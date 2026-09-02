@@ -7479,6 +7479,72 @@ zmianie liczby triggerów), `tools/event-contract-audit.mjs` i
 `tools/family-audit.mjs` bez naruszeń, `oracle-coverage --only` 9 kart batchu 52
 = 100%. Raport: `docs/audits/AUDYT_PR92_2026-09-02.md`.
 
+### Audyt PR #92, tura 2 (2026-09-02): rulingi WotC w repo i cztery rozstrzygnięcia właściciela
+
+Sesja `arena/01a06193-mtg` (PR #93), kontynuacja rozpoznania z tury 1. Właściciel
+rozstrzygnął cztery otwarte pytania; wszystkie cztery weszły do kodu, każdy
+commit osobno zielony (`npm test` + `npm run build`) i pushnięty osobno
+(ADR 0020, bez force pusha).
+
+- **Rulingi jako dane.** `tools/fetch-card-rulings.mjs` ściąga rulings z API
+  Scryfalla (przez `fetch_page`; `curl` z sandboxa nie ma egressu) i dopisuje
+  je do snapshotów w `docs/cards/`. 9 kart batchu 52 ma rulingi, cztery z nich
+  puste listy („WotC nie ma nic") — to też informacja. `HOW_TO_ADD_CARD.md`
+  dostał punkt kontrolny, `ENVIRONMENT.md` §4 — notatkę o dostępie.
+- **Leonin Surveyor / Glitch Ghost Surveyor (odchylenie od rulingów, naprawione).**
+  „Start your engines!" jest akcją stanową, nie triggeriem ETB (ruling
+  2025-02-07): działa przy przejęciu permanentu z silnikami i przy zdolności
+  nadanej, a utrata źródła nie cofa prędkości. Zdolność w danych karty to teraz
+  `static` + `effect: [{type:'start_engines'}]`, rdzeń ma jeden pass w
+  `runStateBasedActions` pytający `effectiveAbilities`, zapis idzie wyłącznie
+  przez `setPlayerSpeed`/`startEnginesFor`, a rodzina pól `speed` w
+  `family-audit` pilnuje braku zapisów z boku.
+- **Vaan, Street Thief (odchylenie, naprawione strukturalnie).** Ruling
+  2025-02-10 zamyka okno rzutu wraz ze zdolnością na stosie. Model zostawiał
+  na karcie w exile stempel `playableUntilTurn`, więc po rezygnacji karta
+  dała się rzucić później za pełny koszt. Dziś oknem jest sama decyzja
+  `pendingExileCast`, a uprawnienie do rzutu z exile i poza timingiem daje
+  flaga `abilityWindowCast` (renoma `vaanCast` — zniknęła ostatnia nazwa karty
+  w sygnaturach rdzenia w tym obszarze).
+- **Treasure z katalogu tokenów (decyzja właściciela).** Jedna zamrożona
+  definicja `TREASURE_TOKEN_EFFECT` w `src/engine/tokens.js` zastąpiła trzy
+  ręczne kopie w rdzeniu; `token_treasure` w katalogu dostał wreszcie własną
+  zdolność (jak `token_food`), a `test/audyt-treasure-katalog.test.js` pilnuje
+  równości obu źródeł i skanuje wszystkie 6 literali `create_token` po stronie
+  kart (pin anty-vacuous).
+- **Kicker na instant/sorcery (decyzja: obsługiwać, nie zgłaszać jako
+  `limitations`).** `castSpell(..., kicked)` z pipami kickera w wymaganiach,
+  kosztem poza obniżkami (CR 601.2f), `wasKicked` na stosie i `kicked` w
+  `spell_cast` — ścieżka, na którą `triggers.js` czekał dla Merfolk Falconer.
+  Oferta (`legalSpellCasts`) liczy tak samo jak płatność (L48), UI dostał swój
+  klucz grupowania i etykietę, a ścieżki modalna/X/Fireball — jawny błąd.
+- **Deklaratywne grupowanie wyzwalaczy (rozszerzenie ADR 0002).** Tag
+  `trigger.groupPer` w danych kart + `mayFireGrouped` w rdzeniu; przy okazji
+  naprawione prawdziwe faux pas: `combat_damage_to_you` scalało się po graczu,
+  więc dwie kopie Contested Game Ball przechylał tylko jeden artefakt
+  (CR 603.3).
+- **Sprawdzone i bez zarzutu:** Cemetery Recruitment (guard strefy), Fourth
+  Bridge Prowler (opcjonalność przez opcjonalny cel), Jolrael (X przy
+  rozstrzyganiu, licznik doborów). `speed` nie potrzebuje projekcji w odcisku —
+  `fingerprint.js` serializuje całe `state.players`.
+- **Zostawione właścicielowi:** `mana-sources.js:46` (Skarb w mapie kolorów,
+  wbrew regulaminowemu komentarzowi tego pliku) i `resources.js:623,847`
+  (`cardId !== 'token_treasure'` przy koszyku skarbowym) — to ID karty w
+  rdzeniu, czyszczenie rusza rozliczanie many i wyceny bota.
+
+**Budżet lektury startowej** (100k tokenów) przepełnił się o ~1,2k przy dopisywaniu
+lekcji — rejestr dotąd miał 99,9% progu. Skutkiem jest nowy `docs/LESSONS_PRZYPADKI.md`
+(narracja przypadków L91 i L106 przeniesiona verbatim), skrócone odsyłacze kotwic
+(`[L21]` zamiast pełnych slugów) i naprawa **sklejonej głowicy wpisu L105**, przez
+którą wpis nie istniał dla grepów. Dziś ~99,84k, zapas 455 B — dalsze rastosanie
+wymaga decyzji właściciela (próg vs. podział rejestru).
+
+Bramy: `npm test` 4168/4168, `npm run test:all` 4178/4178 (~250 s), `npm run build`
+57 modułów / 3097,4 kB (start sesji: 3080,2 kB na M280), audytory bez naruszeń.
+Nowe testy: **21** (silniki 5, okno Vaana 3, Skarb 3, kicker 6, grupowanie 4) —
+delta `npm test` 4147 → 4168 dokładnie tyle wynosi; plik
+`audyt-pr92-grupowe-trygery.test.js` tylko zaktualizowany o tag, nie nowy.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

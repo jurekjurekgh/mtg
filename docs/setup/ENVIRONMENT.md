@@ -115,13 +115,12 @@ sklejać znaczniki konfliktu.
   przechodzi (63 pakiety, ~1 s). Czyli: Żywego Testera da się uruchomić
   w sesji (nie trzeba zainstalowanego wcześniej `node_modules`), ale danych
   kart z Scryfalla nadal pobieraj narzędziem `fetch_page` i zapisuj do
-  repozytorium (ADR 0010). `fetch_page` działa też na czystym JSON-ie API —
-  zmierzone 2026-09-02 (audyt PR #92): te same URL-e, które `curl`-owi zwracają
-  kod 000, przez `fetch_page` wracają normalnie. Rulingi WotC (dawniej
-  „nie do potwierdzenia z repo") bierz tak:
-  `https://api.scryfall.com/cards/<set>/<collector_number>/rulings` — zapisuje
-  je `node tools/fetch-card-rulings.mjs` (u niego egress jest potrzebny, więc w
-  sesji sandboxowej ściągnij `fetch_page`em i zapisuj przez `python3`).
+  repozytorium (ADR 0010). `fetch_page` działa też na czystym JSON-ie (zmierzone
+  2026-09-02: te same URL-e, co `curl`-owi zwracają kod 000, wracają normalnie) —
+  rulingi WotC, dawniej „nie do potwierdzenia z repo", bierz z
+  `api.scryfall.com/cards/<set>/<collector_number>/rulings` przez
+  `node tools/fetch-card-rulings.mjs` (w sesji sandboxowej ściągnij je
+  `fetch_page`em i zapisz przez `python3`).
 - **`write_file` działa tylko w workspace.** Skrypty pomocnicze twórz przez
   `bash` z heredokiem, jeśli mają wylądować poza repo.
 - **Polskie znaki:** narzędzie `edit_file` potrafi je uszkodzić. Do edycji

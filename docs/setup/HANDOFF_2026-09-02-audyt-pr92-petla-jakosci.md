@@ -59,9 +59,12 @@ Baza sesji: `db0c493` (= squash PR #92, `main`).
 
 ## Pułapki (aktualne, zweryfikowane w tej sesji)
 
-- **Sandbox bez egressu HTTPS** — Scryfall tylko przez `fetch_page`, nie
-  `curl`/`fetch` z kodu. `docs/cards/scryfall-*.json` offline = jedyne źródło
-  Oracle w sesji (i ono nie ma rulingów).
+- **Sandbox bez egressu HTTPS z kodu** — `curl`/`fetch` z poziomu basha
+  failuje (SSL_ERROR_SYSCALL/kod 000), ale `fetch_page` DOCIERA do API
+  Scryfalla, w tym `https://api.scryfall.com/cards/<set>/<numer>/rulings`.
+  Ściągnięte rulingi leżą w snapshotach (`docs/cards/scryfall-*.json`, pole
+  `rulings`); narzędzie: `tools/fetch-card-rulings.mjs` (idempotentne, CLI
+  odcięte od importu). Nie uznawaj braku egressu za blokadę.
 - **`addObject` odrzuca pola spoza kontraktu** (L21) i tylko ostrzega na stderr:
   test, który chce `playableUntilTurn`, `plotted` itp., musi je położyć
   `state.objects.set(id, Object.freeze({ ...obj, pole }))` — inaczej dostaje
@@ -80,3 +83,48 @@ Baza sesji: `db0c493` (= squash PR #92, `main`).
   deklaruje się w `CONTRACT_REQUIRED_FIELDS` (patrz raport §4a).
 - **Reguła L48 w obie strony:** zawężenie OFERTY bez walidacji (albo odwrotnie)
   nie jest naprawą — jeden predykat, cztery miejsca wołania (raport §4).
+
+
+## Stan po turze 2 (2026-09-02, godz. popołudniowa) i co dalej polować
+
+Cztery rozstrzygnięcia właściciela wdrożone (szczegóły: §9 raportu audytu, M282
+w kamieniach milowych): rulingi w repo, „Start your engines!" jako akcja
+stanowa, okno rzutu z exile = decyzja, jeden deskryptor Skarba + zdolność w
+katalogu tokenów, kicker na instant/sorcery, deklaratywne `trigger.groupPer`.
+Bramy: `npm test` 4168/4168, `npm run test:all` 4178/4178 (~250 s), build
+57 / 3097,4 kB.
+
+Wątki, które sama ta tura odkryła i zostawia (kolejność = spodziewany zysk):
+
+1. **Cienie danych karty w rdzeniu przy Skarbie.** `mana-sources.js:46` ma
+   `'token_treasure'` w mapie kolorów, choć komentarz w tym pliku mówi, żeby
+   kart z darmowym `{T}: Add` do mapy NIE wpisywać; `resources.js:623,847`
+   porównuje `object.cardId !== 'token_treasure'`. Czyste rozwiązanie:
+   deskryptor zdolności jako źródło (albo jawna flaga na tokenie) + migracja
+   6 literali `create_token` po stronie kart. Ryzyko: dotyka rozliczania many i
+   wycen bota (golden-master), więc osobna tura.
+2. **12–13 argumentów pozycyjnych w `castSpell`.** `buyback, payAltCost,
+   xValue, phyrexianPayWithLife, abilityWindowCast, kicked` — każde kolejne
+   uprawnienie dokłada pozycję, a pomyłka w kolejności jest niema. Propozycja do
+   decyzji właściciela: zamienić ogon na `options` (jak `castPermanent`).
+3. **Semantyka kontr-zaklęcia przy `pendingExileCast`.** Ścieżka odrzucona
+   (`target_unsupported`) zwraca priorytet i zostawia kartę w exile; przy
+   kontrze całego triggeru nie powinno być ani wygnania, ani Skarbu (Całokształt
+   to „exile … If you do" — CR 118.13/608.2a). Nie ruszone, bo wymaga testów
+   kontrzenia zdolności, których dziś nie ma.
+4. **Rodzina pól `speed` i `draws` działają; `playableUntilTurn` nie.** Ten
+   ostatni zapisują dwa miejsca w `effects.js` (impuls i — już nie — Vaan), więc
+   dryf jest mało prawdopodobny; jeśli wróci trzeci pisarz, warto dodać rodzinę
+   z próbkami `bypass`/`legal` (wzorzec `speed`).
+5. **Pułapki harnessu** (L116): `createGameState` bez talii = puste strefy,
+   mana tylko przez `addMana(...{colors})`, skutki triggerów po drenażu
+   priorytetu, a przy agregatach liczyć WYZWANIA, nie efekty (L115).
+6. **Budżet lektury startowej jest wyczerpany** (~99,84k z 100k;
+   `test/dokumentacja-budzet-lektury.test.js`). Każda nowa lekcja w
+   `docs/LESSONS.md` wymaga zwolnienia miejsca u kogoś innego. Trzy wyjścia do
+   wyboru przez właściciela: podnieść próg, rozpisać trwały podział
+   rejestr↔`docs/LESSONS_PRZYPADKI.md`, albo wynieść klasy pilnowane przez
+   automaty do podręczników obszarowych. Ta sesja progu NIE podnosiła.
+7. **Narzędzia do powtórzenia:** rodzina pól w `family-audit` za każdym razem,
+   gdy naprawa wprowadza choke point (bez tego strażnik jest vacuouski —
+   L113); kontrola mutacji w stronę ZACISKAJĄCĄ bramkę (L114).

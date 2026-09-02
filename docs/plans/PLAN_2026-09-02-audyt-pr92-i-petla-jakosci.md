@@ -143,3 +143,20 @@ Obserwacje bez naprawy (udokumentowane, nie na zapas):
    i w walidacji.
 6. Raport audytu + `docs/PROJECT_HISTORY.md` + `docs/ENGINE_MILESTONES.md`,
    kumulatywny opis PR, numbers w README na koniec.
+
+
+## Dodatek (tura 2, 2026-09-02): rozstrzygnięcia właściciela i ich status
+
+Pytania z §7 raportu doczekały się odpowiedzi właściciela; wszystkie cztery
+wdrożono w turze 2 (osobne commity, każdy zielony):
+
+| pytanie | odpowiedź właściciela | status |
+|---|---|---|
+| (a) zachowanie per karta w rdzeniu vs tag w danych | „Engine jest headless, name-agnostic" | ✅ `trigger.groupPer`, `start_engines` jako `static` + `effect`; zero nazw kart w warunkach |
+| (b) kicker na instant/sorcery | „OCZYWIŚCIE OBSŁUŻYĆ" (nie `limitations`) | ✅ `castSpell(..., kicked)` + oferta + UI (`3d07dc0`) |
+| (c) czy da się zweryfikować rulingi | „narzędzie fetch działa i możesz wszystko ściągać z netu" | ✅ `tools/fetch-card-rulings.mjs`, 9 snapshotów z rulingami, odchylenia naprawione |
+| (d) Skarb Vaana składany ręcznie | „w katalogu tokenów od dawna jest Treasure Token" | ✅ `TREASURE_TOKEN_EFFECT` + zdolność w `token_treasure` + test antydryfowy |
+
+Punkty planu z tury 1 (2.1–2.3) pozostają bez zmian; §6 raportu (odrzucone
+podejrzenia) nie wymagał wznowienia. Kolejne polowanie: cienie danych karty w
+`mana-sources.js`/`resources.js` (Skarb) — patrz §9 raportu.

@@ -3670,3 +3670,73 @@ w teście — bez tego pozytywowana ścieżka Vaana wydaje się zepsuta.
 (też per kontroler), Treasure Vaana składany ręcznie zamiast z katalogu
 tokenów (klasa L107), brak `rulings` w snapshotach Scryfall, kicker na
 instant/sorcery (Merfolk Falconer).
+
+
+## M282 (2026-09-02) — Audyt PR #92 tura 2: cztery rozstrzygnięcia właściciela w kodzie (arena/01a06193, PR #93)
+
+Tura 1 zrobiła rozpoznanie i raport (`docs/audits/AUDYT_PR92_2026-09-02.md`),
+tura 2 wdrożyła odpowiedzi właściciela na cztery pytania. Details w §9 raportu;
+tu sedno.
+
+**Rulingi stały się danymi w repo.** `tools/fetch-card-rulings.mjs` czyta `set`
++ `collector_number` ze snapshotu karty, pobiera `…/rulings` z API Scryfalla
+(przez `fetch_page` — `curl` z sandboxa nie ma egressu) i dopisuje
+`rulings`/`rulingsSource`/`rulingsPobrano`. Idempotentne; pusta lista znaczy
+„ściągnięto, WotC nie ma nic". 9 kart batchu 52 ma teraz rulingi, punkt
+kontrolny „rulingi do snapshotu" wszedł do `docs/cards/HOW_TO_ADD_CARD.md`.
+
+**„Start your engines!" to akcja stanowa (CR 603.3 + ruling 2025-02-07), nie
+trigger ETB.** Karty deklarują zdolność `static` z `effect: [{type:
+'start_engines'}]`; `runStateBasedActions` ma jeden pass, który pyta
+`effectiveAbilities` permanentów pola bitwy — dzięki temu działa przejęcie
+cudzego permanentu z silnikami i zdolność nadana, a prędkość nie cofa się po
+utracie źródła. Zapis wyłącznie przez choke pointy `setPlayerSpeed` (klamra
+0..4 + zdarzenie `speed_changed`) i `startEnginesFor`; rodzina pól `speed`
+w `tools/family-audit.mjs` pilnuje, że nikt nie pisnie `.speed` z boku. Zero
+nazw kart w rdzeniu (ADR 0002 w wersji właściciela: „engine headless,
+name-agnostic").
+
+**Okno rzutu z wygnania = decyzja, nie stempel.** Ruling WotC 2025-02-10 dla
+Vaana: „You can't wait to cast it later in the turn". Efekt nie zakłada już
+`playableUntilTurn`; uprawnienie do rzutu z exile i poza timingiem nosi flaga
+`abilityWindowCast` (renoma dawnego `vaanCast` — nazwa karty w rdzeniu).
+Dzięki temu nie ma „czego zapomnieć wyczyścić" — okno znika razem z decyzją.
+
+**Jeden Skarb.** `TREASURE_TOKEN_EFFECT` w `src/engine/tokens.js` zastąpił trzy
+ręczne kopie deskryptora w rdzeniu (Stash, Marut, rezygnacja Vaana), a katalog
+`token_treasure` dostał wreszcie własną zdolność (wzorzec `token_food`) —
+test `audyt-treasure-katalog` porównuje oba źródła i skanuje cały katalog pod
+kątem `create_token` dla Skarbu (6 literali po stronie kart, pin anty-vacuous).
+
+**Kicker na instant/sorcery (decyzja: „oczywiście obsłużyć").** `castSpell`
+dostał `kicked`: walidacja, pipy kickera w wymaganiach, koszt poza obniżkami
+(CR 601.2f), `wasKicked` na obiekcie stosu (CR 702.33a) i `kicked` w
+`spell_cast` — czyli dokładnie tam, od czego `triggers.js` czekał dla Merfolk
+Falconer. Oferta enumeruje wariant kicked z tą samą arytmetyką co płatność
+(L48), UI dostał klucz grupowania, etykietę i liczenie kosztu; ścieżki modalna
+/X/Fireball dostają JAWNY błąd zamiast cichego zignorowania.
+
+**Grupowanie wyzwalaczy deklaruje karta.** Tag `trigger.groupPer`
+(`'affected_player'` | `'controller'`) + jeden `mayFireGrouped` w rdzeniu
+zamiast dwóch osobnych zbiorów dedupu rozłączanych po nazwie zdarzenia.
+Przy okazji padł prawdziwy błąd: `combat_damage_to_you` dedupowało po graczu,
+więc druga kopia tego samego artefaktu nie wyzwalała (CR 603.3). Test
+katalogu pilnuje, żeby każda zdolność grupowa miała tag — bez tego cisza w
+danych oznacza dziś zmianę zachowania.
+
+**Lekcje:** L114 (kontrola mutacji musi ZACISKAĆ bramkę, nie ją poluzowywać —
+odwrócona mutacja puściłaby test bez wartości), L115 (agregacja to fakt
+drukowany na karcie; mierzyć liczbą wyzwań, nie skutkiem, gdy decyzja blokuje),
+L116 (harness: `createGameState` bez talii ma puste strefy, `addObject` nie
+kolejkuje triggerów — testy regułowe muszą iść komendami).
+
+**Budżet lektury startowej.** Dopisanie L114–L116 przepełniło próg 100k
+tokenów (`test/dokumentacja-budzet-lektury.test.js`), więc rejestr został
+skondensowany: kotwice linkują krótko (`[L21]`), narracja L91 i L106 poszła do
+nowego `docs/LESSONS_PRZYPADKI.md` (archiwum, nie lektura), a przy okazji
+sklejona głowica wpisu L105 odzyskała własny nagłówek. Lektura: ~99,84k.
+**Bramy:** `npm test` **4168/4168**, `npm run test:all` **4178/4178** (~250 s),
+`npm run build` **57 modułów / 3097,4 kB**, `family-audit` i
+`event-contract-audit` bez naruszeń, zero zmian w katalogu kart poza
+deskryptorami (tagi grupowania, zdolność tokenu Skarbu, zdolność `static`
+dwóch silników), zero zmian wycen bota (golden-master nietknięty).

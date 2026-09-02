@@ -9,6 +9,7 @@ zanim popełni ten sam błąd.
 | `docs/plans/PLAN_*.md` | roadmapa JEDNEGO zadania | jednorazowy |
 | `docs/PROJECT_HISTORY.md` | dziennik sesji | żywy, **NIE** jest lekturą startową |
 | `docs/decisions/*.md` (ADR) | wiążąca decyzja architektoniczna | trwała, formalna |
+| `docs/LESSONS_PRZYPADKI.md` | narracja przypadków (Objaw/Przyczyna) | trwałe archiwum, **NIE** lektura startowa |
 | **`docs/LESSONS.md`** | **wniosek / heurystyka diagnostyczna** | **trwała, nieformalna** |
 
 Lekcja idzie tu, gdy jest powtarzalna, ale NIE jest decyzją architektoniczną
@@ -28,22 +29,24 @@ nieaktualną oznaczamy z odsyłaczem do nowszej.
 ```
 
 Wpis niesie FAKTY (nazwy plików, testów, kart, numery CR) i regułę — nie
-narrację. L15–L19 są datowane po numerze kamienia milowego (M102/M103 =
-2026-08-16 wg `PROJECT_HISTORY.md`): oryginalne daty zaginęły przy migracji
-M208.
+narrację (ta zostaje w `docs/audits/`). Rejestr waży niemal cały budżet lektury
+startowej (`test/dokumentacja-budzet-lektury.test.js`, 100k tokenów), więc nowy
+wpis płaci się skróceniem innego — progu NIE podnosimy. L15–L19 są datowane po
+numerze kamienia milowego (M102/M103 = 2026-08-16 wg `PROJECT_HISTORY.md`):
+oryginalne daty zaginęły przy migracji M208.
 
 ## Wpisy zbiorcze (mapa klas)
 
-Kilka lekcji opisywało tę samą klasę błędu z różnych stron. M275 zebrał je we
-**wpisy zbiorcze**: pełna klasa, tabela wariantów i wspólna reguła mieszkają
-w jednym miejscu, a pozostałe numery zostają jako **kotwice** — krótki opis
-własnego przypadku plus odsyłacz. Numery lekcji są cytowane w kodzie ~1150
-razy, więc **żaden nie znika**.
+Kilka lekcji opisywało tę samą klasę z różnych stron; M275 zebrał je we **wpisy
+zbiorcze**: pełna klasa, tabela wariantów i reguła w jednym miejscu, a reszta
+numerów zostaje jako **kotwice** (krótki przypadek + odsyłacz). Numery są cytowane
+w kodzie ~1150 razy, więc **żaden nie znika**; narrację najdłuższych przypadków
+wynosimy do `docs/LESSONS_PRZYPADKI.md`.
 
 | Klasa | Wpis główny | Kotwice |
 |---|---|---|
 | Jawna lista pól gubi dane po cichu (fabryka → generator → transport → widok) | **L21** | L93, L94, L101 |
-| Weryfikacja mutacyjna: jedyny dowód, że test/detektor działa | **L13** | L61, L70 |
+| Weryfikacja mutacyjna: jedyny dowód, że test/detektor działa | **L13** | L61, L70, L114 |
 | Strażnik mierzy regułę, nie tekst źródła | **L5** | L26, L31, L44, L83 |
 | Zero zgłoszeń detektorów to pomiar narzędzia | **L27** | L40, L73, L75 |
 | Oferta i walidacja: jeden filtr, porządek i rejestr | **L48** | L90 |
@@ -82,20 +85,20 @@ NAZWIE mechaniki, bo one jej nie zawierają.
 
 ## L106 (2026-08-31) — Efekt „do końca tury" z ZAMROŻONYM zbiorem obiektów nie wolno filtrować po BIEŻĄCYM kontrolerze
 
-**Objaw (M269):** po „Creatures you control get +2/+2 until end of turn"
-kradzież buffowanego stwora NATYCHMIAST kasowała bonus (4/6 → 2/4); buff
-ujemny po przejęciu LECZYŁ. CR 611.2c: zbiór obiektów efektu ciągłego ustala
-się RAZ, przy rozstrzygnięciu.
-
-**Przyczyna:** `untilEndOfTurnBonuses` (`permanents.js`) miała DWA filtry tej
-samej przynależności — zamrożony `objectIds` (M101/B2) i starszy
-`object.controllerId === buff.controllerId`. Póki kontrola się nie zmienia,
-dają ten sam wynik, więc żaden test nie świecił.
+**Przypadek (M269):** po „Creatures you control get +2/+2 until end of turn"
+kradzież stwora kasowała bonus (4/6 → 2/4), a buff ujemny po przejęciu leczył
+— `untilEndOfTurnBonuses` miało DWA filtry tej samej przynależności (zamrożony
+`objectIds` i starszy `object.controllerId`), więc żaden test nie świecił,
+póki się zgadzały (CR 611.2c: zbiór ustala się RAZ). Pełny opis:
+`docs/LESSONS_PRZYPADKI.md`, sekcja „L106".
 
 **Reguła:** (1) Dokładając precyzyjniejsze kryterium, USUŃ stare — dwa filtry
 tej samej przynależności to jeden za dużo. (2) Redundancja jest niewidoczna,
 póki kryteria się zgadzają; testu szukaj tam, gdzie się rozjeżdżają (zmiana
-kontroli, typu, strefy).## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
+kontroli, typu, strefy).
+
+
+## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
 
 **Objaw (M268):** handoff M267 odnotował, że etykiety `bestow`/`morph`
 składają koszt po staremu, ale „dziś ich koszty są generyczne, więc to ryzyko,
@@ -246,7 +249,7 @@ wykazała cztery gubione deskryptory kosztu w `playerView`: `warp`, `surge`,
 testem na JEDNĄ kartę — reszta dojechała później i nikt jej nie zauważył, bo
 silnik liczył ofertę poprawnie; kłamała tylko etykieta.
 
-→ **Pełna klasa i reguła: [L21](#l21-2026-08-16--jawna-lista-pól-gubi-dane-po-cichu--w-każdej-z-czterech-warstw).**
+→ Pełna klasa i reguła: [L21].**
 Tu dodatkowo, specyficzne dla widoku:
 1. Koszt alternatywny (warp, surge, kicker, bestow, plot, suspend, morph,
    adventure) to publiczny Oracle (CR 601.2b) — musi dotrzeć do widoku KAŻDEJ
@@ -455,7 +458,7 @@ z MV 0 (CR 707.2: koszt many jest wartością kopiowalną). Bez błędu, ostrze�
 i testu; piny kopiowania sprawdzały `transformTo`/`station`/`saga`, nigdy kosztu.
 Ujawnione pytaniem o CR 202.3b zadanym WSZYSTKIM ścieżkom rodziny.
 
-→ **Pełna klasa i reguła: [L21](#l21-2026-08-16--jawna-lista-pól-gubi-dane-po-cichu--w-każdej-z-czterech-warstw).**
+→ Pełna klasa i reguła: [L21].**
 
 ## L93 (2026-08-30) — Jawna lista pól w warstwie TRANSPORTOWEJ musi pokrywać generator
 
@@ -464,7 +467,7 @@ Crawling Chorus (`toxic: 1`) bił gracza trzy razy bez znaku trucizny: `installD
 `surge` i `warp` na niej nie było. Testy mechanik omijały tę warstwę, bo budowały
 obiekt helperem `putCard`.
 
-→ **Pełna klasa i reguła: [L21](#l21-2026-08-16--jawna-lista-pól-gubi-dane-po-cichu--w-każdej-z-czterech-warstw).**
+→ Pełna klasa i reguła: [L21].**
 Tu dodatkowo: pełne partie botów (`real-cards-batch3`) łapią zakleszczenia decyzji,
 których unit nie widzi — po zmianie warstwy decyzji odpal choć jeden taki test.
 
@@ -498,7 +501,7 @@ wystąpienie `pending*` w surowym pliku. Mutacja: `state.pendingZzz` w kodzie
 + wzmianka `pendingZzz` wyłącznie w KOMENTARZU → strażnik zielony. Nowa decyzja
 znów wyciekłaby z odcisku stanu.
 
-→ **Pełna klasa: [L5](#l5-2026-08-14--strażnik-mierzy-regułę-a-nie-tekst-źródła).** Kluczowe: `stripComments` przed skanem, pin
+→ Pełna klasa: [L5].** Kluczowe: `stripComments` przed skanem, pin
 o dwóch nogach (kompozycja + ścieżka produkcyjna przez nią przechodzi).
 
 **Strażnik:** `test/fingerprint-pending-decisions.test.js` (`stripComments`
@@ -761,7 +764,7 @@ dowiodła, że silnik działa poprawnie — zdolność tapuje DWA permanenty nar
 więc warunek „jedyna zmiana to zapłacony koszt" wychodził prawdą. Rozróżnienie
 jest strukturalne: płacących wskazuje KOMENDA (`objectId` + `tapCreatureId`).
 
-→ **Pełna klasa: [L27](#l27-2026-08-17--zero-zgłoszeń-detektorów-to-pomiar-narzędzia-nie-produktu).** Fałszywy alarm kosztuje więcej niż cisza, ale zanim go
+→ Pełna klasa: [L27].** Fałszywy alarm kosztuje więcej niż cisza, ale zanim go
 uciszysz — sprawdź, czy nie kłamie pomiar.
 
 ## L76 (2026-08-25) — Żywy Tester mierzy `dist/`, nie `src/`
@@ -812,7 +815,7 @@ snapshoty „MOJE POLA:” / „POLA WROGA:”, a audyt biega z `--quiet`, gdzie
 pliku jest JEDEN snapshot. Detektor był martwy w jedynym trybie, w którym go
 używano.
 
-→ **Pełna klasa: [L27](#l27-2026-08-17--zero-zgłoszeń-detektorów-to-pomiar-narzędzia-nie-produktu).** Kluczowe: dane strukturalne ze sterownika zamiast
+→ Pełna klasa: [L27].** Kluczowe: dane strukturalne ze sterownika zamiast
 tekstu transkryptu; **zero z martwego detektora wygląda jak zero z czystej gry**.
 
 ## L74 (2026-08-25) — Ustalenie o UI weryfikuj w DOM, nie w spłaszczonym transkrypcie
@@ -869,7 +872,7 @@ CR 202.2) nie uczyniła żadnego testu czerwonym, bo regułę egzekwowały już 
 kart. Gałąź była martwa **i błędna**: efekt animujący może kolor nadać (Genju of
 the Spires, CR 613 warstwa 5), a zerowanie po typie by go zgubiło.
 
-→ **Pełna procedura: [L13](#l13-2026-08-15--weryfikacja-mutacyjna-jedyny-dowód-że-test-lub-detektor-działa).** Mutuj per gałąź; gałąź bez czerwieni jest
+→ Pełna procedura: [L13].** Mutuj per gałąź; gałąź bez czerwieni jest
 podejrzana — najpierw pytaj, czy powinna istnieć.
 
 ## L67 (2026-08-25) — Helper, który istnieje, ale nie jest wołany w gałęzi, gdzie miał chronić
@@ -987,7 +990,7 @@ także po cofnięciu fiksu — dane nie miały kształtu, w którym fix działa 
 mierzył `flush()`, nie naprawę). To L1 w najgroźniejszym wariancie: test
 istnieje, ma nazwę i komentarz, więc temat uchodzi za zabezpieczony.
 
-→ **Pełna procedura: [L13](#l13-2026-08-15--weryfikacja-mutacyjna-jedyny-dowód-że-test-lub-detektor-działa).**
+→ Pełna procedura: [L13].**
 
 ## L62 (2026-08-25) — Kolejność renderu to część kontraktu: log rysowany od najnowszego łamie liczenie „nowych" po indeksie
 
@@ -1432,7 +1435,7 @@ transkrypcie NIE są błędami UI). Zanim zgłosisz bug, potwierdź źródło w 
 
 ## L13 (2026-08-15) — WERYFIKACJA MUTACYJNA: jedyny dowód, że test lub detektor działa
 
-**Wpis zbiorczy.** Numery L61 i L70 zostają jako kotwice cytowań i odsyłają tutaj.
+**Wpis zbiorczy.** Numery L61, L70 i L114 zostają jako kotwice cytowań i odsyłają tutaj.
 
 „Zielony" nie znaczy „pilnuje". Trzy niezależne przypadki tej samej klasy:
 
@@ -1449,6 +1452,10 @@ transkrypcie NIE są błędami UI). Zanim zgłosisz bug, potwierdź źródło w 
   (`effectiveColors`) nie uczyniła nic czerwonym, bo regułę egzekwowały już dane
   kart. Gałąź była martwa **i błędna** — Genju of the Spires („becomes a 6/1 red
   Spirit creature land", CR 613 warstwa 5) traciłby kolor.
+- **Zła struna mutacji (L114, M282):** przy bramce `A && !B` podmiana `!B` na
+  `false` ZNOSI warunkowanie zamiast je zacisnąć — komplet zieleni sugerował, że
+  asercja pilnuje. Mutacja ma sprowadzać kod do stanu PRZED naprawą (tu: usunąć
+  `!B`), a nie do stanu „bramka szeroko otwarta".
 
 **Reguła:**
 1. Test regresyjny liczy się dopiero, gdy pokazano, że **czerwienieje po
@@ -1709,7 +1716,7 @@ Test miał `if (!expected) continue`, a 20 kart weszło BEZ pliku źródłowego
 (ADR 0010 §2a): im więcej kart z pominięciem procedury, tym mniejszy zasięg
 testu — a zielony wynik sugerował coś odwrotnego.
 
-→ **Pełna klasa: [L5](#l5-2026-08-14--strażnik-mierzy-regułę-a-nie-tekst-źródła).** Każde „nie mam danych, więc przepuszczam" wymaga
+→ Pełna klasa: [L5].** Każde „nie mam danych, więc przepuszczam" wymaga
 drugiego testu na OBECNOŚĆ danych.
 
 ## L27 (2026-08-17) — ZERO ZGŁOSZEŃ detektorów to pomiar NARZĘDZIA, nie produktu
@@ -1808,7 +1815,7 @@ Zielony — a właściciel zobaczył „Chronic Flooding — trigger
 i tylko jedna sięgała po słownik. Strażnik pilnował DANYCH, błąd siedział
 w KODZIE.
 
-→ **Pełna klasa: [L5](#l5-2026-08-14--strażnik-mierzy-regułę-a-nie-tekst-źródła).**
+→ Pełna klasa: [L5].**
 
 **Osobna uwaga:** gdy właściciel mówi „przycisk jest nieaktywny", zweryfikuj to
 dosłownie — tu `disabled` było `false`: przycisk działał, ale jego jedyny skutek
@@ -1941,7 +1948,7 @@ moje stwory 24 razy w partii) nie miał strażnika. `detectNoEffectOffers` mierz
 oferty, nie OPISY, więc kafel kłamiący o koszcie przechodził bez echa.
 
 **Reguła:** po audycie pytaj o KLASĘ — jaka reguła znalazłaby to automatycznie?
-→ **Pełna klasa: [L27](#l27-2026-08-17--zero-zgłoszeń-detektorów-to-pomiar-narzędzia-nie-produktu).**
+→ Pełna klasa: [L27].**
 
 ## L41 (2026-08-18) — Trzy kopie tej samej logiki rozjeżdżają się cicho i kłamią graczowi
 
@@ -2009,7 +2016,7 @@ kolejne sesje omijają temat jako sprawdzony.
 **Reguła:** gdy kod ogranicza graczowi legalną akcję, czytaj TREŚĆ reguły.
 Podejrzane są mechaniki „X nie może Y", gdzie oryginał brzmi „X musi Z" — wymóg
 łatwo zmienia się w pamięci w zakaz. Przy korekcie odwróć test i dopisz
-uzasadnienie. → Pokrewne: [L5](#l5-2026-08-14--strażnik-mierzy-regułę-a-nie-tekst-źródła) (test pilnował zgodności z błędem, nie
+uzasadnienie. → Pokrewne: [L5] (test pilnował zgodności z błędem, nie
 z zasadami).
 
 ## L45 (2026-08-18) — Mgła wojny wycieka polami pobocznymi, nie tożsamością
@@ -2233,23 +2240,17 @@ triggera → exploit", a bramki w `execute` stały odwrotnie.
 
 To nie dwie kopie jednej reguły, lecz **dwa porządki tej samej reguły**.
 
-→ **Pełna klasa i reguła: [L48](#l48-2026-08-18--oferta-i-walidacja-to-jeden-filtr-jeden-porządek-i-jeden-rejestr).**
+→ Pełna klasa i reguła: [L48].**
 
 ## L91 (2026-08-29) — „Trigger bez efektu" ma trzy różne przyczyny; liczenie zdarzeń to ich przybliżenie, nie reguła
 
-**Objaw:** runda 2 Żywym Testerem (18 partii, M256) wyprodukowała 12 komunikatów
-„trigger bez efektu (nie było czego wykonać)": Trostani Discordant ×4,
-Veiled Ascension ×3, Jyoti, Moag Ancient ×3, Plague Reaver ×1, Chronic Flooding
-×1. Dla czterech pierwszych komunikat był NIEPRECYZYJNY — karta nie miała na
-kim działać (brak zakrytych stworów, brak cudzych stworów, brak stworów-lądów,
-brak innych stworów), a gracz czytał „nie było czego wykonać", czyli komunikat,
-który sugeruje usterkę (kardynał 1 z AUDYT_M255).
-**Przyczyna:** `resolveTrigger` wnioskował powód z LICZBY nowych zdarzeń
-(`producedNothing`). Milczenie ma jednak TRZY źródła: pusty zbiór odbiorców,
-brak paliwa (pusta biblioteka przy młynowaniu) i stan już docelowy (CR 701.20b —
-tapnięcie tapniętego, M106/Z2). Dotychczasowe rozróżnienie brało pod uwagę dwa
-z nich; trzecie („nikt nie pasuje do efektu") było nierozróżnialne od „efekt
-wykonał się bez skutku", bo oba nie produkują zdarzeń.
+**Przypadek (M256, 18 partii Żywym Testerem):** 12 komunikatów „trigger bez
+efektu" na pięciu kartach (Trostani Discordant ×4, Veiled Ascension ×3,
+Jyoti, Moag Ancient ×3, Plague Reaver, Chronic Flooding) — dla czterech
+pierwszych NIEPRECYZYJNY, bo karta nie miała na kim działać, a
+`resolveTrigger` wnioskował powód z LICZBY nowych zdarzeń. Pełny Objaw i
+Przyczyna: `docs/LESSONS_PRZYPADKI.md`, sekcja „L91
+
 **Reguła:**
 1. **Powód mieszka w warstwie efektu.** Selektor zbioru odbiorców
    (`faceDownCreaturesYouControl`, `creaturesNotControlledByOwner`,
@@ -2285,6 +2286,7 @@ zawsze pusty → H2b; wycięcie wpisu `buff_land_creatures` → H4, H7;
 `empty_library` → `no_targets` → H3; wycięcie masowej idempotentności
 (untap_all) → H6.
 
+
 ## L108 (2026-08-31) — Deadlock reguł: szukaj par „musisz X" / „nie możesz X"
 
 Odkryte w M270 (błąd #9, CR 508.1c). Dotąd polowanie na błędy zakładało, że
@@ -2317,18 +2319,14 @@ prawdziwy co do FAKTU (cykl istnieje i pilnuje go `test/module-graph.test.js`)
 i błędny co do WNIOSKU — duplikat nie był jedynym wyjściem. Kopia gubiła dwie
 korekty CR, które choke point wykonywał.
 
-Reguła: gdy komentarz uzasadnia, dlaczego dany kod NIE korzysta ze wspólnej
-ścieżki („żeby uniknąć cyklu", „dla wydajności", „bo tu jest inaczej"),
-traktuj to jak zgłoszenie błędu, nie jak dokumentację. Sprawdź, ilu korekt
-brakuje kopii względem oryginału — zwykle co najmniej jednej. Ograniczenie
-architektoniczne rozwiązuje się przesunięciem WARSTW (funkcja czysta w dół
-grafu, rejestr wstrzykiwany w górę), a nie powieleniem logiki.
+**Reguła:** komentarz uzasadniający, dlaczego kod NIE korzysta ze wspólnej
+ścieżki („żeby uniknąć cyklu", „dla wydajności"), traktuj jak zgłoszenie błędu,
+nie jak dokumentację; ograniczenie architektoniczne rozwiązuje przesunięcie
+WARSTW, nie powielenie logiki. **Zastosowane w M271:** `deathZoneFor` i
+`spellExitZone` zeszły do `zones.js`, `mover.js` wstrzykuje choke point rejestrą,
+osiem kopii reguły „gdzie ląduje czar" → jedna.
 
-Zastosowane w M271: `deathZoneFor` i `spellExitZone` zeszły do `zones.js`
-(najniższa warstwa), a `mover.js` udostępnia choke point zmian stref warstwom
-niższym przez rejestrację. Osiem kopii reguły „gdzie ląduje czar" → jedna.
-
-→ Klasa nadrzędna: [L107](#l107-2026-08-31--najbogatsza-żyła-błędów-ścieżka-robiąca-to-samo-co-helper-ale-ręcznie-grep-po-mutacji-pola-nie-po-nazwie-mechaniki) (helper istnieje, ścieżka go omija).
+→ Klasa nadrzędna: [L107].
 
 ## L110 (2026-08-31) — Usunięcie duplikatu odsłania błędy, które maskował
 
@@ -2340,12 +2338,11 @@ była kolejność odczepiania KILKU załączników (#16).
 
 1. Po sprowadzeniu ścieżki do helpera uruchom NAJSZERSZY zestaw
    (`npm run test:all`, w tym benchmark botów) — `npm test` tego nie złapał.
-2. Nie cofaj naprawy i nie osłabiaj inwariantu; znajdź, co duplikat maskował.
-3. Inwarianty na końcu operacji widzą stan POŚREDNI przy rekurencji: pętla
-   zmieniająca wiele powiązanych obiektów musi najpierw zerwać wiązania,
-   potem stosować polityki.
+2. Nie cofaj naprawy — znajdź, co duplikat maskował. Inwarianty na końcu
+   operacji widzą stan POŚREDNI przy rekurencji: pętla zmieniająca wiele
+   powiązanych obiektów musi najpierw zerwać wiązania, potem stosować polityki.
 
-→ Klasa nadrzędna: [L107](#l107-2026-08-31--najbogatsza-żyła-błędów-ścieżka-robiąca-to-samo-co-helper-ale-ręcznie-grep-po-mutacji-pola-nie-po-nazwie-mechaniki).
+→ Klasa nadrzędna: [L107].
 
 ## L111 (2026-08-31) — sonda wołająca `applyEffect` pomija state-based actions
 
@@ -2362,7 +2359,7 @@ czy repro nadal przechodzi. Punkt 3 jako jedyny łapie to niezawodnie.
 ## L112 (2026-09-01) — Klasę błędów tępi narzędzie, nie kolejna para oczu
 
 M273 (platyna, ADR 0027). 10 z 25 błędów czterech odznak to JEDEN wzorzec
-(L107): ścieżka omija choke point albo gubi pole zdarzenia oczekiwane przez
+([L107]): ścieżka omija choke point albo gubi pole zdarzenia oczekiwane przez
 konsumenta. Emitera bez `toZone` (#20) przeoczyłem wzrokiem — znalazł go skan.
 Gdy klasa wraca trzeci raz: przestań szukać egzemplarzy, napisz analizator.
 
@@ -2375,18 +2372,11 @@ Wymiary skanu (`tools/event-contract-audit.mjs`, w `npm test`):
 3. RĘCZNE MUTACJE `state.zones` — ominięcie choke pointu gubi jego reguły
    (#25: skasowany token zostawiał wiszące id w `state.combat`, CR 506.4).
 
-Rygor, bez którego narzędzie szkodzi:
-- Trafienie weryfikuj wobec KONSUMENTA (grep pola w `session.js`,
-  `triggers.js`). Brak konsumenta = wyjątek, nie błąd: z 36 kandydatów realne
-  były 2.
-- Lista wyjątków JAWNA i z POWODEM; test sensowności uzasadnień wyłapał moje
-  własne „Jak wyżej".
-- Analizator też jest produktem: parser gubił pola po komentarzu — poprawka
-  plus test regresyjny. Fałszywy alarm poprawiaj w TEŚCIE, nie w kodzie.
-- Skan bije listę znalezisk: sam wskazywał ścieżki pominięte przez pierwszą
-  naprawę (#24, #25, M274). Zasięgu skanu pilnuje L113.
-
-→ Klasa, którą to narzędzie tępi: [L107](#l107-2026-08-31--najbogatsza-żyła-błędów-ścieżka-robiąca-to-samo-co-helper-ale-ręcznie-grep-po-mutacji-pola-nie-po-nazwie-mechaniki).
+Rygor, bez którego narzędzie szkodzi: trafienie weryfikuj wobec KONSUMENTA (grep
+pola w `session.js`, `triggers.js`) — z 36 kandydatów realne były 2; lista
+wyjątków JAWNA i z POWODEM; analizator jest produktem (fałszywy alarm poprawiaj w
+TEŚCIE, nie w kodzie).
+→ Pełna klasa: L27 i L13 (wymogi wobec detektora i jego mutacji tam).
 
 ## L113 (2026-09-01) — Filtr wyciszający w strażniku opisuje INTENCJĘ, nie ciąg znaków
 
@@ -2403,9 +2393,47 @@ M274. Strażnik z M273 („każda ścieżka ETB zna liczniki") przepuścił trzy
 Po poszerzeniu skanu uruchom go od razu: poprawiony filtr sam wskazał czwartą
 ścieżkę (Dragon Arch), której nie dał ręczny przegląd.
 
-Strażnik to kod produkcyjny odznaki. Fałszywy alarm boli od razu, ale
-**fałszywe MILCZENIE jest gorsze** — udaje, że klasa jest zamknięta. Po
-napisaniu strażnika sprawdź, ile trafień pominął i czemu (u mnie 3 z 13).
+**Fałszywe MILCZENIE strażnika jest gorsze od fałszywego alarmu** — po jego
+napisaniu sprawdź, ile trafień pominął i czemu (u mnie 3 z 13).
 
-→ Klasa, której pilnuje naprawiony strażnik: [L107](#l107-2026-08-31--najbogatsza-żyła-błędów-ścieżka-robiąca-to-samo-co-helper-ale-ręcznie-grep-po-mutacji-pola-nie-po-nazwie-mechaniki).
+→ Klasa, której pilnuje naprawiony strażnik: [L107]; pomiar narzędzia: L27.
 
+
+
+## L114 (2026-09-02) — Kotwica: kontrola mutacji w złym kierunku
+
+„Sprawdziłem mutacją" przy bramce `A && !abilityWindowCast` (okno rzutu z
+wygnania, Vaan) dało komplet zieleni: podmiana `!B` na `false` ZNOSI warunek
+zamiast go zaciskać. **Reguła:** mutacja = stan PRZED naprawą (tu: usunąć
+`!abilityWindowCast` z warunków `canCastFromExile`); sprawdzaj jej KIERUNEK.
+**Strażnik:** test 3 z `test/audyt-rulingi-vaan-okno-rzutu.test.js`.
+→ Pełna klasa: [L13] (wariant dopisany tamże).
+
+## L115 (2026-09-02) — Tryb agregacji triggerów jest DRUKOWANY NA KARCIE, więc deklaruje go karta
+
+**Objaw:** tryb grupowania rozpoznawało się w silniku po NAZWIE zdarzenia, a
+`combat_damage_to_you` scalało się po graczu → druga instancja tej samej zdolności
+przepadała (Contested Game Ball ×2, CR 603.3).
+**Przyczyna:** rozjazd z CR 603.2 (zdarzenie scala się w jedno) i CR 603.3 (każda
+instancja wyzwala osobno); decyzja właściciela: „engine jest headless,
+name-agnostic" (ADR 0002).
+**Reguła:** tryb nosi deskryptor `trigger.groupPer` ∈ `'affected_player'` |
+`'controller'` (brak tagu = ogień per zdarzenie), klucz grupowania zawsze zawiera
+instancję zdolności (`${subject}#${abilityIndex}|…`), a katalog i
+`test/audyt-grupowanie-triggerow-tag.test.js` pilnują, że tag jest czytany.
+Agregat mierz liczbą `ability_triggered`, nie skutkiem — przy `pendingExileCast`
+jeden i dwa wyzwalacze zostawiają tyle samo wygnań.
+**Strażnik:** usunięcie tagu z Vaana czerwieni testy 1 i 3; klucz bez
+`abilityIndex` — test 2 (raport §9 ma narrację).
+
+## L116 (2026-09-02) — Nim oskarżysz silnik: trzy pułapki harnessu testów regułowych
+
+**Objaw:** test okna Vaana dał `trigger_resolved: no_result` — wyglądał jak błąd
+efektu, a to brak danych w teście.
+**Reguła:** (1) `createGameState` bez `decks` ma WSZYSTKIE strefy puste
+(`state.zones.library.length === 0`) — kartę na wierzch kładzie sam test (wzorzec
+`test/batch52-kart.test.js`); (2) mana ze źródła
+(`addMana(state, playerId, 10, { colors })`, nie `execute({type:'add_mana'})`);
+(3) trygery rozstrzygają się przy priorytecie — bez pętli `pass_priority` asercja
+o skutku jest fałszywie czerwona, a przy blokadzie decyzji drenaż ma prawo stanąć.
+→ Pokrewne: L21, L107.
