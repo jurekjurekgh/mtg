@@ -459,8 +459,31 @@ export function effectiveSpellManaCost(state, object) {
   return reduceGenericCost(object?.cardId, base, totalReduction);
 }
 
+/**
+ * Opcje rzutu czaru — ogon `castSpell`. Decyzja właściciela (audyt PR #93):
+ * flagi nie mogą być kolejnymi argumentami pozycyjnymi. Przez pięć batchy
+ * doklejalismy je jeden po drugim (`buyback, payAltCost, xValue,
+ * phyrexianPayWithLife, abilityWindowCast, kicked`) i sygnatura urosła do 13
+ * pozycji, na których `false, false, undefined, 0, true` jest MYLNE CICHE —
+ * zamiana dwóch flag miejscami nie daje żadnego błędu. Kształt lustrzany do
+ * `castPermanent(…, options)`; lista poniżej jest JEDYNYM źródłem nazw, a
+ * nieznany klucz odrzucamy, więc literówka w opcji nie udaje uprawnienia (L21).
+ */
+export const CAST_SPELL_OPTIONS = Object.freeze([
+  'buyback', 'payAltCost', 'xValue', 'phyrexianPayWithLife', 'abilityWindowCast', 'kicked',
+]);
+
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
-export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0, abilityWindowCast = false, kicked = false) {
+export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, options = {}) {
+  for (const key of Object.keys(options)) {
+    if (!CAST_SPELL_OPTIONS.includes(key)) {
+      throw new Error(`Nieznana opcja rzutu czaru: ${key} (znane: ${CAST_SPELL_OPTIONS.join(', ')})`);
+    }
+  }
+  const {
+    buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0,
+    abilityWindowCast = false, kicked = false,
+  } = options;
   const preObject = state.objects.get(objectId);
   // Kicker (CR 702.33) na instantach i sorcerych rozlicza TA funkcja. Ścieżki
   // z własną walidacją kosztu (tryby „choose one\", koszt X, Fireball) idą do

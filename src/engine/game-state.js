@@ -2283,13 +2283,13 @@ export function execute(state, input) {
       // wykrywa trigger „you cast a spell you don't own". Karta w exile ma
       // controllerId właściciela; nadpisujemy go dla ścieżki rzutu.
       state.objects.set(pending.objectId, Object.freeze({ ...card, controllerId: pending.playerId }));
-      // 12. argument castSpell to `abilityWindowCast` (rzut w oknie zdolności:
-      // z exile i poza timingiem) — JEDYNE źródło tego uprawnienia, bo
-      // komenda `cast_spell`/`cast_permanent` nie ma takiego pola (bramka
-      // decyzji wyżej odrzuca inne komendy, dopóki okno jest otwarte).
+      // `abilityWindowCast` (rzut w oknie zdolności: z exile i poza timingiem) —
+      // JEDYNE źródło tego uprawnienia, bo komenda `cast_spell`/`cast_permanent`
+      // nie ma takiego pola (bramka decyzji wyżej odrzuca inne komendy, dopóki
+      // okno jest otwarte). Od audytu PR #93 opcje rzutu jadą obiektem.
       if (card.kind === 'spell') {
         castSpell(state, pending.playerId, pending.objectId, cmd.targets ?? [], undefined,
-          cmd.modeIndex, undefined, false, false, undefined, 0, true);
+          cmd.modeIndex, undefined, { abilityWindowCast: true });
       } else {
         castPermanent(state, pending.playerId, pending.objectId, { abilityWindowCast: true });
       }
@@ -4869,10 +4869,14 @@ export function execute(state, input) {
       // accepted() skanuje result.events pod kątem triggerów dies/leaves.
       // Wcześniej tylko [e] — poświęcony kosztem stwór nie odpalał dies.
       const before = state.events.length;
-      // Uwaga (audyt PR #93): 12. argument castSpell to `abilityWindowCast` i go
-      // komenda NIE ustawia — uprawnienie do rzutu z exile w oknie zdolności
-      // pochodzi wyłącznie z `resolve_exile_cast`. 13. to `kicked` (CR 702.33).
-      const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, cmd.buyback, cmd.payAltCost, cmd.xValue, cmd.phyrexianPayWithLife, false, Boolean(cmd.kicked));
+      // Uwaga (audyt PR #93): `abilityWindowCast` NIE jest opcją tej komendy —
+      // uprawnienie do rzutu z exile w oknie zdolności pochodzi wyłącznie z
+      // `resolve_exile_cast`. Opcje idą obiektem (patrz CAST_SPELL_OPTIONS),
+      // więc `kicked` (CR 702.33) ma nazwę, a nie trzynastą pozycję.
+      const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, {
+        buyback: cmd.buyback, payAltCost: cmd.payAltCost, xValue: cmd.xValue,
+        phyrexianPayWithLife: cmd.phyrexianPayWithLife, kicked: Boolean(cmd.kicked),
+      });
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {
