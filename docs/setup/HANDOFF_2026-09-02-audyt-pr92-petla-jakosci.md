@@ -91,8 +91,22 @@ Cztery rozstrzygnięcia właściciela wdrożone (szczegóły: §9 raportu audytu
 w kamieniach milowych): rulingi w repo, „Start your engines!" jako akcja
 stanowa, okno rzutu z exile = decyzja, jeden deskryptor Skarba + zdolność w
 katalogu tokenów, kicker na instant/sorcery, deklaratywne `trigger.groupPer`.
-Bramy: `npm test` 4168/4168, `npm run test:all` 4178/4178 (~250 s), build
-57 / 3097,4 kB.
+Bramy na HEAD `eca0337`: `npm test` **4168/4168** (152 s), `npm run test:all`
+**4178/4178**, 0 fail (268 s — brama PR, ADR 0019), `npm run build` 57 modułów /
+**3097,4 kB**, `family-audit` i `event-contract-audit` bez naruszeń, strażnicy
+dokumentacji 23/23, CI `test` **pass** (3m32s), `oracle-coverage` dla 9 kart
+batchu 52 = 100%.
+
+**Uwaga techniczna dla następnej sesji (nie jest to błąd projektu):** w trakcie tej
+sesji sandbox został przebudowany — `.git` zastąpiono świeżym klonem na bazie
+`db0c493`, przez co 13 lokalnych commitów zniknęło z gałęzi, choć pliki przetrwały.
+Ratunek był tani i bezpieczny: `git fetch origin arena/01a06193-mtg` +
+`git reset --mixed FETCH_HEAD` (bez `--hard`!) zwrócił historię, a delta w drzewie
+okazała się dokładnie tym, co nie zdążyło zostać zpushowane. Naprawione commity to
+`8ff69ae` (grupa `trigger.groupPer`) i `eca0337` (dokumentacja); reszta historii to
+`db0c493..3d07dc0`. Po przebudowie `node_modules` nie było — `npm ci` (1,7 s).
+Wniosek do powtórzenia: **push po każdym commicie** (ADR 0020 D) i nie trzymaj
+niczego cennego wyłącznie w drzewie roboczym.
 
 Wątki, które sama ta tura odkryła i zostawia (kolejność = spodziewany zysk):
 
