@@ -378,6 +378,58 @@ export const REJECTION_REASON_LABELS = Object.freeze({
   insufficient_mana: 'za mało many',
 });
 
+/**
+ * Przyczyny przegranej (CR 104.x) — JEDNO źródło etykiet, bo czytają je dwa
+ * miejsca: log stołu (`player_lost`) i nakładka końca gry (M288/D). Wcześniejsza
+ * tabela leżała w środku formatowania logu i nikt jej nie reused'ował, więc
+ * nakładka nie miała z czego wziąć słowa „pusta biblioteka".
+ */
+export const LOSS_REASON_LABELS = Object.freeze({
+  life_zero: 'brak życia',
+  poison_ten: '10 znaków trucizny',
+  empty_library: 'pusta biblioteka',
+  conceded: 'poddanie partii',
+});
+
+/**
+ * M288/D (uwaga właściciela z żywej gry, 2026-09-02): treść NAKŁADKI KOŃCA GRY.
+ *
+ * Zgłoszenie: „Gdy gra się kończy do tekstu ›Koniec partii - wygrywa X‹ chciałbym
+ * dodać ilość życia, z którą skończyli gracze, plus opcjonalną informację, jeśli
+ * koniec gry wynika z wyczerpania kart — i u którego gracza".
+ *
+ * Zwraca FAKTY, nie zdania: życie obu graczy i przyczyny przegranych. Przyczyn
+ * nie wymyślamy — bierzemy je ze zdarzeń silnika (`player_lost.reason`,
+ * `player_conceded`), czyli z tego samego źródła, z którego log pisze
+ * „przegrywa (pusta biblioteka)" (L48: prezentacja nie buduje wiedzy).
+ * Nazwy graczy dokłada UI (`panelPlayerName`), bo to sprawa warstwy stołu.
+ */
+export function gameOverNotice(view, state) {
+  const life = (view?.players ?? []).map((pl) => ({ playerId: pl.id, life: pl.life ?? 0 }));
+  const losses = [];
+  const seen = new Set();
+  const push = (playerId, reason) => {
+    const key = `${playerId}|${reason ?? ''}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    losses.push({ playerId, reason: reason ?? null, label: LOSS_REASON_LABELS[reason] ?? null });
+  };
+  const events = state?.events ?? state?.log ?? [];
+  for (const e of events) {
+    if (e?.type === 'player_lost') push(e.playerId, e.reason);
+    else if (e?.type === 'player_conceded') push(e.playerId, 'conceded');
+  }
+  return {
+    life,
+    losses,
+    // CR 104.3b — wyczerpanie biblioteki. Oddzielne pole, bo to jedyna
+    // przyczyna, której gracz NIE widzi po samych licznikach życia.
+    exhaustedPlayerIds: losses.filter((l) => l.reason === 'empty_library').map((l) => l.playerId),
+    isDraw: Boolean(view?.isDraw),
+    winnerId: view?.winnerId ?? null,
+  };
+}
+
 /** Zdanie dla gracza + kod techniczny w nawiasie (do zgłoszeń błędów). */
 export function rejectionReasonLabel(reason) {
   if (!reason || typeof reason !== 'string') return 'ruch odrzucony przez zasady gry';
@@ -980,11 +1032,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${nameOfObject(e.objectId)} staje się stworzeniem ${e.power}/${e.toughness}${duration}`;
       }
       case 'player_lost': {
-        const reasons = {
-          life_zero: 'brak życia',
-          poison_ten: '10 znaków trucizny',
-          empty_library: 'pusta biblioteka',
-        };
+        const reasons = LOSS_REASON_LABELS;
         // CR 104.4b: gdy wszyscy gracze przegrywają jednocześnie, partia kończy
         // się REMISEM — bez tego log mówił tylko „przegrywa", a gracz nie
         // wiedział, że nikt nie wygrał.

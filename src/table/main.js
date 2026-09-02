@@ -20,7 +20,7 @@ import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
-import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL, TURN_NAMES } from './session.js';
+import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL, TURN_NAMES, gameOverNotice } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
@@ -1243,8 +1243,36 @@ function bootstrapTable() {
       const winnerName = panelPlayerName(winner?.name) ?? null;
       // CR 104.4b: remis (winnerId null + isDraw) — inaczej gracz widział samo
       // „Koniec partii" i nie wiedział, jak się skończyła.
-      if (view.isDraw) el.textContent = 'Koniec partii — REMIS';
-      else el.textContent = winnerName ? `Koniec partii — wygrywa ${winnerName}` : 'Koniec partii';
+      // M288/D (uwaga właściciela z żywej gry, 2026-09-02): nakładka ma
+      // pomniejszyć się do trzech faktów — werdykt, życia końcowe, przyczyna
+      // nieoczywista. Wcześniejszy `textContent` nie pozwalał dołożyć życia i
+      // przyczyny bez zduplikowania zdania, więc gałąź buduje teraz <spany>
+      // (te same klasy co w trybie aktywnym: ti-life / ti-life foe).
+      el.textContent = '';
+      const note = (cls, text) => {
+        const s = document.createElement('span');
+        s.className = cls;
+        s.textContent = text;
+        el.appendChild(s);
+      };
+      note('ti-result', view.isDraw ? 'Koniec partii — REMIS'
+        : (winnerName ? `Koniec partii — wygrywa ${winnerName}` : 'Koniec partii'));
+      // Życia i przyczyny czytamy ze zdarzeń silnika (session.gameOverNotice) —
+      // UI nic nie dodaje od siebie (L48). „brak życia" pomijamy: widać je po
+      // licznikach; wyczerpanie biblioteki i trucizna są NIEWIDOCZNE i to je
+      // właściciel kazał dopisać (CR 104.3b / 704.10).
+      const info = gameOverNotice(view, session.state);
+      const nameOfId = (id) => panelPlayerName((view.players ?? []).find((p) => p.id === id)?.name) ?? id;
+      for (const entry of info.life) {
+        const name = nameOfId(entry.playerId);
+        note(name === 'Bot' ? 'ti-life foe' : 'ti-life', `${name}: ${entry.life} ż.`);
+      }
+      for (const loss of info.losses) {
+        if (!loss.reason || loss.reason === 'life_zero') continue;
+        const name = nameOfId(loss.playerId);
+        note('ti-reason', loss.reason === 'empty_library'
+          ? `${name} wyczerpał bibliotekę` : `${name}: ${loss.label}`);
+      }
       return;
     }
     const who = (view.players ?? []).find((p) => p.id === view.turn.activePlayerId);

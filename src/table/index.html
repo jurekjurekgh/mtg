@@ -82,6 +82,12 @@
     border-radius: 999px; padding: 1px 8px;
   }
   .turn-indicator.finished { color: #fca5a5; border-color: rgba(252,165,165,.4); }
+  /* M288/D (uwaga właściciela z żywej gry): nakładka końca gry niesie trzy
+     rodzaje informacji — werdykt (ti-result), życia końcowe (ti-life, te same
+     klasy co w trybie aktywnym) i przyczynę inną niż zerowe życie: wyczerpanie
+     biblioteki albo 10 znaków trucizny (ti-reason). */
+  .turn-indicator.finished .ti-result { font-weight: 700; }
+  .turn-indicator.finished .ti-reason { color: #fbbf24; font-weight: 600; }
   /* Ikony symboli many (2026-08-07, rewizja 2026-08-09): kolorowe badge
      tekstowe zamiast kolek — litera na kolorowym tle (czworokat z zaokragleniem).
      Kolory dobrane na kontrast: biale litery na ciemnym tle (U/B/G), ciemne
