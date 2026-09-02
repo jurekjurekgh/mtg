@@ -1525,7 +1525,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // było poprawką planszy (pytanie kontrolne właściciela, tura 10).
     const atakJałowy = creature.cantAttackStatic === true
       || (!grantsEvasion && attackerNeutralizedByProtection(creature, blockers));
-    const value = (atakJałowy ? pumpPower : 2 * pumpPower) + pumpToughness + ofensywne;
+    // M290 (tura 11): ten sam haczyk, tylko o stopień wyżej — pompa na ciele,
+    // ktorego cios i tak dojdzie, jest warte wiecej niz pompa na ciele, ktorego
+    // cios trzeba najpierw przebic przez sciane. Nosiciel z lataniem (albo
+    // „nie do zablokowania") wbrew blokerom bez latania/reacha zbiera +1 do wagi
+    // kazdego punktu sily. To NIE jest nowe „premiowanie latania" — to ta sama
+    // zasada co ewazja GRANTOWANA przez sprzet (linia wyzej), tylko tym razem
+    // czytana ze stanu nosiciela. Antysymetria drabiny nietknieta: wartosc wciaz
+    // jest funkcja pary (sprzet, nosiciel, widok), a nie kierunku ruchu.
+    const bearingEvasion = creature.cantBeBlocked === true
+      || (hasKeyword(creature, 'flying')
+        && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')));
+    const wagaSily = atakJałowy ? 1 : (2 + (bearingEvasion ? 1 : 0));
+    const value = wagaSily * pumpPower + pumpToughness + ofensywne;
     const nothingAdded = pumpPower === 0 && pumpToughness === 0 && !grantsEvasion && !hasteAdds
       && freshGrants.every((kw) => kw === 'haste');
     return { value, nothingAdded };

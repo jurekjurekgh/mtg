@@ -192,7 +192,12 @@ test('T9/8: „czy nosiciel umie użyć pompy" ma JEDNO miejsce w modelu (L28)',
   const atk = (cialo.match(/attackerNeutralizedByProtection\(/g) ?? []).length;
   assert.equal(atk, 1, `obrona przed jałowym atakiem liczona raz (jest ${atk})`);
   assert.match(cialo, /creature\.cantAttackStatic === true/, 'obrona przed defenderem/detainem liczona w tej samej funkcji');
-  assert.match(cialo, /atakJa\u0142owy \? pumpPower : 2 \* pumpPower/, 'waga pompy zależy od spożytkowania (pół na ciele, które nie atakuje)');
+  assert.match(cialo, /const wagaSily = atakJa\u0142owy \? 1 : \(2 \+ \(bearingEvasion \? 1 : 0\)\);/,
+    'waga pompy zależy od spożytkowania: pół na ciele, które nie atakuje, +1 za to, że cios dojdzie (M289 + M290)');
+  assert.match(cialo, /const value = wagaSily \* pumpPower \+ pumpToughness \+ ofensywne;/,
+    'value liczy się z tej jednej wagi — gałęzie equipu nie mogą mnożyć własnych mnożników');
+  assert.equal((cialo.match(/hasKeyword\(creature, 'flying'\)/g) ?? []).length, 1,
+    'latanie nosiciela czytane raz (w definicji), nie raz na gałąź');
   const uses = (src.match(/equipValuation\(view, source,/g) ?? []).length;
   assert.ok(uses >= 3, `wycena wywoływana w definicji i w obu gałęziach equipu (jest ${uses})`);
 });
