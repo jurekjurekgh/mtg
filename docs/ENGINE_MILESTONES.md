@@ -3809,3 +3809,32 @@ końcu ośmiu linii odsyłacza w kotwicach.
 plus jeden test), strażnicy dokumentacji **24/24**. Commity: `19ab3ed`, `dbf5b16`,
 ten dokumentacyjny. Numery w message `dbf5b16` (240 265 / 39 735 B) są sprzed
 ostatniej edycji nagłówka rejestru; stan końcowy to wiersz wyżej.
+
+## M285 (2026-09-02) — audyt bota: punkty remisu jako miara braku wyceny; wybór lądu scored (PR #93, tura 5)
+
+**Pomiar.** `tools/bot-tie-audit.mjs` (nowe narzędzie, eksport `audytRemisow`) rozgrywa
+12 partii parami talii spoza próbki benchmarku i klasyfikuje każdą decyzję z
+`bot.trace()`: `single` / `decided` / `tie_top` / `tie_all`. Stan przed: 5340 decyzji,
+1025 z alternatywami, 312 remisów na maksimum (30,4%): `block` 188, `play_land` 75,
+`attack` 35. Remis = wybór arbitralny = identyczny skutek jak brak wyceny, niewidoczny
+w źródle. Równoległy przebieg Żywego Testera (8 gier, 3 profile): „brak zgłoszeń" w 8/8
+transkryptach, więc wartość audytu leży po stronie scoringu, nie mechaniki.
+
+**Naprawa `play_land`.** Baza 90 + `landPlayDelta` ∈ [-14, 16]. `landAnaliza` liczy
+fakty deklaratywnie (ADR 0002): kolory kandydata przez nowy
+`manaSourceOfCardDefinition` w `src/engine/mana-sources.js` (CR 305.6 + deskryptor
+zdolności), lądy na polu bitwy przez `getSourceForObject`, zapotrzebowanie ręki przez
+`coloredPipsOf`. Preferencje: pokrycie pipów (monotonicznie 10/12/14/15/16), pierwszy
+kolor +3, {T}: Add {C}{C} +4, zdolność niemanowa przy bazie ≥2 +2, `entersTapped` −8,
+bezbarwny przy brakach −3. `summarize` dla lądu nosi karte (`play_land(id:cardId)`),
+`tieProjection` wystawia wejścia delty do śladu — bramka liczy groźby na nich, nie na
+tożsamości wariantów, więc lądy zamienne moga pozostać w remisie.
+
+**Reguła z tego odcinka:** sufit klampy psuje porządkowanie. Wersja „10 + min(6, n−1)
+per kolor ze wspólnym min(16, suma)" gniotła pokrycie 2 i 3 pipów do tej samej liczby —
+remis przy róźnych danych. Wykrył to audyt na grach; test jednostkowy („lepszy ląd
+wygrywa") przechodził. Mapowanie musi być monotoniczne w zakresie, który realnie
+występuje, a nie „wystarczająco duże".
+
+**Bramy:** `npm test` 4192/4192, `npm run test:all` i build w wierszu ponizej, benchmark
+quick: heuristic **83,6%** (przed 82,7%), aggro 28,9% bez zmian. Commity: `16fec68`.

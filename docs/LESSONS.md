@@ -1846,3 +1846,27 @@ efektu, a to brak danych w teście.
 (3) trygery rozstrzygają się przy priorytecie — bez pętli `pass_priority` asercja
 o skutku jest fałszywie czerwona, a przy blokadzie decyzji drenaż ma prawo stanąć.
 → Pokrewne: L21, L107.
+
+## L117 (2026-09-02) — Remis punktów jest tak samo arbitralny jak brak wyceny; mierz go na śladzie
+
+**Przypadek:** audyt „działań niescoringowanych" bota. Statyczna inwentaryzacja
+`createHeuristicBot` (84 zagnieżdżone helpery) wskazała 6 podejrzanych miejsc — ale
+regiony funkcji nachodzą na siebie, więc wynik był zaniżony. Pomiar na `bot.trace()`
+z 12 partii: 30,4% decyzji z alternatywami to ex aequo na maksimum; `play_land` miał
+płaskie 90, więc wybór manabazy zapadał w kolejności `legalCommands` (i w rng puli
+top-3). Złapana przy okazji pułapka: wspólny sufit klampy (`min(16, suma)`) zgrywał do
+jednego wyniku ląd pokrywający 2 i 3 pipów — test jednostkowy „lepszy wygrywa" tego nie
+widział, bo oba warianty były „lepsze".
+**Reguła:** punkty decyzyjne bota audytuje się na rozegranych partiach, nie na grepie:
+identyczne `score` przy ≥2 opcjach ⇒ wycena nic nie rozstrzygnęła, niezależnie od tego,
+czy w źródle „jest gałąź punktująca". Klasyfikację remisów prowadź po **wejściach**
+wyceny (projekcja danych wystawiona do śladu przez samego bota), nie po tożsamości
+wariantów: zamienne opcje muszą pozostać w remisie, bo sztuczny tie-breaker wygląda w
+metrykach jak działająca wycena i kłamie. Jeśli bramka ma łapać niedoinfekcyjność
+mapowania, mapping musi być monotoniczny w zakresie realnie występującym — klampa
+„na wszelki wypadek" go psuje.
+**Strażnik:** `tools/bot-tie-audit.mjs` (eksport `audytRemisow`, CLI `--gate=<kind>`)
++ `test/audyt-bot-wybior-landu.test.js`; mutacje: płaska wycena ⇒ RED 1/3/5, kara za
+`entersTapped` usunięta ⇒ RED 3/5, ślad bez karty ⇒ RED 1/2/3/4.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L117). → Pokrewne: L1, L5, L48.
+

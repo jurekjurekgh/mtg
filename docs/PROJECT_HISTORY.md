@@ -7628,6 +7628,24 @@ zmiany 58 modułów / 3111,8 kB, strażnicy dokumentacji 24/24. Commity tury:
 `19ab3ed` (rejestr + archiwum), `dbf5b16` (strażnik kondensacji + wzorzec wpisu),
 ten dokumentacyjny. Narracja jest w §11 raportu `AUDYT_PR92_2026-09-02.md`.
 
+### Audyt PR #92, tura 5 (2026-09-02): rulingi odlozone, audyt bota przez remisy punktowe
+
+Dwie decyzje właściciela. (1) **Rulingi WotC**: hurtowe dociaganie ~429 kart
+odrzucone; zapisane jako ADR 0028 — zasilanie „przy kartce", kolejka priorytetu
+(`support.limitations` → nietypowe CR → ustalenia audytów), zaden prog procentowy
+poki kolejka jest niepusta. (2) **Kierunek pracy**: audyt Żywym Testerem z akcentem
+na inteligentne zachowanie bota i scoringowanie działań niescoringowanych.
+
+Audyt mierzony jest przez `tools/bot-tie-audit.mjs` na śladzie bota, bo grep po
+źródle zaniżał (statyczna inwentaryzacja: 6 podejrzeń; rzeczywistość: 30,4% decyzji
+z alternatywami to remis na maksimum punktów). Naprawiony pierwszy co wielkosć
+obszar — wybór lądu (`play_land` miał płaskie 90, decydowała kolejność listy i rng
+puli top-3). Po naprawie: 0 groźb wśród 37 remisów lądu (same zamienne pary),
+benchmark quick 83,6% wobec 82,7%. Zarejestrowane backlogi: `block` 186 (głównie
+benign — silnik oferuje `block[]` obok `pass_priority`), `attack` 35, `cast_*` 13,
+`activate_ability` 8, `resolve_*` po kilka. Narracja: §12 raportu
+`AUDYT_PR92_2026-09-02.md`, most M285, lekcja L117.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

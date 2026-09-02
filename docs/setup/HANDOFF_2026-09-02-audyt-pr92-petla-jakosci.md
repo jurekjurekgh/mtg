@@ -238,3 +238,29 @@ Bramy końcowe tury 4: `npm test` 4187/4187 · `npm run test:all` 4197/4197 (0 f
 build 58 modułów / 3111,8 kB · strażnicy dokumentacji 24/24 · CI `test` pass
 dla `0197792` (`gh pr checks 93`), dla `19ab3ed`/`dbf5b16` do odczytu w następnej
 turze.
+
+---
+
+## Tura 5 (2026-09-02): ADR 0028 + audyt bota przez remisy punktowe
+
+**Zapadło:** ADR 0028 (`681049d`) — rulingi WotC nie sa hurtowo dociągane, tylko
+„przy kartce" i kolejką priorytetu; w README wiersz, w `docs/cards/HOW_TO_ADD_CARD.md`
+odnośnik. **Zmierzono:** `tools/bot-tie-audit.mjs` — 5340 decyzji, 30,4% remisów na
+maksimum (block 188, play_land 75, attack 35). Żywy Tester równolegle: 8 gier,
+„brak zgłoszeń" w 8/8 transkryptach. **Naprawiono:** wybór lądu (`16fec68`) —
+`landPlayDelta` + `landAnaliza` + `tieProjection` + karta w śladzie; benchmark quick
+83,6% (przed 82,7%), `npm test` 4192/4192.
+
+**Następny krok (kolejność wg wartosci, nie wg liczby remisów):**
+1. `tieProjection` dla `declare_attackers` i `declare_blockers` — bez projekcji nie
+   da się odróżnić `block` 186 (prawdopodobnie benign: `block[]` vs `pass_priority`,
+   ten sam no-op) od realnych przeoczeń; dopiero potem decyzja, czy wyceniać przypisania.
+2. `cast_permanent`/`cast_spell` (13) i `activate_ability` (8) — projekcja per karta.
+3. Drobne `resolve_*` po 1–7 — doraźnie, przy zgłoszeniach z partii.
+4. `docs/setup/ENVIRONMENT.md`: poprawic stwierdzenie o egressie (rejestr npm dziala,
+   `api.scryfall.com` blokowany → `ECONNRESET`) — mylące dla kazdego, kto planuje
+   sciaganie danych.
+
+**Uwagi praktyczne:** transkrypty testera NIE trafiaja do repo (decyzja wlasciciela,
+`docs/setup/TESTER_STOLU.md:419`), narzedzie odpalac przez `node tools/bot-tie-audit.mjs
+--gry=1 --top=3` (~7 s na 12 partii); `--gate=<kind>` z kodem wyjscia gotowe do CI.

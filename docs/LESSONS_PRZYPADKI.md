@@ -1208,3 +1208,21 @@ i błędny co do WNIOSKU — duplikat nie był jedynym wyjściem. Kopia gubiła 
 korekty CR, które choke point wykonywał.
 
 → Klasa nadrzędna: [L107].
+
+## L117 (2026-09-02) — audyt remisów bota: grep po źródle kłamie, ślad nie
+
+Zadanie brzmiało „scoringować działania niescoringowane". Naturalny pierwszy ruch —
+przejść źródło bota i wypisać funkcje zwracające stałą — dał odpowiedź fałszywie
+spokojną: 6 podejrzeń przy ~84 helperach żyjących w jednym wnętrzu `createHeuristicBot`,
+gdzie regiony nachodzą na siebie. Dopiero przyrząd na śladzie (`bot.trace()` per decyzja,
+12 partii) pokazał skalę: co trzecia decyzja z alternatywami była podejmowana bez
+żadnego rozstrzygnięcia punktów. To jest ten sam błąd co „brak gałęzi wyceny", tylko
+niewidzialny dla statycznego sprawdzenia i dla review'a kodu — dlatego audyt przeniósł
+się na pomiary.
+
+Druga nauczka dotyczy samej naprawy: gdy wpisuje się kore wyceny „żeby nie urosło za
+dużo" (wspólny sufit 16 punktów), łatwo zgubić porządek wewnątrz zakresu i stworzyć nowe
+remisy, już w poprawionym kodzie. Wyjściem nie było poluzowanie sufity, tylko mapa
+monotoniczna (1→10, 2→12, 3→14, 4→15, ≥5→16) oraz bramka porównująca **wejścia** delty
+między wariantami ex aequo — bot sam wystawia projekcję do śladu, więc test nie powtarza
+wzoru z produkcji, tylko sprawdza, że ten sam wzór nie gubi informacji.
