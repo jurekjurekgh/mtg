@@ -8,7 +8,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { processTriggers } from '../src/engine/triggers.js';
-import { createBattlefieldToken } from '../src/engine/tokens.js';
+import { createBattlefieldToken, TREASURE_TOKEN_EFFECT } from '../src/engine/tokens.js';
 import { createSession, HUMAN_ID, BOT_ID } from '../src/table/session.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
@@ -337,16 +337,12 @@ test('Security Rhox: wariant ze Skarbów oferowany tylko z maną ze Skarbów; rz
   // Z dwoma Skarbami — wariant treasureAlt {R}{G} oferowany.
   const state2 = mainPhase(game());
   addRealCard(state2, 'rhox2', 'security-rhox', 'p1', 'hand');
-  createBattlefieldToken(state2, 'p1', {
-    cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
-    types: ['Artifact'], subtypes: ['Treasure'],
-    abilities: [{ type: 'activated', cost: { tap: true, sacrificeSelf: true }, effect: { type: 'add_mana', amount: 1 } }],
-  });
-  createBattlefieldToken(state2, 'p1', {
-    cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
-    types: ['Artifact'], subtypes: ['Treasure'],
-    abilities: [{ type: 'activated', cost: { tap: true, sacrificeSelf: true }, effect: { type: 'add_mana', amount: 1 } }],
-  });
+  // Audyt PR #93 (tura 3): dawniej test pisał Skarb „ręcznie" (sam cardId
+  // wystarczał, bo kolory brały się z mapy w silniku). Teraz prawda o Skarbie
+  // siedzi w deskryptora zdolności — więc test bierze JEDNO wspólne źródło
+  // `TREASURE_TOKEN_EFFECT`, tak jak robi to silnik.
+  createBattlefieldToken(state2, 'p1', TREASURE_TOKEN_EFFECT);
+  createBattlefieldToken(state2, 'p1', TREASURE_TOKEN_EFFECT);
   const view2 = playerView(state2, 'p1');
   const alt = view2.legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === 'rhox2' && c.treasureAlt === true);
   assert.ok(alt, 'wariant treasureAlt oferowany z 2 Skarbami');

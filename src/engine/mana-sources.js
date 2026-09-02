@@ -43,7 +43,12 @@ const MANA_SOURCE_MAP = Object.freeze({
   // Mana artifacts / creatures
   'dragonbroods-relic': { colors: ['W', 'U', 'B', 'R', 'G'], amount: 1 },
   'apprentice-wizard': { colors: [], amount: 3 }, // {C}{C}{C}
-  'token_treasure': { colors: ['W', 'U', 'B', 'R', 'G'], amount: 1 },
+  // Skarb (Treasure) NIE ma tu wpisu (audyt PR #93, tura 3): jego zdolność
+  // „{T}, Sacrifice this artifact: Add one mana of any color" leży w DESKRYPTORZE
+  // tokena, a czyta ją `treasureManaAbilityOf` niżej. Wpis w tej mapie był dokładnie
+  // tym „cieniem danych karty", przed którym ostrzega komentarz pod MANA_SOURCE_MAP:
+  // trzy miejsca (mapa, resources.js, katalog tokenów) trzymały tę samą regułę i żadne
+  // z nich nie musiało się z niczym liczyć — rozjazd był bezgłośny (klasa L21).
   // Static Net (BRO): Powerstone — „{T}: Add {C} — Spend this mana only to
   // cast artifact spells.\" Produkuje bezbarwną {C}; ograniczenie niesie
   // deskryptor zdolności (spendOnly:'artifact') z karty/tokenu i jest
@@ -137,6 +142,55 @@ const BASIC_SUBTYPE_COLORS = Object.freeze({
  * Dla danego obiektu gry (land, token, permanent) zwraca info o produkcji many,
  * jeśli jest źródłem many.
  */
+/**
+ * Pięć kolorów many — awaryjna odpowiedź na „Add one mana of any color"
+ * (CR 106.2b: {W}{U}{B}{R}{G}). To stała REGUŁOWA, nie nazwa karty.
+ *
+ * Definicje w katalogu podają kolory JAWNIE w deskryptora (`effect.colors`,
+ * audyt PR #93 tura 3 — wcześniej szło to z MANA_SOURCE_MAP i z dwóch literałów
+ * w `resources.js`, a sześć efektów `create_token` w ogóle ich nie miało), więc
+ * w zwykłej grze ta awaria nie wchodzi do gry. Została tam, gdzie i w `addMana`:
+ * obiekt zbudany bez kolorów produkuje manę dowolnego koloru, nie bezbarwną.
+ * Strażnik `test/audyt-treasure-katalog.test.js` pilnuje, żeby nowe definicje
+ * pisały fakt w danych (porównuje `effect.colors` obu definicji Skarba).
+ */
+export const ANY_COLOR_MANA = Object.freeze(['W', 'U', 'B', 'R', 'G']);
+
+/**
+ * Zdolność many, której kosztem jest {T} + poświęcenie SAMEGO źródła, oznaczona
+ * jako skarbowa (`effect.fromTreasure`) — czyli Skarb i każdy, kto gra jego
+ * rolę. `manaAbilityColors` takich zdolności celowo NIE liczy (produkcja nie
+ * jest „od ręki", bo wymaga zdjęcia permanentu), a tu pytamy o coś innego: co
+ * obiekt na polu bitwy JEST w stanie wyprodukować — płatność i tak musi go
+ * poświęcić (CR 701.14a — poświęcenie jest kosztem zdolności, nie celem).
+ *
+ * Brak tu nazwy karty: predykat czyta deskryptor (cost + effect.fromTreasure),
+ * więc kopia tej samej zdolności pod innym `cardId` liczy się identycznie
+ * (decyzja właściciela, audyt PR #93; ADR 0002 — rdzeń jest name-agnostic).
+ */
+export function treasureManaAbilityOf(gameObject) {
+  for (const ability of gameObject?.abilities ?? []) {
+    if (ability?.type !== 'activated') continue;
+    const cost = ability.cost ?? {};
+    const keys = Object.keys(cost).filter((key) => cost[key]);
+    if (keys.length !== 2 || !cost.tap || !cost.sacrificeSelf) continue;
+    const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    for (const effect of effects) {
+      if (effect?.type !== 'add_mana' || !effect.fromTreasure) continue;
+      // Brak `colors` = „dowolny kolor", dokładnie jak w domyśle `addMana`
+      // (tam: „wygoda testów"). Wszystkie deskryptory w katalogu kolory
+      // podają — strażnik `audyt-treasure-katalog.test.js` porównuje
+      // `effect.colors` obu definicji Skarba, więc rozjazd danych RED-uje.
+      return {
+        colors: [...(effect.colors ?? ANY_COLOR_MANA)],
+        amount: effect.amount ?? 1,
+        fromTreasure: true,
+      };
+    }
+  }
+  return null;
+}
+
 export function getSourceForObject(gameObject, state = null) {
   if (!gameObject) return null;
   const cardId = gameObject.cardId;
@@ -168,6 +222,13 @@ export function getSourceForObject(gameObject, state = null) {
       ? [...new Set([...abilityColors, gameObject.chosenColor])]
       : abilityColors;
     return { id: gameObject.id, cardId, colors, amount };
+  }
+  // Zdolność skarbowa (patrz `treasureManaAbilityOf` wyżej): źródło, które
+  // produkuje manę poświęcając siebie. Dawniej zastępował to wpis w
+  // MANA_SOURCE_MAP — teraz fakt mieszka w danych tokena.
+  const sacMana = treasureManaAbilityOf(gameObject);
+  if (sacMana) {
+    return { id: gameObject.id, cardId, colors: sacMana.colors, amount: sacMana.amount };
   }
   const info = getManaSourceInfo(cardId);
   if (info) {

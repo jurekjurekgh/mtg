@@ -30,7 +30,9 @@ import { effectivePower, effectiveToughness } from './permanents.js';
 export const TREASURE_TOKEN_ABILITY = Object.freeze({
   type: 'activated', timing: 'instant', keyword: null,
   cost: Object.freeze({ tap: true, sacrificeSelf: true }),
-  effect: Object.freeze({ type: 'add_mana', amount: 1, fromTreasure: true }),
+  // Kolory jednostki jadą z deskryptora (tak jak w katalogu `token_treasure`),
+  // a nie z litery w silniku — audyt PR #93 (tura 3).
+  effect: Object.freeze({ type: 'add_mana', amount: 1, colors: Object.freeze(['W', 'U', 'B', 'R', 'G']), fromTreasure: true }),
   trigger: null, targets: null, cycling: null, condition: null, pump: null,
   keywords: null, oncePerTurn: false, mustAttack: false,
 });

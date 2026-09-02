@@ -67,9 +67,13 @@ test('Skarb: deskryptor silnika == definicja w katalogu tokenów', () => {
     'opłata Skarbu: {T}, Sacrifice this artifact');
   assert.deepEqual(project(CATALOG.abilities?.[0] ?? {}, ['cost']), { cost: { tap: true, sacrificeSelf: true } },
     'katalog musi mieć TĘ SAMĄ opłatę (inaczej dwa Skarby grają różnie)');
-  assert.deepEqual(TREASURE_TOKEN_ABILITY.effect, { type: 'add_mana', amount: 1, fromTreasure: true },
+  // Kolory są DANYMI efektu (audyt PR #93, tura 3) — silnik nie ma ich prawa
+  // znać z litery, więc jeśli którakolwiek z definicji je zgubi, Skarb przestaje
+  // płacić za pipy i ten pin to widzi.
+  const EFEKT = { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'], fromTreasure: true };
+  assert.deepEqual({ ...TREASURE_TOKEN_ABILITY.effect }, EFEKT,
     'efekt Skarbu: 1 mana dowolnego koloru, oznaczona jako skarbowa');
-  assert.deepEqual(CATALOG.abilities?.[0]?.effect, { type: 'add_mana', amount: 1, fromTreasure: true },
+  assert.deepEqual({ ...(CATALOG.abilities?.[0]?.effect ?? {}) }, EFEKT,
     'katalog musi mieć TEN SAM efekt many');
 });
 
@@ -90,8 +94,8 @@ test('Skarb: każda karta tworzy go z definicji katalogu (brak własnych wersji)
     for (const k of ['tap', 'sacrificeSelf']) {
       if (Boolean(ability.cost?.[k]) !== Boolean(TREASURE_TOKEN_ABILITY.cost[k])) return true;
     }
-    for (const k of ['type', 'amount', 'fromTreasure']) {
-      if (ability.effect?.[k] !== TREASURE_TOKEN_ABILITY.effect[k]) return true;
+    for (const k of ['type', 'amount', 'fromTreasure', 'colors']) {
+      if (JSON.stringify(ability.effect?.[k] ?? null) !== JSON.stringify(TREASURE_TOKEN_ABILITY.effect[k] ?? null)) return true;
     }
     return false;
   });
