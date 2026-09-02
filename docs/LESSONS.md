@@ -1870,3 +1870,24 @@ mapowania, mapping musi być monotoniczny w zakresie realnie występującym — 
 `entersTapped` usunięta ⇒ RED 3/5, ślad bez karty ⇒ RED 1/2/3/4.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L117). → Pokrewne: L1, L5, L48.
 
+## L118 (2026-09-02) — Zanim wyłączysz klasę przypadków z pomiaru, udowodnij w teście, że jest równoważna
+
+**Przypadek:** audyt remisów bota (M285→M286): 208 z 308 remisów wyglądało na
+`block[]`/`attack[]` vs `pass_priority`, czyli „ten sam no-op" — i dość byłoby
+jedno zdanie w kodzie narzędzia, żeby je wyłączyć. Równocześnie reguła „brak
+projekcji u którejkolwiek opcji ⇒ bez danych" **wycinała findingi realne**
+(null przy passie pochłaniał całą decyzję). Po dowodzie regułowym
+(`test/audyt-bot-walka-remisy.test.js` test 1 — identyczny stan po obrażeniach)
+i po odrzuceniu tylko opcji bez projekcji wypłyneły 4 groźby, których wcześniejszy
+pomiar nie widział.
+**Reguła:** każda klasyfikacja w narzędziu audytowym, która redukuje licznik,
+potrzebuje testu stwierdzającego równoważność (albo — dla metryk — porównuj
+wyłącznie dane mogące zmienić wynik: suma siły ataku przy ataku śmiertelnym jest
+różnicą bez znaczenia, dlatego projekcja saturuje na lethalu). Bez tego audyt myli
+się w obie strony: straszy szumem i milczy przy błędzie. Bramka dla stanu
+przejrzanego bywa grzechotką (`<= N` z przykładami przy przekroczeniu), nie zerem —
+zero, którego projekt nie obwieścił, jest kłamstwem w teście (ADR 0019).
+**Strażnik:** `test/audyt-bot-walka-remisy.test.js` (dowód no-opa + grzechotka) i
+`tools/bot-tie-audit.mjs` (`tieNoOp`, `tieAkcyjne`, klasyfikacja po projekcji).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L118). → Pokrewne: L18, L5, L117.
+

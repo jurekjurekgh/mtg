@@ -7646,6 +7646,17 @@ benign — silnik oferuje `block[]` obok `pass_priority`), `attack` 35, `cast_*`
 `activate_ability` 8, `resolve_*` po kilka. Narracja: §12 raportu
 `AUDYT_PR92_2026-09-02.md`, most M285, lekcja L117.
 
+### Audyt PR #92, tura 6 (2026-09-02): audyt bota #2 — no-op y udowodnione, metryka wysycona
+
+Remisy bojowe przestały być liczbą-widmem: 208 z 308 to nadwyżka oferty silnika
+(`block[]`/`attack[]` vs `pass_priority`), co najpierw udowodniono testem regułowym
+(identyczny stan po obrażeniach), potem wycięto z licznika. Zostało 100 remisów
+między realnymi wariantami (12,4% decyzji akcyjnych) i 4 groźby przejrzane:
+2 polityka bota (brak kary za trade za obrażenia nieśmiertelne), 2 do benchmarku
+(płaska wycena siły/obrony w ataku) — wpisane do `docs/backlog.md`. Bramka jako
+grzechotka `<= 4` zamiast udawanego zera. Narracja: §12.4–12.5 raportu, M286,
+lekcja L118. Commit `cf978f0`; `npm test` 4195/4195, benchmark bez zmian (83,6%).
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

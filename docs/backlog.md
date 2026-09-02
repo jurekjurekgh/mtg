@@ -141,3 +141,20 @@ Następna lista właściciela wchodzi tutaj.)_
 - ~~Karty dwustronne bez `oracle_text` w pliku źródłowym~~ — **zrobione
   (M118)**: pliki DFC ujednolicone do kanonicznego `card_faces`, a strażnik
   porównuje teraz tekst każdej strony osobno (layout `transform`).
+
+### 6.4 Audyt bota #2 (2026-09-02) — jedna zmiana wagowa do benchmarku
+
+Z pomiaru remisów (`tools/bot-tie-audit.mjs`, M286) zostały cztery groźby; trzy
+są zamknięte (ląd naprawiony, block = polityka), jedna czeka na decyzję liczbową:
+
+- **`attack`: płaska wycena na drobnych różnicach.** `attack[]` (0) ex aequo z
+  atakiem 1/1 w blokerów (0) oraz dwa zestawy o sile 3 vs 4 i obronie w domu 3 vs 2
+  ex aequo (6). Propozycja: kara za wystawianie stwora, który ginie pod blokiem,
+  liczona względem obrażeń, które i tak dopinają — ale **tylko przez benchmark**
+  (`node tools/benchmark.mjs` przed/po, próg przyjęcia = brak regresji; ADR 0018
+  profil quick na start). Bez tej weryfikacji zmiana jest gustem, nie wynikiem.
+- **Projektowanie projekcji dalszych klas:** `cast_permanent` 8, `cast_spell` 5,
+  `activate_ability` 8, `resolve_discard_choice` 7 — dziś `bez-danych` = `akcyjne`,
+  czyli pomiar o nich milczy. Wzorzec: `tieProjection` w `heuristic-bot.js` +
+  grzechotka w teście (patrz `test/audyt-bot-walka-remisy.test.js`).
+

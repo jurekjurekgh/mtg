@@ -1226,3 +1226,27 @@ remisy, już w poprawionym kodzie. Wyjściem nie było poluzowanie sufity, tylko
 monotoniczna (1→10, 2→12, 3→14, 4→15, ≥5→16) oraz bramka porównująca **wejścia** delty
 między wariantami ex aequo — bot sam wystawia projekcję do śladu, więc test nie powtarza
 wzoru z produkcji, tylko sprawdza, że ten sam wzór nie gubi informacji.
+
+## L118 (2026-09-02) — audyt, który kłamał w obie strony
+
+Pierwszy pomiar remisów bota dał nagłówek „30,4% decyzji bez rozstrzygnięcia".
+Brzmiało groźnie i było bezużyteczne: dwie trzecie tej liczby to sytuacja, w której
+silnik wystawia w tym samym kroku dwie komendy o tym samym skutku (`block[]` i
+`pass_priority`), a bot nie ma żadnego dylematu. Kusiło, żeby po prostu dodać do
+narzędzia zbiór „tego nie liczę" — i to była ta sama postawa, którą piętnujemy w
+kodzie produkcyjnym: zmiana liczb, żeby liczby wyglądały lepiej.
+
+Najpierw dowód: dwa osobne stoły, ta sama pozycja, dwie różne drogi przez krok
+bloków, a na końcu identyczny stan (życie, skład, tapnięcia, faza). Ten test jest
+tanim ubezpieczeniem dla klasyfikacji w narzędziu — gdyby ktoś kiedyś zmienił
+semantykę passów w walce, test czerwienieje i licznik nie zmaleje po cichu.
+
+Drugi błąd był lustrzany i groźniejszy, bo ukryty: opcja bez projekcji
+(`pass_priority`) rozlewała się na całą decyzję i kategoryzowała ją jako „brak
+danych". W ten sposób finding dotyczący blokowania (unik 4 obrażeń za 1 stwora ex
+aequo z wzięciem 4 obrażeń) siedział w koszyku, którego nikt nie czyta. Po
+odrzuceniu pustych projekcji wyszły cztery przypadki do oceny człowieka — i przy
+okazji wyszło, że metryka też wymaga wysycenia: przy ataku śmiertelnym różnica
+16 wobec 17 obrażeń nie istnieje dla wyniku partii, więc raportowanie jej jako
+„przeoczenia wyceny" byłoby generowaniem szumu. Reguła jest ogólna: porównuj
+dokładnie tyle, ile może zmienić losy gry, ani bita więcej.

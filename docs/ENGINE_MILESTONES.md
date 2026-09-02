@@ -3838,3 +3838,31 @@ występuje, a nie „wystarczająco duże".
 
 **Bramy:** `npm test` 4192/4192, `npm run test:all` i build w wierszu ponizej, benchmark
 quick: heuristic **83,6%** (przed 82,7%), aggro 28,9% bez zmian. Commity: `16fec68`.
+
+## M286 (2026-09-02) — audyt bota #2: klasyfikacja no-opów i saturacja metryki (PR #93, tura 6)
+
+**Problem drugiego rzędu.** M285 dał liczbę (30,4% remisów), ale liczbę
+nieużyteczną: 208 z 308 remisów to nadwyżka oferty silnika (`block[]`/`attack[]`
+obok `pass_priority` w tym samym kroku), a nie dylemat bota. Wycięcie tej klasy
+poprzedził **dowód regułowy** (test 1 w `test/audyt-bot-walka-remisy.test.js`):
+`declare_blockers{}` i pass obrońcy w kroku bloków prowadzą do identycznego stanu
+po obrażeniach — badane: życie, skład i tapnięcie stołu, krok fazy. Bez tego testu
+klasyfikacja byłaby założeniem.
+
+**Druga strona tego samego błędu.** Reguła „brak projekcji u którejkolwiek opcji ⇒
+bez danych" zacierała realne przeoczenia (null przy `pass_priority` pochłaniał
+całą decyzję). Narzędzie odrzuca teraz opcje bez projekcji i orzeka na reszcie —
+wypłyneły 4 groźby (2 block, 2 attack). Jednocześnie surowa suma siły ataku
+okazała się złą osią: przy ataku śmiertelnym 16 i 17 obrażeń to ten sam wynik
+partii, a obrona w domu nie ma znaczenia, bo gra się kończy. Projekcja walki
+saturuje więc na lethalu (`sila = min(sila, życie wroga)`, `obronaWDomu` tylko
+dla ataków nieśmiertelnych).
+
+**Reguła:** metryka audytowa ma pytać o dane, które mogą zmienić wynik partii —
+każde inne rozszerzenie porównania produje findingi pozorne i zużywa zaufanie do
+prawdziwych. Dotyczy to też liczników zbiorczych: zanim wyłączysz klasę przypadków
+z pomiaru, udowodnij w teście, że jest równoważna.
+
+**Bramy:** `npm test` **4195/4195** (3 nowe testy), golden-master regenerowany
+przez metadane śladu (wagi bez zmian), benchmark quick **heuristic 83,6% /
+aggro 28,9%** — identycznie, co jest tu wynikiem pożądanym. Commit: `cf978f0`.

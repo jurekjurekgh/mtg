@@ -264,3 +264,34 @@ maksimum (block 188, play_land 75, attack 35). Żywy Tester równolegle: 8 gier,
 **Uwagi praktyczne:** transkrypty testera NIE trafiaja do repo (decyzja wlasciciela,
 `docs/setup/TESTER_STOLU.md:419`), narzedzie odpalac przez `node tools/bot-tie-audit.mjs
 --gry=1 --top=3` (~7 s na 12 partii); `--gate=<kind>` z kodem wyjscia gotowe do CI.
+
+---
+
+## Tura 6 (2026-09-02): audyt bota #2 — pomiar pomiaru
+
+**Zrobione (`cf978f0`):** klasyfikacja `no-op` w `tools/bot-tie-audit.mjs`
+(208 z 308 remisów to nadwyżka oferty silnika, udowodniona testem regułowym, nie
+założona), odrzucanie opcji bez projekcji (wcześniej zacierały findingi),
+saturacja projekcji ataku na lethalu, `tieProjection` dla `declare_attackers` i
+`declare_blockers`, grzechotka `<= 4` w `test/audyt-bot-walka-remisy.test.js`.
+Stan: 100 remisów między realnymi wariantami (12,4% decyzji akcyjnych), 0 groźb
+`play_land`, 4 przejrzane (2 polityka bota, 2 do benchmarku). `npm test`
+4195/4195, benchmark quick bez zmian (83,6% / 28,9%) — zero zmian wag.
+
+**Następny krok:**
+1. `attack`: zaostrzenie wyceny na drobnych różnicach (siła ponad potrzebną,
+   obrona zostawiana w domu przy atakach nieśmiertelnych) — **wymaga benchmarku**,
+   nie testu jednostkowego; wejściowo: `node tools/benchmark.mjs` przed/po, próg
+   przyjęcia = brak regresji. To jedyna z czterech groźb, która jest realnie
+   do ruszenia.
+2. `cast_permanent` (8) / `cast_spell` (5) / `activate_ability` (8) /
+   `resolve_discard_choice` (7) — projekcje per karta, potem analogiczna grzechotka.
+   Dziś `bez-danych` = `akcyjne` dla tych klas, więc pomiar nic o nich nie mówi.
+3. Żywy Tester: partia z `--steps 300` po każdej zmianie wag (nie odpalona w tej
+   turze, bo kod bota nie zmienił ścieżek wykonania — tylko metadane śladu).
+4. `docs/setup/ENVIRONMENT.md` — wciaż do sprostowania: rejestr npm działa,
+   `api.scryfall.com` blokuje (`ECONNRESET`); to jedyna znana nieprawda w docs.
+
+**Uwaga o narzędziach:** `gh pr edit --body-file` w tym sandboxie nie stosuje
+zmiany (zwraca 0!), PATCH przez `gh api -X PATCH repos/.../pulls/93 --input plik.json`
+działa — ciało PR-a #93 ma sekcje Tura 1–5, do uzupełnienia o 6.
