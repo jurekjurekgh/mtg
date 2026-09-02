@@ -1073,6 +1073,38 @@ function discardChooserId(pending) {
  * tego warunek „pendingExploits niepuste" blokował gracza, którego decyzja
  * była wcześniejsza (cel triggera), i oferta rozjeżdżała się z walidacją.
  */
+/**
+ * „Prosty zakres\" rzutu kartą spoza ręki — JEDNA definicja dla oferty i
+ * walidacji wszystkich ścieżek, które rzucają kartę leżącą w innej strefie
+ * bez wybierania jej kosztu z ręki: darmowy rzut z Discover (CR 701.53) i
+ * rzut z wygnania po Vaanie, Street Thief.
+ *
+ * Powód istnienia (audyt PR #92, znalezisko 5): filtr miał trzy kopie —
+ * ofertę Discover (zawężoną w M280/F), bramkę `resolve_exile_cast` i ofertę
+ * Vaana. Kopie rozjeżdżały się w drugą stronę: oferta Discover mówiła „nie\",
+ * a `execute()` i tak przyjmował `castFree: true` dla czaru celowanego, który
+ * lądował na stosie bez celów i fizzlował (CR 608.2b). L48: oferta i
+ * walidacja to JEDEN filtr.
+ *
+ * `allowTargets` — Discover nie enumeruje celów, więc czar celowany jest poza
+ * jego zakresem; Vaan wystawia warianty rzutu per zestaw celów (`epicCastOffers`)
+ * i tam cele są dozwolone.
+ */
+function outsideHandCastScope(card, { allowTargets = false } = {}) {
+  if (!card) return false;
+  // CR 305.1: land nie jest czarem — nigdy nie „się rzuca\", nawet za darmo.
+  if (card.kind === 'land' || (card.types ?? []).includes('Land')) return false;
+  if (card.kind === 'spell') {
+    const spell = card.spell ?? {};
+    if (!['instant', 'sorcery'].includes(spell.timing)) return false;
+    if (spell.additionalCost || spell.xCost || spell.fireball || spell.modes) return false;
+    if (!allowTargets && (spell.targets ?? []).length > 0) return false;
+    return true;
+  }
+  // Czyste aury mają własną ścieżkę celu (castAuraSpell) — poza prostym zakresem.
+  return ['creature', 'artifact', 'enchantment'].includes(card.kind) && !card.aura;
+}
+
 function firstPendingDecision(state) {
   if (state.pendingMulligans.length > 0) return { playerId: state.pendingMulligans[0], kind: 'mulligan' };
   if (state.pendingMulliganBottom) return { playerId: state.pendingMulliganBottom.playerId, kind: 'mulliganBottom' };
@@ -2221,12 +2253,9 @@ export function execute(state, input) {
     const pending = state.pendingExileCast;
     const before = state.events.length;
     const card = state.objects.get(pending.objectId);
-    const isLand = Boolean(card) && (card.kind === 'land' || (card.types ?? []).includes('Land'));
-    const castableKind = Boolean(card) && (
-      (card.kind === 'spell' && ['instant', 'sorcery'].includes(card.spell?.timing)
-        && !card.spell?.additionalCost && !card.spell?.xCost && !card.spell?.fireball)
-      || (['creature', 'artifact', 'enchantment'].includes(card.kind) && !card.aura)
-    );
+    // A92/5: zakres wylicza ten sam predykat co oferta (dawniej druga kopia
+    // tego filtra — bez `modes`, więc rozjeżdżała się z ofertą Vaana).
+    const castableKind = outsideHandCastScope(card, { allowTargets: true });
     const decline = (note) => {
       state.pendingExileCast = null;
       // „If you don't [cast it], create a Treasure token." Źródło triggera
@@ -2253,7 +2282,7 @@ export function execute(state, input) {
     };
     if (!cmd.cast) return decline();
     if (!card || card.zone !== 'exile') return reject('illegal_exile_cast');
-    if (isLand || !castableKind) return reject('illegal_exile_cast_scope');
+    if (!castableKind) return reject('illegal_exile_cast_scope');
     try {
       // CR 109.4: rzucający staje się KONTROLEREM czaru (obiekt na stosie), a
       // WŁAŚCICIELEM zostaje pierwotny gracz (ownerId bez zmian) — to właśnie
@@ -4024,6 +4053,12 @@ export function execute(state, input) {
     const before = state.events.length;
     const foundObj = state.objects.get(disc.foundExileId);
     if (!foundObj) return reject('illegal_discover_choice');
+    // A92/5 (L48): ta sama bramka co oferta — darmowy rzut TYLKO dla kart
+    // w prostym zakresie. Bez niej komenda spoza oferty kładła czar na
+    // stosie z `targets: []` i pozwalała mu fizzlować (CR 608.2b).
+    if (cmd.castFree && !outsideHandCastScope(foundObj, { allowTargets: false })) {
+      return reject('illegal_discover_free_cast');
+    }
     if (cmd.castFree && foundObj.kind === 'spell') {
       // Rzuć czar (instant/sorcery) bez kosztu many — idzie na stos.
       const stackId = `spell-${state.objectSequence++}`;
@@ -6206,14 +6241,8 @@ export function playerView(state, playerId) {
     // darmowo rzucalny. Reszta trafia do „weź do ręki" (zawsze legalny
     // wynik Discover — CR 701.53).
     const discoverCard = state.objects.get(state.pendingDiscover.foundExileId);
-    const discoverFreeCastable = Boolean(discoverCard) && (
-      (['creature', 'artifact', 'enchantment'].includes(discoverCard.kind) && !discoverCard.aura)
-      || (discoverCard.kind === 'spell'
-        && ['instant', 'sorcery'].includes(discoverCard.spell?.timing)
-        && !discoverCard.spell?.additionalCost && !discoverCard.spell?.xCost
-        && !discoverCard.spell?.fireball && !discoverCard.spell?.modes
-        && !(discoverCard.spell?.targets ?? []).length)
-    );
+    // Ten sam predykat co bramka w `execute()` (L48 — jeden filtr, dwa miejsca).
+    const discoverFreeCastable = outsideHandCastScope(discoverCard, { allowTargets: false });
     if (discoverFreeCastable) {
       legalCommands.push(command('resolve_discover_choice', playerId, { castFree: true }));
     }
@@ -6384,14 +6413,9 @@ export function playerView(state, playerId) {
     // rezygnacja (zgodnie z „If you don't, create a Treasure token").
     const exilePending = state.pendingExileCast;
     const exileCard = state.objects.get(exilePending.objectId);
-    const exileIsLand = Boolean(exileCard)
-      && (exileCard.kind === 'land' || (exileCard.types ?? []).includes('Land'));
-    const exileCastable = Boolean(exileCard) && !exileIsLand && (
-      (exileCard.kind === 'spell' && ['instant', 'sorcery'].includes(exileCard.spell?.timing)
-        && !exileCard.spell?.additionalCost && !exileCard.spell?.xCost
-        && !exileCard.spell?.fireball && !exileCard.spell?.modes)
-      || (['creature', 'artifact', 'enchantment'].includes(exileCard.kind) && !exileCard.aura)
-    );
+    // A92/5: trzecia kopia filtra zniknęła — oferta liczy zakres tym samym
+    // predykatem co bramka `resolve_exile_cast` (L48).
+    const exileCastable = outsideHandCastScope(exileCard, { allowTargets: true });
     legalCommands.push(command('resolve_exile_cast', playerId, {
       cast: false, objectId: exilePending.objectId, cardId: exilePending.cardId,
     }));
