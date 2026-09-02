@@ -216,6 +216,8 @@ Wynik podaj w opisie PR (liczba testów, liczba modułów i rozmiar artefaktu).
       pola `rulings`). **Nie pomijać:** część rozstrzygnięć nie ma śladu w
       `oracle_text`, a rozstrzyga spory o model (przykłady w
       `docs/audits/AUDYT_PR92_2026-09-02.md` §6a — Leonin Surveyor, Vaan).
+      Policyjnie: **ADR 0028** — nie hurtujemy katalogu, ściąga się przy kartce
+      i w kolejności priorytetu (najpierw karty z `support.limitations`).
       Brak pola `rulings` = „nigdy nie ściągnięte"; `rulings: []` = „ściągnięte,
       WotC nie dodało nic".
 - [ ] definicje w `REAL_CARDS` (`src/cards/card-data.js`) — pełne mechaniki,
