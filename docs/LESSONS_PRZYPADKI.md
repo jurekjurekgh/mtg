@@ -1282,3 +1282,38 @@ Wniosek, który warto zapamiętać: przyrząd pomiarowy dziedziczy godność tyl
 modelu, który mierzy. Jeśli audyt ma *inną* arytmetykę niż kod, to nie audytuje
 kodu, tylko siebie — i kłamie w obie strony: straszy szumem i przeoczy właściwy
 błąd.
+
+## L120 (2026-09-02) — Opcjonalna zależność komponentu to dziura w drucie
+
+Partia testowa właściciela (2026-09-02) dała cztery uwagi; przy dwóch z nich
+objaw był „to nie działa", a kod wyglądał na poprawny.
+
+**B — hover kart specjalnych.** `renderUndercity(els, session, view, { onClick, hover })`
+przyjmuje `hover` od M153/C i ma w sobie trzy linie podpięcia `mouseenter` /
+`mouseleave` / `wheel`. Test `special-cards-click-hover-m153.test.js` woła
+render z ręki: `renderUndercity(els, {}, view, { onClick: noop, hover: h })` —
+więc asercja „najechanie podnosi kartę" jest spełniona *zawsze*, niezależnie od
+tego, co robi stół. A stół wołał `renderUndercity(els, session, view, { onClick:
+onUndercityClick })` — bez `hover`. Ten sam brak, ten sam skutek: panel trucizn
+nawet nie miał parametru. Klik działał (go przekazywano), powiększenie nie.
+
+**A — modal celów wielokrotnych.** Kreator rysował wiersze jako
+`<button class="action multi-target-toggle">` z marką stanu w tekście
+(`[ ] Highland Game (Ty)`) i dokładał osobny przycisk „Podgląd". Nic dziwnego, że
+wyglądał obco: w `src/table/index.html` nie było ANI JEDNEJ reguły dla
+`.multi-target-*` (ani na `.escape-exile-*`) — cały styl tego ekranu to był
+domyślny przycisk przeglądarki. Wizard walki miał za to od M129/C pełną obsługę
+dotyku (label jako cel, 44 px, `:has(:checked)` na całym wierszu).
+
+Wspólny mianownik: **testy patrzyły na komponent, nikt nie patrzył na połączenie**.
+Stąd w naprawie trzy rzeczy naraz: helper, który jest jednym miejscem podłączania
+(`attachSpecialCardHover`), picker jako jedna rodzina prezentacji
+(`renderPickerRow`, z klasami rodzinnymi przeniesionymi na `<input>`, bo na nie
+patrzy tester), oraz testy sprawdzające *wywołanie* i *istnienie stylu*, a nie
+tylko zachowanie po podaniu stuba.
+
+Ten sam wniosek z innej strony (uwaga C): gałąź przeniesienia sprzętu była nową
+ścieżką w kodzie, która pominęła badania przechodzone przez ścieżkę główną —
+to nie błąd „braku wagi", tylko brak wspólnego predykatu. L119 ostrzegał
+przed metryką gorszą od kodu; L120 ostrzega przed testem, który dowodzi istnienia
+funkcji zamiast jej użycia.

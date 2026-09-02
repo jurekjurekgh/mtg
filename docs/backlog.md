@@ -119,6 +119,12 @@ Następna lista właściciela wchodzi tutaj.)_
 - **Wycena decyzji blokujących** poza trybami modalnymi: scry/surveil,
   wybór celu triggera, rozdzielanie obrażeń — dziś w większości „pierwsza
   oferta".
+- **Inne gałęzie z własnym modelem świata** (pokłosie M288/C, L28): equip miał
+  dwa modele — rzut pytał „co sprzęt daje", przeniesienie tylko „kto większy".
+  Przejrzeć gałęzie, które liczą premię lokalnie, mając obok wywołanie wspólnej
+  wyceny: `grep -n "score +=\|score -=" src/controllers/heuristic-bot.js` i
+  porównać z dostępnymi `*Valuation`/predykatami. Każda taka rozbieżność to
+  decyzja podejmowana bez części danych (klasa L119).
 
 ## 4. Stół i Żywy Tester
 
@@ -133,8 +139,26 @@ Następna lista właściciela wchodzi tutaj.)_
   przed M112).
 - **Sprzątanie kontraktu `addObject`** (lekcja L21: pola spoza kontraktu giną
   po cichu — dorobić walidację albo jawną listę pól).
+- **Reszta ekranów wyboru na `picker.js`** (po M288/A): wspólny wiersz wyboru ma
+  już kreator celów wielokrotnych, wybór atakujących/bloków i koszt escape
+  (`.escape-exile-*` też nie miały ani jednej reguły CSS — dostały ją razem z
+  rodziną `.picker-*`). Do przejścia tym samym kątem: chipy `.look-wizard-card`
+  (scry/surveil/look), steppery podziału obrażeń, `mana-wizard`. Kryterium:
+  czy ekran ma „pozycje do zapunktowania", bo wtedy picker daje mu natywny
+  `<input>` (dotyk 44 px) i klik w nazwę = pełny ekran karty.
+- **Kontrakt testera na markup pickera** — `tools/table-tester/run-game.mjs`
+  klika `.multi-target-toggle` i czyta `checked` (fallback na tekst „[x]"), a
+  nazwę bierze z `.picker-name`. Jeśli picker zmieni strukturę wiersza, tester
+  musi zmienić się w tym samym comicie (inaczej kreatorzy znikają z zasięgu
+  audytu — klassa M206).
 
 ## 5. Dług dokumentacyjny
+- **Ścieżki-widma w `docs/PROJECT_HISTORY.md`** (pomierzone `find`+`git log` przy
+  M288): `test/m213-nazwy-kart-z-danych.js`, `docs/TODO.md`,
+  `test/bot-reasoning.test.js` — wpisy historyczne wskazują pliki, których w repo nie
+  ma. Nie kasować treści: poprawić odnośnik na istniejący odpowiednik albo dopisać
+  „(plik wycofany w MNNN)". Zasada cytowania: `ls test/<plik>` przed wpisem (errata
+  §13.5 raportu z tury 8).
 
 - Przegląd starych wpisów `notes` (58 kart) — czy któryś nie opisuje jednak
   luki wobec Oracle (wtedy przenieść do `limitations` i naprawić).

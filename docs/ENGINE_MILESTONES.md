@@ -3903,3 +3903,58 @@ nie był wart przepisania pinsów pilnujących wyceny.
 sufity per kind), golden-master zregenerowany (świadoma zmiana wyceny), benchmark
 `--seeds 24`: heuristic 85,5% (baseline 85,7%) / aggro 24,5% / random 4,5%. Commity: kod z testami,
 osobno dokumentacja.
+
+## M288 (2026-09-02) — uwagi właściciela z żywej gry A–D: picker, hover, equip, nakładka (PR #93, tura 8)
+
+**Zakres.** Cztery uwagi po partii testowej, każda w osobnym comicie:
+A „modal Knockout Maneuver jest inny niż modal blokowania — zróbcie jeden
+elastyczny helper do efektów wielocelowych (logika per efekt, wygląd wspólny)";
+B „karty specjalne (Undercity, Day/Night, Poison) mają powiększać się na hover,
+teraz działa tylko klik"; C „bot w jednej turze przełożył Thieves' Tools
+dwukrotnie — ukrócić"; D „w nakładce końca gry dodaj życia końcowe i — jeśli
+koniec gry to wyczerpanie biblioteki — u kogo".
+
+**B i A mają wspólny kształt usterki (L120):** komponent był poprawny, a
+połączenie — nie. `renderUndercity` umiał hover od M153/C, ale `renderTableView`
+podawał `hover` tylko Day/Night; test jednostyczny przechodził rok, bo podawał
+stub sam. Kreator wielocelowy i kreator escape nie miały **ani jednej** reguły
+CSS (`.multi-target-*`, `.escape-exile-*` nie istniały w `index.html`), więc ich
+wiersze były gołymi `<button>` z marką `[ ]`/`[x]` w tekście i osobnym
+przyciskiem „Podgląd". Naprawa: `src/table/picker.js` (`renderPickerRow` z
+`kind` checkbox|radio, `group`, klasami rodzinnymi na `<input>`, uchwytami
+`setChecked`/`setDisabled`) używany przez kreator celów (lista, pozycje,
+poświęcenie, mulligan), wizard atakujących/bloków i kreator kosztu escape;
+`attachSpecialCardHover` jako jedyne miejsce podłączania hovera + reguły
+`:hover`/`cursor` dla trzech kart specjalnych; tester stołu czyta teraz
+`checked` (fallback na „[x]") i nazwę z `.picker-name`.
+
+**C (wycena, nie limit).** Repro na zgłoszonej parze kart: sprzęt przypięty do
+własnego 2/1 → oferta `activate_ability(tools#0->marut)` = **+11,00**, bo gałąź
+przeniesienia liczyła wyłącznie `delta = power(cel) − power(nosiciel)` i nie
+pytała, czy sprzęt w ogóle coś daje (Thieves' Tools nie mają pompy, a ich
+warunkowa ewazja `cantBeBlockedMaxPower: 3` jest na 7/7 martwa). Zamiast
+wprowadzać zakaz „jedno equipnięcie na turę" (CR 702.6a dozwala wiele aktywacji,
+a zakaz zablokowałby *naprawę* błędnego nosiciela) — wydobyto wspólny predykat
+`equipValuation(view, source, creature)` i podpięto go pod **obie** gałęzie:
+przeniesienie nic-nie-dodaje = −12 (kara jak przy pierwszym założeniu),
+przeniesienie budzące efekt = premia, przeniesienie za samym ciałem = dawne
+`delta ≥ 2` (M100/E13 nietknięte). Po naprawie: → Marut −10,00 (bot pasuje),
+→ Invoker +14 (naprawa dozwolona).
+
+**D.** Etykiety przyczyn przegranej leżały w środku formatowania logu; wyniesione
+do `LOSS_REASON_LABELS` + czysty `gameOverNotice(view, state)` (życia, przyczyny
+z `player_lost`/`player_conceded`, dedup, fallback na `state.log`), a gałąź
+kończąca `updateTurnIndicator` buduje spany `ti-result`/`ti-life`/`ti-reason`.
+`life_zero` pomijany w nakładce — widać go po licznikach.
+
+**Akceptacja C liczbowa, na tej samej próbie co zawsze** (`git worktree` na
+`ae8bc24` vs kandydat, `--seeds 24`, 2016 meczów): **85,5% (1724) → 85,5%
+(1723)**, Δ = −1 mecz = szum, aggro 24,5% → 24,6%, random 4,5% bez zmian.
+Werdykt: **brak regresji** — przyjęto dla spójności modelu (ta sama zasada w obu
+gałęziach), nie dla win-rate. Golden-master bota NIE wymagał regeneracji
+(fixture nie zawiera pozycji z przeniesieniem sprzętu).
+
+**Bramy tury:** `npm test` 4224/4224 · `npm run test:all` 4234/4234 ·
+`npm run build` 59 modułów (picker.js) / 3140,2 kB · strażnicy dokumentacji 24/24
+· 32 nowe testy w czterech plikach `test/uwagi-tura8-*.test.js` · partia Żywego
+Testera (12 gier) poniżej w §13.4 raportu.

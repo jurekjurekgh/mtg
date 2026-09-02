@@ -348,3 +348,72 @@ model gorszy od mierzonego kodu; `obronaWDomu` — fałsz regułowy wg CR 502.3)
 - Rozszerzanie `summarize` o `cardId` dla `cast_*` zostało **cofnięte**: ~19 testów
   parsuje `cast_*(objectId)`. Przy grze z formatem śladu najpierw `grep -rn
   "cast_spell(\|cast_permanent(" test/ | wc -l`.
+
+
+---
+
+## Tura 8 (2026-09-02): uwagi z żywej gry — modal wielocelowy, hover, equip bota, nakładka
+
+**Co właściciel zgłosił (dokładnie te cztery uwagi były osią):** A — „modal Knockout
+Maneuver jest inny niż modal blokowania; przeróbcie na jeden wspólny helper do
+efektów wielocelowych (logika per efekt, wygląd wspólny)"; B — „karty specjalne
+(Undercity, Day/Night, Poison) mają powiększać się po hover jak zwykłe stwory";
+C — „bot w jednej turze przełożył Thieves' Tools dwukrotnie, bez sensu — ukrócić";
+D — „w nakładce końca gry dopiszcie życia końcowe i wyczerpanie biblioteki, jeśli to
+jego przyczyna".
+
+**Commity (każdy zielony i pushnięty osobno, bez force):** `74b8172` plan,
+`6d30844` B, `41bce48` D, `d8fde3f` A, `69a86df` C, `f6900b5` poprawka D.
+
+**Jak to obejrzeć rękami:**
+- A: stół ze spellem wielocelowym (`Knockout Maneuver`, Fireball na 3 cele) albo
+  mulliganem z odłożeniem (Kaervek) — wiersze to `<label>` z natywnym `<input>`;
+  klik w nazwę otwiera pełny ekran karty; przy pozycjach z Oracle wiersze danej
+  pozycji dzielą `name`, więc zachowują się jak radio;
+- C: `play-heuristic`, Thieves' Tools na własnym 2/1 i Marut 7/7 w ręce — przed
+  naprawą bot wydawał {2} na przeniesienie (ocena +11,00), po naprawie veto
+  −10,00 i dobiera inną akcję; helper `ocenyEquipu` w
+  `test/uwagi-tura8-bot-equip-nie-przenosi-prozno.test.js` wypisuje wszystkie oceny;
+- D: doprowadź partię do końca (albo odpal gremlina — remisy przez deck-out) —
+  nakładka: „Koniec partii — wygrywa X · Gracz: N ż. · Bot: M ż. · X wyczerpał
+  bibliotekę" (dokładnie taki tekst emituje `src/table/main.js`).
+
+**Liczby, które trzymają naprawę:**
+- `node --test test/uwagi-tura8-*.test.js` = 33/33 (picker 10, hover 5, nakładka 11,
+  equip 7);
+- brama C na reżimie bota (`test/bot-*.test.js test/audyt-bot-*.test.js
+  test/equip-do-obecnego-nosiciela.test.js test/m244-equip-heurystyka.test.js
+  test/m270-*.test.js test/m272-*.test.js`) = **227/227**; golden-master
+  `bot-decyzje-fixtures.json` bez regeneracji, grzechotka remisów nietknięta;
+- benchmark A/B na tej samej próbie (`--seeds 24`, 2016 meczów; baseline z
+  `git worktree` na `ae8bc24`): heuristic **85,5% (1724) → 85,5% (1723)**, Δ = −1
+  mecz = szum; aggro 24,5% → 24,6%, random bez zmian → próg planu (brak regresji)
+  spełniony; C przyjęte dla spójności modelu, nie dla win-rate;
+- `npm test` po A = 4224/4224, `npm run build` = 59 modułów / 3144,5 kB;
+- `npm run test:all` = **4242/4242, zero failów** (po C i po poprawce D) · Żywy Tester (12 partii, 4 pary decków × 3
+  profile, seedy 781+) = **12/12 do końca, `DETEKTORY: brak zgłoszeń` w każdej**; w 4 partiach
+  koniec przez deck-out, więc nakładka mówi `Bot wyczerpał bibliotekę`; kreator
+  poświęcenia doszedł do `rzucono:` pierwszy raz (3 otwarcia kreatora na 12 partii).
+
+**Nowe rzeczy, o których następna tura musi pamiętać:**
+1. `src/table/picker.js` — KAŻDY ekran „wybierz pozycje/cele/odrzucenia" idzie przez
+   `renderPickerRow`; nie wracamy do znaczników `[ ]`/`[x]` w tekście ani do osobnego
+   przycisku „Podgląd" (wycofane świadomie, L120).
+2. Hover kart specjalnych montuje `attachSpecialCardHover` w `main.js`; `render.js`
+   pozostaje od niego czysty — pilnują tego dwa strażniki w
+   `test/uwagi-tura8-hover-kart-specjalnych.test.js`.
+3. Tester klika `.multi-target-toggle` i czyta `checked` (fallback na „[x]"), nazwę z
+   `.picker-name`; zmiana markupu pickera = zmiana testera w tym samym comicie.
+4. `equipValuation` jest jedna dla obu gałęzi equipu (nowy sprzęt i przeniesienie);
+   kolejne premie/kary za sprzęt dokładamy w niej, nie w `score` gałęzi (L28).
+
+**Czego świadomie NIE zrobiliśmy (nie dokańczać bez nowego zgłoszenia):** limitu
+„jeden equip na turę" (zakaz poza zasadami, blokowałby naprawę błędnie
+wyposażonego stworzenia); przeniesienia na picker chipów `.look-wizard-card`,
+stepperów podziału obrażeń i `mana-wizard` (to nie listy wyborów — wpis w
+`docs/backlog.md` §4); liczby tur i seeda w nakładce (kontrakt `KONIEC PARTII`
+testera jest celowo krótki).
+
+**Lekcja tury (L120, rejestr + archiwum):** opcjonalna zależność komponentu to
+dziura w drucie — zielony test komponentu z podanym stubem nie dowodzi, że
+aplikacja tę zależność podaje; każda rodzina klas DOM musi mieć regułę CSS.

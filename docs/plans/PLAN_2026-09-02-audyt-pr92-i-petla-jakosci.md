@@ -181,3 +181,20 @@ kolejności; każda jako osobny, zielony commit.
 (C) — detektory „brak zgłoszeń", benchmark A/B na tej samej próbie, dokumentacja ze
 strażnikami doków. **Nie robimy:** nowych lekcji bez zwolnienia miejsca (budżet
 lektury), podnoszenia progu, zmian w katalogu kart.
+
+---
+
+## Status po turze 8 (2026-09-02): uwagi z żywej gry A–D
+
+Cztery uwagi właściciela po partii na stole, w kolejności wg jego listy: B (hover
+kart specjalnych) → D (nakładka końca gry) → A (spójny modal wielocelowy) → C
+(veto pustego equipu). W planie tura miała być „audytem bota #4", ale zgłoszenia
+właściciela mają nad audytem priorytet (reguła sesji: uwagi z gry > plan własny);
+audyt #4 nie startował, bo grzechotka po M287 już wskazuje kierunek (projekcje
+`cast_spell`/`activate_ability`/`resolve_discard_choice`, wpis w backlogu).
+
+Wykonane i zmierzone: B `6d30844`, D `41bce48` (+ poprawka `f6900b5` po pomiarze w
+transkrypcie testera), A `d8fde3f` (picker, 32/32 asercje w nowych testach +
+adaptacja 4 harnessów DOM), C `69a86df` (equipValuation; brama bota 227/227,
+benchmark A/B: 85,5% → 85,5%, Δ = −1 mecz = szum). Dokumentacja: §13 raportu,
+M288, L120 + przypadek, backlog §3/§4, HANDOFF tura 8.

@@ -1893,11 +1893,11 @@ zero, którego projekt nie obwieścił, jest kłamstwem w teście (ADR 0019).
 
 ## L119 (2026-09-02) — Metryka audytowa nie może być modelem gorszym od mierzonego kodu
 
-**Przypadek:** audyt remisorów bota (M286→M287). Projekcja „wartość ciała" liczona
-jako `power + toughness` flagowala pary slusznie uznane za zamienne, bo sama wycena
+**Przypadek:** audyt remisów bota (M286→M287). Projekcja „wartość ciała" liczona
+jako `power + toughness` flagowała pary słusznie uznane za zamienne, bo sama wycena
 waży siłę i wytrzymałość inaczej (2/pt vs 1/pt); projekcja „obrona zostawiona w
-domu" flagowala rzekomy brak ostrożności, którego nie ma — stwór tapnięty atakiem
-odswieza się w naszym następnym kroku odswiezania, czyli zdąży zablokować (CR 502.3,
+domu" flagowała rzekomy brak ostrożności, którego nie ma — stwór tapnięty atakiem
+odświeża się w naszym następnym kroku odświeżania, czyli zdąży zablokować (CR 502.3,
 wyjątek „doesn't untap" ma osobną gałąź). Równolegle ta sama metryka, ale liczona po
 składnikach, znalazła rzecz prawdziwą: `cast_permanent` w ogóle nie znał kosztu many.
 **Reguła:** porównuj warianty po **wejściach, które mierzony kod konsumuje**, w
@@ -1911,3 +1911,26 @@ kontra-przykład „większy korpus broni ceny") + grzechotka per kind w
 `test/audyt-bot-walka-remisy.test.js`; pomiar: `tools/bot-tie-audit.mjs`.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L119). → Pokrewne: L117, L118, L5.
 
+## L120 (2026-09-02) — Opcjonalna zależność komponentu to dziura w drucie; pilnuj miejsca użycia
+
+**Przypadek:** dwie z czterech uwag właściciela z żywej gry (2026-09-02) miały ten
+sam kształt. B: „karty specjalne mają powiększać się na hover, działa tylko klik" —
+`renderUndercity` umiał hover od M153/C i jego test przechodził zielono przez rok,
+bo test PODAWAŁ `hover` sam, a `renderTableView` przekazywał go tylko Day/Night.
+A: modal celów wielokrotnych wyglądał jak inny produkt, bo `.multi-target-*` i
+`.escape-exile-*` nie miały ANI JEDNEJ reguły CSS, a testy patrzyły na strukturę
+DOM, nie na to, czy struktura ma styl.
+
+**Reguła:** jeśli komponent przyjmuje zależność opcjonalną (`hover = null`), zielony
+test tego komponentu NIE jest dowodem, że ktoś ją podaje — zależy to od jednego
+wywołania. Albo uczyń zależność wymaganą (głośny fail), albo dodaj asercję na
+MIEJSCE UŻYCIA (skan wywołania/źródła). To samo dla prezentacji: każda rodzina klas
+DOM produkowana przez kod musi mieć co najmniej jedną regułę CSS — brak reguły to
+nie „brak zdobień", tylko druga estetyka na tej samej planszy (i drugie zachowanie
+na dotyku).
+
+**Strażnik:** `test/uwagi-tura8-hover-kart-specjalnych.test.js` (strażnik
+przekazania `hover` w `renderTableView` + strażnik reguł `:hover`) i
+`test/uwagi-tura8-picker-wielocelowy.test.js` (reguły `.picker-*` z progiem dotyku
+44 px, „renderPickerRow wywołany ≥ 3razy", brak osobnego przycisku Podglądu).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L120). → Pokrewne: L16, L21, L118, L119.

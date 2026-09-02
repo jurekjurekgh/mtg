@@ -7674,6 +7674,27 @@ wytrzymałość inaczej) oraz obrona zostawiana w domu (nieprawda regułowa — 
 stwory odświeżają się przed turą wroga, CR 502.3). Narracja: §12.6–12.7 raportu,
 M287 w kamieniach milowych, lekcja L119. `npm test` 4199/4199.
 
+### Uwagi z żywej gry, tura 8 (2026-09-02): picker wielocelowy, hover kart specjalnych, equip bota, nakładka końca gry
+
+Właściciel przeszedł partię na stole i zgłosił cztery rzeczy (A–D). Wszystkie są
+w kodzie, każda w osobnym comicie: `6d30844` (B, hover), `41bce48` (D, nakładka),
+`d8fde3f` (A, picker), `69a86df` (C, wycena equipu).
+Dwie z nich (A i B) okazały się tym samym błędem w dwóch warstwach: komponent
+miał funkcję, a nikt jej nie podłączał — `renderUndercity` dostawał `hover`
+tylko w teście, a kreator celów nie miał ani jednej reguły CSS. Stąd nowy
+`src/table/picker.js` (jeden wygląd dla celów wielokrotnych, pozycji z Oracle,
+poświęcenia, mulliganu, atakujących/bloków i kosztu escape; logika nadal per
+efekt, legalność nadal z `legalCommands`) i strażnicy „drutu": testy patrzą na
+miejsce użycia i na istnienie stylu (L120). Equip bota: przeniesienie sprzętu
+musi przejść te same badania co pierwsze założenie — `equipValuation` zamiast
+samego `delta` siły (repro: +11,00 za ruch, który nic nie zmieniał; po naprawie
+−10,00 i bot pasuje). Nakładka końca gry mówi teraz życia obu graczy i — jeśli
+partię skończyło wyczerpanie biblioteki, trucizna albo poddanie — u kogo.
+Akceptacja zmiany wadze bota: `--seeds 24`, 2016 meczów, baseline z worktree
+`ae8bc24` → **85,5% (1724) vs 85,5% (1723)**, czyli szum; przyjęto dla spójności
+modelu, nie dla win-rate. `npm test` 4224/4224, `test:all` 4234/4234, build 59
+modułów / 3140,2 kB, 32 nowe testy. Narracja: §13 raportu, M288, L120.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
