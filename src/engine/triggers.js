@@ -1779,9 +1779,14 @@ function processTriggersScan(state, recentEvents) {
   // trigger „one or more permanents you control leave the battlefield"
   // odpala się RAZ na komendę, nie raz na permanent (CR 603.2).
   const leftBattlefield = new Set();
-  // Kontrolerzy, których STWORY zadały w tej komendzie combat damage graczowi
-  // (Disa the Restless — „one or more creatures you control").
-  const anyCombatDamageControllers = new Set();
+  // Instancje grupowych wyzwalaczy „one or more … deal combat damage to a
+  // player” (Disa the Restless, Vaan, Street Thief), które już odpaliły w tej
+  // komendzie. KLUCZ = żywiciel zdolności + jej indeks + filtr podtypów +
+  // poszkodowany, bo grupowanie CR 603.2 scala ZDARZENIE (dwa stwory atakujące
+  // razem to jeden wyzwalacz jednej instancji), a NIE sprawcę: KAŻDA instancja
+  // zdolności wyzwala osobno (CR 603.3). Dedup po samym kontrolerze kasował
+  // drugą kopię karty — audyt PR #92, znalezisko 4.
+  const groupedCombatDamageFires = new Set();
   // Gracze, którzy w tej komendzie otrzymali combat damage — trigger
   // „whenever you're dealt combat damage" (Contested Game Ball) odpala się
   // RAZ na zadanie obrażeń, nie raz na atakującego (ruling WotC, M201/N2).
@@ -2139,25 +2144,27 @@ function processTriggersScan(state, recentEvents) {
       // player" (Disa the Restless, CR 603.2): trigger odpala się RAZ na
       // komendę, gdy DOWOLNY stwór kontrolera źródła zadał obrażenia graczowi
       // (grupowanie jak leftBattlefield — zdarzenie per stwór, trigger per
-      // kontroler). Źródło triggera samo może być stworem lub nie (Disa).
+      // INSTANCJĘ zdolności). Źródło triggera samo może być stworem lub nie (Disa).
       if (source) {
         // Vaan, Street Thief (FIN): „Whenever one or more Scouts, Pirates,
         // and/or Rogues you control deal combat damage to a player" — trigger
-        // z FILTREM PODTYPÓW na stworze zadającym obrażenia. Dedup „raz na
-        // kontrolera" musi uwzględniać filtr: stwór spoza podtypów nie
-        // oznaczający kontrolera jako „obsłużonego", żeby późniejszy trafny
-        // stwór w tej samej walce i tak odpalił trigger (dedup po kluczu
-        // `kontroler|podtypy`, a nie po samym kontrolerze).
+        // z FILTREM PODTYPÓW na stworze zadającym obrażenia. Filtr wchodzi do
+        // KLUCZA grupowania, bo stwór spoza podtypów nie może oznaczyć wszystkiego
+        // jako „obsłużonego”: późniejszy trafny stwór w tej samej walce musi
+        // odpalić zdolność. Klucz liczy się od INSTANCJI zdolności (żywiciel +
+        // indeks + poszkodowany), nie od kontrolera — dwie kopie karty z tym
+        // triggerem wyzwalają dwa razy (CR 603.3).
         const dealtSubtypes = source.subtypes ?? [];
         for (const candidate of state.objects.values()) {
           if (candidate.zone !== 'battlefield' || candidate.controllerId !== source.controllerId) continue;
-          for (const ability of effectiveAbilities(candidate)) {
+          for (const [abilityIndex, ability] of effectiveAbilities(candidate).entries()) {
             if (ability?.trigger?.event !== 'any_combat_damage_to_player') continue;
             const filter = ability.trigger.subtypes;
             if (filter?.length && !dealtSubtypes.some((sub) => filter.includes(sub))) continue;
-            const key = `${source.controllerId}|${filter?.length ? [...filter].sort().join(',') : 'any'}`;
-            if (anyCombatDamageControllers.has(key)) continue;
-            anyCombatDamageControllers.add(key);
+            const key = `${candidate.id}#${abilityIndex}|`
+              + `${filter?.length ? [...filter].sort().join(',') : 'any'}|${ev.target ?? ''}`;
+            if (groupedCombatDamageFires.has(key)) continue;
+            groupedCombatDamageFires.add(key);
             tryFire(state, ability, candidate, [], events, { damagedPlayerId: ev.target });
           }
         }
