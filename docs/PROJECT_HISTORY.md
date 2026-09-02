@@ -7765,6 +7765,49 @@ surowca, a nie brak chęci**.
 
 ## Zasada aktualizacji
 
+### Tura 11 (2026-09-02): waga jakości ciała (M290) i pierwsza karta wielocelowa (M291)
+
+Właściciel kazał ruszyć oba wątki zostawione w turze 10 jako „świadomie nietknięte”.
+
+**(e) — M290, `src/controllers/heuristic-bot.js`.** `equipValuation` dostała trzeci
+stopień wagi siły: ciało z własną ewazją, która omija ścianę (albo `cantBeBlocked`),
+zbiera +1 za każdy punkt siły pompy. Para vanilla 3/2 → latacz 3/3 przeszła z −4,00 na
++7,00 (bot płaci {1} i przenosi sprzęt), ruch w drugą stronę pozostał −4,00, a para o
+identycznych statystykach (gorehorn-minotaurs vs angel-of-the-dawn) — dokładnie ta,
+którą backlog zostawiał otwartą — też się rozstrzygnęła (+7,00 / −4,00). Premia znika,
+gdy wróg ma reacha albo latacza; zapisane testem. Świadomie nietknięta została gałąź
+pierwszego założenia sprzętu (FRESH) — jej remis 18,00/18,00 jest zpinowany jako
+decyzja, nie przeoczenie. Benchmark A/B `--seeds 24` (2016 meczów, identyczny profil):
+heuristic 1723 → 1724/2016, aggro 248 → 247/1008 — zero regresu, zmiana broni zasady,
+nie metryki. Raport §14, milestoney M290, testy `test/uwagi-tura11-bot-jakosc-ciala-equip.test.js` (9).
+
+**(b) — M291, pierwsza z 4–6 kart wielocelowych.** Okazało się, że blokada z tury 10
+była moim błędem procedury, nie środowiska: `docs/cards/HOW_TO_ADD_CARD.md` ma wpisany
+kanał awaryjny na wypadek martwego egressu (agent ściąga te same URL-e przez
+`fetch_page`). Udało się ściągnąć `cards/clu/128` i pusty zestaw rulingów, więc karta
+powstała w tej samej turze: **Coordinated Assault** (CLU, {R}, „up to two target
+creatures each get +1/+0 and gain first strike"). Przy okazji wyszła luka silnika —
+fan-out „each of up to N" istniał tylko w torze triggerów, a tor czaru pompowałby
+pierwszy cel dwa razy. Domknięte generycznym deskryptorem `allTargets: true`
+w `src/engine/spells.js` (bez znania nazw kart przez silnik) + strażnikiem, że nie
+łączy się z efektem blokującym decyzją.
+
+**Rykosz na warsztat pomiarów:** talii NIE układałem ręcznie (patrz L122) — karta
+dostała `plan: 'Ravnica'`, a `tools/generate-plan-decks.mjs` sam dopisał ją do
+`decks/ravnica.txt` (+1 Mountain). Od tego commitu skład tej talii się różni, więc
+porównania A/B z tur 7–10 wymagają nowego baseline'a. Pomiar na żywo (4 partie, ta
+sama para co baseline z tury 10): otwarcia kreatora wielocelowego 0/4 → 2/4, w tym
+jedno realnie na nowej karcie (oba cele wybrane, oba dostały efekt), bot grający talią
+też zadeklarował oba cele, detektory stołu czyste. Z listy 4–6 w tej turze weszły
+dwie karty: Coordinated Assault (CLU 128) i Dual Shot (SOI 153) — ten sam deskryptor
+`allTargets`, dwa różne efekty (pump+grant oraz czyste obrażenia). Koszt jednostkowy to
+cały tor wejścia (snapshot, rejestr, `MANA_COSTS`, generator talii, build, rodzina
+testów, regeneracja golden-mastera, pomiar), więc reszta idzie partią, nie hurtownie;
+druga karta pociągnęła też przesunięcie w podziale Innistradu (Blazing Torch brg → wu),
+bo przydział liczy generator całości planu — stąd aktualizacja sumy nielandów 36 → 37
+w `test/repo-decks.test.js` (M228). Przepis
+zostaje w `docs/backlog.md` §1.
+
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
 
 - ten plik — jeśli zmienia się bieżący stan lub następny krok;

@@ -522,3 +522,38 @@ w `docs/audits/AUDYT_PR92_2026-09-02.md` §13.8 i stanie się legalny w momencie
 dopiszecie karty z >1 celem (nowe karty nie mają jeszcze przypisania). L122 w
 rejestrze mówi, żebym następnym razem odpalił strażników talii w tej samej minucie,
 w której piszę talie.
+
+---
+
+## Dopisek (2026-09-02, tura 11): (e) domknięte, (b) ruszyło — i dwie rzeczy, które trzeba wiedzieć
+
+** (e) Jakość ciała w wadze pompy — M290, `src/controllers/heuristic-bot.js`.**
+Trzeci stopień wagi siły w `equipValuation`: ciało z własną ewazją omijającą ścianę
+zbiera +1 za każdy punkt siły pompy. Zamknęło to parę, którą tura 10 zostawiła
+otwartą (identyczne 3/3: vanilla vs latacz → +7,00 / −4,00 zamiast −4,00 / −4,00).
+Benchmark A/B `--seeds 24`: zero regresu (1723 → 1724 na 2016). Świadomie nietknięta
+gałąź FRESH — pin T11/7 mówi, że to decyzja, nie przeoczenie.
+
+**(b) Pierwsza karta wielocelowa — M291, Coordinated Assault (CLU 128).** Dwie lekcje
+dla Was:
+1. **nie czekać na sieć** — `docs/cards/HOW_TO_ADD_CARD.md` zezwala ściągnąć te same
+   URL-e `fetch_page`em i zapisać snapshot w `docs/cards/`; w turze 10 uznałem martwy
+   egress za koniec wątku i byłem w błędzie;
+2. **wielość celu to cecha TORU, nie mechaniki** — fan-out „each of up to N" żył tylko
+   w `applyTriggerEffects` (tory triggerów); tor czaru dostał go dopiero w M291
+   (`allTargets` w `src/engine/spells.js`). Każdą kartę wielocelową testuj na DWU
+   celach w tym torze, którym gra (L123).
+
+**Talii nie układamy ręcznie.** Karta dostała `plan: 'Ravnica'`, a
+`node tools/generate-plan-decks.mjs` sam dopisał ją do `decks/ravnica.txt` (+1
+Mountain) — i zaktualizował `dist` (`npm run build` listę talii ma w artefakcie).
+Po tej zmianie porównania A/B z tur 7-10 wymagają nowego baseline'a (§15 raportu).
+
+**Pokrycie pickera zmierzone na żywym stole:** ta sama para co baseline z tury 10,
+4 partie po 300 kroków → otwarcia kreatora wielocelowego 0/4 → 2/4 (jedno na nowej
+karcie, oba cele wybrane, oba realnie dostały efekt; bot grający talią też zadeklarował
+oba cele), detektory czyste. Z listy „4-6 kart” weszły dwie: Coordinated Assault (CLU)
+i Dual Shot (SOI) — ta druga przesunęła też Blazing Torch między połówkami Innistradu
+(przydział liczy generator), przez co M228 wymaganł aktualizacji sumy nielandów 36 → 37.
+Przepis na resztę jest w `docs/backlog.md` §1 i §13.8 raportu.
+

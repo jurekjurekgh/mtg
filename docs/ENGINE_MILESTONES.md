@@ -3997,3 +3997,92 @@ boczny między atakującymi zostaje −4,00.
 `node tools/benchmark.mjs --seeds 24` (2016 meczów) — wynik w §13.7 raportu; progiem
 planu jest brak regresji, a nie wzrost. Bramy: `test/uwagi-tura9-bot-rowne-ciala-equip.test.js`
 8/8, subset reżimu bota 242/242, `npm test` 4240/4240, `npm run test:all` 4250/4250.
+
+## M290 (2026-09-02) — Jakość ciała nosiciela w wadze pompy sprzętu (PR #93, tura 11)
+
+Kropla po M289: wycena ładunku patrzyła, czy nosiciel WOGOLE może zaatakować, ale nie
+patrzyła, czy jego cios przejdzie przez ścianę. Efekt: para „vanilla 3/2 z pompą" vs
+„latacz 3/3 bez niczego" była dla drabiny `wornByMine` równa w obie strony (−4,00 i
+−4,00), więc sprzęt zostawał na gorszym ciele, a właściciel słusznie nazywał to
+„przerzucaniem na pierwszą lepszą". `equipValuation` (src/controllers/heuristic-bot.js)
+dostaje trzeci stopień wagi siły:
+
+    wagaSily = atakJałowy ? 1 : (2 + (bearingEvasion ? 1 : 0))
+
+`bearingEvasion` = `creature.cantBeBlocked` ALBO latanie nosiciela przy blokerach bez
+latania i bez reacha — czyli TA SAME przesłanka, którą funkcja stosuje do ewazji
+GRANTOWANEJ przez sprzęt, tylko czytana ze stanu nosiciela. Liczona raz, w definicji
+wyceny (L28/L121), więc obie gałęzie equipu dostają ją gratis i nie da się jej
+podwoić w `ofensywne` (pilnuje tego T11/8).
+
+Pomiar (Wooden Stake +1/+0): D4 3/2 → latacz 3/3: −4,00 → +7,00 (bot płaci {1} i robi
+ruch); D3 w drugą stronę: −4,00 (bez zmian); para o IDENTYCZNYCH statystykach
+(gorehorn-minotaurs vs angel-of-the-dawn, 3/3 vanilla vs 3/3 latacz): −4,00/−4,00 →
++7,00/−4,00 — to dokładnie ten wypadek, który backlog §3 zostawiał „świadomie
+netknięte". Ściana kasuje premię: z wrogim reachem albo wrogim lataczem D4 wraca do
+−4,00, więc premia nie jest premią za kartę z lataniem. Świadomie NIE ruszone: gałąź
+pierwszego założenia (FRESH) — tam waga nadal idzie od mocy nosiciela i dla pary
+3/2 vs 3/3 daje remis 18,00/18,00 (pin T11/7); jej piny siedzą w kilkudziesięciu
+testach i zasługują na osobny commit z osobnym A/B.
+
+Akceptacja wagowa: benchmark A/B `node tools/benchmark.mjs --seeds 24` (2016 meczów),
+baseline = `f6a5459` przez `git worktree`, profil identyczny: heuristic 85,5%
+(1723/2016) → 85,5% (1724/2016), aggro 24,6% (248/1008) → 24,5% (247/1008), random
+4,5% (45/1008) → 4,5%. Zero regresu, jeden przełączony mecz — zmiana broni zasady,
+nie metryki. Bramy: rodzina equipu 17/17 (9 nowych T11 w
+`test/uwagi-tura11-bot-jakosc-ciala-equip.test.js`, w tym antysymetria na siatce
+6 ciał × 2 sprzętów = 30 parach kierunkowych).
+
+## M291 (2026-09-02) — `allTargets` na torze czaru + pierwsza karta wielocelowa (PR #93, tura 11)
+
+Pokrycie kreatora celów w Teście na żywo rośnie tylko z NOWYCH kart (§13.8 i L122:
+surowiec wyczerpany, 7 na 443 kart z >1 celem, kart wolnych 0). Pierwsza z nich:
+**Coordinated Assault** (CLU 128, {R} instant — „Up to two target creatures each get
++1/+0 and gain first strike until end of turn."). Dane 1:1 z `api.scryfall.com/cards/clu/128`
+przez `fetch_page` (egress HTTPS sandboxa był martwy; `docs/cards/HOW_TO_ADD_CARD.md`
+dopuszcza ten kanał wprost) — snapshot `docs/cards/scryfall-coordinated-assault.json`,
+rulingów WotC ten druk nie ma (`rulings: []`).
+
+Przy okazji wyszła asymetria torów (L123): fan-out „each of up to N" istniał od M157
+jedynie w `applyTriggerEffects` (trigger), a w torze czaru lista efektów jest
+aplikowana RAZ z pełną tablicą celów i każdy efekt czyta `targets[0]` — nowy czar
+pompowałby pierwszy cel dwa razy. Dlatego w `src/engine/spells.js` pojawia się
+deskryptor `allTargets: true`: aplikuje efekt osobno dla każdego wskazanego celu
+(pominięcie celów null = semantyka „up to"), dokładnie jak fan-out triggerów; silnik
+nadal nie zna żadnej nazwy karty (ADR 0002 — pilnuje M291/7, które sprawdza też, że
+`allTargets` nie łączy się z efektem blokującym decyzją `pendingSpell`).
+
+Wpis w rejestrze kart ma `plan: 'Ravnica'`, więc to `tools/generate-plan-decks.mjs`
+decyduje o talii (M178/ADR 0023): diff dotknął JEDNEGO pliku — do `decks/ravnica.txt`
+weszła 1 kopia i 1 Mountain więcej. `artId` świadomie nie ma (karta jest poza arkuszem
+kolekcji, stół spada na druk ze Scryfalla — `src/table/card-images.js`).
+
+Pomiar na żywym stole (`tools/table-tester/run-game.mjs`, ta sama para co baseline z
+tury 10, 4 partie po 300 kroków): otwarcia kreatora wielocelowego 0/4 → 2/4, w tym
+jedno na nowej karcie — transkrypt greedy (seed 922):
+
+    >> Cel czaru: Coordinated Assault (7 opcji)
+    [multi-target wizard] Coordinated Assault — zaznacz cele (2) … potrzeba 2, celuję w 2
+    [ROZGRYWKA] • Rzucasz Coordinated Assault → cel: Zombie Army, Trained Arynx
+    [ROZGRYWKA] • Zombie Army zyskuje: pierwsze uderzenie
+    [ROZGRYWKA] • Trained Arynx zyskuje: pierwsze uderzenie
+
+Czyli picker wielocelowy otwiera się, działa na wspólnym helperze (ten sam komponent
+co kreator atakujących) i oba cele realnie dostają efekt; bot grający tą talią też
+sam zadeklarował oba cele (seed 924). Detektory: 0 zgłoszeń w czterech partiach.
+Uwaga na copy silnika: rzut bez celów (profil explorer, seed 921) rozstrzyga się z
+komunikatem „cel nielegalny — bez efektu", choć przy „up to" jest to legalny,
+świadomy wybór — kosmetyka do decyzji właściciela.
+
+Wjazd karty poruszył dwiema bramkami jakości (sufit `block` 4 → 5 w
+`test/audyt-bot-walka-remisy.test.js` i golden-master bota). Atrybucja trzema
+drzewami (raport §16, lekcja L124): `f6a5459` → 4/4/130, samo M290 → 4/4/130,
+M290 + karta → 5/4/133. Czyli waga M290 NIE dołożyła ani jednego remisu, a sufit
+podnieśliśmy po przejrzeniu przykładu (polityka nieśmiertelnej wymiany). Fixture
+`bot-scoring-snapshot.mjs --write` trzeba puszczać na gotowym drzewie — po
+`MANA_COSTS` i po generatorze talii.
+
+W tej samej turze doszła DRUGA karta na tym samym deskryptorze, ale z innym efektem: **Dual Shot** (SOI 153, {R}, „deals 1 damage to each of up to two target creatures“); jej ruling („nie można wskazać tego samego stworzenia dwa razy”) testujemy jako M291/D5, bo to jedyne realne nadużycie karty. Przydział talii znowu przez generator: diff dotknął też podziału Innistradu (Blazing Torch przeszedł brg → wu, bo podział kolorystyczny liczy leak/imbalance całości planu), więc `test/repo-decks.test.js` (M228) ma zaktualizowaną sumę nielandów 36 → 37 z komentarzem, że to odpowiedź na zmianę składu.
+Pozostało z listy 4–6 kart: dwie następne (przepis w §13.8 i backlogu §1). Benchmark
+nie był powtarzany po tej zmianie — od tego commitu talie różnią się składem, więc
+porównania A/B z tur 7–10 liczą się od nowego baseline'a.

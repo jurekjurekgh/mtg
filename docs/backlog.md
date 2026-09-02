@@ -19,13 +19,24 @@ kompaktowane, repo nie.
 ## 1. Karty (lista właściciela)
 
 - **Karty wielocelowe (cele >1) — podstawa pod audyt na żywo** (pomiar w
-  `docs/audits/AUDYT_PR92_2026-09-02.md` §13.8): spośród 443 kart wspieranych tylko
-  7 deklaruje >1 celu, a talie testowe są w całości rozdzielone (ADR 0023: każda
-  wspierana karta w dokładnie jednej talii, kart wolnych = 0), więc nie da się
-  ułożyć talonu pod kreator celów bez nowych kart. 4-6 kart z >1 celem (albo
-  z pozycjami „X lub Y") załatwia dwie rzeczy naraz: rodzinę kart, której dziś
-  brakuje, i pokrycie pickera w Teście (talia `wielocelowa` staje się legalna sama,
-  bo nowe karty nie mają jeszcze przypisania — przepis w §13.8).
+  `docs/audits/AUDYT_PR92_2026-09-02.md` §13.8 i §15): spośród 443 kart wspieranych
+  tylko 7 deklaruje >1 celu, a talie testowe są w całości rozdzielone (ADR 0023:
+  każda wspierana karta w dokładnie jednej talii, kart wolnych = 0), więc nie da się
+  ułożyć talonu pod kreator celów bez nowych kart.
+  **START w turze 11 (M291): weszły dwie** — Coordinated Assault (CLU 128, {R},
+  „up to two target creatures each get +1/+0 and gain first strike") oraz Dual Shot
+  (SOI 153, {R}, „deals 1 damage to each of up to two target creatures"): ten sam
+  deskryptor `allTargets`, dwa różne efekty (pump+grant oraz czyste obrażenia). Zapisana
+  nauka: talii NIE układamy ręcznie, tylko nadajemy karcie `plan` i puszczamy
+  `node tools/generate-plan-decks.mjs` (on jest źródłem prawdy przydziału; diff:
+  jeden plik na pierwszą kartę, trzy na drugą, bo przy drugiej generator przestawił też
+  Blazing Torch między połówkami Innistradu). Zostały 2-4 karty z listy właściciela; przydatny
+  kształt to „up to N" (picker z opcją pominięcia) i „each of" (patrz niżej).
+  Przy braku egressu: `docs/cards/HOW_TO_ADD_CARD.md` zezwala ściągnąć te same URL-e
+  `fetch_page`em i zapisać snapshot — to zadziałało w turze 11, nie czekamy na sieć.
+  Uwaga silnikowa (L123): „each of up to N" ma fan-out osobno w torze triggerów
+  (`applyTriggerEffects`) i osobno w torze czaru (`allTargets`, M291) — każda nowa
+  karta wielocelowa musi mieć test na DWU celach w tym torze, którym realnie gra.
 
 _(pusto — batch 34 zamknięty w całości: 10 z 10 kart, M113–M116.
 Następna lista właściciela wchodzi tutaj.)_
@@ -141,11 +152,19 @@ Następna lista właściciela wchodzi tutaj.)_
   zakotwiczał się na tym drugim. Naprawione połową wagi siły dla ciał, które nie
   atakują (albo których obrażenia zapobiega ochrona blokerów); bramowane
   `test/uwagi-tura9-bot-rowne-ciala-equip.test.js` (8/8) i benchmarkiem A/B (§13.7).
-  **Zostaje otwarte:** ten sam mechanizm nie rozróżnia ciał RÓWNYCH co do siły, z
-  których jedno ma ewazję (latacz 3/3 vs vanilla 3/3 — oba kierunki −4,00). To
-  świadomie nietknięte: każda premiu za „jakość ciała" jest wagą i wymaga A/B, a
-  żaden pomiar w tej turze nie wykazał, że jest potrzebna (mana nie jest spalona,
-  jedynie nosiciel bywa gorszy).
+  **ZAMKNIĘTE w turze 11 (M290):** ta sama waga rozróżnia teraz ciała RÓWNE co do
+  siły, jeśli jedno ma ewazję omijającą ścianę — pompa na nosicielu z lataniem (albo
+  `cantBeBlocked`) przy blokerach bez latania/reacha dostaje +1 do wagi każdego punktu
+  siły. Zmierzone na parze o identycznych statystykach (gorehorn-minotaurs 3/3 vanilla
+  vs angel-of-the-dawn 3/3 latacz): −4,00/−4,00 → **+7,00 / −4,00**; z wrogim reachem
+  premia znika (wraca −4,00), więc to nagroda za stan, nie za kartę. Benchmark A/B
+  `--seeds 24`: heuristic 1723 → 1724 na 2016, aggro 248 → 247 na 1008 — zero regresu.
+  Strażnik: `test/uwagi-tura11-bot-jakosc-ciala-equip.test.js` (9 testów, w tym
+  antysymetria na siatce 6 ciał × 2 sprzętów i T11/8 — jedno miejsce definicji premii).
+  **Zostaje otwarte (decyzja właściciela):** gałąź FRESH (pierwsze założenie sprzętu)
+  nadal liczy od mocy nosiciela i dla pary latacz 3/3 vs vanilla 3/2 daje remis
+  18,00/18,00 — ruszenie jej rusza kilkadziesiąt pinów equipu, więc idzie osobnym
+  commitem z osobnym A/B (pin stanu: T11/7).
 - **Ergonomia dotykowa pozostałych kontrolek** (po M129, lekcja L35): wizardy
   walki i obrażeń mają już cel dotyku >= 44 px. Do przejrzenia tym samym
   kątem: wizard scry/surveil (chipy `.look-wizard-card`), przyciski stref
@@ -168,8 +187,10 @@ Następna lista właściciela wchodzi tutaj.)_
   `decks/wielocelowa.txt` wpadła w `test/m132-proporcje-landow.test.js` (lądy) i
   `test/repo-decks.test.js` (M178/ADR 0023 — 11 z 12 kart już gdzieś leżało).
   Przenoszenie kart między taliami odrzucone świadomie: `decks/*.txt` karmią
-  benchmark i audyt remisów, a zmiana składu par unieważnia porównania A/B z tur
-  7-10. Czekamy na nowe karty (§1).
+  benchmark i audyt remisów, a zmiana składu par unieważnia porównania A/B.
+  **Droga, która działa (tura 11):** nowa karta + `plan` + `generate-plan-decks.mjs`.
+  Rykosz odnotowany w §15 raportu: od commitu M291 talia `ravnica` ma inny skład, więc
+  porównania A/B z tur 7-10 liczą się od nowego baseline'a.
 - **Kontrakt testera na markup pickera** — `tools/table-tester/run-game.mjs`
   klika `.multi-target-toggle` i czyta `checked` (fallback na tekst „[x]"), a
   nazwę bierze z `.picker-name`. Jeśli picker zmieni strukturę wiersza, tester

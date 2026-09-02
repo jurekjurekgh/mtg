@@ -1968,3 +1968,47 @@ między taliami) była gorsza niż brak talii, bo talie karmią benchmark i audy
 
 **Strażnik:** `test/repo-decks.test.js` + `test/m132-proporcje-landow.test.js`;
 wniosek zapisany w `docs/backlog.md` §1 i §4.
+
+## L123 (2026-09-02) — Semantyka zaimplementowana w jednym torze nie istnieje w drugim
+
+**Przypadek:** M291. Nowa karta „up to two target creatures EACH get +1/+0" miała być
+dopisaniem wpisu do katalogu. Tor triggerów umiał to od M157 F4(a)
+(`applyTriggerEffects`: `count > 1` → lista efektów aplikowana raz na cel), a tor
+czaru — nie: aplikuje listę efektów RAZ z pełną tablicą celów, a `pump` i
+`grant_keywords_until_end_of_turn` czytają `targets[0]`. Gdybym skończył na
+„katalog = dane, silnik już to umie", karta wchodziłaby do repo z cichym błędem:
+pompowałaby pierwszy cel dwa razy, a drugi wcale. Żaden test jej by nie przyłapał,
+bo nie istniała.
+
+**Reguła:** przy każdej wielocelowości audytuj WSZYSTKIE tory, którymi efekt może
+nadejść (czar ze stosu, zdolność aktywowana, trigger, tryb modalny, kopia czaru) i
+dla każdego z nich zapisz test na DWU celach. Zdanie „silnik to wspiera" bez nazwy
+toru jest bezwartościowe — to nie cecha mechaniki, a cecha ścieżki kodu.
+Druga połówka lekcji: blokada środowiska nie zamyka zadania, jeśli procedura repo ma
+opisany kanał awaryjny — `docs/cards/HOW_TO_ADD_CARD.md` dopuszcza ściągnięcie tych
+samych URL-i przez `fetch_page`, a ja w turze 10 uznałem brak egressu za koniec
+wątku (b).
+
+**Strażnik:** `test/m291-coordinated-assault-i-fan-out-celow.test.js` (M291/2 — dwa
+cele, M291/3 — jeden, M291/4 — zero, M291/7 — silnik nie zna nazw kart i
+`allTargets` nie łączy się z efektem blokującym decyzją).
+
+## L124 (2026-09-02) — Zmianę w grzechotce przypisz trzema drzewami, zanim podniesiesz próg
+
+**Przypadek:** M291 (tura 11). Po dodaniu jednej karty do katalogu zmienił się skład
+`decks/ravnica.txt` i zazęły dwie bramki jakości: sufit `block` w
+`test/audyt-bot-walka-remisy.test.js` (4 → 5) oraz zamrożony golden-master bota. Ten
+sam audyt odpalony na `f6a5459` dał 4/4/130, a na drzewie z SAMĄ zmianą wagową M290
+(też 4/4/130) — czyli waga nie zepsuła żadnej decyzji, a dokładkę remisu zrobiło inne
+rozdanie talii. Bez tego pomiaru jedynym dostępnym komunikatem byłoby „podnieś próg”.
+
+**Reguła:** gdy po zmianie wagowej pęka grzechotka, mierz trzy drzewa (stan zeszły /
+tylko zmiana wagowa / zmiana wagowa + treść) dokładnie tym samym wywołaniem, którego
+używa test. Atrybucja decyduje, czy podnosimy sufit (i wpisujemy PRZYCZYNĘ przy
+asercji), czy mamy nową dziurę w wycenie. Ten sam rygor dotyczy fixture’ów: `--write`
+puszcza się na GOTOWYM drzewie — u nas pierwszy zapis zamroził ślad bota bez wpisu
+`MANA_COSTS` nowej karty i test znowu świecił, choć nic już nie było nie tak z kodem.
+
+**Strażnik:** komentarz z tabelką atrybucji przy suficie `block`
+(`test/audyt-bot-walka-remisy.test.js`), `test/bot-scoring-snapshot.test.js`, oraz
+kolejność wejścia karty w `docs/audits/AUDYT_PR92_2026-09-02.md` §16.
