@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "overallHash": "271347032ba615aae74ad68d57e5a1acd821689dad43250470b43c7fd97815f3",
+  "overallHash": "3ca2c26377deae5cfc6b5e0c0912175bcc05392041329b2b004634d6540bc3a6",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1000,
-      "hash": "bb3232a7990e34bbb85dee0a916a7265295c20da4d82ddbc86c84be03a1fb5ca",
+      "hash": "1c9baa37a265d7a54935d128fbd2c164466e37e06d5e6ac92be435c9d8a2795c",
       "decisions": 245,
       "scoreSum": 3188.1,
       "chosenKinds": {
@@ -26,7 +26,7 @@
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1001,
-      "hash": "20f43c596a88074aeb2c22ba0f625cb0645f4aa7224e63925a8ea71fb3a4abfb",
+      "hash": "171f0284394c56ffab36f2dfb78fa2db6ed29c9d04ec0cbcb695aa4ec1025ad2",
       "decisions": 234,
       "scoreSum": 1907.4,
       "chosenKinds": {
@@ -45,7 +45,7 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1000,
-      "hash": "beec4a844953f9ae1cdfe8dc520644e92afb26e1733d93dbd5ab4a187dd03f7f",
+      "hash": "d925b8f4298ef568154a781e8c3b78ea3b84deb7619d258826a7bd4d4fe3f6dd",
       "decisions": 168,
       "scoreSum": 2546.8,
       "chosenKinds": {
@@ -65,7 +65,7 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1001,
-      "hash": "6ef9d019f91bd50128103b0aad7ad179e7c80f5f183e5bd38b1c546489c2e311",
+      "hash": "80ce8d3ba96f647959a868f9a0dbc320a0a7400594fb0d1b5436972001e527b5",
       "decisions": 289,
       "scoreSum": 3410.7,
       "chosenKinds": {
@@ -87,7 +87,7 @@
     {
       "pair": "tarkir-bg|warhammer-brg",
       "seed": 1000,
-      "hash": "1903f6fcea21f8c2e8803fde4c1ba37c343bcd02a919ed65d950b793705d1231",
+      "hash": "4d323e874b055131492a72eef484e1fe7db9c092a7c85862135b561261e0a1e5",
       "decisions": 246,
       "scoreSum": 3107,
       "chosenKinds": {
@@ -109,7 +109,7 @@
     {
       "pair": "tarkir-bg|warhammer-brg",
       "seed": 1001,
-      "hash": "e1c1c82f8e948c645bbbcaf174db9ed17a2223c87ce9580a91dcc760648eedef",
+      "hash": "98c3e49c2d3a7c3903d753f02f1c3eb416ec0397d43c678cbd726f8671aaa070",
       "decisions": 158,
       "scoreSum": 2515.7,
       "chosenKinds": {

@@ -65,6 +65,17 @@ const deckOf = (nazwa) => {
 const rodzaj = (s) => String(s ?? '?').replace(/[\[(].*$/, '').trim();
 
 /**
+ * „Brak akcji" — pary, które silnik wystawia obok siebie w krokach bojowych:
+ * w declare_blockers `declare_blockers{}` (ślad: `block[]`) i `pass_priority`
+ * prowadzą do tego samego stanu (brak bloków), różniąc tylko tym, KTO dostaje
+ * pierwsze okno odpowiedzi (udowodnione w teście test/audyt-bot-block-noop.test.js,
+ * nie założone). Analogicznie `attack[]` w declare_attackers. Remis między nimi
+ * nie jest przeoczeniem wyceny, tylko nadwyżką oferty silnika — nie wolno mu
+ * policzyć jako decyzji, bo pomiar straszy liczbą zamiast mówić prawdę.
+ */
+const BRAK_ACJI = new Set(['pass_priority', 'block[]', 'attack[]']);
+
+/**
  * Rozegrane partie → statystyka decyzji per kind. Deterministyczne: seedy
  * pochodzą od nazw talii (ADR 0005), dwa uruchomienia dają identyczny wynik.
  * Funkcja jest eksportowana, żeby test bramkowy mógł ją wywołać na małym
@@ -72,13 +83,14 @@ const rodzaj = (s) => String(s ?? '?').replace(/[\[(].*$/, '').trim();
  */
 export function audytRemisow({ pary = AUDIT_PAIRS, gry = 1, kindFilter = '' } = {}) {
   const stat = new Map();
-  const global = { single: 0, decided: 0, tie_top: 0, tie_all: 0, decisions: 0, gry: 0 };
+  const global = { single: 0, decided: 0, tie_top: 0, tie_all: 0, decisions: 0, gry: 0,
+    tieNoOp: 0, tieAkcyjne: 0 };
 
   const wierszDla = (kind) => {
     let s = stat.get(kind);
     if (!s) {
       s = { kind, single: 0, decided: 0, tie_top: 0, tie_all: 0, suma: 0,
-        rozroznialne: 0, rownowazne: 0, bezDanych: 0, przyklady: [] };
+        noOp: 0, akcyjne: 0, rozroznialne: 0, rownowazne: 0, bezDanych: 0, przyklady: [] };
       stat.set(kind, s);
     }
     return s;
@@ -100,8 +112,22 @@ export function audytRemisow({ pary = AUDIT_PAIRS, gry = 1, kindFilter = '' } = 
       else klasa = 'decided';
       s[klasa] += 1; global[klasa] += 1;
       if (klasa !== 'tie_top' && klasa !== 'tie_all') continue;
-      const proj = (e.tie ?? []).map((x) => x.proj);
-      if (!e.tie || proj.length < 2 || proj.some((x) => x == null)) {
+      // Najpierw: czy to w ogóle jest decyzja? Wszystkie ex aequo opcje bez
+      // akcji = nadwyżka oferty silnika, nie dylemat bota.
+      const tiedOpcje = (e.options ?? []).filter((o) => o.score === max);
+      if (tiedOpcje.length > 1 && tiedOpcje.every((o) => BRAK_ACJI.has(o.cmd))) {
+        s.noOp += 1; global.tieNoOp += 1;
+        continue;
+      }
+      s.akcyjne += 1; global.tieAkcyjne += 1;
+      // Opcje bez projekcji (pass_priority, concede — rodzina „brak akcji")
+      // wylatywalby wszystko: przy block[] vs block[x<y] vs pass null
+      // wcisnął realny finding do „bez danych". Odrzucamy je, a klasyfikujemy
+      // to, co zostaje; jeśli mniej niż dwa warianty — nie mamy zdania.
+      const zProjekcja = (e.tie ?? []).filter((x) => x.proj
+        && (kind === 'play_land' || !Object.values(x.proj).some((v) => v === undefined)));
+      const proj = zProjekcja.map((x) => x.proj);
+      if (!e.tie || proj.length < 2) {
         s.bezDanych += 1;
       } else {
         // Sygnatura = TO, na co wycena patrzyła. Równe sygnatury ⇒ remis z
@@ -111,8 +137,18 @@ export function audytRemisow({ pary = AUDIT_PAIRS, gry = 1, kindFilter = '' } = 
         // decyzji zamienne i nie wolno od bota żądać rozstrzygnięcia. Za to
         // różne wejścia przy równym wyniku = niedoinfekcyjność mapowania
         // (np. sufit klampy zgniatał pokrycie 2 i 3 do jednego punktu).
-        const sygn = proj.map((pr) => `${pr.pokrywa}|${pr.ilosc >= 2 ? 'x' : '-'}|`
-          + `${pr.nowyKolor ? 'n' : '-'}|${pr.zdolnosc ? 'a' : '-'}|${pr.tapped ? 't' : '-'}`);
+        let sygn;
+        if (kind === 'play_land') {
+          // Tylko WEJŚCIA delty: dwa lądy w różnych kolorach, z których żaden
+          // nie pokrywa zapotrzebowania, są dla tej decyzji zamienne.
+          sygn = proj.map((pr) => `${pr.pokrywa}|${pr.ilosc >= 2 ? 'x' : '-'}|`
+            + `${pr.nowyKolor ? 'n' : '-'}|${pr.zdolnosc ? 'a' : '-'}|${pr.tapped ? 't' : '-'}`);
+        } else {
+          // Walka: projekcja jest zbiorem faktów o wariancie (ile tur obrażeń,
+          // ilu swoich wystawiamy na blok / ile obrażeń znika i ile gini).
+          // Każdy z nich jest rozstrzygalny, więc porównujemy całość.
+          sygn = proj.map((pr) => JSON.stringify(pr));
+        }
         if (new Set(sygn).size > 1) {
           s.rozroznialne += 1;
           s.przyklady.push(`${meta.para} seed ${meta.seed} ${meta.gracz} tura ${e.turn} `
@@ -179,13 +215,18 @@ if (uruchomionyJakoSkrypt) {
   const istotne = rows.filter((r) => !doPominięcia.has(r.kind));
   const sumaIstotnych = istotne.reduce((a, r) => a + r.suma, 0);
   const sumaTie = istotne.reduce((a, r) => a + r.tie_top + r.tie_all, 0);
+  const istotneAkcyjne = istotne.reduce((a, r) => a + (r.suma - r.noOp), 0);
   console.log(` decyzje z alternatywami (bez pass/concede/mulligan): ${sumaIstotnych}, z tego remis: ${sumaTie}`
     + ` (${sumaIstotnych ? ((100 * sumaTie / sumaIstotnych).toFixed(1)) : 0}%)`);
-  console.log('\n kind                    single decided  tie_top  tie_all | rozróznialne rownowazne bez-danych');
+  console.log(`   z REMISÓW: ${global.tieNoOp} to pary „brak akcji" silnika (block[]/attack[] vs pass)`
+    + ` — nadwyżka oferty, nie dylemat; ${global.tieAkcyjne} to remis miedzy REALNymi wariantami`
+    + ` (${istotneAkcyjne ? ((100 * global.tieAkcyjne / istotneAkcyjne).toFixed(1)) : 0}% decyzji akcyjnych)`);
+  console.log('\n kind                    single decided  tie_top  tie_all |   no-op akcyjne | rozróznialne rownowazne bez-danych');
   for (const r of rows) {
     if (r.tie_top + r.tie_all === 0) continue;
     console.log(` ${r.kind.padEnd(23)} ${String(r.single).padStart(6)} ${String(r.decided).padStart(7)}`
       + ` ${String(r.tie_top).padStart(8)} ${String(r.tie_all).padStart(8)} |`
+      + ` ${String(r.noOp).padStart(6)} ${String(r.akcyjne).padStart(8)} |`
       + ` ${String(r.rozroznialne).padStart(12)} ${String(r.rownowazne).padStart(11)} ${String(r.bezDanych).padStart(10)}`);
   }
   const grozy = rows.filter((r) => r.rozroznialne > 0);

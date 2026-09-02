@@ -4759,7 +4759,56 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * audyt liczy je jako „bez danych" i nie udaje, ze je ocenil.
    */
   function tieProjection(view, cmd) {
-    if (cmd?.type !== 'play_land' || !view) return null;
+    if (!view) return null;
+    if (cmd?.type === 'declare_attackers') {
+      // Ile tur obrażeń to realnie daje i ile stworów wystawiamy na blok —
+      // dane, które decyzja o ataku musi rozstrzygać. Nie odtwarzają wzoru
+      // punktacji (tam jest jeszcze presja, tempo, trigger „attacks"), więc
+      // różnica przy równych punktach jest sygnałem, nie tautologią.
+      const atak = cmd.attackerIds ?? [];
+      const wrog = enemy(view);
+      const blokerzy = untappedEnemyBlockers(view);
+      let sila = 0;
+      let wystawione = 0;
+      for (const id of atak) {
+        const o = objectOnBoard(view, id);
+        sila += o?.power ?? 0;
+        if (blokerzy.some((b) => (b.power ?? 0) >= (o?.toughness ?? 99))) wystawione += 1;
+      }
+      const zycieWroga = wrog?.life ?? 999;
+      // Nadwyżka ponad śmiertelność NIE jest daną decyzyjną: zestaw 16 i 17
+      // obrażeń przy wrogu na 15 życiu wygrywa tak samo (przeredagowanie
+      // metryki, nie kodu — patrz uwagi w docs/audits/AUDYT_PR92 §12.4).
+      return {
+        atakuje: atak.length,
+        sila: Math.min(sila, zycieWroga),
+        smiertelny: sila > 0 && sila >= zycieWroga ? 1 : 0,
+        wystawioneNaBlok: wystawione,
+        // Które z NASZYCH stworów zostaje w domu — ta sama suma siły ataku przy
+        // różnych zestawach to różna obrona na następną turę. Wyłączone, gdy atak
+        // jest śmiertelny: gra się kończy w tej turze i żaden blokera nie będzie
+        // potrzebny (ta sama co wyżej zasada — metryka ma pytać o dane, które
+        // MOGĄ zmienić wynik partii, nie o wszystkie możliwe różnice).
+        obronaWDomu: (sila >= zycieWroga) ? 0 : (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId
+          && o.kind === 'creature' && !atak.includes(o.id)).reduce((a, o) => a + (o.toughness ?? 0), 0),
+      };
+    }
+    if (cmd?.type === 'declare_blockers') {
+      // Ile obrażeń realnie znika i iloma własnymi stwarami się za to płaci.
+      const przypisania = cmd.assignments ?? {};
+      let zablokowane = 0;
+      let ofiary = 0;
+      for (const [atakujacyId, blokerzy] of Object.entries(przypisania)) {
+        const atakujacy = objectOnBoard(view, atakujacyId);
+        zablokowane += atakujacy?.power ?? 0;
+        for (const blokerId of blokerzy ?? []) {
+          const b = objectOnBoard(view, blokerId);
+          if (b && (atakujacy?.power ?? 0) >= (b.toughness ?? 99)) ofiary += 1;
+        }
+      }
+      return { zablokowane, ofiary, blokuje: Object.keys(przypisania).length };
+    }
+    if (cmd?.type !== 'play_land') return null;
     const o = (view.zones.hand ?? []).find((x) => x?.id === cmd.objectId);
     if (!o) return null;
     const a = landAnaliza(view, cmd.objectId);
