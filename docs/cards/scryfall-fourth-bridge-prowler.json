@@ -19,5 +19,14 @@
     "large": "https://cards.scryfall.io/large/front/7/3/73aaaa09-c985-42f8-b426-06fd3b8de66d.jpg?1783936763",
     "normal": "https://cards.scryfall.io/normal/front/7/3/73aaaa09-c985-42f8-b426-06fd3b8de66d.jpg?1783936763"
   },
-  "pobrano": "2026-09-01"
+  "pobrano": "2026-09-01",
+  "rulings": [
+    {
+      "date": "2017-02-09",
+      "source": "wotc",
+      "comment": "Fourth Bridge Prowler can be the target of its own ability."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/aer/60/rulings",
+  "rulingsPobrano": "2026-09-02"
 }

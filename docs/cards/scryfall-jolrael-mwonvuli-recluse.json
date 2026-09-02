@@ -19,5 +19,29 @@
     "large": "https://cards.scryfall.io/large/front/1/8/188f9016-275f-4060-8b11-9cdeef3759bd.jpg?1783912990",
     "normal": "https://cards.scryfall.io/normal/front/1/8/188f9016-275f-4060-8b11-9cdeef3759bd.jpg?1783912990"
   },
-  "pobrano": "2026-09-01"
+  "pobrano": "2026-09-01",
+  "rulings": [
+    {
+      "date": "2022-12-08",
+      "source": "wotc",
+      "comment": "The triggered ability can trigger only once each turn. It doesn't matter if Jolrael was on the battlefield when the first card was drawn: if it's not on the battlefield when the second card is drawn, the ability can't trigger at all that turn."
+    },
+    {
+      "date": "2022-12-08",
+      "source": "wotc",
+      "comment": "Jolrael's last ability overwrites all previous effects that set the affected creatures' power and/or toughness to specific values. If other effects that set these characteristics to specific values start to apply after Jolrael's ability resolves, they will overwrite that part of the effect."
+    },
+    {
+      "date": "2022-12-08",
+      "source": "wotc",
+      "comment": "Effects that modify an affected creature's power and/or toughness without setting them to specific values will apply no matter when those effects began. The same is true for counters that change the creature's power and/or toughness."
+    },
+    {
+      "date": "2022-12-08",
+      "source": "wotc",
+      "comment": "The value of X is determined only as Jolrael's last ability resolves. Once that happens, the value of X won't change later in the turn even if the number of cards in your hand changes."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/mkc/173/rulings",
+  "rulingsPobrano": "2026-09-02"
 }

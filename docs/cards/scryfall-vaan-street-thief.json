@@ -19,5 +19,19 @@
     "large": "https://cards.scryfall.io/large/front/5/0/50e1ec29-9de3-4f1b-b818-057e030d475b.jpg?1783906593",
     "normal": "https://cards.scryfall.io/normal/front/5/0/50e1ec29-9de3-4f1b-b818-057e030d475b.jpg?1783906593"
   },
-  "pobrano": "2026-09-01"
+  "pobrano": "2026-09-01",
+  "rulings": [
+    {
+      "date": "2025-06-06",
+      "source": "wotc",
+      "comment": "You cast the exiled card while Vaan's first ability is still on the stack. You can't wait to cast it later in the turn. Timing restrictions based on the card's type are ignored."
+    },
+    {
+      "date": "2025-06-06",
+      "source": "wotc",
+      "comment": "Vaan's last ability resolves before the spell that caused it to trigger. It resolves even if that spell is countered or otherwise leaves the stack."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/fin/168/rulings",
+  "rulingsPobrano": "2026-09-02"
 }

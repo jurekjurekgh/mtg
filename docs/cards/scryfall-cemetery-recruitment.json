@@ -17,5 +17,14 @@
     "large": "https://cards.scryfall.io/large/front/3/a/3a23adea-9f4a-409c-a37d-323eee781273.jpg?1783937486",
     "normal": "https://cards.scryfall.io/normal/front/3/a/3a23adea-9f4a-409c-a37d-323eee781273.jpg?1783937486"
   },
-  "pobrano": "2026-09-01"
+  "pobrano": "2026-09-01",
+  "rulings": [
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If the target creature card is an illegal target as Cemetery Recruitment tries to resolve, it won't resolve and none of its effects will happen. You won't draw a card even if the target creature card was a Zombie card."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/emn/83/rulings",
+  "rulingsPobrano": "2026-09-02"
 }
