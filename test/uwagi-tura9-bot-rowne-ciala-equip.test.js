@@ -149,17 +149,23 @@ test('T9/5: sprzęt na ciele, które nie może atakować, schodzi na atakująceg
     `przeniesienie znad defenddera na atakującego to poprawa planszy: ${naSerwanta?.toFixed(2)}`);
 });
 
-test('T9/6: równe co do siły ciało z defenderem NIE wyciąga pompy — zostaw (znana decyzja)', () => {
-  // Udokumentowane przybliżenie, nie błąd: Wishful Merfolk (3/2, defender) nosi
-  // Wooden Stake, kandydatem jest Highland Game (2/1). Ładunek jest identyczny,
-  // a siła nosiciela po pompie jest WIĘKSZA, więc drabina każe stać. +1 siły na
-  // defenderze nie jest bezwartościowe (zmienia bilans bloku), więc model nie
-  // karze ani nie nagradza tego ruchu — decyzja jest świadoma (backlog §3).
-  const r = oceny(stow({ worn: 'wishful-merfolk', creatury: ['wishful-merfolk', 'highland-game'] }));
-  const naGrę = cel(r, 'highland-game');
-  assert.ok(naGrę < 0,
-    `przepięcie z równego co do siły defenddera jest wstrzymane: ${naGrę?.toFixed(2)}`);
-  assert.equal(placZaEquip(r), false, `i bot za nie nie płaci: ${JSON.stringify(r.pick)}`);
+test('T9/6: pompa NIE zostaje na ciele, które nie umie jej użyć (M289)', () => {
+  // To jest druga strona T9/1 i odpowiada na drugą część pytania właściciela
+  // („żeby wybrał najlepszy cel i tam zostawił"). Wishful Merfolk (3/2, defender)
+  // nosi Wooden Stake, kandydatem jest Undead Servant (3/2). Przed turą 9 ładunek
+  // liczono od samej pompy, więc oba ciała były równe i drabina kazała stać —
+  // sprzęt zakotwiczał się na stworze, który nigdy nie zaatakuje. Po M289
+  // `equipValuation` pyta, czy nosiciel umie spożytkować siłę: na defenderze
+  // +1 siły warte jest połowę (bilans bloku), na atakującym całe (obrażenia
+  // graczowi), więc przeprowadzka jest poprawą i ma dodatnią wycenę.
+  const r = oceny(stow({ worn: 'wishful-merfolk', creatury: ['wishful-merfolk', 'undead-servant'] }));
+  const naSerwanta = cel(r, 'undead-servant');
+  assert.ok(naSerwanta > 0,
+    `wyciągnięcie pompy znad defenddera to poprawa, nie ruch boczny: ${naSerwanta?.toFixed(2)}`);
+  // Anty-over-fix w drugą stronę: dwa ciała, OBA atakujące, pompa daje im tyle
+  // samo — tu nadal nie ma po co płacić (por. T9/1).
+  const bocznie = oceny(stow({ worn: 'highland-game', creatury: ['highland-game', 'leafcrown-dryad'] }));
+  assert.ok(cel(bocznie, 'leafcrown-dryad') < 0, 'ruch boczny między atakującymi zostaje zablokowany');
 });
 
 test('T9/7: strażnik progów — drabina ma trzy szczeble w jednym miejscu', () => {
@@ -173,4 +179,20 @@ test('T9/7: strażnik progów — drabina ma trzy szczeble w jednym miejscu', ()
   assert.match(cialo, /payload\.value > wornPayload\.value/, '2) szczebel: naprawa = wyraźnie lepszy ładunek');
   assert.match(cialo, /delta >= 2 && payload\.value >= wornPayload\.value/, '3) szczebel: ciało >= 2 siły i ładunek nie gorszy');
   assert.match(cialo, /else score -= 6;/, '4) szczebel: wszystko inne (w tym dwa równe ciała) jest karane');
+});
+
+test('T9/8: „czy nosiciel umie użyć pompy" ma JEDNO miejsce w modelu (L28)', () => {
+  // Reguła z M289 nie może urodzić się drugi raz w gałęzi przeniesienia —
+  // wtedy mielibyśmy dwa modele świata i znowu rozjazd typu „przeniesienie
+  // liczy tylko delta" (to była przyczyna zgłoszenia C).
+  const src = fs.readFileSync('src/controllers/heuristic-bot.js', 'utf8');
+  const start = src.indexOf('function equipValuation');
+  assert.ok(start > 0, 'wspólna wycena ładunku istnieje');
+  const cialo = src.slice(start, src.indexOf('\n  }', start));
+  const atk = (cialo.match(/attackerNeutralizedByProtection\(/g) ?? []).length;
+  assert.equal(atk, 1, `obrona przed jałowym atakiem liczona raz (jest ${atk})`);
+  assert.match(cialo, /creature\.cantAttackStatic === true/, 'obrona przed defenderem/detainem liczona w tej samej funkcji');
+  assert.match(cialo, /atakJa\u0142owy \? pumpPower : 2 \* pumpPower/, 'waga pompy zależy od spożytkowania (pół na ciele, które nie atakuje)');
+  const uses = (src.match(/equipValuation\(view, source,/g) ?? []).length;
+  assert.ok(uses >= 3, `wycena wywoływana w definicji i w obu gałęziach equipu (jest ${uses})`);
 });

@@ -1515,7 +1515,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // F (M244): nosiciel, który nie może atakować, nie wyciąga nic z grantu
     // ofensywnego — zostaje mu tylko P/T do obrony.
     const ofensywne = creature.cantAttackStatic === true ? 0 : ((grantsEvasion ? 8 : 0) + (hasteAdds ? 6 : 0));
-    const value = 2 * pumpPower + pumpToughness + ofensywne;
+    // M289 (tura 10, dopowiedzenie do tej samej zasady): „ile warta jest pompa"
+    // zależy od tego, czy nosiciel umie ją spożytkować. Ciało, które legalnie NIE
+    // atakuje (defender/detain/aura), albo takie, którego obrażenia są zapobiegane
+    // przez ochronę blokerów (CR 702.16c — jałowy atak), liczy tylko część
+    // obronną siły: +1 siły wciąż zabija atakującego w bloku, ale nie robi
+    // krzywdy graczowi. Bez tego gałąź przeniesienia stała jak zaklęta: równy co
+    // do siły defender zatrzymywał sprzęt u siebie, choć przeniesienie za {1}
+    // było poprawką planszy (pytanie kontrolne właściciela, tura 10).
+    const atakJałowy = creature.cantAttackStatic === true
+      || (!grantsEvasion && attackerNeutralizedByProtection(creature, blockers));
+    const value = (atakJałowy ? pumpPower : 2 * pumpPower) + pumpToughness + ofensywne;
     const nothingAdded = pumpPower === 0 && pumpToughness === 0 && !grantsEvasion && !hasteAdds
       && freshGrants.every((kw) => kw === 'haste');
     return { value, nothingAdded };
