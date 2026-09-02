@@ -3958,3 +3958,42 @@ gałęziach), nie dla win-rate. Golden-master bota NIE wymagał regeneracji
 `npm run build` 59 modułów (picker.js) / 3140,2 kB · strażnicy dokumentacji 24/24
 · 32 nowe testy w czterech plikach `test/uwagi-tura8-*.test.js` · partia Żywego
 Testera (12 gier) poniżej w §13.4 raportu.
+
+## M289 (2026-09-02) — Pompa ważona tym, co nosiciel umie z nią zrobić (PR #93, tura 10)
+
+**Zgłoszenie (pytanie kontrolne po uwadze C):** „gdyby były dwie kreatury, którym
+obu ten equipment daje pompę, to czy zablokowane jest bezsensowne wydawanie many na
+dwukrotne przerzucanie? Chodzi o to, żeby wybrał najlepszy cel i tam już zostawił,
+a nie zaraz przerzucał na inną kreaturę, której też coś daje, zabierając go z tej
+pierwszej lepszej".
+
+**Czyta się w dwie strony i obie zostały zmierzone.** (1) Ruch boczny jest
+zablokowany: dwa atakujące ciała o tej samej sile, sprzęt daje im tyle samo →
+oferta przeniesienia −4,00 przy passie 0,00 (Wooden Stake na Highland Game 2/1 z
+kandydatem Leafcrown Dryad 2/2; Brawler's Plate +2/+2 z trample'em na tej samej
+parze — samo −4,00, bo w tym miejscu modelu nie ma osobnej wagi kosztu aktywacji).
+Schody 2/1 → 2/2 → 7/7 dają JEDEN krok na najlepsze ciało (+10,00 na Maruta,
+−4,00 na ciało pośrednie), więc drugiego opłaconego equipu w turze nie ma. Drabina
+`wornByMine` jest antysymetryczna, a to znaczy, że X->Y i Y->X nie mogą być dodatnie
+jednocześnie — ping-pong nie ma jak powstać; sprawdzane na wszystkich 40 parach
+(5 ciał × 2 sprzęty), z wymuszeniem ≥3 dozwolonych awansów, żeby test nie przechodził
+przez pusto. (2) Ale ta sama drabina potrafiła ZAKOTWICZYĆ pompę na ciele, które
+nie umie jej użyć: na defenderze 3/2 ładunek (+1/+0) wyceniał się identycznie jak na
+atakującym 3/2, więc przeniesienie za {1} było karane −6. To nie jest marnotrawstwo,
+to utracona poprawka (L121).
+
+**Naprawa (jedyne miejsce):** w `equipValuation` wartość siły zależy od
+spożytkowania — ciało z `cantAttackStatic` albo takie, którego obrażenia zapobiega
+ochrona blokera (`attackerNeutralizedByProtection`, CR 702.16c), liczy połowę wagi
+pompy (siła wciąż decyduje o bilansie bloku), reszta planu bez zmian:
+`value = (jałowy ? pumpPower : 2·pumpPower) + pumpToughness + ofensywne`. Zmiana
+siedzi w definicji, więc obie gałęzie equipu dostają ją gratis (L28), a relacja
+„lepszy dom" pozostaje antysymetryczna (funkcja zależna od pary sprzęt-nosiciel,
+nie od kierunku ruchu). Po naprawie: Merfolk-defender → Undead Servant +7,00
+(wcześniej −4,00), Monastery Flock 0/5 → Undead Servant +7,00 i bot płaci, ruch
+boczny między atakującymi zostaje −4,00.
+
+**Akceptacja wagowa:** `git worktree` na `54c4371` vs kandydat,
+`node tools/benchmark.mjs --seeds 24` (2016 meczów) — wynik w §13.7 raportu; progiem
+planu jest brak regresji, a nie wzrost. Bramy: `test/uwagi-tura9-bot-rowne-ciala-equip.test.js`
+8/8, subset reżimu bota 242/242, `npm test` 4240/4240.

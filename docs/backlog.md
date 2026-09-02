@@ -125,18 +125,18 @@ Następna lista właściciela wchodzi tutaj.)_
   wyceny: `grep -n "score +=\|score -=" src/controllers/heuristic-bot.js` i
   porównać z dostępnymi `*Valuation`/predykatami. Każda taka rozbieżność to
   decyzja podejmowana bez części danych (klasa L119).
-- **Waga „spożytkowania" w `equipValuation`** (zgłoszone w §13.6 raportu, tura 9):
-  ładunek sprzętu jest liczony od pompy i grantów, a nie od tego, co nosiciel umie
-  z tym zrobić. Efekt: pompowany 3/2 vanilla i 3/3 z lataniem są równoważni (oba
-  kierunki przeniesienia = −4,00), podobnie jak równe co do siły ciało z defenderem.
-  Mana nie jest spalona (drabina każe stać), ale wybór nosiciela może być gorszy.
-  Gdyby wejść w to wagowo: tylko przez `node tools/benchmark.mjs --seeds 24`
-  przed/po (próg: brak regresji) i z anty-ping-pongowym testem
-  `test/uwagi-tura9-bot-rowne-ciala-equip.test.js` jako bramą (własność z §13.6
-  musi pozostać prawdziwa).
-
-## 4. Stół i Żywy Tester
-
+- **ZAMKNIĘTE w turze 10 (M289).** Waga „spożytkowania" w
+  `equipValuation` (zgłoszone w §13.6 raportu): ładunek sprzętu był liczony od pompy
+  i nowo grantowanych keywordów, a nie od tego, co nosiciel umie z nią zrobić —
+  pompowany 3/2 vanilla i 3/2 z defenderem były dla drabiny równoważne, więc sprzęt
+  zakotwiczał się na tym drugim. Naprawione połową wagi siły dla ciał, które nie
+  atakują (albo których obrażenia zapobiega ochrona blokerów); bramowane
+  `test/uwagi-tura9-bot-rowne-ciala-equip.test.js` (8/8) i benchmarkiem A/B (§13.7).
+  **Zostaje otwarte:** ten sam mechanizm nie rozróżnia ciał RÓWNYCH co do siły, z
+  których jedno ma ewazję (latacz 3/3 vs vanilla 3/3 — oba kierunki −4,00). To
+  świadomie nietknięte: każda premiu za „jakość ciała" jest wagą i wymaga A/B, a
+  żaden pomiar w tej turze nie wykazał, że jest potrzebna (mana nie jest spalona,
+  jedynie nosiciel bywa gorszy).
 - **Ergonomia dotykowa pozostałych kontrolek** (po M129, lekcja L35): wizardy
   walki i obrażeń mają już cel dotyku >= 44 px. Do przejrzenia tym samym
   kątem: wizard scry/surveil (chipy `.look-wizard-card`), przyciski stref

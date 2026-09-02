@@ -466,3 +466,40 @@ pompę ze sprzętu, a `cantAttackStatic` ustawia `staticAttackPrevented`), więc
 „reprezentacja" milczała o 1 sile i nie pokazywała defendera w ogóle. Pomiary
 przepisaliśmy na same prawdziwe karty; `addObject` przy okazji przypomniał
 ostrzeżeniem L21, że pola spoza kontraktu giną.
+
+
+---
+
+## Tura 10 (2026-09-02): druga strona weta C — `equipValuation` liczy spożytkowanie pompy
+
+**Skąd:** pytanie kontrolne właściciela (13.6) o dwa ciała profitujące z pompy.
+Blokada ruchu bocznego była potwierdzona, ale ten sam pomiar ujawnił, że drabina
+weta więzi pompę na ciele, które nie umie jej użyć (defender 3/2 z Wooden Stake
+przeciw atakującemu 3/2 obok: −4,00, czyli „stój" tam, gdzie ruch jest poprawką).
+
+**Zmiana (jedyne miejsce):** w `equipValuation` waga siły zależy od tego, czy atak
+nosiciela ma sens — `cantAttackStatic` albo obrażenia zapobiegane przez ochronę
+blokerów (`attackerNeutralizedByProtection`, CR 702.16c) → połowa wagi `pumpPower`.
+`ofensywne` pozostaje zerowane dla ciał nieatakujących. Brak zmian w progach drabiny
+(−12 / +4+różnica / `delta >= 2` / −6), brak osobnej wagi kosztu aktywacji.
+
+**Jak powtórzyć:** `node --test test/uwagi-tura9-bot-rowne-ciala-equip.test.js`
+(8/8). T9/5 i T9/6 to obie strony medalu (schodzi znad defenddera; nie kursuje
+między równymi atakującymi), T9/3 to antysymetria na 40 parach, T9/8 pilnuje, że
+waga ma jedno miejsce w pliku.
+
+**Bramy:** subset reżimu bota 242/242 · `npm test` 4240/4240 · benchmark A/B na `--seeds 24`
+(2016 meczów, baseline z worktree na `54c4371`): **Werdykt: agregat identyczny** — heuristic 85,5% (1723/2016) w obu gałęziach, aggro 24,6% (248/1008), random 4,5% (45/1008). To nie jest dowód „nic nie zmieniliśmy": ta pozycja (sprzęt na ciele, które nie atakuje, z równym co do siły kandydatem obok) nie zdarza się w talach benchmarku, więc win-rate nie ma czego mierzyć. Dowodem działania naprawy są stoły w `test/uwagi-tura9-bot-rowne-ciala-equip.test.js`, a benchmarkiem zamknęliśmy tylko tylną furtkę (że nic nie zepsuliśmy w reszcie gry bota).. Progiem planu był brak
+regresji, nie wzrost.
+
+**Nowa lekcja:** L121 — każde „nie płać za X" ma dwie osie: czy odcina ruch
+bezwartościowy i czy nie odcina ruchu, który realnie poprawia stan. Druga oś nie
+generuje zgłaszalnego błędu, tylko cicho utracone poprawki, więc trzeba ją pisać
+testem w tej samej turze co pierwszą.
+
+**Wpadka narzędziowa tej tury (do zapamiętania):** pierwsza wersja wklejenia L121 do
+`docs/LESSONS.md` liczyła pozycję końca wpisu przez `find('\n## ')`, który zwrócił
+−1 (L120 był ostatnim wpisem) i w efekcie wstawił nową lekcję NA POCZĄTEK pliku, a
+poprawka slice'iem starła nagłówek rejestru. Ratunek: `git checkout docs/LESSONS.md` i
+wklejenie na KONIEC (rejestr jest chronologiczny: L119, L120, L121 na końcu). Przed
+każdym masowym cięciem doków — `git show HEAD:<plik> | head -3` do porównania.

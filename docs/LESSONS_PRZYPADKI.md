@@ -1317,3 +1317,34 @@ Ten sam wniosek z innej strony (uwaga C): gałąź przeniesienia sprzętu była 
 to nie błąd „braku wagi", tylko brak wspólnego predykatu. L119 ostrzegał
 przed metryką gorszą od kodu; L120 ostrzega przed testem, który dowodzi istnienia
 funkcji zamiast jej użycia.
+
+## L121 — pompa ważona spożytkowaniem (M289, PR #93 tura 10)
+
+**Objaw.** Właściciel pyta: „gdyby były dwie kreatury, którym obu ten equipment daje
+pompę, to czy zablokowane jest bezsensowne wydawanie many na dwukrotne przerzucanie?
+Chodzi o to, żeby wybrał najlepszy cel i tam już zostawił". Testy tury 9 potwierdziły
+blokadę ruchu bocznego (−4,00 przy passie 0,00), ale ten sam odczyt pokazał coś,
+czego nikt nie zgłosił: Wooden Stake przyklejony do Wishful Merfolk (3/2, defender)
+miał dokładnie taką samą wycenę ładunku jak obok stojący Undead Servant (3/2), więc
+przeniesienie za {1} było karane −6. Sprzęt leżał na ciele, które nigdy nie
+zaatakuje, i model nie reagował.
+
+**Przyczyna.** `equipValuation` liczył `2·pumpPower + pumpToughness + ofensywne`,
+gdzie `ofensywne` było zerowane dla ciał nieatakujących — ale sama pompa nie. Czyli
+funkcja pytała „co sprzęt daje", a nie „co nosiciel umie z tym zrobić". Gałąź
+pierwszego założenia miała osobne badania (M244/F: `cantAttackStatic`, M221/E:
+ochrona blokerów), gałąź przeniesienia porównywała dwie liczby i nie miała o tym
+skąd wiedzieć.
+
+**Rozwiązanie.** Waga siły w `equipValuation`: ciało z `cantAttackStatic` albo
+takie, którego obrażenia zapobiega ochrona blokera (`attackerNeutralizedByProtection`,
+CR 702.16c), liczy połowę wagi pompy — siła na defenderze wciąż decyduje o bilansie
+bloku, ale nie robi krzywdy graczowi. Zmiana siedzi w definicji, więc obie gałęzie
+dostają ją gratis (L28), a relacja „lepszy dom" pozostaje funkcją pary
+(sprzęt, nosiciel), a nie kierunku ruchu — antysymetria, a więc brak ping-pongu,
+przetrwała.
+
+**Dowód.** Przed/po na tych samych stołach: Merfolk(defender, nosi) → Servant:
+−4,00 → +7,00. Flocker 0/5 (defender) → Servant: +8,00 → +7,00 i bot nadal płaci.
+Ruch boczny między dwoma atakującymi o tej samej sile: −4,00 w obu konfiguracjach
+(bez zmian). Własność anty-ping-pongowa: 40/40 par, ≥3 dozwolone awanse.

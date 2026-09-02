@@ -1934,3 +1934,21 @@ przekazania `hover` w `renderTableView` + strażnik reguł `:hover`) i
 `test/uwagi-tura8-picker-wielocelowy.test.js` (reguły `.picker-*` z progiem dotyku
 44 px, „renderPickerRow wywołany ≥ 3razy", brak osobnego przycisku Podglądu).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L120). → Pokrewne: L16, L21, L118, L119.
+
+## L121 (2026-09-02) — Weto przeciw marnotrawstwu sprawdzaj też w drugą stronę: czy nie mrozi naprawy
+
+**Przypadek:** uwaga C z żywej gry — bot płacił manę za przepięcie sprzętu, które nic
+nie dawało (M288 to zablokował). Pytanie kontrolne właściciela pokazało drugą stronę
+tego samego kodu: Wooden Stake leżał na 3/2 z defenderem, obok stał 3/2, który umie
+atakować, a ładunek liczony od samej pompy był na obu identyczny — drabina kazała
+stać i sprzęt zakotwiczał się na stworze, który nigdy nie zaatakuje. Żaden gracz
+tego nie zgłosi: błąd objawia się ciszą (brak poprawki), nie kaszanem.
+
+**Reguła:** każde „nie płać za X" ma dwie osie: czy odcina ruch bezwartościowy ORAZ
+czy nie odcina ruchu, który realnie poprawia stan. Drugiej osi nie widać w logach,
+więc testuj ją w tej samej turze co pierwszą i trzymaj ocenę ruchu w JEDNEJ funkcji
+para-(sprzęt, nosiciel) — wtedy antysymetria relacji „lepszy dom" jest własnością,
+a nie obietnicą.
+
+**Strażnik:** `test/uwagi-tura9-bot-rowne-ciala-equip.test.js` (T9/5 i T9/6 — obie
+strony, T9/3 — antysymetria na 40 parach, T9/8 — jedno miejsce definicji wagi).

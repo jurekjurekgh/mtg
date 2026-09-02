@@ -7718,6 +7718,30 @@ jako zmiany wagowe, które bez benchmarku A/B na `--seeds 24` byłyby gustem; ta
 tura nie rusza `src/`, więc nie ma nowego milestonu ani A/B. Narracja: §13.6
 raportu.
 
+### Tura 10 (2026-09-02): druga strona weta C — pompa ważona tym, co nosiciel umie z nią zrobić
+
+Właściciel dopytał, czy naprawa C obejmuje wypadek, w którym obie kreatury profitują
+z pompy (czy bot nie kursuje między nimi, płacąc dwa razy). Blokadę zmierzyliśmy w
+turze 9 (`test/uwagi-tura9-bot-rowne-ciala-equip.test.js`), ale samo mierzenie
+pokazało usterkę po drugiej stronie tej samej drabiny: Wooden Stake na 3/2 z
+defenderem i kandydat 3/2, który umie atakować, miały identyczną wycenę ładunku,
+więc przeniesienie za {1} było karane −6 — sprzęt więził się na stworze, który
+nigdy nie zaatakuje, a nikt tego nie zgłosi, bo błąd objawia się ciszą (brak
+poprawki), nie kaszanem. `equipValuation` liczył „co sprzęt daje", a nie „co
+nosiciel z tym zrobi"; gałąź pierwszego założenia miała osobne badania (M244/F,
+M221/E), gałąź przeniesienia porównywała dwie liczby i nie miała o tym skąd wiedzieć.
+Naprawa jest jedna i siedzi w definicji (L28): ciało z `cantAttackStatic` albo
+takie, którego obrażenia zapobiega ochrona blokera (CR 702.16c), liczy połowę wagi
+pompy — siła na defenderze nadal decyduje o bilansie bloku. Relacja „lepszy dom"
+wciąż jest funkcją pary (sprzęt, nosiciel), więc antysymetria i brak ping-pongu
+przetrwały, a test sprawdza to na 40 parach. Zmienione stoły: Merfolk(defender) →
+Servant −4,00 → +7,00; Flocker 0/5 → Servant +8,00 → +7,00 (bot nadal płaci); ruch
+boczny między atakującymi −4,00 bez zmian; latanie vs vanilla bez zmian (to
+świadamie nietknięte — każda premia za „jakość ciała" jest wagą i wymaga A/B).
+Brama wagowa: `git worktree` na `54c4371` vs kandydat, `--seeds 24`, 2016 meczów
+(§13.7). Lekcja: **L121 — weto przeciw marnotrawstwu sprawdzaj też w drugą stronę,
+czy nie mrozi naprawy**.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
