@@ -886,7 +886,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'permanents_you_control_leave_battlefield' },
+        trigger: { event: 'permanents_you_control_leave_battlefield', groupPer: 'controller' },
         effect: { type: 'scry', amount: 1 },
       }),
     ],
@@ -3570,7 +3570,7 @@ export const REAL_CARDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'any_combat_damage_to_player' },
+        trigger: { event: 'any_combat_damage_to_player', groupPer: 'affected_player' },
         effect: [{
           type: 'create_token', cardId: 'token_tarmogoyf', name: 'Tarmogoyf',
           kind: 'creature', power: 0, toughness: 0, colors: ['G'],
@@ -9612,7 +9612,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'combat_damage_to_you' },
+        trigger: { event: 'combat_damage_to_you', groupPer: 'affected_player' },
         effect: [{ type: 'attacker_gains_control_and_untaps' }],
       }),
       createAbility({
@@ -10184,7 +10184,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'any_combat_damage_to_player', subtypes: ['Scout', 'Pirate', 'Rogue'] },
+        trigger: { event: 'any_combat_damage_to_player', subtypes: ['Scout', 'Pirate', 'Rogue'], groupPer: 'affected_player' },
         effect: [{ type: 'exile_top_of_player_library_and_may_cast' }],
       }),
       createAbility({

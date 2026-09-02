@@ -1781,18 +1781,41 @@ function processTriggersScan(state, recentEvents) {
   // trigger „one or more permanents you control leave the battlefield"
   // odpala się RAZ na komendę, nie raz na permanent (CR 603.2).
   const leftBattlefield = new Set();
-  // Instancje grupowych wyzwalaczy „one or more … deal combat damage to a
-  // player” (Disa the Restless, Vaan, Street Thief), które już odpaliły w tej
-  // komendzie. KLUCZ = żywiciel zdolności + jej indeks + filtr podtypów +
-  // poszkodowany, bo grupowanie CR 603.2 scala ZDARZENIE (dwa stwory atakujące
-  // razem to jeden wyzwalacz jednej instancji), a NIE sprawcę: KAŻDA instancja
-  // zdolności wyzwala osobno (CR 603.3). Dedup po samym kontrolerze kasował
-  // drugą kopię karty — audyt PR #92, znalezisko 4.
-  const groupedCombatDamageFires = new Set();
-  // Gracze, którzy w tej komendzie otrzymali combat damage — trigger
-  // „whenever you're dealt combat damage" (Contested Game Ball) odpala się
-  // RAZ na zadanie obrażeń, nie raz na atakującego (ruling WotC, M201/N2).
-  const combatDamagedPlayers = new Set();
+  // GRUPOWANIE zbiorczych wyzwalaczy („Whenever one or more …") — patrz
+  // `mayFireGrouped` poniżej. Zestaw kluczy jest JEDEN dla wszystkich ścieżek,
+  // bo dawniej każda miała własny (osobny dedup obrażeń i osobny dedup
+  // poszkodowanych) i zachowania rozjeżdżały się między kartami.
+  const groupedTriggerFires = new Set();
+  /**
+   * Czy zdolność grupowa odpala się przy tym zdarzeniu. Tag
+   * `trigger.groupPer` DEKLARUJE KARTĘ, a rdzeń tylko wykonuje (audyt PR #93,
+   * decyzja właściciela: „engine jest headless i name-agnostic" — różnice
+   * zachowań poszczególnych kart w deskryptorze karty, nie w warunkach w core):
+   *   • 'affected_player' — raz na instancję zdolności i na gracza, którego
+   *     dotyczy zdarzenie: „Whenever one or more [X] you control deal combat
+   *     damage to a player" oraz „Whenever you're dealt combat damage"
+   *     (ruling WotC M201/N2: raz na zadanie obrażeń, choćby zadało je kilka
+   *     stworów — CR 510.2, obrażenia bojowe są jednoczesne, a silnik emituje
+   *     zdarzenie per źródło);
+   *   • 'controller' — raz na instancję zdolności i na kontrolera odchodzących
+   *     permanentów: „Whenever one or more permanents you control leave the
+   *     battlefield" (CR 603.2);
+   *   • brak tagu — zdolność odpala się od KAŻDEGO zdarzenia (dosłowne
+   *     „whenever", np. jeden stwór zadaje obrażenia).
+   * Klucz zawsze obejmuje instancję zdolności i jej filtr, bo grupowanie scala
+   * ZDARZENIE, a nie sprawcę: KAŻDA instancja wyzwala osobno (CR 603.3 —
+   * audyt PR #92, znalezisko 4; dedup po samym graczu kasował drugą kopię
+   * karty, tak samo jak przy `combat_damage_to_you`).
+   */
+  function mayFireGrouped(ability, { subject, abilityIndex = 0, filter = null, groupSubject = null }) {
+    const groupPer = ability?.trigger?.groupPer ?? null;
+    if (groupPer == null) return true;
+    const key = `${subject}#${abilityIndex}|${groupPer}|`
+      + `${filter?.length ? [...filter].sort().join(',') : 'any'}|${groupSubject ?? ''}`;
+    if (groupedTriggerFires.has(key)) return false;
+    groupedTriggerFires.add(key);
+    return true;
+  }
   /**
    * „You descended this turn" (CR 700.x, Canonized in Blood): gdy PERMANENT
    * CARD (nie token, nie czar) trafia do grobu gracza z dowolnej strefy.
@@ -2125,12 +2148,16 @@ function processTriggersScan(state, recentEvents) {
       // damage to you at the same time” — obrażenia bojowe są jednoczesne
       // (CR 510.2), a strumień zdarzeń jest per źródło. Grupujemy po
       // poszkodowanym graczu w obrębie komendy (wzór: Disa the Restless).
-      if (!combatDamagedPlayers.has(ev.target)) {
-        combatDamagedPlayers.add(ev.target);
+      {
         for (const candidate of state.objects.values()) {
           if (candidate.zone !== 'battlefield' || candidate.controllerId !== ev.target) continue;
-          for (const ability of effectiveAbilities(candidate)) {
+          for (const [abilityIndex, ability] of effectiveAbilities(candidate).entries()) {
             if (ability?.trigger?.event !== 'combat_damage_to_you') continue;
+            // Ruling WotC (M201/N2): raz na zadanie obrażeń, niezależnie od
+            // liczby atakujących — ale tylko gdy KARTA tak deklaruje
+            // (`groupPer: 'affected_player'`). Dedup po samym graczu kasował
+            // drugą kopię tego samego artefaktu (CR 603.3).
+            if (!mayFireGrouped(ability, { subject: candidate.id, abilityIndex, groupSubject: ev.target })) continue;
             // Warunek intervening-if sprawdza tryFire z PEŁNYM extra (dane
             // zdarzenia) — pre-check z pustym eventData cicho uciszałby warunki
             // czytające dane zdarzenia (M200/O-N3; wzór: any_combat_damage).
@@ -2163,10 +2190,10 @@ function processTriggersScan(state, recentEvents) {
             if (ability?.trigger?.event !== 'any_combat_damage_to_player') continue;
             const filter = ability.trigger.subtypes;
             if (filter?.length && !dealtSubtypes.some((sub) => filter.includes(sub))) continue;
-            const key = `${candidate.id}#${abilityIndex}|`
-              + `${filter?.length ? [...filter].sort().join(',') : 'any'}|${ev.target ?? ''}`;
-            if (groupedCombatDamageFires.has(key)) continue;
-            groupedCombatDamageFires.add(key);
+            // Grupowanie po tagu karty (brak tagu = odpalenie per zdarzenie).
+            if (!mayFireGrouped(ability, {
+              subject: candidate.id, abilityIndex, filter, groupSubject: ev.target ?? null,
+            })) continue;
             tryFire(state, ability, candidate, [], events, { damagedPlayerId: ev.target });
           }
         }
@@ -2997,7 +3024,10 @@ function processTriggersScan(state, recentEvents) {
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield' || source.controllerId !== controllerId) continue;
         for (const ability of effectiveAbilities(source)) {
-          if (ability?.trigger?.event === 'permanents_you_control_leave_battlefield') {
+          // Grupowanie po kontrolerze deklaruje KARTA (tag `groupPer`), rdzeń
+          // nie zna żadnej karty po nazwie ani po nazwie zdarzenia-grup.
+          if (ability?.trigger?.event === 'permanents_you_control_leave_battlefield'
+            && ability?.trigger?.groupPer === 'controller') {
             tryFire(state, ability, source, [], events);
           }
         }

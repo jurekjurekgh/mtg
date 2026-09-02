@@ -14,9 +14,13 @@ import assert from 'node:assert/strict';
 import { createGameState, addObject, execute } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 
+// SPOSÓB grupowania deklaruje sama zdolność (tag `trigger.groupPer`, audyt
+// PR #93 — „engine jest headless i name-agnostic": rdzeń nie rozpoznaje kart
+// po nazwie zdarzenia-grup, tylko wykonuje to, co karta zapisze w deskryptorze.
+// Katalog pilnuje tego testem `test/audyt-grupowanie-triggerow-tag.test.js`.
 const TRIGGER_ABILITY = Object.freeze({
   type: 'triggered',
-  trigger: { event: 'any_combat_damage_to_player' },
+  trigger: { event: 'any_combat_damage_to_player', groupPer: 'affected_player' },
   effect: Object.freeze({ type: 'draw_cards', amount: 1 }),
   targets: null, cost: null, condition: null,
 });
@@ -83,7 +87,7 @@ test('A92/4: filtr podtypów nie oznacza kontrolera „obsłużonego” przez st
   const state = game();
   creature(state, 'hostFiltered', {
     abilities: [Object.freeze({ ...TRIGGER_ABILITY,
-      trigger: Object.freeze({ event: 'any_combat_damage_to_player', subtypes: ['Rogue'] }) })],
+      trigger: Object.freeze({ event: 'any_combat_damage_to_player', subtypes: ['Rogue'], groupPer: 'affected_player' }) })],
   });
   creature(state, 'soldier', { subtypes: ['Soldier'] });   // nie pasuje do filtra
   creature(state, 'rogue', { subtypes: ['Rogue'] });       // pasuje
