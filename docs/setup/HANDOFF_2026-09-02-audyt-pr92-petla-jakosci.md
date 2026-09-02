@@ -9,8 +9,9 @@ Baza sesji: `db0c493` (= squash PR #92, `main`).
 - **Wszystkie znaleziska z audytu PR #92 naprawione i zielone.** Pięć defektów w
   trzech klasach (odcisk stanu, „stan zamiast zdarzenia”, oferta ≠ walidacja) +
   strażnicy klasy w `tools/`. Raport: `docs/audits/AUDYT_PR92_2026-09-02.md`.
-- **Bramy na HEAD tej gałęzi:** `npm test` **4147/4147**, `npm run test:all`
-  **patrz sekcja „Bramy” raportu** (brama PR, ADR 0019), `npm run build`
+- **Bramy na HEAD tej gałęzi (`22dfba3`):** `npm test` **4147/4147**,
+  `npm run test:all` **4157/4157** (0 fail, ~188 s — brama PR, ADR 0019),
+  `npm run build`
   **57 modułów / 3084,1 kB**, `node --test test/bot-benchmark.test.js` 10/10,
   `tools/event-contract-audit.mjs` i `tools/family-audit.mjs` — brak naruszeń,
   `tools/oracle-coverage.mjs --only` dla 9 kart batchu 52 → 100%.
@@ -28,7 +29,8 @@ Baza sesji: `db0c493` (= squash PR #92, `main`).
 | `094a8c0` | znalezisko 3 — porządek dobrania w zdarzeniu (`recordCardDrawn` jako choke point, `drawNumberThisTurn`) |
 | `0b409fd` | znalezisko 4 — grupowe triggery dedupowane po instancji zdolności (CR 603.3) |
 | `10f7a39` | znalezisko 5 — `outsideHandCastScope`: jeden filtr oferty i walidacji darmowego rzutu |
-| (ostatni) | strażnicy klasy (rodzina `draws`, `CONTRACT_REQUIRED_FIELDS`) + raport + dokumentacja |
+| `d5eba18` | strażnicy klasy (rodzina `draws`, `CONTRACT_REQUIRED_FIELDS` + piny anty-vacuous) |
+| `22dfba3` | raport + M281 + historia + L48 + backlog + handoff + liczby README |
 
 ## Gdzie szukać dalej
 
