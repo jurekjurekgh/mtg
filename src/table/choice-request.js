@@ -2,7 +2,7 @@ import { choiceResponse } from '../protocol/types.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, FACE_DOWN_LABEL } from './session.js';
-import { commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection } from './multi-target.js';
+import { commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -945,13 +945,15 @@ function commandForMulliganKeepSelection(commands, pickedRowId) {
 /** Wartownik wiersza odmowy („bez celu") w wyborze pojedynczym z `allowNone`. */
 const NONE_PICK = '__none__';
 
-export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, slotLabels: slotLabels_ = null, onComplete, onCancel, onOpenCard = null }) {
+export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, slotLabels: slotLabels_ = null, onComplete, onCancel, onOpenCard = null, onOpenCardByCardId = null }) {
   clearChoiceElement(host);
   // M257-r5/C: druga sekcja kreatora — stwór do poświęcenia (koszt dodatkowy).
   // Wybór JEDNOKROTNY (jeden stwór = jedna płatność), niezależny od celu czaru.
   const sacMode = Boolean(plan.sacrificeMode);
   const singleMode = Boolean(plan.singleMode);
   const keepMode = Boolean(plan.mulliganKeepMode);
+  // M300: okna rzutu — wiersz na każdą GOTOWĄ opcję (wariant rzutu / odmowa).
+  const castWindowMode = Boolean(plan.castWindowMode);
   const xLabel = plan.hasX ? ` oraz wartość X (${plan.xMin}–${plan.xMax})` : '';
   const range = plan.minTargets === plan.maxTargets
     ? `${plan.maxTargets}`
@@ -1019,7 +1021,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     ? commandForMulliganSelection(commands, [...chosen])
     : keepMode
       ? commandForMulliganKeepSelection(commands, [...chosen][0] ?? null)
-      : sacMode
+      : castWindowMode
+        ? commandForCastWindowSelection(commands, [...chosen][0] ?? null)
+        : sacMode
         ? commandForSacrificeSelection(commands, { targets: [...chosen], sacrifice: sacrificeChoice })
         : slots
           ? commandForSlots()
@@ -1046,10 +1050,10 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     for (const row of rows) row.handle.setChecked(pickOf(row));
   };
 
-  const addRow = (id, slot, { labelOverride = null, forceKind = null, groupOverride = undefined } = {}) => {
+  const addRow = (id, slot, { labelOverride = null, forceKind = null, groupOverride = undefined, cardId = null } = {}) => {
     // M298/A: wybór pojedynczy i mulligan są JEDNOWYBOROWE — radio w grupie,
     // a model (`chosen`) czyści się przy każdym nowym zaznaczeniu.
-    const exclusive = singleMode || keepMode;
+    const exclusive = singleMode || keepMode || castWindowMode;
     const kind = forceKind ?? ((typeof slot === 'number' || slot === 'sac' || exclusive) ? 'radio' : 'checkbox');
     const group = groupOverride !== undefined ? groupOverride
       : (typeof slot === 'number' ? `multi-target-slot-${slot}` : (slot === 'sac' ? 'multi-target-sac' : (exclusive ? 'multi-target-single' : null)));
@@ -1078,8 +1082,11 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         refresh();
       },
       // Gracz nie ma karty do pokazania — dawny `addPeek` pomijał go w ten sam
-      // sposób (M206); nazwa zostaje wtedy zwykłym tekstem.
-      onOpenCard: (isPlayer(id) || id === NONE_PICK || labelOverride != null) ? null : onOpenCard,
+      // sposób (M206); nazwa zostaje wtedy zwykłym tekstem. M300: wiersze okien
+      // rzutu niosą cardId — nazwa otwiera podgląd karty rzutu.
+      onOpenCard: cardId != null && onOpenCardByCardId
+        ? (() => onOpenCardByCardId(cardId))
+        : ((isPlayer(id) || id === NONE_PICK || labelOverride != null) ? null : onOpenCard),
     });
     rows.push({ id, slot, handle });
   };
@@ -1113,7 +1120,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       ].filter(Boolean);
       if (missing.length > 0) setStatus(`Brakuje: ${missing.join(', ')}`, true);
       else setStatus(cmd ? `Wybrano: ${slotLabels[0] ?? 'cel'} + ${sacLabel}` : 'Wybór niedozwolony', !cmd);
-    } else if ((singleMode || keepMode)) {
+    } else if ((singleMode || keepMode || castWindowMode)) {
       // M298/A: przy wyborze pojedynczym licznik „1" nic nie mówi — status
       // pokazuje WYBRANY wiersz („Wybrano: Karta:sts-target-b (Nieprzyjaciel)").
       if (cmd) {
@@ -1143,6 +1150,10 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       renderPickerSection(list, `${slotIndex + 1}. ${label}:`, { className: 'multi-target-slot-label' });
       for (const id of ids) addRow(id, slotIndex);
     });
+  } else if (castWindowMode) {
+    // M300: okno rzutu — wiersz na każdą opcję (wariant rzutu K1/K2 albo
+    // odmowa); cardId wiersza daje podgląd kliknięciem w nazwę.
+    for (const row of plan.rows ?? []) addRow(row.id, null, { labelOverride: row.label, cardId: row.cardId ?? null });
   } else if (keepMode) {
     // M298/A: mulligan — wiersze z ETYKIETAMI od wywołującego („Zatrzymaj
     // rękę (7 kart)” / „Weź mulligan”), nie z nazw obiektów.

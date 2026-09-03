@@ -36,8 +36,15 @@ function targetKey(targets) {
  *  - `hasX`, `xMin`, `xMax` — czy jest licznik X i w jakim zakresie.
  */
 export function multiTargetPlanOf(commands) {
-  const list = (commands ?? []).filter((cmd) => cmd && Array.isArray(cmd.targets));
+  const all = commands ?? [];
+  const list = all.filter((cmd) => cmd && Array.isArray(cmd.targets));
   if (list.length < 2) return null;
+  // M300 (audyt okien rzutu): plan nie może POWSTAĆ z podzbioru opcji —
+  // okno rzutu z odmową (decline/cast:false) i wariantami celowanymi
+  // dawało kreator wielocelowy BEZ wiersza odmowy (zmierzone: Vaan + czar
+  // z {X}). Jeżeli którakolwiek opcja nie niesie `targets`, ta rodzina ma
+  // własny kształt (okna rzutu → castWindowPlanOf, fallback → przyciski).
+  if (list.length !== all.length) return null;
 
   const xValues = [...new Set(list.map((cmd) => cmd.xValue).filter((x) => Number.isInteger(x)))]
     .sort((a, b) => a - b);
@@ -458,6 +465,55 @@ export function mulliganKeepPlanOf(commands) {
     targets: [],
     hasX: false,
   };
+}
+
+// ===========================================================================
+// M300 (zlecenie właściciela 2026-09-03): OKNA RZUTU do wspólnego kreatora.
+//
+// Okno Vaana (`resolve_exile_cast`), Halo Foragera (`resolve_grave_free_cast`),
+// madness, rebound i suspend to grupy, w których KAŻDA opcja jest GOTOWYM
+// wariantem rzutu (cele/X/tryb/stun — etykiety K1/K2 z audytu PR #94) albo
+// odmową (`cast: false` / `decline: true`). To NIE jest „skomponuj cele”
+// (multiTargetPlanOf) ani „wybierz jednego kandydata” (singleTargetPlanOf) —
+// to „wybierz jedną z etykietowanych opcji”: jeden wiersz na opcję, radio,
+// Zatwierdź oddaje komendę z legalCommands (L48).
+// ===========================================================================
+
+/** Typy komend okien rzutu — patrz nagłówek sekcji. */
+export const CAST_WINDOW_TYPES = Object.freeze([
+  'resolve_exile_cast', 'resolve_grave_free_cast', 'resolve_madness_cast',
+  'resolve_rebound_cast', 'resolve_suspend_cast',
+]);
+
+/**
+ * Plan okna rzutu albo null. Wiersze (`rows`: `{ id, label, cardId }`)
+ * wypełnia wywołujący ETYKIETAMI z `labelChoiceOptions` (K1/K2: tryb, stun,
+ * numeracja duplikatów) i cardId do podglądu — silnik planu nie zna sesji.
+ */
+export function castWindowPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2) return null;
+  const type = options[0]?.type;
+  if (!CAST_WINDOW_TYPES.includes(type)) return null;
+  if (!options.every((cmd) => cmd?.type === type)) return null;
+  return {
+    type,
+    castWindowMode: true,
+    targets: [],
+    hasX: false,
+    itemLabel: 'wariant',
+    rows: options.map((cmd, i) => ({ id: `opt-${i}`, label: null, cardId: cmd.cardId ?? null })),
+  };
+}
+
+/**
+ * Komenda spod wiersza `opt-N` — tożsamościowo z oferty silnika (L48),
+ * bo warianty różnią się polami, których plan nie zna (stun, X, tryb…).
+ */
+export function commandForCastWindowSelection(commands, rowId) {
+  const match = /^opt-(\d+)$/.exec(String(rowId ?? ''));
+  if (!match) return null;
+  return (commands ?? [])[Number(match[1])] ?? null;
 }
 
 /**

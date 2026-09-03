@@ -33,7 +33,7 @@ import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard } from './choice-request.js';
-import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf } from './multi-target.js';
+import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
 function runEngineSmoke() {
@@ -376,6 +376,34 @@ function bootstrapTable() {
         commands: request.options,
         sourceName: pendingProliferate?.sourceCardId ? session.nameOf(pendingProliferate.sourceCardId) : null,
         onOpenCard: openCardFullscreen,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // M300 (zlecenie właściciela 2026-09-03): OKNA RZUTU (Vaan, Halo Forager,
+    // madness, rebound, suspend) — każda opcja to GOTOWY wariant rzutu
+    // (etykiety K1/K2: tryb, stun, X) albo odmowa. Wiersz na opcję + radio +
+    // Zatwierdź; plan MUSI biec przed multiTargetPlanOf, bo warianty okien
+    // niosą `targets` (multiTargetPlanOf gubił odmowę — test M300/1).
+    const castWindowPlan = castWindowPlanOf(request.options ?? []);
+    if (castWindowPlan) {
+      const opts = request.options ?? [];
+      const labels = labelChoiceOptions(opts, session, choiceView);
+      castWindowPlan.rows = opts.map((option, i) => ({
+        id: castWindowPlan.rows[i].id,
+        label: labels[i],
+        cardId: cardIdForChoiceOption(option),
+      }));
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: castWindowPlan,
+        commands: request.options,
+        intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz wariant:`,
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
         onCancel: () => hideModal('choice-request'),
       });
