@@ -117,3 +117,38 @@ przerobić na uniwersalny helper”.
 
 Poza zakresem (decyzja w raporcie §3b/§3c): przyciski dla 2–5 opcji, okna
 rzutu jako przyszły osobny wizard, search_choice, undercity.
+
+---
+
+## Etap dodany 2026-09-03 (po decyzji o §3c): okna rzutu do wspólnego kreatora (M300)
+
+Zlecenie właściciela: „Nie wiem co rozumiesz przez wizard dla okien rzutu —
+co to znaczy? Że te efekty są nieobsłużone? Że nie korzystają ze wspólnego
+helpera? W obu przypadkach trzeba to załatać."
+
+Stan zmierzony: silnik obsługuje okna rzutu W PEŁNI (etykiety wariantów K1/K2
+z audytu PR #94: tryb, stun, numeracja duplikatów) — brakowało tylko toru UI:
+wybór padał na awaryjną ścianę przycisków `renderChoiceRequest`, poza
+wspólnym helperem.
+
+1. Plan: `castWindowPlanOf` (5 typów okien, jedna opcja = jeden wiersz radio
+   z `cardId` do podglądu) + `commandForCastWindowSelection` (tożsamość
+   z `legalCommands`, L48); routing w `openChoiceRequest` PRZED
+   `multiTargetPlanOf` (opcje okien niosą `targets`); etykiety K1/K2
+   z `labelChoiceOptions`, intro z `choiceGroupTitle` + „— wybierz wariant:".
+2. Klasa błędu przy okazji: `multiTargetPlanOf` budował plan z PODZBIORU
+   opcji niosących `targets` — okno Vaana z czarem {X} i odmową dawało
+   kreator wielocelowy BEZ wiersza odmowy (zmierzone przed naprawą). Straż:
+   plan powstaje tylko gdy KAŻDA opcja niesie `targets`.
+3. Weryfikacja: 7 testów (RED), 6 mutacji RED; bramki 4383/4383,
+   `test:all` 4393/4393, build 3217,2 kB. Żywy Tester: Halo Forager
+   (worek-basni, seedy 802/811 — okna 5 i 14 opcji z wierszem „Zrezygnuj")
+   i Vaan (final-fantasy, seed 51 — dwa okna 2-opcyjne), 0 zgłoszeń
+   detektorów. Odpowiedź na pytanie właściciela: audyt §3c = detekcja,
+   M299 = migracja §3a, M300 = migracja okien rzutu.
+4. Dokumentacja: M300, PROJECT_HISTORY, aktualizacja §3c/§4 audytu, PR #95.
+
+Świadomy kompromis: `resolve_grave_free_cast` był w `OPTION_IGNORABLE_TYPES`
+(per-opcyjne checkboxy wyciszenia) — w kreatorze wyciszenie per opcja znika;
+zostaje wyciszenie grupy w panelu akcji (automatyczna odmowa w `advance()`)
+i jawny wiersz odmowy.

@@ -95,7 +95,11 @@ silnika i protokołu — L48).
 - **okna rzutu** (`resolve_exile_cast` Vaan, `resolve_grave_free_cast` Halo
   Forager, `resolve_madness_cast`, `resolve_rebound_cast`,
   `resolve_suspend_cast`): każda opcja to OSOBNY rzut z własnymi celami/X/stun
-  (etykiety K1/K2 z audytu PR #94) — to nie jest „jeden wybór z listy";
+  (etykiety K1/K2 z audytu PR #94) — to nie jest „jeden wybór z listy".
+  **AKTUALIZACJA 2026-09-03 (M300):** decyzja właściciela („w obu przypadkach
+  trzeba to załatać") — okna rzutu DOŁĄCZONE do wspólnego kreatora: jedna
+  opcja = jeden wiersz radio z etykietą K1/K2 i podglądem karty
+  (`castWindowPlanOf`, `commandForCastWindowSelection`); silnik bez zmian (L48);
 - **kolejność** (`resolve_index_choice` — wizard index już istnieje;
   `resolve_reveal_order` — permutacje, dziś jedna oferta);
 - **podgląd+wybór sekwencyjny** (`resolve_search_choice` — para
@@ -114,6 +118,7 @@ w silniku (L48), prowadzenie Żywego Testera już działa (`.multi-target-toggle
 grup bez `objectId` stracą nazwę źródła w intro — akceptowalne (nazwa zostaje
 w nagłówku panelu akcji; można rozszerzyć później).
 
-Świadomie NIE ruszamy: §3b (przyciski poprawne), §3c (osobne klasy — osobne
-decyzje właściciela, w tym okna rzutu jako potencjalny przyszły osobny
-wizard).
+Świadomie NIE ruszamy: §3b (przyciski poprawne), §3c bez okien rzutu
+(search_choice — dwa wymiary, undercity, kolejności reveal — decyzje
+właściciela). Okna rzutu: zrealizowane jako M300 (decyzja właściciela
+2026-09-03 — patrz §3c, aktualizacja).
