@@ -525,35 +525,55 @@ w której piszę talie.
 
 ---
 
-## Dopisek (2026-09-02, tura 11): (e) domknięte, (b) ruszyło — i dwie rzeczy, które trzeba wiedzieć
+## Dopisek (2026-09-03, tura 12): karty wielocelowe WYCOFANE — co z tury 11 zostaje
 
-** (e) Jakość ciała w wadze pompy — M290, `src/controllers/heuristic-bot.js`.**
-Trzeci stopień wagi siły w `equipValuation`: ciało z własną ewazją omijającą ścianę
-zbiera +1 za każdy punkt siły pompy. Zamknęło to parę, którą tura 10 zostawiła
-otwartą (identyczne 3/3: vanilla vs latacz → +7,00 / −4,00 zamiast −4,00 / −4,00).
-Benchmark A/B `--seeds 24`: zero regresu (1723 → 1724 na 2016). Świadomie nietknięta
-gałąź FRESH — pin T11/7 mówi, że to decyzja, nie przeoczenie.
+**Decyzja właściciela:** agent nie dodaje kart do katalogu samodzielnie. W turze 11
+weszły dwie (Coordinated Assault CLU 128, Dual Shot SOI 153) — ściągnięte 1:1 z API
+Scryfall, żadnej tekstury z pamięci — ale prośba „4-6 kart” z tamtej tury nie była
+pozwoleniem stałym i właściciel ją cofnął. Commit `0434199` (fan-out `allTargets` w
+`src/engine/spells.js`, wpisy w rejestrze i w `MANA_COSTS`, trzy `decks/*.txt`,
+rodzina `test/m291-*.test.js`, golden-master) został zrevertowany; snapshoty
+`docs/cards/scryfall-*.json` usunięte. Katalog jest znowu tym, co był przed turą 11,
+plus M290 w wadze sprzętu.
 
-**(b) Pierwsza karta wielocelowa — M291, Coordinated Assault (CLU 128).** Dwie lekcje
-dla Was:
+**Z tury 11 zostaje (e) — M290, `src/controllers/heuristic-bot.js`.** Trzeci stopień
+wagi siły w `equipValuation`: ciało z własną ewazją omijającą ścianę zbiera +1 za
+każdy punkt siły pompy. Zamknęło to parę, którą tura 10 zostawiła otwartą (identyczne
+3/3: vanilla vs latacz → +7,00 / −4,00 zamiast −4,00 / −4,00). Benchmark A/B
+`--seeds 24`: zero regresu (1723 → 1724 na 2016 meczów). Świadomie nietknięta gałąź
+FRESH — pin T11/7 mówi, że to decyzja, nie przeoczenie.
+
+**Dwie rzeczy, które przeżyły revert (wiedza, nie kod):**
 1. **nie czekać na sieć** — `docs/cards/HOW_TO_ADD_CARD.md` zezwala ściągnąć te same
-   URL-e `fetch_page`em i zapisać snapshot w `docs/cards/`; w turze 10 uznałem martwy
-   egress za koniec wątku i byłem w błędzie;
-2. **wielość celu to cecha TORU, nie mechaniki** — fan-out „each of up to N" żył tylko
-   w `applyTriggerEffects` (tory triggerów); tor czaru dostał go dopiero w M291
-   (`allTargets` w `src/engine/spells.js`). Każdą kartę wielocelową testuj na DWU
-   celach w tym torze, którym gra (L123).
+   URL-e `fetch_page`em i zapisać snapshot w `docs/cards/`; w turze 10 uznałem
+   martwy egress za koniec wątku i byłem w błędzie;
+2. **wielość celu to cecha TORU, nie mechaniki** — fan-out „each of up to N" żyje w
+   `applyTriggerEffects` (tory triggerów), a tor czaru go NIE ma: `pump`,
+   `grant_keywords_until_end_of_turn` i `damage` czytają jeden wpis
+   `targets[...]`. Wyrównanie tego było gotowe i zielone (14/14), ale razem z kartami
+   zostało wycofane, bo bez karty wielocelowej byłoby martwym kodem. L123 + §15
+   raportu opisują dokładnie, co trzeba odtworzyć, jeśli właściciel kiedyś powie „tak”.
 
-**Talii nie układamy ręcznie.** Karta dostała `plan: 'Ravnica'`, a
-`node tools/generate-plan-decks.mjs` sam dopisał ją do `decks/ravnica.txt` (+1
-Mountain) — i zaktualizował `dist` (`npm run build` listę talii ma w artefakcie).
-Po tej zmianie porównania A/B z tur 7-10 wymagają nowego baseline'a (§15 raportu).
+**Stan pomiarów po revercie:** baseline benchmarku to znowu liczby M290 (heuristic
+85,5%, aggro 24,5%, random 4,5%), bo talie wróciły do stanu z `f6a5459`; run
+wykonany na drzewie z kartami (87,0% / 21,4% / 4,7%) jest nieaktualny i nie jest
+punktem odniesienia dla żadnych A/B. Grzechotka walki znowu 4/4/130 (sufit `block` 4),
+a fixture bota wrócił do hasha sprzed eksperymentu — test jest zielony bez żadnego
+`--write`.
 
-**Pokrycie pickera zmierzone na żywym stole:** ta sama para co baseline z tury 10,
-4 partie po 300 kroków → otwarcia kreatora wielocelowego 0/4 → 2/4 (jedno na nowej
-karcie, oba cele wybrane, oba realnie dostały efekt; bot grający talią też zadeklarował
-oba cele), detektory czyste. Z listy „4-6 kart” weszły dwie: Coordinated Assault (CLU)
-i Dual Shot (SOI) — ta druga przesunęła też Blazing Torch między połówkami Innistradu
-(przydział liczy generator), przez co M228 wymaganł aktualizacji sumy nielandów 36 → 37.
-Przepis na resztę jest w `docs/backlog.md` §1 i §13.8 raportu.
+**Co otwarte (decyzje właściciela, nie moje zadania):** (a) picker dla chipów/
+stepperów/many, (c) `creatureManaCostWeight = 1`, (d) potrącanie kosztu
+`equipment.equip`, czy domknąć M290 w gałęzi FRESH (remis 18,00/18,00, pin T11/7),
+oraz — raz jeszcze, bo to teraz punkt zasadniczy — **czy w ogóle i jakie karty mają
+wejść do katalogu.** Bez pisemnego „tak" dla każdej karty nie ruszam.
 
+**Rykosz na przyszłość (L25 + nowe):** każda zmiana składu talii rusza bramki, o
+których nikt nie myśli: M228 (sumy nielandów), sufit grzechotki, golden-master
+bota i seed w `test/panel-rozgrywka-tura-przeciwnika.test.js` (talia człowieka jest
+tam sztywno `decks/innistrad-brg.txt`). Trzeba przejrzeć seedy wszędzie, gdzie ta
+talia jest podkładką: `grep -rln "decks/" test/ | xargs grep -l makeSession`.
+
+**Bramy na koniec tury 12:** revert + dokumentacja → rodzina equip, strażnicy
+talii/źródeł/kart, Z5, grzechotki, panel M101/D, M195: **124/124**; pełne `npm test`
+i `npm run test:all` — dopisane poniżej po przejściu. `npm run build`: 3146,1 kB /
+59 modułów (3150,7 kB z kartami).

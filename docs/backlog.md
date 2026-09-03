@@ -18,25 +18,22 @@ kompaktowane, repo nie.
 
 ## 1. Karty (lista właściciela)
 
-- **Karty wielocelowe (cele >1) — podstawa pod audyt na żywo** (pomiar w
-  `docs/audits/AUDYT_PR92_2026-09-02.md` §13.8 i §15): spośród 443 kart wspieranych
-  tylko 7 deklaruje >1 celu, a talie testowe są w całości rozdzielone (ADR 0023:
-  każda wspierana karta w dokładnie jednej talii, kart wolnych = 0), więc nie da się
-  ułożyć talonu pod kreator celów bez nowych kart.
-  **START w turze 11 (M291): weszły dwie** — Coordinated Assault (CLU 128, {R},
-  „up to two target creatures each get +1/+0 and gain first strike") oraz Dual Shot
-  (SOI 153, {R}, „deals 1 damage to each of up to two target creatures"): ten sam
-  deskryptor `allTargets`, dwa różne efekty (pump+grant oraz czyste obrażenia). Zapisana
-  nauka: talii NIE układamy ręcznie, tylko nadajemy karcie `plan` i puszczamy
-  `node tools/generate-plan-decks.mjs` (on jest źródłem prawdy przydziału; diff:
-  jeden plik na pierwszą kartę, trzy na drugą, bo przy drugiej generator przestawił też
-  Blazing Torch między połówkami Innistradu). Zostały 2-4 karty z listy właściciela; przydatny
-  kształt to „up to N" (picker z opcją pominięcia) i „each of" (patrz niżej).
-  Przy braku egressu: `docs/cards/HOW_TO_ADD_CARD.md` zezwala ściągnąć te same URL-e
-  `fetch_page`em i zapisać snapshot — to zadziałało w turze 11, nie czekamy na sieć.
-  Uwaga silnikowa (L123): „each of up to N" ma fan-out osobno w torze triggerów
-  (`applyTriggerEffects`) i osobno w torze czaru (`allTargets`, M291) — każda nowa
-  karta wielocelowa musi mieć test na DWU celach w tym torze, którym realnie gra.
+- **Karty wielocelowe (cele >1) — WSTRZYMANE decyzją właściciela (2026-09-03).**
+  Stan katalogu: 443 karty wspierane, z tego tylko 7 deklaruje >1 celu, a talie testowe
+  są w całości rozdzielone (ADR 0023: każda wspierana karta w dokładnie jednej talii,
+  kart wolnych = 0), więc pokrycia tej rodziny na żywym stole nie da się podnieść bez
+  nowych kart. W turze 11 weszły dwie (Coordinated Assault CLU 128 i Dual Shot SOI 153)
+  wraz z fan-outem `allTargets` na torze czaru — cała gałąź `0434199` została
+  **zrevertowana na polecenie właściciela: agent nie dodaje kart do katalogu bez
+  wyraźnej zgody.** Jeżeli zgoda kiedyś wróci, ustalone fakty zostają: (i) tekst reguł
+  wyłącznie 1:1 z API, a gdy egress milczy — te same URL-e przez `fetch_page` i snapshot
+  do `docs/cards/` (`docs/cards/HOW_TO_ADD_CARD.md`); (ii) przydział talii wyłącznie
+  przez `plan` + `node tools/generate-plan-decks.mjs`, nigdy ręczne przepisywanie
+  `decks/*.txt` (L122); (iii) „each of up to N" potrzebuje fan-outu osobno w torze
+  triggerów i osobno w torze czaru, a każda karta wielocelowa testu na DWU celach w tym
+  torze, którym realnie gra (L123 — dziś w drzewie nie ma ani jednego takiego testu);
+  (iv) po każdej zmianie składu talii: `MANA_COSTS`, M228, grzechotki, golden-master i
+  re-hunt seedów wszędzie, gdzie ta talia jest podkładką (L25).
 
 _(pusto — batch 34 zamknięty w całości: 10 z 10 kart, M113–M116.
 Następna lista właściciela wchodzi tutaj.)_
@@ -188,9 +185,11 @@ Następna lista właściciela wchodzi tutaj.)_
   `test/repo-decks.test.js` (M178/ADR 0023 — 11 z 12 kart już gdzieś leżało).
   Przenoszenie kart między taliami odrzucone świadomie: `decks/*.txt` karmią
   benchmark i audyt remisów, a zmiana składu par unieważnia porównania A/B.
-  **Droga, która działa (tura 11):** nowa karta + `plan` + `generate-plan-decks.mjs`.
-  Rykosz odnotowany w §15 raportu: od commitu M291 talia `ravnica` ma inny skład, więc
-  porównania A/B z tur 7-10 liczą się od nowego baseline'a.
+  Jedyna droga technicznie działająca to nowa karta + `plan` +
+  `generate-plan-decks.mjs` — i jest **wstrzymana** (patrz §1): agent nie dokłada kart
+  bez zgody właściciela. Po revercie tury 11 talie są znowu w stanie z `f6a5459`, więc
+  porównania A/B z tur 7-10 odzyskały bezpośredniość (baseline heuristic 85,5%,
+  aggro 24,5%, random 4,5%).
 - **Kontrakt testera na markup pickera** — `tools/table-tester/run-game.mjs`
   klika `.multi-target-toggle` i czyta `checked` (fallback na tekst „[x]"), a
   nazwę bierze z `.picker-name`. Jeśli picker zmieni strukturę wiersza, tester

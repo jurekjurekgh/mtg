@@ -1971,7 +1971,8 @@ wniosek zapisany w `docs/backlog.md` §1 i §4.
 
 ## L123 (2026-09-02) — Semantyka zaimplementowana w jednym torze nie istnieje w drugim
 
-**Przypadek:** M291. Nowa karta „up to two target creatures EACH get +1/+0" miała być
+**Przypadek:** M291 (wpis w rejestrze oznaczony jako cofnięte). Karta „up to two target
+creatures EACH get +1/+0" miała być
 dopisaniem wpisu do katalogu. Tor triggerów umiał to od M157 F4(a)
 (`applyTriggerEffects`: `count > 1` → lista efektów aplikowana raz na cel), a tor
 czaru — nie: aplikuje listę efektów RAZ z pełną tablicą celów, a `pump` i
@@ -1989,9 +1990,12 @@ opisany kanał awaryjny — `docs/cards/HOW_TO_ADD_CARD.md` dopuszcza ściągni�
 samych URL-i przez `fetch_page`, a ja w turze 10 uznałem brak egressu za koniec
 wątku (b).
 
-**Strażnik:** `test/m291-coordinated-assault-i-fan-out-celow.test.js` (M291/2 — dwa
-cele, M291/3 — jeden, M291/4 — zero, M291/7 — silnik nie zna nazw kart i
-`allTargets` nie łączy się z efektem blokującym decyzją).
+**Strażnik:** dziś żaden — rodzina `test/m291-*.test.js` (dwa cele / jeden / zero oraz
+to, że silnik nie zna nazw kart i że `allTargets` nie łączy się z efektem blokującym
+decyzję) istniała i świeciła 14/14 na zielono, lecz właściciel cofnął zgodę na karty
+wielocelowe 2026-09-03 i cała gałąź `0434199` została zrevertowana. Lekcja przeżywa kod właśnie po
+to; jeśli karta wielocelowa wejdzie kiedyś za zgodą właściciela, te cztery asercje są
+pierwszą rzeczą do odtworzenia (treść testu jest w commicie `0434199`).
 
 ## L124 (2026-09-02) — Zmianę w grzechotce przypisz trzema drzewami, zanim podniesiesz próg
 
@@ -2009,6 +2013,8 @@ asercji), czy mamy nową dziurę w wycenie. Ten sam rygor dotyczy fixture’ów:
 puszcza się na GOTOWYM drzewie — u nas pierwszy zapis zamroził ślad bota bez wpisu
 `MANA_COSTS` nowej karty i test znowu świecił, choć nic już nie było nie tak z kodem.
 
-**Strażnik:** komentarz z tabelką atrybucji przy suficie `block`
-(`test/audyt-bot-walka-remisy.test.js`), `test/bot-scoring-snapshot.test.js`, oraz
-kolejność wejścia karty w `docs/audits/AUDYT_PR92_2026-09-02.md` §16.
+**Strażnik:** `test/bot-scoring-snapshot.test.js` (fixture, który ta lekcja chroni przed
+przedwczesnym `--write`) oraz tabela atrybucji i kolejność wejścia karty w
+`docs/audits/AUDYT_PR92_2026-09-02.md` §15. Komentarz z tabelką przy suficie `block` w
+`test/audyt-bot-walka-remisy.test.js` zniknął razem z Revertem kart — sufit znowu
+wynosi 4 — stan z `f6a5459`.

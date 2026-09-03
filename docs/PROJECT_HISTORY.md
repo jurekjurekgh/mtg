@@ -7765,7 +7765,7 @@ surowca, a nie brak chęci**.
 
 ## Zasada aktualizacji
 
-### Tura 11 (2026-09-02): waga jakości ciała (M290) i pierwsza karta wielocelowa (M291)
+### Tura 11 (2026-09-02): waga jakości ciała (M290); karta wielocelowa (M291) — wycofana w turze 12
 
 Właściciel kazał ruszyć oba wątki zostawione w turze 10 jako „świadomie nietknięte”.
 
@@ -7781,7 +7781,9 @@ decyzja, nie przeoczenie. Benchmark A/B `--seeds 24` (2016 meczów, identyczny p
 heuristic 1723 → 1724/2016, aggro 248 → 247/1008 — zero regresu, zmiana broni zasady,
 nie metryki. Raport §14, milestoney M290, testy `test/uwagi-tura11-bot-jakosc-ciala-equip.test.js` (9).
 
-**(b) — M291, pierwsza z 4–6 kart wielocelowych.** Okazało się, że blokada z tury 10
+**(b) — M291, pierwsza z 4–6 kart wielocelowych.** *(Cała ta gałąź została
+wycofana w turze 12 na polecenie właściciela — patrz wpis niżej; liczby z tego akapitu
+opisują drzewo, którego już nie ma.)* Okazało się, że blokada z tury 10
 była moim błędem procedury, nie środowiska: `docs/cards/HOW_TO_ADD_CARD.md` ma wpisany
 kanał awaryjny na wypadek martwego egressu (agent ściąga te same URL-e przez
 `fetch_page`). Udało się ściągnąć `cards/clu/128` i pusty zestaw rulingów, więc karta
@@ -7795,10 +7797,12 @@ w `src/engine/spells.js` (bez znania nazw kart przez silnik) + strażnikiem, że
 **Rykosz na warsztat pomiarów:** talii NIE układałem ręcznie (patrz L122) — karta
 dostała `plan: 'Ravnica'`, a `tools/generate-plan-decks.mjs` sam dopisał ją do
 `decks/ravnica.txt` (+1 Mountain). Od tego commitu skład tej talii się różni, więc
-porównania A/B z tur 7–10 wymagają nowego baseline'a. Pomiar na żywo (4 partie, ta
-sama para co baseline z tury 10): otwarcia kreatora wielocelowego 0/4 → 2/4, w tym
-jedno realnie na nowej karcie (oba cele wybrane, oba dostały efekt), bot grający talią
-też zadeklarował oba cele, detektory stołu czyste. Z listy 4–6 w tej turze weszły
+porównania A/B z tur 7–10 wymagają nowego baseline'a. Pomiar na żywo (osiem partii,
+ta sama para talii co baseline z tury 10 plus druga para, seedy 922–925 i 931–934):
+otwarcia kreatora wielocelowego 0/4 → 2/8, w tym jedno realnie na nowej karcie (oba
+cele wybrane, oba dostały efekt), bot grający talią też zadeklarował oba cele, a w
+jednym logu widać sam fan-out („Dual Shot → cel: Human, Human”, dwa zdarzenia obrażeń,
+dwie ofiary); detektory stołu: 0 zgłoszeń w ośmiu partiach. Z listy 4–6 w tej turze weszły
 dwie karty: Coordinated Assault (CLU 128) i Dual Shot (SOI 153) — ten sam deskryptor
 `allTargets`, dwa różne efekty (pump+grant oraz czyste obrażenia). Koszt jednostkowy to
 cały tor wejścia (snapshot, rejestr, `MANA_COSTS`, generator talii, build, rodzina
@@ -7807,6 +7811,51 @@ druga karta pociągnęła też przesunięcie w podziale Innistradu (Blazing Torc
 bo przydział liczy generator całości planu — stąd aktualizacja sumy nielandów 36 → 37
 w `test/repo-decks.test.js` (M228). Przepis
 zostaje w `docs/backlog.md` §1.
+
+**Koniec tury 11:** `npm test` 4263/4263, `npm run test:all` 4273/4273, CI `pass`;
+PR #93 ma sekcję tury 11, tytuł „tury 1–11”, body 49 331 znaków. Po wejściu kart
+odświeżyłem baseline benchmarku (`node tools/benchmark.mjs --seeds 24`, 2016 meczów,
+drzewo z commitem `0434199`): heuristic 87,0%, aggro 21,4%, random 4,7%. To punkt
+odniesienia dla następnych A/B, a nie dowód siły nowych kart — run jest jednostronny,
+pula `--seeds 24` bierze sześć talii alfabetycznie, więc obejmuje `innistrad-brg` z
+Dual Shot, ale `ravnica` z Coordinated Assault już nie.
+
+**Rykosz, którego nie przewidziałem:** `test/panel-rozgrywka-tura-przeciwnika.test.js`
+(M101/D) gra `decks/alara.txt`, ale talję człowieka bierze sztywno z
+`decks/innistrad-brg.txt`, więc po dodaniu Dual Shot (i wyrzuceniu Blazing Torch)
+seed 2 przestał rzucać dwoma opóźnionymi triggerami, na których scenariusz stoi.
+Przehuntowany na 18 z komentarzem przy pince. L25 dotyczy więc także testów
+scenariuszowych, nie tylko gier benchmarku: każda zmiana składu talii każe przejrzeć
+seedy wszędzie, gdzie ta talia jest podkładką (`grep -rln "decks/" test/`).
+
+
+### Tura 12 (2026-09-03): karty wielocelowe wycofane na polecenie właściciela
+
+Właściciel przeczytał commity tury 11 i cofnął zgodę: nie mam prawa sam dodawać kart do
+katalogu. Faktura: żadna z dwóch kart nie została wymyślona — teksty reguł i rulingi
+ściągnąłem 1:1 z API Scryfall (CLU 128, SOI 153) — ale ja przekształciłem jednorazową
+prośbę „4–6 realnych kart” w pozwolenie na stałe. Nie przekształcam: `src/cards/card-data.js`
+rośnie tylko na wyraźne, pojedyncze „tak”.
+
+**Co poleciało:** revert `0434199` — fan-out `allTargets` z `src/engine/spells.js`, dwa
+wpisy w rejestrze kart, dwa w `src/cards/mana-costs-data.js`, trzy pliki `decks/*.txt`,
+cała rodzina `test/m291-*.test.js`, golden-master bota, sufit grzechotki 5 → 4, seed
+M101/D 18 → 2, zaostrzenie etykiety Z5; usunięte snapshoty
+`docs/cards/scryfall-coordinated-assault.json` i `docs/cards/scryfall-dual-shot.json`.
+Kamień M291 w rejestrze został przepisany na „cofnięte" z opisem luki i ceny wejścia
+karty, bo to wiedza, nie karta. Z tury 11 zostaje nietknięte M290 (waga jakości ciała).
+
+**Bramy po revercie:** `npm run build` → 3146,1 kB / 59 modułów (dwa wpisy zniknęły z
+artefaktu, było 3150,7 kB), a rodzina, którą revert ruszał — equip tury 9 i 11,
+`test/bot-scoring-snapshot`, `test/repo-decks`, `test/card-data`,
+`test/card-sources-guard`, `test/m138-audyt-stolu`, `test/m132`, `test/m203`,
+`test/panel-rozgrywka-tura-przeciwnika`, `test/audyt-bot-walka-remisy`,
+`test/m195-multi-target` — **124/124** na zielono.
+
+**Lekcja o trybie pracy, nie o kodzie:** komenda „doda X kart" z poprzedniej tury nie
+unieważnia zasady „katalog należy do właściciela". Następnym razem, zanim wejdzie nowa
+karta, pytam o każdą z osobna (albo o listę zatwierdzoną pisemnie w PR), nawet gdy
+poprzednie polecenie brzmiało jak zgoda zbiorcza.
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
 
