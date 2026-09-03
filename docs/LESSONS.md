@@ -2199,3 +2199,26 @@ zagrać i czy gracz widzi, co wybiera”.
 **Strażnik:** `test/audyt-pr94-stun-z-grobu.test.js` (7 testów: warianty niosą
 stun cel, każda oferta wykonalna, licznik na WYBRANYM celu, etykiety trzech
 okien nazywają wybór, strażnik klasy po katalogu). 5 mutacji RED.
+
+## L130 (2026-09-03) — Wynik komendy niesie CAŁY przyrost zdarzeń: przechwyć `state.events.length` PRZED efektem, dołącz `slice(before)` po nim
+
+Dwa zgłoszenia właściciela (uwagi C/D) miały JEDEN root cause: bramki
+wyniku komendy brały `state.events.slice(-1)` albo zwracały listę pobraną
+przed efektem. Efekt dokładający WIĘCEJ niż jedno zdarzenie (infect: licznik
++ opis, renown, poświęcenie Springblooma: 3 zdarzenia) tracił część przyrostu
+— gracz widział skutek na stole, ale log i Rozgrywka milczały.
+
+Wzorzec naprawczy (combat.js ×3, bramka springbloom):
+`const before = state.events.length;` → efekt → do wyniku
+`state.events.slice(before)`. Kontrakt: wynik komendy = zdarzenia od jej
+startu, nie „ostatnie” ani „pierwsze”. Audyt pozostałych bramek `slice(-1)`:
+wszystkie jednocentryczne — bezpieczne.
+
+Pułapki sesji: (1) testy harnessa sesyjnego potrzebują `gameObjectDataOf`
+przy wstrzykiwaniu obiektów i widzą ukryte karty przeciwnika (liczniki ręki);
+(2) wycena bota per-attacker paraliżuje przy samotnym blokerze odstraszającym
+(deathtouch) — klasa wymaga modelowania gang-ataków, nie należy jej łatać
+w pętli per-attacker (zmierzone: −2 partie benchmarku); (3) benchmark szybki
+jest deterministyczny — każda różnica jest prawdziwa; (4) po re-konie
+workspacu `git reset --soft FETCH_HEAD` odtwarza referencje z wypchniętej
+gałęzi bez dotykania drzewa roboczego.

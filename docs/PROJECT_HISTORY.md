@@ -8130,3 +8130,35 @@ naruszeń, benchmark (672 mecze, profil szybki) bez wyjątków: heuristic 83,9%
 wyboru przy otwieraniu mechaniki w oknie), raport
 `docs/audits/AUDYT_PR94_2026-09-03.md`, HANDOFF
 `docs/setup/HANDOFF_2026-09-03-audyt-pr94-stun-z-grobu.md`.
+
+**Ciąg dalszy sesji — uwagi właściciela z żywej gry (A–D).**
+
+- **C/D → M296:** licznik -1/-1 z infect i poświęcenie Springblooma bez śladu
+  w logu — wspólny root cause: bramki wyniku komendy gubiły przyrost
+  `state.events` (`slice(-1)`/return przed efektem). Wzorzec „przechwyć PRZED,
+  dołącz `slice(before)` po” (combat.js ×3 + bramka springbloom) + czytelny
+  opis liczników ujemnych. 6 testów (RED), 5 mutacji, weryfikacja żywa.
+- **B → M297:** bot atakował 4/4 w obrońcę, który może KUPIĆ deathtouch
+  (Death-Hood Cobra / Coat with Venom) i ma manę. `declare_attackers` dostał
+  tor B3 dla trików keywordowych: widoczna aktywacja = ryzyko pewne, ukryty
+  instant = model hipergeometryczny (próg 0.15), kara `dtProb × (10+2P+T)`.
+  Statyczny drukowany deathtouch ŚWIADOMIE poza zakresem — pierwsza wersja
+  per-attacker cofnęła benchmark o 2 partie (paraliż na samotnym 2/1); klasa
+  wymaga gang-ataków (odnotowana w ograniczeniach PR). 6 testów (RED),
+  3 mutacje, benchmark równy bazie.
+- **A → M298:** modale STS „zniszcz stwór” + proliferate, mulligana i ETB
+  Bone Shreddera poza wspólnym kreatorem — `multiTargetPlanOf` widzi tylko
+  `targets` (proliferate nosi `targetIds`, jednocelowe/mulligan nie mają
+  drugiego wymiaru). Trzy plany + trzy tryby `renderMultiTargetWizard`,
+  routing w `openChoiceRequest` (poświęcenie przed pojedynczym celem),
+  L48 bez zmian. Regresja licznika ręki (14 = 7 swoich + 7 ukrytych wroga)
+  złapana żywo i przypięta testem. 13 testów (RED), 4 mutacje; Żywy Tester
+  (mirrodin-brg): seed 21 — pełny przebieg STS → proliferate nowymi
+  wizardami, seed 7 — mulligan „(7 kart)” + ETB Bone Shreddera; 0 detektorów.
+
+**Bramy końcowe:** `npm test` **4368/4368** (+25 do bazy sesji), `test:all`
+**4378/4378**, build 59 modułów / 3208,9 kB, benchmark szybki równy bazie
+(83,9 / 28,0 / 4,2), budżet lektury startowej zachowany. Commity: M296
+`0dd6199`/`11340d0`, M297 `c723aab`/`3855a23`, M298 `761dded`/`6d88ffb`
+(RED + fix parami). Dokumentacja: M296/M297/M298, L130 (wynik komendy niesie
+cały przyrost zdarzeń). PR #95 zaktualizowany.

@@ -4322,3 +4322,106 @@ random 4,2% (identycznie z bazą — wycena bota nietknięta). Żywy Tester:
 6 partii (`worek-basni` × `final-fantasy` i odwrotnie; greedy/explorer/random;
 600 kroków) → 0 zgłoszeń detektorów; okno Halo Foragera wystąpiło (seed 802,
 rzut z grobu rozstrzygnięty), ARM rzucony z ręki z etykietą trybu.
+
+## M296 (2026-09-03) — Wynik komendy niesie wszystkie zdarzenia: liczniki infect/renown i poświęcenie Springblooma widoczne w logu (uwagi właściciela C/D)
+
+**Zgłoszenie (uwagi z żywej gry, 2026-09-03).** C: token-infect Carrion Call
+położył przeciwnikowi licznik -1/-1, ale ani Rozgrywka, ani log o tym nie
+wspomniały. D: Springbloom Druid poświęcił ląd przy ETB — decyzja i wybór
+lądu niewidoczne.
+
+**Root cause (wspólny dla obu).** Bramki budujące wynik komendy brały
+`state.events.slice(-1)` ALBO zwracały wcześniejszą listę zdarzeń — efekt,
+który dokładał do `state.events` więcej niż jedno zdarzenie, tracił część
+przyrostu: (1) `combat.js` — trzy miejsca doklejające `addCounter`
+(infect stworowi, infect graczowi, renown) po pierwotnym pobraniu listy;
+(2) `game-state.js` — bramka springbloom widziała tylko ostatnie
+z trzech zdarzeń poświęcenia.
+
+**Naprawa.** Wzorzec „przechwyć PRZED, dołącz przyrost”: `const before =
+state.events.length` przed efektem, po nim `state.events.slice(before)`
+do wyniku komendy (combat.js ×3, bramka springbloom). Czytelność:
+`counter_added` opisuje liczniki ujemne bez „+” („dostaje 1 licznik -1/-1”,
+session.js). Silnik dalej emituje zdarzenia tak samo — zmienia się tylko
+kontrakt wyniku komendy (niesie CAŁY przyrost).
+
+**Weryfikacja.** 6 testów (RED przed naprawą): licznik -1/-1 na stworze
+i na graczu po infekcji, renown, poświęcenie Springblooma z nazwą lądu
+w zdarzeniu i w opisie; 5 mutacji RED (każde z trzech miejsc combat.js,
+slice w bramce, format licznika). Żywy Tester: sesja z Carrion Call
+i Springbloomem — wpisy w Rozgrywce i logu. Bramy: 4355/4355, build OK.
+
+## M297 (2026-09-03) — declare_attackers modeluje KUPOWANY deathtouch: tor B3 dla trików keywordowych (uwaga właściciela B)
+
+**Zgłoszenie.** „Bot atakuje 4/4, podczas gdy ja mam małego nietapniętego
+stwora, który może KUPIĆ zdolność deathtouch (Death-Hood Cobra / Coat with
+Venom), i mam na to manę — to trochę nierozsądne”.
+
+**Root cause.** `declare_attackers` heurystycznego bota nie modelował
+deathtoucha dokupionego w oknie walki (CR 702.4: dowolny bloker zabija
+atakującego). B3 (ryzyko removalu z talii przeciwnika) istniał tylko dla
+obrażeń — tricki keywordowe były białą plamą.
+
+**Naprawa.** Dwa źródła ryzyka, generycznie po deskryptorach (ADR 0002):
+(1) WIDOCZNE — nietapnięty stwór przeciwnika z aktywowaną zdolnością
+„daje sobie deathtouch do końca tury” (klasa Death-Hood Cobra): jeśli
+`opponentOpenMana ≥ koszt`, ryzyko pewne; (2) UKRYTE — instant dający
+deathtouch do końca tury w talii przeciwnika (klasa Coat with Venom): ten
+sam model hipergeometryczny `probOpponentHolds` co B3, próg obniżony do
+0.15 (tani trick rozstrzyga wymianę nawet przy niskiej szansie trzymania).
+Wspólna kara per atakujący, którego da się zablokować:
+`dtProb × (10 + 2×moc + wytrzymałość)`. Wyłączenia: wyścig (jak w B3),
+nieblokowalni, pełna prewencja, niezniszczalni, pożyczeni
+(tempControlUntilEOT), first-strike zabijający blokera przed odpowiedzią,
+bloker już mający deathtouch (bez podwójnej kary).
+
+**Zakres celowo wąski.** Statyczny bloker z DRUKOWANYM deathtouchem to
+osobna klasa: pierwsza wersja z wyceną per-attacker paraliżowała ataki na
+samotnego 2/1 (−2 partie w benchmarku szybkim, w tym jedna vs random) —
+poprawna ocena wymaga modelowania gang-ataków. Klasa odnotowana tu
+i w ograniczeniach PR #95 (backlog).
+
+**Weryfikacja.** 6 testów (RED przed naprawą): kupno widoczne (Cobra ±mana),
+kupno ukryte (Coat with Venom w talii ±trik, anty-over-fix bez blokera),
+sanity; 3 mutacje RED (cały człon ryzyka, brak aktywatora, brak trików).
+Benchmark szybki RÓWNY bazie (83,9 / 28,0 / 4,2 — talie profilu nie mają
+trików deathtouch). Bramy: 4361/4361, build OK.
+
+## M298 (2026-09-03) — Proliferate, wybór jednego celu i mulligan dołączone do wspólnego kreatora (uwaga właściciela A)
+
+**Zgłoszenie.** „Modale wyboru dla Spread the Sickness (zniszcz stwór +
+proliferate), mulliganu z wyborem i ETB Bone Shreddera nie używają nowego
+wspólnego pomocnika wyboru celów — wyglądają zupełnie inaczej niż wybór
+bloków (inny podgląd kart, inny sposób wskazywania celu); modal niszczący
+cel ma pola checkbox, a wybiera się klikając w całą opcję”.
+
+**Root cause.** `multiTargetPlanOf` filtruje tylko komendy z `targets`, więc
+trzy rodziny padały na awaryjny `renderChoiceRequest` (ściana przycisków):
+(1) proliferate — komendy noszą `targetIds` (podzbiory kandydatów);
+(2) wybór JEDNEGO celu — `cast_spell` z `targets[1]` (STS „zniszcz stwór”)
+i ETB `resolve_trigger_target` z `targetId` (Bone Shredder);
+(3) `resolve_mulligan_choice` (keep/mulligan).
+
+**Naprawa (bez zmian silnika i protokołu — L48).** Trzy plany
+w `multi-target.js` (`proliferatePlanOf`, `singleTargetPlanOf`,
+`mulliganKeepPlanOf`) + trzy tryby `renderMultiTargetWizard`
+(`targetIdsMode`: ptaszki 0–N; `singleMode`: radio + opcjonalny wiersz
+odmowy „you may”; `mulliganKeepMode`: dwa wiersze z etykietami). Routing
+w `openChoiceRequest`: proliferate przed `multiTargetPlanOf` (jego komend
+nie widzi), pojedynczy cel i mulligan-keep PO `sacrificeCastPlanOf` (grupy
+„cel + ofiara” mają pierwszeństwo). Zatwierdź pozostaje wyłączony, dopóki
+wybór nie jest legalną komendą silnika (np. okrojona enumeracja dużej puli
+proliferate). Mylący ptaszek wyciszenia w przycisku opcji znika — wyciszenie
+zostaje w panelu akcji (tam jego miejsce).
+
+**Regresja złapana żywo.** Licznik „Zatrzymaj rękę (N kart)” liczył też 7
+UKRYTYCH kart przeciwnika z widoku (wychodziło 14) — filtr
+`controllerId === playerId`.
+
+**Weryfikacja.** 13 testów (RED przed naprawą): plany + dopasowanie komend
+przez TOŻSAMOŚĆ z `legalCommands` (L48), radio zamienia wybór, nielegalny
+podzbiór nie daje komendy, routing; 4 mutacje RED; harness klikający
+(`table-ui`) prowadzi nowe modale. Żywy Tester (mirrodin-brg): seed 21 —
+pełny przebieg STS „wskaż cel (1)” → cel → „zaznacz obiekty z licznikami
+(0–1)”; seed 7 — mulligan „(7 kart)”, ETB Bone Shreddera. 0 zgłoszeń
+detektorów. Bramy: 4368/4368, `test:all` 4378/4378, build 3208,9 kB.
