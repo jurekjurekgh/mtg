@@ -2170,3 +2170,32 @@ obie strony granicy, anty-over-fix dla ręki/impulsu/braku stempla) oraz
 przebieg integracyjny ze stempel `warpedAtTurn`). 13 mutacji — tabela w §7
 `docs/audits/AUDYT_PR93_2026-09-03.md`; mutacja `>=` zamiast `>` we wspólnym
 predykacie czerwieni testy OBU mechanik naraz (5 RED).
+
+## L129 (2026-09-03) — Otwarcie mechaniki w nowym oknie to CAŁY łańcuch wyboru: oferta → walidacja → obiekt stosu → log → etykieta
+
+**Przypadek:** audyt PR #94 (K1). Fix F otworzył w oknie darmowego rzutu
+z grobu tryby z celami zmiennymi — oferty liczył już wspólny `legalModeCasts`,
+więc warianty ze stunem (`stunAmongTargets`) pojawiły się w panelu. Ale okno
+Vaan, które ten sam łańcuch dostało w tym samym PR (`pushExileCast`), przenosi
+`stunTargetId` komendą, a okno grobu — nie: push gubił pole (duplikaty
+przycisków), `execute` nie przekazywał go do `validateVariableTargets`
+(warianty ≥1 celu odrzucane), obiekt stosu nie dostawał `modeExtra`
+(`extra:stunTargetId` nie miał czego czytać), a zdarzenie i etykieta nie
+nazywały wyboru. Repro: Aerith Rescue Mission (tryb „Schody”) przez okno
+Halo Foragera. Ta sama klasa wyszła też przy etykietach `cast_spell`
+i okna Vaana (K2): warianty różniące się wyłącznie stun celem były
+nierozróżnialne (M91).
+
+**Reguła:** wspólny generator ofert NIE gwarantuje kompletności łańcucha —
+każde okno samo pushuje komendy i samo składa obiekt stosu. Dodając mechanikę
+do okna, przechodzę listę: (1) czy push niesie WSZYSTKIE pola wariantu
+z generatora, (2) czy `execute` przekazuje je do walidatora, (3) czy obiekt
+stosu dostaje pola, które czyta rozstrzyganie (`modeExtra` itd.), (4) czy
+zdarzenie `spell_cast` niesie `modeName`/wybory, które loguje session.js,
+(5) czy etykieta rozróżnia warianty o różnych skutkach. Skan po wspólnym
+generatorze (L128) pyta „czy oferta istnieje”; ta lista pyta „czy da się nią
+zagrać i czy gracz widzi, co wybiera”.
+
+**Strażnik:** `test/audyt-pr94-stun-z-grobu.test.js` (7 testów: warianty niosą
+stun cel, każda oferta wykonalna, licznik na WYBRANYM celu, etykiety trzech
+okien nazywają wybór, strażnik klasy po katalogu). 5 mutacji RED.

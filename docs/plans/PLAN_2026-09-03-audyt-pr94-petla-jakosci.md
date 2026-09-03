@@ -39,14 +39,26 @@ testują to, co deklarują (L13). Audyt bez pełnego B0 (ADR 0018).
 - PR sesji otwarty PRZED pierwszą zmianą w kodzie;
 - raport audytu uzupełniany w miarę przeglądu.
 
-## Etap 2 — przegląd per plik i znaleziska
+## Etap 2 — przegląd per plik i znaleziska ✅
 
-Dla każdego znaleziska: test RED przed naprawą, naprawa chirurgiczna
-u root cause, mutacja potwierdzająca (L13/L8). Jeśli audyt nie znajdzie
-błędów — raport mówi „czysty” z dowodem (co sprawdzono i dlaczego nie
-ma odchyłek), a sesja przechodzi do Etapu 3.
+Przegląd 29 plików zakończony (raport §2-§3). Znaleziska: **K1** (grób gubi
+`stunTargetId` — klasa otwarta przez fix F) i **K2** (etykiety nie nazywają
+wyboru stun celu — klasa M91 rozszerzona przez ten PR). Oba naprawione:
+testy RED (`50b8ae3`, 5 RED) → naprawa + 2 testy etykiet (`646b49a`, 7/7
+zielonych) → 5 mutacji RED.
 
-## Etap 3 — pętla jakości (ADR 0021 §4), jeśli zostanie budżet sesji
+## Etap 3 — pętla jakości (ADR 0021 §4) ✅
+
+Żywy Tester: 6 partii `worek-basni` × `final-fantasy` (i odwrotnie), profile
+greedy/explorer/random, 600 kroków → 0 zgłoszeń detektorów; okno Halo
+Foragera wystąpiło (seed 802), ARM z etykietą trybu (seed 811). Bramy:
+`npm test` 4343/4343, `test:all` 4353/4353, build 59 modułów / 3190,1 kB,
+`family-audit`/`event-contract-audit` bez naruszeń, benchmark szybki bez
+wyjątków (heuristic 83,9% — równy bazie). Macierz okien „rzutu spoza ręki”
+sprawdzona per okno (raport §4c); luka utajona suspend/`modeName` przypięta
+w raporcie (L52).
+
+## Pierwotni kandydaci pętli (niewybrani — kontekst dla następnych sesji)
 
 Kandydaci (wybór wg znalezisk audytu, kolejność wstępna):
 
@@ -59,15 +71,15 @@ Kandydaci (wybór wg znalezisk audytu, kolejność wstępna):
   transform, stempel „po turze” na innych mechanikach);
 - (c) NIE wymyślam nowego batcha kart (ADR 0021 §4c).
 
-## Kolejność commitów (każdy samodzielnie zielony: `npm test` + `npm run build`)
+## Kolejność commitów (wykonana)
 
-1. plan sesji ✅ (PR przed kodem);
-2. raport audytu PR #94;
-3. per znalezisko: test RED → naprawa → mutacje (osobne commity);
-4. dokumentacja: `docs/ENGINE_MILESTONES.md`, `docs/PROJECT_HISTORY.md`,
-   `docs/LESSONS.md` (nowa lekcja tylko jeśli budżet lektury pozwoli —
-   ~4,7k tokena wolnego wg handoffu; inaczej kondensacja istniejącego wpisu),
-   handoff sesji, liczby w `README.md` **na koniec** (L92).
+1. `e6b6b22` — plan sesji (PR #95 otwarty przed kodem);
+2. `93408a2` — raport audytu PR #94;
+3. `50b8ae3` — testy RED (K1, 5 czerwonych);
+4. `646b49a` — naprawa K1/K2 (7/7 zielonych, 5 mutacji RED);
+5. (ten commit) — dokumentacja: M295, L129 (zmieściła się w budżecie
+   ~3,4k wolnego), raport zaktualizowany, PROJECT_HISTORY, handoff,
+   liczby README **na końcu** (L92).
 
 ## Ryzyka i pułapki (z LESSONS/ENVIRONMENT)
 

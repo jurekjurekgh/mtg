@@ -8081,3 +8081,52 @@ Dokumentacja: `docs/audits/AUDYT_PR93_2026-09-03.md` (§4f, §4g), M294, L127,
 L128, HANDOFF
 `docs/setup/HANDOFF_2026-09-03-audyt-pr93-rzut-z-exile.md`.
 
+### Sesja arena/01a067e2 (2026-09-03): audyt PR #94 + pętla jakości (PR #95)
+
+Prompt właściciela: „kontynuujemy projekt” → ADR 0020/0021: PR na starcie
+(#95 przed pierwszą zmianą w kodzie), audyt ostatniego scalonego PR (#94,
+squash `aa62134`), naprawy u root cause. Pomiar startowy: `npm test`
+4336/4336 — zgodny z handoffem.
+
+**Audyt (29 plików diffu, czytane per plik).** Werdykt: PR #94 jakościowo
+dobry — dziesięć znalezisk audytu PR #93 (A–J) naprawionych u root cause,
+wydzielenia (`legalXCostCasts`, `legalFireballCasts`, `legalModeCasts`,
+`legalAuraCastsForObject`, `wrapTargetsValue`) wierne linia po linii, bramki
+stempli tury (plot/warp) wspólne dla obu ścieżek. Jedno znalezisko klasy,
+którą ten PR otworzył:
+
+**K1 — darmowy rzut z grobu gubi wybór celu pod stun counter.** Fix F otworzył
+w oknie Halo Foragera tryby z celami zmiennymi (oferty ze wspólnego
+`legalModeCasts`, więc z wariantami per stun cel), ale okno — w przeciwieństwie
+do okna Vaana z tego samego PR — nie przenosiło `stunTargetId`: push gubił
+pole (duplikaty przycisków), `execute` nie podawał go walidatorowi (warianty
+≥1 celu odrzucane — martwe przyciski), obiekt stosu nie dostawał `modeExtra`
+(efekt `extra:stunTargetId` nie miałby czego czytać), zdarzenie nie niosło
+`modeName`. Repro na żywych kartach: Aerith Rescue Mission (tryb „Schody”,
+MV 4, `final-fantasy`) + okno Halo Foragera (`worek-basni`; czyta DOWOLNY
+grób). 5 testów RED → naprawa w trzech miejscach (playerView/execute/render)
+→ strażnik klasy po katalogu → 5 mutacji RED.
+
+**K2 — etykiety nie nazywają wyboru stun celu** (ta sama klasa M91, istniejąca
+od M146 przy rzucie z ręki, rozszerzona przez PR #94 na okno Vaana): sufiks
+`· stun: <cel>` w etykietach `cast_spell`, `resolve_exile_cast`
+i `resolve_grave_free_cast`. 2 testy.
+
+**Pętla jakości.** Żywy Tester: 6 partii `worek-basni` × `final-fantasy`
+(i odwrotnie; greedy/explorer/random; 600 kroków) → 0 zgłoszeń detektorów;
+okno Halo Foragera wystąpiło (seed 802 — rzut z grobu rozstrzygnięty), ARM
+rzucony z ręki z etykietą trybu (seed 811). Scenariusz K1 zbyt wąski dla
+Testera — przypięty testami silnika (jak I/J w poprzedniej sesji). Macierz
+okien „rzutu spoza ręki” sprawdzona per okno (raport §4c): grób/Vaan —
+otwarte z kompletnym łańcuchem stun; Discover/madness/suspend/epic/rebound —
+spójnie zamknięte dla `variableTargets` po obu stronach. Luka utajona:
+zdarzenie suspend bez `modeName` — nieosiągalna (Mindstab nie jest modalny),
+przypięta w raporcie (L52).
+
+**Bramy:** `npm test` **4343/4343** (+7), `npm run test:all` **4353/4353**,
+build 59 modułów / 3190,1 kB, `family-audit` i `event-contract-audit` bez
+naruszeń, benchmark (672 mecze, profil szybki) bez wyjątków: heuristic 83,9%
+(równy bazie — wycena bota nietknięta). Dokumentacja: M295, L129 (łańcuch
+wyboru przy otwieraniu mechaniki w oknie), raport
+`docs/audits/AUDYT_PR94_2026-09-03.md`, HANDOFF
+`docs/setup/HANDOFF_2026-09-03-audyt-pr94-stun-z-grobu.md`.

@@ -4278,3 +4278,47 @@ powstały dla Discover, a obowiązywały też okno zdolności Vaana.
 - **Dług i higiena.** Test odziedziczony po PR #93 (`audyt-pr92-darmowy-rzut-zakres`)
   piętnował brak oferty dla czaru modalnego i zakładał stempel `playableUntilTurn`, którego
   silnik nie stawia — odwrócony, z komentarzem (L5/L44). Lekcja L127.
+
+## M295 (2026-09-03) — Darmowy rzut z grobu domyka łańcuch stun wyboru; etykiety nazywają wybór we wszystkich trzech oknach (audyt PR #94, sesja arena/01a067e2)
+
+**Kontekst.** Audyt PR #94 (sesja `arena/01a067e2-mtg`, PR #95): przegląd 29
+plików squasha `aa62134`. Werdykt: PR dobry — jedno znalezisko klasy, którą
+ten PR otworzył (K1), plus domknięcie klasy etykiet (K2). Raport:
+`docs/audits/AUDYT_PR94_2026-09-03.md`, lekcja L129.
+
+**K1 — darmowy rzut z grobu (Halo Forager) przenosi wybór celu pod stun.**
+Fix F (PR #94) otworzył w tym oknie tryby z celami zmiennymi, ale bez
+łańcucha `stunTargetId`, który okno Vaana dostało w tym samym PR:
+- push oferty `resolve_grave_free_cast` gubił `stunTargetId` → duplikaty
+  identycznych przycisków w panelu;
+- `execute` nie przekazywał go do `validateVariableTargets` → każdy wariant
+  z ≥1 celem trybu ze `stunAmongTargets` odrzucany (martwe przyciski — L48);
+- obiekt stosu nie dostawał `modeExtra` → efekt
+  `add_counter applyTo 'extra:stunTargetId'` nie miałby czego czytać;
+- zdarzenie `spell_cast` nie niosło `modeName`/`stunTargetId` (log stołu).
+Repro na realnych kartach: Aerith Rescue Mission (tryb „Schody”, MV 4,
+`final-fantasy`) w cmentarzu + Halo Forager (`worek-basni`, okno czyta
+DOWOLNY cmentarz). Naprawa: pole w ofercie → `cmd.stunTargetId` w walidacji
+→ `modeExtra` na stosie + `modeName`/`stunTargetId` w zdarzeniu → nazwa trybu
+i cel stun w etykiecie.
+
+**K2 — etykiety `cast_spell` i okna Vaana nazywają cel pod stun.** Ta sama
+klasa M91 (warianty o różnych skutkach muszą być rozróżnialne): prawny przy
+rzucie z ręki od M146, rozszerzony przez PR #94 na okno Vaana. Sufiks
+`· stun: <cel>` we wszystkich trzech etykietach.
+
+**Sprawdzone okna (macierz po audycie):** grób i Vaan — otwarte
+na `variableTargets`, łańcuch stun kompletny; Discover — tylko tryby bezcelowe
+(`targetlessModeIndexes`); madness/suspend/epic/rebound — odrzucają
+`variableTargets` po obu stronach (oferta = wykonanie). Jedyna luka utajona:
+zdarzenie suspend bez `modeName` — nieosiągalna (jedyna karta suspend,
+Mindstab, nie jest modalna); przypięta w raporcie, nie kodem (L52).
+
+**Bramy.** 7 testów (5 RED przed naprawą) + 5 mutacji RED; `npm test`
+**4343/4343**, `npm run test:all` **4353/4353**, build **59 modułów /
+3190,1 kB**, `family-audit` i `event-contract-audit` bez naruszeń, benchmark
+(profil szybki, 672 mecze) bez wyjątków: heuristic 83,9%, aggro 28,0%,
+random 4,2% (identycznie z bazą — wycena bota nietknięta). Żywy Tester:
+6 partii (`worek-basni` × `final-fantasy` i odwrotnie; greedy/explorer/random;
+600 kroków) → 0 zgłoszeń detektorów; okno Halo Foragera wystąpiło (seed 802,
+rzut z grobu rozstrzygnięty), ARM rzucony z ręki z etykietą trybu.
