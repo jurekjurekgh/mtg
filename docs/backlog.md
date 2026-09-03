@@ -163,12 +163,29 @@ Następna lista właściciela wchodzi tutaj.)_
   18,00/18,00 — ruszenie jej rusza kilkadziesiąt pinów equipu, więc idzie osobnym
   commitem z osobnym A/B (pin stanu: T11/7).
 - **Ergonomia dotykowa pozostałych kontrolek** (po M129, lekcja L35): wizardy
-  walki i obrażeń mają już cel dotyku >= 44 px. Do przejrzenia tym samym
-  kątem: wizard scry/surveil (chipy `.look-wizard-card`), przyciski stref
+  walki i obrażeń mają już cel dotyku >= 44 px; kreatorzy patrzenia rysuje od tury 14
+  ten sam komponent, więc ich przyciski decyzji siedzą w rodzinie `.choice-request-option`.
+  Do przejrzenia tym samym kątem: **klikalna nazwa w chipie** (podkreślony tekst
+  `font-size: 13px`, bez minimum dotyku — zmierzone, nie zgadywane), przyciski stref
   i menu kontekstowe — właściciel gra na telefonie.
+- **Renama nazwy karty w protokole** (`resolve_fertile_thicket`, `pendingFertileThicket`) —
+  dług policzony i przypięty (`M293/11`, equality-pin 63 wystąpień; to 54 linie w tych
+  plikach): 69 wystąpień w całym `src/` (11 plików); ten sam zapach przy `resolve_springbloom`
+  (86 w 10 plikach). `COMMAND_TYPES` (`src/protocol/types.js:23`, `Object.freeze`) jest
+  listą wpisywaną do partii, więc zmiana nazwy to migracja autosave/replay, nie kosmetyka —
+  decyzja właściciela. Warstwa RYSUJĄCA jest już od nazwy niezależna.
+- **Pokrycia żywego scry/surveil nie da się dorobić talią:** w `decks/` zero kart z efektem
+  `scry` i zero z `surveil` (katalog: 5 i 2 karty — liczone po `abilities`/`spell`). Ścieżka
+  `decide` jest dowodzona testami (28 w `choice-request-ui`, 12 w `m293`) i jsdomem, nie
+  Żywym Testerem; poszerzenie katalogu o kartę z takim efektem jest decyzją właściciela
+  (ADR 0023: każda wspierana karta w dokładnie jednej talii) — agent kart nie dodaje.
 
-- **Sondowanie kroku kolejności w wizardzie surveil** — decyzja pośrednia nie
-  ma jeszcze klucza sondy (komenda nie jest wtedy jeszcze znana).
+- **Sondowanie kroków w kreatorach patrzenia** — ZAMKNIĘTE w M293: jedna polityka klucza
+  dla scry, surveil, „ułóż wierzch" i „weź jeden land" (klik niesie klucz wtedy i tylko
+  wtedy, gdy po nim nie ma już kroku; pośrednie nie niosą, bo komenda jeszcze nieznana —
+  to zamierzone i przypięte `M293/4`-`M293/6`). Przy okazji domknięty rozjazd, którego nikt
+  nie zgłosił: przy ≤1 karcie pozostałej po wyborze landa klik domykał wizard, a klucza
+  nie było (`M293/7`).
 - **Rozdzielanie obrażeń (damage wizard)** — poza osią „noop" (jak walka
   przed M112).
 - **Sprzątanie kontraktu `addObject`** (lekcja L21: pola spoza kontraktu giną
@@ -177,13 +194,17 @@ Następna lista właściciela wchodzi tutaj.)_
   wiersz wyboru mają kreator celów wielokrotnych, atakujący/blocki, koszt escape,
   **oba kreatorzy obrażeń (steppery), źródła many w płatności kostki i oba ptaszki
   „ignoruj tę opcję"** (11 wołań helpera, 6 z 8 kreatorów w `choice-request.js`).
-  **Zostaje:** chipy `.look-wizard-card` (scry/surveil/look) i `.thicket-card`
-  (Fertile Thicket) — razem 360 linii własnego markupu. Świadomie NIE pod pickarem:
-  to siatki kart z obrazkiem, nie wiersz „ptaszek + nazwa" ani stepper, a ich cel
-  dotyku pinuje `m138-*`. Decyzja do właściciela: czy picker ma dostać piąty kształt
-  `kind:'chip'`, czy chipy zostają osobnym komponentem. Kryterium z M292: helper
-  przyjmuje to, co wspólne (rodzina dotyku, nazwa, akcja), a nie to, co tylko wygląda
-  podobnie.
+  **DOMKNIĘTE w M293 (tura 14, decyzja właściciela o czystości projektu):** chipy są
+  kształtem pickera (`renderPickerChip` / `renderPickerChipList` / `renderPickerCancel`),
+  a dwa kreatory patrzenia złożyły się w jeden silnik `renderPeekWizard` z parametrem
+  `flow`. Po drodze wyszły dwa fałsze w tym punkcie: klasy `.thicket-card` NIGDY nie było
+  (zero trafień na bazie `17a4d1e`), a zdanie „ich cel dotyku pinuje `m138-*`" nie miało
+  pokrycia — `m138` nie cytuje żadnej klasy chipa; chip ma `padding: 5px 10px` i
+  `font-size: 13px`, czyli celowo NIE jest celem 44 px. **Zostaje po M293 (decyzja
+  właściciela, nie estetyka):** czy podkreślona nazwa karty w chipie ma urosnąć do
+  komfortu dotyku, bo dziś na telefonie to klikalny tekst 13 px. Kryterium z M292
+  zostało spełnione: helper przyjął to, co wspólne (numeracja, nazwa, akcja, rodzina),
+  a chip świadomie nie dziedziczy po `picker-row`.
 - **Talia pod picker nie powstanie przez tasowanie** (tura 10, §13.8): próba
   `decks/wielocelowa.txt` wpadła w `test/m132-proporcje-landow.test.js` (lądy) i
   `test/repo-decks.test.js` (M178/ADR 0023 — 11 z 12 kart już gdzieś leżało).

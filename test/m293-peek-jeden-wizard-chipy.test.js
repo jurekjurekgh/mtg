@@ -21,6 +21,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { execSync } from 'node:child_process';
 
 import { MiniEl, withDocument } from './harness/css-effective.js';
 
@@ -295,7 +296,18 @@ test('M293/11: RYSOWANIE nie zna karty po imieniu (ADR 0002); protokół — dł
     'src/table/choice-request.js'];
   const suma = pliki
     .reduce((acc, f) => acc + (fs.readFileSync(f, 'utf8').match(/fertile_thicket|FertileThicket/g) ?? []).length, 0);
-  assert.ok(suma >= 40, `odwołania protokołowe do nazwy karty: ${suma} (oczekiwane ≥40) — liczba idzie do §18`);
+  // Equality-pin, nie „≥": LONG JEST policzony w docs/audits/AUDYT_PR92_2026-09-02.md §18.5,
+  // docs/ENGINE_MILESTONES.md (M293) i docs/backlog.md. Kto spłaci dług (renama po migracji
+  // autosave/replay), ten zobaczy RED-a i zaktualizuje te trzy miejsca — dług nie może
+  // zniknąć z dokumentów po cichu, tak samo jak nie mógł zniknąć z kodu.
+  assert.equal(suma, 63,
+    `wystąpienia protokołowej nazwy karty w 8 plikach logiki i stołu: ${suma} (pin 63; `
+    + 'spłata długu = renama typu komendy, patrz §18.5 raportu i docs/backlog.md)');
+  const calySrc = execSync('grep -rhoE "fertile_thicket|FertileThicket" src/ | wc -l', { encoding: 'utf8' }).trim();
+  assert.ok(Number(calySrc) >= 69, `w całym src/ miało być ≥69 wystąpień, jest ${calySrc}`);
+  const spring = execSync('grep -rhoE "springbloom|Springbloom" src/ | wc -l', { encoding: 'utf8' }).trim();
+  assert.ok(Number(spring) >= 86,
+    `ten sam zapach ma resolve_springbloom: ${spring} wystąpień w src/ (pin ≥86) — wpisane do backlogu`);
 });
 
 test('M293/12: routing decyduje po CZYNNOŚCI, nie po karcie', () => {

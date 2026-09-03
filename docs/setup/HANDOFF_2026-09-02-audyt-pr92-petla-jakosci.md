@@ -616,6 +616,69 @@ zmieniły się ani o znak.
 
 **Otwarte decyzje właściciela (nic tu nie ruszam bez pisemnego „tak"):**
 (c) `creatureManaCostWeight = 1`; (d) potrącanie kosztu `equipment.equip`; domknięcie M290
-w gałęzi FRESH (remis 18,00/18,00, pin T11/7); chipy `.look-wizard-card`/`.thicket-card`
-(360 linii własnego markupu) — piąty kształt pickera czy osobny komponent; **karty: agent
-nie dodaje i nie pyta zbiorczo** (tura 12).
+w gałęzi FRESH (remis 18,00/18,00, pin T11/7); **karty: agent nie dodaje i nie pyta
+zbiorczo** (tura 12). ~~chipy `.look-wizard-card`/`.thicket-card` — piąty kształt pickera
+czy osobny komponent~~ **DOMKNIĘTE w turze 14 (M293):** chip jest kształtem pickera, a
+`.thicket-card` nigdy nie istniało — razem z tym zdaniem padł też rzekomy pin dotyku chipa
+w `m138-*` (zero trafień; chip ma `padding: 5px 10px`).
+
+---
+
+## Tura 14 (2026-09-03): jeden silnik dla dwóch kreatorów patrzenia (M293)
+
+**Co padło:** `renderPeekWizard(host, spec)` w `src/table/choice-request.js` rysuje gate
+(„Zaglądnij"/„Zrezygnuj"), decydowanie karta po karcie, wybór jednej karty, sorter
+kolejności, znaczniki i stopkę dla scry, surveil, „ułóż wierzch" i dawnego kreatora landa.
+`renderLookWizard` (sygnatura bez zmian) i `renderPeekPickOrderWizard` to adapterzy; routing
+w `src/table/main.js` idzie po `lookKind === 'peek-pick'`, bo nazwa wywodzona od karty
+(`'fertile'`) była tym samym grzechem co kod pod nazwaną kartę (ADR 0002). Picker
+(`src/table/picker.js`, 299 → 418 linii) ma szósty kształt `chip`
+(`renderPickerChip`/`renderPickerChipList`) oraz `renderPickerCancel` — stopka trzech
+kreatorów zamiast trzech kopii po cztery linie. CSS: chipy w rodzinie `.picker-chip*`,
+`.look-wizard-cancel` → `.picker-cancel`, zostały `.look-wizard-current` i współdzielone
+`.log-card, .look-wizard-card-name`; reguły `.look-wizard-*`: 5 → 2. Hak kreatora
+(`look-wizard-cards`/`look-wizard-card`/`-name`) pozostaje W MARKUPIE jako parametr
+pomocnika — na niego patrzą `m129`, `look-wizard-contrast`, `m293` i sonda Testera.
+
+**Kontrakt silnika (nie zgaduj, tu jest):** `spec = { cards, header(view),
+gate:{intro,lookLabel,declineLabel}, flow:'decide'|'pick'|'order-only', decide:{toBad,toGood,
+current}, pick:{intro,eligible:Set,labelFor,noneLabel}, order:{intro,pool,ask,itemLabel,
+chipsAfter}, markOf, badgeOf, payload(view,list), onOpenCard, onCancel, onComplete,
+probeKeyFor }`. Stan: `marked`(id→'off'|'stay'), `off`, `stay`, `chosenId`, `ordered`,
+`index`, `looked`, `skipped`; `view(over)` to kopia „co PO kliknięciu", a `finalView`
+dopełnia `ordered`, gdy sorter nie został zapytany (0/1 karta — CR 701.18/701.41).
+**Pula sortera zależy od `flow`: `'index'` → cała lista, `'decide'`/`'pick'` → tylko
+zostawione na wierzchu.** Kto to zmieni bez tego warunku, zgasi `M112`.
+
+**Wspólne jądro testów:** `test/harness/css-effective.js` (`loadRules`,
+`effectiveDeclarationsFor`, `pxOf`, `MiniEl`, `withDocument`) — `m129` (394 → 269 linii) i
+`look-wizard-contrast` liczą STYL EFEKTYWNY z tego pliku. Dwie pułapki, które mnie kosztowały
+cykl: komentarze CSS trzeba wyciąć PRZED dzieleniem na reguły, a filtr elementu po klasie ma
+porównywać TOKENS (`split(/\s+/).includes`), bo `look-wizard-cards` zawiera podciąg
+`look-wizard-card`. Trzecia: każdy test klikający musi mieścić się W CAŁOŚCI wewnątrz
+`withDocument` — po jego wyjściu `globalThis.document` jest odinstalowany, a render przy
+kliku woła `document.createElement`.
+
+**Bramy po turze:** `npm test` 4276/4276 (baza 4262), `npm run test:all` 4286/4286 (baza
+4272), `npm run build` 3162,5 kB / 59 modułów (baza 3156,0), trzynaście plików stołu w
+jednym biegu 208/208 (`choice-request-ui` 28/28, `m129` 8/8, `look-wizard-contrast` 3/3,
+`m293` 12/12), Żywy Tester: trzy partie `zendikar` (explorer, seedy 7/21/33) — flow `pick`
+otwierany i klikany na żywo, **0 zgłoszeń detektorów**; flow `decide` NIEOSIĄGALNY żywą
+talią (zmierzone: w `decks/` zero kart z efektem `scry` i zero z `surveil`; katalog: 5 i 2)
+— udowodniony testami, nie Testerem. Nie podnoszę z tego powodu liczby kart: to decyzja
+właściciela.
+
+**Nie ruszaj bez decyzji właściciela:** renama `resolve_fertile_thicket` /
+`pendingFertileThicket` (63 wystąpienia w 8 plikach logiki i stołu = 54 linie; 69 w 11
+plikach całego `src/`;
+`COMMAND_TYPES` w `src/protocol/types.js:23` jest `Object.freeze` i trafia do partii ⇒
+migracja autosave/replay; pin liczby w `M293/11` ma zameldować RED przy spłacie),
+`resolve_springbloom` (86 w 10), ergonomia klikalnej nazwy w chipie (13 px, bez minimum
+dotyku), `creatureManaCostWeight`, gałąź FRESH M290, każda premia wagowa bota bez A/B na
+`--seeds 24`, podnoszenie progu 100k w LESSONS.
+
+**Budżet lektury po L126:** docs/LESSONS.md 127 644 B +≈1,5 kB (lekcja w skróconej formie
+Przypadek/Reguła/Strażnik, prozy nie wynosiłem); zapis ~93,0k/100k tokenów z tury 13
+zostaje, zapas ~6,5k. Następna lekcja będzie wymagała przeniesienia którejś prozy do
+`docs/LESSONS_PRZYPADKI.md` (procedura w AGENTS.md).
+

@@ -7904,6 +7904,54 @@ wierszem-przyciskiem pickera i 30 śladów kreatora walki ptaszkowego, zero zgł
 detektorów**; gałąź podziału obrażeń nie wyszła z tasowania, więc jej dowodem jest pomiar
 jsdom + `m172`/`m292`, a nie „krycie na żywo" (§17.5 raportu).
 
+### Tura 14 (2026-09-03): czystość projektu przez parametryzację — dwa kreatory patrzenia w jednym silniku
+
+Właściciel zamknął otwartą decyzję kształtu jednym zdaniem: „jeśli można te dwa ostatnie
+sparametryzować i obsłużyć tym samym wizardem to powinniśmy to zrobić dla czystości
+projektu — poza tym thicket-card brzmi bardzo blisko zabronionego „kodu pod nazwaną kartę"".
+Druga połowa zdania była trafniejsza niż przypuszczałem: `renderFertileThicketWizard`,
+`lookKind === 'fertile'` i chip `.look-wizard-card` w kreatorze landa to było właśnie pisanie
+interfejsu pod konkretną kartę. Zatem: `renderPeekWizard(host, spec)` — jeden silnik kroku
+decydującego, wyboru, sortera i stopki; `renderLookWizard` (scry/surveil/ułożenie wierzchu)
+i `renderPeekPickOrderWizard` (dawniej „thicket") to dwaj adapterzy podający `flow`,
+nagłówek i payload; chip wchodzi do pickera jako kształt `chip`, a nazwa komponentu opisuje
+CZYNNOŚĆ, bo karta jest w danych wejściowych, nie w kodzie rysującym.
+
+Unifikacja okazała się testem uczciwości dwóch implementacji, nie kosmetyką: zlany kod
+wyszedł dwoma RED-ami. `M112` (klucz na decyzji kończącej) zaczął czerwienieć, bo wspólny
+sorter odziedziczył pulę po scry (tylko karty zostawione na wierzchu) i kreator
+„ułóż te N kart" pytał o odłożone na spód. Reguła poszła do kodu, nie do asercji: pula
+sortera zależy od `flow` (CR 701.4/701.18/701.41). Drugi przypadek był prezentem — stary
+kreator landa milczał o klucz sondy, gdy po wyborze zostawała ≤1 karta, choć komenda była
+już znana w całości; dziś obie rodziny liczą klucz tą samą regułą.
+
+Trzy rzeczy wyszły przy okazji i są warte zanotowania mocniej niż sam refactor.
+(1) Stopka „Zamknij (dokończysz później)" miała trzy identyczne kopie po cztery linie —
+w kreatorze patrzenia, walki i przydziału obrażeń — a razem z nimi podróżował hook
+`.look-wizard-cancel`; dziś to `renderPickerCancel` i rodzina `.picker-cancel`. (2) Parser
+stylu efektywnego był dublowany w dwóch testach, więc wydłubaliśmy
+`test/harness/css-effective.js` (`m129` 394 → 269 linii). (3) Dwa zdania w §17.2 raportu
+okazały się wymyślone: `.thicket-card` nigdy nie istniało, a „cel dotyku chipa pinuje
+`m138-*`" nie miał oparcia w `m138` — chip jest małą pigułką (`padding: 5px 10px`) i jego
+klikalna nazwa NIE spełnia komfortu 44 px; to otwarte zgłoszenie dla właściciela, nie
+domknięty fakt. Akapit „dlaczego NIE robimy" jest tak samo narażony na zmyśloną liczbę jak
+akapit „ile zrobiliśmy".
+
+Dług nazwy karty w protokole zmierzyłem i zostawiłem go świadomie: `resolve_fertile_thicket`
+i `pendingFertileThicket` to 54 odwołania w 8 plikach logiki i stołu (69 w 11 plikach
+`src/`), a `COMMAND_TYPES` jest zamrożoną listą wpisywaną do partii — renama wymaga
+migracji autosave/replay i jest decyzją właściciela. Liczba jest equality-pinem w
+`M293/11`, więc jej spadek zamelduje RED-em i wymusi aktualizację doków. Ten sam zapach ma
+`resolve_springbloom` (86 w 10 plikach).
+
+Bramy: przed startem `npm test` 4262/4262 i `test:all` 4272/4272 (baza tury 13); po
+zmianach **4276/4276** i **4286/4286** (+12 testów `m293`), trzynaście plików stołu w jednym
+biegu 208/208, `npm run build` 3162,5 kB / 59 modułów. Żywy Tester: trzy partie `zendikar`
+vs `zendikar` (explorer, seedy 7/21/33) z kreatorzem „zajrzyj → weź land" klikanym na żywo
+i zerem zgłoszeń detektorów; flow `decide` nie da się osiągnąć żadną talią w repo, więc nie
+zgłaszam go jako krytego na żywo. Lekcja: L126. Narracja i liczby: §18 raportu
+`docs/audits/AUDYT_PR92_2026-09-02.md`, M293 w rejestrze kamieni milowych.
+
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
 
 - ten plik — jeśli zmienia się bieżący stan lub następny krok;

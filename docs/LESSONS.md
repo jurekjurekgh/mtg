@@ -2042,3 +2042,34 @@ fałszywie zieloneje (to złapało mutację B w M292 za pierwszym podejściem).
 **Strażnik:** `test/m129-combat-wizard-dotyk.test.js`. Mutacje: wycięty `min-height` z
 `.picker-row` → RED, dopisana kopia `.damage-wizard-row { min-height… }` → RED, ręcznie
 lepiony `checkbox` poza `picker.js` → RED, ptaszek 16 px → RED.
+
+## L126 (2026-09-03) — Zlanie dwóch „takich samych" kreatorów to test, czy naprawdę robiły to samo
+
+**Przypadek:** `renderLookWizard` i kreator „zajrzyj → weź jeden land" miały po osobnym
+budowniczym listy chipów, osobnej polityce klucza sondy i osobnym sorterze — 46 linii
+wspólnego rysunku przy 358 liniach ogółem (difflib po wierszach). Po zlaniu ich w
+`renderPeekWizard` z parametrem `flow` wyszły DWA czerwone testy i jedna kradziona naprawa:
+`M112` (klucz na decyzji kończącej) spadł, bo silnik odziedziczył pulę sortera po scry i
+kreator „ułóż wierzch" pytał o karty odłożone na spód; a dawny kreator landa NIGDY nie dawał
+klucza, gdy po wyborze zostawała ≤1 karta — błąd, którego nikt nie zgłosił, bo obie
+implementacje maskowały się nawzajem. Nazwa komponentu od konkretnej karty
+(`renderFertileThicketWizard`, `lookKind === 'fertile'`) była tym samym grzechem co porównanie
+stringa karty, tylko cichszym — i osiadała w routing widoku, nie w logice efektu.
+
+**Reguła:** unifikując dwa „takie same" kreatory, przenieś ZACHOWANIA OBU jako dane
+(`flow`), nigdy nie wybieraj wygodniejszego po cichu; każdy RED powstały przy zlewaniu
+czytaj jako pomiar rozjazdu, a nie jako wstęp do poluzowania asercji. Nazwy w warstwie
+rysującej mają opisywać CZYNNOŚĆ — jeśli renama dotyka zamrożonej listy typów protokołu,
+zmierz dług (pliki, wystąpienia, powód zamrożenia), zapisz liczbę i zepnij ją
+equality-pinem, żeby spłata świeciła RED-em. Dwa techniczne przykazania z tej samej tury:
+strażnik stylu ma porównywać TOKENS klasy (podciąg `look-wizard-card` trafia w kontener
+`look-wizard-cards`) i liczyć styl efektywny (L125), a test, który klika, musi mieścić się
+W CAŁOŚCI wewnątrz instalatora DOM-u — po wyjściu z `withDocument` każdy kolejny render
+woła `document.createElement` na odinstalowanym oknie.
+
+**Strażnik:** `test/m293-peek-jeden-wizard-chipy.test.js` (12), `M112` w
+`test/choice-request-ui.test.js`, `test/m129-*` + `test/look-wizard-contrast.test.js` przez
+`test/harness/css-effective.js`. Mutacje: pula sortera bez warunku na `flow` → RED M112;
+dopisana druga lista chipów w kreatorze → RED M293/1; przywrócona kopia stopki → RED
+M293/1; wycięty `min-height` rodziny → RED m129; nazwa karty w kodzie rysującym (bez
+komentarza) → RED M293/11.

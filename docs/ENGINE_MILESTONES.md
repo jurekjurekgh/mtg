@@ -4102,9 +4102,12 @@ przeszły przez `src/table/picker.js`; kasacja duplikatu CSS była w zakresie, a
   Kreatorów rysujących wiersz pickerem: 3 z 8 → 6 z 8 + kreator płatności many. Za
   pickarem nie ma już ŻADNEGO ręcznie lepionego wiersza ani `createElement('input')`
   w `src/table/*.js` (pilnuje tego m129/C+D). Świadomie zostają na własnym markupie:
-  `renderLookWizard` i `renderFertileThicketWizard` (razem 360 linii, chipy `.look-wizard-card`
-  i `.thicket-card`) — to lista wybiorcza, nie wiersz ptaszkowy ani stepper, więc decyzja
-  o ich kształcie jest otwarta (backlog §2).
+  dwa kreatory patrzenia (razem 358 linii własnego rysunku) — to lista wybiorcza, nie
+  wiersz ptaszkowy ani stepper, więc decyzja o ich kształcie została otwarta (backlog §2).
+  **Korekta po turze 14:** napisałem tam o chipach `.look-wizard-card` i `.thicket-card` —
+  tej drugiej klasy NIGDY nie było (na bazie `17a4d1e`: zero trafień w całym repo); kreator
+  landa używał klasy kreatora wyglądu. Kreatory poszły pod pickera w M293 (kształt `chip`),
+  a z warstwy UI zniknęły też nazwy wywodzone od karty.
 - Kreator przydziału obrażeń dostał `onOpenCard` (main.js:567 → `openCardFullscreen`):
   klik w nazwę blokującego otwiera kartę tak jak w dwóch pozostałych kreatorach — wcześniej ten
   jeden ekran różnił się zachowaniem, nie tylko kodem.
@@ -4126,3 +4129,75 @@ przeszły przez `src/table/picker.js`; kasacja duplikatu CSS była w zakresie, a
   przestawiony na klasę rodzinną `.mana-wizard-source` — picker przeniósł etykietę do
   zagnieżdżonego spana, a akcja została na wierszu; to ten sam selektor, którego używa
   Żywy Tester.
+
+## M293 (2026-09-03) — Dwa kreatory patrzenia składają się w jeden silnik, chip wchodzi do pickera (PR #93, tura 14)
+
+Decyzja właściciela (tura 14): „jeśli można te dwa ostatnie sparametryzować i obsłużyć tym
+samym wizardem to powinniśmy to zrobić dla czystości projektu — poza tym thicket-card brzmi
+bardzo blisko zabronionego „kodu pod nazwaną kartę”. Oba zdania były prawdziwe i każde
+ciągnęło inną zmianę.
+
+- **Silnik.** `renderPeekWizard(host, spec)` w `src/table/choice-request.js` niesie wszystkie
+  kroki: gate („Zaglądnij” / „Zrezygnuj”), decydowanie karta po karcie, wybór jednej karty,
+  sorter kolejności, znaczniki (`→ wierzch`, `→ spód (1.)`, `→ cmentarz`), budowę chipów i
+  stopkę. Różnica między scry, surveil, „ułóż wierzch" i „weź jeden land" zmieściła się w
+  parametrach: `flow: 'decide' | 'pick' | 'order-only'`, `gate`, `header`, `decide`, `pick`,
+  `payload`. `renderLookWizard` zachowuje publiczną sygnaturę (w kodzie: jest adapterem),
+  `renderFertileThicketWizard` → `renderPeekPickOrderWizard`, a routing w `main.js` idzie po
+  `lookKind === 'peek-pick'` (było `'fertile'` — przymiotnik od nazwy karty w warstwie
+  sterującej widokiem).
+- **Szósty kształt pickera.** `picker.js` 299 → 418 linii: `renderPickerChip` (pigułka
+  inline, ŚWIADOMIE bez `picker-row`, bo wiersz wyboru to cel dotyku ≥44 px, a chip jest mały
+  i upakowany w linii), `renderPickerChipList` (numer `1. ` z M87, dopisek i badge z modelu,
+  klik w nazwę → podgląd karty) i `renderPickerCancel` (stopka; dawniej cztery identyczne
+  linie w trzech kreatorach). Hak kreatora jest parametrem (`listClassName`, `rowClassName`,
+  `nameClassName`), więc `.look-wizard-card*` zostaje w markupie dla testów i sondy Testera.
+- **Unifikacja była testem uczciwości, nie kosmetyką — dwie RED-y były pracą:**
+  1. `M112 „klucz na decyzji KOŃCZĄCEJ"` — wspólna polityka klucza odziedziczyła pulę sortera
+     po scry (tylko karty zostawione na wierzchu) i kreator `index` zaczął pytać o karty
+     odłożone na spód, gubiąc klucz. Pulę liczy się dziś przez `flow`: `'index'` → cała lista,
+     `'decide'`/`'pick'` → to, co zostaje na wierzchu (CR 701.4 / CR 701.18, CR 701.41).
+  2. `M293/1` upomniał się o jedno źródło stopki i pomiar dał 3 kopie. Zamiast poluzować
+     asercję — wyniesienie `renderPickerCancel`; asercja została wymaganiem, nie opisem.
+- **Przy okazji zamknięty rozjazd, którego nikt nie zgłosił:** stary kreator „weź land" nie
+  dawał klucza sondy, gdy po wyborze zostawała ≤1 karta (sorter nie pyta, więc klik zna już
+  całą komendę). Dziś obie rodziny liczą klucz tą samą regułą i pinuje to `M293/7`.
+- **CSS.** Reguła chipa przeniesiona 1:1 do `.picker-chip` (jasne tło i `color: var(--text)`
+  zostają — to poprawka na „czarne na czarnym" z 2026-08-10, pilnowana przez
+  `look-wizard-contrast`), `.look-wizard-cards` i `.look-wizard-card` skasowane (0 odbiorców
+  po przeniesieniu), `.look-wizard-cancel` → `.picker-cancel` (hook nie wędruje już do
+  kreatorów walki i przydziału obrażeń), zostaje `.look-wizard-current` i współdzielone
+  `.log-card, .look-wizard-card-name`. Reguły `.look-wizard-*`: 5 → 2, `.picker-*`: 19 → 24.
+- **Harness.** `test/harness/css-effective.js` — jądro pomiaru stylu efektywnego
+  (`loadRules`, `effectiveDeclarationsFor`, `pxOf`, `MiniEl`, `withDocument`) wydłubane z
+  `m129` (394 → 269 linii), bo drugi plik (`look-wizard-contrast`, przepisany z tekstu CSS na
+  styl efektywny zgodnie z L125) kopiował ten sam parser 1:1. `tools/run-tests.mjs` zbiera
+  tylko `test/*.test.js`, dlatego helper mieszka w `test/harness/`.
+- **Pomiar (difflib po wierszach, baza `17a4d1e`).** PRZED: 358 linii w dwu kreatorach, w tym
+  **46 linii wspólnego rysunku**. PO: 390 linii (silnik 234 + adaptery 64 i 92), a wspólne
+  zostaje **7 linii klamier** (`});`, `}`, ogrodzenia komentarzy) — powtórzonego rysunku zero.
+  `choice-request.js` 1379 → 1432 linii mimo nowego kształtu w pickerze; kopiowane bloki
+  „Zamknij (dokończysz później)": 4 → 0.
+- **Dług wpisany, nie zmiatany.** `resolve_fertile_thicket` (typ komendy) i
+  `pendingFertileThicket` (pole widoku): **54 linie z tą nazwą w 8 plikach logiki i stołu,
+  co daje 63 wystąpienia, a w całym `src/` 69 wystąpień w 11 plikach**, a `COMMAND_TYPES` (`src/protocol/types.js:23`,
+  `Object.freeze`) jest listą wpisywaną do partii — renama wymaga migracji autosave/replay i
+  nie jest decyzją estetyczną, więc ŚWIADOMIE jej nie zrobiłem. Ten sam zapach ma
+  `resolve_springbloom` (86 wystąpień w 10 plikach `src/`). Zakaz dotyczy warstwy rysującej i
+  jest strażnikiem (`M293/11`), a liczby są przypięte, żeby RED zameldował, gdy ktoś dług
+  spłaci.
+- **Bramy.** `npm test` **4276/4276** (baza tury 13: 4262; +12 w nowym `m293`),
+  `npm run test:all` **4286/4286** (baza 4272), trzynaście plików stołu w jednym biegu
+  208/208 (`choice-request-ui` 28/28, `m129` 8/8, `look-wizard-contrast` 3/3, `m260`, `m136`,
+  `m167`, `m138`, `m292`, `table-ui` 71/71, `audit-m87`), `npm run build` 3162,5 kB /
+  59 modułów (baza 3156,0 kB; +6,5 kB to chip, lista i stopka w pickerze plus silnik).
+- **Żywy Tester.** Trzy partie `zendikar` vs `zendikar` (explorer, seedy 7/21/33): kreator
+  „zajrzyj → weź land" otwierał się i był klikany na żywo (transkrypty: 5 i 10 wzmianek o
+  karcie źródłowej, 1 i 8 klików „… na wierzch biblioteki"), **detektory: 0 zgłoszeń**.
+  Świadoma dziura pokrycia: scry/surveil nie osiągnie żadna talia z `decks/` (zmierzone: 0
+  kart z efektem `scry` i 0 z `surveil`; w katalogu efekt `scry` deklaruje 5 kart, `surveil`
+  2 — liczone po `abilities`/`spell`, nie po frazie w `notes`, gdzie wzmianek jest 186.
+  Próba z talii tymczasowej ujawniła przy okazji, że `run-game.mjs` nie ma `--fixture`, a
+  talia spoza artefaktu kończy się komunikatem, zaś nieznana lista kart potrafi cicho
+  dać partię na innej talii — patrz `docs/setup/ENVIRONMENT.md`. Ścieżka `decide` jest więc
+  udowodniona testami i jsdomem, a nie Testerem; nie zgłaszam jej jako „krytej na żywo".
