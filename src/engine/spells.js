@@ -512,13 +512,13 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   }
   // Generyczny X-cost (Consume Spirit, Epic Experiment): koszt = manaCost + X.
   if (preObject?.spell?.xCost) {
-    return castXCostSpell(state, playerId, objectId, targets, xValue);
+    return castXCostSpell(state, playerId, objectId, targets, xValue, abilityWindowCast);
   }
   // Fireball (X-cost, „any number of targets", divided damage): osobna ścieżka —
   // X wybiera gracz, cele to dowolna liczba (stwory i/lub gracze), koszt {X}{R}+
   // {1} za każdy cel ponad pierwszy, obrażenia X dzielone po równo w dół.
   if (preObject?.spell?.fireball) {
-    return castFireball(state, playerId, objectId, targets, xValue);
+    return castFireball(state, playerId, objectId, targets, xValue, abilityWindowCast);
   }
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets, false, abilityWindowCast);
   const player = state.players.find((entry) => entry.id === playerId);
@@ -798,14 +798,18 @@ export function castMadnessSpell(state, playerId, objectId, targets, modeIndex) 
  * cel ponad pierwszy. Obrażenia X dzielone po równo (zaokr. w dół) między
  * wszystkie cele; reszta z dzielenia przepada (CR 119.4 „divided evenly").
  */
-function castFireball(state, playerId, objectId, targets, xValue) {
+function castFireball(state, playerId, objectId, targets, xValue, abilityWindowCast = false) {
   const object = state.objects.get(objectId);
-  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || object.kind !== 'spell' || !object.spell?.fireball) {
+  // Patrz `castXCostSpell`: to samo uprawnienie okna zdolności (audyt PR #93).
+  const fromAbilityWindow = abilityWindowCast && object?.zone === 'exile';
+  if (!object || object.controllerId !== playerId
+    || (object.zone !== 'hand' && !fromAbilityWindow)
+    || object.kind !== 'spell' || !object.spell?.fireball) {
     throw new Error('To nie jest rzucalny czar X z dowolną liczbą celów z ręki');
   }
   if (object.spell.timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
-    if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+    if (!abilityWindowCast && (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0)) {
       throw new Error('Czar sorcery tylko w swoją fazę main przy pustym stosie');
     }
   }
@@ -861,14 +865,20 @@ function castFireball(state, playerId, objectId, targets, xValue) {
  *  wg `spell.targets` (zazwyczaj 0-1 cel — „any target"). X zapisujemy na
  *  obiekcie stosu (spellX), żeby efekty (damage/gain/exile) mogły go użyć.
  */
-function castXCostSpell(state, playerId, objectId, targets, xValue) {
+function castXCostSpell(state, playerId, objectId, targets, xValue, abilityWindowCast = false) {
   const object = state.objects.get(objectId);
-  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || object.kind !== 'spell' || !object.spell?.xCost) {
+  // Audyt PR #93: `abilityWindowCast` — czar X wygnany przez zdolność, która
+  // pyta „you may cast it”, jest rzucalny z exile (CR 107.3a: X wybiera gracz
+  // w chwili rzutu). Mirror `requireSpell`/`castModalSpell`.
+  const fromAbilityWindow = abilityWindowCast && object?.zone === 'exile';
+  if (!object || object.controllerId !== playerId
+    || (object.zone !== 'hand' && !fromAbilityWindow)
+    || object.kind !== 'spell' || !object.spell?.xCost) {
     throw new Error('To nie jest rzucalny X-cost czar z ręki');
   }
   if (object.spell.timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
-    if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+    if (!abilityWindowCast && (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0)) {
       throw new Error('Czar sorcery tylko w swoją fazę main przy pustym stosie');
     }
   }
@@ -2201,7 +2211,13 @@ export function suspendCard(state, playerId, objectId) {
  * podzbiory do rozsądnego limitu (jak COMBAT_OPTION_CAP w combat.js), żeby nie
  * eksplodować przy dużej planszy. Każda komenda niesie xValue i targets.
  */
-function legalFireballCasts(state, playerId, objectId, object, manaAvailable) {
+/**
+ * Oferty rzutu Fireballa (X + „any number of targets” + {1} za każdy cel ponad
+ * pierwszy): podzbiory celów do 3 i X od 1 do budżetu, limit 15 (bez tego
+ * spread setek tysięcy wariantów wywalał stos). Wspólne dla ręki i okna
+ * zdolności Vaana — audyt PR #93, L74: jedna implementacja.
+ */
+export function legalFireballCasts(state, playerId, objectId, object, manaAvailable) {
   const casts = [];
   const creatures = state.zones.battlefield
     .map((id) => state.objects.get(id))
@@ -2367,31 +2383,10 @@ export function legalSpellCasts(state, playerId) {
     }
     // Generyczny X-cost (Consume Spirit, Epic Experiment — Batch 30): czar ma
     // deskryptor `spell.xCost` (koszt bazowy w manaCost NIE zawiera X). X
-    // wybiera gracz; całkowity koszt = manaCost + X. Cel: jeden (jak Fireball
-    // any target) albo brak; oferujemy X od 0 do dostępnej many po pokryciu
-    // bazy, dla każdego legalnego celu.
+    // wybiera gracz; całkowity koszt = manaCost + X. Audyt PR #93: oferty liczy
+    // `legalXCostCasts` — ten sam generator obsługuje też okno zdolności Vaana.
     if (object.spell?.xCost) {
-      const baseCost = effectiveSpellManaCost(state, object);
-      const maxX = Math.max(0, manaAvailable(object) - baseCost);
-      const cap = object.spell.xCost.cap ?? 15;
-      const targetSpec = object.spell.targets ?? [];
-      let pools = [[]];
-      if (targetSpec.length > 0) {
-        pools = cartesian(targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object)));
-      }
-      if (pools.length === 0) pools = [[]];
-      const basePips = coloredPipsOf(object.cardId);
-      const blackX = Boolean(object.spell.xCost.black);
-      for (const combo of pools) {
-        for (let X = 0; X <= Math.min(maxX, cap); X += 1) {
-          if (blackX && X > 0) {
-            const reqs = [...basePips];
-            for (let i = 0; i < X; i += 1) reqs.push(['B']);
-            if (!canPayColoredCost(state, playerId, reqs)) continue;
-          }
-          casts.push({ objectId: id, targets: combo, xValue: X });
-        }
-      }
+      for (const cast of legalXCostCasts(state, playerId, id, object, manaAvailable(object))) casts.push(cast);
       continue;
     }
     // Fireball (X-cost, any-number-of-targets): oferujemy X od 1 do dostępnej
@@ -2542,6 +2537,41 @@ export function legalCleaveCasts(state, playerId) {
  * celów o rozmiarze min..max, a `stunAmongTargets` dokłada wybór jednego z nich
  * jako celu dodatkowego (np. stun counter).
  */
+/**
+ * Oferty rzutu czaru z kosztem X (`spell.xCost`): X od 0 do tego, na co stać
+ * gracza (po pokryciu bazy i z uwzględnieniem `cap`), dla każdego zestawu
+ * celów. „Spend only black mana on X" (Consume Spirit) odrzuca warianty,
+ * których czarne pipy przekraczają źródła.
+ *
+ * Wspólny dla rzutu z ręki (`legalSpellCasts`) i dla okna zdolności Vaana
+ * (`epicCastOffers`) — audyt PR #93, L74: jedna implementacja.
+ */
+export function legalXCostCasts(state, playerId, objectId, object, manaAvailable) {
+  const casts = [];
+  const baseCost = effectiveSpellManaCost(state, object);
+  const maxX = Math.max(0, manaAvailable - baseCost);
+  const cap = object.spell.xCost.cap ?? 15;
+  const targetSpec = object.spell.targets ?? [];
+  let pools = [[]];
+  if (targetSpec.length > 0) {
+    pools = cartesian(targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object)));
+  }
+  if (pools.length === 0) pools = [[]];
+  const basePips = coloredPipsOf(object.cardId);
+  const blackX = Boolean(object.spell.xCost.black);
+  for (const combo of pools) {
+    for (let X = 0; X <= Math.min(maxX, cap); X += 1) {
+      if (blackX && X > 0) {
+        const reqs = [...basePips];
+        for (let i = 0; i < X; i += 1) reqs.push(['B']);
+        if (!canPayColoredCost(state, playerId, reqs)) continue;
+      }
+      casts.push({ objectId, targets: combo, xValue: X });
+    }
+  }
+  return casts;
+}
+
 /**
  * Oferty rzutu JEDNEGO trybu czaru modalnego (cele stałe i zmienne).
  * Wspólna dla rzutu z ręki (`legalSpellCasts`) i dla okien „you may cast it”
