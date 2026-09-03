@@ -7857,6 +7857,53 @@ unieważnia zasady „katalog należy do właściciela". Następnym razem, zanim
 karta, pytam o każdą z osobna (albo o listę zatwierdzoną pisemnie w PR), nawet gdy
 poprzednie polecenie brzmiało jak zgoda zbiorcza.
 
+### Tura 13 (2026-09-03): picker dla rodzin „ile" i „jedno tapnięcie", ptaszek ignorowania, przerobiony m129
+
+Właściciel odpowiedział na propozycję zakresu krótko: „1+2+3 i przerobienie testu" — czyli
+pełna unifikacja wierszy stołu plus świadoma zmiana strażnika, który trzymał duplikaty CSS
+przy życiu.
+
+**Wszedł jeden komponent, cztery kształty.** `src/table/picker.js` (121 → 299 linii) rysuje
+teraz ptaszka (`checkbox`/`radio`), stepper (`min`/`max`, `onStep(±1,id)`, predykaty
+`canDecrement`/`canIncrement`, `format`, hak `actions`, handle `setValue/refresh`),
+wiersz-przycisk (`kind:'button'`, `html` na ikony many) i wariant `inline` (ptaszek wewnątrz
+przycisku opcji, bez klas `picker-*`, bo trzy testy porównują `className` ze stringiem).
+Przez niego idą: podział obrażeń, przydział obrażeń blokującym, źródła many w płatności
+kostki i OBA ptaszki „ignoruj tę opcję" (panel `renderChoiceRequest` + panel akcji w
+`render.js`). Kreatorów w `choice-request.js` rysujących wiersz helperem: 3/8 → 6/8;
+ręcznie lepionych wierszy `*-row` i `createElement('input')` poza pickerem: 4 → 0.
+Wiersze scry/surveil i Fertile Thicket zostają własne — to chipy z obrazkiem, nie ptaszek
+ani stepper (decyzja i cena: backlog §2).
+
+**Konsolidacja, nie doklejenie:** skasowane reguły `.combat-wizard-row`,
+`.combat-wizard-row .combat-wizard-name`, `.damage-wizard-row`, `.damage-wizard-minus`
+— po 261 znaków bajt w bajt wspólne z rodziną `.picker-*`. Klasy hakerskie
+(`damage-wizard-*`, `action-ignore`, `mana-wizard-source`, `multi-target-toggle`,
+`combat-wizard-toggle`, `escape-exile-toggle`) zostały na tych samych elementach co klasy
+rodzinne, więc sonda Testera i testy liczące po klasach nie zmieniły selektorów —
+poza jednym miejscem, jawnie przerobionym (niżej).
+
+**Drugie oblicze „przerobienia testu":** `renderDamageWizard` dostał `onOpenCard`
+(main.js → `openCardFullscreen`) — klik w nazwę blokującego otwiera kartę jak w dwóch
+pozostałych kreatorach; `m136` (strażnik intencji, okno 600 znaków) wymagał skrócenia
+komentarza przy wywołaniu, a nie poluzowania asercji. `m129` przestawiony z tekstu CSS na
+styl efektywny liczony od realnej listy klas + strażnik antyduplikacyjny i zakaz lepionych
+ptaszków; cztery mutacje przełączały go na RED (tabele w §17.3 raportu
+`docs/audits/AUDYT_PR92_2026-09-02.md`). Driver `test/table-ui.test.js` klikający źródła
+many po tekście węzła (`/^Tapnij:/`) przeniósł się na klasę `.mana-wizard-source` —
+picker przeniósł etykietę do zagnieżdżonego spana, a akcję zostawił na wierszu; to ten sam
+selektor, którego używa Żywy Tester. Lekcja z tego: L125.
+
+**Bramy tury 13:** przed startem 4249/4249 (`npm test`) i 4259/4259 (`test:all`) — zmierzone,
+żeby mieć bazę; po zmianach `npm test` **4262/4262** (+11 nowych `m292`, +2 w przerobionym
+`m129`), `npm run test:all` **4272/4272**, `test/table-ui.test.js` 71/71,
+`test/table-mana-wizard` 25/25, `m136` 7/7, `m129` 8/8, `npm run build` 3156,0 kB /
+59 modułów. Żywy Tester: cztery partie (seed 42 innistrad-brg vs ravnica + 3/9/15
+srodziemie vs ravnica, profil random, `--tick-rate` 0,35–0,5) — **17 opłat kreatora many
+wierszem-przyciskiem pickera i 30 śladów kreatora walki ptaszkowego, zero zgłoszeń
+detektorów**; gałąź podziału obrażeń nie wyszła z tasowania, więc jej dowodem jest pomiar
+jsdom + `m172`/`m292`, a nie „krycie na żywo" (§17.5 raportu).
+
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
 
 - ten plik — jeśli zmienia się bieżący stan lub następny krok;

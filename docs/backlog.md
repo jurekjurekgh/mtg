@@ -173,13 +173,17 @@ Następna lista właściciela wchodzi tutaj.)_
   przed M112).
 - **Sprzątanie kontraktu `addObject`** (lekcja L21: pola spoza kontraktu giną
   po cichu — dorobić walidację albo jawną listę pól).
-- **Reszta ekranów wyboru na `picker.js`** (po M288/A): wspólny wiersz wyboru ma
-  już kreator celów wielokrotnych, wybór atakujących/bloków i koszt escape
-  (`.escape-exile-*` też nie miały ani jednej reguły CSS — dostały ją razem z
-  rodziną `.picker-*`). Do przejścia tym samym kątem: chipy `.look-wizard-card`
-  (scry/surveil/look), steppery podziału obrażeń, `mana-wizard`. Kryterium:
-  czy ekran ma „pozycje do zapunktowania", bo wtedy picker daje mu natywny
-  `<input>` (dotyk 44 px) i klik w nazwę = pełny ekran karty.
+- **Reszta ekranów wyboru na `picker.js`** (po M288/A, domknięte w M292): wspólny
+  wiersz wyboru mają kreator celów wielokrotnych, atakujący/blocki, koszt escape,
+  **oba kreatorzy obrażeń (steppery), źródła many w płatności kostki i oba ptaszki
+  „ignoruj tę opcję"** (11 wołań helpera, 6 z 8 kreatorów w `choice-request.js`).
+  **Zostaje:** chipy `.look-wizard-card` (scry/surveil/look) i `.thicket-card`
+  (Fertile Thicket) — razem 360 linii własnego markupu. Świadomie NIE pod pickarem:
+  to siatki kart z obrazkiem, nie wiersz „ptaszek + nazwa" ani stepper, a ich cel
+  dotyku pinuje `m138-*`. Decyzja do właściciela: czy picker ma dostać piąty kształt
+  `kind:'chip'`, czy chipy zostają osobnym komponentem. Kryterium z M292: helper
+  przyjmuje to, co wspólne (rodzina dotyku, nazwa, akcja), a nie to, co tylko wygląda
+  podobnie.
 - **Talia pod picker nie powstanie przez tasowanie** (tura 10, §13.8): próba
   `decks/wielocelowa.txt` wpadła w `test/m132-proporcje-landow.test.js` (lądy) i
   `test/repo-decks.test.js` (M178/ADR 0023 — 11 z 12 kart już gdzieś leżało).

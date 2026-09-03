@@ -4078,3 +4078,51 @@ fixture bota, `test/repo-decks`, `test/card-data`, `test/card-sources-guard`,
 `test/audyt-bot-walka-remisy`, `test/m195-multi-target` → **124/124**.
 Baseline benchmarku wrócił do liczb z M290 (heuristic 85,5%, aggro 24,5%, random
 4,5%), bo talie są znowu identyczne jak przy `358ee35`.
+
+
+## M292 (2026-09-03) — Jeden komponent wiersza dla „który", „ile" i „jedno tapnięcie" (PR #93, tura 13)
+
+Decyzja właściciela z tury 13: „1+2+3 i przerobienie testu". Rodzina „ile" (steppery
+przydziału obrażeń i podziału), wiersze źródeł many i oba ptaszki „ignoruj tę opcję"
+przeszły przez `src/table/picker.js`; kasacja duplikatu CSS była w zakresie, a strażnik
+`m129` przepisany z tekstu CSS na styl efektywny (lekcja L125).
+
+- `picker.js` 121 → 299 linii. Cztery kształty z jednego renderera:
+  `kind:'checkbox'|'radio'` (ptaszek, bez zmian), `kind:'stepper'` (`min`/`max`,
+  `onStep(±1, id)`, predykaty `canDecrement`/`canIncrement`, `format`, hak `actions` na
+  własne kontrolki wywołującego; zwraca handle `setValue`/`getValue`/`refresh`/`setDisabled`),
+  `kind:'button'` (wiersz jednodotykowy, `html` dla ikon many) i `variant:'inline'`
+  (ptaszek mieszkający WEWNĄTRZ przycisku — bez klas `picker-*`, bo na `className ===
+  'action-ignore'` patrzyły trzy testy), plus `renderPickerSection` na nagłówki slotów.
+  Nazwy haków (`rowClassName`, `nameClassName`, `valueClassName`, `toggleClassName`,
+  `inc`/`decClassName`) to parametry: tam, gdzie jedna klasa musiałaby wypaść na dwa
+  elementy (`damage-wizard-minus` vs `-plus`), kształt bierze nazwę od wołającego.
+  Kontrakt klas wpisany w nagłówek pliku, bo na niego patrzą testy i sonda Testera.
+- Wołań helpera: 7 → 11 (`choice-request.js` 9, `mana-wizard.js` 1, `render.js` 1).
+  Kreatorów rysujących wiersz pickerem: 3 z 8 → 6 z 8 + kreator płatności many. Za
+  pickarem nie ma już ŻADNEGO ręcznie lepionego wiersza ani `createElement('input')`
+  w `src/table/*.js` (pilnuje tego m129/C+D). Świadomie zostają na własnym markupie:
+  `renderLookWizard` i `renderFertileThicketWizard` (razem 360 linii, chipy `.look-wizard-card`
+  i `.thicket-card`) — to lista wybiorcza, nie wiersz ptaszkowy ani stepper, więc decyzja
+  o ich kształcie jest otwarta (backlog §2).
+- Kreator przydziału obrażeń dostał `onOpenCard` (main.js:567 → `openCardFullscreen`):
+  klik w nazwę blokującego otwiera kartę tak jak w dwóch pozostałych kreatorach — wcześniej ten
+  jeden ekran różnił się zachowaniem, nie tylko kodem.
+- `index.html`: skasowane reguły `.combat-wizard-row`/`.combat-wizard-row .combat-wizard-name`
+  i `.damage-wizard-row`/`.damage-wizard-minus` — były kopiami rodziny `.picker-*` (261
+  znaków na blok). Zostały selektory zależne od struktury wiersza (`:has(.picker-toggle:checked)`
+  obsługuje ptaszek i wiersz-przycisk), `.combat-wizard-sub` (opis pod nazwą) i `.picker-*`.
+- Semantyka reguł nietknięta: CR 510.1c/510.1d (sufit mocy, zero obrażeń, kanalizacja,
+  „suma ≤ mocy"), przy spadku poniżej lethal zerują się późniejsi blokujący, `setValue`
+  maluje wiersz z żywego modelu, a klik w wyłączony stepper nic nie robi (stub DOM w
+  testach odpala listenery niezależnie od `disabled`, a na iOS-ie dotyk potrafi przebić
+  się do rodzica). Predykat `canIncrease`/`canGive` wrócił tam, gdzie był: do warunku
+  klikalności, nie do no-opującego handlera (lekcja L120).
+- Bramy po zmianach: `npm test` 4262/4262 (baza 4249 + 11 nowych w `m292` + 2 w
+  przerobionym `m129`), `npm run test:all` 4272/4272, `node --test test/table-ui.test.js`
+  71/71, `test/m129-*` 8/8, `test/m136-*` 7/7, `test/m172-*`/`test/m195-*`/
+  `test/choice-*`/`test/table-mana-wizard` zielone, `npm run build` 3156,0 kB / 59 modułów.
+  `test/table-ui.test.js`: driver klikający źródła many po tekście węzła (`/^Tapnij:/`)
+  przestawiony na klasę rodzinną `.mana-wizard-source` — picker przeniósł etykietę do
+  zagnieżdżonego spana, a akcja została na wierszu; to ten sam selektor, którego używa
+  Żywy Tester.

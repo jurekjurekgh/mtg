@@ -573,7 +573,49 @@ bota i seed w `test/panel-rozgrywka-tura-przeciwnika.test.js` (talia człowieka 
 tam sztywno `decks/innistrad-brg.txt`). Trzeba przejrzeć seedy wszędzie, gdzie ta
 talia jest podkładką: `grep -rln "decks/" test/ | xargs grep -l makeSession`.
 
-**Bramy na koniec tury 12:** revert + dokumentacja → rodzina equip, strażnicy
+**Bramy na koniec tury 12 (dopisane w turze 13):** revert + dokumentacja → rodzina equip, strażnicy
 talii/źródeł/kart, Z5, grzechotki, panel M101/D, M195: **124/124**; pełne `npm test`
 i `npm run test:all` — dopisane poniżej po przejściu. `npm run build`: 3146,1 kB /
-59 modułów (3150,7 kB z kartami).
+59 modułów (3150,7 kB z kartami). Pełne bramy tury 12 wyszły dopiero w tej sesji:
+`npm test` 4249/4249 i `npm run test:all` 4259/4259 — to one były bazą pomiaru
+przed turą 13, więc wisiorek „dopisane poniżej po przejściu" jest zamknięty.
+
+
+## Dopisek (2026-09-03, tura 13): picker dla rodzin „ile" i „jedno tapnięcie"
+
+**Stan:** gałąź `arena/01a06193-mtg`, PR #93. Baza przed tą turą: `npm test` 4249/4249,
+`test:all` 4259/4259. Po turze 13: `npm test` **4262/4262**, `npm run test:all`
+**4272/4272**, `npm run build` 3156,0 kB / 59 modułów, CI — do sprawdzenia po pushu.
+
+**Co zrobiłem (pełny zakres „1+2+3 + przerobienie testu"):** `src/table/picker.js` (121 →
+299 linii) rysuje cztery kształty wiersza wyboru: ptaszek (`checkbox`/`radio`), stepper
+(`kind:'stepper'` z `min`/`max`, `onStep(±1,id)`, `canDecrement`/`canIncrement`, `format`,
+hakiem `actions` i handlem `setValue/refresh`), wiersz-przycisk (`kind:'button'`, `html`)
+i wariant `inline` dla ptaszka wewnątrz przycisku opcji. Przez niego idą teraz: podział
+obrażeń, przydział obrażeń blokującym (z nowym `onOpenCard`, main.js:567), źródła many
+w płatności kostki, ptaszek wyciszenia w `renderChoiceRequest` i w panelu akcji `render.js`.
+Duplikaty CSS `.combat-wizard-row`, `.combat-wizard-row .combat-wizard-name`,
+`.damage-wizard-row`, `.damage-wizard-minus` skasowane (były kopiami `.picker-*`, 261 znaków
+na blok). Klasy hakerskie zostały na tych samych elementach, więc selektory Testera nie
+zmieniły się ani o znak.
+
+**Kontekst dla następnej sesji (nie zgaduj, tu jest stan faktyczny):**
+- Kontrakt klas pickera jest opisany w nagłówku `src/table/picker.js` i jest twarde:
+  `picker-row` + klasa kształtu (`picker-stepper`/`picker-button`) na wierszu,
+  `picker-name`/`picker-value`/`picker-toggle`, a `variant:'inline'` **nie dostaje żadnych
+  klas `picker-*** (na `className === 'action-ignore'` patrzą `test/table-ui`,
+  `test/choice-group-ignore`, `test/choice-ignore` przez grep źródłowy).
+- `test/m129-*` NIE jest już strażnikiem tekstu CSS: liczy styl efektywny po realnej liście
+  klas + pilnuje, że rodzina kreatora nie dubluje wyglądu wiersza i że poza `picker.js` nie ma
+  `createElement('input')`. Jeśli ktoś „naprawia" RED-a przez dopisanie reguły w rodzinie
+  kreatora — psuje dokładnie to, o co chodziło w turze 8 i 13.
+- `test/table-ui.test.js`: driver klikający źródła many wybierał je po tekście węzła;
+  po M292 tekst siedzi w spanie wewnątrz wiersza, więc selektor to klasa rodzinna
+  `mana-wizard-source` (dokładnie tak jak w `tools/table-tester/run-game.mjs`).
+- Budżet lektury startowej po L125: ~93.0k/100k tokenów (zapas ~7.0k).
+
+**Otwarte decyzje właściciela (nic tu nie ruszam bez pisemnego „tak"):**
+(c) `creatureManaCostWeight = 1`; (d) potrącanie kosztu `equipment.equip`; domknięcie M290
+w gałęzi FRESH (remis 18,00/18,00, pin T11/7); chipy `.look-wizard-card`/`.thicket-card`
+(360 linii własnego markupu) — piąty kształt pickera czy osobny komponent; **karty: agent
+nie dodaje i nie pyta zbiorczo** (tura 12).

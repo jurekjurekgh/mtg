@@ -2018,3 +2018,27 @@ przedwczesnym `--write`) oraz tabela atrybucji i kolejność wejścia karty w
 `docs/audits/AUDYT_PR92_2026-09-02.md` §15. Komentarz z tabelką przy suficie `block` w
 `test/audyt-bot-walka-remisy.test.js` zniknął razem z Revertem kart — sufit znowu
 wynosi 4 — stan z `f6a5459`.
+
+
+## L125 (2026-09-03) — Strażnik wyglądu ma mierzyć styl efektywny, nie tekst CSS
+
+**Przypadek:** M288/A zbudował jeden komponent wiersza (`src/table/picker.js`), a
+`test/m129-combat-wizard-dotyk.test.js` kazał każdej rodzinie kreatora mieć WŁASNĄ regułę
+`min-height: 44px` w `index.html`. Efekt: bloki bajt w bajt identyczne (po 261 znaków,
+różnił je tylko selektor), utrzymywane ręcznie w dwóch miejscach — i strażnik zielony także
+wtedy, gdy wspólna rodzina straciła próg dotyku, bo kopia w rodzinie kreatora nadal go
+miała. M292 odwrócił zależność: test liczy deklaracje rozwiązane po realnej liście klas z
+renderera, a drugi test pilnuje, żeby rodzina kreatora nie dublowała wyglądu wiersza.
+Dopiero wtedy kasacja duplikatu była bezpieczna, bo RED-em grozi zarówno regresja w
+komponencie współdzielonym, jak i dorzucenie kopii po stronie wołającego.
+
+**Reguła:** test, który sprawdzając wygląd czyta tekst stylesheetu, pilnuje duplikatu, nie
+faktu. Licz styl efektywny (klasy z kodu → reguły → scalone deklaracje) i dodaj asercję
+antyduplikacyjną. Tekst CSS badaj tylko tam, gdzie nie ma czego renderować (`:root`,
+`@media`). Przy okazji: parser CSS w teście musi wyciąć komentarze PRZED dzieleniem na
+reguły — inaczej reguła stojąca zaraz po bloku komentarza znika z listy i strażnik
+fałszywie zieloneje (to złapało mutację B w M292 za pierwszym podejściem).
+
+**Strażnik:** `test/m129-combat-wizard-dotyk.test.js`. Mutacje: wycięty `min-height` z
+`.picker-row` → RED, dopisana kopia `.damage-wizard-row { min-height… }` → RED, ręcznie
+lepiony `checkbox` poza `picker.js` → RED, ptaszek 16 px → RED.
