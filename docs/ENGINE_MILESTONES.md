@@ -4552,6 +4552,26 @@ Dobrowolna dopłata Zoraline — tryb przyciskowy helpera ze wspólnym Anuluj
 okno Vaana bez regresji (final-fantasy 51); 0 zgłoszeń detektorów. Silnik
 i protokół bez zmian (L48).
 
+## M303 (2026-09-03) — Jeden komponent podglądu 🔍; pomiar: kreatory „osobne" już stoją na jednym helperze
+
+**Pytanie właściciela.** Czy scry/surveil/index, walkę, podział obrażeń,
+escape i mana-wizard przerobić pod wspólny helper, „żeby zmiany UI były
+w jednym miejscu". **Pomiar:** już są — jeden modal `#choice-request`,
+jeden moduł, wspólne wiersze `renderPickerRow` (×10: radio/checkbox/
+przycisk/stepper), wspólne intro/stopka/Anuluj/status, jeden CSS, jeden
+podgląd kart. Różne są tylko maszyny stanów interakcji (sekwencja kart,
+kwoty, sorter) — to parametry/tryby, nie osobne stosy UI; mega-funkcja
+byłaby regresją (L41). **Zmiana:** jedyne faktyczne dublowanie — przycisk
+podglądu 🔍 lepiony ręcznie w dwóch miejscach — zastąpione jednym
+komponentem `renderPeekButton` (klasa, mostek `previewCardId`,
+`stopPropagation`; strażnik M303/3 liczy wystąpienia etykiety = 1).
+
+Bramki: m303 3/3 (RED→fix), mutacje 3/3 zabite; `npm test` 4399/4399,
+`test:all` 4409/4409, build 3224,8 kB; Żywy Tester 0 detektorów: helper
+radiowy (ff51), 🔍 przez komponent + wspólny Anuluj (wb811), surveil bez
+regresji (wl3). Silnik i protokół bez zmian (L48). Commity: RED `b55d18c`,
+fix `327bc1f`.
+
 ## M302 (2026-09-03) — Każdy modal wyboru stoi na jednym helperze: ogólny plan przyciskowy (doprecyzowanie właściciela)
 
 **Doprecyzowanie.** Po M301 właściciel odrzucił ramę „rodzin odroczonych do

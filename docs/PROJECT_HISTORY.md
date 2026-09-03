@@ -8244,3 +8244,24 @@ jako przyciski helpera z 🔍, Zoraline ze wspólnym Anuluj, scry bez regresji;
 sandbox zresetował workspace w trakcie tury (drugi raz) — odzyskane przez
 fetch + mixed reset do FETCH_HEAD, kity RED/fix odtworzone na właściwej
 bazie bez utraty treści.
+
+**Ciąg dalszy sesji — pomiar „jednego miejsca" zmian UI i komponent
+podglądu (M303).**
+
+Właściciel zapytał, czy scry/surveil/index, walkę, podział obrażeń, escape
+i mana-wizard przerobić pod wspólny helper („żeby zmiany UI były w jednym
+miejscu"). Pomiar: te wizardy już są trybami jednego fundamentu — jeden
+modal `#choice-request`, jeden moduł `choice-request.js`, wspólne wiersze
+`renderPickerRow` z `picker.js` (radio/checkbox/przycisk/stepper, 10
+wywołań łącznie z mana-wizardem), wspólne intro/stopka/Anuluj/status, jeden
+arkusz CSS, jeden podgląd kart. Mega-funkcja łącząca maszyny stanów
+(sekwencja kart, kwoty, sorter) nie dodałaby „jednego miejsca", tylko
+ryzyko regresji — różnice zostają jako parametry/tryby. Jedyne faktyczne
+dublowanie — przycisk podglądu 🔍 lepiony ręcznie w dwóch miejscach —
+zamknięte jednym komponentem `renderPeekButton`; strażnik testowy pilnuje,
+by etykieta miała dokładnie jedno wystąpienie w źródle. Bramki: m303 3/3,
+mutacje 3/3 zabite; `npm test` 4399/4399, `test:all` 4409/4409, build
+3224,8 kB; Żywy Tester 0 detektorów (ff51/wb811/wl3 — 🔍 przez komponent,
+wspólny Anuluj, surveil bez regresji). Commity: `b55d18c` (RED),
+`327bc1f` (fix). Uwaga sesji: sandbox zresetował workspace trzeci raz —
+docblock siatki bezpieczeństwa utracony przy resecie, przywrócony w ficie.

@@ -151,3 +151,35 @@ podział obrażeń — kwoty, escape — licznik, mana-wizard — płatność).
 `resolve_reveal_order` nie tworzy modala (pojedyncza komenda, permutacje
 nieenumerowane). Awaryjna ściana `renderChoiceRequest` = siatka
 bezpieczeństwa dla grup pustych.
+
+## 5. M303 — pytanie właściciela: „czy scry/surveil/index, walkę, podział
+obrażeń, escape i mana-wizard przerobić pod helper, żeby zmiany UI były
+w jednym miejscu?" (2026-09-03)
+
+Pomiar: te wizardy JUŻ stoją na jednym fundamencie — różnią się kształtem
+interakcji (maszyną stanów), nie stosem UI:
+
+- jeden modal `#choice-request` dla wszystkich wyborów (mana-wizard ma
+  własny element, bo to podprzepływ płatności otwierany z kosztu, nie
+  wybór z `legalCommands` — ale rysuje się tymi samymi komponentami);
+- jeden moduł `choice-request.js` + wspólne prymitywy z `picker.js`:
+  `renderPickerRow` (radio/checkbox/przycisk/stepper — 8 wywołań
+  w choice-request.js + 2 w mana-wizard.js), `renderPickerChipList`,
+  `renderPickerSection`, `renderPickerCancel`;
+- wspólne chrome: `choice-request-intro`, `choice-request-options`,
+  `choice-request-actions`, `ghost-btn`, `picker-status`;
+- jeden podgląd kart: `openCardFullscreenByCardId` + delegacja nazw
+  (`log-card`), bez duplikatów;
+- cały CSS modali w jednym arkuszu (`index.html`) — zmiana czcionki,
+  koloru czy 44 px celu dotyku to JEDNO miejsce.
+
+Wniosek: łączenie wszystkich maszyn stanów w jedną mega-funkcję nie dałoby
+„jednego miejsca zmian" (ono już jest), a podniosłoby ryzyko regresji
+(L41: jedna funkcja na kształt interakcji). Różnice zostają jako
+parametry/tryby, nie osobne stosy.
+
+Jedyne faktyczne dublowanie znalezione pomiarem — przycisk podglądu 🔍
+lepiony ręcznie w dwóch miejscach (siatka bezpieczeństwa + tryb
+przyciskowy) — zamknięte w M303: jeden komponent `renderPeekButton`
+(klasa, mostek `previewCardId`, `stopPropagation`). Strażnik testowy
+(M303/3) liczy wystąpienia etykiety — ma być dokładnie jedno.

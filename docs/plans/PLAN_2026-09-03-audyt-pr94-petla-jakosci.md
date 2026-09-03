@@ -219,3 +219,35 @@ i odmowa (2 opcje) nie mogą być z tego samego helpera na przyciskach?"
    3224,2 kB.
 4. Dokumentacja: M302, PROJECT_HISTORY, audyt §3b/§3c/§4 po aktualizacji,
    PR #95.
+
+---
+
+### Etap M303 (2026-09-03): pytanie właściciela o pozostałe kreatory — pomiar i domknięcie „jednego miejsca"
+
+Pytanie właściciela: „A tych: scry/surveil/index (sekwencja kart), walka
+(przełączniki), podział obrażeń (kwoty), escape (licznik), mana-wizard
+(płatność) — nie można by przerobić pod ten helper (rozszerzając jego opcje
+o niezbędne funkcjonalności)? Żeby zmiany UI były w jednym miejscu?"
+
+Pomiar: te wizardy JUŻ są trybami jednego fundamentu — jeden modal
+`#choice-request`, jeden moduł, wspólne wiersze `renderPickerRow` (×10),
+wspólne intro/stopka/Anuluj/status, jeden CSS w `index.html`, jeden podgląd
+kart (`openCardFullscreenByCardId` + delegacja `log-card`). Mega-funkcja
+łącząca wszystkie maszyny stanów nie dałaby „jednego miejsca zmian" (ono już
+jest), tylko podniosłaby ryzyko regresji — różnice zostają jako parametry/
+tryby. Jedyne faktyczne dublowanie — przycisk podglądu 🔍 lepiony ręcznie
+w dwóch miejscach — zamknięte jednym komponentem `renderPeekButton`
+(strażnik M303/3: dokładnie jedno wystąpienie etykiety).
+
+1. RED: `test/m303-jeden-helper-podglad.test.js` — kontrakt komponentu
+   (klasa/`previewCardId`/klik), `stopPropagation` (podgląd nie zatwierdza
+   wyboru), strażnik jednej etykiety w źródle.
+2. Fix: `renderPeekButton` w `choice-request.js`; oba ręczne bloki 🔍
+   zastąpione wywołaniem; przywrócony docblock siatki bezpieczeństwa
+   (utracony przy resecie workspace).
+3. Weryfikacja: mutacje 3/3 zabite (drop-stopPropagation, wrong-card,
+   inline-peek-dup); bramki 4399/4399, `test:all` 4409/4409, build
+   3224,8 kB; live 0 detektorów (ff51 helper radiowy, wb811 🔍 przez
+   komponent + wspólny Anuluj, wl3 surveil bez regresji).
+4. Dokumentacja: audyt §5 (mapa wspólnego fundamentu), M303
+   w ENGINE_MILESTONES i PROJECT_HISTORY, PR #95.
