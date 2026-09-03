@@ -2273,11 +2273,23 @@ export function execute(state, input) {
           return reject('illegal_grave_free_cast');
         }
         const mode = card.spell.modes[modeIndex];
-        if (mode.variableTargets) return reject('illegal_grave_free_cast');
-        const spec = mode.targets ?? [];
-        if (chosen.length !== spec.length) return reject('illegal_grave_free_cast_targets');
-        if (spec.length > 0) validateTargets(state, spec, chosen, pending.playerId, card.colors ?? []);
-        chosenTargets = chosen.slice();
+        if (mode.variableTargets) {
+          // Liczbę celów wybiera gracz („up to three”), więc jedyną poprawną
+          // walidacją jest przynależność do zbioru wyliczonego przez TEN SAM
+          // generator co oferta (L48: oferta = walidacja). Dawniej okno w
+          // ogóle odrzucało takie tryby (znalezisko F audytu PR #93).
+          const allowed = legalModeCasts(state, pending.playerId, card.id, modeIndex, mode);
+          const combo = chosen.slice();
+          const ok = allowed.some((cast) => cast.targets.length === combo.length
+            && cast.targets.every((id, i) => id === combo[i]));
+          if (!ok) return reject('illegal_grave_free_cast_targets');
+          chosenTargets = combo;
+        } else {
+          const spec = mode.targets ?? [];
+          if (chosen.length !== spec.length) return reject('illegal_grave_free_cast_targets');
+          if (spec.length > 0) validateTargets(state, spec, chosen, pending.playerId, card.colors ?? []);
+          chosenTargets = chosen.slice();
+        }
         chosenMode = modeIndex;
       } else {
         const spec = card.spell?.targets ?? [];
@@ -6567,7 +6579,11 @@ export function playerView(state, playerId) {
       if (card.spell?.additionalCost || card.spell?.xCost || card.spell?.fireball) continue;
       const xValue = card.manaCost ?? 0;
       if (producibleMana(state, playerId, null, spellManaPurpose(card)) < xValue) continue;
-      for (const offer of epicCastOffers(state, playerId, card)) {
+      // Audyt PR #93 (znalezisko F): Halo Forager płaci {X} = MV, a CELE trybu
+      // wybiera gracz (CR 601.2c) — „up to three target creatures” nie może
+      // wyłączać karty z oferty, skoro Oracle mówi „any instant or sorcery
+      // card with mana value X". Ten sam generator co w oknie Vaana.
+      for (const offer of epicCastOffers(state, playerId, card, { variableTargets: true })) {
         legalCommands.push(command('resolve_grave_free_cast', playerId, {
           objectId: graveId, cardId: card.cardId, xValue,
           targets: offer.targets,
