@@ -84,10 +84,24 @@ export function canPlayByImpulseFromExile(object, state) {
  * ścieżce permanentów i tak zostaje, żeby nie zmieniać zachowania dla
  * obiektów zbudowanych wprost (testy, stare zapisy).
  */
+/** Wspólne czytanie stempla: flaga mechaniki + pole z numerem tury. */
+function turnStampReached(object, state, flag, stamp) {
+  if (!object?.[flag] || object.zone !== 'exile') return true;
+  if (object[stamp] == null) return true;
+  return state.turn.number > object[stamp];
+}
+
 export function plottedTurnReached(object, state) {
-  if (!object?.plotted || object.zone !== 'exile') return true;
-  if (object.plottedAtTurn == null) return true;
-  return state.turn.number > object.plottedAtTurn;
+  return turnStampReached(object, state, 'plotted', 'plottedAtTurn');
+}
+
+/**
+ * CR 702.185a (warp, audyt PR #93 — znalezisko J): wygnaną po warp-caście
+ * kartę wolno rzucić dopiero „after the current turn has ended". Stempel
+ * `warpedAtTurn` kładzie opóźniony trigger wygnania (triggers.js).
+ */
+export function warpTurnReached(object, state) {
+  return turnStampReached(object, state, 'warpReady', 'warpedAtTurn');
 }
 
 /** Flaga „bez płacenia kosztu many" na obiekcie (strefa bez znaczenia). */

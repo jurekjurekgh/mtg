@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
 import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
-import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached } from './impulse-window.js';
+import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
 import { deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
 import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
@@ -2122,10 +2122,22 @@ function resolvePermanentSpell(state, stackId, object, before) {
  * permanent wchodzi na stos jak zwykły rzut; przy wejściu zbroimy
  * opóźniony trigger wygnania w najbliższym kroku końcowym
  * (resolvePermanentSpell → state.delayedTriggers). Po wygnaniu karta ma
- * `warpReady` i można ją rzucić z exile w późniejszej turze za koszt warp.
- * objectId może wskazywać kartę z RĘKI albo obiekt z exile (warpReady).
+ * `warpReady` i można ją rzucić z exile w późniejszej turze — już ZA ZWYKŁY
+ * koszt many (cast_permanent z exile), bo warp działa wyłącznie z ręki.
+ *
+ * Audyt PR #93 / znalezisko J (CR 702.185a): „Warp [cost]" means „You may cast
+ * this card **from your hand** by paying [cost] rather than its mana cost" …
+ * „Its owner may cast this card after the current turn has ended" — drugie
+ * zdanie nie daje żadnego kosztu alternatywnego, więc z exile płaci się koszt
+ * many. Engine oferował i przyjmował rzut z exile ZA KOSZT WARP (Weftblade
+ * Enhancer: 3 zamiast 6 — talia worek-legend), czyli drugi rzut w cenie
+ * połowy. Warp pozostaje wyłącznie akcją z ręki.
  */
 export function warpCard(state, playerId, objectId) {
+  const object = state.objects.get(objectId);
+  if (object?.zone === 'exile') {
+    throw new Error('Warp jest kosztem rzutu z ręki — kartę wygnaną rzuca się z exile za koszt many (cast_permanent)');
+  }
   return castPermanent(state, playerId, objectId, { warpCast: true });
 }
 

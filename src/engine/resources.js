@@ -7,7 +7,7 @@ import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, manaUnitKey, treasureManaAbilityOf, ANY_COLOR_MANA } from './mana-sources.js';
-import { canPlayByImpulseFromExile, isFreeImpulseCast, plottedTurnReached } from './impulse-window.js';
+import { canPlayByImpulseFromExile, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
 export function initializeResources(state) {
@@ -714,6 +714,11 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // (`plottedCastAllowed`) — jedno miejsce prawdy w impulse-window.js.
   if (plotted && !plottedTurnReached(object, state)) {
     throw new Error('Plot: można rzucić dopiero w późniejszej turze');
+  }
+  // Audyt PR #93 / znalezisko J (CR 702.185a): „after the current turn has
+  // ended" — karta wygnana po warp-caście czeka w exile do następnej tury.
+  if (warpReady && !warpTurnReached(object, state)) {
+    throw new Error('Warp: kartę wygnaną można rzucić dopiero w późniejszej turze');
   }
   // Batch 47 (Gila Courser, Caves of Chaos Adventurer): PERMANENT wygnany
   // impulsem jest grywalny z exile do konca wskazanej tury (CR 601.2b).

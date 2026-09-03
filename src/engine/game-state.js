@@ -32,7 +32,7 @@ import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTop
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject } from './effects.js';
-import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive } from './impulse-window.js';
+import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive, warpTurnReached } from './impulse-window.js';
 
 /**
  * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
@@ -493,7 +493,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'exploit', 'treasureAltCost', 'cardName', 'name', 'bloodthirst', 'renown', 'additionalCost',
   'kicker', 'costReduction', 'adventure', 'buyback', 'protectionFromColors',
   'plottedAtTurn', 'enterAsCopy', 'suspend', 'suspended', 'timeCounters', 'suspendReady',
-  'warp', 'warpReady', 'surge', 'manifestReady', 'manifestTurnUpCost',
+  'warp', 'warpReady', 'warpedAtTurn', 'surge', 'manifestReady', 'manifestTurnUpCost',
   'rebound', 'reboundCast', 'reboundReady',
   'subtypesBeforeOverride', 'lostKeywordsUntilEOT', 'madness', 'madnessReady',
 ]);
@@ -556,12 +556,12 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.29).
@@ -6872,16 +6872,17 @@ export function playerView(state, playerId) {
         }
       }
       // Warp-ready karty w exile (wygnane po warp-caście): rzut z exile
-      // za koszt warp w późniejszej turze (castPermanent warpCast).
+      // w PÓŹNIEJSZEJ turze (CR 702.185a) i już nie za koszt warp — warp to
+      // koszt alternatywny wyłącznie z ręki (znalezisko J audytu PR #93),
+      // więc z exile płaci się koszt many, jak za zaplotowaną kartę bez
+      // zniżki. Oferta = `cast_permanent`, ta sama komenda co z ręki.
       for (const id of state.zones.exile) {
         const ex = state.objects.get(id);
-        if (ex?.controllerId === playerId && ex.warpReady
-          && (ex.warp?.cost ?? 0) <= manaAvailable) {
-          const warpColors = (ex.warp.colors ?? []).map((c) => [c]);
-          if (warpColors.length === 0 || canPayColoredCost(state, playerId, warpColors)) {
-            legalCommands.push(command('warp_card', playerId, { objectId: id }));
-          }
-        }
+        if (ex?.controllerId !== playerId || !ex.warpReady) continue;
+        if (!warpTurnReached(ex, state)) continue;
+        if (effectiveSpellManaCost(state, ex) > manaAvailableFor(ex)) continue;
+        if (!hasColorForCardId(state, playerId, ex.cardId, 0)) continue;
+        legalCommands.push(command('cast_permanent', playerId, { objectId: id }));
       }
     }
     // Zaplotowane PERMANENTY w exile: rzut bez kosztu many (sorcery-speed).
