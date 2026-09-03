@@ -70,6 +70,26 @@ export function canPlayByImpulseFromExile(object, state) {
   return object?.zone === 'exile' && isImpulseWindowLive(object, state);
 }
 
+/**
+ * CR 702.170d (plot, audyt PR #93 — znalezisko I): karta zaplonowana jest
+ * rzucalna „during any turn AFTER the turn in which it became plotted".
+ * Stempel `plottedAtTurn` kładzie wyłącznie `plotCard` (spells.js), a czytają
+ * go DWIE ścieżki rzutu — czary (`plottedCastAllowed`) i permanenty
+ * (`castPermanent`). Przed tym modułem każda ścieżka miała własną kopię
+ * reguły (albo żadnej: czary nie miały jej wcale, więc zaplotowany czar
+ * można było rzucić w tej samej turze, w której go zaplonowano — CR
+ * 702.170d naruszone).
+ *
+ * Brak stempla (`plottedAtTurn == null`) nie blokuje: tak było w starszej
+ * ścieżce permanentów i tak zostaje, żeby nie zmieniać zachowania dla
+ * obiektów zbudowanych wprost (testy, stare zapisy).
+ */
+export function plottedTurnReached(object, state) {
+  if (!object?.plotted || object.zone !== 'exile') return true;
+  if (object.plottedAtTurn == null) return true;
+  return state.turn.number > object.plottedAtTurn;
+}
+
 /** Flaga „bez płacenia kosztu many" na obiekcie (strefa bez znaczenia). */
 export function hasFreeCastStamp(object) {
   return object?.playableWithoutPaying === true;

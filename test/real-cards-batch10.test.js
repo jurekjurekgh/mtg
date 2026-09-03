@@ -246,9 +246,15 @@ test('Tumbleweed Rising: plot przenosi kartę do exile, a późniejszy cast nie 
   const exileObject = [...state.objects.values()].find((object) => object.cardId === 'tumbleweed-rising' && object.zone === 'exile');
   assert.ok(exileObject?.plotted);
   assert.equal(state.players[0].mana, 0);
+  // Audyt PR #93 / znalezisko I (CR 702.170d): „during any turn AFTER the turn
+  // in which it became plotted" — w turze zaplonowania czar jest niemy, tak
+  // jak zaplotowany stwór (Spinewoods Paladin). Dawniej rzucało się go od razu.
+  const sameTurn = playerView(state, 'p1').legalCommands.find((command) => command.type === 'cast_spell' && command.objectId === exileObject.id);
+  assert.equal(sameTurn, undefined, 'zaplotowany czar czeka do późniejszej tury (CR 702.170d)');
+  state.turn.number += 1; // „on a later turn"
   state.players[0].mana = 0;
   const cast = playerView(state, 'p1').legalCommands.find((command) => command.type === 'cast_spell' && command.objectId === exileObject.id);
-  assert.ok(cast, 'zaplotowany czar można rzucić z exile');
+  assert.ok(cast, 'zaplotowany czar można rzucić z exile w późniejszej turze');
   assert.ok(execute(state, cast).ok);
   assert.equal(state.players[0].mana, 0, 'cast po plot nie pobiera many');
 });

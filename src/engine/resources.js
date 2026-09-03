@@ -7,7 +7,7 @@ import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, manaUnitKey, treasureManaAbilityOf, ANY_COLOR_MANA } from './mana-sources.js';
-import { canPlayByImpulseFromExile, isFreeImpulseCast } from './impulse-window.js';
+import { canPlayByImpulseFromExile, isFreeImpulseCast, plottedTurnReached } from './impulse-window.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
 export function initializeResources(state) {
@@ -709,8 +709,10 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // M154 (Batch 38, Warp): karta z warpReady (wygnana po warp-caście w końcowym
   // kroku) można rzucić w późniejszej turze ZA KOSZT WARP (nie za darmo).
   const warpReady = object?.zone === 'exile' && object.warpReady;
-  // CR 702.136: "on a later turn" — can't cast the same turn you plotted.
-  if (plotted && object.plottedAtTurn != null && state.turn.number <= object.plottedAtTurn) {
+  // Audyt PR #93 / znalezisko I (CR 702.170d): „on a later turn" — can't cast
+  // the same turn you plotted. Ten sam predykat co w ścieżce czarów
+  // (`plottedCastAllowed`) — jedno miejsce prawdy w impulse-window.js.
+  if (plotted && !plottedTurnReached(object, state)) {
     throw new Error('Plot: można rzucić dopiero w późniejszej turze');
   }
   // Batch 47 (Gila Courser, Caves of Chaos Adventurer): PERMANENT wygnany

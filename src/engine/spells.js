@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
 import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
-import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast } from './impulse-window.js';
+import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
 import { deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
 import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
@@ -64,7 +64,12 @@ export function plottedCastAllowed(state, playerId, object) {
   if (!object?.plotted || object.zone !== 'exile') return true;
   return ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
     && state.turn.activePlayerId === playerId
-    && state.zones.stack.length === 0;
+    && state.zones.stack.length === 0
+    // Audyt PR #93 / znalezisko I (CR 702.170d): klauzula „on a later turn".
+    // Ścieżka permanentów znała ją od Batcha 24 (castPermanent), ścieżka
+    // czarów nie — zaplotowany czar znikał z ręki do exile i wracał na stos
+    // w TEJ SAMEJ turze. Wspólna reguła mieszka w impulse-window.js.
+    && plottedTurnReached(object, state);
 }
 
 function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindowCast = false) {
@@ -88,7 +93,7 @@ function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindow
   const targetSpec = cleaved && object.spell.cleave ? (object.spell.cleave.targets ?? []) : (object.spell.targets ?? []);
   // M202/odznaka #2 (CR 702.170d): zaplotowana karta — niezależnie od timingu.
   if (!plottedCastAllowed(state, playerId, object)) {
-    throw new Error('Zaplotowaną kartę rzuca się w swoją fazę main przy pustym stosie');
+    throw new Error('Zaplotowaną kartę rzuca się w swoją fazę main przy pustym stosie, najwcześniej w turze po zaplonowaniu');
   }
   if (timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
