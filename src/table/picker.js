@@ -80,6 +80,125 @@ export function renderPickerSection(host, text, { className = '' } = {}) {
 }
 
 /**
+ * Stopka kreatora: „Zamknij (dokończysz później)". Rysowana tu, bo trzy
+ * kreatory (przeglądanie kart, walka, przydział obrażeń) miały IDENTYCZNE
+ * cztery linie tego przycisku, a ich hook `.look-wizard-cancel` wędrował za
+ * kopiami do kreatorów, które z „look" nie mają nic wspólnego (M293).
+ */
+export function renderPickerCancel(host, { label = 'Zamknij (dokończysz później)', className = '', onClick = null } = {}) {
+  const btn = mkElement('button', host);
+  btn.type = 'button';
+  btn.className = joinClasses('ghost-btn picker-cancel', className);
+  btn.textContent = String(label);
+  btn.addEventListener('click', () => onClick?.());
+  host.appendChild(btn);
+  return btn;
+}
+
+/**
+ * Chip: pigułka z NAZWĄ KARTY w liście przeglądniętej (scry/surveil/look,
+ * sortery kolejności) — M293, decyzja właściciela z tury 14: „jeśli można te
+ * dwa ostatnie sparametryzować i obsłużyć tym samym wizardem, powinniśmy to
+ * zrobić dla czystości projektu".
+ *
+ * Świadomie NIE dziedziczy `picker-row`: wiersz wyboru to cel dotyku 44 px z
+ * ramką, a chip to mały znaczek w upakowanej linii (`.picker-chip`, 5×10 px
+ * paddingu). Wspólne jest RYSOWANIE (indeks + klikalna nazwa + dopiski), nie
+ * wygląd wiersza — stąd kształt `chip` nie dostaje rodziny `.picker-row` ani
+ * `picker-name` (ta druga niesie `flex:1` i podkreślenie wiersza).
+ *
+ * `marks` (dopiski „→ cmentarz", „→ spód (2.)") i `badge` („ · basic land") to
+ * JEDYNE rzeczy, którymi różniły się dwa dotychczasowe budowniczowie listy.
+ */
+function renderPickerChip(host, {
+  id = null,
+  cardId = null,
+  label = '',
+  indexLabel = '',
+  badge = null,
+  marks = [],
+  rowClassName = '',
+  indexClassName = '',
+  nameClassName = '',
+  markClassName = '',
+  onOpenCard = null,
+} = {}) {
+  const row = mkElement('div', host);
+  row.className = joinClasses('picker-chip', rowClassName);
+  if (indexLabel) {
+    const indexEl = mkElement('span', host);
+    // M87 (zgłoszenie): `textContent` body sklejał chipy w jedno
+    // („Curate2. Woolly") — każdy wiersz zaczyna się od znaku nowego wiersza,
+    // dokładnie jak w `renderChoiceRequest` (M86). Dlatego indeks nosi `\\n`,
+    // a nie osobny margines CSS.
+    indexEl.className = joinClasses('picker-chip-index', indexClassName);
+    indexEl.textContent = String(indexLabel);
+    row.appendChild(indexEl);
+  }
+  const nameEl = mkElement('span', host);
+  const openable = typeof onOpenCard === 'function' && cardId != null;
+  nameEl.className = joinClasses(openable ? 'picker-chip-name is-openable' : 'picker-chip-name', nameClassName);
+  nameEl.textContent = String(label ?? '');
+  if (openable) {
+    // Nazwa karty otwiera pełny ekran (`log-card` + `dataset.cardId` — delegacja
+    // w main.js, M167/C) i nie zaznacza niczego obok.
+    if (nameEl.dataset) nameEl.dataset.cardId = String(cardId);
+    nameEl.addEventListener('click', (e) => {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+      onOpenCard(cardId);
+    });
+  }
+  row.appendChild(nameEl);
+  for (const mark of (badge ? [badge, ...marks] : marks)) {
+    if (!mark) continue;
+    const el = mkElement('span', host);
+    if (markClassName) el.className = markClassName;
+    el.textContent = String(mark);
+    row.appendChild(el);
+  }
+  host.appendChild(row);
+  return { row, nameEl };
+}
+
+/**
+ * Lista chipów przeglądniętych kart. `items`: `{ id, cardId, name, badge,
+ * marks }`. `numbered` daje prefix „\\n1. ", „\\n2. " (porządek = kolejność
+ * biblioteki, nie kliknięć). Zwraca `{ list, rows }`.
+ */
+export function renderPickerChipList(host, {
+  items = [],
+  listClassName = '',
+  rowClassName = '',
+  indexClassName = '',
+  nameClassName = '',
+  markClassName = '',
+  numbered = true,
+  indexLabelOf = null,
+  onOpenCard = null,
+} = {}) {
+  const list = mkElement('div', host);
+  list.className = joinClasses('picker-chip-list', listClassName);
+  host.appendChild(list);
+  const rows = items.map((item, i) => renderPickerChip(list, {
+    id: item.id ?? null,
+    cardId: item.cardId ?? null,
+    label: item.name ?? item.label ?? '',
+    indexLabel: numbered
+      ? (typeof indexLabelOf === 'function' ? indexLabelOf(item, i) : `\n${i + 1}. `)
+      : '',
+    badge: item.badge ?? null,
+    marks: item.marks ?? [],
+    rowClassName,
+    indexClassName,
+    nameClassName,
+    markClassName,
+    onOpenCard,
+  }));
+  return { list, rows: rows.map((r) => r.row), nameEls: rows.map((r) => r.nameEl) };
+}
+
+/**
  * Nazwa wiersza: osobny cel kliknięcia (pełny ekran karty) albo czysty tekst.
  * `html` przyjmuje WYŁĄCZNIE markup generowany w tym kodzie (ikony many z
  * `mana-icons.js`) — nazwy kart idą przez `label`, czyli `textContent`.

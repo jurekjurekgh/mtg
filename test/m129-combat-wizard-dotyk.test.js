@@ -36,86 +36,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const HTML = fs.readFileSync('src/table/index.html', 'utf8');
-const CSS_RAW = (HTML.match(/<style>([\s\S]*?)<\/style>/) ?? ['', ''])[1];
-/** Komentarze wycinamy PRZED parsowaniem: bez tego reguła stojąca zaraz po
- *  bloku komentarza znikała z listy (fałszywie zielony strażnik antyduplikacji). */
-const CSS = CSS_RAW.replace(/\/\*[\s\S]*?\*\//g, '');
+import {
+  MIN_TOUCH_TARGET_PX,
+  MiniEl,
+  effectiveDeclarationsFor,
+  loadRules,
+  pxOf,
+  subjectClasses,
+  withDocument,
+} from './harness/css-effective.js';
 
-/** Wszystkie reguły prostego stopnia (stile stołu nie zagnieżdżają bloków). */
-const RULES = [...CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-  .map((m) => ({ selector: m[1].replace(/\s+/g, ' ').trim(), body: m[2] }))
-  .filter((r) => !r.selector.startsWith('@') && !r.selector.includes('/*'));
-
-/** Klasy wskazanne przez selektor jako OSTATNI człon (czyli to, co jest stylowane). */
-function subjectClasses(selector) {
-  const last = selector.split(/[\s>]+/).filter(Boolean).pop() ?? '';
-  const stripped = last.replace(/:has\([^)]*\)/g, '').replace(/::?[a-z-]+(\([^)]*\))?/g, '');
-  return [...stripped.matchAll(/\.([\w-]+)/g)].map((m) => m[1]);
-}
-
-/**
- * Deklaracje, które realnie trafią na element o danej liście klas:
- * reguła aplikuje się, gdy WSZYSTKIE klasy jej przedmiotu są na elemencie.
- * Późniejsze reguły wygrywają (kaskada w kolejności pliku).
- */
-function effectiveDeclarations(classList) {
-  const tokens = new Set(String(classList).split(/\s+/).filter(Boolean));
-  const merged = new Map();
-  const matched = [];
-  for (const rule of RULES) {
-    const subj = subjectClasses(rule.selector);
-    if (subj.length === 0 || !subj.every((c) => tokens.has(c))) continue;
-    matched.push(rule.selector);
-    for (const decl of rule.body.split(';')) {
-      const [prop, ...rest] = decl.split(':');
-      const value = rest.join(':').trim();
-      if (prop && value) merged.set(prop.trim(), value);
-    }
-  }
-  return { decls: Object.fromEntries(merged), matched };
-}
-
-function pxOf(decls, property) {
-  const raw = decls[property];
-  const m = typeof raw === 'string' ? raw.match(/(\d+(?:\.\d+)?)px/) : null;
-  return m ? Number(m[1]) : null;
-}
-
-/** Stub DOM-u w stylu reszty testów UI (bez jsdom — liczymy tylko klasy). */
-class MiniEl {
-  constructor(tag) {
-    this.tagName = tag; this.children = []; this.listeners = {}; this.className = '';
-    this.text = ''; this.type = ''; this.checked = false; this.disabled = false; this.dataset = {};
-    this.classList = { toggle: () => {} };
-  }
-
-  set textContent(value) { this.text = String(value); this.children = []; }
-
-  get textContent() { return this.text + this.children.map((c) => c.textContent).join(''); }
-
-  set innerHTML(value) { this.text = String(value).replace(/<[^>]*>/g, ''); this.children = []; }
-
-  get innerHTML() { return this.text + this.children.map((c) => c.innerHTML).join(''); }
-
-  appendChild(child) { this.children.push(child); return child; }
-
-  addEventListener(type, listener) { (this.listeners[type] ??= []).push(listener); }
-
-  click() { for (const l of this.listeners.click ?? []) l({ stopPropagation() {}, preventDefault() {} }); }
-}
-
-const MIN_TOUCH_TARGET_PX = 44;
-
-function withDocument(fn) {
-  const old = globalThis.document;
-  globalThis.document = { createElement: (tag) => new MiniEl(tag) };
-  try {
-    return fn();
-  } finally {
-    globalThis.document = old;
-  }
-}
+/** Reguły stylu stołu — JEDNO źródło dla obu strażników (m129 i chipy). */
+const RULES = loadRules();
+const effectiveDeclarations = (classList) => effectiveDeclarationsFor(RULES, classList);
 
 /** Render wizarda walki i jego pierwszy wiersz + ptaszek (realne klasy, nie zgadywane). */
 async function combatRow() {
@@ -277,6 +210,16 @@ test('M292: rodzina kreatora NIE dubluje wyglądu wiersza (jeden komponent, para
       && /min-height|padding|border-radius/.test(r.body));
     assert.deepEqual(own.map((r) => r.selector), [],
       `.${fam} nie może mieć własnych reguł wiersza — wygląd daje rodzina picker-*`);
+  }
+  // M293: od tury 14 dotyczy to także chipów (pigułek z nazwą karty) — je też
+  // rysuje picker (`kind: 'chip'`), a `.look-wizard-card*` są hakami. Tło chipa
+  // pilnuje osobny test (`look-wizard-contrast`), tu chodzi o duplikat.
+  for (const fam of ['look-wizard-card', 'look-wizard-cards']) {
+    const own = RULES.filter((r) => subjectClasses(r.selector).length === 1
+      && subjectClasses(r.selector)[0] === fam
+      && /background|min-height|padding|border-radius|gap/.test(r.body));
+    assert.deepEqual(own.map((r) => r.selector), [],
+      `.${fam} jest HAKIEM — wygląd chipa daje rodzina .picker-chip* (M293)`);
   }
 });
 

@@ -32,7 +32,7 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
-import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderFertileThicketWizard } from './choice-request.js';
+import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard } from './choice-request.js';
 import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
@@ -416,12 +416,13 @@ function bootstrapTable() {
       return;
     }
     const lookKind = lookWizardKindOf(request, choiceView);
-    // M260/A (uwaga właściciela z PR #89): Fertile Thicket — decyzja
-    // „zaglądnij?” musi zapaść PRZED pokazaniem kart, dlatego osobny wizard
-    // (look-wizard scry od razu pokazuje karty — tam „look” jest obowiązkowy).
-    if (lookKind === 'fertile') {
+    // M260/A (uwaga właściciela z PR #89): decyzja „zaglądnij?” musi zapaść
+    // PRZED pokazaniem kart, dlatego osobny wizard (scry od razu pokazuje
+    // karty — tam „look” jest obowiązkowy). Nazwa funkcji idzie po czynności,
+    // nie po karcie, która ją wprowadziła (ADR 0002, M293).
+    if (lookKind === 'peek-pick') {
       const pending = choiceView.pendingFertileThicket;
-      renderFertileThicketWizard(els.choiceRequestBody, {
+      renderPeekPickOrderWizard(els.choiceRequestBody, {
         cards: pending.cards.map((card) => ({ id: card.id, cardId: card.cardId, name: session.nameOf(card.cardId) })),
         basicLandIds: pending.basicLandIds ?? [],
         // M201/F: nazwa karty z danych (ADR 0002) — intro nazywa źródło decyzji.

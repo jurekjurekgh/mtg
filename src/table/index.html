@@ -834,10 +834,12 @@
   /* M70 (uwaga B, 2026-08-10): chipy kart JASNE — modal jest jasny, a ciemne
      tło (#27272a) bez jawnego koloru tekstu dawało czarny napis na czarnym
      tle (Surveil z Curate — nazwy kart nieczytelne). Styl jak .bot-move-line. */
-  .look-wizard-cards { display: flex; flex-wrap: wrap; gap: 6px; }
-  .look-wizard-card { padding: 5px 10px; border-radius: 10px; background: #f4f4f5; border: 1px solid #e4e4e7; color: var(--text); font-size: 13px; }
+  /* M293: chipy przeglądniętych kart NIE mają już własnych reguł — rysuje je
+     `src/table/picker.js` (kształt `chip`), więc wygląd bierze z rodziny
+     `.picker-chip*`. `look-wizard-cards` i `look-wizard-card` zostają jako haki
+     (na nie patrzą testy i sonda), a `.look-wizard-card-name` dzieli podkreślenie
+     z klikalnymi nazwami w logu (.log-card). */
   .look-wizard-current { font-size: 16px; font-weight: 600; color: var(--gold, #e6c36a); }
-  .look-wizard-cancel { align-self: flex-start; }
 
   /* --- Wizard walki: atakujący / blokujący ---------------------------
      M129 (uwaga C właściciela, 2026-08-17, telefon): „Pola wyboru (ptaszki)
@@ -924,6 +926,17 @@
   .picker-value, .picker-count { min-width: 28px; text-align: center; font-size: 16px; font-weight: 700; }
   .picker-actions { display: inline-flex; gap: 4px; margin-left: auto; }
   .picker-row.picker-button { cursor: pointer; }
+  .picker-cancel { align-self: flex-start; } /* M293: wspólna stopka trzech kreatorów */
+  /* ===== M293: chip = pigułka z nazwą karty w liście przeglądniętej. Celowo
+     POZA .picker-row: wiersz wyboru to cel dotyku 44 px, a chip jest mały i
+     upakowany w linii (bug 2026-08-10: chipy „czarne na czarnym" — stąd jawne
+     jasne tło i `color: var(--text)`, pilnowane przez look-wizard-contrast). */
+  .picker-chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .picker-chip {
+    padding: 5px 10px; border-radius: 10px; background: #f4f4f5;
+    border: 1px solid #e4e4e7; color: var(--text); font-size: 13px;
+  }
+  .picker-chip-name.is-openable:hover { color: var(--gold, #e6c36a); }
   .picker-button .picker-name { flex: 1; min-width: 0; text-decoration: none; }
 
   /* M292: steppery przydziału obrażeń NIE mają już własnych reguł — wiersz
