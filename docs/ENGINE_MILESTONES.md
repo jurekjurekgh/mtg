@@ -4425,3 +4425,39 @@ podzbiór nie daje komendy, routing; 4 mutacje RED; harness klikający
 pełny przebieg STS „wskaż cel (1)” → cel → „zaznacz obiekty z licznikami
 (0–1)”; seed 7 — mulligan „(7 kart)”, ETB Bone Shreddera. 0 zgłoszeń
 detektorów. Bramy: 4368/4368, `test:all` 4378/4378, build 3208,9 kB.
+
+## M299 (2026-09-03) — Audyt modali wyboru: cała rodzina jednowyborowa we wspólnym kreatorze (zlecenie właściciela)
+
+**Zlecenie.** „Przejrzeć silnik i wszystkie tory czarów i zdolności z modalami
+wyboru czy nie mają jakichś customowych modali, które należałoby przerobić na
+uniwersalny helper”. Raport: `docs/audits/AUDYT_MODALE_WYBORU_2026-09-03.md`.
+
+**Wynik audytu.** (1) Customowych modali wyboru POZA torem `choice-request`
+NIE MA — każdy wybór przechodzi przez `openChoiceRequest`; `mana-wizard`
+(płatność kosztów) jest celowo osobny. (2) Prawdziwa luka: `openChoiceRequest`
+ma 13 routowanych ścieżek, a reszta z 66 typów `resolve_*` spada do awaryjnej
+ściany przycisków; w tym ~24 typy o kształcie „wybierz jednego kandydata”
+(`{targetId}`/`{cardId}`/`{keepId}`/`{pickId}`/`{sacrificeLandId}`/`{armyId}`,
+np. Forever Young, Springbloom Druid, discard, amass, Grave Exchange,
+Cuombajj Witches) — TA SAMA klasa co `resolve_trigger_target` obsłużony
+w M298. (3) Świadomie zostają przyciski: enumeracje 2–5 opcji (kolory, typy
+lądu, tryby, tak/nie), okna rzutu (Vaan/Halo Forager/madness/rebound/suspend
+— każda opcja to osobny rzut z etykietami K1/K2), `search_choice` (dwa
+wymiary: karta + miejsce), undercity, kolejności (index/reveal).
+
+**Naprawa.** Generalizacja `singleTargetPlanOf` (trzecie źródło planu):
+jednorodna grupa `resolve_*`, warianty wybierają kandydata polem z listy albo
+są odmową (`done`/`skip`/null). Wiersz odmowy z etykietą per sposób odmowy
+(„Gotowe — bez wyboru” / „Pomiń” / „Zakończ bez wyboru”), intro nazywa
+wybierany obiekt per pole („wskaż ląd do poświęcenia”, „wskaż kartę”,
+„wskaż armię”, „legendę do zachowania”). Wykluczenia okien rzutu jawną listą
+typów (ich `cardId` = karta rzutu, nie wybór). Straż w kreatorze: pusty wybór
+≠ odmowa — bez niej `undefined == null` dopasowywałoby wariant done/skip
+i Zatwierdź wysyłałoby odmowę mimo braku decyzji (zmierzone żywym testerem).
+
+**Weryfikacja.** 8 testów (RED), 5 mutacji RED (w tym jedna naprawiona po
+audycie własnych testów — wykluczenie okien rzutu z jednym cardId było
+kryte dedupem kandydatów). Bramki: 4376/4376, `test:all` 4386/4386, build
+3212,8 kB. Żywy Tester: Springbloom Druid — picker „wskaż ląd do poświęcenia
+(1)” z wierszem Pomiń, poświęcenie w logu; High Stride — „wskaż cel (1)”
+z 4 kandydatami; 0 zgłoszeń detektorów. Silnik i protokół bez zmian (L48).

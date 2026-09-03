@@ -8162,3 +8162,23 @@ wyboru przy otwieraniu mechaniki w oknie), raport
 `0dd6199`/`11340d0`, M297 `c723aab`/`3855a23`, M298 `761dded`/`6d88ffb`
 (RED + fix parami). Dokumentacja: M296/M297/M298, L130 (wynik komendy niesie
 cały przyrost zdarzeń). PR #95 zaktualizowany.
+
+**Ciąg dalszy sesji — audyt modali wyboru (M299, zlecenie właściciela).**
+
+Właściciel: „a masz coś w backlogu czym mógłbyś się zająć? warto byłoby
+przejrzeć silnik i wszystkie tory czarów i zdolności z modalami wyboru czy
+nie mają jakichś customowych modali do przerobienia na uniwersalny helper”.
+Backlog = idee (ADR 0021) — bez decyzji właściciela nic z niego nie podjęto;
+audyt wykonany jako jawne zlecenie. Wynik: customowych modali wyboru poza
+torem choice-request NIE MA (inwentarz: choice-request, mana-wizard, bot-move,
+card-preview, context-menu, notice); luka = ~24 typy jednowyborowe
+({targetId}/{cardId}/{keepId}/{pickId}/{sacrificeLandId}/{armyId} + odmowy
+done/skip/null) spadające do ściany przycisków. Generalizacja
+singleTargetPlanOf domyka klasę jednym ruchem (L48 bez zmian); okna rzutu,
+małe enumeracje, search i undercity świadomie poza zakresem (raport §3).
+Pułapka sesji: `undefined == null` w dopasowaniu odmowy — pusty wybór
+wysyłałby done/skip (test M299/8). Bramki: 4376/4376, test:all 4386/4386,
+build 3212,8 kB; Żywy Tester: Springbloom (picker lądu + Pomiń), High
+Stride (cel z 4 kandydatów), 0 detektorów. Raport:
+`docs/audits/AUDYT_MODALE_WYBORU_2026-09-03.md`; commity `d95165d` (audyt),
+`4c588fe` (RED), `7603aab` (fix).
