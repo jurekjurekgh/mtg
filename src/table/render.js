@@ -2870,8 +2870,12 @@ export function commandLabel(cmd, session, view) {
       const costName = cmd.sacrificeTargetId
         ? ` — poświęć ${nameOfObjectId(cmd.sacrificeTargetId)}`
         : (cmd.payAltCost ? ` — dopłać {${orPay ?? '?'}}` : '');
+      // Znalezisko E: przy aurze `cel` to GOSPODARZ (stwór, artefakt, land albo
+      // gracz dla Curse), a wariant bestow płaci koszt bestow — bez dopisku
+      // dwa warianty aury nazywają się identycznie (M91/uwaga D).
+      const bestowName = cmd.bestow ? ' (bestow)' : '';
       return cmd.cast
-        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${modeName}${costName}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}`
+        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${modeName}${bestowName}${costName}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}`
         : 'Zrezygnuj — stwórz token Skarb (Treasure)';
     }
     case 'resolve_reveal_choice': {

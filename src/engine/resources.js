@@ -1043,17 +1043,23 @@ function auraTargetProtected(state, host, sourceObject) {
   return (sourceObject.colors ?? []).some((c) => protColors.includes(c));
 }
 
-export function castAuraSpell(state, playerId, objectId, { targetId, bestow = false } = {}) {
+export function castAuraSpell(state, playerId, objectId, { targetId, bestow = false, abilityWindowCast = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
-  if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalna karta aury');
+  // Audyt PR #93 (znalezisko E): okno zdolności „you may cast it" (Vaan)
+  // daje to samo uprawnienie co `requireSpell`/`castPermanent` — aura leży
+  // w exile, a rzut następuje w trakcie rozstrzygania zdolności, więc timing
+  // czaru (CR 601.2b) nie obowiązuje (ruling WotC 2025-02-10).
+  const fromAbilityWindow = abilityWindowCast && object?.zone === 'exile';
+  if (!player || !object || object.controllerId !== playerId
+    || (object.zone !== 'hand' && !fromAbilityWindow)) throw new Error('Nielegalna karta aury');
   if (bestow && !object.bestow) throw new Error('Ta karta nie ma mechaniki bestow');
   if (!bestow && !object.aura) throw new Error('Tę kartę można rzucić jako aurę tylko za koszt bestow');
   // Flash (CR 702.8): aura z flash rzucana jest jak instant — jak permanent
   // z flash w castPermanent. Bez flash obowiązuje timing sorcery (CR 307.1).
   const hasFlashAura = (object.keywords ?? []).includes('flash');
-  if (!hasFlashAura && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Czar aury tylko w swoją fazę main');
-  if (!hasFlashAura && state.zones.stack.length > 0) throw new Error('Czar aury tylko przy pustym stosie');
+  if (!hasFlashAura && !abilityWindowCast && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Czar aury tylko w swoją fazę main');
+  if (!hasFlashAura && !abilityWindowCast && state.zones.stack.length > 0) throw new Error('Czar aury tylko przy pustym stosie');
   // Czysta aura płaci zwykły koszt many (z ewentualną obniżką z permanentów
   // — Etherium Sculptor dla aur-artefaktów, CR 601.2f); bestow — koszt bestow.
   // M111 (CR 601.2f): obniżka działa też na koszt bestow (koszt alternatywny).
@@ -1178,105 +1184,123 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
  * (bestow:false, koszt many karty). Aury wymagają celu już przy rzuceniu
  * (CR 601.2c) — bez stwora na polu bitwy nie da się jej w ogóle rzucić.
  */
-export function legalAuraCasts(state, playerId) {
-  const player = state.players.find((entry) => entry.id === playerId);
+/**
+ * Warianty rzucenia JEDNEJ aury: legalny gospodarz × wariant bestow (o ile
+ * karta go ma). Wyciągnięte z `legalAuraCasts`, bo okno zdolności „you may
+ * cast it" (Vaan) potrzebuje tego samego wyliczenia dla karty leżącej w exile
+ * — L74: jeden generator, nie kopia (audyt PR #93, znalezisko E).
+ */
+export function legalAuraCastsForObject(state, playerId, object) {
   const out = [];
+  if (!object) return out;
+  // M202/N1 (L48): budżet PER KARTA z celem wydania many — mana ograniczona
+  // drukiem nie opłaci czaru nie-artefaktowego, więc jedna wspólna liczba
+  // rozjeżdżałaby ofertę z walidacją.
+  const manaAvailable = producibleMana(state, playerId, null, spellManaPurpose(object));
+  const options = [];
+  if (object.aura && reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object)) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(false);
+  if (object.bestow && reduceAlternativeCost(state, object, object.bestow.cost ?? 0) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(true);
+  if (options.length === 0) return out;
+  // Aura „Enchant player" (Curse): celem jest GRACZ, nie stwór — wybór celu
+  // przez gracza (każdy gracz jest legalnym celem; przeciwnik zwykle cenniejszy).
+  if (object.enchantPlayer) {
+    for (const targetId of state.players.map((p) => p.id)) {
+      for (const isBestow of options) out.push({ objectId: object.id, targetId, bestow: isBestow });
+    }
+    return out;
+  }
+  // Protection (CR 702.16b) — spójnie z castAuraSpell: cel z protection od
+  // koloru aury nie jest oferowany (oferta = walidacja).
+  const protectedTarget = (target) => auraTargetProtected(state, target, object);
+  if (object.aura?.enchantType === 'artifact_or_creature') {
+    // Batch 48 (Clawing Torment, NEO): Oracle bywa DWOJAKI — „Enchant
+    // artifact or creature YOU CONTROL" (Moonlit Meditation) albo bez tego
+    // ograniczenia (Clawing Torment: aura-debuff rzucana na przeciwnika).
+    // Ograniczenie jest DESKRYPTOREM (`ownControlOnly`), nie stałą w kodzie.
+    const ownOnly = object.aura?.ownControlOnly !== false;
+    for (const targetId of state.zones.battlefield) {
+      const target = state.objects.get(targetId);
+      const isArtOrCreature = target && (target.kind === 'creature' || target.kind === 'artifact' || (target.types ?? []).includes('Artifact'));
+      if (isArtOrCreature && (!ownOnly || target.controllerId === playerId) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+        out.push({ objectId: object.id, targetId, bestow: false });
+      }
+    }
+  } else if (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment') {
+    // Batch 23: Feedback — Enchant enchantment
+    for (const targetId of state.zones.battlefield) {
+      const target = state.objects.get(targetId);
+      const isEnchantment = target && (target.kind === 'enchantment' || (target.types ?? []).includes('Enchantment'));
+      if (isEnchantment && target.zone === 'battlefield' && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+        for (const bestow of options) out.push({ objectId: object.id, targetId, bestow });
+      }
+    }
+  } else if (object.aura?.enchant === 'land' || object.aura?.enchantType === 'land') {
+    // Chronic Flooding: „Enchant land" — gospodarzem jest dowolny land na
+    // polu bitwy (także przeciwnika; ta aura nie jest „przyjazna").
+    for (const targetId of state.zones.battlefield) {
+      const target = state.objects.get(targetId);
+      if (!target || target.zone !== 'battlefield') continue;
+      const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
+      if (isLand && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+        out.push({ objectId: object.id, targetId, bestow: false });
+      }
+    }
+  } else if (object.aura?.enchantType === 'creature_or_land') {
+    for (const targetId of state.zones.battlefield) {
+      const target = state.objects.get(targetId);
+      if (!target || target.zone !== 'battlefield') continue;
+      const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
+      if ((target.kind === 'creature' || isLand) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+        for (const bestow of options) out.push({ objectId: object.id, targetId, bestow });
+      }
+    }
+  } else if (object.aura?.enchantType === 'creature_you_control') {
+    // Batch 45 (Pain for All): „Enchant creature you control" — oferta
+    // tylko WŁASNYCH stworów (oferta = walidacja, pułapka M82).
+    for (const targetId of state.zones.battlefield) {
+      const target = state.objects.get(targetId);
+      if (target && target.zone === 'battlefield' && target.kind === 'creature'
+        && target.controllerId === playerId
+        && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+        out.push({ objectId: object.id, targetId, bestow: false });
+      }
+    }
+  } else if (object.aura?.enchantType === 'creature_or_vehicle') {
+    // M154 (Batch 38): Silken Strength — stwór albo Vehicle.
+    for (const targetId of state.zones.battlefield) {
+      const target = state.objects.get(targetId);
+      if (!target || target.zone !== 'battlefield') continue;
+      const isVehicle = (target.subtypes ?? []).includes('Vehicle');
+      if ((target.kind === 'creature' || isVehicle) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+        for (const bestow of options) out.push({ objectId: object.id, targetId, bestow });
+      }
+    }
+  } else {
+    for (const targetId of state.zones.battlefield) {
+      const target = state.objects.get(targetId);
+      if (target && target.zone === 'battlefield' && target.kind === 'creature' && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+        for (const bestow of options) out.push({ objectId: object.id, targetId, bestow });
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Warianty rzucenia aury (karta w ręce × legalny cel-stwór na polu bitwy).
+ * Cel to DOWOLNY stwór („enchant creature" bez ograniczenia kontrolera).
+ * Karty z bestow dają warianty bestow:true; czyste aury — warianty zwykłe
+ * (bestow:false, koszt many karty). Aury wymagają celu już przy rzuceniu
+ * (CR 601.2c) — bez stwora na polu bitwy nie da się jej w ogóle rzucić.
+ */
+export function legalAuraCasts(state, playerId) {
+  const out = [];
+  const player = state.players.find((entry) => entry.id === playerId);
   if (!player) return out;
-  // Oferta po manie produkowalnej — czar aury widać przed tapowaniem landów.
-  // + walidacja kolorowa (Sweet Oblivion bug: 2 Plains nie mogą rzucić U)
   for (const id of state.zones.hand) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId) continue;
-    // M202/N1 (L48): budżet PER KARTA z celem wydania many — mana ograniczona
-    // drukiem nie opłaci czaru nie-artefaktowego, więc jedna wspólna liczba
-    // rozjeżdżałaby ofertę z walidacją.
-    const manaAvailable = producibleMana(state, playerId, null, spellManaPurpose(object));
-    const options = [];
-    if (object.aura && reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object)) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(false);
-    if (object.bestow && reduceAlternativeCost(state, object, object.bestow.cost ?? 0) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(true);
-    if (options.length === 0) continue;
-    // Aura „Enchant player" (Curse): celem jest GRACZ, nie stwór — wybór celu
-    // przez gracza (każdy gracz jest legalnym celem; przeciwnik zwykle cenniejszy).
-    if (object.enchantPlayer) {
-      for (const targetId of state.players.map((p) => p.id)) {
-        for (const isBestow of options) out.push({ objectId: id, targetId, bestow: isBestow });
-      }
-      continue;
-    }
-    // Protection (CR 702.16b) — spójnie z castAuraSpell: cel z protection od
-    // koloru aury nie jest oferowany (oferta = walidacja).
-    const protectedTarget = (target) => auraTargetProtected(state, target, object);
-    if (object.aura?.enchantType === 'artifact_or_creature') {
-      // Batch 48 (Clawing Torment, NEO): Oracle bywa DWOJAKI — „Enchant
-      // artifact or creature YOU CONTROL" (Moonlit Meditation) albo bez tego
-      // ograniczenia (Clawing Torment: aura-debuff rzucana na przeciwnika).
-      // Ograniczenie jest DESKRYPTOREM (`ownControlOnly`), nie stałą w kodzie.
-      const ownOnly = object.aura?.ownControlOnly !== false;
-      for (const targetId of state.zones.battlefield) {
-        const target = state.objects.get(targetId);
-        const isArtOrCreature = target && (target.kind === 'creature' || target.kind === 'artifact' || (target.types ?? []).includes('Artifact'));
-        if (isArtOrCreature && (!ownOnly || target.controllerId === playerId) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-          out.push({ objectId: id, targetId, bestow: false });
-        }
-      }
-    } else if (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment') {
-      // Batch 23: Feedback — Enchant enchantment
-      for (const targetId of state.zones.battlefield) {
-        const target = state.objects.get(targetId);
-        const isEnchantment = target && (target.kind === 'enchantment' || (target.types ?? []).includes('Enchantment'));
-        if (isEnchantment && target.zone === 'battlefield' && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-          for (const bestow of options) out.push({ objectId: id, targetId, bestow });
-        }
-      }
-    } else if (object.aura?.enchant === 'land' || object.aura?.enchantType === 'land') {
-      // Chronic Flooding: „Enchant land" — gospodarzem jest dowolny land na
-      // polu bitwy (także przeciwnika; ta aura nie jest „przyjazna").
-      for (const targetId of state.zones.battlefield) {
-        const target = state.objects.get(targetId);
-        if (!target || target.zone !== 'battlefield') continue;
-        const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
-        if (isLand && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-          out.push({ objectId: id, targetId, bestow: false });
-        }
-      }
-    } else if (object.aura?.enchantType === 'creature_or_land') {
-      for (const targetId of state.zones.battlefield) {
-        const target = state.objects.get(targetId);
-        if (!target || target.zone !== 'battlefield') continue;
-        const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
-        if ((target.kind === 'creature' || isLand) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-          for (const bestow of options) out.push({ objectId: id, targetId, bestow });
-        }
-      }
-    } else if (object.aura?.enchantType === 'creature_you_control') {
-      // Batch 45 (Pain for All): „Enchant creature you control" — oferta
-      // tylko WŁASNYCH stworów (oferta = walidacja, pułapka M82).
-      for (const targetId of state.zones.battlefield) {
-        const target = state.objects.get(targetId);
-        if (target && target.zone === 'battlefield' && target.kind === 'creature'
-          && target.controllerId === playerId
-          && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-          out.push({ objectId: id, targetId, bestow: false });
-        }
-      }
-    } else if (object.aura?.enchantType === 'creature_or_vehicle') {
-      // M154 (Batch 38): Silken Strength — stwór albo Vehicle.
-      for (const targetId of state.zones.battlefield) {
-        const target = state.objects.get(targetId);
-        if (!target || target.zone !== 'battlefield') continue;
-        const isVehicle = (target.subtypes ?? []).includes('Vehicle');
-        if ((target.kind === 'creature' || isVehicle) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-          for (const bestow of options) out.push({ objectId: id, targetId, bestow });
-        }
-      }
-    } else {
-      for (const targetId of state.zones.battlefield) {
-        const target = state.objects.get(targetId);
-        if (target && target.zone === 'battlefield' && target.kind === 'creature' && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-          for (const bestow of options) out.push({ objectId: id, targetId, bestow });
-        }
-      }
-    }
+    out.push(...legalAuraCastsForObject(state, playerId, object));
   }
   return out;
 }
