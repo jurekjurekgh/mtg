@@ -1026,7 +1026,14 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
           : plan.targetIdsMode
             ? commandForProliferateSelection(commands, [...chosen])
             : singleMode
-              ? commandForSingleTargetSelection(commands, { targetId: singlePick() })
+              // Pusty wybór (nic nie zaznaczono) NIE jest odmową — odmowę
+              // zaznacza się jawnym wierszem (NONE_PICK). Bez tej straży
+              // `undefined == null` dopasowywałoby wariant done/skip i
+              // Zatwierdź wysyłałoby odmowę mimo braku decyzji (zmierzone
+              // żywym testerem: status „Wybrano: cel” przy pustym wyborze).
+              ? (chosen.size > 0
+                ? commandForSingleTargetSelection(commands, { targetId: singlePick(), field: plan.singleField ?? null })
+                : null)
               : commandForSelection(commands, { targets: [...chosen], xValue: plan.hasX ? xValue : null }));
 
   const pickOf = ({ id, slot }) => (slot == null
@@ -1144,7 +1151,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     // M298/A: wybór jednego celu — po wierszu na kandydata + opcjonalny
     // wiersz odmowy („you may”: targetId null w ofercie silnika).
     for (const id of plan.targets) addRow(id, null);
-    if (plan.allowNone) addRow(NONE_PICK, null, { labelOverride: 'Nie wskazuj celu' });
+    if (plan.allowNone) addRow(NONE_PICK, null, { labelOverride: plan.noneLabel ?? 'Nie wskazuj celu' });
   } else {
     // M257-r5/C: tryb poświęcenia dostaje NAGŁÓWKI sekcji (cele / ofiara).
     if (sacMode) renderPickerSection(list, `${slotLabels[0] ?? 'Cel'}:`, { className: 'multi-target-slot-label' });

@@ -294,11 +294,58 @@ export function commandForProliferateSelection(commands, targetIds) {
 }
 
 /**
+ * Pola, którymi komendy jednowyborowe niosą WYBRANEGO kandydata (audyt
+ * modali wyboru 2026-09-03, §3a): ~24 typy resolve_* o tym samym kształcie
+ * decyzji co resolve_trigger_target. Świadomie NIE ma tu pól okien rzutu
+ * (exile/grave-free/madness/rebound/suspend cast) — tam `cardId` oznacza
+ * kartę rzutu, nie wybór z listy.
+ */
+const SINGLE_PICK_FIELDS = ['targetId', 'cardId', 'keepId', 'pickId', 'sacrificeLandId', 'armyId'];
+
+/**
+ * Typy WYKLUCZONE z ogólnej rodziny jednowyborowej: OKNA RZUTU, w których
+ * każda opcja to OSOBNY rzut z własnymi celami/X/stun (etykiety K1/K2),
+ * a nie wybór jednego kandydata z listy — tam `cardId` oznacza kartę rzutu.
+ */
+const SINGLE_PICK_EXCLUDED_TYPES = new Set([
+  'resolve_exile_cast', 'resolve_grave_free_cast', 'resolve_madness_cast',
+  'resolve_rebound_cast', 'resolve_suspend_cast',
+]);
+
+/** Czy komenda jest wariantem ODMOWY rodziny jednowyborowej. */
+function isNonePickCommand(cmd, field) {
+  if (!cmd) return false;
+  if (field === 'cardId' && cmd.cardId === null) return true;
+  return cmd.done === true || cmd.skip === true;
+}
+
+/** Etykieta wiersza odmowy zależy od tego, JAK rodzina odmawia. */
+function noneLabelOf(commands, field) {
+  if (commands.some((cmd) => cmd?.done === true)) return 'Gotowe — bez wyboru';
+  if (commands.some((cmd) => cmd?.skip === true)) return 'Pomiń';
+  if (field === 'cardId') return 'Zakończ bez wyboru';
+  return 'Nie wskazuj celu';
+}
+
+/** Nazwa wybieranego obiektu per pole — intro kreatora („wskaż …”). */
+function itemLabelOf(field) {
+  if (field === 'cardId' || field === 'pickId') return 'kartę';
+  if (field === 'sacrificeLandId') return 'ląd do poświęcenia';
+  if (field === 'armyId') return 'armię';
+  if (field === 'keepId') return 'legendę do zachowania';
+  return 'cel';
+}
+
+/**
  * Plan wyboru JEDNEGO celu: grupa, w której KAŻDA komenda wskazuje dokładnie
- * jeden cel — dwa źródła:
+ * jeden cel — trzy źródła:
  *  - `cast_spell` z `targets[1]` (Spread the Sickness: „zniszcz stwór”),
- *  - `resolve_trigger_target` z `targetId` (ETB Bone Shredder) — wariant
- *    `targetId: null` („you may”) daje dodatkowy wiersz odmowy (`allowNone`).
+ *  - `resolve_trigger_target` z `targetId` (ETB Bone Shredder),
+ *  - M299 (audyt modali wyboru): każda inna jednorodna grupa, której komendy
+ *    wybierają kandydata polem z SINGLE_PICK_FIELDS (resolve_graveyard_top_
+ *    choice, resolve_discard_choice, resolve_springbloom, resolve_amass_
+ *    choice, resolve_opponent_target itd.); wariant odmowy (`done`/`skip`/
+ *    null) daje dodatkowy wiersz (`allowNone`).
  * Wykluczenia: pojedyncza opcja (zwykła lista wystarczy), różne `xValue`
  * (licznik X musi zostać — obsługuje go multiTargetPlanOf).
  */
@@ -344,14 +391,38 @@ export function singleTargetPlanOf(commands) {
       itemLabel: 'cel',
     };
   }
-  return null;
+  // M299: ogólna rodzina jednowyborowa — jeden typ komendy, każdy wariant
+  // wybiera kandydata tym samym polem albo jest odmową. Okna rzutu mają
+  // własne etykiety K1/K2 (każda opcja = osobny rzut), stąd wykluczenie.
+  if (SINGLE_PICK_EXCLUDED_TYPES.has(options[0]?.type)) return null;
+  if (!options.every((cmd) => cmd?.type === options[0].type)) return null;
+  const field = SINGLE_PICK_FIELDS.find((name) => options.some((cmd) => cmd[name] != null));
+  if (!field) return null;
+  if (!options.every((cmd) => isNonePickCommand(cmd, field) || cmd[field] != null)) return null;
+  const targets = [];
+  for (const cmd of options) {
+    if (!isNonePickCommand(cmd, field) && !targets.includes(cmd[field])) targets.push(cmd[field]);
+  }
+  if (targets.length < 2) return null; // jeden kandydat = zwykła lista
+  return {
+    type: options[0].type,
+    targets,
+    minTargets: 1,
+    maxTargets: 1,
+    hasX: false,
+    singleMode: 'field',
+    singleField: field,
+    allowNone: options.some((cmd) => isNonePickCommand(cmd, field)),
+    noneLabel: noneLabelOf(options, field),
+    itemLabel: itemLabelOf(field),
+  };
 }
 
 /**
  * Komenda odpowiadająca wskazanemu celowi (albo odmowie — `targetId: null`)
  * albo null; szukana wśród wariantów legalnych silnika (L48).
  */
-export function commandForSingleTargetSelection(commands, { targetId }) {
+export function commandForSingleTargetSelection(commands, { targetId, field = null }) {
   return (commands ?? []).find((cmd) => {
     if (!cmd) return false;
     if (cmd.type === 'cast_spell') {
@@ -359,6 +430,12 @@ export function commandForSingleTargetSelection(commands, { targetId }) {
     }
     if (cmd.type === 'resolve_trigger_target') {
       return 'targetId' in cmd && cmd.targetId === targetId;
+    }
+    if (field) {
+      // Ogólna rodzina jednowyborowa (M299): kandydat siedzi w `field`,
+      // a pusty wybór = wariant odmowy (done/skip/null).
+      if (targetId == null) return isNonePickCommand(cmd, field);
+      return cmd[field] === targetId && !isNonePickCommand(cmd, field);
     }
     return false;
   }) ?? null;
