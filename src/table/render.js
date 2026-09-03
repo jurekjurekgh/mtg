@@ -15,6 +15,7 @@ import {
 import { costSymbols, escapeHtml, manaCostHtml, manaSymbolsHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
+import { renderPickerRow } from './picker.js';
 
 /**
  * Renderowanie stołu: PlayerView + log sesji → DOM (M7).
@@ -4029,26 +4030,28 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       // aktywny (1-2 spacje wokół pola), żeby omijający ptaszka gracz nie rzucił
       // przypadkowo instanta na cały przycisk. Klik w label przełącza checkbox
       // natywnie; stopPropagation chroni przycisk (nie gra opcji).
-      const label = document.createElement('label');
-      label.className = 'action-ignore';
-      label.title = 'Zaznacz: ta opcja nie przerywa auto-passu';
-      const toggle = document.createElement('input');
-      toggle.type = 'checkbox';
-      toggle.className = 'action-ignore-input';
-      // Grupa jest „wyciszona", gdy wyciszone są wszystkie jej warianty.
-      toggle.checked = Boolean(ignoredOptionKeys && keys.every((k) => ignoredOptionKeys.has(k)));
-      label.appendChild(toggle);
-      label.addEventListener('click', (e) => e?.stopPropagation?.());
-      toggle.addEventListener('change', () => {
-        // Przełączamy CAŁĄ grupę w jedną stronę (stan brany z pierwszego
-        // klucza), żeby częściowe wyciszenie nie zostawiło czaru aktywnym.
-        const wasIgnored = Boolean(ignoredOptionKeys && keys.every((k) => ignoredOptionKeys.has(k)));
-        for (const k of keys) {
-          const isIgnored = Boolean(ignoredOptionKeys && ignoredOptionKeys.has(k));
-          if (isIgnored === wasIgnored) onToggleIgnoredOption(k);
-        }
+      // M292: układ buduje `src/table/picker.js` w wariancie `inline` — ta sama
+      // obsługa co w modalu wyboru (`choice-request.js`), ten sam wygląd rodzinny.
+      renderPickerRow(button, {
+        kind: 'checkbox',
+        variant: 'inline',
+        rowClassName: 'action-ignore',
+        toggleClassName: 'action-ignore-input',
+        label: null,
+        title: 'Zaznacz: ta opcja nie przerywa auto-passu',
+        // Grupa jest „wyciszona", gdy wyciszone są wszystkie jej warianty.
+        checked: Boolean(ignoredOptionKeys && keys.every((k) => ignoredOptionKeys.has(k))),
+        stopRowPropagation: true,
+        onToggle: () => {
+          // Przełączamy CAŁĄ grupę w jedną stronę (stan brany z pierwszego
+          // klucza), żeby częściowe wyciszenie nie zostawiło czaru aktywnym.
+          const wasIgnored = Boolean(ignoredOptionKeys && keys.every((k) => ignoredOptionKeys.has(k)));
+          for (const k of keys) {
+            const isIgnored = Boolean(ignoredOptionKeys && ignoredOptionKeys.has(k));
+            if (isIgnored === wasIgnored) onToggleIgnoredOption(k);
+          }
+        },
       });
-      button.appendChild(label);
     }
     els.actions.appendChild(button);
   }

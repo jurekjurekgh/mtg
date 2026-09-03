@@ -234,3 +234,21 @@ test('M292/10: sekcje nagłówkowe też pochodzą z helpera (sloty „1. twój s
   assert.match(out.className, /(^| )picker-section( |$)multi-target-slot-label$|picker-section/);
   assert.match(out.className, /multi-target-slot-label/, 'hak kreatora zostaje obok rodzinnego');
 });
+
+test('M292/11: żaden kreator nie rysuje wiersza własnoręcznie — wszyscy idą przez picker', () => {
+  // Kontrapunkt dla prośby „nie każdy efekt na innej, równoległej funkcji
+  // wizualizującej wybory": sprawdzone po plikach, nie po pamięci.
+  const plik = fs.readFileSync('src/table/choice-request.js', 'utf8');
+  const body = plik.slice(plik.indexOf('export function renderDamageWizard('));
+  const forZone = body.slice(0, body.indexOf('export function renderEscapeExileWizard'));
+  assert.match(forZone, /renderPickerRow\(/, 'kreator przydziału obrażeń buduje wiersz pickerem');
+  const division = plik.slice(plik.indexOf('export function renderDamageDivisionWizard('), plik.indexOf('export function renderMultiTargetWizard('));
+  assert.match(division, /renderPickerRow\(/, 'kreator podziału obrażeń buduje wiersz pickerem');
+  const mana = fs.readFileSync('src/table/mana-wizard.js', 'utf8');
+  assert.match(mana, /renderPickerRow\(/, 'kreator płatności many buduje wiersz pickerem');
+  for (const [nazwa, sciezka] of [['choice-request', 'src/table/choice-request.js'], ['render', 'src/table/render.js']]) {
+    const s = fs.readFileSync(sciezka, 'utf8');
+    const wiersze = s.match(/choiceNode\([^)]*'div', '[\w-]*-row'/g) ?? [];
+    assert.deepEqual(wiersze, [], `${nazwa}: nie może samo składać wierszy z klasy „*-row”`);
+  }
+});

@@ -118,17 +118,24 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
     // przełącza checkbox natywnie; stopPropagation chroni przycisk.
     if (onToggleIgnoredOption && IGNORABLE_IN_CHOICE.has(option.type)) {
       const key = commandOptionKey(option);
-      const label = document.createElement('label');
-      label.className = 'action-ignore';
-      label.title = 'Zaznacz: ta opcja nie przerywa auto-passu';
-      const toggle = document.createElement('input');
-      toggle.type = 'checkbox';
-      toggle.className = 'action-ignore-input';
-      toggle.checked = Boolean(ignoredOptionKeys && ignoredOptionKeys.has(key));
-      label.appendChild(toggle);
-      label.addEventListener('click', (e) => e?.stopPropagation?.());
-      toggle.addEventListener('change', () => onToggleIgnoredOption(key));
-      button.appendChild(label);
+      // M292 (punkt 3 decyzji właściciela): ptaszek wyciszenia NIE jest wierszem
+      // wyboru — siedzi WEWNĄTRZ przycisku opcji — więc bierze ze wspólnego
+      // komponentu wyłącznie OBSŁUGĘ (label→input, `stopPropagation` chroniący
+      // przycisk, tytuł, stan z modelu), a wygląd zostaje rodzinny
+      // (`.action .action-ignore`). Dawniej ten sam układ był lepiony ręcznie
+      // dwa razy: tu i w panelu akcji (`render.js`) — czyli dokładnie ten
+      // równoległy sposób wizualizacji, o którego skasowaniu była prośba.
+      renderPickerRow(button, {
+        kind: 'checkbox',
+        variant: 'inline',
+        rowClassName: 'action-ignore',
+        toggleClassName: 'action-ignore-input',
+        label: null,
+        title: 'Zaznacz: ta opcja nie przerywa auto-passu',
+        checked: Boolean(ignoredOptionKeys && ignoredOptionKeys.has(key)),
+        stopRowPropagation: true,
+        onToggle: () => onToggleIgnoredOption(key),
+      });
     }
     button.addEventListener('click', () => {
       const response = choiceResponse(request, option);
@@ -781,14 +788,20 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
     `${sourceName ? `${sourceName} — ` : ''}podziel ${total} obraż${total === 1 ? 'enie' : (total >= 2 && total <= 4 ? 'enia' : 'eń')} między maks. ${maxTargets} celów (suma musi wynosić ${total}):`);
   const list = choiceNode(host, 'div', 'damage-wizard-list');
   const amounts = candidateIds.map(() => 0);
-  const counters = [];
+  const rows = [];
   let confirm = null;
   let sumEl = null;
   const sum = () => amounts.reduce((a, b) => a + b, 0);
   const chosenCount = () => amounts.filter((n) => n > 0).length;
   const legal = () => sum() === total && chosenCount() >= 1 && chosenCount() <= maxTargets;
+  // M292: warunki legalności dokładań wyjeżdżą z handlerów przycisków do
+  // predykatów pickera — ten sam warunek rządzi wtedy i akcją, i stanem `disabled`,
+  // więc widełki nie rozjadą się z wizualnym stanem (był to klasyczny rozjazd
+  // w stepperskich kreatorach przed tym commitem).
+  const canGive = (idx) => sum() < total
+    && !(amounts[idx] === 0 && chosenCount() >= maxTargets); // nowy cel: wolny slot
   const refresh = () => {
-    candidateIds.forEach((id, idx) => { if (counters[idx]) counters[idx].textContent = String(amounts[idx]); });
+    candidateIds.forEach((id, idx) => { rows[idx]?.setValue(amounts[idx]); });
     if (sumEl) sumEl.textContent = `Przydzielono: ${sum()} / ${total}${chosenCount() > maxTargets ? ` — za dużo celów (maks. ${maxTargets})` : ''}`;
     if (confirm) {
       const ok = legal();
@@ -797,29 +810,38 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
     }
   };
   candidateIds.forEach((id, idx) => {
-    const row = choiceNode(list, 'div', 'damage-wizard-row');
     const isPlayer = Boolean(view.players?.some((pl) => pl.id === id));
     const name = isPlayer
       ? (view.players.find((pl) => pl.id === id)?.name ?? id)
       : objectName(view, session, id);
-    const nameEl = choiceNode(row, 'span', 'damage-wizard-name', name);
-    if (!isPlayer && onOpenCard) {
-      nameEl.dataset.objectId = id;
-      nameEl.addEventListener('click', () => onOpenCard(id));
-    }
-    const minus = choiceNode(row, 'button', 'ghost-btn damage-wizard-minus', '−1');
-    const counter = choiceNode(row, 'span', 'damage-wizard-count', '0');
-    const plus = choiceNode(row, 'button', 'ghost-btn damage-wizard-plus', '+1');
-    counters[idx] = counter;
-    minus.addEventListener('click', () => {
-      if (amounts[idx] > 0) { amounts[idx] -= 1; refresh(); }
+    // Wiersz buduje JEDEN komponent (picker.js, `kind: 'stepper'`) — te same
+    // 44 px i ta sama klikalna nazwa co w kreatorze wielocelowym i walce.
+    // Klasy `damage-wizard-*` zostają jako haki `m136-*`, `m172-*` i Testera
+    // (`$$('#choice-request .damage-wizard-plus')`).
+    const handle = renderPickerRow(list, {
+      id,
+      kind: 'stepper',
+      label: name,
+      min: 0,
+      max: total,
+      rowClassName: 'damage-wizard-row',
+      nameClassName: 'damage-wizard-name',
+      valueClassName: 'damage-wizard-count',
+      decClassName: 'ghost-btn damage-wizard-minus',
+      incClassName: 'ghost-btn damage-wizard-plus',
+      canDecrement: () => amounts[idx] > 0,
+      canIncrement: () => canGive(idx),
+      onStep: (delta) => {
+        const next = amounts[idx] + delta;
+        if (next < 0) return;
+        if (delta > 0 && !canGive(idx)) return;
+        amounts[idx] = next;
+        refresh();
+      },
+      onOpenCard: isPlayer || typeof onOpenCard !== 'function' ? null : (oid) => onOpenCard(oid),
     });
-    plus.addEventListener('click', () => {
-      // Nowy cel dopiero, gdy jest wolny slot (maxTargets) i wolna suma.
-      if (sum() >= total) return;
-      if (amounts[idx] === 0 && chosenCount() >= maxTargets) return;
-      amounts[idx] += 1; refresh();
-    });
+    if (!isPlayer && handle.label?.dataset) handle.label.dataset.objectId = id;
+    rows[idx] = handle;
   });
   sumEl = choiceNode(host, 'div', 'damage-wizard-remaining', `Przydzielono: 0 / ${total}`);
   const buttons = choiceNode(host, 'div', 'choice-request-actions');
@@ -1077,11 +1099,11 @@ function controllerTag(view, id) {
   return ` (${controller?.name ?? object.controllerId})`;
 }
 
-export function renderDamageWizard(host, { view, session, pending, defaultCommand, onComplete, onCancel, probeKeyFor = null }) {
+export function renderDamageWizard(host, { view, session, pending, defaultCommand, onComplete, onCancel, probeKeyFor = null, onOpenCard = null }) {
   clearChoiceElement(host);
   choiceNode(host, 'div', 'choice-request-intro', 'Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:');
   const list = choiceNode(host, 'div', 'damage-wizard-list');
-  const state = { entries: [], amounts: new Map(), renders: [] }; // amounts: `${attackerId}:${blockerId}` → n
+  const state = { entries: [], renders: [] };
   let confirm = null;
   // CR 702.19b: przydział trample jest legalny, gdy albo cała moc poszła
   // w blokerów, albo każdy blokujący dostał co najmniej lethal.
@@ -1129,15 +1151,15 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
       entry.trample ? `do gracza: ${entry.power}` : '');
     const key = entry.attackerId;
 
+    const rowHandles = [];
     const sum = () => amounts.reduce((a, b) => a + b, 0);
     const canIncrease = (idx) => sum() < entry.power
       && (idx === 0 || amounts[idx - 1] >= entry.blockers[idx - 1].lethal);
     const render = () => {
-      // odśwież liczniki w wierszach
+      // odśwież liczniki w wierszach (picker liczy z tego samego modelu, co
+      // pozwala +/− — `setValue` wywołuje w środku `paint()`)
       for (let idx = 0; idx < entry.blockers.length; idx += 1) {
-        const b = entry.blockers[idx];
-        const el = state.amounts.get(`${key}:${b.id}`);
-        if (el) el.textContent = String(amounts[idx]);
+        rowHandles[idx]?.setValue(amounts[idx]);
       }
       // M101/B6 (CR 702.19b): nadmiar trample idzie na gracza DOPIERO, gdy
       // każdy bloker ma lethal — inaczej silnik odrzuci przydział. Pokazujemy
@@ -1173,40 +1195,57 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
       // i w przeglądarce, i w stubach MiniEl testów (nie każda ma
       // replaceChildren).
       rows.innerHTML = '';
+      rowHandles.length = 0;
       entry.blockers.forEach((b, idx) => {
-        const row = choiceNode(rows, 'div', 'damage-wizard-row');
         const liveBlockerName = objectName(view, session, b.id);
         const blockerName = liveBlockerName !== '?'
           ? liveBlockerName
           : (b.cardId ? session.nameOf(b.cardId) : '?');
-        choiceNode(row, 'span', 'damage-wizard-name',
-          `${blockerName} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal})`);
-        const minus = choiceNode(row, 'button', 'ghost-btn damage-wizard-minus', '−1');
-        minus.type = 'button';
-        const amountEl = choiceNode(row, 'span', 'damage-wizard-amount', '0');
-        state.amounts.set(`${key}:${b.id}`, amountEl);
-        const plus = choiceNode(row, 'button', 'ghost-btn damage-wizard-plus', '+1');
-        plus.type = 'button';
-        minus.addEventListener('click', () => {
-          if (amounts[idx] <= 0) return;
-          amounts[idx] -= 1;
-          // Jeśli ten bloker spadł poniżej lethal, późniejsi nie mogą mieć
-          // obrażeń (reguła kolejności CR 510.1d).
-          if (amounts[idx] < b.lethal) {
-            for (let j = idx + 1; j < amounts.length; j += 1) amounts[j] = 0;
-          }
-          render();
+        // M292: wiersz-stepper z `src/table/picker.js` — te same 44 px, ten sam
+        // licznik i TA SAMA klikalna nazwa co w kreatorze wielocelowym, walce i
+        // podziale obrażeń. Przed tym commitem ten ekran był jedynym w todo-stole,
+        // który nie przyjmował `onOpenCard` (uwaga właściciela: „elastyczne
+        // komponenty z parametrami, nie równoległe funkcje" — konwencja była
+        // złamana dokładnie w jednym miejscu i nikt jej nie pilnował).
+        const handle = renderPickerRow(rows, {
+          id: b.id,
+          kind: 'stepper',
+          label: `${blockerName} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal})`,
+          min: 0,
+          max: entry.power,
+          rowClassName: 'damage-wizard-row',
+          nameClassName: 'damage-wizard-name',
+          valueClassName: 'damage-wizard-amount',
+          decClassName: 'ghost-btn damage-wizard-minus',
+          incClassName: 'ghost-btn damage-wizard-plus',
+          canDecrement: () => amounts[idx] > 0,
+          canIncrement: () => canIncrease(idx),
+          onStep: (delta) => {
+            if (delta < 0) {
+              if (amounts[idx] <= 0) return;
+              amounts[idx] -= 1;
+              // Jeśli ten bloker spadł poniżej lethal, późniejsi nie mogą mieć
+              // obrażeń (reguła kolejności CR 510.1d).
+              if (amounts[idx] < b.lethal) {
+                for (let j = idx + 1; j < amounts.length; j += 1) amounts[j] = 0;
+              }
+            } else {
+              if (!canIncrease(idx)) return;
+              amounts[idx] += 1;
+            }
+            render();
+          },
+          onOpenCard: typeof onOpenCard === 'function' ? (oid) => onOpenCard(oid) : null,
         });
-        plus.addEventListener('click', () => {
-          if (!canIncrease(idx)) return;
-          amounts[idx] += 1;
-          render();
-        });
-        const up = choiceNode(row, 'button', 'ghost-btn damage-wizard-up', '↑');
+        if (handle.label?.dataset && b.cardId) handle.label.dataset.objectId = b.id;
+        rowHandles[idx] = handle;
+        // ↑/↓ (kolejność przydziału, M150/B) jadą w tym samym wierszu, w
+        // hakcie `actions`, który picker oddaje wywołującemu na własne kontrolki.
+        const up = choiceNode(handle.actions, 'button', 'ghost-btn damage-wizard-up', '↑');
         up.type = 'button';
         up.title = 'Przesuń wyżej w kolejności przydziału';
         up.addEventListener('click', () => { if (idx > 0) swapBlockerOrder(idx, idx - 1); });
-        const down = choiceNode(row, 'button', 'ghost-btn damage-wizard-down', '↓');
+        const down = choiceNode(handle.actions, 'button', 'ghost-btn damage-wizard-down', '↓');
         down.type = 'button';
         down.title = 'Przesuń niżej w kolejności przydziału';
         down.addEventListener('click', () => { if (idx < entry.blockers.length - 1) swapBlockerOrder(idx, idx + 1); });

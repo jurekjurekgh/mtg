@@ -566,6 +566,9 @@ function bootstrapTable() {
       renderDamageWizard(els.choiceRequestBody, {
         view: choiceView, session, pending,
         defaultCommand: request.options[0],
+        // M292: jedyny ekran stołu bez tej konwencji — nazwa blokera otwiera
+        // kartę jak w walce, podziale obrażeń i kreatorze celów (patrz picker).
+        onOpenCard: (objectId) => openCardFullscreen(objectId),
         // M136 (backlog: „damage wizard poza osią noop"): klucz sondy dla
         // przycisku zatwierdzenia — wizard składa komendę ze stepperów, więc
         // sam liczy jej kształt, a tu dokładamy tożsamość komendy.
