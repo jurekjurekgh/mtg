@@ -185,3 +185,37 @@ ujednolicić elementy graficzne, podgląd kart targetów itp."
    regresji (final-fantasy 51); 0 zgłoszeń detektorów. Harness `table-ui`
    zaktualizowany (pickActionButton sięga głębiej — wiersz pickera).
 4. Dokumentacja: M301, PROJECT_HISTORY, aktualizacja §3b/§4 audytu, PR #95.
+
+---
+
+## Etap dodany 2026-09-03 (doprecyzowanie właściciela): KAŻDY modal wyboru na jednym helperze (M302)
+
+Doprecyzowanie właściciela po M301: „Nie rozumiem pytania. Czemu te modale
+wyboru, które wymieniasz wymagają mojej decyzji? Każdy modal wyboru może
+i powinien mieć ten sam helper, być może z różnymi/dodatkowymi opcjami czy
+parametrami. Ale podstawa powinna być jedna żeby wszelkie zmiany — np.
+czcionki, ikonki podglądu itp. — były w jednym miejscu. Czemu 1 kandydat
+i odmowa (2 opcje) nie mogą być z tego samego helpera na przyciskach?"
+
+1. `enumButtonsPlanOf` (M301: lista 18 rodzin + limit 2–5) → ogólny
+   `buttonsPlanOf`: KAŻDA grupa ≥2 opcji, której nie wziął wcześniejszy plan
+   albo wizard typowany, dostaje wiersze-przyciski wspólnego kreatora
+   (jeden klik = dokładna komenda, L48). Tryb `buttonsMode` (dawniej
+   `enumButtonsMode`). Routing przeniesiony na sam KONIEC
+   `openChoiceRequest` — wizardy typowane (scry/surveil/index, walka,
+   podział obrażeń, escape) mają pierwszeństwo; strażnik kolejności czyta
+   źródło main.js (test M302/4). `renderChoiceRequest` zostaje jako siatka
+   bezpieczeństwa dla grup pustych.
+2. Zmierzone żywo po naprawie: Jill (11 kandydatów → radio-wizard rodziny
+   §3a; wariant 1 kandydat + odmowa → przyciski helpera), „Karta z grobu na
+   wierzch biblioteki" (1 kandydat + „Gotowe — bez wyboru" → przyciski
+   z 🔍), Zoraline — Dobrowolna dopłata (przyciski ze wspólnym Anuluj),
+   scry/surveil — sekwencyjne wizardy BEZ regresji, okno Vaana bez regresji;
+   0 zgłoszeń detektorów (final-fantasy 51, worek-basni 811, worek-legend 3,
+   wiedzmin 7).
+3. Weryfikacja: 4 nowe testy (RED), testy M301 zaktualizowane do ogólnej
+   semantyki (razem 13/13), mutacje zabite (guard ≥2, gałąź renderu,
+   kolejność routingu); bramki 4396/4396, `test:all` 4406/4406, build
+   3224,2 kB.
+4. Dokumentacja: M302, PROJECT_HISTORY, audyt §3b/§3c/§4 po aktualizacji,
+   PR #95.

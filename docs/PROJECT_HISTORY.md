@@ -8223,3 +8223,24 @@ Torment (gospodarz w kreatorze, 811), Dobrowolna dopłata (tryb przyciskowy,
 811), Wedgelight Rammer („wskaż stwora do tapnięcia”, worek-legend 3), okno
 Vaana bez regresji (51); 0 detektorów. Commity: `42c3399` (RED, 9 testów),
 `8d8342f` (fix, 8 mutacji).
+
+**Ciąg dalszy sesji — każdy modal wyboru na jednym helperze (M302,
+doprecyzowanie właściciela).**
+
+Właściciel odrzucił ramę „rodzin odroczonych”: „Każdy modal wyboru może
+i powinien mieć ten sam helper… podstawa powinna być jedna żeby wszelkie
+zmiany — np. czcionki, ikonki podglądu itp. — były w jednym miejscu. Czemu
+1 kandydat i odmowa (2 opcje) nie mogą być z tego samego helpera na
+przyciskach?". enumButtonsPlanOf (lista rodzin + limit 2–5) stał się ogólnym
+buttonsPlanOf: każda grupa ≥2 opcji bez dedykowanego planu dostaje
+wiersze-przyciski wspólnego kreatora (jeden klik = dokładna komenda, L48).
+Search_choice, undercity i grupy „1 kandydat + odmowa” (Jill) w helperze;
+routing planu na końcu openChoiceRequest ze strażnikiem kolejności (test
+czyta źródło main.js — chroni wizardy scry/surveil/index). renderChoiceRequest
+= tylko siatka bezpieczeństwa dla grup pustych. Bramki: 4396/4396, test:all
+4406/4406, build 3224,2 kB; Żywy Tester: Jill i „karta z grobu na wierzch”
+jako przyciski helpera z 🔍, Zoraline ze wspólnym Anuluj, scry bez regresji;
+0 detektorów. Commity: `55e32c2` (RED), `f0600d8` (fix). Uwaga sesji:
+sandbox zresetował workspace w trakcie tury (drugi raz) — odzyskane przez
+fetch + mixed reset do FETCH_HEAD, kity RED/fix odtworzone na właściwej
+bazie bez utraty treści.

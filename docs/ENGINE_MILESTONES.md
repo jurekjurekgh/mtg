@@ -4551,3 +4551,43 @@ Dobrowolna dopłata Zoraline — tryb przyciskowy helpera ze wspólnym Anuluj
 (811), Wedgelight Rammer — „wskaż stwora do tapnięcia (1)” (worek-legend 3),
 okno Vaana bez regresji (final-fantasy 51); 0 zgłoszeń detektorów. Silnik
 i protokół bez zmian (L48).
+
+## M302 (2026-09-03) — Każdy modal wyboru stoi na jednym helperze: ogólny plan przyciskowy (doprecyzowanie właściciela)
+
+**Doprecyzowanie.** Po M301 właściciel odrzucił ramę „rodzin odroczonych do
+decyzji”: „Nie rozumiem pytania. Czemu te modale wyboru, które wymieniasz
+wymagają mojej decyzji? Każdy modal wyboru może i powinien mieć ten sam
+helper, być może z różnymi/dodatkowymi opcjami czy parametrami. Ale podstawa
+powinna być jedna żeby wszelkie zmiany — np. czcionki, ikonki podglądu itp.
+— były w jednym miejscu. Czemu 1 kandydat i odmowa (2 opcje) nie mogą być
+z tego samego helpera na przyciskach?"
+
+**Naprawa.** `enumButtonsPlanOf` (M301: lista 18 rodzin §3b + limit 2–5)
+→ `buttonsPlanOf`: plan jest OGÓLNY — każda grupa ≥2 opcji, której nie wziął
+wcześniejszy dedykowany plan (cele, okna rzutu, pojedynczy wybór, mulligan)
+ani wizard typowany (scry/surveil/index, walka, podział obrażeń, escape),
+dostaje wiersze-przyciski wspólnego kreatora: jeden klik = DOKŁADNA komenda
+silnika (tożsamość z `legalCommands`, L48), wspólne intro/Anuluj/podgląd kart
+🔍/klucz sondy (M104). Znikają wyjątki: `search_choice` (para
+`{found, destination}` jest gotową opcją — dwa wymiary nie wymagają osobnego
+planu), undercity, grupy „1 kandydat + odmowa” (Jill — odpowiedź na pytanie
+właściciela: mogą), duże grupy szukania (17 opcji), kształty mieszane.
+Routing przeniesiony na sam KONIEC `openChoiceRequest`; strażnik testowy
+czyta źródło main.js i pilnuje, by plan przyciskowy nie stanął przed
+wizardami typowanymi (inaczej scry/surveil/index połknęłyby się jako
+płaskie przyciski). `renderChoiceRequest` zostaje wyłącznie jako siatka
+bezpieczeństwa dla grup pustych. Zmiany graficzne (czcionki, ikony podglądu)
+mają od teraz JEDNO miejsce.
+
+**Weryfikacja.** 4 nowe testy (RED) + testy M301 zaktualizowane do ogólnej
+semantyki (razem 13/13): plan dla Jill/search/undercity/17 opcji/mieszanych
+typów, negatyw <2 opcji, odmowa = klik = dokładna komenda `targetId: null`,
+podgląd karty, strażnik kolejności routingu. Mutacje zabite: guard ≥2,
+gałąź renderu, przesunięcie routingu przed lookWizardKindOf. Bramki:
+4396/4396, `test:all` 4406/4406, build 3224,2 kB. Żywy Tester: Jill
+(11 kandydatów → radio-wizard; wariant „1 kandydat + odmowa” → przyciski
+helpera), „Karta z grobu na wierzch biblioteki” → przyciski z 🔍 (worek-basni
+811), Dobrowolna dopłata → przyciski ze wspólnym Anuluj, scry/surveil —
+wizardy sekwencyjne bez regresji, okno Vaana bez regresji (final-fantasy 51,
+worek-legend 3, wiedzmin 7); 0 zgłoszeń detektorów. Silnik i protokół bez
+zmian (L48).

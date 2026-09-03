@@ -89,14 +89,17 @@ silnika i protokołu — L48).
 `resolve_replacement_choice`, `resolve_explore_choice`,
 `resolve_destroy_equipment_choice`, `resolve_food_choice` (tak/nie).
 
-**AKTUALIZACJA 2026-09-03 (M301):** decyzja właściciela — „małe enumeracje
-2-5 opcji mogą zostać przy przyciskach, ale warto, żeby to też był element
-tego samego helpera. Choćby po to, żeby ujednolicić elementy graficzne,
-podgląd kart targetów itp.". Zrealizowane: `enumButtonsPlanOf` + tryb
-`enumButtonsMode` kreatora (wiersz-przycisk, jeden klik = dokładna komenda,
-wspólne intro/Anuluj/podgląd kart/klucz sondy). Semantyka przyciskowa
-zachowana; grupy >5 opcji i rodziny spoza listy zostają przy dawnym
-rysowaniu.
+**AKTUALIZACJA 2026-09-03 (M301→M302):** decyzja właściciela — „małe
+enumeracje 2-5 opcji mogą zostać przy przyciskach, ale warto, żeby to też
+był element tego samego helpera. Choćby po to, żeby ujednolicić elementy
+graficzne, podgląd kart targetów itp.", a następnie doprecyzowanie: „Każdy
+modal wyboru może i powinien mieć ten sam helper, być może z różnymi/
+dodatkowymi opcjami czy parametrami. Ale podstawa powinna być jedna żeby
+wszelkie zmiany — np. czcionki, ikonki podglądu itp. — były w jednym
+miejscu". Zrealizowane: ogólny plan przyciskowy `buttonsPlanOf` + tryb
+`buttonsMode` kreatora (wiersz-przycisk, jeden klik = dokładna komenda,
+wspólne intro/Anuluj/podgląd kart/klucz sondy). M301 zaczął od listy 18
+rodzin i limitu 2–5; M302 zniósł oba ograniczenia — plan jest uniwersalny.
 
 **Uzupełnienie audytu (zmierzone żywo przy M301):** rodzina §3a „wybierz
 jednego kandydata" miała trzy luki pól/kształtów poza listą — aurzy
@@ -104,7 +107,9 @@ gospodarze (`cast_permanent` z `targets[1]`), aktywacje z jednym celem
 (`activate_ability` z `targets[1]`) oraz pola kosztów `tapCreatureId`/
 `tapOtherCreatureId`/`exileTargetId` (Wedgelight Rammer, Makeshift Mauler).
 Domknięte w M301 (SINGLE_TARGET_CAST_TYPES + rozszerzenie
-SINGLE_PICK_FIELDS).
+SINGLE_PICK_FIELDS). Grupy „1 kandydat + odmowa" (np. Jill), dawniej
+zostawiane świadomie przy ścianie, od M302 też idą przez helper
+(przyciskowo — pytanie właściciela „czemu nie mogą?" rozstrzyga: mogą).
 
 ### 3c. Inny kształt decyzji — osobne kreatory albo zostają (poza tym audytem)
 
@@ -117,12 +122,14 @@ SINGLE_PICK_FIELDS).
   opcja = jeden wiersz radio z etykietą K1/K2 i podglądem karty
   (`castWindowPlanOf`, `commandForCastWindowSelection`); silnik bez zmian (L48);
 - **kolejność** (`resolve_index_choice` — wizard index już istnieje;
-  `resolve_reveal_order` — permutacje, dziś jedna oferta);
+  `resolve_reveal_order` — permutacje, dziś jedna oferta, bez modala);
 - **podgląd+wybór sekwencyjny** (`resolve_search_choice` — para
   `{found, destination}`: dwa wymiary, kandydaci = biblioteka); wymagałby
-  własnego planu, nie ogólnej generalizacji;
+  własnego planu, nie ogólnej generalizacji — **M302: para jest GOTOWĄ
+  opcją, więc wystarczył ogólny plan przyciskowy (bez osobnego planu)**;
 - **undercity** (`resolve_undercity_route` — `{room, roomName}`): wybór pokoju,
-  etykieta niesie nazwę pokoju (nie obiekt); niszowe.
+  etykieta niesie nazwę pokoju (nie obiekt); niszowe — **M302: również
+  ogólny plan przyciskowy**.
 
 ## 4. Rekomendacja
 
@@ -134,7 +141,13 @@ w silniku (L48), prowadzenie Żywego Testera już działa (`.multi-target-toggle
 grup bez `objectId` stracą nazwę źródła w intro — akceptowalne (nazwa zostaje
 w nagłówku panelu akcji; można rozszerzyć później).
 
-Świadomie NIE ruszamy: search_choice (dwa wymiary), undercity, kolejności
-reveal — decyzje właściciela. Zrealizowane po audycie: §3a = M299 (+M301
-domknięcie pól), okna rzutu §3c = M300, małe enumeracje §3b = M301
-(przyciski wewnątrz wspólnego helpera — decyzja właściciela 2026-09-03).
+Stan po M302 (2026-09-03): KAŻDY modal wyboru stoi na jednym helperze.
+Zrealizowane po audycie: §3a = M299 (+M301 domknięcie pól), okna rzutu §3c
+= M300, enumeracje §3b = M301, a M302 zniósł wyjątki — `search_choice`,
+undercity i grupy „1 kandydat + odmowa" też są w helperze (przyciskowo).
+Osobne kreatory celowe zostały tylko tam, gdzie decyzja ma własny kształt
+interakcji (scry/surveil/index — sekwencja kart, walka — przełączniki,
+podział obrażeń — kwoty, escape — licznik, mana-wizard — płatność).
+`resolve_reveal_order` nie tworzy modala (pojedyncza komenda, permutacje
+nieenumerowane). Awaryjna ściana `renderChoiceRequest` = siatka
+bezpieczeństwa dla grup pustych.
