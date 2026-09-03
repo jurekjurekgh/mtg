@@ -4229,8 +4229,8 @@ powstały dla Discover, a obowiązywały też okno zdolności Vaana.
 - **Otwarty przypadek tej samej klasy (backlog, nie milczenie):** `xCost` i `fireball`
   (3 karty w 3 taliach). Sam predykat nie wystarczy — okno musi wyliczać X, inaczej jedyny
   wariant (X = 0) jest ruchem-pułapką.
-- **Bramy.** `npm test` 4276 → **4295/4295**, `npm run test:all` **4305/4305**,
-  `npm run build` 59 modułów / 3172,3 kB (baza 3167,0 kB). Benchmark (profil szybki,
+- **Bramy.** `npm test` 4276 → **4297/4297**, `npm run test:all` **4307/4307**,
+  `npm run build` 59 modułów / 3173,1 kB (baza 3167,0 kB). Benchmark (profil szybki,
   672 mecze) bez wyjątków: heuristic 83,9%, aggro 28,0%, random 4,2%.
 - **Dług i higiena.** Test odziedziczony po PR #93 (`audyt-pr92-darmowy-rzut-zakres`)
   piętnował brak oferty dla czaru modalnego i zakładał stempel `playableUntilTurn`, którego
