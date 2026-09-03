@@ -4226,12 +4226,17 @@ powstały dla Discover, a obowiązywały też okno zdolności Vaana.
   `payFreeCastAdditionalCost` co suspend/rebound/epic. Pomiar osiągalności: 5 kart
   w 5 taliach, Vaan w `final-fantasy`. Koszt wymagający wyboru kart (`cathartic-reunion`)
   zostaje bez oferty — jawne ograniczenie, nie ciche pominięcie (L5).
-- **Otwarty przypadek tej samej klasy (backlog, nie milczenie):** `xCost` i `fireball`
-  (3 karty w 3 taliach). Sam predykat nie wystarczy — okno musi wyliczać X, inaczej jedyny
-  wariant (X = 0) jest ruchem-pułapką.
-- **Bramy.** `npm test` 4276 → **4297/4297**, `npm run test:all` **4307/4307**,
-  `npm run build` 59 modułów / 3173,1 kB (baza 3167,0 kB). Benchmark (profil szybki,
+- **D — koszt X (CR 107.3a/107.3b).** Parametr `allowX`; `castXCostSpell` i `castFireball`
+  znają `abilityWindowCast` (każda gałąź `castSpell` ma dziś to samo uprawnienie); oferty X
+  liczy `legalXCostCasts` (wyciągnięty z wnętrza `legalSpellCasts`) i `legalFireballCasts` —
+  jeden generator z rzutem z ręki. **Discover dla kart X zostaje zamknięte i przypięte
+  testem**: CR 107.3b zmusza X = 0, a przy X = 0 żadna z dwóch kart katalogu nic nie robi,
+  więc oferta byłaby no-opem (uwaga F z M280). Źródła reguł w raporcie §4.
+- **Bramy.** `npm test` 4276 → **4304/4304**, `npm run test:all` **4314/4314**,
+  `npm run build` 59 modułów / 3176,1 kB (baza 3167,0 kB). Benchmark (profil szybki,
   672 mecze) bez wyjątków: heuristic 83,9%, aggro 28,0%, random 4,2%.
+- **Cztery parametry predykatu:** `allowTargets`, `allowModes`, `allowAdditionalCost`, `allowX`
+  — każdy włącza się per ścieżka, każdy ma test na „milczy, gdy wyłączony".
 - **Dług i higiena.** Test odziedziczony po PR #93 (`audyt-pr92-darmowy-rzut-zakres`)
   piętnował brak oferty dla czaru modalnego i zakładał stempel `playableUntilTurn`, którego
   silnik nie stawia — odwrócony, z komentarzem (L5/L44). Lekcja L127.

@@ -2110,9 +2110,18 @@ złamanie reguł, nie naprawa. I wreszcie: wariant ruchu bez wyboru X (X = 0) je
 pułapką, więc dopóki okno nie potrafi wyliczyć X, wyłączenie zostaje — ale jako
 świadomy wpis w backlogu, nie jako milczenie predykatu.
 
+Dopisek z tej samej tury (koszt X): **wariant legalny, ale nic nie robiący, nie
+jest ofertą.** Rzut bez kosztu many zmusza X = 0 (CR 107.3b), więc ten sam czar
+bywa pełnoprawnym ruchem w oknie, które płaci manę (X wybiera gracz, CR 107.3a),
+i no-opem w oknie darmowym. Zamknij tę ścieżkę PARAMETREM (`allowX`) i przypnij
+testem, że milczy — domyślna wartość predykatu nie może być jedynym śladem
+decyzji (uwaga właściciela F z M280).
+
 **Strażnik:** `test/audyt-pr93-modalny-rzut-z-okna.test.js` (6, w tym skan
 katalogu: każdy z 12 czarów modalnych ma ofertę w oknie zdolności),
 `test/audyt-pr93-modalny-discover.test.js` (6, w tym etykieta stołu z nazwą
 trybu), `test/audyt-pr93-koszt-dodatkowy-z-exile.test.js` (7) oraz odwrócony
 `test/audyt-pr92-darmowy-rzut-zakres.test.js`. Dziewięć mutacji — tabela w §7
-`docs/audits/AUDYT_PR93_2026-09-03.md`.
+`docs/audits/AUDYT_PR93_2026-09-03.md`; znalezisko D —
+`test/audyt-pr93-koszt-x-z-exile.test.js` (7, w tym strażnik: każda karta X
+katalogu rzucalna w oknie zdolności oraz Discover milczące dla kart X).

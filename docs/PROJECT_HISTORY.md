@@ -8002,13 +8002,28 @@ i na Discover wykluczenia, które powstały dla innej ścieżki.
   Koszt wymagający wyboru kart (`cathartic-reunion`) zostaje bez oferty — jawne
   ograniczenie (L5), nie ciche pominięcie kosztu.
 
-**Otwarty przypadek tej samej klasy** (wpis do backlogu, nie milczenie: X-cost
-i Fireball — 3 karty w 3 taliach) oraz **odwrócony test odziedziczony po PR #93**,
-który piętnował brak oferty jako zamierzony i zakładał stempel `playableUntilTurn`,
-którego silnik już nie stawia (przechodziłby bez naprawy — L5/L44).
+**D (po uzupełnieniu dokumentacji).** Wrócił wątek zostawiony w backlogu:
+karta z kosztem X albo Fireballem w oknie zdolności (`consume-spirit`,
+`epic-experiment`, `fireball` — 3 karty w 3 taliach). CR 107.3a: X wybiera
+gracz, więc okno wystawia wariant na każde X; `castXCostSpell`/`castFireball`
+dostały `abilityWindowCast` (domknięcie serii: każda gałąź `castSpell` zna to
+samo uprawnienie), a oferty X liczy generator wspólny z rzutem z ręki.
+**Discover dla kart X zostało świadomie zamknięte i przypięte testem** —
+CR 107.3b zmusza X = 0, a przy X = 0 żadna z kart nic nie robi, więc oferta
+byłaby no-opem (uwaga właściciela F z M280). 7 testów, 3 mutacje.
 
-**Bramy na koniec:** `npm test` **4295/4295**, `npm run test:all` **4305/4305**,
-build 59 modułów / 3172,3 kB, benchmark (672 mecze, profil szybki) bez wyjątków.
+**Co zostaje zamknięte ŚWIADOMIE (każde przypięte testem, nie milczeniem):**
+Discover + karta X (CR 107.3b ⇒ X = 0 ⇒ no-op), Discover + tryb wymagający celu
+(brak enumeracji celów, CR 608.2b), koszt „odrzuć N kart” w obu oknach (brak
+ścieżki zapłaty, L5) oraz tryb z celami zmiennymi w madness i darmowym rzucie
+z grobu (wykonanie odrzuca je jawnie). Osobno: **odwrócony test odziedziczony
+po PR #93**, który piętnował brak oferty jako zamierzony i zakładał stempel
+`playableUntilTurn`, którego silnik już nie stawia (przechodziłby bez naprawy —
+L5/L44).
+
+**Bramy na koniec:** `npm test` **4304/4304**, `npm run test:all` **4314/4314**, build 59 modułów / 3176,1 kB, benchmark (672 mecze, profil szybki) bez
+wyjątków, `event-contract-audit` i `family-audit` bez naruszeń, 6 partii Żywego
+Testera → 0 zgłoszeń detektorów.
 Dokumentacja: `docs/audits/AUDYT_PR93_2026-09-03.md`, M294, L127, HANDOFF
 `docs/setup/HANDOFF_2026-09-03-audyt-pr93-rzut-z-exile.md`.
 

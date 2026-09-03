@@ -25,7 +25,8 @@ Baza sesji: `83a9043` (= squash PR #93, `main`).
 | `5e1ec49` | **A** — czar modalny w oknie zdolności Vaana jest rzucalny (`allowModes` + `abilityWindowCast` w `castModalSpell` + wspólny `legalModeCasts`) |
 | `f7d0aac` | **B** — darmowy rzut Discover nie gubi czarów modalnych (tryb w ofercie, `chosenMode` na stosie, etykieta z nazwą trybu) |
 | `e19b8e0` | **C** — koszt dodatkowy nie wyłącza rzutu z exile (ofiara / dopłata {N}; Discover płaci przez `payFreeCastAdditionalCost`) |
-| *(ostatni)* | dokumentacja: raport, M294, L127, historia, backlog, README |
+| `fc37fda` | **D** — czar z kosztem X w oknie zdolności: X wybiera gracz (CR 107.3a); Discover dla kart X zamknięte świadomie (CR 107.3b ⇒ no-op) |
+| *(dokumentacja)* | raport (§4, §4b), M294, L127, historia, backlog (wpis X zamknięty), liczby README |
 
 Każdy commit testowy przeszedł weryfikację mutacyjną (L13): 9 mutacji, tabela
 w §7 raportu. Dodatkowo odwrócono test odziedziczony po PR #93, który
@@ -34,25 +35,29 @@ którego silnik już nie stawia (L5/L44 — przechodziłby bez naprawy).
 
 ## Gdzie szukać dalej
 
-1. **X-cost i Fireball w oknie „you may cast it”** — jedyny OTWARTY przypadek tej
-   samej klasy (`docs/backlog.md` §2, pierwszy wpis). Trzy elementy: parametr
-   predykatu, `abilityWindowCast` w `castXCostSpell`/`castFireball` (obie dziś
-   wymagają `zone === 'hand'`) i enumeracja X w ofercie okna — bez niej jedyny
-   wariant (X = 0) jest ruchem-pułapką. Karty: `consume-spirit`,
-   `epic-experiment`, `fireball` (3 karty w 3 taliach).
+1. **ZAMKNIĘTE w tej sesji (`fc37fda`): X-cost i Fireball w oknie zdolności.**
+   Zostaje jedno „gdyby”: pierwsza karta X sensowna przy X = 0 (np.
+   `engineered-explosives` za 0) — wtedy decyzję o zamknięciu Discover trzeba
+   podnieść osobno; predykat ma już parametr `allowX`, brakuje tylko zgody na
+   ofertę no-opu w tej jednej ścieżce. Zobacz wpis w `docs/backlog.md` §2.
 2. **Kicker na czarach bez pokrycia katalogowego** — silnik obsługuje (PR #93),
    ale w `card-data.js` nie ma ani jednego instantu/sorcery z `kicker`
    (drugi wpis w `docs/backlog.md` §2). Wniosek do właściciela: pierwsza taka
    karta domknie rodzinę testami na żywym stole.
-3. **Ścieżki, których ta sesja nie ruszała, a mają ten sam kształt predykatu:**
+3. **Cztery parametry predykatu** (`allowTargets`, `allowModes`,
+   `allowAdditionalCost`, `allowX`) — nowa ścieżka „you may cast it” powinna
+   odpowiedzieć na każde z nich pytaniem „czy potrafię to rozliczyć”,
+   zamiast dopisywać kolejną kopię filtra (L48/L74).
+
+4. **Ścieżki, których ta sesja nie ruszała, a mają ten sam kształt predykatu:**
    darmowy rzut z grobu (`resolve_grave_free_cast`) i madness odrzucają tryby
    z celami zmiennymi JAWNIE w wykonaniu — jeśli kiedyś dostaną enumerację
    celów, `epicCastOffers` ma już opcję `variableTargets`, wystarczy ją włączyć
    i przenieść `stunTargetId` do komendy (patrz komentarz przy opcji).
-4. **Budżet lektury startowej:** ~95,3k / 100k tokenów po dopisaniu L127. Wolne
+5. **Budżet lektury startowej:** ~95,5k / 100k tokenów po dopisaniu L127 (X). Wolne
    ~4,7k. Kolejna lekcja wymaga kondensacji istniejącego wpisu (Przypadek +
    Reguła + Strażnik, proza do `docs/LESSONS_PRZYPADKI.md`) — progu nie podnosić.
-5. **Dług `pendingFertileThicket`** (63 wystąpienia) i `resolve_springbloom`
+6. **Dług `pendingFertileThicket`** (63 wystąpienia) i `resolve_springbloom`
    (86) — bez zmian, liczby przypięte w M293/M294.
 
 ## Pokrycie Żywym Testerem (uczciwie)

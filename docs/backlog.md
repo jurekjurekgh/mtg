@@ -40,18 +40,19 @@ Następna lista właściciela wchodzi tutaj.)_
 
 ## 2. Silnik i reguły
 
-- **[otwarte, zmierzone 2026-09-03 — audyt PR #93]** Karta z kosztem X albo
-  Fireballem w oknie „you may cast it” (Vaan) i w darmowym rzucie Discover
-  nadal nie ma oferty: `consume-spirit`, `epic-experiment` (2 karty w 2 taliach)
-  i `fireball` (1 karta w 1 talii), a Vaan jest w `final-fantasy`, więc każda
-  z nich jest osiągalna w realnej partii. Wyłączenie siedzi w
-  `outsideHandCastScope` obok `allowModes`/`allowAdditionalCost` — ale samo
-  jego zdjęcie NIE wystarczy: okno musi wyliczać X w ofercie (X = 0..budżet),
-  bo wariant bez X jest ruchem-pułapką (karta stracona bez efektu). Do tego
-  `castXCostSpell` i `castFireball` wymagają dziś `zone === 'hand'` i nie znają
-  `abilityWindowCast` (to samo, co naprawiono dla `castModalSpell` w PR #94).
-  Trzy elementy: parametr predykatu, `abilityWindowCast` w obu funkcjach i
-  warianty X w `epicCastOffers`/ofercie Discover.
+- **[ZAMKNIĘTE w PR #94, `fc37fda` — audyt PR #93]** Karta z kosztem X albo
+  Fireballem w oknie „you may cast it”. `consume-spirit`, `epic-experiment`
+  i `fireball` (3 karty w 3 taliach; Vaan w `final-fantasy`) nie miały żadnej
+  oferty rzutu — dziś okno wystawia wariant na każde wybrane X (CR 107.3a),
+  `castXCostSpell`/`castFireball` znają `abilityWindowCast`, a oferty liczy
+  generator wspólny z rzutem z ręki (`legalXCostCasts`, `legalFireballCasts`).
+  **Discover zostało ŚWIADOMIE zamknięte i przypięte testem**: CR 107.3b
+  („the only legal choice for X is 0”) zmusza X = 0, a przy X = 0 obie karty
+  katalogu nie robią nic — oferta byłaby no-opem, czyli uwaga F z M280. Jeśli
+  kiedyś pojawi się karta X sensowna przy X = 0 (np. `engineered-explosives`
+  za 0), decyzję trzeba podnieść osobno: predykat ma już parametr `allowX`,
+  brakuje tylko zgody na ofertę no-opu w tej jednej ścieżce.
+
 - **[zmierzone 2026-09-03]** Kicker na instantach i sorcerych jest obsługiwany
   przez silnik (PR #93), ale w `src/cards/card-data.js` nie ma ANI JEDNEJ
   takiej karty — ścieżka nie ma pokrycia katalogowego (możliwość bez karty).
