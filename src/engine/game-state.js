@@ -1950,6 +1950,12 @@ export function execute(state, input) {
     const pending = state.pendingSpringbloom;
     if (cmd.type !== 'resolve_springbloom') return reject('springbloom_unresolved');
     if (cmd.playerId !== pending.controllerId) return reject('springbloom_not_your_decision');
+    // M296 (uwaga D właściciela): wynik komendy musi nieść WSZYSTKIE zdarzenia
+    // gałęzi — stół czyta result.events (log + Rozgrywka). Wcześniej
+    // `slice(-1)` zwracał tylko OSTATNIE zdarzenie, więc przy poświęceniu
+    // (permanent_sacrificed + springbloom_resolved + search_choice_required)
+    // gracz nie widział ani faktu poświęcenia, ani KTÓREGO landu.
+    const before = state.events.length;
     // Player can choose to not sacrifice (skip) — chyba że efekt jest
     // OBOWIĄZKOWY (Roiling Regrowth: „Sacrifice a land.").
     if (cmd.skip && pending.mandatory) return reject('springbloom_sacrifice_mandatory');
@@ -1958,7 +1964,7 @@ export function execute(state, input) {
       state.events.push(event('springbloom_skipped', {
         controllerId: pending.controllerId, cardId: pending.cardId ?? null,
       }));
-      return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - 1) });
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
     const landId = cmd.sacrificeLandId;
     if (!pending.landIds.includes(landId)) return reject('illegal_springbloom_sacrifice');
@@ -1999,7 +2005,7 @@ export function execute(state, input) {
       entersTapped: true,
       chain: { remaining: 1, qualifier: { types: ['Basic', 'Land'] }, destination: 'battlefield', entersTapped: true },
     });
-    return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - 1) });
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
   // Index (APC): look at top 5, reorder any order
   if (state.pendingIndex) {

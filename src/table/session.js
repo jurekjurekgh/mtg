@@ -1497,8 +1497,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // graczowi „dostaje +2 licznik +1/+1” i „traci 2 licznik stun” —
       // `polishPlural` istniał w tym pliku (obrażenia, karty), ale liczniki
       // go nie używały.
-      case 'counter_added':
-        return `${objectOrLki(e.objectId, e.cardId)} dostaje +${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (razem ${e.total})`;
+      case 'counter_added': {
+        // M296 (uwaga C właściciela): przy licznikach −1/−1 wpis brzmiał
+        // „dostaje +1 licznik -1/-1" — mylący plus. Znak należy się tylko
+        // licznikom, które same nie niosą minusa.
+        const amountText = String(e.counter).startsWith('-') ? String(e.amount) : `+${e.amount}`;
+        return `${objectOrLki(e.objectId, e.cardId)} dostaje ${amountText} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (razem ${e.total})`;
+      }
       case 'counter_removed': {
         if (e.annihilated || e.counter === 'mixed') {
           return `${objectOrLki(e.objectId, e.cardId)}: anihilacja ${e.amount} par liczników +1/+1 i −1/−1`;
