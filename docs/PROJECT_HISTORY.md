@@ -8182,3 +8182,23 @@ build 3212,8 kB; Żywy Tester: Springbloom (picker lądu + Pomiń), High
 Stride (cel z 4 kandydatów), 0 detektorów. Raport:
 `docs/audits/AUDYT_MODALE_WYBORU_2026-09-03.md`; commity `d95165d` (audyt),
 `4c588fe` (RED), `7603aab` (fix).
+
+**Ciąg dalszy sesji — okna rzutu do wspólnego kreatora (M300, zlecenie
+właściciela).**
+
+Właściciel po raporcie z audytu modali dopytał: „Nie wiem co rozumiesz przez
+wizard dla okien rzutu — co to znaczy? Że te efekty są nieobsłużone? Że nie
+korzystają ze wspólnego helpera? W obu przypadkach trzeba to załatać."
+Odpowiedź: silnik obsługuje okna w pełni (etykiety K1/K2 z audytu PR #94),
+wybór padał tylko na awaryjną ścianę przycisków — M300 przeniósł 5 typów
+okien (exile/grave-free/madness/rebound/suspend cast) do kreatora: jedna
+opcja = wiersz radio z etykietą K1/K2 i podglądem karty; Zatwierdź oddaje
+komendę przez tożsamość z legalCommands (L48). Przy okazji naprawiona klasa
+błędu: multiTargetPlanOf budował plan z podzbioru opcji z targets — okno
+Vaana z czarem {X} traciło wiersz odmowy (straż: plan tylko gdy każda opcja
+niesie targets). Kompromis świadomy: resolve_grave_free_cast traci
+per-opcyjne wyciszenie (zostaje wyciszenie grupy + jawny wiersz odmowy).
+Bramki: 4383/4383, test:all 4393/4393, build 3217,2 kB; Żywy Tester: Halo
+Forager (worek-basni, seedy 802/811 — okna 5 i 14 opcji) i Vaan
+(final-fantasy, seed 51 — dwa okna), 0 detektorów. Commity: `0b5c6ab`
+(audyt+plan), `a90dc32` (RED, 7 testów), `aa8caea` (fix, 6 mutacji RED).

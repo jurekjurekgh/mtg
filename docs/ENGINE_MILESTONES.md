@@ -4461,3 +4461,49 @@ kryte dedupem kandydatów). Bramki: 4376/4376, `test:all` 4386/4386, build
 3212,8 kB. Żywy Tester: Springbloom Druid — picker „wskaż ląd do poświęcenia
 (1)” z wierszem Pomiń, poświęcenie w logu; High Stride — „wskaż cel (1)”
 z 4 kandydatami; 0 zgłoszeń detektorów. Silnik i protokół bez zmian (L48).
+
+## M300 (2026-09-03) — Okna rzutu dołączone do wspólnego kreatora (zlecenie właściciela)
+
+**Zlecenie.** Właściciel po audycie modali wyboru (M299) dopytał o „wizard dla
+okien rzutu": „Nie wiem co rozumiesz przez wizard dla okien rzutu — co to
+znaczy? Że te efekty są nieobsłużone? Że nie korzystają ze wspólnego helpera?
+W obu przypadkach trzeba to załatać." Odpowiedź na pytanie: silnik obsługuje
+okna W PEŁNI (etykiety wariantów K1/K2 z audytu PR #94: tryb, stun, numeracja
+duplikatów), brakowało tylko toru UI — wybór padał na awaryjną ścianę
+przycisków `renderChoiceRequest`, poza wspólnym helperem.
+
+**Naprawa.** Nowe źródło planu `castWindowPlanOf` (5 typów okien:
+`resolve_exile_cast` Vaan, `resolve_grave_free_cast` Halo Forager,
+`resolve_madness_cast`, `resolve_rebound_cast`, `resolve_suspend_cast`): jedna
+opcja = jeden wiersz radio niosący `cardId` do podglądu; etykiety wypełnia
+wywołujący z `labelChoiceOptions` (K1/K2), intro = `choiceGroupTitle` +
+„— wybierz wariant:". Zatwierdź oddaje DOKŁADNĄ komendę silnika przez
+`commandForCastWindowSelection` (indeks wiersza `opt-N` → opcja oferty przez
+TOŻSAMOŚĆ z `legalCommands`, L48 — warianty różnią się polami, których plan
+nie zna: stun/X/tryb/koszt dodatkowy). Routing w `openChoiceRequest` PRZED
+`multiTargetPlanOf`, bo opcje okien niosą `targets`.
+
+**Klasa błędu przy okazji.** `multiTargetPlanOf` budował plan z PODZBIORU
+opcji niosących `targets` — okno Vaana z czarem {X} i odmową dawało kreator
+wielocelowy BEZ wiersza odmowy (zmierzone przed naprawą:
+`multiTargetPlanOf(vaanWindowWithX)` zwracał plan hasX z samymi celami).
+Straż: plan powstaje tylko gdy KAŻDA opcja niesie `targets`; inaczej rodzina
+ma własny kształt (okna rzutu → `castWindowPlanOf`, fallback → przyciski).
+
+**Świadomy kompromis.** `resolve_grave_free_cast` był w
+`OPTION_IGNORABLE_TYPES` (per-opcyjne checkboxy wyciszenia w ścianie
+przycisków) — w kreatorze wyciszenie per opcja znika; zostaje wyciszenie
+grupy w panelu akcji (automatyczna odmowa w `advance()`) i jawny wiersz
+odmowy.
+
+**Weryfikacja.** 7 testów (RED przed naprawą): kształt planu (wiersz na opcję
+Z ODMOWĄ, `cardId`, etykiety = null do wypełnienia), tożsamość komend
+z `legalCommands`, wizard DOM (radio + Zatwierdź oddaje dokładnie tę komendę),
+podgląd karty po kliknięciu nazwy wiersza, pusty wybór = wyłączone Zatwierdź,
+routing main.js przed multiTargetPlanOf, negatywy (pojedyncza opcja, obce
+i mieszane typy). 6 mutacji RED (w tym straż podzbioru, gałąź kreatora,
+off-by-one indeksu). Bramki: 4383/4383, `test:all` 4393/4393, build
+3217,2 kB. Żywy Tester: Halo Forager (worek-basni, seedy 802/811 — okna 5
+i 14 opcji z wierszem „Zrezygnuj (nie płać {X})" i etykietami „Rzuć z grobu
+za {N}") i Vaan (final-fantasy, seed 51 — dwa okna 2-opcyjne), 0 zgłoszeń
+detektorów. Silnik i protokół bez zmian (L48).
