@@ -4721,18 +4721,22 @@ export function execute(state, input) {
           state.turn = jumpToStep(state.turn, 'declare_blockers', defenderId);
           events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
         }
-        // CR 106.4: niewykorzystana mana znika z puli na końcu KAŻDEGO kroku
-        // i fazy (wcześniej utrzymywała się do końca tury — tapnięte landy
-        // „trzymały" manę przez walkę i fazy przeciwnika).
+        // CR 500.4: „When a step or phase ends, any unused mana left in a
+        // player's mana pool is lost" — czyli na końcu KAŻDEGO kroku i fazy
+        // (od M10; wcześniej pula trzymała się do końca fazy, a przed M10
+        // nadmiar many palił życie — „mana burn", dziś nieistniejący).
+        // Sprawdzono wobec CR w audycie PR #93: silnik czyści pulę per krok
+        // i per faza — zachowanie poprawne, poprawiono tylko numer reguły
+        // (dawny odnośnik „CR 106.4” opisywał starą wersję przepisu).
         for (const player of state.players) {
           player.mana = 0;
           player.manaPool = {};
           // M214: pula many ograniczonej drukiem znika razem z resztą puli
-          // (CR 106.4) — bez tego osierocone jednostki zalegałyby w księgowaniu.
+          // (CR 500.4) — bez tego osierocone jednostki zalegałyby w księgowaniu.
           player.restrictedPool = {};
           player.treasureMana = 0;
           // M201 (znalezisko #3): licznik many ograniczonej znika razem z pulą
-          // (CR 106.4) — stały licznik blokowałby płatności w kolejnych krokach.
+          // (CR 500.4) — stały licznik blokowałby płatności w kolejnych krokach.
           player.artifactOnlyMana = 0;
         }
         if (state.turn.step === 'cleanup') {
