@@ -7871,7 +7871,7 @@ przycisku opcji, bez klas `picker-*`, bo trzy testy porównują `className` ze s
 Przez niego idą: podział obrażeń, przydział obrażeń blokującym, źródła many w płatności
 kostki i OBA ptaszki „ignoruj tę opcję" (panel `renderChoiceRequest` + panel akcji w
 `render.js`). Kreatorów w `choice-request.js` rysujących wiersz helperem: 3/8 → 6/8;
-ręcznie lepionych wierszy `*-row` i `createElement('input')` poza pickerem: 4 → 0.
+ręcznie lepionych wierszy i ptaszków wyboru (`*-row`, `createElement('input'|'label')`) poza pickerem: 5 → 0 (pierwszy odczyt „4" policzył tylko linie ptaszków; przemierzone całym wzorcem, §17.1 raportu).
 Wiersze scry/surveil i Fertile Thicket zostają własne — to chipy z obrazkiem, nie ptaszek
 ani stepper (decyzja i cena: backlog §2).
 
