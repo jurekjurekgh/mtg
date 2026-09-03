@@ -4232,8 +4232,8 @@ powstały dla Discover, a obowiązywały też okno zdolności Vaana.
   jeden generator z rzutem z ręki. **Discover dla kart X zostaje zamknięte i przypięte
   testem**: CR 107.3b zmusza X = 0, a przy X = 0 żadna z dwóch kart katalogu nic nie robi,
   więc oferta byłaby no-opem (uwaga F z M280). Źródła reguł w raporcie §4.
-- **Bramy.** `npm test` 4276 → **4310/4310**, `npm run test:all` **4320/4320**,
-  `npm run build` 59 modułów / 3179,7 kB (baza 3167,0 kB). Benchmark (profil szybki,
+- **Bramy.** `npm test` 4276 → **4319/4319**, `npm run test:all` **4320/4320**,
+  `npm run build` 59 modułów / 3182,4 kB (baza 3167,0 kB). Benchmark (profil szybki,
   672 mecze) bez wyjątków: heuristic 83,9%, aggro 28,0%, random 4,2%.
 - **E — czysta aura (CR 303.4a).** Znaleziona SKANEM KATALOGU, nie zgłoszeniem:
   `outsideHandCastScope` odcinał `card.aura`, choć Oracle Vaana mówi „You may cast it”.
@@ -4241,6 +4241,14 @@ powstały dla Discover, a obowiązywały też okno zdolności Vaana.
   `legalAuraCastsForObject` (ekstrakcja z `legalAuraCasts`) — typ gospodarza, hexproof,
   protection, Curse (cel-gracz) i bestow. Discover przy aurach zamknięte (brak celów).
   Metoda skanu opisana w raporcie §4c — do powtórzenia w kolejnych audytach.
+- **F — inna ścieżka, ta sama klasa (ADR 0021 §4b).** Darmowy rzut z grobu
+  (Halo Forager) pomijał tryby z `variableTargets`, więc `wrap-in-flames` nie
+  dało się rzucić z cmentarza; walidacja komendy idzie teraz przez ten sam
+  generator co oferta (L48). **G — bot:** po F brał pierwszy wariant z brzegu,
+  czyli jałowy (0 celów) — 4 many i karta za nic. Wycena wrappera
+  `apply_to_each_target` wyciągnięta z `cast_spell` (`wrapTargetsValue`),
+  efekty WYBRANEGO trybu i wspólna `freeCastVariantScore` z jałowością (M233).
+ _testy: 5 + 4, mutacje: 3 + 3._
 - **Pięć parametrów predykatu:** `allowTargets`, `allowModes`, `allowAdditionalCost`,
   `allowX`, `allowAura`
   — każdy włącza się per ścieżka, każdy ma test na „milczy, gdy wyłączony".

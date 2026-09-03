@@ -26,6 +26,8 @@ Baza sesji: `83a9043` (= squash PR #93, `main`).
 | `f7d0aac` | **B** — darmowy rzut Discover nie gubi czarów modalnych (tryb w ofercie, `chosenMode` na stosie, etykieta z nazwą trybu) |
 | `e19b8e0` | **C** — koszt dodatkowy nie wyłącza rzutu z exile (ofiara / dopłata {N}; Discover płaci przez `payFreeCastAdditionalCost`) |
 | `fc37fda` | **D** — czar z kosztem X w oknie zdolności: X wybiera gracz (CR 107.3a); Discover dla kart X zamknięte świadomie (CR 107.3b ⇒ no-op) |
+| `8267b70` | **F** — darmowy rzut z grobu (Halo Forager): tryb z celami zmiennymi (CR 601.2c); walidacja przez ten sam generator co oferta |
+| `ddc9d64` | **G** — bot: nie marnuje czaru z celami zmiennymi w oknach rzutu spoza ręki (jałowość M233 + wartość per cel + efekty wybranego trybu) |
 | `fb867f5` | **E** — czysta aura w oknie zdolności: gospodarza wybiera gracz (CR 303.4a); znaleziona SKANEM KATALOGU (22 aury w 12 taliach), `legalAuraCastsForObject` wspólne z ręką |
 | *(dokumentacja)* | raport (§4, §4b), M294, L127, historia, backlog (wpis X zamknięty), liczby README |
 
@@ -59,15 +61,21 @@ którego silnik już nie stawia (L5/L44 — przechodziłby bez naprawy).
    odpowiedzieć na każde z nich pytaniem „czy potrafię to rozliczyć”,
    zamiast dopisywać kolejną kopię filtra (L48/L74).
 
-5. **Ścieżki, których ta sesja nie ruszała, a mają ten sam kształt predykatu:**
+5. **Następny skan (kolejna ścieżka):** `pendingMadnessCast` i
+   `pendingReboundCast`/`pendingSuspendCast` — te same trzy pytania co przy F
+   (efekty wybranego trybu, jałowość, wartość per cel). Karty z madness:
+   `terminal-agony`, `revolutionist`, `invasion-of-the-giants` (żadna nie ma
+   trybu z celami zmiennymi, więc F tam nie jest żywe — ale G może być).
+
+6. **Ścieżki, których ta sesja nie ruszała, a mają ten sam kształt predykatu:**
    darmowy rzut z grobu (`resolve_grave_free_cast`) i madness odrzucają tryby
    z celami zmiennymi JAWNIE w wykonaniu — jeśli kiedyś dostaną enumerację
    celów, `epicCastOffers` ma już opcję `variableTargets`, wystarczy ją włączyć
    i przenieść `stunTargetId` do komendy (patrz komentarz przy opcji).
-6. **Budżet lektury startowej:** ~95,5k / 100k tokenów po dopisaniu L127 (X). Wolne
+7. **Budżet lektury startowej:** ~95,5k / 100k tokenów po dopisaniu L127 (X). Wolne
    ~4,7k. Kolejna lekcja wymaga kondensacji istniejącego wpisu (Przypadek +
    Reguła + Strażnik, proza do `docs/LESSONS_PRZYPADKI.md`) — progu nie podnosić.
-7. **Dług `pendingFertileThicket`** (63 wystąpienia) i `resolve_springbloom`
+8. **Dług `pendingFertileThicket`** (63 wystąpienia) i `resolve_springbloom`
    (86) — bez zmian, liczby przypięte w M293/M294.
 
 ## Pokrycie Żywym Testerem (uczciwie)

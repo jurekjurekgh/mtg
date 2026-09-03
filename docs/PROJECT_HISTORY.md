@@ -8022,6 +8022,18 @@ cast it” (wygnana jest karta, nie „instant or sorcery”). Naprawa: parametr
 gospodarza, hexproof, protection, Curse-celująca-w-gracza, bestow). 6 testów,
 3 mutacje. Discover przy aurach zostaje zamknięte (okno nie wylicza celów).
 
+**F i G (inna ścieżka, ta sama klasa).** Skan katalogu skierowany na okno
+darmowego rzutu z grobu (Halo Forager) znalazł szósty przypadek: tryby z
+celami zmiennymi („up to three target creatures”, CR 601.2c) nie były ani
+oferowane, ani wykonywalne — `wrap-in-flames` ginęło z oferty, choć okno czyta
+dowolny cmentarz. Naprawa silnika (`variableTargets` + walidacja przez ten sam
+generator co oferta) odsłoniła siódmy: **bot brał wariant bez celów** i palił
+{X} = 4 many za zero efektu. Trzy okna rzutu spoza ręki wyceniały wariant po
+`spell.effects` (pustym dla czarów modalnych) i nie pytały o jałowość, którą
+`cast_spell` sprawdza od M233. Wyciągnięto wspólną wycenę wrappera
+`apply_to_each_target` (`wrapTargetsValue`) i wspólne `freeCastVariantScore`.
+9 testów, 6 mutacji.
+
 **Co zostaje zamknięte ŚWIADOMIE (każde przypięte testem, nie milczeniem):**
 Discover + karta X (CR 107.3b ⇒ X = 0 ⇒ no-op), Discover + aura, Discover + tryb
 wymagający celu
@@ -8032,7 +8044,7 @@ po PR #93**, który piętnował brak oferty jako zamierzony i zakładał stempel
 `playableUntilTurn`, którego silnik już nie stawia (przechodziłby bez naprawy —
 L5/L44).
 
-**Bramy na koniec:** `npm test` **4310/4310**, `npm run test:all` **4320/4320**, build 59 modułów / 3179,7 kB, benchmark (672 mecze, profil szybki) bez
+**Bramy na koniec:** `npm test` **4319/4319**, `npm run test:all` **patrz koniec sesji**, build 59 modułów / 3182,4 kB, benchmark (672 mecze, profil szybki) bez
 wyjątków, `event-contract-audit` i `family-audit` bez naruszeń, 6 partii Żywego
 Testera → 0 zgłoszeń detektorów.
 Dokumentacja: `docs/audits/AUDYT_PR93_2026-09-03.md`, M294, L127, HANDOFF
