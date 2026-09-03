@@ -77,6 +77,31 @@ export function previewCardIdOfOption(option, resolveCardId) {
   return null;
 }
 
+/**
+ * M303: JEDEN komponent przycisku podglądu 🔍 (wcześniej lepiony ręcznie w
+ * dwóch miejscach). Zmiana ikony/etykiety/zachowania podglądu = jedna linia.
+ * `stopPropagation`: podgląd to podgląd — klik nie zatwierdza wyboru
+ * (rodzic może mieć własny `click` na wierszu przyciskowym).
+ */
+export function renderPeekButton(parent, { cardId, onOpen }) {
+  const peek = choiceNode(parent, 'button', 'ghost-btn choice-request-peek', '🔍 Podgląd karty');
+  peek.type = 'button';
+  if (peek.dataset) peek.dataset.previewCardId = String(cardId ?? '');
+  peek.addEventListener('click', (event) => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    onOpen?.(cardId);
+  });
+  return peek;
+}
+
+/**
+ * Siatka bezpieczeństwa dla modalnych wyborów. Po M302 każda grupa wyborów
+ * z ≥2 opcjami idzie przez tryb przyciskowy wspólnego helpera (routing na
+ * KOŃCU openChoiceRequest); ta funkcja rysuje już tylko grupy bez opcji
+ * (np. wybór celu na pusty stos — jedyna legalna komenda, brak listy) oraz
+ * wszystko, co przyszłe typy zgłoszeń przyniosą, zanim dostaną własny tryb.
+ */
 export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel, ignoredOptionKeys = null, onToggleIgnoredOption = null, onOpenCard = null, cardIdOfOption = null }) {
   clearChoiceElement(host);
   // introLabel (choiceGroupTitle) — opis wyboru jak w panelu akcji (uwaga A);
@@ -144,15 +169,7 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
     // M201/C2: podgląd karty przy opcji (osobny przycisk — klik w samą opcję
     // ma nadal ZATWIERDZAĆ wybór, a nie otwierać obrazek).
     const previewCardId = onOpenCard && cardIdOfOption ? cardIdOfOption(option) : null;
-    if (previewCardId) {
-      const peek = choiceNode(options, 'button', 'ghost-btn choice-request-peek', '🔍 Podgląd karty');
-      peek.type = 'button';
-      if (peek.dataset) peek.dataset.previewCardId = previewCardId;
-      peek.addEventListener('click', (event) => {
-        event?.stopPropagation?.();
-        onOpenCard(previewCardId);
-      });
-    }
+    if (previewCardId) renderPeekButton(options, { cardId: previewCardId, onOpen: onOpenCard });
   }
   if (request.options.length === 0) {
     choiceNode(host, 'div', 'zone-empty', 'Brak dostępnych wariantów.');
@@ -1171,14 +1188,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       // Etykiety niosą HTML (ikony many) — innerHTML jak w panelu akcji.
       button.innerHTML = `<span class="action-label picker-name">\n${row.label ?? ''}</span>`;
       button.addEventListener('click', () => { if (cmd) onComplete(cmd); });
-      if (row.cardId != null && onOpenCardByCardId) {
-        const peek = choiceNode(wrap, 'button', 'ghost-btn choice-request-peek', '🔍 Podgląd karty');
-        peek.type = 'button';
-        peek.addEventListener('click', (event) => {
-          event?.stopPropagation?.();
-          onOpenCardByCardId(row.cardId);
-        });
-      }
+      if (row.cardId != null && onOpenCardByCardId) renderPeekButton(wrap, { cardId: row.cardId, onOpen: onOpenCardByCardId });
     });
   } else if (castWindowMode) {
     // M300: okno rzutu — wiersz na każdą opcję (wariant rzutu K1/K2 albo
@@ -1525,7 +1535,7 @@ export function renderEscapeExileWizard(host, { candidates, exileCount, sourceNa
 
   for (const candidate of candidates) {
     // M288/A: te same wiersze co w wizardzie walki i kreatorze celów — przez
-    // wspólny picker. Osobny przycisk „🔍 Podgląd karty" zniknął: nazwa karty
+    // wspólny picker. Osobny przycisk podglądu 🔍 zniknął: nazwa karty
     // otwiera pełny ekran (jedna konwencja dla wszystkich kreatorów).
     renderPickerRow(list, {
       id: candidate.cardId ?? candidate.id,
