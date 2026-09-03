@@ -2073,3 +2073,100 @@ woła `document.createElement` na odinstalowanym oknie.
 dopisana druga lista chipów w kreatorze → RED M293/1; przywrócona kopia stopki → RED
 M293/1; wycięty `min-height` rodziny → RED m129; nazwa karty w kodzie rysującym (bez
 komentarza) → RED M293/11.
+
+## L127 (2026-09-03) — Zakres rzutu kartą spoza ręki to cecha ŚCIEŻKI, nie karty: jeden predykat z parametrem „co ta ścieżka potrafi rozliczyć”
+
+**Przypadek:** PR #93 zlał trzy kopie filtru „prostego zakresu” w jeden
+`outsideHandCastScope` (słusznie, L48), ale zostawił w nim wykluczenia NA SZTYWNO:
+`modes`, `targets`, `additionalCost`. Każde powstało dla Discover — jego oferta
+nie pyta ani o tryb, ani o cel — a po unifikacji obowiązywało też okno zdolności
+Vaana, które tryby i cele ENUMERUJE (`epicCastOffers`), a koszt dodatkowy rozlicza
+w `castSpell`. Skutek: **zero ofert rzutu** dla kart, które Oracle dopuszcza
+(repro na realnych kartach: `aerith-rescue-mission` wygnana przez Vaana → tylko
+rezygnacja; `ruinous-rampage` trafiona Discover → tylko „weź do ręki”;
+`village-rites` w obu oknach → nic). Cztery fakty z tej samej tury: egzekucja
+modę OBSŁUGIWAŁA (`chosenMode` na stosie, rozstrzyganie je czyta), więc był to
+czysty rozjazd oferty i wykonania (L41/L48); `castModalSpell` nie znał
+`abilityWindowCast`, bo stempel `playableUntilTurn` słusznie zniknął z karty
+(ruling WotC 2025-02-10) i gałąź modalna straciła jedyną drogę autoryzacji; własna
+kopia generatora ofert w `epicCastOffers` pomijała tryby z „up to N target …”,
+które rzut z ręki oferuje; a test z poprzedniej sesji piętnował brak oferty jako
+zamierzony i zakładał stempel, którego silnik już nie stawia — przechodziłby
+nawet bez naprawy.
+
+**Reguła:** każde wykluczenie w predykacie zakresu pytaj „czy TA ścieżka potrafi
+to ROZLICZYĆ”, nie „czy karta to ma” — parametr per ścieżka (`allowTargets`,
+`allowModes`, `allowAdditionalCost`), jeden filtr, oferta i bramka wywołane z
+TYMI SAMYMI argumentami. Oferty trybów/celów liczy generator wspólny z rzutem
+z ręki (`legalModeCasts`), nie kopia okna. Gdy naprawa odbiera stempel albo
+uprawnienie (ruling), sprawdź, czy nowe uprawnienie dotarło do KAŻDEJ gałęzi
+wykonania (`requireSpell`, `castPermanent`, `castModalSpell`, `castXCostSpell`,
+`castFireball`) — gałąź bez uprawnienia to rozjazd oferty i wykonania. Test
+odziedziczony po poprzedniej sesji traktuj jak hipotezę: sprawdź, czy jego stan
+przygotowawczy odtwarza to, co silnik robi DZIŚ (stempel zdjęty ⇒ test vacuous
+aż do usunięcia stempla z helpera). Koszt wymagający wyboru kart w trakcie
+płacenia („discard two cards”) zostaw bez oferty (L5) — pominięcie kosztu to
+złamanie reguł, nie naprawa. I wreszcie: wariant ruchu bez wyboru X (X = 0) jest
+pułapką, więc dopóki okno nie potrafi wyliczyć X, wyłączenie zostaje — ale jako
+świadomy wpis w backlogu, nie jako milczenie predykatu.
+
+Oferta kontra walidacja przy wykładniczej liczbie wariantów: OFERTA bywa
+WYCINKIEM (limit wariantów, jak `COMBAT_OPTION_CAP`), ale WALIDACJA w `execute`
+musi pozostać PEŁNA i niezależna — inaczej ograniczenie panelu staje się
+ograniczeniem reguł (znalezisko H audytu PR #93).
+
+Test nie może porównywać mierzonej wartości ze STAŁĄ ZAIMPORTOWANĄ z
+testowanego modułu: mutacja zmienia obie naraz i test przechodzi (tautologia
+wykryta przy H). Wartość graniczna wpisana literą, stała sprawdzana osobno.
+
+Skan katalogu zamiast czekania na zgłoszenie: dla każdej karty otwórz badaną
+ścieżkę i wypisz te bez ŻADNEJ oferty — to znalazło znalezisko E (aury), którego
+nie doszedł Żywy Tester w 6 partiach. Strażnik klasy w teście utrwala wynik.
+
+Dopisek z tej samej tury (koszt X): **wariant legalny, ale nic nie robiący, nie
+jest ofertą.** Rzut bez kosztu many zmusza X = 0 (CR 107.3b), więc ten sam czar
+bywa pełnoprawnym ruchem w oknie, które płaci manę (X wybiera gracz, CR 107.3a),
+i no-opem w oknie darmowym. Zamknij tę ścieżkę PARAMETREM (`allowX`) i przypnij
+testem, że milczy — domyślna wartość predykatu nie może być jedynym śladem
+decyzji (uwaga właściciela F z M280).
+
+**Strażnik:** `test/audyt-pr93-modalny-rzut-z-okna.test.js` (6, w tym skan
+katalogu: każdy z 12 czarów modalnych ma ofertę w oknie zdolności),
+`test/audyt-pr93-modalny-discover.test.js` (6, w tym etykieta stołu z nazwą
+trybu), `test/audyt-pr93-koszt-dodatkowy-z-exile.test.js` (7) oraz odwrócony
+`test/audyt-pr92-darmowy-rzut-zakres.test.js`. Dziewięć mutacji — tabela w §7
+`docs/audits/AUDYT_PR93_2026-09-03.md`; znalezisko D —
+`test/audyt-pr93-koszt-x-z-exile.test.js` (7, w tym strażnik: każda karta X
+katalogu rzucalna w oknie zdolności oraz Discover milczące dla kart X).
+
+## L128 (2026-09-03) — Mechanika z dwiema ścieżkami rzutu: reguła ma jedno miejsce prawdy, a skan musi PORÓWNYWAĆ ścieżki, nie tylko liczyć oferty
+
+**Przypadek:** skan poboczny audytu PR #93 przejechał każdą kartę katalogu
+z mechaniką „rzutu spoza ręki" (flashback 3, escape 2, madness 2, suspend 1,
+plot 2 — wszystkie w realnych taliach) i znalazł dwa odchylenia, oba w tym
+samym miejscu: regułę znała JEDNA ścieżka rzutu, druga nie.
+- **I (plot, CR 702.170d):** zaplotowany STWÓR czeka do następnej tury
+  (`castPermanent` od Batcha 24), a zaplotowany CZAR wracał w tej samej
+  (`plottedCastAllowed` pilnowało tylko „własna faza main + pusty stos").
+  Żywe w talii `worek-dziki` — dwie karty z plotem, dwie różne odpowiedzi.
+- **J (warp, CR 702.185a):** `warpCard` = `castPermanent({ warpCast: true })`
+  obsługiwał rękę i exile jedną komendą, więc karta wygnana po warp-caście
+  wracała na stół ZA KOSZT WARP (Weftblade Enhancer: 3 many zamiast 6),
+  choć warp jest kosztem alternatywnym wyłącznie z ręki.
+
+**Reguła:** pozwolenie na rzut z exile, które realizuje więcej niż jedna
+ścieżka kodu (czary vs permanenty, ręka vs exile), dostaje JEDEN predykat
+wspólny dla oferty i walidacji — w `impulse-window.js`, obok reszty stempli
+grywalności z wygnania (`plottedTurnReached`, `warpTurnReached`). Skan
+„czy ta karta ma ofertę w swoim oknie" wykrywa brak oferty, ale NIE wykrywa
+rozjazdu między ścieżkami: obie odpowiedziały „tak", tyle że na inne pytania.
+Dlatego skan mechaniki pyta per ścieżka i ZESTAWIA odpowiedzi — to ta sama
+metoda, która w L48 kazała zestawiać ofertę z walidacją.
+
+**Strażnik:** `test/audyt-pr93-plot-pozniejsza-tura.test.js` (6: czar i stwór,
+obie strony granicy, anty-over-fix dla ręki/impulsu/braku stempla) oraz
+`test/audyt-pr93-warp-z-exile.test.js` (6: brak oferty za koszt warp, pobranie
+6 many, odrzucenie `warp_card` z exile, anty-over-fix dla warpu z ręki,
+przebieg integracyjny ze stempel `warpedAtTurn`). 13 mutacji — tabela w §7
+`docs/audits/AUDYT_PR93_2026-09-03.md`; mutacja `>=` zamiast `>` we wspólnym
+predykacie czerwieni testy OBU mechanik naraz (5 RED).

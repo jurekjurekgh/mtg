@@ -35,9 +35,12 @@ function discoverState(foundPatch) {
 
 /**
  * Stan z decyzją Vaana (resolve_exile_cast) i wygnaną kartą `stolen`.
- * `playableUntilTurn` to stempel, który silnik zakłada w samym efekcie
- * `exile_top_of_player_library_and_may_cast` — bez niego `requireSpell`
- * nie uznaje karty za rzucalną z exile (jak przy impulse/suspend).
+ *
+ * Bez stempla `playableUntilTurn` (audyt PR #93: zdjęty z karty Vaana — ruling
+ * WotC 2025-02-10 zabrania czekać z rzutem do później w turze). JEDYNYM
+ * uprawnieniem do rzutu z exile jest teraz `abilityWindowCast`, które niesie
+ * bramka `resolve_exile_cast`; dawniej ten test zakładał stempel, więc
+ * przechodził nawet bez naprawy (L5/L44: test zgodny z kodem, a nie z Oracle).
  */
 function exileState(patch) {
   const state = game();
@@ -45,12 +48,6 @@ function exileState(patch) {
     id: 'stolen', instanceId: 'i-stolen', cardId: 'test-stolen', controllerId: 'p2',
     ownerId: 'p2', zone: 'exile', manaCost: 0, ...patch,
   });
-  // Fabryka obiektów odrzuca pola spoza kontraktu (L21 — stąd ostrzeżenie w
-  // `addObject`), a stempel impulse nosi sam efekt Vaana; zakładamy go tak
-  // samo, jak w silniku: bezpośrednio na obiekcie w exile.
-  state.objects.set('stolen', Object.freeze({
-    ...state.objects.get('stolen'), playableUntilTurn: state.turn.number,
-  }));
   state.pendingExileCast = {
     playerId: 'p1', objectId: 'stolen', cardId: 'test-stolen', sourceId: 'vaan',
     restorePriorityTo: 'p1',
@@ -63,11 +60,16 @@ const TARGETED_SORCERY = {
   kind: 'spell',
   spell: { timing: 'sorcery', targets: [{ type: 'creature' }], effects: [{ type: 'destroy_permanent' }] },
 };
+// Kształt `spell.modes` = TABLICA trybów (jak w katalogu: `modes: [` —
+// 15 wystąpień, zero w starym kształcie `{ choose, options }`).
 const MODAL_INSTANT = {
   kind: 'spell',
   spell: {
     timing: 'instant', targets: [],
-    modes: { choose: 1, options: [{ name: 'A', effects: [] }, { name: 'B', effects: [] }] },
+    modes: [
+      { name: 'A', effects: [{ type: 'gain_life', amount: 1 }] },
+      { name: 'B', effects: [{ type: 'gain_life', amount: 2 }] },
+    ],
   },
 };
 
@@ -96,16 +98,24 @@ test('A92/5: Discover — walidacja odrzuca X-cost, a przyjmuje permanent bez ce
   assert.equal(creatureState.zones.stack.length, 1, 'czar na stosie, nie w ręce');
 });
 
-test('A92/5: Vaan — bramka i oferta mają ten sam zakres (mody odrzucone po obu stronach)', () => {
+test('A92/5: Vaan — bramka i oferta mają ten sam zakres (czar modalny: zgoda po obu stronach)', () => {
   const state = exileState({ kind: 'spell', colors: ['R'], spell: MODAL_INSTANT.spell });
   const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_exile_cast');
   assert.ok(offers.some((c) => c.cast === false), 'rezygnacja (→ Skarb) zawsze dostępna');
-  assert.ok(!offers.some((c) => c.cast === true), 'oferta nie proponuje rzutu czaru modalnego');
-  const r = execute(state, { type: 'resolve_exile_cast', playerId: 'p1', cast: true, targets: [] });
-  assert.equal(r.ok, false,
-    'te same karty co oferta muszą odrzucać bramki execute() — dawniej `modes` '
-    + 'było w ofercie, ale nie w bramce (druga kopia tego samego filtra)');
-  assert.equal(state.zones.stack.length, 0, 'żaden czar nie wszedł na stos');
+  // Audyt PR #93: ten test ODWRÓCONO. Pierwotna wersja piętnowała brak oferty
+  // dla czaru modalnego — była zgodna z kodem, ale nie z Oracle („You may cast
+  // it” bez wyjątku dla „Choose one”, ADR 0022). Zgodność oferty i bramki
+  // sprawdzamy teraz w stronę DOZWOLONĄ: obie strony czar modalny przyjmują.
+  const castOffers = offers.filter((c) => c.cast === true);
+  assert.ok(castOffers.length > 0, 'oferta proponuje rzut czaru modalnego');
+  assert.deepEqual([...new Set(castOffers.map((c) => c.modeIndex))].sort(), [0, 1],
+    'każdy tryb jest osobnym wariantem oferty');
+  const r = execute(state, castOffers[0]);
+  assert.equal(r.ok, true,
+    'to samo co oferta musi przyjąć bramka execute() — jeden filtr, jedno '
+    + 'uprawnienie (`abilityWindowCast`) dla oferty i wykonania (L48)');
+  const stacked = [...state.objects.values()].find((o) => o.zone === 'stack');
+  assert.ok(stacked && stacked.chosenMode != null, 'czar na stosie pamięta wybrany tryb');
 });
 
 test('A92/5: Vaan — prosty instant spoza ręki nadal rzuca się TERAZ (pozytyw)', () => {

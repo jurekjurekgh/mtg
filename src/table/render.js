@@ -2721,7 +2721,13 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_discover_choice': {
       // Discover (Geological Appraiser): rzuć znalezioną kartę albo weź do ręki.
-      return cmd.castFree ? 'Discover: rzuć bez kosztu many' : 'Discover: weź kartę do ręki';
+      // Audyt PR #93: czar z „Choose one” ma w ofercie JEDEN wariant na tryb
+      // bezcelowy — bez nazwy trybu w etykiecie dwa przyciski wyglądają
+      // identycznie (M91/uwaga D: gracz musi widzieć, którą opcję wybiera).
+      const found = obj(cmd.objectId);
+      const mode = (cmd.modeIndex != null && found?.spell?.modes) ? found.spell.modes[cmd.modeIndex] : null;
+      const modeName = mode?.name ? ` — ${mode.name}` : '';
+      return cmd.castFree ? `Discover: rzuć bez kosztu many${modeName}` : 'Discover: weź kartę do ręki';
     }
     case 'resolve_explore_choice': {
       // Explore (Guidestone Compass): wierzch albo grób.
@@ -2853,8 +2859,23 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_exile_cast': {
       // Vaan, Street Thief: rzut TERAZ (za normalny koszt) albo Treasure.
       const vaanTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      // Audyt PR #93: okno Vaana wystawia dziś WARIANTY — per tryb (czar
+      // modalny), per ofiara i „albo zapłać {N}” (koszt dodatkowy). Bez
+      // dopisku wszystkie przyciski nazywają się tak samo i gracz wybiera
+      // na ślepo (M91/uwaga D — to samo co przy `resolve_discover_choice`).
+      const exiled = obj(cmd.objectId);
+      const mode = (cmd.modeIndex != null && exiled?.spell?.modes) ? exiled.spell.modes[cmd.modeIndex] : null;
+      const modeName = mode?.name ? ` — ${mode.name}` : '';
+      const orPay = exiled?.spell?.additionalCost?.orPayMana;
+      const costName = cmd.sacrificeTargetId
+        ? ` — poświęć ${nameOfObjectId(cmd.sacrificeTargetId)}`
+        : (cmd.payAltCost ? ` — dopłać {${orPay ?? '?'}}` : '');
+      // Znalezisko E: przy aurze `cel` to GOSPODARZ (stwór, artefakt, land albo
+      // gracz dla Curse), a wariant bestow płaci koszt bestow — bez dopisku
+      // dwa warianty aury nazywają się identycznie (M91/uwaga D).
+      const bestowName = cmd.bestow ? ' (bestow)' : '';
       return cmd.cast
-        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}`
+        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${modeName}${bestowName}${costName}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}`
         : 'Zrezygnuj — stwórz token Skarb (Treasure)';
     }
     case 'resolve_reveal_choice': {

@@ -40,6 +40,25 @@ Następna lista właściciela wchodzi tutaj.)_
 
 ## 2. Silnik i reguły
 
+- **[ZAMKNIĘTE w PR #94, `fc37fda` — audyt PR #93]** Karta z kosztem X albo
+  Fireballem w oknie „you may cast it”. `consume-spirit`, `epic-experiment`
+  i `fireball` (3 karty w 3 taliach; Vaan w `final-fantasy`) nie miały żadnej
+  oferty rzutu — dziś okno wystawia wariant na każde wybrane X (CR 107.3a),
+  `castXCostSpell`/`castFireball` znają `abilityWindowCast`, a oferty liczy
+  generator wspólny z rzutem z ręki (`legalXCostCasts`, `legalFireballCasts`).
+  **Discover zostało ŚWIADOMIE zamknięte i przypięte testem**: CR 107.3b
+  („the only legal choice for X is 0”) zmusza X = 0, a przy X = 0 obie karty
+  katalogu nie robią nic — oferta byłaby no-opem, czyli uwaga F z M280. Jeśli
+  kiedyś pojawi się karta X sensowna przy X = 0 (np. `engineered-explosives`
+  za 0), decyzję trzeba podnieść osobno: predykat ma już parametr `allowX`,
+  brakuje tylko zgody na ofertę no-opu w tej jednej ścieżce.
+
+- **[zmierzone 2026-09-03]** Kicker na instantach i sorcerych jest obsługiwany
+  przez silnik (PR #93), ale w `src/cards/card-data.js` nie ma ANI JEDNEJ
+  takiej karty — ścieżka nie ma pokrycia katalogowego (możliwość bez karty).
+  Wniosek do właściciela: pierwsza karta z kickerem na czarze domknie rodzinę
+  testami na żywym stole; dziś pokrywają ją wyłącznie testy syntetyczne.
+
 - **Z6/Z7 z audytu M119 — do decyzji właściciela:**
   - „Bierzesz mulligan (1)” — liczba bez jednostki (czy zmienić brzmienie na
     „mulligan nr 1 (ręka 7 kart, odłożysz 1)”?);

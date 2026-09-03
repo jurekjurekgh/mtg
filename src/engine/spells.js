@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
 import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
-import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast } from './impulse-window.js';
+import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
 import { deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
 import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
@@ -64,7 +64,12 @@ export function plottedCastAllowed(state, playerId, object) {
   if (!object?.plotted || object.zone !== 'exile') return true;
   return ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
     && state.turn.activePlayerId === playerId
-    && state.zones.stack.length === 0;
+    && state.zones.stack.length === 0
+    // Audyt PR #93 / znalezisko I (CR 702.170d): klauzula „on a later turn".
+    // Ścieżka permanentów znała ją od Batcha 24 (castPermanent), ścieżka
+    // czarów nie — zaplotowany czar znikał z ręki do exile i wracał na stos
+    // w TEJ SAMEJ turze. Wspólna reguła mieszka w impulse-window.js.
+    && plottedTurnReached(object, state);
 }
 
 function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindowCast = false) {
@@ -88,7 +93,7 @@ function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindow
   const targetSpec = cleaved && object.spell.cleave ? (object.spell.cleave.targets ?? []) : (object.spell.targets ?? []);
   // M202/odznaka #2 (CR 702.170d): zaplotowana karta — niezależnie od timingu.
   if (!plottedCastAllowed(state, playerId, object)) {
-    throw new Error('Zaplotowaną kartę rzuca się w swoją fazę main przy pustym stosie');
+    throw new Error('Zaplotowaną kartę rzuca się w swoją fazę main przy pustym stosie, najwcześniej w turze po zaplonowaniu');
   }
   if (timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
@@ -505,17 +510,20 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Modal „Choose one" (Aerith Rescue Mission): osobna ścieżka walidacji —
   // cele i efekty pochodzą z wybranego trybu, a nie z nadrzędnego deskryptora.
   if (preObject?.spell?.modes && modeIndex != null) {
-    return castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId);
+    // Audyt PR #93: ścieżka modalna musi znać to samo uprawnienie co `requireSpell`
+    // — inaczej czar z „Choose one" wygnany w oknie zdolności nie ma żadnej drogi
+    // autoryzacji (Vaan: stempel `playableUntilTurn` zdjęty słusznie, ruling WotC).
+    return castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId, abilityWindowCast);
   }
   // Generyczny X-cost (Consume Spirit, Epic Experiment): koszt = manaCost + X.
   if (preObject?.spell?.xCost) {
-    return castXCostSpell(state, playerId, objectId, targets, xValue);
+    return castXCostSpell(state, playerId, objectId, targets, xValue, abilityWindowCast);
   }
   // Fireball (X-cost, „any number of targets", divided damage): osobna ścieżka —
   // X wybiera gracz, cele to dowolna liczba (stwory i/lub gracze), koszt {X}{R}+
   // {1} za każdy cel ponad pierwszy, obrażenia X dzielone po równo w dół.
   if (preObject?.spell?.fireball) {
-    return castFireball(state, playerId, objectId, targets, xValue);
+    return castFireball(state, playerId, objectId, targets, xValue, abilityWindowCast);
   }
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets, false, abilityWindowCast);
   const player = state.players.find((entry) => entry.id === playerId);
@@ -795,14 +803,18 @@ export function castMadnessSpell(state, playerId, objectId, targets, modeIndex) 
  * cel ponad pierwszy. Obrażenia X dzielone po równo (zaokr. w dół) między
  * wszystkie cele; reszta z dzielenia przepada (CR 119.4 „divided evenly").
  */
-function castFireball(state, playerId, objectId, targets, xValue) {
+function castFireball(state, playerId, objectId, targets, xValue, abilityWindowCast = false) {
   const object = state.objects.get(objectId);
-  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || object.kind !== 'spell' || !object.spell?.fireball) {
+  // Patrz `castXCostSpell`: to samo uprawnienie okna zdolności (audyt PR #93).
+  const fromAbilityWindow = abilityWindowCast && object?.zone === 'exile';
+  if (!object || object.controllerId !== playerId
+    || (object.zone !== 'hand' && !fromAbilityWindow)
+    || object.kind !== 'spell' || !object.spell?.fireball) {
     throw new Error('To nie jest rzucalny czar X z dowolną liczbą celów z ręki');
   }
   if (object.spell.timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
-    if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+    if (!abilityWindowCast && (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0)) {
       throw new Error('Czar sorcery tylko w swoją fazę main przy pustym stosie');
     }
   }
@@ -858,14 +870,20 @@ function castFireball(state, playerId, objectId, targets, xValue) {
  *  wg `spell.targets` (zazwyczaj 0-1 cel — „any target"). X zapisujemy na
  *  obiekcie stosu (spellX), żeby efekty (damage/gain/exile) mogły go użyć.
  */
-function castXCostSpell(state, playerId, objectId, targets, xValue) {
+function castXCostSpell(state, playerId, objectId, targets, xValue, abilityWindowCast = false) {
   const object = state.objects.get(objectId);
-  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || object.kind !== 'spell' || !object.spell?.xCost) {
+  // Audyt PR #93: `abilityWindowCast` — czar X wygnany przez zdolność, która
+  // pyta „you may cast it”, jest rzucalny z exile (CR 107.3a: X wybiera gracz
+  // w chwili rzutu). Mirror `requireSpell`/`castModalSpell`.
+  const fromAbilityWindow = abilityWindowCast && object?.zone === 'exile';
+  if (!object || object.controllerId !== playerId
+    || (object.zone !== 'hand' && !fromAbilityWindow)
+    || object.kind !== 'spell' || !object.spell?.xCost) {
     throw new Error('To nie jest rzucalny X-cost czar z ręki');
   }
   if (object.spell.timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
-    if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+    if (!abilityWindowCast && (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0)) {
       throw new Error('Czar sorcery tylko w swoją fazę main przy pustym stosie');
     }
   }
@@ -2104,10 +2122,22 @@ function resolvePermanentSpell(state, stackId, object, before) {
  * permanent wchodzi na stos jak zwykły rzut; przy wejściu zbroimy
  * opóźniony trigger wygnania w najbliższym kroku końcowym
  * (resolvePermanentSpell → state.delayedTriggers). Po wygnaniu karta ma
- * `warpReady` i można ją rzucić z exile w późniejszej turze za koszt warp.
- * objectId może wskazywać kartę z RĘKI albo obiekt z exile (warpReady).
+ * `warpReady` i można ją rzucić z exile w późniejszej turze — już ZA ZWYKŁY
+ * koszt many (cast_permanent z exile), bo warp działa wyłącznie z ręki.
+ *
+ * Audyt PR #93 / znalezisko J (CR 702.185a): „Warp [cost]" means „You may cast
+ * this card **from your hand** by paying [cost] rather than its mana cost" …
+ * „Its owner may cast this card after the current turn has ended" — drugie
+ * zdanie nie daje żadnego kosztu alternatywnego, więc z exile płaci się koszt
+ * many. Engine oferował i przyjmował rzut z exile ZA KOSZT WARP (Weftblade
+ * Enhancer: 3 zamiast 6 — talia worek-legend), czyli drugi rzut w cenie
+ * połowy. Warp pozostaje wyłącznie akcją z ręki.
  */
 export function warpCard(state, playerId, objectId) {
+  const object = state.objects.get(objectId);
+  if (object?.zone === 'exile') {
+    throw new Error('Warp jest kosztem rzutu z ręki — kartę wygnaną rzuca się z exile za koszt many (cast_permanent)');
+  }
   return castPermanent(state, playerId, objectId, { warpCast: true });
 }
 
@@ -2198,7 +2228,13 @@ export function suspendCard(state, playerId, objectId) {
  * podzbiory do rozsądnego limitu (jak COMBAT_OPTION_CAP w combat.js), żeby nie
  * eksplodować przy dużej planszy. Każda komenda niesie xValue i targets.
  */
-function legalFireballCasts(state, playerId, objectId, object, manaAvailable) {
+/**
+ * Oferty rzutu Fireballa (X + „any number of targets” + {1} za każdy cel ponad
+ * pierwszy): podzbiory celów do 3 i X od 1 do budżetu, limit 15 (bez tego
+ * spread setek tysięcy wariantów wywalał stos). Wspólne dla ręki i okna
+ * zdolności Vaana — audyt PR #93, L74: jedna implementacja.
+ */
+export function legalFireballCasts(state, playerId, objectId, object, manaAvailable) {
   const casts = [];
   const creatures = state.zones.battlefield
     .map((id) => state.objects.get(id))
@@ -2364,31 +2400,10 @@ export function legalSpellCasts(state, playerId) {
     }
     // Generyczny X-cost (Consume Spirit, Epic Experiment — Batch 30): czar ma
     // deskryptor `spell.xCost` (koszt bazowy w manaCost NIE zawiera X). X
-    // wybiera gracz; całkowity koszt = manaCost + X. Cel: jeden (jak Fireball
-    // any target) albo brak; oferujemy X od 0 do dostępnej many po pokryciu
-    // bazy, dla każdego legalnego celu.
+    // wybiera gracz; całkowity koszt = manaCost + X. Audyt PR #93: oferty liczy
+    // `legalXCostCasts` — ten sam generator obsługuje też okno zdolności Vaana.
     if (object.spell?.xCost) {
-      const baseCost = effectiveSpellManaCost(state, object);
-      const maxX = Math.max(0, manaAvailable(object) - baseCost);
-      const cap = object.spell.xCost.cap ?? 15;
-      const targetSpec = object.spell.targets ?? [];
-      let pools = [[]];
-      if (targetSpec.length > 0) {
-        pools = cartesian(targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object)));
-      }
-      if (pools.length === 0) pools = [[]];
-      const basePips = coloredPipsOf(object.cardId);
-      const blackX = Boolean(object.spell.xCost.black);
-      for (const combo of pools) {
-        for (let X = 0; X <= Math.min(maxX, cap); X += 1) {
-          if (blackX && X > 0) {
-            const reqs = [...basePips];
-            for (let i = 0; i < X; i += 1) reqs.push(['B']);
-            if (!canPayColoredCost(state, playerId, reqs)) continue;
-          }
-          casts.push({ objectId: id, targets: combo, xValue: X });
-        }
-      }
+      for (const cast of legalXCostCasts(state, playerId, id, object, manaAvailable(object))) casts.push(cast);
       continue;
     }
     // Fireball (X-cost, any-number-of-targets): oferujemy X od 1 do dostępnej
@@ -2539,7 +2554,104 @@ export function legalCleaveCasts(state, playerId) {
  * celów o rozmiarze min..max, a `stunAmongTargets` dokłada wybór jednego z nich
  * jako celu dodatkowego (np. stun counter).
  */
-function legalModeCasts(state, playerId, objectId, modeIndex, mode) {
+/**
+ * Oferty rzutu czaru z kosztem X (`spell.xCost`): X od 0 do tego, na co stać
+ * gracza (po pokryciu bazy i z uwzględnieniem `cap`), dla każdego zestawu
+ * celów. „Spend only black mana on X" (Consume Spirit) odrzuca warianty,
+ * których czarne pipy przekraczają źródła.
+ *
+ * Wspólny dla rzutu z ręki (`legalSpellCasts`) i dla okna zdolności Vaana
+ * (`epicCastOffers`) — audyt PR #93, L74: jedna implementacja.
+ */
+export function legalXCostCasts(state, playerId, objectId, object, manaAvailable) {
+  const casts = [];
+  const baseCost = effectiveSpellManaCost(state, object);
+  const maxX = Math.max(0, manaAvailable - baseCost);
+  const cap = object.spell.xCost.cap ?? 15;
+  const targetSpec = object.spell.targets ?? [];
+  let pools = [[]];
+  if (targetSpec.length > 0) {
+    pools = cartesian(targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object)));
+  }
+  if (pools.length === 0) pools = [[]];
+  const basePips = coloredPipsOf(object.cardId);
+  const blackX = Boolean(object.spell.xCost.black);
+  for (const combo of pools) {
+    for (let X = 0; X <= Math.min(maxX, cap); X += 1) {
+      if (blackX && X > 0) {
+        const reqs = [...basePips];
+        for (let i = 0; i < X; i += 1) reqs.push(['B']);
+        if (!canPayColoredCost(state, playerId, reqs)) continue;
+      }
+      casts.push({ objectId, targets: combo, xValue: X });
+    }
+  }
+  return casts;
+}
+
+/**
+ * Oferty rzutu JEDNEGO trybu czaru modalnego (cele stałe i zmienne).
+ * Wspólna dla rzutu z ręki (`legalSpellCasts`) i dla okien „you may cast it”
+ * (`epicCastOffers` w game-state.js) — audyt PR #93: kopia w oknach pomijała
+ * tryby z „up to N target ...”, przez co karta była niegrywalna z exile, choć
+ * z ręki i wg Oracle grywalna (L74: jedna implementacja; L48: oferta = wykonanie).
+ */
+/**
+ * Limit wariantów oferty dla trybu z celami zmiennymi („up to N targets").
+ * Kombinacji jest 2^n, więc przy szerokim stole panel akcji puchnie
+ * wykładniczo (zmierzone: 8 stworów → 93 warianty). Projekt ma ten sam
+ * kompromis w walce (`COMBAT_OPTION_CAP`): OFERTA jest ograniczona,
+ * a WALIDACJA w `execute` pozostaje pełna (bot nadal może zagrać legalny
+ * wariant, którego nie ma w panelu) — audyt PR #93, znalezisko H.
+ */
+export const VARIABLE_TARGET_OPTION_CAP = 32;
+
+/** Wybór wariantów do oferty, gdy kombinacji jest więcej niż limit. */
+function trimVariableTargetCombos(combos, cap, maxSize) {
+  if (combos.length <= cap) return combos;
+  const empty = combos.filter((combo) => combo.length === 0);
+  const singles = combos.filter((combo) => combo.length === 1);
+  const fullest = combos.filter((combo) => combo.length === maxSize);
+  const middle = combos.filter((combo) => combo.length !== 0 && combo.length !== 1 && combo.length !== maxSize);
+  // Kolejność deterministyczna (ADR 0005): „nic”, „po jednym”, „ilu się da”,
+  // a na końcu warianty pośrednie — gracz zachowuje skrajne wybory, a panel
+  // mieści się na telefonie.
+  return [...empty, ...singles, ...fullest, ...middle].slice(0, cap);
+}
+
+/**
+ * Walidacja celów trybu z `variableTargets` (CR 601.2c): każdy cel musi być
+ * legalny, liczba celów mieścić się w [min, max], a ten sam cel nie może być
+ * wybrany dwa razy. PEŁNA i niezależna od (ograniczonej) oferty — wspólna dla
+ * rzutu z ręki (`castModalSpell`) i okien „you may cast it" (audyt PR #93).
+ */
+export function validateVariableTargets(state, playerId, mode, chosen, object, stunTargetId = undefined) {
+  const allowed = mode.variableTargets.type
+    ? new Set(legalTargetCandidates(state, playerId, { type: mode.variableTargets.type }, object))
+    : null;
+  const seen = new Set();
+  for (const tId of chosen) {
+    const target = state.objects.get(tId);
+    if (allowed ? !allowed.has(tId) : (!target || target.zone !== 'battlefield' || target.kind !== 'creature')) {
+      throw new Error(`Nielegalny cel: ${tId}`);
+    }
+    // CR 601.2c: „target” oznacza RÓŻNE obiekty — ten sam stwór dwa razy to
+    // nie są dwa cele.
+    if (seen.has(tId)) throw new Error(`Cel wybrany dwa razy: ${tId}`);
+    seen.add(tId);
+  }
+  const min = mode.variableTargets.min ?? 1;
+  const max = mode.variableTargets.max ?? chosen.length;
+  if (chosen.length < min || chosen.length > max) throw new Error('Nieprawidłowa liczba celów trybu');
+  // M146: wariant ZERO celów trybu „… put a stun counter on ONE OF THEM” jest
+  // legalny; bez celów nie ma na kim położyć licznika i ta część nie następuje.
+  if (mode.stunAmongTargets && chosen.length > 0 && !chosen.includes(stunTargetId)) {
+    throw new Error('Cel stun musi być jednym z celowanych stworów');
+  }
+  return chosen.slice();
+}
+
+export function legalModeCasts(state, playerId, objectId, modeIndex, mode, cap = VARIABLE_TARGET_OPTION_CAP) {
   const casts = [];
   if (mode.variableTargets) {
     // Batch 43 (Sea God's Scorn): „up to three target creatures and/or
@@ -2562,18 +2674,20 @@ function legalModeCasts(state, playerId, objectId, modeIndex, mode) {
       const withHead = subsets(rest, k - 1).map((s) => [head, ...s]);
       return [...withHead, ...subsets(rest, k)];
     };
-    for (let k = min; k <= max; k += 1) {
-      for (const combo of subsets(creatures, k)) {
-        // M105/B4 (CR 601.2c): „up to N target creatures" pozwala wybrać ZERO
-        // celów. Wariant pusty istnieje także dla trybu z dodatkowym celem
-        // („Put a stun counter on ONE OF THEM") — bez tej gałęzi pętla po
-        // `combo` nie dawała żadnej oferty i cały tryb znikał przy pustym
-        // stole (albo nie dało się go rzucić „na pusto").
-        if (mode.stunAmongTargets && combo.length > 0) {
-          for (const stunId of combo) casts.push({ objectId, targets: combo, modeIndex, stunTargetId: stunId });
-        } else {
-          casts.push({ objectId, targets: combo, modeIndex });
-        }
+    const combos = [];
+    for (let k = min; k <= max; k += 1) combos.push(...subsets(creatures, k));
+    // Audyt PR #93 (znalezisko H): kombinacji jest 2^n — ofertę przycinamy do
+    // `cap` (walidacja w `execute` zostaje pełna, patrz wyżej).
+    for (const combo of trimVariableTargetCombos(combos, cap, max)) {
+      // M105/B4 (CR 601.2c): „up to N target creatures" pozwala wybrać ZERO
+      // celów. Wariant pusty istnieje także dla trybu z dodatkowym celem
+      // („Put a stun counter on ONE OF THEM") — bez tej gałęzi pętla po
+      // `combo` nie dawała żadnej oferty i cały tryb znikał przy pustym
+      // stole (albo nie dało się go rzucić „na pusto").
+      if (mode.stunAmongTargets && combo.length > 0) {
+        for (const stunId of combo) casts.push({ objectId, targets: combo, modeIndex, stunTargetId: stunId });
+      } else {
+        casts.push({ objectId, targets: combo, modeIndex });
       }
     }
     return casts;
@@ -2614,7 +2728,7 @@ function resolveModalEffectTargets(state, effect, object, liveChosen) {
  * Rzuca czar modalny (Aerith Rescue Mission): waliduje cele wybranego trybu
  * (stałe albo zmienne) i kładzie czar na stos z wybranym trybem + celami.
  */
-function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId) {
+function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId, abilityWindowCast = false) {
   const object = state.objects.get(objectId);
   // M228/3 (błąd odkryty przez rotującą próbkę benchmarku): czar MODALNY
   // z exile jest rzucalny nie tylko gdy `plotted`, ale też jako suspend-ready
@@ -2625,7 +2739,8 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   const impulse = canPlayByImpulseFromExile(object, state);
   const plottedLike = object?.zone === 'exile' && (object.plotted || object.suspendReady);
   if (!object || object.controllerId !== playerId || !['hand', 'exile'].includes(object.zone)
-    || object.kind !== 'spell' || (object.zone === 'exile' && !plottedLike && !impulse)) {
+    || object.kind !== 'spell'
+    || (object.zone === 'exile' && !plottedLike && !impulse && !abilityWindowCast)) {
     throw new Error('To nie jest rzucalny czar z ręki albo zaplotowany z exile');
   }
   if (!object.spell?.modes) throw new Error('Ten czar nie jest modalny');
@@ -2644,36 +2759,19 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   if (!freeCast && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   if (object.spell.timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
-    if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+    // Rzut w oknie zdolności ignoruje timing (CR 601.2b pomijany — ruling WotC
+    // dla Vaana: rzucasz, póki zdolność jest na stosie) — mirror `requireSpell`.
+    if (!abilityWindowCast
+      && (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0)) {
       throw new Error('Czar sorcery tylko w swoją fazę main przy pustym stosie');
     }
   }
   const chosen = Array.isArray(targets) ? targets : [];
   let chosenTargets = [];
   if (mode.variableTargets) {
-    // Tryb z `type` (Sea God's Scorn — creature_or_enchantment) waliduje
-    // celami z legalTargetCandidates; bez `type` historycznie: stwory.
-    const allowed = mode.variableTargets.type
-      ? new Set(legalTargetCandidates(state, playerId, { type: mode.variableTargets.type }, object))
-      : null;
-    for (const tId of chosen) {
-      const target = state.objects.get(tId);
-      if (allowed ? !allowed.has(tId) : (!target || target.zone !== 'battlefield' || target.kind !== 'creature')) {
-        throw new Error(`Nielegalny cel: ${tId}`);
-      }
-    }
-    const min = mode.variableTargets.min ?? 1;
-    const max = mode.variableTargets.max ?? chosen.length;
-    if (chosen.length < min || chosen.length > max) throw new Error('Nieprawidłowa liczba celów trybu');
-    // M146 (audyt benchmarku — pre-existing, odsłonięty nowymi taliami):
-    // wariant ZERO celów trybu „up to N target creatures ... put a stun
-    // counter on ONE OF THEM" jest legalny (CR 601.2c); bez celów nie ma na
-    // kim położyć stun countera i ta część po prostu nie następuje. Walidacja
-    // wymaga stunTargetId ∈ chosen TYLKO, gdy chosen nie jest puste.
-    if (mode.stunAmongTargets && chosen.length > 0 && !chosen.includes(stunTargetId)) {
-      throw new Error('Cel stun musi być jednym z celowanych stworów');
-    }
-    chosenTargets = chosen.slice();
+    // Audyt PR #93 (znalezisko H): jeden walidator dla rzutu z ręki i okien
+    // „you may cast it" — pełny (niezależny od przyciętej oferty).
+    chosenTargets = validateVariableTargets(state, playerId, mode, chosen, object, stunTargetId);
   } else {
     const spec = mode.targets ?? [];
     if (chosen.length !== spec.length) throw new Error('Nieprawidłowa liczba celów trybu');

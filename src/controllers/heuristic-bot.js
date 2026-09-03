@@ -1420,6 +1420,80 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * własny permanent oraz efekt przyjazny we wrogi permanent są karane
    * dokładnie tymi samymi tabelami co przy zwykłym rzucie.
    */
+  /**
+   * Wartość wrappera „apply to each target” (Wrap in Flames: „1 damage to
+   * each of up to three target creatures”) — liczona PER CEL, bo warianty
+   * różnią się ICH LICZBĄ (CR 601.2c: „up to N targets” wybiera gracz).
+   * Wyciągnięte z wyceny `cast_spell` w audycie PR #93 (znalezisko F), żeby
+   * okna rzutu spoza ręki (`resolve_grave_free_cast`, `resolve_madness_cast`,
+   * `resolve_exile_cast`) liczyły to SAMO — inaczej wszystkie warianty
+   * remisowały i bot brał pierwszy z brzegu, w tym jałowy (L74/M233).
+   */
+  function wrapTargetsValue(view, effect, cmd) {
+    let score = 0;
+    if (effect?.type !== 'apply_to_each_target') return 0;
+    const inner = Array.isArray(effect.effects) ? effect.effects : [];
+    const hasDamage = inner.some((x) => x?.type === 'damage');
+    const hasCantBlock = inner.some((x) => x?.type === 'cant_block');
+    // M233/2 (audyt Żywym Testerem, Sea God's Scorn): wrapper może nieść
+    // efekt USUWAJĄCY permanent (bounce/destroy/exile). Bez wyceny celu
+    // odbicie WŁASNEGO stwora zostawało na bazie 50 i bot odbijał
+    // swojego stwora na rękę (strata tempa). Reguła jak górny
+    // REMOVAL_EFFECTS: cel własny = strata, wroga = zysk (ADR 0002).
+    const WRAP_REMOVAL = new Set([
+      'bounce_permanent', 'bounce_to_library_top', 'bounce_to_library_bottom',
+      'destroy_permanent', 'exile_permanent', 'exile_target_creature',
+    ]);
+    const hasRemoval = inner.some((x) => WRAP_REMOVAL.has(x?.type));
+    if (hasDamage || hasCantBlock || hasRemoval) {
+      for (const slot of cmd.targets ?? []) {
+        const t3 = objectOnBoard(view, slot);
+        if (!t3) continue;
+        const mine = t3.controllerId === view.playerId;
+        if (hasDamage) score += mine ? -60 : 12 + (t3.power ?? 0) * 2;
+        else if (hasCantBlock) score += mine ? -10 : 8;
+        if (hasRemoval) {
+          // Uwaga L39/L48: wrappery z removal-efektami wewnętrznymi
+          // celują wyłącznie w stwory/enchantmenty (spec z deskryptora,
+          // np. creature_or_enchantment), więc „czysty ląd" nigdy nie
+          // staje się celem — reguła M247 jest tu z założenia pusta.
+          score += mine
+            ? -90
+            : P.removalEnemyBase + P.removalWorthWeight * ((t3.power ?? 0) + (t3.toughness ?? 0))
+              + enemyRemovalTargetBonus(view, t3); // M234
+        }
+      }
+    }
+  
+    return score;
+  }
+
+  /**
+   * Efekty WYBRANEGO wariantu czaru w oknie rzutu spoza ręki: tryb modalny
+   * niesie własne efekty (`modes[i].effects`), a czar niemodalny — listę z
+   * deskryptora. Bez tego okna wyceniały `spell.effects` (puste dla czarów
+   * modalnych) i nie odróżniały wariantów (audyt PR #93, znalezisko F).
+   */
+  function freeCastVariantEffects(card, cmd) {
+    const spell = card?.spell ?? null;
+    if (!spell) return [];
+    if (cmd?.modeIndex != null) return spell.modes?.[cmd.modeIndex]?.effects ?? [];
+    return spell.effects ?? [];
+  }
+
+  /**
+   * Wspólna wycena wariantu czaru w oknie „rzutu spoza ręki": baza (karta
+   * za darmo albo za {X}) − kara za nieprzyjazny cel + wartość per cel
+   * (wrapper „each target”) oraz odmowa, gdy czar jest TERAZ jałowy (M233:
+   * „up to three targets” bez celów to wyrzucona karta).
+   */
+  function freeCastVariantScore(view, effects, cmd, base) {
+    if (effects.length > 0 && allEffectsInertNow(view, effects, cmd)) return -40;
+    let score = base - freeCastTargetPenalty(view, effects, cmd);
+    for (const effect of effects) score += wrapTargetsValue(view, effect, cmd);
+    return score;
+  }
+
   function freeCastTargetPenalty(view, effects, cmd) {
     const target = objectOnBoard(view, (cmd.targets ?? [])[0]) ?? null;
     return selfHarmPenalty(view, effects, cmd, target)
@@ -2678,45 +2752,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (alreadyShielded) score -= 25;
             else score += victim && isCreatureThreatened(view, victim) ? 30 : -20;
           }
-          // M158/Batch 39 (Wrap in Flames): wrapper „each of up to N targets"
-          // różnicuje warianty celami — wyceniamy KAŻDY cel wg efektów
-          // wewnętrznych (damage: wróg +, własny −; cant_block: drobny plus
-          // na wrogu). Bez tego remis wariantów brał pierwsze 3 kreatury
-          // z pola bitwy — także WŁASNE.
-          if (effect.type === 'apply_to_each_target') {
-            const inner = Array.isArray(effect.effects) ? effect.effects : [];
-            const hasDamage = inner.some((x) => x?.type === 'damage');
-            const hasCantBlock = inner.some((x) => x?.type === 'cant_block');
-            // M233/2 (audyt Żywym Testerem, Sea God's Scorn): wrapper może nieść
-            // efekt USUWAJĄCY permanent (bounce/destroy/exile). Bez wyceny celu
-            // odbicie WŁASNEGO stwora zostawało na bazie 50 i bot odbijał
-            // swojego stwora na rękę (strata tempa). Reguła jak górny
-            // REMOVAL_EFFECTS: cel własny = strata, wroga = zysk (ADR 0002).
-            const WRAP_REMOVAL = new Set([
-              'bounce_permanent', 'bounce_to_library_top', 'bounce_to_library_bottom',
-              'destroy_permanent', 'exile_permanent', 'exile_target_creature',
-            ]);
-            const hasRemoval = inner.some((x) => WRAP_REMOVAL.has(x?.type));
-            if (hasDamage || hasCantBlock || hasRemoval) {
-              for (const slot of cmd.targets ?? []) {
-                const t3 = objectOnBoard(view, slot);
-                if (!t3) continue;
-                const mine = t3.controllerId === view.playerId;
-                if (hasDamage) score += mine ? -60 : 12 + (t3.power ?? 0) * 2;
-                else if (hasCantBlock) score += mine ? -10 : 8;
-                if (hasRemoval) {
-                  // Uwaga L39/L48: wrappery z removal-efektami wewnętrznymi
-                  // celują wyłącznie w stwory/enchantmenty (spec z deskryptora,
-                  // np. creature_or_enchantment), więc „czysty ląd" nigdy nie
-                  // staje się celem — reguła M247 jest tu z założenia pusta.
-                  score += mine
-                    ? -90
-                    : P.removalEnemyBase + P.removalWorthWeight * ((t3.power ?? 0) + (t3.toughness ?? 0))
-                      + enemyRemovalTargetBonus(view, t3); // M234
-                }
-              }
-            }
-          }
+          // Audyt PR #93 (znalezisko F): wycena wrappera „each of up to N
+          // targets” wyciągnięta do `wrapTargetsValue` — to samo liczenie
+          // mają teraz okna rzutu spoza ręki (grób/madness/Vaan), które
+          // dotąd BRAŁY pierwszy wariant z brzegu, w tym jałowy (0 celów).
+          score += wrapTargetsValue(view, effect, cmd);
           // M157/L28 (inwentaryzacja): kradzież stwora do końca tury (Spreading
           // Insurrection, Awaken the Sleeper) — warianty różnią się celem;
           // wartość = tymczasowy zysk najsilniejszego stwora wroga.
@@ -4623,9 +4663,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const graveCard = cmd.objectId
           ? (view.zones.graveyard ?? []).find((o) => o.id === cmd.objectId)
           : null;
-        const effects = graveCard?.spell?.effects ?? [];
-        return finish(Math.max(6, 40 - 3 * (cmd.xValue ?? 0))
-          - freeCastTargetPenalty(view, effects, cmd));
+        // Audyt PR #93 (znalezisko F): efekty WYBRANEGO trybu i wycena per cel.
+        const effects = freeCastVariantEffects(graveCard, cmd);
+        return finish(freeCastVariantScore(view, effects, cmd, Math.max(6, 40 - 3 * (cmd.xValue ?? 0))));
       }
       case 'resolve_madness_cast': {
         // M158/Batch 39: rzut za koszt madness to niemal zawsze zysk (karta
@@ -4639,7 +4679,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const madnessCard = cmd.objectId
           ? view.zones.exile.find((o) => o.id === cmd.objectId)
           : null;
-        return finish(60 - freeCastTargetPenalty(view, madnessCard?.spell?.effects ?? [], cmd));
+        // Audyt PR #93 (znalezisko F): ta sama wycena co w oknie grobu.
+        return finish(freeCastVariantScore(view, freeCastVariantEffects(madnessCard, cmd), cmd, 60));
       }
       case 'resolve_exile_cast': {
         // Vaan, Street Thief: rzut ukradzionej karty za normalny koszt to
@@ -4651,7 +4692,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const exiledCard = cmd.objectId
           ? view.zones.exile.find((o) => o.id === cmd.objectId)
           : null;
-        return finish(52 - freeCastTargetPenalty(view, exiledCard?.spell?.effects ?? [], cmd));
+        // Audyt PR #93 (znalezisko F): jw. — Vaan wycenia wybrany tryb i cele.
+        return finish(freeCastVariantScore(view, freeCastVariantEffects(exiledCard, cmd), cmd, 52));
       }
       case 'resolve_reveal_choice': {
         // M158/Batch 39 (Invasion of the Giants II): ujawnij Olbrzyma za 2

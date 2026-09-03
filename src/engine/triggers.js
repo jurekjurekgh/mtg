@@ -876,7 +876,10 @@ function resolveDelayedTrigger(state, payload, events) {
     // warpCast). Zwykłe exile_object (Puppeteer Clique) nic nie dokleja.
     if (pending.warp) {
       const exiled = state.objects.get(exileId);
-      state.objects.set(exileId, Object.freeze({ ...exiled, warpReady: true, warped: false }));
+      // Audyt PR #93 / znalezisko J (CR 702.185a): właściciel może rzucić
+      // kartę z exile dopiero „after the current turn has ended" — stempel
+      // tury wygnania, lustrzany do `plottedAtTurn` przy plocie.
+      state.objects.set(exileId, Object.freeze({ ...exiled, warpReady: true, warped: false, warpedAtTurn: state.turn.number }));
     }
     const fired = event('object_exiled', {
       objectId: exileId, fromId: pending.objectId, cardId: object.cardId,

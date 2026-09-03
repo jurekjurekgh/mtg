@@ -70,6 +70,40 @@ export function canPlayByImpulseFromExile(object, state) {
   return object?.zone === 'exile' && isImpulseWindowLive(object, state);
 }
 
+/**
+ * CR 702.170d (plot, audyt PR #93 — znalezisko I): karta zaplonowana jest
+ * rzucalna „during any turn AFTER the turn in which it became plotted".
+ * Stempel `plottedAtTurn` kładzie wyłącznie `plotCard` (spells.js), a czytają
+ * go DWIE ścieżki rzutu — czary (`plottedCastAllowed`) i permanenty
+ * (`castPermanent`). Przed tym modułem każda ścieżka miała własną kopię
+ * reguły (albo żadnej: czary nie miały jej wcale, więc zaplotowany czar
+ * można było rzucić w tej samej turze, w której go zaplonowano — CR
+ * 702.170d naruszone).
+ *
+ * Brak stempla (`plottedAtTurn == null`) nie blokuje: tak było w starszej
+ * ścieżce permanentów i tak zostaje, żeby nie zmieniać zachowania dla
+ * obiektów zbudowanych wprost (testy, stare zapisy).
+ */
+/** Wspólne czytanie stempla: flaga mechaniki + pole z numerem tury. */
+function turnStampReached(object, state, flag, stamp) {
+  if (!object?.[flag] || object.zone !== 'exile') return true;
+  if (object[stamp] == null) return true;
+  return state.turn.number > object[stamp];
+}
+
+export function plottedTurnReached(object, state) {
+  return turnStampReached(object, state, 'plotted', 'plottedAtTurn');
+}
+
+/**
+ * CR 702.185a (warp, audyt PR #93 — znalezisko J): wygnaną po warp-caście
+ * kartę wolno rzucić dopiero „after the current turn has ended". Stempel
+ * `warpedAtTurn` kładzie opóźniony trigger wygnania (triggers.js).
+ */
+export function warpTurnReached(object, state) {
+  return turnStampReached(object, state, 'warpReady', 'warpedAtTurn');
+}
+
 /** Flaga „bez płacenia kosztu many" na obiekcie (strefa bez znaczenia). */
 export function hasFreeCastStamp(object) {
   return object?.playableWithoutPaying === true;

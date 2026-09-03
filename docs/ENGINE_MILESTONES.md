@@ -4201,3 +4201,80 @@ ciągnęło inną zmianę.
   talia spoza artefaktu kończy się komunikatem, zaś nieznana lista kart potrafi cicho
   dać partię na innej talii — patrz `docs/setup/ENVIRONMENT.md`. Ścieżka `decide` jest więc
   udowodniona testami i jsdomem, a nie Testerem; nie zgłaszam jej jako „krytej na żywo".
+
+## M294 (2026-09-03) — Zakres rzutu z exile parametryzuje się ścieżką: tryby, cele i koszt dodatkowy wracają do oferty (PR #94)
+
+Audyt PR #93 (`docs/audits/AUDYT_PR93_2026-09-03.md`) znalazł trzy odchylki od Oracle
+w jednej klasie: unifikacja trzech kopii filtru „prostego zakresu” (znalezisko 5 audytu
+PR #92) zostawiła wykluczenia na sztywno (`modes`, `targets`, `additionalCost`), które
+powstały dla Discover, a obowiązywały też okno zdolności Vaana.
+
+- **A — czar modalny w oknie zdolności.** Repro na realnej karcie: Vaan wygania
+  `aerith-rescue-mission` (2 tryby, MV 4), gracz ma 10 many w pięciu kolorach, a oferta to
+  TYLKO rezygnacja (`[{ cast: false }]`). `outsideHandCastScope` dostaje `allowModes`
+  (okno zdolności: tak), `castModalSpell` zna `abilityWindowCast` (uprawnienie z exile +
+  ignorowanie timingu — mirror `requireSpell`), a oferty trybów liczy wspólny z rzutem
+  z ręki `legalModeCasts` (własna kopia w `epicCastOffers` gubiła tryby
+  z „up to N target …”: Wrap in Flames i Sea God's Scorn były niegrywalne z exile).
+- **B — darmowy rzut Discover (CR 701.53).** Oferta dostaje jeden wariant na tryb, który
+  nie wymaga celu (`targetlessModeIndexes` — Discover nie enumeruje celów, CR 608.2b);
+  wykonanie waliduje `modeIndex`, ustawia `chosenMode` na stosie i niesie
+  `modeIndex`/`modeName` w `spell_cast`; etykieta stołu nazywa tryb (M91), bo bez tego dwa
+  przyciski wyglądały identycznie.
+- **C — koszt dodatkowy (CR 601.2h, CR 118.9d).** Parametr `allowAdditionalCost`: okno
+  Vaana przekazuje `sacrificeTargetId`/`payAltCost` do `castSpell`, a Discover woła ten sam
+  `payFreeCastAdditionalCost` co suspend/rebound/epic. Pomiar osiągalności: 5 kart
+  w 5 taliach, Vaan w `final-fantasy`. Koszt wymagający wyboru kart (`cathartic-reunion`)
+  zostaje bez oferty — jawne ograniczenie, nie ciche pominięcie (L5).
+- **D — koszt X (CR 107.3a/107.3b).** Parametr `allowX`; `castXCostSpell` i `castFireball`
+  znają `abilityWindowCast` (każda gałąź `castSpell` ma dziś to samo uprawnienie); oferty X
+  liczy `legalXCostCasts` (wyciągnięty z wnętrza `legalSpellCasts`) i `legalFireballCasts` —
+  jeden generator z rzutem z ręki. **Discover dla kart X zostaje zamknięte i przypięte
+  testem**: CR 107.3b zmusza X = 0, a przy X = 0 żadna z dwóch kart katalogu nic nie robi,
+  więc oferta byłaby no-opem (uwaga F z M280). Źródła reguł w raporcie §4.
+- **Bramy.** `npm test` 4276 → **4336/4336** (z I i J: +12),
+  `npm run test:all` **4346/4346**, `npm run build` 59 modułów / 3187,5 kB
+  (baza 3167,0 kB). Benchmark (profil szybki,
+  672 mecze) bez wyjątków: heuristic 83,9%, aggro 28,0%, random 4,2%.
+- **E — czysta aura (CR 303.4a).** Znaleziona SKANEM KATALOGU, nie zgłoszeniem:
+  `outsideHandCastScope` odcinał `card.aura`, choć Oracle Vaana mówi „You may cast it”.
+  22 aury w 12 z 23 talii. `castAuraSpell` zna `abilityWindowCast`; oferty liczy
+  `legalAuraCastsForObject` (ekstrakcja z `legalAuraCasts`) — typ gospodarza, hexproof,
+  protection, Curse (cel-gracz) i bestow. Discover przy aurach zamknięte (brak celów).
+  Metoda skanu opisana w raporcie §4c — do powtórzenia w kolejnych audytach.
+- **F — inna ścieżka, ta sama klasa (ADR 0021 §4b).** Darmowy rzut z grobu
+  (Halo Forager) pomijał tryby z `variableTargets`, więc `wrap-in-flames` nie
+  dało się rzucić z cmentarza; walidacja komendy idzie teraz przez ten sam
+  generator co oferta (L48). **G — bot:** po F brał pierwszy wariant z brzegu,
+  czyli jałowy (0 celów) — 4 many i karta za nic. Wycena wrappera
+  `apply_to_each_target` wyciągnięta z `cast_spell` (`wrapTargetsValue`),
+  efekty WYBRANEGO trybu i wspólna `freeCastVariantScore` z jałowością (M233).
+ _testy: 5 + 4, mutacje: 3 + 3._
+- **H — panel na telefonie.** Cena F: „up to N targets” dawało 2^n wariantów
+  (8 stworów → 93). `VARIABLE_TARGET_OPTION_CAP` (32) przycina OFERTĘ
+  (deterministycznie: nic / po jednym / ilu się da), a walidacja zostaje PEŁNA
+  i wspólna z rzutem z ręki (`validateVariableTargets`) — L48: oferta to
+  wycinek, walidacja jest źródłem prawdy. _testy: 5, mutacje: 3._
+- **I — skan poboczny: plot (CR 702.170d).** Każda z 10 kart katalogu z
+  flashbackiem/escape/madness/suspend/plot dostała ofertę w swoim oknie — poza
+  jedną: zaplotowany CZAR (`tumbleweed-rising`, talia `worek-dziki`) wracał
+  z exile w TEJ SAMEJ turze, podczas gdy zaplotowany STWÓR czekał grzecznie do
+  następnej. Regułę znała tylko ścieżka `castPermanent`; `plottedCastAllowed`
+  (M202) pilnowało wyłącznie „własna faza main + pusty stos". Jeden predykat
+  `plottedTurnReached` w `impulse-window.js` bramkuje ofertę i walidację
+  obu ścieżek. _testy: 6, mutacje: 5._
+- **J — skan poboczny: warp (CR 702.185a).** `weftblade-enhancer`
+  (manaCost 6, Warp {2}{W}, talia `worek-legend`) wracał z exile ZA KOSZT WARP
+  — 3 many zamiast 6, bo `warpCard` = `castPermanent({ warpCast: true })`
+  obsługiwał rękę i exile jedną komendą. Warp jest kosztem alternatywnym
+  wyłącznie Z RĘKI: `warpCard` odrzuca obiekt z exile, karta wraca zwykłym
+  `cast_permanent` za koszt many. Druga część reguły — „after the current turn
+  has ended" — dostaje stempel `warpedAtTurn` i predykat `warpTurnReached`
+  (wspólne miejsce prawdy co I); luka utajona, przypięta testem (L52).
+  _testy: 6, mutacje: 8._
+- **Pięć parametrów predykatu:** `allowTargets`, `allowModes`, `allowAdditionalCost`,
+  `allowX`, `allowAura`
+  — każdy włącza się per ścieżka, każdy ma test na „milczy, gdy wyłączony".
+- **Dług i higiena.** Test odziedziczony po PR #93 (`audyt-pr92-darmowy-rzut-zakres`)
+  piętnował brak oferty dla czaru modalnego i zakładał stempel `playableUntilTurn`, którego
+  silnik nie stawia — odwrócony, z komentarzem (L5/L44). Lekcja L127.
