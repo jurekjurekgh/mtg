@@ -1078,7 +1078,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Dawniej efekt doklejał `playableUntilTurn: state.turn.number` — po
     // rezygnacji karta zostawała w exile „rzucalna do końca tury" i dało się
     // ją rzucić później za pełny koszt. Uprawnienie do rzutu z exile daje
-    // teraz wyłącznie flaga `abilityWindowCast` w `requireSpell`/`castPermanent`.
+    // teraz wyłącznie flaga `abilityWindowCast` — w `requireSpell`,
+    // `castPermanent` i (od audytu PR #93) w `castModalSpell`.
     // (Impuls, plot i suspend MAJĄ własny stempel — tam okno jest efektem
     // trwającym wiele tur i nie jest decyzją na stosie.)
     state.events.push(event('object_exiled', {

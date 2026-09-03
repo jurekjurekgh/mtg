@@ -505,7 +505,10 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Modal „Choose one" (Aerith Rescue Mission): osobna ścieżka walidacji —
   // cele i efekty pochodzą z wybranego trybu, a nie z nadrzędnego deskryptora.
   if (preObject?.spell?.modes && modeIndex != null) {
-    return castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId);
+    // Audyt PR #93: ścieżka modalna musi znać to samo uprawnienie co `requireSpell`
+    // — inaczej czar z „Choose one" wygnany w oknie zdolności nie ma żadnej drogi
+    // autoryzacji (Vaan: stempel `playableUntilTurn` zdjęty słusznie, ruling WotC).
+    return castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId, abilityWindowCast);
   }
   // Generyczny X-cost (Consume Spirit, Epic Experiment): koszt = manaCost + X.
   if (preObject?.spell?.xCost) {
@@ -2539,7 +2542,14 @@ export function legalCleaveCasts(state, playerId) {
  * celów o rozmiarze min..max, a `stunAmongTargets` dokłada wybór jednego z nich
  * jako celu dodatkowego (np. stun counter).
  */
-function legalModeCasts(state, playerId, objectId, modeIndex, mode) {
+/**
+ * Oferty rzutu JEDNEGO trybu czaru modalnego (cele stałe i zmienne).
+ * Wspólna dla rzutu z ręki (`legalSpellCasts`) i dla okien „you may cast it”
+ * (`epicCastOffers` w game-state.js) — audyt PR #93: kopia w oknach pomijała
+ * tryby z „up to N target ...”, przez co karta była niegrywalna z exile, choć
+ * z ręki i wg Oracle grywalna (L74: jedna implementacja; L48: oferta = wykonanie).
+ */
+export function legalModeCasts(state, playerId, objectId, modeIndex, mode) {
   const casts = [];
   if (mode.variableTargets) {
     // Batch 43 (Sea God's Scorn): „up to three target creatures and/or
@@ -2614,7 +2624,7 @@ function resolveModalEffectTargets(state, effect, object, liveChosen) {
  * Rzuca czar modalny (Aerith Rescue Mission): waliduje cele wybranego trybu
  * (stałe albo zmienne) i kładzie czar na stos z wybranym trybem + celami.
  */
-function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId) {
+function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId, abilityWindowCast = false) {
   const object = state.objects.get(objectId);
   // M228/3 (błąd odkryty przez rotującą próbkę benchmarku): czar MODALNY
   // z exile jest rzucalny nie tylko gdy `plotted`, ale też jako suspend-ready
@@ -2625,7 +2635,8 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   const impulse = canPlayByImpulseFromExile(object, state);
   const plottedLike = object?.zone === 'exile' && (object.plotted || object.suspendReady);
   if (!object || object.controllerId !== playerId || !['hand', 'exile'].includes(object.zone)
-    || object.kind !== 'spell' || (object.zone === 'exile' && !plottedLike && !impulse)) {
+    || object.kind !== 'spell'
+    || (object.zone === 'exile' && !plottedLike && !impulse && !abilityWindowCast)) {
     throw new Error('To nie jest rzucalny czar z ręki albo zaplotowany z exile');
   }
   if (!object.spell?.modes) throw new Error('Ten czar nie jest modalny');
@@ -2644,7 +2655,10 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   if (!freeCast && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   if (object.spell.timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
-    if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+    // Rzut w oknie zdolności ignoruje timing (CR 601.2b pomijany — ruling WotC
+    // dla Vaana: rzucasz, póki zdolność jest na stosie) — mirror `requireSpell`.
+    if (!abilityWindowCast
+      && (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0)) {
       throw new Error('Czar sorcery tylko w swoją fazę main przy pustym stosie');
     }
   }

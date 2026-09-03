@@ -19,7 +19,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, staticAttackPrevented } from './combat.js';
-import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell } from './spells.js';
+import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -802,7 +802,15 @@ function payFreeCastAdditionalCost(state, playerId, obj, cmd) {
   return null;
 }
 
-function epicCastOffers(state, playerId, obj) {
+/**
+ * `variableTargets` — czy ścieżka, dla której liczymy ofertę, potrafi ROZLICZYĆ
+ * tryb z „up to N target ...” (CR 601.2c). Okno zdolności Vaana idzie przez
+ * `castSpell` → `castModalSpell`, który takie tryby waliduje; madness
+ * (`castMadnessSpell`) i darmowy rzut z grobu (`resolve_grave_free_cast`)
+ * odrzucają je JAWNIE, więc tam oferta musi milczeć (L48: oferta nie może
+ * obiecywać czegoś, co wykonanie odrzuci).
+ */
+function epicCastOffers(state, playerId, obj, { variableTargets = false } = {}) {
   const spell = obj.spell ?? {};
   if (spell.fireball) return [];
   // M201/U2: koszty dodatkowe (CR 601.2h) — każdy zestaw celów mnożymy przez
@@ -811,19 +819,21 @@ function epicCastOffers(state, playerId, obj) {
   if (costVariants.length === 0) return [];
   const withCosts = (offers) => offers.flatMap((offer) => costVariants.map((cost) => ({ ...offer, ...cost })));
   if (spell.modes) {
+    // Audyt PR #93: oferty trybów liczy ten sam generator co rzut z ręki
+    // (`legalModeCasts`) — własna kopia pomijała tryby z celami zmiennymi,
+    // więc Wrap in Flames czy Sea God's Scorn znikały z oferty w oknach
+    // „you may cast it”, choć z ręki były rzucalne (L74/L48).
     const offers = [];
     for (let modeIndex = 0; modeIndex < spell.modes.length; modeIndex += 1) {
       const mode = spell.modes[modeIndex];
-      if (mode.variableTargets) continue;
-      const spec = mode.targets ?? [];
-      if (spec.length === 0) {
-        offers.push({ cardId: obj.id, targets: [], modeIndex });
-        continue;
-      }
-      const pools = spec.map((entry) => legalTargetCandidates(state, playerId, entry));
-      if (pools.some((pool) => pool.length === 0)) continue;
-      for (const combo of cartesianTargetPools(pools)) {
-        offers.push({ cardId: obj.id, targets: combo, modeIndex });
+      if (mode.variableTargets && !variableTargets) continue;
+      for (const cast of legalModeCasts(state, playerId, obj.id, modeIndex, mode)) {
+        offers.push({
+          cardId: obj.id, targets: cast.targets, modeIndex,
+          // Tryb „up to N … put a stun counter on ONE OF THEM” niesie dodatkowy
+          // wybór — bez przeniesienia go do komendy wykonanie odrzuci ofertę.
+          ...(cast.stunTargetId != null ? { stunTargetId: cast.stunTargetId } : {}),
+        });
       }
     }
     return withCosts(offers);
@@ -1090,15 +1100,25 @@ function discardChooserId(pending) {
  * `allowTargets` — Discover nie enumeruje celów, więc czar celowany jest poza
  * jego zakresem; Vaan wystawia warianty rzutu per zestaw celów (`epicCastOffers`)
  * i tam cele są dozwolone.
+ *
+ * `allowModes` — czar z „Choose one” (tryby). Audyt PR #93: wykluczenie trybów
+ * powstało dla Discover, którego oferta nie pyta o tryb; unifikacja przeniosła
+ * je jednak też na okno zdolności Vaana, gdzie oferta tryby ENUMERUJE
+ * (`epicCastOffers`), a egzekucja ustawia `chosenMode`. Skutek był odwrotny do
+ * zamierzonego: czar modalny wygnany przez Vaana nie dostawał ŻADNEJ oferty
+ * rzutu, choć Oracle mówi „You may cast it” (ADR 0022). Tryb nie jest cechą
+ * ścieżki płatności, tylko wyborem przy rzucie — więc zakres zależy od tego,
+ * czy dana ścieżka potrafi ten wybór przenieść na stos (L48).
  */
-function outsideHandCastScope(card, { allowTargets = false } = {}) {
+function outsideHandCastScope(card, { allowTargets = false, allowModes = false } = {}) {
   if (!card) return false;
   // CR 305.1: land nie jest czarem — nigdy nie „się rzuca\", nawet za darmo.
   if (card.kind === 'land' || (card.types ?? []).includes('Land')) return false;
   if (card.kind === 'spell') {
     const spell = card.spell ?? {};
     if (!['instant', 'sorcery'].includes(spell.timing)) return false;
-    if (spell.additionalCost || spell.xCost || spell.fireball || spell.modes) return false;
+    if (spell.additionalCost || spell.xCost || spell.fireball) return false;
+    if (!allowModes && spell.modes) return false;
     if (!allowTargets && (spell.targets ?? []).length > 0) return false;
     return true;
   }
@@ -2256,7 +2276,7 @@ export function execute(state, input) {
     const card = state.objects.get(pending.objectId);
     // A92/5: zakres wylicza ten sam predykat co oferta (dawniej druga kopia
     // tego filtra — bez `modes`, więc rozjeżdżała się z ofertą Vaana).
-    const castableKind = outsideHandCastScope(card, { allowTargets: true });
+    const castableKind = outsideHandCastScope(card, { allowTargets: true, allowModes: true });
     const decline = (note) => {
       state.pendingExileCast = null;
       // „If you don't [cast it], create a Treasure token." Źródło triggera
@@ -2290,7 +2310,7 @@ export function execute(state, input) {
       // okno jest otwarte). Od audytu PR #93 opcje rzutu jadą obiektem.
       if (card.kind === 'spell') {
         castSpell(state, pending.playerId, pending.objectId, cmd.targets ?? [], undefined,
-          cmd.modeIndex, undefined, { abilityWindowCast: true });
+          cmd.modeIndex, cmd.stunTargetId, { abilityWindowCast: true });
       } else {
         castPermanent(state, pending.playerId, pending.objectId, { abilityWindowCast: true });
       }
@@ -6429,7 +6449,7 @@ export function playerView(state, playerId) {
     const exileCard = state.objects.get(exilePending.objectId);
     // A92/5: trzecia kopia filtra zniknęła — oferta liczy zakres tym samym
     // predykatem co bramka `resolve_exile_cast` (L48).
-    const exileCastable = outsideHandCastScope(exileCard, { allowTargets: true });
+    const exileCastable = outsideHandCastScope(exileCard, { allowTargets: true, allowModes: true });
     legalCommands.push(command('resolve_exile_cast', playerId, {
       cast: false, objectId: exilePending.objectId, cardId: exilePending.cardId,
     }));
@@ -6438,11 +6458,14 @@ export function playerView(state, playerId) {
       const cost = effectiveSpellManaCost(state, exileCard);
       if (cost <= budget && hasColorForCardId(state, playerId, exileCard.cardId, 0)) {
         if (exileCard.kind === 'spell') {
-          for (const offer of epicCastOffers(state, playerId, exileCard)) {
+          // Vaan idzie przez `castSpell` → `castModalSpell`: potrafi rozliczyć
+          // także tryb z celami zmiennymi (CR 601.2c), więc oferta je enumeruje.
+          for (const offer of epicCastOffers(state, playerId, exileCard, { variableTargets: true })) {
             legalCommands.push(command('resolve_exile_cast', playerId, {
               cast: true, objectId: exilePending.objectId, cardId: exilePending.cardId,
               targets: offer.targets,
               ...(offer.modeIndex != null ? { modeIndex: offer.modeIndex } : {}),
+              ...(offer.stunTargetId != null ? { stunTargetId: offer.stunTargetId } : {}),
             }));
           }
         } else {
