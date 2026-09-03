@@ -8034,6 +8034,15 @@ generator co oferta) odsłoniła siódmy: **bot brał wariant bez celów** i pal
 `apply_to_each_target` (`wrapTargetsValue`) i wspólne `freeCastVariantScore`.
 9 testów, 6 mutacji.
 
+**H (cena F).** Naprawa F odsłoniła koszt obecny też przy rzucie z ręki: tryb
+„up to three target creatures” enumeruje 2^n kombinacji — 8 stworów wroga to
+93 warianty w panelu, a właściciel gra na telefonie. Projekt zna ten kompromis
+z walki (`COMBAT_OPTION_CAP`): oferta ograniczona (`VARIABLE_TARGET_OPTION_CAP`
+= 32, deterministycznie: nic / po jednym / ilu się da), walidacja PEŁNA i
+wspólna z ręką (`validateVariableTargets`). 5 testów, 3 mutacje — w tym
+wykryta tautologia: pierwsza wersja testu porównywała ofertę z importowaną
+stałą, więc mutacja limitu przechodziła.
+
 **Co zostaje zamknięte ŚWIADOMIE (każde przypięte testem, nie milczeniem):**
 Discover + karta X (CR 107.3b ⇒ X = 0 ⇒ no-op), Discover + aura, Discover + tryb
 wymagający celu
@@ -8044,7 +8053,7 @@ po PR #93**, który piętnował brak oferty jako zamierzony i zakładał stempel
 `playableUntilTurn`, którego silnik już nie stawia (przechodziłby bez naprawy —
 L5/L44).
 
-**Bramy na koniec:** `npm test` **4319/4319**, `npm run test:all` **4329/4329**, build 59 modułów / 3182,4 kB, benchmark (672 mecze, profil szybki) bez
+**Bramy na koniec:** `npm test` **4324/4324**, `npm run test:all` **patrz koniec sesji**, build 59 modułów / 3183,9 kB, benchmark (672 mecze, profil szybki) bez
 wyjątków, `event-contract-audit` i `family-audit` bez naruszeń, 6 partii Żywego
 Testera → 0 zgłoszeń detektorów.
 Dokumentacja: `docs/audits/AUDYT_PR93_2026-09-03.md`, M294, L127, HANDOFF

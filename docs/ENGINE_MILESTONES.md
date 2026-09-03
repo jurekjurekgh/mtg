@@ -4232,8 +4232,8 @@ powstały dla Discover, a obowiązywały też okno zdolności Vaana.
   jeden generator z rzutem z ręki. **Discover dla kart X zostaje zamknięte i przypięte
   testem**: CR 107.3b zmusza X = 0, a przy X = 0 żadna z dwóch kart katalogu nic nie robi,
   więc oferta byłaby no-opem (uwaga F z M280). Źródła reguł w raporcie §4.
-- **Bramy.** `npm test` 4276 → **4319/4319**, `npm run test:all` **4329/4329**,
-  `npm run build` 59 modułów / 3182,4 kB (baza 3167,0 kB). Benchmark (profil szybki,
+- **Bramy.** `npm test` 4276 → **4324/4324**, `npm run test:all` **4329/4329**,
+  `npm run build` 59 modułów / 3183,9 kB (baza 3167,0 kB). Benchmark (profil szybki,
   672 mecze) bez wyjątków: heuristic 83,9%, aggro 28,0%, random 4,2%.
 - **E — czysta aura (CR 303.4a).** Znaleziona SKANEM KATALOGU, nie zgłoszeniem:
   `outsideHandCastScope` odcinał `card.aura`, choć Oracle Vaana mówi „You may cast it”.
@@ -4249,6 +4249,11 @@ powstały dla Discover, a obowiązywały też okno zdolności Vaana.
   `apply_to_each_target` wyciągnięta z `cast_spell` (`wrapTargetsValue`),
   efekty WYBRANEGO trybu i wspólna `freeCastVariantScore` z jałowością (M233).
  _testy: 5 + 4, mutacje: 3 + 3._
+- **H — panel na telefonie.** Cena F: „up to N targets” dawało 2^n wariantów
+  (8 stworów → 93). `VARIABLE_TARGET_OPTION_CAP` (32) przycina OFERTĘ
+  (deterministycznie: nic / po jednym / ilu się da), a walidacja zostaje PEŁNA
+  i wspólna z rzutem z ręki (`validateVariableTargets`) — L48: oferta to
+  wycinek, walidacja jest źródłem prawdy. _testy: 5, mutacje: 3._
 - **Pięć parametrów predykatu:** `allowTargets`, `allowModes`, `allowAdditionalCost`,
   `allowX`, `allowAura`
   — każdy włącza się per ścieżka, każdy ma test na „milczy, gdy wyłączony".

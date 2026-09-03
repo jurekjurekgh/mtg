@@ -2110,6 +2110,15 @@ złamanie reguł, nie naprawa. I wreszcie: wariant ruchu bez wyboru X (X = 0) je
 pułapką, więc dopóki okno nie potrafi wyliczyć X, wyłączenie zostaje — ale jako
 świadomy wpis w backlogu, nie jako milczenie predykatu.
 
+Oferta kontra walidacja przy wykładniczej liczbie wariantów: OFERTA bywa
+WYCINKIEM (limit wariantów, jak `COMBAT_OPTION_CAP`), ale WALIDACJA w `execute`
+musi pozostać PEŁNA i niezależna — inaczej ograniczenie panelu staje się
+ograniczeniem reguł (znalezisko H audytu PR #93).
+
+Test nie może porównywać mierzonej wartości ze STAŁĄ ZAIMPORTOWANĄ z
+testowanego modułu: mutacja zmienia obie naraz i test przechodzi (tautologia
+wykryta przy H). Wartość graniczna wpisana literą, stała sprawdzana osobno.
+
 Skan katalogu zamiast czekania na zgłoszenie: dla każdej karty otwórz badaną
 ścieżkę i wypisz te bez ŻADNEJ oferty — to znalazło znalezisko E (aury), którego
 nie doszedł Żywy Tester w 6 partiach. Strażnik klasy w teście utrwala wynik.

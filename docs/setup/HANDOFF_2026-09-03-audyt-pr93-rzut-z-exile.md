@@ -27,6 +27,7 @@ Baza sesji: `83a9043` (= squash PR #93, `main`).
 | `e19b8e0` | **C** — koszt dodatkowy nie wyłącza rzutu z exile (ofiara / dopłata {N}; Discover płaci przez `payFreeCastAdditionalCost`) |
 | `fc37fda` | **D** — czar z kosztem X w oknie zdolności: X wybiera gracz (CR 107.3a); Discover dla kart X zamknięte świadomie (CR 107.3b ⇒ no-op) |
 | `8267b70` | **F** — darmowy rzut z grobu (Halo Forager): tryb z celami zmiennymi (CR 601.2c); walidacja przez ten sam generator co oferta |
+| `a8c3822` | **H** — limit wariantów „up to N targets” (`VARIABLE_TARGET_OPTION_CAP` 32) + pełna walidacja niezależna od oferty |
 | `ddc9d64` | **G** — bot: nie marnuje czaru z celami zmiennymi w oknach rzutu spoza ręki (jałowość M233 + wartość per cel + efekty wybranego trybu) |
 | `fb867f5` | **E** — czysta aura w oknie zdolności: gospodarza wybiera gracz (CR 303.4a); znaleziona SKANEM KATALOGU (22 aury w 12 taliach), `legalAuraCastsForObject` wspólne z ręką |
 | *(dokumentacja)* | raport (§4, §4b), M294, L127, historia, backlog (wpis X zamknięty), liczby README |
