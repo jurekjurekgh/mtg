@@ -2073,3 +2073,46 @@ woła `document.createElement` na odinstalowanym oknie.
 dopisana druga lista chipów w kreatorze → RED M293/1; przywrócona kopia stopki → RED
 M293/1; wycięty `min-height` rodziny → RED m129; nazwa karty w kodzie rysującym (bez
 komentarza) → RED M293/11.
+
+## L127 (2026-09-03) — Zakres rzutu kartą spoza ręki to cecha ŚCIEŻKI, nie karty: jeden predykat z parametrem „co ta ścieżka potrafi rozliczyć”
+
+**Przypadek:** PR #93 zlał trzy kopie filtru „prostego zakresu” w jeden
+`outsideHandCastScope` (słusznie, L48), ale zostawił w nim wykluczenia NA SZTYWNO:
+`modes`, `targets`, `additionalCost`. Każde powstało dla Discover — jego oferta
+nie pyta ani o tryb, ani o cel — a po unifikacji obowiązywało też okno zdolności
+Vaana, które tryby i cele ENUMERUJE (`epicCastOffers`), a koszt dodatkowy rozlicza
+w `castSpell`. Skutek: **zero ofert rzutu** dla kart, które Oracle dopuszcza
+(repro na realnych kartach: `aerith-rescue-mission` wygnana przez Vaana → tylko
+rezygnacja; `ruinous-rampage` trafiona Discover → tylko „weź do ręki”;
+`village-rites` w obu oknach → nic). Cztery fakty z tej samej tury: egzekucja
+modę OBSŁUGIWAŁA (`chosenMode` na stosie, rozstrzyganie je czyta), więc był to
+czysty rozjazd oferty i wykonania (L41/L48); `castModalSpell` nie znał
+`abilityWindowCast`, bo stempel `playableUntilTurn` słusznie zniknął z karty
+(ruling WotC 2025-02-10) i gałąź modalna straciła jedyną drogę autoryzacji; własna
+kopia generatora ofert w `epicCastOffers` pomijała tryby z „up to N target …”,
+które rzut z ręki oferuje; a test z poprzedniej sesji piętnował brak oferty jako
+zamierzony i zakładał stempel, którego silnik już nie stawia — przechodziłby
+nawet bez naprawy.
+
+**Reguła:** każde wykluczenie w predykacie zakresu pytaj „czy TA ścieżka potrafi
+to ROZLICZYĆ”, nie „czy karta to ma” — parametr per ścieżka (`allowTargets`,
+`allowModes`, `allowAdditionalCost`), jeden filtr, oferta i bramka wywołane z
+TYMI SAMYMI argumentami. Oferty trybów/celów liczy generator wspólny z rzutem
+z ręki (`legalModeCasts`), nie kopia okna. Gdy naprawa odbiera stempel albo
+uprawnienie (ruling), sprawdź, czy nowe uprawnienie dotarło do KAŻDEJ gałęzi
+wykonania (`requireSpell`, `castPermanent`, `castModalSpell`, `castXCostSpell`,
+`castFireball`) — gałąź bez uprawnienia to rozjazd oferty i wykonania. Test
+odziedziczony po poprzedniej sesji traktuj jak hipotezę: sprawdź, czy jego stan
+przygotowawczy odtwarza to, co silnik robi DZIŚ (stempel zdjęty ⇒ test vacuous
+aż do usunięcia stempla z helpera). Koszt wymagający wyboru kart w trakcie
+płacenia („discard two cards”) zostaw bez oferty (L5) — pominięcie kosztu to
+złamanie reguł, nie naprawa. I wreszcie: wariant ruchu bez wyboru X (X = 0) jest
+pułapką, więc dopóki okno nie potrafi wyliczyć X, wyłączenie zostaje — ale jako
+świadomy wpis w backlogu, nie jako milczenie predykatu.
+
+**Strażnik:** `test/audyt-pr93-modalny-rzut-z-okna.test.js` (6, w tym skan
+katalogu: każdy z 12 czarów modalnych ma ofertę w oknie zdolności),
+`test/audyt-pr93-modalny-discover.test.js` (6, w tym etykieta stołu z nazwą
+trybu), `test/audyt-pr93-koszt-dodatkowy-z-exile.test.js` (7) oraz odwrócony
+`test/audyt-pr92-darmowy-rzut-zakres.test.js`. Dziewięć mutacji — tabela w §7
+`docs/audits/AUDYT_PR93_2026-09-03.md`.

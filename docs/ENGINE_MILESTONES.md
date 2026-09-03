@@ -4201,3 +4201,37 @@ ciągnęło inną zmianę.
   talia spoza artefaktu kończy się komunikatem, zaś nieznana lista kart potrafi cicho
   dać partię na innej talii — patrz `docs/setup/ENVIRONMENT.md`. Ścieżka `decide` jest więc
   udowodniona testami i jsdomem, a nie Testerem; nie zgłaszam jej jako „krytej na żywo".
+
+## M294 (2026-09-03) — Zakres rzutu z exile parametryzuje się ścieżką: tryby, cele i koszt dodatkowy wracają do oferty (PR #94)
+
+Audyt PR #93 (`docs/audits/AUDYT_PR93_2026-09-03.md`) znalazł trzy odchylki od Oracle
+w jednej klasie: unifikacja trzech kopii filtru „prostego zakresu” (znalezisko 5 audytu
+PR #92) zostawiła wykluczenia na sztywno (`modes`, `targets`, `additionalCost`), które
+powstały dla Discover, a obowiązywały też okno zdolności Vaana.
+
+- **A — czar modalny w oknie zdolności.** Repro na realnej karcie: Vaan wygania
+  `aerith-rescue-mission` (2 tryby, MV 4), gracz ma 10 many w pięciu kolorach, a oferta to
+  TYLKO rezygnacja (`[{ cast: false }]`). `outsideHandCastScope` dostaje `allowModes`
+  (okno zdolności: tak), `castModalSpell` zna `abilityWindowCast` (uprawnienie z exile +
+  ignorowanie timingu — mirror `requireSpell`), a oferty trybów liczy wspólny z rzutem
+  z ręki `legalModeCasts` (własna kopia w `epicCastOffers` gubiła tryby
+  z „up to N target …”: Wrap in Flames i Sea God's Scorn były niegrywalne z exile).
+- **B — darmowy rzut Discover (CR 701.53).** Oferta dostaje jeden wariant na tryb, który
+  nie wymaga celu (`targetlessModeIndexes` — Discover nie enumeruje celów, CR 608.2b);
+  wykonanie waliduje `modeIndex`, ustawia `chosenMode` na stosie i niesie
+  `modeIndex`/`modeName` w `spell_cast`; etykieta stołu nazywa tryb (M91), bo bez tego dwa
+  przyciski wyglądały identycznie.
+- **C — koszt dodatkowy (CR 601.2h, CR 118.9d).** Parametr `allowAdditionalCost`: okno
+  Vaana przekazuje `sacrificeTargetId`/`payAltCost` do `castSpell`, a Discover woła ten sam
+  `payFreeCastAdditionalCost` co suspend/rebound/epic. Pomiar osiągalności: 5 kart
+  w 5 taliach, Vaan w `final-fantasy`. Koszt wymagający wyboru kart (`cathartic-reunion`)
+  zostaje bez oferty — jawne ograniczenie, nie ciche pominięcie (L5).
+- **Otwarty przypadek tej samej klasy (backlog, nie milczenie):** `xCost` i `fireball`
+  (3 karty w 3 taliach). Sam predykat nie wystarczy — okno musi wyliczać X, inaczej jedyny
+  wariant (X = 0) jest ruchem-pułapką.
+- **Bramy.** `npm test` 4276 → **4295/4295**, `npm run test:all` **4305/4305**,
+  `npm run build` 59 modułów / 3172,3 kB (baza 3167,0 kB). Benchmark (profil szybki,
+  672 mecze) bez wyjątków: heuristic 83,9%, aggro 28,0%, random 4,2%.
+- **Dług i higiena.** Test odziedziczony po PR #93 (`audyt-pr92-darmowy-rzut-zakres`)
+  piętnował brak oferty dla czaru modalnego i zakładał stempel `playableUntilTurn`, którego
+  silnik nie stawia — odwrócony, z komentarzem (L5/L44). Lekcja L127.

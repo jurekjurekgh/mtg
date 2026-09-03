@@ -40,6 +40,24 @@ Następna lista właściciela wchodzi tutaj.)_
 
 ## 2. Silnik i reguły
 
+- **[otwarte, zmierzone 2026-09-03 — audyt PR #93]** Karta z kosztem X albo
+  Fireballem w oknie „you may cast it” (Vaan) i w darmowym rzucie Discover
+  nadal nie ma oferty: `consume-spirit`, `epic-experiment` (2 karty w 2 taliach)
+  i `fireball` (1 karta w 1 talii), a Vaan jest w `final-fantasy`, więc każda
+  z nich jest osiągalna w realnej partii. Wyłączenie siedzi w
+  `outsideHandCastScope` obok `allowModes`/`allowAdditionalCost` — ale samo
+  jego zdjęcie NIE wystarczy: okno musi wyliczać X w ofercie (X = 0..budżet),
+  bo wariant bez X jest ruchem-pułapką (karta stracona bez efektu). Do tego
+  `castXCostSpell` i `castFireball` wymagają dziś `zone === 'hand'` i nie znają
+  `abilityWindowCast` (to samo, co naprawiono dla `castModalSpell` w PR #94).
+  Trzy elementy: parametr predykatu, `abilityWindowCast` w obu funkcjach i
+  warianty X w `epicCastOffers`/ofercie Discover.
+- **[zmierzone 2026-09-03]** Kicker na instantach i sorcerych jest obsługiwany
+  przez silnik (PR #93), ale w `src/cards/card-data.js` nie ma ANI JEDNEJ
+  takiej karty — ścieżka nie ma pokrycia katalogowego (możliwość bez karty).
+  Wniosek do właściciela: pierwsza karta z kickerem na czarze domknie rodzinę
+  testami na żywym stole; dziś pokrywają ją wyłącznie testy syntetyczne.
+
 - **Z6/Z7 z audytu M119 — do decyzji właściciela:**
   - „Bierzesz mulligan (1)” — liczba bez jednostki (czy zmienić brzmienie na
     „mulligan nr 1 (ręka 7 kart, odłożysz 1)”?);

@@ -7969,3 +7969,46 @@ Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
 - `docs/ROADMAP.md` — jeśli zmienia się kolejność etapów;
 - ADR — jeśli zapada lub zmienia się decyzja architektoniczna;
 - dokumentację karty/mechaniki — jeśli zmienia się zakres jej obsługi.
+
+### Sesja arena/01a066d9 (2026-09-03): audyt PR #93 + rzut kartą spoza ręki (PR #94)
+
+Prompt właściciela: „kontynuujemy projekt” → ADR 0020/0021: PR na starcie, audyt
+ostatniego scalonego PR (#93), potem naprawy u root cause. Pomiar startowy: `npm test`
+4276/4276, build 59 modułów / 3167,0 kB.
+
+**Audyt (89 plików diffu, czytane per plik).** Werdykt: PR #93 jakościowo dobry —
+pięć znalezisk PR #92 naprawione u root cause, każda klasa domknięta strażnikiem
+(`tools/family-audit.mjs`, `CONTRACT_REQUIRED_FIELDS`, tag `trigger.groupPer`), zero
+nazw kart w rdzeniu. Weryfikacja mutacyjna dwóch napraw (porządek dobrania → 3 RED;
+dedup triggerów → 3 RED w dwóch plikach). Jedna decyzja zostawiła jednak ślad:
+unifikacja trzech kopii filtru „prostego zakresu” przeniosła na okno zdolności Vaana
+i na Discover wykluczenia, które powstały dla innej ścieżki.
+
+**Trzy naprawy w jednej klasie (każda własnym commitem, każda z mutacją):**
+
+- **A (M294).** Czar modalny wygnany przez Vaana nie był rzucalny wcale — repro na
+  realnej karcie (`aerith-rescue-mission`, 10 many w pięciu kolorach → oferta to tylko
+  rezygnacja). `outsideHandCastScope` dostaje `allowModes`, `castModalSpell` zna
+  `abilityWindowCast`, oferty trybów liczy wspólny z rzutem z ręki `legalModeCasts`
+  (kopia w `epicCastOffers` gubiła tryby „up to N target …”). 6 testów + strażnik
+  katalogu (12 czarów modalnych), 3 mutacje.
+- **B.** Darmowy rzut Discover gubił czary modalne (CR 701.53): oferta per tryb
+  bezcelowy, `chosenMode` na stosie, `modeIndex`/`modeName` w zdarzeniu, etykieta
+  stołu nazywa tryb. 6 testów, 3 mutacje.
+- **C.** Koszt dodatkowy wyłączał rzut w obu oknach (5 kart w 5 taliach, Vaan
+  w `final-fantasy`): parametr `allowAdditionalCost`, ofiara albo dopłata
+  (`sacrifice a creature or pay {4}`) w ofercie i w płatności; Discover woła
+  `payFreeCastAdditionalCost` jak suspend/rebound/epic. 7 testów, 3 mutacje.
+  Koszt wymagający wyboru kart (`cathartic-reunion`) zostaje bez oferty — jawne
+  ograniczenie (L5), nie ciche pominięcie kosztu.
+
+**Otwarty przypadek tej samej klasy** (wpis do backlogu, nie milczenie: X-cost
+i Fireball — 3 karty w 3 taliach) oraz **odwrócony test odziedziczony po PR #93**,
+który piętnował brak oferty jako zamierzony i zakładał stempel `playableUntilTurn`,
+którego silnik już nie stawia (przechodziłby bez naprawy — L5/L44).
+
+**Bramy na koniec:** `npm test` **4295/4295**, `npm run test:all` **4305/4305**,
+build 59 modułów / 3172,3 kB, benchmark (672 mecze, profil szybki) bez wyjątków.
+Dokumentacja: `docs/audits/AUDYT_PR93_2026-09-03.md`, M294, L127, HANDOFF
+`docs/setup/HANDOFF_2026-09-03-audyt-pr93-rzut-z-exile.md`.
+
