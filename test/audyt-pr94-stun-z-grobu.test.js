@@ -125,8 +125,9 @@ test('A94/K1: grób — L48: KAŻDA oferta okna wykonuje się bez odrzucenia', (
 test('A94/K1: grób — rozstrzygnięcie: cele stępione, stun counter na WYBRANYM celu', () => {
   const state = graveState(MODAL_STUN);
   const cast = graveCasts(state).find((c) => c.modeIndex === 1
-    && (c.targets ?? []).length === 2 && c.stunTargetId === 'foe1');
-  assert.ok(cast, 'wariant z dwoma celami i stunem na foe1');
+    && (c.targets ?? []).length === 2 && c.stunTargetId === 'foe1'
+    && c.targets.includes('foe1') && c.targets.includes('foe2'));
+  assert.ok(cast, 'wariant z dwoma wrogimi stworami i stunem na foe1');
   const manaBefore = state.players.find((p) => p.id === 'p1').mana;
   const r = execute(state, cast);
   assert.ok(r.ok, `rzut przyjęty (${r.events[0]?.reason ?? ''})`);
@@ -158,6 +159,49 @@ test('A94/K1: grób — etykieta nazywa TRYB (M91/uwaga D): „Winda” i puste 
     const cmd = offers.find((c) => c.modeIndex === REGISTRY.get(MODAL_STUN).spell.modes.indexOf(mode));
     assert.ok(plain(commandLabel(cmd, session, session.view())).includes(mode.name),
       `etykieta nazywa tryb „${mode.name}”`);
+  }
+});
+
+test('A94/K2: etykieta cast_spell nazywa cel pod stun (warianty o różnych skutkach rozróżnialne)', () => {
+  const state = game('p1');
+  addMana(state, 'p1', 10, { colors: ['W', 'U', 'B', 'R', 'G'] });
+  addSimpleCreature(state, 'foe1', 'p2');
+  addSimpleCreature(state, 'foe2', 'p2');
+  put(state, 'arm', MODAL_STUN, 'p1', 'hand');
+  const offers = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'cast_spell' && c.objectId === 'arm' && c.modeIndex === 1
+      && (c.targets ?? []).length === 2);
+  assert.equal(offers.length, 2, 'dwa warianty tych samych celów — różnią się celem pod stun');
+  assert.notEqual(offers[0].stunTargetId, offers[1].stunTargetId, 'każdy wariant wskazuje inny stun cel');
+  const session = tableSession(state);
+  const labels = offers.map((cmd) => plain(commandLabel(cmd, session, session.view())));
+  assert.notEqual(labels[0], labels[1], `etykiety muszą się różnić: „${labels[0]}”`);
+  for (const [i, cmd] of offers.entries()) {
+    assert.ok(labels[i].includes(cmd.stunTargetId),
+      `etykieta nazywa stun cel (${cmd.stunTargetId}): „${labels[i]}”`);
+  }
+});
+
+test('A94/K2: etykieta okna Vaana nazywa cel pod stun (ta sama klasa M91)', () => {
+  const state = game('p1');
+  addMana(state, 'p1', 10, { colors: ['W', 'U', 'B', 'R', 'G'] });
+  addSimpleCreature(state, 'foe1', 'p2');
+  addSimpleCreature(state, 'foe2', 'p2');
+  put(state, 'stolen', MODAL_STUN, 'p2', 'exile');
+  state.pendingExileCast = {
+    playerId: 'p1', objectId: 'stolen', cardId: MODAL_STUN, sourceId: 'vaan',
+    restorePriorityTo: 'p1',
+  };
+  const offers = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'resolve_exile_cast' && c.cast === true && c.modeIndex === 1
+      && (c.targets ?? []).length === 2);
+  assert.equal(offers.length, 2, 'dwa warianty tych samych celów — różnią się celem pod stun');
+  const session = tableSession(state);
+  const labels = offers.map((cmd) => plain(commandLabel(cmd, session, session.view())));
+  assert.notEqual(labels[0], labels[1], `etykiety muszą się różnić: „${labels[0]}”`);
+  for (const [i, cmd] of offers.entries()) {
+    assert.ok(labels[i].includes(cmd.stunTargetId),
+      `etykieta nazywa stun cel (${cmd.stunTargetId}): „${labels[i]}”`);
   }
 });
 

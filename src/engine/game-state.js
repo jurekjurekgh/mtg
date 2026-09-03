@@ -2266,6 +2266,11 @@ export function execute(state, input) {
     const chosen = Array.isArray(cmd.targets) ? cmd.targets : [];
     let chosenTargets = [];
     let chosenMode;
+    // Audyt PR #94 / K1: wybór celu pod stun counter (`stunAmongTargets`)
+    // musi dojechać na stos — rozstrzyganie czyta `object.modeExtra`
+    // (`resolveModalEffectTargets` → `extra:stunTargetId`), mirror
+    // `castModalSpell`.
+    let chosenModeExtra = null;
     try {
       if (card.spell?.modes) {
         const modeIndex = cmd.modeIndex;
@@ -2277,7 +2282,10 @@ export function execute(state, input) {
           // Liczbę celów wybiera gracz („up to three”), a oferta jest
           // PRZYCIĘTA limitem (znalezisko H) — walidacja musi być pełna:
           // ten sam walidator co przy rzucie z ręki (`castModalSpell`).
-          chosenTargets = validateVariableTargets(state, pending.playerId, mode, chosen, card);
+          // Audyt PR #94 / K1: tryb ze `stunAmongTargets` wymaga wyboru celu
+          // pod stun counter — tego samego wyboru, który niesie oferta.
+          chosenTargets = validateVariableTargets(state, pending.playerId, mode, chosen, card, cmd.stunTargetId);
+          if (mode.stunAmongTargets) chosenModeExtra = { stunTargetId: cmd.stunTargetId };
         } else {
           const spec = mode.targets ?? [];
           if (chosen.length !== spec.length) return reject('illegal_grave_free_cast_targets');
@@ -2308,6 +2316,7 @@ export function execute(state, input) {
       controllerId: pending.playerId,
       chosenTargets,
       ...(chosenMode != null ? { chosenMode } : {}),
+      ...(chosenModeExtra != null ? { modeExtra: chosenModeExtra } : {}),
       // „If that spell would be put into a graveyard, exile it instead."
       exileInsteadOfGraveyard: true,
       freeGraveCast: true,
@@ -2329,7 +2338,15 @@ export function execute(state, input) {
       // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
       colors: [...(card.colors ?? [])],
       fromGraveyard: true, xPaid: xValue, manaSpent: xValue,
-      ...(chosenMode != null ? { modeIndex: chosenMode } : {}),
+      // Audyt PR #94 / K1: log stołu czyta `e.modeName` (session.js) — bez
+      // niego rzut modalny z grobu wyglądał w logu jak niemodalny; wybór
+      // stun celu też jest częścią decyzji (M91/uwaga D), mirror
+      // `castModalSpell`.
+      ...(chosenMode != null ? {
+        modeIndex: chosenMode,
+        modeName: card.spell?.modes?.[chosenMode]?.name ?? null,
+        stunTargetId: chosenModeExtra?.stunTargetId ?? null,
+      } : {}),
     }));
     state.events.push(event('grave_free_cast_resolved', {
       playerId: pending.playerId, sourceCardId: pending.sourceCardId,
@@ -6582,6 +6599,11 @@ export function playerView(state, playerId) {
           objectId: graveId, cardId: card.cardId, xValue,
           targets: offer.targets,
           ...(offer.modeIndex != null ? { modeIndex: offer.modeIndex } : {}),
+          // Audyt PR #94 / K1: tryb „up to N … put a stun counter on ONE OF
+          // THEM” niesie wybór celu pod stun — bez niego w panelu są N
+          // identycznych przycisków, a walidacja odrzuca każdy wariant ≥1 celu
+          // (L48: oferta = walidacja; tak samo `pushExileCast` w oknie Vaana).
+          ...(offer.stunTargetId != null ? { stunTargetId: offer.stunTargetId } : {}),
         }));
       }
     }
