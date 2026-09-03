@@ -1109,15 +1109,24 @@ function discardChooserId(pending) {
  * rzutu, choć Oracle mówi „You may cast it” (ADR 0022). Tryb nie jest cechą
  * ścieżki płatności, tylko wyborem przy rzucie — więc zakres zależy od tego,
  * czy dana ścieżka potrafi ten wybór przenieść na stos (L48).
+ *
+ * `allowAdditionalCost` — koszt dodatkowy (CR 601.2h). Audyt PR #93: wykluczenie
+ * powstało dla ścieżek, które kosztu NIE rozliczają (dawna oferta Discover),
+ * ale okno zdolności Vaana rozlicza go w `castSpell` (ofiara albo dopłata),
+ * a darmowy rzut Discover w `payFreeCastAdditionalCost` (CR 118.9d: rzut bez
+ * kosztu many nadal płaci koszty dodatkowe). Koszt wymagający wyboru kart
+ * w trakcie płacenia („discard two cards”) jest nieobsługiwany wszędzie —
+ * o braku oferty decyduje `freeCastAdditionalCostVariants`, nie ten predykat.
  */
-function outsideHandCastScope(card, { allowTargets = false, allowModes = false } = {}) {
+function outsideHandCastScope(card, { allowTargets = false, allowModes = false, allowAdditionalCost = false } = {}) {
   if (!card) return false;
   // CR 305.1: land nie jest czarem — nigdy nie „się rzuca\", nawet za darmo.
   if (card.kind === 'land' || (card.types ?? []).includes('Land')) return false;
   if (card.kind === 'spell') {
     const spell = card.spell ?? {};
     if (!['instant', 'sorcery'].includes(spell.timing)) return false;
-    if (spell.additionalCost || spell.xCost || spell.fireball) return false;
+    if (spell.xCost || spell.fireball) return false;
+    if (!allowAdditionalCost && spell.additionalCost) return false;
     if (!allowModes && spell.modes) return false;
     if (!allowTargets && (spell.targets ?? []).length > 0) return false;
     return true;
@@ -2300,7 +2309,7 @@ export function execute(state, input) {
     const card = state.objects.get(pending.objectId);
     // A92/5: zakres wylicza ten sam predykat co oferta (dawniej druga kopia
     // tego filtra — bez `modes`, więc rozjeżdżała się z ofertą Vaana).
-    const castableKind = outsideHandCastScope(card, { allowTargets: true, allowModes: true });
+    const castableKind = outsideHandCastScope(card, { allowTargets: true, allowModes: true, allowAdditionalCost: true });
     const decline = (note) => {
       state.pendingExileCast = null;
       // „If you don't [cast it], create a Treasure token." Źródło triggera
@@ -2333,8 +2342,12 @@ export function execute(state, input) {
       // nie ma takiego pola (bramka decyzji wyżej odrzuca inne komendy, dopóki
       // okno jest otwarte). Od audytu PR #93 opcje rzutu jadą obiektem.
       if (card.kind === 'spell') {
-        castSpell(state, pending.playerId, pending.objectId, cmd.targets ?? [], undefined,
-          cmd.modeIndex, cmd.stunTargetId, { abilityWindowCast: true });
+        // Koszt dodatkowy (CR 601.2h): ofiara (`sacrificeTargetId`) albo dopłata
+        // (`payAltCost`, „sacrifice a creature or pay {4}”) — rozlicza je
+        // `castSpell`, bo okno Vaana płaci PEŁNY koszt many czaru.
+        castSpell(state, pending.playerId, pending.objectId, cmd.targets ?? [], cmd.sacrificeTargetId,
+          cmd.modeIndex, cmd.stunTargetId,
+          { abilityWindowCast: true, ...(cmd.payAltCost === true ? { payAltCost: true } : {}) });
       } else {
         castPermanent(state, pending.playerId, pending.objectId, { abilityWindowCast: true });
       }
@@ -4099,7 +4112,7 @@ export function execute(state, input) {
     // A92/5 (L48): ta sama bramka co oferta — darmowy rzut TYLKO dla kart
     // w prostym zakresie. Bez niej komenda spoza oferty kładła czar na
     // stosie z `targets: []` i pozwalała mu fizzlować (CR 608.2b).
-    if (cmd.castFree && !outsideHandCastScope(foundObj, { allowTargets: false, allowModes: true })) {
+    if (cmd.castFree && !outsideHandCastScope(foundObj, { allowTargets: false, allowModes: true, allowAdditionalCost: true })) {
       return reject('illegal_discover_free_cast');
     }
     // Audyt PR #93: czar modalny wymaga WYBORU TRYBU w komendzie — bez niego
@@ -4112,6 +4125,12 @@ export function execute(state, input) {
         return reject('illegal_discover_free_cast_mode');
       }
       chosenDiscoverMode = cmd.modeIndex;
+    }
+    if (cmd.castFree && ['spell', 'creature', 'artifact', 'enchantment'].includes(foundObj.kind)) {
+      // CR 118.9d: „without paying its mana cost” nie zwalnia z kosztów
+      // DODATKOWYCH. Ten sam helper co suspend/rebound/epic (M201/U2).
+      const costReason = payFreeCastAdditionalCost(state, disc.playerId, foundObj, cmd);
+      if (costReason) return reject(costReason);
     }
     if (cmd.castFree && foundObj.kind === 'spell') {
       // Rzuć czar (instant/sorcery) bez kosztu many — idzie na stos.
@@ -6319,21 +6338,26 @@ export function playerView(state, playerId) {
     // wynik Discover — CR 701.53).
     const discoverCard = state.objects.get(state.pendingDiscover.foundExileId);
     // Ten sam predykat co bramka w `execute()` (L48 — jeden filtr, dwa miejsca).
-    const discoverFreeCastable = outsideHandCastScope(discoverCard, { allowTargets: false, allowModes: true });
+    const discoverFreeCastable = outsideHandCastScope(discoverCard, { allowTargets: false, allowModes: true, allowAdditionalCost: true });
     // Audyt PR #93: czar z „Choose one” rzuca się z wyborem TRYBU (jeden wariant
     // per tryb bezcelowy). Gdy każdy tryb wymaga celu (Vandalize), karty nie
     // da się rzucić bez wyboru celu — zostaje „weź do ręki” (zawsze legalne).
     const discoverModes = targetlessModeIndexes(discoverCard);
     const modalBezTrybu = (discoverCard?.spell?.modes ?? []).length > 0 && discoverModes.length === 0;
-    if (discoverFreeCastable && !modalBezTrybu) {
+    // Koszt dodatkowy (CR 118.9d): rzut bez kosztu many płaci go nadal — jeden
+    // wariant na ofiarę i (gdy karta tak ma) wariant „albo zapłać {N}”. Koszt
+    // wymagający wyboru kart („discard two cards”) daje pustą listę = bez oferty.
+    const discoverCosts = freeCastAdditionalCostVariants(state, playerId, discoverCard);
+    if (discoverFreeCastable && !modalBezTrybu && discoverCosts.length > 0) {
       // `objectId`/`cardId` jadą w komendzie dla etykiety UI: przy czarze
       // modalnym wariantów jest kilka i etykieta musi nazwać tryb (M91).
       const discoverIds = { objectId: state.pendingDiscover.foundExileId, cardId: discoverCard.cardId };
-      if (discoverModes.length === 0) {
-        legalCommands.push(command('resolve_discover_choice', playerId, { castFree: true, ...discoverIds }));
-      } else {
-        for (const modeIndex of discoverModes) {
-          legalCommands.push(command('resolve_discover_choice', playerId, { castFree: true, modeIndex, ...discoverIds }));
+      const modeVariants = discoverModes.length === 0 ? [{}] : discoverModes.map((modeIndex) => ({ modeIndex }));
+      for (const modeVariant of modeVariants) {
+        for (const costVariant of discoverCosts) {
+          legalCommands.push(command('resolve_discover_choice', playerId, {
+            castFree: true, ...modeVariant, ...costVariant, ...discoverIds,
+          }));
         }
       }
     }
@@ -6506,7 +6530,7 @@ export function playerView(state, playerId) {
     const exileCard = state.objects.get(exilePending.objectId);
     // A92/5: trzecia kopia filtra zniknęła — oferta liczy zakres tym samym
     // predykatem co bramka `resolve_exile_cast` (L48).
-    const exileCastable = outsideHandCastScope(exileCard, { allowTargets: true, allowModes: true });
+    const exileCastable = outsideHandCastScope(exileCard, { allowTargets: true, allowModes: true, allowAdditionalCost: true });
     legalCommands.push(command('resolve_exile_cast', playerId, {
       cast: false, objectId: exilePending.objectId, cardId: exilePending.cardId,
     }));
@@ -6523,6 +6547,10 @@ export function playerView(state, playerId) {
               targets: offer.targets,
               ...(offer.modeIndex != null ? { modeIndex: offer.modeIndex } : {}),
               ...(offer.stunTargetId != null ? { stunTargetId: offer.stunTargetId } : {}),
+              // Koszt dodatkowy: `freeCastAdditionalCostVariants` (wewnątrz
+              // epicCastOffers) daje wariant per ofiara i wariant z dopłatą.
+              ...(offer.sacrificeTargetId != null ? { sacrificeTargetId: offer.sacrificeTargetId } : {}),
+              ...(offer.payAltCost === true ? { payAltCost: true } : {}),
             }));
           }
         } else {
