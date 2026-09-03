@@ -1126,6 +1126,30 @@ function outsideHandCastScope(card, { allowTargets = false, allowModes = false }
   return ['creature', 'artifact', 'enchantment'].includes(card.kind) && !card.aura;
 }
 
+/**
+ * Tryby czaru modalnego, które NIE wymagają wyboru celu — zakres darmowego
+ * rzutu Discover (CR 701.53).
+ *
+ * Discover nie enumeruje celów (uwaga właściciela F z M280): tryb „destroy
+ * target artifact” wszedłby na stos z `chosenTargets: []` i sfizzlował
+ * (CR 608.2b), czyli zaoferował graczowi ruch, który nic nie robi. Tryb z
+ * `variableTargets` („up to N target …”) odpada z tego samego powodu — jego
+ * wybór to cel (a bywa, że i dodatkowy cel pod stun counter).
+ *
+ * Jeden filtr dla oferty i dla bramki `resolve_discover_choice` (L48).
+ */
+function targetlessModeIndexes(card) {
+  const modes = card?.spell?.modes ?? [];
+  const out = [];
+  for (let index = 0; index < modes.length; index += 1) {
+    const mode = modes[index];
+    if ((mode.targets ?? []).length > 0) continue;
+    if (mode.variableTargets) continue;
+    out.push(index);
+  }
+  return out;
+}
+
 function firstPendingDecision(state) {
   if (state.pendingMulligans.length > 0) return { playerId: state.pendingMulligans[0], kind: 'mulligan' };
   if (state.pendingMulliganBottom) return { playerId: state.pendingMulliganBottom.playerId, kind: 'mulliganBottom' };
@@ -4075,21 +4099,40 @@ export function execute(state, input) {
     // A92/5 (L48): ta sama bramka co oferta — darmowy rzut TYLKO dla kart
     // w prostym zakresie. Bez niej komenda spoza oferty kładła czar na
     // stosie z `targets: []` i pozwalała mu fizzlować (CR 608.2b).
-    if (cmd.castFree && !outsideHandCastScope(foundObj, { allowTargets: false })) {
+    if (cmd.castFree && !outsideHandCastScope(foundObj, { allowTargets: false, allowModes: true })) {
       return reject('illegal_discover_free_cast');
+    }
+    // Audyt PR #93: czar modalny wymaga WYBORU TRYBU w komendzie — bez niego
+    // trafiał na stos bez `chosenMode` i rozstrzygał się jak czar niemodalny
+    // (czyli wcale). Tryb celowany jest poza zakresem Discover (L48: oferta
+    // i walidacja liczą ten sam filtr `targetlessModeIndexes`).
+    let chosenDiscoverMode = null;
+    if (cmd.castFree && (foundObj.spell?.modes ?? []).length > 0) {
+      if (!targetlessModeIndexes(foundObj).includes(cmd.modeIndex)) {
+        return reject('illegal_discover_free_cast_mode');
+      }
+      chosenDiscoverMode = cmd.modeIndex;
     }
     if (cmd.castFree && foundObj.kind === 'spell') {
       // Rzuć czar (instant/sorcery) bez kosztu many — idzie na stos.
       const stackId = `spell-${state.objectSequence++}`;
       moveObjectDirectly(state, disc.foundExileId, 'stack', stackId);
       const spellTargets = (foundObj.spell?.targets ?? []);
-      const stacked = Object.freeze({ ...state.objects.get(stackId), tapped: false, chosenTargets: [], freeDiscover: true });
+      const stacked = Object.freeze({
+        ...state.objects.get(stackId), tapped: false, chosenTargets: [], freeDiscover: true,
+        ...(chosenDiscoverMode != null ? { chosenMode: chosenDiscoverMode } : {}),
+      });
       state.objects.set(stackId, stacked);
       state.spellsCastThisTurn += 1;
       state.events.push(event('spell_cast', {
         // M273 (błąd #23): kolory czaru są częścią kontraktu zdarzenia.
         playerId: disc.playerId, fromId: disc.foundExileId, object: stacked,
         cardId: foundObj.cardId, targets: [], discover: true, manaSpent: 0,
+        // M91 (uwaga D): log stołu mówi, KTÓRY tryb wybrano — opis zdarzenia
+        // jest czystą funkcją bez dostępu do obiektu na stosie (L107).
+        ...(chosenDiscoverMode != null
+          ? { modeIndex: chosenDiscoverMode, modeName: foundObj.spell?.modes?.[chosenDiscoverMode]?.name ?? null }
+          : {}),
         colors: [...(foundObj.colors ?? [])],
       }));
     } else if (cmd.castFree && (foundObj.kind === 'creature' || foundObj.kind === 'artifact' || foundObj.kind === 'enchantment')) {
@@ -6276,9 +6319,23 @@ export function playerView(state, playerId) {
     // wynik Discover — CR 701.53).
     const discoverCard = state.objects.get(state.pendingDiscover.foundExileId);
     // Ten sam predykat co bramka w `execute()` (L48 — jeden filtr, dwa miejsca).
-    const discoverFreeCastable = outsideHandCastScope(discoverCard, { allowTargets: false });
-    if (discoverFreeCastable) {
-      legalCommands.push(command('resolve_discover_choice', playerId, { castFree: true }));
+    const discoverFreeCastable = outsideHandCastScope(discoverCard, { allowTargets: false, allowModes: true });
+    // Audyt PR #93: czar z „Choose one” rzuca się z wyborem TRYBU (jeden wariant
+    // per tryb bezcelowy). Gdy każdy tryb wymaga celu (Vandalize), karty nie
+    // da się rzucić bez wyboru celu — zostaje „weź do ręki” (zawsze legalne).
+    const discoverModes = targetlessModeIndexes(discoverCard);
+    const modalBezTrybu = (discoverCard?.spell?.modes ?? []).length > 0 && discoverModes.length === 0;
+    if (discoverFreeCastable && !modalBezTrybu) {
+      // `objectId`/`cardId` jadą w komendzie dla etykiety UI: przy czarze
+      // modalnym wariantów jest kilka i etykieta musi nazwać tryb (M91).
+      const discoverIds = { objectId: state.pendingDiscover.foundExileId, cardId: discoverCard.cardId };
+      if (discoverModes.length === 0) {
+        legalCommands.push(command('resolve_discover_choice', playerId, { castFree: true, ...discoverIds }));
+      } else {
+        for (const modeIndex of discoverModes) {
+          legalCommands.push(command('resolve_discover_choice', playerId, { castFree: true, modeIndex, ...discoverIds }));
+        }
+      }
     }
     legalCommands.push(command('resolve_discover_choice', playerId, { castFree: false }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeExplore) {

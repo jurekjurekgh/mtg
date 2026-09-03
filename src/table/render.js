@@ -2721,7 +2721,13 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_discover_choice': {
       // Discover (Geological Appraiser): rzuć znalezioną kartę albo weź do ręki.
-      return cmd.castFree ? 'Discover: rzuć bez kosztu many' : 'Discover: weź kartę do ręki';
+      // Audyt PR #93: czar z „Choose one” ma w ofercie JEDEN wariant na tryb
+      // bezcelowy — bez nazwy trybu w etykiecie dwa przyciski wyglądają
+      // identycznie (M91/uwaga D: gracz musi widzieć, którą opcję wybiera).
+      const found = obj(cmd.objectId);
+      const mode = (cmd.modeIndex != null && found?.spell?.modes) ? found.spell.modes[cmd.modeIndex] : null;
+      const modeName = mode?.name ? ` — ${mode.name}` : '';
+      return cmd.castFree ? `Discover: rzuć bez kosztu many${modeName}` : 'Discover: weź kartę do ręki';
     }
     case 'resolve_explore_choice': {
       // Explore (Guidestone Compass): wierzch albo grób.
