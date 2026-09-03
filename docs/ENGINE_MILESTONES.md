@@ -4232,10 +4232,17 @@ powstały dla Discover, a obowiązywały też okno zdolności Vaana.
   jeden generator z rzutem z ręki. **Discover dla kart X zostaje zamknięte i przypięte
   testem**: CR 107.3b zmusza X = 0, a przy X = 0 żadna z dwóch kart katalogu nic nie robi,
   więc oferta byłaby no-opem (uwaga F z M280). Źródła reguł w raporcie §4.
-- **Bramy.** `npm test` 4276 → **4304/4304**, `npm run test:all` **4314/4314**,
-  `npm run build` 59 modułów / 3176,1 kB (baza 3167,0 kB). Benchmark (profil szybki,
+- **Bramy.** `npm test` 4276 → **4310/4310**, `npm run test:all` **4314/4314**,
+  `npm run build` 59 modułów / 3179,4 kB (baza 3167,0 kB). Benchmark (profil szybki,
   672 mecze) bez wyjątków: heuristic 83,9%, aggro 28,0%, random 4,2%.
-- **Cztery parametry predykatu:** `allowTargets`, `allowModes`, `allowAdditionalCost`, `allowX`
+- **E — czysta aura (CR 303.4a).** Znaleziona SKANEM KATALOGU, nie zgłoszeniem:
+  `outsideHandCastScope` odcinał `card.aura`, choć Oracle Vaana mówi „You may cast it”.
+  22 aury w 12 z 23 talii. `castAuraSpell` zna `abilityWindowCast`; oferty liczy
+  `legalAuraCastsForObject` (ekstrakcja z `legalAuraCasts`) — typ gospodarza, hexproof,
+  protection, Curse (cel-gracz) i bestow. Discover przy aurach zamknięte (brak celów).
+  Metoda skanu opisana w raporcie §4c — do powtórzenia w kolejnych audytach.
+- **Pięć parametrów predykatu:** `allowTargets`, `allowModes`, `allowAdditionalCost`,
+  `allowX`, `allowAura`
   — każdy włącza się per ścieżka, każdy ma test na „milczy, gdy wyłączony".
 - **Dług i higiena.** Test odziedziczony po PR #93 (`audyt-pr92-darmowy-rzut-zakres`)
   piętnował brak oferty dla czaru modalnego i zakładał stempel `playableUntilTurn`, którego

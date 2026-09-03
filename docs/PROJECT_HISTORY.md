@@ -8012,8 +8012,19 @@ samo uprawnienie), a oferty X liczy generator wspólny z rzutem z ręki.
 CR 107.3b zmusza X = 0, a przy X = 0 żadna z kart nic nie robi, więc oferta
 byłaby no-opem (uwaga właściciela F z M280). 7 testów, 3 mutacje.
 
+**E (skan katalogu).** Po D przyszedł skan: dla każdej z 489 kart katalogu
+otwarto okno Vaana i wypisano te bez oferty. Wyszedł piąty przypadek tej
+samej klasy — **czyste aury** (22 w 12 z 23 talii). Predykat odcinał
+`card.aura` komentarzem „mają własną ścieżkę celu”, choć Oracle mówi „You may
+cast it” (wygnana jest karta, nie „instant or sorcery”). Naprawa: parametr
+`allowAura`, `abilityWindowCast` w `castAuraSpell` i `legalAuraCastsForObject`
+(ekstrakcja z `legalAuraCasts` — okno dostaje te same reguły hosta: typ
+gospodarza, hexproof, protection, Curse-celująca-w-gracza, bestow). 6 testów,
+3 mutacje. Discover przy aurach zostaje zamknięte (okno nie wylicza celów).
+
 **Co zostaje zamknięte ŚWIADOMIE (każde przypięte testem, nie milczeniem):**
-Discover + karta X (CR 107.3b ⇒ X = 0 ⇒ no-op), Discover + tryb wymagający celu
+Discover + karta X (CR 107.3b ⇒ X = 0 ⇒ no-op), Discover + aura, Discover + tryb
+wymagający celu
 (brak enumeracji celów, CR 608.2b), koszt „odrzuć N kart” w obu oknach (brak
 ścieżki zapłaty, L5) oraz tryb z celami zmiennymi w madness i darmowym rzucie
 z grobu (wykonanie odrzuca je jawnie). Osobno: **odwrócony test odziedziczony
@@ -8021,7 +8032,7 @@ po PR #93**, który piętnował brak oferty jako zamierzony i zakładał stempel
 `playableUntilTurn`, którego silnik już nie stawia (przechodziłby bez naprawy —
 L5/L44).
 
-**Bramy na koniec:** `npm test` **4304/4304**, `npm run test:all` **4314/4314**, build 59 modułów / 3176,1 kB, benchmark (672 mecze, profil szybki) bez
+**Bramy na koniec:** `npm test` **4310/4310**, `npm run test:all` **4314/4314**, build 59 modułów / 3179,4 kB, benchmark (672 mecze, profil szybki) bez
 wyjątków, `event-contract-audit` i `family-audit` bez naruszeń, 6 partii Żywego
 Testera → 0 zgłoszeń detektorów.
 Dokumentacja: `docs/audits/AUDYT_PR93_2026-09-03.md`, M294, L127, HANDOFF

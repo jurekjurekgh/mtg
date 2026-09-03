@@ -2110,6 +2110,10 @@ złamanie reguł, nie naprawa. I wreszcie: wariant ruchu bez wyboru X (X = 0) je
 pułapką, więc dopóki okno nie potrafi wyliczyć X, wyłączenie zostaje — ale jako
 świadomy wpis w backlogu, nie jako milczenie predykatu.
 
+Skan katalogu zamiast czekania na zgłoszenie: dla każdej karty otwórz badaną
+ścieżkę i wypisz te bez ŻADNEJ oferty — to znalazło znalezisko E (aury), którego
+nie doszedł Żywy Tester w 6 partiach. Strażnik klasy w teście utrwala wynik.
+
 Dopisek z tej samej tury (koszt X): **wariant legalny, ale nic nie robiący, nie
 jest ofertą.** Rzut bez kosztu many zmusza X = 0 (CR 107.3b), więc ten sam czar
 bywa pełnoprawnym ruchem w oknie, które płaci manę (X wybiera gracz, CR 107.3a),
