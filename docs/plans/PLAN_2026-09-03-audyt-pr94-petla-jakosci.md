@@ -93,3 +93,27 @@ Kandydaci (wybór wg znalezisk audytu, kolejność wstępna):
   zielonym kroku; przed `reset --hard` backup `git diff > ~/backup.patch`;
 - **ENVIRONMENT §4:** Żywy Tester mierzy `dist/mtg-table.html` — rebuild po
   każdej zmianie `src/`.
+
+---
+
+## Etap dodany 2026-09-03 (po uwagach A–D): audyt modali wyboru (M299)
+
+Zlecenie właściciela: „przejrzeć silnik i wszystkie tory czarów i zdolności
+z modalami wyboru czy nie mają jakichś customowych modali, które należałoby
+przerobić na uniwersalny helper”.
+
+1. Audyt: 66 typów `resolve_*`, inwentarz modali, mapa routingu
+   `openChoiceRequest` → raport `docs/audits/AUDYT_MODALE_WYBORU_2026-09-03.md`.
+   Wynik: customowych modali POZA torem choice-request NIE MA; luka = ~24 typy
+   jednowyborowych `{targetId}`/`{cardId}`/... spadających do ściany przycisków.
+2. Naprawa: generalizacja `singleTargetPlanOf` (M298) na całą rodzinę —
+   plan czyta POLE wyboru z komend + wariant odmowy (`done`/`skip`/null);
+   routing i kreator bez zmian (radio + Zatwierdź, L48). Wykluczenia: okna
+   rzutu (exile/grave-free/madness/rebound/suspend cast), search (2 wymiary),
+   małe enumeracje (2–5 przycisków = poprawne), kolejności (index/reveal).
+3. Weryfikacja: testy RED na kształtach komend z silnika, mutacje, bramki,
+   Żywy Tester (Forever Young [worek-basni], Springbloom [wiedzmin], discard).
+4. Dokumentacja: M299, PROJECT_HISTORY, PR #95.
+
+Poza zakresem (decyzja w raporcie §3b/§3c): przyciski dla 2–5 opcji, okna
+rzutu jako przyszły osobny wizard, search_choice, undercity.
