@@ -1,6 +1,4 @@
 export const MANA_COSTS = {
-  "dual-shot": "{R}",          // M291: SOI 153 — docs/cards/scryfall-dual-shot.json
-  "coordinated-assault": "{R}",   // M291: CLU 128 — docs/cards/scryfall-coordinated-assault.json
   "dream-twist": "{U}",
   "voice-of-the-vermin": "{3}{G}",
   "setessan-skirmisher": "{1}{G}",

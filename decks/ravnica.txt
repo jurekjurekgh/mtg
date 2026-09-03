@@ -1,7 +1,6 @@
 # Ravnica
 
 1x Dimir Guildgate
-1x Coordinated Assault
 1x Guildscorn Ward
 1x Boros Challenger
 1x Chronic Flooding
@@ -28,5 +27,5 @@
 5x Plains
 2x Island
 1x Swamp
-2x Mountain
+1x Mountain
 3x Forest

@@ -169,17 +169,10 @@ test('M101/D: trigger jako JEDYNY obiekt na stosie też raportuje swój skutek',
   // Seed 2 po Batchu 52 (alara +Leonin Surveyor, innistrad +Cemetery
   // Recruitment, landy przeliczone) — hunter 1..60 (3 opóźnione; kolejne
   // trafienia: 4, 7, 11, 14, 16, 17). Konwencja L25.
-  // M291 (tura 11): talia człowieka w makeSession to innistrad-brg, a generator
-  // przeniósł do niej Dual Shot i wyrzucił z niej Blazing Torch — przebieg partii
-  // się przelosował i seed 2 przestał w ogóle rzucać opóźnionych triggerów (test
-  // słusznie krzyczy „zmienił się przebieg partii”, zamiast milczeć). Hunter
-  // 1..40 na alara.txt: pierwsze trafienie seed 18 (2 opóźnione), dalej
-  // 19/20/21 (4), 24 (5), 26 (7). Bierziemy 18 — najniższe powtarzalne.
-  // Konwencja L25.
-  const { shown, log } = playCollectingPanel(makeSession(18, 'alara.txt'));
+  const { shown, log } = playCollectingPanel(makeSession(2, 'alara.txt'));
   const panel = shown.join('\n');
   const opoznione = log.filter((l) => /trigger się rozstrzyga \(opóźniony\)/.test(l));
-  assert.ok(opoznione.length > 0, 'seed 18 miał zawierać opóźnione triggery — zmienił się przebieg partii');
+  assert.ok(opoznione.length > 0, 'seed 1 miał zawierać opóźnione triggery — zmienił się przebieg partii');
   for (const line of opoznione) {
     assert.ok(panel.includes(line), `opóźniony trigger poza panelem: „${line}"`);
   }

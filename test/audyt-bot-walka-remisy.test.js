@@ -132,17 +132,7 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
   // PRZEJRZEĆ i podnieść próg ręcznie — nie automatycznie.
   const opis = [atak, blok, lad].flatMap((r) => r.przyklady.filter((x) => typeof x === 'string'));
   assert.ok(atak.rozroznialne <= 4, `attack groźb: ${atak.rozroznialne}\n${opis.join('\n')}`);
-  // M291 (tura 11): sufit 4 → 5. Atrybucja ZMIERZONA, nie zgadywana: ten sam
-  // audyt na `f6a5459` (sprzed tury 11) daje block 4 / attack 4 / tieNoOp 130, na
-  // `358ee35` (tylko M290, talie bez zmian) daje IDENTYCZNE 4/4/130, a w drzewie z
-  // nową kartą (M291, `decks/ravnica.txt` +1 kopia) wypada block 5 / tieNoOp 133.
-  // Czyli dokładka NIE pochodzi z nowej wagi equipu, tylko z innego rozdania
-  // Ravnicy. Przejrzany przykład: `ravnica|innistrad-wu seed 4007 p1 tura 27` —
-  // pozycje różnią się liczbą blokujących (1 vs 2) przy `ofiary: 0`, czyli ten sam
-  // polityczny klasyk z nagłówka pliku: nieśmiertelna wymiana, za którą bot SLUSZNIE
-  // nie płaci. Dlatego podnosimy sufit o 1 i zapisujemy przyczynę, a nie „bo test
-  // czerwony”.
-  assert.ok(blok.rozroznialne <= 5, `block groźb: ${blok.rozroznialne}\n${opis.join('\n')}`);
+  assert.ok(blok.rozroznialne <= 4, `block groźb: ${blok.rozroznialne}\n${opis.join('\n')}`);
   // Klasy z projekcją wartości (tura 6): tu zero jest osiągalne i wymagane —
   // różnica kosztu many albo korpusu MUSI przechodzić na wynik.
   for (const nazwa of ['cast_permanent', 'cast_spell', 'activate_ability']) {

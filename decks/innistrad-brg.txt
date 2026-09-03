@@ -1,7 +1,7 @@
 # Innistrad (BRG)
 
+1x Blazing Torch
 1x Caravan Vigil
-1x Dual Shot
 1x Forge Devil
 1x Ghoulcaller's Bell
 1x Predator's Gambit
@@ -19,5 +19,5 @@
 1x Wolfkin Bond
 1x Grave Exchange
 3x Swamp
-2x Mountain
-4x Forest
+1x Mountain
+5x Forest

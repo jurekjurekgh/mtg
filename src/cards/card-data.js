@@ -10373,67 +10373,6 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['draw po powrocie wyłącznie, gdy odzyskana karta ma podtyp Zombie (CR 608.2g — podtyp sprawdzany z karty w ręce, bez zmiany strefy)'],
   }),
 
-  // ===========================================================================
-  // M291 (tura 11, decyzja (b) właściciela: pokrycie kreatora celu).
-  // Surowiec na otwarcie pickera wielocelowego w REALNEJ partii to karty z >1
-  // celem — było ich 7 na 443 wspierane (raport §13.8), więc talie nigdy nie
-  // dochodziły do tej decyzji. Jedyna uczciwa dźwignia to NOWE karty, bo ADR
-  // 0023 trzyma każdą wspieraną kartę w dokładnie jednej talii (kart wolnych: 0).
-  // Coordinated Assault (CLU 128) {R}: „Up to two target creatures each get
-  // +1/+0 and gain first strike until end of turn." — dwa cele OPCJONALNE plus
-  // ten sam efekt na każdym z nich (wzorzec `allTargets`, M291).
-  defineCard({
-    id: 'coordinated-assault', name: 'Coordinated Assault', set: 'CLU',
-    types: ['Instant'], colors: ['R'], manaCost: 1,
-    oracleText: 'Up to two target creatures each get +1/+0 and gain first strike until end of turn. (They deal combat damage before creatures without first strike.)',
-    imageUri: 'https://cards.scryfall.io/large/front/e/1/e1741b97-b75f-49a3-a930-e0eefda9d5be.jpg?1783912542',
-    spell: {
-      timing: 'instant',
-      // „up to two" = DWA cele opcjonalne (slot 0 i slot 1 mogą zostać puste) —
-      // zapis jak Assert Perfection (Batch 45), tylko tu oba pola są luźne, bo
-      // Oracle pozwala wskazać zero, jeden albo dwa dowolne stwory.
-      targets: [{ type: 'creature', optional: true }, { type: 'creature', optional: true }],
-      effects: [
-        { type: 'pump', power: 1, toughness: 0, allTargets: true },
-        { type: 'grant_keywords_until_end_of_turn', keywords: ['first_strike'], allTargets: true },
-      ],
-    },
-    plan: 'Ravnica',
-    support: { status: 'supported', limitations: [] },
-    notes: [
-      'Druk: CLU 128 (Ravnica: Clue Edition), Modern legalny — dane 1:1 w docs/cards/scryfall-coordinated-assault.json',
-      'Rulingów WotC dla tej karty nie ma (rulings: []) — jedyne rozstrzygnięcie w tekście to remindery first strike',
-      'artId świadomie brak: karta jest poza arkuszem kolekcji, stół spada na druk ze Scryfalla (src/table/card-images.js)',
-    ],
-  }),
-
-  // Dual Shot (SOI 153) {R} — DRUGI kształt wielocelowości na tym samym
-  // deskryptorze `allTargets`: „deals 1 damage to each of up to two target
-  // creatures". Wzięliśmy druk ze Shadows over Innistrad (plan 'Innistrad' =
-  // talia innistradowa przez generator, M178/ADR 0023); XLN 141 ma identyczny
-  // tekst reguł. Ruling WotC (2017-09-29): nie można wskazać tego samego
-  // stworzenia dwa razy, żeby zgarnęło 2 obrażenia — pilnuje tego ogólna
-  // zasada różnych celów (CR 114.5), nie osobna gałąź w karcie.
-  defineCard({
-    id: 'dual-shot', name: 'Dual Shot', set: 'SOI',
-    types: ['Instant'], colors: ['R'], manaCost: 1,
-    oracleText: 'Dual Shot deals 1 damage to each of up to two target creatures.',
-    imageUri: 'https://cards.scryfall.io/large/front/b/7/b7ac4fa4-4a03-41a9-b7e4-c3a6da89472f.jpg?1783937755',
-    spell: {
-      timing: 'instant',
-      // Oba sloty opcjonalne (0..2 cele) — tak jak w Coordinated Assault; różni
-      // je tylko efekt (obrażenia zamiast pompy z keywordem).
-      targets: [{ type: 'creature', optional: true }, { type: 'creature', optional: true }],
-      effects: [{ type: 'damage', amount: 1, allTargets: true }],
-    },
-    plan: 'Innistrad',
-    support: { status: 'supported', limitations: [] },
-    notes: [
-      'Dane i ruling: docs/cards/scryfall-dual-shot.json (SOI 153, common, pauper legalny)',
-      'artId świadomie brak — karta poza arkuszem kolekcji (src/table/card-images.js)',
-    ],
-  }),
-
 ]);
 
 /**
