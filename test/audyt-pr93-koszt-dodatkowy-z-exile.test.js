@@ -16,6 +16,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { commandLabel } from '../src/table/render.js';
 
 const REGISTRY = createCardRegistry();
 const SAC_SPELL = 'village-rites';                 // dodatkowy koszt: poświęć stwora
@@ -147,6 +148,31 @@ test('A93/C: Vaan — wariant „albo zapłać {4}” (Lash of the Balrog) zamia
   assert.ok(state.zones.battlefield.includes('mine'), 'bez poświęcenia — zapłacono maną');
   resolveStack(state);
   assert.ok(!state.zones.battlefield.includes('foe'), 'cel czaru zniszczony');
+});
+
+/** Etykieta bez znaczników HTML + fałszywa sesja stołu. */
+const plain = (html) => String(html).replace(/<[^>]*>/g, '');
+function tableSession(state) {
+  const view = playerView(state, 'p1');
+  return {
+    view: () => view,
+    nameOf: (id) => REGISTRY.get(id)?.name ?? id,
+    nameOfObject: (id) => id,
+    cardDetails: (id) => REGISTRY.get(id) ?? null,
+    colorsOf: (id) => REGISTRY.get(id)?.colors ?? [],
+    abilitiesOf: (id) => REGISTRY.get(id)?.abilities ?? [],
+    log: [], reasoning: [], state: { seed: 1 },
+  };
+}
+
+test('A93/C: etykieta okna Vaana mówi, CZYM płacisz (ofiara albo dopłata)', () => {
+  const state = exileState(OR_PAY_SPELL);
+  const offers = exileCasts(state).filter((c) => (c.targets ?? []).includes('foe'));
+  const session = tableSession(state);
+  const labels = offers.map((cmd) => plain(commandLabel(cmd, session, session.view())));
+  assert.equal(new Set(labels).size, offers.length, `etykiety muszą się różnić: ${labels.join(' | ')}`);
+  assert.ok(labels.some((l) => l.includes('poświęć')), 'wariant z ofiarą nazywa ofiarę');
+  assert.ok(labels.some((l) => /dopłać \{4\}/.test(l)), 'wariant z dopłatą mówi, ile many');
 });
 
 test('A93/C: Vaan — koszt nieobsługiwany (odrzuć karty) nadal bez oferty, bez łamania reguł', () => {

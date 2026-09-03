@@ -19,6 +19,7 @@ import { createGameState, addObject, execute, playerView } from '../src/engine/g
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
+import { commandLabel } from '../src/table/render.js';
 import { addMana } from '../src/engine/resources.js';
 
 const REGISTRY = createCardRegistry();
@@ -156,6 +157,37 @@ test('A93/A: anty-over-fix — po rezygnacji karta NIE jest rzucalna później w
     'po rezygnacji nie pojawia się oferta rzutu „później w turze”');
   const late = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: exileId, targets: [], modeIndex: 0 });
   assert.equal(late.ok, false, 'próba rzutu poza oknem decyzji jest odrzucona');
+});
+
+/** Etykieta bez znaczników HTML (jak w testach diamentowej odznaki). */
+const plain = (html) => String(html).replace(/<[^>]*>/g, '');
+
+/** Fałszywa sesja stołu: etykieta bierze obiekt z wygnania w widoku. */
+function tableSession(state) {
+  const view = playerView(state, 'p1');
+  return {
+    view: () => view,
+    nameOf: (id) => REGISTRY.get(id)?.name ?? id,
+    nameOfObject: (id) => id,
+    cardDetails: (id) => REGISTRY.get(id) ?? null,
+    colorsOf: (id) => REGISTRY.get(id)?.colors ?? [],
+    abilitiesOf: (id) => REGISTRY.get(id)?.abilities ?? [],
+    log: [], reasoning: [], state: { seed: 1 },
+  };
+}
+
+test('A93/A: etykieta okna Vaana nazywa TRYB — dwa warianty nie wyglądają identycznie', () => {
+  // Ruinous Rampage: oba tryby bezcelowe → oferta ma dwa warianty rzutu.
+  const state = vaanExileState('ruinous-rampage');
+  const offers = castOffers(state);
+  assert.equal(new Set(offers.map((c) => c.modeIndex)).size, 2, 'dwa warianty (po jednym na tryb)');
+  const session = tableSession(state);
+  const labels = offers.map((cmd) => plain(commandLabel(cmd, session, session.view())));
+  assert.equal(new Set(labels).size, 2, `etykiety muszą się różnić: ${labels.join(' | ')}`);
+  for (const mode of REGISTRY.get('ruinous-rampage').spell.modes) {
+    assert.ok(labels.some((l) => l.includes(mode.name)),
+      `etykieta nazywa tryb „${mode.name}” (M91/uwaga D)`);
+  }
 });
 
 test('A93/A: tryb z celami ZMIENNYMI („up to N target …") też wchodzi do oferty okna', () => {

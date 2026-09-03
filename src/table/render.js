@@ -2859,8 +2859,19 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_exile_cast': {
       // Vaan, Street Thief: rzut TERAZ (za normalny koszt) albo Treasure.
       const vaanTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      // Audyt PR #93: okno Vaana wystawia dziś WARIANTY — per tryb (czar
+      // modalny), per ofiara i „albo zapłać {N}” (koszt dodatkowy). Bez
+      // dopisku wszystkie przyciski nazywają się tak samo i gracz wybiera
+      // na ślepo (M91/uwaga D — to samo co przy `resolve_discover_choice`).
+      const exiled = obj(cmd.objectId);
+      const mode = (cmd.modeIndex != null && exiled?.spell?.modes) ? exiled.spell.modes[cmd.modeIndex] : null;
+      const modeName = mode?.name ? ` — ${mode.name}` : '';
+      const orPay = exiled?.spell?.additionalCost?.orPayMana;
+      const costName = cmd.sacrificeTargetId
+        ? ` — poświęć ${nameOfObjectId(cmd.sacrificeTargetId)}`
+        : (cmd.payAltCost ? ` — dopłać {${orPay ?? '?'}}` : '');
       return cmd.cast
-        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}`
+        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${modeName}${costName}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}`
         : 'Zrezygnuj — stwórz token Skarb (Treasure)';
     }
     case 'resolve_reveal_choice': {
