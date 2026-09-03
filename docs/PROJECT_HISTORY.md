@@ -7944,6 +7944,17 @@ migracji autosave/replay i jest decyzją właściciela. Liczba jest equality-pin
 `M293/11`, więc jej spadek zamelduje RED-em i wymusi aktualizację doków. Ten sam zapach ma
 `resolve_springbloom` (86 w 10 plikach).
 
+Środowiskowy haczyk tej tury, bo powtarzalny: przebudowa piaskownicy przywróciła pliki,
+ale cofnęła wskaźnik gałęzi do bazy PR, więc cała tura leżała niecommitowana w drzewie —
+ratunek to `git fetch --depth=200 origin <gałąź>` i `git reset --mixed FETCH_HEAD`;
+`--hard`, który zalecał stary wpis w `docs/setup/ENVIRONMENT.md`, zjadłby pracę, i wpis
+dostał poprawkę razem z tym doświadczeniem. Zostawiłem po sobie jedną drobną plamę, której
+nie da się cofnąć bez force pushu (zabroniony w tej sesji): w message `a7aba06` przy
+pisaniu po polsku został mi znak `本地`. Skan wszystkich trackowanych plików `src/`, `docs/`,
+`test/` i `tools/` dał zero znaków CJK/fullwidth, więc plama nie weszła do repo — weszła do
+historii commitów i tak ją zostawiam, żeby następna sesja nie zgadywała, czy coś jej nie
+ukryłem.
+
 Bramy: przed startem `npm test` 4262/4262 i `test:all` 4272/4272 (baza tury 13); po
 zmianach **4276/4276** i **4286/4286** (+12 testów `m293`), trzynaście plików stołu w jednym
 biegu 208/208, `npm run build` 3162,5 kB / 59 modułów. Żywy Tester: trzy partie `zendikar`
