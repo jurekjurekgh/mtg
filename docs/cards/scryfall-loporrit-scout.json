@@ -19,5 +19,8 @@
     "large": "https://cards.scryfall.io/large/front/a/1/a182bc66-bfda-4bf5-bd12-3de5dba60945.jpg?1783906585",
     "normal": "https://cards.scryfall.io/normal/front/a/1/a182bc66-bfda-4bf5-bd12-3de5dba60945.jpg?1783906585"
   },
-  "pobrano": "2026-09-01"
+  "pobrano": "2026-09-01",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/fin/192/rulings",
+  "rulingsPobrano": "2026-09-02"
 }

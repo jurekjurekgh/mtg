@@ -489,7 +489,7 @@ export const REAL_CARDS = Object.freeze([
                       type: ABILITY_TYPE.activated,
                       cost: { tap: true, sacrificeSelf: true },
                       // Mana ze Skarba jest identyfikowalna (Marut, Batch 16).
-                      effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+                      effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'], fromTreasure: true },
                     }),
                   ],
                 },
@@ -839,6 +839,22 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_treasure', name: 'Treasure', set: null,
     types: ['Artifact', 'Token'], subtypes: ['Treasure'], colors: [],
     manaCost: 0,
+    // Zdolność Skarbu należy do DEFINICJI tokena (jak `token_food`), a nie do
+    // efektu, który go tworzy — audyt PR #93 (decyzja właściciela: „Skarby
+    // składamy z katalogu tokenów"). Silnik nie importuje katalogu (ADR 0002),
+    // więc drugie odbicie tej samej zasady trzyma `TREASURE_TOKEN_EFFECT`
+    // w tokens.js; ich równość pilnuje test/audyt-treasure-katalog.test.js.
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, sacrificeSelf: true },
+        // Kolory jednostki są DANYMI tokena (audyt PR #93): dawniej „Add one
+        // mana of any color" tłumaczył silnik na literalną listę pięciu kolorów
+        // w resources.js i na wpis w MANA_SOURCE_MAP — trzy kopie tej samej
+        // reguły, które mogły się rozjechać w ciszy (klasa L21).
+        effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'], fromTreasure: true },
+      }),
+    ],
     imageUri: 'https://cards.scryfall.io/large/front/7/e/7ec6f053-96f7-4e57-b2eb-4e7699a40a4f.jpg?1783911520',  // totj
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
@@ -874,7 +890,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'permanents_you_control_leave_battlefield' },
+        trigger: { event: 'permanents_you_control_leave_battlefield', groupPer: 'controller' },
         effect: { type: 'scry', amount: 1 },
       }),
     ],
@@ -1565,6 +1581,26 @@ export const REAL_CARDS = Object.freeze([
     plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
     notes: ['„noncreature spell" = czar na stosie niebędący stworem (instants/sorceries i czyste aury); cast bestow (stwór) nie jest celem Negate'],
+  }),
+
+  // Audyt PR #93 (tura 3), wątek 3 z HANDOFF: pierwsza karta w katalogu, która
+  // CELEJE ZDOLNOŚĆ na stosie, a nie czar — kontrzenie wyzwalanych zdolności
+  // nie miało dotąd żadnej drogi, więc i semantyka „cały trigger skontrowany"
+  // (ani wygnania, ani Skarbu przy Vaanie) była nie-do-przetestowania.
+  defineCard({
+    id: 'stifle', name: 'Stifle', set: 'CNS',
+    types: ['Instant'], colors: ['U'], manaCost: 1,
+    oracleText: "Counter target activated or triggered ability. (Mana abilities can\'t be targeted.)",
+    imageUri: 'https://cards.scryfall.io/large/front/6/1/616d1b20-61c1-4d39-a9b5-ad9fd61699e4.jpg?1783939358',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'ability_on_stack' }],
+      effects: [{ type: 'counter_ability' }],
+    },
+    plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„Mana abilities can\'t be targeted" bierze się z konstrukcji silnika: zdolność many '
+      + 'rozstrzyga się bez stosu (CR 605.1a), więc nie ma wpisu, który można by skontrować'],
   }),
 
   // =========================================================================
@@ -2348,7 +2384,7 @@ export const REAL_CARDS = Object.freeze([
             createAbility({
               type: ABILITY_TYPE.activated,
               cost: { tap: true, sacrificeSelf: true },
-              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+              effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'], fromTreasure: true },
             }),
           ],
         }],
@@ -3558,7 +3594,7 @@ export const REAL_CARDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'any_combat_damage_to_player' },
+        trigger: { event: 'any_combat_damage_to_player', groupPer: 'affected_player' },
         effect: [{
           type: 'create_token', cardId: 'token_tarmogoyf', name: 'Tarmogoyf',
           kind: 'creature', power: 0, toughness: 0, colors: ['G'],
@@ -4070,8 +4106,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       // cecha GRACZA — trwa po odejściu źródła, wzrost przy obrażeniach
       // przeciwnika w triggers.js, max 4).
       createAbility({
-        type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield' },
+        // “Start your engines!” — zdolność STATYCZNA, nie trigger: prędkość
+        // startuje jako akcja stanowa, gdy tylko kontrolujesz permanent z tą
+        // zdolnością (ruling WotC 2025-02-07, zapisany w snapshotach
+        // docs/cards/scryfall-*.json w polu `rulings`; obsługa:
+        // `runStateBasedActions`). Dzięki temu działa też przejęcie cudzego
+        // permanentu oraz zdolność nadana — a utrata źródła nie cofa prędkości.
+        type: ABILITY_TYPE.static,
         effect: [{ type: 'start_engines' }],
       }),
       // „Max speed — {3}, Exile this card from your graveyard: Draw a card."
@@ -8496,7 +8537,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
             createAbility({
               type: ABILITY_TYPE.activated,
               cost: { tap: true, sacrificeSelf: true },
-              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+              effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'], fromTreasure: true },
             }),
           ],
         }],
@@ -8535,7 +8576,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
             createAbility({
               type: ABILITY_TYPE.activated,
               cost: { tap: true, sacrificeSelf: true },
-              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+              effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'], fromTreasure: true },
             }),
           ],
         }],
@@ -8654,7 +8695,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
             createAbility({
               type: ABILITY_TYPE.activated,
               cost: { tap: true, sacrificeSelf: true },
-              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+              effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'], fromTreasure: true },
             }),
           ],
         }],
@@ -8669,7 +8710,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
             createAbility({
               type: ABILITY_TYPE.activated,
               cost: { tap: true, sacrificeSelf: true },
-              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+              effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'], fromTreasure: true },
             }),
           ],
         }],
@@ -9595,7 +9636,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'combat_damage_to_you' },
+        trigger: { event: 'combat_damage_to_you', groupPer: 'affected_player' },
         effect: [{ type: 'attacker_gains_control_and_untaps' }],
       }),
       createAbility({
@@ -10167,7 +10208,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'any_combat_damage_to_player', subtypes: ['Scout', 'Pirate', 'Rogue'] },
+        trigger: { event: 'any_combat_damage_to_player', subtypes: ['Scout', 'Pirate', 'Rogue'], groupPer: 'affected_player' },
         effect: [{ type: 'exile_top_of_player_library_and_may_cast' }],
       }),
       createAbility({
@@ -10284,8 +10325,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/e/0/e08e4107-213f-491b-a032-8e3367009ba8.jpg?1783907918',
     abilities: [
       createAbility({
-        type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield' },
+        // “Start your engines!” — zdolność STATYCZNA, nie trigger: prędkość
+        // startuje jako akcja stanowa, gdy tylko kontrolujesz permanent z tą
+        // zdolnością (ruling WotC 2025-02-07, zapisany w snapshotach
+        // docs/cards/scryfall-*.json w polu `rulings`; obsługa:
+        // `runStateBasedActions`). Dzięki temu działa też przejęcie cudzego
+        // permanentu oraz zdolność nadana — a utrata źródła nie cofa prędkości.
+        type: ABILITY_TYPE.static,
         effect: [{ type: 'start_engines' }],
       }),
       createAbility({

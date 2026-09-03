@@ -24,6 +24,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'creatureBase',            // baza za rzucenie stwora (dawniej 70)
   'creaturePowerWeight',     // mnożnik mocy w wycenie stwora (dawniej *2)
   'creatureToughnessWeight', // mnożnik wytrzymałości w wycenie stwora (dawniej *1)
+  'creatureManaCostWeight',  // kara za punkt many przy rzucaniu stwora (audyt remisów, tura 6)
   'spellBase',               // baza za rzucenie czaru niebędącego permanentem (dawniej 50)
   // Rodzina „premie agresji w ataku" (B6 T1) — jak chętnie bot przepycha
   // obrażenia. Same PREMIE (dodatnie) — progi/kary za złe ataki zostają
@@ -97,6 +98,10 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   creatureBase: 70,
   creaturePowerWeight: 2,
   creatureToughnessWeight: 1,
+  // 1 punkt za każdy punkt many: wystarcza, by rozstrzygnąć „to samo ciało za
+  // mniejszą manę" (remis w audycie: 4 na 12 partii), ale nie waży tyle co
+  // sama siła (2/pt), więc większy stwór za większą manę nadal wygrywa.
+  creatureManaCostWeight: 1,
   spellBase: 50,
   attackThroughBonus: 3,
   attackOpenBoardBonus: 8,

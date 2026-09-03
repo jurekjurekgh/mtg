@@ -1,5 +1,7 @@
 import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
+import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
+import { coloredPipsOf } from '../engine/mana-cost.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { probAtLeastOne } from '../engine/hypergeom.js';
 import { normalizeHeuristicWeights } from './heuristic-weights.js';
@@ -1139,6 +1141,99 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
 
+  /**
+   * Który ląd z ręki zagrać, gdy jest ich więcej niż jeden (audyt bota, PR #93 t. 5).
+   *
+   * Przed tą zmianą `play_land` miał wycenę PŁASKĄ 90, więc przy dwóch ziemiach
+   * w ręce bot brał pierwszą z listy `legalCommands`. Wybór manabazy to jedna z
+   * ważniejszych decyzji w Magic, a tu była arbitralna. Skala zmierzona przez
+   * `tools/bot-tie-audit.mjs` (12 partii, 1025 decyzji z alternatywami): 34,1%
+   * to remis na maksimum punktów, a `play_land` był drugi co wielkość (75
+   * remisów). Po naprawie: 30,4% ogólem i 39 dla lądu — wszystkie 39 to pary
+   * lądów o IDENTYCZNEJ projekcji danych (dwa lasy), czyli remis uczciwy.
+   *
+   * Delta NIE rusza bazowej wartości grania lądu (90 — ląd nadal bije większość
+   * innych akcji), tylko porusza wybór miedzy lądami. Zamienne lądy pozostaja w
+   * remisie: sztuczne rozsanianie identycznych wariantów byłoby kłamstwem wyceny,
+   * a strażnik ma mierzyć regułe, nie szum (L5).
+   *
+   * Dane wyłączenie deklaratywne (ADR 0002 — zero nazw kart w bocie): kolory
+   * kandydata z DEFINICJI karty przez `manaSourceOfCardDefinition` (CR 305.6 +
+   * deskryptor zdolności), kolory lądów na polu bitwy przez TE SAME rozwiazanie
+   * co silnik (`getSourceForObject`), zapotrzebowanie reki przez `coloredPipsOf`
+   * (tabela kosztów). `landAnaliza` liczy dane, `landPlayDelta` przekłada je na
+   * punkty, `tieProjection` wystawia je do śladu — jeden źródło prawdy, inaczej
+   * bramka remisów stalaby na innej arytmetyce niz wycena i milczała przy błedzie.
+   */
+  const manaOnlyAbility = (ability) => {
+    // Zdolność, której jedyne efekty to „Add …" — czysto manowa (CR 605.1b).
+    const efekty = Array.isArray(ability?.effect) ? ability.effect
+      : (ability?.effect ? [ability.effect] : []);
+    return efekty.length > 0 && efekty.every((e) => e?.type === 'add_mana');
+  };
+
+  /** Stan faktów o lądzie i rekem, potrzebny do wyboru (bez punktów). */
+  function landAnaliza(view, objectId) {
+    const ja = view.playerId;
+    const karta = (view.zones.hand ?? []).find((o) => o?.id === objectId);
+    const def = cardDef(karta?.cardId);
+    const pola = (view.zones.battlefield ?? [])
+      .filter((o) => o?.controllerId === ja && o.kind === 'land');
+    const dostepne = new Map();
+    for (const o of pola) {
+      for (const kolor of getSourceForObject(o, null)?.colors ?? []) {
+        dostepne.set(kolor, (dostepne.get(kolor) ?? 0) + 1);
+      }
+    }
+    // Czego brakuje do zagrania kart z ręki: pip nieopłacony żadnym kolorem
+    // dostepnym stale. Liczymy zapotrzebowanie (ile pipów koloru), nie liste
+    // zyczen — ląd placący DWA takie pipy jest wart dwa razy wiecej.
+    const potrzeby = new Map();
+    for (const o of view.zones.hand ?? []) {
+      if (!o || o.kind === 'land' || o.id === objectId) continue;
+      for (const jednostka of coloredPipsOf(o.cardId)) {
+        if (jednostka.some((k) => (dostepne.get(k) ?? 0) > 0)) continue;
+        for (const k of jednostka) potrzeby.set(k, (potrzeby.get(k) ?? 0) + 1);
+      }
+    }
+    const zrodlo = manaSourceOfCardDefinition(karta?.cardId, def, null);
+    const kolory = zrodlo?.colors ?? [];
+    let pokrywa = 0;
+    for (const k of kolory) pokrywa += potrzeby.get(k) ?? 0;
+    return {
+      def, pola, potrzeby, kolory, pokrywa,
+      ilosc: zrodlo?.amount ?? 1,
+      nowyKolor: kolory.length > 0 && !kolory.some((k) => dostepne.get(k)),
+      dodatkowaZdolnosc: (def?.abilities ?? []).some((a) => a?.type === 'activated'
+        && !manaOnlyAbility(a)),
+      entersTapped: Boolean(def?.entersTapped),
+    };
+  }
+
+  function landPlayDelta(view, objectId) {
+    const a = landAnaliza(view, objectId);
+    let delta = 0;
+    // Pokrycie zapotrzebowania: satysfakcja ROSNĄCA, ale nasycana poniżej sufitu
+    // delty. Wcześniejsza postać (10 + min(6, n−1) DLA KAŻDEGO koloru, potem
+    // wspólna klampa) zgrywała do jednego wyniku ląd pokrywający 2 i 3 kolory —
+    // audyt remisorów złapał to jako remis przy różnych danych (16 takich
+    // decyzji na 12 partiach). Sumaryczne pokrycie mapowane monotonicznie: 1→10, 2→12,
+    // 3→14, 4→15, ≥5→16. Od 5 pipów różnica przestaje być widoczna — świadomie,
+    // bo ląd nie ma prawa przeskoczyć przez to np. śmiertelnego ataku ( baza 90).
+    const sygnaly = [];
+    for (const k of a.kolory) if (a.potrzeby.get(k)) sygnaly.push(a.potrzeby.get(k));
+    const lacznePokrycie = sygnaly.reduce((x, y) => x + y, 0);
+    if (lacznePokrycie > 0) delta += [10, 12, 14, 15, 16][Math.min(4, lacznePokrycie - 1)];
+    if (a.potrzeby.size > 0 && a.kolory.length === 0) delta -= 3;  // bezbarwny przy brakach koloru
+    if (a.nowyKolor) delta += 3;                                    // pierwszy takiego koloru
+    if (a.ilosc >= 2) delta += 4;                                   // {T}: Add {C}{C} i podobne
+    if (a.entersTapped) delta -= 8;                                 // mana dopiero w nastepnej turze
+    // Ląd z zdolnościa poza manową (cykl, token, tarcza) zyskuje, gdy manabaza
+    // jest juz wystarczajaca — wtedy liczy sie uzytecznosc, nie kolor.
+    if (a.pola.length >= 2 && a.dodatkowaZdolnosc) delta += 2;
+    return Math.max(-14, Math.min(16, delta));
+  }
+
   // ===========================================================================
   // M121 — EFEKTY OFENSYWNE WYMIERZONE WE WŁASNE PERMANENTY / W SIEBIE.
   //
@@ -1381,6 +1476,74 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const canAttackNow = (object) => Boolean(object) && !object.tapped && !object.summoningSickness;
 
   /**
+   * M288/C (uwaga właściciela z żywej gry, 2026-09-02): JEDNA definicja tego,
+   * co equipment REALNIE daje danemu nosicielowi.
+   *
+   * Zgłoszenie: „Bot w jednej turze przełożył Thieves' Tools dwukrotnie — raz
+   * wyposażył jednego swojego stwora, a zaraz po chwili drugiego. To bez sensu:
+   * po co wydawał manę na wyposażenie pierwszego, skoro zaraz chciał go
+   * przełożyć na drugiego? To trzeba ukrócić."
+   *
+   * Zmierzone repro (ta para kart, `attachedTo` na własnym stworze):
+   * przeniesienie sprzętu na Maruta (7/7) wyceniało się na +11,00, bo gałąź
+   * przeniesienia liczyła WYŁĄCZNIE `delta = power(cel) − power(nosiciel)`.
+   * Thieves' Tools nie ma pompy, a jego warunkowa ewazja
+   * (`cantBeBlockedMaxPower: 3`) jest na 7/7 martwa — czyli zapłacone {2} za
+   * nic. Wycena M244 (D/G/F) już to umiała, ale była wgałęziona tylko przy
+   * PIERWSZYM założeniu sprzętu. Stąd wspólny predykat dla obu gałęzi (L28).
+   *
+   * `value` to tylko porządek wielkości (do porównania nosicieli); liczby,
+   * które trafiają do scoringu, są w wywołaniach — jedno źródło faktów, nie
+   * jedno źródło wagi (patrz L119 o metryce gorszej od modelu).
+   */
+  function equipValuation(view, source, creature) {
+    const def = source?.equipment;
+    if (!def || !creature) return { value: 0, nothingAdded: true };
+    const grants = def.keywords ?? [];
+    const keywords = new Set([...(creature.keywords ?? []), ...(creature.grantedKeywords ?? [])]);
+    const freshGrants = grants.filter((kw) => !keywords.has(kw));
+    const pumpPower = def.pump?.power ?? 0;
+    const pumpToughness = def.pump?.toughness ?? 0;
+    const hasteAdds = freshGrants.includes('haste') && creature.summoningSickness === true;
+    const blockers = untappedEnemyBlockers(view);
+    const effectivePower = (creature.power ?? 0) + (creature.grantedPower ?? 0);
+    const conditionalEvasion = def.cantBeBlockedMaxPower != null
+      && effectivePower <= def.cantBeBlockedMaxPower;
+    const grantsEvasion = (freshGrants.includes('flying')
+      && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')))
+      || conditionalEvasion;
+    // F (M244): nosiciel, który nie może atakować, nie wyciąga nic z grantu
+    // ofensywnego — zostaje mu tylko P/T do obrony.
+    const ofensywne = creature.cantAttackStatic === true ? 0 : ((grantsEvasion ? 8 : 0) + (hasteAdds ? 6 : 0));
+    // M289 (tura 10, dopowiedzenie do tej samej zasady): „ile warta jest pompa"
+    // zależy od tego, czy nosiciel umie ją spożytkować. Ciało, które legalnie NIE
+    // atakuje (defender/detain/aura), albo takie, którego obrażenia są zapobiegane
+    // przez ochronę blokerów (CR 702.16c — jałowy atak), liczy tylko część
+    // obronną siły: +1 siły wciąż zabija atakującego w bloku, ale nie robi
+    // krzywdy graczowi. Bez tego gałąź przeniesienia stała jak zaklęta: równy co
+    // do siły defender zatrzymywał sprzęt u siebie, choć przeniesienie za {1}
+    // było poprawką planszy (pytanie kontrolne właściciela, tura 10).
+    const atakJałowy = creature.cantAttackStatic === true
+      || (!grantsEvasion && attackerNeutralizedByProtection(creature, blockers));
+    // M290 (tura 11): ten sam haczyk, tylko o stopień wyżej — pompa na ciele,
+    // ktorego cios i tak dojdzie, jest warte wiecej niz pompa na ciele, ktorego
+    // cios trzeba najpierw przebic przez sciane. Nosiciel z lataniem (albo
+    // „nie do zablokowania") wbrew blokerom bez latania/reacha zbiera +1 do wagi
+    // kazdego punktu sily. To NIE jest nowe „premiowanie latania" — to ta sama
+    // zasada co ewazja GRANTOWANA przez sprzet (linia wyzej), tylko tym razem
+    // czytana ze stanu nosiciela. Antysymetria drabiny nietknieta: wartosc wciaz
+    // jest funkcja pary (sprzet, nosiciel, widok), a nie kierunku ruchu.
+    const bearingEvasion = creature.cantBeBlocked === true
+      || (hasKeyword(creature, 'flying')
+        && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')));
+    const wagaSily = atakJałowy ? 1 : (2 + (bearingEvasion ? 1 : 0));
+    const value = wagaSily * pumpPower + pumpToughness + ofensywne;
+    const nothingAdded = pumpPower === 0 && pumpToughness === 0 && !grantsEvasion && !hasteAdds
+      && freshGrants.every((kw) => kw === 'haste');
+    return { value, nothingAdded };
+  }
+
+  /**
    * Kara za rzucenie czaru/zagranie permanentu, gdy kontroler ma na polu bitwy
    * stwora z triggerem „when you cast a spell" (Illusory Demon — poświęcenie
    * źródła). Wartość stracimy przy każdym czarze — generyczny deskryptor.
@@ -1597,7 +1760,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     switch (cmd.type) {
       case 'concede': return finish(NEVER);
       case 'draw_card': return finish(100);
-      case 'play_land': return finish(90);
+      case 'play_land': return finish(90 + landPlayDelta(view, cmd.objectId));
       case 'tap_for_mana': {
         // Własne kroki początkowe/końcowe: mana wyparuje na końcu kroku,
         // a land zostaje zatapiany całą turę — gorzej niż pass.
@@ -1776,6 +1939,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const def = card ? cardDef(card.cardId) : undefined;
         let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
+        // AUDYT REMISÓW (tura 6, `tools/bot-tie-audit.mjs`): gałąź wyceniała
+        // CIAŁO, ale nie CENĘ — stwór 2/2 za {2} i ten sam 2/2 za {6} miały
+        // identyczny wynik, więc przy dwóch stworach w ręce wybór zapadał
+        // w kolejności `legalCommands`. To nie subtelność, tylko brak danych:
+        // mana wydana na ciało to mana, której nie wydasz na drugie ciało ani
+        // na kontrę, a „tempo" jest podstawową miarą wartości w Magic.
+        // Waga 1/pt many jest celowo mniejsza niż waga siły (2/pt): płacenie za
+        // większy korpus pozostaje opłacalne, dopóki korpus jest większy.
+        score -= P.creatureManaCostWeight
+          * ((card?.manaCost ?? 0) + coloredPipsOf(card?.cardId ?? '').length);
         // M258/A (uwaga właściciela, Squire's Lightblade): wartość equipmentu
         // żyje na NOSICIELU. Rzut przy braku własnych kreatur to marnowanie:
         // ETB „attach za darmo" fizzluje (CR 603.4b), a karta czeka na stole
@@ -1974,7 +2147,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Batch 44 (Frightful Delusion): „counter unless pays" to słabszy
         // kontrczar (przeciwnik może się wykupić za {1}), ale ta sama klasa
         // decyzji — nigdy we własny czar; premia jak counter_spell.
-        if (effects.some((effect) => effect?.type === 'counter_spell' || effect?.type === 'counter_spell_unless_pays')) {
+        // Audyt PR #93: `counter_ability` (Stifle) to ta sama klasa decyzji —
+        // nigdy we własną zdolność (koszt już zapłacony, CR 118.12 nie zwraca
+        // nic), a cel bez wpływu oznacza „trzymaj kontrę".
+        if (effects.some((effect) => effect?.type === 'counter_spell' || effect?.type === 'counter_spell_unless_pays'
+          || effect?.type === 'counter_ability')) {
           const stack = view.zones.stack ?? [];
           const targets = cmd.targets ?? [];
           const ownTarget = targets.some((id) => {
@@ -2011,6 +2188,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const effs = [
                 ...((entry.spell?.effects) ?? []),
                 ...((entry.spell?.modes ?? []).flatMap((m) => m.effects ?? [])),
+                // Zdolność na stosie nie ma `spell` — jej deskryptor mieszka w
+                // `abilityEffects` (playerView, audyt PR #93). [x].flat() bo
+                // efekt zdolności bywa pojedynczym obiektem, nie tablicą.
+                ...[entry.abilityEffects].flat().filter(Boolean),
               ];
               // Sam tap/untap/self-mill/scry jednego permanentu = niski wpływ.
               return effs.some((e) => HIGH_IMPACT.has(e?.type));
@@ -3668,7 +3849,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const wornByMine = Boolean(wearer) && wearer.controllerId === view.playerId;
             if (wornByMine) {
               const delta = (target.power ?? 0) - (wearer.power ?? 0);
-              if (delta >= 2) score += 4 + delta;
+              // M288/C (sedno zgłoszenia): PRZENIESIENIE sprzętu było wyceniane
+              // po samej sile nosiciela, więc bot płacił {2} za ruch, który nic
+              // nie zmieniał — a potem płacił {2} jeszcze raz, za ruch z powrotem.
+              // Dziś przeniesienie przechodzi TE SAME badania co pierwsze założenie:
+              //  - jeśli celowi sprzęt niczego nie dodaje (brak pompy, martwa
+              //    warunkowa ewazja, granty już obecne) — kara jak za rzut w próżnię;
+              //  - jeśli dodaje, ale MNIJEJ niż obecnemu nosicielowi, przeprowadzka
+              //    jest pogorszeniem planszy, nie poprawą.
+              const payload = equipValuation(view, source, target);
+              const wornPayload = equipValuation(view, source, wearer);
+              if (payload.nothingAdded) score -= 12;
+              else if (payload.value > wornPayload.value) {
+                // NAPRAWA, nie kaprys: na obecnym nosicielu efekt sprzętu jest
+                // martwy, a na celu żyje (np. warunkowa ewazja progu 3 na 3/2
+                // zamiast na 7/7). Taka przeprowadzka kupuje realną wartość i
+                // nie może być blokowana regułą „większy nosiciel" (M100/E13).
+                score += 4 + (payload.value - wornPayload.value);
+              }
+              else if (delta >= 2 && payload.value >= wornPayload.value) score += 4 + delta;
               else score -= 6;
             } else {
               // M221/E (zgłoszenie właściciela): equipment zwiększający siłę
@@ -3705,10 +3904,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const neutralized = attackerNeutralizedByProtection(target, blockersNow);
               // „Nic nie dodaje" (D/G): bez pompy, bez nowych użytecznych
               // keywordów (haste liczymy tylko przy chorobie), bez ewazji.
-              const nothingAdded = pumpPower === 0 && pumpToughness === 0
-                && !grantsEvasion
-                && !hasteAdds
-                && freshGrants.every((kw) => kw === 'haste');
+              // M288/C: definicja „nic nie dodaje" mieszka w `equipValuation`
+              // (ta sama, którą bada gałąź przeniesienia) — inaczej dwie gałęzie
+              // equipu miałyby dwa modele świata (L28).
+              const nothingAdded = equipValuation(view, source, target).nothingAdded;
               if (target.cantAttackStatic === true) {
                 // F: sprzęt na stworze, który NIE MOŻE atakować (obrońca bez
                 // latającego / defender / detain / aura Hobble) — premia
@@ -4645,7 +4844,123 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return scored;
   }
 
-  function summarize(cmd) {
+  /**
+   * Projekcja DANYCH, na których bot oparł decyzję — wyłącznie dla audytu
+   * (`tools/bot-tie-audit.mjs`). Same punkty nie odpowiadaja na pytanie, czy ex
+   * aequo bylo uczciwe: 93 = 93 moze znac „dwa lasy, nic do rozstrzygniecia"
+   * albo „ktoś przestał patrzec przed druga cecha". Projekcja zwraca to, co
+   * `landPlayDelta` realnie wzielo pod uwage (te same dane, ta sama funkcja),
+   * wiec bramka lapie regresje: usuniecie delty ⇒ roznica w projekcji przy
+   * rownych punktach ⇒ RED. Zwraca null dla komend bez zdefiniowanej projekcji —
+   * audyt liczy je jako „bez danych" i nie udaje, ze je ocenil.
+   */
+  function tieProjection(view, cmd) {
+    if (!view) return null;
+    if (cmd?.type === 'declare_attackers') {
+      const atak = cmd.attackerIds ?? [];
+      // Projekcja WYNIKU kroku bojowego (CR 509/510 na poziomie faktów, bez
+      // wag): ile obrażeń realnie dojdzie po absorpcji blockerów, ilu naszych
+      // ginie, ilu ich blokerów ginie. To są dane, które decyzja o ataku musi
+      // rozstrzygać; punkty dorzucają do tego presję, zegar i ryzyko removalu.
+      //
+      // Świadomie NIE ma tu „obrony zostawionej w domu". Pierwsza wersja
+      // projekcji pytała o sumę wytrzymałości stworów, które nie atakują, i
+      // findingi na tym polu okazały się artefaktem metryki, nie ślepotą bota:
+      // stwór tapnięty atakiem odświeża się w NASZYM kroku odświeżania, czyli
+      // zdąży zablokować w turze wroga (CR 502.3 + 702.21 dla vigilance —
+      // wyjątek „doesn't untap" obsługuje osobna gałąź wyceny). Pytanie
+      // „co zostaje w obronie" jest więc w Magic pytaniem o efekt, nie o
+      // tapnięcie; metryka, która o tym zapomina, produkuje szum (L118).
+      const blokerzy = untappedEnemyBlockers(view);
+      const absorpcja = blokerzy.reduce((a, o) => a + (o.toughness ?? 0), 0);
+      const najsilniejszy = blokerzy.reduce((a, o) => Math.max(a, o.power ?? 0), 0);
+      let sila = 0;
+      let ginie = 0;
+      for (const id of atak) {
+        const o = objectOnBoard(view, id);
+        sila += o?.power ?? 0;
+        if ((o?.toughness ?? 99) <= najsilniejszy) ginie += 1;
+      }
+      const zycieWroga = enemy(view)?.life ?? 999;
+      const zabici = blokerzy.filter((b) => atak.some((id) => (objectOnBoard(view, id)?.power ?? 0) >= (b.toughness ?? 99))).length;
+      return {
+        atakuje: atak.length,
+        trafienie: Math.min(Math.max(0, sila - absorpcja), zycieWroga),
+        ginie,
+        zabici,
+        smiertelny: sila > 0 && Math.max(0, sila - absorpcja) >= zycieWroga ? 1 : 0,
+      };
+    }
+    if (String(cmd?.type ?? '').startsWith('cast_')) {
+      // Rzucanie czaru: audyt pyta o dane, które różnią WARIANTY tego samego
+      // typu komendy (tę kartę czy tamtą, z kickerem czy bez, na ile celów).
+      // Bez projekcji 13 remisów `cast_*` było „bez danych" — pomiar o nich
+      // milczał, a milczenie łatwo pomylić z brakiem problemu.
+      //
+      // Sygnaturą jest WARTOŚĆ, nie surowe pola. Pierwsza wersja niosła osobno
+      // `koszt` i `materialna = power + toughness`; to drugie okazało się
+      // modelem gorszym niż sama wycena (Magic waży siłę inaczej niż
+      // wytrzymałość — patżej `creaturePowerWeight` vs `creatureToughnessWeight`),
+      // więc flagała pary słusznie uznane za zamienne. Osobny `koszt` był z kolei
+      // podwójnym liczeniem tej samej różnicy. Została jedna liczba: ile ta karta
+      // realnie dokłada do wyniku w przeliczeniu na manę, którą zajmuje.
+      const o = handCard(view, cmd.objectId);
+      if (!o) return null;
+      const koszt = (o.manaCost ?? 0) + coloredPipsOf(o.cardId).length;
+      const cialo = (o.power ?? 0) * P.creaturePowerWeight + (o.toughness ?? 0) * P.creatureToughnessWeight;
+      return {
+        waluta: cialo - P.creatureManaCostWeight * koszt,
+        cele: (cmd.targets ?? []).length,
+        kicker: cmd.kicked ? 1 : 0,
+        tryb: cmd.mode ?? cmd.modeIndex ?? null,
+      };
+    }
+    if (cmd?.type === 'activate_ability') {
+      // Aktywacja zdolności: czy płacimy maną/tapnięciem, ile ma celów i czy to
+      // w ogóle zdolność nie-manowa (mana to osobna komenda `tap_for_mana`).
+      const o = (view.zones.battlefield ?? []).find((x) => x.id === cmd.objectId)
+        ?? handCard(view, cmd.objectId);
+      const zdolnosc = o?.abilities?.[cmd.abilityIndex ?? 0] ?? cardDef(o?.cardId)?.abilities?.[cmd.abilityIndex ?? 0];
+      if (!zdolnosc) return null;
+      return {
+        tap: zdolnosc.cost?.tap ? 1 : 0,
+        mana: zdolnosc.cost?.mana ?? zdolnosc.cost?.generic ?? 0,
+        manowa: manaOnlyAbility(zdolnosc) ? 1 : 0,
+        cele: (cmd.targets ?? []).length,
+        kosztem: zdolnosc.cost?.sacrificeSelf ? 1 : 0,
+      };
+    }
+    if (cmd?.type === 'declare_blockers') {
+      // Ile obrażeń realnie znika i iloma własnymi stwarami się za to płaci.
+      const przypisania = cmd.assignments ?? {};
+      let zablokowane = 0;
+      let ofiary = 0;
+      for (const [atakujacyId, blokerzy] of Object.entries(przypisania)) {
+        const atakujacy = objectOnBoard(view, atakujacyId);
+        zablokowane += atakujacy?.power ?? 0;
+        for (const blokerId of blokerzy ?? []) {
+          const b = objectOnBoard(view, blokerId);
+          if (b && (atakujacy?.power ?? 0) >= (b.toughness ?? 99)) ofiary += 1;
+        }
+      }
+      return { zablokowane, ofiary, blokuje: Object.keys(przypisania).length };
+    }
+    if (cmd?.type !== 'play_land') return null;
+    const o = (view.zones.hand ?? []).find((x) => x?.id === cmd.objectId);
+    if (!o) return null;
+    const a = landAnaliza(view, cmd.objectId);
+    return {
+      karta: o.cardId ?? null,
+      kolory: [...a.kolory].sort().join(''),   // do raportu, NIE do sygnatury
+      pokrywa: a.pokrywa,
+      tapped: a.entersTapped,
+      zdolnosc: a.dodatkowaZdolnosc,
+      ilosc: a.ilosc,
+      nowyKolor: a.nowyKolor,
+    };
+  }
+
+  function summarize(cmd, view = null) {
     // M203/2: warianty scry/surveil były w śladzie nieodróżnialne (oba
     // streszczały się do `resolve_scry`), więc diagnostyka i test wyceny
     // musiały parować opcje z `legalCommands` PO INDEKSIE — a opcje w śladzie
@@ -4660,12 +4975,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     if (cmd.type === 'declare_attackers') return `attack[${cmd.attackerIds.join(',')}]`;
     if (cmd.type === 'declare_blockers') return `block[${Object.entries(cmd.assignments ?? {}).map(([a, b]) => `${a}<${b.join('+')}`).join(' ')}]`;
+    // Świadomie BEZ karty w śladzie (próba z tury 6 odwrócona): ~19 testów
+    // (m234, m235, m247, m257, batch52) parsuje format `cast_*(objectId)`, a
+    // wariant i tak jest w nim rozstrzygalny — `objectId` jest unikalny w ręce,
+    // a od tury 6 różnicę niosą projekcje (`waluta`, `cele`, `kicker`). Zysk
+    // czytelności nie był wart przepisania pinsów, które sami pilnują wyceny.
     if (cmd.type === 'cast_spell' || cmd.type === 'cast_cleave' || cmd.type === 'cast_permanent' || cmd.type === 'cast_adventure' || cmd.type === 'cast_adventure_creature') return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''})`;
     // M195/B: aktywacja zdolności bez ŹRÓDŁA i CELU była w śladzie nieczytelna
     // („activate_ability" × N) — nie dało się odróżnić buffu sojusznika od
     // tapnięcia samego siebie ani w diagnostyce, ani w teście wyceny.
     if (cmd.type === 'activate_ability') {
       return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
+    }
+    if (cmd.type === 'play_land') {
+      // Ślad ma nazywać WARIANT (lekcja M195/B i M203/2, ta sama co wyżej): przy
+      // dwóch ziemiach w ręce oba warianty streszczały się do `play_land`, więc
+      // audyt remisorów (`tools/bot-tie-audit.mjs`) nie odróżniał „dwa lasy —
+      // remis uczciwy" od „góra i las — bot nie ocenił". Karta w śladzie czyni
+      // remis rozstrzygalnym dla bramki.
+      const o = (view?.zones?.hand ?? []).find((x) => x?.id === cmd.objectId);
+      return `play_land(${cmd.objectId}${o?.cardId ? ':' + o.cardId : ''})`;
     }
     return cmd.type;
   }
@@ -4682,11 +5011,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const pool = scored.slice(0, Math.min(3, scored.length));
         pick = pool[Math.floor(rng() * pool.length)];
       }
-      history.push({
+      const wpis = {
         turn: view.turn.number, step: view.turn.step,
-        chosen: summarize(pick.cmd), score: pick.score,
-        options: scored.map((entry) => ({ cmd: summarize(entry.cmd), score: entry.score })),
-      });
+        chosen: summarize(pick.cmd, view), score: pick.score,
+        options: scored.map((entry) => ({ cmd: summarize(entry.cmd, view), score: entry.score })),
+      };
+      // Ex aequo na maksimum: doklej projekcję danych wszystkich wariantów z
+      // górnej półki, żeby audyt mógł ocenić, czy remis był uczciwy (tieProjection).
+      // Koszt: tylko przy remisach, a wpis i tak powstaje.
+      if (scored.length > 1 && Number.isFinite(pick.score)) {
+        const naMaks = scored.filter((x) => x.score === pick.score);
+        if (naMaks.length > 1) {
+          wpis.tie = naMaks.map((x) => ({ cmd: summarize(x.cmd, view), proj: tieProjection(view, x.cmd) }));
+        }
+      }
+      history.push(wpis);
       return pick.cmd;
     },
     /** Ślad uzasadnień punktowych — diagnostyka decyzji bota. */

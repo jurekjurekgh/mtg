@@ -1,4 +1,5 @@
 import { choiceResponse } from '../protocol/types.js';
+import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, FACE_DOWN_LABEL } from './session.js';
 import { commandForSelection, commandForMulliganSelection, commandForSacrificeSelection } from './multi-target.js';
@@ -117,17 +118,24 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
     // przełącza checkbox natywnie; stopPropagation chroni przycisk.
     if (onToggleIgnoredOption && IGNORABLE_IN_CHOICE.has(option.type)) {
       const key = commandOptionKey(option);
-      const label = document.createElement('label');
-      label.className = 'action-ignore';
-      label.title = 'Zaznacz: ta opcja nie przerywa auto-passu';
-      const toggle = document.createElement('input');
-      toggle.type = 'checkbox';
-      toggle.className = 'action-ignore-input';
-      toggle.checked = Boolean(ignoredOptionKeys && ignoredOptionKeys.has(key));
-      label.appendChild(toggle);
-      label.addEventListener('click', (e) => e?.stopPropagation?.());
-      toggle.addEventListener('change', () => onToggleIgnoredOption(key));
-      button.appendChild(label);
+      // M292 (punkt 3 decyzji właściciela): ptaszek wyciszenia NIE jest wierszem
+      // wyboru — siedzi WEWNĄTRZ przycisku opcji — więc bierze ze wspólnego
+      // komponentu wyłącznie OBSŁUGĘ (label→input, `stopPropagation` chroniący
+      // przycisk, tytuł, stan z modelu), a wygląd zostaje rodzinny
+      // (`.action .action-ignore`). Dawniej ten sam układ był lepiony ręcznie
+      // dwa razy: tu i w panelu akcji (`render.js`) — czyli dokładnie ten
+      // równoległy sposób wizualizacji, o którego skasowaniu była prośba.
+      renderPickerRow(button, {
+        kind: 'checkbox',
+        variant: 'inline',
+        rowClassName: 'action-ignore',
+        toggleClassName: 'action-ignore-input',
+        label: null,
+        title: 'Zaznacz: ta opcja nie przerywa auto-passu',
+        checked: Boolean(ignoredOptionKeys && ignoredOptionKeys.has(key)),
+        stopRowPropagation: true,
+        onToggle: () => onToggleIgnoredOption(key),
+      });
     }
     button.addEventListener('click', () => {
       const response = choiceResponse(request, option);
@@ -175,15 +183,16 @@ export function lookWizardKindOf(request, view) {
     }
     return 'index';
   }
-  // M260/A: Fertile Thicket — decyzja „zaglądnąć?” musi zapaść PRZED
-  // pokazaniem kart, więc zwykła lista opcji (z nazwami landów w etykietach)
-  // psuje „you may look”. Wizard dostaje karty z pendingFertileThicket.
+  // M260/A: decyzja „zaglądnąć?” musi zapaść PRZED pokazaniem kart, więc
+  // zwykła lista opcji (z nazwami landów w etykietach) psuje „you may look”.
+  // Wizard dostaje karty z pendingFertileThicket; `kind` nazywa CZYNNOŚĆ, nie
+  // kartę (M293, ADR 0002).
   if (type === 'resolve_fertile_thicket') {
     const pending = view?.pendingFertileThicket;
     if (!pending || pending.playerId !== view?.playerId || !Array.isArray(pending.cards) || pending.cards.length === 0) {
       return null;
     }
-    return 'fertile';
+    return 'peek-pick';
   }
   if (type !== 'resolve_surveil' && type !== 'resolve_scry') return null;
   const pending = type === 'resolve_surveil' ? view?.pendingSurveil : view?.pendingScry;
@@ -194,324 +203,384 @@ export function lookWizardKindOf(request, view) {
 }
 
 /**
- * Wizard decyzji scry/surveil: najpierw PEŁNA LISTA przeglądniętych kart
- * (zgłoszenie: „piszesz jakie karty wyciągnęło Surveil"), potem JEDNA decyzja
- * na kartę po kolei (grób/wierzch albo spód/wierzch) — NIE lista wszystkich
- * kombinacji. Surveil z ≥2 kartami zostającymi na wierzchu ma jeszcze krok
- * kolejności (klikane od góry). Po ostatnim kroku wywołuje onComplete:
- * surveil → { millIds, topOrder }, scry → { bottomIds }.
+ * M293 (decyzja właściciela z tury 14: „jeśli można te dwa ostatnie
+ * sparametryzować i obsłużyć tym samym wizardem, powinniśmy to zrobić dla
+ * czystości projektu — poza tym thicket-card brzmi bardzo blisko zabronionego
+ * kodu pod nazwaną kartę").
+ *
+ * Przed tym commitem istniały DWA kreatory rysujące ten sam układ:
+ * `renderLookWizard` (scry / surveil / „ułóż wierzch biblioteki") oraz kreator
+ * „zajrzyj → weź jeden basic land → reszta na spód" (M260/A), nazwany od karty,
+ * która mechanikę wprowadziła. Duplikat był mierzalny: budowniczy listy
+ * obejrzanych kart 981 vs 868 znaków (różnił go jeden dopisek i jeden znacznik),
+ * identyczne pięć linii przycisku „Zamknij", dwa osobne sortery kolejności i
+ * DWIE niezależne implementacje polityki klucza sondy (M112/M136).
+ *
+ * Teraz: JEDEN silnik kroków, JEDEN rysownik chipa (`src/table/picker.js`,
+ * kształt `chip`), JEDNA polityka klucza. Logika decyzji zostaje własna per
+ * efekt — dokładnie tak, jak brzmiała prośba z tury 8: „logika musi być w
+ * każdym typie efektu inna, ale wygląd może być taki sam (elastyczny helper)".
+ *
+ * `spec` (wszystkie pola opcjonalne poza `cards`/`payload`):
+ *   cards                    [{ id, cardId, name }] w kolejności z widoku
+ *   header(view)             stały nagłówek nad listą kart (np. „Scry 3 — …")
+ *   gate {intro, lookLabel, declineLabel}   krok „czy w ogóle zaglądam?"
+ *   flow 'decide'|'pick'|'order-only'       środek decyzji
+ *   decide {toBad, toGood, current(card, view)}      decyzja per karta
+ *   pick {intro, eligible:Set, labelFor, noneLabel}  wybór JEDNEJ karty
+ *   order {intro, pool(view), ask(view, len), itemLabel(pos, name), chipsAfter}
+ *   markOf(card, view) / badgeOf(card, view)         dopisek i znacznik chipa
+ *   payload(view, list)      co dostaje onComplete ORAZ probeKeyFor
+ *   onOpenCard / onCancel / onComplete / probeKeyFor
+ *
+ * Polityka klucza sondy jest jedna i policzalna: klik niesie
+ * `dataset.optionKey` wtedy i tylko wtedy, gdy po nim nie ma już żadnego kroku,
+ * czyli gracz zna całą komendę (M112/M136).
  */
-export function renderLookWizard(host, { kind, cards, onComplete, onCancel, probeKeyFor = null, onOpenCard = null }) {
-  const list = Array.isArray(cards) ? cards.slice() : [];
-  const labels = kind === 'surveil'
-    ? { intro: `Surveil ${list.length} — obejrzane karty:`, toBad: 'Na cmentarz', toGood: 'Na wierzch biblioteki', badMark: '→ cmentarz', goodMark: '→ wierzch' }
-    : kind === 'index'
-      ? { intro: `Wierzch biblioteki — ${list.length} ${polishPluralCount(list.length, 'karta', 'karty', 'kart')} (ułóż w dowolnej kolejności):`, toBad: '', toGood: '', badMark: '', goodMark: '' }
-      : { intro: `Scry ${list.length} — obejrzane karty:`, toBad: 'Na spód biblioteki', toGood: 'Zostaw na wierzchu', badMark: '→ spód', goodMark: '→ wierzch' };
-  const badIds = []; // surveil: millIds · scry: bottomIds
-  const keptIds = kind === 'index' ? list.map((card) => card.id) : []; // index: wszystkie zostają, liczy się kolejność
-  const orderIds = []; // surveil/index: docelowa kolejność wierzchu (od góry)
-  const decisions = new Map(); // id → 'bad' | 'top'
+function renderPeekWizard(host, spec) {
+  const list = Array.isArray(spec.cards) ? spec.cards.slice() : [];
+  const state = {
+    marked: new Map(),   // id → 'off' | 'stay' (decyzja per karta)
+    off: [],             // odłożone poza wierzch (cmentarz / spód)
+    stay: [],            // zostające na wierzchu (kolejność z listy)
+    chosenId: undefined, // flow 'pick': wybrana karta, null = żadna
+    ordered: [],         // sorter: kolejność wskazana przez gracza
+    index: 0,            // flow 'decide': której karty dotyczy krok
+    looked: !spec.gate,  // gate: czy gracz już zajrzał
+    skipped: false,
+  };
+  /** Kopia stanu — po to, żeby policzyć „co będzie PO tym kliknięciu". */
+  const view = (over = {}) => ({
+    marked: new Map(state.marked), off: [...state.off], stay: [...state.stay],
+    chosenId: state.chosenId, ordered: [...state.ordered], index: state.index,
+    looked: state.looked, skipped: state.skipped, ...over,
+  });
+  const orderPool = (v) => (spec.order ? spec.order.pool(v, list) : []);
+  const orderAsked = (v) => Boolean(spec.order) && spec.order.ask(v, orderPool(v).length);
+  /**
+   * Sortera nie pytamy, gdy nie wnosi nic (0 albo 1 karta — „in any order",
+   * CR 701.18/701.41): wtedy kolejność bierzemy z listy, tak jak robił to
+   * wizard przed M148. Jedno miejsce, obie rodziny.
+   */
+  const finalView = (v) => {
+    if (v.ordered.length > 0 || orderAsked(v)) return v;
+    return { ...v, ordered: [...v.ordered, ...orderPool(v)] };
+  };
+  const payloadOf = (v) => spec.payload(v, list);
+  const keyFor = (v) => (typeof spec.probeKeyFor === 'function' ? (spec.probeKeyFor(payloadOf(v)) ?? null) : null);
+  const finish = (v) => spec.onComplete?.(payloadOf(finalView(v)));
 
-  const renderIntro = () => {
-    // M87: textContent body skleja inline span-y („1. Curate2. Woolly").
-    // Intro i każda karta dostają \n — jak renderChoiceRequest (M86).
-    choiceNode(host, 'div', 'choice-request-intro', `${labels.intro}\n`);
-    const looked = choiceNode(host, 'div', 'look-wizard-cards');
-    list.forEach((card, index) => {
-      const mark = decisions.get(card.id);
-      const suffix = mark === 'bad' ? ` ${labels.badMark}` : mark === 'top' ? ` ${labels.goodMark}` : '';
-      // M167/C: nazwa karty w liście jest KLIKALNA (pełnoekranowa ilustracja)
-      // — gracz nie pamięta z nazwy, co karta robi.
-      const row = choiceNode(looked, 'div', 'look-wizard-card', `\n${index + 1}. `);
-      if (onOpenCard && card.cardId) {
-        const nameSpan = choiceNode(row, 'span', 'look-wizard-card-name log-card', card.name);
-        nameSpan.dataset.cardId = card.cardId;
-        nameSpan.addEventListener('click', () => onOpenCard(card.cardId));
-      } else {
-        // Bez handleru pełnoekranu (np. stare wywołania/testy): nazwa jako
-        // zwykły span tekstowy — bez createTextNode (mini-harnesy UI).
-        choiceNode(row, 'span', '', card.name ?? '');
-      }
-      if (suffix) choiceNode(row, 'span', '', suffix);
+  const emitChips = () => renderPickerChipList(host, {
+    items: list.map((card) => ({
+      id: card.id,
+      cardId: card.cardId ?? null,
+      name: card.name ?? '',
+      badge: spec.badgeOf ? spec.badgeOf(card, state) : null,
+      marks: spec.markOf ? [spec.markOf(card, state)].filter(Boolean) : [],
+    })),
+    listClassName: 'look-wizard-cards',
+    rowClassName: 'look-wizard-card',
+    // `log-card` + `dataset.cardId` to delegacja pełnego ekranu karty (main.js,
+    // M167/C) — klasy wolno dać tylko nazwie, która naprawdę coś otwiera.
+    nameClassName: typeof spec.onOpenCard === 'function' ? 'look-wizard-card-name log-card' : '',
+    onOpenCard: typeof spec.onOpenCard === 'function' ? (cardId) => spec.onOpenCard(cardId) : null,
+  });
+
+  /** Opcja kroku = jedno tapnięcie w całym wierszu (picker `kind:'button'`). */
+  const emitOption = (options, { label, key = null, onClick }) => {
+    const handle = renderPickerRow(options, {
+      kind: 'button',
+      label,
+      rowClassName: 'action choice-request-option',
+      onActivate: () => onClick(),
     });
+    if (key && handle.row.dataset) handle.row.dataset.optionKey = key;
+    return handle;
   };
-  const renderCancel = () => {
-    const cancel = choiceNode(host, 'button', 'ghost-btn look-wizard-cancel', 'Zamknij (dokończysz później)');
-    cancel.type = 'button';
-    cancel.addEventListener('click', () => onCancel?.());
-  };
-  const finish = () => {
-    // topOrder musi być permutacją kart zostających na wierzchu — przy 0/1
-    // karcie krok kolejności jest zbędny i trywialna permutacja wystarczy.
-    // M148: scry jak surveil — gracz wybiera KOLEJNOŚĆ reszty na wierzchu.
-    const topOrder = orderIds.length > 0 ? [...orderIds] : [...keptIds];
-    if (kind === 'index') onComplete?.({ order: topOrder });
-    else if (kind === 'surveil') onComplete?.({ millIds: [...badIds], topOrder });
-    else onComplete?.({ bottomIds: [...badIds], topOrder });
-  };
-  const stepOrder = () => {
+
+  const renderCancel = () => renderPickerCancel(host, { onClick: () => spec.onCancel?.() });
+
+  /**
+   * Układ kroku: nagłówek+chipy i/lub tekst instrukcji (kolejność zadana przez
+   * `introBeforeChips`), opcjonalna linia „która karta", opcje, „Zamknij".
+   */
+  const renderStep = ({ intro = null, introBeforeChips = true, chips = false, current = null, options = [] }) => {
     clearChoiceElement(host);
-    renderIntro();
-    choiceNode(host, 'div', 'choice-request-intro', kind === 'index'
-      ? 'Ustaw nową kolejność od góry — wybieraj karty po kolei:'
-      : 'Wybierz w kolejności od najwyższej do najniższej na szczycie biblioteki:');
-    const options = choiceNode(host, 'div', 'choice-request-options');
-    const remaining = keptIds.filter((kept) => !orderIds.includes(kept));
-    for (const id of remaining) {
-      const card = list.find((c) => c.id === id);
-      // M149 (uwaga B właściciela): komunikat nie brzmi już generycznie
-      // „Kolejna karta na wierzchu", tylko enumeruje KONKRETNĄ kartę i jej
-      // pozycję od góry — gracz widzi, którą układa.
-      const pos = orderIds.length + 1;
-      const button = choiceNode(options, 'button', 'action choice-request-option',
-        `${pos}. na wierzchu: ${card?.name ?? id}`);
-      button.type = 'button';
-      // M136 (backlog: „sonda surveil — decyzja pośrednia nie ma klucza"):
-      // krok kolejności był ostatnim miejscem wizarda scry/surveil poza
-      // pomiarem Żywego Testera. Klucz da się policzyć wtedy, gdy TO
-      // kliknięcie domyka wizard — czyli przy OSTATNIEJ nieuporządkowanej
-      // karcie (albo gdy została już tylko jedna). Wcześniej komenda nie jest
-      // jeszcze znana i klucza świadomie nie ma (uczciwiej niż zgadywać).
-      const finishesNow = orderIds.length + 1 === keptIds.length;
-      if (probeKeyFor && finishesNow && button.dataset) {
-        const finalOrder = [...orderIds, id];
-        const key = kind === 'index'
-          ? probeKeyFor({ order: [...finalOrder] })
-          : kind === 'surveil'
-            ? probeKeyFor({ millIds: [...badIds], topOrder: [...finalOrder] })
-            : probeKeyFor({ bottomIds: [...badIds], topOrder: [...finalOrder] });
-        if (key) button.dataset.optionKey = key;
-      }
-      button.addEventListener('click', () => {
-        orderIds.push(id);
-        if (orderIds.length === keptIds.length) finish();
-        else stepOrder();
-      });
-    }
-    renderCancel();
-  };
-  const stepCard = (index) => {
-    clearChoiceElement(host);
-    renderIntro();
-    const card = list[index];
-    choiceNode(host, 'div', 'look-wizard-current', `Karta ${index + 1} z ${list.length}: ${card.name}`);
-    const options = choiceNode(host, 'div', 'choice-request-options');
-    // M112 (oś „noop"): jeżeli TO kliknięcie kończy wizard, znamy już komendę,
-    // którą wyśle — dopinamy klucz sondy, żeby Żywy Tester mógł zmierzyć
-    // scry/surveil tak samo jak zwykłe oferty. Gdy po decyzji nastąpi jeszcze
-    // krok kolejności (surveil z ≥2 kartami na wierzchu), komendy jeszcze nie
-    // znamy i klucza nie ma — to uczciwsze niż zgadywanie.
-    const finishingKey = (nextBad, nextKept) => {
-      if (!probeKeyFor) return null;
-      if (index + 1 < list.length) return null;
-      // Surveil/scry: gdy ≥2 karty zostają na wierzchu, po decyzjach następuje
-      // jeszcze krok KOLEJNOŚCI — komenda nie jest jeszcze znana, klucza brak.
-      if ((kind === 'surveil' || kind === 'scry') && nextKept.length >= 2) return null;
-      if (kind === 'surveil') return probeKeyFor({ millIds: [...nextBad], topOrder: [...nextKept] });
-      if (kind === 'scry') return probeKeyFor({ bottomIds: [...nextBad], topOrder: [...nextKept] });
-      return probeKeyFor({ order: [...nextKept] });
+    const emitChipsBlock = () => {
+      if (!chips) return;
+      if (spec.header) choiceNode(host, 'div', 'choice-request-intro', `${spec.header(state)}\n`);
+      emitChips();
     };
-    const bad = choiceNode(options, 'button', 'action choice-request-option', labels.toBad);
-    bad.type = 'button';
-    const badKey = finishingKey([...badIds, card.id], [...keptIds]);
-    if (badKey && bad.dataset) bad.dataset.optionKey = badKey;
-    bad.addEventListener('click', () => {
-      decisions.set(card.id, 'bad');
-      badIds.push(card.id);
-      next(index);
-    });
-    const good = choiceNode(options, 'button', 'action choice-request-option', labels.toGood);
-    good.type = 'button';
-    const goodKey = finishingKey([...badIds], [...keptIds, card.id]);
-    if (goodKey && good.dataset) good.dataset.optionKey = goodKey;
-    good.addEventListener('click', () => {
-      decisions.set(card.id, 'top');
-      keptIds.push(card.id);
-      next(index);
-    });
+    const emitIntro = () => { if (intro != null) choiceNode(host, 'div', 'choice-request-intro', `${intro}\n`); };
+    if (introBeforeChips) { emitIntro(); emitChipsBlock(); } else { emitChipsBlock(); emitIntro(); }
+    if (current) choiceNode(host, 'div', 'look-wizard-current', current);
+    const optionsEl = choiceNode(host, 'div', 'choice-request-options');
+    for (const option of options) emitOption(optionsEl, option);
     renderCancel();
   };
-  const next = (index) => {
-    if (index + 1 < list.length) { stepCard(index + 1); return; }
-    // Surveil/scry: reszta na wierzchu „in any order" (CR 701.18/701.41) —
-    // przy ≥2 pytamy o kolejność (M148, zgłoszenie właściciela).
-    if ((kind === 'surveil' || kind === 'scry') && keptIds.length >= 2) stepOrder();
-    else finish();
+
+  // ---- krok „czy zaglądam?" — tylko tam, gdzie samo spojrzenie jest decyzją ---
+  const stepGate = () => renderStep({
+    intro: spec.gate.intro,
+    options: [
+      { label: spec.gate.lookLabel, onClick: () => { state.looked = true; stepMain(); } },
+      {
+        // Rezygnacja domyka decyzję od razu — cała komenda jest znana (M112).
+        label: spec.gate.declineLabel,
+        key: keyFor(view({ skipped: true })),
+        onClick: () => { state.skipped = true; finish(view({ skipped: true })); },
+      },
+    ],
+  });
+
+  /** Klucz dla decyzji per karta: tylko gdy to ostatnia karta i sorter nie zapyta. */
+  const decideKey = (bucket, id) => {
+    if (typeof spec.probeKeyFor !== 'function') return null;
+    const next = view(bucket === 'off'
+      ? { index: state.index + 1, off: [...state.off, id] }
+      : { index: state.index + 1, stay: [...state.stay, id] });
+    if (next.index < list.length || orderAsked(next)) return null;
+    return keyFor(finalView(next));
   };
+
+  // ---- krok: decyzja per karta (scry / surveil) ==============================
+  const stepDecide = () => {
+    const card = list[state.index];
+    renderStep({
+      chips: true,
+      // M149 (uwaga B właściciela): komunikat enumeruje KONKRETNĄ kartę i jej
+      // pozycję, zamiast brzmieć generycznie („Kolejna karta na wierzchu").
+      current: spec.decide.current(card, state),
+      options: [
+        {
+          label: spec.decide.toBad,
+          key: decideKey('off', card.id),
+          onClick: () => { state.marked.set(card.id, 'off'); state.off.push(card.id); stepAdvance(); },
+        },
+        {
+          label: spec.decide.toGood,
+          key: decideKey('stay', card.id),
+          onClick: () => { state.marked.set(card.id, 'stay'); state.stay.push(card.id); stepAdvance(); },
+        },
+      ],
+    });
+  };
+
+  /** Wybór karty domyka wizard tylko gdy sorter nie zapyta (0/1 karty do odłożenia). */
+  const pickKey = (chosenId) => {
+    if (typeof spec.probeKeyFor !== 'function') return null;
+    const next = view({ chosenId, ordered: [] });
+    return orderAsked(next) ? null : keyFor(finalView(next));
+  };
+
+  // ---- krok: wybór JEDNEJ karty spośród oznaczonych (basic landy) ============
+  const stepPick = () => renderStep({
+    intro: spec.pick.intro(state, list),
+    chips: true,
+    options: [
+      ...list.filter((card) => spec.pick.eligible.has(card.id)).map((card) => ({
+        label: spec.pick.labelFor(card),
+        key: pickKey(card.id),
+        onClick: () => { state.chosenId = card.id; state.ordered = []; stepOrderOrFinish(); },
+      })),
+      {
+        label: spec.pick.noneLabel,
+        key: pickKey(null),
+        onClick: () => { state.chosenId = null; state.ordered = []; stepOrderOrFinish(); },
+      },
+    ],
+  });
+
+  // ---- krok: sorter kolejności (identyczny układ dla obu rodzin) =============
+  const stepOrder = () => {
+    const pool = orderPool(state);
+    const remaining = pool.filter((id) => !state.ordered.includes(id));
+    renderStep({
+      intro: spec.order.intro(state, list),
+      introBeforeChips: Boolean(spec.order.chipsAfter),
+      chips: true,
+      options: remaining.map((id) => {
+        const card = list.find((c) => c.id === id);
+        const pos = state.ordered.length + 1;
+        return {
+          label: spec.order.itemLabel(pos, card?.name ?? id),
+          // To kliknięcie kończy sorter, gdy do pełnej permutacji brakuje jednej.
+          key: pos === pool.length ? keyFor(finalView(view({ ordered: [...state.ordered, id] }))) : null,
+          onClick: () => {
+            state.ordered.push(id);
+            if (state.ordered.length === pool.length) finish(view());
+            else stepOrder();
+          },
+        };
+      }),
+    });
+  };
+
+  const stepOrderOrFinish = () => (orderAsked(state) ? stepOrder() : finish(view()));
+  const stepAdvance = () => {
+    if (state.index + 1 < list.length) {
+      state.index += 1;
+      stepDecide();
+      return;
+    }
+    stepOrderOrFinish();
+  };
+  const stepMain = () => (spec.flow === 'decide' ? stepDecide()
+    : spec.flow === 'pick' ? stepPick() : stepOrderOrFinish());
 
   clearChoiceElement(host);
-  if (kind === 'index') {
-    renderIntro();
-    stepOrder();
-    return;
-  }
-  if (list.length === 0) {
+  if (list.length === 0 && spec.flow !== 'order-only') {
+    // Brak kart = brak decyzji; wariant „ułożę wierzch" renderuje się nawet z
+    // pustą listą, bo jego krokiem jest kolejność, a nie wybór z listy.
     choiceNode(host, 'div', 'zone-empty', 'Brak kart do decyzji.');
     return host;
   }
-  stepCard(0);
+  if (spec.gate && !state.looked) {
+    stepGate();
+    return host;
+  }
+  stepMain();
   return host;
 }
 
-// =============================================================================
-// M260/A (uwaga właściciela z testów PR #89): Fertile Thicket — wizard
-// „zaglądnij → wybierz basic land → ułóż resztę na spodzie”.
-// =============================================================================
+// -----------------------------------------------------------------------------
+// Dwa publiczne wejścia: tablica parametrów, nie dwa rysowniki.
+// -----------------------------------------------------------------------------
+
+/** Etykiety kroków kreatora „obejrzyj i zdecyduj" — jedno miejsce, trzy tryby. */
+const LOOK_WIZARD_LABELS = {
+  surveil: {
+    intro: (n) => `Surveil ${n} — obejrzane karty:`,
+    toBad: 'Na cmentarz', toGood: 'Na wierzch biblioteki', badMark: '→ cmentarz', goodMark: '→ wierzch',
+  },
+  scry: {
+    intro: (n) => `Scry ${n} — obejrzane karty:`,
+    toBad: 'Na spód biblioteki', toGood: 'Zostaw na wierzchu', badMark: '→ spód', goodMark: '→ wierzch',
+  },
+  index: {
+    intro: (n) => `Wierzch biblioteki — ${n} ${polishPluralCount(n, 'karta', 'karty', 'kart')} (ułóż w dowolnej kolejności):`,
+    toBad: '', toGood: '', badMark: '', goodMark: '',
+  },
+};
 
 /**
- * Wizard decyzji Fertile Thicket (BFZ). Oracle: „you may LOOK AT the top five
- * cards of your library. If you do, reveal up to one BASIC LAND card from
- * among them, then put that card on top of your library and the rest on the
- * bottom in any order.”
- *
- * Trzy kroki (zgłoszenie A1/A2/A3):
- *  1. „Zaglądnij?” — decyduje O PATRZENIU, zanim UI pokaże JAKĄKOLIWIEK
- *     nazwę karty (inaczej rezygnacja jest pozorna: gracz i tak widział
- *     Mountain/Island w etykietach opcji).
- *  2. Po zajrzeniu — pełna lista obejrzanych kart (klikalne nazwy) +
- *     przycisk „<basic land> na wierzch biblioteki” dla KAŻDEGO basic landa
- *     (nie-basic landy i nie-landy nie są do wzięcia — A2) + „Bez basic
- *     landa” (cała piątka na spód).
- *  3. Sorter kolejności spodu — klikana od najbliższej wierzchu, dokładnie
- *     jak kolejność wierzchu w wizardzie scry/surveil (A3; engine waliduje
- *     permutację `bottomOrder`).
- *
- * Kończy się onComplete: { skip: true } | { chosenCardId, bottomOrder }.
- * chosenCardId może być null („bez landa”) — wtedy bottomOrder to cała piątka.
+ * Wizard decyzji scry/surveil: najpierw PEŁNA LISTA przeglądniętych kart
+ * (zgłoszenie: „piszesz jakie karty wyciągnęło Surveil"), potem JEDNA decyzja
+ * na kartę po kolei (grób/wierzch albo spód/wierzch) — NIE lista wszystkich
+ * kombinacji. Scry i surveil z ≥2 kartami zostającymi na wierzchu mają jeszcze
+ * krok kolejności (klikane od góry, M148). Po ostatnim kroku onComplete:
+ * surveil → { millIds, topOrder }, scry → { bottomIds, topOrder },
+ * index → { order }.
  */
-export function renderFertileThicketWizard(host, { cards, basicLandIds = [], sourceName = null, onComplete, onCancel, onOpenCard = null, probeKeyFor = null }) {
+export function renderLookWizard(host, { kind, cards, onComplete, onCancel, probeKeyFor = null, onOpenCard = null }) {
+  const labels = LOOK_WIZARD_LABELS[kind] ?? LOOK_WIZARD_LABELS.scry;
+  const list = Array.isArray(cards) ? cards.slice() : [];
+  return renderPeekWizard(host, {
+    cards: list,
+    flow: kind === 'index' ? 'order-only' : 'decide',
+    decide: kind === 'index' ? null : {
+      toBad: labels.toBad,
+      toGood: labels.toGood,
+      current: (card, v) => `Karta ${v.index + 1} z ${list.length}: ${card.name}`,
+    },
+    // M148: „reszta na wierzchu in any order" — przy ≥2 pytamy o kolejność.
+    // `index` nie ma decyzji „czy zostaje": pytamy zawsze, bo przedmiotem wyboru
+    // jest sama kolejność (też przy jednej karcie — tak było od M65).
+    order: {
+      intro: () => (kind === 'index'
+        ? 'Ustaw nową kolejność od góry — wybieraj karty po kolei:'
+        : 'Wybierz w kolejności od najwyższej do najniższej na szczycie biblioteki:'),
+      // `index` nie ma decyzji, więc `stay` jest puste — basenem jest cała
+      // lista. Przy `decide` basenem jest TYLKO to, co zostało na wierzchu
+      // (inaczy sorter pyta o karty odłożone na spód, a M112 gubi klucz).
+      pool: (v) => (kind === 'index' ? list.map((c) => c.id) : v.stay),
+      ask: (v, len) => (kind === 'index' ? true : len >= 2),
+      itemLabel: (pos, name) => `${pos}. na wierzchu: ${name}`,
+      chipsAfter: false,
+    },
+    markOf: (card, v) => {
+      const mark = v.marked.get(card.id);
+      return mark === 'off' ? ` ${labels.badMark}` : mark === 'stay' ? ` ${labels.goodMark}` : '';
+    },
+    header: () => labels.intro(list.length),
+    payload: (v) => {
+      const topOrder = v.ordered.length > 0 ? [...v.ordered] : [...v.stay];
+      if (kind === 'index') return { order: topOrder };
+      if (kind === 'surveil') return { millIds: [...v.off], topOrder };
+      return { bottomIds: [...v.off], topOrder };
+    },
+    onOpenCard,
+    onCancel,
+    onComplete,
+    probeKeyFor,
+  });
+}
+
+/**
+ * M293 (wcześniej M260/A): decyzja „zajrzyj na wierzch biblioteki → weź JEDEN
+ * basic land albo żaden → resztę odłóż na spód w dowolnej kolejności".
+ * Zgłoszenia A1/A2/A3 dotyczyły karty, która tę mechanikę wprowadziła, ale
+ * nazwy karty w kodzie nie ma i być nie może (ADR 0002 — UI nie rozpoznaje kart
+ * po imieniu; stąd dawniejsza nazwa funkcji i klasa `.thicket-*` znikają, a
+ * zostaje nazwa po CZYNNOŚCI).
+ *
+ * Trzy kroki, dokładnie jak w oryginale z M260:
+ *  1. „Zaglądnij?" — decyduje O PATRZENIU, zanim UI pokaże JAKĄKOLWIEK nazwę
+ *     karty (inaczej rezygnacja jest pozorna: gracz i tak widział karty w
+ *     etykietach opcji).
+ *  2. Po zajrzeniu — pełna lista obejrzanych kart (klikalne nazwy) + przycisk
+ *     „… na wierzch biblioteki" dla KAŻDEGO basic landa (spoza listy nic nie
+ *     jest do wzięcia — A2) + „Bez basic landa".
+ *  3. Sorter kolejności spodu — klikane od najbliższej wierzchu, ten sam układ
+ *     co krok kolejności wierzchu w scry/surveil (A3; silnik waliduje permutację).
+ *
+ * onComplete: { skip: true } | { chosenCardId, bottomOrder } — `chosenCardId`
+ * może być null („bez landa"), wtedy `bottomOrder` to cała obejrzana lista.
+ */
+export function renderPeekPickOrderWizard(host, {
+  cards, basicLandIds = [], sourceName = null, onComplete, onCancel, onOpenCard = null, probeKeyFor = null,
+} = {}) {
   const list = Array.isArray(cards) ? cards.slice() : [];
   const basic = new Set(basicLandIds);
-  const bottomOrder = [];
-  let chosenCardId = null;
-
-  // M212/ADR 0002: nazwa karty przychodzi z DANYCH (sourceName ←
-  // pendingFertileThicket.sourceCardId); fallback opisuje mechanikę, nie kartę.
-  const title = sourceName ?? 'Zajrzenie w wierzch biblioteki';
-
-  const renderLookedCards = (mark) => {
-    const looked = choiceNode(host, 'div', 'look-wizard-cards');
-    list.forEach((card, index) => {
-      const row = choiceNode(looked, 'div', 'look-wizard-card', `\n${index + 1}. `);
-      if (onOpenCard && card.cardId) {
-        const nameSpan = choiceNode(row, 'span', 'look-wizard-card-name log-card', card.name);
-        nameSpan.dataset.cardId = card.cardId;
-        nameSpan.addEventListener('click', () => onOpenCard(card.cardId));
-      } else {
-        choiceNode(row, 'span', '', card.name ?? '');
-      }
-      // A2: basic landy oznaczone — gracz widzi, które może położyć na wierzch.
-      if (basic.has(card.id)) choiceNode(row, 'span', '', ' · basic land');
-      const suffix = mark === card.id ? ' → wierzch' : bottomOrder.includes(card.id)
-        ? ` → spód (${bottomOrder.indexOf(card.id) + 1}.)`
-        : '';
-      if (suffix) choiceNode(row, 'span', '', suffix);
-    });
-  };
-
-  const renderCancel = () => {
-    const cancel = choiceNode(host, 'button', 'ghost-btn look-wizard-cancel', 'Zamknij (dokończysz później)');
-    cancel.type = 'button';
-    cancel.addEventListener('click', () => onCancel?.());
-  };
-
-  /** Ostatni krok sortera: przycisk zna już CAŁĄ komendę (jak M136). */
-  const finish = () => {
-    onComplete?.({ chosenCardId, bottomOrder: [...bottomOrder] });
-  };
-  const probeKeyOfFinish = () => (probeKeyFor
-    ? probeKeyFor({ chosenCardId, bottomOrder: [...bottomOrder] })
-    : null);
-
-  // Krok 1 — decyzja o ZAGLĄDNIĘCIU (bez zdradzania kart).
-  const stepLook = () => {
-    clearChoiceElement(host);
-    choiceNode(host, 'div', 'choice-request-intro',
-      `${title} — możesz zajrzeć w ${list.length} ${polishPluralCount(list.length, 'kartę', 'karty', 'kart')} z wierzchu biblioteki.\n`);
-    const options = choiceNode(host, 'div', 'choice-request-options');
-    const look = choiceNode(options, 'button', 'action choice-request-option', 'Zaglądnij (obejrzyj karty)');
-    look.type = 'button';
-    look.addEventListener('click', () => stepChooseLand());
-    const decline = choiceNode(options, 'button', 'action choice-request-option', 'Zrezygnuj — nie zaglądam');
-    decline.type = 'button';
-    // „Zrezygnuj” domyka decyzję od razu — klucz sondy znany (M112).
-    const declineKey = probeKeyFor ? probeKeyFor({ skip: true }) : null;
-    if (declineKey && decline.dataset) decline.dataset.optionKey = declineKey;
-    decline.addEventListener('click', () => onComplete?.({ skip: true }));
-    renderCancel();
-  };
-
-  // Krok 2 — wybór basic landa na wierzch (albo nic).
-  const stepChooseLand = () => {
-    clearChoiceElement(host);
-    choiceNode(host, 'div', 'choice-request-intro', `Obejrzane karty (wybierz basic land na wierzch):\n`);
-    renderLookedCards(null);
-    const options = choiceNode(host, 'div', 'choice-request-options');
-    for (const card of list) {
-      if (!basic.has(card.id)) continue;
-      const button = choiceNode(options, 'button', 'action choice-request-option',
-        `${card.name} na wierzch biblioteki`);
-      button.type = 'button';
-      button.addEventListener('click', () => {
-        chosenCardId = card.id;
-        bottomOrder.length = 0;
-        stepBottomOrder();
-      });
-    }
-    const none = choiceNode(options, 'button', 'action choice-request-option',
-      'Bez basic landa — wszystko na spód');
-    none.type = 'button';
-    none.addEventListener('click', () => {
-      chosenCardId = null;
-      bottomOrder.length = 0;
-      stepBottomOrder();
-    });
-    renderCancel();
-  };
-
-  // Krok 3 — kolejność reszty na spodzie („in any order”, A3).
-  const stepBottomOrder = () => {
-    const remaining = list.map((c) => c.id).filter((id) => id !== chosenCardId);
-    if (remaining.length <= 1) {
-      // 0/1 karta — permutacja trywialna, pytanie nic nie wnosi.
-      bottomOrder.push(...remaining);
-      finish();
-      return;
-    }
-    clearChoiceElement(host);
-    choiceNode(host, 'div', 'choice-request-intro',
-      chosenCardId != null
-        ? `${list.find((c) => c.id === chosenCardId)?.name ?? 'Wybrany land'} na wierzch biblioteki. Odłóż pozostałe na spód — wybieraj po kolei (pierwsza wybrana będzie najbliżej wierzchu):\n`
-        : 'Odłóż obejrzane karty na spód — wybieraj po kolei (pierwsza wybrana będzie najbliżej wierzchu):\n');
-    renderLookedCards(chosenCardId);
-    const options = choiceNode(host, 'div', 'choice-request-options');
-    for (const id of remaining) {
-      if (bottomOrder.includes(id)) continue;
-      const card = list.find((c) => c.id === id);
-      const pos = bottomOrder.length + 1;
-      const button = choiceNode(options, 'button', 'action choice-request-option',
-        `${pos}. na spód: ${card?.name ?? id}`);
-      button.type = 'button';
-      const finishesNow = bottomOrder.length + 1 === remaining.length;
-      if (finishesNow) {
-        const key = probeKeyOfFinish();
-        if (key && button.dataset) button.dataset.optionKey = key;
-        button.addEventListener('click', () => { bottomOrder.push(id); finish(); });
-      } else {
-        button.addEventListener('click', () => { bottomOrder.push(id); stepBottomOrder(); });
-      }
-    }
-    renderCancel();
-  };
-
-  clearChoiceElement(host);
-  if (list.length === 0) {
-    choiceNode(host, 'div', 'zone-empty', 'Brak kart do decyzji.');
-    return host;
-  }
-  stepLook();
-  return host;
+  const nameOf = (id) => list.find((c) => c.id === id)?.name ?? 'Wybrany land';
+  return renderPeekWizard(host, {
+    cards: list,
+    flow: 'pick',
+    // M201/F: nazwa karty przychodzi z DANYCH (sourceName ← karta źródłowa
+    // decyzji); fallback opisuje czynność, nie kartę.
+    gate: {
+      intro: `${sourceName ?? 'Zajrzenie w wierzch biblioteki'} — możesz zajrzeć w ${list.length} ${polishPluralCount(list.length, 'kartę', 'karty', 'kart')} z wierzchu biblioteki.`,
+      lookLabel: 'Zaglądnij (obejrzyj karty)',
+      declineLabel: 'Zrezygnuj — nie zaglądam',
+    },
+    pick: {
+      intro: () => 'Obejrzane karty (wybierz basic land na wierzch):',
+      eligible: basic,
+      labelFor: (card) => `${card.name} na wierzch biblioteki`,
+      noneLabel: 'Bez basic landa — wszystko na spód',
+    },
+    order: {
+      intro: (v) => (v.chosenId != null
+        ? `${nameOf(v.chosenId)} na wierzch biblioteki. Odłóż pozostałe na spód — wybieraj po kolei (pierwsza wybrana będzie najbliżej wierzchu):`
+        : 'Odłóż obejrzane karty na spód — wybieraj po kolei (pierwsza wybrana będzie najbliżej wierzchu):'),
+      pool: (v) => list.map((c) => c.id).filter((id) => id !== v.chosenId),
+      ask: (v, len) => len >= 2,
+      itemLabel: (pos, name) => `${pos}. na spód: ${name}`,
+      chipsAfter: true,
+    },
+    badgeOf: (card) => (basic.has(card.id) ? ' · basic land' : ''),
+    markOf: (card, v) => (v.chosenId === card.id
+      ? ' → wierzch'
+      : v.ordered.includes(card.id) ? ` → spód (${v.ordered.indexOf(card.id) + 1}.)` : ''),
+    payload: (v) => (v.skipped
+      ? { skip: true }
+      : { chosenCardId: v.chosenId ?? null, bottomOrder: [...v.ordered] }),
+    header: null,
+    onOpenCard,
+    onCancel,
+    onComplete,
+    probeKeyFor,
+  });
 }
 
 // =============================================================================
@@ -597,24 +666,26 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
   choiceNode(host, 'div', 'choice-request-intro', intro);
   const list = choiceNode(host, 'div', 'combat-wizard-list');
 
-  const renderRow = (id, checked, disabled, label, onChange) => {
-    const row = choiceNode(list, 'label', 'combat-wizard-row');
-    const input = choiceNode(row, 'input', 'combat-wizard-toggle');
-    input.type = 'checkbox';
-    input.checked = checked;
-    input.disabled = Boolean(disabled);
-    input.addEventListener('change', () => {
-      onChange(input.checked);
+  // M288/A: wiersz buduje WSPÓLNY picker (picker.js) — ten sam co kreator
+  // wielocelowy i kreator kosztu escape. Klasy `combat-wizard-*` zostają, więc
+  // CSS z M129/C i testy dotyku (m129-*) nie widzą różnicy; zmieniło się tylko
+  // to, że markup przestał być kopiowany w trzech miejscach.
+  const renderRow = (id, checked, disabled, label, onChange) => renderPickerRow(list, {
+    id,
+    label,
+    checked,
+    disabled,
+    rowClassName: 'combat-wizard-row',
+    toggleClassName: 'combat-wizard-toggle',
+    nameClassName: 'combat-wizard-name',
+    onToggle: (on) => {
+      onChange(on);
       // M112: po zmianie zaznaczenia klucz sondy musi opisywać NOWY wybór.
       if (typeof host.__refreshCombatProbeKey === 'function') host.__refreshCombatProbeKey();
-    });
+    },
     // Uwaga C: nazwa stwora klikalna (fullscreen karty) + P/T w nawiasie.
-    const nameEl = choiceNode(row, 'span', 'combat-wizard-name', label);
-    if (onOpenCard) {
-      nameEl.addEventListener('click', (e) => { e?.stopPropagation?.(); e?.preventDefault?.(); onOpenCard(id); });
-    }
-    return row;
-  };
+    onOpenCard: onOpenCard ?? undefined,
+  }).row;
 
   const renderAttackerBlockers = (attackerId) => {
     const attackerLabel = objectName(view, session, attackerId) + creaturePT(view, attackerId);
@@ -750,11 +821,7 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
       .every((ids) => (ids ?? []).length === 0));
     onComplete?.(emptyOffer ?? { type: 'declare_blockers', playerId: view.playerId, assignments: {} });
   });
-  if (onCancel) {
-    const cancel = choiceNode(host, 'button', 'ghost-btn look-wizard-cancel', 'Zamknij (dokończysz później)');
-    cancel.type = 'button';
-    cancel.addEventListener('click', () => onCancel());
-  }
+  if (onCancel) renderPickerCancel(host, { onClick: () => onCancel() });
   return host;
 }
 
@@ -778,14 +845,20 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
     `${sourceName ? `${sourceName} — ` : ''}podziel ${total} obraż${total === 1 ? 'enie' : (total >= 2 && total <= 4 ? 'enia' : 'eń')} między maks. ${maxTargets} celów (suma musi wynosić ${total}):`);
   const list = choiceNode(host, 'div', 'damage-wizard-list');
   const amounts = candidateIds.map(() => 0);
-  const counters = [];
+  const rows = [];
   let confirm = null;
   let sumEl = null;
   const sum = () => amounts.reduce((a, b) => a + b, 0);
   const chosenCount = () => amounts.filter((n) => n > 0).length;
   const legal = () => sum() === total && chosenCount() >= 1 && chosenCount() <= maxTargets;
+  // M292: warunki legalności dokładań wyjeżdżą z handlerów przycisków do
+  // predykatów pickera — ten sam warunek rządzi wtedy i akcją, i stanem `disabled`,
+  // więc widełki nie rozjadą się z wizualnym stanem (był to klasyczny rozjazd
+  // w stepperskich kreatorach przed tym commitem).
+  const canGive = (idx) => sum() < total
+    && !(amounts[idx] === 0 && chosenCount() >= maxTargets); // nowy cel: wolny slot
   const refresh = () => {
-    candidateIds.forEach((id, idx) => { if (counters[idx]) counters[idx].textContent = String(amounts[idx]); });
+    candidateIds.forEach((id, idx) => { rows[idx]?.setValue(amounts[idx]); });
     if (sumEl) sumEl.textContent = `Przydzielono: ${sum()} / ${total}${chosenCount() > maxTargets ? ` — za dużo celów (maks. ${maxTargets})` : ''}`;
     if (confirm) {
       const ok = legal();
@@ -794,29 +867,38 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
     }
   };
   candidateIds.forEach((id, idx) => {
-    const row = choiceNode(list, 'div', 'damage-wizard-row');
     const isPlayer = Boolean(view.players?.some((pl) => pl.id === id));
     const name = isPlayer
       ? (view.players.find((pl) => pl.id === id)?.name ?? id)
       : objectName(view, session, id);
-    const nameEl = choiceNode(row, 'span', 'damage-wizard-name', name);
-    if (!isPlayer && onOpenCard) {
-      nameEl.dataset.objectId = id;
-      nameEl.addEventListener('click', () => onOpenCard(id));
-    }
-    const minus = choiceNode(row, 'button', 'ghost-btn damage-wizard-minus', '−1');
-    const counter = choiceNode(row, 'span', 'damage-wizard-count', '0');
-    const plus = choiceNode(row, 'button', 'ghost-btn damage-wizard-plus', '+1');
-    counters[idx] = counter;
-    minus.addEventListener('click', () => {
-      if (amounts[idx] > 0) { amounts[idx] -= 1; refresh(); }
+    // Wiersz buduje JEDEN komponent (picker.js, `kind: 'stepper'`) — te same
+    // 44 px i ta sama klikalna nazwa co w kreatorze wielocelowym i walce.
+    // Klasy `damage-wizard-*` zostają jako haki `m136-*`, `m172-*` i Testera
+    // (`$$('#choice-request .damage-wizard-plus')`).
+    const handle = renderPickerRow(list, {
+      id,
+      kind: 'stepper',
+      label: name,
+      min: 0,
+      max: total,
+      rowClassName: 'damage-wizard-row',
+      nameClassName: 'damage-wizard-name',
+      valueClassName: 'damage-wizard-count',
+      decClassName: 'ghost-btn damage-wizard-minus',
+      incClassName: 'ghost-btn damage-wizard-plus',
+      canDecrement: () => amounts[idx] > 0,
+      canIncrement: () => canGive(idx),
+      onStep: (delta) => {
+        const next = amounts[idx] + delta;
+        if (next < 0) return;
+        if (delta > 0 && !canGive(idx)) return;
+        amounts[idx] = next;
+        refresh();
+      },
+      onOpenCard: isPlayer || typeof onOpenCard !== 'function' ? null : (oid) => onOpenCard(oid),
     });
-    plus.addEventListener('click', () => {
-      // Nowy cel dopiero, gdy jest wolny slot (maxTargets) i wolna suma.
-      if (sum() >= total) return;
-      if (amounts[idx] === 0 && chosenCount() >= maxTargets) return;
-      amounts[idx] += 1; refresh();
-    });
+    if (!isPlayer && handle.label?.dataset) handle.label.dataset.objectId = id;
+    rows[idx] = handle;
   });
   sumEl = choiceNode(host, 'div', 'damage-wizard-remaining', `Przydzielono: 0 / ${total}`);
   const buttons = choiceNode(host, 'div', 'choice-request-actions');
@@ -864,8 +946,8 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // a nie jeden wór („zaznacz cele (2)"). Etykiety pozycji przekazuje
   // wywołujący z Oracle (`spell.targets`); bez nich zostaje numeracja.
   const slots = plan.slots ?? null;
-  // M257-r5/C: w trybie poświęcenia etykiety = nazwy SEKCJI („stwor” +
-  // „Poświęcenie (koszt)”), nie pozycji celu.
+  // M257-r5/C: w trybie poświęcenia etykiety = nazwy SEKCJI („stwor" +
+  // „Poświęcenie (koszt)"), nie pozycji celu.
   const slotLabels = slots || sacMode ? (slotLabels_ ?? []) : [];
   choiceNode(host, 'div', 'choice-request-intro',
     intro ?? (slots
@@ -874,24 +956,32 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         ? `${sourceName ? `${sourceName} — ` : ''}wskaż cel czaru oraz stwora do poświęcenia (koszt):\n`
         : `${sourceName ? `${sourceName} — ` : ''}zaznacz ${itemWord} (${range})${xLabel}:\n`));
 
+  // =====================================================================
+  // M288/A (uwaga właściciela z żywej gry): wiersze wyboru NIE są już własną
+  // konstrukcją tego kreatora (button z marką `[ ]`/`[x]` w tekście + osobny
+  // przycisk „Podgląd", bez ani jednej reguły CSS), tylko wspólnym pickerem
+  // z `src/table/picker.js` — tym samym, na którym stoi wybór atakujących,
+  // bloków i kosztu escape. Logika wyboru (które wiersze, kiedy „Zatwierdź"
+  // gaśnie) zostaje per efekt, bo taką ustala silnik przez `legalCommands`.
+  // =====================================================================
   const chosen = new Set();
   let xValue = plan.hasX ? plan.xMin : null;
-  // M257-r5/C: druga sekcja kreatora — stwór do poświęcenia (koszt dodatkowy).
-  // Wybór JEDNOKROTNY (jeden stwór = jedna płatność), niezależny od celu czaru.
   let sacrificeChoice = null;
-  const list = choiceNode(host, 'div', 'multi-target-list');
-  // M257-r5/C: klucze toggles są ZAKRESOWE (`slot` = 'sac' | 'target' | null).
+  // M257-r5/C: klucze toggles są ZAKRESOWE (`slot` = 'sac' | numer pozycji | null).
   // W trybie poświęcenia pule CELU i OFIARY się nakładają (własny stwór jest
-  // i celem czaru, i kosztem), więc prosty id→node by się zderzył.
-  const toggleRows = [];
+  // i celem czaru, i kosztem), więc nie mogą współdzielić zbioru `chosen`.
+  const rows = [];
+  const list = choiceNode(host, 'div', 'multi-target-list picker-list');
   let confirm = null;
   let statusEl = null;
   let xCounter = null;
 
-  // M207: w trybie pozycyjnym kolejnosc celow NIESIE ZNACZENIE (pozycja 0 to
-  // inny slot niz pozycja 1), wiec komende skladamy z wyborow per-pozycja,
-  // a nie ze zbioru `chosen`. `commandForSelection` porownuje zbiory
-  // (targetKey sortuje), wiec dla pozycji uzywamy dopasowania po kolejnosci.
+  const isPlayer = (id) => (view?.players ?? []).some((pl) => pl.id === id);
+
+  // M207: w trybie pozycyjnym kolejność celów NIESIE ZNACZENIE (pozycja 0 to
+  // inny slot niż pozycja 1), więc komendę składamy z wyborów per-pozycja,
+  // a nie ze zbioru `chosen`. `commandForSelection` porównuje zbiory
+  // (targetKey sortuje), więc dla pozycji używamy dopasowania po kolejności.
   const slotChoice = slots ? slots.map(() => null) : null;
   const commandForSlots = () => {
     if (slotChoice.some((id) => id == null)) return null;
@@ -907,42 +997,79 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         ? commandForSlots()
         : commandForSelection(commands, { targets: [...chosen], xValue: plan.hasX ? xValue : null }));
 
+  const pickOf = ({ id, slot }) => (slot == null
+    ? chosen.has(id)
+    : slot === 'sac'
+      ? id === sacrificeChoice
+      : slotChoice[slot] === id);
+
+  const syncRows = () => {
+    for (const row of rows) row.handle.setChecked(pickOf(row));
+  };
+
+  const addRow = (id, slot) => {
+    const handle = renderPickerRow(list, {
+      id,
+      label: objectOrPlayerName(view, session, id),
+      // Pozycja celu i poświęcenie (koszt) są JEDNOWYBOROWE — radio w grupie
+      // daje wzajemne wykluczenie natywnie, bez ręcznego odznaczania sióstr.
+      kind: (typeof slot === 'number' || slot === 'sac') ? 'radio' : 'checkbox',
+      group: typeof slot === 'number' ? `multi-target-slot-${slot}` : (slot === 'sac' ? 'multi-target-sac' : null),
+      rowClassName: slot == null ? 'multi-target-row' : 'multi-target-row multi-target-slot-row',
+      toggleClassName: 'multi-target-toggle',
+      nameClassName: 'multi-target-name',
+      onToggle: (on) => {
+        if (slot == null) {
+          if (on) chosen.add(id); else chosen.delete(id);
+        } else if (slot === 'sac') {
+          if (on) sacrificeChoice = id;
+          else if (sacrificeChoice === id) sacrificeChoice = null;
+        } else {
+          if (on) slotChoice[slot] = id;
+          else if (slotChoice[slot] === id) slotChoice[slot] = null;
+        }
+        refresh();
+      },
+      // Gracz nie ma karty do pokazania — dawny `addPeek` pomijał go w ten sam
+      // sposób (M206); nazwa zostaje wtedy zwykłym tekstem.
+      onOpenCard: isPlayer(id) ? null : onOpenCard,
+    });
+    rows.push({ id, slot, handle });
+  };
+
+  const setStatus = (text, problem) => {
+    if (!statusEl) return;
+    statusEl.textContent = String(text);
+    statusEl.className = problem
+      ? 'picker-status multi-target-status is-problem'
+      : 'picker-status multi-target-status';
+  };
+
   const refresh = () => {
-    for (const { node, id, slot } of toggleRows) {
-      const picked = slots
-        ? slotChoice.includes(id)
-        : sacMode && slot === 'sac'
-          ? id === sacrificeChoice
-          : chosen.has(id);
-      node.textContent = `${picked ? '[x]' : '[ ]'} ${objectOrPlayerName(view, session, id)}`;
-    }
+    syncRows();
     if (xCounter) xCounter.textContent = String(xValue ?? '');
     const cmd = currentCommand();
-    if (statusEl) {
-      if (slots) {
-        // Pozycje bez wyboru trzeba WYMIENIC — samo wyszarzone „Zatwierdz"
-        // nie mowi graczowi, czego brakuje (to bylo sedno zgloszenia).
-        const missing = slotChoice
-          .map((id, i) => (id == null ? (slotLabels[i] ?? `cel ${i + 1}`) : null))
-          .filter(Boolean);
-        statusEl.textContent = missing.length === 0
-          ? (cmd ? 'Wybrano komplet celów' : 'Wybór niedozwolony')
-          : `Brakuje: ${missing.join(', ')}`;
-      } else if (sacMode) {
-        // M257-r5/C: status wymienia brakujące SEKCJE, nie tylko licznik.
-        const sacLabel = slotLabels[1] ?? 'Poświęcenie (koszt)';
-        const missing = [
-          chosen.size === 0 ? (slotLabels[0] ?? 'cel') : null,
-          sacrificeChoice == null ? sacLabel : null,
-        ].filter(Boolean);
-        statusEl.textContent = missing.length === 0
-          ? (cmd ? `Wybrano: ${slotLabels[0] ?? 'cel'} + ${sacLabel}` : 'Wybór niedozwolony')
-          : `Brakuje: ${missing.join(', ')}`;
-      } else {
-        statusEl.textContent = cmd
-          ? `Wybrano ${itemWord}: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}`
-          : `Wybór niedozwolony (${itemWord}: ${chosen.size}${plan.hasX ? `, X = ${xValue}` : ''})`;
-      }
+    if (slots) {
+      // Pozycje bez wyboru trzeba WYMIENIĆ — samo wyszarzone „Zatwierdź"
+      // nie mówi graczowi, czego brakuje (to było sedno zgłoszenia).
+      const missing = slotChoice
+        .map((id, i) => (id == null ? (slotLabels[i] ?? `cel ${i + 1}`) : null))
+        .filter(Boolean);
+      if (missing.length > 0) setStatus(`Brakuje: ${missing.join(', ')}`, true);
+      else setStatus(cmd ? 'Wybrano komplet celów' : 'Wybór niedozwolony', !cmd);
+    } else if (sacMode) {
+      // M257-r5/C: status wymienia brakujące SEKCJE, nie tylko licznik.
+      const sacLabel = slotLabels[1] ?? 'Poświęcenie (koszt)';
+      const missing = [
+        chosen.size === 0 ? (slotLabels[0] ?? 'cel') : null,
+        sacrificeChoice == null ? sacLabel : null,
+      ].filter(Boolean);
+      if (missing.length > 0) setStatus(`Brakuje: ${missing.join(', ')}`, true);
+      else setStatus(cmd ? `Wybrano: ${slotLabels[0] ?? 'cel'} + ${sacLabel}` : 'Wybór niedozwolony', !cmd);
+    } else if (cmd) {
+      setStatus(`Wybrano ${itemWord}: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}`, false);
+    } else {
+      setStatus(`Wybór niedozwolony (${itemWord}: ${chosen.size}${plan.hasX ? `, X = ${xValue}` : ''})`, true);
     }
     if (confirm) {
       confirm.disabled = !cmd;
@@ -950,65 +1077,27 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     }
   };
 
-  const addPeek = (row, id) => {
-    if (!onOpenCard || view.players?.some((pl) => pl.id === id)) return;
-    const peek = choiceNode(row, 'button', 'ghost-btn multi-target-peek', 'Podgląd');
-    peek.type = 'button';
-    peek.addEventListener('click', () => onOpenCard(id));
-  };
-
   if (slots) {
-    // Sekcja na KAZDA pozycje celu, z naglowkiem z Oracle („twoj stwor",
-    // „stwor przeciwnika", „karta-stwor w grobie", „gracz"). W obrebie
-    // pozycji wybor jest JEDNOKROTNY - kliniecie zastepuje poprzedni.
+    // Sekcja na KAŻDĄ pozycję celu, z nagłówkiem z Oracle („twój stwór",
+    // „stwór przeciwnika", „karta-stwór w grobie", „gracz"). W obrębie
+    // pozycji wybór jest JEDNOKROTNY — kliknięcie zastępuje poprzedni.
     slots.forEach((ids, slotIndex) => {
       const label = slotLabels[slotIndex] ?? `cel ${slotIndex + 1}`;
-      choiceNode(list, 'div', 'multi-target-slot-label', `${slotIndex + 1}. ${label}:`);
-      for (const id of ids) {
-        const row = choiceNode(list, 'div', 'multi-target-row multi-target-slot-row');
-        const toggle = choiceNode(row, 'button', 'action multi-target-toggle');
-        toggle.type = 'button';
-        toggleRows.push({ node: toggle, id, slot: null });
-        toggle.addEventListener('click', () => {
-          slotChoice[slotIndex] = slotChoice[slotIndex] === id ? null : id;
-          refresh();
-        });
-        addPeek(row, id);
-      }
+      renderPickerSection(list, `${slotIndex + 1}. ${label}:`, { className: 'multi-target-slot-label' });
+      for (const id of ids) addRow(id, slotIndex);
     });
   } else {
-    // M257-r5/C: trym poświęcenia dostaje NAGŁÓWKI sekcji (cele / ofiara).
-    if (sacMode) choiceNode(list, 'div', 'multi-target-slot-label', `${slotLabels[0] ?? 'Cel'}:`);
-    for (const id of plan.targets) {
-      const row = choiceNode(list, 'div', 'multi-target-row');
-      const toggle = choiceNode(row, 'button', 'action multi-target-toggle');
-      toggle.type = 'button';
-      toggleRows.push({ node: toggle, id, slot: sacMode ? 'target' : null });
-      toggle.addEventListener('click', () => {
-        if (chosen.has(id)) chosen.delete(id);
-        else chosen.add(id);
-        refresh();
-      });
-      addPeek(row, id);
-    }
+    // M257-r5/C: tryb poświęcenia dostaje NAGŁÓWKI sekcji (cele / ofiara).
+    if (sacMode) renderPickerSection(list, `${slotLabels[0] ?? 'Cel'}:`, { className: 'multi-target-slot-label' });
+    for (const id of plan.targets) addRow(id, null);
   }
 
   // M257-r5/C: DRUGA sekcja — ofiara kosztu dodatkowego. Pule celów i ofiar
   // się nakładają (własny stwór bywa celem i kosztem), stąd wybór jedyny,
-  // zakresowy (klik = zmiana), a nie współdzielony z celami zbiór `chosen`.
+  // zakresowy (radio w grupie), a nie współdzielony z celami zbiór `chosen`.
   if (sacMode) {
-    choiceNode(list, 'div', 'multi-target-slot-label', `${slotLabels[1] ?? 'Poświęcenie (koszt)'}:`);
-    for (const id of plan.sacrifices) {
-      const row = choiceNode(list, 'div', 'multi-target-row multi-target-slot-row');
-      const toggle = choiceNode(row, 'button', 'action multi-target-toggle');
-      toggle.type = 'button';
-      toggleRows.push({ node: toggle, id, slot: 'sac' });
-      toggle.addEventListener('click', () => {
-        sacrificeChoice = sacrificeChoice === id ? null : id;
-        refresh();
-      });
-      addPeek(row, id);
-    }
+    renderPickerSection(list, `${slotLabels[1] ?? 'Poświęcenie (koszt)'}:`, { className: 'multi-target-slot-label' });
+    for (const id of plan.sacrifices) addRow(id, 'sac');
   }
 
   if (plan.hasX) {
@@ -1021,7 +1110,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     plus.addEventListener('click', () => { if (xValue < plan.xMax) { xValue += 1; refresh(); } });
   }
 
-  statusEl = choiceNode(host, 'div', 'multi-target-status', '');
+  statusEl = choiceNode(host, 'div', 'picker-status multi-target-status', '');
   const buttons = choiceNode(host, 'div', 'choice-request-actions');
   confirm = choiceNode(buttons, 'button', 'primary-btn multi-target-confirm', 'Zatwierdź wybór');
   confirm.type = 'button';
@@ -1067,11 +1156,11 @@ function controllerTag(view, id) {
   return ` (${controller?.name ?? object.controllerId})`;
 }
 
-export function renderDamageWizard(host, { view, session, pending, defaultCommand, onComplete, onCancel, probeKeyFor = null }) {
+export function renderDamageWizard(host, { view, session, pending, defaultCommand, onComplete, onCancel, probeKeyFor = null, onOpenCard = null }) {
   clearChoiceElement(host);
   choiceNode(host, 'div', 'choice-request-intro', 'Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:');
   const list = choiceNode(host, 'div', 'damage-wizard-list');
-  const state = { entries: [], amounts: new Map(), renders: [] }; // amounts: `${attackerId}:${blockerId}` → n
+  const state = { entries: [], renders: [] };
   let confirm = null;
   // CR 702.19b: przydział trample jest legalny, gdy albo cała moc poszła
   // w blokerów, albo każdy blokujący dostał co najmniej lethal.
@@ -1119,15 +1208,15 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
       entry.trample ? `do gracza: ${entry.power}` : '');
     const key = entry.attackerId;
 
+    const rowHandles = [];
     const sum = () => amounts.reduce((a, b) => a + b, 0);
     const canIncrease = (idx) => sum() < entry.power
       && (idx === 0 || amounts[idx - 1] >= entry.blockers[idx - 1].lethal);
     const render = () => {
-      // odśwież liczniki w wierszach
+      // odśwież liczniki w wierszach (picker liczy z tego samego modelu, co
+      // pozwala +/− — `setValue` wywołuje w środku `paint()`)
       for (let idx = 0; idx < entry.blockers.length; idx += 1) {
-        const b = entry.blockers[idx];
-        const el = state.amounts.get(`${key}:${b.id}`);
-        if (el) el.textContent = String(amounts[idx]);
+        rowHandles[idx]?.setValue(amounts[idx]);
       }
       // M101/B6 (CR 702.19b): nadmiar trample idzie na gracza DOPIERO, gdy
       // każdy bloker ma lethal — inaczej silnik odrzuci przydział. Pokazujemy
@@ -1163,40 +1252,57 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
       // i w przeglądarce, i w stubach MiniEl testów (nie każda ma
       // replaceChildren).
       rows.innerHTML = '';
+      rowHandles.length = 0;
       entry.blockers.forEach((b, idx) => {
-        const row = choiceNode(rows, 'div', 'damage-wizard-row');
         const liveBlockerName = objectName(view, session, b.id);
         const blockerName = liveBlockerName !== '?'
           ? liveBlockerName
           : (b.cardId ? session.nameOf(b.cardId) : '?');
-        choiceNode(row, 'span', 'damage-wizard-name',
-          `${blockerName} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal})`);
-        const minus = choiceNode(row, 'button', 'ghost-btn damage-wizard-minus', '−1');
-        minus.type = 'button';
-        const amountEl = choiceNode(row, 'span', 'damage-wizard-amount', '0');
-        state.amounts.set(`${key}:${b.id}`, amountEl);
-        const plus = choiceNode(row, 'button', 'ghost-btn damage-wizard-plus', '+1');
-        plus.type = 'button';
-        minus.addEventListener('click', () => {
-          if (amounts[idx] <= 0) return;
-          amounts[idx] -= 1;
-          // Jeśli ten bloker spadł poniżej lethal, późniejsi nie mogą mieć
-          // obrażeń (reguła kolejności CR 510.1d).
-          if (amounts[idx] < b.lethal) {
-            for (let j = idx + 1; j < amounts.length; j += 1) amounts[j] = 0;
-          }
-          render();
+        // M292: wiersz-stepper z `src/table/picker.js` — te same 44 px, ten sam
+        // licznik i TA SAMA klikalna nazwa co w kreatorze wielocelowym, walce i
+        // podziale obrażeń. Przed tym commitem ten ekran był jedynym w todo-stole,
+        // który nie przyjmował `onOpenCard` (uwaga właściciela: „elastyczne
+        // komponenty z parametrami, nie równoległe funkcje" — konwencja była
+        // złamana dokładnie w jednym miejscu i nikt jej nie pilnował).
+        const handle = renderPickerRow(rows, {
+          id: b.id,
+          kind: 'stepper',
+          label: `${blockerName} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal})`,
+          min: 0,
+          max: entry.power,
+          rowClassName: 'damage-wizard-row',
+          nameClassName: 'damage-wizard-name',
+          valueClassName: 'damage-wizard-amount',
+          decClassName: 'ghost-btn damage-wizard-minus',
+          incClassName: 'ghost-btn damage-wizard-plus',
+          canDecrement: () => amounts[idx] > 0,
+          canIncrement: () => canIncrease(idx),
+          onStep: (delta) => {
+            if (delta < 0) {
+              if (amounts[idx] <= 0) return;
+              amounts[idx] -= 1;
+              // Jeśli ten bloker spadł poniżej lethal, późniejsi nie mogą mieć
+              // obrażeń (reguła kolejności CR 510.1d).
+              if (amounts[idx] < b.lethal) {
+                for (let j = idx + 1; j < amounts.length; j += 1) amounts[j] = 0;
+              }
+            } else {
+              if (!canIncrease(idx)) return;
+              amounts[idx] += 1;
+            }
+            render();
+          },
+          onOpenCard: typeof onOpenCard === 'function' ? (oid) => onOpenCard(oid) : null,
         });
-        plus.addEventListener('click', () => {
-          if (!canIncrease(idx)) return;
-          amounts[idx] += 1;
-          render();
-        });
-        const up = choiceNode(row, 'button', 'ghost-btn damage-wizard-up', '↑');
+        if (handle.label?.dataset && b.cardId) handle.label.dataset.objectId = b.id;
+        rowHandles[idx] = handle;
+        // ↑/↓ (kolejność przydziału, M150/B) jadą w tym samym wierszu, w
+        // hakcie `actions`, który picker oddaje wywołującemu na własne kontrolki.
+        const up = choiceNode(handle.actions, 'button', 'ghost-btn damage-wizard-up', '↑');
         up.type = 'button';
         up.title = 'Przesuń wyżej w kolejności przydziału';
         up.addEventListener('click', () => { if (idx > 0) swapBlockerOrder(idx, idx - 1); });
-        const down = choiceNode(row, 'button', 'ghost-btn damage-wizard-down', '↓');
+        const down = choiceNode(handle.actions, 'button', 'ghost-btn damage-wizard-down', '↓');
         down.type = 'button';
         down.title = 'Przesuń niżej w kolejności przydziału';
         down.addEventListener('click', () => { if (idx < entry.blockers.length - 1) swapBlockerOrder(idx, idx + 1); });
@@ -1255,11 +1361,7 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     def.type = 'button';
     def.addEventListener('click', () => onComplete?.(defaultCommand));
   }
-  if (onCancel) {
-    const cancel = choiceNode(host, 'button', 'ghost-btn look-wizard-cancel', 'Zamknij (dokończysz później)');
-    cancel.type = 'button';
-    cancel.addEventListener('click', () => onCancel());
-  }
+  if (onCancel) renderPickerCancel(host, { onClick: () => onCancel() });
   return host;
 }
 
@@ -1309,19 +1411,21 @@ export function renderEscapeExileWizard(host, { candidates, exileCount, sourceNa
   });
 
   for (const candidate of candidates) {
-    const row = choiceNode(list, 'label', 'escape-exile-row');
-    const input = choiceNode(row, 'input', 'escape-exile-toggle');
-    input.type = 'checkbox';
-    input.checked = false;
-    input.addEventListener('change', () => {
-      if (input.checked) picked.add(candidate.id); else picked.delete(candidate.id);
-      refresh();
+    // M288/A: te same wiersze co w wizardzie walki i kreatorze celów — przez
+    // wspólny picker. Osobny przycisk „🔍 Podgląd karty" zniknął: nazwa karty
+    // otwiera pełny ekran (jedna konwencja dla wszystkich kreatorów).
+    renderPickerRow(list, {
+      id: candidate.cardId ?? candidate.id,
+      label: candidate.name ?? candidate.id,
+      rowClassName: 'escape-exile-row',
+      toggleClassName: 'escape-exile-toggle',
+      nameClassName: 'escape-exile-name',
+      onToggle: (on) => {
+        if (on) picked.add(candidate.id); else picked.delete(candidate.id);
+        refresh();
+      },
+      onOpenCard: typeof onOpenCard === 'function' ? (cardId) => onOpenCard(cardId) : undefined,
     });
-    choiceNode(row, 'span', 'escape-exile-name', candidate.name ?? candidate.id);
-    if (typeof onOpenCard === 'function' && candidate.cardId) {
-      const spy = choiceNode(row, 'button', 'card-preview-btn', '🔍 Podgląd karty');
-      spy.addEventListener('click', (ev) => { ev.preventDefault?.(); ev.stopPropagation?.(); onOpenCard(candidate.cardId); });
-    }
   }
   refresh();
   return host;

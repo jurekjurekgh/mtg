@@ -19,5 +19,39 @@
     "large": "https://cards.scryfall.io/large/front/e/0/e08e4107-213f-491b-a032-8e3367009ba8.jpg?1783907918",
     "normal": "https://cards.scryfall.io/normal/front/e/0/e08e4107-213f-491b-a032-8e3367009ba8.jpg?1783907918"
   },
-  "pobrano": "2026-09-01"
+  "pobrano": "2026-09-01",
+  "rulings": [
+    {
+      "date": "2025-02-07",
+      "source": "wotc",
+      "comment": "Start your engines! isn’t a triggered ability. Increasing your speed to 1 is something that happens as a state-based action as soon as you control a permanent with the ability. Notably, this includes gaining control of a permanent with the ability that another player controls."
+    },
+    {
+      "date": "2025-02-07",
+      "source": "wotc",
+      "comment": "Your speed doesn’t change until a spell or ability says so, such as the inherent triggered ability that cares about opponents losing life during your turn. Notably, losing control of permanents with start your engines! doesn’t affect your speed."
+    },
+    {
+      "date": "2025-02-07",
+      "source": "wotc",
+      "comment": "Each player tracks their speed (or lack thereof) separately. Increasing your speed has no effect on whether another player has speed."
+    },
+    {
+      "date": "2025-02-07",
+      "source": "wotc",
+      "comment": "If an effect needs to know what a player’s speed is and that player doesn’t have a speed, their speed is considered 0."
+    },
+    {
+      "date": "2025-02-07",
+      "source": "wotc",
+      "comment": "A player “has max speed” if their speed is 4."
+    },
+    {
+      "date": "2025-02-07",
+      "source": "wotc",
+      "comment": "“Max speed — [ability]” means “As long as you have max speed, this object has [ability].” If the granted ability functions in a zone other than the battlefield, the max speed ability does too."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/dft/18/rulings",
+  "rulingsPobrano": "2026-09-02"
 }

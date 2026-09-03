@@ -20,7 +20,7 @@ import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
-import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL, TURN_NAMES } from './session.js';
+import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL, TURN_NAMES, gameOverNotice } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
@@ -32,7 +32,7 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
-import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderFertileThicketWizard } from './choice-request.js';
+import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard } from './choice-request.js';
 import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
@@ -416,12 +416,13 @@ function bootstrapTable() {
       return;
     }
     const lookKind = lookWizardKindOf(request, choiceView);
-    // M260/A (uwaga właściciela z PR #89): Fertile Thicket — decyzja
-    // „zaglądnij?” musi zapaść PRZED pokazaniem kart, dlatego osobny wizard
-    // (look-wizard scry od razu pokazuje karty — tam „look” jest obowiązkowy).
-    if (lookKind === 'fertile') {
+    // M260/A (uwaga właściciela z PR #89): decyzja „zaglądnij?” musi zapaść
+    // PRZED pokazaniem kart, dlatego osobny wizard (scry od razu pokazuje
+    // karty — tam „look” jest obowiązkowy). Nazwa funkcji idzie po czynności,
+    // nie po karcie, która ją wprowadziła (ADR 0002, M293).
+    if (lookKind === 'peek-pick') {
       const pending = choiceView.pendingFertileThicket;
-      renderFertileThicketWizard(els.choiceRequestBody, {
+      renderPeekPickOrderWizard(els.choiceRequestBody, {
         cards: pending.cards.map((card) => ({ id: card.id, cardId: card.cardId, name: session.nameOf(card.cardId) })),
         basicLandIds: pending.basicLandIds ?? [],
         // M201/F: nazwa karty z danych (ADR 0002) — intro nazywa źródło decyzji.
@@ -566,6 +567,9 @@ function bootstrapTable() {
       renderDamageWizard(els.choiceRequestBody, {
         view: choiceView, session, pending,
         defaultCommand: request.options[0],
+        // M292: jedyny ekran stołu bez tej konwencji — nazwa blokera otwiera
+        // kartę jak w walce, podziale obrażeń i kreatorze celów (patrz picker).
+        onOpenCard: (objectId) => openCardFullscreen(objectId),
         // M136 (backlog: „damage wizard poza osią noop"): klucz sondy dla
         // przycisku zatwierdzenia — wizard składa komendę ze stepperów, więc
         // sam liczy jej kształt, a tu dokładamy tożsamość komendy.
@@ -1044,6 +1048,10 @@ function bootstrapTable() {
       // pokazuje JEDNĄ opcję otwierającą modal wyboru kreatury do wygnania).
       if (cmd.type === 'cast_permanent' && cmd.exileTargetId != null) return `perm-exile:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.kicked) return `perm-k:${cmd.objectId}`;
+      // Kicker na CZARZE (CR 702.33, audyt PR #93): bez własnego klucza
+      // wariant kicked zbiłby się z naturalnym rzutem w jedną grupę i panel
+      // pokazał tylko jeden z dwóch przycisków (oferta nieosiągalna kliknięciem).
+      if (cmd.type === 'cast_spell' && cmd.kicked) return `spell-k:${cmd.objectId}`;
       if (cmd.type === 'cast_adventure') return `adv:${cmd.objectId}`;
       if (cmd.type === 'cast_adventure_creature') return `advc:${cmd.objectId}`;
       if (cmd.type === 'activate_ability' && (cmd.targets?.length || cmd.xValue != null || cmd.attackerId != null || cmd.crewCreatureIds?.length)) return `ability:${cmd.objectId}:${cmd.abilityIndex}`;
@@ -1239,8 +1247,41 @@ function bootstrapTable() {
       const winnerName = panelPlayerName(winner?.name) ?? null;
       // CR 104.4b: remis (winnerId null + isDraw) — inaczej gracz widział samo
       // „Koniec partii" i nie wiedział, jak się skończyła.
-      if (view.isDraw) el.textContent = 'Koniec partii — REMIS';
-      else el.textContent = winnerName ? `Koniec partii — wygrywa ${winnerName}` : 'Koniec partii';
+      // M288/D (uwaga właściciela z żywej gry, 2026-09-02): nakładka ma
+      // pomniejszyć się do trzech faktów — werdykt, życia końcowe, przyczyna
+      // nieoczywista. Wcześniejszy `textContent` nie pozwalał dołożyć życia i
+      // przyczyny bez zduplikowania zdania, więc gałąź buduje teraz <spany>
+      // (te same klasy co w trybie aktywnym: ti-life / ti-life foe).
+      el.textContent = '';
+      // Separator w TEKŚCIE, nie tylko w CSS (`gap` flexa): tester i czytnik
+      // ekranu czytają `textContent`, a tam bez spacji wychodziło
+      // „wygrywa BotGracz: 0 ż.Bot: 20 ż." (zmierzone w transkrypcie Żywego
+      // Testera po M288/D).
+      let notei = 0;
+      const note = (cls, text) => {
+        const s = document.createElement('span');
+        s.className = cls;
+        s.textContent = (notei++ === 0 ? '' : ' · ') + text;
+        el.appendChild(s);
+      };
+      note('ti-result', view.isDraw ? 'Koniec partii — REMIS'
+        : (winnerName ? `Koniec partii — wygrywa ${winnerName}` : 'Koniec partii'));
+      // Życia i przyczyny czytamy ze zdarzeń silnika (session.gameOverNotice) —
+      // UI nic nie dodaje od siebie (L48). „brak życia" pomijamy: widać je po
+      // licznikach; wyczerpanie biblioteki i trucizna są NIEWIDOCZNE i to je
+      // właściciel kazał dopisać (CR 104.3b / 704.10).
+      const info = gameOverNotice(view, session.state);
+      const nameOfId = (id) => panelPlayerName((view.players ?? []).find((p) => p.id === id)?.name) ?? id;
+      for (const entry of info.life) {
+        const name = nameOfId(entry.playerId);
+        note(name === 'Bot' ? 'ti-life foe' : 'ti-life', `${name}: ${entry.life} ż.`);
+      }
+      for (const loss of info.losses) {
+        if (!loss.reason || loss.reason === 'life_zero') continue;
+        const name = nameOfId(loss.playerId);
+        note('ti-reason', loss.reason === 'empty_library'
+          ? `${name} wyczerpał bibliotekę` : `${name}: ${loss.label}`);
+      }
       return;
     }
     const who = (view.players ?? []).find((p) => p.id === view.turn.activePlayerId);

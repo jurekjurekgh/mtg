@@ -146,7 +146,11 @@ function pickActionButton(actions) {
   if (dom.get('mana-wizard').className === 'modal active') {
     const walk = (el, acc = []) => { for (const c of el.children ?? []) { acc.push(c); walk(c, acc); } return acc; };
     const wiz = walk(dom.get('mana-wizard-body'));
-    const source = wiz.find((el) => /^Tapnij:/.test(el.text ?? '') && (el.listeners.click ?? []).length > 0);
+    // M292: wiersz źródła buduje `picker.js` (`kind: 'button'`), więc tekst
+    // mieszka w zagnieżdżonym spanie, a akcja na wierszu — selektor po klasie
+    // rodzinnej (dokładnie na nią patrzy Żywy Tester: `$$('#mana-wizard .mana-wizard-source')`).
+    const source = wiz.find((el) => /(^| )mana-wizard-source( |$)/.test(String(el.className))
+      && (el.listeners.click ?? []).length > 0);
     if (source) return source;
     return wiz.find((el) => /Anuluj płatność/.test(el.text ?? '')) ?? null;
   }
@@ -536,7 +540,10 @@ function driveToManaWizard(maxClicks = 300) {
 /** Kliki w przyciski źródeł kreatora (po jednym, nie „wszystkie naraz”). */
 function wizardSourceButtons() {
   const walk = (el, acc = []) => { for (const c of el.children ?? []) { acc.push(c); walk(c, acc); } return acc; };
-  return walk(dom.get('mana-wizard-body')).filter((el) => /^Tapnij:/.test(el.text ?? '') && (el.listeners.click ?? []).length > 0);
+  // M292: po klasie rodzinnej, nie po tekście na węźle (patrz pickActionButton).
+  return walk(dom.get('mana-wizard-body'))
+    .filter((el) => /(^| )mana-wizard-source( |$)/.test(String(el.className)))
+    .filter((el) => (el.listeners.click ?? []).length > 0);
 }
 
 test('kreator many (E.3a): dwukolorowa płatność Curate otwiera wizard, źródła tapowane po jednym, rzut sam się dokłada', () => {

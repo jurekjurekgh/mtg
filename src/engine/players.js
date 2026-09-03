@@ -47,3 +47,58 @@ export function addPoisonCounters(state, playerId, amount) {
   return events;
 }
 
+/**
+ * Speed gracza (DFT „Start your engines!", CR: akcja stanowa) — JEDYNY zapis
+ * pola `player.speed` w silniku (analogia: `changeLife` dla życia,
+ * `recordCardDrawn` dla dobrań; rodzina pól `speed` w `tools/family-audit.mjs`
+ * pilnuje, żeby żadna nowa ścieżka nie pisała wprost).
+ * Zwraca wydarzenia `speed_changed` (wołający nie dubluje pusha do `state.events`).
+ */
+export function setPlayerSpeed(state, playerId, speed) {
+  const player = state.players.find((entry) => entry.id === playerId);
+  if (!player) return [];
+  const next = Math.max(0, Math.min(4, speed));
+  if ((player.speed ?? 0) === next) return [];
+  player.speed = next;
+  const e = event('speed_changed', { playerId, speed: next });
+  state.events.push(e);
+  return [e];
+}
+
+/**
+ * „Start your engines!" (CR: stan, nie trigger — ruling WotC dla Leonin
+ * Surveyor, 2025-02-07, zapisany w `docs/cards/scryfall-leonin-surveyor.json`):
+ * jeśli gracz NIE ma prędkości, dostaje 1. Ustawiamy, nie zwiększamy — drugi
+ * silnik nie podnosi prędkości wyżej, a utrata źródła jej nie cofa.
+ */
+export function startEnginesFor(state, playerId) {
+  const player = state.players.find((entry) => entry.id === playerId);
+  if (!player || (player.speed ?? 0) >= 1) return [];
+  return setPlayerSpeed(state, playerId, 1);
+}
+
+/**
+ * Jedyny choke point licznika dobrań w turze (analogicznie do `changeLife`
+ * dla życia): podnosi `state.cardsDrawnThisTurn` i STEMUPLUJE porządek
+ * dobrania w zdarzeniu `card_drawn` (`drawNumberThisTurn`).
+ *
+ * Dlaczego porządek musi iść ZE ZDARZENIA, nie ze stanu: skan triggerów
+ * (`processTriggers`) biegnie PO CAŁEJ komendzie, więc odczyt
+ * `state.cardsDrawnThisTurn === 2` po komendzie widzi wartość KOŃCOWĄ —
+ * „draw two” na starcie tury dawało dwa wyzwalacze Jolrael, a dobranie
+ * w kroku + „draw two” nie dawało żadnego (audyt PR #92, znalezisko 3).
+ *
+ * Zakres: dobrania w rozumieniu CR 122.12. Karty wzięte po mulliganie NIE są
+ * dobraniami (CR 701.3b) i nie przechodzą tędy — ich `card_drawn` nosi
+ * jawne `drawNumberThisTurn: null`, bo kontrakt pola musi być wypełniony
+ * u WSZYSTKICH emiterów (ADR 0027).
+ */
+export function recordCardDrawn(state, playerId, payload = {}) {
+  const drawNumberThisTurn = (state.cardsDrawnThisTurn?.[playerId] ?? 0) + 1;
+  state.cardsDrawnThisTurn = {
+    ...(state.cardsDrawnThisTurn ?? {}), [playerId]: drawNumberThisTurn,
+  };
+  const drawnEvent = event('card_drawn', { ...payload, playerId, drawNumberThisTurn });
+  state.events.push(drawnEvent);
+  return drawnEvent;
+}

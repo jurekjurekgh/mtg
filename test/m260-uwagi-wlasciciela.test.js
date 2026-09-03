@@ -5,7 +5,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { applyEffect } from '../src/engine/effects.js';
-import { lookWizardKindOf, renderFertileThicketWizard } from '../src/table/choice-request.js';
+import { lookWizardKindOf, renderPeekPickOrderWizard } from '../src/table/choice-request.js';
 import { commandLabel, cardInfo, waitingExileStatus } from '../src/table/render.js';
 import { describeGameEvent } from '../src/table/session.js';
 
@@ -217,7 +217,7 @@ const FERTILE_CARDS = [
 test('M260/A1 (wizard): decyzja „zaglądnij?” PRZED pokazaniem kart; rezygnacja = skip', () => {
   const host = new MiniEl('div');
   const done = [];
-  renderFertileThicketWizard(host, {
+  renderPeekPickOrderWizard(host, {
     cards: FERTILE_CARDS,
     basicLandIds: ['fa', 'fc'],
     sourceName: 'Fertile Thicket',
@@ -240,7 +240,7 @@ test('M260/A1 (wizard): decyzja „zaglądnij?” PRZED pokazaniem kart; rezygna
 test('M260/A2+A3 (wizard): po zajrzeniu widać karty; tylko basic landy na wierzch; sorter kolejności spodu', () => {
   const host = new MiniEl('div');
   const done = [];
-  renderFertileThicketWizard(host, {
+  renderPeekPickOrderWizard(host, {
     cards: FERTILE_CARDS,
     basicLandIds: ['fa', 'fc'],
     sourceName: 'Fertile Thicket',
@@ -274,7 +274,7 @@ test('M260/A2 (wizard): brak basic landów — tylko „bez landa”, cała pią
   const host = new MiniEl('div');
   const done = [];
   const cards = FERTILE_CARDS.slice(1).map((c, i) => ({ ...c, id: `n${i}` }));
-  renderFertileThicketWizard(host, {
+  renderPeekPickOrderWizard(host, {
     cards,
     basicLandIds: [],
     sourceName: 'Fertile Thicket',
@@ -301,7 +301,7 @@ test('M260/A1 (routing): lookWizardKindOf rozpoznaje decyzję Fertile Thicket', 
     { type: 'resolve_fertile_thicket', playerId: 'p1', chosenCardId: null },
   ];
   const view = { playerId: 'p1', pendingFertileThicket: { playerId: 'p1', cards: [{ id: 'fa' }] } };
-  assert.equal(lookWizardKindOf({ options }, view), 'fertile');
+  assert.equal(lookWizardKindOf({ options }, view), 'peek-pick');
   assert.equal(lookWizardKindOf({ options }, { playerId: 'p2', pendingFertileThicket: { playerId: 'p1', cards: null } }),
     null, 'decyzja cudza — bez wizarda');
   assert.equal(lookWizardKindOf({ options }, { playerId: 'p1' }), null,

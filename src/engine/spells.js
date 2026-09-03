@@ -2,6 +2,7 @@ import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
 import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
+import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
 import { deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
 import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
@@ -10,7 +11,7 @@ import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from
 import { effectiveProtectionFromColors } from './attachments.js';
 import { addCounter } from './counters.js';
 import { shuffle } from './shuffle.js';
-import { changeLife } from './players.js';
+import { changeLife, recordCardDrawn } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, coloredPipsOf, consumePendingSpellDiscount } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
@@ -66,14 +67,20 @@ export function plottedCastAllowed(state, playerId, object) {
     && state.zones.stack.length === 0;
 }
 
-function requireSpell(state, playerId, objectId, targets, cleaved, vaanCast = false) {
+function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindowCast = false) {
   const object = state.objects.get(objectId);
   // Batch 46 (Gila Courser): karta wygnana „impulse" jest grywalna z exile
   // do końca twojej następnej tury — za PEŁNY koszt (w odróżnieniu od plot).
-  const impulse = object?.zone === 'exile' && object.playableUntilTurn != null
-    && state.turn.number <= object.playableUntilTurn;
+  const impulse = canPlayByImpulseFromExile(object, state);
   const plotted = object?.zone === 'exile' && (object.plotted || object.suspendReady);
-  if (!object || object.controllerId !== playerId || (!['hand', 'exile'].includes(object.zone)) || object.kind !== 'spell' || (object.zone === 'exile' && !plotted && !impulse)) {
+  // Audyt PR #92: `abilityWindowCast` to osobne uprawnienie do rzutu z exile —
+  // „karta leży w exile, bo właśnie wygnała ją zdolność, która wciąż jest na
+  // stosie i o rzucie decyduje". Ściślejsze niż dawny stempel
+  // `playableUntilTurn`: okno znika razem z decyzją, więc nie da się z niego
+  // skorzystać „później w turze" (ruling WotC dla Vaana, 2025-02-10).
+  // Nazwa jest celowo bezimienna (ADR 0002) — to mechanika, nie karta.
+  if (!object || object.controllerId !== playerId || (!['hand', 'exile'].includes(object.zone)) || object.kind !== 'spell'
+    || (object.zone === 'exile' && !plotted && !impulse && !abilityWindowCast)) {
     throw new Error('To nie jest rzucalny czar z ręki, zaplotowany albo gotowy z suspendu z exile');
   }
   if (!object.spell || !object.spell.effects?.length) throw new Error('Obiekt nie ma deskryptora czaru');
@@ -85,10 +92,10 @@ function requireSpell(state, playerId, objectId, targets, cleaved, vaanCast = fa
   }
   if (timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
-    // Vaan, Street Thief: rzut „teraz" przy rozstrzyganiu zdolności ignoruje
+    // Rzucenie w oknie zdolności (np. „you may cast it" przy wygnaniu) ignoruje
     // timing czaru (CR 601.2b pomijany — ruling WotC: rzucasz, póki zdolność
     // jest na stosie), jak madness/suspend/rebound.
-    if (!vaanCast && (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0)) {
+    if (!abilityWindowCast && (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0)) {
       throw new Error('Czar sorcery tylko w swoją fazę main przy pustym stosie');
     }
   } else if (timing !== 'instant') {
@@ -342,6 +349,14 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (object && object.zone === 'stack' && object.kind !== 'trigger' && object.kind !== 'activated' && isArtifact) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
+    // Cel „activated or triggered ability on the stack" (Stifle, audyt PR #93).
+    // Zdolność many NIE może być celem — i nie musi jej pilnować ten warunek:
+    // taka zdolność w ogóle nie wchodzi na stos (CR 605.1a, patrz
+    // `isActivatedManaAbility` w abilities.js), więc nie ma czego wskazać.
+    if (spec?.type === 'ability_on_stack') {
+      if (object && object.zone === 'stack' && (object.activatedEntry || object.triggerEntry)) return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
     // Cel „target opponent" (Plague Reaver): gracz inny niż aktywujący.
     if (spec?.type === 'opponent') {
       if (targetId && targetId !== casterId && state.players.some((player) => player.id === targetId)) {
@@ -452,9 +467,41 @@ export function effectiveSpellManaCost(state, object) {
   return reduceGenericCost(object?.cardId, base, totalReduction);
 }
 
+/**
+ * Opcje rzutu czaru — ogon `castSpell`. Decyzja właściciela (audyt PR #93):
+ * flagi nie mogą być kolejnymi argumentami pozycyjnymi. Przez pięć batchy
+ * doklejalismy je jeden po drugim (`buyback, payAltCost, xValue,
+ * phyrexianPayWithLife, abilityWindowCast, kicked`) i sygnatura urosła do 13
+ * pozycji, na których `false, false, undefined, 0, true` jest MYLNE CICHE —
+ * zamiana dwóch flag miejscami nie daje żadnego błędu. Kształt lustrzany do
+ * `castPermanent(…, options)`; lista poniżej jest JEDYNYM źródłem nazw, a
+ * nieznany klucz odrzucamy, więc literówka w opcji nie udaje uprawnienia (L21).
+ */
+export const CAST_SPELL_OPTIONS = Object.freeze([
+  'buyback', 'payAltCost', 'xValue', 'phyrexianPayWithLife', 'abilityWindowCast', 'kicked',
+]);
+
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
-export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0, vaanCast = false) {
+export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, options = {}) {
+  for (const key of Object.keys(options)) {
+    if (!CAST_SPELL_OPTIONS.includes(key)) {
+      throw new Error(`Nieznana opcja rzutu czaru: ${key} (znane: ${CAST_SPELL_OPTIONS.join(', ')})`);
+    }
+  }
+  const {
+    buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0,
+    abilityWindowCast = false, kicked = false,
+  } = options;
   const preObject = state.objects.get(objectId);
+  // Kicker (CR 702.33) na instantach i sorcerych rozlicza TA funkcja. Ścieżki
+  // z własną walidacją kosztu (tryby „choose one\", koszt X, Fireball) idą do
+  // osobnych funkcji, które kickera nie znają — JAWNY błąd zamiast cichego
+  // zignorowania (L5: naprawa u źródła, nie maskowanie; oferta i tak takich
+  // wariantów nie enumeruje, więc to bramka na wypadek błędnego płatnika).
+  if (kicked && ((preObject?.spell?.modes && modeIndex != null)
+    || preObject?.spell?.xCost || preObject?.spell?.fireball)) {
+    throw new Error('Kicker nie łączy się z rzutem modalnym, z kosztem X ani z Fireballem');
+  }
   // Modal „Choose one" (Aerith Rescue Mission): osobna ścieżka walidacji —
   // cele i efekty pochodzą z wybranego trybu, a nie z nadrzędnego deskryptora.
   if (preObject?.spell?.modes && modeIndex != null) {
@@ -470,7 +517,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   if (preObject?.spell?.fireball) {
     return castFireball(state, playerId, objectId, targets, xValue);
   }
-  const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets, false, vaanCast);
+  const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets, false, abilityWindowCast);
   const player = state.players.find((entry) => entry.id === playerId);
   const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   // Dodatkowy koszt „sacrifice a creature" (Village Rites): walidacja celu-
@@ -504,7 +551,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Suspend (CR 702.62): rzut po zdjęciu ostatniego licznika czasu — bez kosztu.
   // Batch 47: impulse „bez placenia" (Caves of Chaos Adventurer po ukonczonym
   // lochu) omija koszt i kolorowa walidacje — jak plot/suspend.
-  const freeImpulse = object.zone === 'exile' && object.playableWithoutPaying === true;
+  const freeImpulse = isFreeImpulseCast(object);
   // Phyrexian mana (CR 118.9): każdy pip {R/P} płaci się maną LUB 2 życiem —
   // ta sama reguła co ścieżka permanentów (cast_permanent: warianty
   // phyrexianPayWithLife + changeLife). Batch 48 (Ruthless Invasion): PIERWSZY
@@ -515,6 +562,22 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const lifePaid = phyrexianSymbols > 0 ? (phyrexianPayWithLife ?? 0) : 0;
   if (lifePaid < 0 || lifePaid > phyrexianSymbols) throw new Error('Nieprawidłowa liczba symboli phyrexian płaconych życiem');
   if (!object.plotted && !object.suspendReady && !freeImpulse && !hasColorForObject(state, playerId, object, lifePaid)) throw new Error('Brak kolorowego źródła many');
+  // Kicker (CR 702.33) na czarach — ta sama zasada co na ścieżce permanentów
+  // (`castPermanent` w resources.js): „You may pay an additional [cost] as you
+  // cast this spell." — koszt dodatkowy dokłada się do sumy, JEGO pipy kolorów
+  // do wymagań, a fakt opłacenia ląduje na obiekcie stosu (`wasKicked`) i
+  // w zdarzeniu `spell_cast` (`kicked`) — tam, gdzie patrzą triggery
+  // „if it was kicked" oraz „whenever you cast a kicked spell" (Merfolk
+  // Falconer). Decyzja właściciela (audyt PR #93): silnik obsługuje kickera
+  // także na instantach i sorcerych — to nie `limitations`, tylko brakująca
+  // ścieżka rozliczenia kosztu.
+  if (kicked && !object.kicker) throw new Error('Ta karta nie ma mechaniki kicker');
+  const kicker = kicked ? (object.kicker ?? null) : null;
+  const kickerPips = (kicker?.colors ?? []).map((color) => [color]);
+  if (kickerPips.length > 0
+    && !canPayColoredCost(state, playerId, [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips])) {
+    throw new Error('Brak kolorowego źródła many na kickera');
+  }
   // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal) oraz modyfikatory
   // z permanentów (Etherium Sculptor): płacimy efektywny koszt wyliczony
   // w chwili rzutu (warunki i modyfikatory oceniane na bieżącej planszy).
@@ -523,9 +586,11 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Pip phyrexian płacony maną to pełna jednostka many (CR 118.9); pipy
   // opłacone życiem nie biorą udziału w koszcie many. M259/B3: baseMana
   // (object.manaCost) zawiera już symbole phyrexian — odejmujemy lifePaid.
-  const manaSpent = baseMana + altManaExtra - lifePaid;
+  // Kicker to koszt DODATKOWY (CR 601.2f): nie podlega obnizkom kosztu czaru
+  // i placa go takze rzuty „without paying its mana cost" (plot/suspend).
+  const manaSpent = baseMana + altManaExtra - lifePaid + (kicker?.cost ?? 0);
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
-  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId, lifePaid), spellManaPurpose(object));
+  spendMana(state, playerId, manaSpent, [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips], spellManaPurpose(object));
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
@@ -561,6 +626,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const reboundCast = Boolean(object.spell?.rebound && object.zone === 'hand');
   const stacked = Object.freeze({
     ...moved, tapped: false, chosenTargets: chosen.slice(), wasBuyback, reboundCast,
+    // CR 702.33a: „was kicked" to własność CZARU na stosie — trigger wchodzący
+    // po rozstrzygnięciu czyta ją z obiektu, nie ze zdarzenia rzutu.
+    wasKicked: Boolean(kicker),
     ...(sacrificedToughness != null ? { sacrificedToughness } : {}),
   });
   state.objects.set(stackId, stacked);
@@ -604,6 +672,10 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // Phyrexian mana (CR 118.9) — publiczne: ile symboli i czy opłacono
     // życiem (jak permanent_cast; log i panel nazywają wybór).
     phyrexianSymbols, phyrexianPaidWithLife: lifePaid,
+    // Fakt użycia kickera (jawny w logu i dla triggerów „whenever you cast a
+    // kicked spell" — triggers.js czyta `ev.kicked`; lustrzane pole
+    // `permanent_cast` w resources.js).
+    kicked: Boolean(kicker),
   });
   state.events.push(e);
   // Storm (CR 702.40a): „When you cast this spell, copy it for each spell cast
@@ -1061,6 +1133,16 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
         return object?.zone === 'stack' && object.kind !== 'trigger' && object.kind !== 'activated';
       });
     }
+    case 'ability_on_stack': {
+      // Stifle (audyt PR #93): „Counter target activated or triggered ability".
+      // Zdolność na stosie to wpis z `activatedEntry` (CR 602.2a) albo
+      // `triggerEntry` (CR 603.3) — PREDYKAT TEN SAM co w `counterStackObject`,
+      // bo dwie definicje „czym jest zdolność na stosie" to klasa L21.
+      return state.zones.stack.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'stack' && Boolean(object.activatedEntry || object.triggerEntry);
+      });
+    }
     case 'artifact_spell_on_stack': {
       // Steel Sabotage: „Counter target artifact spell" — czary na stosie,
       // których karta jest artefaktem (także artifact creature).
@@ -1419,8 +1501,9 @@ function resolveActivatedAbilityEntry(state, entry) {
           }
           const handId = `hand-${state.objectSequence++}`;
           const drawn = moveObjectDirectly(state, topId, 'hand', handId);
-          state.cardsDrawnThisTurn[payload.playerId] = (state.cardsDrawnThisTurn[payload.playerId] ?? 0) + 1;
-          state.events.push(event('card_drawn', { playerId: payload.playerId, fromId: topId, object: drawn }));
+          // A92/3: cycling to pełnoprawne dobranie (CR 122.12) — idzie przez
+          // ten sam choke point co krok dobierania i efekt `draw_cards`.
+          recordCardDrawn(state, payload.playerId, { fromId: topId, object: drawn });
         }
         state.events.push(event('ability_resolved', {
           playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
@@ -2181,7 +2264,7 @@ export function legalSpellCasts(state, playerId) {
       // Adventurer) jest grywalna z exile do konca wskazanej tury. Dotad
       // requireSpell ja przyjmowal, ale OFERTA jej nie enumerowala, wiec
       // gracz nie mial jej w „Twoje dzialania" (klasa L48).
-      const impulseLive = obj?.playableUntilTurn != null && state.turn.number <= obj.playableUntilTurn;
+      const impulseLive = isImpulseWindowLive(obj, state);
       return obj?.plotted || obj?.suspendReady || impulseLive;
     }),
   ];
@@ -2189,7 +2272,7 @@ export function legalSpellCasts(state, playerId) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId || object.kind !== 'spell' || !object.spell) continue;
     // „Without paying its mana cost" (ukonczony loch) — jak plot.
-    const freeImpulseCast = object.zone === 'exile' && object.playableWithoutPaying === true;
+    const freeImpulseCast = isFreeImpulseCast(object);
     if (freeImpulseCast) {
       if (object.spell.timing === 'sorcery') {
         const mainPhaseFree = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
@@ -2225,6 +2308,32 @@ export function legalSpellCasts(state, playerId) {
       return out;
     })();
     if (spellPhyrexianVariants.length === 0) continue;
+    // Kicker (CR 702.33, audyt PR #93): wariant z dodatkowym kosztem —
+    // dokładany PO zwykłych wariantach, żeby pierwsza pozycja panelu została
+    // najtańszym naturalnym rzutem (proste boty i tester stołu biorą pierwszą;
+    // ten sam porządek co przy `cast_permanent` w playerView). Enumerujemy
+    // tylko tam, gdzie walidacja potrafi kickera rozliczyć (ścieżka prosta —
+    // tryby, koszt X i Fireball mają osobne funkcje rzutu bez kickera).
+    // L48: oferta liczy tak samo jak płatność — koszt AND pipy kolorów kickera.
+    const freeCastForKicker = () => Boolean(object.plotted || object.suspendReady
+      || isFreeImpulseCast(object));
+    const pushKickerSpellCasts = (cast) => {
+      if (!object.kicker) return;
+      const kickerCost = object.kicker.cost ?? 0;
+      const kickerPips = (object.kicker.colors ?? []).map((color) => [color]);
+      const freeCast = freeCastForKicker();
+      const base = freeCast ? 0 : effectiveSpellManaCost(state, object);
+      for (const k of spellPhyrexianVariants) {
+        // M259/B3: wariant phyrexianu płacony życiem obniża sumę o k.
+        if (base + kickerCost - (k ?? 0) > manaAvailable(object)) continue;
+        const pips = freeCast ? [] : coloredPipsOf(object.cardId, k ?? 0);
+        if (pips.length + kickerPips.length > 0
+          && !canPayColoredCost(state, playerId, [...pips, ...kickerPips])) continue;
+        const kickedCast = { ...cast, kicked: true };
+        if (k != null) kickedCast.phyrexianPayWithLife = k;
+        casts.push(kickedCast);
+      }
+    };
     const pushSpellCast = (cast) => {
       // Kolejność panelu (M203/2): przy konwencji „prezentacja = enumeracja"
       // wariant manowy (k=null) jest PIERWSZY wprost z tablicy wariantów —
@@ -2232,6 +2341,7 @@ export function legalSpellCasts(state, playerId) {
       for (const k of spellPhyrexianVariants) {
         casts.push(k == null ? cast : { ...cast, phyrexianPayWithLife: k });
       }
+      pushKickerSpellCasts(cast);
     };
     if (object.spell.timing === 'sorcery') {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
@@ -2512,8 +2622,7 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   // enumerowała tryby impulse-czaru z exile (Your Temple Is Under Attack po
   // ukończonym lochu), a execute je odrzucał — rozjazd oferty i wykonania
   // (L48/L41). Mirror gałęzi z requireSpell.
-  const impulse = object?.zone === 'exile' && object.playableUntilTurn != null
-    && state.turn.number <= object.playableUntilTurn;
+  const impulse = canPlayByImpulseFromExile(object, state);
   const plottedLike = object?.zone === 'exile' && (object.plotted || object.suspendReady);
   if (!object || object.controllerId !== playerId || !['hand', 'exile'].includes(object.zone)
     || object.kind !== 'spell' || (object.zone === 'exile' && !plottedLike && !impulse)) {
@@ -2529,8 +2638,7 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   // nie zmienia kosztu rzutu, więc nie ma powodu, by omijał Etherium Sculptor.
   // Rzut bez płacenia (plot albo impulse „without paying its mana cost" po
   // ukończonym lochu) kosztuje 0; zwykły impulse — pełny koszt.
-  const freeCast = object.plotted || object.suspendReady
-    || (object.zone === 'exile' && object.playableWithoutPaying === true);
+  const freeCast = object.plotted || object.suspendReady || isFreeImpulseCast(object);
   const modalCost = freeCast ? 0 : effectiveSpellManaCost(state, object);
   if (modalCost > producibleMana(state, playerId, null, spellManaPurpose(object))) throw new Error('Niewystarczająca mana');
   if (!freeCast && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');

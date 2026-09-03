@@ -13,7 +13,24 @@ import { HUMAN_ID, BOT_ID, createSession } from '../src/table/session.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
 class MiniEl {
-  constructor(tag) { this.tagName = tag; this.children = []; this.listeners = {}; this.style = {}; this.dataset = {}; this.className = ''; this.text = ''; this.html = ''; this.value = ''; this.disabled = false; }
+  constructor(tag) { this.tagName = tag; this.children = []; this.listeners = {}; this.style = {}; this.dataset = {}; this.className = ''; this.text = ''; this.html = ''; this.value = ''; this.disabled = false; this.type = ''; this.checked = false; }
+  /**
+   * Klik z natywną AKTYWACJĄ (tak samo robi jsdom, na którym jeździ Żywy
+   * Tester): klik w `<input type=checkbox>` przełącza zaznaczenie i ogłasza
+   * `change`, klik w `<label>` trafia w jego ptaszek. M288/A — kreator
+   * wielocelowy przeszedł na ptaszki `<input>` (jak wizard walki), więc
+   * wywoływanie `listeners.click[0]()` nie ma już czego wołać.
+   */
+  click() {
+    const input = this.tagName === 'input' ? this : (this.children ?? []).find((c) => c.tagName === 'input') ?? null;
+    if (input && (input.type === 'checkbox' || input.type === 'radio')) {
+      if (input.disabled) return;
+      input.checked = input.type === 'radio' ? true : !input.checked;
+      for (const fn of input.listeners.change ?? []) fn({});
+      return;
+    }
+    for (const fn of this.listeners.click ?? []) fn({});
+  }
   set textContent(v) { this.text = String(v); this.children = []; }
   get textContent() { return this.text + this.children.map((c) => c.textContent).join(''); }
   set innerHTML(v) { this.html = String(v); }
@@ -205,9 +222,9 @@ test('M200/C: wizard mulliganu — zatwierdź aktywuje się przy dokładnie N ka
   assert.equal(toggles.length, 5, 'wiersz na każdą kartę ręki');
   const confirm = host.querySelectorAll('.multi-target-confirm')[0];
   assert.equal(confirm.disabled, true, 'bez zaznaczenia — Zatwierdź wyłączone');
-  toggles[0].listeners.click[0](); // a1
+  toggles[0].click(); // a1
   assert.equal(confirm.disabled, true, '1 z 2 — nadal wyłączone');
-  toggles[2].listeners.click[0](); // a3
+  toggles[2].click(); // a3
   assert.equal(confirm.disabled, false, 'dokładnie 2 karty — włączone (komenda istnieje w engine)');
   confirm.listeners.click[0]();
   assert.ok(completed, 'zatwierdzenie oddało komendę');

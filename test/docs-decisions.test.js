@@ -319,6 +319,51 @@ test('LESSONS: mapa klas wskazuje istniejące lekcje, a kotwice prowadzą do wpi
   }
 });
 
+// ---------------------------------------------------------------------------
+// PR #93: kondensacja rejestru (decyzja właściciela — miejsce w budżecie robi
+// się streszczeniem, nie podnoszeniem progu). Skala zmiany jest gwarancją, ale
+// tylko dopóki nikt jej nie rozdmucha z powrotem: wpis ma w rejestrze regułę
+// i strażnika, a prozę w archiwum. Obie strony odsyłacza muszą istnieć.
+// ---------------------------------------------------------------------------
+
+test('LESSONS: wyniesiona narracja ma adresata, a skrócony wpis ma regułę', () => {
+  const lessons = fs.readFileSync('docs/LESSONS.md', 'utf8');
+  const przypadki = fs.readFileSync('docs/LESSONS_PRZYPADKI.md', 'utf8');
+
+  const wyniesione = [...lessons.matchAll(/^→ narracja: `docs\/LESSONS_PRZYPADKI\.md` \((L\d+)\)/gm)]
+    .map((m) => m[1]);
+  assert.ok(wyniesione.length >= 50,
+    `rejestr powinien wskazywać archiwum narracji w co najmniej 50 wpisach `
+    + `(jest ${wyniesione.length}) — jeśli wpisy znów niosą prozę, budżet `
+    + `lektury startowej zacznie puchnąć i kondensacja PR #93 przepada`);
+
+  const naglowki = new Set([...przypadki.matchAll(/^## (L\d+) \(/gm)].map((m) => m[1]));
+  for (const nr of wyniesione) {
+    assert.ok(naglowki.has(nr),
+      `${nr}: odsyłacz do archiwum bez nagłówka — przeniesiona narracja przepadła`);
+  }
+  for (const nr of naglowki) {
+    assert.ok(lessons.includes(`## ${nr} (`),
+      `${nr}: przypadek w archiwum bez lekcji w rejestrze — archiwum zaczyna śmiecić`);
+  }
+
+  // Skrót musi zostać REGULĄ, nie streszczeniem streszczenia.
+  for (const nr of wyniesione) {
+    const od = lessons.indexOf(`## ${nr} (`);
+    const nast = lessons.slice(od + 1).search(/^## L\d+ \(/m);
+    const tresc = nast === -1 ? lessons.slice(od) : lessons.slice(od, od + 1 + nast);
+    assert.match(tresc, /\*\*(Reguła|Zasada|Wniosek|Strażnik)/,
+      `${nr}: wpis skrócony do narracji bez reguły — nie nadaje się do lektury startowej`);
+  }
+
+  // Wzorzec wpisu w nagłówku rejestru musi opisywać stan faktyczny (bez Objawu).
+  const naglowek = lessons.slice(0, lessons.indexOf('\n## L1 ('));
+  assert.match(naglowek, /\*\*Przypadek:\*\*/,
+    'wzorzec wpisu w rejestrze musi wymagać jednego zdania **Przypadek:** — to ono identyfikuje klasę');
+  assert.doesNotMatch(naglowek, /^\*\*Objaw:\*\* co było widać/m,
+    'wzorzec nie może już kazać pisać Objawu w rejestrze — proza mieszka w archiwum');
+});
+
 test('LESSONS: kotwica zachowuje własny KONKRET, nie jest samym odsyłaczem', () => {
   // Skrócenie lekcji nie może wyciąć faktów (karta, test, plik, numer CR) —
   // to one pozwalają rozpoznać klasę w nowym przebraniu.

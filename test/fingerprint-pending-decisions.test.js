@@ -24,17 +24,38 @@ import { stateFingerprint } from '../src/engine/fingerprint.js';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
- * Zbiór pendingów KONSULTOWANYCH przez firstPendingDecisionPlayerId —
- * ta funkcja decyduje, kto ma priorytet po każdej komendzie (inwariant
- * accepted()), więc jej pola to definicja „decyzji blokującej grę".
+ * Zbiór pendingów KONSULTOWANYCH przy wyznaczaniu, kto ma priorytet po
+ * każdej komendzie (inwariant `accepted()`) — to definicja „decyzji
+ * blokującej grę”.
+ *
+ * Znalezisko 1 z audytu PR #92 (2026-09-02): ground truth liczono wyłącznie
+ * z ciała `firstPendingDecisionPlayerId`, które od refaktoryzacji M258 jest
+ * jednoliniowym delegatem (`return firstPendingDecision(state)?.playerId`).
+ * Delegat nie odwołuje się do `state.pending*`, więc skan zwracał ZBIÓR PUSTY,
+ * a strażnik był zielony dla KAŻDEGO stanu repo — dokładnie tej klasy, którą
+ * sam pilnuje. Dwie decyzje prześlizgnęły się realnie: `pendingWardPay` i
+ * `pendingExileCast` (znalezisko 2).
+ *
+ * Reguła (L113): skan opisuje INTENCJĘ (enumerację decyzji blokujących), a nie
+ * nazwę funkcji, która może stać się delegatem. Dlatego przeglądamy OBYDWA
+ * ciała i wymagamy progu liczby pól: strażnik vacuous musi być czerwony, nie
+ * zielony (L26: „brak danych = pomijam” nie jest strażnikiem).
  */
 function blockingPendingFieldsFromSource() {
   const src = readFileSync(join(ROOT, 'src/engine/game-state.js'), 'utf8');
-  const body = src.match(/function firstPendingDecisionPlayerId\(state\) \{[\s\S]*?\n\}/);
-  assert.ok(body, 'firstPendingDecisionPlayerId znalezione w game-state.js');
-  // Funkcja to płaska sekwencja `if (state.pendingX…) return …;` — zapis
-  // kontraktowy; jeśli kiedyś zyska zagnieżdżone bloki, doprecyzuj regex.
-  return [...new Set([...body[0].matchAll(/state\.(pending[A-Z][A-Za-z]*)/g)].map((m) => m[1]))].sort();
+  const bodies = [];
+  for (const name of ['firstPendingDecision', 'firstPendingDecisionPlayerId']) {
+    const body = new RegExp('function ' + name + '\\(state\\) \\{[\\s\\S]*?\\n\\}').exec(src);
+    assert.ok(body, `${name} znalezione w game-state.js`);
+    // Funkcja to płaska sekwencja `if (state.pendingX…) return …;` — zapis
+    // kontraktowy; jeśli kiedyś zyska zagnieżdżone bloki, doprecyzuj regex.
+    bodies.push(body[0]);
+  }
+  const found = [...new Set([...bodies.join('\n').matchAll(/state\.(pending[A-Z][A-Za-z]*)/g)].map((m) => m[1]))].sort();
+  assert.ok(found.length >= 50,
+    `ground truth liczy ${found.length} pól — skan przestał obejmować realną `
+    + 'enumerację decyzji blokujących (patrz komentarz funkcji: pułapka delegatu)');
+  return found;
 }
 
 /**
@@ -174,6 +195,17 @@ function fingerprintCoveredFieldsFromSource() {
   return coveredFieldsFromFingerprintFile(readFileSync(join(ROOT, 'src/engine/fingerprint.js'), 'utf8'));
 }
 
+test('STRAŻNIK nie jest vacuous: ground truth widzi decyzje wniesione po M258', () => {
+  // Pin znaleziska 1 (audyt PR #92): te decyzje otwarto PO wprowadzeniu
+  // delegatu i żadna nie trafiła do odcisku. Jeśli skan znowu przegapi
+  // enumerację, ten test czerwienieje niezależnie od progu liczby pól.
+  const blocking = blockingPendingFieldsFromSource();
+  for (const field of ['pendingWardPay', 'pendingExileCast', 'pendingEscapeExile', 'pendingDiscover']) {
+    assert.ok(blocking.includes(field),
+      `${field} blokuje grę w firstPendingDecision, ale skan ground truth go nie widzi`);
+  }
+});
+
 test('STRAŻNIK klasy L16: każdy pending blokujący grę jest pokryty w fingerprintcie', () => {
   const blocking = blockingPendingFieldsFromSource();
   const covered = fingerprintCoveredFieldsFromSource();
@@ -223,13 +255,17 @@ test('A1+A2 (pin strażnika): pokrycie wyłącznie KOMENTARZEM albo CIĄGIEM ZNA
     'ścieżka produkcyjna strażnika skanuje KOD (bez komentarzy), nie surowy plik — regresja A1');
 });
 
-test('fingerprint projektuje 5 pendingów z audytu PR #86 (N1)', () => {
+test('fingerprint projektuje każdą decyzję z audytu PR #86 (N1) i PR #92 (znalezisko 2)', () => {
   const cases = {
     pendingManifestDread: { playerId: 'p1', objectIds: ['lib0', 'lib1'], restorePriorityTo: 'p1' },
     pendingSuspendCast: { playerId: 'p1', objectId: 'susp-1', restorePriorityTo: 'p2' },
     pendingOpponentTarget: { playerId: 'p2', activatingPlayerId: 'p1', sourceId: 'src-1', spec: { type: 'any_target' } },
     pendingFabricate: { playerId: 'p1', sourceId: 'src-2', amount: 1, hostOnBattlefield: true },
     pendingCopyTargets: { playerId: 'p1', queue: [{ copyId: 'c1', targetIndex: 0 }], specs: [{ type: 'creature' }] },
+    // Znalezisko 2 (audyt PR #92): decyzje wniesione po M258, których odcisk
+    // nie niósł — ward (CR 702.21) i rzut z wygnania (Vaan, Street Thief).
+    pendingWardPay: { playerId: 'p1', amount: 2, wardSourceId: 'src-3', targetingStackId: 'spell-9' },
+    pendingExileCast: { playerId: 'p1', objectId: 'exile-4', cardId: 'loporrit-scout', sourceId: 'vaan-1' },
   };
   for (const [field, value] of Object.entries(cases)) {
     const state = createGameState({ seed: 5, players: [{ id: 'p1' }, { id: 'p2' }] });

@@ -27,11 +27,12 @@ import { runStateBasedActions, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities } from './attachments.js';
-import { createBattlefieldToken } from './tokens.js';
+import { createBattlefieldToken, TREASURE_TOKEN_EFFECT } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
-import { changeLife } from './players.js';
+import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject } from './effects.js';
+import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive } from './impulse-window.js';
 
 /**
  * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
@@ -630,9 +631,9 @@ function performDrawStepDraw(state, playerId, objectId = null) {
   const drawn = Object.freeze({ ...object, id: newObjectId, zone: 'hand' });
   state.objects.delete(object.id);
   state.objects.set(drawn.id, drawn);
-  state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
-  const drawnEvent = event('card_drawn', { playerId, fromId: object.id, object: drawn, source: 'draw_step' });
-  state.events.push(drawnEvent);
+  // A92/3: licznik + zdarzenie przez JEDEN choke point (players.recordCardDrawn)
+  // — dawniej osobny inkrement i zdarzenie bez porządku dobrania.
+  const drawnEvent = recordCardDrawn(state, playerId, { fromId: object.id, object: drawn, source: 'draw_step' });
   state.turn.drawnInStep = true;
   return { ok: true, events: [drawnEvent] };
 }
@@ -1073,6 +1074,38 @@ function discardChooserId(pending) {
  * tego warunek „pendingExploits niepuste" blokował gracza, którego decyzja
  * była wcześniejsza (cel triggera), i oferta rozjeżdżała się z walidacją.
  */
+/**
+ * „Prosty zakres\" rzutu kartą spoza ręki — JEDNA definicja dla oferty i
+ * walidacji wszystkich ścieżek, które rzucają kartę leżącą w innej strefie
+ * bez wybierania jej kosztu z ręki: darmowy rzut z Discover (CR 701.53) i
+ * rzut z wygnania po Vaanie, Street Thief.
+ *
+ * Powód istnienia (audyt PR #92, znalezisko 5): filtr miał trzy kopie —
+ * ofertę Discover (zawężoną w M280/F), bramkę `resolve_exile_cast` i ofertę
+ * Vaana. Kopie rozjeżdżały się w drugą stronę: oferta Discover mówiła „nie\",
+ * a `execute()` i tak przyjmował `castFree: true` dla czaru celowanego, który
+ * lądował na stosie bez celów i fizzlował (CR 608.2b). L48: oferta i
+ * walidacja to JEDEN filtr.
+ *
+ * `allowTargets` — Discover nie enumeruje celów, więc czar celowany jest poza
+ * jego zakresem; Vaan wystawia warianty rzutu per zestaw celów (`epicCastOffers`)
+ * i tam cele są dozwolone.
+ */
+function outsideHandCastScope(card, { allowTargets = false } = {}) {
+  if (!card) return false;
+  // CR 305.1: land nie jest czarem — nigdy nie „się rzuca\", nawet za darmo.
+  if (card.kind === 'land' || (card.types ?? []).includes('Land')) return false;
+  if (card.kind === 'spell') {
+    const spell = card.spell ?? {};
+    if (!['instant', 'sorcery'].includes(spell.timing)) return false;
+    if (spell.additionalCost || spell.xCost || spell.fireball || spell.modes) return false;
+    if (!allowTargets && (spell.targets ?? []).length > 0) return false;
+    return true;
+  }
+  // Czyste aury mają własną ścieżkę celu (castAuraSpell) — poza prostym zakresem.
+  return ['creature', 'artifact', 'enchantment'].includes(card.kind) && !card.aura;
+}
+
 function firstPendingDecision(state) {
   if (state.pendingMulligans.length > 0) return { playerId: state.pendingMulligans[0], kind: 'mulligan' };
   if (state.pendingMulliganBottom) return { playerId: state.pendingMulliganBottom.playerId, kind: 'mulliganBottom' };
@@ -1415,7 +1448,12 @@ export function execute(state, input) {
       const newId = `hand-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, topId, 'hand', newId);
       drawn.push(moved);
-      state.events.push(event('card_drawn', { playerId, fromId: topId, object: moved, mulligan: true }));
+      // CR 701.3b: karty wzięte po mulliganie NIE są dobraniami — licznik
+      //      tury ich nie liczy, a kontrakt `drawNumberThisTurn` jest
+      //      wypełniony JAWNYM null (ADR 0027: brak pola to rozjazd ładunków).
+      state.events.push(event('card_drawn', {
+        playerId, fromId: topId, object: moved, mulligan: true, drawNumberThisTurn: null,
+      }));
     }
     // Odłożenie N kart na spód — decyzja gracza (resolve_mulligan_bottom_choice).
     const newHand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === playerId);
@@ -2208,7 +2246,7 @@ export function execute(state, input) {
   // z ofertą: prosty instant/sorcery (bez xCost/fireball/additionalCost) albo
   // permanent niebędący aurą. Land i karty spoza zakresu → tylko rezygnacja
   // (treasure) — jak pay_x_cast_from_graveyard ogranicza się do prostych
-  // czarów. vaanCast w castSpell/castPermanent omija bramki timingu (CR 601.2b
+  // czarów. abilityWindowCast w castSpell/castPermanent omija bramki timingu (CR 601.2b
   // ignorowany, gdyż rzut następuje w trakcie rozstrzygania zdolności).
   if (state.pendingExileCast) {
     if (cmd.type !== 'resolve_exile_cast') return reject('exile_cast_unresolved');
@@ -2216,27 +2254,18 @@ export function execute(state, input) {
     const pending = state.pendingExileCast;
     const before = state.events.length;
     const card = state.objects.get(pending.objectId);
-    const isLand = Boolean(card) && (card.kind === 'land' || (card.types ?? []).includes('Land'));
-    const castableKind = Boolean(card) && (
-      (card.kind === 'spell' && ['instant', 'sorcery'].includes(card.spell?.timing)
-        && !card.spell?.additionalCost && !card.spell?.xCost && !card.spell?.fireball)
-      || (['creature', 'artifact', 'enchantment'].includes(card.kind) && !card.aura)
-    );
+    // A92/5: zakres wylicza ten sam predykat co oferta (dawniej druga kopia
+    // tego filtra — bez `modes`, więc rozjeżdżała się z ofertą Vaana).
+    const castableKind = outsideHandCastScope(card, { allowTargets: true });
     const decline = (note) => {
       state.pendingExileCast = null;
       // „If you don't [cast it], create a Treasure token." Źródło triggera
       // mogło opuścić pole bitwy — token tworzy KONTROLER zdolności (LKI).
-      applyEffect(state, {
-        type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
-        colors: [], types: ['Artifact'], subtypes: ['Treasure'],
-        abilities: [Object.freeze({
-          type: 'activated', timing: 'instant', keyword: null,
-          cost: Object.freeze({ tap: true, sacrificeSelf: true }),
-          effect: Object.freeze({ type: 'add_mana', amount: 1, fromTreasure: true }),
-          trigger: null, targets: null, cycling: null, condition: null, pump: null,
-          keywords: null, oncePerTurn: false, mustAttack: false,
-        })],
-      }, { id: pending.sourceId, controllerId: pending.playerId, cardId: pending.cardId, zone: 'none', kind: null }, []);
+      // Skarb z JEDNEJ współdzielonej definicji (tokens.js) — patrz
+      // `TREASURE_TOKEN_EFFECT`; dawniej to samo literalne pole było pisane
+      // ponownie przy każdym powstaniu Skarbu (audyt PR #93).
+      applyEffect(state, TREASURE_TOKEN_EFFECT,
+        { id: pending.sourceId, controllerId: pending.playerId, cardId: pending.cardId, zone: 'none', kind: null }, []);
       if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
       }
@@ -2248,18 +2277,22 @@ export function execute(state, input) {
     };
     if (!cmd.cast) return decline();
     if (!card || card.zone !== 'exile') return reject('illegal_exile_cast');
-    if (isLand || !castableKind) return reject('illegal_exile_cast_scope');
+    if (!castableKind) return reject('illegal_exile_cast_scope');
     try {
       // CR 109.4: rzucający staje się KONTROLEREM czaru (obiekt na stosie), a
       // WŁAŚCICIELEM zostaje pierwotny gracz (ownerId bez zmian) — to właśnie
       // wykrywa trigger „you cast a spell you don't own". Karta w exile ma
       // controllerId właściciela; nadpisujemy go dla ścieżki rzutu.
       state.objects.set(pending.objectId, Object.freeze({ ...card, controllerId: pending.playerId }));
+      // `abilityWindowCast` (rzut w oknie zdolności: z exile i poza timingiem) —
+      // JEDYNE źródło tego uprawnienia, bo komenda `cast_spell`/`cast_permanent`
+      // nie ma takiego pola (bramka decyzji wyżej odrzuca inne komendy, dopóki
+      // okno jest otwarte). Od audytu PR #93 opcje rzutu jadą obiektem.
       if (card.kind === 'spell') {
         castSpell(state, pending.playerId, pending.objectId, cmd.targets ?? [], undefined,
-          cmd.modeIndex, undefined, false, false, undefined, 0, true);
+          cmd.modeIndex, undefined, { abilityWindowCast: true });
       } else {
-        castPermanent(state, pending.playerId, pending.objectId, { vaanCast: true });
+        castPermanent(state, pending.playerId, pending.objectId, { abilityWindowCast: true });
       }
       state.pendingExileCast = null;
       if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
@@ -4019,6 +4052,12 @@ export function execute(state, input) {
     const before = state.events.length;
     const foundObj = state.objects.get(disc.foundExileId);
     if (!foundObj) return reject('illegal_discover_choice');
+    // A92/5 (L48): ta sama bramka co oferta — darmowy rzut TYLKO dla kart
+    // w prostym zakresie. Bez niej komenda spoza oferty kładła czar na
+    // stosie z `targets: []` i pozwalała mu fizzlować (CR 608.2b).
+    if (cmd.castFree && !outsideHandCastScope(foundObj, { allowTargets: false })) {
+      return reject('illegal_discover_free_cast');
+    }
     if (cmd.castFree && foundObj.kind === 'spell') {
       // Rzuć czar (instant/sorcery) bez kosztu many — idzie na stos.
       const stackId = `spell-${state.objectSequence++}`;
@@ -4831,7 +4870,14 @@ export function execute(state, input) {
       // accepted() skanuje result.events pod kątem triggerów dies/leaves.
       // Wcześniej tylko [e] — poświęcony kosztem stwór nie odpalał dies.
       const before = state.events.length;
-      const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, cmd.buyback, cmd.payAltCost, cmd.xValue, cmd.phyrexianPayWithLife);
+      // Uwaga (audyt PR #93): `abilityWindowCast` NIE jest opcją tej komendy —
+      // uprawnienie do rzutu z exile w oknie zdolności pochodzi wyłącznie z
+      // `resolve_exile_cast`. Opcje idą obiektem (patrz CAST_SPELL_OPTIONS),
+      // więc `kicked` (CR 702.33) ma nazwę, a nie trzynastą pozycję.
+      const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, {
+        buyback: cmd.buyback, payAltCost: cmd.payAltCost, xValue: cmd.xValue,
+        phyrexianPayWithLife: cmd.phyrexianPayWithLife, kicked: Boolean(cmd.kicked),
+      });
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {
@@ -5394,6 +5440,12 @@ export function playerView(state, playerId) {
           // T6: zdolność triggerowana na stosie (pseudo-obiekt kind 'trigger').
           trigger: Boolean(object.triggerEntry),
           triggerEvent: object.triggerEntry?.ability?.trigger?.event ?? null,
+          // Audyt PR #93 (tura 3): EFEKTY zdolności leżącej na stosie. Bez nich
+          // ani stół, ani bot nie wiedzą, CO kontruje Stifle — a to ta sama
+          // klasa co `spell` czaru na stosie: deskryptor jest publiczny od
+          // chwili, gdy wpis wszedł na stos (ADR 0017).
+          abilityEffects: object.activatedEntry?.ability?.effect
+            ?? object.triggerEntry?.ability?.effect ?? null,
         };
       }
       // M201/A2 (zgłoszenie właściciela, Mindstab): karty „w poczekalni”
@@ -5429,8 +5481,10 @@ export function playerView(state, playerId) {
           waiting.timeCounters = object.timeCounters ?? 0;
         }
         if (object.plottedAtTurn != null) waiting.plottedAtTurn = object.plottedAtTurn;
-        if (object.playableWithoutPaying) waiting.playableWithoutPaying = true;
-        if (object.playableUntilTurn != null) waiting.playableUntilTurn = object.playableUntilTurn;
+        // Okno impulsu jedzie na obiekt stosu JEDNYM ruchem (audyt PR #93):
+        // dawniej dwa niezależne `if`-y sklejały pola i wystarczyło, że któreś
+        // z nich zmieni nazwę, żeby rzut zgubił „bez płacenia".
+        carryImpulseWindow(object, waiting);
         if (object.reboundReady) waiting.reboundReady = true;
         if (object.madnessReady) waiting.madnessReady = true;
         // M265: karta wygnana po rzucie za warp (CR EOE — warpReady) czeka na
@@ -6201,14 +6255,8 @@ export function playerView(state, playerId) {
     // darmowo rzucalny. Reszta trafia do „weź do ręki" (zawsze legalny
     // wynik Discover — CR 701.53).
     const discoverCard = state.objects.get(state.pendingDiscover.foundExileId);
-    const discoverFreeCastable = Boolean(discoverCard) && (
-      (['creature', 'artifact', 'enchantment'].includes(discoverCard.kind) && !discoverCard.aura)
-      || (discoverCard.kind === 'spell'
-        && ['instant', 'sorcery'].includes(discoverCard.spell?.timing)
-        && !discoverCard.spell?.additionalCost && !discoverCard.spell?.xCost
-        && !discoverCard.spell?.fireball && !discoverCard.spell?.modes
-        && !(discoverCard.spell?.targets ?? []).length)
-    );
+    // Ten sam predykat co bramka w `execute()` (L48 — jeden filtr, dwa miejsca).
+    const discoverFreeCastable = outsideHandCastScope(discoverCard, { allowTargets: false });
     if (discoverFreeCastable) {
       legalCommands.push(command('resolve_discover_choice', playerId, { castFree: true }));
     }
@@ -6379,14 +6427,9 @@ export function playerView(state, playerId) {
     // rezygnacja (zgodnie z „If you don't, create a Treasure token").
     const exilePending = state.pendingExileCast;
     const exileCard = state.objects.get(exilePending.objectId);
-    const exileIsLand = Boolean(exileCard)
-      && (exileCard.kind === 'land' || (exileCard.types ?? []).includes('Land'));
-    const exileCastable = Boolean(exileCard) && !exileIsLand && (
-      (exileCard.kind === 'spell' && ['instant', 'sorcery'].includes(exileCard.spell?.timing)
-        && !exileCard.spell?.additionalCost && !exileCard.spell?.xCost
-        && !exileCard.spell?.fireball && !exileCard.spell?.modes)
-      || (['creature', 'artifact', 'enchantment'].includes(exileCard.kind) && !exileCard.aura)
-    );
+    // A92/5: trzecia kopia filtra zniknęła — oferta liczy zakres tym samym
+    // predykatem co bramka `resolve_exile_cast` (L48).
+    const exileCastable = outsideHandCastScope(exileCard, { allowTargets: true });
     legalCommands.push(command('resolve_exile_cast', playerId, {
       cast: false, objectId: exilePending.objectId, cardId: exilePending.cardId,
     }));
@@ -6670,8 +6713,8 @@ export function playerView(state, playerId) {
         // Po ukonczonym lochu gra sie bez placenia, inaczej za pelny koszt.
         if (object?.controllerId === playerId && !object.plotted && !object.aura
           && (object.kind === 'creature' || object.kind === 'artifact' || object.kind === 'enchantment')
-          && object.playableUntilTurn != null && state.turn.number <= object.playableUntilTurn) {
-          const freeCast = object.playableWithoutPaying === true;
+          && isImpulseWindowLive(object, state)) {
+          const freeCast = hasFreeCastStamp(object);
           const affordable = freeCast
             || (effectiveSpellManaCost(state, object) <= manaAvailableFor(object)
               && hasColorForCardId(state, playerId, object.cardId, 0));

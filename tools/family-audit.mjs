@@ -121,6 +121,10 @@ export const FIELD_FAMILIES = [
     owner: 'src/engine/players.js',
     pattern: /\.life\s*(?:\+=|-=|=(?!=))/,
     why: 'zmienia życie poza changeLife — gubi zdarzenie life_changed i kontrakt logu/bota',
+    // Próbki pinu anty-vacuous (patrz `test/family-audit.test.js`): `bypass`
+    // MUSI pasować do wzoru, `legal` NIE może.
+    bypass: ['state.players[0].life += 1;', 'p.life = 20;', 'target.life -= 3;'],
+    legal: ['const before = player.life;', 'if (player.life <= 0) {', 'life: player.life'],
   },
   {
     id: 'poison',
@@ -128,6 +132,94 @@ export const FIELD_FAMILIES = [
     owner: 'src/engine/players.js',
     pattern: /\.poison\s*(?:\+=|-=|=(?!=))/,
     why: 'zmienia truciznę poza addPoisonCounters — gubi zdarzenie poison_counters_added',
+    bypass: ['player.poison = 10;', 'state.players[1].poison += 1;'],
+    legal: ['player.poison === 9;', 'const poison = player.poison;'],
+  },
+  {
+    id: 'speed',
+    label: 'prędkość gracza (DFT „Start your engines!”)',
+    owner: 'src/engine/players.js',
+    pattern: /\.speed\s*(?:\+=|-=|=(?!=))/,
+    why: 'pisze player.speed poza setPlayerSpeed/startEnginesFor — gubi zdarzenie speed_changed'
+      + ' i klamrę 0..4; prędkość to akcja stanowa, nie czyjś zapis w locie',
+    bypass: ['player.speed = 3;', 'state.players[0].speed += 1;', 'p.speed = 0;'],
+    legal: ['const s = player.speed;', 'if (player.speed >= 4) return;', 'speed: 0,',
+      'state.speedIncreasedThisTurn = {};'],
+  },
+  {
+    // Rodzina z audytu PR #92 (znalezisko 3): licznik dobrań w turze był
+    // podnoszony trzema rozjechanymi ścieżkami, a wyzwalacz Jolrael czytał
+    // WARTOŚĆ KOŃCOWĄ stanu po komendzie — „draw two" dawało dwa wyzwalacze,
+    // a „1 + 2" none. Odtąd jedynym miejscem zapisu jest `recordCardDrawn`
+    // (players.js), które razem z licznikiem stempluje `drawNumberThisTurn`
+    // w zdarzeniu `card_drawn`.
+    //
+    // Zasięg wzoru (świadomie węższy niż „każde przypisanie"): łapie zapis
+    // per gracz (`state.cardsDrawnThisTurn[id] = 3`, `+= 1`, `p.cardsDrawnThisTurn++`,
+    // `state.players[i].cardsDrawnThisTurn = 2`) — to jest klasa błędu
+    // „ścieżka podnosi licznik sama". Nie łapie przerzucenia całego obiektu
+    // składnią (`state.cardsDrawnThisTurn = { ...x, [id]: 2 }`), bo tym samym
+    // wzorem zeruje się licznik przy starcie tury w `game-state.js` (w bloku
+    // resetów `spellsCastThisTurn`/`lifeGainedThisTurn`), a fałszywy alarm na
+    // każdym progu tury kosztowałby więcej, niż wart jest ten rzadki zapis.
+    // Nie łapie też formy przedrostkowej `++x.cardsDrawnThisTurn` (pole jest
+    // potem, nie przed operatorem) — w kodzie produkcyjnym nikt jej nie używa,
+    // a jej obsługa kosztowałaby wzór łapiący komentarze.
+    id: 'draws',
+    label: 'licznik dobrań w turze',
+    owner: 'src/engine/players.js',
+    pattern: /\.cardsDrawnThisTurn\s*(?:\[[^\]]+\])?\s*(?:\+=|\+\+|=(?!=)\s*\d)/,
+    why: 'podnosi licznik dobrań poza recordCardDrawn — gubi stemplowanie drawNumberThisTurn w card_drawn (CR 122.5)',
+    bypass: [
+      'state.cardsDrawnThisTurn[p.id] = 2;',
+      'p.cardsDrawnThisTurn += 1;',
+      'state.players[1].cardsDrawnThisTurn = 3;',
+    ],
+    legal: [
+      'state.cardsDrawnThisTurn = {};',
+      'const n = (state.cardsDrawnThisTurn?.[playerId] ?? 0) + 1;',
+      'const drawn = (state?.cardsDrawnThisTurn ?? {})[object.controllerId] ?? 0;',
+    ],
+  },
+  // Rodziny z audytu PR #93 (tura 3, watek 4 z HANDOFF): okno impulsu. Dwa pola,
+  // ktore zawsze chodza parami (stempel okna + zwolnienie z kosztu), a zapisywaly
+  // je recznie trzy pliki i czytalo osiem. Wlascicielem jest choke point
+  // `impulse-window.js` — poza nim wolno te pola tylko czytac.
+  {
+    id: 'impulse-window',
+    label: 'stempel okna impulsu',
+    owner: 'src/engine/impulse-window.js',
+    pattern: /\bplayableUntilTurn\s*[:=](?!=)/,
+    why: 'pisze playableUntilTurn poza impulse-window.js — pomija choke point, a z nim '
+      + 'gaśnie para pol (okno + zwolnienie z kosztu) i rozjeżdża się oferta z walidacją (L48)',
+    bypass: [
+      'waiting.playableUntilTurn = 7;',
+      'state.objects.get(id).playableUntilTurn = turn;',
+      'Object.freeze({ ...moved, playableUntilTurn: 4 }),',
+    ],
+    legal: [
+      'if (object.playableUntilTurn != null) {',
+      'const live = state.turn.number <= object.playableUntilTurn;',
+      'playableUntilTurn,',
+      'const until = impulseWindowOf(object);',
+    ],
+  },
+  {
+    id: 'impulse-free-cast',
+    label: 'flaga rzutu bez placenia',
+    owner: 'src/engine/impulse-window.js',
+    pattern: /\bplayableWithoutPaying\s*[:=](?!=)/,
+    why: 'pisze playableWithoutPaying poza impulse-window.js — flaga bez okna to darmowy rzut '
+      + 'bez terminu ważności (CR 701.51b „without paying its mana cost" żyje tyle, co impuls)',
+    bypass: [
+      'target.playableWithoutPaying = true;',
+      'Object.freeze({ ...moved, playableWithoutPaying: true }),',
+      'exiled.playableWithoutPaying = free;',
+    ],
+    legal: [
+      'const free = object.playableWithoutPaying === true;',
+      'if (object.playableWithoutPaying) {',
+    ],
   },
 ];
 

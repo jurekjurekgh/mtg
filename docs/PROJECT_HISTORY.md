@@ -6310,7 +6310,7 @@ po U7 — ostatnie trzy błędy wyszły dopiero z **ręcznej analizy transkrypt�
 pod kątem wzorca „oferta, która nic nie zmienia albo jest pewną stratą".
 Ten wzorzec dał U8, U9 i U10. (2) Połowa tropów to fałszywe alarmy; każdy
 zweryfikowany trop zapisano w planie, żeby następna sesja ich nie powtarzała
-(T4′, `aura_spell_cast`, „1 opcja", dwa landy pod rząd).
+(T4', `aura_spell_cast`, „1 opcja", dwa landy pod rząd).
 
 **Wynik:** `npm test` **1838/1838**, build 50 modułów / 1693.9 kB, Żywy Tester
 bez zgłoszeń detektorów w 14 partiach (11 kombinacji talii, 4 profile gracza).
@@ -7413,7 +7413,555 @@ Golden-master bota zregenerowany (`bot-scoring-snapshot.mjs --write`) —
 
 Fast **4118/4118**, test:all **4128/4128**, build **57 modułów / 3069,2 kB**.
 
+### Audyt PR #92 — pięć znalezisk pętli jakości (2026-09-02, PR #93)
+
+Zlecenie właściciela: „kontynuujemy projekt" → domyślna pętla sesji
+(ADR 0020/0021): PR #93 przed kodowaniem, audyt ostatnio scalonego PR #92,
+inkrementalne commity (każdy zielony), bez force pusha.
+
+**Znaleziska w PR #92 (squash `db0c493`) i ich naprawy:**
+
+1. **+ 2. (razem, wspólny korzeń)** — `pendingWardPay` i `pendingExileCast`
+   blokowały priorytet, ale wypadły z projekcji odcisku stanu (ADR 0005), a
+   strażnik w `test/fingerprint-pending-decisions.test.js` był **vacuous**:
+   ground truth liczony regexem od delegata `firstPendingDecisionPlayerId`
+   dawał zbiór pusty (L26/L112 — fałszywe milczenie bramki jest gorsze niż
+   fałszywy alarm). Naprawa: skan obu ciał + próg liczebności (`>= 50`, realnie
+   64 pola) + pin nie-vacuous + oba pola w `PENDING_DECISION_FIELDS`.
+2. **Jolrael, Mwonvuli Recluse („draw your second card each turn")** — warunek
+   czytał `state.players[…].cardsDrawnThisTurn === 2` (STAN po komendzie), a
+   licznik podnoszą trzy rozjechane ścieżki → batch „draw two" dawał DWA
+   wyzwalacze, a dobranie w kroku + „draw two" — ŻADEN (repro
+   `scratch/repro-jolrael.mjs`). Naprawa u korzenia: choke point
+   `recordCardDrawn` w `players.js` stempluje `drawNumberThisTurn` w zdarzeniu
+   `card_drawn` (wszystkie ścieżki, mulligan jawnie `null` — CR 701.3b),
+   trigger czyta `ev.drawNumberThisTurn === 2`.
+3. **Grupowe triggery „one or more … deal combat damage to a player"** —
+   dedup po kluczu `kontroler|filtry` (PR #92 dopisał filtry podtypów Vaana,
+   nie zmieniając wymiaru sprawcy) kasował drugą instancję zdolności, mimo że
+   CR 603.3 każe każdej wyzwolić osobno. Klucz liczony od żywiciela i indeksu
+   zdolności; zbiór przemianowany na `groupedCombatDamageFires`.
+4. **Darmowy rzut z Discover** — M280/F zawęziło samą OFERTĘ, walidacja w
+   `execute()` została starsza i szersza: `castFree: true` dla czaru celowanego
+   kładło czar na stosie bez celów (fizzle, CR 608.2b). Ten sam filtr miał trzy
+   kopie (oferta Discover, bramka Vaana, oferta Vaana) rozjechane w obie strony.
+   Jeden predykat `outsideHandCastScope(card, { allowTargets })` w czterech
+   miejscach (L48: oferta = walidacja).
+
+**Strażnicy klasy (punkt 2.2):** rodzina pól `draws` w `tools/family-audit.mjs`
+(każdy zapis `cardsDrawnThisTurn` poza choke pointem = naruszenie) i pola
+WYMAGANE w `tools/event-contract-audit.mjs` (`CONTRACT_REQUIRED_FIELDS`) — te
+drugie pojawiły się, bo sprawdziłem własne założenie z nagłówka testu:
+analizator ADR 0027 milczał po usunięciu stempla z emitera mulliganu, gdyż
+reguła większościowa nie działa dla rodzin dwuemiterowych (1/2 = 50% < próg
+60%). Oba uzbrojone w piny anty-vacuous (L112).
+
+**Punkt 2.3 planu (mechaniczny przegląd `pending*`):** 68 nazw w `src/engine/`,
+64 w blokadzie priorytetu, **68 w odcisku (100%)**; cztery poza blokadą to
+księgowość przejściowa, nie decyzje gracza (`pendingAbilityActivation`,
+`pendingDevourEtbs`, `pendingSpellDiscounts`, `pendingSpellReturnToHand` — każda
+sparowana z prawdziwym pendingiem albo konsumowana natychmiast).
+
+**Zweryfikowane i odrzucone (bez zmian):** `ownerId` wierzchu biblioteki u Vaana
+(Oracle mówi „an opponent's library"), pokrycie warstw w `resolve_exile_cast`,
+kontrakt `object_transformed` (4/4 emitera), Merfolk Falconer (silnik nie ma
+ścieżki kickera na instant/sorcery — zapisane w § otwarte), Ulna/Infusion,
+Leonin `activePlayerIsController`. Claim planu „Rulingi WotC dla Vaana" nie do
+potwierdzenia z repo — snapshoty `docs/cards/scryfall-*.json` nie mają `rulings`.
+
+**L48 dostało rozszerzenie** o czwarty kierunek rozjazdu: zawężenie samej
+oferty (bez walidacji) nie domyka luki — bramka w `execute()` jest jedyną
+granicą dla sterowników nieschodzących z `legalCommands`.
+
+**Liczby:** `npm test` 4131 → **4143/4143**, `npm run test:all` **4153/4153**,
+build 3080,2 → **3084,1 kB**, `test/bot-benchmark.test.js` 10/10 (powtórzone po
+zmianie liczby triggerów), `tools/event-contract-audit.mjs` i
+`tools/family-audit.mjs` bez naruszeń, `oracle-coverage --only` 9 kart batchu 52
+= 100%. Raport: `docs/audits/AUDYT_PR92_2026-09-02.md`.
+
+### Audyt PR #92, tura 2 (2026-09-02): rulingi WotC w repo i cztery rozstrzygnięcia właściciela
+
+Sesja `arena/01a06193-mtg` (PR #93), kontynuacja rozpoznania z tury 1. Właściciel
+rozstrzygnął cztery otwarte pytania; wszystkie cztery weszły do kodu, każdy
+commit osobno zielony (`npm test` + `npm run build`) i pushnięty osobno
+(ADR 0020, bez force pusha).
+
+- **Rulingi jako dane.** `tools/fetch-card-rulings.mjs` ściąga rulings z API
+  Scryfalla (przez `fetch_page`; `curl` z sandboxa nie ma egressu) i dopisuje
+  je do snapshotów w `docs/cards/`. 9 kart batchu 52 ma rulingi, cztery z nich
+  puste listy („WotC nie ma nic") — to też informacja. `HOW_TO_ADD_CARD.md`
+  dostał punkt kontrolny, `ENVIRONMENT.md` §4 — notatkę o dostępie.
+- **Leonin Surveyor / Glitch Ghost Surveyor (odchylenie od rulingów, naprawione).**
+  „Start your engines!" jest akcją stanową, nie triggeriem ETB (ruling
+  2025-02-07): działa przy przejęciu permanentu z silnikami i przy zdolności
+  nadanej, a utrata źródła nie cofa prędkości. Zdolność w danych karty to teraz
+  `static` + `effect: [{type:'start_engines'}]`, rdzeń ma jeden pass w
+  `runStateBasedActions` pytający `effectiveAbilities`, zapis idzie wyłącznie
+  przez `setPlayerSpeed`/`startEnginesFor`, a rodzina pól `speed` w
+  `family-audit` pilnuje braku zapisów z boku.
+- **Vaan, Street Thief (odchylenie, naprawione strukturalnie).** Ruling
+  2025-02-10 zamyka okno rzutu wraz ze zdolnością na stosie. Model zostawiał
+  na karcie w exile stempel `playableUntilTurn`, więc po rezygnacji karta
+  dała się rzucić później za pełny koszt. Dziś oknem jest sama decyzja
+  `pendingExileCast`, a uprawnienie do rzutu z exile i poza timingiem daje
+  flaga `abilityWindowCast` (renoma `vaanCast` — zniknęła ostatnia nazwa karty
+  w sygnaturach rdzenia w tym obszarze).
+- **Treasure z katalogu tokenów (decyzja właściciela).** Jedna zamrożona
+  definicja `TREASURE_TOKEN_EFFECT` w `src/engine/tokens.js` zastąpiła trzy
+  ręczne kopie w rdzeniu; `token_treasure` w katalogu dostał wreszcie własną
+  zdolność (jak `token_food`), a `test/audyt-treasure-katalog.test.js` pilnuje
+  równości obu źródeł i skanuje wszystkie 6 literali `create_token` po stronie
+  kart (pin anty-vacuous).
+- **Kicker na instant/sorcery (decyzja: obsługiwać, nie zgłaszać jako
+  `limitations`).** `castSpell(..., kicked)` z pipami kickera w wymaganiach,
+  kosztem poza obniżkami (CR 601.2f), `wasKicked` na stosie i `kicked` w
+  `spell_cast` — ścieżka, na którą `triggers.js` czekał dla Merfolk Falconer.
+  Oferta (`legalSpellCasts`) liczy tak samo jak płatność (L48), UI dostał swój
+  klucz grupowania i etykietę, a ścieżki modalna/X/Fireball — jawny błąd.
+- **Deklaratywne grupowanie wyzwalaczy (rozszerzenie ADR 0002).** Tag
+  `trigger.groupPer` w danych kart + `mayFireGrouped` w rdzeniu; przy okazji
+  naprawione prawdziwe faux pas: `combat_damage_to_you` scalało się po graczu,
+  więc dwie kopie Contested Game Ball przechylał tylko jeden artefakt
+  (CR 603.3).
+- **Sprawdzone i bez zarzutu:** Cemetery Recruitment (guard strefy), Fourth
+  Bridge Prowler (opcjonalność przez opcjonalny cel), Jolrael (X przy
+  rozstrzyganiu, licznik doborów). `speed` nie potrzebuje projekcji w odcisku —
+  `fingerprint.js` serializuje całe `state.players`.
+- **Zostawione właścicielowi:** `mana-sources.js:46` (Skarb w mapie kolorów,
+  wbrew regulaminowemu komentarzowi tego pliku) i `resources.js:623,847`
+  (`cardId !== 'token_treasure'` przy koszyku skarbowym) — to ID karty w
+  rdzeniu, czyszczenie rusza rozliczanie many i wyceny bota.
+
+**Budżet lektury startowej** (100k tokenów) przepełnił się o ~1,2k przy dopisywaniu
+lekcji — rejestr dotąd miał 99,9% progu. Skutkiem jest nowy `docs/LESSONS_PRZYPADKI.md`
+(narracja przypadków L91 i L106 przeniesiona verbatim), skrócone odsyłacze kotwic
+(`[L21]` zamiast pełnych slugów) i naprawa **sklejonej głowicy wpisu L105**, przez
+którą wpis nie istniał dla grepów. Dziś ~99,84k, zapas 455 B — dalsze rastosanie
+wymaga decyzji właściciela (próg vs. podział rejestru).
+
+Bramy: `npm test` 4168/4168, `npm run test:all` 4178/4178 (~250 s), `npm run build`
+57 modułów / 3097,4 kB (start sesji: 3080,2 kB na M280), audytory bez naruszeń.
+Nowe testy: **21** (silniki 5, okno Vaana 3, Skarb 3, kicker 6, grupowanie 4) —
+delta `npm test` 4147 → 4168 dokładnie tyle wynosi; plik
+`audyt-pr92-grupowe-trygery.test.js` tylko zaktualizowany o tag, nie nowy.
+
+### Audyt PR #92, tura 3 (2026-09-02): cztery wątki z tury 2 zamknięte, w tym kontrzenie zdolności
+
+Tura wzięła to, co tura 2 odłożyła (pkt 1–5 §9 raportu + wątki 3, 4 i 6 z jej
+HANDOFF-u), w kolejności: długi ogon API → fakt w danych karty → rodzina pól →
+mechanika, bez której reszta była nie-do-zmierzania.
+
+- **A — `castSpell` przez `options`** (`9d0ba7b`). Sześć flag pozycyjnych
+  sklejonych w jeden obiekt, wzorowany na `castPermanent` od początku.
+  Argumenty liczone raz, wołający po trzech ścieżkach zamiast dwunastu pozycji.
+  Sześć testów w `test/audyt-castspell-opcje.test.js`: sygnatura (7 pozycyjnych
+  + `options`), odrzucenie nieznanej opcji (a nie jej ciche zignorowanie),
+  dotarcie znanych do logiki, mapowanie komendy `cast_spell`, skan źródła
+  (każda flaga w ciele `castSpell` jest na liście opcji i każda opcja jest
+  użyta) oraz zamrożenie listy `CAST_SPELL_OPTIONS`.
+- **B — Skarb bez ID karty w rdzeniu** (`5d7b3f4`). Kolory jednostki są DANĄ
+  deskryptora (katalog tokenów, `TREASURE_TOKEN_EFFECT` i sześć efektów
+  `create_token`, które kolorów nigdy nie wypisały), zdolność czytana po koszcie
+  `{T, sacrificeSelf}` + znaczniku `fromTreasure`, a pula skarbowej many niesie
+  własne kolory (`player.treasureManaColors`). Wpis `'token_treasure'` z
+  `MANA_SOURCE_MAP` usunięty — mapa była „cieniem danych karty" we własnym
+  rozumieniu (komentarz w tym pliku + strażnik M193/A).
+  Nowe `test/audyt-treasure-bez-id.test.js` (5 testów), w tym skan tekstu
+  `src/engine/*.js`: jedno wystąpienie pilnowanego literału w KOMENTARZU też
+  łamie bramkę (i słusznie — komentarz z ID to pierwszy krok do kodu z ID).
+- **C — okno impulsu z choke pointem** (`62e03e6`). Nowy moduł
+  `src/engine/impulse-window.js` (58. w bundlu) pisze `playableUntilTurn` /
+  `playableWithoutPaying` i czyta je przez pięć funkcji; `tools/family-audit.mjs`
+  ma rodziny `impulse-window` i `impulse-free-cast`, a `test/family-audit.test.js`
+  ósmy test pilnuje, żeby warunek ważności okna nie został znów przepisany ręcznie
+  w żadnym z plików-czytelników.
+- **D — kontrzenie zdolności** (`9f1c37c`). Stifle (CNS #108, snapshot z
+  rulingami WotC 2004-10-04), typ celu `ability_on_stack`, efekt
+  `counter_ability` przez wspólny `counterStackObject`, `abilityEffects` w
+  `playerView`, wycena w botu w tej samej klasie co kontrczar. Pytanie z tury 2
+  („co z `pendingExileCast` Vaana przy kontrze całego triggeru") zamknięte
+  testem: ani wygnania, ani Skarbu, ani decyzji; obrażenia walki zostają.
+  Katalog urósł o jedną kartę, więc `tools/generate-plan-decks.mjs` dopisał
+  `1x Stifle` do `decks/wiedzmin.txt` (ADR 0023: dokładnie jedna talia).
+
+**Czego tura nie ruszyła (świadomie):** rejestru `docs/LESSONS.md` — zapas
+budżetu lektury to 455 B (tura 2, M282), a każda nowa lekcja wymagałaby
+wycięcia cudzej. Narracja jest w §10 raportu `AUDYT_PR92_2026-09-02.md`;
+decyzja o progu (a/b/c z §9) czeka na właściciela.
+
+Bramy: `npm test` 4186/4186, `npm run test:all` 4196/4196 (0 fail), `npm run build`
+58 modułów / 3111,8 kB, `family-audit` i `event-contract-audit` bez naruszeń,
+`npm run benchmark` bez zmiany (heuristic 82,7%, aggro 28,9%), strażnicy
+dokumentacji 23/23. Nowe testy tury: **18** (options 6, Skarb-bez-ID 5,
+rodzina impulsu 1 w `test/family-audit.test.js`, kontrzenie zdolności 6) —
+dokładnie tyle wynosi delta `npm test` 4168 → 4186. Piny
+`test/audyt-treasure-katalog.test.js` (równość definicji rozszerzona o
+`colors`) i `test/real-cards-batch28.test.js` (Skarb z `TREASURE_TOKEN_EFFECT`
+zamiast pisanego ręcznie) są zaktualizowane, nie nowe.
+
+### Audyt PR #92, tura 4 (2026-09-02, noc): budżet lektury odzyskany kondensacją rejestru
+
+Właściciel rozstrzygnął wątek z §9 raportu: przed dopisaniem czegokolwiek
+nowego sesja ma **zaoszczędzić miejsce** w lekturze startowej (streszczenia,
+zespolenia, mniej prozy). Nie wybrano żadnego z trzech wariantów §9 (próg /
+podział rejestru / wyniesienie klas) — rejestr miał już wpisaną umowę wynoszenia
+narracji do `docs/LESSONS_PRZYPADKI.md`, więc zastosowano ją konsekwentnie do
+całego rejestru: 75 z 116 wpisów skrócono do `**Przypadek** + **Reguła** +
+**Strażnik**`, proza pojechała w archiwum bez przepisania (kontrola w skrypcie:
+każdy zakres w backtickach, każdy `CR x.y`, `Mnnn` i ścieżka `test/…` z oryginału
+musi zostać w unii rejestr ∪ archiwum; 23 wpisy, gdzie to nie zachodziło,
+zostały nietknięte). Lektura startowa: 279 545 → 242 564 B / 280 000
+(86 413 → ~86 600 tokenów), czyli zapas 455 B zamienił się w ~37 kB.
+
+Kondensacja nie wisi na dobrej woli: `test/docs-decisions.test.js` sprawdza
+odsyłacze w obie strony i to, że skrócony wpis nadal ma regułę, a wzorzec wpisu
+w nagłówku rejestru przestał kazać pisać Objawa. Cztery mutacje kontrolne RED
+(dwie pierwsze zielone, bo mutacja nie była stanem sprzed naprawy — L114).
+Naprawione dwie wady rejestru z PR #92: urwany cytat w L91 i `.**` na końcu
+ośmiu kotwic. Pytanie właściciela o rulingi dla ~500 kart rozpisane w §11.5
+raportu: rekomendacja to **nie hurtować** (Scryfall bez ścieżki masowej, brak
+egressu w `bash`, 429 wywołań `fetch_page`), tylko „przy kartce" + kolejka
+priorytetu + opcjonalny test pokrycia dla kart z `limitations`.
+
+Bramy: `npm test` 4187/4187, `npm run test:all` 4197/4197 (0 fail), build bez
+zmiany 58 modułów / 3111,8 kB, strażnicy dokumentacji 24/24. Commity tury:
+`19ab3ed` (rejestr + archiwum), `dbf5b16` (strażnik kondensacji + wzorzec wpisu),
+ten dokumentacyjny. Narracja jest w §11 raportu `AUDYT_PR92_2026-09-02.md`.
+
+### Audyt PR #92, tura 5 (2026-09-02): rulingi odlozone, audyt bota przez remisy punktowe
+
+Dwie decyzje właściciela. (1) **Rulingi WotC**: hurtowe dociaganie ~429 kart
+odrzucone; zapisane jako ADR 0028 — zasilanie „przy kartce", kolejka priorytetu
+(`support.limitations` → nietypowe CR → ustalenia audytów), zaden prog procentowy
+poki kolejka jest niepusta. (2) **Kierunek pracy**: audyt Żywym Testerem z akcentem
+na inteligentne zachowanie bota i scoringowanie działań niescoringowanych.
+
+Audyt mierzony jest przez `tools/bot-tie-audit.mjs` na śladzie bota, bo grep po
+źródle zaniżał (statyczna inwentaryzacja: 6 podejrzeń; rzeczywistość: 30,4% decyzji
+z alternatywami to remis na maksimum punktów). Naprawiony pierwszy co wielkosć
+obszar — wybór lądu (`play_land` miał płaskie 90, decydowała kolejność listy i rng
+puli top-3). Po naprawie: 0 groźb wśród 37 remisów lądu (same zamienne pary),
+benchmark quick 83,6% wobec 82,7%. Zarejestrowane backlogi: `block` 186 (głównie
+benign — silnik oferuje `block[]` obok `pass_priority`), `attack` 35, `cast_*` 13,
+`activate_ability` 8, `resolve_*` po kilka. Narracja: §12 raportu
+`AUDYT_PR92_2026-09-02.md`, most M285, lekcja L117.
+
+### Audyt PR #92, tura 6 (2026-09-02): audyt bota #2 — no-op y udowodnione, metryka wysycona
+
+Remisy bojowe przestały być liczbą-widmem: 208 z 308 to nadwyżka oferty silnika
+(`block[]`/`attack[]` vs `pass_priority`), co najpierw udowodniono testem regułowym
+(identyczny stan po obrażeniach), potem wycięto z licznika. Zostało 100 remisów
+między realnymi wariantami (12,4% decyzji akcyjnych) i 4 groźby przejrzane:
+2 polityka bota (brak kary za trade za obrażenia nieśmiertelne), 2 do benchmarku
+(płaska wycena siły/obrony w ataku) — wpisane do `docs/backlog.md`. Bramka jako
+grzechotka `<= 4` zamiast udawanego zera. Narracja: §12.4–12.5 raportu, M286,
+lekcja L118. Commit `cf978f0`; `npm test` 4195/4195, benchmark bez zmian (83,6%).
+
+### Audyt PR #92, tura 7 (2026-09-02): rzut stwora poznał cenę many, metryka — własne ograniczenia
+
+Krok planu brzmiał „zaostrzyć wycenę ataku, ale tylko przez benchmark". Nie został
+wykonany jako zaostrzenie ataku: grzechotka audytu pokazała większą dziurę obok.
+`cast_permanent` wyceniał korpus, ale nie koszt — 2/2 za {2} i 2/2 za {6} miały
+identyczny wynik, więc wybór między stworami w ręce zapadał w kolejności listy.
+Naprawione nowym nazwanym parametrem `creatureManaCostWeight` (1 punkt za punkt
+many). Benchmark z baseline'em na tej samej próbie: quick 83,6% → 83,8%, a na 2016
+meczach 85,7% → **85,5%** (Δ = −3 mecze = szum), więc przyjęto to **ze względu na
+lukę modelową, nie na win-rate** (próg planu: brak regresji). Projekcje dostały też klasy, o których pomiar
+milczał (`cast_*`, `activate_ability`) — wszystkie ich remisy okazały się równe po
+stronie danych (0 groźb). Dwa wcześniejsze „findingi" były wymysłem samej metryki:
+suma P/T jako wartość ciała (model gorszy niż mierzona wycena, która waży siłę i
+wytrzymałość inaczej) oraz obrona zostawiana w domu (nieprawda regułowa — atakujące
+stwory odświeżają się przed turą wroga, CR 502.3). Narracja: §12.6–12.7 raportu,
+M287 w kamieniach milowych, lekcja L119. `npm test` 4199/4199.
+
+### Uwagi z żywej gry, tura 8 (2026-09-02): picker wielocelowy, hover kart specjalnych, equip bota, nakładka końca gry
+
+Właściciel przeszedł partię na stole i zgłosił cztery rzeczy (A–D). Wszystkie są
+w kodzie, każda w osobnym comicie: `6d30844` (B, hover), `41bce48` (D, nakładka),
+`d8fde3f` (A, picker), `69a86df` (C, wycena equipu).
+Dwie z nich (A i B) okazały się tym samym błędem w dwóch warstwach: komponent
+miał funkcję, a nikt jej nie podłączał — `renderUndercity` dostawał `hover`
+tylko w teście, a kreator celów nie miał ani jednej reguły CSS. Stąd nowy
+`src/table/picker.js` (jeden wygląd dla celów wielokrotnych, pozycji z Oracle,
+poświęcenia, mulliganu, atakujących/bloków i kosztu escape; logika nadal per
+efekt, legalność nadal z `legalCommands`) i strażnicy „drutu": testy patrzą na
+miejsce użycia i na istnienie stylu (L120). Equip bota: przeniesienie sprzętu
+musi przejść te same badania co pierwsze założenie — `equipValuation` zamiast
+samego `delta` siły (repro: +11,00 za ruch, który nic nie zmieniał; po naprawie
+−10,00 i bot pasuje). Nakładka końca gry mówi teraz życia obu graczy i — jeśli
+partię skończyło wyczerpanie biblioteki, trucizna albo poddanie — u kogo.
+Akceptacja zmiany wadze bota: `--seeds 24`, 2016 meczów, baseline z worktree
+`ae8bc24` → **85,5% (1724) vs 85,5% (1723)**, czyli szum; przyjęto dla spójności
+modelu, nie dla win-rate. `npm test` 4224/4224, `test:all` 4234/4234, build 59
+modułów / 3140,2 kB, 32 nowe testy. Narracja: §13 raportu, M288, L120.
+
+### Pytanie kontrolne po turze 8 (2026-09-02, tura 9): czy drabina equipu łapie przepięcie między równymi ciałami
+
+Właściciel dopytał o sedno zgłoszenia C: naprawa zabrała manę za przeniesienie
+sprzętu, który „nic nie daje", ale co z przypadkiem, w którym obie kreatury
+profitują z pompy — czy bot nie zacznie wtedy kursować tam i z powrotem,
+zabierając sprzęt z ciała lepszej od gorszej? Odpowiedź padła liczbami, nie
+deklaracją: gałąź `wornByMine` jest drabiną czterech szczebli (nic-nie-dodaje
+→ −12; wyraźnie większy ładunek → premia naprawy; ciało ≥ 2 siły i ładunek nie
+gorszy → premia; wszystko inne → −6), a każdy szczebel jest antysymetryczny, więc
+ruch w obie strony nie może być dodatni jednocześnie. Dołączony test
+`test/uwagi-tura9-bot-rowne-ciala-equip.test.js` (7/7) mierzy to na prawdziwych
+kartach: Wooden Stake na 2/1 z kandydatem 2/2 = −4,00 (pass), Brawler's Plate
+{4} na tej samej parze = −4,00, schody 2/1 → 2/2 → 7/7 = jeden krok na Maruta
+(+10,00, pośrednie ciało −4,00), a sprzęt uwięziony na defenderze schodzi na
+atakującego (+8,00). Własność anty-ping-pongowa jest sprawdzana na wszystkich 40
+parami konfiguracjach (5 ciał × 2 sprzęty), z wymuszoną obecnością ≥3 dozwolonych
+awansów, żeby test nie był pusty. Dwie granice modelu (ładunek liczony od pompy,
+nie od tego, co nosiciel umie z nią zrobić → równe co do siły ciało z lataniem
+czy z defenderem nie wyciąga sprzętu od siebie) trafiły do `docs/backlog.md` §3
+jako zmiany wagowe, które bez benchmarku A/B na `--seeds 24` byłyby gustem; ta
+tura nie rusza `src/`, więc nie ma nowego milestonu ani A/B. Narracja: §13.6
+raportu.
+
+### Tura 10 (2026-09-02): druga strona weta C — pompa ważona tym, co nosiciel umie z nią zrobić
+
+Właściciel dopytał, czy naprawa C obejmuje wypadek, w którym obie kreatury profitują
+z pompy (czy bot nie kursuje między nimi, płacąc dwa razy). Blokadę zmierzyliśmy w
+turze 9 (`test/uwagi-tura9-bot-rowne-ciala-equip.test.js`), ale samo mierzenie
+pokazało usterkę po drugiej stronie tej samej drabiny: Wooden Stake na 3/2 z
+defenderem i kandydat 3/2, który umie atakować, miały identyczną wycenę ładunku,
+więc przeniesienie za {1} było karane −6 — sprzęt więził się na stworze, który
+nigdy nie zaatakuje, a nikt tego nie zgłosi, bo błąd objawia się ciszą (brak
+poprawki), nie kaszanem. `equipValuation` liczył „co sprzęt daje", a nie „co
+nosiciel z tym zrobi"; gałąź pierwszego założenia miała osobne badania (M244/F,
+M221/E), gałąź przeniesienia porównywała dwie liczby i nie miała o tym skąd wiedzieć.
+Naprawa jest jedna i siedzi w definicji (L28): ciało z `cantAttackStatic` albo
+takie, którego obrażenia zapobiega ochrona blokera (CR 702.16c), liczy połowę wagi
+pompy — siła na defenderze nadal decyduje o bilansie bloku. Relacja „lepszy dom"
+wciąż jest funkcją pary (sprzęt, nosiciel), więc antysymetria i brak ping-pongu
+przetrwały, a test sprawdza to na 40 parach. Zmienione stoły: Merfolk(defender) →
+Servant −4,00 → +7,00; Flocker 0/5 → Servant +8,00 → +7,00 (bot nadal płaci); ruch
+boczny między atakującymi −4,00 bez zmian; latanie vs vanilla bez zmian (to
+świadamie nietknięte — każda premia za „jakość ciała" jest wagą i wymaga A/B).
+Brama wagowa: `git worktree` na `54c4371` vs kandydat, `--seeds 24`, 2016 meczów
+(§13.7). Lekcja: **L121 — weto przeciw marnotrawstwu sprawdzaj też w drugą stronę,
+czy nie mrozi naprawy**.
+
+### Tura 10, dopisek (2026-09-02): talia pod kreator celów — zatrzymana przez ADR 0023, nie przez lenistwo
+
+Równolegle z M289 spróbowałem pogrubić pokrycie pickera w Żywym Testerze własnym
+materiałem: `decks/wielocelowa.txt` (12 kart otwierających kreator + 12 ciał). Zabiły
+to dwa strażniki repo: `test/m132-proporcje-landow.test.js` (3,00 nielandowych na ląd
+przy progu 2,00) i `test/repo-decks.test.js` w wpisie M178/ADR 0023 (każda wspierana
+karta w DOKŁADNIE jednej talii — 11 z 12 moich kart już gdzieś leżało). Nie
+przepisywałem talii, bo `decks/*.txt` karmią `tools/benchmark.mjs` i
+`tools/bot-tie-audit.mjs`, a zmiana składu par unieważniłaby porównania A/B z tur
+7-10; i nie obejrzałem niezmiennika, bo on był rozstrzygnięciem projektu, nie
+formalnością. Zamiast tego pomiar surowca: 443 karty wspierane, w tym 7 z >1 celem,
+15 z poświęceniem/odrzuceniem, 12 equipmentów, **kart wolnych zero**. Najgestojsza
+para `ravnica` vs `worek-dziki` w 4 partiach (explorer/greedy/random/defensive, seedy
+911-914): 40 wpisów `kreator many`, 12 `[combat wizard]`, zero otwarć kreatora
+wielocelowego, `DETEKTORY: brak zgłoszeń` wszędzie. Wniosek w `docs/backlog.md` §1 i
+§4: pokrycie rodziny wielocelowej rośnie przez nowe karty w katalogu, a talia
+`wielocelowa` będzie legalna sama, bo nowe karty nie mają jeszcze przypisania —
+przepis zostawiony w §13.8 raportu. Lekcja: **L122 — materiał do audytu przepuść
+przez niezmienniki repo w tej samej minucie; „brak materiału" to zwykle brak
+surowca, a nie brak chęci**.
+
 ## Zasada aktualizacji
+
+### Tura 11 (2026-09-02): waga jakości ciała (M290); karta wielocelowa (M291) — wycofana w turze 12
+
+Właściciel kazał ruszyć oba wątki zostawione w turze 10 jako „świadomie nietknięte”.
+
+**(e) — M290, `src/controllers/heuristic-bot.js`.** `equipValuation` dostała trzeci
+stopień wagi siły: ciało z własną ewazją, która omija ścianę (albo `cantBeBlocked`),
+zbiera +1 za każdy punkt siły pompy. Para vanilla 3/2 → latacz 3/3 przeszła z −4,00 na
++7,00 (bot płaci {1} i przenosi sprzęt), ruch w drugą stronę pozostał −4,00, a para o
+identycznych statystykach (gorehorn-minotaurs vs angel-of-the-dawn) — dokładnie ta,
+którą backlog zostawiał otwartą — też się rozstrzygnęła (+7,00 / −4,00). Premia znika,
+gdy wróg ma reacha albo latacza; zapisane testem. Świadomie nietknięta została gałąź
+pierwszego założenia sprzętu (FRESH) — jej remis 18,00/18,00 jest zpinowany jako
+decyzja, nie przeoczenie. Benchmark A/B `--seeds 24` (2016 meczów, identyczny profil):
+heuristic 1723 → 1724/2016, aggro 248 → 247/1008 — zero regresu, zmiana broni zasady,
+nie metryki. Raport §14, milestoney M290, testy `test/uwagi-tura11-bot-jakosc-ciala-equip.test.js` (9).
+
+**(b) — M291, pierwsza z 4–6 kart wielocelowych.** *(Cała ta gałąź została
+wycofana w turze 12 na polecenie właściciela — patrz wpis niżej; liczby z tego akapitu
+opisują drzewo, którego już nie ma.)* Okazało się, że blokada z tury 10
+była moim błędem procedury, nie środowiska: `docs/cards/HOW_TO_ADD_CARD.md` ma wpisany
+kanał awaryjny na wypadek martwego egressu (agent ściąga te same URL-e przez
+`fetch_page`). Udało się ściągnąć `cards/clu/128` i pusty zestaw rulingów, więc karta
+powstała w tej samej turze: **Coordinated Assault** (CLU, {R}, „up to two target
+creatures each get +1/+0 and gain first strike"). Przy okazji wyszła luka silnika —
+fan-out „each of up to N" istniał tylko w torze triggerów, a tor czaru pompowałby
+pierwszy cel dwa razy. Domknięte generycznym deskryptorem `allTargets: true`
+w `src/engine/spells.js` (bez znania nazw kart przez silnik) + strażnikiem, że nie
+łączy się z efektem blokującym decyzją.
+
+**Rykosz na warsztat pomiarów:** talii NIE układałem ręcznie (patrz L122) — karta
+dostała `plan: 'Ravnica'`, a `tools/generate-plan-decks.mjs` sam dopisał ją do
+`decks/ravnica.txt` (+1 Mountain). Od tego commitu skład tej talii się różni, więc
+porównania A/B z tur 7–10 wymagają nowego baseline'a. Pomiar na żywo (osiem partii,
+ta sama para talii co baseline z tury 10 plus druga para, seedy 922–925 i 931–934):
+otwarcia kreatora wielocelowego 0/4 → 2/8, w tym jedno realnie na nowej karcie (oba
+cele wybrane, oba dostały efekt), bot grający talią też zadeklarował oba cele, a w
+jednym logu widać sam fan-out („Dual Shot → cel: Human, Human”, dwa zdarzenia obrażeń,
+dwie ofiary); detektory stołu: 0 zgłoszeń w ośmiu partiach. Z listy 4–6 w tej turze weszły
+dwie karty: Coordinated Assault (CLU 128) i Dual Shot (SOI 153) — ten sam deskryptor
+`allTargets`, dwa różne efekty (pump+grant oraz czyste obrażenia). Koszt jednostkowy to
+cały tor wejścia (snapshot, rejestr, `MANA_COSTS`, generator talii, build, rodzina
+testów, regeneracja golden-mastera, pomiar), więc reszta idzie partią, nie hurtownie;
+druga karta pociągnęła też przesunięcie w podziale Innistradu (Blazing Torch brg → wu),
+bo przydział liczy generator całości planu — stąd aktualizacja sumy nielandów 36 → 37
+w `test/repo-decks.test.js` (M228). Przepis
+zostaje w `docs/backlog.md` §1.
+
+**Koniec tury 11:** `npm test` 4263/4263, `npm run test:all` 4273/4273, CI `pass`;
+PR #93 ma sekcję tury 11, tytuł „tury 1–11”, body 49 331 znaków. Po wejściu kart
+odświeżyłem baseline benchmarku (`node tools/benchmark.mjs --seeds 24`, 2016 meczów,
+drzewo z commitem `0434199`): heuristic 87,0%, aggro 21,4%, random 4,7%. To punkt
+odniesienia dla następnych A/B, a nie dowód siły nowych kart — run jest jednostronny,
+pula `--seeds 24` bierze sześć talii alfabetycznie, więc obejmuje `innistrad-brg` z
+Dual Shot, ale `ravnica` z Coordinated Assault już nie.
+
+**Rykosz, którego nie przewidziałem:** `test/panel-rozgrywka-tura-przeciwnika.test.js`
+(M101/D) gra `decks/alara.txt`, ale talję człowieka bierze sztywno z
+`decks/innistrad-brg.txt`, więc po dodaniu Dual Shot (i wyrzuceniu Blazing Torch)
+seed 2 przestał rzucać dwoma opóźnionymi triggerami, na których scenariusz stoi.
+Przehuntowany na 18 z komentarzem przy pince. L25 dotyczy więc także testów
+scenariuszowych, nie tylko gier benchmarku: każda zmiana składu talii każe przejrzeć
+seedy wszędzie, gdzie ta talia jest podkładką (`grep -rln "decks/" test/`).
+
+
+### Tura 12 (2026-09-03): karty wielocelowe wycofane na polecenie właściciela
+
+Właściciel przeczytał commity tury 11 i cofnął zgodę: nie mam prawa sam dodawać kart do
+katalogu. Faktura: żadna z dwóch kart nie została wymyślona — teksty reguł i rulingi
+ściągnąłem 1:1 z API Scryfall (CLU 128, SOI 153) — ale ja przekształciłem jednorazową
+prośbę „4–6 realnych kart” w pozwolenie na stałe. Nie przekształcam: `src/cards/card-data.js`
+rośnie tylko na wyraźne, pojedyncze „tak”.
+
+**Co poleciało:** revert `0434199` — fan-out `allTargets` z `src/engine/spells.js`, dwa
+wpisy w rejestrze kart, dwa w `src/cards/mana-costs-data.js`, trzy pliki `decks/*.txt`,
+cała rodzina `test/m291-*.test.js`, golden-master bota, sufit grzechotki 5 → 4, seed
+M101/D 18 → 2, zaostrzenie etykiety Z5; usunięte snapshoty
+`docs/cards/scryfall-coordinated-assault.json` i `docs/cards/scryfall-dual-shot.json`.
+Kamień M291 w rejestrze został przepisany na „cofnięte" z opisem luki i ceny wejścia
+karty, bo to wiedza, nie karta. Z tury 11 zostaje nietknięte M290 (waga jakości ciała).
+
+**Bramy po revercie:** `npm run build` → 3146,1 kB / 59 modułów (dwa wpisy zniknęły z
+artefaktu, było 3150,7 kB), a rodzina, którą revert ruszał — equip tury 9 i 11,
+`test/bot-scoring-snapshot`, `test/repo-decks`, `test/card-data`,
+`test/card-sources-guard`, `test/m138-audyt-stolu`, `test/m132`, `test/m203`,
+`test/panel-rozgrywka-tura-przeciwnika`, `test/audyt-bot-walka-remisy`,
+`test/m195-multi-target` — **124/124** na zielono.
+
+**Lekcja o trybie pracy, nie o kodzie:** komenda „doda X kart" z poprzedniej tury nie
+unieważnia zasady „katalog należy do właściciela". Następnym razem, zanim wejdzie nowa
+karta, pytam o każdą z osobna (albo o listę zatwierdzoną pisemnie w PR), nawet gdy
+poprzednie polecenie brzmiało jak zgoda zbiorcza.
+
+### Tura 13 (2026-09-03): picker dla rodzin „ile" i „jedno tapnięcie", ptaszek ignorowania, przerobiony m129
+
+Właściciel odpowiedział na propozycję zakresu krótko: „1+2+3 i przerobienie testu" — czyli
+pełna unifikacja wierszy stołu plus świadoma zmiana strażnika, który trzymał duplikaty CSS
+przy życiu.
+
+**Wszedł jeden komponent, cztery kształty.** `src/table/picker.js` (121 → 299 linii) rysuje
+teraz ptaszka (`checkbox`/`radio`), stepper (`min`/`max`, `onStep(±1,id)`, predykaty
+`canDecrement`/`canIncrement`, `format`, hak `actions`, handle `setValue/refresh`),
+wiersz-przycisk (`kind:'button'`, `html` na ikony many) i wariant `inline` (ptaszek wewnątrz
+przycisku opcji, bez klas `picker-*`, bo trzy testy porównują `className` ze stringiem).
+Przez niego idą: podział obrażeń, przydział obrażeń blokującym, źródła many w płatności
+kostki i OBA ptaszki „ignoruj tę opcję" (panel `renderChoiceRequest` + panel akcji w
+`render.js`). Kreatorów w `choice-request.js` rysujących wiersz helperem: 3/8 → 6/8;
+ręcznie lepionych wierszy i ptaszków wyboru (`*-row`, `createElement('input'|'label')`) poza pickerem: 5 → 0 (pierwszy odczyt „4" policzył tylko linie ptaszków; przemierzone całym wzorcem, §17.1 raportu).
+Wiersze scry/surveil i Fertile Thicket zostają własne — to chipy z obrazkiem, nie ptaszek
+ani stepper (decyzja i cena: backlog §2).
+
+**Konsolidacja, nie doklejenie:** skasowane reguły `.combat-wizard-row`,
+`.combat-wizard-row .combat-wizard-name`, `.damage-wizard-row`, `.damage-wizard-minus`
+— po 261 znaków bajt w bajt wspólne z rodziną `.picker-*`. Klasy hakerskie
+(`damage-wizard-*`, `action-ignore`, `mana-wizard-source`, `multi-target-toggle`,
+`combat-wizard-toggle`, `escape-exile-toggle`) zostały na tych samych elementach co klasy
+rodzinne, więc sonda Testera i testy liczące po klasach nie zmieniły selektorów —
+poza jednym miejscem, jawnie przerobionym (niżej).
+
+**Drugie oblicze „przerobienia testu":** `renderDamageWizard` dostał `onOpenCard`
+(main.js → `openCardFullscreen`) — klik w nazwę blokującego otwiera kartę jak w dwóch
+pozostałych kreatorach; `m136` (strażnik intencji, okno 600 znaków) wymagał skrócenia
+komentarza przy wywołaniu, a nie poluzowania asercji. `m129` przestawiony z tekstu CSS na
+styl efektywny liczony od realnej listy klas + strażnik antyduplikacyjny i zakaz lepionych
+ptaszków; cztery mutacje przełączały go na RED (tabele w §17.3 raportu
+`docs/audits/AUDYT_PR92_2026-09-02.md`). Driver `test/table-ui.test.js` klikający źródła
+many po tekście węzła (`/^Tapnij:/`) przeniósł się na klasę `.mana-wizard-source` —
+picker przeniósł etykietę do zagnieżdżonego spana, a akcję zostawił na wierszu; to ten sam
+selektor, którego używa Żywy Tester. Lekcja z tego: L125.
+
+**Bramy tury 13:** przed startem 4249/4249 (`npm test`) i 4259/4259 (`test:all`) — zmierzone,
+żeby mieć bazę; po zmianach `npm test` **4262/4262** (+11 nowych `m292`, +2 w przerobionym
+`m129`), `npm run test:all` **4272/4272**, `test/table-ui.test.js` 71/71,
+`test/table-mana-wizard` 25/25, `m136` 7/7, `m129` 8/8, `npm run build` 3156,0 kB /
+59 modułów. Żywy Tester: cztery partie (seed 42 innistrad-brg vs ravnica + 3/9/15
+srodziemie vs ravnica, profil random, `--tick-rate` 0,35–0,5) — **17 opłat kreatora many
+wierszem-przyciskiem pickera i 30 śladów kreatora walki ptaszkowego, zero zgłoszeń
+detektorów**; gałąź podziału obrażeń nie wyszła z tasowania, więc jej dowodem jest pomiar
+jsdom + `m172`/`m292`, a nie „krycie na żywo" (§17.5 raportu).
+
+### Tura 14 (2026-09-03): czystość projektu przez parametryzację — dwa kreatory patrzenia w jednym silniku
+
+Właściciel zamknął otwartą decyzję kształtu jednym zdaniem: „jeśli można te dwa ostatnie
+sparametryzować i obsłużyć tym samym wizardem to powinniśmy to zrobić dla czystości
+projektu — poza tym thicket-card brzmi bardzo blisko zabronionego „kodu pod nazwaną kartę"".
+Druga połowa zdania była trafniejsza niż przypuszczałem: `renderFertileThicketWizard`,
+`lookKind === 'fertile'` i chip `.look-wizard-card` w kreatorze landa to było właśnie pisanie
+interfejsu pod konkretną kartę. Zatem: `renderPeekWizard(host, spec)` — jeden silnik kroku
+decydującego, wyboru, sortera i stopki; `renderLookWizard` (scry/surveil/ułożenie wierzchu)
+i `renderPeekPickOrderWizard` (dawniej „thicket") to dwaj adapterzy podający `flow`,
+nagłówek i payload; chip wchodzi do pickera jako kształt `chip`, a nazwa komponentu opisuje
+CZYNNOŚĆ, bo karta jest w danych wejściowych, nie w kodzie rysującym.
+
+Unifikacja okazała się testem uczciwości dwóch implementacji, nie kosmetyką: zlany kod
+wyszedł dwoma RED-ami. `M112` (klucz na decyzji kończącej) zaczął czerwienieć, bo wspólny
+sorter odziedziczył pulę po scry (tylko karty zostawione na wierzchu) i kreator
+„ułóż te N kart" pytał o odłożone na spód. Reguła poszła do kodu, nie do asercji: pula
+sortera zależy od `flow` (CR 701.4/701.18/701.41). Drugi przypadek był prezentem — stary
+kreator landa milczał o klucz sondy, gdy po wyborze zostawała ≤1 karta, choć komenda była
+już znana w całości; dziś obie rodziny liczą klucz tą samą regułą.
+
+Trzy rzeczy wyszły przy okazji i są warte zanotowania mocniej niż sam refactor.
+(1) Stopka „Zamknij (dokończysz później)" miała trzy identyczne kopie po cztery linie —
+w kreatorze patrzenia, walki i przydziału obrażeń — a razem z nimi podróżował hook
+`.look-wizard-cancel`; dziś to `renderPickerCancel` i rodzina `.picker-cancel`. (2) Parser
+stylu efektywnego był dublowany w dwóch testach, więc wydłubaliśmy
+`test/harness/css-effective.js` (`m129` 394 → 269 linii). (3) Dwa zdania w §17.2 raportu
+okazały się wymyślone: `.thicket-card` nigdy nie istniało, a „cel dotyku chipa pinuje
+`m138-*`" nie miał oparcia w `m138` — chip jest małą pigułką (`padding: 5px 10px`) i jego
+klikalna nazwa NIE spełnia komfortu 44 px; to otwarte zgłoszenie dla właściciela, nie
+domknięty fakt. Akapit „dlaczego NIE robimy" jest tak samo narażony na zmyśloną liczbę jak
+akapit „ile zrobiliśmy".
+
+Dług nazwy karty w protokole zmierzyłem i zostawiłem go świadomie: `resolve_fertile_thicket`
+i `pendingFertileThicket` to 54 odwołania w 8 plikach logiki i stołu (69 w 11 plikach
+`src/`), a `COMMAND_TYPES` jest zamrożoną listą wpisywaną do partii — renama wymaga
+migracji autosave/replay i jest decyzją właściciela. Liczba jest equality-pinem w
+`M293/11`, więc jej spadek zamelduje RED-em i wymusi aktualizację doków. Ten sam zapach ma
+`resolve_springbloom` (86 w 10 plikach).
+
+Środowiskowy haczyk tej tury, bo powtarzalny: przebudowa piaskownicy przywróciła pliki,
+ale cofnęła wskaźnik gałęzi do bazy PR, więc cała tura leżała niecommitowana w drzewie —
+ratunek to `git fetch --depth=200 origin <gałąź>` i `git reset --mixed FETCH_HEAD`;
+`--hard`, który zalecał stary wpis w `docs/setup/ENVIRONMENT.md`, zjadłby pracę, i wpis
+dostał poprawkę razem z tym doświadczeniem. Zostawiłem po sobie jedną drobną plamę, której
+nie da się cofnąć bez force pushu (zabroniony w tej sesji): w message `a7aba06` przy
+pisaniu po polsku został mi znak `本地`. Skan wszystkich trackowanych plików `src/`, `docs/`,
+`test/` i `tools/` dał zero znaków CJK/fullwidth, więc plama nie weszła do repo — weszła do
+historii commitów i tak ją zostawiam, żeby następna sesja nie zgadywała, czy coś jej nie
+ukryłem.
+
+Bramy: przed startem `npm test` 4262/4262 i `test:all` 4272/4272 (baza tury 13); po
+zmianach **4276/4276** i **4286/4286** (+12 testów `m293`), trzynaście plików stołu w jednym
+biegu 208/208, `npm run build` 3162,5 kB / 59 modułów. Żywy Tester: trzy partie `zendikar`
+vs `zendikar` (explorer, seedy 7/21/33) z kreatorzem „zajrzyj → weź land" klikanym na żywo
+i zerem zgłoszeń detektorów; flow `decide` nie da się osiągnąć żadną talią w repo, więc nie
+zgłaszam go jako krytego na żywo. Lekcja: L126. Narracja i liczby: §18 raportu
+`docs/audits/AUDYT_PR92_2026-09-02.md`, M293 w rejestrze kamieni milowych.
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
 

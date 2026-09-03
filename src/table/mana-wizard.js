@@ -2,6 +2,7 @@ import { getSourceForObject } from '../engine/mana-sources.js';
 import { escapeHtml, manaSymbolsHtml } from './mana-icons.js';
 import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
+import { renderPickerRow } from './picker.js';
 
 /**
  * Sekwencyjny kreator płatności many (E.3a, zgłoszenie właściciela 2026-08-06):
@@ -276,9 +277,11 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     const requirements = baseColorRequirements(parsed);
     return buildDescriptor(object, totalNeeded, requirements, costStr, totalNeeded - requirements.length);
   }
-  if (cmd.type === 'cast_permanent' && cmd.kicked) {
+  if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell') && cmd.kicked) {
     // Kicker (CR 702.33): zwykły koszt + dodatkowy koszt kickera (liczba
     // bez obniżek), pipy kickera dokładają się do wymagań kolorów.
+    // Audyt PR #93: ścieżka czarów (castSpell) rozlicza kickera tak samo jak
+    // permanentów, więc i liczenie w wizardzie musi obejmować `cast_spell`.
     const kicker = object.kicker;
     if (!kicker || !Number.isInteger(kicker.cost)) return null;
     const requirements = [...baseColorRequirements(parsed), ...(kicker.colors ?? []).map((color) => [color])];
@@ -467,13 +470,19 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
   const list = document.createElement('div');
   list.className = 'mana-wizard-sources choice-request-options';
   for (const source of model.untappedSources) {
-    const button = document.createElement('button');
-    button.className = 'action choice-request-option mana-wizard-source';
-    button.type = 'button';
     const gain = source.amount !== 1 ? ` +${source.amount}` : '';
-    button.innerHTML = `Tapnij: ${escapeHtml(source.name)} (${sourceColorsLabel(source.colors)}${gain})`;
-    button.addEventListener('click', () => onTapSource?.(source.id));
-    list.appendChild(button);
+    // M292: wiersz rysuje TEN SAM komponent co kreatory wyboru i steppery
+    // (`src/table/picker.js`, `kind: 'button'`) — wspólne 44 px celu dotyku i
+    // wspólna etykieta, zero osobnej funkcji wizualizującej dla tego ekranu.
+    // `html` jest tu dozwolone tylko dlatego, że markup powstaje w tym pliku
+    // (ikony many z `mana-icons.js`), a nazwa źródła idzie przez `escapeHtml`.
+    renderPickerRow(list, {
+      kind: 'button',
+      id: source.id,
+      html: `Tapnij: ${escapeHtml(source.name)} (${sourceColorsLabel(source.colors)}${gain})`,
+      rowClassName: 'action choice-request-option mana-wizard-source',
+      onActivate: (sourceId) => onTapSource?.(sourceId),
+    });
   }
   if (model.untappedSources.length === 0) {
     const empty = document.createElement('div');

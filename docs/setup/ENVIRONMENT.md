@@ -62,8 +62,18 @@ wielokrotnie (handoffy notują „2×", „3× w tej sesji"), także **w środku
 git reflog -10                     # potwierdź: wpis „clone: from …"
 git ls-remote --heads origin | grep <slug-sesji>   # praca jest na zdalnej gałęzi?
 git fetch origin <gałąź-sesji>
+git status --porcelain | head      # NAJPIERW: czy drzewo ma niecommitowaną pracę?
 git reset --hard FETCH_HEAD        # odtwórz historię sesji lokalnie
 ```
+
+**Wariant groźniejszy (tura 14, 2026-09-03):** rebuild potrafi przywrócić PLIKI z
+ostatniego snapshotu, a cofnąć wyłącznie wskaźnik gałęzi — wtedy cała bieżąca tura siedzi
+niecommitowana w drzewie i `git reset --hard FETCH_HEAD` zjada ją bez śladu. Sygnał:
+`git log -1` pokazuje bazę PR, a `git status` masę zmian z tej tury. Leczenie:
+`git fetch --depth=200 origin <gałąź>`, potem `git reset --mixed FETCH_HEAD` (przenosi ref i
+indeks, zostawia pliki), a `git diff --stat` musi wyjść dokładnie zmianami tej tury. Przed
+każdym resetem: `git diff <baza> > ~/backup.patch`. `--hard` jest dopuszczalne TYLKO przy
+czystym drzewie albo po własnym backupie.
 
 Jeżeli po resecie zdarzyło Ci się zacommitować **na `main`** (bo tam wskazywał
 HEAD po klonie), przenieś commit na gałąź sesji:
@@ -111,11 +121,16 @@ sklejać znaczniki konfliktu.
 
 - **Arbitralny egress HTTPS jest zablokowany, ale rejestr npm NIE.**
   Zmierzone 2026-08-24 (M202): `curl https://api.scryfall.com/...` → kod 000,
-  `fetch` w Node → `fetch failed`, za to `npm i` w `tools/table-tester`
+  `fetch` w Node → `ECONNRESET`/`fetch failed`, za to `npm i` w `tools/table-tester`
   przechodzi (63 pakiety, ~1 s). Czyli: Żywego Testera da się uruchomić
   w sesji (nie trzeba zainstalowanego wcześniej `node_modules`), ale danych
   kart z Scryfalla nadal pobieraj narzędziem `fetch_page` i zapisuj do
-  repozytorium (ADR 0010).
+  repozytorium (ADR 0010). `fetch_page` działa też na czystym JSON-ie (zmierzone
+  2026-09-02: te same URL-e, co `curl`-owi zwracają kod 000, wracają normalnie) —
+  rulingi WotC, dawniej „nie do potwierdzenia z repo", bierz z
+  `api.scryfall.com/cards/<set>/<collector_number>/rulings` przez
+  `node tools/fetch-card-rulings.mjs` (w sesji sandboxowej ściągnij je
+  `fetch_page`em i zapisz przez `python3`).
 - **`write_file` działa tylko w workspace.** Skrypty pomocnicze twórz przez
   `bash` z heredokiem, jeśli mają wylądować poza repo.
 - **Polskie znaki:** narzędzie `edit_file` potrafi je uszkodzić. Do edycji

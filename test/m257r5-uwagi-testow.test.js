@@ -29,7 +29,7 @@ function withMiniDom(run) {
     constructor(tag) {
       this.tagName = tag; this.children = []; this.listeners = {};
       this.className = ''; this.text = ''; this.dataset = {}; this.disabled = false;
-      this.style = {};
+      this.style = {}; this.type = ''; this.checked = false;
       this.classList = { toggle: () => {}, add: () => {}, remove: () => {} };
     }
     set textContent(v) { this.text = String(v); this.children = []; }
@@ -37,7 +37,24 @@ function withMiniDom(run) {
     appendChild(c) { this.children.push(c); return c; }
     replaceChildren(...n) { this.children = n.flat(); }
     addEventListener(t, l) { (this.listeners[t] ??= []).push(l); }
-    click() { for (const l of this.listeners.click ?? []) l({}); }
+    /**
+     * Klik z natywną AKTYWACJĄ (jak w jsdomie Żywego Testera): klik w
+     * `<input type=checkbox|radio>` przełącza zaznaczenie i ogłasza `change`;
+     * klik w `<label>` trafia w jego ptaszek. M288/A — kreator wielocelowy
+     * używa ptaszków `<input>` (takich samych jak wizard walki), więc klik
+     * w wiersz MUSI coś znaczyć, inaczej test mierzy pustkę.
+     */
+    click() {
+      const input = this.tagName === 'input' ? this
+        : (this.children ?? []).find((c) => c.tagName === 'input') ?? null;
+      if (input && (input.type === 'checkbox' || input.type === 'radio')) {
+        if (input.disabled) return;
+        input.checked = input.type === 'radio' ? true : !input.checked;
+        for (const l of input.listeners.change ?? []) l({});
+        return;
+      }
+      for (const l of this.listeners.click ?? []) l({});
+    }
     fire(type, e = {}) { for (const l of this.listeners[type] ?? []) l(e); }
     all() { return [this, ...this.children.flatMap((c) => (c.all ? c.all() : [c]))]; }
     find(pred) { return this.all().find(pred); }
@@ -270,8 +287,12 @@ test('r5/C: kreator ma DWA osobne wybory ptaszkiem i oddaje komendę z legalComm
     assert.ok(labels.some((l) => l.includes('Poświęcenie')), 'sekcja poświęcenia');
     const rows = host.findAll((n) => String(n.className).includes('multi-target-toggle'));
     assert.equal(rows.length, 5, '3 cele + 2 ofiary = 5 wierszy (nie 6 kombinacji!)');
-    const toggle = (text) => host.findAll((n) => String(n.className).includes('multi-target-toggle'))
-      .find((n) => n.textContent.includes(text) && n.textContent.startsWith('[ ]'));
+    // M288/A: stan siedzi w ptaszku (`checked`), a nazwa w wierszu — dawny
+    // filtr po przedrostku „[ ]” nie ma czego szukać.
+    const toggle = (text) => host.findAll((n) => String(n.className).includes('multi-target-row'))
+      .filter((row) => row.textContent.includes(text))
+      .map((row) => (row.children ?? []).find((c) => String(c.tagName).toLowerCase() === 'input' && !c.checked))
+      .find(Boolean);
     const confirmBtn = host.find((n) => String(n.className).includes('multi-target-confirm'));
     assert.ok(confirmBtn.disabled, 'zatwierdź wyłączone bez wyborów');
     toggle('Gigant').click();            // cel = pierwszy Gigant (foe0 w puli)

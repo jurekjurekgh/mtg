@@ -27,7 +27,9 @@ test('bot gra land drop, gdy ma landa na ręce', () => {
   const bot = createHeuristicBot({ seed: 1 });
   const cmd = bot.chooseCommand(playerView(state, 'p1'));
   assert.equal(cmd.type, 'play_land');
-  assert.equal(bot.trace().at(-1).chosen, 'play_land');
+  // Ślad nazywa WARIANT (karta w id), nie tylko typ decyzji — bez tego audyt
+  // remisorów (tools/bot-tie-audit.mjs) nie odróżnia dwóch lasów od lasu i góry.
+  assert.equal(bot.trace().at(-1).chosen, 'play_land(l:L)');
 });
 
 test('bot wybiera atak, gdy jest śmiertelny', () => {

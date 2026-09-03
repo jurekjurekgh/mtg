@@ -4,6 +4,7 @@ import {
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
+import { hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
@@ -14,6 +15,7 @@ import {
 import { costSymbols, escapeHtml, manaCostHtml, manaSymbolsHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
+import { renderPickerRow } from './picker.js';
 
 /**
  * Renderowanie stołu: PlayerView + log sesji → DOM (M7).
@@ -182,6 +184,7 @@ const TARGET_TYPE_LABELS = Object.freeze({
   noncreature_spell_on_stack: 'czar niebędący stworem na stosie',
   spell_on_stack: 'czar na stosie',
   artifact_spell_on_stack: 'czar-artefakt na stosie',
+  ability_on_stack: 'aktywowana albo wyzwalana zdolność na stosie',
   opponent: 'przeciwnik',
   // M126/#4 (Żywy Tester): w tekście kafli świeciły surowe slugi
   // („cel: creature_without_subtype", „cel: equipment_you_control").
@@ -967,6 +970,7 @@ function describeEffect(e) {
     cloak: () => 'cloak (wierzch biblioteki twarzą w dół jako 2/2)',
     control_to_owners_all_creatures: () => 'kontrola stworów wraca do właścicieli',
     counter_spell: () => 'skontruj czar',
+    counter_ability: () => 'skontruj zdolność',
     counter_spell_unless_pays: (effect) => `skontruj czar, chyba że kontroler zapłaci {${effect?.amount ?? 1}}; ten gracz odrzuca kartę`,
     fireball_resolve: () => 'X obrażeń podzielone po równo między cele',
     craft_transform: () => 'craft — transform',
@@ -2376,7 +2380,15 @@ export function commandLabel(cmd, session, view) {
         if (cmd.phyrexianPayWithLife > 0) parts.push(`${cmd.phyrexianPayWithLife}× po 2 życia`);
         phy = ` · phyrexian ${parts.join(' + ')}`;
       }
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${phy})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
+      // Kicker (CR 702.33, audyt PR #93): wariant z dopłatą musi różnić się
+      // etykietą od naturalnego rzutu — dwa identyczne przyciski o różnym
+      // skutku to klasa M101/B. Kicker kosztuje tyle, ile jego pipy, i NIE
+      // podlega obniżkom (CR 601.2f) — Format jak przy `cast_permanent`.
+      const kickerDef = cmd.kicked ? obj(cmd.objectId)?.kicker : null;
+      const kickerPart = kickerDef
+        ? ` + kicker ${manaCostHtml(costSymbols(kickerDef.cost, kickerDef.colors))}`
+        : '';
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -4018,26 +4030,28 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       // aktywny (1-2 spacje wokół pola), żeby omijający ptaszka gracz nie rzucił
       // przypadkowo instanta na cały przycisk. Klik w label przełącza checkbox
       // natywnie; stopPropagation chroni przycisk (nie gra opcji).
-      const label = document.createElement('label');
-      label.className = 'action-ignore';
-      label.title = 'Zaznacz: ta opcja nie przerywa auto-passu';
-      const toggle = document.createElement('input');
-      toggle.type = 'checkbox';
-      toggle.className = 'action-ignore-input';
-      // Grupa jest „wyciszona", gdy wyciszone są wszystkie jej warianty.
-      toggle.checked = Boolean(ignoredOptionKeys && keys.every((k) => ignoredOptionKeys.has(k)));
-      label.appendChild(toggle);
-      label.addEventListener('click', (e) => e?.stopPropagation?.());
-      toggle.addEventListener('change', () => {
-        // Przełączamy CAŁĄ grupę w jedną stronę (stan brany z pierwszego
-        // klucza), żeby częściowe wyciszenie nie zostawiło czaru aktywnym.
-        const wasIgnored = Boolean(ignoredOptionKeys && keys.every((k) => ignoredOptionKeys.has(k)));
-        for (const k of keys) {
-          const isIgnored = Boolean(ignoredOptionKeys && ignoredOptionKeys.has(k));
-          if (isIgnored === wasIgnored) onToggleIgnoredOption(k);
-        }
+      // M292: układ buduje `src/table/picker.js` w wariancie `inline` — ta sama
+      // obsługa co w modalu wyboru (`choice-request.js`), ten sam wygląd rodzinny.
+      renderPickerRow(button, {
+        kind: 'checkbox',
+        variant: 'inline',
+        rowClassName: 'action-ignore',
+        toggleClassName: 'action-ignore-input',
+        label: null,
+        title: 'Zaznacz: ta opcja nie przerywa auto-passu',
+        // Grupa jest „wyciszona", gdy wyciszone są wszystkie jej warianty.
+        checked: Boolean(ignoredOptionKeys && keys.every((k) => ignoredOptionKeys.has(k))),
+        stopRowPropagation: true,
+        onToggle: () => {
+          // Przełączamy CAŁĄ grupę w jedną stronę (stan brany z pierwszego
+          // klucza), żeby częściowe wyciszenie nie zostawiło czaru aktywnym.
+          const wasIgnored = Boolean(ignoredOptionKeys && keys.every((k) => ignoredOptionKeys.has(k)));
+          for (const k of keys) {
+            const isIgnored = Boolean(ignoredOptionKeys && ignoredOptionKeys.has(k));
+            if (isIgnored === wasIgnored) onToggleIgnoredOption(k);
+          }
+        },
       });
-      button.appendChild(label);
     }
     els.actions.appendChild(button);
   }
@@ -4072,10 +4086,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Liczniki trucizny (M157/F) — panel jak Undercity/Day/Night --------
   // M169/M: Poison Token klikalny — main przekazuje handler pełnego ekranu
   // (karta specjalna spoza rejestru, jak Day/Night i Undercity).
-  renderPoisonPanel(els, view, { onOpenCard: onPoisonCardClick });
+  renderPoisonPanel(els, view, { onOpenCard: onPoisonCardClick, hover });
 
   // --- Loch Undercity (M24) -------------------------------------------
-  renderUndercity(els, session, view, { onClick: onUndercityClick });
+  renderUndercity(els, session, view, { onClick: onUndercityClick, hover });
 }
 
 /**
@@ -4097,7 +4111,29 @@ const POISON_COUNTER_CARD = Object.freeze({
   imageUri: 'https://cards.scryfall.io/large/front/8/a/8a9cb417-8709-4336-be36-2fb0cea31fe1.jpg?1783904328',
 });
 
-export function renderPoisonPanel(els, view, { onOpenCard = null } = {}) {
+/**
+ * Uwaga B (2026-09-02, uwagi właściciela z żywej gry): jedno podpięcie hovera
+ * dla WSZYSTKICH kart specjalnych na stole (loch Undercity, znacznik dzień/noc,
+ * liczniki trucizny) — powiększony druk pod kursorem, tak jak na kaflach.
+ *
+ * Wcześniej każdy panel powtarzał te trzy linie, a dwa z nich nigdy nie
+ * dostała obiektu `hover` od `renderTableView`: klik działał, najechanie nie.
+ * Test na samym komponencie tego nie łapał, bo podawał `hover` samodzielnie —
+ * dlatego ten helper jest JEDYNYM miejscem podłączania, a jego użycie w
+ * wywołaniach sprawdza strażnik w testach (L16: pilnuj drutu, nie żarówki).
+ *
+ * Zwraca true, gdy hover faktycznie podpięto (na dotyku `hover` jest nullem —
+ * tam powiększenie zastępuje tapnięcie, M7c).
+ */
+export function attachSpecialCardHover(card, hover, info) {
+  if (!card || !hover || typeof hover.start !== 'function') return false;
+  card.addEventListener('mouseenter', (e) => hover.start(info, e));
+  if (hover.end) card.addEventListener('mouseleave', hover.end);
+  if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(info, e));
+  return true;
+}
+
+export function renderPoisonPanel(els, view, { onOpenCard = null, hover = null } = {}) {
   if (!els.poison) return;
   const any = (view.players ?? []).some((p) => (p.poison ?? 0) > 0);
   els.poison.hidden = !any;
@@ -4110,6 +4146,13 @@ export function renderPoisonPanel(els, view, { onOpenCard = null } = {}) {
     card.className = 'poison-card clickable';
     card.addEventListener('click', () => onOpenCard(POISON_COUNTER_CARD));
   }
+  // Uwaga B (2026-09-02): panel liczników trucizny był jedynym miejscu na
+  // stole bez jakiejkolwiek ścieżki hovera — karta miała klik i nic więcej.
+  attachSpecialCardHover(card, hover, {
+    name: POISON_COUNTER_CARD.name,
+    imageUri: POISON_COUNTER_CARD.imageUri,
+    artId: null, set: null, colors: [], kind: 'card', types: ['Counter'], faceDown: false,
+  });
   const img = document.createElement('img');
   img.src = POISON_COUNTER_CARD.imageUri;
   img.alt = POISON_COUNTER_CARD.name;
@@ -4143,16 +4186,11 @@ export function renderDayNight(els, session, view, { onClick = null, hover = nul
     if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
     if (onClick) onClick();
   });
-  if (hover && hover.start) {
-    const info = {
-      name: DAY_NIGHT_TOKEN.name,
-      imageUri: designation === 'night' ? DAY_NIGHT_TOKEN.imageUriNight : DAY_NIGHT_TOKEN.imageUriDay,
-      artId: null, set: null, colors: [], kind: 'card', types: ['Card', 'Card'], faceDown: false,
-    };
-    card.addEventListener('mouseenter', (e) => hover.start(info, e));
-    card.addEventListener('mouseleave', hover.end);
-    if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(info, e));
-  }
+  attachSpecialCardHover(card, hover, {
+    name: DAY_NIGHT_TOKEN.name,
+    imageUri: designation === 'night' ? DAY_NIGHT_TOKEN.imageUriNight : DAY_NIGHT_TOKEN.imageUriDay,
+    artId: null, set: null, colors: [], kind: 'card', types: ['Card', 'Card'], faceDown: false,
+  });
   const info = div(els.daynight, 'daynight-info');
   div(info, 'daynight-status', designation === 'night' ? 'Noc' : 'Dzień');
   // M200/G (uwaga właściciela): opis zgodny z IMPLEMENTACJĄ (M68,
@@ -4188,16 +4226,14 @@ export function renderUndercity(els, session, view, { onClick = null, hover = nu
     if (onClick) onClick();
   });
   // M153/C: hover jak dla pozostałych kart — powiększony druk pod kursorem.
-  if (hover && hover.start) {
-    const hInfo = {
-      name: UNDERCITY_DUNGEON.name,
-      imageUri: UNDERCITY_DUNGEON.imageUri,
-      artId: null, set: null, colors: [], kind: 'card', types: ['Dungeon'], faceDown: false,
-    };
-    card.addEventListener('mouseenter', (e) => hover.start(hInfo, e));
-    card.addEventListener('mouseleave', hover.end);
-    if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(hInfo, e));
-  }
+  // Uwaga B (2026-09-02): podpięcie idzie przez wspólny helper, a wywołanie
+  // z `renderTableView` MUSI przekazywać `hover` — przez rok przekazywał go
+  // tylko Day/Night, więc na stole loch reagował wyłącznie na klik.
+  attachSpecialCardHover(card, hover, {
+    name: UNDERCITY_DUNGEON.name,
+    imageUri: UNDERCITY_DUNGEON.imageUri,
+    artId: null, set: null, colors: [], kind: 'card', types: ['Dungeon'], faceDown: false,
+  });
   const info = div(els.undercity, 'undercity-info');
   div(info, 'undercity-init', view.initiativePlayerId != null
     ? `Inicjatywa: ${PLAYER_NAMES[view.initiativePlayerId] ?? view.initiativePlayerId}`
@@ -4428,9 +4464,9 @@ export function waitingExileStatus(object) {
       ? `Plot · rzut bez kosztu od tury ${object.plottedAtTurn + 1}`
       : 'Plot · rzut bez kosztu w kolejnej turze');
   }
-  if (object.playableWithoutPaying) {
-    parts.push(object.playableUntilTurn != null
-      ? `Impuls · zagrywalna do końca tury ${object.playableUntilTurn}`
+  if (hasFreeCastStamp(object)) {
+    parts.push(impulseWindowOf(object) != null
+      ? `Impuls · zagrywalna do końca tury ${impulseWindowOf(object)}`
       : 'Impuls · zagrywalna bez płacenia');
   }
   if (object.reboundReady) parts.push('Rebound · rzut w Twoim upkeepie');

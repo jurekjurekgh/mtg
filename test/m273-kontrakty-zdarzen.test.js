@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  CONTRACT_REQUIRED_FIELDS,
+  findMissingRequiredFields,
   auditEventContracts, auditBattlefieldDeletions, formatViolations, collectEmitters,
   CONTRACT_EXCEPTIONS,
 } from '../tools/event-contract-audit.mjs';
@@ -27,6 +29,42 @@ test('kontrakty zdarzeń: żaden emiter nie gubi pola wymaganego przez konsument
     + 'z uzasadnieniem do CONTRACT_EXCEPTIONS w tools/event-contract-audit.mjs '
     + '(ADR 0027 pkt 3: wyjątek bez powodu jest naruszeniem).',
   );
+});
+
+test('pole WYMAGANE nie zna progu większościowego — 1/2 emiterów to naruszenie (audyt PR #92)', () => {
+  // Reguła `CONTRACT_RATIO` (>= 60%) milczy dla małych rodzin: przy dwóch
+  // emiterach usunięcie pola daje 1/2 = 50% i analizator nie mówi nic. Tak
+  // wyglądała luka w `card_drawn.drawNumberThisTurn`, którą pinujemy tutaj —
+  // gdyby kiedyś ktoś „poprawił" wymóg na większościowy, ten test czerwienieje.
+  const zrodlo = `
+    state.events.push(event('card_drawn', { playerId, drawNumberThisTurn: 1 }));
+    state.events.push(event('card_drawn', { playerId, mulligan: true }));
+  `;
+  const emitters = collectEmitters(zrodlo, 'fixture.js');
+  assert.equal(emitters.length, 2, 'fixture ma dwóch emiterów card_drawn');
+  const v = findMissingRequiredFields(emitters);
+  assert.equal(v.length, 1, 'brak stempla u drugiego emitera MUSI być naruszeniem');
+  assert.equal(v[0].field, 'drawNumberThisTurn');
+  assert.equal(v[0].required, true, 'naruszenie oznaczone jako wymóg, nie rozjazd większościowy');
+  assert.match(formatViolations(v), /pole WYMAGANE/, 'komunikat mówi, że to wymóg deklaratywny');
+  const kompletne = findMissingRequiredFields(collectEmitters(
+    `event('card_drawn', { playerId, drawNumberThisTurn: null });`, 'fixture.js'));
+  assert.deepEqual(kompletne, [], 'jawne `null` to NIE brak pola — wyjątku nie potrzeba');
+});
+
+test('deklaracja pól wymaganych jest niepusta i dotyczy typów wieloemiterowych', () => {
+  // Pusta albo jednopunktowa deklaracja byłaby tym samym błędem, przed którym
+  // narzędzie powstało: strażnikiem bez pokrycia (L26/L112).
+  const names = Object.keys(CONTRACT_REQUIRED_FIELDS);
+  assert.ok(names.length >= 1, 'brak żadnych pól wymaganych — mechanizm martwy');
+  for (const [type, fields] of Object.entries(CONTRACT_REQUIRED_FIELDS)) {
+    assert.ok(Array.isArray(fields) && fields.length >= 1, `${type}: pusta lista pól`);
+    for (const field of fields) {
+      assert.equal(field in CONTRACT_EXCEPTIONS, false);
+      assert.ok(!Object.keys(CONTRACT_EXCEPTIONS).includes(`${type}.${field}`),
+        `${type}.${field} nie może być jednocześnie wymagane i wyjęte wyjątkiem`);
+    }
+  }
 });
 
 test('każdy wyjątek ma niepuste uzasadnienie (ADR 0027 pkt 3)', () => {

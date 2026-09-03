@@ -1,0 +1,44 @@
+{
+  "source": "https://api.scryfall.com/cards/616d1b20-61c1-4d39-a9b5-ad9fd61699e4?format=json",
+  "print": "cns",
+  "name": "Stifle",
+  "mana_cost": "{U}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "Counter target activated or triggered ability. (Mana abilities can't be targeted.)",
+  "power": null,
+  "toughness": null,
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": [],
+  "set": "cns",
+  "set_name": "Conspiracy",
+  "collector_number": "108",
+  "rarity": "rare",
+  "artist": "Eric Fortune",
+  "illustration_id": "642fc1b5-2de3-4d3e-8bb5-4fb0bc9282f9",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/1/616d1b20-61c1-4d39-a9b5-ad9fd61699e4.jpg?1783939358",
+    "normal": "https://cards.scryfall.io/normal/front/6/1/616d1b20-61c1-4d39-a9b5-ad9fd61699e4.jpg?1783939358"
+  },
+  "rulings": [
+    {
+      "date": "2004-10-04",
+      "source": "wotc",
+      "comment": "An activated ability has a \"Cost: Effect\" format. Look for the colon. A triggered ability starts with \"when\", \"whenever\", or \"at\"."
+    },
+    {
+      "date": "2004-10-04",
+      "source": "wotc",
+      "comment": "Turn-based actions and special actions like the normal card draw, combat damage, or turning a face-down creature face up can't be targeted."
+    },
+    {
+      "date": "2004-10-04",
+      "source": "wotc",
+      "comment": "It can target delayed triggered abilities. For example, a card that says \"Whenever a player cycles a card, you may exile target creature. If you do, return that creature to the battlefield at the beginning of the end step.\" triggers when a player cycles a card and creates a delayed trigger that happens at the beginning of the end step. You can choose to target the \"at the beginning of the end step\" trigger when it is placed on the stack at end of turn."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/cns/108/rulings",
+  "rulingsPobrano": "2026-09-02",
+  "pobrano": "2026-09-02"
+}

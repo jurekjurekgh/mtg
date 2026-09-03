@@ -3,6 +3,8 @@ import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { deathZoneFor, effectiveKeywords, effectiveToughness } from './permanents.js';
 import { removeIllegalAttachments, detachAttachmentsFromHost } from './attachments.js';
 import { removeCounter } from './counters.js';
+import { effectiveAbilities } from './permanents.js';
+import { startEnginesFor } from './players.js';
 
 /**
  * Regeneracja (CR 701.12): tarcza z efektu „regenerate" zastępuje następne
@@ -42,10 +44,10 @@ export function tryRegenerate(state, object, collected = null) {
   collected?.push(regenerationEvent);
   // M117 (lekcja L24, ta sama klasa co tapnięcie landa za manę z M114):
   // regeneracja TAPUJE permanent (CR 701.15a), a tapnięcie jest zdarzeniem
-  // widocznym dla reguł — bez `object_tapped` żaden trigger „becomes tapped\"
+  // widocznym dla reguł — bez `object_tapped` żaden trigger „becomes tapped”
   // (Chronic Flooding) by go nie zobaczył, a gracz nie przeczytałby w logu,
   // dlaczego jego stwór stoi zatapniętny. Zdarzenie tylko przy REALNEJ zmianie:
-  // permanent już zatapniętny nie „staje się\" zatapniętny drugi raz.
+  // permanent już zatapniętny nie „staje się” zatapniętny drugi raz.
   if (!wasTapped) {
     const tappedEvent = event('object_tapped', {
       objectId: object.id, playerId: object.controllerId, viaRegeneration: true,
@@ -53,7 +55,7 @@ export function tryRegenerate(state, object, collected = null) {
     state.events.push(tappedEvent);
     // Zdarzenie musi trafić także do listy ZWRACANEJ przez SBA — `accepted()`
     // karmi `processTriggers` tą listą, a nie całym `state.events`. Bez tego
-    // trigger „becomes tapped\" nie zobaczyłby tapnięcia z regeneracji.
+    // trigger „becomes tapped” nie zobaczyłby tapnięcia z regeneracji.
     collected?.push(tappedEvent);
   }
   return true;
@@ -363,6 +365,34 @@ export function runStateBasedActions(state) {
       });
       state.events.push(started); events.push(started);
     }
+  }
+  // „Start your engines!" (DFT: Glitch Ghost Surveyor, Leonin Surveyor) —
+  // prędkość startuje do 1 JAKO AKCJA STANOWA, nie z triggera wejścia. Ruling
+  // WotC 2025-02-07 (w repo: docs/cards/scryfall-leonin-surveyor.json, pole
+  // `rulings`): „isn't a triggered ability … as soon as you control a permanent
+  // with the ability. Notably, this includes gaining control of a permanent with
+  // the ability that another player controls". Konsekwencje modelu:
+  //  (a) brak nazw kart (ADR 0002) — liczy się deklaracja zdolności z efektem
+  //      `start_engines`;
+  //  (b) czytamy `effectiveAbilities`, więc zdolność NADANA działa tak samo jak
+  //      wydrukowana;
+  //  (c) działa po zmianie kontrolera, gdy żadne ETB już nie zachodzi;
+  //  (d) nigdy nie cofa prędkości — brak gałęzi „ktoś stracił silnik", bo
+  //      prędkość jest cechą gracza (ten sam ruling: „losing control … doesn't
+  //      affect your speed").
+  const playersWithoutSpeed = new Set(state.players
+    .filter((pl) => (pl.speed ?? 0) < 1).map((pl) => pl.id));
+  if (playersWithoutSpeed.size > 0) {
+    const engineControllers = new Set();
+    for (const id of state.zones.battlefield) {
+      const object = state.objects.get(id);
+      if (!object || object.zone !== 'battlefield' || !object.controllerId) continue;
+      if (!playersWithoutSpeed.has(object.controllerId)) continue;
+      const hasEngines = effectiveAbilities(object).some((ability) => [ability?.effect].flat()
+        .some((entry) => entry?.type === 'start_engines'));
+      if (hasEngines) engineControllers.add(object.controllerId);
+    }
+    for (const playerId of engineControllers) events.push(...startEnginesFor(state, playerId));
   }
   return events;
 }

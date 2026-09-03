@@ -210,6 +210,16 @@ Wynik podaj w opisie PR (liczba testów, liczba modułów i rozmiar artefaktu).
 ## Checklista na koniec batcha
 
 - [ ] `docs/cards/scryfall-*.json` dla każdej karty (ADR 0010 §2a)
+- [ ] rulingi do snapshotu: `node tools/fetch-card-rulings.mjs --only=<slug>`
+      (potrzebny egress; w sandboxie — `fetch_page` na
+      `https://api.scryfall.com/cards/<set>/<collector_number>/rulings` i zapis
+      pola `rulings`). **Nie pomijać:** część rozstrzygnięć nie ma śladu w
+      `oracle_text`, a rozstrzyga spory o model (przykłady w
+      `docs/audits/AUDYT_PR92_2026-09-02.md` §6a — Leonin Surveyor, Vaan).
+      Policyjnie: **ADR 0028** — nie hurtujemy katalogu, ściąga się przy kartce
+      i w kolejności priorytetu (najpierw karty z `support.limitations`).
+      Brak pola `rulings` = „nigdy nie ściągnięte"; `rulings: []` = „ściągnięte,
+      WotC nie dodało nic".
 - [ ] definicje w `REAL_CARDS` (`src/cards/card-data.js`) — pełne mechaniki,
       `support.limitations` pusty
 - [ ] `artId` ze słownika (lub świadomy brak z powodu spoza kolekcji)

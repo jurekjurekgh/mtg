@@ -51,6 +51,15 @@ tokenów**. Pilnuje tego `test/dokumentacja-budzet-lektury.test.js`; gdy
 próg zostanie przekroczony, przepisanie/rozdzielenie dokumentów staje się
 obowiązkowym zadaniem sesji, a nie opcją.
 
+Sposób odzyskiwania miejsca (ustalony w PR #93, M284): rejestr lekcji skraca
+się DO postaci `**Przypadek** + **Reguła** + **Strażnik**`, a prozę (Objaw,
+Przyczyna, tabele wariantów, dowody mutacyjne) przenosi się w całości do
+`docs/LESSONS_PRZYPADKI.md` pod tym samym numerem wpisu, zostawiając odsyłacz
+`→ narracja:`. Numery `## L<nr>` są nietknięte, bo kod cytuje je ~1150 razy;
+żaden fakt nie znika, tylko zmienia plik. Pilnuje tego
+`test/docs-decisions.test.js`. **Próg 100k podnosi wyłącznie właściciel** —
+sesja, która go podnosi, żeby uciszyć test, maskuje objaw (L5).
+
 Potem, w miarę potrzeby obszaru: `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`,
 `docs/WORKFLOW.md`, `SECURITY.md`, `docs/setup/TESTER_STOLU.md`.
 

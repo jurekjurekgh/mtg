@@ -6,7 +6,8 @@ import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount } from './mana-cost.js';
-import { allControlledManaSources, getSourceForObject, manaUnitKey } from './mana-sources.js';
+import { allControlledManaSources, getSourceForObject, manaUnitKey, treasureManaAbilityOf, ANY_COLOR_MANA } from './mana-sources.js';
+import { canPlayByImpulseFromExile, isFreeImpulseCast } from './impulse-window.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
 export function initializeResources(state) {
@@ -28,13 +29,18 @@ export function initializeResources(state) {
     // Pula many pochodzącej ze Skarbów (Marut: „mana from a Treasure was
     // spent to cast it"). Zeruje się razem z maną na starcie tury.
     player.treasureMana = 0;
+    // Kolory jednostek many skarbowej leżących w puli (audyt PR #93, tura 3):
+    // `treasureAltCost` nie może zakładać „dowolnego koloru" z litery — pyta o
+    // to, co faktycznie wyprodukowano. Unia, nie wielość: rozliczenie częściowe
+    // zostawia ją do wyczerpania licznika `treasureMana`.
+    player.treasureManaColors = [];
     player.artifactOnlyMana = 0;
     player.landPlays = 1;
   }
   return state;
 }
 
-export function addMana(state, playerId, amount, { colors = ['W', 'U', 'B', 'R', 'G'], fromTreasure = false, spendOnly = null } = {}) {
+export function addMana(state, playerId, amount, { colors = ANY_COLOR_MANA, fromTreasure = false, spendOnly = null } = {}) {
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mana musi być nieujemną liczbą całkowitą');
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
@@ -55,7 +61,13 @@ export function addMana(state, playerId, amount, { colors = ['W', 'U', 'B', 'R',
   // Mana wytworzona przez Skarb jest identyfikowalna w puli (CR 106 i Marut) —
   // śledzimy ją oddzielnym licznikiem, żeby spendMana mogła ją wydać w sposób
   // jawny dla efektów „if mana from a Treasure was spent".
-  if (fromTreasure && amount > 0) player.treasureMana = (player.treasureMana ?? 0) + amount;
+  if (fromTreasure && amount > 0) {
+    player.treasureMana = (player.treasureMana ?? 0) + amount;
+    // Razem z licznikiem idą kolory (unia) — patrz `treasureManaColors` wyżej.
+    const kolory = new Set(player.treasureManaColors ?? []);
+    for (const color of colors ?? []) kolory.add(color);
+    player.treasureManaColors = [...kolory];
+  }
   // M201 (znalezisko #3): mana OGRANICZONA drukiem (Powerstone — „only to cast
   // artifact spells") musi być rozpoznawalna także PO trafieniu do puli:
   // gracz może tapnąć źródło ręcznie (kreator many), a dopiero potem wybrać
@@ -317,6 +329,9 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
   // 0005): Marut pyta, ILE many ze Skarba wydano na jego rzut.
   const treasure = Math.min(player.treasureMana ?? 0, amount);
   if (treasure > 0) player.treasureMana = (player.treasureMana ?? 0) - treasure;
+  // Brak many skarbowej w puli = brak kolorów do rozliczenia (inaczej
+  // `treasureAltCost` oglądałby kolory jednostek, których już nie ma).
+  if ((player.treasureMana ?? 0) === 0) player.treasureManaColors = [];
   // M201 (znalezisko #3): licznik many OGRANICZONEJ zawsze równa się sumie
   // jednostek w `player.restrictedPool` — konsumpcja zaktualizowała mapę,
   // więc licznik idzie za nią (M214: wcześniej „rozliczenie po fakcie”
@@ -336,6 +351,7 @@ export function resetTurnResources(state, playerId) {
   player.manaPool = {};
   player.restrictedPool = {};
   player.treasureMana = 0;
+  player.treasureManaColors = [];
   player.artifactOnlyMana = 0;
   player.landPlays = 1;
   return player;
@@ -610,9 +626,15 @@ function hasColorManaForObject(state, playerId, object, phyrexianPayWithLife = 0
 }
 
 /**
- * M69 (Security Rhox): dostępna mana ze Skarbów — pula (treasureMana, śledzona
- * per jednostka przy addMana fromTreasure) + nietapnięte tokeny Treasure na
- * polu bitwy. Koszt alternatywny „Spend only mana produced by Treasures".
+ * M69 (Security Rhox): dostępna mana ze Skarbów — pula (`treasureMana`,
+ * śledzona per jednostka przy addMana with fromTreasure) + nietapnięte źródła
+ * skarbona polu bitwy. Koszt alternatywny „Spend only mana produced by
+ * Treasures".
+ *
+ * Źródła nie są dobierane po ID karty (dawniej: literał token_treasure) ani po
+ * tylko po DESKRYPTORZE zdolności (`treasureManaAbilityOf` w mana-sources.js).
+ * Audyt PR #93 (tura 3), decyzja właściciela: rdzeń nie zna żadnej karty po
+ * nazwie (ADR 0002), a Skarb jest definicją w katalogu tokenów.
  */
 export function treasureManaAvailable(state, playerId) {
   const player = state.players.find((p) => p.id === playerId);
@@ -620,10 +642,29 @@ export function treasureManaAvailable(state, playerId) {
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
     if (!object || object.controllerId !== playerId || object.tapped) continue;
-    if (object.cardId !== 'token_treasure') continue;
-    total += 1;
+    const ability = treasureManaAbilityOf(object);
+    if (!ability) continue;
+    total += ability.amount;
   }
   return total;
+}
+
+/**
+ * Kolory, jakimi może zapłacić jednostka skarbowej many: unia kolorów z puli
+ * (to, co już wyprodukowano) i z deskryptorów zdolności na polu bitwy. Dawniej
+ * literał ['W','U','B','R','G'] powtarzany w dwóch miejscach tego pliku.
+ */
+export function treasureManaColorUnits(state, playerId) {
+  const player = state.players.find((p) => p.id === playerId);
+  const kolory = new Set(player?.treasureManaColors ?? []);
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.controllerId !== playerId) continue;
+    const ability = treasureManaAbilityOf(object);
+    if (!ability) continue;
+    for (const color of ability.colors) kolory.add(color);
+  }
+  return [...kolory];
 }
 
 /**
@@ -648,7 +689,7 @@ export function canPayMadnessCost(state, playerId, object) {
   return hasColorRequirements(state, playerId, requirements);
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, vaanCast = false } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, abilityWindowCast = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
@@ -660,7 +701,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // plot. Flagę ustawia efekt wygnania (exile_top_playable_until_next_turn),
   // tutaj tylko ZERUJEMY koszt; bez tego pole byłoby martwe (L48: oferta
   // i płatność muszą znać tę samą regułę).
-  const freeImpulse = object?.zone === 'exile' && object.playableWithoutPaying === true;
+  const freeImpulse = isFreeImpulseCast(object);
   // M158/Batch 39 (CR 702.34): rzut za koszt madness z exile (karta
   // odrzucona z madnessReady) — timing ignorowany (rzut w rozstrzyganiu
   // zdolności, jak rebound/suspend).
@@ -675,9 +716,12 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Batch 47 (Gila Courser, Caves of Chaos Adventurer): PERMANENT wygnany
   // impulsem jest grywalny z exile do konca wskazanej tury (CR 601.2b).
   // Bez tej bramki oferta pokazywala ruch, ktorego walidacja nie przyjmowala.
-  const impulseLive = object?.zone === 'exile' && object.playableUntilTurn != null
-    && state.turn.number <= object.playableUntilTurn;
-  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted && !warpReady && !madnessLive && !impulseLive)) throw new Error('Nielegalny permanent');
+  const impulseLive = canPlayByImpulseFromExile(object, state);
+  // Audyt PR #92: rzut w oknie nierozstrzygniętej zdolności (patrz
+  // `requireSpell` w spells.js) jest samodzielnym uprawnieniem do wzięcia
+  // karty z exile — bez stempla `playableUntilTurn` na obiekcie, bo oknem
+  // jest decyzja, a nie efekt trwający do końca tury.
+  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted && !warpReady && !madnessLive && !impulseLive && !abilityWindowCast)) throw new Error('Nielegalny permanent');
   if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
   // bez flash — tylko w swojej main phase (plot też rzuca się jako sorcery).
@@ -687,10 +731,10 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // timing — także w cleanup (odrzucenie ponad limit ręki) i w turze
   // przeciwnika. Bez wyjątku bramka odrzucała rzut, a heuristic-bot zawsze
   // wybierał cast:true → crash sesji „Bot wybrał nielegalną komendę".
-  if (!hasFlash && !madnessCast && !vaanCast && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
+  if (!hasFlash && !madnessCast && !abilityWindowCast && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
   // Timing sorcery (CR 307.1/117.1a): rzut permanenta bez flash wymaga
   // PUSTEGO stosu — czar idzie na stos i rozstrzyga się po rundzie passów.
-  if (!hasFlash && !madnessCast && !vaanCast && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
+  if (!hasFlash && !madnessCast && !abilityWindowCast && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
   if (warpCast && !object.warp) throw new Error('Ta karta nie ma mechaniki warp');
   if (madnessCast && !object.madness) throw new Error('Ta karta nie ma mechaniki madness');
   // Surge (CR 702.111): koszt ALTERNATYWNY rzutu z ręki, legalny gdy ty (lub
@@ -829,10 +873,12 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   }
   if (treasureAltCost) {
     // „Spend only mana produced by Treasures" — dostępne Skarby (pula +
-    // nietapnięte tokeny) muszą pokryć sumę i pipy (jednostki dowolnego koloru).
+    // nietapnięte źródła) muszą pokryć sumę i pipy. Jednostki niosą kolory
+    // Z DEKRYPTORA (treasureManaColorUnits), a nie domyślną piątkę wpisaną
+    // w silnik — audyt PR #93 (tura 3).
     const available = treasureManaAvailable(state, playerId);
     if (available < totalMana) throw new Error('Koszt alternatywny wymaga many ze Skarbów');
-    const treasureUnits = Array.from({ length: available }, () => ['W', 'U', 'B', 'R', 'G']);
+    const treasureUnits = Array.from({ length: available }, () => treasureManaColorUnits(state, playerId));
     if (!matchColorRequirements(treasureUnits, requirements)) throw new Error('Brak kolorowej many ze Skarbów');
     // Dołóż Skarby z pola bitwy do puli (koszt: poświęć token, dodaj manę any
     // fromTreasure) — spendMana wyda manę skarbową w pierwszej kolejności.
@@ -840,11 +886,13 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     for (const id of [...state.zones.battlefield]) {
       if (need <= 0) break;
       const object = state.objects.get(id);
-      if (!object || object.controllerId !== playerId || object.tapped || object.cardId !== 'token_treasure') continue;
+      if (!object || object.controllerId !== playerId || object.tapped) continue;
+      const ability = treasureManaAbilityOf(object);
+      if (!ability) continue;
       const graveId = `grave-${state.objectSequence++}`;
       moveObjectDirectly(state, id, 'graveyard', graveId);
-      addMana(state, playerId, 1, { colors: ['W', 'U', 'B', 'R', 'G'], fromTreasure: true });
-      need -= 1;
+      addMana(state, playerId, ability.amount, { colors: ability.colors, fromTreasure: true });
+      need -= ability.amount;
     }
     if ((player.treasureMana ?? 0) < totalMana) throw new Error('Niewystarczająca mana ze Skarbów');
   }
