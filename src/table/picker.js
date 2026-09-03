@@ -27,6 +27,20 @@
  * go osobno. O to właśnie chodziło w prośbie: JEDEN komponent z parametrami
  * zamiast równoległej funkcji wizualizującej dla każdego efektu.
  *
+ * M293 (2026-09-03, decyzja właściciela o czystości projektu): piąty kształt —
+ * `chip` (`renderPickerChip` + `renderPickerChipList`), pigułka z nazwą karty dla list
+ * przeglądniętych (scry, surveil, „ułóż wierzch", „weź jeden land"), oraz
+ * `renderPickerCancel` — stopka „Zamknij (dokończysz później)", którą trzy kreatory
+ * (patrzenia, walki, przydziału obrażeń) rysowały własną, identyczną kopią. Chip
+ * ŚWIADOMIE nie dostaje `picker-row`: wiersz wyboru to cel dotyku ≥44 px, a chip jest
+ * mały i upakowany w linii (`padding: 5px 10px`, `font-size: 13px`); klikalna jest
+ * tylko podkreślona nazwa i tylko gdy wywołujący podał `onOpenCard`. Nazwy haków
+ * (`look-wizard-cards`, `look-wizard-card`, `look-wizard-card-name`) pozostają w
+ * markupie JAKO PARAMETRY, bo patrzą na nie `m129`, `look-wizard-contrast`, `m293` i
+ * sonda `run-game.mjs`, a sam styl mieszka w rodzinie `.picker-*` (reguły
+ * `.look-wizard-*`: 5 → 2; `.look-wizard-cancel` → `.picker-cancel`, bo hook jeździł za
+ * kopiami do kreatorów niemających nic wspólnego z „look").
+ *
  * Ten moduł odpowiada za WYGLĄD i obsługę dotyku, a nie za decyzję: które
  * wiersze istnieją, co znaczy zaznaczenie, ile wolno dołożyć i kiedy „Zatwierdź"
  * gaśnie — to wie wywołujący (per efekt), a legalność i tak rozstrzyga silnik
@@ -55,7 +69,19 @@
  *    (44 px, ramka) — inaczej zagnieździłby wiersz w wierszu. Wywołujący podaje
  *    wtedy własne klasy (`action-ignore`, `action-ignore-input`) i na nie patrzą
  *    `test/table-ui.test.js`, `test/choice-group-ignore.test.js` oraz sonda
- *    `run-game.mjs` (`.action-ignore-input`).
+ *    `run-game.mjs` (`.action-ignore-input`),
+ *  - chip to `<div class="picker-chip …">` z `<span class="picker-chip-name">`; lista
+ *    nosi `picker-chip-list` plus `listClassName` wywołującego, a numer pozycji
+ *    zaczyna się od znaku nowej linii (konwenans M86/M87 z `renderChoiceRequest`:
+ *    bez niego `textContent` skleja pozycje w jeden ciąg — to samo czyta sonda
+ *    Testora i testy, więc nie zastępuje go margines CSS). Chip nie ma `<input>`
+ *    i nie jest wierszem `picker-row`. Stopka kreatora: `<button class="ghost-btn
+ *    picker-cancel">`.
+ *
+ * Testy, które liczą się z tym kontraktem: `m129-*` (dotyk i antyduplikat CSS),
+ * `m292-*`, `m293-*`, `look-wizard-contrast`, `choice-request-ui`, `table-ui`,
+ * `table-mana-wizard`, `m172-*`, `m136-*` — oraz jądro pomiaru
+ * `test/harness/css-effective.js` (styl efektywny, nie tekst stylesheetu; L125).
  */
 
 /** Tworzy element przez dokument gospodarza (testy core nie mają DOM-u). */
