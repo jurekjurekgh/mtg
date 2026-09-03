@@ -8032,7 +8032,7 @@ po PR #93**, który piętnował brak oferty jako zamierzony i zakładał stempel
 `playableUntilTurn`, którego silnik już nie stawia (przechodziłby bez naprawy —
 L5/L44).
 
-**Bramy na koniec:** `npm test` **4310/4310**, `npm run test:all` **4314/4314**, build 59 modułów / 3179,4 kB, benchmark (672 mecze, profil szybki) bez
+**Bramy na koniec:** `npm test` **4310/4310**, `npm run test:all` **4320/4320**, build 59 modułów / 3179,4 kB, benchmark (672 mecze, profil szybki) bez
 wyjątków, `event-contract-audit` i `family-audit` bez naruszeń, 6 partii Żywego
 Testera → 0 zgłoszeń detektorów.
 Dokumentacja: `docs/audits/AUDYT_PR93_2026-09-03.md`, M294, L127, HANDOFF
