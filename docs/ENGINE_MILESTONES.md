@@ -4232,7 +4232,7 @@ powstały dla Discover, a obowiązywały też okno zdolności Vaana.
   jeden generator z rzutem z ręki. **Discover dla kart X zostaje zamknięte i przypięte
   testem**: CR 107.3b zmusza X = 0, a przy X = 0 żadna z dwóch kart katalogu nic nie robi,
   więc oferta byłaby no-opem (uwaga F z M280). Źródła reguł w raporcie §4.
-- **Bramy.** `npm test` 4276 → **4324/4324**, `npm run test:all` **4329/4329**,
+- **Bramy.** `npm test` 4276 → **4324/4324**, `npm run test:all` **4334/4334**,
   `npm run build` 59 modułów / 3183,9 kB (baza 3167,0 kB). Benchmark (profil szybki,
   672 mecze) bez wyjątków: heuristic 83,9%, aggro 28,0%, random 4,2%.
 - **E — czysta aura (CR 303.4a).** Znaleziona SKANEM KATALOGU, nie zgłoszeniem:
