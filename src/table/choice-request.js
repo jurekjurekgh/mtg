@@ -954,10 +954,13 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   const keepMode = Boolean(plan.mulliganKeepMode);
   // M300: okna rzutu — wiersz na każdą GOTOWĄ opcję (wariant rzutu / odmowa).
   const castWindowMode = Boolean(plan.castWindowMode);
-  // M301 (decyzja właściciela): małe enumeracje 2–5 opcji — semantyka
-  // przyciskowa (jeden klik = decyzja), ale rysowane przez ten sam kreator:
-  // wspólna lista, podgląd kart, klucz sondy (M104), Anuluj.
-  const enumButtonsMode = Boolean(plan.enumButtonsMode);
+  // M301→M302 (decyzje właściciela): tryb przyciskowy wspólnego helpera —
+  // semantyka przyciskowa (jeden klik = decyzja), rysowana przez ten sam
+  // kreator: wspólna lista, podgląd kart, klucz sondy (M104), Anuluj.
+  // M302: tryb jest OGÓLNY — obsługuje każdą grupę, której nie wziął
+  // dedykowany plan/wizard (enumeracje, search, undercity, „1 kandydat
+  // + odmowa”, wszystkie przyszłe kształty bez osobnych planów).
+  const buttonsMode = Boolean(plan.buttonsMode);
   const xLabel = plan.hasX ? ` oraz wartość X (${plan.xMin}–${plan.xMax})` : '';
   const range = plan.minTargets === plan.maxTargets
     ? `${plan.maxTargets}`
@@ -1154,8 +1157,8 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       renderPickerSection(list, `${slotIndex + 1}. ${label}:`, { className: 'multi-target-slot-label' });
       for (const id of ids) addRow(id, slotIndex);
     });
-  } else if (enumButtonsMode) {
-    // M301: mała enumeracja — wiersz jest PRZYCISKIEM (jeden klik = wybór),
+  } else if (buttonsMode) {
+    // M301/M302: tryb przyciskowy — wiersz jest PRZYCISKIEM (jeden klik = wybór),
     // więc nie przechodzi przez addRow/radio; cardId daje osobny podgląd 🔍
     // (jak dawna ściana przycisków, M201/C2), bo klik wiersza ma zatwierdzać.
     (plan.rows ?? []).forEach((row, index) => {
@@ -1214,13 +1217,13 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     plus.addEventListener('click', () => { if (xValue < plan.xMax) { xValue += 1; refresh(); } });
   }
 
-  // M301: tryb przyciskowy nie ma statusu ani „Zatwierdź” — wiersz-przycisk
+  // M301/M302: tryb przyciskowy nie ma statusu ani „Zatwierdź” — wiersz-przycisk
   // wysyła komendę od razu; zostaje tylko wspólne Anuluj (ten sam helper).
-  if (!enumButtonsMode) {
+  if (!buttonsMode) {
     statusEl = choiceNode(host, 'div', 'picker-status multi-target-status', '');
   }
   const buttons = choiceNode(host, 'div', 'choice-request-actions');
-  if (!enumButtonsMode) {
+  if (!buttonsMode) {
     confirm = choiceNode(buttons, 'button', 'primary-btn multi-target-confirm', 'Zatwierdź wybór');
     confirm.type = 'button';
     confirm.disabled = true;
@@ -1232,7 +1235,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   const cancel = choiceNode(buttons, 'button', 'ghost-btn multi-target-cancel', 'Anuluj');
   cancel.type = 'button';
   cancel.addEventListener('click', () => onCancel?.());
-  if (!enumButtonsMode) refresh();
+  if (!buttonsMode) refresh();
 }
 
 /** Nazwa celu: gracz („Nieprzyjaciel") albo karta na polu bitwy. */

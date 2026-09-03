@@ -7,7 +7,7 @@
 //
 // Dwa ruchy:
 //  A) rodziny enumeracyjne (kolory, typy lądu, tryby, tak/nie…) dostają plan
-//     `enumButtonsPlanOf` i są rysowane PRZEZ ten sam kreator (wiersze jak
+//     `buttonsPlanOf` i są rysowane PRZEZ ten sam kreator (wiersze jak
 //     picker, podgląd kart, jeden klik = dokładna komenda silnika, L48);
 //  B) luka „wskaż cel (1)”: aura castowana na gospodarza i aktywacje z jednym
 //     celem niosą `targets[1]`, więc multiTargetPlanOf je odrzucał (rozmiar 1),
@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import { choiceRequest } from '../src/protocol/types.js';
 import {
   singleTargetPlanOf, commandForSingleTargetSelection,
-  enumButtonsPlanOf, commandForCastWindowSelection,
+  buttonsPlanOf, commandForCastWindowSelection,
 } from '../src/table/multi-target.js';
 import { renderMultiTargetWizard } from '../src/table/choice-request.js';
 
@@ -51,32 +51,23 @@ const payGroup = () => Object.freeze([
   Object.freeze({ type: 'resolve_optional_pay_choice', playerId: 'p1', pay: false, sourceId: 's1', cost: 2 }),
 ]);
 
-test('M301/1: enumButtonsPlanOf — mała jednorodna enumeracja daje plan wierszy', () => {
-  const colors = enumButtonsPlanOf(colorGroup());
+test('M301/1: buttonsPlanOf — mała jednorodna enumeracja daje plan wierszy', () => {
+  const colors = buttonsPlanOf(colorGroup());
   assert.ok(colors, 'wybór koloru (5 opcji) ma dać plan');
-  assert.equal(colors.enumButtonsMode, true);
+  assert.equal(colors.buttonsMode, true);
   assert.equal(colors.rows.length, 5, 'wiersz na opcję');
   assert.deepEqual(colors.rows.map((r) => r.id), ['opt-0', 'opt-1', 'opt-2', 'opt-3', 'opt-4']);
   assert.ok(colors.rows.every((r) => r.label === null), 'etykiety wypełnia wywołujący');
-  const pay = enumButtonsPlanOf(payGroup());
+  const pay = buttonsPlanOf(payGroup());
   assert.ok(pay, 'tak/nie (2 opcje) ma dać plan');
   assert.equal(pay.rows.length, 2);
 });
 
-test('M301/2: enumButtonsPlanOf — negatywy: za mało/za dużo, mieszane typy, obce i odroczone rodziny', () => {
-  assert.equal(enumButtonsPlanOf([colorGroup()[0]]), null, 'jedna opcja = zwykły przycisk');
-  const six = [...colorGroup(), Object.freeze({ type: 'resolve_color_choice', playerId: 'p1', color: 'C' })];
-  assert.equal(enumButtonsPlanOf(Object.freeze(six)), null, '6 opcji = poza zakresem „2–5”');
-  const mixed = Object.freeze([colorGroup()[0], Object.freeze({ type: 'resolve_land_type_choice', playerId: 'p1', landType: 'Plains' })]);
-  assert.equal(enumButtonsPlanOf(mixed), null, 'mieszane typy to nie jedna rodzina');
-  assert.equal(enumButtonsPlanOf(Object.freeze([
-    Object.freeze({ type: 'resolve_trigger_target', playerId: 'p1', targetId: 'a' }),
-    Object.freeze({ type: 'resolve_trigger_target', playerId: 'p1', targetId: null }),
-  ])), null, 'wybór celu to nie enumeracja');
-  assert.equal(enumButtonsPlanOf(Object.freeze([
-    Object.freeze({ type: 'resolve_search_choice', playerId: 'p1', found: 'k1', destination: 'hand' }),
-    Object.freeze({ type: 'resolve_search_choice', playerId: 'p1', found: null }),
-  ])), null, 'search_choice zostaje odroczony (dwa wymiary)');
+test('M301/2: buttonsPlanOf — negatyw: grupa <2 opcji nie otwiera modala (panel akcji)', () => {
+  assert.equal(buttonsPlanOf([colorGroup()[0]]), null, 'jedna opcja = zwykły przycisk panelu');
+  assert.equal(buttonsPlanOf([]), null, 'pusta grupa = brak planu');
+  // M302 rozszerzył zakres: >5 opcji, mieszane typy, search_choice i grupy
+  // „1 kandydat + odmowa” też dostają plan przyciskowy — patrz testy M302.
 });
 
 test('M301/3: luka „wskaż cel (1)” — aura (cast_permanent z targets[1]) dostaje plan pojedynczy', () => {
@@ -158,7 +149,7 @@ test('M301/5b: luka pól kosztu — tapCreatureId/tapOtherCreatureId/exileTarget
 });
 
 test('M301/6: wizard enumeracji — wiersz-przycisk klika się RAZ i oddaje dokładną komendę', () => {
-  const plan = enumButtonsPlanOf(payGroup());
+  const plan = buttonsPlanOf(payGroup());
   plan.rows = plan.rows.map((row, i) => ({ ...row, label: i === 0 ? 'Zapłać — efekt odpali' : 'Nie płać', cardId: null }));
   const { host, completed, request } = renderEnumWizard(plan, payGroup());
   const rows = host.byClass('choice-request-option');
@@ -175,7 +166,7 @@ test('M301/7: wizard enumeracji — podgląd karty z wiersza i Anuluj bez decyzj
     Object.freeze({ type: 'resolve_modal_choice', playerId: 'p1', modeIndex: 0, cardId: 'k-pierwsza' }),
     Object.freeze({ type: 'resolve_modal_choice', playerId: 'p1', modeIndex: 1, cardId: 'k-druga' }),
   ]);
-  const plan = enumButtonsPlanOf(group);
+  const plan = buttonsPlanOf(group);
   plan.rows = group.map((cmd, i) => ({ id: `opt-${i}`, label: `Tryb ${i + 1}`, cardId: cmd.cardId }));
   const { host, completed, previews, cancels } = renderEnumWizard(plan, group);
   const peeks = host.byClass('choice-request-peek');
@@ -192,7 +183,7 @@ test('M301/7: wizard enumeracji — podgląd karty z wiersza i Anuluj bez decyzj
 
 test('M301/8: wiersze enumeracji niosą klucz sondy (optionKey) jak ściana przycisków', () => {
   const cmds = payGroup();
-  const plan = enumButtonsPlanOf(cmds);
+  const plan = buttonsPlanOf(cmds);
   plan.rows = plan.rows.map((row, i) => ({ ...row, label: `Opcja ${i}`, cardId: null }));
   const { host } = renderEnumWizard(plan, cmds);
   const rows = host.byClass('choice-request-option');

@@ -544,47 +544,35 @@ export function commandForCastWindowSelection(commands, rowId) {
 }
 
 // ===========================================================================
-// M301 (decyzja właściciela 2026-09-03): MAŁE ENUMERACJE (audyt §3b) też są
-// elementem wspólnego helpera — „mogą zostać przy przyciskach, ale warto,
-// żeby to też był element tego samego helpera. Choćby po to, żeby ujednolicić
-// elementy graficzne, podgląd kart targetów itp."
+// M301→M302 (decyzje właściciela 2026-09-03): KAŻDY modal wyboru stoi na tym
+// samym helperze — różnią się parametry, podstawa jest jedna („żeby wszelkie
+// zmiany — np. czcionki, ikonki podglądu itp. — były w jednym miejscu”).
 //
-// Rodziny enumeracyjne (kolory, typy lądu, tryby, tak/nie…) nie wybierają
-// kandydata z listy (to §3a) ani nie komponują celów — to „wybierz jedną
-// z 2–5 gotowych opcji”. Semantyka zostaje przyciskowa (JEDEN klik = decyzja),
-// ale rysuje je ten sam kreator: wspólny nagłówek, wiersze pickera, podgląd
-// kart, klucz sondy (M104). Komenda wraca z legalCommands przez indeks
-// wiersza (commandForCastWindowSelection — ten sam lookup opt-N, L48).
+// M301 zaczął od małych enumeracji (2–5 opcji, 18 rodzin §3b). M302 domyka:
+// plan przyciskowy jest OGÓLNY — każda grupa ≥2 opcji, której nie wziął
+// wcześniejszy dedykowany plan albo wizard typowany (scry/surveil/index,
+// walka, podział obrażeń, escape), dostaje wiersze-przyciski we wspólnym
+// kreatorze. Odpadają „rodziny odroczone”: search_choice, undercity, grupy
+// „1 kandydat + odmowa” (Jill) — wszystko jedzie przez jeden komponent.
+//
+// Semantyka przyciskowa: JEDEN klik = DOKŁADNA komenda silnika (tożsamość
+// z legalCommands — lookup opt-N, L48). Awaryjna ściana renderChoiceRequest
+// zostaje wyłącznie jako siatka bezpieczeństwa dla grup pustych.
 // ===========================================================================
 
-/** Typy enumeracyjne §3b audytu modali wyboru (2026-09-03). */
-export const ENUM_BUTTON_TYPES = Object.freeze([
-  'resolve_color_choice', 'resolve_land_type_choice', 'resolve_modal_choice',
-  'resolve_clash_choice', 'resolve_fabricate', 'resolve_endure_choice',
-  'resolve_library_placement', 'resolve_moonlit_choice', 'resolve_pay_or_sacrifice',
-  'resolve_ward_pay_choice', 'resolve_counter_pay_choice', 'resolve_optional_pay_choice',
-  'resolve_optional_trigger_choice', 'resolve_optional_draw', 'resolve_replacement_choice',
-  'resolve_explore_choice', 'resolve_destroy_equipment_choice', 'resolve_food_choice',
-]);
-
 /**
- * Plan małej enumeracji albo null: jednorodna grupa typu z ENUM_BUTTON_TYPES,
- * 2–5 opcji (zlecenie: „małe enumeracje 2-5 opcji”). Wiersze (`rows`:
- * `{ id, label, cardId }`) wypełnia wywołujący etykietami z
- * `labelChoiceOptions` i cardId do podglądu — jak okna rzutu (M300).
- * Rodziny odroczone (search_choice — dwa wymiary, undercity, kolejności)
- * NIE są na liście, więc zostają przy obecnym rysowaniu do decyzji
- * właściciela; grupy >5 opcji też (np. fabricate z wieloma wartościami).
+ * Ogólny plan przyciskowy albo null (grupy <2 opcji nie otwierają modala —
+ * panel akcji). Wiersze (`rows`: `{ id, label, cardId }`) wypełnia
+ * wywołujący etykietami z `labelChoiceOptions` i cardId do podglądu — jak
+ * okna rzutu (M300). Plan nie zna typów komend: przycisk niesie swoją
+ * komendę, więc jednorodność typu NIE jest warunkiem (M302).
  */
-export function enumButtonsPlanOf(commands) {
+export function buttonsPlanOf(commands) {
   const options = commands ?? [];
-  if (options.length < 2 || options.length > 5) return null;
-  const type = options[0]?.type;
-  if (!ENUM_BUTTON_TYPES.includes(type)) return null;
-  if (!options.every((cmd) => cmd?.type === type)) return null;
+  if (options.length < 2) return null;
   return {
-    type,
-    enumButtonsMode: true,
+    type: options[0]?.type ?? null,
+    buttonsMode: true,
     targets: [],
     hasX: false,
     rows: options.map((_, i) => ({ id: `opt-${i}`, label: null, cardId: null })),

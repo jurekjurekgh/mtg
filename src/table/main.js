@@ -33,7 +33,7 @@ import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard } from './choice-request.js';
-import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, enumButtonsPlanOf } from './multi-target.js';
+import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
 function runEngineSmoke() {
@@ -517,37 +517,6 @@ function bootstrapTable() {
       showModal('choice-request');
       return;
     }
-    // M301 (decyzja właściciela 2026-09-03): MAŁE ENUMERACJE (audyt §3b —
-    // kolory, typy lądu, tryby, tak/nie…) zostają PRZYCISKAMI (jeden klik =
-    // decyzja), ale w tym samym helperze: wspólna lista pickera, podgląd kart
-    // (cardId opcji), intro z choiceGroupTitle, klucz sondy (M104). Routing
-    // OSTATNI z planów — bogatsze kształty (cele, okna rzutu, pojedynczy
-    // wybór) zabrały już wyżej swoje plany; rodziny odroczone (search_choice,
-    // undercity, kolejności) nie są w ENUM_BUTTON_TYPES i dalej idą do
-    // renderChoiceRequest.
-    const enumPlan = enumButtonsPlanOf(request.options ?? []);
-    if (enumPlan) {
-      const opts = request.options ?? [];
-      const labels = labelChoiceOptions(opts, session, choiceView);
-      enumPlan.rows = opts.map((option, i) => ({
-        id: enumPlan.rows[i].id,
-        label: labels[i],
-        cardId: cardIdForChoiceOption(option),
-      }));
-      renderMultiTargetWizard(els.choiceRequestBody, {
-        view: choiceView,
-        session,
-        plan: enumPlan,
-        commands: request.options,
-        intro: choiceGroupTitle(request, session, choiceView),
-        onOpenCard: openCardFullscreen,
-        onOpenCardByCardId: openCardFullscreenByCardId,
-        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
-        onCancel: () => hideModal('choice-request'),
-      });
-      showModal('choice-request');
-      return;
-    }
     const lookKind = lookWizardKindOf(request, choiceView);
     // M260/A (uwaga właściciela z PR #89): decyzja „zaglądnij?” musi zapaść
     // PRZED pokazaniem kart, dlatego osobny wizard (scry od razu pokazuje
@@ -711,6 +680,38 @@ function bootstrapTable() {
           hideModal('choice-request');
           play(cmd);
         },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // M301→M302 (decyzje właściciela 2026-09-03): WSPÓLNY HELPER domyka
+    // WSZYSTKIE pozostałe wybory — plan przyciskowy jest ogólny (bez listy
+    // rodzin): małe enumeracje (kolory, tryby, tak/nie…), search_choice,
+    // undercity, grupy „1 kandydat + odmowa” (Jill) i każdy przyszły kształt,
+    // którego nie wziął dedykowany plan. Wiersz-przycisk: jeden klik =
+    // DOKŁADNA komenda z legalCommands (L48), wspólne intro/Anuluj/podgląd
+    // kart/klucz sondy (M104). Kolejność CELOWO ostatnia: wizardy typowane
+    // (scry/surveil/index, walka, podział obrażeń, escape) i plany celów mają
+    // pierwszeństwo — stąd test M302/4 pilnuje tej kolejności.
+    const buttonsPlan = buttonsPlanOf(request.options ?? []);
+    if (buttonsPlan) {
+      const opts = request.options ?? [];
+      const labels = labelChoiceOptions(opts, session, choiceView);
+      buttonsPlan.rows = opts.map((option, i) => ({
+        id: buttonsPlan.rows[i].id,
+        label: labels[i],
+        cardId: cardIdForChoiceOption(option),
+      }));
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: buttonsPlan,
+        commands: request.options,
+        intro: choiceGroupTitle(request, session, choiceView),
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
         onCancel: () => hideModal('choice-request'),
       });
       showModal('choice-request');
