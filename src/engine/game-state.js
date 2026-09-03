@@ -19,7 +19,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, staticAttackPrevented } from './combat.js';
-import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts } from './spells.js';
+import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -2274,16 +2274,10 @@ export function execute(state, input) {
         }
         const mode = card.spell.modes[modeIndex];
         if (mode.variableTargets) {
-          // Liczbę celów wybiera gracz („up to three”), więc jedyną poprawną
-          // walidacją jest przynależność do zbioru wyliczonego przez TEN SAM
-          // generator co oferta (L48: oferta = walidacja). Dawniej okno w
-          // ogóle odrzucało takie tryby (znalezisko F audytu PR #93).
-          const allowed = legalModeCasts(state, pending.playerId, card.id, modeIndex, mode);
-          const combo = chosen.slice();
-          const ok = allowed.some((cast) => cast.targets.length === combo.length
-            && cast.targets.every((id, i) => id === combo[i]));
-          if (!ok) return reject('illegal_grave_free_cast_targets');
-          chosenTargets = combo;
+          // Liczbę celów wybiera gracz („up to three”), a oferta jest
+          // PRZYCIĘTA limitem (znalezisko H) — walidacja musi być pełna:
+          // ten sam walidator co przy rzucie z ręki (`castModalSpell`).
+          chosenTargets = validateVariableTargets(state, pending.playerId, mode, chosen, card);
         } else {
           const spec = mode.targets ?? [];
           if (chosen.length !== spec.length) return reject('illegal_grave_free_cast_targets');

@@ -2579,7 +2579,62 @@ export function legalXCostCasts(state, playerId, objectId, object, manaAvailable
  * tryby z „up to N target ...”, przez co karta była niegrywalna z exile, choć
  * z ręki i wg Oracle grywalna (L74: jedna implementacja; L48: oferta = wykonanie).
  */
-export function legalModeCasts(state, playerId, objectId, modeIndex, mode) {
+/**
+ * Limit wariantów oferty dla trybu z celami zmiennymi („up to N targets").
+ * Kombinacji jest 2^n, więc przy szerokim stole panel akcji puchnie
+ * wykładniczo (zmierzone: 8 stworów → 93 warianty). Projekt ma ten sam
+ * kompromis w walce (`COMBAT_OPTION_CAP`): OFERTA jest ograniczona,
+ * a WALIDACJA w `execute` pozostaje pełna (bot nadal może zagrać legalny
+ * wariant, którego nie ma w panelu) — audyt PR #93, znalezisko H.
+ */
+export const VARIABLE_TARGET_OPTION_CAP = 32;
+
+/** Wybór wariantów do oferty, gdy kombinacji jest więcej niż limit. */
+function trimVariableTargetCombos(combos, cap, maxSize) {
+  if (combos.length <= cap) return combos;
+  const empty = combos.filter((combo) => combo.length === 0);
+  const singles = combos.filter((combo) => combo.length === 1);
+  const fullest = combos.filter((combo) => combo.length === maxSize);
+  const middle = combos.filter((combo) => combo.length !== 0 && combo.length !== 1 && combo.length !== maxSize);
+  // Kolejność deterministyczna (ADR 0005): „nic”, „po jednym”, „ilu się da”,
+  // a na końcu warianty pośrednie — gracz zachowuje skrajne wybory, a panel
+  // mieści się na telefonie.
+  return [...empty, ...singles, ...fullest, ...middle].slice(0, cap);
+}
+
+/**
+ * Walidacja celów trybu z `variableTargets` (CR 601.2c): każdy cel musi być
+ * legalny, liczba celów mieścić się w [min, max], a ten sam cel nie może być
+ * wybrany dwa razy. PEŁNA i niezależna od (ograniczonej) oferty — wspólna dla
+ * rzutu z ręki (`castModalSpell`) i okien „you may cast it" (audyt PR #93).
+ */
+export function validateVariableTargets(state, playerId, mode, chosen, object, stunTargetId = undefined) {
+  const allowed = mode.variableTargets.type
+    ? new Set(legalTargetCandidates(state, playerId, { type: mode.variableTargets.type }, object))
+    : null;
+  const seen = new Set();
+  for (const tId of chosen) {
+    const target = state.objects.get(tId);
+    if (allowed ? !allowed.has(tId) : (!target || target.zone !== 'battlefield' || target.kind !== 'creature')) {
+      throw new Error(`Nielegalny cel: ${tId}`);
+    }
+    // CR 601.2c: „target” oznacza RÓŻNE obiekty — ten sam stwór dwa razy to
+    // nie są dwa cele.
+    if (seen.has(tId)) throw new Error(`Cel wybrany dwa razy: ${tId}`);
+    seen.add(tId);
+  }
+  const min = mode.variableTargets.min ?? 1;
+  const max = mode.variableTargets.max ?? chosen.length;
+  if (chosen.length < min || chosen.length > max) throw new Error('Nieprawidłowa liczba celów trybu');
+  // M146: wariant ZERO celów trybu „… put a stun counter on ONE OF THEM” jest
+  // legalny; bez celów nie ma na kim położyć licznika i ta część nie następuje.
+  if (mode.stunAmongTargets && chosen.length > 0 && !chosen.includes(stunTargetId)) {
+    throw new Error('Cel stun musi być jednym z celowanych stworów');
+  }
+  return chosen.slice();
+}
+
+export function legalModeCasts(state, playerId, objectId, modeIndex, mode, cap = VARIABLE_TARGET_OPTION_CAP) {
   const casts = [];
   if (mode.variableTargets) {
     // Batch 43 (Sea God's Scorn): „up to three target creatures and/or
@@ -2602,18 +2657,20 @@ export function legalModeCasts(state, playerId, objectId, modeIndex, mode) {
       const withHead = subsets(rest, k - 1).map((s) => [head, ...s]);
       return [...withHead, ...subsets(rest, k)];
     };
-    for (let k = min; k <= max; k += 1) {
-      for (const combo of subsets(creatures, k)) {
-        // M105/B4 (CR 601.2c): „up to N target creatures" pozwala wybrać ZERO
-        // celów. Wariant pusty istnieje także dla trybu z dodatkowym celem
-        // („Put a stun counter on ONE OF THEM") — bez tej gałęzi pętla po
-        // `combo` nie dawała żadnej oferty i cały tryb znikał przy pustym
-        // stole (albo nie dało się go rzucić „na pusto").
-        if (mode.stunAmongTargets && combo.length > 0) {
-          for (const stunId of combo) casts.push({ objectId, targets: combo, modeIndex, stunTargetId: stunId });
-        } else {
-          casts.push({ objectId, targets: combo, modeIndex });
-        }
+    const combos = [];
+    for (let k = min; k <= max; k += 1) combos.push(...subsets(creatures, k));
+    // Audyt PR #93 (znalezisko H): kombinacji jest 2^n — ofertę przycinamy do
+    // `cap` (walidacja w `execute` zostaje pełna, patrz wyżej).
+    for (const combo of trimVariableTargetCombos(combos, cap, max)) {
+      // M105/B4 (CR 601.2c): „up to N target creatures" pozwala wybrać ZERO
+      // celów. Wariant pusty istnieje także dla trybu z dodatkowym celem
+      // („Put a stun counter on ONE OF THEM") — bez tej gałęzi pętla po
+      // `combo` nie dawała żadnej oferty i cały tryb znikał przy pustym
+      // stole (albo nie dało się go rzucić „na pusto").
+      if (mode.stunAmongTargets && combo.length > 0) {
+        for (const stunId of combo) casts.push({ objectId, targets: combo, modeIndex, stunTargetId: stunId });
+      } else {
+        casts.push({ objectId, targets: combo, modeIndex });
       }
     }
     return casts;
@@ -2695,29 +2752,9 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   const chosen = Array.isArray(targets) ? targets : [];
   let chosenTargets = [];
   if (mode.variableTargets) {
-    // Tryb z `type` (Sea God's Scorn — creature_or_enchantment) waliduje
-    // celami z legalTargetCandidates; bez `type` historycznie: stwory.
-    const allowed = mode.variableTargets.type
-      ? new Set(legalTargetCandidates(state, playerId, { type: mode.variableTargets.type }, object))
-      : null;
-    for (const tId of chosen) {
-      const target = state.objects.get(tId);
-      if (allowed ? !allowed.has(tId) : (!target || target.zone !== 'battlefield' || target.kind !== 'creature')) {
-        throw new Error(`Nielegalny cel: ${tId}`);
-      }
-    }
-    const min = mode.variableTargets.min ?? 1;
-    const max = mode.variableTargets.max ?? chosen.length;
-    if (chosen.length < min || chosen.length > max) throw new Error('Nieprawidłowa liczba celów trybu');
-    // M146 (audyt benchmarku — pre-existing, odsłonięty nowymi taliami):
-    // wariant ZERO celów trybu „up to N target creatures ... put a stun
-    // counter on ONE OF THEM" jest legalny (CR 601.2c); bez celów nie ma na
-    // kim położyć stun countera i ta część po prostu nie następuje. Walidacja
-    // wymaga stunTargetId ∈ chosen TYLKO, gdy chosen nie jest puste.
-    if (mode.stunAmongTargets && chosen.length > 0 && !chosen.includes(stunTargetId)) {
-      throw new Error('Cel stun musi być jednym z celowanych stworów');
-    }
-    chosenTargets = chosen.slice();
+    // Audyt PR #93 (znalezisko H): jeden walidator dla rzutu z ręki i okien
+    // „you may cast it" — pełny (niezależny od przyciętej oferty).
+    chosenTargets = validateVariableTargets(state, playerId, mode, chosen, object, stunTargetId);
   } else {
     const spec = mode.targets ?? [];
     if (chosen.length !== spec.length) throw new Error('Nieprawidłowa liczba celów trybu');
