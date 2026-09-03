@@ -152,3 +152,36 @@ wspólnym helperem.
 (per-opcyjne checkboxy wyciszenia) — w kreatorze wyciszenie per opcja znika;
 zostaje wyciszenie grupy w panelu akcji (automatyczna odmowa w `advance()`)
 i jawny wiersz odmowy.
+
+---
+
+## Etap dodany 2026-09-03 (po decyzji o §3b): małe enumeracje do wspólnego helpera (M301)
+
+Decyzja właściciela: „Małe enumeracje 2-5 opcji mogą zostać przy przyciskach,
+ale warto, żeby to też był element tego samego helpera. Choćby po to, żeby
+ujednolicić elementy graficzne, podgląd kart targetów itp."
+
+1. Plan: `enumButtonsPlanOf` (18 rodzin §3b, jednorodny typ, 2–5 opcji) +
+   tryb `enumButtonsMode` kreatora: wiersz-przycisk (JEDEN klik = DOKŁADNA
+   komenda z legalCommands, L48), wspólne intro/Anuluj/lista pickera,
+   podgląd karty per `cardId` opcji, klucz sondy M104, klasa
+   `choice-request-option` (prowadzenie Żywego Testera bez zmian). Routing
+   ostatni z planów; rodziny odroczone (search_choice, undercity, kolejności)
+   i grupy >5 opcji zostają przy dawnym rysowaniu.
+2. Luki rodziny „wskaż cel (1)" zmierzone żywo i domknięte przy okazji:
+   (a) `singleTargetPlanOf` znał tylko `cast_spell` z `targets[1]` — aurzy
+   gospodarze (`cast_permanent`) i aktywacje z jednym celem
+   (`activate_ability`, np. equip) padały na ścianę → SINGLE_TARGET_CAST_TYPES;
+   (b) pola kosztów `tapCreatureId`/`tapOtherCreatureId`/`exileTargetId`
+   poza SINGLE_PICK_FIELDS (Wedgelight Rammer, Makeshift Mauler) → dopisane
+   + etykiety czynności („stwora do tapnięcia", „kartę do wygnania");
+   gałąź pola pierwsza w `commandForSingleTargetSelection` (typy się
+   nakładają).
+3. Weryfikacja: 9 testów (RED), 8 mutacji; bramki 4392/4392, `test:all`
+   4402/4402, build 3224,6 kB. Żywy Tester: Clawing Torment — wybór
+   gospodarza w kreatorze z tagami kontrolera (worek-basni 811), Dobrowolna
+   dopłata Zoraline — tryb przyciskowy helpera (811), Wedgelight Rammer —
+   kreator „wskaż stwora do tapnięcia" (worek-legend 3), okno Vaana bez
+   regresji (final-fantasy 51); 0 zgłoszeń detektorów. Harness `table-ui`
+   zaktualizowany (pickActionButton sięga głębiej — wiersz pickera).
+4. Dokumentacja: M301, PROJECT_HISTORY, aktualizacja §3b/§4 audytu, PR #95.

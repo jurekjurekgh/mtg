@@ -4507,3 +4507,47 @@ off-by-one indeksu). Bramki: 4383/4383, `test:all` 4393/4393, build
 i 14 opcji z wierszem „Zrezygnuj (nie płać {X})" i etykietami „Rzuć z grobu
 za {N}") i Vaan (final-fantasy, seed 51 — dwa okna 2-opcyjne), 0 zgłoszeń
 detektorów. Silnik i protokół bez zmian (L48).
+
+## M301 (2026-09-03) — Małe enumeracje we wspólnym helperze + domknięcie rodziny „wskaż cel (1)” (decyzja właściciela)
+
+**Decyzja.** Po audycie modali i M300 właściciel: „Małe enumeracje 2-5 opcji
+mogą zostać przy przyciskach, ale warto, żeby to też był element tego samego
+helpera. Choćby po to, żeby ujednolicić elementy graficzne, podgląd kart
+targetów itp."
+
+**Naprawa — enumeracje.** Nowe źródło planu `enumButtonsPlanOf`: jednorodna
+grupa `resolve_*` z listy 18 rodzin §3b audytu (kolory, typy lądu, tryby,
+clash, fabricate, endure, library placement, moonlit, pay-or-sacrifice,
+ward/counter/optional pay, optional trigger/draw, replacement, explore,
+destroy equipment, food), 2–5 opcji. Nowy tryb kreatora `enumButtonsMode`:
+wiersz jest PRZYCISKIEM (semantyka właściciela zachowana — jeden klik =
+DOKŁADNA komenda silnika przez tożsamość z `legalCommands`, L48), ale rysuje
+go wspólny helper: lista pickera, intro z `choiceGroupTitle`, wspólne Anuluj,
+podgląd karty 🔍 per `cardId` opcji, klucz sondy Żywego Testera (M104). Bez
+„Zatwierdź” i statusu — przycisk zatwierdza sam. Routing OSTATNI z planów;
+grupy >5 opcji i rodziny odroczone (search_choice, undercity, kolejności
+reveal) zostają przy dawnym rysowaniu do decyzji właściciela.
+
+**Naprawa — luki „wskaż cel (1)” (zmierzone żywo).** (1) `singleTargetPlanOf`
+znał tylko `cast_spell` z `targets[1]` — wybór gospodarza aury
+(`cast_permanent`) i aktywacje z jednym celem (`activate_ability`, np. equip)
+padały na ścianę przycisków: `SINGLE_TARGET_CAST_TYPES` = cast_spell /
+cast_permanent / activate_ability, typ planu z komend (nie stała),
+`commandForSingleTargetSelection` po `targets[0]`. (2) Pola kosztów
+`tapCreatureId`/`tapOtherCreatureId`/`exileTargetId` nie były
+w SINGLE_PICK_FIELDS (zmierzone żywo: Wedgelight Rammer „tapnij innego
+stwora”, Makeshift Mauler „wygnij kartę stwora”) — dopisane, z etykietami
+czynności („stwora do tapnięcia”, „kartę do wygnania”); gałąź pola idzie
+PIERWSZA w dopasowaniu komendy, bo typy kosztów nakładają się z castami.
+
+**Weryfikacja.** 9 testów (RED): plan enumeracji i negatywy (1 opcja, 6 opcji,
+mieszane typy, rodziny obce/odroczone), plan pojedynczy dla aury i equip
+(+ wariant bez celu wyklucza), tożsamość komend (targets[0] i pola kosztów),
+wizard DOM (wiersz-przycisk klika się raz = dokładna komenda, brak Zatwierdź,
+podgląd 🔍 nie wybiera, Anuluj, optionKey sondy). 8 mutacji RED. Bramki:
+4392/4392, `test:all` 4402/4402, build 3224,6 kB. Żywy Tester: Clawing
+Torment — gospodarz aury w kreatorze z tagami kontrolera (worek-basni 811),
+Dobrowolna dopłata Zoraline — tryb przyciskowy helpera ze wspólnym Anuluj
+(811), Wedgelight Rammer — „wskaż stwora do tapnięcia (1)” (worek-legend 3),
+okno Vaana bez regresji (final-fantasy 51); 0 zgłoszeń detektorów. Silnik
+i protokół bez zmian (L48).

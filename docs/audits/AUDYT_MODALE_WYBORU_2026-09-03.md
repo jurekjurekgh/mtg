@@ -77,7 +77,7 @@ z M298: jeden wybór z listy kandydatów, Zatwierdź = komenda z legalCommands.
 Generalizacja `singleTargetPlanOf` domyka klasę jednym ruchem (bez zmian
 silnika i protokołu — L48).
 
-### 3b. Małe enumeracje — przyciski są DOBRE (nie konwertować)
+### 3b. Małe enumeracje — przyciski zostają, ale WE WSPÓLNYM HELPERZE (M301)
 
 2–5 opcji bez wymiaru celu/karty: `resolve_color_choice` (5 kolorów),
 `resolve_land_type_choice` (5), `resolve_modal_choice` (tryby),
@@ -88,7 +88,23 @@ silnika i protokołu — L48).
 `resolve_optional_trigger_choice`, `resolve_optional_draw`,
 `resolve_replacement_choice`, `resolve_explore_choice`,
 `resolve_destroy_equipment_choice`, `resolve_food_choice` (tak/nie).
-Ściana przycisków przy 2–5 opcjach to czytelna lista, nie problem.
+
+**AKTUALIZACJA 2026-09-03 (M301):** decyzja właściciela — „małe enumeracje
+2-5 opcji mogą zostać przy przyciskach, ale warto, żeby to też był element
+tego samego helpera. Choćby po to, żeby ujednolicić elementy graficzne,
+podgląd kart targetów itp.". Zrealizowane: `enumButtonsPlanOf` + tryb
+`enumButtonsMode` kreatora (wiersz-przycisk, jeden klik = dokładna komenda,
+wspólne intro/Anuluj/podgląd kart/klucz sondy). Semantyka przyciskowa
+zachowana; grupy >5 opcji i rodziny spoza listy zostają przy dawnym
+rysowaniu.
+
+**Uzupełnienie audytu (zmierzone żywo przy M301):** rodzina §3a „wybierz
+jednego kandydata" miała trzy luki pól/kształtów poza listą — aurzy
+gospodarze (`cast_permanent` z `targets[1]`), aktywacje z jednym celem
+(`activate_ability` z `targets[1]`) oraz pola kosztów `tapCreatureId`/
+`tapOtherCreatureId`/`exileTargetId` (Wedgelight Rammer, Makeshift Mauler).
+Domknięte w M301 (SINGLE_TARGET_CAST_TYPES + rozszerzenie
+SINGLE_PICK_FIELDS).
 
 ### 3c. Inny kształt decyzji — osobne kreatory albo zostają (poza tym audytem)
 
@@ -118,7 +134,7 @@ w silniku (L48), prowadzenie Żywego Testera już działa (`.multi-target-toggle
 grup bez `objectId` stracą nazwę źródła w intro — akceptowalne (nazwa zostaje
 w nagłówku panelu akcji; można rozszerzyć później).
 
-Świadomie NIE ruszamy: §3b (przyciski poprawne), §3c bez okien rzutu
-(search_choice — dwa wymiary, undercity, kolejności reveal — decyzje
-właściciela). Okna rzutu: zrealizowane jako M300 (decyzja właściciela
-2026-09-03 — patrz §3c, aktualizacja).
+Świadomie NIE ruszamy: search_choice (dwa wymiary), undercity, kolejności
+reveal — decyzje właściciela. Zrealizowane po audycie: §3a = M299 (+M301
+domknięcie pól), okna rzutu §3c = M300, małe enumeracje §3b = M301
+(przyciski wewnątrz wspólnego helpera — decyzja właściciela 2026-09-03).

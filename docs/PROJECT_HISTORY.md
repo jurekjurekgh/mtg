@@ -8202,3 +8202,24 @@ Bramki: 4383/4383, test:all 4393/4393, build 3217,2 kB; Żywy Tester: Halo
 Forager (worek-basni, seedy 802/811 — okna 5 i 14 opcji) i Vaan
 (final-fantasy, seed 51 — dwa okna), 0 detektorów. Commity: `0b5c6ab`
 (audyt+plan), `a90dc32` (RED, 7 testów), `aa8caea` (fix, 6 mutacji RED).
+
+**Ciąg dalszy sesji — małe enumeracje we wspólnym helperze (M301, decyzja
+właściciela).**
+
+Właściciel po M300: „Małe enumeracje 2-5 opcji mogą zostać przy przyciskach,
+ale warto, żeby to też był element tego samego helpera. Choćby po to, żeby
+ujednolicić elementy graficzne, podgląd kart targetów itp.". Powstał
+enumButtonsPlanOf (18 rodzin §3b audytu, 2–5 opcji) + tryb enumButtonsMode
+kreatora: wiersz-przycisk (jeden klik = dokładna komenda silnika, L48),
+wspólna lista/intro/Anuluj, podgląd kart, klucz sondy M104 — semantyka
+przyciskowa zachowana, routing ostatni z planów (rodziny odroczone i grupy
+>5 opcji bez zmian). Przy okazji domknięte trzy luki rodziny „wskaż cel (1)”
+zmierzone żywo: gospodarze aury (cast_permanent z targets[1]) i aktywacje
+z jednym celem (activate_ability — equip) poza singleTargetPlanOf oraz pola
+kosztów tapCreatureId/tapOtherCreatureId/exileTargetId poza
+SINGLE_PICK_FIELDS (Wedgelight Rammer, Makeshift Mauler). Bramki:
+4392/4392, test:all 4402/4402, build 3224,6 kB; Żywy Tester: Clawing
+Torment (gospodarz w kreatorze, 811), Dobrowolna dopłata (tryb przyciskowy,
+811), Wedgelight Rammer („wskaż stwora do tapnięcia”, worek-legend 3), okno
+Vaana bez regresji (51); 0 detektorów. Commity: `42c3399` (RED, 9 testów),
+`8d8342f` (fix, 8 mutacji).
