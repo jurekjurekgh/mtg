@@ -4232,8 +4232,9 @@ powstały dla Discover, a obowiązywały też okno zdolności Vaana.
   jeden generator z rzutem z ręki. **Discover dla kart X zostaje zamknięte i przypięte
   testem**: CR 107.3b zmusza X = 0, a przy X = 0 żadna z dwóch kart katalogu nic nie robi,
   więc oferta byłaby no-opem (uwaga F z M280). Źródła reguł w raporcie §4.
-- **Bramy.** `npm test` 4276 → **4324/4324**, `npm run test:all` **4334/4334**,
-  `npm run build` 59 modułów / 3183,9 kB (baza 3167,0 kB). Benchmark (profil szybki,
+- **Bramy.** `npm test` 4276 → **4336/4336** (z I i J: +12),
+  `npm run test:all` **4346/4346**, `npm run build` 59 modułów / 3187,5 kB
+  (baza 3167,0 kB). Benchmark (profil szybki,
   672 mecze) bez wyjątków: heuristic 83,9%, aggro 28,0%, random 4,2%.
 - **E — czysta aura (CR 303.4a).** Znaleziona SKANEM KATALOGU, nie zgłoszeniem:
   `outsideHandCastScope` odcinał `card.aura`, choć Oracle Vaana mówi „You may cast it”.
@@ -4254,6 +4255,23 @@ powstały dla Discover, a obowiązywały też okno zdolności Vaana.
   (deterministycznie: nic / po jednym / ilu się da), a walidacja zostaje PEŁNA
   i wspólna z rzutem z ręki (`validateVariableTargets`) — L48: oferta to
   wycinek, walidacja jest źródłem prawdy. _testy: 5, mutacje: 3._
+- **I — skan poboczny: plot (CR 702.170d).** Każda z 10 kart katalogu z
+  flashbackiem/escape/madness/suspend/plot dostała ofertę w swoim oknie — poza
+  jedną: zaplotowany CZAR (`tumbleweed-rising`, talia `worek-dziki`) wracał
+  z exile w TEJ SAMEJ turze, podczas gdy zaplotowany STWÓR czekał grzecznie do
+  następnej. Regułę znała tylko ścieżka `castPermanent`; `plottedCastAllowed`
+  (M202) pilnowało wyłącznie „własna faza main + pusty stos". Jeden predykat
+  `plottedTurnReached` w `impulse-window.js` bramkuje ofertę i walidację
+  obu ścieżek. _testy: 6, mutacje: 5._
+- **J — skan poboczny: warp (CR 702.185a).** `weftblade-enhancer`
+  (manaCost 6, Warp {2}{W}, talia `worek-legend`) wracał z exile ZA KOSZT WARP
+  — 3 many zamiast 6, bo `warpCard` = `castPermanent({ warpCast: true })`
+  obsługiwał rękę i exile jedną komendą. Warp jest kosztem alternatywnym
+  wyłącznie Z RĘKI: `warpCard` odrzuca obiekt z exile, karta wraca zwykłym
+  `cast_permanent` za koszt many. Druga część reguły — „after the current turn
+  has ended" — dostaje stempel `warpedAtTurn` i predykat `warpTurnReached`
+  (wspólne miejsce prawdy co I); luka utajona, przypięta testem (L52).
+  _testy: 6, mutacje: 8._
 - **Pięć parametrów predykatu:** `allowTargets`, `allowModes`, `allowAdditionalCost`,
   `allowX`, `allowAura`
   — każdy włącza się per ścieżka, każdy ma test na „milczy, gdy wyłączony".

@@ -9,9 +9,12 @@ Baza sesji: `83a9043` (= squash PR #93, `main`).
 - **Audyt PR #93 zamknięty:** 89 plików diffu, raport
   `docs/audits/AUDYT_PR93_2026-09-03.md`. Werdykt: PR dobry; jedna decyzja
   (unifikacja filtru „prostego zakresu”) zostawiła trzy odchylki od Oracle —
-  wszystkie trzy naprawione w tej sesji.
-- **Bramy na HEAD gałęzi:** `npm test` **4295/4295** (baza 4276),
-  `npm run test:all` **4305/4305**, `npm run build` **59 modułów / 3172,3 kB**
+  wszystkie trzy naprawione w tej sesji. Skan poboczny mechanik „rzutu spoza
+  ręki" dorzucił znaleziska **I** (plot, CR 702.170d) i **J** (warp,
+  CR 702.185a): w obu przypadkach regułę znała jedna ścieżka rzutu, druga nie
+  (lekcja L128).
+- **Bramy na HEAD gałęzi:** `npm test` **4336/4336** (baza 4276),
+  `npm run test:all` **4346/4346**, `npm run build` **59 modułów / 3187,5 kB**
   (baza 3167,0 kB). Benchmark (profil szybki, 672 mecze) bez wyjątków:
   heuristic 83,9%, aggro 28,0%, random 4,2%.
 - **Zero nowych kart w katalogu** (ADR 0021 §4c) i zero zmian w wycenach bota.
@@ -30,7 +33,9 @@ Baza sesji: `83a9043` (= squash PR #93, `main`).
 | `a8c3822` | **H** — limit wariantów „up to N targets” (`VARIABLE_TARGET_OPTION_CAP` 32) + pełna walidacja niezależna od oferty |
 | `ddc9d64` | **G** — bot: nie marnuje czaru z celami zmiennymi w oknach rzutu spoza ręki (jałowość M233 + wartość per cel + efekty wybranego trybu) |
 | `fb867f5` | **E** — czysta aura w oknie zdolności: gospodarza wybiera gracz (CR 303.4a); znaleziona SKANEM KATALOGU (22 aury w 12 taliach), `legalAuraCastsForObject` wspólne z ręką |
-| *(dokumentacja)* | raport (§4, §4b), M294, L127, historia, backlog (wpis X zamknięty), liczby README |
+| `b866f75` | **I** — zaplotowany czar czeka do następnej tury (`plottedTurnReached` wspólne dla czarów i permanentów, CR 702.170d) |
+| `a99a09b` | **J** — warp z exile za koszt many, nie za koszt warp + stempel `warpedAtTurn` (CR 702.185a) |
+| *(dokumentacja)* | raport (§4, §4b, §4f, §4g), M294, L127, L128, historia, backlog (wpis X zamknięty), liczby README |
 
 Każdy commit testowy przeszedł weryfikację mutacyjną (L13): 9 mutacji, tabela
 w §7 raportu. Dodatkowo odwrócono test odziedziczony po PR #93, który
@@ -62,11 +67,15 @@ którego silnik już nie stawia (L5/L44 — przechodziłby bez naprawy).
    odpowiedzieć na każde z nich pytaniem „czy potrafię to rozliczyć”,
    zamiast dopisywać kolejną kopię filtra (L48/L74).
 
-5. **Następny skan (kolejna ścieżka):** `pendingMadnessCast` i
-   `pendingReboundCast`/`pendingSuspendCast` — te same trzy pytania co przy F
-   (efekty wybranego trybu, jałowość, wartość per cel). Karty z madness:
-   `terminal-agony`, `revolutionist`, `invasion-of-the-giants` (żadna nie ma
-   trybu z celami zmiennymi, więc F tam nie jest żywe — ale G może być).
+5. **ZROBIONE w tej sesji (`b866f75`, `a99a09b`): skan mechanik „rzutu spoza
+   ręki" — plot (I) i warp (J).** Metoda: wylicz karty katalogu per mechanika
+   (`grep` po deskryptorze), sprawdź, czy każda ma ofertę w swoim oknie przy
+   pełnym stole, i porównaj odpowiedzi RÓŻNYCH ŚCIEŻEK dla tej samej
+   mechaniki (czary vs permanent, ręka vs exile) — I i J wyszły właśnie
+   z rozjazdu między ścieżkami, nie z braku oferty. Kolejny krok tej samej
+   metody: mechaniki bez pokrycia w katalogu (**rebound** — jedyna karta to
+   tylna strona transforma, więc okno jest martwe; **kicker na czarach** —
+   decyzja właściciela, ADR 0021 §4: katalog nie rośnie z inwencji sesji).
 
 6. **Ścieżki, których ta sesja nie ruszała, a mają ten sam kształt predykatu:**
    darmowy rzut z grobu (`resolve_grave_free_cast`) i madness odrzucają tryby

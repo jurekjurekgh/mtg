@@ -2138,3 +2138,35 @@ trybu), `test/audyt-pr93-koszt-dodatkowy-z-exile.test.js` (7) oraz odwrócony
 `docs/audits/AUDYT_PR93_2026-09-03.md`; znalezisko D —
 `test/audyt-pr93-koszt-x-z-exile.test.js` (7, w tym strażnik: każda karta X
 katalogu rzucalna w oknie zdolności oraz Discover milczące dla kart X).
+
+## L128 (2026-09-03) — Mechanika z dwiema ścieżkami rzutu: reguła ma jedno miejsce prawdy, a skan musi PORÓWNYWAĆ ścieżki, nie tylko liczyć oferty
+
+**Przypadek:** skan poboczny audytu PR #93 przejechał każdą kartę katalogu
+z mechaniką „rzutu spoza ręki" (flashback 3, escape 2, madness 2, suspend 1,
+plot 2 — wszystkie w realnych taliach) i znalazł dwa odchylenia, oba w tym
+samym miejscu: regułę znała JEDNA ścieżka rzutu, druga nie.
+- **I (plot, CR 702.170d):** zaplotowany STWÓR czeka do następnej tury
+  (`castPermanent` od Batcha 24), a zaplotowany CZAR wracał w tej samej
+  (`plottedCastAllowed` pilnowało tylko „własna faza main + pusty stos").
+  Żywe w talii `worek-dziki` — dwie karty z plotem, dwie różne odpowiedzi.
+- **J (warp, CR 702.185a):** `warpCard` = `castPermanent({ warpCast: true })`
+  obsługiwał rękę i exile jedną komendą, więc karta wygnana po warp-caście
+  wracała na stół ZA KOSZT WARP (Weftblade Enhancer: 3 many zamiast 6),
+  choć warp jest kosztem alternatywnym wyłącznie z ręki.
+
+**Reguła:** pozwolenie na rzut z exile, które realizuje więcej niż jedna
+ścieżka kodu (czary vs permanenty, ręka vs exile), dostaje JEDEN predykat
+wspólny dla oferty i walidacji — w `impulse-window.js`, obok reszty stempli
+grywalności z wygnania (`plottedTurnReached`, `warpTurnReached`). Skan
+„czy ta karta ma ofertę w swoim oknie" wykrywa brak oferty, ale NIE wykrywa
+rozjazdu między ścieżkami: obie odpowiedziały „tak", tyle że na inne pytania.
+Dlatego skan mechaniki pyta per ścieżka i ZESTAWIA odpowiedzi — to ta sama
+metoda, która w L48 kazała zestawiać ofertę z walidacją.
+
+**Strażnik:** `test/audyt-pr93-plot-pozniejsza-tura.test.js` (6: czar i stwór,
+obie strony granicy, anty-over-fix dla ręki/impulsu/braku stempla) oraz
+`test/audyt-pr93-warp-z-exile.test.js` (6: brak oferty za koszt warp, pobranie
+6 many, odrzucenie `warp_card` z exile, anty-over-fix dla warpu z ręki,
+przebieg integracyjny ze stempel `warpedAtTurn`). 13 mutacji — tabela w §7
+`docs/audits/AUDYT_PR93_2026-09-03.md`; mutacja `>=` zamiast `>` we wspólnym
+predykacie czerwieni testy OBU mechanik naraz (5 RED).

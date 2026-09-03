@@ -8043,6 +8043,24 @@ wspólna z ręką (`validateVariableTargets`). 5 testów, 3 mutacje — w tym
 wykryta tautologia: pierwsza wersja testu porównywała ofertę z importowaną
 stałą, więc mutacja limitu przechodziła.
 
+**I (skan poboczny — plot).** Poza oknami A–H przejechano każdą kartę
+katalogu z mechaniką „rzutu spoza ręki" (flashback 3, escape 2, madness 2,
+suspend 1, plot 2 — wszystkie w realnych taliach): oferta jest wszędzie, z
+jednym wyjątkiem, ŻYWYM w `worek-dziki` — zaplotowany CZAR (Tumbleweed Rising)
+wracał z exile w tej samej turze, w której go zaplonowano, podczas gdy
+zaplotowany stwór z tej samej talii czekał do następnej (CR 702.170d). Regułę
+znała wyłącznie ścieżka permanentów. Jeden predykat `plottedTurnReached`
+w `impulse-window.js` bramkuje teraz ofertę i walidację obu ścieżek. 6 testów,
+5 mutacji.
+
+**J (skan poboczny — warp).** Ta sama mechanika skanu, jedna karta dalej:
+Weftblade Enhancer (manaCost 6, Warp {2}{W}, talia `worek-legend`) wracał
+z exile ZA KOSZT WARP — 3 many zamiast 6. CR 702.185a daje koszt alternatywny
+wyłącznie dla rzutu z ręki; z exile płaci się koszt many. `warpCard` odrzuca
+obiekt z exile, karta wraca zwykłym `cast_permanent`. Druga połowa reguły
+(„after the current turn has ended") dostaje stempel `warpedAtTurn` — luka
+utajona, przypięta testem, nie zgłoszeniem (L52). 6 testów, 8 mutacji.
+
 **Co zostaje zamknięte ŚWIADOMIE (każde przypięte testem, nie milczeniem):**
 Discover + karta X (CR 107.3b ⇒ X = 0 ⇒ no-op), Discover + aura, Discover + tryb
 wymagający celu
@@ -8053,9 +8071,13 @@ po PR #93**, który piętnował brak oferty jako zamierzony i zakładał stempel
 `playableUntilTurn`, którego silnik już nie stawia (przechodziłby bez naprawy —
 L5/L44).
 
-**Bramy na koniec:** `npm test` **4324/4324**, `npm run test:all` **4334/4334**, build 59 modułów / 3183,9 kB, benchmark (672 mecze, profil szybki) bez
-wyjątków, `event-contract-audit` i `family-audit` bez naruszeń, 6 partii Żywego
-Testera → 0 zgłoszeń detektorów.
-Dokumentacja: `docs/audits/AUDYT_PR93_2026-09-03.md`, M294, L127, HANDOFF
+**Bramy na koniec:** `npm test` **4336/4336**, `npm run test:all` **4346/4346**, build 59 modułów / 3187,5 kB, benchmark (672 mecze, profil szybki) bez
+wyjątków, `event-contract-audit` i `family-audit` bez naruszeń; Żywy Tester:
+6 partii (`worek-dziki` × 3 dla I, `worek-legend` × 3 dla J) → 0 zgłoszeń
+detektorów (w partiach J karta z warpem pojawiła się, ale profil gracza
+odrzucił ją z ręki zamiast rzucić za warp — ścieżka rzutu z exile zostaje
+przypięta testami).
+Dokumentacja: `docs/audits/AUDYT_PR93_2026-09-03.md` (§4f, §4g), M294, L127,
+L128, HANDOFF
 `docs/setup/HANDOFF_2026-09-03-audyt-pr93-rzut-z-exile.md`.
 
