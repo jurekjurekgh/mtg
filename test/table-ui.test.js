@@ -172,6 +172,14 @@ function pickActionButton(actions) {
       return bodyTree.find((el) => el.tagName === 'button'
         && /multi-target-confirm/.test(String(el.className))) ?? null;
     }
+    // M301: wiersze-przyciski małych enumeracji siedzą w pickera wierszu
+    // (div > button), więc przycisk bywa o poziom głębiej niż dawna ściana
+    // przycisków — szukamy `.choice-request-option` po CAŁYM drzewie (tak jak
+    // Żywy Tester: `$$('#choice-request .choice-request-option')`).
+    const optionButtons = bodyTree.filter((el) => el.tagName === 'button'
+      && /(^| )choice-request-option( |$)/.test(String(el.className))
+      && (el.listeners.click ?? []).length > 0);
+    if (optionButtons.length > 0) return optionButtons[0];
     const choiceButtons = dom.get('choice-request-body').children
       .flatMap((child) => child.children ?? [])
       .filter((child) => (child.listeners.click ?? []).length > 0);

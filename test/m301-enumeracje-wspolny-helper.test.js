@@ -38,6 +38,7 @@ class MiniEl {
   all(pred, out = []) { if (pred(this)) out.push(this); for (const c of this.children) c.all(pred, out); return out; }
   byClass(cls) { return this.all((el) => String(el.className).split(/\s+/).includes(cls)); }
 }
+globalThis.document = { createElement: (tag) => new MiniEl(tag) };
 
 const VIEW = { playerId: 'p1', players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }], zones: { battlefield: [] } };
 const SESSION = { nameOf: (cardId) => `Karta:${cardId}`, nameOfObject: (id) => `Obiekt:${id}` };
@@ -134,13 +135,35 @@ function renderEnumWizard(plan, commands) {
   return { host, completed, previews, cancels, request };
 }
 
+test('M301/5b: luka pól kosztu — tapCreatureId/tapOtherCreatureId/exileTargetId to też „wybierz jednego”', () => {
+  // Wedgelight Rammer (zmierzone żywo): „tapnij innego swojego stwora” —
+  // wariant per kandydat, padały na ścianę przycisków mimo kształtu §3a.
+  const tap = Object.freeze([
+    Object.freeze({ type: 'activate_ability', playerId: 'p1', objectId: 'wr1', abilityIndex: 0, tapCreatureId: 'c1' }),
+    Object.freeze({ type: 'activate_ability', playerId: 'p1', objectId: 'wr1', abilityIndex: 0, tapCreatureId: 'c2' }),
+    Object.freeze({ type: 'activate_ability', playerId: 'p1', objectId: 'wr1', abilityIndex: 0, tapCreatureId: 'c3' }),
+  ]);
+  const plan = singleTargetPlanOf(tap);
+  assert.ok(plan, 'wybór stwora do tapnięcia ma dać plan');
+  assert.deepEqual(plan.targets, ['c1', 'c2', 'c3']);
+  assert.equal(commandForSingleTargetSelection(tap, { targetId: 'c2', field: 'tapCreatureId' }), tap[1], 'tożsamość (L48)');
+  // Makeshift Mauler: koszt „wygnij kartę stwora” — wariant per kandydat.
+  const exile = Object.freeze([
+    Object.freeze({ type: 'cast_permanent', playerId: 'p1', objectId: 'mm1', exileTargetId: 'g1' }),
+    Object.freeze({ type: 'cast_permanent', playerId: 'p1', objectId: 'mm1', exileTargetId: 'b1' }),
+  ]);
+  const exilePlan = singleTargetPlanOf(exile);
+  assert.ok(exilePlan, 'wybór karty do wygnania w koszcie ma dać plan');
+  assert.equal(commandForSingleTargetSelection(exile, { targetId: 'b1', field: 'exileTargetId' }), exile[1]);
+});
+
 test('M301/6: wizard enumeracji — wiersz-przycisk klika się RAZ i oddaje dokładną komendę', () => {
   const plan = enumButtonsPlanOf(payGroup());
   plan.rows = plan.rows.map((row, i) => ({ ...row, label: i === 0 ? 'Zapłać — efekt odpali' : 'Nie płać', cardId: null }));
   const { host, completed, request } = renderEnumWizard(plan, payGroup());
   const rows = host.byClass('choice-request-option');
   assert.equal(rows.length, 2, 'wiersze mają klasę przycisku wyboru (prowadzenie Żywego Testera)');
-  assert.ok(rows.every((r) => r.tagName === 'BUTTON'), 'jeden klik = decyzja (semantyka przycisku)');
+  assert.ok(rows.every((r) => String(r.tagName).toUpperCase() === 'BUTTON'), 'jeden klik = decyzja (semantyka przycisku)');
   assert.equal(host.byClass('multi-target-confirm').length, 0, 'tryb przyciskowy NIE ma „Zatwierdź”');
   rows[1].click();
   assert.equal(completed.length, 1, 'klik od razu wysyła');
@@ -168,12 +191,13 @@ test('M301/7: wizard enumeracji — podgląd karty z wiersza i Anuluj bez decyzj
 });
 
 test('M301/8: wiersze enumeracji niosą klucz sondy (optionKey) jak ściana przycisków', () => {
-  const plan = enumButtonsPlanOf(payGroup());
+  const cmds = payGroup();
+  const plan = enumButtonsPlanOf(cmds);
   plan.rows = plan.rows.map((row, i) => ({ ...row, label: `Opcja ${i}`, cardId: null }));
-  const { host } = renderEnumWizard(plan, payGroup());
+  const { host } = renderEnumWizard(plan, cmds);
   const rows = host.byClass('choice-request-option');
   assert.ok(rows.every((r) => typeof r.dataset.optionKey === 'string' && r.dataset.optionKey.length > 0),
     'sonda Żywego Testera czyta optionKey (M104) — nie może zniknąć w nowym helperze');
   // Komenda spod wiersza wraca przez wspólny lookup opt-N (tożsamość).
-  assert.equal(commandForCastWindowSelection(payGroup(), 'opt-1'), payGroup()[1]);
+  assert.equal(commandForCastWindowSelection(cmds, 'opt-1'), cmds[1]);
 });

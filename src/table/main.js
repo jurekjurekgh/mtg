@@ -33,7 +33,7 @@ import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard } from './choice-request.js';
-import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf } from './multi-target.js';
+import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, enumButtonsPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
 function runEngineSmoke() {
@@ -511,6 +511,37 @@ function bootstrapTable() {
         plan: mulliganKeep,
         commands: request.options,
         intro: 'Mulligan — wybierz:',
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // M301 (decyzja właściciela 2026-09-03): MAŁE ENUMERACJE (audyt §3b —
+    // kolory, typy lądu, tryby, tak/nie…) zostają PRZYCISKAMI (jeden klik =
+    // decyzja), ale w tym samym helperze: wspólna lista pickera, podgląd kart
+    // (cardId opcji), intro z choiceGroupTitle, klucz sondy (M104). Routing
+    // OSTATNI z planów — bogatsze kształty (cele, okna rzutu, pojedynczy
+    // wybór) zabrały już wyżej swoje plany; rodziny odroczone (search_choice,
+    // undercity, kolejności) nie są w ENUM_BUTTON_TYPES i dalej idą do
+    // renderChoiceRequest.
+    const enumPlan = enumButtonsPlanOf(request.options ?? []);
+    if (enumPlan) {
+      const opts = request.options ?? [];
+      const labels = labelChoiceOptions(opts, session, choiceView);
+      enumPlan.rows = opts.map((option, i) => ({
+        id: enumPlan.rows[i].id,
+        label: labels[i],
+        cardId: cardIdForChoiceOption(option),
+      }));
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: enumPlan,
+        commands: request.options,
+        intro: choiceGroupTitle(request, session, choiceView),
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
         onCancel: () => hideModal('choice-request'),
       });

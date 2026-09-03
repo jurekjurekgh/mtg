@@ -954,6 +954,10 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   const keepMode = Boolean(plan.mulliganKeepMode);
   // M300: okna rzutu — wiersz na każdą GOTOWĄ opcję (wariant rzutu / odmowa).
   const castWindowMode = Boolean(plan.castWindowMode);
+  // M301 (decyzja właściciela): małe enumeracje 2–5 opcji — semantyka
+  // przyciskowa (jeden klik = decyzja), ale rysowane przez ten sam kreator:
+  // wspólna lista, podgląd kart, klucz sondy (M104), Anuluj.
+  const enumButtonsMode = Boolean(plan.enumButtonsMode);
   const xLabel = plan.hasX ? ` oraz wartość X (${plan.xMin}–${plan.xMax})` : '';
   const range = plan.minTargets === plan.maxTargets
     ? `${plan.maxTargets}`
@@ -1150,6 +1154,29 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       renderPickerSection(list, `${slotIndex + 1}. ${label}:`, { className: 'multi-target-slot-label' });
       for (const id of ids) addRow(id, slotIndex);
     });
+  } else if (enumButtonsMode) {
+    // M301: mała enumeracja — wiersz jest PRZYCISKIEM (jeden klik = wybór),
+    // więc nie przechodzi przez addRow/radio; cardId daje osobny podgląd 🔍
+    // (jak dawna ściana przycisków, M201/C2), bo klik wiersza ma zatwierdzać.
+    (plan.rows ?? []).forEach((row, index) => {
+      const cmd = (commands ?? [])[index];
+      const wrap = choiceNode(list, 'div', 'multi-target-row enum-choice-row');
+      const button = choiceNode(wrap, 'button', 'action choice-request-option enum-choice-btn');
+      button.type = 'button';
+      // M104: sonda Żywego Testera czyta optionKey — kontrakt ściany przycisków.
+      if (cmd && button.dataset) button.dataset.optionKey = commandOptionKey(cmd);
+      // Etykiety niosą HTML (ikony many) — innerHTML jak w panelu akcji.
+      button.innerHTML = `<span class="action-label picker-name">\n${row.label ?? ''}</span>`;
+      button.addEventListener('click', () => { if (cmd) onComplete(cmd); });
+      if (row.cardId != null && onOpenCardByCardId) {
+        const peek = choiceNode(wrap, 'button', 'ghost-btn choice-request-peek', '🔍 Podgląd karty');
+        peek.type = 'button';
+        peek.addEventListener('click', (event) => {
+          event?.stopPropagation?.();
+          onOpenCardByCardId(row.cardId);
+        });
+      }
+    });
   } else if (castWindowMode) {
     // M300: okno rzutu — wiersz na każdą opcję (wariant rzutu K1/K2 albo
     // odmowa); cardId wiersza daje podgląd kliknięciem w nazwę.
@@ -1187,19 +1214,25 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     plus.addEventListener('click', () => { if (xValue < plan.xMax) { xValue += 1; refresh(); } });
   }
 
-  statusEl = choiceNode(host, 'div', 'picker-status multi-target-status', '');
+  // M301: tryb przyciskowy nie ma statusu ani „Zatwierdź” — wiersz-przycisk
+  // wysyła komendę od razu; zostaje tylko wspólne Anuluj (ten sam helper).
+  if (!enumButtonsMode) {
+    statusEl = choiceNode(host, 'div', 'picker-status multi-target-status', '');
+  }
   const buttons = choiceNode(host, 'div', 'choice-request-actions');
-  confirm = choiceNode(buttons, 'button', 'primary-btn multi-target-confirm', 'Zatwierdź wybór');
-  confirm.type = 'button';
-  confirm.disabled = true;
-  confirm.addEventListener('click', () => {
-    const cmd = currentCommand();
-    if (cmd) onComplete(cmd);
-  });
+  if (!enumButtonsMode) {
+    confirm = choiceNode(buttons, 'button', 'primary-btn multi-target-confirm', 'Zatwierdź wybór');
+    confirm.type = 'button';
+    confirm.disabled = true;
+    confirm.addEventListener('click', () => {
+      const cmd = currentCommand();
+      if (cmd) onComplete(cmd);
+    });
+  }
   const cancel = choiceNode(buttons, 'button', 'ghost-btn multi-target-cancel', 'Anuluj');
   cancel.type = 'button';
   cancel.addEventListener('click', () => onCancel?.());
-  refresh();
+  if (!enumButtonsMode) refresh();
 }
 
 /** Nazwa celu: gracz („Nieprzyjaciel") albo karta na polu bitwy. */

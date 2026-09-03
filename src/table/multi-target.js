@@ -307,7 +307,18 @@ export function commandForProliferateSelection(commands, targetIds) {
  * (exile/grave-free/madness/rebound/suspend cast) — tam `cardId` oznacza
  * kartę rzutu, nie wybór z listy.
  */
-const SINGLE_PICK_FIELDS = ['targetId', 'cardId', 'keepId', 'pickId', 'sacrificeLandId', 'armyId'];
+// M301 (zmierzone żywo: Wedgelight Rammer, Makeshift Mauler): pola KOSZTÓW
+// „tapnij stwora” i „wygnij kartę” to ten sam kształt „wybierz jednego
+// kandydata” — bez nich grupy padały na ścianę przycisków.
+const SINGLE_PICK_FIELDS = ['targetId', 'cardId', 'keepId', 'pickId', 'sacrificeLandId', 'armyId',
+  'tapCreatureId', 'tapOtherCreatureId', 'exileTargetId'];
+
+/**
+ * M301: typy komend „rzuć/aktywuj w JEDEN cel" — wybór niesie `targets[1]`
+ * (gospodarz aury, cel equip). Razem z `resolve_trigger_target` i ogólną
+ * rodziną pól (SINGLE_PICK_FIELDS) wyczerpują kształt „wskaż cel (1)”.
+ */
+const SINGLE_TARGET_CAST_TYPES = ['cast_spell', 'cast_permanent', 'activate_ability'];
 
 /**
  * Typy WYKLUCZONE z ogólnej rodziny jednowyborowej: OKNA RZUTU, w których
@@ -340,6 +351,9 @@ function itemLabelOf(field) {
   if (field === 'sacrificeLandId') return 'ląd do poświęcenia';
   if (field === 'armyId') return 'armię';
   if (field === 'keepId') return 'legendę do zachowania';
+  // M301: koszty „tapnij stwora” / „wygnij kartę” nazywają czynność z Oracle.
+  if (field === 'tapCreatureId' || field === 'tapOtherCreatureId') return 'stwora do tapnięcia';
+  if (field === 'exileTargetId') return 'kartę do wygnania';
   return 'cel';
 }
 
@@ -359,7 +373,13 @@ function itemLabelOf(field) {
 export function singleTargetPlanOf(commands) {
   const options = commands ?? [];
   if (options.length < 2) return null;
-  const spells = options.filter((cmd) => cmd?.type === 'cast_spell'
+  // M301 (zlecenie właściciela — „podgląd kart targetów itp."): wybór
+  // JEDNEGO celu to nie tylko cast_spell — aura castowana na gospodarza
+  // (cast_permanent z targets[1]) i aktywacje z jednym celem (equip) mają
+  // DOKŁADNIE ten sam kształt, a padały na ścianę przycisków (rozmiar 1 jest
+  // poniżej progu multiTargetPlanOf). Typy wprost, nie „dowolny z targets":
+  // L48 — plan prowadzi tylko rodziny o znanym sposobie wyboru.
+  const spells = options.filter((cmd) => SINGLE_TARGET_CAST_TYPES.includes(cmd?.type)
     && Array.isArray(cmd.targets) && cmd.targets.length === 1);
   if (spells.length === options.length) {
     const xValues = new Set(spells.map((cmd) => cmd.xValue ?? null));
@@ -369,7 +389,8 @@ export function singleTargetPlanOf(commands) {
     const targets = [];
     for (const cmd of spells) if (!targets.includes(cmd.targets[0])) targets.push(cmd.targets[0]);
     return {
-      type: 'cast_spell',
+      // M301: typ z komend (cast_spell / cast_permanent aury / activate_ability).
+      type: spells[0].type,
       objectId: spells[0].objectId,
       modeIndex: spells[0].modeIndex ?? null,
       targets,
@@ -377,6 +398,7 @@ export function singleTargetPlanOf(commands) {
       maxTargets: 1,
       hasX: false,
       singleMode: 'targets',
+      allowNone: false, // rzutu/aktywacji nie „odmawia się” — brak wiersza none
       itemLabel: 'cel',
     };
   }
@@ -432,17 +454,22 @@ export function singleTargetPlanOf(commands) {
 export function commandForSingleTargetSelection(commands, { targetId, field = null }) {
   return (commands ?? []).find((cmd) => {
     if (!cmd) return false;
-    if (cmd.type === 'cast_spell') {
+    if (field) {
+      // Ogólna rodzina jednowyborowa (M299): kandydat siedzi w `field`,
+      // a pusty wybór = wariant odmowy (done/skip/null). M301: gałąź pola
+      // idzie PIERWSZA — pola kosztów (tapCreatureId, exileTargetId…) bywają
+      // na komendach typów z SINGLE_TARGET_CAST_TYPES (activate_ability,
+      // cast_permanent) i tamten kształt (`targets[1]`) ich nie opisuje.
+      if (targetId == null) return isNonePickCommand(cmd, field);
+      return cmd[field] === targetId && !isNonePickCommand(cmd, field);
+    }
+    // M301: wspólny kształt „jeden cel w targets[1]" — cast_spell, aura
+    // (cast_permanent) i aktywacje (equip); patrz singleTargetPlanOf.
+    if (SINGLE_TARGET_CAST_TYPES.includes(cmd.type)) {
       return Array.isArray(cmd.targets) && cmd.targets.length === 1 && cmd.targets[0] === targetId;
     }
     if (cmd.type === 'resolve_trigger_target') {
       return 'targetId' in cmd && cmd.targetId === targetId;
-    }
-    if (field) {
-      // Ogólna rodzina jednowyborowa (M299): kandydat siedzi w `field`,
-      // a pusty wybór = wariant odmowy (done/skip/null).
-      if (targetId == null) return isNonePickCommand(cmd, field);
-      return cmd[field] === targetId && !isNonePickCommand(cmd, field);
     }
     return false;
   }) ?? null;
@@ -514,6 +541,54 @@ export function commandForCastWindowSelection(commands, rowId) {
   const match = /^opt-(\d+)$/.exec(String(rowId ?? ''));
   if (!match) return null;
   return (commands ?? [])[Number(match[1])] ?? null;
+}
+
+// ===========================================================================
+// M301 (decyzja właściciela 2026-09-03): MAŁE ENUMERACJE (audyt §3b) też są
+// elementem wspólnego helpera — „mogą zostać przy przyciskach, ale warto,
+// żeby to też był element tego samego helpera. Choćby po to, żeby ujednolicić
+// elementy graficzne, podgląd kart targetów itp."
+//
+// Rodziny enumeracyjne (kolory, typy lądu, tryby, tak/nie…) nie wybierają
+// kandydata z listy (to §3a) ani nie komponują celów — to „wybierz jedną
+// z 2–5 gotowych opcji”. Semantyka zostaje przyciskowa (JEDEN klik = decyzja),
+// ale rysuje je ten sam kreator: wspólny nagłówek, wiersze pickera, podgląd
+// kart, klucz sondy (M104). Komenda wraca z legalCommands przez indeks
+// wiersza (commandForCastWindowSelection — ten sam lookup opt-N, L48).
+// ===========================================================================
+
+/** Typy enumeracyjne §3b audytu modali wyboru (2026-09-03). */
+export const ENUM_BUTTON_TYPES = Object.freeze([
+  'resolve_color_choice', 'resolve_land_type_choice', 'resolve_modal_choice',
+  'resolve_clash_choice', 'resolve_fabricate', 'resolve_endure_choice',
+  'resolve_library_placement', 'resolve_moonlit_choice', 'resolve_pay_or_sacrifice',
+  'resolve_ward_pay_choice', 'resolve_counter_pay_choice', 'resolve_optional_pay_choice',
+  'resolve_optional_trigger_choice', 'resolve_optional_draw', 'resolve_replacement_choice',
+  'resolve_explore_choice', 'resolve_destroy_equipment_choice', 'resolve_food_choice',
+]);
+
+/**
+ * Plan małej enumeracji albo null: jednorodna grupa typu z ENUM_BUTTON_TYPES,
+ * 2–5 opcji (zlecenie: „małe enumeracje 2-5 opcji”). Wiersze (`rows`:
+ * `{ id, label, cardId }`) wypełnia wywołujący etykietami z
+ * `labelChoiceOptions` i cardId do podglądu — jak okna rzutu (M300).
+ * Rodziny odroczone (search_choice — dwa wymiary, undercity, kolejności)
+ * NIE są na liście, więc zostają przy obecnym rysowaniu do decyzji
+ * właściciela; grupy >5 opcji też (np. fabricate z wieloma wartościami).
+ */
+export function enumButtonsPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2 || options.length > 5) return null;
+  const type = options[0]?.type;
+  if (!ENUM_BUTTON_TYPES.includes(type)) return null;
+  if (!options.every((cmd) => cmd?.type === type)) return null;
+  return {
+    type,
+    enumButtonsMode: true,
+    targets: [],
+    hasX: false,
+    rows: options.map((_, i) => ({ id: `opt-${i}`, label: null, cardId: null })),
+  };
 }
 
 /**
