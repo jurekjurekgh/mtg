@@ -242,6 +242,147 @@ export function mulliganBottomPlanOf(commands) {
   };
 }
 
+// ===========================================================================
+// M298/A (uwaga właściciela z żywej gry, 2026-09-03): modale wyboru dla
+// proliferate, pojedynczego celu i mulligana wyglądały inaczej niż wybór
+// bloków/atakujących, bo multiTargetPlanOf filtrował tylko komendy z polem
+// `targets` — te trzy rodziny spadały do awaryjnego renderChoiceRequest
+// (ściana przycisków + mylący ptaszek wyciszenia w przycisku). Dostają plany
+// i przechodzą przez TEN SAM kreator; zatwierdzenie oddaje komendę
+// z legalCommands (L48: UI nie wymyśla ruchów, tylko inaczej je pokazuje).
+// ===========================================================================
+
+/**
+ * Plan proliferate (CR 701.27, Spread the Sickness): komendy
+ * `resolve_proliferate` niosą `targetIds` (podzbiory kandydatów z
+ * licznikami), a NIE `targets` — stąd osobny plan zamiast multiTargetPlanOf.
+ * Null dla grupy jednoelementowej (pojedyncza oferta nie wymaga kreatora).
+ */
+export function proliferatePlanOf(commands) {
+  const options = commands ?? [];
+  const list = options.filter((cmd) => cmd?.type === 'resolve_proliferate');
+  if (list.length !== options.length || list.length < 2) return null;
+  const sizes = list.map((cmd) => (cmd.targetIds ?? []).length);
+  const targets = [];
+  for (const cmd of list) {
+    for (const id of cmd.targetIds ?? []) if (!targets.includes(id)) targets.push(id);
+  }
+  return {
+    type: 'resolve_proliferate',
+    targets,
+    minTargets: Math.min(...sizes),
+    maxTargets: Math.max(...sizes),
+    hasX: false,
+    // Wariant z targetIds zamiast targets — przełącza dopasowanie komendy
+    // (commandForProliferateSelection) w renderMultiTargetWizard.
+    targetIdsMode: true,
+    itemLabel: 'obiekty z licznikami',
+    playerId: list[0].playerId ?? null,
+  };
+}
+
+/**
+ * Komenda odpowiadająca zaznaczonym obiektom proliferate albo null — szukana
+ * wśród wariantów legalnych silnika (porządek kliknięć nieistotny, pusty
+ * wybór = komenda bez targetIds).
+ */
+export function commandForProliferateSelection(commands, targetIds) {
+  const key = targetKey(targetIds ?? []);
+  return (commands ?? []).find((cmd) =>
+    cmd?.type === 'resolve_proliferate'
+    && targetKey(cmd.targetIds ?? []) === key) ?? null;
+}
+
+/**
+ * Plan wyboru JEDNEGO celu: grupa, w której KAŻDA komenda wskazuje dokładnie
+ * jeden cel — dwa źródła:
+ *  - `cast_spell` z `targets[1]` (Spread the Sickness: „zniszcz stwór”),
+ *  - `resolve_trigger_target` z `targetId` (ETB Bone Shredder) — wariant
+ *    `targetId: null` („you may”) daje dodatkowy wiersz odmowy (`allowNone`).
+ * Wykluczenia: pojedyncza opcja (zwykła lista wystarczy), różne `xValue`
+ * (licznik X musi zostać — obsługuje go multiTargetPlanOf).
+ */
+export function singleTargetPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2) return null;
+  const spells = options.filter((cmd) => cmd?.type === 'cast_spell'
+    && Array.isArray(cmd.targets) && cmd.targets.length === 1);
+  if (spells.length === options.length) {
+    const xValues = new Set(spells.map((cmd) => cmd.xValue ?? null));
+    if (xValues.size > 1) return null; // grupa z {X} → kreator z licznikiem
+    if (!spells.every((cmd) => cmd.objectId === spells[0].objectId
+      && (cmd.modeIndex ?? null) === (spells[0].modeIndex ?? null))) return null;
+    const targets = [];
+    for (const cmd of spells) if (!targets.includes(cmd.targets[0])) targets.push(cmd.targets[0]);
+    return {
+      type: 'cast_spell',
+      objectId: spells[0].objectId,
+      modeIndex: spells[0].modeIndex ?? null,
+      targets,
+      minTargets: 1,
+      maxTargets: 1,
+      hasX: false,
+      singleMode: 'targets',
+      itemLabel: 'cel',
+    };
+  }
+  const triggers = options.filter((cmd) => cmd?.type === 'resolve_trigger_target' && 'targetId' in cmd);
+  if (triggers.length === options.length) {
+    const targets = [];
+    for (const cmd of triggers) {
+      if (cmd.targetId != null && !targets.includes(cmd.targetId)) targets.push(cmd.targetId);
+    }
+    if (targets.length < 2) return null; // jeden kandydat = zwykła lista
+    return {
+      type: 'resolve_trigger_target',
+      targets,
+      minTargets: 1,
+      maxTargets: 1,
+      hasX: false,
+      singleMode: 'targetId',
+      allowNone: triggers.some((cmd) => cmd.targetId == null),
+      itemLabel: 'cel',
+    };
+  }
+  return null;
+}
+
+/**
+ * Komenda odpowiadająca wskazanemu celowi (albo odmowie — `targetId: null`)
+ * albo null; szukana wśród wariantów legalnych silnika (L48).
+ */
+export function commandForSingleTargetSelection(commands, { targetId }) {
+  return (commands ?? []).find((cmd) => {
+    if (!cmd) return false;
+    if (cmd.type === 'cast_spell') {
+      return Array.isArray(cmd.targets) && cmd.targets.length === 1 && cmd.targets[0] === targetId;
+    }
+    if (cmd.type === 'resolve_trigger_target') {
+      return 'targetId' in cmd && cmd.targetId === targetId;
+    }
+    return false;
+  }) ?? null;
+}
+
+/**
+ * Plan mulligana „zatrzymaj rękę albo weź mulligan” (`resolve_mulligan_choice`,
+ * dwa warianty) — dwa czytelne wiersze zamiast dwóch wielkich przycisków.
+ * Przy siódmym mulliganie oferta jest jednoelementowa → zwykła lista.
+ * Etykiety wierszy (liczba kart w ręce) dokleja wywołujący (`plan.rows`).
+ */
+export function mulliganKeepPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length !== 2) return null;
+  const list = options.filter((cmd) => cmd?.type === 'resolve_mulligan_choice' && typeof cmd.keep === 'boolean');
+  if (list.length !== 2) return null;
+  return {
+    type: 'resolve_mulligan_choice',
+    mulliganKeepMode: true,
+    targets: [],
+    hasX: false,
+  };
+}
+
 /**
  * Komenda odpowiadająca zaznaczonym kartom albo null (wybór nielegalny =
  * brak takiej komendy — UI nie buduje komendy z palca, L48).
