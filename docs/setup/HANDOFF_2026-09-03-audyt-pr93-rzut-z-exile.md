@@ -55,6 +55,16 @@ którego silnik już nie stawia (L5/L44 — przechodziłby bez naprawy).
 5. **Dług `pendingFertileThicket`** (63 wystąpienia) i `resolve_springbloom`
    (86) — bez zmian, liczby przypięte w M293/M294.
 
+## Pokrycie Żywym Testerem (uczciwie)
+
+Sześć partii na artefakcie (`final-fantasy`, `tarkir-wur`, `worek-dziki`;
+profile `greedy`/`explorer`/`random`; 400–600 kroków): **0 zgłoszeń detektorów**.
+Same okna z napraw (Vaan, Discover) nie wystąpiły ani razu — tester nie gra
+scenariuszem, a Vaan jest jedną kartą w talii singleton i wymaga obrażeń
+bojowych. Etykiety są udowodnione testami `commandLabel` + mutacją. Jeśli
+następna sesja chce je zobaczyć na żywo: `run-game.mjs` nie ma `--fixture`
+(patrz ENVIRONMENT), więc pozostaje grać wiele seedów albo dodać taki przełącznik.
+
 ## Pułapki napotkane w tej sesji
 
 - Test odziedziczony po poprzedniej sesji potrafi być vacuous: `exileState`
