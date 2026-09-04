@@ -136,7 +136,11 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   // odzwierciedla CR 702.112a — w pełni zapobiegnięte obrażenia to brak
   // „dealt combat damage", czyli brak renown (jak przy toxic wyżej).
   if (actual > 0 && (source?.renown ?? 0) > 0 && source.zone === 'battlefield' && !source.renowned) {
+    // M296 (uwaga C właściciela, ta sama klasa): counter_added z addCounter
+    // musi jechać w strumieniu komendy — inaczej stół milczy o licznikach.
+    const renownBefore = state.events.length;
     addCounter(state, sourceId, '+1/+1', source.renown);
+    events.push(...state.events.slice(renownBefore));
     // Znacznik „renowned" (CR 702.112b): nie jest ani zdolnością, ani cechą
     // kopiowalną — znika wraz z obiektem (nowy obiekt po powrocie = bez
     // znacznika), więc wystarczy flaga na obiekcie.
@@ -707,7 +711,13 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
       }
       if (hasKeyword(state, blocker, 'infect')) {
         if (blockerDealt > 0) {
+          // M296 (uwaga C właściciela): addCounter pushuje counter_added tylko
+          // do state.events — bez przeniesienia do `events` wynik komendy
+          // resolve_combat niósł sam damage_dealt i stół (log + Rozgrywka)
+          // milczał o znaczniku −1/−1, choć kafel go pokazywał.
+          const countersBefore = state.events.length;
           addCounter(state, attackerId, '-1/-1', blockerDealt);
+          events.push(...state.events.slice(countersBefore));
           markDealtDamageThisTurn(state, attackerId);
         }
       } else if (blockerDealt > 0) {
@@ -782,7 +792,11 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     }
     if (hasKeyword(state, attacker, 'infect')) {
       if (dealt > 0) {
+        // M296 (uwaga C właściciela): jak wyżej — counter_added musi jechać
+        // w strumieniu komendy, inaczej stół milczy o znaczniku −1/−1.
+        const countersBefore = state.events.length;
         addCounter(state, blockerId, '-1/-1', dealt);
+        events.push(...state.events.slice(countersBefore));
         markDealtDamageThisTurn(state, blockerId);
       }
     } else if (dealt > 0) {

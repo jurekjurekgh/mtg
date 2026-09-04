@@ -36,10 +36,14 @@ import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive, warpTurnReac
 
 /**
  * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
- * Ta sama wartość co COMBAT_OPTION_CAP / CREW_OPTION_CAP / ESCAPE_OPTION_CAP —
- * lekcja L19: każda enumeracja kombinacyjna dostaje cap w dniu narodzin.
+ * Lekcja L19: każda enumeracja kombinacyjna dostaje cap w dniu narodzin.
+ *
+ * M304 (klin znaleziony Żywym Testerem): cap musi pokrywać PEŁNĄ przestrzeń
+ * decyzji, inaczej legalne wybory nie mają komendy i kreator milczy. Ręka po
+ * mulliganie ma ≤7 kart, więc maksimum podzbiorów to C(7,3)=C(7,4)=35 —
+ * poprzednie 32 obcinało 3 kombinacje przy 4. mulliganie (i tyleż przy 3.).
  */
-const MULLIGAN_BOTTOM_OPTION_CAP = 32;
+const MULLIGAN_BOTTOM_OPTION_CAP = 35;
 
 /**
  * Stabilny klucz tożsamości komendy — do deduplikacji oferty (M125/A).
@@ -1950,6 +1954,12 @@ export function execute(state, input) {
     const pending = state.pendingSpringbloom;
     if (cmd.type !== 'resolve_springbloom') return reject('springbloom_unresolved');
     if (cmd.playerId !== pending.controllerId) return reject('springbloom_not_your_decision');
+    // M296 (uwaga D właściciela): wynik komendy musi nieść WSZYSTKIE zdarzenia
+    // gałęzi — stół czyta result.events (log + Rozgrywka). Wcześniej
+    // `slice(-1)` zwracał tylko OSTATNIE zdarzenie, więc przy poświęceniu
+    // (permanent_sacrificed + springbloom_resolved + search_choice_required)
+    // gracz nie widział ani faktu poświęcenia, ani KTÓREGO landu.
+    const before = state.events.length;
     // Player can choose to not sacrifice (skip) — chyba że efekt jest
     // OBOWIĄZKOWY (Roiling Regrowth: „Sacrifice a land.").
     if (cmd.skip && pending.mandatory) return reject('springbloom_sacrifice_mandatory');
@@ -1958,7 +1968,7 @@ export function execute(state, input) {
       state.events.push(event('springbloom_skipped', {
         controllerId: pending.controllerId, cardId: pending.cardId ?? null,
       }));
-      return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - 1) });
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
     const landId = cmd.sacrificeLandId;
     if (!pending.landIds.includes(landId)) return reject('illegal_springbloom_sacrifice');
@@ -1999,7 +2009,7 @@ export function execute(state, input) {
       entersTapped: true,
       chain: { remaining: 1, qualifier: { types: ['Basic', 'Land'] }, destination: 'battlefield', entersTapped: true },
     });
-    return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - 1) });
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
   // Index (APC): look at top 5, reorder any order
   if (state.pendingIndex) {
@@ -2266,6 +2276,11 @@ export function execute(state, input) {
     const chosen = Array.isArray(cmd.targets) ? cmd.targets : [];
     let chosenTargets = [];
     let chosenMode;
+    // Audyt PR #94 / K1: wybór celu pod stun counter (`stunAmongTargets`)
+    // musi dojechać na stos — rozstrzyganie czyta `object.modeExtra`
+    // (`resolveModalEffectTargets` → `extra:stunTargetId`), mirror
+    // `castModalSpell`.
+    let chosenModeExtra = null;
     try {
       if (card.spell?.modes) {
         const modeIndex = cmd.modeIndex;
@@ -2277,7 +2292,10 @@ export function execute(state, input) {
           // Liczbę celów wybiera gracz („up to three”), a oferta jest
           // PRZYCIĘTA limitem (znalezisko H) — walidacja musi być pełna:
           // ten sam walidator co przy rzucie z ręki (`castModalSpell`).
-          chosenTargets = validateVariableTargets(state, pending.playerId, mode, chosen, card);
+          // Audyt PR #94 / K1: tryb ze `stunAmongTargets` wymaga wyboru celu
+          // pod stun counter — tego samego wyboru, który niesie oferta.
+          chosenTargets = validateVariableTargets(state, pending.playerId, mode, chosen, card, cmd.stunTargetId);
+          if (mode.stunAmongTargets) chosenModeExtra = { stunTargetId: cmd.stunTargetId };
         } else {
           const spec = mode.targets ?? [];
           if (chosen.length !== spec.length) return reject('illegal_grave_free_cast_targets');
@@ -2308,6 +2326,7 @@ export function execute(state, input) {
       controllerId: pending.playerId,
       chosenTargets,
       ...(chosenMode != null ? { chosenMode } : {}),
+      ...(chosenModeExtra != null ? { modeExtra: chosenModeExtra } : {}),
       // „If that spell would be put into a graveyard, exile it instead."
       exileInsteadOfGraveyard: true,
       freeGraveCast: true,
@@ -2329,7 +2348,15 @@ export function execute(state, input) {
       // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
       colors: [...(card.colors ?? [])],
       fromGraveyard: true, xPaid: xValue, manaSpent: xValue,
-      ...(chosenMode != null ? { modeIndex: chosenMode } : {}),
+      // Audyt PR #94 / K1: log stołu czyta `e.modeName` (session.js) — bez
+      // niego rzut modalny z grobu wyglądał w logu jak niemodalny; wybór
+      // stun celu też jest częścią decyzji (M91/uwaga D), mirror
+      // `castModalSpell`.
+      ...(chosenMode != null ? {
+        modeIndex: chosenMode,
+        modeName: card.spell?.modes?.[chosenMode]?.name ?? null,
+        stunTargetId: chosenModeExtra?.stunTargetId ?? null,
+      } : {}),
     }));
     state.events.push(event('grave_free_cast_resolved', {
       playerId: pending.playerId, sourceCardId: pending.sourceCardId,
@@ -6582,6 +6609,11 @@ export function playerView(state, playerId) {
           objectId: graveId, cardId: card.cardId, xValue,
           targets: offer.targets,
           ...(offer.modeIndex != null ? { modeIndex: offer.modeIndex } : {}),
+          // Audyt PR #94 / K1: tryb „up to N … put a stun counter on ONE OF
+          // THEM” niesie wybór celu pod stun — bez niego w panelu są N
+          // identycznych przycisków, a walidacja odrzuca każdy wariant ≥1 celu
+          // (L48: oferta = walidacja; tak samo `pushExileCast` w oknie Vaana).
+          ...(offer.stunTargetId != null ? { stunTargetId: offer.stunTargetId } : {}),
         }));
       }
     }

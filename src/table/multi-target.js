@@ -36,8 +36,15 @@ function targetKey(targets) {
  *  - `hasX`, `xMin`, `xMax` — czy jest licznik X i w jakim zakresie.
  */
 export function multiTargetPlanOf(commands) {
-  const list = (commands ?? []).filter((cmd) => cmd && Array.isArray(cmd.targets));
+  const all = commands ?? [];
+  const list = all.filter((cmd) => cmd && Array.isArray(cmd.targets));
   if (list.length < 2) return null;
+  // M300 (audyt okien rzutu): plan nie może POWSTAĆ z podzbioru opcji —
+  // okno rzutu z odmową (decline/cast:false) i wariantami celowanymi
+  // dawało kreator wielocelowy BEZ wiersza odmowy (zmierzone: Vaan + czar
+  // z {X}). Jeżeli którakolwiek opcja nie niesie `targets`, ta rodzina ma
+  // własny kształt (okna rzutu → castWindowPlanOf, fallback → przyciski).
+  if (list.length !== all.length) return null;
 
   const xValues = [...new Set(list.map((cmd) => cmd.xValue).filter((x) => Number.isInteger(x)))]
     .sort((a, b) => a - b);
@@ -242,16 +249,358 @@ export function mulliganBottomPlanOf(commands) {
   };
 }
 
+// ===========================================================================
+// M298/A (uwaga właściciela z żywej gry, 2026-09-03): modale wyboru dla
+// proliferate, pojedynczego celu i mulligana wyglądały inaczej niż wybór
+// bloków/atakujących, bo multiTargetPlanOf filtrował tylko komendy z polem
+// `targets` — te trzy rodziny spadały do awaryjnego renderChoiceRequest
+// (ściana przycisków + mylący ptaszek wyciszenia w przycisku). Dostają plany
+// i przechodzą przez TEN SAM kreator; zatwierdzenie oddaje komendę
+// z legalCommands (L48: UI nie wymyśla ruchów, tylko inaczej je pokazuje).
+// ===========================================================================
+
+/**
+ * Plan proliferate (CR 701.27, Spread the Sickness): komendy
+ * `resolve_proliferate` niosą `targetIds` (podzbiory kandydatów z
+ * licznikami), a NIE `targets` — stąd osobny plan zamiast multiTargetPlanOf.
+ * Null dla grupy jednoelementowej (pojedyncza oferta nie wymaga kreatora).
+ */
+export function proliferatePlanOf(commands) {
+  const options = commands ?? [];
+  const list = options.filter((cmd) => cmd?.type === 'resolve_proliferate');
+  if (list.length !== options.length || list.length < 2) return null;
+  const sizes = list.map((cmd) => (cmd.targetIds ?? []).length);
+  const targets = [];
+  for (const cmd of list) {
+    for (const id of cmd.targetIds ?? []) if (!targets.includes(id)) targets.push(id);
+  }
+  return {
+    type: 'resolve_proliferate',
+    targets,
+    minTargets: Math.min(...sizes),
+    maxTargets: Math.max(...sizes),
+    hasX: false,
+    // Wariant z targetIds zamiast targets — przełącza dopasowanie komendy
+    // (commandForProliferateSelection) w renderMultiTargetWizard.
+    targetIdsMode: true,
+    itemLabel: 'obiekty z licznikami',
+    playerId: list[0].playerId ?? null,
+  };
+}
+
+/**
+ * Komenda odpowiadająca zaznaczonym obiektom proliferate albo null — szukana
+ * wśród wariantów legalnych silnika (porządek kliknięć nieistotny, pusty
+ * wybór = komenda bez targetIds).
+ */
+export function commandForProliferateSelection(commands, targetIds) {
+  const key = targetKey(targetIds ?? []);
+  return (commands ?? []).find((cmd) =>
+    cmd?.type === 'resolve_proliferate'
+    && targetKey(cmd.targetIds ?? []) === key) ?? null;
+}
+
+/**
+ * Pola, którymi komendy jednowyborowe niosą WYBRANEGO kandydata (audyt
+ * modali wyboru 2026-09-03, §3a): ~24 typy resolve_* o tym samym kształcie
+ * decyzji co resolve_trigger_target. Świadomie NIE ma tu pól okien rzutu
+ * (exile/grave-free/madness/rebound/suspend cast) — tam `cardId` oznacza
+ * kartę rzutu, nie wybór z listy.
+ */
+// M301 (zmierzone żywo: Wedgelight Rammer, Makeshift Mauler): pola KOSZTÓW
+// „tapnij stwora” i „wygnij kartę” to ten sam kształt „wybierz jednego
+// kandydata” — bez nich grupy padały na ścianę przycisków.
+const SINGLE_PICK_FIELDS = ['targetId', 'cardId', 'keepId', 'pickId', 'sacrificeLandId', 'armyId',
+  'tapCreatureId', 'tapOtherCreatureId', 'exileTargetId'];
+
+/**
+ * M301: typy komend „rzuć/aktywuj w JEDEN cel" — wybór niesie `targets[1]`
+ * (gospodarz aury, cel equip). Razem z `resolve_trigger_target` i ogólną
+ * rodziną pól (SINGLE_PICK_FIELDS) wyczerpują kształt „wskaż cel (1)”.
+ */
+const SINGLE_TARGET_CAST_TYPES = ['cast_spell', 'cast_permanent', 'activate_ability'];
+
+/**
+ * Typy WYKLUCZONE z ogólnej rodziny jednowyborowej: OKNA RZUTU, w których
+ * każda opcja to OSOBNY rzut z własnymi celami/X/stun (etykiety K1/K2),
+ * a nie wybór jednego kandydata z listy — tam `cardId` oznacza kartę rzutu.
+ */
+const SINGLE_PICK_EXCLUDED_TYPES = new Set([
+  'resolve_exile_cast', 'resolve_grave_free_cast', 'resolve_madness_cast',
+  'resolve_rebound_cast', 'resolve_suspend_cast',
+]);
+
+/** Czy komenda jest wariantem ODMOWY rodziny jednowyborowej. */
+function isNonePickCommand(cmd, field) {
+  if (!cmd) return false;
+  if (field === 'cardId' && cmd.cardId === null) return true;
+  return cmd.done === true || cmd.skip === true;
+}
+
+/** Etykieta wiersza odmowy zależy od tego, JAK rodzina odmawia. */
+function noneLabelOf(commands, field) {
+  if (commands.some((cmd) => cmd?.done === true)) return 'Gotowe — bez wyboru';
+  if (commands.some((cmd) => cmd?.skip === true)) return 'Pomiń';
+  if (field === 'cardId') return 'Zakończ bez wyboru';
+  return 'Nie wskazuj celu';
+}
+
+/** Nazwa wybieranego obiektu per pole — intro kreatora („wskaż …”). */
+function itemLabelOf(field) {
+  if (field === 'cardId' || field === 'pickId') return 'kartę';
+  if (field === 'sacrificeLandId') return 'ląd do poświęcenia';
+  if (field === 'armyId') return 'armię';
+  if (field === 'keepId') return 'legendę do zachowania';
+  // M301: koszty „tapnij stwora” / „wygnij kartę” nazywają czynność z Oracle.
+  if (field === 'tapCreatureId' || field === 'tapOtherCreatureId') return 'stwora do tapnięcia';
+  if (field === 'exileTargetId') return 'kartę do wygnania';
+  return 'cel';
+}
+
+/**
+ * Plan wyboru JEDNEGO celu: grupa, w której KAŻDA komenda wskazuje dokładnie
+ * jeden cel — trzy źródła:
+ *  - `cast_spell` z `targets[1]` (Spread the Sickness: „zniszcz stwór”),
+ *  - `resolve_trigger_target` z `targetId` (ETB Bone Shredder),
+ *  - M299 (audyt modali wyboru): każda inna jednorodna grupa, której komendy
+ *    wybierają kandydata polem z SINGLE_PICK_FIELDS (resolve_graveyard_top_
+ *    choice, resolve_discard_choice, resolve_springbloom, resolve_amass_
+ *    choice, resolve_opponent_target itd.); wariant odmowy (`done`/`skip`/
+ *    null) daje dodatkowy wiersz (`allowNone`).
+ * Wykluczenia: pojedyncza opcja (zwykła lista wystarczy), różne `xValue`
+ * (licznik X musi zostać — obsługuje go multiTargetPlanOf).
+ */
+export function singleTargetPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2) return null;
+  // M301 (zlecenie właściciela — „podgląd kart targetów itp."): wybór
+  // JEDNEGO celu to nie tylko cast_spell — aura castowana na gospodarza
+  // (cast_permanent z targets[1]) i aktywacje z jednym celem (equip) mają
+  // DOKŁADNIE ten sam kształt, a padały na ścianę przycisków (rozmiar 1 jest
+  // poniżej progu multiTargetPlanOf). Typy wprost, nie „dowolny z targets":
+  // L48 — plan prowadzi tylko rodziny o znanym sposobie wyboru.
+  const spells = options.filter((cmd) => SINGLE_TARGET_CAST_TYPES.includes(cmd?.type)
+    && Array.isArray(cmd.targets) && cmd.targets.length === 1);
+  if (spells.length === options.length) {
+    const xValues = new Set(spells.map((cmd) => cmd.xValue ?? null));
+    if (xValues.size > 1) return null; // grupa z {X} → kreator z licznikiem
+    if (!spells.every((cmd) => cmd.objectId === spells[0].objectId
+      && (cmd.modeIndex ?? null) === (spells[0].modeIndex ?? null))) return null;
+    const targets = [];
+    for (const cmd of spells) if (!targets.includes(cmd.targets[0])) targets.push(cmd.targets[0]);
+    return {
+      // M301: typ z komend (cast_spell / cast_permanent aury / activate_ability).
+      type: spells[0].type,
+      objectId: spells[0].objectId,
+      modeIndex: spells[0].modeIndex ?? null,
+      targets,
+      minTargets: 1,
+      maxTargets: 1,
+      hasX: false,
+      singleMode: 'targets',
+      allowNone: false, // rzutu/aktywacji nie „odmawia się” — brak wiersza none
+      itemLabel: 'cel',
+    };
+  }
+  const triggers = options.filter((cmd) => cmd?.type === 'resolve_trigger_target' && 'targetId' in cmd);
+  if (triggers.length === options.length) {
+    const targets = [];
+    for (const cmd of triggers) {
+      if (cmd.targetId != null && !targets.includes(cmd.targetId)) targets.push(cmd.targetId);
+    }
+    if (targets.length < 2) return null; // jeden kandydat = zwykła lista
+    return {
+      type: 'resolve_trigger_target',
+      targets,
+      minTargets: 1,
+      maxTargets: 1,
+      hasX: false,
+      singleMode: 'targetId',
+      allowNone: triggers.some((cmd) => cmd.targetId == null),
+      itemLabel: 'cel',
+    };
+  }
+  // M299: ogólna rodzina jednowyborowa — jeden typ komendy, każdy wariant
+  // wybiera kandydata tym samym polem albo jest odmową. Okna rzutu mają
+  // własne etykiety K1/K2 (każda opcja = osobny rzut), stąd wykluczenie.
+  if (SINGLE_PICK_EXCLUDED_TYPES.has(options[0]?.type)) return null;
+  if (!options.every((cmd) => cmd?.type === options[0].type)) return null;
+  const field = SINGLE_PICK_FIELDS.find((name) => options.some((cmd) => cmd[name] != null));
+  if (!field) return null;
+  if (!options.every((cmd) => isNonePickCommand(cmd, field) || cmd[field] != null)) return null;
+  const targets = [];
+  for (const cmd of options) {
+    if (!isNonePickCommand(cmd, field) && !targets.includes(cmd[field])) targets.push(cmd[field]);
+  }
+  if (targets.length < 2) return null; // jeden kandydat = zwykła lista
+  return {
+    type: options[0].type,
+    targets,
+    minTargets: 1,
+    maxTargets: 1,
+    hasX: false,
+    singleMode: 'field',
+    singleField: field,
+    allowNone: options.some((cmd) => isNonePickCommand(cmd, field)),
+    noneLabel: noneLabelOf(options, field),
+    itemLabel: itemLabelOf(field),
+  };
+}
+
+/**
+ * Komenda odpowiadająca wskazanemu celowi (albo odmowie — `targetId: null`)
+ * albo null; szukana wśród wariantów legalnych silnika (L48).
+ */
+export function commandForSingleTargetSelection(commands, { targetId, field = null }) {
+  return (commands ?? []).find((cmd) => {
+    if (!cmd) return false;
+    if (field) {
+      // Ogólna rodzina jednowyborowa (M299): kandydat siedzi w `field`,
+      // a pusty wybór = wariant odmowy (done/skip/null). M301: gałąź pola
+      // idzie PIERWSZA — pola kosztów (tapCreatureId, exileTargetId…) bywają
+      // na komendach typów z SINGLE_TARGET_CAST_TYPES (activate_ability,
+      // cast_permanent) i tamten kształt (`targets[1]`) ich nie opisuje.
+      if (targetId == null) return isNonePickCommand(cmd, field);
+      return cmd[field] === targetId && !isNonePickCommand(cmd, field);
+    }
+    // M301: wspólny kształt „jeden cel w targets[1]" — cast_spell, aura
+    // (cast_permanent) i aktywacje (equip); patrz singleTargetPlanOf.
+    if (SINGLE_TARGET_CAST_TYPES.includes(cmd.type)) {
+      return Array.isArray(cmd.targets) && cmd.targets.length === 1 && cmd.targets[0] === targetId;
+    }
+    if (cmd.type === 'resolve_trigger_target') {
+      return 'targetId' in cmd && cmd.targetId === targetId;
+    }
+    return false;
+  }) ?? null;
+}
+
+/**
+ * Plan mulligana „zatrzymaj rękę albo weź mulligan” (`resolve_mulligan_choice`,
+ * dwa warianty) — dwa czytelne wiersze zamiast dwóch wielkich przycisków.
+ * Przy siódmym mulliganie oferta jest jednoelementowa → zwykła lista.
+ * Etykiety wierszy (liczba kart w ręce) dokleja wywołujący (`plan.rows`).
+ */
+export function mulliganKeepPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length !== 2) return null;
+  const list = options.filter((cmd) => cmd?.type === 'resolve_mulligan_choice' && typeof cmd.keep === 'boolean');
+  if (list.length !== 2) return null;
+  return {
+    type: 'resolve_mulligan_choice',
+    mulliganKeepMode: true,
+    targets: [],
+    hasX: false,
+  };
+}
+
+// ===========================================================================
+// M300 (zlecenie właściciela 2026-09-03): OKNA RZUTU do wspólnego kreatora.
+//
+// Okno Vaana (`resolve_exile_cast`), Halo Foragera (`resolve_grave_free_cast`),
+// madness, rebound i suspend to grupy, w których KAŻDA opcja jest GOTOWYM
+// wariantem rzutu (cele/X/tryb/stun — etykiety K1/K2 z audytu PR #94) albo
+// odmową (`cast: false` / `decline: true`). To NIE jest „skomponuj cele”
+// (multiTargetPlanOf) ani „wybierz jednego kandydata” (singleTargetPlanOf) —
+// to „wybierz jedną z etykietowanych opcji”: jeden wiersz na opcję, radio,
+// Zatwierdź oddaje komendę z legalCommands (L48).
+// ===========================================================================
+
+/** Typy komend okien rzutu — patrz nagłówek sekcji. */
+export const CAST_WINDOW_TYPES = Object.freeze([
+  'resolve_exile_cast', 'resolve_grave_free_cast', 'resolve_madness_cast',
+  'resolve_rebound_cast', 'resolve_suspend_cast',
+]);
+
+/**
+ * Plan okna rzutu albo null. Wiersze (`rows`: `{ id, label, cardId }`)
+ * wypełnia wywołujący ETYKIETAMI z `labelChoiceOptions` (K1/K2: tryb, stun,
+ * numeracja duplikatów) i cardId do podglądu — silnik planu nie zna sesji.
+ */
+export function castWindowPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2) return null;
+  const type = options[0]?.type;
+  if (!CAST_WINDOW_TYPES.includes(type)) return null;
+  if (!options.every((cmd) => cmd?.type === type)) return null;
+  return {
+    type,
+    castWindowMode: true,
+    targets: [],
+    hasX: false,
+    itemLabel: 'wariant',
+    rows: options.map((cmd, i) => ({ id: `opt-${i}`, label: null, cardId: cmd.cardId ?? null })),
+  };
+}
+
+/**
+ * Komenda spod wiersza `opt-N` — tożsamościowo z oferty silnika (L48),
+ * bo warianty różnią się polami, których plan nie zna (stun, X, tryb…).
+ */
+export function commandForCastWindowSelection(commands, rowId) {
+  const match = /^opt-(\d+)$/.exec(String(rowId ?? ''));
+  if (!match) return null;
+  return (commands ?? [])[Number(match[1])] ?? null;
+}
+
+// ===========================================================================
+// M301→M302 (decyzje właściciela 2026-09-03): KAŻDY modal wyboru stoi na tym
+// samym helperze — różnią się parametry, podstawa jest jedna („żeby wszelkie
+// zmiany — np. czcionki, ikonki podglądu itp. — były w jednym miejscu”).
+//
+// M301 zaczął od małych enumeracji (2–5 opcji, 18 rodzin §3b). M302 domyka:
+// plan przyciskowy jest OGÓLNY — każda grupa ≥2 opcji, której nie wziął
+// wcześniejszy dedykowany plan albo wizard typowany (scry/surveil/index,
+// walka, podział obrażeń, escape), dostaje wiersze-przyciski we wspólnym
+// kreatorze. Odpadają „rodziny odroczone”: search_choice, undercity, grupy
+// „1 kandydat + odmowa” (Jill) — wszystko jedzie przez jeden komponent.
+//
+// Semantyka przyciskowa: JEDEN klik = DOKŁADNA komenda silnika (tożsamość
+// z legalCommands — lookup opt-N, L48). Awaryjna ściana renderChoiceRequest
+// zostaje wyłącznie jako siatka bezpieczeństwa dla grup pustych.
+// ===========================================================================
+
+/**
+ * Ogólny plan przyciskowy albo null (grupy <2 opcji nie otwierają modala —
+ * panel akcji). Wiersze (`rows`: `{ id, label, cardId }`) wypełnia
+ * wywołujący etykietami z `labelChoiceOptions` i cardId do podglądu — jak
+ * okna rzutu (M300). Plan nie zna typów komend: przycisk niesie swoją
+ * komendę, więc jednorodność typu NIE jest warunkiem (M302).
+ */
+export function buttonsPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2) return null;
+  return {
+    type: options[0]?.type ?? null,
+    buttonsMode: true,
+    targets: [],
+    hasX: false,
+    rows: options.map((_, i) => ({ id: `opt-${i}`, label: null, cardId: null })),
+  };
+}
+
 /**
  * Komenda odpowiadająca zaznaczonym kartom albo null (wybór nielegalny =
  * brak takiej komendy — UI nie buduje komendy z palca, L48).
+ *
+ * M304 (klin znaleziony Żywym Testerem): silnik deduplikuje kombinacje
+ * „odłóż N na spód" po multizbiorze DEFINICJI kart i zostawia JEDNEGO
+ * reprezentanta z konkretnymi INSTANCJAMI (M119/Z3), a kreator rysuje wiersz
+ * na każdą instancję. Szukanie po dokładnych id instancji gubiło wybór
+ * „tej drugiej kopii" tej samej karty — Zatwierdź milczało przy legalnej
+ * decyzji. Z tłumaczem `defOf(instancja) → definicja` porównujemy multi-zbiory
+ * DEFINICJI: reprezentant jest semantycznie tą samą decyzją (tak definiuje ją
+ * sam dedup silnika), więc jego komenda jest prawidłowym wynikiem wyboru.
+ * Bez tłumacza — dotychczasowe dokładne dopasowanie (kompatybilność).
  */
-export function commandForMulliganSelection(commands, cardIds) {
-  const selection = [...(cardIds ?? [])].sort().join('|');
+export function commandForMulliganSelection(commands, cardIds, defOf = null) {
+  const list = cardIds ?? [];
+  const keyOf = (ids) => [...ids].map((id) => (defOf ? (defOf(id) ?? id) : id)).sort().join('|');
+  const selection = keyOf(list);
   const cmd = (commands ?? []).find((entry) =>
     entry?.type === 'resolve_mulligan_bottom_choice'
     && Array.isArray(entry.cardIds)
-    && entry.cardIds.length === cardIds.length
-    && [...entry.cardIds].sort().join('|') === selection);
+    && entry.cardIds.length === list.length
+    && keyOf(entry.cardIds) === selection);
   return cmd ?? null;
 }

@@ -4278,3 +4278,360 @@ powstały dla Discover, a obowiązywały też okno zdolności Vaana.
 - **Dług i higiena.** Test odziedziczony po PR #93 (`audyt-pr92-darmowy-rzut-zakres`)
   piętnował brak oferty dla czaru modalnego i zakładał stempel `playableUntilTurn`, którego
   silnik nie stawia — odwrócony, z komentarzem (L5/L44). Lekcja L127.
+
+## M295 (2026-09-03) — Darmowy rzut z grobu domyka łańcuch stun wyboru; etykiety nazywają wybór we wszystkich trzech oknach (audyt PR #94, sesja arena/01a067e2)
+
+**Kontekst.** Audyt PR #94 (sesja `arena/01a067e2-mtg`, PR #95): przegląd 29
+plików squasha `aa62134`. Werdykt: PR dobry — jedno znalezisko klasy, którą
+ten PR otworzył (K1), plus domknięcie klasy etykiet (K2). Raport:
+`docs/audits/AUDYT_PR94_2026-09-03.md`, lekcja L129.
+
+**K1 — darmowy rzut z grobu (Halo Forager) przenosi wybór celu pod stun.**
+Fix F (PR #94) otworzył w tym oknie tryby z celami zmiennymi, ale bez
+łańcucha `stunTargetId`, który okno Vaana dostało w tym samym PR:
+- push oferty `resolve_grave_free_cast` gubił `stunTargetId` → duplikaty
+  identycznych przycisków w panelu;
+- `execute` nie przekazywał go do `validateVariableTargets` → każdy wariant
+  z ≥1 celem trybu ze `stunAmongTargets` odrzucany (martwe przyciski — L48);
+- obiekt stosu nie dostawał `modeExtra` → efekt
+  `add_counter applyTo 'extra:stunTargetId'` nie miałby czego czytać;
+- zdarzenie `spell_cast` nie niosło `modeName`/`stunTargetId` (log stołu).
+Repro na realnych kartach: Aerith Rescue Mission (tryb „Schody”, MV 4,
+`final-fantasy`) w cmentarzu + Halo Forager (`worek-basni`, okno czyta
+DOWOLNY cmentarz). Naprawa: pole w ofercie → `cmd.stunTargetId` w walidacji
+→ `modeExtra` na stosie + `modeName`/`stunTargetId` w zdarzeniu → nazwa trybu
+i cel stun w etykiecie.
+
+**K2 — etykiety `cast_spell` i okna Vaana nazywają cel pod stun.** Ta sama
+klasa M91 (warianty o różnych skutkach muszą być rozróżnialne): prawny przy
+rzucie z ręki od M146, rozszerzony przez PR #94 na okno Vaana. Sufiks
+`· stun: <cel>` we wszystkich trzech etykietach.
+
+**Sprawdzone okna (macierz po audycie):** grób i Vaan — otwarte
+na `variableTargets`, łańcuch stun kompletny; Discover — tylko tryby bezcelowe
+(`targetlessModeIndexes`); madness/suspend/epic/rebound — odrzucają
+`variableTargets` po obu stronach (oferta = wykonanie). Jedyna luka utajona:
+zdarzenie suspend bez `modeName` — nieosiągalna (jedyna karta suspend,
+Mindstab, nie jest modalna); przypięta w raporcie, nie kodem (L52).
+
+**Bramy.** 7 testów (5 RED przed naprawą) + 5 mutacji RED; `npm test`
+**4343/4343**, `npm run test:all` **4353/4353**, build **59 modułów /
+3190,1 kB**, `family-audit` i `event-contract-audit` bez naruszeń, benchmark
+(profil szybki, 672 mecze) bez wyjątków: heuristic 83,9%, aggro 28,0%,
+random 4,2% (identycznie z bazą — wycena bota nietknięta). Żywy Tester:
+6 partii (`worek-basni` × `final-fantasy` i odwrotnie; greedy/explorer/random;
+600 kroków) → 0 zgłoszeń detektorów; okno Halo Foragera wystąpiło (seed 802,
+rzut z grobu rozstrzygnięty), ARM rzucony z ręki z etykietą trybu.
+
+## M296 (2026-09-03) — Wynik komendy niesie wszystkie zdarzenia: liczniki infect/renown i poświęcenie Springblooma widoczne w logu (uwagi właściciela C/D)
+
+**Zgłoszenie (uwagi z żywej gry, 2026-09-03).** C: token-infect Carrion Call
+położył przeciwnikowi licznik -1/-1, ale ani Rozgrywka, ani log o tym nie
+wspomniały. D: Springbloom Druid poświęcił ląd przy ETB — decyzja i wybór
+lądu niewidoczne.
+
+**Root cause (wspólny dla obu).** Bramki budujące wynik komendy brały
+`state.events.slice(-1)` ALBO zwracały wcześniejszą listę zdarzeń — efekt,
+który dokładał do `state.events` więcej niż jedno zdarzenie, tracił część
+przyrostu: (1) `combat.js` — trzy miejsca doklejające `addCounter`
+(infect stworowi, infect graczowi, renown) po pierwotnym pobraniu listy;
+(2) `game-state.js` — bramka springbloom widziała tylko ostatnie
+z trzech zdarzeń poświęcenia.
+
+**Naprawa.** Wzorzec „przechwyć PRZED, dołącz przyrost”: `const before =
+state.events.length` przed efektem, po nim `state.events.slice(before)`
+do wyniku komendy (combat.js ×3, bramka springbloom). Czytelność:
+`counter_added` opisuje liczniki ujemne bez „+” („dostaje 1 licznik -1/-1”,
+session.js). Silnik dalej emituje zdarzenia tak samo — zmienia się tylko
+kontrakt wyniku komendy (niesie CAŁY przyrost).
+
+**Weryfikacja.** 6 testów (RED przed naprawą): licznik -1/-1 na stworze
+i na graczu po infekcji, renown, poświęcenie Springblooma z nazwą lądu
+w zdarzeniu i w opisie; 5 mutacji RED (każde z trzech miejsc combat.js,
+slice w bramce, format licznika). Żywy Tester: sesja z Carrion Call
+i Springbloomem — wpisy w Rozgrywce i logu. Bramy: 4355/4355, build OK.
+
+## M297 (2026-09-03) — declare_attackers modeluje KUPOWANY deathtouch: tor B3 dla trików keywordowych (uwaga właściciela B)
+
+**Zgłoszenie.** „Bot atakuje 4/4, podczas gdy ja mam małego nietapniętego
+stwora, który może KUPIĆ zdolność deathtouch (Death-Hood Cobra / Coat with
+Venom), i mam na to manę — to trochę nierozsądne”.
+
+**Root cause.** `declare_attackers` heurystycznego bota nie modelował
+deathtoucha dokupionego w oknie walki (CR 702.4: dowolny bloker zabija
+atakującego). B3 (ryzyko removalu z talii przeciwnika) istniał tylko dla
+obrażeń — tricki keywordowe były białą plamą.
+
+**Naprawa.** Dwa źródła ryzyka, generycznie po deskryptorach (ADR 0002):
+(1) WIDOCZNE — nietapnięty stwór przeciwnika z aktywowaną zdolnością
+„daje sobie deathtouch do końca tury” (klasa Death-Hood Cobra): jeśli
+`opponentOpenMana ≥ koszt`, ryzyko pewne; (2) UKRYTE — instant dający
+deathtouch do końca tury w talii przeciwnika (klasa Coat with Venom): ten
+sam model hipergeometryczny `probOpponentHolds` co B3, próg obniżony do
+0.15 (tani trick rozstrzyga wymianę nawet przy niskiej szansie trzymania).
+Wspólna kara per atakujący, którego da się zablokować:
+`dtProb × (10 + 2×moc + wytrzymałość)`. Wyłączenia: wyścig (jak w B3),
+nieblokowalni, pełna prewencja, niezniszczalni, pożyczeni
+(tempControlUntilEOT), first-strike zabijający blokera przed odpowiedzią,
+bloker już mający deathtouch (bez podwójnej kary).
+
+**Zakres celowo wąski.** Statyczny bloker z DRUKOWANYM deathtouchem to
+osobna klasa: pierwsza wersja z wyceną per-attacker paraliżowała ataki na
+samotnego 2/1 (−2 partie w benchmarku szybkim, w tym jedna vs random) —
+poprawna ocena wymaga modelowania gang-ataków. Klasa odnotowana tu
+i w ograniczeniach PR #95 (backlog).
+
+**Weryfikacja.** 6 testów (RED przed naprawą): kupno widoczne (Cobra ±mana),
+kupno ukryte (Coat with Venom w talii ±trik, anty-over-fix bez blokera),
+sanity; 3 mutacje RED (cały człon ryzyka, brak aktywatora, brak trików).
+Benchmark szybki RÓWNY bazie (83,9 / 28,0 / 4,2 — talie profilu nie mają
+trików deathtouch). Bramy: 4361/4361, build OK.
+
+## M298 (2026-09-03) — Proliferate, wybór jednego celu i mulligan dołączone do wspólnego kreatora (uwaga właściciela A)
+
+**Zgłoszenie.** „Modale wyboru dla Spread the Sickness (zniszcz stwór +
+proliferate), mulliganu z wyborem i ETB Bone Shreddera nie używają nowego
+wspólnego pomocnika wyboru celów — wyglądają zupełnie inaczej niż wybór
+bloków (inny podgląd kart, inny sposób wskazywania celu); modal niszczący
+cel ma pola checkbox, a wybiera się klikając w całą opcję”.
+
+**Root cause.** `multiTargetPlanOf` filtruje tylko komendy z `targets`, więc
+trzy rodziny padały na awaryjny `renderChoiceRequest` (ściana przycisków):
+(1) proliferate — komendy noszą `targetIds` (podzbiory kandydatów);
+(2) wybór JEDNEGO celu — `cast_spell` z `targets[1]` (STS „zniszcz stwór”)
+i ETB `resolve_trigger_target` z `targetId` (Bone Shredder);
+(3) `resolve_mulligan_choice` (keep/mulligan).
+
+**Naprawa (bez zmian silnika i protokołu — L48).** Trzy plany
+w `multi-target.js` (`proliferatePlanOf`, `singleTargetPlanOf`,
+`mulliganKeepPlanOf`) + trzy tryby `renderMultiTargetWizard`
+(`targetIdsMode`: ptaszki 0–N; `singleMode`: radio + opcjonalny wiersz
+odmowy „you may”; `mulliganKeepMode`: dwa wiersze z etykietami). Routing
+w `openChoiceRequest`: proliferate przed `multiTargetPlanOf` (jego komend
+nie widzi), pojedynczy cel i mulligan-keep PO `sacrificeCastPlanOf` (grupy
+„cel + ofiara” mają pierwszeństwo). Zatwierdź pozostaje wyłączony, dopóki
+wybór nie jest legalną komendą silnika (np. okrojona enumeracja dużej puli
+proliferate). Mylący ptaszek wyciszenia w przycisku opcji znika — wyciszenie
+zostaje w panelu akcji (tam jego miejsce).
+
+**Regresja złapana żywo.** Licznik „Zatrzymaj rękę (N kart)” liczył też 7
+UKRYTYCH kart przeciwnika z widoku (wychodziło 14) — filtr
+`controllerId === playerId`.
+
+**Weryfikacja.** 13 testów (RED przed naprawą): plany + dopasowanie komend
+przez TOŻSAMOŚĆ z `legalCommands` (L48), radio zamienia wybór, nielegalny
+podzbiór nie daje komendy, routing; 4 mutacje RED; harness klikający
+(`table-ui`) prowadzi nowe modale. Żywy Tester (mirrodin-brg): seed 21 —
+pełny przebieg STS „wskaż cel (1)” → cel → „zaznacz obiekty z licznikami
+(0–1)”; seed 7 — mulligan „(7 kart)”, ETB Bone Shreddera. 0 zgłoszeń
+detektorów. Bramy: 4368/4368, `test:all` 4378/4378, build 3208,9 kB.
+
+## M299 (2026-09-03) — Audyt modali wyboru: cała rodzina jednowyborowa we wspólnym kreatorze (zlecenie właściciela)
+
+**Zlecenie.** „Przejrzeć silnik i wszystkie tory czarów i zdolności z modalami
+wyboru czy nie mają jakichś customowych modali, które należałoby przerobić na
+uniwersalny helper”. Raport: `docs/audits/AUDYT_MODALE_WYBORU_2026-09-03.md`.
+
+**Wynik audytu.** (1) Customowych modali wyboru POZA torem `choice-request`
+NIE MA — każdy wybór przechodzi przez `openChoiceRequest`; `mana-wizard`
+(płatność kosztów) jest celowo osobny. (2) Prawdziwa luka: `openChoiceRequest`
+ma 13 routowanych ścieżek, a reszta z 66 typów `resolve_*` spada do awaryjnej
+ściany przycisków; w tym ~24 typy o kształcie „wybierz jednego kandydata”
+(`{targetId}`/`{cardId}`/`{keepId}`/`{pickId}`/`{sacrificeLandId}`/`{armyId}`,
+np. Forever Young, Springbloom Druid, discard, amass, Grave Exchange,
+Cuombajj Witches) — TA SAMA klasa co `resolve_trigger_target` obsłużony
+w M298. (3) Świadomie zostają przyciski: enumeracje 2–5 opcji (kolory, typy
+lądu, tryby, tak/nie), okna rzutu (Vaan/Halo Forager/madness/rebound/suspend
+— każda opcja to osobny rzut z etykietami K1/K2), `search_choice` (dwa
+wymiary: karta + miejsce), undercity, kolejności (index/reveal).
+
+**Naprawa.** Generalizacja `singleTargetPlanOf` (trzecie źródło planu):
+jednorodna grupa `resolve_*`, warianty wybierają kandydata polem z listy albo
+są odmową (`done`/`skip`/null). Wiersz odmowy z etykietą per sposób odmowy
+(„Gotowe — bez wyboru” / „Pomiń” / „Zakończ bez wyboru”), intro nazywa
+wybierany obiekt per pole („wskaż ląd do poświęcenia”, „wskaż kartę”,
+„wskaż armię”, „legendę do zachowania”). Wykluczenia okien rzutu jawną listą
+typów (ich `cardId` = karta rzutu, nie wybór). Straż w kreatorze: pusty wybór
+≠ odmowa — bez niej `undefined == null` dopasowywałoby wariant done/skip
+i Zatwierdź wysyłałoby odmowę mimo braku decyzji (zmierzone żywym testerem).
+
+**Weryfikacja.** 8 testów (RED), 5 mutacji RED (w tym jedna naprawiona po
+audycie własnych testów — wykluczenie okien rzutu z jednym cardId było
+kryte dedupem kandydatów). Bramki: 4376/4376, `test:all` 4386/4386, build
+3212,8 kB. Żywy Tester: Springbloom Druid — picker „wskaż ląd do poświęcenia
+(1)” z wierszem Pomiń, poświęcenie w logu; High Stride — „wskaż cel (1)”
+z 4 kandydatami; 0 zgłoszeń detektorów. Silnik i protokół bez zmian (L48).
+
+## M300 (2026-09-03) — Okna rzutu dołączone do wspólnego kreatora (zlecenie właściciela)
+
+**Zlecenie.** Właściciel po audycie modali wyboru (M299) dopytał o „wizard dla
+okien rzutu": „Nie wiem co rozumiesz przez wizard dla okien rzutu — co to
+znaczy? Że te efekty są nieobsłużone? Że nie korzystają ze wspólnego helpera?
+W obu przypadkach trzeba to załatać." Odpowiedź na pytanie: silnik obsługuje
+okna W PEŁNI (etykiety wariantów K1/K2 z audytu PR #94: tryb, stun, numeracja
+duplikatów), brakowało tylko toru UI — wybór padał na awaryjną ścianę
+przycisków `renderChoiceRequest`, poza wspólnym helperem.
+
+**Naprawa.** Nowe źródło planu `castWindowPlanOf` (5 typów okien:
+`resolve_exile_cast` Vaan, `resolve_grave_free_cast` Halo Forager,
+`resolve_madness_cast`, `resolve_rebound_cast`, `resolve_suspend_cast`): jedna
+opcja = jeden wiersz radio niosący `cardId` do podglądu; etykiety wypełnia
+wywołujący z `labelChoiceOptions` (K1/K2), intro = `choiceGroupTitle` +
+„— wybierz wariant:". Zatwierdź oddaje DOKŁADNĄ komendę silnika przez
+`commandForCastWindowSelection` (indeks wiersza `opt-N` → opcja oferty przez
+TOŻSAMOŚĆ z `legalCommands`, L48 — warianty różnią się polami, których plan
+nie zna: stun/X/tryb/koszt dodatkowy). Routing w `openChoiceRequest` PRZED
+`multiTargetPlanOf`, bo opcje okien niosą `targets`.
+
+**Klasa błędu przy okazji.** `multiTargetPlanOf` budował plan z PODZBIORU
+opcji niosących `targets` — okno Vaana z czarem {X} i odmową dawało kreator
+wielocelowy BEZ wiersza odmowy (zmierzone przed naprawą:
+`multiTargetPlanOf(vaanWindowWithX)` zwracał plan hasX z samymi celami).
+Straż: plan powstaje tylko gdy KAŻDA opcja niesie `targets`; inaczej rodzina
+ma własny kształt (okna rzutu → `castWindowPlanOf`, fallback → przyciski).
+
+**Świadomy kompromis.** `resolve_grave_free_cast` był w
+`OPTION_IGNORABLE_TYPES` (per-opcyjne checkboxy wyciszenia w ścianie
+przycisków) — w kreatorze wyciszenie per opcja znika; zostaje wyciszenie
+grupy w panelu akcji (automatyczna odmowa w `advance()`) i jawny wiersz
+odmowy.
+
+**Weryfikacja.** 7 testów (RED przed naprawą): kształt planu (wiersz na opcję
+Z ODMOWĄ, `cardId`, etykiety = null do wypełnienia), tożsamość komend
+z `legalCommands`, wizard DOM (radio + Zatwierdź oddaje dokładnie tę komendę),
+podgląd karty po kliknięciu nazwy wiersza, pusty wybór = wyłączone Zatwierdź,
+routing main.js przed multiTargetPlanOf, negatywy (pojedyncza opcja, obce
+i mieszane typy). 6 mutacji RED (w tym straż podzbioru, gałąź kreatora,
+off-by-one indeksu). Bramki: 4383/4383, `test:all` 4393/4393, build
+3217,2 kB. Żywy Tester: Halo Forager (worek-basni, seedy 802/811 — okna 5
+i 14 opcji z wierszem „Zrezygnuj (nie płać {X})" i etykietami „Rzuć z grobu
+za {N}") i Vaan (final-fantasy, seed 51 — dwa okna 2-opcyjne), 0 zgłoszeń
+detektorów. Silnik i protokół bez zmian (L48).
+
+## M301 (2026-09-03) — Małe enumeracje we wspólnym helperze + domknięcie rodziny „wskaż cel (1)” (decyzja właściciela)
+
+**Decyzja.** Po audycie modali i M300 właściciel: „Małe enumeracje 2-5 opcji
+mogą zostać przy przyciskach, ale warto, żeby to też był element tego samego
+helpera. Choćby po to, żeby ujednolicić elementy graficzne, podgląd kart
+targetów itp."
+
+**Naprawa — enumeracje.** Nowe źródło planu `enumButtonsPlanOf`: jednorodna
+grupa `resolve_*` z listy 18 rodzin §3b audytu (kolory, typy lądu, tryby,
+clash, fabricate, endure, library placement, moonlit, pay-or-sacrifice,
+ward/counter/optional pay, optional trigger/draw, replacement, explore,
+destroy equipment, food), 2–5 opcji. Nowy tryb kreatora `enumButtonsMode`:
+wiersz jest PRZYCISKIEM (semantyka właściciela zachowana — jeden klik =
+DOKŁADNA komenda silnika przez tożsamość z `legalCommands`, L48), ale rysuje
+go wspólny helper: lista pickera, intro z `choiceGroupTitle`, wspólne Anuluj,
+podgląd karty 🔍 per `cardId` opcji, klucz sondy Żywego Testera (M104). Bez
+„Zatwierdź” i statusu — przycisk zatwierdza sam. Routing OSTATNI z planów;
+grupy >5 opcji i rodziny odroczone (search_choice, undercity, kolejności
+reveal) zostają przy dawnym rysowaniu do decyzji właściciela.
+
+**Naprawa — luki „wskaż cel (1)” (zmierzone żywo).** (1) `singleTargetPlanOf`
+znał tylko `cast_spell` z `targets[1]` — wybór gospodarza aury
+(`cast_permanent`) i aktywacje z jednym celem (`activate_ability`, np. equip)
+padały na ścianę przycisków: `SINGLE_TARGET_CAST_TYPES` = cast_spell /
+cast_permanent / activate_ability, typ planu z komend (nie stała),
+`commandForSingleTargetSelection` po `targets[0]`. (2) Pola kosztów
+`tapCreatureId`/`tapOtherCreatureId`/`exileTargetId` nie były
+w SINGLE_PICK_FIELDS (zmierzone żywo: Wedgelight Rammer „tapnij innego
+stwora”, Makeshift Mauler „wygnij kartę stwora”) — dopisane, z etykietami
+czynności („stwora do tapnięcia”, „kartę do wygnania”); gałąź pola idzie
+PIERWSZA w dopasowaniu komendy, bo typy kosztów nakładają się z castami.
+
+**Weryfikacja.** 9 testów (RED): plan enumeracji i negatywy (1 opcja, 6 opcji,
+mieszane typy, rodziny obce/odroczone), plan pojedynczy dla aury i equip
+(+ wariant bez celu wyklucza), tożsamość komend (targets[0] i pola kosztów),
+wizard DOM (wiersz-przycisk klika się raz = dokładna komenda, brak Zatwierdź,
+podgląd 🔍 nie wybiera, Anuluj, optionKey sondy). 8 mutacji RED. Bramki:
+4392/4392, `test:all` 4402/4402, build 3224,6 kB. Żywy Tester: Clawing
+Torment — gospodarz aury w kreatorze z tagami kontrolera (worek-basni 811),
+Dobrowolna dopłata Zoraline — tryb przyciskowy helpera ze wspólnym Anuluj
+(811), Wedgelight Rammer — „wskaż stwora do tapnięcia (1)” (worek-legend 3),
+okno Vaana bez regresji (final-fantasy 51); 0 zgłoszeń detektorów. Silnik
+i protokół bez zmian (L48).
+
+## M304 (2026-09-03) — Klin w mulliganie londyńskim naprawiony (sesja łowiecka Żywego Testera, 169 partii)
+
+**Znalezisko.** Gracz zaznacza dokładnie żądaną liczbę kart do odłożenia po
+mulliganie, a „Zatwierdź" milczy (transkrypt: sweep3/t-theros-random-3.txt,
+przed naprawą 4 retry testera + anulowanie). Dwuwarstwowa przyczyna:
+(1) silnik deduplikuje kombinacje „odłóż N na spód" po multizbiorze
+DEFINICJI kart i zostawia reprezentanta z konkretnymi INSTANCJAMI,
+a `commandForMulliganSelection` szukał po dokładnych id — wybór „drugiej
+kopii" tej samej karty nie miał komendy; (2) CAP=32 < C(7,4)=35 dziurawił
+ofertę dla ręki samych różnych kart.
+
+**Naprawa.** (a) `commandForMulliganSelection` porównuje multi-zbiory
+definicji przez opcjonalny tłumacz instancja→definicja (kreator podaje go
+z sesji; reprezentant jest tą samą decyzją wg dedupa silnika); (b)
+MULLIGAN_BOTTOM_OPTION_CAP 32→35 = pełna przestrzeń decyzji dla ręki ≤7
+kart. Walidacja silnika bez zmian (L48) — zmieniona tylko kompletność
+oferty i dopasowanie UI do jej semantyki.
+
+Bramki: m304 3/3 (RED→fix), mutacje 3/3 zabite; `npm test` 4402/4402,
+`test:all` 4412/4412, build 3226,2 kB; Żywy Tester: 33 przebiegi wizarda
+mulligan-bottom (8 seedów) — 0 retry, 0 błędów. Sesja łowiecka ogółem:
+169 partii, 0 innych blokad/braków komunikatów/błędnych modali. Commity:
+RED `3d1fb2b`, fix `0b84945`.
+
+## M303 (2026-09-03) — Jeden komponent podglądu 🔍; pomiar: kreatory „osobne" już stoją na jednym helperze
+
+**Pytanie właściciela.** Czy scry/surveil/index, walkę, podział obrażeń,
+escape i mana-wizard przerobić pod wspólny helper, „żeby zmiany UI były
+w jednym miejscu". **Pomiar:** już są — jeden modal `#choice-request`,
+jeden moduł, wspólne wiersze `renderPickerRow` (×10: radio/checkbox/
+przycisk/stepper), wspólne intro/stopka/Anuluj/status, jeden CSS, jeden
+podgląd kart. Różne są tylko maszyny stanów interakcji (sekwencja kart,
+kwoty, sorter) — to parametry/tryby, nie osobne stosy UI; mega-funkcja
+byłaby regresją (L41). **Zmiana:** jedyne faktyczne dublowanie — przycisk
+podglądu 🔍 lepiony ręcznie w dwóch miejscach — zastąpione jednym
+komponentem `renderPeekButton` (klasa, mostek `previewCardId`,
+`stopPropagation`; strażnik M303/3 liczy wystąpienia etykiety = 1).
+
+Bramki: m303 3/3 (RED→fix), mutacje 3/3 zabite; `npm test` 4399/4399,
+`test:all` 4409/4409, build 3224,8 kB; Żywy Tester 0 detektorów: helper
+radiowy (ff51), 🔍 przez komponent + wspólny Anuluj (wb811), surveil bez
+regresji (wl3). Silnik i protokół bez zmian (L48). Commity: RED `b55d18c`,
+fix `327bc1f`.
+
+## M302 (2026-09-03) — Każdy modal wyboru stoi na jednym helperze: ogólny plan przyciskowy (doprecyzowanie właściciela)
+
+**Doprecyzowanie.** Po M301 właściciel odrzucił ramę „rodzin odroczonych do
+decyzji”: „Nie rozumiem pytania. Czemu te modale wyboru, które wymieniasz
+wymagają mojej decyzji? Każdy modal wyboru może i powinien mieć ten sam
+helper, być może z różnymi/dodatkowymi opcjami czy parametrami. Ale podstawa
+powinna być jedna żeby wszelkie zmiany — np. czcionki, ikonki podglądu itp.
+— były w jednym miejscu. Czemu 1 kandydat i odmowa (2 opcje) nie mogą być
+z tego samego helpera na przyciskach?"
+
+**Naprawa.** `enumButtonsPlanOf` (M301: lista 18 rodzin §3b + limit 2–5)
+→ `buttonsPlanOf`: plan jest OGÓLNY — każda grupa ≥2 opcji, której nie wziął
+wcześniejszy dedykowany plan (cele, okna rzutu, pojedynczy wybór, mulligan)
+ani wizard typowany (scry/surveil/index, walka, podział obrażeń, escape),
+dostaje wiersze-przyciski wspólnego kreatora: jeden klik = DOKŁADNA komenda
+silnika (tożsamość z `legalCommands`, L48), wspólne intro/Anuluj/podgląd kart
+🔍/klucz sondy (M104). Znikają wyjątki: `search_choice` (para
+`{found, destination}` jest gotową opcją — dwa wymiary nie wymagają osobnego
+planu), undercity, grupy „1 kandydat + odmowa” (Jill — odpowiedź na pytanie
+właściciela: mogą), duże grupy szukania (17 opcji), kształty mieszane.
+Routing przeniesiony na sam KONIEC `openChoiceRequest`; strażnik testowy
+czyta źródło main.js i pilnuje, by plan przyciskowy nie stanął przed
+wizardami typowanymi (inaczej scry/surveil/index połknęłyby się jako
+płaskie przyciski). `renderChoiceRequest` zostaje wyłącznie jako siatka
+bezpieczeństwa dla grup pustych. Zmiany graficzne (czcionki, ikony podglądu)
+mają od teraz JEDNO miejsce.
+
+**Weryfikacja.** 4 nowe testy (RED) + testy M301 zaktualizowane do ogólnej
+semantyki (razem 13/13): plan dla Jill/search/undercity/17 opcji/mieszanych
+typów, negatyw <2 opcji, odmowa = klik = dokładna komenda `targetId: null`,
+podgląd karty, strażnik kolejności routingu. Mutacje zabite: guard ≥2,
+gałąź renderu, przesunięcie routingu przed lookWizardKindOf. Bramki:
+4396/4396, `test:all` 4406/4406, build 3224,2 kB. Żywy Tester: Jill
+(11 kandydatów → radio-wizard; wariant „1 kandydat + odmowa” → przyciski
+helpera), „Karta z grobu na wierzch biblioteki” → przyciski z 🔍 (worek-basni
+811), Dobrowolna dopłata → przyciski ze wspólnym Anuluj, scry/surveil —
+wizardy sekwencyjne bez regresji, okno Vaana bez regresji (final-fantasy 51,
+worek-legend 3, wiedzmin 7); 0 zgłoszeń detektorów. Silnik i protokół bez
+zmian (L48).

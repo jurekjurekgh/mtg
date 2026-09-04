@@ -109,6 +109,22 @@ function diesBeforeDealingDamage(attacker, blockers) {
   });
 }
 
+/**
+ * M297/B (uwaga właściciela 2026-09-03): czy atakujący GINIE przy bloku, bo
+ * bloker ma deathtouch (CR 702.4 — każde ≥1 obrażenie jest śmiertelne).
+ * Nie dotyczy niezniszczalnych; bloker musi realnie móc zablokować tego
+ * atakującego (flying/reach, menace) i mieć moc > 0 (0 mocy = brak obrażeń).
+ */
+function diesToDeathtouchBlocker(attacker, blockers) {
+  const kw = attacker?.keywords ?? [];
+  if (kw.includes('indestructible')) return false;
+  return (blockers ?? []).some((b) => {
+    if (!b || !(b.keywords ?? []).includes('deathtouch')) return false;
+    if ((b.power ?? 0) <= 0) return false;
+    return attackerCanBeBlocked(attacker, [b]);
+  });
+}
+
 /** Atakujący zadaje obrażenia PRZED blokerem (first/double strike, CR 702.7). */
 function attackerStrikesFirst(attacker, blockers) {
   const kw = attacker?.keywords ?? [];
@@ -669,6 +685,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
   const minRemovalCost = removalSpells.size ? Math.min(...[...removalSpells.values()].map((r) => r.cost)) : Number.POSITIVE_INFINITY;
   const minPumpCost = pumpSpells.size ? Math.min(...[...pumpSpells.values()].map((p) => p.cost)) : Number.POSITIVE_INFINITY;
+  // M297/B (uwaga właściciela 2026-09-03): „kupowany deathtouch" — instant
+  // dający deathtouch do końca tury (klasa Coat with Venom). Obrońca z maną
+  // i DOWOLNYM blokerem wymienia taniego stwora za naszego drogiego
+  // atakującego (CR 702.4). Model jak B3 (deck + hipergeometria).
+  const deathtouchTricks = new Map(); // cardId → { cost, copies }
+  for (const [id, copies] of opponentCounts) {
+    const def = registry.get(id);
+    const isSpell = (def?.types ?? []).includes('Instant') || (def?.types ?? []).includes('Sorcery');
+    if (!def || !isSpell) continue;
+    const spell = def.spell;
+    if (!spell || spell.timing !== 'instant') continue;
+    const grantsDeathtouch = (spell.effects ?? []).some((e) => e?.type === 'grant_keywords_until_end_of_turn'
+      && (e?.keywords ?? []).includes('deathtouch'));
+    if (grantsDeathtouch) deathtouchTricks.set(id, { cost: def.manaCost ?? 0, copies });
+  }
+  const minDeathtouchTrickCost = deathtouchTricks.size
+    ? Math.min(...[...deathtouchTricks.values()].map((t) => t.cost)) : Number.POSITIVE_INFINITY;
 
   // B2 — lookahead: ograniczony koszt symulacji i waga poprawy ewaluacji.
   const LOOKAHEAD_TOP_K = 3;
@@ -1644,6 +1677,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const untapped = view.zones.battlefield.filter((o) => o.controllerId !== view.playerId
       && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
     return (foe?.mana ?? 0) + untapped;
+  }
+
+  /**
+   * M297/B (uwaga właściciela): WIDOCZNE „kupno deathtouch" — nietapnięty
+   * stwór przeciwnika z aktywowaną zdolnością dającą sobie deathtouch do
+   * końca tury (klasa Death-Hood Cobra). Zdolność celuje w siebie, więc
+   * aktywować może się tylko sam bloker — stąd wymóg „nietapnięty" (bloker
+   * musi przeżyć do walki). Zwraca najtańszy koszt many takiej zdolności
+   * albo null. Bez nazw kart (ADR 0002) — po deskryptorach zdolności.
+   */
+  function visibleDeathtouchActivatorCost(view) {
+    let best = null;
+    for (const object of view.zones.battlefield) {
+      if (object.controllerId === view.playerId || object.tapped) continue;
+      if (object.kind !== 'creature' && !(object.types ?? []).includes('Creature')) continue;
+      for (const ability of cardDef(object.cardId)?.abilities ?? []) {
+        if (ability?.type !== 'activated') continue;
+        const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+        const grantsDeathtouch = effects.some((e) => e?.type === 'grant_keywords_until_end_of_turn'
+          && (e?.keywords ?? []).includes('deathtouch'));
+        if (!grantsDeathtouch) continue;
+        const cost = ability.cost?.mana ?? 0;
+        if (best === null || cost < best) best = cost;
+      }
+    }
+    return best;
   }
 
   /**
@@ -4223,6 +4282,40 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // Kara ~ wartość stwora × prawdopodobieństwo: atak 2/2 przy 70%
               // ryzyka removalu to strata (0 obrażeń i stwór w grobie).
               if (killable) score -= removalProb * (14 + 2 * (object.power ?? 0) + (object.toughness ?? 0));
+            }
+          }
+        }
+        // M297/B (uwaga właściciela 2026-09-03): „kupowany deathtouch".
+        // Obrońca z nietapniętym blokerem, maną i trikiem (instant w ręce
+        // ALBO aktywowana zdolność widocznego stwora) daje blokerowi
+        // deathtouch w oknie walki — wtedy KAŻDY bloker zabija naszego
+        // atakującego (CR 702.4). Bot ma nie atakować wartościowych stworów
+        // w takim oknie — dokładnie scenariusz właściciela (4/4 vs mały
+        // stwór + Coat with Venom/Death-Hood Cobra + mana). Model ryzyka jak
+        // B3 (hipergeometria dla ukrytego triku; pewność dla widocznej
+        // aktywacji), próg obniżony względem removalu: trick deathtouch jest
+        // tani i rozstrzyga wymianę na korzyść obrońcy nawet przy niskiej
+        // szansie trzymania.
+        if (!racing && blockers.length > 0) {
+          const trickProb = deathtouchTricks.size && opponentOpenMana(view) >= minDeathtouchTrickCost
+            ? probOpponentHolds(view, deathtouchTricks) : 0;
+          const activatorCost = visibleDeathtouchActivatorCost(view);
+          const activatorReady = activatorCost !== null && opponentOpenMana(view) >= activatorCost;
+          const dtProb = Math.max(trickProb > 0.15 ? trickProb : 0, activatorReady ? 1 : 0);
+          if (dtProb > 0) {
+            for (const id of attackers) {
+              const object = objectOnBoard(view, id);
+              if (!object || object.tempControlUntilEOT) continue;
+              if (!attackerCanBeBlocked(object, blockers)) continue;
+              if (damageFullyPrevented(view, object)) continue;
+              if ((object.keywords ?? []).includes('indestructible')) continue;
+              // Bloker już MA deathtouch — dokupienie triku nic by nie zmieniło,
+              // więc kara za „kupowany" deathtouch byłaby podwójnym liczeniem.
+              if (diesToDeathtouchBlocker(object, blockers)) continue;
+              // First strike zabija blokera, zanim ten zada obrażenia.
+              if (attackerStrikesFirst(object, blockers)
+                && (object.power ?? 0) >= strongestBlockerToughness) continue;
+              score -= dtProb * (10 + 2 * (object.power ?? 0) + (object.toughness ?? 0));
             }
           }
         }

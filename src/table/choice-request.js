@@ -2,7 +2,7 @@ import { choiceResponse } from '../protocol/types.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, FACE_DOWN_LABEL } from './session.js';
-import { commandForSelection, commandForMulliganSelection, commandForSacrificeSelection } from './multi-target.js';
+import { commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -77,6 +77,31 @@ export function previewCardIdOfOption(option, resolveCardId) {
   return null;
 }
 
+/**
+ * M303: JEDEN komponent przycisku podglądu 🔍 (wcześniej lepiony ręcznie w
+ * dwóch miejscach). Zmiana ikony/etykiety/zachowania podglądu = jedna linia.
+ * `stopPropagation`: podgląd to podgląd — klik nie zatwierdza wyboru
+ * (rodzic może mieć własny `click` na wierszu przyciskowym).
+ */
+export function renderPeekButton(parent, { cardId, onOpen }) {
+  const peek = choiceNode(parent, 'button', 'ghost-btn choice-request-peek', '🔍 Podgląd karty');
+  peek.type = 'button';
+  if (peek.dataset) peek.dataset.previewCardId = String(cardId ?? '');
+  peek.addEventListener('click', (event) => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    onOpen?.(cardId);
+  });
+  return peek;
+}
+
+/**
+ * Siatka bezpieczeństwa dla modalnych wyborów. Po M302 każda grupa wyborów
+ * z ≥2 opcjami idzie przez tryb przyciskowy wspólnego helpera (routing na
+ * KOŃCU openChoiceRequest); ta funkcja rysuje już tylko grupy bez opcji
+ * (np. wybór celu na pusty stos — jedyna legalna komenda, brak listy) oraz
+ * wszystko, co przyszłe typy zgłoszeń przyniosą, zanim dostaną własny tryb.
+ */
 export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel, ignoredOptionKeys = null, onToggleIgnoredOption = null, onOpenCard = null, cardIdOfOption = null }) {
   clearChoiceElement(host);
   // introLabel (choiceGroupTitle) — opis wyboru jak w panelu akcji (uwaga A);
@@ -144,15 +169,7 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
     // M201/C2: podgląd karty przy opcji (osobny przycisk — klik w samą opcję
     // ma nadal ZATWIERDZAĆ wybór, a nie otwierać obrazek).
     const previewCardId = onOpenCard && cardIdOfOption ? cardIdOfOption(option) : null;
-    if (previewCardId) {
-      const peek = choiceNode(options, 'button', 'ghost-btn choice-request-peek', '🔍 Podgląd karty');
-      peek.type = 'button';
-      if (peek.dataset) peek.dataset.previewCardId = previewCardId;
-      peek.addEventListener('click', (event) => {
-        event?.stopPropagation?.();
-        onOpenCard(previewCardId);
-      });
-    }
+    if (previewCardId) renderPeekButton(options, { cardId: previewCardId, onOpen: onOpenCard });
   }
   if (request.options.length === 0) {
     choiceNode(host, 'div', 'zone-empty', 'Brak dostępnych wariantów.');
@@ -930,11 +947,37 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
  * legalność rozstrzyga silnik — UI nie wymyśla ruchów (L48). Przycisk
  * „Zatwierdź" jest wyłączony, dopóki wybór nie odpowiada żadnej komendzie.
  */
-export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, slotLabels: slotLabels_ = null, onComplete, onCancel, onOpenCard = null }) {
+/**
+ * M298/A: mulligan „zatrzymaj albo weź mulligan" — wiersz o id `keep` szuka
+ * wariantu `keep: true`, pozostały wiersz — `keep: false`. Komenda i tak
+ * musi istnieć w ofercie silnika (L48).
+ */
+function commandForMulliganKeepSelection(commands, pickedRowId) {
+  if (pickedRowId == null) return null;
+  const keep = pickedRowId === 'keep';
+  return (commands ?? []).find((cmd) =>
+    cmd?.type === 'resolve_mulligan_choice' && cmd.keep === keep) ?? null;
+}
+
+/** Wartownik wiersza odmowy („bez celu") w wyborze pojedynczym z `allowNone`. */
+const NONE_PICK = '__none__';
+
+export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, slotLabels: slotLabels_ = null, onComplete, onCancel, onOpenCard = null, onOpenCardByCardId = null }) {
   clearChoiceElement(host);
   // M257-r5/C: druga sekcja kreatora — stwór do poświęcenia (koszt dodatkowy).
   // Wybór JEDNOKROTNY (jeden stwór = jedna płatność), niezależny od celu czaru.
   const sacMode = Boolean(plan.sacrificeMode);
+  const singleMode = Boolean(plan.singleMode);
+  const keepMode = Boolean(plan.mulliganKeepMode);
+  // M300: okna rzutu — wiersz na każdą GOTOWĄ opcję (wariant rzutu / odmowa).
+  const castWindowMode = Boolean(plan.castWindowMode);
+  // M301→M302 (decyzje właściciela): tryb przyciskowy wspólnego helpera —
+  // semantyka przyciskowa (jeden klik = decyzja), rysowana przez ten sam
+  // kreator: wspólna lista, podgląd kart, klucz sondy (M104), Anuluj.
+  // M302: tryb jest OGÓLNY — obsługuje każdą grupę, której nie wziął
+  // dedykowany plan/wizard (enumeracje, search, undercity, „1 kandydat
+  // + odmowa”, wszystkie przyszłe kształty bez osobnych planów).
+  const buttonsMode = Boolean(plan.buttonsMode);
   const xLabel = plan.hasX ? ` oraz wartość X (${plan.xMin}–${plan.xMax})` : '';
   const range = plan.minTargets === plan.maxTargets
     ? `${plan.maxTargets}`
@@ -954,7 +997,11 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       ? `${sourceName ? `${sourceName} — ` : ''}wskaż po jednym celu dla każdej pozycji:\n`
       : sacMode
         ? `${sourceName ? `${sourceName} — ` : ''}wskaż cel czaru oraz stwora do poświęcenia (koszt):\n`
-        : `${sourceName ? `${sourceName} — ` : ''}zaznacz ${itemWord} (${range})${xLabel}:\n`));
+        : singleMode
+          ? `${sourceName ? `${sourceName} — ` : ''}wskaż ${itemWord} (${range})${xLabel}:\n`
+          : keepMode
+            ? `${sourceName ? `${sourceName} — ` : ''}wybierz:\n`
+            : `${sourceName ? `${sourceName} — ` : ''}zaznacz ${itemWord} (${range})${xLabel}:\n`));
 
   // =====================================================================
   // M288/A (uwaga właściciela z żywej gry): wiersze wyboru NIE są już własną
@@ -989,13 +1036,38 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       && cmd.targets.length === slotChoice.length
       && cmd.targets.every((id, i) => id === slotChoice[i])) ?? null;
   };
+  // M298/A: wybór pojedynczy trzyma dokładnie JEDNO id w `chosen` (radio),
+  // a wiersz odmowy („you may") siedzi pod wartownikiem NONE_PICK.
+  const singlePick = () => (chosen.size > 0
+    ? ([...chosen][0] === NONE_PICK ? null : [...chosen][0])
+    : undefined);
+  // M304: tłumacz instancja→definicja do dopasowania mulligan-bottom.
+  // Silnik deduplikuje kombinacje po definicjach kart (reprezentant z
+  // konkretnymi instancjami), więc wybór „drugiej kopii" musi mapować się
+  // na reprezentanta klasy — inaczej Zatwierdź milczy (klin z żywca).
+  const defOfMulliganCard = (id) => session?.state?.objects?.get(id)?.cardId ?? null;
   const currentCommand = () => (plan.cardIdsMode
-    ? commandForMulliganSelection(commands, [...chosen])
-    : sacMode
-      ? commandForSacrificeSelection(commands, { targets: [...chosen], sacrifice: sacrificeChoice })
-      : slots
-        ? commandForSlots()
-        : commandForSelection(commands, { targets: [...chosen], xValue: plan.hasX ? xValue : null }));
+    ? commandForMulliganSelection(commands, [...chosen], defOfMulliganCard)
+    : keepMode
+      ? commandForMulliganKeepSelection(commands, [...chosen][0] ?? null)
+      : castWindowMode
+        ? commandForCastWindowSelection(commands, [...chosen][0] ?? null)
+        : sacMode
+        ? commandForSacrificeSelection(commands, { targets: [...chosen], sacrifice: sacrificeChoice })
+        : slots
+          ? commandForSlots()
+          : plan.targetIdsMode
+            ? commandForProliferateSelection(commands, [...chosen])
+            : singleMode
+              // Pusty wybór (nic nie zaznaczono) NIE jest odmową — odmowę
+              // zaznacza się jawnym wierszem (NONE_PICK). Bez tej straży
+              // `undefined == null` dopasowywałoby wariant done/skip i
+              // Zatwierdź wysyłałoby odmowę mimo braku decyzji (zmierzone
+              // żywym testerem: status „Wybrano: cel” przy pustym wyborze).
+              ? (chosen.size > 0
+                ? commandForSingleTargetSelection(commands, { targetId: singlePick(), field: plan.singleField ?? null })
+                : null)
+              : commandForSelection(commands, { targets: [...chosen], xValue: plan.hasX ? xValue : null }));
 
   const pickOf = ({ id, slot }) => (slot == null
     ? chosen.has(id)
@@ -1007,19 +1079,27 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     for (const row of rows) row.handle.setChecked(pickOf(row));
   };
 
-  const addRow = (id, slot) => {
+  const addRow = (id, slot, { labelOverride = null, forceKind = null, groupOverride = undefined, cardId = null } = {}) => {
+    // M298/A: wybór pojedynczy i mulligan są JEDNOWYBOROWE — radio w grupie,
+    // a model (`chosen`) czyści się przy każdym nowym zaznaczeniu.
+    const exclusive = singleMode || keepMode || castWindowMode;
+    const kind = forceKind ?? ((typeof slot === 'number' || slot === 'sac' || exclusive) ? 'radio' : 'checkbox');
+    const group = groupOverride !== undefined ? groupOverride
+      : (typeof slot === 'number' ? `multi-target-slot-${slot}` : (slot === 'sac' ? 'multi-target-sac' : (exclusive ? 'multi-target-single' : null)));
     const handle = renderPickerRow(list, {
       id,
-      label: objectOrPlayerName(view, session, id),
-      // Pozycja celu i poświęcenie (koszt) są JEDNOWYBOROWE — radio w grupie
-      // daje wzajemne wykluczenie natywnie, bez ręcznego odznaczania sióstr.
-      kind: (typeof slot === 'number' || slot === 'sac') ? 'radio' : 'checkbox',
-      group: typeof slot === 'number' ? `multi-target-slot-${slot}` : (slot === 'sac' ? 'multi-target-sac' : null),
+      label: labelOverride ?? objectOrPlayerName(view, session, id),
+      kind,
+      group,
       rowClassName: slot == null ? 'multi-target-row' : 'multi-target-row multi-target-slot-row',
       toggleClassName: 'multi-target-toggle',
       nameClassName: 'multi-target-name',
       onToggle: (on) => {
-        if (slot == null) {
+        if (slot == null && exclusive) {
+          // Radio: zaznaczenie zastępuje wybór; odznaczenie nie zwalnia
+          // (jak w natywnym radio — wraca się tylko przez inny wiersz).
+          if (on) { chosen.clear(); chosen.add(id); }
+        } else if (slot == null) {
           if (on) chosen.add(id); else chosen.delete(id);
         } else if (slot === 'sac') {
           if (on) sacrificeChoice = id;
@@ -1031,8 +1111,11 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         refresh();
       },
       // Gracz nie ma karty do pokazania — dawny `addPeek` pomijał go w ten sam
-      // sposób (M206); nazwa zostaje wtedy zwykłym tekstem.
-      onOpenCard: isPlayer(id) ? null : onOpenCard,
+      // sposób (M206); nazwa zostaje wtedy zwykłym tekstem. M300: wiersze okien
+      // rzutu niosą cardId — nazwa otwiera podgląd karty rzutu.
+      onOpenCard: cardId != null && onOpenCardByCardId
+        ? (() => onOpenCardByCardId(cardId))
+        : ((isPlayer(id) || id === NONE_PICK || labelOverride != null) ? null : onOpenCard),
     });
     rows.push({ id, slot, handle });
   };
@@ -1066,6 +1149,16 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       ].filter(Boolean);
       if (missing.length > 0) setStatus(`Brakuje: ${missing.join(', ')}`, true);
       else setStatus(cmd ? `Wybrano: ${slotLabels[0] ?? 'cel'} + ${sacLabel}` : 'Wybór niedozwolony', !cmd);
+    } else if ((singleMode || keepMode || castWindowMode)) {
+      // M298/A: przy wyborze pojedynczym licznik „1" nic nie mówi — status
+      // pokazuje WYBRANY wiersz („Wybrano: Karta:sts-target-b (Nieprzyjaciel)").
+      if (cmd) {
+        const picked = rows.find((row) => chosen.has(row.id));
+        const label = picked?.handle?.label?.textContent ?? itemWord;
+        setStatus(`Wybrano: ${label}`, false);
+      } else {
+        setStatus('Wskaż jeden wiersz', true);
+      }
     } else if (cmd) {
       setStatus(`Wybrano ${itemWord}: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}`, false);
     } else {
@@ -1086,6 +1179,35 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       renderPickerSection(list, `${slotIndex + 1}. ${label}:`, { className: 'multi-target-slot-label' });
       for (const id of ids) addRow(id, slotIndex);
     });
+  } else if (buttonsMode) {
+    // M301/M302: tryb przyciskowy — wiersz jest PRZYCISKIEM (jeden klik = wybór),
+    // więc nie przechodzi przez addRow/radio; cardId daje osobny podgląd 🔍
+    // (jak dawna ściana przycisków, M201/C2), bo klik wiersza ma zatwierdzać.
+    (plan.rows ?? []).forEach((row, index) => {
+      const cmd = (commands ?? [])[index];
+      const wrap = choiceNode(list, 'div', 'multi-target-row enum-choice-row');
+      const button = choiceNode(wrap, 'button', 'action choice-request-option enum-choice-btn');
+      button.type = 'button';
+      // M104: sonda Żywego Testera czyta optionKey — kontrakt ściany przycisków.
+      if (cmd && button.dataset) button.dataset.optionKey = commandOptionKey(cmd);
+      // Etykiety niosą HTML (ikony many) — innerHTML jak w panelu akcji.
+      button.innerHTML = `<span class="action-label picker-name">\n${row.label ?? ''}</span>`;
+      button.addEventListener('click', () => { if (cmd) onComplete(cmd); });
+      if (row.cardId != null && onOpenCardByCardId) renderPeekButton(wrap, { cardId: row.cardId, onOpen: onOpenCardByCardId });
+    });
+  } else if (castWindowMode) {
+    // M300: okno rzutu — wiersz na każdą opcję (wariant rzutu K1/K2 albo
+    // odmowa); cardId wiersza daje podgląd kliknięciem w nazwę.
+    for (const row of plan.rows ?? []) addRow(row.id, null, { labelOverride: row.label, cardId: row.cardId ?? null });
+  } else if (keepMode) {
+    // M298/A: mulligan — wiersze z ETYKIETAMI od wywołującego („Zatrzymaj
+    // rękę (7 kart)” / „Weź mulligan”), nie z nazw obiektów.
+    for (const row of plan.rows ?? []) addRow(row.id, null, { labelOverride: row.label });
+  } else if (singleMode) {
+    // M298/A: wybór jednego celu — po wierszu na kandydata + opcjonalny
+    // wiersz odmowy („you may”: targetId null w ofercie silnika).
+    for (const id of plan.targets) addRow(id, null);
+    if (plan.allowNone) addRow(NONE_PICK, null, { labelOverride: plan.noneLabel ?? 'Nie wskazuj celu' });
   } else {
     // M257-r5/C: tryb poświęcenia dostaje NAGŁÓWKI sekcji (cele / ofiara).
     if (sacMode) renderPickerSection(list, `${slotLabels[0] ?? 'Cel'}:`, { className: 'multi-target-slot-label' });
@@ -1110,19 +1232,25 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     plus.addEventListener('click', () => { if (xValue < plan.xMax) { xValue += 1; refresh(); } });
   }
 
-  statusEl = choiceNode(host, 'div', 'picker-status multi-target-status', '');
+  // M301/M302: tryb przyciskowy nie ma statusu ani „Zatwierdź” — wiersz-przycisk
+  // wysyła komendę od razu; zostaje tylko wspólne Anuluj (ten sam helper).
+  if (!buttonsMode) {
+    statusEl = choiceNode(host, 'div', 'picker-status multi-target-status', '');
+  }
   const buttons = choiceNode(host, 'div', 'choice-request-actions');
-  confirm = choiceNode(buttons, 'button', 'primary-btn multi-target-confirm', 'Zatwierdź wybór');
-  confirm.type = 'button';
-  confirm.disabled = true;
-  confirm.addEventListener('click', () => {
-    const cmd = currentCommand();
-    if (cmd) onComplete(cmd);
-  });
+  if (!buttonsMode) {
+    confirm = choiceNode(buttons, 'button', 'primary-btn multi-target-confirm', 'Zatwierdź wybór');
+    confirm.type = 'button';
+    confirm.disabled = true;
+    confirm.addEventListener('click', () => {
+      const cmd = currentCommand();
+      if (cmd) onComplete(cmd);
+    });
+  }
   const cancel = choiceNode(buttons, 'button', 'ghost-btn multi-target-cancel', 'Anuluj');
   cancel.type = 'button';
   cancel.addEventListener('click', () => onCancel?.());
-  refresh();
+  if (!buttonsMode) refresh();
 }
 
 /** Nazwa celu: gracz („Nieprzyjaciel") albo karta na polu bitwy. */
@@ -1412,7 +1540,7 @@ export function renderEscapeExileWizard(host, { candidates, exileCount, sourceNa
 
   for (const candidate of candidates) {
     // M288/A: te same wiersze co w wizardzie walki i kreatorze celów — przez
-    // wspólny picker. Osobny przycisk „🔍 Podgląd karty" zniknął: nazwa karty
+    // wspólny picker. Osobny przycisk podglądu 🔍 zniknął: nazwa karty
     // otwiera pełny ekran (jedna konwencja dla wszystkich kreatorów).
     renderPickerRow(list, {
       id: candidate.cardId ?? candidate.id,

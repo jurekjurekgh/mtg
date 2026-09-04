@@ -33,7 +33,7 @@ import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard } from './choice-request.js';
-import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf } from './multi-target.js';
+import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf } from './multi-target.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
 function runEngineSmoke() {
@@ -361,6 +361,55 @@ function bootstrapTable() {
       showModal('choice-request');
       return;
     }
+    // M298/A (uwaga właściciela z żywej gry, 2026-09-03): proliferate
+    // (Spread the Sickness i inne) — komendy niosą `targetIds`, nie `targets`,
+    // więc multiTargetPlanOf ich nie widział i padały na ścianę przycisków
+    // (do 64 podzbiorów). Teraz ten sam kreator co cele/bloki: lista obiektów
+    // z licznikami, ptaszek, Zatwierdź; komenda wraca z legalCommands (L48).
+    const proliferatePlan = proliferatePlanOf(request.options ?? []);
+    if (proliferatePlan) {
+      const pendingProliferate = choiceView.pendingProliferate;
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: proliferatePlan,
+        commands: request.options,
+        sourceName: pendingProliferate?.sourceCardId ? session.nameOf(pendingProliferate.sourceCardId) : null,
+        onOpenCard: openCardFullscreen,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // M300 (zlecenie właściciela 2026-09-03): OKNA RZUTU (Vaan, Halo Forager,
+    // madness, rebound, suspend) — każda opcja to GOTOWY wariant rzutu
+    // (etykiety K1/K2: tryb, stun, X) albo odmowa. Wiersz na opcję + radio +
+    // Zatwierdź; plan MUSI biec przed multiTargetPlanOf, bo warianty okien
+    // niosą `targets` (multiTargetPlanOf gubił odmowę — test M300/1).
+    const castWindowPlan = castWindowPlanOf(request.options ?? []);
+    if (castWindowPlan) {
+      const opts = request.options ?? [];
+      const labels = labelChoiceOptions(opts, session, choiceView);
+      castWindowPlan.rows = opts.map((option, i) => ({
+        id: castWindowPlan.rows[i].id,
+        label: labels[i],
+        cardId: cardIdForChoiceOption(option),
+      }));
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: castWindowPlan,
+        commands: request.options,
+        intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz wariant:`,
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     const multiPlan = multiTargetPlanOf(request.options ?? []);
     if (multiPlan) {
       const sourceObject = [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
@@ -409,6 +458,59 @@ function bootstrapTable() {
         // Etykiety SEKCJI z Oracle (ADR 0002) + stały opis kosztu.
         slotLabels: [targetSpec ? targetTypeLabel(targetSpec) : 'cel', 'Poświęcenie (koszt)'],
         onOpenCard: openCardFullscreen,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // M298/A: wybór JEDNEGO celu (STS „zniszcz stwór”, ETB Bone Shreddera)
+    // padał na ścianę przycisków z mylącym ptaszkiem wyciszenia — teraz ten
+    // sam kreator: wiersze radio, podgląd nazwą, Zatwierdź. Plan poświęcenia
+    // (sacrificeCastPlanOf) ma PIERWSZEŃSTWO — grupy „cel + ofiara" też są
+    // jednocelowe, ale mają dodatkowy wymiar, którego ten plan nie widzi.
+    const singlePlan = singleTargetPlanOf(request.options ?? []);
+    if (singlePlan) {
+      const sourceObject = singlePlan.objectId == null
+        ? null
+        : [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
+          ...(choiceView.zones?.graveyard ?? []), ...(choiceView.zones?.exile ?? [])]
+          .find((o) => o.id === singlePlan.objectId);
+      // ETB (resolve_trigger_target) nie ma objectId — źródło z pendingu.
+      const triggerCardId = singlePlan.objectId == null ? choiceView.pendingTriggerTarget?.cardId : null;
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: singlePlan,
+        commands: request.options,
+        sourceName: sourceObject?.cardId ? session.nameOf(sourceObject.cardId)
+          : (triggerCardId ? session.nameOf(triggerCardId) : null),
+        onOpenCard: openCardFullscreen,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // M298/A: mulligan „zatrzymaj rękę / weź mulligan” — dwa wiersze radio
+    // zamiast dwóch wielkich przycisków (ten sam kreator, L48 bez zmian).
+    const mulliganKeep = mulliganKeepPlanOf(request.options ?? []);
+    if (mulliganKeep) {
+      // Widok niesie też UKRYTE karty przeciwnika (`hidden: true`) — licznik
+      // „Zatrzymaj rękę (N kart)” dotyczy wyłącznie własnej ręki (zmierzone
+      // żywym testerem: bez filtra wychodziło 14 = 7 swoich + 7 wroga).
+      const handSize = (choiceView.zones?.hand ?? [])
+        .filter((o) => o.controllerId === choiceView.playerId).length;
+      mulliganKeep.rows = [
+        { id: 'keep', label: `Zatrzymaj rękę (${handSize} ${polishPluralCount(handSize, 'karta', 'karty', 'kart')})` },
+        { id: 'mulligan', label: 'Weź mulligan' },
+      ];
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: mulliganKeep,
+        commands: request.options,
+        intro: 'Mulligan — wybierz:',
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
         onCancel: () => hideModal('choice-request'),
       });
@@ -578,6 +680,38 @@ function bootstrapTable() {
           hideModal('choice-request');
           play(cmd);
         },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // M301→M302 (decyzje właściciela 2026-09-03): WSPÓLNY HELPER domyka
+    // WSZYSTKIE pozostałe wybory — plan przyciskowy jest ogólny (bez listy
+    // rodzin): małe enumeracje (kolory, tryby, tak/nie…), search_choice,
+    // undercity, grupy „1 kandydat + odmowa” (Jill) i każdy przyszły kształt,
+    // którego nie wziął dedykowany plan. Wiersz-przycisk: jeden klik =
+    // DOKŁADNA komenda z legalCommands (L48), wspólne intro/Anuluj/podgląd
+    // kart/klucz sondy (M104). Kolejność CELOWO ostatnia: wizardy typowane
+    // (scry/surveil/index, walka, podział obrażeń, escape) i plany celów mają
+    // pierwszeństwo — stąd test M302/4 pilnuje tej kolejności.
+    const buttonsPlan = buttonsPlanOf(request.options ?? []);
+    if (buttonsPlan) {
+      const opts = request.options ?? [];
+      const labels = labelChoiceOptions(opts, session, choiceView);
+      buttonsPlan.rows = opts.map((option, i) => ({
+        id: buttonsPlan.rows[i].id,
+        label: labels[i],
+        cardId: cardIdForChoiceOption(option),
+      }));
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: buttonsPlan,
+        commands: request.options,
+        intro: choiceGroupTitle(request, session, choiceView),
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
         onCancel: () => hideModal('choice-request'),
       });
       showModal('choice-request');

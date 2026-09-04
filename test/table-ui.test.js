@@ -55,6 +55,8 @@ class MiniEl {
   addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
 
   click() { for (const fn of this.listeners.click ?? []) fn({}); }
+  /** Odpala listenery zdarzenia innego niż click (np. `change` ptaszka). */
+  emit(type) { for (const fn of this.listeners[type] ?? []) fn({}); }
 }
 
 function installMiniDom() {
@@ -156,6 +158,28 @@ function pickActionButton(actions) {
   }
   const choicePanel = dom.get('choice-request');
   if (choicePanel.className === 'modal active') {
+    // M298 (uwaga A): mulligan-keep, wybór jednego celu i proliferate siedzą
+    // teraz we wspólnym pickerze (radio/checkbox + Zatwierdź), nie w liście
+    // przycisków — najpierw zaznacz pierwszy niezaznaczony wiersz, potem
+    // zatwierdź (klik w samo Zatwierdź bez wyboru nic nie robi).
+    const walk = (el, acc = []) => { for (const c of el.children ?? []) { acc.push(c); walk(c, acc); } return acc; };
+    const bodyTree = walk(dom.get('choice-request-body'));
+    const toggle = bodyTree.find((el) => el.tagName === 'input'
+      && /(^| )multi-target-toggle( |$)/.test(String(el.className)) && !el.checked);
+    if (toggle) {
+      toggle.checked = true;
+      toggle.emit('change');
+      return bodyTree.find((el) => el.tagName === 'button'
+        && /multi-target-confirm/.test(String(el.className))) ?? null;
+    }
+    // M301: wiersze-przyciski małych enumeracji siedzą w pickera wierszu
+    // (div > button), więc przycisk bywa o poziom głębiej niż dawna ściana
+    // przycisków — szukamy `.choice-request-option` po CAŁYM drzewie (tak jak
+    // Żywy Tester: `$$('#choice-request .choice-request-option')`).
+    const optionButtons = bodyTree.filter((el) => el.tagName === 'button'
+      && /(^| )choice-request-option( |$)/.test(String(el.className))
+      && (el.listeners.click ?? []).length > 0);
+    if (optionButtons.length > 0) return optionButtons[0];
     const choiceButtons = dom.get('choice-request-body').children
       .flatMap((child) => child.children ?? [])
       .filter((child) => (child.listeners.click ?? []).length > 0);
@@ -1045,10 +1069,12 @@ test('M73c/5: po zakończeniu partii wskaźnik pokazuje zwycięzcę', () => {
   globalThis.window.confirm = () => true;
   try {
     // Rozstrzygnij mulligan (jeśli otwarty), żeby odsłonić panel akcji.
-    const choice = dom.get('choice-request');
-    if (choice.className === 'modal active') {
-      const first = dom.get('choice-request-body').children[0];
-      if (first) first.click();
+    // M298: mulligan-keep to picker (radio + Zatwierdź) — steruje nim
+    // pickActionButton (zaznacz pierwszy wiersz, zatwierdź).
+    for (let i = 0; i < 3 && dom.get('choice-request').className === 'modal active'; i += 1) {
+      const btn = pickActionButton(dom.get('actions'));
+      if (!btn) break;
+      btn.click();
     }
     let concede = null;
     for (let i = 0; i < 20 && !concede; i += 1) {

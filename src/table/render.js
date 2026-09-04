@@ -2388,7 +2388,12 @@ export function commandLabel(cmd, session, view) {
       const kickerPart = kickerDef
         ? ` + kicker ${manaCostHtml(costSymbols(kickerDef.cost, kickerDef.colors))}`
         : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
+      // Audyt PR #94 / K2 (M91/uwaga D, klasa przed tym PR przy rzucie z ręki):
+      // tryb „… put a stun counter on ONE OF THEM” mnoży warianty per cel pod
+      // stun (legalModeCasts) — bez nazwy tego celu przyciski o różnych
+      // skutkach wyglądają identycznie.
+      const stunPart = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -2839,7 +2844,15 @@ export function commandLabel(cmd, session, view) {
       // wygląda identycznie (L29).
       if (cmd.decline || cmd.objectId == null) return 'Zrezygnuj (nie płać {X})';
       const gfcTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      return `Rzuć z grobu za {${cmd.xValue ?? '?'}}: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${gfcTargets ? ` → cel: ${gfcTargets}` : ''}`;
+      // Audyt PR #94 / K1 (M91/uwaga D): po fix F okno grobu wystawia tryby —
+      // bez nazwy trybu „Winda” i puste „Schody” (Aerith Rescue Mission)
+      // nazywają się identycznie, a warianty różniące się celem pod stun
+      // counter muszą mówić, KTÓRY stwór dostaje licznik.
+      const gfcCard = obj(cmd.objectId);
+      const gfcMode = (cmd.modeIndex != null && gfcCard?.spell?.modes) ? gfcCard.spell.modes[cmd.modeIndex] : null;
+      const gfcModeName = gfcMode?.name ? ` — ${gfcMode.name}` : '';
+      const gfcStun = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
+      return `Rzuć z grobu za {${cmd.xValue ?? '?'}}: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${gfcModeName}${gfcTargets ? ` → cel: ${gfcTargets}` : ''}${gfcStun}`;
     }
     case 'resolve_madness_cast': {
       // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —
@@ -2874,8 +2887,11 @@ export function commandLabel(cmd, session, view) {
       // gracz dla Curse), a wariant bestow płaci koszt bestow — bez dopisku
       // dwa warianty aury nazywają się identycznie (M91/uwaga D).
       const bestowName = cmd.bestow ? ' (bestow)' : '';
+      // Audyt PR #94 / K2 (M91/uwaga D): warianty różniące się wyłącznie
+      // celem pod stun counter muszą nazywać ten wybór (jak `cast_spell`).
+      const stunName = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
       return cmd.cast
-        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${modeName}${bestowName}${costName}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}`
+        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${modeName}${bestowName}${costName}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}${stunName}`
         : 'Zrezygnuj — stwórz token Skarb (Treasure)';
     }
     case 'resolve_reveal_choice': {
