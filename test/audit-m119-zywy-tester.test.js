@@ -101,8 +101,11 @@ test('M119/Z3: warianty mulligana o tym samym składzie NIE dublują się', () =
   assert.equal(options[0].cardIds.length, 3);
 });
 
-test('M119/Z3: enumeracja mulligana ma cap (lekcja L19)', () => {
+test('M119/Z3: enumeracja mulligana ma cap pokrywający pełną przestrzeń (L19 + M304)', () => {
   // Ręka z samych RÓŻNYCH kart nie daje się zdeduplikować — wtedy broni cap.
+  // M304 (klin z Żywego Testera): cap musi pokrywać CAŁĄ przestrzeń decyzji,
+  // inaczej legalne wybory nie mają komendy i kreator milczy. Dla ręki ≤7
+  // kart maksimum to C(7,3)=C(7,4)=35 — cap 32 obcinał 3 kombinacje.
   const registry = createCardRegistry();
   const state = createGameState({ seed: 9, players: [{ id: 'p1' }, { id: 'p2' }] });
 
@@ -130,8 +133,8 @@ test('M119/Z3: enumeracja mulligana ma cap (lekcja L19)', () => {
 
   const options = playerView(state, 'p1').legalCommands
     .filter((cmd) => cmd.type === 'resolve_mulligan_bottom_choice');
-  assert.ok(options.length <= 32, `cap 32 (L19), było ${options.length}`);
-  assert.ok(options.length > 1, 'różne karty = realnie różne decyzje, muszą zostać');
+  assert.ok(options.length <= 35, `cap 35 = pełna przestrzeń C(7,3) (L19 + M304), było ${options.length}`);
+  assert.equal(options.length, 35, 'różne karty = pełna przestrzeń decyzji bez dziur');
 });
 
 // =============================================================================
