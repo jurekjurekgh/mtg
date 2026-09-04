@@ -92,11 +92,12 @@ ADR 0020/0021: PR → audyt ostatniego scalonego PR → pętla jakości.
 
 ### Etap 4 — Domknięcie sesji
 
-- [ ] `npm test`, `npm run build`, `npm run test:all` zielone (brama PR).
-- [ ] Wszystko wypchnięte; `git status` czysty.
-- [ ] `docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-09-04.md`,
+- [x] `npm test`, `npm run build`, `npm run test:all` zielone (brama PR):
+      4402/4402, 59 modułów / 3226,2 kB, 4412/4412.
+- [x] Wszystko wypchnięte; `git status` czysty.
+- [x] `docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-09-04.md`,
       liczby README (L92), opis PR kumulacyjnie.
-- [ ] Blok przekazania w czacie (ADR 0013 §3).
+- [x] Blok przekazania w czacie (ADR 0013 §3).
 
 ## Ryzyka i pułapki
 
