@@ -24,13 +24,13 @@ ADR 0020/0021: PR → audyt ostatniego scalonego PR → pętla jakości.
 ### Etap 0 — PR na starcie (ADR 0020 A)
 
 - [x] `git push -u origin arena/01a06dd7-mtg`.
-- [ ] PR `arena/01a06dd7-mtg` → `main` otwarty na GitHubie.
-- [ ] Plan widoczny w repo i w opisie PR.
+- [x] PR `arena/01a06dd7-mtg` → `main` otwarty na GitHubie (#96).
+- [x] Plan widoczny w repo i w opisie PR.
 - Kryterium: PR istnieje PRZED jakąkolwiek zmianą kodu.
 
 ### Etap 1 — Audyt PR #95
 
-- [ ] Diff przczytany **per plik**, następująco:
+- [x] Diff przczytany **per plik**, następująco:
   - `src/engine/combat.js` — łańcuch wyników komendy (M296), model
     kupowanego deathtouch (M297), brak regresji obrażeń/kroku walki;
   - `src/engine/game-state.js` — bramki escape/naprawy wyników, `modeExtra`,
@@ -46,13 +46,21 @@ ADR 0020/0021: PR → audyt ostatniego scalonego PR → pętla jakości.
     commitów;
   - `docs/**` — czy opisywane liczby/stan zgadzają się z kodem
     (L56/L92), czy LESSONS/ENGINE_MILESTONES nie dublują faktów.
-- [ ] `npm test` i `npm run build` na `main`-as-base: zielone.
-- [ ] Dopuszczalne potwierdzenie: `node --test test/bot-benchmark.test.js`
+- [x] `npm test` i `npm run build` na `main`-as-base: zielone (4402/3226,2 kB).
+- [x] Dopuszczalne potwierdzenie: `node --test test/bot-benchmark.test.js`
   (bez pełnego B0).
-- [ ] Raport w `docs/audits/AUDYT_PR95_2026-09-04.md`.
+- [x] Raport w `docs/audits/AUDYT_PR95_2026-09-04.md`.
 - [ ] Wynik w opisie PR.
 - Kryterium: każdy zmieniony plik ma albo akceptację, albo znalezisko z
   repro/naprawą; brak znaleziska w pliku → jawny wpis „sprawdzone, bez zmian”.
+
+#### Wynik audytu (2026-09-04)
+
+- Werdykt: PR #95 jakościowo dobry; kod bez zastrzeżeń regułowych.
+- Znaleziska F1/F2 (dokumentacyjne, L92): README i handoff 2026-09-03
+  podają nieaktualne liczby (README 4378 / 3208,9 kB; realnie 4402/4412
+  i 3226,2 kB). Naprawa: README w etapie 4 + nowy handoff 2026-09-04.
+- Szczegóły: `docs/audits/AUDYT_PR95_2026-09-04.md`.
 
 ### Etap 2 — Naprawy znalezisk (jeśli są)
 
