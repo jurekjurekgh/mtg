@@ -10478,6 +10478,33 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['offspring: token 1/1 z cechami druku (bez liczników/atachamentów); „enters\"/„enters with" kopii działają (ruling BLB)'],
   }),
 
+  // 595HOB Óin the Brave (HOB, Śródziemie) {1}{R} 1/3 — Storied;
+  // while enduring story: +1/+0 and haste; {1},{T},Discard a card: Draw.
+  defineCard({
+    id: 'oin-the-brave', name: 'Óin the Brave', set: 'HOB',
+    types: ['Legendary', 'Creature'], subtypes: ['Dwarf', 'Warrior'], colors: ['R'],
+    power: 1, toughness: 3, manaCost: 2,
+    oracleText: "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, Óin gets +1/+0 and has haste.\n{1}, {T}, Discard a card: Draw a card.",
+    imageUri: 'https://cards.scryfall.io/large/front/9/9/9984b9ef-e81c-48f4-aa33-0504171a2d3c.jpg?1785496200',
+    abilities: [
+      createAbility({ type: ABILITY_TYPE.static, storied: true }),
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { enduringStory: true },
+        pump: { power: 1, toughness: 0 },
+        keywords: ['haste'],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, tap: true, colors: ['R'], discardCard: true },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 595, plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Storied: enduring story leży na GRACZU i zostaje do końca gry (brak triggera); liczy się każdy permanent raz (rulingi HOB 2026-06-29)'],
+  }),
+
   // 598OTJ Sheriff of Safe Passage (OTJ, Śródziemie) {2}{W} 0/0 — enters with
   // a +1/+1 counter plus one for each other creature you control; Plot {1}{W}.
   defineCard({

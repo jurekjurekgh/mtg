@@ -88,7 +88,7 @@ export function createGameState({ seed, players }) {
   const state = {
     seed,
     starterId,
-    players: players.map((p) => ({ id: p.id, name: p.name ?? p.id, life: 20, commanderCasts: 0, speed: 0 })),
+    players: players.map((p) => ({ id: p.id, name: p.name ?? p.id, life: 20, commanderCasts: 0, speed: 0, enduringStory: false })),
     turn: initialTurn(starterId),
     objects: new Map(),
     zones: Object.fromEntries(ZONES.map((zone) => [zone, []])),

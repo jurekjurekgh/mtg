@@ -6,6 +6,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { legalBlockerOptions } from '../src/engine/combat.js';
+import { effectiveKeywords, effectivePower } from '../src/engine/permanents.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -276,6 +277,93 @@ test('B53: Rust-Shield Rampager — bloker o mocy 2 nie może blokować, o mocy 
   for (const assignment of options) {
     assert.ok(!(assignment.ram ?? []).includes('weak'), 'bloker 2/2 nie może blokować');
   }
+});
+
+// =====================================================================
+// Óin the Brave (HOB) — Storied: enduring story na graczu + haste/+1/+0
+// =====================================================================
+test('B53: Óin the Brave — dane Oracle i deskryptory Storied', () => {
+  const def = REGISTRY.get('oin-the-brave');
+  assert.deepEqual(def.types, ['Legendary', 'Creature']);
+  assert.deepEqual(def.subtypes, ['Dwarf', 'Warrior']);
+  assert.deepEqual(def.colors, ['R']);
+  assert.equal(def.power, 1);
+  assert.equal(def.toughness, 3);
+  assert.equal(def.manaCost, 2);
+  assert.equal(def.artId, 595);
+  assert.equal(def.plan, 'Śródziemie');
+  assert.equal(def.abilities[0].type, 'static');
+  assert.equal(def.abilities[0].storied, true);
+  assert.deepEqual(def.abilities[1].condition, { enduringStory: true });
+  assert.deepEqual(def.abilities[1].pump, { power: 1, toughness: 0 });
+  assert.deepEqual(def.abilities[1].keywords, ['haste']);
+  assert.deepEqual(def.abilities[2].cost, { mana: 1, tap: true, colors: ['R'], discardCard: true });
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+});
+
+test('B53: Óin — bez enduring story 1/3 bez haste; z 2 artefaktami 2/3 haste', () => {
+  const state = game();
+  addPermanent(state, 'oin', 'oin-the-brave', 'p1');
+  const alone = state.objects.get('oin');
+  assert.equal(effectivePower(alone, state), 1);
+  assert.ok(!effectiveKeywords(alone, state).includes('haste'));
+  assert.notEqual(state.players.find((p) => p.id === 'p1').enduringStory, true);
+
+  addObject(state, {
+    id: 'art1', instanceId: 'i-art1', cardId: 'test-art1', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'artifact', manaCost: 1, abilities: [], keywords: [],
+    subtypes: [], types: ['Artifact'], colors: [],
+  });
+  addObject(state, {
+    id: 'art2', instanceId: 'i-art2', cardId: 'test-art2', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'artifact', manaCost: 1, abilities: [], keywords: [],
+    subtypes: [], types: ['Artifact'], colors: [],
+  });
+  // Odczyt statyk (lub SBA) ustawia enduring story.
+  assert.equal(effectivePower(state.objects.get('oin'), state), 2);
+  assert.ok(effectiveKeywords(state.objects.get('oin'), state).includes('haste'));
+  assert.equal(state.players.find((p) => p.id === 'p1').enduringStory, true);
+});
+
+test('B53: Óin — enduring story zostaje po utracie permanentu', () => {
+  const state = game();
+  addPermanent(state, 'oin', 'oin-the-brave', 'p1');
+  addObject(state, { id: 'art1', instanceId: 'i-art1', cardId: 'test-art1', controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'artifact', manaCost: 1, abilities: [], keywords: [], subtypes: [], types: ['Artifact'], colors: [] });
+  addObject(state, { id: 'art2', instanceId: 'i-art2', cardId: 'test-art2', controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'artifact', manaCost: 1, abilities: [], keywords: [], subtypes: [], types: ['Artifact'], colors: [] });
+  assert.equal(effectivePower(state.objects.get('oin'), state), 2);
+  state.objects.set('art1', Object.freeze({ ...state.objects.get('art1'), zone: 'graveyard' }));
+  state.zones.battlefield = state.zones.battlefield.filter((id) => id !== 'art1');
+  state.zones.graveyard.push('art1');
+  assert.equal(state.players.find((p) => p.id === 'p1').enduringStory, true, 'etykieta trwa');
+  assert.equal(effectivePower(state.objects.get('oin'), state), 2);
+  assert.ok(effectiveKeywords(state.objects.get('oin'), state).includes('haste'));
+});
+
+test('B53: Óin — {1},{T}, odrzuć kartę: dobierz', () => {
+  const state = game();
+  addPermanent(state, 'oin', 'oin-the-brave', 'p1');
+  addMana(state, 'p1', 1, { colors: ['R'] });
+  addObject(state, {
+    id: 'tmp', instanceId: 'i-tmp', cardId: 'test-tmp', controllerId: 'p1', ownerId: 'p1',
+    zone: 'hand', kind: 'card', manaCost: 0, abilities: [], keywords: [],
+    subtypes: [], types: [], colors: [],
+  });
+  addObject(state, {
+    id: 'top', instanceId: 'i-top', cardId: 'test-top', controllerId: 'p1', ownerId: 'p1',
+    zone: 'library', kind: 'card', manaCost: 1, abilities: [], keywords: [],
+    subtypes: [], types: [], colors: [],
+  });
+  const before = state.zones.hand.length;
+  const activate = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'oin' && c.abilityIndex === 2);
+  assert.ok(activate, 'oferta aktywacji {1},{T},Discard');
+  assert.ok(execute(state, activate).ok);
+  const discard = commands(state).find((c) => c.type === 'resolve_discard_choice' && c.cardId === 'tmp');
+  assert.ok(discard, 'koszt odrzucenia wybiera kartę');
+  assert.ok(execute(state, discard).ok);
+  assert.equal(state.objects.get('oin').tapped, true, 'koszt tap zapłacony');
+  resolveStack(state);
+  assert.equal(state.zones.hand.length, before, 'odrzucenie 1 + dobór 1');
 });
 
 // =====================================================================

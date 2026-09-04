@@ -443,4 +443,5 @@ export const MANA_COSTS = {
   "ghirapur-gearcrafter": "{2}{R}",
   "rust-shield-rampager": "{3}{G}",
   "sheriff-of-safe-passage": "{2}{W}",
+  "oin-the-brave": "{1}{R}",
 };

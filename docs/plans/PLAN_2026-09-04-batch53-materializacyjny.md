@@ -85,6 +85,24 @@ bez force push), **ADR 0028** (rulingi ściągnięte przy karcie).
       + bloker 2/2 odrzucony a 3/3 dopuszczony (legalBlockerOptions).
 - [x] Pomiar: `npm test` **4417/4417**, `npm run build` **59 modułów / 3241,3 kB**.
 
+## Transza 4 — Óin the Brave (595 HOB, Storied)
+
+- [x] `defineCard` + `MANA_COSTS` + `tools/collection-art-ids.csv` (595).
+- [x] Generyczny `Storied` (abilities.js): statyczna zdolność `storied: true`
+      + warunek statyczny `condition.enduringStory` (permanents.js) z etykietą
+      NA GRACZU (`player.enduringStory`) — raz nadana, trwa do końca gry.
+- [x] `hasEnduringStory` liczy artefakty/legendy/Sagi RAZ per permanent i
+      ustawia etykietę w `runStateBasedActions` (nie trigger, nie stos;
+      rulingi HOB 2026-06-29).
+- [x] `defineCard`: Storied + +1/+0/haste (as long) + `{1},{T},Discard a
+      card: Draw a card` (istniejący koszt `discardCard`).
+- [x] `decks/srodziemie.txt` przez generator (ADR 0023).
+- [x] `test/real-cards-batch53.test.js`: sanity danych, 1/3 bez story →
+      2/3+haste przy 3 kwalifikowanych, trwałość po utracie, aktywacja
+      `{1},{T}` z odrzuceniem.
+- [x] Pomiar: `npm test` **4421/4421**, `npm run build` **59 modułów / 3245,5 kB**.
+
+## Etap 1 — dane kart (ADR 0010 §2a)
 
 - [ ] 10 × `docs/cards/scryfall-<slug>.json` (uproszczony kształt wg
       `HOW_TO_ADD_CARD.md` + `rulings`/`rulingsSource`/`rulingsPobrano`).
