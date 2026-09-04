@@ -80,6 +80,9 @@ export function gameObjectDataOf(card) {
     // Kicker (CR 702.33, Kor Sanctifiers): opcjonalny dodatkowy koszt rzutu
     // — wariant `kicked` komendy cast_permanent (resources.castPermanent).
     if (card.kicker) data.kicker = card.kicker;
+    // Offspring (BLB, Rust-Shield Rampager): jak kicker, ale z ETB-triggerem
+    // tokenu-kopii; deskryptor musi dojść na obiekt gry (L21).
+    if (card.offspring) data.offspring = card.offspring;
     // M113: warunkowa obniżka kosztu permanentu (Academy Journeymage).
     if (card.costReduction) data.costReduction = card.costReduction;
     // Adventure (CR 715, Gray Slaad): alternatywny rzut czaru z ręki, po

@@ -65,7 +65,26 @@ bez force push), **ADR 0028** (rulingi ściągnięte przy karcie).
       (pusty stół) oraz 3 liczniki (dwóch sojuszników).
 - [x] Pomiar: `npm test` **4413/4413**, `npm run build` **59 modułów / 3233,8 kB**.
 
-## Etap 1 — dane kart (ADR 0010 §2a)
+## Transza 3 — Rust-Shield Rampager (591 BLB, Offspring)
+
+- [x] `defineCard` + `MANA_COSTS` + `tools/collection-art-ids.csv` (591).
+- [x] Deskryptor `offspring` `{cost, colors}` (registry/materialize/identity/
+      game-state/resources) — wzorzec kickera (CR 702.16b?); `cast_permanent`
+      z `offspring: true` sumuje koszt, dodaje pipy i flagę `wasOffspring`;
+      `legalCommands` oferuje wariant tylko gdy stać na dopłatę.
+- [x] Generyczny efekt `create_offspring_token` (effects.js): 1/1 token-kopia
+      WARTOŚCI Z DRUKU (bez liczników/aur/atachamentów — ruling BLB);
+      dziedziczy „enters"/„enters with", station/saga/transformTo.
+- [x] `condition.wasOffspring` (triggers.js) — trigger tylko u spłaconego rzutu.
+- [x] Statyczna restrykcja `cantBeBlockedByPower` (abilities/combat)
+      — bloker o efektywnej mocy <= próg nie może blokować (legalBlockerOptions).
+- [x] `createBattlefieldToken` przenosi `entersWithCounters/If` na token-kopię.
+- [x] PL etykieta `create_offspring_token` (strażnik M122).
+- [x] `node tools/generate-plan-decks.mjs` → `decks/worek-basni.txt`.
+- [x] `test/real-cards-batch53.test.js`: sanity danych + bez/Offspring 1/1
+      + bloker 2/2 odrzucony a 3/3 dopuszczony (legalBlockerOptions).
+- [x] Pomiar: `npm test` **4417/4417**, `npm run build` **59 modułów / 3241,3 kB**.
+
 
 - [ ] 10 × `docs/cards/scryfall-<slug>.json` (uproszczony kształt wg
       `HOW_TO_ADD_CARD.md` + `rulings`/`rulingsSource`/`rulingsPobrano`).

@@ -10453,6 +10453,31 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 591BLB Rust-Shield Rampager (BLB, Bloomburrow) {3}{G} 4/4 — Offspring {2};
+  // can't be blocked by creatures with power 2 or less.
+  defineCard({
+    id: 'rust-shield-rampager', name: 'Rust-Shield Rampager', set: 'BLB',
+    types: ['Creature'], subtypes: ['Raccoon', 'Warrior'], colors: ['G'],
+    power: 4, toughness: 4, manaCost: 4,
+    oracleText: "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\\nThis creature can't be blocked by creatures with power 2 or less.",
+    imageUri: 'https://cards.scryfall.io/large/front/c/9/c96b01f5-83de-4237-a68d-f946c53e31a6.jpg?1783910806',
+    offspring: { cost: 2, colors: [] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        cantBeBlockedByPower: 2,
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', condition: { wasOffspring: true } },
+        effect: { type: 'create_offspring_token' },
+      }),
+    ],
+    artId: 591, plan: 'Bloomburrow',
+    support: { status: 'supported', limitations: [] },
+    notes: ['offspring: token 1/1 z cechami druku (bez liczników/atachamentów); „enters\"/„enters with" kopii działają (ruling BLB)'],
+  }),
+
   // 598OTJ Sheriff of Safe Passage (OTJ, Śródziemie) {2}{W} 0/0 — enters with
   // a +1/+1 counter plus one for each other creature you control; Plot {1}{W}.
   defineCard({

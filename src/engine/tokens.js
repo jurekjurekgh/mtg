@@ -77,7 +77,7 @@ export function nextCopyNumber(state, name) {
   return max + 1;
 }
 
-export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, toxic = null, transformTo = null, frontFaceId = null, station = null, saga = null, tapped = false, copyNumber = null, manaCost = 0 }) {
+export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, toxic = null, transformTo = null, frontFaceId = null, station = null, saga = null, tapped = false, copyNumber = null, manaCost = 0, entersWithCounters = null, entersWithCountersIf = null }) {
   if (!state || !state.players.some((p) => p.id === controllerId)) throw new Error('Nieznany kontroler tokenu');
   if (!cardId || !name) throw new TypeError('Token wymaga cardId i nazwy');
   // Token niebędący stworem (np. Treasure — artefakt) nie ma statystyk:
@@ -100,6 +100,10 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     // Właścicielem tokenu jest gracz, pod czyją kontrolą wszedł na pole bitwy
     // (CR 111.2) — istotne przy efektach „creatures they own".
     ownerId: controllerId,
+    // M202/Offspring: token-kopia może dziedziczyć „enters with" (CR 707.2
+    // — wartości kopiowalne) i musi je aplikować po wejściu.
+    ...(entersWithCounters ? { entersWithCounters } : {}),
+    ...(entersWithCountersIf ? { entersWithCountersIf } : {}),
     // CR 111: jawny znacznik tokenu — SBA CR 704.5e usuwa token, który
     // znalazł się poza polem bitwy.
     isToken: true,

@@ -1424,6 +1424,39 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     });
     return;
   }
+  // Offspring (BLB, Rust-Shield Rampager, CR 702.16x?): „When this creature
+  // enters, create a 1/1 token copy of it." Token kopia druk źródła (nie
+  // liczniki/atachamenty/efekty poza drukiem — ruling WotC); dziedziczy
+  // zdolności „enters" i „enters with" (ruling: będzie działać), więc
+  // kopiujemy też entersWithCounters/If. Zawsze 1/1, niezależnie od P/T
+  // oryginału po buffach.
+  if (effect.type === 'create_offspring_token') {
+    const src = state.objects.get(sourceObject.id);
+    if (!src || src.zone !== 'battlefield' || src.kind !== 'creature') return;
+    const ctrl = src.controllerId;
+    const copyName = src.cardName ?? src.cardId ?? 'Copy';
+    const token = createBattlefieldToken(state, ctrl, {
+      cardId: src.cardId, name: copyName,
+      copyNumber: nextCopyNumber(state, copyName),
+      kind: 'creature', power: 1, toughness: 1,
+      colors: [...(src.colors ?? [])],
+      types: [...(src.types ?? [])],
+      subtypes: [...(src.subtypes ?? [])],
+      keywords: [...(src.keywords ?? [])],
+      abilities: [...(src.abilities ?? [])],
+      manaCost: copyManaValueOf(src),
+      ...(src.entersWithCounters ? { entersWithCounters: src.entersWithCounters } : {}),
+      ...(src.entersWithCountersIf ? { entersWithCountersIf: src.entersWithCountersIf } : {}),
+      ...(src.station ? { station: src.station } : {}),
+      ...(src.saga ? { saga: src.saga } : {}),
+      ...(src.transformTo ? { transformTo: src.transformTo } : {}),
+      ...(src.transformTo && src.frontFaceId ? { frontFaceId: src.frontFaceId } : {}),
+    });
+    // „As [this creature] enters" / „enters with" kopii działają (ruling
+    // Offspring) — liczniki wejścia aplikujemy jak przy zwykłym permanencie.
+    applyEnterCounters(state, token.id);
+    return;
+  }
   if (effect.type === 'return_source_from_graveyard_to_hand') {
     // Furious Forebear: po zapłacie {1}{W} karta wraca z grobu na rękę
     // właściciela (CR 400.7 — nowy obiekt).

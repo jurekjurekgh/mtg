@@ -181,6 +181,12 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.wasKicked) {
     return Boolean(sourceObject?.wasKicked);
   }
+  // Offspring (BLB, Rust-Shield Rampager): trigger „when this creature
+  // enters, create a 1/1 token copy" istnieje tylko u stwora rzuconego
+  // z opłaconym kosztem offspring (flaga wasOffspring na permanencie).
+  if (condition.wasOffspring) {
+    return Boolean(sourceObject?.wasOffspring);
+  }
   // M67 (Homicidal Brute — tył Civilized Scholar): „At the beginning of your
   // end step, if this creature DIDN'T ATTACK this turn, tap this creature,
   // then transform it." — flaga attackedThisTurn na atakujących (declareAttackers),

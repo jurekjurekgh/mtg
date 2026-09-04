@@ -1010,6 +1010,7 @@ function describeEffect(e) {
     explore: () => 'explore',
     investigate: () => 'investigate (stwórz token Clue)',
     create_copy_token: () => 'stwórz token-kopię artefaktu (haste, exile na koniec tury)',
+    create_offspring_token: () => 'stwórz kopia (Offspring) — 1/1 token-kopię tego stwora (wartości z druku)',
     gain_control_until_end_of_turn: () => 'przejmij kontrolę do końca tury, odkręć i haste',
     destroy_equipment_attached: () => 'zniszcz cały wyposażony Equipment',
     prevent_combat_damage_except_enchanted: () => 'prewencja obrażeń bojowych (poza zaczarowanymi i enchantment-creatures)',

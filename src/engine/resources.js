@@ -689,7 +689,7 @@ export function canPayMadnessCost(state, playerId, object) {
   return hasColorRequirements(state, playerId, requirements);
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, abilityWindowCast = false } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, offspring = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, abilityWindowCast = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
@@ -787,6 +787,11 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // dodatkowy, CR 601.2f — jak koszty alternatywne).
   if (kicked && !object.kicker) throw new Error('Ta karta nie ma mechaniki kicker');
   const kicker = kicked ? (object.kicker ?? null) : null;
+  // Offspring (BLB, Rust-Shield Rampager): „You may pay an additional {2} as
+  // you cast this spell" — dodatkowy koszt, jak kicker; przy opłaceniu
+  // permanent dostaje wasOffspring, a ETB-trigger karty tworzy 1/1 token-kopię.
+  if (offspring && !object.offspring) throw new Error('Ta karta nie ma mechaniki offspring');
+  const offspringPaid = offspring ? (object.offspring ?? null) : null;
   // M69 (Security Rhox): „You may pay {R}{G} rather than pay this spell's mana
   // cost. Spend only mana produced by Treasures to cast it this way." — koszt
   // ALTERNATYWNY (CR 601.2b), bez redukcji generycznej; wyklucza morph/kicker/
@@ -832,7 +837,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // kosztu many (3 za {2}{W/P} maną; 2 + 2 życia za wariant życiowy).
   // Wzór dotychczasowy `cost + (phyrexian - lifePaid)` zakładał, że manaCost
   // symboli NIE zawiera (stare dane: Porcelain manaCost=2).
-  const totalMana = cost - lifePaid + (kicker?.cost ?? 0);
+  const totalMana = cost - lifePaid + (kicker?.cost ?? 0) + (offspringPaid?.cost ?? 0);
   // Opłacalność liczona po MANIE PRODUKOWALNEJ (pula + nietapnięte landy) —
   // spendMana sam do-tapuje brakujące landy. Koszt alternatywny ze Skarbów
   // ma własną walidację (treasureManaAvailable) poniżej.
@@ -864,6 +869,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Kicker dodaje pipy kolorów do wymagań (Kor Sanctifiers: {W} + kicker {W}
   // = dwa pipy białe); walidacja dotyczy całej sumy PRZED mutacją.
   const kickerPips = (kicker?.colors ?? []).map((color) => [color]);
+  const offspringRequirements = (offspringPaid?.colors ?? []).map((color) => [color]);
   // Morph face-down (CR 702.36): koszt {3} jest BEZBARWNY — pipy karty nie
   // obowiązują (root cause: face-down Monastery Flock wymagał {U} z powodu
   // pipów karty; cicha zła płatność w consumeManaPool to maskowała).
@@ -874,7 +880,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     ? altCostColors
     : treasureAltCost
       ? (treasureAltCost.colors ?? []).map((color) => [color])
-      : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
+      : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips, ...offspringRequirements];
   if (!faceDown && !plotted && !freeImpulse && !warpCast && !madnessCast && !treasureAltCost && !hasColorRequirements(state, playerId, requirements)) {
     throw new Error('Brak kolorowego źródła many');
   }
@@ -991,12 +997,18 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // Kicker (CR 702.33): fakt opłacenia dodatkowego kosztu — triggery
     // „if it was kicked" filtrują po tej fladze (jak wasCast).
     ...(kicker ? { wasKicked: true } : {}),
+    // Offspring (BLB, Rust-Shield Rampager): flaga na permanencie decyduje,
+    // czy ETB-trigger stworzy token-kopię (condition wasOffspring).
+    ...(offspringPaid ? { wasOffspring: true } : {}),
   });
   state.objects.set(stackId, stacked);
   const e = event('permanent_cast', {
     playerId, fromId: objectId, object: stacked, manaCost: cost, faceDown,
     // Fakt użycia kickera (jawny w logu i dla triggerów „was kicked").
     kicked: Boolean(kicker),
+    // Offspring — jak kicker: fakt opłacenia dodatkowego kosztu (log i ewent.
+    // triggery „you cast a spell with offspring").
+    offspring: Boolean(offspringPaid),
     // Mana wydana na ten rzut (bez części opłaconej życiem — to nie mana) —
     // progi triggerów „if N or more mana was spent" (Tellah, Great Sage).
     manaSpent,

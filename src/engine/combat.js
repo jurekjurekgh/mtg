@@ -973,6 +973,24 @@ function attackerBlockSubtypeRestriction(state, attacker) {
   return null;
 }
 
+/** Maksymalna moc blokera („can't be blocked by creatures with power 2 or
+ * less" — Rust-Shield Rampager), z własnej zdolności lub nadanej sprzętem. */
+function attackerBlockPowerRestriction(state, attacker) {
+  for (const ability of effectiveAbilities(attacker)) {
+    if (ability?.type === 'static' && ability.cantBeBlockedByPower != null) {
+      return ability.cantBeBlockedByPower;
+    }
+  }
+  for (const attachment of attachmentsAttachedTo(state, attacker.id)) {
+    for (const ability of attachment.equipment?.grantedAbilities ?? []) {
+      if (ability?.type === 'static' && ability.cantBeBlockedByPower != null) {
+        return ability.cantBeBlockedByPower;
+      }
+    }
+  }
+  return null;
+}
+
 /** Czy dany blocker może blokować danego atakującego (reguła latania/zasięgu). */
 function canBlock(state, attacker, blocker) {
   if (!attacker || !blocker) return false;
@@ -996,6 +1014,10 @@ function canBlock(state, attacker, blocker) {
     const blockerSubtypes = blocker.subtypes ?? [];
     if (blockSubtypes.some((sub) => blockerSubtypes.includes(sub))) return false;
   }
+  // Rust-Shield Rampager: bloker o efektywnej mocy <= próg nie może blokować
+  // (moc po pumpach/licznikach — CR 702.x; już wykonany blok zostaje).
+  const maxBlockPower = attackerBlockPowerRestriction(state, attacker);
+  if (maxBlockPower != null && effectivePower(blocker, state) <= maxBlockPower) return false;
   // Landwalk (CR 702.33, forestwalk): atakujący nie może być blokowany, gdy
   // OBRONCA kontroluje ląd o podtypie landwalka (defender = kontroler blokera).
   const landwalkSub = attackerLandwalkSubtype(state, attacker);

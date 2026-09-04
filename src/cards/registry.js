@@ -127,6 +127,13 @@ export function defineCard(data) {
       cost: data.kicker.cost,
       colors: Object.freeze([...(data.kicker.colors ?? [])]),
     }) : null,
+    // Offspring (BLB, Rust-Shield Rampager): { cost, colors } — opcjonalny
+    // dodatkowy koszt przy rzucie; przy opłaceniu permanent dostaje flagę
+    // wasOffspring i ETB-trigger kopiujący go jako 1/1 token.
+    offspring: data.offspring ? Object.freeze({
+      cost: data.offspring.cost,
+      colors: Object.freeze([...(data.offspring.colors ?? [])]),
+    }) : null,
     // Adventure (CR 715, Gray Slaad // Entropic Decay): { cost, colors, spell }
     // — alternatywny rzut czaru z ręki (sorcery); po rozstrzygnięciu karta
     // idzie do exile („on an adventure"), skąd można rzucić stronę-stwora

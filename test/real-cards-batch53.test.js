@@ -5,6 +5,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { legalBlockerOptions } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -208,6 +209,73 @@ test('B53: Ironclad Slayer — odmowa celu = trigger bez efektu (you may)', () =
   assert.ok(execute(state, decline).ok);
   resolveStack(state);
   assert.equal(state.objects.get('equip-in-gy')?.zone, 'graveyard', 'bez wyboru celu nic nie wraca');
+});
+
+// =====================================================================
+// Rust-Shield Rampager (BLB) — Offspring + can't be blocked by power 2 or less
+// =====================================================================
+test('B53: Rust-Shield Rampager — dane Oracle, Offspring i statyczna blokada', () => {
+  const def = REGISTRY.get('rust-shield-rampager');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Raccoon', 'Warrior']);
+  assert.deepEqual(def.colors, ['G']);
+  assert.equal(def.power, 4);
+  assert.equal(def.toughness, 4);
+  assert.equal(def.manaCost, 4);
+  assert.equal(def.artId, 591);
+  assert.equal(def.plan, 'Bloomburrow');
+  assert.deepEqual(def.offspring, { cost: 2, colors: [] });
+  assert.equal(def.abilities[0].type, 'static');
+  assert.equal(def.abilities[0].cantBeBlockedByPower, 2);
+  assert.equal(def.abilities[1].trigger.event, 'enter_battlefield');
+  assert.deepEqual(def.abilities[1].trigger.condition, { wasOffspring: true });
+  assert.equal(def.abilities[1].effect.type, 'create_offspring_token');
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+});
+
+test('B53: Rust-Shield Rampager — bez offspringu brak tokenu', () => {
+  const state = game();
+  addMana(state, 'p1', 4, { colors: ['G'] });
+  addCard(state, 'ram', 'rust-shield-rampager', 'p1', 'hand');
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ram' }).ok);
+  resolveStack(state);
+  const origin = byCard(state, 'rust-shield-rampager', 'p1');
+  assert.ok(origin && !origin.isToken, 'oryginał na polu bitwy');
+  const tokens = [...state.objects.values()].filter((o) => o.zone === 'battlefield' && o.cardId === 'rust-shield-rampager' && o.isToken);
+  assert.equal(tokens.length, 0, 'bez dopłaty offspring brak tokenu-kopii');
+});
+
+test('B53: Rust-Shield Rampager — Offspring {2}: 1/1 token-kopia', () => {
+  const state = game();
+  addMana(state, 'p1', 6, { colors: ['G'] });
+  addCard(state, 'ram', 'rust-shield-rampager', 'p1', 'hand');
+  const offer = commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'ram' && c.offspring === true);
+  assert.ok(offer, 'oferta wariantu offspring');
+  assert.ok(execute(state, offer).ok);
+  resolveStack(state);
+  const token = [...state.objects.values()].find((o) => o.zone === 'battlefield' && o.cardId === 'rust-shield-rampager' && o.isToken);
+  assert.ok(token, 'token-kopia utworzony');
+  assert.equal(token.power, 1);
+  assert.equal(token.toughness, 1);
+  assert.deepEqual(token.subtypes, ['Raccoon', 'Warrior']);
+  assert.equal(token.controllerId, 'p1');
+});
+
+test('B53: Rust-Shield Rampager — bloker o mocy 2 nie może blokować, o mocy 3 może', () => {
+  const state = game();
+  addPermanent(state, 'ram', 'rust-shield-rampager', 'p1');
+  addSimpleCreature(state, 'weak', 'p2', { power: 2, toughness: 2 });
+  addSimpleCreature(state, 'strong', 'p2', { power: 3, toughness: 3 });
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['ram'] }).ok);
+  const options = legalBlockerOptions(state, 'p2');
+  assert.ok(options.some((assignment) => (assignment.ram ?? []).includes('strong')), 'silny bloker dostępny');
+  for (const assignment of options) {
+    assert.ok(!(assignment.ram ?? []).includes('weak'), 'bloker 2/2 nie może blokować');
+  }
 });
 
 // =====================================================================
