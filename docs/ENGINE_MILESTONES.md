@@ -4552,6 +4552,30 @@ Dobrowolna dopłata Zoraline — tryb przyciskowy helpera ze wspólnym Anuluj
 okno Vaana bez regresji (final-fantasy 51); 0 zgłoszeń detektorów. Silnik
 i protokół bez zmian (L48).
 
+## M304 (2026-09-03) — Klin w mulliganie londyńskim naprawiony (sesja łowiecka Żywego Testera, 169 partii)
+
+**Znalezisko.** Gracz zaznacza dokładnie żądaną liczbę kart do odłożenia po
+mulliganie, a „Zatwierdź" milczy (transkrypt: sweep3/t-theros-random-3.txt,
+przed naprawą 4 retry testera + anulowanie). Dwuwarstwowa przyczyna:
+(1) silnik deduplikuje kombinacje „odłóż N na spód" po multizbiorze
+DEFINICJI kart i zostawia reprezentanta z konkretnymi INSTANCJAMI,
+a `commandForMulliganSelection` szukał po dokładnych id — wybór „drugiej
+kopii" tej samej karty nie miał komendy; (2) CAP=32 < C(7,4)=35 dziurawił
+ofertę dla ręki samych różnych kart.
+
+**Naprawa.** (a) `commandForMulliganSelection` porównuje multi-zbiory
+definicji przez opcjonalny tłumacz instancja→definicja (kreator podaje go
+z sesji; reprezentant jest tą samą decyzją wg dedupa silnika); (b)
+MULLIGAN_BOTTOM_OPTION_CAP 32→35 = pełna przestrzeń decyzji dla ręki ≤7
+kart. Walidacja silnika bez zmian (L48) — zmieniona tylko kompletność
+oferty i dopasowanie UI do jej semantyki.
+
+Bramki: m304 3/3 (RED→fix), mutacje 3/3 zabite; `npm test` 4402/4402,
+`test:all` 4412/4412, build 3226,2 kB; Żywy Tester: 33 przebiegi wizarda
+mulligan-bottom (8 seedów) — 0 retry, 0 błędów. Sesja łowiecka ogółem:
+169 partii, 0 innych blokad/braków komunikatów/błędnych modali. Commity:
+RED `3d1fb2b`, fix `0b84945`.
+
 ## M303 (2026-09-03) — Jeden komponent podglądu 🔍; pomiar: kreatory „osobne" już stoją na jednym helperze
 
 **Pytanie właściciela.** Czy scry/surveil/index, walkę, podział obrażeń,

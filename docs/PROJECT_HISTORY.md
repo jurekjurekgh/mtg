@@ -8265,3 +8265,32 @@ mutacje 3/3 zabite; `npm test` 4399/4399, `test:all` 4409/4409, build
 wspólny Anuluj, surveil bez regresji). Commity: `b55d18c` (RED),
 `327bc1f` (fix). Uwaga sesji: sandbox zresetował workspace trzeci raz —
 docblock siatki bezpieczeństwa utracony przy resecie, przywrócony w ficie.
+
+**Sesja łowiecka Żywego Testera — klin w mulliganie londyńskim (M304).**
+
+Zlecenie właściciela: intensywna sesja Żywym Testerem i tropienie błędów
+z ostatnich poprawek (blokady / braki komunikatów / błędne modale).
+Przemiot: 169 partii w trzech falach — 23 talie × greedy × 3 seedy, 10 talii
+× 5 profili (random/explorer/impatient/hoarder/defensive) × 2 seedy, oraz
+24 partie celowane w escape (theros) i peek-pick-order (zendikar); plus 8
+probe'ów mulliganowych. Bilans: zero blokad w rodzinach zhelperowanych, zero
+braków komunikatów, zero błędnych modali; jedyne REALNE znalezisko to klin
+w mulliganie londyńskim — gracz zaznacza dokładnie żądaną liczbę kart do
+odłożenia, a „Zatwierdź" milczy. Przyczyna dwuwarstwowa: silnik deduplikuje
+kombinacje po multizbiorze definicji kart i zostawia reprezentanta
+z konkretnymi instancjami, a kreator dopasowywał po dokładnych id (wybór
+„drugiego Swampa" bez komendy) oraz CAP=32 < C(7,4)=35 dziurawił ofertę dla
+ręki samych różnych kart. Naprawa: dopasowanie po multi-zbiorach definicji
+przez tłumacz instancja→definicja z sesji + CAP=35 (pełna przestrzeń dla
+ręki ≤7 kart); walidacja silnika bez zmian (L48). Fałszywe tropy
+sklasyfikowane: detektor `noop` przy aktywacjach ubezpieczeniowych (tarcza
+regeneracji, Thunderstaff, Cellar Door na pustej bibliotece — efekt
+niewidoczny do czasu walki), Entrancing Lyre (status „Wybór niedozwolony
+(cele: 1, X = 1)" istnieje; Żywy Tester nie czyta statusu i potrzebuje
+retry), Severed Strands we własnego stwora (jakość bota, lead B4/B5), 3×
+LIMIT KROKÓW = długie partie z żywą akcją, nie zacięcia. Bramki: m304 3/3,
+mutacje 3/3 zabite; `npm test` 4402/4402, `test:all` 4412/4412, build
+3226,2 kB; żywo 33 przebiegi wizarda mulligan-bottom bez retry. Commity:
+`3d1fb2b` (RED), `0b84945` (fix). Uwaga sesji: sandbox zresetował workspace
+czwarty raz — odzyskane fetch + mixed reset do FETCH_HEAD; node_modules
+testera (jsdom) i dist/ odtworzone (npm i + npm run build).

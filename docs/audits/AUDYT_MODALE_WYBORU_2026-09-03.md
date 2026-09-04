@@ -183,3 +183,32 @@ lepiony ręcznie w dwóch miejscach (siatka bezpieczeństwa + tryb
 przyciskowy) — zamknięte w M303: jeden komponent `renderPeekButton`
 (klasa, mostek `previewCardId`, `stopPropagation`). Strażnik testowy
 (M303/3) liczy wystąpienia etykiety — ma być dokładnie jedno.
+
+## 6. Sesja łowiecka Żywego Testera (2026-09-03, wieczór) — M304
+
+Intensywne przemiatanie po M303: 169 partii (23 talie × greedy × 3 seedy;
+10 talii × 5 profili; theros/zendikar pod escape i peek-pick) + 8 probe'ów
+mulliganowych. Wynik: 0 blokad modali wyboru, 0 braków komunikatów w
+rodzinach zhelperowanych, 0 błędnych modali. Jedna REALNA blokada:
+
+**M304 — klin w mulliganie londyńskim** (`sweep3/t-theros-random-3.txt`):
+gracz zaznacza dokładnie żądaną liczbę kart do odłożenia, a „Zatwierdź"
+milczy. Dwuwarstwowa przyczyna: (1) silnik deduplikuje kombinacje po
+multizbiorze DEFINICJI kart i zostawia reprezentanta z konkretnymi
+INSTANCJAMI, a kreator dopasowywał wybór po dokładnych id instancji — wybór
+„drugiego Swampa" nie miał komendy; (2) CAP=32 < C(7,4)=35 dziurawił ofertę
+dla ręki samych różnych kart. Naprawa: dopasowanie po multi-zbiorach
+definicji (tłumacz instancja→definicja z sesji) + CAP=35 (pełna przestrzeń
+dla ręki ≤7 kart). Walidacja silnika bez zmian (L48). Strażnik M119/Z3
+przestawiony na „cap pokrywa pełną przestrzeń".
+
+Pozostałe obserwacje sesji (bez napraw — sklasyfikowane):
+- detektor `noop` zgłasza aktywacje „ubezpieczeniowe" (tarcza regeneracji,
+  Thunderstaff, Cellar Door na pustej bibliotece) — zgodne z rzeczywistością
+  (efekt niewidoczny do czasu walki/zniszczenia), nie wada UI;
+- Entrancing Lyre („cel oraz X"): status „Wybór niedozwolony (cele: 1, X = 1)"
+  istnieje i wystarcza człowiekowi; Żywy Tester potrzebuje retry, bo nie
+  czyta statusu — obserwacja UX, nie blokada;
+- bot rzucił Severed Strands we własnego Tenth District Veteran — temat
+  jakości bota (znany lead B4/B5), nie UI;
+- 3× LIMIT KROKÓW = długie partie (tura 32–36 z żywą akcją), nie zacięcia.

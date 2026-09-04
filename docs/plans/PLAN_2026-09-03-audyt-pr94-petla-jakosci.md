@@ -251,3 +251,33 @@ w dwóch miejscach — zamknięte jednym komponentem `renderPeekButton`
    komponent + wspólny Anuluj, wl3 surveil bez regresji).
 4. Dokumentacja: audyt §5 (mapa wspólnego fundamentu), M303
    w ENGINE_MILESTONES i PROJECT_HISTORY, PR #95.
+
+---
+
+### Etap M304 (2026-09-03): sesja łowiecka Żywego Testera — klin w mulliganie
+
+Zlecenie właściciela: intensywna sesja Żywym Testerem i tropienie błędów
+mogących wynikać z ostatnich poprawek (blokady / braki komunikatów / błędne
+modale), do wyczerpania budżetu.
+
+Przebieg: 169 partii w trzech falach (23 talie × greedy × 3 seedy; 10 talii
+× 5 profili × 2 seedy; theros/zendikar pod escape i peek-pick × 24) + 8
+probe'ów mulliganowych. Wyniki: 0 blokad w zhelperowanych rodzinach, 0
+braków komunikatów, 0 błędnych modali; fałszywe tropy sklasyfikowane
+(noop-aktywacje ubezpieczeniowe, długi limit kroków, Severed Strands =
+jakość bota, Entrancing Lyre = status istnieje, tester nie czyta).
+
+Jedno REALNE znalezisko: **klin w mulliganie londyńskim** — Zatwierdź
+milczy przy legalnym wyborze kart do odłożenia (dedup silnika po
+definicjach vs dopasowanie UI po instancjach + CAP 32 < C(7,4)=35).
+
+1. RED: `test/m304-mulligan-bottom-klin.test.js` (mapowanie definicji,
+   pełna przestrzeń oferty, integracja kreatora z wyborem drugiej kopii).
+2. Fix: tłumacz instancja→definicja w `commandForMulliganSelection`
+   i kreatorze; MULLIGAN_BOTTOM_OPTION_CAP 32→35; strażnik M119/Z3 na
+   „cap pokrywa pełną przestrzeń".
+3. Weryfikacja: mutacje 3/3 zabite; bramki 4402/4402, `test:all`
+   4412/4412, build 3226,2 kB; żywo: 33 przebiegi wizarda mulligan-bottom,
+   0 retry (przed naprawą: retry + anulowanie w t-theros-random-3).
+4. Dokumentacja: audyt §6 (raport sesji), M304 w ENGINE_MILESTONES
+   i PROJECT_HISTORY, PR #95.
