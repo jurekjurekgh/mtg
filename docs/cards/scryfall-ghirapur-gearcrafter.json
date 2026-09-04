@@ -1,0 +1,27 @@
+{
+  "artist": "Victor Adame Minguez",
+  "cmc": 3.0,
+  "collector_number": "149",
+  "colors": [
+    "R"
+  ],
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/0/f05cafb6-8812-42bb-ad14-3dde4bcb7034.jpg?1783938329",
+    "normal": "https://cards.scryfall.io/large/front/f/0/f05cafb6-8812-42bb-ad14-3dde4bcb7034.jpg?1783938329"
+  },
+  "mana_cost": "{2}{R}",
+  "name": "Ghirapur Gearcrafter",
+  "oracle_text": "When this creature enters, create a 1/1 colorless Thopter artifact creature token with flying. (A creature with flying can't be blocked except by creatures with flying or reach.)",
+  "pobrano": "2026-09-04",
+  "power": "2",
+  "print": "ori",
+  "rarity": "common",
+  "rulings": [],
+  "rulingsPobrano": "2026-09-04",
+  "rulingsSource": "https://api.scryfall.com/cards/ori/149/rulings",
+  "set": "ori",
+  "set_name": "Magic Origins",
+  "source": "https://api.scryfall.com/cards/named?exact=Ghirapur+Gearcrafter&set=ori",
+  "toughness": "1",
+  "type_line": "Creature — Human Artificer"
+}

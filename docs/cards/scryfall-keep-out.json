@@ -1,0 +1,25 @@
+{
+  "artist": "Ron Spencer",
+  "cmc": 2.0,
+  "collector_number": "19",
+  "colors": [
+    "W"
+  ],
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/a/4ab1601c-634c-4f21-8926-ba3cb92008c1.jpg?1783904503",
+    "normal": "https://cards.scryfall.io/large/front/4/a/4ab1601c-634c-4f21-8926-ba3cb92008c1.jpg?1783904503"
+  },
+  "mana_cost": "{1}{W}",
+  "name": "Keep Out",
+  "oracle_text": "Choose one —\n• Keep Out deals 4 damage to target tapped creature.\n• Destroy target enchantment.",
+  "pobrano": "2026-09-04",
+  "print": "ecl",
+  "rarity": "common",
+  "rulings": [],
+  "rulingsPobrano": "2026-09-04",
+  "rulingsSource": "https://api.scryfall.com/cards/ecl/19/rulings",
+  "set": "ecl",
+  "set_name": "Lorwyn Eclipsed",
+  "source": "https://api.scryfall.com/cards/named?exact=Keep+Out&set=ecl",
+  "type_line": "Instant"
+}

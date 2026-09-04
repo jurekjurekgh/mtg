@@ -1,0 +1,62 @@
+{
+  "artist": "Eric Deschamps",
+  "cmc": 2.0,
+  "collector_number": "166",
+  "color_identity": [],
+  "colors": [],
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/a/faef8b8b-2c45-4fed-b6ba-a8ac49c66330.jpg?1783941706",
+    "normal": "https://cards.scryfall.io/large/front/f/a/faef8b8b-2c45-4fed-b6ba-a8ac49c66330.jpg?1783941706"
+  },
+  "mana_cost": "{2}",
+  "name": "Ichorclaw Myr",
+  "oracle_text": "Infect (This creature deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)\nWhenever this creature becomes blocked, it gets +2/+2 until end of turn.",
+  "pobrano": "2026-09-04",
+  "power": "1",
+  "print": "som",
+  "rarity": "common",
+  "rulings": [
+    {
+      "comment": "A player who has ten or more poison counters loses the game. This is a state-based action.",
+      "date": "2011-01-01",
+      "source": "wotc"
+    },
+    {
+      "comment": "Infect's effect applies to any damage, not just combat damage.",
+      "date": "2011-01-01",
+      "source": "wotc"
+    },
+    {
+      "comment": "The -1/-1 counters remain on the creature indefinitely. They're not removed if the creature regenerates or the turn ends.",
+      "date": "2011-01-01",
+      "source": "wotc"
+    },
+    {
+      "comment": "Damage from a source with infect is damage in all respects. If the source with infect also has lifelink, damage dealt by that source also causes its controller to gain that much life. Damage from a source with infect can be prevented or redirected. Abilities that trigger on damage being dealt will trigger if a source with infect deals damage, if appropriate.",
+      "date": "2011-01-01",
+      "source": "wotc"
+    },
+    {
+      "comment": "If damage from a source with infect that would be dealt to a player is prevented, that player doesn't get poison counters. If damage from a source with infect that would be dealt to a creature is prevented, that creature doesn't get -1/-1 counters.",
+      "date": "2011-01-01",
+      "source": "wotc"
+    },
+    {
+      "comment": "Damage from a source with infect affects planeswalkers normally.",
+      "date": "2011-01-01",
+      "source": "wotc"
+    },
+    {
+      "comment": "Whenever Ichorclaw Myr becomes blocked, its last ability triggers just once, no matter how many creatures it became blocked by. It will get just +2/+2.",
+      "date": "2011-01-01",
+      "source": "wotc"
+    }
+  ],
+  "rulingsPobrano": "2026-09-04",
+  "rulingsSource": "https://api.scryfall.com/cards/som/166/rulings",
+  "set": "som",
+  "set_name": "Scars of Mirrodin",
+  "source": "https://api.scryfall.com/cards/named?exact=Ichorclaw+Myr&set=som",
+  "toughness": "1",
+  "type_line": "Artifact Creature — Phyrexian Myr"
+}

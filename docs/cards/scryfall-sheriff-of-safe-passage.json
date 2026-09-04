@@ -1,0 +1,58 @@
+{
+  "artist": "Brian Valeza",
+  "cmc": 3.0,
+  "collector_number": "29",
+  "colors": [
+    "W"
+  ],
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/3/c38a845d-f25d-45ab-9154-3fa5291b0ba0.jpg?1783911852",
+    "normal": "https://cards.scryfall.io/large/front/c/3/c38a845d-f25d-45ab-9154-3fa5291b0ba0.jpg?1783911852"
+  },
+  "mana_cost": "{2}{W}",
+  "name": "Sheriff of Safe Passage",
+  "oracle_text": "This creature enters with a +1/+1 counter on it plus an additional +1/+1 counter on it for each other creature you control.\nPlot {1}{W} (You may pay {1}{W} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)",
+  "pobrano": "2026-09-04",
+  "power": "0",
+  "print": "otj",
+  "rarity": "uncommon",
+  "rulings": [
+    {
+      "comment": "If Sheriff of Safe Passage enters the battlefield under your control at the same time as one or more other creatures, it doesn’t take those creatures into consideration when determining how many +1/+1 counters it enters the battlefield with.",
+      "date": "2024-04-12",
+      "source": "wotc"
+    },
+    {
+      "comment": "Plot abilities are written “Plot [cost],” which means “Any time you have priority during your main phase while the stack is empty, you may pay [cost] and exile this card from your hand. It becomes plotted.”",
+      "date": "2024-04-12",
+      "source": "wotc"
+    },
+    {
+      "comment": "Exiling a card using its plot ability is a special action. Once you announce you’re taking that action, no other player can respond by trying to remove that card from your hand.",
+      "date": "2024-04-12",
+      "source": "wotc"
+    },
+    {
+      "comment": "You can’t cast a plotted card on the same turn it became plotted. On any future turn, you may cast that card from exile without paying its mana cost during your main phase while the stack is empty.",
+      "date": "2024-04-12",
+      "source": "wotc"
+    },
+    {
+      "comment": "If you’re casting a plotted card from exile without paying its mana cost, you can’t choose to cast it for any other alternative costs. You can, however, pay additional costs, such as kicker costs. If the plotted card has any mandatory additional costs, those must still be paid to cast the spell.",
+      "date": "2024-04-12",
+      "source": "wotc"
+    },
+    {
+      "comment": "If a plotted card has {X} in its mana cost, you must choose 0 as the value of X when casting it without paying its mana cost.",
+      "date": "2024-04-12",
+      "source": "wotc"
+    }
+  ],
+  "rulingsPobrano": "2026-09-04",
+  "rulingsSource": "https://api.scryfall.com/cards/otj/29/rulings",
+  "set": "otj",
+  "set_name": "Outlaws of Thunder Junction",
+  "source": "https://api.scryfall.com/cards/named?exact=Sheriff+of+Safe+Passage&set=otj",
+  "toughness": "0",
+  "type_line": "Creature — Human Knight"
+}

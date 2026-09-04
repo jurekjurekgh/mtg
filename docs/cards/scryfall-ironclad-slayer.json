@@ -1,0 +1,27 @@
+{
+  "artist": "Ryan Pancoast",
+  "cmc": 3.0,
+  "collector_number": "31",
+  "colors": [
+    "W"
+  ],
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/4/d413f69f-fe2d-4049-8640-178af7e927d9.jpg?1783937515",
+    "normal": "https://cards.scryfall.io/large/front/d/4/d413f69f-fe2d-4049-8640-178af7e927d9.jpg?1783937515"
+  },
+  "mana_cost": "{2}{W}",
+  "name": "Ironclad Slayer",
+  "oracle_text": "When this creature enters, you may return target Aura or Equipment card from your graveyard to your hand.",
+  "pobrano": "2026-09-04",
+  "power": "3",
+  "print": "emn",
+  "rarity": "common",
+  "rulings": [],
+  "rulingsPobrano": "2026-09-04",
+  "rulingsSource": "https://api.scryfall.com/cards/emn/31/rulings",
+  "set": "emn",
+  "set_name": "Eldritch Moon",
+  "source": "https://api.scryfall.com/cards/named?exact=Ironclad+Slayer&set=emn",
+  "toughness": "2",
+  "type_line": "Creature — Human Warrior"
+}
