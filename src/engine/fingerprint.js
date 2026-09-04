@@ -165,6 +165,9 @@ export function stateFingerprint(state) {
     pendingSacrifice: state.pendingSacrifice ? {
       playerId: state.pendingSacrifice.playerId,
       candidateIds: [...state.pendingSacrifice.candidateIds],
+      optional: Boolean(state.pendingSacrifice.optional),
+      sourceId: state.pendingSacrifice.sourceId ?? null,
+      reflexiveEvent: state.pendingSacrifice.reflexiveEvent ?? null,
     } : null,
     initiativePlayerId: state.initiativePlayerId ?? null,
     undercityProgress: { ...(state.undercityProgress ?? {}) },

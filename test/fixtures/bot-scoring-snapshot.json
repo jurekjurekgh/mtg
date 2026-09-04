@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "9bd5ad5fb50e59a7e5201aca33a6cf709470382ffb6c194129880bba4f1021b1",
+  "overallHash": "36659db6b4c916ee7d60242d53e24ae0683e93ae2e24b3c9b70eee523714c052",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
@@ -85,21 +85,21 @@
       }
     },
     {
-      "pair": "tarkir-bg|warhammer-brg",
+      "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "b6e83687b52fc7c9de375b29feec494c6d1c9a9a86328d1b745e444945a79ea2",
-      "decisions": 246,
-      "scoreSum": 3076.4,
+      "hash": "c27339d166a17411a643aa2c0249ff7791abcfb23a8320f713fb2287f2923c79",
+      "decisions": 224,
+      "scoreSum": 2871.9,
       "chosenKinds": {
         "activate_ability": 3,
-        "attack": 6,
+        "attack": 4,
         "block": 8,
-        "cast_permanent": 8,
+        "cast_permanent": 7,
         "cast_spell": 2,
-        "pass_priority": 196,
+        "pass_priority": 179,
         "play_land": 7,
-        "resolve_combat": 10,
-        "resolve_damage_assignment": 2,
+        "resolve_combat": 9,
+        "resolve_damage_assignment": 1,
         "resolve_endure_choice": 1,
         "resolve_exploit_choice": 1,
         "resolve_mulligan_choice": 1,
@@ -107,19 +107,20 @@
       }
     },
     {
-      "pair": "tarkir-bg|warhammer-brg",
+      "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1001,
-      "hash": "644bdbdb97d1444b526f21ea8b62e2b8cbb9085a307c1fc008436133ecd6e2da",
-      "decisions": 158,
-      "scoreSum": 2493.2,
+      "hash": "feab477de21c38b694778506f58b80358906618b8a82de073ebdbb02d93d5f2e",
+      "decisions": 162,
+      "scoreSum": 2507.2,
       "chosenKinds": {
         "attack": 5,
         "block": 6,
         "cast_permanent": 5,
         "cast_spell": 1,
-        "pass_priority": 127,
+        "pass_priority": 130,
         "play_land": 6,
         "resolve_combat": 7,
+        "resolve_damage_assignment": 1,
         "resolve_mulligan_choice": 1
       }
     }

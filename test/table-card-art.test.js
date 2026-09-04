@@ -75,7 +75,7 @@ const isImg = (el) => el.tagName === 'img';
 const imagesIn = (host) => host.findAll(isImg);
 const facesIn = (host) => host.findAll((el) => el.className.startsWith('face '));
 
-function buildSession(humanDeck, botDeck = 'warhammer-brg.txt', seed = 7) {
+function buildSession(humanDeck, botDeck = 'warhammer-ubr.txt', seed = 7) {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync(`decks/${humanDeck}`, 'utf8'), registry).cardIds],

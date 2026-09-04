@@ -1,5 +1,5 @@
 // M233 — audyt Żywym Testerem (2026-08-27), partia tarkir-wur (gracz) vs
-// warhammer-brg (bot), seed 11: w turze 12 bot rzucił Wrap in Flames
+// warhammer-ubr (bot), seed 11: w turze 12 bot rzucił Wrap in Flames
 // (Sorcery 4 many: „1 obrażenie każdemu z max 3 celów + nie może blokować")
 // mimo że gracz NIE kontrolował żadnego stwora. Czar poszedł BEZ CELÓW —
 // 4 many i cała karta wyrzucone za zero efektu.

@@ -72,7 +72,7 @@ test('M138/detektor Z1: NIE zgłasza efektu SZKODLIWEGO w mój permanent (to pop
 });
 
 test('M229/detektor Z1: NIE zgłasza PRZEJĘCIA KONTROLI jako buffa (Awaken the Sleeper)', () => {
-  // Audyt nowych talii (warhammer-brg vs mirrodin-brg, seed 23): bot rzuca
+  // Audyt nowych talii (warhammer-ubr vs mirrodin-brg, seed 23): bot rzuca
   // Awaken the Sleeper na Hill Giant gracza — PRZEJMUJE kontrolę (kradzież,
   // poprawna gra), przejęty stwór dostaje haste („zyskuje: pośpiech" → BENEFIT).
   // Karta jest w harmfulNames (gain_control_until_end_of_turn), więc detektor

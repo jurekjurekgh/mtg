@@ -233,7 +233,7 @@ function gamesWon(board, bot) {
 test('harness jest deterministyczny: dwa przebiegi dają identyczny wynik', () => {
   const config = {
     bots: ['aggro', 'heuristic'],
-    decks: ['tarkir-bg', 'warhammer-brg'],
+    decks: ['tarkir-bg', 'warhammer-ubr'],
     seedsCount: 2,
     seedBase: 11,
     maxCommands: 5000,
@@ -323,7 +323,7 @@ test('bot heurystyczny nie jest słabszy niż próg regresji vs aggro', () => {
 test('raport tekstowy zawiera macierz i wyniki par (smoke formatowania)', () => {
   const result = runBenchmark({
     bots: ['heuristic', 'random'],
-    decks: ['tarkir-bg', 'warhammer-brg'],
+    decks: ['tarkir-bg', 'warhammer-ubr'],
     seedsCount: 1,
     seedBase: 5,
     maxCommands: 5000,
@@ -332,7 +332,7 @@ test('raport tekstowy zawiera macierz i wyniki par (smoke formatowania)', () => 
   assert.match(report, /Benchmark botów \(B0\)/);
   assert.match(report, /Macierz win-rate/);
   assert.match(report, /== heuristic vs random ==/);
-  assert.match(report, /tarkir-bg | warhammer-brg/);
+  assert.match(report, /tarkir-bg | warhammer-ubr/);
 });
 
 test('runBenchmark: macierz mieści się w budżecie i mierzy każdą talię z katalogu', () => {

@@ -239,9 +239,9 @@ test('M257B3: sort panelu — Przygoda z czarami, pass przed poddaniem na dole',
 function morphGameSession(onCast, { seed = 1 } = {}) {
   const registry = createCardRegistry();
   // Bot (p2) = tarkir-bg (m.in. Woolly Loxodon, Morph {3}, artId 518 —
-  // karta, którą właściciel zobaczył na warstwie); gracz = warhammer-brg.
+  // karta, którą właściciel zobaczył na warstwie); gracz = warhammer-ubr.
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/warhammer-brg.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), registry).cardIds],
     [BOT_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), registry).cardIds],
   ]);
   return { registry, session: createSession({ seed, registry, decks, onCast }) };

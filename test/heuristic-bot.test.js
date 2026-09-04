@@ -86,7 +86,7 @@ test('bot dobija removal śmiertelnym, gdy zabija wartościowy cel', () => {
 const registry = createCardRegistry();
 const deckLists = new Map([
   ['p1', parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), registry).cardIds],
-  ['p2', parseDeckText(fs.readFileSync('decks/warhammer-brg.txt', 'utf8'), registry).cardIds],
+  ['p2', parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), registry).cardIds],
 ]);
 
 function playHeuristicMatch(seed, secondFactory = (s) => createHeuristicBot({ seed: s })) {

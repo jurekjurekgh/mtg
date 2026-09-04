@@ -4090,11 +4090,30 @@ export function execute(state, input) {
   if (state.pendingSacrifice) {
     if (cmd.type !== 'resolve_sacrifice_choice') return reject('sacrifice_unresolved');
     if (cmd.playerId !== state.pendingSacrifice.playerId) return reject('sacrifice_not_your_decision');
-    if (!state.pendingSacrifice.candidateIds.includes(cmd.targetId)) return reject('illegal_sacrifice_target');
-    const target = state.objects.get(cmd.targetId);
-    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return reject('illegal_sacrifice_target');
     const pending = state.pendingSacrifice;
     const before = state.events.length;
+    // Batch 53 (Glorifier of Suffering): opcjonalna ofiara („you may sacrifice
+    // another creature or artifact") — komenda `skip` kończy decyzję bez
+    // poświęcenia i bez refleksu.
+    if (cmd.skip === true) {
+      if (!pending.optional) return reject('sacrifice_mandatory');
+      state.pendingSacrifice = null;
+      state.events.push(event('reflexive_sacrifice_resolved', {
+        playerId: pending.playerId, sourceId: pending.sourceId ?? null,
+        cardId: pending.cardId ?? null, sacrificed: false,
+      }));
+      if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+        state.turn.priorityPlayerId = pending.restorePriorityTo;
+      }
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+    }
+    if (!pending.candidateIds.includes(cmd.targetId)) return reject('illegal_sacrifice_target');
+    const target = state.objects.get(cmd.targetId);
+    if (!target || target.zone !== 'battlefield') return reject('illegal_sacrifice_target');
+    if (target.kind !== 'creature' && target.kind !== 'artifact'
+      && !(target.types ?? []).some((type) => ['Creature', 'Artifact'].includes(type))) {
+      return reject('illegal_sacrifice_target');
+    }
     // M269 (błąd #5): wybór ofiary nie zmienia tego, że poświęcenie jest
     // śmiercią (CR 701.17a) — ta sama wspólna strefa docelowa.
     // M272 (błąd #20): strefa musi trafić do ZDARZENIA, bo po niej triggery
@@ -4106,6 +4125,16 @@ export function execute(state, input) {
       fromId: target.id, objectId: graveId, playerId: target.controllerId, cardId: moved.cardId,
       sacrificeChoice: true, toZone: sacZone,
     }));
+    // Reflexive „When you do" (Glorifier): po poświęceniu emitujemy zdarzenie
+    // `reflexive_sacrifice`. processTriggers (w accepted) skanuje go i dla
+    // zdolności `trigger.event === 'reflexive_sacrifice'` kolejkuje decyzję
+    // celów (up to two creatures) — dokładnie dwustopniowy timing z rulinga.
+    if (pending.reflexiveEvent) {
+      state.events.push(event(pending.reflexiveEvent, {
+        sourceId: pending.sourceId, cardId: pending.cardId ?? null,
+        sacrificedId: moved.id, playerId: pending.playerId,
+      }));
+    }
     state.pendingSacrifice = null;
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -6400,6 +6429,11 @@ export function playerView(state, playerId) {
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSacrifice) {
     // Oczekująca decyzja poświęcenia (Grave Exchange): cel wybiera stwora
     // do poświęcenia spośród kandydatów (resolve_sacrifice_choice).
+    // Batch 53 (Glorifier): „you may sacrifice another creature or artifact"
+    // — dodatkowa oferta `skip` (bez refleksu).
+    if (state.pendingSacrifice.optional) {
+      legalCommands.push(command('resolve_sacrifice_choice', playerId, { skip: true }));
+    }
     for (const targetId of state.pendingSacrifice.candidateIds) {
       legalCommands.push(command('resolve_sacrifice_choice', playerId, { targetId }));
     }

@@ -10478,6 +10478,39 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['offspring: token 1/1 z cechami druku (bez liczników/atachamentów); „enters\"/„enters with" kopii działają (ruling BLB)'],
   }),
 
+  // 592LCI Glorifier of Suffering (LCI, Warhammer Fantasy) {2}{W} 3/2 —
+  // ETB „you may sacrifice another creature or artifact. When you do, put
+  // a +1/+1 counter on each of up to two target creatures." (reflexive).
+  defineCard({
+    id: 'glorifier-of-suffering', name: 'Glorifier of Suffering', set: 'LCI',
+    types: ['Creature'], subtypes: ['Vampire', 'Soldier'], colors: ['W'],
+    power: 3, toughness: 2, manaCost: 3,
+    oracleText: 'When this creature enters, you may sacrifice another creature or artifact. When you do, put a +1/+1 counter on each of up to two target creatures.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/5/7580ad36-7362-4dee-9511-d119173b70e8.jpg?1783913811',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'reflexive_sacrifice',
+          sacrifice: { types: ['Creature', 'Artifact'], otherThanSource: true },
+          reflexiveEvent: 'reflexive_sacrifice',
+        },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'reflexive_sacrifice',
+          requiresTarget: { type: 'creature', count: 2, upTo: true },
+        },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    artId: 592, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['reflexive: najpierw decyzja poświęcenia, potem cele „up to two target creatures\" (ruling LCI 2023-11-10)'],
+  }),
+
   // 595HOB Óin the Brave (HOB, Śródziemie) {1}{R} 1/3 — Storied;
   // while enduring story: +1/+0 and haste; {1},{T},Discard a card: Draw.
   defineCard({

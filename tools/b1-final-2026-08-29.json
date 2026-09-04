@@ -36,8 +36,8 @@
       "tarkir-bg",
       "tarkir-wur",
       "theros",
-      "warhammer-brg",
-      "warhammer-wu",
+      "warhammer-ubr",
+      "warhammer-wg",
       "wiedzmin",
       "zendikar"
     ],
@@ -201,7 +201,7 @@
           "avgTurns": 18,
           "avgCommands": 436
         },
-        "alara | warhammer-brg": {
+        "alara | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -211,7 +211,7 @@
           "avgTurns": 17.4,
           "avgCommands": 409.8
         },
-        "alara | warhammer-wu": {
+        "alara | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -370,7 +370,7 @@
           "avgTurns": 17.2,
           "avgCommands": 407
         },
-        "dominaria-brg | warhammer-brg": {
+        "dominaria-brg | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -380,7 +380,7 @@
           "avgTurns": 20.5,
           "avgCommands": 481.1
         },
-        "dominaria-brg | warhammer-wu": {
+        "dominaria-brg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -528,7 +528,7 @@
           "avgTurns": 17.6,
           "avgCommands": 431.6
         },
-        "dominaria-wu | warhammer-brg": {
+        "dominaria-wu | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -538,7 +538,7 @@
           "avgTurns": 17,
           "avgCommands": 404.3
         },
-        "dominaria-wu | warhammer-wu": {
+        "dominaria-wu | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -677,7 +677,7 @@
           "avgTurns": 17.7,
           "avgCommands": 431.7
         },
-        "final-fantasy | warhammer-brg": {
+        "final-fantasy | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -687,7 +687,7 @@
           "avgTurns": 20.5,
           "avgCommands": 496.2
         },
-        "final-fantasy | warhammer-wu": {
+        "final-fantasy | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -817,7 +817,7 @@
           "avgTurns": 17.5,
           "avgCommands": 438.9
         },
-        "forgotten-realms | warhammer-brg": {
+        "forgotten-realms | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -827,7 +827,7 @@
           "avgTurns": 16.9,
           "avgCommands": 414
         },
-        "forgotten-realms | warhammer-wu": {
+        "forgotten-realms | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -945,7 +945,7 @@
           "avgTurns": 16.5,
           "avgCommands": 401.4
         },
-        "innistrad-brg | warhammer-brg": {
+        "innistrad-brg | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -955,7 +955,7 @@
           "avgTurns": 14.5,
           "avgCommands": 338.9
         },
-        "innistrad-brg | warhammer-wu": {
+        "innistrad-brg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1065,7 +1065,7 @@
           "avgTurns": 17.2,
           "avgCommands": 412
         },
-        "innistrad-wu | warhammer-brg": {
+        "innistrad-wu | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1075,7 +1075,7 @@
           "avgTurns": 18.9,
           "avgCommands": 442.7
         },
-        "innistrad-wu | warhammer-wu": {
+        "innistrad-wu | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1175,7 +1175,7 @@
           "avgTurns": 19.8,
           "avgCommands": 469.3
         },
-        "mirrodin-brg | warhammer-brg": {
+        "mirrodin-brg | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1185,7 +1185,7 @@
           "avgTurns": 18.9,
           "avgCommands": 430.1
         },
-        "mirrodin-brg | warhammer-wu": {
+        "mirrodin-brg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1274,7 +1274,7 @@
           "avgTurns": 17.2,
           "avgCommands": 409.3
         },
-        "mirrodin-wu | warhammer-brg": {
+        "mirrodin-wu | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1284,7 +1284,7 @@
           "avgTurns": 20,
           "avgCommands": 460.7
         },
-        "mirrodin-wu | warhammer-wu": {
+        "mirrodin-wu | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1363,7 +1363,7 @@
           "avgTurns": 20.3,
           "avgCommands": 488
         },
-        "ravnica | warhammer-brg": {
+        "ravnica | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1373,7 +1373,7 @@
           "avgTurns": 21,
           "avgCommands": 488.2
         },
-        "ravnica | warhammer-wu": {
+        "ravnica | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1440,7 +1440,7 @@
           "avgTurns": 19,
           "avgCommands": 456.3
         },
-        "srodziemie | warhammer-brg": {
+        "srodziemie | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1450,7 +1450,7 @@
           "avgTurns": 19.3,
           "avgCommands": 452.6
         },
-        "srodziemie | warhammer-wu": {
+        "srodziemie | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1510,7 +1510,7 @@
           "avgTurns": 19.4,
           "avgCommands": 472.6
         },
-        "tarkir-bg | warhammer-brg": {
+        "tarkir-bg | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1520,7 +1520,7 @@
           "avgTurns": 17,
           "avgCommands": 400.4
         },
-        "tarkir-bg | warhammer-wu": {
+        "tarkir-bg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1570,7 +1570,7 @@
           "avgTurns": 18.3,
           "avgCommands": 441.7
         },
-        "tarkir-wur | warhammer-brg": {
+        "tarkir-wur | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1580,7 +1580,7 @@
           "avgTurns": 21.2,
           "avgCommands": 506.9
         },
-        "tarkir-wur | warhammer-wu": {
+        "tarkir-wur | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1620,7 +1620,7 @@
           "avgTurns": 17,
           "avgCommands": 404.8
         },
-        "theros | warhammer-brg": {
+        "theros | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1630,7 +1630,7 @@
           "avgTurns": 17.8,
           "avgCommands": 413.3
         },
-        "theros | warhammer-wu": {
+        "theros | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1660,7 +1660,7 @@
           "avgTurns": 16.2,
           "avgCommands": 388.2
         },
-        "warhammer-brg | warhammer-brg": {
+        "warhammer-ubr | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1670,7 +1670,7 @@
           "avgTurns": 19.2,
           "avgCommands": 445.6
         },
-        "warhammer-brg | warhammer-wu": {
+        "warhammer-ubr | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1680,7 +1680,7 @@
           "avgTurns": 19.8,
           "avgCommands": 476
         },
-        "warhammer-brg | wiedzmin": {
+        "warhammer-ubr | wiedzmin": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1690,7 +1690,7 @@
           "avgTurns": 18.8,
           "avgCommands": 452.4
         },
-        "warhammer-brg | zendikar": {
+        "warhammer-ubr | zendikar": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1699,7 +1699,7 @@
           "avgTurns": 16.8,
           "avgCommands": 404.1
         },
-        "warhammer-wu | warhammer-wu": {
+        "warhammer-wg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1709,7 +1709,7 @@
           "avgTurns": 22.8,
           "avgCommands": 572.2
         },
-        "warhammer-wu | wiedzmin": {
+        "warhammer-wg | wiedzmin": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1718,7 +1718,7 @@
           "avgTurns": 22.3,
           "avgCommands": 559.3
         },
-        "warhammer-wu | zendikar": {
+        "warhammer-wg | zendikar": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1905,7 +1905,7 @@
           "avgTurns": 16.8,
           "avgCommands": 411
         },
-        "alara | warhammer-brg": {
+        "alara | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -1914,7 +1914,7 @@
           "avgTurns": 23.7,
           "avgCommands": 566.9
         },
-        "alara | warhammer-wu": {
+        "alara | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2070,7 +2070,7 @@
           "avgTurns": 16.7,
           "avgCommands": 404.9
         },
-        "dominaria-brg | warhammer-brg": {
+        "dominaria-brg | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2079,7 +2079,7 @@
           "avgTurns": 15.5,
           "avgCommands": 368.5
         },
-        "dominaria-brg | warhammer-wu": {
+        "dominaria-brg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2215,7 +2215,7 @@
           "avgTurns": 14.7,
           "avgCommands": 357.3
         },
-        "dominaria-wu | warhammer-brg": {
+        "dominaria-wu | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2224,7 +2224,7 @@
           "avgTurns": 15.9,
           "avgCommands": 378.1
         },
-        "dominaria-wu | warhammer-wu": {
+        "dominaria-wu | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2355,7 +2355,7 @@
           "avgTurns": 17,
           "avgCommands": 424.9
         },
-        "final-fantasy | warhammer-brg": {
+        "final-fantasy | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2364,7 +2364,7 @@
           "avgTurns": 17.5,
           "avgCommands": 431.9
         },
-        "final-fantasy | warhammer-wu": {
+        "final-fantasy | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2482,7 +2482,7 @@
           "avgTurns": 15.6,
           "avgCommands": 396.7
         },
-        "forgotten-realms | warhammer-brg": {
+        "forgotten-realms | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2491,7 +2491,7 @@
           "avgTurns": 16.7,
           "avgCommands": 418.8
         },
-        "forgotten-realms | warhammer-wu": {
+        "forgotten-realms | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2607,7 +2607,7 @@
           "avgTurns": 17.5,
           "avgCommands": 424.2
         },
-        "innistrad-brg | warhammer-brg": {
+        "innistrad-brg | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2617,7 +2617,7 @@
           "avgTurns": 19.1,
           "avgCommands": 458.5
         },
-        "innistrad-brg | warhammer-wu": {
+        "innistrad-brg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2724,7 +2724,7 @@
           "avgTurns": 18.8,
           "avgCommands": 454.5
         },
-        "innistrad-wu | warhammer-brg": {
+        "innistrad-wu | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2733,7 +2733,7 @@
           "avgTurns": 20.7,
           "avgCommands": 493
         },
-        "innistrad-wu | warhammer-wu": {
+        "innistrad-wu | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2830,7 +2830,7 @@
           "avgTurns": 21.3,
           "avgCommands": 514.8
         },
-        "mirrodin-brg | warhammer-brg": {
+        "mirrodin-brg | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2840,7 +2840,7 @@
           "avgTurns": 23.4,
           "avgCommands": 547.5
         },
-        "mirrodin-brg | warhammer-wu": {
+        "mirrodin-brg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2926,7 +2926,7 @@
           "avgTurns": 19.5,
           "avgCommands": 470.6
         },
-        "mirrodin-wu | warhammer-brg": {
+        "mirrodin-wu | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -2936,7 +2936,7 @@
           "avgTurns": 21.2,
           "avgCommands": 497.8
         },
-        "mirrodin-wu | warhammer-wu": {
+        "mirrodin-wu | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3011,7 +3011,7 @@
           "avgTurns": 22.8,
           "avgCommands": 551.3
         },
-        "ravnica | warhammer-brg": {
+        "ravnica | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3021,7 +3021,7 @@
           "avgTurns": 26,
           "avgCommands": 624.8
         },
-        "ravnica | warhammer-wu": {
+        "ravnica | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3089,7 +3089,7 @@
           "avgTurns": 18.1,
           "avgCommands": 447.2
         },
-        "srodziemie | warhammer-brg": {
+        "srodziemie | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3099,7 +3099,7 @@
           "avgTurns": 26,
           "avgCommands": 621.2
         },
-        "srodziemie | warhammer-wu": {
+        "srodziemie | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3158,7 +3158,7 @@
           "avgTurns": 15.8,
           "avgCommands": 387
         },
-        "tarkir-bg | warhammer-brg": {
+        "tarkir-bg | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3167,7 +3167,7 @@
           "avgTurns": 17.5,
           "avgCommands": 419.1
         },
-        "tarkir-bg | warhammer-wu": {
+        "tarkir-bg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3213,7 +3213,7 @@
           "avgTurns": 16.7,
           "avgCommands": 406.7
         },
-        "tarkir-wur | warhammer-brg": {
+        "tarkir-wur | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3222,7 +3222,7 @@
           "avgTurns": 19.3,
           "avgCommands": 463.8
         },
-        "tarkir-wur | warhammer-wu": {
+        "tarkir-wur | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3261,7 +3261,7 @@
           "avgTurns": 19.6,
           "avgCommands": 470.2
         },
-        "theros | warhammer-brg": {
+        "theros | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3271,7 +3271,7 @@
           "avgTurns": 22.6,
           "avgCommands": 538.5
         },
-        "theros | warhammer-wu": {
+        "theros | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3301,7 +3301,7 @@
           "avgTurns": 20,
           "avgCommands": 481.4
         },
-        "warhammer-brg | warhammer-brg": {
+        "warhammer-ubr | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3311,7 +3311,7 @@
           "avgTurns": 21.9,
           "avgCommands": 515.7
         },
-        "warhammer-brg | warhammer-wu": {
+        "warhammer-ubr | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3321,7 +3321,7 @@
           "avgTurns": 17.6,
           "avgCommands": 428.9
         },
-        "warhammer-brg | wiedzmin": {
+        "warhammer-ubr | wiedzmin": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3331,7 +3331,7 @@
           "avgTurns": 22,
           "avgCommands": 528.6
         },
-        "warhammer-brg | zendikar": {
+        "warhammer-ubr | zendikar": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3341,7 +3341,7 @@
           "avgTurns": 20.2,
           "avgCommands": 482.3
         },
-        "warhammer-wu | warhammer-wu": {
+        "warhammer-wg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3351,7 +3351,7 @@
           "avgTurns": 23.2,
           "avgCommands": 602.5
         },
-        "warhammer-wu | wiedzmin": {
+        "warhammer-wg | wiedzmin": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3361,7 +3361,7 @@
           "avgTurns": 28.8,
           "avgCommands": 741.6
         },
-        "warhammer-wu | zendikar": {
+        "warhammer-wg | zendikar": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3546,7 +3546,7 @@
           "avgTurns": 20.4,
           "avgCommands": 497.6
         },
-        "alara | warhammer-brg": {
+        "alara | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3555,7 +3555,7 @@
           "avgTurns": 20.2,
           "avgCommands": 492.2
         },
-        "alara | warhammer-wu": {
+        "alara | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3708,7 +3708,7 @@
           "avgTurns": 14.4,
           "avgCommands": 355.4
         },
-        "dominaria-brg | warhammer-brg": {
+        "dominaria-brg | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3717,7 +3717,7 @@
           "avgTurns": 15.1,
           "avgCommands": 372
         },
-        "dominaria-brg | warhammer-wu": {
+        "dominaria-brg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3855,7 +3855,7 @@
           "avgTurns": 14.5,
           "avgCommands": 358.8
         },
-        "dominaria-wu | warhammer-brg": {
+        "dominaria-wu | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3864,7 +3864,7 @@
           "avgTurns": 14.5,
           "avgCommands": 347.2
         },
-        "dominaria-wu | warhammer-wu": {
+        "dominaria-wu | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -3993,7 +3993,7 @@
           "avgTurns": 15.3,
           "avgCommands": 387.2
         },
-        "final-fantasy | warhammer-brg": {
+        "final-fantasy | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4002,7 +4002,7 @@
           "avgTurns": 15.7,
           "avgCommands": 393.4
         },
-        "final-fantasy | warhammer-wu": {
+        "final-fantasy | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4121,7 +4121,7 @@
           "avgTurns": 16.3,
           "avgCommands": 415.1
         },
-        "forgotten-realms | warhammer-brg": {
+        "forgotten-realms | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4130,7 +4130,7 @@
           "avgTurns": 16.3,
           "avgCommands": 400
         },
-        "forgotten-realms | warhammer-wu": {
+        "forgotten-realms | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4241,7 +4241,7 @@
           "avgTurns": 18.2,
           "avgCommands": 452.8
         },
-        "innistrad-brg | warhammer-brg": {
+        "innistrad-brg | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4250,7 +4250,7 @@
           "avgTurns": 17.6,
           "avgCommands": 425.8
         },
-        "innistrad-brg | warhammer-wu": {
+        "innistrad-brg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4356,7 +4356,7 @@
           "avgTurns": 16.2,
           "avgCommands": 394.7
         },
-        "innistrad-wu | warhammer-brg": {
+        "innistrad-wu | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4365,7 +4365,7 @@
           "avgTurns": 18.5,
           "avgCommands": 454.1
         },
-        "innistrad-wu | warhammer-wu": {
+        "innistrad-wu | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4462,7 +4462,7 @@
           "avgTurns": 19.7,
           "avgCommands": 487.7
         },
-        "mirrodin-brg | warhammer-brg": {
+        "mirrodin-brg | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4472,7 +4472,7 @@
           "avgTurns": 21.1,
           "avgCommands": 503.7
         },
-        "mirrodin-brg | warhammer-wu": {
+        "mirrodin-brg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4559,7 +4559,7 @@
           "avgTurns": 19.5,
           "avgCommands": 474
         },
-        "mirrodin-wu | warhammer-brg": {
+        "mirrodin-wu | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4568,7 +4568,7 @@
           "avgTurns": 21.3,
           "avgCommands": 508.3
         },
-        "mirrodin-wu | warhammer-wu": {
+        "mirrodin-wu | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4644,7 +4644,7 @@
           "avgTurns": 20.8,
           "avgCommands": 512.3
         },
-        "ravnica | warhammer-brg": {
+        "ravnica | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4653,7 +4653,7 @@
           "avgTurns": 22.9,
           "avgCommands": 551.2
         },
-        "ravnica | warhammer-wu": {
+        "ravnica | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4721,7 +4721,7 @@
           "avgTurns": 16.3,
           "avgCommands": 418.2
         },
-        "srodziemie | warhammer-brg": {
+        "srodziemie | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4731,7 +4731,7 @@
           "avgTurns": 18.1,
           "avgCommands": 451.4
         },
-        "srodziemie | warhammer-wu": {
+        "srodziemie | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4787,7 +4787,7 @@
           "avgTurns": 16.9,
           "avgCommands": 417.6
         },
-        "tarkir-bg | warhammer-brg": {
+        "tarkir-bg | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4796,7 +4796,7 @@
           "avgTurns": 15.3,
           "avgCommands": 370.5
         },
-        "tarkir-bg | warhammer-wu": {
+        "tarkir-bg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4842,7 +4842,7 @@
           "avgTurns": 15.8,
           "avgCommands": 384.2
         },
-        "tarkir-wur | warhammer-brg": {
+        "tarkir-wur | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4852,7 +4852,7 @@
           "avgTurns": 19.9,
           "avgCommands": 479
         },
-        "tarkir-wur | warhammer-wu": {
+        "tarkir-wur | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4891,7 +4891,7 @@
           "avgTurns": 16.7,
           "avgCommands": 411
         },
-        "theros | warhammer-brg": {
+        "theros | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4901,7 +4901,7 @@
           "avgTurns": 17.2,
           "avgCommands": 418.5
         },
-        "theros | warhammer-wu": {
+        "theros | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4931,7 +4931,7 @@
           "avgTurns": 18,
           "avgCommands": 449.4
         },
-        "warhammer-brg | warhammer-brg": {
+        "warhammer-ubr | warhammer-ubr": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4940,7 +4940,7 @@
           "avgTurns": 19.1,
           "avgCommands": 454.5
         },
-        "warhammer-brg | warhammer-wu": {
+        "warhammer-ubr | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4949,7 +4949,7 @@
           "avgTurns": 16.5,
           "avgCommands": 405.2
         },
-        "warhammer-brg | wiedzmin": {
+        "warhammer-ubr | wiedzmin": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4959,7 +4959,7 @@
           "avgTurns": 20.1,
           "avgCommands": 486.3
         },
-        "warhammer-brg | zendikar": {
+        "warhammer-ubr | zendikar": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4969,7 +4969,7 @@
           "avgTurns": 18.2,
           "avgCommands": 442.5
         },
-        "warhammer-wu | warhammer-wu": {
+        "warhammer-wg | warhammer-wg": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4978,7 +4978,7 @@
           "avgTurns": 18.6,
           "avgCommands": 480.4
         },
-        "warhammer-wu | wiedzmin": {
+        "warhammer-wg | wiedzmin": {
           "games": 10,
           "unfinished": 0,
           "wins": {
@@ -4987,7 +4987,7 @@
           "avgTurns": 21.8,
           "avgCommands": 556.8
         },
-        "warhammer-wu | zendikar": {
+        "warhammer-wg | zendikar": {
           "games": 10,
           "unfinished": 0,
           "wins": {

@@ -2089,6 +2089,21 @@ function processTriggersScan(state, recentEvents) {
         }
       }
     }
+    // Batch 53 (Glorifier of Suffering, LCI): reflexive „When you do" po
+    // poświęceniu. Zdarzenie `reflexive_sacrifice` emituje resolve_sacrifice
+    // (game-state) — skanujemy je jak każde zdarzenie triggera i odpalamy
+    // zdolność źródła z `trigger.event === 'reflexive_sacrifice'`. To cel
+    // „up to two target creatures" — tryFire przejmuje decyzję celu (Temat 2).
+    if (ev.type === 'reflexive_sacrifice') {
+      const source = state.objects.get(ev.sourceId);
+      if (source && source.zone === 'battlefield') {
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.trigger?.event === 'reflexive_sacrifice') {
+            tryFire(state, ability, source, [], events, { sacrificedId: ev.sacrificedId ?? null });
+          }
+        }
+      }
+    }
     // M166/B (Enrage, RIX — Cacophodon): „Whenever this creature is dealt
     // damage" — dowolne obrażenia STWORA (combat i niecombat; amount > 0,
     // CR 119.3 — w pełni zapobiegnięte nie odpala). Obiekt po id ze

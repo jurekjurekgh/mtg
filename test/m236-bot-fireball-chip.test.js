@@ -1,5 +1,5 @@
 // M236/4 — audyt Żywym Testerem (2026-08-27) + KOREKTA właściciela.
-// innistrad-brg vs warhammer-brg, seed 91: bot rzucił Fireball (skalujący X)
+// innistrad-brg vs warhammer-ubr, seed 91: bot rzucił Fireball (skalujący X)
 // za X=1 w twarz gracza (19→18) w 2. turze — spalił potencjalne dobicie za chip.
 //
 // Zasada (jak M236/5): trzymaj Fireball na cel, który DOBIJESZ (stwór ginie /

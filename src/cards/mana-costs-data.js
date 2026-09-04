@@ -445,4 +445,5 @@ export const MANA_COSTS = {
   "sheriff-of-safe-passage": "{2}{W}",
   "oin-the-brave": "{1}{R}",
   "ichorclaw-myr": "{2}",
+  "glorifier-of-suffering": "{2}{W}",
 };

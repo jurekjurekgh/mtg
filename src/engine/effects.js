@@ -4961,6 +4961,40 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }));
     return;
   }
+  // Batch 53 (Glorifier of Suffering, LCI): ETB „you may sacrifice another
+  // creature or artifact. When you do, [reflexive ability]". Generyczny efekt
+  // `reflexive_sacrifice` — najpierw blokująca decyzja „poświęć albo nie"
+  // (wspólny pendingSacrifice / resolve_sacrifice_choice), po poświęceniu
+  // emitujemy zdarzenie `reflexive_sacrifice`, do którego jest podpięta
+  // refleksyjna zdolność triggerowa z celami karty (CR 603.3d; ruling LCI).
+  if (effect.type === 'reflexive_sacrifice') {
+    const controllerId = sourceObject.controllerId;
+    const sacrificeSpec = effect.sacrifice ?? {};
+    const wantedTypes = sacrificeSpec.types ?? ['Creature', 'Artifact'];
+    const candidates = state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield' || object.controllerId !== controllerId) return false;
+      if (sacrificeSpec.otherThanSource && object.id === sourceObject.id) return false;
+      return wantedTypes.some((type) => object.kind === type.toLowerCase()
+        || (object.types ?? []).includes(type));
+    });
+    if (candidates.length === 0) return; // „you may" — brak ofiary = brak refleksu
+    state.pendingSacrifice = {
+      playerId: controllerId,
+      candidateIds: [...candidates],
+      optional: true,
+      sourceId: sourceObject.id,
+      cardId: sourceObject?.cardId ?? null,
+      reflexiveEvent: effect.reflexiveEvent ?? 'reflexive_sacrifice',
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('reflexive_sacrifice_required', {
+      playerId: controllerId, sourceId: sourceObject.id, cardId: sourceObject?.cardId ?? null,
+      candidateIds: [...candidates],
+    }));
+    return;
+  }
   // Might of the Masses (2XM): target creature gets +1/+1 per creature you control
   if (effect.type === 'pump_by_creature_count') {
     const targetId = targets[0];

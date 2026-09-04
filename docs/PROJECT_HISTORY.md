@@ -23,7 +23,7 @@
 - **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5b „Uwagi z testów” część 2**: **A** — „Tasuj talię” bez komunikatu (tylko podmiana seeda), **B** — kto zaczyna partię = LOSOWE z seeda (`state.starterId`, deterministyczny rzut monetą; CR 103.7a/103.4 przymocowane do startera zamiast `players[0]`; collateral: 41 factory/pinów w 27 plikach testowych + golden-master bota zregenerowany), **C** — Awaken the Sleeper: bot ATAKUJE przejętym stworem (wycena celu castu: 3×power + equipment; pożyczona kreatura bez downside'u w `declare_attackers`), **D** — Ruthless Invasion: bez ataku w tej turze = NIE RZUCAM (okno + gotowi atakujący + usuwani blokerzy), płatność życiem {R/P} = tylko za LETHAL (martwa gałąż wyceny przeniesiona do pętli cast_spell + baza −1); benchmarki quick bez zmian (heuristic 84.7%); `npm test` 3805/3805; build 2932.3 kB; **PR #88**)
 - **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5 „Uwagi z testów”**: **A** — hover powiększonej karty Scryfall na miniaturkach w warstwie „Rozgrywka” (tor `scryfall` bez trybów FOT/KON), **B** — bot blokuje 3/3 przy 5 życiach swoim 2/2 (premia przeżycia w wycenie bloku: prógi życia ≤2/≤5/≤8), **C** — Bone Splinters: osobne wybory „cel czaru” + „cel poświęcenia” (wizard `renderMultiTargetWizard` + wymiar `sacrificeTargetId`), zamiast enumeracji kombinacji 3×3; fix M253: transkrypt benchmarku wdarł się do repo (fail CI); `npm test` 3787/3787; build 2924.8 kB; **PR #88**)
 - **Ostatnia aktualizacja (poprzednia):** 2026-08-30 (sesja arena/01a04e98, **r4 „Uwagi z testów” + strojenie + pętla bota**: **Fix A** — „Deklaracja atakujących” bez kreatur = auto-przejście (root cause: `legalAttackerOptions` zwracał `[[]]` → pusta „decyzja” wystawiana jako komenda; CR 508.1), **T1/T4** — rodzina aura do parametrów (11 kluczy, golden-master) + strojenie `auraHostileEnemyBase` 55→65 (tuner: proxy 0.5642→0.5668; benchmark 4200 meczów bez regresji — adopcja), **B7** — pętla jakości seeds 3001–3006 (oś: poprawność/logika/optymalność): **0 defektów** — 4 fałszywe alarmy zamknięte L57, w tym „re-Equip” z 3002 (pojazd crewowany: sprzęt odłącza się w cleanup, przypięcia świeże — CR 702.16/702.6); 3 testy inwariantów; `npm test` 3765/3765; build 2914.8 kB; **PR #88**)
-- **Ostatnia aktualizacja (poprzednia):** 2026-08-29 (sesja arena/01a04e98, **etap 5**: **pętla jakości Żywym Testerem** (właściciel: „może sam coś znajdziesz”) — 6 partii (tarkir-bg/wiedzmin, worek-basni/theros, warhammer-wu/worek-legend, seeds 2001–2006), 0 detektorów, 3 znaleziska: **F3** Kappa Tech-Wrecker „Ninjutsu {1}{G}" — pita zielona zgubiona w danych (koszt {2} generyczny), silnik (oferta + płatność) ignorował pipy KOLORÓW w ninjutsu — jedyne aktywowane kosztowanie bez koloru (L48) + kafel „Ninjutsu {2}” i gramatyka żeńska; **F1** „enters with a counter” niewidoczne na kaflu (7 kart: Trigon, Kappa, Servant of the Scale, Necrosquito, Voice of the Vermin, Swooping Protector, Creakwood Safewright); **F4** (narzędzie) profil defensive mulliganował do 0 kart (wzorzec bez granic słów łapał „zostaNIE 5”); 7 testów (RED→GREEN dowiedzone stashem), 8 fałszywych alarmów zamkniętych z L57 (m.in. Colossodon vanilla, Breaching Hippocamp untap stwora, własny morph w logu = zgodne z regułą rundy 3); `npm test` 3755/3755; build 2910.5 kB; **PR #88**)
+- **Ostatnia aktualizacja (poprzednia):** 2026-08-29 (sesja arena/01a04e98, **etap 5**: **pętla jakości Żywym Testerem** (właściciel: „może sam coś znajdziesz”) — 6 partii (tarkir-bg/wiedzmin, worek-basni/theros, warhammer-wg/worek-legend, seeds 2001–2006), 0 detektorów, 3 znaleziska: **F3** Kappa Tech-Wrecker „Ninjutsu {1}{G}" — pita zielona zgubiona w danych (koszt {2} generyczny), silnik (oferta + płatność) ignorował pipy KOLORÓW w ninjutsu — jedyne aktywowane kosztowanie bez koloru (L48) + kafel „Ninjutsu {2}” i gramatyka żeńska; **F1** „enters with a counter” niewidoczne na kaflu (7 kart: Trigon, Kappa, Servant of the Scale, Necrosquito, Voice of the Vermin, Swooping Protector, Creakwood Safewright); **F4** (narzędzie) profil defensive mulliganował do 0 kart (wzorzec bez granic słów łapał „zostaNIE 5”); 7 testów (RED→GREEN dowiedzone stashem), 8 fałszywych alarmów zamkniętych z L57 (m.in. Colossodon vanilla, Breaching Hippocamp untap stwora, własny morph w logu = zgodne z regułą rundy 3); `npm test` 3755/3755; build 2910.5 kB; **PR #88**)
 
 ## Sesja 2026-08-30 — E/F: znaleziska pętli jakości (mulligan-bottom auto, regenerate = combat trick) (arena/01a04e98, PR #88)
 
@@ -244,7 +244,7 @@ zielony commit = push natychmiast.
 teraz Pętlę Jakości Żywym Testerem, może sam coś znajdziesz"). Talie z
 ostatnich rund nieprzetestowane + Batch 51: tarkir-bg ↔ wiedzmin
 (seeds 2001–2002, greedy/explorer), worek-basni ↔ theros (2003–2004,
-greedy/defensive), warhammer-wu ↔ worek-legend (2005–2006, greedy/random).
+greedy/defensive), warhammer-wg ↔ worek-legend (2005–2006, greedy/random).
 Raport: `docs/audits/AUDYT_M257R4_ZYWY_TESTER_2026-08-29.md`.
 
 **F3 (dane + silnik + kafel) — Kappa Tech-Wrecker, „Ninjutsu {1}{G}":**
@@ -483,7 +483,7 @@ szczególnym akcentem na nowe karty."
 **Metoda (ADR 0021):** 18 partii (12 w rundzie 1 + 6 kontrolnych po naprawach)
 na parach talii, które dostały karty w Batchu 51 i przy uwagach A–E: ravnica
 (bloodrush), tarkir-bg (Typhoid Rats), tarkir-wur (Dromoka Warrior),
-warhammer-brg (Invasive Species, Savage Surge), warhammer-wu (Thunderstaff),
+warhammer-ubr (Invasive Species, Savage Surge), warhammer-wg (Thunderstaff),
 theros (Akroan Sergeant / renown), worek-mroczny (Kulrath Mystic; poza próbką
 benchmarku), dominaria-wu (Willbender, Wormfang Newt, Altar of the Goyf).
 Profile `explorer/greedy/defensive/impatient/random`. Wszystkie partie kończą
@@ -7294,7 +7294,7 @@ worek-* — profile greedy/random/defensive/explorer/impatient/hoarder, seedy
   (damage/untap/mill/destroy) i rodziny pól (życie/trucizna) — z jawną listą
   wyjątków (ADR 0027 pkt 3). Weryfikacja mutacyjna: `damage_to_controller`
   z `changeLife(-)` zamiast `dealNonCombatDamage` → 1 fail (RED) → GREEN.
-- **2.1 znalezisko #1** (theros vs warhammer-wu, seed 308, impatient): grupa
+- **2.1 znalezisko #1** (theros vs warhammer-wg, seed 308, impatient): grupa
   `resolve_escape_exile` spadała na „Wybierz: Wariant (10 opcji)" — typ grupy
   `escape_exile` nie miał deskryptora ani gałęzi tytułu (L102/1). Fix:
   `choiceSourceTitle` nazywa kartę + deskryptor fallback; RED→GREEN.

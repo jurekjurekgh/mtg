@@ -52,7 +52,7 @@ globalThis.document = { createElement: (tag) => new MiniEl(tag) };
 function sessionWithTurns(steps = 220) {
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-brg.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   const session = createSession({ seed: 3, registry: REGISTRY, decks });
   for (let i = 0; i < steps; i += 1) {

@@ -149,7 +149,7 @@ policzona (2 → 4).
 
 ## Zgłoszenie detektora `[noop]` (Thunderstaff) — zweryfikowane, uznane za poprawne
 
-`warhammer-wu × worek-legend`, seed 157, profil `random`:
+`warhammer-wg × worek-legend`, seed 157, profil `random`:
 
 ```
 [noop] Oferta bez skutku — jedyna zmiana to zapłacony koszt

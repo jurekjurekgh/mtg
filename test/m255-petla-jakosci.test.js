@@ -1,7 +1,7 @@
 // M255 (2026-08-29) — pętla jakości Żywym Testerem po Batchu 51 (ADR 0021).
 //
 // 12 partii na taliach, które dostały nowe karty (ravnica, tarkir-bg/wur,
-// warhammer-brg/wu, theros, worek-mroczny, dominaria-wu), profile
+// warhammer-ubr/wu, theros, worek-mroczny, dominaria-wu), profile
 // explorer/greedy/defensive/impatient/random, detektory: 0 zgłoszeń.
 // Poniżej to, co wyszło z lektury transkryptów (L27/L40 — zero detektorów to
 // dolna granica, nie dowód jakości):

@@ -5,12 +5,12 @@
   powstało 10 nowych talii — świeże próbki do audytu „z perspektywy gracza".
 - **Metoda:** `tools/table-tester/run-game.mjs`, ~15 partii, priorytet talii =
   świeżo podzielone (tarkir-bg/wur, innistrad-wu/brg, mirrodin-wu/brg,
-  dominaria-wu/brg, warhammer-wu/brg), różne profile (explorer/defensive/random/
+  dominaria-wu/brg, warhammer-wg/brg), różne profile (explorer/defensive/random/
   greedy) i seedy, `--tick-rate` 0.2–0.25. Transkrypty: `audyt-m229/`.
 
 ## Znaleziska i naprawy (3 realne błędy)
 
-Wszystkie z jednej partii-zapalnika (warhammer-brg vs mirrodin-brg, seed 23:
+Wszystkie z jednej partii-zapalnika (warhammer-ubr vs mirrodin-brg, seed 23:
 bot rzuca Awaken the Sleeper — PRZEJMUJE Hill Giant gracza) + ręcznej lektury.
 
 1. **M229/1 (UI, render):** kafel przejętego stwora pokazywał „Pośpiech ·

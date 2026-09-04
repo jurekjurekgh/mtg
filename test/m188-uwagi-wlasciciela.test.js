@@ -23,7 +23,7 @@ const REGISTRY = createCardRegistry();
 function tableSession() {
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-brg.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   return createSession({ seed: 3, registry: REGISTRY, decks });
 }

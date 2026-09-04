@@ -55,7 +55,7 @@ test('B47/A3: każdy egzemplarz trafia do talii SWOJEGO planu', () => {
     ['curate', 'forgotten-realms.txt'],
     ['curate-stx', 'worek-legend.txt'],
     ['negate', 'wiedzmin.txt'],
-    ['negate-m15', 'warhammer-wu.txt'],
+    ['negate-m15', 'warhammer-ubr.txt'],
   ]) {
     assert.deepEqual(gdzie(cardId), [oczekiwane],
       `${cardId} ma być w DOKŁADNIE jednej talii: ${oczekiwane}`);

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { choiceGroupTitle, choiceRequestGroupKey } from '../src/table/render.js';
 
 /**
- * M267 — znalezisko ŻYWEGO TESTERA (profil `explorer`, warhammer-wu vs
+ * M267 — znalezisko ŻYWEGO TESTERA (profil `explorer`, warhammer-wg vs
  * worek-basni, seed 506, krok 45), złapane przez detektor
  * `detectGenericChoiceTitle` dodany w M266/D.
  *

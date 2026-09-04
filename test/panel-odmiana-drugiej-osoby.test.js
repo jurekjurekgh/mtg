@@ -58,7 +58,7 @@ function makeSession(seed, deckA, deckB) {
 
 test('M101/C: w całej partii żaden komunikat nie łączy „Ty" z czasownikiem w 3. osobie', () => {
   const zle = new Set();
-  for (const [seed, a, b] of [[13, 'innistrad-brg', 'dominaria-brg'], [7, 'innistrad-brg', 'dominaria-brg'], [3, 'dominaria-brg', 'tarkir-bg'], [21, 'warhammer-brg', 'innistrad-brg']]) {
+  for (const [seed, a, b] of [[13, 'innistrad-brg', 'dominaria-brg'], [7, 'innistrad-brg', 'dominaria-brg'], [3, 'dominaria-brg', 'tarkir-bg'], [21, 'warhammer-ubr', 'innistrad-brg']]) {
     const session = makeSession(seed, a, b);
     for (let i = 0; i < 400 && session.state.status === 'active'; i += 1) {
       const view = session.view();

@@ -367,6 +367,97 @@ test('B53: Óin — {1},{T}, odrzuć kartę: dobierz', () => {
 });
 
 // =====================================================================
+// Glorifier of Suffering (LCI) — ETB „you may sacrifice another creature
+// or artifact. When you do, put a +1/+1 counter on each of up to two
+// target creatures." (reflexive, ruling LCI 2023-11-10)
+// =====================================================================
+test('B53: Glorifier of Suffering — dane Oracle i dwa deskryptory', () => {
+  const def = REGISTRY.get('glorifier-of-suffering');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Vampire', 'Soldier']);
+  assert.deepEqual(def.colors, ['W']);
+  assert.equal(def.power, 3);
+  assert.equal(def.toughness, 2);
+  assert.equal(def.manaCost, 3);
+  assert.equal(def.artId, 592);
+  assert.equal(def.plan, 'Warhammer Fantasy');
+  const etb = def.abilities[0];
+  assert.equal(etb.trigger.event, 'enter_battlefield');
+  assert.equal(etb.effect.type, 'reflexive_sacrifice');
+  assert.deepEqual(etb.effect.sacrifice, { types: ['Creature', 'Artifact'], otherThanSource: true });
+  assert.equal(etb.effect.reflexiveEvent, 'reflexive_sacrifice');
+  const reflexive = def.abilities[1];
+  assert.equal(reflexive.trigger.event, 'reflexive_sacrifice');
+  assert.deepEqual(reflexive.trigger.requiresTarget, { type: 'creature', count: 2, upTo: true });
+  assert.deepEqual(reflexive.effect, { type: 'add_counter', counter: '+1/+1', amount: 1 });
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+});
+
+test('B53: Glorifier — poświęcenie artefaktu → refleks z licznikami na obu celach', () => {
+  const state = game();
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  addCard(state, 'g', 'glorifier-of-suffering', 'p1', 'hand');
+  addSimpleCreature(state, 'own', 'p1', { power: 2, toughness: 2 });
+  addSimpleCreature(state, 'foe', 'p2', { power: 2, toughness: 2 });
+  addObject(state, {
+    id: 'art', instanceId: 'i-art', cardId: 'x-art', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'artifact', manaCost: 2, abilities: [], keywords: [],
+    subtypes: [], types: ['Artifact'], colors: [],
+  });
+
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'g' }).ok);
+  resolveStack(state);
+  const skipCmd = commands(state).find((c) => c.type === 'resolve_sacrifice_choice' && c.skip === true);
+  assert.ok(skipCmd, 'opcjonalność: komenda skip dostępna');
+  const sac = commands(state).find((c) => c.type === 'resolve_sacrifice_choice' && c.targetId === 'art');
+  assert.ok(sac, 'artefakt na liście ofiar („another artifact")');
+  assert.ok(execute(state, sac).ok);
+  // Po poświęceniu jeszcze NIE ma liczników — refleks dopiero zbiera cele.
+  assert.equal(state.objects.get('own')?.counters?.['+1/+1'], undefined);
+  assert.equal(state.objects.get('foe')?.counters?.['+1/+1'], undefined);
+  const targets = commands(state).find((c) => c.type === 'resolve_trigger_target'
+    && Array.isArray(c.targetIds) && c.targetIds.length === 2
+    && c.targetIds.includes('own') && c.targetIds.includes('foe'));
+  assert.ok(targets, 'oferta „up to two target creatures"');
+  assert.ok(execute(state, targets).ok);
+  resolveStack(state);
+  assert.equal(state.objects.get('own')?.counters?.['+1/+1'], 1);
+  assert.equal(state.objects.get('foe')?.counters?.['+1/+1'], 1);
+  assert.notEqual(state.objects.get('art')?.zone, 'battlefield', 'artefakt poświęcony');
+});
+
+test('B53: Glorifier — rezygnacja z poświęcenia = brak refleksu i liczników', () => {
+  const state = game();
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  addCard(state, 'g', 'glorifier-of-suffering', 'p1', 'hand');
+  addSimpleCreature(state, 'own', 'p1', { power: 2, toughness: 2 });
+  addObject(state, {
+    id: 'art', instanceId: 'i-art', cardId: 'x-art', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'artifact', manaCost: 2, abilities: [], keywords: [],
+    subtypes: [], types: ['Artifact'], colors: [],
+  });
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'g' }).ok);
+  resolveStack(state);
+  const skip = commands(state).find((c) => c.type === 'resolve_sacrifice_choice' && c.skip === true);
+  assert.ok(skip);
+  assert.ok(execute(state, skip).ok);
+  resolveStack(state);
+  assert.equal(state.objects.get('art')?.zone, 'battlefield', 'artefakt zostaje');
+  assert.equal(state.objects.get('own')?.counters?.['+1/+1'], undefined, 'brak refleksu = brak liczników');
+});
+
+test('B53: Glorifier — bez innego stwora/artefaktu brak decyzji poświęcenia', () => {
+  const state = game();
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  addCard(state, 'g', 'glorifier-of-suffering', 'p1', 'hand');
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'g' }).ok);
+  resolveStack(state);
+  assert.equal(state.pendingSacrifice, null, 'brak kandydata = brak blokującej decyzji');
+  assert.ok(!commands(state).some((c) => c.type === 'resolve_sacrifice_choice'), 'brak oferty poświęcenia');
+});
+
+// =====================================================================
 // Ichorclaw Myr (SOM) — Infect + „becomes blocked": +2/+2, raz na blok
 // =====================================================================
 test('B53: Ichorclaw Myr — dane Oracle (Infect, becomes_blocked)', () => {

@@ -946,6 +946,7 @@ function describeEffect(e) {
     // brak listy = mana bezbarwna ({C}), konkretna lista = te kolory.
     add_mana: () => manaEffectLabel(e),
     fabricate: () => `fabricate ${e.amount ?? 1} (liczniki +1/+1 albo tokeny Servo)`,
+    reflexive_sacrifice: () => 'poświęć innego stwora albo artefakt (dobrowolnie: następuje refleks)',
     exile_top_playable_until_next_turn: () => 'wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury',
     grant_double_strike_on_noncreature_cast_this_turn: () => 'do końca tury: każdy twój czar niebędący stworem daje wybranemu stworowi podwójne uderzenie',
     add_flying_counter_to_face_down_you_control: () => 'połóż licznik flying na zakrytych stworach',
@@ -1844,7 +1845,7 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd?.type === 'resolve_manifest_dread' && view?.pendingManifestDread?.sourceCardId) {
     return `${session.nameOf(view.pendingManifestDread.sourceCardId)} — zmanifestuj jedną z 2 kart (druga do grobu)`;
   }
-  // Pętla jakości (Żywy Tester, theros vs warhammer-wu, seed 308, profil
+  // Pętla jakości (Żywy Tester, theros vs warhammer-wg, seed 308, profil
   // impatient): decyzja „wybierz karty do wygnania za Escape”
   // (resolve_escape_exile) — grupa miała typ `escape_exile`, którego nie znała
   // żadna mapa deskryptorów, więc tytuł spadał na „Wybierz: Wariant
@@ -2607,6 +2608,8 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_sacrifice_choice': {
       // Grave Exchange: cel poświęca stwora własnego wyboru.
+      // Batch 53 (Glorifier of Suffering): opcjonalna ofiara — `skip`.
+      if (cmd.skip) return 'Poświęcenie: nie rób (bez refleksu „when you do")';
       return `Poświęć: ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_devour_choice': {

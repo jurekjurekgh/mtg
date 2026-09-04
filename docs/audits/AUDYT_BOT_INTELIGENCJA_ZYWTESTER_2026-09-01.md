@@ -21,8 +21,8 @@ benchmarku i 3 worki):
 | 404 | tarkir-bg (greedy) | ravnica | Bot | – |
 | 405 | ravnica (explorer) | theros | **Gracz** | – |
 | 406 | theros (defensive) | srodziemie | Bot | – |
-| 407 | srodziemie (random) | warhammer-brg | Bot | 1× noop (oś 4) |
-| 408 | warhammer-brg (explorer) | wiedzmin | Bot | – |
+| 407 | srodziemie (random) | warhammer-ubr | Bot | 1× noop (oś 4) |
+| 408 | warhammer-ubr (explorer) | wiedzmin | Bot | – |
 | 409 | wiedzmin (greedy) | zendikar | Bot | – |
 | 410 | zendikar (hoarder) | alara | Bot | – |
 | 411 | alara (defensive) | forgotten-realms | Bot | – |
@@ -32,7 +32,7 @@ benchmarku i 3 worki):
 | 415 | tarkir-wur (greedy) | innistrad-brg | **Gracz** | – |
 | 416 | worek-mroczny (hoarder) | mirrodin-brg | Bot | – |
 | 417 | ravnica (impatient) | tarkir-bg | Bot | – |
-| 418 | innistrad-wu (random) | warhammer-brg | Bot | – |
+| 418 | innistrad-wu (random) | warhammer-ubr | Bot | – |
 | 419 | mirrodin-brg (defensive) | srodziemie | Bot | – |
 | 420 | wiedzmin (explorer) | worek-dziki | Bot | – |
 

@@ -462,6 +462,8 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // Batch 53 (Ichorclaw Myr): „Whenever this creature becomes blocked" —
   // raz na atakującego, niezależnie od liczby blokerów (ruling SOM).
   becomes_blocked: 'zablokowanie tego stwora',
+  // Batch 53 (Glorifier of Suffering): reflexive „When you do" po poświęceniu.
+  reflexive_sacrifice: 'refleks po poświęceniu („when you do")',
   aura_host_targeted_by_spell: 'gospodarz aury celem czaru',
   spell_targets_this_creature: 'twoja karta celuje w to stworzenie',
   bat_attacks: 'atak nietoperza',
@@ -776,6 +778,16 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       }
       case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredByCardId ? ` (${nameOf(e.counteredByCardId)})` : (e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : '')}`;
       case 'sacrifice_choice_required': return `${whoN(e.playerId)} wskazuje stwora do poświęcenia`;
+      // Batch 53 (Glorifier of Suffering): opcjonalne poświęcenie innego
+      // stwora/artefaktu + refleks „when you do".
+      case 'reflexive_sacrifice_required':
+        return `${whoN(e.playerId)} może poświęcić innego stwora lub artefakt (refleks „when you do")`;
+      case 'reflexive_sacrifice_resolved':
+        return e.sacrificed
+          ? `${whoN(e.playerId)} poświęca inny permanent i odpala refleks`
+          : `${whoN(e.playerId)} rezygnuje z poświęcenia (brak refleksu)`;
+      case 'reflexive_sacrifice':
+        return `${nameOfObject(e.sourceId)} — refleks po poświęceniu ${nameOfObject(e.sacrificedId)}`;
       case 'food_choice_required': return `${whoN(e.playerId)} rozstrzyga: poświęcić Food na +3 życia?`;
       case 'food_choice_resolved': return e.auto
         ? null

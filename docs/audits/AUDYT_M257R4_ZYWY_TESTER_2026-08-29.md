@@ -3,7 +3,7 @@
 **Sesja:** `arena/01a04e98-mtg` (PR #88). **Zakres:** pętla jakości
 własnym wyborem właściciela („może sam coś znajdziesz") — 6 partii
 Żywym Testerem na taliiach, których nie testowały ostatnie rundy
-(tarkir-bg, worek-basni, warhammer-wu, wiedzmin, theros, worek-legend) +
+(tarkir-bg, worek-basni, warhammer-wg, wiedzmin, theros, worek-legend) +
 karty z Batchu 51 (worek-basni/legend) i mechaniki z M255/M256/M257.
 
 **Baza:** `f97e6b5` (stan po rundzie 3 uwag: foW widokowy, kolejność menu,
@@ -27,8 +27,8 @@ Greatsword of Tyr). Bramy startowe: `npm test` 3748/3748, build 2907.7 kB.
 | 2002 | tarkir-bg ↔ wiedzmin | explorer | wygrywa Bot | 0 |
 | 2003 | worek-basni ↔ theros | greedy | wygrywa Bot | 0 |
 | 2004 | worek-basni ↔ theros | defensive | wygrywa Bot | 0 |
-| 2005 | warhammer-wu ↔ worek-legend | greedy | wygrywa Bot | 0 |
-| 2006 | warhammer-wu ↔ worek-legend | random | wygrywa Bot | 0 |
+| 2005 | warhammer-wg ↔ worek-legend | greedy | wygrywa Bot | 0 |
+| 2006 | warhammer-wg ↔ worek-legend | random | wygrywa Bot | 0 |
 
 Każda partia kończy się naturalnie (życie). Brak: `Błąd wewnętrzny`,
 `undefined`, `NaN`, `cel: ?`. Weryfikacja na żywo po fixach: ta sama
