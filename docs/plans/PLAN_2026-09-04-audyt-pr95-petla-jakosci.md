@@ -50,7 +50,7 @@ ADR 0020/0021: PR → audyt ostatniego scalonego PR → pętla jakości.
 - [x] Dopuszczalne potwierdzenie: `node --test test/bot-benchmark.test.js`
   (bez pełnego B0).
 - [x] Raport w `docs/audits/AUDYT_PR95_2026-09-04.md`.
-- [ ] Wynik w opisie PR.
+- [x] Wynik w opisie PR.
 - Kryterium: każdy zmieniony plik ma albo akceptację, albo znalezisko z
   repro/naprawą; brak znaleziska w pliku → jawny wpis „sprawdzone, bez zmian”.
 
@@ -64,20 +64,31 @@ ADR 0020/0021: PR → audyt ostatniego scalonego PR → pętla jakości.
 
 ### Etap 2 — Naprawy znalezisk (jeśli są)
 
-- [ ] Dla każdego znaleziska: nazwana reguła/klasa, repro headless,
-      test RED, fix u root cause, mutacja, potwierdzenie = zielone.
-- [ ] Każdą samodzielnie zieloną paczkę: osobny commit + push (ADR 0020 C).
+- [x] **N/A — brak znalezisk regułowych** w audycie PR #95; znaleziska
+      F1/F2 są dokumentacyjne (L92) i naprawiane w Etapie 4.
 - Kryterium: po każdej paczce `npm test` + `npm run build` zielone.
 
 ### Etap 3 — Pętla jakości (ADR 0021)
 
-- [ ] Wybór ścieżki: audyt Żywym Testerem na przebudowanym artefakcie
-      (oś 1–3 z `TESTER_STOLU.md`) LUB polowanie na niezgodności z CR
-      ścieżką niewykorzystaną w PR #95; w obu: nowy detektor / strażnik
-      dla każdej znalezionej klasy.
-- [ ] Zero nowych kart (ADR 0021 §4c).
-- [ ] Brak pełnego B0.
+- [x] Wybór ścieżki: audyt Żywym Testerem na przebudowanym artefakcie
+      (oś 1–3 z `TESTER_STOLU.md`); cztery partie, wszystkie
+      „DETEKTORY: brak zgłoszeń”.
+- [x] Zero nowych kart (ADR 0021 §4c).
+- [x] Brak pełnego B0 (ADR 0018 — tylko na wyraźną komendę właściciela).
 - Kryterium: każda znaleziona klasa ma repro, naprawę i strażnika.
+
+#### Wynik pętli jakości (2026-09-04)
+
+- Cztery partie żywego testera na przebudowanym `dist/` (profile:
+  greedy ×2, explorer, random), wszystkie bez zgłoszeń detektorów.
+- Mulligan londyński (seed 811): 3 odrzucenia, odłożenie 1/2/3 karty,
+  opcje 6/16/35, zatrzymanie 4 kart — przebieg w `[ROZGRYWKA]`
+  transkryptu zgodny z regułą.
+- KANDYDAT ODRZUCONY: „Bierzesz mulligan (1)” w końcowej linii `LOG:`
+  snapshotu to artefakt testera (`snapshot()` bierze `slice(-6)` z DOM
+  rysowanego od najnowszego, więc to OGON najstarszych wpisów), nie błąd
+  silnika. Nie tworzymy znaleziska (ADR 0016: bez maskowania, bez latania
+  na artefaktach testera).
 
 ### Etap 4 — Domknięcie sesji
 

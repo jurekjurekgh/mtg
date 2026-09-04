@@ -8294,3 +8294,32 @@ mutacje 3/3 zabite; `npm test` 4402/4402, `test:all` 4412/4412, build
 `3d1fb2b` (RED), `0b84945` (fix). Uwaga sesji: sandbox zresetował workspace
 czwarty raz — odzyskane fetch + mixed reset do FETCH_HEAD; node_modules
 testera (jsdom) i dist/ odtworzone (npm i + npm run build).
+
+**Audyt PR #95 + pętla jakości (2026-09-04).**
+
+Sesja w trybie domyślnym ADR 0020/0021 („kontynuujemy projekt”): PR #96
+(`arena/01a06dd7-mtg` → `main`) otwarty PRZED pierwszą zmianą w kodzie;
+audyt ostatniego scalonego PR (#95 — squash `bf615b1`, 27 plików,
++3983 −63). Werdykt audytu: **PR dobry** — kod chirurgiczny, bez znalezisk
+regułowych; per plik: engine combat/game-state (łańcuch wyników komendy
+M296, model kupowanego deathtouch M297, `modeExtra`), heuristic-bot (kara
+za deathtouch), UI choice-request/multi-target/main/render/session
+(wspólny kreator M298–M304, etykiety, FoW) — wszystko akceptowane. Dwa
+znaleziska **dokumentacyjne (L92)**: F1 README (4378 → realnie 4402/4412,
+build 3226,2 kB), F2 handoff 2026-09-03 (liczby sprzed scalenia — zastąpiony
+handoffem 2026-09-04). Raport: `docs/audits/AUDYT_PR95_2026-09-04.md`.
+
+Pętla jakości: cztery partie Żywego Testera na przebudowanym `dist/`
+(final-fantasy × worek-basni 51, theros × zendikar 47, wiedzmin ×
+worek-legend 7 explorer, worek-basni × final-fantasy 811 random) —
+wszystkie „DETEKTORY: brak zgłoszeń”, wszystkie kończą się wygraną bota.
+Mulligan londyński przećwiczony realnie (seed 811: 3 odrzucenia,
+odłożenie 1/2/3 karty, 6/16/35 opcji, zatrzymanie 4 kart). Kandydat
+„Bierzesz mulligan (1)” w końcowej linii `LOG:` snapshotu rozpatrzony
+i odrzucony: to OGON najstarszych wpisów (render rysuje log od najnowszego,
+a `snapshot()` bierze `slice(-6)` z DOM), nie błąd silnika — przebieg ten
+znajduje się w sekcji `[ROZGRYWKA]` transkryptu. Bramki na HEAD:
+`npm test` 4402/4402, `test:all` 4412/4412, build 59 modułów / 3226,2 kB;
+bot-benchmark 10/10; pełny B0 bez zmian (ADR 0018). Zero nowych kart.
+Commity: `03baf91` (plan), `43151c0` (raport), `b8137e9` (roadmapa),
+dokumentacja Etapu 4.
