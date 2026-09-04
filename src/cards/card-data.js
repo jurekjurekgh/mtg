@@ -10390,6 +10390,49 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // Dane Oracle: docs/cards/scryfall-<slug>.json (ADR 0010 §2a).
   // =========================================================================
 
+  // 589M3C Acidic Slime (M3C, Warhammer Fantasy) {3}{G}{G} 2/2 — Deathtouch;
+  // ETB: destroy target artifact, enchantment, or land.
+  defineCard({
+    id: 'acidic-slime', name: 'Acidic Slime', set: 'M3C',
+    types: ['Creature'], subtypes: ['Ooze'], colors: ['G'],
+    keywords: ['deathtouch'], power: 2, toughness: 2, manaCost: 5,
+    oracleText: 'Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nWhen this creature enters, destroy target artifact, enchantment, or land.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/d/7dfeb1d1-7b2d-4235-902f-22a62af5dc0f.jpg?1783911373',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'artifact_or_enchantment_or_land' },
+        },
+        effect: { type: 'destroy_permanent' },
+      }),
+    ],
+    artId: 589, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['destroy celuje w artefakt, enchantment albo ląd (filtr istniejący od transzy 1); deathtouch jako keyword bazowy'],
+  }),
+
+  // 593SOI Inspiring Captain (SOI, Warhammer Fantasy) {3}{W} 3/3 — ETB:
+  // creatures you control get +1/+1 until end of turn.
+  defineCard({
+    id: 'inspiring-captain', name: 'Inspiring Captain', set: 'SOI',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['W'],
+    power: 3, toughness: 3, manaCost: 4,
+    oracleText: 'When this creature enters, creatures you control get +1/+1 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/5/45704604-a1b3-4225-8466-aa76136c84a8.jpg?1783937816',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'buff_creatures_you_control', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 593, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['ETB buff do końca tury; zbiór stworów ustalony przy rozstrzygnięciu (CR 611.2c, ruling SOI 2016-04-08)'],
+  }),
+
   // 590ECL Keep Out (ECL, Wiedźmin) {1}{W} Instant — Choose one:
   // 4 damage to target tapped creature OR destroy target enchantment.
   defineCard({

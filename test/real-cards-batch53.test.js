@@ -550,3 +550,98 @@ test('B53: Sheriff of Safe Passage — +1 za każdego INNEGO stwora', () => {
   assert.ok(sheriff, 'szeryf na polu bitwy');
   assert.equal(sheriff.counters?.['+1/+1'], 3, '1 bazowy + 2 za sojuszników');
 });
+
+// =====================================================================
+// Acidic Slime (M3C) — Deathtouch; ETB destroy target artifact, enchantment
+// or land.
+// =====================================================================
+test('B53: Acidic Slime — dane Oracle i filtr celu (artefakt/enchantment/ląd)', () => {
+  const def = REGISTRY.get('acidic-slime');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Ooze']);
+  assert.deepEqual(def.colors, ['G']);
+  assert.equal(def.power, 2);
+  assert.equal(def.toughness, 2);
+  assert.equal(def.manaCost, 5);
+  assert.equal(def.artId, 589);
+  assert.equal(def.plan, 'Warhammer Fantasy');
+  assert.ok(def.keywords.includes('deathtouch'));
+  const etb = def.abilities[0];
+  assert.equal(etb.trigger.event, 'enter_battlefield');
+  assert.deepEqual(etb.trigger.requiresTarget, { type: 'artifact_or_enchantment_or_land' });
+  assert.deepEqual(etb.effect, { type: 'destroy_permanent' });
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+});
+
+test('B53: Acidic Slime — ETB niszczy cel (ląd) i nie celuje w stwora', () => {
+  const state = game();
+  addMana(state, 'p1', 5, { colors: ['G'] });
+  addCard(state, 'slime', 'acidic-slime', 'p1', 'hand');
+  addObject(state, {
+    id: 'land', instanceId: 'i-land', cardId: 'basic-forest', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'land', manaCost: 0, abilities: [], keywords: [],
+    subtypes: ['Forest'], types: ['Basic', 'Land'], colors: ['G'],
+  });
+  addObject(state, {
+    id: 'art', instanceId: 'i-art', cardId: 'test-art', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'artifact', manaCost: 2, abilities: [], keywords: [],
+    subtypes: [], types: ['Artifact'], colors: [],
+  });
+  addSimpleCreature(state, 'cre', 'p2', { power: 2, toughness: 2 });
+
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'slime' }).ok);
+  resolveStack(state);
+  const offers = commands(state).filter((c) => c.type === 'resolve_trigger_target');
+  assert.ok(offers.some((c) => c.targetId === 'land'), 'ląd na liście celów');
+  assert.ok(offers.some((c) => c.targetId === 'art'), 'artefakt na liście celów');
+  assert.ok(!offers.some((c) => c.targetId === 'cre'), 'stwór nie jest legalnym celem');
+  const target = offers.find((c) => c.targetId === 'land');
+  assert.ok(execute(state, target).ok);
+  resolveStack(state);
+  assert.notEqual(state.objects.get('land')?.zone, 'battlefield', 'ląd zniszczony');
+  assert.equal(state.objects.get('art')?.zone, 'battlefield', 'artefakt nietknięty');
+});
+
+// =====================================================================
+// Inspiring Captain (SOI) — ETB: creatures you control get +1/+1 until end
+// of turn (set of affected creatures fixed at resolution).
+// =====================================================================
+test('B53: Inspiring Captain — dane Oracle i efekt ETB', () => {
+  const def = REGISTRY.get('inspiring-captain');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Human', 'Knight']);
+  assert.deepEqual(def.colors, ['W']);
+  assert.equal(def.power, 3);
+  assert.equal(def.toughness, 3);
+  assert.equal(def.manaCost, 4);
+  assert.equal(def.artId, 593);
+  assert.equal(def.plan, 'Warhammer Fantasy');
+  const etb = def.abilities[0];
+  assert.equal(etb.trigger.event, 'enter_battlefield');
+  assert.deepEqual(etb.effect, { type: 'buff_creatures_you_control', power: 1, toughness: 1 });
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+});
+
+test('B53: Inspiring Captain — +1/+1 dla stworów w chwili rozstrzygnięcia', () => {
+  const state = game();
+  addMana(state, 'p1', 4, { colors: ['W'] });
+  addSimpleCreature(state, 'ally', 'p1', { power: 2, toughness: 2 });
+  addSimpleCreature(state, 'foe', 'p2', { power: 2, toughness: 2 });
+  addCard(state, 'cap', 'inspiring-captain', 'p1', 'hand');
+
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cap' }).ok);
+  resolveStack(state);
+  const cap = byCard(state, 'inspiring-captain');
+  assert.ok(cap, 'kapitan na polu bitwy');
+  assert.equal(effectivePower(cap, state), 4, 'sam kapitan też dostaje +1/+1 (3/3 → 4/4)');
+  assert.equal(effectivePower(state.objects.get('ally'), state), 3);
+  assert.equal(effectiveToughness(state.objects.get('ally'), state), 3);
+  assert.equal(effectivePower(state.objects.get('foe'), state), 2, 'stwór przeciwnika bez buffa');
+
+  // CR 611.2c / ruling SOI: zbiór ustalony przy rozstrzygnięciu — późniejszy
+  // stwór nie dostaje już buffa.
+  addSimpleCreature(state, 'late', 'p1', { power: 2, toughness: 2 });
+  assert.equal(effectivePower(state.objects.get('late'), state), 2);
+});
