@@ -1041,8 +1041,13 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   const singlePick = () => (chosen.size > 0
     ? ([...chosen][0] === NONE_PICK ? null : [...chosen][0])
     : undefined);
+  // M304: tłumacz instancja→definicja do dopasowania mulligan-bottom.
+  // Silnik deduplikuje kombinacje po definicjach kart (reprezentant z
+  // konkretnymi instancjami), więc wybór „drugiej kopii" musi mapować się
+  // na reprezentanta klasy — inaczej Zatwierdź milczy (klin z żywca).
+  const defOfMulliganCard = (id) => session?.state?.objects?.get(id)?.cardId ?? null;
   const currentCommand = () => (plan.cardIdsMode
-    ? commandForMulliganSelection(commands, [...chosen])
+    ? commandForMulliganSelection(commands, [...chosen], defOfMulliganCard)
     : keepMode
       ? commandForMulliganKeepSelection(commands, [...chosen][0] ?? null)
       : castWindowMode

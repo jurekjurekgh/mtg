@@ -582,13 +582,25 @@ export function buttonsPlanOf(commands) {
 /**
  * Komenda odpowiadająca zaznaczonym kartom albo null (wybór nielegalny =
  * brak takiej komendy — UI nie buduje komendy z palca, L48).
+ *
+ * M304 (klin znaleziony Żywym Testerem): silnik deduplikuje kombinacje
+ * „odłóż N na spód" po multizbiorze DEFINICJI kart i zostawia JEDNEGO
+ * reprezentanta z konkretnymi INSTANCJAMI (M119/Z3), a kreator rysuje wiersz
+ * na każdą instancję. Szukanie po dokładnych id instancji gubiło wybór
+ * „tej drugiej kopii" tej samej karty — Zatwierdź milczało przy legalnej
+ * decyzji. Z tłumaczem `defOf(instancja) → definicja` porównujemy multi-zbiory
+ * DEFINICJI: reprezentant jest semantycznie tą samą decyzją (tak definiuje ją
+ * sam dedup silnika), więc jego komenda jest prawidłowym wynikiem wyboru.
+ * Bez tłumacza — dotychczasowe dokładne dopasowanie (kompatybilność).
  */
-export function commandForMulliganSelection(commands, cardIds) {
-  const selection = [...(cardIds ?? [])].sort().join('|');
+export function commandForMulliganSelection(commands, cardIds, defOf = null) {
+  const list = cardIds ?? [];
+  const keyOf = (ids) => [...ids].map((id) => (defOf ? (defOf(id) ?? id) : id)).sort().join('|');
+  const selection = keyOf(list);
   const cmd = (commands ?? []).find((entry) =>
     entry?.type === 'resolve_mulligan_bottom_choice'
     && Array.isArray(entry.cardIds)
-    && entry.cardIds.length === cardIds.length
-    && [...entry.cardIds].sort().join('|') === selection);
+    && entry.cardIds.length === list.length
+    && keyOf(entry.cardIds) === selection);
   return cmd ?? null;
 }

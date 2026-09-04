@@ -36,10 +36,14 @@ import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive, warpTurnReac
 
 /**
  * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
- * Ta sama wartość co COMBAT_OPTION_CAP / CREW_OPTION_CAP / ESCAPE_OPTION_CAP —
- * lekcja L19: każda enumeracja kombinacyjna dostaje cap w dniu narodzin.
+ * Lekcja L19: każda enumeracja kombinacyjna dostaje cap w dniu narodzin.
+ *
+ * M304 (klin znaleziony Żywym Testerem): cap musi pokrywać PEŁNĄ przestrzeń
+ * decyzji, inaczej legalne wybory nie mają komendy i kreator milczy. Ręka po
+ * mulliganie ma ≤7 kart, więc maksimum podzbiorów to C(7,3)=C(7,4)=35 —
+ * poprzednie 32 obcinało 3 kombinacje przy 4. mulliganie (i tyleż przy 3.).
  */
-const MULLIGAN_BOTTOM_OPTION_CAP = 32;
+const MULLIGAN_BOTTOM_OPTION_CAP = 35;
 
 /**
  * Stabilny klucz tożsamości komendy — do deduplikacji oferty (M125/A).
