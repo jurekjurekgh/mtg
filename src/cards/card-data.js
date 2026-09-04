@@ -781,6 +781,17 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/1/f/1fbc471d-5948-47fc-b7cc-81cc13a4cd15.jpg?1783906133',  // tfin
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Call the Mountain Chocobo'] },
   }),
+  // Batch 53 (Ghirapur Gearcrafter): drukowany token 1/1 Thopter z lataniem.
+  // Wpis jest danymi prezentacji (grafika Scryfall); reguła pozostaje inline
+  // w efekcie `create_token` (ADR 0002), a zgodność pilnuje M202/K.
+  defineCard({
+    id: 'token_thopter', name: 'Thopter', set: null,
+    types: ['Artifact', 'Creature', 'Token'], subtypes: ['Thopter'], colors: [],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
+    oracleText: 'Flying',
+    imageUri: 'https://cards.scryfall.io/large/front/b/9/b9d38c75-c69f-45cd-a745-03ac7513491b.jpg?1783903566',  // tsoc
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Ghirapur Gearcrafter'] },
+  }),
   defineCard({
     id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
     types: ['Land'], colors: [],
@@ -10372,6 +10383,76 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['draw po powrocie wyłącznie, gdy odzyskana karta ma podtyp Zombie (CR 608.2g — podtyp sprawdzany z karty w ręce, bez zmiany strefy)'],
   }),
+
+  // =========================================================================
+  // Batch 53 (2026-09-04) — lista właściciela 589–598 (pierwsza transza:
+  // reuse istniejących mechanik + drobne, generyczne filtry celów).
+  // Dane Oracle: docs/cards/scryfall-<slug>.json (ADR 0010 §2a).
+  // =========================================================================
+
+  // 590ECL Keep Out (ECL, Wiedźmin) {1}{W} Instant — Choose one:
+  // 4 damage to target tapped creature OR destroy target enchantment.
+  defineCard({
+    id: 'keep-out', name: 'Keep Out', set: 'ECL',
+    types: ['Instant'], colors: ['W'], manaCost: 2,
+    oracleText: 'Choose one —\n• Keep Out deals 4 damage to target tapped creature.\n• Destroy target enchantment.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/a/4ab1601c-634c-4f21-8926-ba3cb92008c1.jpg?1783904503',
+    spell: {
+      timing: 'instant',
+      modes: [
+        { name: 'Zadaj 4 obrażenia tapped stworowi', targets: [{ type: 'tapped_creature' }], effects: [{ type: 'damage', amount: 4 }] },
+        { name: 'Zniszcz enchantment', targets: [{ type: 'enchantment' }], effects: [{ type: 'destroy_permanent' }] },
+      ],
+    },
+    artId: 590, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 594EMN Ironclad Slayer (EMN, Wiedźmin) {2}{W} 3/2 — ETB: you may return
+  // target Aura or Equipment card from your graveyard to your hand.
+  defineCard({
+    id: 'ironclad-slayer', name: 'Ironclad Slayer', set: 'EMN',
+    types: ['Creature'], subtypes: ['Human', 'Warrior'], colors: ['W'],
+    power: 3, toughness: 2, manaCost: 3,
+    oracleText: 'When this creature enters, you may return target Aura or Equipment card from your graveyard to your hand.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/4/d413f69f-fe2d-4049-8640-178af7e927d9.jpg?1783937515',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'aura_or_equipment_card_in_graveyard', controlledBy: 'controller', optional: true },
+        },
+        effect: { type: 'return_card_from_graveyard_to_hand' },
+      }),
+    ],
+    artId: 594, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 596ORI Ghirapur Gearcrafter (ORI, Kaladesh) {2}{R} 2/1 — ETB: create a
+  // 1/1 colorless Thopter artifact creature token with flying.
+  defineCard({
+    id: 'ghirapur-gearcrafter', name: 'Ghirapur Gearcrafter', set: 'ORI',
+    types: ['Creature'], subtypes: ['Human', 'Artificer'], colors: ['R'],
+    power: 2, toughness: 1, manaCost: 3,
+    oracleText: 'When this creature enters, create a 1/1 colorless Thopter artifact creature token with flying. (A creature with flying can\'t be blocked except by creatures with flying or reach.)',
+    imageUri: 'https://cards.scryfall.io/large/front/f/0/f05cafb6-8812-42bb-ad14-3dde4bcb7034.jpg?1783938329',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'create_token', cardId: 'token_thopter', name: 'Thopter',
+          kind: 'creature', power: 1, toughness: 1, colors: [],
+          types: ['Artifact', 'Creature'], subtypes: ['Thopter'], keywords: ['flying'], amount: 1,
+        },
+      }),
+    ],
+    artId: 596, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 
 ]);
 

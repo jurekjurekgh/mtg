@@ -39,6 +39,21 @@ bez force push), **ADR 0028** (rulingi ściągnięte przy karcie).
       istotne dla: Offspring, Glorifier (reflexive), Inspiring Captain,
       Storied/Óin, Ichorclaw (becomes blocked), Plot/Sheriff).
 
+## Transza 1 — 3 proste karty (590 Keep Out, 594 Ironclad Slayer, 596 Ghirapur Gearcrafter)
+
+- [x] `defineCard` ×3 w `REAL_CARDS` + `plan`/`artId` (ADR 0010 §2a).
+- [x] `MANA_COSTS` ×3.
+- [x] `tools/collection-art-ids.csv`: 590/594/596 (jeszcze przed pełnym 589–598).
+- [x] Generyczne filtry celów w `triggers.js`:
+      `aura_or_equipment_card_in_graveyard` (Ironclad) oraz
+      `artifact_or_enchantment_or_land` (przygotowanie pod Acidic Slime).
+- [x] PL etykiety filtrów w `src/table/render.js` (strażnik M126).
+- [x] Wpis katalogowy `token_thopter` + obraz Scryfall (strażnik M202/K).
+- [x] `node tools/generate-plan-decks.mjs` → decks/ (kaladesh, wiedzmin).
+- [x] `test/real-cards-batch53.test.js` (sanity danych + legalne scenario;
+      Ironclad: „you may” z celowym i z odmową; Keep Out: oba tryby; Ghirapur: token).
+- [x] Pomiar: `npm test` **4410/4410**, `npm run build` **59 modułów / 3232,0 kB**.
+
 ## Etap 1 — dane kart (ADR 0010 §2a)
 
 - [ ] 10 × `docs/cards/scryfall-<slug>.json` (uproszczony kształt wg

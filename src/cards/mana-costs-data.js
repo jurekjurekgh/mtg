@@ -437,4 +437,8 @@ export const MANA_COSTS = {
   "fourth-bridge-prowler": "{B}",
   "leonin-surveyor": "{1}{W}",
   "cemetery-recruitment": "{1}{B}",
+  // Batch 53 (2026-09-04) — koszty wprost z Oracle (docs/cards/scryfall-*.json).
+  "keep-out": "{1}{W}",
+  "ironclad-slayer": "{2}{W}",
+  "ghirapur-gearcrafter": "{2}{R}",
 };

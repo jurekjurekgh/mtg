@@ -356,6 +356,20 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return types.includes('Instant') || types.includes('Sorcery');
     });
   }
+  if (spec.type === 'aura_or_equipment_card_in_graveyard' && spec.controlledBy === 'controller') {
+    // Batch 53 (Ironclad Slayer, EMN): „return target Aura or Equipment card
+    // from your graveyard to your hand" — karty-własnego grobu z podtypem
+    // Aura albo Equipment (token nie jest kartą, CR 108.2b).
+    return state.zones.graveyard.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.controllerId !== sourceObject.controllerId) return false;
+      if (object.name != null) return false;
+      const isAura = (object.types ?? []).includes('Enchantment') && (object.subtypes ?? []).includes('Aura');
+      const isEquipment = (object.types ?? []).includes('Artifact')
+        && ((object.subtypes ?? []).includes('Equipment') || object.equipment != null);
+      return isAura || isEquipment;
+    });
+  }
   if (spec.type === 'land_card_in_graveyard') {
     // Circle of the Land Druid (CLB): „return target land card from your
     // graveyard to your hand" — KARTY-lądy z grobu kontrolera (token nie jest
@@ -458,6 +472,17 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       if (Array.isArray(spec.notColors) && spec.notColors.some((color) => (object.colors ?? []).includes(color))) return false;
       if (hexproofBlocked(object)) return false;
       return true;
+    });
+  }
+  // Batch 53 (Acidic Slime, M3C): „destroy target artifact, enchantment,
+  // or land" — suma trzech rodzin permanentów na polu bitwy (generycznie,
+  // ADR 0002). Walidacja celu po stronie triggera = wybór z tej listy.
+  if (spec.type === 'artifact_or_enchantment_or_land') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield'
+        && (isArtifactOrEnchantment(object) || isLand(object))
+        && !hexproofBlocked(object);
     });
   }
   if (spec.type === 'artifact_or_enchantment' && !spec.controlledBy) {
