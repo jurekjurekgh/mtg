@@ -6,7 +6,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { legalBlockerOptions } from '../src/engine/combat.js';
-import { effectiveKeywords, effectivePower } from '../src/engine/permanents.js';
+import { effectiveKeywords, effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -364,6 +364,57 @@ test('B53: Óin — {1},{T}, odrzuć kartę: dobierz', () => {
   assert.equal(state.objects.get('oin').tapped, true, 'koszt tap zapłacony');
   resolveStack(state);
   assert.equal(state.zones.hand.length, before, 'odrzucenie 1 + dobór 1');
+});
+
+// =====================================================================
+// Ichorclaw Myr (SOM) — Infect + „becomes blocked": +2/+2, raz na blok
+// =====================================================================
+test('B53: Ichorclaw Myr — dane Oracle (Infect, becomes_blocked)', () => {
+  const def = REGISTRY.get('ichorclaw-myr');
+  assert.deepEqual(def.types, ['Artifact', 'Creature']);
+  assert.deepEqual(def.subtypes, ['Phyrexian', 'Myr']);
+  assert.deepEqual(def.colors, []);
+  assert.equal(def.power, 1);
+  assert.equal(def.toughness, 1);
+  assert.equal(def.manaCost, 2);
+  assert.deepEqual(def.keywords, ['infect']);
+  assert.equal(def.artId, 597);
+  assert.equal(def.plan, 'Mirrodin');
+  assert.equal(def.abilities[0].trigger.event, 'becomes_blocked');
+  assert.deepEqual(def.abilities[0].effect, { type: 'pump', power: 2, toughness: 2 });
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+});
+
+test('B53: Ichorclaw Myr — zablokowany dostaje +2/+2 (raz, nawet przy 2 blokerach)', () => {
+  const state = game();
+  addPermanent(state, 'myr', 'ichorclaw-myr', 'p1');
+  addSimpleCreature(state, 'blk1', 'p2', { power: 1, toughness: 1 });
+  addSimpleCreature(state, 'blk2', 'p2', { power: 1, toughness: 1 });
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['myr'] }).ok);
+  assert.equal(effectivePower(state.objects.get('myr'), state), 1, 'przed blokiem 1/1');
+  const block = commands(state, 'p2').find((c) => c.type === 'declare_blockers'
+    && Array.isArray(c.assignments?.myr) && c.assignments.myr.includes('blk1') && c.assignments.myr.includes('blk2'));
+  assert.ok(block, 'ofertowany blok dwoma stwora');
+  assert.ok(execute(state, block).ok);
+  resolveStack(state);
+  assert.equal(effectivePower(state.objects.get('myr'), state), 3, '+2/+2, nie +4/+4');
+  assert.equal(effectiveToughness(state.objects.get('myr'), state), 3);
+});
+
+test('B53: Ichorclaw Myr — bez bloku brak pumpu', () => {
+  const state = game();
+  addPermanent(state, 'myr', 'ichorclaw-myr', 'p1');
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['myr'] }).ok);
+  assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
+  resolveStack(state);
+  assert.equal(effectivePower(state.objects.get('myr'), state), 1);
 });
 
 // =====================================================================

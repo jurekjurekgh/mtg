@@ -1,6 +1,7 @@
 # Mirrodin (WU)
 
 1x Crawling Chorus
+1x Horizon Spellbomb
 1x Panic Spellbomb
 1x Steel Sabotage
 1x Divine Offering

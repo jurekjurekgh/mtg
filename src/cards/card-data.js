@@ -10505,6 +10505,26 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['Storied: enduring story leży na GRACZU i zostaje do końca gry (brak triggera); liczy się każdy permanent raz (rulingi HOB 2026-06-29)'],
   }),
 
+  // 597SOM Ichorclaw Myr (SOM, Mirrodin) {2} 1/1 — Infect;
+  // whenever this creature becomes blocked, it gets +2/+2 until end of turn.
+  defineCard({
+    id: 'ichorclaw-myr', name: 'Ichorclaw Myr', set: 'SOM',
+    types: ['Artifact', 'Creature'], subtypes: ['Phyrexian', 'Myr'], colors: [],
+    power: 1, toughness: 1, manaCost: 2, keywords: ['infect'],
+    oracleText: 'Infect (This creature deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)\nWhenever this creature becomes blocked, it gets +2/+2 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/a/faef8b8b-2c45-4fed-b6ba-a8ac49c66330.jpg?1783941706',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'becomes_blocked' },
+        effect: { type: 'pump', power: 2, toughness: 2 },
+      }),
+    ],
+    artId: 597, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['becomes_blocked odpala RAZ na atakującego (ruling SOM 2011-01-01); Infect już wspólny z engine'],
+  }),
+
   // 598OTJ Sheriff of Safe Passage (OTJ, Śródziemie) {2}{W} 0/0 — enters with
   // a +1/+1 counter plus one for each other creature you control; Plot {1}{W}.
   defineCard({

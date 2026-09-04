@@ -459,6 +459,9 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   any_creature_dies: 'śmierć stworzenia',
   attacks: 'atak',
   attacks_alone: 'samotny atak',
+  // Batch 53 (Ichorclaw Myr): „Whenever this creature becomes blocked" —
+  // raz na atakującego, niezależnie od liczby blokerów (ruling SOM).
+  becomes_blocked: 'zablokowanie tego stwora',
   aura_host_targeted_by_spell: 'gospodarz aury celem czaru',
   spell_targets_this_creature: 'twoja karta celuje w to stworzenie',
   bat_attacks: 'atak nietoperza',

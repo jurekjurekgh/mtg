@@ -267,6 +267,8 @@ test('Springbloom Druid: „up to two" — rezygnacja na drugim kroku kończy sz
 const HANDLED_TRIGGER_EVENTS = new Set([
   'another_creature_enters', 'any_combat_damage_to_player', 'any_creature_dies',
   'attacks', 'attacks_alone', 'aura_host_targeted_by_spell', 'bat_attacks', 'faerie_attacks', 'beginning_of_combat',
+  // Batch 53 (Ichorclaw Myr): „whenever this creature becomes blocked".
+  'becomes_blocked',
   'card_put_into_graveyard_from_nonbattlefield', 'combat_damage_to_player',
   'dies', 'enchanted_creature_damage_to_opponent', 'end_step', 'enter_battlefield', 'equipped_creature_attacks',
   'equipped_creature_blocks_or_blocked_by', 'combat_damage_to_you',

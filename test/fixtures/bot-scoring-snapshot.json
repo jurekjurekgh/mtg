@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "ec422a8fa069f2edb5ec2e518b4e647775ceaee38934af0184cdcf7d2718e499",
+  "overallHash": "9bd5ad5fb50e59a7e5201aca33a6cf709470382ffb6c194129880bba4f1021b1",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
@@ -45,8 +45,8 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1000,
-      "hash": "d29a39d0fc822528cfc1626f3a9a875a6169f95f81b25f36b081425735fb17f2",
-      "decisions": 168,
+      "hash": "291a104f66ddc3084a72e6ecdb4d7c92cb38df40be968d72dd068f6649f3fe99",
+      "decisions": 166,
       "scoreSum": 2521.4,
       "chosenKinds": {
         "activate_ability": 2,
@@ -54,7 +54,7 @@
         "block": 7,
         "cast_permanent": 5,
         "cast_spell": 1,
-        "pass_priority": 132,
+        "pass_priority": 130,
         "play_land": 6,
         "resolve_combat": 7,
         "resolve_discard_choice": 2,
@@ -65,22 +65,22 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1001,
-      "hash": "70a004b60583f4fc9d5b0e399dd26dfa46b14e28520d10630f25a2925944ccb7",
-      "decisions": 289,
-      "scoreSum": 3380.1,
+      "hash": "0877a3e0fc9a8dc7128f0ed99a9ca954b4e05a70a056e305cc44e14ca2ba542b",
+      "decisions": 189,
+      "scoreSum": 2953.2,
       "chosenKinds": {
-        "activate_ability": 3,
-        "attack": 10,
-        "block": 11,
+        "activate_ability": 1,
+        "attack": 6,
+        "block": 7,
         "cast_flashback": 1,
-        "cast_permanent": 7,
-        "cast_spell": 3,
-        "pass_priority": 227,
-        "play_land": 9,
-        "resolve_combat": 12,
-        "resolve_discard_choice": 3,
+        "cast_permanent": 6,
+        "cast_spell": 2,
+        "pass_priority": 145,
+        "play_land": 8,
+        "resolve_combat": 8,
+        "resolve_discard_choice": 1,
         "resolve_mulligan_choice": 1,
-        "resolve_reveal_exile_hand": 1,
+        "resolve_search_choice": 2,
         "resolve_trigger_target": 1
       }
     },

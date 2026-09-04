@@ -2700,6 +2700,21 @@ function processTriggersScan(state, recentEvents) {
           }
         }
       }
+      // Batch 53 (Ichorclaw Myr, SOM): „Whenever this creature becomes
+      // blocked, it gets +2/+2 until end of turn." Trigger odpala się RAZ
+      // na ATARKUJĄCEGO, niezależnie od liczby blokerów (ruling WotC).
+      // „Becomes blocked" dotyczy atakującego; bloker dostaje analogiczny
+      // status tylko przez przyszły event (np. „becomes blocking").
+      for (const [attackerId, blockerIds] of Object.entries(assignments ?? {})) {
+        if (!Array.isArray(blockerIds) || blockerIds.length === 0) continue;
+        const attacker = state.objects.get(attackerId);
+        if (!attacker || attacker.zone !== 'battlefield') continue;
+        for (const ability of effectiveAbilities(attacker)) {
+          if (ability?.trigger?.event === 'becomes_blocked') {
+            tryFire(state, ability, attacker, [], events);
+          }
+        }
+      }
     }
     // Deklaracja atakujących: triggery „attacks" (na atakującym), tribał
     // „bat_attacks" (na kontrolowanych permanentach — np. Zoraline) oraz

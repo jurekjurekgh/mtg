@@ -102,6 +102,18 @@ bez force push), **ADR 0028** (rulingi ściągnięte przy karcie).
       `{1},{T}` z odrzuceniem.
 - [x] Pomiar: `npm test` **4421/4421**, `npm run build` **59 modułów / 3245,5 kB**.
 
+## Transza 5 — Ichorclaw Myr (597 SOM, Infect + „becomes blocked”)
+
+- [x] `defineCard` + `MANA_COSTS` + `tools/collection-art-ids.csv` (597).
+- [x] Generyczny trigger `becomes_blocked` (triggers.js): raz na atakującego,
+      niezależnie od liczby blokerów (ruling SOM); blok bez blokerów nie odpala.
+- [x] PL etykieta `TRIGGER_EVENT_LABELS` (strażnik M122/A).
+- [x] `decks/mirrodin-*` przez generator (ADR 0023/0024, split pozostaje
+      `mirrodin-wu`+`mirrodin-brg`).
+- [x] `test/real-cards-batch53.test.js`: sanity danych (Infect w keywordach),
+      blok 1 blokerem + blok 2 blokerami (pump tylko +2/+2), brak bloku = brak.
+- [x] Pomiar: `npm test` **4424/4424**, `npm run build` **59 modułów / 3248,1 kB**.
+
 ## Etap 1 — dane kart (ADR 0010 §2a)
 
 - [ ] 10 × `docs/cards/scryfall-<slug>.json` (uproszczony kształt wg
