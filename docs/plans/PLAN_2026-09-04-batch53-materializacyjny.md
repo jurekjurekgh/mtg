@@ -54,6 +54,17 @@ bez force push), **ADR 0028** (rulingi ściągnięte przy karcie).
       Ironclad: „you may” z celowym i z odmową; Keep Out: oba tryby; Ghirapur: token).
 - [x] Pomiar: `npm test` **4410/4410**, `npm run build` **59 modułów / 3232,0 kB**.
 
+## Transza 2 — Sheriff of Safe Passage (598 OTJ, Plot)
+
+- [x] `defineCard` + `MANA_COSTS` + `tools/collection-art-ids.csv` (598).
+- [x] Generyczna formuła wejścia `other_creatures_you_control_plus_one`
+      w `applyEnterCounters` (`src/engine/effects.js`) — CR 121.6/614.1c,
+      bez kartowych warunków (ADR 0002).
+- [x] `node tools/generate-plan-decks.mjs` → `decks/srodziemie.txt`.
+- [x] `test/real-cards-batch53.test.js`: sanity danych + wejście 1 licznik
+      (pusty stół) oraz 3 liczniki (dwóch sojuszników).
+- [x] Pomiar: `npm test` **4413/4413**, `npm run build` **59 modułów / 3233,8 kB**.
+
 ## Etap 1 — dane kart (ADR 0010 §2a)
 
 - [ ] 10 × `docs/cards/scryfall-<slug>.json` (uproszczony kształt wg

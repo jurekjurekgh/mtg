@@ -892,8 +892,19 @@ export function destroyPermanentByEffect(state, objectId, options = {}) {
 export function applyEnterCounters(state, objectId) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.faceDown) return;
+  // Batch 53 (Sheriff of Safe Passage, CR 121.6/614.1c): „enters with a
+  // +1/+1 counter on it plus an additional one for each other creature you
+  // control" — kwota jest cechą WEJŚCIA i zależy od stanu stołu w chwili
+  // wejścia. Formuła jako string (jak greatest_power_you_control w tokenach)
+  // pozostaje generyczna (ADR 0002), a nie kartowa.
+  const otherCreatures = object.kind === 'creature'
+    ? creaturesYouControl(state, object.controllerId).filter((o) => o.id !== objectId).length
+    : 0;
   for (const [name, amount] of Object.entries(object.entersWithCounters ?? {})) {
-    addCounter(state, objectId, name, amount);
+    const resolved = amount === 'other_creatures_you_control_plus_one'
+      ? 1 + otherCreatures
+      : amount;
+    addCounter(state, objectId, name, resolved);
   }
   // Liczniki wejścia WARUNKOWE (CR 614.1c): „enters with two +1/+1 counters
   // if a creature died this turn" (morbid) / „if at least three <color> mana

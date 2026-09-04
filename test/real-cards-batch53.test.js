@@ -40,6 +40,21 @@ function addPermanent(state, id, cardId, controllerId, patch = {}) {
   return state.objects.get(id);
 }
 
+function addSimpleCreature(state, id, controllerId, { power = 2, toughness = 2, subtypes = [], keywords = [] } = {}) {
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId: `test-${id}`, controllerId, ownerId: controllerId, zone: 'battlefield',
+    kind: 'creature', power, toughness, manaCost: 1, abilities: [], keywords,
+    subtypes, types: ['Creature'], colors: [],
+  });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
+  return state.objects.get(id);
+}
+
+function byCard(state, cardId, controllerId = null) {
+  return [...state.objects.values()]
+    .find((o) => o.cardId === cardId && (controllerId == null || o.controllerId === controllerId));
+}
+
 function commands(state, playerId = 'p1') {
   return playerView(state, playerId).legalCommands;
 }
@@ -193,4 +208,47 @@ test('B53: Ironclad Slayer — odmowa celu = trigger bez efektu (you may)', () =
   assert.ok(execute(state, decline).ok);
   resolveStack(state);
   assert.equal(state.objects.get('equip-in-gy')?.zone, 'graveyard', 'bez wyboru celu nic nie wraca');
+});
+
+// =====================================================================
+// Sheriff of Safe Passage (OTJ) — enters with +1/+1 for each other creature
+// =====================================================================
+test('B53: Sheriff of Safe Passage — dane Oracle i deskryptor wejścia', () => {
+  const def = REGISTRY.get('sheriff-of-safe-passage');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Human', 'Knight']);
+  assert.deepEqual(def.colors, ['W']);
+  assert.equal(def.power, 0);
+  assert.equal(def.toughness, 0);
+  assert.equal(def.manaCost, 3);
+  assert.equal(def.artId, 598);
+  assert.equal(def.plan, 'Śródziemie');
+  assert.deepEqual(def.plot, { cost: 2, colors: ['W'] });
+  assert.deepEqual(def.entersWithCounters, { '+1/+1': 'other_creatures_you_control_plus_one' });
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+});
+
+test('B53: Sheriff of Safe Passage — wejście na pustym stole = 1 licznik (+1/+1)', () => {
+  const state = game();
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  addCard(state, 'sheriff', 'sheriff-of-safe-passage', 'p1', 'hand');
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'sheriff' }).ok);
+  resolveStack(state);
+  const sheriff = byCard(state, 'sheriff-of-safe-passage');
+  assert.ok(sheriff, 'szeryf na polu bitwy');
+  assert.equal(sheriff.counters?.['+1/+1'], 1, 'zero innych stworów → jeden licznik');
+});
+
+test('B53: Sheriff of Safe Passage — +1 za każdego INNEGO stwora', () => {
+  const state = game();
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  addSimpleCreature(state, 'ally1', 'p1', { power: 1, toughness: 1 });
+  addSimpleCreature(state, 'ally2', 'p1', { power: 1, toughness: 1 });
+  addCard(state, 'sheriff', 'sheriff-of-safe-passage', 'p1', 'hand');
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'sheriff' }).ok);
+  resolveStack(state);
+  const sheriff = byCard(state, 'sheriff-of-safe-passage');
+  assert.ok(sheriff, 'szeryf na polu bitwy');
+  assert.equal(sheriff.counters?.['+1/+1'], 3, '1 bazowy + 2 za sojuszników');
 });

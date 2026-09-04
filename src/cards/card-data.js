@@ -10453,6 +10453,21 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 598OTJ Sheriff of Safe Passage (OTJ, Śródziemie) {2}{W} 0/0 — enters with
+  // a +1/+1 counter plus one for each other creature you control; Plot {1}{W}.
+  defineCard({
+    id: 'sheriff-of-safe-passage', name: 'Sheriff of Safe Passage', set: 'OTJ',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['W'],
+    power: 0, toughness: 0, manaCost: 3,
+    oracleText: 'This creature enters with a +1/+1 counter on it plus an additional +1/+1 counter on it for each other creature you control.\\nPlot {1}{W} (You may pay {1}{W} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/c/3/c38a845d-f25d-45ab-9154-3fa5291b0ba0.jpg?1783911852',
+    plot: { cost: 2, colors: ['W'] },
+    entersWithCounters: { '+1/+1': 'other_creatures_you_control_plus_one' },
+    artId: 598, plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+    notes: ['enters-with liczy INNE stwory przy każdym wejściu (CR 121.6), także reanimacja; plot obsługuje ścieżka cast_permanent (exile z ręki i późniejszy rzut bez many)'],
+  }),
+
 
 ]);
 
