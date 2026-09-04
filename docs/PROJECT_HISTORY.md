@@ -8323,3 +8323,33 @@ znajduje się w sekcji `[ROZGRYWKA]` transkryptu. Bramki na HEAD:
 bot-benchmark 10/10; pełny B0 bez zmian (ADR 0018). Zero nowych kart.
 Commity: `03baf91` (plan), `43151c0` (raport), `b8137e9` (roadmapa),
 dokumentacja Etapu 4.
+
+**Batch 53 — nowy batch materializacyjny (589–598, 2026-09-04).**
+
+Zlecenie właściciela: „Proponuję nowy batch materializacyjny. Podziel to
+sobie na sensowne etapy i commituj po kawałku” — 10 kart na gałęzi
+`arena/01a06dd7-mtg` (PR #96). Wykonano w 7 transzach: 3 proste karty
+(590/594/596), Sheriff (598, Plot), Rust-Shield (591, Offspring), Óin (595,
+Storied), Ichorclaw (597, becomes_blocked), Glorifier (592, reflexive
+sacrifice) i domknięcie (589 Acidic Slime, 593 Inspiring Captain). Nowe
+generyczne mechaniki: Offspring, Storied, `becomes_blocked`, „reflexive
+when you do” po poświęceniu, `cantBeBlockedByPower` oraz filtry celów
+`aura_or_equipment_card_in_graveyard` i `artifact_or_enchantment_or_land`.
+
+Kluczowa decyzja **„accept-migrate”** (właściciel): Glorifier przepchnął
+Warhammer Fantasy ponad próg 30 nielandowych, więc akceptujemy split ADR
+0024 — `warhammer-ubr` 21 + `warhammer-wg` 17 (leak 0, imbalance 4) —
+i migrujemy wszystkie odwołania `warhammer-brg`/`warhammer-wu` w testach,
+`src`, README, docs i narzędziach. Ze względu na spójność talii transza 6
+poszła w jednym zielonym commicie razem ze splitem i migracją. Golden-master
+`test/fixtures/bot-scoring-snapshot.json` odświeżony (`--write`); hash się nie
+zmienił, bo próbkuje parę `tarkir-bg|warhammer-ubr`.
+
+Słownik `tools/collection-art-ids.csv` 598 pozycji, 455 kart z artId;
+10 × `docs/cards/scryfall-<slug>.json` z rulingami. Bramki na HEAD
+`54da590`: `npm test` **4432/4432**, `test:all` **4442/4442**, build
+**59 modułów / 3257,4 kB**, bot-benchmark 10/10 (profil szybki ADR 0018,
+pełny B0 bez komendy właściciela). Commity: `6f91045` (transza 6 + split +
+migracja), `54da590` (transza 7). Plan:
+`docs/plans/PLAN_2026-09-04-batch53-materializacyjny.md`; handoff:
+`docs/setup/HANDOFF_2026-09-04-batch53-materializacyjny.md`.

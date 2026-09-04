@@ -114,42 +114,81 @@ bez force push), **ADR 0028** (rulingi ściągnięte przy karcie).
       blok 1 blokerem + blok 2 blokerami (pump tylko +2/+2), brak bloku = brak.
 - [x] Pomiar: `npm test` **4424/4424**, `npm run build` **59 modułów / 3248,1 kB**.
 
+## Transza 6 — Glorifier of Suffering (592 LCI) + podział Warhammera i migracja
+
+- [x] `defineCard` + `MANA_COSTS` + `tools/collection-art-ids.csv` (592).
+- [x] Generyczny efekt `reflexive_sacrifice` (effects.js): dobrowolna ofiara
+      „another creature or artifact”, `otherThanSource`, emisja zdarzenia
+      `reflexive_sacrifice` po poświęceniu; `skip` w `resolve_sacrifice_choice`.
+- [x] Silnik dwa etapy (ruling LCI 2023-11-10): najpierw decyzja poświęcenia,
+      potem refleksyjna zdolność z celami „up to two target creatures”.
+- [x] `EVENT_TYPES`: `reflexive_sacrifice_required`, `reflexive_sacrifice_resolved`,
+      `reflexive_sacrifice`; etykiety PL (strażniki M122/M202/C).
+- [x] `test/real-cards-batch53.test.js`: dane Oracle, ofiara artefaktu → refleks
+      na dwóch celach, rezygnacja z poświęcenia = brak refleksu, brak kandydata
+      = brak blokującej decyzji.
+- [x] **Decyzja właściciela „accept-migrate”:** Warhammer przekroczył 30
+      nielandowych → `node tools/generate-plan-decks.mjs` → `warhammer-ubr` (21)
+      + `warhammer-wg` (15) [leak 0, imbalance 6], ADR 0024.
+- [x] Migracja wszystkich odwołań `warhammer-brg`/`warhammer-wu` (testy src,
+      README, docs, tools, zloty-master) → `warhammer-ubr`/`warhammer-wg`;
+      `node tools/bot-scoring-snapshot.mjs --write`.
+- [x] Pomiar po migracji: `npm test` **4428/4428**, `npm run build`
+      **59 modułów / 3255,2 kB**; commit `6f91045`.
+
+## Transza 7 — domknięcie batcha: 589 Acidic Slime, 593 Inspiring Captain
+
+- [x] `defineCard` + `MANA_COSTS` + `tools/collection-art-ids.csv` (589, 593).
+- [x] Acidic Slime: `keywords:['deathtouch']` + ETB `destroy_permanent`
+      z celem `artifact_or_enchantment_or_land` (filtr przygotowany w transzy 1).
+- [x] Inspiring Captain: ETB `buff_creatures_you_control` +1/+1 (do końca tury;
+      CR 611.2c — zbiór stworów ustalony przy rozstrzygnięciu, ruling SOI).
+- [x] `decks/warhammer-wg.txt` przez generator: 17 nielandowych
+      (wraz z Acidic Slime i Inspiring Captain), `warhammer-ubr` bez zmian.
+- [x] README — tabela talii Warhammera.
+- [x] `test/art-ids-tool.test.js`: 598 pozycji słownika / 455 kart z artId.
+- [x] Testy: Acidic Slime — dane + niszczy ląd a nie stwora; Inspiring Captain —
+      dane + buff w chwili rozstrzygnięcia (także kapitan), przeciwnik i późniejszy
+      stwór bez buffa.
+- [x] Pomiar: `npm test` **4432/4432**, `npm run test:all` **4442/4442**,
+      `npm run build` **59 modułów / 3257,4 kB**; commit `54da590`.
+
 ## Etap 1 — dane kart (ADR 0010 §2a)
 
-- [ ] 10 × `docs/cards/scryfall-<slug>.json` (uproszczony kształt wg
+- [x] 10 × `docs/cards/scryfall-<slug>.json` (uproszczony kształt wg
       `HOW_TO_ADD_CARD.md` + `rulings`/`rulingsSource`/`rulingsPobrano`).
-- [ ] `tools/collection-art-ids.csv` dopisane 589–598 (trzykolumnowy format
+- [x] `tools/collection-art-ids.csv` dopisane 589–598 (trzykolumnowy format
       `Ilustracja,Nazwa Karty,Plan`).
-- [ ] `test/art-ids-tool.test.js` 588→598 (jeśli zszywa zakres).
+- [x] `test/art-ids-tool.test.js` 588→598 (jeśli zszywa zakres).
 
 ## Etap 2 — mechaniki silnika (generyczne, ADR 0002)
 
 Przewidywane braki w core (nazwane REGUŁY, nie łatki):
 
-- [ ] **`permanent_artifact_enchantment_land`** — filtr celu dla Acidic Slime
+- [x] **`permanent_artifact_enchantment_land`** — filtr celu dla Acidic Slime
       („target artifact, enchantment, or land”) w `spells.js`/`triggers.js`.
-- [ ] **`aura_or_equipment_card_in_graveyard`** — filtr celu dla Ironclad
+- [x] **`aura_or_equipment_card_in_graveyard`** — filtr celu dla Ironclad
       Slayer („target Aura or Equipment card from your graveyard”).
-- [ ] **`becomes_blocked`** — generyczny trigger „whenever this creature
+- [x] **`becomes_blocked`** — generyczny trigger „whenever this creature
       becomes blocked” (Ichorclaw Myr); emitowany raz na atakującego przy
       `declareBlockers`, skanowany przez `triggers.js` (wzorzec
       `blockers_declared` dla Wooden Stake). Ruling WotC: raz, niezależnie
       od liczby blokerów.
-- [ ] **`cantBeBlockedByPower`** — statyczna restrykcja „can't be blocked by
+- [x] **`cantBeBlockedByPower`** — statyczna restrykcja „can't be blocked by
       creatures with power 2 or less” (Rust-Shield Rampager) w
       `canBlock`/`declareBlockers`; ruling: już zablokowanie nie odwraca się,
       gdy bloker zmaleje.
-- [ ] **Offspring** (Rust-Shield Rampager) — deskryptor kosztu dodatkowego
+- [x] **Offspring** (Rust-Shield Rampager) — deskryptor kosztu dodatkowego
       przy rzucie + trigger „when this creature enters, create a 1/1 token
       copy of it” (CR 702.16x?); jednokrotna dopłata, kopia bez atachman­tów/
       liczników/niekopiowalnych, „enters” kopii działają, kontrowany rzut = brak
       tokenu.
-- [ ] **reflexive „When you do” po sacrifice** (Glorifier of Suffering) —
+- [x] **reflexive „When you do” po sacrifice** (Glorifier of Suffering) —
       najpierw decyzja „may sacrifice another creature or artifact”, potem
       refleksyjna zdolność z celami „up to two target creatures” i licznikami.
       Wzorzec: `requiresTarget` z kosztem (Zoraline — pay) + `pendingSacrifice`
       (istnieje); należy domknąć timing refleksyjny.
-- [ ] **Storied** (Óin the Brave) — gracz (nie źródło) z 3+ legendarnymi,
+- [x] **Storied** (Óin the Brave) — gracz (nie źródło) z 3+ legendarnymi,
       sagami i/lub artefaktami dostaje trwałą etykietę `enduringStory` na
       resztę gry (nie trigger, nie idzie na stos; raz ustawiona nie znika).
       Statyka: „As long as you have an enduring story, Óin gets +1/+0 and has
@@ -158,33 +197,33 @@ Przewidywane braki w core (nazwane REGUŁY, nie łatki):
 
 ## Etap 3 — definicje kart
 
-- [ ] `256`-słownik: 10 × `defineCard` w `src/cards/card-data.js` + `plan`.
-- [ ] `MANA_COSTS` dla 10 kart (`src/cards/mana-costs-data.js`).
-- [ ] Token Thopter (Ghirapur) i token-kopia Rust-Shield oraz (jeśli trzeba)
+- [x] `256`-słownik: 10 × `defineCard` w `src/cards/card-data.js` + `plan`.
+- [x] `MANA_COSTS` dla 10 kart (`src/cards/mana-costs-data.js`).
+- [x] Token Thopter (Ghirapur) i token-kopia Rust-Shield oraz (jeśli trzeba)
       tokeny/obrazy w `TOKEN_IMAGES`/katalogu tokenów.
 
 ## Etap 4 — etykiety, klasyfikacje, talie, testy
 
-- [ ] Etykiety PL dla nowych zdarzeń/efektów (strażnik M122, M202/C,
+- [x] Etykiety PL dla nowych zdarzeń/efektów (strażnik M122, M202/C,
       KEYWORD_LABELS / KEYWORD_EVENT_LABELS).
-- [ ] Klasyfikacja nowych efektów w heuristic-bocie (strażnik M157,
+- [x] Klasyfikacja nowych efektów w heuristic-bocie (strażnik M157,
       `FRIENDLY_TARGET_EFFECTS`, `REVIEWED_UNVALUED`).
-- [ ] `gameObjectDataOf` (`src/cards/materialize.js`) — nowe deskryptory
+- [x] `gameObjectDataOf` (`src/cards/materialize.js`) — nowe deskryptory
       (offspring/storied/becomes_blocked) muszą dojść na obiekt gry (L84).
-- [ ] `node tools/generate-plan-decks.mjs` → decks/ (singleton, ADR 0023).
-- [ ] Testy `test/real-cards-batch53.test.js` (legalny + nielegalny + sanity
+- [x] `node tools/generate-plan-decks.mjs` → decks/ (singleton, ADR 0023).
+- [x] Testy `test/real-cards-batch53.test.js` (legalny + nielegalny + sanity
       danych + interakcje), w tym testy reguł generycznych.
-- [ ] `npm test` + `npm run build` zielone po każdej samodzielnej paczce;
+- [x] `npm test` + `npm run build` zielone po każdej samodzielnej paczce;
       aktualizacja README/PROJECT_HISTORY/ENGINE_MILESTONES (M305+).
 
 ## Etap 5 — domknięcie
 
-- [ ] Bramy: `npm test`, `npm run build`, `npm run test:all` zielone.
-- [ ] `node --test test/bot-benchmark.test.js` (dopuszczalny profil szybki,
+- [x] Bramy: `npm test`, `npm run build`, `npm run test:all` zielone.
+- [x] `node --test test/bot-benchmark.test.js` (dopuszczalny profil szybki,
       ADR 0018 — bez pełnego B0).
-- [ ] Opis PR #96 kumulacyjnie; `docs/setup/HANDOFF_2026-09-04.md` i
-      `docs/PROJECT_HISTORY.md` z wynikami.
-- [ ] `git status` czysty; wszystko wypchnięte.
+- [x] Opis PR #96 kumulacyjnie; `docs/setup/HANDOFF_2026-09-04-batch53-materializacyjny.md`
+      i `docs/PROJECT_HISTORY.md` z wynikami.
+- [x] `git status` czysty; wszystko wypchnięte.
 
 ## Ryzyka i pułapki
 
