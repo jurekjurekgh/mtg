@@ -8383,3 +8383,27 @@ edycje (2×) — sekwencyjnie + weryfikacja grepem. Commity: `b79fc9c` (plan),
 dokumentacja domknięcia. Plan:
 `docs/plans/PLAN_2026-09-05-audyt-pr96-petla-jakosci.md`; handoff:
 `docs/setup/HANDOFF_2026-09-05.md`.
+
+**Gruntowy audyt Batcha 53, warstwy (a/b/c) (2026-09-05).**
+
+Zlecenie właściciela w PR #97 (`arena/01a07073-mtg`): audyt 10 kart
+589–598 w trzech warstwach. (a) Kod vs CR/rulingi: 1 znalezisko — **A1**
+Glorifier of Suffering, refleks „When you do" gasł po zabiciu źródła
+w odpowiedzi (fix: zdolność na zdarzeniu + wyjątek strefowy, CR 603.10,
+ruling LCI; test kill-in-response). (b) 15 partii Żywego Testera
+(G1–G15, greedy/explorer): wszystkie 10 kart rzucone na żywo; 12 gier
+czystych, 3 noopy kart starych (Cellar Door, Thunderstaff ×2 —
+pre-existing, bez akcji); skan 95 trafień, 100% false-positive.
+Znaleziska stołowe: **B1** pipy plotu, **B3** log `cele: A, B`,
+**B4** `kopię`, **B5** kafel ewazji, **B6** etykieta offspring (wszystkie
+z pinami); B2/B7 odrzucone. (c) Scoring bota: 12 mikrosond headless;
+**C-FIX-1** flaga offspring w projekcji remisu (golden-master: dryf
+tylko haszy, `--write` po weryfikacji), **C-FIX-2** próg ewazji mocowej
+w simie walki (eksport z combat.js → PlayerView → filtr; test mutowany);
+rekomendacje C-R1–C-R7 bez akcji. Bramy: `test:all` 4457/4457, fast
+4447/4447, benchmark 10/10, build 59/3265,2 kB. Raport:
+`docs/audits/AUDYT_BATCH53_2026-09-05.md`. Commity: `a1ca1b8` (A1),
+`cb8e904` (B1), `526486d` (B3), `8b9a252` (B4/B5/B6), `b3c0e98`
+(C-FIX-1/2). Plan:
+`docs/plans/PLAN_2026-09-05-audyt-batch53-stol-bot.md`; handoff:
+`docs/setup/HANDOFF_2026-09-05.md` (sekcja Kontynuacja).
