@@ -8490,3 +8490,22 @@ Realizacja rekomendacji systemowych z AUDYT_BATCH53 jako ŚWIADOME zmiany wycen
 Bramy na domknięciu fazy 2: `test:all` **4486/4486**, fast **4476/4476**,
 build **59 modułów / 3283,1 kB**. Benchmark szybki: heuristic **84,1%**
 (565/672). Handoff: `docs/setup/HANDOFF_2026-09-05c.md`.
+
+### Faza 3 (ta sama sesja, tematy z handoffa 2026-09-05b)
+
+- **`7213b39` — upkeep na wspólnym `triggerConditionClause`:** gałąź upkeep
+  renderowała wyłącznie `noSpellsLastTurn` z hardkodowym fallbackiem „gdy
+  rzucano 2+ czary" — wilkołaki (eachUpkeep) nie mówiły „w KAŻDYM upkeep",
+  a karty z upkeepem bez warunku (Veiled Ascension) dostawały fałszywy
+  warunek. Naprawa: noSpells/minSpellsLastTurn w helperze (jedno miejsce
+  prawdy, L28/L41) + strona czasu z pól deskryptora (eachUpkeep /
+  enchantedPlayerUpkeep / enchantedPermanentControllerUpkeep / twojego).
+  3 testy (wilk day/night + anty-over-fix), mutacje 2×RED.
+- **`57ff6f8` — O5 podniesiony:** warunek z audytu PR #97 spełniony (pierwsza
+  karta z dwiema kolorowymi aktywacjami: death-hood-cobra 2× {1}{G}).
+  Strażnik `ability-cost-pips` rozlicza WYSTĄPIENIA multizbiorów per zdolność
+  (konsumpcja); przestawka WARTOŚCI pipów między zdolnościami pozostaje poza
+  zasięgiem — jawne w nagłówku, przepięte testem. Odnotowane w AUDYT_PR97.
+
+Bramy na domknięciu fazy 3: `test:all` **4492/4492**, fast **4482/4482**,
+build **59 modułów / 3284,1 kB**.
