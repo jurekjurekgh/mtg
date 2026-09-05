@@ -57,7 +57,7 @@
   liczy się do prognozy wygranej względem 10 − poison, nie życia.
 - Test: bot atakuje na 9 trucizny (wrogie życie wysokie) — dopłata wyścigu.
 
-### E7. C-R6 — plot nigdy nie wygrywa: sonda → decyzja
+### E7. C-R6 — plot nigdy nie wygrywa: sonda → decyzja [WYKONANE: PROBE → bez zmiany, patrz AUDYT_BATCH53 §Rekomendacje]
 - Najpierw PROBE (L68): czy przy za małej manie na rzut bot w ogóle plotuje
   (55 > pass)? Jeśli tak — luka jest tylko „flat vs rzeczywista wartość";
   poprawić wycenę plotu względem ciała (darmowy rzut później = wartość
