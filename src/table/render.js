@@ -1011,7 +1011,7 @@ function describeEffect(e) {
     explore: () => 'explore',
     investigate: () => 'investigate (stwórz token Clue)',
     create_copy_token: () => 'stwórz token-kopię artefaktu (haste, exile na koniec tury)',
-    create_offspring_token: () => 'stwórz kopia (Offspring) — 1/1 token-kopię tego stwora (wartości z druku)',
+    create_offspring_token: () => 'stwórz kopię (Offspring) — 1/1 token-kopię tego stwora (wartości z druku)',
     gain_control_until_end_of_turn: () => 'przejmij kontrolę do końca tury, odkręć i haste',
     destroy_equipment_attached: () => 'zniszcz cały wyposażony Equipment',
     prevent_combat_damage_except_enchanted: () => 'prewencja obrażeń bojowych (poza zaczarowanymi i enchantment-creatures)',
@@ -1296,6 +1296,9 @@ function describeStatic(ability) {
   if (ability.cantAttackAlone) parts.push('nie może atakować sam');
   if (ability.cantBlockAlone) parts.push('nie może blokować sam');
   if (ability.cantAttackUnlessDefenderHasFlying) parts.push('atakuje tylko, gdy obrońca ma latanie');
+  // Audyt Batch53/B5: ewazja Rust-Shield Rampagera („can't be blocked by
+  // creatures with power 2 or less") nie miała reprezentacji na kaflu.
+  if (ability.cantBeBlockedByPower != null) parts.push(`nie może być blokowany przez stwory o mocy ≤${ability.cantBeBlockedByPower}`);
   if (ability.faceDownEnterFlyingCounter) parts.push('zakryte stwory wchodzą z licznikiem flying');
   if (ability.costModifier) parts.push('obniża koszt czarów');
   return parts.join(' · ');
@@ -2317,6 +2320,14 @@ export function commandLabel(cmd, session, view) {
         // many — dopłata wyglądała na dwa razy droższą, niż jest.
         const kickerHtml = manaCostHtml(costSymbols(kicker.cost, kicker.colors));
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} + kicker ${kickerHtml})`;
+      }
+      // Audyt Batch53/B6: wariant Offspring bez własnej etykiety wyglądał
+      // IDENTYCZNIE jak zwykły rzut (klasa M101/B — dwa przyciski o różnym
+      // skutku). Format jak kicker.
+      if (cmd.offspring) {
+        const off = card?.offspring ?? {};
+        const offHtml = manaCostHtml(costSymbols(off.cost, off.colors));
+        return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} + offspring ${offHtml})`;
       }
       // C (uwaga właściciela, Makeshift Mauler / Fear of Abduction): wariant
       // kosztu „wygnaj kartę stwora z grobu / stwora z pola bitwy"

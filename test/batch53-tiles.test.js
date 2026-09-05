@@ -66,3 +66,40 @@ test('kafel plotu bez kolorów bez zmian: „Plot {2}"', () => {
   const text = tileText(generic.id, 'creature');
   assert.ok(text.includes(`Plot {${generic.plot.cost}}`), `kafel: ${text}`);
 });
+
+test('kafel Rampagera: „stwórz kopię" (B4) + ewazja widoczna (B5)', async () => {
+  const text = tileText('rust-shield-rampager', 'creature');
+  assert.ok(text.includes('stwórz kopię (Offspring)'), `kafel: ${text}`);
+  assert.ok(!text.includes('stwórz kopia '), `kafel: ${text}`);
+  assert.ok(text.includes('nie może być blokowany przez stwory o mocy ≤2'), `kafel: ${text}`);
+});
+
+test('etykieta rzutu Offspring różni się od zwykłej (B6)', async () => {
+  const { commandLabel } = await import('../src/table/render.js');
+  const view = {
+    status: 'active', winnerId: null, playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty', life: 20 }, { id: 'p2', name: 'Nieprzyjaciel', life: 20 }],
+    zones: {
+      stack: [], graveyard: [], exile: [], library: [], battlefield: [],
+      hand: [{
+        id: 'ram', cardId: 'rust-shield-rampager', controllerId: 'p1',
+        zone: 'hand', kind: 'card', manaCost: 4, offspring: { cost: 2, colors: [] },
+      }],
+    },
+    turn: { number: 1, activePlayerId: 'p1', phase: 'precombat_main', step: 'precombat_main' },
+    legalCommands: [],
+  };
+  const session = {
+    view: () => view, log: [], reasoning: [], state: { seed: 13 },
+    nameOf: (id) => REGISTRY.get(id)?.name ?? id ?? '?',
+    nameOfObject: (objectId) => (objectId === 'ram' ? 'Rust-Shield Rampager' : objectId),
+    cardDetails: (id) => REGISTRY.get(id) ?? null,
+    colorsOf: (id) => REGISTRY.get(id)?.colors ?? [],
+    abilitiesOf: (id) => REGISTRY.get(id)?.abilities ?? [],
+  };
+  const plain = commandLabel({ type: 'cast_permanent', playerId: 'p1', objectId: 'ram' }, session, view);
+  const off = commandLabel({ type: 'cast_permanent', playerId: 'p1', objectId: 'ram', offspring: true }, session, view);
+  assert.ok(!plain.includes('offspring'), `zwykły: ${plain}`);
+  assert.ok(off.includes('+ offspring'), `offspring: ${off}`);
+  assert.notEqual(plain, off);
+});
