@@ -731,6 +731,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * konserwatywne: to sterowanie KOLEJNOŚCIĄ rzutów, nie symulacja.
    * Nieznane typy → 0 (zachowanie bez zmian; L28: tabela, nie if-y).
    */
+  /**
+   * C-R4 (audyt Batch53): pump z triggera „whenever this creature becomes
+   * blocked" (Ichorclaw Myr 1/1 — zablokowany 3/3). Sim walki liczył staty
+   * drukowane, więc bot chował stwora, który realnie WYGRYWA blok. Generycznie
+   * po deskryptorach (ADR 0002): triggered + event becomes_blocked + pump.
+   */
+  const becomesBlockedPump = (object) => {
+    const def = object?.cardId ? cardDef(object.cardId) : undefined;
+    let power = 0;
+    let toughness = 0;
+    for (const ability of def?.abilities ?? []) {
+      if (ability?.type !== 'triggered' || ability.trigger?.event !== 'becomes_blocked') continue;
+      const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      for (const e of effs) {
+        if (e?.type !== 'pump') continue;
+        power += e.power ?? 0;
+        toughness += e.toughness ?? 0;
+      }
+    }
+    return { power, toughness };
+  };
+
   const enemyNonlandPermanents = (view) => (view.zones.battlefield ?? [])
     .filter((o) => o.controllerId !== view.playerId && o.kind !== 'land' && (o.types ?? []).every((t) => t !== 'Land'));
   const etbEnemyHasTarget = (view, spec) => {
@@ -4283,6 +4305,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // 0002): 0 mocy = 0 obrażeń bojowych.
           const dealsNoCombatDamage = (power ?? 0) <= 0 && drainOnAttack(id) === 0;
           const canBeBlocked = attackerCanBeBlocked(object, blockers);
+          // C-R4: staty EFEKTYWNE w bloku — pump „becomes blocked" jest aktywny
+          // tylko, gdy atakujący realnie zostanie zablokowany (są blokerzy i
+          // da się zablokować); w otwartym ataku liczy się druk.
+          const bbPump = becomesBlockedPump(object);
+          const blockedStats = blockers.length > 0 && canBeBlocked
+            ? { power: power + bbPump.power, toughness: toughness + bbPump.toughness }
+            : { power, toughness };
+          const combatObject = blockedStats.power === power && blockedStats.toughness === toughness
+            ? object : { ...object, power: blockedStats.power, toughness: blockedStats.toughness };
           // M221/E (zgłoszenie właściciela): przeciwnik ma nietapniętego blokera
           // z ochroną od koloru atakującego (np. token 1/1 z protection from
           // black blokujący 7/7 czarnego). Taki bloker zablokuje bez strat —
@@ -4340,24 +4371,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // i tak nigdy nie zablokuje. Reguła po deskryptorze cantBlock
             // z PlayerView (ADR 0002/0017), nie po nazwie karty.
             perAttacker = power + P.attackThroughBonus;
-          } else if (diesBeforeDealingDamage(object, blockers)) {
+          } else if (diesBeforeDealingDamage(combatObject, blockers)) {
             // M202/N: bloker z first strike zabija atakującego, zanim ten zada
             // cokolwiek (CR 510.4) — atak ma 0% szans: 0 obrażeń i strata
             // stwora. Jałowy, więc premia wyścigu go nie uratuje.
             perAttacker = -(toughness + 8);
             futileAttackers += 1;
-          } else if (attackerStrikesFirst(object, blockers) && power >= strongestBlockerToughness) {
+          } else if (attackerStrikesFirst(combatObject, blockers) && blockedStats.power >= strongestBlockerToughness) {
             // M202/N (symetrycznie): first strike atakującego zabija blokera,
             // zanim ten odpowie — atakujący PRZEŻYWA, więc to nie wymiana
             // (power - 1), a czysty zysk jak przy ataku w otwartego.
             perAttacker = power + P.attackThroughBonus;
-          } else if (toughness > strongestBlockerPower && power >= strongestBlockerToughness) {
-            perAttacker = power + P.attackThroughBonus; // przeżyje I zabija blokera — realny zysk
-          } else if (blockers.length >= 2 && toughness <= gangPower && power < weakestBlockerToughness) {
+          } else if (blockedStats.toughness > strongestBlockerPower && blockedStats.power >= strongestBlockerToughness) {
+            perAttacker = blockedStats.power + P.attackThroughBonus; // przeżyje I zabija blokera — realny zysk
+          } else if (blockers.length >= 2 && blockedStats.toughness <= gangPower && blockedStats.power < weakestBlockerToughness) {
             // M167/I: ginie od GANGU blokerów i nie zabija ŻADNEGO — czysta
             // strata stwora (2/4 w 1/3 + 3/3). Kara ponad wagę wyścigu.
             perAttacker = -(toughness + 8);
-          } else if (toughness > strongestBlockerPower) {
+          } else if (blockedStats.toughness > strongestBlockerPower) {
             // Przeżyje, ale NIE zabije blokera (2/3 vs 2/3): nic nie zyskuje,
             // a tapnięty atakujący nie zablokuje w następnej turze — netto
             // strata, poniżej passu (uwaga właściciela z testów).
@@ -4365,7 +4396,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M188/C: ten atak jest JAŁOWY — obrońca zablokuje bez straty,
             // więc nie przejdą obrażenia ani nie zginie żaden bloker.
             futileAttackers += 1;
-          } else if (power >= strongestBlockerToughness) {
+          } else if (blockedStats.power >= strongestBlockerToughness) {
             perAttacker = power - 1; // wymiana: obrażenia + usunięcie blockerów
           } else {
             // Chump do większego blokera: atakujący ginie, 0 obrażeń. Nawet
