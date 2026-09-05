@@ -4432,12 +4432,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const penetratingPower = Math.max(0, totalPower - blockerAbsorb);
         if (attackers.length > 0 && penetratingPower >= enemyLife) score += 1000;
         else if (totalPower >= enemyLife && blockers.length === 0) score += 100;
+        // C-R5 (audyt Batch53): wygrana TRUCIZNĄ to drugi zegar — liczniki
+        // przeciwnika są w widoku (players.poison), a infect w twarz liczy
+        // się do 10 − poison, nie do życia. Przenikająca moc infect ≥ brakują
+        // liczników = lethal jak życiowy (+1000), nawet przy pełnym życiu.
+        const enemyPoison = enemy(view)?.poison ?? 0;
+        const infectTotalPower = attackers.reduce((sum, id) => {
+          const o = objectOnBoard(view, id);
+          return sum + (hasKeyword(o, 'infect') ? (o.power ?? 0) : 0);
+        }, 0);
+        const penetratingInfect = Math.max(0, infectTotalPower - blockerAbsorb);
+        if (attackers.length > 0 && enemyPoison < 10 && penetratingInfect >= 10 - enemyPoison) score += 1000;
         // Zegar (B1): gramy o czas, gdy wróg jest blisko śmierci, może nas
         // zabić w następnej turze albo nasza biblioteka się kończy — wtedy
         // atakujemy nawet kosztem wymiany. (strażnik „> 0" odróżnia realną
         // partię od stanów testowych bez biblioteki)
         const libraryExists = view.zones.library.length > 0;
         const racing = enemyLife <= 10
+          // C-R5: zegar trucizny — przy 6+ licznikach wróg jest dwa ataki
+          // infect od przegranej; wyścig ma się odpalić także przy pełnym
+          // życiu (wycisza kary ryzyka B3/M297 i dokłada dopłatę).
+          || enemyPoison >= 6
           || enemyBoardPower(view) >= myLife(view)
           || (libraryExists && myLibraryCount(view) <= 4);
         // M188/C (uwaga właściciela: „bot atakuje 2/2 mimo mojej 1/5 —
@@ -4449,7 +4464,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // wyżej i nie przechodzi przez tę gałąź, bo wtedy atak nie jest jałowy.
         const wholeAttackFutile = attackers.length > 0 && futileAttackers === attackers.length;
         if (racing && attackers.length > 0 && !wholeAttackFutile) {
-          score += totalPower >= enemyLife - 5 ? 20 : 8;
+          score += (totalPower >= enemyLife - 5 || enemyPoison + infectTotalPower >= 6) ? 20 : 8;
           if (libraryExists && myLibraryCount(view) <= 2) score += 15;
         }
         // B3 — EV ataku: gdy przeciwnik może mieć removal (instant z damage)
