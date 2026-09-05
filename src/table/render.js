@@ -1561,7 +1561,6 @@ export function rulesText(info) {
     }).filter(Boolean).join('  ·  ')
     : '';
   const spellLine = info.spell ? describeSpellEffects(info.spell) : '';
-  const plotLine = info.plot ? `Plot {${info.plot.cost ?? '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equip = info.equipment;
   // M257 r3 (Greatsword of Tyr, „Equip {W}"): pipy KOLORÓW kosztu equipu —
   // to samo rozbicie generic + kolory co costTextOf/abilityCostHtml (M138/Z10:
@@ -1571,6 +1570,9 @@ export function rulesText(info) {
     const generic = Math.max(0, (n ?? 0) - colors.length);
     return [generic > 0 ? String(generic) : '', ...colors].filter(Boolean).join(', ');
   };
+  // Audyt Batch53/B1: koszt plotu z pipami kolorów (ten sam rozkład co equip;
+  // goła liczba kłamała, że {1}{W} płaci się dowolną maną).
+  const plotLine = info.plot ? `Plot {${equipPips(info.plot.cost, info.plot.colors) || '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equipLine = equip
     ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equipPips(equip.equipFor.equip, equip.equipFor.colors) || '?'}} · ` : ''}{${equipPips(equip.equip, equip.colors) || '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
     : '';
