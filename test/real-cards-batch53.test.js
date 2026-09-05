@@ -297,7 +297,8 @@ test('B53: Óin the Brave — dane Oracle i deskryptory Storied', () => {
   assert.deepEqual(def.abilities[1].condition, { enduringStory: true });
   assert.deepEqual(def.abilities[1].pump, { power: 1, toughness: 0 });
   assert.deepEqual(def.abilities[1].keywords, ['haste']);
-  assert.deepEqual(def.abilities[2].cost, { mana: 1, tap: true, colors: ['R'], discardCard: true });
+  // Audyt PR #96/F1: Oracle „{1}, {T}, Discard a card” — koszt generyczny.
+  assert.deepEqual(def.abilities[2].cost, { mana: 1, tap: true, discardCard: true });
   assert.equal(def.support.status, 'supported');
   assert.deepEqual(def.support.limitations, []);
 });
@@ -340,10 +341,11 @@ test('B53: Óin — enduring story zostaje po utracie permanentu', () => {
   assert.ok(effectiveKeywords(state.objects.get('oin'), state).includes('haste'));
 });
 
-test('B53: Óin — {1},{T}, odrzuć kartę: dobierz', () => {
+test('B53: Óin — {1},{T}, odrzuć kartę: dobierz (mana BEZBARWNA wystarcza)', () => {
   const state = game();
   addPermanent(state, 'oin', 'oin-the-brave', 'p1');
-  addMana(state, 'p1', 1, { colors: ['R'] });
+  // Audyt PR #96/F1: {1} to koszt generyczny — jawnie bezbarwna pula.
+  addMana(state, 'p1', 1, { colors: [] });
   addObject(state, {
     id: 'tmp', instanceId: 'i-tmp', cardId: 'test-tmp', controllerId: 'p1', ownerId: 'p1',
     zone: 'hand', kind: 'card', manaCost: 0, abilities: [], keywords: [],
