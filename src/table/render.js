@@ -1396,6 +1396,11 @@ function triggerConditionClause(trigger) {
   if (cond.spellColorsInclude) czlony.push(`rzucany czar jest koloru ${cond.spellColorsInclude.join('/')}`);
   if (cond.noMinusCountersWhenDied) czlony.push('nie miał liczników -1/-1 (persist)');
   if (cond.enteredUntapped) czlony.push('wszedł nietapnięty');
+  // PR #98 (handoff 2026-09-05b pkt 2, wilkołaki): warunki triggerów upkeep —
+  // dawniej żyły tylko w gałęzi upkeep jako hardkody (2+ czary), klauzula
+  // wspólna ich nie znała (klasa L28).
+  if (cond.noSpellsLastTurn) czlony.push('w poprzedniej turze nie rzucano czarów');
+  if (cond.minSpellsLastTurn != null) czlony.push(`w poprzedniej turze rzucano ${cond.minSpellsLastTurn}+ czary`);
   return czlony.length > 0 ? czlony.join(' i ') : null;
 }
 
@@ -1461,7 +1466,20 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
     return `Gdy atakuje${clause ? ` (gdy ${clause})` : ''}: ${parts}.`;
   }
   if (trigger.event === 'bat_attacks') return `Gdy nietoperz, który kontrolujesz, atakuje: ${parts}.`;
-  if (trigger.event === 'upkeep') return `Na początku upkeep (${trigger.condition?.noSpellsLastTurn ? 'gdy wcześniej nie rzucano czarów' : 'gdy rzucono 2+ czary'}): ${parts}.`;
+  if (trigger.event === 'upkeep') {
+    // PR #98: strona CZASU wynika z pól deskryptora (eachUpkeep — wilkołaki
+    // day/night, CR 702.145 „each upkeep" = obu graczy; aury — upkeep
+    // zaczarowanego gracza/kontrolera; brak pól = „your upkeep"), a WARUNEK
+    // liczy wspólny triggerConditionClause — koniec hardkodu „2+ czary",
+    // który fałszował etykietę kartom z upkeepem bez warunku (Veiled
+    // Ascension) i nie mówił „każdego" przy wilkołakach.
+    const clause = triggerConditionClause(trigger);
+    const czyj = trigger.condition?.eachUpkeep ? 'każdego upkeep'
+      : trigger.condition?.enchantedPlayerUpkeep ? 'upkeep zaczarowanego gracza'
+        : trigger.condition?.enchantedPermanentControllerUpkeep ? 'upkeep kontrolera zaczarowanego permanentu'
+          : 'twojego upkeep';
+    return `Na początku ${czyj}${clause ? ` (gdy ${clause})` : ''}: ${parts}.`;
+  }
   // Czytelne opisy powszechnych triggerów (audyt żywym testerem M80) — zamiast
   // surowego fallbacku „Trigger <event>".
   if (trigger.event === 'any_creature_dies') return `Gdy jakiekolwiek stworzenie umrze: ${parts}.`;
