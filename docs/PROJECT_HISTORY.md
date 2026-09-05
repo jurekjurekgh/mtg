@@ -8353,3 +8353,33 @@ pełny B0 bez komendy właściciela). Commity: `6f91045` (transza 6 + split +
 migracja), `54da590` (transza 7). Plan:
 `docs/plans/PLAN_2026-09-04-batch53-materializacyjny.md`; handoff:
 `docs/setup/HANDOFF_2026-09-04-batch53-materializacyjny.md`.
+
+**Audyt PR #96 + naprawy F1–F4 (2026-09-05).**
+
+Sesja w trybie domyślnym ADR 0020/0021 („kontynuujemy projekt”): PR #97
+(`arena/01a07073-mtg` → `main`) otwarty PRZED kodem; audyt ostatniego
+scalonego PR (#96 — squash `d67b684`, 114 pliki, +2799 −382, batch 53 +
+split Warhammera). Werdykt: **PR dobry** — mechaniki generyczne (Offspring,
+Storied, reflexive, becomes_blocked), testy real-cast z obiema gałęziami,
+migracja `brg/wu→ubr/wg` kompletna. 4 znaleziska, wszystkie naprawione
+w tym PR z mutacjami: **F1** Óin the Brave — koszt aktywacji `{R}` zamiast
+Oracle `{1}` (fix: zdjąć `colors` + strażnik klasowy
+`test/ability-cost-pips.test.js`, 53 zdolności z pipami, 0 miss); **F2**
+README na liczbach etapu audytu (L92); **F3** Offspring — brak tokenu po
+zejściu źródła (fix: `printLki` na wpisie stosu + `wasOffspring` na stubie
+LKI, CR 603.10/608.2b, ruling BLB); **F4** ścieżka `take` ofiary
+refleksyjnej bez emisji `reflexive_sacrifice_resolved` (martwa gałąź logu).
+Raport: `docs/audits/AUDYT_PR96_2026-09-05.md`.
+
+Pętla jakości: dwie partie Żywego Testera na przebudowanym `dist/`
+(warhammer-wg × tarkir-bg explorer, wiedzmin × warhammer-ubr greedy) —
+„DETEKTORY: brak zgłoszeń”, skan transkryptów czysty (7 trafień klasy
+false-positive + skrót UI „choroba”); Keep Out rzucony realnie w grze 2.
+Bramki na HEAD: `npm test` 4434/4434, `test:all` 4444/4444, build 59 modułów
+/ 3260,7 kB; bot-benchmark 10/10; pełny B0 bez zmian (ADR 0018). Zero nowych
+kart. Lekcja narzędziowa: równoległe `edit_file` do tego samego pliku gubią
+edycje (2×) — sekwencyjnie + weryfikacja grepem. Commity: `b79fc9c` (plan),
+`896ff7e` (raport), `ad45507` (F1), `732892b` (F3), `2b113b9` (F4),
+dokumentacja domknięcia. Plan:
+`docs/plans/PLAN_2026-09-05-audyt-pr96-petla-jakosci.md`; handoff:
+`docs/setup/HANDOFF_2026-09-05.md`.

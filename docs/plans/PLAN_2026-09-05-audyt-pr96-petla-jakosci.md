@@ -59,7 +59,7 @@ ADR 0020/0021: PR → audyt ostatniego scalonego PR → pętla jakości.
     README mówi 4412/4412 i 3226,2 kB, a handoff batch53 mierzył 4442/4442
     i 3257,4 kB — do weryfikacji pomiarem.
 - [x] `npm test` i `npm run build` na bazie: zielone.
-- [ ] Dopuszczalne potwierdzenie: `node --test test/bot-benchmark.test.js`
+- [x] Dopuszczalne potwierdzenie: `node --test test/bot-benchmark.test.js`
   (bez pełnego B0).
 - [x] Raport w `docs/audits/AUDYT_PR96_2026-09-05.md`.
 - [x] Wynik w opisie PR.
@@ -72,15 +72,15 @@ ADR 0020/0021: PR → audyt ostatniego scalonego PR → pętla jakości.
 
 ### Etap 2 — Naprawy znalezisk (jeśli są)
 
-- [ ] N/A albo lista napraw u root cause z mutacjami.
+- [x] N/A albo lista napraw u root cause z mutacjami.
 - Kryterium: po każdej paczce `npm test` + `npm run build` zielone.
 
 ### Etap 3 — Pętla jakości (ADR 0021)
 
-- [ ] Wybór ścieżki po audycie: Żywy Tester na przebudowanym artefakcie
+- [x] Wybór ścieżki po audycie: Żywy Tester na przebudowanym artefakcie
   (oś 1–3 z `TESTER_STOLU.md`) i/lub polowanie CR inną ścieżką.
-- [ ] Zero nowych kart (ADR 0021 §4c).
-- [ ] Brak pełnego B0 (ADR 0018 — tylko na wyraźną komendę właściciela).
+- [x] Zero nowych kart (ADR 0021 §4c).
+- [x] Brak pełnego B0 (ADR 0018 — tylko na wyraźną komendę właściciela).
 - Kryterium: każda znaleziona klasa ma repro, naprawę i strażnika.
 
 #### Wynik pętli jakości (2026-09-05)
@@ -89,11 +89,11 @@ ADR 0020/0021: PR → audyt ostatniego scalonego PR → pętla jakości.
 
 ### Etap 4 — Domknięcie sesji
 
-- [ ] `npm test`, `npm run build`, `npm run test:all` zielone (brama PR).
-- [ ] Wszystko wypchnięte; `git status` czysty.
-- [ ] `docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-09-05.md`,
+- [x] `npm test`, `npm run build`, `npm run test:all` zielone (brama PR).
+- [x] Wszystko wypchnięte; `git status` czysty.
+- [x] `docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-09-05.md`,
       liczby README (L92), opis PR kumulacyjnie.
-- [ ] Blok przekazania w czacie (ADR 0013 §3).
+- [x] Blok przekazania w czacie (ADR 0013 §3).
 
 ## Ryzyka i pułapki
 
