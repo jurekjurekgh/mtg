@@ -542,6 +542,19 @@ export function castWindowPlanOf(commands) {
  * bo warianty różnią się polami, których plan nie zna (stun, X, tryb…).
  */
 export function commandForCastWindowSelection(commands, rowId) {
+  return commandForOptionRow(commands, rowId);
+}
+
+/**
+ * A1/A2 cd. (zgłoszenie właściciela: modal z lupą → radio + Zatwierdź):
+ * ta sama logika opt-N co okna rzutu, wyeksportowana dla ogólnego planu
+ * przyciskowego (buttonsMode), żeby i tam Zatwierdź dawało właściwą komendę.
+ */
+export function commandForButtonsSelection(commands, rowId) {
+  return commandForOptionRow(commands, rowId);
+}
+
+function commandForOptionRow(commands, rowId) {
   const match = /^opt-(\d+)$/.exec(String(rowId ?? ''));
   if (!match) return null;
   return (commands ?? [])[Number(match[1])] ?? null;

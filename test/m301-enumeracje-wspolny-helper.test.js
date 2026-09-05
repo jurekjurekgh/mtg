@@ -148,20 +148,30 @@ test('M301/5b: luka pól kosztu — tapCreatureId/tapOtherCreatureId/exileTarget
   assert.equal(commandForSingleTargetSelection(exile, { targetId: 'b1', field: 'exileTargetId' }), exile[1]);
 });
 
-test('M301/6: wizard enumeracji — wiersz-przycisk klika się RAZ i oddaje dokładną komendę', () => {
+test('M301/6: wizard enumeracji — wiersz to radio, wybór zatwierdzamy przyciskiem „Zatwierdź”', () => {
   const plan = buttonsPlanOf(payGroup());
   plan.rows = plan.rows.map((row, i) => ({ ...row, label: i === 0 ? 'Zapłać — efekt odpali' : 'Nie płać', cardId: null }));
   const { host, completed, request } = renderEnumWizard(plan, payGroup());
-  const rows = host.byClass('choice-request-option');
-  assert.equal(rows.length, 2, 'wiersze mają klasę przycisku wyboru (prowadzenie Żywego Testera)');
-  assert.ok(rows.every((r) => String(r.tagName).toUpperCase() === 'BUTTON'), 'jeden klik = decyzja (semantyka przycisku)');
-  assert.equal(host.byClass('multi-target-confirm').length, 0, 'tryb przyciskowy NIE ma „Zatwierdź”');
-  rows[1].click();
-  assert.equal(completed.length, 1, 'klik od razu wysyła');
+  // A1/A2 cd. (zgłoszenie właściciela: modal z lupą → radio + Zatwierdź):
+  // tryb przyciskowy używa TEGO SAMEGO komponentu co okna rzutu — wiersz
+  // z radiem (label + input), wspólny przycisk Zatwierdź, brak „klik raz = decyzja”.
+  const labels = host.all((el) => el.tagName === 'label');
+  assert.ok(labels.length >= 2, 'wiersze to picker label (radio)');
+  const confirm = host.byClass('multi-target-confirm');
+  assert.equal(confirm.length, 1, 'tryb przyciskowy MA przycisk „Zatwierdź”');
+  assert.ok(confirm[0].disabled, 'Zatwierdź wyłączony przed wyborem');
+  // Zaznaczamy wiersz (ustawiamy input.checked + change) — wybór NIE jest
+  // wysyłany od razu (ten sam wzorzec co w M300/5 dla okien rzutu).
+  const secondInput = labels[1].children.find((c) => c.tagName === 'input');
+  secondInput.checked = true; secondInput.emit('change');
+  assert.equal(completed.length, 0, 'zaznaczenie radio nie wysyła decyzji');
+  assert.ok(!confirm[0].disabled, 'Zatwierdź włączony po wyborze');
+  confirm[0].click();
+  assert.equal(completed.length, 1, 'Zatwierdź wysyła decyzję');
   assert.equal(completed[0], request.options[1], 'tożsamość komendy z legalCommands (L48)');
 });
 
-test('M301/7: wizard enumeracji — podgląd karty z wiersza i Anuluj bez decyzji', () => {
+test('M301/7: wizard enumeracji — nazwa karty klikalna (podgląd) i Anuluj bez decyzji', () => {
   const group = Object.freeze([
     Object.freeze({ type: 'resolve_modal_choice', playerId: 'p1', modeIndex: 0, cardId: 'k-pierwsza' }),
     Object.freeze({ type: 'resolve_modal_choice', playerId: 'p1', modeIndex: 1, cardId: 'k-druga' }),
@@ -169,9 +179,14 @@ test('M301/7: wizard enumeracji — podgląd karty z wiersza i Anuluj bez decyzj
   const plan = buttonsPlanOf(group);
   plan.rows = group.map((cmd, i) => ({ id: `opt-${i}`, label: `Tryb ${i + 1}`, cardId: cmd.cardId }));
   const { host, completed, previews, cancels } = renderEnumWizard(plan, group);
+  // A1/A2 cd.: osobne przyciski 🔍 zniknęły — nazwa karty jest klikalna
+  // (picker-name + log-card + dataset.cardId, ten sam wzorzec co M300/6).
   const peeks = host.byClass('choice-request-peek');
-  assert.equal(peeks.length, 2, 'wiersz z cardId dostaje podgląd');
-  peeks[0].click();
+  assert.equal(peeks.length, 0, 'bez osobnego przycisku lupy — nazwa karty jest klikalna');
+  const cardNames = host.byClass('picker-name');
+  assert.ok(cardNames.length >= 2, 'klikalne nazwy w wierszach');
+  assert.equal(cardNames[0].dataset.cardId, 'k-pierwsza', 'nazwa nosi cardId do pełnego ekranu');
+  cardNames[0].click(); // otwiera pełny ekran karty
   assert.deepEqual(previews, ['k-pierwsza'], 'podgląd otwiera kartę opcji');
   assert.equal(completed.length, 0, 'podgląd NIE jest wyborem');
   const cancel = host.byClass('multi-target-cancel')[0];
