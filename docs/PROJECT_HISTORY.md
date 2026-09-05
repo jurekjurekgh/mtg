@@ -8449,3 +8449,44 @@ Bramy na domknięciu: `test:all` **4469/4469**, fast **4459/4459**, build
 kart, zero zmian wycen bota. Commity: `ce76ecc` (plan), `4085358` (audyt),
 `948f310` (O3 LKI), `73faa5d` (L47), `5c07350` (warunki triggerów),
 `6ff467f` (storm/ward). Handoff: `docs/setup/HANDOFF_2026-09-05b.md`.
+
+## Sesja arena/01a0712d — faza 2: C-R1–C-R7 z audytu Batch53 (wyceny bota)
+
+Kontynuacja PR #98 na tym samym drzewie (1 sesja = 1 PR). Zlecenie: „Kontynuuj
+zgodnie z handoffem, w tym C-R1–C-R7 (m.in. brak premii ETB w cast_permanent)".
+Realizacja rekomendacji systemowych z AUDYT_BATCH53 jako ŚWIADOME zmiany wycen
+(nie refaktor), plan docs/plans/PLAN_2026-09-05b (etapy E1–E8).
+
+- **C-R1+C-R7** (`0abc269`): tabela `ETB_EFFECT_BONUS` po TYPACH efektów
+  (ADR 0002) w `cast_permanent` — premia za triggery wejścia (draw/token/
+  removal/anthem/search/…), cele wymagane tylko przy pasującym permanencie
+  wroga; wykluczenia przeciw podwójnemu liczeniu (reanimate/equipment/
+  damage_to_controller/lose_life). Warianty kicker/offspring: warunkowe ETB
+  liczone per wariant + KOSZT dopłaty — koniec remisu „pierwsza oferta".
+  Epsilon 0,001×waluta (lustrzany z tieProjection, koszt rejestrowy) rozstrzyga
+  idealne remisy rzutów — grzechotka remisów zielona, pin arytmetyczny
+  cena-stwora nietknięty. C-FIX-1 przepisany (remis → świadoma wygrana dopłaty).
+- **C-R2** (`331252a`): cele triggerów z grobu/wygnania wyceniane
+  (`openZoneCard`: stwór P/T, reszta koszt×2, wzorzec craft_exile);
+  `return_card_from_graveyard_to_hand`/`put_graveyard_card_on_top`
+  przeklasyfikowane neutral→przyjazny w effect-intent (strażnik klasyfikacji
+  oczyszczony). Ironclad bierze najdroższą aurę/equipment, Mystic Sanctuary
+  najdroższy instant.
+- **C-R3** (`4587a9c`): wartość ofiary — nie-stwory po koszcie×2 (cenny
+  artefakt przestaje być „darmową ofiarą" przed tokenem 1/1); engine anotuje
+  `resolve_sacrifice_choice` flagą `reflexReady` (precedens M150) — refleks
+  jałowy → bot wybiera skip (Grave Exchange nietknięty).
+- **C-R4** (`4a7b7fc`): sim walki liczy pump „when this becomes blocked"
+  (Ichorclaw 1/1→3/3 wygrywa blok z 2/2; 3/3 w 4/4 nadal jałowe).
+- **C-R5** (`5bc06cc`): trucizna jako drugi zegar wygranej — racing od 6+
+  liczników, dopłata 20 przy presji infect, przenikający infect ≥ 10−poison
+  = lethal +1000; na 9 truciznach kary ryzyka B3/M297 wyciszone.
+- **C-R6** (`57b4fdf`): PROBE (plan E7) — plot działa poprawnie (2 many:
+  plotuje; 3+: rzuca). Odnotowane w audycie, bez zmiany na siłę.
+- Każdy etap: testy RED→GREEN + weryfikacja mutacyjna + pełny `npm test`
+  zielony + push; snapshot bota regenerowany na E2 (`d9e266e5`), finalny
+  `--write` na gotowym drzewie bez zmiany hasha (L124).
+
+Bramy na domknięciu fazy 2: `test:all` **4486/4486**, fast **4476/4476**,
+build **59 modułów / 3283,1 kB**. Benchmark szybki: heuristic **84,1%**
+(565/672). Handoff: `docs/setup/HANDOFF_2026-09-05c.md`.
