@@ -1949,6 +1949,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return family ? score * scoreWeights[family] : score;
   }
 
+  // C-R2 (audyt Batch53): cele triggerów spoza pola bitwy (grób/wygnanie —
+  // strefy jawne, CR 400.2/406.3; widok niesie kind/types/P/T/manaCost, M274).
+  // Wcześniej karty-grobu wypadały z objectOnBoard → 0 pkt → remis → bot
+  // brał PIERWSZĄ kartę grobu (Ironclad, Mystic Sanctuary, Circle Druid).
+  // Wartość: stwór po P/T (jak na stole), reszta po koszcie (wzorzec
+  // craft_exile); znak jak dla celów na stole — friendly premiuje WŁASNE
+  // karty (zwracamy własną), wroga gałąź wroga.
+  const openZoneCard = (view, id) => (view.zones.graveyard ?? []).find((o) => o.id === id)
+    ?? (view.zones.exile ?? []).find((o) => o.id === id) ?? null;
+  const offBoardCardValue = (o) => {
+    const def = o?.cardId ? cardDef(o.cardId) : undefined;
+    const types = o?.types ?? def?.types ?? [];
+    if ((o?.kind ?? def?.kind) === 'creature' || types.includes('Creature')) {
+      return ((o?.power ?? def?.power ?? 0) ?? 0) * 2 + ((o?.toughness ?? def?.toughness ?? 0) ?? 0);
+    }
+    return (o?.manaCost ?? def?.manaCost ?? 0) * 2;
+  };
+  const offBoardTargetScore = (view, o, friendly) => {
+    const v = offBoardCardValue(o);
+    const own = o.controllerId === view.playerId;
+    return friendly ? (own ? 30 + v : -20 - v) : (own ? -20 - v : 30 + v);
+  };
+
   function scoreCommand(view, cmd) {
     const finish = (score) => weightedScore(cmd.type, score);
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
@@ -4762,6 +4785,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           for (const id of cmd.targetIds) {
             const t2 = objectOnBoard(view, id);
             if (!t2) {
+              // C-R2: karta z grobu/wygnania — wartość po P/T albo koszcie
+              // (ta sama polityka co w gałęzi jednocelowej, L41).
+              const openCard2 = openZoneCard(view, id);
+              if (openCard2) {
+                score += offBoardTargetScore(view, openCard2, cmd.friendly);
+                continue;
+              }
               // M171/Z3 (audyt Żywym Testerem, klasa L50): cel-GRACZ w
               // wariancie wielocelowym był pomijany (0 pkt) — kombinacje
               // remisowały i bot dzielił obrażenia Tytana we WŁASNĄ twarz.
@@ -4782,6 +4812,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!target) {
+          // C-R2: karta z grobu/wygnania — wybieramy NAJLEPSZĄ, nie pierwszą.
+          const openCard = openZoneCard(view, cmd.targetId);
+          if (openCard) return finish(offBoardTargetScore(view, openCard, cmd.friendly));
           // M171/Z3: gałąź bliźniacza z wielocelową (L41) — friendly odwraca.
           const playerId = cmd.targetId;
           if (playerId === view.playerId) return finish(cmd.friendly ? 25 : -40);
