@@ -1,0 +1,78 @@
+{
+  "artist": "Ralph Horsley",
+  "cmc": 4.0,
+  "collector_number": "190",
+  "colors": [
+    "G"
+  ],
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/9/c96b01f5-83de-4237-a68d-f946c53e31a6.jpg?1783910806",
+    "normal": "https://cards.scryfall.io/large/front/c/9/c96b01f5-83de-4237-a68d-f946c53e31a6.jpg?1783910806"
+  },
+  "mana_cost": "{3}{G}",
+  "name": "Rust-Shield Rampager",
+  "oracle_text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nThis creature can't be blocked by creatures with power 2 or less.",
+  "pobrano": "2026-09-04",
+  "power": "4",
+  "print": "blb",
+  "rarity": "common",
+  "rulings": [
+    {
+      "comment": "Once Rust-Shield Rampager has been blocked, reducing the power of a blocking creature to 2 or less won’t remove that creature from combat or cause Rust-Shield Rampager to become unblocked.",
+      "date": "2024-07-26",
+      "source": "wotc"
+    },
+    {
+      "comment": "You can pay an offspring cost only once as you cast a spell with offspring. You can’t try to pay it multiple times to get more token copies.",
+      "date": "2024-07-26",
+      "source": "wotc"
+    },
+    {
+      "comment": "If the spell is countered, the offspring ability will not trigger, and no token will be created.",
+      "date": "2024-07-26",
+      "source": "wotc"
+    },
+    {
+      "comment": "If the spell resolves but the creature with offspring leaves the battlefield before the offspring ability resolves, you’ll still create a token copy of it.",
+      "date": "2024-07-26",
+      "source": "wotc"
+    },
+    {
+      "comment": "The token copies exactly what was printed on the original creature and nothing else, except it’s a 1/1 (unless that creature is copying something else; see below). It doesn’t copy whether that creature is tapped or untapped, whether it has any counters on it or Auras and Equipment attached to it, or any non-copy effects that have changed its types, color, or so on.",
+      "date": "2024-07-26",
+      "source": "wotc"
+    },
+    {
+      "comment": "In the rare case where the original creature is copying something else when the offspring ability resolves, the token enters as whatever that creature copied, except it’s a 1/1.",
+      "date": "2024-07-26",
+      "source": "wotc"
+    },
+    {
+      "comment": "Many creatures with offspring abilities have other abilities that refer to them as “this creature” rather than referring to them by name. This difference is for clarity purposes and does not change the function of any of these abilities.",
+      "date": "2024-07-26",
+      "source": "wotc"
+    },
+    {
+      "comment": "Any “enters” abilities of the copied creature will trigger when the token enters. Any “as [this creature] enters” or “[this creature] enters with” abilities of the copied creature will also work.",
+      "date": "2024-07-26",
+      "source": "wotc"
+    },
+    {
+      "comment": "The token created by the offspring ability isn’t “cast”, so abilities that trigger when a creature spell is cast won’t trigger for the copy.",
+      "date": "2024-07-26",
+      "source": "wotc"
+    },
+    {
+      "comment": "In the rare case where the creature doesn’t have the offspring ability when it enters, the ability won’t trigger even if you paid the offspring cost.",
+      "date": "2024-07-26",
+      "source": "wotc"
+    }
+  ],
+  "rulingsPobrano": "2026-09-04",
+  "rulingsSource": "https://api.scryfall.com/cards/blb/190/rulings",
+  "set": "blb",
+  "set_name": "Bloomburrow",
+  "source": "https://api.scryfall.com/cards/named?exact=Rust-Shield+Rampager&set=blb",
+  "toughness": "4",
+  "type_line": "Creature — Raccoon Warrior"
+}

@@ -47,9 +47,9 @@ const REPO = path.resolve(import.meta.dirname, '..');
  * decyzji co tuning i przestawał być niezależnym pomiarem.
  */
 export const AUDIT_PAIRS = Object.freeze([
-  ['ravnica', 'innistrad-wu'], ['dominaria-brg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-brg'],
+  ['ravnica', 'innistrad-wu'], ['dominaria-brg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ubr'],
   ['wiedzmin', 'tarkir-bg'], ['worek-legend', 'wiedzmin'], ['srodziemie', 'theros'],
-  ['kaladesh', 'zendikar'], ['warhammer-wu', 'innistrad-brg'], ['dominaria-wu', 'worek-mroczny'],
+  ['kaladesh', 'zendikar'], ['warhammer-wg', 'innistrad-brg'], ['dominaria-wu', 'worek-mroczny'],
   ['forgotten-realms', 'worek-dziki'], ['tarkir-wur', 'wiedzmin'], ['worek-basni', 'mirrodin-brg'],
 ].map((p) => Object.freeze(p)));
 

@@ -53,7 +53,7 @@ M257r4: F3 ninjutsu, F1 liczniki wejścia, F4 driver; `npm test`
   przeciwnika 55+2×worth, na własnym −70−worth, brak celu −50,
   losesKeywords jałowa −80−worth, czysta ochrona: brak zagrożeń −40,
   20+12×zagrożenia+p. **Wybór: rodzina `aura`** (T1 + T4).
-- Aury w taliach (pula T4): Hobble (warhammer-wu), Moonlit Meditation
+- Aury w taliach (pula T4): Hobble (warhammer-wg), Moonlit Meditation
   (worek-legend), Grounded (innistrad-brg), Nature's Embrace (wiedzmin),
   Shiv's Embrace (dominaria-brg), Serra's Embrace (dominaria-wu).
 
@@ -111,9 +111,9 @@ M257r4: F3 ninjutsu, F1 liczniki wejścia, F4 driver; `npm test`
 
 ### Etap 4 — Pętla jakości: oś BOTA (poprawność, logika, optymalność) — commity po znaleziskach
 1. 6 partii Żywym Testerem (seeds 3001–3006), talie z aurami + BENCH:
-   warhammer-wu ↔ worek-legend, worek-legend ↔ warhammer-wu,
+   warhammer-wg ↔ worek-legend, worek-legend ↔ warhammer-wg,
    innistrad-brg ↔ innistrad-wu, wiedźmin ↔ tarkir-bg, theros ↔
-   worek-basni, (6.) warhammer-brg ↔ alara. Profile: greedy ×2,
+   worek-basni, (6.) warhammer-ubr ↔ alara. Profile: greedy ×2,
    explorer, defensive, random, greedy.
 2. Odczyt: oś 1 (bezsensowne działania bota) + nowa oś wzmocniona:
    poprawność (CR), logika (spójność celu/środków), optymalność

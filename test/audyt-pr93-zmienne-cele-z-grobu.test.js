@@ -8,7 +8,7 @@
 // Oracle Halo Foragera: „you may pay {X}. When you do, you may cast target
 // instant or sorcery card with mana value X from a graveyard without paying
 // its mana cost.” — bez wyłączenia kart, których cele wybiera gracz.
-// Miara: `wrap-in-flames` (MV 4) w `decks/warhammer-brg.txt`,
+// Miara: `wrap-in-flames` (MV 4) w `decks/warhammer-ubr.txt`,
 // Halo Forager w `decks/worek-basni.txt`; okno czyta DOWOLNY cmentarz.
 //
 // Discover zostaje przy takich trybach zamknięte ŚWIADOMIE i przypięte

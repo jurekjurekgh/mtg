@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
-import { deathZoneFor, effectiveKeywords, effectiveToughness } from './permanents.js';
+import { deathZoneFor, effectiveKeywords, effectiveToughness, hasEnduringStory } from './permanents.js';
 import { removeIllegalAttachments, detachAttachmentsFromHost } from './attachments.js';
 import { removeCounter } from './counters.js';
 import { effectiveAbilities } from './permanents.js';
@@ -90,6 +90,11 @@ export function runStateBasedActions(state) {
   // zastępczego (tarcza albo regeneracja), nie przetwarzamy kolejnych akcji
   // stanowych — inaczej drugi przebieg rozstrzygnąłby za gracza.
   if (state.pendingReplacementChoice) return events;
+  // Batch 53 (Óin the Brave, HOB): Storied — etykieta `enduringStory` na
+  // graczu ustawia się w AKCJI STANOWEJ (nie trigger, nie stos) i trwa do
+  // końca gry. Sprawdzamy PRZED SBA, żeby trzeci permanent zdążył dać etykietę,
+  // nawet jeśli zaraz potem zniknie (legend rule / 0 wytrzymałości — ruling).
+  for (const player of state.players) hasEnduringStory(state, player.id);
   // CR 506.4c (M201, znalezisko #1): „A permanent that's no longer a creature
   // is removed from combat.” Przyczyna bywa dowolna — koniec animacji
   // (Skilled Animator), utrata typu, zmiana charakterystyk — więc reguła

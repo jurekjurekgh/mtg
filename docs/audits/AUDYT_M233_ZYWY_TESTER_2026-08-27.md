@@ -20,7 +20,7 @@ wrappera — czar zostawał na bazie `spellBase` (50) i przebijał pass (0).
 
 ### M233/1 — Wrap in Flames rzucone BEZ celów (0 obrażeń, 0 celów)
 
-**Partia:** tarkir-wur (gracz) vs warhammer-brg (bot), seed 11, profil
+**Partia:** tarkir-wur (gracz) vs warhammer-ubr (bot), seed 11, profil
 defensive. **Tura 12:** bot rzucił Wrap in Flames (Sorcery 4 many — „1 obrażenie
 każdemu z max 3 celów + nie może blokować") mimo że gracz kontrolował ZERO
 stworów (na stole miał tylko Plains + Island). Czar poszedł bez celów: 4 many

@@ -5042,7 +5042,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const o = handCard(view, cmd.objectId);
       if (!o) return null;
       const koszt = (o.manaCost ?? 0) + coloredPipsOf(o.cardId).length;
-      const cialo = (o.power ?? 0) * P.creaturePowerWeight + (o.toughness ?? 0) * P.creatureToughnessWeight;
+      // Equipment: wartość rzutu żyje na NOSICIELU (M258/A), więc projekcja
+      // musi liczyć pompę tak jak scoreCommand — inaczej audyt widzi
+      // „różne dane” tam, gdzie wycena faktycznie widzi warianty zamienne
+      // (Steelfin Whale 3/4 za 6 vs Strandwalker tworzący 2/4 Germ za 5).
+      const pump = (myCreatures(view).length > 0 && o.equipment) ? (o.equipment.pump ?? {}) : {};
+      const cialo = (o.power ?? 0) * P.creaturePowerWeight + (o.toughness ?? 0) * P.creatureToughnessWeight
+        + (pump.power ?? 0) * P.creaturePowerWeight + (pump.toughness ?? 0) * P.creatureToughnessWeight;
       return {
         waluta: cialo - P.creatureManaCostWeight * koszt,
         cele: (cmd.targets ?? []).length,

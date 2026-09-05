@@ -1,0 +1,58 @@
+{
+  "artist": "Colin Boyer",
+  "cmc": 2.0,
+  "collector_number": "106",
+  "colors": [
+    "R"
+  ],
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/9/9984b9ef-e81c-48f4-aa33-0504171a2d3c.jpg?1785496200",
+    "normal": "https://cards.scryfall.io/large/front/9/9/9984b9ef-e81c-48f4-aa33-0504171a2d3c.jpg?1785496200"
+  },
+  "mana_cost": "{1}{R}",
+  "name": "Óin the Brave",
+  "oracle_text": "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, Óin gets +1/+0 and has haste.\n{1}, {T}, Discard a card: Draw a card.",
+  "pobrano": "2026-09-04",
+  "power": "1",
+  "print": "hob",
+  "rarity": "common",
+  "rulings": [
+    {
+      "comment": "If you control three legendary, Saga, and/or artifact permanents but don't control a permanent with storied, you don't get an enduring story. For example, if you controlled three artifacts, lost control of two, then cast Thorin Oakenshield, you won't have an enduring story.",
+      "date": "2026-06-29",
+      "source": "wotc"
+    },
+    {
+      "comment": "Once you have an enduring story, you have it for the rest of the game, even if you lose control of some or all of your storied permanents. The enduring story designation is on the player and can't be removed by any effect.",
+      "date": "2026-06-29",
+      "source": "wotc"
+    },
+    {
+      "comment": "Storied isn't a triggered ability and doesn't use the stack. Players can respond to a spell that will give you your third legendary, Saga, and/or artifact permanent, but they can't respond to you getting an enduring story once you control that third permanent.",
+      "date": "2026-06-29",
+      "source": "wotc"
+    },
+    {
+      "comment": "A permanent is any object on the battlefield, including tokens and lands. Spells and emblems aren't permanents.",
+      "date": "2026-06-29",
+      "source": "wotc"
+    },
+    {
+      "comment": "If your third legendary, Saga, or artifact permanent enters the battlefield and then one of those permanents leaves the battlefield immediately afterwards (most likely due to the \"legend rule\" or due to being a creature with 0 toughness), you get an enduring story before it leaves the battlefield.",
+      "date": "2026-06-29",
+      "source": "wotc"
+    },
+    {
+      "comment": "A single permanent can only count once toward the three legendary, Saga, and/or artifact permanents needed to get an enduring story, even if it has more than one of those qualities. If you control one permanent that is a legendary artifact and a second permanent that is a Saga, you will only have two of the three permanents required to get an enduring story.",
+      "date": "2026-06-29",
+      "source": "wotc"
+    }
+  ],
+  "rulingsPobrano": "2026-09-04",
+  "rulingsSource": "https://api.scryfall.com/cards/hob/106/rulings",
+  "set": "hob",
+  "set_name": "The Hobbit",
+  "source": "https://api.scryfall.com/cards/named?exact=%C3%93in+the+Brave&set=hob",
+  "toughness": "3",
+  "type_line": "Legendary Creature — Dwarf Warrior"
+}

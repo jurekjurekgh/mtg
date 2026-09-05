@@ -892,8 +892,19 @@ export function destroyPermanentByEffect(state, objectId, options = {}) {
 export function applyEnterCounters(state, objectId) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.faceDown) return;
+  // Batch 53 (Sheriff of Safe Passage, CR 121.6/614.1c): „enters with a
+  // +1/+1 counter on it plus an additional one for each other creature you
+  // control" — kwota jest cechą WEJŚCIA i zależy od stanu stołu w chwili
+  // wejścia. Formuła jako string (jak greatest_power_you_control w tokenach)
+  // pozostaje generyczna (ADR 0002), a nie kartowa.
+  const otherCreatures = object.kind === 'creature'
+    ? creaturesYouControl(state, object.controllerId).filter((o) => o.id !== objectId).length
+    : 0;
   for (const [name, amount] of Object.entries(object.entersWithCounters ?? {})) {
-    addCounter(state, objectId, name, amount);
+    const resolved = amount === 'other_creatures_you_control_plus_one'
+      ? 1 + otherCreatures
+      : amount;
+    addCounter(state, objectId, name, resolved);
   }
   // Liczniki wejścia WARUNKOWE (CR 614.1c): „enters with two +1/+1 counters
   // if a creature died this turn" (morbid) / „if at least three <color> mana
@@ -1411,6 +1422,39 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // M262: badge „Wygnane: <źródło>" — token znika z efektu karty.
       exiledBy: sourceObject.cardId,
     });
+    return;
+  }
+  // Offspring (BLB, Rust-Shield Rampager, CR 702.16x?): „When this creature
+  // enters, create a 1/1 token copy of it." Token kopia druk źródła (nie
+  // liczniki/atachamenty/efekty poza drukiem — ruling WotC); dziedziczy
+  // zdolności „enters" i „enters with" (ruling: będzie działać), więc
+  // kopiujemy też entersWithCounters/If. Zawsze 1/1, niezależnie od P/T
+  // oryginału po buffach.
+  if (effect.type === 'create_offspring_token') {
+    const src = state.objects.get(sourceObject.id);
+    if (!src || src.zone !== 'battlefield' || src.kind !== 'creature') return;
+    const ctrl = src.controllerId;
+    const copyName = src.cardName ?? src.cardId ?? 'Copy';
+    const token = createBattlefieldToken(state, ctrl, {
+      cardId: src.cardId, name: copyName,
+      copyNumber: nextCopyNumber(state, copyName),
+      kind: 'creature', power: 1, toughness: 1,
+      colors: [...(src.colors ?? [])],
+      types: [...(src.types ?? [])],
+      subtypes: [...(src.subtypes ?? [])],
+      keywords: [...(src.keywords ?? [])],
+      abilities: [...(src.abilities ?? [])],
+      manaCost: copyManaValueOf(src),
+      ...(src.entersWithCounters ? { entersWithCounters: src.entersWithCounters } : {}),
+      ...(src.entersWithCountersIf ? { entersWithCountersIf: src.entersWithCountersIf } : {}),
+      ...(src.station ? { station: src.station } : {}),
+      ...(src.saga ? { saga: src.saga } : {}),
+      ...(src.transformTo ? { transformTo: src.transformTo } : {}),
+      ...(src.transformTo && src.frontFaceId ? { frontFaceId: src.frontFaceId } : {}),
+    });
+    // „As [this creature] enters" / „enters with" kopii działają (ruling
+    // Offspring) — liczniki wejścia aplikujemy jak przy zwykłym permanencie.
+    applyEnterCounters(state, token.id);
     return;
   }
   if (effect.type === 'return_source_from_graveyard_to_hand') {
@@ -4914,6 +4958,40 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // M258/F5: opcjonalność poświęcenia to informacja regułowa — log nie
       // może mówić „może" przy obowiązkowym poświęceniu (Roiling Regrowth).
       mandatory: Boolean(effect.mandatory),
+    }));
+    return;
+  }
+  // Batch 53 (Glorifier of Suffering, LCI): ETB „you may sacrifice another
+  // creature or artifact. When you do, [reflexive ability]". Generyczny efekt
+  // `reflexive_sacrifice` — najpierw blokująca decyzja „poświęć albo nie"
+  // (wspólny pendingSacrifice / resolve_sacrifice_choice), po poświęceniu
+  // emitujemy zdarzenie `reflexive_sacrifice`, do którego jest podpięta
+  // refleksyjna zdolność triggerowa z celami karty (CR 603.3d; ruling LCI).
+  if (effect.type === 'reflexive_sacrifice') {
+    const controllerId = sourceObject.controllerId;
+    const sacrificeSpec = effect.sacrifice ?? {};
+    const wantedTypes = sacrificeSpec.types ?? ['Creature', 'Artifact'];
+    const candidates = state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield' || object.controllerId !== controllerId) return false;
+      if (sacrificeSpec.otherThanSource && object.id === sourceObject.id) return false;
+      return wantedTypes.some((type) => object.kind === type.toLowerCase()
+        || (object.types ?? []).includes(type));
+    });
+    if (candidates.length === 0) return; // „you may" — brak ofiary = brak refleksu
+    state.pendingSacrifice = {
+      playerId: controllerId,
+      candidateIds: [...candidates],
+      optional: true,
+      sourceId: sourceObject.id,
+      cardId: sourceObject?.cardId ?? null,
+      reflexiveEvent: effect.reflexiveEvent ?? 'reflexive_sacrifice',
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('reflexive_sacrifice_required', {
+      playerId: controllerId, sourceId: sourceObject.id, cardId: sourceObject?.cardId ?? null,
+      candidateIds: [...candidates],
     }));
     return;
   }

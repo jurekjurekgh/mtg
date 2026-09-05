@@ -29,7 +29,7 @@ ravnica vs srodziemie, seed 76: bot tapował Soulmender ({T}: 1 życia) 6× przy
 gdy tapuje zdolnego do walki stwora.
 
 ### M236/4 — skalujący Fireball spalony za trywialny chip w twarz
-innistrad-brg vs warhammer-brg, seed 91: bot rzucił Fireball za X=1 w twarz
+innistrad-brg vs warhammer-ubr, seed 91: bot rzucił Fireball za X=1 w twarz
 (19→18) w 2. turze. Dobicie = zawsze; trywialny chip (≤2, daleko od dobicia)
 < pass (trzymaj zasób); realne cięcie życia i letalne trafienie premiowane.
 

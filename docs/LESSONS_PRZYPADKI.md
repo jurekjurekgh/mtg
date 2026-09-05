@@ -631,7 +631,7 @@ powtórzenie klasy (M96, M135, M138/Z1).
 odbiorcą jest ZBIÓR. `{2}, {T}: atakujące stwory dostają +1/+0 do końca tury`
 nie miało wpisu w `TEMPORARY_PUMP_EFFECTS`, więc zdolność miała gołą bazę
 (`score = 2`) i bot palił ją w Głównej 1 (transkrypt `tarkir-wur vs
-warhammer-wu`, tura 16). Wspólny mianownik potrzebuje jeszcze
+warhammer-wg`, tura 16). Wspólny mianownik potrzebuje jeszcze
 **reprezentanta zbioru**: `recipient` był źródłem (artefaktem), więc
 `combatTrickWindow` nie zachodził i bot dostawał karę „poza oknem walki"
 ZAWSZE. Reprezentant = własny atakujący z `view.combat` (ADR 0017). Test

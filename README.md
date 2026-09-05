@@ -33,7 +33,7 @@ choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdzia�
 na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
-Bieżący stan: **4378/4378 testów** (`test:all`; szybki rdzeń 4368/4368), artefakt **59 modułów / 3208,9 kB**. Szczegóły:
+Bieżący stan: **4412/4412 testów** (`test:all`; szybki rdzeń 4402/4402), artefakt **59 modułów / 3226,2 kB**. Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
@@ -129,8 +129,8 @@ liczone z plików `decks/*.txt`).
 | `tarkir-bg` | Tarkir (BG) | UBG | 29 | 10 | 19 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 24 | 8 | 16 |
 | `theros` | Theros | WUBRG | 26 | 9 | 17 |
-| `warhammer-brg` | Warhammer Fantasy (BRG) | BRG | 24 | 8 | 16 |
-| `warhammer-wu` | Warhammer Fantasy (WU) | WUB | 24 | 8 | 16 |
+| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 32 | 11 | 21 |
+| `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
 | `wiedzmin` | Wiedźmin | UBRG | 41 | 14 | 27 |
 | `zendikar` | Zendikar | WURG | 29 | 10 | 19 |
 

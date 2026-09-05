@@ -181,6 +181,12 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.wasKicked) {
     return Boolean(sourceObject?.wasKicked);
   }
+  // Offspring (BLB, Rust-Shield Rampager): trigger „when this creature
+  // enters, create a 1/1 token copy" istnieje tylko u stwora rzuconego
+  // z opłaconym kosztem offspring (flaga wasOffspring na permanencie).
+  if (condition.wasOffspring) {
+    return Boolean(sourceObject?.wasOffspring);
+  }
   // M67 (Homicidal Brute — tył Civilized Scholar): „At the beginning of your
   // end step, if this creature DIDN'T ATTACK this turn, tap this creature,
   // then transform it." — flaga attackedThisTurn na atakujących (declareAttackers),
@@ -356,6 +362,20 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return types.includes('Instant') || types.includes('Sorcery');
     });
   }
+  if (spec.type === 'aura_or_equipment_card_in_graveyard' && spec.controlledBy === 'controller') {
+    // Batch 53 (Ironclad Slayer, EMN): „return target Aura or Equipment card
+    // from your graveyard to your hand" — karty-własnego grobu z podtypem
+    // Aura albo Equipment (token nie jest kartą, CR 108.2b).
+    return state.zones.graveyard.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.controllerId !== sourceObject.controllerId) return false;
+      if (object.name != null) return false;
+      const isAura = (object.types ?? []).includes('Enchantment') && (object.subtypes ?? []).includes('Aura');
+      const isEquipment = (object.types ?? []).includes('Artifact')
+        && ((object.subtypes ?? []).includes('Equipment') || object.equipment != null);
+      return isAura || isEquipment;
+    });
+  }
   if (spec.type === 'land_card_in_graveyard') {
     // Circle of the Land Druid (CLB): „return target land card from your
     // graveyard to your hand" — KARTY-lądy z grobu kontrolera (token nie jest
@@ -458,6 +478,17 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       if (Array.isArray(spec.notColors) && spec.notColors.some((color) => (object.colors ?? []).includes(color))) return false;
       if (hexproofBlocked(object)) return false;
       return true;
+    });
+  }
+  // Batch 53 (Acidic Slime, M3C): „destroy target artifact, enchantment,
+  // or land" — suma trzech rodzin permanentów na polu bitwy (generycznie,
+  // ADR 0002). Walidacja celu po stronie triggera = wybór z tej listy.
+  if (spec.type === 'artifact_or_enchantment_or_land') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield'
+        && (isArtifactOrEnchantment(object) || isLand(object))
+        && !hexproofBlocked(object);
     });
   }
   if (spec.type === 'artifact_or_enchantment' && !spec.controlledBy) {
@@ -2058,6 +2089,21 @@ function processTriggersScan(state, recentEvents) {
         }
       }
     }
+    // Batch 53 (Glorifier of Suffering, LCI): reflexive „When you do" po
+    // poświęceniu. Zdarzenie `reflexive_sacrifice` emituje resolve_sacrifice
+    // (game-state) — skanujemy je jak każde zdarzenie triggera i odpalamy
+    // zdolność źródła z `trigger.event === 'reflexive_sacrifice'`. To cel
+    // „up to two target creatures" — tryFire przejmuje decyzję celu (Temat 2).
+    if (ev.type === 'reflexive_sacrifice') {
+      const source = state.objects.get(ev.sourceId);
+      if (source && source.zone === 'battlefield') {
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.trigger?.event === 'reflexive_sacrifice') {
+            tryFire(state, ability, source, [], events, { sacrificedId: ev.sacrificedId ?? null });
+          }
+        }
+      }
+    }
     // M166/B (Enrage, RIX — Cacophodon): „Whenever this creature is dealt
     // damage" — dowolne obrażenia STWORA (combat i niecombat; amount > 0,
     // CR 119.3 — w pełni zapobiegnięte nie odpala). Obiekt po id ze
@@ -2666,6 +2712,21 @@ function processTriggersScan(state, recentEvents) {
             // przy kolejkowaniu — pre-check z pustym eventData byl
             // redundantny i nie zgodny z CR (wzorzec: O-N3).
             queueTriggerToStack(state, ability, attachment, [foeId], events);
+          }
+        }
+      }
+      // Batch 53 (Ichorclaw Myr, SOM): „Whenever this creature becomes
+      // blocked, it gets +2/+2 until end of turn." Trigger odpala się RAZ
+      // na ATARKUJĄCEGO, niezależnie od liczby blokerów (ruling WotC).
+      // „Becomes blocked" dotyczy atakującego; bloker dostaje analogiczny
+      // status tylko przez przyszły event (np. „becomes blocking").
+      for (const [attackerId, blockerIds] of Object.entries(assignments ?? {})) {
+        if (!Array.isArray(blockerIds) || blockerIds.length === 0) continue;
+        const attacker = state.objects.get(attackerId);
+        if (!attacker || attacker.zone !== 'battlefield') continue;
+        for (const ability of effectiveAbilities(attacker)) {
+          if (ability?.trigger?.event === 'becomes_blocked') {
+            tryFire(state, ability, attacker, [], events);
           }
         }
       }

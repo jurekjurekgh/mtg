@@ -9,6 +9,7 @@
 1x Village Rites
 1x Cuombajj Witches
 1x Dawntreader Elk
+1x Keep Out
 1x Leafcrown Dryad
 1x Maritime Guard
 1x Merfolk Mesmerist
@@ -17,6 +18,7 @@
 1x Apprentice Wizard
 1x Chittering Rats
 1x Dread Warlock
+1x Ironclad Slayer
 1x Nature's Embrace
 1x Scroll Thief
 1x Springbloom Druid
@@ -28,7 +30,8 @@
 1x Bedhead Beastie
 1x Segmented Krotiq
 1x Howl of the Night Pack
+2x Plains
 5x Island
 4x Swamp
-2x Mountain
+1x Mountain
 3x Forest

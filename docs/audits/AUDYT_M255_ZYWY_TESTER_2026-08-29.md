@@ -18,8 +18,8 @@ szczególnym akcentem na nowe karty."
 
 | Partia | Wynik | Detektory |
 |---|---|---|
-| r1: ravnica×tarkir-bg s3, tarkir-bg×ravnica s11, warhammer-brg×theros s17, theros×warhammer-brg s23, warhammer-wu×tarkir-wur s31, tarkir-wur×warhammer-wu s37 | 6× koniec partii | 0 |
-| r1: worek-mroczny×ravnica s41, worek-mroczny×theros s47, dominaria-wu×warhammer-brg s53, dominaria-wu×worek-mroczny s59, tarkir-wur×theros s67, warhammer-brg×worek-mroczny s71 | 6× koniec partii | 0 |
+| r1: ravnica×tarkir-bg s3, tarkir-bg×ravnica s11, warhammer-ubr×theros s17, theros×warhammer-ubr s23, warhammer-wg×tarkir-wur s31, tarkir-wur×warhammer-wg s37 | 6× koniec partii | 0 |
+| r1: worek-mroczny×ravnica s41, worek-mroczny×theros s47, dominaria-wu×warhammer-ubr s53, dominaria-wu×worek-mroczny s59, tarkir-wur×theros s67, warhammer-ubr×worek-mroczny s71 | 6× koniec partii | 0 |
 | r2 (po naprawach): te same pary co wyżej, seedy 31/37/47/11/53/17 | 6× koniec partii | 0 |
 
 **Pokrycie nowych kart (grep po transkryptach):** Skinbrand Goblin (1 partia),

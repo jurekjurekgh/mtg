@@ -1,0 +1,27 @@
+{
+  "artist": "Karl Kopinski",
+  "cmc": 5.0,
+  "collector_number": "218",
+  "colors": [
+    "G"
+  ],
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/d/7dfeb1d1-7b2d-4235-902f-22a62af5dc0f.jpg?1783911373",
+    "normal": "https://cards.scryfall.io/large/front/7/d/7dfeb1d1-7b2d-4235-902f-22a62af5dc0f.jpg?1783911373"
+  },
+  "mana_cost": "{3}{G}{G}",
+  "name": "Acidic Slime",
+  "oracle_text": "Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nWhen this creature enters, destroy target artifact, enchantment, or land.",
+  "pobrano": "2026-09-04",
+  "power": "2",
+  "print": "m3c",
+  "rarity": "uncommon",
+  "rulings": [],
+  "rulingsPobrano": "2026-09-04",
+  "rulingsSource": "https://api.scryfall.com/cards/m3c/218/rulings",
+  "set": "m3c",
+  "set_name": "Modern Horizons 3 Commander",
+  "source": "https://api.scryfall.com/cards/named?exact=Acidic+Slime&set=m3c",
+  "toughness": "2",
+  "type_line": "Creature — Ooze"
+}

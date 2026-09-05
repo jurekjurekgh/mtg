@@ -168,7 +168,7 @@ test('bot: lookahead unika bezwartościowej wymiany, którą naiwne B1 podejmuje
 
 test('smoke: partia botów z lookahead vs aggro kończy się rozstrzygnięciem', () => {
   const registry = createCardRegistry();
-  const deck = parseDeckText(fs.readFileSync('decks/warhammer-brg.txt', 'utf8'), registry);
+  const deck = parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), registry);
   const state = setupCardMatch({ seed: 5, players: [{ id: 'p1' }, { id: 'p2' }], decks: new Map([['p1', deck.cardIds], ['p2', deck.cardIds]]), registry });
   const result = runSimulation({
     state,

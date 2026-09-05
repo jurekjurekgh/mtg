@@ -781,6 +781,17 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/1/f/1fbc471d-5948-47fc-b7cc-81cc13a4cd15.jpg?1783906133',  // tfin
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Call the Mountain Chocobo'] },
   }),
+  // Batch 53 (Ghirapur Gearcrafter): drukowany token 1/1 Thopter z lataniem.
+  // Wpis jest danymi prezentacji (grafika Scryfall); reguła pozostaje inline
+  // w efekcie `create_token` (ADR 0002), a zgodność pilnuje M202/K.
+  defineCard({
+    id: 'token_thopter', name: 'Thopter', set: null,
+    types: ['Artifact', 'Creature', 'Token'], subtypes: ['Thopter'], colors: [],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
+    oracleText: 'Flying',
+    imageUri: 'https://cards.scryfall.io/large/front/b/9/b9d38c75-c69f-45cd-a745-03ac7513491b.jpg?1783903566',  // tsoc
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Ghirapur Gearcrafter'] },
+  }),
   defineCard({
     id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
     types: ['Land'], colors: [],
@@ -10372,6 +10383,239 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['draw po powrocie wyłącznie, gdy odzyskana karta ma podtyp Zombie (CR 608.2g — podtyp sprawdzany z karty w ręce, bez zmiany strefy)'],
   }),
+
+  // =========================================================================
+  // Batch 53 (2026-09-04) — lista właściciela 589–598 (pierwsza transza:
+  // reuse istniejących mechanik + drobne, generyczne filtry celów).
+  // Dane Oracle: docs/cards/scryfall-<slug>.json (ADR 0010 §2a).
+  // =========================================================================
+
+  // 589M3C Acidic Slime (M3C, Warhammer Fantasy) {3}{G}{G} 2/2 — Deathtouch;
+  // ETB: destroy target artifact, enchantment, or land.
+  defineCard({
+    id: 'acidic-slime', name: 'Acidic Slime', set: 'M3C',
+    types: ['Creature'], subtypes: ['Ooze'], colors: ['G'],
+    keywords: ['deathtouch'], power: 2, toughness: 2, manaCost: 5,
+    oracleText: 'Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nWhen this creature enters, destroy target artifact, enchantment, or land.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/d/7dfeb1d1-7b2d-4235-902f-22a62af5dc0f.jpg?1783911373',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'artifact_or_enchantment_or_land' },
+        },
+        effect: { type: 'destroy_permanent' },
+      }),
+    ],
+    artId: 589, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['destroy celuje w artefakt, enchantment albo ląd (filtr istniejący od transzy 1); deathtouch jako keyword bazowy'],
+  }),
+
+  // 593SOI Inspiring Captain (SOI, Warhammer Fantasy) {3}{W} 3/3 — ETB:
+  // creatures you control get +1/+1 until end of turn.
+  defineCard({
+    id: 'inspiring-captain', name: 'Inspiring Captain', set: 'SOI',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['W'],
+    power: 3, toughness: 3, manaCost: 4,
+    oracleText: 'When this creature enters, creatures you control get +1/+1 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/5/45704604-a1b3-4225-8466-aa76136c84a8.jpg?1783937816',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'buff_creatures_you_control', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 593, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['ETB buff do końca tury; zbiór stworów ustalony przy rozstrzygnięciu (CR 611.2c, ruling SOI 2016-04-08)'],
+  }),
+
+  // 590ECL Keep Out (ECL, Wiedźmin) {1}{W} Instant — Choose one:
+  // 4 damage to target tapped creature OR destroy target enchantment.
+  defineCard({
+    id: 'keep-out', name: 'Keep Out', set: 'ECL',
+    types: ['Instant'], colors: ['W'], manaCost: 2,
+    oracleText: 'Choose one —\n• Keep Out deals 4 damage to target tapped creature.\n• Destroy target enchantment.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/a/4ab1601c-634c-4f21-8926-ba3cb92008c1.jpg?1783904503',
+    spell: {
+      timing: 'instant',
+      modes: [
+        { name: 'Zadaj 4 obrażenia tapped stworowi', targets: [{ type: 'tapped_creature' }], effects: [{ type: 'damage', amount: 4 }] },
+        { name: 'Zniszcz enchantment', targets: [{ type: 'enchantment' }], effects: [{ type: 'destroy_permanent' }] },
+      ],
+    },
+    artId: 590, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 594EMN Ironclad Slayer (EMN, Wiedźmin) {2}{W} 3/2 — ETB: you may return
+  // target Aura or Equipment card from your graveyard to your hand.
+  defineCard({
+    id: 'ironclad-slayer', name: 'Ironclad Slayer', set: 'EMN',
+    types: ['Creature'], subtypes: ['Human', 'Warrior'], colors: ['W'],
+    power: 3, toughness: 2, manaCost: 3,
+    oracleText: 'When this creature enters, you may return target Aura or Equipment card from your graveyard to your hand.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/4/d413f69f-fe2d-4049-8640-178af7e927d9.jpg?1783937515',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'aura_or_equipment_card_in_graveyard', controlledBy: 'controller', optional: true },
+        },
+        effect: { type: 'return_card_from_graveyard_to_hand' },
+      }),
+    ],
+    artId: 594, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 596ORI Ghirapur Gearcrafter (ORI, Kaladesh) {2}{R} 2/1 — ETB: create a
+  // 1/1 colorless Thopter artifact creature token with flying.
+  defineCard({
+    id: 'ghirapur-gearcrafter', name: 'Ghirapur Gearcrafter', set: 'ORI',
+    types: ['Creature'], subtypes: ['Human', 'Artificer'], colors: ['R'],
+    power: 2, toughness: 1, manaCost: 3,
+    oracleText: 'When this creature enters, create a 1/1 colorless Thopter artifact creature token with flying. (A creature with flying can\'t be blocked except by creatures with flying or reach.)',
+    imageUri: 'https://cards.scryfall.io/large/front/f/0/f05cafb6-8812-42bb-ad14-3dde4bcb7034.jpg?1783938329',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'create_token', cardId: 'token_thopter', name: 'Thopter',
+          kind: 'creature', power: 1, toughness: 1, colors: [],
+          types: ['Artifact', 'Creature'], subtypes: ['Thopter'], keywords: ['flying'], amount: 1,
+        },
+      }),
+    ],
+    artId: 596, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 591BLB Rust-Shield Rampager (BLB, Bloomburrow) {3}{G} 4/4 — Offspring {2};
+  // can't be blocked by creatures with power 2 or less.
+  defineCard({
+    id: 'rust-shield-rampager', name: 'Rust-Shield Rampager', set: 'BLB',
+    types: ['Creature'], subtypes: ['Raccoon', 'Warrior'], colors: ['G'],
+    power: 4, toughness: 4, manaCost: 4,
+    oracleText: "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\\nThis creature can't be blocked by creatures with power 2 or less.",
+    imageUri: 'https://cards.scryfall.io/large/front/c/9/c96b01f5-83de-4237-a68d-f946c53e31a6.jpg?1783910806',
+    offspring: { cost: 2, colors: [] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        cantBeBlockedByPower: 2,
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', condition: { wasOffspring: true } },
+        effect: { type: 'create_offspring_token' },
+      }),
+    ],
+    artId: 591, plan: 'Bloomburrow',
+    support: { status: 'supported', limitations: [] },
+    notes: ['offspring: token 1/1 z cechami druku (bez liczników/atachamentów); „enters\"/„enters with" kopii działają (ruling BLB)'],
+  }),
+
+  // 592LCI Glorifier of Suffering (LCI, Warhammer Fantasy) {2}{W} 3/2 —
+  // ETB „you may sacrifice another creature or artifact. When you do, put
+  // a +1/+1 counter on each of up to two target creatures." (reflexive).
+  defineCard({
+    id: 'glorifier-of-suffering', name: 'Glorifier of Suffering', set: 'LCI',
+    types: ['Creature'], subtypes: ['Vampire', 'Soldier'], colors: ['W'],
+    power: 3, toughness: 2, manaCost: 3,
+    oracleText: 'When this creature enters, you may sacrifice another creature or artifact. When you do, put a +1/+1 counter on each of up to two target creatures.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/5/7580ad36-7362-4dee-9511-d119173b70e8.jpg?1783913811',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'reflexive_sacrifice',
+          sacrifice: { types: ['Creature', 'Artifact'], otherThanSource: true },
+          reflexiveEvent: 'reflexive_sacrifice',
+        },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'reflexive_sacrifice',
+          requiresTarget: { type: 'creature', count: 2, upTo: true },
+        },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    artId: 592, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['reflexive: najpierw decyzja poświęcenia, potem cele „up to two target creatures\" (ruling LCI 2023-11-10)'],
+  }),
+
+  // 595HOB Óin the Brave (HOB, Śródziemie) {1}{R} 1/3 — Storied;
+  // while enduring story: +1/+0 and haste; {1},{T},Discard a card: Draw.
+  defineCard({
+    id: 'oin-the-brave', name: 'Óin the Brave', set: 'HOB',
+    types: ['Legendary', 'Creature'], subtypes: ['Dwarf', 'Warrior'], colors: ['R'],
+    power: 1, toughness: 3, manaCost: 2,
+    oracleText: "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, Óin gets +1/+0 and has haste.\n{1}, {T}, Discard a card: Draw a card.",
+    imageUri: 'https://cards.scryfall.io/large/front/9/9/9984b9ef-e81c-48f4-aa33-0504171a2d3c.jpg?1785496200',
+    abilities: [
+      createAbility({ type: ABILITY_TYPE.static, storied: true }),
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { enduringStory: true },
+        pump: { power: 1, toughness: 0 },
+        keywords: ['haste'],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, tap: true, colors: ['R'], discardCard: true },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 595, plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Storied: enduring story leży na GRACZU i zostaje do końca gry (brak triggera); liczy się każdy permanent raz (rulingi HOB 2026-06-29)'],
+  }),
+
+  // 597SOM Ichorclaw Myr (SOM, Mirrodin) {2} 1/1 — Infect;
+  // whenever this creature becomes blocked, it gets +2/+2 until end of turn.
+  defineCard({
+    id: 'ichorclaw-myr', name: 'Ichorclaw Myr', set: 'SOM',
+    types: ['Artifact', 'Creature'], subtypes: ['Phyrexian', 'Myr'], colors: [],
+    power: 1, toughness: 1, manaCost: 2, keywords: ['infect'],
+    oracleText: 'Infect (This creature deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)\nWhenever this creature becomes blocked, it gets +2/+2 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/a/faef8b8b-2c45-4fed-b6ba-a8ac49c66330.jpg?1783941706',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'becomes_blocked' },
+        effect: { type: 'pump', power: 2, toughness: 2 },
+      }),
+    ],
+    artId: 597, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['becomes_blocked odpala RAZ na atakującego (ruling SOM 2011-01-01); Infect już wspólny z engine'],
+  }),
+
+  // 598OTJ Sheriff of Safe Passage (OTJ, Śródziemie) {2}{W} 0/0 — enters with
+  // a +1/+1 counter plus one for each other creature you control; Plot {1}{W}.
+  defineCard({
+    id: 'sheriff-of-safe-passage', name: 'Sheriff of Safe Passage', set: 'OTJ',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['W'],
+    power: 0, toughness: 0, manaCost: 3,
+    oracleText: 'This creature enters with a +1/+1 counter on it plus an additional +1/+1 counter on it for each other creature you control.\\nPlot {1}{W} (You may pay {1}{W} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/c/3/c38a845d-f25d-45ab-9154-3fa5291b0ba0.jpg?1783911852',
+    plot: { cost: 2, colors: ['W'] },
+    entersWithCounters: { '+1/+1': 'other_creatures_you_control_plus_one' },
+    artId: 598, plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+    notes: ['enters-with liczy INNE stwory przy każdym wejściu (CR 121.6), także reanimacja; plot obsługuje ścieżka cast_permanent (exile z ręki i późniejszy rzut bez many)'],
+  }),
+
 
 ]);
 

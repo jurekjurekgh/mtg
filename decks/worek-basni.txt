@@ -17,10 +17,11 @@
 1x Zoraline, Cosmos Caller
 1x Downwind Ambusher
 1x Locthwain Paladin
+1x Rust-Shield Rampager
 1x Burning-Yard Trainer
 1x Greater Tanuki
-2x Plains
-1x Island
-4x Swamp
+1x Plains
+2x Island
+3x Swamp
 1x Mountain
-2x Forest
+3x Forest

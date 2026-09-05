@@ -165,6 +165,47 @@ export function untapControlled(state, playerId) {
  * niego funkcja zachowuje dawną sygnaturę (bez buffów); miejsca mechaniczne
  * (combat, SBA, PlayerView, koszty {X}) zawsze przekazują stan.
  */
+/** Liczba RÓŻNYCH permanentów z kwalifikującymi się cechami Storied
+ * (artefakt, legendary, Saga — jeden permanent liczy się RAZ nawet przy
+ * kilku cechach; ruling WotC 2026-06-29). Landy i tokeny też są permanentami. */
+function storiedQualifiedCount(state, playerId) {
+  const seen = new Set();
+  for (const object of state?.objects?.values?.() ?? []) {
+    if (object?.zone !== 'battlefield' || object.controllerId !== playerId) continue;
+    const qualifies = (object.types ?? []).includes('Artifact')
+      || (object.types ?? []).includes('Legendary')
+      || (object.subtypes ?? []).includes('Saga');
+    if (qualifies) seen.add(object.id);
+  }
+  return seen.size;
+}
+
+/** Czy kontroler źródła kontroluje jakikolwiek permanent z keywordem Storied. */
+function controlsStoriedPermanent(state, playerId) {
+  for (const object of state?.objects?.values?.() ?? []) {
+    if (object?.zone !== 'battlefield' || object.controllerId !== playerId) continue;
+    if (effectiveAbilities(object).some((ability) => ability?.storied)) return true;
+  }
+  return false;
+}
+
+/** Storied (CR 702.?? — HOB): „If you control three or more artifacts,
+ * legendaries, and/or Sagas, you have an enduring story for the rest of the
+ * game." Etykieta jest NA GRACZU i nie może zostać usunięta; nie jest
+ * triggerem i nie idzie na stos (ruling WotC). Ustawiamy ją leniwie przy
+ * odczycie warunku oraz w runStateBasedActions (jedno źródło prawdy). */
+export function hasEnduringStory(state, playerId) {
+  const player = state?.players?.find((entry) => entry.id === playerId);
+  if (!player) return false;
+  if (player.enduringStory) return true;
+  if (!controlsStoriedPermanent(state, playerId)) return false;
+  if (storiedQualifiedCount(state, playerId) >= 3) {
+    player.enduringStory = true;
+    return true;
+  }
+  return false;
+}
+
 /**
  * Statyczne zdolności warunkowe (CR 604.3): deskryptor
  * `{ type: 'static', condition, pump, keywords }` daje buff, dopóki warunek
@@ -243,6 +284,11 @@ function staticConditionHolds(state, object, condition) {
       && c.controllerId === object.controllerId
       && (c.kind === 'artifact' || (c.types ?? []).includes('Artifact'))).length;
     return count >= condition.minArtifactsControlled;
+  }
+  // Batch 53 (Óin the Brave, HOB): „As long as you have an enduring story"
+  // — etykieta na graczu (Storied), generyczna (ADR 0002).
+  if (condition.enduringStory) {
+    return hasEnduringStory(state, object.controllerId);
   }
   // Kabira Vindicator — Level counters (CR 702.86)
   if (condition.minLevel != null || condition.maxLevel != null) {

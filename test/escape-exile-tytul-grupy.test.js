@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { choiceGroupTitle } from '../src/table/render.js';
 
 /**
- * Znalezisko ŻYWEGO TESTERA (pętla jakości, theros vs warhammer-wu, seed 308,
+ * Znalezisko ŻYWEGO TESTERA (pętla jakości, theros vs warhammer-wg, seed 308,
  * profil impatient): decyzja „wybierz karty do wygnania za Escape”
  * (resolve_escape_exile) — grupa dostała typ `escape_exile`, którego nie znała
  * żadna z dwóch map deskryptorów (CHOICE_GROUP_TYPE_DESCRIPTORS /

@@ -23,7 +23,7 @@
 - **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5b „Uwagi z testów” część 2**: **A** — „Tasuj talię” bez komunikatu (tylko podmiana seeda), **B** — kto zaczyna partię = LOSOWE z seeda (`state.starterId`, deterministyczny rzut monetą; CR 103.7a/103.4 przymocowane do startera zamiast `players[0]`; collateral: 41 factory/pinów w 27 plikach testowych + golden-master bota zregenerowany), **C** — Awaken the Sleeper: bot ATAKUJE przejętym stworem (wycena celu castu: 3×power + equipment; pożyczona kreatura bez downside'u w `declare_attackers`), **D** — Ruthless Invasion: bez ataku w tej turze = NIE RZUCAM (okno + gotowi atakujący + usuwani blokerzy), płatność życiem {R/P} = tylko za LETHAL (martwa gałąż wyceny przeniesiona do pętli cast_spell + baza −1); benchmarki quick bez zmian (heuristic 84.7%); `npm test` 3805/3805; build 2932.3 kB; **PR #88**)
 - **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5 „Uwagi z testów”**: **A** — hover powiększonej karty Scryfall na miniaturkach w warstwie „Rozgrywka” (tor `scryfall` bez trybów FOT/KON), **B** — bot blokuje 3/3 przy 5 życiach swoim 2/2 (premia przeżycia w wycenie bloku: prógi życia ≤2/≤5/≤8), **C** — Bone Splinters: osobne wybory „cel czaru” + „cel poświęcenia” (wizard `renderMultiTargetWizard` + wymiar `sacrificeTargetId`), zamiast enumeracji kombinacji 3×3; fix M253: transkrypt benchmarku wdarł się do repo (fail CI); `npm test` 3787/3787; build 2924.8 kB; **PR #88**)
 - **Ostatnia aktualizacja (poprzednia):** 2026-08-30 (sesja arena/01a04e98, **r4 „Uwagi z testów” + strojenie + pętla bota**: **Fix A** — „Deklaracja atakujących” bez kreatur = auto-przejście (root cause: `legalAttackerOptions` zwracał `[[]]` → pusta „decyzja” wystawiana jako komenda; CR 508.1), **T1/T4** — rodzina aura do parametrów (11 kluczy, golden-master) + strojenie `auraHostileEnemyBase` 55→65 (tuner: proxy 0.5642→0.5668; benchmark 4200 meczów bez regresji — adopcja), **B7** — pętla jakości seeds 3001–3006 (oś: poprawność/logika/optymalność): **0 defektów** — 4 fałszywe alarmy zamknięte L57, w tym „re-Equip” z 3002 (pojazd crewowany: sprzęt odłącza się w cleanup, przypięcia świeże — CR 702.16/702.6); 3 testy inwariantów; `npm test` 3765/3765; build 2914.8 kB; **PR #88**)
-- **Ostatnia aktualizacja (poprzednia):** 2026-08-29 (sesja arena/01a04e98, **etap 5**: **pętla jakości Żywym Testerem** (właściciel: „może sam coś znajdziesz”) — 6 partii (tarkir-bg/wiedzmin, worek-basni/theros, warhammer-wu/worek-legend, seeds 2001–2006), 0 detektorów, 3 znaleziska: **F3** Kappa Tech-Wrecker „Ninjutsu {1}{G}" — pita zielona zgubiona w danych (koszt {2} generyczny), silnik (oferta + płatność) ignorował pipy KOLORÓW w ninjutsu — jedyne aktywowane kosztowanie bez koloru (L48) + kafel „Ninjutsu {2}” i gramatyka żeńska; **F1** „enters with a counter” niewidoczne na kaflu (7 kart: Trigon, Kappa, Servant of the Scale, Necrosquito, Voice of the Vermin, Swooping Protector, Creakwood Safewright); **F4** (narzędzie) profil defensive mulliganował do 0 kart (wzorzec bez granic słów łapał „zostaNIE 5”); 7 testów (RED→GREEN dowiedzone stashem), 8 fałszywych alarmów zamkniętych z L57 (m.in. Colossodon vanilla, Breaching Hippocamp untap stwora, własny morph w logu = zgodne z regułą rundy 3); `npm test` 3755/3755; build 2910.5 kB; **PR #88**)
+- **Ostatnia aktualizacja (poprzednia):** 2026-08-29 (sesja arena/01a04e98, **etap 5**: **pętla jakości Żywym Testerem** (właściciel: „może sam coś znajdziesz”) — 6 partii (tarkir-bg/wiedzmin, worek-basni/theros, warhammer-wg/worek-legend, seeds 2001–2006), 0 detektorów, 3 znaleziska: **F3** Kappa Tech-Wrecker „Ninjutsu {1}{G}" — pita zielona zgubiona w danych (koszt {2} generyczny), silnik (oferta + płatność) ignorował pipy KOLORÓW w ninjutsu — jedyne aktywowane kosztowanie bez koloru (L48) + kafel „Ninjutsu {2}” i gramatyka żeńska; **F1** „enters with a counter” niewidoczne na kaflu (7 kart: Trigon, Kappa, Servant of the Scale, Necrosquito, Voice of the Vermin, Swooping Protector, Creakwood Safewright); **F4** (narzędzie) profil defensive mulliganował do 0 kart (wzorzec bez granic słów łapał „zostaNIE 5”); 7 testów (RED→GREEN dowiedzone stashem), 8 fałszywych alarmów zamkniętych z L57 (m.in. Colossodon vanilla, Breaching Hippocamp untap stwora, własny morph w logu = zgodne z regułą rundy 3); `npm test` 3755/3755; build 2910.5 kB; **PR #88**)
 
 ## Sesja 2026-08-30 — E/F: znaleziska pętli jakości (mulligan-bottom auto, regenerate = combat trick) (arena/01a04e98, PR #88)
 
@@ -244,7 +244,7 @@ zielony commit = push natychmiast.
 teraz Pętlę Jakości Żywym Testerem, może sam coś znajdziesz"). Talie z
 ostatnich rund nieprzetestowane + Batch 51: tarkir-bg ↔ wiedzmin
 (seeds 2001–2002, greedy/explorer), worek-basni ↔ theros (2003–2004,
-greedy/defensive), warhammer-wu ↔ worek-legend (2005–2006, greedy/random).
+greedy/defensive), warhammer-wg ↔ worek-legend (2005–2006, greedy/random).
 Raport: `docs/audits/AUDYT_M257R4_ZYWY_TESTER_2026-08-29.md`.
 
 **F3 (dane + silnik + kafel) — Kappa Tech-Wrecker, „Ninjutsu {1}{G}":**
@@ -483,7 +483,7 @@ szczególnym akcentem na nowe karty."
 **Metoda (ADR 0021):** 18 partii (12 w rundzie 1 + 6 kontrolnych po naprawach)
 na parach talii, które dostały karty w Batchu 51 i przy uwagach A–E: ravnica
 (bloodrush), tarkir-bg (Typhoid Rats), tarkir-wur (Dromoka Warrior),
-warhammer-brg (Invasive Species, Savage Surge), warhammer-wu (Thunderstaff),
+warhammer-ubr (Invasive Species, Savage Surge), warhammer-wg (Thunderstaff),
 theros (Akroan Sergeant / renown), worek-mroczny (Kulrath Mystic; poza próbką
 benchmarku), dominaria-wu (Willbender, Wormfang Newt, Altar of the Goyf).
 Profile `explorer/greedy/defensive/impatient/random`. Wszystkie partie kończą
@@ -7294,7 +7294,7 @@ worek-* — profile greedy/random/defensive/explorer/impatient/hoarder, seedy
   (damage/untap/mill/destroy) i rodziny pól (życie/trucizna) — z jawną listą
   wyjątków (ADR 0027 pkt 3). Weryfikacja mutacyjna: `damage_to_controller`
   z `changeLife(-)` zamiast `dealNonCombatDamage` → 1 fail (RED) → GREEN.
-- **2.1 znalezisko #1** (theros vs warhammer-wu, seed 308, impatient): grupa
+- **2.1 znalezisko #1** (theros vs warhammer-wg, seed 308, impatient): grupa
   `resolve_escape_exile` spadała na „Wybierz: Wariant (10 opcji)" — typ grupy
   `escape_exile` nie miał deskryptora ani gałęzi tytułu (L102/1). Fix:
   `choiceSourceTitle` nazywa kartę + deskryptor fallback; RED→GREEN.
@@ -8294,3 +8294,62 @@ mutacje 3/3 zabite; `npm test` 4402/4402, `test:all` 4412/4412, build
 `3d1fb2b` (RED), `0b84945` (fix). Uwaga sesji: sandbox zresetował workspace
 czwarty raz — odzyskane fetch + mixed reset do FETCH_HEAD; node_modules
 testera (jsdom) i dist/ odtworzone (npm i + npm run build).
+
+**Audyt PR #95 + pętla jakości (2026-09-04).**
+
+Sesja w trybie domyślnym ADR 0020/0021 („kontynuujemy projekt”): PR #96
+(`arena/01a06dd7-mtg` → `main`) otwarty PRZED pierwszą zmianą w kodzie;
+audyt ostatniego scalonego PR (#95 — squash `bf615b1`, 27 plików,
++3983 −63). Werdykt audytu: **PR dobry** — kod chirurgiczny, bez znalezisk
+regułowych; per plik: engine combat/game-state (łańcuch wyników komendy
+M296, model kupowanego deathtouch M297, `modeExtra`), heuristic-bot (kara
+za deathtouch), UI choice-request/multi-target/main/render/session
+(wspólny kreator M298–M304, etykiety, FoW) — wszystko akceptowane. Dwa
+znaleziska **dokumentacyjne (L92)**: F1 README (4378 → realnie 4402/4412,
+build 3226,2 kB), F2 handoff 2026-09-03 (liczby sprzed scalenia — zastąpiony
+handoffem 2026-09-04). Raport: `docs/audits/AUDYT_PR95_2026-09-04.md`.
+
+Pętla jakości: cztery partie Żywego Testera na przebudowanym `dist/`
+(final-fantasy × worek-basni 51, theros × zendikar 47, wiedzmin ×
+worek-legend 7 explorer, worek-basni × final-fantasy 811 random) —
+wszystkie „DETEKTORY: brak zgłoszeń”, wszystkie kończą się wygraną bota.
+Mulligan londyński przećwiczony realnie (seed 811: 3 odrzucenia,
+odłożenie 1/2/3 karty, 6/16/35 opcji, zatrzymanie 4 kart). Kandydat
+„Bierzesz mulligan (1)” w końcowej linii `LOG:` snapshotu rozpatrzony
+i odrzucony: to OGON najstarszych wpisów (render rysuje log od najnowszego,
+a `snapshot()` bierze `slice(-6)` z DOM), nie błąd silnika — przebieg ten
+znajduje się w sekcji `[ROZGRYWKA]` transkryptu. Bramki na HEAD:
+`npm test` 4402/4402, `test:all` 4412/4412, build 59 modułów / 3226,2 kB;
+bot-benchmark 10/10; pełny B0 bez zmian (ADR 0018). Zero nowych kart.
+Commity: `03baf91` (plan), `43151c0` (raport), `b8137e9` (roadmapa),
+dokumentacja Etapu 4.
+
+**Batch 53 — nowy batch materializacyjny (589–598, 2026-09-04).**
+
+Zlecenie właściciela: „Proponuję nowy batch materializacyjny. Podziel to
+sobie na sensowne etapy i commituj po kawałku” — 10 kart na gałęzi
+`arena/01a06dd7-mtg` (PR #96). Wykonano w 7 transzach: 3 proste karty
+(590/594/596), Sheriff (598, Plot), Rust-Shield (591, Offspring), Óin (595,
+Storied), Ichorclaw (597, becomes_blocked), Glorifier (592, reflexive
+sacrifice) i domknięcie (589 Acidic Slime, 593 Inspiring Captain). Nowe
+generyczne mechaniki: Offspring, Storied, `becomes_blocked`, „reflexive
+when you do” po poświęceniu, `cantBeBlockedByPower` oraz filtry celów
+`aura_or_equipment_card_in_graveyard` i `artifact_or_enchantment_or_land`.
+
+Kluczowa decyzja **„accept-migrate”** (właściciel): Glorifier przepchnął
+Warhammer Fantasy ponad próg 30 nielandowych, więc akceptujemy split ADR
+0024 — `warhammer-ubr` 21 + `warhammer-wg` 17 (leak 0, imbalance 4) —
+i migrujemy wszystkie odwołania `warhammer-brg`/`warhammer-wu` w testach,
+`src`, README, docs i narzędziach. Ze względu na spójność talii transza 6
+poszła w jednym zielonym commicie razem ze splitem i migracją. Golden-master
+`test/fixtures/bot-scoring-snapshot.json` odświeżony (`--write`); hash się nie
+zmienił, bo próbkuje parę `tarkir-bg|warhammer-ubr`.
+
+Słownik `tools/collection-art-ids.csv` 598 pozycji, 455 kart z artId;
+10 × `docs/cards/scryfall-<slug>.json` z rulingami. Bramki na HEAD
+`54da590`: `npm test` **4432/4432**, `test:all` **4442/4442**, build
+**59 modułów / 3257,4 kB**, bot-benchmark 10/10 (profil szybki ADR 0018,
+pełny B0 bez komendy właściciela). Commity: `6f91045` (transza 6 + split +
+migracja), `54da590` (transza 7). Plan:
+`docs/plans/PLAN_2026-09-04-batch53-materializacyjny.md`; handoff:
+`docs/setup/HANDOFF_2026-09-04-batch53-materializacyjny.md`.

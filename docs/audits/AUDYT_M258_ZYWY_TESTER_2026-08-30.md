@@ -164,7 +164,7 @@ botów (0 odrzuceń komend; zapłaty i kontry obserwowane).
 2. **Testy „pełnej partii bota" łapią to, czego unit nie widzi** —
    regresja F2 ujawniła się DOPIERO po fixie F1 (madness realnie doszedł
    do botów). Warto trzymać przynajmniej jedną taką partię na talii z
-   mechanikami nietypowymi (już jest: real-cards-batch3, warhammer-brg).
+   mechanikami nietypowymi (już jest: real-cards-batch3, warhammer-ubr).
 3. **Kreator z PR #88 był martwy dla sterownika** — nowe modale UI wymagają
    gałęzi w run-game.mjs, inaczej Żywy Tester nigdy ich nie przećwiczy
    (drugie takie znalezisko po M203; wzorzec: gałąź per modal + limit prób).

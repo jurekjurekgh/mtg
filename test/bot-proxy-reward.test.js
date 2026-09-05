@@ -106,10 +106,10 @@ function runMatch({ onStep = null } = {}) {
   const state = setupCardMatch({
     seed: 3000,
     players: [{ id: 'p1' }, { id: 'p2' }],
-    decks: new Map([['p1', deckOf('tarkir-bg')], ['p2', deckOf('warhammer-brg')]]),
+    decks: new Map([['p1', deckOf('tarkir-bg')], ['p2', deckOf('warhammer-ubr')]]),
     registry,
   });
-  const bot = createHeuristicBot({ seed: 3001, opponentDeck: deckOf('warhammer-brg'), registry });
+  const bot = createHeuristicBot({ seed: 3001, opponentDeck: deckOf('warhammer-ubr'), registry });
   const { state: finalState, results } = runSimulation({
     state,
     controllers: new Map([['p1', bot], ['p2', createRandomBot({ seed: 3002, allowConcede: false })]]),

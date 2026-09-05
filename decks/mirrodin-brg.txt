@@ -1,11 +1,11 @@
 # Mirrodin (BRG)
 
 1x Great Furnace
-1x Horizon Spellbomb
 1x Rustvine Cultivator
 1x Carapace Forger
 1x Consume Spirit
 1x Death-Hood Cobra
+1x Ichorclaw Myr
 1x Shatter
 1x Bone Shredder
 1x Awaken the Sleeper

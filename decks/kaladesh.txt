@@ -9,6 +9,7 @@
 1x Stall Out
 1x Welder Automaton
 1x Cogwork Assembler
+1x Ghirapur Gearcrafter
 1x Glint-Sleeve Artisan
 1x Glitch Ghost Surveyor
 1x Skilled Animator

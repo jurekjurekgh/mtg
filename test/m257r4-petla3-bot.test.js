@@ -14,7 +14,7 @@ import { runStateBasedActions } from '../src/engine/state-based.js';
  * M257 r4 — pętla jakości bota (Żywy Tester, seeds 3001–3006; oś wzmocniona
  * przez właściciela: POPRAWNOŚĆ, LOGICZNOŚĆ, OPTYMALNOŚĆ).
  *
- * Znalezisko Z1 (partia 3002, worek-legend vs warhammer-wu, bot = warhammer-wu,
+ * Znalezisko Z1 (partia 3002, worek-legend vs warhammer-wg, bot = warhammer-wg,
  * tury 26/28/30): bot co turę załogowywał Irontread Crusher (crew 3, animacja
  * do końca tury) i przypinał Brawler's Plate {4} + Wooden Stake {1}.
  *

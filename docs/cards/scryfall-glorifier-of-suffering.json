@@ -1,0 +1,33 @@
+{
+  "artist": "Lauren K. Cannon",
+  "cmc": 3.0,
+  "collector_number": "15",
+  "colors": [
+    "W"
+  ],
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/5/7580ad36-7362-4dee-9511-d119173b70e8.jpg?1783913811",
+    "normal": "https://cards.scryfall.io/large/front/7/5/7580ad36-7362-4dee-9511-d119173b70e8.jpg?1783913811"
+  },
+  "mana_cost": "{2}{W}",
+  "name": "Glorifier of Suffering",
+  "oracle_text": "When this creature enters, you may sacrifice another creature or artifact. When you do, put a +1/+1 counter on each of up to two target creatures.",
+  "pobrano": "2026-09-04",
+  "power": "3",
+  "print": "lci",
+  "rarity": "common",
+  "rulings": [
+    {
+      "comment": "You don't choose a target for Glorifier of Suffering's ability at the time it triggers. Rather, a second \"reflexive\" ability triggers when you sacrifice another creature or artifact this way. You choose targets for that ability as it goes on the stack. Each player may respond to this triggered ability as normal.",
+      "date": "2023-11-10",
+      "source": "wotc"
+    }
+  ],
+  "rulingsPobrano": "2026-09-04",
+  "rulingsSource": "https://api.scryfall.com/cards/lci/15/rulings",
+  "set": "lci",
+  "set_name": "The Lost Caverns of Ixalan",
+  "source": "https://api.scryfall.com/cards/named?exact=Glorifier+of+Suffering&set=lci",
+  "toughness": "2",
+  "type_line": "Creature — Vampire Soldier"
+}

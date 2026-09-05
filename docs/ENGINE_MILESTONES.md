@@ -4635,3 +4635,28 @@ helpera), „Karta z grobu na wierzch biblioteki” → przyciski z 🔍 (worek-
 wizardy sekwencyjne bez regresji, okno Vaana bez regresji (final-fantasy 51,
 worek-legend 3, wiedzmin 7); 0 zgłoszeń detektorów. Silnik i protokół bez
 zmian (L48).
+
+## M305 (2026-09-04) — Reflexive „when you do” po dobrowolnym poświęceniu + domknięcie batcha 53
+
+**Reguła.** Glorifier of Suffering (LCI) wymaga dwustopniowego timing:
+najpierw opcjonalna decyzja „may sacrifice another creature or artifact”,
+a dopiero potem refleksyjna zdolność „when you do” z celami
+„up to two target creatures” (ruling LCI 2023-11-10; CR 603.3d). Silnik ma
+już `pendingSacrifice` (koszty pokroju Zoraline); rozszerzenie: `skip`
+w `resolve_sacrifice_choice`, dopuszczenie artefaktów/stworów innych niż
+źródło oraz emisja zdarzenia `reflexive_sacrifice` po faktycznym poświęceniu.
+Skaner triggerów obsługuje to zdarzenie jak zwykły trigger (dwustopniowa
+sekwencja: poświęcenie → wybór celów w standardowym `resolve_trigger_target`).
+
+**Weryfikacja.** 4 testy w `test/real-cards-batch53.test.js`: dane Oracle
+i dwa deskryptory, poświęcenie artefaktu → refleks z licznikami na dwóch
+celach, rezygnacja z poświęcenia = brak refleksu, brak kandydata = brak
+blokującej decyzji. Strażniki: `batch25` (obsługiwane zdarzenie triggera),
+`card-sources-guard` M122 (opis PL), `m202-c-etykiety-triggerow` (brak
+surowego sluga w widoku). Do tego domknięcie batcha 53: Acidic Slime
+(destroy artifact/enchantment/land, filtr istniejący) i Inspiring Captain
+(mass +1/+1 do końca tury, CR 611.2c — zbiór ustalony przy rozstrzygnięciu).
+Bramki: `npm test` **4432/4432**, `test:all` **4442/4442**, build
+**59 modułów / 3257,4 kB**; bot-benchmark 10/10. Commity `6f91045`,
+`54da590`. Przy okazji split Warhammera (ubr/wg, ADR 0024) i migracja
+odwołań do starych talii.

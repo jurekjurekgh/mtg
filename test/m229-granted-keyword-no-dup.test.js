@@ -1,6 +1,6 @@
 // M229 — audyt Żywym Testerem na nowych taliach (podział ADR 0024).
 //
-// Znalezisko (warhammer-brg vs mirrodin-brg, seed 23): bot rzuca Awaken the
+// Znalezisko (warhammer-ubr vs mirrodin-brg, seed 23): bot rzuca Awaken the
 // Sleeper na Hill Giant gracza — PRZEJMUJE kontrolę do końca tury (poprawna
 // gra, nie „buff"), stwór dostaje haste. Kafel przejętego stwora pokazywał
 // jednak „Pośpiech · Pośpiech" — keyword NADANY dublował się: raz w linii

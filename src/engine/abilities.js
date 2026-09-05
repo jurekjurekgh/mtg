@@ -121,7 +121,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, landwalk = null, onNthResolve = null, preventCombatDamageToController = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -169,6 +169,15 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // podtypach. Zdarza się w `equipment.grantedAbilities`, więc trafia do
     // combat przez attachmentsAttachedTo.
     cantBeBlockedBySubtypes: cantBeBlockedBySubtypes ? Object.freeze([...cantBeBlockedBySubtypes]) : null,
+    // „can't be blocked by creatures with power 2 or less" (Rust-Shield
+    // Rampager, CR 702.x?): statyczny próg MOCY blokera — canBlock odrzuca
+    // blokerów o efektywnej mocy <= wartość. Sprawdzane przed wykonaniem bloku.
+    cantBeBlockedByPower: cantBeBlockedByPower != null ? cantBeBlockedByPower : null,
+    // Storied (HOB, Óin the Brave): cecha KEYWORDOWA na permanencie — nie
+    // modyfikuje sama statystyk, tylko umożliwia nadanie `enduringStory`
+    // graczowi (hasEnduringStory w permanents.js), gdy >=3 kwalifikowane
+    // permanenty (artefakty/legendy/Sagi, raz na permanent).
+    storied: Boolean(storied),
     // Landwalk (CR 702.33, Emerald Oryx — forestwalk): „This creature can't be
     // blocked as long as defending player controls a [podtyp]". { subtype } —
     // generyczny (inne landwalki w przyszłości). Sprawdzane w canBlock.

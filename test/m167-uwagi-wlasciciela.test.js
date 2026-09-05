@@ -232,7 +232,7 @@ test('Ea: nagłówki faz wracają do logu — raz na zmianę fazy', async () => 
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-brg.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   const session = createSession({ seed: 3, registry: REGISTRY, decks });
   // Keep ręki startowej, potem przewijamy passami przez kilka kroków/faz.

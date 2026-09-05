@@ -1,0 +1,38 @@
+{
+  "artist": "Ben Maier",
+  "cmc": 4.0,
+  "collector_number": "25",
+  "colors": [
+    "W"
+  ],
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/5/45704604-a1b3-4225-8466-aa76136c84a8.jpg?1783937816",
+    "normal": "https://cards.scryfall.io/large/front/4/5/45704604-a1b3-4225-8466-aa76136c84a8.jpg?1783937816"
+  },
+  "mana_cost": "{3}{W}",
+  "name": "Inspiring Captain",
+  "oracle_text": "When this creature enters, creatures you control get +1/+1 until end of turn.",
+  "pobrano": "2026-09-04",
+  "power": "3",
+  "print": "soi",
+  "rarity": "common",
+  "rulings": [
+    {
+      "comment": "Inspiring Captain’s triggered ability affects only creatures you control at the time it resolves. Creatures you begin to control later in the turn won’t get +1/+1.",
+      "date": "2019-07-12",
+      "source": "wotc"
+    },
+    {
+      "comment": "The set of creatures affected by Inspiring Captain’s ability is determined as the ability resolves. Creatures you begin to control later in the turn won’t get +1/+1.",
+      "date": "2016-04-08",
+      "source": "wotc"
+    }
+  ],
+  "rulingsPobrano": "2026-09-04",
+  "rulingsSource": "https://api.scryfall.com/cards/soi/25/rulings",
+  "set": "soi",
+  "set_name": "Shadows over Innistrad",
+  "source": "https://api.scryfall.com/cards/named?exact=Inspiring+Captain&set=soi",
+  "toughness": "3",
+  "type_line": "Creature — Human Knight"
+}

@@ -10,7 +10,7 @@ import { choiceGroupTitle, choiceRequestType } from '../src/table/render.js';
  * nie ma ani gałęzi tytułu, ani deskryptora, gracz widzi generyczne
  * „Wybierz: Wariant (N opcje)".
  *
- * Znalezione Żywym Testerem: resolve_escape_exile (theros/warhammer-wu s308),
+ * Znalezione Żywym Testerem: resolve_escape_exile (theros/warhammer-wg s308),
  * resolve_look_top_choice (tarkir-wur/innistrad-brg s316),
  * resolve_reveal_exile_hand (dominaria-brg/dominaria-wu s414). Po trzecim
  * przypadku zamykamy KLASĘ: każdy typ komendy, który `choiceRequestGroupKey`

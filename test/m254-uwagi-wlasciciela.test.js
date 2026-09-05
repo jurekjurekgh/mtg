@@ -355,7 +355,7 @@ test('M254/C2: kolejka pomija rzuty bez ilustracji (nie blokuje gry)', () => {
 test('M254/C3: sesja staje, gdy obserwator poprosi o pauzę (i rusza po continueArtPlay)', () => {
   const registry = createCardRegistry();
   const human = parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), registry).cardIds;
-  const bot = parseDeckText(fs.readFileSync('decks/warhammer-brg.txt', 'utf8'), registry).cardIds;
+  const bot = parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), registry).cardIds;
   const session = createSession({
     seed: 254, registry, decks: new Map([[HUMAN_ID, human], [BOT_ID, bot]]),
     pauseOnBotMoves: true,

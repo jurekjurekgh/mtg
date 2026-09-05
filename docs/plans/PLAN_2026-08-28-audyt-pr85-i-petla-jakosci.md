@@ -79,7 +79,7 @@ Etap 3 (pętla jakości Żywym Testerem) ZAKOŃCZONY — 7 partii na 10 taliach
 spoza próbki benchmarku (`BENCH_DECKS` = alara, dominaria-brg, dominaria-wu,
 final-fantasy, forgotten-realms, innistrad-brg): theros/wiedzmin s=13,
 innistrad-wu/tarkir-bg s=5, zendikar/tarkir-wur s=21 (explorer),
-warhammer-wu/srodziemie s=9 (defensive), worek-mroczny/theros s=31,
+warhammer-wg/srodziemie s=9 (defensive), worek-mroczny/theros s=31,
 tarkir-bg/ravnica s=17, wiedzmin/zendikar s=33 (`--tick-rate 1`, oś
 ptaszków). Detektory: 0 zgłoszeń we wszystkich; 6/7 partii z naturalnym
 końcem (siódma początkowo STOP — patrz niżej).
