@@ -4686,10 +4686,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Grave Exchange: cel poświęca stwora WŁASNEGO wyboru. Minimalizujemy
         // stratę — najsłabszy własny stwór (najniższa wartość) punktujemy
         // najwyżej; gwarantowana odpowiedź, by partia nie stanęła.
+        // C-R3a (audyt Batch53): refleks jałowy (reflexReady=false — brak
+        // kandydata dla „When you do") → poświęcenie kupuje NIC, rezygnacja
+        // wygrywa. Flaga tylko przy decyzjach refleksowych (Grave Exchange
+        // bez flagi = stara polityka).
+        if (cmd.skip === true) return finish(cmd.reflexReady === false ? 40 : 0);
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!target) return finish(0);
-        const value = (target.power ?? 0) * 2 + (target.toughness ?? 0);
-        return finish(40 - value);
+        // C-R3b: artefakty/nie-stwory wyceniane po KOSZCIE (wzorzec
+        // craft_exile), nie jako 0 — cenny artefakt przestaje być „darmową
+        // ofiarą" przed tokenem 1/1.
+        const value = target.kind === 'creature' || (target.types ?? []).includes('Creature')
+          ? (target.power ?? 0) * 2 + (target.toughness ?? 0)
+          : (target.manaCost ?? 0) * 2;
+        return finish(cmd.reflexReady === false ? 5 - value : 40 - value);
       }
       case 'resolve_food_choice': {
         // Insatiable Appetite: poświęć Food (+5/+5) albo nie (+3/+3).
