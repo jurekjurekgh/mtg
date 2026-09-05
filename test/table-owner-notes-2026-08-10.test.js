@@ -199,3 +199,17 @@ test('Jill ETB: trigger_target_required mówi o zwrocie na rękę', () => {
   assert.match(text, /Jill/);
   assert.match(text, /zwrot/i);
 });
+
+test('B3: trigger_target_resolved wielocelowy wymienia WSZYSTKIE cele (Glorifier)', () => {
+  const multi = (e) => describeGameEvent(e, {
+    nameOf: (cardId) => REGISTRY.get(cardId)?.name ?? cardId ?? '?',
+    nameOfObject: (id) => ({ ram: 'Ramroller', glo: 'Glorifier of Suffering' }[id] ?? '?'),
+    isPlayer: (id) => ['p1', 'p2'].includes(id),
+  }, PLAYER_NAMES);
+  const text = multi({
+    type: 'trigger_target_resolved', playerId: 'p2', sourceId: 'glo',
+    cardId: 'glorifier-of-suffering', targetId: 'ram', targetIds: ['ram', 'glo'],
+    noEffect: false, remaining: 0,
+  });
+  assert.equal(text, 'Glorifier of Suffering — cele: Ramroller, Glorifier of Suffering');
+});
