@@ -1946,23 +1946,41 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           && ['precombat_main', 'combat'].includes(view.turn.phase)) value += 2 + (recipient.power ?? 0);
         else value -= 10;
       } else if (kw === 'vigilance') {
-        // M221/D (zgłoszenie właściciela, Bladed Sentinel „{W}: vigilance do
-        // końca tury"): vigilance = „nie tapuje się, gdy atakuje" (CR 702.21).
-        // Ma sens WYŁĄCZNIE, gdy stwór zaraz zaatakuje w MOJEJ turze i jest
-        // odkręcony — wtedy zachowa blok po ataku. Bot wykupywał ją w turze
-        // przeciwnika (gdzie nie atakuje) i nawet na ZATAPNIĘTYM stworze —
-        // podwójne marnotrawstwo many. Reguła po STANIE (moja tura + zaraz
-        // atak + odkręcony), nie po nazwie kroku (L42/L64), bez nazw kart.
-        if (attacking) {
-          // Już atakuje — jeśli jeszcze nietapnięty, vigilance zatrzyma go
-          // odkręconego do obrony; wartość rośnie z jego wytrzymałością.
-          value += !recipient.tapped ? 2 + (recipient.toughness ?? 0) : -10;
-        } else if (myTurn(view) && canAttackNow(recipient)
-          && ['precombat_main', 'combat'].includes(view.turn.phase)
-          && ['main1', 'beginning_of_combat', 'declare_attackers'].includes(view.turn.step)) {
-          // Przed własnym atakiem, stwór gotowy — vigilance kupuje blok po ataku.
+        // M221/D + B (zgłoszenie właściciela, Bladed Sentinel „{W}: vigilance
+        // do końca tury"): vigilance = „nie tapuje się, gdy atakuje" (CR 702.21).
+        // Daje korzyść WYŁĄCZNIE jeśli ten stwór ATAKUJE w tej turze i pozostanie
+        // odkręcony do bloku. Kupowanie go w main1 (przed decyzją o ataku)
+        // marnuje manę — bot po takim kupnie nie atakował (widział presję
+        // wroga albo nie miał po co), a many nie odzyska. Reguła: vigilance
+        // opłaca się TYLKO wtedy, gdy (a) stwór już jest w fazie walki i atakuje
+        // (deklaracja atakujących, odpowiedź na bloki), albo (b) jest w KROKU
+        // declare_attackers, a my właśnie o tym decydujemy. Przed walką
+        // (main1/beginning_of_combat) nie kupujemy — poczekamy na atak.
+        // Nazwy karty NIE ma w regule (ADR 0002); warunek po STANIE
+        // (recipient.tapped, krok/faza, czy atakuje — L42/L64).
+        const myTurnCombat = myTurn(view)
+          && view.turn.phase === 'combat'
+          && ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step);
+        if (attacking && !recipient.tapped) {
+          // Stwór ATAKUJE i jest odkręcony — vigilance zatrzyma go odkręconym.
+          // Wartość rośnie z wytrzymałością (im twardszy, tym cenniejszy blok).
+          value += 2 + (recipient.toughness ?? 0);
+        } else if (blocking) {
+          // Blokowanie: vigilance nie pomaga (stwór i tak nie atakuje).
+          value -= 5;
+        } else if (myTurnCombat && canAttackNow(recipient)
+                   && view.turn.step === 'declare_attackers') {
+          // Jesteśmy dokładnie w kroku deklaracji atakujących — jeśli mamy
+          // zamiar wysłać tego stwora, vigilance opłaca się. Ta gałąź
+          // odpowiada kupowaniu z PRZYCISKU w wizardzie ataku (a nie main1).
+          // Ujemne w stosunku do wariantu attacking (nie wiemy jeszcze czy
+          // gracz wybierze atak) — wystarczy mała premia, żeby opcja nie była
+          // karana, ale nie tak duża, żeby kupować bez ataku.
           value += 2 + (recipient.toughness ?? 0);
         } else {
+          // Każda inna sytuacja (main1, tura przeciwnika, stwór zatapnięty)
+          // — marnowanie many. Wcześniej gałąź precombat_main dawała +value
+          // nawet BEZ zamiaru ataku → bug B: kupione w main1, po czym brak ataku.
           value -= 10;
         }
       } else {

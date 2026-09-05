@@ -7596,6 +7596,51 @@ export function playerView(state, playerId) {
       sourceId: state.pendingExploits[0].sourceId,
       candidateIds: [...state.pendingExploits[0].candidateIds],
     } : null,
+    // A1/A2 (Final Parting): szukanie w bibliotece ujawnia WSZYSTKIE karty
+    // decydentowi (CR 400.2 + 701.19 — przeszukanie = full information),
+    // tak samo jak manifest_dread (M223), peek-pick-order (M293) czy scry.
+    // Widok niesie: (a) listę KART-kandydatów z pełnymi danymi (tylko dla
+    // wybierającego), (b) źródło i cel strefy (hand/graveyard/battlefield),
+    // (c) czy szukanie jest obowiązkowe (CR 701.19c), (d) informację o
+    // chain (Final Parting: karta do ręki → karta do grobu). UI buduje
+    // z tego modal z zaznaczaniem (ptaszek) + podglądem karty pełnym
+    // ekranem (zgłoszenie A1: modal z lupą ma być zastąpiony wszędzie
+    // tym z ptaszkowaniem).
+    pendingSearchChoice: state.pendingSearchChoice ? (() => {
+      const pending = state.pendingSearchChoice;
+      const base = Object.freeze({
+        playerId: pending.playerId,
+        sourceCardId: pending.sourceCardId ?? null,
+        destination: pending.destination ?? null,
+        // Dopuszczalne destynacje (Caravan Vigil morbid — wybór ręka/pole
+        // bitwy); null = jedna strefa.
+        destinations: Array.isArray(pending.destinations) ? [...pending.destinations] : null,
+        mandatory: Boolean(pending.mandatory),
+        chain: pending.chain ? { ...pending.chain } : null,
+        // A1/A2 (Final Parting): lista kandydatów widoczna TYLKO dla
+        // decydenta (biblioteka to strefa nieuporządkowana, informacja
+        // tylko właściciela). Bierzemy ją prosto z pending.candidateIds
+        // (zapisane przy queueSearchChoice), nie odtwarzamy filtru —
+        // eliminuje ryzyko rozjazdu między silnikiem a UI.
+        cards: pending.playerId === playerId && Array.isArray(pending.candidateIds)
+          ? Object.freeze(pending.candidateIds.map((id) => {
+              const o = state.objects.get(id);
+              return Object.freeze({
+                id,
+                cardId: o?.cardId ?? null,
+                kind: o?.kind ?? null,
+                types: Object.freeze([...(o?.types ?? [])]),
+                cmc: o?.manaValue ?? o?.cmc ?? 0,
+                manaCost: o?.manaCost ?? null,
+                power: o?.power ?? null,
+                toughness: o?.toughness ?? null,
+                colors: Object.freeze([...(o?.colors ?? [])]),
+              });
+            }))
+          : null,
+      });
+      return base;
+    })() : null,
     // M69 (Dreams of Steel and Oil): reveal ręki — po odsłonięciu karty są
     // JAWNE dla obu graczy (MtG: „reveals their hand"), więc view niesie
     // cardIds ręki i grobu (kandydaci wyboru) oraz etap (chosenHand != null).

@@ -65,6 +65,10 @@ export function previewCardIdOfOption(option, resolveCardId) {
     ...(Array.isArray(option.targetIds) ? option.targetIds : []),
     option.targetId, option.keepId, option.sacrificeTargetId, option.chosenCardId,
     option.exileTargetId, option.tapCreatureId,
+    // A1/A2 (Final Parting): szukanie w bibliotece — pole `found` niesie
+    // objectId wybranej karty; trafia do kolejki przed cardId/objectId, bo
+    // to właśnie jest kartą, którą gracz wybiera w tym wizardzie.
+    option.found,
     ...(Array.isArray(option.cardIds) ? option.cardIds : []),
     // dopiero potem karta, której dotyczy sama komenda
     option.cardId, option.objectId,
@@ -614,8 +618,19 @@ function objectName(view, session, id) {
       // Face-down (morph/megamorph, CR 708.2): tożsamość ukryta — „Morph"
       // zamiast „?" (audyt żywym testerem M73c; pisownia M127 z jednego źródła).
       if (object.faceDown) return FACE_DOWN_LABEL;
-      return session.nameOf(object.cardId);
+      // Karty w library przeciwnika nie mają cardId w widoku (FoW) – pomiń
+      // i szukaj dalej (pendingSearchChoice.cards ma pełne dane dla decydenta).
+      if (object.cardId) return session.nameOf(object.cardId);
     }
+  }
+  // A1 (Final Parting): szukanie w bibliotece ujawnia karty TYLKO decydentowi
+  // w `pendingSearchChoice.cards` (biblioteka w view.zones.library jest ukryta
+  // nawet dla właściciela — patrzyliśmy na strefę, ale karty wyboru siedzą
+  // w pendingu, analogicznie do Manifest Dread / Scry).
+  const searchCards = view?.pendingSearchChoice?.cards;
+  if (Array.isArray(searchCards)) {
+    const card = searchCards.find((c) => c.id === id);
+    if (card?.cardId) return session.nameOf(card.cardId);
   }
   return session.nameOfObject ? session.nameOfObject(id) : String(id);
 }
