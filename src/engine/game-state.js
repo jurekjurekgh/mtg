@@ -18,7 +18,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
@@ -5541,6 +5541,14 @@ export function playerView(state, playerId) {
           entry.cantAttackStatic = true;
         }
         if (object.cantBeBlocked === true) entry.cantBeBlocked = true;
+        // Audyt Batch53/C (Rust-Shield Rampager): próg ewazji mocowej
+        // („can't be blocked by creatures with power N or less") to informacja
+        // publiczna (skutek statyki) — bot czyta go wprost z widoku
+        // (attackerCanBeBlocked), zamiast zgadywać z rejestru (ADR 0017).
+        if (object.kind === 'creature' && !hiddenFromViewer) {
+          const blockPowerCap = attackerBlockPowerRestriction(state, object);
+          if (blockPowerCap != null) entry.cantBeBlockedByPower = blockPowerCap;
+        }
         // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona
         // permanentu (CR 702.16) jest informacją PUBLICZNĄ wydrukowaną skutkiem
         // rozstrzygniętej aury/efektu — kafel musi ją pokazać osobnym badge'em

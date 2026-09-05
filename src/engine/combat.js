@@ -974,8 +974,9 @@ function attackerBlockSubtypeRestriction(state, attacker) {
 }
 
 /** Maksymalna moc blokera („can't be blocked by creatures with power 2 or
- * less" — Rust-Shield Rampager), z własnej zdolności lub nadanej sprzętem. */
-function attackerBlockPowerRestriction(state, attacker) {
+ * less" — Rust-Shield Rampager), z własnej zdolności lub nadanej sprzętem.
+ * Eksportowane dla PlayerView (bot czyta próg ewazji — audyt Batch53/C). */
+export function attackerBlockPowerRestriction(state, attacker) {
   for (const ability of effectiveAbilities(attacker)) {
     if (ability?.type === 'static' && ability.cantBeBlockedByPower != null) {
       return ability.cantBeBlockedByPower;
