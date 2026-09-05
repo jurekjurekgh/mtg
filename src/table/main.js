@@ -478,6 +478,16 @@ function bootstrapTable() {
           .find((o) => o.id === singlePlan.objectId);
       // ETB (resolve_trigger_target) nie ma objectId — źródło z pendingu.
       const triggerCardId = singlePlan.objectId == null ? choiceView.pendingTriggerTarget?.cardId : null;
+      const hasExplicitSource = Boolean(sourceObject?.cardId) || Boolean(triggerCardId);
+      // A1/A2 (Final Parting): dla decyzji bez jawnego sourceObject (np.
+      // szukanie w bibliotece, gdzie źródło jedzie z innego pendingu niż
+      // pendingTriggerTarget) budujemy intro przez choiceGroupTitle, który
+      // zna per-typ gałęzie tytułów (w tym nazwę + cel strefy). Dla decyzji
+      // z nazwanym źródłem (cel triggera) sourceName wystarczy — intro
+      // generuje się automatycznie w kreatorze.
+      const intro = hasExplicitSource
+        ? null
+        : `${choiceGroupTitle(request, session, choiceView)} — wskaż ${singlePlan.itemLabel ?? 'cel'}:`;
       renderMultiTargetWizard(els.choiceRequestBody, {
         view: choiceView,
         session,
@@ -485,7 +495,9 @@ function bootstrapTable() {
         commands: request.options,
         sourceName: sourceObject?.cardId ? session.nameOf(sourceObject.cardId)
           : (triggerCardId ? session.nameOf(triggerCardId) : null),
+        intro,
         onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
         onCancel: () => hideModal('choice-request'),
       });
