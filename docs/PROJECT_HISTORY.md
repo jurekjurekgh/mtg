@@ -8509,3 +8509,53 @@ build **59 modułów / 3283,1 kB**. Benchmark szybki: heuristic **84,1%**
 
 Bramy na domknięciu fazy 3: `test:all` **4492/4492**, fast **4482/4482**,
 build **59 modułów / 3284,1 kB**.
+
+
+### Sesja arena/01a071d1 (2026-09-05): audyt PR #98 + pętla jakości (PR #99)
+
+Kontynuacja po PR #98. Prompt właściciela: „kontynuujemy projekt" (ADR 0021,
+pętla domyślna; brak nowych batchy kart). Gałąź `arena/01a071d1-mtg`, PR #99.
+
+- **Audyt PR #98** (`docs/audits/AUDYT_PR98_2026-09-05.md`): werdykt „PR dobry",
+  0 nowych F, 0 regresji. Engine generyczne (ADR 0002 OK). Flagi LKI
+  `wasKicked`/`wasCast`/`manaFromTreasureSpent` (rodzina F3, CR 603.10/608.2b),
+  `reflexReady` (legalTriggerTargetCandidates, L48), friendly classification
+  zwrotu własnej karty z grobu (C-R2), wspólny `triggerConditionClause`
+  (L41/L28), etykiety `storm`/`ward` + strażnik M122 na cały `src/engine`.
+- **Pętla jakości (ADR 0021 4a/4b)**:
+  - Żywy Tester: 5 partii (diverse matchupy, profile greedy + explorer) →
+    **0 zgłoszeń detektorów**, czyste etykiety, bez wycieków slugów. Etykiety
+    z PR #98 potwierdzone na żywo.
+  - Statyczna weryfikacja: `triggerConditionClause` pokrywa WSZYSTKIE klucze
+    `condition` używane na triggerach katalogu (wyjątek
+    `anotherOpponentExists` = karta nieaktywna w 1v1).
+  - **Nowy strażnik** `test/trigger-condition-clause-coverage.test.js` (2):
+    zamknięcie klasy cicho uciętego intervening-if na kaflu (L29/L31).
+- Bramy: `npm test` **4484/4484**, `npm run build` 59 modułów / 3284,1 kB.
+- Handoff: `docs/setup/HANDOFF_2026-09-05d.md`.
+
+
+### Faza 2 (arena/01a071d1, po commit 0b1e586): domkniecie ETB_EFFECT_BONUS + szersza petla testera + audyt CR (PR #99)
+- **ETB_EFFECT_BONUS (C-R1, commit `b6ebc5c`)**: audyt 59 typow efektow triggerow
+  wejscia — 42 w tabeli, 17 niepokrytych to celowo obsluzone gdzie indziej
+  (attach_self_to_target / reanimate_under_your_control / reflexive_sacrifice /
+  conditional w dedykowanych galeziach cast_permanent; pay_* / pay_x_cast jako
+  koszt; damage_to_controller / lose_life penalizowane M169/K; mill_cards = self-mill)
+  albo niszowe (1 karta). Dodano 3 JASNO KORZYSTNE, nieobsluzone nigdzie
+  indziej: `untap_permanent` (Breaching Hippocamp), `springbloom_sacrifice_search`
+  (ramp), `fertile_thicket_reveal` (dobor landu) — wartosci konserwatywne.
+- **Straznik** `test/etb-effect-bonus-coverage.test.js` (2): kazdy typ ETB
+  uzyty przez >=2 karty musi byc w tabeli lub jawnie wyjatkowany
+  (samoszkodzenie/koszt/dedykowana galez); straznik kierunku (L5/L29/L31).
+- **Szersza petla Zywego Testera (ADR 0021 4a)**: lacznie 9 partii w sesji
+  (profil greedy + explorer, rozne seedy, matchupy z station/spacecraft,
+  Warhammer, klanami Tarkiru, transformami Innistradu) — **0 zgloszen
+  detektorow**, etykiety czyste (rozdzial sagi, gospodarz aury celem czaru,
+  drugi czar w turze…), brak wyciekow slugow.
+- **Audyt innej klasy CR (ADR 0027 / L107)**: `node tools/event-contract-audit.mjs`
+  — **brak naruszen** (kontrakty zdarzen + kasowanie obiektow z pola bitwy).
+  Statyczna weryfikacja `etbEnemyHasTarget` vs 20 typow `requiresTarget` ETB:
+  wszystkie celujace we wroga pokryte przez fallback, `creature_you_control` w
+  galezi etbAttach — brak niedowartosciowania C-R1.
+- Bramki: `npm test` **4486/4486** (o 4 vs start sesji), `npm run build` 59
+  modulow / 3284,1 kB, `event-contract-audit` czysty, golden-master bota zielony.
