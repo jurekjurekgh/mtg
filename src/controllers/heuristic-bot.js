@@ -721,6 +721,94 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   const byType = (view, type) => view.legalCommands.filter((cmd) => cmd.type === type);
   const objectOnBoard = (view, objectId) => view.zones.battlefield.find((o) => o.id === objectId);
+
+  /**
+   * C-R1 (audyt Batch53): premia za TRIGGERY WEJŚCIA karty-permanentu —
+   * tabela po TYPACH efektów (generycznie, ADR 0002). Warunki rzutu
+   * (wasKicked/wasOffspring) bramkują per WARIANT rzutu; ifCast przy rzucie
+   * z ręki jest zawsze spełniony. Wartości celowane pod skalę gałęzi
+   * cast_permanent (ciało ~70, removal ~18-20, karta ~9) — celowo
+   * konserwatywne: to sterowanie KOLEJNOŚCIĄ rzutów, nie symulacja.
+   * Nieznane typy → 0 (zachowanie bez zmian; L28: tabela, nie if-y).
+   */
+  const enemyNonlandPermanents = (view) => (view.zones.battlefield ?? [])
+    .filter((o) => o.controllerId !== view.playerId && o.kind !== 'land' && (o.types ?? []).every((t) => t !== 'Land'));
+  const etbEnemyHasTarget = (view, spec) => {
+    const raw = typeof spec === 'string' ? spec : spec?.type;
+    if (!raw) return true; // bez wymogu celu — efekt bezwarunkowy
+    const foes = enemyNonlandPermanents(view);
+    if (raw === 'opponent' || raw === 'player') return true;
+    if (raw === 'artifact_or_enchantment') {
+      return foes.some((o) => o.kind === 'artifact' || o.kind === 'enchantment' || (o.types ?? []).some((t) => t === 'Artifact' || t === 'Enchantment'));
+    }
+    if (raw === 'artifact_or_enchantment_or_land') {
+      return (view.zones.battlefield ?? []).some((o) => o.controllerId !== view.playerId);
+    }
+    // pozostałe cele wymagają stwora/permanentu przeciwnia (creature,
+    // creature_opponent_controls, artifact_or_creature, nonland_permanent…)
+    return foes.length > 0;
+  };
+  const ETB_EFFECT_BONUS = Object.freeze({
+    draw_cards: (e) => 9 * (e.amount ?? 1),
+    draw_then_discard: () => 6,
+    discard_cards: (e) => -4 * (e.amount ?? 1),
+    scry: () => 4,
+    discover: () => 10,
+    gain_life: (e) => Math.min(2 * (e.amount ?? 1), 8),
+    create_token: () => 12,
+    create_offspring_token: () => 12,
+    living_weapon: () => 12,
+    destroy_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 18 : 0),
+    exile_opponent_creature: (e, view, req) => (etbEnemyHasTarget(view, req) ? 20 : 0),
+    exile_target_creature: (e, view, req) => (etbEnemyHasTarget(view, req) ? 20 : 0),
+    exile_nonland_permanent_linked: (e, view, req) => (etbEnemyHasTarget(view, req) ? 18 : 0),
+    bounce_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 12 : 0),
+    tap_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 8 : 0),
+    lock_untap: (e, view, req) => (etbEnemyHasTarget(view, req) ? 12 : 0),
+    detain: (e, view, req) => (etbEnemyHasTarget(view, req) ? 8 : 0),
+    damage: (e, view, req) => (etbEnemyHasTarget(view, req) ? Math.min(3 * (e.amount ?? 1), 15) : 0),
+    damage_divided: (e, view, req) => (etbEnemyHasTarget(view, req) ? 15 : 0),
+    damage_each_opponent: (e) => 4,
+    each_player_loses_life_fraction: () => 3,
+    buff_creatures_you_control: () => 8, // wchodzący stwór też jest odbiorcą
+    grant_keywords_until_end_of_turn: () => 4,
+    buff_creature_until_end_of_turn: (e, view, req) => ((view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId && o.kind === 'creature') ? 5 : 0),
+    add_counter: (e, view, req) => (req ? (etbEnemyHasTarget(view, req) ? 6 : 0) : 5),
+    search_library_to_hand: () => 9,
+    search_library_to_battlefield: () => 10,
+    return_card_from_graveyard_to_hand: (e, view) => ((view.zones.graveyard ?? []).some((o) => o.controllerId === view.playerId) ? 7 : 0),
+    return_permanent_from_graveyard: (e, view) => ((view.zones.graveyard ?? []).some((o) => o.controllerId === view.playerId) ? 10 : 0),
+    put_graveyard_card_on_top: () => 4,
+    reveal_top_pick_land_rest_grave: () => 5,
+    opponent_hand_card_to_top: () => 3,
+    discard_each_opponent: () => 3,
+    take_initiative: () => 6,
+    amass: () => 6,
+    fabricate: () => 8,
+    untap_all_creatures_you_control: () => 3,
+    animate_linked: (e, view) => ((view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'))) ? 10 : 0),
+    prevent_damage_this_turn: () => 3,
+    exile_own_land: () => -6,
+  });
+  const etbEnterBonusValue = (view, def, { kicked = false, offspring = false } = {}) => {
+    if (!def) return 0;
+    let total = 0;
+    for (const ability of def.abilities ?? []) {
+      if (ability?.type !== 'triggered' || ability.trigger?.event !== 'enter_battlefield') continue;
+      const cond = ability.trigger.condition ?? {};
+      if (cond.wasKicked && !kicked) continue;
+      if (cond.wasOffspring && !offspring) continue;
+      if (cond.delirium || cond.descendedThisTurn || cond.controlsCreatureWithCounter) continue; // zbyt sytuacyjne — bez zmian
+      const req = ability.trigger.requiresTarget ?? null;
+      const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      for (const e of effs) {
+        const fn = e?.type ? ETB_EFFECT_BONUS[e.type] : null;
+        if (!fn) continue;
+        total += fn(e, view, req);
+      }
+    }
+    return total;
+  };
   const handCard = (view, objectId) => view.zones.hand.find((o) => o.id === objectId);
   // Karta w DOWOLNEJ strefie widoku (M103/D: Escape/Flashback grają z grobu —
   // handCard nie widział karty i czar spadał do wyceny 60 „na ślepo").
@@ -2184,6 +2272,47 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (cmd.phyrexianPayWithLife != null && cmd.phyrexianPayWithLife > 0) {
           score -= 2 * cmd.phyrexianPayWithLife;
         }
+        // C-R1 (audyt Batch53, zlecenie właściciela 2026-09-05): gałąź
+        // wyceniała CIAŁO − koszt, ale nie PREMIĘ ETB — stwór z „When this
+        // creature enters, draw/destroy/token/anthem" remisował z gołym
+        // ciałem (i przegrywał z tańszym). Tabela po TYPACH efektów
+        // (ADR 0002); cele wymagane (requiresTarget) premiowane tylko, gdy
+        // przeciwnik ma pasujący permanent (przybliżenie z widoku — FoW).
+        // Świadome wykluczenia (przeciw podwójnemu liczeniu): reanimate
+        // (premia +2×moc wyżej), attach_self_to_target (gałąź equipment),
+        // damage_to_controller/lose_life (kary M169/K). Typy poza tabelą → 0
+        // (zachowanie bez zmian).
+        score += etbEnterBonusValue(view, def, { kicked: cmd.kicked === true, offspring: cmd.offspring === true });
+        // C-R7 (audyt Batch53): warianty kicker/offspring dopiero co zdobyły
+        // WARTOŚĆ (warunkowe ETB liczone wyżej), więc teraz uczciwie liczymy
+        // ich KOSZT — dopłata opłacalna, tylko gdy premia przewyższa manę.
+        if (cmd.kicked === true) {
+          const kk = def?.kicker ?? {};
+          score -= P.creatureManaCostWeight * ((kk.cost ?? 0) + (kk.colors?.length ?? 0));
+        }
+        if (cmd.offspring === true) {
+          const oo = def?.offspring ?? {};
+          score -= P.creatureManaCostWeight * ((oo.cost ?? 0) + (oo.colors?.length ?? 0));
+        }
+        // Grzechotka remisów (audyt-bot-walka-remisy, tura 6): przy EX AEQUO
+        // rzutów różnica gęstości wartości („waluta" z tieProjection:
+        // ciało − waga×koszt, z pumpą equipment) MUSI przechodzić na wynik —
+        // inaczej remis „przy różnych danych" wygląda jak przeoczenie wyceny.
+        // Epsilon rozstrzyga TYLKO idealne remisy (kroki wyceny są ≥ 0.1,
+        // więc 0.001 nigdy nie odwraca realnej różnicy) na korzyść karty
+        // gęstszej w przeliczeniu na manę. Koszt z REJESTRU (def) zamiast z
+        // obiektu: pin arytmetyczny ceny-stwora różnicuje manaCost POZIOMO
+        // OBIEKTU tej samej karty — epsilon ma być ślepy na to, co jest
+        // sztuczką testu, a widoczne na to, co różni karty naprawdę; dopłaty
+        // kicker/offspring dokładamy, by warianty TEJ SAMEJ karty (identyczna
+        // waluta w projekcji, różne flagi) też nie remisowały.
+        const epsKoszt = (def?.manaCost ?? 0) + coloredPipsOf(card?.cardId ?? '').length
+          + (cmd.kicked === true ? ((def?.kicker?.cost ?? 0) + (def?.kicker?.colors?.length ?? 0)) : 0)
+          + (cmd.offspring === true ? ((def?.offspring?.cost ?? 0) + (def?.offspring?.colors?.length ?? 0)) : 0);
+        const epsPump = (myCreatures(view).length > 0 && card?.equipment) ? (card.equipment.pump ?? {}) : {};
+        const epsCialo = (def?.power ?? 0) * P.creaturePowerWeight + (def?.toughness ?? 0) * P.creatureToughnessWeight
+          + (epsPump.power ?? 0) * P.creaturePowerWeight + (epsPump.toughness ?? 0) * P.creatureToughnessWeight;
+        score += 0.001 * (epsCialo - P.creatureManaCostWeight * epsKoszt);
         return finish(score);
       }
       case 'resolve_escape_exile': {
