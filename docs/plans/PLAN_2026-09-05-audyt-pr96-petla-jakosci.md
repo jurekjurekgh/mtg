@@ -26,14 +26,14 @@ ADR 0020/0021: PR → audyt ostatniego scalonego PR → pętla jakości.
 
 ### Etap 0 — PR na starcie (ADR 0020 A)
 
-- [ ] `git push -u origin arena/01a07073-mtg`.
-- [ ] PR `arena/01a07073-mtg` → `main` otwarty na GitHubie.
-- [ ] Plan widoczny w repo i w opisie PR.
+- [x] `git push -u origin arena/01a07073-mtg`.
+- [x] PR `arena/01a07073-mtg` → `main` otwarty na GitHubie.
+- [x] Plan widoczny w repo i w opisie PR.
 - Kryterium: PR istnieje PRZED jakąkolwiek zmianą kodu.
 
 ### Etap 1 — Audyt PR #96
 
-- [ ] Diff przeczytany **per plik**, następująco:
+- [x] Diff przeczytany **per plik**, następująco:
   - `src/cards/card-data.js` (+244) — 10 definicji batcha 53 vs snapshoty
     `docs/cards/scryfall-*.json` (Oracle: koszt, typy, P/T, tekst) i ADR 0022
     (supported = 100% Oracle); `limitations` tylko strukturalne;
@@ -58,11 +58,11 @@ ADR 0020/0021: PR → audyt ostatniego scalonego PR → pętla jakości.
   - `docs/**` — liczby/stan zgodne z kodem (L56/L92); podejrzenie wstępne:
     README mówi 4412/4412 i 3226,2 kB, a handoff batch53 mierzył 4442/4442
     i 3257,4 kB — do weryfikacji pomiarem.
-- [ ] `npm test` i `npm run build` na bazie: zielone.
+- [x] `npm test` i `npm run build` na bazie: zielone.
 - [ ] Dopuszczalne potwierdzenie: `node --test test/bot-benchmark.test.js`
   (bez pełnego B0).
-- [ ] Raport w `docs/audits/AUDYT_PR96_2026-09-05.md`.
-- [ ] Wynik w opisie PR.
+- [x] Raport w `docs/audits/AUDYT_PR96_2026-09-05.md`.
+- [x] Wynik w opisie PR.
 - Kryterium: każdy zmieniony plik ma albo akceptację, albo znalezisko z
   repro/naprawą; brak znaleziska w pliku → jawny wpis „sprawdzone, bez zmian”.
 
