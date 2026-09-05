@@ -1365,6 +1365,40 @@ function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
 }
 
 /** Czytelny opis zdolności triggerowanej (np. „Gdy ta karta umrze: zyskaj 2 życia”). */
+/**
+ * Audyt Żywego Testera 2026-09-05 (PR #98, partia zendikar×srodziemie):
+ * kafel Kor Sanctifiers obiecywał „Gdy wejdzie na pole bitwy: zniszcz cel”,
+ * choć Oracle warunkuje skutek kickerem („if it was kicked”) i zawęża cel
+ * do artefaktu/enchantmentu. Intervening-if (CR 603.4) i typ celu to
+ * publiczne informacje karty — klauzulę liczy JEDEN helper wspólny dla
+ * wszystkich gałęzi zdarzeń (klasa L28: end_step miał własną kopię,
+ * ETB/dies/attacks gubiły warunek w całości). Etykiety odzwierciedlają
+ * semantykę conditionHolds (src/engine/triggers.js).
+ */
+function triggerConditionClause(trigger) {
+  const cond = trigger?.condition ?? {};
+  const czlony = [];
+  if (cond.minTappedCreaturesControlled) czlony.push(`kontrolujesz ${cond.minTappedCreaturesControlled}+ zatapnięte stwory`);
+  if (cond.subtypeCardInYourGraveyard) czlony.push(`w twoim grobie jest karta ${cond.subtypeCardInYourGraveyard}`);
+  if (cond.selfHasCounter) czlony.push(`ma licznik ${COUNTER_LABELS[cond.selfHasCounter] ?? cond.selfHasCounter}`);
+  if (cond.didntAttackThisTurn) czlony.push('nie atakował w tej turze');
+  if (cond.delirium) czlony.push('delirium');
+  if (cond.wasKicked) czlony.push('opłacono kicker');
+  if (cond.wasOffspring) czlony.push('opłacono koszt offspring');
+  if (cond.ifCast) czlony.push('rzuciłeś tę kartę');
+  if (cond.descendedThisTurn) czlony.push('zstąpiłeś w tej turze (descended)');
+  if (cond.controlsCreatureWithCounter) czlony.push('kontrolujesz stwora z licznikiem');
+  if (cond.notBlocking) czlony.push('nie blokował');
+  if (cond.saddled) czlony.push('jest osiodłany');
+  if (cond.minTotalPowerYouControl) czlony.push(`łączna siła kontrolowanych stworów ≥ ${cond.minTotalPowerYouControl}`);
+  if (cond.spellManaValueAtLeast != null) czlony.push(`rzucany czar ma koszt ≥ ${cond.spellManaValueAtLeast}`);
+  if (cond.spellIsColorless) czlony.push('rzucany czar jest bezbarwny');
+  if (cond.spellColorsInclude) czlony.push(`rzucany czar jest koloru ${cond.spellColorsInclude.join('/')}`);
+  if (cond.noMinusCountersWhenDied) czlony.push('nie miał liczników -1/-1 (persist)');
+  if (cond.enteredUntapped) czlony.push('wszedł nietapnięty');
+  return czlony.length > 0 ? czlony.join(' i ') : null;
+}
+
 function describeTriggered(ability, controllerId = HUMAN_ID) {
   const trigger = ability?.trigger ?? {};
   // M146 (znalezisko audytu #2): kafel karty PRZECIWNIKA pokazywał „twój
@@ -1389,12 +1423,20 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
     // M202/C: bez zapożyczenia „Trigger” — kafel ma mówić po polsku (oś 2 audytu).
     return 'Wymaga drugiego przeciwnika — zdolność nieaktywna w grze 1v1';
   }
-  if (trigger.event === 'dies') return `Gdy ta karta umrze: ${parts}.`;
+  if (trigger.event === 'dies') {
+    const clause = triggerConditionClause(trigger);
+    return `Gdy ta karta umrze${clause ? ` (gdy ${clause})` : ''}: ${parts}.`;
+  }
   if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
   if (trigger.event === 'enter_battlefield' && trigger.sacrificeIfUnpaid) return `Gdy wejdzie na pole bitwy: zapłać {${trigger.payMana ?? 0}} albo ją poświęć (płatność automatyczna).`;
   if (trigger.event === 'enter_battlefield') {
     // Celowany ETB z obrażeniami (Forge Devil, Reclusive Artificer): damage
     // idzie na CEL — „zada N obrażeń celowi" zamiast gołego „N obrażeń".
+    // PR #98: warunek intervening-if w nawiasie czasu, typ celu w nawiasie
+    // po skutku (Kor Sanctifiers bez tego obiecywał bezwarunkowe zniszczenie).
+    const clause = triggerConditionClause(trigger);
+    const condSuffix = clause ? ` (gdy ${clause})` : '';
+    const targetSuffix = trigger.requiresTarget ? ` (${targetTypeLabel(trigger.requiresTarget)})` : '';
     const hasDamage = effects.some((e) => e.type === 'damage');
     if (trigger.requiresTarget && hasDamage) {
       const rew = effects.map((e) => {
@@ -1407,11 +1449,17 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
         }
         return describeEffect(e);
       }).join(' i ');
-      return `Gdy wejdzie na pole bitwy: ${rew}.`;
+      // Gałąź damage celuje słowem „celowi" w środku zdania (bywa z drugim
+      // skutkiem typu „obrażenia kontrolerowi") — sufiks typu na końcu zdania
+      // myliłby przynależność, więc typ celu opisuje tylko gałąź poniżej.
+      return `Gdy wejdzie na pole bitwy${condSuffix}: ${rew}.`;
     }
-    return `Gdy wejdzie na pole bitwy: ${parts}.`;
+    return `Gdy wejdzie na pole bitwy${condSuffix}: ${parts}${targetSuffix}.`;
   }
-  if (trigger.event === 'attacks') return `Gdy atakuje: ${parts}.`;
+  if (trigger.event === 'attacks') {
+    const clause = triggerConditionClause(trigger);
+    return `Gdy atakuje${clause ? ` (gdy ${clause})` : ''}: ${parts}.`;
+  }
   if (trigger.event === 'bat_attacks') return `Gdy nietoperz, który kontrolujesz, atakuje: ${parts}.`;
   if (trigger.event === 'upkeep') return `Na początku upkeep (${trigger.condition?.noSpellsLastTurn ? 'gdy wcześniej nie rzucano czarów' : 'gdy rzucono 2+ czary'}): ${parts}.`;
   // Czytelne opisy powszechnych triggerów (audyt żywym testerem M80) — zamiast
@@ -1431,20 +1479,10 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
     // bezwarunkową i nie rozumie, czemu nic się nie dzieje (Creakwood
     // Safewright stał całą partię z trzema licznikami). Wcześniej gałąź znała
     // WYŁĄCZNIE minTappedCreaturesControlled; każdy inny warunek znikał.
-    const cond = trigger.condition ?? {};
-    const czlony = [];
-    if (cond.minTappedCreaturesControlled) {
-      czlony.push(`kontrolujesz ${cond.minTappedCreaturesControlled}+ zatapnięte stwory`);
-    }
-    if (cond.subtypeCardInYourGraveyard) {
-      czlony.push(`w twoim grobie jest karta ${cond.subtypeCardInYourGraveyard}`);
-    }
-    if (cond.selfHasCounter) {
-      czlony.push(`ma licznik ${COUNTER_LABELS[cond.selfHasCounter] ?? cond.selfHasCounter}`);
-    }
-    if (cond.didntAttackThisTurn) czlony.push('nie atakował w tej turze');
-    if (cond.delirium) czlony.push('delirium');
-    const suffix = czlony.length > 0 ? ` (gdy ${czlony.join(' i ')})` : '';
+    // PR #98: klauzula liczy wspólny triggerConditionClause (jedno miejsce
+    // prawdy — end_step miał przedtem własną kopię listy, klasa L28/L41).
+    const clause = triggerConditionClause(trigger);
+    const suffix = clause ? ` (gdy ${clause})` : '';
     return `Na początku kroku końca${suffix}: ${parts}.`;
   }
   // M223 (audyt Batch 50, Nanoform Sentinel): „Whenever this creature becomes
