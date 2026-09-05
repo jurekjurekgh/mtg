@@ -209,12 +209,20 @@ test('M122: każdy event triggera z bazy kart ma polską etykietę', async () =>
   // M122/#6: eventy triggerów rodzi też SILNIK (triggers.js: `delayed`
   // dla „exile at end of turn"/reanimate), nie tylko baza kart — pierwsza
   // wersja strażnika ich nie widziała i „trigger (delayed)" dalej wyciekał.
-  const engineSource = fs.readFileSync('src/engine/triggers.js', 'utf8');
-  for (const match of engineSource.matchAll(/trigger: \{ event: '([a-z0-9_]+)' \}/g)) {
-    const event = match[1];
-    if (TRIGGER_EVENT_LABELS[event]) continue;
-    if (!missing.has(event)) missing.set(event, []);
-    missing.get(event).push('src/engine/triggers.js');
+  // PR #98 (Żywy Tester, „trigger (storm)"): pseudo-zdolności triggerowe rodzą
+  // się też POZA triggers.js (storm w spells.js) i w innej składni
+  // (`trigger: Object.freeze({ event: … })`). Zasięg skanu = zasięg KLASY
+  // (L113), nie plik z pierwszym przypadkiem — skanujemy CAŁY src/engine.
+  const engineFiles = fs.readdirSync('src/engine')
+    .filter((f) => f.endsWith('.js')).map((f) => `src/engine/${f}`);
+  for (const file of engineFiles) {
+    const source = fs.readFileSync(file, 'utf8');
+    for (const match of source.matchAll(/trigger: (?:Object\.freeze\()?\{ event: '([a-z0-9_]+)'/g)) {
+      const event = match[1];
+      if (TRIGGER_EVENT_LABELS[event]) continue;
+      if (!missing.has(event)) missing.set(event, []);
+      missing.get(event).push(file);
+    }
   }
   const report = [...missing.entries()]
     .map(([event, cards]) => `${event} (${cards.slice(0, 3).join(', ')})`)
