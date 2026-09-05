@@ -8509,3 +8509,27 @@ build **59 modułów / 3283,1 kB**. Benchmark szybki: heuristic **84,1%**
 
 Bramy na domknięciu fazy 3: `test:all` **4492/4492**, fast **4482/4482**,
 build **59 modułów / 3284,1 kB**.
+
+
+### Sesja arena/01a071d1 (2026-09-05): audyt PR #98 + pętla jakości (PR #99)
+
+Kontynuacja po PR #98. Prompt właściciela: „kontynuujemy projekt" (ADR 0021,
+pętla domyślna; brak nowych batchy kart). Gałąź `arena/01a071d1-mtg`, PR #99.
+
+- **Audyt PR #98** (`docs/audits/AUDYT_PR98_2026-09-05.md`): werdykt „PR dobry",
+  0 nowych F, 0 regresji. Engine generyczne (ADR 0002 OK). Flagi LKI
+  `wasKicked`/`wasCast`/`manaFromTreasureSpent` (rodzina F3, CR 603.10/608.2b),
+  `reflexReady` (legalTriggerTargetCandidates, L48), friendly classification
+  zwrotu własnej karty z grobu (C-R2), wspólny `triggerConditionClause`
+  (L41/L28), etykiety `storm`/`ward` + strażnik M122 na cały `src/engine`.
+- **Pętla jakości (ADR 0021 4a/4b)**:
+  - Żywy Tester: 5 partii (diverse matchupy, profile greedy + explorer) →
+    **0 zgłoszeń detektorów**, czyste etykiety, bez wycieków slugów. Etykiety
+    z PR #98 potwierdzone na żywo.
+  - Statyczna weryfikacja: `triggerConditionClause` pokrywa WSZYSTKIE klucze
+    `condition` używane na triggerach katalogu (wyjątek
+    `anotherOpponentExists` = karta nieaktywna w 1v1).
+  - **Nowy strażnik** `test/trigger-condition-clause-coverage.test.js` (2):
+    zamknięcie klasy cicho uciętego intervening-if na kaflu (L29/L31).
+- Bramy: `npm test` **4484/4484**, `npm run build` 59 modułów / 3284,1 kB.
+- Handoff: `docs/setup/HANDOFF_2026-09-05d.md`.
