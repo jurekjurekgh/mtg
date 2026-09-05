@@ -8407,3 +8407,45 @@ rekomendacje C-R1–C-R7 bez akcji. Bramy: `test:all` 4457/4457, fast
 (C-FIX-1/2). Plan:
 `docs/plans/PLAN_2026-09-05-audyt-batch53-stol-bot.md`; handoff:
 `docs/setup/HANDOFF_2026-09-05.md` (sekcja Kontynuacja).
+
+### Sesja arena/01a0712d (2026-09-05): audyt PR #97 + pętla jakości (PR #98)
+
+Prompt „kontynuujemy projekt" → pętla domyślna (ADR 0020/0021). PR #98
+otwarty przed kodowaniem; audyt scalonego PR #97, potem pozycje z handoffu.
+
+**Audyt PR #97** (`d67b684..5fb7994`, 21 plików; raport
+`docs/audits/AUDYT_PR97_2026-09-05.md`): bramy zgodne (fast 4447/4447,
+build 59/3265,2 kB, benchmark 10/10); Oracle/rulingi potwierdzone ze
+snapshotów (Óin F1, Offspring LKI, Glorifier refleks); kontrola mutacyjna
+niezależna: F1 → `ability-cost-pips` RED, A1 → `real-cards-batch53` 3 RED,
+C-FIX-2 → `batch53-bot` RED. Werdykt: **PR dobry, 0 nowych F**; obserwacje
+O1–O5 (m.in. „Sheriff niećwiczony" z handoffu = nieaktualne: test istnieje
+w PR #97; incydent procesowy: replace-first-occurrence na zduplikowanym
+stringu kosztu trafił w Goblin Picker zamiast Óina — klasa L8/L34).
+
+**O3 → naprawa rodziny F3:** fakty historyczne rzutu `wasKicked`/
+`wasCast`/`manaFromTreasureSpent` docierają teraz do stubu LKI
+(`queueTriggerToStack` + `resolveTriggerEntry`) — Kor Sanctifiers,
+Geological Appraiser i Marut tracili skutek po kill-in-response (re-check
+intervening-if CR 603.4 z LKI, CR 603.10/608.2b). Test
+`audyt-pr97-flagi-rzutu-lki` (RED 3/4 przed, GREEN 4/4 po).
+
+**O4 → korekta L47:** `copyableDescriptorKeys` nigdy nie powstało — lekcja
+mówi teraz prawdę o 4 ścieżkach kopiowania (w tym `printLki` z F3).
+
+**Żywy Tester (zendikar×srodziemie s7, innistrad-brg×worek-dziki s11):**
+dwa znaleziska stołowe. (1) Kafel Kor Sanctifiers obiecywał bezwarunkowe
+„zniszcz cel" — naprawa generyczna: wspólny `triggerConditionClause` dla
+gałęzi ETB/dies/attacks (+refaktor end_step na wspólny helper, L41/L28)
+i typ celu w ETB z `targetTypeLabel`; test rodziny 8 szt. (mutacja 6/8
+RED). (2) Surowy slug „trigger (storm)" w modalu — pseudo-zdolności
+storm (spells.js) i ward (triggers.js, składnia Object.freeze) wyciekały,
+bo strażnik M122 skanował jeden plik i jedną składnię (L113); etykiety
+dodane, strażnik rozszerzony na CAŁY `src/engine` + obie składnie
+(mutacja: RED z adresem pliku).
+
+Bramy na domknięciu: `test:all` **4469/4469**, fast **4459/4459**, build
+**59 modułów / 3268,7 kB**. Benchmark szybki 10/10 (audyt). Zero nowych
+kart, zero zmian wycen bota. Commity: `ce76ecc` (plan), `4085358` (audyt),
+`948f310` (O3 LKI), `73faa5d` (L47), `5c07350` (warunki triggerów),
+`6ff467f` (storm/ward). Handoff: `docs/setup/HANDOFF_2026-09-05b.md`.

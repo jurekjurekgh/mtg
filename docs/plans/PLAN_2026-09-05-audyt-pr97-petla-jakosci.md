@@ -60,6 +60,18 @@
 5. E3.4 naprawy z Żywego Testera (jeśli będą).
 6. Dokumentacja domknięcia (README/handoff/PROJECT_HISTORY).
 
-## Podsumowanie wykonania (uzupełnić na końcu)
+## Podsumowanie wykonania
 
-- (uzupełnić)
+- **E1 ✔** plan zcommitowany (`ce76ecc`), PR #98 otwarty przed kodem.
+- **E2 ✔** raport `docs/audits/AUDYT_PR97_2026-09-05.md` (`4085358`):
+  bramy zgodne, mutacje F1/A1/C-FIX-2 potwierdzone, 0 nowych F, O1–O5.
+- **E3.1 ✔** `wasKicked` potwierdzone repro (RED 3/4) + naprawa RODZINY
+  (`wasKicked`/`wasCast`/`manaFromTreasureSpent` na LKI; `948f310`).
+- **E3.2 ✔** L47 skorygowana do stanu faktycznego (`73faa5d`).
+- **E3.3 ✔** Sheriff: luka zamknięta już w PR #97 (audyt O1) — nie dublowano.
+- **E3.4 ✔** 2 partie + 2 kontrolne Żywego Testera; znaleziska:
+  warunki triggerów i typ celu na kaflach (`5c07350`), etykiety
+  storm/ward + rozszerzony strażnik M122 (`6ff467f`). Detektory 0 zgłoszeń,
+  transkrypty czytane ręcznie (oś surowych slugów dała 2 znaleziska).
+- **E4 ✔** test:all 4469/4469, fast 4459/4459, build 59/3268,7 kB;
+  README/PROJECT_HISTORY/HANDOFF_2026-09-05b.md; opis PR zaktualizowany.
