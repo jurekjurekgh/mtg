@@ -811,6 +811,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     animate_linked: (e, view) => ((view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'))) ? 10 : 0),
     prevent_damage_this_turn: () => 3,
     exile_own_land: () => -6,
+    // C-R1 (domkniecie, sesja arena/01a071d1): typy ETB jawnie korzystne,
+    // nieobsluzone w dedykowanych galezich `cast_permanent` (attach/reanimate/
+    // reflexive/conditional sa tam), a w katalogu uzytkowe przez realne karty.
+    // Konserwatywne wartosci (skala = sterowanie kolejnoscia rzutow, nie
+    // symulacja): odkrecenie celu i ramp sa realna korzyscia planszy.
+    untap_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 8 : 6),
+    springbloom_sacrifice_search: () => 10,
+    fertile_thicket_reveal: () => 5,
   });
   const etbEnterBonusValue = (view, def, { kicked = false, offspring = false } = {}) => {
     if (!def) return 0;
