@@ -5738,6 +5738,13 @@ export function playerView(state, playerId) {
         // M262 (reforma stref): źródło wygnania (karta/mechanika/efekt) —
         // badge „Wygnane: …" w boksie wygnania na stole.
         waiting.exiledBy = object.meta?.exiledBy ?? null;
+        // Pętla jakości 2026-09-05: tak jak grób (M274), wygnanie (też jawne,
+        // CR 406.3) musi nieść manaCost, power, toughness — bez nich wycena
+        // bota widziała exile jako bezwartościowy i tieProjection nie mogła
+        // odróżnić kart (np. cast_adventure_creature z wygnania — M255/J).
+        waiting.manaCost = object.manaCost ?? 0;
+        if (object.power != null) waiting.power = object.power;
+        if (object.toughness != null) waiting.toughness = object.toughness;
       }
       // M265 (Żywy Tester, theros vs worek-basni seed 332): deskryptor czaru
       // dla kart w GROBIE — dokładnie ta sama luka co M212/Z7 w wygnaniu.

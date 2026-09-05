@@ -5160,6 +5160,54 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           && (o.colors ?? []).includes(color)).length;
         return finish(5 + needScore * 6 + enemyInColor);
       }
+      // M131 (pętla jakości 2026-09-05): kolejne typy decyzji, które dotąd
+      // nie miały case w scoreCommand (spadały do default: finish(0) →
+      // pierwsza oferta).
+      //
+      // Fabricate (CR 702.122, Servo Exhibition-type): wybierz „+1/+1 counter
+      // na źródle" ALBO „stwórz X 1/1 Servo tokenów". Preferuj tokeny, gdy
+      // na stole jest mniej własnych stworów (rozlewają board); w innym wypadku
+      // pompuj istniejące. Generycznie (ADR 0002): tokeny mają przewagę liczebną
+      // + synergia z anthem/trample/evasion; counter lepszy, gdy stwór już atakuje.
+      case 'resolve_fabricate': {
+        if (cmd.mode === 'tokens') return finish(15);
+        if (cmd.mode === 'counters') return finish(10);
+        return finish(0);
+      }
+      // Manifest Dread (M251, Batch 46): z dwóch wierzchnich kart wybierz jedną
+      // do zmanifestowania (face-down 2/2), druga idzie do grobu. Wybierz kartę,
+      // której strata MNIEJ boli (gorsza), żeby zachować wartościową na potem.
+      // Face-down 2/2 jest w 100% wymienny niezależnie od karty pod spodem
+      // (dopóki jej nie odwrócimy), więc decyzja = „która karta może spaść".
+      case 'resolve_manifest_dread': {
+        const card = cmd.cardId ? view.zones.library.find((o) => o.id === cmd.cardId) : null;
+        if (!card) return finish(0);
+        // Kara za utratę karty: im cenniejsza, tym gorzej wybrać ją na manifest.
+        const keepValue = cardKeepValue(view, card);
+        return finish(10 - keepValue);
+      }
+      // Reveal exile hand (M69, Dreams of Steel and Oil): wybierz KARTĘ Z RĘKI
+      // PRZECIWNIKA do wygnania (kontroler efektu wybiera, czyli MY gdy nasz czar,
+      // PRZECIWNIK gdy jego). Widok nie niesie direction, ale kandydujące id
+      // pochodzą z ręki przeciwnika — wygnaj najcenniejszą dla wroga kartę
+      // (najdroższy czar/stwór), analogicznie do discard_choice przymusowego.
+      case 'resolve_reveal_exile_hand': {
+        if (cmd.cardId == null) return finish(-5); // nic nie wygnaj — tylko gdy wymuszone
+        const card = [...(view.zones.hand ?? [])].find((o) => o.id === cmd.cardId)
+          ?? view.zones.library.find((o) => o.id === cmd.cardId);
+        if (!card) return finish(0);
+        // Kandydujące id są w ręce DRUGIEGO gracza (gdy MY wybieramy na ich ręce)
+        // albo NASZEJ ręce (gdy przeciwnik rzuca czar, ale w Dreams to my
+        // wybieramy własną rękę? — sprawdzamy controllerId).
+        const isOwnHand = (view.zones.hand ?? []).some((o) => o.id === cmd.cardId);
+        if (isOwnHand) {
+          // To NASZ czar wygnał NASZĄ kartę? Niemożliwe w Dreams. Ale na wszelki
+          // wypadek: wygnaj najtańszą (analogicznie do discard_choice celu=cost).
+          return finish(20 - (card.manaCost ?? 0));
+        }
+        // Normalny przypadek: wybieramy z ręki PRZECIWNIKA — wygnaj najcenniejszą.
+        return finish(20 + (card.manaCost ?? 0) + (card.power ?? 0) + (card.toughness ?? 0));
+      }
       case 'pass_priority': return finish(0);
       default: return finish(0);
     }
@@ -5361,7 +5409,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // więc flagała pary słusznie uznane za zamienne. Osobny `koszt` był z kolei
       // podwójnym liczeniem tej samej różnicy. Została jedna liczba: ile ta karta
       // realnie dokłada do wyniku w przeliczeniu na manę, którą zajmuje.
-      const o = handCard(view, cmd.objectId);
+      const o = handCard(view, cmd.objectId)
+        ?? (view.zones.exile ?? []).find((x) => x.id === cmd.objectId)
+        ?? (view.zones.graveyard ?? []).find((x) => x.id === cmd.objectId);
       if (!o) return null;
       const koszt = (o.manaCost ?? 0) + coloredPipsOf(o.cardId).length;
       // Equipment: wartość rzutu żyje na NOSICIELU (M258/A), więc projekcja
@@ -5479,6 +5529,48 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd?.type === 'resolve_modal_choice' && cmd.modeIndex != null) {
       return { mode: cmd.modeIndex };
     }
+    if (cmd?.type === 'resolve_fabricate') {
+      return { mode: cmd.mode ?? null };
+    }
+    if (cmd?.type === 'resolve_manifest_dread') {
+      // Manifest Dread (M251): widok odsłania karty z wierzchu w
+      // pendingManifestDread.cards (tak jak scry/surveil) — tam są dane
+      // do wyceny (zones.library ich nie widzi, bo karty NIE są jeszcze w
+      // strefie w sensie view).
+      const cards = view.pendingManifestDread?.cards ?? [];
+      const card = cards.find((o) => o.id === cmd.cardId)
+        ?? view.zones.library.find((o) => o.id === cmd.cardId);
+      return card ? { cost: card.manaCost ?? 0, kind: card.kind } : { card: null };
+    }
+    if (cmd?.type === 'resolve_reveal_exile_hand' || cmd?.type === 'resolve_reveal_exile_grave') {
+      if (cmd.cardId == null) return { skip: 1 };
+      const card = [...(view.zones.hand ?? []), ...view.zones.graveyard, ...view.zones.library]
+        .find((o) => o.id === cmd.cardId);
+      return { cost: card?.manaCost ?? 0, kind: card?.kind ?? null };
+    }
+    if (cmd?.type === 'resolve_escape_exile') {
+      const ids = cmd.exileIds ?? [];
+      const sumValue = ids.reduce((s, id) => {
+        const o = view.zones.graveyard.find((x) => x.id === id);
+        return s + (o ? (o.manaCost ?? 0) : 0);
+      }, 0);
+      return { count: ids.length, value: sumValue };
+    }
+    if (cmd?.type === 'resolve_rebound_cast' || cmd?.type === 'resolve_grave_free_cast'
+        || cmd?.type === 'resolve_madness_cast' || cmd?.type === 'resolve_exile_cast') {
+      return { cast: cmd.cast ? 1 : 0, cardId: cmd.objectId ?? cmd.cardId ?? null };
+    }
+    if (cmd?.type === 'resolve_scry' || cmd?.type === 'resolve_surveil') {
+      const bottoms = cmd.bottomIds ?? cmd.millIds ?? [];
+      return {
+        moved: bottoms.length,
+        orderOriginal: cmd.topOrder == null ? 1 : 0,
+      };
+    }
+    if (cmd?.type === 'resolve_springbloom') {
+      const land = cmd.sacrificeLandId ? objectOnBoard(view, cmd.sacrificeLandId) : null;
+      return { land: land ? (land.cardId ?? land.id) : 'skip' };
+    }
     if (cmd?.type === 'resolve_look_top_choice' || cmd?.type === 'resolve_satyr_look_choice'
         || cmd?.type === 'resolve_graveyard_top_choice' || cmd?.type === 'resolve_delirium_target'
         || cmd?.type === 'resolve_mentor_target' || cmd?.type === 'resolve_room_target') {
@@ -5579,6 +5671,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     if (cmd.type === 'resolve_color_choice') {
       return `resolve_color_choice(${cmd.color ?? '?'})`;
+    }
+    if (cmd.type === 'resolve_fabricate') {
+      return `resolve_fabricate(${cmd.mode ?? '?'})`;
+    }
+    if (cmd.type === 'resolve_manifest_dread') {
+      return `resolve_manifest_dread(${cmd.cardId ?? '?'})`;
+    }
+    if (cmd.type === 'resolve_reveal_exile_hand' || cmd.type === 'resolve_reveal_exile_grave') {
+      return `${cmd.type}(${cmd.cardId ?? 'skip'})`;
+    }
+    if (cmd.type === 'resolve_escape_exile') {
+      return `resolve_escape_exile(${(cmd.exileIds ?? []).join('+') || '?'})`;
+    }
+    if (cmd.type === 'resolve_rebound_cast' || cmd.type === 'resolve_grave_free_cast'
+        || cmd.type === 'resolve_madness_cast' || cmd.type === 'resolve_exile_cast') {
+      if (cmd.cast === false || cmd.decline === true) return `${cmd.type}(skip)`;
+      return `${cmd.type}(${cmd.objectId ?? cmd.cardId ?? '?'}${cmd.targets ? '->' + cmd.targets.join('+') : ''})`;
+    }
+    if (cmd.type === 'resolve_springbloom') {
+      return `resolve_springbloom(${cmd.sacrificeLandId ?? 'skip'})`;
     }
     if (cmd.type === 'resolve_look_top_choice' || cmd.type === 'resolve_satyr_look_choice'
         || cmd.type === 'resolve_graveyard_top_choice' || cmd.type === 'resolve_delirium_target'
