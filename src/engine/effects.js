@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
 import { spendMana, addMana, producibleMana } from './resources.js';
@@ -4985,6 +4985,14 @@ function markTemporaryExile(state, exileId, sourceObject) {
         || (object.types ?? []).includes(type));
     });
     if (candidates.length === 0) return; // „you may" — brak ofiary = brak refleksu
+    // Audyt Batch53/A1: zdolność refleksyjną ustalamy JUŻ TERAZ (przy
+    // rozstrzygnięciu ETB) — źródło mogło opuścić pole bitwy (kill w odpowiedzi
+    // na ETB), a refleks „When you do" i tak musi odpalić (ruling LCI).
+    // Żywe źródło: zdolności efektywne; stub: druk z LKI (F3).
+    const srcAbilities = sourceObject?.zone === 'battlefield'
+      ? effectiveAbilities(sourceObject)
+      : (sourceObject?.lkiPrint?.abilities ?? []);
+    const reflexiveAbility = srcAbilities.find((a) => a?.trigger?.event === (effect.reflexiveEvent ?? 'reflexive_sacrifice')) ?? null;
     state.pendingSacrifice = {
       playerId: controllerId,
       candidateIds: [...candidates],
@@ -4992,6 +5000,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
       sourceId: sourceObject.id,
       cardId: sourceObject?.cardId ?? null,
       reflexiveEvent: effect.reflexiveEvent ?? 'reflexive_sacrifice',
+      reflexiveAbility: reflexiveAbility ? Object.freeze({ ...reflexiveAbility }) : null,
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = controllerId;

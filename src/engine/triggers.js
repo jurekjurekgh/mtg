@@ -1492,7 +1492,9 @@ function triggerSourceZoneLegal(source, triggerEvent) {
   if (source.zone === 'battlefield') return true;
   // Triggery śmierci/odejścia działają z ostatniej znanej informacji —
   // źródło jest w grobie/exile (Selhoff, Servant of the Scale).
-  return ['dies', 'any_creature_dies', 'leaves_battlefield'].includes(triggerEvent);
+  // Refleks „When you do" (Audyt Batch53/A1): dziecko rozstrzygniętej już
+  // zdolności — niezależne od strefy źródła (ruling LCI 2023-11-10).
+  return ['dies', 'any_creature_dies', 'leaves_battlefield', 'reflexive_sacrifice'].includes(triggerEvent);
 }
 
 export function triggerTargetDecisionPending(state, pending) {
@@ -2135,11 +2137,23 @@ function processTriggersScan(state, recentEvents) {
     // zdolność źródła z `trigger.event === 'reflexive_sacrifice'`. To cel
     // „up to two target creatures" — tryFire przejmuje decyzję celu (Temat 2).
     if (ev.type === 'reflexive_sacrifice') {
-      const source = state.objects.get(ev.sourceId);
-      if (source && source.zone === 'battlefield') {
-        for (const ability of effectiveAbilities(source)) {
-          if (ability?.trigger?.event === 'reflexive_sacrifice') {
-            tryFire(state, ability, source, [], events, { sacrificedId: ev.sacrificedId ?? null });
+      // Audyt Batch53/A1: zdolność niesie ZDARZENIE (z chwili rozstrzygnięcia
+      // ETB) — refleks „When you do" odpala także gdy źródło opuściło pole
+      // bitwy (kill w odpowiedzi na ETB; ruling LCI 2023-11-10, CR 603.10).
+      if (ev.reflexiveAbility) {
+        const live = state.objects.get(ev.sourceId);
+        const source = (live && live.zone === 'battlefield') ? live : Object.freeze({
+          id: ev.sourceId, controllerId: ev.playerId ?? live?.controllerId ?? null,
+          cardId: ev.cardId ?? null, zone: 'none',
+        });
+        tryFire(state, ev.reflexiveAbility, source, [], events, { sacrificedId: ev.sacrificedId ?? null });
+      } else {
+        const source = state.objects.get(ev.sourceId);
+        if (source && source.zone === 'battlefield') {
+          for (const ability of effectiveAbilities(source)) {
+            if (ability?.trigger?.event === 'reflexive_sacrifice') {
+              tryFire(state, ability, source, [], events, { sacrificedId: ev.sacrificedId ?? null });
+            }
           }
         }
       }

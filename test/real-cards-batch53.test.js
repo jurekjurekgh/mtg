@@ -490,6 +490,40 @@ test('B53: Glorifier — bez innego stwora/artefaktu brak decyzji poświęcenia'
   assert.ok(!commands(state).some((c) => c.type === 'resolve_sacrifice_choice'), 'brak oferty poświęcenia');
 });
 
+test('B53: Glorifier — kill w odpowiedzi na ETB: refleks i tak odpala (A1)', () => {
+  // Ruling LCI 2023-11-10: refleks „When you do" jest dzieckiem
+  // rozstrzygniętej zdolności — niezależny od strefy źródła (CR 603.10).
+  const state = game();
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  addCard(state, 'g', 'glorifier-of-suffering', 'p1', 'hand');
+  addSimpleCreature(state, 'own', 'p1', { power: 2, toughness: 2 });
+  addSimpleCreature(state, 'foe', 'p2', { power: 2, toughness: 2 });
+  addObject(state, {
+    id: 'art', instanceId: 'i-art', cardId: 'x-art', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'artifact', manaCost: 2, abilities: [], keywords: [],
+    subtypes: [], types: ['Artifact'], colors: [],
+  });
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'g' }).ok);
+  resolveStack(state, 2); // rzut schodzi; ETB czeka na stosie
+  const trig = state.zones.stack.map((id) => state.objects.get(id)).find((o) => o?.kind === 'trigger');
+  assert.ok(trig, 'trigger ETB na stosie');
+  const perm = byCard(state, 'glorifier-of-suffering');
+  assert.equal(perm?.zone, 'battlefield');
+  // Kill w odpowiedzi na ETB (ten sam choke point co destroy_permanent).
+  moveObjectDirectly(state, perm.id, 'graveyard', 'grave-g');
+  resolveStack(state); // ETB -> decyzja ofiary
+  const sac = commands(state).find((c) => c.type === 'resolve_sacrifice_choice' && c.targetId === 'art');
+  assert.ok(sac, 'ofiara po śmierci źródła');
+  assert.ok(execute(state, sac).ok);
+  const targets = commands(state).find((c) => c.type === 'resolve_trigger_target'
+    && Array.isArray(c.targetIds) && c.targetIds.length === 2);
+  assert.ok(targets, 'refleks odpala mimo śmierci źródła');
+  assert.ok(execute(state, targets).ok);
+  resolveStack(state);
+  assert.equal(state.objects.get('own')?.counters?.['+1/+1'], 1);
+  assert.equal(state.objects.get('foe')?.counters?.['+1/+1'], 1);
+});
+
 // =====================================================================
 // Ichorclaw Myr (SOM) — Infect + „becomes blocked": +2/+2, raz na blok
 // =====================================================================
@@ -582,6 +616,28 @@ test('B53: Sheriff of Safe Passage — +1 za każdego INNEGO stwora', () => {
   const sheriff = byCard(state, 'sheriff-of-safe-passage');
   assert.ok(sheriff, 'szeryf na polu bitwy');
   assert.equal(sheriff.counters?.['+1/+1'], 3, '1 bazowy + 2 za sojuszników');
+});
+
+test('B53: Sheriff — plot {1}{W} i rzut z exile w późniejszej turze', () => {
+  // Ruling OTJ: plot sorcery-speed; rzut z exile bez many od następnej tury.
+  const state = game();
+  addMana(state, 'p1', 2, { colors: ['W'] });
+  addCard(state, 'sheriff', 'sheriff-of-safe-passage', 'p1', 'hand');
+  const plot = commands(state).find((c) => c.type === 'plot_card' && c.objectId === 'sheriff');
+  assert.ok(plot, 'oferta plotu {1}{W}');
+  assert.ok(execute(state, plot).ok);
+  const plottedId = state.zones.exile[state.zones.exile.length - 1];
+  assert.equal(state.objects.get(plottedId)?.cardId, 'sheriff-of-safe-passage');
+  const sameTurn = commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === plottedId);
+  assert.ok(!sameTurn, 'ta sama tura: brak rzutu zaplotowanego');
+  state.turn.number += 1; // późniejsza tura (konwencja testów plotu)
+  const cast = commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === plottedId);
+  assert.ok(cast, 'późniejsza tura: rzut z exile bez many');
+  assert.ok(execute(state, cast).ok);
+  resolveStack(state);
+  const sheriff = byCard(state, 'sheriff-of-safe-passage');
+  assert.ok(sheriff, 'szeryf na polu bitwy');
+  assert.equal(sheriff.counters?.['+1/+1'], 1, 'liczniki wejścia także po rzucie z plotu');
 });
 
 // =====================================================================

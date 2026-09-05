@@ -3645,7 +3645,10 @@ export function execute(state, input) {
       // M166/B: źródło umarłe (Enrage) — LKI z pendingu (CR 603.10).
       const srcM = state.objects.get(pending.sourceId) ?? pending.sourceLki ?? null;
       const srcLegalM = Boolean(srcM
-        && ['battlefield', 'graveyard', 'exile'].includes(srcM.zone)
+        && (['battlefield', 'graveyard', 'exile'].includes(srcM.zone)
+          // Audyt Batch53/A1: refleks „When you do" niezależny od strefy
+          // źródła (dziecko rozstrzygniętej zdolności, ruling LCI).
+          || pending.ability?.trigger?.event === 'reflexive_sacrifice')
         && triggerConditionHolds(state, pending.ability, srcM, pending.extra ?? {}));
       if (srcLegalM && chosenList.length > 0) {
         const stackEntryM = queueTriggerToStack(state, pending.ability, srcM,
@@ -3706,7 +3709,10 @@ export function execute(state, input) {
     // M166/B: źródło umarłe (Enrage) — LKI z pendingu (CR 603.10).
     const source = state.objects.get(pending.sourceId) ?? pending.sourceLki ?? null;
     const sourceLegal = Boolean(source
-      && ['battlefield', 'graveyard', 'exile'].includes(source.zone)
+      && (['battlefield', 'graveyard', 'exile'].includes(source.zone)
+        // Audyt Batch53/A1: refleks „When you do" niezależny od strefy
+        // źródła (dziecko rozstrzygniętej zdolności, ruling LCI).
+        || pending.ability?.trigger?.event === 'reflexive_sacrifice')
       && triggerConditionHolds(state, pending.ability, source, pending.extra ?? {}));
     // Trigger odpala się przy legalnym źródle. Odmowa celu (chosen === null):
     // - „you may ... When you do, ..." (requiresTarget.optional — Kappa,
@@ -4139,6 +4145,9 @@ export function execute(state, input) {
       state.events.push(event(pending.reflexiveEvent, {
         sourceId: pending.sourceId, cardId: pending.cardId ?? null,
         sacrificedId: moved.id, playerId: pending.playerId,
+        // Audyt Batch53/A1: zdolność z chwili rozstrzygnięcia ETB (źródło
+        // mogło już odejść — refleks odpala z LKI, ruling LCI).
+        reflexiveAbility: pending.reflexiveAbility ?? null,
       }));
     }
     state.pendingSacrifice = null;
