@@ -80,16 +80,20 @@ test('C53/C-FIX-2: bot atakuje Rampagerem przez mur 0/5 (ewazja mocowa)', () => 
     'Rampager jest nie do zablokowania dla 0/5 — bot atakuje za 3, zamiast trzymać stwora');
 });
 
-test('C53/C-FIX-1: remis plain/offspring ma rozróżnialne projekcje', () => {
+test('C53/C-FIX-1: plain/offspring różnicuje wycenę (C-R7: dopłata opłacalna)', () => {
   const s = game();
   addMana(s, 'p1', 10, { colors: ['W', 'U', 'B', 'R', 'G'] });
   addCard(s, 'r', 'rust-shield-rampager', 'p1');
   const { cmd, entry } = pick(s);
   assert.equal(cmd.type, 'cast_permanent');
-  assert.ok(!cmd.offspring, 'remis idzie w rzut naturalny (pierwsza oferta, jak kicker)');
-  assert.ok(entry.tie && entry.tie.length === 2, 'remis jest ogłoszony z projekcjami');
-  const flags = entry.tie.map((t) => t.proj?.offspring).sort();
-  assert.deepEqual(flags, [0, 1], 'projekcje różnią warianty flagą offspring');
+  // C-R7 (audyt Batch53, 2026-09-05): warunkowy ETB (create_offspring_token)
+  // dostaje premię, dopłata 2 many koszt — token 1/1 za ~1.8 pkt jest
+  // opłacalny, więc dopłacamy zamiast remisować w pierwszą ofertę.
+  // Historyjnie: do tur 53. to był REMIS z projekcjami różnicowanymi flagą
+  // offspring; C-R7 zamienia remis na świadomą wygraną wariantu.
+  assert.ok(cmd.offspring, 'dopłata offspring wygrywa wyceną (token > koszt dopłaty)');
+  const wybrany = entry.options.find((o) => o.cmd === 'cast_permanent(r)');
+  assert.ok(wybrany, `w śladzie jest wybrany rzut: ${JSON.stringify(entry.options.slice(0, 4))}`);
 });
 
 test('C53/C: Acidic Slime celuje najcenniejszy permanent wroga', () => {

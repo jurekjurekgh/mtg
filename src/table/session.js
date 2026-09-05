@@ -464,6 +464,14 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   becomes_blocked: 'zablokowanie tego stwora',
   // Batch 53 (Glorifier of Suffering): reflexive „When you do" po poświęceniu.
   reflexive_sacrifice: 'refleks po poświęceniu („when you do")',
+  // PR #98 (Żywy Tester, innistrad-brg×worek-dziki seed 11): pseudo-zdolność
+  // storm rodzi się w spells.js (spells.js:702), poza zasięgiem strażnika
+  // M122 — w modalu wyciekał surowy slug „trigger (storm)".
+  storm: 'Storm — kopie za wcześniejsze czary',
+  // PR #98 (strażnik M122 rozszerzony na cały src/engine): pseudo-zdolność
+  // ward (triggers.js, Object.freeze-składnia) wyciekała jako „trigger (ward)"
+  // — udokumentowana w M264, ale etykiety nikt nie dopisał.
+  ward: 'ward — zdolność ochronna',
   aura_host_targeted_by_spell: 'gospodarz aury celem czaru',
   spell_targets_this_creature: 'twoja karta celuje w to stworzenie',
   bat_attacks: 'atak nietoperza',

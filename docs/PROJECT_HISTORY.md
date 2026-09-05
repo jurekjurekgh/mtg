@@ -8407,3 +8407,105 @@ rekomendacje C-R1–C-R7 bez akcji. Bramy: `test:all` 4457/4457, fast
 (C-FIX-1/2). Plan:
 `docs/plans/PLAN_2026-09-05-audyt-batch53-stol-bot.md`; handoff:
 `docs/setup/HANDOFF_2026-09-05.md` (sekcja Kontynuacja).
+
+### Sesja arena/01a0712d (2026-09-05): audyt PR #97 + pętla jakości (PR #98)
+
+Prompt „kontynuujemy projekt" → pętla domyślna (ADR 0020/0021). PR #98
+otwarty przed kodowaniem; audyt scalonego PR #97, potem pozycje z handoffu.
+
+**Audyt PR #97** (`d67b684..5fb7994`, 21 plików; raport
+`docs/audits/AUDYT_PR97_2026-09-05.md`): bramy zgodne (fast 4447/4447,
+build 59/3265,2 kB, benchmark 10/10); Oracle/rulingi potwierdzone ze
+snapshotów (Óin F1, Offspring LKI, Glorifier refleks); kontrola mutacyjna
+niezależna: F1 → `ability-cost-pips` RED, A1 → `real-cards-batch53` 3 RED,
+C-FIX-2 → `batch53-bot` RED. Werdykt: **PR dobry, 0 nowych F**; obserwacje
+O1–O5 (m.in. „Sheriff niećwiczony" z handoffu = nieaktualne: test istnieje
+w PR #97; incydent procesowy: replace-first-occurrence na zduplikowanym
+stringu kosztu trafił w Goblin Picker zamiast Óina — klasa L8/L34).
+
+**O3 → naprawa rodziny F3:** fakty historyczne rzutu `wasKicked`/
+`wasCast`/`manaFromTreasureSpent` docierają teraz do stubu LKI
+(`queueTriggerToStack` + `resolveTriggerEntry`) — Kor Sanctifiers,
+Geological Appraiser i Marut tracili skutek po kill-in-response (re-check
+intervening-if CR 603.4 z LKI, CR 603.10/608.2b). Test
+`audyt-pr97-flagi-rzutu-lki` (RED 3/4 przed, GREEN 4/4 po).
+
+**O4 → korekta L47:** `copyableDescriptorKeys` nigdy nie powstało — lekcja
+mówi teraz prawdę o 4 ścieżkach kopiowania (w tym `printLki` z F3).
+
+**Żywy Tester (zendikar×srodziemie s7, innistrad-brg×worek-dziki s11):**
+dwa znaleziska stołowe. (1) Kafel Kor Sanctifiers obiecywał bezwarunkowe
+„zniszcz cel" — naprawa generyczna: wspólny `triggerConditionClause` dla
+gałęzi ETB/dies/attacks (+refaktor end_step na wspólny helper, L41/L28)
+i typ celu w ETB z `targetTypeLabel`; test rodziny 8 szt. (mutacja 6/8
+RED). (2) Surowy slug „trigger (storm)" w modalu — pseudo-zdolności
+storm (spells.js) i ward (triggers.js, składnia Object.freeze) wyciekały,
+bo strażnik M122 skanował jeden plik i jedną składnię (L113); etykiety
+dodane, strażnik rozszerzony na CAŁY `src/engine` + obie składnie
+(mutacja: RED z adresem pliku).
+
+Bramy na domknięciu: `test:all` **4469/4469**, fast **4459/4459**, build
+**59 modułów / 3268,7 kB**. Benchmark szybki 10/10 (audyt). Zero nowych
+kart, zero zmian wycen bota. Commity: `ce76ecc` (plan), `4085358` (audyt),
+`948f310` (O3 LKI), `73faa5d` (L47), `5c07350` (warunki triggerów),
+`6ff467f` (storm/ward). Handoff: `docs/setup/HANDOFF_2026-09-05b.md`.
+
+## Sesja arena/01a0712d — faza 2: C-R1–C-R7 z audytu Batch53 (wyceny bota)
+
+Kontynuacja PR #98 na tym samym drzewie (1 sesja = 1 PR). Zlecenie: „Kontynuuj
+zgodnie z handoffem, w tym C-R1–C-R7 (m.in. brak premii ETB w cast_permanent)".
+Realizacja rekomendacji systemowych z AUDYT_BATCH53 jako ŚWIADOME zmiany wycen
+(nie refaktor), plan docs/plans/PLAN_2026-09-05b (etapy E1–E8).
+
+- **C-R1+C-R7** (`0abc269`): tabela `ETB_EFFECT_BONUS` po TYPACH efektów
+  (ADR 0002) w `cast_permanent` — premia za triggery wejścia (draw/token/
+  removal/anthem/search/…), cele wymagane tylko przy pasującym permanencie
+  wroga; wykluczenia przeciw podwójnemu liczeniu (reanimate/equipment/
+  damage_to_controller/lose_life). Warianty kicker/offspring: warunkowe ETB
+  liczone per wariant + KOSZT dopłaty — koniec remisu „pierwsza oferta".
+  Epsilon 0,001×waluta (lustrzany z tieProjection, koszt rejestrowy) rozstrzyga
+  idealne remisy rzutów — grzechotka remisów zielona, pin arytmetyczny
+  cena-stwora nietknięty. C-FIX-1 przepisany (remis → świadoma wygrana dopłaty).
+- **C-R2** (`331252a`): cele triggerów z grobu/wygnania wyceniane
+  (`openZoneCard`: stwór P/T, reszta koszt×2, wzorzec craft_exile);
+  `return_card_from_graveyard_to_hand`/`put_graveyard_card_on_top`
+  przeklasyfikowane neutral→przyjazny w effect-intent (strażnik klasyfikacji
+  oczyszczony). Ironclad bierze najdroższą aurę/equipment, Mystic Sanctuary
+  najdroższy instant.
+- **C-R3** (`4587a9c`): wartość ofiary — nie-stwory po koszcie×2 (cenny
+  artefakt przestaje być „darmową ofiarą" przed tokenem 1/1); engine anotuje
+  `resolve_sacrifice_choice` flagą `reflexReady` (precedens M150) — refleks
+  jałowy → bot wybiera skip (Grave Exchange nietknięty).
+- **C-R4** (`4a7b7fc`): sim walki liczy pump „when this becomes blocked"
+  (Ichorclaw 1/1→3/3 wygrywa blok z 2/2; 3/3 w 4/4 nadal jałowe).
+- **C-R5** (`5bc06cc`): trucizna jako drugi zegar wygranej — racing od 6+
+  liczników, dopłata 20 przy presji infect, przenikający infect ≥ 10−poison
+  = lethal +1000; na 9 truciznach kary ryzyka B3/M297 wyciszone.
+- **C-R6** (`57b4fdf`): PROBE (plan E7) — plot działa poprawnie (2 many:
+  plotuje; 3+: rzuca). Odnotowane w audycie, bez zmiany na siłę.
+- Każdy etap: testy RED→GREEN + weryfikacja mutacyjna + pełny `npm test`
+  zielony + push; snapshot bota regenerowany na E2 (`d9e266e5`), finalny
+  `--write` na gotowym drzewie bez zmiany hasha (L124).
+
+Bramy na domknięciu fazy 2: `test:all` **4486/4486**, fast **4476/4476**,
+build **59 modułów / 3283,1 kB**. Benchmark szybki: heuristic **84,1%**
+(565/672). Handoff: `docs/setup/HANDOFF_2026-09-05c.md`.
+
+### Faza 3 (ta sama sesja, tematy z handoffa 2026-09-05b)
+
+- **`7213b39` — upkeep na wspólnym `triggerConditionClause`:** gałąź upkeep
+  renderowała wyłącznie `noSpellsLastTurn` z hardkodowym fallbackiem „gdy
+  rzucano 2+ czary" — wilkołaki (eachUpkeep) nie mówiły „w KAŻDYM upkeep",
+  a karty z upkeepem bez warunku (Veiled Ascension) dostawały fałszywy
+  warunek. Naprawa: noSpells/minSpellsLastTurn w helperze (jedno miejsce
+  prawdy, L28/L41) + strona czasu z pól deskryptora (eachUpkeep /
+  enchantedPlayerUpkeep / enchantedPermanentControllerUpkeep / twojego).
+  3 testy (wilk day/night + anty-over-fix), mutacje 2×RED.
+- **`57ff6f8` — O5 podniesiony:** warunek z audytu PR #97 spełniony (pierwsza
+  karta z dwiema kolorowymi aktywacjami: death-hood-cobra 2× {1}{G}).
+  Strażnik `ability-cost-pips` rozlicza WYSTĄPIENIA multizbiorów per zdolność
+  (konsumpcja); przestawka WARTOŚCI pipów między zdolnościami pozostaje poza
+  zasięgiem — jawne w nagłówku, przepięte testem. Odnotowane w AUDYT_PR97.
+
+Bramy na domknięciu fazy 3: `test:all` **4492/4492**, fast **4482/4482**,
+build **59 modułów / 3284,1 kB**.

@@ -6454,11 +6454,21 @@ export function playerView(state, playerId) {
     // do poświęcenia spośród kandydatów (resolve_sacrifice_choice).
     // Batch 53 (Glorifier): „you may sacrifice another creature or artifact"
     // — dodatkowa oferta `skip` (bez refleksu).
+    // C-R3a (audyt Batch53): flaga `reflexReady` — czy refleksyjna zdolność
+    // „When you do" realnie ma na kim działać (kandydaci celów jak dla
+    // triggerów, L48; precedens cmd.friendly z M150). Anotujemy TYLKO decyzje
+    // z reflekssem (reflexiveAbility) — Grave Exchange (ofiara obowiązkowa,
+    // bez refleksu) zostaje bez flagi, a jego polityka „najsłabszy pierwszy"
+    // nietknięta. Brak kandydata celu = poświęcenie jałowe → bot ma jawny
+    // sygnał, by wybrać skip zamiast palić permanent za nic.
+    const reflexAbility = state.pendingSacrifice.reflexiveAbility ?? null;
+    const reflexReady = reflexAbility == null ? undefined : (!reflexAbility.trigger?.requiresTarget
+      || legalTriggerTargetCandidates(state, { sourceId: state.pendingSacrifice.sourceId, ability: reflexAbility }).length > 0);
     if (state.pendingSacrifice.optional) {
-      legalCommands.push(command('resolve_sacrifice_choice', playerId, { skip: true }));
+      legalCommands.push(command('resolve_sacrifice_choice', playerId, { skip: true, ...(reflexReady === undefined ? {} : { reflexReady }) }));
     }
     for (const targetId of state.pendingSacrifice.candidateIds) {
-      legalCommands.push(command('resolve_sacrifice_choice', playerId, { targetId }));
+      legalCommands.push(command('resolve_sacrifice_choice', playerId, { targetId, ...(reflexReady === undefined ? {} : { reflexReady }) }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeAmassChoice) {
     // Amass z wieloma armiami (CR 701.43): gracz wybiera, która Army dostaje

@@ -78,5 +78,13 @@ export function triggerTargetEffectFriendly(ability) {
     // jest przyjazny (ujemny klasyfikuje triggerEffectIsHostile powyżej).
     || (e?.type === 'buff_creature_until_end_of_turn'
       && (e.power ?? 0) >= 0 && (e.toughness ?? 0) >= 0
-      && (e.power ?? 0) + (e.toughness ?? 0) > 0));
+      && (e.power ?? 0) + (e.toughness ?? 0) > 0)
+    // C-R2 (audyt Batch53, 2026-09-05): zwrot WŁASNEJ karty z grobu — do ręki
+    // (Ironclad Slayer, Circle Druid) albo na wierzch biblioteki (Mystic
+    // Sanctuary) — to korzyść kontrolera, a spec „controlledBy: controller"
+    // i tak ogranicza cele do własnych kart. Bez tej gałęzi friendly=false,
+    // wycena C-R2 dawała znak wrogi (−20−wartość) i bot wybierał „brak celu"
+    // zamiast NAJLEPSZEJ karty grobu.
+    || e?.type === 'return_card_from_graveyard_to_hand'
+    || e?.type === 'put_graveyard_card_on_top');
 }

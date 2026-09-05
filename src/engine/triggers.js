@@ -860,10 +860,13 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
     powerModifier: source.powerModifier ?? 0,
     toughnessModifier: source.toughnessModifier ?? 0,
     faceDown: source.faceDown ?? false,
-    // Audyt PR #96/F3: flaga rzutu jest faktem historycznym — re-check
-    // intervening-if (CR 603.4) przy rozstrzygnięciu czyta ją ze stubu LKI,
-    // gdy źródło opuściło już pole bitwy.
+    // Audyt PR #96/F3 + PR #97/O3: flagi rzutu to FAKTY HISTORYCZNE —
+    // re-check intervening-if (CR 603.4) i liczności efektów (Marut) czytają
+    // je ze stubu LKI, gdy źródło opuściło już pole bitwy (CR 603.10/608.2b).
     wasOffspring: source.wasOffspring === true,
+    wasKicked: source.wasKicked === true,
+    wasCast: source.wasCast === true,
+    manaFromTreasureSpent: source.manaFromTreasureSpent ?? 0,
   });
   // Audyt PR #96/F3: migawka cech źródła do efektów kopiujących
   // (create_offspring_token) — ruling Offspring (BLB): token powstaje także
@@ -996,6 +999,10 @@ export function resolveTriggerEntry(state, entry) {
     powerModifier: lki.powerModifier ?? 0, toughnessModifier: lki.toughnessModifier ?? 0,
     faceDown: lki.faceDown ?? false,
     wasOffspring: lki.wasOffspring === true,
+    // Audyt PR #97/O3: pozostałe fakty historyczne rzutu (rodzina F3).
+    wasKicked: lki.wasKicked === true,
+    wasCast: lki.wasCast === true,
+    manaFromTreasureSpent: lki.manaFromTreasureSpent ?? 0,
     // Audyt PR #96/F3: nośnik cech dla efektów kopiujących (ruling Offspring).
     lkiPrint: printLki ? Object.freeze({
       kind: printLki.kind ?? null, cardId: entry.cardId,
