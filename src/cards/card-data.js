@@ -10572,7 +10572,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 1, tap: true, colors: ['R'], discardCard: true },
+        // Audyt PR #96/F1: Oracle „{1}, {T}, Discard a card” — koszt
+        // GENERYCZNY, bez pipy {R} (cost.colors to pipy do zapłaty).
+        cost: { mana: 1, tap: true, discardCard: true },
         effect: { type: 'draw_cards', amount: 1 },
       }),
     ],

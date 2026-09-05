@@ -860,6 +860,29 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
     powerModifier: source.powerModifier ?? 0,
     toughnessModifier: source.toughnessModifier ?? 0,
     faceDown: source.faceDown ?? false,
+    // Audyt PR #96/F3: flaga rzutu jest faktem historycznym — re-check
+    // intervening-if (CR 603.4) przy rozstrzygnięciu czyta ją ze stubu LKI,
+    // gdy źródło opuściło już pole bitwy.
+    wasOffspring: source.wasOffspring === true,
+  });
+  // Audyt PR #96/F3: migawka cech źródła do efektów kopiujących
+  // (create_offspring_token) — ruling Offspring (BLB): token powstaje także
+  // gdy źródło opuści pole bitwy przed rozstrzygnięciem (CR 603.10/608.2b).
+  const printLki = Object.freeze({
+    kind: source.kind ?? null,
+    cardName: source.cardName ?? source.cardId ?? null,
+    colors: Object.freeze([...(source.colors ?? [])]),
+    types: Object.freeze([...(source.types ?? [])]),
+    subtypes: Object.freeze([...(source.subtypes ?? [])]),
+    keywords: Object.freeze([...(source.keywords ?? [])]),
+    abilities: Object.freeze([...(source.abilities ?? [])]),
+    manaCost: source.manaCost ?? 0,
+    ...(source.entersWithCounters ? { entersWithCounters: source.entersWithCounters } : {}),
+    ...(source.entersWithCountersIf ? { entersWithCountersIf: source.entersWithCountersIf } : {}),
+    ...(source.station ? { station: source.station } : {}),
+    ...(source.saga ? { saga: source.saga } : {}),
+    ...(source.transformTo ? { transformTo: source.transformTo } : {}),
+    ...(source.frontFaceId ? { frontFaceId: source.frontFaceId } : {}),
   });
   const entry = Object.freeze({
     id, zone: 'stack', controllerId: source.controllerId, cardId: source.cardId,
@@ -870,6 +893,7 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
       targets: [...(targets ?? [])],
       extra: Object.freeze({ ...(extra ?? {}) }),
       sourceLki,
+      printLki,
     }),
   });
   state.objects.set(id, entry);
@@ -964,12 +988,28 @@ export function resolveTriggerEntry(state, entry) {
   // czytające power/toughness źródła (source_power) działają z ostatniej
   // znanej informacji zamiast produkować NaN.
   const lki = payload.sourceLki ?? {};
+  const printLki = payload.printLki ?? null;
   const source = liveSource ?? Object.freeze({
     id: payload.sourceId, controllerId: entry.controllerId,
     cardId: entry.cardId, zone: 'none', kind: null,
     power: lki.power, toughness: lki.toughness,
     powerModifier: lki.powerModifier ?? 0, toughnessModifier: lki.toughnessModifier ?? 0,
     faceDown: lki.faceDown ?? false,
+    wasOffspring: lki.wasOffspring === true,
+    // Audyt PR #96/F3: nośnik cech dla efektów kopiujących (ruling Offspring).
+    lkiPrint: printLki ? Object.freeze({
+      kind: printLki.kind ?? null, cardId: entry.cardId,
+      cardName: printLki.cardName ?? entry.cardId, controllerId: entry.controllerId,
+      colors: [...(printLki.colors ?? [])], types: [...(printLki.types ?? [])],
+      subtypes: [...(printLki.subtypes ?? [])], keywords: [...(printLki.keywords ?? [])],
+      abilities: [...(printLki.abilities ?? [])], manaCost: printLki.manaCost ?? 0,
+      ...(printLki.entersWithCounters ? { entersWithCounters: printLki.entersWithCounters } : {}),
+      ...(printLki.entersWithCountersIf ? { entersWithCountersIf: printLki.entersWithCountersIf } : {}),
+      ...(printLki.station ? { station: printLki.station } : {}),
+      ...(printLki.saga ? { saga: printLki.saga } : {}),
+      ...(printLki.transformTo ? { transformTo: printLki.transformTo } : {}),
+      ...(printLki.frontFaceId ? { frontFaceId: printLki.frontFaceId } : {}),
+    }) : null,
     counters: {}, formerCounters: {}, keywords: [], abilities: [], types: [],
   });
   // Zdolność opuszcza stos w momencie rozstrzygania.
@@ -1452,7 +1492,9 @@ function triggerSourceZoneLegal(source, triggerEvent) {
   if (source.zone === 'battlefield') return true;
   // Triggery śmierci/odejścia działają z ostatniej znanej informacji —
   // źródło jest w grobie/exile (Selhoff, Servant of the Scale).
-  return ['dies', 'any_creature_dies', 'leaves_battlefield'].includes(triggerEvent);
+  // Refleks „When you do" (Audyt Batch53/A1): dziecko rozstrzygniętej już
+  // zdolności — niezależne od strefy źródła (ruling LCI 2023-11-10).
+  return ['dies', 'any_creature_dies', 'leaves_battlefield', 'reflexive_sacrifice'].includes(triggerEvent);
 }
 
 export function triggerTargetDecisionPending(state, pending) {
@@ -2095,11 +2137,23 @@ function processTriggersScan(state, recentEvents) {
     // zdolność źródła z `trigger.event === 'reflexive_sacrifice'`. To cel
     // „up to two target creatures" — tryFire przejmuje decyzję celu (Temat 2).
     if (ev.type === 'reflexive_sacrifice') {
-      const source = state.objects.get(ev.sourceId);
-      if (source && source.zone === 'battlefield') {
-        for (const ability of effectiveAbilities(source)) {
-          if (ability?.trigger?.event === 'reflexive_sacrifice') {
-            tryFire(state, ability, source, [], events, { sacrificedId: ev.sacrificedId ?? null });
+      // Audyt Batch53/A1: zdolność niesie ZDARZENIE (z chwili rozstrzygnięcia
+      // ETB) — refleks „When you do" odpala także gdy źródło opuściło pole
+      // bitwy (kill w odpowiedzi na ETB; ruling LCI 2023-11-10, CR 603.10).
+      if (ev.reflexiveAbility) {
+        const live = state.objects.get(ev.sourceId);
+        const source = (live && live.zone === 'battlefield') ? live : Object.freeze({
+          id: ev.sourceId, controllerId: ev.playerId ?? live?.controllerId ?? null,
+          cardId: ev.cardId ?? null, zone: 'none',
+        });
+        tryFire(state, ev.reflexiveAbility, source, [], events, { sacrificedId: ev.sacrificedId ?? null });
+      } else {
+        const source = state.objects.get(ev.sourceId);
+        if (source && source.zone === 'battlefield') {
+          for (const ability of effectiveAbilities(source)) {
+            if (ability?.trigger?.event === 'reflexive_sacrifice') {
+              tryFire(state, ability, source, [], events, { sacrificedId: ev.sacrificedId ?? null });
+            }
           }
         }
       }

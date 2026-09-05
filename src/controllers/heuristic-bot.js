@@ -44,9 +44,16 @@ function attackerCanBeBlocked(attacker, blockers) {
   if (attacker.cantBeBlocked === true) return false;
   const keywords = attacker.keywords ?? [];
   const flying = keywords.includes('flying');
+  // Audyt Batch53/C (Rust-Shield Rampager): ewazja mocowa („can't be blocked
+  // by creatures with power N or less") — blokerzy o mocy ≤ progu nie liczą
+  // się do obrony. Próg z PlayerView (efektywna statyka, ADR 0017); moc
+  // blokera efektywna (power + grantedPower, jak equipValuation).
+  const powerCap = attacker.cantBeBlockedByPower;
   const able = (blockers ?? []).filter((b) => {
     const kw = b?.keywords ?? [];
-    return !flying || kw.includes('flying') || kw.includes('reach');
+    if (flying && !kw.includes('flying') && !kw.includes('reach')) return false;
+    if (powerCap != null && ((b?.power ?? 0) + (b?.grantedPower ?? 0)) <= powerCap) return false;
+    return true;
   });
   if (keywords.includes('menace') && able.length < 2) return false;
   return able.length > 0;
@@ -5053,6 +5060,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         waluta: cialo - P.creatureManaCostWeight * koszt,
         cele: (cmd.targets ?? []).length,
         kicker: cmd.kicked ? 1 : 0,
+        // Audyt Batch53/C: wariant offspring (Rust-Shield Rampager) remisował
+        // z rzutem naturalnym (ten sam score), a projekcja nie niosła różnicy
+        // — remis wyglądał na „uczciwy", choć warianty się różnią (jak kicker).
+        offspring: cmd.offspring ? 1 : 0,
         tryb: cmd.mode ?? cmd.modeIndex ?? null,
       };
     }

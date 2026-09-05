@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
 import { spendMana, addMana, producibleMana } from './resources.js';
@@ -1431,8 +1431,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // kopiujemy też entersWithCounters/If. Zawsze 1/1, niezależnie od P/T
   // oryginału po buffach.
   if (effect.type === 'create_offspring_token') {
-    const src = state.objects.get(sourceObject.id);
-    if (!src || src.zone !== 'battlefield' || src.kind !== 'creature') return;
+    const live = state.objects.get(sourceObject.id);
+    const liveOk = live && live.zone === 'battlefield' && live.kind === 'creature';
+    // Audyt PR #96/F3: ruling Offspring (BLB) — token powstaje także gdy
+    // źródło opuściło pole bitwy przed rozstrzygnięciem; cechy bierze wtedy
+    // z ostatniej znanej informacji (CR 603.10/608.2b).
+    const lki = !liveOk ? sourceObject?.lkiPrint : null;
+    const src = liveOk ? live : (lki && lki.kind === 'creature' ? lki : null);
+    if (!src) return;
     const ctrl = src.controllerId;
     const copyName = src.cardName ?? src.cardId ?? 'Copy';
     const token = createBattlefieldToken(state, ctrl, {
@@ -4979,6 +4985,14 @@ function markTemporaryExile(state, exileId, sourceObject) {
         || (object.types ?? []).includes(type));
     });
     if (candidates.length === 0) return; // „you may" — brak ofiary = brak refleksu
+    // Audyt Batch53/A1: zdolność refleksyjną ustalamy JUŻ TERAZ (przy
+    // rozstrzygnięciu ETB) — źródło mogło opuścić pole bitwy (kill w odpowiedzi
+    // na ETB), a refleks „When you do" i tak musi odpalić (ruling LCI).
+    // Żywe źródło: zdolności efektywne; stub: druk z LKI (F3).
+    const srcAbilities = sourceObject?.zone === 'battlefield'
+      ? effectiveAbilities(sourceObject)
+      : (sourceObject?.lkiPrint?.abilities ?? []);
+    const reflexiveAbility = srcAbilities.find((a) => a?.trigger?.event === (effect.reflexiveEvent ?? 'reflexive_sacrifice')) ?? null;
     state.pendingSacrifice = {
       playerId: controllerId,
       candidateIds: [...candidates],
@@ -4986,6 +5000,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
       sourceId: sourceObject.id,
       cardId: sourceObject?.cardId ?? null,
       reflexiveEvent: effect.reflexiveEvent ?? 'reflexive_sacrifice',
+      reflexiveAbility: reflexiveAbility ? Object.freeze({ ...reflexiveAbility }) : null,
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = controllerId;

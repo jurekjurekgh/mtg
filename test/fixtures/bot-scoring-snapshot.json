@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "overallHash": "36659db6b4c916ee7d60242d53e24ae0683e93ae2e24b3c9b70eee523714c052",
+  "overallHash": "53489c88131cc29a3ab0bd034b7af04fb2a3942279ae7f937dbd2bea3121e37c",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1000,
-      "hash": "b666c2fc8bee5717fe8fb686697d0aecf006a8db8fa9434dbdb3eed352e158fa",
+      "hash": "5c95355f8228dafec3fddf1f89ab479eb5abca191287689d8deaccb8b19457f9",
       "decisions": 245,
       "scoreSum": 3174.6,
       "chosenKinds": {
@@ -26,7 +26,7 @@
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1001,
-      "hash": "ea1564686ca6abe94bdc71110faa76abc85e39bf0d3c266664f2ec08d6783a93",
+      "hash": "608960c9d911adf30fc3ba6b4ec477da2c2d6e79f31975d37d65e1db1e69bef4",
       "decisions": 234,
       "scoreSum": 1887.6,
       "chosenKinds": {
@@ -45,7 +45,7 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1000,
-      "hash": "291a104f66ddc3084a72e6ecdb4d7c92cb38df40be968d72dd068f6649f3fe99",
+      "hash": "1a5678da13a3d3ceab9f6fa61fb728e7368c79e8e1a90b357c06326a81f1448f",
       "decisions": 166,
       "scoreSum": 2521.4,
       "chosenKinds": {
@@ -87,7 +87,7 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "c27339d166a17411a643aa2c0249ff7791abcfb23a8320f713fb2287f2923c79",
+      "hash": "9a986a5b3cd8e112cfbae4b9743509fb0a6061256333e18c7156e0b4f22e764d",
       "decisions": 224,
       "scoreSum": 2871.9,
       "chosenKinds": {
@@ -109,7 +109,7 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1001,
-      "hash": "feab477de21c38b694778506f58b80358906618b8a82de073ebdbb02d93d5f2e",
+      "hash": "ee538cb3fad9641095b13f203c2d18f202794b0128b254bbaf8c22789c4f416a",
       "decisions": 162,
       "scoreSum": 2507.2,
       "chosenKinds": {

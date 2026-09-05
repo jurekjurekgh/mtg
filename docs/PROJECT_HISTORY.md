@@ -8353,3 +8353,57 @@ pełny B0 bez komendy właściciela). Commity: `6f91045` (transza 6 + split +
 migracja), `54da590` (transza 7). Plan:
 `docs/plans/PLAN_2026-09-04-batch53-materializacyjny.md`; handoff:
 `docs/setup/HANDOFF_2026-09-04-batch53-materializacyjny.md`.
+
+**Audyt PR #96 + naprawy F1–F4 (2026-09-05).**
+
+Sesja w trybie domyślnym ADR 0020/0021 („kontynuujemy projekt”): PR #97
+(`arena/01a07073-mtg` → `main`) otwarty PRZED kodem; audyt ostatniego
+scalonego PR (#96 — squash `d67b684`, 114 pliki, +2799 −382, batch 53 +
+split Warhammera). Werdykt: **PR dobry** — mechaniki generyczne (Offspring,
+Storied, reflexive, becomes_blocked), testy real-cast z obiema gałęziami,
+migracja `brg/wu→ubr/wg` kompletna. 4 znaleziska, wszystkie naprawione
+w tym PR z mutacjami: **F1** Óin the Brave — koszt aktywacji `{R}` zamiast
+Oracle `{1}` (fix: zdjąć `colors` + strażnik klasowy
+`test/ability-cost-pips.test.js`, 53 zdolności z pipami, 0 miss); **F2**
+README na liczbach etapu audytu (L92); **F3** Offspring — brak tokenu po
+zejściu źródła (fix: `printLki` na wpisie stosu + `wasOffspring` na stubie
+LKI, CR 603.10/608.2b, ruling BLB); **F4** ścieżka `take` ofiary
+refleksyjnej bez emisji `reflexive_sacrifice_resolved` (martwa gałąź logu).
+Raport: `docs/audits/AUDYT_PR96_2026-09-05.md`.
+
+Pętla jakości: dwie partie Żywego Testera na przebudowanym `dist/`
+(warhammer-wg × tarkir-bg explorer, wiedzmin × warhammer-ubr greedy) —
+„DETEKTORY: brak zgłoszeń”, skan transkryptów czysty (7 trafień klasy
+false-positive + skrót UI „choroba”); Keep Out rzucony realnie w grze 2.
+Bramki na HEAD: `npm test` 4434/4434, `test:all` 4444/4444, build 59 modułów
+/ 3260,7 kB; bot-benchmark 10/10; pełny B0 bez zmian (ADR 0018). Zero nowych
+kart. Lekcja narzędziowa: równoległe `edit_file` do tego samego pliku gubią
+edycje (2×) — sekwencyjnie + weryfikacja grepem. Commity: `b79fc9c` (plan),
+`896ff7e` (raport), `ad45507` (F1), `732892b` (F3), `2b113b9` (F4),
+dokumentacja domknięcia. Plan:
+`docs/plans/PLAN_2026-09-05-audyt-pr96-petla-jakosci.md`; handoff:
+`docs/setup/HANDOFF_2026-09-05.md`.
+
+**Gruntowy audyt Batcha 53, warstwy (a/b/c) (2026-09-05).**
+
+Zlecenie właściciela w PR #97 (`arena/01a07073-mtg`): audyt 10 kart
+589–598 w trzech warstwach. (a) Kod vs CR/rulingi: 1 znalezisko — **A1**
+Glorifier of Suffering, refleks „When you do" gasł po zabiciu źródła
+w odpowiedzi (fix: zdolność na zdarzeniu + wyjątek strefowy, CR 603.10,
+ruling LCI; test kill-in-response). (b) 15 partii Żywego Testera
+(G1–G15, greedy/explorer): wszystkie 10 kart rzucone na żywo; 12 gier
+czystych, 3 noopy kart starych (Cellar Door, Thunderstaff ×2 —
+pre-existing, bez akcji); skan 95 trafień, 100% false-positive.
+Znaleziska stołowe: **B1** pipy plotu, **B3** log `cele: A, B`,
+**B4** `kopię`, **B5** kafel ewazji, **B6** etykieta offspring (wszystkie
+z pinami); B2/B7 odrzucone. (c) Scoring bota: 12 mikrosond headless;
+**C-FIX-1** flaga offspring w projekcji remisu (golden-master: dryf
+tylko haszy, `--write` po weryfikacji), **C-FIX-2** próg ewazji mocowej
+w simie walki (eksport z combat.js → PlayerView → filtr; test mutowany);
+rekomendacje C-R1–C-R7 bez akcji. Bramy: `test:all` 4457/4457, fast
+4447/4447, benchmark 10/10, build 59/3265,2 kB. Raport:
+`docs/audits/AUDYT_BATCH53_2026-09-05.md`. Commity: `a1ca1b8` (A1),
+`cb8e904` (B1), `526486d` (B3), `8b9a252` (B4/B5/B6), `b3c0e98`
+(C-FIX-1/2). Plan:
+`docs/plans/PLAN_2026-09-05-audyt-batch53-stol-bot.md`; handoff:
+`docs/setup/HANDOFF_2026-09-05.md` (sekcja Kontynuacja).

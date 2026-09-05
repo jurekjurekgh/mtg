@@ -18,7 +18,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
@@ -3645,7 +3645,10 @@ export function execute(state, input) {
       // M166/B: źródło umarłe (Enrage) — LKI z pendingu (CR 603.10).
       const srcM = state.objects.get(pending.sourceId) ?? pending.sourceLki ?? null;
       const srcLegalM = Boolean(srcM
-        && ['battlefield', 'graveyard', 'exile'].includes(srcM.zone)
+        && (['battlefield', 'graveyard', 'exile'].includes(srcM.zone)
+          // Audyt Batch53/A1: refleks „When you do" niezależny od strefy
+          // źródła (dziecko rozstrzygniętej zdolności, ruling LCI).
+          || pending.ability?.trigger?.event === 'reflexive_sacrifice')
         && triggerConditionHolds(state, pending.ability, srcM, pending.extra ?? {}));
       if (srcLegalM && chosenList.length > 0) {
         const stackEntryM = queueTriggerToStack(state, pending.ability, srcM,
@@ -3706,7 +3709,10 @@ export function execute(state, input) {
     // M166/B: źródło umarłe (Enrage) — LKI z pendingu (CR 603.10).
     const source = state.objects.get(pending.sourceId) ?? pending.sourceLki ?? null;
     const sourceLegal = Boolean(source
-      && ['battlefield', 'graveyard', 'exile'].includes(source.zone)
+      && (['battlefield', 'graveyard', 'exile'].includes(source.zone)
+        // Audyt Batch53/A1: refleks „When you do" niezależny od strefy
+        // źródła (dziecko rozstrzygniętej zdolności, ruling LCI).
+        || pending.ability?.trigger?.event === 'reflexive_sacrifice')
       && triggerConditionHolds(state, pending.ability, source, pending.extra ?? {}));
     // Trigger odpala się przy legalnym źródle. Odmowa celu (chosen === null):
     // - „you may ... When you do, ..." (requiresTarget.optional — Kappa,
@@ -4130,9 +4136,18 @@ export function execute(state, input) {
     // zdolności `trigger.event === 'reflexive_sacrifice'` kolejkuje decyzję
     // celów (up to two creatures) — dokładnie dwustopniowy timing z rulinga.
     if (pending.reflexiveEvent) {
+      // Audyt PR #96/F4: ścieżka `take` też rozstrzyga wybór (wzorzec
+      // food_choice) — bez tego gałąź `sacrificed:true` w session.js martwa.
+      state.events.push(event('reflexive_sacrifice_resolved', {
+        playerId: pending.playerId, sourceId: pending.sourceId ?? null,
+        cardId: pending.cardId ?? null, sacrificed: true, sacrificedId: moved.id,
+      }));
       state.events.push(event(pending.reflexiveEvent, {
         sourceId: pending.sourceId, cardId: pending.cardId ?? null,
         sacrificedId: moved.id, playerId: pending.playerId,
+        // Audyt Batch53/A1: zdolność z chwili rozstrzygnięcia ETB (źródło
+        // mogło już odejść — refleks odpala z LKI, ruling LCI).
+        reflexiveAbility: pending.reflexiveAbility ?? null,
       }));
     }
     state.pendingSacrifice = null;
@@ -5526,6 +5541,14 @@ export function playerView(state, playerId) {
           entry.cantAttackStatic = true;
         }
         if (object.cantBeBlocked === true) entry.cantBeBlocked = true;
+        // Audyt Batch53/C (Rust-Shield Rampager): próg ewazji mocowej
+        // („can't be blocked by creatures with power N or less") to informacja
+        // publiczna (skutek statyki) — bot czyta go wprost z widoku
+        // (attackerCanBeBlocked), zamiast zgadywać z rejestru (ADR 0017).
+        if (object.kind === 'creature' && !hiddenFromViewer) {
+          const blockPowerCap = attackerBlockPowerRestriction(state, object);
+          if (blockPowerCap != null) entry.cantBeBlockedByPower = blockPowerCap;
+        }
         // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona
         // permanentu (CR 702.16) jest informacją PUBLICZNĄ wydrukowaną skutkiem
         // rozstrzygniętej aury/efektu — kafel musi ją pokazać osobnym badge'em

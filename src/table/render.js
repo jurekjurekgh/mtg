@@ -1011,7 +1011,7 @@ function describeEffect(e) {
     explore: () => 'explore',
     investigate: () => 'investigate (stwórz token Clue)',
     create_copy_token: () => 'stwórz token-kopię artefaktu (haste, exile na koniec tury)',
-    create_offspring_token: () => 'stwórz kopia (Offspring) — 1/1 token-kopię tego stwora (wartości z druku)',
+    create_offspring_token: () => 'stwórz kopię (Offspring) — 1/1 token-kopię tego stwora (wartości z druku)',
     gain_control_until_end_of_turn: () => 'przejmij kontrolę do końca tury, odkręć i haste',
     destroy_equipment_attached: () => 'zniszcz cały wyposażony Equipment',
     prevent_combat_damage_except_enchanted: () => 'prewencja obrażeń bojowych (poza zaczarowanymi i enchantment-creatures)',
@@ -1296,6 +1296,9 @@ function describeStatic(ability) {
   if (ability.cantAttackAlone) parts.push('nie może atakować sam');
   if (ability.cantBlockAlone) parts.push('nie może blokować sam');
   if (ability.cantAttackUnlessDefenderHasFlying) parts.push('atakuje tylko, gdy obrońca ma latanie');
+  // Audyt Batch53/B5: ewazja Rust-Shield Rampagera („can't be blocked by
+  // creatures with power 2 or less") nie miała reprezentacji na kaflu.
+  if (ability.cantBeBlockedByPower != null) parts.push(`nie może być blokowany przez stwory o mocy ≤${ability.cantBeBlockedByPower}`);
   if (ability.faceDownEnterFlyingCounter) parts.push('zakryte stwory wchodzą z licznikiem flying');
   if (ability.costModifier) parts.push('obniża koszt czarów');
   return parts.join(' · ');
@@ -1561,7 +1564,6 @@ export function rulesText(info) {
     }).filter(Boolean).join('  ·  ')
     : '';
   const spellLine = info.spell ? describeSpellEffects(info.spell) : '';
-  const plotLine = info.plot ? `Plot {${info.plot.cost ?? '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equip = info.equipment;
   // M257 r3 (Greatsword of Tyr, „Equip {W}"): pipy KOLORÓW kosztu equipu —
   // to samo rozbicie generic + kolory co costTextOf/abilityCostHtml (M138/Z10:
@@ -1571,6 +1573,9 @@ export function rulesText(info) {
     const generic = Math.max(0, (n ?? 0) - colors.length);
     return [generic > 0 ? String(generic) : '', ...colors].filter(Boolean).join(', ');
   };
+  // Audyt Batch53/B1: koszt plotu z pipami kolorów (ten sam rozkład co equip;
+  // goła liczba kłamała, że {1}{W} płaci się dowolną maną).
+  const plotLine = info.plot ? `Plot {${equipPips(info.plot.cost, info.plot.colors) || '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equipLine = equip
     ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equipPips(equip.equipFor.equip, equip.equipFor.colors) || '?'}} · ` : ''}{${equipPips(equip.equip, equip.colors) || '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
     : '';
@@ -2315,6 +2320,14 @@ export function commandLabel(cmd, session, view) {
         // many — dopłata wyglądała na dwa razy droższą, niż jest.
         const kickerHtml = manaCostHtml(costSymbols(kicker.cost, kicker.colors));
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} + kicker ${kickerHtml})`;
+      }
+      // Audyt Batch53/B6: wariant Offspring bez własnej etykiety wyglądał
+      // IDENTYCZNIE jak zwykły rzut (klasa M101/B — dwa przyciski o różnym
+      // skutku). Format jak kicker.
+      if (cmd.offspring) {
+        const off = card?.offspring ?? {};
+        const offHtml = manaCostHtml(costSymbols(off.cost, off.colors));
+        return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} + offspring ${offHtml})`;
       }
       // C (uwaga właściciela, Makeshift Mauler / Fear of Abduction): wariant
       // kosztu „wygnaj kartę stwora z grobu / stwora z pola bitwy"

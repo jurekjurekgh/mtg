@@ -1639,13 +1639,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'trigger_target_resolved': {
         const src = objectOrLki(e.sourceId, e.cardId);
         if (e.noEffect) return `${src} — cel odrzucony, trigger bez efektu`;
-        const target = e.targetId == null
-          ? 'nic'
-          : (isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId));
+        // Audyt Batch53/B3: trigger wielocelowy (Glorifier „up to two") —
+        // log wymieniał tylko pierwszy cel, choć efekt bił we wszystkie.
+        const ids = (Array.isArray(e.targetIds) && e.targetIds.length > 1) ? e.targetIds : [e.targetId];
+        const target = ids.map((id) => (id == null ? 'nic' : (isPlayer(id) ? whoN(id) : nameOfObject(id)))).join(', ');
         // M242 (zgłoszenie H): jedyny legalny cel wymuszonego triggera —
         // wybór bez pytania, ale zapisany wprost (nie wygląda jak pominięcie).
         const autoNote = e.auto ? ' (jedyny legalny — automatycznie)' : '';
-        return `${src} — cel: ${target}${autoNote}`;
+        return `${src} — cel${ids.length > 1 ? 'e' : ''}: ${target}${autoNote}`;
       }
       case 'optional_trigger_required': return `${objectOrLki(e.sourceId, e.cardId)} — skorzystać z efektu „you may"? (${decisionOwnerNote(e.playerId)})`;
       // M138/Z7 (audyt Żywym Testerem): „Nieprzyjaciel korzysta z efektu «you
