@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "overallHash": "d9e266e5bb6a48d17e234e06b8ed8cf60979e6103dbca14a7922aae56e8ddc4a",
+  "overallHash": "fb8cece4b67028c3e3590f8a251e08a9b5f1299bdceffef7cbd80f4e5ad02059",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1000,
-      "hash": "1cf9e4cc10b52f6a97fb3865a21bb57b81d96f3fb1c6b24b16b3aeb534ca1b4d",
+      "hash": "db3682300c44a984ff2acf81001b13a92a693b87b9b501034b7a98d5931eb5df",
       "decisions": 245,
       "scoreSum": 3174.6,
       "chosenKinds": {
@@ -26,7 +26,7 @@
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1001,
-      "hash": "6f889c84cee660ad04617b529f097645093695a336fdfb6fd6421eda15722a12",
+      "hash": "cb3e73eb5d01359d6dc574d34a6016468623692a58ae3b1f922079a06611c7cc",
       "decisions": 234,
       "scoreSum": 1894.8036,
       "chosenKinds": {
@@ -45,9 +45,9 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1000,
-      "hash": "b6102299382ab90ebc7c88d50edd49a72ad1e93ba37bc7135aa9ede685d28f81",
+      "hash": "13a795499b1bbf4f47e0a49514f18031b98dd382ea08bb92534e4433c84e0573",
       "decisions": 168,
-      "scoreSum": 2522.2144,
+      "scoreSum": 2542.2144,
       "chosenKinds": {
         "activate_ability": 2,
         "attack": 4,
@@ -66,7 +66,7 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1001,
-      "hash": "2b2027883bc098bdde4a72a3c4bd7c1ddcd82fa844485ff142d6d7bbdb0c41c7",
+      "hash": "a01fe4e26cc9f89e4a7225de736264bef467a406c889e7af99c6ebbebd74aea6",
       "decisions": 189,
       "scoreSum": 2961.318,
       "chosenKinds": {
@@ -88,19 +88,19 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "027c6fe599f1331172c422277c773fdb77097c2a987b77008a5f3517daa594ce",
-      "decisions": 224,
-      "scoreSum": 2871.918,
+      "hash": "96ec43389731595e90f5f7ff308a7434956c44c95dd34ee6a0e1c03bb25ca919",
+      "decisions": 234,
+      "scoreSum": 1956.0945,
       "chosenKinds": {
-        "activate_ability": 3,
-        "attack": 4,
-        "block": 8,
+        "activate_ability": 7,
+        "attack": 3,
+        "block": 7,
         "cast_permanent": 7,
         "cast_spell": 2,
-        "pass_priority": 179,
+        "pass_priority": 186,
         "play_land": 7,
         "resolve_combat": 9,
-        "resolve_damage_assignment": 1,
+        "resolve_damage_assignment": 2,
         "resolve_endure_choice": 1,
         "resolve_exploit_choice": 1,
         "resolve_mulligan_choice": 1,

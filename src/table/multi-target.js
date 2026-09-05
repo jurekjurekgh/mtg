@@ -310,7 +310,7 @@ export function commandForProliferateSelection(commands, targetIds) {
 // M301 (zmierzone żywo: Wedgelight Rammer, Makeshift Mauler): pola KOSZTÓW
 // „tapnij stwora” i „wygnij kartę” to ten sam kształt „wybierz jednego
 // kandydata” — bez nich grupy padały na ścianę przycisków.
-const SINGLE_PICK_FIELDS = ['targetId', 'cardId', 'keepId', 'pickId', 'sacrificeLandId', 'armyId',
+const SINGLE_PICK_FIELDS = ['targetId', 'cardId', 'keepId', 'pickId', 'found', 'sacrificeLandId', 'armyId',
   'tapCreatureId', 'tapOtherCreatureId', 'exileTargetId'];
 
 /**
@@ -334,6 +334,9 @@ const SINGLE_PICK_EXCLUDED_TYPES = new Set([
 function isNonePickCommand(cmd, field) {
   if (!cmd) return false;
   if (field === 'cardId' && cmd.cardId === null) return true;
+  // Szukanie w bibliotece: odmowa (fail to find) to found == null (CR 701.19b)
+  // — tylko przy nieobowiązkowym szukaniu (mandatory=false).
+  if (field === 'found' && cmd.found == null) return true;
   return cmd.done === true || cmd.skip === true;
 }
 
@@ -342,12 +345,13 @@ function noneLabelOf(commands, field) {
   if (commands.some((cmd) => cmd?.done === true)) return 'Gotowe — bez wyboru';
   if (commands.some((cmd) => cmd?.skip === true)) return 'Pomiń';
   if (field === 'cardId') return 'Zakończ bez wyboru';
+  if (field === 'found') return 'Nie znajduj karty (rezygnacja)';
   return 'Nie wskazuj celu';
 }
 
 /** Nazwa wybieranego obiektu per pole — intro kreatora („wskaż …”). */
 function itemLabelOf(field) {
-  if (field === 'cardId' || field === 'pickId') return 'kartę';
+  if (field === 'cardId' || field === 'pickId' || field === 'found') return 'kartę';
   if (field === 'sacrificeLandId') return 'ląd do poświęcenia';
   if (field === 'armyId') return 'armię';
   if (field === 'keepId') return 'legendę do zachowania';
@@ -538,6 +542,19 @@ export function castWindowPlanOf(commands) {
  * bo warianty różnią się polami, których plan nie zna (stun, X, tryb…).
  */
 export function commandForCastWindowSelection(commands, rowId) {
+  return commandForOptionRow(commands, rowId);
+}
+
+/**
+ * A1/A2 cd. (zgłoszenie właściciela: modal z lupą → radio + Zatwierdź):
+ * ta sama logika opt-N co okna rzutu, wyeksportowana dla ogólnego planu
+ * przyciskowego (buttonsMode), żeby i tam Zatwierdź dawało właściwą komendę.
+ */
+export function commandForButtonsSelection(commands, rowId) {
+  return commandForOptionRow(commands, rowId);
+}
+
+function commandForOptionRow(commands, rowId) {
   const match = /^opt-(\d+)$/.exec(String(rowId ?? ''));
   if (!match) return null;
   return (commands ?? [])[Number(match[1])] ?? null;

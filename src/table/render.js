@@ -1935,6 +1935,20 @@ function choiceSourceTitle(cmd, session, view) {
     const zone = cmd.type === 'resolve_reveal_exile_hand' ? 'ręki' : 'grobu';
     return `${session.nameOf(view.pendingRevealExile.sourceCardId)} — karta z ${zone} do wygnania`;
   }
+  // A1/A2 (Final Parting): szukanie w bibliotece — tytuł modala musi nazywać
+  // ŹRÓDŁO (karta/efekt wywołujący szukanie) oraz CEL (do ręki / do grobu /
+  // na pole bitwy). Final Parting („jedna do ręki, druga do grobu") — bez
+  // tej informacji gracz nie wiedział, której z dwóch kart dotyczy obecny
+  // wybór (A2). Źródło z pendingu jak pozostałe decyzje (ADR 0002 — bez
+  // nazw kart w kodzie); destination opisuje cel przez nazwę strefy.
+  if (cmd?.type === 'resolve_search_choice' && view?.pendingSearchChoice) {
+    const psc = view.pendingSearchChoice;
+    const src = psc.sourceCardId ? session.nameOf(psc.sourceCardId) : 'Szukanie w bibliotece';
+    const destMap = { hand: 'do ręki', graveyard: 'do grobu', battlefield: 'na pole bitwy' };
+    const destLabel = destMap[cmd.destination ?? psc.destination] ?? null;
+    if (destLabel) return `${src} — wybierz kartę ${destLabel}`;
+    return `${src} — wybierz kartę`;
+  }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
   let object = null;
