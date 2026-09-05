@@ -5071,6 +5071,95 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score += (card.power ?? 0) * 2 + (card.toughness ?? 0);
         return finish(score);
       }
+      // M130 (pętla jakości 2026-09-05): resolve_exploit_choice (M69, Exploit,
+      // CR 702.110) — decyzja: poświęć wybranego stwora, żeby odpalić trigger
+      // „when this creature exploits a creature", albo skip. Bot dotąd nie
+      // oceniał ofiar (score 0 → remis → pierwsza oferta) i potrafił poświęcić
+      // najsilniejszego stwora. Reguła: poświęcenie KUPUJE trigger exploita
+      // (stały bonus), ale kosztuje permanent — wybierz NAJSŁABSZEGO kandydata
+      // (minimum straty); skip, jeżeli w ogóle nie ma co zyskać (np. bez
+      // triggerów exploita na źródle — tu bezpieczna domyślna: poświęć słabego).
+      case 'resolve_exploit_choice': {
+        if (cmd.skip === true) return finish(20);
+        const victim = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
+        if (!victim || victim.controllerId !== view.playerId) return finish(-50);
+        // Wartość ofiary jak w resolve_sacrifice_choice (C-R3b).
+        const value = victim.kind === 'creature' || (victim.types ?? []).includes('Creature')
+          ? (victim.power ?? 0) * 2 + (victim.toughness ?? 0)
+          : (victim.manaCost ?? 0) * 2;
+        // Poświęcenie jest warte mniej, im cenniejsza ofiara; preferuj najtańszego
+        // (chump/token 1/1). Bazowy zysk z exploita (≈15) musi przewyższyć stratę.
+        return finish(40 - value);
+      }
+      // M130 (Cuombajj Witches i pokrewne): przeciwnik wybiera cel OBRAŻEŃ
+      // ({T}: zadać 1 obrażenie celowi). My (bot) wybieramy jako przeciwnik w
+      // tej decyzji → powinniśmy wybrać cel NAJBARDZIEJ DLA NAS KORZYSTNY,
+      // czyli zranić WŁASNEGO stwora najmniej szkodliwie albo zabić wrogiego
+      // stworowi z 1 wytrzymałością (lethal). Bez wyceny bot wybierał pierwszą
+      // ofertę z listy (zawsze własnego stwora o najwyższej wartości).
+      // Reguła generyczna (ADR 0002): najlepszy cel to wrogi stwór z 1
+      // pozostałą wytrzymałością (dobicie), potem najsłabszy z naszych.
+      case 'resolve_opponent_target': {
+        const tgt = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
+        if (tgt) {
+          const isMine = tgt.controllerId === view.playerId;
+          const remaining = (tgt.toughness ?? 0) - (tgt.damage ?? 0);
+          // Zabić wrogiego stwora jednym obrażeniem — najlepsza opcja.
+          if (!isMine && remaining <= 1) {
+            return finish(100 + (tgt.power ?? 0) * 2);
+          }
+          // Zranić wrogi stwór, ale nie zabić — małą korzyścią jest to, że
+          // nie zadajemy obrażeń sobie.
+          if (!isMine) return finish(30);
+          // Zranić WŁASNEGO stwora — kara; najlżej jest zranić stwora,
+          // który i tak nie zginie z tego powodu (pozostała wytrzymałość > 1).
+          if (remaining > 1) return finish(10 - ((tgt.power ?? 0) + (tgt.toughness ?? 0)));
+          // Zranić własnego na śmierć — miażdżąca kara.
+          return finish(-80 - (tgt.power ?? 0) * 2 - (tgt.toughness ?? 0));
+        }
+        // Cel-gracz: zadaję obrażenie PRZECIWNIKOWI czy sobie?
+        const foe = enemy(view);
+        if (cmd.targetId === view.playerId) return finish(-40); // sobie — nie
+        if (foe && cmd.targetId === foe.id) return finish(15); // wroga — OK
+        return finish(0);
+      }
+      // M130 (Benevolent Blessing / Manor Gate): wybór koloru (ochrona albo gate).
+      // Dla ochrony (protection) — wybierz kolor, który ma najwięcej wrogich
+      // stworów (ochrona realnie kogoś zneutralizuje, L200/H M235). Dla gate
+      // (Manor Gate) wybierz kolor potrzebny do rzucania kart w ręce — ten sam
+      // model co land choice. Ponieważ widok nie niesie trybu (ochrona/gate),
+      // używamy generycznej heurystyki: preferuj kolor, którego najwięcej
+      // brakuje do rzucenia kart w ręce (manabaza), a w razie remisu — kolor,
+      // w którym wróg ma najwięcej stworów (ochrona = bonus).
+      case 'resolve_color_choice': {
+        const color = cmd.color;
+        if (!color) return finish(0);
+        const COLOR_ORDER = ['W', 'U', 'B', 'R', 'G'];
+        const idx = COLOR_ORDER.indexOf(color);
+        if (idx < 0) return finish(0);
+        // (1) Potrzeba koloru w ręce (podobnie jak w landAnaliza).
+        const available = new Map();
+        for (const o of (view.zones.battlefield ?? [])) {
+          if (o.controllerId !== view.playerId) continue;
+          for (const c of getSourceForObject(o, null)?.colors ?? []) {
+            available.set(c, (available.get(c) ?? 0) + 1);
+          }
+        }
+        const need = new Map();
+        for (const o of view.zones.hand ?? []) {
+          if (!o || o.kind === 'land' || o.id == null) continue;
+          for (const jednostka of coloredPipsOf(o.cardId)) {
+            if (jednostka.some((k) => (available.get(k) ?? 0) > 0)) continue;
+            for (const k of jednostka) need.set(k, (need.get(k) ?? 0) + 1);
+          }
+        }
+        const needScore = need.get(color) ?? 0;
+        // (2) Liczba wrogich stworów w tym kolorze (dla ochrony).
+        const enemyInColor = (view.zones.battlefield ?? []).filter((o) =>
+          o.controllerId !== view.playerId && o.kind === 'creature'
+          && (o.colors ?? []).includes(color)).length;
+        return finish(5 + needScore * 6 + enemyInColor);
+      }
       case 'pass_priority': return finish(0);
       default: return finish(0);
     }
@@ -5323,6 +5412,95 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       return { zablokowane, ofiary, blokuje: Object.keys(przypisania).length };
     }
+    // M130-rodzina (pętla jakości 2026-09-05): projekcje dla ROZSTRZYGNIĘĆ
+    // WYBORÓW (resolve_*). Audyt remisów (tools/bot-tie-audit.mjs) oznaczał je
+    // jako „bez danych" (tieProjection zwracał null), więc nie mógł odróżnić
+    // uczciwego remisu od ślepoty wyceny (klasa L117: remis jest tak samo
+    // arbitralny jak brak wyceny). Projekcja zwraca DANE, które scoreCommand
+    // wziął pod uwagę (te same generatory wartości), nie same punkty — jedno
+    // źródło prawdy (L28/L41).
+    if (cmd?.type === 'resolve_discard_choice') {
+      if (cmd.cardId == null) return { skip: 1 };
+      const mine = (view.zones.hand ?? []).some((o) => o.id === cmd.cardId);
+      const card = (view.zones.hand ?? []).find((o) => o.id === cmd.cardId)
+        ?? view.zones.library.find((o) => o.id === cmd.cardId);
+      return { mine: mine ? 1 : 0, cost: card?.manaCost ?? 0 };
+    }
+    if (cmd?.type === 'resolve_search_choice') {
+      if (cmd.found == null) return { skip: 1 };
+      const card = view.zones.library.find((o) => o.id === cmd.found);
+      return {
+        land: card?.kind === 'land' ? 1 : 0,
+        cost: card?.manaCost ?? 0,
+        power: card?.power ?? 0,
+        toughness: card?.toughness ?? 0,
+      };
+    }
+    if (cmd?.type === 'resolve_trigger_target') {
+      // Jednolite projekcje dla celów triggerów (stół + otwarte strefy + gracz).
+      const ids = Array.isArray(cmd.targetIds) ? cmd.targetIds : [cmd.targetId];
+      const proj = ids.map((id) => {
+        if (id == null) return null;
+        if (id === view.playerId) return { self: 1 };
+        if (id === enemy(view)?.id) return { foe: 1 };
+        const onBoard = objectOnBoard(view, id);
+        if (onBoard) {
+          return {
+            mine: onBoard.controllerId === view.playerId ? 1 : 0,
+            value: (onBoard.power ?? 0) * 2 + (onBoard.toughness ?? 0),
+          };
+        }
+        const open = openZoneCard(view, id);
+        if (open) {
+          return {
+            mine: open.controllerId === view.playerId ? 1 : 0,
+            value: offBoardCardValue(open),
+            zone: 'open',
+          };
+        }
+        return { id };
+      });
+      return Array.isArray(cmd.targetIds) ? { targets: proj } : proj[0];
+    }
+    if (cmd?.type === 'resolve_exploit_choice') {
+      if (cmd.done === true) return { done: 1 };
+      const t = objectOnBoard(view, cmd.targetId);
+      return {
+        value: t ? (t.power ?? 0) * 2 + (t.toughness ?? 0) + (t.keywords?.length ?? 0) : 0,
+      };
+    }
+    if (cmd?.type === 'resolve_opponent_target') {
+      const t = objectOnBoard(view, cmd.targetId);
+      return t ? { value: (t.power ?? 0) * 2 + (t.toughness ?? 0) } : { id: cmd.targetId };
+    }
+    if (cmd?.type === 'resolve_color_choice') {
+      return { color: cmd.color ?? null };
+    }
+    if (cmd?.type === 'resolve_modal_choice' && cmd.modeIndex != null) {
+      return { mode: cmd.modeIndex };
+    }
+    if (cmd?.type === 'resolve_look_top_choice' || cmd?.type === 'resolve_satyr_look_choice'
+        || cmd?.type === 'resolve_graveyard_top_choice' || cmd?.type === 'resolve_delirium_target'
+        || cmd?.type === 'resolve_mentor_target' || cmd?.type === 'resolve_room_target') {
+      // Wszystkie wybory z JEDNYM celem (karta z biblioteki/grobu/pokoju, cel
+      // na stole) — projekcja to wartość tego celu (ta sama co scoreCommand).
+      const id = cmd.pickId ?? cmd.targetId ?? cmd.found ?? null;
+      if (id == null && cmd.done === true) return { done: 1 };
+      const obj = (id && objectOnBoard(view, id))
+        ?? (id && openZoneCard(view, id))
+        ?? view.zones.library.find((o) => o.id === id)
+        ?? null;
+      if (!obj) return { picked: 0 };
+      const types = obj.types ?? obj.cardId ? cardDef(obj.cardId)?.types : [];
+      const isCreature = obj.kind === 'creature' || (types ?? []).includes('Creature');
+      return {
+        land: obj.kind === 'land' ? 1 : 0,
+        power: obj.power ?? 0,
+        toughness: obj.toughness ?? 0,
+        cost: obj.manaCost ?? 0,
+        creature: isCreature ? 1 : 0,
+      };
+    }
     if (cmd?.type !== 'play_land') return null;
     const o = (view.zones.hand ?? []).find((x) => x?.id === cmd.objectId);
     if (!o) return null;
@@ -5373,6 +5551,41 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // remis rozstrzygalnym dla bramki.
       const o = (view?.zones?.hand ?? []).find((x) => x?.id === cmd.objectId);
       return `play_land(${cmd.objectId}${o?.cardId ? ':' + o.cardId : ''})`;
+    }
+    // M130-rodzina: nazwy wariantów rozstrzygnięć wyborów (L34/L40/M195/M203) —
+    // bez nich wszystkie warianty jednego type są nierozróżnialne w śladzie i
+    // tieProjection nie ma czego parować.
+    if (cmd.type === 'resolve_discard_choice') {
+      return cmd.cardId == null
+        ? 'resolve_discard_choice(skip)'
+        : `resolve_discard_choice(${cmd.cardId})`;
+    }
+    if (cmd.type === 'resolve_search_choice') {
+      return cmd.found == null
+        ? 'resolve_search_choice(skip)'
+        : `resolve_search_choice(${cmd.found})`;
+    }
+    if (cmd.type === 'resolve_trigger_target') {
+      const ids = Array.isArray(cmd.targetIds) ? cmd.targetIds : [cmd.targetId];
+      return `resolve_trigger_target(${ids.map((x) => x ?? 'none').join('+')})`;
+    }
+    if (cmd.type === 'resolve_exploit_choice') {
+      return cmd.done === true
+        ? 'resolve_exploit_choice(done)'
+        : `resolve_exploit_choice(${cmd.targetId ?? '?'})`;
+    }
+    if (cmd.type === 'resolve_opponent_target') {
+      return `resolve_opponent_target(${cmd.targetId ?? '?'})`;
+    }
+    if (cmd.type === 'resolve_color_choice') {
+      return `resolve_color_choice(${cmd.color ?? '?'})`;
+    }
+    if (cmd.type === 'resolve_look_top_choice' || cmd.type === 'resolve_satyr_look_choice'
+        || cmd.type === 'resolve_graveyard_top_choice' || cmd.type === 'resolve_delirium_target'
+        || cmd.type === 'resolve_mentor_target' || cmd.type === 'resolve_room_target') {
+      const id = cmd.pickId ?? cmd.targetId ?? cmd.found ?? null;
+      const done = cmd.done === true ? 'done' : null;
+      return `${cmd.type}(${id ?? done ?? '?'})`;
     }
     return cmd.type;
   }
