@@ -1431,8 +1431,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // kopiujemy też entersWithCounters/If. Zawsze 1/1, niezależnie od P/T
   // oryginału po buffach.
   if (effect.type === 'create_offspring_token') {
-    const src = state.objects.get(sourceObject.id);
-    if (!src || src.zone !== 'battlefield' || src.kind !== 'creature') return;
+    const live = state.objects.get(sourceObject.id);
+    const liveOk = live && live.zone === 'battlefield' && live.kind === 'creature';
+    // Audyt PR #96/F3: ruling Offspring (BLB) — token powstaje także gdy
+    // źródło opuściło pole bitwy przed rozstrzygnięciem; cechy bierze wtedy
+    // z ostatniej znanej informacji (CR 603.10/608.2b).
+    const lki = !liveOk ? sourceObject?.lkiPrint : null;
+    const src = liveOk ? live : (lki && lki.kind === 'creature' ? lki : null);
+    if (!src) return;
     const ctrl = src.controllerId;
     const copyName = src.cardName ?? src.cardId ?? 'Copy';
     const token = createBattlefieldToken(state, ctrl, {

@@ -5,6 +5,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { moveObjectDirectly } from '../src/engine/objects.js';
 import { legalBlockerOptions } from '../src/engine/combat.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 
@@ -257,6 +258,32 @@ test('B53: Rust-Shield Rampager — Offspring {2}: 1/1 token-kopia', () => {
   resolveStack(state);
   const token = [...state.objects.values()].find((o) => o.zone === 'battlefield' && o.cardId === 'rust-shield-rampager' && o.isToken);
   assert.ok(token, 'token-kopia utworzony');
+  assert.equal(token.power, 1);
+  assert.equal(token.toughness, 1);
+  assert.deepEqual(token.subtypes, ['Raccoon', 'Warrior']);
+  assert.equal(token.controllerId, 'p1');
+});
+
+test('B53: Rust-Shield Rampager — token z LKI mimo zejścia źródła (F3)', () => {
+  // Ruling Offspring (BLB): „If the creature leaves the battlefield before
+  // the triggered ability resolves, the token is still created”.
+  const state = game();
+  addMana(state, 'p1', 6, { colors: ['G'] });
+  addCard(state, 'ram', 'rust-shield-rampager', 'p1', 'hand');
+  const offer = commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'ram' && c.offspring === true);
+  assert.ok(offer, 'oferta wariantu offspring');
+  assert.ok(execute(state, offer).ok);
+  resolveStack(state, 2); // rzut schodzi; trigger ETB czeka na stosie
+  const trig = state.zones.stack.map((id) => state.objects.get(id)).find((o) => o?.kind === 'trigger');
+  assert.ok(trig, 'trigger ETB na stosie');
+  const perm = [...state.objects.values()].find((o) => o.zone === 'battlefield' && o.cardId === 'rust-shield-rampager' && !o.isToken);
+  assert.ok(perm, 'źródło na polu bitwy przed rozstrzygnięciem triggera');
+  // Realna ścieżka śmierci (ten sam choke point co destroy_permanent):
+  // stary identyfikator znika ze state.objects (CR 400.7).
+  moveObjectDirectly(state, perm.id, 'graveyard', 'grave-ram');
+  resolveStack(state);
+  const token = [...state.objects.values()].find((o) => o.zone === 'battlefield' && o.cardId === 'rust-shield-rampager' && o.isToken);
+  assert.ok(token, 'token-kopia z LKI mimo zejścia źródła');
   assert.equal(token.power, 1);
   assert.equal(token.toughness, 1);
   assert.deepEqual(token.subtypes, ['Raccoon', 'Warrior']);
