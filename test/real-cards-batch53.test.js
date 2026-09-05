@@ -442,6 +442,10 @@ test('B53: Glorifier — poświęcenie artefaktu → refleks z licznikami na obu
   const sac = commands(state).find((c) => c.type === 'resolve_sacrifice_choice' && c.targetId === 'art');
   assert.ok(sac, 'artefakt na liście ofiar („another artifact")');
   assert.ok(execute(state, sac).ok);
+  // Audyt PR #96/F4: ścieżka `take` emituje rozstrzygnięcie wyboru.
+  const resolved = state.events.find((e) => e.type === 'reflexive_sacrifice_resolved');
+  assert.ok(resolved, 'emisja reflexive_sacrifice_resolved po poświęceniu');
+  assert.equal(resolved.sacrificed, true);
   // Po poświęceniu jeszcze NIE ma liczników — refleks dopiero zbiera cele.
   assert.equal(state.objects.get('own')?.counters?.['+1/+1'], undefined);
   assert.equal(state.objects.get('foe')?.counters?.['+1/+1'], undefined);

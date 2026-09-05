@@ -4130,6 +4130,12 @@ export function execute(state, input) {
     // zdolności `trigger.event === 'reflexive_sacrifice'` kolejkuje decyzję
     // celów (up to two creatures) — dokładnie dwustopniowy timing z rulinga.
     if (pending.reflexiveEvent) {
+      // Audyt PR #96/F4: ścieżka `take` też rozstrzyga wybór (wzorzec
+      // food_choice) — bez tego gałąź `sacrificed:true` w session.js martwa.
+      state.events.push(event('reflexive_sacrifice_resolved', {
+        playerId: pending.playerId, sourceId: pending.sourceId ?? null,
+        cardId: pending.cardId ?? null, sacrificed: true, sacrificedId: moved.id,
+      }));
       state.events.push(event(pending.reflexiveEvent, {
         sourceId: pending.sourceId, cardId: pending.cardId ?? null,
         sacrificedId: moved.id, playerId: pending.playerId,
