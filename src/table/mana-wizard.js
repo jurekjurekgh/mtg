@@ -63,6 +63,14 @@ export function untappedLandSourcesOf(view, playerId) {
   return out;
 }
 
+/** Składanka tekstowa kosztu aktywacji zdolności many (HTML robi manaSymbolsHtml). */
+function activationCostSymbols({ generic, colors }) {
+  const gen = Math.max(0, generic ?? 0);
+  const pips = Array.isArray(colors) ? colors : [];
+  if (gen === 0 && pips.length === 0) return '';
+  return `${gen > 0 ? `{${gen}}` : ''}${pips.map((c) => `{${c}}`).join('')}`;
+}
+
 /**
  * Czy zdolność aktywowana produkuje manę (efekt add_mana). Generyczna — nie
  * zna nazw kart; deskryptor effect może być obiektem albo listą.
@@ -112,11 +120,25 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
     if (seen.has(cmd.objectId)) continue;
     const info = abilityInfo(cmd.objectId, cmd.abilityIndex);
     if (!info || info.isLand) continue; // lądy pokryte tap_for_mana
-    const netGain = (info.amount ?? 0) - (info.manaCost ?? 0);
-    if (netGain <= 0) continue; // net niepozytywny — nie opłaca się tapować
+    // M311 (zgłoszenie właściciela, Apprentice Wizard „{U}, {T}: Add
+    // {C}{C}{C}"): koszt aktywacji NIE jest netowany z produkcją TEGO źródła —
+    // różne waluty (produkcja bezbarwna {C}, pip kosztu kolorowy {U}; CR
+    // 107.4a) i różne momenty (koszt płaci spendMana z puli albo auto-tapu
+    // INNYCH źródeł PRZED produkcją, CR 601.2h). Dawne „3 − 1 = 2" kłamało
+    // w opisie (pula rośnie o 3) i w planie (nadmiarowa mana przeciekała do
+    // puli poza planem). Źródło niesie PEŁNĄ produkcję + koszt osobno; solver
+    // (countPaymentVariants) dolicza koszt do zapotrzebowania.
+    const costColors = Array.isArray(info.costColors) ? info.costColors : [];
+    const costMana = info.manaCost ?? 0;
+    const activationGeneric = Math.max(0, costMana - costColors.length);
+    const produkcja = info.amount ?? 0;
+    if (produkcja - activationGeneric <= 0) continue; // netto nic nie zyskujemy
     seen.add(cmd.objectId);
     sources.push({
-      id: cmd.objectId, cardId: info.cardId, colors: info.colors ?? [], amount: netGain,
+      id: cmd.objectId, cardId: info.cardId, colors: info.colors ?? [], amount: produkcja,
+      activationCost: costMana > 0
+        ? { generic: activationGeneric, colors: [...costColors] }
+        : null,
       kind: 'ability',
       command: { type: 'activate_ability', playerId, objectId: cmd.objectId, abilityIndex: cmd.abilityIndex },
     });
@@ -360,10 +382,20 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
   const subset = [];
   const walk = (start, size, sumAmount) => {
     if (variants.size >= cap) return;
-    if (size >= minSize && sumAmount >= need) {
-      if (coveredRequirementCount(subset, requirements) >= requirements.length) {
+    // M311: źródła-zdolności z kosztem aktywacji doliczają go do
+    // zapotrzebowania (CR 601.2h — koszt płaci pula/inne źródła PRZED
+    // produkcją): generic do sumy, pipy kolorowe jako DODATKOWE wymagania
+    // pokrywane przez INNE wybrane źródła (produkcja tego źródła nie płaci
+    // własnego kosztu). Dokładne rozliczenie robi silnik (spendMana);
+    // tu decyduje kształt płatności i liczba realnych wariantów.
+    const costGeneric = subset.reduce((acc, s) => acc + (s.activationCost?.generic ?? 0), 0);
+    const costPips = subset.flatMap((s) => s.activationCost?.colors ?? []);
+    const allReqs = costPips.length > 0 ? [...requirements, ...costPips.map((c) => [c])] : requirements;
+    if (size >= minSize && sumAmount - costGeneric >= need) {
+      if (coveredRequirementCount(subset, allReqs) >= allReqs.length) {
         const key = subset
-          .map((s) => `${[...s.colors].sort().join('')}#${s.amount ?? 1}`)
+          .map((s) => `${[...s.colors].sort().join('')}#${s.amount ?? 1}#`
+            + (s.activationCost ? `${s.activationCost.generic}:${[...(s.activationCost.colors ?? [])].sort().join('')}` : '-'))
           .sort()
           .join('|');
         variants.add(key);
@@ -471,6 +503,12 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
   list.className = 'mana-wizard-sources choice-request-options';
   for (const source of model.untappedSources) {
     const gain = source.amount !== 1 ? ` +${source.amount}` : '';
+    // M311: koszt aktywacji zdolności many pokazywany WPROST („koszt aktywacji
+    // {U}") — nie jest wliczony w gain (pełna produkcja), bo płaci go pula/
+    // inne źródła (CR 601.2h), nie produkcja tego źródła.
+    const cost = source.activationCost
+      ? ` — koszt aktywacji ${manaSymbolsHtml(activationCostSymbols(source.activationCost))}`
+      : '';
     // M292: wiersz rysuje TEN SAM komponent co kreatory wyboru i steppery
     // (`src/table/picker.js`, `kind: 'button'`) — wspólne 44 px celu dotyku i
     // wspólna etykieta, zero osobnej funkcji wizualizującej dla tego ekranu.
@@ -479,7 +517,7 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
     renderPickerRow(list, {
       kind: 'button',
       id: source.id,
-      html: `Tapnij: ${escapeHtml(source.name)} (${sourceColorsLabel(source.colors)}${gain})`,
+      html: `Tapnij: ${escapeHtml(source.name)} (${sourceColorsLabel(source.colors)}${gain})${cost}`,
       rowClassName: 'action choice-request-option mana-wizard-source',
       onActivate: (sourceId) => onTapSource?.(sourceId),
     });
