@@ -1946,23 +1946,41 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           && ['precombat_main', 'combat'].includes(view.turn.phase)) value += 2 + (recipient.power ?? 0);
         else value -= 10;
       } else if (kw === 'vigilance') {
-        // M221/D (zgłoszenie właściciela, Bladed Sentinel „{W}: vigilance do
-        // końca tury"): vigilance = „nie tapuje się, gdy atakuje" (CR 702.21).
-        // Ma sens WYŁĄCZNIE, gdy stwór zaraz zaatakuje w MOJEJ turze i jest
-        // odkręcony — wtedy zachowa blok po ataku. Bot wykupywał ją w turze
-        // przeciwnika (gdzie nie atakuje) i nawet na ZATAPNIĘTYM stworze —
-        // podwójne marnotrawstwo many. Reguła po STANIE (moja tura + zaraz
-        // atak + odkręcony), nie po nazwie kroku (L42/L64), bez nazw kart.
-        if (attacking) {
-          // Już atakuje — jeśli jeszcze nietapnięty, vigilance zatrzyma go
-          // odkręconego do obrony; wartość rośnie z jego wytrzymałością.
-          value += !recipient.tapped ? 2 + (recipient.toughness ?? 0) : -10;
-        } else if (myTurn(view) && canAttackNow(recipient)
-          && ['precombat_main', 'combat'].includes(view.turn.phase)
-          && ['main1', 'beginning_of_combat', 'declare_attackers'].includes(view.turn.step)) {
-          // Przed własnym atakiem, stwór gotowy — vigilance kupuje blok po ataku.
+        // M221/D + B (zgłoszenie właściciela, Bladed Sentinel „{W}: vigilance
+        // do końca tury"): vigilance = „nie tapuje się, gdy atakuje" (CR 702.21).
+        // Daje korzyść WYŁĄCZNIE jeśli ten stwór ATAKUJE w tej turze i pozostanie
+        // odkręcony do bloku. Kupowanie go w main1 (przed decyzją o ataku)
+        // marnuje manę — bot po takim kupnie nie atakował (widział presję
+        // wroga albo nie miał po co), a many nie odzyska. Reguła: vigilance
+        // opłaca się TYLKO wtedy, gdy (a) stwór już jest w fazie walki i atakuje
+        // (deklaracja atakujących, odpowiedź na bloki), albo (b) jest w KROKU
+        // declare_attackers, a my właśnie o tym decydujemy. Przed walką
+        // (main1/beginning_of_combat) nie kupujemy — poczekamy na atak.
+        // Nazwy karty NIE ma w regule (ADR 0002); warunek po STANIE
+        // (recipient.tapped, krok/faza, czy atakuje — L42/L64).
+        const myTurnCombat = myTurn(view)
+          && view.turn.phase === 'combat'
+          && ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step);
+        if (attacking && !recipient.tapped) {
+          // Stwór ATAKUJE i jest odkręcony — vigilance zatrzyma go odkręconym.
+          // Wartość rośnie z wytrzymałością (im twardszy, tym cenniejszy blok).
+          value += 2 + (recipient.toughness ?? 0);
+        } else if (blocking) {
+          // Blokowanie: vigilance nie pomaga (stwór i tak nie atakuje).
+          value -= 5;
+        } else if (myTurnCombat && canAttackNow(recipient)
+                   && view.turn.step === 'declare_attackers') {
+          // Jesteśmy dokładnie w kroku deklaracji atakujących — jeśli mamy
+          // zamiar wysłać tego stwora, vigilance opłaca się. Ta gałąź
+          // odpowiada kupowaniu z PRZYCISKU w wizardzie ataku (a nie main1).
+          // Ujemne w stosunku do wariantu attacking (nie wiemy jeszcze czy
+          // gracz wybierze atak) — wystarczy mała premia, żeby opcja nie była
+          // karana, ale nie tak duża, żeby kupować bez ataku.
           value += 2 + (recipient.toughness ?? 0);
         } else {
+          // Każda inna sytuacja (main1, tura przeciwnika, stwór zatapnięty)
+          // — marnowanie many. Wcześniej gałąź precombat_main dawała +value
+          // nawet BEZ zamiaru ataku → bug B: kupione w main1, po czym brak ataku.
           value -= 10;
         }
       } else {
@@ -5071,6 +5089,143 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score += (card.power ?? 0) * 2 + (card.toughness ?? 0);
         return finish(score);
       }
+      // M130 (pętla jakości 2026-09-05): resolve_exploit_choice (M69, Exploit,
+      // CR 702.110) — decyzja: poświęć wybranego stwora, żeby odpalić trigger
+      // „when this creature exploits a creature", albo skip. Bot dotąd nie
+      // oceniał ofiar (score 0 → remis → pierwsza oferta) i potrafił poświęcić
+      // najsilniejszego stwora. Reguła: poświęcenie KUPUJE trigger exploita
+      // (stały bonus), ale kosztuje permanent — wybierz NAJSŁABSZEGO kandydata
+      // (minimum straty); skip, jeżeli w ogóle nie ma co zyskać (np. bez
+      // triggerów exploita na źródle — tu bezpieczna domyślna: poświęć słabego).
+      case 'resolve_exploit_choice': {
+        if (cmd.skip === true) return finish(20);
+        const victim = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
+        if (!victim || victim.controllerId !== view.playerId) return finish(-50);
+        // Wartość ofiary jak w resolve_sacrifice_choice (C-R3b).
+        const value = victim.kind === 'creature' || (victim.types ?? []).includes('Creature')
+          ? (victim.power ?? 0) * 2 + (victim.toughness ?? 0)
+          : (victim.manaCost ?? 0) * 2;
+        // Poświęcenie jest warte mniej, im cenniejsza ofiara; preferuj najtańszego
+        // (chump/token 1/1). Bazowy zysk z exploita (≈15) musi przewyższyć stratę.
+        return finish(40 - value);
+      }
+      // M130 (Cuombajj Witches i pokrewne): przeciwnik wybiera cel OBRAŻEŃ
+      // ({T}: zadać 1 obrażenie celowi). My (bot) wybieramy jako przeciwnik w
+      // tej decyzji → powinniśmy wybrać cel NAJBARDZIEJ DLA NAS KORZYSTNY,
+      // czyli zranić WŁASNEGO stwora najmniej szkodliwie albo zabić wrogiego
+      // stworowi z 1 wytrzymałością (lethal). Bez wyceny bot wybierał pierwszą
+      // ofertę z listy (zawsze własnego stwora o najwyższej wartości).
+      // Reguła generyczna (ADR 0002): najlepszy cel to wrogi stwór z 1
+      // pozostałą wytrzymałością (dobicie), potem najsłabszy z naszych.
+      case 'resolve_opponent_target': {
+        const tgt = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
+        if (tgt) {
+          const isMine = tgt.controllerId === view.playerId;
+          const remaining = (tgt.toughness ?? 0) - (tgt.damage ?? 0);
+          // Zabić wrogiego stwora jednym obrażeniem — najlepsza opcja.
+          if (!isMine && remaining <= 1) {
+            return finish(100 + (tgt.power ?? 0) * 2);
+          }
+          // Zranić wrogi stwór, ale nie zabić — małą korzyścią jest to, że
+          // nie zadajemy obrażeń sobie.
+          if (!isMine) return finish(30);
+          // Zranić WŁASNEGO stwora — kara; najlżej jest zranić stwora,
+          // który i tak nie zginie z tego powodu (pozostała wytrzymałość > 1).
+          if (remaining > 1) return finish(10 - ((tgt.power ?? 0) + (tgt.toughness ?? 0)));
+          // Zranić własnego na śmierć — miażdżąca kara.
+          return finish(-80 - (tgt.power ?? 0) * 2 - (tgt.toughness ?? 0));
+        }
+        // Cel-gracz: zadaję obrażenie PRZECIWNIKOWI czy sobie?
+        const foe = enemy(view);
+        if (cmd.targetId === view.playerId) return finish(-40); // sobie — nie
+        if (foe && cmd.targetId === foe.id) return finish(15); // wroga — OK
+        return finish(0);
+      }
+      // M130 (Benevolent Blessing / Manor Gate): wybór koloru (ochrona albo gate).
+      // Dla ochrony (protection) — wybierz kolor, który ma najwięcej wrogich
+      // stworów (ochrona realnie kogoś zneutralizuje, L200/H M235). Dla gate
+      // (Manor Gate) wybierz kolor potrzebny do rzucania kart w ręce — ten sam
+      // model co land choice. Ponieważ widok nie niesie trybu (ochrona/gate),
+      // używamy generycznej heurystyki: preferuj kolor, którego najwięcej
+      // brakuje do rzucenia kart w ręce (manabaza), a w razie remisu — kolor,
+      // w którym wróg ma najwięcej stworów (ochrona = bonus).
+      case 'resolve_color_choice': {
+        const color = cmd.color;
+        if (!color) return finish(0);
+        const COLOR_ORDER = ['W', 'U', 'B', 'R', 'G'];
+        const idx = COLOR_ORDER.indexOf(color);
+        if (idx < 0) return finish(0);
+        // (1) Potrzeba koloru w ręce (podobnie jak w landAnaliza).
+        const available = new Map();
+        for (const o of (view.zones.battlefield ?? [])) {
+          if (o.controllerId !== view.playerId) continue;
+          for (const c of getSourceForObject(o, null)?.colors ?? []) {
+            available.set(c, (available.get(c) ?? 0) + 1);
+          }
+        }
+        const need = new Map();
+        for (const o of view.zones.hand ?? []) {
+          if (!o || o.kind === 'land' || o.id == null) continue;
+          for (const jednostka of coloredPipsOf(o.cardId)) {
+            if (jednostka.some((k) => (available.get(k) ?? 0) > 0)) continue;
+            for (const k of jednostka) need.set(k, (need.get(k) ?? 0) + 1);
+          }
+        }
+        const needScore = need.get(color) ?? 0;
+        // (2) Liczba wrogich stworów w tym kolorze (dla ochrony).
+        const enemyInColor = (view.zones.battlefield ?? []).filter((o) =>
+          o.controllerId !== view.playerId && o.kind === 'creature'
+          && (o.colors ?? []).includes(color)).length;
+        return finish(5 + needScore * 6 + enemyInColor);
+      }
+      // M131 (pętla jakości 2026-09-05): kolejne typy decyzji, które dotąd
+      // nie miały case w scoreCommand (spadały do default: finish(0) →
+      // pierwsza oferta).
+      //
+      // Fabricate (CR 702.122, Servo Exhibition-type): wybierz „+1/+1 counter
+      // na źródle" ALBO „stwórz X 1/1 Servo tokenów". Preferuj tokeny, gdy
+      // na stole jest mniej własnych stworów (rozlewają board); w innym wypadku
+      // pompuj istniejące. Generycznie (ADR 0002): tokeny mają przewagę liczebną
+      // + synergia z anthem/trample/evasion; counter lepszy, gdy stwór już atakuje.
+      case 'resolve_fabricate': {
+        if (cmd.mode === 'tokens') return finish(15);
+        if (cmd.mode === 'counters') return finish(10);
+        return finish(0);
+      }
+      // Manifest Dread (M251, Batch 46): z dwóch wierzchnich kart wybierz jedną
+      // do zmanifestowania (face-down 2/2), druga idzie do grobu. Wybierz kartę,
+      // której strata MNIEJ boli (gorsza), żeby zachować wartościową na potem.
+      // Face-down 2/2 jest w 100% wymienny niezależnie od karty pod spodem
+      // (dopóki jej nie odwrócimy), więc decyzja = „która karta może spaść".
+      case 'resolve_manifest_dread': {
+        const card = cmd.cardId ? view.zones.library.find((o) => o.id === cmd.cardId) : null;
+        if (!card) return finish(0);
+        // Kara za utratę karty: im cenniejsza, tym gorzej wybrać ją na manifest.
+        const keepValue = cardKeepValue(view, card);
+        return finish(10 - keepValue);
+      }
+      // Reveal exile hand (M69, Dreams of Steel and Oil): wybierz KARTĘ Z RĘKI
+      // PRZECIWNIKA do wygnania (kontroler efektu wybiera, czyli MY gdy nasz czar,
+      // PRZECIWNIK gdy jego). Widok nie niesie direction, ale kandydujące id
+      // pochodzą z ręki przeciwnika — wygnaj najcenniejszą dla wroga kartę
+      // (najdroższy czar/stwór), analogicznie do discard_choice przymusowego.
+      case 'resolve_reveal_exile_hand': {
+        if (cmd.cardId == null) return finish(-5); // nic nie wygnaj — tylko gdy wymuszone
+        const card = [...(view.zones.hand ?? [])].find((o) => o.id === cmd.cardId)
+          ?? view.zones.library.find((o) => o.id === cmd.cardId);
+        if (!card) return finish(0);
+        // Kandydujące id są w ręce DRUGIEGO gracza (gdy MY wybieramy na ich ręce)
+        // albo NASZEJ ręce (gdy przeciwnik rzuca czar, ale w Dreams to my
+        // wybieramy własną rękę? — sprawdzamy controllerId).
+        const isOwnHand = (view.zones.hand ?? []).some((o) => o.id === cmd.cardId);
+        if (isOwnHand) {
+          // To NASZ czar wygnał NASZĄ kartę? Niemożliwe w Dreams. Ale na wszelki
+          // wypadek: wygnaj najtańszą (analogicznie do discard_choice celu=cost).
+          return finish(20 - (card.manaCost ?? 0));
+        }
+        // Normalny przypadek: wybieramy z ręki PRZECIWNIKA — wygnaj najcenniejszą.
+        return finish(20 + (card.manaCost ?? 0) + (card.power ?? 0) + (card.toughness ?? 0));
+      }
       case 'pass_priority': return finish(0);
       default: return finish(0);
     }
@@ -5272,7 +5427,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // więc flagała pary słusznie uznane za zamienne. Osobny `koszt` był z kolei
       // podwójnym liczeniem tej samej różnicy. Została jedna liczba: ile ta karta
       // realnie dokłada do wyniku w przeliczeniu na manę, którą zajmuje.
-      const o = handCard(view, cmd.objectId);
+      const o = handCard(view, cmd.objectId)
+        ?? (view.zones.exile ?? []).find((x) => x.id === cmd.objectId)
+        ?? (view.zones.graveyard ?? []).find((x) => x.id === cmd.objectId);
       if (!o) return null;
       const koszt = (o.manaCost ?? 0) + coloredPipsOf(o.cardId).length;
       // Equipment: wartość rzutu żyje na NOSICIELU (M258/A), więc projekcja
@@ -5322,6 +5479,137 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
       }
       return { zablokowane, ofiary, blokuje: Object.keys(przypisania).length };
+    }
+    // M130-rodzina (pętla jakości 2026-09-05): projekcje dla ROZSTRZYGNIĘĆ
+    // WYBORÓW (resolve_*). Audyt remisów (tools/bot-tie-audit.mjs) oznaczał je
+    // jako „bez danych" (tieProjection zwracał null), więc nie mógł odróżnić
+    // uczciwego remisu od ślepoty wyceny (klasa L117: remis jest tak samo
+    // arbitralny jak brak wyceny). Projekcja zwraca DANE, które scoreCommand
+    // wziął pod uwagę (te same generatory wartości), nie same punkty — jedno
+    // źródło prawdy (L28/L41).
+    if (cmd?.type === 'resolve_discard_choice') {
+      if (cmd.cardId == null) return { skip: 1 };
+      const mine = (view.zones.hand ?? []).some((o) => o.id === cmd.cardId);
+      const card = (view.zones.hand ?? []).find((o) => o.id === cmd.cardId)
+        ?? view.zones.library.find((o) => o.id === cmd.cardId);
+      return { mine: mine ? 1 : 0, cost: card?.manaCost ?? 0 };
+    }
+    if (cmd?.type === 'resolve_search_choice') {
+      if (cmd.found == null) return { skip: 1 };
+      const card = view.zones.library.find((o) => o.id === cmd.found);
+      return {
+        land: card?.kind === 'land' ? 1 : 0,
+        cost: card?.manaCost ?? 0,
+        power: card?.power ?? 0,
+        toughness: card?.toughness ?? 0,
+      };
+    }
+    if (cmd?.type === 'resolve_trigger_target') {
+      // Jednolite projekcje dla celów triggerów (stół + otwarte strefy + gracz).
+      const ids = Array.isArray(cmd.targetIds) ? cmd.targetIds : [cmd.targetId];
+      const proj = ids.map((id) => {
+        if (id == null) return null;
+        if (id === view.playerId) return { self: 1 };
+        if (id === enemy(view)?.id) return { foe: 1 };
+        const onBoard = objectOnBoard(view, id);
+        if (onBoard) {
+          return {
+            mine: onBoard.controllerId === view.playerId ? 1 : 0,
+            value: (onBoard.power ?? 0) * 2 + (onBoard.toughness ?? 0),
+          };
+        }
+        const open = openZoneCard(view, id);
+        if (open) {
+          return {
+            mine: open.controllerId === view.playerId ? 1 : 0,
+            value: offBoardCardValue(open),
+            zone: 'open',
+          };
+        }
+        return { id };
+      });
+      return Array.isArray(cmd.targetIds) ? { targets: proj } : proj[0];
+    }
+    if (cmd?.type === 'resolve_exploit_choice') {
+      if (cmd.done === true) return { done: 1 };
+      const t = objectOnBoard(view, cmd.targetId);
+      return {
+        value: t ? (t.power ?? 0) * 2 + (t.toughness ?? 0) + (t.keywords?.length ?? 0) : 0,
+      };
+    }
+    if (cmd?.type === 'resolve_opponent_target') {
+      const t = objectOnBoard(view, cmd.targetId);
+      return t ? { value: (t.power ?? 0) * 2 + (t.toughness ?? 0) } : { id: cmd.targetId };
+    }
+    if (cmd?.type === 'resolve_color_choice') {
+      return { color: cmd.color ?? null };
+    }
+    if (cmd?.type === 'resolve_modal_choice' && cmd.modeIndex != null) {
+      return { mode: cmd.modeIndex };
+    }
+    if (cmd?.type === 'resolve_fabricate') {
+      return { mode: cmd.mode ?? null };
+    }
+    if (cmd?.type === 'resolve_manifest_dread') {
+      // Manifest Dread (M251): widok odsłania karty z wierzchu w
+      // pendingManifestDread.cards (tak jak scry/surveil) — tam są dane
+      // do wyceny (zones.library ich nie widzi, bo karty NIE są jeszcze w
+      // strefie w sensie view).
+      const cards = view.pendingManifestDread?.cards ?? [];
+      const card = cards.find((o) => o.id === cmd.cardId)
+        ?? view.zones.library.find((o) => o.id === cmd.cardId);
+      return card ? { cost: card.manaCost ?? 0, kind: card.kind } : { card: null };
+    }
+    if (cmd?.type === 'resolve_reveal_exile_hand' || cmd?.type === 'resolve_reveal_exile_grave') {
+      if (cmd.cardId == null) return { skip: 1 };
+      const card = [...(view.zones.hand ?? []), ...view.zones.graveyard, ...view.zones.library]
+        .find((o) => o.id === cmd.cardId);
+      return { cost: card?.manaCost ?? 0, kind: card?.kind ?? null };
+    }
+    if (cmd?.type === 'resolve_escape_exile') {
+      const ids = cmd.exileIds ?? [];
+      const sumValue = ids.reduce((s, id) => {
+        const o = view.zones.graveyard.find((x) => x.id === id);
+        return s + (o ? (o.manaCost ?? 0) : 0);
+      }, 0);
+      return { count: ids.length, value: sumValue };
+    }
+    if (cmd?.type === 'resolve_rebound_cast' || cmd?.type === 'resolve_grave_free_cast'
+        || cmd?.type === 'resolve_madness_cast' || cmd?.type === 'resolve_exile_cast') {
+      return { cast: cmd.cast ? 1 : 0, cardId: cmd.objectId ?? cmd.cardId ?? null };
+    }
+    if (cmd?.type === 'resolve_scry' || cmd?.type === 'resolve_surveil') {
+      const bottoms = cmd.bottomIds ?? cmd.millIds ?? [];
+      return {
+        moved: bottoms.length,
+        orderOriginal: cmd.topOrder == null ? 1 : 0,
+      };
+    }
+    if (cmd?.type === 'resolve_springbloom') {
+      const land = cmd.sacrificeLandId ? objectOnBoard(view, cmd.sacrificeLandId) : null;
+      return { land: land ? (land.cardId ?? land.id) : 'skip' };
+    }
+    if (cmd?.type === 'resolve_look_top_choice' || cmd?.type === 'resolve_satyr_look_choice'
+        || cmd?.type === 'resolve_graveyard_top_choice' || cmd?.type === 'resolve_delirium_target'
+        || cmd?.type === 'resolve_mentor_target' || cmd?.type === 'resolve_room_target') {
+      // Wszystkie wybory z JEDNYM celem (karta z biblioteki/grobu/pokoju, cel
+      // na stole) — projekcja to wartość tego celu (ta sama co scoreCommand).
+      const id = cmd.pickId ?? cmd.targetId ?? cmd.found ?? null;
+      if (id == null && cmd.done === true) return { done: 1 };
+      const obj = (id && objectOnBoard(view, id))
+        ?? (id && openZoneCard(view, id))
+        ?? view.zones.library.find((o) => o.id === id)
+        ?? null;
+      if (!obj) return { picked: 0 };
+      const types = obj.types ?? obj.cardId ? cardDef(obj.cardId)?.types : [];
+      const isCreature = obj.kind === 'creature' || (types ?? []).includes('Creature');
+      return {
+        land: obj.kind === 'land' ? 1 : 0,
+        power: obj.power ?? 0,
+        toughness: obj.toughness ?? 0,
+        cost: obj.manaCost ?? 0,
+        creature: isCreature ? 1 : 0,
+      };
     }
     if (cmd?.type !== 'play_land') return null;
     const o = (view.zones.hand ?? []).find((x) => x?.id === cmd.objectId);
@@ -5373,6 +5661,61 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // remis rozstrzygalnym dla bramki.
       const o = (view?.zones?.hand ?? []).find((x) => x?.id === cmd.objectId);
       return `play_land(${cmd.objectId}${o?.cardId ? ':' + o.cardId : ''})`;
+    }
+    // M130-rodzina: nazwy wariantów rozstrzygnięć wyborów (L34/L40/M195/M203) —
+    // bez nich wszystkie warianty jednego type są nierozróżnialne w śladzie i
+    // tieProjection nie ma czego parować.
+    if (cmd.type === 'resolve_discard_choice') {
+      return cmd.cardId == null
+        ? 'resolve_discard_choice(skip)'
+        : `resolve_discard_choice(${cmd.cardId})`;
+    }
+    if (cmd.type === 'resolve_search_choice') {
+      return cmd.found == null
+        ? 'resolve_search_choice(skip)'
+        : `resolve_search_choice(${cmd.found})`;
+    }
+    if (cmd.type === 'resolve_trigger_target') {
+      const ids = Array.isArray(cmd.targetIds) ? cmd.targetIds : [cmd.targetId];
+      return `resolve_trigger_target(${ids.map((x) => x ?? 'none').join('+')})`;
+    }
+    if (cmd.type === 'resolve_exploit_choice') {
+      return cmd.done === true
+        ? 'resolve_exploit_choice(done)'
+        : `resolve_exploit_choice(${cmd.targetId ?? '?'})`;
+    }
+    if (cmd.type === 'resolve_opponent_target') {
+      return `resolve_opponent_target(${cmd.targetId ?? '?'})`;
+    }
+    if (cmd.type === 'resolve_color_choice') {
+      return `resolve_color_choice(${cmd.color ?? '?'})`;
+    }
+    if (cmd.type === 'resolve_fabricate') {
+      return `resolve_fabricate(${cmd.mode ?? '?'})`;
+    }
+    if (cmd.type === 'resolve_manifest_dread') {
+      return `resolve_manifest_dread(${cmd.cardId ?? '?'})`;
+    }
+    if (cmd.type === 'resolve_reveal_exile_hand' || cmd.type === 'resolve_reveal_exile_grave') {
+      return `${cmd.type}(${cmd.cardId ?? 'skip'})`;
+    }
+    if (cmd.type === 'resolve_escape_exile') {
+      return `resolve_escape_exile(${(cmd.exileIds ?? []).join('+') || '?'})`;
+    }
+    if (cmd.type === 'resolve_rebound_cast' || cmd.type === 'resolve_grave_free_cast'
+        || cmd.type === 'resolve_madness_cast' || cmd.type === 'resolve_exile_cast') {
+      if (cmd.cast === false || cmd.decline === true) return `${cmd.type}(skip)`;
+      return `${cmd.type}(${cmd.objectId ?? cmd.cardId ?? '?'}${cmd.targets ? '->' + cmd.targets.join('+') : ''})`;
+    }
+    if (cmd.type === 'resolve_springbloom') {
+      return `resolve_springbloom(${cmd.sacrificeLandId ?? 'skip'})`;
+    }
+    if (cmd.type === 'resolve_look_top_choice' || cmd.type === 'resolve_satyr_look_choice'
+        || cmd.type === 'resolve_graveyard_top_choice' || cmd.type === 'resolve_delirium_target'
+        || cmd.type === 'resolve_mentor_target' || cmd.type === 'resolve_room_target') {
+      const id = cmd.pickId ?? cmd.targetId ?? cmd.found ?? null;
+      const done = cmd.done === true ? 'done' : null;
+      return `${cmd.type}(${id ?? done ?? '?'})`;
     }
     return cmd.type;
   }

@@ -1566,6 +1566,10 @@ function resolveActivatedAbilityEntry(state, entry) {
         playerId: payload.playerId, qualifier: searchQualifier, destination: isChannel ? 'battlefield' : 'hand',
         entersTapped: isChannel,
         sourceCardId: entry.cardId,
+        candidateIds: [...candidates],
+        destinations: null,
+        chain: null,
+        mandatory: false,
         emitter: {
           kind: isChannel ? 'channel' : 'cycling',
           playerId: payload.playerId, objectId: payload.sourceId, abilityIndex: payload.abilityIndex,

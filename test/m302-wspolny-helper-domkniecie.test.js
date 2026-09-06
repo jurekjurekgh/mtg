@@ -86,7 +86,7 @@ test('M302/2: plan przyciskowy jest OGÓLNY — bez listy rodzin i bez limitu 5 
   assert.equal(buttonsPlanOf([search[0]]), null);
 });
 
-test('M302/3: wizard przyciskowy — odmowa w grupie „1 kandydat + odmowa” to klik w wiersz', () => {
+test('M302/3: wizard przyciskowy — odmowa w grupie „1 kandydat + odmowa” to radio + Zatwierdź', () => {
   const jill = Object.freeze([
     Object.freeze({ type: 'resolve_trigger_target', playerId: 'p1', targetId: 'staff1', friendly: false }),
     Object.freeze({ type: 'resolve_trigger_target', playerId: 'p1', targetId: null, friendly: false }),
@@ -105,11 +105,16 @@ test('M302/3: wizard przyciskowy — odmowa w grupie „1 kandydat + odmowa” t
     onComplete: (cmd) => completed.push(cmd),
     onCancel: () => completed.push('cancel'),
   });
-  const rows = host.byClass('choice-request-option');
-  assert.equal(rows.length, 2);
-  rows[1].click();
+  const labels = host.all((el) => el.tagName === 'label');
+  assert.equal(labels.length, 2, 'wiersze to radio (label)');
+  const confirm = host.byClass('multi-target-confirm')[0];
+  assert.ok(confirm, 'Zatwierdź istnieje');
+  const declineInput = labels[1].children.find((c) => c.tagName === 'input');
+  declineInput.checked = true; declineInput.emit('change');
+  assert.equal(completed.length, 0, 'radio samo nie wysyła');
+  confirm.click();
   assert.equal(completed[0], request.options[1], 'odmowa = DOKŁADNA komenda targetId:null (L48)');
-  // Wybór kandydata z podglądem karty.
+  // Wybór kandydata z klikalną nazwą karty (A1/A2 cd.).
   const host2 = new MiniEl('div');
   const completed2 = [];
   const previews = [];
@@ -122,8 +127,12 @@ test('M302/3: wizard przyciskowy — odmowa w grupie „1 kandydat + odmowa” t
     onComplete: (cmd) => completed2.push(cmd),
     onCancel: () => {},
   });
-  host2.byClass('choice-request-peek')[0].click();
-  assert.deepEqual(previews, ['staff'], 'podgląd karty kandydata działa jak wszędzie');
+  const peeks = host2.byClass('choice-request-peek');
+  assert.equal(peeks.length, 0, 'bez osobnego przycisku lupy');
+  const cardName = host2.byClass('picker-name')[0];
+  assert.equal(cardName.dataset.cardId, 'staff', 'nazwa karty ma cardId do pełnego ekranu');
+  cardName.click();
+  assert.deepEqual(previews, ['staff'], 'klik w nazwę otwiera pełny ekran karty');
   assert.equal(completed2.length, 0);
 });
 

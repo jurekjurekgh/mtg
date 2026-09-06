@@ -2226,3 +2226,38 @@ w pętli per-attacker (zmierzone: −2 partie benchmarku); (3) benchmark szybki
 jest deterministyczny — każda różnica jest prawdziwa; (4) po re-konie
 workspacu `git reset --soft FETCH_HEAD` odtwarza referencje z wypchniętej
 gałęzi bez dotykania drzewa roboczego.
+
+## L131 (2026-09-05) — Decyzja bez wyceny = pierwsza oferta z listy
+
+**Przypadek:** `tools/bot-tie-audit.mjs` pokazał 50+ remisów przy wyborach
+`resolve_*` (discard/search/trigger_target/exploit/opponent_target/
+color_choice/...), z czego połowa jako "bez danych" (projekcja `tieProjection`
+zwracała null), a połowa jako "remisy przy różnych danych". Wszystkie trzy
+typy (`resolve_exploit_choice`, `resolve_opponent_target`,
+`resolve_color_choice`) padały do `default: return finish(0)` w `scoreCommand`,
+więc KAŻDY wariant dostawał 0 pkt i stabilny sort w greedyChoice wybierał
+PIERWSZĄ ofertę z listy. Konsekwencja w rozgrywce: bot przy Exploit poświęcał
+najsilniejszego stwora (bo ten był pierwszy na liście), przy Cuombajj Witches
+obracał 1 obrażenie w siebie, a przy wyborze koloru ochrony wybierał zawsze
+biały, niezależnie od planszy.
+
+**Przyczyna:** L50 (nowy typ efektu/akcji startuje bez wyceny) + L34/L40/M195/
+M203 (warianty bez nazwy w `summarize` są nierozróżnialne w śladzie) + L117
+(remis punktów bez danych w projekcji jest tak samo arbitralny jak brak
+wyceny). Nowy typ decyzji `resolve_*` dodany w silniku nie dostał
+odpowiadającego mu `case` w kontrolerze — a że w silniku kolejność
+kandydatów NIE JEST posortowana po wartości (oferta w kolejności
+naturalnej: gracz→stworzy wroga→itp.), pierwsza oferta to często NAJGORSZA
+opcja z perspektywy botu.
+
+**Reguła:** Dodając NOWY typ komendy w silniku (command family `resolve_*`),
+trzeba JEDNOCZEŚNIE: (1) dodać case w `scoreCommand` z prawidłową wyceną
+(nie zostawiać domyślnego 0); (2) dodać nazwę wariantu w `summarize()`,
+żeby ślad decyzyjny rozróżniał opcje; (3) dodać `tieProjection` dla
+audytu remisów. Test `?`. Audyt remisów (`node tools/bot-tie-audit.mjs`)
+jest strażnikiem klasy "decyzja bez wyceny": każdy nowy typ w kolumnie
+"bez-danych" to albo brak wyceny, albo brak projekcji.
+
+**Strażnik:** `node tools/bot-tie-audit.mjs --gate=<kind>` (exit code 0 gdy
+brak "rozróżnialnych" remisów = nie ma groźnych decyzji z różnymi danymi
+ale tym samym wynikiem).

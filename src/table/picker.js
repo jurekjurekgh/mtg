@@ -229,7 +229,7 @@ export function renderPickerChipList(host, {
  * `html` przyjmuje WYŁĄCZNIE markup generowany w tym kodzie (ikony many z
  * `mana-icons.js`) — nazwy kart idą przez `label`, czyli `textContent`.
  */
-function renderPickerName(host, { className, label, html, openable, onOpenCard, id }) {
+function renderPickerName(host, { className, label, html, openable, onOpenCard, id, openId = null, openLabel = null }) {
   const nameEl = mkElement('span', host);
   nameEl.className = joinClasses('picker-name', className);
   if (html) nameEl.innerHTML = html;
@@ -237,12 +237,23 @@ function renderPickerName(host, { className, label, html, openable, onOpenCard, 
   host.appendChild(nameEl);
   // Nazwa otwiera pełny ekran karty i NIE przełącza ptaszka (stopPropagation,
   // wzorzec M66 z wizarda walki). Bez `onOpenCard` nazwa pozostaje tekstem.
-  if (openable && typeof onOpenCard === 'function' && id != null) {
-    nameEl.className = joinClasses(nameEl.className, 'is-openable');
+  // A1/A2 cd. (zgłoszenie właściciela: wszystkie modale z ptaszkami/radiem —
+  // nazwa karty klikalna do pełnego ekranu): dodajemy klasę `log-card` oraz
+  // `dataset.cardId`, żeby delegacja pełnego ekranu w `main.js` (M167/C) łapała
+  // te kliknięcia tak samo jak nazwy w panelu logu/stosu. Dotyczy stepperów,
+  // checkboxów i radiobuttonów wszystkich wizardów.
+  // `openId` pozwala przekazać inny identyfikator do podglądu niż `id` wiersza
+  // (potrzebne, gdy wiersz reprezentuje decyzję-enum, a jego nazwą jest karta
+  // rozpoznawana po cardId, a nie objectId — patrz M300/M301/M302).
+  const targetId = openId ?? id;
+  const dataCardId = openLabel ?? targetId;
+  if (openable && typeof onOpenCard === 'function' && targetId != null) {
+    nameEl.className = joinClasses(nameEl.className, 'is-openable', 'log-card');
+    if (nameEl.dataset) nameEl.dataset.cardId = String(dataCardId);
     nameEl.addEventListener('click', (e) => {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
-      onOpenCard(id);
+      onOpenCard(targetId);
     });
   }
   return nameEl;
@@ -294,6 +305,7 @@ export function renderPickerRow(host, {
   onStep = null,
   onActivate = null,
   onOpenCard = null,
+  openCardId = null,
   stopRowPropagation = false,
 } = {}) {
   const inline = variant === 'inline';
@@ -348,6 +360,7 @@ export function renderPickerRow(host, {
       openable: true,
       onOpenCard,
       id,
+      openId: openCardId ?? id,
     });
 
     let n = Number(value) || 0;
@@ -425,6 +438,7 @@ export function renderPickerRow(host, {
       openable: true,
       onOpenCard,
       id,
+      openId: openCardId ?? id,
     });
   }
 

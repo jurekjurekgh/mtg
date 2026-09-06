@@ -668,6 +668,11 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
   }
   state.pendingSearchChoice = {
     playerId: ownerId, qualifier, destination,
+    // A1/A2 (Final Parting): pełna lista kandydatów do wizards UI
+    // (analogiczna do pendingExploits.candidateIds) — potrzebna do budowy
+    // listy kart w playerView (biblioteka w warstwie widoku jest ukryta
+    // nawet dla właściciela, więc kandydatów nie da się odtworzyć z zones).
+    candidateIds: [...candidateIds],
     // Caravan Vigil Morbid: gracz wybiera, czy znaleziony ląd ląduje w ręce
     // czy na pole bitwy („you may put it onto the battlefield instead of into
     // your hand"). destinations = dopuszczalne strefy; null = jedna.
