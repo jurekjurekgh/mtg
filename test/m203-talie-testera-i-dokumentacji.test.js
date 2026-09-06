@@ -103,3 +103,47 @@ test('M203/6: --list-decks wypisuje talie z decks/ (i waliduje nazwy przed parti
   const listed = res.stdout.split('\n').map((s) => s.trim()).filter(Boolean).sort();
   assert.deepEqual(listed, [...DECKS].sort(), 'lista talii testera = zawartość decks/');
 });
+
+test('M203/7: liczności talii w README == zawartość decks/*.txt', () => {
+  // README ogłasza: „Ta lista jest aktualizowana przy każdej zmianie zestawu
+  // talii (liczności liczone z plików decks/*.txt)". Bez strażnika to zdanie
+  // kłamie — i skłamało: talia `wiedzmin` miała w tabeli 41/14/27, a w pliku
+  // 45/15/30, bo każda dostawka kart przesuwała liczby bez odświeżenia opisu.
+  // Alarm 2026-09-06 (karta `Stifle` w talii właściciela) pokazał, że pliki
+  // talii są czytane WIERZĘC; więc wiarygodność opisu jest częścią naprawy.
+  // Kolumny „Kolory" celowo poza zakresem: to skrót myślowy (unia kolorów
+  // kart + landów), nie dane z pliku — pilnowanie skrótu byłoby pinem.
+  const BASICZNE = new Set(['Plains', 'Island', 'Swamp', 'Mountain', 'Forest']);
+  const licz = (deck) => {
+    let razem = 0; let landy = 0;
+    for (const linia of fs.readFileSync(path.join('decks', `${deck}.txt`), 'utf8').split(/\r?\n/)) {
+      const m = linia.match(/^\s*(\d+)x\s+(.+?)(?:\s*\([A-Z0-9]+\))?\s*$/);
+      if (!m) continue;
+      const ile = Number(m[1]);
+      razem += ile;
+      if (BASICZNE.has(m[2].trim())) landy += ile;
+    }
+    return { razem, landy, nieland: razem - landy };
+  };
+  const README = fs.readFileSync('README.md', 'utf8');
+  const WPIS = /^\| `([a-z][\w-]*)` \| [^|]+\| [^|]+\| (\d+) \| (\d+) \| (\d+) \|$/gm;
+  const wiersze = new Map();
+  const bledy = [];
+  for (const m of README.matchAll(WPIS)) {
+    if (wiersze.has(m[1])) bledy.push(`${m[1]}: wiersz w README występuje dwa razy`);
+    wiersze.set(m[1], { razem: +m[2], landy: +m[3], nieland: +m[4] });
+  }
+  for (const [deck, z] of wiersze) {
+    const rzeczywiste = licz(deck);
+    if (!rzeczywiste) { bledy.push(`${deck}: w README jest wiersz, a pliku decks/${deck}.txt nie ma`); continue; }
+    for (const k of ['razem', 'landy', 'nieland']) {
+      if (z[k] !== rzeczywiste[k]) {
+        bledy.push(`${deck}: README mówi ${z[k]} dla „${k}", a plik ma ${rzeczywiste[k]} (${JSON.stringify(rzeczywiste)})`);
+      }
+    }
+  }
+  for (const deck of DECKS) {
+    if (!wiersze.has(deck)) bledy.push(`${deck}: talia istnieje w decks/, a nie ma jej w liście w README`);
+  }
+  assert.deepEqual(bledy, [], 'lista talii w README jest jej rejestrem tylko tyle, ile pilnuje ten test (L56)');
+});
