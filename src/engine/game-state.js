@@ -7538,9 +7538,10 @@ export function playerView(state, playerId) {
         // dane kandydatów tylko dla decydenta — dokładnie jak
         // `pendingManifestDreadView` (M223). Bez nich wycena i projekcja bota
         // nie miały czym różnicować kart (wpisy `zones.library` są puste).
-        cards: state.pendingSatyrLook.playerId === playerId
-          ? Object.freeze(state.pendingSatyrLook.objectIds.map(revealedCandidateView).filter(Boolean))
-          : null,
+        // F1 (audyt PR #101): bramka decydenta jest TU, na wpisie
+        // (`activeSatyrLook`) — druga, identyczna bramka na `cards` była
+        // zawsze prawdziwa (martwy wartownik, L48/7) i została usunięta.
+        cards: Object.freeze(state.pendingSatyrLook.objectIds.map(revealedCandidateView).filter(Boolean)),
       }
       : null,
     // M221/B: źródło i główny efekt decyzji „you may" — do etykiety modala.
