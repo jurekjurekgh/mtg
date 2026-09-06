@@ -4985,7 +4985,10 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'attacks', requiresTarget: { type: 'creature_you_control' } },
+        // M314 (zgłoszenie właściciela): Oracle „untap ANOTHER target creature
+        // you control" — atakujący nie może być własnym celem (CR; jak
+        // M158/Breaching Hippocamp). Dotąd kandydaci zawierali źródło.
+        trigger: { event: 'attacks', requiresTarget: { type: 'creature_you_control', notSelf: true } },
         effect: { type: 'untap_permanent' },
       }),
     ],
