@@ -4647,7 +4647,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // traci permanent. Właściciel: „jak już przejął to powinien
             // zaatakować właściciela” — gałęzie downside'u go nie dotyczą.
             if (canBeBlocked && blockers.length > 0) {
-              if (power >= strongestBlockerToughness) {
+              // M325 (audyt PR #102, F2): Warunek „zabija najsilniejszego
+              // blokera" musi czytać staty Z BONUSEM (M317), inaczej bot liczy
+              // właścicielowi utratę permanentu, którego atakujący nie zabije.
+              // Kwota wyceny zostaje SUROWA: to wartość permanentu właściciela
+              // (wydruk), a nie stan, który pump zmienia.
+              if (power >= effBlockerToughness) {
                 // Zabija najsilniejszego blokera — właściciel traci ten
                 // permanent; atakujący wraca do właściciela (przeżyje) albo
                 // ginie (strata właściciela) — w żadnym razie nie bota.
@@ -4820,8 +4825,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // więc kara za „kupowany" deathtouch byłaby podwójnym liczeniem.
               if (diesToDeathtouchBlocker(object, blockers)) continue;
               // First strike zabija blokera, zanim ten zada obrażenia.
+              // M325 (audyt PR #102, F2): to samo źródło co wyżej — przy
+              // WIDOCZNYM pumpe bloker może przeżyć pierwsze uderzenie i wtedy
+              // trik z deathtouchem nadal zabija atakującego (klasa L48: jeden
+              // model w całej rodzinie gałęzi).
               if (attackerStrikesFirst(object, blockers)
-                && (object.power ?? 0) >= strongestBlockerToughness) continue;
+                && (object.power ?? 0) >= effBlockerToughness) continue;
               score -= dtProb * (10 + 2 * (object.power ?? 0) + (object.toughness ?? 0));
             }
           }
