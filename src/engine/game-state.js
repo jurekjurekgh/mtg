@@ -5067,7 +5067,9 @@ export function execute(state, input) {
     spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
     turnFaceUp(state, cmd.objectId);
     const flipped = state.objects.get(cmd.objectId);
-    if (flipped) state.objects.set(cmd.objectId, Object.freeze({ ...flipped, ward: null, cloakReady: false, cloakTurnUpCost: null }));
+    // M319/NA1: numer kopii zakrycia znika razem z zakryciem — face-up karta
+    // nie ma nosić „(Cloak N)" ani liczyć się do numeracji kolejnych cloaków.
+    if (flipped) state.objects.set(cmd.objectId, Object.freeze({ ...flipped, ward: null, cloakReady: false, cloakTurnUpCost: null, copyNumber: null }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
 

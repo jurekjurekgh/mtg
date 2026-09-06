@@ -8,7 +8,7 @@ import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
 import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
-import { createBattlefieldToken, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
+import { createBattlefieldToken, nextCopyNumber, nextFaceDownCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
 
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
@@ -1855,6 +1855,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       cloakTurnUpCost: (topObj.types ?? []).includes('Creature') || topObj.kind === 'creature'
         ? (topObj.manaCost ?? 0)
         : null,
+      // M319/NA1: stały numer kopii („Nazwa (Cloak N)" w celach/kaflach),
+      // żeby kilka jednakowych zakrytych dało się rozpoznać — jak tokeny-kopie
+      // (M172/D). Znika przy uncover (turn_cloak_face_up).
+      copyNumber: nextFaceDownCopyNumber(state, controllerId, topObj.cardId),
     });
     state.objects.set(battleId, cloaked);
     // Veiled Ascension (MKC): „Face-down creatures you control enter with a

@@ -1,7 +1,7 @@
 import { choiceResponse } from '../protocol/types.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
-import { commandOptionKey, FACE_DOWN_LABEL } from './session.js';
+import { commandOptionKey, FACE_DOWN_LABEL, faceDownName, cloakFaceDownName } from './session.js';
 import { commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection } from './multi-target.js';
 
 function clearChoiceElement(element) {
@@ -617,7 +617,16 @@ function objectName(view, session, id) {
     if (object) {
       // Face-down (morph/megamorph, CR 708.2): tożsamość ukryta — „Morph"
       // zamiast „?" (audyt żywym testerem M73c; pisownia M127 z jednego źródła).
-      if (object.faceDown) return FACE_DOWN_LABEL;
+      // M319/NA1: WŁASNY cloak to mechanika CLOAK — „Nazwa (Cloak N)"
+      // (cloakFaceDownName), nie gołe „Morph", które kłamało o ward {2}
+      // i nie odróżniało kilku zakrytych kart tej samej nazwy.
+      if (object.faceDown) {
+        if (object.cloakReady && object.cardId != null) {
+          return cloakFaceDownName(session.nameOf(object.cardId), object.copyNumber);
+        }
+        if (object.cardId != null) return faceDownName(session.nameOf(object.cardId));
+        return FACE_DOWN_LABEL;
+      }
       // A1/A2 + M155: tokeny niosą JAWNĄ nazwę w polu `name` w playerView
       // (cardId typu token_servo nie istnieje w katalogu kart — nameOf zwracałby
       // surowe id, co psuje etykiety w wizardach przydziału obrażeń i celu).

@@ -8,7 +8,7 @@ import { hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
-  FACE_DOWN_LABEL, faceDownName,
+  FACE_DOWN_LABEL, faceDownName, cloakFaceDownName,
   manaEffectLabel,
   manaProducedLabel,
 } from './session.js';
@@ -2257,7 +2257,11 @@ export function commandLabel(cmd, session, view) {
       : null;
     const base = object
       ? (object.faceDown
-        ? faceDownName(object.cardId != null ? session.nameOf(object.cardId) : null)
+        // M319/NA1: własny cloak podpisany „Nazwa (Cloak N)" (nie „(Morph)")
+        // — mechanika zakrycia i stały numer kopii (M172/D dla tokenów).
+        ? (object.cloakReady
+          ? cloakFaceDownName(object.cardId != null ? session.nameOf(object.cardId) : null, object.copyNumber)
+          : faceDownName(object.cardId != null ? session.nameOf(object.cardId) : null))
         : (tokenName || session.nameOf(object.cardId)))
       : session.nameOfObject(id);
     // E (2026-08-11): permanent na polu bitwy, który mogą mieć OBAJ gracze
@@ -3284,7 +3288,9 @@ export function cardInfo(session, object, combat = null) {
     // własnego permanentu, sama nazwa mechaniki dla cudzego (FoW).
     // M260/B1: zakryte WYGNANIE nie jest morphem — sam znacznik nazwy
     // wystarcza („Wygnana zakryta"), badge mechaniki pola bitwy myliłby.
-    morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${object.cloakReady ? 'Cloak' : FACE_DOWN_LABEL})` : FACE_DOWN_LABEL)) : null,
+    // M319/NA1: własny cloak z numerem kopii — „zakryty (Cloak 2)" — żeby
+    // kafel na stole pasował do etykiety celu („Nazwa (Cloak 2)").
+    morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${object.cloakReady ? `Cloak${object.copyNumber ? ` ${object.copyNumber}` : ''}` : FACE_DOWN_LABEL})` : FACE_DOWN_LABEL)) : null,
     colors,
     kind,
     // M138/Z6 (audyt Żywym Testerem): typy bierzemy ze STANU GRY, nie z rejestru
