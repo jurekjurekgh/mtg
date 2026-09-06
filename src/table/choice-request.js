@@ -1052,7 +1052,13 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // (targetKey sortuje), więc dla pozycji używamy dopasowania po kolejności.
   const slotChoice = slots ? slots.map(() => null) : null;
   const commandForSlots = () => {
-    if (slotChoice.some((id) => id == null)) return null;
+    // F3 (Żywy Tester, sesja 01a07711): pusta pozycja OPCJONALNA („up to one
+    // target", B45/9) = wariant silnika z `null` na tej pozycji — wybór jest
+    // wtedy KOMPLETNY. Pozycja OBOWIĄZKOWA bez zaznaczenia nadal blokuje
+    // (wybór niekompletny). Deskryptor `slotOptional` pochodzi z komend
+    // silnika (multiTargetPlanOf), więc legalność rozstrzyga dalej silnik (L48).
+    const niekompletne = (id, i) => id == null && !(plan.slotOptional?.[i]);
+    if (slotChoice.some(niekompletne)) return null;
     return (commands ?? []).find((cmd) => Array.isArray(cmd.targets)
       && cmd.targets.length === slotChoice.length
       && cmd.targets.every((id, i) => id === slotChoice[i])) ?? null;
@@ -1165,8 +1171,10 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     if (slots) {
       // Pozycje bez wyboru trzeba WYMIENIĆ — samo wyszarzone „Zatwierdź"
       // nie mówi graczowi, czego brakuje (to było sedno zgłoszenia).
+      // F3: pozycja OPCJONALNA bez zaznaczenia NIE jest brakiem — to legalny
+      // wariant „bez celu na tej pozycji" (B45/9).
       const missing = slotChoice
-        .map((id, i) => (id == null ? (slotLabels[i] ?? `cel ${i + 1}`) : null))
+        .map((id, i) => (id == null && !plan.slotOptional?.[i] ? (slotLabels[i] ?? `cel ${i + 1}`) : null))
         .filter(Boolean);
       if (missing.length > 0) setStatus(`Brakuje: ${missing.join(', ')}`, true);
       else setStatus(cmd ? 'Wybrano komplet celów' : 'Wybór niedozwolony', !cmd);

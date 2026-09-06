@@ -775,6 +775,54 @@ export async function runTableGame({
         if (cancelSac) { cancelSac.click(); await sleep(60); }
         return true;
       }
+      // F3 (sesja 01a07711): TRYB POZYCYJNY (M207) — „wskaż po jednym celu
+      // dla każdej pozycji: 1. twój stwór … 2. stwór przeciwnika (opcjonalnie)…".
+      // Wiersze to radio z `name="multi-target-slot-N"`, po jednym na pozycję.
+      // Dotąd `needed` z tego intro wychodziło 1 (nie ma tam „zaznacz cele (N)"),
+      // więc sterownik zaznaczał jeden ptaszek i utykał: Zatwierdź wymagał
+      // kompletu pozycji obowiązkowych, 5 prób i przerwana partia (Assert
+      // Perfection, worek-mroczny|theros s13 hoarder — zmierzone w audycie).
+      // Polityka: jeden wiersz na pozycję (pierwszy z listy = realny cel,
+      // „czar celowany ma być rzucony W CEL"), pozycja OPCJONALNA bez
+      // kandydatów zostaje pusta — silnik ma wariant z `null` na tej pozycji
+      // (B45/9), a kreator (F3) mapuje pustą opcjonalną na ten wariant.
+      if (/po jednym celu dla każdej pozycji/.test(intro)) {
+        const slotToggles = $$('#choice-request .multi-target-toggle').filter((b) => !b.disabled);
+        const grupy = new Map();
+        for (const b of slotToggles) {
+          const m = String(b.name ?? '').match(/^multi-target-slot-(\d+)$/);
+          if (m) {
+            const idx = Number(m[1]);
+            if (!grupy.has(idx)) grupy.set(idx, []);
+            grupy.get(idx).push(b);
+          }
+        }
+        logL(`  [slots wizard] ${intro.slice(0, 90)} — pozycji ${grupy.size}, ptaszków ${slotToggles.length}`);
+        for (const idx of [...grupy.keys()].sort((a, b) => a - b)) {
+          const wiersze = grupy.get(idx);
+          if (wiersze.some((b) => b.checked === true)) continue;
+          wiersze[0].click();
+          await sleep(20);
+        }
+        const confirmSlots = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
+        if (confirmSlots && !confirmSlots.disabled) {
+          confirmSlots.click();
+          await sleep(80);
+          multiWizardFailures = 0;
+          multiWizardLastIntro = null;
+          return true;
+        }
+        multiWizardFailures = intro === multiWizardLastIntro ? multiWizardFailures + 1 : 1;
+        multiWizardLastIntro = intro;
+        logL(`  [slots wizard] nie złożono legalnego wyboru (pozycji ${grupy.size})`
+          + ` — anuluję (próba ${multiWizardFailures}/${MULTI_WIZARD_STUCK_LIMIT})`);
+        if (multiWizardFailures >= MULTI_WIZARD_STUCK_LIMIT) {
+          throw new Error(`Kreator pozycyjny nie do zamknięcia po ${multiWizardFailures} próbach: ${intro.slice(0, 120)}`);
+        }
+        const cancelSlots = $$('#choice-request button').find((b) => /multi-target-cancel/.test(String(b.className)));
+        if (cancelSlots) { cancelSlots.click(); await sleep(60); }
+        return true;
+      }
       // M206 → M288/A: selektorem testera jest `.multi-target-toggle`. Dawniej
       // był to PRZYCISK ze stanem w tekście („[ ] Mountain" / „[x] Mountain"),
       // dziś to natywny `<input type=checkbox>` w `<label>` (picker.js — ten sam
