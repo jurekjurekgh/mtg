@@ -1031,7 +1031,19 @@ export async function runTableGame({
   };
 
   // Czy partia już się skończyła (panel akcji jest wtedy pusty prawidłowo).
-  const isGameOver = () => /Koniec partii|wygrywa|wygrał|przegrał/.test(text($('#turn-indicator')));
+  // AUDYT PR #100 (HANDOFF 2026-09-05e): koniec partii czytamy ze STRUKTURY
+  // (mostek `__mtgDebug.gameOver()` → `state.status !== 'active'`), a tekst
+  // wskaźnika tury zostaje wyłącznie jako fallback dla transkryptów bez
+  // mostka (?tester=1) i dla stanów sprzed pierwszej partii. Wcześniejszy
+  // scraping słów „wygrywa|wygrał|przegrał" dawał POZORNE timeouty: partia
+  // była już skończona, ale wskaźnik nie zawierał żadnego z tych napisów,
+  // więc pętla deptała do limitu kroków i raportowała zacięcie tam, gdzie
+  // go nie było (klasa L1: narzędzie mierzy własną ślepotę).
+  const isGameOverByText = () => /Koniec partii|wygrywa|wygrał|przegrał/.test(text($('#turn-indicator')));
+  const isGameOver = () => {
+    const sygnał = domWindow.__mtgDebug?.gameOver?.() ?? null;
+    return sygnał === null ? isGameOverByText() : sygnał === true;
+  };
 
   const step = async () => {
     // M205: dowody z głównego logu (auto-pass) zbieramy na POCZĄTKU kroku —
@@ -1149,7 +1161,14 @@ export async function runTableGame({
       break;
     }
     const ti = text($('#turn-indicator'));
-    if (/Koniec partii|wygrywa|wygrał|przegrał/.test(ti)) {
+    // AUDYT PR #100 (HANDOFF 2026-09-05e): tu siedział fałszywy detektor —
+    // DRUGA, niezależna kopia tego samego scrapingu tekstu (L41: jedno
+    // źródło). Skoro test był już w `isGameOver()`, oba musiały się zgodzić,
+    // a nie zgadzały się zawsze tam, gdzie wskaźnik tury nie nosi żadnego z
+    // wyrazów (remis, poddanie w turze bota, odświeżenie renderu poza
+    // gałęzią banera) — partia kończyła się w ciszy, a pętla deptała do
+    // LIMITU KROKÓW i raportowała zacięcie.
+    if (isGameOver()) {
       logL(`== KONIEC PARTII == ${ti}`);
       snapshot(i + 1);
       break;
