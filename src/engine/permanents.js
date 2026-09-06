@@ -842,6 +842,12 @@ export function turnFaceUp(state, objectId, counters = {}) {
         keywords: [...(object.faceDownOriginal.keywords ?? [])],
         manaCost: object.faceDownOriginal.manaCost ?? 0,
         cardName: object.faceDownOriginal.cardName ?? null,
+        // M321: uncover przywraca też P/T karty (CR 702.75c — „turn it face
+        // up"; odkryty cloak zostawał 2/2, bo cloak nadpisuje power/toughness
+        // na staty zakrycia). Morfy, których faceDownOriginal nie niesie P/T,
+        // zostają przy obecnym zachowaniu (fallback na obiekt).
+        power: object.faceDownOriginal.power ?? object.power,
+        toughness: object.faceDownOriginal.toughness ?? object.toughness,
         faceDownOriginal: undefined,
       }
       : {}),

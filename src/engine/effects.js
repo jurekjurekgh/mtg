@@ -1850,6 +1850,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         keywords: Object.freeze([...(topObj.keywords ?? [])]),
         manaCost: topObj.manaCost ?? 0,
         cardName: topObj.cardName ?? null,
+        // M321: P/T karty — uncover ma przywrócić pełne ciało (CR 702.75c).
+        // Pole `power`/`toughness` obiektu jest nadpisane na 2/2 zakrycia, więc
+        // bez tego odkryty cloak zostawał 2/2 (bug z M315: turnFaceUp
+        // przywracał nazwę/kolory/koszt, ale nie statystyki).
+        power: topObj.power ?? null,
+        toughness: topObj.toughness ?? null,
       }),
       cloakReady: (topObj.types ?? []).includes('Creature') || topObj.kind === 'creature',
       cloakTurnUpCost: (topObj.types ?? []).includes('Creature') || topObj.kind === 'creature'

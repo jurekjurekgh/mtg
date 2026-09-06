@@ -2263,11 +2263,35 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     switch (cmd.type) {
       case 'concede': return finish(NEVER);
       // M315 (CR 702.75c): uncover cloakowanego — legalna SPECIALNA AKCJA
-      // (bez stosu), ale wycena „czy warto odsłonić" (wartość karty vs koszt
-      // many vs utrata ward {2}) to OSOBNY temat heurystyki. Do czasu wyceny:
-      // NEVER — bot nie marnuje many na nieocenioną akcję (precedens M310:
-      // temat wyceny ≠ legalność silnika).
-      case 'turn_cloak_face_up': return finish(NEVER);
+      // (bez stosu), wycena poniżej (M321 — zgłoszenie właściciela: „jawna
+      // luka w działaniu bota").
+      case 'turn_cloak_face_up': {
+        // M321 (CR 702.75c + ruling WotC 2024-02-02): uncover kosztuje koszt
+        // many KARTY i zdejmuje ward {2} — opłaca się tylko, gdy karta jest
+        // WYRAŹNIE lepsza od zakrycia 2/2 z ward. Bot odsłania TYLKO w mainie
+        // (poza mainem odsłonięcie nic nie zmienia: po deklaracji bloków ciało
+        // nie zdąży niczego obronić), gdy ma many (zapas liczony jak w M320 —
+        // ownOpenMana), a zysk (ciało ponad 2/2 + keywordy karty + trigger ETB)
+        // przebija koszt many + flat za utratę ward. Zero nazw kart (ADR 0002).
+        const stepNow = view.turn?.step ?? '';
+        if (!stepNow.includes('main')) return finish(NEVER);
+        const cloak = objectOnBoard(view, cmd.objectId);
+        if (!cloak?.cardId) return finish(NEVER);
+        const cloakDef = cardDef(cloak.cardId);
+        if (!cloakDef) return finish(NEVER);
+        // playerView nie niesie cloakTurnUpCost — kosztmany KARTY bierzemy
+        // z rejestru (CR 702.75c: „paying its mana cost"; identycznie czyta
+        // oferta w game-state).
+        const uncoverCost = cloak.cloakTurnUpCost ?? cloakDef.manaCost ?? 0;
+        if (uncoverCost <= 0 || ownOpenMana(view) < uncoverCost) return finish(NEVER);
+        const bodyGain = Math.max(0, (cloakDef.power ?? 0) - 2) * 2
+          + Math.max(0, (cloakDef.toughness ?? 0) - 2);
+        const keywordBonus = Math.min(6, (cloakDef.keywords ?? []).length * 2);
+        const etbBonus = (cloakDef.abilities ?? []).some((a) => a?.type === 'triggered'
+          && a?.trigger?.event === 'enter_battlefield') ? 5 : 0;
+        const uncoverValue = bodyGain + keywordBonus + etbBonus - uncoverCost - 3; // −3: utrata ward {2}
+        return finish(uncoverValue > 0 ? uncoverValue : NEVER);
+      }
       case 'draw_card': return finish(100);
       case 'play_land': return finish(90 + landPlayDelta(view, cmd.objectId));
       case 'tap_for_mana': {
