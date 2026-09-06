@@ -433,10 +433,19 @@ export function singleTargetPlanOf(commands) {
   if (!field) return null;
   if (!options.every((cmd) => isNonePickCommand(cmd, field) || cmd[field] != null)) return null;
   const targets = [];
+  let liczbaWariantow = 0;
   for (const cmd of options) {
-    if (!isNonePickCommand(cmd, field) && !targets.includes(cmd[field])) targets.push(cmd[field]);
+    if (isNonePickCommand(cmd, field)) continue;
+    liczbaWariantow += 1;
+    if (!targets.includes(cmd[field])) targets.push(cmd[field]);
   }
   if (targets.length < 2) return null; // jeden kandydat = zwykła lista
+  // A2 (audyt PR #100): jeśli pod jednym kandydatem kryje się WIĘCEJ komend
+  // niż jest kandydatów, decyzja ma drugi wymiar, którego ten kreator nie
+  // potrafi wyrazić (szukanie z wieloma destynacjami: `cardId|destination` — silnik
+  // dedupuje po krotce, gra oddaje wiersz na kandydata). Zwracamy null: lista
+  // ofert silnika pokazuje wtedy każdy wariant osobno, z etykietą celu.
+  if (liczbaWariantow !== targets.length) return null;
   return {
     type: options[0].type,
     targets,
