@@ -2006,6 +2006,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // karty (zwracamy własną), wroga gałąź wroga.
   const openZoneCard = (view, id) => (view.zones.graveyard ?? []).find((o) => o.id === id)
     ?? (view.zones.exile ?? []).find((o) => o.id === id) ?? null;
+  // A1 (audyt PR #100; L1/L102/L131): karta KANDYDATA decyzji o kartach ze stref
+  // UKRYTYCH (biblioteka, cudza ręka) nie ma pól w `view.zones.*` — playerView
+  // projekcjonuje tam tylko `{ id, controllerId, hidden }`. Każdy lookup
+  // lookup „wpis z zones.library po .manaCost" jest więc INERTNY: wpis istnieje, pole
+  // jest `undefined`, `?? 0` zeruje różnice, a wycena i projekcja remisują —
+  // nie dlatego, że warianty są równe, tylko dlatego, że bot jest ślepy.
+  // Źródłem prawdy jest payload samej decyzji (silnik odsłania karty tylko
+  // decydentowi: CR 701.3 „look at"), a strefy jawne (grób, wygnanie, własna
+  // ręka) mają dane w widoku. Wycena (`scoreCommand`) i projekcja remisów
+  // (`tieProjection`) MUSZĄ iść przez tę jedną funkcję (L131/L41/L48).
+  const decisionCandidateCard = (view, id) => {
+    if (id == null) return null;
+    const nosniki = [
+      view.pendingSearchChoice?.cards,
+      view.pendingManifestDread?.cards,
+      view.pendingLookTopN?.cards,
+      view.pendingSatyrLook?.cards,
+      view.pendingRevealExile?.handCards,
+    ];
+    for (const pool of nosniki) {
+      if (!Array.isArray(pool)) continue;
+      const found = pool.find((o) => o?.id === id);
+      if (found) return found;
+    }
+    return openZoneCard(view, id)
+      ?? (view.zones.hand ?? []).find((o) => o.id === id && o.hidden !== true)
+      ?? null;
+  };
   const offBoardCardValue = (o) => {
     const def = o?.cardId ? cardDef(o.cardId) : undefined;
     const types = o?.types ?? def?.types ?? [];
@@ -5057,9 +5085,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // ręki są w view.zones.hand (odrzucone jako koszt — wolę najtańsze),
         // karty odsłoniętej ręki przeciwnika nie.
         if (cmd.cardId == null) return finish(40);
-        const mine = (view.zones.hand ?? []).some((o) => o.id === cmd.cardId);
-        const value = view.zones.library.find((o) => o.id === cmd.cardId)?.manaCost
-          ?? (view.zones.hand ?? []).find((o) => o.id === cmd.cardId)?.manaCost ?? 0;
+        const karta = decisionCandidateCard(view, cmd.cardId);
+        const mine = karta?.controllerId === view.playerId;
+        const value = karta?.manaCost ?? 0;
         // Moja ręka (koszt): im tańsza karta, tym lepiej ją oddać.
         if (mine) return finish(20 - Math.min(10, value));
         // Ręka przeciwnika: wybranie drogiej karty ma wartość, ale dwie karty
@@ -5070,7 +5098,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Satyr Wayfinder: wzięcie lądu do ręki = pewna mana (zawsze lepsze niż
         // rezygnacja, bo reszta i tak idzie do grobu). Ląd premiami za manabazę.
         if (cmd.pickId == null) return finish(-5);
-        const card = view.zones.library.find((o) => o.id === cmd.pickId) ?? null;
+        const card = decisionCandidateCard(view, cmd.pickId);
         let score = 30;
         if (card) score += (card.kind === 'land' ? 30 : 0) + (card.power ?? 0) * 2 + (card.toughness ?? 0);
         return finish(score);
@@ -5081,7 +5109,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // fail-to-find (found: null). Bez tego bot brał pierwszą ofertę
         // (rezygnację) i „skipował szukanie" — zgłoszenie właściciela B.
         if (cmd.found == null) return finish(-40);
-        const card = view.zones.library.find((o) => o.id === cmd.found) ?? null;
+        const card = decisionCandidateCard(view, cmd.found);
         if (!card) return finish(0);
         let score = 25;
         // Land do ręki/na pole bitwy = pewna mana; stwory wg statystyk.
@@ -5198,7 +5226,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // Face-down 2/2 jest w 100% wymienny niezależnie od karty pod spodem
       // (dopóki jej nie odwrócimy), więc decyzja = „która karta może spaść".
       case 'resolve_manifest_dread': {
-        const card = cmd.cardId ? view.zones.library.find((o) => o.id === cmd.cardId) : null;
+        const card = decisionCandidateCard(view, cmd.cardId);
         if (!card) return finish(0);
         // Kara za utratę karty: im cenniejsza, tym gorzej wybrać ją na manifest.
         const keepValue = cardKeepValue(view, card);
@@ -5211,13 +5239,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // (najdroższy czar/stwór), analogicznie do discard_choice przymusowego.
       case 'resolve_reveal_exile_hand': {
         if (cmd.cardId == null) return finish(-5); // nic nie wygnaj — tylko gdy wymuszone
-        const card = [...(view.zones.hand ?? [])].find((o) => o.id === cmd.cardId)
-          ?? view.zones.library.find((o) => o.id === cmd.cardId);
+        const card = decisionCandidateCard(view, cmd.cardId);
         if (!card) return finish(0);
         // Kandydujące id są w ręce DRUGIEGO gracza (gdy MY wybieramy na ich ręce)
         // albo NASZEJ ręce (gdy przeciwnik rzuca czar, ale w Dreams to my
         // wybieramy własną rękę? — sprawdzamy controllerId).
-        const isOwnHand = (view.zones.hand ?? []).some((o) => o.id === cmd.cardId);
+        const isOwnHand = card.controllerId === view.playerId;
         if (isOwnHand) {
           // To NASZ czar wygnał NASZĄ kartę? Niemożliwe w Dreams. Ale na wszelki
           // wypadek: wygnaj najtańszą (analogicznie do discard_choice celu=cost).
@@ -5489,14 +5516,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // źródło prawdy (L28/L41).
     if (cmd?.type === 'resolve_discard_choice') {
       if (cmd.cardId == null) return { skip: 1 };
-      const mine = (view.zones.hand ?? []).some((o) => o.id === cmd.cardId);
-      const card = (view.zones.hand ?? []).find((o) => o.id === cmd.cardId)
-        ?? view.zones.library.find((o) => o.id === cmd.cardId);
-      return { mine: mine ? 1 : 0, cost: card?.manaCost ?? 0 };
+      const card = decisionCandidateCard(view, cmd.cardId);
+      return { mine: card?.controllerId === view.playerId ? 1 : 0, cost: card?.manaCost ?? 0 };
     }
     if (cmd?.type === 'resolve_search_choice') {
       if (cmd.found == null) return { skip: 1 };
-      const card = view.zones.library.find((o) => o.id === cmd.found);
+      const card = decisionCandidateCard(view, cmd.found);
       return {
         land: card?.kind === 'land' ? 1 : 0,
         cost: card?.manaCost ?? 0,
@@ -5555,15 +5580,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // pendingManifestDread.cards (tak jak scry/surveil) — tam są dane
       // do wyceny (zones.library ich nie widzi, bo karty NIE są jeszcze w
       // strefie w sensie view).
-      const cards = view.pendingManifestDread?.cards ?? [];
-      const card = cards.find((o) => o.id === cmd.cardId)
-        ?? view.zones.library.find((o) => o.id === cmd.cardId);
+      const card = decisionCandidateCard(view, cmd.cardId);
       return card ? { cost: card.manaCost ?? 0, kind: card.kind } : { card: null };
     }
     if (cmd?.type === 'resolve_reveal_exile_hand' || cmd?.type === 'resolve_reveal_exile_grave') {
       if (cmd.cardId == null) return { skip: 1 };
-      const card = [...(view.zones.hand ?? []), ...view.zones.graveyard, ...view.zones.library]
-        .find((o) => o.id === cmd.cardId);
+      const card = decisionCandidateCard(view, cmd.cardId);
       return { cost: card?.manaCost ?? 0, kind: card?.kind ?? null };
     }
     if (cmd?.type === 'resolve_escape_exile') {
@@ -5596,10 +5618,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // na stole) — projekcja to wartość tego celu (ta sama co scoreCommand).
       const id = cmd.pickId ?? cmd.targetId ?? cmd.found ?? null;
       if (id == null && cmd.done === true) return { done: 1 };
-      const obj = (id && objectOnBoard(view, id))
-        ?? (id && openZoneCard(view, id))
-        ?? view.zones.library.find((o) => o.id === id)
-        ?? null;
+      const obj = (id && objectOnBoard(view, id)) ?? decisionCandidateCard(view, id);
       if (!obj) return { picked: 0 };
       const types = obj.types ?? obj.cardId ? cardDef(obj.cardId)?.types : [];
       const isCreature = obj.kind === 'creature' || (types ?? []).includes('Creature');

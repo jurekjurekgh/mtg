@@ -7453,6 +7453,21 @@ export function playerView(state, playerId) {
       })
       : null,
   } : null;
+  // A1 (audyt PR #100, klasa L1/L102): wpisy `zones.library` i cudzej ręki są w
+  // widoku POZBAWIONE pól karty ( `{id, controllerId, hidden}` — granica FoW,
+  // ADR 0003). Decyzje, które rozstrzyga się o kartach WŁAŚNIE z tych stref,
+  // muszą więc SAME nieść ich dane — inaczej każdy konsument (UI, wycena bota)
+  // patrzy w puste pola. Wspólny projektor kandydata: ten sam kształt co
+  // `pendingManifestDread.cards` (M223) i `pendingSearchChoice.cards`.
+  const revealedCandidateView = (id) => {
+    const object = state.objects.get(id);
+    if (!object) return null;
+    return Object.freeze({
+      id: object.id, cardId: object.cardId ?? null, controllerId: object.controllerId, zone: object.zone,
+      kind: object.kind ?? null, power: object.power ?? null, toughness: object.toughness ?? null,
+      manaCost: object.manaCost ?? null, types: Object.freeze([...(object.types ?? [])]),
+    });
+  };
   const pendingEpicExperimentView = state.pendingEpicExperiment ? {
     playerId: state.pendingEpicExperiment.playerId,
     maxMV: state.pendingEpicExperiment.maxMV,
@@ -7516,7 +7531,17 @@ export function playerView(state, playerId) {
     // M240/B (zgłoszenie): jak M162/C — tytuł modala ETB-look nazywa kartę
     // źródła (na polu bitwy; informacja publiczna, tylko właściciel decyzji).
     pendingSatyrLook: activeSatyrLook
-      ? { sourceCardId: state.pendingSatyrLook.sourceCardId ?? null }
+      ? {
+        sourceCardId: state.pendingSatyrLook.sourceCardId ?? null,
+        // A1 (audyt PR #100): efekt każe odsłonić wierzch biblioteki
+        // WYŁĄCZNIE jej właścicielowi (CR 701.3 „look at"), więc widok nosi
+        // dane kandydatów tylko dla decydenta — dokładnie jak
+        // `pendingManifestDreadView` (M223). Bez nich wycena i projekcja bota
+        // nie miały czym różnicować kart (wpisy `zones.library` są puste).
+        cards: state.pendingSatyrLook.playerId === playerId
+          ? Object.freeze(state.pendingSatyrLook.objectIds.map(revealedCandidateView).filter(Boolean))
+          : null,
+      }
       : null,
     // M221/B: źródło i główny efekt decyzji „you may" — do etykiety modala.
     // sourceCardId z obiektu-źródła (pole bitwy), effect (płytka kopia) z
@@ -7653,6 +7678,14 @@ export function playerView(state, playerId) {
       sourceCardId: state.pendingRevealExile.cardId ?? null,
       handCardIds: [...state.pendingRevealExile.handIds],
       graveCardIds: [...state.pendingRevealExile.graveIds],
+      // A1 (audyt PR #100): kandydaci z RĘKI są dla widoka ukryci (cudza ręka
+      // = `hidden`, bez pól karty), a decyzja zapada właśnie o nich — więc
+      // ujawnione na potrzeby efektu dane idą w payloadzie, wyłącznie
+      // adresatowi ujawnienia (decydentowi). Grób jest strefą jawną i swoje
+      // dane już niesie, dlatego `graveCardIds` zostają bez otoczki.
+      handCards: state.pendingRevealExile.playerId === playerId
+        ? Object.freeze([...state.pendingRevealExile.handIds].map(revealedCandidateView).filter(Boolean))
+        : null,
       chosenHand: state.pendingRevealExile.chosenHand,
     } : null,
     initiativePlayerId,
