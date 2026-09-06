@@ -1908,6 +1908,53 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return (foe?.mana ?? 0) + untapped;
   }
 
+  /** M320/NA2: otwarta mana BOTA — pula + nietapnięte własne landy (lustrzane). */
+  function ownOpenMana(view) {
+    const self = view.players.find((p) => p.id === view.playerId);
+    const untapped = view.zones.battlefield.filter((o) => o.controllerId === view.playerId
+      && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
+    return (self?.mana ?? 0) + untapped;
+  }
+
+  /**
+   * M320/NA2 (zgłoszenie właściciela): ward (CR 702.21) — celując we wrogi
+   * permanent z ward {N}, bot musi DOPŁACIĆ N przy rozstrzygnięciu, albo czar/
+   * zdolność zostaje skontrowana (fizzle — mana przepada). Bot celował cloakami
+   * 2/2 (ward {2}) zdolnościami bez many na dopłatę — „bez sensu".
+   * Koszt ward liczony po odjęciu zarezerwowanej many (koszt czaru/zdolności —
+   * dopłata idzie z puli PO zapłaceniu kosztu głównego). Własny cel nie
+   * triggeruje ward (CR 702.21a: „an opponent controls").
+   */
+  function wardTargetTax(view, targetIds, reservedMana = 0) {
+    let tax = 0;
+    let open = ownOpenMana(view) - reservedMana;
+    for (const id of targetIds ?? []) {
+      const o = objectOnBoard(view, id);
+      if (!o || o.controllerId === view.playerId) continue;
+      const amount = o.ward ?? ((o.keywords ?? []).includes('ward') ? 2 : null);
+      if (amount == null || amount <= 0) continue;
+      if (open >= amount) { tax += amount; open -= amount; }
+      else { tax += 200; } // brak many na dopłatę → wariant fiknie, poniżej passu
+    }
+    return tax;
+  }
+
+  /** M320/NA2: mana zarezerwowana na sam koszt czaru/zdolności (przed ward). */
+  function reservedManaOf(view, cmd) {
+    if (cmd.type === 'activate_ability') {
+      const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
+      const abilityObject = source ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+      const def = abilityObject ? cardDef(abilityObject.cardId) : undefined;
+      const ability = cmd.grantedFromEquipment
+        ? (def?.equipment?.grantedAbilities ?? [])[cmd.abilityIndex ?? 0]
+        : ((abilityObject?.activatableAbilities ?? def?.abilities ?? [])[cmd.abilityIndex ?? 0]);
+      return ability?.cost?.mana ?? 0;
+    }
+    const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    const base = card?.manaCost ?? (card?.cardId ? (cardDef(card.cardId)?.manaCost ?? 0) : 0);
+    return base + (cmd.xValue ?? 0);
+  }
+
   /**
    * M297/B (uwaga właściciela): WIDOCZNE „kupno deathtouch" — nietapnięty
    * stwór przeciwnika z aktywowaną zdolnością dającą sobie deathtouch do
@@ -2167,7 +2214,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   function scoreCommand(view, cmd) {
-    const finish = (score) => weightedScore(cmd.type, score);
+    // M320/NA2: ward (CR 702.21) — dopłata za celowanie we wrogi permanent
+    // z ward. Odejmowana od WYNIKU każdego wariantu (finish), więc warianty
+    // różnią się kosztem ward jak każdym innym; brak many na dopłatę →
+    // wariant fiknie i schodzi poniżej passu. Trigger z celem (wariant
+    // resolve_trigger_target) to też „spell or ability" w sensie ward.
+    const wardScoringType = ['cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
+      'cast_adventure', 'cast_permanent', 'activate_ability', 'resolve_trigger_target'].includes(cmd.type);
+    const wardTax = wardScoringType
+      ? wardTargetTax(view, cmd.targets ?? (cmd.targetId != null ? [cmd.targetId] : []), reservedManaOf(view, cmd))
+      : 0;
+    if (wardTax >= 200) return weightedScore(cmd.type, -200);
+    const finish = (score) => weightedScore(cmd.type, score - wardTax);
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
