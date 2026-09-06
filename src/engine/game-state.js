@@ -5553,6 +5553,11 @@ export function playerView(state, playerId) {
           entry.types = [...object.types];
         }
         if (object.faceDown) entry.faceDown = true;
+        // M326 (audyt PR #102, F6): przyczyna zakrycia JAWNA dla obu graczy
+        // (CR 708.6 — stół musi pokazać, CO zakryło kartę), w przeciwieństwie
+        // do `cloakReady` (prawa do obrotu = zna tylko kontroler). Nazwa
+        // mechaniki nic nie mówi o karcie pod spodem, więc FoW zostaje.
+        if (object.faceDownCause) entry.faceDownCause = object.faceDownCause;
         if (object.goaded === true) entry.goaded = true;
         // M177/E: detain jest informacją publiczną (badge + boty).
         if (object.detained === true) entry.detained = true;

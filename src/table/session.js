@@ -82,6 +82,31 @@ export function cloakFaceDownName(cardName, copyNumber = null) {
 }
 
 /**
+ * M326 (audyt PR #102, F6): samo źródło znacznika przyczyny zakrycia.
+ * Cloverek (Veiled Ascension) podpisuje się „Cloak N", wszystko inne zostaje
+ * przy dzisiejszym „Morph" (M127) — silnik nie nosi przyczyny dla morpha/
+ * manifestu, a wymyślanie jej z kształtu obiektu byłoby zgadywaniem.
+ */
+export function faceDownCauseTag(object) {
+  return object?.faceDownCause === 'cloak'
+    ? cloakFaceDownName(null, object?.copyNumber ?? null)
+    : FACE_DOWN_LABEL;
+}
+
+/**
+ * Pełna etykieta zakrytego permanentu dla WIDZA: kontroler zna swoją kartę
+ * (CR 708.6) więc „Nazwa (Cloak 1)", przeciwnik tylko przyczynę „Cloak 1"
+ * (bez cardId w widoku — FoW, CR 708.2a). Przed M326 pięć miejsc stołu
+ * sklejało to osobno i wszystkie cztery „dla wroga" mówiły „Morph" o cloaku.
+ */
+export function faceDownLabel(object, nameOf) {
+  const name = object?.cardId != null ? nameOf(object.cardId) : null;
+  return object?.faceDownCause === 'cloak'
+    ? cloakFaceDownName(name, object?.copyNumber ?? null)
+    : faceDownName(name);
+}
+
+/**
  * Feature 2026-08-11: stabilny klucz POJEDYNCZEJ opcji akcji (rzut czaru /
  * aktywacja zdolności) — do „ptaszka wyciszenia" w panelu „Twoje działania".
  * Zaznaczona opcja nie przerywa auto-passu (hasMeaningfulDecision ją pomija).

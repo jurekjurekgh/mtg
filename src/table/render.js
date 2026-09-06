@@ -8,7 +8,7 @@ import { hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
-  FACE_DOWN_LABEL, faceDownName, cloakFaceDownName,
+  FACE_DOWN_LABEL, faceDownLabel, faceDownCauseTag,
   manaEffectLabel,
   manaProducedLabel,
 } from './session.js';
@@ -2255,13 +2255,13 @@ export function commandLabel(cmd, session, view) {
     const tokenName = looksLikeToken && object?.name != null
       ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name)
       : null;
+    // M326 (audyt PR #102, F6): brzmienie zakrycia z JEDNEGO źródła
+    // (session.faceDownLabel, CR 708.6). Podstawą był `cloakReady` — pole
+    // ZNAJOMOŚCI reguły, którego w widoku przeciwnika celowo nie ma, więc
+    // cudzy cloak podpisywał się „Morph" (kłamstwo o ward {2}).
     const base = object
       ? (object.faceDown
-        // M319/NA1: własny cloak podpisany „Nazwa (Cloak N)" (nie „(Morph)")
-        // — mechanika zakrycia i stały numer kopii (M172/D dla tokenów).
-        ? (object.cloakReady
-          ? cloakFaceDownName(object.cardId != null ? session.nameOf(object.cardId) : null, object.copyNumber)
-          : faceDownName(object.cardId != null ? session.nameOf(object.cardId) : null))
+        ? faceDownLabel(object, session.nameOf)
         : (tokenName || session.nameOf(object.cardId)))
       : session.nameOfObject(id);
     // E (2026-08-11): permanent na polu bitwy, który mogą mieć OBAJ gracze
@@ -3290,7 +3290,11 @@ export function cardInfo(session, object, combat = null) {
     // wystarcza („Wygnana zakryta"), badge mechaniki pola bitwy myliłby.
     // M319/NA1: własny cloak z numerem kopii — „zakryty (Cloak 2)" — żeby
     // kafel na stole pasował do etykiety celu („Nazwa (Cloak 2)").
-    morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${object.cloakReady ? `Cloak${object.copyNumber ? ` ${object.copyNumber}` : ''}` : FACE_DOWN_LABEL})` : FACE_DOWN_LABEL)) : null,
+    // M326 (audyt PR #102, F6): badge po JAWNEJ przyczynie zakrycia, nie po
+    // prawie kontrolera do obrotu — dla wroga wychodziło to samo co przy
+    // morphie, a ruling WotC 2024-02-02 wymaga rozróżnialności PRZEZ
+    // WSZYSTKICH graczy (patrz komentarz w effects.js przy `faceDownCause`).
+    morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${faceDownCauseTag(object)})` : faceDownCauseTag(object))) : null,
     colors,
     kind,
     // M138/Z6 (audyt Żywym Testerem): typy bierzemy ze STANU GRY, nie z rejestru
@@ -4074,7 +4078,11 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
         const tgtPlayer = view.players.find((pl) => pl.id === id);
         if (tgtPlayer) return tgtPlayer.name ?? id;
         const tgtObj = (view.zones.battlefield ?? []).find((o) => o.id === id);
-        if (tgtObj) return tgtObj.faceDown ? FACE_DOWN_LABEL : session.nameOf(tgtObj.cardId ?? id);
+        // M326 (F6): cel na POLU BITWY — tam może leżeć cloak, więc etykieta
+        // bierze przyczynę z widoku (kontroler dodatkowo zna swoją kartę,
+        // CR 708.6). Logi zakrytego RZUTU na stosie zostają przy
+        // FACE_DOWN_LABEL: clocek nie rzuca zakryty i stos przyczyny nie nosi.
+        if (tgtObj) return tgtObj.faceDown ? faceDownLabel(tgtObj, session.nameOf) : session.nameOf(tgtObj.cardId ?? id);
         return session.nameOfObject(id);
       }).join(', ');
       // Face-down czar (morph/megamorph, CR 708.2): tożsamość ukryta przed

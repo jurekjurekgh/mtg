@@ -1873,6 +1873,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         // z drukowanym wardem, więc błąd był uśpiony).
         ward: topObj.ward ?? null,
       }),
+      // M326 (audyt PR #102, F6): PRZYCZYNA zakrycia jest JAWNA, bo rozróżnienie
+      // zakrytych permanentów musi widzieć każdy gracz (CR 708.6 + ruling WotC
+      // 2024-02-02: „You must ensure that your face-down spells and permanents
+      // can be easily differentiated … as well as what ability caused them to
+      // be face down\"). To NIE to samo co `cloakReady`: ta flaga znaczy także
+      // „pod spodem jest karta stworu" (ukryte, CR 708.2a) i decyduje o prawie
+      // do obrotu, więc zostaje u kontrolera.
+      faceDownCause: 'cloak',
       cloakReady: (topObj.types ?? []).includes('Creature') || topObj.kind === 'creature',
       cloakTurnUpCost: (topObj.types ?? []).includes('Creature') || topObj.kind === 'creature'
         ? (topObj.manaCost ?? 0)

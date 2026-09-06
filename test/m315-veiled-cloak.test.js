@@ -110,7 +110,9 @@ test('M315/A1: kafel cloakowanego (właściciel) — „Ward {2}" I „Latanie" 
     id: 'o1', cardId: 'goblin-piker', controllerId: 'p1', zone: 'battlefield', kind: 'creature',
     faceDown: true, ward: 2, keywords: ['flying', 'ward'], types: ['Creature'],
     power: 2, toughness: 2, powerModifier: 0, toughnessModifier: 0, tapped: false,
-    summoningSickness: true, damage: 0, cloakReady: true,
+    // M326: od tego commitu stół pyta o JAWNĄ przyczynę zakrycia (widok nosi
+    // `faceDownCause` przy każdym cloaku — patrz m326/A), nie o `cloakReady`.
+    summoningSickness: true, damage: 0, cloakReady: true, faceDownCause: 'cloak',
   });
   assert.match(text, /Ward \{2\}/, `kafl ma pokazać ward {2} zakrycia: ${text}`);
   assert.match(text, /Latani/, `licznik flying (Veiled Ascension) jest jawny — kafel go gubił: ${text}`);
