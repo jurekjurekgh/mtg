@@ -7246,8 +7246,12 @@ export function playerView(state, playerId) {
   // z czego rysować. `manaPool` to mapa profil-kolorów → liczba jednostek
   // (klucz `manaUnitKey`: 'U', 'UR', '' = bezbarwna). Pula jest jawną
   // informacją stołową (jak `mana`), więc trafia do widoku OBU graczy.
-  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool }) => ({
+  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool, speed }) => ({
     id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0,
+    // M313 (zgłoszenie właściciela, Leonin Surveyor): prędkość (DFT „Start
+    // your engines!", Batch 24) jest jawna dla OBU graczy — licznik publiczny,
+    // jak poison; bez niej UI nie miało z czego rysować panelu speed.
+    speed: speed ?? 0,
     manaPool: { ...(manaPool ?? {}) },
     // M214: jednostki many ograniczonej drukiem (Powerstone) — UI/audyt widzi
     // je osobno, żeby nie liczyć ich jako „mana na wszystko".

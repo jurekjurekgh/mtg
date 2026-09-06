@@ -3993,7 +3993,7 @@ function showHoverPreviewAt(els, info, e, mode, { showCycleHint = true } = {}) {
  *   onCardClick: (objectId: string, cardId: string) => void,
  *   onStackClick?: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, onSpeedCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'handEnemy', 'actions', 'log']) clear(els[key]);
@@ -4227,6 +4227,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // (karta specjalna spoza rejestru, jak Day/Night i Undercity).
   renderPoisonPanel(els, view, { onOpenCard: onPoisonCardClick, hover });
 
+  // --- Prędkość (M313) — panel jak Poison: tylko gracze z „Start your engines!" ---
+  renderSpeedPanel(els, view, { onOpenCard: onSpeedCardClick, hover });
+
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view, { onClick: onUndercityClick, hover });
 }
@@ -4245,6 +4248,16 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
 // M157/F (uwaga właściciela): liczniki trucizny mają być jawnie widoczne —
 // panel w stylu Undercity/Day-Night z ilustracją karty „Poison Counter"
 // (Scryfall tecc/13) i licznikami graczy. Widoczny, gdy ktoś ma truciznę.
+// M313 (zgłoszenie właściciela): marker prędkości (DFT „Start your engines!")
+// — oficjalny double-faced token mechaniki (tdft/14): przód „Start Your
+// Engines!", tył „Max Speed". Karta specjalna spoza rejestru (jak Poison
+// Counter / Day-Night) — ilustracja z Scryfallem, klik = pełny ekran.
+const SPEED_MARKER = Object.freeze({
+  name: 'Start Your Engines!',
+  imageUriFront: 'https://cards.scryfall.io/large/front/8/2/82613de6-ed37-48c1-8d2f-d91a3f496794.jpg?1783907681',
+  imageUriMax: 'https://cards.scryfall.io/large/back/8/2/82613de6-ed37-48c1-8d2f-d91a3f496794.jpg?1783907681',
+});
+
 const POISON_COUNTER_CARD = Object.freeze({
   name: 'Poison Counter',
   imageUri: 'https://cards.scryfall.io/large/front/8/a/8a9cb417-8709-4336-be36-2fb0cea31fe1.jpg?1783904328',
@@ -4303,6 +4316,45 @@ export function renderPoisonPanel(els, view, { onOpenCard = null, hover = null }
     div(info, 'poison-count', `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${p.poison ?? 0} ${polishPluralCount(p.poison ?? 0, 'licznik', 'liczniki', 'liczników')} trucizny`);
   }
   div(info, 'poison-note', 'Gracz z 10 licznikami trucizny przegrywa (CR 704.10). Liczniki znikają tylko z końcem gry — obrażenia ich nie leczą.');
+}
+
+export function renderSpeedPanel(els, view, { onOpenCard = null, hover = null } = {}) {
+  if (!els.speed) return;
+  // M313 (zgłoszenie właściciela): panel pokazuje TYLKO graczy, którzy
+  // „zapalili silnik" (speed > 0); przy obu — wiersz dla każdego osobno.
+  const zapaleni = (view.players ?? []).filter((p) => (p.speed ?? 0) > 0);
+  els.speed.hidden = zapaleni.length === 0;
+  if (zapaleni.length === 0) return;
+  clear(els.speed);
+  // Marker „Start Your Engines! // Max Speed" (tdft/14, oficjalny double-faced
+  // token mechaniki) — przy maksymalnej prędkości któregokolwiek gracza
+  // pokazujemy TYŁ („Max Speed"), jak Day/Night przełącza swoją ilustrację.
+  const maxSpeed = Math.max(...zapaleni.map((p) => p.speed ?? 0));
+  const imageUri = maxSpeed >= 4 ? SPEED_MARKER.imageUriMax : SPEED_MARKER.imageUriFront;
+  const card = div(els.speed, 'speed-card');
+  if (onOpenCard) {
+    card.className = `${card.className} clickable`.trim();
+    card.addEventListener('click', () => onOpenCard({ name: SPEED_MARKER.name, imageUri }));
+  }
+  attachSpecialCardHover(card, hover, {
+    name: SPEED_MARKER.name,
+    imageUri,
+    artId: null, set: null, colors: [], kind: 'card', types: ['Card'], faceDown: false,
+  });
+  const img = document.createElement('img');
+  img.src = imageUri;
+  img.alt = SPEED_MARKER.name;
+  img.loading = 'lazy';
+  card.appendChild(img);
+  const info = div(els.speed, 'speed-info');
+  div(info, 'speed-status', 'Prędkość — Start your engines!');
+  for (const p of zapaleni) {
+    const v = p.speed ?? 0;
+    div(info, 'speed-count',
+      `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${v} z 4${v >= 4 ? ' (maks.)' : ''}`);
+  }
+  div(info, 'speed-note',
+    'Prędkość startuje na 1 przy permanentie „Start your engines!" i rośnie raz w turze, gdy przeciwnik traci życie. Maksymalna prędkość (4) odblokowuje zdolności „Max speed".');
 }
 
 export function renderDayNight(els, session, view, { onClick = null, hover = null } = {}) {

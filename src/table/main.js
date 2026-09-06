@@ -134,6 +134,7 @@ function bootstrapTable() {
     daynight: el('daynight'),
     poison: el('poison'),
     undercity: el('undercity'),
+    speed: el('speed'),
     hoverPreview: el('hover-preview'),
     contextMenu: el('context-menu'),
     contextMenuBody: el('context-menu-body'),
@@ -1523,6 +1524,8 @@ function bootstrapTable() {
       onDayNightClick: () => openDayNightFullscreen(),
       // M169/M: Poison Token w panelu trucizny — pełny ekran (karta specjalna).
       onPoisonCardClick: (card) => openSpecialCardFullscreen(card),
+      // M313: marker prędkości (Start Your Engines!) — pełny ekran.
+      onSpeedCardClick: (card) => openSpecialCardFullscreen(card),
       hoverMode: currentHoverMode,
       onHoverModeChange: (mode) => { currentHoverMode = mode; },
     });
