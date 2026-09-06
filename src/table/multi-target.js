@@ -334,8 +334,13 @@ const SINGLE_PICK_EXCLUDED_TYPES = new Set([
 function isNonePickCommand(cmd, field) {
   if (!cmd) return false;
   if (field === 'cardId' && cmd.cardId === null) return true;
-  // Szukanie w bibliotece: odmowa (fail to find) to found == null (CR 701.19b)
-  // — tylko przy nieobowiązkowym szukaniu (mandatory=false).
+  // Szukanie w bibliotece: odmowa (fail to find) to `found == null` (CR 701.19b).
+  // Sprawdzania `mandatory` TU nie ma i być nie może: gwarancja jest
+  // strukturalna po stronie silnika — oferta odmowy jest emitowana wyłącznie
+  // w gałęzi `if (!pending.mandatory)` (game-state ~6210), więc komenda z
+  // `found: null` NIE ISTNIEJE przy szukaniu obowiązkowym. Sprawdzanie flagi
+  // z komendy byłoby warunkiem martwym (L5): komenda `found: null` nie niesie
+  // `mandatory` (dane decyzji siedzą w `view.pendingSearchChoice`).
   if (field === 'found' && cmd.found == null) return true;
   return cmd.done === true || cmd.skip === true;
 }

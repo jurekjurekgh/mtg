@@ -626,6 +626,22 @@ export const TEMPORARY_PUMP_EFFECTS = new Map([
 ]);
 
 /**
+ * A3 (audyt PR #100): efektywne typy obiektu z widoku — ŻYWE typy
+ * (`viewObject.types`: ożywiony ląd, karta skopiowana przez `enter_as_copy`,
+ * utrata typów) mają pierwszeństwo przed wydrukowanymi z katalogu.
+ * W `tieProjection` stało `obj.types ?? obj.cardId ? cardDef(...)?.types : []`,
+ * a `?:` wiąże słabiej niż `??`, więc warunkiem było całe
+ * `(obj.types ?? obj.cardId)` i do wyniku ZAWSZE szły typy drukowane —
+ * `obj.types` nie było użyte ani razu. Wyodrębnione, bo klasa błędu (operator
+ * warunkowy w łańcuchu `??`) wraca przy każdym kopiowaniu takiego wyrażenia.
+ */
+export function effectiveTypesOf(viewObject, printedDef) {
+  const zywe = viewObject?.types;
+  if (Array.isArray(zywe)) return zywe;
+  return printedDef?.types ?? [];
+}
+
+/**
  * Wspólny mianownik: `{ power, toughness }` nadawane przez efekt typu pump
  * (null = to nie jest pump). Ujemne wartości są tu NA MIEJSCU — to ten sam
  * efekt, tylko ze znakiem minus (M202/G: debuff to efekt WROGI, nie mniejszy
@@ -5620,7 +5636,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (id == null && cmd.done === true) return { done: 1 };
       const obj = (id && objectOnBoard(view, id)) ?? decisionCandidateCard(view, id);
       if (!obj) return { picked: 0 };
-      const types = obj.types ?? obj.cardId ? cardDef(obj.cardId)?.types : [];
+      const types = effectiveTypesOf(obj, obj.cardId ? cardDef(obj.cardId) : null);
       const isCreature = obj.kind === 'creature' || (types ?? []).includes('Creature');
       return {
         land: obj.kind === 'land' ? 1 : 0,
