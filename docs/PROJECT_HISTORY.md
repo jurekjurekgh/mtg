@@ -8851,3 +8851,28 @@ przed i po rebase (pusty diff) — pomiary suite ważne.
 - **Bramki:** `npm test` **4534/4534** (+7), build 59 / 3327,9 kB; benchmark
   bez dryfu (570/672). Żywo: ravnica|srodziemie s31 — 0 zgłoszeń detektorów
   (obie karty w grze). Commit `3f75358` (wypchnięty).
+
+### Część 4 (arena/01a07711, 2026-09-06): M315 cloak (Veiled Ascension) + M317 bot vs triki obronne (PR #102)
+
+- **M315 (temat A, „albo 100% CR i Rulings albo nieobsługiwana"):**
+  ward {2} cloakowanego był egzekwowany od M258/F3 (W2-W7), ale KAFL gubił
+  granty (licznik flying z Veiled Ascension) i hardkodował ward na kaflu;
+  odkrycie (uncover) NIE ISTNIAŁO. Naprawy: kafel czyta keywordy z widoku
+  (widok rozstrzyga FoW: kontroler pełna lista, przeciwnik granty + ward —
+  decyzja M258/F3 „to nie jest informacja ukryta"); własny zakryty podpisany
+  „(Cloak)" (cloakReady tylko dla kontrolera — CR 708.2d); NOWA SPECIALNA
+  AKCJA `turn_cloak_face_up` (CR 702.75c + ruling WotC: any time you have
+  priority, bez stosu, niereagowalna; tylko karty STWORÓW; koszt many karty
+  z faceDownOriginal; po obrocie traci ward {2}); bot: NEVER (wycena uncover
+  = osobny temat, M310-precedens). Golden-master REGENEROWANY (nowa legalna
+  akcja w options, 1 partia +1 decyzja — świadome). Pin m277 + cloakReady.
+  Strażnik m315 (9).
+- **M317 (temat B):** `enemyDefensivePumpBonus` — wycena ataku zakłada, że
+  obrońca pompa blokera zdolnością ze stołu (tap → nietapnięte źródło; mana →
+  pula + nietapnięte landy; detain wyklucza; najlepsza pojedyncza zdolność);
+  gałęzie ataku liczą staty blokerów z bonusem. Bot nie kupuje już wymiany
+  2/2↔2/2 wygrywanej wrogim pumpe. Strażnik m317 (6); golden-master bez zmian.
+- Bramy: `npm test` **4549/4549** (+15), `test:all` **4559/4559**, build
+  59 / 3336,4 kB; benchmark 84,8% (570/672) bez dryfu. Żywo: ravnica
+  |worek-legend s41 (Warden w grze) — 0 zgłoszeń detektorów.
+- Commity: `963af06` (M315), `6d8dfa9` (M317) — wypchnięte.
