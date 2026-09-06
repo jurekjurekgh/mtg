@@ -20,6 +20,9 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { untapObject } from '../src/engine/permanents.js';
 import { addMana } from '../src/engine/resources.js';
+import { createSession, HUMAN_ID, BOT_ID } from '../src/table/session.js';
+import { parseDeckText } from '../src/cards/deck-text.js';
+import fs from 'node:fs';
 
 const REGISTRY = createCardRegistry();
 
@@ -90,4 +93,89 @@ test('M318/D: pula {U} + bramka → {1}{B} oferowany (pula pokrywa {1}, bramka p
   const lil = putCard(state, 'lil', 'lilianas-triumph', 'p1', 'hand');
   addMana(state, 'p1', 1, { colors: ['U'] });
   assert.equal(spellOffered(state, lil.id), true, 'pula {U} + bramka {B} = {1}{B} do zaplacenia');
+});
+
+// ---- E/F/G: pełna sesja — scenariusz zgłoszenia (Severed Strands {1}{B}) ----
+// Zgłoszenie (2026-09-06): „odtapowany Guildgate + kilka innych lądów, brak
+// Swampów, w ręku Severed Strands; w panelu jest tylko „Użyj Dimir Guildgate",
+// brak „Rzuć Severed Strands"”. Repro z pełną sesją (ravnica vs srodziemie):
+// przy nietapniętych landach oferta JEST bez tapnięcia czegokolwiek (planer
+// many liczy nietapnięte źródła, M193/A); brak oferty wynika wyłącznie z
+// warunków POZA maną: cel = stwór przeciwnika (CR 601.2b-c) albo własny stwór
+// do poświęcenia jako koszt dodatkowy (CR 601.2h). Sama bramka tapnięta daje
+// 1 manę — {1}{B}=2, więc „najpierw tapnę bramkę” nigdy nie odblokowuje rzutu.
+
+function sessionWithSS({ tappedOthers = false, ownCreature = true, foeCreature = true } = {}) {
+  const REG = createCardRegistry();
+  const decks = new Map([
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/ravnica.txt', 'utf8'), REG).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/srodziemie.txt', 'utf8'), REG).cardIds],
+  ]);
+  const session = createSession({ seed: 5, registry: REG, decks });
+  const state = session.state;
+  for (let i = 0; i < 8; i++) {
+    const cmds = session.view().legalCommands;
+    const keep = cmds.find((c) => c.type === 'resolve_mulligan_choice' && c.keep === true)
+      ?? cmds.find((c) => c.type === 'resolve_mulligan_choice' || c.type === 'resolve_mulligan_bottom_choice');
+    if (!keep) break;
+    session.apply(keep);
+  }
+  const used = new Set();
+  const take = (cardId) => {
+    const id = [...state.objects.entries()]
+      .find(([oid, o]) => !used.has(oid) && o?.cardId === cardId && (o.zone === 'library' || o.zone === 'hand'))?.[0];
+    if (!id) return null;
+    used.add(id);
+    state.zones.library = state.zones.library.filter((x) => x !== id);
+    state.zones.hand = state.zones.hand.filter((x) => x !== id);
+    return id;
+  };
+  const toBF = (cardId, ctrl, tapped) => {
+    const id = take(cardId);
+    if (!id) return null;
+    state.zones.battlefield.push(id);
+    state.objects.set(id, Object.freeze({ ...state.objects.get(id), zone: 'battlefield', tapped, controllerId: ctrl, ownerId: ctrl }));
+    return id;
+  };
+  toBF('dimir-guildgate', HUMAN_ID, false);
+  toBF('basic-plains', HUMAN_ID, tappedOthers);
+  toBF('basic-forest', HUMAN_ID, tappedOthers);
+  toBF('basic-island', HUMAN_ID, tappedOthers);
+  const own = ownCreature ? toBF('tenth-district-veteran', HUMAN_ID, false) : null;
+  const foe = foeCreature ? toBF('greenwood-sentinel', BOT_ID, false) : null;
+  const ss = take('severed-strands');
+  state.zones.hand.push(ss);
+  state.objects.set(ss, Object.freeze({ ...state.objects.get(ss), zone: 'hand' }));
+  let guard = 0;
+  while (guard++ < 300) {
+    const t = state.turn;
+    if ((t.step === 'main1' || t.step === 'main') && t.activePlayerId === HUMAN_ID && t.priorityPlayerId === HUMAN_ID) break;
+    const cmds = session.view().legalCommands;
+    const pass = cmds.find((c) => c.type === 'pass_priority')
+      ?? cmds.find((c) => ['resolve_discard_choice', 'confirm', 'choose_option', 'resolve_mulligan_choice'].includes(c.type));
+    if (!pass) break;
+    session.apply(pass);
+  }
+  const ssOffered = () => session.view().legalCommands.some(
+    (c) => c.type === 'cast_spell' && c.objectId === ss,
+  );
+  return { session, state, gate: state.zones.battlefield[0], ssOffered };
+}
+
+test('M318/E: sesja — bramka+landy untap (zero Swampów), oba stwor — SS ofertowany BEZ tapnienia', () => {
+  const { ssOffered } = sessionWithSS({});
+  assert.equal(ssOffered(), true, 'planer many liczy nietapnięte źródła: {B} z bramki bez tapnienia');
+});
+
+test('M318/F: sesja — brak stwora przeciwnika (celu) → brak oferty jest poprawny (CR 601.2b-c)', () => {
+  const { ssOffered } = sessionWithSS({ foeCreature: false });
+  assert.equal(ssOffered(), false, 'SS celuje we wrogiego stwora — bez celu czaru nie można rzucić');
+});
+
+test('M318/G: sesja — tylko bramka untap: brak oferty, a tapnięcie bramki NIE pomaga (1 < {1}{B})', () => {
+  const { session, gate, ssOffered } = sessionWithSS({ tappedOthers: true });
+  assert.equal(ssOffered(), false, '1 mana < {1}{B}');
+  const act = session.view().legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === gate);
+  if (act) session.apply(act);
+  assert.equal(ssOffered(), false, 'pula 1 po bramce nie pokrywa kosztu 2 — tapnięcie nie odblokowuje');
 });
