@@ -8758,3 +8758,20 @@ prawdziwe). `git log` nie pomaga: klon sesji ma JEDEN commit zbiorczy
   startowej: kondensacja L126 i L131 (narracja → `LESSONS_PRZYPADKI.md`,
   numery 1:1); po dopisaniu L135 zmierzono **99,96k/100k** (test budżetu
   zielony, próg nietknięty).
+- **Dopisek (ten sam dzień, decyzja właściciela) — Station wraca jako
+  heurystyka bota:** właściciel przeklasyfikował wątek — pompowanie charge
+  ponad próg jest legalne, ale bezsensowne (marnuje tapnięcia stworów) i
+  powinno mieć ujemny scoring bota. Weryfikacja (L57, pomiar nie zgadywanie):
+  scoring MA karę `charge >= threshold → −15` (kontynuacja M120/M153/A2;
+  z bazą +2 i kosztem tapu −3 netto ≈ −16, poniżej passu), a zachowanie jest
+  poprawne behawioralnie — ale gałąź NIE miała pinu testowego (klasa L13:
+  mutacja usuwająca karę byłaby zielona). Strażnik
+  `test/m310-station-ponad-prog-scoring.test.js` (3 testy): para graniczna
+  na Gunshipie (charge 5 → buduje, charge 6 = próg → nie), próg czytany z
+  DESKRYPTORA karty (Rammer próg 9 na charge 6 dalej buduje). Mutacje pinu:
+  kara zamieniona na +4 ⇒ M310/2 RED; stała „6" zamiast deskryptora ⇒
+  M310/3 RED; po przywróceniu 3/3 GREEN. Źródło 7× aktywacji w partii
+  worek-legend s7: profil `greedy` TESTERA (sonda pokrycia UI — priorytet
+  `/^Aktywuj:/` z definicji), nie heurystyka bota; tester będzie pompował
+  dalej (cel: pokrycie mechaniki), bot nie. Pomiar żywy na lustrze partii
+  (bot=worek-legend s7): patrz HANDOFF 2026-09-06c.

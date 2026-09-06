@@ -31,11 +31,13 @@ Start: `main` = `6ce4cab` (squash merge PR #101, 32 pliki, +1684/−268),
     na s13 (linia `[slots wizard]` w transkrypcie, partia domknięta).
   - E3b: silnik nie ma wymogu „must block" (grep), `cantBlockAlone`
     spójny — para wymóg×zakaz po stronie bloków nie może wystąpić.
-  - Station legality: DOMKNIĘTE bez zmian kodu — aktywacje po progu są
-    legalne wg Oracle (Station bez górnej granicy, CR 702/721) i silnik
-    nie ma sztucznego capu (`permanents.js` próg z deskryptora,
-    `abilities.js` koszt tap-another); sekwencja 2→6→9→12 w partii
-    worek-legend s7 była legalna.
+  - Station legality: aktywacje po progu są legalne wg Oracle (Station bez
+    górnej granicy, CR 702/721) i silnik nie ma sztucznego capu
+    (`permanents.js` próg z deskryptora, `abilities.js` koszt tap-another);
+    sekwencja 2→6→9→12 w partii worek-legend s7 była legalna.
+    **Dopisek (decyzja właściciela):** wątek wrócił jako heurystyka bota —
+    scoring ma karę ponad-próg (−15), dopisano strażnik m310 (mutacje
+    zweryfikowane); źródłem 7× pompowania był profil greedy TESTERA, nie bot.
   - Dryf remisów F1/F2: ZERO (bit-w-bit 11322/631/213 wobec bazy
     `6ce4cab`); rozbieżność z opisem PR #101 (625/197) = zmiana talii w
     fazie #101 (usunięcie Stifle), nie fixy.
