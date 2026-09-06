@@ -8775,3 +8775,54 @@ prawdziwe). `git log` nie pomaga: klon sesji ma JEDEN commit zbiorczy
   `/^Aktywuj:/` z definicji), nie heurystyka bota; tester będzie pompował
   dalej (cel: pokrycie mechaniki), bot nie. Pomiar żywy na lustrze partii
   (bot=worek-legend s7): patrz HANDOFF 2026-09-06c.
+
+
+### Kontynuacja fazy 3 (arena/01a07711, 2026-09-06): pętla jakości — M311–M313 (PR #102)
+
+Prompt właściciela: „kontynuujemy projekt" (ADR 0021). Uwaga porządkowa:
+lokalna gałąź została odnaleziona przestawioną na squash-merge PR #101
+(`6ce4cab`), z pracą fazy 3 żywą w drzewie roboczym — ale ORIGIN zachował
+pełną linię fazy 3 (`5466cfb`…`e80d395`). Pracę sesyjną (M311–M313 + docs)
+zrebase'owano na `e80d395`; tymczasowe commity odtworzeniowe wypadły
+w rebase jako już-obecne (patch-identyczne). Drzewo bit-w-bit identyczne
+przed i po rebase (pusty diff) — pomiary suite ważne.
+
+- **M311 (tor A, `5e086d1`) — Apprentice Wizard / kreator many.**
+  Zgłoszenie: opis „+2" kłamał, a plan płatności źle liczył — zdolność
+  netto daje 2, bo płaci koszt aktywacji {1}{U} z produkcji 3 (CR 601.2h,
+  107.4a). Kontrakt: źródło-zdolność niesie PEŁNĄ produkcję
+  (`amount` 3) + `activationCost {generic, colors}` osobno; skip gdy
+  `produkcja − kosztGeneryk ≤ 0`; solver acceptuje
+  `Σamount − ΣkosztGeneryk ≥ need` i traktuje pipy kosztu jako dodatkowe
+  wymagania; klucz wariantu z sygnaturą `generic:pips`; etykieta
+  „+3 — koszt aktywacji {1}{U}". Silnik płaci koszt PRZED produkcją.
+  Stary pin `table-mana-wizard.test.js` deklarował netowany model —
+  przełożony (amount 3, deepEqual activationCost). Testy m311 (4).
+- **M312 (tor B, `b107c56`) — Village Rites / encje HTML w wierszach.**
+  Zgłoszenie: wiersze kreatora wyboru pokazywały surowe encje HTML ikon
+  many zamiast renderu. Naprawa dwuwarstwowa: `addRow` (choice-request.js)
+  robi routing TREŚCIOWY — etykieta z `<` → kanał `html` (innerHTML,
+  kontrakt M104/A2), czysty tekst → kanał `label` (textContent, fallback
+  `objectOrPlayerName`); bramka nazwy w picker.js (radio/checkbox) liczy
+  się z kanałem `html` (`html || (label !== null && label !== '')` —
+  dotąd wiersz z samym html tracił `picker-name`). Ślepe kierowanie
+  całego labelOverride→html łamie 4 piny mini-DOM — odrzucone; obowiązują
+  detekcja treści `includes('<')`. Testy m312 (3).
+- **M313 (tor C, `71da22f`) — Start your engines! / panel prędkości.**
+  Zgłoszenie: Leonin Surveyor ma aktywować strefę specjalną Speed z
+  tokenem analogicznym do Undercity/Poison i polem prędkości gracza
+  (jeden zapalony = jego prędkość, obaj = wiersz dla każdego). Stan
+  wyjściowy: silnik miał speed w całości (DFT Batch 24), milczały widok
+  i UI. Naprawa: playerView projekcjonuje `speed` (licznik publiczny jak
+  poison); panel `#speed` na stole wg wzorca Poison — marker tdft/14
+  (przód „Start Your Engines!", przy maks. prędkości TYŁ „Max Speed"),
+  wiersze tylko dla graczy z speed > 0, licznik „X z 4" z „(maks.)",
+  klik = pełny ekran, hover; CSS rodziny `.speed-*`. Testy m313 (5).
+- **Żywo (regresja po torach):** partia kaladesh|alara s23 (greedy,
+  policy-seed 1) do końca — prędkość obu graczy doszła do 4 (ścieżka
+  „maks." panelu ćwiczona w DOM), **0 zgłoszeń detektorów**, pokrycie
+  UI: 27 akcji widzianych / 25 klikniętych. Benchmark szybki bez dryfu
+  (heuristic 84,8% = 570/672, random 3,9%).
+- Bramy na zamknięcie: `test:all` **4537/4537** (+5 m313, +3 m310,
+  +6 m309 względem 4522), szybki rdzeń **4527/4527**, build **59 modułów
+  / 3327,6 kB**. Handoff: `docs/setup/HANDOFF_2026-09-06d.md`.
