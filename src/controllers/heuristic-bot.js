@@ -1974,9 +1974,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // (main1/beginning_of_combat) nie kupujemy — poczekamy na atak.
         // Nazwy karty NIE ma w regule (ADR 0002); warunek po STANIE
         // (recipient.tapped, krok/faza, czy atakuje — L42/L64).
-        const myTurnCombat = myTurn(view)
+        // A4 (audyt PR #100): okno jest DOKŁADNIE jedno. Silnik tapuje
+        // atakujących przy DEKLARACJI (combat.js:264), a deklarację w tym
+        // silniku jest komenda gracza składana w kroku `declare_attackers`
+        // (odpowiednik CR 508.2a: „the active player taps the chosen
+        // attackers") — więc zakup premii sekundy przed tą komendą realnie
+        // chroni przed tapnięciem. Dawniej lista kroków obejmowała także
+        // `declare_blockers` i `combat_damage`, a i tak warunek niżej zawężał
+        // ją do jednego kroku → dwa wpisy martwe (L5: martwy warunek =
+        // podejrzany, nie dekoracyjny).
+        const przedDeklaracjaAtaku = myTurn(view)
           && view.turn.phase === 'combat'
-          && ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step);
+          && view.turn.step === 'declare_attackers';
         if (attacking && !recipient.tapped) {
           // Stwór ATAKUJE i jest odkręcony — vigilance zatrzyma go odkręconym.
           // Wartość rośnie z wytrzymałością (im twardszy, tym cenniejszy blok).
@@ -1984,19 +1993,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         } else if (blocking) {
           // Blokowanie: vigilance nie pomaga (stwór i tak nie atakuje).
           value -= 5;
-        } else if (myTurnCombat && canAttackNow(recipient)
-                   && view.turn.step === 'declare_attackers') {
-          // Jesteśmy dokładnie w kroku deklaracji atakujących — jeśli mamy
-          // zamiar wysłać tego stwora, vigilance opłaca się. Ta gałąź
-          // odpowiada kupowaniu z PRZYCISKU w wizardzie ataku (a nie main1).
-          // Ujemne w stosunku do wariantu attacking (nie wiemy jeszcze czy
-          // gracz wybierze atak) — wystarczy mała premia, żeby opcja nie była
-          // karana, ale nie tak duża, żeby kupować bez ataku.
+        } else if (przedDeklaracjaAtaku && canAttackNow(recipient)) {
+          // Jesteśmy w kroku deklaracji i stwór MOŻE zaatakować (odkręcony,
+          // bez choroby przyzwania) — kupno trzyma go odkręconym po ataku.
+          // Premia jest IDENTYCZNA jak w wariancie `attacking`: komentarz
+          // PR #100 obiecywał „ujemną w stosunku do niego", a kod od początku
+          // dodawał tyle samo. Zostaje wartość równa, bo przy `canAttackNow`
+          // zakup nie jest loterią — sztuczne skalanie premii karałoby ruch,
+          // który w tym silniku po prostu działa.
           value += 2 + (recipient.toughness ?? 0);
         } else {
           // Każda inna sytuacja (main1, tura przeciwnika, stwór zatapnięty)
           // — marnowanie many. Wcześniej gałąź precombat_main dawała +value
           // nawet BEZ zamiaru ataku → bug B: kupione w main1, po czym brak ataku.
+          // Świadomie karany jest też krok `beginning_of_combat`: w papierze
+          // to jedyne okno przed akcją turową deklaracji (CR 508.1), ale ten
+          // silnik rozkłada tapowanie na komendę, więc kupowanie turę wcześniej
+          // nie ma oparcia w zamiarze ataku (brak jeszcze dowodu, że stwór
+          // pójdzie do ataku) — patrz gate `test/m221d-vigilance-window.test.js`.
           value -= 10;
         }
       } else {
