@@ -877,6 +877,55 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const myCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'creature');
   const enemyCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId !== view.playerId && o.kind === 'creature');
   const untappedEnemyBlockers = (view) => enemyCreatures(view).filter((o) => !o.tapped);
+  /**
+   * M317 (zgłoszenie właściciela, Ghost Warden): wycena ataku ma zakładać,
+   * że OBROŃCA może w oknie bloków pompać swojego blokera zdolnością ze
+   * STOŁU — nie tylko zdolnością blokera, ale DOWOLNĄ dostępną („za
+   * tapnięcie albo za manę, o ile ją mam"): atakujący bot liczy wymianę
+   * 2/2↔2/2, a obrońca tapem Wardena robi 3/3 — atakujący ginie bez zysku.
+   *
+   * Skan wrogiego stołu (PlayerView — `activatableAbilities` jest jawne,
+   * M243/E) pod kątem AKTYWOWANYCH zdolności z pozytywnym pumpem na cel
+   * „creature". Dostępność: koszt tap wymaga nietapniętego źródła; koszt
+   * many — budżet wroga (pula + nietapnięte lądy, pipsy wrogich landów
+   * pomijamy = zakładamy, że zapłaci: pełna ostrożność obrońcy). Źródło
+   * zdetainowane nie aktywuje. Zwracamy NAJLEPSZĄ pojedynczą zdolność
+   * (jedna aktywacja na jedno źródło w oknie bloków — nie sumujemy).
+   */
+  const enemyDefensivePumpBonus = (view) => {
+    const foe = enemy(view);
+    const manaBudget = (foe?.mana ?? 0)
+      + (view.zones.battlefield ?? []).filter((o) => o?.controllerId !== view.playerId
+        && o?.kind === 'land' && !o.tapped).length;
+    let best = { power: 0, toughness: 0 };
+    for (const o of view.zones.battlefield ?? []) {
+      if (!o || o.controllerId === view.playerId) continue;
+      if (o.detained) continue; // M177/E: detain blokuje aktywacje
+      for (const ability of o.activatableAbilities ?? []) {
+        if (ability?.type !== 'activated') continue;
+        const cost = ability?.cost ?? {};
+        if (cost.tap && o.tapped) continue;
+        const mana = cost.mana ?? cost.generic ?? 0;
+        if (mana > manaBudget) continue;
+        const targetsSpec = ability?.targets ?? [];
+        const targetAnyCreature = targetsSpec.length === 0
+          || targetsSpec.some((spec) => spec?.type === 'creature' || spec?.type === 'any_target');
+        if (!targetAnyCreature) continue;
+        const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+        let power = 0;
+        let toughness = 0;
+        for (const effect of effects) {
+          if (effect?.type === 'pump' || effect?.type === 'buff_creature_until_end_of_turn') {
+            power += Math.max(0, effect.power ?? 0);
+            toughness += Math.max(0, effect.toughness ?? 0);
+          }
+        }
+        if (power + toughness <= 0) continue;
+        if (power + toughness > best.power + best.toughness) best = { power, toughness };
+      }
+    }
+    return best;
+  };
   const myTurn = (view) => view.turn.activePlayerId === view.playerId;
   // Kroki własnej tury, w których tapowanie (many albo stworów) nie ma sensu:
   // mana wyparuje na końcu kroku, a stwór zostaje zatapiany całą turę.
@@ -4404,6 +4453,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const blockerPowersDesc = blockers.map((o) => o.power ?? 0).sort((a, b) => b - a);
         const gangPower = (blockerPowersDesc[0] ?? 0) + (blockerPowersDesc[1] ?? 0);
         const weakestBlockerToughness = blockers.reduce((min, o) => Math.min(min, o.toughness ?? 0), Number.POSITIVE_INFINITY);
+        // M317 (Ghost Warden): obrońca może w oknie bloków pompać blokera
+        // zdolnością ze stołu (tap albo mana) — bot zakłada NAJGORSZY przypadek
+        // i liczy staty blokerów Z BONUSEM. Bez tego bot „kupował" wymianę
+        // 2/2↔2/2, która po wrogim pumpecie stawała się stratą 2/2 za 0.
+        const trick = enemyDefensivePumpBonus(view);
+        const effBlockerPower = strongestBlockerPower + trick.power;
+        const effBlockerToughness = strongestBlockerToughness + trick.toughness;
+        const effGangPower = gangPower + trick.power;
+        const effWeakestBlockerToughness = weakestBlockerToughness === Number.POSITIVE_INFINITY
+          ? Number.POSITIVE_INFINITY
+          : weakestBlockerToughness + trick.toughness;
         const enemyLife = enemy(view)?.life ?? 0;
         let score = 0;
         // M188/C (uwaga właściciela): ilu atakujących nie osiąga NICZEGO —
@@ -4506,18 +4566,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // stwora. Jałowy, więc premia wyścigu go nie uratuje.
             perAttacker = -(toughness + 8);
             futileAttackers += 1;
-          } else if (attackerStrikesFirst(combatObject, blockers) && blockedStats.power >= strongestBlockerToughness) {
+          } else if (attackerStrikesFirst(combatObject, blockers) && blockedStats.power >= effBlockerToughness) {
             // M202/N (symetrycznie): first strike atakującego zabija blokera,
             // zanim ten odpowie — atakujący PRZEŻYWA, więc to nie wymiana
             // (power - 1), a czysty zysk jak przy ataku w otwartego.
             perAttacker = power + P.attackThroughBonus;
-          } else if (blockedStats.toughness > strongestBlockerPower && blockedStats.power >= strongestBlockerToughness) {
+          } else if (blockedStats.toughness > effBlockerPower && blockedStats.power >= effBlockerToughness) {
             perAttacker = blockedStats.power + P.attackThroughBonus; // przeżyje I zabija blokera — realny zysk
-          } else if (blockers.length >= 2 && blockedStats.toughness <= gangPower && blockedStats.power < weakestBlockerToughness) {
+          } else if (blockers.length >= 2 && blockedStats.toughness <= effGangPower && blockedStats.power < effWeakestBlockerToughness) {
             // M167/I: ginie od GANGU blokerów i nie zabija ŻADNEGO — czysta
             // strata stwora (2/4 w 1/3 + 3/3). Kara ponad wagę wyścigu.
             perAttacker = -(toughness + 8);
-          } else if (blockedStats.toughness > strongestBlockerPower) {
+          } else if (blockedStats.toughness > effBlockerPower) {
             // Przeżyje, ale NIE zabije blokera (2/3 vs 2/3): nic nie zyskuje,
             // a tapnięty atakujący nie zablokuje w następnej turze — netto
             // strata, poniżej passu (uwaga właściciela z testów).
@@ -4525,7 +4585,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M188/C: ten atak jest JAŁOWY — obrońca zablokuje bez straty,
             // więc nie przejdą obrażenia ani nie zginie żaden bloker.
             futileAttackers += 1;
-          } else if (blockedStats.power >= strongestBlockerToughness) {
+          } else if (blockedStats.power >= effBlockerToughness) {
             perAttacker = power - 1; // wymiana: obrażenia + usunięcie blockerów
           } else {
             // Chump do większego blokera: atakujący ginie, 0 obrażeń. Nawet
