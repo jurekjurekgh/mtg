@@ -8876,3 +8876,36 @@ przed i po rebase (pusty diff) — pomiary suite ważne.
   59 / 3336,4 kB; benchmark 84,8% (570/672) bez dryfu. Żywo: ravnica
   |worek-legend s41 (Warden w grze) — 0 zgłoszeń detektorów.
 - Commity: `963af06` (M315), `6d8dfa9` (M317) — wypchnięte.
+
+### Część 5 (arena/01a07711, 2026-09-06): zgłoszenia właściciela — NA1/NA2/NA3 + uncover bota (PR #102)
+
+- **M318 (NA3, Guildgate):** zgłoszenie „czarny czar nie dostępny, choć
+  nietapnięty Dimir Guildgate produkuję {B}". Diagnoza: silnik zgodny z CR —
+  skan 10240 kombinacji (bramka × landy × pule × czarne czary ravnica + stwory
+  zakryte) + kontrola pozytywna w pełnej sesji (play_land t1, main t3, {1}{B}
+  po dołożeniu landa). Dwa wyjaśnienia: {1}{B} = 2 many (sama bramka daje 1 —
+  CR 107.4a) albo bramka entersTapped w turze wejścia. Test-gvardian m318 (4).
+- **M319 (NA1, etykiety):** zakryte cloak-i mówiły „(Morph)" (mechanika kłamała
+  — cloak ma ward {2}) i kilka jednakowych zakrytych było nierozróżnialnych.
+  `cloakFaceDownName` w session.js (jedno źródło), `nextFaceDownCopyNumber`
+  (numeracja po ŻYWYCH cloak-ach kontrolera, jak tokeny „kopia N" M172/D),
+  cloak dostaje `copyNumber` przy tworzeniu, uncover go zdejmuje; etykiety celów
+  (render + choice-request) i badge kafla: „Nazwa (Cloak N)"/„zakryty (Cloak N)".
+  FoW zachowane (przeciwnik dalej widzi tylko „Morph" — CR 708.2a). Strażnik m319 (5).
+- **M320 (NA2, ward):** bot celował czarami/zdolnościami w stwory z ward {2}
+  bez many na dopłatę → skontrowane (CR 702.21), mana przepadła. `wardTargetTax`
+  + `reservedManaOf` + `ownOpenMana`: podatek ward liczony PO koszcie głównym;
+  many brak → wariant fiknie (poniżej passu); własny cel nie triggeruje (CR
+  702.21a). Zakres: cast (również bestow/escape/flashback/adventure/cleave),
+  activate_ability, resolve_trigger_target. Strażnik m320 (3), RED potwierdzony
+  stashem.
+- **M321 (uncover bota — „jawna luka"):** wycena `turn_cloak_face_up` — tylko
+  main, tylko przy many, zysk (ciało ponad 2/2 + keywordy + trigger ETB) musi
+  przebijać koszt many + flat za utratę ward {2}; słabe karty zostają zakryte.
+  PRZY OKAZJI BUG silnika z M315: `turnFaceUp` przywracał nazwę/kolory/koszt,
+  ale NIE P/T — odkryty cloak zostawał 2/2. Naprawa: P/T w faceDownOriginal +
+  odtworzenie przy obrocie (morfy bez zmian). Strażnik m321 (3).
+- Bramy: `npm test` **4564/4564** (+15), `test:all` **4574/4574**, build
+  59 / 3344,7 kB; benchmark 84,8% (570/672) bez dryfu; golden-master bez zmian.
+  Żywo: worek-legend|ravnica s41, 700 kroków — 0 zgłoszeń detektorów.
+- Commity: `c9ed6bb` (M318), `a3e59af` (M319), `1bccf3e` (M320), `da6f7e4` (M321) — wypchnięte.
