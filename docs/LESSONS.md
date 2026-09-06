@@ -2261,3 +2261,57 @@ jest strażnikiem klasy "decyzja bez wyceny": każdy nowy typ w kolumnie
 **Strażnik:** `node tools/bot-tie-audit.mjs --gate=<kind>` (exit code 0 gdy
 brak "rozróżnialnych" remisów = nie ma groźnych decyzji z różnymi danymi
 ale tym samym wynikiem).
+
+## L132 (2026-09-06) — Wycena oparta o STREFĘ UKRYTĄ jest inertna; audyt czytający to samo źródło tego nie zobaczy
+
+**Przypadek:** PR #100 dodał wyceny `resolve_manifest_dread`,
+`resolve_reveal_exile_hand` i poprawki `resolve_search_choice` /
+`resolve_satyr_look_choice` — wszystkie liczone z `view.zones.library.find(id)`
+(i z `view.zones.hand` przy cudzej ręce). `playerView` projekcjonuje te strefy
+jako `{ id, controllerId, hidden: true }`: wpis JEST (lookup truthy, więc
+`if (!card) return 0` nigdy się nie oddziela), ale `kind`/`manaCost`/`power`
+są `undefined`, a `?? 0` zeruje różnice. Pomiar: `bot-tie-audit --kind=manifest` — dwa warianty po 6 pkt przy projekcji
+`rozróznialne` (seed 4025), czyli decyzja = kolejność ofert.
+
+**Przyczyna:** L1 + L102 w nowym wcieleniu: nie brak `case`, tylko WYBÓR
+ŹRÓDŁA wewnątrz case'u. Groźniejsze niż L131, bo niewidoczne dla strażnika:
+`tieProjection` dla szukania czytała TE SAME puste wpisy, więc audyt kładł 12
+remisów do `rownowazne` — narzędzie mierzyło własną ślepotę (L119/L13). Gdzie
+projekcja miała właściwe źródło (`pendingManifestDread.cards`), rozjazd wyszedł
+jako GROZA: metryka działa, tylko nie może patrzeć w to samo miejsce co kod.
+
+**Reguła:** Wycena i projekcja kart ze strefy ukrytej (biblioteka, cudza ręka)
+biorą dane z PAYLOADU decyzji, nie ze strefy — silnik tak już robi dla
+`pendingSearchChoice.cards`, `pendingManifestDread.cards`, `pendingLookTopN.cards`
+tylko dla decydenta (FoW nietknięta). Brak payloadu = luka kompletności widoku
+(ADR 0017) do domknięcia w SILNIKU, nie zgadywanie w bocie. Jeden helper
+(`decisionCandidateCard`) dla wyceny i projekcji razem.
+
+**Strażnik:** `test/m305-hidden-candidate-valuation.test.js` — różne dane
+kandydatów muszą dawać różne punkty, plus strażnik źródła (w bocie nie ma
+`zones.library.find(`, wycena i projekcja idą przez ten sam helper) i anty-over-fix
+FoW (widok wroga nie niesie kart).
+
+## L133 (2026-09-06) — Detektor narzędzia nie może dublować scrapingu tekstu: strukturalny sygnał jest tańszy i nie milczy
+
+**Przypadek:** HANDOFF 2026-09-05e zgłaszał „pozorne timeouty" Żywego Testera
+(final-fantasy s41, worek-legend×theros s61, 90 s). W `run-game.mjs` koniec
+partii był wykrywany DWA RAZY przez osobne regexy od tekstu `#turn-indicator`:
+raz w gałęzi `res === 'none'` (z poprawką M209), raz w gałęzi „akcja się
+udała" — drugi nie miał odpowiednika i tam, gdzie wskaźnik nie nosił żadnego z
+wyrazów, pętla deptała do LIMITU KROKÓW, raportując zacięcie gry, która już
+się skończyła.
+
+**Przyczyna:** L34/L40 (tekst UI jest etykietą, nie kontraktem) + L41 (jedno
+źródło dla jednej reguły): sygnał stanu istniał (`state.status !== 'active'`),
+ale narzędzie wolało dopasowanie słów, a przy okazji skopiowało dopasowanie.
+Kopia dodana później (M209) nie spotkała się z oryginałem.
+
+**Reguła:** Narzędzia pętli jakości czytają stan przez mostek
+(`window.__mtgDebug`), tekst UI tylko jako fallback bez mostka. Jeśli skrypt
+czyta TEN SAM fakt z dwóch miejsc, drugie musi zniknąć albo wywoływać pierwsze.
+
+**Strażnik:** partia z końcem w turze bota (`wyczerpanie biblioteki`) i partia
+wygrana przez gracza kończą się linią `== KONIEC PARTII ==` bez `LIMIT KROKÓW`
+i bez `[STOP]` (zmierzone w tej sesji: 4 partie, 0 zgłoszeń detektorów).
+

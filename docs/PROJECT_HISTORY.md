@@ -8559,3 +8559,66 @@ pętla domyślna; brak nowych batchy kart). Gałąź `arena/01a071d1-mtg`, PR #9
   galezi etbAttach — brak niedowartosciowania C-R1.
 - Bramki: `npm test` **4486/4486** (o 4 vs start sesji), `npm run build` 59
   modulow / 3284,1 kB, `event-contract-audit` czysty, golden-master bota zielony.
+  — L92 (korekta pomiaru, sesja 2026-09-06): na scalonym `448ed55` liczba
+  wynosi **4488** (dwa testy doszły poza tym wpisem), nie 4486.
+
+
+### Faza 1 (arena/01a07682, po commit 9a34458): audyt PR #100 + pętla jakości (PR #101)
+- **Audyt PR #100** (`docs/audits/AUDYT_PR100_2026-09-06.md`): 5 znalezisk
+  POTWIERDZONYCH (A1 inertne wyceny ze strefy ukrytej, A2 zwijanie grupy po id
+  karty gubiło drugi cel destynacji, A3 litera `??`/`?:` w projekcji, A4 martwe
+  kroki w oknie vigilance + komentarz przeczy kodowi, A5 obietnica bez warunku),
+  2 OBSERWACJE bez zmian (A6 próg `resolve_exploit_choice`, A7 martwy parametr
+  `openLabel` w pickerze). Kontrakty pól ofert zweryfikowane `grep
+  "command('resolve_*'"` — żadna wycena nie wypadła przez literówkę w polu.
+- **A1 = główna naprawa sesji** (`51dbbda`): `playerView` oddaje bibliotekę i
+  cudzą rękę jako `{ id, controllerId, hidden }` (bez pól karty), więc wyceny
+  `resolve_search_choice`/`resolve_satyr_look_choice`/`resolve_manifest_dread`/
+  `resolve_reveal_exile_hand`/`resolve_discard_choice` liczyły zera. Jedno
+  źródło: `decisionCandidateCard(view, id)` czytające payload decyzji, użyte
+  tak w wycenie, jak w `tieProjection` (L131); silnik dostawia to, czego
+  widok nie miał — `pendingSatyrLook.cards` i `pendingRevealExile.handCards`,
+  wyłącznie decydentowi (FoW sprawdzona od drugiej strony).
+- **A2** (`219a3d0`): `singleTargetPlanOf` nie zwija już grupy, w której pod
+  jednym kandydatem siedzi kilka komend (szukanie z `cardId|destination`) —
+  pada na listę ofert silnika, a etykieta wiersza nosi destynację ze
+  wspólnego źródła z tytułem modala.
+- **A3+A5** (`addbd0d`): `effectiveTypesOf` (żywe typy > drukowane), gwarancja
+  braku odmowy przy szukaniu obowiązkowym przypięta po stronie silnika.
+- **A4** (`9a34458`): okno vigilance = dokładnie `declare_attackers`
+  (behawioralnie neutralnie, gate `m221d` nietknięty), komentarz zgodny z kodem.
+- **Pętla jakości**: Żywy Tester 4 partie (m.in. para i seed z rzekomym
+  timeoutem z HANDOFF) — naprawiony fałszywy detektor końca partii:
+  `__mtgDebug.gameOver()` (struktura stanu) zamiast drugiej kopii scrapingu
+  tekstu w `run-game.mjs`; 0 zgłoszeń detektorów. Ścieżka statyczna:
+  `bot-tie-audit` 24 partie — GROZA `resolve_manifest_dread` zniknęła,
+  remisy 627 → 625, realne 199 → 197; `--kind=search` pokazuje teraz remisy
+  identycznych lądów (uczciwe), nie zerowe. `event-contract-audit` czysty.
+- **Wątek właściciela domknięty**: GROZY `attack` (7) i część `block` (5) to
+  model addytywny (suma części, brak rozliczenia trade-offu z blokerami), NIE
+  ślepota na dane — dowody w sekcji „Odpowiedź na otwarty wątek" audytu.
+  Zmiana funkcji wyceny walki wymaga pełnego B0 (ADR 0018), więc zostaje
+  zapisana jako następny krok, nie wdrożona.
+- **A8 z pętli jakości** (`d0787ad`): `resolve_springbloom` wyceniał każdy ląd
+  tak samo (40 pkt), więc ofiara padała na pierwszego kandydata — doszła
+  `landLossValue` (te same fakty i arytmetyka co `landAnaliza`/`landPlayDelta`:
+  kolory z `getSourceForObject`, zapotrzebowanie z `coloredPipsOf`, zdolność
+  poza manową z definicji), a projekcja remisów przestała orzekać na podstawie
+  TOŻSAMOŚCI lądu (fałszywy alarm: każda para różnych obiektów = „różne dane").
+  Zmierzono: GROZY rodziny 2 → 0.
+- **Żywy Tester** (`0166f28`): koniec partii czytany ze stanu przez
+  `__mtgDebug.gameOver()` zamiast drugiej kopii scrapingu tekstu wskaźnika —
+  domknięcie wątku „pozorne timeouty" z HANDOFF 2026-09-05e (4 partie, w tym
+  para i seed ze zgłoszenia: koniec gry raportowany natychmiast, 0 zgłoszeń).
+- **Lekcje**: L132 (wycena ze strefy ukrytej jest inertna, a audyt czytający
+  to samo źródło tego nie zobaczy), L133 (detektor narzędzia nie dubluje
+  scrapingu tekstu — mostek do stanu).
+- Uwaga budżetowa: lektura startowa (AGENTS + 28 ADR + LESSONS + ENVIRONMENT)
+  po dodaniu L132/L133 waży ~99,9k/100k tokenów — próg NIE był podnoszony
+  (decyzja właściciela M208), tylko skondensowane nowe wpisy. Następnemu
+  dodaniu lekcji musi towarzyszyć kondensacja `docs/LESSONS.md`.
+- Bramki: `npm test` **4500/4500** (baseline sesji 4488 + 12 nowych testów),
+  `npm run build` 59 modułów / 3319,6 kB, benchmark szybki heuristic **84,8%**
+  (570/672; baseline 84,7% = 569/672), `event-contract-audit` czysty,
+  golden-master bota zregenerowany świadomie: `fb8cece4b670…` → `fdb515abbacf…`.
+- Handoff: `docs/setup/HANDOFF_2026-09-06a.md`.
