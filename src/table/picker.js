@@ -229,7 +229,7 @@ export function renderPickerChipList(host, {
  * `html` przyjmuje WYŁĄCZNIE markup generowany w tym kodzie (ikony many z
  * `mana-icons.js`) — nazwy kart idą przez `label`, czyli `textContent`.
  */
-function renderPickerName(host, { className, label, html, openable, onOpenCard, id, openId = null, openLabel = null }) {
+function renderPickerName(host, { className, label, html, openable, onOpenCard, id, openId = null }) {
   const nameEl = mkElement('span', host);
   nameEl.className = joinClasses('picker-name', className);
   if (html) nameEl.innerHTML = html;
@@ -246,7 +246,9 @@ function renderPickerName(host, { className, label, html, openable, onOpenCard, 
   // (potrzebne, gdy wiersz reprezentuje decyzję-enum, a jego nazwą jest karta
   // rozpoznawana po cardId, a nie objectId — patrz M300/M301/M302).
   const targetId = openId ?? id;
-  const dataCardId = openLabel ?? targetId;
+  // F2 (audyt PR #101): parametr `openLabel` był martwy (nikt go nie podawał)
+  // i pułapką — trafiłby etykietą w pole o semantyce IDENTYFIKATORA.
+  const dataCardId = targetId;
   if (openable && typeof onOpenCard === 'function' && targetId != null) {
     nameEl.className = joinClasses(nameEl.className, 'is-openable', 'log-card');
     if (nameEl.dataset) nameEl.dataset.cardId = String(dataCardId);
