@@ -5040,18 +5040,19 @@ export function execute(state, input) {
     if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('manifest_turn_up_no_colored_source');
     const before = state.events.length;
     spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
+    // M322 (audyt PR #102): znaczniki manifestu zdejmują się w `turnFaceUp`
+    // — ten sam punkt zbierający co dla cloaka, więc żadna z dróg obrotu nie
+    // może ich zgubić (wcześniej kasował je handler, czyli jeden z wołających).
     turnFaceUp(state, cmd.objectId);
-    // Zdejmujemy znaczniki manifestu — po obrocie to zwykły stwór.
-    const flipped = state.objects.get(cmd.objectId);
-    if (flipped) state.objects.set(cmd.objectId, Object.freeze({ ...flipped, manifestReady: false, manifestTurnUpCost: null }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
 
-  // M315 — cloak: obrót twarzą do góry (CR 702.75c). Specjalna akcja:
+  // M315 — cloak: obrót twarzą do góry (CR 701.56b). Specjalna akcja:
   // bez stosu, niereagowalna, w każdym oknie priorytetu. Walidacja
-  // tożsama z ofertą (L48). Po obrocie permanent traci ward {2}
-  // (CR 702.75c) — pole `ward` nie pochodzi z faceDownOriginal, więc
-  // trzeba je zdjąć ręcznie (keywords przywraca turnFaceUp).
+  // tożsama z ofertą (L48). Po obrocie permanent traci ward {2} i resztę
+  // śladów zakrycia — sprząta je punkt zbierający `turnFaceUp` (M322), bo do
+  // odsłonięcia prowadzą dwie procedury: koszt karty (701.56b) i koszt
+  // morpha/disguise (701.56c/d).
   if (cmd.type === 'turn_cloak_face_up') {
     const object = state.objects.get(cmd.objectId);
     if (!object || object.zone !== 'battlefield' || !object.faceDown || !object.cloakReady) {
@@ -5065,11 +5066,12 @@ export function execute(state, input) {
     if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('cloak_turn_up_no_colored_source');
     const before = state.events.length;
     spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
-    turnFaceUp(state, cmd.objectId);
-    const flipped = state.objects.get(cmd.objectId);
     // M319/NA1: numer kopii zakrycia znika razem z zakryciem — face-up karta
     // nie ma nosić „(Cloak N)" ani liczyć się do numeracji kolejnych cloaków.
-    if (flipped) state.objects.set(cmd.objectId, Object.freeze({ ...flipped, ward: null, cloakReady: false, cloakTurnUpCost: null, copyNumber: null }));
+    // M322: kasację śladów zakrycia przejmuje punkt zbierający `turnFaceUp`
+    // (obrót zdolnością morpha szedł obok handera i zostawiał ward {2} na
+    // face-up permanencie).
+    turnFaceUp(state, cmd.objectId);
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
 

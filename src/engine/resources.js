@@ -1329,7 +1329,10 @@ export function legalAuraCasts(state, playerId) {
  * Megamorph (CR 702.109) kładzie przy obrocie licznik +1/+1; zwykły morph
  * (CR 702.37, Woolly Loxodon) obraca kartę za koszt morph BEZ licznika.
  */
-function faceDownAbilities(object) {
+// M322 (audyt PR #102, F9): eksport — ścieżka `cloak` (effects.js) musi dać zakrytemu
+// permanentowi TE SAME zdolności co rzut twarzą w dół, bo CR 701.56c/d zostawia
+// przy cloaku procedurę obrotu za koszt morpha/disguise.
+export function faceDownAbilities(object) {
   if (!object.morph) return [];
   // CR 702.36/702.37: koszt obrotu twarza do gory to koszt many z pipami
   // kolorowymi (Morph {U}, Megamorph {6}{G}...) — deskryptor niesie colors;

@@ -3,7 +3,7 @@ import { spellExitZone } from './zones.js';
 import { untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
-import { spendMana, addMana, producibleMana } from './resources.js';
+import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
 import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
@@ -1830,7 +1830,17 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // limitations), nie wpis w support.limitations. Keyword + kwota
       // (czyta wardAmountOf).
       keywords: ['ward'],
-      abilities: [],
+      // M322 (audyt PR #102, F0+F9) — dwa braki tego samego kształtu:
+      //  • 708.2a tłumi DRUKOWANE zdolności, ale 701.56c/d zostawia przy
+      //    cloaku procedurę obrotu za koszt morpha/disguise — lista zdolności
+      //    zakrycia jest więc TA SAMa co przy rzucie twarzą w dół (provider
+      //    `faceDownAbilities`, bez kopiowania jego logiki — L41);
+      //  • obrót przywraca zdolności karty z migawki `originalAbilities`
+      //    (wprowadzonej w Batch 24 dokładnie dla Willbendera). Cloak brał
+      //    kształt face-down z rzutu, ale bez tej migawki — uncovered
+      //    permanent zostawał BEZ zdolności karty (zmierzone: `abilities: []`).
+      abilities: faceDownAbilities(topObj),
+      originalAbilities: Object.freeze([...(topObj.abilities ?? [])]),
       colors: [],
       cardName: null,
       manaCost: 0,
@@ -1856,6 +1866,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         // przywracał nazwę/kolory/koszt, ale nie statystyki).
         power: topObj.power ?? null,
         toughness: topObj.toughness ?? null,
+        // M322 (F4): kwota warda też jest cechą karty — zakrycie nadpisuje ją
+        // na 2 (701.56a), a obrót ma przywrócić to, co było wydrukowane. Bez
+        // tego uncover kasował drukowany ward twardym `ward: null` (poprawny
+        // wynik z niepoprawnego źródła — klasa L104; dziś katalog nie ma karty
+        // z drukowanym wardem, więc błąd był uśpiony).
+        ward: topObj.ward ?? null,
       }),
       cloakReady: (topObj.types ?? []).includes('Creature') || topObj.kind === 'creature',
       cloakTurnUpCost: (topObj.types ?? []).includes('Creature') || topObj.kind === 'creature'

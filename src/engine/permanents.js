@@ -851,6 +851,28 @@ export function turnFaceUp(state, objectId, counters = {}) {
         faceDownOriginal: undefined,
       }
       : {}),
+    // M322 (audyt PR #102, F9/F4): koniec zakrycia sprząta ŚLADY MECHANIKI w
+    // punkcie zbierającym, nie u wołającego. Do tej pory kasowaniem
+    // `ward`/`cloakReady`/`cloakTurnUpCost`/`copyNumber` zajmował się handler
+    // komendy `turn_cloak_face_up`, więc obrót inną procedurą tej samej karty
+    // (CR 701.56c: koszt morpha) zostawiał ward {2} na face-up permanencie —
+    // pole `ward` idzie do PlayerView i do odznaki kafla, więc stwór „miał"
+    // ward już po odsłonięciu. Tak samo manifest: flagi zdjęte tu, a nie w
+    // handlerze `turn_manifest_face_up` (L41 — jedno źródło dla obu dróg).
+    ...(object.cloakReady === true || object.cloakTurnUpCost != null
+      ? {
+        cloakReady: false,
+        cloakTurnUpCost: null,
+        faceDownCause: null,
+        copyNumber: null,
+        // Ward wraca z migawki stworzonej przy zakryciu (F4) — dla karty bez
+        // drukowanego warda to null, czyli dzisiejsze zachowanie.
+        ward: object.faceDownOriginal?.ward ?? null,
+      }
+      : {}),
+    ...(object.manifestReady === true
+      ? { manifestReady: false, manifestTurnUpCost: null }
+      : {}),
   });
   state.events.push(event('object_flipped', { objectId }));
   // Batch 24 (Willbender): „When this creature is turned face up" — osobny
