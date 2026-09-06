@@ -1121,7 +1121,21 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       : (typeof slot === 'number' ? `multi-target-slot-${slot}` : (slot === 'sac' ? 'multi-target-sac' : (exclusive ? 'multi-target-single' : null)));
     const handle = renderPickerRow(list, {
       id,
-      label: labelOverride ?? objectOrPlayerName(view, session, id),
+      // M312 (zgłoszenie właściciela, Village Rites): etykieta od wywołującego
+      // (labelOverride) pochodzi z `commandLabel` i może zawierać HTML ikon
+      // many — kontrakt M104/A2 („przez innerHTML; textContent pokazywał
+      // surowy <span…"). Etykieta Z MARKUPEM idzie kanałem `html` (innerHTML);
+      // czysty tekst (keepMode „Weź mulligan", odmowa, nazwy obiektów) zostaje
+      // kanałem `label` (textContent) — identyczny wynik w przeglądarce, a
+      // testowe mini-DOMy bez parsera dalej czytają tekst. Kanał rozpoznaje
+      // treść („<"), nie tryb wizarda, bo o HTML decyduje źródło etykiety
+      // (commandLabel), nie kształt wyboru.
+      label: (typeof labelOverride === 'string' && labelOverride.includes('<'))
+        ? null
+        : (labelOverride ?? objectOrPlayerName(view, session, id)),
+      html: (typeof labelOverride === 'string' && labelOverride.includes('<'))
+        ? labelOverride
+        : null,
       kind,
       group,
       rowClassName: slot == null ? 'multi-target-row' : 'multi-target-row multi-target-slot-row',

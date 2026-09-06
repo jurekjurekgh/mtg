@@ -432,7 +432,10 @@ export function renderPickerRow(host, {
   row.appendChild(input);
 
   let nameEl = null;
-  if (label !== null && label !== '') {
+  // M312: bramka musi liczyć się z kanałem `html` (etykiety-HTML z kreatorów
+  // wyboru, kontrakt M104/A2) — dotąd sprawdzała tylko `label`, więc wiersz
+  // z etykietą-HTML a pustym `label` tracił nazwę całkiem.
+  if (html || (label !== null && label !== '')) {
     nameEl = renderPickerName(row, {
       className: own('picker-name', nameClassName),
       label,
