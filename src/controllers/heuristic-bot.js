@@ -1384,6 +1384,45 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     };
   }
 
+  /**
+   * A8 (audyt PR #100, pętla jakości): ile TRACIMY, oddając ląd z pola bitwy.
+   * Decyzje „sacrifice a land" (Springbloom Druid, Roiling Regrowth) wyceniały
+   * dotąd KAŻDY ląd tak samo (`finish(40)` za dowolny), więc ofiara padała na
+   * pierwszego kandydata z listy silnika — a na tej liście bywa jedyny ląd
+   * płacący kolor, którego potrzebuje ręka. Te same fakty i te same
+   * rozwiązania co przy wyborze lądu do grania (`landAnaliza`: kolory przez
+   * `getSourceForObject` jak w silniku, zapotrzebowanie przez `coloredPipsOf`,
+   * zdolność poza manową przez definicję karty) — tylko liczone na stratę,
+   * bo jedno źródło prawdy obejmuje obie strony decyzji (L41/L131).
+   */
+  function landLossValue(view, objectId) {
+    const o = objectOnBoard(view, objectId);
+    if (!o) return 0;
+    const pola = (view.zones.battlefield ?? [])
+      .filter((x) => x?.controllerId === view.playerId && x.kind === 'land');
+    const licznik = (lista) => {
+      const m = new Map();
+      for (const x of lista) {
+        for (const kolor of getSourceForObject(x, null)?.colors ?? []) m.set(kolor, (m.get(kolor) ?? 0) + 1);
+      }
+      return m;
+    };
+    const wszystkie = licznik(pola);
+    const zostaje = licznik(pola.filter((x) => x.id !== objectId));
+    let strata = 0;
+    for (const x of view.zones.hand ?? []) {
+      if (!x || x.kind === 'land') continue;
+      for (const jednostka of coloredPipsOf(x.cardId)) {
+        const placilPrzed = jednostka.some((k) => (wszystkie.get(k) ?? 0) > 0);
+        const placilPotem = jednostka.some((k) => (zostaje.get(k) ?? 0) > 0);
+        if (placilPrzed && !placilPotem) strata += 1;
+      }
+    }
+    const def = cardDef(o.cardId);
+    const zdolnosc = (def?.abilities ?? []).some((a) => a?.type === 'activated' && !manaOnlyAbility(a)) ? 2 : 0;
+    return Math.min(16, strata * 4 + zdolnosc);
+  }
+
   function landPlayDelta(view, objectId) {
     const a = landAnaliza(view, objectId);
     let delta = 0;
@@ -5020,7 +5059,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       case 'resolve_springbloom': {
         // Ramp: poświęcenie landa → 2 basic landy tapped (od M70 trigger żyje).
-        return finish(cmd.sacrificeLandId != null ? 40 : 10);
+        // A8 (audyt PR #100): KTÓRY ląd oddać — bez `landLossValue` każdy
+        // kandydat dostawał 40 i wybór był kolejnością ofert (nie remistem
+        // danych, tylko ślepotą wyceny — klasa L132).
+        if (cmd.sacrificeLandId == null) return finish(10);
+        return finish(40 - landLossValue(view, cmd.sacrificeLandId));
       }
       case 'resolve_damage_division': {
         // M166/D (Inferno Titan): kwoty na wrogie cele/gracza = zysk
@@ -5638,8 +5681,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       };
     }
     if (cmd?.type === 'resolve_springbloom') {
-      const land = cmd.sacrificeLandId ? objectOnBoard(view, cmd.sacrificeLandId) : null;
-      return { land: land ? (land.cardId ?? land.id) : 'skip' };
+      // A8: projekcja nosi FAKTY wyceny (ile tracimy: nieopłacone pipy +
+      // zdolność poza manową), a nie tożsamość lądu. Wcześniejsze
+      // `{ land: cardId ?? id }` oznaczało, że KAŻDA para różnych lądów
+      // wypadała jako „różne dane przy tym samym wyniku" — alarm bez
+      // informacji, bo wycena była identyczna dla wszystkich kandydatów.
+      if (cmd.sacrificeLandId == null) return { skip: 1 };
+      const land = objectOnBoard(view, cmd.sacrificeLandId);
+      const def = land?.cardId ? cardDef(land.cardId) : null;
+      return {
+        strata: landLossValue(view, cmd.sacrificeLandId),
+        zdolnosc: (def?.abilities ?? []).some((a) => a?.type === 'activated' && !manaOnlyAbility(a)) ? 1 : 0,
+      };
     }
     if (cmd?.type === 'resolve_look_top_choice' || cmd?.type === 'resolve_satyr_look_choice'
         || cmd?.type === 'resolve_graveyard_top_choice' || cmd?.type === 'resolve_delirium_target'
