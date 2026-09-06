@@ -877,6 +877,55 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const myCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'creature');
   const enemyCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId !== view.playerId && o.kind === 'creature');
   const untappedEnemyBlockers = (view) => enemyCreatures(view).filter((o) => !o.tapped);
+  /**
+   * M317 (zgłoszenie właściciela, Ghost Warden): wycena ataku ma zakładać,
+   * że OBROŃCA może w oknie bloków pompać swojego blokera zdolnością ze
+   * STOŁU — nie tylko zdolnością blokera, ale DOWOLNĄ dostępną („za
+   * tapnięcie albo za manę, o ile ją mam"): atakujący bot liczy wymianę
+   * 2/2↔2/2, a obrońca tapem Wardena robi 3/3 — atakujący ginie bez zysku.
+   *
+   * Skan wrogiego stołu (PlayerView — `activatableAbilities` jest jawne,
+   * M243/E) pod kątem AKTYWOWANYCH zdolności z pozytywnym pumpem na cel
+   * „creature". Dostępność: koszt tap wymaga nietapniętego źródła; koszt
+   * many — budżet wroga (pula + nietapnięte lądy, pipsy wrogich landów
+   * pomijamy = zakładamy, że zapłaci: pełna ostrożność obrońcy). Źródło
+   * zdetainowane nie aktywuje. Zwracamy NAJLEPSZĄ pojedynczą zdolność
+   * (jedna aktywacja na jedno źródło w oknie bloków — nie sumujemy).
+   */
+  const enemyDefensivePumpBonus = (view) => {
+    const foe = enemy(view);
+    const manaBudget = (foe?.mana ?? 0)
+      + (view.zones.battlefield ?? []).filter((o) => o?.controllerId !== view.playerId
+        && o?.kind === 'land' && !o.tapped).length;
+    let best = { power: 0, toughness: 0 };
+    for (const o of view.zones.battlefield ?? []) {
+      if (!o || o.controllerId === view.playerId) continue;
+      if (o.detained) continue; // M177/E: detain blokuje aktywacje
+      for (const ability of o.activatableAbilities ?? []) {
+        if (ability?.type !== 'activated') continue;
+        const cost = ability?.cost ?? {};
+        if (cost.tap && o.tapped) continue;
+        const mana = cost.mana ?? cost.generic ?? 0;
+        if (mana > manaBudget) continue;
+        const targetsSpec = ability?.targets ?? [];
+        const targetAnyCreature = targetsSpec.length === 0
+          || targetsSpec.some((spec) => spec?.type === 'creature' || spec?.type === 'any_target');
+        if (!targetAnyCreature) continue;
+        const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+        let power = 0;
+        let toughness = 0;
+        for (const effect of effects) {
+          if (effect?.type === 'pump' || effect?.type === 'buff_creature_until_end_of_turn') {
+            power += Math.max(0, effect.power ?? 0);
+            toughness += Math.max(0, effect.toughness ?? 0);
+          }
+        }
+        if (power + toughness <= 0) continue;
+        if (power + toughness > best.power + best.toughness) best = { power, toughness };
+      }
+    }
+    return best;
+  };
   const myTurn = (view) => view.turn.activePlayerId === view.playerId;
   // Kroki własnej tury, w których tapowanie (many albo stworów) nie ma sensu:
   // mana wyparuje na końcu kroku, a stwór zostaje zatapiany całą turę.
@@ -1859,6 +1908,53 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return (foe?.mana ?? 0) + untapped;
   }
 
+  /** M320/NA2: otwarta mana BOTA — pula + nietapnięte własne landy (lustrzane). */
+  function ownOpenMana(view) {
+    const self = view.players.find((p) => p.id === view.playerId);
+    const untapped = view.zones.battlefield.filter((o) => o.controllerId === view.playerId
+      && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
+    return (self?.mana ?? 0) + untapped;
+  }
+
+  /**
+   * M320/NA2 (zgłoszenie właściciela): ward (CR 702.21) — celując we wrogi
+   * permanent z ward {N}, bot musi DOPŁACIĆ N przy rozstrzygnięciu, albo czar/
+   * zdolność zostaje skontrowana (fizzle — mana przepada). Bot celował cloakami
+   * 2/2 (ward {2}) zdolnościami bez many na dopłatę — „bez sensu".
+   * Koszt ward liczony po odjęciu zarezerwowanej many (koszt czaru/zdolności —
+   * dopłata idzie z puli PO zapłaceniu kosztu głównego). Własny cel nie
+   * triggeruje ward (CR 702.21a: „an opponent controls").
+   */
+  function wardTargetTax(view, targetIds, reservedMana = 0) {
+    let tax = 0;
+    let open = ownOpenMana(view) - reservedMana;
+    for (const id of targetIds ?? []) {
+      const o = objectOnBoard(view, id);
+      if (!o || o.controllerId === view.playerId) continue;
+      const amount = o.ward ?? ((o.keywords ?? []).includes('ward') ? 2 : null);
+      if (amount == null || amount <= 0) continue;
+      if (open >= amount) { tax += amount; open -= amount; }
+      else { tax += 200; } // brak many na dopłatę → wariant fiknie, poniżej passu
+    }
+    return tax;
+  }
+
+  /** M320/NA2: mana zarezerwowana na sam koszt czaru/zdolności (przed ward). */
+  function reservedManaOf(view, cmd) {
+    if (cmd.type === 'activate_ability') {
+      const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
+      const abilityObject = source ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+      const def = abilityObject ? cardDef(abilityObject.cardId) : undefined;
+      const ability = cmd.grantedFromEquipment
+        ? (def?.equipment?.grantedAbilities ?? [])[cmd.abilityIndex ?? 0]
+        : ((abilityObject?.activatableAbilities ?? def?.abilities ?? [])[cmd.abilityIndex ?? 0]);
+      return ability?.cost?.mana ?? 0;
+    }
+    const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    const base = card?.manaCost ?? (card?.cardId ? (cardDef(card.cardId)?.manaCost ?? 0) : 0);
+    return base + (cmd.xValue ?? 0);
+  }
+
   /**
    * M297/B (uwaga właściciela): WIDOCZNE „kupno deathtouch" — nietapnięty
    * stwór przeciwnika z aktywowaną zdolnością dającą sobie deathtouch do
@@ -2118,7 +2214,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   function scoreCommand(view, cmd) {
-    const finish = (score) => weightedScore(cmd.type, score);
+    // M320/NA2: ward (CR 702.21) — dopłata za celowanie we wrogi permanent
+    // z ward. Odejmowana od WYNIKU każdego wariantu (finish), więc warianty
+    // różnią się kosztem ward jak każdym innym; brak many na dopłatę →
+    // wariant fiknie i schodzi poniżej passu. Trigger z celem (wariant
+    // resolve_trigger_target) to też „spell or ability" w sensie ward.
+    const wardScoringType = ['cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
+      'cast_adventure', 'cast_permanent', 'activate_ability', 'resolve_trigger_target'].includes(cmd.type);
+    const wardTax = wardScoringType
+      ? wardTargetTax(view, cmd.targets ?? (cmd.targetId != null ? [cmd.targetId] : []), reservedManaOf(view, cmd))
+      : 0;
+    if (wardTax >= 200) return weightedScore(cmd.type, -200);
+    const finish = (score) => weightedScore(cmd.type, score - wardTax);
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
@@ -2155,6 +2262,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     switch (cmd.type) {
       case 'concede': return finish(NEVER);
+      // M315 (CR 702.75c): uncover cloakowanego — legalna SPECIALNA AKCJA
+      // (bez stosu), wycena poniżej (M321 — zgłoszenie właściciela: „jawna
+      // luka w działaniu bota").
+      case 'turn_cloak_face_up': {
+        // M321 (CR 702.75c + ruling WotC 2024-02-02): uncover kosztuje koszt
+        // many KARTY i zdejmuje ward {2} — opłaca się tylko, gdy karta jest
+        // WYRAŹNIE lepsza od zakrycia 2/2 z ward. Bot odsłania TYLKO w mainie
+        // (poza mainem odsłonięcie nic nie zmienia: po deklaracji bloków ciało
+        // nie zdąży niczego obronić), gdy ma many (zapas liczony jak w M320 —
+        // ownOpenMana), a zysk (ciało ponad 2/2 + keywordy karty + trigger ETB)
+        // przebija koszt many + flat za utratę ward. Zero nazw kart (ADR 0002).
+        const stepNow = view.turn?.step ?? '';
+        if (!stepNow.includes('main')) return finish(NEVER);
+        const cloak = objectOnBoard(view, cmd.objectId);
+        if (!cloak?.cardId) return finish(NEVER);
+        const cloakDef = cardDef(cloak.cardId);
+        if (!cloakDef) return finish(NEVER);
+        // playerView nie niesie cloakTurnUpCost — kosztmany KARTY bierzemy
+        // z rejestru (CR 702.75c: „paying its mana cost"; identycznie czyta
+        // oferta w game-state).
+        const uncoverCost = cloak.cloakTurnUpCost ?? cloakDef.manaCost ?? 0;
+        if (uncoverCost <= 0 || ownOpenMana(view) < uncoverCost) return finish(NEVER);
+        const bodyGain = Math.max(0, (cloakDef.power ?? 0) - 2) * 2
+          + Math.max(0, (cloakDef.toughness ?? 0) - 2);
+        const keywordBonus = Math.min(6, (cloakDef.keywords ?? []).length * 2);
+        const etbBonus = (cloakDef.abilities ?? []).some((a) => a?.type === 'triggered'
+          && a?.trigger?.event === 'enter_battlefield') ? 5 : 0;
+        const uncoverValue = bodyGain + keywordBonus + etbBonus - uncoverCost - 3; // −3: utrata ward {2}
+        return finish(uncoverValue > 0 ? uncoverValue : NEVER);
+      }
       case 'draw_card': return finish(100);
       case 'play_land': return finish(90 + landPlayDelta(view, cmd.objectId));
       case 'tap_for_mana': {
@@ -4398,6 +4535,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const blockerPowersDesc = blockers.map((o) => o.power ?? 0).sort((a, b) => b - a);
         const gangPower = (blockerPowersDesc[0] ?? 0) + (blockerPowersDesc[1] ?? 0);
         const weakestBlockerToughness = blockers.reduce((min, o) => Math.min(min, o.toughness ?? 0), Number.POSITIVE_INFINITY);
+        // M317 (Ghost Warden): obrońca może w oknie bloków pompać blokera
+        // zdolnością ze stołu (tap albo mana) — bot zakłada NAJGORSZY przypadek
+        // i liczy staty blokerów Z BONUSEM. Bez tego bot „kupował" wymianę
+        // 2/2↔2/2, która po wrogim pumpecie stawała się stratą 2/2 za 0.
+        const trick = enemyDefensivePumpBonus(view);
+        const effBlockerPower = strongestBlockerPower + trick.power;
+        const effBlockerToughness = strongestBlockerToughness + trick.toughness;
+        const effGangPower = gangPower + trick.power;
+        const effWeakestBlockerToughness = weakestBlockerToughness === Number.POSITIVE_INFINITY
+          ? Number.POSITIVE_INFINITY
+          : weakestBlockerToughness + trick.toughness;
         const enemyLife = enemy(view)?.life ?? 0;
         let score = 0;
         // M188/C (uwaga właściciela): ilu atakujących nie osiąga NICZEGO —
@@ -4500,18 +4648,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // stwora. Jałowy, więc premia wyścigu go nie uratuje.
             perAttacker = -(toughness + 8);
             futileAttackers += 1;
-          } else if (attackerStrikesFirst(combatObject, blockers) && blockedStats.power >= strongestBlockerToughness) {
+          } else if (attackerStrikesFirst(combatObject, blockers) && blockedStats.power >= effBlockerToughness) {
             // M202/N (symetrycznie): first strike atakującego zabija blokera,
             // zanim ten odpowie — atakujący PRZEŻYWA, więc to nie wymiana
             // (power - 1), a czysty zysk jak przy ataku w otwartego.
             perAttacker = power + P.attackThroughBonus;
-          } else if (blockedStats.toughness > strongestBlockerPower && blockedStats.power >= strongestBlockerToughness) {
+          } else if (blockedStats.toughness > effBlockerPower && blockedStats.power >= effBlockerToughness) {
             perAttacker = blockedStats.power + P.attackThroughBonus; // przeżyje I zabija blokera — realny zysk
-          } else if (blockers.length >= 2 && blockedStats.toughness <= gangPower && blockedStats.power < weakestBlockerToughness) {
+          } else if (blockers.length >= 2 && blockedStats.toughness <= effGangPower && blockedStats.power < effWeakestBlockerToughness) {
             // M167/I: ginie od GANGU blokerów i nie zabija ŻADNEGO — czysta
             // strata stwora (2/4 w 1/3 + 3/3). Kara ponad wagę wyścigu.
             perAttacker = -(toughness + 8);
-          } else if (blockedStats.toughness > strongestBlockerPower) {
+          } else if (blockedStats.toughness > effBlockerPower) {
             // Przeżyje, ale NIE zabije blokera (2/3 vs 2/3): nic nie zyskuje,
             // a tapnięty atakujący nie zablokuje w następnej turze — netto
             // strata, poniżej passu (uwaga właściciela z testów).
@@ -4519,7 +4667,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M188/C: ten atak jest JAŁOWY — obrońca zablokuje bez straty,
             // więc nie przejdą obrażenia ani nie zginie żaden bloker.
             futileAttackers += 1;
-          } else if (blockedStats.power >= strongestBlockerToughness) {
+          } else if (blockedStats.power >= effBlockerToughness) {
             perAttacker = power - 1; // wymiana: obrażenia + usunięcie blockerów
           } else {
             // Chump do większego blokera: atakujący ginie, 0 obrażeń. Nawet

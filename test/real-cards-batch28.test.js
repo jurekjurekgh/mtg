@@ -398,12 +398,13 @@ test('Tenth District Veteran: atak odkręca inny stwór (target)', () => {
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['vet'] }).ok);
-  // trigger attacks z celem — wybierz 'other' (odkręcenie)
-  const view = playerView(state, 'p1');
-  const tt = view.legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'other');
-  assert.ok(tt, 'cel triggera attacks → other');
-  const r = execute(state, tt);
-  assert.ok(r.ok, r.events?.[0]?.reason);
+  // M314: „another target creature you control" — Veteran NIE jest własnym
+  // kandydatem; jedyny legalny cel ('other') wybiera się AUTOMATYCZNIE
+  // (M242 — pytanie o jeden legalny cel to szum UI)
+  const autoResolved = (state.events ?? []).some(
+    (e) => e.type === 'trigger_target_resolved' && e.auto === true && e.targetId === 'other',
+  );
+  assert.ok(autoResolved, 'auto-cel triggera attacks → other (bez decyzji, M242)');
   resolveStack(state);
   assert.equal(state.objects.get('other').tapped, false, 'other odkręcony');
 });

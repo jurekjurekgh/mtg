@@ -193,8 +193,8 @@ test('kreator many: manaSourcesOf — lądy + nie-lądowe zdolności many', () =
   });
   // abilityInfo symuluje czytanie pełnego stanu (main.js w runtime):
   const info = {
-    'a1:0': { cardId: 'apprentice-wizard', colors: [], amount: 3, manaCost: 1, isLand: false },
-    'a2:0': { cardId: 'seers-lantern', colors: [], amount: 1, manaCost: 0, isLand: false },
+    'a1:0': { cardId: 'apprentice-wizard', colors: [], amount: 3, manaCost: 1, costColors: ['U'], isLand: false },
+    'a2:0': { cardId: 'seers-lantern', colors: [], amount: 1, manaCost: 0, costColors: [], isLand: false },
     'a2:1': null, // scry — nie mana
   };
   const abilityInfo = (oid, idx) => info[`${oid}:${idx}`] ?? null;
@@ -205,7 +205,14 @@ test('kreator many: manaSourcesOf — lądy + nie-lądowe zdolności many', () =
   assert.ok(ids.includes('a1'), 'Apprentice Wizard (dork) w liście');
   assert.ok(ids.includes('a2'), "Seer's Lantern w liście");
   const apprentice = sources.find((s) => s.id === 'a1');
-  assert.equal(apprentice.amount, 2, 'Apprentice net +2 (3 produkcji − 1 kosztu {U})');
+  // M311 (zgłoszenie właściciela): koszt aktywacji NIE jest netowany z
+  // produkcją — źródło niesie PEŁNĄ produkcję (3) + koszt osobno (pips {U}
+  // płaci pula/inne źródła PRZED produkcją, CR 601.2h; {U} ≠ {C}, CR 107.4a).
+  // Dawny pin „net +2" deklarował dokładnie model, który kłamał w opisie
+  // („+2" vs realne +3 do puli) i w planie płatności.
+  assert.equal(apprentice.amount, 3, 'Apprentice produkuje 3 bezbarwne (pełna produkcja)');
+  assert.deepEqual(apprentice.activationCost, { generic: 0, colors: ['U'] },
+    'koszt aktywacji {U} osobno');
   assert.equal(apprentice.command.type, 'activate_ability');
   assert.equal(apprentice.kind, 'ability');
   const land = sources.find((s) => s.id === 'l1');

@@ -1463,3 +1463,38 @@ mojej talii". Usunięcie (2026-09-06) objęło definicję, wpis `MANA_COSTS`,
 snapshot, przydział `plan` (regeneracja `decks/wiedzmin.txt`: 45 → 44 kart) i
 test `audyt-kontrzenie-zdolnosci.test.js`, który dziś opiera się na karcie
 synteretycznej `SONDA`.
+
+## L126 (2026-09-03) — przypadek: zlanie renderLookWizard z kreatorem landa
+
+`renderLookWizard` i kreator „zajrzyj → weź jeden land" miały po osobnym
+budowniczym listy chipów, osobnej polityce klucza sondy i osobnym sorterze — 46 linii
+wspólnego rysunku przy 358 liniach ogółem (difflib po wierszach). Po zlaniu ich w
+`renderPeekWizard` z parametrem `flow` wyszły DWA czerwone testy i jedna kradziona naprawa:
+`M112` (klucz na decyzji kończącej) spadł, bo silnik odziedziczył pulę sortera po scry i
+kreator „ułóż wierzch" pytał o karty odłożone na spód; a dawny kreator landa NIGDY nie dawał
+klucza, gdy po wyborze zostawała ≤1 karta — błąd, którego nikt nie zgłosił, bo obie
+implementacje maskowały się nawzajem. Nazwa komponentu od konkretnej karty
+(`renderFertileThicketWizard`, `lookKind === 'fertile'`) była tym samym grzechem co porównanie
+stringa karty, tylko cichszym — i osiadała w routing widoku, nie w logice efektu.
+
+Mutacje: pula sortera bez warunku na `flow` → RED M112; dopisana druga lista chipów
+w kreatorze → RED M293/1; przywrócona kopia stopki → RED M293/1; wycięty `min-height`
+rodziny → RED m129; nazwa karty w kodzie rysującym (bez komentarza) → RED M293/11.
+
+## L131 (2026-09-05) — przypadek: remisy wyborów resolve_* przy bot-tie-audit
+
+`tools/bot-tie-audit.mjs` pokazał 50+ remisów przy wyborach
+`resolve_*` (discard/search/trigger_target/exploit/opponent_target/
+color_choice/...), z czego połowa jako "bez danych" (projekcja `tieProjection`
+zwracała null), a połowa jako "remisy przy różnych danych". Wszystkie trzy
+typy padały do `default: return finish(0)` w `scoreCommand`,
+więc KAŻDY wariant dostawał 0 pkt i stabilny sort w greedyChoice wybierał
+PIERWSZĄ ofertę z listy.
+
+Przyczyna (klasy): L50 (nowy typ efektu/akcji startuje bez wyceny) +
+L34/L40/M195/M203 (warianty bez nazwy w `summarize` są nierozróżnialne
+w śladzie) + L117 (remis punktów bez danych w projekcji jest tak samo
+arbitralny jak brak wyceny). Nowy typ decyzji dodany w silniku nie dostał
+odpowiadającego mu `case` w kontrolerze — a kolejność kandydatów w ofercie
+NIE JEST posortowana po wartości (naturalna: gracz→stworzy wroga→itp.),
+więc pierwsza oferta to często NAJGORSZA opcja z perspektywy botu.

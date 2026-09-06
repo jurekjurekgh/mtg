@@ -602,6 +602,19 @@
   .poison-status { font-size: 13px; font-weight: 800; color: var(--gold-2); }
   .poison-count { font-size: 13px; font-weight: 700; color: #b7e4b7; }
   .poison-note { font-size: 11.5px; line-height: 1.4; color: #aab; }
+  .speed-panel {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: linear-gradient(180deg, #26203a, #12101e);
+    border: 1px solid var(--gold-2); border-radius: 12px; padding: 8px 12px; margin: 10px 0;
+    color: #e2e8f0;
+  }
+  .speed-panel[hidden] { display: none; }
+  .speed-card { width: 84px; flex: none; }
+  .speed-card img { width: 100%; border-radius: 6px; border: 1px solid var(--gold); display: block; }
+  .speed-info { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .speed-status { font-size: 13px; font-weight: 800; color: var(--gold-2); }
+  .speed-count { font-size: 13px; font-weight: 700; color: #cfd8ff; }
+  .speed-note { font-size: 11.5px; line-height: 1.4; color: #aab; }
   .daynight-card { width: 84px; flex: none; }
   .daynight-card img { width: 100%; border-radius: 6px; border: 1px solid var(--gold); display: block; }
   .daynight-info { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
@@ -1029,6 +1042,9 @@
   <div class="daynight-panel" id="daynight" hidden></div>
   <!-- M157/F: liczniki trucizny — panel widoczny, gdy ktoś ma truciznę. -->
   <div class="poison-panel" id="poison" hidden></div>
+  <!-- M313: prędkość (Start your engines!) — panel jak Poison, widoczny gdy
+       ktokolwiek zapalił silnik (speed > 0); wiersz per taki gracz. -->
+  <div class="speed-panel" id="speed" hidden></div>
   <div class="undercity-panel" id="undercity" hidden></div>
 
   <main class="board">

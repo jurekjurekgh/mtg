@@ -72,6 +72,14 @@ export function multiTargetPlanOf(commands) {
     // M207: rozbicie na POZYCJE CELU (patrz `targetSlotsOf`) albo null, gdy
     // czar bierze jednorodną listę („dowolna liczba celów").
     slots: targetSlotsOf(list, sizes),
+    // F3 (Żywy Tester, sesja 01a07711): pozycja OPCJONALNA („up to one target",
+    // B45/9 — Assert Perfection) bywa w komendach silnika `null` na tej pozycji.
+    // Deskryptor czytany z KOMEND (silnik = źródło prawdy), nie z karty —
+    // kreator i tak nie zna rejestru. Pozycja opcjonalna bez zaznaczenia
+    // mapuje się w kreatorze na ten właśnie wariant `null`.
+    slotOptional: targetSlotsOf(list, sizes)
+      ? [...targetSlotsOf(list, sizes).keys()].map((i) => list.some((cmd) => cmd.targets[i] == null))
+      : null,
     // Wspólne pola komendy — UI potrzebuje ich do opisu (nazwa karty, tryb).
     objectId: list[0].objectId,
     type: list[0].type,

@@ -8,7 +8,7 @@ import { hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
-  FACE_DOWN_LABEL, faceDownName,
+  FACE_DOWN_LABEL, faceDownName, cloakFaceDownName,
   manaEffectLabel,
   manaProducedLabel,
 } from './session.js';
@@ -295,6 +295,9 @@ export function describeSpellEffects(spell) {
 export const OPTION_IGNORABLE_TYPES = Object.freeze([
   'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
   'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'plot_card', 'suspend_card',
+  // M315: odsłonięcie cloakowanego — akcja opcjonalna (kosztowna), gracz może
+  // wyciszyć („nie przerywaj auto-passu").
+  'turn_cloak_face_up',
   // M180/Z4 (Żywy Tester): grupa Halo Foragera („Wartość X”) wyciszalna —
   // wyciszona blokująca decyzja opcjonalna auto-wykonuje decline w advance().
   'resolve_grave_free_cast',
@@ -310,7 +313,7 @@ const ACTION_RANK = Object.freeze({
   // tu nie były, spadały na fallback `?? 99` = PO pass/poddaniu. Właściciel:
   // „Nie mogłaby się pokazywać tam gdzie inne czary?" — wszystkie czary
   // razem, w ranku 5 (escape/flashback/adventure/obrócenie manifested).
-  cast_escape: 5, cast_flashback: 5, cast_adventure: 5, cast_adventure_creature: 5, turn_manifest_face_up: 5,
+  cast_escape: 5, cast_flashback: 5, cast_adventure: 5, cast_adventure_creature: 5, turn_manifest_face_up: 5, turn_cloak_face_up: 5,
   activate_ability: 5,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
@@ -2254,7 +2257,11 @@ export function commandLabel(cmd, session, view) {
       : null;
     const base = object
       ? (object.faceDown
-        ? faceDownName(object.cardId != null ? session.nameOf(object.cardId) : null)
+        // M319/NA1: własny cloak podpisany „Nazwa (Cloak N)" (nie „(Morph)")
+        // — mechanika zakrycia i stały numer kopii (M172/D dla tokenów).
+        ? (object.cloakReady
+          ? cloakFaceDownName(object.cardId != null ? session.nameOf(object.cardId) : null, object.copyNumber)
+          : faceDownName(object.cardId != null ? session.nameOf(object.cardId) : null))
         : (tokenName || session.nameOf(object.cardId)))
       : session.nameOfObject(id);
     // E (2026-08-11): permanent na polu bitwy, który mogą mieć OBAJ gracze
@@ -2922,6 +2929,12 @@ export function commandLabel(cmd, session, view) {
       // Manifest — obróć twarzą do góry za koszt many.
       return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)}`;
     }
+    case 'turn_cloak_face_up': {
+      // M315 (Veiled Ascension): cloak — specjalna akcja (bez stosu), koszt
+      // many karty. Etykieta nazywa mechanikę i kartę (koszt = koszt karty,
+      // którą kontroler zna — CR 708.2d).
+      return `Obróć twarzą do góry (Cloak): ${nameOfObjectId(cmd.objectId)}`;
+    }
     case 'resolve_hand_top_choice': {
       // M162/C (uwaga właściciela): Chittering Rats u bota otwierał modal
       // „Karta z ręki na wierzch (1 z 5)…" — ten case w ogóle nie istniał,
@@ -3250,7 +3263,15 @@ export function cardInfo(session, object, combat = null) {
   const attachedEquipment = Boolean(object.attachedTo) && !attachedAura;
   // M258/F3: ward zakrytego (cloak) jest jawny — keyword w widoku
   // (reszta keywordów tłumiona przez CR 708.2a jak dotąd).
-  const keywordsNow = faceDown ? (object.ward != null ? ['ward'] : []) : (object.keywords?.length ? object.keywords : (details.keywords || []));
+    // M315 (Veiled Ascension, CR 702.75 + 122.1b): zakryty permanent NOSI ward
+  // {2} (definicja zakrycia) i MOŻE mieć jawne granty (licznik flying z Veiled
+  // Ascension — „face-down creatures enter with a flying counter"). Widok
+  // już rozstrzyga FoW (kontroler: pełna lista; przeciwnik: same granty),
+  // więc kafel czyta keywordy z WIDOKU; fallback ['ward'] dla starszych
+  // ścieżek, gdzie kwota ward idzie bez keyworda.
+  const keywordsNow = faceDown
+    ? (object.keywords?.length ? [...object.keywords] : (object.ward != null ? ['ward'] : []))
+    : (object.keywords?.length ? object.keywords : (details.keywords || []));
   return {
     objectId: object.id,
     cardId: faceDown ? null : cardId,
@@ -3267,7 +3288,9 @@ export function cardInfo(session, object, combat = null) {
     // własnego permanentu, sama nazwa mechaniki dla cudzego (FoW).
     // M260/B1: zakryte WYGNANIE nie jest morphem — sam znacznik nazwy
     // wystarcza („Wygnana zakryta"), badge mechaniki pola bitwy myliłby.
-    morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${FACE_DOWN_LABEL})` : FACE_DOWN_LABEL)) : null,
+    // M319/NA1: własny cloak z numerem kopii — „zakryty (Cloak 2)" — żeby
+    // kafel na stole pasował do etykiety celu („Nazwa (Cloak 2)").
+    morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${object.cloakReady ? `Cloak${object.copyNumber ? ` ${object.copyNumber}` : ''}` : FACE_DOWN_LABEL})` : FACE_DOWN_LABEL)) : null,
     colors,
     kind,
     // M138/Z6 (audyt Żywym Testerem): typy bierzemy ze STANU GRY, nie z rejestru
@@ -3993,7 +4016,7 @@ function showHoverPreviewAt(els, info, e, mode, { showCycleHint = true } = {}) {
  *   onCardClick: (objectId: string, cardId: string) => void,
  *   onStackClick?: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, onSpeedCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'handEnemy', 'actions', 'log']) clear(els[key]);
@@ -4227,6 +4250,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // (karta specjalna spoza rejestru, jak Day/Night i Undercity).
   renderPoisonPanel(els, view, { onOpenCard: onPoisonCardClick, hover });
 
+  // --- Prędkość (M313) — panel jak Poison: tylko gracze z „Start your engines!" ---
+  renderSpeedPanel(els, view, { onOpenCard: onSpeedCardClick, hover });
+
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view, { onClick: onUndercityClick, hover });
 }
@@ -4245,6 +4271,16 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
 // M157/F (uwaga właściciela): liczniki trucizny mają być jawnie widoczne —
 // panel w stylu Undercity/Day-Night z ilustracją karty „Poison Counter"
 // (Scryfall tecc/13) i licznikami graczy. Widoczny, gdy ktoś ma truciznę.
+// M313 (zgłoszenie właściciela): marker prędkości (DFT „Start your engines!")
+// — oficjalny double-faced token mechaniki (tdft/14): przód „Start Your
+// Engines!", tył „Max Speed". Karta specjalna spoza rejestru (jak Poison
+// Counter / Day-Night) — ilustracja z Scryfallem, klik = pełny ekran.
+const SPEED_MARKER = Object.freeze({
+  name: 'Start Your Engines!',
+  imageUriFront: 'https://cards.scryfall.io/large/front/8/2/82613de6-ed37-48c1-8d2f-d91a3f496794.jpg?1783907681',
+  imageUriMax: 'https://cards.scryfall.io/large/back/8/2/82613de6-ed37-48c1-8d2f-d91a3f496794.jpg?1783907681',
+});
+
 const POISON_COUNTER_CARD = Object.freeze({
   name: 'Poison Counter',
   imageUri: 'https://cards.scryfall.io/large/front/8/a/8a9cb417-8709-4336-be36-2fb0cea31fe1.jpg?1783904328',
@@ -4303,6 +4339,45 @@ export function renderPoisonPanel(els, view, { onOpenCard = null, hover = null }
     div(info, 'poison-count', `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${p.poison ?? 0} ${polishPluralCount(p.poison ?? 0, 'licznik', 'liczniki', 'liczników')} trucizny`);
   }
   div(info, 'poison-note', 'Gracz z 10 licznikami trucizny przegrywa (CR 704.10). Liczniki znikają tylko z końcem gry — obrażenia ich nie leczą.');
+}
+
+export function renderSpeedPanel(els, view, { onOpenCard = null, hover = null } = {}) {
+  if (!els.speed) return;
+  // M313 (zgłoszenie właściciela): panel pokazuje TYLKO graczy, którzy
+  // „zapalili silnik" (speed > 0); przy obu — wiersz dla każdego osobno.
+  const zapaleni = (view.players ?? []).filter((p) => (p.speed ?? 0) > 0);
+  els.speed.hidden = zapaleni.length === 0;
+  if (zapaleni.length === 0) return;
+  clear(els.speed);
+  // Marker „Start Your Engines! // Max Speed" (tdft/14, oficjalny double-faced
+  // token mechaniki) — przy maksymalnej prędkości któregokolwiek gracza
+  // pokazujemy TYŁ („Max Speed"), jak Day/Night przełącza swoją ilustrację.
+  const maxSpeed = Math.max(...zapaleni.map((p) => p.speed ?? 0));
+  const imageUri = maxSpeed >= 4 ? SPEED_MARKER.imageUriMax : SPEED_MARKER.imageUriFront;
+  const card = div(els.speed, 'speed-card');
+  if (onOpenCard) {
+    card.className = `${card.className} clickable`.trim();
+    card.addEventListener('click', () => onOpenCard({ name: SPEED_MARKER.name, imageUri }));
+  }
+  attachSpecialCardHover(card, hover, {
+    name: SPEED_MARKER.name,
+    imageUri,
+    artId: null, set: null, colors: [], kind: 'card', types: ['Card'], faceDown: false,
+  });
+  const img = document.createElement('img');
+  img.src = imageUri;
+  img.alt = SPEED_MARKER.name;
+  img.loading = 'lazy';
+  card.appendChild(img);
+  const info = div(els.speed, 'speed-info');
+  div(info, 'speed-status', 'Prędkość — Start your engines!');
+  for (const p of zapaleni) {
+    const v = p.speed ?? 0;
+    div(info, 'speed-count',
+      `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${v} z 4${v >= 4 ? ' (maks.)' : ''}`);
+  }
+  div(info, 'speed-note',
+    'Prędkość startuje na 1 przy permanentie „Start your engines!" i rośnie raz w turze, gdy przeciwnik traci życie. Maksymalna prędkość (4) odblokowuje zdolności „Max speed".');
 }
 
 export function renderDayNight(els, session, view, { onClick = null, hover = null } = {}) {

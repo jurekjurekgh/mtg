@@ -77,6 +77,26 @@ export function nextCopyNumber(state, name) {
   return max + 1;
 }
 
+/**
+ * M319/NA1: kolejny numer STAŁEJ kopii zakrytego cloak-a (CR 702.75) —
+ * „Nazwa (Cloak N)" w etykietach celów, tak jak „Nazwa (kopia N)" dla
+ * tokenów-kopii (M172/D). Liczymy ŻYWE zakryte cloak-i TEGO Kontrolera
+ * o tym cardId (tożsamość cloak-a zna tylko kontroler — CR 708.6), żeby
+ * numery nie przeciekały między graczami. Numer znika przy uncover
+ * (game-state turn_cloak_face_up), więc nie zaśmieca face-up kart.
+ */
+export function nextFaceDownCopyNumber(state, controllerId, cardId) {
+  let max = 0;
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (object?.faceDown && object?.cloakReady && object?.copyNumber > 0
+      && object?.controllerId === controllerId && object?.cardId === cardId) {
+      max = Math.max(max, object.copyNumber);
+    }
+  }
+  return max + 1;
+}
+
 export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, toxic = null, transformTo = null, frontFaceId = null, station = null, saga = null, tapped = false, copyNumber = null, manaCost = 0, entersWithCounters = null, entersWithCountersIf = null }) {
   if (!state || !state.players.some((p) => p.id === controllerId)) throw new Error('Nieznany kontroler tokenu');
   if (!cardId || !name) throw new TypeError('Token wymaga cardId i nazwy');

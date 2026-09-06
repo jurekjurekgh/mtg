@@ -8696,3 +8696,216 @@ prawdziwe). `git log` nie pomaga: klon sesji ma JEDEN commit zbiorczy
   `Stifle` w transkrypcie.
 - Własna talia `decks/wiedzmin.txt` jest od tej fazy wolna od kart-sond; jeśli
   właściciel zechce realnej kontry zdolności, wpis idzie z batcha (ADR 0029).
+
+
+### Faza 3 (arena/01a07711): audyt PR #101 + pętla jakości — F3 pozycja celu opcjonalna (PR #102)
+
+- **Audyt PR #101** (`2d196a0`, `docs/audits/AUDYT_PR101_2026-09-06.md`):
+  zmiany poprawne regułowo — A1 (`decisionCandidateCard` + payload decyzji),
+  A2/A3/A4/A8, mostek `gameOver` w Testerze, usunięcie Stifle kompletność wg
+  checkli L134, grzechotka L124 (atrybucja per para zgodna z pomiarem).
+  Weryfikacja mutacyjna próbki RED→GREEN: 4/5 deklaracji potwierdzone, piąta
+  ujawniła F1. Dopełnienie sesji kontynuacyjnej: spot-checky CR (608.2b ✓,
+  701.19a–c ✓, KOREKTA błędnego cytuatu „701.3/701.34a «look at»" — w CR
+  (2026-08-07) to attach/proliferate; poprawnie 701.16d + 701.19a–c) i
+  pełne file-by-file pokrycie diffu (LESSONS/PRZYPADKI/HISTORY/HANDOFF).
+- **F1** (`e19c836`): martwa wewnętrzna bramka `pendingSatyrLook.cards`
+  (klasa L48/7) — usunięta, wpis gated przez `activeSatyrLook` z identycznym
+  predykatem; FoW pinuje bramka zewnętrzna (m305/4). Zachowanie bit w bit.
+- **F2** (`850134c`): martwy parametr `openLabel` w `renderPickerName`
+  (obserwacja A7 z audytu PR #100, zmierzona) — usunięty. Zachowanie bit w bit.
+- **Dryf remisów F1/F2 = ZERO**: `bot-tie-audit` 24 partie na HEAD i na bazie
+  `6ce4cab` — bit-w-bit identycznie 11322 decyzji / 631 remisów / 213 realnych.
+  Rozbieżność wobec 625/197 z opisu PR #101 pochodzi ze zmiany talii w fazie
+  #101 (usunięcie Stifle przesuwa trajektorie ~±12 remisów; `wiedzmin` gra w
+  3/12 par audytu) — potwierdzone rekonstrukcją karty w bazie (619/200,
+  przybliżona: gałąź sesji #101 usunięta z origin).
+- **F3** (`215ed1d`): pozycja celu OPCJONALNA w kreatorze wielocelowym.
+  Zgłoszenie z pętli jakości: partia worek-mroczny|theros s13 `hoarder`
+  stanęła na „Assert Perfection — wskaż po jednym celu dla każdej pozycji"
+  (5 prób, throw). Silnik poprawny od Batch 45 (B45/9: `optional: true`
+  enumeruje wariant z `null`); luka w dwie warstwy: kreator trybu pozycyjnego
+  (M207) żądał nie-null w każdym slocie (wariant 1-celowy „pump bez
+  ugryzienia" niemożliwy z panelu; przy zerze wrogich stworów czar w ogóle
+  nie do rzucenia — odchybka od Oracle w warstwie prezentacji), a sterownik
+  testera nie rozpoznawał trybu. Naprawa bez przypadków po nazwie: plan niesie
+  `slotOptional` czytany z KOMEND silnika; kreator mapuje pustą pozycję
+  opcjonalną na wariant `null` (obowiązkowe nadal blokują, status „Brakuje"
+  ich nie kłamie); Tester dostaje gałąź trybu pozycyjnego (radio grupy
+  `multi-target-slot-N`). Strażnik `test/m309-slot-opcjonalny-kreator.test.js`
+  (6 testów, w tym pin przez realne `legalCommands`). Żywo: partia s13 po
+  naprawie domknięta, linia `[slots wizard]` w transkrypcie (pozycja 2 bez
+  kandydatów — ścieżka niemożliwa przed naprawą); wariant „z ugryzieniem"
+  pokryty testami F3/5+F3/6 (w biegu s41 karta nie wypadła).
+- **Pętla jakości — partie (6 zakończonych, 0 zgłoszeń detektorów):**
+  worek-legend|warhammer-ubr s7 (Bot 13:−3), srodziemie|mirrodin-wu s23
+  (Gracz 11:−1), kaladesh|zendikar s41 (Bot 12:0), dominaria-brg|worek-dziki
+  s29 `impatient` (Bot 17:−7), worek-mroczny|theros s13 `hoarder` (Gracz
+  20:0, po F3), worek-mroczny|theros s41 `hoarder` (Gracz wygrywa
+  wyczerpaniem biblioteki 3:7).
+- **E3b — pary wymóg×zakaz po stronie bloków:** silnik nie ma żadnego
+  „must block" (grep), lure/provoke nie istnieją w danych kart; para nie
+  może wystąpić. `cantBlockAlone` spójny (walidacja + oferta). Strona ataku
+  (M270, goad × „can't attack alone") zweryfikowana w PR #101.
+- **Station legality — DOMKNIĘTE bez zmian kodu:** aktywacje Station po
+  progu są legalne wg Oracle (Station bez górnej granicy, „only as a
+  sorcery" to jedyny reżim czasowy); silnik nie ma sztucznego capu — próg
+  czytany z deskryptora (`permanents.js`), koszt to tap-another
+  (`abilities.js`). Sekwencja 2→6→9→12 (Warmaker Gunship, partia
+  worek-legend s7) legalna; obserwacja zamknięta.
+- **Lekcje:** L135 (nowy KSZTAŁT komendy musi mieć obsługę u każdego
+  konsumenta: silnik → kreator UI → sterownik testera). Budżet lektury
+  startowej: kondensacja L126 i L131 (narracja → `LESSONS_PRZYPADKI.md`,
+  numery 1:1); po dopisaniu L135 zmierzono **99,96k/100k** (test budżetu
+  zielony, próg nietknięty).
+- **Dopisek (ten sam dzień, decyzja właściciela) — Station wraca jako
+  heurystyka bota:** właściciel przeklasyfikował wątek — pompowanie charge
+  ponad próg jest legalne, ale bezsensowne (marnuje tapnięcia stworów) i
+  powinno mieć ujemny scoring bota. Weryfikacja (L57, pomiar nie zgadywanie):
+  scoring MA karę `charge >= threshold → −15` (kontynuacja M120/M153/A2;
+  z bazą +2 i kosztem tapu −3 netto ≈ −16, poniżej passu), a zachowanie jest
+  poprawne behawioralnie — ale gałąź NIE miała pinu testowego (klasa L13:
+  mutacja usuwająca karę byłaby zielona). Strażnik
+  `test/m310-station-ponad-prog-scoring.test.js` (3 testy): para graniczna
+  na Gunshipie (charge 5 → buduje, charge 6 = próg → nie), próg czytany z
+  DESKRYPTORA karty (Rammer próg 9 na charge 6 dalej buduje). Mutacje pinu:
+  kara zamieniona na +4 ⇒ M310/2 RED; stała „6" zamiast deskryptora ⇒
+  M310/3 RED; po przywróceniu 3/3 GREEN. Źródło 7× aktywacji w partii
+  worek-legend s7: profil `greedy` TESTERA (sonda pokrycia UI — priorytet
+  `/^Aktywuj:/` z definicji), nie heurystyka bota; tester będzie pompował
+  dalej (cel: pokrycie mechaniki), bot nie. Pomiar żywy na lustrze partii
+  (bot=worek-legend s7): patrz HANDOFF 2026-09-06c.
+
+
+### Kontynuacja fazy 3 (arena/01a07711, 2026-09-06): pętla jakości — M311–M313 (PR #102)
+
+Prompt właściciela: „kontynuujemy projekt" (ADR 0021). Uwaga porządkowa:
+lokalna gałąź została odnaleziona przestawioną na squash-merge PR #101
+(`6ce4cab`), z pracą fazy 3 żywą w drzewie roboczym — ale ORIGIN zachował
+pełną linię fazy 3 (`5466cfb`…`e80d395`). Pracę sesyjną (M311–M313 + docs)
+zrebase'owano na `e80d395`; tymczasowe commity odtworzeniowe wypadły
+w rebase jako już-obecne (patch-identyczne). Drzewo bit-w-bit identyczne
+przed i po rebase (pusty diff) — pomiary suite ważne.
+
+- **M311 (tor A, `5e086d1`) — Apprentice Wizard / kreator many.**
+  Zgłoszenie: opis „+2" kłamał, a plan płatności źle liczył — zdolność
+  netto daje 2, bo płaci koszt aktywacji {1}{U} z produkcji 3 (CR 601.2h,
+  107.4a). Kontrakt: źródło-zdolność niesie PEŁNĄ produkcję
+  (`amount` 3) + `activationCost {generic, colors}` osobno; skip gdy
+  `produkcja − kosztGeneryk ≤ 0`; solver acceptuje
+  `Σamount − ΣkosztGeneryk ≥ need` i traktuje pipy kosztu jako dodatkowe
+  wymagania; klucz wariantu z sygnaturą `generic:pips`; etykieta
+  „+3 — koszt aktywacji {1}{U}". Silnik płaci koszt PRZED produkcją.
+  Stary pin `table-mana-wizard.test.js` deklarował netowany model —
+  przełożony (amount 3, deepEqual activationCost). Testy m311 (4).
+- **M312 (tor B, `b107c56`) — Village Rites / encje HTML w wierszach.**
+  Zgłoszenie: wiersze kreatora wyboru pokazywały surowe encje HTML ikon
+  many zamiast renderu. Naprawa dwuwarstwowa: `addRow` (choice-request.js)
+  robi routing TREŚCIOWY — etykieta z `<` → kanał `html` (innerHTML,
+  kontrakt M104/A2), czysty tekst → kanał `label` (textContent, fallback
+  `objectOrPlayerName`); bramka nazwy w picker.js (radio/checkbox) liczy
+  się z kanałem `html` (`html || (label !== null && label !== '')` —
+  dotąd wiersz z samym html tracił `picker-name`). Ślepe kierowanie
+  całego labelOverride→html łamie 4 piny mini-DOM — odrzucone; obowiązują
+  detekcja treści `includes('<')`. Testy m312 (3).
+- **M313 (tor C, `71da22f`) — Start your engines! / panel prędkości.**
+  Zgłoszenie: Leonin Surveyor ma aktywować strefę specjalną Speed z
+  tokenem analogicznym do Undercity/Poison i polem prędkości gracza
+  (jeden zapalony = jego prędkość, obaj = wiersz dla każdego). Stan
+  wyjściowy: silnik miał speed w całości (DFT Batch 24), milczały widok
+  i UI. Naprawa: playerView projekcjonuje `speed` (licznik publiczny jak
+  poison); panel `#speed` na stole wg wzorca Poison — marker tdft/14
+  (przód „Start Your Engines!", przy maks. prędkości TYŁ „Max Speed"),
+  wiersze tylko dla graczy z speed > 0, licznik „X z 4" z „(maks.)",
+  klik = pełny ekran, hover; CSS rodziny `.speed-*`. Testy m313 (5).
+- **Żywo (regresja po torach):** partia kaladesh|alara s23 (greedy,
+  policy-seed 1) do końca — prędkość obu graczy doszła do 4 (ścieżka
+  „maks." panelu ćwiczona w DOM), **0 zgłoszeń detektorów**, pokrycie
+  UI: 27 akcji widzianych / 25 klikniętych. Benchmark szybki bez dryfu
+  (heuristic 84,8% = 570/672, random 3,9%).
+- Bramy na zamknięcie: `test:all` **4537/4537** (+5 m313, +3 m310,
+  +6 m309 względem 4522), szybki rdzeń **4527/4527**, build **59 modułów
+  / 3327,6 kB**. Handoff: `docs/setup/HANDOFF_2026-09-06d.md`.
+
+### Część 3 (arena/01a07711, 2026-09-06): M314 — Veteran + Ghost Warden, okna walki i „another"
+
+- **Zgłoszenie:** pump #1 z Wardena przed walką → atak Veteranem → trigger
+  odtapia Wardena → brak okna na pump #2 („od razu podział obrażeń").
+  Hipoteza właściciela: pinezka „nie przerywaj auto-passu".
+- **Weryfikacja (L57, `test/m314-veteran-okna-walki.test.js`, 7):** silnik
+  sekwencjonuje OKNA POPRAWNIE — po rozstrzygnięciu triggera priorytet wraca
+  do atakującego (CR 116.3c) z aktywacją Wardena jeszcze PRZED blokami
+  (M314/3), drugie okno po blokach w combat_damage (M314/4, M172/C); bez
+  pinezki sesja zatrzymuje się z pumpem #2 (M314/5: 16 życia bota). NIE
+  zmieniano semantyki auto-passu.
+- **Pinezka (pin M314/6):** checkbox GRUPY wycisza wszystkie warianty
+  aktywacji (render.js, Feature 2026-08-11 + M91/Uwaga B); wyciszona opcja
+  nie otwiera żadnego okna — zaprojektowane; hamulec ręczny: krzyżyk albo
+  odznaczenie ptaszka. 17 życia bota = pump #2 nie zdążył.
+- **Naprawa (RED→GREEN):** descriptor Veterana bez `notSelf` — atakujący był
+  kandydatem własnego untapa (Oracle: „untap ANOTHER target creature you
+  control"; precedens M158 Hippocamp). Po naprawie: 1 kandydat → auto-cel
+  (M242, brak pytania), ≥2 → decyzja bez atakującego (M314/1b), Veteran
+  solo → trigger nie odpala (no_targets, CR 603.3d, M314/2). Pin batch28
+  przełożony na model auto-celu.
+- **Bramki:** `npm test` **4534/4534** (+7), build 59 / 3327,9 kB; benchmark
+  bez dryfu (570/672). Żywo: ravnica|srodziemie s31 — 0 zgłoszeń detektorów
+  (obie karty w grze). Commit `3f75358` (wypchnięty).
+
+### Część 4 (arena/01a07711, 2026-09-06): M315 cloak (Veiled Ascension) + M317 bot vs triki obronne (PR #102)
+
+- **M315 (temat A, „albo 100% CR i Rulings albo nieobsługiwana"):**
+  ward {2} cloakowanego był egzekwowany od M258/F3 (W2-W7), ale KAFL gubił
+  granty (licznik flying z Veiled Ascension) i hardkodował ward na kaflu;
+  odkrycie (uncover) NIE ISTNIAŁO. Naprawy: kafel czyta keywordy z widoku
+  (widok rozstrzyga FoW: kontroler pełna lista, przeciwnik granty + ward —
+  decyzja M258/F3 „to nie jest informacja ukryta"); własny zakryty podpisany
+  „(Cloak)" (cloakReady tylko dla kontrolera — CR 708.2d); NOWA SPECIALNA
+  AKCJA `turn_cloak_face_up` (CR 702.75c + ruling WotC: any time you have
+  priority, bez stosu, niereagowalna; tylko karty STWORÓW; koszt many karty
+  z faceDownOriginal; po obrocie traci ward {2}); bot: NEVER (wycena uncover
+  = osobny temat, M310-precedens). Golden-master REGENEROWANY (nowa legalna
+  akcja w options, 1 partia +1 decyzja — świadome). Pin m277 + cloakReady.
+  Strażnik m315 (9).
+- **M317 (temat B):** `enemyDefensivePumpBonus` — wycena ataku zakłada, że
+  obrońca pompa blokera zdolnością ze stołu (tap → nietapnięte źródło; mana →
+  pula + nietapnięte landy; detain wyklucza; najlepsza pojedyncza zdolność);
+  gałęzie ataku liczą staty blokerów z bonusem. Bot nie kupuje już wymiany
+  2/2↔2/2 wygrywanej wrogim pumpe. Strażnik m317 (6); golden-master bez zmian.
+- Bramy: `npm test` **4549/4549** (+15), `test:all` **4559/4559**, build
+  59 / 3336,4 kB; benchmark 84,8% (570/672) bez dryfu. Żywo: ravnica
+  |worek-legend s41 (Warden w grze) — 0 zgłoszeń detektorów.
+- Commity: `963af06` (M315), `6d8dfa9` (M317) — wypchnięte.
+
+### Część 5 (arena/01a07711, 2026-09-06): zgłoszenia właściciela — NA1/NA2/NA3 + uncover bota (PR #102)
+
+- **M318 (NA3, Guildgate):** zgłoszenie „czarny czar nie dostępny, choć
+  nietapnięty Dimir Guildgate produkuję {B}". Diagnoza: silnik zgodny z CR —
+  skan 10240 kombinacji (bramka × landy × pule × czarne czary ravnica + stwory
+  zakryte) + kontrola pozytywna w pełnej sesji (play_land t1, main t3, {1}{B}
+  po dołożeniu landa). Dwa wyjaśnienia: {1}{B} = 2 many (sama bramka daje 1 —
+  CR 107.4a) albo bramka entersTapped w turze wejścia. Test-gvardian m318 (4).
+- **M319 (NA1, etykiety):** zakryte cloak-i mówiły „(Morph)" (mechanika kłamała
+  — cloak ma ward {2}) i kilka jednakowych zakrytych było nierozróżnialnych.
+  `cloakFaceDownName` w session.js (jedno źródło), `nextFaceDownCopyNumber`
+  (numeracja po ŻYWYCH cloak-ach kontrolera, jak tokeny „kopia N" M172/D),
+  cloak dostaje `copyNumber` przy tworzeniu, uncover go zdejmuje; etykiety celów
+  (render + choice-request) i badge kafla: „Nazwa (Cloak N)"/„zakryty (Cloak N)".
+  FoW zachowane (przeciwnik dalej widzi tylko „Morph" — CR 708.2a). Strażnik m319 (5).
+- **M320 (NA2, ward):** bot celował czarami/zdolnościami w stwory z ward {2}
+  bez many na dopłatę → skontrowane (CR 702.21), mana przepadła. `wardTargetTax`
+  + `reservedManaOf` + `ownOpenMana`: podatek ward liczony PO koszcie głównym;
+  many brak → wariant fiknie (poniżej passu); własny cel nie triggeruje (CR
+  702.21a). Zakres: cast (również bestow/escape/flashback/adventure/cleave),
+  activate_ability, resolve_trigger_target. Strażnik m320 (3), RED potwierdzony
+  stashem.
+- **M321 (uncover bota — „jawna luka"):** wycena `turn_cloak_face_up` — tylko
+  main, tylko przy many, zysk (ciało ponad 2/2 + keywordy + trigger ETB) musi
+  przebijać koszt many + flat za utratę ward {2}; słabe karty zostają zakryte.
+  PRZY OKAZJI BUG silnika z M315: `turnFaceUp` przywracał nazwę/kolory/koszt,
+  ale NIE P/T — odkryty cloak zostawał 2/2. Naprawa: P/T w faceDownOriginal +
+  odtworzenie przy obrocie (morfy bez zmian). Strażnik m321 (3).
+- Bramy: `npm test` **4564/4564** (+15), `test:all` **4574/4574**, build
+  59 / 3344,7 kB; benchmark 84,8% (570/672) bez dryfu; golden-master bez zmian.
+  Żywo: worek-legend|ravnica s41, 700 kroków — 0 zgłoszeń detektorów.
+- Commity: `c9ed6bb` (M318), `a3e59af` (M319), `1bccf3e` (M320), `da6f7e4` (M321) — wypchnięte.

@@ -8,7 +8,7 @@ import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
 import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
-import { createBattlefieldToken, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
+import { createBattlefieldToken, nextCopyNumber, nextFaceDownCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
 
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
@@ -1837,6 +1837,34 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       ward: 2,
       summoningSickness: true,
       tapped: false,
+      // M315 (CR 702.75c + ruling WotC 2024-02-02): „Any time you have
+      // priority, you can turn a cloaked permanent you control face-up by
+      // revealing that it's a creature card ... and paying its mana cost.
+      // This is a special action." — flagi dla turn_cloak_face_up
+      // (game-state.js). Koszt obrotu = koszt many KARTY (nie zakrycia,
+      // które ma mana value 0); tylko karty STWORÓW.
+      faceDownOriginal: Object.freeze({
+        colors: Object.freeze([...(topObj.colors ?? [])]),
+        subtypes: Object.freeze([...(topObj.subtypes ?? [])]),
+        types: Object.freeze([...(topObj.types ?? [])]),
+        keywords: Object.freeze([...(topObj.keywords ?? [])]),
+        manaCost: topObj.manaCost ?? 0,
+        cardName: topObj.cardName ?? null,
+        // M321: P/T karty — uncover ma przywrócić pełne ciało (CR 702.75c).
+        // Pole `power`/`toughness` obiektu jest nadpisane na 2/2 zakrycia, więc
+        // bez tego odkryty cloak zostawał 2/2 (bug z M315: turnFaceUp
+        // przywracał nazwę/kolory/koszt, ale nie statystyki).
+        power: topObj.power ?? null,
+        toughness: topObj.toughness ?? null,
+      }),
+      cloakReady: (topObj.types ?? []).includes('Creature') || topObj.kind === 'creature',
+      cloakTurnUpCost: (topObj.types ?? []).includes('Creature') || topObj.kind === 'creature'
+        ? (topObj.manaCost ?? 0)
+        : null,
+      // M319/NA1: stały numer kopii („Nazwa (Cloak N)" w celach/kaflach),
+      // żeby kilka jednakowych zakrytych dało się rozpoznać — jak tokeny-kopie
+      // (M172/D). Znika przy uncover (turn_cloak_face_up).
+      copyNumber: nextFaceDownCopyNumber(state, controllerId, topObj.cardId),
     });
     state.objects.set(battleId, cloaked);
     // Veiled Ascension (MKC): „Face-down creatures you control enter with a

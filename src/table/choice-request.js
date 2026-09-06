@@ -1,7 +1,7 @@
 import { choiceResponse } from '../protocol/types.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
-import { commandOptionKey, FACE_DOWN_LABEL } from './session.js';
+import { commandOptionKey, FACE_DOWN_LABEL, faceDownName, cloakFaceDownName } from './session.js';
 import { commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection } from './multi-target.js';
 
 function clearChoiceElement(element) {
@@ -617,7 +617,16 @@ function objectName(view, session, id) {
     if (object) {
       // Face-down (morph/megamorph, CR 708.2): tożsamość ukryta — „Morph"
       // zamiast „?" (audyt żywym testerem M73c; pisownia M127 z jednego źródła).
-      if (object.faceDown) return FACE_DOWN_LABEL;
+      // M319/NA1: WŁASNY cloak to mechanika CLOAK — „Nazwa (Cloak N)"
+      // (cloakFaceDownName), nie gołe „Morph", które kłamało o ward {2}
+      // i nie odróżniało kilku zakrytych kart tej samej nazwy.
+      if (object.faceDown) {
+        if (object.cloakReady && object.cardId != null) {
+          return cloakFaceDownName(session.nameOf(object.cardId), object.copyNumber);
+        }
+        if (object.cardId != null) return faceDownName(session.nameOf(object.cardId));
+        return FACE_DOWN_LABEL;
+      }
       // A1/A2 + M155: tokeny niosą JAWNĄ nazwę w polu `name` w playerView
       // (cardId typu token_servo nie istnieje w katalogu kart — nameOf zwracałby
       // surowe id, co psuje etykiety w wizardach przydziału obrażeń i celu).
@@ -1052,7 +1061,13 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // (targetKey sortuje), więc dla pozycji używamy dopasowania po kolejności.
   const slotChoice = slots ? slots.map(() => null) : null;
   const commandForSlots = () => {
-    if (slotChoice.some((id) => id == null)) return null;
+    // F3 (Żywy Tester, sesja 01a07711): pusta pozycja OPCJONALNA („up to one
+    // target", B45/9) = wariant silnika z `null` na tej pozycji — wybór jest
+    // wtedy KOMPLETNY. Pozycja OBOWIĄZKOWA bez zaznaczenia nadal blokuje
+    // (wybór niekompletny). Deskryptor `slotOptional` pochodzi z komend
+    // silnika (multiTargetPlanOf), więc legalność rozstrzyga dalej silnik (L48).
+    const niekompletne = (id, i) => id == null && !(plan.slotOptional?.[i]);
+    if (slotChoice.some(niekompletne)) return null;
     return (commands ?? []).find((cmd) => Array.isArray(cmd.targets)
       && cmd.targets.length === slotChoice.length
       && cmd.targets.every((id, i) => id === slotChoice[i])) ?? null;
@@ -1115,7 +1130,21 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       : (typeof slot === 'number' ? `multi-target-slot-${slot}` : (slot === 'sac' ? 'multi-target-sac' : (exclusive ? 'multi-target-single' : null)));
     const handle = renderPickerRow(list, {
       id,
-      label: labelOverride ?? objectOrPlayerName(view, session, id),
+      // M312 (zgłoszenie właściciela, Village Rites): etykieta od wywołującego
+      // (labelOverride) pochodzi z `commandLabel` i może zawierać HTML ikon
+      // many — kontrakt M104/A2 („przez innerHTML; textContent pokazywał
+      // surowy <span…"). Etykieta Z MARKUPEM idzie kanałem `html` (innerHTML);
+      // czysty tekst (keepMode „Weź mulligan", odmowa, nazwy obiektów) zostaje
+      // kanałem `label` (textContent) — identyczny wynik w przeglądarce, a
+      // testowe mini-DOMy bez parsera dalej czytają tekst. Kanał rozpoznaje
+      // treść („<"), nie tryb wizarda, bo o HTML decyduje źródło etykiety
+      // (commandLabel), nie kształt wyboru.
+      label: (typeof labelOverride === 'string' && labelOverride.includes('<'))
+        ? null
+        : (labelOverride ?? objectOrPlayerName(view, session, id)),
+      html: (typeof labelOverride === 'string' && labelOverride.includes('<'))
+        ? labelOverride
+        : null,
       kind,
       group,
       rowClassName: slot == null ? 'multi-target-row' : 'multi-target-row multi-target-slot-row',
@@ -1165,8 +1194,10 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     if (slots) {
       // Pozycje bez wyboru trzeba WYMIENIĆ — samo wyszarzone „Zatwierdź"
       // nie mówi graczowi, czego brakuje (to było sedno zgłoszenia).
+      // F3: pozycja OPCJONALNA bez zaznaczenia NIE jest brakiem — to legalny
+      // wariant „bez celu na tej pozycji" (B45/9).
       const missing = slotChoice
-        .map((id, i) => (id == null ? (slotLabels[i] ?? `cel ${i + 1}`) : null))
+        .map((id, i) => (id == null && !plan.slotOptional?.[i] ? (slotLabels[i] ?? `cel ${i + 1}`) : null))
         .filter(Boolean);
       if (missing.length > 0) setStatus(`Brakuje: ${missing.join(', ')}`, true);
       else setStatus(cmd ? 'Wybrano komplet celów' : 'Wybór niedozwolony', !cmd);

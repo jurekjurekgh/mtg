@@ -66,6 +66,22 @@ export function faceDownName(cardName) {
 }
 
 /**
+ * M319/NA1 (zgłoszenie właściciela 2026-09-06, cz. 5): zakryty CLOAK
+ * (CR 702.75) ma własny znacznik — „Morph" kłamał o mechanice (cloak to
+ * 2/2 z ward {2}; morph to 2/2 bez ward). Nazwa WŁASNEGO cloak-a dostaje
+ * STAŁY numer kopii („Nazwa (Cloak 1)", „Nazwa (Cloak 2)") — kilka jednakowych
+ * zakrytych kart musi dać się rozpoznać przy wyborze celów, tak jak tokeny-kopie
+ * „Nazwa (kopia N)" (M172/D). Numer nadaje silnik przy tworzeniu zakrycia
+ * (nextFaceDownCopyNumber) i znika przy obrocie twarzą do góry.
+ */
+export const CLOAK_LABEL = 'Cloak';
+
+export function cloakFaceDownName(cardName, copyNumber = null) {
+  const tail = copyNumber ? ` ${copyNumber}` : '';
+  return cardName == null ? `${CLOAK_LABEL}${tail}` : `${cardName} (Cloak${tail})`;
+}
+
+/**
  * Feature 2026-08-11: stabilny klucz POJEDYNCZEJ opcji akcji (rzut czaru /
  * aktywacja zdolności) — do „ptaszka wyciszenia" w panelu „Twoje działania".
  * Zaznaczona opcja nie przerywa auto-passu (hasMeaningfulDecision ją pomija).
