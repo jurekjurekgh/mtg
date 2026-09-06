@@ -8826,3 +8826,28 @@ przed i po rebase (pusty diff) — pomiary suite ważne.
 - Bramy na zamknięcie: `test:all` **4537/4537** (+5 m313, +3 m310,
   +6 m309 względem 4522), szybki rdzeń **4527/4527**, build **59 modułów
   / 3327,6 kB**. Handoff: `docs/setup/HANDOFF_2026-09-06d.md`.
+
+### Część 3 (arena/01a07711, 2026-09-06): M314 — Veteran + Ghost Warden, okna walki i „another"
+
+- **Zgłoszenie:** pump #1 z Wardena przed walką → atak Veteranem → trigger
+  odtapia Wardena → brak okna na pump #2 („od razu podział obrażeń").
+  Hipoteza właściciela: pinezka „nie przerywaj auto-passu".
+- **Weryfikacja (L57, `test/m314-veteran-okna-walki.test.js`, 7):** silnik
+  sekwencjonuje OKNA POPRAWNIE — po rozstrzygnięciu triggera priorytet wraca
+  do atakującego (CR 116.3c) z aktywacją Wardena jeszcze PRZED blokami
+  (M314/3), drugie okno po blokach w combat_damage (M314/4, M172/C); bez
+  pinezki sesja zatrzymuje się z pumpem #2 (M314/5: 16 życia bota). NIE
+  zmieniano semantyki auto-passu.
+- **Pinezka (pin M314/6):** checkbox GRUPY wycisza wszystkie warianty
+  aktywacji (render.js, Feature 2026-08-11 + M91/Uwaga B); wyciszona opcja
+  nie otwiera żadnego okna — zaprojektowane; hamulec ręczny: krzyżyk albo
+  odznaczenie ptaszka. 17 życia bota = pump #2 nie zdążył.
+- **Naprawa (RED→GREEN):** descriptor Veterana bez `notSelf` — atakujący był
+  kandydatem własnego untapa (Oracle: „untap ANOTHER target creature you
+  control"; precedens M158 Hippocamp). Po naprawie: 1 kandydat → auto-cel
+  (M242, brak pytania), ≥2 → decyzja bez atakującego (M314/1b), Veteran
+  solo → trigger nie odpala (no_targets, CR 603.3d, M314/2). Pin batch28
+  przełożony na model auto-celu.
+- **Bramki:** `npm test` **4534/4534** (+7), build 59 / 3327,9 kB; benchmark
+  bez dryfu (570/672). Żywo: ravnica|srodziemie s31 — 0 zgłoszeń detektorów
+  (obie karty w grze). Commit `3f75358` (wypchnięty).
