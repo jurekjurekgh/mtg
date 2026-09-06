@@ -1837,6 +1837,24 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       ward: 2,
       summoningSickness: true,
       tapped: false,
+      // M315 (CR 702.75c + ruling WotC 2024-02-02): „Any time you have
+      // priority, you can turn a cloaked permanent you control face-up by
+      // revealing that it's a creature card ... and paying its mana cost.
+      // This is a special action." — flagi dla turn_cloak_face_up
+      // (game-state.js). Koszt obrotu = koszt many KARTY (nie zakrycia,
+      // które ma mana value 0); tylko karty STWORÓW.
+      faceDownOriginal: Object.freeze({
+        colors: Object.freeze([...(topObj.colors ?? [])]),
+        subtypes: Object.freeze([...(topObj.subtypes ?? [])]),
+        types: Object.freeze([...(topObj.types ?? [])]),
+        keywords: Object.freeze([...(topObj.keywords ?? [])]),
+        manaCost: topObj.manaCost ?? 0,
+        cardName: topObj.cardName ?? null,
+      }),
+      cloakReady: (topObj.types ?? []).includes('Creature') || topObj.kind === 'creature',
+      cloakTurnUpCost: (topObj.types ?? []).includes('Creature') || topObj.kind === 'creature'
+        ? (topObj.manaCost ?? 0)
+        : null,
     });
     state.objects.set(battleId, cloaked);
     // Veiled Ascension (MKC): „Face-down creatures you control enter with a

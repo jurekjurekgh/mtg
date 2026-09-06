@@ -295,6 +295,9 @@ export function describeSpellEffects(spell) {
 export const OPTION_IGNORABLE_TYPES = Object.freeze([
   'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
   'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'plot_card', 'suspend_card',
+  // M315: odsłonięcie cloakowanego — akcja opcjonalna (kosztowna), gracz może
+  // wyciszyć („nie przerywaj auto-passu").
+  'turn_cloak_face_up',
   // M180/Z4 (Żywy Tester): grupa Halo Foragera („Wartość X”) wyciszalna —
   // wyciszona blokująca decyzja opcjonalna auto-wykonuje decline w advance().
   'resolve_grave_free_cast',
@@ -310,7 +313,7 @@ const ACTION_RANK = Object.freeze({
   // tu nie były, spadały na fallback `?? 99` = PO pass/poddaniu. Właściciel:
   // „Nie mogłaby się pokazywać tam gdzie inne czary?" — wszystkie czary
   // razem, w ranku 5 (escape/flashback/adventure/obrócenie manifested).
-  cast_escape: 5, cast_flashback: 5, cast_adventure: 5, cast_adventure_creature: 5, turn_manifest_face_up: 5,
+  cast_escape: 5, cast_flashback: 5, cast_adventure: 5, cast_adventure_creature: 5, turn_manifest_face_up: 5, turn_cloak_face_up: 5,
   activate_ability: 5,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
@@ -2922,6 +2925,12 @@ export function commandLabel(cmd, session, view) {
       // Manifest — obróć twarzą do góry za koszt many.
       return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)}`;
     }
+    case 'turn_cloak_face_up': {
+      // M315 (Veiled Ascension): cloak — specjalna akcja (bez stosu), koszt
+      // many karty. Etykieta nazywa mechanikę i kartę (koszt = koszt karty,
+      // którą kontroler zna — CR 708.2d).
+      return `Obróć twarzą do góry (Cloak): ${nameOfObjectId(cmd.objectId)}`;
+    }
     case 'resolve_hand_top_choice': {
       // M162/C (uwaga właściciela): Chittering Rats u bota otwierał modal
       // „Karta z ręki na wierzch (1 z 5)…" — ten case w ogóle nie istniał,
@@ -3250,7 +3259,15 @@ export function cardInfo(session, object, combat = null) {
   const attachedEquipment = Boolean(object.attachedTo) && !attachedAura;
   // M258/F3: ward zakrytego (cloak) jest jawny — keyword w widoku
   // (reszta keywordów tłumiona przez CR 708.2a jak dotąd).
-  const keywordsNow = faceDown ? (object.ward != null ? ['ward'] : []) : (object.keywords?.length ? object.keywords : (details.keywords || []));
+    // M315 (Veiled Ascension, CR 702.75 + 122.1b): zakryty permanent NOSI ward
+  // {2} (definicja zakrycia) i MOŻE mieć jawne granty (licznik flying z Veiled
+  // Ascension — „face-down creatures enter with a flying counter"). Widok
+  // już rozstrzyga FoW (kontroler: pełna lista; przeciwnik: same granty),
+  // więc kafel czyta keywordy z WIDOKU; fallback ['ward'] dla starszych
+  // ścieżek, gdzie kwota ward idzie bez keyworda.
+  const keywordsNow = faceDown
+    ? (object.keywords?.length ? [...object.keywords] : (object.ward != null ? ['ward'] : []))
+    : (object.keywords?.length ? object.keywords : (details.keywords || []));
   return {
     objectId: object.id,
     cardId: faceDown ? null : cardId,
@@ -3267,7 +3284,7 @@ export function cardInfo(session, object, combat = null) {
     // własnego permanentu, sama nazwa mechaniki dla cudzego (FoW).
     // M260/B1: zakryte WYGNANIE nie jest morphem — sam znacznik nazwy
     // wystarcza („Wygnana zakryta"), badge mechaniki pola bitwy myliłby.
-    morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${FACE_DOWN_LABEL})` : FACE_DOWN_LABEL)) : null,
+    morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${object.cloakReady ? 'Cloak' : FACE_DOWN_LABEL})` : FACE_DOWN_LABEL)) : null,
     colors,
     kind,
     // M138/Z6 (audyt Żywym Testerem): typy bierzemy ze STANU GRY, nie z rejestru

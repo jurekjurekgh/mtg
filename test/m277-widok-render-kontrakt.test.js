@@ -107,7 +107,7 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
   // literowej w NOWYM polu (L113: wyjątek z powodu, nie ciche wyciszenie).
   const WARUNKOWE_SPOZA_PROBKI = new Set([
     'attachedTo', 'aura', 'equipment', 'bestow', 'saga', 'spell', 'name',
-    'copyNumber', 'faceDown', 'ward', 'protection', 'detained', 'goaded',
+    'copyNumber', 'faceDown', 'ward', 'cloakReady', 'protection', 'detained', 'goaded',
     'saddled', 'untapLocked', 'dontUntapNextUntapStep', 'tempControlUntilEOT',
     'cantBeBlocked', 'cantBlock', 'cantBlockPrinted', 'cantBeRegeneratedThisTurn',
     'grantedKeywords', 'grantedPower', 'grantedToughness', 'lostKeywordsUntilEOT',

@@ -5047,6 +5047,30 @@ export function execute(state, input) {
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
 
+  // M315 — cloak: obrót twarzą do góry (CR 702.75c). Specjalna akcja:
+  // bez stosu, niereagowalna, w każdym oknie priorytetu. Walidacja
+  // tożsama z ofertą (L48). Po obrocie permanent traci ward {2}
+  // (CR 702.75c) — pole `ward` nie pochodzi z faceDownOriginal, więc
+  // trzeba je zdjąć ręcznie (keywords przywraca turnFaceUp).
+  if (cmd.type === 'turn_cloak_face_up') {
+    const object = state.objects.get(cmd.objectId);
+    if (!object || object.zone !== 'battlefield' || !object.faceDown || !object.cloakReady) {
+      return reject('illegal_cloak_turn_up');
+    }
+    if (object.controllerId !== cmd.playerId) return reject('cloak_not_your_permanent');
+    const cardId = object.cardId;
+    const cost = object.cloakTurnUpCost ?? 0;
+    const purpose = spellManaPurpose(object);
+    if (producibleMana(state, cmd.playerId, null, purpose) < cost) return reject('cloak_turn_up_insufficient_mana');
+    if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('cloak_turn_up_no_colored_source');
+    const before = state.events.length;
+    spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
+    turnFaceUp(state, cmd.objectId);
+    const flipped = state.objects.get(cmd.objectId);
+    if (flipped) state.objects.set(cmd.objectId, Object.freeze({ ...flipped, ward: null, cloakReady: false, cloakTurnUpCost: null }));
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
+
   if (cmd.type === 'cast_permanent') {
     try {
       // Czary aur (bestow CR 702.103 oraz czyste aury CR 303.4): ten sam typ
@@ -5476,8 +5500,12 @@ export function playerView(state, playerId) {
         // załączniki) — publiczna informacja liczona tak samo jak w combat.
         // Zakryty stwór nie ma własnych keywordów (CR 708.2), ale MOŻE mieć
         // nadane z zewnątrz (aura/equipment/granty) — te są jawne.
+        // M258/F3 (decyzja właściciela): ward zakrycia jest JAWNY („to nie
+        // jest informacja ukryta") — even dla widza, który karty nie zna;
+        // reszta własnych keywordów zakrycia zostaje za mgłą (CR 708.2a).
         const keywords = hiddenFromViewer
-          ? effectiveKeywords(object, state).filter((keyword) => !(object.keywords ?? []).includes(keyword))
+          ? effectiveKeywords(object, state).filter((keyword) => keyword === 'ward'
+            || !(object.keywords ?? []).includes(keyword))
           : effectiveKeywords(object, state);
         if (keywords.length) entry.keywords = keywords;
         // M258/F3 + audyt PR #89 (W8, oś 2/ADR 0017): kwota ward jest JAWNĄ
@@ -5486,6 +5514,11 @@ export function playerView(state, playerId) {
         // nie pokazywał „Ward {2}\", a test W8 sprawdzał cardInfo na SUROWYM
         // obiekcie i luki nie widział.
         if (object.ward != null) entry.ward = object.ward;
+        // M315: mechanika zakrycia JAWNA dla kontrolera (CR 708.2d — swój
+        // permanent możesz obejrzeć; kafel podpisuje „Cloak" zamiast „Morph").
+        // Przeciwnik nie dostaje tej flagi — cloak-vs-morph to informacja
+        // ukryta (FoW, CR 708.2a).
+        if (!hiddenFromViewer && object.cloakReady) entry.cloakReady = true;
         // M175/A3 (uwaga właściciela, Death-Hood Cobra): NADANE keywordy
         // (granty do EOT, załączniki, anthemy, statyki warunkowe) jawnie w
         // widoku — render liczył je jako „efektywne − entry.keywords", a obie
@@ -5836,6 +5869,22 @@ export function playerView(state, playerId) {
         if (producibleMana(state, playerId, null, spellManaPurpose(obj)) < cost) continue;
         if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0))) continue;
         legalCommands.push(command('turn_manifest_face_up', playerId, { objectId: objId }));
+      }
+    }
+    // M315 (CR 702.75c + ruling WotC 2024-02-02): cloak — obrót twarzą do
+    // góry to SPECJALNA AKCJA: „any time you have priority", bez stosu,
+    // niereagowalna; tylko gdy pod zakryciem karta STWORA („revealing that
+    // it's a creature card"); koszt = koszt many KARTY. Oferta = walidacja
+    // (L48) — te same bramki w execute.
+    if (hasPriority) {
+      for (const objId of state.zones.battlefield) {
+        const obj = state.objects.get(objId);
+        if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.cloakReady) continue;
+        if (obj.controllerId !== playerId) continue;
+        const cost = obj.cloakTurnUpCost ?? 0;
+        if (producibleMana(state, playerId, null, spellManaPurpose(obj)) < cost) continue;
+        if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0))) continue;
+        legalCommands.push(command('turn_cloak_face_up', playerId, { objectId: objId }));
       }
     }
     // Pass jest niedostępny, gdy DOMYKAŁBY rundę w nierozstrzygniętym kroku

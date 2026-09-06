@@ -2155,6 +2155,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     switch (cmd.type) {
       case 'concede': return finish(NEVER);
+      // M315 (CR 702.75c): uncover cloakowanego — legalna SPECIALNA AKCJA
+      // (bez stosu), ale wycena „czy warto odsłonić" (wartość karty vs koszt
+      // many vs utrata ward {2}) to OSOBNY temat heurystyki. Do czasu wyceny:
+      // NEVER — bot nie marnuje many na nieocenioną akcję (precedens M310:
+      // temat wyceny ≠ legalność silnika).
+      case 'turn_cloak_face_up': return finish(NEVER);
       case 'draw_card': return finish(100);
       case 'play_land': return finish(90 + landPlayDelta(view, cmd.objectId));
       case 'tap_for_mana': {
