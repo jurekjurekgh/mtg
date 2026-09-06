@@ -2,6 +2,7 @@ import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
 import { coloredPipsOf } from '../engine/mana-cost.js';
+import { COMMAND_TYPES } from '../protocol/types.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { probAtLeastOne } from '../engine/hypergeom.js';
 import { normalizeHeuristicWeights } from './heuristic-weights.js';
@@ -671,6 +672,19 @@ export function isNegativePump(effect) {
   if (!pump) return false;
   return pump.power < 0 || pump.toughness < 0;
 }
+
+/**
+ * M324 (audyt PR #102, F1): komendy, dla których wycena dolicza podatek wardu
+ * (CR 702.21). Kryterium jest strukturalne: każdy typ `cast_*` i każde okno
+ * `*_cast` to rzucenie czaru z celami w komendzie, a ward patrzy na CELE, nie
+ * na nazwę komendy. Strażnik zakresu klasy: `test/m324-bot-ward-rodzina.test.js`
+ * (świeci, gdy dojdzie nowy typ rzutu — trzeba świadomie zdecydować, czy
+ * podlega, i ewentualnie wyłączyć go jawnym wyjątkiem z powodem).
+ */
+export const WARD_TAXED_TYPES = new Set([
+  ...COMMAND_TYPES.filter((type) => type.startsWith('cast_') || type.endsWith('_cast')),
+  'activate_ability', 'resolve_trigger_target',
+]);
 
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
@@ -1941,6 +1955,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   /** M320/NA2: mana zarezerwowana na sam koszt czaru/zdolności (przed ward). */
   function reservedManaOf(view, cmd) {
+    // M324: okna darmowego rzutu nie płacą kosztu karty (CR 702.62a suspend,
+    // 702.97 rebound, M195 Epic z grobu) — z puli wychodzi wyłącznie to, co
+    // naprawdę: {X} (Epic płaci X = MV, CR 118.9a) i koszt madness. Bez tego
+    // podatek ward liczony był od reszty pomniejszonej o koszt, którego nikt
+    // nie płaci, i bot odmawiał darmowych rzutów (over-fix w drugą stronę).
+    if (cmd.type === 'resolve_madness_cast') return cmd.cost ?? 0;
+    if (cmd.type === 'resolve_suspend_cast' || cmd.type === 'resolve_rebound_cast'
+      || cmd.type === 'resolve_grave_free_cast') return cmd.xValue ?? 0;
+    // `resolve_exile_cast` (Vaana) NIE jest darmowe — idzie przez castSpell i
+    // płaci pełny koszt, więc zostaje na ścieżce ogólnej (koszt karty).
     if (cmd.type === 'activate_ability') {
       const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
       const abilityObject = source ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
@@ -2219,9 +2243,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // różnią się kosztem ward jak każdym innym; brak many na dopłatę →
     // wariant fiknie i schodzi poniżej passu. Trigger z celem (wariant
     // resolve_trigger_target) to też „spell or ability" w sensie ward.
-    const wardScoringType = ['cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
-      'cast_adventure', 'cast_permanent', 'activate_ability', 'resolve_trigger_target'].includes(cmd.type);
-    const wardTax = wardScoringType
+    // M324 (audyt PR #102, F1): zestaw typów jest WYPROWADZONY z kontraktu
+    // (WARD_TAXED_TYPES), nie wyliczany ręcznie. Ręczna ósemka pominęła całą
+    // rodzinę okien darmowego rzutu (suspend, rebound, madness, Epic, Vaana) i
+    // przygodę-stronę-stwora — a silnik odpala ward od ZDARZENIA (spell_cast /
+    // permanent_cast / aura_spell_cast / ability_activated / spell_copied —
+    // `fireWardTriggers`), więc o podatku decyduje „czy to rzut/aktywacja z
+    // celem", nie nazwa komendy. Zmierzone sondą w oknie madness: bot rzucał w
+    // ward {2} bez rezerwy i oddawał czar do kontrowania (ten sam objaw, który
+    // zgłosił właściciel w cz. 5 / NA2).
+    const wardTax = WARD_TAXED_TYPES.has(cmd.type)
       ? wardTargetTax(view, cmd.targets ?? (cmd.targetId != null ? [cmd.targetId] : []), reservedManaOf(view, cmd))
       : 0;
     if (wardTax >= 200) return weightedScore(cmd.type, -200);

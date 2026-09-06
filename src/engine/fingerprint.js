@@ -50,7 +50,7 @@ function stableStringify(value) {
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, frontFaceId, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBlockPrinted, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady, manifestReady, abilityResolvedThisTurn }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, frontFaceId, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBlockPrinted, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady, manifestReady, abilityResolvedThisTurn, cloakReady, ward }) => ({
       id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
       abilities: abilities ?? [],
       counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
@@ -94,6 +94,19 @@ export function stateFingerprint(state) {
       subtypesBeforeOverride: subtypesBeforeOverride ? [...subtypesBeforeOverride] : null,
       madnessReady: Boolean(madnessReady),
       manifestReady: Boolean(manifestReady),
+      // M323 (audyt PR #102, F3; klasa L16/M122#1 i M187/N1): pole stanu,
+      // które zmienia PRZYSZŁE możliwości, należy do odcisku. Zmierzone sonką
+      // na prawdziwym cloaku: zdjęcie `cloakReady` przełącza liczbę legalnych
+      // komend `turn_cloak_face_up` z 1 na 0, a fingerprint pozostawał
+      // identyczny — sonda „oferta bez skutku" i weryfikacja replayów były na
+      // ten stan ślepe. Rodzeństwo (`manifestReady`, `madnessReady`) jest tu od
+      // dawna, cloak wszedł bez niego.
+      cloakReady: Boolean(cloakReady),
+      // Kwota warda (CR 702.21) to cecha permanentu, nie tylko keyword:
+      // decyduje, ile kosztuje celowanie, a po M322 wraca z migawki zakrycia.
+      // Sam keyword jest w `keywords`, więc bez tego pola dwa stany z wardem
+      // {1} i {2} miałyby ten sam odcisk.
+      ward: ward ?? null,
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
   const zones = Object.fromEntries(Object.entries(state.zones).map(([zone, ids]) => [zone, [...ids]]));
