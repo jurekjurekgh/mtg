@@ -21,8 +21,28 @@
  *     zestawy o różnej sile i różnej obronie zostawionej w domu ex aequo (6).
  *     Tu wycena jest realnie płaska na drobnych różnicach; decyzja o jej
  *     zaostrzeniu wymaga benchmarku, nie testu, więc idzie do backlogu.
- * Bramka jest więc GRZECHOTKĄ: zamyka stan przejrzany (≤4) i łapie każdy wzrost,
+ * Bramka jest więc GRZECHOTKĄ: zamyka stan przejrzany i łapie każdy wzrost,
  * a nie udaje ideału, którego projekt nie obwieścił.
+ *
+ * REAUDYT 2026-09-06 (usuwanie karty `Stifle` z katalogu — alarm właściciela):
+ * talia `wiedzmin` straciła jedną kartę, więc sufit `block` musiał pęknąć
+ * (3 → 6 przy 7 parach). Rozjazd jest ZMIERZONY, nie zgadnięty: pary bez
+ * `wiedzmin` dały identyczne liczby przed i po (ravnica|innistrad-wu 1,
+ * kaladesh|zendikar 2, dominaria-wu|worek-mroczny 0), a CAŁY przyrost padł na
+ * `wiedzmin|tarkir-bg` (block 0 → 3, attack 0 → 1) — czyli na zmianę
+ * trajektorii partii, nie na zmianę wag. Cztery nowe pozycje przejrzane co do
+ * klasy:
+ *   - tura 11 i 13 (p1, @0): `block[]` ex aequo z blokiem, który zostawia
+ *     jednego własnego stwora — klasa A wyżej, POLITYKA (brak presji
+ *     śmiertelnej = brak kary za nieblokowanie);
+ *   - tura 15 (@33): dwie identyczne projekcje (wymienialni blokerzy) plus
+ *     trzecia opcja „blokuje 3, giną 3" — ta sama płaskość wymiany;
+ *   - tura 12 attack (@0): `attack[]` ex aequo z `attack[stwór]`, który ginie,
+ *     zabijając dwóch — klasa B, płaski model addytywny, decyzja o zaostrzeniu
+ *     należy do pełnego B0 (ADR 0018), nie do tego testu.
+ * Żadna z nich nie jest nową klasą przeoczenia, więc próg `block` idzie do 6
+ * ŚWIADOMIEJ (sufit, nie pin). Gdyby przydarzył się wzrost bez zmiany talii ani
+ * wag — to już nie ten przypadek i trzeba diagnostyki, nie podnoszenia progu.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -132,7 +152,9 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
   // PRZEJRZEĆ i podnieść próg ręcznie — nie automatycznie.
   const opis = [atak, blok, lad].flatMap((r) => r.przyklady.filter((x) => typeof x === 'string'));
   assert.ok(atak.rozroznialne <= 4, `attack groźb: ${atak.rozroznialne}\n${opis.join('\n')}`);
-  assert.ok(blok.rozroznialne <= 4, `block groźb: ${blok.rozroznialne}\n${opis.join('\n')}`);
+  // Sufit 6 po reaudycie 2026-09-06 (patrz nagłówek): 3 → 6 po zmianie składu
+  // talii `wiedzmin`, cztery nowe pozycje przejrzane i zakwalifikowane do klas A/B.
+  assert.ok(blok.rozroznialne <= 6, `block groźb: ${blok.rozroznialne}\n${opis.join('\n')}`);
   // Klasy z projekcją wartości (tura 6): tu zero jest osiągalne i wymagane —
   // różnica kosztu many albo korpusu MUSI przechodzić na wynik.
   for (const nazwa of ['cast_permanent', 'cast_spell', 'activate_ability']) {

@@ -1,25 +1,30 @@
 /**
- * Kontrzenie ZDOLNOŚCI (Stifle) — audyt PR #93, tura 3, wątek 3 z HANDOFF.
+ * Kontrzenie ZDOLNOŚCI — mechanika `counter_ability` (PR #93, tura 3, wątek 3
+ * z HANDOFF).
  *
- * Do tej pory silnik umiał kontrować wyłącznie CZARY (`counter_spell` dla
- * Negate / Stoic Rebuttal / Steel Sabotage). `counterStackObject` radził sobie
- * z wpisami zdolności (`activatedEntry`, `triggerEntry`), ale nikt go o zdolność
- * nie pytał: nie było typu celu „zdolność na stosie", nie było efektu
- * „kontruj zdolność" i nie było karty, która by to robiła. Skutek uboczny:
- * pytanie z tury 2 — „co z `pendingExileCast` Vaana, kiedy cały trigger
- * zostanie skontrowany" — było nie-do-udowodnienia, więc zostało w HANDOFF
- * jako otwarte.
+ * Silnik umiał kontrować wyłącznie CZARY (`counter_spell` dla Negate / Stoic
+ * Rebuttal / Steel Sabotage). `counterStackObject` radził sobie z wpisami
+ * zdolności (`activatedEntry`, `triggerEntry`), ale nikt go o zdolność nie
+ * pytał: nie było typu celu „zdolność na stosie" i nie było efektu „kontruj
+ * zdolność". Skutek uboczny: pytanie z tury 2 — „co z `pendingExileCast`
+ * Vaana, kiedy cały trigger zostanie skontrowany" — było nie-do-udowodnienia.
  *
- * Teraz dowód istnieje i jest zgodny z CR 118.12/608.2a: skontrowana zdolność
- * znika ze stosu i NIE rozstrzyga się, więc NIE ma wygnania i NIE ma Skarbu
- * (nie ma też decyzji do podjęcia). Dodatkowo klauzula Oracle
- * „(Mana abilities can't be targeted.)" jest w tym silniku spełniona
- * KONSTRUKCJĄ, nie warunkiem: zdolność many rozstrzyga się bez stosu
- * (CR 605.1a), więc nie ma czego wskazać — test 4 pilnuje, żeby nikt kiedyś
- * nie „poprawił" tego wpuszczaniem mana abilities na stos.
+ * Dowód istnieje i jest zgodny z CR 118.12/608.2a: skontrowana zdolność znika
+ * ze stosu i NIE rozstrzyga się, więc NIE ma wygnania i NIE ma Skarbu (nie ma
+ * też decyzji do podjęcia). Klauzula Oracle „(Mana abilities can't be
+ * targeted.)" jest w tym silniku spełniona KONSTRUKCJĄ, nie warunkiem: zdolność
+ * many rozstrzyga się bez stosu (CR 605.1a), więc nie ma czego wskazać — test 4
+ * pilnuje, żeby nikt kiedyś nie „poprawił" tego wpuszczaniem mana abilities na
+ * stos.
  *
- * Źródło danych: `docs/cards/scryfall-stifle.json` (CNS #108, wraz z trzema
- * rulingami WotC 2004-10-04 — ADR 0022).
+ * NOŚNIK MECHANIKI JEST SYNTERETYCZNY i tak ma zostać: katalog kart to
+ * KOLEKCJA WŁAŚCICIELA (`tools/collection-art-ids.csv`), a nie składnica kart,
+ * których potrzebują testy (reguła i strażnik:
+ * `test/proweniencja-katalogu.test.js`). Dawniej ten plik wymagał realnej
+ * karty `Stifle` (CNS), którą agent tamtej tury dopisał do katalogu; karta
+ * weszła dzięki temu do talii `decks/wiedzmin.txt`, czyli do „talii mojej
+ * kolekcji" — stąd usunięcie. Jeśli właściciel wyśle kiedyś realną kontrę
+ * zdolności, test 1 wystarczy przepiąć z `SONDA` na wpis z rejestru.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -27,15 +32,29 @@ import fs from 'node:fs';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
-import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { legalTargetCandidates, validateTargets } from '../src/engine/spells.js';
 
 const REGISTRY = createCardRegistry();
-const STIFLE = REGISTRY.get('stifle');
 const VAAN = REGISTRY.get('vaan-street-thief');
 const SOULMENDER = REGISTRY.get('soulmender');
+
+/**
+ * Synteretyczny nośnik mechaniki (patrz nagłówek pliku). Nie trafia do
+ * rejestru ani do talii — silnik i tak czyta wyłącznie to, co niesie obiekt
+ * gry (ADR 0002), a `gameObjectDataOf` materializuje definicję bez rejestru.
+ */
+const SONDA = {
+  id: 'sonda-kontra-zdolnosci', name: 'Sonda: Kontrzenie Zdolności', set: 'TEST',
+  types: ['Instant'], colors: ['U'], manaCost: 1,
+  oracleText: "Counter target activated or triggered ability. (Mana abilities can't be targeted.)",
+  spell: {
+    timing: 'instant',
+    targets: [{ type: 'ability_on_stack' }],
+    effects: [{ type: 'counter_ability' }],
+  },
+};
 
 function game({ seed = 5 } = {}) {
   const state = createGameState({ seed, players: [{ id: 'p1' }, { id: 'p2' }] });
@@ -107,37 +126,36 @@ function stółZTriggeremVaana() {
   return { state, abilityId: ids[0] };
 }
 
-test('1) Stifle: definicja karty == snapshot Scryfall, koszt ma pipy, typ celu ma etykietę', () => {
-  const snapshot = JSON.parse(fs.readFileSync(new URL('../docs/cards/scryfall-stifle.json', import.meta.url), 'utf8'));
-  assert.equal(STIFLE.name, snapshot.name);
-  assert.equal(STIFLE.oracleText, snapshot.oracle_text, 'Oracle bez zmian (L57)');
-  assert.deepEqual(STIFLE.types, ['Instant']);
-  assert.deepEqual(STIFLE.colors, snapshot.colors);
-  assert.equal(MANA_COSTS.stifle, snapshot.mana_cost,
-    'bez wpisu w MANA_COSTS koszt {U} straciłpipę koloru i dałby się zapłacić bezbarwną maną');
-  assert.equal(STIFLE.spell.targets[0].type, 'ability_on_stack');
-  assert.equal(STIFLE.spell.effects[0].type, 'counter_ability');
+test('1) nośnik kontrzenia: materializacja przenosi typ celu i efekt na obiekt gry', () => {
+  // Gałąź `spell` w `gameObjectDataOf` kopiuje pola ręcznie (klasa Z5/L21) —
+  // bez `spell` na obiekcie rzut nie miałby ani celu, ani efektu, a testy 2–6
+  // przeszłyby na martwej karcie.
+  const dane = gameObjectDataOf(SONDA);
+  assert.equal(dane.kind, 'spell');
+  assert.equal(dane.manaCost, 1, 'bez kosztu na obiekcie rzut byłby darmowy');
+  assert.deepEqual(dane.colors, ['U']);
+  assert.equal(dane.spell.targets[0].type, 'ability_on_stack');
+  assert.equal(dane.spell.effects[0].type, 'counter_ability');
   // Etykieta typu celu (ogólny strażnik: `card-sources-guard.test.js`); tu
-  // tylko sprawdzam, że NOWY typ jej nie zgubił.
+  // tylko sprawdzam, że typ celu używany przez tę mechanikę jej nie zgubił.
   const render = fs.readFileSync(new URL('../src/table/render.js', import.meta.url), 'utf8');
   assert.match(render, /ability_on_stack:\s*'[^']+'/,
     'typ celu bez etykiety w render.js — na stole świeci surowy slug (klasa M126/#4)');
-  assert.equal(snapshot.rulings.length, 3, 'rulingi WotC są w snapshotcie (ADR 0022)');
 });
 
 test('2) skontrowany trigger: ani wygnania, ani Skarbu, ani decyzji do podjęcia', () => {
   const { state, abilityId } = stółZTriggeremVaana();
   const przed = state.zones.library.length;
   addMana(state, 'p2', 1, { colors: ['U'] });
-  put(state, 'stifle', STIFLE, 'p2', 'hand');
+  put(state, 'kontra', SONDA, 'p2', 'hand');
   przekażPriorytet(state, 'p2');
 
   const r = execute(state, {
-    type: 'cast_spell', playerId: 'p2', cardId: 'stifle', objectId: 'stifle', targets: [abilityId],
+    type: 'cast_spell', playerId: 'p2', cardId: SONDA.id, objectId: 'kontra', targets: [abilityId],
   });
-  assert.equal(r.ok, true, `Stifle musi przyjąć zdolność na stosie jako cel: ${r.events?.[0]?.reason ?? r.events?.[0]?.type}`);
+  assert.equal(r.ok, true, `kontrzenie musi przyjąć zdolność na stosie jako cel: ${r.events?.[0]?.reason ?? r.events?.[0]?.type}`);
 
-  // Rozstrzygnięcia: najpierw Stifle (kontra), potem NIC — trigger znika.
+  // Rozstrzygnięcia: najpierw kontra, potem NIC — trigger znika.
   for (let i = 0; i < 6 && state.zones.stack.length > 0; i += 1) {
     const pass = commands(state, state.turn.priorityPlayerId).find((c) => c.type === 'pass_priority');
     if (!pass) break;
@@ -146,7 +164,7 @@ test('2) skontrowany trigger: ani wygnania, ani Skarbu, ani decyzji do podjęcia
 
   const kontr = state.events.filter((e) => e.type === 'spell_countered');
   assert.equal(kontr.length, 1, `jedna kontra: ${JSON.stringify(kontr.map((e) => e.type))}`);
-  assert.equal(kontr[0].counteredByCardId, 'stifle', 'LKI kontrującego (CR 603.10)');
+  assert.equal(kontr[0].counteredByCardId, SONDA.id, 'LKI kontrującego (CR 603.10)');
   assert.equal(state.objects.get(abilityId), undefined, 'skontrowana zdolność nie ma już obiektu na stosie');
   assert.equal(state.pendingExileCast, null, 'brak decyzji „rzucisz wygnaną kartę?" — nie ma czego pytać');
   assert.equal(state.objects.get('top')?.zone, 'library', 'karta NIE została wygnana (CR 118.12: skontrowana zdolność się nie rozstrzyga)');
@@ -160,7 +178,7 @@ test('3) skontrowana zdolność aktywowana: koszt zapłacony, efekt nie (CR 118.
   const state = game();
   put(state, 'soul', SOULMENDER, 'p1');
   addMana(state, 'p2', 1, { colors: ['U'] });
-  put(state, 'stifle', STIFLE, 'p2', 'hand');
+  put(state, 'kontra', SONDA, 'p2', 'hand');
 
   const r1 = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'soul', abilityIndex: 0 });
   assert.equal(r1.ok, true, `Soulmender aktywuje się: ${r1.events?.[0]?.reason}`);
@@ -169,7 +187,7 @@ test('3) skontrowana zdolność aktywowana: koszt zapłacony, efekt nie (CR 118.
 
   przekażPriorytet(state, 'p2');
   assert.ok(execute(state, {
-    type: 'cast_spell', playerId: 'p2', cardId: 'stifle', objectId: 'stifle', targets: ids,
+    type: 'cast_spell', playerId: 'p2', cardId: SONDA.id, objectId: 'kontra', targets: ids,
   }).ok);
   for (let i = 0; i < 6 && state.zones.stack.length > 0; i += 1) {
     const pass = commands(state, state.turn.priorityPlayerId).find((c) => c.type === 'pass_priority');
@@ -192,7 +210,7 @@ test('4) zdolność many nie ma wpisu na stosie, więc nie ma czego skontrować'
     'CR 605.1a — zdolność many rozstrzyga się natychmiast i nie wchodzi na stos; '
     + 'to ona realizuje klauzulę „(Mana abilities can\'t be targeted.)", nie żaden warunek w kodzie');
   assert.deepEqual(legalTargetCandidates(state, 'p2', { type: 'ability_on_stack' }), [],
-    'oferta celów Stifle też nie może wymyślić zdolności many');
+    'oferta celów kontry też nie może wymyślić zdolności many');
 });
 
 test('5) oferta i walidacja mówią to samo; zdolność ≠ czar i odwrotnie (L48)', () => {
@@ -217,30 +235,30 @@ test('5) oferta i walidacja mówią to samo; zdolność ≠ czar i odwrotnie (L4
   });
   assert.equal(rCzar.ok, true, `czar bez celu musi dać się rzucić (${bezcelowy.id}): ${rCzar.events?.[0]?.reason}`);
   const czarNaStosie = [...state.zones.stack].find((id) => !zdolnościNaStosie(state).includes(id));
-  assert.ok(czarNaStosie, 'drugi wpis na stosie to czar — poza zakresem celu Stifle');
+  assert.ok(czarNaStosie, 'drugi wpis na stosie to czar — poza zakresem celu kontrzenia zdolności');
   assert.throws(() => validateTargets(state, [{ type: 'ability_on_stack' }], [czarNaStosie], 'p2'),
     /Nielegalny cel/);
 });
 
-test('6) bez zdolności na stosie Stifle nie jest w ogóle oferowany (CR 601.2a)', () => {
+test('6) bez zdolności na stosie kontrzenie nie jest w ogóle oferowane (CR 601.2a)', () => {
   // Filtr po `objectId`, NIE po `cardId`: komenda z playerView nie niesie
   // cardId, więc filter(c => c.cardId === …) byłby pusty ZAWSZE — asercja
   // „brak oferty" przechodziłaby nawet przy pełnej ofercie (pusty pin, L48).
-  const oferyStifle = (state) => commands(state, 'p2')
-    .filter((c) => c.type === 'cast_spell' && c.objectId === 'stifle');
+  const oferyKontry = (state) => commands(state, 'p2')
+    .filter((c) => c.type === 'cast_spell' && c.objectId === 'kontra');
 
   const state = game();
   addMana(state, 'p2', 1, { colors: ['U'] });
-  put(state, 'stifle', STIFLE, 'p2', 'hand');
+  put(state, 'kontra', SONDA, 'p2', 'hand');
   state.turn.priorityPlayerId = 'p2';
-  assert.deepEqual(oferyStifle(state), [],
+  assert.deepEqual(oferyKontry(state), [],
     'bez legalnego celu nie ma oferty rzutu (oferta = walidacja, L48)');
 
   const zTriggerem = stółZTriggeremVaana();
   addMana(zTriggerem.state, 'p2', 1, { colors: ['U'] });
-  put(zTriggerem.state, 'stifle', STIFLE, 'p2', 'hand');
+  put(zTriggerem.state, 'kontra', SONDA, 'p2', 'hand');
   przekażPriorytet(zTriggerem.state, 'p2');
-  const oferta = oferyStifle(zTriggerem.state);
+  const oferta = oferyKontry(zTriggerem.state);
   assert.equal(oferta.length, 1, `oferta rzutu z celem, jest: ${JSON.stringify(oferta)}`);
   assert.deepEqual([...oferta[0].targets], [zTriggerem.abilityId],
     'w ofercie musi być widać, CO jest celem (panel nie zgaduje — ta sama enumeracja co w walidacji)');

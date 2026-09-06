@@ -2584,7 +2584,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Batch 44 (Frightful Delusion): „counter unless pays" to słabszy
         // kontrczar (przeciwnik może się wykupić za {1}), ale ta sama klasa
         // decyzji — nigdy we własny czar; premia jak counter_spell.
-        // Audyt PR #93: `counter_ability` (Stifle) to ta sama klasa decyzji —
+        // Audyt PR #93: `counter_ability` to ta sama klasa decyzji —
         // nigdy we własną zdolność (koszt już zapłacony, CR 118.12 nie zwraca
         // nic), a cel bez wpływu oznacza „trzymaj kontrę".
         if (effects.some((effect) => effect?.type === 'counter_spell' || effect?.type === 'counter_spell_unless_pays'

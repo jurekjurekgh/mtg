@@ -354,7 +354,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (object && object.zone === 'stack' && object.kind !== 'trigger' && object.kind !== 'activated' && isArtifact) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
-    // Cel „activated or triggered ability on the stack" (Stifle, audyt PR #93).
+    // Cel „activated or triggered ability on the stack" (typ dodany w audycie PR #93).
     // Zdolność many NIE może być celem — i nie musi jej pilnować ten warunek:
     // taka zdolność w ogóle nie wchodzi na stos (CR 605.1a, patrz
     // `isActivatedManaAbility` w abilities.js), więc nie ma czego wskazać.
@@ -1152,7 +1152,7 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
       });
     }
     case 'ability_on_stack': {
-      // Stifle (audyt PR #93): „Counter target activated or triggered ability".
+      // Audyt PR #93: „Counter target activated or triggered ability".
       // Zdolność na stosie to wpis z `activatedEntry` (CR 602.2a) albo
       // `triggerEntry` (CR 603.3) — PREDYKAT TEN SAM co w `counterStackObject`,
       // bo dwie definicje „czym jest zdolność na stosie" to klasa L21.
