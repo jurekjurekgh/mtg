@@ -5,6 +5,43 @@ Start: `main` = `6ce4cab` (squash merge PR #101, 32 pliki, +1684/−268),
 `npm test` **4506/4506** (zmierzone na starcie), `npm run build` 59 modułów /
 3318,6 kB (zmierzone).
 
+## Przebieg (rozliczenie)
+
+- **E1 ZAKOŃCZONY** (`2d196a0`): audyt PR #101 w
+  `docs/audits/AUDYT_PR101_2026-09-06.md` — 2 znaleziska (F1, F2), 3
+  obserwacje; mutacje RED→GREEN 4/5 deklaracji potwierdzone (piąta → F1);
+  dopełnienie sesji kontynuacyjnej: spot-checky CR (608.2b ✓, 701.19a–c ✓,
+  korekta błędnego cytuatu „701.3/701.34a" → 701.16d + 701.19a–c),
+  file-by-file pokrycie diffu (LESSONS/PRZYPADKI/PROJECT_HISTORY/HANDOFF
+  dokończone).
+- **E2 ZAKOŃCZONY**: F1 (`e19c836`), F2 (`850134c`) — martwe warunki klasy
+  L48/7, zachowanie bit w bit tożsame; benchmark 10/10 GREEN.
+- **E3 ZAKOŃCZONY**:
+  - Żywy Tester: 6 zakończonych partii (worek-legend|warhammer-ubr s7,
+    srodziemie|mirrodin-wu s23, kaladesh|zendikar s41,
+    dominaria-brg|worek-dziki s29 `impatient`, worek-mroczny|theros s13
+    `hoarder` ×2: przed i po F3, worek-mroczny|theros s41 `hoarder`) —
+    0 zgłoszeń detektorów.
+  - **F3** (`215ed1d`): pozycja celu OPCJONALNA w kreatorze wielocelowym —
+    partia s13 `hoarder` stawała na „Assert Perfection" (tryb pozycyjny
+    M207 nie umiał wyrazić „up to one", L135); naprawa: `slotOptional` z
+    komend silnika → kreator mapuje pustą pozycję opcjonalną na wariant
+    `null` (B45/9), sterownik testera ma gałąź trybu pozycyjnego;
+    `test/m309-slot-opcjonalny-kreator.test.js` 6/6; żywo potwierdzone
+    na s13 (linia `[slots wizard]` w transkrypcie, partia domknięta).
+  - E3b: silnik nie ma wymogu „must block" (grep), `cantBlockAlone`
+    spójny — para wymóg×zakaz po stronie bloków nie może wystąpić.
+  - Station legality: DOMKNIĘTE bez zmian kodu — aktywacje po progu są
+    legalne wg Oracle (Station bez górnej granicy, CR 702/721) i silnik
+    nie ma sztucznego capu (`permanents.js` próg z deskryptora,
+    `abilities.js` koszt tap-another); sekwencja 2→6→9→12 w partii
+    worek-legend s7 była legalna.
+  - Dryf remisów F1/F2: ZERO (bit-w-bit 11322/631/213 wobec bazy
+    `6ce4cab`); rozbieżność z opisem PR #101 (625/197) = zmiana talii w
+    fazie #101 (usunięcie Stifle), nie fixy.
+- **E4**: ten commit (PROJECT_HISTORY, HANDOFF_2026-09-06c, README L92,
+  opis PR).
+
 ## Zakres
 
 1. **Audyt poprzedniego PR (ADR 0020 B)** — PR #101 „audyt PR #100 + pętla

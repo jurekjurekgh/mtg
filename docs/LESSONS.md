@@ -2030,17 +2030,6 @@ lepiony `checkbox` poza `picker.js` → RED, ptaszek 16 px → RED.
 
 ## L126 (2026-09-03) — Zlanie dwóch „takich samych" kreatorów to test, czy naprawdę robiły to samo
 
-**Przypadek:** `renderLookWizard` i kreator „zajrzyj → weź jeden land" miały po osobnym
-budowniczym listy chipów, osobnej polityce klucza sondy i osobnym sorterze — 46 linii
-wspólnego rysunku przy 358 liniach ogółem (difflib po wierszach). Po zlaniu ich w
-`renderPeekWizard` z parametrem `flow` wyszły DWA czerwone testy i jedna kradziona naprawa:
-`M112` (klucz na decyzji kończącej) spadł, bo silnik odziedziczył pulę sortera po scry i
-kreator „ułóż wierzch" pytał o karty odłożone na spód; a dawny kreator landa NIGDY nie dawał
-klucza, gdy po wyborze zostawała ≤1 karta — błąd, którego nikt nie zgłosił, bo obie
-implementacje maskowały się nawzajem. Nazwa komponentu od konkretnej karty
-(`renderFertileThicketWizard`, `lookKind === 'fertile'`) była tym samym grzechem co porównanie
-stringa karty, tylko cichszym — i osiadała w routing widoku, nie w logice efektu.
-
 **Reguła:** unifikując dwa „takie same" kreatory, przenieś ZACHOWANIA OBU jako dane
 (`flow`), nigdy nie wybieraj wygodniejszego po cichu; każdy RED powstały przy zlewaniu
 czytaj jako pomiar rozjazdu, a nie jako wstęp do poluzowania asercji. Nazwy w warstwie
@@ -2054,10 +2043,8 @@ woła `document.createElement` na odinstalowanym oknie.
 
 **Strażnik:** `test/m293-peek-jeden-wizard-chipy.test.js` (12), `M112` w
 `test/choice-request-ui.test.js`, `test/m129-*` + `test/look-wizard-contrast.test.js` przez
-`test/harness/css-effective.js`. Mutacje: pula sortera bez warunku na `flow` → RED M112;
-dopisana druga lista chipów w kreatorze → RED M293/1; przywrócona kopia stopki → RED
-M293/1; wycięty `min-height` rodziny → RED m129; nazwa karty w kodzie rysującym (bez
-komentarza) → RED M293/11.
+`test/harness/css-effective.js`.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L126)
 
 ## L127 (2026-09-03) — Zakres rzutu kartą spoza ręki to cecha ŚCIEŻKI, nie karty: jeden predykat z parametrem „co ta ścieżka potrafi rozliczyć”
 
@@ -2173,26 +2160,16 @@ gałęzi bez dotykania drzewa roboczego.
 
 ## L131 (2026-09-05) — Decyzja bez wyceny = pierwsza oferta z listy
 
-**Przypadek:** `tools/bot-tie-audit.mjs` pokazał 50+ remisów przy wyborach
-`resolve_*` (discard/search/trigger_target/exploit/opponent_target/
-color_choice/...), z czego połowa jako "bez danych" (projekcja `tieProjection`
-zwracała null), a połowa jako "remisy przy różnych danych". Wszystkie trzy
-typy (`resolve_exploit_choice`, `resolve_opponent_target`,
+**Przypadek:** `bot-tie-audit` pokazał 50+ remisów przy wyborach `resolve_*` —
+nowe typy (`resolve_exploit_choice`, `resolve_opponent_target`,
 `resolve_color_choice`) padały do `default: return finish(0)` w `scoreCommand`,
-więc KAŻDY wariant dostawał 0 pkt i stabilny sort w greedyChoice wybierał
-PIERWSZĄ ofertę z listy. Konsekwencja w rozgrywce: bot przy Exploit poświęcał
-najsilniejszego stwora (bo ten był pierwszy na liście), przy Cuombajj Witches
-obracał 1 obrażenie w siebie, a przy wyborze koloru ochrony wybierał zawsze
-biały, niezależnie od planszy.
-
-**Przyczyna:** L50 (nowy typ efektu/akcji startuje bez wyceny) + L34/L40/M195/
-M203 (warianty bez nazwy w `summarize` są nierozróżnialne w śladzie) + L117
-(remis punktów bez danych w projekcji jest tak samo arbitralny jak brak
-wyceny). Nowy typ decyzji `resolve_*` dodany w silniku nie dostał
-odpowiadającego mu `case` w kontrolerze — a że w silniku kolejność
-kandydatów NIE JEST posortowana po wartości (oferta w kolejności
-naturalnej: gracz→stworzy wroga→itp.), pierwsza oferta to często NAJGORSZA
-opcja z perspektywy botu.
+więc KAŻDY wariant dostawał 0 pkt i stabilny sort wybierał PIERWSZĄ ofertę
+(przy Exploit bot poświęcał najsilniejszego stwora, przy Cuombajj Witches
+obracał 1 obrażenie w siebie). Przyczyna (klasy L50/L34/L40/L117): nowy typ
+decyzji dodany w silniku nie dostał swojego `case` w kontrolerze, a kolejność
+kandydatów w ofercie NIE jest posortowana po wartości — pierwsza oferta to
+często NAJGORSZA opcja.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L131)
 
 **Reguła:** Dodając NOWY typ komendy w silniku (command family `resolve_*`),
 trzeba JEDNOCZEŚNIE: (1) dodać case w `scoreCommand` z prawidłową wyceną
@@ -2281,3 +2258,27 @@ nie edit `card-data.js`. Usuwanie karty jest pełne, gdy znika definicja, klucz
 nazwa i plan zgodne z wierszem, poza kolekcją tylko tokeny/landy, `decks/*.txt`
 bez kart spoza słownika, `MANA_COSTS` bez sierot). Fałszywka zweryfikowana:
 wstrzyknięcie `Stifle` do katalogu czerwieni testy 1, 3 i 5.
+
+## L135 (2026-09-06) — Nowy KSZTAŁT komendy musi mieć obsługę u każdego konsumenta: silnik → kreator UI → sterownik testera
+
+**Przypadek:** Batch 45 dodał w silniku pozycję celu `optional: true` („up to one
+target", B45/9 — wariant z `null` na tej pozycji). Testy silnika zielone, ale kreator
+wielocelowy (M207, tryb pozycyjny) żądał nie-null w KAŻDYM slocie, a sterownik testera
+parsował tylko intro „zaznacz cele (N)" — partia Żywego Testera stanęła na 5 prób i
+throw; z panelu nie dało się zagrać wariantu 1-celowego, a przy zerze kandydatów na
+pozycji opcjonalnej w ogóle rzucić czaru (odchybka od Oracle w warstwie prezentacji).
+
+**Przyczyna:** rozszerzenie kształtu oferty (null w `targets[i]`) nie niesie zmiany u
+konsumentów — klasa L131 dotyczyła nowego TYPU komendy, tu nowy kształt istniejącego
+typu przeszedł przez siatkę testów, bo żadna z warstw nie miała testu na ten kształt.
+
+**Reguła:** dodając nowy kształt oferty w silniku, przejrzyj WSZYSTKICH konsumentów:
+kreator (`commandFor*`), sterownik testera (rozpoznawanie intro), wycena bota.
+Deskryptor kształtu czytaj z KOMEND silnika, nie z karty (`slotOptional` w planie).
+Pusta pozycja OPCJONALNA = wariant `null` (wybór kompletny); pozycja OBOWIĄZKOWA bez
+zaznaczenia = wybór niekompletny (status „Brakuje" M200 wymienia tylko obowiązkowe).
+
+**Strażnik:** `test/m309-slot-opcjonalny-kreator.test.js` (6: plan z deskryptorem,
+UI: wariant bez celu + anty-over-fix na obowiązkowych, pin przez realne
+`legalCommands`); sterownik testera mierzy partia z tym kreatorem (`== KONIEC PARTII`
+bez zgłoszeń detektorów, zmierzone).

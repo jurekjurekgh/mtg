@@ -8696,3 +8696,65 @@ prawdziwe). `git log` nie pomaga: klon sesji ma JEDEN commit zbiorczy
   `Stifle` w transkrypcie.
 - Własna talia `decks/wiedzmin.txt` jest od tej fazy wolna od kart-sond; jeśli
   właściciel zechce realnej kontry zdolności, wpis idzie z batcha (ADR 0029).
+
+
+### Faza 3 (arena/01a07711): audyt PR #101 + pętla jakości — F3 pozycja celu opcjonalna (PR #102)
+
+- **Audyt PR #101** (`2d196a0`, `docs/audits/AUDYT_PR101_2026-09-06.md`):
+  zmiany poprawne regułowo — A1 (`decisionCandidateCard` + payload decyzji),
+  A2/A3/A4/A8, mostek `gameOver` w Testerze, usunięcie Stifle kompletność wg
+  checkli L134, grzechotka L124 (atrybucja per para zgodna z pomiarem).
+  Weryfikacja mutacyjna próbki RED→GREEN: 4/5 deklaracji potwierdzone, piąta
+  ujawniła F1. Dopełnienie sesji kontynuacyjnej: spot-checky CR (608.2b ✓,
+  701.19a–c ✓, KOREKTA błędnego cytuatu „701.3/701.34a «look at»" — w CR
+  (2026-08-07) to attach/proliferate; poprawnie 701.16d + 701.19a–c) i
+  pełne file-by-file pokrycie diffu (LESSONS/PRZYPADKI/HISTORY/HANDOFF).
+- **F1** (`e19c836`): martwa wewnętrzna bramka `pendingSatyrLook.cards`
+  (klasa L48/7) — usunięta, wpis gated przez `activeSatyrLook` z identycznym
+  predykatem; FoW pinuje bramka zewnętrzna (m305/4). Zachowanie bit w bit.
+- **F2** (`850134c`): martwy parametr `openLabel` w `renderPickerName`
+  (obserwacja A7 z audytu PR #100, zmierzona) — usunięty. Zachowanie bit w bit.
+- **Dryf remisów F1/F2 = ZERO**: `bot-tie-audit` 24 partie na HEAD i na bazie
+  `6ce4cab` — bit-w-bit identycznie 11322 decyzji / 631 remisów / 213 realnych.
+  Rozbieżność wobec 625/197 z opisu PR #101 pochodzi ze zmiany talii w fazie
+  #101 (usunięcie Stifle przesuwa trajektorie ~±12 remisów; `wiedzmin` gra w
+  3/12 par audytu) — potwierdzone rekonstrukcją karty w bazie (619/200,
+  przybliżona: gałąź sesji #101 usunięta z origin).
+- **F3** (`215ed1d`): pozycja celu OPCJONALNA w kreatorze wielocelowym.
+  Zgłoszenie z pętli jakości: partia worek-mroczny|theros s13 `hoarder`
+  stanęła na „Assert Perfection — wskaż po jednym celu dla każdej pozycji"
+  (5 prób, throw). Silnik poprawny od Batch 45 (B45/9: `optional: true`
+  enumeruje wariant z `null`); luka w dwie warstwy: kreator trybu pozycyjnego
+  (M207) żądał nie-null w każdym slocie (wariant 1-celowy „pump bez
+  ugryzienia" niemożliwy z panelu; przy zerze wrogich stworów czar w ogóle
+  nie do rzucenia — odchybka od Oracle w warstwie prezentacji), a sterownik
+  testera nie rozpoznawał trybu. Naprawa bez przypadków po nazwie: plan niesie
+  `slotOptional` czytany z KOMEND silnika; kreator mapuje pustą pozycję
+  opcjonalną na wariant `null` (obowiązkowe nadal blokują, status „Brakuje"
+  ich nie kłamie); Tester dostaje gałąź trybu pozycyjnego (radio grupy
+  `multi-target-slot-N`). Strażnik `test/m309-slot-opcjonalny-kreator.test.js`
+  (6 testów, w tym pin przez realne `legalCommands`). Żywo: partia s13 po
+  naprawie domknięta, linia `[slots wizard]` w transkrypcie (pozycja 2 bez
+  kandydatów — ścieżka niemożliwa przed naprawą); wariant „z ugryzieniem"
+  pokryty testami F3/5+F3/6 (w biegu s41 karta nie wypadła).
+- **Pętla jakości — partie (6 zakończonych, 0 zgłoszeń detektorów):**
+  worek-legend|warhammer-ubr s7 (Bot 13:−3), srodziemie|mirrodin-wu s23
+  (Gracz 11:−1), kaladesh|zendikar s41 (Bot 12:0), dominaria-brg|worek-dziki
+  s29 `impatient` (Bot 17:−7), worek-mroczny|theros s13 `hoarder` (Gracz
+  20:0, po F3), worek-mroczny|theros s41 `hoarder` (Gracz wygrywa
+  wyczerpaniem biblioteki 3:7).
+- **E3b — pary wymóg×zakaz po stronie bloków:** silnik nie ma żadnego
+  „must block" (grep), lure/provoke nie istnieją w danych kart; para nie
+  może wystąpić. `cantBlockAlone` spójny (walidacja + oferta). Strona ataku
+  (M270, goad × „can't attack alone") zweryfikowana w PR #101.
+- **Station legality — DOMKNIĘTE bez zmian kodu:** aktywacje Station po
+  progu są legalne wg Oracle (Station bez górnej granicy, „only as a
+  sorcery" to jedyny reżim czasowy); silnik nie ma sztucznego capu — próg
+  czytany z deskryptora (`permanents.js`), koszt to tap-another
+  (`abilities.js`). Sekwencja 2→6→9→12 (Warmaker Gunship, partia
+  worek-legend s7) legalna; obserwacja zamknięta.
+- **Lekcje:** L135 (nowy KSZTAŁT komendy musi mieć obsługę u każdego
+  konsumenta: silnik → kreator UI → sterownik testera). Budżet lektury
+  startowej: kondensacja L126 i L131 (narracja → `LESSONS_PRZYPADKI.md`,
+  numery 1:1); po dopisaniu L135 zmierzono **99,96k/100k** (test budżetu
+  zielony, próg nietknięty).
