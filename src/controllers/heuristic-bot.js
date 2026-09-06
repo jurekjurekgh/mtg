@@ -626,6 +626,22 @@ export const TEMPORARY_PUMP_EFFECTS = new Map([
 ]);
 
 /**
+ * A3 (audyt PR #100): efektywne typy obiektu z widoku — ŻYWE typy
+ * (`viewObject.types`: ożywiony ląd, karta skopiowana przez `enter_as_copy`,
+ * utrata typów) mają pierwszeństwo przed wydrukowanymi z katalogu.
+ * W `tieProjection` stało `obj.types ?? obj.cardId ? cardDef(...)?.types : []`,
+ * a `?:` wiąże słabiej niż `??`, więc warunkiem było całe
+ * `(obj.types ?? obj.cardId)` i do wyniku ZAWSZE szły typy drukowane —
+ * `obj.types` nie było użyte ani razu. Wyodrębnione, bo klasa błędu (operator
+ * warunkowy w łańcuchu `??`) wraca przy każdym kopiowaniu takiego wyrażenia.
+ */
+export function effectiveTypesOf(viewObject, printedDef) {
+  const zywe = viewObject?.types;
+  if (Array.isArray(zywe)) return zywe;
+  return printedDef?.types ?? [];
+}
+
+/**
  * Wspólny mianownik: `{ power, toughness }` nadawane przez efekt typu pump
  * (null = to nie jest pump). Ujemne wartości są tu NA MIEJSCU — to ten sam
  * efekt, tylko ze znakiem minus (M202/G: debuff to efekt WROGI, nie mniejszy
@@ -1368,6 +1384,45 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     };
   }
 
+  /**
+   * A8 (audyt PR #100, pętla jakości): ile TRACIMY, oddając ląd z pola bitwy.
+   * Decyzje „sacrifice a land" (Springbloom Druid, Roiling Regrowth) wyceniały
+   * dotąd KAŻDY ląd tak samo (`finish(40)` za dowolny), więc ofiara padała na
+   * pierwszego kandydata z listy silnika — a na tej liście bywa jedyny ląd
+   * płacący kolor, którego potrzebuje ręka. Te same fakty i te same
+   * rozwiązania co przy wyborze lądu do grania (`landAnaliza`: kolory przez
+   * `getSourceForObject` jak w silniku, zapotrzebowanie przez `coloredPipsOf`,
+   * zdolność poza manową przez definicję karty) — tylko liczone na stratę,
+   * bo jedno źródło prawdy obejmuje obie strony decyzji (L41/L131).
+   */
+  function landLossValue(view, objectId) {
+    const o = objectOnBoard(view, objectId);
+    if (!o) return 0;
+    const pola = (view.zones.battlefield ?? [])
+      .filter((x) => x?.controllerId === view.playerId && x.kind === 'land');
+    const licznik = (lista) => {
+      const m = new Map();
+      for (const x of lista) {
+        for (const kolor of getSourceForObject(x, null)?.colors ?? []) m.set(kolor, (m.get(kolor) ?? 0) + 1);
+      }
+      return m;
+    };
+    const wszystkie = licznik(pola);
+    const zostaje = licznik(pola.filter((x) => x.id !== objectId));
+    let strata = 0;
+    for (const x of view.zones.hand ?? []) {
+      if (!x || x.kind === 'land') continue;
+      for (const jednostka of coloredPipsOf(x.cardId)) {
+        const placilPrzed = jednostka.some((k) => (wszystkie.get(k) ?? 0) > 0);
+        const placilPotem = jednostka.some((k) => (zostaje.get(k) ?? 0) > 0);
+        if (placilPrzed && !placilPotem) strata += 1;
+      }
+    }
+    const def = cardDef(o.cardId);
+    const zdolnosc = (def?.abilities ?? []).some((a) => a?.type === 'activated' && !manaOnlyAbility(a)) ? 2 : 0;
+    return Math.min(16, strata * 4 + zdolnosc);
+  }
+
   function landPlayDelta(view, objectId) {
     const a = landAnaliza(view, objectId);
     let delta = 0;
@@ -1958,9 +2013,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // (main1/beginning_of_combat) nie kupujemy — poczekamy na atak.
         // Nazwy karty NIE ma w regule (ADR 0002); warunek po STANIE
         // (recipient.tapped, krok/faza, czy atakuje — L42/L64).
-        const myTurnCombat = myTurn(view)
+        // A4 (audyt PR #100): okno jest DOKŁADNIE jedno. Silnik tapuje
+        // atakujących przy DEKLARACJI (combat.js:264), a deklarację w tym
+        // silniku jest komenda gracza składana w kroku `declare_attackers`
+        // (odpowiednik CR 508.2a: „the active player taps the chosen
+        // attackers") — więc zakup premii sekundy przed tą komendą realnie
+        // chroni przed tapnięciem. Dawniej lista kroków obejmowała także
+        // `declare_blockers` i `combat_damage`, a i tak warunek niżej zawężał
+        // ją do jednego kroku → dwa wpisy martwe (L5: martwy warunek =
+        // podejrzany, nie dekoracyjny).
+        const przedDeklaracjaAtaku = myTurn(view)
           && view.turn.phase === 'combat'
-          && ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step);
+          && view.turn.step === 'declare_attackers';
         if (attacking && !recipient.tapped) {
           // Stwór ATAKUJE i jest odkręcony — vigilance zatrzyma go odkręconym.
           // Wartość rośnie z wytrzymałością (im twardszy, tym cenniejszy blok).
@@ -1968,19 +2032,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         } else if (blocking) {
           // Blokowanie: vigilance nie pomaga (stwór i tak nie atakuje).
           value -= 5;
-        } else if (myTurnCombat && canAttackNow(recipient)
-                   && view.turn.step === 'declare_attackers') {
-          // Jesteśmy dokładnie w kroku deklaracji atakujących — jeśli mamy
-          // zamiar wysłać tego stwora, vigilance opłaca się. Ta gałąź
-          // odpowiada kupowaniu z PRZYCISKU w wizardzie ataku (a nie main1).
-          // Ujemne w stosunku do wariantu attacking (nie wiemy jeszcze czy
-          // gracz wybierze atak) — wystarczy mała premia, żeby opcja nie była
-          // karana, ale nie tak duża, żeby kupować bez ataku.
+        } else if (przedDeklaracjaAtaku && canAttackNow(recipient)) {
+          // Jesteśmy w kroku deklaracji i stwór MOŻE zaatakować (odkręcony,
+          // bez choroby przyzwania) — kupno trzyma go odkręconym po ataku.
+          // Premia jest IDENTYCZNA jak w wariancie `attacking`: komentarz
+          // PR #100 obiecywał „ujemną w stosunku do niego", a kod od początku
+          // dodawał tyle samo. Zostaje wartość równa, bo przy `canAttackNow`
+          // zakup nie jest loterią — sztuczne skalanie premii karałoby ruch,
+          // który w tym silniku po prostu działa.
           value += 2 + (recipient.toughness ?? 0);
         } else {
           // Każda inna sytuacja (main1, tura przeciwnika, stwór zatapnięty)
           // — marnowanie many. Wcześniej gałąź precombat_main dawała +value
           // nawet BEZ zamiaru ataku → bug B: kupione w main1, po czym brak ataku.
+          // Świadomie karany jest też krok `beginning_of_combat`: w papierze
+          // to jedyne okno przed akcją turową deklaracji (CR 508.1), ale ten
+          // silnik rozkłada tapowanie na komendę, więc kupowanie turę wcześniej
+          // nie ma oparcia w zamiarze ataku (brak jeszcze dowodu, że stwór
+          // pójdzie do ataku) — patrz gate `test/m221d-vigilance-window.test.js`.
           value -= 10;
         }
       } else {
@@ -2006,6 +2075,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // karty (zwracamy własną), wroga gałąź wroga.
   const openZoneCard = (view, id) => (view.zones.graveyard ?? []).find((o) => o.id === id)
     ?? (view.zones.exile ?? []).find((o) => o.id === id) ?? null;
+  // A1 (audyt PR #100; L1/L102/L131): karta KANDYDATA decyzji o kartach ze stref
+  // UKRYTYCH (biblioteka, cudza ręka) nie ma pól w `view.zones.*` — playerView
+  // projekcjonuje tam tylko `{ id, controllerId, hidden }`. Każdy lookup
+  // lookup „wpis z zones.library po .manaCost" jest więc INERTNY: wpis istnieje, pole
+  // jest `undefined`, `?? 0` zeruje różnice, a wycena i projekcja remisują —
+  // nie dlatego, że warianty są równe, tylko dlatego, że bot jest ślepy.
+  // Źródłem prawdy jest payload samej decyzji (silnik odsłania karty tylko
+  // decydentowi: CR 701.3 „look at"), a strefy jawne (grób, wygnanie, własna
+  // ręka) mają dane w widoku. Wycena (`scoreCommand`) i projekcja remisów
+  // (`tieProjection`) MUSZĄ iść przez tę jedną funkcję (L131/L41/L48).
+  const decisionCandidateCard = (view, id) => {
+    if (id == null) return null;
+    const nosniki = [
+      view.pendingSearchChoice?.cards,
+      view.pendingManifestDread?.cards,
+      view.pendingLookTopN?.cards,
+      view.pendingSatyrLook?.cards,
+      view.pendingRevealExile?.handCards,
+    ];
+    for (const pool of nosniki) {
+      if (!Array.isArray(pool)) continue;
+      const found = pool.find((o) => o?.id === id);
+      if (found) return found;
+    }
+    return openZoneCard(view, id)
+      ?? (view.zones.hand ?? []).find((o) => o.id === id && o.hidden !== true)
+      ?? null;
+  };
   const offBoardCardValue = (o) => {
     const def = o?.cardId ? cardDef(o.cardId) : undefined;
     const types = o?.types ?? def?.types ?? [];
@@ -2487,7 +2584,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Batch 44 (Frightful Delusion): „counter unless pays" to słabszy
         // kontrczar (przeciwnik może się wykupić za {1}), ale ta sama klasa
         // decyzji — nigdy we własny czar; premia jak counter_spell.
-        // Audyt PR #93: `counter_ability` (Stifle) to ta sama klasa decyzji —
+        // Audyt PR #93: `counter_ability` to ta sama klasa decyzji —
         // nigdy we własną zdolność (koszt już zapłacony, CR 118.12 nie zwraca
         // nic), a cel bez wpływu oznacza „trzymaj kontrę".
         if (effects.some((effect) => effect?.type === 'counter_spell' || effect?.type === 'counter_spell_unless_pays'
@@ -4962,7 +5059,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       case 'resolve_springbloom': {
         // Ramp: poświęcenie landa → 2 basic landy tapped (od M70 trigger żyje).
-        return finish(cmd.sacrificeLandId != null ? 40 : 10);
+        // A8 (audyt PR #100): KTÓRY ląd oddać — bez `landLossValue` każdy
+        // kandydat dostawał 40 i wybór był kolejnością ofert (nie remistem
+        // danych, tylko ślepotą wyceny — klasa L132).
+        if (cmd.sacrificeLandId == null) return finish(10);
+        return finish(40 - landLossValue(view, cmd.sacrificeLandId));
       }
       case 'resolve_damage_division': {
         // M166/D (Inferno Titan): kwoty na wrogie cele/gracza = zysk
@@ -5057,9 +5158,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // ręki są w view.zones.hand (odrzucone jako koszt — wolę najtańsze),
         // karty odsłoniętej ręki przeciwnika nie.
         if (cmd.cardId == null) return finish(40);
-        const mine = (view.zones.hand ?? []).some((o) => o.id === cmd.cardId);
-        const value = view.zones.library.find((o) => o.id === cmd.cardId)?.manaCost
-          ?? (view.zones.hand ?? []).find((o) => o.id === cmd.cardId)?.manaCost ?? 0;
+        const karta = decisionCandidateCard(view, cmd.cardId);
+        const mine = karta?.controllerId === view.playerId;
+        const value = karta?.manaCost ?? 0;
         // Moja ręka (koszt): im tańsza karta, tym lepiej ją oddać.
         if (mine) return finish(20 - Math.min(10, value));
         // Ręka przeciwnika: wybranie drogiej karty ma wartość, ale dwie karty
@@ -5070,7 +5171,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Satyr Wayfinder: wzięcie lądu do ręki = pewna mana (zawsze lepsze niż
         // rezygnacja, bo reszta i tak idzie do grobu). Ląd premiami za manabazę.
         if (cmd.pickId == null) return finish(-5);
-        const card = view.zones.library.find((o) => o.id === cmd.pickId) ?? null;
+        const card = decisionCandidateCard(view, cmd.pickId);
         let score = 30;
         if (card) score += (card.kind === 'land' ? 30 : 0) + (card.power ?? 0) * 2 + (card.toughness ?? 0);
         return finish(score);
@@ -5081,7 +5182,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // fail-to-find (found: null). Bez tego bot brał pierwszą ofertę
         // (rezygnację) i „skipował szukanie" — zgłoszenie właściciela B.
         if (cmd.found == null) return finish(-40);
-        const card = view.zones.library.find((o) => o.id === cmd.found) ?? null;
+        const card = decisionCandidateCard(view, cmd.found);
         if (!card) return finish(0);
         let score = 25;
         // Land do ręki/na pole bitwy = pewna mana; stwory wg statystyk.
@@ -5198,7 +5299,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // Face-down 2/2 jest w 100% wymienny niezależnie od karty pod spodem
       // (dopóki jej nie odwrócimy), więc decyzja = „która karta może spaść".
       case 'resolve_manifest_dread': {
-        const card = cmd.cardId ? view.zones.library.find((o) => o.id === cmd.cardId) : null;
+        const card = decisionCandidateCard(view, cmd.cardId);
         if (!card) return finish(0);
         // Kara za utratę karty: im cenniejsza, tym gorzej wybrać ją na manifest.
         const keepValue = cardKeepValue(view, card);
@@ -5211,13 +5312,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // (najdroższy czar/stwór), analogicznie do discard_choice przymusowego.
       case 'resolve_reveal_exile_hand': {
         if (cmd.cardId == null) return finish(-5); // nic nie wygnaj — tylko gdy wymuszone
-        const card = [...(view.zones.hand ?? [])].find((o) => o.id === cmd.cardId)
-          ?? view.zones.library.find((o) => o.id === cmd.cardId);
+        const card = decisionCandidateCard(view, cmd.cardId);
         if (!card) return finish(0);
         // Kandydujące id są w ręce DRUGIEGO gracza (gdy MY wybieramy na ich ręce)
         // albo NASZEJ ręce (gdy przeciwnik rzuca czar, ale w Dreams to my
         // wybieramy własną rękę? — sprawdzamy controllerId).
-        const isOwnHand = (view.zones.hand ?? []).some((o) => o.id === cmd.cardId);
+        const isOwnHand = card.controllerId === view.playerId;
         if (isOwnHand) {
           // To NASZ czar wygnał NASZĄ kartę? Niemożliwe w Dreams. Ale na wszelki
           // wypadek: wygnaj najtańszą (analogicznie do discard_choice celu=cost).
@@ -5489,14 +5589,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // źródło prawdy (L28/L41).
     if (cmd?.type === 'resolve_discard_choice') {
       if (cmd.cardId == null) return { skip: 1 };
-      const mine = (view.zones.hand ?? []).some((o) => o.id === cmd.cardId);
-      const card = (view.zones.hand ?? []).find((o) => o.id === cmd.cardId)
-        ?? view.zones.library.find((o) => o.id === cmd.cardId);
-      return { mine: mine ? 1 : 0, cost: card?.manaCost ?? 0 };
+      const card = decisionCandidateCard(view, cmd.cardId);
+      return { mine: card?.controllerId === view.playerId ? 1 : 0, cost: card?.manaCost ?? 0 };
     }
     if (cmd?.type === 'resolve_search_choice') {
       if (cmd.found == null) return { skip: 1 };
-      const card = view.zones.library.find((o) => o.id === cmd.found);
+      const card = decisionCandidateCard(view, cmd.found);
       return {
         land: card?.kind === 'land' ? 1 : 0,
         cost: card?.manaCost ?? 0,
@@ -5555,15 +5653,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // pendingManifestDread.cards (tak jak scry/surveil) — tam są dane
       // do wyceny (zones.library ich nie widzi, bo karty NIE są jeszcze w
       // strefie w sensie view).
-      const cards = view.pendingManifestDread?.cards ?? [];
-      const card = cards.find((o) => o.id === cmd.cardId)
-        ?? view.zones.library.find((o) => o.id === cmd.cardId);
+      const card = decisionCandidateCard(view, cmd.cardId);
       return card ? { cost: card.manaCost ?? 0, kind: card.kind } : { card: null };
     }
     if (cmd?.type === 'resolve_reveal_exile_hand' || cmd?.type === 'resolve_reveal_exile_grave') {
       if (cmd.cardId == null) return { skip: 1 };
-      const card = [...(view.zones.hand ?? []), ...view.zones.graveyard, ...view.zones.library]
-        .find((o) => o.id === cmd.cardId);
+      const card = decisionCandidateCard(view, cmd.cardId);
       return { cost: card?.manaCost ?? 0, kind: card?.kind ?? null };
     }
     if (cmd?.type === 'resolve_escape_exile') {
@@ -5586,8 +5681,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       };
     }
     if (cmd?.type === 'resolve_springbloom') {
-      const land = cmd.sacrificeLandId ? objectOnBoard(view, cmd.sacrificeLandId) : null;
-      return { land: land ? (land.cardId ?? land.id) : 'skip' };
+      // A8: projekcja nosi FAKTY wyceny (ile tracimy: nieopłacone pipy +
+      // zdolność poza manową), a nie tożsamość lądu. Wcześniejsze
+      // `{ land: cardId ?? id }` oznaczało, że KAŻDA para różnych lądów
+      // wypadała jako „różne dane przy tym samym wyniku" — alarm bez
+      // informacji, bo wycena była identyczna dla wszystkich kandydatów.
+      if (cmd.sacrificeLandId == null) return { skip: 1 };
+      const land = objectOnBoard(view, cmd.sacrificeLandId);
+      const def = land?.cardId ? cardDef(land.cardId) : null;
+      return {
+        strata: landLossValue(view, cmd.sacrificeLandId),
+        zdolnosc: (def?.abilities ?? []).some((a) => a?.type === 'activated' && !manaOnlyAbility(a)) ? 1 : 0,
+      };
     }
     if (cmd?.type === 'resolve_look_top_choice' || cmd?.type === 'resolve_satyr_look_choice'
         || cmd?.type === 'resolve_graveyard_top_choice' || cmd?.type === 'resolve_delirium_target'
@@ -5596,12 +5701,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // na stole) — projekcja to wartość tego celu (ta sama co scoreCommand).
       const id = cmd.pickId ?? cmd.targetId ?? cmd.found ?? null;
       if (id == null && cmd.done === true) return { done: 1 };
-      const obj = (id && objectOnBoard(view, id))
-        ?? (id && openZoneCard(view, id))
-        ?? view.zones.library.find((o) => o.id === id)
-        ?? null;
+      const obj = (id && objectOnBoard(view, id)) ?? decisionCandidateCard(view, id);
       if (!obj) return { picked: 0 };
-      const types = obj.types ?? obj.cardId ? cardDef(obj.cardId)?.types : [];
+      const types = effectiveTypesOf(obj, obj.cardId ? cardDef(obj.cardId) : null);
       const isCreature = obj.kind === 'creature' || (types ?? []).includes('Creature');
       return {
         land: obj.kind === 'land' ? 1 : 0,

@@ -251,6 +251,13 @@ function bootstrapTable() {
       // nie wszedł do bufora" od „wszedł, ale nie zdążył się pokazać".
       botMovesSnapshot: () => (session ? session.botMoves.map((m) => m.text ?? '') : []),
       botPausePending: () => (session ? session.botPausePending : false),
+      // AUDYT PR #100 (HANDOFF 2026-09-05e, fałszywy detektor końca partii):
+      // koniec gry ze STRUKTURY stanu, nie z tekstu wskaźnika tury. Skrypt
+      // Testera skanował napisy „wygrywa|Koniec partii", a w części ścieżek
+      // (poddanie, remis, limit tur) wskaźnik mówi inaczej — partia już
+      // zakończona była deptana do limitu kroków i raportowana jako zacięcie.
+      // null = sesji jeszcze nie ma (Tester wtedy spada na odczyt tekstu).
+      gameOver: () => (session && session.state ? session.state.status !== 'active' : null),
     };
   }
   // Feature 2026-08-11: wyciszone opcje akcji (ptaszek „nie przerywaj

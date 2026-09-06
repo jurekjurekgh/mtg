@@ -143,11 +143,17 @@ Następna lista właściciela wchodzi tutaj.)_
   `playableWithoutPaying` w `tools/family-audit.mjs` + choke point
   `src/engine/impulse-window.js`. Historia: siedem zapisów w dwóch plikach i
   trzynaście odczytów w czterech, żadnego właściciela (wątek 4 z HANDOFF tury 2).
-- **[zamknięte w PR #93, `9f1c37c`]** kontrzenie zdolności: Stifle (CNS #108) z
-  typem celu `ability_on_stack`, efektem `counter_ability` i `abilityEffects` w
-  `playerView`. Historia: `counterStackObject` umiał zdjąć wpis zdolności, ale
+- **[zamknięte w PR #93, `9f1c37c`; karta wycofana 2026-09-06]** kontrzenie
+  zdolności: typ celu `ability_on_stack`, efekt `counter_ability`, `abilityEffects`
+  w `playerView`. Historia: `counterStackObject` umiał zdjąć wpis zdolności, ale
   nikt go o to nie prosił, więc pytanie o `pendingExileCast` Vaana przy kontrze
   całego triggeru było nie-do-udowodnienia (§9 pkt 3 raportu z tury 2).
+  **Pomysł na przyszłość:** nośnikiem była karta `Stifle` (CNS #108) dopisana do
+  katalogu przez agenta — 2026-09-06 właściciel nakazał ją usunąć (nie ma jej w
+  jego kolekcji, a `plan` wgrał ją do talii `wiedzmin`; ADR 0029). Mechanika
+  żyje i jest testowana na karcie synteretycznej; jeśli właściciel wrzuci do
+  batcha realną kontrę zdolności, `test/audyt-kontrzenie-zdolnosci.test.js`
+  wystarczy przepiąć z `SONDA` na wpis rejestru.
 
 ## 3. Bot
 

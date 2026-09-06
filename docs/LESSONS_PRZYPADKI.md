@@ -130,6 +130,15 @@ którego karta nie oferuje.
 `spell` z wpisu grobu (`game-state.js`) → te same testy; usunięcie
 `abilityResolvedThisTurn` z `fingerprint.js` → testy odcisku i sondy.
 
+
+**Mutacje, którymi sprawdzono strażnika (wyniesione z rejestru 2026-09-06):**
+brak rozrównienia (`zawsze no_result`) → H1, H1c, H2; `zawsze
+no_targets` → H3; selektor bez filtra kontrolera → H1c; selektor właściciela
+zawsze pusty → H2b; wycięcie wpisu `buff_land_creatures` → H4, H7;
+`sacrifice_each_other_creature` → H5, H7; `mill_cards` → H3, H7;
+`empty_library` → `no_targets` → H3; wycięcie masowej idempotentności
+(untap_all) → H6.
+
 ## L100 (2026-08-31) — przypadek
 
 **Objaw (Żywy Tester M265, worek-basni vs final-fantasy seed 303):** modal
@@ -143,6 +152,20 @@ Przycisk bierze koszt z `playerView` (`costColors` z `trigger.payColors` —
 `game-state.js:5726`), a opis zdarzenia z samego zdarzenia
 `optional_pay_required`, które niosło tylko `payMana`/`payLife`. Nikt nie
 zauważył, bo obie warstwy „działały", tylko mówiły co innego.
+
+
+**Grep rodzeństwa i mutacje (wyniesione z rejestru 2026-09-06):**
+`pay_or_sacrifice_required`, `counter_pay_required`,
+   `ward_choice_required` renderowały koszt jako gołe `{N}`.
+   **DOMKNIĘTE w M266/E.** Skan katalogu pokazał, że dla MADNESS ta karta już
+   istniała (Terminal Agony {B}{R}, Revolutionist {3}{R}) — log pisał „rzuć za
+   {2}", cenę niemożliwą do zapłacenia. Naprawa nie dołożyła trzeciej kopii
+   składanki: `costSymbols(amount, colors)` (`src/table/mana-icons.js`) jest
+   JEDYNYM źródłem dla obu warstw, a `madness_ready_required` i komendy
+   `resolve_madness_cast`/`resolve_pay_or_sacrifice` niosą `costColors`.
+   Strażnik: `test/m266-koszt-pipy.test.js` (5). Wniosek: „dziś to prawda"
+   w ostrzeżeniu o rodzeństwie weryfikuj od razu SKANEM KATALOGU — błąd
+   zwykle już jest w grze.
 
 ## L99 (2026-08-31) — przypadek
 
@@ -1374,3 +1397,69 @@ zero otwarć kreatora wielocelowego. Czyli surowiec się wyczerpał, a nie chę�
 (backlog §1). Talia `wielocelowa` stanie się legalna sama, bo nowe karty nie mają
 jeszcze przypisania — przepis (12 nazw + proporcja lądów) został w §13.8 raportu,
 żeby nikt nie układał go drugi raz.
+
+## L127 (2026-09-03) — przypadek: trzy sztywne wykluczenia po zlaniu filtrów
+
+Przeniesione z `docs/LESSONS.md` przy kondensacji budżetu lektury startowej (2026-09-06) — treść bez zmian, skrócona została tylko samo lekcja.
+
+**Przypadek:** PR #93 zlał trzy kopie filtru „prostego zakresu” w jeden
+`outsideHandCastScope` (słusznie, L48), ale zostawił w nim wykluczenia NA SZTYWNO:
+`modes`, `targets`, `additionalCost`. Każde powstało dla Discover — jego oferta
+nie pyta ani o tryb, ani o cel — a po unifikacji obowiązywało też okno zdolności
+Vaana, które tryby i cele ENUMERUJE (`epicCastOffers`), a koszt dodatkowy rozlicza
+w `castSpell`. Skutek: **zero ofert rzutu** dla kart, które Oracle dopuszcza
+(repro na realnych kartach: `aerith-rescue-mission` wygnana przez Vaana → tylko
+rezygnacja; `ruinous-rampage` trafiona Discover → tylko „weź do ręki”;
+`village-rites` w obu oknach → nic). Cztery fakty z tej samej tury: egzekucja
+modę OBSŁUGIWAŁA (`chosenMode` na stosie, rozstrzyganie je czyta), więc był to
+czysty rozjazd oferty i wykonania (L41/L48); `castModalSpell` nie znał
+`abilityWindowCast`, bo stempel `playableUntilTurn` słusznie zniknął z karty
+(ruling WotC 2025-02-10) i gałąź modalna straciła jedyną drogę autoryzacji; własna
+kopia generatora ofert w `epicCastOffers` pomijała tryby z „up to N target …”,
+które rzut z ręki oferuje; a test z poprzedniej sesji piętnował brak oferty jako
+zamierzony i zakładał stempel, którego silnik już nie stawia — przechodziłby
+nawet bez naprawy.
+
+
+Oferta kontra walidacja przy wykładniczej liczbie wariantów: OFERTA bywa
+WYCINKIEM (limit wariantów, jak `COMBAT_OPTION_CAP`), ale WALIDACJA w `execute`
+musi pozostać PEŁNA i niezależna — inaczej ograniczenie panelu staje się
+ograniczeniem reguł (znalezisko H audytu PR #93).
+
+Test nie może porównywać mierzonej wartości ze STAŁĄ ZAIMPORTOWANĄ z
+testowanego modułu: mutacja zmienia obie naraz i test przechodzi (tautologia
+wykryta przy H). Wartość graniczna wpisana literą, stała sprawdzana osobno.
+
+Skan katalogu zamiast czekania na zgłoszenie: dla każdej karty otwórz badaną
+ścieżkę i wypisz te bez ŻADNEJ oferty — to znalazło znalezisko E (aury), którego
+nie doszedł Żywy Tester w 6 partiach. Strażnik klasy w teście utrwala wynik.
+
+Dopisek z tej samej tury (koszt X): **wariant legalny, ale nic nie robiący, nie
+jest ofertą.** Rzut bez kosztu many zmusza X = 0 (CR 107.3b), więc ten sam czar
+bywa pełnoprawnym ruchem w oknie, które płaci manę (X wybiera gracz, CR 107.3a),
+i no-opem w oknie darmowym. Zamknij tę ścieżkę PARAMETREM (`allowX`) i przypnij
+testem, że milczy — domyślna wartość predykatu nie może być jedynym śladem
+decyzji (uwaga właściciela F z M280).
+
+
+
+## L134 (2026-09-06) — przypadek: karta-sonda w talii właściciela
+
+Sesja wdrażająca kontrzenie zdolności (PR #93, commit `9f1c37c`) potrzebowała
+nośnika, bo `counterStackObject` umiał kontrować wpis zdolności, ale nikt go o
+zdolność nie pytał: nie było typu celu `ability_on_stack` ani efektu
+`counter_ability`, więc i pytanie o `pendingExileCast` Vaana przy skontrowanym
+triggerze było nie-do-udowodnienia (`docs/backlog.md`). Agent rozwiązał brak
+dopełniając katalog kartem `Stifle` (CNS #108) i snapshotem
+`docs/cards/scryfall-stifle.json`.
+
+Nie zaprotestowała ŻADNA bramka, bo każda z nich mierzy poprawność, nie
+pochodzenie: `repo-decks.test.js` sprawdza zgodność plików z generatorem i że
+każda wspierana karta jest w dokładnie jednej talii (ADR 0023), `m132` —
+proporcję lądów, spójność danych — zgodność z Scryfall. Rejestr talii jest
+WYPROWADZONY z pola `plan`, więc dopisanie karty do katalogu samo weszło do
+pliku talii. Właściciel: „to nie błąd w karcie, to agent zdecydował, co gra w
+mojej talii". Usunięcie (2026-09-06) objęło definicję, wpis `MANA_COSTS`,
+snapshot, przydział `plan` (regeneracja `decks/wiedzmin.txt`: 45 → 44 kart) i
+test `audyt-kontrzenie-zdolnosci.test.js`, który dziś opiera się na karcie
+synteretycznej `SONDA`.

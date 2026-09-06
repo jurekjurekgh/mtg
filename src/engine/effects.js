@@ -3797,7 +3797,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return;
   }
   if (effect.type === 'counter_ability') {
-    // Stifle: „Counter target activated or triggered ability." Cel wskazano przy
+    // Kontrzenie ZDOLNOŚCI (efekt `counter_ability`, audyt PR #93): „Counter target
+    // activated or triggered ability." Cel wskazano przy
     // rzucie, tu tylko rozstrzygamy: jeśli zdolności już na stosie nie ma
     // (skontrowana wcześniej, zniknęła), nie ma efektu (CR 608.2b). Contra idzie
     // przez WSPÓLNY `counterStackObject` — ta sama droga co ward i Negate, więc

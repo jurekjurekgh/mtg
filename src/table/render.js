@@ -1841,6 +1841,11 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
  * „Wybierz:" (uwaga właściciela A: „Aura: Benevolent Blessing (3 opcje)").
  * null → etykieta schodzi na deskryptor czynności z prefiksem „Wybierz:".
  */
+// A2 (audyt PR #100): nazwy stref-docelowych szukania — JEDNO źródło dla
+// tytułu modala i dla etykiety wiersza na liście ofert (L41). Bez wspólnego
+// źródła lista pokazywała dwie nie do rozróżnienia pozycje tej samej karty.
+const SEARCH_DESTINATION_LABELS = Object.freeze({ hand: 'do ręki', graveyard: 'do grobu', battlefield: 'na pole bitwy' });
+
 function choiceSourceTitle(cmd, session, view) {
   // Uwaga C właściciela (2026-08-10): modal wyboru ma nazywać kartę, która
   // go wywołała. Komendy resolve_* nie niosą objectId — źródło czytamy
@@ -1944,8 +1949,7 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd?.type === 'resolve_search_choice' && view?.pendingSearchChoice) {
     const psc = view.pendingSearchChoice;
     const src = psc.sourceCardId ? session.nameOf(psc.sourceCardId) : 'Szukanie w bibliotece';
-    const destMap = { hand: 'do ręki', graveyard: 'do grobu', battlefield: 'na pole bitwy' };
-    const destLabel = destMap[cmd.destination ?? psc.destination] ?? null;
+    const destLabel = SEARCH_DESTINATION_LABELS[cmd.destination ?? psc.destination] ?? null;
     if (destLabel) return `${src} — wybierz kartę ${destLabel}`;
     return `${src} — wybierz kartę`;
   }
@@ -2858,7 +2862,16 @@ export function commandLabel(cmd, session, view) {
       // Szukanie w bibliotece: PlayerView chowa cardId kart biblioteki (FoW),
       // więc nameOfObjectId dawało „?". Pełny stan sesji zna nazwę.
       if (cmd.found == null) return 'Szukanie — nie znajduj karty (rezygnuję)';
-      return `Szukanie: ${escapeHtml(session.nameOfObject(cmd.found))}`;
+      // A2 (audyt PR #100): gdy szukanie ma WIELE destynacji (Caravan Vigil:
+      // ta sama karta do ręki albo na pole bitwy przy morbid), cel jest drugim
+      // wymiarem decyzji i MUSI być w etykiecie — bez tego dwie pozycje listy
+      // brzmią identycznie („Szukanie: Forest"), a gracz nie wie, co zaznacza
+      // (L41: jedno źródło nazwy strefy z tytułem modala).
+      const warianty = view?.pendingSearchChoice?.destinations;
+      const cel = Array.isArray(warianty) && warianty.length > 1
+        ? SEARCH_DESTINATION_LABELS[cmd.destination] ?? null : null;
+      const nazwa = escapeHtml(session.nameOfObject(cmd.found));
+      return cel ? `Szukanie: ${nazwa} — ${cel}` : `Szukanie: ${nazwa}`;
     }
     case 'resolve_springbloom': {
       // M102/U3: bez tej gałęzi wszystkie warianty spadały do `default`
