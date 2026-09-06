@@ -226,21 +226,8 @@ Tu dodatkowo, specyficzne dla widoku:
 3. Do każdej takiej pary warstw pisz test SPÓJNOŚCI (`payColors` zdarzenia
    `deepEqual` `costColors` komendy), nie tylko test tekstu — sam tekst
    zielenieje po zahardkodowaniu jednej karty.
-4. Grep rodzeństwa: `pay_or_sacrifice_required`, `counter_pay_required`,
-   `ward_choice_required` renderowały koszt jako gołe `{N}`.
-   **DOMKNIĘTE w M266/E.** Skan katalogu pokazał, że dla MADNESS ta karta już
-   istniała (Terminal Agony {B}{R}, Revolutionist {3}{R}) — log pisał „rzuć za
-   {2}", cenę niemożliwą do zapłacenia. Naprawa nie dołożyła trzeciej kopii
-   składanki: `costSymbols(amount, colors)` (`src/table/mana-icons.js`) jest
-   JEDYNYM źródłem dla obu warstw, a `madness_ready_required` i komendy
-   `resolve_madness_cast`/`resolve_pay_or_sacrifice` niosą `costColors`.
-   Strażnik: `test/m266-koszt-pipy.test.js` (5). Wniosek: „dziś to prawda"
-   w ostrzeżeniu o rodzeństwie weryfikuj od razu SKANEM KATALOGU — błąd
-   zwykle już jest w grze.
-
-**Strażnik:** `test/m265-optional-pay-colored-cost.test.js` (5 testów).
-Mutacje: usunięcie `payColors` ze zdarzenia (`triggers.js`) → testy 1, 2, 5;
-uproszczenie opisu do `{${e.payMana}}` (`session.js`) → testy 2, 3.
+**Strażnik:** `test/m265-optional-pay-colored-cost.test.js` (5 testów; mutacje
+w narracji: `payColors` ze zdarzenia → 1, 2, 5; goły `{N}` w opisie → 2, 3).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L100)
 
@@ -1705,12 +1692,6 @@ Przyczyna: `docs/LESSONS_PRZYPADKI.md`, sekcja „L91”.
    biblioteka" mówią, co zrobić dalej; „nie było czego wykonać" mówi tylko, że
    coś nie zadziałało (oś 2: „wszystko poza szumem powinno tam być").
 **Strażnik:** `test/m256-zywy-tester-runda2.test.js` (H1–H7, 15 testów).
-Mutacje: brak rozrównienia (`zawsze no_result`) → H1, H1c, H2; `zawsze
-no_targets` → H3; selektor bez filtra kontrolera → H1c; selektor właściciela
-zawsze pusty → H2b; wycięcie wpisu `buff_land_creatures` → H4, H7;
-`sacrifice_each_other_creature` → H5, H7; `mill_cards` → H3, H7;
-`empty_library` → `no_targets` → H3; wycięcie masowej idempotentności
-(untap_all) → H6.
 ## L108 (2026-08-31) — Deadlock reguł: szukaj par „musisz X" / „nie możesz X"
 
 Odkryte w M270 (błąd #9, CR 508.1c). Dotąd polowanie na błędy zakładało, że
@@ -2080,24 +2061,6 @@ komentarza) → RED M293/11.
 
 ## L127 (2026-09-03) — Zakres rzutu kartą spoza ręki to cecha ŚCIEŻKI, nie karty: jeden predykat z parametrem „co ta ścieżka potrafi rozliczyć”
 
-**Przypadek:** PR #93 zlał trzy kopie filtru „prostego zakresu” w jeden
-`outsideHandCastScope` (słusznie, L48), ale zostawił w nim wykluczenia NA SZTYWNO:
-`modes`, `targets`, `additionalCost`. Każde powstało dla Discover — jego oferta
-nie pyta ani o tryb, ani o cel — a po unifikacji obowiązywało też okno zdolności
-Vaana, które tryby i cele ENUMERUJE (`epicCastOffers`), a koszt dodatkowy rozlicza
-w `castSpell`. Skutek: **zero ofert rzutu** dla kart, które Oracle dopuszcza
-(repro na realnych kartach: `aerith-rescue-mission` wygnana przez Vaana → tylko
-rezygnacja; `ruinous-rampage` trafiona Discover → tylko „weź do ręki”;
-`village-rites` w obu oknach → nic). Cztery fakty z tej samej tury: egzekucja
-modę OBSŁUGIWAŁA (`chosenMode` na stosie, rozstrzyganie je czyta), więc był to
-czysty rozjazd oferty i wykonania (L41/L48); `castModalSpell` nie znał
-`abilityWindowCast`, bo stempel `playableUntilTurn` słusznie zniknął z karty
-(ruling WotC 2025-02-10) i gałąź modalna straciła jedyną drogę autoryzacji; własna
-kopia generatora ofert w `epicCastOffers` pomijała tryby z „up to N target …”,
-które rzut z ręki oferuje; a test z poprzedniej sesji piętnował brak oferty jako
-zamierzony i zakładał stempel, którego silnik już nie stawia — przechodziłby
-nawet bez naprawy.
-
 **Reguła:** każde wykluczenie w predykacie zakresu pytaj „czy TA ścieżka potrafi
 to ROZLICZYĆ”, nie „czy karta to ma” — parametr per ścieżka (`allowTargets`,
 `allowModes`, `allowAdditionalCost`), jeden filtr, oferta i bramka wywołane z
@@ -2114,34 +2077,15 @@ złamanie reguł, nie naprawa. I wreszcie: wariant ruchu bez wyboru X (X = 0) je
 pułapką, więc dopóki okno nie potrafi wyliczyć X, wyłączenie zostaje — ale jako
 świadomy wpis w backlogu, nie jako milczenie predykatu.
 
-Oferta kontra walidacja przy wykładniczej liczbie wariantów: OFERTA bywa
-WYCINKIEM (limit wariantów, jak `COMBAT_OPTION_CAP`), ale WALIDACJA w `execute`
-musi pozostać PEŁNA i niezależna — inaczej ograniczenie panelu staje się
-ograniczeniem reguł (znalezisko H audytu PR #93).
-
-Test nie może porównywać mierzonej wartości ze STAŁĄ ZAIMPORTOWANĄ z
-testowanego modułu: mutacja zmienia obie naraz i test przechodzi (tautologia
-wykryta przy H). Wartość graniczna wpisana literą, stała sprawdzana osobno.
-
-Skan katalogu zamiast czekania na zgłoszenie: dla każdej karty otwórz badaną
-ścieżkę i wypisz te bez ŻADNEJ oferty — to znalazło znalezisko E (aury), którego
-nie doszedł Żywy Tester w 6 partiach. Strażnik klasy w teście utrwala wynik.
-
-Dopisek z tej samej tury (koszt X): **wariant legalny, ale nic nie robiący, nie
-jest ofertą.** Rzut bez kosztu many zmusza X = 0 (CR 107.3b), więc ten sam czar
-bywa pełnoprawnym ruchem w oknie, które płaci manę (X wybiera gracz, CR 107.3a),
-i no-opem w oknie darmowym. Zamknij tę ścieżkę PARAMETREM (`allowX`) i przypnij
-testem, że milczy — domyślna wartość predykatu nie może być jedynym śladem
-decyzji (uwaga właściciela F z M280).
-
 **Strażnik:** `test/audyt-pr93-modalny-rzut-z-okna.test.js` (6, w tym skan
 katalogu: każdy z 12 czarów modalnych ma ofertę w oknie zdolności),
 `test/audyt-pr93-modalny-discover.test.js` (6, w tym etykieta stołu z nazwą
 trybu), `test/audyt-pr93-koszt-dodatkowy-z-exile.test.js` (7) oraz odwrócony
-`test/audyt-pr92-darmowy-rzut-zakres.test.js`. Dziewięć mutacji — tabela w §7
-`docs/audits/AUDYT_PR93_2026-09-03.md`; znalezisko D —
-`test/audyt-pr93-koszt-x-z-exile.test.js` (7, w tym strażnik: każda karta X
-katalogu rzucalna w oknie zdolności oraz Discover milczące dla kart X).
+`test/audyt-pr92-darmowy-rzut-zakres.test.js`. Znalezisko D — `test/audyt-pr93-koszt-x-z-exile.test.js` (7: każda karta X
+katalogu rzucalna w oknie zdolności, Discover milczy dla kart X). Dziewięć
+mutacji — tabela w §7 `docs/audits/AUDYT_PR93_2026-09-03.md`.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L127)
 
 ## L128 (2026-09-03) — Mechanika z dwiema ścieżkami rzutu: reguła ma jedno miejsce prawdy, a skan musi PORÓWNYWAĆ ścieżki, nie tylko liczyć oferty
 
@@ -2315,3 +2259,25 @@ czyta TEN SAM fakt z dwóch miejsc, drugie musi zniknąć albo wywoływać pierw
 wygrana przez gracza kończą się linią `== KONIEC PARTII ==` bez `LIMIT KROKÓW`
 i bez `[STOP]` (zmierzone w tej sesji: 4 partie, 0 zgłoszeń detektorów).
 
+## L134 (2026-09-06) — Brak nośnika mechaniki NIE powodem poszerzania katalogu: talia jest wyprowadzona z katalogu
+
+**Przypadek:** sesja PR #93 potrzebowała karty do testu `counter_ability` i
+dopisała do katalogu realną kartę `Stifle` — poprawną, ze snapshotem Scryfall,
+rulingami i wpisem w `MANA_COSTS`. Bramki zielone, bo karta była poprawna;
+`plan: 'Wiedźmin'` wgrał ją do `decks/wiedzmin.txt` (ADR 0023), a właściciel
+przeczytał ją w talii SWOJEJ kolekcji (alarm 2026-09-06).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L134)
+
+**Reguła:** katalog rośnie wyłącznie z list właściciela (ADR 0029); wolno tylko
+tokenom i landom podstawowym. Test potrzebujący nośnika buduje kartę
+SYNTERETYCZNĄ w swoim pliku — engine nie zna rejestru (ADR 0002), więc sama
+definicja podana do `gameObjectDataOf` żyje na stole i w `legalCommands`.
+Mechanika bez nośnika w kolekcji to wpis do backlogu (propozycja do batcha),
+nie edit `card-data.js`. Usuwanie karty jest pełne, gdy znika definicja, klucz
+`MANA_COSTS`, snapshot `docs/cards/scryfall-<id>.json`, `plan` (regeneracja
+`decks/`) i testy pinujące nazwę karty.
+
+**Strażnik:** `test/proweniencja-katalogu.test.js` (artId ∈ słownika kolekcji,
+nazwa i plan zgodne z wierszem, poza kolekcją tylko tokeny/landy, `decks/*.txt`
+bez kart spoza słownika, `MANA_COSTS` bez sierot). Fałszywka zweryfikowana:
+wstrzyknięcie `Stifle` do katalogu czerwieni testy 1, 3 i 5.

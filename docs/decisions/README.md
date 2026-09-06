@@ -41,6 +41,7 @@ dokument opisuje kontekst, wybór i jego konsekwencje.
 | [0027](0027-platinum-badge-static-analyzer.md) | Odznaka platynowa: klasę błędów L107 tępi ANALIZATOR statyczny wpięty w `npm test` (choke pointy + kontrakty zdarzeń), a nie audyt wzrokowy; wymagane 5 błędów wskazanych przez narzędzie i jawna lista wyjątków | Zaakceptowana |
 | [0028](0028-rulings-on-touch-not-bulk.md) | Rulingi WotC: zasada „przy kartce" (snapshot niesie `rulings`, choćby puste) i kolejka priorytetu zamiast hurtowego przejścia po katalogu; próg pokrycia tylko na podstawie stanu faktycznego | Zaakceptowana |
 
+| [0029](0029-catalog-grows-only-from-owner-collection.md) | Katalog kart to kolekcja właściciela: agent nie dodaje kart (też jako „nośników mechaniki") — brak nośnika rozwiązuje karta synteretyczna w teście; strażnik `proweniencja-katalogu.test.js` | Zaakceptowana |
 ## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
 
 Uwaga właściciela (2026-08-14): reguły trwałe nie mogą mieszkać w handoffie, bo

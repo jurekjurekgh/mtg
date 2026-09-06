@@ -8622,3 +8622,77 @@ pętla domyślna; brak nowych batchy kart). Gałąź `arena/01a071d1-mtg`, PR #9
   (570/672; baseline 84,7% = 569/672), `event-contract-audit` czysty,
   golden-master bota zregenerowany świadomie: `fb8cece4b670…` → `fdb515abbacf…`.
 - Handoff: `docs/setup/HANDOFF_2026-09-06a.md`.
+
+### Faza 2 (arena/01a07682): ALARM właściciela — karta-sonda w katalogu i jej usunięcie (PR #101)
+
+Zgłoszenie: „w talii Wiedźmin pojawiła się karta `Stifle`, której nie ma w mojej
+kolekcji". Śledztwo: wpis `src/cards/card-data.js` z `plan: 'Wiedźmin'`,
+`set: 'CNS'`; `docs/PROJECT_HISTORY.md` (linia ~7578) wskazał autora — sesja
+wdrażająca kontrzenie zdolności (PR #93, `9f1c37c`), która potrzebowała nośnika
+mechaniki i dopisała kartę (ze snapshotem Scryfall i rulingami, więc dane były
+prawdziwe). `git log` nie pomaga: klon sesji ma JEDEN commit zbiorczy
+(`448ed55`), więc proweniencji kart nie da się odczytać z historii.
+
+- **Diagnoza procesowa** (istota alarmu): rejestr talii jest WYPROWADZONY z pola
+  `plan` (ADR 0023), więc każda karta dopisana do katalogu wchodzi do talii
+  właściciela i nikt nie protestuje — wszystkie bramki (`repo-decks`, spójność z
+  generatorem, `m132`, singleton, `limitations`) mierzą POPRAWNOŚĆ danych, nie
+  ich POCHODZENIE.
+- **Decyzja właściciela:** usunąć kartę w całości; zdolność `counter_ability`
+  zostaje (jest card-agnostic); przebadać katalog od początku projektu; zbudować
+  strażnika.
+- **Cięcie:** definicja w `card-data.js`, klucz `stifle` w `mana-costs-data.js`,
+  `docs/cards/scryfall-stifle.json` (git rm), regeneracja `decks/wiedzmin.txt`
+  (45 → 44 kart, `1x Stifle` zniknął), komentarze w `src/engine/{effects,
+  game-state,spells}.js` i `src/controllers/heuristic-bot.js` przepisane bez
+  nazwy karty (core nie zna kart po nazwie — ADR 0002).
+- **Test bez utraty pokrycia:** `test/audyt-kontrzenie-zdolnosci.test.js` (6
+  testów) przerobiony na kartę SYNTERETYCZNĄ `SONDA` materializowaną przez
+  `gameObjectDataOf` — pokrycie `counter_ability`/`ability_on_stack`/no-opa
+  kontrzenia (CR 118.12, CR 605.1a, etykieta celu w render.js) zostało, karta
+  zniknęła. Zniknął za to pin „definicja == snapshot" (nie ma czego pinować) —
+  jego rolę pełni dziś strażnik pochodzenia.
+- **AUDYT KATALOGU (metoda):** słownik kolekcji `tools/collection-art-ids.csv`
+  (598 wierszy, `Ilustracja = <artId><set>`) jest rejestrem tego, co właściciel
+  wysłał. Porównanie: 455 kart kwalifikujących się do talii (filtr jak w
+  generatorze: `supported` i nie `basic-`) — **455/455 ma artId, a nazwa i plan
+  zgadzają się z wierszem słownika; 39 wpisów bez artId to wyłącznie tokeny**;
+  0 rozjazdów planu (karta nie siedzi w cudzej talii tematycznej);
+  `MANA_COSTS` 443/443 bez sierot. **Jedyną kartą w katalogu (499 wpisów)
+  spoza kolekcji był `Stifle`.**
+- **Strażnik:** `test/proweniencja-katalogu.test.js` (5 asercji: artId ∈
+  kolekcji, plan ∈ wiersza, poza kolekcją tylko token/land, `decks/*.txt` bez
+  kart spoza słownika, `MANA_COSTS` bez sierot). Fail-by-construction
+  sprawdzone fałszywką: wstrzyknięcie `Stifle` do katalogu + osierocony klucz
+  `MANA_COSTS` czerwieni testy 1, 3 i 5 (po usunięciu fałszywki — 5/5 zielone).
+- **Reguła na piśmie:** ADR **0029** (katalog rośnie wyłącznie z batchy
+  właściciela; brak nośnika = karta synteretyczna w teście) + **L134**.
+- **Skutek uboczny 1 — grzechotka remisów:** `test/audyt-bot-walka-remisy.test.js`
+  podskoczył `block` 3 → 6 i `attack` 1 → 2. Zmierzone per para (nie zgadnięte):
+  pary bez `wiedzmin` dały identyczne liczby przed i po (ravnica|innistrad-wu 1,
+  kaladesh|zendikar 2, dominaria-wu|worek-mroczny 0), cały przyrost na
+  `wiedzmin|tarkir-bg` (block 0→3, attack 0→1) = zmiana trajektorii po utracie
+  karty, nie zmiana wag. Cztery nowe pozycje przejrzane: trzy to klasa „`block[]`
+  ex aequo z blokiem za jednego stwora przy braku presji śmiertelnej" (polityka
+  M169/J+L), jedna to płaski model addytywny w ataku (klasa znana, zmiana wyceny
+  wymaga pełnego B0 — ADR 0018). Sufit `block` podniesiony 4 → 6 ŚWIADOMIEJ z
+  recenzją w nagłówku testu; `attack` bez zmian (≤4).
+- **Skutek uboczny 2 — dokumentacja talii kłamała:** lista w `README.md`
+  (ogłoszona jako „aktualizowana przy każdej zmianie zestawu talii") była
+  nieaktualna dla 13 talii i nie miała wiersza `kaladesh` (plan awansował
+  automatycznie w M181). Odświeżona (22 wiersze) i dostała strażnika
+  **M203/7** w `test/m203-talie-testera-i-dokumentacji.test.js`: liczności z
+  `decks/*.txt` == tabela w README, każdy plik talii ma wiersz, każdy wiersz ma
+  plik. Kolumna „Kolory" poza zakresem (skrót, nie dane z pliku).
+- **Budżet lektury startowej:** po L134 i ADR 0029 było ~101,5k/100k, więc
+  skondensowano `docs/LESSONS.md` (L127, L91, L100 — narracja i listy mutacji
+  przeniesione do `docs/LESSONS_PRZYPADKI.md`, numery 1:1, adresacja pilnowana
+  przez `test/docs-decisions.test.js`). Jest ~99,8k/100k. Progu nie podnoszono.
+- **Bramki:** `npm test` **4506/4506** (start fazy: 4505 z 1 czerwoną grzechotką),
+  `npm run build` 59 modułów / **3318,6 kB** (o 1 kB mniej po usunięciu karty),
+  benchmark szybki heuristic **84,8% (570/672)** — bez zmian wobec baseline'u
+  fazy 1, aggro 26,5%, random 3,9%; Żywy Tester: partia `wiedzmin` vs
+  `tarkir-bg` seed 4008, 420 kroków, 0 zgłoszeń detektorów, 0 wystąpień
+  `Stifle` w transkrypcie.
+- Własna talia `decks/wiedzmin.txt` jest od tej fazy wolna od kart-sond; jeśli
+  właściciel zechce realnej kontry zdolności, wpis idzie z batcha (ADR 0029).
