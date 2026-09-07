@@ -9147,3 +9147,66 @@ modułów / 3369,8 kB** (rozmiar bez zmiany). README „Bieżący stan"
 zaktualizowany (L92). Bez nowych kart, talii, limitacji Oracle i pełnego
 B0 (ADR 0018/0029); brak nowego wpisu LESSONS (brak nowej klasy; budżet
 bez zmian). PR #105 oddany do przeglądu; agent nie scala.
+
+## Sesja arena/01a07c4e cz. 2 — wyceny bota i modale, PR #105 (2026-09-07)
+
+Kontynuacja PR #105 na tej samej gałęzi (ADR 0021, właściciel jeszcze nie
+scala). Prompt: Żywy Tester — taktyka bota, wycena każdego działania,
+generowanie ofert modalnych. Plan
+`docs/plans/PLAN_2026-09-07-wyceny-bota-i-modale.md` przed kodem.
+Baza: 4733/4733 fast (po E3), build 3385,7 kB.
+
+**E1 telemetria**: `scoreCommand` oznacza trafienia `default`
+(`lastUnvaluedType`), trace niesie `unvalued`, `unvaluedDecisions()`
+liczy per typ (pass_priority informacyjnie), mostek `__mtgDebug.botUnvalued()`,
+run-game drukuje „== NIEWYCENIONE ==", detektor `detectUnvaluedBotChoices`.
+`hashTrace` stripuje `unvalued` (golden-master stabilny). RED-first na
+detektorze.
+
+**E2 wyceny — 20 niepokrytych typów z rozpoznania zamknięte w 4 pakietach**:
+A `d7427b2` (`resolve_optional_draw` +5/−2 z karą pustej biblioteki CR
+104.4c, `resolve_damage_target` → damageTargetValue, `resolve_hand_creature`,
+kary celu trybów modalnych selfHarm/friendlyMisaim), B `36e2ea9`
+(`resolve_redirect_choice`+`resolve_copy_targets` jednym case po widoku
+stosu, `resolve_enter_as_copy`, `resolve_amass_choice`, `resolve_epic_choice`
+jak suspend), C `8b8ec70` (`resolve_look_top_choice` po cardKeepValue,
+`resolve_hand_top_choice`, `resolve_reveal_exile_grave` po znaku właściciela
+strefy, `resolve_destroy_equipment_choice` po kontrolerze SPRZĘTU —
+`attachedTo` doekspowany w widoku (decydent-only `pendingDestroyEquipment`,
+`pendingMoonlitChoice`), `resolve_land_type_choice` po potrzebach pipów,
+`resolve_moonlit_choice` po delcie P/T zaczarowanego vs token, 
+`cast_adventure_creature` kształtem stwora + bonus ETB), D `ce01f2c`
+(5 jawnych `finish(0)` z komentarzami dla jednowariantowych:
+damage_assignment, replacement_choice, reveal_order, index_choice, modal
+skip — `default` odtąd zarezerwowany wyłącznie dla PRZYSZŁYCH typów).
+Mutacje kontrolne pakietu C: 7/7 RED. Fixture
+`test/fixtures/bot-scoring-snapshot.json` zregenerowana świadomie
+(`--write`; drift scoreSum +14 w 1/6 partii, decyzje 188=188).
+
+**E3 modale**: enumeracja klasowa wszystkich 16 modalnych czarów katalogu
+i triggerów (etherwrought-page, inspiring-bard): oferta per legalny
+kandydat (źródło się liczy), tryb bez celu zawsze dostępny, pusta pula
+trybu celowanego nie usuwa trybu bezcelowego, same tryby celowane +
+pusto → dokładnie skip. **Zero błędów silnika** — oferta była poprawna,
+brak naprawy produkcyjnej; klasa piniowana testem
+`test/modale-generowanie-ofert.test.js` (L48).
+
+**E4 żywy stół**: 4 partie po buildzie (pary maksymalizujące ruch
+modalny): alara|wiedzmin greedy s10501, forgotten-realms|ravnica explorer
+s10502, final-fantasy|worek-basni impatient `--snapshot-every 3` s10503,
+tarkir-wur|mirrodin-wu defensive s10504. Wszystkie: exit 0, stderr 0 B,
+„DETEKTORY: brak zgłoszeń", **„NIEWYCENIONE: brak"** — każdy wybrany
+ruch bota miał dedykowaną wycenę (telemetria E1 potwierdza domknięcie
+E2 w żywej grze). Taktyka bez zarzutu: Chronic Flooding blokowało
+Basilisk Gate, Twiddle tapowało Plague Reaver, Agate Assault wygnawało
+Warrior's Sword (modal celowany w sprzęt), aury stackowane na własnym
+nosicielu, living weapon, blokada dwoma stworami; modale (Scry, Aerith —
+Winda) działały w UI bez zakłóceń.
+
+**E5 zamknięcie**: fast 4733/4733, `test:all` **4743/4743**, build
+**59 modułów / 3385,7 kB**, quick benchmark heuristic **84,8%**
+(570/672; vs random 96,1%; aggro 26,5%) — bot-benchmark w paśmie bazowym.
+README „Bieżący stan", `docs/setup/HANDOFF_2026-09-07g.md`. Bez nowych
+kart (ADR 0029), bez pełnego B0 (ADR 0018/0025), bez nowego wpisu
+LESSONS (brak nowej klasy; budżet lektury bez zmian). PR #105 oddany do
+przeglądu; agent nie scala.
