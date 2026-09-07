@@ -154,3 +154,18 @@ quiet 74 kroki, verbose 73 przed i po. Dodatkowo s10402/s10403 ukończone,
 znacznika wygnania stwora jako kosztu dodatkowego. Naprawić sam detektor,
 sprawdzić dwie strefy i prawdziwe puste ceny/dopłaty oraz źródło danych
 panelu niezależne od --quiet, potem powtórzyć grę (szczegóły w audycie).
+
+
+E3/M347: F9 — znacznik dodatkowego kosztu wygnania nie jest pustą kwotą;
+nie ma zmian etykiet produktu. 6 testów (4 RED→GREEN + 2 kontrole), cztery
+mutacje; rodzina 125/125. Pełne etykiety panelu z rekordów okien także pod
+--quiet. W toku końcowe cztery przebiegi testera i pełna bramka przed pushem.
+M346 wypchnięte `528e76e` po 4679/4679 + build.
+
+E3: M347 powtórki czterech przebiegów ukończone, 0 flag. Stderr impatienta
+ujawnił F10: `session.log` jest tablicą, a `play` woła ją jak funkcję przy
+zmianie otwartego kreatora many. Kolejny samodzielny przyrost M348 (przed
+E4): interfejs wpisu systemowego + prawidłowa kontynuacja play, strażnik
+na realnej sesji; przechwytywanie runtime errors w testerze od beforeParse
++ detektor niezależny od profilu/logowania, testy i żywe A/B. To naprawa
+konkretnego wyjątku UI, nie strojenie heurystyki bota.

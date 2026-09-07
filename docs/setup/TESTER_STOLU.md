@@ -213,6 +213,17 @@ DOM). `detectStaleLogTail` porównuje te dane w każdym oknie, także --quiet;
 zgłoszenie oznacza błąd obserwacji TESTERA, nie nielegalny ruch gracza.
 Dowód A/B i testy: `docs/audits/AUDYT_PR103_2026-09-07.md`, m346.
 
+#### Koszt dodatkowy a brak ceny — M347 (2026-09-07)
+
+`Wygnaj stwora z grobu/z pola bitwy (koszt) — …` to kompletny tytuł wyboru
+kosztu dodatkowego, nie pusty slot many. `detectEmptyCostDescriptor` rozróżnia
+znacznik funkcji wygnania od pustej ceny lub dopłaty; NIE wycisza całego
+panelu zawierającego ten znacznik. Etykiety panelu bierze z pełnych
+`windowRecords.actions`, niezależnie od --quiet i skrótów „pokrycia UI”.
+Linie pozostają źródłem dla transkryptów archiwalnych i opisów ręki/modali.
+Strażnicy m347 obejmują obie strefy, prawdziwy widok/tytuł i wykonaną komendę,
+realnie puste ceny oraz mieszany panel poprawnych/błędnych etykiet.
+
 #### Detektor nie może zależeć od poziomu logowania (M99)
 
 Weryfikacja mutacyjna wykryła dwa detektory czytające **wyłącznie linie
