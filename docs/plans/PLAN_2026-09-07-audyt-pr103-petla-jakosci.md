@@ -89,3 +89,8 @@ ETB), F5 (SBA w środku czaru), F6 (próżny strażnik bramki manifestu),
 F7 (HTTP 429 kasuje rulingi). 19 prób mutacyjnych; 17 złych wariantów
 zatrzymanych, 1 przeoczony przez C i 1 poprawka odrzucona przez błędny test.
 Każdy F będzie osobnym zielonym przyrostem (E2). Baseline bot: 10/10.
+
+E2/M339: F1 naprawione u producenta numeru — numeracja jawnych wejść na
+całym stole, bez cardId/kontrolera. 4 RED→GREEN, test różnicowy całego FoW,
+etykiety i ciągłość po obrocie/przejęciu; rodzina 20/20. Bramka pełna przed
+commitem; pozostałe ustalenia realizowane oddzielnie.

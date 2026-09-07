@@ -1917,7 +1917,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // M319/NA1: stały numer kopii („Nazwa (Cloak N)" w celach/kaflach),
       // żeby kilka jednakowych zakrytych dało się rozpoznać — jak tokeny-kopie
       // (M172/D). Znika przy uncover (turn_cloak_face_up).
-      copyNumber: nextFaceDownCopyNumber(state, controllerId, topObj.cardId),
+      copyNumber: nextFaceDownCopyNumber(state),
     });
     state.objects.set(battleId, cloaked);
     // Veiled Ascension (MKC): „Face-down creatures you control enter with a
