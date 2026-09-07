@@ -86,6 +86,14 @@ export function applyRulings(snapshot, rulings, url, date = new Date().toISOStri
 // Uruchomienie bezpośrednie (import dla testów NIE wolno networkować — wzorzec
 // `tools/family-audit.mjs`).
 if (process.argv[1] && process.argv[1].endsWith('fetch-card-rulings.mjs')) {
+  // M328 (audyt PR #102, F5): to polecenie NIGDY nie działało — blok
+  // bezpośredniego uruchomienia czytał `files`, którego nikt nie zadeklarował,
+  // więc każdy przebieg (także z `--only=` czy `--dry-run`) wywalał się
+  // `ReferenceError`em, zanim zdążył cokolwiek pobrać ani wypisać. Dokumentacja
+  // narzędzia (ADR 0028 §3) obiecuje workflow „ściągnij rulingi wskazanej
+  // karty", więc naprawa idzie w punkcie zbierającym, nie w obejściu;
+  // hermetyczny test CLI: test/m328-narzedzie-rulingi.test.js.
+  const files = listSnapshots(CARDS_DIR);
 
   if (!files.length) {
     console.error(`Brak snapshotów w ${CARDS_DIR} (albo --only nie trafił w żaden plik).`);
