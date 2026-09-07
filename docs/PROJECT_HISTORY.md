@@ -8987,3 +8987,52 @@ detektorów (w tym dwie na chwilowej talii `audyt-cloak` — patrz
   marker ↔ nagłówek w archiwum) i liczebność (`wyniesione >= 50`) zielone.
   M203/3 przy okazji pokazał, że nazwy talii w `TESTER_STOLU.md` są skanowane:
   chwilowa talia audytowa nie może być w nich wymieniona z nazwy.
+
+### Kontynuacja (arena/01a078a2, 2026-09-07 popołudnie): M333–M335, pętla jakości na otwartym PR #103
+
+Ta sama sesja po zapisaniu `docs/setup/HANDOFF_2026-09-07a.md` — ciągnięcie
+tematu rodzinnego (zakrywanie) aż do wyczerpania, plus celowa partia testerowa.
+Start: `npm test` 4608/4608; koniec: **4618/4618**, build 59 modułów /
+**3365,9 kB**, `node --test test/bot-benchmark.test.js` 10/10,
+`node tools/benchmark.mjs --quick` heuristic **84,8% (570/672)**, aggro 26,5%
+(89/336), random 3,9% (13/336) — zero dryfu.
+
+- **M333 (`12130ce`, F6c):** przyczyna zakrycia dla WSZYSTKICH mechanik
+  (manifest, morph — nie tylko cloak), jedna tabela etykiet w
+  `src/table/session.js` (fallback usunięty z `render.js`), zdejmowanie
+  `faceDownCause` przy obrocie manifestu i zerowanie drukowanego wardu pod
+  zakryciem (CR 701.40a). Dwa z tych trzech wyszły z pisania strażnika, nie z
+  czytania kodu. Strażnik `test/m333-przyczyna-manifest.test.js` (6).
+- **M334 (`601615e`, F11 + F10):** `turn_manifest_face_up` u bota było
+  wyceniane przez `default: finish(0)` — remis z pasem, a przy stabilnym
+  sortowaniu i doklejaniu oferty obrotu PRZED pasem bot płacił zawsze
+  (sonda: `bot: ["turn_manifest_face_up"]` dla Goblin Piker 2/1). Naprawione
+  JEDNYM wspólnym `case` dla rodziny i podatkiem wardu liczonym ze stanu
+  (`max(0, object.ward - karta.ward)`, waga 1.5 = dzisiejsze −3 u cloaka,
+  zero dryfu). Przy okazji: `faceDownOriginal` manifestu nie niósł P/T, więc
+  obrót zwracał 2/2 zamiast 6/5 (CR 701.40b; ten sam błąd co u cloaka w M315).
+  Strażnik `test/m334-bot-manifest-odsloniecie.test.js` (6; trzy mutacje
+  trafione w zamierzone asercje).
+- **M335 (`a9112a2`, F12):** partia wisi po `Manifest Dread` z jedną kartą w
+  bibliotece — gałąź bez decyzji zwracała prawdę, więc `pendingSpell`
+  czekał na `resolve_*`, które nigdy nie powstało; objaw na stole: „Błąd
+  wewnętrzny stołu: Pending spell odwołuje się do nieistniejącego czaru
+  spell-39" + `[STOP] brak akcji w kroku 50`. Znalezione wyłącznie przez
+  celowaną partię `tools/table-tester` (seed 4001, transkrypt
+  `tools/table-tester/audyt-pr103/m334-manifest-g1.txt`) — po raz kolejny:
+  4614 testów jednostkowych nie widziało stanu „jedna karta na wierzchu".
+  Naprawa `return;`, bez maskowania w pasie. Strażnik
+  `test/m335-manifest-bez-wybory.test.js` (4).
+- **Korekta własnego zgłoszenia:** w komunikacie M335 napisałem „żadna talia w
+  `decks/` nie ma Manifest Dread" — grep zrobiony po commicie pokazał
+  `decks/worek-mroczny.txt:12`. Wniosek (dlaczego zero dryfu) jest inny i
+  zmierzony porządnie: `benchmarkDecks()` odrzuca talie `worek*`, a `BENCH_DECKS`
+  to pierwszych 6 talii. Zapisane w §7 audytu PR #102, żeby następna sesja nie
+  powtarzała obiecanego „zbadać worek-mroczny".
+- **Dokumentacja i lekcje:** §7 w `docs/audits/AUDYT_PR102_2026-09-06.md`,
+  §„Stan przedłużenia sesji" w `docs/setup/HANDOFF_2026-09-07a.md`, rozbudowana
+  sekcja „Partia celowana pod mechanikę" w `docs/setup/TESTER_STOLU.md` (krótka
+  talia = test brzegów biblioteki + `npm run build` po sprzątaniu), **L138**
+  (zwrot prawdy = blokada; testuj „gra idzie dalej") i **L139** (kotwica
+  jednoznaczna + `node --check` przed commitem) w `docs/LESSONS.md`; budżet
+  lektury startowej zielony.

@@ -1594,3 +1594,97 @@ z `cloakReady`, więc dwa clokowane lądy miały TEN SAM numer — a ruling WotC
 co innego, w pięciu kopiach kodu; testy jednostkowe etykiet budowały widoki
 RĘCZNIE (ficzki oddawały stary kształt), a partie na zwykłych taliach nigdy nie
 doczekały się cloaka (1 kopia w jednej talii).
+
+## L138 (2026-09-07) — przypadek: efekt zgłosił blokadę, której nie było — partia wisi na `pendingSpell.effects: []`
+
+**Przypadek:** Żywy Tester na talii celowanej pod manifest (20 kart, seed 4001,
+transkrypt `tools/table-tester/audyt-pr103/m334-manifest-g1.txt`) zgłosił trzy
+rzeczy naraz: `[STOP] brak akcji w kroku 50`, `[ui] Jedyna opcja to „Poddaj
+partię"` oraz `[rules] Dalej (pass) → Błąd wewnętrzny stołu: Pending spell
+odwołuje się do nieistniejącego czaru spell-39`. Żaden z 4614 testów jednostkowych
+tego nie widział, bo wszystkie testy manifestu zakładały co najmniej dwie karty w
+bibliotece.
+
+**Przyczyna:** w `src/engine/effects.js` gałąź `manifest_dread` dla
+`topIds.length === 1` manifestowała jedyną kartę (słusznie — CR 701.62a
+“as many as possible”, nie ma z czego wybierać) i kończyła się `return true`.
+Truthiness zwrotu jest tu jednak SYGNAŁEM KONTRAKTOWYM: `src/engine/spells.js`
+robí `const blocked = applyEffect(...); if (blocked) { state.pendingSpell =
+{ stackId, effects: effects.slice(i+1) }; return ... }`. Czar zostawał więc na
+stosie z PUSTĄ listą pozostałych efektów, a jedynym mechanizmem zdejmującym
+`pendingSpell` jest obsługa `resolve_*` — której nikt nie wygenerował, bo nie
+było o co pytać gracza. Objaw przesuwał się w czasie: najpierw nic (gra
+„normalnie" kończy turę), potem każdy pas przechodził przez kontrolę
+`pendingSpell` i uderzał w nieistniejący `spell-39`.
+
+**Rozstrzygnięcie:** `return;` — ujednolicone z gałęzią `topIds.length === 0`,
+która robiła to poprawnie. Sonda przed/po (ten sam stan, jedna karta w
+bibliotece): `pendingSpell: {"stackId":"spell-0","effects":[]} | stack: 1` →
+`pendingSpell: null | stack: 0 | faceDown: 1`. Strażnik D liczy w gałęzi
+`return true` i `state.pendingManifestDread = {` — asymetria liczb jest
+czerwona, więc kolejna taka ścieżka nie przejdzie niezauważona.
+
+**Lekcja o testach:** asercja „obiekt powstał" nie distinguishes rozstrzygnięty
+czar od wiszącego. Dopisanie w teście B pętli „6 pasów z rzędu przyjętych +
+`status === 'active'` + stos pusty" jest tanie i łapie WSZYSTKIE warianty tej
+klasy (zawieszony stos, zgubiony priorytet, nieskończony krok).
+
+## L139 (2026-09-07) — przypadek: cięcie tekstu kotwicą, która była w moim własnym komentarzu
+
+**Przypadek:** chciałem zrobić commit M334 bez naprawy M335 (ten sam plik, dwie
+sprawki — split przez tymczasowe cofnięcie jednej). Python miał znaleźć
+`return;` i zamienić je na `return true;`. Znalazł pierwsze wystąpienie po
+kotwicy komentarza — a komentarz PRZED CHWILĄ wstawiony przeze mnie zawierał
+zdanie „(`return;` — brak decyzji = brak blokady), więc ujednolicone". Cięcie
+poszło w środku komentarza: plik zachował obie wersje linii (`return true;` i
+`return;`), został fragment `) — ujednolicone.` poza komentarzem i składnia
+siadła.
+
+**Jak to wyglądało w testach:** `node --test` zwrócił cztery wpisy
+`not ok - test/batch50-kart.test.js` itd. — nazwy PLIKÓW, bez szczegółów, bo
+błąd parsowania modulu to nie asercja. Łatwo zrzucić winę na zmianę logiki.
+
+**Co poszło źle proceduralnie:** `git add` + `git commit` BEZ `node --check` i
+bez żadnej bramki — pełne `npm test` planowałem „zaraz po". Uratowało tylko to,
+że commit był jeszcze lokalny: `git commit --amend -C HEAD` (bez force pusha,
+ADR 0020 D — reguła „push natychmiast" zadziałała tu w drugą stronę: im wcześniej
+push, tym mniej możliwości poprawki bez rewizji historii).
+
+**Zasada na przyszłość:** każda operacja tekstowa na kodzie = (1) assert
+jednoznaczności klucza, (2) `node --check` zmienionych plików, (3) BRAMKA
+składni przed `git add`, (4) po commitcie `git show HEAD:<plik> | node --check
+/dev/stdin`, jeśli commit był budowany skryptem.
+
+## L124 (2026-09-02) — przypadek: grzechotka pękła nie od wagi, tylko od innego rozdania
+
+**Przypadek:** M291 (tura 11). Po dodaniu jednej karty do katalogu zmienił się skład
+`decks/ravnica.txt` i zazęły dwie bramki jakości: sufit `block` w
+`test/audyt-bot-walka-remisy.test.js` (4 → 5) oraz zamrożony golden-master bota. Ten
+sam audyt odpalony na `f6a5459` dał 4/4/130, a na drzewie z SAMĄ zmianą wagową M290
+(też 4/4/130) — czyli waga nie zepsuła żadnej decyzji, a dokładkę remisu zrobiło inne
+rozdanie talii. Bez tego pomiaru jedynym dostępnym komunikatem byłoby „podnieś próg".
+
+Ten sam rygor dotyczy fixture'ów: `--write` puszcza się na GOTOWYM drzewie — u nas
+pierwszy zapis zamroził ślad bota bez wpisu `MANA_COSTS` nowej karty i test znowu
+świecił, choć z kodem nie było już nic nie tak. Komentarz z tabelką atrybucji przy
+suficie `block` w `test/audyt-bot-walka-remisy.test.js` zniknął razem z Revetą —
+patrz tabela atrybucji i kolejność wejścia karty w
+`docs/audits/AUDYT_PR92_2026-09-02.md` §15.
+
+## L130 (2026-09-03) — przypadek: „trigger bez opisu" i pułapki tamtej sesji
+
+**Przypadek:** dwa zgłoszenia właściciela (uwagi C/D) miały JEDEN root cause: bramki
+wyniku komendy brały `state.events.slice(-1)` albo zwracały listę pobraną PRZED
+efektem. Efekt dokładający WIĘCEJ niż jedno zdarzenie (infect: licznik + opis,
+renown, poświęcenie Springblooma: 3 zdarzenia) tracił część przyrostu — gracz widział
+skutek na stole, ale log i Rozgrywka milczały. Audyt pozostałych bramek `slice(-1)`:
+wszystkie jednocentryczne, więc bezpieczne.
+
+**Pułapki tamtej sesji (dla odtwarzania przebiegu, nie reguła):** (1) testy harnessa
+sesyjnego potrzebują `gameObjectDataOf` przy wstrzykiwaniu obiektów i widzą ukryte
+karty przeciwnika (liczniki ręki); (2) wycena bota per-attacker paraliżuje przy
+samotnym blokerze odstraszającym (deathtouch) — klasa wymaga modelowania gang-ataków,
+nie należy jej łatać w pętli per-attacker (zmierzone: −2 partie benchmarku);
+(3) benchmark szybki jest deterministyczny — każda różnica jest prawdziwa; (4) po
+re-konie workspace `git reset --soft FETCH_HEAD` odtwarza referencje z wypchniętej
+gałęzi bez dotykania drzewa roboczego.

@@ -16,10 +16,6 @@ Rejestr podaje REGUŁĘ i STRAŻNIKA; pełna narracja (Objaw/Przyczyna) wpisów
 skondensowanych w PR #93 mieszka w `docs/LESSONS_PRZYPADKI.md` pod tym
 samym numerem — szukać grepem, nie czytać na starcie.
 
-Rejestr podaje REGUŁĘ i STRAŻNIKA; pełna narracja (Objaw/Przyczyna) wpisów
-skondensowanych w PR #93 mieszka w `docs/LESSONS_PRZYPADKI.md` pod tym
-samym numerem — szukać grepem, nie czytać na starcie.
-
 Lekcja idzie tu, gdy jest powtarzalna, ale NIE jest decyzją architektoniczną
 (te → ADR). Wymusza zmianę sposobu pracy? Dopisz ją też do `AGENTS.md`.
 Ustala granicę komponentów? ADR + tu odsyłacz. Lekcji nie kasujemy:
@@ -43,7 +39,7 @@ odsyłacz musi mieć adresata, a wpis — regułę lub strażnika).
 
 Wpis niesie FAKTY (nazwy plików, testów, kart, numery CR) i regułę — nie
 narrację (ta zostaje w `docs/audits/`). Rejestr to największa pozycja budżetu lektury
-startowej (~113 kB z ~240 kB po kondensacji PR #93) (`test/dokumentacja-budzet-lektury.test.js`, 100k tokenów), więc nowy
+startowej (`test/dokumentacja-budzet-lektury.test.js`, próg 100k), więc nowy
 wpis płaci się skróceniem innego — progu NIE podnosimy. L15–L19 są datowane po
 numerze kamienia milowego (M102/M103 = 2026-08-16 wg `PROJECT_HISTORY.md`):
 oryginalne daty zaginęły przy migracji M208.
@@ -1977,13 +1973,6 @@ pierwszą rzeczą do odtworzenia (treść testu jest w commicie `0434199`).
 
 ## L124 (2026-09-02) — Zmianę w grzechotce przypisz trzema drzewami, zanim podniesiesz próg
 
-**Przypadek:** M291 (tura 11). Po dodaniu jednej karty do katalogu zmienił się skład
-`decks/ravnica.txt` i zazęły dwie bramki jakości: sufit `block` w
-`test/audyt-bot-walka-remisy.test.js` (4 → 5) oraz zamrożony golden-master bota. Ten
-sam audyt odpalony na `f6a5459` dał 4/4/130, a na drzewie z SAMĄ zmianą wagową M290
-(też 4/4/130) — czyli waga nie zepsuła żadnej decyzji, a dokładkę remisu zrobiło inne
-rozdanie talii. Bez tego pomiaru jedynym dostępnym komunikatem byłoby „podnieś próg”.
-
 **Reguła:** gdy po zmianie wagowej pęka grzechotka, mierz trzy drzewa (stan zeszły /
 tylko zmiana wagowa / zmiana wagowa + treść) dokładnie tym samym wywołaniem, którego
 używa test. Atrybucja decyduje, czy podnosimy sufit (i wpisujemy PRZYCZYNĘ przy
@@ -1996,6 +1985,7 @@ przedwczesnym `--write`) oraz tabela atrybucji i kolejność wejścia karty w
 `docs/audits/AUDYT_PR92_2026-09-02.md` §15. Komentarz z tabelką przy suficie `block` w
 `test/audyt-bot-walka-remisy.test.js` zniknął razem z Revertem kart — sufit znowu
 wynosi 4 — stan z `f6a5459`.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L124)
 
 
 ## L125 (2026-09-03) — Strażnik wyglądu ma mierzyć styl efektywny, nie tekst CSS
@@ -2110,26 +2100,17 @@ okien nazywają wybór, strażnik klasy po katalogu). 5 mutacji RED.
 
 ## L130 (2026-09-03) — Wynik komendy niesie CAŁY przyrost zdarzeń: przechwyć `state.events.length` PRZED efektem, dołącz `slice(before)` po nim
 
-Dwa zgłoszenia właściciela (uwagi C/D) miały JEDEN root cause: bramki
-wyniku komendy brały `state.events.slice(-1)` albo zwracały listę pobraną
-przed efektem. Efekt dokładający WIĘCEJ niż jedno zdarzenie (infect: licznik
-+ opis, renown, poświęcenie Springblooma: 3 zdarzenia) tracił część przyrostu
-— gracz widział skutek na stole, ale log i Rozgrywka milczały.
-
-Wzorzec naprawczy (combat.js ×3, bramka springbloom):
+**Reguła:**
+wynik komendy = zdarzenia od jej startu, nie „ostatnie" ani „pierwsze" (combat.js ×3, bramka springbloom).
 `const before = state.events.length;` → efekt → do wyniku
 `state.events.slice(before)`. Kontrakt: wynik komendy = zdarzenia od jej
 startu, nie „ostatnie” ani „pierwsze”. Audyt pozostałych bramek `slice(-1)`:
 wszystkie jednocentryczne — bezpieczne.
 
-Pułapki sesji: (1) testy harnessa sesyjnego potrzebują `gameObjectDataOf`
-przy wstrzykiwaniu obiektów i widzą ukryte karty przeciwnika (liczniki ręki);
-(2) wycena bota per-attacker paraliżuje przy samotnym blokerze odstraszającym
-(deathtouch) — klasa wymaga modelowania gang-ataków, nie należy jej łatać
-w pętli per-attacker (zmierzone: −2 partie benchmarku); (3) benchmark szybki
-jest deterministyczny — każda różnica jest prawdziwa; (4) po re-konie
-workspacu `git reset --soft FETCH_HEAD` odtwarza referencje z wypchniętej
-gałęzi bez dotykania drzewa roboczego.
+**Strażnik:** `test/audyt-pr92-grupowe-trygery.test.js` (przyrost liczony przez
+`state.events.length` PRZED efektem), `test/batch46-kart.test.js` (Springbloom:
+trzy zdarzenia z jednego poświęcenia).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L130)
 
 ## L131 (2026-09-05) — Decyzja bez wyceny = pierwsza oferta z listy
 
@@ -2291,3 +2272,36 @@ w tym D — skan `nameOfObject`: zero ręcznego `faceDownName`, oraz B — numer
 po jawnej przyczynie dla obu widzów).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L137)
 
+## L138 (2026-09-07) — zwrot prawdy z efektu = blokada; ścieżka bez decyzji nie może jej zgłaszać
+
+**Reguła:**
+- rozstrzygacz czyta PRAWDZIWY zwrot efektu jako „czekam na gracza" i odkłada
+  resztę listy do `state.pendingSpell`, a zdejmują go wyłącznie komendy
+  `resolve_*` → każda gałąź z `return true` musi w tym samym ruchu postawić
+  `state.pending* = {...}` (F12: `manifest_dread` przy jednej karcie w bibliotece,
+  CR 701.62a — czar wisiał na stosie z `effects: []`),
+- przy zmianie efektu sprawdza się ZWROTY, nie tylko efekty uboczne,
+- test asertuje, że gra się TOCZY (pasy przyjęte, stos pusty,
+  `status === 'active'`), nie tylko że obiekt powstał,
+- nie maskować: sprzątanie osieroconego `pendingSpell` u konsumenta (pas,
+  cleanup) ukryłoby każdy kolejny błąd tej klasy.
+
+**Strażnik:** `test/m335-manifest-bez-wybory.test.js` A–D (D: liczba
+`return true` = liczba postawionych decyzji w gałęzi).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L138)
+
+## L139 (2026-09-07) — skryptowe cięcie pliku: jednoznaczny krótki klucz, `node --check` przed `git add`
+
+**Reguła:**
+- przed wstawką `assert s.count(klucz) == 1`; klucz krótki i NIEOBECNY w tekście
+  wstawianym przed chwilą (mój `s.index("return;")` trafił w `return;` w komentarzu
+  dodanym minutę wcześniej → commit z plikiem o błędnej składni),
+- wkładka po `idx + len(klucz)` pewniejsza niż `replace(długie, długie + nowe)`:
+  długie dopasowania padają o jeden znak, a wyjątek w połowie zostawia plik
+  częściowo zmieniony,
+- po zmianie strukturalnej `node --check` KAŻDEGO zmienionego pliku PRZED
+  `git add` (objaw: wiele `not ok <plik>` bez szczegółów); póki commit lokalny,
+  ratuje `--amend` bez force pusha (ADR 0020 D).
+
+**Strażnik:** zwyczaj; składnię sprawdza import w każdym teście.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L139)

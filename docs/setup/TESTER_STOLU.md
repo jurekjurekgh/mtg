@@ -102,6 +102,16 @@ w pierwszych turach: u nas 2× Veiled Ascension + 8 Plains/4 Island, dzięki
 czemu na wierzchu biblioteki leżał LĄD — a zakryty ląd (CR 701.56a) to
 przypadek, którego testy jednostkowe nie pokrywały i który obnażył F6b.
 
+Krótka talia to przy okazji **test brzegów biblioteki** i warto ją taką zrobić:
+20-kartowa talia manifestowa (seed 4001) doprowadziła do stanu „na wierzchu
+jedna karta", w którym partia wisiała — i to znalazł F12 (M335), a nie 4618
+testów jednostkowych. Cena: przy wyczerpanej bibliotece detektory zgłaszają
+RÓWNIEŻ `[ui] Jedyna opcja to „Poddaj partię"` i `[rules] Komenda gracza
+odrzucona przez engine` — trzeba je triażować (sprawdzić, czy tło jest
+regulowe), a nie odsiewać hurtowo. Po usunięciu pliku zrób `npm run build`:
+lista talii jest wpięta w artefakt, więc `dist/` do przebudowania nadal
+wystawia talię, której nie ma już w repo.
+
 ### Jak czytać transkrypt
 
 ```
