@@ -136,7 +136,7 @@ export const REGRESSION_CONFIG = Object.freeze({
  * ADR 0018 — profil SZYBKI, domyślny tryb CLI. Ta sama próbka co test
  * regresji (`REGRESSION_CONFIG`): wynik jest porównywalny z progiem
  * testowym, a przebieg trwa ~2–4 minuty zamiast ~40. Pełna macierz
- * (~10 000 meczów, ADR 0025) odpala się wyłącznie przez jawny `--full`
+ * (budżet 6 000 meczów, ADR 0025) odpala się wyłącznie przez jawny `--full`
  * na wyraźną komendę właściciela.
  */
 export const QUICK_CONFIG = Object.freeze({
@@ -207,8 +207,13 @@ export function defaultPairs(botNames, selfPlay) {
 // Kalibracja (2026-08-29): ~154 ms/mecz przy 18 taliach → 6 000 meczów to
 // ~13 min, 10 000 to ~25 min. Budżet jest w MECZACH (nie w minutach), bo
 // rozmiar próbki musi być deterministyczny (ADR 0005).
-const DEFAULT_BUDGET_MATCHES = 6_000;
-const DEFAULT_MIN_SEEDS_PER_MATCHUP = 4;
+// Ponowny pomiar (2026-09-07, bieg b1-final): 5 700 meczów, ~183,5 ms/mecz,
+// 17,4 min — przy 19 taliach budżet 6 000 mieści pełne pokrycie (190 par).
+// Stałe są EKSPORTOWANE i przypięte do HELP-a przez
+// `test/m338-pomoc-benchmarku-liczby.test.js` — F13: help kłamał
+// („10 000", „4 seedy", „22 talie → 6") miesiącami, bo nic go nie liczyło.
+export const DEFAULT_BUDGET_MATCHES = 6_000;
+export const DEFAULT_MIN_SEEDS_PER_MATCHUP = 4;
 
 /** Deterministyczny PRNG (mulberry32) — zero zależności, powtarzalny wynik. */
 export function mulberry32(seed) {
@@ -703,27 +708,30 @@ export function parseBenchmarkArgs(argv) {
   return options;
 }
 
-const HELP = `Harness pomiarowy B0 — macierz win-rate bot-vs-bot.
+// HELP jest eksportowany dla strażnika liczb (M338/F13) — treść bez zmian.
+export const HELP = `Harness pomiarowy B0 — macierz win-rate bot-vs-bot.
 
 Użycie: node tools/benchmark.mjs [opcje]
 
 Tryby (ADR 0018):
-  --quick            profil SZYBKI — DOMYŚLNY: 4 seedy, pary
+  --quick            profil SZYBKI — DOMYŚLNY: 8 seedów, pary
                      heuristic:random i heuristic:aggro, ~2–4 min.
                      Ta sama próbka, którą liczy test regresji.
   --full             MACIERZ PEŁNA (ADR 0025): wszystkie pary botów,
                      wszystkie talie, ale pary talii PRÓBKOWANE do budżetu
-                     ~10 000 meczów (~10 min) zamiast wszystkich kombinacji
-                     (dziś 253 pary × 50 seedów = 75 900 meczów, przy 45
-                     taliach ~300 tys.). Wyłącznie na wyraźną komendę
+                     6 000 meczów (zmierzone 2026-09-07: 5 700 meczów,
+                     ~17 min) zamiast wszystkich kombinacji (przy 19 taliach
+                     to 190 par × 50 seedów × 6 układów = 57 000 meczów;
+                     w 2026-08, przy 22 plikach, straszak brzmiał 75 900).
+                     Wyłącznie na wyraźną komendę
                      właściciela — agent nie odpala jej „przy okazji".
 
 Opcje:
   --seeds N          liczba seedów na pojedynek; z budżetu (szybki: 8,
-                     pełna: wyliczana — 22 talie → 6). Jawna wartość
+                     pełna: wyliczana — dziś 19 talii → 5). Jawna wartość
                      przesuwa środek ciężkości (więcej seedów = mniej par
                      talii), ale NIE powiększa macierzy.
-  --budget N         budżet meczów dla pełnej macierzy (domyślnie 10 000)
+  --budget N         budżet meczów dla pełnej macierzy (domyślnie 6 000)
   --min-seeds N      minimalna liczba seedów na pojedynek (domyślnie 4)
   --seed-base N      pierwszy seed próbki (szybki: 2026, pełny: 1000)
   --bots a,b,c       boty do macierzy (domyślnie: aggro,heuristic,random)
@@ -733,7 +741,7 @@ Opcje:
   --max-commands N   limit komend na mecz (domyślnie 8000)
   --progress N       loguj postęp co N meczów (pełna: 500, szybki: 100; 0 = cisza)
   --stall-ms N       watchdog zacinki: przerwij mecz, który trwa dłużej niż
-                     N ms (domyślnie 15000; 0 = bez watchdoga)
+                     N ms (pełna macierz: 15000; szybka: 0 = bez watchdoga)
   --json plik        zapisz pełny wynik JSON do pliku
   --help             ta pomoc
 
