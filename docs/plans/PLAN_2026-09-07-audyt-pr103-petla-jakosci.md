@@ -115,3 +115,8 @@ E2/M343: F5 — jedna bramka SBA dla rdzenia i usuwania tokenów; obowiązuje
 przez całe `pendingSpell`, także pusty ogon. 5 RED→GREEN, 3 mutacje osobnych
 torów i pustego ogona; rodzina + fixture 21/21, bez zapisu fixture.
 M342 wypchnięte `437cf27` po 4656/4656 + build.
+
+E2/M344: F6 — naprawiony sam strażnik m337/C: realny manifest, własne/cudze
+scry, zakaz i powrót obrotu. Mutacja bramki daje teraz RED w C (dawniej GREEN),
+cały plik 6/6. M343 wypchnięty `a659024` po 4661/4661 + build;
+quick 672 mecze: 570/672 = 84,8%, zero dryfu, bez zmiany progów/fixture.
