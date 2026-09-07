@@ -1233,6 +1233,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
     return pool + fromLands;
   };
+  /**
+   * E6/A1 (zgłoszenie właściciela, Moonscarred Werewolf): kandydat na
+   * ODBLOKOWANIE many liczy się tylko, gdy jest RZUTOWALNY W TYM KROKU —
+   * mana z tapu wyparuje na końcu bieżącego kroku (CR 500.4), więc tap w
+   * cudzym upkeepie pod sorcery/stwora (nielegalne poza własną główną,
+   * CR 307.1/117.1a) odblokowuje nic. Instant rzucisz w każdym kroku,
+   * gdy masz priorytet (CR 307.5). Wspólna lista dla M167/D (early-return)
+   * i M128 (unlocksSomething) — jedno źródło prawdy (L28/L41), deskryptory
+   * kind/types (ADR 0002).
+   */
+  const manaUnlockCandidates = (view) => (view.zones.hand ?? []).filter((o) => {
+    if (!o || o.kind === 'land' || (o.manaCost ?? 0) <= 0) return false;
+    if (o.kind === 'instant' || (o.types ?? []).includes('Instant')) return true;
+    // Kroki główne silnika nazywają się main1/main2 (turn.js; „main" to
+    // alias skoku) — akceptujemy oba plus alias dla widoków syntetycznych.
+    const step = view.turn.step;
+    return myTurn(view) && (step === 'main1' || step === 'main2' || step === 'main');
+  });
   const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
   /**
    * M135 — CZY TĘ KARTĘ CHCEMY DOBRAĆ? Wspólna wycena dla wszystkich decyzji
@@ -3854,7 +3872,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // JEDYNYM efektem zdolności.
         const producesManaOnly = effects.length > 0 && effects.every((e) => e?.type === 'add_mana');
         if (producesManaOnly) {
-          const hasPlayableInHand = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
+          // E6/A1: „zagrawalne" liczone po TIMINGU (manaUnlockCandidates) —
+          // sorcery w ręce nie jest zagrawalne w cudzym upkeepie, więc tu
+          // działa ta sama kara co przy pustej ręce.
+          const hasPlayableInHand = manaUnlockCandidates(view).length > 0;
           if (!hasPlayableInHand) return finish(taps || tapsCreature ? -30 : -5);
         }
         // M106/Z8 (audyt stołu, CR 608.2b): jeżeli moja zdolność Z TEGO
@@ -4479,7 +4500,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Dodatkowa mana (Holdout Settlement, Apprentice Wizard, Treasure):
             // cenna tylko, gdy jest co zagrać. Liczy się BILANS: produkcja
             // minus koszt many zdolności (Wizard: 3 − 1 = +2).
-            const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
+            const hasPlayable = manaUnlockCandidates(view).length > 0;
             // M155 (audyt żywym testerem, Pristine Talisman): zdolność many
             // z riderem gain_life — tap NIGDY nie jest zmarnowany (daje
             // życie), więc kara M128 („tapowanie na zapas") nie ma sensu.
@@ -4510,10 +4531,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const availableAfter = availableNow + net;
             // Koszt karty czytamy z widoku (manaCost); pomijamy lądy (nie są
             // czarami) i karty, których i tak nie stać nas po aktywacji.
-            const unlocksSomething = view.zones.hand.some((o) => {
-              if (o.kind === 'land') return false;
+            // E6/A1: kandydaci po TIMINGU rzucania (manaUnlockCandidates) —
+            // rachunek progu (M128) bez zmian, ale sorcery/stwór w cudzym
+            // kroku już go nie „odblokowuje" (mana wyparuje, CR 500.4).
+            const unlocksSomething = manaUnlockCandidates(view).some((o) => {
               const cost = o.manaCost ?? 0;
-              if (cost <= 0) return false;
               return cost > availableNow && cost <= availableAfter;
             });
             // Wartość wyłącznie za realne odblokowanie zagrania.
