@@ -16,7 +16,7 @@ import { describeGameEvent } from '../src/table/session.js';
  *
  * Ward {N}: „Whenever this permanent becomes the target of a spell or
  * ability an opponent controls, counter that spell or ability unless
- * that player pays {N}." Źródłem w katalogu jest CLOAK (CR 702.75 —
+ * that player pays {N}." Źródłem w katalogu jest CLOAK (CR 701.56 —
  * Veiled Ascension): zakryty permanent to 2/2 z ward {2}.
  *
  * Model silnika: ward jako trigger kolejkowany NAD czarem celującym
@@ -66,7 +66,7 @@ function cloakedCreature(state, ownerId = 'p1') {
 
 const stackObjects = (state) => state.zones.stack.map((id) => state.objects.get(id));
 
-test('M258/W1: cloak tworzy 2/2 z ward {2} (CR 702.75)', () => {
+test('M258/W1: cloak tworzy 2/2 z ward {2} (CR 701.56a)', () => {
   const state = game();
   const cloaked = cloakedCreature(state, 'p1');
   assert.ok(cloaked, 'zakryty permanent powstał');

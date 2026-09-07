@@ -13,7 +13,7 @@ import { renderTableView } from '../src/table/render.js';
  * M315 (zgłoszenie właściciela — Veiled Ascension, „albo karta jest w 100%
  * zgodna z CR i Rulings albo jest nieobsługiwana"):
  *
- * A1. Cloakowane stwory mają z automatu ward {2} (CR 702.75) — badge kafla
+ * A1. Cloakowane stwory mają z automatu ward {2} (CR 701.56a) — badge kafla
  *     musi to pokazywać TOGETHER z efektami nadanymi zakrytym (Veiled
  *     Ascension: „face-down creatures enter with a flying counter" — licznik
  *     flying jest JAWNY, CR 122.1b). Dotąd kafel gubił Latanie (hardkod
@@ -21,7 +21,7 @@ import { renderTableView } from '../src/table/render.js';
  * A2. Cloakowany permanent można obrócić twarzą do góry „any time you have
  *     priority" — SPECJALNA AKCJA, bez stosu, niereagowalna (ruling WotC
  *     2024-02-02); tylko gdy pod zakryciem karta STWORA; koszt = koszt many
- *     karty; po obrocie traci ward {2} (CR 702.75c). Dotąd brak komendy w
+ *     karty; po obrocie traci ward {2} (CR 701.56b). Dotąd brak komendy w
  *     ogóle — odsłonięcie było niemożliwe.
  */
 
@@ -174,7 +174,7 @@ test('M315/A2: cloakowany (karta stwora) — oferta turn_cloak_face_up w prioryt
   assert.ok(cmd, `brak oferty odsłonięcia (RED): ${view.legalCommands.map((c) => c.type).join(',')}`);
 });
 
-test('M315/A2: uncover kosztuje koszt many KARTY, przywraca cechy i zdejmuje ward (CR 702.75c)', () => {
+test('M315/A2: uncover kosztuje koszt many KARTY, przywraca cechy i zdejmuje ward (CR 701.56b)', () => {
   const state = game('p1');
   const cloaked = cloakedFrom(state, 'goblin-piker');
   addMana(state, 'p1', 5, { colors: ['R'] });
@@ -190,7 +190,7 @@ test('M315/A2: uncover kosztuje koszt many KARTY, przywraca cechy i zdejmuje war
   assert.equal(flipped.manaCost, 2, 'koszt many karty przywrócony (nie 0 zakrycia)');
   assert.ok((flipped.colors ?? []).includes('R'), 'kolory karty przywrócone');
   assert.deepEqual(flipped.keywords ?? [], [], 'keywordy z karty (Piker ich nie ma) — nie zakrycia');
-  assert.equal(flipped.ward ?? null, null, 'po uncover cloak TRACI ward {2} (CR 702.75c)');
+  assert.equal(flipped.ward ?? null, null, 'po uncover cloak TRACI ward {2} (CR 701.56b)');
   assert.ok(!flipped.cloakReady, 'flaga zakrycia zdjęta');
   const p1 = state.players.find((p) => p.id === 'p1');
   assert.ok(p1.mana <= 3, `zapłacono koszt {2} z puli (zostało ≤3): ${p1.mana}`);
