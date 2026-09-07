@@ -53,7 +53,7 @@ do weryfikacji, nie poleceniem ponownego liczenia.
   wobec stanu/DOM; każda nowa potwierdzona klasa dostaje detektor i dowód
   A/B. Usterki testera naprawiać, nie omijać. Celowane stany regułowe
   uzupełniają partie, szczególnie dla nowych bramek decyzji i kosztów.
-- [ ] **E4 — brama PR i przekazanie stanu.** `npm run test:all` + build,
+- [x] **E4 — brama PR i przekazanie stanu.** `npm run test:all` + build,
   szybki benchmark przy zmianie bota/ofert (raport z konfiguracją),
   `tools/family-audit.mjs`; żadnego `--full`. Uaktualnienie audytu, planu,
   `PROJECT_HISTORY.md`, README i nowego handoffu według pomiarów.
@@ -182,3 +182,14 @@ E3 domknięte M348: s10403 quiet/verbose po 6 wyjątków PRZED → 0 PO,
 wszystkie flagi PO 0, 126 okien, koniec 14/−5. Dwa inne profile na tym
 samym nowym artefakcie również ukończone, 0 wyjątków / 0 flag. Zapisane
 wyniki i granice dowodu w audycie; do zakończenia pozostaje wyłącznie E4.
+
+
+## Zakończenie E4 — 2026-09-07
+
+M348 wypchnięte `396431e`. Pełny pakiet **4705/4705**, fast **4695/4695**,
+build **59 / 3369,8 kB**, family-audit czysto. F1–F10 zamknięte, fixture i
+progi nietknięte; quick 84,8% (570/672), bez pełnego B0 i bez nowych kart.
+Dokumenty zamknięcia: historia, README, handoff 07e i lekcje (L141;
+L12/L13/L138). Kolejny commit jest wyłącznie dokumentacyjny; obowiązuje
+jeszcze jego bramka i kontrola CI po pushu. PR pozostaje do scalenia
+przez właściciela, nie przez agenta.

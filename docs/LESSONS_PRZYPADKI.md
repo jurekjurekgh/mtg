@@ -1741,3 +1741,33 @@ opcji, nie wycena) oraz pin M293/11 (63→62 wystąpień `fertile_thicket`:
 aktualizacja w §18.5 audytu PR92, MILESTONES i backlogu zgodnie z komentarzem
 pinu). Lekcja uboczna: equality-pin licznika to nie biurokracja — sam wskazał
 miejsce, w którym reguła przesiadła się między plikami.
+
+
+## L133 (2026-09-06) — przypadek: Detektor narzędzia nie może dublować scrapingu tekstu: strukturalny sygnał jest tańszy i nie milczy
+
+**Przypadek:** HANDOFF 2026-09-05e zgłaszał „pozorne timeouty" Żywego Testera
+(final-fantasy s41, worek-legend×theros s61, 90 s). W `run-game.mjs` koniec
+partii był wykrywany DWA RAZY przez osobne regexy od tekstu `#turn-indicator`:
+raz w gałęzi `res === 'none'` (z poprawką M209), raz w gałęzi „akcja się
+udała" — drugi nie miał odpowiednika i tam, gdzie wskaźnik nie nosił żadnego z
+wyrazów, pętla deptała do LIMITU KROKÓW, raportując zacięcie gry, która już
+się skończyła.
+
+**Przyczyna:** L34/L40 (tekst UI jest etykietą, nie kontraktem) + L41 (jedno
+źródło dla jednej reguły): sygnał stanu istniał (`state.status !== 'active'`),
+ale narzędzie wolało dopasowanie słów, a przy okazji skopiowało dopasowanie.
+Kopia dodana później (M209) nie spotkała się z oryginałem.
+
+
+## L135 (2026-09-06) — przypadek: Nowy KSZTAŁT komendy musi mieć obsługę u każdego konsumenta: silnik → kreator UI → sterownik testera
+
+**Przypadek:** Batch 45 dodał w silniku pozycję celu `optional: true` („up to one
+target", B45/9 — wariant z `null` na tej pozycji). Testy silnika zielone, ale kreator
+wielocelowy (M207, tryb pozycyjny) żądał nie-null w KAŻDYM slocie, a sterownik testera
+parsował tylko intro „zaznacz cele (N)" — partia Żywego Testera stanęła na 5 prób i
+throw; z panelu nie dało się zagrać wariantu 1-celowego, a przy zerze kandydatów na
+pozycji opcjonalnej w ogóle rzucić czaru (odchybka od Oracle w warstwie prezentacji).
+
+**Przyczyna:** rozszerzenie kształtu oferty (null w `targets[i]`) nie niesie zmiany u
+konsumentów — klasa L131 dotyczyła nowego TYPU komendy, tu nowy kształt istniejącego
+typu przeszedł przez siatkę testów, bo żadna z warstw nie miała testu na ten kształt.
