@@ -91,7 +91,7 @@ test('B: panel liczników trucizny ma hover i klik', () => {
     'podgląd pokazuje druk ze Scryfalla');
 });
 
-test('B: renderTableView PODAJE hover wszystkim trzem kartom specjalnym (drut, nie żarówka)', () => {
+test('B: renderTableView PODAJE hover wszystkim kartom specjalnym (drut, nie żarówka)', () => {
   const src = fs.readFileSync('src/table/render.js', 'utf8');
   const start = src.indexOf('export function renderTableView(');
   assert.ok(start > 0, 'funkcja renderTableView znaleziona');
@@ -99,7 +99,10 @@ test('B: renderTableView PODAJE hover wszystkim trzem kartom specjalnym (drut, n
   // tniemy po następnym `export function`, żeby nie złapać cudzych wywołań.
   const next = src.indexOf('\nexport function', start + 10);
   const body = src.slice(start, next === -1 ? src.length : next);
-  for (const call of ['renderDayNight(', 'renderUndercity(', 'renderPoisonPanel(']) {
+  // E6/B: renderSpeedPanel (M313) powstał PO Uwadze B i jako jedyny nie był
+  // pinowany — dokładnie ten scenariusz „nowy panel bez hovera”, który ten
+  // test miał uniemożliwić (L16).
+  for (const call of ['renderDayNight(', 'renderUndercity(', 'renderPoisonPanel(', 'renderSpeedPanel(']) {
     const line = body.split('\n').find((l) => l.includes(call));
     assert.ok(line, `wywołanie ${call} jest w renderTableView`);
     assert.match(line, /\bhover\b/, `${call} musi dostawać obiekt hover — bez niego `
@@ -109,7 +112,7 @@ test('B: renderTableView PODAJE hover wszystkim trzem kartom specjalnym (drut, n
 
 test('B: CSS kart specjalnych ma regułę najechania (infografika, nie tylko podgląd)', () => {
   const css = fs.readFileSync('src/table/index.html', 'utf8');
-  for (const cls of ['undercity-card', 'daynight-card', 'poison-card']) {
+  for (const cls of ['undercity-card', 'daynight-card', 'poison-card', 'speed-card']) {
     assert.match(css, new RegExp(`\\.${cls}:hover\\s+img`),
       `.${cls}:hover img musi istnieć — inaczej najechanie niczego nie rysuje na karcie`);
     assert.match(css, new RegExp(`\\.${cls}\\.clickable[^{]*\\{[^}]*cursor:\\s*pointer`),
