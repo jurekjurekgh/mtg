@@ -1983,8 +1983,8 @@ puszcza się na GOTOWYM drzewie — u nas pierwszy zapis zamroził ślad bota be
 **Strażnik:** `test/bot-scoring-snapshot.test.js` (fixture, który ta lekcja chroni przed
 przedwczesnym `--write`) oraz tabela atrybucji i kolejność wejścia karty w
 `docs/audits/AUDYT_PR92_2026-09-02.md` §15. Komentarz z tabelką przy suficie `block` w
-`test/audyt-bot-walka-remisy.test.js` zniknął razem z Revertem kart — sufit znowu
-wynosi 4 — stan z `f6a5459`.
+`test/audyt-bot-walka-remisy.test.js` (historia sufitu `block` przeniesiona
+do `docs/LESSONS_PRZYPADKI.md` L124).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L124)
 
 
@@ -2114,28 +2114,16 @@ trzy zdarzenia z jednego poświęcenia).
 
 ## L131 (2026-09-05) — Decyzja bez wyceny = pierwsza oferta z listy
 
-**Przypadek:** `bot-tie-audit` pokazał 50+ remisów przy wyborach `resolve_*` —
-nowe typy (`resolve_exploit_choice`, `resolve_opponent_target`,
-`resolve_color_choice`) padały do `default: return finish(0)` w `scoreCommand`,
-więc KAŻDY wariant dostawał 0 pkt i stabilny sort wybierał PIERWSZĄ ofertę
-(przy Exploit bot poświęcał najsilniejszego stwora, przy Cuombajj Witches
-obracał 1 obrażenie w siebie). Przyczyna (klasy L50/L34/L40/L117): nowy typ
-decyzji dodany w silniku nie dostał swojego `case` w kontrolerze, a kolejność
-kandydatów w ofercie NIE jest posortowana po wartości — pierwsza oferta to
-często NAJGORSZA opcja.
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L131)
-
-**Reguła:** Dodając NOWY typ komendy w silniku (command family `resolve_*`),
-trzeba JEDNOCZEŚNIE: (1) dodać case w `scoreCommand` z prawidłową wyceną
-(nie zostawiać domyślnego 0); (2) dodać nazwę wariantu w `summarize()`,
-żeby ślad decyzyjny rozróżniał opcje; (3) dodać `tieProjection` dla
-audytu remisów. Test `?`. Audyt remisów (`node tools/bot-tie-audit.mjs`)
-jest strażnikiem klasy "decyzja bez wyceny": każdy nowy typ w kolumnie
-"bez-danych" to albo brak wyceny, albo brak projekcji.
+**Reguła:** dodając typ `resolve_*` w silniku: (1) `case` w `scoreCommand`
+z wyceną (nie domyślne 0), (2) nazwa wariantu w `summarize()`, (3)
+`tieProjection`; audyt remisów (`tools/bot-tie-audit.mjs`) jest strażnikiem
+klasy — kolumna „bez-danych" to brak wyceny albo projekcji.
 
 **Strażnik:** `node tools/bot-tie-audit.mjs --gate=<kind>` (exit code 0 gdy
 brak "rozróżnialnych" remisów = nie ma groźnych decyzji z różnymi danymi
 ale tym samym wynikiem).
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L131)
 
 ## L132 (2026-09-06) — Wycena oparta o STREFĘ UKRYTĄ jest inertna; audyt czytający to samo źródło tego nie zobaczy
 
@@ -2237,11 +2225,6 @@ przywracaj gitem (cofa je do indeksu, a nie do „stanu przed mutacją"):
 - scratch (wiadomości commitów, sondy, transkrypty) trzymaj w `.arena/` albo w
   gitignorowanym `tools/table-tester/**` i i tak zapisuj WNIOSKI w `docs/` —
   plik poza repozytorium nie jest dowodem,
-- odzyskiwanie historii: `git fetch origin <gałąź>` → `git reset --mixed
-  FETCH_HEAD` (ref + indeks, drzewo zostaje) → `git diff --stat` musi pokazać
-  DOKŁADNIE niecommitowany zakres tej tury → rest commitów z tych samych
-  wiadomości.
-
 
 **Strażnik:** nie da się tego sforsować jednym testem (to procedury pracy);
 ENVIRONMENT §1/§2 opisuje oba zjawiska, a `test/repo-artefakty-audytu.test.js`
@@ -2305,3 +2288,11 @@ po jawnej przyczynie dla obu widzów).
 
 **Strażnik:** zwyczaj; składnię sprawdza import w każdym teście.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L139)
+## L140 (2026-09-07) — ta sama reguła w wielu ręcznych listach = gwarancja rozjazdu; bramkuj jednym predykatem
+
+**Reguła:** ta sama reguła legalności jako kilka ręcznie enumerowanych list
+(54 warunki pasa vs ~64 bramki `resolve_*` w execute) — każda nowa decyzja
+pending rozsypie którąś kopię (M337: padł cały B0). Zostań przy JEDNYM
+predykacie ze wspólnego źródła + strażnik źródła przeciw czwartej kopii.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L140)
+

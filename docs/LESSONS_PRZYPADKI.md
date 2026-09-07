@@ -1499,6 +1499,15 @@ odpowiadającego mu `case` w kontrolerze — a kolejność kandydatów w ofercie
 NIE JEST posortowana po wartości (naturalna: gracz→stworzy wroga→itp.),
 więc pierwsza oferta to często NAJGORSZA opcja z perspektywy botu.
 
+**Przykłady z rejestru (wyniesione 2026-09-07):** przy Exploit bot poświęcał
+najsilniejszego stwora, przy Cuombajj Witches obracał 1 obrażenie w siebie —
+oba padały właśnie na „pierwsza oferta = domyślny 0 pkt".
+**Dopisek M336 (F14):** komentarz silnika przy ofertach `subsets()` twierdził
+„pierwsza oferta = WSZYSTKO", a realnie pierwszy jest wariant PUSTY — proliferate
+bez wyceny bot brał zawsze jako pustkę (8× w meczach, w tym przepuszczona
+wygrana trucizną). Komentarz przepisany; dopasowanie kodu do dawniejszego
+zdania dałoby botom samobójstwo.
+
 ## L128 (2026-09-03) — przypadek: Mechanika z dwiema ścieżkami rzutu: reguła ma jedno miejsce prawdy, a skan musi PORÓWNYWAĆ ścieżki, nie tylko liczyć oferty
 
 **Przypadek:** skan poboczny audytu PR #93 przejechał każdą kartę katalogu
@@ -1560,6 +1569,12 @@ projekcja miała właściwe źródło (`pendingManifestDread.cards`), rozjazd wy
 jako GROZA: metryka działa, tylko nie może patrzeć w to samo miejsce co kod.
 
 ## L136 (2026-09-07) — przypadek: `git checkout <plik>` kasuje NIEZAKOMMITOWANE poprawki w tym pliku; scratch piaskownicy znika między turami
+
+**Przepis odzyskiwania historii (wyniesiony 2026-09-07):** `git fetch origin
+<gałąź>` → `git reset --mixed FETCH_HEAD` (ref + indeks, drzewo zostaje) →
+`git diff --stat` musi pokazać DOKŁADNIE niecommitowany zakres tej tury →
+rest commitów z tych samych wiadomości (pliki `.gitignore`-owane i scratch
+poza repo trzeba odtworzyć z czatu — git ich nie niesie).
 
 **Przypadek:** sesja 01a078a2 (audyt PR #102). Dwa niezależne ukłucia. (1) Żeby
 sprawdzić, czy test CLI narzędzia łapie mutację, przywróciłem plik narzędzia
@@ -1657,6 +1672,10 @@ składni przed `git add`, (4) po commitcie `git show HEAD:<plik> | node --check
 
 ## L124 (2026-09-02) — przypadek: grzechotka pękła nie od wagi, tylko od innego rozdania
 
+**Historia sufitu `block` (wyniesiona 2026-09-07):** komentarz z tabelką
+atrybucji przy suficie `block` w `test/audyt-bot-walka-remisy.test.js`
+zniknął razem z Revertem kart — sufit znowu wynosi 4 — stan z `f6a5459`.
+
 **Przypadek:** M291 (tura 11). Po dodaniu jednej karty do katalogu zmienił się skład
 `decks/ravnica.txt` i zazęły dwie bramki jakości: sufit `block` w
 `test/audyt-bot-walka-remisy.test.js` (4 → 5) oraz zamrożony golden-master bota. Ten
@@ -1688,3 +1707,37 @@ nie należy jej łatać w pętli per-attacker (zmierzone: −2 partie benchmarku
 (3) benchmark szybki jest deterministyczny — każda różnica jest prawdziwa; (4) po
 re-konie workspace `git reset --soft FETCH_HEAD` odtwarza referencje z wypchniętej
 gałęzi bez dotykania drzewa roboczego.
+
+## L140 (2026-09-07) — przypadek: pełny B0 padł na ofercie legalnej tylko dla jednej z trzech kopii reguły
+
+**Przypadek:** M337. `--full` (5700 meczów) urwał się na 3200:
+`command_rejected trigger_target_unresolved` — „Bot wybrał nielegalną komendę"
+(aggro mirrodin-wu vs random ravnica, seed 1001, tura 22 `declare_blockers`).
+Repro pojedynczego starcia: oferta `turn_cloak_face_up` przy otwartym
+`pendingTriggerTargets`. Pętle akcji opcjonalnych (obrót maską/disguise —
+CR 701.40b/701.56b, specjalne, bez stosu) pytały TYLKO o `hasPriority`; o to,
+czy czyjaś decyzja wisi, pytał wyłącznie pass — ręczną listą ~54 warunków.
+Trzecia to była kopia tej samej reguły (Batch 47 łatał tak samo `pass` przy
+`pendingManifestDread`; L41/L90). execute pilnował jej konsekwentnie, 64
+bramkami `if (cmd.type !== 'resolve_*') reject` — rozjechała się warstwa
+OFEROWANIA.
+
+**Naprawa (u źródła, nie listą):** jeden predykat
+`optionalActionsOpen = priorityPlayerId === playerId && firstDecisionOwner == null`
+w obu pętlach face-up ORAZ w bramce pasa (ręczną listę skasować). Równość
+reguł wykazana na liczbach: `firstPendingDecision` ogarnia 64 pola (nadzbiór
+dawnej listy: 10 pól „brakujących" ma odpowiedniki w derivatach
+`pendingBackup`/`triggerTargetsBlock`/`roomTargetBlocks`/`deliriumBlocks`/
+`mentorBlocks` + `pendingMulligans`, więc żadna legalna oferta nie znika), a w
+execute jest DOKŁADNIE 64 bramek resolve-only → 1:1. Strażnik źródła (test E):
+dokładnie 2 `if (optionalActionsOpen) {`, zero `if (hasPriority) {`, zero
+`!state.pending*` w bramce pasa — czwartej kopii nie będzie.
+
+**Rykoszety, każdy z atrybucją:** golden-master ruszyła JEDNA partia
+(`ravnica|innistrad-wu@1000`, dwa wpisy śladu DEC #238/#239 — znika
+nielegalna oferta face-up; decyzje i scoreSum bez zmian — zmienił się zbiór
+opcji, nie wycena) oraz pin M293/11 (63→62 wystąpień `fertile_thicket`:
+`!state.pendingFertileThicket` wypadł z listy pasa — dług NIE spłacony,
+aktualizacja w §18.5 audytu PR92, MILESTONES i backlogu zgodnie z komentarzem
+pinu). Lekcja uboczna: equality-pin licznika to nie biurokracja — sam wskazał
+miejsce, w którym reguła przesiadła się między plikami.
