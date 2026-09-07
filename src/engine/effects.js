@@ -5209,7 +5209,18 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (topIds.length === 1) {
       // Tylko jedna karta w bibliotece: manifestujemy ją bez wyboru (CR 701.62a
       // — „as many as possible"), nic do grobu.
-      return true;
+      // M335 (Żywy Tester, talia audytowa 2026-09-07, seed 4001): TEJ ścieżki
+      // NIE wolno oznaczać jako blokującej. Truthy zwrot z tego efektu znaczy dla
+      // rozstrzygacza „czar czeka na decyzję" (spells.js: `if (blocked)
+      // state.pendingSpell = { stackId, effects: reszta }`), a tu decyzji nie ma
+      // żadnej — czar zostawał na stosie z `pendingSpell.effects: []` na zawsze.
+      // Zmierzone: po takim rzucie stos nie pustoszeje, karta nie trafia do
+      // grobu, a każde kolejne `pass_priority` daje „Błąd wewnętrzny stołu:
+      // Pending spell odwołuje się do nieistniejącego czaru" i partia wisi
+      // (detektor [rules] Żywego Testera to złapał). Gałąź zerowa robi to
+      // poprawnie (`return;`) — ujednolicone.
+      manifestCardFaceDown(state, topIds[0], controllerId);
+      return;
     }
     state.pendingManifestDread = {
       playerId: controllerId,
