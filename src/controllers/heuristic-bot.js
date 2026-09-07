@@ -3066,6 +3066,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             });
             if (!targetImpactful) score -= 60; // trywialny cel — trzymaj kontrę
           }
+          // E7/D2 (zgłoszenie właściciela): „counter unless its controller
+          // pays {N}" (Frightful Delusion) — kontroler CELU decyduje o dopłacie,
+          // więc gdy ma CZYM zapłacić, kontra najpewniej wygaśnie bezskutecznie:
+          // bot wymieniałby CAŁĄ kartę z ręki na {N} many przeciwnika (+ odrzut).
+          // Właściciel: „bot powinien czekać, aż [przeciwnik] wyda całą manę —
+          // inaczej marnuje swój czar". Zasoby płatnika liczymy jak
+          // `manaAvailableNow` (wyżej): pula + nietapnięte LĄDY — auto-tap
+          // silnika przy płatności obejmuje wyłącznie lądy (producibleMana).
+          // Bez zasobów na dopłatę — pełna premia jak counter_spell (Batch 44).
+          const unlessPays = effects.find((e) => e?.type === 'counter_spell_unless_pays');
+          if (unlessPays && foeTarget && !ownTarget) {
+            const foeEntryId = (targets ?? []).find((tid) => {
+              const entry = stack.find((item) => item.id === tid);
+              return entry && entry.controllerId !== view.playerId;
+            });
+            const payerId = stack.find((item) => item.id === foeEntryId)?.controllerId ?? null;
+            const payer = view.players.find((p) => p.id === payerId);
+            if (payer) {
+              const fromLands = view.zones.battlefield.filter((o) => o.controllerId === payerId
+                && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
+              if ((payer.mana ?? 0) + fromLands >= (unlessPays.amount ?? 1)) score -= 90;
+            }
+          }
         }
         if (spell.fireball) {
           // M236/4 (audyt + KOREKTA właściciela): Fireball to zasób SKALUJĄCY
