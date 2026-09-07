@@ -9210,3 +9210,20 @@ README „Bieżący stan", `docs/setup/HANDOFF_2026-09-07g.md`. Bez nowych
 kart (ADR 0029), bez pełnego B0 (ADR 0018/0025), bez nowego wpisu
 LESSONS (brak nowej klasy; budżet lektury bez zmian). PR #105 oddany do
 przeglądu; agent nie scala.
+
+**E6 (redirect po zgłoszeniach właściciela z testów)**: (A1) bot tapował
+Moonscarred Werewolf dla many w upkeepie PRZECIWNIKA pod sorcery/stwora —
+„odblokowanie" M128 liczyło rękę bez TIMINGU rzucania (CR 307.1/500.4);
+fix `manaUnlockCandidates` (instant zawsze, reszta tylko własna główna)
+w trzech miejscach ścieżki many; RED na scenariuszu właściciela, mutacje
+2×RED, M243/E2 przywrócony aliasem kroku (main1/main2). (A2) transform
+wilkołaka BOTA znikał z panelu „Rozgrywka", gdy stos schodził po passie
+człowieka (poza BOT_RESOLUTION_EVENTS), a miniatury nie było nigdy —
+`TRANSFORM_DIGEST_EVENTS` + wpis w `BOT_MOVE_CARD_EVENTS`; testy na obie
+kolejności passów; weryfikacja żywa na seedzie zgłoszenia (s20603): OBA
+transformy w panelu. (B) hover kart specjalnych działa od PR #104 —
+domknięta szczelina strażnika (`renderSpeedPanel` niepinowany) + CSS
+`.speed-card`. Końcowe bramki: fast 4740/4740, test:all 4750/4750, build
+3388,1 kB, benchmark 85,0%. Bez nowych kart, bez pełnego B0, bez nowego
+wpisu LESSONS (klasy „timing rzucania w kandydatach many" i „transform
+jako treść panelu" mają wpisy w planie E6 i komentarzach kodu).

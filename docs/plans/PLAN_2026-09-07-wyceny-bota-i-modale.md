@@ -183,7 +183,7 @@ kolejności ofertę) → implementacja → GREEN → `npm test` + build → comm
   attachments.js i handoffie).
 ## E6. Zgłoszenia właściciela z testów (redirect po E5, ten sam PR)
 
-- [ ] **A1**: bot tapuje Moonscarred Werewolf („{T}: Add {G}{G}") w pierwszym
+- [x] **A1**: bot tapuje Moonscarred Werewolf („{T}: Add {G}{G}") w pierwszym
       możliwym momencie mimo braku potrzeby many — mana wyparuje, źródło
       zostaje zatapiane. Rozpoznanie: gałąź `producesManaOnly` w
       `activate_ability` pyta tylko „czy ręka ma COKOLWIEK płatnego"
@@ -193,7 +193,7 @@ kolejności ofertę) → implementacja → GREEN → `npm test` + build → comm
       M128 przy komponencie add_mana): bramka `unlocksSomething`
       (availableNow → availableNow + net) + kara jak M167/D; RED-first,
       mutacje kontrolne.
-- [ ] **A2**: panel „Rozgrywka" nie pokazuje transformacji wilkołaka BOTA
+- [x] **A2**: panel „Rozgrywka" nie pokazuje transformacji wilkołaka BOTA
       rozstrzyganej poza oknem `botActing` (upkeep gracza) — informacja
       jest tylko w logu. Rozpoznanie: `noteBotMove` wypuszcza
       `object_transformed` tylko dla człowieka (`HUMAN_DIGEST_EVENTS`,
@@ -201,7 +201,7 @@ kolejności ofertę) → implementacja → GREEN → `npm test` + build → comm
       `BOT_RESOLUTION_EVENTS`, więc okno nie ratuje; do tego brak wpisu w
       `BOT_MOVE_CARD_EVENTS` = brak miniatury nowej twarzy. Fix: transform
       ZAWSZE treścią panelu + miniatura (pole bitwy jawne, CR 400.2).
-- [ ] **B**: hover → powiększenie karty specjalnej Day/Night (i pozostałych
+- [x] **B**: hover → powiększenie karty specjalnej Day/Night (i pozostałych
       specjalnych). Weryfikacja: naprawione w PR #104 („Uwaga B",
       `attachSpecialCardHover` — jedno podpięcie dla wszystkich paneli);
       sonda jsdom na HEAD potwierdza podpięcie i podgląd dla Day/Night.
@@ -211,3 +211,27 @@ kolejności ofertę) → implementacja → GREEN → `npm test` + build → comm
       właściciela: testować na świeżym buildzie/pages.
 - Kryterium: jak w E2 — RED-first, `npm test` + build na każdy zielony
   krok, commit+push natychmiast (ADR 0020 C), szybki benchmark na końcu.
+
+### Podsumowanie E6 (2026-09-07, redirect po zgłoszeniach właściciela)
+
+- **A1** `97e6ddb`: RED na scenariuszu właściciela (obcy upkeep + sorcery →
+  tap wybierał się +8 za złudzenie odblokowania). Fix: `manaUnlockCandidates`
+  (instant zawsze CR 307.5; reszta tylko własna główna main1/main2) we
+  współużyciu M167/D + M128 (3 miejsca). Mutacje (a)/(b) → 1 RED każda.
+  Poprawka aliasu kroku przywróciła M243/E2. Fixture: drift wyłącznie
+  hashowy (decyzje 234=234, scoreSum równe).
+- **A2** `2cee62b`: RED na obu kolejnościach passów (żywa s20603: wpis znikał
+  całkiem; odwrotna: brak miniatury). Fix: `TRANSFORM_DIGEST_EVENTS`
+  (bramka noteBotMove) + `object_transformed` w `BOT_MOVE_CARD_EVENTS`.
+  Mutacje → 1 i 2 RED. Weryfikacja żywa (ten sam seed): panel pokazuje OBA
+  transformy.
+- **B** `3520d82`: hover Day/Night działa na HEAD (naprawa z PR #104; probe
+  jsdom). Domknięta szczelina: strażnik pinuje też `renderSpeedPanel` (M313)
+  + CSS `.speed-card` :hover/kursor. Wniosek: zgłoszenie odpowiadało stanowi
+  sprzed PR #104 (stary build) — testować na świeżym artefakcie.
+- Bramki po E6: fast **4740/4740**, `test:all` **4750/4750**, build
+  **59 modułów / 3388,1 kB**, quick benchmark heuristic **85,0%**
+  (571/672; vs random 96,1%; aggro 26,2%) — pasmo bazowe. Weryfikacja żywa:
+  s20611 (gracz 20:−6), s20612 (bot 43:−1), s20603-pofix (bot 23:−1) —
+  exit 0, stderr 0 B, „NIEWYCENIONE: brak", „DETEKTORY: brak zgłoszeń",
+  0 aktywacji wilkołaków bez potrzeby.
