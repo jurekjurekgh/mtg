@@ -175,7 +175,9 @@ export function manifestCardFaceDown(state, cardObjectId, controllerId) {
     keywords: [],
     manaCost: 0,
     cardName: null,
-    abilities: [],
+    // M340/F2, CR 701.40c: manifest zachowuje również procedurę morpha,
+    // tak jak cloak i rzut face-down. Nie są to drukowane zdolności 2/2.
+    abilities: faceDownAbilities(card),
     originalAbilities: card.abilities ?? [],
     faceDownOriginal: Object.freeze({
       colors: Object.freeze([...(card.colors ?? [])]),

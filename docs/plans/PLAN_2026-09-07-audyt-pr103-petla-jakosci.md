@@ -94,3 +94,7 @@ E2/M339: F1 naprawione u producenta numeru — numeracja jawnych wejść na
 całym stole, bez cardId/kontrolera. 4 RED→GREEN, test różnicowy całego FoW,
 etykiety i ciągłość po obrocie/przejęciu; rodzina 20/20. Bramka pełna przed
 commitem; pozostałe ustalenia realizowane oddzielnie.
+
+E2/M340: F2 — provider `faceDownAbilities` podłączony także w manifeście.
+7 testów przez execute (6 RED + 1 kontrola → 7 GREEN), rodzina 28/28.
+Poprzedni przyrost M339 wypchnięty jako `5d81996` po 4640/4640 + build.
