@@ -4081,7 +4081,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
         // M326 (F6): cel na POLU BITWY — tam może leżeć cloak, więc etykieta
         // bierze przyczynę z widoku (kontroler dodatkowo zna swoją kartę,
         // CR 708.6). Logi zakrytego RZUTU na stosie zostają przy
-        // FACE_DOWN_LABEL: clocek nie rzuca zakryty i stos przyczyny nie nosi.
+        // FACE_DOWN_LABEL: cloak nie rzuca zakryty i stos przyczyny nie nosi.
         if (tgtObj) return tgtObj.faceDown ? faceDownLabel(tgtObj, session.nameOf) : session.nameOf(tgtObj.cardId ?? id);
         return session.nameOfObject(id);
       }).join(', ');

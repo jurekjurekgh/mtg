@@ -169,7 +169,7 @@ const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell', 'cast_cleave'
 
 /**
  * M327 (audyt PR #102, F7): ODSŁONIĘCIE zakrycia. To jedyne nie-rzutowe
- * `spendMana` w silniku, które płaci PIPY KOLORU (CR 701.56b: clocek płaci
+ * `spendMana` w silniku, które płaci PIPY KOLORU (CR 701.56b: cloak płaci
  * koszt many karty; 701.55c: manifest tak samo) — a mimo to kreator many ich
  * nie znał, więc źródła tapował silnik w swojej kolejności. Reguła właściciela
  * z M168/M195 jest ogólna: „zawsze kiedy płatność many jest niejednoznaczna

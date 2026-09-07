@@ -8909,3 +8909,72 @@ przed i po rebase (pusty diff) — pomiary suite ważne.
   59 / 3344,7 kB; benchmark 84,8% (570/672) bez dryfu; golden-master bez zmian.
   Żywo: worek-legend|ravnica s41, 700 kroków — 0 zgłoszeń detektorów.
 - Commity: `c9ed6bb` (M318), `a3e59af` (M319), `1bccf3e` (M320), `da6f7e4` (M321) — wypchnięte.
+
+## Sesja arena/01a078a2 — audyt PR #102 + pętla jakości (cloak: reguły, widok, stół, narzędzia)
+
+Kontynuacja po PR #102 (1 sesja = 1 branch = 1 PR): plan
+`docs/plans/PLAN_2026-09-06c-audyt-pr102-petla-jakosci.md`, audyt
+`docs/audits/AUDYT_PR102_2026-09-06.md` (10 znalezisk F0, F1–F8, F6b + 6
+zamkniętych tropów), PR **#103**. Start: `npm test` 4567/4567; koniec:
+**4602/4602** (+35 testów), build 59 modułów / 3358,0 kB, benchmark `--quick`
+84,8% (570/672) bez dryfu, `test/bot-benchmark.test.js` 10/10, golden-master
+wycen bez regeneracji. Żywy Tester: 6 ukończonych partii, 0 zgłoszeń
+detektorów (w tym dwie na chwilowej talii `audyt-cloak` — patrz
+`docs/setup/TESTER_STOLU.md` → „Partia celowana pod mechanikę").
+
+- **M322 (`85b736c`, F0+F9+F4):** uncover cloaka gasił zdolności karty —
+  ścieżka cloaku brała kształt face-down bez migawki `originalAbilities`
+  (Batch 24), więc odsłonięty permanent zostawał `abilities: []`; cloak zna od
+  teraz procedurę obrotu za koszt morpha/disguise (CR 701.56c/d) przez wspólny
+  provider `faceDownAbilities`; sprzątanie śladów zakrycia (ward {2},
+  `cloakReady`, `cloakTurnUpCost`, `copyNumber`, `faceDownCause`, `manifestReady`)
+  przeniesione z handlerów do punktu zbierającego `turnFaceUp`, bo do odsłonięcia
+  prowadzą DWA wejścia; ward przywracany z migawki, nie twardym `null`
+  (klasa L104). Strażnik m322 (5).
+- **M324 (`05faae5`, F1 + F3):** podatek wardu dla CAŁEJ rodziny rzutów —
+  `WARD_TAXED_TYPES` wyprowadzony z `COMMAND_TYPES` (`cast_*`/`*_cast` +
+  `activate_ability` + `resolve_trigger_target`) zamiast ręcznej ósemki, plus
+  rezerwacja many na koszty darmowych rzutów w `reservedManaOf`; odcisk stanu
+  (`fingerprint.js`) obejmuje `cloakReady` i `ward` (sonda: uncover spadał
+  z 1 do 0 ofert przy IDENTYCZNYM fingerprint — „oferta bez skutku" i replaye
+  były ślepe), `copyNumber` świadomie poza dygestem. Strażniki m323 (4) i
+  m324 (4, w tym pin 14 nazw typu).
+- **M325 (`5e7bd75`, F2):** model „widoczny pump obronny" (M317) domknięty w
+  rodzinie porównań — `effBlockerToughness` w warunku zabicia blokera na
+  pożyczonym stworze i w wyłączeniu kary za kupowany deathtouch przy first
+  strike; kwota wyceny permanentu została surowa (to wartość wydruku, nie
+  stan). Dryf ZERO (benchmark i golden-master), więc pin jest ŹRÓDŁOWY
+  (m325, 2: skan `case 'declare_attackers'` + wyjątek z powodem).
+- **M326 (`e2f3c7a`, F6):** PRZYCZYNA zakrycia jest informacją JAWNĄ (CR 708.6
+  + ruling WotC 2024-02-02 o rozróżnialności), a nie pochodną `cloakReady`:
+  nowe pole `faceDownCause` na obiekcie i w `playerView` (bez bramki FoW),
+  helpery `faceDownCauseTag`/`faceDownLabel` w `session.js` jako jedyne źródło
+  brzmienia, konsumenci (nazwa kafla w modalach, badge, etykieta celu w
+  wizardzie, log celu) przepięte; cudzy cloak to od teraz „Cloak 2", nie
+  kłamiący „Morph", a `cardId` nadal ukryty (m319/B nietknięty). m326 (7).
+- **M327 (`182efb1`, F7):** kreator many dla `turn_cloak_face_up` i
+  `turn_manifest_face_up` — jedyne nie-rzutowe `spendMana` z pipami koloru w
+  silniku nie miały deskryptora, więc źródła tapował silnik; koszt czytany z
+  `opts.turnUpCost` z pełnego stanu (widok nosi `manaCost: 0`), rozbieżność z
+  kosztem karty zamyka kreator; eksport `WIZARD_PAYMENT_COMMAND_TYPES` +
+  strażnik rodziny (m327, 5).
+- **M328–M330 (`76af12b`, `a4e0eb5`, `e0a1902`, F5+F8):** `tools/fetch-card-rulings.mjs`
+  NIGDY nie działał jako CLI (czytał `files` sprzed deklaracji — `ReferenceError`
+  na każdym przebiegu, także `--only`/`--dry-run`); naprawione + pierwszy realny
+  wpis: 14 rulingów WotC w `docs/cards/scryfall-veiled-ascension.json`
+  wkładką tekstową (bez round-tripu `JSON.stringify`), hermetyczny test CLI
+  m328 (4) idący tylko ścieżkami przed `fetch()`; cytowania cloaka
+  „CR 702.75" → 701.56a/b w src/ (M329) i w testach (M332) — cloak to keyword
+  ACTION (CR 701), słownik z VIII 2026 przesuwa na 701.58, mapa liter w audycie;
+  `multiTargetPlanOf` liczy `targetSlotsOf` raz, nie trzy (M330).
+- **M331/M332 (`ab8ceb1`, `76aa5c9`, F6b — z Żywego Testera):** log i podsumowanie
+  „Rozgrywka" (nazwa obiektu w `nameOfObject`) to szósty konsument etykiety —
+  dalej pisał „(Morph)"; `nextFaceDownCopyNumber` numerował tylko zakrycia
+  z `cloakReady`, więc dwa clokowane LĄDY (legalne z 701.56a) były
+  nierozróżnialne. Naprawa przez wspólne `faceDownLabel` + numerację po jawnej
+  przyczynie; asercja M265 przestawiona z dosłownego „Morph" na „przyczynę
+  zakrycia + żadnej nazwy karty". m331 (4).
+- Lekcje: **L136** (`git checkout <plik>` kasuje niezacommitowaną poprawkę;
+  scratch piaskownicy przepada — commit+push po każdym findingu), **L137**
+  (etykieta to rodzina: grep po TEKŚCIE, nie po nazwie pola; test na prawdziwym
+  widoku; partia celowana dla rzadkiej mechaniki).

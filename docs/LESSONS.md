@@ -2282,3 +2282,75 @@ zaznaczenia = wybór niekompletny (status „Brakuje" M200 wymienia tylko obowi�
 UI: wariant bez celu + anty-over-fix na obowiązkowych, pin przez realne
 `legalCommands`); sterownik testera mierzy partia z tym kreatorem (`== KONIEC PARTII`
 bez zgłoszeń detektorów, zmierzone).
+
+## L136 (2026-09-07) — `git checkout <plik>` kasuje NIEZAKOMMITOWANE poprawki w tym pliku; scratch piaskownicy znika między turami
+
+**Przypadek:** sesja 01a078a2 (audyt PR #102). Dwa niezależne ukłucia. (1) Żeby
+sprawdzić, czy test CLI narzędzia łapie mutację, przywróciłem plik narzędzia
+`git checkout tools/fetch-card-rulings.mjs` — a poprawka narzędzia NIE była
+jeszcze zacommitowana (czekała w drzewie na wspólną bramkę), więc checkout
+zwalił ją razem z mutacją; o mały włos commit „naprawa + test" wjechałby bez
+naprawy, a test świeciłby na czerwono. (2) W trakcie sesji środowisko
+odtworzyło workspace ze świeżego klona: 9 commitów zostało na zdalnej gałęzi,
+a NIEZAKOMMITOWANE zmiany czterech kolejnych findingów wróciły jako diff
+roboczy — `git log` wskazywał bazę PR, `/home/user/*.txt` (komunikaty commitów,
+skrypty sondujące, transkrypty testera) przepadły bez śladu.
+
+**Przyczyna:** snapshot ARENY to drzewo + patchset, nie historia git; wszystko
+poza `git push` jest ulotne, a `git checkout <sciezka>` przywraca wersję z
+INDEKSU/HEAD niezależnie od tego, co było w pliku.
+
+**Reguła:**
+- jeden finding = jeden commit = push (`git status` po każdym; nie zbieraj
+  pięciu findingów w drzewie — ENVIRONMENT §2 „Profilaktyka"),
+- PRZED każdym `git checkout <plik>` / `git restore` sprawdź, czy ten plik ma
+  pracę z tej tury: `git diff --stat -- <plik>`; na mutacje testowe kopiuj
+  plik `cp plik /tmp/plik.bak` i przywracaj KOPIĄ, nie gitem,
+- scratch (wiadomości commitów, sondy, transkrypty) trzymaj w `.arena/` albo w
+  gitignorowanym `tools/table-tester/**` i i tak zapisuj WNIOSKI w `docs/` —
+  plik poza repozytorium nie jest dowodem,
+- odzyskiwanie historii: `git fetch origin <gałąź>` → `git reset --mixed
+  FETCH_HEAD` (ref + indeks, drzewo zostaje) → `git diff --stat` musi pokazać
+  DOKŁADNIE niecommitowany zakres tej tury → rest commitów z tych samych
+  wiadomości.
+
+**Strażnik:** nie da się tego sforsować jednym testem (to procedury pracy), ale ENVIRONMENT
+§1/§2 opisuje oba zjawiska, a `test/repo-artefakty-audytu.test.js` pilnuje,
+żeby artefakty testera nie weszły do indeksu przy takim sprzątaniu.
+
+## L137 (2026-09-07) — etykieta to rodzina: jedno źródło brzmienia, test na PRAWDZIWYM widoku, partia celowana
+
+**Przypadek:** F6 z audytu PR #102 — przeciwnik czytał „(Morph)" o cudzym
+cloaku, bo pięć miejsc stołu formatowało tę samą etykietę osobno i wszystkie
+pytały o `cloakReady` (pole ZNAJOMOŚCI reguły, bramkowane przez Fog of War),
+żeby odkryć PRZYCZYNĘ zakrycia. Po naprawie (jawne `faceDownCause` w widoku +
+dwa helpery w `session.js`) i po przejściu wszystkich testów JEDNO miejsce
+dalej kłamało: `nameOfObject` w `session.js` — nazwa czytana przez ~124 opisy
+logu i modal „Rozgrywka". Wpadło dopiero na żywym stole (partia 5/6 z talią
+celowaną): „Plains (Morph) dostaje +1 licznik flying". Ta sama partia
+pokazała drugą nogę rodziny: `nextFaceDownCopyNumber` numerował tylko zakrycia
+z `cloakReady`, więc dwa clokowane lądy miały TEN SAM numer — a ruling WotC
+2024-02-02 każe rozróżniać przyczynę zakrycia przez wszystkich graczy.
+
+**Przyczyna:** fakt „co zakryło kartę" był wyprowadzany z pola, które znaczy
+co innego, w pięciu kopiach kodu; testy jednostkowe etykiet budowały widoki
+RĘCZNIE (ficzki oddawały stary kształt), a partie na zwykłych taliach nigdy nie
+doczekały się cloaka (1 kopia w jednej talii).
+
+**Reguła:**
+- podnosząc nowe pole do widoku, zrób grep po WSZYSTKICH miejscach, które
+  formatują DANY TEKST (nie po nazwie pola!), i przepnij je na jeden helper —
+  konsumentem jest TEŻ log (`nameOfObject`) i karty (cardInfo), nie tylko kafel,
+- asercję kładź na PRAWDZIWYM `playerView`/`createSession`, a fikcje testowe
+  zaktualizuj do nowego kształtu (inaczej test pinuje nieaktualny stan),
+- dodaj strażnika ŹRÓDŁOWEGO dla rodziny etykiety (L107): skan „żaden
+  konsument nie wyprowadza znacznika z `.cloakReady`" — to on łapie szóste
+  miejsce, zanim ktoś je znajdzie na stole,
+- jeśli mechanika jest rzadka w talii, zrób sondę partią na CHWILOWEJ talii
+  (`docs/setup/TESTER_STOLU.md` → „Partia celowana pod mechanikę"), a plik
+  usuń przed bramką (strażnicy M178 nie znoszą dubli w taliiach).
+
+**Strażnik:** `test/m326-cloak-przyczyna.test.js` (7, w tym C2 — skan
+`src/table/*.js` pod `.cloakReady`), `test/m331-log-przyczyna.test.js` (4,
+w tym D — skan `nameOfObject`: zero ręcznego `faceDownName`, oraz B — numeracja
+po jawnej przyczynie dla obu widzów).
