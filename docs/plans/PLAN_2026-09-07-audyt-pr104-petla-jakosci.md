@@ -40,17 +40,35 @@ Zakres: 36 plików diffu (`gh pr diff 104`), ~2250+/146−. Obszary:
 
 ## E3. Pętla jakości (ADR 0021), dopóki właściciel nie wskaże innego tematu
 
-- [ ] audyt Żywym Testerem z perspektywy gracza (kilka partii, różne
-      profile, zawsze stderr + detektory; `npm run build` przed testerem —
-      L76), naprawy u root cause + nowe detektory tam, gdzie ręczne
-      znalezisko.
-- [ ] polowanie na niezgodności z CR inną ścieżką niż sesja #104 (nie
-      powtarzać detektorów M346–M348).
-- [ ] nie wymyślać batcha kart; katalog rośnie wyłącznie z listy właściciela.
+- [x] audyt Żywym Testerem z perspektywy gracza: 4 partie (4 profile ×
+      4 pary dek), stderr puste, „DETEKTORY: brak zgłoszeń" w każdej;
+      `npm run build` przed pomiarem (L76). Transkrypty:
+      `tools/table-tester/audyt-pr105/` (gitignored) — greedy s10421,
+      explorer s10422, impatient s10423 (+`--snapshot-every 3`, pełna
+      lektura osi ręcznych: kolejność triggerów mill, zachowanie many przy
+      przerwanej płatności, odrzucenie illegal_ability przez silnik, cloak
+      + Ward), random s10424. Detektory M346–M348 celowo nie powtarzane.
+      Znalezisko kosmetyczne: duplikat bloku POKRYCIE/DETEKTORY na końcu
+      logu (rozszerza obserwację z audytu #104 o blok podsumowania; bez
+      klasy, bez naprawy).
+- [x] polowanie na niezgodności z CR inną ścieżką niż sesja #104: sonda
+      timingowa „śmierć celu w trakcie oczekiwania czaru na rozstrzyganie"
+      (CR 117.2a/603.3c/608.2b, okolice bramki M343). Wynik: silnik
+      poprawny — SBA zabija 0/0 na granicy komendy rzutu, trigger dies
+      rozlicza się na tej samej granicy (model triggerów silnika), czar
+      z martwym jedynym celem fizzluje W CAŁOŚCI (scry nie biegnie,
+      CR 608.2b); anty-over-fix: przy żywym celu destroy działa, scry
+      blokuje. Pierwotna anomalia sondy była błędem armatury (L116:
+      addObject nie stosuje liczników ETB). Strażnik wg L39:
+      `test/audyt-pr105-fizzle-martwy-cel.test.js` (3 testy, zielone).
+- [x] nie wymyślać batcha kart; katalog rośnie wyłącznie z listy właściciela
+      (przestrzegane — jedyne karty syntetyczne w teście strażnika).
 
 ## E4. Zamknięcie sesji
 
-- [ ] README „Bieżący stan" zmierzone na końcu (L92), historia sesji w
+- [x] README „Bieżący stan" zmierzone na końcu (L92): **4708/4708**
+      (`test:all`, ~280 s; szybki rdzeń 4698/4698, ~169 s), build
+      **59 modułów / 3369,8 kB** bez zmiany rozmiaru. Historia sesji w
       `docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-09-07f.md`,
       opis PR kumulacyjnie, instrukcja przekazania w czacie.
 - Kryterium: wszystkie commity wypchnięte, CI zielone, agent nie scala.
@@ -68,4 +86,15 @@ Zakres: 36 plików diffu (`gh pr diff 104`), ~2250+/146−. Obszary:
 
 ## Podsumowanie wykonania (uzupełniane na końcu sesji)
 
-- (do uzupełnienia po E4)
+- Audyt PR #104 zamknięty (E1): 36/36 plików, 11 mutacji → 10/10 fixów
+  RED→GREEN (2 bezkrytyczne probe'y powtórzone celowanie), zero błędów;
+  raport `docs/audits/AUDYT_PR104_2026-09-07.md` (commit d24036f).
+- E2: n/d — audyt nie wykazał napraw.
+- E3: 4 partie Żywym Testerem (greedy/explorer/impatient/random) — zero
+  zgłoszeń, zero błędów runtime; sonda CR 608.2b potwierdziła poprawność
+  fizzla czaru z martwym celem; nowy strażnik `audyt-pr105-fizzle-
+  martwy-cel.test.js` (3 testy). Brak nowych klas błędów → brak nowego
+  wpisu LESSONS (budżet lektury nietknięty).
+- E4: bramki zmierzone: `test:all` 4708/4708, `npm test` 4698/4698,
+  build 59 modułów / 3369,8 kB. README zaktualizowany. PR #105 czeka na
+  scalenie przez właściciela (agent nie scala — ADR 0020).

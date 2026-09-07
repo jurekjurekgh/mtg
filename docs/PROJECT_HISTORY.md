@@ -9109,3 +9109,41 @@ Dokumenty: aktualny README, handoff `HANDOFF_2026-09-07e.md`, L141 (pochodne
 sekretu też wymagają FoW), dopiski L12/L13/L138. Narracje L133/L135 do
 `LESSONS_PRZYPADKI.md` dla budżetu, bez utraty numerów i bez zmiany progu.
 PR #104 oddany do przeglądu; agent nie scala.
+
+
+## Sesja arena/01a07c4e — audyt PR #104, pętla jakości, PR #105 (2026-09-07)
+
+Plan `docs/plans/PLAN_2026-09-07-audyt-pr104-petla-jakosci.md` (`27ca7b0`)
+opublikowany przed kodem (ADR 0020 A: PR #105 na starcie). Audyt 36 plików
+diffu PR #104 (`9da8b88`), raport `docs/audits/AUDYT_PR104_2026-09-07.md`
+(commit `d24036f`). 11 prób mutacyjnych na testach #104: **10/10 fixów
+RED→GREEN** (M339–M345, M346–M348; 2 probe'y bezkrytyczne powtórzone
+celowanie po diagnozie — L114: przywracać kształt PRE-fix, nie dowolną
+mutację). Zero błędów → E2 n/d. Baza zmierzona: 4695/4695, build
+59 modułów / 3369,8 kB; budżet lektury 99 904/100 000.
+
+Pętla jakości (E3): 4 partie Żywym Testerem po buildzie (L76) —
+greedy theros|tarkir-bg s10421, explorer worek-basni|mirrodin-brg s10422,
+impatient final-fantasy|ravnica s10423 (`--snapshot-every 3`, pełna lektura
+transkryptu: triggery mill w kolejności, mana zachowana przy przerwanej
+płatności, odrzucenie `illegal_ability` przez silnik, cloak z kontrą
+latamania + Guildscorn Ward), random worek-mroczny|srodziemie s10424.
+Wszystkie: exit 0, puste stderr, „DETEKTORY: brak zgłoszeń"; osie
+M346–M348 nie powtarzane. Obserwacja kosmetyczna: duplikat bloku
+POKRYCIE/DETEKTORY na końcu logu (szerzy notatkę z audytu #104 o duplikacie
+na granicy przycięcia; bez klasy, bez naprawy).
+
+Sonda CR 608.2b (okolice bramki M343, CR 117.2a/603.3c): cel czaru
+[destroy_permanent, scry] umiera od SBA w kolejce komendy rzutu (0/0
+z fabryki — L116: addObject nie stosuje liczników ETB) → trigger dies
+rozlicza się na granicy komendy, czar w rozstrzygnięciu fizzluje W
+CAŁOŚCI — scry nie biegnie, brak decyzji, gra toczy się dalej. Silnik
+poprawny; pierwsza „anomalia" była błędem armatury sondy. Strażnik wg
+L39: `test/audyt-pr105-fizzle-martwy-cel.test.js` (3 testy: granica
+SBA+trigger, fizzl bez efektów, anty-over-fix z żywym celem).
+
+Końcowy kod: fast **4698/4698** (+3), full **4708/4708**, build **59
+modułów / 3369,8 kB** (rozmiar bez zmiany). README „Bieżący stan"
+zaktualizowany (L92). Bez nowych kart, talii, limitacji Oracle i pełnego
+B0 (ADR 0018/0029); brak nowego wpisu LESSONS (brak nowej klasy; budżet
+bez zmian). PR #105 oddany do przeglądu; agent nie scala.
