@@ -2179,7 +2179,16 @@ export function createSession(config) {
     // morph — znacznik „(Morph)" odróżnia zakryte 2/2 od pełnego stwora.
     // M127: brzmienie i wielkość litery z jednego źródła (faceDownName).
     if (object.faceDown) {
-      return faceDownName((!fogOfWar && object.controllerId === HUMAN_ID) ? nameOf(object.cardId) : null);
+      // M331 (audyt PR #102, F6b — Żywy Tester, partia audytowa 2026-09-07):
+      // log i podsumowanie „Rozgrywka" to TEŻ konsument etykiety zakrycia.
+      // Zmierzone w prawdziwej grze: „Plains (Morph) dostaje +1 licznik flying"
+      // o zakryciu z Veiled Ascension — nazwa mechaniki kłamała (cloak to 2/2
+      // z ward {2}) i gubiła numer kopii, więc w logu nie dało się rozróżnić
+      // dwóch cloak-i. BRAMA nazwy zostaje jak była (własny permanent nazywamy,
+      // obserwator dla AI nie — M199/M100/E10); wymieniony jest tylko dobór
+      // znacznika, przez wspólne `faceDownLabel` (L41).
+      const visibleName = !fogOfWar && object.controllerId === HUMAN_ID;
+      return faceDownLabel(object, visibleName ? nameOf : () => null);
     }
     // M155 (audyt żywym testerem): tokeny niosą JAWNĄ nazwę w `object.name`
     // (cardId `token_*` poza rejestrem → nameOf zwracałby „token_squirrel").

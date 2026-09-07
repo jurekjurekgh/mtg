@@ -90,7 +90,13 @@ export function nextFaceDownCopyNumber(state, controllerId, cardId) {
   let max = 0;
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
-    if (object?.faceDown && object?.cloakReady && object?.copyNumber > 0
+    // M332 (audyt PR #102, F6b): liczymy WSZYSTKIE zakrycia z cloaka, nie te
+    // z prawem obrotu. `cloakReady` znaczy „pod spodem jest karta stworu",
+    // więc dwa zakryte LĄDY (701.56a: ląd z cloaka też jest 2/2 twarzą w dół,
+    // tylko nie ma za co go obrócić) dostawały ten sam numer i w logu, i na
+    // kaflu były nierozróżnialne — a ruling WotC 2024-02-02 wymaga, żeby
+    // zakrycia dało się rozróżniać. Przyczyna jest od M326 jawnym polem.
+    if (object?.faceDown && object?.faceDownCause === 'cloak' && object?.copyNumber > 0
       && object?.controllerId === controllerId && object?.cardId === cardId) {
       max = Math.max(max, object.copyNumber);
     }
