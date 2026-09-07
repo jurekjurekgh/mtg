@@ -1797,6 +1797,14 @@ function bootstrapTable() {
     if (cmd.type === 'cast_escape' && Number.isInteger(stateObject?.spell?.escape?.cost)) {
       opts.escapeCost = stateObject.spell.escape.cost;
     }
+    // M327 (audyt PR #102, F7): koszt ODSŁONIĘCIA (CR 701.56b cloaka,
+    // 701.55c manifestu) nosi tylko pełny stan — zakryty permanent ma w widoku
+    // `manaCost: 0`, więc kreator brałby liczbę z kosztu karty i musiał ją
+    // porównać z prawdą silnika. Podajemy ją jak `escapeCost` wyżej.
+    if (cmd.type === 'turn_cloak_face_up' || cmd.type === 'turn_manifest_face_up') {
+      const turnUpCost = stateObject?.cloakTurnUpCost ?? stateObject?.manifestTurnUpCost;
+      if (Number.isInteger(turnUpCost)) opts.turnUpCost = turnUpCost;
+    }
     const descriptor = paymentDescriptorOf(cmd, view, opts);
     if (!descriptor) return null;
     const pool = (view.players ?? []).find((p) => p.id === HUMAN_ID)?.mana ?? 0;
