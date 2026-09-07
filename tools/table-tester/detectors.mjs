@@ -1216,9 +1216,19 @@ export function detectStaleLogTail(windowRecords) {
   return found;
 }
 
-export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set() } = {}) {
+/** M348/F10: wyjątek runtime jest błędem w KAŻDYM profilu, także impatient. */
+export function detectRuntimeErrors(records) {
+  const found = [];
+  for (const record of records ?? []) {
+    push(found, 'ui', 'Wyjątek JavaScript w stole', `${record.type}: ${record.message}`);
+  }
+  return found;
+}
+
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, runtimeErrors = [], profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set() } = {}) {
   const all = [
     ...detectRawText(lines),
+    ...detectRuntimeErrors(runtimeErrors),
     ...detectBotRepeats(lines),
     ...detectBotSelfTargeting(lines),
     ...detectBotSelfHarmOnOwnPermanents(lines, harmfulNames),

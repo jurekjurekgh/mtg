@@ -224,6 +224,17 @@ Linie pozostają źródłem dla transkryptów archiwalnych i opisów ręki/modal
 Strażnicy m347 obejmują obie strefy, prawdziwy widok/tytuł i wykonaną komendę,
 realnie puste ceny oraz mieszany panel poprawnych/błędnych etykiet.
 
+#### Wyjątki JavaScript — M348 (2026-09-07)
+
+Ukończona partia i brak zwykłych flag NIE dowodzą braku wyjątków interfejsu.
+`runtime-errors.mjs` podpina `error` i `unhandledrejection` w `beforeParse`
+jsdom, przed uruchomieniem skryptów artefaktu. `runtimeErrors` trafiają do
+`detectRuntimeErrors` i wyniku `runTableGame`; dotyczy to każdego profilu,
+również impatient. Normalne odrzucenie komendy przez engine jest osobnym
+faktem i nie jest wyjątkiem JavaScript. Domyślne raportowanie jsdom nie jest
+wyciszane; stderr również należy przejrzeć. M348 złapało w ten sposób sześć
+wyjątków `session.log is not a function` mimo ukończenia tej samej partii.
+
 #### Detektor nie może zależeć od poziomu logowania (M99)
 
 Weryfikacja mutacyjna wykryła dwa detektory czytające **wyłącznie linie

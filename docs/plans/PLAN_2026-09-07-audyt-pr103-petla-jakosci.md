@@ -46,7 +46,7 @@ do weryfikacji, nie poleceniem ponownego liczenia.
   Przy każdej: kontrola składni/diffu, cały `npm test`, `npm run build`,
   osobny commit i natychmiastowy push; raport/plan aktualizowany przyrostowo.
   Golden-master tylko przy zmierzonej i przypisanej zmianie śladu.
-- [ ] **E3 — pętla jakości innymi ścieżkami.** Co najmniej trzy ukończone
+- [x] **E3 — pętla jakości innymi ścieżkami.** Co najmniej trzy ukończone
   partie Żywego Testera ze świeżego artefaktu, preferowane talie spoza
   szybkiej próbki i inne pary/profile niż w #103. Ręczny przegląd transkryptu
   w trzech osiach: decyzje bota, log/modal, auto-pass. Zgłoszenia sprawdzić
@@ -169,3 +169,16 @@ E4): interfejs wpisu systemowego + prawidłowa kontynuacja play, strażnik
 na realnej sesji; przechwytywanie runtime errors w testerze od beforeParse
 + detektor niezależny od profilu/logowania, testy i żywe A/B. To naprawa
 konkretnego wyjątku UI, nie strojenie heurystyki bota.
+
+
+E3/M348: F10 — logSystem przez istniejący zapis sesji, log nadal tablicą,
+play nie gubi nowej komendy. 4 testy UI i 6 runtime (transport od beforeParse
+do detektorów), 6 mutacji, rodzina 50/50. Stary artefakt s10403: 6 wyjątków
+w obu trybach, mimo ukończenia partii. Nowy build 59 / 3369,8 kB, powtórki
+PO i bramka w toku. M347 wypchnięte `2976a45` po 4685/4685 + build.
+
+
+E3 domknięte M348: s10403 quiet/verbose po 6 wyjątków PRZED → 0 PO,
+wszystkie flagi PO 0, 126 okien, koniec 14/−5. Dwa inne profile na tym
+samym nowym artefakcie również ukończone, 0 wyjątków / 0 flag. Zapisane
+wyniki i granice dowodu w audycie; do zakończenia pozostaje wyłącznie E4.

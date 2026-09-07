@@ -32,6 +32,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { extractBotMoves, extractModalChoice, extractTileText, chronologicalLogEntries } from './extract.mjs';
 import { runDetectors, formatFindings, harmfulCardNames } from './detectors.mjs';
+import { observeRuntimeErrors } from './runtime-errors.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ARTIFACT = path.resolve(__dirname, '../../dist/mtg-table.html');
@@ -142,7 +143,9 @@ async function boot() {
     throw new Error(`Brak artefaktu: ${ARTIFACT}\nUruchom najpierw: npm run build`);
   }
   const html = fs.readFileSync(ARTIFACT, 'utf8');
+  const runtimeErrors = [];
   const dom = new JSDOM(html, {
+    beforeParse: (window) => observeRuntimeErrors(window, runtimeErrors),
     runScripts: 'dangerously',
     // M103: ?tester=1 włącza w artefakcie mostek window.__mtgDebug (sonda
     // „oferta bez skutku" — fingerprint stanu + wykonanie komendy na klonie).
@@ -157,7 +160,7 @@ async function boot() {
     window.crypto = { getRandomValues: (arr) => { for (let i = 0; i < arr.length; i += 1) arr[i] = Math.floor(Math.random() * 256); return arr; } };
   }
   window.confirm = () => true;
-  return { window, document };
+  return { window, document, runtimeErrors };
 }
 
 // ---------------------------------------------------------------------------
@@ -174,7 +177,7 @@ export async function runTableGame({
   human, bot, seed, steps, out, quiet, snapshotEvery, log,
   profile = 'greedy', policySeed = 1, tickRate = 0,
 }) {
-  const { window: domWindow, document } = await boot();
+  const { window: domWindow, document, runtimeErrors } = await boot();
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => [...document.querySelectorAll(sel)];
   // M103 (L15): mostek diagnostyczny artefaktu (?tester=1) — sonda „oferta
@@ -1255,7 +1258,7 @@ export async function runTableGame({
     // kart (miniaturka dokleja nazwę do wpisu w transkrypcie).
     allCardNames = new Set([...registry.all()].map((c) => c.name).filter(Boolean));
   } catch { /* rejestr niedostępny — detektor po prostu nic nie zgłosi */ }
-  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords, rejectionRecords, harmfulNames, allCardNames, myPermanentNames, enemyPermanentNames });
+  const findings = runDetectors(lines, { actionRecords, windowRecords, runtimeErrors, profile, probeRecords, rejectionRecords, harmfulNames, allCardNames, myPermanentNames, enemyPermanentNames });
   for (const line of formatFindings(findings)) logL(line);
 
   flush();
@@ -1287,7 +1290,7 @@ export async function runTableGame({
     mainLogShowsOwnDraw: /Dobierasz:/.test(text($('#log'))),
     ownPlayerLabel: text($('.player.own .pname')),
   };
-  return { lines, findings, windowRecords, probeRecords, rejectionRecords, layout, outPath, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
+  return { lines, findings, windowRecords, runtimeErrors, probeRecords, rejectionRecords, layout, outPath, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
 }
 
 // ---------------------------------------------------------------------------

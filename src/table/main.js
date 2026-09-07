@@ -1718,8 +1718,9 @@ function bootstrapTable() {
     if (manaWizardDescriptor) {
       const abandoned = manaWizardDescriptor.cmd;
       closeManaWizard();
-      if (abandoned && session.log) {
-        session.log('system', `Przerwano płatność many: ${describeAbandonedCast(abandoned)}. Mana w puli zostaje.`);
+      if (abandoned) {
+        // M348/F10: log to tablica dla renderera; zapis idzie przez API sesji.
+        session.logSystem(`Przerwano płatność many: ${describeAbandonedCast(abandoned)}. Mana w puli zostaje.`);
       }
     }
     const descriptor = manaWizardFor(cmd);
