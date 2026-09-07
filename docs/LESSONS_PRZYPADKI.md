@@ -1498,3 +1498,99 @@ arbitralny jak brak wyceny). Nowy typ decyzji dodany w silniku nie dostał
 odpowiadającego mu `case` w kontrolerze — a kolejność kandydatów w ofercie
 NIE JEST posortowana po wartości (naturalna: gracz→stworzy wroga→itp.),
 więc pierwsza oferta to często NAJGORSZA opcja z perspektywy botu.
+
+## L128 (2026-09-03) — przypadek: Mechanika z dwiema ścieżkami rzutu: reguła ma jedno miejsce prawdy, a skan musi PORÓWNYWAĆ ścieżki, nie tylko liczyć oferty
+
+**Przypadek:** skan poboczny audytu PR #93 przejechał każdą kartę katalogu
+z mechaniką „rzutu spoza ręki" (flashback 3, escape 2, madness 2, suspend 1,
+plot 2 — wszystkie w realnych taliach) i znalazł dwa odchylenia, oba w tym
+samym miejscu: regułę znała JEDNA ścieżka rzutu, druga nie.
+- **I (plot, CR 702.170d):** zaplotowany STWÓR czeka do następnej tury
+  (`castPermanent` od Batcha 24), a zaplotowany CZAR wracał w tej samej
+  (`plottedCastAllowed` pilnowało tylko „własna faza main + pusty stos").
+  Żywe w talii `worek-dziki` — dwie karty z plotem, dwie różne odpowiedzi.
+- **J (warp, CR 702.185a):** `warpCard` = `castPermanent({ warpCast: true })`
+  obsługiwał rękę i exile jedną komendą, więc karta wygnana po warp-caście
+  wracała na stół ZA KOSZT WARP (Weftblade Enhancer: 3 many zamiast 6),
+  choć warp jest kosztem alternatywnym wyłącznie z ręki.
+
+## L129 (2026-09-03) — przypadek: Otwarcie mechaniki w nowym oknie to CAŁY łańcuch wyboru: oferta → walidacja → obiekt stosu → log → etykieta
+
+**Przypadek:** audyt PR #94 (K1). Fix F otworzył w oknie darmowego rzutu
+z grobu tryby z celami zmiennymi — oferty liczył już wspólny `legalModeCasts`,
+więc warianty ze stunem (`stunAmongTargets`) pojawiły się w panelu. Ale okno
+Vaan, które ten sam łańcuch dostało w tym samym PR (`pushExileCast`), przenosi
+`stunTargetId` komendą, a okno grobu — nie: push gubił pole (duplikaty
+przycisków), `execute` nie przekazywał go do `validateVariableTargets`
+(warianty ≥1 celu odrzucane), obiekt stosu nie dostawał `modeExtra`
+(`extra:stunTargetId` nie miał czego czytać), a zdarzenie i etykieta nie
+nazywały wyboru. Repro: Aerith Rescue Mission (tryb „Schody”) przez okno
+Halo Foragera. Ta sama klasa wyszła też przy etykietach `cast_spell`
+i okna Vaana (K2): warianty różniące się wyłącznie stun celem były
+nierozróżnialne (M91).
+
+## L123 (2026-09-02) — przypadek: Semantyka zaimplementowana w jednym torze nie istnieje w drugim
+
+**Przypadek:** M291 (wpis w rejestrze oznaczony jako cofnięte). Karta „up to two target
+creatures EACH get +1/+0" miała być
+dopisaniem wpisu do katalogu. Tor triggerów umiał to od M157 F4(a)
+(`applyTriggerEffects`: `count > 1` → lista efektów aplikowana raz na cel), a tor
+czaru — nie: aplikuje listę efektów RAZ z pełną tablicą celów, a `pump` i
+`grant_keywords_until_end_of_turn` czytają `targets[0]`. Gdybym skończył na
+„katalog = dane, silnik już to umie", karta wchodziłaby do repo z cichym błędem:
+pompowałaby pierwszy cel dwa razy, a drugi wcale. Żaden test jej by nie przyłapał,
+bo nie istniała.
+
+## L132 (2026-09-06) — przypadek: Wycena oparta o STREFĘ UKRYTĄ jest inertna; audyt czytający to samo źródło tego nie zobaczy
+
+**Przypadek:** PR #100 dodał wyceny `resolve_manifest_dread`,
+`resolve_reveal_exile_hand` i poprawki `resolve_search_choice` /
+`resolve_satyr_look_choice` — wszystkie liczone z `view.zones.library.find(id)`
+(i z `view.zones.hand` przy cudzej ręce). `playerView` projekcjonuje te strefy
+jako `{ id, controllerId, hidden: true }`: wpis JEST (lookup truthy, więc
+`if (!card) return 0` nigdy się nie oddziela), ale `kind`/`manaCost`/`power`
+są `undefined`, a `?? 0` zeruje różnice. Pomiar: `bot-tie-audit --kind=manifest` — dwa warianty po 6 pkt przy projekcji
+`rozróznialne` (seed 4025), czyli decyzja = kolejność ofert.
+
+**Przyczyna:** L1 + L102 w nowym wcieleniu: nie brak `case`, tylko WYBÓR
+ŹRÓDŁA wewnątrz case'u. Groźniejsze niż L131, bo niewidoczne dla strażnika:
+`tieProjection` dla szukania czytała TE SAME puste wpisy, więc audyt kładł 12
+remisów do `rownowazne` — narzędzie mierzyło własną ślepotę (L119/L13). Gdzie
+projekcja miała właściwe źródło (`pendingManifestDread.cards`), rozjazd wyszedł
+jako GROZA: metryka działa, tylko nie może patrzeć w to samo miejsce co kod.
+
+## L136 (2026-09-07) — przypadek: `git checkout <plik>` kasuje NIEZAKOMMITOWANE poprawki w tym pliku; scratch piaskownicy znika między turami
+
+**Przypadek:** sesja 01a078a2 (audyt PR #102). Dwa niezależne ukłucia. (1) Żeby
+sprawdzić, czy test CLI narzędzia łapie mutację, przywróciłem plik narzędzia
+`git checkout tools/fetch-card-rulings.mjs` — a poprawka narzędzia NIE była
+jeszcze zacommitowana (czekała w drzewie na wspólną bramkę), więc checkout
+zwalił ją razem z mutacją; o mały włos commit „naprawa + test" wjechałby bez
+naprawy, a test świeciłby na czerwono. (2) W trakcie sesji środowisko
+odtworzyło workspace ze świeżego klona: 9 commitów zostało na zdalnej gałęzi,
+a NIEZAKOMMITOWANE zmiany czterech kolejnych findingów wróciły jako diff
+roboczy — `git log` wskazywał bazę PR, `/home/user/*.txt` (komunikaty commitów,
+skrypty sondujące, transkrypty testera) przepadły bez śladu.
+
+**Przyczyna:** snapshot ARENY to drzewo + patchset, nie historia git; wszystko
+poza `git push` jest ulotne, a `git checkout <sciezka>` przywraca wersję z
+INDEKSU/HEAD niezależnie od tego, co było w pliku.
+
+## L137 (2026-09-07) — przypadek: etykieta to rodzina: jedno źródło brzmienia, test na PRAWDZIWYM widoku, partia celowana
+
+**Przypadek:** F6 z audytu PR #102 — przeciwnik czytał „(Morph)" o cudzym
+cloaku, bo pięć miejsc stołu formatowało tę samą etykietę osobno i wszystkie
+pytały o `cloakReady` (pole ZNAJOMOŚCI reguły, bramkowane przez Fog of War),
+żeby odkryć PRZYCZYNĘ zakrycia. Po naprawie (jawne `faceDownCause` w widoku +
+dwa helpery w `session.js`) i po przejściu wszystkich testów JEDNO miejsce
+dalej kłamało: `nameOfObject` w `session.js` — nazwa czytana przez ~124 opisy
+logu i modal „Rozgrywka". Wpadło dopiero na żywym stole (partia 5/6 z talią
+celowaną): „Plains (Morph) dostaje +1 licznik flying". Ta sama partia
+pokazała drugą nogę rodziny: `nextFaceDownCopyNumber` numerował tylko zakrycia
+z `cloakReady`, więc dwa clokowane lądy miały TEN SAM numer — a ruling WotC
+2024-02-02 każe rozróżniać przyczynę zakrycia przez wszystkich graczy.
+
+**Przyczyna:** fakt „co zakryło kartę" był wyprowadzany z pola, które znaczy
+co innego, w pięciu kopiach kodu; testy jednostkowe etykiet budowały widoki
+RĘCZNIE (ficzki oddawały stary kształt), a partie na zwykłych taliach nigdy nie
+doczekały się cloaka (1 kopia w jednej talii).

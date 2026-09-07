@@ -93,8 +93,8 @@ w ogóle miał co oglądać, zrób talię CELOWANĄ:
 4. **usuń plik PRZED bramką** — `npm test` ma strażników, którzy nie znoszą
    drugiej talii z tą samą kartą: „każda wspierana karta jest w DOKŁADNIE
    jednej talii" (M178/ADR 0023), zgodność z generatorem i liczności w README.
-   Cztery czerwone testy po zostawieniu `decks/audyt-cloak.txt` to dokładnie
-   ten przypadek (nie regresja silnika).
+   Cztery czerwone testy po zostawieniu takiej chwilowej talii w `decks/` to
+   dokładnie ten przypadek (nie regresja silnika).
 
 Talia nie musi mieć 60 kart (partia skończy się na pustej bibliotece — dla
 audytu etykiet to bez znaczenia), ale musi dawać rozegranie mechaniki
