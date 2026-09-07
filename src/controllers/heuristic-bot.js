@@ -5818,6 +5818,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(20 + (card.manaCost ?? 0) + (card.power ?? 0) + (card.toughness ?? 0));
       }
       case 'pass_priority': return finish(0);
+      // E2/D (plan 2026-09-07): decyzje JEDNOWARIANTOWE — wycena nie może
+      // zmienić wyboru (jedyna legalna komenda albo warianty regułowo
+      // równoważne). Jawne case zamiast default: telemetria „niewycenione"
+      // (E1) oznacza od teraz wyłącznie naprawdę NOWY typ komendy silnika.
+      case 'resolve_damage_assignment':
+        return finish(0); // M66/R: dokładnie jeden wariant (lethal-first); człowiek ma wizard (CR 510.1c/d)
+      case 'resolve_replacement_choice':
+        return finish(0); // CR 616.1: regenerate vs shield — regułowo równoważne
+      case 'resolve_reveal_order':
+        return finish(0); // jedna komenda (kolejność jak w reveal — patrz oferta silnika)
+      case 'resolve_index_choice':
+        return finish(0); // jedna komenda (kolejność oryginalna; execute przyjmuje permutacje)
+      case 'resolve_modal_choice':
+        return finish(0); // skip (modeIndex null) tylko gdy żaden tryb nie ma kandydatów (L48)
       default:
         // E1: decyzja bez dedykowanej wyceny — wynik z kolejności ofert.
         // Trafienie liczy scoreTracked/chooseCommand i raportuje jako
