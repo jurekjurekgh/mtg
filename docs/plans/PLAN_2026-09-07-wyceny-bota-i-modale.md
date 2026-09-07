@@ -181,3 +181,33 @@ kolejności ofertę) → implementacja → GREEN → `npm test` + build → comm
   Bez nowych kart, bez pełnego B0, bez nowego wpisu LESSONS (brak nowej
   klasy; quirk `addObject`/`attachedTo` żyje w kontrakcie
   attachments.js i handoffie).
+## E6. Zgłoszenia właściciela z testów (redirect po E5, ten sam PR)
+
+- [ ] **A1**: bot tapuje Moonscarred Werewolf („{T}: Add {G}{G}") w pierwszym
+      możliwym momencie mimo braku potrzeby many — mana wyparuje, źródło
+      zostaje zatapiane. Rozpoznanie: gałąź `producesManaOnly` w
+      `activate_ability` pyta tylko „czy ręka ma COKOLWIEK płatnego"
+      (`hasPlayableInHand`), bez testu M128 „czy ta mana COKOLWIEK
+      odblokowuje"; baza `score = 2` bije pass (0), a bez celów nie działa
+      nawet straż M106. Fix generyczny (ADR 0002, L28 — ta sama reguła co
+      M128 przy komponencie add_mana): bramka `unlocksSomething`
+      (availableNow → availableNow + net) + kara jak M167/D; RED-first,
+      mutacje kontrolne.
+- [ ] **A2**: panel „Rozgrywka" nie pokazuje transformacji wilkołaka BOTA
+      rozstrzyganej poza oknem `botActing` (upkeep gracza) — informacja
+      jest tylko w logu. Rozpoznanie: `noteBotMove` wypuszcza
+      `object_transformed` tylko dla człowieka (`HUMAN_DIGEST_EVENTS`,
+      M257/K4) albo w oknie stosu — a `object_transformed` NIE jest w
+      `BOT_RESOLUTION_EVENTS`, więc okno nie ratuje; do tego brak wpisu w
+      `BOT_MOVE_CARD_EVENTS` = brak miniatury nowej twarzy. Fix: transform
+      ZAWSZE treścią panelu + miniatura (pole bitwy jawne, CR 400.2).
+- [ ] **B**: hover → powiększenie karty specjalnej Day/Night (i pozostałych
+      specjalnych). Weryfikacja: naprawione w PR #104 („Uwaga B",
+      `attachSpecialCardHover` — jedno podpięcie dla wszystkich paneli);
+      sonda jsdom na HEAD potwierdza podpięcie i podgląd dla Day/Night.
+      Szczelina do domknięcia: strażnik testowy („drut, nie żarówka")
+      nie pinuje `renderSpeedPanel` (M313, dodany po Uwadze B) — dołożony
+      do `test/uwagi-tura8-hover-kart-specjalnych.test.js`. Wniosek dla
+      właściciela: testować na świeżym buildzie/pages.
+- Kryterium: jak w E2 — RED-first, `npm test` + build na każdy zielony
+  krok, commit+push natychmiast (ADR 0020 C), szybki benchmark na końcu.
