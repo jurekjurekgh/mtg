@@ -78,7 +78,8 @@ export function nextCopyNumber(state, name) {
 }
 
 /**
- * M319/NA1: kolejny numer STAŁEJ kopii zakrytego cloak-a (CR 702.75) —
+ * M319/NA1: kolejny numer STAŁEJ kopii zakrytego cloak-a (CR 701.56 +
+ * ruling WotC 2024-02-02 o rozróżnialności zakryć) —
  * „Nazwa (Cloak N)" w etykietach celów, tak jak „Nazwa (kopia N)" dla
  * tokenów-kopii (M172/D). Liczymy ŻYWE zakryte cloak-i TEGO Kontrolera
  * o tym cardId (tożsamość cloak-a zna tylko kontroler — CR 708.6), żeby

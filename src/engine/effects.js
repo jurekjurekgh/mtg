@@ -1805,7 +1805,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       }
     }
   }
-  // Cloak (Veiled Ascension, MKC; CR 702.75 — „cloak"): wierzch biblioteki
+  // Cloak (Veiled Ascension, MKC; CR 701.56 — „cloak"): wierzch biblioteki
+  // UWAGA CO DO NUMERU (audyt PR #102, F5): cloak to keyword ACTION, więc
+  // siedzi w CR 701 (akcje), NIE w 702 (ability keywords). Komentarze w tym
+  // repo cytały „702.75" od M258 — przepisane na 701.56a–g wg tekstu z 2024
+  // r.; słownik z VIII 2026 przesuwa je na 701.58a–g, więc przy kolejnym
+  // odświeżaniu CR chodzi o TEN sam blok (listę mapowań trzyma
+  // docs/audits/AUDYT_PR102_2026-09-06.md).
   // gracza na pole bitwy TWARZĄ W DÓŁ jako bezimienny stwór 2/2 bez zdolności
   // (jak morph). Rzeczywisty cardId zostaje ukryty (faceDown), a obiekt ma
   // cechy tylko 2/2 (CR 708.2). Wracający na górę po obrocie twarzą do góry
@@ -1825,7 +1831,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       power: 2, toughness: 2,
       types: ['Creature'],
       subtypes: [],
-      // M258/F3 (CR 702.75): zakryty permanent to stwór 2/2 z WARD {2} —
+      // M258/F3 (CR 701.56a): zakryty permanent to stwór 2/2 z WARD {2} —
       // pełna mechanika CR 702.21 (decyzja właściciela: żadnych
       // limitations), nie wpis w support.limitations. Keyword + kwota
       // (czyta wardAmountOf).
@@ -1847,7 +1853,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       ward: 2,
       summoningSickness: true,
       tapped: false,
-      // M315 (CR 702.75c + ruling WotC 2024-02-02): „Any time you have
+      // M315 (CR 701.56b + ruling WotC 2024-02-02): „Any time you have
       // priority, you can turn a cloaked permanent you control face-up by
       // revealing that it's a creature card ... and paying its mana cost.
       // This is a special action." — flagi dla turn_cloak_face_up
@@ -1860,7 +1866,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         keywords: Object.freeze([...(topObj.keywords ?? [])]),
         manaCost: topObj.manaCost ?? 0,
         cardName: topObj.cardName ?? null,
-        // M321: P/T karty — uncover ma przywrócić pełne ciało (CR 702.75c).
+        // M321: P/T karty — uncover ma przywrócić pełne ciało (CR 701.56b).
         // Pole `power`/`toughness` obiektu jest nadpisane na 2/2 zakrycia, więc
         // bez tego odkryty cloak zostawał 2/2 (bug z M315: turnFaceUp
         // przywracał nazwę/kolory/koszt, ale nie statystyki).

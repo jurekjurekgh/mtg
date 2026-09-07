@@ -2293,11 +2293,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     switch (cmd.type) {
       case 'concede': return finish(NEVER);
-      // M315 (CR 702.75c): uncover cloakowanego — legalna SPECIALNA AKCJA
+      // M315 (CR 701.56b): uncover cloakowanego — legalna SPECIALNA AKCJA
       // (bez stosu), wycena poniżej (M321 — zgłoszenie właściciela: „jawna
       // luka w działaniu bota").
       case 'turn_cloak_face_up': {
-        // M321 (CR 702.75c + ruling WotC 2024-02-02): uncover kosztuje koszt
+        // M321 (CR 701.56b + ruling WotC 2024-02-02): uncover kosztuje koszt
         // many KARTY i zdejmuje ward {2} — opłaca się tylko, gdy karta jest
         // WYRAŹNIE lepsza od zakrycia 2/2 z ward. Bot odsłania TYLKO w mainie
         // (poza mainem odsłonięcie nic nie zmienia: po deklaracji bloków ciało
@@ -2311,7 +2311,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const cloakDef = cardDef(cloak.cardId);
         if (!cloakDef) return finish(NEVER);
         // playerView nie niesie cloakTurnUpCost — kosztmany KARTY bierzemy
-        // z rejestru (CR 702.75c: „paying its mana cost"; identycznie czyta
+        // z rejestru (CR 701.56b: „paying its mana cost"; identycznie czyta
         // oferta w game-state).
         const uncoverCost = cloak.cloakTurnUpCost ?? cloakDef.manaCost ?? 0;
         if (uncoverCost <= 0 || ownOpenMana(view) < uncoverCost) return finish(NEVER);

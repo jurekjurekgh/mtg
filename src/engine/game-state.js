@@ -5880,7 +5880,7 @@ export function playerView(state, playerId) {
         legalCommands.push(command('turn_manifest_face_up', playerId, { objectId: objId }));
       }
     }
-    // M315 (CR 702.75c + ruling WotC 2024-02-02): cloak — obrót twarzą do
+    // M315 (CR 701.56b + ruling WotC 2024-02-02): cloak — obrót twarzą do
     // góry to SPECJALNA AKCJA: „any time you have priority", bez stosu,
     // niereagowalna; tylko gdy pod zakryciem karta STWORA („revealing that
     // it's a creature card"); koszt = koszt many KARTY. Oferta = walidacja

@@ -716,7 +716,7 @@ export function effectiveSubtypesOnBattlefield(state, object) {
  * Zwraca null, gdy obiekt nie ma warda (keyword czytany EFEKTYWNIE —
  * granty/utrata), inaczej kwotę many z pola `ward`; domyślnie 2, bo
  * jedyne źródło w katalogu to zakryte permanenty (cloak/disguise,
- * CR 702.75: „2/2 creature with ward {2}").
+ * CR 701.56a: „2/2 creature with ward {2}").
  */
 export function wardAmountOf(object, state = null) {
   if (!object) return null;
@@ -743,7 +743,7 @@ export function effectiveKeywords(object, state = null) {
     if ((object.counters ?? {}).flying > 0) counterKeywords.push('flying');
     if ((object.counters ?? {}).deathtouch > 0) counterKeywords.push('deathtouch');
     if ((object.counters ?? {}).lifelink > 0) counterKeywords.push('lifelink');
-    // M258/F3 (CR 702.75 + 702.21): zakryty permanent z CLOAK/DISGUISE to
+    // M258/F3 (CR 701.56a + 702.21): zakryty permanent z CLOAK/DISGUISE to
     // 2/2 Z WARD {2} — ward jest częścią definicji zakrycia (jak staty 2/2),
     // a nie drukowanym keywordem zakrywanej karty, więc CR 708.2a go NIE
     // tłumi (ruling cloak: „Other effects can still grant it any
@@ -842,7 +842,7 @@ export function turnFaceUp(state, objectId, counters = {}) {
         keywords: [...(object.faceDownOriginal.keywords ?? [])],
         manaCost: object.faceDownOriginal.manaCost ?? 0,
         cardName: object.faceDownOriginal.cardName ?? null,
-        // M321: uncover przywraca też P/T karty (CR 702.75c — „turn it face
+        // M321: uncover przywraca też P/T karty (CR 701.56b — „turn it face
         // up"; odkryty cloak zostawał 2/2, bo cloak nadpisuje power/toughness
         // na staty zakrycia). Morfy, których faceDownOriginal nie niesie P/T,
         // zostają przy obecnym zachowaniu (fallback na obiekt).

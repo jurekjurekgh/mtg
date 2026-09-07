@@ -1583,7 +1583,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
 
 /** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
 export function rulesText(info) {
-  // M258/F3 (cloak, CR 702.75): zakryty permanent z ward {2} — ward jest
+  // M258/F3 (cloak, CR 701.56a): zakryty permanent z ward {2} — ward jest
   // cechą JAWNĄ zakrycia (jak staty 2/2), więc kafel go pokazuje mimo
   // maskowania reszty tożsamości (CR 708.2a tłumi druk, nie definicję
   // zakrycia). Zwykły morph bez warda: linia pusta jak dotąd.
@@ -3263,7 +3263,7 @@ export function cardInfo(session, object, combat = null) {
   const attachedEquipment = Boolean(object.attachedTo) && !attachedAura;
   // M258/F3: ward zakrytego (cloak) jest jawny — keyword w widoku
   // (reszta keywordów tłumiona przez CR 708.2a jak dotąd).
-    // M315 (Veiled Ascension, CR 702.75 + 122.1b): zakryty permanent NOSI ward
+    // M315 (Veiled Ascension, CR 701.56a + 122.1b): zakryty permanent NOSI ward
   // {2} (definicja zakrycia) i MOŻE mieć jawne granty (licznik flying z Veiled
   // Ascension — „face-down creatures enter with a flying counter"). Widok
   // już rozstrzyga FoW (kontroler: pełna lista; przeciwnik: same granty),

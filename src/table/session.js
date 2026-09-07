@@ -67,7 +67,7 @@ export function faceDownName(cardName) {
 
 /**
  * M319/NA1 (zgłoszenie właściciela 2026-09-06, cz. 5): zakryty CLOAK
- * (CR 702.75) ma własny znacznik — „Morph" kłamał o mechanice (cloak to
+ * (CR 701.56) ma własny znacznik — „Morph" kłamał o mechanice (cloak to
  * 2/2 z ward {2}; morph to 2/2 bez ward). Nazwa WŁASNEGO cloak-a dostaje
  * STAŁY numer kopii („Nazwa (Cloak 1)", „Nazwa (Cloak 2)") — kilka jednakowych
  * zakrytych kart musi dać się rozpoznać przy wyborze celów, tak jak tokeny-kopie
