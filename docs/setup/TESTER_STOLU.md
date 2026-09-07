@@ -96,6 +96,16 @@ w ogóle miał co oglądać, zrób talię CELOWANĄ:
    Cztery czerwone testy po zostawieniu takiej chwilowej talii w `decks/` to
    dokładnie ten przypadek (nie regresja silnika).
 
+**M337 od strony stołu (2026-09-07):** oferta komend opcjonalnych (obrót
+zakrytego tworza twarzą do góry) jest teraz bramkowana tym samym predykatem co
+`pass_priority` — przy WSZELKIEJ otwartej decyzji (własnej czy cudzej), nie tylko
+własnej. Na stole to znaczy: gdy panel żąda wyboru celu triggera, przycisk
+„Obróć twarzą do góry" NIE powinien znikać na chwilę i wracać — on nie istnieje,
+dopóki decyzja nie zapadnie, i to jest zachowanie zgodne z CR (specjalna akcja
+żąda priorytetu, a priorytetu nie ma przy wiszącej decyzji). Zgłoszenie detektora
+„brak opcji obrotu" przy otwartym `resolve_*` to nie błąd UI — zanim raportować,
+sprawdź, czy panel nie czeka na inny wybór.
+
 Talia nie musi mieć 60 kart (partia skończy się na pustej bibliotece — dla
 audytu etykiet to bez znaczenia), ale musi dawać rozegranie mechaniki
 w pierwszych turach: u nas 2× Veiled Ascension + 8 Plains/4 Island, dzięki

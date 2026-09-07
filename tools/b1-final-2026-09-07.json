@@ -1,0 +1,5599 @@
+{
+  "generatedAt": "2026-09-07T09:49:07.107Z",
+  "elapsedMs": 1045956,
+  "config": {
+    "bots": [
+      "aggro",
+      "heuristic",
+      "random"
+    ],
+    "pairs": [
+      [
+        "aggro",
+        "heuristic"
+      ],
+      [
+        "aggro",
+        "random"
+      ],
+      [
+        "heuristic",
+        "random"
+      ]
+    ],
+    "decks": [
+      "alara",
+      "dominaria-brg",
+      "dominaria-wu",
+      "final-fantasy",
+      "forgotten-realms",
+      "innistrad-brg",
+      "innistrad-wu",
+      "kaladesh",
+      "mirrodin-brg",
+      "mirrodin-wu",
+      "ravnica",
+      "srodziemie",
+      "tarkir-bg",
+      "tarkir-wur",
+      "theros",
+      "warhammer-ubr",
+      "warhammer-wg",
+      "wiedzmin",
+      "zendikar"
+    ],
+    "seedsCount": 5,
+    "seedBase": 1000,
+    "maxCommands": 8000,
+    "selfPlay": false,
+    "stallMs": 15000,
+    "totalMatches": 5700,
+    "budgetMatches": 6000,
+    "deckPairsPlayed": 190,
+    "deckPairsAll": 190
+  },
+  "pairs": {
+    "aggro | heuristic": {
+      "games": 1900,
+      "unfinished": 1,
+      "wins": {
+        "aggro": 559,
+        "heuristic": 1340
+      },
+      "avgTurns": 19.42,
+      "avgCommands": 461.5,
+      "decks": {
+        "alara | alara": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "heuristic": 1
+          },
+          "avgTurns": 18,
+          "avgCommands": 423.4
+        },
+        "alara | dominaria-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 16.9,
+          "avgCommands": 400.3
+        },
+        "alara | dominaria-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.9,
+          "avgCommands": 397.2
+        },
+        "alara | final-fantasy": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 19.4,
+          "avgCommands": 470.6
+        },
+        "alara | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 1,
+            "heuristic": 9
+          },
+          "avgTurns": 18,
+          "avgCommands": 444.1
+        },
+        "alara | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 15.9,
+          "avgCommands": 374.1
+        },
+        "alara | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 21.3,
+          "avgCommands": 513
+        },
+        "alara | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 17.3,
+          "avgCommands": 416.1
+        },
+        "alara | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 429.1
+        },
+        "alara | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 22.4,
+          "avgCommands": 530.3
+        },
+        "alara | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 477.6
+        },
+        "alara | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 26,
+          "avgCommands": 665.5
+        },
+        "alara | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 16.9,
+          "avgCommands": 393
+        },
+        "alara | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 22.7,
+          "avgCommands": 540.3
+        },
+        "alara | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 5,
+            "heuristic": 5
+          },
+          "avgTurns": 17.3,
+          "avgCommands": 410.2
+        },
+        "alara | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 21.9,
+          "avgCommands": 521.9
+        },
+        "alara | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 19.7,
+          "avgCommands": 479.6
+        },
+        "alara | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 17.4,
+          "avgCommands": 406.8
+        },
+        "alara | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 444.5
+        },
+        "dominaria-brg | dominaria-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 17.6,
+          "avgCommands": 410.8
+        },
+        "dominaria-brg | dominaria-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 17.6,
+          "avgCommands": 411.6
+        },
+        "dominaria-brg | final-fantasy": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 17.9,
+          "avgCommands": 423.2
+        },
+        "dominaria-brg | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 15,
+          "avgCommands": 355.6
+        },
+        "dominaria-brg | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 394.1
+        },
+        "dominaria-brg | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 17.2,
+          "avgCommands": 405.5
+        },
+        "dominaria-brg | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 3,
+            "heuristic": 7
+          },
+          "avgTurns": 16.8,
+          "avgCommands": 398.6
+        },
+        "dominaria-brg | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 4,
+            "heuristic": 6
+          },
+          "avgTurns": 20,
+          "avgCommands": 455
+        },
+        "dominaria-brg | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 2,
+            "heuristic": 8
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 466.2
+        },
+        "dominaria-brg | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 20.1,
+          "avgCommands": 461.2
+        },
+        "dominaria-brg | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 20.8,
+          "avgCommands": 502.1
+        },
+        "dominaria-brg | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 17.1,
+          "avgCommands": 391
+        },
+        "dominaria-brg | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 19,
+          "avgCommands": 441.1
+        },
+        "dominaria-brg | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 3,
+            "heuristic": 7
+          },
+          "avgTurns": 17.2,
+          "avgCommands": 391.1
+        },
+        "dominaria-brg | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 18.4,
+          "avgCommands": 420.6
+        },
+        "dominaria-brg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 19.1,
+          "avgCommands": 459.1
+        },
+        "dominaria-brg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 423.1
+        },
+        "dominaria-brg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 18.8,
+          "avgCommands": 436.3
+        },
+        "dominaria-wu | dominaria-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 19.6,
+          "avgCommands": 480.7
+        },
+        "dominaria-wu | final-fantasy": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "heuristic": 4
+          },
+          "avgTurns": 17.9,
+          "avgCommands": 438.3
+        },
+        "dominaria-wu | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 4,
+            "heuristic": 6
+          },
+          "avgTurns": 18.3,
+          "avgCommands": 457.8
+        },
+        "dominaria-wu | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 17.7,
+          "avgCommands": 429.7
+        },
+        "dominaria-wu | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 4
+          },
+          "avgTurns": 18.6,
+          "avgCommands": 452.1
+        },
+        "dominaria-wu | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 5,
+            "heuristic": 5
+          },
+          "avgTurns": 19.7,
+          "avgCommands": 494.9
+        },
+        "dominaria-wu | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 21,
+          "avgCommands": 492.2
+        },
+        "dominaria-wu | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 4,
+            "heuristic": 6
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 484.6
+        },
+        "dominaria-wu | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "heuristic": 4
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 484.5
+        },
+        "dominaria-wu | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 3,
+            "aggro": 7
+          },
+          "avgTurns": 21.7,
+          "avgCommands": 550.5
+        },
+        "dominaria-wu | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 16.8,
+          "avgCommands": 399.5
+        },
+        "dominaria-wu | tarkir-wur": {
+          "games": 10,
+          "unfinished": 1,
+          "wins": {
+            "heuristic": 4,
+            "aggro": 5
+          },
+          "avgTurns": 23.3,
+          "avgCommands": 554.4
+        },
+        "dominaria-wu | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 4,
+            "heuristic": 6
+          },
+          "avgTurns": 17,
+          "avgCommands": 404.3
+        },
+        "dominaria-wu | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 4,
+            "aggro": 6
+          },
+          "avgTurns": 19.4,
+          "avgCommands": 460.7
+        },
+        "dominaria-wu | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 4
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 512.8
+        },
+        "dominaria-wu | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "heuristic": 2
+          },
+          "avgTurns": 17.3,
+          "avgCommands": 402.5
+        },
+        "dominaria-wu | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 16.8,
+          "avgCommands": 409.1
+        },
+        "final-fantasy | final-fantasy": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 20.9,
+          "avgCommands": 512.7
+        },
+        "final-fantasy | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.1,
+          "avgCommands": 453.9
+        },
+        "final-fantasy | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 20.3,
+          "avgCommands": 492.6
+        },
+        "final-fantasy | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "heuristic": 4
+          },
+          "avgTurns": 20.8,
+          "avgCommands": 518.2
+        },
+        "final-fantasy | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 3,
+            "heuristic": 7
+          },
+          "avgTurns": 17.6,
+          "avgCommands": 433.2
+        },
+        "final-fantasy | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 484.4
+        },
+        "final-fantasy | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 2,
+            "heuristic": 8
+          },
+          "avgTurns": 22.9,
+          "avgCommands": 546.9
+        },
+        "final-fantasy | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "heuristic": 4
+          },
+          "avgTurns": 21.9,
+          "avgCommands": 521.4
+        },
+        "final-fantasy | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 22.9,
+          "avgCommands": 591.1
+        },
+        "final-fantasy | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 16.5,
+          "avgCommands": 389.9
+        },
+        "final-fantasy | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 4
+          },
+          "avgTurns": 22.7,
+          "avgCommands": 542
+        },
+        "final-fantasy | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 17.6,
+          "avgCommands": 426.8
+        },
+        "final-fantasy | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 21.2,
+          "avgCommands": 506.9
+        },
+        "final-fantasy | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 1,
+            "heuristic": 9
+          },
+          "avgTurns": 22.2,
+          "avgCommands": 547.8
+        },
+        "final-fantasy | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "heuristic": 4
+          },
+          "avgTurns": 21.5,
+          "avgCommands": 515.6
+        },
+        "final-fantasy | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 19.5,
+          "avgCommands": 478.7
+        },
+        "forgotten-realms | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 4
+          },
+          "avgTurns": 16.9,
+          "avgCommands": 424.1
+        },
+        "forgotten-realms | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 16.4,
+          "avgCommands": 394.1
+        },
+        "forgotten-realms | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "heuristic": 2
+          },
+          "avgTurns": 18.1,
+          "avgCommands": 457.5
+        },
+        "forgotten-realms | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 16.9,
+          "avgCommands": 423.2
+        },
+        "forgotten-realms | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 19.8,
+          "avgCommands": 478.3
+        },
+        "forgotten-realms | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 4
+          },
+          "avgTurns": 21.1,
+          "avgCommands": 505
+        },
+        "forgotten-realms | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "heuristic": 4
+          },
+          "avgTurns": 19.9,
+          "avgCommands": 480.4
+        },
+        "forgotten-realms | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 2,
+            "aggro": 8
+          },
+          "avgTurns": 18.4,
+          "avgCommands": 481.9
+        },
+        "forgotten-realms | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 14.8,
+          "avgCommands": 346.9
+        },
+        "forgotten-realms | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 17.8,
+          "avgCommands": 430.8
+        },
+        "forgotten-realms | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 456.1
+        },
+        "forgotten-realms | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 2,
+            "aggro": 8
+          },
+          "avgTurns": 19.9,
+          "avgCommands": 505.8
+        },
+        "forgotten-realms | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 17.6,
+          "avgCommands": 431.2
+        },
+        "forgotten-realms | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 3,
+            "aggro": 7
+          },
+          "avgTurns": 17.6,
+          "avgCommands": 426
+        },
+        "forgotten-realms | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 15.1,
+          "avgCommands": 368.1
+        },
+        "innistrad-brg | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 15.9,
+          "avgCommands": 372.9
+        },
+        "innistrad-brg | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 2,
+            "heuristic": 8
+          },
+          "avgTurns": 17.1,
+          "avgCommands": 403.6
+        },
+        "innistrad-brg | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 3,
+            "heuristic": 7
+          },
+          "avgTurns": 14.5,
+          "avgCommands": 342.2
+        },
+        "innistrad-brg | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 17,
+          "avgCommands": 383.7
+        },
+        "innistrad-brg | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 18.6,
+          "avgCommands": 434
+        },
+        "innistrad-brg | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 5,
+            "heuristic": 5
+          },
+          "avgTurns": 17.8,
+          "avgCommands": 407.8
+        },
+        "innistrad-brg | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 19.7,
+          "avgCommands": 484.8
+        },
+        "innistrad-brg | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 15.5,
+          "avgCommands": 363.3
+        },
+        "innistrad-brg | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 17.8,
+          "avgCommands": 410.3
+        },
+        "innistrad-brg | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 16.2,
+          "avgCommands": 381.8
+        },
+        "innistrad-brg | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 16.8,
+          "avgCommands": 389
+        },
+        "innistrad-brg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 18.7,
+          "avgCommands": 445
+        },
+        "innistrad-brg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 5,
+            "heuristic": 5
+          },
+          "avgTurns": 18,
+          "avgCommands": 417.4
+        },
+        "innistrad-brg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 16.5,
+          "avgCommands": 391.4
+        },
+        "innistrad-wu | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.9,
+          "avgCommands": 423.6
+        },
+        "innistrad-wu | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 5,
+            "heuristic": 5
+          },
+          "avgTurns": 17.5,
+          "avgCommands": 419
+        },
+        "innistrad-wu | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 20.4,
+          "avgCommands": 465.2
+        },
+        "innistrad-wu | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 473.9
+        },
+        "innistrad-wu | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 23.3,
+          "avgCommands": 536.9
+        },
+        "innistrad-wu | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 23.2,
+          "avgCommands": 585.7
+        },
+        "innistrad-wu | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 17,
+          "avgCommands": 394
+        },
+        "innistrad-wu | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 2,
+            "heuristic": 8
+          },
+          "avgTurns": 19.8,
+          "avgCommands": 458.2
+        },
+        "innistrad-wu | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 17.7,
+          "avgCommands": 417.4
+        },
+        "innistrad-wu | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 21.8,
+          "avgCommands": 506.1
+        },
+        "innistrad-wu | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 21.1,
+          "avgCommands": 509.4
+        },
+        "innistrad-wu | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 4,
+            "heuristic": 6
+          },
+          "avgTurns": 21.3,
+          "avgCommands": 497.6
+        },
+        "innistrad-wu | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 446.2
+        },
+        "kaladesh | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 5,
+            "heuristic": 5
+          },
+          "avgTurns": 17.5,
+          "avgCommands": 432.2
+        },
+        "kaladesh | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 4,
+            "heuristic": 6
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 436.4
+        },
+        "kaladesh | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 2,
+            "heuristic": 8
+          },
+          "avgTurns": 19.9,
+          "avgCommands": 467.5
+        },
+        "kaladesh | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 4,
+            "heuristic": 6
+          },
+          "avgTurns": 19.9,
+          "avgCommands": 467.7
+        },
+        "kaladesh | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 4,
+            "heuristic": 6
+          },
+          "avgTurns": 20.1,
+          "avgCommands": 502.9
+        },
+        "kaladesh | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 16.9,
+          "avgCommands": 398.6
+        },
+        "kaladesh | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 4,
+            "heuristic": 6
+          },
+          "avgTurns": 19.7,
+          "avgCommands": 464.9
+        },
+        "kaladesh | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 4,
+            "heuristic": 6
+          },
+          "avgTurns": 16.3,
+          "avgCommands": 386
+        },
+        "kaladesh | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 20.6,
+          "avgCommands": 486.1
+        },
+        "kaladesh | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 19.9,
+          "avgCommands": 489.6
+        },
+        "kaladesh | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "heuristic": 4
+          },
+          "avgTurns": 16.5,
+          "avgCommands": 381.7
+        },
+        "kaladesh | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 4
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 399.6
+        },
+        "mirrodin-brg | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 3,
+            "heuristic": 7
+          },
+          "avgTurns": 19,
+          "avgCommands": 425.6
+        },
+        "mirrodin-brg | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 19.7,
+          "avgCommands": 448.6
+        },
+        "mirrodin-brg | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 23.8,
+          "avgCommands": 543.8
+        },
+        "mirrodin-brg | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "heuristic": 3
+          },
+          "avgTurns": 24,
+          "avgCommands": 576.5
+        },
+        "mirrodin-brg | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 4
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 379.5
+        },
+        "mirrodin-brg | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 4
+          },
+          "avgTurns": 23.5,
+          "avgCommands": 545.2
+        },
+        "mirrodin-brg | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 19.6,
+          "avgCommands": 449.6
+        },
+        "mirrodin-brg | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 19.2,
+          "avgCommands": 438.8
+        },
+        "mirrodin-brg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 27,
+          "avgCommands": 639.6
+        },
+        "mirrodin-brg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 21.9,
+          "avgCommands": 487
+        },
+        "mirrodin-brg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 17.9,
+          "avgCommands": 416.6
+        },
+        "mirrodin-wu | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 24.5,
+          "avgCommands": 573.9
+        },
+        "mirrodin-wu | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 27.6,
+          "avgCommands": 637.7
+        },
+        "mirrodin-wu | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 4
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 493.6
+        },
+        "mirrodin-wu | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 379
+        },
+        "mirrodin-wu | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 18.1,
+          "avgCommands": 410.8
+        },
+        "mirrodin-wu | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 3,
+            "heuristic": 7
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 431.5
+        },
+        "mirrodin-wu | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 19.6,
+          "avgCommands": 450.7
+        },
+        "mirrodin-wu | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 21.8,
+          "avgCommands": 524.3
+        },
+        "mirrodin-wu | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 3,
+            "aggro": 7
+          },
+          "avgTurns": 19.6,
+          "avgCommands": 437.5
+        },
+        "mirrodin-wu | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 17.3,
+          "avgCommands": 408.1
+        },
+        "ravnica | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 24,
+          "avgCommands": 565.1
+        },
+        "ravnica | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 21.5,
+          "avgCommands": 535.2
+        },
+        "ravnica | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 20.3,
+          "avgCommands": 473.3
+        },
+        "ravnica | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 423.2
+        },
+        "ravnica | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 5,
+            "heuristic": 5
+          },
+          "avgTurns": 19.6,
+          "avgCommands": 459.4
+        },
+        "ravnica | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 22.1,
+          "avgCommands": 513
+        },
+        "ravnica | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 22.6,
+          "avgCommands": 549.3
+        },
+        "ravnica | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 3,
+            "heuristic": 7
+          },
+          "avgTurns": 26,
+          "avgCommands": 623.8
+        },
+        "ravnica | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.3,
+          "avgCommands": 408.7
+        },
+        "srodziemie | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 21,
+          "avgCommands": 522.5
+        },
+        "srodziemie | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.3,
+          "avgCommands": 379
+        },
+        "srodziemie | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 19.5,
+          "avgCommands": 451.2
+        },
+        "srodziemie | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 20.3,
+          "avgCommands": 480.2
+        },
+        "srodziemie | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 22.3,
+          "avgCommands": 518.1
+        },
+        "srodziemie | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 21.1,
+          "avgCommands": 504.9
+        },
+        "srodziemie | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 23.6,
+          "avgCommands": 554
+        },
+        "srodziemie | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.6,
+          "avgCommands": 438.8
+        },
+        "tarkir-bg | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 16.5,
+          "avgCommands": 385.2
+        },
+        "tarkir-bg | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 23.3,
+          "avgCommands": 548.1
+        },
+        "tarkir-bg | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 439
+        },
+        "tarkir-bg | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 5,
+            "heuristic": 5
+          },
+          "avgTurns": 22.6,
+          "avgCommands": 531.8
+        },
+        "tarkir-bg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 5,
+            "heuristic": 5
+          },
+          "avgTurns": 21.8,
+          "avgCommands": 526.6
+        },
+        "tarkir-bg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "heuristic": 3
+          },
+          "avgTurns": 22.7,
+          "avgCommands": 557.1
+        },
+        "tarkir-bg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 4
+          },
+          "avgTurns": 17.7,
+          "avgCommands": 423.7
+        },
+        "tarkir-wur | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 4
+          },
+          "avgTurns": 26.6,
+          "avgCommands": 637.9
+        },
+        "tarkir-wur | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 18.4,
+          "avgCommands": 431.6
+        },
+        "tarkir-wur | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 24.5,
+          "avgCommands": 592.9
+        },
+        "tarkir-wur | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 5
+          },
+          "avgTurns": 21.6,
+          "avgCommands": 531.3
+        },
+        "tarkir-wur | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 3,
+            "aggro": 7
+          },
+          "avgTurns": 20.3,
+          "avgCommands": 477.6
+        },
+        "tarkir-wur | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 20.1,
+          "avgCommands": 492
+        },
+        "theros | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 16.8,
+          "avgCommands": 388.6
+        },
+        "theros | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.1,
+          "avgCommands": 390.8
+        },
+        "theros | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 19.4,
+          "avgCommands": 462.6
+        },
+        "theros | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 20,
+          "avgCommands": 473.6
+        },
+        "theros | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.5,
+          "avgCommands": 388.5
+        },
+        "warhammer-ubr | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 21.7,
+          "avgCommands": 505.9
+        },
+        "warhammer-ubr | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 21,
+          "avgCommands": 502.3
+        },
+        "warhammer-ubr | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 4
+          },
+          "avgTurns": 20.6,
+          "avgCommands": 479.6
+        },
+        "warhammer-ubr | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 439.5
+        },
+        "warhammer-wg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.6,
+          "avgCommands": 453.9
+        },
+        "warhammer-wg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 22.7,
+          "avgCommands": 546.6
+        },
+        "warhammer-wg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.9,
+          "avgCommands": 408.9
+        },
+        "wiedzmin | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "aggro": 2
+          },
+          "avgTurns": 19.1,
+          "avgCommands": 436.1
+        },
+        "wiedzmin | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 1
+          },
+          "avgTurns": 15.4,
+          "avgCommands": 358.2
+        },
+        "zendikar | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 3
+          },
+          "avgTurns": 18.7,
+          "avgCommands": 445.7
+        }
+      }
+    },
+    "aggro | random": {
+      "games": 1900,
+      "unfinished": 0,
+      "wins": {
+        "aggro": 1692,
+        "random": 208
+      },
+      "avgTurns": 19.42,
+      "avgCommands": 458.5,
+      "decks": {
+        "alara | alara": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 17.3,
+          "avgCommands": 416.5
+        },
+        "alara | dominaria-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 445.8
+        },
+        "alara | dominaria-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 5,
+            "aggro": 5
+          },
+          "avgTurns": 22.8,
+          "avgCommands": 544.7
+        },
+        "alara | final-fantasy": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 19.6,
+          "avgCommands": 474.4
+        },
+        "alara | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 17.3,
+          "avgCommands": 420.1
+        },
+        "alara | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.4,
+          "avgCommands": 372.8
+        },
+        "alara | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 18.4,
+          "avgCommands": 450.3
+        },
+        "alara | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 17.5,
+          "avgCommands": 424
+        },
+        "alara | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 23.6,
+          "avgCommands": 571.5
+        },
+        "alara | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "aggro": 9
+          },
+          "avgTurns": 19.4,
+          "avgCommands": 461.4
+        },
+        "alara | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "random": 3
+          },
+          "avgTurns": 23.1,
+          "avgCommands": 553.6
+        },
+        "alara | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 20,
+          "avgCommands": 495
+        },
+        "alara | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "random": 4
+          },
+          "avgTurns": 18.7,
+          "avgCommands": 436.7
+        },
+        "alara | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 20.3,
+          "avgCommands": 486.7
+        },
+        "alara | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 18.1,
+          "avgCommands": 421.2
+        },
+        "alara | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 21.9,
+          "avgCommands": 536.5
+        },
+        "alara | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "aggro": 9
+          },
+          "avgTurns": 18.1,
+          "avgCommands": 437
+        },
+        "alara | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.1,
+          "avgCommands": 345.5
+        },
+        "alara | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "aggro": 9
+          },
+          "avgTurns": 19.4,
+          "avgCommands": 472.8
+        },
+        "dominaria-brg | dominaria-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 21.1,
+          "avgCommands": 483.3
+        },
+        "dominaria-brg | dominaria-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 5,
+            "aggro": 5
+          },
+          "avgTurns": 21.4,
+          "avgCommands": 500.3
+        },
+        "dominaria-brg | final-fantasy": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 21.2,
+          "avgCommands": 509.2
+        },
+        "dominaria-brg | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 436.4
+        },
+        "dominaria-brg | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 17.2,
+          "avgCommands": 409.4
+        },
+        "dominaria-brg | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 444.8
+        },
+        "dominaria-brg | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 19.6,
+          "avgCommands": 461.3
+        },
+        "dominaria-brg | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 20.9,
+          "avgCommands": 476
+        },
+        "dominaria-brg | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "random": 4
+          },
+          "avgTurns": 24.4,
+          "avgCommands": 574.7
+        },
+        "dominaria-brg | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 19.1,
+          "avgCommands": 430.7
+        },
+        "dominaria-brg | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 21,
+          "avgCommands": 505.7
+        },
+        "dominaria-brg | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 21.5,
+          "avgCommands": 492.4
+        },
+        "dominaria-brg | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "random": 3
+          },
+          "avgTurns": 23.2,
+          "avgCommands": 544.2
+        },
+        "dominaria-brg | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "random": 3
+          },
+          "avgTurns": 17.5,
+          "avgCommands": 397.9
+        },
+        "dominaria-brg | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "random": 3
+          },
+          "avgTurns": 20.6,
+          "avgCommands": 480.6
+        },
+        "dominaria-brg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 421.8
+        },
+        "dominaria-brg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 18.7,
+          "avgCommands": 429
+        },
+        "dominaria-brg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 21.4,
+          "avgCommands": 498.7
+        },
+        "dominaria-wu | dominaria-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 17.1,
+          "avgCommands": 411.3
+        },
+        "dominaria-wu | final-fantasy": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.1,
+          "avgCommands": 354.8
+        },
+        "dominaria-wu | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 371.3
+        },
+        "dominaria-wu | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 14.1,
+          "avgCommands": 338.8
+        },
+        "dominaria-wu | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 17.2,
+          "avgCommands": 406.5
+        },
+        "dominaria-wu | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 16,
+          "avgCommands": 374.7
+        },
+        "dominaria-wu | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 17.3,
+          "avgCommands": 398.6
+        },
+        "dominaria-wu | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.1,
+          "avgCommands": 345.5
+        },
+        "dominaria-wu | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 360.5
+        },
+        "dominaria-wu | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 377
+        },
+        "dominaria-wu | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 16.2,
+          "avgCommands": 374.3
+        },
+        "dominaria-wu | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 17.1,
+          "avgCommands": 402.4
+        },
+        "dominaria-wu | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 14.3,
+          "avgCommands": 332.8
+        },
+        "dominaria-wu | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.3,
+          "avgCommands": 357.1
+        },
+        "dominaria-wu | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.3,
+          "avgCommands": 355.5
+        },
+        "dominaria-wu | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 13.3,
+          "avgCommands": 298.6
+        },
+        "dominaria-wu | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 367.9
+        },
+        "final-fantasy | final-fantasy": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 19.1,
+          "avgCommands": 462.8
+        },
+        "final-fantasy | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 18.3,
+          "avgCommands": 447.9
+        },
+        "final-fantasy | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 17.1,
+          "avgCommands": 429.1
+        },
+        "final-fantasy | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 17.8,
+          "avgCommands": 434.6
+        },
+        "final-fantasy | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 18.4,
+          "avgCommands": 441.3
+        },
+        "final-fantasy | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 490.9
+        },
+        "final-fantasy | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 439.7
+        },
+        "final-fantasy | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 17.7,
+          "avgCommands": 416
+        },
+        "final-fantasy | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 19.7,
+          "avgCommands": 488.5
+        },
+        "final-fantasy | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 20.2,
+          "avgCommands": 476.5
+        },
+        "final-fantasy | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 20.9,
+          "avgCommands": 497.6
+        },
+        "final-fantasy | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 17.4,
+          "avgCommands": 421
+        },
+        "final-fantasy | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 459.6
+        },
+        "final-fantasy | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 17.5,
+          "avgCommands": 413.4
+        },
+        "final-fantasy | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 16.4,
+          "avgCommands": 376.2
+        },
+        "final-fantasy | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 18.1,
+          "avgCommands": 434.8
+        },
+        "forgotten-realms | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.5,
+          "avgCommands": 374.4
+        },
+        "forgotten-realms | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "aggro": 9
+          },
+          "avgTurns": 16.9,
+          "avgCommands": 426.9
+        },
+        "forgotten-realms | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 16.2,
+          "avgCommands": 395.4
+        },
+        "forgotten-realms | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 16,
+          "avgCommands": 390.9
+        },
+        "forgotten-realms | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.5,
+          "avgCommands": 366.5
+        },
+        "forgotten-realms | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.9,
+          "avgCommands": 371.5
+        },
+        "forgotten-realms | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 16.1,
+          "avgCommands": 378.9
+        },
+        "forgotten-realms | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 19.1,
+          "avgCommands": 482.2
+        },
+        "forgotten-realms | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 16.5,
+          "avgCommands": 392.9
+        },
+        "forgotten-realms | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 19.3,
+          "avgCommands": 466.7
+        },
+        "forgotten-realms | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 16.1,
+          "avgCommands": 389.4
+        },
+        "forgotten-realms | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 380.7
+        },
+        "forgotten-realms | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 16.3,
+          "avgCommands": 388.8
+        },
+        "forgotten-realms | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 362.6
+        },
+        "forgotten-realms | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 15.6,
+          "avgCommands": 370.8
+        },
+        "innistrad-brg | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 4,
+            "aggro": 6
+          },
+          "avgTurns": 18,
+          "avgCommands": 435.8
+        },
+        "innistrad-brg | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 19.4,
+          "avgCommands": 457.6
+        },
+        "innistrad-brg | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 19.7,
+          "avgCommands": 470.7
+        },
+        "innistrad-brg | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 5,
+            "random": 5
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 480.6
+        },
+        "innistrad-brg | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 6,
+            "aggro": 4
+          },
+          "avgTurns": 23.2,
+          "avgCommands": 548.4
+        },
+        "innistrad-brg | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 17.8,
+          "avgCommands": 411
+        },
+        "innistrad-brg | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 21.6,
+          "avgCommands": 537.8
+        },
+        "innistrad-brg | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "random": 4
+          },
+          "avgTurns": 21.5,
+          "avgCommands": 503.5
+        },
+        "innistrad-brg | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "random": 3
+          },
+          "avgTurns": 24.2,
+          "avgCommands": 574.8
+        },
+        "innistrad-brg | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 19.1,
+          "avgCommands": 451.2
+        },
+        "innistrad-brg | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 3,
+            "aggro": 7
+          },
+          "avgTurns": 18.4,
+          "avgCommands": 436.3
+        },
+        "innistrad-brg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 19.9,
+          "avgCommands": 472.5
+        },
+        "innistrad-brg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 17.8,
+          "avgCommands": 422.8
+        },
+        "innistrad-brg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 4,
+            "aggro": 6
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 437.6
+        },
+        "innistrad-wu | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 483
+        },
+        "innistrad-wu | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 19,
+          "avgCommands": 450.6
+        },
+        "innistrad-wu | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 21.3,
+          "avgCommands": 497.9
+        },
+        "innistrad-wu | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 25.8,
+          "avgCommands": 605.7
+        },
+        "innistrad-wu | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 20.9,
+          "avgCommands": 479.9
+        },
+        "innistrad-wu | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 23.6,
+          "avgCommands": 575
+        },
+        "innistrad-wu | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "random": 3
+          },
+          "avgTurns": 23,
+          "avgCommands": 532.6
+        },
+        "innistrad-wu | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 23.4,
+          "avgCommands": 550.4
+        },
+        "innistrad-wu | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 5,
+            "random": 5
+          },
+          "avgTurns": 17.2,
+          "avgCommands": 402.8
+        },
+        "innistrad-wu | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 22.5,
+          "avgCommands": 533.6
+        },
+        "innistrad-wu | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 20.1,
+          "avgCommands": 471.3
+        },
+        "innistrad-wu | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 19.7,
+          "avgCommands": 451
+        },
+        "innistrad-wu | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 23.2,
+          "avgCommands": 550.5
+        },
+        "kaladesh | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 449.2
+        },
+        "kaladesh | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 17.1,
+          "avgCommands": 395.6
+        },
+        "kaladesh | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 19.8,
+          "avgCommands": 467.4
+        },
+        "kaladesh | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 16.5,
+          "avgCommands": 380.5
+        },
+        "kaladesh | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 17.7,
+          "avgCommands": 430.8
+        },
+        "kaladesh | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 19.2,
+          "avgCommands": 454.2
+        },
+        "kaladesh | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 18.1,
+          "avgCommands": 425.3
+        },
+        "kaladesh | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 14,
+          "avgCommands": 323.9
+        },
+        "kaladesh | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 17.7,
+          "avgCommands": 419.1
+        },
+        "kaladesh | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 16.1,
+          "avgCommands": 377
+        },
+        "kaladesh | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 16.3,
+          "avgCommands": 371.5
+        },
+        "kaladesh | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 18.2,
+          "avgCommands": 432.3
+        },
+        "mirrodin-brg | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 19.5,
+          "avgCommands": 442.4
+        },
+        "mirrodin-brg | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 23.8,
+          "avgCommands": 554.3
+        },
+        "mirrodin-brg | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 23.9,
+          "avgCommands": 547.1
+        },
+        "mirrodin-brg | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 22.3,
+          "avgCommands": 527.6
+        },
+        "mirrodin-brg | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 469.1
+        },
+        "mirrodin-brg | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 23.3,
+          "avgCommands": 541.7
+        },
+        "mirrodin-brg | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 439.1
+        },
+        "mirrodin-brg | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 21.4,
+          "avgCommands": 496.3
+        },
+        "mirrodin-brg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 478.2
+        },
+        "mirrodin-brg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 418.4
+        },
+        "mirrodin-brg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 20.1,
+          "avgCommands": 465.5
+        },
+        "mirrodin-wu | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 22,
+          "avgCommands": 513.2
+        },
+        "mirrodin-wu | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 24.4,
+          "avgCommands": 572.8
+        },
+        "mirrodin-wu | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 21.7,
+          "avgCommands": 514.6
+        },
+        "mirrodin-wu | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 3,
+            "aggro": 7
+          },
+          "avgTurns": 21.9,
+          "avgCommands": 501.7
+        },
+        "mirrodin-wu | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 22.6,
+          "avgCommands": 526.5
+        },
+        "mirrodin-wu | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 432.8
+        },
+        "mirrodin-wu | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 22.8,
+          "avgCommands": 531.7
+        },
+        "mirrodin-wu | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 22.1,
+          "avgCommands": 526.6
+        },
+        "mirrodin-wu | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 19.4,
+          "avgCommands": 435.6
+        },
+        "mirrodin-wu | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 480.1
+        },
+        "ravnica | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 4,
+            "aggro": 6
+          },
+          "avgTurns": 28.6,
+          "avgCommands": 687.1
+        },
+        "ravnica | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 24.1,
+          "avgCommands": 599.7
+        },
+        "ravnica | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 24.3,
+          "avgCommands": 569.4
+        },
+        "ravnica | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 24.3,
+          "avgCommands": 577.6
+        },
+        "ravnica | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 20.8,
+          "avgCommands": 493.9
+        },
+        "ravnica | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 24.5,
+          "avgCommands": 586.6
+        },
+        "ravnica | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 23.6,
+          "avgCommands": 558.7
+        },
+        "ravnica | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 21.5,
+          "avgCommands": 493
+        },
+        "ravnica | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 23.6,
+          "avgCommands": 559.6
+        },
+        "srodziemie | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 24.4,
+          "avgCommands": 605.7
+        },
+        "srodziemie | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "random": 3
+          },
+          "avgTurns": 25.1,
+          "avgCommands": 584.2
+        },
+        "srodziemie | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 23.3,
+          "avgCommands": 551.5
+        },
+        "srodziemie | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 19.2,
+          "avgCommands": 453.6
+        },
+        "srodziemie | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 2,
+            "aggro": 8
+          },
+          "avgTurns": 22.7,
+          "avgCommands": 541.1
+        },
+        "srodziemie | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 438.9
+        },
+        "srodziemie | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 19.7,
+          "avgCommands": 451.9
+        },
+        "srodziemie | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 4,
+            "aggro": 6
+          },
+          "avgTurns": 23.9,
+          "avgCommands": 560.9
+        },
+        "tarkir-bg | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 17.9,
+          "avgCommands": 415.5
+        },
+        "tarkir-bg | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 21.9,
+          "avgCommands": 514.4
+        },
+        "tarkir-bg | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 392.6
+        },
+        "tarkir-bg | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 19.1,
+          "avgCommands": 459.4
+        },
+        "tarkir-bg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 16.2,
+          "avgCommands": 377.3
+        },
+        "tarkir-bg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 395.4
+        },
+        "tarkir-bg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 18.8,
+          "avgCommands": 448
+        },
+        "tarkir-wur | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 19.9,
+          "avgCommands": 462.8
+        },
+        "tarkir-wur | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "aggro": 9
+          },
+          "avgTurns": 16,
+          "avgCommands": 373.4
+        },
+        "tarkir-wur | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 19.9,
+          "avgCommands": 476.9
+        },
+        "tarkir-wur | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 365.1
+        },
+        "tarkir-wur | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 14.1,
+          "avgCommands": 317.6
+        },
+        "tarkir-wur | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "aggro": 9
+          },
+          "avgTurns": 19.5,
+          "avgCommands": 466.8
+        },
+        "theros | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "random": 3
+          },
+          "avgTurns": 18.6,
+          "avgCommands": 427.7
+        },
+        "theros | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "random": 4
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 477.8
+        },
+        "theros | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 20.1,
+          "avgCommands": 460.4
+        },
+        "theros | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 19.6,
+          "avgCommands": 444.9
+        },
+        "theros | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "random": 3
+          },
+          "avgTurns": 22.1,
+          "avgCommands": 519.6
+        },
+        "warhammer-ubr | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 23.3,
+          "avgCommands": 549.9
+        },
+        "warhammer-ubr | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 19,
+          "avgCommands": 436.9
+        },
+        "warhammer-ubr | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 348.1
+        },
+        "warhammer-ubr | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 9,
+            "random": 1
+          },
+          "avgTurns": 22.4,
+          "avgCommands": 525.1
+        },
+        "warhammer-wg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 10
+          },
+          "avgTurns": 21.5,
+          "avgCommands": 520.7
+        },
+        "warhammer-wg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8,
+            "random": 2
+          },
+          "avgTurns": 24.6,
+          "avgCommands": 596.6
+        },
+        "warhammer-wg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 5,
+            "aggro": 5
+          },
+          "avgTurns": 21.5,
+          "avgCommands": 532.9
+        },
+        "wiedzmin | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "random": 3
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 476.4
+        },
+        "wiedzmin | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 5,
+            "aggro": 5
+          },
+          "avgTurns": 20.8,
+          "avgCommands": 484
+        },
+        "zendikar | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 2,
+            "aggro": 8
+          },
+          "avgTurns": 17.2,
+          "avgCommands": 410.8
+        }
+      }
+    },
+    "heuristic | random": {
+      "games": 1900,
+      "unfinished": 0,
+      "wins": {
+        "random": 102,
+        "heuristic": 1798
+      },
+      "avgTurns": 18.46,
+      "avgCommands": 443.9,
+      "decks": {
+        "alara | alara": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "heuristic": 9
+          },
+          "avgTurns": 21.6,
+          "avgCommands": 540.3
+        },
+        "alara | dominaria-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 23,
+          "avgCommands": 547.1
+        },
+        "alara | dominaria-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 2,
+            "heuristic": 8
+          },
+          "avgTurns": 25.4,
+          "avgCommands": 625.1
+        },
+        "alara | final-fantasy": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 22.7,
+          "avgCommands": 562
+        },
+        "alara | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 19.9,
+          "avgCommands": 489.4
+        },
+        "alara | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 19,
+          "avgCommands": 472.2
+        },
+        "alara | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "heuristic": 9
+          },
+          "avgTurns": 22.2,
+          "avgCommands": 535
+        },
+        "alara | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 22,
+          "avgCommands": 536.1
+        },
+        "alara | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 24.7,
+          "avgCommands": 600.1
+        },
+        "alara | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 22.1,
+          "avgCommands": 534.3
+        },
+        "alara | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 22.5,
+          "avgCommands": 541.6
+        },
+        "alara | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 22.3,
+          "avgCommands": 567.1
+        },
+        "alara | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 21.7,
+          "avgCommands": 521.8
+        },
+        "alara | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 25.6,
+          "avgCommands": 621.6
+        },
+        "alara | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 19.5,
+          "avgCommands": 471.8
+        },
+        "alara | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 23.9,
+          "avgCommands": 590.1
+        },
+        "alara | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 21.1,
+          "avgCommands": 515.7
+        },
+        "alara | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.7,
+          "avgCommands": 447
+        },
+        "alara | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 24.7,
+          "avgCommands": 600.2
+        },
+        "dominaria-brg | dominaria-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 491.5
+        },
+        "dominaria-brg | dominaria-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 20,
+          "avgCommands": 489.5
+        },
+        "dominaria-brg | final-fantasy": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 20.1,
+          "avgCommands": 484.3
+        },
+        "dominaria-brg | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 18.2,
+          "avgCommands": 443.8
+        },
+        "dominaria-brg | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 3
+          },
+          "avgTurns": 18,
+          "avgCommands": 438.6
+        },
+        "dominaria-brg | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 18.6,
+          "avgCommands": 446.9
+        },
+        "dominaria-brg | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 455.1
+        },
+        "dominaria-brg | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.9,
+          "avgCommands": 422.4
+        },
+        "dominaria-brg | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 19.1,
+          "avgCommands": 448.8
+        },
+        "dominaria-brg | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 17.9,
+          "avgCommands": 420.4
+        },
+        "dominaria-brg | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 19.8,
+          "avgCommands": 491.2
+        },
+        "dominaria-brg | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 20,
+          "avgCommands": 476.7
+        },
+        "dominaria-brg | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 489.9
+        },
+        "dominaria-brg | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "random": 5
+          },
+          "avgTurns": 16.1,
+          "avgCommands": 379.2
+        },
+        "dominaria-brg | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 439.7
+        },
+        "dominaria-brg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 17.7,
+          "avgCommands": 419.6
+        },
+        "dominaria-brg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.5,
+          "avgCommands": 412.6
+        },
+        "dominaria-brg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 500.9
+        },
+        "dominaria-wu | dominaria-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 469.8
+        },
+        "dominaria-wu | final-fantasy": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.9,
+          "avgCommands": 378.3
+        },
+        "dominaria-wu | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 14.3,
+          "avgCommands": 336.6
+        },
+        "dominaria-wu | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 14.7,
+          "avgCommands": 355.9
+        },
+        "dominaria-wu | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "heuristic": 9
+          },
+          "avgTurns": 18.3,
+          "avgCommands": 437.6
+        },
+        "dominaria-wu | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.5,
+          "avgCommands": 369.9
+        },
+        "dominaria-wu | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.8,
+          "avgCommands": 395.1
+        },
+        "dominaria-wu | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 367.7
+        },
+        "dominaria-wu | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.1,
+          "avgCommands": 355.6
+        },
+        "dominaria-wu | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.1,
+          "avgCommands": 393.9
+        },
+        "dominaria-wu | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.3,
+          "avgCommands": 384.3
+        },
+        "dominaria-wu | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.3,
+          "avgCommands": 435
+        },
+        "dominaria-wu | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 14.3,
+          "avgCommands": 336.9
+        },
+        "dominaria-wu | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 372
+        },
+        "dominaria-wu | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 14.5,
+          "avgCommands": 342.2
+        },
+        "dominaria-wu | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 13.9,
+          "avgCommands": 318
+        },
+        "dominaria-wu | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.1,
+          "avgCommands": 410.4
+        },
+        "final-fantasy | final-fantasy": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.1,
+          "avgCommands": 436
+        },
+        "final-fantasy | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.9,
+          "avgCommands": 389.8
+        },
+        "final-fantasy | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 14.7,
+          "avgCommands": 363.6
+        },
+        "final-fantasy | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.6,
+          "avgCommands": 432
+        },
+        "final-fantasy | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 402.8
+        },
+        "final-fantasy | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.4,
+          "avgCommands": 437.5
+        },
+        "final-fantasy | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.9,
+          "avgCommands": 426.4
+        },
+        "final-fantasy | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 394.2
+        },
+        "final-fantasy | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.1,
+          "avgCommands": 449.6
+        },
+        "final-fantasy | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 451.3
+        },
+        "final-fantasy | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 457.7
+        },
+        "final-fantasy | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 15.5,
+          "avgCommands": 373.4
+        },
+        "final-fantasy | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.3,
+          "avgCommands": 417.3
+        },
+        "final-fantasy | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.9,
+          "avgCommands": 402.8
+        },
+        "final-fantasy | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.3,
+          "avgCommands": 355.1
+        },
+        "final-fantasy | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.5,
+          "avgCommands": 423.2
+        },
+        "forgotten-realms | forgotten-realms": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.5,
+          "avgCommands": 377.7
+        },
+        "forgotten-realms | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 13.7,
+          "avgCommands": 342.5
+        },
+        "forgotten-realms | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.5,
+          "avgCommands": 375.2
+        },
+        "forgotten-realms | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 13.7,
+          "avgCommands": 334
+        },
+        "forgotten-realms | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.5,
+          "avgCommands": 365.1
+        },
+        "forgotten-realms | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.3,
+          "avgCommands": 361.5
+        },
+        "forgotten-realms | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.5,
+          "avgCommands": 402.3
+        },
+        "forgotten-realms | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.5,
+          "avgCommands": 425.4
+        },
+        "forgotten-realms | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.1,
+          "avgCommands": 420.2
+        },
+        "forgotten-realms | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.7,
+          "avgCommands": 441
+        },
+        "forgotten-realms | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 14.7,
+          "avgCommands": 359.7
+        },
+        "forgotten-realms | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.1,
+          "avgCommands": 371.5
+        },
+        "forgotten-realms | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 14.1,
+          "avgCommands": 328.9
+        },
+        "forgotten-realms | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 14.7,
+          "avgCommands": 343.9
+        },
+        "forgotten-realms | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.1,
+          "avgCommands": 368.5
+        },
+        "innistrad-brg | innistrad-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.4,
+          "avgCommands": 377
+        },
+        "innistrad-brg | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.6,
+          "avgCommands": 444.2
+        },
+        "innistrad-brg | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.1,
+          "avgCommands": 395.6
+        },
+        "innistrad-brg | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 19,
+          "avgCommands": 460.3
+        },
+        "innistrad-brg | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.3,
+          "avgCommands": 413.5
+        },
+        "innistrad-brg | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.5,
+          "avgCommands": 388.1
+        },
+        "innistrad-brg | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.5,
+          "avgCommands": 437
+        },
+        "innistrad-brg | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 18.8,
+          "avgCommands": 445.6
+        },
+        "innistrad-brg | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 20,
+          "avgCommands": 477.2
+        },
+        "innistrad-brg | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.3,
+          "avgCommands": 372.5
+        },
+        "innistrad-brg | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.3,
+          "avgCommands": 442.3
+        },
+        "innistrad-brg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17,
+          "avgCommands": 411.8
+        },
+        "innistrad-brg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.5,
+          "avgCommands": 363
+        },
+        "innistrad-brg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 402.3
+        },
+        "innistrad-wu | innistrad-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "random": 4
+          },
+          "avgTurns": 16.8,
+          "avgCommands": 398
+        },
+        "innistrad-wu | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.3,
+          "avgCommands": 383
+        },
+        "innistrad-wu | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 19.3,
+          "avgCommands": 465.7
+        },
+        "innistrad-wu | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 19.3,
+          "avgCommands": 456.8
+        },
+        "innistrad-wu | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 20,
+          "avgCommands": 482.8
+        },
+        "innistrad-wu | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 19.7,
+          "avgCommands": 481.4
+        },
+        "innistrad-wu | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 19.9,
+          "avgCommands": 477.2
+        },
+        "innistrad-wu | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 499.6
+        },
+        "innistrad-wu | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 391.4
+        },
+        "innistrad-wu | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.3,
+          "avgCommands": 442.2
+        },
+        "innistrad-wu | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.6,
+          "avgCommands": 454.5
+        },
+        "innistrad-wu | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 391.6
+        },
+        "innistrad-wu | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 463.2
+        },
+        "kaladesh | kaladesh": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 16.3,
+          "avgCommands": 406
+        },
+        "kaladesh | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 373.6
+        },
+        "kaladesh | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 3
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 398.5
+        },
+        "kaladesh | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.3,
+          "avgCommands": 389.1
+        },
+        "kaladesh | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 17.4,
+          "avgCommands": 444.9
+        },
+        "kaladesh | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 3
+          },
+          "avgTurns": 18.1,
+          "avgCommands": 439.8
+        },
+        "kaladesh | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 17.7,
+          "avgCommands": 436
+        },
+        "kaladesh | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 15.2,
+          "avgCommands": 366.6
+        },
+        "kaladesh | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 387.7
+        },
+        "kaladesh | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 14.9,
+          "avgCommands": 361.1
+        },
+        "kaladesh | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 370.5
+        },
+        "kaladesh | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 17.4,
+          "avgCommands": 430.6
+        },
+        "mirrodin-brg | mirrodin-brg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 21.1,
+          "avgCommands": 485.9
+        },
+        "mirrodin-brg | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 23.1,
+          "avgCommands": 541.5
+        },
+        "mirrodin-brg | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 19.3,
+          "avgCommands": 432.2
+        },
+        "mirrodin-brg | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 23.3,
+          "avgCommands": 560.6
+        },
+        "mirrodin-brg | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 21.7,
+          "avgCommands": 498.2
+        },
+        "mirrodin-brg | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 23.5,
+          "avgCommands": 545.7
+        },
+        "mirrodin-brg | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 17.2,
+          "avgCommands": 395.4
+        },
+        "mirrodin-brg | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 2,
+            "heuristic": 8
+          },
+          "avgTurns": 22.3,
+          "avgCommands": 523.2
+        },
+        "mirrodin-brg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 19.9,
+          "avgCommands": 465.8
+        },
+        "mirrodin-brg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.1,
+          "avgCommands": 388.2
+        },
+        "mirrodin-brg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 486.9
+        },
+        "mirrodin-wu | mirrodin-wu": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 24.7,
+          "avgCommands": 593.8
+        },
+        "mirrodin-wu | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 25.3,
+          "avgCommands": 603.8
+        },
+        "mirrodin-wu | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 504.5
+        },
+        "mirrodin-wu | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 23.5,
+          "avgCommands": 563
+        },
+        "mirrodin-wu | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 21.5,
+          "avgCommands": 506.9
+        },
+        "mirrodin-wu | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 453.2
+        },
+        "mirrodin-wu | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 21.5,
+          "avgCommands": 510.6
+        },
+        "mirrodin-wu | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.7,
+          "avgCommands": 416.2
+        },
+        "mirrodin-wu | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 418.2
+        },
+        "mirrodin-wu | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 20.1,
+          "avgCommands": 474.1
+        },
+        "ravnica | ravnica": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 22.9,
+          "avgCommands": 541.3
+        },
+        "ravnica | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 23.9,
+          "avgCommands": 593.9
+        },
+        "ravnica | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 24.1,
+          "avgCommands": 566.1
+        },
+        "ravnica | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 23.2,
+          "avgCommands": 549
+        },
+        "ravnica | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 19.5,
+          "avgCommands": 466.1
+        },
+        "ravnica | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 485.6
+        },
+        "ravnica | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 23.1,
+          "avgCommands": 554.5
+        },
+        "ravnica | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 19.7,
+          "avgCommands": 452.4
+        },
+        "ravnica | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 23.9,
+          "avgCommands": 581.9
+        },
+        "srodziemie | srodziemie": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 20.7,
+          "avgCommands": 545.9
+        },
+        "srodziemie | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 25,
+          "avgCommands": 638.9
+        },
+        "srodziemie | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 27.3,
+          "avgCommands": 715.9
+        },
+        "srodziemie | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 18.1,
+          "avgCommands": 457.2
+        },
+        "srodziemie | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 19.7,
+          "avgCommands": 503
+        },
+        "srodziemie | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "heuristic": 9
+          },
+          "avgTurns": 18.7,
+          "avgCommands": 480.3
+        },
+        "srodziemie | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 17.9,
+          "avgCommands": 448.8
+        },
+        "srodziemie | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 22.9,
+          "avgCommands": 589.9
+        },
+        "tarkir-bg | tarkir-bg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 16,
+          "avgCommands": 374.8
+        },
+        "tarkir-bg | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 18.9,
+          "avgCommands": 446
+        },
+        "tarkir-bg | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.5,
+          "avgCommands": 364.9
+        },
+        "tarkir-bg | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.3,
+          "avgCommands": 389.7
+        },
+        "tarkir-bg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.7,
+          "avgCommands": 368.6
+        },
+        "tarkir-bg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 13.9,
+          "avgCommands": 320.6
+        },
+        "tarkir-bg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 16,
+          "avgCommands": 380.1
+        },
+        "tarkir-wur | tarkir-wur": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 19.8,
+          "avgCommands": 467
+        },
+        "tarkir-wur | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 14.5,
+          "avgCommands": 335.4
+        },
+        "tarkir-wur | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 18.1,
+          "avgCommands": 428.4
+        },
+        "tarkir-wur | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 13.9,
+          "avgCommands": 318.8
+        },
+        "tarkir-wur | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 13.1,
+          "avgCommands": 293.2
+        },
+        "tarkir-wur | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "heuristic": 9
+          },
+          "avgTurns": 17.5,
+          "avgCommands": 410.8
+        },
+        "theros | theros": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.3,
+          "avgCommands": 362.4
+        },
+        "theros | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 19.5,
+          "avgCommands": 472.7
+        },
+        "theros | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.4,
+          "avgCommands": 382.2
+        },
+        "theros | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 390.1
+        },
+        "theros | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 17.9,
+          "avgCommands": 425.9
+        },
+        "warhammer-ubr | warhammer-ubr": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 19.9,
+          "avgCommands": 476.2
+        },
+        "warhammer-ubr | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.9,
+          "avgCommands": 388
+        },
+        "warhammer-ubr | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.1,
+          "avgCommands": 366.1
+        },
+        "warhammer-ubr | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "heuristic": 9
+          },
+          "avgTurns": 21.2,
+          "avgCommands": 508.3
+        },
+        "warhammer-wg | warhammer-wg": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.7,
+          "avgCommands": 398.4
+        },
+        "warhammer-wg | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 15.3,
+          "avgCommands": 354.8
+        },
+        "warhammer-wg | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "random": 1
+          },
+          "avgTurns": 18.6,
+          "avgCommands": 450.6
+        },
+        "wiedzmin | wiedzmin": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 19.2,
+          "avgCommands": 451.1
+        },
+        "wiedzmin | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8,
+            "random": 2
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 499.8
+        },
+        "zendikar | zendikar": {
+          "games": 10,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10
+          },
+          "avgTurns": 16.3,
+          "avgCommands": 395.4
+        }
+      }
+    }
+  },
+  "totals": {
+    "aggro": {
+      "games": 3800,
+      "unfinished": 1,
+      "wins": {
+        "aggro": 2251,
+        "heuristic": 1340,
+        "random": 208
+      },
+      "avgTurns": 19.42,
+      "avgCommands": 460
+    },
+    "heuristic": {
+      "games": 3800,
+      "unfinished": 1,
+      "wins": {
+        "aggro": 559,
+        "heuristic": 3138,
+        "random": 102
+      },
+      "avgTurns": 18.94,
+      "avgCommands": 452.7
+    },
+    "random": {
+      "games": 3800,
+      "unfinished": 0,
+      "wins": {
+        "aggro": 1692,
+        "random": 310,
+        "heuristic": 1798
+      },
+      "avgTurns": 18.94,
+      "avgCommands": 451.2
+    }
+  },
+  "stalls": []
+}

@@ -9036,3 +9036,29 @@ Start: `npm test` 4608/4608; koniec: **4618/4618**, build 59 modułów /
   (zwrot prawdy = blokada; testuj „gra idzie dalej") i **L139** (kotwica
   jednoznaczna + `node --check` przed commitem) w `docs/LESSONS.md`; budżet
   lektury startowej zielony.
+
+### Przedłużenie (2026-09-07 wieczór): F14 → M336, blokada B0 → M337, pełny B0, F13 → M338
+
+- **M336 (`eae8f56`, F14):** `resolve_proliferate` bez wyceny u bota — a korekta
+  własnego ustalenia była cenniejsza niż fix: komentarz silnika „pierwsza oferta =
+  WSZYSTKO" kłamał, `subsets()` kładzie PUSTKĘ pierwszą, więc bot brał pustkę
+  zawsze (przepuszczona wygrana trucizną w sondzie). Fix: `case` z sumą delt +
+  `POISON_LOSS_LIMIT` jako jedno źródło progu (SBA i bot). Strażnik (8/8).
+- **M337 (`3bb1970`):** pełny B0 padł na 3200/5700 na ofercie `turn_cloak_face_up`
+  przy cudzej decyzji — trzy ręczne kopie tej samej reguły (oferty face-up pytały
+  o sam priorytet, pass o listę ~54 warunków, execute o 64 bramki). Jeden predykat
+  `optionalActionsOpen` po obu stronach + strażnik źródła przeciw czwartej kopii;
+  rykoszety (fixture, pin M293 63→62) z atrybucją w commicie. **L140** w rejestrze.
+- **Pełny B0 dokończony po raz pierwszy** (`tools/b1-final-2026-09-07.{txt,json}`):
+  5 700 meczów, 17,4 min, 0 zacinek; heuristic 82,6% vs 80,8% (baza 2026-08-29,
+  inna objętość próbki — kierunek, nie różnica). „niedokończone: 1" = remis
+  obustronnego wyzerowania życia (CR 104.3a), nie awaria — udokumentowane, żeby
+  następna sesja nie goniła go jak błędu.
+- **M338 (F13):** `--help` benchmarku kłamał o domyślnych (budżet „10 000", szybki
+  „4 seedy", watchdog dla szybkiego), bo nic go nie liczyło — HELP i stałe
+  eksportowane, `test/m338-pomoc-benchmarku-liczby.test.js` (5/5, dwie mutacje)
+  wyprowadza liczby z kodu i bieżącego katalogu; ADR 0025 dostał dateowaną
+  „Aktualizację liczb" (konwencja ADR 0018), bez zmiany decyzji.
+- Dokumentacja: §8 audytu PR #102, notka o bramce M337 w `TESTER_STOLU.md`,
+  kondensacja rejestru LESSONS (L131/L124/L136 → archiwum PRZYPADKI, budżet
+  startowy 99 946/100 000).
