@@ -98,3 +98,7 @@ commitem; pozostałe ustalenia realizowane oddzielnie.
 E2/M340: F2 — provider `faceDownAbilities` podłączony także w manifeście.
 7 testów przez execute (6 RED + 1 kontrola → 7 GREEN), rodzina 28/28.
 Poprzedni przyrost M339 wypchnięty jako `5d81996` po 4640/4640 + build.
+
+E2/M341: F3 — premia za wygraną po przejrzeniu wszystkich ID. Cztery
+mutacyjne RED + dwie kontrole → 6/6; wraz z m336 i golden-masterem 18/18,
+bez zmiany fixture/progów. M340 wypchnięte jako `3a12df7` po 4647/4647 + build.

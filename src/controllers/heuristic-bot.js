@@ -5522,6 +5522,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const ids = cmd.targetIds ?? [];
         if (ids.length === 0) return finish(0);
         let suma = 0;
+        let lethalPoison = false;
         for (const id of ids) {
           const player = (view.players ?? []).find((p) => p.id === id);
           if (player) {
@@ -5533,7 +5534,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               suma -= 1;
               continue;
             }
-            if (poison + 1 >= POISON_LOSS_LIMIT) return finish(1000);  // ta sama skala co lethal ataku
+            // M341/F3: wygrana dopiero po ocenie CAŁEGO wyboru. Następny ID
+            // może oznaczać własną dziesiątą truciznę (remis, CR 104.4b).
+            if (poison + 1 >= POISON_LOSS_LIMIT) lethalPoison = true;
             suma += 1;
             continue;
           }
@@ -5555,7 +5558,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // wypadek"; wariant i tak wygrywa przez to, że pusty ma zero)
           }
         }
-        return finish(suma);
+        return finish(lethalPoison ? 1000 : suma);
       }
       case 'resolve_manifest_dread': {
         const card = decisionCandidateCard(view, cmd.cardId);
