@@ -120,3 +120,27 @@ E2/M344: F6 — naprawiony sam strażnik m337/C: realny manifest, własne/cudze
 scry, zakaz i powrót obrotu. Mutacja bramki daje teraz RED w C (dawniej GREEN),
 cały plik 6/6. M343 wypchnięty `a659024` po 4661/4661 + build;
 quick 672 mecze: 570/672 = 84,8%, zero dryfu, bez zmiany progów/fixture.
+
+E2/M345: F7 — 429 i błędna odpowiedź nie nadpisują rulingów, pierwsza pusta
+lista ma proweniencję. 3 RED + 5 kontroli → 8 GREEN, 3 mutacje ubite,
+z m328 12/12. Snapshoty kolekcji nietknięte, żadnej sieci w testach.
+M344 wypchnięty `af0226f` po 4662/4662 + build. Kod E2 gotowy, ale M345 czeka na commit/push (blokada autoryzacji poniżej).
+F8/narzędzie pozostaje w E3, potem końcowe bramki i dokumenty E4.
+
+
+## Blokada publikacji — 2026-09-07
+
+Przed commitem M345 `gh pr view 104 --json state` zwrócił **HTTP 401:
+Bad credentials**. Sprawdzenie było pierwsze w sekwencji `set -e`, więc
+NIE wykonano ani commita M345, ani pusha, ani zmiany opisu PR. Właściciel
+poproszony o ponowne połączenie GitHub w Arena; żadnych próśb o tokeny.
+Ostatni potwierdzony push: `af0226f` (M344). Kod M345 + testy i dokumentacja
+zostają w drzewie roboczym, bramka **4670/4670 + build 59 / 3369,7 kB**.
+Nie zaczęto implementacji F8 przed opublikowaniem niezależnego przyrostu M345.
+Punkt wznowienia: `docs/setup/HANDOFF_2026-09-07d.md`.
+
+
+**Wznowienie po odświeżeniu GitHub (2026-09-07):** połączenie działa,
+PR #104 nadal OPEN/draft, gałąź zdalna i lokalna zgodne (`af0226f`, 0/0),
+main nadal `c9b884c`. Brudne drzewo M345 zachowane bez resetu. Ponowna
+bramka fast + build przed osobnym commitem/pushem M345; potem F8 i E4.
