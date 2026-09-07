@@ -110,3 +110,8 @@ E3/rozpoznanie: trzy partie 10401–10403 zakończone (74/61/78 kroków, 0 flag)
 ale ręczny odczyt ujawnił F8: stary ogon logu i zła kolejność odrzuceń w
 samym testerze. Naprawa ekstraktora + powtórka A/B po E2; zakres dopisany
 przed implementacją narzędzia, nie nowa mechanika produktu.
+
+E2/M343: F5 — jedna bramka SBA dla rdzenia i usuwania tokenów; obowiązuje
+przez całe `pendingSpell`, także pusty ogon. 5 RED→GREEN, 3 mutacje osobnych
+torów i pustego ogona; rodzina + fixture 21/21, bez zapisu fixture.
+M342 wypchnięte `437cf27` po 4656/4656 + build.
