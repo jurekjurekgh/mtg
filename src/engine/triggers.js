@@ -67,7 +67,11 @@ function bumpSpeedIfOpponentDamaged(state, source) {
   // Zapis wyłącznie przez choke point `setPlayerSpeed` (players.js) — ten sam,
   // który stosuje akcję stanową „Start your engines!” (state-based.js). Bramka
   // „czy wolno wzrosnąć” zostaje tutaj (to warunek triggera), mutacja nie.
-  state.events.push(...setPlayerSpeed(state, controllerId, (player.speed ?? 0) + 1));
+      // E7/B2 (zgłoszenie właściciela): `setPlayerSpeed` SAM pushuje zdarzenie
+      // do `state.events` i dopiero potem je zwraca („wołający nie dubluje
+      // pusha") — re-push tutaj dawał PODWÓJNY wpis „Zwiększasz prędkość"
+      // w modalu Rozgrywka. Wołamy bez rozszerzania do dziennika.
+      setPlayerSpeed(state, controllerId, (player.speed ?? 0) + 1);
   state.speedIncreasedThisTurn = { ...(state.speedIncreasedThisTurn ?? {}), [controllerId]: true };
 }
 
