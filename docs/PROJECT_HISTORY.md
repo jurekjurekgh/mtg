@@ -8978,7 +8978,7 @@ detektorów (w tym dwie na chwilowej talii `audyt-cloak` — patrz
   scratch piaskownicy przepada — commit+push po każdym findingu), **L137**
   (etykieta to rodzina: grep po TEKŚCIE, nie po nazwie pola; test na prawdziwym
   widoku; partia celowana dla rzadkiej mechaniki).
-- **Budżet lektury startowej** ( próg 100k, `test/dokumentacja-budzet-lektury.test.js`):
+- **Budżet lektury startowej** (próg 100k, `test/dokumentacja-budzet-lektury.test.js`):
   po dopisaniu L136+L137 było ~101,6k, więc kondensacja była zadaniem tej sesji
   (AGENTS §0) — proza sześciu wpisów (L123, L128, L129, L132, L136, L137)
   poszła do `docs/LESSONS_PRZYPADKI.md` zgodnie ze wzorcem PR #93 (narracja w
@@ -8986,4 +8986,4 @@ detektorów (w tym dwie na chwilowej talii `audyt-cloak` — patrz
   Zmierzono **97,1k/100k** (LESSONS ~48,5k), strażnicy formatu (L136/L137
   marker ↔ nagłówek w archiwum) i liczebność (`wyniesione >= 50`) zielone.
   M203/3 przy okazji pokazał, że nazwy talii w `TESTER_STOLU.md` są skanowane:
-  chwilkowa talia audytowa nie może być w nich wymieniona z nazwy.
+  chwilowa talia audytowa nie może być w nich wymieniona z nazwy.
