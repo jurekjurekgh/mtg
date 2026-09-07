@@ -185,6 +185,15 @@ export function manifestCardFaceDown(state, cardObjectId, controllerId) {
       manaCost: card.manaCost ?? 0,
       cardName: card.cardName ?? null,
       ward: card.ward ?? null,
+      // M334 (zmierzone testem bota M334/A): manifest — w przeciwieństwie do
+      // rzutu morphem — NADPISUJE power/toughness obiektu na 2/2 (patrz wyżej),
+      // więc obrót musi mieć skąd je wziąć. CR 701.40b: „the effect defining its
+      // characteristics while it was face down ends, and it regains its normal
+      // characteristics" — zmanifestowany 6/5 po obrocie jest 6/5, nie 2/2.
+      // Bez migawki `turnFaceUp` brał P/T z już nadpisanego obiektu (dokładnie
+      // ten błąd co u cloaka w M315, naprawiony tam dla 701.56b).
+      power: card.power ?? null,
+      toughness: card.toughness ?? null,
     }),
     // „Turn it face up any time for its mana cost if it's a creature card":
     // koszt obrotu = koszt many karty; tylko dla kart stworów (CR 701.40b).
@@ -5200,7 +5209,6 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (topIds.length === 1) {
       // Tylko jedna karta w bibliotece: manifestujemy ją bez wyboru (CR 701.62a
       // — „as many as possible"), nic do grobu.
-      manifestCardFaceDown(state, topIds[0], controllerId);
       return true;
     }
     state.pendingManifestDread = {
