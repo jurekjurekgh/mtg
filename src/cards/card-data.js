@@ -9682,7 +9682,10 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       targets: [{ type: 'any_target' }],
       effects: [{ type: 'damage', amount: 2 }],
     },
-    artId: 562, plan: 'Kaladesh',
+    // E7/C (zgłoszenie właściciela): plan wg KOLUMNY PLANU (transpozycja
+    // „Warhammer Fantasy"), nie wg realnego bloku wydania (AER = Aether
+    // Revolt, blok Kaladesh). Talia: warhammer-ubr (mono-R).
+    artId: 562, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
 
