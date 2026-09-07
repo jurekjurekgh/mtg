@@ -49,9 +49,11 @@ export const PLAYER_NAMES = { [HUMAN_ID]: 'Ty', [BOT_ID]: 'Nieprzyjaciel' };
  */
 export const FACE_DOWN_LABEL = 'Morph';
 
-/** Znacznik przy nazwie WŁASNEJ zakrytej karty: „Segmented Krotiq (Morph)". */
-export function faceDownSuffix() {
-  return ` (${FACE_DOWN_LABEL})`;
+/** Znacznik przy nazwie WŁASNEJ zakrytej karty: „Segmented Krotiq (Morph)".
+ * M333: etykieta mechaniki jest parametrem (domyślnie „Morph"), żeby rodzina
+ * przyczyn zakrycia miała JEDNO źródło brzmienia (L137). */
+export function faceDownSuffix(label = FACE_DOWN_LABEL) {
+  return ` (${label})`;
 }
 
 /**
@@ -61,8 +63,8 @@ export function faceDownSuffix() {
  * - własny face-down: kontroler zna swoją kartę, więc nazwa + znacznik, żeby
  *   gracz nie wziął zakrytego 2/2 za pełnego stwora (decyzja z M100/E12).
  */
-export function faceDownName(cardName) {
-  return cardName == null ? FACE_DOWN_LABEL : `${cardName}${faceDownSuffix()}`;
+export function faceDownName(cardName, label = FACE_DOWN_LABEL) {
+  return cardName == null ? label : `${cardName}${faceDownSuffix(label)}`;
 }
 
 /**
@@ -82,15 +84,31 @@ export function cloakFaceDownName(cardName, copyNumber = null) {
 }
 
 /**
- * M326 (audyt PR #102, F6): samo źródło znacznika przyczyny zakrycia.
- * Cloverek (Veiled Ascension) podpisuje się „Cloak N", wszystko inne zostaje
- * przy dzisiejszym „Morph" (M127) — silnik nie nosi przyczyny dla morpha/
- * manifestu, a wymyślanie jej z kształtu obiektu byłoby zgadywaniem.
+ * M326 (audyt PR #102, F6) + M333 (F6c): JEDNA tabela znaczników przyczyny
+ * zakrycia. Wcześniejszy kształt „cloak ? Cloak : Morph" naprawił kłamstwo o
+ * cloaku, ale zostawił to samo kłamstwo po drugiej stronie: zmanifestowany
+ * 2/2 (CR 701.40a) i megamorph też czytały „Morph", a ruling WotC
+ * 2024-02-02 wymaga, żeby PRZYCZYNA zakrycia (disguise / cloak / manifest /
+ * morph) była rozpoznawalna dla wszystkich graczy. Megamorph nie ma własnego
+ * wiersza, bo to wariant morpha (CR 702.37b — ten sam kształt 2/2, inny obrót),
+ * więc gra się tą samą nazwą mechaniki.
+ *
+ * Brak przyczyny (obiekt spoza silnika: rewers ręki przeciwnika, zakryte
+ * wygnanie) NIE wolno tłumaczyć jako „Morph" — stąd osobny wyjątek poniżej.
+ * Nazwy to nazwy mechanik (jak „Morph" od M127), nie tłumaczone: tak samo
+ * brzmią w tekście Oracle i na kartach.
  */
+export const FACE_DOWN_CAUSE_LABELS = Object.freeze({
+  cloak: CLOAK_LABEL,
+  manifest: 'Manifest',
+  morph: FACE_DOWN_LABEL,
+  disguise: 'Disguise',
+});
+
+/** Znacznik przyczyny zakrycia (bez nazwy karty); cloak dokleja numer kopii. */
 export function faceDownCauseTag(object) {
-  return object?.faceDownCause === 'cloak'
-    ? cloakFaceDownName(null, object?.copyNumber ?? null)
-    : FACE_DOWN_LABEL;
+  if (object?.faceDownCause === 'cloak') return cloakFaceDownName(null, object?.copyNumber ?? null);
+  return FACE_DOWN_CAUSE_LABELS[object?.faceDownCause] ?? FACE_DOWN_LABEL;
 }
 
 /**
@@ -101,9 +119,8 @@ export function faceDownCauseTag(object) {
  */
 export function faceDownLabel(object, nameOf) {
   const name = object?.cardId != null ? nameOf(object.cardId) : null;
-  return object?.faceDownCause === 'cloak'
-    ? cloakFaceDownName(name, object?.copyNumber ?? null)
-    : faceDownName(name);
+  if (object?.faceDownCause === 'cloak') return cloakFaceDownName(name, object?.copyNumber ?? null);
+  return faceDownName(name, FACE_DOWN_CAUSE_LABELS[object?.faceDownCause] ?? FACE_DOWN_LABEL);
 }
 
 /**

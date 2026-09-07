@@ -9982,7 +9982,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     },
     artId: 569, plan: 'Duskmourn',
     support: { status: 'supported', limitations: [] },
-    notes: ['manifest dread: wybór którą z 2 kart z wierzchu zmanifestować (2/2 face-down), druga do grobu; obrót za koszt many tylko dla kart stworów (CR 701.34)'],
+    // Manifest dread to osobne keyword ACTION (CR 701.62a): samo zakrycie robi
+    // manifest z 701.40a, a obrót twarzą do góry to specjalna akcja 701.40b.
+    notes: ['manifest dread: wybór którą z 2 kart z wierzchu zmanifestować (2/2 face-down), druga do grobu; obrót za koszt many tylko dla kart stworów (CR 701.62a + 701.40b)'],
   }),
 
   // =========================================================================

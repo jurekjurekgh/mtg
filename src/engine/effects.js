@@ -135,11 +135,18 @@ function thronePutChosenCreature(state, pending, targetId) {
 }
 
 /**
- * Manifest (CR 701.34): przenosi kartę z biblioteki na pole bitwy jako face-down
- * stwór 2/2 bez nazwy/typów/kosztu (jak morph face-down, CR 708.2). Zapisuje
- * `faceDownOriginal` (cechy karty) i `manifestReady` — jeśli karta jest kartą
- * STWORA, można ją obrócić twarzą do góry za jej koszt many (turnFaceUp).
- * Generyczne, bez nazw kart (ADR 0002).
+ * Manifest (CR 701.40a): przenosi kartę z biblioteki na pole bitwy jako
+ * face-down stwór 2/2 bez nazwy/typów/kosztu (jak morph face-down, CR 702.37c
+ * i 708.2). Zapisuje `faceDownOriginal` (cechy karty) i `manifestReady` — jeśli
+ * karta jest kartą STWORA, można ją obrócić twarzą do góry za jej koszt many
+ * (CR 701.40b, `turnFaceUp`). Generyczne, bez nazw kart (ADR 0002).
+ *
+ * M333 (F6c, dokończenie rodziny z audytu PR #102): `faceDownCause: 'manifest'`.
+ * Ruling WotC 2024-02-02 dla cloaka wymaga, żeby zakryte permanenty dało się
+ * rozróżniać PO PRZYCZYNIE zakrycia (disguise / cloak / manifest / morph) —
+ * dopóki pole nosił tylko cloak, przeciwnik czytał „(Morph)" o zmanifestowanym
+ * 2/2, czyli etykietę inną niż F6 naprawił dla cloaka. Tożsamość karty zostaje
+ * ukryta (CR 708.2a); jawny jest wyłącznie mechanizm.
  */
 export function manifestCardFaceDown(state, cardObjectId, controllerId) {
   const card = state.objects.get(cardObjectId);
@@ -150,12 +157,18 @@ export function manifestCardFaceDown(state, cardObjectId, controllerId) {
   const manifested = Object.freeze({
     ...moved,
     faceDown: true,
+    faceDownCause: 'manifest',
     summoningSickness: true,
     tapped: false,
     kind: 'creature',
     power: 2,
     toughness: 2,
     // CR 708.2 — face-down bez cech karty; oryginał chowamy do obrotu.
+    // M333: ward też jest cechą karty — zakryty permanent nie ma zdolności,
+    // a `wardAmountOf` w gałęzi face-down czyta wprost `object.ward` (patrz
+    // permanents.js), więc bez wyzerowania zmanifestowany stwór z drukowanym
+    // wardem miałby ward pod zakryciem. Wraca z migawki w `turnFaceUp`.
+    ward: null,
     colors: [],
     subtypes: [],
     types: ['Creature'],
@@ -171,9 +184,10 @@ export function manifestCardFaceDown(state, cardObjectId, controllerId) {
       keywords: Object.freeze([...(card.keywords ?? [])]),
       manaCost: card.manaCost ?? 0,
       cardName: card.cardName ?? null,
+      ward: card.ward ?? null,
     }),
     // „Turn it face up any time for its mana cost if it's a creature card":
-    // koszt obrotu = koszt many karty; tylko dla kart stworów (CR 701.34e).
+    // koszt obrotu = koszt many karty; tylko dla kart stworów (CR 701.40b).
     manifestReady: isCreatureCard,
     manifestTurnUpCost: isCreatureCard ? (card.manaCost ?? 0) : null,
   });
@@ -5170,10 +5184,13 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }));
     return true;
   }
-  // Manifest Dread (DSK, CR 701.34): „Look at the top two cards of your library.
+  // Manifest Dread (DSK, CR 701.62a — manifest dread to osobne keyword
+  // action; samo zakrycie robi manifest z 701.40): „Look at the top two cards of your library.
   // Put one onto the battlefield face down as a 2/2 creature and the other into
   // your graveyard." Blokująca decyzja kontrolera (pendingManifestDread,
   // resolve_manifest_dread). Generyczne (ADR 0002) — bez nazw kart.
+  // Manifest dread to osobne keyword ACTION: CR 701.62a (sam mechanizm
+  // manifestuje przez 701.40).
   if (effect.type === 'manifest_dread') {
     const controllerId = sourceObject.controllerId;
     const topIds = state.zones.library
@@ -5181,7 +5198,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
       .slice(0, 2);
     if (topIds.length === 0) return;
     if (topIds.length === 1) {
-      // Tylko jedna karta w bibliotece: manifestujemy ją bez wyboru (CR 701.34c
+      // Tylko jedna karta w bibliotece: manifestujemy ją bez wyboru (CR 701.62a
       // — „as many as possible"), nic do grobu.
       manifestCardFaceDown(state, topIds[0], controllerId);
       return true;

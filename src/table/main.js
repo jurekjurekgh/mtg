@@ -20,7 +20,7 @@ import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
-import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL, TURN_NAMES, gameOverNotice } from './session.js';
+import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TURN_NAMES, gameOverNotice } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
@@ -1474,9 +1474,13 @@ function bootstrapTable() {
       const topObj = view.zones.stack[view.zones.stack.length - 1];
       // Face-down czar (morph): tożsamość ukryta (CR 708.2) — pokazujemy
       // „Morph" zamiast „?" („?" sugerowało błąd; zgłoszenie właściciela).
-      // M127: pisownia etykiety z jednego źródła (session.FACE_DOWN_LABEL).
+      // M127: pisownia etykiety z jednego źródła. M333 (F6c): tym źródłem jest
+      // helper, a nie stała — inaczej stos zapamiętałoby „Morph" na stałe,
+      // dokładnie jak kafle przed M326 (szósty konsument z L137). Dziś na stos
+      // trafia wyłącznie czar zagrany twarzą w dół przez morph (702.37c), więc
+      // wynik jest ten sam, ale etykieta pochodzi z faktu, nie z założenia.
       const topName = topObj
-        ? (topObj.faceDown ? FACE_DOWN_LABEL : (session.nameOf(topObj.cardId) || topObj.cardId))
+        ? (topObj.faceDown ? faceDownCauseTag(topObj) : (session.nameOf(topObj.cardId) || topObj.cardId))
         : '?';
       const s = document.createElement('span');
       s.className = 'ti-stack';

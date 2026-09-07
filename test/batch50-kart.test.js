@@ -346,7 +346,7 @@ test('B50: Manifest Dread — karta NIE-stwór zmanifestowana NIE da się obróc
   castManifestDread(state);
   execute(state, { type: 'resolve_manifest_dread', playerId: 'p1', cardId: 'noncreat' });
   const facedown = [...state.objects.values()].find((o) => o.faceDown && o.zone === 'battlefield');
-  assert.equal(facedown.manifestReady, false, 'nie-stwór: brak możliwości obrotu (CR 701.34e)');
+  assert.equal(facedown.manifestReady, false, 'nie-stwór: brak możliwości obrotu (CR 701.40b)');
   const flip = playerView(state, 'p1').legalCommands.find((c) => c.type === 'turn_manifest_face_up' && c.objectId === facedown.id);
   assert.ok(!flip, 'brak oferty obrotu dla nie-stwora');
 });

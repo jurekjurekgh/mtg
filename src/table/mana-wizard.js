@@ -221,7 +221,7 @@ function buildDescriptor(object, totalNeeded, requirements, costStr, effectiveGe
  * Tryby kosztu alternatywnego (E.3a cz. B): całkowity koszt to LICZBA z
  * deskryptora — BEZ obniżek CR 601.2f (castCleave/castEscape/castAuraSpell z
  * bestow nie wołają reduceGenericCost). Wymagania kolorów z karty bazowej.
- * Morph (CR 702.36) jest bezbarwny → puste wymagania (kreator otworzy się
+ * Morph (CR 702.37a) jest bezbarwny → puste wymagania (kreator otworzy się
  * tylko przy ≥2 profilach źródeł; zazwyczaj 1 wariant → auto-tap M34).
  *
  * `opts.effectiveGeneric`: jednostki generyczne po obniżkach (Etherium

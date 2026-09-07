@@ -2094,7 +2094,7 @@ export function execute(state, input) {
     return accepted(state, cmd, { ok: true, events: resolved });
   }
   // Manifest Dread (DSK): wybór, którą z dwóch kart z wierzchu zmanifestować
-  // (face-down 2/2); druga do grobu (CR 701.34/702.111).
+  // (face-down 2/2); druga do grobu (CR 701.62a).
   if (state.pendingManifestDread) {
     if (cmd.type !== 'resolve_manifest_dread') return reject('manifest_dread_unresolved');
     if (cmd.playerId !== state.pendingManifestDread.playerId) return reject('manifest_dread_not_your_decision');
@@ -2103,7 +2103,7 @@ export function execute(state, input) {
     if (!pending.objectIds.includes(pickId)) return reject('illegal_manifest_dread_choice');
     const before = state.events.length;
     manifestCardFaceDown(state, pickId, pending.playerId);
-    // Druga karta do grobu (CR 701.34b).
+    // Druga karta do grobu (CR 701.62a).
     for (const id of pending.objectIds.filter((oid) => oid !== pickId)) {
       const graveId = `grave-${state.objectSequence++}`;
       const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
@@ -5025,7 +5025,7 @@ export function execute(state, input) {
     }
   }
 
-  // Manifest — obrót twarzą do góry (CR 701.34e): specjalna akcja, nie używa
+  // Manifest — obrót twarzą do góry (CR 701.40b): specjalna akcja, nie używa
   // stosu (jak morph). Tylko karta STWORA (manifestReady), za koszt many karty.
   if (cmd.type === 'turn_manifest_face_up') {
     const object = state.objects.get(cmd.objectId);
@@ -5703,6 +5703,11 @@ export function playerView(state, playerId) {
           // aury (inny flavor w UI, inne rozstrzygnięcie przy fizzle).
           bestow: object.bestow ?? null, attachedTo: object.attachedTo ?? null,
           faceDown: Boolean(object.faceDown),
+          // M333 (F6c): przyczyna zakrycia CZARU na stosie jest jawna (samo
+          // zagranie twarzą w dół jest publiczne — CR 702.37c), więc panel
+          // „Stos" może ją czytać tak jak kafle na stole; bez tego jedynym
+          // źródłem znacznika był tam stały „Morph" (szósty konsument z L137).
+          ...(object.faceDownCause ? { faceDownCause: object.faceDownCause } : {}),
           // T6: zdolność triggerowana na stosie (pseudo-obiekt kind 'trigger').
           trigger: Boolean(object.triggerEntry),
           triggerEvent: object.triggerEntry?.ability?.trigger?.event ?? null,
@@ -5866,7 +5871,7 @@ export function playerView(state, playerId) {
     // oferujemy wyłącznie posiadaczowi priorytetu.
     trailingCommands.push(command('concede', playerId));
     const hasPriority = state.turn.priorityPlayerId === playerId;
-    // Manifest (CR 701.34e): obrót twarzą do góry to specjalna akcja „any time"
+    // Manifest (CR 701.40b): obrót twarzą do góry to specjalna akcja „any time"
     // (gdy masz priorytet), za koszt many karty; tylko karty stworów
     // (manifestReady). Oferta gdy stać na koszt + kolorowe źródła.
     if (hasPriority) {
@@ -7180,7 +7185,8 @@ export function playerView(state, playerId) {
       // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}) —
       // niezależnie od kosztu many karty (alternatywny koszt zagrania).
       if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= manaAvailableFor(object)) {
-        // Morph jest bezbarwny (CR 702.36) – nie wymaga kolorowego źródła
+        // Morph jest bezbarwny (CR 702.37a — „no mana cost", samo {3};
+        // 702.36 to Fear) – nie wymaga kolorowego źródła
         legalCommands.push(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
       }
       // M69 (Security Rhox): „You may pay {R}{G} rather than pay this spell's
@@ -7497,13 +7503,13 @@ export function playerView(state, playerId) {
       : null,
   } : null;
   // M223 (audyt Batch 50): decyzja manifest dread ujawnia DWIE karty z wierzchu
-  // TYLKO decydentowi (CR 701.34a „look at" — informacja własna, jak scry/look_top).
+  // TYLKO decydentowi (CR 701.62a „look at" — informacja własna, jak scry/look_top).
   // Bez tego etykieta „Zmanifestuj: ?" nie znała nazwy karty (biblioteka ukryta).
   const pendingManifestDreadView = state.pendingManifestDread ? {
     playerId: state.pendingManifestDread.playerId,
     count: state.pendingManifestDread.objectIds.length,
     // M251/B: źródło decyzji (czar na stosie) — publiczne dla obu graczy,
-    // w przeciwieństwie do `cards` (tylko decydent, „look at" CR 701.34a).
+    // w przeciwieństwie do `cards` (tylko decydent, „look at" CR 701.62a).
     sourceCardId: state.pendingManifestDread.sourceCardId ?? null,
     cards: state.pendingManifestDread.playerId === playerId
       ? state.pendingManifestDread.objectIds.map((id) => {

@@ -1829,7 +1829,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_copy_targets: 'Kopia czaru — wybór celu',
   resolve_exploit_choice: 'Exploit — poświęcić stwora?',
   resolve_fabricate: 'Fabricate — liczniki czy tokeny?',
-  // małą literą: „manifest dread" to mechanika (CR 701.34), a „Manifest
+  // małą literą: „manifest dread" to mechanika (CR 701.62a), a „Manifest
   // Dread" to KARTA w katalogu — strażnik m212 zabrania literału z nazwą karty.
   resolve_manifest_dread: 'manifest dread — zmanifestuj jedną z 2 kart',
   resolve_optional_draw: 'Dobór dobrowolny (you may)',
@@ -3513,9 +3513,14 @@ function buildFace(parent, info, { size = '', skipLiveState = false, textless = 
     }
     if (info.combatRole) flags.push(info.combatRole);
     if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
-    // M100/E12: kafel zakrytego permanentu niesie znacznik morpha — własny
+    // M100/E12: kafel zakrytego permanentu niesie znacznik mechaniki — własny
     // ma nazwę + „zakryty (morph)", wrogi „Face-down creature" + „morph".
-    if (info.faceDown) flags.push(info.morphBadge ?? FACE_DOWN_LABEL);
+    // M333 (F6c): bez `?? FACE_DOWN_LABEL` — M260/B1 UŚWIADOMIONIE zostawia
+    // `morphBadge: null` dla zakrytego wygnania (to nie jest morph na polu
+    // bitwy, CR 406.3), a dawny fallback wstawiał tam etykietę z powrotem,
+    // czyli dokładnie to, przed czym miał chronić. Znacznik bywa null —
+    // wtedy nie ma żadnego znacznika, i tak ma być.
+    if (info.morphBadge) flags.push(info.morphBadge);
     // M73d (J): choroba przywołania dotyczy tylko stworów (CR 302.6) —
     // artefakty/enchantmenty nie dostają badge (audyt żywym testerem).
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push('choroba');
@@ -3594,9 +3599,10 @@ export function buildStateOverlay(visual, info) {
       flags.push(['att', info.hostName ? `${label} → ${info.hostName}` : label]);
     }
     // Nadal pokazujemy załączniki GOSPODARZA (info.attachments) niżej.
-    // M100/E12: kafel zakrytego permanentu niesie znacznik morpha (własny
+    // M100/E12: kafel zakrytego permanentu niesie znacznik mechaniki (własny
     // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
-    if (info.faceDown) flags.push(['morph', info.morphBadge ?? FACE_DOWN_LABEL]);
+    // M333: j.w. — null oznacza „żadnego znacznika" (zakryte wygnanie, M260/B1).
+    if (info.morphBadge) flags.push(['morph', info.morphBadge]);
     if (info.goaded) flags.push(['goad', 'goad']);
     // M177/E (CR 701.29): detain — nie atakuje, nie blokuje, bez aktywacji.
     if (info.detained) flags.push(['kw', 'zatrzymany (detain)']);
