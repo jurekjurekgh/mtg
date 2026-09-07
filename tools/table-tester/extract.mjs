@@ -142,3 +142,13 @@ export function extractTileText(tile) {
   }
   return parts.join(' · ');
 }
+
+
+/**
+ * M346/F8: DOM logu ma najnowsze wpisy NA POCZĄTKU (renderTableView).
+ * Bierzemy najnowsze N, a do transkryptu oddajemy je chronologicznie.
+ * count może być limitem snapshotu albo liczbą wpisów od ostatniego odczytu.
+ */
+export function chronologicalLogEntries(entries, count = entries.length) {
+  return entries.slice(0, Math.max(0, count)).reverse();
+}

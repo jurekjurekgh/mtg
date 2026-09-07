@@ -30,7 +30,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { extractBotMoves, extractModalChoice, extractTileText } from './extract.mjs';
+import { extractBotMoves, extractModalChoice, extractTileText, chronologicalLogEntries } from './extract.mjs';
 import { runDetectors, formatFindings, harmfulCardNames } from './detectors.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -260,7 +260,7 @@ export async function runTableGame({
   const actionRecords = [];          // { label, hasTick, commandKey } — detektor osi 3
   // M99: panel akcji w KAŻDYM kroku — detektor martwego okna (Forever Young)
   // nie może zależeć od snapshotów, bo `--quiet` je wyłącza.
-  const windowRecords = [];          // { actions: string[], gameOver: boolean }
+  const windowRecords = [];          // { actions, gameOver, logTail, newestLogEntry }
   // M103 (L15): rekordy sondy „oferta bez skutku" dla detektora `noop` —
   // { label, source, applied|scanned, probe } dla ofert panelu i modala.
   const probeRecords = [];
@@ -298,10 +298,13 @@ export async function runTableGame({
   const MAIN_LOG_EVIDENCE = /^Auto-pass:/;
   const collectRejections = (action) => {
     const entries = $$('#log .log-rejection').map((e) => text(e).trim()).filter(Boolean);
-    for (let i = rejectionsSeen; i < entries.length; i += 1) {
+    // M346/F8: nowe odrzucenia też są na początku DOM, nie za starym indeksem.
+    if (entries.length < rejectionsSeen) rejectionsSeen = 0;
+    const fresh = chronologicalLogEntries(entries, entries.length - rejectionsSeen);
+    for (const reason of fresh) {
       rejectionRecords.push({
         action: String(action ?? '').slice(0, 90),
-        reason: entries[i].slice(0, 120),
+        reason: reason.slice(0, 120),
         afterTick: tickedThisWindow,
       });
     }
@@ -326,9 +329,8 @@ export async function runTableGame({
     // wpisu (pomiar: 0 trafień w transkrypcie mimo obecności wpisu w logu).
     if (entries.length < mainLogSeen) mainLogSeen = 0;  // log przycięty/przerysowany
     const freshCount = entries.length - mainLogSeen;
-    // `slice(0, freshCount)` to nowe wpisy (od najnowszego) — odwracamy, żeby
-    // trafiły do transkryptu w kolejności chronologicznej.
-    const fresh = entries.slice(0, Math.max(0, freshCount)).reverse();
+    // Ta sama kolejność co w snapshotach i kolektorze odrzuceń (M346/F8).
+    const fresh = chronologicalLogEntries(entries, freshCount);
     for (const entry of fresh) {
       if (!MAIN_LOG_EVIDENCE.test(entry)) continue;
       logL(`  LOG: ${entry.slice(0, 160)}`);
@@ -1061,6 +1063,16 @@ export async function runTableGame({
     return false;
   };
 
+  // Jedno źródło ogona dla snapshotu i pomiaru w KAŻDYM oknie, także --quiet.
+  const captureLogWindow = () => {
+    const entries = $$('#log .log-event, #log .log-rejection, #log .log-system')
+      .map((e) => text(e).trim()).filter(Boolean);
+    // Niezależny punkt odniesienia dla detektora: najnowszy wpis wprost z DOM,
+    // nie z ekstraktora, którego kolejność właśnie sprawdzamy.
+    const newestLogEntry = entries[0] ?? null;
+    return { logTail: chronologicalLogEntries(entries, 6), newestLogEntry };
+  };
+
   const snapshot = (stepNo) => {
     const ti = text($('#turn-indicator'));
     const stack = $$('#stack-zone *').map((e) => text(e)).filter((t) => t && t.length > 2).slice(0, 6).join(' | ') || '(pusty)';
@@ -1068,7 +1080,7 @@ export async function runTableGame({
     const hand = tiles('#hand');
     const bfOwn = tiles('#bf-own');
     const bfEnemy = tiles('#bf-enemy');
-    const logTail = $$('#log .log-event, #log .log-rejection, #log .log-system').map((e) => text(e)).slice(-6);
+    const { logTail } = captureLogWindow();
     logL(`\n--- krok ${stepNo} | ${ti} ---`);
     logL(`  STOS: ${stack}`);
     logL(`  AKCJE: ${actions.length ? actions.join('  ||  ') : '(brak)'}`);
@@ -1111,6 +1123,7 @@ export async function runTableGame({
     // M99: zapis okna decyzyjnego ZANIM klikniemy — to jedyny moment, w którym
     // widać dokładnie to, co widzi gracz (łącznie z „samym Poddaj partię").
     windowRecords.push({
+      ...captureLogWindow(),
       actions: $$('#actions button.action').map((b) => text(b).trim()).filter(Boolean),
       gameOver: isGameOver(),
     });
@@ -1158,6 +1171,7 @@ export async function runTableGame({
     // Stan PO (ewentualnym) odrzuceniu — to jest okno, które zobaczył gracz.
     if (profile === 'impatient') {
       windowRecords.push({
+        ...captureLogWindow(),
         actions: $$('#actions button.action').map((b) => text(b).trim()).filter(Boolean),
         gameOver: isGameOver(),
       });

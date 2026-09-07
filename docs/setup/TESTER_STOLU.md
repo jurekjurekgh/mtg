@@ -202,6 +202,17 @@ Detektory (`tools/table-tester/detectors.mjs`, testy:
 - **`rules`** — odrzucona komenda gracza, „zadaje 0 obrażeń" w logu, komunikaty
   typu „to nie powinno się zdarzyć".
 
+#### Kolejność logu — M346 (2026-09-07)
+
+DOM logu ma najnowszy wpis na początku. `chronologicalLogEntries` bierze
+najnowsze N i odwraca je do chronologii; używają go snapshot, kolektor
+odrzuceń i kolektor dowodów auto-pass. Nie używać `slice(-6)` ani starego
+indeksu końca DOM: dawały początek partii zamiast aktualnych zdarzeń.
+`windowRecords` niesie `logTail` i niezależne `newestLogEntry` (pierwszy wpis
+DOM). `detectStaleLogTail` porównuje te dane w każdym oknie, także --quiet;
+zgłoszenie oznacza błąd obserwacji TESTERA, nie nielegalny ruch gracza.
+Dowód A/B i testy: `docs/audits/AUDYT_PR103_2026-09-07.md`, m346.
+
 #### Detektor nie może zależeć od poziomu logowania (M99)
 
 Weryfikacja mutacyjna wykryła dwa detektory czytające **wyłącznie linie

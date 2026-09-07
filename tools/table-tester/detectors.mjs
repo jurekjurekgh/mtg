@@ -1190,6 +1190,20 @@ export function detectDuplicateLogEntry(lines) {
   return found;
 }
 
+/** M346/F8: raportowany ogon musi kończyć się najnowszym wpisem DOM logu. */
+export function detectStaleLogTail(windowRecords) {
+  const found = [];
+  for (const record of windowRecords ?? []) {
+    // Stare rekordy/transkrypty nie niosą tych danych. Pusty DOM też jest OK.
+    if (!Array.isArray(record.logTail) || !record.newestLogEntry) continue;
+    if (record.logTail.at(-1) !== record.newestLogEntry) {
+      push(found, 'info', 'Nieaktualny ogon logu testera',
+        `Najnowszy wpis DOM: ${record.newestLogEntry}; koniec ogona: ${record.logTail.at(-1) ?? '(pusty)'}`);
+    }
+  }
+  return found;
+}
+
 export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set() } = {}) {
   const all = [
     ...detectRawText(lines),
@@ -1203,6 +1217,7 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // M98 — przypadki, które dotąd zgłaszał właściciel z telefonu, a są
     // w pełni widoczne w DOM (decyzja właściciela: tester ma je łapać sam).
     ...detectDeadEndWindow(lines, windowRecords ? { windowRecords } : {}),
+    ...detectStaleLogTail(windowRecords),
     ...detectNoResponseWindow(lines),
     ...detectGroupWithoutTick(actionRecords),
     // M103 (L15) — wzorzec „oferta bez skutku" z M102 (U8/U9/U10):

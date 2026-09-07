@@ -40,7 +40,7 @@ do weryfikacji, nie poleceniem ponownego liczenia.
   plików, dowody ustaleń, także tropy obalone. Artefakty benchmarku:
   sprawdzenie konfiguracji, sum i raportowania bez uruchamiania macierzy.
   Osobny zielony commit raportu + aktualizacja opisu PR.
-- [ ] **E2 — naprawy potwierdzonych usterek, osobno per przyczyna.** Najpierw
+- [x] **E2 — naprawy potwierdzonych usterek, osobno per przyczyna.** Najpierw
   repro przez prawdziwy kontrakt (`execute`/`playerView` lub DOM artefaktu),
   potem chirurgiczna poprawka + RED→GREEN + kontrola anty-over-fix.
   Przy każdej: kontrola składni/diffu, cały `npm test`, `npm run build`,
@@ -144,3 +144,13 @@ Punkt wznowienia: `docs/setup/HANDOFF_2026-09-07d.md`.
 PR #104 nadal OPEN/draft, gałąź zdalna i lokalna zgodne (`af0226f`, 0/0),
 main nadal `c9b884c`. Brudne drzewo M345 zachowane bez resetu. Ponowna
 bramka fast + build przed osobnym commitem/pushem M345; potem F8 i E4.
+
+
+E2 zakończone: M345 wypchnięte `0f294d8`, ponownie 4670/4670 + build.
+E3/M346: F8 naprawione; 9/9 testów, 4 mutacje, rodzina 116/116.
+Żywe A/B: s10401 po 14 flag starego ogona w OBU trybach → 0 po poprawce;
+quiet 74 kroki, verbose 73 przed i po. Dodatkowo s10402/s10403 ukończone,
+0 flag. F9 z verbose do kolejnego przyrostu: fałszywy „pusty koszt” dla
+znacznika wygnania stwora jako kosztu dodatkowego. Naprawić sam detektor,
+sprawdzić dwie strefy i prawdziwe puste ceny/dopłaty oraz źródło danych
+panelu niezależne od --quiet, potem powtórzyć grę (szczegóły w audycie).
