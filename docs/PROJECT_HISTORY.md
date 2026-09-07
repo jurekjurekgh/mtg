@@ -8909,3 +8909,156 @@ przed i po rebase (pusty diff) — pomiary suite ważne.
   59 / 3344,7 kB; benchmark 84,8% (570/672) bez dryfu; golden-master bez zmian.
   Żywo: worek-legend|ravnica s41, 700 kroków — 0 zgłoszeń detektorów.
 - Commity: `c9ed6bb` (M318), `a3e59af` (M319), `1bccf3e` (M320), `da6f7e4` (M321) — wypchnięte.
+
+## Sesja arena/01a078a2 — audyt PR #102 + pętla jakości (cloak: reguły, widok, stół, narzędzia)
+
+Kontynuacja po PR #102 (1 sesja = 1 branch = 1 PR): plan
+`docs/plans/PLAN_2026-09-06c-audyt-pr102-petla-jakosci.md`, audyt
+`docs/audits/AUDYT_PR102_2026-09-06.md` (10 znalezisk F0, F1–F8, F6b + 6
+zamkniętych tropów), PR **#103**. Start: `npm test` 4567/4567; koniec:
+**4602/4602** (+35 testów), build 59 modułów / 3358,0 kB, benchmark `--quick`
+84,8% (570/672) bez dryfu, `test/bot-benchmark.test.js` 10/10, golden-master
+wycen bez regeneracji. Żywy Tester: 6 ukończonych partii, 0 zgłoszeń
+detektorów (w tym dwie na chwilowej talii `audyt-cloak` — patrz
+`docs/setup/TESTER_STOLU.md` → „Partia celowana pod mechanikę").
+
+- **M322 (`85b736c`, F0+F9+F4):** uncover cloaka gasił zdolności karty —
+  ścieżka cloaku brała kształt face-down bez migawki `originalAbilities`
+  (Batch 24), więc odsłonięty permanent zostawał `abilities: []`; cloak zna od
+  teraz procedurę obrotu za koszt morpha/disguise (CR 701.56c/d) przez wspólny
+  provider `faceDownAbilities`; sprzątanie śladów zakrycia (ward {2},
+  `cloakReady`, `cloakTurnUpCost`, `copyNumber`, `faceDownCause`, `manifestReady`)
+  przeniesione z handlerów do punktu zbierającego `turnFaceUp`, bo do odsłonięcia
+  prowadzą DWA wejścia; ward przywracany z migawki, nie twardym `null`
+  (klasa L104). Strażnik m322 (5).
+- **M324 (`05faae5`, F1 + F3):** podatek wardu dla CAŁEJ rodziny rzutów —
+  `WARD_TAXED_TYPES` wyprowadzony z `COMMAND_TYPES` (`cast_*`/`*_cast` +
+  `activate_ability` + `resolve_trigger_target`) zamiast ręcznej ósemki, plus
+  rezerwacja many na koszty darmowych rzutów w `reservedManaOf`; odcisk stanu
+  (`fingerprint.js`) obejmuje `cloakReady` i `ward` (sonda: uncover spadał
+  z 1 do 0 ofert przy IDENTYCZNYM fingerprint — „oferta bez skutku" i replaye
+  były ślepe), `copyNumber` świadomie poza dygestem. Strażniki m323 (4) i
+  m324 (4, w tym pin 14 nazw typu).
+- **M325 (`5e7bd75`, F2):** model „widoczny pump obronny" (M317) domknięty w
+  rodzinie porównań — `effBlockerToughness` w warunku zabicia blokera na
+  pożyczonym stworze i w wyłączeniu kary za kupowany deathtouch przy first
+  strike; kwota wyceny permanentu została surowa (to wartość wydruku, nie
+  stan). Dryf ZERO (benchmark i golden-master), więc pin jest ŹRÓDŁOWY
+  (m325, 2: skan `case 'declare_attackers'` + wyjątek z powodem).
+- **M326 (`e2f3c7a`, F6):** PRZYCZYNA zakrycia jest informacją JAWNĄ (CR 708.6
+  + ruling WotC 2024-02-02 o rozróżnialności), a nie pochodną `cloakReady`:
+  nowe pole `faceDownCause` na obiekcie i w `playerView` (bez bramki FoW),
+  helpery `faceDownCauseTag`/`faceDownLabel` w `session.js` jako jedyne źródło
+  brzmienia, konsumenci (nazwa kafla w modalach, badge, etykieta celu w
+  wizardzie, log celu) przepięte; cudzy cloak to od teraz „Cloak 2", nie
+  kłamiący „Morph", a `cardId` nadal ukryty (m319/B nietknięty). m326 (7).
+- **M327 (`182efb1`, F7):** kreator many dla `turn_cloak_face_up` i
+  `turn_manifest_face_up` — jedyne nie-rzutowe `spendMana` z pipami koloru w
+  silniku nie miały deskryptora, więc źródła tapował silnik; koszt czytany z
+  `opts.turnUpCost` z pełnego stanu (widok nosi `manaCost: 0`), rozbieżność z
+  kosztem karty zamyka kreator; eksport `WIZARD_PAYMENT_COMMAND_TYPES` +
+  strażnik rodziny (m327, 5).
+- **M328–M330 (`76af12b`, `a4e0eb5`, `e0a1902`, F5+F8):** `tools/fetch-card-rulings.mjs`
+  NIGDY nie działał jako CLI (czytał `files` sprzed deklaracji — `ReferenceError`
+  na każdym przebiegu, także `--only`/`--dry-run`); naprawione + pierwszy realny
+  wpis: 14 rulingów WotC w `docs/cards/scryfall-veiled-ascension.json`
+  wkładką tekstową (bez round-tripu `JSON.stringify`), hermetyczny test CLI
+  m328 (4) idący tylko ścieżkami przed `fetch()`; cytowania cloaka
+  „CR 702.75" → 701.56a/b w src/ (M329) i w testach (M332) — cloak to keyword
+  ACTION (CR 701), słownik z VIII 2026 przesuwa na 701.58, mapa liter w audycie;
+  `multiTargetPlanOf` liczy `targetSlotsOf` raz, nie trzy (M330).
+- **M331/M332 (`ab8ceb1`, `76aa5c9`, F6b — z Żywego Testera):** log i podsumowanie
+  „Rozgrywka" (nazwa obiektu w `nameOfObject`) to szósty konsument etykiety —
+  dalej pisał „(Morph)"; `nextFaceDownCopyNumber` numerował tylko zakrycia
+  z `cloakReady`, więc dwa clokowane LĄDY (legalne z 701.56a) były
+  nierozróżnialne. Naprawa przez wspólne `faceDownLabel` + numerację po jawnej
+  przyczynie; asercja M265 przestawiona z dosłownego „Morph" na „przyczynę
+  zakrycia + żadnej nazwy karty". m331 (4).
+- Lekcje: **L136** (`git checkout <plik>` kasuje niezacommitowaną poprawkę;
+  scratch piaskownicy przepada — commit+push po każdym findingu), **L137**
+  (etykieta to rodzina: grep po TEKŚCIE, nie po nazwie pola; test na prawdziwym
+  widoku; partia celowana dla rzadkiej mechaniki).
+- **Budżet lektury startowej** (próg 100k, `test/dokumentacja-budzet-lektury.test.js`):
+  po dopisaniu L136+L137 było ~101,6k, więc kondensacja była zadaniem tej sesji
+  (AGENTS §0) — proza sześciu wpisów (L123, L128, L129, L132, L136, L137)
+  poszła do `docs/LESSONS_PRZYPADKI.md` zgodnie ze wzorcem PR #93 (narracja w
+  archiwum, reguła+strażnik w rejestrze, odsyłacz `→ narracja`), numery 1:1.
+  Zmierzono **97,1k/100k** (LESSONS ~48,5k), strażnicy formatu (L136/L137
+  marker ↔ nagłówek w archiwum) i liczebność (`wyniesione >= 50`) zielone.
+  M203/3 przy okazji pokazał, że nazwy talii w `TESTER_STOLU.md` są skanowane:
+  chwilowa talia audytowa nie może być w nich wymieniona z nazwy.
+
+### Kontynuacja (arena/01a078a2, 2026-09-07 popołudnie): M333–M335, pętla jakości na otwartym PR #103
+
+Ta sama sesja po zapisaniu `docs/setup/HANDOFF_2026-09-07a.md` — ciągnięcie
+tematu rodzinnego (zakrywanie) aż do wyczerpania, plus celowa partia testerowa.
+Start: `npm test` 4608/4608; koniec: **4618/4618**, build 59 modułów /
+**3365,9 kB**, `node --test test/bot-benchmark.test.js` 10/10,
+`node tools/benchmark.mjs --quick` heuristic **84,8% (570/672)**, aggro 26,5%
+(89/336), random 3,9% (13/336) — zero dryfu.
+
+- **M333 (`12130ce`, F6c):** przyczyna zakrycia dla WSZYSTKICH mechanik
+  (manifest, morph — nie tylko cloak), jedna tabela etykiet w
+  `src/table/session.js` (fallback usunięty z `render.js`), zdejmowanie
+  `faceDownCause` przy obrocie manifestu i zerowanie drukowanego wardu pod
+  zakryciem (CR 701.40a). Dwa z tych trzech wyszły z pisania strażnika, nie z
+  czytania kodu. Strażnik `test/m333-przyczyna-manifest.test.js` (6).
+- **M334 (`601615e`, F11 + F10):** `turn_manifest_face_up` u bota było
+  wyceniane przez `default: finish(0)` — remis z pasem, a przy stabilnym
+  sortowaniu i doklejaniu oferty obrotu PRZED pasem bot płacił zawsze
+  (sonda: `bot: ["turn_manifest_face_up"]` dla Goblin Piker 2/1). Naprawione
+  JEDNYM wspólnym `case` dla rodziny i podatkiem wardu liczonym ze stanu
+  (`max(0, object.ward - karta.ward)`, waga 1.5 = dzisiejsze −3 u cloaka,
+  zero dryfu). Przy okazji: `faceDownOriginal` manifestu nie niósł P/T, więc
+  obrót zwracał 2/2 zamiast 6/5 (CR 701.40b; ten sam błąd co u cloaka w M315).
+  Strażnik `test/m334-bot-manifest-odsloniecie.test.js` (6; trzy mutacje
+  trafione w zamierzone asercje).
+- **M335 (`a9112a2`, F12):** partia wisi po `Manifest Dread` z jedną kartą w
+  bibliotece — gałąź bez decyzji zwracała prawdę, więc `pendingSpell`
+  czekał na `resolve_*`, które nigdy nie powstało; objaw na stole: „Błąd
+  wewnętrzny stołu: Pending spell odwołuje się do nieistniejącego czaru
+  spell-39" + `[STOP] brak akcji w kroku 50`. Znalezione wyłącznie przez
+  celowaną partię `tools/table-tester` (seed 4001, transkrypt
+  `tools/table-tester/audyt-pr103/m334-manifest-g1.txt`) — po raz kolejny:
+  4614 testów jednostkowych nie widziało stanu „jedna karta na wierzchu".
+  Naprawa `return;`, bez maskowania w pasie. Strażnik
+  `test/m335-manifest-bez-wybory.test.js` (4).
+- **Korekta własnego zgłoszenia:** w komunikacie M335 napisałem „żadna talia w
+  `decks/` nie ma Manifest Dread" — grep zrobiony po commicie pokazał
+  `decks/worek-mroczny.txt:12`. Wniosek (dlaczego zero dryfu) jest inny i
+  zmierzony porządnie: `benchmarkDecks()` odrzuca talie `worek*`, a `BENCH_DECKS`
+  to pierwszych 6 talii. Zapisane w §7 audytu PR #102, żeby następna sesja nie
+  powtarzała obiecanego „zbadać worek-mroczny".
+- **Dokumentacja i lekcje:** §7 w `docs/audits/AUDYT_PR102_2026-09-06.md`,
+  §„Stan przedłużenia sesji" w `docs/setup/HANDOFF_2026-09-07a.md`, rozbudowana
+  sekcja „Partia celowana pod mechanikę" w `docs/setup/TESTER_STOLU.md` (krótka
+  talia = test brzegów biblioteki + `npm run build` po sprzątaniu), **L138**
+  (zwrot prawdy = blokada; testuj „gra idzie dalej") i **L139** (kotwica
+  jednoznaczna + `node --check` przed commitem) w `docs/LESSONS.md`; budżet
+  lektury startowej zielony.
+
+### Przedłużenie (2026-09-07 wieczór): F14 → M336, blokada B0 → M337, pełny B0, F13 → M338
+
+- **M336 (`eae8f56`, F14):** `resolve_proliferate` bez wyceny u bota — a korekta
+  własnego ustalenia była cenniejsza niż fix: komentarz silnika „pierwsza oferta =
+  WSZYSTKO" kłamał, `subsets()` kładzie PUSTKĘ pierwszą, więc bot brał pustkę
+  zawsze (przepuszczona wygrana trucizną w sondzie). Fix: `case` z sumą delt +
+  `POISON_LOSS_LIMIT` jako jedno źródło progu (SBA i bot). Strażnik (8/8).
+- **M337 (`3bb1970`):** pełny B0 padł na 3200/5700 na ofercie `turn_cloak_face_up`
+  przy cudzej decyzji — trzy ręczne kopie tej samej reguły (oferty face-up pytały
+  o sam priorytet, pass o listę ~54 warunków, execute o 64 bramki). Jeden predykat
+  `optionalActionsOpen` po obu stronach + strażnik źródła przeciw czwartej kopii;
+  rykoszety (fixture, pin M293 63→62) z atrybucją w commicie. **L140** w rejestrze.
+- **Pełny B0 dokończony po raz pierwszy** (`tools/b1-final-2026-09-07.{txt,json}`):
+  5 700 meczów, 17,4 min, 0 zacinek; heuristic 82,6% vs 80,8% (baza 2026-08-29,
+  inna objętość próbki — kierunek, nie różnica). „niedokończone: 1" = remis
+  obustronnego wyzerowania życia (CR 104.3a), nie awaria — udokumentowane, żeby
+  następna sesja nie goniła go jak błędu.
+- **M338 (F13):** `--help` benchmarku kłamał o domyślnych (budżet „10 000", szybki
+  „4 seedy", watchdog dla szybkiego), bo nic go nie liczyło — HELP i stałe
+  eksportowane, `test/m338-pomoc-benchmarku-liczby.test.js` (5/5, dwie mutacje)
+  wyprowadza liczby z kodu i bieżącego katalogu; ADR 0025 dostał dateowaną
+  „Aktualizację liczb" (konwencja ADR 0018), bez zmiany decyzji.
+- Dokumentacja: §8 audytu PR #102, notka o bramce M337 w `TESTER_STOLU.md`,
+  kondensacja rejestru LESSONS (L131/L124/L136 → archiwum PRZYPADKI, budżet
+  startowy 99 946/100 000).

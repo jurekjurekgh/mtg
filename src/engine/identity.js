@@ -86,7 +86,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     warpedAtTurn: warpedAtTurn ?? null,
     // Batch 50 (Surge, CR 702.111): alternatywny koszt rzutu z ręki.
     surge: surge ? Object.freeze({ ...surge }) : null,
-    // Batch 50 (Manifest, CR 701.34): gotowość obrotu twarzą do góry za koszt.
+    // Batch 50 (Manifest, CR 701.40b): gotowość obrotu twarzą do góry za koszt.
     manifestReady: Boolean(manifestReady),
     manifestTurnUpCost: manifestTurnUpCost ?? null,
     suspended: Boolean(suspended),

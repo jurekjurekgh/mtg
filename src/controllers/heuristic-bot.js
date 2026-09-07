@@ -2,6 +2,8 @@ import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
 import { coloredPipsOf } from '../engine/mana-cost.js';
+import { POISON_LOSS_LIMIT } from '../engine/state-based.js';
+import { COMMAND_TYPES } from '../protocol/types.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { probAtLeastOne } from '../engine/hypergeom.js';
 import { normalizeHeuristicWeights } from './heuristic-weights.js';
@@ -671,6 +673,19 @@ export function isNegativePump(effect) {
   if (!pump) return false;
   return pump.power < 0 || pump.toughness < 0;
 }
+
+/**
+ * M324 (audyt PR #102, F1): komendy, dla których wycena dolicza podatek wardu
+ * (CR 702.21). Kryterium jest strukturalne: każdy typ `cast_*` i każde okno
+ * `*_cast` to rzucenie czaru z celami w komendzie, a ward patrzy na CELE, nie
+ * na nazwę komendy. Strażnik zakresu klasy: `test/m324-bot-ward-rodzina.test.js`
+ * (świeci, gdy dojdzie nowy typ rzutu — trzeba świadomie zdecydować, czy
+ * podlega, i ewentualnie wyłączyć go jawnym wyjątkiem z powodem).
+ */
+export const WARD_TAXED_TYPES = new Set([
+  ...COMMAND_TYPES.filter((type) => type.startsWith('cast_') || type.endsWith('_cast')),
+  'activate_ability', 'resolve_trigger_target',
+]);
 
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
@@ -1941,6 +1956,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   /** M320/NA2: mana zarezerwowana na sam koszt czaru/zdolności (przed ward). */
   function reservedManaOf(view, cmd) {
+    // M324: okna darmowego rzutu nie płacą kosztu karty (CR 702.62a suspend,
+    // 702.97 rebound, M195 Epic z grobu) — z puli wychodzi wyłącznie to, co
+    // naprawdę: {X} (Epic płaci X = MV, CR 118.9a) i koszt madness. Bez tego
+    // podatek ward liczony był od reszty pomniejszonej o koszt, którego nikt
+    // nie płaci, i bot odmawiał darmowych rzutów (over-fix w drugą stronę).
+    if (cmd.type === 'resolve_madness_cast') return cmd.cost ?? 0;
+    if (cmd.type === 'resolve_suspend_cast' || cmd.type === 'resolve_rebound_cast'
+      || cmd.type === 'resolve_grave_free_cast') return cmd.xValue ?? 0;
+    // `resolve_exile_cast` (Vaana) NIE jest darmowe — idzie przez castSpell i
+    // płaci pełny koszt, więc zostaje na ścieżce ogólnej (koszt karty).
     if (cmd.type === 'activate_ability') {
       const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
       const abilityObject = source ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
@@ -2219,9 +2244,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // różnią się kosztem ward jak każdym innym; brak many na dopłatę →
     // wariant fiknie i schodzi poniżej passu. Trigger z celem (wariant
     // resolve_trigger_target) to też „spell or ability" w sensie ward.
-    const wardScoringType = ['cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
-      'cast_adventure', 'cast_permanent', 'activate_ability', 'resolve_trigger_target'].includes(cmd.type);
-    const wardTax = wardScoringType
+    // M324 (audyt PR #102, F1): zestaw typów jest WYPROWADZONY z kontraktu
+    // (WARD_TAXED_TYPES), nie wyliczany ręcznie. Ręczna ósemka pominęła całą
+    // rodzinę okien darmowego rzutu (suspend, rebound, madness, Epic, Vaana) i
+    // przygodę-stronę-stwora — a silnik odpala ward od ZDARZENIA (spell_cast /
+    // permanent_cast / aura_spell_cast / ability_activated / spell_copied —
+    // `fireWardTriggers`), więc o podatku decyduje „czy to rzut/aktywacja z
+    // celem", nie nazwa komendy. Zmierzone sondą w oknie madness: bot rzucał w
+    // ward {2} bez rezerwy i oddawał czar do kontrowania (ten sam objaw, który
+    // zgłosił właściciel w cz. 5 / NA2).
+    const wardTax = WARD_TAXED_TYPES.has(cmd.type)
       ? wardTargetTax(view, cmd.targets ?? (cmd.targetId != null ? [cmd.targetId] : []), reservedManaOf(view, cmd))
       : 0;
     if (wardTax >= 200) return weightedScore(cmd.type, -200);
@@ -2262,37 +2294,52 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     switch (cmd.type) {
       case 'concede': return finish(NEVER);
-      // M315 (CR 702.75c): uncover cloakowanego — legalna SPECIALNA AKCJA
-      // (bez stosu), wycena poniżej (M321 — zgłoszenie właściciela: „jawna
-      // luka w działaniu bota").
-      case 'turn_cloak_face_up': {
-        // M321 (CR 702.75c + ruling WotC 2024-02-02): uncover kosztuje koszt
-        // many KARTY i zdejmuje ward {2} — opłaca się tylko, gdy karta jest
-        // WYRAŹNIE lepsza od zakrycia 2/2 z ward. Bot odsłania TYLKO w mainie
-        // (poza mainem odsłonięcie nic nie zmienia: po deklaracji bloków ciało
-        // nie zdąży niczego obronić), gdy ma many (zapas liczony jak w M320 —
+            // M315/M321 + M334 (CR 701.56b, 701.40b, 702.37e): rodzina OBROTÓW
+      // twarzą do góry — cloak i manifest to TA SAMA decyzja („zapłać koszt
+      // many karty, żeby odzyskać to, co leży pod zakryciem"), więc mają
+      // JEDEN wspólny przypadek (L137: rodzina wyceniana w jednym miejscu,
+      // inaczej kolejne okno decyzji dostaje `default: finish(0)`).
+      case 'turn_cloak_face_up':
+      case 'turn_manifest_face_up': {
+        // Wycena (M321 dla cloaka, M334 dla manifestu): tylko w mainie (poza
+        // mainem odsłonięcie nic nie zmienia — po deklaracji bloków ciało nie
+        // zdąży niczego obronić), tylko gdy stać (zapas liczony jak w M320 —
         // ownOpenMana), a zysk (ciało ponad 2/2 + keywordy karty + trigger ETB)
-        // przebija koszt many + flat za utratę ward. Zero nazw kart (ADR 0002).
+        // musi przebić koszt many I to, co zakrycie daje, a obrót zabiera.
+        // Zero nazw kart (ADR 0002).
         const stepNow = view.turn?.step ?? '';
         if (!stepNow.includes('main')) return finish(NEVER);
-        const cloak = objectOnBoard(view, cmd.objectId);
-        if (!cloak?.cardId) return finish(NEVER);
-        const cloakDef = cardDef(cloak.cardId);
-        if (!cloakDef) return finish(NEVER);
-        // playerView nie niesie cloakTurnUpCost — kosztmany KARTY bierzemy
-        // z rejestru (CR 702.75c: „paying its mana cost"; identycznie czyta
-        // oferta w game-state).
-        const uncoverCost = cloak.cloakTurnUpCost ?? cloakDef.manaCost ?? 0;
+        const covered = objectOnBoard(view, cmd.objectId);
+        if (!covered?.cardId) return finish(NEVER);
+        const coveredDef = cardDef(covered.cardId);
+        if (!coveredDef) return finish(NEVER);
+        // playerView nie niesie `cloakTurnUpCost`/`manifestTurnUpCost` (prawa
+        // do obrotu są u kontrolera, a kwoty i tak nie są publiczne) — koszt
+        // obrotu to koszt many KARTY; odczyt z rejestru, tak samo jak czyta go
+        // oferta w game-state (CR 701.56b/701.40b: „paying its mana cost").
+        const uncoverCost = covered.cloakTurnUpCost ?? covered.manifestTurnUpCost
+          ?? coveredDef.manaCost ?? 0;
         if (uncoverCost <= 0 || ownOpenMana(view) < uncoverCost) return finish(NEVER);
-        const bodyGain = Math.max(0, (cloakDef.power ?? 0) - 2) * 2
-          + Math.max(0, (cloakDef.toughness ?? 0) - 2);
-        const keywordBonus = Math.min(6, (cloakDef.keywords ?? []).length * 2);
-        const etbBonus = (cloakDef.abilities ?? []).some((a) => a?.type === 'triggered'
+        const bodyGain = Math.max(0, (coveredDef.power ?? 0) - 2) * 2
+          + Math.max(0, (coveredDef.toughness ?? 0) - 2);
+        const keywordBonus = Math.min(6, (coveredDef.keywords ?? []).length * 2);
+        const etbBonus = (coveredDef.abilities ?? []).some((a) => a?.type === 'triggered'
           && a?.trigger?.event === 'enter_battlefield') ? 5 : 0;
-        const uncoverValue = bodyGain + keywordBonus + etbBonus - uncoverCost - 3; // −3: utrata ward {2}
+        // Ile warda TRACI się na obrocie — liczone ze STANU, nie z mechaniki:
+        // kwotę zakrycia niesie publiczne pole `ward` widoku (M258/F3,
+        // CR 701.56a: cloak to 2/2 Z WARD {2}), a drukowaną kwotę karty
+        // widać w rejestrze. Stąd cloak z kartą bez drukowanego warda płaci za
+        // utratę ward {2} (jak w M321), a manifest i morph — zero, bo ich
+        // definicje zakrycia wardu nie dają (CR 701.40a, 702.37a); karta
+        // z drukowanym wardem {2} pod cloakiem nie traci nic (701.56a tylko
+        // PODNOSI ward do 2 → obrót nic nie zabiera). Waga 1.5 kalibruje tak,
+        // by dzisiejszy cloak płacił −3, czyli dokładnie tyle, ile płacił przed
+        // tą zmianą (zero dryfu wycen na karcie, którą mierzył benchmark).
+        const lostWard = Math.max(0, (covered.ward ?? 0) - (coveredDef.ward ?? 0));
+        const uncoverValue = bodyGain + keywordBonus + etbBonus - uncoverCost - lostWard * 1.5;
         return finish(uncoverValue > 0 ? uncoverValue : NEVER);
       }
-      case 'draw_card': return finish(100);
+            case 'draw_card': return finish(100);
       case 'play_land': return finish(90 + landPlayDelta(view, cmd.objectId));
       case 'tap_for_mana': {
         // Własne kroki początkowe/końcowe: mana wyparuje na końcu kroku,
@@ -4616,7 +4663,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // traci permanent. Właściciel: „jak już przejął to powinien
             // zaatakować właściciela” — gałęzie downside'u go nie dotyczą.
             if (canBeBlocked && blockers.length > 0) {
-              if (power >= strongestBlockerToughness) {
+              // M325 (audyt PR #102, F2): Warunek „zabija najsilniejszego
+              // blokera" musi czytać staty Z BONUSEM (M317), inaczej bot liczy
+              // właścicielowi utratę permanentu, którego atakujący nie zabije.
+              // Kwota wyceny zostaje SUROWA: to wartość permanentu właściciela
+              // (wydruk), a nie stan, który pump zmienia.
+              if (power >= effBlockerToughness) {
                 // Zabija najsilniejszego blokera — właściciel traci ten
                 // permanent; atakujący wraca do właściciela (przeżyje) albo
                 // ginie (strata właściciela) — w żadnym razie nie bota.
@@ -4713,7 +4765,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return sum + (hasKeyword(o, 'infect') ? (o.power ?? 0) : 0);
         }, 0);
         const penetratingInfect = Math.max(0, infectTotalPower - blockerAbsorb);
-        if (attackers.length > 0 && enemyPoison < 10 && penetratingInfect >= 10 - enemyPoison) score += 1000;
+        if (attackers.length > 0 && enemyPoison < POISON_LOSS_LIMIT
+          && penetratingInfect >= POISON_LOSS_LIMIT - enemyPoison) score += 1000;
         // Zegar (B1): gramy o czas, gdy wróg jest blisko śmierci, może nas
         // zabić w następnej turze albo nasza biblioteka się kończy — wtedy
         // atakujemy nawet kosztem wymiany. (strażnik „> 0" odróżnia realną
@@ -4789,8 +4842,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // więc kara za „kupowany" deathtouch byłaby podwójnym liczeniem.
               if (diesToDeathtouchBlocker(object, blockers)) continue;
               // First strike zabija blokera, zanim ten zada obrażenia.
+              // M325 (audyt PR #102, F2): to samo źródło co wyżej — przy
+              // WIDOCZNYM pumpe bloker może przeżyć pierwsze uderzenie i wtedy
+              // trik z deathtouchem nadal zabija atakującego (klasa L48: jeden
+              // model w całej rodzinie gałęzi).
               if (attackerStrikesFirst(object, blockers)
-                && (object.power ?? 0) >= strongestBlockerToughness) continue;
+                && (object.power ?? 0) >= effBlockerToughness) continue;
               score -= dtProb * (10 + 2 * (object.power ?? 0) + (object.toughness ?? 0));
             }
           }
@@ -5446,6 +5503,60 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // której strata MNIEJ boli (gorsza), żeby zachować wartościową na potem.
       // Face-down 2/2 jest w 100% wymienny niezależnie od karty pod spodem
       // (dopóki jej nie odwrócimy), więc decyzja = „która karta może spaść".
+      // M336 (klasa L133 — decyzja bez wyceny): Proliferate (CR 701.27) to
+      // wybór DOWOLNEJ liczby permanentów i/lub graczy z licznikami, więc
+      // silnik enumeruje PODZBIORY. Pusty wariant jest pierwszy (zmierzone
+      // sondą na `courage-in-crisis`; komentarz w grze mówił odwrotnie —
+      // też poprawione), a bez wyceny bot brał dokladnie to: pusty zbiór
+      // ZAWSZE. Skutek mierzony w czterech pozycjach:
+      //   • własny stwór z +1/+1 → przepuszczony darmowy licznik,
+      //   • przeciwnik przy 9 truciznach → przepuszczona WYGRANA partia,
+      //   • własne 9 trucizen → „przypadek bezpieczny" (bot nie wybrał NICZEGO,
+      //     nie dlatego że policzył) — ta ślepota wraca, gdy tylko ktoś
+      //     zmieni kolejność ofert,
+      //   • własny -1/-1 → słusznie nic, też przypadkiem.
+      // Wycena = suma delt po celach WYBRANYCH w wariancie, więc pusty zbiór
+      // ma 0 i jest górną granicą dla wszystkiego, co szkodliwe: bot nie musi
+      // zgadywać polityki z kolejności enumeracji (L41).
+      case 'resolve_proliferate': {
+        const ids = cmd.targetIds ?? [];
+        if (ids.length === 0) return finish(0);
+        let suma = 0;
+        for (const id of ids) {
+          const player = (view.players ?? []).find((p) => p.id === id);
+          if (player) {
+            const poison = player.poison ?? 0;
+            if (id === view.playerId) {
+              // Własna dziesiąta trucizna to przegrana (CR 120.7, SBA) — cała
+              // decyzja jest do odrzucenia, nie do „przetargowania".
+              if (poison + 1 >= POISON_LOSS_LIMIT) return finish(NEVER);
+              suma -= 1;
+              continue;
+            }
+            if (poison + 1 >= POISON_LOSS_LIMIT) return finish(1000);  // ta sama skala co lethal ataku
+            suma += 1;
+            continue;
+          }
+          const permanent = objectOnBoard(view, id);
+          if (!permanent) continue;
+          const own = permanent.controllerId === view.playerId;
+          const tough = permanent.toughness ?? 0;   // WIDOKOWA = efektywna (CR 613)
+          for (const [kind, count] of Object.entries(permanent.counters ?? {})) {
+            if (!(count > 0)) continue;
+            if (kind === '+1/+1') suma += own ? 2 : -2;
+            else if (kind === '-1/-1') {
+              // dokładka może dobijać: przy efektywnej wytrzymałości 1 drugi
+              // -1/-1 to 0/0, czyli śmierć przy najbliższych SBA (CR 704.5a)
+              if (own) suma -= tough - 1 <= 0 ? 6 : 2;
+              else suma += tough - 1 <= 0 ? 4 : 2;
+            } else if (kind === 'loyalty') suma += own ? 1 : -1;
+            // inne liczniki zostają bez wagi: nie mamy reguły, która mówi, czy
+            // służą właścicielowi (L119 — nie dopisujemy wagi „na wszelki
+            // wypadek"; wariant i tak wygrywa przez to, że pusty ma zero)
+          }
+        }
+        return finish(suma);
+      }
       case 'resolve_manifest_dread': {
         const card = decisionCandidateCard(view, cmd.cardId);
         if (!card) return finish(0);

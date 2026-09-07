@@ -157,7 +157,7 @@ test('kreator many: morph — bezbarwny koszt, brak wymagań kolorów', () => {
   const d = paymentDescriptorOf({ type: 'cast_permanent', objectId: 'h1', faceDown: true }, view);
   assert.ok(d);
   assert.equal(d.totalNeeded, 3);
-  assert.deepEqual(d.requirements, [], 'morph bezbarwny (CR 702.36) — brak wymagań kolorów');
+  assert.deepEqual(d.requirements, [], 'morph bezbarwny (CR 702.37a) — brak wymagań kolorów');
   assert.equal(d.costStr, 'Morph (3)');
 });
 

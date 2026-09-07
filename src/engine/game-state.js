@@ -2094,7 +2094,7 @@ export function execute(state, input) {
     return accepted(state, cmd, { ok: true, events: resolved });
   }
   // Manifest Dread (DSK): wybór, którą z dwóch kart z wierzchu zmanifestować
-  // (face-down 2/2); druga do grobu (CR 701.34/702.111).
+  // (face-down 2/2); druga do grobu (CR 701.62a).
   if (state.pendingManifestDread) {
     if (cmd.type !== 'resolve_manifest_dread') return reject('manifest_dread_unresolved');
     if (cmd.playerId !== state.pendingManifestDread.playerId) return reject('manifest_dread_not_your_decision');
@@ -2103,7 +2103,7 @@ export function execute(state, input) {
     if (!pending.objectIds.includes(pickId)) return reject('illegal_manifest_dread_choice');
     const before = state.events.length;
     manifestCardFaceDown(state, pickId, pending.playerId);
-    // Druga karta do grobu (CR 701.34b).
+    // Druga karta do grobu (CR 701.62a).
     for (const id of pending.objectIds.filter((oid) => oid !== pickId)) {
       const graveId = `grave-${state.objectSequence++}`;
       const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
@@ -5025,7 +5025,7 @@ export function execute(state, input) {
     }
   }
 
-  // Manifest — obrót twarzą do góry (CR 701.34e): specjalna akcja, nie używa
+  // Manifest — obrót twarzą do góry (CR 701.40b): specjalna akcja, nie używa
   // stosu (jak morph). Tylko karta STWORA (manifestReady), za koszt many karty.
   if (cmd.type === 'turn_manifest_face_up') {
     const object = state.objects.get(cmd.objectId);
@@ -5040,18 +5040,19 @@ export function execute(state, input) {
     if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('manifest_turn_up_no_colored_source');
     const before = state.events.length;
     spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
+    // M322 (audyt PR #102): znaczniki manifestu zdejmują się w `turnFaceUp`
+    // — ten sam punkt zbierający co dla cloaka, więc żadna z dróg obrotu nie
+    // może ich zgubić (wcześniej kasował je handler, czyli jeden z wołających).
     turnFaceUp(state, cmd.objectId);
-    // Zdejmujemy znaczniki manifestu — po obrocie to zwykły stwór.
-    const flipped = state.objects.get(cmd.objectId);
-    if (flipped) state.objects.set(cmd.objectId, Object.freeze({ ...flipped, manifestReady: false, manifestTurnUpCost: null }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
 
-  // M315 — cloak: obrót twarzą do góry (CR 702.75c). Specjalna akcja:
+  // M315 — cloak: obrót twarzą do góry (CR 701.56b). Specjalna akcja:
   // bez stosu, niereagowalna, w każdym oknie priorytetu. Walidacja
-  // tożsama z ofertą (L48). Po obrocie permanent traci ward {2}
-  // (CR 702.75c) — pole `ward` nie pochodzi z faceDownOriginal, więc
-  // trzeba je zdjąć ręcznie (keywords przywraca turnFaceUp).
+  // tożsama z ofertą (L48). Po obrocie permanent traci ward {2} i resztę
+  // śladów zakrycia — sprząta je punkt zbierający `turnFaceUp` (M322), bo do
+  // odsłonięcia prowadzą dwie procedury: koszt karty (701.56b) i koszt
+  // morpha/disguise (701.56c/d).
   if (cmd.type === 'turn_cloak_face_up') {
     const object = state.objects.get(cmd.objectId);
     if (!object || object.zone !== 'battlefield' || !object.faceDown || !object.cloakReady) {
@@ -5065,11 +5066,12 @@ export function execute(state, input) {
     if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('cloak_turn_up_no_colored_source');
     const before = state.events.length;
     spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
-    turnFaceUp(state, cmd.objectId);
-    const flipped = state.objects.get(cmd.objectId);
     // M319/NA1: numer kopii zakrycia znika razem z zakryciem — face-up karta
     // nie ma nosić „(Cloak N)" ani liczyć się do numeracji kolejnych cloaków.
-    if (flipped) state.objects.set(cmd.objectId, Object.freeze({ ...flipped, ward: null, cloakReady: false, cloakTurnUpCost: null, copyNumber: null }));
+    // M322: kasację śladów zakrycia przejmuje punkt zbierający `turnFaceUp`
+    // (obrót zdolnością morpha szedł obok handera i zostawiał ward {2} na
+    // face-up permanencie).
+    turnFaceUp(state, cmd.objectId);
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
 
@@ -5551,6 +5553,11 @@ export function playerView(state, playerId) {
           entry.types = [...object.types];
         }
         if (object.faceDown) entry.faceDown = true;
+        // M326 (audyt PR #102, F6): przyczyna zakrycia JAWNA dla obu graczy
+        // (CR 708.6 — stół musi pokazać, CO zakryło kartę), w przeciwieństwie
+        // do `cloakReady` (prawa do obrotu = zna tylko kontroler). Nazwa
+        // mechaniki nic nie mówi o karcie pod spodem, więc FoW zostaje.
+        if (object.faceDownCause) entry.faceDownCause = object.faceDownCause;
         if (object.goaded === true) entry.goaded = true;
         // M177/E: detain jest informacją publiczną (badge + boty).
         if (object.detained === true) entry.detained = true;
@@ -5696,6 +5703,11 @@ export function playerView(state, playerId) {
           // aury (inny flavor w UI, inne rozstrzygnięcie przy fizzle).
           bestow: object.bestow ?? null, attachedTo: object.attachedTo ?? null,
           faceDown: Boolean(object.faceDown),
+          // M333 (F6c): przyczyna zakrycia CZARU na stosie jest jawna (samo
+          // zagranie twarzą w dół jest publiczne — CR 702.37c), więc panel
+          // „Stos" może ją czytać tak jak kafle na stole; bez tego jedynym
+          // źródłem znacznika był tam stały „Morph" (szósty konsument z L137).
+          ...(object.faceDownCause ? { faceDownCause: object.faceDownCause } : {}),
           // T6: zdolność triggerowana na stosie (pseudo-obiekt kind 'trigger').
           trigger: Boolean(object.triggerEntry),
           triggerEvent: object.triggerEntry?.ability?.trigger?.event ?? null,
@@ -5852,6 +5864,20 @@ export function playerView(state, playerId) {
   // pass był oferowany przy otwartej, blokującej decyzji. Klasa L41.)
   const firstDecisionOwner = state.status === 'active' ? firstPendingDecisionPlayerId(state) : null;
   const blockedByOthersDecision = firstDecisionOwner != null && firstDecisionOwner !== playerId;
+  // M337 (macierz B0 przerwana na 56%): AKCJE OPCJONALNE — specjalne (obrót
+  // twarzą do góry, CR 701.40b/701.56b) i pass — są nielegalne, gdy JAKA
+  // KOLWIEK decyzja czeka, także ta, której właścicielem jest sam gracz.
+  // execute pilnuje tego 64 bramkami `if (cmd.type !== 'resolve_*') reject`
+  // (zmierzone: 64 = liczba pól w `firstPendingDecision`, więc reguły są
+  // 1:1), a oferta pytała o nie TYLKO przy passie. Efekt mierzony powtórką
+  // pojedynku z macierzy (aggro mirrodin-wu vs random ravnica, seed 1001,
+  // tura 22, krok declare_blockers):
+  //   oferty: ["turn_cloak_face_up","resolve_trigger_target",…,"concede"]
+  //   execute: command_rejected trigger_target_unresolved
+  //   → „Bot wybrał nielegalną komendę" i cały przebieg padł.
+  // Jeden predykat po obu stronach, nie dwa warunki (wzorzec M255/G i L41;
+  // Batch 47 łatał to samo dla `pass_priority`, M337 domyka rodzinę).
+  const optionalActionsOpen = state.turn.priorityPlayerId === playerId && firstDecisionOwner == null;
 
   const trailingCommands = [];
   if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom) {
@@ -5859,10 +5885,10 @@ export function playerView(state, playerId) {
     // oferujemy wyłącznie posiadaczowi priorytetu.
     trailingCommands.push(command('concede', playerId));
     const hasPriority = state.turn.priorityPlayerId === playerId;
-    // Manifest (CR 701.34e): obrót twarzą do góry to specjalna akcja „any time"
+    // Manifest (CR 701.40b): obrót twarzą do góry to specjalna akcja „any time"
     // (gdy masz priorytet), za koszt many karty; tylko karty stworów
     // (manifestReady). Oferta gdy stać na koszt + kolorowe źródła.
-    if (hasPriority) {
+    if (optionalActionsOpen) {
       for (const objId of state.zones.battlefield) {
         const obj = state.objects.get(objId);
         if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.manifestReady) continue;
@@ -5873,12 +5899,12 @@ export function playerView(state, playerId) {
         legalCommands.push(command('turn_manifest_face_up', playerId, { objectId: objId }));
       }
     }
-    // M315 (CR 702.75c + ruling WotC 2024-02-02): cloak — obrót twarzą do
+    // M315 (CR 701.56b + ruling WotC 2024-02-02): cloak — obrót twarzą do
     // góry to SPECJALNA AKCJA: „any time you have priority", bez stosu,
     // niereagowalna; tylko gdy pod zakryciem karta STWORA („revealing that
     // it's a creature card"); koszt = koszt many KARTY. Oferta = walidacja
     // (L48) — te same bramki w execute.
-    if (hasPriority) {
+    if (optionalActionsOpen) {
       for (const objId of state.zones.battlefield) {
         const obj = state.objects.get(objId);
         if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.cloakReady) continue;
@@ -5896,8 +5922,15 @@ export function playerView(state, playerId) {
     // M255/F: ta sama reguła co w execute (closingCombatPassBlocked) —
     // obrońca MUSI dostać pass, bo nie ma `resolve_combat`.
     const blockedByCombat = closingCombatPassBlocked(state, playerId);
-    if (hasPriority && !blockedByCombat && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingReplacementChoice && !state.pendingUndercityRoute && !state.pendingFabricate && !state.pendingEscapeExile) trailingCommands.push(command('pass_priority', playerId));
+    // M337: ręcznie enumerowana lista ~54 `!state.pending*` była TRZECIĄ
+    // kopią tej samej reguły (Batch 47, M255/G, teraz to) i to ona rozjeżdżała
+    // się z execute przy każdej nowej decyzji. Zastąpiona tym samym
+    // predykatem, który liczy oferty akcji opcjonalnych — `firstDecisionOwner`
+    // ogarnia 64 pola, czyli nadzbiór dawnej listy (porównane na literalach:
+    // 10 brakujących pól ma tu odpowiedniki w postaci derivatów
+    // `pendingBackup`/`triggerTargetsBlock`/`roomTargetBlocks`/
+    // `deliriumBlocks`/`mentorBlocks`, więc żadna legalna oferta nie znika).
+    if (optionalActionsOpen && !blockedByCombat) trailingCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
   // jakiej bramki execute() je zamykają: scry → surveil → backup → clash →
@@ -6105,8 +6138,15 @@ export function playerView(state, playerId) {
     // permanents and/or players" — podzbiory kandydatów (permanenty z
     // licznikami + gracze z poison). Przy dużych pulach ograniczamy enumerację
     // (jak combat options): pełne podzbiory do 6 kandydatów, wyżej warianty
-    // wszystkie/pojedyncze/puste. Pierwsza oferta = WSZYSTKO (deterministyczny
-    // wybór botów — proliferacja wszystkiego).
+    // wszystkie/pojedyncze/puste.
+    // M336 (sonda na `courage-in-crisis`, nie lektura komentarza): PIERWSZA
+    // oferta jest PUSTA, bo `subsets()` wylicza od najuboższych. Dawniej stało
+    // tu „pierwsza oferta = WSZYSTKO (deterministyczna polityka botów)" — i to
+    // była NIEPRAWDA, nie tylko nieaktualność: gdyby ktoś dopasował kod do
+    // tego zdania, boty proliferowałyby WSZYSTKO, czyli własne liczniki -1/-1
+    // i własną truciznę (przy 9 = przegrana partii). Decyzja nie może zależeć
+    // od kolejności enumeracji — bot ją wycenia (`resolve_proliferate`
+    // w scoreCommand), a ten komentarz tylko opisuje, co widzi gracz.
     const cands = state.pendingProliferate.candidateIds ?? [];
     const subsets = (arr) => {
       if (arr.length === 0) return [[]];
@@ -7173,7 +7213,8 @@ export function playerView(state, playerId) {
       // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}) —
       // niezależnie od kosztu many karty (alternatywny koszt zagrania).
       if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= manaAvailableFor(object)) {
-        // Morph jest bezbarwny (CR 702.36) – nie wymaga kolorowego źródła
+        // Morph jest bezbarwny (CR 702.37a — „no mana cost", samo {3};
+        // 702.36 to Fear) – nie wymaga kolorowego źródła
         legalCommands.push(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
       }
       // M69 (Security Rhox): „You may pay {R}{G} rather than pay this spell's
@@ -7490,13 +7531,13 @@ export function playerView(state, playerId) {
       : null,
   } : null;
   // M223 (audyt Batch 50): decyzja manifest dread ujawnia DWIE karty z wierzchu
-  // TYLKO decydentowi (CR 701.34a „look at" — informacja własna, jak scry/look_top).
+  // TYLKO decydentowi (CR 701.62a „look at" — informacja własna, jak scry/look_top).
   // Bez tego etykieta „Zmanifestuj: ?" nie znała nazwy karty (biblioteka ukryta).
   const pendingManifestDreadView = state.pendingManifestDread ? {
     playerId: state.pendingManifestDread.playerId,
     count: state.pendingManifestDread.objectIds.length,
     // M251/B: źródło decyzji (czar na stosie) — publiczne dla obu graczy,
-    // w przeciwieństwie do `cards` (tylko decydent, „look at" CR 701.34a).
+    // w przeciwieństwie do `cards` (tylko decydent, „look at" CR 701.62a).
     sourceCardId: state.pendingManifestDread.sourceCardId ?? null,
     cards: state.pendingManifestDread.playerId === playerId
       ? state.pendingManifestDread.objectIds.map((id) => {

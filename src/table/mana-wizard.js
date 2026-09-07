@@ -1,6 +1,6 @@
 import { getSourceForObject } from '../engine/mana-sources.js';
 import { escapeHtml, manaSymbolsHtml } from './mana-icons.js';
-import { parseManaCost } from '../engine/mana-cost.js';
+import { parseManaCost, totalManaNeeded } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { renderPickerRow } from './picker.js';
 
@@ -168,6 +168,25 @@ const PAYMENT_DECISION_TYPES = new Set([
 const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_adventure', 'cast_adventure_creature']);
 
 /**
+ * M327 (audyt PR #102, F7): ODSŁONIĘCIE zakrycia. To jedyne nie-rzutowe
+ * `spendMana` w silniku, które płaci PIPY KOLORU (CR 701.56b: cloak płaci
+ * koszt many karty; 701.55c: manifest tak samo) — a mimo to kreator many ich
+ * nie znał, więc źródła tapował silnik w swojej kolejności. Reguła właściciela
+ * z M168/M195 jest ogólna: „zawsze kiedy płatność many jest niejednoznaczna
+ * (więcej niż 1 kombinacja rodzajów źródeł) powinien być wizard".
+ */
+const FACE_UP_TURN_TYPES = new Set(['turn_cloak_face_up', 'turn_manifest_face_up']);
+
+/**
+ * Rodzina typów komend, dla których kreator zna płatność (strażnik m327/C):
+ * każdy `cmd.type` w silniku, którego handler woła `spendMana` z pipami
+ * koloru, musi się tu znaleźć — inaczej stół tapuje źródła za gracza.
+ */
+export const WIZARD_PAYMENT_COMMAND_TYPES = new Set([
+  ...WIZARD_CAST_TYPES, ...FACE_UP_TURN_TYPES, ...PAYMENT_DECISION_TYPES, 'activate_ability',
+]);
+
+/**
  * Wymagania kolorów z piper kolorowych karty bazowej (colored + hybrid +
  * phyrexian po odjęciu symboli opłaconych życiem). Spójne z hasColorForObject
  * w engine — cleave/escape/bestow NIE zmieniają wymagań kolorów: alternatywny
@@ -202,7 +221,7 @@ function buildDescriptor(object, totalNeeded, requirements, costStr, effectiveGe
  * Tryby kosztu alternatywnego (E.3a cz. B): całkowity koszt to LICZBA z
  * deskryptora — BEZ obniżek CR 601.2f (castCleave/castEscape/castAuraSpell z
  * bestow nie wołają reduceGenericCost). Wymagania kolorów z karty bazowej.
- * Morph (CR 702.36) jest bezbarwny → puste wymagania (kreator otworzy się
+ * Morph (CR 702.37a) jest bezbarwny → puste wymagania (kreator otworzy się
  * tylko przy ≥2 profilach źródeł; zazwyczaj 1 wariant → auto-tap M34).
  *
  * `opts.effectiveGeneric`: jednostki generyczne po obniżkach (Etherium
@@ -250,6 +269,32 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     const source = allDecisionCards.find((o) => o.id === (cmd.sourceId ?? cmd.targetId))
       ?? { id: cmd.sourceId ?? cmd.targetId ?? null, cardId: null };
     return buildDescriptor(source, cost, [], `{${cost}}`, cost);
+  }
+  if (FACE_UP_TURN_TYPES.has(cmd.type)) {
+    const allTurnCards = Object.values(view?.zones ?? {}).flat();
+    const object = allTurnCards.find((o) => o.id === cmd.objectId);
+    if (!object || !object.faceDown) return null;
+    // Koszt specjalnej akcji = koszt many KARTY (nie zakrycia, które ma wartość 0),
+    // więc czytamy go z kosztu karty bazowej — ta sama tablica co przy rzucie.
+    const costStr = MANA_COSTS[object.cardId];
+    if (!costStr) return null;
+    if (/\{[XYZ]\}/.test(costStr)) return null; // koszt zmienny: poza kreatorem (jak wyżej)
+    const parsed = parseManaCost(costStr);
+    if (!parsed) return null;
+    const printed = totalManaNeeded(parsed);
+    // Silnik płaci `cloakTurnUpCost` / `manifestTurnUpCost` (pełny stan), a
+    // widok tych pól nie niesie — main.js podaje je jak `escapeCost`. Każda
+    // rozbieżność zamyka kreator: przy błędnym koszcie gracz dostałby
+    // odrzuconą komendę, a to gorsze niż auto-tap.
+    if (opts.turnUpCost != null && opts.turnUpCost !== printed) return null;
+    const totalNeeded = Number.isInteger(opts.turnUpCost) ? opts.turnUpCost : printed;
+    if (!Number.isInteger(totalNeeded)) return null;
+    // Koszt {0} nie ma tu osobnego wyjątku: suchy koszt bez pipów daje jeden
+    // kształt płatności, a bramka M202/O (`shouldOpenManaWizard`) i tak zamyka
+    // kreator — nie dokładamy warunku, którego nikt nie sprawdza (ADR 0017).
+    const requirements = baseColorRequirements(parsed);
+    const label = `${cmd.type === 'turn_manifest_face_up' ? 'Manifest' : 'Cloak'} (${totalNeeded})`;
+    return buildDescriptor(object, totalNeeded, requirements, label, Math.max(0, totalNeeded - requirements.length));
   }
   if (!WIZARD_CAST_TYPES.has(cmd.type)) return null;
   const allCards = Object.values(view?.zones ?? {}).flat();

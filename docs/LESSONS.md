@@ -16,10 +16,6 @@ Rejestr podaje REGUŁĘ i STRAŻNIKA; pełna narracja (Objaw/Przyczyna) wpisów
 skondensowanych w PR #93 mieszka w `docs/LESSONS_PRZYPADKI.md` pod tym
 samym numerem — szukać grepem, nie czytać na starcie.
 
-Rejestr podaje REGUŁĘ i STRAŻNIKA; pełna narracja (Objaw/Przyczyna) wpisów
-skondensowanych w PR #93 mieszka w `docs/LESSONS_PRZYPADKI.md` pod tym
-samym numerem — szukać grepem, nie czytać na starcie.
-
 Lekcja idzie tu, gdy jest powtarzalna, ale NIE jest decyzją architektoniczną
 (te → ADR). Wymusza zmianę sposobu pracy? Dopisz ją też do `AGENTS.md`.
 Ustala granicę komponentów? ADR + tu odsyłacz. Lekcji nie kasujemy:
@@ -43,7 +39,7 @@ odsyłacz musi mieć adresata, a wpis — regułę lub strażnika).
 
 Wpis niesie FAKTY (nazwy plików, testów, kart, numery CR) i regułę — nie
 narrację (ta zostaje w `docs/audits/`). Rejestr to największa pozycja budżetu lektury
-startowej (~113 kB z ~240 kB po kondensacji PR #93) (`test/dokumentacja-budzet-lektury.test.js`, 100k tokenów), więc nowy
+startowej (`test/dokumentacja-budzet-lektury.test.js`, próg 100k), więc nowy
 wpis płaci się skróceniem innego — progu NIE podnosimy. L15–L19 są datowane po
 numerze kamienia milowego (M102/M103 = 2026-08-16 wg `PROJECT_HISTORY.md`):
 oryginalne daty zaginęły przy migracji M208.
@@ -1956,15 +1952,6 @@ wniosek zapisany w `docs/backlog.md` §1 i §4.
 
 ## L123 (2026-09-02) — Semantyka zaimplementowana w jednym torze nie istnieje w drugim
 
-**Przypadek:** M291 (wpis w rejestrze oznaczony jako cofnięte). Karta „up to two target
-creatures EACH get +1/+0" miała być
-dopisaniem wpisu do katalogu. Tor triggerów umiał to od M157 F4(a)
-(`applyTriggerEffects`: `count > 1` → lista efektów aplikowana raz na cel), a tor
-czaru — nie: aplikuje listę efektów RAZ z pełną tablicą celów, a `pump` i
-`grant_keywords_until_end_of_turn` czytają `targets[0]`. Gdybym skończył na
-„katalog = dane, silnik już to umie", karta wchodziłaby do repo z cichym błędem:
-pompowałaby pierwszy cel dwa razy, a drugi wcale. Żaden test jej by nie przyłapał,
-bo nie istniała.
 
 **Reguła:** przy każdej wielocelowości audytuj WSZYSTKIE tory, którymi efekt może
 nadejść (czar ze stosu, zdolność aktywowana, trigger, tryb modalny, kopia czaru) i
@@ -1975,21 +1962,16 @@ opisany kanał awaryjny — `docs/cards/HOW_TO_ADD_CARD.md` dopuszcza ściągni�
 samych URL-i przez `fetch_page`, a ja w turze 10 uznałem brak egressu za koniec
 wątku (b).
 
+
 **Strażnik:** dziś żaden — rodzina `test/m291-*.test.js` (dwa cele / jeden / zero oraz
 to, że silnik nie zna nazw kart i że `allTargets` nie łączy się z efektem blokującym
 decyzję) istniała i świeciła 14/14 na zielono, lecz właściciel cofnął zgodę na karty
 wielocelowe 2026-09-03 i cała gałąź `0434199` została zrevertowana. Lekcja przeżywa kod właśnie po
 to; jeśli karta wielocelowa wejdzie kiedyś za zgodą właściciela, te cztery asercje są
 pierwszą rzeczą do odtworzenia (treść testu jest w commicie `0434199`).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L123)
 
 ## L124 (2026-09-02) — Zmianę w grzechotce przypisz trzema drzewami, zanim podniesiesz próg
-
-**Przypadek:** M291 (tura 11). Po dodaniu jednej karty do katalogu zmienił się skład
-`decks/ravnica.txt` i zazęły dwie bramki jakości: sufit `block` w
-`test/audyt-bot-walka-remisy.test.js` (4 → 5) oraz zamrożony golden-master bota. Ten
-sam audyt odpalony na `f6a5459` dał 4/4/130, a na drzewie z SAMĄ zmianą wagową M290
-(też 4/4/130) — czyli waga nie zepsuła żadnej decyzji, a dokładkę remisu zrobiło inne
-rozdanie talii. Bez tego pomiaru jedynym dostępnym komunikatem byłoby „podnieś próg”.
 
 **Reguła:** gdy po zmianie wagowej pęka grzechotka, mierz trzy drzewa (stan zeszły /
 tylko zmiana wagowa / zmiana wagowa + treść) dokładnie tym samym wywołaniem, którego
@@ -2001,8 +1983,9 @@ puszcza się na GOTOWYM drzewie — u nas pierwszy zapis zamroził ślad bota be
 **Strażnik:** `test/bot-scoring-snapshot.test.js` (fixture, który ta lekcja chroni przed
 przedwczesnym `--write`) oraz tabela atrybucji i kolejność wejścia karty w
 `docs/audits/AUDYT_PR92_2026-09-02.md` §15. Komentarz z tabelką przy suficie `block` w
-`test/audyt-bot-walka-remisy.test.js` zniknął razem z Revertem kart — sufit znowu
-wynosi 4 — stan z `f6a5459`.
+`test/audyt-bot-walka-remisy.test.js` (historia sufitu `block` przeniesiona
+do `docs/LESSONS_PRZYPADKI.md` L124).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L124)
 
 
 ## L125 (2026-09-03) — Strażnik wyglądu ma mierzyć styl efektywny, nie tekst CSS
@@ -2076,18 +2059,6 @@ mutacji — tabela w §7 `docs/audits/AUDYT_PR93_2026-09-03.md`.
 
 ## L128 (2026-09-03) — Mechanika z dwiema ścieżkami rzutu: reguła ma jedno miejsce prawdy, a skan musi PORÓWNYWAĆ ścieżki, nie tylko liczyć oferty
 
-**Przypadek:** skan poboczny audytu PR #93 przejechał każdą kartę katalogu
-z mechaniką „rzutu spoza ręki" (flashback 3, escape 2, madness 2, suspend 1,
-plot 2 — wszystkie w realnych taliach) i znalazł dwa odchylenia, oba w tym
-samym miejscu: regułę znała JEDNA ścieżka rzutu, druga nie.
-- **I (plot, CR 702.170d):** zaplotowany STWÓR czeka do następnej tury
-  (`castPermanent` od Batcha 24), a zaplotowany CZAR wracał w tej samej
-  (`plottedCastAllowed` pilnowało tylko „własna faza main + pusty stos").
-  Żywe w talii `worek-dziki` — dwie karty z plotem, dwie różne odpowiedzi.
-- **J (warp, CR 702.185a):** `warpCard` = `castPermanent({ warpCast: true })`
-  obsługiwał rękę i exile jedną komendą, więc karta wygnana po warp-caście
-  wracała na stół ZA KOSZT WARP (Weftblade Enhancer: 3 many zamiast 6),
-  choć warp jest kosztem alternatywnym wyłącznie z ręki.
 
 **Reguła:** pozwolenie na rzut z exile, które realizuje więcej niż jedna
 ścieżka kodu (czary vs permanenty, ręka vs exile), dostaje JEDEN predykat
@@ -2098,6 +2069,7 @@ rozjazdu między ścieżkami: obie odpowiedziały „tak", tyle że na inne pyta
 Dlatego skan mechaniki pyta per ścieżka i ZESTAWIA odpowiedzi — to ta sama
 metoda, która w L48 kazała zestawiać ofertę z walidacją.
 
+
 **Strażnik:** `test/audyt-pr93-plot-pozniejsza-tura.test.js` (6: czar i stwór,
 obie strony granicy, anty-over-fix dla ręki/impulsu/braku stempla) oraz
 `test/audyt-pr93-warp-z-exile.test.js` (6: brak oferty za koszt warp, pobranie
@@ -2105,21 +2077,10 @@ obie strony granicy, anty-over-fix dla ręki/impulsu/braku stempla) oraz
 przebieg integracyjny ze stempel `warpedAtTurn`). 13 mutacji — tabela w §7
 `docs/audits/AUDYT_PR93_2026-09-03.md`; mutacja `>=` zamiast `>` we wspólnym
 predykacie czerwieni testy OBU mechanik naraz (5 RED).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L128)
 
 ## L129 (2026-09-03) — Otwarcie mechaniki w nowym oknie to CAŁY łańcuch wyboru: oferta → walidacja → obiekt stosu → log → etykieta
 
-**Przypadek:** audyt PR #94 (K1). Fix F otworzył w oknie darmowego rzutu
-z grobu tryby z celami zmiennymi — oferty liczył już wspólny `legalModeCasts`,
-więc warianty ze stunem (`stunAmongTargets`) pojawiły się w panelu. Ale okno
-Vaan, które ten sam łańcuch dostało w tym samym PR (`pushExileCast`), przenosi
-`stunTargetId` komendą, a okno grobu — nie: push gubił pole (duplikaty
-przycisków), `execute` nie przekazywał go do `validateVariableTargets`
-(warianty ≥1 celu odrzucane), obiekt stosu nie dostawał `modeExtra`
-(`extra:stunTargetId` nie miał czego czytać), a zdarzenie i etykieta nie
-nazywały wyboru. Repro: Aerith Rescue Mission (tryb „Schody”) przez okno
-Halo Foragera. Ta sama klasa wyszła też przy etykietach `cast_spell`
-i okna Vaana (K2): warianty różniące się wyłącznie stun celem były
-nierozróżnialne (M91).
 
 **Reguła:** wspólny generator ofert NIE gwarantuje kompletności łańcucha —
 każde okno samo pushuje komendy i samo składa obiekt stosu. Dodając mechanikę
@@ -2131,75 +2092,41 @@ zdarzenie `spell_cast` niesie `modeName`/wybory, które loguje session.js,
 generatorze (L128) pyta „czy oferta istnieje”; ta lista pyta „czy da się nią
 zagrać i czy gracz widzi, co wybiera”.
 
+
 **Strażnik:** `test/audyt-pr94-stun-z-grobu.test.js` (7 testów: warianty niosą
 stun cel, każda oferta wykonalna, licznik na WYBRANYM celu, etykiety trzech
 okien nazywają wybór, strażnik klasy po katalogu). 5 mutacji RED.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L129)
 
 ## L130 (2026-09-03) — Wynik komendy niesie CAŁY przyrost zdarzeń: przechwyć `state.events.length` PRZED efektem, dołącz `slice(before)` po nim
 
-Dwa zgłoszenia właściciela (uwagi C/D) miały JEDEN root cause: bramki
-wyniku komendy brały `state.events.slice(-1)` albo zwracały listę pobraną
-przed efektem. Efekt dokładający WIĘCEJ niż jedno zdarzenie (infect: licznik
-+ opis, renown, poświęcenie Springblooma: 3 zdarzenia) tracił część przyrostu
-— gracz widział skutek na stole, ale log i Rozgrywka milczały.
-
-Wzorzec naprawczy (combat.js ×3, bramka springbloom):
+**Reguła:**
+wynik komendy = zdarzenia od jej startu, nie „ostatnie" ani „pierwsze" (combat.js ×3, bramka springbloom).
 `const before = state.events.length;` → efekt → do wyniku
 `state.events.slice(before)`. Kontrakt: wynik komendy = zdarzenia od jej
 startu, nie „ostatnie” ani „pierwsze”. Audyt pozostałych bramek `slice(-1)`:
 wszystkie jednocentryczne — bezpieczne.
 
-Pułapki sesji: (1) testy harnessa sesyjnego potrzebują `gameObjectDataOf`
-przy wstrzykiwaniu obiektów i widzą ukryte karty przeciwnika (liczniki ręki);
-(2) wycena bota per-attacker paraliżuje przy samotnym blokerze odstraszającym
-(deathtouch) — klasa wymaga modelowania gang-ataków, nie należy jej łatać
-w pętli per-attacker (zmierzone: −2 partie benchmarku); (3) benchmark szybki
-jest deterministyczny — każda różnica jest prawdziwa; (4) po re-konie
-workspacu `git reset --soft FETCH_HEAD` odtwarza referencje z wypchniętej
-gałęzi bez dotykania drzewa roboczego.
+**Strażnik:** `test/audyt-pr92-grupowe-trygery.test.js` (przyrost liczony przez
+`state.events.length` PRZED efektem), `test/batch46-kart.test.js` (Springbloom:
+trzy zdarzenia z jednego poświęcenia).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L130)
 
 ## L131 (2026-09-05) — Decyzja bez wyceny = pierwsza oferta z listy
 
-**Przypadek:** `bot-tie-audit` pokazał 50+ remisów przy wyborach `resolve_*` —
-nowe typy (`resolve_exploit_choice`, `resolve_opponent_target`,
-`resolve_color_choice`) padały do `default: return finish(0)` w `scoreCommand`,
-więc KAŻDY wariant dostawał 0 pkt i stabilny sort wybierał PIERWSZĄ ofertę
-(przy Exploit bot poświęcał najsilniejszego stwora, przy Cuombajj Witches
-obracał 1 obrażenie w siebie). Przyczyna (klasy L50/L34/L40/L117): nowy typ
-decyzji dodany w silniku nie dostał swojego `case` w kontrolerze, a kolejność
-kandydatów w ofercie NIE jest posortowana po wartości — pierwsza oferta to
-często NAJGORSZA opcja.
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L131)
-
-**Reguła:** Dodając NOWY typ komendy w silniku (command family `resolve_*`),
-trzeba JEDNOCZEŚNIE: (1) dodać case w `scoreCommand` z prawidłową wyceną
-(nie zostawiać domyślnego 0); (2) dodać nazwę wariantu w `summarize()`,
-żeby ślad decyzyjny rozróżniał opcje; (3) dodać `tieProjection` dla
-audytu remisów. Test `?`. Audyt remisów (`node tools/bot-tie-audit.mjs`)
-jest strażnikiem klasy "decyzja bez wyceny": każdy nowy typ w kolumnie
-"bez-danych" to albo brak wyceny, albo brak projekcji.
+**Reguła:** dodając typ `resolve_*` w silniku: (1) `case` w `scoreCommand`
+z wyceną (nie domyślne 0), (2) nazwa wariantu w `summarize()`, (3)
+`tieProjection`; audyt remisów (`tools/bot-tie-audit.mjs`) jest strażnikiem
+klasy — kolumna „bez-danych" to brak wyceny albo projekcji.
 
 **Strażnik:** `node tools/bot-tie-audit.mjs --gate=<kind>` (exit code 0 gdy
 brak "rozróżnialnych" remisów = nie ma groźnych decyzji z różnymi danymi
 ale tym samym wynikiem).
 
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L131)
+
 ## L132 (2026-09-06) — Wycena oparta o STREFĘ UKRYTĄ jest inertna; audyt czytający to samo źródło tego nie zobaczy
 
-**Przypadek:** PR #100 dodał wyceny `resolve_manifest_dread`,
-`resolve_reveal_exile_hand` i poprawki `resolve_search_choice` /
-`resolve_satyr_look_choice` — wszystkie liczone z `view.zones.library.find(id)`
-(i z `view.zones.hand` przy cudzej ręce). `playerView` projekcjonuje te strefy
-jako `{ id, controllerId, hidden: true }`: wpis JEST (lookup truthy, więc
-`if (!card) return 0` nigdy się nie oddziela), ale `kind`/`manaCost`/`power`
-są `undefined`, a `?? 0` zeruje różnice. Pomiar: `bot-tie-audit --kind=manifest` — dwa warianty po 6 pkt przy projekcji
-`rozróznialne` (seed 4025), czyli decyzja = kolejność ofert.
-
-**Przyczyna:** L1 + L102 w nowym wcieleniu: nie brak `case`, tylko WYBÓR
-ŹRÓDŁA wewnątrz case'u. Groźniejsze niż L131, bo niewidoczne dla strażnika:
-`tieProjection` dla szukania czytała TE SAME puste wpisy, więc audyt kładł 12
-remisów do `rownowazne` — narzędzie mierzyło własną ślepotę (L119/L13). Gdzie
-projekcja miała właściwe źródło (`pendingManifestDread.cards`), rozjazd wyszedł
-jako GROZA: metryka działa, tylko nie może patrzeć w to samo miejsce co kod.
 
 **Reguła:** Wycena i projekcja kart ze strefy ukrytej (biblioteka, cudza ręka)
 biorą dane z PAYLOADU decyzji, nie ze strefy — silnik tak już robi dla
@@ -2208,10 +2135,12 @@ tylko dla decydenta (FoW nietknięta). Brak payloadu = luka kompletności widoku
 (ADR 0017) do domknięcia w SILNIKU, nie zgadywanie w bocie. Jeden helper
 (`decisionCandidateCard`) dla wyceny i projekcji razem.
 
+
 **Strażnik:** `test/m305-hidden-candidate-valuation.test.js` — różne dane
 kandydatów muszą dawać różne punkty, plus strażnik źródła (w bocie nie ma
 `zones.library.find(`, wycena i projekcja idą przez ten sam helper) i anty-over-fix
 FoW (widok wroga nie niesie kart).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L132)
 
 ## L133 (2026-09-06) — Detektor narzędzia nie może dublować scrapingu tekstu: strukturalny sygnał jest tańszy i nie milczy
 
@@ -2282,3 +2211,88 @@ zaznaczenia = wybór niekompletny (status „Brakuje" M200 wymienia tylko obowi�
 UI: wariant bez celu + anty-over-fix na obowiązkowych, pin przez realne
 `legalCommands`); sterownik testera mierzy partia z tym kreatorem (`== KONIEC PARTII`
 bez zgłoszeń detektorów, zmierzone).
+
+## L136 (2026-09-07) — `git checkout <plik>` kasuje NIEZAKOMMITOWANE poprawki w tym pliku; scratch piaskownicy znika między turami
+
+**Reguła:** w tym środowisku istnieje tylko to, co wypchnięte do `origin` —
+więc każdy finding zamknij commitem i pushem, a plików z tej tury nigdy nie
+przywracaj gitem (cofa je do indeksu, a nie do „stanu przed mutacją"):
+- jeden finding = jeden commit = push (`git status` po każdym; nie zbieraj
+  pięciu findingów w drzewie — ENVIRONMENT §2 „Profilaktyka"),
+- PRZED każdym `git checkout <plik>` / `git restore` sprawdź, czy ten plik ma
+  pracę z tej tury: `git diff --stat -- <plik>`; na mutacje testowe kopiuj
+  plik `cp plik /tmp/plik.bak` i przywracaj KOPIĄ, nie gitem,
+- scratch (wiadomości commitów, sondy, transkrypty) trzymaj w `.arena/` albo w
+  gitignorowanym `tools/table-tester/**` i i tak zapisuj WNIOSKI w `docs/` —
+  plik poza repozytorium nie jest dowodem,
+
+**Strażnik:** nie da się tego sforsować jednym testem (to procedury pracy);
+ENVIRONMENT §1/§2 opisuje oba zjawiska, a `test/repo-artefakty-audytu.test.js`
+pilnuje, żeby artefakty testera nie weszły do indeksu przy takim sprzątaniu.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L136)
+
+## L137 (2026-09-07) — etykieta to rodzina: jedno źródło brzmienia, test na PRAWDZIWYM widoku, partia celowana
+
+
+**Reguła:** fakt prezentowany w UI ma JEDNO źródło brzmienia i tylu
+konsumentów, ilu formatuje ten sam tekst — szukaj ich grepem po treści:
+- podnosząc nowe pole do widoku, zrób grep po WSZYSTKICH miejscach, które
+  formatują DANY TEKST (nie po nazwie pola!), i przepnij je na jeden helper —
+  konsumentem jest TEŻ log (`nameOfObject`) i karty (cardInfo), nie tylko kafel,
+- asercję kładź na PRAWDZIWYM `playerView`/`createSession`, a fikcje testowe
+  zaktualizuj do nowego kształtu (inaczej test pinuje nieaktualny stan),
+- dodaj strażnika ŹRÓDŁOWEGO dla rodziny etykiety (L107): skan „żaden
+  konsument nie wyprowadza znacznika z `.cloakReady`" — to on łapie szóste
+  miejsce, zanim ktoś je znajdzie na stole,
+- jeśli mechanika jest rzadka w talii, zrób sondę partią na CHWILOWEJ talii
+  (`docs/setup/TESTER_STOLU.md` → „Partia celowana pod mechanikę"), a plik
+  usuń przed bramką (strażnicy M178 nie znoszą dubli w taliiach).
+
+
+**Strażnik:** `test/m326-cloak-przyczyna.test.js` (7, w tym C2 — skan
+`src/table/*.js` pod `.cloakReady`), `test/m331-log-przyczyna.test.js` (4,
+w tym D — skan `nameOfObject`: zero ręcznego `faceDownName`, oraz B — numeracja
+po jawnej przyczynie dla obu widzów).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L137)
+
+## L138 (2026-09-07) — zwrot prawdy z efektu = blokada; ścieżka bez decyzji nie może jej zgłaszać
+
+**Reguła:**
+- rozstrzygacz czyta PRAWDZIWY zwrot efektu jako „czekam na gracza" i odkłada
+  resztę listy do `state.pendingSpell`, a zdejmują go wyłącznie komendy
+  `resolve_*` → każda gałąź z `return true` musi w tym samym ruchu postawić
+  `state.pending* = {...}` (F12: `manifest_dread` przy jednej karcie w bibliotece,
+  CR 701.62a — czar wisiał na stosie z `effects: []`),
+- przy zmianie efektu sprawdza się ZWROTY, nie tylko efekty uboczne,
+- test asertuje, że gra się TOCZY (pasy przyjęte, stos pusty,
+  `status === 'active'`), nie tylko że obiekt powstał,
+- nie maskować: sprzątanie osieroconego `pendingSpell` u konsumenta (pas,
+  cleanup) ukryłoby każdy kolejny błąd tej klasy.
+
+**Strażnik:** `test/m335-manifest-bez-wybory.test.js` A–D (D: liczba
+`return true` = liczba postawionych decyzji w gałęzi).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L138)
+
+## L139 (2026-09-07) — skryptowe cięcie pliku: jednoznaczny krótki klucz, `node --check` przed `git add`
+
+**Reguła:**
+- przed wstawką `assert s.count(klucz) == 1`; klucz krótki i NIEOBECNY w tekście
+  wstawianym przed chwilą (mój `s.index("return;")` trafił w `return;` w komentarzu
+  dodanym minutę wcześniej → commit z plikiem o błędnej składni),
+- wkładka po `idx + len(klucz)` pewniejsza niż `replace(długie, długie + nowe)`:
+  długie dopasowania padają o jeden znak, a wyjątek w połowie zostawia plik
+  częściowo zmieniony,
+- po zmianie strukturalnej `node --check` KAŻDEGO zmienionego pliku PRZED
+  `git add` (objaw: wiele `not ok <plik>` bez szczegółów); póki commit lokalny,
+  ratuje `--amend` bez force pusha (ADR 0020 D).
+
+**Strażnik:** zwyczaj; składnię sprawdza import w każdym teście.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L139)
+## L140 (2026-09-07) — ta sama reguła w wielu ręcznych listach = gwarancja rozjazdu; bramkuj jednym predykatem
+
+**Reguła:** ta sama reguła legalności jako kilka ręcznie enumerowanych list
+(54 warunki pasa vs ~64 bramki `resolve_*` w execute) — każda nowa decyzja
+pending rozsypie którąś kopię (M337: padł cały B0). Zostań przy JEDNYM
+predykacie ze wspólnego źródła + strażnik źródła przeciw czwartej kopii.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L140)
+

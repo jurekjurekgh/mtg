@@ -49,9 +49,11 @@ export const PLAYER_NAMES = { [HUMAN_ID]: 'Ty', [BOT_ID]: 'Nieprzyjaciel' };
  */
 export const FACE_DOWN_LABEL = 'Morph';
 
-/** Znacznik przy nazwie WŁASNEJ zakrytej karty: „Segmented Krotiq (Morph)". */
-export function faceDownSuffix() {
-  return ` (${FACE_DOWN_LABEL})`;
+/** Znacznik przy nazwie WŁASNEJ zakrytej karty: „Segmented Krotiq (Morph)".
+ * M333: etykieta mechaniki jest parametrem (domyślnie „Morph"), żeby rodzina
+ * przyczyn zakrycia miała JEDNO źródło brzmienia (L137). */
+export function faceDownSuffix(label = FACE_DOWN_LABEL) {
+  return ` (${label})`;
 }
 
 /**
@@ -61,13 +63,13 @@ export function faceDownSuffix() {
  * - własny face-down: kontroler zna swoją kartę, więc nazwa + znacznik, żeby
  *   gracz nie wziął zakrytego 2/2 za pełnego stwora (decyzja z M100/E12).
  */
-export function faceDownName(cardName) {
-  return cardName == null ? FACE_DOWN_LABEL : `${cardName}${faceDownSuffix()}`;
+export function faceDownName(cardName, label = FACE_DOWN_LABEL) {
+  return cardName == null ? label : `${cardName}${faceDownSuffix(label)}`;
 }
 
 /**
  * M319/NA1 (zgłoszenie właściciela 2026-09-06, cz. 5): zakryty CLOAK
- * (CR 702.75) ma własny znacznik — „Morph" kłamał o mechanice (cloak to
+ * (CR 701.56) ma własny znacznik — „Morph" kłamał o mechanice (cloak to
  * 2/2 z ward {2}; morph to 2/2 bez ward). Nazwa WŁASNEGO cloak-a dostaje
  * STAŁY numer kopii („Nazwa (Cloak 1)", „Nazwa (Cloak 2)") — kilka jednakowych
  * zakrytych kart musi dać się rozpoznać przy wyborze celów, tak jak tokeny-kopie
@@ -79,6 +81,46 @@ export const CLOAK_LABEL = 'Cloak';
 export function cloakFaceDownName(cardName, copyNumber = null) {
   const tail = copyNumber ? ` ${copyNumber}` : '';
   return cardName == null ? `${CLOAK_LABEL}${tail}` : `${cardName} (Cloak${tail})`;
+}
+
+/**
+ * M326 (audyt PR #102, F6) + M333 (F6c): JEDNA tabela znaczników przyczyny
+ * zakrycia. Wcześniejszy kształt „cloak ? Cloak : Morph" naprawił kłamstwo o
+ * cloaku, ale zostawił to samo kłamstwo po drugiej stronie: zmanifestowany
+ * 2/2 (CR 701.40a) i megamorph też czytały „Morph", a ruling WotC
+ * 2024-02-02 wymaga, żeby PRZYCZYNA zakrycia (disguise / cloak / manifest /
+ * morph) była rozpoznawalna dla wszystkich graczy. Megamorph nie ma własnego
+ * wiersza, bo to wariant morpha (CR 702.37b — ten sam kształt 2/2, inny obrót),
+ * więc gra się tą samą nazwą mechaniki.
+ *
+ * Brak przyczyny (obiekt spoza silnika: rewers ręki przeciwnika, zakryte
+ * wygnanie) NIE wolno tłumaczyć jako „Morph" — stąd osobny wyjątek poniżej.
+ * Nazwy to nazwy mechanik (jak „Morph" od M127), nie tłumaczone: tak samo
+ * brzmią w tekście Oracle i na kartach.
+ */
+export const FACE_DOWN_CAUSE_LABELS = Object.freeze({
+  cloak: CLOAK_LABEL,
+  manifest: 'Manifest',
+  morph: FACE_DOWN_LABEL,
+  disguise: 'Disguise',
+});
+
+/** Znacznik przyczyny zakrycia (bez nazwy karty); cloak dokleja numer kopii. */
+export function faceDownCauseTag(object) {
+  if (object?.faceDownCause === 'cloak') return cloakFaceDownName(null, object?.copyNumber ?? null);
+  return FACE_DOWN_CAUSE_LABELS[object?.faceDownCause] ?? FACE_DOWN_LABEL;
+}
+
+/**
+ * Pełna etykieta zakrytego permanentu dla WIDZA: kontroler zna swoją kartę
+ * (CR 708.6) więc „Nazwa (Cloak 1)", przeciwnik tylko przyczynę „Cloak 1"
+ * (bez cardId w widoku — FoW, CR 708.2a). Przed M326 pięć miejsc stołu
+ * sklejało to osobno i wszystkie cztery „dla wroga" mówiły „Morph" o cloaku.
+ */
+export function faceDownLabel(object, nameOf) {
+  const name = object?.cardId != null ? nameOf(object.cardId) : null;
+  if (object?.faceDownCause === 'cloak') return cloakFaceDownName(name, object?.copyNumber ?? null);
+  return faceDownName(name, FACE_DOWN_CAUSE_LABELS[object?.faceDownCause] ?? FACE_DOWN_LABEL);
 }
 
 /**
@@ -2154,7 +2196,16 @@ export function createSession(config) {
     // morph — znacznik „(Morph)" odróżnia zakryte 2/2 od pełnego stwora.
     // M127: brzmienie i wielkość litery z jednego źródła (faceDownName).
     if (object.faceDown) {
-      return faceDownName((!fogOfWar && object.controllerId === HUMAN_ID) ? nameOf(object.cardId) : null);
+      // M331 (audyt PR #102, F6b — Żywy Tester, partia audytowa 2026-09-07):
+      // log i podsumowanie „Rozgrywka" to TEŻ konsument etykiety zakrycia.
+      // Zmierzone w prawdziwej grze: „Plains (Morph) dostaje +1 licznik flying"
+      // o zakryciu z Veiled Ascension — nazwa mechaniki kłamała (cloak to 2/2
+      // z ward {2}) i gubiła numer kopii, więc w logu nie dało się rozróżnić
+      // dwóch cloak-i. BRAMA nazwy zostaje jak była (własny permanent nazywamy,
+      // obserwator dla AI nie — M199/M100/E10); wymieniony jest tylko dobór
+      // znacznika, przez wspólne `faceDownLabel` (L41).
+      const visibleName = !fogOfWar && object.controllerId === HUMAN_ID;
+      return faceDownLabel(object, visibleName ? nameOf : () => null);
     }
     // M155 (audyt żywym testerem): tokeny niosą JAWNĄ nazwę w `object.name`
     // (cardId `token_*` poza rejestrem → nameOf zwracałby „token_squirrel").

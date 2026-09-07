@@ -4181,6 +4181,8 @@ ciągnęło inną zmianę.
 - **Dług wpisany, nie zmiatany.** `resolve_fertile_thicket` (typ komendy) i
   `pendingFertileThicket` (pole widoku): **54 linie z tą nazwą w 8 plikach logiki i stołu,
   co daje 63 wystąpienia, a w całym `src/` 69 wystąpień w 11 plikach**, a `COMMAND_TYPES` (`src/protocol/types.js:23`,
+  (aktualizacja M337: 53 linie / 62 wystąpienia — jeden warunek `pendingFertileThicket` znikł
+  z ręcznej listy bramek pasa na rzecz predykatu `optionalActionsOpen`; dług bez zmian)
   `Object.freeze`) jest listą wpisywaną do partii — renama wymaga migracji autosave/replay i
   nie jest decyzją estetyczną, więc ŚWIADOMIE jej nie zrobiłem. Ten sam zapach ma
   `resolve_springbloom` (86 wystąpień w 10 plikach `src/`). Zakaz dotyczy warstwy rysującej i

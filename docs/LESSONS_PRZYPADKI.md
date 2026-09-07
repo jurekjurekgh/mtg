@@ -1498,3 +1498,246 @@ arbitralny jak brak wyceny). Nowy typ decyzji dodany w silniku nie dostał
 odpowiadającego mu `case` w kontrolerze — a kolejność kandydatów w ofercie
 NIE JEST posortowana po wartości (naturalna: gracz→stworzy wroga→itp.),
 więc pierwsza oferta to często NAJGORSZA opcja z perspektywy botu.
+
+**Przykłady z rejestru (wyniesione 2026-09-07):** przy Exploit bot poświęcał
+najsilniejszego stwora, przy Cuombajj Witches obracał 1 obrażenie w siebie —
+oba padały właśnie na „pierwsza oferta = domyślny 0 pkt".
+**Dopisek M336 (F14):** komentarz silnika przy ofertach `subsets()` twierdził
+„pierwsza oferta = WSZYSTKO", a realnie pierwszy jest wariant PUSTY — proliferate
+bez wyceny bot brał zawsze jako pustkę (8× w meczach, w tym przepuszczona
+wygrana trucizną). Komentarz przepisany; dopasowanie kodu do dawniejszego
+zdania dałoby botom samobójstwo.
+
+## L128 (2026-09-03) — przypadek: Mechanika z dwiema ścieżkami rzutu: reguła ma jedno miejsce prawdy, a skan musi PORÓWNYWAĆ ścieżki, nie tylko liczyć oferty
+
+**Przypadek:** skan poboczny audytu PR #93 przejechał każdą kartę katalogu
+z mechaniką „rzutu spoza ręki" (flashback 3, escape 2, madness 2, suspend 1,
+plot 2 — wszystkie w realnych taliach) i znalazł dwa odchylenia, oba w tym
+samym miejscu: regułę znała JEDNA ścieżka rzutu, druga nie.
+- **I (plot, CR 702.170d):** zaplotowany STWÓR czeka do następnej tury
+  (`castPermanent` od Batcha 24), a zaplotowany CZAR wracał w tej samej
+  (`plottedCastAllowed` pilnowało tylko „własna faza main + pusty stos").
+  Żywe w talii `worek-dziki` — dwie karty z plotem, dwie różne odpowiedzi.
+- **J (warp, CR 702.185a):** `warpCard` = `castPermanent({ warpCast: true })`
+  obsługiwał rękę i exile jedną komendą, więc karta wygnana po warp-caście
+  wracała na stół ZA KOSZT WARP (Weftblade Enhancer: 3 many zamiast 6),
+  choć warp jest kosztem alternatywnym wyłącznie z ręki.
+
+## L129 (2026-09-03) — przypadek: Otwarcie mechaniki w nowym oknie to CAŁY łańcuch wyboru: oferta → walidacja → obiekt stosu → log → etykieta
+
+**Przypadek:** audyt PR #94 (K1). Fix F otworzył w oknie darmowego rzutu
+z grobu tryby z celami zmiennymi — oferty liczył już wspólny `legalModeCasts`,
+więc warianty ze stunem (`stunAmongTargets`) pojawiły się w panelu. Ale okno
+Vaan, które ten sam łańcuch dostało w tym samym PR (`pushExileCast`), przenosi
+`stunTargetId` komendą, a okno grobu — nie: push gubił pole (duplikaty
+przycisków), `execute` nie przekazywał go do `validateVariableTargets`
+(warianty ≥1 celu odrzucane), obiekt stosu nie dostawał `modeExtra`
+(`extra:stunTargetId` nie miał czego czytać), a zdarzenie i etykieta nie
+nazywały wyboru. Repro: Aerith Rescue Mission (tryb „Schody”) przez okno
+Halo Foragera. Ta sama klasa wyszła też przy etykietach `cast_spell`
+i okna Vaana (K2): warianty różniące się wyłącznie stun celem były
+nierozróżnialne (M91).
+
+## L123 (2026-09-02) — przypadek: Semantyka zaimplementowana w jednym torze nie istnieje w drugim
+
+**Przypadek:** M291 (wpis w rejestrze oznaczony jako cofnięte). Karta „up to two target
+creatures EACH get +1/+0" miała być
+dopisaniem wpisu do katalogu. Tor triggerów umiał to od M157 F4(a)
+(`applyTriggerEffects`: `count > 1` → lista efektów aplikowana raz na cel), a tor
+czaru — nie: aplikuje listę efektów RAZ z pełną tablicą celów, a `pump` i
+`grant_keywords_until_end_of_turn` czytają `targets[0]`. Gdybym skończył na
+„katalog = dane, silnik już to umie", karta wchodziłaby do repo z cichym błędem:
+pompowałaby pierwszy cel dwa razy, a drugi wcale. Żaden test jej by nie przyłapał,
+bo nie istniała.
+
+## L132 (2026-09-06) — przypadek: Wycena oparta o STREFĘ UKRYTĄ jest inertna; audyt czytający to samo źródło tego nie zobaczy
+
+**Przypadek:** PR #100 dodał wyceny `resolve_manifest_dread`,
+`resolve_reveal_exile_hand` i poprawki `resolve_search_choice` /
+`resolve_satyr_look_choice` — wszystkie liczone z `view.zones.library.find(id)`
+(i z `view.zones.hand` przy cudzej ręce). `playerView` projekcjonuje te strefy
+jako `{ id, controllerId, hidden: true }`: wpis JEST (lookup truthy, więc
+`if (!card) return 0` nigdy się nie oddziela), ale `kind`/`manaCost`/`power`
+są `undefined`, a `?? 0` zeruje różnice. Pomiar: `bot-tie-audit --kind=manifest` — dwa warianty po 6 pkt przy projekcji
+`rozróznialne` (seed 4025), czyli decyzja = kolejność ofert.
+
+**Przyczyna:** L1 + L102 w nowym wcieleniu: nie brak `case`, tylko WYBÓR
+ŹRÓDŁA wewnątrz case'u. Groźniejsze niż L131, bo niewidoczne dla strażnika:
+`tieProjection` dla szukania czytała TE SAME puste wpisy, więc audyt kładł 12
+remisów do `rownowazne` — narzędzie mierzyło własną ślepotę (L119/L13). Gdzie
+projekcja miała właściwe źródło (`pendingManifestDread.cards`), rozjazd wyszedł
+jako GROZA: metryka działa, tylko nie może patrzeć w to samo miejsce co kod.
+
+## L136 (2026-09-07) — przypadek: `git checkout <plik>` kasuje NIEZAKOMMITOWANE poprawki w tym pliku; scratch piaskownicy znika między turami
+
+**Przepis odzyskiwania historii (wyniesiony 2026-09-07):** `git fetch origin
+<gałąź>` → `git reset --mixed FETCH_HEAD` (ref + indeks, drzewo zostaje) →
+`git diff --stat` musi pokazać DOKŁADNIE niecommitowany zakres tej tury →
+rest commitów z tych samych wiadomości (pliki `.gitignore`-owane i scratch
+poza repo trzeba odtworzyć z czatu — git ich nie niesie).
+
+**Przypadek:** sesja 01a078a2 (audyt PR #102). Dwa niezależne ukłucia. (1) Żeby
+sprawdzić, czy test CLI narzędzia łapie mutację, przywróciłem plik narzędzia
+`git checkout tools/fetch-card-rulings.mjs` — a poprawka narzędzia NIE była
+jeszcze zacommitowana (czekała w drzewie na wspólną bramkę), więc checkout
+zwalił ją razem z mutacją; o mały włos commit „naprawa + test" wjechałby bez
+naprawy, a test świeciłby na czerwono. (2) W trakcie sesji środowisko
+odtworzyło workspace ze świeżego klona: 9 commitów zostało na zdalnej gałęzi,
+a NIEZAKOMMITOWANE zmiany czterech kolejnych findingów wróciły jako diff
+roboczy — `git log` wskazywał bazę PR, `/home/user/*.txt` (komunikaty commitów,
+skrypty sondujące, transkrypty testera) przepadły bez śladu.
+
+**Przyczyna:** snapshot ARENY to drzewo + patchset, nie historia git; wszystko
+poza `git push` jest ulotne, a `git checkout <sciezka>` przywraca wersję z
+INDEKSU/HEAD niezależnie od tego, co było w pliku.
+
+## L137 (2026-09-07) — przypadek: etykieta to rodzina: jedno źródło brzmienia, test na PRAWDZIWYM widoku, partia celowana
+
+**Przypadek:** F6 z audytu PR #102 — przeciwnik czytał „(Morph)" o cudzym
+cloaku, bo pięć miejsc stołu formatowało tę samą etykietę osobno i wszystkie
+pytały o `cloakReady` (pole ZNAJOMOŚCI reguły, bramkowane przez Fog of War),
+żeby odkryć PRZYCZYNĘ zakrycia. Po naprawie (jawne `faceDownCause` w widoku +
+dwa helpery w `session.js`) i po przejściu wszystkich testów JEDNO miejsce
+dalej kłamało: `nameOfObject` w `session.js` — nazwa czytana przez ~124 opisy
+logu i modal „Rozgrywka". Wpadło dopiero na żywym stole (partia 5/6 z talią
+celowaną): „Plains (Morph) dostaje +1 licznik flying". Ta sama partia
+pokazała drugą nogę rodziny: `nextFaceDownCopyNumber` numerował tylko zakrycia
+z `cloakReady`, więc dwa clokowane lądy miały TEN SAM numer — a ruling WotC
+2024-02-02 każe rozróżniać przyczynę zakrycia przez wszystkich graczy.
+
+**Przyczyna:** fakt „co zakryło kartę" był wyprowadzany z pola, które znaczy
+co innego, w pięciu kopiach kodu; testy jednostkowe etykiet budowały widoki
+RĘCZNIE (ficzki oddawały stary kształt), a partie na zwykłych taliach nigdy nie
+doczekały się cloaka (1 kopia w jednej talii).
+
+## L138 (2026-09-07) — przypadek: efekt zgłosił blokadę, której nie było — partia wisi na `pendingSpell.effects: []`
+
+**Przypadek:** Żywy Tester na talii celowanej pod manifest (20 kart, seed 4001,
+transkrypt `tools/table-tester/audyt-pr103/m334-manifest-g1.txt`) zgłosił trzy
+rzeczy naraz: `[STOP] brak akcji w kroku 50`, `[ui] Jedyna opcja to „Poddaj
+partię"` oraz `[rules] Dalej (pass) → Błąd wewnętrzny stołu: Pending spell
+odwołuje się do nieistniejącego czaru spell-39`. Żaden z 4614 testów jednostkowych
+tego nie widział, bo wszystkie testy manifestu zakładały co najmniej dwie karty w
+bibliotece.
+
+**Przyczyna:** w `src/engine/effects.js` gałąź `manifest_dread` dla
+`topIds.length === 1` manifestowała jedyną kartę (słusznie — CR 701.62a
+“as many as possible”, nie ma z czego wybierać) i kończyła się `return true`.
+Truthiness zwrotu jest tu jednak SYGNAŁEM KONTRAKTOWYM: `src/engine/spells.js`
+robí `const blocked = applyEffect(...); if (blocked) { state.pendingSpell =
+{ stackId, effects: effects.slice(i+1) }; return ... }`. Czar zostawał więc na
+stosie z PUSTĄ listą pozostałych efektów, a jedynym mechanizmem zdejmującym
+`pendingSpell` jest obsługa `resolve_*` — której nikt nie wygenerował, bo nie
+było o co pytać gracza. Objaw przesuwał się w czasie: najpierw nic (gra
+„normalnie" kończy turę), potem każdy pas przechodził przez kontrolę
+`pendingSpell` i uderzał w nieistniejący `spell-39`.
+
+**Rozstrzygnięcie:** `return;` — ujednolicone z gałęzią `topIds.length === 0`,
+która robiła to poprawnie. Sonda przed/po (ten sam stan, jedna karta w
+bibliotece): `pendingSpell: {"stackId":"spell-0","effects":[]} | stack: 1` →
+`pendingSpell: null | stack: 0 | faceDown: 1`. Strażnik D liczy w gałęzi
+`return true` i `state.pendingManifestDread = {` — asymetria liczb jest
+czerwona, więc kolejna taka ścieżka nie przejdzie niezauważona.
+
+**Lekcja o testach:** asercja „obiekt powstał" nie distinguishes rozstrzygnięty
+czar od wiszącego. Dopisanie w teście B pętli „6 pasów z rzędu przyjętych +
+`status === 'active'` + stos pusty" jest tanie i łapie WSZYSTKIE warianty tej
+klasy (zawieszony stos, zgubiony priorytet, nieskończony krok).
+
+## L139 (2026-09-07) — przypadek: cięcie tekstu kotwicą, która była w moim własnym komentarzu
+
+**Przypadek:** chciałem zrobić commit M334 bez naprawy M335 (ten sam plik, dwie
+sprawki — split przez tymczasowe cofnięcie jednej). Python miał znaleźć
+`return;` i zamienić je na `return true;`. Znalazł pierwsze wystąpienie po
+kotwicy komentarza — a komentarz PRZED CHWILĄ wstawiony przeze mnie zawierał
+zdanie „(`return;` — brak decyzji = brak blokady), więc ujednolicone". Cięcie
+poszło w środku komentarza: plik zachował obie wersje linii (`return true;` i
+`return;`), został fragment `) — ujednolicone.` poza komentarzem i składnia
+siadła.
+
+**Jak to wyglądało w testach:** `node --test` zwrócił cztery wpisy
+`not ok - test/batch50-kart.test.js` itd. — nazwy PLIKÓW, bez szczegółów, bo
+błąd parsowania modulu to nie asercja. Łatwo zrzucić winę na zmianę logiki.
+
+**Co poszło źle proceduralnie:** `git add` + `git commit` BEZ `node --check` i
+bez żadnej bramki — pełne `npm test` planowałem „zaraz po". Uratowało tylko to,
+że commit był jeszcze lokalny: `git commit --amend -C HEAD` (bez force pusha,
+ADR 0020 D — reguła „push natychmiast" zadziałała tu w drugą stronę: im wcześniej
+push, tym mniej możliwości poprawki bez rewizji historii).
+
+**Zasada na przyszłość:** każda operacja tekstowa na kodzie = (1) assert
+jednoznaczności klucza, (2) `node --check` zmienionych plików, (3) BRAMKA
+składni przed `git add`, (4) po commitcie `git show HEAD:<plik> | node --check
+/dev/stdin`, jeśli commit był budowany skryptem.
+
+## L124 (2026-09-02) — przypadek: grzechotka pękła nie od wagi, tylko od innego rozdania
+
+**Historia sufitu `block` (wyniesiona 2026-09-07):** komentarz z tabelką
+atrybucji przy suficie `block` w `test/audyt-bot-walka-remisy.test.js`
+zniknął razem z Revertem kart — sufit znowu wynosi 4 — stan z `f6a5459`.
+
+**Przypadek:** M291 (tura 11). Po dodaniu jednej karty do katalogu zmienił się skład
+`decks/ravnica.txt` i zazęły dwie bramki jakości: sufit `block` w
+`test/audyt-bot-walka-remisy.test.js` (4 → 5) oraz zamrożony golden-master bota. Ten
+sam audyt odpalony na `f6a5459` dał 4/4/130, a na drzewie z SAMĄ zmianą wagową M290
+(też 4/4/130) — czyli waga nie zepsuła żadnej decyzji, a dokładkę remisu zrobiło inne
+rozdanie talii. Bez tego pomiaru jedynym dostępnym komunikatem byłoby „podnieś próg".
+
+Ten sam rygor dotyczy fixture'ów: `--write` puszcza się na GOTOWYM drzewie — u nas
+pierwszy zapis zamroził ślad bota bez wpisu `MANA_COSTS` nowej karty i test znowu
+świecił, choć z kodem nie było już nic nie tak. Komentarz z tabelką atrybucji przy
+suficie `block` w `test/audyt-bot-walka-remisy.test.js` zniknął razem z Revetą —
+patrz tabela atrybucji i kolejność wejścia karty w
+`docs/audits/AUDYT_PR92_2026-09-02.md` §15.
+
+## L130 (2026-09-03) — przypadek: „trigger bez opisu" i pułapki tamtej sesji
+
+**Przypadek:** dwa zgłoszenia właściciela (uwagi C/D) miały JEDEN root cause: bramki
+wyniku komendy brały `state.events.slice(-1)` albo zwracały listę pobraną PRZED
+efektem. Efekt dokładający WIĘCEJ niż jedno zdarzenie (infect: licznik + opis,
+renown, poświęcenie Springblooma: 3 zdarzenia) tracił część przyrostu — gracz widział
+skutek na stole, ale log i Rozgrywka milczały. Audyt pozostałych bramek `slice(-1)`:
+wszystkie jednocentryczne, więc bezpieczne.
+
+**Pułapki tamtej sesji (dla odtwarzania przebiegu, nie reguła):** (1) testy harnessa
+sesyjnego potrzebują `gameObjectDataOf` przy wstrzykiwaniu obiektów i widzą ukryte
+karty przeciwnika (liczniki ręki); (2) wycena bota per-attacker paraliżuje przy
+samotnym blokerze odstraszającym (deathtouch) — klasa wymaga modelowania gang-ataków,
+nie należy jej łatać w pętli per-attacker (zmierzone: −2 partie benchmarku);
+(3) benchmark szybki jest deterministyczny — każda różnica jest prawdziwa; (4) po
+re-konie workspace `git reset --soft FETCH_HEAD` odtwarza referencje z wypchniętej
+gałęzi bez dotykania drzewa roboczego.
+
+## L140 (2026-09-07) — przypadek: pełny B0 padł na ofercie legalnej tylko dla jednej z trzech kopii reguły
+
+**Przypadek:** M337. `--full` (5700 meczów) urwał się na 3200:
+`command_rejected trigger_target_unresolved` — „Bot wybrał nielegalną komendę"
+(aggro mirrodin-wu vs random ravnica, seed 1001, tura 22 `declare_blockers`).
+Repro pojedynczego starcia: oferta `turn_cloak_face_up` przy otwartym
+`pendingTriggerTargets`. Pętle akcji opcjonalnych (obrót maską/disguise —
+CR 701.40b/701.56b, specjalne, bez stosu) pytały TYLKO o `hasPriority`; o to,
+czy czyjaś decyzja wisi, pytał wyłącznie pass — ręczną listą ~54 warunków.
+Trzecia to była kopia tej samej reguły (Batch 47 łatał tak samo `pass` przy
+`pendingManifestDread`; L41/L90). execute pilnował jej konsekwentnie, 64
+bramkami `if (cmd.type !== 'resolve_*') reject` — rozjechała się warstwa
+OFEROWANIA.
+
+**Naprawa (u źródła, nie listą):** jeden predykat
+`optionalActionsOpen = priorityPlayerId === playerId && firstDecisionOwner == null`
+w obu pętlach face-up ORAZ w bramce pasa (ręczną listę skasować). Równość
+reguł wykazana na liczbach: `firstPendingDecision` ogarnia 64 pola (nadzbiór
+dawnej listy: 10 pól „brakujących" ma odpowiedniki w derivatach
+`pendingBackup`/`triggerTargetsBlock`/`roomTargetBlocks`/`deliriumBlocks`/
+`mentorBlocks` + `pendingMulligans`, więc żadna legalna oferta nie znika), a w
+execute jest DOKŁADNIE 64 bramek resolve-only → 1:1. Strażnik źródła (test E):
+dokładnie 2 `if (optionalActionsOpen) {`, zero `if (hasPriority) {`, zero
+`!state.pending*` w bramce pasa — czwartej kopii nie będzie.
+
+**Rykoszety, każdy z atrybucją:** golden-master ruszyła JEDNA partia
+(`ravnica|innistrad-wu@1000`, dwa wpisy śladu DEC #238/#239 — znika
+nielegalna oferta face-up; decyzje i scoreSum bez zmian — zmienił się zbiór
+opcji, nie wycena) oraz pin M293/11 (63→62 wystąpień `fertile_thicket`:
+`!state.pendingFertileThicket` wypadł z listy pasa — dług NIE spłacony,
+aktualizacja w §18.5 audytu PR92, MILESTONES i backlogu zgodnie z komentarzem
+pinu). Lekcja uboczna: equality-pin licznika to nie biurokracja — sam wskazał
+miejsce, w którym reguła przesiadła się między plikami.

@@ -1,7 +1,7 @@
 import { choiceResponse } from '../protocol/types.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
-import { commandOptionKey, FACE_DOWN_LABEL, faceDownName, cloakFaceDownName } from './session.js';
+import { commandOptionKey, faceDownLabel } from './session.js';
 import { commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection } from './multi-target.js';
 
 function clearChoiceElement(element) {
@@ -620,13 +620,11 @@ function objectName(view, session, id) {
       // M319/NA1: WŁASNY cloak to mechanika CLOAK — „Nazwa (Cloak N)"
       // (cloakFaceDownName), nie gołe „Morph", które kłamało o ward {2}
       // i nie odróżniało kilku zakrytych kart tej samej nazwy.
-      if (object.faceDown) {
-        if (object.cloakReady && object.cardId != null) {
-          return cloakFaceDownName(session.nameOf(object.cardId), object.copyNumber);
-        }
-        if (object.cardId != null) return faceDownName(session.nameOf(object.cardId));
-        return FACE_DOWN_LABEL;
-      }
+      // M326 (audyt PR #102, F6): jedno źródło brzmienia (session.faceDownLabel)
+      // — przyczynę zakrycia zna od teraz KAŻDY gracz (CR 708.6), a nie tylko
+      // kontroler przez `cloakReady`; przeciwnik dalej nie widzi card_ID
+      // (FoW, CR 708.2a), więc dostaje „Cloak 1" zamiast kłamiącego „Morph".
+      if (object.faceDown) return faceDownLabel(object, session.nameOf);
       // A1/A2 + M155: tokeny niosą JAWNĄ nazwę w polu `name` w playerView
       // (cardId typu token_servo nie istnieje w katalogu kart — nameOf zwracałby
       // surowe id, co psuje etykiety w wizardach przydziału obrażeń i celu).

@@ -242,7 +242,7 @@ test('M265: trigger_resolved od zakrytego źródła bota — modal bez SKANU kar
     if (!cmd || !session.apply(cmd).ok) break;
   }
 
-  // Zakryty permanent BOTA: cloak (CR 702.75) → bezimienny 2/2 z ward {2},
+  // Zakryty permanent BOTA: cloak (CR 701.56a) → bezimienny 2/2 z ward {2},
   // pod spodem REALNA karta z wierzchu biblioteki bota (Forest/Veiled Ascension).
   const botPermanent = state.zones.battlefield
     .map((id) => state.objects.get(id)).find((o) => o?.controllerId === BOT_ID);
@@ -268,7 +268,13 @@ test('M265: trigger_resolved od zakrytego źródła bota — modal bez SKANU kar
 
   const resolved = session.botMoves.find((m) => m.type === 'trigger_resolved');
   assert.ok(resolved, `blok modala ma wpis o rozstrzygnięciu triggera: ${JSON.stringify(session.botMoves)}`);
-  assert.ok(resolved.text.includes(FACE_DOWN_LABEL), `tekst bez nazwy źródła: ${resolved.text}`);
+  // M331 (audyt PR #102, F6b): znacznikiem jest PRZYCZYNA zakrycia, nie zawsze
+  // „Morph\" — tu źródłem triggera jest cloak, więc poprawny tekst to
+  // „Cloak 1 — trigger się rozstrzyga". Inwariant się nie zmienia: żadnej
+  // nazwy karty pod zakryciem ani skanu cardId (asercje niżej).
+  assert.match(resolved.text, /(Cloak( \d+)?|Morph)/, `tekst z przyczyną zakrycia: ${resolved.text}`);
+  assert.doesNotMatch(resolved.text, /Veiled Ascension|Forest/,
+    `nazwa karty pod zakryciem wyciekła do modala: ${resolved.text}`);
   assert.equal(resolved.cardId ?? null, null,
     `skan zakrytego źródła triggera wycieka do modala (cardId=${resolved.cardId})`);
 });

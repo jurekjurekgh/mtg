@@ -109,8 +109,10 @@ test('M319/C: etykieta celu cloakowanego — „Nazwa (Cloak 2)” (commandLabel
     zones: {
       hand: [], stack: [], graveyard: [], library: [], exile: [],
       battlefield: [
-        { id: 'c1', faceDown: true, cardId: 'goblin-piker', cloakReady: true, copyNumber: 1, controllerId: 'p1', zone: 'battlefield' },
-        { id: 'c2', faceDown: true, cardId: 'goblin-piker', cloakReady: true, copyNumber: 2, controllerId: 'p1', zone: 'battlefield' },
+        // faceDownCause: 'cloak' — jawna przyczyna zakrycia z widoku (M326);
+        // fikcja musi oddawać kształt, który produkuje playerView.
+        { id: 'c1', faceDown: true, cardId: 'goblin-piker', cloakReady: true, faceDownCause: 'cloak', copyNumber: 1, controllerId: 'p1', zone: 'battlefield' },
+        { id: 'c2', faceDown: true, cardId: 'goblin-piker', cloakReady: true, faceDownCause: 'cloak', copyNumber: 2, controllerId: 'p1', zone: 'battlefield' },
       ],
     },
   };

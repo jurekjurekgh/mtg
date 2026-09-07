@@ -8,7 +8,7 @@ import { hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
-  FACE_DOWN_LABEL, faceDownName, cloakFaceDownName,
+  FACE_DOWN_LABEL, faceDownLabel, faceDownCauseTag,
   manaEffectLabel,
   manaProducedLabel,
 } from './session.js';
@@ -1583,7 +1583,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
 
 /** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
 export function rulesText(info) {
-  // M258/F3 (cloak, CR 702.75): zakryty permanent z ward {2} — ward jest
+  // M258/F3 (cloak, CR 701.56a): zakryty permanent z ward {2} — ward jest
   // cechą JAWNĄ zakrycia (jak staty 2/2), więc kafel go pokazuje mimo
   // maskowania reszty tożsamości (CR 708.2a tłumi druk, nie definicję
   // zakrycia). Zwykły morph bez warda: linia pusta jak dotąd.
@@ -1829,7 +1829,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_copy_targets: 'Kopia czaru — wybór celu',
   resolve_exploit_choice: 'Exploit — poświęcić stwora?',
   resolve_fabricate: 'Fabricate — liczniki czy tokeny?',
-  // małą literą: „manifest dread" to mechanika (CR 701.34), a „Manifest
+  // małą literą: „manifest dread" to mechanika (CR 701.62a), a „Manifest
   // Dread" to KARTA w katalogu — strażnik m212 zabrania literału z nazwą karty.
   resolve_manifest_dread: 'manifest dread — zmanifestuj jedną z 2 kart',
   resolve_optional_draw: 'Dobór dobrowolny (you may)',
@@ -2255,13 +2255,13 @@ export function commandLabel(cmd, session, view) {
     const tokenName = looksLikeToken && object?.name != null
       ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name)
       : null;
+    // M326 (audyt PR #102, F6): brzmienie zakrycia z JEDNEGO źródła
+    // (session.faceDownLabel, CR 708.6). Podstawą był `cloakReady` — pole
+    // ZNAJOMOŚCI reguły, którego w widoku przeciwnika celowo nie ma, więc
+    // cudzy cloak podpisywał się „Morph" (kłamstwo o ward {2}).
     const base = object
       ? (object.faceDown
-        // M319/NA1: własny cloak podpisany „Nazwa (Cloak N)" (nie „(Morph)")
-        // — mechanika zakrycia i stały numer kopii (M172/D dla tokenów).
-        ? (object.cloakReady
-          ? cloakFaceDownName(object.cardId != null ? session.nameOf(object.cardId) : null, object.copyNumber)
-          : faceDownName(object.cardId != null ? session.nameOf(object.cardId) : null))
+        ? faceDownLabel(object, session.nameOf)
         : (tokenName || session.nameOf(object.cardId)))
       : session.nameOfObject(id);
     // E (2026-08-11): permanent na polu bitwy, który mogą mieć OBAJ gracze
@@ -3263,7 +3263,7 @@ export function cardInfo(session, object, combat = null) {
   const attachedEquipment = Boolean(object.attachedTo) && !attachedAura;
   // M258/F3: ward zakrytego (cloak) jest jawny — keyword w widoku
   // (reszta keywordów tłumiona przez CR 708.2a jak dotąd).
-    // M315 (Veiled Ascension, CR 702.75 + 122.1b): zakryty permanent NOSI ward
+    // M315 (Veiled Ascension, CR 701.56a + 122.1b): zakryty permanent NOSI ward
   // {2} (definicja zakrycia) i MOŻE mieć jawne granty (licznik flying z Veiled
   // Ascension — „face-down creatures enter with a flying counter"). Widok
   // już rozstrzyga FoW (kontroler: pełna lista; przeciwnik: same granty),
@@ -3290,7 +3290,11 @@ export function cardInfo(session, object, combat = null) {
     // wystarcza („Wygnana zakryta"), badge mechaniki pola bitwy myliłby.
     // M319/NA1: własny cloak z numerem kopii — „zakryty (Cloak 2)" — żeby
     // kafel na stole pasował do etykiety celu („Nazwa (Cloak 2)").
-    morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${object.cloakReady ? `Cloak${object.copyNumber ? ` ${object.copyNumber}` : ''}` : FACE_DOWN_LABEL})` : FACE_DOWN_LABEL)) : null,
+    // M326 (audyt PR #102, F6): badge po JAWNEJ przyczynie zakrycia, nie po
+    // prawie kontrolera do obrotu — dla wroga wychodziło to samo co przy
+    // morphie, a ruling WotC 2024-02-02 wymaga rozróżnialności PRZEZ
+    // WSZYSTKICH graczy (patrz komentarz w effects.js przy `faceDownCause`).
+    morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${faceDownCauseTag(object)})` : faceDownCauseTag(object))) : null,
     colors,
     kind,
     // M138/Z6 (audyt Żywym Testerem): typy bierzemy ze STANU GRY, nie z rejestru
@@ -3509,9 +3513,14 @@ function buildFace(parent, info, { size = '', skipLiveState = false, textless = 
     }
     if (info.combatRole) flags.push(info.combatRole);
     if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
-    // M100/E12: kafel zakrytego permanentu niesie znacznik morpha — własny
+    // M100/E12: kafel zakrytego permanentu niesie znacznik mechaniki — własny
     // ma nazwę + „zakryty (morph)", wrogi „Face-down creature" + „morph".
-    if (info.faceDown) flags.push(info.morphBadge ?? FACE_DOWN_LABEL);
+    // M333 (F6c): bez `?? FACE_DOWN_LABEL` — M260/B1 UŚWIADOMIONIE zostawia
+    // `morphBadge: null` dla zakrytego wygnania (to nie jest morph na polu
+    // bitwy, CR 406.3), a dawny fallback wstawiał tam etykietę z powrotem,
+    // czyli dokładnie to, przed czym miał chronić. Znacznik bywa null —
+    // wtedy nie ma żadnego znacznika, i tak ma być.
+    if (info.morphBadge) flags.push(info.morphBadge);
     // M73d (J): choroba przywołania dotyczy tylko stworów (CR 302.6) —
     // artefakty/enchantmenty nie dostają badge (audyt żywym testerem).
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push('choroba');
@@ -3590,9 +3599,10 @@ export function buildStateOverlay(visual, info) {
       flags.push(['att', info.hostName ? `${label} → ${info.hostName}` : label]);
     }
     // Nadal pokazujemy załączniki GOSPODARZA (info.attachments) niżej.
-    // M100/E12: kafel zakrytego permanentu niesie znacznik morpha (własny
+    // M100/E12: kafel zakrytego permanentu niesie znacznik mechaniki (własny
     // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
-    if (info.faceDown) flags.push(['morph', info.morphBadge ?? FACE_DOWN_LABEL]);
+    // M333: j.w. — null oznacza „żadnego znacznika" (zakryte wygnanie, M260/B1).
+    if (info.morphBadge) flags.push(['morph', info.morphBadge]);
     if (info.goaded) flags.push(['goad', 'goad']);
     // M177/E (CR 701.29): detain — nie atakuje, nie blokuje, bez aktywacji.
     if (info.detained) flags.push(['kw', 'zatrzymany (detain)']);
@@ -4074,7 +4084,11 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
         const tgtPlayer = view.players.find((pl) => pl.id === id);
         if (tgtPlayer) return tgtPlayer.name ?? id;
         const tgtObj = (view.zones.battlefield ?? []).find((o) => o.id === id);
-        if (tgtObj) return tgtObj.faceDown ? FACE_DOWN_LABEL : session.nameOf(tgtObj.cardId ?? id);
+        // M326 (F6): cel na POLU BITWY — tam może leżeć cloak, więc etykieta
+        // bierze przyczynę z widoku (kontroler dodatkowo zna swoją kartę,
+        // CR 708.6). Logi zakrytego RZUTU na stosie zostają przy
+        // FACE_DOWN_LABEL: cloak nie rzuca zakryty i stos przyczyny nie nosi.
+        if (tgtObj) return tgtObj.faceDown ? faceDownLabel(tgtObj, session.nameOf) : session.nameOf(tgtObj.cardId ?? id);
         return session.nameOfObject(id);
       }).join(', ');
       // Face-down czar (morph/megamorph, CR 708.2): tożsamość ukryta przed

@@ -3,7 +3,7 @@ import { spellExitZone } from './zones.js';
 import { untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
-import { spendMana, addMana, producibleMana } from './resources.js';
+import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
 import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
@@ -135,11 +135,18 @@ function thronePutChosenCreature(state, pending, targetId) {
 }
 
 /**
- * Manifest (CR 701.34): przenosi kartę z biblioteki na pole bitwy jako face-down
- * stwór 2/2 bez nazwy/typów/kosztu (jak morph face-down, CR 708.2). Zapisuje
- * `faceDownOriginal` (cechy karty) i `manifestReady` — jeśli karta jest kartą
- * STWORA, można ją obrócić twarzą do góry za jej koszt many (turnFaceUp).
- * Generyczne, bez nazw kart (ADR 0002).
+ * Manifest (CR 701.40a): przenosi kartę z biblioteki na pole bitwy jako
+ * face-down stwór 2/2 bez nazwy/typów/kosztu (jak morph face-down, CR 702.37c
+ * i 708.2). Zapisuje `faceDownOriginal` (cechy karty) i `manifestReady` — jeśli
+ * karta jest kartą STWORA, można ją obrócić twarzą do góry za jej koszt many
+ * (CR 701.40b, `turnFaceUp`). Generyczne, bez nazw kart (ADR 0002).
+ *
+ * M333 (F6c, dokończenie rodziny z audytu PR #102): `faceDownCause: 'manifest'`.
+ * Ruling WotC 2024-02-02 dla cloaka wymaga, żeby zakryte permanenty dało się
+ * rozróżniać PO PRZYCZYNIE zakrycia (disguise / cloak / manifest / morph) —
+ * dopóki pole nosił tylko cloak, przeciwnik czytał „(Morph)" o zmanifestowanym
+ * 2/2, czyli etykietę inną niż F6 naprawił dla cloaka. Tożsamość karty zostaje
+ * ukryta (CR 708.2a); jawny jest wyłącznie mechanizm.
  */
 export function manifestCardFaceDown(state, cardObjectId, controllerId) {
   const card = state.objects.get(cardObjectId);
@@ -150,12 +157,18 @@ export function manifestCardFaceDown(state, cardObjectId, controllerId) {
   const manifested = Object.freeze({
     ...moved,
     faceDown: true,
+    faceDownCause: 'manifest',
     summoningSickness: true,
     tapped: false,
     kind: 'creature',
     power: 2,
     toughness: 2,
     // CR 708.2 — face-down bez cech karty; oryginał chowamy do obrotu.
+    // M333: ward też jest cechą karty — zakryty permanent nie ma zdolności,
+    // a `wardAmountOf` w gałęzi face-down czyta wprost `object.ward` (patrz
+    // permanents.js), więc bez wyzerowania zmanifestowany stwór z drukowanym
+    // wardem miałby ward pod zakryciem. Wraca z migawki w `turnFaceUp`.
+    ward: null,
     colors: [],
     subtypes: [],
     types: ['Creature'],
@@ -171,9 +184,19 @@ export function manifestCardFaceDown(state, cardObjectId, controllerId) {
       keywords: Object.freeze([...(card.keywords ?? [])]),
       manaCost: card.manaCost ?? 0,
       cardName: card.cardName ?? null,
+      ward: card.ward ?? null,
+      // M334 (zmierzone testem bota M334/A): manifest — w przeciwieństwie do
+      // rzutu morphem — NADPISUJE power/toughness obiektu na 2/2 (patrz wyżej),
+      // więc obrót musi mieć skąd je wziąć. CR 701.40b: „the effect defining its
+      // characteristics while it was face down ends, and it regains its normal
+      // characteristics" — zmanifestowany 6/5 po obrocie jest 6/5, nie 2/2.
+      // Bez migawki `turnFaceUp` brał P/T z już nadpisanego obiektu (dokładnie
+      // ten błąd co u cloaka w M315, naprawiony tam dla 701.56b).
+      power: card.power ?? null,
+      toughness: card.toughness ?? null,
     }),
     // „Turn it face up any time for its mana cost if it's a creature card":
-    // koszt obrotu = koszt many karty; tylko dla kart stworów (CR 701.34e).
+    // koszt obrotu = koszt many karty; tylko dla kart stworów (CR 701.40b).
     manifestReady: isCreatureCard,
     manifestTurnUpCost: isCreatureCard ? (card.manaCost ?? 0) : null,
   });
@@ -1805,7 +1828,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       }
     }
   }
-  // Cloak (Veiled Ascension, MKC; CR 702.75 — „cloak"): wierzch biblioteki
+  // Cloak (Veiled Ascension, MKC; CR 701.56 — „cloak"): wierzch biblioteki
+  // UWAGA CO DO NUMERU (audyt PR #102, F5): cloak to keyword ACTION, więc
+  // siedzi w CR 701 (akcje), NIE w 702 (ability keywords). Komentarze w tym
+  // repo cytały „702.75" od M258 — przepisane na 701.56a–g wg tekstu z 2024
+  // r.; słownik z VIII 2026 przesuwa je na 701.58a–g, więc przy kolejnym
+  // odświeżaniu CR chodzi o TEN sam blok (listę mapowań trzyma
+  // docs/audits/AUDYT_PR102_2026-09-06.md).
   // gracza na pole bitwy TWARZĄ W DÓŁ jako bezimienny stwór 2/2 bez zdolności
   // (jak morph). Rzeczywisty cardId zostaje ukryty (faceDown), a obiekt ma
   // cechy tylko 2/2 (CR 708.2). Wracający na górę po obrocie twarzą do góry
@@ -1825,19 +1854,29 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       power: 2, toughness: 2,
       types: ['Creature'],
       subtypes: [],
-      // M258/F3 (CR 702.75): zakryty permanent to stwór 2/2 z WARD {2} —
+      // M258/F3 (CR 701.56a): zakryty permanent to stwór 2/2 z WARD {2} —
       // pełna mechanika CR 702.21 (decyzja właściciela: żadnych
       // limitations), nie wpis w support.limitations. Keyword + kwota
       // (czyta wardAmountOf).
       keywords: ['ward'],
-      abilities: [],
+      // M322 (audyt PR #102, F0+F9) — dwa braki tego samego kształtu:
+      //  • 708.2a tłumi DRUKOWANE zdolności, ale 701.56c/d zostawia przy
+      //    cloaku procedurę obrotu za koszt morpha/disguise — lista zdolności
+      //    zakrycia jest więc TA SAMa co przy rzucie twarzą w dół (provider
+      //    `faceDownAbilities`, bez kopiowania jego logiki — L41);
+      //  • obrót przywraca zdolności karty z migawki `originalAbilities`
+      //    (wprowadzonej w Batch 24 dokładnie dla Willbendera). Cloak brał
+      //    kształt face-down z rzutu, ale bez tej migawki — uncovered
+      //    permanent zostawał BEZ zdolności karty (zmierzone: `abilities: []`).
+      abilities: faceDownAbilities(topObj),
+      originalAbilities: Object.freeze([...(topObj.abilities ?? [])]),
       colors: [],
       cardName: null,
       manaCost: 0,
       ward: 2,
       summoningSickness: true,
       tapped: false,
-      // M315 (CR 702.75c + ruling WotC 2024-02-02): „Any time you have
+      // M315 (CR 701.56b + ruling WotC 2024-02-02): „Any time you have
       // priority, you can turn a cloaked permanent you control face-up by
       // revealing that it's a creature card ... and paying its mana cost.
       // This is a special action." — flagi dla turn_cloak_face_up
@@ -1850,13 +1889,27 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         keywords: Object.freeze([...(topObj.keywords ?? [])]),
         manaCost: topObj.manaCost ?? 0,
         cardName: topObj.cardName ?? null,
-        // M321: P/T karty — uncover ma przywrócić pełne ciało (CR 702.75c).
+        // M321: P/T karty — uncover ma przywrócić pełne ciało (CR 701.56b).
         // Pole `power`/`toughness` obiektu jest nadpisane na 2/2 zakrycia, więc
         // bez tego odkryty cloak zostawał 2/2 (bug z M315: turnFaceUp
         // przywracał nazwę/kolory/koszt, ale nie statystyki).
         power: topObj.power ?? null,
         toughness: topObj.toughness ?? null,
+        // M322 (F4): kwota warda też jest cechą karty — zakrycie nadpisuje ją
+        // na 2 (701.56a), a obrót ma przywrócić to, co było wydrukowane. Bez
+        // tego uncover kasował drukowany ward twardym `ward: null` (poprawny
+        // wynik z niepoprawnego źródła — klasa L104; dziś katalog nie ma karty
+        // z drukowanym wardem, więc błąd był uśpiony).
+        ward: topObj.ward ?? null,
       }),
+      // M326 (audyt PR #102, F6): PRZYCZYNA zakrycia jest JAWNA, bo rozróżnienie
+      // zakrytych permanentów musi widzieć każdy gracz (CR 708.6 + ruling WotC
+      // 2024-02-02: „You must ensure that your face-down spells and permanents
+      // can be easily differentiated … as well as what ability caused them to
+      // be face down\"). To NIE to samo co `cloakReady`: ta flaga znaczy także
+      // „pod spodem jest karta stworu" (ukryte, CR 708.2a) i decyduje o prawie
+      // do obrotu, więc zostaje u kontrolera.
+      faceDownCause: 'cloak',
       cloakReady: (topObj.types ?? []).includes('Creature') || topObj.kind === 'creature',
       cloakTurnUpCost: (topObj.types ?? []).includes('Creature') || topObj.kind === 'creature'
         ? (topObj.manaCost ?? 0)
@@ -5140,10 +5193,13 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }));
     return true;
   }
-  // Manifest Dread (DSK, CR 701.34): „Look at the top two cards of your library.
+  // Manifest Dread (DSK, CR 701.62a — manifest dread to osobne keyword
+  // action; samo zakrycie robi manifest z 701.40): „Look at the top two cards of your library.
   // Put one onto the battlefield face down as a 2/2 creature and the other into
   // your graveyard." Blokująca decyzja kontrolera (pendingManifestDread,
   // resolve_manifest_dread). Generyczne (ADR 0002) — bez nazw kart.
+  // Manifest dread to osobne keyword ACTION: CR 701.62a (sam mechanizm
+  // manifestuje przez 701.40).
   if (effect.type === 'manifest_dread') {
     const controllerId = sourceObject.controllerId;
     const topIds = state.zones.library
@@ -5151,10 +5207,20 @@ function markTemporaryExile(state, exileId, sourceObject) {
       .slice(0, 2);
     if (topIds.length === 0) return;
     if (topIds.length === 1) {
-      // Tylko jedna karta w bibliotece: manifestujemy ją bez wyboru (CR 701.34c
+      // Tylko jedna karta w bibliotece: manifestujemy ją bez wyboru (CR 701.62a
       // — „as many as possible"), nic do grobu.
+      // M335 (Żywy Tester, talia audytowa 2026-09-07, seed 4001): TEJ ścieżki
+      // NIE wolno oznaczać jako blokującej. Truthy zwrot z tego efektu znaczy dla
+      // rozstrzygacza „czar czeka na decyzję" (spells.js: `if (blocked)
+      // state.pendingSpell = { stackId, effects: reszta }`), a tu decyzji nie ma
+      // żadnej — czar zostawał na stosie z `pendingSpell.effects: []` na zawsze.
+      // Zmierzone: po takim rzucie stos nie pustoszeje, karta nie trafia do
+      // grobu, a każde kolejne `pass_priority` daje „Błąd wewnętrzny stołu:
+      // Pending spell odwołuje się do nieistniejącego czaru" i partia wisi
+      // (detektor [rules] Żywego Testera to złapał). Gałąź zerowa robi to
+      // poprawnie (`return;`) — ujednolicone.
       manifestCardFaceDown(state, topIds[0], controllerId);
-      return true;
+      return;
     }
     state.pendingManifestDread = {
       playerId: controllerId,

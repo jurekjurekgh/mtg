@@ -300,9 +300,12 @@ test('M293/11: RYSOWANIE nie zna karty po imieniu (ADR 0002); protokół — dł
   // docs/ENGINE_MILESTONES.md (M293) i docs/backlog.md. Kto spłaci dług (renama po migracji
   // autosave/replay), ten zobaczy RED-a i zaktualizuje te trzy miejsca — dług nie może
   // zniknąć z dokumentów po cichu, tak samo jak nie mógł zniknąć z kodu.
-  assert.equal(suma, 63,
-    `wystąpienia protokołowej nazwy karty w 8 plikach logiki i stołu: ${suma} (pin 63; `
-    + 'spłata długu = renama typu komendy, patrz §18.5 raportu i docs/backlog.md)');
+  assert.equal(suma, 62,
+    `wystąpienia protokołowej nazwy karty w 8 plikach logiki i stołu: ${suma} (pin 62; `
+    + 'spłata długu = renama typu komendy, patrz §18.5 raportu i docs/backlog.md). '
+    + '63 → 62: M337 wymienił ręczną listę warunków pasa na predykat, więc '
+    + '`!state.pendingFertileThicket` znikło z bramki — dług NIE jest spłacony, '
+    + 'licznik tylko przesiadł się na wyliczanie przez firstPendingDecision)');
   const calySrc = execSync('grep -rhoE "fertile_thicket|FertileThicket" src/ | wc -l', { encoding: 'utf8' }).trim();
   assert.ok(Number(calySrc) >= 69, `w całym src/ miało być ≥69 wystąpień, jest ${calySrc}`);
   const spring = execSync('grep -rhoE "springbloom|Springbloom" src/ | wc -l', { encoding: 'utf8' }).trim();

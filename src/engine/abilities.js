@@ -1180,7 +1180,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   }
   // Detain (CR 701.29, M177/E): walidacja niezależna od oferty (L48).
   if (object.detained) throw new Error('Zatrzymany (detain) permanent nie aktywuje zdolności');
-  // Morph/megamorph (CR 702.36/702.37): obrót twarzą do góry działa tylko,
+  // Morph/megamorph (CR 702.37 / 702.37b; 702.36 to Fear): obrót twarzą do góry działa tylko,
   // póki permanent leży twarzą w dół — po obrocie zdolność wygasa. Walidacja
   // spójna z ofertą legalCommands (wcześniej lukę maskował throw w
   // turnFaceUp — „nielegalność" wychodziła dopiero z aplikacji efektu).
@@ -1581,7 +1581,7 @@ export function performActivation(state, ctx) {
   // D (2026-08-11, MTG rules CR 602.2a): NIEmany zdolności aktywowane idą NA
   // STOS (przeciwnik może odpowiedzieć instanitem). WYJĄTKI (rozstrzygają się
   // od razu): zdolności many (isActivatedManaAbility — add_mana bez celów) oraz
-  // morph/megamorph twarzą do góry (specjalna akcja, CR 702.36e — nie używa
+  // morph/megamorph twarzą do góry (specjalna akcja, CR 702.37e — nie używa
   // stosu). Koszty (tap/mana/poświęcenie) już zapłacone — kolejkujemy wpis na
   // stos; efekty zastosuje resolveTopOfStack.
   const isFaceUpAction = ability.keyword === 'morph' || ability.keyword === 'megamorph';

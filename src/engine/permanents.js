@@ -716,7 +716,7 @@ export function effectiveSubtypesOnBattlefield(state, object) {
  * Zwraca null, gdy obiekt nie ma warda (keyword czytany EFEKTYWNIE —
  * granty/utrata), inaczej kwotę many z pola `ward`; domyślnie 2, bo
  * jedyne źródło w katalogu to zakryte permanenty (cloak/disguise,
- * CR 702.75: „2/2 creature with ward {2}").
+ * CR 701.56a: „2/2 creature with ward {2}").
  */
 export function wardAmountOf(object, state = null) {
   if (!object) return null;
@@ -743,7 +743,7 @@ export function effectiveKeywords(object, state = null) {
     if ((object.counters ?? {}).flying > 0) counterKeywords.push('flying');
     if ((object.counters ?? {}).deathtouch > 0) counterKeywords.push('deathtouch');
     if ((object.counters ?? {}).lifelink > 0) counterKeywords.push('lifelink');
-    // M258/F3 (CR 702.75 + 702.21): zakryty permanent z CLOAK/DISGUISE to
+    // M258/F3 (CR 701.56a + 702.21): zakryty permanent z CLOAK/DISGUISE to
     // 2/2 Z WARD {2} — ward jest częścią definicji zakrycia (jak staty 2/2),
     // a nie drukowanym keywordem zakrywanej karty, więc CR 708.2a go NIE
     // tłumi (ruling cloak: „Other effects can still grant it any
@@ -825,7 +825,7 @@ export function turnFaceUp(state, objectId, counters = {}) {
     faceDown: false,
     // Przywrócenie oryginalnych zdolności karty po obrocie (Batch 24 —
     // Willbender; face-down cast ukrył je pod flip-ability — patrz
-    // resources.castPermanent). CR 702.36: obrót „odkrywa" kartę wraz
+    // resources.castPermanent). CR 702.37e: obrót „odkrywa" kartę wraz
     // z jej zdolnościami.
     ...(Array.isArray(object.originalAbilities)
       ? { abilities: [...object.originalAbilities], originalAbilities: undefined }
@@ -842,7 +842,16 @@ export function turnFaceUp(state, objectId, counters = {}) {
         keywords: [...(object.faceDownOriginal.keywords ?? [])],
         manaCost: object.faceDownOriginal.manaCost ?? 0,
         cardName: object.faceDownOriginal.cardName ?? null,
-        // M321: uncover przywraca też P/T karty (CR 702.75c — „turn it face
+        // M333: ward wraca z migawki dla KAŻDEGO zakrycia, nie tylko cloaka —
+        // punkt tworzący (morph/manifest) chowa drukowany ward, bo face-down
+        // permanent nie ma zdolności (CR 708.2a), a `wardAmountOf` czyta go
+        // przez `object.ward != null` w gałęzi face-down (permanents.js 749).
+        // Wcześniejsze czyszczenie leżało w gałęzi cloak, więc zmanifestowany
+        // lub zmorphowany stwór z drukowanym wardem ZACHOWYWAŁ ward pod
+        // zakryciem (uśpione: dziś 0 kart w katalogu ma drukowany ward — F4
+        // w audycie PR #102 opisał to samo złą stronę przy cloaku).
+        ward: object.faceDownOriginal.ward ?? null,
+        // M321: uncover przywraca też P/T karty (CR 701.56b — „turn it face
         // up"; odkryty cloak zostawał 2/2, bo cloak nadpisuje power/toughness
         // na staty zakrycia). Morfy, których faceDownOriginal nie niesie P/T,
         // zostają przy obecnym zachowaniu (fallback na obiekt).
@@ -850,6 +859,31 @@ export function turnFaceUp(state, objectId, counters = {}) {
         toughness: object.faceDownOriginal.toughness ?? object.toughness,
         faceDownOriginal: undefined,
       }
+      : {}),
+    // M322 (audyt PR #102, F9/F4) + M333: koniec zakrycia sprząta ŚLADY
+    // MECHANIKI w punkcie zbierającym, nie u wołającego. Do tej pory kasowaniem
+    // `ward`/`cloakReady`/`cloakTurnUpCost`/`copyNumber` zajmował się handler
+    // komendy `turn_cloak_face_up`, więc obrót inną procedurą tej samej karty
+    // (CR 701.56c: koszt morpha) zostawiał ward {2} na face-up permanencie —
+    // pole `ward` idzie do PlayerView i do odznaki kafla, więc stwór „miał"
+    // ward już po odsłonięciu. Tak samo manifest: flagi zdjęte tu, a nie w
+    // handlerze `turn_manifest_face_up` (L41 — jedno źródło dla obu dróg).
+    // M333: `faceDownCause: null` jest BEZWARUNKOWE — od czasu, gdy przyczynę
+    // piszą też manifest i morph (701.40a, 702.37c), zdjęcie jej wyłącznie w
+    // gałęzi cloaka zostawiało face-up permanentowi „Manifest": dziś nic nie
+    // renderuje etykiety przy faceDown: false, ale to stan, który kłamie
+    // (i który przeżyłby kolejne zakrycie, gdyby jakiś efekt nie nadpisał
+    // pola). Zmierzono testem M333/D (RED przed naprawą).
+    faceDownCause: null,
+    ...(object.cloakReady === true || object.cloakTurnUpCost != null
+      ? {
+        cloakReady: false,
+        cloakTurnUpCost: null,
+        copyNumber: null,
+      }
+      : {}),
+    ...(object.manifestReady === true
+      ? { manifestReady: false, manifestTurnUpCost: null }
       : {}),
   });
   state.events.push(event('object_flipped', { objectId }));

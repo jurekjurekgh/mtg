@@ -78,6 +78,50 @@ progi bota — warto je audytować, ale mają najmniejszą szansę na świeży b
 wszystkich talii — `node run-game.mjs --list-decks`; nie przepisuj ich tutaj,
 bo generator (ADR 0023) zmienia skład przy każdym batchu.
 
+### Partia celowana pod mechanikę (chwilowa talia — M331, 2026-09-07)
+
+Mechanika z JEDNĄ kopią w jednej talii (cloak: 1× Veiled Ascension w
+`decks/ravnica.txt`) nie zostanie odwiedzona w partiach „losowych": 4 ukończone
+gry audytowe PR #103 nie pokazały w logu ani jednego `Cloak`. Żeby audyt UI
+w ogóle miał co oglądać, zrób talię CELOWANĄ:
+
+1. `decks/audyt-<mechanika>.txt` — nagłówek `# Nazwa` + `Nx Nazwa karty`
+   (`parseDeckText` wymaga jednoznacznych nazw albo `Nazwa (SET)`),
+2. **`npm run build`** — lista talii jest wpinana w artefakt (`#deck-human`),
+   bez builda tester rzuci „Talia ... nie jest dostępna w artefakcie",
+3. graj i czytaj log,
+4. **usuń plik PRZED bramką** — `npm test` ma strażników, którzy nie znoszą
+   drugiej talii z tą samą kartą: „każda wspierana karta jest w DOKŁADNIE
+   jednej talii" (M178/ADR 0023), zgodność z generatorem i liczności w README.
+   Cztery czerwone testy po zostawieniu takiej chwilowej talii w `decks/` to
+   dokładnie ten przypadek (nie regresja silnika).
+
+**M337 od strony stołu (2026-09-07):** oferta komend opcjonalnych (obrót
+zakrytego tworza twarzą do góry) jest teraz bramkowana tym samym predykatem co
+`pass_priority` — przy WSZELKIEJ otwartej decyzji (własnej czy cudzej), nie tylko
+własnej. Na stole to znaczy: gdy panel żąda wyboru celu triggera, przycisk
+„Obróć twarzą do góry" NIE powinien znikać na chwilę i wracać — on nie istnieje,
+dopóki decyzja nie zapadnie, i to jest zachowanie zgodne z CR (specjalna akcja
+żąda priorytetu, a priorytetu nie ma przy wiszącej decyzji). Zgłoszenie detektora
+„brak opcji obrotu" przy otwartym `resolve_*` to nie błąd UI — zanim raportować,
+sprawdź, czy panel nie czeka na inny wybór.
+
+Talia nie musi mieć 60 kart (partia skończy się na pustej bibliotece — dla
+audytu etykiet to bez znaczenia), ale musi dawać rozegranie mechaniki
+w pierwszych turach: u nas 2× Veiled Ascension + 8 Plains/4 Island, dzięki
+czemu na wierzchu biblioteki leżał LĄD — a zakryty ląd (CR 701.56a) to
+przypadek, którego testy jednostkowe nie pokrywały i który obnażył F6b.
+
+Krótka talia to przy okazji **test brzegów biblioteki** i warto ją taką zrobić:
+20-kartowa talia manifestowa (seed 4001) doprowadziła do stanu „na wierzchu
+jedna karta", w którym partia wisiała — i to znalazł F12 (M335), a nie 4618
+testów jednostkowych. Cena: przy wyczerpanej bibliotece detektory zgłaszają
+RÓWNIEŻ `[ui] Jedyna opcja to „Poddaj partię"` i `[rules] Komenda gracza
+odrzucona przez engine` — trzeba je triażować (sprawdzić, czy tło jest
+regulowe), a nie odsiewać hurtowo. Po usunięciu pliku zrób `npm run build`:
+lista talii jest wpięta w artefakt, więc `dist/` do przebudowania nadal
+wystawia talię, której nie ma już w repo.
+
 ### Jak czytać transkrypt
 
 ```

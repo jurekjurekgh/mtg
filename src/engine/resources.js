@@ -870,7 +870,8 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // = dwa pipy białe); walidacja dotyczy całej sumy PRZED mutacją.
   const kickerPips = (kicker?.colors ?? []).map((color) => [color]);
   const offspringRequirements = (offspringPaid?.colors ?? []).map((color) => [color]);
-  // Morph face-down (CR 702.36): koszt {3} jest BEZBARWNY — pipy karty nie
+  // Morph face-down (CR 702.37a — „no mana cost", {3} jako koszt
+  // alternatywny; 702.36 to Fear): koszt {3} jest BEZBARWNY — pipy karty nie
   // obowiązują (root cause: face-down Monastery Flock wymagał {U} z powodu
   // pipów karty; cicha zła płatność w consumeManaPool to maskowała).
   // Plot – rzut bez kosztu many – nie ma też wymagań kolorowych (CR 702.136).
@@ -941,6 +942,16 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // obrócenia twarzą do góry (deskryptor budowany bez importu abilities.js,
     // żeby nie tworzyć cyklu abilities -> resources -> abilities).
     patch.faceDown = true;
+    // M333 (F6c): PRZYCZYNA zakrycia jest informacją jawną (CR 708.6 + ruling
+    // WotC 2024-02-02 o rozróżnialności zakryć), a rzut twarzą w dół oferuje
+    // wyłącznie keyword morph/megamorph — 702.37 i 702.37b mówią, że megamorph
+    // jest WARIANTEM morpha (ten sam kształt 2/2, różni się obrotem: licznik
+    // +1/+1), więc obie ścieżki dzielą przyczynę 'morph'. Wyprowadzamy ją z
+    // DESKRYPTORA karty, nie z nazwy ani z kształtu obiektu (ADR 0002): jeśli
+    // kiedyś dojdzie nowe keyword ability pozwalające grać twarzą w dół, jego
+    // własna ścieżka ustawi własną przyczynę (strażnik m333/D pilnuje, żeby
+    // żaden punkt tworzący zakryty permanent nie został bez przyczyny).
+    patch.faceDownCause = object.morph ? 'morph' : null;
     patch.abilities = faceDownAbilities(object);
     // Root cause (Batch 24 — Willbender): face-down ZASTĘPUJE abilities
     // flip-ability; bez zachowania oryginału stwór po obrocie NIE MA swoich
@@ -956,6 +967,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // karty, a efekty patrzące na podtyp/mana value widziały wartości spod
     // rewersu. Oryginał chowamy obok abilities i przywracamy przy obrocie.
     patch.faceDownOriginal = Object.freeze({
+      // M333: migawka niesie TEŻ ward (jak cloak u 701.56a i manifest) —
+      // obrót przywraca drukowany ward, a zakryty go nie ma (CR 708.2a).
+      ward: object.ward ?? null,
       colors: Object.freeze([...(object.colors ?? [])]),
       subtypes: Object.freeze([...(object.subtypes ?? [])]),
       types: Object.freeze([...(object.types ?? [])]),
@@ -969,6 +983,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     patch.keywords = [];
     patch.manaCost = 0;
     patch.cardName = null;
+    patch.ward = null;
   }
   // Ile many ze Skarba wydano na TEN rzut (Marut, CR: „if mana from a
   // Treasure was spent to cast it"). spendMana zużywa mana Skarbową jako
@@ -1017,7 +1032,8 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // Fakt płatności Skarbem (jawny w logu: ile jednostek many pochodziło
     // ze Skarbów) — trigger Maruta czyta tę samą liczbę z obiektu.
     manaFromTreasureSpent: treasureSpent,
-    // Face-down permanent jest bezbarwny (CR 702.36) — nie jest „białym czarem".
+    // Face-down permanent jest bezbarwny (CR 702.37a — brak kosztu many) —
+    // nie jest „białym czarem".
     colors: faceDown ? [] : [...(object.colors ?? [])],
   });
   state.events.push(e);
@@ -1326,14 +1342,20 @@ export function legalAuraCasts(state, playerId) {
 
 /**
  * Zdolność obrócenia twarzą do góry dla face-down permanentu.
- * Megamorph (CR 702.109) kładzie przy obrocie licznik +1/+1; zwykły morph
+ * Megamorph (CR 702.37b — wariant morpha, nie osobny numer: 702.109 to
+ * Exploit) kładzie przy obrocie licznik +1/+1; zwykły morph
  * (CR 702.37, Woolly Loxodon) obraca kartę za koszt morph BEZ licznika.
  */
-function faceDownAbilities(object) {
+// M322 (audyt PR #102, F9): eksport — ścieżka `cloak` (effects.js) musi dać zakrytemu
+// permanentowi TE SAME zdolności co rzut twarzą w dół, bo CR 701.56c/d zostawia
+// przy cloaku procedurę obrotu za koszt morpha/disguise.
+export function faceDownAbilities(object) {
   if (!object.morph) return [];
-  // CR 702.36/702.37: koszt obrotu twarza do gory to koszt many z pipami
-  // kolorowymi (Morph {U}, Megamorph {6}{G}...) — deskryptor niesie colors;
-  // walidacja i oferta korzystaja z kolorowej puli (jak koszty czarow).
+  // Koszt obrotu twarzą do góry to koszt morpha z pipami KOLORU (deskryptor
+  // niesie colors: „Morph {5}{G}", „Megamorph {6}{G}"). CR 702.37a definiuje
+  // „Morph [koszt]", a 702.37e opisuje samą specjalną akcję obrotu (nie
+  // 702.36 — tam jest Fear). Walidacja i oferta korzystają z kolorowej puli
+  // tak jak koszty czarów.
   const morphColors = object.morph.colors ?? [];
   if (object.morph.megamorphCost != null) {
     return [Object.freeze({

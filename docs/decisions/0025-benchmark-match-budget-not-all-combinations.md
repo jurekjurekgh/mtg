@@ -35,7 +35,8 @@ dynamicznie do liczby talii** i mieścił uśredniony pomiar w ~10 minutach.
    | Talii | Wszystkich par | Granych par | Seedów | Meczów | Czas (~154 ms/mecz) |
    |---|---|---|---|---|---|
    | 6 | 21 | 21 | 47 | ~5 900 | ~15 min |
-   | 18 (dziś) | 171 | 171 | 5 | ~5 100 | ~13 min |
+   | 18 (stan z dnia decyzji) | 171 | 171 | 5 | ~5 100 | ~13 min |
+   | 19 (stan 2026-09-07, §Aktualizacja) | 190 | 190 | 5 | 5 700 | ~17 min |
    | 45 | 1 035 | 250 | 4 | ~6 000 | ~15 min |
    | 120 | 7 260 | 250 | 4 | ~6 000 | ~15 min |
 
@@ -49,10 +50,19 @@ dynamicznie do liczby talii** i mieścił uśredniony pomiar w ~10 minutach.
 5. **Jawne `--seeds` przesuwa środek ciężkości** (więcej seedów = mniej par
    talii), ale nigdy nie powiększa macierzy ponad budżet.
 6. **Worki nie wchodzą do macierzy** (`benchmarkDecks()`, ADR 0023 §5): pełny
-   profil bierze 18 talii jednoplanowych, nie 22 pliki z `decks/`.
+   profil bierze 18 talii jednoplanowych, nie 22 pliki z `decks/`
+   (stan z dnia decyzji; dziś 19 z 23 — §Aktualizacja).
 7. **Wyczerpująca macierz znika** — nie ma flagi, której nikt nie dogra.
    `BENCH_DECKS` (6 talii) zostaje próbką profilu SZYBKIEGO i testu regresji
    (672 mecze, bez zmian).
+
+## Aktualizacja liczb (2026-09-07, decyzja bez zmian)
+
+Pełna macierz dograna po raz pierwszy (`tools/b1-final-2026-09-07.txt`):
+19 talii → 190 par × 5 seedów × 2 strony × 3 pary botów = **5 700 meczów**
+(budżet mieści pełne pokrycie), 17,4 min, 0 zacinek; „niedokończone: 1" to
+remis (CR 104.3a). Liczby HELP-a przypięte do kodu testem `m338`. Kontekst:
+audyt PR #102 §8.
 
 ## Konsekwencje
 

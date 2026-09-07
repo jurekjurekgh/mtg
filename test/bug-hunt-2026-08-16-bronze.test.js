@@ -282,7 +282,7 @@ test('B6: Puppeteer Clique zachowuje „YOUR next end step" (nie odpala w turze 
 });
 
 // =============================================================================
-// B7 — obrót morpha twarzą do góry to AKCJA SPECJALNA (CR 702.36b):
+// B7 — obrót morpha twarzą do góry to AKCJA SPECJALNA (CR 702.37e):
 //      nie używa stosu i nie da się na niego odpowiedzieć
 // =============================================================================
 
@@ -318,11 +318,11 @@ test('B7 (strażnik): obrót morpha nie kładzie nic na stos i działa natychmia
   addMana(state, 'p1', 1, { colors: ['U'] });
   const flip = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'activate_ability' && c.objectId === 'flock');
-  assert.ok(flip, 'obrót jest oferowany (CR 702.36b — kiedy masz priorytet)');
+  assert.ok(flip, 'obrót jest oferowany (CR 702.37e — kiedy masz priorytet)');
   const result = execute(state, flip);
   assert.ok(result.ok, `obrót przyjęty: ${result.events?.[0]?.reason ?? ''}`);
   assert.equal(state.zones.stack.length, 0,
-    'CR 702.36b: obrót twarzą do góry NIE używa stosu');
+    'CR 702.37e: obrót twarzą do góry NIE używa stosu');
   assert.equal(state.objects.get('flock').faceDown, false,
     'permanent jest odwrócony natychmiast — przeciwnik nie ma okna odpowiedzi');
   assert.equal(effectiveToughness(state.objects.get('flock'), state), 5, 'po obrocie widać statystyki karty (0/5)');
