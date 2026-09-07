@@ -12,7 +12,7 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
  * w działaniu bota". Od M315 oferta uncover istnieje (CR 701.56b, specjalna
  * akcja bez stosu, koszt = koszt many KARTY, po obrocie znika ward {2}), ale
  * bot miał ją zabetonowaną na NEVER. Wycena (M321): tylko w mainie, przy many,
- * gdy zysk (ciało ponad 2/2 + keywordy + trigger ETB) przebija koszt many +
+ * gdy zysk (ciało ponad 2/2 + keywordy (bez ETB, M342)) przebija koszt many +
  * flat za utratę ward. Słabe karty (2/2 za {1}) zostają zakryte — ward {2}
  * jest wart więcej niż ciało 2/2.
  */

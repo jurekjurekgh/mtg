@@ -102,3 +102,11 @@ Poprzedni przyrost M339 wypchnięty jako `5d81996` po 4640/4640 + build.
 E2/M341: F3 — premia za wygraną po przejrzeniu wszystkich ID. Cztery
 mutacyjne RED + dwie kontrole → 6/6; wraz z m336 i golden-masterem 18/18,
 bez zmiany fixture/progów. M340 wypchnięte jako `3a12df7` po 4647/4647 + build.
+
+E2/M342: F4 — usunięcie nieistniejącej premii ETB, korekta błędnej przesłanki
+m334/C. 3 RED→GREEN; rodzina z golden-masterem 16/16, bez regeneracji.
+M341 wypchnięte `3844ffb` po 4653/4653 + build.
+E3/rozpoznanie: trzy partie 10401–10403 zakończone (74/61/78 kroków, 0 flag),
+ale ręczny odczyt ujawnił F8: stary ogon logu i zła kolejność odrzuceń w
+samym testerze. Naprawa ekstraktora + powtórka A/B po E2; zakres dopisany
+przed implementacją narzędzia, nie nowa mechanika produktu.

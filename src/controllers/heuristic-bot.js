@@ -2294,17 +2294,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     switch (cmd.type) {
       case 'concede': return finish(NEVER);
-            // M315/M321 + M334 (CR 701.56b, 701.40b, 702.37e): rodzina OBROTÓW
+      // M315/M321 + M334 (CR 701.56b, 701.40b, 702.37e): rodzina OBROTÓW
       // twarzą do góry — cloak i manifest to TA SAMA decyzja („zapłać koszt
       // many karty, żeby odzyskać to, co leży pod zakryciem"), więc mają
       // JEDEN wspólny przypadek (L137: rodzina wyceniana w jednym miejscu,
       // inaczej kolejne okno decyzji dostaje `default: finish(0)`).
       case 'turn_cloak_face_up':
       case 'turn_manifest_face_up': {
-        // Wycena (M321 dla cloaka, M334 dla manifestu): tylko w mainie (poza
-        // mainem odsłonięcie nic nie zmienia — po deklaracji bloków ciało nie
-        // zdąży niczego obronić), tylko gdy stać (zapas liczony jak w M320 —
-        // ownOpenMana), a zysk (ciało ponad 2/2 + keywordy karty + trigger ETB)
+        // Konserwatywna polityka planowania M321/M334: tylko w mainie,
+        // tylko gdy stać (ownOpenMana). To nie ograniczenie reguł — obrót
+        // w walce może zmienić wynik, lecz ta wycena nie modeluje tego okna.
+        // Zysk (ciało ponad 2/2 + keywordy karty)
         // musi przebić koszt many I to, co zakrycie daje, a obrót zabiera.
         // Zero nazw kart (ADR 0002).
         const stepNow = view.turn?.step ?? '';
@@ -2323,8 +2323,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const bodyGain = Math.max(0, (coveredDef.power ?? 0) - 2) * 2
           + Math.max(0, (coveredDef.toughness ?? 0) - 2);
         const keywordBonus = Math.min(6, (coveredDef.keywords ?? []).length * 2);
-        const etbBonus = (coveredDef.abilities ?? []).some((a) => a?.type === 'triggered'
-          && a?.trigger?.event === 'enter_battlefield') ? 5 : 0;
+        // M342/F4: obrót nie jest wejściem na pole bitwy — żadnej premii
+        // ETB (ruling WotC 2024-02-02, Veiled Ascension).
         // Ile warda TRACI się na obrocie — liczone ze STANU, nie z mechaniki:
         // kwotę zakrycia niesie publiczne pole `ward` widoku (M258/F3,
         // CR 701.56a: cloak to 2/2 Z WARD {2}), a drukowaną kwotę karty
@@ -2336,10 +2336,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // by dzisiejszy cloak płacił −3, czyli dokładnie tyle, ile płacił przed
         // tą zmianą (zero dryfu wycen na karcie, którą mierzył benchmark).
         const lostWard = Math.max(0, (covered.ward ?? 0) - (coveredDef.ward ?? 0));
-        const uncoverValue = bodyGain + keywordBonus + etbBonus - uncoverCost - lostWard * 1.5;
+        const uncoverValue = bodyGain + keywordBonus - uncoverCost - lostWard * 1.5;
         return finish(uncoverValue > 0 ? uncoverValue : NEVER);
       }
-            case 'draw_card': return finish(100);
+      case 'draw_card': return finish(100);
       case 'play_land': return finish(90 + landPlayDelta(view, cmd.objectId));
       case 'tap_for_mana': {
         // Własne kroki początkowe/końcowe: mana wyparuje na końcu kroku,
