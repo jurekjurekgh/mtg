@@ -2339,6 +2339,15 @@ export function createSession(config) {
     'ability_activated', 'permanent_entered_battlefield', 'object_transformed',
   ]);
 
+  // E6/A2 (zgłoszenie właściciela, Moonscarred Werewolf s20603): transformacja
+  // PERMANENTU jest publiczna (CR 400.2 — twarz na polu bitwy widzi każdy:
+  // P/T, zdolności, daybound/nightbound) i zmienia ocenę pozycji, więc jest
+  // treścią panelu „Rozgrywka" NIEZALEŻNIE od okna botActing/stosu. Dotąd
+  // transform wilkołaka BOTA rozstrzygnięty po passie człowieka wypadał
+  // z noteBotMove (poza BOT_RESOLUTION_EVENTS), choć sam trigger się pokazywał
+  // — gracz widział skutek, nie widział transformacji.
+  const TRANSFORM_DIGEST_EVENTS = new Set(['object_transformed']);
+
   /** Zdarzenia, przy których warto pokazać ilustrację zagranej karty. */
   const BOT_MOVE_CARD_EVENTS = new Set([
     'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'trigger_target_required', 'trigger_target_resolved', 'trigger_resolved', 'modal_trigger_required', 'modal_trigger_resolved', 'optional_trigger_required', 'optional_trigger_resolved', 'mulligan_choice_resolved', 'mulligan_taken', 'mulligan_bottom_required', 'mulligan_bottom_resolved', 'game_started', 'regeneration_shield_added', 'permanent_regenerated', 'permanent_destroyed', 'cant_be_regenerated_set',
@@ -2346,6 +2355,9 @@ export function createSession(config) {
     // Zagranie lądu też pokazuje skan (zgłoszenie 2026-08-06: „zagrywa
     // Swamp" bez ilustracji) — landy podstawowe mają imageUri.
     'land_played',
+    // E6/A2: transform pokazuje NOWĄ twarz (publiczna, CR 400.2) — bez tego
+    // wpis „X przemienia się w Y" szedł bez miniatury nawet w oknie bota.
+    'object_transformed',
     // M89 (Curate modal): card_drawn z draw_cards efektu — modal ruchu
     // bota pokazuje dobraną kartę (gracz chce widzieć, co bot dobrał
     // z efektu czaru, np. Curate Surveil 2 + Draw 1).
@@ -2512,7 +2524,8 @@ export function createSession(config) {
     // i tak jest OCZEKUJĄCY (pokazuje się tylko razem z realną akcją).
     if (!botActing && e.type !== 'turn_started' && e.type !== 'game_started'
       && e.type !== 'step_advanced'
-      && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw) return;
+      && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw
+      && !TRANSFORM_DIGEST_EVENTS.has(e.type)) return;
     let text;
     // Nowa tura: nagłówek „Tura N — <gracz>". Zawsze (uwaga A).
     // M261 (korekta właściciela 2026-08-31): `turn_started` emituje engine
