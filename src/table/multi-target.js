@@ -62,6 +62,16 @@ export function multiTargetPlanOf(commands) {
     for (const id of cmd.targets) if (!targets.includes(id)) targets.push(id);
   }
 
+  // M328 (audyt PR #102, F8): `targetSlotsOf` przechodzi po WSZYSTKICH
+  // wariantach i pozycjach, a tu wołano go trzy razy pod rząd (raz dla pola
+  // `slots`, dwa dla `slotOptional`) — trzykrotna praca przy każdym
+  // zbudowaniu planu, przy czym dwa wywołania liczyły DOKŁADNIE to samo.
+  // Jedno wyliczenie, jedno źródło wartości (L41).
+  const slots = targetSlotsOf(list, sizes);
+  const slotOptional = slots
+    ? [...slots.keys()].map((i) => list.some((cmd) => cmd.targets[i] == null))
+    : null;
+
   return {
     targets,
     minTargets: Math.min(...sizes),
@@ -71,15 +81,13 @@ export function multiTargetPlanOf(commands) {
     xMax: hasX ? xValues[xValues.length - 1] : null,
     // M207: rozbicie na POZYCJE CELU (patrz `targetSlotsOf`) albo null, gdy
     // czar bierze jednorodną listę („dowolna liczba celów").
-    slots: targetSlotsOf(list, sizes),
+    slots,
     // F3 (Żywy Tester, sesja 01a07711): pozycja OPCJONALNA („up to one target",
     // B45/9 — Assert Perfection) bywa w komendach silnika `null` na tej pozycji.
     // Deskryptor czytany z KOMEND (silnik = źródło prawdy), nie z karty —
     // kreator i tak nie zna rejestru. Pozycja opcjonalna bez zaznaczenia
     // mapuje się w kreatorze na ten właśnie wariant `null`.
-    slotOptional: targetSlotsOf(list, sizes)
-      ? [...targetSlotsOf(list, sizes).keys()].map((i) => list.some((cmd) => cmd.targets[i] == null))
-      : null,
+    slotOptional,
     // Wspólne pola komendy — UI potrzebuje ich do opisu (nazwa karty, tryb).
     objectId: list[0].objectId,
     type: list[0].type,
