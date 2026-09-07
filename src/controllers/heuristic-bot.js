@@ -2309,6 +2309,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           modeScore += 8;
         }
       }
+      // E2/A (plan 2026-09-07): tryb z CELEM — dotąd modeScore był wspólny dla
+      // wszystkich kandydatów i wybór celu spadał na kolejność oferty (pump
+      // wzmacniał stwora PRZECIWNIKA, gdy stał pierwszy na polu). Znak efektów
+      // trybu rozstrzygają wspólne tablice kar (L41: jedno źródło prawdy o
+      // celu — jak przy cast_spell): wrogi efekt we własne rzeczy i przyjazny
+      // efekt we wroga są karane (M121/M179).
+      if (cmd.targetId != null) {
+        const targetObj = objectOnBoard(view, cmd.targetId);
+        modeScore -= selfHarmPenalty(view, modeEffects, cmd, targetObj);
+        modeScore -= friendlyMisaimPenalty(view, modeEffects, cmd, targetObj);
+      }
       return finish(modeScore);
     }
     switch (cmd.type) {
@@ -2382,6 +2393,38 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         score -= freeCastTargetPenalty(view, effects, cmd);
         return finish(score);
+      }
+      case 'resolve_optional_draw': {
+        // E2/A (plan 2026-09-07, M67/Force Away): ferocious „you may draw a
+        // card. If you do, discard a card." — dotąd default 0 i PIERWSZA oferta
+        // draw:false: bot nigdy nie dobierał. Kantryp (dobierz, odłóż
+        // najgorszą) podnosi jakość ręki — wartość jak mały cantrip; odmowa
+        // zostaje poniżej. Wyjątek CR 104.4c: przy PUSTEJ bibliotece dobrowolne
+        // dobranie to przegranie partii SBA — odmowa obowiązkowa.
+        if (!cmd.draw) return finish(view.zones.library.length === 0 ? 0 : -2);
+        if (view.zones.library.length === 0) return finish(-100);
+        return finish(5);
+      }
+      case 'resolve_damage_target': {
+        // E2/A (plan 2026-09-07, M66/Stomping Slabs): „any target" — dotąd
+        // default 0 i cel z KOLEJNOŚCI ofert (pierwszy kandydat mógł być
+        // własny stwór). Jedno źródło prawdy o celu obrażeń (L41): wspólny
+        // damageTargetValue z czarami i zdolnościami (dobicie gracza = 1000,
+        // własne rzeczy = zakaz, stwór wg tego, czy ginie).
+        const amount = view.pendingDamageTarget?.amount ?? 0;
+        return finish(damageTargetValue(view, cmd.targetId, amount));
+      }
+      case 'resolve_hand_creature': {
+        // E2/A (plan 2026-09-07, Dragon Arch): darmowe wyłonienie
+        // wielokolorowego stwora z ręki („you may") — dotąd default 0 i
+        // PIERWSZA oferta była ODMOWĄ (targetId:null), więc bot nigdy nie
+        // korzystał. Wycena jak ciało rzucanego stwora (P.creatureBase + P/T),
+        // bo koszt = 0; odmowa przepada.
+        if (cmd.targetId == null) return finish(-4);
+        const card = (view.zones.hand ?? []).find((o) => o.id === cmd.targetId);
+        if (!card) return finish(0);
+        const body = (card.power ?? 0) * P.creaturePowerWeight + (card.toughness ?? 0) * P.creatureToughnessWeight;
+        return finish(P.creatureBase + body);
       }
       case 'resolve_rebound_cast': {
         // Rebound (CR 702.97): jednorazowa decyzja na początku następnego
