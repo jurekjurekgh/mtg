@@ -7707,6 +7707,24 @@ export function playerView(state, playerId) {
     pendingDamageTarget: pendingDamageTargetView, pendingRevealOrder: pendingRevealOrderView,
     pendingRedirectChoice: pendingRedirectChoiceView,
     pendingIndex: pendingIndexView,
+    // E2/C (plan 2026-09-07): decyzje destroy_equipment i moonlit są decyzjami
+    // KONTROLERA efektu, a ich dane (gospodarz na polu bitwy / pierwowzór
+    // kopii) są informacją publiczną — wystawiamy je TYLKO decydentowi
+    // (wzorzec pendingHandTopChoice), żeby bot mógł je wycenić (L48: oferta
+    // = walidacja — wycena czyta to samo, co komenda rozstrzyga).
+    pendingDestroyEquipment: (state.pendingDestroyEquipment
+      && state.pendingDestroyEquipment.playerId === playerId)
+      ? { targetId: state.pendingDestroyEquipment.targetId }
+      : null,
+    pendingMoonlitChoice: (state.pendingMoonlitChoice
+      && state.pendingMoonlitChoice.playerId === playerId)
+      ? {
+          enchantedId: state.pendingMoonlitChoice.enchantedId,
+          amount: state.pendingMoonlitChoice.effect?.amount ?? 1,
+          tokenPower: state.pendingMoonlitChoice.effect?.power ?? 1,
+          tokenToughness: state.pendingMoonlitChoice.effect?.toughness ?? 1,
+        }
+      : null,
     pendingOptionalDraw: state.pendingOptionalDraw ? {
       playerId: state.pendingOptionalDraw.playerId,
       sourceCardId: state.pendingOptionalDraw.sourceCardId,

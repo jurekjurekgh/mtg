@@ -2394,6 +2394,102 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score -= freeCastTargetPenalty(view, effects, cmd);
         return finish(score);
       }
+      case 'resolve_look_top_choice': {
+        // E2/C (plan 2026-09-07, Gurmag Drowner): JEDNĄ kartę z wierzchu
+        // bierzemy do ręki (reszta do grobu/spodu) — bierzemy najcenniejszą
+        // (cardKeepValue, wspólna miara kart z manifest_dread/discard), nie
+        // pierwszą z listy.
+        const card = decisionCandidateCard(view, cmd.cardId);
+        if (!card) return finish(0);
+        return finish(cardKeepValue(view, card));
+      }
+      case 'resolve_hand_top_choice': {
+        // E2/C (plan 2026-09-07, Chittering Rats): decydent odkłada kartę
+        // z WŁASNEJ ręki na WIERZCH własnej biblioteki — wróci przy najbliższym
+        // dobraniu, więc na wierzch idzie NAJCENNEJSZA (+cardKeepValue).
+        // Dotąd default 0 i kolejność ofert od najtańszej.
+        const card = handCard(view, cmd.cardId);
+        if (!card) return finish(0);
+        return finish(cardKeepValue(view, card));
+      }
+      case 'resolve_reveal_exile_grave': {
+        // E2/C (plan 2026-09-07, Dreams of Steel and Oil, M69): wybieramy
+        // kartę z GROBU PRZECIWNIKA do wygnania (grób = strefa jawna, CR 400.2)
+        // — wygnaj najcenniejszą (ucina recursję); brak kandydatów = oferta
+        // null. Lusterko resolve_reveal_exile_hand (ten sam efekt, inna strefa).
+        if (cmd.cardId == null) return finish(0);
+        const card = decisionCandidateCard(view, cmd.cardId);
+        if (!card) return finish(0);
+        return finish(10 + cardKeepValue(view, card));
+      }
+      case 'resolve_destroy_equipment_choice': {
+        // E2/C (plan 2026-09-07, Awaken the Sleeper): „you may destroy all
+        // Equipment attached". Liczy się KTO KONTROLUJE SPRZĘT, nie gospodarz:
+        // po Awaken przejęty stwór wroga nosi JEGO miecz (pin właściciela
+        // m257r5b/C2) — zniszczenie odbiera wrogowi ekwipunek, choć gospodarz
+        // jest nasz. Załączniki są publiczne (attachedTo w widoku, CR 400.2).
+        const hostId = view.pendingDestroyEquipment?.targetId;
+        if (hostId == null || !objectOnBoard(view, hostId)) return finish(cmd.destroy ? 0 : 0);
+        const enemyGear = (view.zones.battlefield ?? []).some((o) => o.attachedTo === hostId
+          && o.controllerId !== view.playerId);
+        if (cmd.destroy) return finish(enemyGear ? 8 : -8);
+        return finish(enemyGear ? -2 : 1);
+      }
+      case 'resolve_land_type_choice': {
+        // E2/C (plan 2026-09-07, Unstable Frontier): podstawowy typ pod
+        // potrzeby RĘKI — dokładnie ta sama miara pipów co
+        // resolve_color_choice (jeden mianownik, L41/L137).
+        const LAND_COLORS = { Plains: 'W', Island: 'U', Swamp: 'B', Mountain: 'R', Forest: 'G' };
+        const color = LAND_COLORS[cmd.landType];
+        if (!color) return finish(0);
+        const available = new Map();
+        for (const o of (view.zones.battlefield ?? [])) {
+          if (o.controllerId !== view.playerId) continue;
+          for (const c of getSourceForObject(o, null)?.colors ?? []) {
+            available.set(c, (available.get(c) ?? 0) + 1);
+          }
+        }
+        const need = new Map();
+        for (const o of view.zones.hand ?? []) {
+          if (!o || o.kind === 'land' || o.id == null) continue;
+          for (const jednostka of coloredPipsOf(o.cardId)) {
+            if (jednostka.some((k) => (available.get(k) ?? 0) > 0)) continue;
+            for (const k of jednostka) need.set(k, (need.get(k) ?? 0) + 1);
+          }
+        }
+        return finish((need.get(color) ?? 0) * 6);
+      }
+      case 'resolve_moonlit_choice': {
+        // E2/C (plan 2026-09-07, Moonlit Meditation, Temat 9): „instead create
+        // copies" opłaca się, gdy pierwowzór ma większe ciało niż zwykłe
+        // tokeny efektu; kwota nie-liczbowá (commander_casts) = zostaw zwykłe
+        // tokeny (handler liczy wtedy zero kopii).
+        const pending = view.pendingMoonlitChoice;
+        if (!pending || !Number.isInteger(pending.amount)) {
+          return finish(cmd.replace ? 0 : 1);
+        }
+        const enchanted = objectOnBoard(view, pending.enchantedId);
+        const copyBody = (enchanted?.power ?? 0) * P.creaturePowerWeight
+          + (enchanted?.toughness ?? 0) * P.creatureToughnessWeight;
+        const plainBody = (pending.tokenPower ?? 1) * P.creaturePowerWeight
+          + (pending.tokenToughness ?? 1) * P.creatureToughnessWeight;
+        const delta = copyBody - plainBody;
+        return finish(cmd.replace ? delta : -delta);
+      }
+      case 'cast_adventure_creature': {
+        // E2/C (plan 2026-09-07, CR 715.3a): strona-stwora przygody z EXILE za
+        // pełny koszt — dotąd default 0 (remis z pasem, wybór z kolejności).
+        // Wycena jak rzut stwora (ciało + bonus ETB jak w warp); koszt
+        // rozlicza silnik (oferta = walidacja, L48).
+        const card = (view.zones.exile ?? []).find((o) => o.id === cmd.objectId)
+          ?? zoneCard(view, cmd.objectId);
+        if (!card) return finish(0);
+        let score = P.creatureBase + (card.power ?? 0) * P.creaturePowerWeight
+          + (card.toughness ?? 0) * P.creatureToughnessWeight;
+        const def = card.cardId ? cardDef(card.cardId) : undefined;
+        if ((def?.abilities ?? []).some((a) => a?.trigger?.event === 'enter_battlefield')) score += 5;
+        return finish(score);
+      }
       case 'resolve_optional_draw': {
         // E2/A (plan 2026-09-07, M67/Force Away): ferocious „you may draw a
         // card. If you do, discard a card." — dotąd default 0 i PIERWSZA oferta
