@@ -6117,8 +6117,15 @@ export function playerView(state, playerId) {
     // permanents and/or players" — podzbiory kandydatów (permanenty z
     // licznikami + gracze z poison). Przy dużych pulach ograniczamy enumerację
     // (jak combat options): pełne podzbiory do 6 kandydatów, wyżej warianty
-    // wszystkie/pojedyncze/puste. Pierwsza oferta = WSZYSTKO (deterministyczny
-    // wybór botów — proliferacja wszystkiego).
+    // wszystkie/pojedyncze/puste.
+    // M336 (sonda na `courage-in-crisis`, nie lektura komentarza): PIERWSZA
+    // oferta jest PUSTA, bo `subsets()` wylicza od najuboższych. Dawniej stało
+    // tu „pierwsza oferta = WSZYSTKO (deterministyczna polityka botów)" — i to
+    // była NIEPRAWDA, nie tylko nieaktualność: gdyby ktoś dopasował kod do
+    // tego zdania, boty proliferowałyby WSZYSTKO, czyli własne liczniki -1/-1
+    // i własną truciznę (przy 9 = przegrana partii). Decyzja nie może zależeć
+    // od kolejności enumeracji — bot ją wycenia (`resolve_proliferate`
+    // w scoreCommand), a ten komentarz tylko opisuje, co widzi gracz.
     const cands = state.pendingProliferate.candidateIds ?? [];
     const subsets = (arr) => {
       if (arr.length === 0) return [[]];

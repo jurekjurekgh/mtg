@@ -2,6 +2,7 @@ import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
 import { coloredPipsOf } from '../engine/mana-cost.js';
+import { POISON_LOSS_LIMIT } from '../engine/state-based.js';
 import { COMMAND_TYPES } from '../protocol/types.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { probAtLeastOne } from '../engine/hypergeom.js';
@@ -4764,7 +4765,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return sum + (hasKeyword(o, 'infect') ? (o.power ?? 0) : 0);
         }, 0);
         const penetratingInfect = Math.max(0, infectTotalPower - blockerAbsorb);
-        if (attackers.length > 0 && enemyPoison < 10 && penetratingInfect >= 10 - enemyPoison) score += 1000;
+        if (attackers.length > 0 && enemyPoison < POISON_LOSS_LIMIT
+          && penetratingInfect >= POISON_LOSS_LIMIT - enemyPoison) score += 1000;
         // Zegar (B1): gramy o czas, gdy wróg jest blisko śmierci, może nas
         // zabić w następnej turze albo nasza biblioteka się kończy — wtedy
         // atakujemy nawet kosztem wymiany. (strażnik „> 0" odróżnia realną
@@ -5501,6 +5503,60 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // której strata MNIEJ boli (gorsza), żeby zachować wartościową na potem.
       // Face-down 2/2 jest w 100% wymienny niezależnie od karty pod spodem
       // (dopóki jej nie odwrócimy), więc decyzja = „która karta może spaść".
+      // M336 (klasa L133 — decyzja bez wyceny): Proliferate (CR 701.27) to
+      // wybór DOWOLNEJ liczby permanentów i/lub graczy z licznikami, więc
+      // silnik enumeruje PODZBIORY. Pusty wariant jest pierwszy (zmierzone
+      // sondą na `courage-in-crisis`; komentarz w grze mówił odwrotnie —
+      // też poprawione), a bez wyceny bot brał dokladnie to: pusty zbiór
+      // ZAWSZE. Skutek mierzony w czterech pozycjach:
+      //   • własny stwór z +1/+1 → przepuszczony darmowy licznik,
+      //   • przeciwnik przy 9 truciznach → przepuszczona WYGRANA partia,
+      //   • własne 9 trucizen → „przypadek bezpieczny" (bot nie wybrał NICZEGO,
+      //     nie dlatego że policzył) — ta ślepota wraca, gdy tylko ktoś
+      //     zmieni kolejność ofert,
+      //   • własny -1/-1 → słusznie nic, też przypadkiem.
+      // Wycena = suma delt po celach WYBRANYCH w wariancie, więc pusty zbiór
+      // ma 0 i jest górną granicą dla wszystkiego, co szkodliwe: bot nie musi
+      // zgadywać polityki z kolejności enumeracji (L41).
+      case 'resolve_proliferate': {
+        const ids = cmd.targetIds ?? [];
+        if (ids.length === 0) return finish(0);
+        let suma = 0;
+        for (const id of ids) {
+          const player = (view.players ?? []).find((p) => p.id === id);
+          if (player) {
+            const poison = player.poison ?? 0;
+            if (id === view.playerId) {
+              // Własna dziesiąta trucizna to przegrana (CR 120.7, SBA) — cała
+              // decyzja jest do odrzucenia, nie do „przetargowania".
+              if (poison + 1 >= POISON_LOSS_LIMIT) return finish(NEVER);
+              suma -= 1;
+              continue;
+            }
+            if (poison + 1 >= POISON_LOSS_LIMIT) return finish(1000);  // ta sama skala co lethal ataku
+            suma += 1;
+            continue;
+          }
+          const permanent = objectOnBoard(view, id);
+          if (!permanent) continue;
+          const own = permanent.controllerId === view.playerId;
+          const tough = permanent.toughness ?? 0;   // WIDOKOWA = efektywna (CR 613)
+          for (const [kind, count] of Object.entries(permanent.counters ?? {})) {
+            if (!(count > 0)) continue;
+            if (kind === '+1/+1') suma += own ? 2 : -2;
+            else if (kind === '-1/-1') {
+              // dokładka może dobijać: przy efektywnej wytrzymałości 1 drugi
+              // -1/-1 to 0/0, czyli śmierć przy najbliższych SBA (CR 704.5a)
+              if (own) suma -= tough - 1 <= 0 ? 6 : 2;
+              else suma += tough - 1 <= 0 ? 4 : 2;
+            } else if (kind === 'loyalty') suma += own ? 1 : -1;
+            // inne liczniki zostają bez wagi: nie mamy reguły, która mówi, czy
+            // służą właścicielowi (L119 — nie dopisujemy wagi „na wszelki
+            // wypadek"; wariant i tak wygrywa przez to, że pusty ma zero)
+          }
+        }
+        return finish(suma);
+      }
       case 'resolve_manifest_dread': {
         const card = decisionCandidateCard(view, cmd.cardId);
         if (!card) return finish(0);

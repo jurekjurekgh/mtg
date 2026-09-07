@@ -7,6 +7,16 @@ import { effectiveAbilities } from './permanents.js';
 import { startEnginesFor } from './players.js';
 
 /**
+ * M336 (rodzina „10 trucizn = przegrana"): PRÓG. Cr 120.7/704.5bc — gracz
+ * z dziesięcioma lub więcej licznikami trucizny przegrywa przy najbliższym
+ * przebiegu akcji stanowych. Dawniej liczba żyła w dwóch miejscach (tutaj w
+ * SBA i u bota przy wycenie lethalnego ataku infect); licznik trucizny wraca
+ * też w decyzji `resolve_proliferate`, więc trzecie miejsce było pewne —
+ * stąd jedna eksportowana stała (L41: kopie się rozjeżdżają).
+ */
+export const POISON_LOSS_LIMIT = 10;
+
+/**
  * Regeneracja (CR 701.12): tarcza z efektu „regenerate" zastępuje następne
  * ZNISZCZENIE permanentu w tej turze — zamiast śmierci: odtappowanie,
  * zdjęcie wszystkich obrażeń, usunięcie z walki i zużycie tarczy. Chroni
@@ -136,7 +146,7 @@ export function runStateBasedActions(state) {
     const losers = [];
     for (const player of state.players) {
       const isZeroLife = player.life <= 0;
-      const isPoisoned = (player.poison ?? 0) >= 10;
+      const isPoisoned = (player.poison ?? 0) >= POISON_LOSS_LIMIT;
       // M202 (CR 704.5m): gracz, który od ostatniego przebiegu akcji stanowych
       // próbował dobrać kartę z pustej biblioteki, przegrywa. Rozstrzygamy to
       // TUTAJ, razem z życiem i trucizną, bo dopiero wtedy wiadomo, czy
