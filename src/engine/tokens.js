@@ -78,26 +78,17 @@ export function nextCopyNumber(state, name) {
 }
 
 /**
- * M319/NA1: kolejny numer STAŁEJ kopii zakrytego cloak-a (CR 701.56 +
- * ruling WotC 2024-02-02 o rozróżnialności zakryć) —
- * „Nazwa (Cloak N)" w etykietach celów, tak jak „Nazwa (kopia N)" dla
- * tokenów-kopii (M172/D). Liczymy ŻYWE zakryte cloak-i TEGO Kontrolera
- * o tym cardId (tożsamość cloak-a zna tylko kontroler — CR 708.6), żeby
- * numery nie przeciekały między graczami. Numer znika przy uncover
- * (game-state turn_cloak_face_up), więc nie zaśmieca face-up kart.
+ * M339/F1: jawny znacznik zakrycia nie może zależeć od ukrytego cardId.
+ * Numerujemy żywe cloaki na CAŁYM stole: gracz może obserwować kolejność
+ * wejść (CR 708.6), ale nie to, czy pod dwoma rewersami jest ta sama karta.
+ * Wspólna numeracja zachowuje rozróżnialność także po zmianie kontroli.
+ * Obrót usuwa numer w turnFaceUp; pozostałych obiektów nie przenumerowujemy.
  */
-export function nextFaceDownCopyNumber(state, controllerId, cardId) {
+export function nextFaceDownCopyNumber(state) {
   let max = 0;
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
-    // M332 (audyt PR #102, F6b): liczymy WSZYSTKIE zakrycia z cloaka, nie te
-    // z prawem obrotu. `cloakReady` znaczy „pod spodem jest karta stworu",
-    // więc dwa zakryte LĄDY (701.56a: ląd z cloaka też jest 2/2 twarzą w dół,
-    // tylko nie ma za co go obrócić) dostawały ten sam numer i w logu, i na
-    // kaflu były nierozróżnialne — a ruling WotC 2024-02-02 wymaga, żeby
-    // zakrycia dało się rozróżniać. Przyczyna jest od M326 jawnym polem.
-    if (object?.faceDown && object?.faceDownCause === 'cloak' && object?.copyNumber > 0
-      && object?.controllerId === controllerId && object?.cardId === cardId) {
+    if (object?.faceDown && object.faceDownCause === 'cloak' && object.copyNumber > 0) {
       max = Math.max(max, object.copyNumber);
     }
   }

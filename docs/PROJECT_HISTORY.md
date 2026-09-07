@@ -9062,3 +9062,50 @@ Start: `npm test` 4608/4608; koniec: **4618/4618**, build 59 modułów /
 - Dokumentacja: §8 audytu PR #102, notka o bramce M337 w `TESTER_STOLU.md`,
   kondensacja rejestru LESSONS (L131/L124/L136 → archiwum PRZYPADKI, budżet
   startowy 99 946/100 000).
+
+
+## Sesja arena/01a07b98 — audyt PR #103, M339–M348, PR #104 (2026-09-07)
+
+Plan `docs/plans/PLAN_2026-09-07-audyt-pr103-petla-jakosci.md` (`d389d15`)
+opublikowany przed kodem. Audyt 59 plików `dfbc39f..c9b884c`, 19 prób
+mutacyjnych istniejących strażników (`536c0cc`), raport
+`docs/audits/AUDYT_PR103_2026-09-07.md`. Zielona baza 4636/4636 nie wykrywała
+F1–F7; żywy tester dołożył F8–F10.
+
+| Commit | Przyrost |
+|---|---|
+| `5d81996` M339 | F1: jawna numeracja cloaków nie zależy od tajnego cardId; porównanie całych widoków FoW |
+| `3a12df7` M340 | F2: manifest udostępnia istniejącą procedurę morph/megamorph |
+| `3844ffb` M341 | F3: cała proliferacja oceniana przed premią za zwycięstwo |
+| `437cf27` M342 | F4: obrót nie wywołuje ETB; usunięty bonus i poprawiony błędny test m334/C |
+| `a659024` M343 | F5: SBA czeka na koniec pendingSpell, także pustego ogona; oba tory usuwania tokenów; korekta m336/E2 i pinu Rage of Purphoros |
+| `af0226f` M344 | F6: m337/C ma prawdziwy manifest i wykrywa brak bramki, nie tylko pin źródła |
+| `0f294d8` M345 | F7: HTTP 429/błędne data nie kasują rulingów; proweniencja pierwszej pustej listy |
+| `528e76e` M346 | F8: wspólna kolejność logu testera, właściwe odrzucenia, detektor starego ogona |
+| `2976a45` M347 | F9: koszt dodatkowy wygnania ≠ pusta cena; koszty panelu z pełnych rekordów okien |
+| `396431e` M348 | F10: logSystem zamiast wywołania tablicy log; kontynuacja nowej komendy po zamknięciu kreatora; runtime errors obserwowane od beforeParse |
+
+Każdy przyrost po fast + build, osobny commit i natychmiastowy push.
+Autoryzacja GitHub dwukrotnie zwróciła 401 przed commitami (M345/M348);
+właściciel odświeżył połączenie, sprawdzono OPEN i zgodność gałęzi przed
+publikacją. Bez resetu drzewa, force push, nowej gałęzi ani drugiego PR.
+
+Końcowy kod: fast **4695/4695** (+59), full **4705/4705**, build **59 modułów /
+3369,8 kB**, family-audit czysto. Quick po M343 **84,8% (570/672)**, aggro
+89/336, random 13/336 — bez dryfu; późniejsze zmiany tylko UI/narzędzia.
+Fixture wycen i progi bez regeneracji. **Pełnego B0 nie uruchamiano**,
+nie dodano kart/talii/limitacji Oracle. Pełny raport z #103 sprawdzono jako
+dane (570 komórek, zgodność agregatów i tekstu z JSON).
+
+Żywe A/B: M346 stary ogon 14 flag → 0 w obu trybach; M347 fałszywy koszt
+1→0 w verbose; M348 wyjątki 6→0 w obu trybach. Po wszystkim g1 explorer
+innistrad-wu|warhammer-ubr s10401, g2 defensive mirrodin-brg|zendikar s10402,
+g3 impatient warhammer-wg|wiedzmin s10403: partie ukończone, 0 wyjątków i
+flag (g3 także verbose). Po naprawie g3 kończy się 14/−5 zamiast 12/−1:
+kliknięcia nie przepadają w wyjątku. Transkrypty pozostają gitignorowane,
+dowody w audycie. jsdom nie zastępuje telefonu w ocenie layoutu/gestów.
+
+Dokumenty: aktualny README, handoff `HANDOFF_2026-09-07e.md`, L141 (pochodne
+sekretu też wymagają FoW), dopiski L12/L13/L138. Narracje L133/L135 do
+`LESSONS_PRZYPADKI.md` dla budżetu, bez utraty numerów i bez zmiany progu.
+PR #104 oddany do przeglądu; agent nie scala.

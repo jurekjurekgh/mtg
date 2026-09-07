@@ -109,13 +109,12 @@ test('M334/B: manifest słabej karty (2/1 Goblin Piker) — bot NIE płaci za de
 });
 
 test('M334/C: ta sama karta pod cloakiem i pod manifestem — różnicuje tylko utracony ward', () => {
-  // Wormfang Newt: ciało 2/2 (zysk 0), brak keywordów, trigger ETB (+5),
-  // koszt many 2 → wartość obrotu 3. Pod MANIFESTEM: 3 > 0 → odsłania.
-  // Pod CLOAKIEM: zakrycie daje ward {2} (CR 701.56a), więc obrót go zabiera
-  // i podatek 3 znosi decyzję do zera → zostaje zakryte (wycena z M321).
-  const manifest = botPlays({ mechanism: 'manifest', cardId: 'wormfang-newt' });
+  // M342/F4: poprzednia sonda Wormfang Newt wymagała nieistniejącego ETB.
+  // Garruk's Companion: 3/2 + trample, koszt {G}{G} → zysk 2.
+  // Manifest ma zysk dodatni; cloak traci ward {2} (kara 3) → zostaje zakryty.
+  const manifest = botPlays({ mechanism: 'manifest', cardId: 'garruks-companion' });
   assert.ok(manifest.uncovered, `manifest bez wardu do stracenia: ${manifest.applied.join(',')}`);
-  const cloak = botPlays({ mechanism: 'cloak', cardId: 'wormfang-newt' });
+  const cloak = botPlays({ mechanism: 'cloak', cardId: 'garruks-companion' });
   assert.ok(!cloak.uncovered, `ten sam tekst pod cloakiem płaci za ward: ${cloak.applied.join(',')}`);
 });
 
@@ -126,9 +125,9 @@ test('M334/D: bez many na koszt karty — żaden obrót nie jest oferowany', () 
   }
 });
 
-test('M334/E: poza główną faza (declare_blockers) — obrót nie jest wyceniany', () => {
+test('M334/E: poza mainem zachowujemy konserwatywną politykę obrotu', () => {
   const { uncovered, applied } = botPlays({ mechanism: 'manifest', cardId: 'plague-reaver', step: 'declare_blockers', moves: 4 });
-  assert.ok(!uncovered, `odsłonięcie po deklaracji bloków nie ratuje ciała; wykonał: ${applied.join(',')}`);
+  assert.ok(!uncovered, `ta heurystyka planuje obrót tylko w mainie; wykonał: ${applied.join(',')}`);
 });
 
 test('M334/F: rodzina ma JEDNO źródło wyceny — drugi typ decyzji nie wypadnie z switcha', () => {

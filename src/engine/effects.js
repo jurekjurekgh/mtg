@@ -175,7 +175,9 @@ export function manifestCardFaceDown(state, cardObjectId, controllerId) {
     keywords: [],
     manaCost: 0,
     cardName: null,
-    abilities: [],
+    // M340/F2, CR 701.40c: manifest zachowuje również procedurę morpha,
+    // tak jak cloak i rzut face-down. Nie są to drukowane zdolności 2/2.
+    abilities: faceDownAbilities(card),
     originalAbilities: card.abilities ?? [],
     faceDownOriginal: Object.freeze({
       colors: Object.freeze([...(card.colors ?? [])]),
@@ -1917,7 +1919,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // M319/NA1: stały numer kopii („Nazwa (Cloak N)" w celach/kaflach),
       // żeby kilka jednakowych zakrytych dało się rozpoznać — jak tokeny-kopie
       // (M172/D). Znika przy uncover (turn_cloak_face_up).
-      copyNumber: nextFaceDownCopyNumber(state, controllerId, topObj.cardId),
+      copyNumber: nextFaceDownCopyNumber(state),
     });
     state.objects.set(battleId, cloaked);
     // Veiled Ascension (MKC): „Face-down creatures you control enter with a

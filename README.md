@@ -33,11 +33,12 @@ choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdzia�
 na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
-Bieżący stan: **4574/4574 testów** (`test:all`; szybki rdzeń 4564/4564), artefakt **59 modułów / 3344,7 kB**. Szczegóły:
+Bieżący stan: **4705/4705 testów** (`test:all`; szybki rdzeń 4695/4695), artefakt **59 modułów / 3369,8 kB**. Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
-npm test          # node --test na test/**/*.test.js — bez DOM-u i sieci
+npm test          # szybki rdzeń (node tools/run-tests.mjs fast)
+npm run test:all  # pełna brama PR, łącznie z regresją bota
 npm run build     # skleja moduły w jeden plik HTML (dist/mtg-table.html)
 ```
 
@@ -200,7 +201,7 @@ zamknięty (heurystyka + modelowanie, harness B0, tune-bot), Etap 5 stołu zamkn
 (gra człowiek–bot na iPadzie przez Pages / file://).
 
 Kolejne kroki:
-1. **Batch 52** — kolejne karty z listy właściciela (Scryfall → definicje → testy → talie singleton → B0).
+1. **Kolejna lista kart od właściciela** — katalog nie rośnie bez niej (ADR 0029); numer nowego batcha wynika z aktualnego stanu projektu.
 2. Dalsze czyszczenie luk MtG z listy właściciela — każda karta 100% Oracle albo niewspierana (ADR 0022), bez specjalnych przypadków po nazwie (ADR 0002).
 3. Strojenie bota pod nowe mechaniki (Adventure/Kicker/Crew) i pętla jakości (Żywy Tester / zgodność CR); pełna macierz B0 tylko na komendę właściciela (ADR 0018).
 

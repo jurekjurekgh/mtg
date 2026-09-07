@@ -82,6 +82,15 @@ export function addRegenerationShield(state, objectId) {
 }
 
 /**
+ * M343/F5, CR 704.4: decyzja wewnątrz czaru nie otwiera okna na SBA.
+ * pendingSpell z pustym ogonem też oznacza trwające rozstrzyganie.
+ * Wspólna bramka dla tej funkcji i końcowego usuwania tokenów w accepted.
+ */
+export function stateBasedActionsOpen(state) {
+  return !state.pendingSpell && !state.pendingReplacementChoice;
+}
+
+/**
  * Centralne state-based actions — jedyne miejsce, które rozstrzyga przegraną
  * z powodu życia <= 0 oraz niszczenie stworów ze śmiertelnymi obrażeniami.
  * Wywoływane po każdej zaakceptowanej komendzie (game-state.js `accepted`)
@@ -99,7 +108,7 @@ export function runStateBasedActions(state) {
   // M202/odznaka #3 (CR 616.1): dopóki gracz nie rozstrzygnie wyboru efektu
   // zastępczego (tarcza albo regeneracja), nie przetwarzamy kolejnych akcji
   // stanowych — inaczej drugi przebieg rozstrzygnąłby za gracza.
-  if (state.pendingReplacementChoice) return events;
+  if (!stateBasedActionsOpen(state)) return events;
   // Batch 53 (Óin the Brave, HOB): Storied — etykieta `enduringStory` na
   // graczu ustawia się w AKCJI STANOWEJ (nie trigger, nie stos) i trwa do
   // końca gry. Sprawdzamy PRZED SBA, żeby trzeci permanent zdążył dać etykietę,

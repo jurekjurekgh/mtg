@@ -113,26 +113,47 @@ test('M337/B: WŁASNA czekająca decyzja zamyka akcje opcjonalne i wraca po jej 
   assert.ok(po.includes('pass_priority'), 'pass też wraca — bramka nie jest lepka');
 });
 
-test('M337/C: ta sama reguła dla manifestu (druga pętla face-up)', () => {
-  const state = gra();
-  put(state, 'md', 'manifest-dread', 'p1', 'hand');
-  for (const id of ['lib-a', 'lib-b']) put(state, id, 'razorfoot-griffin', 'p1', 'library');
-  state.zones.library = ['lib-a', 'lib-b'];
-  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'md');
-  assert.ok(cast, 'Manifest Dread do rzucenia');
-  assert.ok(execute(state, cast).ok, 'rzut przyjęty');
-  execute(state, { type: 'pass_priority', playerId: 'p1' });
-  execute(state, { type: 'pass_priority', playerId: 'p2' });
-  assert.ok(state.pendingManifestDread, 'decyzja manifestu czeka (dwie karty wierzchu)');
-  // DORZUCAMY własne scry — decyzja wciąż nasza, a i tak blokuje akcje opcjonalne.
-  put(state, 'va', 'veiled-ascension', 'p1');
-  applyEffect(state, { type: 'scry', amount: 1 }, state.objects.get('va'), []);
-  const oferty = types(playerView(state, 'p1'));
-  assert.ok(oferty.length > 0, `widok żywy: ${oferty.join(',')}`);
-  for (const zabronione of ['turn_manifest_face_up', 'turn_cloak_face_up', 'play_land', 'pass_priority']) {
-    assert.equal(oferty.includes(zabronione), false, `przy czekającej decyzji nie ma ${zabronione}: ${oferty.join(',')}`);
-  }
-});
+// M344/F6: poprzedni test czekał jeszcze na wybór Manifest Dread — nie miał
+// żadnego manifestu na stole i przechodził po usunięciu badanej bramki.
+for (const decisionOwner of ['p1', 'p2']) {
+  test(`M337/C: istniejący manifest — blokada i powrót przy decyzji ${decisionOwner}`, () => {
+    const state = gra();
+    put(state, 'md', 'manifest-dread', 'p1', 'hand');
+    for (const id of ['lib-a', 'lib-b', 'lib-c']) put(state, id, 'razorfoot-griffin', 'p1', 'library');
+    state.zones.library = ['lib-a', 'lib-b', 'lib-c'];
+    const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'md');
+    assert.ok(cast);
+    assert.ok(execute(state, cast).ok);
+    for (const playerId of ['p1', 'p2']) assert.ok(execute(state, { type: 'pass_priority', playerId }).ok);
+    const manifest = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_manifest_dread' && c.cardId === 'lib-a');
+    assert.ok(manifest);
+    assert.ok(execute(state, manifest).ok, 'NAJPIERW tworzymy zmanifestowany permanent');
+    const faceDown = state.zones.battlefield.map((id) => state.objects.get(id)).find((o) => o.faceDown && o.manifestReady);
+    assert.ok(faceDown);
+    const flip = playerView(state, 'p1').legalCommands.find((c) => c.type === 'turn_manifest_face_up' && c.objectId === faceDown.id);
+    assert.ok(flip, 'przed decyzją istnieje oferta — test nie może być próżny');
+
+    if (decisionOwner === 'p2') put(state, 'foe-lib', 'basic-island', 'p2', 'library');
+    applyEffect(state, { type: 'scry', amount: 1 }, { id: 'scry-probe', controllerId: decisionOwner });
+    assert.equal(state.pendingScry?.playerId, decisionOwner);
+    for (const playerId of ['p1', 'p2']) {
+      const offered = types(playerView(state, playerId));
+      for (const forbidden of ['turn_manifest_face_up', 'turn_cloak_face_up', 'pass_priority']) {
+        assert.equal(offered.includes(forbidden), false, `${playerId}: nie oferujemy ${forbidden} wewnątrz decyzji`);
+      }
+    }
+    const rejected = execute(state, flip);
+    assert.equal(rejected.ok, false, 'walidacja nadal odrzuca zapamiętaną ofertę');
+    assert.equal(state.objects.get(faceDown.id).faceDown, true);
+    const choice = playerView(state, decisionOwner).legalCommands.find((c) => c.type === 'resolve_scry');
+    assert.ok(choice);
+    assert.ok(execute(state, choice).ok);
+    const returned = playerView(state, 'p1').legalCommands.find((c) => c.type === 'turn_manifest_face_up' && c.objectId === faceDown.id);
+    assert.ok(returned, 'po decyzji oferta wraca');
+    assert.ok(execute(state, returned).ok);
+    assert.equal(state.objects.get(faceDown.id).faceDown, false);
+  });
+}
 
 test('M337/D: mecz z macierzy, który przerywał przebieg, dochodzi do końca', () => {
   // aggro(mirrodin-wu) vs random(ravnica), seed 1001 — dokładnie ten z logu

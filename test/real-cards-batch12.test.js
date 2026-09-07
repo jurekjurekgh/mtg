@@ -216,13 +216,14 @@ test('Rage of Purphoros: 4 obrażeń do stwora + Scry 1 (blokująca decyzja)', (
   addRealCard(state, 'lib1', 'basic-forest', 'p1', 'library');
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'rage', targets: ['en'] }).ok);
   const res = passBoth(state);
-  // 3/3 stwór bierze 4 obrażenia → ginie (SBA po komendzie).
+  // M343/F5, CR 704.4: 4 obrażenia są już zadane, ale SBA czeka na koniec scry.
   assert.ok(state.events.some((event) => event.type === 'damage_dealt' && event.target === 'en' && event.amount === 4));
-  assert.equal(state.objects.get('en'), undefined, '3/3 po 4 obrażeniach ginie');
+  assert.equal(state.objects.get('en')?.damage, 4, '3/3 pozostaje na polu podczas decyzji wewnątrz czaru');
   // Scry 1 jest ostatnim efektem — blokuje grę do resolve_scry.
   assert.ok(state.pendingScry, 'scry czeka na decyzję');
   assert.equal(state.pendingScry.objectIds.length, 1);
   assert.ok(execute(state, { type: 'resolve_scry', playerId: 'p1', bottomIds: [] }).ok);
+  assert.equal(state.objects.get('en'), undefined, '3/3 ginie od SBA po zakończeniu całego czaru');
   assert.equal(state.pendingScry, null);
   assert.ok(res.events.some((event) => event.type === 'scry_started'));
   // Regresja: scry jako OSTATNI efekt czaru musi dokończyć czar po decyzji —

@@ -23,7 +23,7 @@ import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, sus
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
-import { runStateBasedActions, tryRegenerate } from './state-based.js';
+import { runStateBasedActions, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities } from './attachments.js';
@@ -1382,9 +1382,12 @@ function accepted(state, cmd, result) {
   // Tokeny rozpoznajemy po cardId z prefiksem `token_` (tworzy je
   // createBattlefieldToken); karty (z Scryfall albo testowe) mają pełne
   // cardId jak „stomping-slabs" i pole `name` zostawiamy na nich.
-  const offBattlefieldTokens = [...state.objects.values()]
-    .filter((o) => typeof o.cardId === 'string' && o.cardId.startsWith('token_')
-      && o.name != null && o.zone !== 'battlefield');
+  // M343/F5: to także SBA — nie wolno omijać wspólnej bramki, gdy czar
+  // czeka na decyzję. Token znika dopiero po dokończeniu rozstrzygania.
+  const offBattlefieldTokens = stateBasedActionsOpen(state)
+    ? [...state.objects.values()].filter((o) => typeof o.cardId === 'string' && o.cardId.startsWith('token_')
+      && o.name != null && o.zone !== 'battlefield')
+    : [];
   if (offBattlefieldTokens.length > 0) {
     for (const token of offBattlefieldTokens) {
       // CR 704.5d (root cause Batch 24, ujawniony przez Moonlit Meditation +

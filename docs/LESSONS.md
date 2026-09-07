@@ -1079,7 +1079,11 @@ obszary sprawdzone i POPRAWNE.
 
 **Reguła (decyzja właściciela):** jeśli tester czegoś nie widzi albo nie
 obsługuje — POPRAWIAMY TESTER, nie akceptujemy braku. Zmiany w narzędziu idą
-tym samym rygorem co produkcja (test + opis w commicie).
+tym samym rygorem co produkcja (test + opis w commicie). Wyjątki JS i stderr
+nie mogą znikać za „partia ukończona / 0 flag”: obserwuj `error` i
+`unhandledrejection` od startu artefaktu, także w profilu impatient.
+Strażnicy M348: `test/table-tester-runtime-errors.test.js`, żywe A/B.
+
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L12)
 
@@ -1104,6 +1108,10 @@ tym samym rygorem co produkcja (test + opis w commicie).
 4. Gdy mutacja nie czerwieni, dane testu nie mają kształtu produkcyjnego —
    odtwórz je z REALNEGO artefaktu.
 5. „Przypięte testem" bez pomiaru przed/po = zdanie do sprawdzenia, nie fakt.
+6. Oczekiwanie testu też wymaga Oracle/CR. Usunięcie nieistniejącego ETB
+   czerwieniło m334/C, a m336/E2 wymagał SBA w środku czaru (PR #104).
+   Nie utrwalaj błędnej reguły tylko po to, żeby zachować zielony pin.
+
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L13)
 
@@ -2144,19 +2152,6 @@ FoW (widok wroga nie niesie kart).
 
 ## L133 (2026-09-06) — Detektor narzędzia nie może dublować scrapingu tekstu: strukturalny sygnał jest tańszy i nie milczy
 
-**Przypadek:** HANDOFF 2026-09-05e zgłaszał „pozorne timeouty" Żywego Testera
-(final-fantasy s41, worek-legend×theros s61, 90 s). W `run-game.mjs` koniec
-partii był wykrywany DWA RAZY przez osobne regexy od tekstu `#turn-indicator`:
-raz w gałęzi `res === 'none'` (z poprawką M209), raz w gałęzi „akcja się
-udała" — drugi nie miał odpowiednika i tam, gdzie wskaźnik nie nosił żadnego z
-wyrazów, pętla deptała do LIMITU KROKÓW, raportując zacięcie gry, która już
-się skończyła.
-
-**Przyczyna:** L34/L40 (tekst UI jest etykietą, nie kontraktem) + L41 (jedno
-źródło dla jednej reguły): sygnał stanu istniał (`state.status !== 'active'`),
-ale narzędzie wolało dopasowanie słów, a przy okazji skopiowało dopasowanie.
-Kopia dodana później (M209) nie spotkała się z oryginałem.
-
 **Reguła:** Narzędzia pętli jakości czytają stan przez mostek
 (`window.__mtgDebug`), tekst UI tylko jako fallback bez mostka. Jeśli skrypt
 czyta TEN SAM fakt z dwóch miejsc, drugie musi zniknąć albo wywoływać pierwsze.
@@ -2164,6 +2159,7 @@ czyta TEN SAM fakt z dwóch miejsc, drugie musi zniknąć albo wywoływać pierw
 **Strażnik:** partia z końcem w turze bota (`wyczerpanie biblioteki`) i partia
 wygrana przez gracza kończą się linią `== KONIEC PARTII ==` bez `LIMIT KROKÓW`
 i bez `[STOP]` (zmierzone w tej sesji: 4 partie, 0 zgłoszeń detektorów).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L133)
 
 ## L134 (2026-09-06) — Brak nośnika mechaniki NIE powodem poszerzania katalogu: talia jest wyprowadzona z katalogu
 
@@ -2190,17 +2186,6 @@ wstrzyknięcie `Stifle` do katalogu czerwieni testy 1, 3 i 5.
 
 ## L135 (2026-09-06) — Nowy KSZTAŁT komendy musi mieć obsługę u każdego konsumenta: silnik → kreator UI → sterownik testera
 
-**Przypadek:** Batch 45 dodał w silniku pozycję celu `optional: true` („up to one
-target", B45/9 — wariant z `null` na tej pozycji). Testy silnika zielone, ale kreator
-wielocelowy (M207, tryb pozycyjny) żądał nie-null w KAŻDYM slocie, a sterownik testera
-parsował tylko intro „zaznacz cele (N)" — partia Żywego Testera stanęła na 5 prób i
-throw; z panelu nie dało się zagrać wariantu 1-celowego, a przy zerze kandydatów na
-pozycji opcjonalnej w ogóle rzucić czaru (odchybka od Oracle w warstwie prezentacji).
-
-**Przyczyna:** rozszerzenie kształtu oferty (null w `targets[i]`) nie niesie zmiany u
-konsumentów — klasa L131 dotyczyła nowego TYPU komendy, tu nowy kształt istniejącego
-typu przeszedł przez siatkę testów, bo żadna z warstw nie miała testu na ten kształt.
-
 **Reguła:** dodając nowy kształt oferty w silniku, przejrzyj WSZYSTKICH konsumentów:
 kreator (`commandFor*`), sterownik testera (rozpoznawanie intro), wycena bota.
 Deskryptor kształtu czytaj z KOMEND silnika, nie z karty (`slotOptional` w planie).
@@ -2211,6 +2196,7 @@ zaznaczenia = wybór niekompletny (status „Brakuje" M200 wymienia tylko obowi�
 UI: wariant bez celu + anty-over-fix na obowiązkowych, pin przez realne
 `legalCommands`); sterownik testera mierzy partia z tym kreatorem (`== KONIEC PARTII`
 bez zgłoszeń detektorów, zmierzone).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L135)
 
 ## L136 (2026-09-07) — `git checkout <plik>` kasuje NIEZAKOMMITOWANE poprawki w tym pliku; scratch piaskownicy znika między turami
 
@@ -2269,6 +2255,11 @@ po jawnej przyczynie dla obu widzów).
 - nie maskować: sprzątanie osieroconego `pendingSpell` u konsumenta (pas,
   cleanup) ukryłoby każdy kolejny błąd tej klasy.
 
+Zatrzymane rozstrzyganie (`pendingSpell`, także `effects: []`) nie otwiera
+okna na SBA. Decyzja UI to nie oddanie priorytetu — M343, CR 704.4.
+Strażnik: `test/m343-sba-po-rozstrzygnieciu.test.js` (liczniki, życie,
+wytrzymałość i zanik tokenów przed/po końcu czaru).
+
 **Strażnik:** `test/m335-manifest-bez-wybory.test.js` A–D (D: liczba
 `return true` = liczba postawionych decyzji w gałęzi).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L138)
@@ -2296,3 +2287,14 @@ pending rozsypie którąś kopię (M337: padł cały B0). Zostań przy JEDNYM
 predykacie ze wspólnego źródła + strażnik źródła przeciw czwartej kopii.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L140)
 
+
+## L141 (2026-09-07) — Pochodna tajnej informacji też może ujawnić kartę
+
+**Reguła:** FoW obejmuje pochodne danych: numer grupy, liczność i kolejność,
+nie tylko samo `cardId`. Testuj CAŁY widok przeciwnika na stanach różniących
+się wyłącznie tajną tożsamością. Jawne znaczniki wyprowadzaj z jawnych faktów.
+M339: numery cloaków po cardId zdradzały równość zakrytych kart i tworzyły
+duplikaty etykiet dla różnych kart; teraz zależą od jawnych wejść na stół.
+
+**Strażnik:** `test/m339-cloak-numeracja-fow.test.js` — pełny widok dla czterech
+wariantów zakrytych kart, etykiety obu widzów, ciągłość po obrocie/przejęciu.

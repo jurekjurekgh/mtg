@@ -58,13 +58,16 @@ async function fetchRulings(set, number) {
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const body = await res.json();
-      return { url, data: body.data ?? [] };
+      // M345/F7: brak danych nie jest potwierdzoną pustą listą rulingów.
+      if (!Array.isArray(body?.data)) throw new Error('Odpowiedź rulingów nie zawiera tablicy data');
+      return { url, data: body.data };
     } catch (error) {
       if (attempt === 3) throw error;
       await new Promise((r) => setTimeout(r, 500 * attempt));
     }
   }
-  return { url: '', data: [] };
+  // Trzy odpowiedzi 429 wyczerpują retry, a nie uprawniają do skasowania danych.
+  throw new Error('HTTP 429: wyczerpano limit prób pobrania rulingów');
 }
 
 /** Normalizacja: zapisujemy tylko to, co czytają audyty (komentarz + źródło). */
@@ -117,12 +120,14 @@ if (process.argv[1] && process.argv[1].endsWith('fetch-card-rulings.mjs')) {
       continue;
     }
     const rulings = normalizeRulings(fetched.data);
-    // Pusta lista jest ZAPISYWANA (odróżnia „ściągnięto, brak rulingów" od
-    // „nigdy nie ściągnięto") — dlatego porównanie normalizuje nieobecność pola
-    // do [], inaczej narzędzie przepisywałoby plik przy każdym uruchomieniu.
+    // M345/F7: [] bez proweniencji to nie to samo co „pobrano, brak rulingów”.
+    // Pierwsze udane pobranie zapisujemy także wtedy, gdy lista jest pusta;
+    // późniejszy brak zmian nie reformatuje już potwierdzonego snapshotu.
     const przed = JSON.stringify(snapshot.rulings ?? []);
     const po = JSON.stringify(rulings);
-    if (przed === po) {
+    const hasProvenance = Array.isArray(snapshot.rulings)
+      && snapshot.rulingsSource === fetched.url && Boolean(snapshot.rulingsPobrano);
+    if (przed === po && hasProvenance) {
       console.log(`bez zmian  ${path.basename(file)} (${rulings.length} rulingów)`);
       continue;
     }

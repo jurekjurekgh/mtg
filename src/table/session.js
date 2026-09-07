@@ -2984,6 +2984,8 @@ export function createSession(config) {
       return card?.abilities ?? [];
     },
     log,
+    /** M348/F10: komunikat UI, bez podszywania się pod zdarzenie silnika. */
+    logSystem(text) { sessionLog('system', text); },
     reasoning,
     /** Istotne ruchy bota od ostatniego okna decyzji człowieka (M18). */
     botMoves,

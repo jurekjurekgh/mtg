@@ -1117,8 +1117,17 @@ export function detectGenericChoiceTitle(lines) {
  * kwota jest pusta — „(koszt )", „+ kicker )". Wariant z „?" łapie już
  * `detectRawText` (placeholder), ale pusty ciąg przechodził przez wszystko.
  */
-export function detectEmptyCostDescriptor(lines) {
+export function detectEmptyCostDescriptor(lines, { windowRecords = null } = {}) {
   const found = [];
+  // M347/F9: komplet etykiet panelu pochodzi z każdego okna, nie z poziomu
+  // logowania ani przyciętej/deduplikowanej listy „pokrycia UI”. Linie zostają
+  // dla archiwalnych transkryptów oraz opisów ręki/modali.
+  const panelRecorded = Array.isArray(windowRecords);
+  const candidates = new Set(lines.filter((line) => /AKCJE:|\[modal choice\]|RĘKA:/.test(line)
+    && !(panelRecorded && /AKCJE:/.test(line))));
+  for (const record of windowRecords ?? []) {
+    for (const label of record.actions ?? []) candidates.add(`AKCJE: ${label}`);
+  }
   // Pusty koszt = miejsce, gdzie etykieta ZAPOWIADA cenę, ale jej nie podaje:
   //   „(koszt )"            — puste nawiasy kosztu,
   //   „(koszt 2W + kicker )" — nazwana DOPŁATA (po „+") bez kwoty.
@@ -1129,9 +1138,12 @@ export function detectEmptyCostDescriptor(lines) {
   // keyworda, nie miejsce na cenę. Sygnałem zapowiedzi ceny jest „koszt/cena"
   // albo dopłata po „+", nie sama nazwa mechaniki.
   const EMPTY_COST = /\((?:koszt|cena)\s*\)|\+\s*(kicker|warp|surge|suspend|bestow|plot|escape|dopłata)\s*(?=[),]|$)/i;
-  for (const line of lines) {
-    if (!/AKCJE:|\[modal choice\]|RĘKA:/.test(line)) continue;
-    const match = line.match(EMPTY_COST);
+  for (const line of candidates) {
+    // Tytuł grupy wygnania już NAZYWA koszt („wygnaj stwora ...”). „(koszt)”
+    // oznacza rolę tej czynności, nie slot kwoty. Usuwamy tylko ten znacznik
+    // do analizy, nie cały panel — obok może naprawdę brakować ceny/dopłaty.
+    const pricedText = line.replace(/(Wygnaj stwora z (?:grobu|pola bitwy))\s+\(koszt\)(?=\s+—)/gi, '$1');
+    const match = pricedText.match(EMPTY_COST);
     if (!match) continue;
     push(found, 'ui',
       `Pusty deskryptor kosztu w etykiecie („${match[0].trim()}") — pole kosztu `
@@ -1190,9 +1202,33 @@ export function detectDuplicateLogEntry(lines) {
   return found;
 }
 
-export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set() } = {}) {
+/** M346/F8: raportowany ogon musi kończyć się najnowszym wpisem DOM logu. */
+export function detectStaleLogTail(windowRecords) {
+  const found = [];
+  for (const record of windowRecords ?? []) {
+    // Stare rekordy/transkrypty nie niosą tych danych. Pusty DOM też jest OK.
+    if (!Array.isArray(record.logTail) || !record.newestLogEntry) continue;
+    if (record.logTail.at(-1) !== record.newestLogEntry) {
+      push(found, 'info', 'Nieaktualny ogon logu testera',
+        `Najnowszy wpis DOM: ${record.newestLogEntry}; koniec ogona: ${record.logTail.at(-1) ?? '(pusty)'}`);
+    }
+  }
+  return found;
+}
+
+/** M348/F10: wyjątek runtime jest błędem w KAŻDYM profilu, także impatient. */
+export function detectRuntimeErrors(records) {
+  const found = [];
+  for (const record of records ?? []) {
+    push(found, 'ui', 'Wyjątek JavaScript w stole', `${record.type}: ${record.message}`);
+  }
+  return found;
+}
+
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, runtimeErrors = [], profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set() } = {}) {
   const all = [
     ...detectRawText(lines),
+    ...detectRuntimeErrors(runtimeErrors),
     ...detectBotRepeats(lines),
     ...detectBotSelfTargeting(lines),
     ...detectBotSelfHarmOnOwnPermanents(lines, harmfulNames),
@@ -1203,6 +1239,7 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // M98 — przypadki, które dotąd zgłaszał właściciel z telefonu, a są
     // w pełni widoczne w DOM (decyzja właściciela: tester ma je łapać sam).
     ...detectDeadEndWindow(lines, windowRecords ? { windowRecords } : {}),
+    ...detectStaleLogTail(windowRecords),
     ...detectNoResponseWindow(lines),
     ...detectGroupWithoutTick(actionRecords),
     // M103 (L15) — wzorzec „oferta bez skutku" z M102 (U8/U9/U10):
@@ -1228,7 +1265,7 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // M266/D — trzy klasy ze zgłoszeń właściciela, przez które przeszedł
     // komplet detektorów (14 partii audytu M265 = zero zgłoszeń, L27).
     ...detectGenericChoiceTitle(lines),
-    ...detectEmptyCostDescriptor(lines),
+    ...detectEmptyCostDescriptor(lines, { windowRecords }),
     ...detectDuplicateLogEntry(lines),
   ];
   // Deduplikacja: ten sam komunikat + dowód pojawia się raz.

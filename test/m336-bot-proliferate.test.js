@@ -159,35 +159,23 @@ test('M336/E: brak kandydatów = brak decyzji (i czar nie wisi na stosie — kla
   assert.ok(state.zones.graveyard.length > 0, 'i leży w czyimś grobie (nie w limbo)');
 });
 
-test('M336/E2: okno decyzji a akcje stanowe — kandydat bez liczników jest przymuszony do no-opu', () => {
-  // Pierwsza wersja tej sondy przewidywała, że +1/+1 z czaru „zniesie" -1/-1 i
-  // kandydatów nie będzie. Jest inaczej i to jest fakt warty pinu:
-  //   • silnik kolejkuje decyzję na podstawie liczników W CHWILI efektu
-  //     (oba liczniki są na sobie),
-  //   • PRIORYTET dla decydującego przechodzi przez SBA, które znoszą parę
-  //     (CR 701.5m2 → state-based.js ~277), więc gdy gracz wybiera, stwór ma
-  //     JUŻ puste liczniki,
-  //   • wybór takiego przedawnionego kandydata musi być nie-zgonem i
-  //     nie-wisem: zero liczników doklejonych, czar się kończy, stos pusty.
-  // W papierowej grze kolejność byłaby odwrotna (wybór przed SBA), ale
-  // ROZSTRZYGNIĘCIA są identyczne (dokładka +1/+1 i -1/-1 i tak się znosi),
-  // więc to kosmetyka oferty, nie błąd reguł. Zapisane, żeby następna sesja nie
-  // „poprawiła" listy kandydatów na siłę.
+test('M336/E2: wybór proliferate poprzedza znoszenie liczników przez SBA (CR 704.4)', () => {
+  // M343/F5: poprzedni pin nazywał przedwczesne SBA „kosmetyką oferty”.
+  // Wynik końcowy liczników bywa ten sam, lecz nie wynik gry (test m343).
   const state = board({ ownToughnessCreature: 'wormfang-newt', ownCounters: { '-1/-1': 1 } });
-  const r = execute(state, castCmd(state, 'own'));
-  assert.ok(r.ok, 'rzut przyjęty');
-  execute(state, { type: 'pass_priority', playerId: 'p1' });
-  execute(state, { type: 'pass_priority', playerId: 'p2' });
-  assert.deepEqual(state.pendingProliferate?.candidateIds, ['own'], 'kandydat z listy sprzed SBA');
-  assert.deepEqual(countersOf(state, 'own'), {}, 'a liczniki już zniesione (CR 701.5m2)');
-  const view = playerView(state, 'p1');
-  const offer = view.legalCommands.find((c) => c.type === 'resolve_proliferate' && (c.targetIds ?? []).includes('own'));
-  assert.ok(offer, 'oferta z tym kandydatem istnieje');
+  assert.ok(execute(state, castCmd(state, 'own')).ok, 'rzut przyjęty');
+  for (const playerId of ['p1', 'p2']) assert.ok(execute(state, { type: 'pass_priority', playerId }).ok);
+  assert.deepEqual(state.pendingProliferate?.candidateIds, ['own']);
+  assert.deepEqual(countersOf(state, 'own'), { '-1/-1': 1, '+1/+1': 1 }, 'oba rodzaje nadal istnieją w środku czaru');
+  const offer = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_proliferate' && c.targetIds?.includes('own'));
+  assert.ok(offer);
   const res = execute(state, offer);
-  assert.ok(res.ok, 'wybór przedawnionego kandydata nie wywala partii');
-  assert.deepEqual(countersOf(state, 'own'), {}, 'i nie dokłada żadnego licznika');
-  assert.equal(state.zones.stack.length, 0, 'czar dokończony');
-  assert.equal(state.status, 'active', 'gra żyje');
+  assert.ok(res.ok, 'wybór przyjęty');
+  assert.equal(res.events.filter((e) => e.type === 'counter_added' && e.objectId === 'own').length, 2);
+  assert.deepEqual(countersOf(state, 'own'), {}, 'SBA po zakończeniu znosi obie pary');
+  assert.equal(state.pendingSpell, null);
+  assert.equal(state.zones.stack.length, 0);
+  assert.equal(state.status, 'active');
 });
 
 test('M336/F: próg trucizny z JEDNEGO źródła i wycena bez nazw kart', () => {

@@ -202,6 +202,39 @@ Detektory (`tools/table-tester/detectors.mjs`, testy:
 - **`rules`** — odrzucona komenda gracza, „zadaje 0 obrażeń" w logu, komunikaty
   typu „to nie powinno się zdarzyć".
 
+#### Kolejność logu — M346 (2026-09-07)
+
+DOM logu ma najnowszy wpis na początku. `chronologicalLogEntries` bierze
+najnowsze N i odwraca je do chronologii; używają go snapshot, kolektor
+odrzuceń i kolektor dowodów auto-pass. Nie używać `slice(-6)` ani starego
+indeksu końca DOM: dawały początek partii zamiast aktualnych zdarzeń.
+`windowRecords` niesie `logTail` i niezależne `newestLogEntry` (pierwszy wpis
+DOM). `detectStaleLogTail` porównuje te dane w każdym oknie, także --quiet;
+zgłoszenie oznacza błąd obserwacji TESTERA, nie nielegalny ruch gracza.
+Dowód A/B i testy: `docs/audits/AUDYT_PR103_2026-09-07.md`, m346.
+
+#### Koszt dodatkowy a brak ceny — M347 (2026-09-07)
+
+`Wygnaj stwora z grobu/z pola bitwy (koszt) — …` to kompletny tytuł wyboru
+kosztu dodatkowego, nie pusty slot many. `detectEmptyCostDescriptor` rozróżnia
+znacznik funkcji wygnania od pustej ceny lub dopłaty; NIE wycisza całego
+panelu zawierającego ten znacznik. Etykiety panelu bierze z pełnych
+`windowRecords.actions`, niezależnie od --quiet i skrótów „pokrycia UI”.
+Linie pozostają źródłem dla transkryptów archiwalnych i opisów ręki/modali.
+Strażnicy m347 obejmują obie strefy, prawdziwy widok/tytuł i wykonaną komendę,
+realnie puste ceny oraz mieszany panel poprawnych/błędnych etykiet.
+
+#### Wyjątki JavaScript — M348 (2026-09-07)
+
+Ukończona partia i brak zwykłych flag NIE dowodzą braku wyjątków interfejsu.
+`runtime-errors.mjs` podpina `error` i `unhandledrejection` w `beforeParse`
+jsdom, przed uruchomieniem skryptów artefaktu. `runtimeErrors` trafiają do
+`detectRuntimeErrors` i wyniku `runTableGame`; dotyczy to każdego profilu,
+również impatient. Normalne odrzucenie komendy przez engine jest osobnym
+faktem i nie jest wyjątkiem JavaScript. Domyślne raportowanie jsdom nie jest
+wyciszane; stderr również należy przejrzeć. M348 złapało w ten sposób sześć
+wyjątków `session.log is not a function` mimo ukończenia tej samej partii.
+
 #### Detektor nie może zależeć od poziomu logowania (M99)
 
 Weryfikacja mutacyjna wykryła dwa detektory czytające **wyłącznie linie
