@@ -5864,6 +5864,20 @@ export function playerView(state, playerId) {
   // pass był oferowany przy otwartej, blokującej decyzji. Klasa L41.)
   const firstDecisionOwner = state.status === 'active' ? firstPendingDecisionPlayerId(state) : null;
   const blockedByOthersDecision = firstDecisionOwner != null && firstDecisionOwner !== playerId;
+  // M337 (macierz B0 przerwana na 56%): AKCJE OPCJONALNE — specjalne (obrót
+  // twarzą do góry, CR 701.40b/701.56b) i pass — są nielegalne, gdy JAKA
+  // KOLWIEK decyzja czeka, także ta, której właścicielem jest sam gracz.
+  // execute pilnuje tego 64 bramkami `if (cmd.type !== 'resolve_*') reject`
+  // (zmierzone: 64 = liczba pól w `firstPendingDecision`, więc reguły są
+  // 1:1), a oferta pytała o nie TYLKO przy passie. Efekt mierzony powtórką
+  // pojedynku z macierzy (aggro mirrodin-wu vs random ravnica, seed 1001,
+  // tura 22, krok declare_blockers):
+  //   oferty: ["turn_cloak_face_up","resolve_trigger_target",…,"concede"]
+  //   execute: command_rejected trigger_target_unresolved
+  //   → „Bot wybrał nielegalną komendę" i cały przebieg padł.
+  // Jeden predykat po obu stronach, nie dwa warunki (wzorzec M255/G i L41;
+  // Batch 47 łatał to samo dla `pass_priority`, M337 domyka rodzinę).
+  const optionalActionsOpen = state.turn.priorityPlayerId === playerId && firstDecisionOwner == null;
 
   const trailingCommands = [];
   if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom) {
@@ -5874,7 +5888,7 @@ export function playerView(state, playerId) {
     // Manifest (CR 701.40b): obrót twarzą do góry to specjalna akcja „any time"
     // (gdy masz priorytet), za koszt many karty; tylko karty stworów
     // (manifestReady). Oferta gdy stać na koszt + kolorowe źródła.
-    if (hasPriority) {
+    if (optionalActionsOpen) {
       for (const objId of state.zones.battlefield) {
         const obj = state.objects.get(objId);
         if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.manifestReady) continue;
@@ -5890,7 +5904,7 @@ export function playerView(state, playerId) {
     // niereagowalna; tylko gdy pod zakryciem karta STWORA („revealing that
     // it's a creature card"); koszt = koszt many KARTY. Oferta = walidacja
     // (L48) — te same bramki w execute.
-    if (hasPriority) {
+    if (optionalActionsOpen) {
       for (const objId of state.zones.battlefield) {
         const obj = state.objects.get(objId);
         if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.cloakReady) continue;
@@ -5908,8 +5922,15 @@ export function playerView(state, playerId) {
     // M255/F: ta sama reguła co w execute (closingCombatPassBlocked) —
     // obrońca MUSI dostać pass, bo nie ma `resolve_combat`.
     const blockedByCombat = closingCombatPassBlocked(state, playerId);
-    if (hasPriority && !blockedByCombat && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingReplacementChoice && !state.pendingUndercityRoute && !state.pendingFabricate && !state.pendingEscapeExile) trailingCommands.push(command('pass_priority', playerId));
+    // M337: ręcznie enumerowana lista ~54 `!state.pending*` była TRZECIĄ
+    // kopią tej samej reguły (Batch 47, M255/G, teraz to) i to ona rozjeżdżała
+    // się z execute przy każdej nowej decyzji. Zastąpiona tym samym
+    // predykatem, który liczy oferty akcji opcjonalnych — `firstDecisionOwner`
+    // ogarnia 64 pola, czyli nadzbiór dawnej listy (porównane na literalach:
+    // 10 brakujących pól ma tu odpowiedniki w postaci derivatów
+    // `pendingBackup`/`triggerTargetsBlock`/`roomTargetBlocks`/
+    // `deliriumBlocks`/`mentorBlocks`, więc żadna legalna oferta nie znika).
+    if (optionalActionsOpen && !blockedByCombat) trailingCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
   // jakiej bramki execute() je zamykają: scry → surveil → backup → clash →

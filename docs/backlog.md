@@ -194,7 +194,8 @@ Następna lista właściciela wchodzi tutaj.)_
   `font-size: 13px`, bez minimum dotyku — zmierzone, nie zgadywane), przyciski stref
   i menu kontekstowe — właściciel gra na telefonie.
 - **Renama nazwy karty w protokole** (`resolve_fertile_thicket`, `pendingFertileThicket`) —
-  dług policzony i przypięty (`M293/11`, equality-pin 63 wystąpień; to 54 linie w tych
+  dług policzony i przypięty (`M293/11`, equality-pin 62 wystąpienia / 53 linie od M337;
+  uprzednio 63/54 — jeden warunek bramek pasa przesiadł się na predykat, spłata bez zmian
   plikach): 69 wystąpień w całym `src/` (11 plików); ten sam zapach przy `resolve_springbloom`
   (86 w 10 plikach). `COMMAND_TYPES` (`src/protocol/types.js:23`, `Object.freeze`) jest
   listą wpisywaną do partii, więc zmiana nazwy to migracja autosave/replay, nie kosmetyka —
