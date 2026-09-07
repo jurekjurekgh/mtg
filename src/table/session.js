@@ -2987,6 +2987,10 @@ export function createSession(config) {
     /** M348/F10: komunikat UI, bez podszywania się pod zdarzenie silnika. */
     logSystem(text) { sessionLog('system', text); },
     reasoning,
+    /** E1 planu 2026-09-07: licznik „akcji bez wyceny” bota (typ → trafienia). */
+    botUnvaluedDecisions() {
+      return typeof bot.unvaluedDecisions === 'function' ? bot.unvaluedDecisions() : {};
+    },
     /** Istotne ruchy bota od ostatniego okna decyzji człowieka (M18). */
     botMoves,
     /** Czyści bufor po pokazaniu go graczowi. */

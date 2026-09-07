@@ -57,9 +57,20 @@ export const SNAPSHOT_CONFIG = Object.freeze({
 
 const FIXTURE_PATH = 'test/fixtures/bot-scoring-snapshot.json';
 
-/** Deterministyczny skrót pełnego śladu — wykrywa każdą zmianę wyceny. */
+/**
+ * Deterministyczny skrót pełnego śladu — wykrywa każdą zmianę wyceny.
+ * E1 (plan 2026-09-07): pole `unvalued` to czysta telemetria (znacznik
+ * gałęzi default scoreCommand), nie wycena — zdejmujemy je przed hashem,
+ * żeby diagnostyka nie czerwieniła golden-mastera (agregaty scoreSum/
+ * chosenKinds potwierdziły identyczność wycen przy wprowadzeniu pola).
+ */
 function hashTrace(trace) {
-  return crypto.createHash('sha256').update(JSON.stringify(trace)).digest('hex');
+  const bezTelemetrii = trace.map((entry) => {
+    if (!entry || entry.unvalued === undefined) return entry;
+    const { unvalued, ...rest } = entry;
+    return rest;
+  });
+  return crypto.createHash('sha256').update(JSON.stringify(bezTelemetrii)).digest('hex');
 }
 
 /**

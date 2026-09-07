@@ -259,6 +259,10 @@ function bootstrapTable() {
       // zakończona była deptana do limitu kroków i raportowana jako zacięcie.
       // null = sesji jeszcze nie ma (Tester wtedy spada na odczyt tekstu).
       gameOver: () => (session && session.state ? session.state.status !== 'active' : null),
+      // E1 planu 2026-09-07: licznik wybranych „akcji bez wyceny” bota
+      // (typ → liczba trafień gałęzi default scoreCommand). Tylko odczyt;
+      // detektor detectUnvaluedBotChoices pilnuje nowego typu komendy bez case.
+      botUnvalued: () => (session ? session.botUnvaluedDecisions() : null),
     };
   }
   // Feature 2026-08-11: wyciszone opcje akcji (ptaszek „nie przerywaj

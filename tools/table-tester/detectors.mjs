@@ -1225,7 +1225,30 @@ export function detectRuntimeErrors(records) {
   return found;
 }
 
-export function runDetectors(lines, { actionRecords = [], windowRecords = null, runtimeErrors = [], profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set() } = {}) {
+/**
+ * E1 planu 2026-09-07 (wyceny bota): zgłoszenie każdej WYBRANEJ przez bota
+ * komendy policzonej gałęzią default scoreCommand — jej wynik zależy wtedy
+ * od kolejności ofert, nie od treści wariantów (antywzorzec L41, klasa
+ * M131/M336). Telemetria (botUnvalued: typ → liczba) przychodzi z mostka
+ * __mtgDebug.botUnvalued; pass_priority pomijamy — 0 jest u niego wartością
+ * legalną i domyślną, nie oznaką braku wyceny.
+ */
+export function detectUnvaluedBotChoices(botUnvalued) {
+  const found = [];
+  if (!botUnvalued || typeof botUnvalued !== 'object') return found;
+  const entries = Object.entries(botUnvalued)
+    .filter(([type]) => type !== 'pass_priority')
+    .sort((a, b) => b[1] - a[1]);
+  for (const [type, count] of entries) {
+    push(found, 'info',
+      `Bot wybrał „${type}" ×${count} bez dedykowanej wyceny (gałąź default `
+      + 'scoreCommand — wybór z kolejności ofert); dodać case w scoreCommand (L137)',
+      `NIEWYCENIONE: ${type}×${count}`);
+  }
+  return found;
+}
+
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, runtimeErrors = [], profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set(), botUnvalued = null } = {}) {
   const all = [
     ...detectRawText(lines),
     ...detectRuntimeErrors(runtimeErrors),
@@ -1267,6 +1290,8 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     ...detectGenericChoiceTitle(lines),
     ...detectEmptyCostDescriptor(lines, { windowRecords }),
     ...detectDuplicateLogEntry(lines),
+    // E1 planu 2026-09-07 — „akcja bez wyceny”: wynik z kolejności ofert.
+    ...detectUnvaluedBotChoices(botUnvalued),
   ];
   // Deduplikacja: ten sam komunikat + dowód pojawia się raz.
   const seen = new Set();

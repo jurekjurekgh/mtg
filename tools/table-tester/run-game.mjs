@@ -1245,6 +1245,18 @@ export async function runTableGame({
   const panelProbes = probeRecords.filter((r) => r.source !== 'modal').length;
   const modalProbes = probeRecords.length - panelProbes;
   logL(`== POKRYCIE UI == akcje widziane: ${seenActions.size}, kliknięte: ${clickedActions.size}, modale: ${seenModals.size}, sondy noop: ${probeRecords.length} (panel ${panelProbes}, modal ${modalProbes})${debugApi ? '' : ' (mostek ?tester=1 niedostępny)'}`);
+  // E1 planu 2026-09-07: telemetria „akcja bez wyceny” bota — licznik
+  // wybranych komend policzonych gałęzią default scoreCommand (wynik
+  // z kolejności ofert). Trafienia idą też do detektora poniżej.
+  const botUnvalued = typeof debugApi?.botUnvalued === 'function' ? (debugApi.botUnvalued() ?? null) : null;
+  if (botUnvalued == null) {
+    logL('== NIEWYCENIONE == n/d (brak mostka ?tester=1)');
+  } else {
+    const entries = Object.entries(botUnvalued);
+    logL(entries.length === 0
+      ? '== NIEWYCENIONE == brak (każdy wybrany ruch bota miał dedykowaną wycenę)'
+      : `== NIEWYCENIONE == ${entries.map(([type, count]) => `${type}×${count}`).join(', ')}`);
+  }
   collectRejections('(koniec partii)');
   // M121: detektor „bot bije we własny permanent" klasyfikuje karty po
   // deskryptorach z rejestru (nazwa karty w logu nie zdradza, co robi czar).
@@ -1258,7 +1270,7 @@ export async function runTableGame({
     // kart (miniaturka dokleja nazwę do wpisu w transkrypcie).
     allCardNames = new Set([...registry.all()].map((c) => c.name).filter(Boolean));
   } catch { /* rejestr niedostępny — detektor po prostu nic nie zgłosi */ }
-  const findings = runDetectors(lines, { actionRecords, windowRecords, runtimeErrors, profile, probeRecords, rejectionRecords, harmfulNames, allCardNames, myPermanentNames, enemyPermanentNames });
+  const findings = runDetectors(lines, { actionRecords, windowRecords, runtimeErrors, profile, probeRecords, rejectionRecords, harmfulNames, allCardNames, myPermanentNames, enemyPermanentNames, botUnvalued });
   for (const line of formatFindings(findings)) logL(line);
 
   flush();

@@ -2238,6 +2238,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return friendly ? (own ? 30 + v : -20 - v) : (own ? -20 - v : 30 + v);
   };
 
+  // E1 planu 2026-09-07 (wyceny bota): telemetria „akcja bez wyceny".
+  // Trafienia `default: finish(0)` w scoreCommand oznaczają decyzję, której
+  // wynik zależy od KOLEJNOŚCI OFERT (antywzorzec L41 — klasa M131/M336),
+  // a nie od treści wariantów. chooseCommand zapisuje licznik per typ
+  // (unvaluedDecisions), a Tester czyta go przez mostek __mtgDebug —
+  // detektor detectUnvaluedBotChoices pilnuje, by NOWE typy komend silnika
+  // nie urodziły się już niewycenione.
+  let lastUnvaluedType = null;
+  const unvaluedCounts = new Map();
+
+  /** scoreCommand + znacznik „policzone gałęzią default" (E1, patrz wyżej). */
+  function scoreTracked(view, cmd) {
+    lastUnvaluedType = null;
+    const score = scoreCommand(view, cmd);
+    const unvalued = lastUnvaluedType;
+    lastUnvaluedType = null;
+    return { cmd, score, unvalued };
+  }
+
   function scoreCommand(view, cmd) {
     // M320/NA2: ward (CR 702.21) — dopłata za celowanie we wrogi permanent
     // z ward. Odejmowana od WYNIKU każdego wariantu (finish), więc warianty
@@ -5589,7 +5608,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(20 + (card.manaCost ?? 0) + (card.power ?? 0) + (card.toughness ?? 0));
       }
       case 'pass_priority': return finish(0);
-      default: return finish(0);
+      default:
+        // E1: decyzja bez dedykowanej wyceny — wynik z kolejności ofert.
+        // Trafienie liczy scoreTracked/chooseCommand i raportuje jako
+        // „niewycenione" (detektor Testera); nowe typy komend silnika
+        // MUSZĄ dostać case (L137: rodzina w jednym miejscu).
+        lastUnvaluedType = cmd.type;
+        return finish(0);
     }
   }
 
@@ -5705,7 +5730,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Deterministyczne: klon + polityka greedyChoice, zero losowości.
    */
   function scoredWithLookahead(view, simulate) {
-    const scored = view.legalCommands.map((cmd) => ({ cmd, score: scoreCommand(view, cmd) }));
+    const scored = view.legalCommands.map((cmd) => scoreTracked(view, cmd));
     scored.sort((a, b) => b.score - a.score);
     const base = evalView(view);
     // W wyścigu (mała biblioteka / bliski lethal wroga) atak jest presją, nie
@@ -6089,16 +6114,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (!view?.legalCommands?.length) throw new Error('Widok nie zawiera legalnych komend');
       const scored = enabled && helpers?.simulate
         ? scoredWithLookahead(view, helpers.simulate)
-        : view.legalCommands.map((cmd) => ({ cmd, score: scoreCommand(view, cmd) }));
+        : view.legalCommands.map((cmd) => scoreTracked(view, cmd));
       scored.sort((a, b) => b.score - a.score);
       let pick = scored[0];
       if (randomness > 0 && scored.length > 1 && rng() < randomness) {
         const pool = scored.slice(0, Math.min(3, scored.length));
         pick = pool[Math.floor(rng() * pool.length)];
       }
+      // E1: wybrany wariant policzony gałęzią default — zapis w telemetrii
+      // (licznik per typ) i we wpisie historii, żeby przebieg był audytowalny.
+      if (pick.unvalued) {
+        unvaluedCounts.set(pick.unvalued, (unvaluedCounts.get(pick.unvalued) ?? 0) + 1);
+      }
       const wpis = {
         turn: view.turn.number, step: view.turn.step,
         chosen: summarize(pick.cmd, view), score: pick.score,
+        ...(pick.unvalued ? { unvalued: pick.unvalued } : {}),
         options: scored.map((entry) => ({ cmd: summarize(entry.cmd, view), score: entry.score })),
       };
       // Ex aequo na maksimum: doklej projekcję danych wszystkich wariantów z
@@ -6116,6 +6147,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     /** Ślad uzasadnień punktowych — diagnostyka decyzji bota. */
     trace() {
       return history.map((entry) => ({ ...entry, options: entry.options.map((o) => ({ ...o })) }));
+    },
+    /**
+     * E1 (plan 2026-09-07): licznik WYBRANYCH komend policzonych gałęzią
+     * default scoreCommand — „akcja bez wyceny" (wynik z kolejności ofert).
+     * Czytane przez mostek __mtgDebug.botUnvalued i detektor Testera.
+     */
+    unvaluedDecisions() {
+      return Object.fromEntries([...unvaluedCounts.entries()].sort(([a], [b]) => a.localeCompare(b)));
     },
   });
 }
