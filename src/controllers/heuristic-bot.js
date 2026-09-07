@@ -2426,6 +2426,77 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const body = (card.power ?? 0) * P.creaturePowerWeight + (card.toughness ?? 0) * P.creatureToughnessWeight;
         return finish(P.creatureBase + body);
       }
+      case 'resolve_redirect_choice':
+      case 'resolve_copy_targets': {
+        // E2/B (plan 2026-09-07): przekierowanie (Willbender, CR 614.5-ish)
+        // i cel KOPII (Storm, CR 707.10) to TA SAMA decyzja o celu jednej
+        // listy efektów (L137 — rodzina w jednym miejscu). Dotąd default 0:
+        // Willbender potrafił przekierować obrażenia wroga WE WŁASNEGO
+        // stwora, a kopia trzymała cel oryginału z KOLEJNOŚCI oferty.
+        // Efekty czaru na stosie są publiczne (CR 400.2); cel liczy wspólny
+        // damageTargetValue dla obrażeń (L41 — jak cast_spell), a dla reszty
+        // — wspólne tablice kar M121/M179 + premia za trafienie wroga.
+        const retargetPending = cmd.type === 'resolve_redirect_choice'
+          ? view.pendingRedirectChoice
+          : view.pendingCopyTargets;
+        const spellId = cmd.type === 'resolve_redirect_choice' ? retargetPending?.stackId : cmd.copyId;
+        const spell = spellId ? (view.zones.stack ?? []).find((o) => o.id === spellId) : null;
+        const retargetEffects = spell?.spell?.effects ?? [];
+        const dmgEffect = retargetEffects.find((e) => e?.type === 'damage');
+        const hasHostilePerm = retargetEffects.some((e) => HOSTILE_PERMANENT_EFFECTS.has(e?.type));
+        const retargetValue = (id) => {
+          if (dmgEffect) return damageTargetValue(view, id, dmgEffect.amount ?? 0);
+          const t = objectOnBoard(view, id);
+          const pseudo = { targets: [id] };
+          let s = -(selfHarmPenalty(view, retargetEffects, pseudo, t)
+            + friendlyMisaimPenalty(view, retargetEffects, pseudo, t));
+          if (t && t.controllerId !== view.playerId && hasHostilePerm) {
+            s += 12 + (t.power ?? 0) + (t.toughness ?? 0);
+          }
+          return s;
+        };
+        return finish(retargetValue(cmd.targetId));
+      }
+      case 'resolve_enter_as_copy': {
+        // E2/B (plan 2026-09-07, CR 707.9d-ish „enter as a copy"): kopiujemy
+        // najmocniejszego kandydata — dotąd default 0 i wybór z KOLEJNOŚCI
+        // (silnik sortuje „najmocniejszy pierwszy", ale bot nie mógł tego
+        // wiedzieć — L41: nie polegamy na kolejności enumeracji). Odmowa
+        // (0/0) przepada.
+        if (cmd.targetId == null) return finish(-6);
+        const copied = objectOnBoard(view, cmd.targetId);
+        if (!copied) return finish(0);
+        return finish(10 + (copied.power ?? 0) * P.creaturePowerWeight
+          + (copied.toughness ?? 0) * P.creatureToughnessWeight);
+      }
+      case 'resolve_amass_choice': {
+        // E2/B (plan 2026-09-07, CR 701.43b): Amass z wieloma armiami —
+        // liczniki dostaje najsilniejsza armia (najlepsza platforma ataku),
+        // nie pierwsza z listy; przeskalowanie jest równe, więc kolejność
+        // ciała rozstrzyga wprost.
+        const army = objectOnBoard(view, cmd.armyId);
+        if (!army) return finish(0);
+        return finish((army.power ?? 0) * P.creaturePowerWeight
+          + (army.toughness ?? 0) * P.creatureToughnessWeight);
+      }
+      case 'resolve_epic_choice': {
+        // E2/B (plan 2026-09-07, Epic Experiment): dotąd default 0 i
+        // done:true jako PIERWSZA oferta — bot nigdy nie rzucał darmowych
+        // czarów z wygnania. Rodzina darmowych rzutów (L137): ten sam
+        // kształt co resolve_suspend_cast / resolve_rebound_cast — rzut
+        // wygrywa z done (reszta i tak idzie do grobu), chyba że czar nie
+        // ma sensownego celu (freeCastTargetPenalty).
+        if (cmd.done) return finish(0);
+        const exiled = cmd.cardId ? view.zones.exile.find((o) => o.id === cmd.cardId) : null;
+        const effects = freeCastVariantEffects(exiled, cmd);
+        let score = 70;
+        for (const effect of effects) {
+          if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
+          if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
+        }
+        score -= freeCastTargetPenalty(view, effects, cmd);
+        return finish(score);
+      }
       case 'resolve_rebound_cast': {
         // Rebound (CR 702.97): jednorazowa decyzja na początku następnego
         // upkeepu — rzuć wygnany czar ZA DARMO (ignorując timing) albo zostaw
