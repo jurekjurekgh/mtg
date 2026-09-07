@@ -18,23 +18,25 @@ Zakres: 36 plików diffu (`gh pr diff 104`), ~2250+/146−. Obszary:
 - [x] lektura diffu wszystkich 36 plików (engine: effects/game-state/
       state-based/tokens; bot; table/main+session; tester; narzędzie rulingów;
       16 testów; dokumenty).
-- [ ] weryfikacja regułowa w CR MtG: M339 (CR 708.6 FoW numeracji cloaków),
+- [x] weryfikacja regułowa w CR MtG: M339 (CR 708.6 FoW numeracji cloaków),
       M340 (CR 702.37e manifest z procedurą morpha), M341 (CR 104.4b/120.7),
       M342 (obrót ≠ ETB, ruling 2024-02-02), M343 (CR 704.3/704.4/704.5d —
       brak okna SBA podczas rozstrzygania czaru), M345 (ADR 0028),
       M346–M348 (tester: kolejność DOM, koszty dodatkowe, runtime errors).
-- [ ] weryfikacja testów RED→GREEN: próby mutacyjne na testach #104
+- [x] weryfikacja testów RED→GREEN: 11 prób mutacyjnych na testach #104
       (każdy nowy test ma paść po cofnięciu fixu — L13; mutacje przez
       kopię pliku + `finally`, nie `git checkout` — L136).
 - [x] `npm test` + `npm run build` na `main` (bazowe wyniki zmierzone).
-- Kryterium ukończenia: `docs/audits/AUDYT_PR104_2026-09-07.md` z
-  inwentarzem plików, wnioskami regułowymi i wynikami mutacji; znalezione
-  błędy naprawione u root cause w osobnych zielonych commitach.
+- [x] Kryterium ukończenia: `docs/audits/AUDYT_PR104_2026-09-07.md` —
+  36/36 plików, 11 mutacji 10/10 fixów RED→GREEN (2 nieważne probe'y
+  powtórzone celowanie), zero błędów do naprawy.
 
 ## E2. Naprawy z audytu (jeśli audyt coś znajdzie)
 
-- [ ] każda naprawa: test RED → implementacja → GREEN → osobny commit + push.
-- Kryterium: pełny `npm test` + `npm run build` zielone per commit.
+- [x] audyt nie wykazał błędów wymagających naprawy (raport §5: wnioski
+      wyłącznie potwierdzające; jedna notatka obserwacyjna o duplikacie
+      raportu na granicy przycięcia logu testera — bez klasy, bez naprawy).
+- Kryterium: n/d — brak napraw do commitowania; bramki bazy zielone.
 
 ## E3. Pętla jakości (ADR 0021), dopóki właściciel nie wskaże innego tematu
 
