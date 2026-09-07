@@ -28,10 +28,10 @@ do weryfikacji, nie poleceniem ponownego liczenia.
 
 ## Mini-roadmapa i kolejność commitów
 
-- [ ] **E0 — osobny commit planu i PR przed kodowaniem.** Potwierdzenie
+- [x] **E0 — osobny commit planu i PR przed kodowaniem.** Potwierdzenie
   `npm test` + `npm run build`, push wyłącznie na gałąź sesji, otwarcie PR
   według szablonu. Sprawdzenie `HEAD` i zdalnej historii przed pushem.
-- [ ] **E1 — pełny audyt PR #103 przed implementacją.** Porównanie
+- [x] **E1 — pełny audyt PR #103 przed implementacją.** Porównanie
   `dfbc39f..c9b884c` plik po pliku, nie streszczenie opisu PR. Sprawdzić
   semantykę reguł/Oracle, FoW, determinizm, generyczność i wszystkie tory
   użycia nowych pól. Testy skonfrontować ze stanem sprzed zmian oraz
@@ -80,3 +80,12 @@ do weryfikacji, nie poleceniem ponownego liczenia.
 E0: pomiar na czystej bazie zakończony: `npm test` 4636/4636,
 `npm run build` 59 modułów / 3369,6 kB. Ten commit publikuje plan;
 PR zostanie otwarty z niego przed jakąkolwiek zmianą kodu.
+
+
+E1: PR #104 otwarty z planu `d389d15`. Audyt 59/59 plików zakończony;
+raport `docs/audits/AUDYT_PR103_2026-09-07.md`: F1 (przeciek numeracji),
+F2 (manifest/morph), F3 (proliferate i kolejność), F4 (nieistniejący bonus
+ETB), F5 (SBA w środku czaru), F6 (próżny strażnik bramki manifestu),
+F7 (HTTP 429 kasuje rulingi). 19 prób mutacyjnych; 17 złych wariantów
+zatrzymanych, 1 przeoczony przez C i 1 poprawka odrzucona przez błędny test.
+Każdy F będzie osobnym zielonym przyrostem (E2). Baseline bot: 10/10.
