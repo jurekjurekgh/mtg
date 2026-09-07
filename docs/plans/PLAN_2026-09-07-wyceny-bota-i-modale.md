@@ -235,3 +235,78 @@ kolejności ofertę) → implementacja → GREEN → `npm test` + build → comm
   s20611 (gracz 20:−6), s20612 (bot 43:−1), s20603-pofix (bot 23:−1) —
   exit 0, stderr 0 B, „NIEWYCENIONE: brak", „DETEKTORY: brak zgłoszeń",
   0 aktywacji wilkołaków bez potrzeby.
+
+## E7. Druga paczka zgłoszeń właściciela (ten sam PR, po E6)
+
+Brzmienie właściciela (2026-09-07): **A** Chill of the Grave — efekt
+„target creature nie odtapowuje się przy swoim kolejnym untap phase" działa,
+ale „chyba nie nadaje tymczasowego badge'a tej kreaturze. Albo przeoczyłem.
+Sprawdź to." — **B1** Glitch Ghost Surveyor: napisało „Zwiększasz prędkość
+(speed 1)", ale nie pojawił się panel Speed z poprzedniego PR — „Czemu?" —
+**B2** na koniec tury zdublowany komunikat „Zwiększasz prędkość (speed: 2)" ×2 —
+**C** Shock 562AER w talii Kaladesh, a kolumna plan = Warhammer Fantasy —
+po korektach właściciela (liczy się kolumna „Plan" z
+`tools/collection-art-ids.csv`, NIE realny blok wydania; błędny wpis CSV
+poprawić u źródła i przenieść kartę do właściwego decku) — **D1** Frightful
+Delusion: opcje dopłacenia 1C mają zagnieżdżony HTML w opisie — **D2** bot
+kontruje czar właściciela mimo że właściciel ma nietapnięty ląd i może
+zapłacić {1} — „inaczej marnuje swój czar" — **E** Makeshift Mauler: bot jako
+dodatkowy koszt wygnał stwora z cmentarza — ani Rozgrywka, ani log nie mówią,
+że coś wygnał i jaką kartę.
+
+- [x] **C**: plan z kolumny „Plan" kolekcji właściciela; CSV linia 563 →
+      `Warhammer Fantasy`, card-data (set zostaje AER), talie z generatora
+      (Shock → warhammer-ubr), README liczności, grzechotka, fixture,
+      table-session seed. `adf087a`.
+- [x] **B2**: podwójny push `speed_changed` — `setPlayerSpeed` sam pushuje
+      („wołający nie dubluje pusha"), a `bumpSpeedIfOpponentDamaged`
+      (triggers.js) robił `state.events.push(...setPlayerSpeed(...))`.
+      Pin: jeden wzrost = jedno zdarzenie (pełna ścieżka combat-damage).
+- [x] **E**: silnik emituje poprawne `object_moved` [koszt] (M262); luka
+      w sesji: log milczał dla obu graczy (describeGameEvent → null poza
+      `escape`/`bounced` — ta klasa co M103/D), a modal „Rozgrywka" widział
+      koszt tylko przy rzucie BOTA (wczesna bramka `noteBotMove`).
+      Przepust `additionalCost` w bramce + opis „zostaje wygnane (dodatkowy
+      koszt rzucenia)" z nazwą karty (strefy jawne, CR 400.2).
+- [x] **D2**: wycena kontr traktowała `counter_spell_unless_pays` jak
+      `counter_spell` (Batch 44). Fix: gdy kontroler czaru-na-stosie może
+      zapłacić `amount` (pula + nietapnięte LĄDY — reguła `manaAvailableNow`),
+      wariant −90 (poniżej passu — trzymaj kontrę, czekaj aż przeciwnik wyda
+      manę); bez zasobów pełna premia.
+- [x] **A**: sonda żywa (jsdom, build właściciela ORAZ branch) — ścieżka
+      KOMPLETNA: flaga → widok (M173/C) → badge „nie odtapuje się" na kaflu;
+      untap step poprawnie blokowany. Zamiast zmiany UI — pin regresyjny
+      silnik → widok → nakładka (klasa L1/ADR 0017). Do właściciela:
+      jeśli badge realnie nie wsiada — proszę o repro/seed.
+- [x] **B1**: sonda żywa — panel Speed pojawia się przy speed=1 na OBU
+      buildach (M313 w main od PR #104). Zgłoszenie odpowiada stanowi
+      sprzed wdrożenia (jak E6/B) — testować na świeżym pages.
+- [x] **D1**: sonda żywa — NIE do odtworzenia: etykieta `commandLabel`
+      niesie HTML (kontrakt M266/E), ale WSZYSTKIE kanały renderują przez
+      innerHTML (panel akcji; modal — fix A2 2026-08-10; wizardy — M312),
+      tester stołu czyta textContent (bez znaczników). Pin kontraktu
+      M104/A2 (emulatorszy mini-DOM + komenda w kształcie silnika).
+- Kryterium: jak w E6 — RED-first dla zmian kodu, `npm test` + build na
+  każdy zielony krok, commit+push natychmiast (ADR 0020 C), szybki
+  benchmark na końcu, `test:all` jako brama PR.
+
+### Podsumowanie E7 (2026-09-07)
+
+- **C** `adf087a`: CSV u źródła + card-data (`plan: 'Warhammer Fantasy'`,
+  set AER) + talie z `tools/generate-plan-decks.mjs` (Shock → warhammer-ubr;
+  kaladesh 23/8/15, warhammer-ubr 33/11/22) + README + grzechotka block ≤7
+  (s4009 t19) + fixture regen (drift tylko para warhammer) + table-session
+  seed 4→1 (hunter na dokładnym chooseHumanCommand). Fast 4742/4742.
+- **B2** `785b804`: RED (2 zdarzenia) → fix (wołanie bez re-pusha) → GREEN.
+  Fast 4743/4743.
+- **E** `c31b9d0`: dwa RED (log: null; modal przy rzucie człowieka: brak
+  wpisu) → przepust `additionalCost` + opis logu → GREEN. Fast 4745/4745.
+- **A** `cf21d55`: pin pełnej ścieżki badge'a + blokada untapu (CR 510.1).
+- **D2** `c55d468`: trzy testy (lądy → nie kontruje; brak many → kontruje;
+  sama pula → nie kontruje) → model dopłaty w wycenie kontr. Fast 4749/4749.
+- **D1** `7f14e05`: pin kanału innerHTML dla opcji dopłaty. Fast 4750/4750.
+- Wnioski dla właściciela: A i B1 działają na obu buildach (badge
+  „nie odtapuje się" na kafla; panel Speed przy speed 1) — jeśli objawy
+  wracają, proszę o świeży pages i repro (seed/screenshot); D1 surowy
+  markup istnieje tylko w etykiecie ŹRÓDŁOWEJ (kontrakt M266/E), w UI
+  zawsze pipa.
