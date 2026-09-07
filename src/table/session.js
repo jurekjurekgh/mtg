@@ -817,6 +817,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         if (e.escape) {
           return `${nameOf(e.object?.cardId)} zostaje wygnane (koszt Escape)`;
         }
+        // E7/E (zgłoszenie właściciela, Makeshift Mauler): dodatkowy koszt
+        // rzucenia „wygnaj stwora z cmentarza" to PŁATNOŚĆ KOSZTU jak mana
+        // (precedens M103/D) — log nazywa wygnaną kartę (strefy jawne,
+        // CR 400.2), niezależnie od tego, kto rzuca czar. Dotąd gałąź zwracała
+        // null: gracz nie wiedział ani ŻE coś wygnano, ani CO.
+        if (e.additionalCost) {
+          return `${nameOf(e.object?.cardId)} zostaje wygnane (dodatkowy koszt rzucenia)`;
+        }
         return null;
       }
       // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — gracz musi
@@ -2522,7 +2530,14 @@ export function createSession(config) {
     // zagraniu landa panel pokazywał nieaktualne „Faza: Podtrzymanie” —
     // czyli land drop w upkeepie, coś nielegalnego wg CR 305.1. Nagłówek
     // i tak jest OCZEKUJĄCY (pokazuje się tylko razem z realną akcją).
-    if (!botActing && e.type !== 'turn_started' && e.type !== 'game_started'
+    // E7/E (zgłoszenie właściciela): dodatkowy koszt rzucenia (object_moved
+    // z flagą `additionalCost`, np. Makeshift Mauler wygnanie z cmentarza)
+    // przechodzi bramkę takze przy akcji CZLOWIEKA — to płatność jak mana
+    // (M103/D), gracz ma widzieć w „Rozgrywce" co i skąd wygnano (CR 400.2:
+    // strefy jawne). Format i mgła wojny jak wyżej (gałąź M192/Z1).
+    const isAdditionalCostMove = e.type === 'object_moved' && e.additionalCost === true;
+    if (!botActing && !isAdditionalCostMove
+      && e.type !== 'turn_started' && e.type !== 'game_started'
       && e.type !== 'step_advanced'
       && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw
       && !TRANSFORM_DIGEST_EVENTS.has(e.type)) return;
