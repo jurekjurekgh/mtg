@@ -1,3 +1,4 @@
+import { holdReplacementResolution } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
 import { triggerTargetEffectFriendly } from './effect-intent.js';
@@ -1668,6 +1669,9 @@ function resolveActivatedAbilityEntry(state, entry) {
       applyEffect(state, nth.effect, source, targets);
     }
   }
+  if (holdReplacementResolution(state,entry,event('ability_resolved',{
+    playerId:payload.playerId,sourceId:payload.sourceId,cardId:entry.cardId,abilityIndex:payload.abilityIndex,
+  }))) return state.events.slice(before);
   state.events.push(event('ability_resolved', {
     playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
     abilityIndex: payload.abilityIndex,
@@ -1755,6 +1759,7 @@ export function resolveTopOfStack(state) {
       if (effTargets === null) continue;
       applyEffect(state, effect, object, effTargets);
     }
+    if (holdReplacementResolution(state,object,{modal:true,modeIndex:object.chosenMode,modeName:mode.name})) return state.events.slice(before);
     // M271 (błąd #14): strefę zejścia liczy WSPÓLNY helper, nie sztywny grób.
     const zoneModal = spellExitZone(object);
     const graveId = `${zoneModal}-${state.objectSequence++}`;

@@ -1,3 +1,4 @@
+import { holdReplacementResolution } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { singleTargetOfStackEntry } from './objects.js';
 import {
@@ -1228,6 +1229,9 @@ export function resolveTriggerEntry(state, entry) {
   // wydarzyło (zerowy wynik)" — gracz miał prawo sądzić, że zdolność
   // przepadła. Efekt, który świadomie nic nie zmienia, bo stan JUŻ jest
   // docelowy, raportujemy jako zwykłe rozstrzygnięcie.
+  if (holdReplacementResolution(state,entry,event('trigger_resolved',{
+    objectId:entry.id,sourceId:payload.sourceId,cardId:entry.cardId,trigger:payload.ability?.trigger?.event??null,
+  }))) return state.events.slice(before);
   const producedNothing = state.events.length === beforeEffects;
   const noOpByState = producedNothing
     && applyTriggerEffectsWereNoOp(state, payload.ability, payload.targets ?? [], source);

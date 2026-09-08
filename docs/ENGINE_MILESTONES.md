@@ -4710,3 +4710,11 @@ Usunięta błędna ochrona i wybór shield/regenerate w lethal SBA; nie mylić
 z poprawną prewencją obrażeń B3b. Destroy efektem używa removeCounter.
 5nowych testów,2mutacje,fast4888/4888,build59/3418,5kB. Nadal9/10,
 Umbra/realny wybór replacement/wznowienia list efektów i B5 otwarte (handoff h).
+
+
+### Batch54 B4b — Treefolk Umbra, 10/10 definicji
+
+Armor/grupowe destroy i rzeczywisty wybór controller/APNAP; serializowalne
+kontynuacje resolution i first strike. Oddzielna miara combat/T, power/fight
+bez zmiany, UI/bot.32testy/6mutacji,fast4920/all4930,build60/3427,4kB,
+golden bez zmiany. B5 końcowa weryfikacja nadal trwa.

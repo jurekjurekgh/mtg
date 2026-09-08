@@ -1367,7 +1367,7 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
       ? liveAttackerName
       : (entry.attackerCardId ? session.nameOf(entry.attackerCardId) : '?');
     choiceNode(wrapper, 'div', 'damage-wizard-head',
-      `${attackerName} (moc ${entry.power}${trample})`);
+      `${attackerName} (${entry.byToughness ? 'obrażenia wg wytrzymałości' : 'moc'} ${entry.power}${trample})`);
     const rows = choiceNode(wrapper, 'div', 'damage-wizard-blockers');
     // M101/B6 (CR 702.19b): przy tramplu przydział 0 jest NIELEGALNY, dopóki
     // nadmiar ma płynąć na gracza. Startujemy więc od domyślnego lethal-first

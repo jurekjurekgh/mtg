@@ -19,6 +19,14 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-08 — batch54 B4b, komplet 10 definicji
+
+Treefolk Umbra606: armor we wspólnym destroy (grupy/wybór/wznowienia),
+combat według toughness bez zmiany power/fight. Wybór po first strike
+wstrzymuje drugą falę; Vandalize niszczy oba cele jednocześnie.32testy,
+6mutacji,fast4920,all4930,build60/3427,4kB; golden nietknięty. Integracja B5
+jeszcze w toku; szczegółowy zakres/dowody w planie batch54.
+
 ## Sesja 2026-09-08 — batch54 B4b.1, granica shield/SBA
 
 Potwierdzone CR122.1c: stara gałąź lethal SBA i jej wybór shield/regenerate

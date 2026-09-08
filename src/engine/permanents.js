@@ -1327,3 +1327,11 @@ export function animatePermanentUntilEndOfTurn(state, objectId, { power, toughne
   }));
   return updated;
 }
+
+/** CR510 / Treefolk Umbra: miara przydziału, nigdy zmiana prawdziwego power. */
+export function combatDamageByToughness(state, object) {
+  return attachmentsAttachedTo(state, object.id).some(a => attachmentGrant(a)?.combatDamageByToughness);
+}
+export function combatDamageAmount(object, state) {
+  return Math.max(0, combatDamageByToughness(state,object) ? effectiveToughness(object,state) : effectivePower(object,state));
+}

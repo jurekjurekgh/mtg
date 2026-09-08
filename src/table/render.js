@@ -1649,6 +1649,7 @@ export function rulesText(info) {
   };
   // Audyt Batch53/B1: koszt plotu z pipami kolorów (ten sam rozkład co equip;
   // goła liczba kłamała, że {1}{W} płaci się dowolną maną).
+  const toughnessDamageLine = info.combatDamageByToughness ? 'Obrażenia bojowe według wytrzymałości, nie mocy' : '';
   const surgeLine = info.surge ? `Surge {${equipPips(info.surge.cost, info.surge.colors)}} — jeśli rzuciłeś już inny czar w tej turze` : '';
   const plotLine = info.plot ? `Plot {${equipPips(info.plot.cost, info.plot.colors) || '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equipLine = equip
@@ -1666,6 +1667,8 @@ export function rulesText(info) {
   const aura = info.aura;
   const auraLine = aura
     ? [
+    aura.umbraArmor ? 'Umbra armor — zamiast zniszczenia gospodarza usuń jego obrażenia i zniszcz tę aurę' : '',
+    aura.combatDamageByToughness ? 'Obrażenia bojowe według wytrzymałości, nie mocy' : '',
       aura.doesntUntap ? 'stwór nie odkręca się podczas kroku odkręcania swojego kontrolera' : '',
       aura.pump ? `stwór: ${signed(aura.pump.power ?? 0)}/${signed(aura.pump.toughness ?? 0)}` : '',
       (aura.keywords ?? []).length ? `stwór ma: ${aura.keywords.map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : '',
@@ -1744,7 +1747,7 @@ export function rulesText(info) {
       .map(([name, n]) => `z ${n === 1 ? '1 licznikiem' : `${n} licznikami`} ${COUNTER_LABELS[name] ?? name}`);
     return parts.length ? `Wchodzi ${parts.join(', ')}` : '';
   })();
-  return [keywordLine, spellLine, surgeLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, entersCountersLine, landLine].filter(Boolean).join(' · ');
+  return [keywordLine, spellLine, toughnessDamageLine, surgeLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, entersCountersLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -1829,7 +1832,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_optional_trigger_choice: 'Efekt dobrowolny („you may")',
   resolve_enter_as_copy: 'Wejście jako kopia — który Ally?',
   resolve_destroy_equipment_choice: 'Zniszczyć equipment?',
-  resolve_replacement_choice: 'Tarcza czy regeneracja?',
+  resolve_replacement_choice: 'Wybierz efekt zastępczy',
   resolve_land_type_choice: 'Typ landa',
   resolve_library_placement: 'Wierzch czy spód biblioteki',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
@@ -3154,6 +3157,7 @@ export function commandLabel(cmd, session, view) {
     // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — etykieta nazywa
     // kartę, żeby w modalu było widać, o który permanent chodzi.
     case 'resolve_replacement_choice':
+      if (cmd.choice?.startsWith('umbra:')) return `Umbra armor: zniszcz ${nameOfObjectId(cmd.choice.slice(6))} zamiast ${nameOfObjectId(cmd.objectId)}`;
       return cmd.choice === 'shield'
         ? `Zdejmij licznik tarczy (${nameOfObjectId(cmd.objectId)})`
         : `Regeneruj (${nameOfObjectId(cmd.objectId)})`;

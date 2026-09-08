@@ -838,10 +838,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — gracz musi
       // wiedzieć, że decyduje (i co wybrał), bo inaczej zniknięcie tarczy albo
       // tapnięcie stwora wyglądałoby na efekt cudzego czaru.
+      case 'umbra_armor_applied':
+        return `Umbra armor chroni ${nameOf(e.cardId)}: usuwa obrażenia; zamiast gospodarza niszczona jest aura ${nameOfObject(e.auraId)}`;
       case 'replacement_choice_required':
-        return `${nameOfObject(e.objectId)}: zniszczenie można zastąpić tarczą albo regeneracją — wybiera ${whoN(e.playerId)}`;
+        return `${nameOfObject(e.objectId)}: wybierz efekt zastępujący zniszczenie — wybiera ${whoN(e.playerId)}`;
       case 'replacement_choice_resolved':
-        return `${whoN(e.playerId)} wybiera ${e.choice === 'shield' ? 'zdjęcie licznika tarczy' : 'regenerację'} dla ${nameOfObject(e.objectId)}`;
+        return `${whoN(e.playerId)} wybiera ${e.choice?.startsWith('umbra:') ? 'umbra armor' : e.choice === 'shield' ? 'zdjęcie licznika tarczy' : 'regenerację'} dla ${nameOfObject(e.objectId)}`;
       case 'command_rejected': return `Odrzucono: ${e.reason ?? 'nielegalna komenda'}`;
       // M201 (znalezisko #1, CR 506.4c): permanent przestał być stworem i
       // wypadł z walki — gracz musi wiedzieć, dlaczego atak zniknął.

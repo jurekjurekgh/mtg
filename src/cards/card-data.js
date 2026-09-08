@@ -3716,7 +3716,7 @@ export const REAL_CARDS = Object.freeze([
       modes: [
         { name: 'Zniszcz artefakt', targets: [{ type: 'artifact' }], effects: [{ type: 'destroy_permanent' }] },
         { name: 'Zniszcz ląd', targets: [{ type: 'land' }], effects: [{ type: 'destroy_permanent' }] },
-        { name: 'Zniszcz oba', targets: [{ type: 'artifact' }, { type: 'land' }], effects: [{ type: 'destroy_permanent', targetIndex: 0 }, { type: 'destroy_permanent', targetIndex: 1 }] },
+        { name: 'Zniszcz oba', targets: [{ type: 'artifact' }, { type: 'land' }], effects: [{ type: 'destroy_permanent', targetIndices: [0, 1] }] },
       ],
     },
     artId: 499,
@@ -10704,6 +10704,14 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       { type: 'damage', amount: 'basic_land_types_you_control' },
     ] },
     artId: 601, plan: 'Alara', support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'treefolk-umbra', name: 'Treefolk Umbra', set: 'MH1',
+    types: ['Enchantment'], colors: ['G'], manaCost: 3,
+    oracleText: "Enchant creature\nEnchanted creature gets +0/+2 and assigns combat damage equal to its toughness rather than its power.\nUmbra armor (If enchanted creature would be destroyed, instead remove all damage from it and destroy this Aura.)", imageUri: "https://cards.scryfall.io/large/front/6/7/677166cf-4e1e-43ac-a67b-afaf33c0d14e.jpg?1783933088",
+    aura: { pump: { power: 0, toughness: 2 }, combatDamageByToughness: true, umbraArmor: true },
+    artId: 606, plan: 'Śródziemie', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({

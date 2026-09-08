@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { preventDamageWithShieldCounter, removeLoyaltyForDamage, attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
+import { combatDamageAmount, combatDamageByToughness, preventDamageWithShieldCounter, removeLoyaltyForDamage, attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
 import { attachmentsAttachedTo } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 
@@ -443,6 +443,10 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
       // obrażenia z first strike — zabite stwory nie biorą udziału w zwykłym
       // przebiegu (CR 510.4/510.5 w minimalnym wymiarze).
       events.push(...runStateBasedActions(state));
+      if (state.pendingReplacementChoice) {
+        state.pendingReplacementChoice.continuations.push({combatResume:{defendingPlayerId,pass:false,resumeFrom:0}});
+        return events;
+      }
     }
   }
   // Sesja combat kończy się przed state-based actions: śmierć stwora nie może
@@ -546,7 +550,8 @@ export function buildDamageAssignmentView(state, viewerId = null) {
     entries.push({
       attackerId,
       attackerCardId: faceId(attacker),
-      power: Math.max(0, effectivePower(attacker, state)),
+      power: combatDamageAmount(attacker, state),
+      ...(combatDamageByToughness(state, attacker) ? { byToughness: true } : {}),
       trample: hasKeyword(state, attacker, 'trample'),
       blockers: blockers.map((id) => {
         const blocker = state.objects.get(id);
@@ -593,7 +598,7 @@ export function validateDamageAssignment(state, attackerId, assignment) {
   const live = new Set(blockers);
   const seen = new Set();
   let sum = 0;
-  const amount = Math.max(0, effectivePower(attacker, state));
+  const amount = combatDamageAmount(attacker, state);
   for (const entry of assignment) {
     if (!entry || !Number.isInteger(entry.amount) || entry.amount < 0) return 'illegal_damage_amount';
     if (!live.has(entry.blockerId) || seen.has(entry.blockerId)) return 'illegal_damage_blocker';
@@ -649,7 +654,7 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
     const blockers = (state.combat.blockers.get(attackerId) ?? []).filter(aliveOnBattlefield);
     const wasBlocked = state.combat.blockedAttackers?.has(attackerId) ?? state.combat.blockers.has(attackerId);
     if (attackersTurn) {
-      const amount = Math.max(0, effectivePower(attacker, state));
+      const amount = combatDamageAmount(attacker, state);
       if (!wasBlocked) {
         dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, amount);
       } else if (blockers.length === 0) {
@@ -696,7 +701,7 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
       if (!blocker || blocker.zone !== 'battlefield') continue;
       if (pass ? !inFirstStrikePass(blockerId) : !inRegularPass(blockerId)) continue;
       // Bloker o ujemnej mocy też zadaje 0 obrażeń (CR 510.1).
-      const blockerDamage = Math.max(0, effectivePower(blocker, state));
+      const blockerDamage = combatDamageAmount(blocker, state);
       // Filtr „prevent all damage to ... this turn" (Ethersworn Shieldmage)
       // — kasuje CAŁOŚĆ obrażeń blokera (CR 119.3; spójnie ze ścieżką
       // atakujący→bloker). Poprzednio filtr działał dopiero wewnątrz

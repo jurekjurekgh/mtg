@@ -96,7 +96,7 @@ function attackerNeutralizedByProtection(attacker, blockers) {
     const attackerKeywords = attacker.keywords ?? [];
     if (attackerKeywords.includes('trample')) {
       const lethalNeeded = attackerKeywords.includes('deathtouch') ? 1 : (b.toughness ?? Number.POSITIVE_INFINITY);
-      if ((attacker.power ?? 0) > lethalNeeded) return false;
+      if (combatPower(attacker) > lethalNeeded) return false;
     }
     return true;
   });
@@ -115,7 +115,7 @@ function diesBeforeDealingDamage(attacker, blockers) {
   return (blockers ?? []).some((b) => {
     const bkw = b?.keywords ?? [];
     if (!bkw.includes('first_strike') && !bkw.includes('double_strike')) return false;
-    return (b?.power ?? 0) >= toughness;
+    return combatPower(b) >= toughness;
   });
 }
 
@@ -130,7 +130,7 @@ function diesToDeathtouchBlocker(attacker, blockers) {
   if (kw.includes('indestructible')) return false;
   return (blockers ?? []).some((b) => {
     if (!b || !(b.keywords ?? []).includes('deathtouch')) return false;
-    if ((b.power ?? 0) <= 0) return false;
+    if (combatPower(b) <= 0) return false;
     return attackerCanBeBlocked(attacker, [b]);
   });
 }
@@ -196,11 +196,14 @@ function combatTrickWindow(view, recipient) {
  */
 
 /** Statystyki bojowe stwora z widoku + delta (pump/debuff) do symulacji. */
+function combatPower(object) {
+  return object?.combatDamageByToughness ? (object.toughness ?? 0) : (object?.power ?? 0);
+}
 function duelStats(object, { power = 0, toughness = 0 } = {}) {
   const kw = object?.keywords ?? [];
   return {
     id: object?.id,
-    power: Math.max(0, (object?.power ?? 0) + power),
+    power: Math.max(0, combatPower(object) + (object?.combatDamageByToughness ? toughness : power)),
     // Efektywna wytrzymałość: bazowa minus już zadane obrażenia.
     toughness: Math.max(0, (object?.toughness ?? 0) - (object?.damage ?? 0) + toughness),
     deathtouch: kw.includes('deathtouch'),
@@ -4875,13 +4878,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           });
           if (!damageGetsThrough) return finish(-100);
         }
-        const strongestBlockerPower = blockers.reduce((max, o) => Math.max(max, o.power ?? 0), 0);
+        const strongestBlockerPower = blockers.reduce((max, o) => Math.max(max, combatPower(o)), 0);
         const strongestBlockerToughness = blockers.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
         // M167/I (uwaga właściciela): GANG dwóch blokerów — atakujący 2/4
         // „przeżywa" najsilniejszego pojedynczego blokera (3/4? nie: 3 < 4),
         // ale para 1/3 + 3/3 zabija go łącznymi obrażeniami. Suma top-2 mocy
         // blokerów + najniższa wytrzymałość (czy atakujący COKOLWIEK zabije).
-        const blockerPowersDesc = blockers.map((o) => o.power ?? 0).sort((a, b) => b - a);
+        const blockerPowersDesc = blockers.map((o) => combatPower(o)).sort((a, b) => b - a);
         const gangPower = (blockerPowersDesc[0] ?? 0) + (blockerPowersDesc[1] ?? 0);
         const weakestBlockerToughness = blockers.reduce((min, o) => Math.min(min, o.toughness ?? 0), Number.POSITIVE_INFINITY);
         // M317 (Ghost Warden): obrońca może w oknie bloków pompać blokera
@@ -4904,7 +4907,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         for (const id of attackers) {
           const object = objectOnBoard(view, id);
           if (!object) continue;
-          const power = object.power ?? 0;
+          const power = combatPower(object);
           const toughness = object.toughness ?? 0;
           // Wartość ataku jednym stworem: obrażenia, które przejdą, minus
           // strata stwora. Wymiana (power ≥ wytrzymałość blockerów) to
@@ -4930,7 +4933,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // da się zablokować); w otwartym ataku liczy się druk.
           const bbPump = becomesBlockedPump(object);
           const blockedStats = blockers.length > 0 && canBeBlocked
-            ? { power: power + bbPump.power, toughness: toughness + bbPump.toughness }
+            ? { power: power + (object.combatDamageByToughness ? bbPump.toughness : bbPump.power), toughness: toughness + bbPump.toughness }
             : { power, toughness };
           const combatObject = blockedStats.power === power && blockedStats.toughness === toughness
             ? object : { ...object, power: blockedStats.power, toughness: blockedStats.toughness };
@@ -5046,7 +5049,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         // Presja: atak w otwartego, lethal i przewaga liczebna premiowane.
         if (blockers.length === 0 && attackers.length > 0) score += P.attackOpenBoardBonus;
-        const totalPower = attackers.reduce((sum, id) => sum + (objectOnBoard(view, id)?.power ?? 0), 0);
+        const totalPower = attackers.reduce((sum, id) => sum + combatPower(objectOnBoard(view, id)), 0);
         // M169/J+L (uwaga właściciela): lethal musi przejść PRZEZ blokerów.
         // Surowy totalPower premiował atak 6/7 w samotnego 7/10 (+100 za
         // „lethal") i odwrotnie — karzełki chowane za blokery nie dopinały
@@ -5064,7 +5067,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const enemyPoison = enemy(view)?.poison ?? 0;
         const infectTotalPower = attackers.reduce((sum, id) => {
           const o = objectOnBoard(view, id);
-          return sum + (hasKeyword(o, 'infect') ? (o.power ?? 0) : 0);
+          return sum + (hasKeyword(o, 'infect') ? combatPower(o) : 0);
         }, 0);
         const penetratingInfect = Math.max(0, infectTotalPower - blockerAbsorb);
         if (attackers.length > 0 && enemyPoison < POISON_LOSS_LIMIT
@@ -5169,7 +5172,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // blok, który POZOSTAWIA nas przy życiu po śmiertelnym ataku, jest
         // wart partii — premia, inaczej pass (0) wygrywał z blokiem (-1).
         const attackThreat = (view.combat?.attackers ?? [])
-          .reduce((sum, id) => sum + (objectOnBoard(view, id)?.power ?? 0), 0);
+          .reduce((sum, id) => sum + combatPower(objectOnBoard(view, id)), 0);
         let score = 0;
         let stoppedDamage = 0;
         for (const [attackerId, blockerIds] of Object.entries(assignments)) {
@@ -5181,7 +5184,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Teraz sumujemy moc blokerów vs wytrzymałość atakującego (multi-block
           // kill, CR 510.1), nagradzamy zablokowane obrażenia i usunięte
           // zagrożenie, a karzemy tylko realną stratę blokerów.
-          const attackerPower = attackerObj.power ?? 0;
+          const attackerPower = combatPower(attackerObj);
           const attackerToughness = (attackerObj.toughness ?? 0) - (attackerObj.damage ?? 0);
           let totalBlockerPower = 0;
           let blockerValueLost = 0;
@@ -5190,7 +5193,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const blocker = objectOnBoard(view, blockerId);
             if (!blocker) continue;
             blockersUsed += 1;
-            totalBlockerPower += (blocker.power ?? 0);
+            totalBlockerPower += combatPower(blocker);
             const blockerDies = attackerPower >= (blocker.toughness ?? 0) - (blocker.damage ?? 0);
             if (blockerDies) blockerValueLost += (blocker.power ?? 0) + (blocker.toughness ?? 0);
           }
@@ -5909,6 +5912,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_damage_assignment':
         return finish(0); // M66/R: dokładnie jeden wariant (lethal-first); człowiek ma wizard (CR 510.1c/d)
       case 'resolve_replacement_choice':
+        if (cmd.choice?.startsWith('umbra:')) {
+          const aura=objectOnBoard(view,cmd.choice.slice(6));
+          return finish(-(aura?.manaCost ?? 0)); // zachowaj cenniejszą aurę / zużyj chwilową regenerację
+        }
         return finish(0); // CR 616.1: regenerate vs shield — regułowo równoważne
       case 'resolve_reveal_order':
         return finish(0); // jedna komenda (kolejność jak w reveal — patrz oferta silnika)

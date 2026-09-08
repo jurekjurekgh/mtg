@@ -33,7 +33,7 @@ choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdzia�
 na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
-Bieżący stan: szybki rdzeń **4888/4888**, artefakt **59 modułów / 3418,5 kB** (batch 54, 9/10 kart). Ostatni pełny pomiar: **4836/4836** (`test:all` na B2, nie wynik B4). Szczegóły:
+Bieżący stan: szybki rdzeń **4920/4920**, artefakt **60 modułów / 3427,4 kB** (batch 54, 10/10 kart; integracja w toku). Pełny zestaw: **4930/4930** (`test:all` na B4b). Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
@@ -127,7 +127,7 @@ liczone z plików `decks/*.txt`).
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 26 | 9 | 17 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
 | `ravnica` | Ravnica | WUBRG | 36 | 12 | 24 |
-| `srodziemie` | Śródziemie | WUBRG | 27 | 9 | 18 |
+| `srodziemie` | Śródziemie | WUBRG | 29 | 10 | 19 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 32 | 11 | 21 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 27 | 9 | 18 |
 | `theros` | Theros | WUBRG | 27 | 9 | 18 |

@@ -1,4 +1,5 @@
-import { effectiveSubtypes, isUntapStepLocked } from './permanents.js';
+import { chooseDestructionReplacement } from './destruction.js';
+import { combatDamageByToughness, effectiveSubtypes, isUntapStepLocked } from './permanents.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
@@ -1454,6 +1455,7 @@ export function execute(state, input) {
   let cmd;
   try { cmd = command(input.type, input.playerId, input); } catch { return reject('invalid_command'); }
   if (state.status !== 'active') return reject('game_over');
+  if (state.pendingReplacementChoice?.frame && !['resolve_replacement_choice','concede'].includes(cmd.type)) return reject('replacement_choice_unresolved');
   if (cmd.type === 'concede') {
     const winner = state.players.find((p) => p.id !== cmd.playerId);
     state.status = 'finished';
@@ -5249,6 +5251,7 @@ export function execute(state, input) {
     if (state.turn.activePlayerId !== cmd.playerId) return reject('not_active_player');
     try {
       const e = resolveCombatDamage(state, cmd.defendingPlayerId);
+      if (state.pendingReplacementChoice) return accepted(state, cmd, {ok:true,events:e});
       state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
       const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
       state.events.push(step);
@@ -5265,6 +5268,34 @@ export function execute(state, input) {
   if (state.pendingReplacementChoice) {
     if (cmd.type !== 'resolve_replacement_choice') return reject('replacement_choice_unresolved');
     if (cmd.playerId !== state.pendingReplacementChoice.playerId) return reject('replacement_choice_not_your_decision');
+    if (state.pendingReplacementChoice.frame) {
+      const pending = state.pendingReplacementChoice;
+      if (!pending.options.includes(cmd.choice)) return reject('illegal_replacement_choice');
+      const before = state.events.length;
+      const continuations = chooseDestructionReplacement(state, cmd.choice);
+      state.events.push(event('replacement_choice_resolved', { playerId:cmd.playerId,
+        objectId:pending.objectId,cardId:pending.cardId,choice:cmd.choice }));
+      for (const item of continuations ?? []) {
+        if (state.pendingReplacementChoice) { state.pendingReplacementChoice.continuations.push(item); continue; }
+        if (item.combatResume) {
+          resolveCombatDamage(state,item.combatResume.defendingPlayerId,item.combatResume);
+          if (!state.pendingReplacementChoice && !state.pendingDamageAssignment) state.turn=jumpToStep(state.turn,'end_of_combat',state.turn.activePlayerId);
+        } else if (item.completion) {
+          const c=item.completion;
+          if(c.spell) {
+            finishPendingSpell(state,c.entryId,[]);
+            const last=state.events.at(-1); if(c.event?.modal && last?.type==='spell_resolved') state.events[state.events.length-1]=Object.freeze({...last,...c.event});
+          } else {
+            state.zones.stack=state.zones.stack.filter(id=>id!==c.entryId);state.objects.delete(c.entryId);
+            state.events.push(c.event);
+          }
+        } else applyEffect(state,item.effect,item.sourceObject,item.targets,item.context);
+      }
+      if (!state.pendingReplacementChoice && state.pendingSpell) {
+        const tail=state.pendingSpell;state.pendingSpell=null;finishPendingSpell(state,tail.stackId,tail.effects);
+      }
+      return accepted(state,cmd,{ok:true,events:state.events.slice(before)});
+    }
     if (cmd.choice !== 'shield' && cmd.choice !== 'regenerate') return reject('illegal_replacement_choice');
     const pending = state.pendingReplacementChoice;
     state.pendingReplacementChoice = null;
@@ -5328,7 +5359,7 @@ export function execute(state, input) {
       state.events.push(resolved);
       e.push(resolved);
       // Drugi pass mógł zakolejkować kolejną decyzję — kroku wtedy nie zmieniamy.
-      if (state.pendingDamageAssignment) return accepted(state, cmd, { ok: true, events: e });
+      if (state.pendingDamageAssignment || state.pendingReplacementChoice) return accepted(state, cmd, { ok: true, events: e });
       state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
       const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
       state.events.push(step);
@@ -5475,6 +5506,7 @@ export function playerView(state, playerId) {
           controllerId: object.controllerId, zone: object.zone,
           kind: object.kind,
           power: effectivePower(object, state), toughness: effectiveToughness(object, state),
+          ...(combatDamageByToughness(state, object) ? { combatDamageByToughness: true } : {}),
           powerModifier: object.powerModifier, toughnessModifier: object.toughnessModifier,
           tapped: object.tapped, summoningSickness: object.summoningSickness, damage: object.damage,
         };
@@ -6926,8 +6958,9 @@ export function playerView(state, playerId) {
     && state.pendingReplacementChoice && state.pendingReplacementChoice.playerId === playerId) {
     // M202/odznaka #3 (CR 616.1): przy dwóch efektach zastępczych wybiera
     // kontroler permanenta. Dwie opcje — jak w kreatorze decyzji.
-    legalCommands.push(command('resolve_replacement_choice', playerId, { choice: 'regenerate' }));
-    legalCommands.push(command('resolve_replacement_choice', playerId, { choice: 'shield' }));
+    for (const choice of state.pendingReplacementChoice.options ?? ['regenerate','shield']) {
+      legalCommands.push(command('resolve_replacement_choice',playerId,{choice,objectId:state.pendingReplacementChoice.objectId}));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeFertileThicket) {
     // Fertile Thicket (BFZ): ETB reveal — gracz wybiera 0 lub 1 basic land z top 5.
     // "You may" = can decline entirely.

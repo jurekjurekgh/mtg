@@ -1,3 +1,4 @@
+import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
 import { preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
@@ -874,29 +875,8 @@ export function counterStackObject(state, stackId, { counteredBy = null, counter
  * Zwraca true, gdy permanent FAKTYCZNIE został zniszczony.
  */
 export function destroyPermanentByEffect(state, objectId, options = {}) {
-  const object = state.objects.get(objectId);
-  if (!object || object.zone !== 'battlefield') return false;
-  if (effectiveKeywords(object, state).includes('indestructible')) return false;
-  if ((object.counters?.shield ?? 0) > 0) {
-    // Jedna semantyczna operacja we wszystkich ścieżkach (counter_removed,
-    // synchronizacja station); shield nie zdejmuje zaznaczonych obrażeń.
-    removeCounter(state, objectId, 'shield', 1);
-    state.events.push(event('shield_consumed', {
-      objectId, cardId: object.cardId, reason: options.reason ?? 'destroy',
-    }));
-    return false;
-  }
-  if (tryRegenerate(state, object)) return false;
-  const toZone = deathZoneFor(state, object);
-  const destId = `${toZone}-${state.objectSequence++}`;
-  const moved = moveObjectDirectly(state, objectId, toZone, destId);
-  state.events.push(event('permanent_destroyed', {
-    // `toZone` jest CZĘŚCIĄ faktu, nie ozdobą: triggery śmierci sprawdzają,
-    // czy permanent poszedł do wygnania — wtedy „dies" się nie wydarzyło.
-    fromId: objectId, objectId: destId, playerId: object.controllerId,
-    cardId: moved.cardId, controllerId: object.controllerId, toZone,
-  }));
-  return true;
+  destroyPermanents(state, [objectId], options);
+  return !state.objects.has(objectId) || state.objects.get(objectId)?.zone !== 'battlefield';
 }
 
 /**
@@ -969,6 +949,14 @@ export function applyEnterCounters(state, objectId) {
 }
 
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
+  if (state.pendingReplacementChoice?.frame) {
+    state.pendingReplacementChoice.continuations.push({effect, sourceObject, targets, context});
+    return true;
+  }
+  if (effect.type === 'destroy_permanents') {
+    destroyPermanents(state, targets.filter(Boolean));
+    return Boolean(state.pendingReplacementChoice);
+  }
   // X-cost czary (Consume Spirit, Epic Experiment — Batch 30): efekty mogą
   // użyć amount: 'X' (lub amountFrom: 'X') — wartość X z obiektu stosu
   // (sourceObject.spellX). Resolwowane raz, spójnie dla wszystkich efektów.
@@ -1284,21 +1272,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const attached = [...state.objects.values()].filter((att) => att.zone === 'battlefield' && att.equipment && att.attachedTo === targetId);
     if (attached.length === 0) return;
     if (effect.confirmed) {
-      for (const att of attached) {
-        // M270 (błąd #7, CR 122.1e): zniszczenie Equipment to śmierć jak każda
-        // inna — strefę docelową wyznacza WSPÓLNY `deathZoneFor` (licznik
-        // finality / naznaczenie exileIfDiesThisTurn kierują do wygnania).
-        // Ta ścieżka szła na sztywno do cmentarza, więc Equipment zwrócone
-        // przez Zoraline („nonland permanent card with mana value 3 or less"
-        // — artefakty się kwalifikują) z licznikiem finality dawało się
-        // odzyskać drugi raz.
-        // M272 (błąd #19): zniszczenie Equipment przechodzi przez ten sam
-        // helper co „destroy target permanent" — wcześniej ta ścieżka nie
-        // znała ani indestructible (CR 702.12), ani licznika shield, ani
-        // regeneracji, więc chroniony Equipment i tak lądował w grobie.
-        destroyPermanentByEffect(state, att.id);
-      }
-      return;
+      destroyPermanents(state, attached.map(a => a.id));
+      return Boolean(state.pendingReplacementChoice);
     }
     state.pendingDestroyEquipment = {
       playerId: sourceObject.controllerId,
@@ -3129,8 +3104,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const minPower = Math.min(...creatures.map((o) => effectivePower(o, state) ?? 0));
     const targetPower = effectivePower(object, state) ?? 0;
     if (targetPower !== minPower) return; // nie najmniejsza moc — nic się nie dzieje
-    applyEffect(state, { type: 'destroy_permanent' }, sourceObject, [targetId], context);
-    return;
+    return applyEffect(state, { type: 'destroy_permanent' }, sourceObject, [targetId], context);
   }
   // M154 (Batch 38, Divine Offering): „Destroy target artifact. You gain life
   // equal to its mana value." — zniszcz artefakt-cel i zyskaj życie równe jego
@@ -3153,11 +3127,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // blokują wyłącznie pierwsze zdanie; mana value bierzemy z chwili przed
     // próbą zniszczenia (LKI, CR 400.7). changeLife samo emituje life_changed.
     if (manaValue > 0) {
-      changeLife(state, sourceObject.controllerId, manaValue);
+      applyEffect(state, { type: 'gain_life', amount: manaValue }, sourceObject, []);
     }
-    return;
+    return Boolean(state.pendingReplacementChoice);
   }
   if (effect.type === 'destroy_permanent') {
+    if (effect.targetIndices) {
+      destroyPermanents(state,effect.targetIndices.map(i=>targets[i]).filter(Boolean));
+      return Boolean(state.pendingReplacementChoice);
+    }
     // Destroy target artifact/permanent (Shatter, CR 701.7): cel trafia do grobu
     // (zmiana strefy battlefield → graveyard), co odpala trigger „dies” przez
     // zdarzenie object_moved (jak sacrifice). W engine bez regeneracji destroy
@@ -3176,7 +3154,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // M272 (błąd #19): pełna sekwencja destroy (indestructible → shield →
     // regeneracja → strefa śmierci) mieszka we WSPÓLNYM helperze.
     destroyPermanentByEffect(state, targetId);
-    return;
+    return Boolean(state.pendingReplacementChoice);
   }
   if (effect.type === 'sacrifice_permanent') {
     // Poświęcenie permanentu: domyślnie samo źródło („sacrifice it"), z
@@ -3825,10 +3803,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
         state.cantBeRegeneratedThisTurn = [...(state.cantBeRegeneratedThisTurn ?? []), targetId];
       }
     }
-    for (const targetId of [idA, idB]) {
-      applyEffect(state, { type: 'destroy_permanent', targetIndex: 0 }, sourceObject, [targetId]);
-    }
-    return;
+    destroyPermanents(state, [idA,idB]);
+    return Boolean(state.pendingReplacementChoice);
   }
   if (effect.type === 'cant_be_regenerated_this_turn') {
     // Rage of Purphoros (THS): „It can't be regenerated this turn." Flaga
