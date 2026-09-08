@@ -70,6 +70,8 @@ test('B1: trample przydziela lethal bez uwzględniania tarcz prewencji (CR 510.1
   // Tarcza Withstand „prevent the next 2 damage" na blokerze.
   state.damageShields = [{ targetId: 'blk', remaining: 2, sourceCardId: 'withstand' }];
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } }).ok, true);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const events = resolveCombatWithAssignment(state, 'p1', 'p2');
@@ -95,6 +97,8 @@ test('B1b: filtr „prevent all damage" nie zmniejsza wymogu lethal przy trample
   // Ethersworn Shieldmage: „prevent all damage that would be dealt to creatures".
   state.preventDamageThisTurn = [{ typesInclude: ['Creature'], isCreature: true }];
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } }).ok, true);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const events = resolveCombatWithAssignment(state, 'p1', 'p2');
@@ -119,6 +123,8 @@ test('B2: damage_dealt blokera niesie kwotę ZADANĄ (po prewencji), lifelink od
   // Tarcza 3 na atakującym — bloker 4/4 zadaje 4, tarcza zjada 3, doszło 1.
   state.damageShields = [{ targetId: 'att', remaining: 3, sourceCardId: 'withstand' }];
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } }).ok, true);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });

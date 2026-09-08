@@ -65,6 +65,8 @@ test('M296/C: infect atakujący → result.events niesie counter_added blokera',
   put(state, 'insect', 'token_insect', 'p1');
   put(state, 'bear', 'thornhide-wolves', 'p2');
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['insect'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { insect: ['bear'] } });
   passUntilCombat(state);
   const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
@@ -82,6 +84,8 @@ test('M296/C: infect bloker → result.events niesie counter_added atakującego'
   put(state, 'wolves', 'thornhide-wolves', 'p1');
   put(state, 'insect', 'token_insect', 'p2');
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['wolves'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { wolves: ['insect'] } });
   passUntilCombat(state);
   const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
@@ -96,6 +100,8 @@ test('M296/C (ta sama klasa): renown — counter_added też jedzie w result.even
   const state = combatState();
   put(state, 'sergeant', 'akroan-sergeant', 'p1');
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['sergeant'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
   passUntilCombat(state);
   const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });

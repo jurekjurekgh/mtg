@@ -415,8 +415,11 @@ test('D3b: intimidate w walce — blokuje tylko artefaktowy stwór albo wspólny
     zone: 'battlefield', kind: 'creature', power: 1, toughness: 1, manaCost: 1,
     types: ['Artifact', 'Creature'], subtypes: [], colors: [], abilities: [], summoningSickness: false,
   });
-  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p1', priorityPlayerId: 'p1' };
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1'); // D: skok (spójny stepIndex), nie ręczna chirurgia
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['host'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const badBlock = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { host: ['white'] } });
   assert.equal(badBlock.ok, false, 'biały stwór bez wspólnego koloru NIE blokuje (intimidate)');
   const greenBlock = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { host: ['green'] } });

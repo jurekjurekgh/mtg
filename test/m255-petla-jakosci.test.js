@@ -291,7 +291,8 @@ function combatDamageWindow({ passes = 1, priority = 'p2' } = {}) {
   put(state, 'blk', 'token_soldier', 'p2'); // 1/1
   const atak = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] });
   assert.ok(atak.ok, 'deklaracja ataku');
-  state.turn.priorityPlayerId = 'p2';
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const blok = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['blk'] } });
   assert.ok(blok.ok, 'deklaracja bloku');
   assert.equal(state.turn.step, 'combat_damage', 'krok obrażeń');

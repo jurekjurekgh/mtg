@@ -656,6 +656,8 @@ test('Boros Challenger: stwór o równej/większej sile nie jest kandydatem — 
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['challenger', 'peer', 'big'] }).ok);
   assert.equal(state.pendingMentorTargets.length, 0, 'równa siła nie jest „lesser power\"');
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(state.turn.step, 'declare_blockers', 'gra przeszła do deklaracji blokerów');
   const view = playerView(state, 'p2');
   assert.ok(hasCommand(view, 'pass_priority') || hasCommand(view, 'declare_blockers'), 'bez decyzji mentora gra toczy się dalej (priorytet obrońcy)');

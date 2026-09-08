@@ -93,6 +93,8 @@ test('Sherlock 1b: Trestle Troll ma prawdziwy reach — może blokować latając
   addRealCard(state, 'moogle', 'cloudbound-moogle', 'p1', 'battlefield', { summoningSickness: false });
   addRealCard(state, 'troll', 'trestle-troll', 'p2', 'battlefield');
   const atk = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['moogle'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(atk.ok, 'moogle atakuje: ' + (atk.events?.[0]?.reason ?? ''));
   const blk = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { moogle: ['troll'] } });
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
@@ -110,6 +112,8 @@ test('Sherlock 1c: Deadly Recluse ma prawdziwy deathtouch — 1 punkt obrażeń 
   addRealCard(state, 'recluse', 'deadly-recluse', 'p1', 'battlefield', { summoningSickness: false });
   addRealCard(state, 'mauler', 'gloomfang-mauler', 'p2', 'battlefield');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['recluse'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { recluse: ['mauler'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
@@ -131,6 +135,8 @@ test('Sherlock 1d: Goblin Deathraiders mają prawdziwy trample — nadmiar nad l
   addRealCard(state, 'raiders', 'goblin-deathraiders', 'p1', 'battlefield', { summoningSickness: false });
   addRealCard(state, 'bear', 'highland-game', 'p2', 'battlefield'); // 2/1
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['raiders'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { raiders: ['bear'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const lifeBefore = state.players.find((p) => p.id === 'p2').life;

@@ -174,6 +174,8 @@ test('Kappa Tech-Wrecker: „you may\" — odmowa nie zdejmuje licznika, wybór 
   // p1 atakuje kapą, p2 nie blokuje.
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['kappa'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
@@ -193,6 +195,8 @@ test('Kappa Tech-Wrecker: „you may\" — odmowa nie zdejmuje licznika, wybór 
   addObject(state2, { id: 'art', instanceId: 'i-art', cardId: 'x-art', controllerId: 'p2', zone: 'battlefield', kind: 'artifact', manaCost: 2, types: ['Artifact'], subtypes: [], colors: [], abilities: [] });
   state2.turn = jumpToStep(state2.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state2, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['kappa'] }).ok);
+  execute(state2, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state2, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state2, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
   execute(state2, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state2, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);

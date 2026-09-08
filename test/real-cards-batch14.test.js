@@ -542,11 +542,12 @@ test('Deathtouch: creature with deathtouch destroys any creature it damages in c
   // Setup combat with deathtouch attacker
   const attacker = addCreature(state, 'dt-attacker', 'p1', 1, 1, ['deathtouch'], 1);
   const blocker = addCreature(state, 'dt-blocker', 'p2', 0, 5, [], 3);
-  state.turn.phase = 'combat';
-  state.turn.step = 'declare_attackers';
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1'); // D: skok (spójny stepIndex), nie ręczna chirurgia
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['dt-attacker'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { 'dt-attacker': ['dt-blocker'] } });
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });

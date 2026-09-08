@@ -61,6 +61,15 @@ function setup({ step = 'main1', myTapped = false, enemyBlockers = 1 }) {
       ...state.objects.get(id), tapped: false, summoningSickness: false,
     }));
   }
+  // C (znalezisko testera): Enigma dobiera — biblioteka musi istnieć, żeby
+  // guard deck-outu nie wetował (setup wcześniej miał 0 kart).
+  for (let i = 0; i < 10; i += 1) {
+    addObject(state, {
+      id: `lib-${i}`, instanceId: `i-lib-${i}`, cardId: 'x-test', controllerId: 'p2',
+      ownerId: 'p2', zone: 'library', kind: 'creature', power: 1, toughness: 1,
+      manaCost: 0, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [],
+    });
+  }
   addMana(state, 'p2', 2, { colors: ['U', 'U'] });
   return state;
 }

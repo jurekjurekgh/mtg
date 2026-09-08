@@ -168,6 +168,8 @@ test('B2: morph blokuje — deklaracja bloków nie zdradza nazwy', () => {
 
   const ra = execute(state, { type: 'declare_attackers', playerId: HUMAN, attackerIds: ['my-attacker'] });
   assert.ok(ra.ok);
+  execute(state, { type: 'pass_priority', playerId: HUMAN }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: FOE });
   const rb = execute(state, {
     type: 'declare_blockers', playerId: FOE, assignments: { 'my-attacker': ['foe-morph'] },
   });

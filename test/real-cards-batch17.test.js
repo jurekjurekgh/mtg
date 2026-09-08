@@ -256,6 +256,8 @@ test("Garruk's Companion: 3/2 z trample, nadmiar obrażeń idzie na gracza", () 
   const p2lifeBefore = state.players.find((p) => p.id === 'p2').life;
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: [comp.id] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { [comp.id]: ['blocker'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
@@ -297,6 +299,8 @@ test('Carrion Call: niezablokowany token infect daje znaki trucizny (nie życie)
   const p2lifeBefore = state.players.find((p) => p.id === 'p2').life;
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: [insect] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok); // brak bloku
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
@@ -316,6 +320,8 @@ test('Carrion Call: infect do blokującego stwora = licznik -1/-1 (śmierć przy
   addCreature(state, 'blocker', 'p2', 1, 1);
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: [insect] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { [insect]: ['blocker'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);

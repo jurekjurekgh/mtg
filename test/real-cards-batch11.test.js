@@ -618,6 +618,8 @@ test('first strike: atakujący z FS zabija blokera, sam nie ponosi obrażeń', (
   state.objects.set('fs', Object.freeze({ ...fs, summoningSickness: false }));
   addSimpleCreature(state, 'blk', 'p2', 2, 2);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['fs'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { fs: ['blk'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const resolved = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
@@ -635,6 +637,8 @@ test('first strike: bloker z FS odpowiada pierwszy i zabija zwykłego atakujące
   addSimpleCreature(state, 'atk', 'p1', 2, 1);
   addSimpleCreature(state, 'blk', 'p2', 2, 2, ['first_strike']);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['blk'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
@@ -650,6 +654,8 @@ test('first strike nie zmienia walki bez stwora z FS (regresja)', () => {
   addSimpleCreature(state, 'atk', 'p1', 2, 1);
   addSimpleCreature(state, 'blk', 'p2', 2, 2);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['blk'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);

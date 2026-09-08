@@ -512,6 +512,8 @@ test('Blazing Torch: wyposażony stwór nie może być blokowany przez Vampira',
   putBlank(state, 'vamp', 'p2', { power: 1, toughness: 1, subtypes: ['Vampire'] });
   putBlank(state, 'gob', 'p2', { power: 1, toughness: 1, subtypes: ['Goblin'] });
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const bad = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['vamp'] } });
   assert.ok(!bad.ok, 'Vampire nie może blokować (CR — can\'t be blocked by Vampires)');
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['gob'] } }).ok, 'Goblin może blokować');

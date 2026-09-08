@@ -237,6 +237,8 @@ test('Emerald Oryx: nie może być blokowany, gdy obrońca kontroluje Forest', (
     subtypes: ['Forest'], types: ['Land'], colors: [],
   });
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['oryx'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const bad = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { oryx: ['blk'] } });
   assert.ok(!bad.ok, 'forestwalk: obrońca z Forest nie może blokować');
 });
@@ -254,6 +256,8 @@ test('Emerald Oryx: może być blokowany, gdy obrońca nie ma Forest', () => {
     subtypes: ['Island'], types: ['Land'], colors: [],
   });
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['oryx'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { oryx: ['blk'] } }).ok,
     'bez Foresta blokowanie legalne');
 });

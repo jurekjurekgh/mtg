@@ -322,6 +322,8 @@ test('M200/D: poświęcenie lądu + śmierć stwora w tej samej turze = DOKŁADN
   state.objects.set('atk', Object.freeze({ ...atk, power: 5, toughness: 5, summoningSickness: false }));
   state.turn = { ...state.turn, number: 4, activePlayerId: 'p2', priorityPlayerId: 'p2', phase: 'combat', step: 'declare_attackers', stepIndex: 5, passes: 0 };
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   // Ofiara BLOKUJE (5 mocy zabija 1/1 w odbiciu; niewyblokowany atak raniłby gracza).
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: { atk: ['victim'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p1' });

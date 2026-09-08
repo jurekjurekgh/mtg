@@ -26,6 +26,9 @@ function combat(trample = false) {
   }
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok);
+  // D (CR 508.2): okno odpowiedzi po deklaracji — pełna runda passów do bloków.
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['spawn', 'hunter'] } }).ok);
   return state;
 }

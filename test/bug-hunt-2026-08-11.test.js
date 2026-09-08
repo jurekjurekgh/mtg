@@ -47,7 +47,10 @@ function startCombat(state, attackers) {
 }
 
 function declareBlocks(state, assignments) {
+  // D: okno po deklaracji (CR 508.2) — pełna runda passów do kroku bloków.
+  execute(state, { type: 'pass_priority', playerId: 'att' });
   state.turn.priorityPlayerId = 'def';
+  execute(state, { type: 'pass_priority', playerId: 'def' });
   return execute(state, { type: 'declare_blockers', playerId: 'def', assignments });
 }
 

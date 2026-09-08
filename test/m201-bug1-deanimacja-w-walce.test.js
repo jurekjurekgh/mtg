@@ -72,6 +72,8 @@ test('BUG1: de-animowany permanent nie zadaje obrażeń bojowych', () => {
   const state = animatedAttackerState();
   applyEffect(state, { type: 'destroy_permanent' }, { id: 'x', controllerId: 'p2', cardId: 'y', zone: 'stack' }, ['animator']);
   runStateBasedActions(state);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   const res = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
@@ -82,6 +84,8 @@ test('BUG1: de-animowany permanent nie zadaje obrażeń bojowych', () => {
 
 test('BUG1 (anty-over-fix): dopóki źródło animacji żyje, atakujący normalnie bije', () => {
   const state = animatedAttackerState();
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok, true);

@@ -315,6 +315,8 @@ test('Giant Spider: reach blokuje atakującego z flying', () => {
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['falcon'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const r = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { falcon: ['spider'] } });
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(r.ok, r.events?.[0]?.reason);
@@ -332,6 +334,8 @@ test('Scroll Thief: combat damage do gracza → draw', () => {
   state.turn.priorityPlayerId = 'p1';
   const before = hand(state, 'p1').length;
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['st'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   // p2 bez bloków
   const view2 = playerView(state, 'p2');
   const noBlocks = view2.legalCommands.find((c) => c.type === 'declare_blockers');

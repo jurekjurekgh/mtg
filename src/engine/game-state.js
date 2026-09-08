@@ -4813,7 +4813,17 @@ export function execute(state, input) {
         events.push(event('priority_passed', { playerId: cmd.playerId, nextPlayerId: state.turn.activePlayerId }));
       } else {
         const previousTurnNumber = state.turn.number;
+        // D (CR 508.2): tędy przechodzi TYLKO combat_damage bez atakujących
+        // (z atakującymi krok domyka resolve_combat — gałąź M255/F powyżej).
+        // Taki pusty combat trzeba sprzątnąć, bo bramka oferty deklaracji
+        // (`!state.combat`) czyta go w NASTĘPNEJ walce.
+        if (state.turn.step === 'combat_damage') state.combat = null;
         state.turn = nextTurnStep(state.turn, state.players);
+        // D (CR 508.2): wejście w bloki po rundzie passów — deklaruje OBROŃCA
+        // (nieaktywny), jak w drodze przez starą komendę i ścieżkę M257.
+        if (state.turn.step === 'declare_blockers') {
+          state.turn.priorityPlayerId = state.players.find((p) => p.id !== state.turn.activePlayerId).id;
+        }
         events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
         // CR 504.1: akcja turowa kroku dobierania — aktywny gracz dobiera
         // kartę SAM, bez decyzji i bez stosu (M101/A). Wykonujemy zaraz po
@@ -5233,13 +5243,16 @@ export function execute(state, input) {
   }
 
   if (cmd.type === 'declare_attackers') {
+    // D (znalezisko testera, CR 508.2): po deklaracji priorytet dostaje
+    // AKTYWNY gracz i następuje pełna runda priorytetów W TYM kroku
+    // (precedens M172/C dla 509.4) — dotąd skok od razu do bloków kasował
+    // obrońcy okno „gdy Bot mnie zaatakuje”. Re-deklaracja odrzucana
+    // (oferta też zniknęła — bramka `!state.combat` przy ofercie).
+    if (state.combat) return reject('attackers_already_declared');
     try {
       const e = declareAttackers(state, cmd.playerId, cmd.attackerIds);
-      const defenderId = state.players.find((player) => player.id !== cmd.playerId).id;
-      state.turn = jumpToStep(state.turn, 'declare_blockers', defenderId);
-      const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
-      state.events.push(step);
-      return accepted(state, cmd, { ok: true, events: [e, step] });
+      state.turn.priorityPlayerId = cmd.playerId;
+      return accepted(state, cmd, { ok: true, events: [e] });
     } catch (error) {
       return reject(`illegal_attackers:${error.message}`);
     }
@@ -7356,7 +7369,9 @@ export function playerView(state, playerId) {
   }
   if (state.status === 'active' && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
       && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && state.turn.priorityPlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingEscapeExile) {
-    if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
+    // D (CR 508.2): deklaracja raz na combat — po deklaracji (state.combat)
+    // krok trwa dalej jako okno odpowiedzi, bez oferty re-deklaracji.
+    if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId && !state.combat) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {
         const key = JSON.stringify(attackerIds);

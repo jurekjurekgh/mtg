@@ -78,10 +78,12 @@ function defendingCobra() {
   const state = game('p1');
   putCard(state, 'cobra', 'death-hood-cobra', 'p2', 'battlefield', { summoningSickness: false });
   putCard(state, 'flyer', 'rustwing-falcon', 'p1', 'battlefield', { summoningSickness: false });
-  addMana(state, 'p2', 4, { colors: ['G'] });
-  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p1', priorityPlayerId: 'p1' };
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1'); // D: skok (spójny stepIndex), nie ręczna chirurgia
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['flyer'] }).ok);
-  state.turn.priorityPlayerId = 'p2';
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  addMana(state, 'p2', 4, { colors: ['G'] }); // D: runda passów czyści pulę (CR 500.4) — mana kobry musi być świeża
   return state;
 }
 

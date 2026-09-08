@@ -1,13 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
+import { jumpToStep } from '../src/engine/turn.js';
 
 function combatState() {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
 
   // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
+  // D: krok STAWIANY skokiem (stepIndex spójny) — ręczne `{...turn, step}`
+  // zostawiało indeks z innego kroku, a runda passów awansuje po indeksie.
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
-  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers' };
   addObject(state, { id: 'ready', instanceId: 'i1', cardId: 'R', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2 });
   addObject(state, { id: 'sick', instanceId: 'i2', cardId: 'S', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2 });
   state.objects.set('sick', Object.freeze({ ...state.objects.get('sick'), summoningSickness: true }));
@@ -28,6 +31,8 @@ test('legalCommands pomija chorych i tapniętych atakujących oraz obejmuje pust
 test('blokujące opcje oferowane są wyłącznie broniącemu graczowi', () => {
   const state = combatState();
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['ready'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const defender = playerView(state, 'p2').legalCommands.filter((c) => c.type === 'declare_blockers');
   assert.equal(defender.length, 2);
   assert.ok(defender.some((c) => Object.keys(c.assignments).length === 0));
@@ -40,6 +45,8 @@ test('wielu atakujących daje wieloblok, a blocker nie powtarza się w opcjach',
   state.objects.set('sick', Object.freeze({ ...state.objects.get('sick'), summoningSickness: false }));
   addObject(state, { id: 'b2', instanceId: 'i4', cardId: 'B2', controllerId: 'p2', zone: 'battlefield', kind: 'creature', power: 1, toughness: 1 });
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['ready', 'sick'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const defender = playerView(state, 'p2').legalCommands.filter((c) => c.type === 'declare_blockers');
   const multi = defender.find((c) => JSON.stringify(c.assignments) === JSON.stringify({ ready: ['b1', 'b2'] }));
   assert.ok(multi, 'brak wielobloku w ofercie');
@@ -49,6 +56,8 @@ test('wielu atakujących daje wieloblok, a blocker nie powtarza się w opcjach',
 test('resolve_combat jest oferowany aktywnemu atakującemu, a pass jest wtedy zablokowany', () => {
   const state = combatState();
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['ready'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const view = playerView(state, 'p1');
@@ -65,6 +74,8 @@ test('resolve_combat jest oferowany aktywnemu atakującemu, a pass jest wtedy za
 test('po komendach combat pass kontynuuje automat od end_of_combat bez cofania', () => {
   const state = combatState();
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['ready'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { ready: ['b1'] } });
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });

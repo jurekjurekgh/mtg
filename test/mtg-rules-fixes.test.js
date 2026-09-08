@@ -818,6 +818,8 @@ test('T16: 5/5 vs dwóch 3/3 — obrażenia ROZDZIELONE (3+2), drugi bloker prze
   addCombatCreature(state, 'b1', 'p2', 3, 3);
   addCombatCreature(state, 'b2', 'p2', 3, 3);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   resolveCombatWithAssignment(state, 'p1', 'p2');
@@ -836,6 +838,8 @@ test('T16: trample — nadmiar po lethal wszystkich blokerów przechodzi na grac
   addCombatCreature(state, 'b1', 'p2', 3, 3);
   addCombatCreature(state, 'b2', 'p2', 3, 3);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   resolveCombatWithAssignment(state, 'p1', 'p2');
@@ -848,6 +852,8 @@ test('T16: deathtouch — 1 obrażeń na blokera (lethal = 1), reszta przepada b
   addCombatCreature(state, 'b1', 'p2', 2, 2);
   addCombatCreature(state, 'b2', 'p2', 2, 2);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   resolveCombatWithAssignment(state, 'p1', 'p2');

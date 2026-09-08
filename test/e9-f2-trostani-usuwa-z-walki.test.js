@@ -54,7 +54,8 @@ test('E9/F2: przejęty BLOKER znika z listy bloków (CR 506.4)', () => {
   state.turn = jumpToStep({ ...initialTurn('p1') }, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1'; state.turn.passes = 0;
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok);
-  state.turn.priorityPlayerId = 'p2'; state.turn.passes = 0;
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } }).ok);
   applyEffect(state, { type: 'control_to_owners_all_creatures' },
     Object.freeze({ id: 't', cardId: 'trostani-discordant', controllerId: 'p2', ownerId: 'p2' }), []);

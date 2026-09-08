@@ -77,6 +77,8 @@ function resolveStack(state, limit = 24) {
 function attackUnblocked(state, attackerIds, defendingPlayerId = 'p2') {
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // okno obrońcy (CR 509.4)
   return execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId });
@@ -218,6 +220,7 @@ test('B52: Vaan — rzut wygnanej cudzej karty daje +1/+1 na Scouty (you don\'t 
   state.zones.library = ['top', ...state.zones.library.filter((id) => id !== 'top')];
 
   attackUnblocked(state, ['atk']);
+  addMana(state, 'p1', 3, { colors: ['G'] }); // D: runda passów czyści pulę (CR 500.4) — mana na rzut w oknie musi być świeża
   resolveStack(state);
   assert.ok(state.pendingExileCast, 'decyzja rzut-albo-Skarb otwarta');
 

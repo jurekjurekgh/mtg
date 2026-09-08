@@ -241,6 +241,8 @@ test('Relic Robber: combat damage do gracza → TEN gracz dostaje Goblin Constru
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['rr'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const noBlocks = playerView(state, 'p2').legalCommands.find((c) => c.type === 'declare_blockers');
   execute(state, noBlocks);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach
@@ -278,6 +280,8 @@ test('Flurry of Wings: X tokenów Bird Soldier = liczba atakujących', () => {
   state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['a1', 'a2'] }).ok);
   // p2 bez bloków (declare_blockers), potem p1 ma priorytet w combat_damage
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const nb = playerView(state, 'p2').legalCommands.find((c) => c.type === 'declare_blockers');
   execute(state, nb);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach

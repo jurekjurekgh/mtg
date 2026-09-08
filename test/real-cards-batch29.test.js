@@ -172,6 +172,8 @@ test('Curiosity: zaczarowany stwór zadaje damage przeciwnikowi -> you may draw'
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['host'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const nb = playerView(state, 'p2').legalCommands.find((c) => c.type === 'declare_blockers');
   execute(state, nb);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
@@ -582,6 +584,8 @@ test('Audyt B4: zakryty stwór z flying counterem może blokować flyera', () =>
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const r = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['cloakfd'] } });
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(r.ok, 'zakryty z flying counterem blokuje flyera: ' + (r.events?.[0]?.reason ?? ''));
