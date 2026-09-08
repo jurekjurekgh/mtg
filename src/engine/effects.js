@@ -1320,6 +1320,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         objectId: object.id, cardId: object.cardId,
         controllerId: ownerId, fromControllerId: object.controllerId, toOwner: true,
       }));
+      // E9/F2 (wyzwanie wyłapywacza błędów II, CR 506.4): zmiana kontrolera
+      // usuwa permanent z walki — jak w gain_control_until_end_of_turn
+      // (E8/B5). Dotąd przejęty atakujący zostawał w state.combat.attackers
+      // i „atakuwał" swojego nowego kontrolera (Trostani Discordant).
+      if (state.combat) removeFromCombat(state, object.id);
       moved.push(object.id);
     }
     return;
