@@ -446,3 +446,23 @@ sondażami/probe'ami na żywym silniku przed spisaniem planu.
   npm test 4770/4770.
 
 Stan po refutacji F3: npm test 4771/4771; test:all 4781/4781; bench — patrz PR #105.
+
+## E10 — korekta audytowa: revert E8/B4 (trample vs protection, CR 702.19b) (2026-09-08)
+
+Audyt wewnętrzny poprawek (`docs/audits/AUDYT_PR105_POPRAWKI_2026-09-08.md`,
+na polecenie właściciela po refutacji F3) wykazał, że E8/B4 było drugim
+fałszywym znaleziskiem: CR 702.19b każe przy przydziale obrażeń uwzględnić
+„damage already marked ... **but not any abilities or effects that might
+change the amount of damage that's actually dealt**" — prewencja (protection)
+NIE obniża lethal przydziału. Stany sprzed B4 były zgodne z regułami; fix
+wprowadził naruszenie (walidacja przepuszcza 0 w chronionego; boty przydzielają 0).
+
+- [ ] **A — ADR 0030**: obowiązek pobrania dosłownego tekstu CR i rulingów
+  ze źródeł online przed każdą zmianą istniejącego kodu regułowego albo
+  nową mechaniką; pamięć treningowa nie jest źródłem (dowody: F3, B4).
+- [ ] **B — revert `2e15ba6`**: `lethalOf` wraca do
+  `deathtouch ? 1 : toughness − damage marked`.
+- [ ] **C — guardia**: `test/e8-b4-trample-protection.test.js` przepisany na
+  twierdzenie POPRAWNEJ reguły (0 w chronionego odrzucone; default przydziela
+  toughness; deathtouch→1 nietknięty; bez protection bez zmian; E2E nadwyżka
+  dla obrońcy tylko po lethal wszystkich blokerów).

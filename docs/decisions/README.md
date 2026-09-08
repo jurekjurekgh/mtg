@@ -42,6 +42,7 @@ dokument opisuje kontekst, wybór i jego konsekwencje.
 | [0028](0028-rulings-on-touch-not-bulk.md) | Rulingi WotC: zasada „przy kartce" (snapshot niesie `rulings`, choćby puste) i kolejka priorytetu zamiast hurtowego przejścia po katalogu; próg pokrycia tylko na podstawie stanu faktycznego | Zaakceptowana |
 
 | [0029](0029-catalog-grows-only-from-owner-collection.md) | Katalog kart to kolekcja właściciela: agent nie dodaje kart (też jako „nośników mechaniki") — brak nośnika rozwiązuje karta synteretyczna w teście; strażnik `proweniencja-katalogu.test.js` | Zaakceptowana |
+| [0030](0030-fetch-cr-rulings-before-engine-changes.md) | Zmiany regułowe (fix istniejącego kodu albo nowa mechanika) wymagają pobrania dosłownego tekstu CR i rulingów ze źródeł online; pamięć treningowa nie jest źródłem (po F3 i B4 w PR #105) | Zaakceptowana |
 ## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
 
 Uwaga właściciela (2026-08-14): reguły trwałe nie mogą mieszkać w handoffie, bo
