@@ -1690,6 +1690,7 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
     id: effectSourceId, controllerId: playerId, cardId: null, zone: 'none', kind: null,
   };
   const sourceLki = Object.freeze({
+    untapVersion: source.untapVersion ?? 0,
     power: source.power, toughness: source.toughness,
     powerModifier: source.powerModifier ?? 0, toughnessModifier: source.toughnessModifier ?? 0,
     faceDown: source.faceDown ?? false,

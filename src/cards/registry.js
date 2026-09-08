@@ -171,6 +171,7 @@ export function defineCard(data) {
       // Ograniczenia gospodarza (Hobble): `cantAttack`/`cantBlock` (bool albo
       // warunek { hostHasColor } — „can't block if it's black\"); egzekwuje
       // combat w engine (permanents.attachmentRestrictions).
+      ...(data.aura.doesntUntap ? { doesntUntap: true } : {}),
       ...(data.aura.cantAttack ? { cantAttack: true } : {}),
       ...(data.aura.cantAttackYou ? { cantAttackYou: true } : {}),
       // Odbiór keywordów gospodarzowi (Grounded: „loses flying").

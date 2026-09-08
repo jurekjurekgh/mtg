@@ -221,7 +221,8 @@ test('Ainok Tracker: morph za {3}, obrót za morphCost {5}', () => {
 test('Spectral Prison: materializacja — enchantment aura', () => {
   const def = REGISTRY.get('spectral-prison');
   assert.ok(def.aura);
-  assert.ok(def.abilities.length >= 2);
+  assert.equal(def.aura.doesntUntap, true);
+  assert.equal(def.abilities.length, 1);
 });
 
 test('Spectral Prison: cast na stwora, lock_untap + sacrifice on spell targeting', () => {

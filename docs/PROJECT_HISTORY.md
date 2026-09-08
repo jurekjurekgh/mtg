@@ -19,6 +19,17 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-08 — batch54 B4a, 9/10
+
+Containment Membrane: surge dla aur, shared static untap-step lock,
+pełne ścieżki kosztów/kolorów (także bestow), UI i bot bez strojenia wag.
+Naprawiono Prison/Lynx/Lyre w tej samej klasie reguł; Lyre nie wznawia
+zakończonego czasu po retap. 22 testy aur, 6 mutacji, fast4883/4883,
+build59/3420,6kB. Golden: eksperymentalnie wyizolowane dwie poprawki reguł,
+nie zmiana heurystyki; dowód 6/6 po cofnięciu tylko Prison/Lynx w planie.
+Generator przegrupował Wiedźmina do WU/BRG (ADR0024); aktywne referencje
+zaktualizowane. Treefolk Umbra i B5 nadal otwarte — handoff g.
+
 ## Sesja 2026-09-08 — batch54 B3b, 8/10
 
 Exploding Borders: search/tapped/shuffle przed domain, player/PW, loyalty

@@ -18,5 +18,14 @@
   },
   "pobrano": "2026-08-23",
   "power": "2",
-  "toughness": "2"
+  "toughness": "2",
+  "rulings": [
+    {
+      "date": "2020-04-17",
+      "source": "wotc",
+      "comment": "Frost Lynx’s triggered ability can target a creature that’s already tapped. That creature won’t untap during its controller’s next untap step."
+    }
+  ],
+  "rulingsPobrano": "2026-09-08",
+  "rulingsSource": "https://api.scryfall.com/cards/m15/55/rulings"
 }

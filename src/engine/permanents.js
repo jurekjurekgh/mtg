@@ -46,7 +46,12 @@ export function removeLoyaltyForDamage(state, object, amount) {
 }
 
 export function replaceObject(state, object, patch) {
-  const updated = Object.freeze({ ...object, ...patch });
+  // Ciągłość „for as long as ... remains tapped” (CR611.2b). Stun nie
+  // odkręca, więc nie zwiększa wersji. Nowy obiekt po zmianie strefy = nowe ID.
+  const untap = object.zone === 'battlefield' && object.tapped && patch.tapped === false;
+  const updated = Object.freeze({ ...object, ...patch,
+    ...(untap ? { untapVersion: (object.untapVersion ?? 0) + 1 } : {}),
+  });
   state.objects.set(object.id, updated);
   return updated;
 }
@@ -62,10 +67,14 @@ export function tapObject(state, objectId, playerId) {
 }
 
 /** Czy permanent nie może się odkręcić z powodu aktywnej blokady (np. Lira). */
-function isUntapLocked(state, object) {
+export function isUntapStepLocked(state, object) {
+  // Stała cecha załącznika, nie ETB trigger; tylko krok odkręcania.
+  if (attachmentsAttachedTo(state, object.id).some(a => attachmentGrant(a)?.doesntUntap)) return true;
   return (object.untapLockedBy ?? []).some((sourceId) => {
     const source = state.objects.get(sourceId);
     if (!source || source.zone !== 'battlefield') return false;
+    const version = object.untapLockVersions?.[sourceId];
+    if (version != null && version !== (source.untapVersion ?? 0)) return false;
     // Lira: blokada działa, gdy źródło jest zatapnięte.
     if (source.tapped) return true;
     // Aura lock (Spectral Prison): blokada działa zawsze, gdy źródło jest
@@ -83,7 +92,9 @@ function isUntapLocked(state, object) {
 function isActiveLockSource(state, objectId) {
   for (const object of state.objects.values()) {
     if (object.zone !== 'battlefield') continue;
-    if ((object.untapLockedBy ?? []).includes(objectId)) return true;
+    if ((object.untapLockedBy ?? []).includes(objectId)
+      && (object.untapLockVersions?.[objectId] == null
+        || object.untapLockVersions[objectId] === (state.objects.get(objectId)?.untapVersion ?? 0))) return true;
   }
   return false;
 }
@@ -94,13 +105,13 @@ function isActiveLockSource(state, objectId) {
  * odkręcania i wymaga zgodności kontrolera.
  *
  * M272 (błąd #18): pięć ścieżek efektów odkręcających mutowało `tapped: false`
- * RĘCZNIE, przez co omijały DWIE reguły, które zna `untapObject`:
+ * RĘCZNIE, przez co omijały regułę stun, którą zna `untapObject`:
  *  - CR 122.1d/614.6 — licznik stun ZASTĘPUJE odkręcenie („instead remove a
  *    stun counter"), i to przy odkręceniu z DOWOLNEGO powodu, nie tylko
  *    w kroku odkręcania. Stwór ze stunem wstawał więc z Twiddle/Village
  *    Bell-Ringer za darmo, zachowując licznik;
- *  - blokada odkręcania (`untapLockedBy`: Spectral Prison, Lira) — permanent
- *    „nie odkręca się" wstawał mimo aktywnej blokady.
+ *  Blokada „during its controller’s untap step” NIE dotyczy odkręcania
+ *  efektem (Oracle Membrane/Prison/Lyre). Stun działa z dowolnego powodu.
  *
  * Zwraca true, gdy permanent FAKTYCZNIE się odkręcił (zdarzenie
  * `object_untapped` wyemitowane) — zdjęcie licznika stun to nie odkręcenie,
@@ -109,7 +120,6 @@ function isActiveLockSource(state, objectId) {
 export function untapByEffect(state, objectId, playerId = null) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || !object.tapped) return false;
-  if (isUntapLocked(state, object)) return false;
   if ((object.counters ?? {}).stun > 0) {
     removeCounter(state, objectId, 'stun', 1);
     return false;
@@ -125,7 +135,7 @@ export function untapObject(state, objectId, playerId) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) throw new Error('Nie można untapować tego obiektu');
   if (!object.tapped) return object;
-  if (isUntapLocked(state, object)) return object;
+  if (isUntapStepLocked(state, object)) return object;
   // Stun counters (Lodestone Needle): jeśli permanent ma liczniki stun,
   // zamiast odkręcenia zdejmij jeden licznik stun (CR 122.1b).
   if ((object.counters ?? {}).stun > 0) {
@@ -175,7 +185,7 @@ export function untapControlled(state, playerId) {
         continue; // odkręcony — flaga zużyta bez skutku (nie ma czego odkręcać)
       }
       // Zablokowane stworzenie (np. przez Entrancing Lyre) nie odkręca się.
-      if (cured.tapped && isUntapLocked(state, cured)) continue;
+      if (cured.tapped && isUntapStepLocked(state, cured)) continue;
       // „You may choose not to untap" (Entrancing Lyre): obiekt będący
       // źródłem aktywnej blokady nie odkręca się — deterministycznie
       // zawsze wybieramy „nie odkręcaj", żeby blokada nie wygasła.

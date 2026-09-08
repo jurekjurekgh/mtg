@@ -348,7 +348,7 @@ export function choiceRequestGroupKey(command) {
   }
   if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {
-    return `permanent:${command.objectId}:${Boolean(command.bestow)}`;
+    return `permanent:${command.objectId}:${Boolean(command.bestow)}${command.surgeCast ? ':surge' : ''}`;
   }
   // M241 (zgłoszenie J/K/L): karta z Escape = jedna grupa; warianty CELU
   // mieszczą się w środku (modal z rzędami per cel), a karty do wygnania
@@ -1649,6 +1649,7 @@ export function rulesText(info) {
   };
   // Audyt Batch53/B1: koszt plotu z pipami kolorów (ten sam rozkład co equip;
   // goła liczba kłamała, że {1}{W} płaci się dowolną maną).
+  const surgeLine = info.surge ? `Surge {${equipPips(info.surge.cost, info.surge.colors)}} — jeśli rzuciłeś już inny czar w tej turze` : '';
   const plotLine = info.plot ? `Plot {${equipPips(info.plot.cost, info.plot.colors) || '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equipLine = equip
     ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equipPips(equip.equipFor.equip, equip.equipFor.colors) || '?'}} · ` : ''}{${equipPips(equip.equip, equip.colors) || '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
@@ -1665,6 +1666,7 @@ export function rulesText(info) {
   const aura = info.aura;
   const auraLine = aura
     ? [
+      aura.doesntUntap ? 'stwór nie odkręca się podczas kroku odkręcania swojego kontrolera' : '',
       aura.pump ? `stwór: ${signed(aura.pump.power ?? 0)}/${signed(aura.pump.toughness ?? 0)}` : '',
       (aura.keywords ?? []).length ? `stwór ma: ${aura.keywords.map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : '',
       // M138/Z9 (audyt Żywym Testerem): aura ODBIERAJĄCA keyword miała kafel
@@ -1742,7 +1744,7 @@ export function rulesText(info) {
       .map(([name, n]) => `z ${n === 1 ? '1 licznikiem' : `${n} licznikami`} ${COUNTER_LABELS[name] ?? name}`);
     return parts.length ? `Wchodzi ${parts.join(', ')}` : '';
   })();
-  return [keywordLine, spellLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, entersCountersLine, landLine].filter(Boolean).join(' · ');
+  return [keywordLine, spellLine, surgeLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, entersCountersLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -1982,7 +1984,8 @@ function choiceSourceTitle(cmd, session, view) {
   // M87: tytuł idzie i do innerHTML przycisku, i do textContent nagłówka
   // modala — escapeHtml dawał „Hunter&#39;s Blowgun" w oknie wyboru.
   const name = session.nameOf(object.cardId)
-    + (cmd.type === 'cast_spell' && cmd.kicked ? ' (kicker)' : '');
+    + (cmd.type === 'cast_spell' && cmd.kicked ? ' (kicker)' : '')
+    + (cmd.surgeCast ? ' (surge)' : '');
   // M202/D+M (zgłoszenie właściciela, Ruthless Invasion i Porcelain Legionnaire):
   // warianty zapłaty many phyrexian ({W/P} — mana ALBO 2 życia) grupują się po
   // karcie, ale tytuł spadał do generycznego „Wybierz: Zapłata: mana czy życie?”
@@ -2373,6 +2376,14 @@ export function commandLabel(cmd, session, view) {
           ? manaCostHtml(costSymbols(card.bestow.cost, card.bestow.colors)) : '?';
         return `Zagraj za bestow: ${nameOfObjectId(cmd.objectId)} (koszt ${bestowCost}) → zaczaruj ${host}`;
       }
+      // M223 (audyt Batch 50, Jwar Isle Avenger): surge to alternatywny,
+      // TAŃSZY koszt — bez własnej etykiety wyglądał identycznie jak zwykły
+      // rzut, więc gracz nie odróżniał wariantów (oś 2 audytu). Format jak warp.
+      if (cmd.surgeCast) {
+        const sc = card?.surge;
+        const cost = sc ? manaCostHtml(costSymbols(sc.cost, sc.colors)) : '?';
+        return `Rzuć za surge: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})${cmd.targets?.length ? ` → zaczaruj ${nameOfObjectId(cmd.targets[0])}` : ''}`;
+      }
       if (cmd.targets?.length && card?.aura) {
         const host = nameOfObjectId(cmd.targets[0]);
         return `Zagraj aurę: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)}) → zaczaruj ${host}`;
@@ -2380,14 +2391,6 @@ export function commandLabel(cmd, session, view) {
       // M268: rzut ZAKRYTY kosztuje {3} bezbarwnych niezależnie od karty
       // (CR 702.37a) — pipy koloru należą do kosztu ODKRYCIA, nie tego.
       if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost != null ? manaCostHtml(costSymbols(card.morph.cost, [])) : '?'})`;
-      // M223 (audyt Batch 50, Jwar Isle Avenger): surge to alternatywny,
-      // TAŃSZY koszt — bez własnej etykiety wyglądał identycznie jak zwykły
-      // rzut, więc gracz nie odróżniał wariantów (oś 2 audytu). Format jak warp.
-      if (cmd.surgeCast) {
-        const sc = card?.surge;
-        const cost = sc ? manaCostHtml(costSymbols(sc.cost, sc.colors)) : '?';
-        return `Rzuć za surge: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})`;
-      }
       // Phyrexian mana (CR 118.9): gracz wybiera, ile symboli {W/P} opłaci
       // 2 życiem (reszta z many) — wariant komendy cast_permanent.
       if (cmd.phyrexianPayWithLife != null) {

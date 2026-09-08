@@ -48,9 +48,9 @@ const REPO = path.resolve(import.meta.dirname, '..');
  */
 export const AUDIT_PAIRS = Object.freeze([
   ['ravnica', 'innistrad-wu'], ['dominaria-brg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ubr'],
-  ['wiedzmin-bg', 'tarkir-bg'], ['worek-legend', 'wiedzmin-bg'], ['srodziemie', 'theros'],
+  ['wiedzmin-brg', 'tarkir-bg'], ['worek-legend', 'wiedzmin-brg'], ['srodziemie', 'theros'],
   ['kaladesh', 'zendikar'], ['warhammer-wg', 'innistrad-brg'], ['dominaria-wu', 'worek-mroczny'],
-  ['forgotten-realms', 'worek-dziki'], ['tarkir-wur', 'wiedzmin-bg'], ['worek-basni', 'mirrodin-brg'],
+  ['forgotten-realms', 'worek-dziki'], ['tarkir-wur', 'wiedzmin-brg'], ['worek-basni', 'mirrodin-brg'],
 ].map((p) => Object.freeze(p)));
 
 const registry = createCardRegistry();

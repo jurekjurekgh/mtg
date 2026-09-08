@@ -33,7 +33,7 @@ choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdzia�
 na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
-Bieżący stan: szybki rdzeń **4861/4861**, artefakt **59 modułów / 3416,7 kB** (batch 54, 8/10 kart). Ostatni pełny pomiar: **4836/4836** (`test:all` na B2, nie wynik B3). Szczegóły:
+Bieżący stan: szybki rdzeń **4883/4883**, artefakt **59 modułów / 3420,6 kB** (batch 54, 9/10 kart). Ostatni pełny pomiar: **4836/4836** (`test:all` na B2, nie wynik B4). Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
@@ -133,8 +133,8 @@ liczone z plików `decks/*.txt`).
 | `theros` | Theros | WUBRG | 27 | 9 | 18 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 35 | 12 | 23 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
-| `wiedzmin-bg` | Wiedźmin (BG) | BG | 23 | 8 | 15 |
-| `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 24 | 8 | 16 |
+| `wiedzmin-brg` | Wiedźmin (BRG) | BRG | 26 | 9 | 17 |
+| `wiedzmin-wu` | Wiedźmin (WU) | WU | 23 | 8 | 15 |
 | `zendikar` | Zendikar | WURG | 32 | 11 | 21 |
 
 ### Worki (małe plany — przejściowe, ADR 0023)

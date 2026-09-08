@@ -1,4 +1,4 @@
-# Wiedźmin (BG)
+# Wiedźmin (BRG)
 
 1x Divest
 1x Vampire's Bite
@@ -10,10 +10,13 @@
 1x Dread Warlock
 1x Nature's Embrace
 1x Springbloom Druid
+1x Ballista Watcher
 1x Emerald Oryx
 1x Nightshade Harvester
 1x Nightsnare
+1x Bedhead Beastie
 1x Segmented Krotiq
 1x Howl of the Night Pack
-5x Swamp
+4x Swamp
+2x Mountain
 3x Forest

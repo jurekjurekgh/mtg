@@ -1,4 +1,4 @@
-import { effectiveSubtypes } from './permanents.js';
+import { effectiveSubtypes, isUntapStepLocked } from './permanents.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
@@ -825,6 +825,7 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
     if (!aura) return [];
     return legalAuraCastsForObject(state, playerId, obj).map((cast) => ({
       cardId: obj.id, targets: [cast.targetId], bestow: cast.bestow,
+      ...(cast.surgeCast ? { surgeCast: true } : {}),
     }));
   }
   // M201/U2: koszty dodatkowe (CR 601.2h) — każdy zestaw celów mnożymy przez
@@ -2434,7 +2435,7 @@ export function execute(state, input) {
         // Aura (CR 303.4a): cel (gospodarz albo gracz dla Curse) wybrał gracz
         // w ofercie; wariant bestow to koszt alternatywny karty.
         castAuraSpell(state, pending.playerId, pending.objectId, {
-          targetId: cmd.targets?.[0], bestow: Boolean(cmd.bestow), abilityWindowCast: true,
+          targetId: cmd.targets?.[0], bestow: Boolean(cmd.bestow), surgeCast: Boolean(cmd.surgeCast), abilityWindowCast: true,
         });
       } else {
         castPermanent(state, pending.playerId, pending.objectId, { abilityWindowCast: true });
@@ -5095,7 +5096,7 @@ export function execute(state, input) {
       // zwykła ścieżka permanentu.
       if (cmd.bestow || state.objects.get(cmd.objectId)?.aura) {
         const before = state.events.length;
-        const e = castAuraSpell(state, cmd.playerId, cmd.objectId, { targetId: cmd.targets?.[0], bestow: Boolean(cmd.bestow) });
+        const e = castAuraSpell(state, cmd.playerId, cmd.objectId, { targetId: cmd.targets?.[0], bestow: Boolean(cmd.bestow), surgeCast: Boolean(cmd.surgeCast) });
         const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
         return accepted(state, cmd, { ok: true, events });
       }
@@ -5653,7 +5654,7 @@ export function playerView(state, playerId) {
         // animowany do EOT (crew rozstrzygnięty) nosi originalBeforeAnimation.
         // Widoczny stan → badge/decyzja bota (nie re-crewuj), ADR 0017.
         if (object.originalBeforeAnimation != null) entry.animatedUntilEOT = true;
-        if ((object.untapLockedBy ?? []).length > 0) entry.untapLocked = true; // pusta tablica = brak blokady
+        if (isUntapStepLocked(state, object)) entry.untapLocked = true;
         if (object.dontUntapNextUntapStep) entry.dontUntapNextUntapStep = true;
         if (object.tempControlUntilTurn != null) entry.tempControlUntilEOT = true;
         if ((state.cantBeRegeneratedThisTurn ?? []).includes(object.id)) entry.cantBeRegeneratedThisTurn = true;
@@ -6833,6 +6834,7 @@ export function playerView(state, playerId) {
           // Koszt X (CR 107.3a) i bestow (CR 702.102) — wybór gracza z oferty.
           ...(offer.xValue != null ? { xValue: offer.xValue } : {}),
           ...(offer.bestow === true ? { bestow: true } : {}),
+          ...(offer.surgeCast === true ? { surgeCast: true } : {}),
         }));
       };
       if (exileCard.aura || exileCard.bestow) {
@@ -7041,11 +7043,11 @@ export function playerView(state, playerId) {
     // — z priorytetem w każdej fazie — ale nadal wymaga legalnego gospodarza
     // (CR 601.2c). Te same warianty co zwykła oferta aur; gating main-phase
     // poniżej je pomija, żeby nie dublować oferty w swojej main phase.
-    for (const { objectId, targetId, bestow } of legalAuraCasts(state, playerId)) {
+    for (const { objectId, targetId, bestow, surgeCast } of legalAuraCasts(state, playerId)) {
       const object = state.objects.get(objectId);
       if (!(object?.keywords ?? []).includes('flash')) continue;
       legalCommands.push(command('cast_permanent', playerId,
-        bestow ? { objectId, bestow: true, targets: [targetId] } : { objectId, targets: [targetId] }));
+        { objectId, targets: [targetId], ...(bestow ? { bestow: true } : {}), ...(surgeCast ? { surgeCast: true } : {}) }));
     }
     // Plot jest specjalną akcją sorcery-speed z ręki: płaci koszt plot i
     // przenosi kartę do exile, gdzie później cast_permanent/cast_spell oferuje
@@ -7181,12 +7183,12 @@ export function playerView(state, playerId) {
     // castami, żeby w liście komend były ZA nimi (proste boty biorą pierwszą
     // komendę danego typu — mają dostać naturalny cast, nie aurę).
     if (state.zones.stack.length === 0) {
-      for (const { objectId, targetId, bestow } of legalAuraCasts(state, playerId)) {
+      for (const { objectId, targetId, bestow, surgeCast } of legalAuraCasts(state, playerId)) {
         // Aura z flash jest już oferowana w bloku flash powyżej (warunki tego
         // bloku to podzbiór tamtego) — bez duplikatów w swojej main phase.
         if ((state.objects.get(objectId)?.keywords ?? []).includes('flash')) continue;
         legalCommands.push(command('cast_permanent', playerId,
-          bestow ? { objectId, bestow: true, targets: [targetId] } : { objectId, targets: [targetId] }));
+          { objectId, targets: [targetId], ...(bestow ? { bestow: true } : {}), ...(surgeCast ? { surgeCast: true } : {}) }));
       }
     }
     // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną albo

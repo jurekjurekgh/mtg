@@ -1618,13 +1618,8 @@ export const REAL_CARDS = Object.freeze([
     types: ['Enchantment'], colors: ['U'], manaCost: 2,
     oracleText: "Enchant creature\nEnchanted creature doesn't untap during its controller's untap step.\nWhen enchanted creature becomes the target of a spell, sacrifice this Aura.",
     imageUri: 'https://cards.scryfall.io/large/front/8/9/89d141bc-7307-40c2-a7ed-427caaec5efc.jpg?1783940711',
-    aura: { keywords: [] },
+    aura: { keywords: [], doesntUntap: true },
     abilities: [
-      createAbility({
-        type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield' },
-        effect: { type: 'lock_untap' },
-      }),
       createAbility({
         type: ABILITY_TYPE.triggered,
         trigger: { event: 'aura_host_targeted_by_spell' },
@@ -1634,7 +1629,7 @@ export const REAL_CARDS = Object.freeze([
     artId: 181,
     plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
-    notes: ['lock_untap: zablokowane do końca tury (jak Entrancing Lyre); sacrifice on targeting przez aura_host_targeted_by_spell trigger'],
+    notes: ['Stała blokada wyłącznie kroku odkręcania; sacrifice on targeting przez aura_host_targeted_by_spell trigger'],
   }),
 
   // 3. Raucous Carnival (DSK) — Conditional entersTapped based on life
@@ -9406,7 +9401,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   // 4. Frost Lynx (M15) — ETB: tapnij stwora wroga; nie odkręci się
-  //    w jego najbliższym kroku odkręcania (tap + lock_untap, wzorzec Liry).
+  //    w jego najbliższym kroku odkręcania (tap + jednorazowa blokada).
   defineCard({
     id: 'frost-lynx', name: 'Frost Lynx', set: 'M15',
     types: ['Creature'], subtypes: ['Elemental', 'Cat'], colors: ['U'],
@@ -9419,7 +9414,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_opponent_controls' } },
         effect: [
           { type: 'tap_permanent' },
-          { type: 'lock_untap' },
+          { type: 'dont_untap_next_untap_step' },
         ],
       }),
     ],
@@ -10709,6 +10704,14 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       { type: 'damage', amount: 'basic_land_types_you_control' },
     ] },
     artId: 601, plan: 'Alara', support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'containment-membrane', name: 'Containment Membrane', set: 'OGW',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 3,
+    oracleText: "Surge {U} (You may cast this spell for its surge cost if you or a teammate has cast another spell this turn.)\nEnchant creature\nEnchanted creature doesn't untap during its controller's untap step.", imageUri: "https://cards.scryfall.io/large/front/4/9/49dd3963-a4d7-4992-b6f8-753996390bbf.jpg?1783937919",
+    surge: { cost: 1, colors: ['U'] }, aura: { doesntUntap: true },
+    artId: 607, plan: 'Wiedźmin', support: { status: 'supported', limitations: [] },
   }),
 
 ]);

@@ -1078,7 +1078,17 @@ function auraTargetProtected(state, host, sourceObject) {
   return (sourceObject.colors ?? []).some((c) => protColors.includes(c));
 }
 
-export function castAuraSpell(state, playerId, objectId, { targetId, bestow = false, abilityWindowCast = false } = {}) {
+/** Koszt i pipy aury: jedno źródło dla oferty oraz walidacji/płatności. */
+function auraPaymentCost(state, object, { bestow = false, surgeCast = false } = {}) {
+  const alternative = surgeCast ? object.surge : bestow ? object.bestow : null;
+  const cost = alternative
+    ? reduceAlternativeCost(state, object, alternative.cost ?? 0, alternative.colors ?? [])
+    : reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object));
+  const requirements = alternative ? (alternative.colors ?? []).map(c => [c]) : coloredPipsOf(object.cardId);
+  return { cost, requirements };
+}
+
+export function castAuraSpell(state, playerId, objectId, { targetId, bestow = false, surgeCast = false, abilityWindowCast = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Audyt PR #93 (znalezisko E): okno zdolności „you may cast it" (Vaan)
@@ -1095,16 +1105,15 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   const hasFlashAura = (object.keywords ?? []).includes('flash');
   if (!hasFlashAura && !abilityWindowCast && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Czar aury tylko w swoją fazę main');
   if (!hasFlashAura && !abilityWindowCast && state.zones.stack.length > 0) throw new Error('Czar aury tylko przy pustym stosie');
-  // Czysta aura płaci zwykły koszt many (z ewentualną obniżką z permanentów
-  // — Etherium Sculptor dla aur-artefaktów, CR 601.2f); bestow — koszt bestow.
-  // M111 (CR 601.2f): obniżka działa też na koszt bestow (koszt alternatywny).
-  const cost = bestow
-    ? reduceAlternativeCost(state, object, object.bestow.cost ?? 0)
-    : reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object));
+  // CR702.117a: sprawdź poprzedni rzut PRZED doliczeniem tej aury.
+  if (surgeCast && (bestow || !object.surge || (state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) < 1)) {
+    throw new Error('Surge wymaga własnego wcześniejszego czaru i wyklucza bestow');
+  }
+  const { cost, requirements } = auraPaymentCost(state, object, { bestow, surgeCast });
   // M202/N1: czar aury to rzut czaru — cel wydania liczony z danych karty.
   const manaPurpose = spellManaPurpose(object);
   if (producibleMana(state, playerId, null, manaPurpose) < cost) throw new Error('Niewystarczająca mana');
-  if (!hasColorManaForObject(state, playerId, object, 0)) throw new Error('Brak kolorowego źródła many');
+  if (!canPayColoredCost(state, playerId, requirements)) throw new Error('Brak kolorowego źródła many');
   // Walidacja CELU PRZED jakąkolwiek mutacją (CR 601.2h): nieudany rzut nie
   // może zostawić karty na stosie ani utraconej many.
   let spellTargets;
@@ -1174,15 +1183,7 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       : (object.aura?.enchantType === 'creature_or_vehicle' ? 'creature_or_vehicle' : 'creature');
     spellTargets = Object.freeze([Object.freeze({ type: auraHostType })]);
   }
-  // M268 (L104/2): rzut za BESTOW płaci pipami kosztu bestow, nie karty
-  // bazowej — wzorzec madness (M161/O2) i cleave/escape (M267/C). Dziś
-  // Leafcrown Dryad ma ten sam {G} w obu kosztach, więc stary zapis trafiał
-  // przypadkiem; pierwsza karta o innym kolorze bestow płaciłaby złym.
-  const bestowRequirements = bestow ? (object.bestow?.colors ?? []).map((color) => [color]) : null;
-  if (bestowRequirements?.length && !canPayColoredCost(state, playerId, bestowRequirements)) {
-    throw new Error('Brak kolorowego źródła many');
-  }
-  spendMana(state, playerId, cost, bestowRequirements ?? coloredPipsOf(object.cardId), manaPurpose);
+  spendMana(state, playerId, cost, requirements, manaPurpose);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
@@ -1190,6 +1191,7 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   // załączone (albo — dla curse — z enchantedPlayerId).
   const stacked = Object.freeze({
     ...moved,
+    surgeCast: Boolean(surgeCast),
     tapped: false,
     enchantPlayer,
     chosenTargets: [targetId],
@@ -1203,6 +1205,7 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   const e = event('aura_spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     manaCost: cost, targets: [targetId], bestow, enchantPlayer,
+    ...(surgeCast ? { surgeCast: true } : {}),
     // Mana wydana na rzut aury — progi triggerów „mana was spent" (Tellah).
     manaSpent: cost,
     // Kolory czaru aury (publiczne) — trigger „a player casts a white spell".
@@ -1226,6 +1229,12 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
  * — L74: jeden generator, nie kopia (audyt PR #93, znalezisko E).
  */
 export function legalAuraCastsForObject(state, playerId, object) {
+  const normal = auraCastsForPayment(state, playerId, object);
+  if (!object?.aura || !object.surge || (state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) < 1) return normal;
+  return [...normal, ...auraCastsForPayment(state, playerId, object, true).map(c => ({ ...c, surgeCast: true }))];
+}
+
+function auraCastsForPayment(state, playerId, object, surgeCast = false) {
   const out = [];
   if (!object) return out;
   // M202/N1 (L48): budżet PER KARTA z celem wydania many — mana ograniczona
@@ -1233,8 +1242,11 @@ export function legalAuraCastsForObject(state, playerId, object) {
   // rozjeżdżałaby ofertę z walidacją.
   const manaAvailable = producibleMana(state, playerId, null, spellManaPurpose(object));
   const options = [];
-  if (object.aura && reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object)) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(false);
-  if (object.bestow && reduceAlternativeCost(state, object, object.bestow.cost ?? 0) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(true);
+  for (const bestow of [false, true]) {
+    if (bestow ? (surgeCast || !object.bestow) : !object.aura) continue;
+    const { cost, requirements } = auraPaymentCost(state, object, { bestow, surgeCast });
+    if (cost <= manaAvailable && canPayColoredCost(state, playerId, requirements)) options.push(bestow);
+  }
   if (options.length === 0) return out;
   // Aura „Enchant player" (Curse): celem jest GRACZ, nie stwór — wybór celu
   // przez gracza (każdy gracz jest legalnym celem; przeciwnik zwykle cenniejszy).

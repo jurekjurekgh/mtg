@@ -106,6 +106,7 @@ export function gameObjectDataOf(card) {
     // (Canonized in Blood) to permanent zagrywany jak stwór/artefakt.
     const data = { kind: 'enchantment', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
     if (card.aura) data.aura = card.aura;
+    if (card.surge) data.surge = card.surge;
     // Aura „Enchant player" (Curse of the Pierced Heart): zaczarowuje GRACZA,
     // nie stwora — obiekt niesie flagę, a docelowego gracza wybiera się przy
     // rzucaniu (cast_permanent z targetem gracza, jak czar aury).

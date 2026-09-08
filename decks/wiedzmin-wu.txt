@@ -1,4 +1,4 @@
-# Wiedźmin (WUR)
+# Wiedźmin (WU)
 
 1x Curiosity
 1x Fleeting Distraction
@@ -11,11 +11,9 @@
 1x Negate (M20)
 1x Wishful Merfolk
 1x Apprentice Wizard
+1x Containment Membrane
 1x Ironclad Slayer
 1x Scroll Thief
-1x Ballista Watcher
 1x Inspiration
-1x Bedhead Beastie
-1x Plains
-5x Island
-2x Mountain
+2x Plains
+6x Island

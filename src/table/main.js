@@ -27,7 +27,7 @@ import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWi
 import { effectiveSpellManaCost } from '../engine/spells.js';
 import { expandManaPool } from '../engine/resources.js';
 import { getSourceForObject } from '../engine/mana-sources.js';
-import { parseManaCost } from '../engine/mana-cost.js';
+import { parseManaCost, reduceAlternativeCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
@@ -1796,6 +1796,11 @@ function bootstrapTable() {
     if (stateObject && parsed) {
       const nonGeneric = parsed.colored.length + parsed.hybrid.length + parsed.phyrexian.length;
       opts.effectiveGeneric = Math.max(0, effectiveSpellManaCost(session.state, stateObject) - nonGeneric);
+    }
+    if (cmd.type === 'cast_permanent' && (cmd.surgeCast || cmd.bestow)) {
+      const alternative = cmd.surgeCast ? stateObject?.surge : stateObject?.bestow;
+      if (alternative) opts.alternativeCost = reduceAlternativeCost(
+        session.state, stateObject, alternative.cost, alternative.colors ?? []);
     }
     // Escape (E.3a cz. B): widok GROBÓW nie niesie spell.escape, więc koszt
     // czytamy z pełnego stanu i podajemy deskryptorowi (jak effectiveGeneric).

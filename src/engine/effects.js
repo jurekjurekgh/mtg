@@ -2750,16 +2750,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'lock_untap') {
-    // Stwór nie odkręca się, dopóki źródło (np. zatapnięta Lira) jest na
-    // polu bitwy i zatapnięte; blokada wygasa, gdy źródło opuści pole bitwy.
-    // Dla aury Spectral Prison: cel to zaczarowany stwór (attachedTo).
+    // CR611.2b / Lyre: przerwanej długości trwania nie wznawia retap,
+    // także gdy przerwa nastąpiła przed rozstrzygnięciem zdolności.
+    const live = state.objects.get(sourceObject.id);
+    if (!live || live.zone !== 'battlefield' || !live.tapped) return;
+    const version = live.untapVersion ?? 0;
+    if (context.sourceUntapVersion != null && context.sourceUntapVersion !== version) return;
     const targetId = targets[0] ?? sourceObject.attachedTo;
     if (!targetId) return;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
     const lockedBy = [...(object.untapLockedBy ?? [])];
     if (!lockedBy.includes(sourceObject.id)) lockedBy.push(sourceObject.id);
-    state.objects.set(targetId, Object.freeze({ ...object, untapLockedBy: lockedBy }));
+    state.objects.set(targetId, Object.freeze({ ...object, untapLockedBy: lockedBy,
+      untapLockVersions: { ...(object.untapLockVersions ?? {}), [sourceObject.id]: version } }));
     // M138/Z4 (L24): blokada odkręcania to realny skutek — bez zdarzenia
     // `resolveTrigger` liczyłby ją jako „nic się nie wydarzyło”.
     state.events.push(event('stats_modified', {
@@ -2793,7 +2797,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const object = state.objects.get(enchantedId);
     if (!object || object.zone !== 'battlefield') return;
     // M272 (błąd #18): wspólny helper — respektuje licznik stun (CR 122.1d)
-    // i blokadę odkręcania, których ręczna mutacja `tapped: false` nie znała.
+    // — ręczna mutacja nie obsługiwała stun. Blokada kroku nie dotyczy efektu.
     untapByEffect(state, enchantedId, sourceObject.controllerId);
     return;
   }

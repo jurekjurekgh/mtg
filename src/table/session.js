@@ -133,7 +133,7 @@ export function faceDownLabel(object, nameOf) {
 export function commandOptionKey(cmd) {
   const fields = [
     'type', 'objectId', 'abilityIndex', 'targets', 'xValue', 'modeIndex',
-    'buyback', 'payAltCost', 'bestow', 'faceDown', 'sacrificeTargetId',
+    'buyback', 'payAltCost', 'bestow', 'surgeCast', 'faceDown', 'sacrificeTargetId',
     'stunTargetId', 'attackerId', 'crewCreatureIds', 'tapCreatureId',
     'tapOtherCreatureId', 'escapeExileIds',
     // M112: komendy WALKI budowane przez wizard (declare_attackers /
@@ -973,7 +973,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // prawdziwego bestow (karta-stwór rzucona jako aura). Czysta aura —
         // także curse na gracza — to zwykły rzut („Curse of the Pierced
         // Heart za koszt bestow" było błędem).
-        const asBestow = e.bestow ? ' za koszt bestow' : '';
+        const asBestow = e.bestow ? ' za koszt bestow' : e.surgeCast ? ' za koszt surge' : '';
         return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${asBestow} → cel: ${targets}`;
       }
       case 'permanent_entered_battlefield': {

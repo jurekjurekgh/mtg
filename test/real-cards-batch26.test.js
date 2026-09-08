@@ -197,7 +197,7 @@ test('Lurking Green Dragon: flying + cantAttackUnlessDefenderHasFlying', () => {
 // --- Deck validation ---------------------------------------------------------
 
 test('Batch 26: karty w taliach singleton', () => {
-  const deckFiles = ['tarkir-bg', 'dominaria-brg', 'warhammer-ubr', 'innistrad-brg', 'wiedzmin-bg', 'wiedzmin-wur', 'alara', 'ravnica', 'zendikar', 'mirrodin-brg'];
+  const deckFiles = ['tarkir-bg', 'dominaria-brg', 'warhammer-ubr', 'innistrad-brg', 'wiedzmin-brg', 'wiedzmin-wu', 'alara', 'ravnica', 'zendikar', 'mirrodin-brg'];
   for (const name of deckFiles) {
     const path = `decks/${name}.txt`;
     if (!fs.existsSync(path)) continue;

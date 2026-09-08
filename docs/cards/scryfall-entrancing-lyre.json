@@ -17,5 +17,39 @@
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/0/6/064abee6-7394-4b75-946f-4ad9840034ac.jpg?1783931515"
   },
-  "pobrano": "2026-08-01"
+  "pobrano": "2026-08-01",
+  "rulings": [
+    {
+      "date": "2020-01-24",
+      "source": "wotc",
+      "comment": "Entrancing Lyre’s activated ability can target a creature that’s already tapped. That creature won’t untap for as long as Entrancing Lyre remains tapped."
+    },
+    {
+      "date": "2020-01-24",
+      "source": "wotc",
+      "comment": "If Entrancing Lyre leaves the battlefield, it’s no longer tapped, so the creature is free to untap as usual."
+    },
+    {
+      "date": "2020-01-24",
+      "source": "wotc",
+      "comment": "If Entrancing Lyre becomes untapped before its activated ability resolves, the target creature is tapped, but it can untap as usual. This is true even if Entrancing Lyre becomes tapped again before the activated ability resolves."
+    },
+    {
+      "date": "2020-01-24",
+      "source": "wotc",
+      "comment": "If the target creature is an illegal target by the time Entrancing Lyre’s ability tries to resolve, the ability won’t resolve. The creature isn’t tapped and can untap as usual."
+    },
+    {
+      "date": "2020-01-24",
+      "source": "wotc",
+      "comment": "If the target creature’s power is increased after Entrancing Lyre’s ability has resolved, it remains affected and won’t untap as usual."
+    },
+    {
+      "date": "2020-01-24",
+      "source": "wotc",
+      "comment": "Once Entrancing Lyre is no longer tapped, the creature won’t immediately become untapped."
+    }
+  ],
+  "rulingsPobrano": "2026-09-08",
+  "rulingsSource": "https://api.scryfall.com/cards/thb/233/rulings"
 }

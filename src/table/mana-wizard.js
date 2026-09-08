@@ -218,15 +218,16 @@ function buildDescriptor(object, totalNeeded, requirements, costStr, effectiveGe
  * (lista zbiorów dopuszczalnych kolorów; hybryda = kilka opcji). Zwraca null,
  * gdy kreator nie stosuje się do komendy (brak kosztu, nieznany tryb, {X}).
  *
- * Tryby kosztu alternatywnego (E.3a cz. B): całkowity koszt to LICZBA z
- * deskryptora — BEZ obniżek CR 601.2f (castCleave/castEscape/castAuraSpell z
- * bestow nie wołają reduceGenericCost). Wymagania kolorów z karty bazowej.
+ * Tryby kosztu alternatywnego: koszt z deskryptora. Bestow/surge używają
+ * własnych pipów i opts.alternativeCost po obniżkach CR601.2f (silnik).
+ * Pozostałe warianty zachowują własne ścieżki kosztu opisane poniżej.
  * Morph (CR 702.37a) jest bezbarwny → puste wymagania (kreator otworzy się
  * tylko przy ≥2 profilach źródeł; zazwyczaj 1 wariant → auto-tap M34).
  *
  * `opts.effectiveGeneric`: jednostki generyczne po obniżkach (Etherium
  * Sculptor, Metalcraft — z pełnego stanu, bo widok nie niesie zdolności; CR
  * 601.2f). Dotyczy tylko zwykłego rzutu (nie kosztów alternatywnych).
+ * `opts.alternativeCost`: koszt bestow/surge po obniżkach z silnika.
  * `opts.escapeCost`: całkowity koszt escape — widok GROBÓW nie niesie
  * spell.escape (obiekt grobu ma tylko id/cardId/controllerId), więc main.js
  * czyta go z session.state.
@@ -318,11 +319,14 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     const requirements = baseColorRequirements(parsed);
     return buildDescriptor(object, totalNeeded, requirements, `Escape (${totalNeeded})`, totalNeeded - requirements.length);
   }
-  if (cmd.type === 'cast_permanent' && cmd.bestow) {
-    const totalNeeded = object.bestow?.cost;
-    if (!Number.isInteger(totalNeeded)) return null;
-    const requirements = baseColorRequirements(parsed);
-    return buildDescriptor(object, totalNeeded, requirements, `Bestow (${totalNeeded})`, totalNeeded - requirements.length);
+  if (cmd.type === 'cast_permanent' && (cmd.surgeCast || cmd.bestow)) {
+    const alternative = cmd.surgeCast ? object.surge : object.bestow;
+    if (!alternative || !Number.isInteger(alternative.cost)) return null;
+    const requirements = (alternative.colors ?? []).map(c => [c]);
+    const totalNeeded = Number.isInteger(opts.alternativeCost)
+      ? Math.max(requirements.length, opts.alternativeCost) : alternative.cost;
+    return buildDescriptor(object, totalNeeded, requirements,
+      `${cmd.surgeCast ? 'Surge' : 'Bestow'} (${totalNeeded})`, totalNeeded - requirements.length);
   }
   if (cmd.type === 'cast_permanent' && cmd.faceDown) {
     const totalNeeded = object.morph?.cost;

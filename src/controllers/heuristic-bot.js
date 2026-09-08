@@ -2004,6 +2004,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return ability?.cost?.mana ?? 0;
     }
     const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    if (cmd.surgeCast) return card?.surge?.cost ?? cardDef(card?.cardId)?.surge?.cost ?? 0;
     const base = card?.manaCost ?? (card?.cardId ? (cardDef(card.cardId)?.manaCost ?? 0) : 0);
     return base + (cmd.xValue ?? 0);
   }
@@ -2304,7 +2305,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       ? wardTargetTax(view, cmd.targets ?? (cmd.targetId != null ? [cmd.targetId] : []), reservedManaOf(view, cmd))
       : 0;
     if (wardTax >= 200) return weightedScore(cmd.type, -200);
-    const finish = (score) => weightedScore(cmd.type, score - wardTax);
+    // Ten sam efekt za surge zużywa mniej many — istniejąca waga kosztu,
+    // bez strojenia parametrów. Nie podbijamy ocen szkodliwych zagrań.
+    const surgeCard = cmd.surgeCast ? (handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId)) : null;
+    const surgeSaving = surgeCard ? Math.max(0, (surgeCard.manaCost ?? 0) - reservedManaOf(view, cmd)) : 0;
+    const finish = (score) => weightedScore(cmd.type, score - wardTax + (score > 0 ? surgeSaving * P.creatureManaCostWeight : 0));
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy

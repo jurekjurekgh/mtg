@@ -1647,7 +1647,7 @@ function resolveActivatedAbilityEntry(state, entry) {
     // M115 (Krumar Initiate): efekty skalowane X-em ({X} w koszcie zdolności)
     // dostają wartość X z payloadu aktywacji — inaczej „endure X" nie wie,
     // ile liczników zaproponować.
-    applyEffect(state, effect, source, targets, { xValue: payload.xValue ?? 0 });
+    applyEffect(state, effect, source, targets, { xValue: payload.xValue ?? 0, sourceUntapVersion: lki.untapVersion ?? 0 });
   }
   const nth = payload.ability?.onNthResolve;
   if (nth && resolveCount === (nth.n ?? 3) && nth.effect) {

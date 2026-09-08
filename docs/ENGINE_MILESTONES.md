@@ -4693,3 +4693,12 @@ kierunki combat i noncombat. UI stref oraz search, jawna wycena domain.
 B54 71/71, 7mutacji RED, golden bez rebaseline. B4/B5 nadal otwarte;
 HANDOFF_2026-09-08f.md i plan zawierają uwagi z live i kolejną gałąź SBA
 do sprawdzenia przy umbra armor.
+
+
+### Batch54 B4a — surge aur i blokady untap step, 9/10
+
+Membrane607, płatności/kolory/wizard, flash i okno exile. Prison static,
+Lynx next-step, Lyre nieprzerwany czas (LKI + wersja untap); stun bez regresji.
+22 testy aur, 6 mutacji; fast4883/4883, build59/3420,6kB. Golden przyjęty
+po izolacji dwóch korekt Oracle, bez zmiany wag/progów. 464art/24talie;
+Wiedźmin WU/BRG zgodnie z generatorem. B4b/B5 nadal otwarte, handoff g.
