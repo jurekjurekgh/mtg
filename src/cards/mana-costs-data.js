@@ -1,4 +1,7 @@
 export const MANA_COSTS = {
+  "skymarch-bloodletter": "{2}{B}",
+  "vampires-bite": "{B}",
+  "rotting-legion": "{4}{B}",
   "dream-twist": "{U}",
   "voice-of-the-vermin": "{3}{G}",
   "setessan-skirmisher": "{1}{G}",

@@ -10606,6 +10606,45 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['enters-with liczy INNE stwory przy każdym wejściu (CR 121.6), także reanimacja; plot obsługuje ścieżka cast_permanent (exile z ręki i późniejszy rzut bez many)'],
   }),
 
+  // Batch 54 — dokładne druki i rulingi zweryfikowane 2026-09-08.
+  defineCard({
+    id: 'rotting-legion', name: "Rotting Legion", set: 'M11',
+    types: ["Creature"], colors: ["B"], manaCost: 5,
+    subtypes: ["Zombie"], power: 4, toughness: 5,
+    oracleText: "This creature enters tapped.",
+    imageUri: "https://cards.scryfall.io/large/front/b/f/bfe5e62c-83ce-4c2b-a745-acd7670e115d.jpg?1783941812",
+    entersTapped: true,
+    artId: 600, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'vampires-bite', name: "Vampire's Bite", set: 'ZEN',
+    types: ["Instant"], colors: ["B"], manaCost: 1,
+    oracleText: "Kicker {2}{B} (You may pay an additional {2}{B} as you cast this spell.)\nTarget creature gets +3/+0 until end of turn. If this spell was kicked, that creature gains lifelink until end of turn. (Damage dealt by the creature also causes its controller to gain that much life.)",
+    imageUri: "https://cards.scryfall.io/large/front/6/4/6460a752-e5a7-4fd0-9ae5-e0773b86f19b.jpg?1783942147",
+    kicker: { cost: 3, colors: ['B'] },
+    spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [
+      { type: 'pump', power: 3, toughness: 0 },
+      { type: 'grant_keywords_until_end_of_turn', keywords: ['lifelink'], condition: { wasKicked: true } },
+    ] },
+    artId: 604, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'skymarch-bloodletter', name: "Skymarch Bloodletter", set: 'M19',
+    types: ["Creature"], colors: ["B"], manaCost: 3,
+    subtypes: ["Vampire", "Soldier"], power: 2, toughness: 2,
+    oracleText: "Flying\nWhen this creature enters, target opponent loses 1 life and you gain 1 life.",
+    imageUri: "https://cards.scryfall.io/large/front/2/c/2c7f2740-a193-4b4c-af00-2dd22d74a4ba.jpg?1783934563",
+    keywords: ['flying'],
+    abilities: [createAbility({
+      type: ABILITY_TYPE.triggered,
+      trigger: { event: 'enter_battlefield', requiresTarget: { type: 'opponent' } },
+      effect: [ { type: 'lose_life', amount: 1, scope: 'target' }, { type: 'gain_life', amount: 1 } ],
+    })],
+    artId: 608, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+  }),
 
 ]);
 

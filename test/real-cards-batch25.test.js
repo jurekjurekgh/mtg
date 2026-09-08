@@ -186,7 +186,7 @@ test('Springbloom Druid: ETB springbloom_sacrifice_search', () => {
 // --- Deck validation ---------------------------------------------------------
 
 test('Batch 25: karty w taliach singleton', () => {
-  const deckFiles = ['tarkir-bg', 'dominaria-brg', 'warhammer-ubr', 'innistrad-brg', 'wiedzmin', 'alara', 'ravnica', 'zendikar', 'mirrodin-brg'];
+  const deckFiles = ['tarkir-bg', 'dominaria-brg', 'warhammer-ubr', 'innistrad-brg', 'wiedzmin-bg', 'wiedzmin-wur', 'alara', 'ravnica', 'zendikar', 'mirrodin-brg'];
   for (const name of deckFiles) {
     const path = `decks/${name}.txt`;
     if (!fs.existsSync(path)) continue;

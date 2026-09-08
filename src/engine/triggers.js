@@ -337,8 +337,9 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     return players;
   }
   if (spec.type === 'opponent') {
-    const opponentId = state.players.find((p) => p.id !== sourceObject.controllerId)?.id ?? null;
-    return opponentId ? [opponentId] : [];
+    // CR 603.3d / Oracle ‘target opponent’: wybór spośród przeciwników,
+    // nie tylko pierwszy gracz (1v1 pozostaje identyczne).
+    return state.players.filter(p => p.id !== sourceObject.controllerId).map(p => p.id);
   }
   if (spec.type === 'creature_card_in_opponent_graveyard') {
     // Puppeteer Clique: karty-stwory z grobu PRZECIWNIKA — najsilniejszy

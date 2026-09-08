@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Rotting%20Legion&set=m11",
+  "print": "m11",
+  "name": "Rotting Legion",
+  "mana_cost": "{4}{B}",
+  "cmc": 5,
+  "type_line": "Creature — Zombie",
+  "oracle_text": "This creature enters tapped.",
+  "colors": [
+    "B"
+  ],
+  "set": "m11",
+  "set_name": "Magic 2011",
+  "collector_number": "115",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/f/bfe5e62c-83ce-4c2b-a745-acd7670e115d.jpg?1783941812",
+    "normal": "https://cards.scryfall.io/normal/front/b/f/bfe5e62c-83ce-4c2b-a745-acd7670e115d.jpg?1783941812"
+  },
+  "pobrano": "2026-09-08",
+  "rulings": [],
+  "rulingsPobrano": "2026-09-08",
+  "rulingsSource": "https://api.scryfall.com/cards/m11/115/rulings",
+  "power": "4",
+  "toughness": "5"
+}

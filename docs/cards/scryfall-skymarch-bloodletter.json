@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Skymarch%20Bloodletter&set=m19",
+  "print": "m19",
+  "name": "Skymarch Bloodletter",
+  "mana_cost": "{2}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Vampire Soldier",
+  "oracle_text": "Flying\nWhen this creature enters, target opponent loses 1 life and you gain 1 life.",
+  "colors": [
+    "B"
+  ],
+  "set": "m19",
+  "set_name": "Core Set 2019",
+  "collector_number": "119",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/c/2c7f2740-a193-4b4c-af00-2dd22d74a4ba.jpg?1783934563",
+    "normal": "https://cards.scryfall.io/normal/front/2/c/2c7f2740-a193-4b4c-af00-2dd22d74a4ba.jpg?1783934563"
+  },
+  "pobrano": "2026-09-08",
+  "rulings": [],
+  "rulingsPobrano": "2026-09-08",
+  "rulingsSource": "https://api.scryfall.com/cards/m19/119/rulings",
+  "power": "2",
+  "toughness": "2"
+}

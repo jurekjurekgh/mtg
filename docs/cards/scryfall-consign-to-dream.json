@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Consign%20to%20Dream&set=shm",
+  "print": "shm",
+  "name": "Consign to Dream",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Return target permanent to its owner's hand. If that permanent is red or green, put it on top of its owner's library instead.",
+  "colors": [
+    "U"
+  ],
+  "set": "shm",
+  "set_name": "Shadowmoor",
+  "collector_number": "32",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/e/5e866d86-5bfa-473d-be17-d8f4aea70ddb.jpg?1783942762",
+    "normal": "https://cards.scryfall.io/normal/front/5/e/5e866d86-5bfa-473d-be17-d8f4aea70ddb.jpg?1783942762"
+  },
+  "pobrano": "2026-09-08",
+  "rulings": [],
+  "rulingsPobrano": "2026-09-08",
+  "rulingsSource": "https://api.scryfall.com/cards/shm/32/rulings"
+}

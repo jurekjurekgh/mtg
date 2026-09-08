@@ -131,9 +131,10 @@ liczone z plików `decks/*.txt`).
 | `tarkir-bg` | Tarkir (BG) | UBG | 30 | 10 | 20 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 27 | 9 | 18 |
 | `theros` | Theros | WUBRG | 27 | 9 | 18 |
-| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 33 | 11 | 22 |
+| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 35 | 12 | 23 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
-| `wiedzmin` | Wiedźmin | UBRG | 44 | 15 | 29 |
+| `wiedzmin-bg` | Wiedźmin (BG) | BG | 23 | 8 | 15 |
+| `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 23 | 8 | 15 |
 | `zendikar` | Zendikar | WURG | 30 | 10 | 20 |
 
 ### Worki (małe plany — przejściowe, ADR 0023)
@@ -141,7 +142,7 @@ liczone z plików `decks/*.txt`).
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
 |---|---|---|---:|---:|---:|
 | `worek-basni` | Worek: Baśnie | WUBRG | 30 | 10 | 20 |
-| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 26 | 9 | 17 |
+| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 27 | 9 | 18 |
 | `worek-legend` | Worek: Legendy | WUBRG | 27 | 9 | 18 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 36 | 12 | 24 |
 

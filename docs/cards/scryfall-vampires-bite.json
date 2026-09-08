@@ -1,0 +1,55 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Vampire%27s%20Bite&set=zen",
+  "print": "zen",
+  "name": "Vampire's Bite",
+  "mana_cost": "{B}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "Kicker {2}{B} (You may pay an additional {2}{B} as you cast this spell.)\nTarget creature gets +3/+0 until end of turn. If this spell was kicked, that creature gains lifelink until end of turn. (Damage dealt by the creature also causes its controller to gain that much life.)",
+  "colors": [
+    "B"
+  ],
+  "set": "zen",
+  "set_name": "Zendikar",
+  "collector_number": "117",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/4/6460a752-e5a7-4fd0-9ae5-e0773b86f19b.jpg?1783942147",
+    "normal": "https://cards.scryfall.io/normal/front/6/4/6460a752-e5a7-4fd0-9ae5-e0773b86f19b.jpg?1783942147"
+  },
+  "pobrano": "2026-09-08",
+  "rulings": [
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If a spell's kicker cost was paid, the spell is \"kicked.\""
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "The kicker ability doesn't let you pay a kicker cost more than once."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If you put a permanent with a kicker ability onto the battlefield without casting it, you can't kick it."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If you copy a kicked spell on the stack, the copy is also kicked. If the copied spell is a permanent spell, the token the copy of that spell becomes when it enters is also kicked."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If a card or token enters as a copy of a permanent, the new permanent isn't kicked, even if the original was."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "To determine a spell's total cost, start with the mana cost (or an alternative cost if another card's effect allows you to pay one instead), add any cost increases (such as kicker), then apply any cost reductions. The spell's mana value remains unchanged, no matter what the total cost to cast it was."
+    }
+  ],
+  "rulingsPobrano": "2026-09-08",
+  "rulingsSource": "https://api.scryfall.com/cards/zen/117/rulings"
+}

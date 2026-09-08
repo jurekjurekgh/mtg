@@ -27,6 +27,7 @@ export function gameObjectDataOf(card) {
   }
   if (card.types.includes('Creature')) {
     const data = { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
+    if (card.entersTapped) data.entersTapped = true;
     if (card.morph) data.morph = card.morph;
     if (card.entersWithCounters) data.entersWithCounters = card.entersWithCounters;
     if (card.entersWithCountersIf) data.entersWithCountersIf = card.entersWithCountersIf;
@@ -141,6 +142,8 @@ export function gameObjectDataOf(card) {
     // Spelle mogą nosić zdolności aktywowane z ręki (cycling — Fiery Fall,
     // CR 702.28): materializujemy je także na obiekcie czaru.
     const data = { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null, suspend: card.suspend ?? null, colors: colors(), abilities: card.abilities ?? [], cardName: card.name };
+    // Batch 54: kicker musi dojść również z definicji instanta na obiekt.
+    if (card.kicker) data.kicker = card.kicker;
     // M161/O1 (zasada właściciela: gotowość na przyszłe karty): instant/
     // sorcery z madness — deskryptor musi przejść na obiekt gry, inaczej
     // odrzucenie nie otworzy decyzji madness (klasa Z5/L21 — gałąź spell

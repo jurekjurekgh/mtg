@@ -978,6 +978,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // Great Sage: „if four/eight or more mana was spent to cast that spell") —
   // kontekst niesie manaSpent ze zdarzenia rzutu (triggers.fireTrigger);
   // próg niespełniony pomija TYLKO ten efekt, nie całą zdolność.
+  // CR 702.33d: tylko opłacony kicker włącza warunkowy efekt czaru.
+  if (effect.condition?.wasKicked && !sourceObject?.wasKicked) return;
   if (effect.condition?.manaSpentAtLeast != null && (context?.manaSpent ?? 0) < effect.condition.manaSpentAtLeast) return;
   if (effect.type === 'damage') {
     // M111: `targetIndex` wskazuje slot celu (konwencja reszty efektów) —
@@ -2486,6 +2488,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (eventPlayerId && state.players.some((player) => player.id === eventPlayerId)) {
         changeLife(state, eventPlayerId, -effect.amount);
       }
+      return;
+    }
+    if (effect.scope === 'target') {
+      // CR 119.3: utrata życia wybranego gracza, nie wszystkich przeciwników.
+      const targetId = targets[effect.targetIndex ?? 0];
+      if (state.players.some(player => player.id === targetId)) changeLife(state, targetId, -effect.amount);
       return;
     }
     if (effect.targetPlayerId != null) {

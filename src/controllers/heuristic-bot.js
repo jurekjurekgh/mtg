@@ -2948,8 +2948,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const modalEffects = (cmd.modeIndex != null && Array.isArray(spell.modes))
           ? (spell.modes[cmd.modeIndex]?.effects ?? [])
           : null;
-        const effects = modalEffects
-          ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? []);
+        const effects = (modalEffects
+          ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? [])).filter(e => !e?.condition?.wasKicked || cmd.kicked === true);
         // M247 anti-overfix (Vandalize „Zniszcz ląd"): kara „czysty ląd jako
         // cel removalu" NIE obejmuje efektów ZAPROJEKTOWANYCH pod niszczenie
         // lądów — rozpoznajemy je po specu celu z deskryptora: slot typu

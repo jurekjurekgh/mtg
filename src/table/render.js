@@ -1182,7 +1182,7 @@ function describeEffect(e) {
     set_base_pt_creatures_you_control: () => 'twoje stwory mają bazowe X/X do końca tury (X = liczba kart w twojej ręce)',
   };
   const fn = generic[e.type];
-  if (fn) return fn();
+  if (fn) return `${e.condition?.wasKicked ? 'jeśli opłacono kicker: ' : ''}${fn()}`;
   return `efekt (${e.type})`;
 }
 

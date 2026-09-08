@@ -152,7 +152,7 @@ test('M296/D: result resolve_springbloom niesie poświęcenie i nazwę landu', (
 test('M296/D: sesja loguje poświęcenie landu (apply czyta result.events)', () => {
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/wiedzmin.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/wiedzmin-wur.txt', 'utf8'), REGISTRY).cardIds],
   ]);
   const session = createSession({ seed: 5, registry: REGISTRY, decks });
   session.apply(session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice'));
