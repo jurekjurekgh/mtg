@@ -339,11 +339,11 @@ export function choiceRequestGroupKey(command) {
   // M87: tryby modalne (Steel Sabotage Kontr vs Odbicie) i warianty
   // poświęcenia (Village Rites) nie mogą wpadać do jednego „Cel czaru".
   if (command.type === 'cast_spell' && (command.targets?.length || command.sacrificeTargetId || command.modeIndex != null)) {
-    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}`;
+    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}${command.kicked ? ':kicker' : ''}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
   if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
-    return `spell-x:${command.objectId}`;
+    return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}`;
   }
   if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {
@@ -1966,7 +1966,8 @@ function choiceSourceTitle(cmd, session, view) {
   if (!object) return null;
   // M87: tytuł idzie i do innerHTML przycisku, i do textContent nagłówka
   // modala — escapeHtml dawał „Hunter&#39;s Blowgun" w oknie wyboru.
-  const name = session.nameOf(object.cardId);
+  const name = session.nameOf(object.cardId)
+    + (cmd.type === 'cast_spell' && cmd.kicked ? ' (kicker)' : '');
   // M202/D+M (zgłoszenie właściciela, Ruthless Invasion i Porcelain Legionnaire):
   // warianty zapłaty many phyrexian ({W/P} — mana ALBO 2 życia) grupują się po
   // karcie, ale tytuł spadał do generycznego „Wybierz: Zapłata: mana czy życie?”

@@ -192,3 +192,42 @@ test('B54: opis PL i wycena bota rozróżniają efekt opłaconego kickera', asyn
     else assert.equal(score(view, cmd), score(withoutRider, cmd), 'bez kickera bot nie wycenia nieistniejącego lifelinku');
   }
 });
+
+// Żywy Tester s10603: „Cel czaru: Vampire's Bite (8 opcji)” otwierał
+// tylko 4 cele. Kicker znikał w commandForSingleTargetSelection (pierwsza
+// zgodna komenda). Klucz grupy musi oddzielać płatność PRZED wyborem celu.
+test('B54: UI — osobne, nazwane grupy Bite; wybór celu zachowuje opłacony kicker', async () => {
+  const { choiceRequestGroupKey, choiceGroupTitle } = await import('../src/table/render.js');
+  const { singleTargetPlanOf, commandForSingleTargetSelection } = await import('../src/table/multi-target.js');
+  const s = game(); put(s, 'bite', 'vampires-bite');
+  put(s, 'own', 'rotting-legion', 'p1', 'battlefield'); put(s, 'foe', 'rotting-legion', 'p2', 'battlefield');
+  addMana(s, 'p1', 4, { colors: ['B'] });
+  const view = playerView(s, 'p1');
+  const casts = view.legalCommands.filter(c => c.type === 'cast_spell' && c.objectId === 'bite');
+  assert.equal(casts.length, 4);
+  const groups = new Map();
+  for (const cmd of casts) {
+    const key = choiceRequestGroupKey(cmd);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(cmd);
+  }
+  assert.equal(groups.size, 2, 'dwa sposoby płatności, nie jeden zgubiony wymiar kreatora');
+  const session = { nameOf: id => registry.get(id).name };
+  for (const options of groups.values()) {
+    assert.equal(options.length, 2);
+    const kicked = Boolean(options[0].kicked);
+    assert.ok(options.every(c => Boolean(c.kicked) === kicked));
+    const title = choiceGroupTitle({ type: 'command', options }, session, view);
+    assert.equal(/kicker/i.test(title), kicked, `tytuł rozróżnia płatności: ${title}`);
+    const plan = singleTargetPlanOf(options);
+    assert.ok(plan);
+    const picked = commandForSingleTargetSelection(options, { targetId: 'own', field: plan.field });
+    assert.ok(options.includes(picked)); assert.equal(Boolean(picked.kicked), kicked);
+  }
+});
+
+test('B54: menu karty korzysta z tego samego klucza grupowania czarów co panel', () => {
+  const main = fs.readFileSync(new URL('../src/table/main.js', import.meta.url), 'utf8');
+  assert.match(main, /if \(cmd\.type === 'cast_spell'\) return choiceRequestGroupKey\(cmd\)/,
+    'dowiązanie wspólnego helpera — bez kopii, która sprawdza cele przed kickerem');
+});

@@ -34,7 +34,7 @@ import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard } from './choice-request.js';
 import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf } from './multi-target.js';
-import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
+import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
 function runEngineSmoke() {
   // Minimalny, odtwarzalny przebieg: kilka rund passów przez komendy z widoku.
@@ -1196,8 +1196,8 @@ function bootstrapTable() {
     // żeby nie było niespójności „Twoje działania vs klik na kartę" (bug D).
     // Klucz grupowania – uproszczony odpowiednik choiceRequestGroupKey z render.js
     const groupKey = (cmd) => {
-      if (cmd.type === 'cast_spell' && cmd.targets?.length) return `spell:${cmd.objectId}`;
-      if (cmd.type === 'cast_spell' && cmd.phyrexianPayWithLife != null) return `spell-x:${cmd.objectId}`;
+      // Batch 54: wspólny klucz rozdziela także CELOWANY czar z kickerem.
+      if (cmd.type === 'cast_spell') return choiceRequestGroupKey(cmd) ?? `spell:${cmd.objectId}:${Boolean(cmd.kicked)}`;
       if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `cleave:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.targets?.length) return `perm:${cmd.objectId}:${Boolean(cmd.bestow)}`;
       if (cmd.type === 'cast_permanent' && cmd.phyrexianPayWithLife != null) return `perm-x:${cmd.objectId}`;
@@ -1206,10 +1206,6 @@ function bootstrapTable() {
       // pokazuje JEDNĄ opcję otwierającą modal wyboru kreatury do wygnania).
       if (cmd.type === 'cast_permanent' && cmd.exileTargetId != null) return `perm-exile:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.kicked) return `perm-k:${cmd.objectId}`;
-      // Kicker na CZARZE (CR 702.33, audyt PR #93): bez własnego klucza
-      // wariant kicked zbiłby się z naturalnym rzutem w jedną grupę i panel
-      // pokazał tylko jeden z dwóch przycisków (oferta nieosiągalna kliknięciem).
-      if (cmd.type === 'cast_spell' && cmd.kicked) return `spell-k:${cmd.objectId}`;
       if (cmd.type === 'cast_adventure') return `adv:${cmd.objectId}`;
       if (cmd.type === 'cast_adventure_creature') return `advc:${cmd.objectId}`;
       if (cmd.type === 'activate_ability' && (cmd.targets?.length || cmd.xValue != null || cmd.attackerId != null || cmd.crewCreatureIds?.length)) return `ability:${cmd.objectId}:${cmd.abilityIndex}`;
