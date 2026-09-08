@@ -960,7 +960,9 @@ function describeEffect(e) {
     // „efekt (set_saddled)" — dokładnie jak w zgłoszeniu B.
     set_saddled: () => 'zostanie osiodłany do końca tury',
     become_basic_land_type: () => 'stań się podstawowym lądem',
-    bounce_permanent: () => 'wróć na rękę właściciela',
+    bounce_permanent: () => e.libraryTopIfColors
+      ? `wróć na rękę właściciela; jeśli ${e.libraryTopIfColors.map(c => ({ R: 'czerwony', G: 'zielony' })[c] ?? c).join(' lub ')} — zamiast tego na wierzch biblioteki właściciela`
+      : 'wróć na rękę właściciela',
     bounce_to_library_top: () => 'włóż na wierzch biblioteki właściciela',
     bounce_to_library_bottom: () => 'włóż na spód biblioteki właściciela',
     buff_creatures_you_control: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla twoich stworów do końca tury`,
@@ -1383,6 +1385,7 @@ function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
 function triggerConditionClause(trigger) {
   const cond = trigger?.condition ?? {};
   const czlony = [];
+  if (cond.distinctCreaturePowersAtLeast != null) czlony.push(`kontrolujesz stwory o co najmniej ${cond.distinctCreaturePowersAtLeast} różnych wartościach siły (coven)`);
   if (cond.minTappedCreaturesControlled) czlony.push(`kontrolujesz ${cond.minTappedCreaturesControlled}+ zatapnięte stwory`);
   if (cond.subtypeCardInYourGraveyard) czlony.push(`w twoim grobie jest karta ${cond.subtypeCardInYourGraveyard}`);
   if (cond.selfHasCounter) czlony.push(`ma licznik ${COUNTER_LABELS[cond.selfHasCounter] ?? cond.selfHasCounter}`);
@@ -1525,7 +1528,11 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'you_cast_second_spell_each_turn') return `Gdy rzucisz drugi czar w turze: ${parts}.`;
   if (trigger.event === 'you_cast_noncreature_spell') return `Gdy rzucisz czar niebędący stworem: ${parts}.`;
   if (trigger.event === 'when_you_cast_spell') return `Gdy rzucisz czar: ${parts}.`;
-  if (trigger.event === 'beginning_of_combat') return `Na początku walki: ${parts}.`;
+  if (trigger.event === 'beginning_of_combat') {
+    const clause = triggerConditionClause(trigger);
+    const turn = trigger.eachCombat ? 'każdej walki' : `walki w turze ${mine ? 'twojej' : 'kontrolera'}`;
+    return `Na początku ${turn}${clause ? ` (gdy ${clause})` : ''}: ${parts}.`;
+  }
   if (trigger.event === 'player_casts_spell') {
     const colorNote = trigger.spellColorsInclude?.length
       ? ` (${trigger.spellColorsInclude.join('/')})` : '';

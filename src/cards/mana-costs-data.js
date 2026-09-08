@@ -1,4 +1,6 @@
 export const MANA_COSTS = {
+  "candlegrove-witch": "{1}{W}",
+  "consign-to-dream": "{2}{U}",
   "kheru-dreadmaw": "{4}{B}",
   "abstruse-interference": "{2}{U}",
   "skymarch-bloodletter": "{2}{B}",

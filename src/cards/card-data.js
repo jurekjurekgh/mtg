@@ -10674,6 +10674,32 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 603, plan: 'Tarkir', support: { status: 'supported', limitations: [] },
   }),
 
+  defineCard({
+    id: "candlegrove-witch", name: "Candlegrove Witch", set: "MID",
+    types: ["Creature"], subtypes: ["Human", "Warlock"], colors: ["W"],
+    manaCost: 2,
+    oracleText: "Coven — At the beginning of combat on your turn, if you control three or more creatures with different powers, this creature gains flying until end of turn.",
+    imageUri: "https://cards.scryfall.io/large/front/d/e/dedfe6ea-cd43-4ec4-83a1-1f0f74e27f56.jpg?1783925665",
+    power: 2, toughness: 2,
+    abilities: [createAbility({ type: ABILITY_TYPE.triggered,
+      trigger: { event: 'beginning_of_combat', condition: { distinctCreaturePowersAtLeast: 3 } },
+      effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['flying'] },
+    })],
+    artId: 599, plan: "Wiedźmin", support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: "consign-to-dream", name: "Consign to Dream", set: "SHM",
+    types: ["Instant"], subtypes: [], colors: ["U"],
+    manaCost: 3,
+    oracleText: "Return target permanent to its owner's hand. If that permanent is red or green, put it on top of its owner's library instead.",
+    imageUri: "https://cards.scryfall.io/large/front/5/e/5e866d86-5bfa-473d-be17-d8f4aea70ddb.jpg?1783942762",
+    spell: { timing: 'instant', targets: [{ type: 'permanent' }], effects: [
+      { type: 'bounce_permanent', libraryTopIfColors: ['R', 'G'] },
+    ] },
+    artId: 605, plan: "Lorwyn", support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /**

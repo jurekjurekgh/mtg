@@ -449,3 +449,163 @@ test('B54: Kheru — dwie aktywacje tego samego źródła mają niezależne LKI 
   assert.equal(s.zones.stack.length, 2); assert.equal(life(s, 'p1'), 20);
   resolve(s); assert.equal(life(s, 'p1'), 27, '5 i 2, nie dwukrotnie ostatnie 2');
 });
+
+// B3 — MID release notes (https://mtg.wiki/page/Coven, fetched 2026-09-08):
+// “You must control three or more creatures with different powers at the time
+// the ability triggers and at the time the ability tries to resolve. They do
+// not, however, need to be the same set of creatures in both cases.”
+// CR 603.4 (https://mtg.wiki/page/Triggered_ability, 2026-08-07):
+// “If the ability triggers, it checks the stated condition again as it resolves.
+// If the condition isn't true at that time, the ability is removed from the
+// stack and does nothing.”
+for (const [id, artId, set, plan] of [
+  ['candlegrove-witch', 599, 'MID', 'Wiedźmin'],
+  ['consign-to-dream', 605, 'SHM', 'Lorwyn'],
+]) test(`B54 B3: ${id} — druk i pełny Oracle`, () => {
+  const def = registry.get(id);
+  const src = JSON.parse(fs.readFileSync(new URL(`../docs/cards/scryfall-${id}.json`, import.meta.url)));
+  assert.ok(def); assert.equal(def.artId, artId); assert.equal(def.set, set); assert.equal(def.plan, plan);
+  assert.equal(def.oracleText, src.oracle_text); assert.equal(def.imageUri, src.image_uris.large);
+  assert.equal(MANA_COSTS[id], src.mana_cost); assert.equal(def.manaCost, src.cmc);
+  assert.deepEqual(def.colors, src.colors); assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+});
+
+async function covenBoard(powers, active = 'p1') {
+  const { processTriggers } = await import('../src/engine/triggers.js');
+  const { replaceObject } = await import('../src/engine/permanents.js');
+  const s = game(); put(s, 'witch', 'candlegrove-witch', 'p1', 'battlefield');
+  for (let i = 0; i < powers.length; i++) {
+    const o = put(s, `friend-${i}`, 'rotting-legion', 'p1', 'battlefield');
+    replaceObject(s, o, { power: powers[i] });
+  }
+  s.turn = jumpToStep(s.turn, 'beginning_of_combat', active);
+  s.turn.activePlayerId = s.turn.priorityPlayerId = active;
+  processTriggers(s, [{ type: 'step_advanced', step: 'beginning_of_combat' }]);
+  return s;
+}
+for (const [powers, active, expected] of [
+  [[2, 2], 'p1', 0], [[1, 2], 'p1', 0], [[1, 3], 'p1', 1], [[1, 3], 'p2', 0],
+]) test(`B54 coven: moce [2,${powers}], tura ${active} → ${expected} trigger`, async () => {
+  const s = await covenBoard(powers, active);
+  assert.equal(s.zones.stack.length, expected);
+  if (expected) {
+    resolve(s); assert.ok(effectiveKeywords(s.objects.get('witch'), s).includes('flying'));
+    const { clearStatModifiers } = await import('../src/engine/permanents.js');
+    clearStatModifiers(s);
+    assert.equal(effectiveKeywords(s.objects.get('witch'), s).includes('flying'), false);
+  }
+});
+test('B54 coven: aktualne efektywne moce w obu sprawdzeniach, nie zamrożona grupa', async () => {
+  const { modifyStats, replaceObject } = await import('../src/engine/permanents.js');
+  const { processTriggers } = await import('../src/engine/triggers.js');
+  const s = await covenBoard([2, 3]); assert.equal(s.zones.stack.length, 0);
+  modifyStats(s, 'friend-0', { power: -1 }); // bazowe 2, efektywne 1
+  processTriggers(s, [{ type: 'step_advanced', step: 'beginning_of_combat' }]);
+  assert.equal(s.zones.stack.length, 1);
+  moveObjectDirectly(s, 'friend-0', 'graveyard', 'gone');
+  const replacement = put(s, 'replacement', 'rotting-legion', 'p1', 'battlefield');
+  replaceObject(s, replacement, { power: -1 }); // ujemna moc też jest odrębną wartością
+  resolve(s); assert.ok(effectiveKeywords(s.objects.get('witch'), s).includes('flying'));
+});
+test('B54 coven: utrata trzeciej mocy w odpowiedzi blokuje efekt', async () => {
+  const { modifyStats } = await import('../src/engine/permanents.js');
+  const s = await covenBoard([1, 3]); assert.equal(s.zones.stack.length, 1);
+  modifyStats(s, 'friend-1', { power: -1 });
+  resolve(s); assert.equal(effectiveKeywords(s.objects.get('witch'), s).includes('flying'), false);
+});
+test('B54 coven: cudze stwory się nie liczą, odejście źródła nie daje flying nowemu ID', async () => {
+  const { processTriggers } = await import('../src/engine/triggers.js');
+  const s = await covenBoard([1]);
+  put(s, 'enemy', 'rotting-legion', 'p2', 'battlefield');
+  processTriggers(s, [{ type: 'step_advanced', step: 'beginning_of_combat' }]);
+  assert.equal(s.zones.stack.length, 0);
+  put(s, 'third', 'rotting-legion', 'p1', 'battlefield');
+  processTriggers(s, [{ type: 'step_advanced', step: 'beginning_of_combat' }]);
+  assert.equal(s.zones.stack.length, 1);
+  moveObjectDirectly(s, 'witch', 'hand', 'returned-witch');
+  resolve(s); assert.equal(effectiveKeywords(s.objects.get('returned-witch'), s).includes('flying'), false);
+});
+
+// Consign Oracle (snapshot): “Return target permanent to its owner's hand.
+// If that permanent is green or red, put it on top of its owner's library instead.”
+// CR 608.2h (https://mtg.wiki/page/Resolving_spells_and_abilities, fetched 2026-09-08):
+// “If an effect requires information from the game ... the answer is determined
+// only once, when the effect is applied.”
+for (const [colors, destination] of [[[], 'hand'], [['U'], 'hand'], [['R'], 'library'], [['G'], 'library'], [['W','G'], 'library']]) {
+  test(`B54 Consign: kolory ${colors} → ${destination} właściciela, bez pośredniej ręki`, async () => {
+    const { replaceObject } = await import('../src/engine/permanents.js');
+    const s = game(); put(s, 'spell', 'consign-to-dream');
+    const target = put(s, 'target', 'basic-forest', 'p2', 'battlefield');
+    replaceObject(s, target, { colors, controllerId: 'p1' });
+    addMana(s, 'p1', 3, { colors: ['U'] });
+    run(s, commands(s).find(c => c.type === 'cast_spell' && c.objectId === 'spell' && c.targets?.[0] === 'target'));
+    resolve(s);
+    assert.equal(s.objects.has('target'), false);
+    const moved = find(s, 'basic-forest', destination);
+    assert.ok(moved); assert.equal(moved.ownerId, 'p2'); assert.equal(moved.controllerId, 'p2');
+    if (destination === 'library') {
+      assert.equal(s.zones.library.filter(id => s.objects.get(id).ownerId === 'p2')[0], moved.id);
+      assert.equal(s.events.some(e => e.fromId === 'target' && e.toZone === 'hand'), false);
+    }
+  });
+}
+test('B54 Consign: kolor zmieniony w odpowiedzi i zakryty permanent (efektywne kolory)', async () => {
+  const { replaceObject } = await import('../src/engine/permanents.js');
+  for (const faceDown of [false, true]) {
+    const s = game(); put(s, 'spell', 'consign-to-dream');
+    put(s, 'target', 'rotting-legion', 'p2', 'battlefield');
+    addMana(s, 'p1', 3, { colors: ['U'] });
+    run(s, commands(s).find(c => c.type === 'cast_spell' && c.targets?.[0] === 'target'));
+    replaceObject(s, s.objects.get('target'), { colors: ['G'], faceDown });
+    resolve(s); assert.ok(find(s, 'rotting-legion', faceDown ? 'hand' : 'library'));
+  }
+});
+test('B54 Consign: cel opuścił pole bitwy → fizzle, nie przenieś ponownie', () => {
+  const s = game(); put(s, 'spell', 'consign-to-dream'); put(s, 'target', 'basic-forest', 'p2', 'battlefield');
+  addMana(s, 'p1', 3, { colors: ['U'] });
+  run(s, commands(s).find(c => c.type === 'cast_spell' && c.targets?.[0] === 'target'));
+  moveObjectDirectly(s, 'target', 'graveyard', 'gone'); resolve(s);
+  assert.equal(s.objects.get('gone').zone, 'graveyard'); assert.ok(find(s, 'consign-to-dream', 'graveyard'));
+});
+test('B54 B3: opisy PL zawierają coven oraz obie strefy Consign', async () => {
+  const { describeSpellEffects, rulesText } = await import('../src/table/render.js');
+  assert.match(describeSpellEffects(registry.get('consign-to-dream').spell), /czerwony|zielony/);
+  const text = rulesText({ ...registry.get('candlegrove-witch'), controllerId: 'p1' });
+  assert.match(text, /3 różnych wartościach siły/); assert.match(text, /coven/);
+  assert.match(text, /w turze twojej/); assert.match(text, /[Ll]atanie/);
+});
+
+test('B54 B3: pipy kosztów, negatywne cele Consign i ochrona', async () => {
+  const { replaceObject } = await import('../src/engine/permanents.js');
+  for (const id of ['candlegrove-witch', 'consign-to-dream']) {
+    for (const [mana, colors] of [[0, []], [5, ['B']]]) {
+      const s = game(); put(s, 'card', id); put(s, 'target', 'rotting-legion', 'p2', 'battlefield');
+      if (mana) addMana(s, 'p1', mana, { colors });
+      assert.equal(commands(s).some(c => c.objectId === 'card' && c.type.startsWith('cast_')), false);
+      assert.equal(execute(s, { type: id === 'consign-to-dream' ? 'cast_spell' : 'cast_permanent',
+        playerId: 'p1', objectId: 'card', targets: ['target'] }).ok, false);
+      assert.equal(s.players[0].mana, mana); assert.equal(s.objects.get('card').zone, 'hand');
+    }
+  }
+  for (const protection of [{}, { keywords: ['hexproof'] }, { protectionFromColors: ['U'] }]) {
+    const s = game(); put(s, 'card', 'consign-to-dream');
+    const target = put(s, 'target', 'rotting-legion', 'p2', Object.keys(protection).length ? 'battlefield' : 'hand');
+    replaceObject(s, target, protection); addMana(s, 'p1', 3, { colors: ['U'] });
+    assert.equal(commands(s).some(c => c.type === 'cast_spell' && c.targets?.[0] === 'target'), false);
+    assert.equal(execute(s, { type: 'cast_spell', playerId: 'p1', objectId: 'card', targets: ['target'] }).ok, false);
+    assert.equal(s.players[0].mana, 3);
+    assert.equal(execute(s, { type: 'cast_spell', playerId: 'p1', objectId: 'card', targets: ['p2'] }).ok, false);
+  }
+});
+test('B54 Consign: bot wycenia usunięcie wroga, odrzuca własny cel', async () => {
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const s = game(); put(s, 'spell', 'consign-to-dream');
+  put(s, 'own', 'rotting-legion', 'p1', 'battlefield'); put(s, 'enemy', 'rotting-legion', 'p2', 'battlefield');
+  addMana(s, 'p1', 3, { colors: ['U'] });
+  const bot = createHeuristicBot({ seed: 54, registry });
+  const chosen = bot.chooseCommand(playerView(s, 'p1'));
+  assert.equal(chosen.type, 'cast_spell'); assert.deepEqual(chosen.targets, ['enemy']);
+  const options = bot.trace().at(-1).options;
+  assert.ok(options.some(o => o.cmd.includes('own') && o.score < 0), JSON.stringify(options));
+});

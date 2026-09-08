@@ -12,6 +12,7 @@
 1x Manifest Dread
 1x Release the Ants
 1x Soulbright Flamekin
+1x Consign to Dream
 1x Crew Captain
 1x Kulrath Mystic
 1x Stomping Slabs
@@ -27,5 +28,5 @@
 3x Plains
 2x Island
 2x Swamp
-3x Mountain
+4x Mountain
 2x Forest

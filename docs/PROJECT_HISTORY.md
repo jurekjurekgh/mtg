@@ -19,6 +19,18 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-08 — batch 54 B3a (7/10), wznowienie połączenia
+
+GitHub odświeżony przez właściciela: publikacja Kheru i checkpointu udana,
+CI 9fd1420 zielone. Candlegrove Witch i Consign to Dream dodane z testami
+RED→GREEN: wspólny intervening-if odrębnych efektywnych mocy, cel dowolny
+permanent i warunkowa strefa wg kolorów przy resolution. UI pokazuje coven
+oraz obie strefy; bot używa istniejącej wyceny bounce (test przeciwny/własny
+cel). 4 mutacje zabite; B54 55/55, fast4845/4845, build59/3409,6 kB;
+golden nie zmieniono. Talie generatorem i README zgodne. B3b/B4/B5 otwarte;
+nie przedstawiać wcześniejszego all/quick jako nowych pomiarów. Szczegóły:
+plan batch54 i HANDOFF_2026-09-08e.md.
+
 ## Sesja 2026-09-08 — batch 54, checkpoint B0–B2 (5/10)
 
 Plan `a4671e0` przed kodem; B1 `15d6613`, UI kickera `df2c21f`, Abstruse

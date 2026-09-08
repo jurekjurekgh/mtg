@@ -4,6 +4,7 @@
 1x Fleeting Distraction
 1x Floodhound
 1x Twiddle
+1x Candlegrove Witch
 1x Keep Out
 1x Maritime Guard
 1x Merfolk Mesmerist
@@ -15,6 +16,6 @@
 1x Ballista Watcher
 1x Inspiration
 1x Bedhead Beastie
-2x Plains
+1x Plains
 5x Island
-1x Mountain
+2x Mountain

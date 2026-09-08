@@ -33,7 +33,7 @@ choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdzia�
 na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
-Bieżący stan: **4836/4836 testów** (`test:all`; szybki rdzeń 4826/4826), artefakt **59 modułów / 3406,4 kB**. Szczegóły:
+Bieżący stan: szybki rdzeń **4845/4845**, artefakt **59 modułów / 3409,6 kB** (batch 54, 7/10 kart). Ostatni pełny pomiar: **4836/4836** (`test:all` na B2, nie wynik B3a). Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
@@ -134,7 +134,7 @@ liczone z plików `decks/*.txt`).
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 35 | 12 | 23 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
 | `wiedzmin-bg` | Wiedźmin (BG) | BG | 23 | 8 | 15 |
-| `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 23 | 8 | 15 |
+| `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 24 | 8 | 16 |
 | `zendikar` | Zendikar | WURG | 32 | 11 | 21 |
 
 ### Worki (małe plany — przejściowe, ADR 0023)
@@ -144,7 +144,7 @@ liczone z plików `decks/*.txt`).
 | `worek-basni` | Worek: Baśnie | WUBRG | 30 | 10 | 20 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 27 | 9 | 18 |
 | `worek-legend` | Worek: Legendy | WUBRG | 27 | 9 | 18 |
-| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 36 | 12 | 24 |
+| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 38 | 13 | 25 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
 

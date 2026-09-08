@@ -446,6 +446,10 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // M177/D (Vanish from Sight, L48 oferta=walidacja): dowolny NIE-land na
     // polu bitwy — typ istniał w ofercie (Thistledown Players), walidacja
     // rzucała „Nieznany typ celu”.
+    if (spec?.type === 'permanent') {
+      if (!object || object.zone !== 'battlefield') throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
+    }
     if (spec?.type === 'nonland_permanent') {
       if (!object || object.zone !== 'battlefield') throw new Error(`Nielegalny cel: ${targetId}`);
       const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
@@ -1269,6 +1273,10 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
     // Batch 22: Thistledown Players — dowolny NIE-land na polu bitwy (stwór,
     // artefakt, enchantment, planeswalker; engine: każy nonland permanent
     // to obiekt strefy battlefield inny niż land).
+    case 'permanent': return state.zones.battlefield.filter(id => {
+      const object = state.objects.get(id);
+      return object?.zone === 'battlefield' && !hasHexproofAgainst(state, object, playerId);
+    });
     case 'nonland_permanent': {
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);

@@ -4671,3 +4671,14 @@ rider kontry, okno mana abilities przy dopłacie, rozdzielenie płatności
 kickera w kreatorze i kontrolera zdolności od bieżącej kontroli źródła.
 B3–B5 otwarte. Stan GitHub/lokalny, blokada autoryzacji i pomiary:
 `docs/setup/HANDOFF_2026-09-08d.md`.
+
+
+### Batch 54 B3a — coven i conditional bounce, 7/10
+
+Wspólny `distinctCreaturePowersAtLeast` w warunkach triggerów (oba sprawdzenia,
+efektywne moce); `permanent` w ofertach/walidacji czarów oraz
+`bounce_permanent.libraryTopIfColors` przed zmianą strefy. Zachowane owner,
+nowe ID i wspólne efekty powrotu. UI początku walki nie gubi warunku.
+B54 55/55, 4/4 mutacje, fast4845/4845, build59/3409,6 kB.
+GitHub działa; poprzednia blokada była historyczna. B3b/B4/B5 w toku,
+nie zakończenie batcha. HANDOFF_2026-09-08e.md.

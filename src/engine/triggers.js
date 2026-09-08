@@ -101,6 +101,13 @@ function isPlayerId(state, id) {
 /** Czy warunek triggera (np. „no spells were cast last turn") jest spełniony. */
 function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   const condition = trigger?.condition ?? {};
+  // Coven (CR 603.4): aktualne efektywne moce; ten sam predykat przy
+  // wyzwoleniu i resolution. Nie zapamiętujemy trójki stworów.
+  if (condition.distinctCreaturePowersAtLeast != null) {
+    const powers = new Set(creaturesYouControl(state, sourceObject.controllerId)
+      .map(object => effectivePower(object, state)));
+    if (powers.size < condition.distinctCreaturePowersAtLeast) return false;
+  }
   if (condition.noSpellsLastTurn) return state.lastTurnSpellsCast === 0;
   // M158/Batch 39 (Exterminator Magmarch): warunki multiplayer („if ANOTHER
   // opponent ...") są w 1v1 martwe z definicji formatu (jest dokładnie jeden

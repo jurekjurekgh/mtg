@@ -4328,6 +4328,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (targetId == null) return; // „up to one" bez celu — brak efektu
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)
+    // „instead” zmienia strefę docelową PRZED ruchem, nigdy hand → library.
+    // Kolory efektywne w chwili resolution (zakryty obiekt jest bezbarwny).
+    if (effect.libraryTopIfColors?.some(color => effectiveColors(object).includes(color))) {
+      return applyEffect(state, { ...effect, type: 'bounce_to_library_top' }, sourceObject, targets, context);
+    }
     const ownerId = object.ownerId ?? object.controllerId;
     const handId = `hand-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'hand', handId);
