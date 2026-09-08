@@ -3052,8 +3052,16 @@ export function execute(state, input) {
       const destZone = chosenDest === 'battlefield' ? 'battlefield' : chosenDest === 'graveyard' ? 'graveyard' : 'hand';
       const newId = `${destZone === 'battlefield' ? 'permanent' : destZone === 'graveyard' ? 'grave' : 'hand'}-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, cmd.found, destZone, newId);
+      // E9/F4 (wyzwanie wyłapywacza błędów II, CR 302.6): stwór postawiony
+      // z biblioteki podlega chorobie przywołania — jak w każdej innej
+      // ścieżce wejścia (F1/reanimate/throne/pyxis). Dziś idą tędy tylko
+      // lądy (katalog), ale ścieżka jest generyczna.
       const placed = destZone === 'battlefield'
-        ? Object.freeze({ ...moved, tapped: Boolean(pending.entersTapped || moved.entersTapped) })
+        ? Object.freeze({
+            ...moved,
+            tapped: Boolean(pending.entersTapped || moved.entersTapped),
+            summoningSickness: moved.kind === 'creature' || (moved.types ?? []).includes('Creature'),
+          })
         : moved;
       if (placed !== moved) state.objects.set(newId, placed);
       state.events.push(event('card_revealed', { playerId: pending.playerId, objectId: newId, cardId: placed.cardId, searched: true }));
