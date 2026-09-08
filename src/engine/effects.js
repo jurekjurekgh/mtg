@@ -1253,6 +1253,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       tempControlOwner: ownerId,
     });
     state.objects.set(targetId, updated);
+    // E8/B5 (wyzwanie wyłapywacza błędów, CR 506.4): zmiana kontrolera
+    // usuwa permanent z walki — przejęty bloker przestaje blokować, przejęty
+    // atakujący przestaje atakować. Dotąd stwór zostawał w state.combat po
+    // starej stronie (blokował/walkował przeciw SWOJEMU nowemu kontrolerowi).
+    if (state.combat) removeFromCombat(state, targetId);
     state.events.push(event('control_changed', {
       objectId: targetId, cardId: updated.cardId,
       controllerId, fromControllerId: object.controllerId, untilEndOfTurn: true,
