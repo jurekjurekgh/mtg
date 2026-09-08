@@ -961,7 +961,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   const drawDeckingPenalty = (view, amount = 1) => {
     const remaining = myLibraryCount(view) - amount;
-    return remaining <= 0 ? -(P.drawCardValue * amount + 40) : 0;
+    // C (znalezisko testera, Cathartic Reunion 6→3): dobieranie w OSTATNIE
+    // karty to wyrok — magnituda M162/B „samobójstwo” (−120), bo stara kara
+    // −(6a+40) nie przebijała bazy czaru (50+18−58=+10 > pass: bot rzucał
+    // Reunion także przy 3 kartach!). Strefa krytyczna 1–3 (~2 tury
+    // naturalnych dobrań do deck-outu) schodzi pod pass (−(60+6a) bije
+    // spellBase 50 + wartość dobrań). Próg 3 nie rusza pinu Denisena
+    // (5→4 = bezpieczne, test A–F/D).
+    if (remaining <= 0) return -(120 + P.drawCardValue * amount);
+    if (remaining <= 3) return -(60 + P.drawCardValue * amount);
+    return 0;
   };
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 

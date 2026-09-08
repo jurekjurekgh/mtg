@@ -69,6 +69,9 @@ test('Q1b: Withstand na własnej stronie jest dozwolonym wyborem (cantrip)', () 
   putCard(state, 'w', 'withstand', 'p2', 'hand');
   putCard(state, 'mine', 'highland-game', 'p2', 'battlefield');
   putCard(state, 'foe', 'thornhide-wolves', 'p1', 'battlefield');
+  // C (znalezisko testera): cantrip dobiera — biblioteka musi istnieć, żeby
+  // guard deck-outu nie wetował (setup wcześniej miał 0 kart).
+  for (let i = 0; i < 10; i++) putCard(state, `lib${i}`, 'highland-game', 'p2', 'library');
 
   const choice = createHeuristicBot({ seed: 156 }).chooseCommand(playerView(state, 'p2'), {});
   assert.equal(choice.type, 'cast_spell',
