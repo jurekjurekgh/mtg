@@ -19,6 +19,22 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-08 — batch 54, checkpoint B0–B2 (5/10)
+
+Plan `a4671e0` przed kodem; B1 `15d6613`, UI kickera `df2c21f`, Abstruse
+`5c94072` wypchnięte. Kheru `4fb63e3` tylko lokalnie: GitHub HTTP 401,
+fetch nie może uwierzytelnić. Właściciel poproszony o ponowne połączenie
+w Arena. Nie ukończono zadania całej dziesiątki ani nie scalono PR #106.
+
+Fast 4826/4826, all 4836/4836, build 59 / 3406,4 kB, quick 571/672 (85,0%).
+Żywy Tester s10605/s10606: obie partie zakończone, 0 detektorów, 0 niewycenionych,
+0 stderr; przeczytano pełne 697 linii. Kheru i Abstruse wykonane w s10605.
+Zmiany source/control według CR 109.5, koszt LKI według 602/608; źródła i
+RED→GREEN w `test/real-cards-batch54.test.js`. Żadnych nowych progów bota.
+Szczegóły, audyt rebaseline i pozostałe pięć kart: plan batcha54 oraz
+`docs/setup/HANDOFF_2026-09-08d.md`. Ten wpis też pozostaje lokalnie do
+odblokowania połączenia; nie przedstawiać go jako aktualizacji GitHuba.
+
 - **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **E/F — znaleziska pętli jakości**: **E** — mulligan: odłożenie N kart na spód, gdy liczba kart w ręce = wymagana (mała biblioteka / 7. mulligan 7=7), wybór WYMUSZONY — silnik auto-rozstrzyga (wzorzec auto-akcji turowej CR 504.1/508.1; testy M100/E10 zaktualizowane — pinowały stare zachowanie), **F** — Regenerate = combat trick: usunięta spekulacja B3 („wróg ma open manę i removal w talii, który MOŻE zabić”) z wyceny zagrożenia (regeneracja trwa do końca tury — CR 702.14) + okno combat_damage: tarcza (2+60=62) wygrywa z `resolve_combat` (stała 50) — bot stawia tarczę PRZED obrażeniami; pewna śmierć = walka zadeklarowana (CR 510) albo lethal już zadany (SBA 704.5g); 6 testów (RED F1/F3 stashem); benchmark quick bez zmian (84.7%); `npm test` 3811/3811; build 2934.0 kB; **PR #88**)
 - **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5b „Uwagi z testów” część 2**: **A** — „Tasuj talię” bez komunikatu (tylko podmiana seeda), **B** — kto zaczyna partię = LOSOWE z seeda (`state.starterId`, deterministyczny rzut monetą; CR 103.7a/103.4 przymocowane do startera zamiast `players[0]`; collateral: 41 factory/pinów w 27 plikach testowych + golden-master bota zregenerowany), **C** — Awaken the Sleeper: bot ATAKUJE przejętym stworem (wycena celu castu: 3×power + equipment; pożyczona kreatura bez downside'u w `declare_attackers`), **D** — Ruthless Invasion: bez ataku w tej turze = NIE RZUCAM (okno + gotowi atakujący + usuwani blokerzy), płatność życiem {R/P} = tylko za LETHAL (martwa gałąż wyceny przeniesiona do pętli cast_spell + baza −1); benchmarki quick bez zmian (heuristic 84.7%); `npm test` 3805/3805; build 2932.3 kB; **PR #88**)
 - **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5 „Uwagi z testów”**: **A** — hover powiększonej karty Scryfall na miniaturkach w warstwie „Rozgrywka” (tor `scryfall` bez trybów FOT/KON), **B** — bot blokuje 3/3 przy 5 życiach swoim 2/2 (premia przeżycia w wycenie bloku: prógi życia ≤2/≤5/≤8), **C** — Bone Splinters: osobne wybory „cel czaru” + „cel poświęcenia” (wizard `renderMultiTargetWizard` + wymiar `sacrificeTargetId`), zamiast enumeracji kombinacji 3×3; fix M253: transkrypt benchmarku wdarł się do repo (fail CI); `npm test` 3787/3787; build 2924.8 kB; **PR #88**)

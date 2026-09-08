@@ -4662,3 +4662,12 @@ Bramki: `npm test` **4432/4432**, `test:all` **4442/4442**, build
 **59 modułów / 3257,4 kB**; bot-benchmark 10/10. Commity `6f91045`,
 `54da590`. Przy okazji split Warhammera (ubr/wg, ADR 0024) i migracja
 odwołań do starych talii.
+
+## Batch 54 (2026-09-08) — checkpoint, nie zakończenie
+
+B0–B2 planu `docs/plans/PLAN_2026-09-08-batch54-599-608.md`: pięć z dziesięciu
+wskazanych kart. Generyczny koszt poświęcenia innego stwora z LKI, jawny
+rider kontry, okno mana abilities przy dopłacie, rozdzielenie płatności
+kickera w kreatorze i kontrolera zdolności od bieżącej kontroli źródła.
+B3–B5 otwarte. Stan GitHub/lokalny, blokada autoryzacji i pomiary:
+`docs/setup/HANDOFF_2026-09-08d.md`.
