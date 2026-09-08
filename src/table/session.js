@@ -3070,7 +3070,7 @@ export function createSession(config) {
       return probeCommandEffect(state, cmd);
     },
     /** Wykonuje komendę człowieka przez protokół; zwraca { ok, reason?, botPause? }. */
-    apply(cmd) {
+    apply(cmd, { holdPriority = false } = {}) {
       // M90 (bug B, zgłoszenie właściciela 2026-08-14): stan sesji zmienia
       // WYŁĄCZNIE zaakceptowana komenda. Wcześniej `apply` czyścił bufor
       // modala i kasował pauzę bota PRZED `execute()` — gdy engine odrzucił
@@ -3147,7 +3147,10 @@ export function createSession(config) {
       // autopass/fazach bez komend). Nagłówek już jest w buforze (noteBotMove),
       // więc modal pokaże „Tura N — …" i zatrzyma grę przed ruchem bota.
       const turnStartedPause = pauseOnBotMoves && turnStartedNow;
-      const internalError = turnStartedPause ? null : advanceGuarded();
+      // Kreator zbiera manę w jednym oknie priorytetu, nawet gdy docelowa
+      // aktywacja jest wyciszona. Anulowanie zostawia pulę; nowa akcja
+      // albo jawny pass przywraca zwykłe automatyczne przewijanie.
+      const internalError = turnStartedPause || holdPriority ? null : advanceGuarded();
       // M100/E8: modal własnego dobrania pokazuje parę nagłówkową tury
       // („Tura N — Ty" + „Ty dobiera: X"), nie samą linię — kontekst M98.
       //

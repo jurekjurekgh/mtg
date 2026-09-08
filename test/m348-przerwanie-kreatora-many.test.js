@@ -78,3 +78,17 @@ test('M348/C: bez poprzedniego kreatora nie ma anulowania ani próby logowania',
   assert.deepEqual(calls, [cmd]);
   assert.equal(session.log.length, count);
 });
+
+test('Batch54 B5 UI: klik źródła w kreatorze przekazuje holdPriority aż do session.apply',()=>{
+ const calls=[];let handlers;
+ const ctx=createContext({
+  HUMAN_ID,manaWizardDescriptor:{cmd:{type:'activate_ability',objectId:'knight'},costStr:'3G'},
+  els:{manaWizardBody:{}},session:{view:()=>({legalCommands:[]}),nameOf:id=>id,apply:(cmd,options)=>{calls.push({cmd,options});return {ok:true};}},
+  manaSourcesForPlayer:()=>[{id:'forest',cardId:'basic-forest'}],selfTapExclusionFor:()=>null,
+  expandManaPool:()=>[],wizardProgress:()=>({done:false,remainingTotal:4,requirements:[['G']],untappedSources:[]}),
+  renderManaWizard:(_el,_data,h)=>{handlers=h;},autosave:()=>{},rerender:()=>{},showBotMoves:()=>{},
+ });
+ runInContext(`${localFunction('playDirect')}\n${localFunction('refreshManaWizard')}\nrefreshManaWizard();`,ctx);
+ handlers.onTapSource('forest');
+ assert.equal(calls.length,1);assert.equal(calls[0].cmd.type,'tap_for_mana');assert.equal(calls[0].options.holdPriority,true);
+});

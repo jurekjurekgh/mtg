@@ -1263,7 +1263,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const step = view.turn.step;
     return myTurn(view) && (step === 'main1' || step === 'main2' || step === 'main');
   });
-  const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
+  const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + combatPower(o), 0);
   /**
    * M135 — CZY TĘ KARTĘ CHCEMY DOBRAĆ? Wspólna wycena dla wszystkich decyzji
    * „zostaw na wierzchu albo odłóż/zmiel" (scry, surveil, clash).
@@ -1299,7 +1299,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // bazową (nie znamy jego treści z widoku, ale to wciąż realna karta).
     return 4 + Math.min(bodyValue, 8) - Math.max(0, cost - reach);
   };
-  const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
+  const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + combatPower(o), 0);
   // M91 (A2): moc stworów przeciwnika, które JUŻ atakują — miara realnego
   // zagrożenia w tej turze (fog ratuje życie tylko wtedy, gdy coś nadlatuje).
   // M92 (audyt PlayerView): publiczne efekty prewencji/regeneracji z widoku.
@@ -1401,12 +1401,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return attackers
         .map((id) => (view.zones.battlefield ?? []).find((o) => o.id === id))
         .filter((o) => o && o.controllerId !== view.playerId)
-        .reduce((sum, o) => sum + (o.power ?? 0), 0);
+        .reduce((sum, o) => sum + combatPower(o), 0);
     }
     if (view.combat) return 0; // trwa MOJA walka — wróg nie atakuje
     return enemyCreatures(view)
       .filter((o) => o.attacking)
-      .reduce((sum, o) => sum + (o.power ?? 0), 0);
+      .reduce((sum, o) => sum + combatPower(o), 0);
   };
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
 
@@ -1943,7 +1943,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   function enemyAttackPower(view) {
     // Podczas własnego okna bloków przeciwnik ma już zadeklarowanych atakujących
     // na planszy jako tapped — przybliżamy zagrożenie sumą siły wrogich stworów.
-    return enemyCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
+    return enemyCreatures(view).reduce((sum, o) => sum + combatPower(o), 0);
   }
 
   /** Otwarta mana przeciwnika: pula + nietapnięte landy (land creatures też). */
@@ -3289,8 +3289,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               && ['main1', 'beginning_of_combat'].includes(view.turn.step);
             // Gotowi atakujący: nietapnięci, bez choroby (albo haste), moc > 0.
             const attackers = myCreatures(view).filter((c) => !c.tapped
-              && (!c.summoningSickness || hasKeyword(c, 'haste')) && (c.power ?? 0) > 0);
-            const totalPower = attackers.reduce((sum, c) => sum + (c.power ?? 0), 0);
+              && (!c.summoningSickness || hasKeyword(c, 'haste')) && combatPower(c) > 0);
+            const totalPower = attackers.reduce((sum, c) => sum + combatPower(c), 0);
             // Blokerzy, których czar faktycznie usuwa: nietapnięte stworы
             // przeciwnika POZA wyjątkami (Ruthless: artifact-creatures
             // blokują mimo zakazu). Zbiór ustala się przy rozstrzygnięciu —
@@ -5152,7 +5152,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // trik z deathtouchem nadal zabija atakującego (klasa L48: jeden
               // model w całej rodzinie gałęzi).
               if (attackerStrikesFirst(object, blockers)
-                && (object.power ?? 0) >= effBlockerToughness) continue;
+                && combatPower(object) >= effBlockerToughness) continue;
               score -= dtProb * (10 + 2 * (object.power ?? 0) + (object.toughness ?? 0));
             }
           }
@@ -5989,8 +5989,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const foeBoard = view.zones.battlefield.filter((o) => o.controllerId !== view.playerId);
     const myCreatures = mine.filter((o) => o.kind === 'creature');
     const foeCreatures = foeBoard.filter((o) => o.kind === 'creature');
-    const myPower = myCreatures.reduce((sum, o) => sum + Math.max(0, o.power ?? 0), 0);
-    const foePower = foeCreatures.reduce((sum, o) => sum + Math.max(0, o.power ?? 0), 0);
+    const myPower = myCreatures.reduce((sum, o) => sum + Math.max(0, combatPower(o)), 0);
+    const foePower = foeCreatures.reduce((sum, o) => sum + Math.max(0, combatPower(o)), 0);
     const myHand = view.zones.hand.filter((o) => o.controllerId === view.playerId).length;
     const foeHand = view.zones.hand.filter((o) => o.controllerId !== view.playerId).length;
     const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
@@ -6017,8 +6017,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if ((c.keywords ?? []).includes('first_strike') || (c.keywords ?? []).includes('double_strike')) foeQuality += 2;
     }
     // Evasion power: flying creatures are harder to block
-    const myEvasion = myCreatures.filter((c) => (c.keywords ?? []).includes('flying')).reduce((s, c) => s + Math.max(0, c.power ?? 0), 0);
-    const foeEvasion = foeCreatures.filter((c) => (c.keywords ?? []).includes('flying')).reduce((s, c) => s + Math.max(0, c.power ?? 0), 0);
+    const myEvasion = myCreatures.filter((c) => (c.keywords ?? []).includes('flying')).reduce((s, c) => s + Math.max(0, combatPower(c)), 0);
+    const foeEvasion = foeCreatures.filter((c) => (c.keywords ?? []).includes('flying')).reduce((s, c) => s + Math.max(0, combatPower(c)), 0);
     // Deck-out pressure: when library is small, every turn counts
     const myDeckPressure = myLib <= 5 ? (5 - myLib) * 3 : 0;
     const foeDeckPressure = foeLib <= 5 ? (5 - foeLib) * 3 : 0;
@@ -6098,16 +6098,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // tapnięcie; metryka, która o tym zapomina, produkuje szum (L118).
       const blokerzy = untappedEnemyBlockers(view);
       const absorpcja = blokerzy.reduce((a, o) => a + (o.toughness ?? 0), 0);
-      const najsilniejszy = blokerzy.reduce((a, o) => Math.max(a, o.power ?? 0), 0);
+      const najsilniejszy = blokerzy.reduce((a, o) => Math.max(a, combatPower(o)), 0);
       let sila = 0;
       let ginie = 0;
       for (const id of atak) {
         const o = objectOnBoard(view, id);
-        sila += o?.power ?? 0;
+        sila += combatPower(o);
         if ((o?.toughness ?? 99) <= najsilniejszy) ginie += 1;
       }
       const zycieWroga = enemy(view)?.life ?? 999;
-      const zabici = blokerzy.filter((b) => atak.some((id) => (objectOnBoard(view, id)?.power ?? 0) >= (b.toughness ?? 99))).length;
+      const zabici = blokerzy.filter((b) => atak.some((id) => combatPower(objectOnBoard(view, id)) >= (b.toughness ?? 99))).length;
       return {
         atakuje: atak.length,
         trafienie: Math.min(Math.max(0, sila - absorpcja), zycieWroga),
@@ -6174,10 +6174,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       let ofiary = 0;
       for (const [atakujacyId, blokerzy] of Object.entries(przypisania)) {
         const atakujacy = objectOnBoard(view, atakujacyId);
-        zablokowane += atakujacy?.power ?? 0;
+        zablokowane += combatPower(atakujacy);
         for (const blokerId of blokerzy ?? []) {
           const b = objectOnBoard(view, blokerId);
-          if (b && (atakujacy?.power ?? 0) >= (b.toughness ?? 99)) ofiary += 1;
+          if (b && combatPower(atakujacy) >= (b.toughness ?? 99)) ofiary += 1;
         }
       }
       return { zablokowane, ofiary, blokuje: Object.keys(przypisania).length };

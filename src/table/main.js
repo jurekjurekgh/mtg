@@ -1675,14 +1675,14 @@ function bootstrapTable() {
   }
 
   /** Jedyna droga akcji gracza: komenda → sesja → przerysowanie. */
-  function playDirect(cmd) {
+  function playDirect(cmd, options) {
     // M201/N1b (zgłoszenie właściciela): awaria wewnątrz sesji (wyjątek pętli
     // bota) nie może zjeść kliknięcia. Sesja łapie ją i oddaje `internalError`
     // (log partii ma już wpis) — tutaj dokładamy widoczny komunikat, żeby
     // gracz nie patrzył na stół, który „nic nie robi”.
     let result;
     try {
-      result = session.apply(cmd);
+      result = session.apply(cmd, options);
     } catch (error) {
       autosave();
       rerender();
@@ -1891,7 +1891,7 @@ function bootstrapTable() {
         const command = src?.command ?? { type: 'tap_for_mana', playerId: HUMAN_ID, objectId };
         // Kolor tapniętego źródła trafia do KOLOROWEJ PULI (engine), więc pokrycie
         // kolorów liczy się samo z puli — bez śledzenia committed (cz. 8).
-        playDirect(command);
+        playDirect(command, { holdPriority: true });
         refreshManaWizard();
       },
       onCancel: () => closeManaWizard(),

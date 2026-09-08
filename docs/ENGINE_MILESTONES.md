@@ -4718,3 +4718,13 @@ Armor/grupowe destroy i rzeczywisty wybór controller/APNAP; serializowalne
 kontynuacje resolution i first strike. Oddzielna miara combat/T, power/fight
 bez zmiany, UI/bot.32testy/6mutacji,fast4920/all4930,build60/3427,4kB,
 golden bez zmiany. B5 końcowa weryfikacja nadal trwa.
+
+
+### Batch54 B5 — integracja zamknięta, 10/10 kart
+
+Koniec combat po armor/podziale, bez podwójnego ruchu zwykłej aury, APNAP,
+projekcje bota według toughness. Kreator many nie uruchamia auto-pass podczas
+zbierania płatności (live10607 + test sesji i UI). Umbra38/38; fast4928,
+all4938, build60/3428,4kB, quick84,8%. Golden zmienia tylko2 etykiety kroku,
+bez zmiany punktacji/komend; dowód izolacji i triage starych kart w
+`docs/audits/BATCH54_INTEGRATION_2026-09-08.md`. PR106 czeka na właściciela.

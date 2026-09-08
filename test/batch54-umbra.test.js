@@ -160,3 +160,51 @@ test('606: first strike czeka na wybór armor przed regularnym przebiegiem',()=>
  resolveCombatDamage(s,'p2');assert.ok(s.pendingReplacementChoice);assert.equal(s.objects.get('block').damage,8,'brak drugiego przebiegu przed wyborem');
  pick(s,'umbra:a0');assert.equal(s.objects.get('block').damage,14,'drugi przebieg wg nowej toughness6 po stracie aury');
 });
+for (const firstStrike of [false,true]) test(`606: execute kończy krok walki po armor (first strike ${firstStrike})`,()=>{
+ const s=board(2);s.turn=jumpToStep(s.turn,'combat_damage','p1');
+ put(s,'block','rotting-legion','p2');replaceObject(s,s.objects.get('block'),{power:8,toughness:20,keywords:firstStrike?['first_strike']:[]});
+ s.combat={attackers:['host'],blockers:new Map([['host',['block']]]),blockedAttackers:new Set(['host']),attackingPlayerId:'p1'};
+ assert.ok(execute(s,{type:'resolve_combat',playerId:'p1',defendingPlayerId:'p2'}).ok);
+ assert.ok(s.pendingReplacementChoice);assert.equal(s.turn.step,'combat_damage');
+ const r=pick(s,'umbra:a0');assert.equal(s.turn.step,'end_of_combat');
+ assert.equal(r.events.filter(e=>e.type==='step_advanced'&&e.step==='end_of_combat').length,1);
+ assert.equal(s.combat,null);assert.equal(s.objects.get('host').zone,'battlefield');
+});
+test('606: replacement wybierany APNAP mimo odwróconej kolejności grupy',async()=>{
+ const {destroyPermanents}=await import('../src/engine/destruction.js');const s=board(2);put(s,'host2','giant-spider','p2');
+ for(const id of ['b0','b1']){const a=put(s,id,'treefolk-umbra','p2');replaceObject(s,a,{kind:'aura',attachedTo:'host2'});}
+ destroyPermanents(s,['host2','host']);assert.equal(s.pendingReplacementChoice.playerId,'p1');
+ pick(s,'umbra:a0');assert.equal(s.pendingReplacementChoice.playerId,'p2');
+ assert.equal(s.objects.get('a0').zone,'battlefield');pick(s,'umbra:b0');assert.equal(s.pendingReplacementChoice,null);
+ assert.equal(s.turn.priorityPlayerId,'p1');
+});
+test('606 bot: prognoza obrażeń używa toughness przy zachowaniu publicznego power',async()=>{
+ const {createHeuristicBot}=await import('../src/controllers/heuristic-bot.js');
+ const s=board();s.turn=jumpToStep(s.turn,'declare_attackers','p1');
+ const v=playerView(s,'p1'),cmd={type:'declare_attackers',playerId:'p1',attackerIds:['host']};
+ const bot=createHeuristicBot({seed:606,randomness:0});bot.chooseCommand({...v,legalCommands:[cmd,{...cmd}]});
+ assert.equal(v.zones.battlefield.find(o=>o.id==='host').power,2);
+ assert.equal(bot.trace().at(-1).tie[0].proj.trafienie,6);
+});
+// CR510.1/510.2, https://mtg.wiki/page/Combat_damage_step (2026-08-07 edition):
+// assignment precedes simultaneous damage in the combat damage step.
+test('606: podział obrażeń → armor → koniec walki, bez przedwczesnego step_advanced',()=>{
+ const s=board(2);s.turn=jumpToStep(s.turn,'combat_damage','p1');put(s,'block','rotting-legion','p2');
+ replaceObject(s,s.objects.get('block'),{power:8,toughness:20});replaceObject(s,s.objects.get('host'),{keywords:['trample']});
+ s.combat={attackers:['host'],blockers:new Map([['host',['block']]]),blockedAttackers:new Set(['host']),attackingPlayerId:'p1'};
+ const r=execute(s,{type:'resolve_combat',playerId:'p1',defendingPlayerId:'p2'});assert.ok(r.ok);assert.ok(s.pendingDamageAssignment);
+ assert.equal(s.turn.step,'combat_damage');assert.equal(r.events.some(e=>e.type==='step_advanced'),false);
+ const cmd=playerView(s,'p1').legalCommands.find(c=>c.type==='resolve_damage_assignment');assert.ok(cmd);assert.ok(execute(s,cmd).ok);
+ assert.ok(s.pendingReplacementChoice);assert.equal(s.turn.step,'combat_damage');
+ const last=pick(s,'umbra:a0');assert.equal(s.turn.step,'end_of_combat');assert.equal(last.events.filter(e=>e.type==='step_advanced').length,1);
+ assert.equal(s.objects.get('block').damage,8);assert.equal(s.objects.get('host').damage,0);
+});
+test('606 grupa: zwykła aura i host niszczone razem nie wykonują podwójnego ruchu',async()=>{
+ const {destroyPermanents}=await import('../src/engine/destruction.js');
+ for(const ids of [['host','ordinary'],['ordinary','host']]) {
+  const s=board(0),a=put(s,'ordinary','containment-membrane');replaceObject(s,a,{kind:'aura',attachedTo:'host'});
+  assert.doesNotThrow(()=>destroyPermanents(s,ids));
+  assert.equal(s.zones.battlefield.length,0);assert.equal(s.zones.graveyard.length,2);
+  assert.equal(s.events.filter(e=>e.type==='permanent_destroyed').length,2,'oba są niszczone, nie aura zrzucona przez cleanup');
+ }
+});

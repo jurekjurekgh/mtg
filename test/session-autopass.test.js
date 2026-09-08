@@ -517,3 +517,24 @@ test('M205: pełna partia — każdy wpis „Auto-pass" odpowiada realnemu oddan
     assert.match(entry.text, /oddajesz priorytet/, `komunikat w 2. osobie: ${entry.text}`);
   }
 });
+
+test('Batch54 B5: kreator many zachowuje upkeep i pulę przy wyciszonej aktywacji',()=>{
+ const registry=createCardRegistry(),ignored=new Set();
+ const decks=new Map([[HUMAN_ID,Array(20).fill('basic-forest')],[BOT_ID,Array(20).fill('basic-island')]]);
+ const {session,state:s}=b10Session(registry,decks,ignored);
+ s.turn=jumpToStep(s.turn,'upkeep',HUMAN_ID);s.turn.activePlayerId=s.turn.priorityPlayerId=HUMAN_ID;
+ const cards=['knight-of-the-skyward-eye','basic-forest','unstable-frontier','basic-plains','basic-plains','basic-plains'];
+ cards.forEach((id,i)=>addObject(s,{...gameObjectDataOf(registry.get(id)),id:`pay-${i}`,instanceId:`pay-i-${i}`,cardId:id,zone:'battlefield',ownerId:HUMAN_ID,controllerId:HUMAN_ID}));
+ for(const c of session.view().legalCommands)if(c.type==='activate_ability')ignored.add(commandOptionKey(c));
+ const ability=session.view().legalCommands.find(c=>c.type==='activate_ability'&&c.objectId==='pay-0');assert.ok(ability);
+ const human=s.players.find(p=>p.id===HUMAN_ID),before=human.mana;
+ for(let i=1;i<=4;i++) {
+  assert.ok(session.apply({type:'tap_for_mana',playerId:HUMAN_ID,objectId:`pay-${i}`},{holdPriority:true}).ok);
+  assert.equal(s.turn.step,'upkeep','auto-pass nie opróżnia puli w środku płatności');
+  assert.equal(human.mana,before+i);assert.equal(s.turn.priorityPlayerId,HUMAN_ID);
+ }
+ assert.ok(session.apply(ability,{holdPriority:true}).ok);assert.equal(human.mana,before);
+ assert.equal(s.zones.stack.length,1);assert.equal(s.objects.get('pay-5').tapped,false,'piąte źródło niepotrzebne');
+ session.recheckAutoPass();assert.equal(s.zones.stack.length,0,'po płatności auto-pass znów działa');
+ assert.equal(session.view().zones.battlefield.find(o=>o.id==='pay-0').power,5);
+});

@@ -19,6 +19,19 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-08 — batch54 B5 zamknięte, 10/10
+
+Domknięta integracja armor/końca walki/podziału, zwykła aura w równoczesnym
+destroy bez podwójnego ruchu, projekcje combat/T i APNAP. Żywy Tester wykazał
+prawdziwy błąd kreatora many: auto-pass wyciszonej aktywacji opróżniał pulę
+między tapnięciami. holdPriority w ścieżce UI→sesja, regresja RED→GREEN,
+powtórka10607 potwierdza cztery źródła i pump Knighta zamiast anulowania.
+Fast4928/4928, all4938/4938, build60/3428,4kB, quick570/672=84,8%.
+Golden: izolowane2 pola step (end_of_combat→combat_damage); wyceny i komendy
+bez zmiany, świadomy rebaseline do4d9b14e8… po porównaniu pełnych śladów.
+Raport BATCH54_INTEGRATION_2026-09-08.md zawiera dowody i pozostawiony triage
+starych kart Slabs/Inspiration. Handoff i; PR106 OPEN, bez merge.
+
 ## Sesja 2026-09-08 — batch54 B4b, komplet 10 definicji
 
 Treefolk Umbra606: armor we wspólnym destroy (grupy/wybór/wznowienia),

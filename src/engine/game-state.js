@@ -5251,7 +5251,7 @@ export function execute(state, input) {
     if (state.turn.activePlayerId !== cmd.playerId) return reject('not_active_player');
     try {
       const e = resolveCombatDamage(state, cmd.defendingPlayerId);
-      if (state.pendingReplacementChoice) return accepted(state, cmd, {ok:true,events:e});
+      if (state.pendingReplacementChoice || state.pendingDamageAssignment) return accepted(state, cmd, {ok:true,events:e});
       state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
       const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
       state.events.push(step);
@@ -5277,9 +5277,12 @@ export function execute(state, input) {
         objectId:pending.objectId,cardId:pending.cardId,choice:cmd.choice }));
       for (const item of continuations ?? []) {
         if (state.pendingReplacementChoice) { state.pendingReplacementChoice.continuations.push(item); continue; }
-        if (item.combatResume) {
-          resolveCombatDamage(state,item.combatResume.defendingPlayerId,item.combatResume);
-          if (!state.pendingReplacementChoice && !state.pendingDamageAssignment) state.turn=jumpToStep(state.turn,'end_of_combat',state.turn.activePlayerId);
+        if (item.combatResume || item.combatFinish) {
+          if (item.combatResume) resolveCombatDamage(state,item.combatResume.defendingPlayerId,item.combatResume);
+          if (!state.pendingReplacementChoice && !state.pendingDamageAssignment) {
+            state.turn=jumpToStep(state.turn,'end_of_combat',state.turn.activePlayerId);
+            state.events.push(event('step_advanced',{number:state.turn.number,phase:state.turn.phase,step:state.turn.step}));
+          }
         } else if (item.completion) {
           const c=item.completion;
           if(c.spell) {

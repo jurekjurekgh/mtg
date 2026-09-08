@@ -453,6 +453,7 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
   // pozostawić odwołań do obiektów już poza battlefield (pilnuje inwariant).
   state.combat = null;
   events.push(...runStateBasedActions(state));
+  if (state.pendingReplacementChoice) state.pendingReplacementChoice.continuations.push({combatFinish:true});
   return events;
 }
 
