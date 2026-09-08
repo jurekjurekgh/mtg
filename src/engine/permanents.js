@@ -112,7 +112,7 @@ function clearSummoningSickness(state, object) {
 export function untapControlled(state, playerId) {
   const untapped = [];
   for (const object of state.objects.values()) {
-    if (object.zone === 'battlefield' && object.controllerId === playerId && (object.tapped || object.summoningSickness)) {
+    if (object.zone === 'battlefield' && object.controllerId === playerId && (object.tapped || object.summoningSickness || object.dontUntapNextUntapStep)) {
       // M101/B5 (CR 302.6): choroba przywołania zależy WYŁĄCZNIE od ciągłości
       // kontroli („under its controller's control continuously since the start
       // of their most recent turn"), a NIE od tego, czy permanent faktycznie
@@ -123,19 +123,25 @@ export function untapControlled(state, playerId) {
       // realnego odkręcenia, więc zatapniętny stwór pod blokadą zostawał chory
       // w nieskończoność i nigdy nie mógł atakować ani użyć zdolności {T}.
       const cured = clearSummoningSickness(state, object);
+      // E8/B2 (wyzwanie wyłapywacza błędów, CR „doesn't untap during its
+      // controller's NEXT untap step"): jednorazowa flaga zużywa się NA
+      // untap stepie obecnego kontrolera, niezależnie od stanu tapped.
+      // Dotąd zjadano ją tylko przy `tapped` (odkręcony w międzyczasie cel
+      // nosił flagę wiecznie i pomijał PÓŹNIEJSZY untap step), a porównanie
+      // z controllerId zapisanym w chwili efektu gubiło skip po zmianie
+      // kontrolera. Blokady odkręcania (stun, untap-lock) obowiązują dalej
+      // w kolejnych stepach — tu flaga i tak właśnie schodzi.
+      if (cured.dontUntapNextUntapStep) {
+        const cleared = replaceObject(state, cured, { dontUntapNextUntapStep: null });
+        if (cleared.tapped) continue; // efektywny skip: ten step bez odkręcenia
+        continue; // odkręcony — flaga zużyta bez skutku (nie ma czego odkręcać)
+      }
       // Zablokowane stworzenie (np. przez Entrancing Lyre) nie odkręca się.
       if (cured.tapped && isUntapLocked(state, cured)) continue;
       // „You may choose not to untap" (Entrancing Lyre): obiekt będący
       // źródłem aktywnej blokady nie odkręca się — deterministycznie
       // zawsze wybieramy „nie odkręcaj", żeby blokada nie wygasła.
       if (cured.tapped && isActiveLockSource(state, cured.id)) continue;
-      // Wavecrash Triton (CR): „doesn't untap during its controller's next
-      // untap step" — jednorazowa flaga zużywana przy tym untap (obiekt
-      // zostaje zatapnięty, flaga zniknie, więc następny untap odkręci).
-      if (cured.tapped && cured.dontUntapNextUntapStep === playerId) {
-        replaceObject(state, cured, { dontUntapNextUntapStep: null });
-        continue;
-      }
       // M101/B3 (CR 122.1b — liczniki stun): „If a permanent with a stun
       // counter on it would become untapped, remove one from it instead."
       // Dotyczy KAŻDEGO odkręcenia, więc także turn-based action kroku
