@@ -10661,6 +10661,18 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ] },
     artId: 602, plan: 'Zendikar', support: { status: 'supported', limitations: [] },
   }),
+  defineCard({
+    id: 'kheru-dreadmaw', name: 'Kheru Dreadmaw', set: 'KTK',
+    types: ['Creature'], subtypes: ['Zombie', 'Crocodile'], colors: ['B'],
+    power: 4, toughness: 4, manaCost: 5, keywords: ['defender'],
+    oracleText: "Defender\n{1}{G}, Sacrifice another creature: You gain life equal to the sacrificed creature's toughness.",
+    imageUri: "https://cards.scryfall.io/large/front/e/8/e8b10468-18b8-4321-a791-0cbd18ea9c4d.jpg?1783939080",
+    abilities: [createAbility({ type: ABILITY_TYPE.activated,
+      cost: { mana: 2, colors: ['G'], sacrificeCreature: { another: true } },
+      effect: { type: 'gain_life', amountFromSacrificedToughness: true },
+    })],
+    artId: 603, plan: 'Tarkir', support: { status: 'supported', limitations: [] },
+  }),
 
 ]);
 

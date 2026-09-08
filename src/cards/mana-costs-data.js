@@ -1,4 +1,5 @@
 export const MANA_COSTS = {
+  "kheru-dreadmaw": "{4}{B}",
   "abstruse-interference": "{2}{U}",
   "skymarch-bloodletter": "{2}{B}",
   "vampires-bite": "{B}",

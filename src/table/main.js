@@ -1208,7 +1208,7 @@ function bootstrapTable() {
       if (cmd.type === 'cast_permanent' && cmd.kicked) return `perm-k:${cmd.objectId}`;
       if (cmd.type === 'cast_adventure') return `adv:${cmd.objectId}`;
       if (cmd.type === 'cast_adventure_creature') return `advc:${cmd.objectId}`;
-      if (cmd.type === 'activate_ability' && (cmd.targets?.length || cmd.xValue != null || cmd.attackerId != null || cmd.crewCreatureIds?.length)) return `ability:${cmd.objectId}:${cmd.abilityIndex}`;
+      if (cmd.type === 'activate_ability') return choiceRequestGroupKey(cmd) ?? `ability:${cmd.objectId}:${cmd.abilityIndex}`;
       if (cmd.type === 'resolve_scry') return 'resolve_scry';
       if (cmd.type === 'resolve_surveil') return 'resolve_surveil';
       if (cmd.type === 'resolve_backup') return 'resolve_backup';

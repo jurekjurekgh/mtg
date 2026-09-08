@@ -374,7 +374,7 @@ export function choiceRequestGroupKey(command) {
       // M160/B1 (Seismic Monstrosaur): warianty kosztu „poświęć ląd” (jeden
       // wpis per ląd) grupują się jak crew/tap — bez tego panel pokazywał
       // N identycznych wpisów „Aktywuj: … — dobierz 1 kartę”.
-      || command.sacrificeLandId != null)) {
+      || command.sacrificeLandId != null || command.sacrificeCreatureId != null)) {
     return `ability:${command.objectId}:${command.abilityIndex}`;
   }
   if (command.type === 'resolve_scry') return 'resolve_scry';
@@ -1203,6 +1203,7 @@ const NON_MANA_COST_LABELS = Object.freeze([
   ['discardCards', (n) => `odrzuć ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')}`],
   ['sacrificeSelf', 'poświęć'],
   ['sacrificeLand', 'poświęć ląd'],
+  ['sacrificeCreature', (rule) => rule.another ? 'poświęć innego stwora' : 'poświęć stwora'],
   ['tapCreature', 'tapnij swojego stwora'],
   ['tapOtherCreature', 'tapnij innego swojego stwora'],
   ['exileFromGraveyard', 'wygnaj tę kartę z grobu'],
@@ -2036,7 +2037,7 @@ function choiceSourceTitle(cmd, session, view) {
   // „Wybierz: Wariant (N opcji)" i gracz nie wiedział, czego dotyczy wybór.
   if (cmd.type === 'activate_ability'
     && (cmd.tapOtherCreatureId != null || cmd.tapCreatureId != null || cmd.crewCreatureIds?.length
-      || cmd.sacrificeLandId != null)) {
+      || cmd.sacrificeLandId != null || cmd.sacrificeCreatureId != null)) {
     return `Aktywuj: ${name}`;
   }
   return null;
@@ -2618,6 +2619,7 @@ export function commandLabel(cmd, session, view) {
       // M160/B2 (Seismic Monstrosaur): koszt „poświęć ląd” enumeruje wariant
       // per ląd — etykieta MUSI nazwać, który ląd ginie (poświęcenie to
       // koszt, CR 601.2h; sześć identycznych wpisów było nierozróżnialnych).
+      const sacCreaturePart = cmd.sacrificeCreatureId != null ? ` — poświęć: ${nameOfObjectId(cmd.sacrificeCreatureId)}` : '';
       const sacLandPart = cmd.sacrificeLandId != null ? ` — poświęć: ${nameOfObjectId(cmd.sacrificeLandId)}` : '';
       // M101/B7: nazwij AKCJĘ, którą gracz wykonuje (crew albo saddle — nie
       // oba naraz), i powiedz wprost, że wskazane stwory zostaną TAPNIĘTE.
@@ -2631,7 +2633,7 @@ export function commandLabel(cmd, session, view) {
         ? ' — UWAGA: twoja biblioteka jest pusta, zdolność nie zadziała'
         : (abilityFizzlesOnHand(ability, view)
           ? ' — UWAGA: brak pasującej karty w ręce, zdolność nie zadziała' : '');
-      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${sacLandPart}${crewPart}${emptyLibWarn}`;
+      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${sacLandPart}${sacCreaturePart}${crewPart}${emptyLibWarn}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));

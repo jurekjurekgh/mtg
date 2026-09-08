@@ -339,3 +339,113 @@ test('B54: regresja bota — damage_each_opponent na aktywacji wycenia dobicie, 
   }
   assert.ok(scores[1] > scores[0], `dobicie > chip, nie ${scores}`);
 });
+
+// CR 602.1a (2026-08-07, odczyt 2026-09-08): “The activation cost is
+// everything before the colon (:). An ability’s activation cost must be
+// paid by the player who is activating it.” 602.2: “If, at any point
+// during the activation of an ability, a player is unable to comply with
+// any of those steps, the activation is illegal; the game returns to the
+// moment before that ability started to be activated”.
+// https://mtg.wiki/page/Activated_ability
+// CR 608.2h: “if it’s no longer in that zone, or if the effect has moved
+// it from a public zone to a hidden zone, the effect uses the object’s last
+// known information.” https://mtg.wiki/page/Resolving_spells_and_abilities
+// WotC 2014-09-20: “Use the toughness of the creature as it last existed
+// on the battlefield to determine how much life you gain.” (snapshot Kheru)
+for (const sourceChange of ['stays', 'leaves', 'stolen']) {
+  test(`B54: Kheru — koszt teraz, LKI efektywnej wytrzymałości później; źródło ${sourceChange}`, async () => {
+    const { modifyStats, replaceObject } = await import('../src/engine/permanents.js');
+    const { addCounter } = await import('../src/engine/counters.js');
+    const s = game(); put(s, 'kheru', 'kheru-dreadmaw', 'p1', 'battlefield');
+    put(s, 'victim', 'rotting-legion', 'p1', 'battlefield');
+    modifyStats(s, 'victim', { toughness: 2 }); addCounter(s, 'victim', '+1/+1', 1);
+    replaceObject(s, s.objects.get('victim'), { damage: 3, tapped: true });
+    addMana(s, 'p1', 2, { colors: ['G'] });
+    const offer = commands(s).find(c => c.type === 'activate_ability' && c.objectId === 'kheru' && c.sacrificeCreatureId === 'victim');
+    run(s, offer);
+    assert.equal(find(s, 'rotting-legion'), undefined, 'poświęcenie zapłacone, nie wybór przy resolution');
+    assert.equal(life(s, 'p1'), 20, 'zdolność jeszcze na stosie');
+    assert.equal(s.zones.stack.length, 1); assert.equal(s.players[0].mana, 0);
+    assert.equal(s.objects.get('kheru').tapped, false, 'Oracle nie ma {T}');
+    if (sourceChange === 'leaves') moveObjectDirectly(s, 'kheru', 'graveyard', 'dead-kheru');
+    if (sourceChange === 'stolen') replaceObject(s, s.objects.get('kheru'), { controllerId: 'p2' });
+    // Karta wraca bez modyfikatorów: to nowy obiekt, nie nowe LKI kosztu.
+    const graveVictim = find(s, 'rotting-legion', 'graveyard');
+    moveObjectDirectly(s, graveVictim.id, 'battlefield', 'returned-victim');
+    resolve(s);
+    assert.equal(life(s, 'p1'), 28, '5 +2 +1, nie bazowe 5 ani wytrzymałość minus 3 obrażenia');
+    assert.equal(life(s, 'p2'), 20);
+  });
+}
+for (const badId of [null, 'kheru', 'foe', 'land', 'hand']) {
+  test(`B54: Kheru — odrzuca nielegalny koszt ${badId}, bez wydania many i poświęcenia`, () => {
+    const s = game(); put(s, 'kheru', 'kheru-dreadmaw', 'p1', 'battlefield');
+    put(s, 'foe', 'rotting-legion', 'p2', 'battlefield');
+    put(s, 'land', 'basic-forest', 'p1', 'battlefield'); put(s, 'hand', 'rotting-legion');
+    addMana(s, 'p1', 2, { colors: ['G'] });
+    assert.equal(commands(s).some(c => c.objectId === 'kheru' && c.type === 'activate_ability'), false);
+    const r = execute(s, { type: 'activate_ability', playerId: 'p1', objectId: 'kheru', abilityIndex: 0, sacrificeCreatureId: badId });
+    assert.equal(r.ok, false); assert.equal(s.players[0].mana, 2); assert.equal(s.objects.get('land').tapped, false);
+    assert.equal(s.zones.stack.length, 0); assert.equal(s.objects.get('kheru').zone, 'battlefield');
+  });
+}
+test('B54: Kheru — pip G, defender i wybór ofiary w kreatorze/PL', async () => {
+  const { choiceRequestGroupKey, choiceGroupTitle, commandLabel } = await import('../src/table/render.js');
+  const { singleTargetPlanOf, commandForSingleTargetSelection } = await import('../src/table/multi-target.js');
+  const s = game(); put(s, 'kheru', 'kheru-dreadmaw', 'p1', 'battlefield');
+  put(s, 'victim', 'rotting-legion', 'p1', 'battlefield'); put(s, 'small', 'skymarch-bloodletter', 'p1', 'battlefield');
+  addMana(s, 'p1', 2, { colors: ['B'] });
+  assert.equal(commands(s).some(c => c.objectId === 'kheru' && c.type === 'activate_ability'), false);
+  assert.equal(execute(s, { type: 'activate_ability', playerId: 'p1', objectId: 'kheru', abilityIndex: 0, sacrificeCreatureId: 'victim' }).ok, false);
+  assert.equal(s.objects.get('victim').zone, 'battlefield');
+  addMana(s, 'p1', 1, { colors: ['G'] });
+  const options = commands(s).filter(c => c.objectId === 'kheru' && c.type === 'activate_ability');
+  assert.equal(options.length, 2);
+  const session = { state: s, nameOf: id => registry.get(id)?.name ?? id, abilitiesOf: id => registry.get(id)?.abilities ?? [],
+    nameOfObject: id => registry.get(s.objects.get(id)?.cardId)?.name ?? id };
+  assert.ok(choiceRequestGroupKey(options[0])); assert.equal(choiceRequestGroupKey(options[0]), choiceRequestGroupKey(options[1]));
+  assert.match(choiceGroupTitle({ type: 'command', options }, session, playerView(s, 'p1')), /Kheru/);
+  const label = commandLabel(options.find(c => c.sacrificeCreatureId === 'victim'), session, playerView(s, 'p1'));
+  assert.match(label, /Rotting Legion/); assert.match(label, /wytrzymało/); assert.match(label, /innego/);
+  const plan = singleTargetPlanOf(options); assert.ok(plan); assert.match(plan.itemLabel, /poświęcenia/);
+  const picked = commandForSingleTargetSelection(options, { targetId: 'small', field: plan.singleField });
+  assert.equal(picked?.sacrificeCreatureId, 'small');
+  s.turn = jumpToStep(s.turn, 'declare_attackers', 'p1');
+  s.objects.set('kheru', Object.freeze({ ...s.objects.get('kheru'), summoningSickness: false }));
+  assert.equal(commands(s).some(c => c.attackerIds?.includes('kheru')), false);
+});
+// CR 109.5 (2026-08-07): “For an activated ability, this is the player
+// who activated the ability. For a triggered ability, this is the
+// controller of the object when the ability triggered”.
+// https://mtg.wiki/page/Control_and_ownership — odczyt 2026-09-08.
+test('B54: Bloodletter — „you” na triggerze nie zmienia się wraz z kontrolą źródła', async () => {
+  const { replaceObject } = await import('../src/engine/permanents.js');
+  const s = game(); put(s, 'blood', 'skymarch-bloodletter'); addMana(s, 'p1', 3, { colors: ['B'] });
+  run(s, commands(s).find(c => c.type === 'cast_permanent' && c.objectId === 'blood'));
+  for (let i = 0; !find(s, 'skymarch-bloodletter') && i < 6; i++) run(s, commands(s).find(c => c.type === 'pass_priority'));
+  const source = find(s, 'skymarch-bloodletter'); assert.ok(source);
+  const target = commands(s).find(c => c.type === 'resolve_trigger_target'); if (target) run(s, target);
+  replaceObject(s, s.objects.get(source.id), { controllerId: 'p2' });
+  resolve(s); assert.equal(life(s, 'p1'), 21); assert.equal(life(s, 'p2'), 19);
+});
+test('B54: Kheru — druk i wycena ofiary: nie oddaje zdrowego dużego stwora za bufor życia', async () => {
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const def = registry.get('kheru-dreadmaw');
+  const src = JSON.parse(fs.readFileSync(new URL('../docs/cards/scryfall-kheru-dreadmaw.json', import.meta.url)));
+  assert.equal(def.oracleText, src.oracle_text); assert.equal(def.imageUri, src.image_uris.large);
+  assert.equal(MANA_COSTS[def.id], src.mana_cost); assert.equal(def.artId, 603); assert.equal(def.set, 'KTK');
+  assert.equal(def.plan, 'Tarkir'); assert.deepEqual(def.support.limitations, []);
+  const s = game(); put(s, 'kheru', def.id, 'p1', 'battlefield');
+  put(s, 'victim', 'rotting-legion', 'p1', 'battlefield'); addMana(s, 'p1', 2, { colors: ['G'] });
+  const bot = createHeuristicBot({ seed: 54, registry }); bot.chooseCommand(playerView(s, 'p1'));
+  const option = bot.trace().at(-1).options.find(o => o.cmd.startsWith('activate_ability(kheru#0'));
+  assert.ok(option); assert.ok(option.score < 0, JSON.stringify(option));
+});
+test('B54: Kheru — dwie aktywacje tego samego źródła mają niezależne LKI kosztu', () => {
+  const s = game(); put(s, 'kheru', 'kheru-dreadmaw', 'p1', 'battlefield');
+  put(s, 'big', 'rotting-legion', 'p1', 'battlefield'); put(s, 'small', 'skymarch-bloodletter', 'p1', 'battlefield');
+  addMana(s, 'p1', 4, { colors: ['G'] });
+  for (const id of ['big', 'small']) run(s, commands(s).find(c => c.type === 'activate_ability' && c.objectId === 'kheru' && c.sacrificeCreatureId === id));
+  assert.equal(s.zones.stack.length, 2); assert.equal(life(s, 'p1'), 20);
+  resolve(s); assert.equal(life(s, 'p1'), 27, '5 i 2, nie dwukrotnie ostatnie 2');
+});

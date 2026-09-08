@@ -5197,7 +5197,7 @@ export function execute(state, input) {
   if (cmd.type === 'activate_ability') {
     try {
       const before = state.events.length;
-      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds, cmd.tapCreatureId, cmd.tapOtherCreatureId, cmd.sacrificeLandId, undefined, cmd.grantedFromEquipment, cmd.tapArtifactIds, { tapPermanentCostId: cmd.tapPermanentCostId, sacrificeCreatureIds: cmd.sacrificeCreatureIds });
+      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds, cmd.tapCreatureId, cmd.tapOtherCreatureId, cmd.sacrificeLandId, undefined, cmd.grantedFromEquipment, cmd.tapArtifactIds, { tapPermanentCostId: cmd.tapPermanentCostId, sacrificeCreatureIds: cmd.sacrificeCreatureIds, sacrificeCreatureId: cmd.sacrificeCreatureId });
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {
@@ -7146,7 +7146,7 @@ export function playerView(state, playerId) {
     // Ninjutsu niesie dodatkowo attackerId (atakujący do zwrotu do ręki);
     // zdolności celowane/{X} niosą targets i xValue.
     //
-    for (const { objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, grantedFromEquipment, tapArtifactIds, tapPermanentCostId, sacrificeCreatureIds } of legalActivatedAbilities(state, playerId)) {
+    for (const { objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, grantedFromEquipment, tapArtifactIds, tapPermanentCostId, sacrificeCreatureIds, sacrificeCreatureId } of legalActivatedAbilities(state, playerId)) {
       const extra = { objectId, abilityIndex };
       if (attackerId !== undefined) extra.attackerId = attackerId;
       if (targets !== undefined) extra.targets = targets;
@@ -7162,6 +7162,7 @@ export function playerView(state, playerId) {
       // stwory kolorów G/W/U" (Angel's Herald) jadą w komendzie.
       if (tapPermanentCostId !== undefined) extra.tapPermanentCostId = tapPermanentCostId;
       if (sacrificeCreatureIds !== undefined) extra.sacrificeCreatureIds = sacrificeCreatureIds;
+      if (sacrificeCreatureId !== undefined) extra.sacrificeCreatureId = sacrificeCreatureId;
       // M146 (Blazing Torch): zdolność NADANA nosicielowi przez przypięty
       // sprzęt — execute musi wiedzieć, że abilityIndex liczy się względem
       // equipment.grantedAbilities, nie object.abilities.

@@ -4254,7 +4254,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             //    bloker ginący bez zabicia atakującego / cel removalu na stosie
             //    — „darmowe" poświęcenie), albo (c) permanent jest bardzo tani
             //    (TMC ≤ 1). Inaczej trzymaj.
-            const amount = effect.amount ?? 0;
+            const sacrificed = ability?.cost?.sacrificeCreature
+              ? objectOnBoard(view, cmd.sacrificeCreatureId) : source;
+            const amount = effect.amountFromSacrificedToughness
+              ? Math.max(0, sacrificed?.toughness ?? 0) : (effect.amount ?? 0);
             const life = myLife(view);
             const pressure = enemyAttackPower(view);
             // Bufor życia: zawsze dodatni, skalowany sytuacją (krytyczne życie
@@ -4264,16 +4267,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             else if (life <= 10 || pressure >= life - 5) lifeValue = 1 + Math.min(amount, 3);
             else lifeValue = Math.min(1 + Math.floor(amount / 2), 3);    // bufor — mała, ale dodatnia
             score += lifeValue;
-            if (ability?.cost?.sacrificeSelf) {
+            if (ability?.cost?.sacrificeSelf || ability?.cost?.sacrificeCreature) {
               // Poświęcenie permanentu za życie: strata karty. Uzasadnione tylko
               // gdy ratunek / permanent i tak ginie w tej turze / bardzo tani.
               const lifeCritical = life <= 5 || pressure >= life;
-              const doomedAnyway = permanentDoomedThisTurn(view, source);
-              const cheapPermanent = (source?.manaCost ?? cardDef(source?.cardId)?.manaCost ?? 99) <= 1;
+              const doomedAnyway = permanentDoomedThisTurn(view, sacrificed);
+              const cheapPermanent = (sacrificed?.manaCost ?? cardDef(sacrificed?.cardId)?.manaCost ?? 99) <= 1;
               if (!(lifeCritical || doomedAnyway || cheapPermanent)) {
                 // Kara przebija bufor + bazę zdolności, żeby wariant zszedł
                 // poniżej passu (trzymaj permanent na później).
-                score -= lifeValue + (source?.kind === 'creature' ? 12 : 8) + 6;
+                score -= lifeValue + (sacrificed?.kind === 'creature' ? 12 : 8) + 6;
               }
             } else if (ability?.cost?.tap && source?.kind === 'creature') {
               // Tap-za-życie DARMOWY: zostaw stwora nietapniętego, jeśli jest

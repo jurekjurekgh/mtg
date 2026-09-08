@@ -997,7 +997,7 @@ export function resolveTriggerEntry(state, entry) {
   // znanej informacji zamiast produkować NaN.
   const lki = payload.sourceLki ?? {};
   const printLki = payload.printLki ?? null;
-  const source = liveSource ?? Object.freeze({
+  const sourceCharacteristics = liveSource ?? Object.freeze({
     id: payload.sourceId, controllerId: entry.controllerId,
     cardId: entry.cardId, zone: 'none', kind: null,
     power: lki.power, toughness: lki.toughness,
@@ -1024,6 +1024,8 @@ export function resolveTriggerEntry(state, entry) {
     }) : null,
     counters: {}, formerCounters: {}, keywords: [], abilities: [], types: [],
   });
+  // CR 109.5: zmiana kontrolera permanenta nie zmienia „you” na triggerze.
+  const source = Object.freeze({ ...sourceCharacteristics, controllerId: entry.controllerId });
   // Zdolność opuszcza stos w momencie rozstrzygania.
   state.zones.stack = state.zones.stack.filter((id) => id !== entry.id);
   state.objects.delete(entry.id);

@@ -1404,11 +1404,16 @@ function resolveActivatedAbilityEntry(state, entry) {
   const payload = entry.activatedEntry;
   const liveSource = state.objects.get(payload.sourceId) ?? null;
   const lki = payload.sourceLki ?? {};
-  const source = liveSource ?? Object.freeze({
+  const sourceCharacteristics = liveSource ?? Object.freeze({
     id: payload.sourceId, controllerId: entry.controllerId, cardId: entry.cardId,
     zone: 'none', kind: null, power: lki.power, toughness: lki.toughness,
     powerModifier: lki.powerModifier ?? 0, toughnessModifier: lki.toughnessModifier ?? 0,
     faceDown: lki.faceDown ?? false, counters: {}, formerCounters: {}, keywords: [], abilities: [], types: [],
+  });
+  // CR 109.5: „you” to kontroler ZDOLNOŚCI, nie nowy kontroler źródła.
+  // Źródło pozostaje tym samym obiektem dla cech (np. power/LKI).
+  const source = Object.freeze({ ...sourceCharacteristics, controllerId: entry.controllerId,
+    ...(payload.sacrificedToughness != null ? { sacrificedToughness: payload.sacrificedToughness } : {}),
   });
   state.zones.stack = state.zones.stack.filter((id) => id !== entry.id);
   state.objects.delete(entry.id);

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "c01d75b4db471a15d0d08d7f1a382762f7c85fc21d08c4ac61ec873932cdb25e",
+  "overallHash": "cee76db2fb99887b605d449142b8d5abb649a5d74dc2f9a309cc62c639952e5f",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
@@ -89,37 +89,38 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "aecffa9135a78df32741b8eac3b8b2b49297ada79982615b6bdbe5a383da69f5",
-      "decisions": 191,
-      "scoreSum": 2755.2162,
+      "hash": "a5ffc044e753d398f97a0cd4426f4de4c90858b06a3b63834e03c92022c42b26",
+      "decisions": 219,
+      "scoreSum": 2987.0243,
       "chosenKinds": {
-        "activate_ability": 5,
-        "attack": 4,
-        "block": 8,
-        "cast_permanent": 6,
+        "activate_ability": 1,
+        "attack": 3,
+        "block": 9,
+        "cast_permanent": 7,
         "cast_spell": 2,
-        "pass_priority": 150,
-        "play_land": 6,
-        "resolve_combat": 8,
-        "resolve_endure_choice": 1,
+        "pass_priority": 178,
+        "play_land": 8,
+        "resolve_combat": 9,
+        "resolve_damage_assignment": 1,
         "resolve_mulligan_choice": 1
       }
     },
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1001,
-      "hash": "268246cb771cb7d8c17b9e130ff6118aadd26ae9744d27c460f7af1a92f60c7b",
-      "decisions": 162,
-      "scoreSum": 1470.2162,
+      "hash": "e2047adfa0ec9d92d5d88990418c36ef1dfe7736d6cd2214378a4f8e84446b21",
+      "decisions": 214,
+      "scoreSum": 2757.0297,
       "chosenKinds": {
-        "attack": 5,
-        "block": 5,
-        "cast_permanent": 5,
-        "cast_spell": 1,
-        "pass_priority": 131,
-        "play_land": 6,
-        "resolve_combat": 7,
+        "activate_ability": 4,
+        "attack": 7,
+        "block": 6,
+        "cast_permanent": 8,
+        "pass_priority": 171,
+        "play_land": 5,
+        "resolve_combat": 9,
         "resolve_damage_assignment": 1,
+        "resolve_endure_choice": 2,
         "resolve_mulligan_choice": 1
       }
     }
