@@ -318,11 +318,11 @@ pule many, czystka, strefy, triggery, aury, goad, ward, sagi, crew, infect,
 protection, speed — te rejony zaudytowane wcześniejszymi rundami M96–M361
 i czyste). Znalezione pięć realnych uproszczeń vs CR, każdy fix RED-first:
 
-- [ ] **B1 — regeneracja konsumuje WSZYSTKIE tarcze** (CR 701.15b): każda
+- [x] **B1 — regeneracja konsumuje WSZYSTKIE tarcze** (CR 701.15b): każda
       tarcza regeneracji zastępuje JEDNO zniszczenie; dwie tarcze = dwa
       uratowania. `tryRegenerate` (state-based.js) robi `filter(id !== ...)`
       — zjada wszystkie. Fix: zdjąć dokładnie jedną instancję.
-- [ ] **B2 — flaga „nie odtapuje się" nie konsumuje się, gdy cel jest
+- [x] **B2 — flaga „nie odtapuje się" nie konsumuje się, gdy cel jest
       odkręcony** (Wavecrash/Chill, CR „next untap step"): `untapControlled`
       wchodzi tylko do obiektów `tapped || summoningSickness` i zjada flagę
       tylko gdy `tapped`; odkręcony cel nosi flagę wiecznie i pomija
@@ -330,20 +330,20 @@ i czyste). Znalezione pięć realnych uproszczeń vs CR, każdy fix RED-first:
       efektu i porównuje z aktywnym graczem — po zmianie kontrolera skip
       wypada w cudzym untap stepie. Fix: flaga konsumowana na untap stepie
       OBECNEGO kontrolera, niezależnie od stanu tapped.
-- [ ] **B3 — niedo-przydzielone obrażenia bez trample** (CR 510.1a: stwór
+- [x] **B3 — niedo-przydzielone obrażenia bez trample** (CR 510.1a: stwór
       zadaje obrażenia RÓWNE mocy — całość musi być przydzielona):
       `validateDamageAssignment` przyjmuje sumę < moc, `defaultDamageAssignment`
       dla wielu blokerów gubi nadmiar (lethal-first bez dolewki do ostatniego),
       a wizard bramkuje `assignmentLegal` wyłącznie dla trample. Fix: walidacja
       `sum === amount` bez trample + domyślny przydział dolewa resztę do
       ostatniego blokera + bramka wizarda.
-- [ ] **B4 — trample vs bloker z pełną prewencją** (CR 702.19b: lethal liczy
+- [x] **B4 — trample vs bloker z pełną prewencją** (CR 702.19b: lethal liczy
       obrażenia, które ZOSTANĄ ZAPOBIEŻONE — bloker z protection od koloru
       atakującego ma lethal 0, cała moc idzie na gracza): `lethalOf` liczy
       tylko wytrzymałość/deathtouch; przy blokerze z protection obrażenia
       i tak są preventowane, więc trample błędnie się zatrzymuje. Fix:
       `lethalOf` → 0, gdy `isDamagePreventedByProtection(blocker, attacker)`.
-- [ ] **B5 — CR 506.4: zmiana kontrolera usuwa permanent z walki** (luka
+- [x] **B5 — CR 506.4: zmiana kontrolera usuwa permanent z walki** (luka
       latentna: oba „steal" z katalogu to sorcery, więc dziś nieosiągalne
       w combacie — ale pierwszy przyszły instant/trigger z przejęciem kontroli
       cicho łamałby zasady: skradziony ATAKUJĄCY dalej zadawałby obrażenia
@@ -352,3 +352,24 @@ i czyste). Znalezione pięć realnych uproszczeń vs CR, każdy fix RED-first:
 - Kryterium: RED-first (test przed fixem), `npm test` + build na każdy
   zielony krok, commit+push natychmiast (ADR 0020 C); na końcu `test:all`
   + quick benchmark + update opisu PR.
+
+### E8 — wykonanie (2026-09-08)
+
+- **B1** `888a234`: RED (`test/e8-b1-regeneracja-tarcze.test.js`) → fix `tryRegenerate`
+  (konsumpcja dokładnie 1 tarczy, `indexOf`+splice-semantyka) → GREEN. Harness:
+  `test/helpers/e8-destroy-harness.js` (realna ścieżka `destroyPermanentByEffect`).
+- **B2** `4bcf5ab`: RED (`test/e8-b2-flaga-nie-odtapuje-sie.test.js`) → fix
+  `untapControlled` (flaga zużywana na untap stepie OBECNEGO kontrolera
+  niezależnie od `tapped`; wejście pętli rozszerzone o `dontUntapNextUntapStep`;
+  stara gałąź `=== playerId` usunięta) → GREEN.
+- **B3** `2b944c0`: RED (`test/e8-b3-pelny-przydzial-obrazen.test.js`) → fix:
+  walidacja `damage_must_be_fully_assigned` (bez trample suma = moc),
+  default lethal-first + dolewka do ostatniego blokera, wizard prefill jak
+  silnik + bramka pełnej sumy → GREEN. Zaktualizowane piny starego uproszczenia:
+  trample-lethal, choice-request-ui (steppery/M101-B6/M150-B), m136, Sherlock 1c.
+- **B4** `2e15ba6`: RED (`test/e8-b4-trample-protection.test.js`) → fix
+  `lethalOf` → 0 przy pełnej prewencji protection (CR 702.16d/702.19b) → GREEN.
+- **B5** `b0c02d9`: RED (`test/e8-b5-zmiana-kontroli-usuwa-z-walki.test.js`,
+  chirurgia przez `applyEffect`) → fix `removeFromCombat` po przejęciu kontroli
+  (CR 506.4) → GREEN.
+- Gate: `npm run test:all` — patrz PR #105 (część 5: E8).
