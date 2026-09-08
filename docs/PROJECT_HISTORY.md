@@ -9300,3 +9300,26 @@ Bramki: fast **4770/4770**, test:all **4780/4780** (~226 s), build
 **3394,2 kB**, quick benchmark heuristic **85,0%** (571/672 — bez zmian).
 PR #105: część 6 opisu (REST PATCH). Handoff:
 `docs/setup/HANDOFF_2026-09-08b.md`.
+
+### Korekta E9/F3 (2026-09-08): sfalszowane znalezisko, cofnięty commit
+
+Właściciel zakwestionował F3 („explore daje wybór"). Weryfikacja u źródła
+potwierdziła jego rację: CR 701.44a (dawniej 701.54a) — „…puts a +1/+1
+counter on the exploring permanent and may put the revealed card into their
+graveyard"; reminder text: „then put the card back on top or into your
+graveyard". Wybór wierzch/grób jest pełnoprawną częścią reguły —
+oryginalna maszyna pendingExplore była poprawna, a „fix" `a7ae267`
+(usunięcie decyzji, obowiązkowy grób) WPROWADZAŁ buga.
+
+Cofnięto całość `a7ae267` (`613a379`, git revert): explore w effects.js,
+maszyna pendingExplore w game-state, typ `resolve_explore_choice` zwrócony
+do COMMAND_TYPES, case'y render, warianty botów, notka Guidestone Compass.
+Dodano test-guardię `test/e9-f3-refutacja-wyboru.test.js` (decyzja
+kolejkowana; „zostaw na wierzchu" zostawia kartę; „do gróbu" wysyła;
+land → ręka natychmiast) — blokuje przyszłe „uproszczenia" tego miejsca.
+Plan: F3 odhaczony z adnotacją SFALSZOWANE; potwierdzone znaleziska E9: 4/5
+(F1, F2, F4, F5). Puenta: przed zgłoszeniem znaleziska zweryfikować
+dosłowny tekst reguły — „you may" w reminder text to wybór, nie uproszczenie.
+
+Bramki po korekcie: fast **4771/4771**, test:all **4781/4781**, build
+**3396,6 kB**.

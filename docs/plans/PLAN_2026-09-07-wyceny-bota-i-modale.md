@@ -392,12 +392,15 @@ sondażami/probe'ami na żywym silniku przed spisaniem planu.
   przejęty ATAKUJĄCY zostaje w state.combat.attackers i „atakuje" swojego
   nowego kontrolera (sister-bug B5 z E8 w drugim efekcie). Sonda: potwierdzona.
   Test: test/e9-f2-trostani-usuwa-z-walki.test.js.
-- [x] **F3 — explore z wyborem, którego nie ma w CR** (CR 701.54b):
-  `explore` (effects.js ~4185, Guidestone Compass) przy nie-landzie kolejkuję
-  decyzję resolve_explore_choice „wierzch albo grób" — reguła każe POŁOŻYĆ
-  kartę DO GROBU bez wyboru; silnik daje graczowi darmowy strict-upgrade
-  (odłożenie na wierzch = podglądanie biblioteki). Test:
-  test/e9-f3-explore-bez-wyboru.test.js (brak pendingExplore + karta w grobie).
+- [ ] **F3 — explore z wyborem — SFALSZOWANE (refutacja 2026-09-08)**:
+  pierwotne znalezisko („CR każe położyć kartę do grobu bez wyboru") okazało
+  się błędem AGENTA, nie silnika. Faktyczny tekst reguły — CR 701.44a
+  (dawniej 701.54a): „…puts a +1/+1 counter on the exploring permanent and
+  may put the revealed card into their graveyard"; reminder text: „then put
+  the card back on top or into your graveyard". Wybór wierzch/grób JEST
+  częścią reguły; oryginalna maszyna pendingExplore była POPRAWNA. „Fix"
+  `a7ae267` COFNIĘTY (`613a379`); test-guardia:
+  test/e9-f3-refutacja-wyboru.test.js (decyzja + oba warianty + land→ręka).
 - [x] **F4 — search→battlefield bez choroby przywołania** (CR 302.6):
   `resolve_search_choice` (game-state.js ~3058) przy destination battlefield
   ustawia tylko `tapped` (entersTapped) — brak `summoningSickness`; ta sama
@@ -425,14 +428,13 @@ sondażami/probe'ami na żywym silniku przed spisaniem planu.
   drugą warstwę: bloker kontrolowany przez nie-obrońcę jest NIELEGALNY przy
   declare_blockers (CR 509.1a) — legalny scenariusz: bloker owner p1 /
   controller p2 (obrońca). npm test 4766/4766.
-- F3: `a7ae267` — explore odkłada kartę do grobu NATYCHMIAST
-  (card_milled explore:true + explore_resolved putInGraveyard:true), bez
-  decyzji. Usunięte u źródła: maszyna pendingExplore w game-state
-  (inicjalizator, kind-helper, activeExplore, oferta legalCommands, handler
-  resolve_explore_choice ~1,5 kB), wpis COMMAND_TYPES w protokole, case'y
-  w render.js, warianty botów (aggro-bot jawnie preferował „na wierzch"!),
-  notka Guidestone Compass. Efekt uboczny: strażnik A3 wyłapał brak case'a —
-  usunięcie typu z protokołu było właściwym fixem. npm test 4768/4768.
+- F3: SFALSZOWANE. Wstępny „fix" `a7ae267` (obowiązkowy grób + usunięcie
+  maszyny pendingExplore, typu z protokołu, case'ów render i wariantów botów)
+  cofnięty całościowo w `613a379` po weryfikacji właściciela: CR 701.44a daje
+  wybór wierzch/grób („may put the revealed card into their graveyard") —
+  oryginalna implementacja była poprawna, a „znalezisko" wprowadzało buga.
+  Test-guardia: test/e9-f3-refutacja-wyboru.test.js. Potwierdzone znaleziska
+  E9: 4/5 (F1, F2, F4, F5).
 - F4: `d207034` — game-state `resolve_search_choice` (destination
   battlefield): `summoningSickness` dla creature obok `tapped` (entersTapped).
   Landy nietknięte (kind !== creature). npm test 4769/4769.
@@ -443,4 +445,4 @@ sondażami/probe'ami na żywym silniku przed spisaniem planu.
   E2E-kształtem: Omenspeaker → 2× ability_triggered (po fixie: 1).
   npm test 4770/4770.
 
-Stan po E9/F5: npm test 4770/4770; test:all i bench — patrz PR #105.
+Stan po refutacji F3: npm test 4771/4771; test:all 4781/4781; bench — patrz PR #105.
