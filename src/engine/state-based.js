@@ -33,7 +33,17 @@ export function tryRegenerate(state, object, collected = null) {
   // obiektu niezależnie od źródła tarczy (regenerate / destroy z efektem
   // regeneracji / planeswalker itd.).
   if ((state.cantBeRegeneratedThisTurn ?? []).includes(object.id)) return false;
-  state.regenerationShields = (state.regenerationShields ?? []).filter((id) => id !== object.id);
+  // E8/B1 (wyzwanie wyłapywacza błędów, CR 701.15b): każda tarcza regeneracji
+  // zastępuje JEDNO zniszczenie — dwie tarcze ratują dwukrotnie. Dotąd filter
+  // zdejmował WSZYSTKIE instancje naraz i drugie zniszczenie w turze zabijało
+  // mimo nietkniętej drugiej tarczy. Konsumujemy dokładnie jedną.
+  const shieldIndex = (state.regenerationShields ?? []).indexOf(object.id);
+  if (shieldIndex >= 0) {
+    state.regenerationShields = [
+      ...(state.regenerationShields ?? []).slice(0, shieldIndex),
+      ...(state.regenerationShields ?? []).slice(shieldIndex + 1),
+    ];
+  }
   // Odcięcie od walki (CR 701.12a: „removed from combat").
   if (state.combat) {
     state.combat.attackers = (state.combat.attackers ?? []).filter((id) => id !== object.id);
