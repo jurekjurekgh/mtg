@@ -1253,15 +1253,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       tempControlOwner: ownerId,
     });
     state.objects.set(targetId, updated);
-    // E8/B5 (wyzwanie wyłapywacza błędów, CR 506.4): zmiana kontrolera
-    // usuwa permanent z walki — przejęty bloker przestaje blokować, przejęty
-    // atakujący przestaje atakować. Dotąd stwór zostawał w state.combat po
-    // starej stronie (blokował/walkował przeciw SWOJEMU nowemu kontrolerowi).
-    if (state.combat) removeFromCombat(state, targetId);
-    state.events.push(event('control_changed', {
-      objectId: targetId, cardId: updated.cardId,
-      controllerId, fromControllerId: object.controllerId, untilEndOfTurn: true,
-    }));
+    // CR 506.4/506.4b: tylko RZECZYWISTA zmiana kontrolera usuwa z walki.
+    // Własny cel nadal dostaje untap/haste; samo odkręcenie nie kończy walki.
+    if (object.controllerId !== controllerId) {
+      if (state.combat) removeFromCombat(state, targetId);
+      state.events.push(event('control_changed', {
+        objectId: targetId, cardId: updated.cardId,
+        controllerId, fromControllerId: object.controllerId, untilEndOfTurn: true,
+      }));
+    }
     state.events.push(event('keyword_granted', { objectId: targetId, cardId: updated.cardId, keywords: ['haste'] }));
     void faktycznieOdkrecony; // zdarzenie object_untapped emituje helper
     return;
