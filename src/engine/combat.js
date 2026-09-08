@@ -462,6 +462,13 @@ function needsDamageAssignmentDecision(state, attacker, blockers) {
 
 /** Lethal (CR 510.1c/702.19b — bez efektów zmieniających faktycznie zadane). */
 function lethalOf(state, attacker, blocker) {
+  // E8/B4 (wyzwanie wyłapywacza błędów, CR 702.19b + 702.16d): „lethal
+  // damage" to obrażenia, które FAKTYCZNIE zabiłyby — zapobiegane przez
+  // protection się nie liczą, więc bloker w pełni chroniony ma lethal 0
+  // (trample przepływa od razu; bez trample i tak wolno mu przydzielić 0).
+  // Dotąd liczona była goła toughness i trample błędnie zatrzymywał się
+  // na blokerze, którego i tak nie zranił.
+  if (isDamagePreventedByProtection(state, blocker, attacker)) return 0;
   if (hasKeyword(state, attacker, 'deathtouch')) return 1;
   return Math.max(0, effectiveToughness(blocker, state) - (blocker.damage ?? 0));
 }
