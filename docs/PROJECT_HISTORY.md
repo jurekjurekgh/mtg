@@ -9347,3 +9347,32 @@ w LESSONS do esencji+wskaźnika (narracja już w LESSONS_PRZYPADKI; nagłówki
 
 Bramki: fast **4772/4772**, test:all **4782/4782**, build **3396,2 kB**,
 bench heuristic **85,0%** (571/672 — bez zmian).
+
+## Sesja arena/01a0805b — audyt PR #105 i naprawy, PR #106 (2026-09-08)
+
+Plan `7237a49` przed implementacją, audyt `e7f0fd6` przed naprawami: 69/69
+plików #105, aktualne źródła online, pięć mutacji (4 RED; 1 luka testu).
+Raport `docs/audits/AUDYT_PR105_2026-09-08.md` rozróżnia regresje #105,
+starsze błędy podtrzymywane przez testy oraz hipotezy niepotwierdzone.
+
+Naprawy oddzielnie, z pełnym fast/build i pushem na każdym kroku:
+- `842bae7` — CR 506.4/506.4b, własny cel efektu kontroli pozostaje w walce.
+- `b8fff42` — hand_top odkłada mniej potrzebną kartę; dostępność w ręce to
+  korzyść, nie powód do odłożenia najcenniejszej.
+- `b83f367` — obca aura nie jest Equipment; bot nie niszczy przez nią własnego miecza.
+- `b11e34c` — CR 510.1c, dowolny podział między blokerów (engine i wizard),
+  bez zmiany pełnej sumy i wymogu trample przed graczem. Dawny R3 poprawiony
+  wg reguły, nie dla samego zielonego testu; historyczny audyt ma korektę.
+- `f62c1e9` — test rzeczywistego untapu i wygaśnięcia flagi (Chill potrzebuje
+  biblioteki, by gra nie kończyła się przed asercjami); realny ląd C1, pin Shock.
+
+Pętla jakości: explorer kaladesh/warhammer-ubr s10601, impatient
+mirrodin-brg/forgotten-realms s10602, obie ukończone, stderr 0 B, detektory
+0, niewycenione 0; przeczytano transkrypty, brak nowego potwierdzonego błędu
+w tej próbce. Bez twierdzeń o wyglądzie na podstawie jsdom.
+
+Bramki końcowe: **fast 4789/4789**, **all 4799/4799**, build **59 / 3395,2 kB**,
+quick heuristic **85,0% (571/672)** — bez dryfu vs #105, bez pełnego B0,
+nowych kart, zmian progów czy fixture. L13 doprecyzowuje datę wydania CR;
+L82 kosmetycznie poprawione. README, plan, audyt i HANDOFF_2026-09-08c
+aktualne. PR #106 oddany właścicielowi do przeglądu; agent nie scala.
