@@ -1,11 +1,12 @@
+import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
-import { getSourceForObject } from './mana-sources.js';
+import { getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
 import { createBattlefieldToken, nextCopyNumber, nextFaceDownCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -589,7 +590,11 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     }));
   }
   const shieldPrevented = preventDamageTo(state, targetId, rawAmount - filterPrevented);
-  const dealt = rawAmount - filterPrevented - shieldPrevented;
+  // Licznik shield zastępuje OBRAŻENIA, a nie tylko ich zaznaczenie.
+  // Musi zadziałać przed damage_dealt, infect, deathtouch i lifelink.
+  const remainder = rawAmount - filterPrevented - shieldPrevented;
+  const counterPrevented = targetIsPlayer ? 0 : preventDamageWithShieldCounter(state, targetId, remainder);
+  const dealt = remainder - counterPrevented;
   state.events.push(event('damage_dealt', {
     source: sourceObject.id, target: targetId, amount: dealt, combat: false,
     sourceCardId: sourceObject.cardId ?? null,
@@ -599,10 +604,11 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     ...(targetIsPlayer || !targetObject ? {} : { targetLki: Object.freeze({ ...targetObject }) }),
   }));
   if (dealt <= 0) return 0;
-  if (effectiveKeywords(sourceObject, state).includes('infect')) {
+  if (effectiveKeywords(sourceObject, state).includes('infect') && (targetIsPlayer || targetObject?.kind === 'creature')) {
     if (targetIsPlayer) {
       addPoisonCounters(state, targetId, dealt);
     } else {
+      removeLoyaltyForDamage(state, targetObject, dealt);
       addCounter(state, targetId, '-1/-1', dealt);
       markDealtDamageThisTurn(state, targetId);
     }
@@ -618,7 +624,7 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   // zadający 1 obrażenie w fight nie zabijał 4/4 (SBA nie miała flagi, a
   // obrażenia < wytrzymałości). Prewencja/protection kasują obrażenia przed
   // oznaczeniem — CR 702.4b: bez zadanych obrażeń nie ma śmierci.
-  if (!targetIsPlayer && dealt > 0 && effectiveKeywords(sourceObject, state).includes('deathtouch')) {
+  if (targetObject?.kind === 'creature' && dealt > 0 && effectiveKeywords(sourceObject, state).includes('deathtouch')) {
     const current = state.objects.get(targetId);
     if (current && current.zone === 'battlefield') {
       state.objects.set(targetId, Object.freeze({ ...current, damagedByDeathtouch: true }));
@@ -869,30 +875,8 @@ export function counterStackObject(state, stackId, { counteredBy = null, counter
  * Zwraca true, gdy permanent FAKTYCZNIE został zniszczony.
  */
 export function destroyPermanentByEffect(state, objectId, options = {}) {
-  const object = state.objects.get(objectId);
-  if (!object || object.zone !== 'battlefield') return false;
-  if (effectiveKeywords(object, state).includes('indestructible')) return false;
-  if ((object.counters?.shield ?? 0) > 0) {
-    const next = { ...(object.counters ?? {}) };
-    next.shield -= 1;
-    if (next.shield <= 0) delete next.shield;
-    state.objects.set(objectId, Object.freeze({ ...object, counters: Object.freeze(next) }));
-    state.events.push(event('shield_consumed', {
-      objectId, cardId: object.cardId, reason: options.reason ?? 'destroy',
-    }));
-    return false;
-  }
-  if (tryRegenerate(state, object)) return false;
-  const toZone = deathZoneFor(state, object);
-  const destId = `${toZone}-${state.objectSequence++}`;
-  const moved = moveObjectDirectly(state, objectId, toZone, destId);
-  state.events.push(event('permanent_destroyed', {
-    // `toZone` jest CZĘŚCIĄ faktu, nie ozdobą: triggery śmierci sprawdzają,
-    // czy permanent poszedł do wygnania — wtedy „dies" się nie wydarzyło.
-    fromId: objectId, objectId: destId, playerId: object.controllerId,
-    cardId: moved.cardId, controllerId: object.controllerId, toZone,
-  }));
-  return true;
+  destroyPermanents(state, [objectId], options);
+  return !state.objects.has(objectId) || state.objects.get(objectId)?.zone !== 'battlefield';
 }
 
 /**
@@ -965,6 +949,14 @@ export function applyEnterCounters(state, objectId) {
 }
 
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
+  if (state.pendingReplacementChoice?.frame) {
+    state.pendingReplacementChoice.continuations.push({effect, sourceObject, targets, context});
+    return true;
+  }
+  if (effect.type === 'destroy_permanents') {
+    destroyPermanents(state, targets.filter(Boolean));
+    return Boolean(state.pendingReplacementChoice);
+  }
   // X-cost czary (Consume Spirit, Epic Experiment — Batch 30): efekty mogą
   // użyć amount: 'X' (lub amountFrom: 'X') — wartość X z obiektu stosu
   // (sourceObject.spellX). Resolwowane raz, spójnie dla wszystkich efektów.
@@ -978,6 +970,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // Great Sage: „if four/eight or more mana was spent to cast that spell") —
   // kontekst niesie manaSpent ze zdarzenia rzutu (triggers.fireTrigger);
   // próg niespełniony pomija TYLKO ten efekt, nie całą zdolność.
+  // CR 702.33d: tylko opłacony kicker włącza warunkowy efekt czaru.
+  if (effect.condition?.wasKicked && !sourceObject?.wasKicked) return;
   if (effect.condition?.manaSpentAtLeast != null && (context?.manaSpent ?? 0) < effect.condition.manaSpentAtLeast) return;
   if (effect.type === 'damage') {
     // M111: `targetIndex` wskazuje slot celu (konwencja reszty efektów) —
@@ -988,11 +982,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (T6 — okno odpowiedzi na triggerze), sprawia, że efekt nic nie robi.
     if (targetId != null && !state.players.some((player) => player.id === targetId)) {
       const targetObj = state.objects.get(targetId);
-      if (!targetObj || targetObj.zone !== 'battlefield' || targetObj.kind !== 'creature') return;
+      if (!targetObj || targetObj.zone !== 'battlefield' || (targetObj.kind !== 'creature' && !isPlaneswalker(targetObj))) return;
     }
     let amount = effect.amount;
     if (amount === 'artifacts_you_control') {
       amount = countArtifactsControlled(state, sourceObject.controllerId);
+    }
+    if (amount === 'basic_land_types_you_control') {
+      amount = basicLandTypeCount(state.zones.battlefield.map(id => state.objects.get(id)), sourceObject.controllerId);
     }
     // Batch 46 (Bring Low): „If that creature has a +1/+1 counter on it,
     // deals 5 damage instead." Warunek sprawdzamy przy ROZSTRZYGNIĘCIU
@@ -1253,15 +1250,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       tempControlOwner: ownerId,
     });
     state.objects.set(targetId, updated);
-    // E8/B5 (wyzwanie wyłapywacza błędów, CR 506.4): zmiana kontrolera
-    // usuwa permanent z walki — przejęty bloker przestaje blokować, przejęty
-    // atakujący przestaje atakować. Dotąd stwór zostawał w state.combat po
-    // starej stronie (blokował/walkował przeciw SWOJEMU nowemu kontrolerowi).
-    if (state.combat) removeFromCombat(state, targetId);
-    state.events.push(event('control_changed', {
-      objectId: targetId, cardId: updated.cardId,
-      controllerId, fromControllerId: object.controllerId, untilEndOfTurn: true,
-    }));
+    // CR 506.4/506.4b: tylko RZECZYWISTA zmiana kontrolera usuwa z walki.
+    // Własny cel nadal dostaje untap/haste; samo odkręcenie nie kończy walki.
+    if (object.controllerId !== controllerId) {
+      if (state.combat) removeFromCombat(state, targetId);
+      state.events.push(event('control_changed', {
+        objectId: targetId, cardId: updated.cardId,
+        controllerId, fromControllerId: object.controllerId, untilEndOfTurn: true,
+      }));
+    }
     state.events.push(event('keyword_granted', { objectId: targetId, cardId: updated.cardId, keywords: ['haste'] }));
     void faktycznieOdkrecony; // zdarzenie object_untapped emituje helper
     return;
@@ -1275,21 +1272,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const attached = [...state.objects.values()].filter((att) => att.zone === 'battlefield' && att.equipment && att.attachedTo === targetId);
     if (attached.length === 0) return;
     if (effect.confirmed) {
-      for (const att of attached) {
-        // M270 (błąd #7, CR 122.1e): zniszczenie Equipment to śmierć jak każda
-        // inna — strefę docelową wyznacza WSPÓLNY `deathZoneFor` (licznik
-        // finality / naznaczenie exileIfDiesThisTurn kierują do wygnania).
-        // Ta ścieżka szła na sztywno do cmentarza, więc Equipment zwrócone
-        // przez Zoraline („nonland permanent card with mana value 3 or less"
-        // — artefakty się kwalifikują) z licznikiem finality dawało się
-        // odzyskać drugi raz.
-        // M272 (błąd #19): zniszczenie Equipment przechodzi przez ten sam
-        // helper co „destroy target permanent" — wcześniej ta ścieżka nie
-        // znała ani indestructible (CR 702.12), ani licznika shield, ani
-        // regeneracji, więc chroniony Equipment i tak lądował w grobie.
-        destroyPermanentByEffect(state, att.id);
-      }
-      return;
+      destroyPermanents(state, attached.map(a => a.id));
+      return Boolean(state.pendingReplacementChoice);
     }
     state.pendingDestroyEquipment = {
       playerId: sourceObject.controllerId,
@@ -2488,6 +2472,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       }
       return;
     }
+    if (effect.scope === 'target') {
+      // CR 119.3: utrata życia wybranego gracza, nie wszystkich przeciwników.
+      const targetId = targets[effect.targetIndex ?? 0];
+      if (state.players.some(player => player.id === targetId)) changeLife(state, targetId, -effect.amount);
+      return;
+    }
     if (effect.targetPlayerId != null) {
       if (!state.players.some((player) => player.id === effect.targetPlayerId)) {
         throw new Error('Nieznany cel utraty życia');
@@ -2734,16 +2724,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'lock_untap') {
-    // Stwór nie odkręca się, dopóki źródło (np. zatapnięta Lira) jest na
-    // polu bitwy i zatapnięte; blokada wygasa, gdy źródło opuści pole bitwy.
-    // Dla aury Spectral Prison: cel to zaczarowany stwór (attachedTo).
+    // CR611.2b / Lyre: przerwanej długości trwania nie wznawia retap,
+    // także gdy przerwa nastąpiła przed rozstrzygnięciem zdolności.
+    const live = state.objects.get(sourceObject.id);
+    if (!live || live.zone !== 'battlefield' || !live.tapped) return;
+    const version = live.untapVersion ?? 0;
+    if (context.sourceUntapVersion != null && context.sourceUntapVersion !== version) return;
     const targetId = targets[0] ?? sourceObject.attachedTo;
     if (!targetId) return;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
     const lockedBy = [...(object.untapLockedBy ?? [])];
     if (!lockedBy.includes(sourceObject.id)) lockedBy.push(sourceObject.id);
-    state.objects.set(targetId, Object.freeze({ ...object, untapLockedBy: lockedBy }));
+    state.objects.set(targetId, Object.freeze({ ...object, untapLockedBy: lockedBy,
+      untapLockVersions: { ...(object.untapLockVersions ?? {}), [sourceObject.id]: version } }));
     // M138/Z4 (L24): blokada odkręcania to realny skutek — bez zdarzenia
     // `resolveTrigger` liczyłby ją jako „nic się nie wydarzyło”.
     state.events.push(event('stats_modified', {
@@ -2777,7 +2771,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const object = state.objects.get(enchantedId);
     if (!object || object.zone !== 'battlefield') return;
     // M272 (błąd #18): wspólny helper — respektuje licznik stun (CR 122.1d)
-    // i blokadę odkręcania, których ręczna mutacja `tapped: false` nie znała.
+    // — ręczna mutacja nie obsługiwała stun. Blokada kroku nie dotyczy efektu.
     untapByEffect(state, enchantedId, sourceObject.controllerId);
     return;
   }
@@ -3110,8 +3104,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const minPower = Math.min(...creatures.map((o) => effectivePower(o, state) ?? 0));
     const targetPower = effectivePower(object, state) ?? 0;
     if (targetPower !== minPower) return; // nie najmniejsza moc — nic się nie dzieje
-    applyEffect(state, { type: 'destroy_permanent' }, sourceObject, [targetId], context);
-    return;
+    return applyEffect(state, { type: 'destroy_permanent' }, sourceObject, [targetId], context);
   }
   // M154 (Batch 38, Divine Offering): „Destroy target artifact. You gain life
   // equal to its mana value." — zniszcz artefakt-cel i zyskaj życie równe jego
@@ -3134,11 +3127,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // blokują wyłącznie pierwsze zdanie; mana value bierzemy z chwili przed
     // próbą zniszczenia (LKI, CR 400.7). changeLife samo emituje life_changed.
     if (manaValue > 0) {
-      changeLife(state, sourceObject.controllerId, manaValue);
+      applyEffect(state, { type: 'gain_life', amount: manaValue }, sourceObject, []);
     }
-    return;
+    return Boolean(state.pendingReplacementChoice);
   }
   if (effect.type === 'destroy_permanent') {
+    if (effect.targetIndices) {
+      destroyPermanents(state,effect.targetIndices.map(i=>targets[i]).filter(Boolean));
+      return Boolean(state.pendingReplacementChoice);
+    }
     // Destroy target artifact/permanent (Shatter, CR 701.7): cel trafia do grobu
     // (zmiana strefy battlefield → graveyard), co odpala trigger „dies” przez
     // zdarzenie object_moved (jak sacrifice). W engine bez regeneracji destroy
@@ -3157,7 +3154,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // M272 (błąd #19): pełna sekwencja destroy (indestructible → shield →
     // regeneracja → strefa śmierci) mieszka we WSPÓLNYM helperze.
     destroyPermanentByEffect(state, targetId);
-    return;
+    return Boolean(state.pendingReplacementChoice);
   }
   if (effect.type === 'sacrifice_permanent') {
     // Poświęcenie permanentu: domyślnie samo źródło („sacrifice it"), z
@@ -3806,10 +3803,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
         state.cantBeRegeneratedThisTurn = [...(state.cantBeRegeneratedThisTurn ?? []), targetId];
       }
     }
-    for (const targetId of [idA, idB]) {
-      applyEffect(state, { type: 'destroy_permanent', targetIndex: 0 }, sourceObject, [targetId]);
-    }
-    return;
+    destroyPermanents(state, [idA,idB]);
+    return Boolean(state.pendingReplacementChoice);
   }
   if (effect.type === 'cant_be_regenerated_this_turn') {
     // Rage of Purphoros (THS): „It can't be regenerated this turn." Flaga
@@ -3911,36 +3906,48 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // Batch 44 (Frightful Delusion): „Counter target spell unless its
     // controller pays {1}. That player discards a card." — decyzja należy do
     // KONTROLERA celowanego czaru (blokująca, resolve_counter_pay_choice).
-    // Bez many na opłatę nie ma decyzji: czar skontrowany od razu, potem
-    // discard (wybór karty w pendingDiscardChoice — CR 701.18).
+    // discardCount jest jawnym riderem — inne kontry nie odrzucają karty.
+    // Bez zasobów/źródeł czar skontrowany od razu, potem opcjonalny rider.
     const targetId = targets[0];
     if (targetId == null) return;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'stack') return; // cel zniknął (CR 608.2b)
     const payerId = object.controllerId;
     const amount = effect.amount ?? 1;
-    const canPay = producibleMana(state, payerId) >= amount;
+    // CR 608.2g: nie pomijaj okna aktywacji ręcznego źródła many tylko
+    // dlatego, że nie jest auto-tapowane (np. sacrificeSelf).
+    const canPay = producibleMana(state, payerId) >= amount || state.zones.battlefield.some(id => {
+      const source = state.objects.get(id);
+      // Konserwatywna bramka: obecność źródła zachowuje OKNO płatności.
+      // Nie obiecuje ani nie wykonuje aktywacji — legalManaAbilities w ofercie
+      // waliduje wszystkie koszty, chorobę itd. Bez legalnej aktywacji/puli
+      // zostaje tylko odmowa. effects nie importuje wykonawcy abilities.
+      return source?.controllerId === payerId
+        && activatableAbilities(state, source).some(isActivatedManaAbility);
+    });
+    const discardCount = effect.discardCount ?? 0;
     if (!canPay) {
       // M271 (błąd #15): jak wyżej — wspólny helper, nie kopia.
       counterStackObject(state, targetId, {
         counteredBy: sourceObject.id, counteredByCardId: sourceObject.cardId,
       });
+      if (discardCount === 0) return; // dalsze instrukcje czaru, bez odziedziczonego discard
       const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === payerId);
       if (handIds.length === 0) return; // bez ręki — nic więcej
       state.pendingDiscardChoice = {
-        playerId: payerId, count: 1, handIds, purpose: 'effect',
+        playerId: payerId, count: discardCount, handIds, purpose: 'effect',
         sourceCardId: sourceObject.cardId ?? null,
         restorePriorityTo: state.turn.priorityPlayerId,
       };
       state.turn.priorityPlayerId = payerId;
       state.events.push(event('discard_choice_required', {
-        playerId: payerId, count: 1, cardIds: [...handIds], purpose: 'effect',
+        playerId: payerId, count: discardCount, cardIds: [...handIds], purpose: 'effect',
         sourceCardId: sourceObject.cardId ?? null,
       }));
       return true; // discard dokończy rozstrzyganie czaru-źródła
     }
     state.pendingCounterPay = {
-      playerId: payerId, targetId, amount,
+      playerId: payerId, targetId, amount, discardCount,
       sourceId: sourceObject.id, sourceCardId: sourceObject.cardId ?? null,
       restorePriorityTo: state.turn.priorityPlayerId,
     };
@@ -4308,6 +4315,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (targetId == null) return; // „up to one" bez celu — brak efektu
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)
+    // „instead” zmienia strefę docelową PRZED ruchem, nigdy hand → library.
+    // Kolory efektywne w chwili resolution (zakryty obiekt jest bezbarwny).
+    if (effect.libraryTopIfColors?.some(color => effectiveColors(object).includes(color))) {
+      return applyEffect(state, { ...effect, type: 'bounce_to_library_top' }, sourceObject, targets, context);
+    }
     const ownerId = object.ownerId ?? object.controllerId;
     const handId = `hand-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'hand', handId);

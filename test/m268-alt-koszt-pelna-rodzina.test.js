@@ -103,26 +103,33 @@ test('M268 (normalizacja): `colors` przechodzi przez registry dla bestow', () =>
   assert.match(bestowBlock[1], /colors:/, 'normalizacja bestow przepuszcza `colors`');
 });
 
-test('M268 (silnik): rzut za bestow płaci pipami KOSZTU BESTOW, nie karty bazowej', () => {
-  // L104/2: dziś Leafcrown Dryad ma ten sam {G} w koszcie bazowym i bestow,
-  // więc `coloredPipsOf(cardId)` trafia PRZYPADKIEM. Pytamy o źródło.
-  // Uwaga: ta sama funkcja obsługuje ZWYKŁĄ aurę, która płaci koszt bazowy —
-  // tam `coloredPipsOf(cardId)` jest poprawne. Pytamy więc nie o obecność
-  // fallbacku, tylko o to, czy gałąź bestow ma własne wymagania kolorów.
-  const source = fs.readFileSync(new URL('../src/engine/resources.js', import.meta.url), 'utf8');
-  const lines = source.split('\n');
-  const offenders = [];
-  lines.forEach((line, index) => {
-    if (!/spendMana\(/.test(line)) return;
-    const context = lines.slice(Math.max(0, index - 90), index).join('\n');
-    if (!/bestow/i.test(context)) return;
-    const usesBestowColors = /bestow\w*[Rr]equirements/.test(line)
-      || /bestow(?:\?)?\.colors/.test(line);
-    if (!usesBestowColors) offenders.push(`resources.js:${index + 1}: ${line.trim().slice(0, 80)}`);
-  });
-  assert.deepEqual(offenders, [],
-    'ścieżka bestow płaci pipami kosztu BAZOWEGO — pierwsza karta o innym '
-    + 'kolorze kosztu bestow złamie regułę płatności (CR 601.2b)');
+test('M268 (silnik): bestow waliduje, oferuje i płaci pipy kosztu alternatywnego', async () => {
+  const { createGameState, addObject, playerView, execute } = await import('../src/engine/game-state.js');
+  const { gameObjectDataOf } = await import('../src/cards/materialize.js');
+  const { jumpToStep } = await import('../src/engine/turn.js');
+  const { addMana } = await import('../src/engine/resources.js');
+  const { paymentDescriptorOf } = await import('../src/table/mana-wizard.js');
+  // Realny Leafcrown Dryad, kontrolowana różnica pipu: druk G, bestow U.
+  // Test zachowania zamiast regexu zależnego od nazwy zmiennej przy spendMana.
+  for (const color of ['U', 'G']) {
+    const state = createGameState({ seed: 268, players: [{ id: 'p1' }, { id: 'p2' }] });
+    state.turn = jumpToStep(state.turn, 'main', 'p1');
+    state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+    for (const [id, cardId, zone] of [['dryad', 'leafcrown-dryad', 'hand'], ['host', 'rotting-legion', 'battlefield']]) {
+      const def = REGISTRY.get(cardId);
+      addObject(state, { ...gameObjectDataOf(def), id, cardId, instanceId: `i-${id}`,
+        ownerId: 'p1', controllerId: 'p1', zone, types: def.types,
+        ...(id === 'dryad' ? { bestow: { ...def.bestow, cost: 3, colors: ['U'] } } : {}) });
+    }
+    addMana(state, 'p1', 3, { colors: [color] });
+    const view = playerView(state, 'p1');
+    const cmd = { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true, targets: ['host'] };
+    assert.equal(view.legalCommands.some(c => c.objectId === 'dryad' && c.bestow), color === 'U');
+    assert.deepEqual(paymentDescriptorOf(cmd, view).requirements, [['U']], 'wizard też używa pipu bestow');
+    assert.equal(execute(state, cmd).ok, color === 'U');
+    assert.equal(state.players[0].mana, color === 'U' ? 0 : 3);
+    if (color === 'G') assert.equal(state.objects.get('dryad').zone, 'hand', 'odrzucenie bez ruchu karty');
+  }
 });
 
 // --- Etykiety: druga rzecz otwarta po M267 -----------------------------------

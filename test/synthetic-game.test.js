@@ -70,7 +70,7 @@ test('partia syntetyczna jest w pełni odtwarzalna z zapisu komend', () => {
 function createSpellMatch(seed) {
   const decks = new Map([
     ['p1', parseDeckText(fs.readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds],
-    ['p2', parseDeckText(fs.readFileSync('decks/wiedzmin.txt', 'utf8'), registry).cardIds],
+    ['p2', parseDeckText(fs.readFileSync('decks/wiedzmin-wu.txt', 'utf8'), registry).cardIds],
   ]);
   return setupCardMatch({ seed, players: [{ id: 'p1' }, { id: 'p2' }], decks, registry });
 }

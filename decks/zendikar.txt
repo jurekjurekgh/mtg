@@ -6,6 +6,7 @@
 1x Might of the Masses
 1x Coralhelm Guide
 1x Jwari Shapeshifter
+1x Abstruse Interference
 1x Kazuul's Toll Collector
 1x Kor Sanctifiers
 1x Molten Nursery
@@ -21,6 +22,6 @@
 1x Merfolk Falconer
 1x Mysteries of the Deep
 2x Plains
-3x Island
+4x Island
 3x Mountain
 2x Forest

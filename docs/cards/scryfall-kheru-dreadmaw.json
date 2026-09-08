@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kheru%20Dreadmaw&set=ktk",
+  "print": "ktk",
+  "name": "Kheru Dreadmaw",
+  "mana_cost": "{4}{B}",
+  "cmc": 5,
+  "type_line": "Creature — Zombie Crocodile",
+  "oracle_text": "Defender\n{1}{G}, Sacrifice another creature: You gain life equal to the sacrificed creature's toughness.",
+  "colors": [
+    "B"
+  ],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "76",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/8/e8b10468-18b8-4321-a791-0cbd18ea9c4d.jpg?1783939080",
+    "normal": "https://cards.scryfall.io/normal/front/e/8/e8b10468-18b8-4321-a791-0cbd18ea9c4d.jpg?1783939080"
+  },
+  "pobrano": "2026-09-08",
+  "rulings": [
+    {
+      "date": "2014-09-20",
+      "source": "wotc",
+      "comment": "Use the toughness of the creature as it last existed on the battlefield to determine how much life you gain."
+    }
+  ],
+  "rulingsPobrano": "2026-09-08",
+  "rulingsSource": "https://api.scryfall.com/cards/ktk/76/rulings",
+  "power": "4",
+  "toughness": "4"
+}

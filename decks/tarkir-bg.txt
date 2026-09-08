@@ -16,10 +16,11 @@
 1x Krotiq Nestguard
 1x Vow of Wildness
 1x Trade Route Envoy
+1x Kheru Dreadmaw
 1x Rakshasa Vizier
 1x Silumgar Butcher
 1x Stampeding Elk Herd
 1x Woolly Loxodon
 1x Island
 3x Swamp
-6x Forest
+7x Forest

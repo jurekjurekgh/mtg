@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
+import { combatDamageAmount, combatDamageByToughness, preventDamageWithShieldCounter, removeLoyaltyForDamage, attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
 import { attachmentsAttachedTo } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 
@@ -443,12 +443,17 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
       // obrażenia z first strike — zabite stwory nie biorą udziału w zwykłym
       // przebiegu (CR 510.4/510.5 w minimalnym wymiarze).
       events.push(...runStateBasedActions(state));
+      if (state.pendingReplacementChoice) {
+        state.pendingReplacementChoice.continuations.push({combatResume:{defendingPlayerId,pass:false,resumeFrom:0}});
+        return events;
+      }
     }
   }
   // Sesja combat kończy się przed state-based actions: śmierć stwora nie może
   // pozostawić odwołań do obiektów już poza battlefield (pilnuje inwariant).
   state.combat = null;
   events.push(...runStateBasedActions(state));
+  if (state.pendingReplacementChoice) state.pendingReplacementChoice.continuations.push({combatFinish:true});
   return events;
 }
 
@@ -546,7 +551,8 @@ export function buildDamageAssignmentView(state, viewerId = null) {
     entries.push({
       attackerId,
       attackerCardId: faceId(attacker),
-      power: Math.max(0, effectivePower(attacker, state)),
+      power: combatDamageAmount(attacker, state),
+      ...(combatDamageByToughness(state, attacker) ? { byToughness: true } : {}),
       trample: hasKeyword(state, attacker, 'trample'),
       blockers: blockers.map((id) => {
         const blocker = state.objects.get(id);
@@ -577,8 +583,9 @@ export function buildDefaultDamageAssignments(state) {
 
 /**
  * Waliduje przydział gracza (resolve_damage_assignment) względem ŻYWEGO stanu:
- * permutacja żywych blokerów, ilości całkowite >= 0, suma <= moc, reguła
- * „>= lethal przed następnym" (CR 510.1d). Zwraca null albo powód odrzucenia.
+ * permutację żywych blokerów, ilości całkowite >= 0, sufit mocy,
+ * pełną sumę (CR 510.1a/c) i lethal przed graczem (CR 702.19b).
+ * Zwraca null albo powód odrzucenia.
  */
 export function validateDamageAssignment(state, attackerId, assignment) {
   const attacker = state.objects.get(attackerId);
@@ -592,7 +599,7 @@ export function validateDamageAssignment(state, attackerId, assignment) {
   const live = new Set(blockers);
   const seen = new Set();
   let sum = 0;
-  const amount = Math.max(0, effectivePower(attacker, state));
+  const amount = combatDamageAmount(attacker, state);
   for (const entry of assignment) {
     if (!entry || !Number.isInteger(entry.amount) || entry.amount < 0) return 'illegal_damage_amount';
     if (!live.has(entry.blockerId) || seen.has(entry.blockerId)) return 'illegal_damage_blocker';
@@ -606,19 +613,13 @@ export function validateDamageAssignment(state, attackerId, assignment) {
   if (sum < amount && !hasKeyword(state, attacker, 'trample')) {
     return 'damage_must_be_fully_assigned';
   }
-  // Reguła kolejności (CR 510.1d): zanim obrażenia trafią do późniejszego
-  // blokera, każdy wcześniejszy musi mieć przydzielone >= lethal.
-  for (let i = 1; i < assignment.length; i += 1) {
-    if (assignment[i].amount <= 0) continue;
-    const prev = state.objects.get(assignment[i - 1].blockerId);
-    if (prev && assignment[i - 1].amount < lethalOf(state, attacker, prev)) return 'illegal_damage_order';
-  }
+  // CR 510.1c: podział między blokerów jest dowolny (bez lethal-first).
+  // Pełna suma powyżej i warunek trample poniżej to niezależne reguły.
   // M101/B6 (CR 702.19b): trample przepuszcza nadmiar na gracza DOPIERO, gdy
   // KAŻDY blokujący ma przydzielone co najmniej lethal. Bez tego atakujący
   // z trample mógł dać blokerom 0 i wpakować pełną moc w obrońcę — bloker
   // przeżywał, a blok nie chronił przed niczym. Reguła dotyczy wyłącznie
-  // trample: bez niego nieprzydzielone obrażenia po prostu przepadają
-  // (nie ma ich gdzie skierować), więc niedobór jest legalny.
+  // trample: bez niego pełna moc musi trafić w blokerów (CR 510.1a/c).
   if (hasKeyword(state, attacker, 'trample') && sum < amount) {
     for (const entry of assignment) {
       const blocker = state.objects.get(entry.blockerId);
@@ -654,7 +655,7 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
     const blockers = (state.combat.blockers.get(attackerId) ?? []).filter(aliveOnBattlefield);
     const wasBlocked = state.combat.blockedAttackers?.has(attackerId) ?? state.combat.blockers.has(attackerId);
     if (attackersTurn) {
-      const amount = Math.max(0, effectivePower(attacker, state));
+      const amount = combatDamageAmount(attacker, state);
       if (!wasBlocked) {
         dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, amount);
       } else if (blockers.length === 0) {
@@ -701,7 +702,7 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
       if (!blocker || blocker.zone !== 'battlefield') continue;
       if (pass ? !inFirstStrikePass(blockerId) : !inRegularPass(blockerId)) continue;
       // Bloker o ujemnej mocy też zadaje 0 obrażeń (CR 510.1).
-      const blockerDamage = Math.max(0, effectivePower(blocker, state));
+      const blockerDamage = combatDamageAmount(blocker, state);
       // Filtr „prevent all damage to ... this turn" (Ethersworn Shieldmage)
       // — kasuje CAŁOŚĆ obrażeń blokera (CR 119.3; spójnie ze ścieżką
       // atakujący→bloker). Poprzednio filtr działał dopiero wewnątrz
@@ -729,6 +730,9 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
         const protEvent = event('damage_prevented', { objectId: attackerId, amount: blockerProtPrevented, cardId: blocker.cardId, protection: true });
         state.events.push(protEvent); events.push(protEvent);
       }
+      const counterBefore = state.events.length;
+      blockerDealt -= preventDamageWithShieldCounter(state, attackerId, blockerDealt);
+      events.push(...state.events.slice(counterBefore));
       if (hasKeyword(state, blocker, 'infect')) {
         if (blockerDealt > 0) {
           // M296 (uwaga C właściciela): addCounter pushuje counter_added tylko
@@ -736,6 +740,7 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
           // resolve_combat niósł sam damage_dealt i stół (log + Rozgrywka)
           // milczał o znaczniku −1/−1, choć kafel go pokazywał.
           const countersBefore = state.events.length;
+          removeLoyaltyForDamage(state, state.objects.get(attackerId), blockerDealt);
           addCounter(state, attackerId, '-1/-1', blockerDealt);
           events.push(...state.events.slice(countersBefore));
           markDealtDamageThisTurn(state, attackerId);
@@ -770,7 +775,7 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
 
 /**
  * Zadaje obrażenia atakującego blokerom wg przydziału (kolejność = kolejność
- * assignment — dla gracza CR 510.1d, dla domyślnego lethal-first). Bloker,
+ * assignment — podział gracza CR 510.1c, domyślnie lethal-first). Bloker,
  * który zniknął z pola bitwy między decyzją a rozstrzygnięciem, jest pomijany
  * (CR 608.2b). Trample: nadmiar po wszystkich blokerach idzie na gracza.
  */
@@ -810,11 +815,15 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
       const protEvent = event('damage_prevented', { objectId: blockerId, amount: attackerProtPrevented, cardId: attacker.cardId, protection: true });
       state.events.push(protEvent); events.push(protEvent);
     }
+    const counterBefore = state.events.length;
+    dealt -= preventDamageWithShieldCounter(state, blockerId, dealt);
+    events.push(...state.events.slice(counterBefore));
     if (hasKeyword(state, attacker, 'infect')) {
       if (dealt > 0) {
         // M296 (uwaga C właściciela): jak wyżej — counter_added musi jechać
         // w strumieniu komendy, inaczej stół milczy o znaczniku −1/−1.
         const countersBefore = state.events.length;
+        removeLoyaltyForDamage(state, state.objects.get(blockerId), dealt);
         addCounter(state, blockerId, '-1/-1', dealt);
         events.push(...state.events.slice(countersBefore));
         markDealtDamageThisTurn(state, blockerId);

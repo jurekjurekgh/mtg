@@ -19,6 +19,95 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Zgłoszenie właściciela A — odznaka animacji (2026-09-08)
+
+PlayerView niesie linkedAnimationSource, renderer pokazuje „animowany przez
+Skilled Animator” bez rozpoznawania karty po ID. Znika razem z linkiem,
+zakryte źródło nie ujawnia nazwy. Testy prawdziwego ETB→widok→overlay7/7;
+fast4935/4935,build60/3429,1kB. Zgłoszenie B (multidiscard) w toku, plan
+PLAN_2026-09-08-animator-discard-ui.md; PR106 nadal OPEN.
+
+## Sesja 2026-09-08 — batch54 B5 zamknięte, 10/10
+
+Domknięta integracja armor/końca walki/podziału, zwykła aura w równoczesnym
+destroy bez podwójnego ruchu, projekcje combat/T i APNAP. Żywy Tester wykazał
+prawdziwy błąd kreatora many: auto-pass wyciszonej aktywacji opróżniał pulę
+między tapnięciami. holdPriority w ścieżce UI→sesja, regresja RED→GREEN,
+powtórka10607 potwierdza cztery źródła i pump Knighta zamiast anulowania.
+Fast4928/4928, all4938/4938, build60/3428,4kB, quick570/672=84,8%.
+Golden: izolowane2 pola step (end_of_combat→combat_damage); wyceny i komendy
+bez zmiany, świadomy rebaseline do4d9b14e8… po porównaniu pełnych śladów.
+Raport BATCH54_INTEGRATION_2026-09-08.md zawiera dowody i pozostawiony triage
+starych kart Slabs/Inspiration. Handoff i; PR106 OPEN, bez merge.
+
+## Sesja 2026-09-08 — batch54 B4b, komplet 10 definicji
+
+Treefolk Umbra606: armor we wspólnym destroy (grupy/wybór/wznowienia),
+combat według toughness bez zmiany power/fight. Wybór po first strike
+wstrzymuje drugą falę; Vandalize niszczy oba cele jednocześnie.32testy,
+6mutacji,fast4920,all4930,build60/3427,4kB; golden nietknięty. Integracja B5
+jeszcze w toku; szczegółowy zakres/dowody w planie batch54.
+
+## Sesja 2026-09-08 — batch54 B4b.1, granica shield/SBA
+
+Potwierdzone CR122.1c: stara gałąź lethal SBA i jej wybór shield/regenerate
+były błędne. Usunięto je; regeneracja nadal chroni, shield nie jest zużywany.
+Destroy-by-effect korzysta z removeCounter (dotąd brakowało counter_removed).
+RED4/5→5/5,2mutacje,fast4888/4888,build59/3418,5kB,golden bez zmiany.
+Umbra nadal nie dodana: następny krok wymaga prawdziwej decyzji podczas
+destroy oraz kontynuacji wszystkich rodzin resolution. Szczegóły: handoff h.
+
+## Sesja 2026-09-08 — batch54 B4a, 9/10
+
+Containment Membrane: surge dla aur, shared static untap-step lock,
+pełne ścieżki kosztów/kolorów (także bestow), UI i bot bez strojenia wag.
+Naprawiono Prison/Lynx/Lyre w tej samej klasie reguł; Lyre nie wznawia
+zakończonego czasu po retap. 22 testy aur, 6 mutacji, fast4883/4883,
+build59/3420,6kB. Golden: eksperymentalnie wyizolowane dwie poprawki reguł,
+nie zmiana heurystyki; dowód 6/6 po cofnięciu tylko Prison/Lynx w planie.
+Generator przegrupował Wiedźmina do WU/BRG (ADR0024); aktywne referencje
+zaktualizowane. Treefolk Umbra i B5 nadal otwarte — handoff g.
+
+## Sesja 2026-09-08 — batch54 B3b, 8/10
+
+Exploding Borders: search/tapped/shuffle przed domain, player/PW, loyalty
+oraz SBA0. Wspólny licznik podtypów i wycena z PlayerView; preferencja nowego
+typu w search bez odsłaniania biblioteki przeciwnikowi. Testy ujawniły
+prewencję shield zbyt późną dla damage_dealt/lifelink/infect — poprawiono
+noncombat i oba kierunki walki. UI ruchów rozróżnia rękę/top/bottom i widoczne
+SBA0. B54 71/71, 7mutacji, golden bez zmiany fixture. Live10607 przeczytane
+392linie: 0detektorów, ale uwagi do kreatora many i Stomping Slabs otwarte
+w B5. Przy B4 zbadać shield w starej gałęzi lethal SBA (CR122.1c). Nie jest
+to zakończenie batcha; szczegóły w planie i handoffie f.
+
+## Sesja 2026-09-08 — batch 54 B3a (7/10), wznowienie połączenia
+
+GitHub odświeżony przez właściciela: publikacja Kheru i checkpointu udana,
+CI 9fd1420 zielone. Candlegrove Witch i Consign to Dream dodane z testami
+RED→GREEN: wspólny intervening-if odrębnych efektywnych mocy, cel dowolny
+permanent i warunkowa strefa wg kolorów przy resolution. UI pokazuje coven
+oraz obie strefy; bot używa istniejącej wyceny bounce (test przeciwny/własny
+cel). 4 mutacje zabite; B54 55/55, fast4845/4845, build59/3409,6 kB;
+golden nie zmieniono. Talie generatorem i README zgodne. B3b/B4/B5 otwarte;
+nie przedstawiać wcześniejszego all/quick jako nowych pomiarów. Szczegóły:
+plan batch54 i HANDOFF_2026-09-08e.md.
+
+## Sesja 2026-09-08 — batch 54, checkpoint B0–B2 (5/10)
+
+Plan `a4671e0` przed kodem; B1 `15d6613`, UI kickera `df2c21f`, Abstruse
+`5c94072` wypchnięte. Kheru `4fb63e3` tylko lokalnie: GitHub HTTP 401,
+fetch nie może uwierzytelnić. Właściciel poproszony o ponowne połączenie
+w Arena. Nie ukończono zadania całej dziesiątki ani nie scalono PR #106.
+
+Fast 4826/4826, all 4836/4836, build 59 / 3406,4 kB, quick 571/672 (85,0%).
+Żywy Tester s10605/s10606: obie partie zakończone, 0 detektorów, 0 niewycenionych,
+0 stderr; przeczytano pełne 697 linii. Kheru i Abstruse wykonane w s10605.
+Zmiany source/control według CR 109.5, koszt LKI według 602/608; źródła i
+RED→GREEN w `test/real-cards-batch54.test.js`. Żadnych nowych progów bota.
+Szczegóły, audyt rebaseline i pozostałe pięć kart: plan batcha54 oraz
+`docs/setup/HANDOFF_2026-09-08d.md`. Ten wpis też pozostaje lokalnie do
+odblokowania połączenia; nie przedstawiać go jako aktualizacji GitHuba.
+
 - **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **E/F — znaleziska pętli jakości**: **E** — mulligan: odłożenie N kart na spód, gdy liczba kart w ręce = wymagana (mała biblioteka / 7. mulligan 7=7), wybór WYMUSZONY — silnik auto-rozstrzyga (wzorzec auto-akcji turowej CR 504.1/508.1; testy M100/E10 zaktualizowane — pinowały stare zachowanie), **F** — Regenerate = combat trick: usunięta spekulacja B3 („wróg ma open manę i removal w talii, który MOŻE zabić”) z wyceny zagrożenia (regeneracja trwa do końca tury — CR 702.14) + okno combat_damage: tarcza (2+60=62) wygrywa z `resolve_combat` (stała 50) — bot stawia tarczę PRZED obrażeniami; pewna śmierć = walka zadeklarowana (CR 510) albo lethal już zadany (SBA 704.5g); 6 testów (RED F1/F3 stashem); benchmark quick bez zmian (84.7%); `npm test` 3811/3811; build 2934.0 kB; **PR #88**)
 - **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5b „Uwagi z testów” część 2**: **A** — „Tasuj talię” bez komunikatu (tylko podmiana seeda), **B** — kto zaczyna partię = LOSOWE z seeda (`state.starterId`, deterministyczny rzut monetą; CR 103.7a/103.4 przymocowane do startera zamiast `players[0]`; collateral: 41 factory/pinów w 27 plikach testowych + golden-master bota zregenerowany), **C** — Awaken the Sleeper: bot ATAKUJE przejętym stworem (wycena celu castu: 3×power + equipment; pożyczona kreatura bez downside'u w `declare_attackers`), **D** — Ruthless Invasion: bez ataku w tej turze = NIE RZUCAM (okno + gotowi atakujący + usuwani blokerzy), płatność życiem {R/P} = tylko za LETHAL (martwa gałąż wyceny przeniesiona do pętli cast_spell + baza −1); benchmarki quick bez zmian (heuristic 84.7%); `npm test` 3805/3805; build 2932.3 kB; **PR #88**)
 - **Ostatnia aktualizacja:** 2026-08-30 (sesja arena/01a04e98, **r5 „Uwagi z testów”**: **A** — hover powiększonej karty Scryfall na miniaturkach w warstwie „Rozgrywka” (tor `scryfall` bez trybów FOT/KON), **B** — bot blokuje 3/3 przy 5 życiach swoim 2/2 (premia przeżycia w wycenie bloku: prógi życia ≤2/≤5/≤8), **C** — Bone Splinters: osobne wybory „cel czaru” + „cel poświęcenia” (wizard `renderMultiTargetWizard` + wymiar `sacrificeTargetId`), zamiast enumeracji kombinacji 3×3; fix M253: transkrypt benchmarku wdarł się do repo (fail CI); `npm test` 3787/3787; build 2924.8 kB; **PR #88**)
@@ -9347,3 +9436,56 @@ w LESSONS do esencji+wskaźnika (narracja już w LESSONS_PRZYPADKI; nagłówki
 
 Bramki: fast **4772/4772**, test:all **4782/4782**, build **3396,2 kB**,
 bench heuristic **85,0%** (571/672 — bez zmian).
+
+## Sesja arena/01a0805b — audyt PR #105 i naprawy, PR #106 (2026-09-08)
+
+Plan `7237a49` przed implementacją, audyt `e7f0fd6` przed naprawami: 69/69
+plików #105, aktualne źródła online, pięć mutacji (4 RED; 1 luka testu).
+Raport `docs/audits/AUDYT_PR105_2026-09-08.md` rozróżnia regresje #105,
+starsze błędy podtrzymywane przez testy oraz hipotezy niepotwierdzone.
+
+Naprawy oddzielnie, z pełnym fast/build i pushem na każdym kroku:
+- `842bae7` — CR 506.4/506.4b, własny cel efektu kontroli pozostaje w walce.
+- `b8fff42` — hand_top odkłada mniej potrzebną kartę; dostępność w ręce to
+  korzyść, nie powód do odłożenia najcenniejszej.
+- `b83f367` — obca aura nie jest Equipment; bot nie niszczy przez nią własnego miecza.
+- `b11e34c` — CR 510.1c, dowolny podział między blokerów (engine i wizard),
+  bez zmiany pełnej sumy i wymogu trample przed graczem. Dawny R3 poprawiony
+  wg reguły, nie dla samego zielonego testu; historyczny audyt ma korektę.
+- `f62c1e9` — test rzeczywistego untapu i wygaśnięcia flagi (Chill potrzebuje
+  biblioteki, by gra nie kończyła się przed asercjami); realny ląd C1, pin Shock.
+
+Pętla jakości: explorer kaladesh/warhammer-ubr s10601, impatient
+mirrodin-brg/forgotten-realms s10602, obie ukończone, stderr 0 B, detektory
+0, niewycenione 0; przeczytano transkrypty, brak nowego potwierdzonego błędu
+w tej próbce. Bez twierdzeń o wyglądzie na podstawie jsdom.
+
+Bramki końcowe: **fast 4789/4789**, **all 4799/4799**, build **59 / 3395,2 kB**,
+quick heuristic **85,0% (571/672)** — bez dryfu vs #105, bez pełnego B0,
+nowych kart, zmian progów czy fixture. L13 doprecyzowuje datę wydania CR;
+L82 kosmetycznie poprawione. README, plan, audyt i HANDOFF_2026-09-08c
+aktualne. PR #106 oddany właścicielowi do przeglądu; agent nie scala.
+
+
+## 2026-09-08 — zgłoszenie właściciela B: jeden wybór N kart do odrzucenia
+
+Cathartic Reunion używa wspólnego multiselectu: dokładnie2 checkboxy,
+licznik, jedno zatwierdzenie. PlayerView udostępnia liczbę tylko decydentowi;
+engine przyjmuje atomowo walidowane cardIds i zachowuje legacy cardId.
+Anulowanie niczego nie odrzuca ani nie cofa wcześniejszego rzutu/many.
+Madness i wstrzymane czary/aktywacje ruszają dopiero po całym koszcie.
+23 nowych regresji (w tym realny main→DOM→engine), fast4958/4958,
+build60/3433,2kB. Żywy stół seed11068 potwierdza oba zgłoszenia,0detektorów.
+Plan: docs/plans/PLAN_2026-09-08-animator-discard-ui.md.
+
+
+## 2026-09-08 — domknięcie Animator/discard UI
+
+Finalna bramka all4970/4970,32 nowych regresji A/B,build60/3433,3kB.
+Golden4d9b14e8… bez regeneracji/tuningu. Nieinstrumentowany standalone,
+Kaladesh/Forgotten Realms seed11068: jeden wybór2z4,draw3 i Dockhand5/5
+z odznaką Animatora;80kroków,0detektorów. Poprawiono również stare opisy
+wykryte na żywo: trwałość animate_linked (nie EOT) oraz dublet logu
+„kosztu zdolności” przy rozstrzygnięciu odrzucenia kart do czaru.
+Raport OWNER_ANIMATOR_DISCARD_2026-09-08.md, handoff2026-09-08j.
+A938882b/Bda70d10 CI SUCCESS; końcowy HEAD/checks w tym samym PR106 OPEN.

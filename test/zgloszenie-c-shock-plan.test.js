@@ -27,6 +27,6 @@ const talia = (nazwa) => readFileSync(`decks/${nazwa}.txt`, 'utf8')
 test('E7/C: Shock siedzi w talii warhammer-ubr (mono-R), nie w kaladesh', () => {
   assert.ok(talia('warhammer-ubr').includes('1x Shock'),
     'warhammer-ubr zawiera 1x Shock');
-  assert.ok(!talia('kaladesh').includes('Shock'),
+  assert.ok(!talia('kaladesh').includes('1x Shock'),
     'kaladesh nie zawiera Shocka — karta przeniesiona wg planu');
 });

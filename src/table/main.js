@@ -27,14 +27,14 @@ import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWi
 import { effectiveSpellManaCost } from '../engine/spells.js';
 import { expandManaPool } from '../engine/resources.js';
 import { getSourceForObject } from '../engine/mana-sources.js';
-import { parseManaCost } from '../engine/mana-cost.js';
+import { parseManaCost, reduceAlternativeCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard } from './choice-request.js';
-import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf } from './multi-target.js';
-import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
+import { discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf } from './multi-target.js';
+import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
 function runEngineSmoke() {
   // Minimalny, odtwarzalny przebieg: kilka rund passów przez komendy z widoku.
@@ -355,6 +355,19 @@ function bootstrapTable() {
     // zaznaczania KART (ptaszek) zamiast listy wszystkich podzbiorów
     // („7×7×7 kombinacji”). Te samy kontrakt co wielocelowość: zatwierdzenie
     // wraca do komendy z legalCommands (L48).
+    const discardPlan = discardPlanOf(request.options ?? [], choiceView);
+    if (discardPlan) {
+      const source = discardPlan.sourceCardId ? `${session.nameOf(discardPlan.sourceCardId)} — ` : '';
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView, session, plan: discardPlan, commands: request.options,
+        intro: `${source}zaznacz ${discardPlan.count} ${polishPluralCount(discardPlan.count, 'kartę', 'karty', 'kart')} do odrzucenia${discardPlan.purpose === 'cost' ? ' jako koszt' : ''}:`,
+        onOpenCard: openCardFullscreen,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     const mulliganPlan = mulliganBottomPlanOf(request.options ?? []);
     if (mulliganPlan) {
       renderMultiTargetWizard(els.choiceRequestBody, {
@@ -1196,8 +1209,8 @@ function bootstrapTable() {
     // żeby nie było niespójności „Twoje działania vs klik na kartę" (bug D).
     // Klucz grupowania – uproszczony odpowiednik choiceRequestGroupKey z render.js
     const groupKey = (cmd) => {
-      if (cmd.type === 'cast_spell' && cmd.targets?.length) return `spell:${cmd.objectId}`;
-      if (cmd.type === 'cast_spell' && cmd.phyrexianPayWithLife != null) return `spell-x:${cmd.objectId}`;
+      // Batch 54: wspólny klucz rozdziela także CELOWANY czar z kickerem.
+      if (cmd.type === 'cast_spell') return choiceRequestGroupKey(cmd) ?? `spell:${cmd.objectId}:${Boolean(cmd.kicked)}`;
       if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `cleave:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.targets?.length) return `perm:${cmd.objectId}:${Boolean(cmd.bestow)}`;
       if (cmd.type === 'cast_permanent' && cmd.phyrexianPayWithLife != null) return `perm-x:${cmd.objectId}`;
@@ -1206,13 +1219,9 @@ function bootstrapTable() {
       // pokazuje JEDNĄ opcję otwierającą modal wyboru kreatury do wygnania).
       if (cmd.type === 'cast_permanent' && cmd.exileTargetId != null) return `perm-exile:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.kicked) return `perm-k:${cmd.objectId}`;
-      // Kicker na CZARZE (CR 702.33, audyt PR #93): bez własnego klucza
-      // wariant kicked zbiłby się z naturalnym rzutem w jedną grupę i panel
-      // pokazał tylko jeden z dwóch przycisków (oferta nieosiągalna kliknięciem).
-      if (cmd.type === 'cast_spell' && cmd.kicked) return `spell-k:${cmd.objectId}`;
       if (cmd.type === 'cast_adventure') return `adv:${cmd.objectId}`;
       if (cmd.type === 'cast_adventure_creature') return `advc:${cmd.objectId}`;
-      if (cmd.type === 'activate_ability' && (cmd.targets?.length || cmd.xValue != null || cmd.attackerId != null || cmd.crewCreatureIds?.length)) return `ability:${cmd.objectId}:${cmd.abilityIndex}`;
+      if (cmd.type === 'activate_ability') return choiceRequestGroupKey(cmd) ?? `ability:${cmd.objectId}:${cmd.abilityIndex}`;
       if (cmd.type === 'resolve_scry') return 'resolve_scry';
       if (cmd.type === 'resolve_surveil') return 'resolve_surveil';
       if (cmd.type === 'resolve_backup') return 'resolve_backup';
@@ -1679,14 +1688,14 @@ function bootstrapTable() {
   }
 
   /** Jedyna droga akcji gracza: komenda → sesja → przerysowanie. */
-  function playDirect(cmd) {
+  function playDirect(cmd, options) {
     // M201/N1b (zgłoszenie właściciela): awaria wewnątrz sesji (wyjątek pętli
     // bota) nie może zjeść kliknięcia. Sesja łapie ją i oddaje `internalError`
     // (log partii ma już wpis) — tutaj dokładamy widoczny komunikat, żeby
     // gracz nie patrzył na stół, który „nic nie robi”.
     let result;
     try {
-      result = session.apply(cmd);
+      result = session.apply(cmd, options);
     } catch (error) {
       autosave();
       rerender();
@@ -1801,6 +1810,11 @@ function bootstrapTable() {
       const nonGeneric = parsed.colored.length + parsed.hybrid.length + parsed.phyrexian.length;
       opts.effectiveGeneric = Math.max(0, effectiveSpellManaCost(session.state, stateObject) - nonGeneric);
     }
+    if (cmd.type === 'cast_permanent' && (cmd.surgeCast || cmd.bestow)) {
+      const alternative = cmd.surgeCast ? stateObject?.surge : stateObject?.bestow;
+      if (alternative) opts.alternativeCost = reduceAlternativeCost(
+        session.state, stateObject, alternative.cost, alternative.colors ?? []);
+    }
     // Escape (E.3a cz. B): widok GROBÓW nie niesie spell.escape, więc koszt
     // czytamy z pełnego stanu i podajemy deskryptorowi (jak effectiveGeneric).
     if (cmd.type === 'cast_escape' && Number.isInteger(stateObject?.spell?.escape?.cost)) {
@@ -1890,7 +1904,7 @@ function bootstrapTable() {
         const command = src?.command ?? { type: 'tap_for_mana', playerId: HUMAN_ID, objectId };
         // Kolor tapniętego źródła trafia do KOLOROWEJ PULI (engine), więc pokrycie
         // kolorów liczy się samo z puli — bez śledzenia committed (cz. 8).
-        playDirect(command);
+        playDirect(command, { holdPriority: true });
         refreshManaWizard();
       },
       onCancel: () => closeManaWizard(),

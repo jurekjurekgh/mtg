@@ -1,6 +1,7 @@
+import { destroyPermanents, regeneratePermanent } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
-import { deathZoneFor, effectiveKeywords, effectiveToughness, hasEnduringStory } from './permanents.js';
+import { isPlaneswalker, deathZoneFor, effectiveKeywords, effectiveToughness, hasEnduringStory } from './permanents.js';
 import { removeIllegalAttachments, detachAttachmentsFromHost } from './attachments.js';
 import { removeCounter } from './counters.js';
 import { effectiveAbilities } from './permanents.js';
@@ -25,60 +26,7 @@ export const POISON_LOSS_LIMIT = 10;
  * zniszczenie — CR 704.5f).
  */
 export function tryRegenerate(state, object, collected = null) {
-  if (!object || object.zone !== 'battlefield') return false;
-  if (!(state.regenerationShields ?? []).includes(object.id)) return false;
-  // CR 701.12b (minimalny wymiar): „It can't be regenerated this turn" (Rage
-  // of Purphoros) — flaga trwała do końca tury ustawiana na obiekcie
-  // efektem cant_be_regenerated_this_turn. Blokuje regenerację TEGO
-  // obiektu niezależnie od źródła tarczy (regenerate / destroy z efektem
-  // regeneracji / planeswalker itd.).
-  if ((state.cantBeRegeneratedThisTurn ?? []).includes(object.id)) return false;
-  // E8/B1 (wyzwanie wyłapywacza błędów, CR 701.15b): każda tarcza regeneracji
-  // zastępuje JEDNO zniszczenie — dwie tarcze ratują dwukrotnie. Dotąd filter
-  // zdejmował WSZYSTKIE instancje naraz i drugie zniszczenie w turze zabijało
-  // mimo nietkniętej drugiej tarczy. Konsumujemy dokładnie jedną.
-  const shieldIndex = (state.regenerationShields ?? []).indexOf(object.id);
-  if (shieldIndex >= 0) {
-    state.regenerationShields = [
-      ...(state.regenerationShields ?? []).slice(0, shieldIndex),
-      ...(state.regenerationShields ?? []).slice(shieldIndex + 1),
-    ];
-  }
-  // Odcięcie od walki (CR 701.12a: „removed from combat").
-  if (state.combat) {
-    state.combat.attackers = (state.combat.attackers ?? []).filter((id) => id !== object.id);
-    for (const [attackerId, blockerIds] of state.combat.blockers) {
-      state.combat.blockers.set(attackerId, blockerIds.filter((id) => id !== object.id));
-    }
-    state.combat.blockedAttackers?.delete(object.id);
-  }
-  const wasTapped = Boolean(object.tapped);
-  const regenerated = Object.freeze({
-    ...object, tapped: true, damage: 0, damagedByDeathtouch: false,
-  });
-  state.objects.set(object.id, regenerated);
-  const regenerationEvent = event('permanent_regenerated', {
-    objectId: object.id, cardId: object.cardId, playerId: object.controllerId,
-  });
-  state.events.push(regenerationEvent);
-  collected?.push(regenerationEvent);
-  // M117 (lekcja L24, ta sama klasa co tapnięcie landa za manę z M114):
-  // regeneracja TAPUJE permanent (CR 701.15a), a tapnięcie jest zdarzeniem
-  // widocznym dla reguł — bez `object_tapped` żaden trigger „becomes tapped”
-  // (Chronic Flooding) by go nie zobaczył, a gracz nie przeczytałby w logu,
-  // dlaczego jego stwór stoi zatapniętny. Zdarzenie tylko przy REALNEJ zmianie:
-  // permanent już zatapniętny nie „staje się” zatapniętny drugi raz.
-  if (!wasTapped) {
-    const tappedEvent = event('object_tapped', {
-      objectId: object.id, playerId: object.controllerId, viaRegeneration: true,
-    });
-    state.events.push(tappedEvent);
-    // Zdarzenie musi trafić także do listy ZWRACANEJ przez SBA — `accepted()`
-    // karmi `processTriggers` tą listą, a nie całym `state.events`. Bez tego
-    // trigger „becomes tapped” nie zobaczyłby tapnięcia z regeneracji.
-    collected?.push(tappedEvent);
-  }
-  return true;
+  return regeneratePermanent(state, object, collected);
 }
 
 /** Dodaje tarczę regeneracji (koszt zdolności „regenerate" — CR 701.12). */
@@ -212,6 +160,11 @@ export function runStateBasedActions(state) {
   // Selhoff Occultist mielił 1× zamiast 3× przy trzech zgonach w walce).
   const dying = [];
   for (const object of [...state.objects.values()]) {
+    // CR 306.9: zero loyalty to ruch do grobu, NIE destroy/regeneracja.
+    if (object.zone === 'battlefield' && isPlaneswalker(object) && (object.counters?.loyalty ?? 0) === 0) {
+      dying.push({ object, put: true });
+      continue;
+    }
     if (object.zone !== 'battlefield' || object.kind !== 'creature' || object.toughness === null) continue;
     // Jwari: „enter as a copy” — SBA nie zabija 0/0, dopoki gracz nie wybierze celu.
     if (object.enteringAsCopy) continue;
@@ -224,74 +177,25 @@ export function runStateBasedActions(state) {
     const killedByDamage = !isIndestructible && object.damage >= toughness;
     const killedByDeathtouch = !isIndestructible && object.damagedByDeathtouch && object.damage > 0;
     if (!killedByZeroToughness && !killedByDamage && !killedByDeathtouch) continue;
-    // M202/odznaka #3 (CR 616.1): gdy zniszczenie można zastąpić na DWA
-    // sposoby — licznikiem tarczy (CR 122.1b) albo tarczą regeneracji
-    // (CR 701.12) — wybiera KONTROLER permanenta, nie silnik. Dotąd tarcza
-    // była konsumowana zawsze, czyli gracz tracił licznik nawet wtedy, gdy
-    // wolał regenerację (która dodatkowo zdejmuje obrażenia i odpina od walki).
-    // Wytrzymałość <= 0 nie jest zniszczeniem, więc wybór tam nie istnieje.
-    const hasShieldCounter = (object.counters?.shield ?? 0) > 0;
-    const hasRegenerationShield = (state.regenerationShields ?? []).includes(object.id)
-      && !(state.cantBeRegeneratedThisTurn ?? []).includes(object.id);
-    if (!killedByZeroToughness && hasShieldCounter && hasRegenerationShield) {
-      state.pendingReplacementChoice = {
-        playerId: object.controllerId,
-        objectId: object.id,
-        cardId: object.cardId ?? null,
-      };
-      state.turn.priorityPlayerId = object.controllerId;
-      const required = event('replacement_choice_required', {
-        playerId: object.controllerId, objectId: object.id, cardId: object.cardId ?? null,
-      });
-      state.events.push(required); events.push(required);
-      return events;
-    }
-    // Shield: zniszczenie z obrażeń zastąp zdjęciem tarczy (CR 122.1b).
-    if (!killedByZeroToughness && (object.counters?.shield ?? 0) > 0) {
-      // M270 (błąd #10): TRZECIA kopia zdejmowania licznika shield — i zarazem
-      // najczęstsza ścieżka w grze (śmierć z obrażeń). Idzie przez WSPÓLNY
-      // helper `removeCounter`, jak dwie pozostałe (markDamage,
-      // resolve_replacement_choice): helper emituje `counter_removed`, którego
-      // ręczna wersja nie dawała, więc log stołu pokazywał zdjęcie tarczy
-      // tylko w części przypadków, a `syncStationKind` (CR 205.1) był
-      // pomijany. Obrażenia zdejmujemy PO zdjęciu licznika (CR 122.1b:
-      // zniszczenie zostaje zastąpione, więc stwór zostaje bez obrażeń).
-      const przed = state.events.length;
-      removeCounter(state, object.id, 'shield', 1);
-      events.push(...state.events.slice(przed));
-      const poZdjeciu = state.objects.get(object.id);
-      state.objects.set(object.id, Object.freeze({
-        ...poZdjeciu, damage: 0, damagedByDeathtouch: false,
-      }));
-      const consumed = event('shield_consumed', { objectId: object.id, cardId: object.cardId, reason: 'destroy' });
-      state.events.push(consumed); events.push(consumed);
-      continue;
-    }
+    // CR122.1c: shield zastępuje destroy wyłącznie „as the result of
+    // an effect”. Lethal/deathtouch SBA NIE zużywa licznika i nie daje
+    // wyboru shield vs regenerate. Prewencja shield działa przy obrażeniach,
+    // zanim trafią tu; premaked damage (np. spadek toughness) zabija normalnie.
     // Regeneracja (CR 701.12): zniszczenie z obrażeń zastępujemy odtapowaniem,
     // zdjęciem obrażeń i usunięciem z walki — stwór NIE umiera (brak dies).
     // Wytrzymałość <= 0 NIE jest zniszczeniem — regeneracja nie chroni.
-    if (!killedByZeroToughness && tryRegenerate(state, object, events)) continue;
+
     // Finality counter: zamiast do grobu, stwór idzie do exile (CR 122.1b
     // w minimalnym wymiarze — dotyczy śmierci z obrażeń). Wygnanie NIE jest
     // śmiercią — nie wchodzi do simultaneousIds.
     // M177/A: finality LUB znacznik Agate Assault (deathZoneFor — jedno źródło).
     const hasFinality = deathZoneFor(state, object) === 'exile';
-    dying.push({ object, hasFinality });
+    dying.push({ object, put: killedByZeroToughness });
   }
-  const simultaneousIds = dying.filter((d) => !d.hasFinality).map((d) => d.object.id);
-  for (const { object, hasFinality } of dying) {
-    const toZone = hasFinality ? 'exile' : 'graveyard';
-    const toId = hasFinality ? `exile-${state.objectSequence++}` : `grave-${state.objectSequence++}`;
-    moveObjectDirectly(state, object.id, toZone, toId);
-    // `object` to LKI zniszczonego permanentu (CR 603.10) — triggery
-    // „leaves the battlefield" muszą je odczytać także wtedy, gdy obiekt już
-    // nie istnieje w stanie (token usunięty przez SBA CR 704.5e).
-    const destroyed = event('creature_destroyed', {
-      fromId: object.id, toId, toZone, cardId: object.cardId, object,
-      ...(simultaneousIds.length > 1 ? { simultaneousIds: [...simultaneousIds] } : {}),
-    });
-    state.events.push(destroyed); events.push(destroyed);
-  }
+  const beforeDestruction = state.events.length;
+  destroyPermanents(state, dying.map(d => d.object.id), {cause:'sba', putIds:dying.filter(d=>d.put).map(d=>d.object.id)});
+  events.push(...state.events.slice(beforeDestruction));
+  if (state.pendingReplacementChoice) return events;
   // CR 122.3 (anihilacja liczników): jeśli permanent ma jednocześnie liczniki
   // +1/+1 i -1/-1, N par znika, gdzie N = mniejsza z liczb. Liczona przy
   // każdym przebiegu SBA (jak w MtG — state-based action).

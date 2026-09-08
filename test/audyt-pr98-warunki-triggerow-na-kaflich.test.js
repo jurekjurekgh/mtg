@@ -103,10 +103,10 @@ test('PR98 anty-over-fix: ETB damage bez sufiksu typu (mylące przy drugim skutk
   assert.match(text, /zada 1 obrażenie celowi i 1 obrażenie kontrolerowi\./, text.slice(0, 250));
 });
 
-test('PR98 anty-over-fix: ETB bez warunku i bez celu — tekst bez zmian', () => {
+test('PR98 anty-over-fix: ETB bez warunku i bez celu — brak sztucznej klauzuli', () => {
   const registry = createCardRegistry();
   const text = bfTileText(registry, 'kor-cartographer');
-  assert.match(text, /Gdy wejdzie na pole bitwy: szukaj w bibliotece na pole bitwy\./, text.slice(0, 250));
+  assert.match(text, /Gdy wejdzie na pole bitwy: szukaj w bibliotece karty typu Plains na pole bitwy \(zatapniętej\), potem potasuj\./, text.slice(0, 250));
   assert.ok(!text.includes('(gdy'), `nieoczekiwany nawias warunku: ${text.slice(0, 250)}`);
 });
 

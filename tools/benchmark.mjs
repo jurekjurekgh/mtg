@@ -728,7 +728,7 @@ Tryby (ADR 0018):
 
 Opcje:
   --seeds N          liczba seedów na pojedynek; z budżetu (szybki: 8,
-                     pełna: wyliczana — dziś 19 talii → 5). Jawna wartość
+                     pełna: wyliczana — dziś 20 talii → 4). Jawna wartość
                      przesuwa środek ciężkości (więcej seedów = mniej par
                      talii), ale NIE powiększa macierzy.
   --budget N         budżet meczów dla pełnej macierzy (domyślnie 6 000)

@@ -143,7 +143,7 @@ test('kreator many: escape — koszt z opts (widok grobu nie niesie spell)', () 
 
 test('kreator many: bestow — koszt alternatywny aury', () => {
   // Leafcrown Dryad {1}{G} (baza), bestow {3}{G} = cost 4.
-  const view = fakeView({ hand: [{ id: 'h1', cardId: 'leafcrown-dryad', controllerId: 'p1', bestow: { cost: 4 } }] });
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'leafcrown-dryad', controllerId: 'p1', bestow: { cost: 4, colors: ['G'] } }] });
   const d = paymentDescriptorOf({ type: 'cast_permanent', objectId: 'h1', bestow: true, targets: ['t1'] }, view);
   assert.ok(d);
   assert.equal(d.totalNeeded, 4);

@@ -326,7 +326,7 @@ export function commandForProliferateSelection(commands, targetIds) {
 // M301 (zmierzone żywo: Wedgelight Rammer, Makeshift Mauler): pola KOSZTÓW
 // „tapnij stwora” i „wygnij kartę” to ten sam kształt „wybierz jednego
 // kandydata” — bez nich grupy padały na ścianę przycisków.
-const SINGLE_PICK_FIELDS = ['targetId', 'cardId', 'keepId', 'pickId', 'found', 'sacrificeLandId', 'armyId',
+const SINGLE_PICK_FIELDS = ['targetId', 'cardId', 'keepId', 'pickId', 'found', 'sacrificeLandId', 'sacrificeCreatureId', 'armyId',
   'tapCreatureId', 'tapOtherCreatureId', 'exileTargetId'];
 
 /**
@@ -374,6 +374,7 @@ function noneLabelOf(commands, field) {
 function itemLabelOf(field) {
   if (field === 'cardId' || field === 'pickId' || field === 'found') return 'kartę';
   if (field === 'sacrificeLandId') return 'ląd do poświęcenia';
+  if (field === 'sacrificeCreatureId') return 'stwora do poświęcenia';
   if (field === 'armyId') return 'armię';
   if (field === 'keepId') return 'legendę do zachowania';
   // M301: koszty „tapnij stwora” / „wygnij kartę” nazywają czynność z Oracle.
@@ -650,4 +651,25 @@ export function commandForMulliganSelection(commands, cardIds, defOf = null) {
     && entry.cardIds.length === list.length
     && keyOf(entry.cardIds) === selection);
   return cmd ?? null;
+}
+
+
+/** Odrzuć N kart: zwarty plan z oferty pojedynczych kandydatów i decyzji.
+ * Bez generowania podzbiorów ręki; engine waliduje pełną listę cardIds. */
+export function discardPlanOf(commands, view) {
+  const pending = view?.pendingDiscardChoice;
+  const list = commands ?? [];
+  if (!pending || pending.count <= 1 || pending.allowDecline || list.length === 0
+    || !list.every(c => c.type === 'resolve_discard_choice' && c.cardId != null && c.playerId === view.playerId)) return null;
+  const targets = [...new Set(list.map(c => c.cardId))];
+  if (targets.length < pending.count) return null;
+  return { type: 'resolve_discard_choice', playerId: view.playerId, targets,
+    count: pending.count, minTargets: pending.count, maxTargets: pending.count,
+    hasX: false, discardMode: true, itemLabel: 'karty',
+    purpose: pending.purpose, sourceCardId: pending.sourceCardId };
+}
+export function commandForDiscardSelection(plan, selected) {
+  if (!plan?.discardMode || !Array.isArray(selected) || selected.length !== plan.count
+    || new Set(selected).size !== selected.length || selected.some(id => !plan.targets.includes(id))) return null;
+  return { type: 'resolve_discard_choice', playerId: plan.playerId, cardIds: [...selected] };
 }

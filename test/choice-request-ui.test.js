@@ -312,10 +312,8 @@ test('renderDamageWizard: steppery +/− i Zatwierdź → resolve_damage_assignm
   assert.equal(confirm.disabled, false, 'start: pełny przydział jest legalny');
   minus[0].click();
   assert.equal(confirm.disabled, true, 'niedobór (suma < moc) blokuje Zatwierdź — CR 510.1a');
-  // CR 510.1d: spadek b1 poniżej lethal wyzerował b2 — powrót wymaga obu.
+  // CR 510.1c: b2 zachowuje przydział; przywrócenie jednego punktu wystarcza.
   plus[0].click();
-  assert.equal(confirm.disabled, true, 'samo lethal na b1 to wciąż niedobór (moc 5)');
-  plus[1].click(); plus[1].click();
   assert.equal(confirm.disabled, false, 'pełny przydział (3+2=5) odblokowuje');
   confirm.click();
   assert.deepEqual(calls, [{ type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b1', amount: 3 }, { blockerId: 'b2', amount: 2 }] } }]);
@@ -651,14 +649,14 @@ test('M148: wizard scry — przy ≥2 kartach na wierzchu gracz wybiera KOLEJNO�
     'scry wysyła bottomIds + topOrder (kolejność klikania)');
 });
 
-// M150/B (CR 510.1c): atakujący wybiera KOLEJNOŚĆ przydziału obrażeń — przyciski
-// ↑/↓ zmieniają kolejność blokerów, więc można ustawić śmiertelny cel pierwszym.
+// M150/B: reorder jest wygodą UI — zachowuje kwoty przy obiektach.
+// CR 510.1c nie wymaga lethal-first (osobny pin C poniżej).
 test('renderDamageWizard (M150/B): reorder blokerów pozwala zabić „późniejszego”', () => {
   const host = new ChoiceMiniEl('div');
   const calls = [];
   // Atakujący moc 2, blokowany przez Ember Beast (wytrz. 4, lethal 4) i
   // Battle-Rattle Shaman (wytrz. 2, lethal 2). Bez reorderu 2 obrażenia
-  // mogły trafić TYLKO pierwszego (Ember, lethal 4) — Shaman nieosiągalny.
+  // domyślnie trafiają pierwszego; ręczny podział może to zmienić.
   const pending = {
     playerId: 'p1',
     entries: [{
@@ -673,10 +671,10 @@ test('renderDamageWizard (M150/B): reorder blokerów pozwala zabić „później
 
   // E8/B3: start = pełny przydział jak w silniku → Ember (pierwszy w
   // kolejności) dostaje od razu całą moc 2, Shaman 0. +1 na Shamanie (drugim
-  // wierszu) nie działa — Ember nie ma lethal (CR 510.1d).
+  // wierszu) nie działa, bo pełna moc jest już rozdysponowana.
   const plus = findAll(host, 'button', '+1');
   plus[1].click();
-  assert.deepEqual(calls, [], 'bez reorderu nie można przydzielić drugiemu blokerowi');
+  assert.deepEqual(calls, [], 'plus nie zatwierdza przydziału ani nie przekracza mocy');
 
   // Przesuń Shaman wyżej (↑ drugiego wiersza) — staje się pierwszym w kolejności.
   const ups = findAll(host, 'button', '↑');
@@ -692,7 +690,7 @@ test('renderDamageWizard (M150/B): reorder blokerów pozwala zabić „później
   assert.deepEqual(calls, [{
     type: 'resolve_damage_assignment', playerId: 'p1',
     assignments: { atk: [{ blockerId: 'shaman', amount: 2 }, { blockerId: 'ember', amount: 0 }] },
-  }], 'po reorderze można zabić Shaman jako pierwszego (CR 510.1d)');
+  }], 'po reorderze kwoty są nadal przypisane do właściwych obiektów');
 });
 
 test('M213: nagłówek kreatora odmienia rzeczownik wg liczby (1/3/5 kart)', () => {
@@ -712,3 +710,35 @@ test('M213: nagłówek kreatora odmienia rzeczownik wg liczby (1/3/5 kart)', () 
       `zła odmiana dla ${ile}: ${host.textContent.slice(0, 80)}`);
   }
 });
+
+// Audyt PR #105/C. CR 510.1c pobrane 2026-09-08:
+// https://mtg.wiki/page/Combat_damage_step — "divided as its controller
+// chooses among them". Przykład źródłowy 4 mocy → 2+2 w 2/3 i 1/1.
+for (const trample of [false, true]) {
+  test(`C: wizard pozwala podzielić 2+2 bez lethal na pierwszym (trample=${trample})`, () => {
+    const host = new ChoiceMiniEl('div');
+    const calls = [];
+    const pending = { playerId: 'p1', entries: [{
+      attackerId: 'atk', power: 4, trample,
+      blockers: [
+        { id: 'b1', toughness: 3, damage: 0, lethal: 3 },
+        { id: 'b2', toughness: 1, damage: 0, lethal: 1 },
+      ],
+    }] };
+    renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION,
+      pending, defaultCommand: null, onComplete: cmd => calls.push(cmd) });
+    const confirm = findAll(host, 'button', 'Zatwierdź przydział')[0];
+    // Start 3+1. Zejście 3→2 nie może wyzerować drugiego blokera.
+    findAll(host, 'button', '−1')[0].click();
+    assert.equal(confirm.disabled, true, 'niedobór lub niepokryty trample');
+    findAll(host, 'button', '+1')[1].click();
+    assert.equal(confirm.disabled, false, '2+2 to legalna pełna suma');
+    confirm.click();
+    assert.deepEqual(calls[0]?.assignments.atk, [
+      { blockerId: 'b1', amount: 2 }, { blockerId: 'b2', amount: 2 },
+    ]);
+    findAll(host, 'button', '+1')[1].click();
+    confirm.click();
+    assert.deepEqual(calls[1], calls[0], 'plus nie przekracza mocy');
+  });
+}

@@ -41,6 +41,7 @@ const HOSTILE_COUNTERS = new Set(['stun', 'finality']);
  */
 export function triggerEffectIsHostile(effect) {
   if (!effect?.type) return false;
+  if (effect.type === 'lose_life' && effect.scope === 'target') return true;
   if (HOSTILE_TRIGGER_TARGET_EFFECTS.has(effect.type)) return true;
   if (effect.type === 'pump' && ((effect.power ?? 0) < 0 || (effect.toughness ?? 0) < 0)) return true;
   // Batch 52 (Fourth Bridge Prowler): ujemny buff „-1/-1 do końca tury" wobec

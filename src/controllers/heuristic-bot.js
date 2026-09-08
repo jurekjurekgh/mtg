@@ -1,3 +1,4 @@
+import { basicLandTypeCount, isPlaneswalker } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
@@ -95,7 +96,7 @@ function attackerNeutralizedByProtection(attacker, blockers) {
     const attackerKeywords = attacker.keywords ?? [];
     if (attackerKeywords.includes('trample')) {
       const lethalNeeded = attackerKeywords.includes('deathtouch') ? 1 : (b.toughness ?? Number.POSITIVE_INFINITY);
-      if ((attacker.power ?? 0) > lethalNeeded) return false;
+      if (combatPower(attacker) > lethalNeeded) return false;
     }
     return true;
   });
@@ -114,7 +115,7 @@ function diesBeforeDealingDamage(attacker, blockers) {
   return (blockers ?? []).some((b) => {
     const bkw = b?.keywords ?? [];
     if (!bkw.includes('first_strike') && !bkw.includes('double_strike')) return false;
-    return (b?.power ?? 0) >= toughness;
+    return combatPower(b) >= toughness;
   });
 }
 
@@ -129,7 +130,7 @@ function diesToDeathtouchBlocker(attacker, blockers) {
   if (kw.includes('indestructible')) return false;
   return (blockers ?? []).some((b) => {
     if (!b || !(b.keywords ?? []).includes('deathtouch')) return false;
-    if ((b.power ?? 0) <= 0) return false;
+    if (combatPower(b) <= 0) return false;
     return attackerCanBeBlocked(attacker, [b]);
   });
 }
@@ -195,11 +196,14 @@ function combatTrickWindow(view, recipient) {
  */
 
 /** Statystyki bojowe stwora z widoku + delta (pump/debuff) do symulacji. */
+function combatPower(object) {
+  return object?.combatDamageByToughness ? (object.toughness ?? 0) : (object?.power ?? 0);
+}
 function duelStats(object, { power = 0, toughness = 0 } = {}) {
   const kw = object?.keywords ?? [];
   return {
     id: object?.id,
-    power: Math.max(0, (object?.power ?? 0) + power),
+    power: Math.max(0, combatPower(object) + (object?.combatDamageByToughness ? toughness : power)),
     // Efektywna wytrzymałość: bazowa minus już zadane obrażenia.
     toughness: Math.max(0, (object?.toughness ?? 0) - (object?.damage ?? 0) + toughness),
     deathtouch: kw.includes('deathtouch'),
@@ -1217,6 +1221,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // optymalne wciąż mu się należy.
     return base + (locking ? Math.max(0, timing) + 4 : timing);
   };
+  // Wspólna wycena tej samej instrukcji na czarze i aktywacji (Batch 54).
+  // Dotychczasowe wartości M155, bez strojenia parametrów.
+  const opponentLifeEffectValue = (view, effect) => {
+    const amount = effect.amount ?? 1;
+    const foe = enemy(view);
+    return (foe && amount >= (foe.life ?? 20)) ? 80 : 4 * amount;
+  };
+
   /**
    * M128 (uwaga B właściciela, 2026-08-17): mana, którą DA SIĘ wydać w tej
    * chwili BEZ aktywowania dodatkowych zdolności — pula gracza plus lądy, które
@@ -1251,7 +1263,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const step = view.turn.step;
     return myTurn(view) && (step === 'main1' || step === 'main2' || step === 'main');
   });
-  const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
+  const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + combatPower(o), 0);
   /**
    * M135 — CZY TĘ KARTĘ CHCEMY DOBRAĆ? Wspólna wycena dla wszystkich decyzji
    * „zostaw na wierzchu albo odłóż/zmiel" (scry, surveil, clash).
@@ -1287,7 +1299,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // bazową (nie znamy jego treści z widoku, ale to wciąż realna karta).
     return 4 + Math.min(bodyValue, 8) - Math.max(0, cost - reach);
   };
-  const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
+  const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + combatPower(o), 0);
   // M91 (A2): moc stworów przeciwnika, które JUŻ atakują — miara realnego
   // zagrożenia w tej turze (fog ratuje życie tylko wtedy, gdy coś nadlatuje).
   // M92 (audyt PlayerView): publiczne efekty prewencji/regeneracji z widoku.
@@ -1344,7 +1356,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!t) return 0;
     if (t.controllerId === view.playerId) return -90;       // WŁASNY stwór — zakaz
     if (damageFullyPrevented(view, t) || (amt > 0 && shieldedAmount(view, t.id) >= amt)) return -70;
-    const remaining = (t.toughness ?? 0) - (t.damage ?? 0); // POZOSTAŁE życie
+    const remaining = isPlaneswalker(t) ? (t.counters?.loyalty ?? 0)
+      : (t.toughness ?? 0) - (t.damage ?? 0); // POZOSTAŁE życie / lojalność
     const lethal = amt >= remaining && remaining > 0;
     if (lethal) {
       if (scaling) {
@@ -1388,12 +1401,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return attackers
         .map((id) => (view.zones.battlefield ?? []).find((o) => o.id === id))
         .filter((o) => o && o.controllerId !== view.playerId)
-        .reduce((sum, o) => sum + (o.power ?? 0), 0);
+        .reduce((sum, o) => sum + combatPower(o), 0);
     }
     if (view.combat) return 0; // trwa MOJA walka — wróg nie atakuje
     return enemyCreatures(view)
       .filter((o) => o.attacking)
-      .reduce((sum, o) => sum + (o.power ?? 0), 0);
+      .reduce((sum, o) => sum + combatPower(o), 0);
   };
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
 
@@ -1930,7 +1943,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   function enemyAttackPower(view) {
     // Podczas własnego okna bloków przeciwnik ma już zadeklarowanych atakujących
     // na planszy jako tapped — przybliżamy zagrożenie sumą siły wrogich stworów.
-    return enemyCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
+    return enemyCreatures(view).reduce((sum, o) => sum + combatPower(o), 0);
   }
 
   /** Otwarta mana przeciwnika: pula + nietapnięte landy (land creatures też). */
@@ -1994,6 +2007,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return ability?.cost?.mana ?? 0;
     }
     const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    if (cmd.surgeCast) return card?.surge?.cost ?? cardDef(card?.cardId)?.surge?.cost ?? 0;
     const base = card?.manaCost ?? (card?.cardId ? (cardDef(card.cardId)?.manaCost ?? 0) : 0);
     return base + (cmd.xValue ?? 0);
   }
@@ -2294,7 +2308,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       ? wardTargetTax(view, cmd.targets ?? (cmd.targetId != null ? [cmd.targetId] : []), reservedManaOf(view, cmd))
       : 0;
     if (wardTax >= 200) return weightedScore(cmd.type, -200);
-    const finish = (score) => weightedScore(cmd.type, score - wardTax);
+    // Ten sam efekt za surge zużywa mniej many — istniejąca waga kosztu,
+    // bez strojenia parametrów. Nie podbijamy ocen szkodliwych zagrań.
+    const surgeCard = cmd.surgeCast ? (handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId)) : null;
+    const surgeSaving = surgeCard ? Math.max(0, (surgeCard.manaCost ?? 0) - reservedManaOf(view, cmd)) : 0;
+    const finish = (score) => weightedScore(cmd.type, score - wardTax + (score > 0 ? surgeSaving * P.creatureManaCostWeight : 0));
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
@@ -2422,13 +2440,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(cardKeepValue(view, card));
       }
       case 'resolve_hand_top_choice': {
-        // E2/C (plan 2026-09-07, Chittering Rats): decydent odkłada kartę
-        // z WŁASNEJ ręki na WIERZCH własnej biblioteki — wróci przy najbliższym
-        // dobraniu, więc na wierzch idzie NAJCENNEJSZA (+cardKeepValue).
-        // Dotąd default 0 i kolejność ofert od najtańszej.
+        // Odkładamy kartę z własnej RĘKI, nie dobieramy jej z biblioteki.
+        // Zachowaj cenniejszą dostępną teraz; odłóż najmniej potrzebną.
+        // cardKeepValue uwzględnia także niedobór/przesyt lądów.
         const card = handCard(view, cmd.cardId);
         if (!card) return finish(0);
-        return finish(cardKeepValue(view, card));
+        return finish(-cardKeepValue(view, card));
       }
       case 'resolve_reveal_exile_grave': {
         // E2/C (plan 2026-09-07, Dreams of Steel and Oil, M69): wybieramy
@@ -2448,7 +2465,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // jest nasz. Załączniki są publiczne (attachedTo w widoku, CR 400.2).
         const hostId = view.pendingDestroyEquipment?.targetId;
         if (hostId == null || !objectOnBoard(view, hostId)) return finish(cmd.destroy ? 0 : 0);
-        const enemyGear = (view.zones.battlefield ?? []).some((o) => o.attachedTo === hostId
+        // Jak selektor efektu: obca aura nie jest niszczonym Equipment.
+        const enemyGear = (view.zones.battlefield ?? []).some((o) => o.equipment && o.attachedTo === hostId
           && o.controllerId !== view.playerId);
         if (cmd.destroy) return finish(enemyGear ? 8 : -8);
         return finish(enemyGear ? -2 : 1);
@@ -2948,8 +2966,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const modalEffects = (cmd.modeIndex != null && Array.isArray(spell.modes))
           ? (spell.modes[cmd.modeIndex]?.effects ?? [])
           : null;
-        const effects = modalEffects
-          ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? []);
+        const effects = (modalEffects
+          ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? [])).filter(e => !e?.condition?.wasKicked || cmd.kicked === true);
         // M247 anti-overfix (Vandalize „Zniszcz ląd"): kara „czysty ląd jako
         // cel removalu" NIE obejmuje efektów ZAPROJEKTOWANYCH pod niszczenie
         // lądów — rozpoznajemy je po specu celu z deskryptora: slot typu
@@ -3271,8 +3289,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               && ['main1', 'beginning_of_combat'].includes(view.turn.step);
             // Gotowi atakujący: nietapnięci, bez choroby (albo haste), moc > 0.
             const attackers = myCreatures(view).filter((c) => !c.tapped
-              && (!c.summoningSickness || hasKeyword(c, 'haste')) && (c.power ?? 0) > 0);
-            const totalPower = attackers.reduce((sum, c) => sum + (c.power ?? 0), 0);
+              && (!c.summoningSickness || hasKeyword(c, 'haste')) && combatPower(c) > 0);
+            const totalPower = attackers.reduce((sum, c) => sum + combatPower(c), 0);
             // Blokerzy, których czar faktycznie usuwa: nietapnięte stworы
             // przeciwnika POZA wyjątkami (Ruthless: artifact-creatures
             // blokują mimo zakazu). Zbiór ustala się przy rozstrzygnięciu —
@@ -3376,7 +3394,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // celuje WŁASNY slot (`targetIndex`, domyślnie 0) — nie wszystkie
             // cele czaru (spell może mieć osobne sloty per efekt damage).
             const slot = cmd.targets?.[effect.targetIndex ?? 0];
-            const amount = Number.isInteger(effect.amount) ? effect.amount : 0;
+            const amount = effect.amount === 'basic_land_types_you_control'
+              ? basicLandTypeCount(view.zones.battlefield ?? [], view.playerId)
+              : Number.isInteger(effect.amount) ? effect.amount : 0;
             const scaling = Boolean(spell?.xCost); // Consume Spirit itp. — X z maną
             if (slot != null) score += damageTargetValue(view, slot, amount, scaling);
             else score -= 60; // efekt obrażeń bez celu — nic nie robi
@@ -3650,9 +3670,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // obrażeń przeciwnikowi). Reguła generyczna: wartość = 4×N (jak
           // modalny trigger), dobicie = bonus.
           if (effect.type === 'damage_each_opponent' || effect.type === 'lose_life_each_opponent') {
-            const amount = effect.amount ?? 1;
-            const foe = enemy(view);
-            score += (foe && amount >= (foe.life ?? 20)) ? 80 : 4 * amount;
+            score += opponentLifeEffectValue(view, effect);
           }
           // M103/B (zgłoszenie właściciela): „cel nie może być blokowany"
           // (Enter the Enigma) — ewazja ma wartość WYŁĄCZNIE na własnym
@@ -3983,6 +4001,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
         }
         for (const effect of effects) {
+          // B54/s4008: ta rodzina miała wycenę tylko w czarach, aktywacja
+          // zostawała na bazie 2 nawet gdy zabijała przeciwnika.
+          if (effect.type === 'damage_each_opponent' || effect.type === 'lose_life_each_opponent') {
+            score += opponentLifeEffectValue(view, effect);
+          }
           // M221/A (zgłoszenie właściciela, Panic Spellbomb): „{T}, poświęć:
           // docelowy stwór nie może blokować w tej turze" to COMBAT TRICK
           // ofensywny — ma sens WYŁĄCZNIE, gdy bot realnie atakuje w tej turze
@@ -4243,7 +4266,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             //    bloker ginący bez zabicia atakującego / cel removalu na stosie
             //    — „darmowe" poświęcenie), albo (c) permanent jest bardzo tani
             //    (TMC ≤ 1). Inaczej trzymaj.
-            const amount = effect.amount ?? 0;
+            const sacrificed = ability?.cost?.sacrificeCreature
+              ? objectOnBoard(view, cmd.sacrificeCreatureId) : source;
+            const amount = effect.amountFromSacrificedToughness
+              ? Math.max(0, sacrificed?.toughness ?? 0) : (effect.amount ?? 0);
             const life = myLife(view);
             const pressure = enemyAttackPower(view);
             // Bufor życia: zawsze dodatni, skalowany sytuacją (krytyczne życie
@@ -4253,16 +4279,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             else if (life <= 10 || pressure >= life - 5) lifeValue = 1 + Math.min(amount, 3);
             else lifeValue = Math.min(1 + Math.floor(amount / 2), 3);    // bufor — mała, ale dodatnia
             score += lifeValue;
-            if (ability?.cost?.sacrificeSelf) {
+            if (ability?.cost?.sacrificeSelf || ability?.cost?.sacrificeCreature) {
               // Poświęcenie permanentu za życie: strata karty. Uzasadnione tylko
               // gdy ratunek / permanent i tak ginie w tej turze / bardzo tani.
               const lifeCritical = life <= 5 || pressure >= life;
-              const doomedAnyway = permanentDoomedThisTurn(view, source);
-              const cheapPermanent = (source?.manaCost ?? cardDef(source?.cardId)?.manaCost ?? 99) <= 1;
+              const doomedAnyway = permanentDoomedThisTurn(view, sacrificed);
+              const cheapPermanent = (sacrificed?.manaCost ?? cardDef(sacrificed?.cardId)?.manaCost ?? 99) <= 1;
               if (!(lifeCritical || doomedAnyway || cheapPermanent)) {
                 // Kara przebija bufor + bazę zdolności, żeby wariant zszedł
                 // poniżej passu (trzymaj permanent na później).
-                score -= lifeValue + (source?.kind === 'creature' ? 12 : 8) + 6;
+                score -= lifeValue + (sacrificed?.kind === 'creature' ? 12 : 8) + 6;
               }
             } else if (ability?.cost?.tap && source?.kind === 'creature') {
               // Tap-za-życie DARMOWY: zostaw stwora nietapniętego, jeśli jest
@@ -4551,7 +4577,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // dla wszystkich źródeł many zamiast kolejnego `if` per karta.
             // =================================================================
             const availableNow = manaAvailableNow(view);
-            const availableAfter = availableNow + net;
+            // B54/s4008: manaAvailableNow już policzyło nietapnięty ląd.
+            // Przelanie jego many do puli nie jest drugim egzemplarzem tej
+            // samej many. Koszt i produkcja nadal liczone jak dotychczas.
+            const countedLand = source && !source.tapped
+              && (source.kind === 'land' || (source.types ?? []).includes('Land')) ? 1 : 0;
+            const availableAfter = availableNow + net - countedLand;
             // Koszt karty czytamy z widoku (manaCost); pomijamy lądy (nie są
             // czarami) i karty, których i tak nie stać nas po aktywacji.
             // E6/A1: kandydaci po TIMINGU rzucania (manaUnlockCandidates) —
@@ -4847,13 +4878,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           });
           if (!damageGetsThrough) return finish(-100);
         }
-        const strongestBlockerPower = blockers.reduce((max, o) => Math.max(max, o.power ?? 0), 0);
+        const strongestBlockerPower = blockers.reduce((max, o) => Math.max(max, combatPower(o)), 0);
         const strongestBlockerToughness = blockers.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
         // M167/I (uwaga właściciela): GANG dwóch blokerów — atakujący 2/4
         // „przeżywa" najsilniejszego pojedynczego blokera (3/4? nie: 3 < 4),
         // ale para 1/3 + 3/3 zabija go łącznymi obrażeniami. Suma top-2 mocy
         // blokerów + najniższa wytrzymałość (czy atakujący COKOLWIEK zabije).
-        const blockerPowersDesc = blockers.map((o) => o.power ?? 0).sort((a, b) => b - a);
+        const blockerPowersDesc = blockers.map((o) => combatPower(o)).sort((a, b) => b - a);
         const gangPower = (blockerPowersDesc[0] ?? 0) + (blockerPowersDesc[1] ?? 0);
         const weakestBlockerToughness = blockers.reduce((min, o) => Math.min(min, o.toughness ?? 0), Number.POSITIVE_INFINITY);
         // M317 (Ghost Warden): obrońca może w oknie bloków pompać blokera
@@ -4876,7 +4907,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         for (const id of attackers) {
           const object = objectOnBoard(view, id);
           if (!object) continue;
-          const power = object.power ?? 0;
+          const power = combatPower(object);
           const toughness = object.toughness ?? 0;
           // Wartość ataku jednym stworem: obrażenia, które przejdą, minus
           // strata stwora. Wymiana (power ≥ wytrzymałość blockerów) to
@@ -4902,7 +4933,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // da się zablokować); w otwartym ataku liczy się druk.
           const bbPump = becomesBlockedPump(object);
           const blockedStats = blockers.length > 0 && canBeBlocked
-            ? { power: power + bbPump.power, toughness: toughness + bbPump.toughness }
+            ? { power: power + (object.combatDamageByToughness ? bbPump.toughness : bbPump.power), toughness: toughness + bbPump.toughness }
             : { power, toughness };
           const combatObject = blockedStats.power === power && blockedStats.toughness === toughness
             ? object : { ...object, power: blockedStats.power, toughness: blockedStats.toughness };
@@ -5018,7 +5049,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         // Presja: atak w otwartego, lethal i przewaga liczebna premiowane.
         if (blockers.length === 0 && attackers.length > 0) score += P.attackOpenBoardBonus;
-        const totalPower = attackers.reduce((sum, id) => sum + (objectOnBoard(view, id)?.power ?? 0), 0);
+        const totalPower = attackers.reduce((sum, id) => sum + combatPower(objectOnBoard(view, id)), 0);
         // M169/J+L (uwaga właściciela): lethal musi przejść PRZEZ blokerów.
         // Surowy totalPower premiował atak 6/7 w samotnego 7/10 (+100 za
         // „lethal") i odwrotnie — karzełki chowane za blokery nie dopinały
@@ -5036,7 +5067,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const enemyPoison = enemy(view)?.poison ?? 0;
         const infectTotalPower = attackers.reduce((sum, id) => {
           const o = objectOnBoard(view, id);
-          return sum + (hasKeyword(o, 'infect') ? (o.power ?? 0) : 0);
+          return sum + (hasKeyword(o, 'infect') ? combatPower(o) : 0);
         }, 0);
         const penetratingInfect = Math.max(0, infectTotalPower - blockerAbsorb);
         if (attackers.length > 0 && enemyPoison < POISON_LOSS_LIMIT
@@ -5121,7 +5152,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // trik z deathtouchem nadal zabija atakującego (klasa L48: jeden
               // model w całej rodzinie gałęzi).
               if (attackerStrikesFirst(object, blockers)
-                && (object.power ?? 0) >= effBlockerToughness) continue;
+                && combatPower(object) >= effBlockerToughness) continue;
               score -= dtProb * (10 + 2 * (object.power ?? 0) + (object.toughness ?? 0));
             }
           }
@@ -5141,7 +5172,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // blok, który POZOSTAWIA nas przy życiu po śmiertelnym ataku, jest
         // wart partii — premia, inaczej pass (0) wygrywał z blokiem (-1).
         const attackThreat = (view.combat?.attackers ?? [])
-          .reduce((sum, id) => sum + (objectOnBoard(view, id)?.power ?? 0), 0);
+          .reduce((sum, id) => sum + combatPower(objectOnBoard(view, id)), 0);
         let score = 0;
         let stoppedDamage = 0;
         for (const [attackerId, blockerIds] of Object.entries(assignments)) {
@@ -5153,7 +5184,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Teraz sumujemy moc blokerów vs wytrzymałość atakującego (multi-block
           // kill, CR 510.1), nagradzamy zablokowane obrażenia i usunięte
           // zagrożenie, a karzemy tylko realną stratę blokerów.
-          const attackerPower = attackerObj.power ?? 0;
+          const attackerPower = combatPower(attackerObj);
           const attackerToughness = (attackerObj.toughness ?? 0) - (attackerObj.damage ?? 0);
           let totalBlockerPower = 0;
           let blockerValueLost = 0;
@@ -5162,7 +5193,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const blocker = objectOnBoard(view, blockerId);
             if (!blocker) continue;
             blockersUsed += 1;
-            totalBlockerPower += (blocker.power ?? 0);
+            totalBlockerPower += combatPower(blocker);
             const blockerDies = attackerPower >= (blocker.toughness ?? 0) - (blocker.damage ?? 0);
             if (blockerDies) blockerValueLost += (blocker.power ?? 0) + (blocker.toughness ?? 0);
           }
@@ -5667,6 +5698,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Land do ręki/na pole bitwy = pewna mana; stwory wg statystyk.
         if (card.kind === 'land') score += 30;
         score += (card.power ?? 0) * 2 + (card.toughness ?? 0);
+        // Domain po search: przy równych podstawowych lądach wybierz NOWY
+        // typ. Czytamy wyłącznie jawny deskryptor źródła oraz kandydatów
+        // udostępnionych decydentowi, nigdy ukrytą bibliotekę.
+        const search = view.pendingSearchChoice;
+        const source = cardDef(search?.sourceCardId);
+        if ((cmd.destination ?? search?.destination) === 'battlefield'
+            && source?.spell?.effects?.some(e => e.amount === 'basic_land_types_you_control')) {
+          const board = view.zones.battlefield ?? [];
+          score += basicLandTypeCount([...board, { ...card, controllerId: view.playerId }], view.playerId)
+            - basicLandTypeCount(board, view.playerId);
+        }
         return finish(score);
       }
       // M130 (pętla jakości 2026-09-05): resolve_exploit_choice (M69, Exploit,
@@ -5870,6 +5912,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_damage_assignment':
         return finish(0); // M66/R: dokładnie jeden wariant (lethal-first); człowiek ma wizard (CR 510.1c/d)
       case 'resolve_replacement_choice':
+        if (cmd.choice?.startsWith('umbra:')) {
+          const aura=objectOnBoard(view,cmd.choice.slice(6));
+          return finish(-(aura?.manaCost ?? 0)); // zachowaj cenniejszą aurę / zużyj chwilową regenerację
+        }
         return finish(0); // CR 616.1: regenerate vs shield — regułowo równoważne
       case 'resolve_reveal_order':
         return finish(0); // jedna komenda (kolejność jak w reveal — patrz oferta silnika)
@@ -5943,8 +5989,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const foeBoard = view.zones.battlefield.filter((o) => o.controllerId !== view.playerId);
     const myCreatures = mine.filter((o) => o.kind === 'creature');
     const foeCreatures = foeBoard.filter((o) => o.kind === 'creature');
-    const myPower = myCreatures.reduce((sum, o) => sum + Math.max(0, o.power ?? 0), 0);
-    const foePower = foeCreatures.reduce((sum, o) => sum + Math.max(0, o.power ?? 0), 0);
+    const myPower = myCreatures.reduce((sum, o) => sum + Math.max(0, combatPower(o)), 0);
+    const foePower = foeCreatures.reduce((sum, o) => sum + Math.max(0, combatPower(o)), 0);
     const myHand = view.zones.hand.filter((o) => o.controllerId === view.playerId).length;
     const foeHand = view.zones.hand.filter((o) => o.controllerId !== view.playerId).length;
     const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
@@ -5971,8 +6017,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if ((c.keywords ?? []).includes('first_strike') || (c.keywords ?? []).includes('double_strike')) foeQuality += 2;
     }
     // Evasion power: flying creatures are harder to block
-    const myEvasion = myCreatures.filter((c) => (c.keywords ?? []).includes('flying')).reduce((s, c) => s + Math.max(0, c.power ?? 0), 0);
-    const foeEvasion = foeCreatures.filter((c) => (c.keywords ?? []).includes('flying')).reduce((s, c) => s + Math.max(0, c.power ?? 0), 0);
+    const myEvasion = myCreatures.filter((c) => (c.keywords ?? []).includes('flying')).reduce((s, c) => s + Math.max(0, combatPower(c)), 0);
+    const foeEvasion = foeCreatures.filter((c) => (c.keywords ?? []).includes('flying')).reduce((s, c) => s + Math.max(0, combatPower(c)), 0);
     // Deck-out pressure: when library is small, every turn counts
     const myDeckPressure = myLib <= 5 ? (5 - myLib) * 3 : 0;
     const foeDeckPressure = foeLib <= 5 ? (5 - foeLib) * 3 : 0;
@@ -6052,16 +6098,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // tapnięcie; metryka, która o tym zapomina, produkuje szum (L118).
       const blokerzy = untappedEnemyBlockers(view);
       const absorpcja = blokerzy.reduce((a, o) => a + (o.toughness ?? 0), 0);
-      const najsilniejszy = blokerzy.reduce((a, o) => Math.max(a, o.power ?? 0), 0);
+      const najsilniejszy = blokerzy.reduce((a, o) => Math.max(a, combatPower(o)), 0);
       let sila = 0;
       let ginie = 0;
       for (const id of atak) {
         const o = objectOnBoard(view, id);
-        sila += o?.power ?? 0;
+        sila += combatPower(o);
         if ((o?.toughness ?? 99) <= najsilniejszy) ginie += 1;
       }
       const zycieWroga = enemy(view)?.life ?? 999;
-      const zabici = blokerzy.filter((b) => atak.some((id) => (objectOnBoard(view, id)?.power ?? 0) >= (b.toughness ?? 99))).length;
+      const zabici = blokerzy.filter((b) => atak.some((id) => combatPower(objectOnBoard(view, id)) >= (b.toughness ?? 99))).length;
       return {
         atakuje: atak.length,
         trafienie: Math.min(Math.max(0, sila - absorpcja), zycieWroga),
@@ -6128,10 +6174,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       let ofiary = 0;
       for (const [atakujacyId, blokerzy] of Object.entries(przypisania)) {
         const atakujacy = objectOnBoard(view, atakujacyId);
-        zablokowane += atakujacy?.power ?? 0;
+        zablokowane += combatPower(atakujacy);
         for (const blokerId of blokerzy ?? []) {
           const b = objectOnBoard(view, blokerId);
-          if (b && (atakujacy?.power ?? 0) >= (b.toughness ?? 99)) ofiary += 1;
+          if (b && combatPower(atakujacy) >= (b.toughness ?? 99)) ofiary += 1;
         }
       }
       return { zablokowane, ofiary, blokuje: Object.keys(przypisania).length };

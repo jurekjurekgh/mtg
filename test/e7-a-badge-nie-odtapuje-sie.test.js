@@ -34,6 +34,8 @@ function putFromOracle(state, cardId, controllerId, zone, id, extra = {}) {
 test('E7/A: Chill of the Grave — flaga w widoku i badge „nie odtapuje się" na kaflu; untap zablokowany', () => {
   const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
   putFromOracle(state, 'chill-of-the-grave', 'p1', 'hand', 'chill');
+  // Chill dobiera: bez biblioteki stary test sprawdzał już zakończoną grę.
+  putFromOracle(state, 'basic-island', 'p1', 'library', 'draw');
   const target = putFromOracle(state, 'midnight-guard', 'p2', 'battlefield', 'tgt');
   addMana(state, 'p1', 4, { colors: ['U', 'U', 'U', 'U'] });
   const cast = playerView(state, 'p1').legalCommands
@@ -52,7 +54,6 @@ test('E7/A: Chill of the Grave — flaga w widoku i badge „nie odtapuje się" 
   const entry = playerView(state, 'p1').zones.battlefield.find((o) => o.id === 'tgt');
   assert.ok(entry?.dontUntapNextUntapStep, 'widok gracza niesie flagę');
   // 3) Nakładka kafla: badge „nie odtapuje się" (ten sam tor co renderTableView).
-  const badges = [];
   class MiniEl {
     constructor(tag) { this.tagName = tag; this.children = []; this.className = ''; this.text = ''; this.src = ''; this.alt = ''; this.loading = ''; this.dataset = {}; }
     set textContent(v) { this.text = String(v); this.children = []; }
@@ -78,9 +79,28 @@ test('E7/A: Chill of the Grave — flaga w widoku i badge „nie odtapuje się" 
   } finally {
     if (oldCreate) globalThis.document.createElement = oldCreate; else delete globalThis.document.createElement;
   }
-  // 4) Untap step kontrolera celu: stwór ZOSTAJE odkręcony, flaga gaśnie po
-  //    swoim jednorazowym działaniu (CR 510.1 — efekt „next untap step").
-  state.turn = jumpToStep(state.turn, 'untap', 'p2');
-  state.turn.activePlayerId = 'p2';
-  assert.equal(state.objects.get('tgt').tapped, true, 'stwór NIE odkręca się w swoim untap step');
+  // Oracle (pobrane 2026-09-08): "It doesn't untap during its controller's
+  // next untap step." https://api.scryfall.com/cards/named?exact=Chill%20of%20the%20Grave
+  // Rulingi tej karty dotyczą tylko kosztu (2021-11-19).
+  // CR 502.3: "Normally, all of a player’s permanents untap, but effects can
+  // keep one or more of a player’s permanents from untapping."
+  // https://mtg.wiki/page/Beginning_phase (pobrane 2026-09-08).
+  // jumpToStep SAM nie wykonuje untapu: przechodzimy przez execute i beginTurn.
+  const nextTurn = () => {
+    assert.equal(state.status, 'active');
+    state.turn = jumpToStep(state.turn, 'cleanup', state.turn.activePlayerId);
+    for (let i = 0; i < 2; i++) {
+      assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+    }
+    assert.equal(state.turn.step, 'upkeep', 'untap wykonany, priorytet dopiero w upkeepie');
+  };
+  nextTurn();
+  assert.equal(state.turn.activePlayerId, 'p2');
+  assert.equal(state.objects.get('tgt').tapped, true, 'pierwszy untap nie odkręca');
+  assert.equal(state.objects.get('tgt').dontUntapNextUntapStep, null, 'jednorazowa flaga zużyta');
+  assert.ok(!playerView(state, 'p1').zones.battlefield.find(o => o.id === 'tgt').dontUntapNextUntapStep);
+  nextTurn(); // tura p1, nie odkręca cudzego stwora
+  assert.equal(state.objects.get('tgt').tapped, true);
+  nextTurn(); // drugi untap p2 już normalny
+  assert.equal(state.objects.get('tgt').tapped, false);
 });

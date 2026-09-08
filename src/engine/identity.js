@@ -140,6 +140,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
       // Ograniczenia nakładane na gospodarza (Hobble): `cantAttack` (bool)
       // oraz `cantBlock` — bool albo warunek { hostHasColor } („can't block
       // if it's black"). Egzekwuje combat — permanents.attachmentRestrictions.
+      ...(aura.umbraArmor ? { umbraArmor: true } : {}),
+      ...(aura.combatDamageByToughness ? { combatDamageByToughness: true } : {}),
+      ...(aura.doesntUntap ? { doesntUntap: true } : {}),
       ...(aura.cantAttack ? { cantAttack: true } : {}),
       ...(aura.cantAttackYou ? { cantAttackYou: true } : {}),
       ...(aura.cantBlock !== undefined && aura.cantBlock !== false

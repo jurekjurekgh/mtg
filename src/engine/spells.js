@@ -1,10 +1,11 @@
+import { holdReplacementResolution } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
 import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
-import { deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
+import { isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
 import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
@@ -229,10 +230,15 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (!isLegal) throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
-    // Cel „any target" (Release the Ants): gracz albo stwór — oba są legalne.
+    // Zakresy celowania obrażeń: player/PW oraz szersze any target.
+    if (spec?.type === 'player_or_planeswalker') {
+      if (state.players.some(player => player.id === targetId)) return { id: targetId, kind: 'player', controllerId: targetId };
+      if (object?.zone === 'battlefield' && isPlaneswalker(object)) return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
     if (spec?.type === 'any_target') {
       if (state.players.some((player) => player.id === targetId)) return { id: targetId, kind: 'player', controllerId: targetId };
-      if (object && object.zone === 'battlefield' && object.kind === 'creature') return object;
+      if (object?.zone === 'battlefield' && (object.kind === 'creature' || isPlaneswalker(object))) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // M108 (Kazuul's Toll Collector): „target Equipment you control" —
@@ -446,6 +452,10 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // M177/D (Vanish from Sight, L48 oferta=walidacja): dowolny NIE-land na
     // polu bitwy — typ istniał w ofercie (Thistledown Players), walidacja
     // rzucała „Nieznany typ celu”.
+    if (spec?.type === 'permanent') {
+      if (!object || object.zone !== 'battlefield') throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
+    }
     if (spec?.type === 'nonland_permanent') {
       if (!object || object.zone !== 'battlefield') throw new Error(`Nielegalny cel: ${targetId}`);
       const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
@@ -1100,7 +1110,12 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
           && !hasHexproofAgainst(state, object, playerId);
       });
     }
-    case 'any_target': return [...players, ...battlefieldCreatures];
+    case 'player_or_planeswalker': return [...players, ...state.zones.battlefield.filter(id => {
+      const object = state.objects.get(id);
+      return object?.zone === 'battlefield' && isPlaneswalker(object) && !hasHexproofAgainst(state, object, playerId);
+    })];
+    case 'any_target': return [...new Set([...players, ...battlefieldCreatures,
+      ...targetCandidatesBySpec(state, playerId, { type: 'player_or_planeswalker' })])];
     case 'player': {
       // M69 (Dreams of Steel and Oil — „Target opponent"): spec.opponent
       // ogranicza kandydatów do przeciwników rzucającego.
@@ -1269,6 +1284,10 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
     // Batch 22: Thistledown Players — dowolny NIE-land na polu bitwy (stwór,
     // artefakt, enchantment, planeswalker; engine: każy nonland permanent
     // to obiekt strefy battlefield inny niż land).
+    case 'permanent': return state.zones.battlefield.filter(id => {
+      const object = state.objects.get(id);
+      return object?.zone === 'battlefield' && !hasHexproofAgainst(state, object, playerId);
+    });
     case 'nonland_permanent': {
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);
@@ -1404,11 +1423,16 @@ function resolveActivatedAbilityEntry(state, entry) {
   const payload = entry.activatedEntry;
   const liveSource = state.objects.get(payload.sourceId) ?? null;
   const lki = payload.sourceLki ?? {};
-  const source = liveSource ?? Object.freeze({
+  const sourceCharacteristics = liveSource ?? Object.freeze({
     id: payload.sourceId, controllerId: entry.controllerId, cardId: entry.cardId,
     zone: 'none', kind: null, power: lki.power, toughness: lki.toughness,
     powerModifier: lki.powerModifier ?? 0, toughnessModifier: lki.toughnessModifier ?? 0,
     faceDown: lki.faceDown ?? false, counters: {}, formerCounters: {}, keywords: [], abilities: [], types: [],
+  });
+  // CR 109.5: „you” to kontroler ZDOLNOŚCI, nie nowy kontroler źródła.
+  // Źródło pozostaje tym samym obiektem dla cech (np. power/LKI).
+  const source = Object.freeze({ ...sourceCharacteristics, controllerId: entry.controllerId,
+    ...(payload.sacrificedToughness != null ? { sacrificedToughness: payload.sacrificedToughness } : {}),
   });
   state.zones.stack = state.zones.stack.filter((id) => id !== entry.id);
   state.objects.delete(entry.id);
@@ -1624,7 +1648,7 @@ function resolveActivatedAbilityEntry(state, entry) {
     // M115 (Krumar Initiate): efekty skalowane X-em ({X} w koszcie zdolności)
     // dostają wartość X z payloadu aktywacji — inaczej „endure X" nie wie,
     // ile liczników zaproponować.
-    applyEffect(state, effect, source, targets, { xValue: payload.xValue ?? 0 });
+    applyEffect(state, effect, source, targets, { xValue: payload.xValue ?? 0, sourceUntapVersion: lki.untapVersion ?? 0 });
   }
   const nth = payload.ability?.onNthResolve;
   if (nth && resolveCount === (nth.n ?? 3) && nth.effect) {
@@ -1645,6 +1669,9 @@ function resolveActivatedAbilityEntry(state, entry) {
       applyEffect(state, nth.effect, source, targets);
     }
   }
+  if (holdReplacementResolution(state,entry,event('ability_resolved',{
+    playerId:payload.playerId,sourceId:payload.sourceId,cardId:entry.cardId,abilityIndex:payload.abilityIndex,
+  }))) return state.events.slice(before);
   state.events.push(event('ability_resolved', {
     playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
     abilityIndex: payload.abilityIndex,
@@ -1732,6 +1759,7 @@ export function resolveTopOfStack(state) {
       if (effTargets === null) continue;
       applyEffect(state, effect, object, effTargets);
     }
+    if (holdReplacementResolution(state,object,{modal:true,modeIndex:object.chosenMode,modeName:mode.name})) return state.events.slice(before);
     // M271 (błąd #14): strefę zejścia liczy WSPÓLNY helper, nie sztywny grób.
     const zoneModal = spellExitZone(object);
     const graveId = `${zoneModal}-${state.objectSequence++}`;

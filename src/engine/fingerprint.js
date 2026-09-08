@@ -50,7 +50,7 @@ function stableStringify(value) {
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, frontFaceId, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBlockPrinted, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady, manifestReady, abilityResolvedThisTurn, cloakReady, ward }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, frontFaceId, untapLockedBy, untapVersion, untapLockVersions, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBlockPrinted, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady, manifestReady, abilityResolvedThisTurn, cloakReady, ward }) => ({
       id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
       abilities: abilities ?? [],
       counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
@@ -59,7 +59,7 @@ export function stateFingerprint(state) {
       enchantPlayer: Boolean(enchantPlayer), enchantedPlayerId: enchantedPlayerId ?? null,
       attachedTo: attachedTo ?? null, baseKind: baseKind ?? null,
       bestow: bestow ? { cost: bestow.cost } : null,
-      aura: aura ? { keywords: [...(aura.keywords ?? [])] } : null,
+      aura: aura ? { ...aura, keywords: [...(aura.keywords ?? [])] } : null,
       // M257 r3 (Greatsword of Tyr, „Equip {W}"): pipy kolorów kosztu są
       // częścią stanu (dwa sprzęty {1} vs {W} muszą się różnić w odcisku).
       equipment: equipment
@@ -69,6 +69,7 @@ export function stateFingerprint(state) {
       transformTo: transformTo ? { cardId: transformTo.cardId, power: transformTo.power, toughness: transformTo.toughness } : null,
       frontFaceId: frontFaceId ?? null,
       untapLockedBy: [...(untapLockedBy ?? [])],
+      untapVersion: untapVersion ?? 0, untapLockVersions: untapLockVersions ?? null,
       colors: [...(colors ?? [])], phyrexianManaCost: phyrexianManaCost ?? 0,
       goaded: Boolean(goaded), goadedUntilTurn: goadedUntilTurn ?? null, detained: Boolean(detained), detainedUntilTurn: detainedUntilTurn ?? null, hexproofUntilTurn: hexproofUntilTurn ?? null,
       // M122/#1: efekty „do końca tury" zmieniające MOŻLIWOŚĆ blokowania

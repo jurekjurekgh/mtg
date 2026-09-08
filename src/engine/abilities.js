@@ -1,5 +1,6 @@
+import { isActivatedManaAbility } from './mana-sources.js';
 import { event } from '../protocol/types.js';
-import { activatableAbilities, deathZoneFor, effectiveKeywords, effectivePower, tapObject } from './permanents.js';
+import { activatableAbilities, deathZoneFor, effectiveKeywords, effectivePower, effectiveToughness, tapObject } from './permanents.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -465,6 +466,16 @@ function legalCrewSubsets(state, crewableIds, neededPower) {
   return out;
 }
 
+// CR 602.1a: poświęcenie stwora to koszt, NIE cel zdolności. „Another”
+// wyklucza źródło; tapped/choroba/hexproof nie wykluczają zapłaty.
+function sacrificeCreatureCandidates(state, playerId, source, cost) {
+  return state.zones.battlefield.filter(id => {
+    const o = state.objects.get(id);
+    return o?.controllerId === playerId && o.kind === 'creature'
+      && (!cost.sacrificeCreature?.another || id !== source.id);
+  });
+}
+
 export function legalActivatedAbilities(state, playerId) {
   const out = [];
   // CR 502.4: w kroku odkręcania nikt nie dostaje priorytetu, więc ŻADNEJ
@@ -654,6 +665,15 @@ export function legalActivatedAbilities(state, playerId) {
           const manaWithout = producibleMana(state, playerId, ability.cost?.tap ? [id, tapId] : [tapId]);
           if ((ability.cost?.mana ?? 0) > manaWithout) continue;
           out.push({ objectId: id, abilityIndex: index, ability, tapPermanentCostId: tapId });
+        }
+        continue;
+      }
+      if (ability.cost?.sacrificeCreature) {
+        if (effectiveAbilityManaCost(state, playerId, ability, object) > mana) continue;
+        if (ability.cost.tap && (object.tapped || tapBlockedBySummoningSickness(state, object, ability))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        for (const sacrificeCreatureId of sacrificeCreatureCandidates(state, playerId, object, ability.cost)) {
+          out.push({ objectId: id, abilityIndex: index, ability, sacrificeCreatureId });
         }
         continue;
       }
@@ -1282,7 +1302,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     state.events.push(e);
     return e;
   }
-  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetId: opponentTargetIdArg, grantedFromEquipment: grantedFromEquipmentArg ?? false, tapArtifactIds: tapArtifactIdsArg, tapPermanentCostId: extraCostsArg?.tapPermanentCostId, sacrificeCreatureIds: extraCostsArg?.sacrificeCreatureIds });
+  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetId: opponentTargetIdArg, grantedFromEquipment: grantedFromEquipmentArg ?? false, tapArtifactIds: tapArtifactIdsArg, tapPermanentCostId: extraCostsArg?.tapPermanentCostId, sacrificeCreatureIds: extraCostsArg?.sacrificeCreatureIds, sacrificeCreatureId: extraCostsArg?.sacrificeCreatureId });
 }
 
 /**
@@ -1310,6 +1330,11 @@ export function performActivation(state, ctx) {
     throw new Error('Zdolność wymaga permanenta na polu bitwy');
   }
   const cost = ability.cost ?? {};
+  // Sprawdzenie PRZED tapem/maną — odmowa nie może zabrać żadnego kosztu.
+  if (cost.sacrificeCreature && !sacrificeCreatureCandidates(state, playerId, object, cost).includes(ctx.sacrificeCreatureId)) {
+    throw new Error('Nielegalny stwór do poświęcenia (koszt)');
+  }
+  let sacrificedToughness;
   const colorReqs = colorRequirementsOf(cost);
   const targetSpec = (ability.targets ?? []).map((spec) => (spec.type === 'land_you_control'
     ? { ...spec, controllerId: playerId } : spec));
@@ -1498,6 +1523,18 @@ export function performActivation(state, ctx) {
     const sacrificed = state.events.slice(sacrificeMarker).find((entry) => entry.type === 'permanent_sacrificed');
     effectSource = (sacrificed && state.objects.get(sacrificed.objectId)) ?? object;
   }
+  if (cost.sacrificeCreature) {
+    const victim = state.objects.get(ctx.sacrificeCreatureId);
+    // CR 608.2h/ruling Kheru: efektywna wytrzymałość tuż PRZED zmianą
+    // strefy, nie bazowa ani pomniejszona o oznaczone obrażenia.
+    sacrificedToughness = effectiveToughness(victim, state);
+    const toZone = deathZoneFor(state, victim);
+    const destId = `${toZone}-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, victim.id, toZone, destId);
+    state.events.push(event('permanent_sacrificed', {
+      fromId: victim.id, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+    }));
+  }
   // Koszt „Sacrifice a land" (Seismic Monstrosaur): poświęcenie własnego
   // landa (wybór gracza niesie komenda sacrificeLandId) — następuje PRZED
   // efektem (CR 601.2h), jak sacrificeSelf.
@@ -1589,7 +1626,7 @@ export function performActivation(state, ctx) {
     return queueActivatedAbilityToStack(state, {
       playerId, objectId, abilityIndex, ability,
       effectSourceId: effectSource.id,
-      effectTargets,
+      effectTargets, sacrificedToughness,
       // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
       // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
       xValue: (cost.manaX || cost.tapXArtifacts) ? (xValue ?? 0) : undefined,
@@ -1632,18 +1669,13 @@ export function performActivation(state, ctx) {
   return activated;
 }
 
-/** Czy to zdolność many (CR 605.1a): dodaje manę i nie ma celów. */
-function isActivatedManaAbility(ability) {
-  if ((ability.targets ?? []).length > 0) return false;
-  const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-  // M154 (Batch 38, Pristine Talisman): „{T}: Add {C}. You gain 1 life." —
-  // zdolność many z dojazdem zysku życia. Mana abilities rozstrzygają się
-  // natychmiast bez stosu (CR 605.1a). Zysk życia dopuszczamy TYLKO jako
-  // rider obok add_mana (sam gain_life — Soulmender {T}: zyskaj 1 życia — to
-  // zwykła zdolność na stosie, nie mana ability).
-  return effects.length > 0 && effects.some((e) => e?.type === 'add_mana')
-    && effects.every((e) => e?.type === 'add_mana' || e?.type === 'gain_life');
+// Batch 54: CR 608.2g pozwala aktywować zdolności many W TRAKCIE dopłaty.
+// Ręczne źródła (np. poświęcenie Sciona) nie są częścią producibleMana:
+// wolno je zaoferować, ale nie wolno poświęcać automatycznie.
+export function legalManaAbilities(state, playerId) {
+  return legalActivatedAbilities(state, playerId).filter(({ ability }) => isActivatedManaAbility(ability));
 }
+
 
 /**
  * D (2026-08-11, MTG rules): NIEmany zdolności aktywowane idą NA STOS
@@ -1653,11 +1685,12 @@ function isActivatedManaAbility(ability) {
  * się od razu. Tutaj: koszty są już zapłacone, kolejkujemy wpis na stos z LKI
  * źródła (CR 603.10), a efekty zastosuje resolveTopOfStack.
  */
-export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds, stationTappedCreatureId = null, eventExtra = {} }) {
+export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds, stationTappedCreatureId = null, sacrificedToughness, eventExtra = {} }) {
   const source = state.objects.get(effectSourceId) ?? state.objects.get(objectId) ?? {
     id: effectSourceId, controllerId: playerId, cardId: null, zone: 'none', kind: null,
   };
   const sourceLki = Object.freeze({
+    untapVersion: source.untapVersion ?? 0,
     power: source.power, toughness: source.toughness,
     powerModifier: source.powerModifier ?? 0, toughnessModifier: source.toughnessModifier ?? 0,
     faceDown: source.faceDown ?? false,
@@ -1675,6 +1708,7 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
       xValue: xValue ?? undefined,
       crewCreatureIds: crewCreatureIds ? [...crewCreatureIds] : undefined,
       sourceLki,
+      ...(sacrificedToughness != null ? { sacrificedToughness } : {}),
     }),
   });
   state.objects.set(id, entry);

@@ -85,6 +85,8 @@ test('B1: TOKEN_IMAGES ma druk Scryfalla dla token_squirrel (i mapa działa w se
 test('C1: widok battlefield niesie czasowe flagi (saddled/untap-lock/kontrola/regeneracja)', () => {
   const state = game('p1');
   putCard(state, 'crt', 'highland-game', 'p1', 'battlefield');
+  putCard(state, 'x', 'entrancing-lyre', 'p1');
+  state.objects.set('x', Object.freeze({ ...state.objects.get('x'), tapped: true }));
   const base = state.objects.get('crt');
   state.objects.set('crt', Object.freeze({
     ...base, saddled: true, untapLockedBy: ['x'], dontUntapNextUntapStep: 'p1',
@@ -97,6 +99,9 @@ test('C1: widok battlefield niesie czasowe flagi (saddled/untap-lock/kontrola/re
   assert.equal(entry.dontUntapNextUntapStep, true, 'dontUntapNextUntapStep w widoku');
   assert.equal(entry.tempControlUntilEOT, true, 'kontrola do EOT w widoku');
   assert.equal(entry.cantBeRegeneratedThisTurn, true, 'bez regeneracji w widoku');
+  state.objects.set('x', Object.freeze({ ...state.objects.get('x'), tapped: false }));
+  assert.equal(playerView(state, 'p2').zones.battlefield.find(o => o.id === 'crt').untapLocked, undefined,
+    'nieaktywne źródło nie daje fałszywej odznaki');
 });
 
 test('C2: nakładka kafla pokazuje badge czasowych stanów', () => {

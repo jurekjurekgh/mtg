@@ -1,0 +1,51 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Exploding%20Borders&set=con",
+  "print": "con",
+  "name": "Exploding Borders",
+  "mana_cost": "{2}{R}{G}",
+  "cmc": 4,
+  "type_line": "Sorcery",
+  "oracle_text": "Domain — Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle. Exploding Borders deals X damage to target player or planeswalker, where X is the number of basic land types among lands you control.",
+  "colors": [
+    "G",
+    "R"
+  ],
+  "set": "con",
+  "set_name": "Conflux",
+  "collector_number": "106",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/2/f247aaaf-4d65-4dfc-bab2-3c1331762647.jpg?1783942469",
+    "normal": "https://cards.scryfall.io/normal/front/f/2/f247aaaf-4d65-4dfc-bab2-3c1331762647.jpg?1783942469"
+  },
+  "pobrano": "2026-09-08",
+  "rulings": [
+    {
+      "date": "2021-06-18",
+      "source": "wotc",
+      "comment": "Domain abilities count the number of basic land types among lands you control, not how many lands you control or how many of any type."
+    },
+    {
+      "date": "2021-06-18",
+      "source": "wotc",
+      "comment": "The basic land types are Plains, Island, Swamp, Mountain, and Forest. Land types other than basic land types (such as Desert) don't contribute to domain abilities."
+    },
+    {
+      "date": "2009-02-01",
+      "source": "wotc",
+      "comment": "You do what the spell says in order, so you'll put a new basic land card onto the battlefield before you determine the value of X."
+    },
+    {
+      "date": "2009-02-01",
+      "source": "wotc",
+      "comment": "Exploding Borders will still deal damage even if you don't put a land card onto the battlefield."
+    },
+    {
+      "date": "2009-02-01",
+      "source": "wotc",
+      "comment": "Exploding Borders has only one target: the player. If that player becomes an illegal target by the time Exploding Borders would resolve, the entire spell doesn't resolve. You won't get to search for a basic land card."
+    }
+  ],
+  "rulingsPobrano": "2026-09-08",
+  "rulingsSource": "https://api.scryfall.com/cards/con/106/rulings"
+}

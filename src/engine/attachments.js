@@ -43,6 +43,9 @@ export function attachmentGrant(object) {
     keywords: [...(descriptor.keywords ?? [])],
     subtypes: [...(descriptor.subtypes ?? [])],
   };
+  if (descriptor.combatDamageByToughness) result.combatDamageByToughness = true;
+  if (descriptor.umbraArmor) result.umbraArmor = true;
+  if (descriptor.doesntUntap) result.doesntUntap = true;
   // Conditional keywords (Hunter's Blowgun): different keywords based on
   // a condition evaluated at read time (state required). Only included when
   // non-empty to preserve backward compatibility with existing tests.

@@ -54,7 +54,7 @@ test('B47/A3: każdy egzemplarz trafia do talii SWOJEGO planu', () => {
   for (const [cardId, oczekiwane] of [
     ['curate', 'forgotten-realms.txt'],
     ['curate-stx', 'worek-legend.txt'],
-    ['negate', 'wiedzmin.txt'],
+    ['negate', 'wiedzmin-wu.txt'],
     ['negate-m15', 'warhammer-ubr.txt'],
   ]) {
     assert.deepEqual(gdzie(cardId), [oczekiwane],

@@ -20,8 +20,9 @@
 1x Hill Giant
 1x Terminal Agony
 1x Wrap in Flames
+1x Rotting Legion
 1x Minotaur Abomination
 1x Revolutionist
 3x Island
-3x Swamp
+4x Swamp
 5x Mountain

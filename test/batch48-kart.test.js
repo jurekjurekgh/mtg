@@ -105,7 +105,7 @@ test('B48/A5: Frost Lynx — ETB tapuje stwora wroga i blokuje odkręcenie', () 
   assert.equal(etb.trigger.requiresTarget?.type, 'creature_opponent_controls',
     'Oracle: „target creature an opponent controls"');
   assert.deepEqual((Array.isArray(etb.effect) ? etb.effect : [etb.effect]).map((e) => e.type),
-    ['tap_permanent', 'lock_untap'], 'tapnij + nie odkręca się w następnym untapie');
+    ['tap_permanent', 'dont_untap_next_untap_step'], 'tapnij + nie odkręca się w następnym untapie');
 });
 
 test('B48/A6: Bedhead Beastie — menace + Mountaincycling {2}', () => {

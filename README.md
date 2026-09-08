@@ -33,7 +33,7 @@ choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdzia�
 na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
-Bieżący stan: **4750/4750 testów** (`test:all`; szybki rdzeń 4740/4740), artefakt **59 modułów / 3388,1 kB**. Szczegóły:
+Bieżący stan: szybki rdzeń **4928/4928**, artefakt **60 modułów / 3428,4 kB** (batch 54 ukończony, **10/10 kart**). Pełny zestaw: **4938/4938**; quick **84,8% (570/672)**. Integracja i znane uwagi jakościowe: [raport B5](docs/audits/BATCH54_INTEGRATION_2026-09-08.md). Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
@@ -116,7 +116,7 @@ liczone z plików `decks/*.txt`).
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
 |---|---|---|---:|---:|---:|
-| `alara` | Alara | WUBRG | 35 | 12 | 23 |
+| `alara` | Alara | WUBRG | 36 | 12 | 24 |
 | `dominaria-brg` | Dominaria (BRG) | BRG | 26 | 9 | 17 |
 | `dominaria-wu` | Dominaria (WU) | WUB | 24 | 8 | 16 |
 | `final-fantasy` | Final Fantasy | WUBRG | 26 | 9 | 17 |
@@ -127,23 +127,24 @@ liczone z plików `decks/*.txt`).
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 26 | 9 | 17 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
 | `ravnica` | Ravnica | WUBRG | 36 | 12 | 24 |
-| `srodziemie` | Śródziemie | WUBRG | 27 | 9 | 18 |
-| `tarkir-bg` | Tarkir (BG) | UBG | 30 | 10 | 20 |
+| `srodziemie` | Śródziemie | WUBRG | 29 | 10 | 19 |
+| `tarkir-bg` | Tarkir (BG) | UBG | 32 | 11 | 21 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 27 | 9 | 18 |
 | `theros` | Theros | WUBRG | 27 | 9 | 18 |
-| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 33 | 11 | 22 |
+| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 35 | 12 | 23 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
-| `wiedzmin` | Wiedźmin | UBRG | 44 | 15 | 29 |
-| `zendikar` | Zendikar | WURG | 30 | 10 | 20 |
+| `wiedzmin-brg` | Wiedźmin (BRG) | BRG | 26 | 9 | 17 |
+| `wiedzmin-wu` | Wiedźmin (WU) | WU | 23 | 8 | 15 |
+| `zendikar` | Zendikar | WURG | 32 | 11 | 21 |
 
 ### Worki (małe plany — przejściowe, ADR 0023)
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
 |---|---|---|---:|---:|---:|
 | `worek-basni` | Worek: Baśnie | WUBRG | 30 | 10 | 20 |
-| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 26 | 9 | 17 |
+| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 27 | 9 | 18 |
 | `worek-legend` | Worek: Legendy | WUBRG | 27 | 9 | 18 |
-| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 36 | 12 | 24 |
+| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 38 | 13 | 25 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
 

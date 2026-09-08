@@ -158,7 +158,7 @@ export function stepLabel(turn) {
 
 /** M73d (B): polskie nazwy typów celów (koniec surowych slugów w opisach). */
 const TARGET_TYPE_LABELS = Object.freeze({
-  creature: 'stwór', player: 'gracz', any_target: 'dowolny cel',
+  creature: 'stwór', player: 'gracz', any_target: 'dowolny cel', player_or_planeswalker: 'gracz lub planeswalker',
   // M166/B (Cacophodon — untap target permanent).
   permanent: 'permanent',
   artifact: 'artefakt', artifact_or_creature: 'artefakt lub stwór',
@@ -247,7 +247,8 @@ export function describeSpellEffects(spell) {
     return `wybierz jedno — ${modeBits.join(' / ')}`;
   }
   const parts = (spell.effects ?? []).map((effect) => {
-    if (effect.type === 'damage') return `Obrażenia ${effect.amount}`;
+    if (effect.type === 'damage') return typeof effect.amount === 'number' || effect.amount === 'X'
+      ? `Obrażenia ${effect.amount}` : describeEffect(effect);
     // M255/D: „+${power}/+${toughness}” drukowało SUROWY SLUG, gdy wartość
     // jest dynamiczna (Tarmogoyf). Ten sam helper co buff_* (`ptPair`).
     if (effect.type === 'pump') return `${ptPair(effect.power ?? 0, effect.toughness ?? 0)} do końca tury`;
@@ -339,15 +340,15 @@ export function choiceRequestGroupKey(command) {
   // M87: tryby modalne (Steel Sabotage Kontr vs Odbicie) i warianty
   // poświęcenia (Village Rites) nie mogą wpadać do jednego „Cel czaru".
   if (command.type === 'cast_spell' && (command.targets?.length || command.sacrificeTargetId || command.modeIndex != null)) {
-    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}`;
+    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}${command.kicked ? ':kicker' : ''}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
   if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
-    return `spell-x:${command.objectId}`;
+    return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}`;
   }
   if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {
-    return `permanent:${command.objectId}:${Boolean(command.bestow)}`;
+    return `permanent:${command.objectId}:${Boolean(command.bestow)}${command.surgeCast ? ':surge' : ''}`;
   }
   // M241 (zgłoszenie J/K/L): karta z Escape = jedna grupa; warianty CELU
   // mieszczą się w środku (modal z rzędami per cel), a karty do wygnania
@@ -374,7 +375,7 @@ export function choiceRequestGroupKey(command) {
       // M160/B1 (Seismic Monstrosaur): warianty kosztu „poświęć ląd” (jeden
       // wpis per ląd) grupują się jak crew/tap — bez tego panel pokazywał
       // N identycznych wpisów „Aktywuj: … — dobierz 1 kartę”.
-      || command.sacrificeLandId != null)) {
+      || command.sacrificeLandId != null || command.sacrificeCreatureId != null)) {
     return `ability:${command.objectId}:${command.abilityIndex}`;
   }
   if (command.type === 'resolve_scry') return 'resolve_scry';
@@ -788,7 +789,7 @@ const COUNTER_LABELS = Object.freeze({
   // w audytowanych partiach) — licznik ogłuszenia z Lodestone Needle. Audyt
   // wszystkich liczników w bazie wykazał też brakujący `level` (Kabira
   // Vindicator). Strażnik w testach pilnuje kompletności tej mapy.
-  stun: 'ogłuszenie', level: 'poziom',
+  stun: 'ogłuszenie', level: 'poziom', loyalty: 'lojalność',
   // Batch 48 (Contested Game Ball): licznik punktowy — po piątym artefakt
   // jest poświęcany w zamian za Skarb.
   point: 'punkt',
@@ -807,6 +808,7 @@ const DYNAMIC_AMOUNT_LABELS = Object.freeze({
 /** Rzeczownikowa fraza dla dynamicznej liczby obrażeń („tyle obrażeń, ile ..."). */
 const DYNAMIC_AMOUNT_NOUNS = Object.freeze({
   artifacts_you_control: 'artefaktów kontrolujesz',
+  basic_land_types_you_control: 'różnych podstawowych typów mają kontrolowane przez ciebie lądy (domain)',
 });
 
 /** Czytelna wartość P/T tokena, także dynamiczna (greatest_power_you_control). */
@@ -954,13 +956,15 @@ function describeEffect(e) {
     grant_double_strike_on_noncreature_cast_this_turn: () => 'do końca tury: każdy twój czar niebędący stworem daje wybranemu stworowi podwójne uderzenie',
     add_flying_counter_to_face_down_you_control: () => 'połóż licznik flying na zakrytych stworach',
     amass: () => 'amass (stwórz/rozrośnij Armię)',
-    animate_linked: () => 'animuj do końca tury',
+    animate_linked: () => `animuj do bazowego ${e.power ?? 0}/${e.toughness ?? 0}, dopóki źródło pozostaje na polu bitwy`,
     animate_permanent_until_end_of_turn: () => 'stanie się stworem do końca tury',
     // M101/B7 (CR 702.171): bez tego wpisu etykieta pokazywała surowy slug
     // „efekt (set_saddled)" — dokładnie jak w zgłoszeniu B.
     set_saddled: () => 'zostanie osiodłany do końca tury',
     become_basic_land_type: () => 'stań się podstawowym lądem',
-    bounce_permanent: () => 'wróć na rękę właściciela',
+    bounce_permanent: () => e.libraryTopIfColors
+      ? `wróć na rękę właściciela; jeśli ${e.libraryTopIfColors.map(c => ({ R: 'czerwony', G: 'zielony' })[c] ?? c).join(' lub ')} — zamiast tego na wierzch biblioteki właściciela`
+      : 'wróć na rękę właściciela',
     bounce_to_library_top: () => 'włóż na wierzch biblioteki właściciela',
     bounce_to_library_bottom: () => 'włóż na spód biblioteki właściciela',
     buff_creatures_you_control: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla twoich stworów do końca tury`,
@@ -977,7 +981,8 @@ function describeEffect(e) {
     control_to_owners_all_creatures: () => 'kontrola stworów wraca do właścicieli',
     counter_spell: () => 'skontruj czar',
     counter_ability: () => 'skontruj zdolność',
-    counter_spell_unless_pays: (effect) => `skontruj czar, chyba że kontroler zapłaci {${effect?.amount ?? 1}}; ten gracz odrzuca kartę`,
+    counter_spell_unless_pays: () => `skontruj czar, chyba że kontroler zapłaci {${e.amount ?? 1}}`
+      + (e.discardCount ? `; ten gracz odrzuca ${e.discardCount} ${polishPluralCount(e.discardCount, 'kartę', 'karty', 'kart')}` : ''),
     fireball_resolve: () => 'X obrażeń podzielone po równo między cele',
     craft_transform: () => 'craft — transform',
     damage_defending_player: () => `${damageCount(dynamicAmount(e.amount))} obrońcy`,
@@ -1147,7 +1152,11 @@ function describeEffect(e) {
     sacrifice_each_other_creature: () => 'poświęć każde inne stworzenie',
     sacrifice_food_choice: () => 'poświęć Food (+5/+5) albo +3/+3 do końca tury',
     search_basic_land_morbid: () => 'szukaj basic landa (morbid)',
-    search_library_to_battlefield: () => 'szukaj w bibliotece na pole bitwy',
+    search_library_to_battlefield: () => {
+      const basicLand = e.qualifier?.types?.includes('Basic') && e.qualifier?.types?.includes('Land');
+      const subtypes = (e.qualifier?.subtypes ?? []).join('/');
+      return `szukaj w bibliotece karty${basicLand ? ' podstawowego lądu' : ''}${subtypes ? ` typu ${subtypes}` : ''} na pole bitwy${e.entersTapped ? ' (zatapniętej)' : ''}, potem potasuj`;
+    },
     search_library_to_hand: () => 'szukaj w bibliotece do ręki',
     springbloom_sacrifice_search: () => 'poświęć ląd, szukaj 2 basic landów',
     start_engines: () => 'start your engines!',
@@ -1182,7 +1191,7 @@ function describeEffect(e) {
     set_base_pt_creatures_you_control: () => 'twoje stwory mają bazowe X/X do końca tury (X = liczba kart w twojej ręce)',
   };
   const fn = generic[e.type];
-  if (fn) return fn();
+  if (fn) return `${e.condition?.wasKicked ? 'jeśli opłacono kicker: ' : ''}${fn()}`;
   return `efekt (${e.type})`;
 }
 
@@ -1202,6 +1211,7 @@ const NON_MANA_COST_LABELS = Object.freeze([
   ['discardCards', (n) => `odrzuć ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')}`],
   ['sacrificeSelf', 'poświęć'],
   ['sacrificeLand', 'poświęć ląd'],
+  ['sacrificeCreature', (rule) => rule.another ? 'poświęć innego stwora' : 'poświęć stwora'],
   ['tapCreature', 'tapnij swojego stwora'],
   ['tapOtherCreature', 'tapnij innego swojego stwora'],
   ['exileFromGraveyard', 'wygnaj tę kartę z grobu'],
@@ -1381,6 +1391,7 @@ function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
 function triggerConditionClause(trigger) {
   const cond = trigger?.condition ?? {};
   const czlony = [];
+  if (cond.distinctCreaturePowersAtLeast != null) czlony.push(`kontrolujesz stwory o co najmniej ${cond.distinctCreaturePowersAtLeast} różnych wartościach siły (coven)`);
   if (cond.minTappedCreaturesControlled) czlony.push(`kontrolujesz ${cond.minTappedCreaturesControlled}+ zatapnięte stwory`);
   if (cond.subtypeCardInYourGraveyard) czlony.push(`w twoim grobie jest karta ${cond.subtypeCardInYourGraveyard}`);
   if (cond.selfHasCounter) czlony.push(`ma licznik ${COUNTER_LABELS[cond.selfHasCounter] ?? cond.selfHasCounter}`);
@@ -1523,7 +1534,11 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'you_cast_second_spell_each_turn') return `Gdy rzucisz drugi czar w turze: ${parts}.`;
   if (trigger.event === 'you_cast_noncreature_spell') return `Gdy rzucisz czar niebędący stworem: ${parts}.`;
   if (trigger.event === 'when_you_cast_spell') return `Gdy rzucisz czar: ${parts}.`;
-  if (trigger.event === 'beginning_of_combat') return `Na początku walki: ${parts}.`;
+  if (trigger.event === 'beginning_of_combat') {
+    const clause = triggerConditionClause(trigger);
+    const turn = trigger.eachCombat ? 'każdej walki' : `walki w turze ${mine ? 'twojej' : 'kontrolera'}`;
+    return `Na początku ${turn}${clause ? ` (gdy ${clause})` : ''}: ${parts}.`;
+  }
   if (trigger.event === 'player_casts_spell') {
     const colorNote = trigger.spellColorsInclude?.length
       ? ` (${trigger.spellColorsInclude.join('/')})` : '';
@@ -1634,6 +1649,8 @@ export function rulesText(info) {
   };
   // Audyt Batch53/B1: koszt plotu z pipami kolorów (ten sam rozkład co equip;
   // goła liczba kłamała, że {1}{W} płaci się dowolną maną).
+  const toughnessDamageLine = info.combatDamageByToughness ? 'Obrażenia bojowe według wytrzymałości, nie mocy' : '';
+  const surgeLine = info.surge ? `Surge {${equipPips(info.surge.cost, info.surge.colors)}} — jeśli rzuciłeś już inny czar w tej turze` : '';
   const plotLine = info.plot ? `Plot {${equipPips(info.plot.cost, info.plot.colors) || '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equipLine = equip
     ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equipPips(equip.equipFor.equip, equip.equipFor.colors) || '?'}} · ` : ''}{${equipPips(equip.equip, equip.colors) || '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
@@ -1650,6 +1667,9 @@ export function rulesText(info) {
   const aura = info.aura;
   const auraLine = aura
     ? [
+    aura.umbraArmor ? 'Umbra armor — zamiast zniszczenia gospodarza usuń jego obrażenia i zniszcz tę aurę' : '',
+    aura.combatDamageByToughness ? 'Obrażenia bojowe według wytrzymałości, nie mocy' : '',
+      aura.doesntUntap ? 'stwór nie odkręca się podczas kroku odkręcania swojego kontrolera' : '',
       aura.pump ? `stwór: ${signed(aura.pump.power ?? 0)}/${signed(aura.pump.toughness ?? 0)}` : '',
       (aura.keywords ?? []).length ? `stwór ma: ${aura.keywords.map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : '',
       // M138/Z9 (audyt Żywym Testerem): aura ODBIERAJĄCA keyword miała kafel
@@ -1727,7 +1747,7 @@ export function rulesText(info) {
       .map(([name, n]) => `z ${n === 1 ? '1 licznikiem' : `${n} licznikami`} ${COUNTER_LABELS[name] ?? name}`);
     return parts.length ? `Wchodzi ${parts.join(', ')}` : '';
   })();
-  return [keywordLine, spellLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, entersCountersLine, landLine].filter(Boolean).join(' · ');
+  return [keywordLine, spellLine, toughnessDamageLine, surgeLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, entersCountersLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -1812,7 +1832,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_optional_trigger_choice: 'Efekt dobrowolny („you may")',
   resolve_enter_as_copy: 'Wejście jako kopia — który Ally?',
   resolve_destroy_equipment_choice: 'Zniszczyć equipment?',
-  resolve_replacement_choice: 'Tarcza czy regeneracja?',
+  resolve_replacement_choice: 'Wybierz efekt zastępczy',
   resolve_land_type_choice: 'Typ landa',
   resolve_library_placement: 'Wierzch czy spód biblioteki',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
@@ -1966,7 +1986,9 @@ function choiceSourceTitle(cmd, session, view) {
   if (!object) return null;
   // M87: tytuł idzie i do innerHTML przycisku, i do textContent nagłówka
   // modala — escapeHtml dawał „Hunter&#39;s Blowgun" w oknie wyboru.
-  const name = session.nameOf(object.cardId);
+  const name = session.nameOf(object.cardId)
+    + (cmd.type === 'cast_spell' && cmd.kicked ? ' (kicker)' : '')
+    + (cmd.surgeCast ? ' (surge)' : '');
   // M202/D+M (zgłoszenie właściciela, Ruthless Invasion i Porcelain Legionnaire):
   // warianty zapłaty many phyrexian ({W/P} — mana ALBO 2 życia) grupują się po
   // karcie, ale tytuł spadał do generycznego „Wybierz: Zapłata: mana czy życie?”
@@ -2034,7 +2056,7 @@ function choiceSourceTitle(cmd, session, view) {
   // „Wybierz: Wariant (N opcji)" i gracz nie wiedział, czego dotyczy wybór.
   if (cmd.type === 'activate_ability'
     && (cmd.tapOtherCreatureId != null || cmd.tapCreatureId != null || cmd.crewCreatureIds?.length
-      || cmd.sacrificeLandId != null)) {
+      || cmd.sacrificeLandId != null || cmd.sacrificeCreatureId != null)) {
     return `Aktywuj: ${name}`;
   }
   return null;
@@ -2059,6 +2081,11 @@ const CHOICE_GROUP_PENDING_SOURCE = Object.freeze({
 
 export function choiceGroupTitle(request, session, view) {
   const options = request?.options ?? [];
+  const discard = view?.pendingDiscardChoice;
+  if (options[0]?.type === 'resolve_discard_choice' && discard?.count > 1 && !discard.allowDecline) {
+    const source = discard.sourceCardId ? `${session.nameOf(discard.sourceCardId)} — ` : '';
+    return `${source}${discard.purpose === 'cost' ? 'koszt: ' : ''}odrzuć ${discard.count} ${polishPluralCount(discard.count, 'kartę', 'karty', 'kart')}`;
+  }
   const titled = choiceSourceTitle(options[0], session, view);
   if (titled) return titled;
   const descriptor = CHOICE_GROUP_TYPE_DESCRIPTORS[request?.type]
@@ -2357,6 +2384,14 @@ export function commandLabel(cmd, session, view) {
           ? manaCostHtml(costSymbols(card.bestow.cost, card.bestow.colors)) : '?';
         return `Zagraj za bestow: ${nameOfObjectId(cmd.objectId)} (koszt ${bestowCost}) → zaczaruj ${host}`;
       }
+      // M223 (audyt Batch 50, Jwar Isle Avenger): surge to alternatywny,
+      // TAŃSZY koszt — bez własnej etykiety wyglądał identycznie jak zwykły
+      // rzut, więc gracz nie odróżniał wariantów (oś 2 audytu). Format jak warp.
+      if (cmd.surgeCast) {
+        const sc = card?.surge;
+        const cost = sc ? manaCostHtml(costSymbols(sc.cost, sc.colors)) : '?';
+        return `Rzuć za surge: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})${cmd.targets?.length ? ` → zaczaruj ${nameOfObjectId(cmd.targets[0])}` : ''}`;
+      }
       if (cmd.targets?.length && card?.aura) {
         const host = nameOfObjectId(cmd.targets[0]);
         return `Zagraj aurę: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)}) → zaczaruj ${host}`;
@@ -2364,14 +2399,6 @@ export function commandLabel(cmd, session, view) {
       // M268: rzut ZAKRYTY kosztuje {3} bezbarwnych niezależnie od karty
       // (CR 702.37a) — pipy koloru należą do kosztu ODKRYCIA, nie tego.
       if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost != null ? manaCostHtml(costSymbols(card.morph.cost, [])) : '?'})`;
-      // M223 (audyt Batch 50, Jwar Isle Avenger): surge to alternatywny,
-      // TAŃSZY koszt — bez własnej etykiety wyglądał identycznie jak zwykły
-      // rzut, więc gracz nie odróżniał wariantów (oś 2 audytu). Format jak warp.
-      if (cmd.surgeCast) {
-        const sc = card?.surge;
-        const cost = sc ? manaCostHtml(costSymbols(sc.cost, sc.colors)) : '?';
-        return `Rzuć za surge: ${nameOfObjectId(cmd.objectId)} (koszt ${cost})`;
-      }
       // Phyrexian mana (CR 118.9): gracz wybiera, ile symboli {W/P} opłaci
       // 2 życiem (reszta z many) — wariant komendy cast_permanent.
       if (cmd.phyrexianPayWithLife != null) {
@@ -2616,6 +2643,7 @@ export function commandLabel(cmd, session, view) {
       // M160/B2 (Seismic Monstrosaur): koszt „poświęć ląd” enumeruje wariant
       // per ląd — etykieta MUSI nazwać, który ląd ginie (poświęcenie to
       // koszt, CR 601.2h; sześć identycznych wpisów było nierozróżnialnych).
+      const sacCreaturePart = cmd.sacrificeCreatureId != null ? ` — poświęć: ${nameOfObjectId(cmd.sacrificeCreatureId)}` : '';
       const sacLandPart = cmd.sacrificeLandId != null ? ` — poświęć: ${nameOfObjectId(cmd.sacrificeLandId)}` : '';
       // M101/B7: nazwij AKCJĘ, którą gracz wykonuje (crew albo saddle — nie
       // oba naraz), i powiedz wprost, że wskazane stwory zostaną TAPNIĘTE.
@@ -2629,7 +2657,7 @@ export function commandLabel(cmd, session, view) {
         ? ' — UWAGA: twoja biblioteka jest pusta, zdolność nie zadziała'
         : (abilityFizzlesOnHand(ability, view)
           ? ' — UWAGA: brak pasującej karty w ręce, zdolność nie zadziała' : '');
-      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${sacLandPart}${crewPart}${emptyLibWarn}`;
+      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${sacLandPart}${sacCreaturePart}${crewPart}${emptyLibWarn}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));
@@ -3040,6 +3068,7 @@ export function commandLabel(cmd, session, view) {
       return `Ucieczka (Escape): wygnij ${count} ${polishPluralCount(count, 'kartę', 'karty', 'kart')}`;
     }
     case 'resolve_discard_choice': {
+      if (Array.isArray(cmd.cardIds)) return `Odrzuć: ${cmd.cardIds.map(id => nameOfObjectId(id)).join(', ')}`;
       // M109 (Nightsnare): „You may choose" — rezygnacja z wyboru.
       if (cmd.cardId == null) return 'Nie wskazuj karty (przeciwnik odrzuci dwie wedle wyboru)';
       // M109: karta z ODSŁONIĘTEJ ręki przeciwnika jest w PlayerView ukryta
@@ -3134,6 +3163,7 @@ export function commandLabel(cmd, session, view) {
     // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — etykieta nazywa
     // kartę, żeby w modalu było widać, o który permanent chodzi.
     case 'resolve_replacement_choice':
+      if (cmd.choice?.startsWith('umbra:')) return `Umbra armor: zniszcz ${nameOfObjectId(cmd.choice.slice(6))} zamiast ${nameOfObjectId(cmd.objectId)}`;
       return cmd.choice === 'shield'
         ? `Zdejmij licznik tarczy (${nameOfObjectId(cmd.objectId)})`
         : `Regeneruj (${nameOfObjectId(cmd.objectId)})`;
@@ -3331,6 +3361,9 @@ export function cardInfo(session, object, combat = null) {
     saddledNow: Boolean(object.saddled),
     untapLockedNow: Boolean(object.untapLocked || object.dontUntapNextUntapStep),
     tempControlNow: Boolean(object.tempControlUntilEOT),
+    linkedAnimationLabel: object.linkedAnimationSource
+      ? `animowany przez ${object.linkedAnimationSource.cardId ? session.nameOf(object.linkedAnimationSource.cardId) : 'zakrytą kartę'}`
+      : null,
     cantRegenerateNow: Boolean(object.cantBeRegeneratedThisTurn),
     // M258/K2 (zgłoszone w audycie M257; CR 202.3b): mana value permanentu
     // z TYLNĄ twarzą DFC w górę = koszt twarzy PRZEDNIEJ (tył nie ma
@@ -3626,6 +3659,7 @@ export function buildStateOverlay(visual, info) {
     if (info.saddledNow) flags.push(['kw', 'osiodłany']);
     if (info.untapLockedNow) flags.push(['kw', 'nie odtapuje się']);
     if (info.tempControlNow) flags.push(['kw', 'kontrola do końca tury']);
+    if (info.linkedAnimationLabel) flags.push(['kw', info.linkedAnimationLabel]);
     if (info.cantRegenerateNow) flags.push(['kw', 'bez regeneracji']);
     {
       const sign = (n) => (n > 0 ? `+${n}` : `${n}`);

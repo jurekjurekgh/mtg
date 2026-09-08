@@ -1,3 +1,4 @@
+import { holdReplacementResolution } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { singleTargetOfStackEntry } from './objects.js';
 import {
@@ -101,6 +102,13 @@ function isPlayerId(state, id) {
 /** Czy warunek triggera (np. „no spells were cast last turn") jest spełniony. */
 function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   const condition = trigger?.condition ?? {};
+  // Coven (CR 603.4): aktualne efektywne moce; ten sam predykat przy
+  // wyzwoleniu i resolution. Nie zapamiętujemy trójki stworów.
+  if (condition.distinctCreaturePowersAtLeast != null) {
+    const powers = new Set(creaturesYouControl(state, sourceObject.controllerId)
+      .map(object => effectivePower(object, state)));
+    if (powers.size < condition.distinctCreaturePowersAtLeast) return false;
+  }
   if (condition.noSpellsLastTurn) return state.lastTurnSpellsCast === 0;
   // M158/Batch 39 (Exterminator Magmarch): warunki multiplayer („if ANOTHER
   // opponent ...") są w 1v1 martwe z definicji formatu (jest dokładnie jeden
@@ -337,8 +345,9 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     return players;
   }
   if (spec.type === 'opponent') {
-    const opponentId = state.players.find((p) => p.id !== sourceObject.controllerId)?.id ?? null;
-    return opponentId ? [opponentId] : [];
+    // CR 603.3d / Oracle ‘target opponent’: wybór spośród przeciwników,
+    // nie tylko pierwszy gracz (1v1 pozostaje identyczne).
+    return state.players.filter(p => p.id !== sourceObject.controllerId).map(p => p.id);
   }
   if (spec.type === 'creature_card_in_opponent_graveyard') {
     // Puppeteer Clique: karty-stwory z grobu PRZECIWNIKA — najsilniejszy
@@ -996,7 +1005,7 @@ export function resolveTriggerEntry(state, entry) {
   // znanej informacji zamiast produkować NaN.
   const lki = payload.sourceLki ?? {};
   const printLki = payload.printLki ?? null;
-  const source = liveSource ?? Object.freeze({
+  const sourceCharacteristics = liveSource ?? Object.freeze({
     id: payload.sourceId, controllerId: entry.controllerId,
     cardId: entry.cardId, zone: 'none', kind: null,
     power: lki.power, toughness: lki.toughness,
@@ -1023,6 +1032,8 @@ export function resolveTriggerEntry(state, entry) {
     }) : null,
     counters: {}, formerCounters: {}, keywords: [], abilities: [], types: [],
   });
+  // CR 109.5: zmiana kontrolera permanenta nie zmienia „you” na triggerze.
+  const source = Object.freeze({ ...sourceCharacteristics, controllerId: entry.controllerId });
   // Zdolność opuszcza stos w momencie rozstrzygania.
   state.zones.stack = state.zones.stack.filter((id) => id !== entry.id);
   state.objects.delete(entry.id);
@@ -1218,6 +1229,9 @@ export function resolveTriggerEntry(state, entry) {
   // wydarzyło (zerowy wynik)" — gracz miał prawo sądzić, że zdolność
   // przepadła. Efekt, który świadomie nic nie zmienia, bo stan JUŻ jest
   // docelowy, raportujemy jako zwykłe rozstrzygnięcie.
+  if (holdReplacementResolution(state,entry,event('trigger_resolved',{
+    objectId:entry.id,sourceId:payload.sourceId,cardId:entry.cardId,trigger:payload.ability?.trigger?.event??null,
+  }))) return state.events.slice(before);
   const producedNothing = state.events.length === beforeEffects;
   const noOpByState = producedNothing
     && applyTriggerEffectsWereNoOp(state, payload.ability, payload.targets ?? [], source);

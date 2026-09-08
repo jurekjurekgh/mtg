@@ -190,10 +190,12 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // CR 110.6/400.7: tapnięcie to status PERMANENTU — istnieje wyłącznie na
     // polu bitwy. Nowy obiekt nie pamięta poprzedniego istnienia, a permanent
     // wchodzi na pole bitwy nietapnięty (CR 110.6b), chyba że efekt wprost
-    // każe inaczej (entersTapped ustawia tapnięcie PO przeniesieniu).
+    // każe inaczej. CR 603.6d: bezwarunkowe entersTapped jest częścią
+    // wejścia (także reanimacji), nie triggerem. Warunkowe landy nadal
+    // rozstrzyga playLand po przeniesieniu.
     // Bez tego stwór odbity na rękę wracał na stół tapnięty, a reanimacja
     // tapniętego stwora dawała tapnięty permanent.
-    tapped: false,
+    tapped: toZone === 'battlefield' && Boolean(object.entersTapped) && !object.entersTappedCondition && !object.faceDown,
     counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
     goaded: false, goadedUntilTurn: null, hexproofUntilTurn: null,
     // CR 400.7: flagi opisujące HISTORIĘ permanentu w tej turze też nie

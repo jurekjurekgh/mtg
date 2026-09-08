@@ -116,7 +116,7 @@ test('bramka na grach: remis play_land tylko przy równych wejściach wyceny', (
   // Pary talii spoza próbki benchmarku; 2 partie wystarczają, by wejść w setki
   // decyzji, a trzymają test w szybkim tierze (ADR 0019).
   const { global, rows } = audytRemisow({
-    pary: [['ravnica', 'innistrad-wu'], ['wiedzmin', 'tarkir-bg'], ['srodziemie', 'theros']],
+    pary: [['ravnica', 'innistrad-wu'], ['wiedzmin-brg', 'tarkir-bg'], ['srodziemie', 'theros']],
     gry: 1,
   });
   const lad = rows.find((r) => r.kind === 'play_land');

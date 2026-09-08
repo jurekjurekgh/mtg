@@ -131,7 +131,7 @@ test('projekcja walki istnieje — bez niej bramka milczałaby zamiast mierzyć'
 test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany', () => {
   const { global, rows } = audytRemisow({ pary: [
     ['ravnica', 'innistrad-wu'], ['dominaria-brg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ubr'],
-    ['wiedzmin', 'tarkir-bg'], ['srodziemie', 'theros'], ['kaladesh', 'zendikar'],
+    ['wiedzmin-brg', 'tarkir-bg'], ['srodziemie', 'theros'], ['kaladesh', 'zendikar'],
     ['dominaria-wu', 'worek-mroczny'],
   ], gry: 1 });
   const dla = (k) => rows.find((r) => r.kind === k) ?? { rozroznialne: 0, akcyjne: 0, noOp: 0 };

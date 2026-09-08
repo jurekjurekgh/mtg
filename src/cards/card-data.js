@@ -1618,13 +1618,8 @@ export const REAL_CARDS = Object.freeze([
     types: ['Enchantment'], colors: ['U'], manaCost: 2,
     oracleText: "Enchant creature\nEnchanted creature doesn't untap during its controller's untap step.\nWhen enchanted creature becomes the target of a spell, sacrifice this Aura.",
     imageUri: 'https://cards.scryfall.io/large/front/8/9/89d141bc-7307-40c2-a7ed-427caaec5efc.jpg?1783940711',
-    aura: { keywords: [] },
+    aura: { keywords: [], doesntUntap: true },
     abilities: [
-      createAbility({
-        type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield' },
-        effect: { type: 'lock_untap' },
-      }),
       createAbility({
         type: ABILITY_TYPE.triggered,
         trigger: { event: 'aura_host_targeted_by_spell' },
@@ -1634,7 +1629,7 @@ export const REAL_CARDS = Object.freeze([
     artId: 181,
     plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
-    notes: ['lock_untap: zablokowane do końca tury (jak Entrancing Lyre); sacrifice on targeting przez aura_host_targeted_by_spell trigger'],
+    notes: ['Stała blokada wyłącznie kroku odkręcania; sacrifice on targeting przez aura_host_targeted_by_spell trigger'],
   }),
 
   // 3. Raucous Carnival (DSK) — Conditional entersTapped based on life
@@ -3721,7 +3716,7 @@ export const REAL_CARDS = Object.freeze([
       modes: [
         { name: 'Zniszcz artefakt', targets: [{ type: 'artifact' }], effects: [{ type: 'destroy_permanent' }] },
         { name: 'Zniszcz ląd', targets: [{ type: 'land' }], effects: [{ type: 'destroy_permanent' }] },
-        { name: 'Zniszcz oba', targets: [{ type: 'artifact' }, { type: 'land' }], effects: [{ type: 'destroy_permanent', targetIndex: 0 }, { type: 'destroy_permanent', targetIndex: 1 }] },
+        { name: 'Zniszcz oba', targets: [{ type: 'artifact' }, { type: 'land' }], effects: [{ type: 'destroy_permanent', targetIndices: [0, 1] }] },
       ],
     },
     artId: 499,
@@ -8613,7 +8608,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     spell: {
       timing: 'instant',
       targets: [{ type: 'spell_on_stack' }],
-      effects: [{ type: 'counter_spell_unless_pays', amount: 1 }],
+      effects: [{ type: 'counter_spell_unless_pays', amount: 1, discardCount: 1 }],
     },
     artId: 256, plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
@@ -9406,7 +9401,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   // 4. Frost Lynx (M15) — ETB: tapnij stwora wroga; nie odkręci się
-  //    w jego najbliższym kroku odkręcania (tap + lock_untap, wzorzec Liry).
+  //    w jego najbliższym kroku odkręcania (tap + jednorazowa blokada).
   defineCard({
     id: 'frost-lynx', name: 'Frost Lynx', set: 'M15',
     types: ['Creature'], subtypes: ['Elemental', 'Cat'], colors: ['U'],
@@ -9419,7 +9414,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_opponent_controls' } },
         effect: [
           { type: 'tap_permanent' },
-          { type: 'lock_untap' },
+          { type: 'dont_untap_next_untap_step' },
         ],
       }),
     ],
@@ -10606,6 +10601,126 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['enters-with liczy INNE stwory przy każdym wejściu (CR 121.6), także reanimacja; plot obsługuje ścieżka cast_permanent (exile z ręki i późniejszy rzut bez many)'],
   }),
 
+  // Batch 54 — dokładne druki i rulingi zweryfikowane 2026-09-08.
+  defineCard({
+    id: 'rotting-legion', name: "Rotting Legion", set: 'M11',
+    types: ["Creature"], colors: ["B"], manaCost: 5,
+    subtypes: ["Zombie"], power: 4, toughness: 5,
+    oracleText: "This creature enters tapped.",
+    imageUri: "https://cards.scryfall.io/large/front/b/f/bfe5e62c-83ce-4c2b-a745-acd7670e115d.jpg?1783941812",
+    entersTapped: true,
+    artId: 600, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'vampires-bite', name: "Vampire's Bite", set: 'ZEN',
+    types: ["Instant"], colors: ["B"], manaCost: 1,
+    oracleText: "Kicker {2}{B} (You may pay an additional {2}{B} as you cast this spell.)\nTarget creature gets +3/+0 until end of turn. If this spell was kicked, that creature gains lifelink until end of turn. (Damage dealt by the creature also causes its controller to gain that much life.)",
+    imageUri: "https://cards.scryfall.io/large/front/6/4/6460a752-e5a7-4fd0-9ae5-e0773b86f19b.jpg?1783942147",
+    kicker: { cost: 3, colors: ['B'] },
+    spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [
+      { type: 'pump', power: 3, toughness: 0 },
+      { type: 'grant_keywords_until_end_of_turn', keywords: ['lifelink'], condition: { wasKicked: true } },
+    ] },
+    artId: 604, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'skymarch-bloodletter', name: "Skymarch Bloodletter", set: 'M19',
+    types: ["Creature"], colors: ["B"], manaCost: 3,
+    subtypes: ["Vampire", "Soldier"], power: 2, toughness: 2,
+    oracleText: "Flying\nWhen this creature enters, target opponent loses 1 life and you gain 1 life.",
+    imageUri: "https://cards.scryfall.io/large/front/2/c/2c7f2740-a193-4b4c-af00-2dd22d74a4ba.jpg?1783934563",
+    keywords: ['flying'],
+    abilities: [createAbility({
+      type: ABILITY_TYPE.triggered,
+      trigger: { event: 'enter_battlefield', requiresTarget: { type: 'opponent' } },
+      effect: [ { type: 'lose_life', amount: 1, scope: 'target' }, { type: 'gain_life', amount: 1 } ],
+    })],
+    artId: 608, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'abstruse-interference', name: 'Abstruse Interference', set: 'OGW',
+    types: ['Instant'], colors: [], keywords: ['devoid'], manaCost: 3,
+    oracleText: "Devoid (This card has no color.)\nCounter target spell unless its controller pays {1}. You create a 1/1 colorless Eldrazi Scion creature token. It has \"Sacrifice this token: Add {C}.\" ({C} represents colorless mana.)",
+    imageUri: "https://cards.scryfall.io/large/front/2/4/249a7be3-311e-4ce6-97dc-97242463ae23.jpg?1783937922",
+    spell: { timing: 'instant', targets: [{ type: 'spell_on_stack' }], effects: [
+      { type: 'counter_spell_unless_pays', amount: 1 },
+      { type: 'create_token', cardId: 'token_eldrazi_scion', name: 'Eldrazi Scion',
+        kind: 'creature', power: 1, toughness: 1, colors: [],
+        types: ['Creature'], subtypes: ['Eldrazi', 'Scion'],
+        abilities: [createAbility({ type: ABILITY_TYPE.activated,
+          cost: { sacrificeSelf: true }, effect: { type: 'add_mana', amount: 1 } })],
+      },
+    ] },
+    artId: 602, plan: 'Zendikar', support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'kheru-dreadmaw', name: 'Kheru Dreadmaw', set: 'KTK',
+    types: ['Creature'], subtypes: ['Zombie', 'Crocodile'], colors: ['B'],
+    power: 4, toughness: 4, manaCost: 5, keywords: ['defender'],
+    oracleText: "Defender\n{1}{G}, Sacrifice another creature: You gain life equal to the sacrificed creature's toughness.",
+    imageUri: "https://cards.scryfall.io/large/front/e/8/e8b10468-18b8-4321-a791-0cbd18ea9c4d.jpg?1783939080",
+    abilities: [createAbility({ type: ABILITY_TYPE.activated,
+      cost: { mana: 2, colors: ['G'], sacrificeCreature: { another: true } },
+      effect: { type: 'gain_life', amountFromSacrificedToughness: true },
+    })],
+    artId: 603, plan: 'Tarkir', support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: "candlegrove-witch", name: "Candlegrove Witch", set: "MID",
+    types: ["Creature"], subtypes: ["Human", "Warlock"], colors: ["W"],
+    manaCost: 2,
+    oracleText: "Coven — At the beginning of combat on your turn, if you control three or more creatures with different powers, this creature gains flying until end of turn.",
+    imageUri: "https://cards.scryfall.io/large/front/d/e/dedfe6ea-cd43-4ec4-83a1-1f0f74e27f56.jpg?1783925665",
+    power: 2, toughness: 2,
+    abilities: [createAbility({ type: ABILITY_TYPE.triggered,
+      trigger: { event: 'beginning_of_combat', condition: { distinctCreaturePowersAtLeast: 3 } },
+      effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['flying'] },
+    })],
+    artId: 599, plan: "Wiedźmin", support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: "consign-to-dream", name: "Consign to Dream", set: "SHM",
+    types: ["Instant"], subtypes: [], colors: ["U"],
+    manaCost: 3,
+    oracleText: "Return target permanent to its owner's hand. If that permanent is red or green, put it on top of its owner's library instead.",
+    imageUri: "https://cards.scryfall.io/large/front/5/e/5e866d86-5bfa-473d-be17-d8f4aea70ddb.jpg?1783942762",
+    spell: { timing: 'instant', targets: [{ type: 'permanent' }], effects: [
+      { type: 'bounce_permanent', libraryTopIfColors: ['R', 'G'] },
+    ] },
+    artId: 605, plan: "Lorwyn", support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'exploding-borders', name: 'Exploding Borders', set: 'CON',
+    types: ['Sorcery'], subtypes: [], colors: ["G", "R"], manaCost: 4,
+    oracleText: "Domain — Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle. Exploding Borders deals X damage to target player or planeswalker, where X is the number of basic land types among lands you control.", imageUri: "https://cards.scryfall.io/large/front/f/2/f247aaaf-4d65-4dfc-bab2-3c1331762647.jpg?1783942469",
+    spell: { timing: 'sorcery', targets: [{ type: 'player_or_planeswalker' }], effects: [
+      { type: 'search_library_to_battlefield', qualifier: { types: ['Basic', 'Land'] }, entersTapped: true },
+      { type: 'damage', amount: 'basic_land_types_you_control' },
+    ] },
+    artId: 601, plan: 'Alara', support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'treefolk-umbra', name: 'Treefolk Umbra', set: 'MH1',
+    types: ['Enchantment'], colors: ['G'], manaCost: 3,
+    oracleText: "Enchant creature\nEnchanted creature gets +0/+2 and assigns combat damage equal to its toughness rather than its power.\nUmbra armor (If enchanted creature would be destroyed, instead remove all damage from it and destroy this Aura.)", imageUri: "https://cards.scryfall.io/large/front/6/7/677166cf-4e1e-43ac-a67b-afaf33c0d14e.jpg?1783933088",
+    aura: { pump: { power: 0, toughness: 2 }, combatDamageByToughness: true, umbraArmor: true },
+    artId: 606, plan: 'Śródziemie', support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'containment-membrane', name: 'Containment Membrane', set: 'OGW',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 3,
+    oracleText: "Surge {U} (You may cast this spell for its surge cost if you or a teammate has cast another spell this turn.)\nEnchant creature\nEnchanted creature doesn't untap during its controller's untap step.", imageUri: "https://cards.scryfall.io/large/front/4/9/49dd3963-a4d7-4992-b6f8-753996390bbf.jpg?1783937919",
+    surge: { cost: 1, colors: ['U'] }, aura: { doesntUntap: true },
+    artId: 607, plan: 'Wiedźmin', support: { status: 'supported', limitations: [] },
+  }),
 
 ]);
 

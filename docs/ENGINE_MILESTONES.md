@@ -4662,3 +4662,69 @@ Bramki: `npm test` **4432/4432**, `test:all` **4442/4442**, build
 **59 modułów / 3257,4 kB**; bot-benchmark 10/10. Commity `6f91045`,
 `54da590`. Przy okazji split Warhammera (ubr/wg, ADR 0024) i migracja
 odwołań do starych talii.
+
+## Batch 54 (2026-09-08) — checkpoint, nie zakończenie
+
+B0–B2 planu `docs/plans/PLAN_2026-09-08-batch54-599-608.md`: pięć z dziesięciu
+wskazanych kart. Generyczny koszt poświęcenia innego stwora z LKI, jawny
+rider kontry, okno mana abilities przy dopłacie, rozdzielenie płatności
+kickera w kreatorze i kontrolera zdolności od bieżącej kontroli źródła.
+B3–B5 otwarte. Stan GitHub/lokalny, blokada autoryzacji i pomiary:
+`docs/setup/HANDOFF_2026-09-08d.md`.
+
+
+### Batch 54 B3a — coven i conditional bounce, 7/10
+
+Wspólny `distinctCreaturePowersAtLeast` w warunkach triggerów (oba sprawdzenia,
+efektywne moce); `permanent` w ofertach/walidacji czarów oraz
+`bounce_permanent.libraryTopIfColors` przed zmianą strefy. Zachowane owner,
+nowe ID i wspólne efekty powrotu. UI początku walki nie gubi warunku.
+B54 55/55, 4/4 mutacje, fast4845/4845, build59/3409,6 kB.
+GitHub działa; poprzednia blokada była historyczna. B3b/B4/B5 w toku,
+nie zakończenie batcha. HANDOFF_2026-09-08e.md.
+
+
+### Batch54 B3b — domain i skutki obrażeń PW, 8/10
+
+Search kontynuuje damage po decyzji; distinct basic land types liczone
+na stanie w resolution. Target player/PW, loyalty i SBA0, bez nowych kart PW.
+Wspólny helper prewencji shield przed eventem oraz lifelink/infect, oba
+kierunki combat i noncombat. UI stref oraz search, jawna wycena domain.
+B54 71/71, 7mutacji RED, golden bez rebaseline. B4/B5 nadal otwarte;
+HANDOFF_2026-09-08f.md i plan zawierają uwagi z live i kolejną gałąź SBA
+do sprawdzenia przy umbra armor.
+
+
+### Batch54 B4a — surge aur i blokady untap step, 9/10
+
+Membrane607, płatności/kolory/wizard, flash i okno exile. Prison static,
+Lynx next-step, Lyre nieprzerwany czas (LKI + wersja untap); stun bez regresji.
+22 testy aur, 6 mutacji; fast4883/4883, build59/3420,6kB. Golden przyjęty
+po izolacji dwóch korekt Oracle, bez zmiany wag/progów. 464art/24talie;
+Wiedźmin WU/BRG zgodnie z generatorem. B4b/B5 nadal otwarte, handoff g.
+
+
+### Batch54 B4b.1 — shield: effect destroy ≠ lethal SBA
+
+Usunięta błędna ochrona i wybór shield/regenerate w lethal SBA; nie mylić
+z poprawną prewencją obrażeń B3b. Destroy efektem używa removeCounter.
+5nowych testów,2mutacje,fast4888/4888,build59/3418,5kB. Nadal9/10,
+Umbra/realny wybór replacement/wznowienia list efektów i B5 otwarte (handoff h).
+
+
+### Batch54 B4b — Treefolk Umbra, 10/10 definicji
+
+Armor/grupowe destroy i rzeczywisty wybór controller/APNAP; serializowalne
+kontynuacje resolution i first strike. Oddzielna miara combat/T, power/fight
+bez zmiany, UI/bot.32testy/6mutacji,fast4920/all4930,build60/3427,4kB,
+golden bez zmiany. B5 końcowa weryfikacja nadal trwa.
+
+
+### Batch54 B5 — integracja zamknięta, 10/10 kart
+
+Koniec combat po armor/podziale, bez podwójnego ruchu zwykłej aury, APNAP,
+projekcje bota według toughness. Kreator many nie uruchamia auto-pass podczas
+zbierania płatności (live10607 + test sesji i UI). Umbra38/38; fast4928,
+all4938, build60/3428,4kB, quick84,8%. Golden zmienia tylko2 etykiety kroku,
+bez zmiany punktacji/komend; dowód izolacji i triage starych kart w
+`docs/audits/BATCH54_INTEGRATION_2026-09-08.md`. PR106 czeka na właściciela.

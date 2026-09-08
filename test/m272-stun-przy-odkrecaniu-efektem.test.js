@@ -17,7 +17,7 @@ import { untapObject } from '../src/engine/permanents.js';
  * a spell or ability trying to untap it").
  *
  * PIĘĆ ścieżek efektów odkręcających mutowało `tapped: false` ręcznie,
- * omijając zarówno licznik stun, jak i blokadę odkręcania (`untapLockedBy`).
+ * omijając licznik stun. Blokada untap step nie dotyczy efektów (B54/CR502.3).
  * Stwór ze stunem wstawał za darmo, zachowując licznik.
  *
  * Strażnik KLASOWY: porównuje każdą ścieżkę z zachowaniem wzorcowego helpera.
@@ -107,11 +107,11 @@ test('KLASA: kontrola negatywna — bez stunu permanent normalnie wstaje', () =>
   }
 });
 
-test('KLASA: blokada odkręcania (untapLockedBy) też obowiązuje efekty', () => {
+test('KLASA: blokada untap step (untapLockedBy) NIE obowiązuje efektów', () => {
   for (const [nazwa, wykonaj] of sciezki) {
     const state = stan({ lock: true });
     wykonaj(state);
-    assert.equal(state.objects.get('c').tapped, true, `${nazwa}: blokada trzyma`);
+    assert.equal(state.objects.get('c').tapped, false, `${nazwa}: efekt odkręca mimo blokady untap step`);
   }
 });
 

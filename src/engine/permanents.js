@@ -7,8 +7,51 @@ import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProte
 // combat.js, effects.js i spells.js (i żeby nie robić cyklu importów).
 export { effectiveColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality };
 
+/** CR 306: także permanent o kilku typach, ale nie karta zakryta. */
+export function isPlaneswalker(object) {
+  return Boolean(object && !object.faceDown
+    && (object.kind === 'planeswalker' || (object.types ?? []).includes('Planeswalker')));
+}
+
+/** Domain: wejście to publiczne permanenty pola bitwy (stan albo PlayerView).
+ * CR 305.6 / ruling CON: liczymy odrębne podstawowe PODTYPY, nie supertyp Basic.
+ */
+export function basicLandTypeCount(battlefield, controllerId) {
+  const basics = new Set(['Plains', 'Island', 'Swamp', 'Mountain', 'Forest']);
+  const found = new Set();
+  for (const object of battlefield) {
+    if (!object || object.controllerId !== controllerId
+        || !(object.kind === 'land' || (object.types ?? []).includes('Land'))) continue;
+    for (const subtype of effectiveSubtypes(object)) if (basics.has(subtype)) found.add(subtype);
+  }
+  return found.size;
+}
+
+/** Prewencja licznika shield, wspólna dla pipeline i markDamage. */
+export function preventDamageWithShieldCounter(state, objectId, amount) {
+  const object = state.objects.get(objectId);
+  if (!(amount > 0) || !object || (object.counters?.shield ?? 0) <= 0) return 0;
+  removeCounter(state, objectId, 'shield', 1);
+  state.events.push(event('shield_consumed', { objectId, cardId: object.cardId, reason: 'damage' }));
+  state.events.push(event('damage_prevented', { objectId, cardId: object.cardId, amount, shieldCounter: true }));
+  return amount;
+}
+
+/** CR120.3c: niezależny skutek obrażeń (także creature/PW), już po prewencji.
+ * Nie ma ujemnych liczników — zdejmujemy najwyżej aktualną lojalność. */
+export function removeLoyaltyForDamage(state, object, amount) {
+  if (!isPlaneswalker(object)) return object;
+  const lost = Math.min(amount, object.counters?.loyalty ?? 0);
+  return lost > 0 ? removeCounter(state, object.id, 'loyalty', lost) : object;
+}
+
 export function replaceObject(state, object, patch) {
-  const updated = Object.freeze({ ...object, ...patch });
+  // Ciągłość „for as long as ... remains tapped” (CR611.2b). Stun nie
+  // odkręca, więc nie zwiększa wersji. Nowy obiekt po zmianie strefy = nowe ID.
+  const untap = object.zone === 'battlefield' && object.tapped && patch.tapped === false;
+  const updated = Object.freeze({ ...object, ...patch,
+    ...(untap ? { untapVersion: (object.untapVersion ?? 0) + 1 } : {}),
+  });
   state.objects.set(object.id, updated);
   return updated;
 }
@@ -24,10 +67,14 @@ export function tapObject(state, objectId, playerId) {
 }
 
 /** Czy permanent nie może się odkręcić z powodu aktywnej blokady (np. Lira). */
-function isUntapLocked(state, object) {
+export function isUntapStepLocked(state, object) {
+  // Stała cecha załącznika, nie ETB trigger; tylko krok odkręcania.
+  if (attachmentsAttachedTo(state, object.id).some(a => attachmentGrant(a)?.doesntUntap)) return true;
   return (object.untapLockedBy ?? []).some((sourceId) => {
     const source = state.objects.get(sourceId);
     if (!source || source.zone !== 'battlefield') return false;
+    const version = object.untapLockVersions?.[sourceId];
+    if (version != null && version !== (source.untapVersion ?? 0)) return false;
     // Lira: blokada działa, gdy źródło jest zatapnięte.
     if (source.tapped) return true;
     // Aura lock (Spectral Prison): blokada działa zawsze, gdy źródło jest
@@ -45,7 +92,9 @@ function isUntapLocked(state, object) {
 function isActiveLockSource(state, objectId) {
   for (const object of state.objects.values()) {
     if (object.zone !== 'battlefield') continue;
-    if ((object.untapLockedBy ?? []).includes(objectId)) return true;
+    if ((object.untapLockedBy ?? []).includes(objectId)
+      && (object.untapLockVersions?.[objectId] == null
+        || object.untapLockVersions[objectId] === (state.objects.get(objectId)?.untapVersion ?? 0))) return true;
   }
   return false;
 }
@@ -56,13 +105,13 @@ function isActiveLockSource(state, objectId) {
  * odkręcania i wymaga zgodności kontrolera.
  *
  * M272 (błąd #18): pięć ścieżek efektów odkręcających mutowało `tapped: false`
- * RĘCZNIE, przez co omijały DWIE reguły, które zna `untapObject`:
+ * RĘCZNIE, przez co omijały regułę stun, którą zna `untapObject`:
  *  - CR 122.1d/614.6 — licznik stun ZASTĘPUJE odkręcenie („instead remove a
  *    stun counter"), i to przy odkręceniu z DOWOLNEGO powodu, nie tylko
  *    w kroku odkręcania. Stwór ze stunem wstawał więc z Twiddle/Village
  *    Bell-Ringer za darmo, zachowując licznik;
- *  - blokada odkręcania (`untapLockedBy`: Spectral Prison, Lira) — permanent
- *    „nie odkręca się" wstawał mimo aktywnej blokady.
+ *  Blokada „during its controller’s untap step” NIE dotyczy odkręcania
+ *  efektem (Oracle Membrane/Prison/Lyre). Stun działa z dowolnego powodu.
  *
  * Zwraca true, gdy permanent FAKTYCZNIE się odkręcił (zdarzenie
  * `object_untapped` wyemitowane) — zdjęcie licznika stun to nie odkręcenie,
@@ -71,7 +120,6 @@ function isActiveLockSource(state, objectId) {
 export function untapByEffect(state, objectId, playerId = null) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || !object.tapped) return false;
-  if (isUntapLocked(state, object)) return false;
   if ((object.counters ?? {}).stun > 0) {
     removeCounter(state, objectId, 'stun', 1);
     return false;
@@ -87,7 +135,7 @@ export function untapObject(state, objectId, playerId) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) throw new Error('Nie można untapować tego obiektu');
   if (!object.tapped) return object;
-  if (isUntapLocked(state, object)) return object;
+  if (isUntapStepLocked(state, object)) return object;
   // Stun counters (Lodestone Needle): jeśli permanent ma liczniki stun,
   // zamiast odkręcenia zdejmij jeden licznik stun (CR 122.1b).
   if ((object.counters ?? {}).stun > 0) {
@@ -137,7 +185,7 @@ export function untapControlled(state, playerId) {
         continue; // odkręcony — flaga zużyta bez skutku (nie ma czego odkręcać)
       }
       // Zablokowane stworzenie (np. przez Entrancing Lyre) nie odkręca się.
-      if (cured.tapped && isUntapLocked(state, cured)) continue;
+      if (cured.tapped && isUntapStepLocked(state, cured)) continue;
       // „You may choose not to untap" (Entrancing Lyre): obiekt będący
       // źródłem aktywnej blokady nie odkręca się — deterministycznie
       // zawsze wybieramy „nie odkręcaj", żeby blokada nie wygasła.
@@ -991,7 +1039,7 @@ export function markDealtDamageThisTurn(state, objectId) {
 }
 
 export function markDamage(state, objectId, amount, sourceId = null) {
-  const object = state.objects.get(objectId);
+  let object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel obrażeń');
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
   // Prewencja (CR 614): filtr „prevent all damage" — zamiast zaznaczyć
@@ -1011,12 +1059,11 @@ export function markDamage(state, objectId, amount, sourceId = null) {
       return object;
     }
   }
-  // Shield counter (CR 122.1b / Voice of the Vermin): zamiast obrażeń zdejmij 1 tarcze.
-  if (amount > 0 && (object.counters?.shield ?? 0) > 0) {
-    removeCounter(state, objectId, 'shield', 1);
-    const after = replaceObject(state, state.objects.get(objectId), {});
-    state.events.push(event('shield_consumed', { objectId, cardId: object.cardId, reason: 'damage' }));
-    return after;
+  // Ta sama prewencja także dla bezpośredniego API markDamage.
+  if (preventDamageWithShieldCounter(state, objectId, amount) > 0) return state.objects.get(objectId);
+  object = removeLoyaltyForDamage(state, object, amount);
+  if (isPlaneswalker(object) && object.kind !== 'creature') {
+    return replaceObject(state, object, { damagedThisTurn: amount > 0 || object.damagedThisTurn });
   }
   const updated = replaceObject(state, object, { damage: object.damage + amount, damagedThisTurn: true });
   state.events.push(event('damage_marked', { objectId, amount, total: updated.damage }));
@@ -1279,4 +1326,12 @@ export function animatePermanentUntilEndOfTurn(state, objectId, { power, toughne
     untilEndOfTurn: true,
   }));
   return updated;
+}
+
+/** CR510 / Treefolk Umbra: miara przydziału, nigdy zmiana prawdziwego power. */
+export function combatDamageByToughness(state, object) {
+  return attachmentsAttachedTo(state, object.id).some(a => attachmentGrant(a)?.combatDamageByToughness);
+}
+export function combatDamageAmount(object, state) {
+  return Math.max(0, combatDamageByToughness(state,object) ? effectiveToughness(object,state) : effectivePower(object,state));
 }

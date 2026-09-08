@@ -1,0 +1,42 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Candlegrove%20Witch&set=mid",
+  "print": "mid",
+  "name": "Candlegrove Witch",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Creature — Human Warlock",
+  "oracle_text": "Coven — At the beginning of combat on your turn, if you control three or more creatures with different powers, this creature gains flying until end of turn.",
+  "colors": [
+    "W"
+  ],
+  "set": "mid",
+  "set_name": "Innistrad: Midnight Hunt",
+  "collector_number": "8",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/e/dedfe6ea-cd43-4ec4-83a1-1f0f74e27f56.jpg?1783925665",
+    "normal": "https://cards.scryfall.io/normal/front/d/e/dedfe6ea-cd43-4ec4-83a1-1f0f74e27f56.jpg?1783925665"
+  },
+  "pobrano": "2026-09-08",
+  "rulings": [
+    {
+      "date": "2021-09-24",
+      "source": "wotc",
+      "comment": "For three creatures to have different powers from one another, each of their powers needs to be different. A 1/1 creature, a 2/1 creature, and another 2/1 creature aren't three creatures with different powers, even though both 2/1 creatures have different power than the 1/1 creature."
+    },
+    {
+      "date": "2021-09-24",
+      "source": "wotc",
+      "comment": "A creature has different power from another if their powers are different numbers. For example, a 1/1 creature and a 2/1 creature have different powers."
+    },
+    {
+      "date": "2021-09-24",
+      "source": "wotc",
+      "comment": "Many coven abilities, such as that of Dawnhart Wardens above, are triggered abilities with intervening if clauses. You must control three or more creatures with different powers at the time the ability triggers and at the time the ability tries to resolve. They do not, however, need to be the same set of creatures in both cases."
+    }
+  ],
+  "rulingsPobrano": "2026-09-08",
+  "rulingsSource": "https://api.scryfall.com/cards/mid/8/rulings",
+  "power": "2",
+  "toughness": "2"
+}

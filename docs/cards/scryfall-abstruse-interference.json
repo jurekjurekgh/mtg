@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Abstruse%20Interference&set=ogw",
+  "print": "ogw",
+  "name": "Abstruse Interference",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Devoid (This card has no color.)\nCounter target spell unless its controller pays {1}. You create a 1/1 colorless Eldrazi Scion creature token. It has \"Sacrifice this token: Add {C}.\" ({C} represents colorless mana.)",
+  "colors": [],
+  "set": "ogw",
+  "set_name": "Oath of the Gatewatch",
+  "collector_number": "40",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/4/249a7be3-311e-4ce6-97dc-97242463ae23.jpg?1783937922",
+    "normal": "https://cards.scryfall.io/normal/front/2/4/249a7be3-311e-4ce6-97dc-97242463ae23.jpg?1783937922"
+  },
+  "pobrano": "2026-09-08",
+  "rulings": [
+    {
+      "date": "2016-01-22",
+      "source": "wotc",
+      "comment": "You get the Eldrazi Scion even if the controller of the spell pays {1}."
+    }
+  ],
+  "rulingsPobrano": "2026-09-08",
+  "rulingsSource": "https://api.scryfall.com/cards/ogw/40/rulings"
+}

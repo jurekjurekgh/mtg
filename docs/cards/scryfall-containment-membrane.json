@@ -1,0 +1,55 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Containment%20Membrane&set=ogw",
+  "print": "ogw",
+  "name": "Containment Membrane",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Surge {U} (You may cast this spell for its surge cost if you or a teammate has cast another spell this turn.)\nEnchant creature\nEnchanted creature doesn't untap during its controller's untap step.",
+  "colors": [
+    "U"
+  ],
+  "set": "ogw",
+  "set_name": "Oath of the Gatewatch",
+  "collector_number": "52",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/9/49dd3963-a4d7-4992-b6f8-753996390bbf.jpg?1783937919",
+    "normal": "https://cards.scryfall.io/normal/front/4/9/49dd3963-a4d7-4992-b6f8-753996390bbf.jpg?1783937919"
+  },
+  "pobrano": "2026-09-08",
+  "rulings": [
+    {
+      "date": "2016-01-22",
+      "source": "wotc",
+      "comment": "Containment Membrane can target and be attached to an untapped creature. It just won't have any effect until that creature becomes tapped."
+    },
+    {
+      "date": "2016-01-22",
+      "source": "wotc",
+      "comment": "The enchanted creature can still be untapped by other spells and abilities."
+    },
+    {
+      "date": "2016-01-22",
+      "source": "wotc",
+      "comment": "For some cards, surge represents only an alternative cost, a discount that applies if you or a teammate has cast another spell this turn. Other cards, like Reckless Bushwhacker, have additional abilities or effects if you paid the surge cost to cast the spell."
+    },
+    {
+      "date": "2016-01-22",
+      "source": "wotc",
+      "comment": "The other spell that you or a teammate cast can be one that's resolved, one that was countered, or (for instants with surge) one that's still on the stack."
+    },
+    {
+      "date": "2016-01-22",
+      "source": "wotc",
+      "comment": "If an instant or sorcery spell cast for its surge cost is copied, the copy is also considered to have had its surge cost paid."
+    },
+    {
+      "date": "2016-01-22",
+      "source": "wotc",
+      "comment": "Casting a spell for its surge cost doesn't change its mana cost or its mana value."
+    }
+  ],
+  "rulingsPobrano": "2026-09-08",
+  "rulingsSource": "https://api.scryfall.com/cards/ogw/52/rulings"
+}

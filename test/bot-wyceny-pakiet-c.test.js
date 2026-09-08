@@ -4,10 +4,10 @@
 // moonlit) są decydent-only i niosą wyłącznie informację publiczną.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
+import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
-import { attachEquipmentToCreature } from '../src/engine/attachments.js';
+import { attachEquipmentToCreature, attachAuraToCreature } from '../src/engine/attachments.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 
@@ -51,8 +51,11 @@ function botChoice(state) {
 
 test('E2/C1: look_top — do ręki idzie najcenniejsza karta z wierzchu (nie pierwsza)', () => {
   const state = newState();
-  // kind przez extra — obiekt addObject jest zamrożony (mutacja w miejscu rzuca).
-  putCreature(state, 'land', 'p1', 0, 0, 'library', { manaCost: 0, cardId: 'basic-forest', kind: 'land' });
+  // Rzeczywisty ląd (putCreature celowo buduje wyłącznie stwory).
+  addObject(state, { id: 'land', instanceId: 'i-land', cardId: 'basic-forest',
+    controllerId: 'p1', zone: 'library', kind: 'land', manaCost: 0,
+    types: ['Land'], subtypes: ['Forest'], colors: ['G'], abilities: [], keywords: [] });
+  assert.equal(state.objects.get('land').kind, 'land');
   putCreature(state, 'skarb', 'p1', 5, 5, 'library', { manaCost: 2 });
   state.pendingLookTopN = { playerId: 'p1', objectIds: ['land', 'skarb'], restTo: 'graveyard', sourceCardId: null, restorePriorityTo: null };
   state.turn.priorityPlayerId = 'p1';
@@ -61,7 +64,7 @@ test('E2/C1: look_top — do ręki idzie najcenniejsza karta z wierzchu (nie pie
   assert.equal(chosen.cardId, 'skarb', `bierzemy 5/5 za 2, wybrał: ${JSON.stringify(chosen)}`);
 });
 
-test('E2/C2: hand_top — na wierzch własnej biblioteki idzie NAJCENNEJSZA karta (wróci przy dobraniu)', () => {
+test('E2/C2: hand_top — na wierzch własnej biblioteki idzie mniej cenna karta (zachowaj lepszą w ręce)', () => {
   const state = newState();
   // Baza many (L116): bez lądów cardKeepValue uzna drogiego stwora za
   // „poza zasięgiem" i wycena odwróci kierunek.
@@ -74,7 +77,7 @@ test('E2/C2: hand_top — na wierzch własnej biblioteki idzie NAJCENNEJSZA kart
   state.turn.priorityPlayerId = 'p1';
   const chosen = botChoice(state);
   assert.equal(chosen.type, 'resolve_hand_top_choice');
-  assert.equal(chosen.cardId, 'mocny', `na wierzch idzie 6/6 (to mój następny dobór), wybrał: ${JSON.stringify(chosen)}`);
+  assert.equal(chosen.cardId, 'slaby', `na wierzch idzie 1/1 (6/6 zostaje w ręce), wybrał: ${JSON.stringify(chosen)}`);
 });
 
 test('E2/C3: reveal_exile_grave — z grobu WROGA wygnaj najcenniejszą (ucina recursję)', () => {
@@ -198,3 +201,28 @@ test('E2/C7: cast_adventure_creature — duże ciało przegrywa ląd, małe wygr
     `ciało 10/10 (100) > ląd (90), wybrał: ${JSON.stringify(chosen)} (oferty: ${view.legalCommands.map((c) => c.type).join(',')})`);
   assert.equal(chosen.objectId, 'adv');
 });
+
+for (const auraController of ['p1', 'p2']) {
+  test(`D: aura ${auraController} nie uzasadnia zniszczenia własnego Equipment`, () => {
+    const state = newState();
+    putCreature(state, 'host', 'p1', 3, 3);
+    putEquip(state, 'sword', 'p1', 'host');
+    addObject(state, {
+      id: 'aura', instanceId: 'i-aura', cardId: 'synthetic-aura',
+      controllerId: auraController, ownerId: auraController, zone: 'battlefield',
+      kind: 'enchantment', aura: {}, manaCost: 1, types: ['Enchantment'],
+      subtypes: ['Aura'], colors: [], abilities: [], keywords: [],
+    });
+    attachAuraToCreature(state, 'aura', 'host');
+    state.pendingDestroyEquipment = { playerId: 'p1', targetId: 'host', restorePriorityTo: null };
+    const view = playerView(state, 'p1');
+    assert.ok(view.zones.battlefield.find(o => o.id === 'sword').equipment,
+      'widok rzeczywiście niesie typ Equipment');
+    assert.ok(!view.zones.battlefield.find(o => o.id === 'aura').equipment);
+    const chosen = botChoice(state);
+    assert.equal(chosen.destroy, false, 'aura nie jest Equipment');
+    assert.ok(execute(state, chosen).ok);
+    assert.equal(state.objects.get('sword').zone, 'battlefield');
+    assert.equal(state.objects.get('aura').zone, 'battlefield');
+  });
+}

@@ -1136,6 +1136,8 @@ Strażnicy M348: `test/table-tester-runtime-errors.test.js`, żywe A/B.
 6. Oczekiwanie testu też wymaga Oracle/CR. Usunięcie nieistniejącego ETB
    czerwieniło m334/C, a m336/E2 wymagał SBA w środku czaru (PR #104).
    Nie utrwalaj błędnej reguły tylko po to, żeby zachować zielony pin.
+   Sprawdzaj datę wydania CR: świeżo pobrane archiwum może cytować starą
+   regułę (PR #106: obowiązkowe lethal-first).
 
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L13)

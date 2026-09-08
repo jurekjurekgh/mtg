@@ -1,3 +1,5 @@
+import { chooseDestructionReplacement } from './destruction.js';
+import { combatDamageByToughness, effectiveSubtypes, isUntapStepLocked } from './permanents.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
@@ -7,7 +9,7 @@ import { assertStateInvariants } from './invariants.js';
 import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
-import { allControlledManaSources } from './mana-sources.js';
+import { allControlledManaSources, isActivatedManaAbility } from './mana-sources.js';
 
 function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   const costStr = MANA_COSTS[cardId];
@@ -20,7 +22,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 }
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
-import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
+import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
@@ -824,6 +826,7 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
     if (!aura) return [];
     return legalAuraCastsForObject(state, playerId, obj).map((cast) => ({
       cardId: obj.id, targets: [cast.targetId], bestow: cast.bestow,
+      ...(cast.surgeCast ? { surgeCast: true } : {}),
     }));
   }
   // M201/U2: koszty dodatkowe (CR 601.2h) — każdy zestaw celów mnożymy przez
@@ -1442,9 +1445,8 @@ function manaGeneratingCommandFor(state, cmd, playerId) {
   if (cmd.type === 'tap_for_mana') return true;
   if (cmd.type === 'activate_ability' && Number.isInteger(cmd.abilityIndex)) {
     const obj = state.objects.get(cmd.objectId);
-    const ability = obj?.abilities?.[cmd.abilityIndex];
-    const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
-    return effects.some((e) => e?.type === 'add_mana');
+    const ability = obj && activatableAbilities(state, obj)[cmd.abilityIndex];
+    return ability != null && isActivatedManaAbility(ability);
   }
   return false;
 }
@@ -1453,6 +1455,7 @@ export function execute(state, input) {
   let cmd;
   try { cmd = command(input.type, input.playerId, input); } catch { return reject('invalid_command'); }
   if (state.status !== 'active') return reject('game_over');
+  if (state.pendingReplacementChoice?.frame && !['resolve_replacement_choice','concede'].includes(cmd.type)) return reject('replacement_choice_unresolved');
   if (cmd.type === 'concede') {
     const winner = state.players.find((p) => p.id !== cmd.playerId);
     state.status = 'finished';
@@ -2434,7 +2437,7 @@ export function execute(state, input) {
         // Aura (CR 303.4a): cel (gospodarz albo gracz dla Curse) wybrał gracz
         // w ofercie; wariant bestow to koszt alternatywny karty.
         castAuraSpell(state, pending.playerId, pending.objectId, {
-          targetId: cmd.targets?.[0], bestow: Boolean(cmd.bestow), abilityWindowCast: true,
+          targetId: cmd.targets?.[0], bestow: Boolean(cmd.bestow), surgeCast: Boolean(cmd.surgeCast), abilityWindowCast: true,
         });
       } else {
         castPermanent(state, pending.playerId, pending.objectId, { abilityWindowCast: true });
@@ -3176,8 +3179,8 @@ export function execute(state, input) {
   // Oczekująca decyzja opcjonalnej płatności triggera (Panic Spellbomb,
   // Zoraline — Temat 8): „you may pay ... When you do, ...".
   // Batch 44 (Frightful Delusion): decyzja „zapłać {N} albo czar skontrowany"
-  // należy do KONTROLERA celowanego czaru; po decyzji ten gracz odrzuca kartę
-  // („That player discards a card" — niezależnie od wyniku), a czar-źródło
+  // należy do KONTROLERA celowanego czaru; jawny discardCount włącza odrzut
+  // („That player discards a card" — niezależnie od wyniku). Czar-źródło
   // dokańcza rozstrzyganie (finishPendingSpell przez discard purpose 'effect'
   // albo wprost przy pustej ręce).
   if (state.pendingCounterPay && !manaGeneratingCommandFor(state, cmd, state.pendingCounterPay.playerId)) {
@@ -3186,11 +3189,11 @@ export function execute(state, input) {
     if (cmd.playerId !== state.pendingCounterPay.playerId) return reject('counter_pay_not_your_decision');
     const pending = state.pendingCounterPay;
     const before = state.events.length;
+    if (cmd.pay && (pending.amount ?? 0) > producibleMana(state, pending.playerId)) return reject('counter_pay_insufficient_mana');
     state.pendingCounterPay = null;
     const target = state.objects.get(pending.targetId);
     const targetOnStack = target && target.zone === 'stack';
     if (cmd.pay) {
-      if ((pending.amount ?? 0) > producibleMana(state, pending.playerId)) return reject('counter_pay_insufficient_mana');
       if ((pending.amount ?? 0) > 0) spendMana(state, pending.playerId, pending.amount, []);
     } else if (targetOnStack) {
       // M271 (błąd #15): piąta kopia kontry — przez WSPÓLNY helper, żeby
@@ -3206,14 +3209,14 @@ export function execute(state, input) {
     // „That player discards a card" — wybór odrzucanej karty należy do
     // odrzucającego (CR 701.18); przy pustej ręce nic się nie dzieje.
     const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
-    if (handIds.length > 0) {
+    if ((pending.discardCount ?? 0) > 0 && handIds.length > 0) {
       state.pendingDiscardChoice = {
-        playerId: pending.playerId, count: 1, handIds, purpose: 'effect',
+        playerId: pending.playerId, count: pending.discardCount, handIds, purpose: 'effect',
         sourceCardId: pending.sourceCardId ?? null,
         restorePriorityTo: pending.restorePriorityTo,
       };
       state.events.push(event('discard_choice_required', {
-        playerId: pending.playerId, count: 1, cardIds: [...handIds], purpose: 'effect',
+        playerId: pending.playerId, count: pending.discardCount, cardIds: [...handIds], purpose: 'effect',
         sourceCardId: pending.sourceCardId ?? null,
       }));
     } else {
@@ -3934,10 +3937,12 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_discard_choice') return reject('discard_choice_unresolved');
     if (cmd.playerId !== discardChooserId(state.pendingDiscardChoice)) return reject('discard_choice_not_your_decision');
     const pending = state.pendingDiscardChoice;
+    const batchChoice = Object.hasOwn(cmd, 'cardIds');
+    if (batchChoice && (!Array.isArray(cmd.cardIds) || Object.hasOwn(cmd, 'cardId'))) return reject('illegal_discard_choice');
     // M109 (Nightsnare): „If you don't" — rezygnacja wybierającego przełącza
     // decyzję na WŁAŚCICIELA ręki, który odrzuca declineAmount kart wg
     // własnego wyboru (CR 701.8a).
-    if (pending.allowDecline && cmd.cardId == null) {
+    if (!batchChoice && pending.allowDecline && cmd.cardId == null) {
       const before = state.events.length;
       const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
       const count = Math.min(pending.declineAmount ?? 2, handIds.length);
@@ -3978,56 +3983,65 @@ export function execute(state, input) {
       }));
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
-    if (!pending.handIds.includes(cmd.cardId)) return reject('illegal_discard_choice');
-    const card = state.objects.get(cmd.cardId);
-    if (!card || card.zone !== 'hand' || card.controllerId !== pending.playerId) return reject('illegal_discard_choice');
+    const cardIds = batchChoice ? [...cmd.cardIds] : [cmd.cardId];
+    const requiredCount = pending.purpose === 'cost' ? pending.count : Math.min(pending.count, pending.handIds.length);
+    // Cały zbiór sprawdzony przed pierwszym odrzuceniem; legacy cardId nadal
+    // płaci pojedynczą kartą (replay/bot), UI zatwierdza pełny wybór cardIds.
+    if (batchChoice && (cardIds.length !== requiredCount || new Set(cardIds).size !== cardIds.length)) return reject('illegal_discard_choice');
+    if (cardIds.length === 0 || cardIds.some(id => {
+      const card = state.objects.get(id);
+      return !pending.handIds.includes(id) || card?.zone !== 'hand' || card.controllerId !== pending.playerId;
+    })) return reject('illegal_discard_choice');
     const before = state.events.length;
-    // M158/Batch 39 (CR 702.34a): karta z Madness odrzucana jest do EXILE
-    // (nie do grobu) z jednorazową decyzją: rzuć za koszt madness albo
-    // przełóż do cmentarza.
-    let moved = null;
-    if (card.madness) {
-      const exileId = `exile-${state.objectSequence++}`;
-      // M262: madness to mechanika wygnania (CR 702.35) — badge „Wygnane: Madness".
-      moved = moveObjectDirectly(state, cmd.cardId, 'exile', exileId, { exiledBy: 'madness' });
-      state.objects.set(exileId, Object.freeze({ ...state.objects.get(exileId), madnessReady: true }));
-      state.events.push(event('card_discarded', {
-        playerId: pending.playerId, fromId: cmd.cardId, objectId: exileId,
-        cardId: moved.cardId, choice: true, purpose: pending.purpose, toZone: 'exile', madness: true,
-      }));
-      // M258: wpis do KOLEJKI, nie bezpośrednio do pendingMadnessCast —
-      // decyzja otwiera się po zakończeniu całej sekwencji odrzuceń
-      // (promoteNextMadness w gałęziach kończących poniżej). Natychmiastowe
-      // otwarcie blokowało kolejne odrzucania w tym samym efekcie.
-      state.madnessQueue.push({
-        playerId: pending.playerId, objectId: exileId, cardId: moved.cardId,
-        restorePriorityTo: state.turn.priorityPlayerId,
-      });
-    } else {
-      const graveId = `grave-${state.objectSequence++}`;
-      moved = moveObjectDirectly(state, cmd.cardId, 'graveyard', graveId);
-      state.events.push(event('card_discarded', {
-        playerId: pending.playerId, fromId: cmd.cardId, objectId: graveId,
-        cardId: moved.cardId, choice: true, purpose: pending.purpose,
-      }));
-    }
-    // M67 (Civilized Scholar): „If a creature card is discarded this way,
-    // untap this creature, then transform it." — po odrzuceniu karty-stwora
-    // wykonaj akcje zapisane w pending (odkręcenie + transform źródła).
-    if (pending.onCreatureDiscard && (moved.kind === 'creature' || (moved.types ?? []).includes('Creature'))) {
-      const target = pending.onCreatureDiscard;
-      const source = state.objects.get(target.sourceId);
-      if (source && source.zone === 'battlefield') {
-        if (target.untap) {
-          const updated = untapObject(state, target.sourceId, pending.playerId);
-          state.events.push(event('object_untapped', { objectId: target.sourceId, playerId: pending.playerId }));
-        }
-        if (target.transform) {
-          applyEffect(state, { type: 'transform' }, state.objects.get(target.sourceId), []);
+    for (const cardId of cardIds) {
+      const card = state.objects.get(cardId);
+      // M158/Batch 39 (CR 702.34a): karta z Madness odrzucana jest do EXILE
+      // (nie do grobu) z jednorazową decyzją: rzuć za koszt madness albo
+      // przełóż do cmentarza.
+      let moved = null;
+      if (card.madness) {
+        const exileId = `exile-${state.objectSequence++}`;
+        // M262: madness to mechanika wygnania (CR 702.35) — badge „Wygnane: Madness".
+        moved = moveObjectDirectly(state, cardId, 'exile', exileId, { exiledBy: 'madness' });
+        state.objects.set(exileId, Object.freeze({ ...state.objects.get(exileId), madnessReady: true }));
+        state.events.push(event('card_discarded', {
+          playerId: pending.playerId, fromId: cardId, objectId: exileId,
+          cardId: moved.cardId, choice: true, purpose: pending.purpose, toZone: 'exile', madness: true,
+        }));
+        // M258: wpis do KOLEJKI, nie bezpośrednio do pendingMadnessCast —
+        // decyzja otwiera się po zakończeniu całej sekwencji odrzuceń
+        // (promoteNextMadness w gałęziach kończących poniżej). Natychmiastowe
+        // otwarcie blokowało kolejne odrzucania w tym samym efekcie.
+        state.madnessQueue.push({
+          playerId: pending.playerId, objectId: exileId, cardId: moved.cardId,
+          restorePriorityTo: state.turn.priorityPlayerId,
+        });
+      } else {
+        const graveId = `grave-${state.objectSequence++}`;
+        moved = moveObjectDirectly(state, cardId, 'graveyard', graveId);
+        state.events.push(event('card_discarded', {
+          playerId: pending.playerId, fromId: cardId, objectId: graveId,
+          cardId: moved.cardId, choice: true, purpose: pending.purpose,
+        }));
+      }
+      // M67 (Civilized Scholar): „If a creature card is discarded this way,
+      // untap this creature, then transform it." — po odrzuceniu karty-stwora
+      // wykonaj akcje zapisane w pending (odkręcenie + transform źródła).
+      if (pending.onCreatureDiscard && (moved.kind === 'creature' || (moved.types ?? []).includes('Creature'))) {
+        const target = pending.onCreatureDiscard;
+        const source = state.objects.get(target.sourceId);
+        if (source && source.zone === 'battlefield') {
+          if (target.untap) {
+            const updated = untapObject(state, target.sourceId, pending.playerId);
+            state.events.push(event('object_untapped', { objectId: target.sourceId, playerId: pending.playerId }));
+          }
+          if (target.transform) {
+            applyEffect(state, { type: 'transform' }, state.objects.get(target.sourceId), []);
+          }
         }
       }
     }
-    const remaining = pending.count - 1;
+    const remaining = pending.count - cardIds.length;
     const stillInHand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
     const resolvedEvents = state.events.slice(before);
     if (remaining > 0 && stillInHand.length > 0) {
@@ -5095,7 +5109,7 @@ export function execute(state, input) {
       // zwykła ścieżka permanentu.
       if (cmd.bestow || state.objects.get(cmd.objectId)?.aura) {
         const before = state.events.length;
-        const e = castAuraSpell(state, cmd.playerId, cmd.objectId, { targetId: cmd.targets?.[0], bestow: Boolean(cmd.bestow) });
+        const e = castAuraSpell(state, cmd.playerId, cmd.objectId, { targetId: cmd.targets?.[0], bestow: Boolean(cmd.bestow), surgeCast: Boolean(cmd.surgeCast) });
         const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
         return accepted(state, cmd, { ok: true, events });
       }
@@ -5198,7 +5212,7 @@ export function execute(state, input) {
   if (cmd.type === 'activate_ability') {
     try {
       const before = state.events.length;
-      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds, cmd.tapCreatureId, cmd.tapOtherCreatureId, cmd.sacrificeLandId, undefined, cmd.grantedFromEquipment, cmd.tapArtifactIds, { tapPermanentCostId: cmd.tapPermanentCostId, sacrificeCreatureIds: cmd.sacrificeCreatureIds });
+      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds, cmd.tapCreatureId, cmd.tapOtherCreatureId, cmd.sacrificeLandId, undefined, cmd.grantedFromEquipment, cmd.tapArtifactIds, { tapPermanentCostId: cmd.tapPermanentCostId, sacrificeCreatureIds: cmd.sacrificeCreatureIds, sacrificeCreatureId: cmd.sacrificeCreatureId });
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {
@@ -5248,6 +5262,7 @@ export function execute(state, input) {
     if (state.turn.activePlayerId !== cmd.playerId) return reject('not_active_player');
     try {
       const e = resolveCombatDamage(state, cmd.defendingPlayerId);
+      if (state.pendingReplacementChoice || state.pendingDamageAssignment) return accepted(state, cmd, {ok:true,events:e});
       state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
       const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
       state.events.push(step);
@@ -5264,6 +5279,37 @@ export function execute(state, input) {
   if (state.pendingReplacementChoice) {
     if (cmd.type !== 'resolve_replacement_choice') return reject('replacement_choice_unresolved');
     if (cmd.playerId !== state.pendingReplacementChoice.playerId) return reject('replacement_choice_not_your_decision');
+    if (state.pendingReplacementChoice.frame) {
+      const pending = state.pendingReplacementChoice;
+      if (!pending.options.includes(cmd.choice)) return reject('illegal_replacement_choice');
+      const before = state.events.length;
+      const continuations = chooseDestructionReplacement(state, cmd.choice);
+      state.events.push(event('replacement_choice_resolved', { playerId:cmd.playerId,
+        objectId:pending.objectId,cardId:pending.cardId,choice:cmd.choice }));
+      for (const item of continuations ?? []) {
+        if (state.pendingReplacementChoice) { state.pendingReplacementChoice.continuations.push(item); continue; }
+        if (item.combatResume || item.combatFinish) {
+          if (item.combatResume) resolveCombatDamage(state,item.combatResume.defendingPlayerId,item.combatResume);
+          if (!state.pendingReplacementChoice && !state.pendingDamageAssignment) {
+            state.turn=jumpToStep(state.turn,'end_of_combat',state.turn.activePlayerId);
+            state.events.push(event('step_advanced',{number:state.turn.number,phase:state.turn.phase,step:state.turn.step}));
+          }
+        } else if (item.completion) {
+          const c=item.completion;
+          if(c.spell) {
+            finishPendingSpell(state,c.entryId,[]);
+            const last=state.events.at(-1); if(c.event?.modal && last?.type==='spell_resolved') state.events[state.events.length-1]=Object.freeze({...last,...c.event});
+          } else {
+            state.zones.stack=state.zones.stack.filter(id=>id!==c.entryId);state.objects.delete(c.entryId);
+            state.events.push(c.event);
+          }
+        } else applyEffect(state,item.effect,item.sourceObject,item.targets,item.context);
+      }
+      if (!state.pendingReplacementChoice && state.pendingSpell) {
+        const tail=state.pendingSpell;state.pendingSpell=null;finishPendingSpell(state,tail.stackId,tail.effects);
+      }
+      return accepted(state,cmd,{ok:true,events:state.events.slice(before)});
+    }
     if (cmd.choice !== 'shield' && cmd.choice !== 'regenerate') return reject('illegal_replacement_choice');
     const pending = state.pendingReplacementChoice;
     state.pendingReplacementChoice = null;
@@ -5327,7 +5373,7 @@ export function execute(state, input) {
       state.events.push(resolved);
       e.push(resolved);
       // Drugi pass mógł zakolejkować kolejną decyzję — kroku wtedy nie zmieniamy.
-      if (state.pendingDamageAssignment) return accepted(state, cmd, { ok: true, events: e });
+      if (state.pendingDamageAssignment || state.pendingReplacementChoice) return accepted(state, cmd, { ok: true, events: e });
       state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
       const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
       state.events.push(step);
@@ -5474,6 +5520,7 @@ export function playerView(state, playerId) {
           controllerId: object.controllerId, zone: object.zone,
           kind: object.kind,
           power: effectivePower(object, state), toughness: effectiveToughness(object, state),
+          ...(combatDamageByToughness(state, object) ? { combatDamageByToughness: true } : {}),
           powerModifier: object.powerModifier, toughnessModifier: object.toughnessModifier,
           tapped: object.tapped, summoningSickness: object.summoningSickness, damage: object.damage,
         };
@@ -5653,7 +5700,14 @@ export function playerView(state, playerId) {
         // animowany do EOT (crew rozstrzygnięty) nosi originalBeforeAnimation.
         // Widoczny stan → badge/decyzja bota (nie re-crewuj), ADR 0017.
         if (object.originalBeforeAnimation != null) entry.animatedUntilEOT = true;
-        if ((object.untapLockedBy ?? []).length > 0) entry.untapLocked = true; // pusta tablica = brak blokady
+        // Źródło aktywnej animacji jest publiczne; nazwa zakrytej karty nie.
+        const animationLink = (state.linkedAnimations ?? []).find(link => link.targetId === object.id);
+        const animationSource = animationLink && state.objects.get(animationLink.sourceId);
+        if (animationSource?.zone === 'battlefield') entry.linkedAnimationSource = {
+          objectId: animationSource.id,
+          cardId: animationSource.faceDown ? null : animationSource.cardId,
+        };
+        if (isUntapStepLocked(state, object)) entry.untapLocked = true;
         if (object.dontUntapNextUntapStep) entry.dontUntapNextUntapStep = true;
         if (object.tempControlUntilTurn != null) entry.tempControlUntilEOT = true;
         if ((state.cantBeRegeneratedThisTurn ?? []).includes(object.id)) entry.cantBeRegeneratedThisTurn = true;
@@ -6346,6 +6400,11 @@ export function playerView(state, playerId) {
       legalCommands.push(command('resolve_counter_pay_choice', playerId, { pay: true, ...counterPayInfo }));
     }
     legalCommands.push(command('resolve_counter_pay_choice', playerId, { pay: false, ...counterPayInfo }));
+    // CR 608.2g: jedynie legalne zdolności MANY podczas resolution.
+    // Wyjątek od blokady zwykłych aktywacji — bez ręcznego auto-sacrifice.
+    for (const { ability, ...offer } of legalManaAbilities(state, playerId)) {
+      legalCommands.push(command('activate_ability', playerId, offer));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeWardPay) {
     // M258/F3 — ward (CR 702.21): dopłać {N} (czar/zdolność przechodzi)
     // albo odmów (kontr). Boty płacą (pierwsza oferta) — rzucający już
@@ -6828,6 +6887,7 @@ export function playerView(state, playerId) {
           // Koszt X (CR 107.3a) i bestow (CR 702.102) — wybór gracza z oferty.
           ...(offer.xValue != null ? { xValue: offer.xValue } : {}),
           ...(offer.bestow === true ? { bestow: true } : {}),
+          ...(offer.surgeCast === true ? { surgeCast: true } : {}),
         }));
       };
       if (exileCard.aura || exileCard.bestow) {
@@ -6919,8 +6979,9 @@ export function playerView(state, playerId) {
     && state.pendingReplacementChoice && state.pendingReplacementChoice.playerId === playerId) {
     // M202/odznaka #3 (CR 616.1): przy dwóch efektach zastępczych wybiera
     // kontroler permanenta. Dwie opcje — jak w kreatorze decyzji.
-    legalCommands.push(command('resolve_replacement_choice', playerId, { choice: 'regenerate' }));
-    legalCommands.push(command('resolve_replacement_choice', playerId, { choice: 'shield' }));
+    for (const choice of state.pendingReplacementChoice.options ?? ['regenerate','shield']) {
+      legalCommands.push(command('resolve_replacement_choice',playerId,{choice,objectId:state.pendingReplacementChoice.objectId}));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeFertileThicket) {
     // Fertile Thicket (BFZ): ETB reveal — gracz wybiera 0 lub 1 basic land z top 5.
     // "You may" = can decline entirely.
@@ -7036,11 +7097,11 @@ export function playerView(state, playerId) {
     // — z priorytetem w każdej fazie — ale nadal wymaga legalnego gospodarza
     // (CR 601.2c). Te same warianty co zwykła oferta aur; gating main-phase
     // poniżej je pomija, żeby nie dublować oferty w swojej main phase.
-    for (const { objectId, targetId, bestow } of legalAuraCasts(state, playerId)) {
+    for (const { objectId, targetId, bestow, surgeCast } of legalAuraCasts(state, playerId)) {
       const object = state.objects.get(objectId);
       if (!(object?.keywords ?? []).includes('flash')) continue;
       legalCommands.push(command('cast_permanent', playerId,
-        bestow ? { objectId, bestow: true, targets: [targetId] } : { objectId, targets: [targetId] }));
+        { objectId, targets: [targetId], ...(bestow ? { bestow: true } : {}), ...(surgeCast ? { surgeCast: true } : {}) }));
     }
     // Plot jest specjalną akcją sorcery-speed z ręki: płaci koszt plot i
     // przenosi kartę do exile, gdzie później cast_permanent/cast_spell oferuje
@@ -7142,7 +7203,7 @@ export function playerView(state, playerId) {
     // Ninjutsu niesie dodatkowo attackerId (atakujący do zwrotu do ręki);
     // zdolności celowane/{X} niosą targets i xValue.
     //
-    for (const { objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, grantedFromEquipment, tapArtifactIds, tapPermanentCostId, sacrificeCreatureIds } of legalActivatedAbilities(state, playerId)) {
+    for (const { objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, grantedFromEquipment, tapArtifactIds, tapPermanentCostId, sacrificeCreatureIds, sacrificeCreatureId } of legalActivatedAbilities(state, playerId)) {
       const extra = { objectId, abilityIndex };
       if (attackerId !== undefined) extra.attackerId = attackerId;
       if (targets !== undefined) extra.targets = targets;
@@ -7158,6 +7219,7 @@ export function playerView(state, playerId) {
       // stwory kolorów G/W/U" (Angel's Herald) jadą w komendzie.
       if (tapPermanentCostId !== undefined) extra.tapPermanentCostId = tapPermanentCostId;
       if (sacrificeCreatureIds !== undefined) extra.sacrificeCreatureIds = sacrificeCreatureIds;
+      if (sacrificeCreatureId !== undefined) extra.sacrificeCreatureId = sacrificeCreatureId;
       // M146 (Blazing Torch): zdolność NADANA nosicielowi przez przypięty
       // sprzęt — execute musi wiedzieć, że abilityIndex liczy się względem
       // equipment.grantedAbilities, nie object.abilities.
@@ -7175,12 +7237,12 @@ export function playerView(state, playerId) {
     // castami, żeby w liście komend były ZA nimi (proste boty biorą pierwszą
     // komendę danego typu — mają dostać naturalny cast, nie aurę).
     if (state.zones.stack.length === 0) {
-      for (const { objectId, targetId, bestow } of legalAuraCasts(state, playerId)) {
+      for (const { objectId, targetId, bestow, surgeCast } of legalAuraCasts(state, playerId)) {
         // Aura z flash jest już oferowana w bloku flash powyżej (warunki tego
         // bloku to podzbiór tamtego) — bez duplikatów w swojej main phase.
         if ((state.objects.get(objectId)?.keywords ?? []).includes('flash')) continue;
         legalCommands.push(command('cast_permanent', playerId,
-          bestow ? { objectId, bestow: true, targets: [targetId] } : { objectId, targets: [targetId] }));
+          { objectId, targets: [targetId], ...(bestow ? { bestow: true } : {}), ...(surgeCast ? { surgeCast: true } : {}) }));
       }
     }
     // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną albo
@@ -7738,6 +7800,13 @@ export function playerView(state, playerId) {
       sourceCardId: state.pendingOptionalDraw.sourceCardId,
     } : null,
     // M100 (BUG A): viewerId — zakryte karty przeciwnika bez cardId (FoW).
+    pendingDiscardChoice: activeDiscardChoice ? {
+      count: state.pendingDiscardChoice.purpose === 'cost' ? state.pendingDiscardChoice.count
+        : Math.min(state.pendingDiscardChoice.count, state.pendingDiscardChoice.handIds.length),
+      purpose: state.pendingDiscardChoice.purpose,
+      sourceCardId: state.pendingDiscardChoice.sourceCardId ?? null,
+      allowDecline: Boolean(state.pendingDiscardChoice.allowDecline),
+    } : null,
     pendingDamageAssignment: buildDamageAssignmentView(state, playerId),
     // M72 (Batch 29): GENERYCZNE rozdzielanie obrażeń niecombat (Fireball).
     // Widok niesie total, źródło i listę celów; UI buduje własny przydział.
@@ -7781,6 +7850,7 @@ export function playerView(state, playerId) {
                 cardId: o?.cardId ?? null,
                 kind: o?.kind ?? null,
                 types: Object.freeze([...(o?.types ?? [])]),
+                subtypes: Object.freeze(effectiveSubtypes(o)),
                 cmc: o?.manaValue ?? o?.cmc ?? 0,
                 manaCost: o?.manaCost ?? null,
                 power: o?.power ?? null,

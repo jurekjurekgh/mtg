@@ -133,7 +133,7 @@ export function faceDownLabel(object, nameOf) {
 export function commandOptionKey(cmd) {
   const fields = [
     'type', 'objectId', 'abilityIndex', 'targets', 'xValue', 'modeIndex',
-    'buyback', 'payAltCost', 'bestow', 'faceDown', 'sacrificeTargetId',
+    'buyback', 'payAltCost', 'bestow', 'surgeCast', 'faceDown', 'sacrificeTargetId',
     'stunTargetId', 'attackerId', 'crewCreatureIds', 'tapCreatureId',
     'tapOtherCreatureId', 'escapeExileIds',
     // M112: komendy WALKI budowane przez wizard (declare_attackers /
@@ -187,7 +187,12 @@ const BOT_MOVE_NOISE = new Set([
  * jest komunikatem „Rozgrywka" (pełna legalność — własna wiedza); dobranie
  * BOTA w kroku dobierania zostaje szumem; dobrania z efektu (obu) są treścią.
  */
+function isRulesZoneMove(e) {
+  return e.type === 'object_moved' && (e.bounced === true || e.sba === 'zero_loyalty');
+}
+
 export function isBotMoveNoise(e, { botActing = false, stackSize = 0, humanId = HUMAN_ID } = {}) {
+  if (isRulesZoneMove(e)) return false;
   if (e?.type === 'card_drawn') return e.source !== 'effect' && e.playerId !== humanId;
   if (!BOT_MOVE_NOISE.has(e.type)) return false;
   if (e.type === 'stats_modified') {
@@ -806,9 +811,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'game_created':
         return null;
       case 'object_moved': {
+        if (e.sba === 'zero_loyalty') return `${nameOf(e.cardId ?? e.object?.cardId)}: zero lojalności — ${e.toZone === 'exile' ? 'wygnanie zamiast grobu' : 'trafia do grobu właściciela'}`;
         if (e.bounced) {
           const whoOwner = e.object?.controllerId ? whoN(e.object.controllerId) : 'właściciela';
-          return `${nameOf(e.object?.cardId)} wraca do ręki (${whoOwner})`;
+          const where = e.toZone === 'library'
+            ? (e.toBottom ? 'na spód biblioteki' : 'na wierzch biblioteki') : 'do ręki';
+          return `${nameOf(e.object?.cardId)} wraca ${where} (${whoOwner})`;
         }
         // M103/D (zgłoszenie właściciela): wygnanie kart za koszt Escape było
         // w logu niewidzialne (zwykłe zmiany stref log celowo pomija, ale to
@@ -830,10 +838,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — gracz musi
       // wiedzieć, że decyduje (i co wybrał), bo inaczej zniknięcie tarczy albo
       // tapnięcie stwora wyglądałoby na efekt cudzego czaru.
+      case 'umbra_armor_applied':
+        return `Umbra armor chroni ${nameOf(e.cardId)}: usuwa obrażenia; zamiast gospodarza niszczona jest aura ${nameOfObject(e.auraId)}`;
       case 'replacement_choice_required':
-        return `${nameOfObject(e.objectId)}: zniszczenie można zastąpić tarczą albo regeneracją — wybiera ${whoN(e.playerId)}`;
+        return `${nameOfObject(e.objectId)}: wybierz efekt zastępujący zniszczenie — wybiera ${whoN(e.playerId)}`;
       case 'replacement_choice_resolved':
-        return `${whoN(e.playerId)} wybiera ${e.choice === 'shield' ? 'zdjęcie licznika tarczy' : 'regenerację'} dla ${nameOfObject(e.objectId)}`;
+        return `${whoN(e.playerId)} wybiera ${e.choice?.startsWith('umbra:') ? 'umbra armor' : e.choice === 'shield' ? 'zdjęcie licznika tarczy' : 'regenerację'} dla ${nameOfObject(e.objectId)}`;
       case 'command_rejected': return `Odrzucono: ${e.reason ?? 'nielegalna komenda'}`;
       // M201 (znalezisko #1, CR 506.4c): permanent przestał być stworem i
       // wypadł z walki — gracz musi wiedzieć, dlaczego atak zniknął.
@@ -965,7 +975,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // prawdziwego bestow (karta-stwór rzucona jako aura). Czysta aura —
         // także curse na gracza — to zwykły rzut („Curse of the Pierced
         // Heart za koszt bestow" było błędem).
-        const asBestow = e.bestow ? ' za koszt bestow' : '';
+        const asBestow = e.bestow ? ' za koszt bestow' : e.surgeCast ? ' za koszt surge' : '';
         return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${asBestow} → cel: ${targets}`;
       }
       case 'permanent_entered_battlefield': {
@@ -1812,9 +1822,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // Zdarzenie pary: object_moved+escape już nazywają przeniesione karty —
       // resolved to dublet informacji (Uwaga D: świadome pominięcie).
       case 'escape_exile_resolved': return null;
-      case 'discard_choice_resolved': return e.purpose === 'cost'
-        ? `${whoN(e.playerId)} odrzuca kartę (koszt zdolności)`
-        : `${whoN(e.playerId)} odrzuca kartę z ręki`;
+      // card_discarded już nazywa każdą kartę. Zakończenie decyzji nie jest
+      // kolejnym odrzuceniem ani zawsze pojedynczym kosztem zdolności.
+      case 'discard_choice_resolved': return null;
       case 'hand_top_choice_required': {
         const src = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
         return `${whoN(e.playerId)} wybiera kartę z ręki na wierzch biblioteki${src}`;
@@ -2536,7 +2546,7 @@ export function createSession(config) {
     // (M103/D), gracz ma widzieć w „Rozgrywce" co i skąd wygnano (CR 400.2:
     // strefy jawne). Format i mgła wojny jak wyżej (gałąź M192/Z1).
     const isAdditionalCostMove = e.type === 'object_moved' && e.additionalCost === true;
-    if (!botActing && !isAdditionalCostMove
+    if (!botActing && !isAdditionalCostMove && !isRulesZoneMove(e)
       && e.type !== 'turn_started' && e.type !== 'game_started'
       && e.type !== 'step_advanced'
       && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw
@@ -3060,7 +3070,7 @@ export function createSession(config) {
       return probeCommandEffect(state, cmd);
     },
     /** Wykonuje komendę człowieka przez protokół; zwraca { ok, reason?, botPause? }. */
-    apply(cmd) {
+    apply(cmd, { holdPriority = false } = {}) {
       // M90 (bug B, zgłoszenie właściciela 2026-08-14): stan sesji zmienia
       // WYŁĄCZNIE zaakceptowana komenda. Wcześniej `apply` czyścił bufor
       // modala i kasował pauzę bota PRZED `execute()` — gdy engine odrzucił
@@ -3137,7 +3147,10 @@ export function createSession(config) {
       // autopass/fazach bez komend). Nagłówek już jest w buforze (noteBotMove),
       // więc modal pokaże „Tura N — …" i zatrzyma grę przed ruchem bota.
       const turnStartedPause = pauseOnBotMoves && turnStartedNow;
-      const internalError = turnStartedPause ? null : advanceGuarded();
+      // Kreator zbiera manę w jednym oknie priorytetu, nawet gdy docelowa
+      // aktywacja jest wyciszona. Anulowanie zostawia pulę; nowa akcja
+      // albo jawny pass przywraca zwykłe automatyczne przewijanie.
+      const internalError = turnStartedPause || holdPriority ? null : advanceGuarded();
       // M100/E8: modal własnego dobrania pokazuje parę nagłówkową tury
       // („Tura N — Ty" + „Ty dobiera: X"), nie samą linię — kontekst M98.
       //
