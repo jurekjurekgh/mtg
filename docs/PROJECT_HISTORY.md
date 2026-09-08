@@ -9227,3 +9227,42 @@ domknięta szczelina strażnika (`renderSpeedPanel` niepinowany) + CSS
 3388,1 kB, benchmark 85,0%. Bez nowych kart, bez pełnego B0, bez nowego
 wpisu LESSONS (klasy „timing rzucania w kandydatach many" i „transform
 jako treść panelu" mają wpisy w planie E6 i komentarzach kodu).
+
+## Sesja arena/01a07c4e cz. 3 — E8: wyzwanie wyłapywacza błędów, PR #105 (2026-09-08)
+
+Kontynuacja PR #105 (ADR 0021). Prompt: wyzwanie odznakowe — znaleźć i
+naprawić 5 unikalnych błędów/uproszczeń vs zasady MtG; każdy fix RED-first,
+osobny commit, plan pushnięty PRZED kodem (`63e31f7`, sekcja E8 z kotwicami
+w kodzie). Baza: fast 4750/4750, test:all 4760/4760.
+
+- **B1 `888a234`** — regeneracja konsumowała WSZYSTKIE tarcze naraz
+  (`filter(id !== object.id)`); CR 701.15b: jedna tarcza = jedno zniszczenie.
+  Fix `tryRegenerate`: konsumpcja dokładnie jednej instancji. Harness
+  `test/helpers/e8-destroy-harness.js` (realna ścieżka
+  `destroyPermanentByEffect`).
+- **B2 `4bcf5ab`** — flaga „nie odtapuje się" zużywana tylko przy `tapped`
+  (odkręcony cel nosił ją wiecznie → PÓŹNIEJSZY untap step błędnie skipowany)
+  i porównywana z controllerId-z-momentu-efektu (skip wypadał w cudzym untap
+  stepie po zmianie kontrolera). Fix `untapControlled`: zużycie na untap
+  stepie obecnego kontrolera niezależnie od stanu tapped.
+- **B3 `2b944c0`** — bez trample przydział mógł zostawić niedobór (stare
+  uproszczenie „niedobór legalny"); default lethal-first gubił resztę przy
+  wielu blokerach; wizard startował od 0, bramkował tylko trample. Fix:
+  `damage_must_be_fully_assigned` (CR 510.1a), dolewka reszty do ostatniego
+  blokera (konwencja M66), wizard prefill jak silnik + bramka pełnej sumy.
+  Zaktualizowane piny starego uproszczenia: trample-lethal-przed-graczem,
+  choice-request-ui (steppery, M101/B6, M150/B), m136-sonda, Sherlock 1c.
+- **B4 `2e15ba6`** — `lethalOf` ignorował protection: trample zatrzymywał się
+  na blokerze w pełni chronionym (CR 702.19b + 702.16d). Fix: lethal 0 przy
+  pełnej prewencji (walidacja/default/widok korzystają automatycznie).
+- **B5 `b0c02d9`** — `gain_control_until_end_of_turn` nie ruszał
+  `state.combat` (CR 506.4): przejęty bloker blokował swojego nowego
+  kontrolera, przejęty atakujący „atakował" w jego stronę. Fix:
+  `removeFromCombat` po przejęciu (helper jak przy regeneracji CR 701.12a).
+- **Zamknięcie `3e34e44`** — plan E8 odhaczony 5/5 + wyniki per bug; PR #105
+  część 5 (body przez REST API — `gh pr edit` pada na deprecację Projects
+  classic). `gh api repos/{owner}/{repo}/pulls/N -X PATCH --input body.json`.
+
+Bramki: fast **4762/4762**, test:all **4772/4772** (~222 s), build
+**3394,6 kB**, quick benchmark heuristic **85,0%** (571/672 — bez zmian).
+Handoff: `docs/setup/HANDOFF_2026-09-08.md`.
