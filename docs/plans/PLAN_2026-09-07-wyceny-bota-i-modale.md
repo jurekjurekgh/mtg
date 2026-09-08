@@ -373,3 +373,51 @@ i czyste). Znalezione pięć realnych uproszczeń vs CR, każdy fix RED-first:
   chirurgia przez `applyEffect`) → fix `removeFromCombat` po przejęciu kontroli
   (CR 506.4) → GREEN.
 - Gate: `npm run test:all` — patrz PR #105 (część 5: E8).
+
+## E9 — wyzwanie wyłapywacza błędów, runda II: kolejne 5 uproszczeń vs CR (2026-09-08)
+
+Zasady jak w E8: każdy fix RED-first (test pierwszy, potwierdzony FAIL przed
+naprawą), osobny commit, plan pushnięty przed kodem. Kotwice zweryfikowane
+sondażami/probe'ami na żywym silniku przed spisaniem planu.
+
+- [ ] **F1 — powrót z grobu bez choroby przywołania** (CR 302.6):
+  `put_graveyard_card_onto_battlefield` (effects.js ~4571, Disa the Restless)
+  wchodzi z `moveObjectDirectly` + `applyEnterCounters`, ale NIE ustawia
+  `summoningSickness` — wszystkie ścieżki-rodzeństwo (reanimate, return_with_counter,
+  return_to_battlefield_tapped, pyxis, throne) ustawiają. Sonda: ożywiony stwór
+  atakuje w TEJ SAMEJ turze. Test: test/e9-f1-powrot-bez-sickness.test.js.
+- [ ] **F2 — masowa zmiana kontroli nie usuwa z walki** (CR 506.4):
+  `control_to_owners_all_creatures` (effects.js ~1305, Trostani Discordant)
+  zmienia controllerId i stawia sickness, ale nie woła `removeFromCombat` —
+  przejęty ATAKUJĄCY zostaje w state.combat.attackers i „atakuje" swojego
+  nowego kontrolera (sister-bug B5 z E8 w drugim efekcie). Sonda: potwierdzona.
+  Test: test/e9-f2-trostani-usuwa-z-walki.test.js.
+- [ ] **F3 — explore z wyborem, którego nie ma w CR** (CR 701.54b):
+  `explore` (effects.js ~4185, Guidestone Compass) przy nie-landzie kolejkuję
+  decyzję resolve_explore_choice „wierzch albo grób" — reguła każe POŁOŻYĆ
+  kartę DO GROBU bez wyboru; silnik daje graczowi darmowy strict-upgrade
+  (odłożenie na wierzch = podglądanie biblioteki). Test:
+  test/e9-f3-explore-bez-wyboru.test.js (brak pendingExplore + karta w grobie).
+- [ ] **F4 — search→battlefield bez choroby przywołania** (CR 302.6):
+  `resolve_search_choice` (game-state.js ~3058) przy destination battlefield
+  ustawia tylko `tapped` (entersTapped) — brak `summoningSickness`; ta sama
+  klasa co F1, inny moduł/ścieżka. Dziś idą nią tylko lądy (katalog), ale
+  ścieżka jest generyczna — następny batch z „search for a creature" wyszedłby
+  zepsuty. Fix u źródła wraz z F1 nie łamie landów (kind !== creature).
+  Test: test/e9-f4-search-battlefield-sickness.test.js.
+- [ ] **F5 — Throne: podwójny trigger ETB** (CR 603.6c): `thronePutChosenCreature`
+  (effects.js ~110) emituje I `object_moved` (toZone battlefield), I
+  `permanent_entered_battlefield` — pompa triggerów (triggers.js ~2373) dopasowuje
+  OBA typy do `enter_battlefield` i odpala `fireEnterBattlefieldTriggers` DWA RAZY
+  (Zoraline dałaby 4 życia zamiast 2, Impact Tremors 2 obrażenia zamiast 1).
+  Pozostałe ścieżki wejść emitują dokładnie jedno z nich. Fix: dedupe per
+  (obiekt-wchodzący) w jednym przebiegu processTriggersScan. Test:
+  test/e9-f5-throne-etb-raz.test.js.
+
+### E9 — wykonanie (wyniki dopisywać po każdym fixie)
+
+- F1: —
+- F2: —
+- F3: —
+- F4: —
+- F5: —
