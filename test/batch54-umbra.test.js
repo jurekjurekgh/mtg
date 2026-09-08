@@ -8,6 +8,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { replaceObject, effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 import { applyEffect, destroyPermanentByEffect } from '../src/engine/effects.js';
+import { destroyPermanents } from '../src/engine/destruction.js';
 import { runStateBasedActions, addRegenerationShield } from '../src/engine/state-based.js';
 import { addCounter } from '../src/engine/counters.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
@@ -128,6 +129,14 @@ for(const cause of ['effect','sba'])test(`606/F1: tarcza na aurze chroni ją prz
  assert.equal(s.objects.get('a0').zone,'battlefield','aura niszczona efektem umbra, nie SBA');
  assert.equal(s.events.filter(e=>e.type==='shield_consumed').length,1);
  assert.equal(s.pendingReplacementChoice,null);
+});
+test('606/F1: aura już w batchu SBA też dostaje override przyczyny (614.6)',()=>{
+ const s=board();addCounter(s,'a0','shield',1);
+ destroyPermanents(s,['host','a0'],{cause:'sba'});
+ assert.equal(s.objects.get('host').zone,'battlefield');
+ assert.equal(s.objects.get('a0').zone,'battlefield','umbra niszczy aurę efektem — tarcza ją chroni');
+ assert.equal(s.objects.get('a0').counters?.shield ?? 0,0);
+ assert.equal(s.events.filter(e=>e.type==='shield_consumed').length,1);
 });
 test('606: niezniszczalna aura nadal usuwa obrażenia hosta',()=>{
  const s=board();replaceObject(s,s.objects.get('a0'),{keywords:['indestructible']});replaceObject(s,s.objects.get('host'),{damage:6});runStateBasedActions(s);

@@ -71,7 +71,11 @@ export function destroyPermanents(state, ids, { cause = 'effect', putIds = [], f
 }
 function expandArmor(work,id) {
   const choice=work.choices[id];
-  if (choice?.startsWith('umbra:')) { const auraId=choice.slice(6);if(!work.ids.includes(auraId)) { work.ids.push(auraId); (work.causes ??= {})[auraId]='effect'; } }
+  // F1: override przyczyny NIESKRÓCONY do dopisania — aura już w batchu
+  // (np. własna śmierć SBA obok hosta) też jest niszczona EFEKTEM umbra
+  // (614.6), więc jej tarcza dostaje szansę (614.5), o ile decyzja dla
+  // aury jeszcze nie zapadła (kolejność APNAP; jeden event na id).
+  if (choice?.startsWith('umbra:')) { const auraId=choice.slice(6);(work.causes ??= {})[auraId]='effect';if(!work.ids.includes(auraId))work.ids.push(auraId); }
 }
 export function chooseDestructionReplacement(state,choice) {
   const pending=state.pendingReplacementChoice;
