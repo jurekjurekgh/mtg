@@ -7,7 +7,7 @@ import {jumpToStep} from '../src/engine/turn.js';
 import {addMana} from '../src/engine/resources.js';
 import {moveObjectDirectly} from '../src/engine/objects.js';
 import {replaceObject} from '../src/engine/permanents.js';
-import {cardInfo,buildStateOverlay} from '../src/table/render.js';
+import {cardInfo,buildStateOverlay,rulesText} from '../src/table/render.js';
 const registry=createCardRegistry();
 const session={cardDetails:id=>registry.get(id),nameOf:id=>registry.get(id)?.name??id,colorsOf:id=>registry.get(id)?.colors??[]};
 function put(s,id,cardId,zone='battlefield') {
@@ -51,4 +51,9 @@ test('A: kontrola źródła nie kończy linku, ale zakryte źródło nie ujawnia
 test('A: zwykły stwór 5/5 nie dostaje badge źródła',()=>{
  const s=setup();put(s,'body','rotting-legion');replaceObject(s,s.objects.get('body'),{power:5,toughness:5});
  assert.doesNotMatch(overlayText(info(s,'p1','body')),/animowany przez/);
+});
+
+test('A: opis Animatora nie obiecuje błędnie animacji tylko do końca tury',()=>{
+ const s=setup(),source=s.linkedAnimations[0].sourceId,text=rulesText(info(s,'p1',source));
+ assert.match(text,/bazowego 5\/5, dopóki źródło pozostaje na polu bitwy/);assert.doesNotMatch(text,/do końca tury/);
 });

@@ -1,3 +1,4 @@
+import {describeGameEvent} from '../src/table/session.js';
 import {readFileSync} from 'node:fs';
 import {createContext,runInContext} from 'node:vm';
 import {renderMultiTargetWizard} from '../src/table/choice-request.js';
@@ -157,4 +158,11 @@ for(const change of ['gone','control']) test(`B: nieaktualny wybór (${change}) 
 });
 test('B: niejednoznaczne cardId + cardIds odrzucone atomowo',()=>{
  const s=setup(),before=stateFingerprint(s);assert.equal(execute(s,{type:'resolve_discard_choice',playerId:'p1',cardId:'a',cardIds:['a','b']}).ok,false);assert.equal(stateFingerprint(s),before);
+});
+
+test('B UI: log nazywa dwie odrzucone karty, resolved nie dodaje trzeciej ani fałszywego kosztu zdolności',()=>{
+ const s=setup(),result=batch(s,['a','b']),helpers={nameOf:id=>registry.get(id)?.name??id,nameOfObject:id=>id};
+ const discards=result.events.filter(e=>e.type==='card_discarded').map(e=>describeGameEvent(e,helpers));
+ assert.equal(discards.length,2);assert.match(discards.join(' '),/Giant Spider/);assert.match(discards.join(' '),/Forest/);
+ assert.equal(describeGameEvent(result.events.find(e=>e.type==='discard_choice_resolved'),helpers),null);
 });

@@ -1822,9 +1822,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // Zdarzenie pary: object_moved+escape już nazywają przeniesione karty —
       // resolved to dublet informacji (Uwaga D: świadome pominięcie).
       case 'escape_exile_resolved': return null;
-      case 'discard_choice_resolved': return e.purpose === 'cost'
-        ? `${whoN(e.playerId)} odrzuca kartę (koszt zdolności)`
-        : `${whoN(e.playerId)} odrzuca kartę z ręki`;
+      // card_discarded już nazywa każdą kartę. Zakończenie decyzji nie jest
+      // kolejnym odrzuceniem ani zawsze pojedynczym kosztem zdolności.
+      case 'discard_choice_resolved': return null;
       case 'hand_top_choice_required': {
         const src = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
         return `${whoN(e.playerId)} wybiera kartę z ręki na wierzch biblioteki${src}`;

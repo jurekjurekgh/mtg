@@ -42,7 +42,7 @@ do nadal oczekującej decyzji. Koszt po zatwierdzeniu jest nieodwracalny.
   koszt; PlayerView z liczbą dla decydenta, jeden wspólny picker z licznikiem
   i zatwierdzeniem dokładnieN, bez efektu zaznaczeń/anulowania. Test wiring
   rzeczywistego main, nie tylko helperów. Fast + build → commit/push.
-- [ ] C: pełne all, golden bez zmiany wag/pinów, weryfikacja zbudowanego
+- [x] C: pełne all, golden bez zmiany wag/pinów, weryfikacja zbudowanego
   stołu (jsdom, scenariusz obu zgłoszeń), dokumentacja/handoff/PR/CI.
 
 Ryzyka: madness czeka do końca całego odrzucenia; nie wznowić pendingSpell
@@ -63,3 +63,13 @@ Live seed11068 (Kaladesh vs Forgotten Realms),80kroków: jeden picker2z4,
 odrzuca Island/Mountain, draw3; później Dockhand5/5 z odznaką Animatora.
 Zero zgłoszeń detektorów. Wcześniejszy przebieg wykrył niejednoznaczne
 „(koszt)” — etykieta poprawiona na „koszt: odrzuć2” bez zmiany detektorów.
+
+C ukończone lokalnie: all4970/4970 (32 testy A/B),build60/3433,3kB,
+golden4d9b14e8… bez regeneracji i zmian wag. Powtórzony finalny standalone
+live11068:80kroków,54sondy,0detektorów, discard2z4→draw3 i badge5/5.
+Dwa stare błędy tekstu odkryte na żywo również poprawione z regresjami:
+Animator nie mówi już „do końca tury”, resolved nie loguje dodatkowego
+pojedynczego „kosztu zdolności” przy odrzuceniu kart do czaru.
+A/B CI SUCCESS; wynik CI końcowego commita publikowany w PR106.
+Raport: docs/audits/OWNER_ANIMATOR_DISCARD_2026-09-08.md.
+Handoff: docs/setup/HANDOFF_2026-09-08j.md.

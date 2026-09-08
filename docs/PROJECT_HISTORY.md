@@ -9477,3 +9477,15 @@ Madness i wstrzymane czary/aktywacje ruszają dopiero po całym koszcie.
 23 nowych regresji (w tym realny main→DOM→engine), fast4958/4958,
 build60/3433,2kB. Żywy stół seed11068 potwierdza oba zgłoszenia,0detektorów.
 Plan: docs/plans/PLAN_2026-09-08-animator-discard-ui.md.
+
+
+## 2026-09-08 — domknięcie Animator/discard UI
+
+Finalna bramka all4970/4970,32 nowych regresji A/B,build60/3433,3kB.
+Golden4d9b14e8… bez regeneracji/tuningu. Nieinstrumentowany standalone,
+Kaladesh/Forgotten Realms seed11068: jeden wybór2z4,draw3 i Dockhand5/5
+z odznaką Animatora;80kroków,0detektorów. Poprawiono również stare opisy
+wykryte na żywo: trwałość animate_linked (nie EOT) oraz dublet logu
+„kosztu zdolności” przy rozstrzygnięciu odrzucenia kart do czaru.
+Raport OWNER_ANIMATOR_DISCARD_2026-09-08.md, handoff2026-09-08j.
+A938882b/Bda70d10 CI SUCCESS; końcowy HEAD/checks w tym samym PR106 OPEN.

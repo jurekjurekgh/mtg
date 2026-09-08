@@ -956,7 +956,7 @@ function describeEffect(e) {
     grant_double_strike_on_noncreature_cast_this_turn: () => 'do końca tury: każdy twój czar niebędący stworem daje wybranemu stworowi podwójne uderzenie',
     add_flying_counter_to_face_down_you_control: () => 'połóż licznik flying na zakrytych stworach',
     amass: () => 'amass (stwórz/rozrośnij Armię)',
-    animate_linked: () => 'animuj do końca tury',
+    animate_linked: () => `animuj do bazowego ${e.power ?? 0}/${e.toughness ?? 0}, dopóki źródło pozostaje na polu bitwy`,
     animate_permanent_until_end_of_turn: () => 'stanie się stworem do końca tury',
     // M101/B7 (CR 702.171): bez tego wpisu etykieta pokazywała surowy slug
     // „efekt (set_saddled)" — dokładnie jak w zgłoszeniu B.
