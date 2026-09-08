@@ -2541,14 +2541,22 @@ export function commandLabel(cmd, session, view) {
         ? manaCostHtml(costSymbols(escCost, defCard?.spell?.escape?.colors)) : '?';
       const exiled = (cmd.escapeExileIds ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const exilePart = exiled ? ` — wygnaj: ${exiled}` : '';
-      return `Ucieczka: ${nameOfObjectId(cmd.objectId)} (koszt ${esc})${exilePart}`;
+      // A (znalezisko testera): ta sama luka co we flashbacku — Sweet Oblivion
+      // celuje w gracza, więc warianty różniące się tylko celem potrzebują go
+      // w etykiecie (wzorzec „→ cel:” z cast_spell/cleave).
+      const escTargets = (cmd.targets ?? []).filter((id) => id != null).map((id) => nameOfObjectId(id)).join(', ');
+      return `Ucieczka: ${nameOfObjectId(cmd.objectId)} (koszt ${esc})${exilePart}${escTargets ? ` → cel: ${escTargets}` : ''}`;
     }
     case 'cast_flashback': {
       const objCard = obj(cmd.objectId);
       const defCard = objCard?.cardId ? session.cardDetails(objCard.cardId) : null;
       const fbCost = defCard?.spell?.flashback?.cost;
       const fb = fbCost != null ? manaCostHtml(`{${fbCost}}`) : '?';
-      return `Flashback: ${nameOfObjectId(cmd.objectId)} (koszt ${fb})`;
+      // A (znalezisko testera): cel w etykiecie jak w cast_spell — bez tego
+      // dwie różne komendy (Dream Twist w Ty / w Nieprzyjaciela) wyglądały
+      // identycznie („dwie oferty flashback jednej karty”).
+      const fbTargets = (cmd.targets ?? []).filter((id) => id != null).map((id) => nameOfObjectId(id)).join(', ');
+      return `Flashback: ${nameOfObjectId(cmd.objectId)} (koszt ${fb})${fbTargets ? ` → cel: ${fbTargets}` : ''}`;
     }
     case 'cast_adventure': {
       const card = obj(cmd.objectId);
@@ -2562,7 +2570,10 @@ export function commandLabel(cmd, session, view) {
       const advCost = adv.cost != null
         ? manaCostHtml(`${advGeneric > 0 || advPips.length === 0 ? `{${advGeneric}}` : ''}${advPips.map((c) => `{${c}}`).join('')}`)
         : '?';
-      return `Przygoda: ${nameOfObjectId(cmd.objectId)} (koszt ${advCost})`;
+      // A (znalezisko testera): przygoda też bywa celowana (Ettercap) —
+      // cel w etykiecie jak w cast_spell/cleave.
+      const advTargets = (cmd.targets ?? []).filter((id) => id != null).map((id) => nameOfObjectId(id)).join(', ');
+      return `Przygoda: ${nameOfObjectId(cmd.objectId)} (koszt ${advCost})${advTargets ? ` → cel: ${advTargets}` : ''}`;
     }
     case 'cast_adventure_creature': {
       return `Zagraj z przygody: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(obj(cmd.objectId))})`;
