@@ -4,10 +4,10 @@
 // moonlit) są decydent-only i niosą wyłącznie informację publiczną.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
+import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
-import { attachEquipmentToCreature } from '../src/engine/attachments.js';
+import { attachEquipmentToCreature, attachAuraToCreature } from '../src/engine/attachments.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 
@@ -198,3 +198,28 @@ test('E2/C7: cast_adventure_creature — duże ciało przegrywa ląd, małe wygr
     `ciało 10/10 (100) > ląd (90), wybrał: ${JSON.stringify(chosen)} (oferty: ${view.legalCommands.map((c) => c.type).join(',')})`);
   assert.equal(chosen.objectId, 'adv');
 });
+
+for (const auraController of ['p1', 'p2']) {
+  test(`D: aura ${auraController} nie uzasadnia zniszczenia własnego Equipment`, () => {
+    const state = newState();
+    putCreature(state, 'host', 'p1', 3, 3);
+    putEquip(state, 'sword', 'p1', 'host');
+    addObject(state, {
+      id: 'aura', instanceId: 'i-aura', cardId: 'synthetic-aura',
+      controllerId: auraController, ownerId: auraController, zone: 'battlefield',
+      kind: 'enchantment', aura: {}, manaCost: 1, types: ['Enchantment'],
+      subtypes: ['Aura'], colors: [], abilities: [], keywords: [],
+    });
+    attachAuraToCreature(state, 'aura', 'host');
+    state.pendingDestroyEquipment = { playerId: 'p1', targetId: 'host', restorePriorityTo: null };
+    const view = playerView(state, 'p1');
+    assert.ok(view.zones.battlefield.find(o => o.id === 'sword').equipment,
+      'widok rzeczywiście niesie typ Equipment');
+    assert.ok(!view.zones.battlefield.find(o => o.id === 'aura').equipment);
+    const chosen = botChoice(state);
+    assert.equal(chosen.destroy, false, 'aura nie jest Equipment');
+    assert.ok(execute(state, chosen).ok);
+    assert.equal(state.objects.get('sword').zone, 'battlefield');
+    assert.equal(state.objects.get('aura').zone, 'battlefield');
+  });
+}

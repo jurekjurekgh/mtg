@@ -2447,7 +2447,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // jest nasz. Załączniki są publiczne (attachedTo w widoku, CR 400.2).
         const hostId = view.pendingDestroyEquipment?.targetId;
         if (hostId == null || !objectOnBoard(view, hostId)) return finish(cmd.destroy ? 0 : 0);
-        const enemyGear = (view.zones.battlefield ?? []).some((o) => o.attachedTo === hostId
+        // Jak selektor efektu: obca aura nie jest niszczonym Equipment.
+        const enemyGear = (view.zones.battlefield ?? []).some((o) => o.equipment && o.attachedTo === hostId
           && o.controllerId !== view.playerId);
         if (cmd.destroy) return finish(enemyGear ? 8 : -8);
         return finish(enemyGear ? -2 : 1);
