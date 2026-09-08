@@ -61,7 +61,7 @@ test('E2/C1: look_top — do ręki idzie najcenniejsza karta z wierzchu (nie pie
   assert.equal(chosen.cardId, 'skarb', `bierzemy 5/5 za 2, wybrał: ${JSON.stringify(chosen)}`);
 });
 
-test('E2/C2: hand_top — na wierzch własnej biblioteki idzie NAJCENNEJSZA karta (wróci przy dobraniu)', () => {
+test('E2/C2: hand_top — na wierzch własnej biblioteki idzie mniej cenna karta (zachowaj lepszą w ręce)', () => {
   const state = newState();
   // Baza many (L116): bez lądów cardKeepValue uzna drogiego stwora za
   // „poza zasięgiem" i wycena odwróci kierunek.
@@ -74,7 +74,7 @@ test('E2/C2: hand_top — na wierzch własnej biblioteki idzie NAJCENNEJSZA kart
   state.turn.priorityPlayerId = 'p1';
   const chosen = botChoice(state);
   assert.equal(chosen.type, 'resolve_hand_top_choice');
-  assert.equal(chosen.cardId, 'mocny', `na wierzch idzie 6/6 (to mój następny dobór), wybrał: ${JSON.stringify(chosen)}`);
+  assert.equal(chosen.cardId, 'slaby', `na wierzch idzie 1/1 (6/6 zostaje w ręce), wybrał: ${JSON.stringify(chosen)}`);
 });
 
 test('E2/C3: reveal_exile_grave — z grobu WROGA wygnaj najcenniejszą (ucina recursję)', () => {

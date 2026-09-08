@@ -2422,13 +2422,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(cardKeepValue(view, card));
       }
       case 'resolve_hand_top_choice': {
-        // E2/C (plan 2026-09-07, Chittering Rats): decydent odkłada kartę
-        // z WŁASNEJ ręki na WIERZCH własnej biblioteki — wróci przy najbliższym
-        // dobraniu, więc na wierzch idzie NAJCENNEJSZA (+cardKeepValue).
-        // Dotąd default 0 i kolejność ofert od najtańszej.
+        // Odkładamy kartę z własnej RĘKI, nie dobieramy jej z biblioteki.
+        // Zachowaj cenniejszą dostępną teraz; odłóż najmniej potrzebną.
+        // cardKeepValue uwzględnia także niedobór/przesyt lądów.
         const card = handCard(view, cmd.cardId);
         if (!card) return finish(0);
-        return finish(cardKeepValue(view, card));
+        return finish(-cardKeepValue(view, card));
       }
       case 'resolve_reveal_exile_grave': {
         // E2/C (plan 2026-09-07, Dreams of Steel and Oil, M69): wybieramy
