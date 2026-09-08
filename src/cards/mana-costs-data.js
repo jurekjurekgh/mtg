@@ -1,4 +1,5 @@
 export const MANA_COSTS = {
+  "abstruse-interference": "{2}{U}",
   "skymarch-bloodletter": "{2}{B}",
   "vampires-bite": "{B}",
   "rotting-legion": "{4}{B}",

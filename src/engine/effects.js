@@ -1,11 +1,11 @@
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
-import { getSourceForObject } from './mana-sources.js';
+import { getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
 import { createBattlefieldToken, nextCopyNumber, nextFaceDownCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -3919,36 +3919,48 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // Batch 44 (Frightful Delusion): „Counter target spell unless its
     // controller pays {1}. That player discards a card." — decyzja należy do
     // KONTROLERA celowanego czaru (blokująca, resolve_counter_pay_choice).
-    // Bez many na opłatę nie ma decyzji: czar skontrowany od razu, potem
-    // discard (wybór karty w pendingDiscardChoice — CR 701.18).
+    // discardCount jest jawnym riderem — inne kontry nie odrzucają karty.
+    // Bez zasobów/źródeł czar skontrowany od razu, potem opcjonalny rider.
     const targetId = targets[0];
     if (targetId == null) return;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'stack') return; // cel zniknął (CR 608.2b)
     const payerId = object.controllerId;
     const amount = effect.amount ?? 1;
-    const canPay = producibleMana(state, payerId) >= amount;
+    // CR 608.2g: nie pomijaj okna aktywacji ręcznego źródła many tylko
+    // dlatego, że nie jest auto-tapowane (np. sacrificeSelf).
+    const canPay = producibleMana(state, payerId) >= amount || state.zones.battlefield.some(id => {
+      const source = state.objects.get(id);
+      // Konserwatywna bramka: obecność źródła zachowuje OKNO płatności.
+      // Nie obiecuje ani nie wykonuje aktywacji — legalManaAbilities w ofercie
+      // waliduje wszystkie koszty, chorobę itd. Bez legalnej aktywacji/puli
+      // zostaje tylko odmowa. effects nie importuje wykonawcy abilities.
+      return source?.controllerId === payerId
+        && activatableAbilities(state, source).some(isActivatedManaAbility);
+    });
+    const discardCount = effect.discardCount ?? 0;
     if (!canPay) {
       // M271 (błąd #15): jak wyżej — wspólny helper, nie kopia.
       counterStackObject(state, targetId, {
         counteredBy: sourceObject.id, counteredByCardId: sourceObject.cardId,
       });
+      if (discardCount === 0) return; // dalsze instrukcje czaru, bez odziedziczonego discard
       const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === payerId);
       if (handIds.length === 0) return; // bez ręki — nic więcej
       state.pendingDiscardChoice = {
-        playerId: payerId, count: 1, handIds, purpose: 'effect',
+        playerId: payerId, count: discardCount, handIds, purpose: 'effect',
         sourceCardId: sourceObject.cardId ?? null,
         restorePriorityTo: state.turn.priorityPlayerId,
       };
       state.turn.priorityPlayerId = payerId;
       state.events.push(event('discard_choice_required', {
-        playerId: payerId, count: 1, cardIds: [...handIds], purpose: 'effect',
+        playerId: payerId, count: discardCount, cardIds: [...handIds], purpose: 'effect',
         sourceCardId: sourceObject.cardId ?? null,
       }));
       return true; // discard dokończy rozstrzyganie czaru-źródła
     }
     state.pendingCounterPay = {
-      playerId: payerId, targetId, amount,
+      playerId: payerId, targetId, amount, discardCount,
       sourceId: sourceObject.id, sourceCardId: sourceObject.cardId ?? null,
       restorePriorityTo: state.turn.priorityPlayerId,
     };

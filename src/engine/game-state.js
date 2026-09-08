@@ -7,7 +7,7 @@ import { assertStateInvariants } from './invariants.js';
 import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
-import { allControlledManaSources } from './mana-sources.js';
+import { allControlledManaSources, isActivatedManaAbility } from './mana-sources.js';
 
 function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   const costStr = MANA_COSTS[cardId];
@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 }
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
-import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
+import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
@@ -1442,9 +1442,8 @@ function manaGeneratingCommandFor(state, cmd, playerId) {
   if (cmd.type === 'tap_for_mana') return true;
   if (cmd.type === 'activate_ability' && Number.isInteger(cmd.abilityIndex)) {
     const obj = state.objects.get(cmd.objectId);
-    const ability = obj?.abilities?.[cmd.abilityIndex];
-    const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
-    return effects.some((e) => e?.type === 'add_mana');
+    const ability = obj && activatableAbilities(state, obj)[cmd.abilityIndex];
+    return ability != null && isActivatedManaAbility(ability);
   }
   return false;
 }
@@ -3176,8 +3175,8 @@ export function execute(state, input) {
   // Oczekująca decyzja opcjonalnej płatności triggera (Panic Spellbomb,
   // Zoraline — Temat 8): „you may pay ... When you do, ...".
   // Batch 44 (Frightful Delusion): decyzja „zapłać {N} albo czar skontrowany"
-  // należy do KONTROLERA celowanego czaru; po decyzji ten gracz odrzuca kartę
-  // („That player discards a card" — niezależnie od wyniku), a czar-źródło
+  // należy do KONTROLERA celowanego czaru; jawny discardCount włącza odrzut
+  // („That player discards a card" — niezależnie od wyniku). Czar-źródło
   // dokańcza rozstrzyganie (finishPendingSpell przez discard purpose 'effect'
   // albo wprost przy pustej ręce).
   if (state.pendingCounterPay && !manaGeneratingCommandFor(state, cmd, state.pendingCounterPay.playerId)) {
@@ -3186,11 +3185,11 @@ export function execute(state, input) {
     if (cmd.playerId !== state.pendingCounterPay.playerId) return reject('counter_pay_not_your_decision');
     const pending = state.pendingCounterPay;
     const before = state.events.length;
+    if (cmd.pay && (pending.amount ?? 0) > producibleMana(state, pending.playerId)) return reject('counter_pay_insufficient_mana');
     state.pendingCounterPay = null;
     const target = state.objects.get(pending.targetId);
     const targetOnStack = target && target.zone === 'stack';
     if (cmd.pay) {
-      if ((pending.amount ?? 0) > producibleMana(state, pending.playerId)) return reject('counter_pay_insufficient_mana');
       if ((pending.amount ?? 0) > 0) spendMana(state, pending.playerId, pending.amount, []);
     } else if (targetOnStack) {
       // M271 (błąd #15): piąta kopia kontry — przez WSPÓLNY helper, żeby
@@ -3206,14 +3205,14 @@ export function execute(state, input) {
     // „That player discards a card" — wybór odrzucanej karty należy do
     // odrzucającego (CR 701.18); przy pustej ręce nic się nie dzieje.
     const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
-    if (handIds.length > 0) {
+    if ((pending.discardCount ?? 0) > 0 && handIds.length > 0) {
       state.pendingDiscardChoice = {
-        playerId: pending.playerId, count: 1, handIds, purpose: 'effect',
+        playerId: pending.playerId, count: pending.discardCount, handIds, purpose: 'effect',
         sourceCardId: pending.sourceCardId ?? null,
         restorePriorityTo: pending.restorePriorityTo,
       };
       state.events.push(event('discard_choice_required', {
-        playerId: pending.playerId, count: 1, cardIds: [...handIds], purpose: 'effect',
+        playerId: pending.playerId, count: pending.discardCount, cardIds: [...handIds], purpose: 'effect',
         sourceCardId: pending.sourceCardId ?? null,
       }));
     } else {
@@ -6346,6 +6345,11 @@ export function playerView(state, playerId) {
       legalCommands.push(command('resolve_counter_pay_choice', playerId, { pay: true, ...counterPayInfo }));
     }
     legalCommands.push(command('resolve_counter_pay_choice', playerId, { pay: false, ...counterPayInfo }));
+    // CR 608.2g: jedynie legalne zdolności MANY podczas resolution.
+    // Wyjątek od blokady zwykłych aktywacji — bez ręcznego auto-sacrifice.
+    for (const { ability, ...offer } of legalManaAbilities(state, playerId)) {
+      legalCommands.push(command('activate_ability', playerId, offer));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeWardPay) {
     // M258/F3 — ward (CR 702.21): dopłać {N} (czar/zdolność przechodzi)
     // albo odmów (kontr). Boty płacą (pierwsza oferta) — rzucający już

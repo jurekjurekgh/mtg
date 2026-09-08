@@ -8613,7 +8613,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     spell: {
       timing: 'instant',
       targets: [{ type: 'spell_on_stack' }],
-      effects: [{ type: 'counter_spell_unless_pays', amount: 1 }],
+      effects: [{ type: 'counter_spell_unless_pays', amount: 1, discardCount: 1 }],
     },
     artId: 256, plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
@@ -10644,6 +10644,22 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     })],
     artId: 608, plan: 'Ixalan',
     support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'abstruse-interference', name: 'Abstruse Interference', set: 'OGW',
+    types: ['Instant'], colors: [], keywords: ['devoid'], manaCost: 3,
+    oracleText: "Devoid (This card has no color.)\nCounter target spell unless its controller pays {1}. You create a 1/1 colorless Eldrazi Scion creature token. It has \"Sacrifice this token: Add {C}.\" ({C} represents colorless mana.)",
+    imageUri: "https://cards.scryfall.io/large/front/2/4/249a7be3-311e-4ce6-97dc-97242463ae23.jpg?1783937922",
+    spell: { timing: 'instant', targets: [{ type: 'spell_on_stack' }], effects: [
+      { type: 'counter_spell_unless_pays', amount: 1 },
+      { type: 'create_token', cardId: 'token_eldrazi_scion', name: 'Eldrazi Scion',
+        kind: 'creature', power: 1, toughness: 1, colors: [],
+        types: ['Creature'], subtypes: ['Eldrazi', 'Scion'],
+        abilities: [createAbility({ type: ABILITY_TYPE.activated,
+          cost: { sacrificeSelf: true }, effect: { type: 'add_mana', amount: 1 } })],
+      },
+    ] },
+    artId: 602, plan: 'Zendikar', support: { status: 'supported', limitations: [] },
   }),
 
 ]);

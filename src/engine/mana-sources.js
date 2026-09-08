@@ -332,3 +332,16 @@ export function manaUnitKey(colors) {
   const set = new Set((colors ?? []).filter((c) => MANA_COLOR_ORDER.includes(c)));
   return MANA_COLOR_ORDER.filter((c) => set.has(c)).join('');
 }
+
+/** Czy to zdolność many (CR 605.1a): dodaje manę i nie ma celów. */
+export function isActivatedManaAbility(ability) {
+  if ((ability.targets ?? []).length > 0) return false;
+  const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+  // M154 (Batch 38, Pristine Talisman): „{T}: Add {C}. You gain 1 life." —
+  // zdolność many z dojazdem zysku życia. Mana abilities rozstrzygają się
+  // natychmiast bez stosu (CR 605.1a). Zysk życia dopuszczamy TYLKO jako
+  // rider obok add_mana (sam gain_life — Soulmender {T}: zyskaj 1 życia — to
+  // zwykła zdolność na stosie, nie mana ability).
+  return effects.length > 0 && effects.some((e) => e?.type === 'add_mana')
+    && effects.every((e) => e?.type === 'add_mana' || e?.type === 'gain_life');
+}

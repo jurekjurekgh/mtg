@@ -231,3 +231,111 @@ test('B54: menu karty korzysta z tego samego klucza grupowania czarów co panel'
   assert.match(main, /if \(cmd\.type === 'cast_spell'\) return choiceRequestGroupKey\(cmd\)/,
     'dowiązanie wspólnego helpera — bez kopii, która sprawdza cele przed kickerem');
 });
+
+// CR 608.2b (wydanie 2026-08-07, odczyt 2026-09-08): “If all its
+// targets, for every instance of the word ‘target,’ are now illegal, the
+// spell or ability doesn’t resolve.” 608.2c: “The controller of the spell
+// or ability follows its instructions in the order written.”
+// https://mtg.wiki/page/Resolving_spells_and_abilities
+// WotC 2016-01-22 (snapshot): “You get the Eldrazi Scion even if the
+// controller of the spell pays {1}.”
+function counterScenario({ resources = 'land', cardId = 'abstruse-interference' } = {}) {
+  const s = game(); s.turn.activePlayerId = s.turn.priorityPlayerId = 'p2';
+  put(s, 'spell', 'fleeting-distraction', 'p2'); put(s, 'tgt', 'rotting-legion', 'p2', 'battlefield');
+  put(s, 'extra', 'rotting-legion', 'p2'); put(s, 'counter', cardId);
+  if (resources === 'land') put(s, 'payer-land', 'basic-island', 'p2', 'battlefield');
+  if (resources === 'scion') put(s, 'payer-scion', 'token_eldrazi_scion', 'p2', 'battlefield');
+  addMana(s, 'p2', 1, { colors: ['U'] }); addMana(s, 'p1', 3, { colors: ['U'] });
+  run(s, commands(s).find(c => c.type === 'cast_spell' && c.objectId === 'spell'));
+  const targetId = s.zones.stack.at(-1);
+  run(s, commands(s).find(c => c.type === 'pass_priority'));
+  run(s, commands(s).find(c => c.type === 'cast_spell' && c.objectId === 'counter'));
+  return { s, targetId };
+}
+function resolveUntilCounterDecision(s) {
+  for (let i = 0; i < 8 && !s.pendingCounterPay && !s.pendingDiscardChoice && find(s, 'abstruse-interference', 'stack'); i++) {
+    run(s, commands(s).find(c => c.type === 'pass_priority'));
+  }
+}
+for (const resources of ['land', 'none']) for (const pay of resources === 'none' ? [false] : [false, true]) {
+  test(`B54: Abstruse — zasoby ${resources}, płaci ${pay}; jeden Scion, zero discard`, () => {
+    const { s, targetId } = counterScenario({ resources });
+    resolveUntilCounterDecision(s);
+    if (resources === 'land') {
+      assert.ok(s.pendingCounterPay); assert.equal(find(s, 'token_eldrazi_scion'), undefined);
+      run(s, commands(s).find(c => c.type === 'resolve_counter_pay_choice' && c.pay === pay));
+    }
+    assert.equal(s.objects.get(targetId)?.zone === 'stack', pay);
+    assert.equal(s.pendingDiscardChoice, null);
+    assert.equal(s.objects.get('extra').zone, 'hand');
+    const tokens = [...s.objects.values()].filter(o => o.cardId === 'token_eldrazi_scion' && o.zone === 'battlefield');
+    assert.equal(tokens.length, 1); assert.equal(tokens[0].controllerId, 'p1');
+    assert.equal(tokens[0].power, 1); assert.equal(tokens[0].toughness, 1); assert.deepEqual(tokens[0].colors, []);
+    assert.equal(find(s, 'abstruse-interference', 'graveyard')?.colors.length, 0, 'devoid także poza stosem');
+    resolve(s);
+    const manaBefore = s.players[0].mana;
+    // Mana ability bez {T}: choroba przywołania nie zabrania poświęcenia.
+    s.turn.priorityPlayerId = 'p1';
+    run(s, commands(s).find(c => c.type === 'activate_ability' && c.objectId === tokens[0].id));
+    assert.equal(s.players[0].mana, manaBefore + 1); assert.equal(s.zones.stack.length, 0);
+    assert.equal(s.players[0].manaPool[''] >= 1, true, 'rzeczywista mana bezbarwna');
+  });
+}
+test('B54: Abstruse — nielegalny jedyny cel: nie tworzy Sciona', () => {
+  const { s, targetId } = counterScenario();
+  moveObjectDirectly(s, targetId, 'graveyard', 'gone');
+  resolve(s);
+  assert.equal(find(s, 'token_eldrazi_scion'), undefined); assert.equal(s.pendingCounterPay, null);
+  assert.equal(s.objects.get('extra').zone, 'hand');
+});
+// CR 608.2g, to samo źródło: “If an effect gives a player the option to
+// pay mana, they may activate mana abilities before taking that action.”
+test('B54: Abstruse — dopłatę można uzyskać z ręcznie poświęconego Sciona podczas resolution', () => {
+  const { s, targetId } = counterScenario({ resources: 'scion' });
+  resolveUntilCounterDecision(s);
+  assert.ok(s.pendingCounterPay, 'nie auto-kontruj tylko dlatego, że auto-tap nie poświęca tokenów');
+  const pendingBefore = s.pendingCounterPay;
+  assert.equal(execute(s, { type: 'resolve_counter_pay_choice', playerId: 'p2', pay: true }).ok, false);
+  assert.deepEqual(s.pendingCounterPay, pendingBefore, 'odrzucona dopłata nie gubi decyzji');
+  run(s, commands(s).find(c => c.type === 'activate_ability' && c.objectId === 'payer-scion'));
+  assert.equal(s.objects.get(targetId).zone, 'stack'); assert.ok(s.pendingCounterPay);
+  run(s, commands(s).find(c => c.type === 'resolve_counter_pay_choice' && c.pay));
+  assert.equal(s.objects.get(targetId).zone, 'stack'); assert.equal(s.pendingCounterPay, null);
+  assert.equal(find(s, 'token_eldrazi_scion')?.controllerId, 'p1');
+  assert.equal(s.players[1].mana, 0);
+});
+test('B54: Abstruse — PL opis nie pożycza discard z Frightful Delusion, druk i mana są zgodne', async () => {
+  const { describeSpellEffects } = await import('../src/table/render.js');
+  const def = registry.get('abstruse-interference'); assert.ok(def);
+  const src = JSON.parse(fs.readFileSync(new URL('../docs/cards/scryfall-abstruse-interference.json', import.meta.url)));
+  assert.equal(def.oracleText, src.oracle_text); assert.equal(MANA_COSTS[def.id], src.mana_cost);
+  assert.equal(def.artId, 602); assert.equal(def.plan, 'Zendikar'); assert.deepEqual(def.colors, []);
+  assert.doesNotMatch(describeSpellEffects(def.spell), /odrzuc/);
+  assert.match(describeSpellEffects(registry.get('frightful-delusion').spell), /odrzuc/);
+});
+
+// Zmiana talii Zendikar ujawniła dwa stare pominięcia wyceny (s4008).
+// Nie podnosimy grzechotki remisów i nie stroimy wag: sprawdzamy DANE
+// wejściowe istniejących funkcji. Zdolność lądu nie daje dodatkowej many
+// ponad tę, którą manaAvailableNow JUŻ policzyło w tym samym lądzie.
+test('B54: regresja bota — tap policzonego już lądu nie odblokowuje droższego czaru', async () => {
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const s = game(); put(s, 'settlement', 'holdout-settlement', 'p1', 'battlefield');
+  put(s, 'spell', 'rotting-legion');
+  addMana(s, 'p1', 3, { colors: ['B'] }); // razem z lądem 4, nigdy 5
+  const bot = createHeuristicBot({ seed: 54, registry }); bot.chooseCommand(playerView(s, 'p1'));
+  const option = bot.trace().at(-1).options.find(o => o.cmd === 'activate_ability(settlement#0)');
+  assert.ok(option); assert.ok(option.score < 0, JSON.stringify(option));
+});
+test('B54: regresja bota — damage_each_opponent na aktywacji wycenia dobicie, nie samą bazę', async () => {
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const scores = [];
+  for (const remaining of [20, 1]) {
+    const s = game(); put(s, 'welder', 'welder-automaton', 'p1', 'battlefield');
+    addMana(s, 'p1', 4, { colors: ['R'] }); s.players[1].life = remaining;
+    const bot = createHeuristicBot({ seed: 54, registry }); bot.chooseCommand(playerView(s, 'p1'));
+    const option = bot.trace().at(-1).options.find(o => o.cmd === 'activate_ability(welder#0)');
+    assert.ok(option); scores.push(option.score);
+  }
+  assert.ok(scores[1] > scores[0], `dobicie > chip, nie ${scores}`);
+});

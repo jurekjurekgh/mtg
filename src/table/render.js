@@ -977,7 +977,8 @@ function describeEffect(e) {
     control_to_owners_all_creatures: () => 'kontrola stworów wraca do właścicieli',
     counter_spell: () => 'skontruj czar',
     counter_ability: () => 'skontruj zdolność',
-    counter_spell_unless_pays: (effect) => `skontruj czar, chyba że kontroler zapłaci {${effect?.amount ?? 1}}; ten gracz odrzuca kartę`,
+    counter_spell_unless_pays: () => `skontruj czar, chyba że kontroler zapłaci {${e.amount ?? 1}}`
+      + (e.discardCount ? `; ten gracz odrzuca ${e.discardCount} ${polishPluralCount(e.discardCount, 'kartę', 'karty', 'kart')}` : ''),
     fireball_resolve: () => 'X obrażeń podzielone po równo między cele',
     craft_transform: () => 'craft — transform',
     damage_defending_player: () => `${damageCount(dynamicAmount(e.amount))} obrońcy`,

@@ -1,3 +1,4 @@
+import { isActivatedManaAbility } from './mana-sources.js';
 import { event } from '../protocol/types.js';
 import { activatableAbilities, deathZoneFor, effectiveKeywords, effectivePower, tapObject } from './permanents.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
@@ -1632,18 +1633,13 @@ export function performActivation(state, ctx) {
   return activated;
 }
 
-/** Czy to zdolność many (CR 605.1a): dodaje manę i nie ma celów. */
-function isActivatedManaAbility(ability) {
-  if ((ability.targets ?? []).length > 0) return false;
-  const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-  // M154 (Batch 38, Pristine Talisman): „{T}: Add {C}. You gain 1 life." —
-  // zdolność many z dojazdem zysku życia. Mana abilities rozstrzygają się
-  // natychmiast bez stosu (CR 605.1a). Zysk życia dopuszczamy TYLKO jako
-  // rider obok add_mana (sam gain_life — Soulmender {T}: zyskaj 1 życia — to
-  // zwykła zdolność na stosie, nie mana ability).
-  return effects.length > 0 && effects.some((e) => e?.type === 'add_mana')
-    && effects.every((e) => e?.type === 'add_mana' || e?.type === 'gain_life');
+// Batch 54: CR 608.2g pozwala aktywować zdolności many W TRAKCIE dopłaty.
+// Ręczne źródła (np. poświęcenie Sciona) nie są częścią producibleMana:
+// wolno je zaoferować, ale nie wolno poświęcać automatycznie.
+export function legalManaAbilities(state, playerId) {
+  return legalActivatedAbilities(state, playerId).filter(({ ability }) => isActivatedManaAbility(ability));
 }
+
 
 /**
  * D (2026-08-11, MTG rules): NIEmany zdolności aktywowane idą NA STOS

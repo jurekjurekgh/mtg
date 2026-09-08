@@ -1217,6 +1217,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // optymalne wciąż mu się należy.
     return base + (locking ? Math.max(0, timing) + 4 : timing);
   };
+  // Wspólna wycena tej samej instrukcji na czarze i aktywacji (Batch 54).
+  // Dotychczasowe wartości M155, bez strojenia parametrów.
+  const opponentLifeEffectValue = (view, effect) => {
+    const amount = effect.amount ?? 1;
+    const foe = enemy(view);
+    return (foe && amount >= (foe.life ?? 20)) ? 80 : 4 * amount;
+  };
+
   /**
    * M128 (uwaga B właściciela, 2026-08-17): mana, którą DA SIĘ wydać w tej
    * chwili BEZ aktywowania dodatkowych zdolności — pula gracza plus lądy, które
@@ -3650,9 +3658,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // obrażeń przeciwnikowi). Reguła generyczna: wartość = 4×N (jak
           // modalny trigger), dobicie = bonus.
           if (effect.type === 'damage_each_opponent' || effect.type === 'lose_life_each_opponent') {
-            const amount = effect.amount ?? 1;
-            const foe = enemy(view);
-            score += (foe && amount >= (foe.life ?? 20)) ? 80 : 4 * amount;
+            score += opponentLifeEffectValue(view, effect);
           }
           // M103/B (zgłoszenie właściciela): „cel nie może być blokowany"
           // (Enter the Enigma) — ewazja ma wartość WYŁĄCZNIE na własnym
@@ -3983,6 +3989,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
         }
         for (const effect of effects) {
+          // B54/s4008: ta rodzina miała wycenę tylko w czarach, aktywacja
+          // zostawała na bazie 2 nawet gdy zabijała przeciwnika.
+          if (effect.type === 'damage_each_opponent' || effect.type === 'lose_life_each_opponent') {
+            score += opponentLifeEffectValue(view, effect);
+          }
           // M221/A (zgłoszenie właściciela, Panic Spellbomb): „{T}, poświęć:
           // docelowy stwór nie może blokować w tej turze" to COMBAT TRICK
           // ofensywny — ma sens WYŁĄCZNIE, gdy bot realnie atakuje w tej turze
@@ -4551,7 +4562,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // dla wszystkich źródeł many zamiast kolejnego `if` per karta.
             // =================================================================
             const availableNow = manaAvailableNow(view);
-            const availableAfter = availableNow + net;
+            // B54/s4008: manaAvailableNow już policzyło nietapnięty ląd.
+            // Przelanie jego many do puli nie jest drugim egzemplarzem tej
+            // samej many. Koszt i produkcja nadal liczone jak dotychczas.
+            const countedLand = source && !source.tapped
+              && (source.kind === 'land' || (source.types ?? []).includes('Land')) ? 1 : 0;
+            const availableAfter = availableNow + net - countedLand;
             // Koszt karty czytamy z widoku (manaCost); pomijamy lądy (nie są
             // czarami) i karty, których i tak nie stać nas po aktywacji.
             // E6/A1: kandydaci po TIMINGU rzucania (manaUnlockCandidates) —
