@@ -1928,6 +1928,9 @@ function processTriggersScan(state, recentEvents) {
   const MAX_TRIGGER_EVENTS_SCANNED = 512;
   const queue = [...recentEvents];
   const aggregatedControllers = new Set();
+  // E9/F5: obiekty, których wejście na pole bitwy już obsłużono w tym
+  // przebiegu (podwójna emisja object_moved + permanent_entered_battlefield).
+  const etbEnterFired = new Set();
   let scanned = 0;
   let idx = 0;
   const processEvent = (ev) => {
@@ -2370,7 +2373,15 @@ function processTriggersScan(state, recentEvents) {
     // wejściem — od T1 (stos) czar permanenta leży wtedy na stosie i wchodzi
     // dopiero przy rozstrzygnięciu (permanent_entered_battlefield); triggery
     // ETB muszą odpalić się po rundzie passów, nie w chwili rzutu.
+    // E9/F5 (CR 603.6c): niektóre ścieżki (Throne of the Dead Three) emitują
+    // DWA zdarzenia jednego wejścia (object_moved→battlefield ORAZ
+    // permanent_entered_battlefield). Wejście = JEDNO zdarzenie reguł —
+    // dedupe per wchodzący obiekt w obrębie jednego przebiegu skanu, żeby
+    // triggery ETB (własne i innych permanentów) nie odpalały się podwójnie.
     if (ev.type === 'land_played' || ev.type === 'permanent_entered_battlefield' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
+      const enteredKey = ev.object?.id ?? ev.objectId;
+      if (etbEnterFired.has(enteredKey)) return;
+      etbEnterFired.add(enteredKey);
       let entered = state.objects.get(ev.object?.id);
       if (!entered) return;
       // CR 730.2c / 702.145: daybound LUB nightbound przy designation=null
