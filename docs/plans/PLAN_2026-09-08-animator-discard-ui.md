@@ -35,7 +35,7 @@ do nadal oczekującej decyzji. Koszt po zatwierdzeniu jest nieodwracalny.
 ## Etapy — osobne zielone commity/pushe
 
 - [x] P0: rozpoznanie, źródła i ten plan wypchnięty przed kodem.
-- [ ] A: test prawdziwej animacji→PlayerView→render; badge „animowany przez
+- [x] A: test prawdziwej animacji→PlayerView→render; badge „animowany przez
   Skilled Animator”, usunięcie po odejściu źródła/hosta, FoW i brak badge'a
   dla niepowiązanego5/5. Fast + build → commit/push.
 - [ ] B: testy RED odrzucenia dwóch kart/invalid atomowo/madness/efekt vs
@@ -49,3 +49,6 @@ Ryzyka: madness czeka do końca całego odrzucenia; nie wznowić pendingSpell
 ani pendingAbilityActivation po pierwszej zN kart; odrzucanie efektu przy
 krótkiej ręce i opcjonalny wybór Nightsnare nadal poprawne. Nie odsłaniać
 obcej ręki osobie nieuprawnionej. Pojedyncze odrzucenie pozostaje proste.
+
+A ukończone:7/7 testów, fast4935/4935,build60/3429,1kB.
+Badge czyta publiczny żywy link; source face-down ma opis bez nazwy.

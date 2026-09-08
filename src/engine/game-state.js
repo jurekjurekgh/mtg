@@ -5689,6 +5689,13 @@ export function playerView(state, playerId) {
         // animowany do EOT (crew rozstrzygnięty) nosi originalBeforeAnimation.
         // Widoczny stan → badge/decyzja bota (nie re-crewuj), ADR 0017.
         if (object.originalBeforeAnimation != null) entry.animatedUntilEOT = true;
+        // Źródło aktywnej animacji jest publiczne; nazwa zakrytej karty nie.
+        const animationLink = (state.linkedAnimations ?? []).find(link => link.targetId === object.id);
+        const animationSource = animationLink && state.objects.get(animationLink.sourceId);
+        if (animationSource?.zone === 'battlefield') entry.linkedAnimationSource = {
+          objectId: animationSource.id,
+          cardId: animationSource.faceDown ? null : animationSource.cardId,
+        };
         if (isUntapStepLocked(state, object)) entry.untapLocked = true;
         if (object.dontUntapNextUntapStep) entry.dontUntapNextUntapStep = true;
         if (object.tempControlUntilTurn != null) entry.tempControlUntilEOT = true;

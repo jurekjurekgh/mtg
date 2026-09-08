@@ -19,6 +19,14 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Zgłoszenie właściciela A — odznaka animacji (2026-09-08)
+
+PlayerView niesie linkedAnimationSource, renderer pokazuje „animowany przez
+Skilled Animator” bez rozpoznawania karty po ID. Znika razem z linkiem,
+zakryte źródło nie ujawnia nazwy. Testy prawdziwego ETB→widok→overlay7/7;
+fast4935/4935,build60/3429,1kB. Zgłoszenie B (multidiscard) w toku, plan
+PLAN_2026-09-08-animator-discard-ui.md; PR106 nadal OPEN.
+
 ## Sesja 2026-09-08 — batch54 B5 zamknięte, 10/10
 
 Domknięta integracja armor/końca walki/podziału, zwykła aura w równoczesnym

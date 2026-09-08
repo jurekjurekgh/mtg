@@ -3355,6 +3355,9 @@ export function cardInfo(session, object, combat = null) {
     saddledNow: Boolean(object.saddled),
     untapLockedNow: Boolean(object.untapLocked || object.dontUntapNextUntapStep),
     tempControlNow: Boolean(object.tempControlUntilEOT),
+    linkedAnimationLabel: object.linkedAnimationSource
+      ? `animowany przez ${object.linkedAnimationSource.cardId ? session.nameOf(object.linkedAnimationSource.cardId) : 'zakrytą kartę'}`
+      : null,
     cantRegenerateNow: Boolean(object.cantBeRegeneratedThisTurn),
     // M258/K2 (zgłoszone w audycie M257; CR 202.3b): mana value permanentu
     // z TYLNĄ twarzą DFC w górę = koszt twarzy PRZEDNIEJ (tył nie ma
@@ -3650,6 +3653,7 @@ export function buildStateOverlay(visual, info) {
     if (info.saddledNow) flags.push(['kw', 'osiodłany']);
     if (info.untapLockedNow) flags.push(['kw', 'nie odtapuje się']);
     if (info.tempControlNow) flags.push(['kw', 'kontrola do końca tury']);
+    if (info.linkedAnimationLabel) flags.push(['kw', info.linkedAnimationLabel]);
     if (info.cantRegenerateNow) flags.push(['kw', 'bez regeneracji']);
     {
       const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
