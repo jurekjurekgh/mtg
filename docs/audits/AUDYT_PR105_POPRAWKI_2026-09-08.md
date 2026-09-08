@@ -88,7 +88,7 @@ zostanie preventowane), nadwyżka (przy trample) legalnie na obrońcę.
 wpływu). Stary kod był zgodny z regułami. B4 wprowadził naruszenie w dwóch
 miejscach naraz (walidacja + domyślny przydział botów + prefill wizarda).
 
-### Zalecenie (do decyzji właściciela — nie wykonane)
+### Zalecenie (do decyzji właściciela — nie wykonane w ramach audytu)
 Revert `2e15ba6` + przepisanie `test/e8-b4-trample-protection.test.js` na
 guardię twierdzącą odwrotność: minimum przydziału na chronionego blokera
 = toughness−marked (nadwyżka legalna), deathtouch→1 nadal pierwszy. Po
@@ -212,3 +212,20 @@ wtedy fizzlował poprawnie. Bez ryzyka.
   combat" (pełny tekst); „Battle and changing control"
 - CR 603.2c: yawgatog; blogs.magicjudges.org/rules/comprehensive-rules/
 - CR 608.2b: r/magicTCG „Doubt about illegal targets" (pełny tekst)
+
+---
+
+## NASTĘPCZO (2026-09-08, po decyzji właściciela): B4 NAPRAWIONY
+
+Właściciel zarządził naprawę wg CR (zgodnie z zaleceniem powyżej):
+- ADR 0030 (`367e92c`) — obowiązek pobierania CR/rulingów ze źródeł online
+  przed zmianami regułowymi (fix istniejącego kodu albo nowa mechanika).
+- Revert `2e15ba6` + guardia (`227c142`): `lethalOf` z powrotem
+  `deathtouch ? 1 : toughness − marked`; test/e8-b4 pinuje poprawną regułę
+  (przydział 0 w chronionego odrzucony, default przydziela toughness,
+  deathtouch→1, E2E). Sonda /tmp/probe-b4-protection.mjs: walidacja znów
+  odrzuca 0, domyślny przydział botów = 2.
+- Budżet lektury startowej (skutek ADR 0030): kondensacja 65 bloków
+  „Przypadek" w LESSONS → 99.6k/100k (`be09633`).
+- Bramki po naprawie: npm test 4772/4772; test:all 4782/4782; build
+  3396,2 kB; bench heuristic 85,0% (bez zmian).

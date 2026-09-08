@@ -9323,3 +9323,27 @@ dosłowny tekst reguły — „you may" w reminder text to wybór, nie uproszcze
 
 Bramki po korekcie: fast **4771/4771**, test:all **4781/4781**, build
 **3396,6 kB**.
+
+### Korekta E8/B4 + ADR 0030 (2026-09-08): audyt → revert jedynego pozostałego błędnego fixu
+
+Audyt wewnętrzny wszystkich poprawek PR #105 wg dosłownych tekstów CR
+(`docs/audits/AUDYT_PR105_POPRAWKI_2026-09-08.md`, polecenie właściciela
+po refutacji F3): 8/9 fixów potwierdzonych (z korektą cytatu F5: 603.2c,
+nie 603.6c); **E8/B4 drugim fałszywym znaleziskiem** — CR 702.19b („…but
+not any abilities or effects that might change the amount of damage that's
+actually dealt") WYŁĄCZA prewencję z wyliczenia lethal przydziału; stan
+sprzed B4 był zgodny z regułami, a fix czynił legalnym przydział 0
+w blokera z protection (sonda: walidacja przepuszczała, boty przydzielały 0).
+
+Na polecenie właściciela: **ADR 0030** (`367e92c`) — zmiany regułowe
+(fix istniejącego kodu albo nowa mechanika) wymagają pobrania dosłownego
+tekstu CR i rulingów ze źródeł online; pamięć treningowa nie jest źródłem.
+**Revert `2e15ba6` + guardia** (`227c142`): lethalOf wraca do
+`deathtouch ? 1 : toughness − marked`; test/e8-b4 pinuje poprawną regułę
+(5 testów, w tym E2E: [0,3] odrzucone, [2,3] legalne). Skutek uboczny:
+strażnik budżetu lektury 101.2k/100k → kondensacja 65 bloków „Przypadek"
+w LESSONS do esencji+wskaźnika (narracja już w LESSONS_PRZYPADKI; nagłówki
+141/141) → 99.6k (`be09633`).
+
+Bramki: fast **4772/4772**, test:all **4782/4782**, build **3396,2 kB**,
+bench heuristic **85,0%** (571/672 — bez zmian).

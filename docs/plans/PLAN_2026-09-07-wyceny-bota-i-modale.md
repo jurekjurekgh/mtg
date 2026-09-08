@@ -457,12 +457,23 @@ change the amount of damage that's actually dealt**" — prewencja (protection)
 NIE obniża lethal przydziału. Stany sprzed B4 były zgodne z regułami; fix
 wprowadził naruszenie (walidacja przepuszcza 0 w chronionego; boty przydzielają 0).
 
-- [ ] **A — ADR 0030**: obowiązek pobrania dosłownego tekstu CR i rulingów
+- [x] **A — ADR 0030**: obowiązek pobrania dosłownego tekstu CR i rulingów
   ze źródeł online przed każdą zmianą istniejącego kodu regułowego albo
   nową mechaniką; pamięć treningowa nie jest źródłem (dowody: F3, B4).
-- [ ] **B — revert `2e15ba6`**: `lethalOf` wraca do
+- [x] **B — revert `2e15ba6`**: `lethalOf` wraca do
   `deathtouch ? 1 : toughness − damage marked`.
-- [ ] **C — guardia**: `test/e8-b4-trample-protection.test.js` przepisany na
+- [x] **C — guardia**: `test/e8-b4-trample-protection.test.js` przepisany na
   twierdzenie POPRAWNEJ reguły (0 w chronionego odrzucone; default przydziela
   toughness; deathtouch→1 nietknięty; bez protection bez zmian; E2E nadwyżka
   dla obrońcy tylko po lethal wszystkich blokerów).
+
+**E10 — wykonanie (2026-09-08):**
+
+- A: ADR 0030 + wpis w rejestrze (`docs/decisions/README.md`) — `367e92c`.
+- Skutek uboczny A: strażnik budżetu lektury startowej 101.2k/100k →
+  kondensacja 65 bloków „Przypadek" w LESSONS (narracja już w PRZYPADKI,
+  nagłówki nietknięte 141/141) → 99.6k — `be09633`.
+- B+C: revert `2e15ba6` + guardia 5 testów (przydział 0 w chronionego
+  odrzucony; default=toughness; deathtouch→1; E2E [0,3] odrzucone/[2,3]
+  legalne) — `227c142`. Bramki: npm test 4772/4772; test:all 4782/4782;
+  build 3396,2 kB; bench heuristic 85,0% (571/672, bez zmian).
