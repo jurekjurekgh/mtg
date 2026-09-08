@@ -51,8 +51,11 @@ function botChoice(state) {
 
 test('E2/C1: look_top — do ręki idzie najcenniejsza karta z wierzchu (nie pierwsza)', () => {
   const state = newState();
-  // kind przez extra — obiekt addObject jest zamrożony (mutacja w miejscu rzuca).
-  putCreature(state, 'land', 'p1', 0, 0, 'library', { manaCost: 0, cardId: 'basic-forest', kind: 'land' });
+  // Rzeczywisty ląd (putCreature celowo buduje wyłącznie stwory).
+  addObject(state, { id: 'land', instanceId: 'i-land', cardId: 'basic-forest',
+    controllerId: 'p1', zone: 'library', kind: 'land', manaCost: 0,
+    types: ['Land'], subtypes: ['Forest'], colors: ['G'], abilities: [], keywords: [] });
+  assert.equal(state.objects.get('land').kind, 'land');
   putCreature(state, 'skarb', 'p1', 5, 5, 'library', { manaCost: 2 });
   state.pendingLookTopN = { playerId: 'p1', objectIds: ['land', 'skarb'], restTo: 'graveyard', sourceCardId: null, restorePriorityTo: null };
   state.turn.priorityPlayerId = 'p1';
