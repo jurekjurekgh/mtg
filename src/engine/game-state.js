@@ -64,10 +64,11 @@ function commandIdentityKey(cmd) {
 import {
   HOSTILE_TRIGGER_TARGET_EFFECTS,
   triggerEffectIsHostile,
+  triggerTargetDebuffOf,
   triggerTargetEffectFriendly,
 } from './effect-intent.js';
 
-export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetEffectFriendly };
+export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetEffectFriendly };
 
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
@@ -6488,6 +6489,9 @@ export function playerView(state, playerId) {
     // M150/A: flaga `friendly` (pump/licznik na własnym) niesiona w komendzie,
     // żeby bot NIE celował przyjaznego pumpu w WROGIEGO stwora.
     const triggerFriendly = triggerTargetEffectFriendly(triggerTargetHead.ability);
+    // B (znalezisko testera): debuff P/T w komendzie (jak friendly z M150) —
+    // bot premiuje zabójstwo, nie największy cel.
+    const triggerDebuff = triggerTargetDebuffOf(triggerTargetHead.ability);
     // M157/F4(a): wielocelowy trigger (count > 1, „each of up to N") —
     // warianty = podzbiory celów o rozmiarze 1..count (bez powtórzeń,
     // porządek deterministyczny) + zero celów przy upTo. CAP 32 wariantów
@@ -6515,7 +6519,7 @@ export function playerView(state, playerId) {
       // pierwszy wariant pełnego rozmiaru (deterministycznie: najwcześniejsze
       // kandydaty), a wariant pusty („up to") idzie na koniec.
       for (const targetIds of variants) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}) }));
       }
     } else {
       // M203/2 (konwencja „prezentacja = enumeracja"): kandydaci w kolejności
@@ -6523,10 +6527,10 @@ export function playerView(state, playerId) {
       // pierwszą ofertę), a odmowa („up to one"/„you may") jest OSTATNIA —
       // dawniej wymuszało to odwrócenie przez unshift.
       for (const targetId of legal) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}) }));
       }
       if (triggerTargetHead.allowNone) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}) }));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMoonlitChoice) {

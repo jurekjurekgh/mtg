@@ -5471,6 +5471,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // licznik +1/+1) celuje WłASNY stwór — `cmd.friendly` niesie flagę
         // wyliczoną z deskryptora efektu (generycznie, ADR 0002).
         // M157/F4(a): wariant wielocelowy — suma wycen po celach (pusty = 0).
+        // B (znalezisko testera, Prowler): wrogi debuff toughness DOBIJA —
+        // 704.5f (toughness+delta ≤ 0 ginie mimo indestructible/regen, bo to
+        // nie destroy) albo lethal z oznaczonymi obrażeniami. Liczy się tylko
+        // ZMIANA wyniku (cel żywy → martwy); dobijanie trupa to strata.
+        const debuffKills = (t) => {
+          if (cmd.debuff == null || t?.toughness == null) return false;
+          const dT = Math.min(0, cmd.debuff.toughness ?? 0);
+          if (!(dT < 0)) return false;
+          const deadAfter = t.toughness + dT <= 0 || (t.damage ?? 0) >= t.toughness + dT;
+          const deadBefore = t.toughness <= 0 || (t.damage ?? 0) >= t.toughness;
+          return deadAfter && !deadBefore;
+        };
         if (Array.isArray(cmd.targetIds)) {
           let score = 0;
           for (const id of cmd.targetIds) {
@@ -5495,9 +5507,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M167/A (Voice of the Vermin): przyjazny buff celuje
             // WSPÓŁATAKUJĄCEGO (atak trwa do końca tury — buff „on orbit").
             const attackingNow2 = (view.combat?.attackers ?? []).includes(t2.id);
+            // B: zabójstwo debuffem bije rozmiar (+60 > realny rozrzut wartości
+            // celów); zabójstwo własnego to katastrofa (−60). Bez zabójstwa
+            // dotychczasowa polityka (największy wróg).
+            const kill2 = debuffKills(t2);
             score += (cmd.friendly
               ? (t2.controllerId === view.playerId ? 30 + v2 + (attackingNow2 ? 25 : 0) : -20 - v2)
-              : (t2.controllerId === view.playerId ? -20 - v2 : 30 + v2));
+              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 : -20 - v2) : (kill2 ? 30 + v2 + 60 : 30 + v2)));
           }
           return finish(score);
         }
@@ -5519,8 +5535,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (target.controllerId === view.playerId) return finish(30 + value + (attackingNow ? 25 : 0));
           return finish(-20 - value);
         }
-        if (target.controllerId === view.playerId) return finish(-20 - value);
-        return finish(30 + value);
+        // B: jak w gałęzi wielocelowej (L41) — zabójstwo debuffem bije rozmiar.
+        const kill = debuffKills(target);
+        if (target.controllerId === view.playerId) return finish(kill ? -60 - value : -20 - value);
+        return finish(kill ? 30 + value + 60 : 30 + value);
       }
       case 'resolve_optional_trigger_choice': {
         // M167/B (Circle of the Land Druid): opcjonalny SELF-MILL tylko przy
