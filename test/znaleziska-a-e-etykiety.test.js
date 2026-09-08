@@ -10,7 +10,7 @@ import { createGameState, addObject, playerView } from '../src/engine/game-state
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { commandLabel } from '../src/table/render.js';
+import { commandLabel, choiceGroupTitle } from '../src/table/render.js';
 
 const R = createCardRegistry();
 function game() {
@@ -68,6 +68,23 @@ test('A: oferta escape Sweet Oblivion niesie cel w etykiecie', () => {
   const labels = pair.slice(0, 2).map((c) => commandLabel(c, session(), v));
   assert.notEqual(labels[0], labels[1], `etykiety muszą się różnić: ${labels.join(' | ')}`);
   assert.ok(labels.every((l) => l.includes('→ cel:')), `cel w etykiecie: ${labels.join(' | ')}`);
+});
+
+// E: grupa kosztu wygnania czytała się jak efekt („Wygnaj stwora z grobu
+// (koszt) — Makeshift Mauler”), nie jak rzut czaru. Reframe: rzut pierwszy,
+// wybór kosztu drugi (pokrycie klucza grupy z uwagi C zostaje).
+test('E: grupa Mauler zaczyna się od rzutu, koszt wygnania dopisany', () => {
+  const s = game();
+  put(s, 'mm', 'makeshift-mauler', 'p1', 'hand');
+  for (let i = 0; i < 3; i++) put(s, `g${i}`, 'goblin-piker', 'p1', 'graveyard');
+  mana(s, 'p1', 5);
+  const v = playerView(s, 'p1');
+  const offers = v.legalCommands.filter((c) => c.type === 'cast_permanent' && c.objectId === 'mm');
+  assert.equal(offers.length, 3, 'trzy warianty kosztu wygnania');
+  const title = choiceGroupTitle({ options: offers }, session(), v);
+  assert.ok(title.startsWith('Rzuć:'), `tytuł to rzut, nie efekt: ${title}`);
+  assert.ok(title.includes('Makeshift Mauler'), title);
+  assert.ok(title.includes('wygnaj stwora z grobu (koszt)'), `wybór kosztu widoczny: ${title}`);
 });
 
 test('A: oferta przygody Ettercap niesie cel w etykiecie', () => {

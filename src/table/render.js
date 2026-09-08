@@ -2011,7 +2011,10 @@ function choiceSourceTitle(cmd, session, view) {
       .map((z) => (view?.zones?.[z] ?? []).find((o) => o.id === cmd.exileTargetId))
       .find((o) => o != null)?.zone;
     const source = exileZone === 'graveyard' ? 'z grobu' : 'z pola bitwy';
-    return `Wygnaj stwora ${source} (koszt) — ${name}`;
+    // E (znalezisko testera): tytuł to RZUT z dopiskiem o wyborze kosztu,
+    // nie sam koszt (pokrycie klucza grupy z uwagi C zostaje — wybór
+    // wygnania nadal w tytule, tylko po nazwie czynności i karty).
+    return `Rzuć: ${name} — wygnaj stwora ${source} (koszt)`;
   }
   if (cmd.type === 'cast_spell' && cmd.sacrificeTargetId && !cmd.targets?.length) {
     return `Poświęć stwora — ${name}`;
