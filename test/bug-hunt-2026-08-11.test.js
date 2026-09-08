@@ -126,7 +126,9 @@ test('Sherlock 2026-08-11 1c: first strike + wielu blokerów — przebieg first 
   assert.ok(state.pendingDamageAssignment, 'wielu blokerów wymaga decyzji (CR 510.1c)');
   const a = execute(state, {
     type: 'resolve_damage_assignment', playerId: 'att',
-    assignments: { a: [{ blockerId: 'b1', amount: 1 }, { blockerId: 'b2', amount: 1 }] },
+    // E8/B3 (CR 510.1a): 4/4 przydziela CAŁĄ moc — 2/2 wystarczy do zabicia
+    // obu 1/1 (po 1 lethal + dolewka reszty do ostatniego).
+    assignments: { a: [{ blockerId: 'b1', amount: 2 }, { blockerId: 'b2', amount: 2 }] },
   });
   assert.ok(a.ok, 'rozdzielenie: ' + (a.events?.[0]?.reason ?? ''));
   const b1 = state.objects.get('b1');

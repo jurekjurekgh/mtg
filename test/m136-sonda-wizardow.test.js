@@ -158,9 +158,11 @@ test('M136: klucz przydziału obrażeń AKTUALIZUJE się po zmianie stepperów',
   });
   const confirm = nodes(host).find((n) => (n.className ?? '').includes('damage-wizard-confirm'));
   const before = confirm.dataset.optionKey;
-  const plus = nodes(host).find((n) => (n.className ?? '').includes('damage-wizard-plus'));
-  assert.ok(plus, 'jest stepper +1');
-  plus.click();
+  // E8/B3: start = pełny przydział (3 = 2 lethal + dolewka), więc zmianą
+  // stanu jest zejście minussem (plus z pełnego stanu byłby no-op).
+  const minus = nodes(host).find((n) => (n.className ?? '').includes('damage-wizard-minus'));
+  assert.ok(minus, 'jest stepper −1');
+  minus.click();
   assert.notEqual(confirm.dataset.optionKey, before,
     'po zmianie przydziału klucz sondy musi się zmienić');
 });
@@ -173,10 +175,20 @@ test('M136: klucz odpowiada komendzie wysyłanej przez wizard obrażeń', () => 
     probeKeyFor: (cmd) => commandOptionKey(cmd),
     onComplete: (cmd) => { sent = cmd; },
   });
-  const plus = nodes(host).find((n) => (n.className ?? '').includes('damage-wizard-plus'));
-  plus.click();
-  const confirm = nodes(host).find((n) => (n.className ?? '').includes('damage-wizard-confirm'));
+  // E8/B3 (CR 510.1a): start = pełny przydział (3: lethal-first 2 + dolewka 1),
+  // więc żeby zmienić przydział, najpierw schodzimy minussem, potem wracamy.
+  const all = (cls) => nodes(host).filter((n) => (n.className ?? '').includes(cls));
+  const keyBefore = all('damage-wizard-confirm')[0].dataset.optionKey;
+  // E8/B3 (CR 510.1a): start = pełny przydział 3 (lethal 2 + dolewka 1).
+  // minus na b1 kaskadą zeruje b2 (CR 510.1d); powrót: +1 na b1 i +1 na b2.
+  all('damage-wizard-minus')[0].click();
+  const keyAfterMinus = all('damage-wizard-confirm')[0].dataset.optionKey;
+  assert.notEqual(keyAfterMinus, keyBefore, 'po zmianie przydziału klucz sondy się zmienia');
+  all('damage-wizard-plus')[0].click();
+  all('damage-wizard-plus')[1].click();
+  const confirm = all('damage-wizard-confirm')[0];
   const key = confirm.dataset.optionKey;
+  assert.notEqual(key, keyAfterMinus, 'powrót do pełnego przydziału znów zmienia klucz');
   confirm.click();
   assert.ok(sent, 'wizard wysłał komendę');
   assert.equal(key, commandOptionKey(sent),

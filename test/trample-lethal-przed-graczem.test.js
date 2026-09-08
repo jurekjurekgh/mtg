@@ -17,8 +17,8 @@ import { jumpToStep } from '../src/engine/turn.js';
  * całą moc w gracza — bloker przeżywał, a obrońca dostawał obrażenia,
  * przed którymi właśnie się bronił.
  *
- * Bez trample nadmiar nie ma dokąd pójść, więc niedobór jest legalny
- * (obrażenia po prostu przepadają) — reguła dotyczy wyłącznie trample.
+ * Bez trample stwór przydziela CAŁĄ moc (CR 510.1a, E8/B3) — niedobór jest
+ * nielegalny; „marnuje się" dopiero nadwyżka ponad lethal blokera.
  */
 
 function combatState({ attackerPower = 5, trample = true, blockers = [{ id: 'blk', power: 2, toughness: 2 }] } = {}) {
@@ -104,11 +104,20 @@ test('trample: obrażenia już na blokerze zmniejszają wymagane lethal (CR 510.
   assert.equal(validateDamageAssignment(state, 'att', [{ blockerId: 'blk', amount: 0 }]), 'trample_blocker_below_lethal');
 });
 
-test('BEZ trample niedobór jest legalny — nadmiar nie ma dokąd pójść', () => {
+test('BEZ trample niedobór jest NIELEGALNY — stwór zadaje CAŁĄ moc (CR 510.1a, E8/B3)', () => {
   const state = combatState({ trample: false, blockers: [{ id: 'b1', power: 2, toughness: 2 }, { id: 'b2', power: 2, toughness: 2 }] });
-  // Atakujący bez trample może „zmarnować" obrażenia; CR 702.19b nie działa.
+  // Stare uproszczenie (przed E8/B3): „niedobór legalny, obrażenia przepadają".
+  // CR 510.1a: stwór przydziela obrażenia RÓWNE mocy — bez trample nie ma
+  // dokąd odłożyć reszty, więc CAŁOŚĆ musi pójść w blokerów.
   assert.equal(
     validateDamageAssignment(state, 'att', [{ blockerId: 'b1', amount: 0 }, { blockerId: 'b2', amount: 0 }]),
+    'damage_must_be_fully_assigned',
+  );
+  // Nadwyżka (zwykłe przebicie lethału) pozostaje legalna — ona faktycznie
+  // „przepada" naMartwym blokerze i to jedyny legalny sposób marnotrawstwa
+  // (moc 5: 2 + 3 = całość przydzielona).
+  assert.equal(
+    validateDamageAssignment(state, 'att', [{ blockerId: 'b1', amount: 2 }, { blockerId: 'b2', amount: 3 }]),
     null,
   );
 });
