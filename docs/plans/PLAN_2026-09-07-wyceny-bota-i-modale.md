@@ -310,3 +310,45 @@ dodatkowy koszt wygnał stwora z cmentarza — ani Rozgrywka, ani log nie mówi�
   wracają, proszę o świeży pages i repro (seed/screenshot); D1 surowy
   markup istnieje tylko w etykiecie ŹRÓDŁOWEJ (kontrakt M266/E), w UI
   zawsze pipa.
+
+## E8. Wyzwanie „wyłapywacza błędów" — 5 uproszczeń vs zasady MtG (ten sam PR)
+
+Audyt „jak Sherlock" po całym silniku (walka, SBA, regeneracja, liczniki,
+pule many, czystka, strefy, triggery, aury, goad, ward, sagi, crew, infect,
+protection, speed — te rejony zaudytowane wcześniejszymi rundami M96–M361
+i czyste). Znalezione pięć realnych uproszczeń vs CR, każdy fix RED-first:
+
+- [ ] **B1 — regeneracja konsumuje WSZYSTKIE tarcze** (CR 701.15b): każda
+      tarcza regeneracji zastępuje JEDNO zniszczenie; dwie tarcze = dwa
+      uratowania. `tryRegenerate` (state-based.js) robi `filter(id !== ...)`
+      — zjada wszystkie. Fix: zdjąć dokładnie jedną instancję.
+- [ ] **B2 — flaga „nie odtapuje się" nie konsumuje się, gdy cel jest
+      odkręcony** (Wavecrash/Chill, CR „next untap step"): `untapControlled`
+      wchodzi tylko do obiektów `tapped || summoningSickness` i zjada flagę
+      tylko gdy `tapped`; odkręcony cel nosi flagę wiecznie i pomija
+      PÓŹNIEJSZY untap step. Dodatkowo flaga trzyma controllerId-z-momentu-
+      efektu i porównuje z aktywnym graczem — po zmianie kontrolera skip
+      wypada w cudzym untap stepie. Fix: flaga konsumowana na untap stepie
+      OBECNEGO kontrolera, niezależnie od stanu tapped.
+- [ ] **B3 — niedo-przydzielone obrażenia bez trample** (CR 510.1a: stwór
+      zadaje obrażenia RÓWNE mocy — całość musi być przydzielona):
+      `validateDamageAssignment` przyjmuje sumę < moc, `defaultDamageAssignment`
+      dla wielu blokerów gubi nadmiar (lethal-first bez dolewki do ostatniego),
+      a wizard bramkuje `assignmentLegal` wyłącznie dla trample. Fix: walidacja
+      `sum === amount` bez trample + domyślny przydział dolewa resztę do
+      ostatniego blokera + bramka wizarda.
+- [ ] **B4 — trample vs bloker z pełną prewencją** (CR 702.19b: lethal liczy
+      obrażenia, które ZOSTANĄ ZAPOBIEŻONE — bloker z protection od koloru
+      atakującego ma lethal 0, cała moc idzie na gracza): `lethalOf` liczy
+      tylko wytrzymałość/deathtouch; przy blokerze z protection obrażenia
+      i tak są preventowane, więc trample błędnie się zatrzymuje. Fix:
+      `lethalOf` → 0, gdy `isDamagePreventedByProtection(blocker, attacker)`.
+- [ ] **B5 — CR 506.4: zmiana kontrolera usuwa permanent z walki** (luka
+      latentna: oba „steal" z katalogu to sorcery, więc dziś nieosiągalne
+      w combacie — ale pierwszy przyszły instant/trigger z przejęciem kontroli
+      cicho łamałby zasady: skradziony ATAKUJĄCY dalej zadawałby obrażenia
+      staremu obrońcy). Fix: `removeFromCombat` w
+      `gain_control_until_end_of_turn` + test chirurgią stanu.
+- Kryterium: RED-first (test przed fixem), `npm test` + build na każdy
+  zielony krok, commit+push natychmiast (ADR 0020 C); na końcu `test:all`
+  + quick benchmark + update opisu PR.
