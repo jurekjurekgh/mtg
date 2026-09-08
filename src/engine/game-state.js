@@ -3371,7 +3371,10 @@ export function execute(state, input) {
       fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, cardId: moved.cardId,
       exploit: true, toZone: exploitZone,
     }));
-    state.events.push(event('exploited', { exploiterId: pending.sourceId, exploitedId: moved.id }));
+    // P4 (audyt PR106 — Żywy Tester, 2026-09-08): nazwa ofiary jedzie
+    // z cardId ZDARZENIA (jak permanent_sacrificed powyżej), bo obiekt
+    // (zwłaszcza token) może już nie istnieć — log pokazywał „Exploit: ?".
+    state.events.push(event('exploited', { exploiterId: pending.sourceId, exploitedId: moved.id, cardId: moved.cardId }));
     state.events.push(event('exploit_choice_resolved', { playerId: pending.playerId, sourceId: pending.sourceId, exploitedId: moved.id }));
     if (state.pendingExploits.length > 0) state.turn.priorityPlayerId = state.pendingExploits[0].playerId;
     else if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;

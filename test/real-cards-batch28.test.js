@@ -205,6 +205,32 @@ test('Silumgar Butcher: exploit — skip (bez poświęcenia) nie odpala triggera
   assert.ok(!state.events.some((e) => e.type === 'exploited'), 'brak zdarzenia exploited');
 });
 
+test('Silumgar Butcher: exploit — ofiara-token nazywa się w logu (P4, Żywy Tester)', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const state = mainPhase(game());
+  createBattlefieldToken(state, 'p1', { cardId: 'token_spirit', name: 'Spirit', power: 1, toughness: 1 });
+  const food = [...state.objects.values()].find((o) => o.cardId === 'token_spirit' && o.zone === 'battlefield');
+  assert.ok(food, 'token na stole');
+  addRealCard(state, 'butcher', 'silumgar-butcher', 'p1', 'hand');
+  addMana(state, 'p1', 5, { colors: ['B'] });
+  execute(state, { type: 'cast_permanent', playerId: 'p1', cardId: 'silumgar-butcher', objectId: 'butcher' });
+  resolveStackToExploit(state);
+  const view = playerView(state, 'p1');
+  const sac = view.legalCommands.find((c) => c.type === 'resolve_exploit_choice' && c.targetId === food.id);
+  assert.ok(sac, 'można poświęcić token');
+  execute(state, sac);
+  const exploited = state.events.find((e) => e.type === 'exploited');
+  assert.ok(exploited, 'zdarzenie exploited');
+  assert.equal(exploited.cardId, 'token_spirit', 'ofiara jedzie z cardId zdarzenia');
+  // Obiekt tokena już nie istnieje — tekst i tak nazywa ofiarę, bez „?".
+  assert.equal(state.objects.get(exploited.exploitedId), undefined);
+  const text = describeGameEvent(exploited,
+    { nameOf: (id) => REGISTRY.get(id)?.name ?? '?', nameOfObject: (id) => REGISTRY.get(state.objects.get(id)?.cardId)?.name ?? '?' },
+    { p1: 'Ty', p2: 'Nieprzyjaciel' });
+  assert.ok(!text.includes('?'), `log bez placeholdera: ${text}`);
+  assert.match(text, /Spirit/);
+});
+
 // --- Relic Robber ------------------------------------------------------------
 
 test('Relic Robber: combat damage do gracza → TEN gracz dostaje Goblin Construct 0/1 cantBlock', () => {
