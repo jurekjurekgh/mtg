@@ -380,32 +380,32 @@ Zasady jak w E8: każdy fix RED-first (test pierwszy, potwierdzony FAIL przed
 naprawą), osobny commit, plan pushnięty przed kodem. Kotwice zweryfikowane
 sondażami/probe'ami na żywym silniku przed spisaniem planu.
 
-- [ ] **F1 — powrót z grobu bez choroby przywołania** (CR 302.6):
+- [x] **F1 — powrót z grobu bez choroby przywołania** (CR 302.6):
   `put_graveyard_card_onto_battlefield` (effects.js ~4571, Disa the Restless)
   wchodzi z `moveObjectDirectly` + `applyEnterCounters`, ale NIE ustawia
   `summoningSickness` — wszystkie ścieżki-rodzeństwo (reanimate, return_with_counter,
   return_to_battlefield_tapped, pyxis, throne) ustawiają. Sonda: ożywiony stwór
   atakuje w TEJ SAMEJ turze. Test: test/e9-f1-powrot-bez-sickness.test.js.
-- [ ] **F2 — masowa zmiana kontroli nie usuwa z walki** (CR 506.4):
+- [x] **F2 — masowa zmiana kontroli nie usuwa z walki** (CR 506.4):
   `control_to_owners_all_creatures` (effects.js ~1305, Trostani Discordant)
   zmienia controllerId i stawia sickness, ale nie woła `removeFromCombat` —
   przejęty ATAKUJĄCY zostaje w state.combat.attackers i „atakuje" swojego
   nowego kontrolera (sister-bug B5 z E8 w drugim efekcie). Sonda: potwierdzona.
   Test: test/e9-f2-trostani-usuwa-z-walki.test.js.
-- [ ] **F3 — explore z wyborem, którego nie ma w CR** (CR 701.54b):
+- [x] **F3 — explore z wyborem, którego nie ma w CR** (CR 701.54b):
   `explore` (effects.js ~4185, Guidestone Compass) przy nie-landzie kolejkuję
   decyzję resolve_explore_choice „wierzch albo grób" — reguła każe POŁOŻYĆ
   kartę DO GROBU bez wyboru; silnik daje graczowi darmowy strict-upgrade
   (odłożenie na wierzch = podglądanie biblioteki). Test:
   test/e9-f3-explore-bez-wyboru.test.js (brak pendingExplore + karta w grobie).
-- [ ] **F4 — search→battlefield bez choroby przywołania** (CR 302.6):
+- [x] **F4 — search→battlefield bez choroby przywołania** (CR 302.6):
   `resolve_search_choice` (game-state.js ~3058) przy destination battlefield
   ustawia tylko `tapped` (entersTapped) — brak `summoningSickness`; ta sama
   klasa co F1, inny moduł/ścieżka. Dziś idą nią tylko lądy (katalog), ale
   ścieżka jest generyczna — następny batch z „search for a creature" wyszedłby
   zepsuty. Fix u źródła wraz z F1 nie łamie landów (kind !== creature).
   Test: test/e9-f4-search-battlefield-sickness.test.js.
-- [ ] **F5 — Throne: podwójny trigger ETB** (CR 603.6c): `thronePutChosenCreature`
+- [x] **F5 — Throne: podwójny trigger ETB** (CR 603.6c): `thronePutChosenCreature`
   (effects.js ~110) emituje I `object_moved` (toZone battlefield), I
   `permanent_entered_battlefield` — pompa triggerów (triggers.js ~2373) dopasowuje
   OBA typy do `enter_battlefield` i odpala `fireEnterBattlefieldTriggers` DWA RAZY
@@ -416,8 +416,31 @@ sondażami/probe'ami na żywym silniku przed spisaniem planu.
 
 ### E9 — wykonanie (wyniki dopisywać po każdym fixie)
 
-- F1: —
-- F2: —
-- F3: —
-- F4: —
-- F5: —
+- F1: `bfd9cbc` — effects.js `put_graveyard_card_onto_battlefield`: po
+  `moveObjectDirectly` stwór dostaje `summoningSickness` (freeze + re-set)
+  PRZED `applyEnterCounters`, żeby licznikom nie przeszkadzał. RED najpierw:
+  ożywiony Gojf atakował w tej samej turze. npm test 4764/4764.
+- F2: `fc3d492` — effects.js `control_to_owners_all_creatures`: po zdarzeniu
+  control_changed `if (state.combat) removeFromCombat(...)`. Test v1 ukazał
+  drugą warstwę: bloker kontrolowany przez nie-obrońcę jest NIELEGALNY przy
+  declare_blockers (CR 509.1a) — legalny scenariusz: bloker owner p1 /
+  controller p2 (obrońca). npm test 4766/4766.
+- F3: `a7ae267` — explore odkłada kartę do grobu NATYCHMIAST
+  (card_milled explore:true + explore_resolved putInGraveyard:true), bez
+  decyzji. Usunięte u źródła: maszyna pendingExplore w game-state
+  (inicjalizator, kind-helper, activeExplore, oferta legalCommands, handler
+  resolve_explore_choice ~1,5 kB), wpis COMMAND_TYPES w protokole, case'y
+  w render.js, warianty botów (aggro-bot jawnie preferował „na wierzch"!),
+  notka Guidestone Compass. Efekt uboczny: strażnik A3 wyłapał brak case'a —
+  usunięcie typu z protokołu było właściwym fixem. npm test 4768/4768.
+- F4: `d207034` — game-state `resolve_search_choice` (destination
+  battlefield): `summoningSickness` dla creature obok `tapped` (entersTapped).
+  Landy nietknięte (kind !== creature). npm test 4769/4769.
+- F5: `03b71f0` — triggers.js `processTriggersScan`: dedupe per wchodzący
+  obiekt (`etbEnterFired` Set) — drugie zdarzenie tego samego wejścia
+  (object_moved→BF + permanent_entered_battlefield z Throne) pomija CAŁY
+  blok matchera ETB (także backup/devour/dayNight). RED potwierdzony
+  E2E-kształtem: Omenspeaker → 2× ability_triggered (po fixie: 1).
+  npm test 4770/4770.
+
+Stan po E9/F5: npm test 4770/4770; test:all i bench — patrz PR #105.
