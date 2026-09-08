@@ -4572,6 +4572,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (card.kind === 'land' || card.kind === 'spell') return;
     const bfId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, cardId, 'battlefield', bfId);
+    // E9/F1 (wyzwanie wyłapywacza błędów II, CR 302.6): stwór stawiany z grobu
+    // podlega chorobie przywołania — CR 400.7 buduje obiekt „od zera", a każda
+    // ścieżka-rodzeństwo (reanimate, return_with_counter, throne, pyxis)
+    // ustawia `summoningSickness` jawnie. Dotąd Disa the Restless pozwalała
+    // ożywionemu Lhurgoyfowi zaatakować w tej samej turze.
+    const placed = (moved.kind === 'creature' || (moved.types ?? []).includes('Creature'))
+      ? Object.freeze({ ...moved, summoningSickness: true })
+      : moved;
+    if (placed !== moved) state.objects.set(bfId, placed);
     // M273 (błąd #24): liczniki wejścia — ta sama reguła co przy rzucie.
     applyEnterCounters(state, bfId);
     state.events.push(event('permanent_entered_battlefield', {
