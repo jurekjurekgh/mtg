@@ -19,6 +19,15 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-08 — batch54 B4b.1, granica shield/SBA
+
+Potwierdzone CR122.1c: stara gałąź lethal SBA i jej wybór shield/regenerate
+były błędne. Usunięto je; regeneracja nadal chroni, shield nie jest zużywany.
+Destroy-by-effect korzysta z removeCounter (dotąd brakowało counter_removed).
+RED4/5→5/5,2mutacje,fast4888/4888,build59/3418,5kB,golden bez zmiany.
+Umbra nadal nie dodana: następny krok wymaga prawdziwej decyzji podczas
+destroy oraz kontynuacji wszystkich rodzin resolution. Szczegóły: handoff h.
+
 ## Sesja 2026-09-08 — batch54 B4a, 9/10
 
 Containment Membrane: surge dla aur, shared static untap-step lock,

@@ -878,10 +878,9 @@ export function destroyPermanentByEffect(state, objectId, options = {}) {
   if (!object || object.zone !== 'battlefield') return false;
   if (effectiveKeywords(object, state).includes('indestructible')) return false;
   if ((object.counters?.shield ?? 0) > 0) {
-    const next = { ...(object.counters ?? {}) };
-    next.shield -= 1;
-    if (next.shield <= 0) delete next.shield;
-    state.objects.set(objectId, Object.freeze({ ...object, counters: Object.freeze(next) }));
+    // Jedna semantyczna operacja we wszystkich ścieżkach (counter_removed,
+    // synchronizacja station); shield nie zdejmuje zaznaczonych obrażeń.
+    removeCounter(state, objectId, 'shield', 1);
     state.events.push(event('shield_consumed', {
       objectId, cardId: object.cardId, reason: options.reason ?? 'destroy',
     }));

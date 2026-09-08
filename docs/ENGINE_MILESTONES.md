@@ -4702,3 +4702,11 @@ Lynx next-step, Lyre nieprzerwany czas (LKI + wersja untap); stun bez regresji.
 22 testy aur, 6 mutacji; fast4883/4883, build59/3420,6kB. Golden przyjęty
 po izolacji dwóch korekt Oracle, bez zmiany wag/progów. 464art/24talie;
 Wiedźmin WU/BRG zgodnie z generatorem. B4b/B5 nadal otwarte, handoff g.
+
+
+### Batch54 B4b.1 — shield: effect destroy ≠ lethal SBA
+
+Usunięta błędna ochrona i wybór shield/regenerate w lethal SBA; nie mylić
+z poprawną prewencją obrażeń B3b. Destroy efektem używa removeCounter.
+5nowych testów,2mutacje,fast4888/4888,build59/3418,5kB. Nadal9/10,
+Umbra/realny wybór replacement/wznowienia list efektów i B5 otwarte (handoff h).

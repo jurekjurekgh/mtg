@@ -6,6 +6,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addCounter } from '../src/engine/counters.js';
 import { markDamage } from '../src/engine/permanents.js';
+import { destroyPermanentByEffect } from '../src/engine/effects.js';
 import { runStateBasedActions } from '../src/engine/state-based.js';
 
 /**
@@ -69,50 +70,27 @@ test('komenda zwraca te same zdarzenia, które trafiły do stanu', () => {
   assert.deepEqual(zwrocone, typy(state), 'wynik komendy zgodny ze strumieniem stanu');
 });
 
-/**
- * M270 błąd #10 — TRZECIA ścieżka zdejmowania licznika shield: SBA przy
- * śmierci z obrażeń (CR 704.5g + 122.1b). Najczęstsza w realnej grze, a jako
- * jedyna nadal zdejmowała licznik ręcznie. Ten blok domyka klasę
- * ENUMERACYJNIE: wszystkie trzy ścieżki raportują tak samo.
- */
-test('SBA (śmierć z obrażeń) zdejmuje tarczę przez wspólny helper', () => {
+// CR122.1c: istnieją DWIE ścieżki shield, nie trzecia w lethal SBA.
+// Dawny test M270 utrwalał błędną interpretację „as the result of an effect”.
+test('M270/B54: lethal SBA omija shield i nie emituje fałszywego counter_removed', () => {
   const state = stan();
   state.objects.set('c', Object.freeze({ ...state.objects.get('c'), damage: 4 }));
-  state.events.length = 0;
   runStateBasedActions(state);
-  const spider = state.objects.get('c');
-  assert.equal(spider.zone, 'battlefield', 'tarcza zastąpiła zniszczenie (CR 122.1b)');
-  assert.equal(spider.counters.shield ?? 0, 0, 'licznik zdjęty');
-  assert.equal(spider.damage, 0, 'obrażenia zdjęte razem z zastąpieniem');
-  assert.equal(ile(state, 'counter_removed'), 1, 'zdjęcie tarczy widoczne w logu');
-  assert.equal(ile(state, 'shield_consumed'), 1);
+  assert.notEqual(state.objects.get('c')?.zone, 'battlefield');
+  assert.equal(ile(state, 'counter_removed'), 0); assert.equal(ile(state, 'shield_consumed'), 0);
 });
-
-test('WSZYSTKIE trzy ścieżki tarczy raportują identycznie (domknięcie klasy)', () => {
-  const przezObrazenia = stan();
-  markDamage(przezObrazenia, 'c', 3);
-
-  const przezZniszczenie = stan();
-  przezZniszczenie.pendingReplacementChoice = { playerId: 'p1', objectId: 'c', cardId: 'giant-spider' };
-  execute(przezZniszczenie, { type: 'resolve_replacement_choice', playerId: 'p1', choice: 'shield' });
-
-  const przezSba = stan();
-  przezSba.objects.set('c', Object.freeze({ ...przezSba.objects.get('c'), damage: 4 }));
-  przezSba.events.length = 0;
-  runStateBasedActions(przezSba);
-
-  for (const [nazwa, state] of [['obrażenia', przezObrazenia], ['zniszczenie', przezZniszczenie], ['SBA', przezSba]]) {
-    assert.equal(state.objects.get('c').counters.shield ?? 0, 0, `${nazwa}: licznik zdjęty`);
-    assert.equal(ile(state, 'counter_removed'), 1, `${nazwa}: dokładnie jeden counter_removed`);
+test('M270/B54: automatyczny destroy efektem i obrażenia raportują licznik tak samo', () => {
+  for (const mode of ['damage', 'destroy']) {
+    const state = stan();
+    if (mode === 'damage') markDamage(state, 'c', 3);
+    else destroyPermanentByEffect(state, 'c');
+    assert.equal(state.objects.get('c').counters.shield ?? 0, 0);
+    assert.equal(ile(state, 'counter_removed'), 1); assert.equal(ile(state, 'shield_consumed'), 1);
   }
 });
-
-test('SBA: przy dwóch tarczach zdejmowana jest dokładnie jedna', () => {
-  const state = stan();
-  addCounter(state, 'c', 'shield', 1); // razem 2
-  state.objects.set('c', Object.freeze({ ...state.objects.get('c'), damage: 4 }));
-  state.events.length = 0;
-  runStateBasedActions(state);
-  assert.equal(state.objects.get('c').counters.shield, 1, 'kontrola negatywna: druga tarcza zostaje');
+test('M270/B54: destroy efektem usuwa tylko jedną z dwóch tarcz', () => {
+  const state = stan(); addCounter(state, 'c', 'shield', 1);
+  destroyPermanentByEffect(state, 'c');
+  assert.equal(state.objects.get('c').counters.shield, 1);
   assert.equal(ile(state, 'counter_removed'), 1);
 });

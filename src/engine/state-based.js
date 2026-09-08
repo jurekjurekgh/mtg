@@ -229,49 +229,10 @@ export function runStateBasedActions(state) {
     const killedByDamage = !isIndestructible && object.damage >= toughness;
     const killedByDeathtouch = !isIndestructible && object.damagedByDeathtouch && object.damage > 0;
     if (!killedByZeroToughness && !killedByDamage && !killedByDeathtouch) continue;
-    // M202/odznaka #3 (CR 616.1): gdy zniszczenie można zastąpić na DWA
-    // sposoby — licznikiem tarczy (CR 122.1b) albo tarczą regeneracji
-    // (CR 701.12) — wybiera KONTROLER permanenta, nie silnik. Dotąd tarcza
-    // była konsumowana zawsze, czyli gracz tracił licznik nawet wtedy, gdy
-    // wolał regenerację (która dodatkowo zdejmuje obrażenia i odpina od walki).
-    // Wytrzymałość <= 0 nie jest zniszczeniem, więc wybór tam nie istnieje.
-    const hasShieldCounter = (object.counters?.shield ?? 0) > 0;
-    const hasRegenerationShield = (state.regenerationShields ?? []).includes(object.id)
-      && !(state.cantBeRegeneratedThisTurn ?? []).includes(object.id);
-    if (!killedByZeroToughness && hasShieldCounter && hasRegenerationShield) {
-      state.pendingReplacementChoice = {
-        playerId: object.controllerId,
-        objectId: object.id,
-        cardId: object.cardId ?? null,
-      };
-      state.turn.priorityPlayerId = object.controllerId;
-      const required = event('replacement_choice_required', {
-        playerId: object.controllerId, objectId: object.id, cardId: object.cardId ?? null,
-      });
-      state.events.push(required); events.push(required);
-      return events;
-    }
-    // Shield: zniszczenie z obrażeń zastąp zdjęciem tarczy (CR 122.1b).
-    if (!killedByZeroToughness && (object.counters?.shield ?? 0) > 0) {
-      // M270 (błąd #10): TRZECIA kopia zdejmowania licznika shield — i zarazem
-      // najczęstsza ścieżka w grze (śmierć z obrażeń). Idzie przez WSPÓLNY
-      // helper `removeCounter`, jak dwie pozostałe (markDamage,
-      // resolve_replacement_choice): helper emituje `counter_removed`, którego
-      // ręczna wersja nie dawała, więc log stołu pokazywał zdjęcie tarczy
-      // tylko w części przypadków, a `syncStationKind` (CR 205.1) był
-      // pomijany. Obrażenia zdejmujemy PO zdjęciu licznika (CR 122.1b:
-      // zniszczenie zostaje zastąpione, więc stwór zostaje bez obrażeń).
-      const przed = state.events.length;
-      removeCounter(state, object.id, 'shield', 1);
-      events.push(...state.events.slice(przed));
-      const poZdjeciu = state.objects.get(object.id);
-      state.objects.set(object.id, Object.freeze({
-        ...poZdjeciu, damage: 0, damagedByDeathtouch: false,
-      }));
-      const consumed = event('shield_consumed', { objectId: object.id, cardId: object.cardId, reason: 'destroy' });
-      state.events.push(consumed); events.push(consumed);
-      continue;
-    }
+    // CR122.1c: shield zastępuje destroy wyłącznie „as the result of
+    // an effect”. Lethal/deathtouch SBA NIE zużywa licznika i nie daje
+    // wyboru shield vs regenerate. Prewencja shield działa przy obrażeniach,
+    // zanim trafią tu; premaked damage (np. spadek toughness) zabija normalnie.
     // Regeneracja (CR 701.12): zniszczenie z obrażeń zastępujemy odtapowaniem,
     // zdjęciem obrażeń i usunięciem z walki — stwór NIE umiera (brak dies).
     // Wytrzymałość <= 0 NIE jest zniszczeniem — regeneracja nie chroni.
