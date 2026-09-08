@@ -4213,15 +4213,13 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (creatureId) {
       addCounter(state, creatureId, '+1/+1', 1);
     }
-    // E9/F3 (wyzwanie wyłapywacza błędów II, CR 701.54b): „then put the
-    // revealed card into its owner's graveyard" — explore NIE daje wyboru.
-    // Dotąd kolejkowaliśmy resolve_explore_choice („wierzch albo grób"),
-    // czyli darmowy strict-upgrade: gracz odkładał kartę na wierzch i
-    // podglądał własną bibliotekę.
-    const graveId = `grave-${state.objectSequence++}`;
-    moveObjectDirectly(state, topId, 'graveyard', graveId);
-    state.events.push(event('card_milled', { playerId: ownerId, fromId: topId, objectId: graveId, cardId: topCard.cardId, explore: true }));
-    state.events.push(event('explore_resolved', { playerId: ownerId, foundCardId: topCard.cardId, isLand: false, putInGraveyard: true }));
+    // Blokująca decyzja: wierzch albo grób.
+    state.pendingExplore = {
+      playerId: ownerId,
+      objectId: topId,
+      cardId: topCard.cardId,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
     state.turn.priorityPlayerId = ownerId;
     state.events.push(event('explore_choice_required', { playerId: ownerId, cardId: topCard.cardId }));
     return true;

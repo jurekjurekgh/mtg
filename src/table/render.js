@@ -56,6 +56,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_food_choice: 'Food (poświęcenie)',
   resolve_amass_choice: 'Amass — która Armia?',
   resolve_discover_choice: 'Discover (wybór)',
+  resolve_explore_choice: 'Explore (wybór)',
   resolve_craft_exile: 'Craft (wybór wygnania)',
   resolve_hand_creature: 'Położenie stwora z ręki',
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
@@ -402,6 +403,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_food_choice') return 'resolve_food_choice';
   if (command.type === 'resolve_amass_choice') return 'resolve_amass_choice';
   if (command.type === 'resolve_discover_choice') return 'resolve_discover_choice';
+  if (command.type === 'resolve_explore_choice') return 'resolve_explore_choice';
   if (command.type === 'resolve_craft_exile') return 'resolve_craft_exile';
   if (command.type === 'resolve_hand_creature') return 'resolve_hand_creature';
   if (command.type === 'resolve_legend_choice') return 'resolve_legend_choice';
@@ -480,6 +482,7 @@ export function choiceRequestType(commands) {
   if (first.type === 'resolve_amass_choice') return 'target';
   if (first.type === 'resolve_discover_choice') return 'command';
   if (first.type === 'resolve_exile_cast') return 'command';
+  if (first.type === 'resolve_explore_choice') return 'command';
   if (first.type === 'resolve_craft_exile') return 'command';
   if (first.type === 'resolve_hand_creature') return 'target';
   if (first.type === 'resolve_legend_choice') return 'target';
@@ -1803,6 +1806,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_modal_choice: 'Tryb czaru („choose one")',
   resolve_discover_choice: 'Discover — rzucić czy wziąć do ręki?',
   resolve_endure_choice: 'Endure — liczniki czy token?',
+  resolve_explore_choice: 'Explore — co z odsłoniętą kartą?',
   resolve_craft_exile: 'Craft — karta do wygnania',
   resolve_color_choice: 'Kolor (np. ochrona)',
   resolve_optional_trigger_choice: 'Efekt dobrowolny („you may")',
@@ -2829,6 +2833,10 @@ export function commandLabel(cmd, session, view) {
       const mode = (cmd.modeIndex != null && found?.spell?.modes) ? found.spell.modes[cmd.modeIndex] : null;
       const modeName = mode?.name ? ` — ${mode.name}` : '';
       return cmd.castFree ? `Discover: rzuć bez kosztu many${modeName}` : 'Discover: weź kartę do ręki';
+    }
+    case 'resolve_explore_choice': {
+      // Explore (Guidestone Compass): wierzch albo grób.
+      return cmd.putInGraveyard ? 'Explore: odłóż kartę do grobu' : 'Explore: zostaw kartę na wierzchu';
     }
     case 'resolve_craft_exile': {
       // Craft (Lodestone Needle): wybór artefaktu do wygnania.
