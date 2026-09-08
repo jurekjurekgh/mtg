@@ -2442,6 +2442,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_hand_top_choice': {
         // Odkładamy kartę z własnej RĘKI, nie dobieramy jej z biblioteki.
         // Zachowaj cenniejszą dostępną teraz; odłóż najmniej potrzebną.
+        // F5 (audyt PR106): świadome odwrócenie E2/C („najcenniejsza na
+        // wierzch”) — opóźnij najtańszą kartę, najlepszą graj od razu.
         // cardKeepValue uwzględnia także niedobór/przesyt lądów.
         const card = handCard(view, cmd.cardId);
         if (!card) return finish(0);

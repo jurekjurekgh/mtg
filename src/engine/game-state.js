@@ -3505,6 +3505,14 @@ export function execute(state, input) {
             // (jak token-kopia). CR 707.2 — kopiowalne są WSZYSTKIE cechy.
             ...(target.station ? { station: target.station } : {}),
             ...(target.saga ? { saga: target.saga } : {}),
+            // F3 (audyt PR106, CR 707.2 + 614.1d): „enters tapped” to
+            // kopiowalny tekst karty. Obiekt jest JUŻ na polu (decyzja po
+            // permanent_entered_battlefield), więc samo pole go nie tapnie —
+            // tapnięcie ustawiamy wprost. To wejście tapnięte, nie „becomes
+            // tapped” (CR 701.21a — brak zdarzenia object_tapped jest poprawny).
+            ...(copyBase.entersTapped ? { entersTapped: true } : {}),
+            ...(copyBase.entersTappedCondition ? { entersTappedCondition: copyBase.entersTappedCondition } : {}),
+            ...(copyBase.entersTapped && !copyBase.entersTappedCondition ? { tapped: true } : {}),
             // M264/2.3 (CR 712.9): kopia na KARCIE jednostronnej (Jwari —
             // zwykła karta wchodząca jako kopia) nie ma drugiej strony.
             // „If a spell or ability instructs a player to transform ... any
@@ -5273,9 +5281,8 @@ export function execute(state, input) {
     }
   }
 
-  // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — tarcza albo
-  // regeneracja. Rozstrzygamy decyzję i wracamy do akcji stanowych (accepted
-  // uruchamia je ponownie), więc permanent przeżywa dokładnie jednym sposobem.
+  // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego we frame B4b
+  // (tarcza/regeneracja/umbra, APNAP, kontynuacje resolution i walki).
   if (state.pendingReplacementChoice) {
     if (cmd.type !== 'resolve_replacement_choice') return reject('replacement_choice_unresolved');
     if (cmd.playerId !== state.pendingReplacementChoice.playerId) return reject('replacement_choice_not_your_decision');
@@ -5310,45 +5317,10 @@ export function execute(state, input) {
       }
       return accepted(state,cmd,{ok:true,events:state.events.slice(before)});
     }
-    if (cmd.choice !== 'shield' && cmd.choice !== 'regenerate') return reject('illegal_replacement_choice');
-    const pending = state.pendingReplacementChoice;
-    state.pendingReplacementChoice = null;
-    const object = state.objects.get(pending.objectId);
-    const e = [];
-    if (object && object.zone === 'battlefield') {
-      // M270 (błąd #8): zdjęcie licznika shield idzie przez WSPÓLNY helper
-      // `removeCounter`, nie przez ręczne przepisanie `counters`. Bliźniacza
-      // ścieżka (markDamage w permanents.js) helpera używa, więc ta sama
-      // operacja raportowała się dwojako: przy obrażeniach log stołu pisał
-      // „traci 1 licznik shield" (counter_removed), a przy zastąpieniu
-      // zniszczenia — nic. Helper synchronizuje też rodzaj station (CR 205.1),
-      // czego ręczna ścieżka nie robiła.
-      // Kontrakt tej gałęzi: zdarzenia zbieramy do `e`, a do `state.events`
-      // trafiają RAZ, na końcu (`state.events.push(...e, resolved)`).
-      // `removeCounter` pushuje od razu, więc jego wpis wycinamy ze
-      // `state.events` i przekładamy do `e` — inaczej log miałby duplikat.
-      const zdejmijTarcze = () => {
-        if ((state.objects.get(object.id)?.counters?.shield ?? 0) > 0) {
-          const przed = state.events.length;
-          removeCounter(state, object.id, 'shield', 1);
-          e.push(...state.events.splice(przed));
-        }
-        e.push(event('shield_consumed', { objectId: object.id, cardId: object.cardId, reason: 'destroy' }));
-      };
-      if (cmd.choice === 'shield') {
-        zdejmijTarcze();
-      } else if (!tryRegenerate(state, object, e)) {
-        // Tarcza regeneracji zniknęła między kolejką a decyzją (CR 701.12) —
-        // gracz traci wybór, ale nie permanent bez powodu: zostaje tarcza.
-        zdejmijTarcze();
-      }
-    }
-    const resolved = event('replacement_choice_resolved', {
-      playerId: pending.playerId, objectId: pending.objectId, cardId: pending.cardId ?? null, choice: cmd.choice,
-    });
-    state.events.push(...e, resolved);
-    e.push(resolved);
-    return accepted(state, cmd, { ok: true, events: e });
+    // F4 (audyt PR106): legacy gałąź bez frame nie ma producenta (ostatni —
+    // stara SBA — usunięty w B4b) i została skasowana. Taki stan to błąd
+    // wewnętrzny, nie legalna decyzja — nie przepuszczamy dalej.
+    throw new Error('pendingReplacementChoice bez frame (błąd wewnętrzny)');
   }
 
   // M66 (R): rozdzielanie obrażeń combat (CR 510.1c/d) — decyzja atakującego.

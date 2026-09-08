@@ -953,10 +953,6 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.pendingReplacementChoice.continuations.push({effect, sourceObject, targets, context});
     return true;
   }
-  if (effect.type === 'destroy_permanents') {
-    destroyPermanents(state, targets.filter(Boolean));
-    return Boolean(state.pendingReplacementChoice);
-  }
   // X-cost czary (Consume Spirit, Epic Experiment — Batch 30): efekty mogą
   // użyć amount: 'X' (lub amountFrom: 'X') — wartość X z obiektu stosu
   // (sourceObject.spellX). Resolwowane raz, spójnie dla wszystkich efektów.
@@ -1432,6 +1428,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // kopia TYLNEJ twarzy nie odróżnia się od zwykłego obiektu na tyle
       // (MV 0 — CR 202.3b przez copyManaValueOf; reset K5 — CR 711.4a).
       ...(src.transformTo && src.frontFaceId ? { frontFaceId: src.frontFaceId } : {}),
+      // F3 (audyt PR106, CR 707.2 + 614.1d): kopia przejmuje kopiowalny
+      // „enters tapped” oryginału — token wchodzi tapnięty (jak Static Net).
+      ...(copyBase.entersTapped && !copyBase.entersTappedCondition ? { tapped: true } : {}),
     });
     // M105/B6 (CR 603.7b): „Exile it at the beginning of THE NEXT end step"
     // — najbliższy krok końcowy, niezależnie od tego, czyja to tura.

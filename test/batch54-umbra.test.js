@@ -116,11 +116,18 @@ test('606: kilka decyzji w jednym równoczesnym destroy nie gubi kontynuacji',as
  pick(s,'umbra:b1');assert.equal(s.objects.get('host').zone,'battlefield');assert.equal(s.objects.get('host2').zone,'battlefield');
  assert.notEqual(s.objects.get('a0')?.zone,'battlefield');assert.notEqual(s.objects.get('b1')?.zone,'battlefield');
 });
-for(const cause of ['effect','sba'])test(`606: shield na aurze zachowuje przyczynę destroy ${cause}`,()=>{
+// F1 (audyt PR106): zniszczenie aury wynika z EFEKTU umbra (702.89a), nie z
+// pierwotnej przyczyny — SBA „never happens” (614.6), a shield ma okazję na
+// zdarzeniu zmodyfikowanym (614.5). CR122.1c: „destroyed as the result of an
+// effect”. Źródła pobrane 2026-09-08: mtg.wiki Shield_counter, Umbra_armor,
+// Replacement_effect (CR 2026-08-07).
+for(const cause of ['effect','sba'])test(`606/F1: tarcza na aurze chroni ją przy destroy ${cause}`,()=>{
  const s=board();addCounter(s,'a0','shield',1);replaceObject(s,s.objects.get('host'),{damage:6});
  if(cause==='effect')destroyPermanentByEffect(s,'host');else runStateBasedActions(s);
- assert.equal(s.objects.get('host').damage,0);assert.equal(s.objects.get('a0')?.zone==='battlefield',cause==='effect');
- assert.equal(s.events.filter(e=>e.type==='shield_consumed').length,cause==='effect'?1:0);
+ assert.equal(s.objects.get('host').zone,'battlefield');assert.equal(s.objects.get('host').damage,0);
+ assert.equal(s.objects.get('a0').zone,'battlefield','aura niszczona efektem umbra, nie SBA');
+ assert.equal(s.events.filter(e=>e.type==='shield_consumed').length,1);
+ assert.equal(s.pendingReplacementChoice,null);
 });
 test('606: niezniszczalna aura nadal usuwa obrażenia hosta',()=>{
  const s=board();replaceObject(s,s.objects.get('a0'),{keywords:['indestructible']});replaceObject(s,s.objects.get('host'),{damage:6});runStateBasedActions(s);
