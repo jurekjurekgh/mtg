@@ -10700,6 +10700,17 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 605, plan: "Lorwyn", support: { status: 'supported', limitations: [] },
   }),
 
+  defineCard({
+    id: 'exploding-borders', name: 'Exploding Borders', set: 'CON',
+    types: ['Sorcery'], subtypes: [], colors: ["G", "R"], manaCost: 4,
+    oracleText: "Domain — Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle. Exploding Borders deals X damage to target player or planeswalker, where X is the number of basic land types among lands you control.", imageUri: "https://cards.scryfall.io/large/front/f/2/f247aaaf-4d65-4dfc-bab2-3c1331762647.jpg?1783942469",
+    spell: { timing: 'sorcery', targets: [{ type: 'player_or_planeswalker' }], effects: [
+      { type: 'search_library_to_battlefield', qualifier: { types: ['Basic', 'Land'] }, entersTapped: true },
+      { type: 'damage', amount: 'basic_land_types_you_control' },
+    ] },
+    artId: 601, plan: 'Alara', support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /**

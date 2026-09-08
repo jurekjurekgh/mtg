@@ -7,6 +7,44 @@ import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProte
 // combat.js, effects.js i spells.js (i żeby nie robić cyklu importów).
 export { effectiveColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality };
 
+/** CR 306: także permanent o kilku typach, ale nie karta zakryta. */
+export function isPlaneswalker(object) {
+  return Boolean(object && !object.faceDown
+    && (object.kind === 'planeswalker' || (object.types ?? []).includes('Planeswalker')));
+}
+
+/** Domain: wejście to publiczne permanenty pola bitwy (stan albo PlayerView).
+ * CR 305.6 / ruling CON: liczymy odrębne podstawowe PODTYPY, nie supertyp Basic.
+ */
+export function basicLandTypeCount(battlefield, controllerId) {
+  const basics = new Set(['Plains', 'Island', 'Swamp', 'Mountain', 'Forest']);
+  const found = new Set();
+  for (const object of battlefield) {
+    if (!object || object.controllerId !== controllerId
+        || !(object.kind === 'land' || (object.types ?? []).includes('Land'))) continue;
+    for (const subtype of effectiveSubtypes(object)) if (basics.has(subtype)) found.add(subtype);
+  }
+  return found.size;
+}
+
+/** Prewencja licznika shield, wspólna dla pipeline i markDamage. */
+export function preventDamageWithShieldCounter(state, objectId, amount) {
+  const object = state.objects.get(objectId);
+  if (!(amount > 0) || !object || (object.counters?.shield ?? 0) <= 0) return 0;
+  removeCounter(state, objectId, 'shield', 1);
+  state.events.push(event('shield_consumed', { objectId, cardId: object.cardId, reason: 'damage' }));
+  state.events.push(event('damage_prevented', { objectId, cardId: object.cardId, amount, shieldCounter: true }));
+  return amount;
+}
+
+/** CR120.3c: niezależny skutek obrażeń (także creature/PW), już po prewencji.
+ * Nie ma ujemnych liczników — zdejmujemy najwyżej aktualną lojalność. */
+export function removeLoyaltyForDamage(state, object, amount) {
+  if (!isPlaneswalker(object)) return object;
+  const lost = Math.min(amount, object.counters?.loyalty ?? 0);
+  return lost > 0 ? removeCounter(state, object.id, 'loyalty', lost) : object;
+}
+
 export function replaceObject(state, object, patch) {
   const updated = Object.freeze({ ...object, ...patch });
   state.objects.set(object.id, updated);
@@ -991,7 +1029,7 @@ export function markDealtDamageThisTurn(state, objectId) {
 }
 
 export function markDamage(state, objectId, amount, sourceId = null) {
-  const object = state.objects.get(objectId);
+  let object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel obrażeń');
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
   // Prewencja (CR 614): filtr „prevent all damage" — zamiast zaznaczyć
@@ -1011,12 +1049,11 @@ export function markDamage(state, objectId, amount, sourceId = null) {
       return object;
     }
   }
-  // Shield counter (CR 122.1b / Voice of the Vermin): zamiast obrażeń zdejmij 1 tarcze.
-  if (amount > 0 && (object.counters?.shield ?? 0) > 0) {
-    removeCounter(state, objectId, 'shield', 1);
-    const after = replaceObject(state, state.objects.get(objectId), {});
-    state.events.push(event('shield_consumed', { objectId, cardId: object.cardId, reason: 'damage' }));
-    return after;
+  // Ta sama prewencja także dla bezpośredniego API markDamage.
+  if (preventDamageWithShieldCounter(state, objectId, amount) > 0) return state.objects.get(objectId);
+  object = removeLoyaltyForDamage(state, object, amount);
+  if (isPlaneswalker(object) && object.kind !== 'creature') {
+    return replaceObject(state, object, { damagedThisTurn: amount > 0 || object.damagedThisTurn });
   }
   const updated = replaceObject(state, object, { damage: object.damage + amount, damagedThisTurn: true });
   state.events.push(event('damage_marked', { objectId, amount, total: updated.damage }));

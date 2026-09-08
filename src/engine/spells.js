@@ -4,7 +4,7 @@ import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
-import { deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
+import { isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
 import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
@@ -229,10 +229,15 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (!isLegal) throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
-    // Cel „any target" (Release the Ants): gracz albo stwór — oba są legalne.
+    // Zakresy celowania obrażeń: player/PW oraz szersze any target.
+    if (spec?.type === 'player_or_planeswalker') {
+      if (state.players.some(player => player.id === targetId)) return { id: targetId, kind: 'player', controllerId: targetId };
+      if (object?.zone === 'battlefield' && isPlaneswalker(object)) return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
     if (spec?.type === 'any_target') {
       if (state.players.some((player) => player.id === targetId)) return { id: targetId, kind: 'player', controllerId: targetId };
-      if (object && object.zone === 'battlefield' && object.kind === 'creature') return object;
+      if (object?.zone === 'battlefield' && (object.kind === 'creature' || isPlaneswalker(object))) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // M108 (Kazuul's Toll Collector): „target Equipment you control" —
@@ -1104,7 +1109,12 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
           && !hasHexproofAgainst(state, object, playerId);
       });
     }
-    case 'any_target': return [...players, ...battlefieldCreatures];
+    case 'player_or_planeswalker': return [...players, ...state.zones.battlefield.filter(id => {
+      const object = state.objects.get(id);
+      return object?.zone === 'battlefield' && isPlaneswalker(object) && !hasHexproofAgainst(state, object, playerId);
+    })];
+    case 'any_target': return [...new Set([...players, ...battlefieldCreatures,
+      ...targetCandidatesBySpec(state, playerId, { type: 'player_or_planeswalker' })])];
     case 'player': {
       // M69 (Dreams of Steel and Oil — „Target opponent"): spec.opponent
       // ogranicza kandydatów do przeciwników rzucającego.

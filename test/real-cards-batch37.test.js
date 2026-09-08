@@ -6,6 +6,7 @@ import { createGameState, addObject, execute, playerView } from '../src/engine/g
 import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
+import { addCounter } from '../src/engine/counters.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectiveKeywords } from '../src/engine/permanents.js';
 import { applyEffect } from '../src/engine/effects.js';
@@ -253,6 +254,8 @@ function putPlaneswalker(state, id, subtype, controllerId) {
     toughness: null, manaCost: 3, abilities: [], keywords: [], subtypes: [subtype],
     types: ['Planeswalker'], colors: [], cardName: `${subtype} Planeswalker`,
   });
+  // CR306.9: fixture ma dodatnią lojalność, inaczej znika w SBA.
+  addCounter(state, id, 'loyalty', 3);
   return state.objects.get(id);
 }
 

@@ -19,6 +19,18 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-08 — batch54 B3b, 8/10
+
+Exploding Borders: search/tapped/shuffle przed domain, player/PW, loyalty
+oraz SBA0. Wspólny licznik podtypów i wycena z PlayerView; preferencja nowego
+typu w search bez odsłaniania biblioteki przeciwnikowi. Testy ujawniły
+prewencję shield zbyt późną dla damage_dealt/lifelink/infect — poprawiono
+noncombat i oba kierunki walki. UI ruchów rozróżnia rękę/top/bottom i widoczne
+SBA0. B54 71/71, 7mutacji, golden bez zmiany fixture. Live10607 przeczytane
+392linie: 0detektorów, ale uwagi do kreatora many i Stomping Slabs otwarte
+w B5. Przy B4 zbadać shield w starej gałęzi lethal SBA (CR122.1c). Nie jest
+to zakończenie batcha; szczegóły w planie i handoffie f.
+
 ## Sesja 2026-09-08 — batch 54 B3a (7/10), wznowienie połączenia
 
 GitHub odświeżony przez właściciela: publikacja Kheru i checkpointu udana,

@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -589,7 +589,11 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     }));
   }
   const shieldPrevented = preventDamageTo(state, targetId, rawAmount - filterPrevented);
-  const dealt = rawAmount - filterPrevented - shieldPrevented;
+  // Licznik shield zastępuje OBRAŻENIA, a nie tylko ich zaznaczenie.
+  // Musi zadziałać przed damage_dealt, infect, deathtouch i lifelink.
+  const remainder = rawAmount - filterPrevented - shieldPrevented;
+  const counterPrevented = targetIsPlayer ? 0 : preventDamageWithShieldCounter(state, targetId, remainder);
+  const dealt = remainder - counterPrevented;
   state.events.push(event('damage_dealt', {
     source: sourceObject.id, target: targetId, amount: dealt, combat: false,
     sourceCardId: sourceObject.cardId ?? null,
@@ -599,10 +603,11 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     ...(targetIsPlayer || !targetObject ? {} : { targetLki: Object.freeze({ ...targetObject }) }),
   }));
   if (dealt <= 0) return 0;
-  if (effectiveKeywords(sourceObject, state).includes('infect')) {
+  if (effectiveKeywords(sourceObject, state).includes('infect') && (targetIsPlayer || targetObject?.kind === 'creature')) {
     if (targetIsPlayer) {
       addPoisonCounters(state, targetId, dealt);
     } else {
+      removeLoyaltyForDamage(state, targetObject, dealt);
       addCounter(state, targetId, '-1/-1', dealt);
       markDealtDamageThisTurn(state, targetId);
     }
@@ -618,7 +623,7 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   // zadający 1 obrażenie w fight nie zabijał 4/4 (SBA nie miała flagi, a
   // obrażenia < wytrzymałości). Prewencja/protection kasują obrażenia przed
   // oznaczeniem — CR 702.4b: bez zadanych obrażeń nie ma śmierci.
-  if (!targetIsPlayer && dealt > 0 && effectiveKeywords(sourceObject, state).includes('deathtouch')) {
+  if (targetObject?.kind === 'creature' && dealt > 0 && effectiveKeywords(sourceObject, state).includes('deathtouch')) {
     const current = state.objects.get(targetId);
     if (current && current.zone === 'battlefield') {
       state.objects.set(targetId, Object.freeze({ ...current, damagedByDeathtouch: true }));
@@ -990,11 +995,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (T6 — okno odpowiedzi na triggerze), sprawia, że efekt nic nie robi.
     if (targetId != null && !state.players.some((player) => player.id === targetId)) {
       const targetObj = state.objects.get(targetId);
-      if (!targetObj || targetObj.zone !== 'battlefield' || targetObj.kind !== 'creature') return;
+      if (!targetObj || targetObj.zone !== 'battlefield' || (targetObj.kind !== 'creature' && !isPlaneswalker(targetObj))) return;
     }
     let amount = effect.amount;
     if (amount === 'artifacts_you_control') {
       amount = countArtifactsControlled(state, sourceObject.controllerId);
+    }
+    if (amount === 'basic_land_types_you_control') {
+      amount = basicLandTypeCount(state.zones.battlefield.map(id => state.objects.get(id)), sourceObject.controllerId);
     }
     // Batch 46 (Bring Low): „If that creature has a +1/+1 counter on it,
     // deals 5 damage instead." Warunek sprawdzamy przy ROZSTRZYGNIĘCIU

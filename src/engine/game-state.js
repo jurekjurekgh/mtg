@@ -1,3 +1,4 @@
+import { effectiveSubtypes } from './permanents.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
@@ -7786,6 +7787,7 @@ export function playerView(state, playerId) {
                 cardId: o?.cardId ?? null,
                 kind: o?.kind ?? null,
                 types: Object.freeze([...(o?.types ?? [])]),
+                subtypes: Object.freeze(effectiveSubtypes(o)),
                 cmc: o?.manaValue ?? o?.cmc ?? 0,
                 manaCost: o?.manaCost ?? null,
                 power: o?.power ?? null,

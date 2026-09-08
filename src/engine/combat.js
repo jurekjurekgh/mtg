@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
+import { preventDamageWithShieldCounter, removeLoyaltyForDamage, attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
 import { attachmentsAttachedTo } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 
@@ -724,6 +724,9 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
         const protEvent = event('damage_prevented', { objectId: attackerId, amount: blockerProtPrevented, cardId: blocker.cardId, protection: true });
         state.events.push(protEvent); events.push(protEvent);
       }
+      const counterBefore = state.events.length;
+      blockerDealt -= preventDamageWithShieldCounter(state, attackerId, blockerDealt);
+      events.push(...state.events.slice(counterBefore));
       if (hasKeyword(state, blocker, 'infect')) {
         if (blockerDealt > 0) {
           // M296 (uwaga C właściciela): addCounter pushuje counter_added tylko
@@ -731,6 +734,7 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
           // resolve_combat niósł sam damage_dealt i stół (log + Rozgrywka)
           // milczał o znaczniku −1/−1, choć kafel go pokazywał.
           const countersBefore = state.events.length;
+          removeLoyaltyForDamage(state, state.objects.get(attackerId), blockerDealt);
           addCounter(state, attackerId, '-1/-1', blockerDealt);
           events.push(...state.events.slice(countersBefore));
           markDealtDamageThisTurn(state, attackerId);
@@ -805,11 +809,15 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
       const protEvent = event('damage_prevented', { objectId: blockerId, amount: attackerProtPrevented, cardId: attacker.cardId, protection: true });
       state.events.push(protEvent); events.push(protEvent);
     }
+    const counterBefore = state.events.length;
+    dealt -= preventDamageWithShieldCounter(state, blockerId, dealt);
+    events.push(...state.events.slice(counterBefore));
     if (hasKeyword(state, attacker, 'infect')) {
       if (dealt > 0) {
         // M296 (uwaga C właściciela): jak wyżej — counter_added musi jechać
         // w strumieniu komendy, inaczej stół milczy o znaczniku −1/−1.
         const countersBefore = state.events.length;
+        removeLoyaltyForDamage(state, state.objects.get(blockerId), dealt);
         addCounter(state, blockerId, '-1/-1', dealt);
         events.push(...state.events.slice(countersBefore));
         markDealtDamageThisTurn(state, blockerId);

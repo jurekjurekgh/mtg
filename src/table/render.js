@@ -158,7 +158,7 @@ export function stepLabel(turn) {
 
 /** M73d (B): polskie nazwy typów celów (koniec surowych slugów w opisach). */
 const TARGET_TYPE_LABELS = Object.freeze({
-  creature: 'stwór', player: 'gracz', any_target: 'dowolny cel',
+  creature: 'stwór', player: 'gracz', any_target: 'dowolny cel', player_or_planeswalker: 'gracz lub planeswalker',
   // M166/B (Cacophodon — untap target permanent).
   permanent: 'permanent',
   artifact: 'artefakt', artifact_or_creature: 'artefakt lub stwór',
@@ -247,7 +247,8 @@ export function describeSpellEffects(spell) {
     return `wybierz jedno — ${modeBits.join(' / ')}`;
   }
   const parts = (spell.effects ?? []).map((effect) => {
-    if (effect.type === 'damage') return `Obrażenia ${effect.amount}`;
+    if (effect.type === 'damage') return typeof effect.amount === 'number' || effect.amount === 'X'
+      ? `Obrażenia ${effect.amount}` : describeEffect(effect);
     // M255/D: „+${power}/+${toughness}” drukowało SUROWY SLUG, gdy wartość
     // jest dynamiczna (Tarmogoyf). Ten sam helper co buff_* (`ptPair`).
     if (effect.type === 'pump') return `${ptPair(effect.power ?? 0, effect.toughness ?? 0)} do końca tury`;
@@ -788,7 +789,7 @@ const COUNTER_LABELS = Object.freeze({
   // w audytowanych partiach) — licznik ogłuszenia z Lodestone Needle. Audyt
   // wszystkich liczników w bazie wykazał też brakujący `level` (Kabira
   // Vindicator). Strażnik w testach pilnuje kompletności tej mapy.
-  stun: 'ogłuszenie', level: 'poziom',
+  stun: 'ogłuszenie', level: 'poziom', loyalty: 'lojalność',
   // Batch 48 (Contested Game Ball): licznik punktowy — po piątym artefakt
   // jest poświęcany w zamian za Skarb.
   point: 'punkt',
@@ -807,6 +808,7 @@ const DYNAMIC_AMOUNT_LABELS = Object.freeze({
 /** Rzeczownikowa fraza dla dynamicznej liczby obrażeń („tyle obrażeń, ile ..."). */
 const DYNAMIC_AMOUNT_NOUNS = Object.freeze({
   artifacts_you_control: 'artefaktów kontrolujesz',
+  basic_land_types_you_control: 'różnych podstawowych typów mają kontrolowane przez ciebie lądy (domain)',
 });
 
 /** Czytelna wartość P/T tokena, także dynamiczna (greatest_power_you_control). */
@@ -1150,7 +1152,11 @@ function describeEffect(e) {
     sacrifice_each_other_creature: () => 'poświęć każde inne stworzenie',
     sacrifice_food_choice: () => 'poświęć Food (+5/+5) albo +3/+3 do końca tury',
     search_basic_land_morbid: () => 'szukaj basic landa (morbid)',
-    search_library_to_battlefield: () => 'szukaj w bibliotece na pole bitwy',
+    search_library_to_battlefield: () => {
+      const basicLand = e.qualifier?.types?.includes('Basic') && e.qualifier?.types?.includes('Land');
+      const subtypes = (e.qualifier?.subtypes ?? []).join('/');
+      return `szukaj w bibliotece karty${basicLand ? ' podstawowego lądu' : ''}${subtypes ? ` typu ${subtypes}` : ''} na pole bitwy${e.entersTapped ? ' (zatapniętej)' : ''}, potem potasuj`;
+    },
     search_library_to_hand: () => 'szukaj w bibliotece do ręki',
     springbloom_sacrifice_search: () => 'poświęć ląd, szukaj 2 basic landów',
     start_engines: () => 'start your engines!',

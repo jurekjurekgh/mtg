@@ -609,3 +609,254 @@ test('B54 Consign: bot wycenia usunięcie wroga, odrzuca własny cel', async () 
   const options = bot.trace().at(-1).options;
   assert.ok(options.some(o => o.cmd.includes('own') && o.score < 0), JSON.stringify(options));
 });
+
+// B3b — Exploding Borders (Oracle+rulings w zapisanym snapshotcie).
+// WotC 2009-02-01: “You do what the spell says in order, so you'll put a new
+// basic land card onto the battlefield before you determine the value of X.”
+// “Exploding Borders will still deal damage even if you don't put a land card
+// onto the battlefield.” CR 608.2b: “If all its targets ... are now illegal,
+// the spell or ability doesn't resolve.” (mtg.wiki/Resolving_spells_and_abilities).
+function bordersBoard() {
+  const s = game(); put(s, 'borders', 'exploding-borders');
+  put(s, 'forest', 'basic-forest', 'p1', 'battlefield');
+  put(s, 'mountain', 'basic-mountain', 'p1', 'battlefield');
+  put(s, 'search-plains', 'basic-plains', 'p1', 'library');
+  addMana(s, 'p1', 4, { colors: ['R','G'] }); return s;
+}
+function bordersToSearch(s, target = 'p2') {
+  run(s, commands(s).find(c => c.type === 'cast_spell' && c.objectId === 'borders' && c.targets?.[0] === target));
+  for (let i = 0; !s.pendingSearchChoice && s.zones.stack.length && i < 10; i++) {
+    run(s, commands(s).find(c => c.type === 'pass_priority'));
+  }
+  assert.ok(s.pendingSearchChoice); assert.ok(s.pendingSpell);
+}
+test('B54 Borders: druk, Oracle i domain dopiero po search (wstrzymanie, tapped, shuffle, raz)', () => {
+  const def = registry.get('exploding-borders'); assert.ok(def);
+  const src = JSON.parse(fs.readFileSync(new URL('../docs/cards/scryfall-exploding-borders.json', import.meta.url)));
+  assert.equal(def.oracleText, src.oracle_text); assert.equal(def.imageUri, src.image_uris.large);
+  assert.equal(MANA_COSTS[def.id], src.mana_cost); assert.equal(def.artId, 601); assert.equal(def.plan, 'Alara');
+  assert.deepEqual(def.colors, ['G','R']); assert.equal(def.support.status, 'supported');
+  const s = bordersBoard(); bordersToSearch(s);
+  assert.equal(life(s, 'p2'), 20); assert.ok(find(s, def.id, 'stack'));
+  run(s, commands(s, 'p1').find(c => c.type === 'resolve_search_choice' && c.found === 'search-plains'));
+  assert.equal(life(s, 'p2'), 17); assert.equal(find(s, 'basic-plains').tapped, true);
+  assert.equal(s.pendingSpell, null); assert.equal(s.pendingSearchChoice, null);
+  assert.ok(find(s, def.id, 'graveyard'));
+  const damage = s.events.filter(e => e.type === 'damage_dealt' && e.sourceCardId === def.id);
+  assert.equal(damage.length, 1); assert.equal(damage[0].amount, 3);
+  assert.ok(s.events.some(e => e.type === 'library_searched' && e.shuffled));
+});
+test('B54 Borders: fail-to-find nadal zadaje obrażenia, search nie bierze nonbasic', async () => {
+  const { replaceObject } = await import('../src/engine/permanents.js');
+  const s = bordersBoard();
+  const nonbasic = put(s, 'nonbasic', 'basic-island', 'p1', 'library');
+  replaceObject(s, nonbasic, { types: ['Land'] });
+  bordersToSearch(s);
+  assert.equal(commands(s, 'p1').some(c => c.found === 'nonbasic'), false);
+  assert.equal(execute(s, { type: 'resolve_search_choice', playerId: 'p1', found: 'nonbasic' }).ok, false);
+  assert.ok(s.pendingSearchChoice); assert.equal(life(s, 'p2'), 20);
+  run(s, commands(s, 'p1').find(c => c.type === 'resolve_search_choice' && c.found === null));
+  assert.equal(life(s, 'p2'), 18); assert.ok(find(s, 'exploding-borders', 'graveyard'));
+});
+// DMU release notes (mtg.wiki/Domain, fetched2026-09-08): “The basic land
+// types are Plains, Island, Swamp, Mountain, and Forest. Land types other
+// than basic land types (such as Desert) don't contribute to domain abilities.”
+test('B54 Borders: domain = odrębne aktualne typy własnych landów, także nonbasic', async () => {
+  const { replaceObject, grantBasicLandTypeUntilEndOfTurn } = await import('../src/engine/permanents.js');
+  const s = bordersBoard(); put(s, 'forest2', 'basic-forest', 'p1', 'battlefield');
+  const dual = put(s, 'dual', 'basic-swamp', 'p1', 'battlefield');
+  replaceObject(s, dual, { types: ['Land'], subtypes: ['Island','Swamp','Desert'] });
+  put(s, 'opponent-plains', 'basic-plains', 'p2', 'battlefield');
+  const nonland = put(s, 'nonland', 'rotting-legion', 'p1', 'battlefield');
+  replaceObject(s, nonland, { subtypes: ['Plains'] });
+  bordersToSearch(s);
+  run(s, commands(s, 'p1').find(c => c.type === 'resolve_search_choice' && c.found === null));
+  assert.equal(life(s, 'p2'), 16, 'Forest, Mountain, Island, Swamp (nie cudzy/niestworzony Plains)');
+  const s2 = bordersBoard();
+  grantBasicLandTypeUntilEndOfTurn(s2, 'forest', 'Island');
+  put(s2, 'island', 'basic-island', 'p1', 'battlefield');
+  bordersToSearch(s2);
+  run(s2, commands(s2, 'p1').find(c => c.type === 'resolve_search_choice' && c.found === null));
+  assert.equal(life(s2, 'p2'), 18, 'Island+Mountain; bazowy Forest zastąpiony');
+});
+test('B54 Borders: zero domain to 0 obrażeń, maksymalnie pięć typów', async () => {
+  for (const all of [false, true]) {
+    const s = bordersBoard();
+    for (const id of ['forest','mountain']) moveObjectDirectly(s, id, 'graveyard', `gone-${id}`);
+    if (all) for (const slug of ['plains','island','swamp','mountain','forest']) put(s, `land-${slug}`, `basic-${slug}`, 'p1', 'battlefield');
+    bordersToSearch(s); run(s, commands(s, 'p1').find(c => c.type === 'resolve_search_choice' && c.found === null));
+    assert.equal(life(s, 'p2'), all ? 15 : 20);
+  }
+});
+
+// CR120.3c (mtg.wiki/Damage chunk1, CR2026-08-07, fetched2026-09-08):
+// “Damage dealt to a planeswalker causes that many loyalty counters to be
+// removed from that planeswalker.” CR306.9 (mtg.wiki/Planeswalker chunk2):
+// “If a planeswalker’s loyalty is 0, it’s put into its owner’s graveyard.”
+// Stan testowy typu PW — nie nowa karta w katalogu/kolekcji (ADR0029).
+async function pwFixture(s, loyalty, patch = {}) {
+  const { replaceObject } = await import('../src/engine/permanents.js');
+  const o = put(s, 'walker', 'rotting-legion', 'p2', 'battlefield');
+  return replaceObject(s, o, { kind: 'planeswalker', types: ['Planeswalker'], power: null, toughness: null,
+    counters: { loyalty }, ...patch });
+}
+for (const loyalty of [2, 5]) test(`B54 Borders: cel PW loyalty${loyalty} → usuń 3 liczniki; zero to SBA, nie obrażenia na stwora`, async () => {
+  const s = bordersBoard(); await pwFixture(s, loyalty, { keywords: ['indestructible'], ownerId: 'p1' });
+  bordersToSearch(s, 'walker');
+  run(s, commands(s, 'p1').find(c => c.type === 'resolve_search_choice' && c.found === 'search-plains'));
+  assert.equal(life(s, 'p2'), 20);
+  if (loyalty === 5) {
+    assert.equal(s.objects.get('walker').counters.loyalty, 2); assert.equal(s.objects.get('walker').damage, 0);
+  } else {
+    assert.equal(s.objects.has('walker'), false);
+    assert.equal(find(s, 'rotting-legion', 'graveyard')?.ownerId, 'p1');
+    assert.equal(s.events.some(e => e.type === 'creature_destroyed' && e.fromId === 'walker'), false);
+  }
+});
+test('B54 Borders: PW znika przed resolution → brak całego search; stwór/land nie są celami', async () => {
+  const s = bordersBoard(); await pwFixture(s, 5);
+  put(s, 'creature', 'rotting-legion', 'p2', 'battlefield');
+  const casts = commands(s).filter(c => c.type === 'cast_spell' && c.objectId === 'borders');
+  assert.ok(casts.some(c => c.targets?.[0] === 'p1')); assert.ok(casts.some(c => c.targets?.[0] === 'p2'));
+  for (const target of ['forest','creature','search-plains']) {
+    assert.equal(casts.some(c => c.targets?.[0] === target), false);
+    assert.equal(execute(s, { type: 'cast_spell', playerId: 'p1', objectId: 'borders', targets: [target] }).ok, false);
+  }
+  run(s, casts.find(c => c.targets?.[0] === 'walker'));
+  moveObjectDirectly(s, 'walker', 'graveyard', 'gone-walker'); resolve(s);
+  assert.equal(s.pendingSearchChoice, null); assert.equal(s.objects.get('search-plains').zone, 'library');
+  assert.equal(life(s, 'p2'), 20); assert.equal(s.events.some(e => e.type === 'library_searched' && e.shuffled), false);
+});
+test('B54 Borders: PW otrzymuje ochronę od czerwonego w odpowiedzi → brak search', async () => {
+  const { replaceObject } = await import('../src/engine/permanents.js');
+  const s = bordersBoard(); await pwFixture(s, 5);
+  run(s, commands(s).find(c => c.type === 'cast_spell' && c.targets?.[0] === 'walker'));
+  replaceObject(s, s.objects.get('walker'), { protectionFromColors: ['R'] }); resolve(s);
+  assert.equal(s.pendingSearchChoice, null); assert.equal(s.objects.get('search-plains').zone, 'library');
+  assert.equal(s.objects.get('walker').counters.loyalty, 5);
+});
+test('B54 Borders: czar sorcery, dwa wymagane kolory', () => {
+  for (const colors of [['R'], ['G'], ['U']]) {
+    const s = game(); put(s, 'borders', 'exploding-borders'); addMana(s, 'p1', 9, { colors });
+    assert.equal(commands(s).some(c => c.objectId === 'borders' && c.type === 'cast_spell'), false);
+    assert.equal(execute(s, { type: 'cast_spell', playerId: 'p1', objectId: 'borders', targets: ['p2'] }).ok, false);
+    assert.equal(s.players[0].mana, 9);
+  }
+  const s = bordersBoard(); s.turn = jumpToStep(s.turn, 'beginning_of_combat', 'p1');
+  assert.equal(commands(s).some(c => c.objectId === 'borders' && c.type === 'cast_spell'), false);
+});
+test('B54 Borders: PL domain i bot rozpoznaje obrażenia (bez czytania biblioteki)', async () => {
+  const { describeSpellEffects } = await import('../src/table/render.js');
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  assert.match(describeSpellEffects(registry.get('exploding-borders').spell), /typów.*ląd/);
+  const s = bordersBoard(); s.players[1].life = 2;
+  const bot = createHeuristicBot({ seed: 54, registry });
+  const chosen = bot.chooseCommand(playerView(s, 'p1'));
+  assert.equal(chosen.type, 'cast_spell'); assert.equal(chosen.targets?.[0], 'p2');
+  assert.ok(bot.trace().at(-1).options.some(o => o.cmd.includes('p2') && o.score >= 1000));
+});
+
+test('B54 PW: prewencja, lifelink i infect; hybryda creature/PW ma oba skutki obrażeń', async () => {
+  const { dealNonCombatDamage } = await import('../src/engine/effects.js');
+  const { replaceObject } = await import('../src/engine/permanents.js');
+  for (const creature of [false, true]) for (const infect of [false, true]) {
+    const s = game();
+    await pwFixture(s, 5, creature ? { kind: 'creature', types: ['Creature','Planeswalker'], power: 4, toughness: 4 } : {});
+    const src = put(s, 'src', 'rotting-legion', 'p1', 'battlefield');
+    const source = replaceObject(s, src, { keywords: ['lifelink', ...(infect ? ['infect'] : [])] });
+    s.damageShields = [{ targetId: 'walker', remaining: 1 }];
+    assert.equal(dealNonCombatDamage(s, source, 'walker', 3), 2);
+    const o = s.objects.get('walker');
+    assert.equal(o.counters.loyalty, 3); assert.equal(life(s, 'p1'), 22);
+    assert.equal(o.counters['-1/-1'] ?? 0, creature && infect ? 2 : 0);
+    assert.equal(o.damage, creature && !infect ? 2 : 0);
+  }
+});
+test('B54 PW: damage any_target zachowuje zwykłe cele i dopuszcza planeswalkera', async () => {
+  const s = game(); await pwFixture(s, 3); put(s, 'shock', 'shock');
+  addMana(s, 'p1', 1, { colors: ['R'] });
+  const offers = commands(s).filter(c => c.type === 'cast_spell' && c.objectId === 'shock');
+  assert.ok(offers.some(c => c.targets?.[0] === 'p2'));
+  run(s, offers.find(c => c.targets?.[0] === 'walker')); resolve(s);
+  assert.equal(s.objects.get('walker').counters.loyalty, 1);
+});
+test('B54 Borders: wycena search preferuje nowy typ; widok przeciwnika nie ujawnia kandydatów', async () => {
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const s = bordersBoard(); put(s, 'duplicate-forest', 'basic-forest', 'p1', 'library');
+  bordersToSearch(s);
+  assert.equal(playerView(s, 'p2').pendingSearchChoice.cards, null);
+  const view = playerView(s, 'p1');
+  const score = (cmd) => {
+    const b = createHeuristicBot({ seed: 54, registry }); b.chooseCommand({ ...view, legalCommands: [cmd] });
+    return b.trace()[0].score;
+  };
+  const duplicate = view.legalCommands.find(c => c.found === 'duplicate-forest');
+  const fresh = view.legalCommands.find(c => c.found === 'search-plains');
+  assert.ok(duplicate); assert.ok(fresh); assert.ok(score(fresh) > score(duplicate));
+});
+test('B54 UI: bounce top/bottom nie kłamie o ręce, SBA0 lojalności jest widoczne', async () => {
+  const { describeGameEvent, isBotMoveNoise } = await import('../src/table/session.js');
+  assert.equal(isBotMoveNoise({ type: 'object_moved', bounced: true }), false);
+  assert.equal(isBotMoveNoise({ type: 'object_moved', sba: 'zero_loyalty' }), false);
+  assert.equal(isBotMoveNoise({ type: 'object_moved' }), true);
+  const helpers = { nameOf: id => registry.get(id)?.name ?? id, nameOfObject: id => id };
+  for (const [zone, extra, pattern] of [['hand', {}, /ręki/], ['library', { toTop: true }, /wierzch.*biblioteki/], ['library', { toBottom: true }, /spód.*biblioteki/]]) {
+    const text = describeGameEvent({ type: 'object_moved', bounced: true, toZone: zone, ...extra,
+      object: { cardId: 'rotting-legion', controllerId: 'p2' } }, helpers);
+    assert.match(text, pattern);
+    if (zone === 'library') assert.doesNotMatch(text, /ręki/);
+  }
+  const text = describeGameEvent({ type: 'object_moved', fromId: 'walker', toZone: 'graveyard', sba: 'zero_loyalty',
+    cardId: 'rotting-legion', object: { cardId: 'rotting-legion' } }, helpers);
+  assert.match(text, /lojalno/); assert.match(text, /gr[oó]b|grobu/);
+});
+// CR120.4b: “Second, damage is dealt, as modified by replacement and
+// prevention effects that interact with damage.” (mtg.wiki/Damage chunk1).
+// CR122.1c (mtg.wiki/Shield_counter, fetched2026-09-08):
+// “If damage would be dealt to this permanent, prevent that damage and remove
+// a shield counter from it.”
+// Efekt tarczy ma być widoczny PRZED damage_dealt i lifelink, nie tylko
+// przy zaznaczaniu obrażeń. Ten sam kontrakt dla PW oraz zwykłego stwora.
+test('B54 damage: licznik tarczy zapobiega rzeczywistym obrażeniom i lifelinkowi', async () => {
+  const { dealNonCombatDamage } = await import('../src/engine/effects.js');
+  const { replaceObject } = await import('../src/engine/permanents.js');
+  const { addCounter } = await import('../src/engine/counters.js');
+  for (const pw of [true, false]) {
+    const s = game();
+    if (pw) await pwFixture(s, 5); else put(s, 'walker', 'rotting-legion', 'p2', 'battlefield');
+    addCounter(s, 'walker', 'shield', 1);
+    const source = replaceObject(s, put(s, 'src', 'rotting-legion', 'p1', 'battlefield'), { keywords: ['lifelink'] });
+    assert.equal(dealNonCombatDamage(s, source, 'walker', 3), 0);
+    assert.equal(life(s, 'p1'), 20); assert.equal(s.objects.get('walker').damage, 0);
+    assert.equal(s.objects.get('walker').counters.shield ?? 0, 0);
+    if (pw) assert.equal(s.objects.get('walker').counters.loyalty, 5);
+    assert.equal(s.events.filter(e => e.type === 'damage_dealt').at(-1).amount, 0);
+  }
+});
+
+test('B54 shield CR122.1c: oba kierunki walki, infect/lifelink, tylko jeden licznik na zdarzenie', async () => {
+  const { replaceObject } = await import('../src/engine/permanents.js');
+  const { addCounter } = await import('../src/engine/counters.js');
+  for (const victim of ['attacker', 'blocker']) for (const infect of [false, true]) {
+    const s = game();
+    for (const [id, owner] of [['attacker','p1'],['blocker','p2']]) {
+      const o = put(s, id, 'rotting-legion', owner, 'battlefield');
+      replaceObject(s, o, { power: 3, toughness: 10, summoningSickness: false, tapped: false,
+        keywords: id === victim ? [] : ['lifelink', ...(infect ? ['infect'] : [])] });
+    }
+    addCounter(s, victim, 'shield', 2);
+    s.turn = jumpToStep(s.turn, 'declare_attackers', 'p1');
+    run(s, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['attacker'] });
+    s.turn.priorityPlayerId = 'p2';
+    run(s, { type: 'declare_blockers', playerId: 'p2', assignments: { attacker: ['blocker'] } });
+    s.turn.priorityPlayerId = 'p1';
+    const result = execute(s, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+    assert.ok(result.ok, JSON.stringify(result.events));
+    assert.equal(s.objects.get(victim).counters.shield, 1);
+    assert.equal(s.objects.get(victim).counters['-1/-1'] ?? 0, 0);
+    assert.equal(s.objects.get(victim).damage, 0);
+    assert.equal(life(s, 'p1'), 20); assert.equal(life(s, 'p2'), 20);
+    assert.equal(result.events.find(e => e.type === 'damage_dealt' && e.target === victim)?.amount, 0);
+    assert.ok(result.events.some(e => e.type === 'shield_consumed' && e.objectId === victim));
+  }
+});

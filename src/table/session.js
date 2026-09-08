@@ -187,7 +187,12 @@ const BOT_MOVE_NOISE = new Set([
  * jest komunikatem „Rozgrywka" (pełna legalność — własna wiedza); dobranie
  * BOTA w kroku dobierania zostaje szumem; dobrania z efektu (obu) są treścią.
  */
+function isRulesZoneMove(e) {
+  return e.type === 'object_moved' && (e.bounced === true || e.sba === 'zero_loyalty');
+}
+
 export function isBotMoveNoise(e, { botActing = false, stackSize = 0, humanId = HUMAN_ID } = {}) {
+  if (isRulesZoneMove(e)) return false;
   if (e?.type === 'card_drawn') return e.source !== 'effect' && e.playerId !== humanId;
   if (!BOT_MOVE_NOISE.has(e.type)) return false;
   if (e.type === 'stats_modified') {
@@ -806,9 +811,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'game_created':
         return null;
       case 'object_moved': {
+        if (e.sba === 'zero_loyalty') return `${nameOf(e.cardId ?? e.object?.cardId)}: zero lojalności — ${e.toZone === 'exile' ? 'wygnanie zamiast grobu' : 'trafia do grobu właściciela'}`;
         if (e.bounced) {
           const whoOwner = e.object?.controllerId ? whoN(e.object.controllerId) : 'właściciela';
-          return `${nameOf(e.object?.cardId)} wraca do ręki (${whoOwner})`;
+          const where = e.toZone === 'library'
+            ? (e.toBottom ? 'na spód biblioteki' : 'na wierzch biblioteki') : 'do ręki';
+          return `${nameOf(e.object?.cardId)} wraca ${where} (${whoOwner})`;
         }
         // M103/D (zgłoszenie właściciela): wygnanie kart za koszt Escape było
         // w logu niewidzialne (zwykłe zmiany stref log celowo pomija, ale to
@@ -2536,7 +2544,7 @@ export function createSession(config) {
     // (M103/D), gracz ma widzieć w „Rozgrywce" co i skąd wygnano (CR 400.2:
     // strefy jawne). Format i mgła wojny jak wyżej (gałąź M192/Z1).
     const isAdditionalCostMove = e.type === 'object_moved' && e.additionalCost === true;
-    if (!botActing && !isAdditionalCostMove
+    if (!botActing && !isAdditionalCostMove && !isRulesZoneMove(e)
       && e.type !== 'turn_started' && e.type !== 'game_started'
       && e.type !== 'step_advanced'
       && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw

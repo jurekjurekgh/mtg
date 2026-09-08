@@ -1,3 +1,4 @@
+import { basicLandTypeCount, isPlaneswalker } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
@@ -1352,7 +1353,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!t) return 0;
     if (t.controllerId === view.playerId) return -90;       // WŁASNY stwór — zakaz
     if (damageFullyPrevented(view, t) || (amt > 0 && shieldedAmount(view, t.id) >= amt)) return -70;
-    const remaining = (t.toughness ?? 0) - (t.damage ?? 0); // POZOSTAŁE życie
+    const remaining = isPlaneswalker(t) ? (t.counters?.loyalty ?? 0)
+      : (t.toughness ?? 0) - (t.damage ?? 0); // POZOSTAŁE życie / lojalność
     const lethal = amt >= remaining && remaining > 0;
     if (lethal) {
       if (scaling) {
@@ -3384,7 +3386,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // celuje WŁASNY slot (`targetIndex`, domyślnie 0) — nie wszystkie
             // cele czaru (spell może mieć osobne sloty per efekt damage).
             const slot = cmd.targets?.[effect.targetIndex ?? 0];
-            const amount = Number.isInteger(effect.amount) ? effect.amount : 0;
+            const amount = effect.amount === 'basic_land_types_you_control'
+              ? basicLandTypeCount(view.zones.battlefield ?? [], view.playerId)
+              : Number.isInteger(effect.amount) ? effect.amount : 0;
             const scaling = Boolean(spell?.xCost); // Consume Spirit itp. — X z maną
             if (slot != null) score += damageTargetValue(view, slot, amount, scaling);
             else score -= 60; // efekt obrażeń bez celu — nic nie robi
@@ -5686,6 +5690,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Land do ręki/na pole bitwy = pewna mana; stwory wg statystyk.
         if (card.kind === 'land') score += 30;
         score += (card.power ?? 0) * 2 + (card.toughness ?? 0);
+        // Domain po search: przy równych podstawowych lądach wybierz NOWY
+        // typ. Czytamy wyłącznie jawny deskryptor źródła oraz kandydatów
+        // udostępnionych decydentowi, nigdy ukrytą bibliotekę.
+        const search = view.pendingSearchChoice;
+        const source = cardDef(search?.sourceCardId);
+        if ((cmd.destination ?? search?.destination) === 'battlefield'
+            && source?.spell?.effects?.some(e => e.amount === 'basic_land_types_you_control')) {
+          const board = view.zones.battlefield ?? [];
+          score += basicLandTypeCount([...board, { ...card, controllerId: view.playerId }], view.playerId)
+            - basicLandTypeCount(board, view.playerId);
+        }
         return finish(score);
       }
       // M130 (pętla jakości 2026-09-05): resolve_exploit_choice (M69, Exploit,

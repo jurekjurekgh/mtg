@@ -33,7 +33,7 @@ choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdzia�
 na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
-Bieżący stan: szybki rdzeń **4845/4845**, artefakt **59 modułów / 3409,6 kB** (batch 54, 7/10 kart). Ostatni pełny pomiar: **4836/4836** (`test:all` na B2, nie wynik B3a). Szczegóły:
+Bieżący stan: szybki rdzeń **4861/4861**, artefakt **59 modułów / 3416,7 kB** (batch 54, 8/10 kart). Ostatni pełny pomiar: **4836/4836** (`test:all` na B2, nie wynik B3). Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
@@ -116,7 +116,7 @@ liczone z plików `decks/*.txt`).
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
 |---|---|---|---:|---:|---:|
-| `alara` | Alara | WUBRG | 35 | 12 | 23 |
+| `alara` | Alara | WUBRG | 36 | 12 | 24 |
 | `dominaria-brg` | Dominaria (BRG) | BRG | 26 | 9 | 17 |
 | `dominaria-wu` | Dominaria (WU) | WUB | 24 | 8 | 16 |
 | `final-fantasy` | Final Fantasy | WUBRG | 26 | 9 | 17 |

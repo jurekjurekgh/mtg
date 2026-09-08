@@ -4682,3 +4682,14 @@ nowe ID i wspólne efekty powrotu. UI początku walki nie gubi warunku.
 B54 55/55, 4/4 mutacje, fast4845/4845, build59/3409,6 kB.
 GitHub działa; poprzednia blokada była historyczna. B3b/B4/B5 w toku,
 nie zakończenie batcha. HANDOFF_2026-09-08e.md.
+
+
+### Batch54 B3b — domain i skutki obrażeń PW, 8/10
+
+Search kontynuuje damage po decyzji; distinct basic land types liczone
+na stanie w resolution. Target player/PW, loyalty i SBA0, bez nowych kart PW.
+Wspólny helper prewencji shield przed eventem oraz lifelink/infect, oba
+kierunki combat i noncombat. UI stref oraz search, jawna wycena domain.
+B54 71/71, 7mutacji RED, golden bez rebaseline. B4/B5 nadal otwarte;
+HANDOFF_2026-09-08f.md i plan zawierają uwagi z live i kolejną gałąź SBA
+do sprawdzenia przy umbra armor.

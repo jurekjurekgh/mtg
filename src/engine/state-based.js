@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
-import { deathZoneFor, effectiveKeywords, effectiveToughness, hasEnduringStory } from './permanents.js';
+import { isPlaneswalker, deathZoneFor, effectiveKeywords, effectiveToughness, hasEnduringStory } from './permanents.js';
 import { removeIllegalAttachments, detachAttachmentsFromHost } from './attachments.js';
 import { removeCounter } from './counters.js';
 import { effectiveAbilities } from './permanents.js';
@@ -212,6 +212,11 @@ export function runStateBasedActions(state) {
   // Selhoff Occultist mielił 1× zamiast 3× przy trzech zgonach w walce).
   const dying = [];
   for (const object of [...state.objects.values()]) {
+    // CR 306.9: zero loyalty to ruch do grobu, NIE destroy/regeneracja.
+    if (object.zone === 'battlefield' && isPlaneswalker(object) && (object.counters?.loyalty ?? 0) === 0) {
+      dying.push({ object, hasFinality: deathZoneFor(state, object) === 'exile' });
+      continue;
+    }
     if (object.zone !== 'battlefield' || object.kind !== 'creature' || object.toughness === null) continue;
     // Jwari: „enter as a copy” — SBA nie zabija 0/0, dopoki gracz nie wybierze celu.
     if (object.enteringAsCopy) continue;
@@ -278,7 +283,7 @@ export function runStateBasedActions(state) {
     const hasFinality = deathZoneFor(state, object) === 'exile';
     dying.push({ object, hasFinality });
   }
-  const simultaneousIds = dying.filter((d) => !d.hasFinality).map((d) => d.object.id);
+  const simultaneousIds = dying.filter((d) => !d.hasFinality && d.object.kind === 'creature').map((d) => d.object.id);
   for (const { object, hasFinality } of dying) {
     const toZone = hasFinality ? 'exile' : 'graveyard';
     const toId = hasFinality ? `exile-${state.objectSequence++}` : `grave-${state.objectSequence++}`;
@@ -286,7 +291,8 @@ export function runStateBasedActions(state) {
     // `object` to LKI zniszczonego permanentu (CR 603.10) — triggery
     // „leaves the battlefield" muszą je odczytać także wtedy, gdy obiekt już
     // nie istnieje w stanie (token usunięty przez SBA CR 704.5e).
-    const destroyed = event('creature_destroyed', {
+    const destroyed = event(object.kind === 'creature' ? 'creature_destroyed' : 'object_moved', {
+      ...(object.kind === 'creature' ? {} : { fromZone: 'battlefield', sba: 'zero_loyalty' }),
       fromId: object.id, toId, toZone, cardId: object.cardId, object,
       ...(simultaneousIds.length > 1 ? { simultaneousIds: [...simultaneousIds] } : {}),
     });
