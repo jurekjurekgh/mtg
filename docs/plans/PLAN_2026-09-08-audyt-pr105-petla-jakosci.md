@@ -12,8 +12,8 @@ Tryb: ADR 0020/0021; bez nowych kart, pełnego B0 i zmian progów benchmarku.
 
 ## Etapy i kolejność commitów
 
-- [ ] **P0 — baza i PR:** zmierzyć `npm test` + `npm run build`, wypchnąć ten plan osobno i otworzyć PR przed implementacją.
-- [ ] **P1 — audyt:** przeczytać diff każdego z 69 plików względem początku PR #105, skonfrontować zmiany ze ścieżkami wywołań oraz źródłami CR/Oracle (ADR 0030). Sprawdzić sens oczekiwań i selektywne mutacje, osobno dla gałęzi. Zapisać tabelę pokrycia, ustalenia i odrzucone hipotezy w `docs/audits/AUDYT_PR105_2026-09-08.md`; osobny commit audytu przed naprawami.
+- [x] **P0 — baza i PR:** zmierzyć `npm test` + `npm run build`, wypchnąć ten plan osobno i otworzyć PR przed implementacją.
+- [x] **P1 — audyt:** przeczytać diff każdego z 69 plików względem początku PR #105, skonfrontować zmiany ze ścieżkami wywołań oraz źródłami CR/Oracle (ADR 0030). Sprawdzić sens oczekiwań i selektywne mutacje, osobno dla gałęzi. Zapisać tabelę pokrycia, ustalenia i odrzucone hipotezy w `docs/audits/AUDYT_PR105_2026-09-08.md`; osobny commit audytu przed naprawami.
 - [ ] **P2 — naprawy potwierdzonych ustaleń:** każdy niezależny błąd: cytat źródłowy → test RED → minimalny fix → GREEN i anty-over-fix → pełny szybki rdzeń + build → osobny commit/push. Bez maskowania i bez przypadków po nazwie karty. Wyniki uzupełniają audyt oraz plan.
 - [ ] **P3 — niedokończony plan / pętla jakości:** sprawdzić końcówkę planu PR #105; nie podejmować backlogu jako zlecenia. Zbudowany stół uruchomić Żywym Testerem, czytać transkrypt (taktyka, informacje, auto-pass), zweryfikować nowe klasy detektorem lub testem. Każdą naprawę zamykać oddzielnie.
 - [ ] **P4 — brama PR i przekazanie:** `npm run test:all` + build, szybki benchmark przy zmianie bota/ofert, bez pełnego B0. Aktualny raport, PROJECT_HISTORY, handoff, README i kumulatywny opis PR; czyste drzewo i gałąź wypchnięta. Merge wyłącznie właściciela.
@@ -21,3 +21,8 @@ Tryb: ADR 0020/0021; bez nowych kart, pełnego B0 i zmian progów benchmarku.
 ## Wyniki
 
 W trakcie. Liczby i werdykty będą wpisywane po pomiarze, nie na podstawie deklaracji poprzedniej sesji.
+
+- P0: baza 4772/4772, build 59 / 3396,2 kB; plan `7237a49`, PR #106.
+- P1: 69/69 plików; 5 prób mutacyjnych (4 RED, 1 luka testu). Raport przed
+  naprawami: A kontroler, B hand_top, C stare ograniczenie obrażeń, D Equipment
+  vs aura, E test untapu. P2 pozostaje otwarte.
