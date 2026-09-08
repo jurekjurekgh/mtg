@@ -3937,10 +3937,12 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_discard_choice') return reject('discard_choice_unresolved');
     if (cmd.playerId !== discardChooserId(state.pendingDiscardChoice)) return reject('discard_choice_not_your_decision');
     const pending = state.pendingDiscardChoice;
+    const batchChoice = Object.hasOwn(cmd, 'cardIds');
+    if (batchChoice && (!Array.isArray(cmd.cardIds) || Object.hasOwn(cmd, 'cardId'))) return reject('illegal_discard_choice');
     // M109 (Nightsnare): „If you don't" — rezygnacja wybierającego przełącza
     // decyzję na WŁAŚCICIELA ręki, który odrzuca declineAmount kart wg
     // własnego wyboru (CR 701.8a).
-    if (pending.allowDecline && cmd.cardId == null) {
+    if (!batchChoice && pending.allowDecline && cmd.cardId == null) {
       const before = state.events.length;
       const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
       const count = Math.min(pending.declineAmount ?? 2, handIds.length);
@@ -3981,56 +3983,65 @@ export function execute(state, input) {
       }));
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
-    if (!pending.handIds.includes(cmd.cardId)) return reject('illegal_discard_choice');
-    const card = state.objects.get(cmd.cardId);
-    if (!card || card.zone !== 'hand' || card.controllerId !== pending.playerId) return reject('illegal_discard_choice');
+    const cardIds = batchChoice ? [...cmd.cardIds] : [cmd.cardId];
+    const requiredCount = pending.purpose === 'cost' ? pending.count : Math.min(pending.count, pending.handIds.length);
+    // Cały zbiór sprawdzony przed pierwszym odrzuceniem; legacy cardId nadal
+    // płaci pojedynczą kartą (replay/bot), UI zatwierdza pełny wybór cardIds.
+    if (batchChoice && (cardIds.length !== requiredCount || new Set(cardIds).size !== cardIds.length)) return reject('illegal_discard_choice');
+    if (cardIds.length === 0 || cardIds.some(id => {
+      const card = state.objects.get(id);
+      return !pending.handIds.includes(id) || card?.zone !== 'hand' || card.controllerId !== pending.playerId;
+    })) return reject('illegal_discard_choice');
     const before = state.events.length;
-    // M158/Batch 39 (CR 702.34a): karta z Madness odrzucana jest do EXILE
-    // (nie do grobu) z jednorazową decyzją: rzuć za koszt madness albo
-    // przełóż do cmentarza.
-    let moved = null;
-    if (card.madness) {
-      const exileId = `exile-${state.objectSequence++}`;
-      // M262: madness to mechanika wygnania (CR 702.35) — badge „Wygnane: Madness".
-      moved = moveObjectDirectly(state, cmd.cardId, 'exile', exileId, { exiledBy: 'madness' });
-      state.objects.set(exileId, Object.freeze({ ...state.objects.get(exileId), madnessReady: true }));
-      state.events.push(event('card_discarded', {
-        playerId: pending.playerId, fromId: cmd.cardId, objectId: exileId,
-        cardId: moved.cardId, choice: true, purpose: pending.purpose, toZone: 'exile', madness: true,
-      }));
-      // M258: wpis do KOLEJKI, nie bezpośrednio do pendingMadnessCast —
-      // decyzja otwiera się po zakończeniu całej sekwencji odrzuceń
-      // (promoteNextMadness w gałęziach kończących poniżej). Natychmiastowe
-      // otwarcie blokowało kolejne odrzucania w tym samym efekcie.
-      state.madnessQueue.push({
-        playerId: pending.playerId, objectId: exileId, cardId: moved.cardId,
-        restorePriorityTo: state.turn.priorityPlayerId,
-      });
-    } else {
-      const graveId = `grave-${state.objectSequence++}`;
-      moved = moveObjectDirectly(state, cmd.cardId, 'graveyard', graveId);
-      state.events.push(event('card_discarded', {
-        playerId: pending.playerId, fromId: cmd.cardId, objectId: graveId,
-        cardId: moved.cardId, choice: true, purpose: pending.purpose,
-      }));
-    }
-    // M67 (Civilized Scholar): „If a creature card is discarded this way,
-    // untap this creature, then transform it." — po odrzuceniu karty-stwora
-    // wykonaj akcje zapisane w pending (odkręcenie + transform źródła).
-    if (pending.onCreatureDiscard && (moved.kind === 'creature' || (moved.types ?? []).includes('Creature'))) {
-      const target = pending.onCreatureDiscard;
-      const source = state.objects.get(target.sourceId);
-      if (source && source.zone === 'battlefield') {
-        if (target.untap) {
-          const updated = untapObject(state, target.sourceId, pending.playerId);
-          state.events.push(event('object_untapped', { objectId: target.sourceId, playerId: pending.playerId }));
-        }
-        if (target.transform) {
-          applyEffect(state, { type: 'transform' }, state.objects.get(target.sourceId), []);
+    for (const cardId of cardIds) {
+      const card = state.objects.get(cardId);
+      // M158/Batch 39 (CR 702.34a): karta z Madness odrzucana jest do EXILE
+      // (nie do grobu) z jednorazową decyzją: rzuć za koszt madness albo
+      // przełóż do cmentarza.
+      let moved = null;
+      if (card.madness) {
+        const exileId = `exile-${state.objectSequence++}`;
+        // M262: madness to mechanika wygnania (CR 702.35) — badge „Wygnane: Madness".
+        moved = moveObjectDirectly(state, cardId, 'exile', exileId, { exiledBy: 'madness' });
+        state.objects.set(exileId, Object.freeze({ ...state.objects.get(exileId), madnessReady: true }));
+        state.events.push(event('card_discarded', {
+          playerId: pending.playerId, fromId: cardId, objectId: exileId,
+          cardId: moved.cardId, choice: true, purpose: pending.purpose, toZone: 'exile', madness: true,
+        }));
+        // M258: wpis do KOLEJKI, nie bezpośrednio do pendingMadnessCast —
+        // decyzja otwiera się po zakończeniu całej sekwencji odrzuceń
+        // (promoteNextMadness w gałęziach kończących poniżej). Natychmiastowe
+        // otwarcie blokowało kolejne odrzucania w tym samym efekcie.
+        state.madnessQueue.push({
+          playerId: pending.playerId, objectId: exileId, cardId: moved.cardId,
+          restorePriorityTo: state.turn.priorityPlayerId,
+        });
+      } else {
+        const graveId = `grave-${state.objectSequence++}`;
+        moved = moveObjectDirectly(state, cardId, 'graveyard', graveId);
+        state.events.push(event('card_discarded', {
+          playerId: pending.playerId, fromId: cardId, objectId: graveId,
+          cardId: moved.cardId, choice: true, purpose: pending.purpose,
+        }));
+      }
+      // M67 (Civilized Scholar): „If a creature card is discarded this way,
+      // untap this creature, then transform it." — po odrzuceniu karty-stwora
+      // wykonaj akcje zapisane w pending (odkręcenie + transform źródła).
+      if (pending.onCreatureDiscard && (moved.kind === 'creature' || (moved.types ?? []).includes('Creature'))) {
+        const target = pending.onCreatureDiscard;
+        const source = state.objects.get(target.sourceId);
+        if (source && source.zone === 'battlefield') {
+          if (target.untap) {
+            const updated = untapObject(state, target.sourceId, pending.playerId);
+            state.events.push(event('object_untapped', { objectId: target.sourceId, playerId: pending.playerId }));
+          }
+          if (target.transform) {
+            applyEffect(state, { type: 'transform' }, state.objects.get(target.sourceId), []);
+          }
         }
       }
     }
-    const remaining = pending.count - 1;
+    const remaining = pending.count - cardIds.length;
     const stillInHand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
     const resolvedEvents = state.events.slice(before);
     if (remaining > 0 && stillInHand.length > 0) {
@@ -7789,6 +7800,13 @@ export function playerView(state, playerId) {
       sourceCardId: state.pendingOptionalDraw.sourceCardId,
     } : null,
     // M100 (BUG A): viewerId — zakryte karty przeciwnika bez cardId (FoW).
+    pendingDiscardChoice: activeDiscardChoice ? {
+      count: state.pendingDiscardChoice.purpose === 'cost' ? state.pendingDiscardChoice.count
+        : Math.min(state.pendingDiscardChoice.count, state.pendingDiscardChoice.handIds.length),
+      purpose: state.pendingDiscardChoice.purpose,
+      sourceCardId: state.pendingDiscardChoice.sourceCardId ?? null,
+      allowDecline: Boolean(state.pendingDiscardChoice.allowDecline),
+    } : null,
     pendingDamageAssignment: buildDamageAssignmentView(state, playerId),
     // M72 (Batch 29): GENERYCZNE rozdzielanie obrażeń niecombat (Fireball).
     // Widok niesie total, źródło i listę celów; UI buduje własny przydział.

@@ -2081,6 +2081,11 @@ const CHOICE_GROUP_PENDING_SOURCE = Object.freeze({
 
 export function choiceGroupTitle(request, session, view) {
   const options = request?.options ?? [];
+  const discard = view?.pendingDiscardChoice;
+  if (options[0]?.type === 'resolve_discard_choice' && discard?.count > 1 && !discard.allowDecline) {
+    const source = discard.sourceCardId ? `${session.nameOf(discard.sourceCardId)} — ` : '';
+    return `${source}${discard.purpose === 'cost' ? 'koszt: ' : ''}odrzuć ${discard.count} ${polishPluralCount(discard.count, 'kartę', 'karty', 'kart')}`;
+  }
   const titled = choiceSourceTitle(options[0], session, view);
   if (titled) return titled;
   const descriptor = CHOICE_GROUP_TYPE_DESCRIPTORS[request?.type]
@@ -3063,6 +3068,7 @@ export function commandLabel(cmd, session, view) {
       return `Ucieczka (Escape): wygnij ${count} ${polishPluralCount(count, 'kartę', 'karty', 'kart')}`;
     }
     case 'resolve_discard_choice': {
+      if (Array.isArray(cmd.cardIds)) return `Odrzuć: ${cmd.cardIds.map(id => nameOfObjectId(id)).join(', ')}`;
       // M109 (Nightsnare): „You may choose" — rezygnacja z wyboru.
       if (cmd.cardId == null) return 'Nie wskazuj karty (przeciwnik odrzuci dwie wedle wyboru)';
       // M109: karta z ODSŁONIĘTEJ ręki przeciwnika jest w PlayerView ukryta

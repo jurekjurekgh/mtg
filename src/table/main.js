@@ -33,7 +33,7 @@ import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard } from './choice-request.js';
-import { multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf } from './multi-target.js';
+import { discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
 function runEngineSmoke() {
@@ -355,6 +355,19 @@ function bootstrapTable() {
     // zaznaczania KART (ptaszek) zamiast listy wszystkich podzbiorów
     // („7×7×7 kombinacji”). Te samy kontrakt co wielocelowość: zatwierdzenie
     // wraca do komendy z legalCommands (L48).
+    const discardPlan = discardPlanOf(request.options ?? [], choiceView);
+    if (discardPlan) {
+      const source = discardPlan.sourceCardId ? `${session.nameOf(discardPlan.sourceCardId)} — ` : '';
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView, session, plan: discardPlan, commands: request.options,
+        intro: `${source}zaznacz ${discardPlan.count} ${polishPluralCount(discardPlan.count, 'kartę', 'karty', 'kart')} do odrzucenia${discardPlan.purpose === 'cost' ? ' jako koszt' : ''}:`,
+        onOpenCard: openCardFullscreen,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     const mulliganPlan = mulliganBottomPlanOf(request.options ?? []);
     if (mulliganPlan) {
       renderMultiTargetWizard(els.choiceRequestBody, {

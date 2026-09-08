@@ -2,7 +2,7 @@ import { choiceResponse } from '../protocol/types.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
-import { commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection } from './multi-target.js';
+import { commandForDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -1083,7 +1083,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // konkretnymi instancjami), więc wybór „drugiej kopii" musi mapować się
   // na reprezentanta klasy — inaczej Zatwierdź milczy (klin z żywca).
   const defOfMulliganCard = (id) => session?.state?.objects?.get(id)?.cardId ?? null;
-  const currentCommand = () => (plan.cardIdsMode
+  const currentCommand = () => (plan.discardMode
+    ? commandForDiscardSelection(plan, [...chosen])
+    : plan.cardIdsMode
     ? commandForMulliganSelection(commands, [...chosen], defOfMulliganCard)
     : keepMode
       ? commandForMulliganKeepSelection(commands, [...chosen][0] ?? null)
@@ -1208,6 +1210,8 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       ].filter(Boolean);
       if (missing.length > 0) setStatus(`Brakuje: ${missing.join(', ')}`, true);
       else setStatus(cmd ? `Wybrano: ${slotLabels[0] ?? 'cel'} + ${sacLabel}` : 'Wybór niedozwolony', !cmd);
+    } else if (plan.discardMode) {
+      setStatus(`Wybrano do odrzucenia: ${chosen.size} / ${plan.count}`, !cmd);
     } else if ((singleMode || keepMode || castWindowMode || buttonsMode)) {
       // M298/A: przy wyborze pojedynczym licznik „1" nic nie mówi — status
       // pokazuje WYBRANY wiersz („Wybrano: Karta:sts-target-b (Nieprzyjaciel)").

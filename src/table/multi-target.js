@@ -652,3 +652,24 @@ export function commandForMulliganSelection(commands, cardIds, defOf = null) {
     && keyOf(entry.cardIds) === selection);
   return cmd ?? null;
 }
+
+
+/** Odrzuć N kart: zwarty plan z oferty pojedynczych kandydatów i decyzji.
+ * Bez generowania podzbiorów ręki; engine waliduje pełną listę cardIds. */
+export function discardPlanOf(commands, view) {
+  const pending = view?.pendingDiscardChoice;
+  const list = commands ?? [];
+  if (!pending || pending.count <= 1 || pending.allowDecline || list.length === 0
+    || !list.every(c => c.type === 'resolve_discard_choice' && c.cardId != null && c.playerId === view.playerId)) return null;
+  const targets = [...new Set(list.map(c => c.cardId))];
+  if (targets.length < pending.count) return null;
+  return { type: 'resolve_discard_choice', playerId: view.playerId, targets,
+    count: pending.count, minTargets: pending.count, maxTargets: pending.count,
+    hasX: false, discardMode: true, itemLabel: 'karty',
+    purpose: pending.purpose, sourceCardId: pending.sourceCardId };
+}
+export function commandForDiscardSelection(plan, selected) {
+  if (!plan?.discardMode || !Array.isArray(selected) || selected.length !== plan.count
+    || new Set(selected).size !== selected.length || selected.some(id => !plan.targets.includes(id))) return null;
+  return { type: 'resolve_discard_choice', playerId: plan.playerId, cardIds: [...selected] };
+}

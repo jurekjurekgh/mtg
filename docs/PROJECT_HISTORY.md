@@ -9465,3 +9465,15 @@ quick heuristic **85,0% (571/672)** — bez dryfu vs #105, bez pełnego B0,
 nowych kart, zmian progów czy fixture. L13 doprecyzowuje datę wydania CR;
 L82 kosmetycznie poprawione. README, plan, audyt i HANDOFF_2026-09-08c
 aktualne. PR #106 oddany właścicielowi do przeglądu; agent nie scala.
+
+
+## 2026-09-08 — zgłoszenie właściciela B: jeden wybór N kart do odrzucenia
+
+Cathartic Reunion używa wspólnego multiselectu: dokładnie2 checkboxy,
+licznik, jedno zatwierdzenie. PlayerView udostępnia liczbę tylko decydentowi;
+engine przyjmuje atomowo walidowane cardIds i zachowuje legacy cardId.
+Anulowanie niczego nie odrzuca ani nie cofa wcześniejszego rzutu/many.
+Madness i wstrzymane czary/aktywacje ruszają dopiero po całym koszcie.
+23 nowych regresji (w tym realny main→DOM→engine), fast4958/4958,
+build60/3433,2kB. Żywy stół seed11068 potwierdza oba zgłoszenia,0detektorów.
+Plan: docs/plans/PLAN_2026-09-08-animator-discard-ui.md.

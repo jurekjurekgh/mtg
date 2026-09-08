@@ -7,6 +7,8 @@
  *
  * @typedef {{ type: string, playerId: string, [key: string]: unknown }} Command
  *   Intencja gracza — jedyna droga zmiany stanu (np. play_land, declare_attackers).
+ *   resolve_discard_choice: cardId (legacy/pojedynczo) albo cardIds (pełny
+ *   wybór N różnych instancji); liczba dla UI w PlayerView.pendingDiscardChoice.
  * @typedef {{ type: string, [key: string]: unknown }} Event
  *   Fakt, który zaszedł w engine (np. object_moved, player_lost). Zdarzenia
  *   trafiają do state.events i do wyniku execute.

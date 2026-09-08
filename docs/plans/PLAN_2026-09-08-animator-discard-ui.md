@@ -38,7 +38,7 @@ do nadal oczekującej decyzji. Koszt po zatwierdzeniu jest nieodwracalny.
 - [x] A: test prawdziwej animacji→PlayerView→render; badge „animowany przez
   Skilled Animator”, usunięcie po odejściu źródła/hosta, FoW i brak badge'a
   dla niepowiązanego5/5. Fast + build → commit/push.
-- [ ] B: testy RED odrzucenia dwóch kart/invalid atomowo/madness/efekt vs
+- [x] B: testy RED odrzucenia dwóch kart/invalid atomowo/madness/efekt vs
   koszt; PlayerView z liczbą dla decydenta, jeden wspólny picker z licznikiem
   i zatwierdzeniem dokładnieN, bez efektu zaznaczeń/anulowania. Test wiring
   rzeczywistego main, nie tylko helperów. Fast + build → commit/push.
@@ -52,3 +52,14 @@ obcej ręki osobie nieuprawnionej. Pojedyncze odrzucenie pozostaje proste.
 
 A ukończone:7/7 testów, fast4935/4935,build60/3429,1kB.
 Badge czyta publiczny żywy link; source face-down ma opis bez nazwy.
+
+B ukończone:23/23 nowych testów; fast4958/4958,build60/3433,2kB.
+Komenda cardIds waliduje pełny zbiór przed ruchem, legacy cardId działa.
+Wspólny modal z checkboxami, licznikiem i jednoznacznym nagłówkiem kosztu;
+main testowany wykonaniem rzeczywistej funkcji routingu + DOM + engine.
+Odrzucanie kosztu/efektu/aktywacji, kontrczar, madness, krótsza ręka,
+Nightsnare, Anuluj, stare instancje/kontroler i niejednoznaczne wejście.
+Live seed11068 (Kaladesh vs Forgotten Realms),80kroków: jeden picker2z4,
+odrzuca Island/Mountain, draw3; później Dockhand5/5 z odznaką Animatora.
+Zero zgłoszeń detektorów. Wcześniejszy przebieg wykrył niejednoznaczne
+„(koszt)” — etykieta poprawiona na „koszt: odrzuć2” bez zmiany detektorów.
