@@ -1,5 +1,13 @@
 # Audyt wewnętrzny poprawek PR #105 — weryfikacja wg CR i rulingów (2026-09-08)
 
+> **Korekta z audytu następnej sesji (PR #106, 2026-09-08):** poniższy raport
+> jest historyczny. Potwierdzenie E8/B5 nie obejmowało własnego celu (brak
+> rzeczywistej zmiany kontrolera); opis E8/B3 cytował stare ograniczenie
+> kolejności obrażeń. Aktualne CR 510.1c dopuszcza dowolny podział między
+> blokerów. Pełna suma oraz trample/protection pozostają poprawne. Dowody,
+> źródła i naprawy: [audyt #105](AUDYT_PR105_2026-09-08.md), ustalenia A i C.
+
+
 **Polecenie właściciela** (po refutacji E9/F3): dogłębny audyt dotychczasowych zmian
 w PR #105 — części audytowej (PR #104), rundy brązowej (E8/B1–B5) i pozostałych
 poprawek srebrnych (E9/F1, F2, F4, F5) — każda poprawka sprawdzona pod kątem

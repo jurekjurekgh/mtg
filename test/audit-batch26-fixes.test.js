@@ -235,7 +235,7 @@ test('R2: gracz przydziela inaczej (cała moc na pierwszego blokera)', () => {
   assert.equal(state.objects.get('b2').damage, 0, 'b2 dostał 0');
 });
 
-test('R3: nielegalne przydziały odrzucane (suma > moc, zły bloker, zła kolejność)', () => {
+test('R3: odrzucaj złą sumę i blokera, ale nie dowolną kolejność podziału', () => {
   const s1 = twoBlockersState(5);
   execute(s1, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   const badSum = execute(s1, { type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b1', amount: 3 }, { blockerId: 'b2', amount: 3 }] } });
@@ -246,9 +246,11 @@ test('R3: nielegalne przydziały odrzucane (suma > moc, zły bloker, zła kolejn
   assert.equal(badBlocker.ok, false, 'bloker spoza listy');
   const s3 = twoBlockersState(5);
   execute(s3, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
-  // b2 pierwszy z 2 < lethal 3, a b1 (późniejszy) dostaje 3 > 0 → naruszenie kolejności
-  const badOrder = execute(s3, { type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b2', amount: 2 }, { blockerId: 'b1', amount: 3 }] } });
-  assert.equal(badOrder.ok, false, 'kolejność: b2 musi mieć >= lethal zanim b1 dostanie obrażenia');
+  // CR 510.1c (źródło/cytat: audyt-pr105-swobodny-przydzial): 2+3 jest
+  // legalne niezależnie od kolejności wpisów; dawny pin utrwalał starą regułę.
+  const freeOrder = execute(s3, { type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b2', amount: 2 }, { blockerId: 'b1', amount: 3 }] } });
+  assert.equal(freeOrder.ok, true, 'pełny podział 2+3 legalny także bez lethal na pierwszym');
+  assert.equal(s3.objects.get('b2').damage, 2);
 });
 
 test('R4: trample z wieloma blokerami — reszta idzie na gracza (default)', () => {

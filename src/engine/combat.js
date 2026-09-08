@@ -577,8 +577,9 @@ export function buildDefaultDamageAssignments(state) {
 
 /**
  * Waliduje przydział gracza (resolve_damage_assignment) względem ŻYWEGO stanu:
- * permutacja żywych blokerów, ilości całkowite >= 0, suma <= moc, reguła
- * „>= lethal przed następnym" (CR 510.1d). Zwraca null albo powód odrzucenia.
+ * permutację żywych blokerów, ilości całkowite >= 0, sufit mocy,
+ * pełną sumę (CR 510.1a/c) i lethal przed graczem (CR 702.19b).
+ * Zwraca null albo powód odrzucenia.
  */
 export function validateDamageAssignment(state, attackerId, assignment) {
   const attacker = state.objects.get(attackerId);
@@ -606,19 +607,13 @@ export function validateDamageAssignment(state, attackerId, assignment) {
   if (sum < amount && !hasKeyword(state, attacker, 'trample')) {
     return 'damage_must_be_fully_assigned';
   }
-  // Reguła kolejności (CR 510.1d): zanim obrażenia trafią do późniejszego
-  // blokera, każdy wcześniejszy musi mieć przydzielone >= lethal.
-  for (let i = 1; i < assignment.length; i += 1) {
-    if (assignment[i].amount <= 0) continue;
-    const prev = state.objects.get(assignment[i - 1].blockerId);
-    if (prev && assignment[i - 1].amount < lethalOf(state, attacker, prev)) return 'illegal_damage_order';
-  }
+  // CR 510.1c: podział między blokerów jest dowolny (bez lethal-first).
+  // Pełna suma powyżej i warunek trample poniżej to niezależne reguły.
   // M101/B6 (CR 702.19b): trample przepuszcza nadmiar na gracza DOPIERO, gdy
   // KAŻDY blokujący ma przydzielone co najmniej lethal. Bez tego atakujący
   // z trample mógł dać blokerom 0 i wpakować pełną moc w obrońcę — bloker
   // przeżywał, a blok nie chronił przed niczym. Reguła dotyczy wyłącznie
-  // trample: bez niego nieprzydzielone obrażenia po prostu przepadają
-  // (nie ma ich gdzie skierować), więc niedobór jest legalny.
+  // trample: bez niego pełna moc musi trafić w blokerów (CR 510.1a/c).
   if (hasKeyword(state, attacker, 'trample') && sum < amount) {
     for (const entry of assignment) {
       const blocker = state.objects.get(entry.blockerId);
@@ -770,7 +765,7 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
 
 /**
  * Zadaje obrażenia atakującego blokerom wg przydziału (kolejność = kolejność
- * assignment — dla gracza CR 510.1d, dla domyślnego lethal-first). Bloker,
+ * assignment — podział gracza CR 510.1c, domyślnie lethal-first). Bloker,
  * który zniknął z pola bitwy między decyzją a rozstrzygnięciem, jest pomijany
  * (CR 608.2b). Trample: nadmiar po wszystkich blokerach idzie na gracza.
  */

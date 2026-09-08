@@ -1395,8 +1395,8 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
 
     const rowHandles = [];
     const sum = () => amounts.reduce((a, b) => a + b, 0);
-    const canIncrease = (idx) => sum() < entry.power
-      && (idx === 0 || amounts[idx - 1] >= entry.blockers[idx - 1].lethal);
+    // CR 510.1c: dowolny podział między blokerów, ograniczony tylko mocą.
+    const canIncrease = () => sum() < entry.power;
     const render = () => {
       // odśwież liczniki w wierszach (picker liczy z tego samego modelu, co
       // pozwala +/− — `setValue` wywołuje w środku `paint()`)
@@ -1418,12 +1418,8 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
       // M136: po zmianie przydziału klucz sondy musi opisywać NOWY stan.
       if (typeof host.__refreshDamageProbeKey === 'function') host.__refreshDamageProbeKey();
     };
-    // M150/B (CR 510.1c): atakujący wybiera KOLEJNOŚĆ przydziału obrażeń.
-    // Wcześniej kolejność deklaracji bloków była sztywna i nie dało się
-    // w ogóle przydzielić obrażeń późniejszemu blokerowi, dopóki wcześniejszy
-    // nie dostał lethal (CR 510.1d) — np. 2/2 atakujący blokowany przez 2/2 i 4/4
-    // mógł zabrać obrażenia tylko pierwszemu. Przyciski ↑/↓ zmieniają
-    // kolejność, więc gracz może ustawić śmiertelny cel jako pierwszy.
+    // Kolejność wierszy to wygoda UI i kolejność domyślnego przydziału,
+    // nie wymóg lethal-first. CR 510.1c pozwala dzielić obrażenia dowolnie.
     const swapBlockerOrder = (idx, targetIdx) => {
       const list = entry.blockers;
       const am = amounts;
@@ -1466,11 +1462,6 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
             if (delta < 0) {
               if (amounts[idx] <= 0) return;
               amounts[idx] -= 1;
-              // Jeśli ten bloker spadł poniżej lethal, późniejsi nie mogą mieć
-              // obrażeń (reguła kolejności CR 510.1d).
-              if (amounts[idx] < b.lethal) {
-                for (let j = idx + 1; j < amounts.length; j += 1) amounts[j] = 0;
-              }
             } else {
               if (!canIncrease(idx)) return;
               amounts[idx] += 1;
@@ -1540,8 +1531,8 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     // M251 (audyt Żywym Testerem, w8): etykieta mówiła „Domyślnie
     // (lethal-first)" — żargon implementacji na stole gracza (polski opis,
     // oś 2). Przycisk stosuje silnikowy przydział domyślny: każdy kolejny
-    // bloker deklarowanej kolejności dostaje zabójcze obrażenia dopiero,
-    // gdy poprzedni je ma (CR 510.1c/d).
+    // bloker dostaje lethal przed następnym — to polityka domyślna,
+    // nie ograniczenie legalnego podziału gracza (CR 510.1c).
     const def = choiceNode(actions, 'button', 'action choice-request-option damage-wizard-default', 'Użyj domyślnego przydziału (zabójcze obrażenia po kolei blokerów)');
     def.type = 'button';
     def.addEventListener('click', () => onComplete?.(defaultCommand));
