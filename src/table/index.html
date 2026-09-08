@@ -609,6 +609,9 @@
     color: #e2e8f0;
   }
   .speed-panel[hidden] { display: none; }
+  /* E6/B: panel prędkości (M313) dostał podgląd hover razem z resztą kart
+     specjalnych (attachSpecialCardHover) — reguły najechania/kursora muszą
+     obejmować go tak samo jak Undercity/Day-Night/Poison (uwaga B 2026-09-02). */
   .speed-card { width: 84px; flex: none; }
   .speed-card img { width: 100%; border-radius: 6px; border: 1px solid var(--gold); display: block; }
   .speed-info { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
@@ -625,14 +628,15 @@
      .tile .cardvis .card-img:hover z M?): ilustracja unosi się i dostaje złotą
      ramkę, a obok kursora rysuje ją powiększony druk (attachSpecialCardHover
      w render.js). Na dotyku hover nie istnieje (M7c) — tam zostaje tap. */
-  .undercity-card img, .daynight-card img, .poison-card img {
+  .undercity-card img, .daynight-card img, .poison-card img, .speed-card img {
     transition: transform .12s ease, box-shadow .12s ease;
   }
-  .undercity-card:hover img, .daynight-card:hover img, .poison-card:hover img {
+  .undercity-card:hover img, .daynight-card:hover img, .poison-card:hover img, .speed-card:hover img {
     transform: translateY(-3px); box-shadow: 0 10px 22px rgba(0,0,0,.28);
     border-color: var(--gold);
   }
-  .undercity-card.clickable, .daynight-card.clickable, .poison-card.clickable { cursor: pointer; }
+  .undercity-card.clickable, .daynight-card.clickable, .poison-card.clickable,
+  .speed-card.clickable { cursor: pointer; }
   .undercity-card { width: 84px; flex: none; }
   .undercity-card img { width: 100%; border-radius: 6px; border: 1px solid var(--gold); display: block; }
   .undercity-info { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }

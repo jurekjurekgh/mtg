@@ -161,7 +161,10 @@ test('partia z czarami przechodzi przez stos i event log to opisuje', () => {
   const { registry, decks } = buildDecks('tarkir-bg.txt', 'warhammer-ubr.txt');
   // Seed 4 po Batch 35 E3 (green +Trade Route Envoy, red bez zmian) —
   // przelosowane hunterem (kolejne trafienia: 17, 32).
-  const session = createSession({ seed: 4, registry, decks });
+  // Seed 1 po E7/C (2026-09-07): Shock przeniesiony kaladesh → warhammer-ubr
+  // (plan wg kolumny planu właściciela) — zmiana trajektorii; przelosowane
+  // hunterem na dokładnym chooseHumanCommand (seed 1: pełna partia, 8 rzutów).
+  const session = createSession({ seed: 1, registry, decks });
   playOut(session);
   // W obu taliach są instants — w długiej partii któryś musiał zostać rzucony.
   assert.ok(

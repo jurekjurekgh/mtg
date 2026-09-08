@@ -89,6 +89,9 @@ test('M348/runtime F: sterownik przekazuje zebrane wyjątki do detektorów, nie 
   const ctx = createContext({
     runDetectors, lines: [], actionRecords: [], windowRecords: [], profile: 'impatient', probeRecords: [], rejectionRecords: [],
     harmfulNames: new Set(), allCardNames: new Set(), myPermanentNames: new Set(), enemyPermanentNames: new Set(),
+    // E1 (plan 2026-09-07): pin linii wywołania runDetectors obejmuje też
+    // telemetrię „akcja bez wyceny” — sterownik podaje ją zawsze (tu: brak).
+    botUnvalued: null,
     runtimeErrors: [{ type: 'error', message: 'wyjątek z prawdziwego parametru sterownika' }],
   });
   const findings = runInContext(`${source.slice(start, end + 1)}\nfindings;`, ctx);

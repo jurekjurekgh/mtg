@@ -33,7 +33,7 @@ choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdzia�
 na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
-Bieżący stan: **4705/4705 testów** (`test:all`; szybki rdzeń 4695/4695), artefakt **59 modułów / 3369,8 kB**. Szczegóły:
+Bieżący stan: **4750/4750 testów** (`test:all`; szybki rdzeń 4740/4740), artefakt **59 modułów / 3388,1 kB**. Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
@@ -123,7 +123,7 @@ liczone z plików `decks/*.txt`).
 | `forgotten-realms` | Forgotten Realms | WUBRG | 35 | 12 | 23 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 27 | 9 | 18 |
 | `innistrad-wu` | Innistrad (WU) | WU | 27 | 9 | 18 |
-| `kaladesh` | Kaladesh | WUBRG | 24 | 8 | 16 |
+| `kaladesh` | Kaladesh | WUBRG | 23 | 8 | 15 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 26 | 9 | 17 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
 | `ravnica` | Ravnica | WUBRG | 36 | 12 | 24 |
@@ -131,7 +131,7 @@ liczone z plików `decks/*.txt`).
 | `tarkir-bg` | Tarkir (BG) | UBG | 30 | 10 | 20 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 27 | 9 | 18 |
 | `theros` | Theros | WUBRG | 27 | 9 | 18 |
-| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 32 | 11 | 21 |
+| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 33 | 11 | 22 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
 | `wiedzmin` | Wiedźmin | UBRG | 44 | 15 | 29 |
 | `zendikar` | Zendikar | WURG | 30 | 10 | 20 |

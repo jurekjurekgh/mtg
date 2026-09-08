@@ -466,6 +466,12 @@ function lethalOf(state, attacker, blocker) {
   return Math.max(0, effectiveToughness(blocker, state) - (blocker.damage ?? 0));
 }
 
+// E8/B3: publiczna powierzchnia testowa dla domyślnego przydziału (ten sam
+// kod, którego używa przebieg walki i wariant domyślny wizarda).
+export function defaultDamageAssignmentFor(state, attackerId, blockerIds, amount) {
+  return defaultDamageAssignment(state, state.objects.get(attackerId), blockerIds, amount);
+}
+
 /** Pełna moc na jedynego blokera (bez trample) — naturalny wybór gracza (M66 D). */
 function singleBlockerFullAssignment(blockers, amount) {
   return blockers.length === 1 ? [{ blockerId: blockers[0], amount }] : [];
@@ -484,6 +490,14 @@ function defaultDamageAssignment(state, attacker, blockers, amount) {
     const assigned = Math.min(remaining, lethalOf(state, attacker, blocker));
     out.push({ blockerId, amount: assigned });
     remaining -= assigned;
+  }
+  // E8/B3 (wyzwanie wyłapywacza błędów, CR 510.1a): bez trample stwór zadaje
+  // CAŁĄ moc — lethal-first przy wielu blokerach gubił resztę (6 mocy vs
+  // 2/2 i 3/3 → 2+3=4). Reszta idzie do OSTATNIEGO blokera w kolejności
+  // (zwykła konwencja M66, spójna z CR 510.1c). Przy trample nadwyżka
+  // LEGALNIE zostaje dla obrońcy-gracza (CR 702.19b) — nie ruszać.
+  if (remaining > 0 && out.length > 0 && !hasKeyword(state, attacker, 'trample')) {
+    out[out.length - 1].amount += remaining;
   }
   return out;
 }
@@ -586,6 +600,12 @@ export function validateDamageAssignment(state, attackerId, assignment) {
     sum += entry.amount;
   }
   if (sum > amount) return 'damage_exceeds_power';
+  // E8/B3 (wyzwanie wyłapywacza błędów, CR 510.1a): bez trample suma MUSI być
+  // równa mocy — „niedopri-dzielona" część nie może przepaść. Przy trample
+  // nadwyżka legalnie idzie na obrońcę (CR 702.19b), więc tam tylko sufit.
+  if (sum < amount && !hasKeyword(state, attacker, 'trample')) {
+    return 'damage_must_be_fully_assigned';
+  }
   // Reguła kolejności (CR 510.1d): zanim obrażenia trafią do późniejszego
   // blokera, każdy wcześniejszy musi mieć przydzielone >= lethal.
   for (let i = 1; i < assignment.length; i += 1) {

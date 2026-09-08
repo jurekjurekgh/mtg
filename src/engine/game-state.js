@@ -3054,8 +3054,16 @@ export function execute(state, input) {
       const destZone = chosenDest === 'battlefield' ? 'battlefield' : chosenDest === 'graveyard' ? 'graveyard' : 'hand';
       const newId = `${destZone === 'battlefield' ? 'permanent' : destZone === 'graveyard' ? 'grave' : 'hand'}-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, cmd.found, destZone, newId);
+      // E9/F4 (wyzwanie wyłapywacza błędów II, CR 302.6): stwór postawiony
+      // z biblioteki podlega chorobie przywołania — jak w każdej innej
+      // ścieżce wejścia (F1/reanimate/throne/pyxis). Dziś idą tędy tylko
+      // lądy (katalog), ale ścieżka jest generyczna.
       const placed = destZone === 'battlefield'
-        ? Object.freeze({ ...moved, tapped: Boolean(pending.entersTapped || moved.entersTapped) })
+        ? Object.freeze({
+            ...moved,
+            tapped: Boolean(pending.entersTapped || moved.entersTapped),
+            summoningSickness: moved.kind === 'creature' || (moved.types ?? []).includes('Creature'),
+          })
         : moved;
       if (placed !== moved) state.objects.set(newId, placed);
       state.events.push(event('card_revealed', { playerId: pending.playerId, objectId: newId, cardId: placed.cardId, searched: true }));
@@ -7707,6 +7715,24 @@ export function playerView(state, playerId) {
     pendingDamageTarget: pendingDamageTargetView, pendingRevealOrder: pendingRevealOrderView,
     pendingRedirectChoice: pendingRedirectChoiceView,
     pendingIndex: pendingIndexView,
+    // E2/C (plan 2026-09-07): decyzje destroy_equipment i moonlit są decyzjami
+    // KONTROLERA efektu, a ich dane (gospodarz na polu bitwy / pierwowzór
+    // kopii) są informacją publiczną — wystawiamy je TYLKO decydentowi
+    // (wzorzec pendingHandTopChoice), żeby bot mógł je wycenić (L48: oferta
+    // = walidacja — wycena czyta to samo, co komenda rozstrzyga).
+    pendingDestroyEquipment: (state.pendingDestroyEquipment
+      && state.pendingDestroyEquipment.playerId === playerId)
+      ? { targetId: state.pendingDestroyEquipment.targetId }
+      : null,
+    pendingMoonlitChoice: (state.pendingMoonlitChoice
+      && state.pendingMoonlitChoice.playerId === playerId)
+      ? {
+          enchantedId: state.pendingMoonlitChoice.enchantedId,
+          amount: state.pendingMoonlitChoice.effect?.amount ?? 1,
+          tokenPower: state.pendingMoonlitChoice.effect?.power ?? 1,
+          tokenToughness: state.pendingMoonlitChoice.effect?.toughness ?? 1,
+        }
+      : null,
     pendingOptionalDraw: state.pendingOptionalDraw ? {
       playerId: state.pendingOptionalDraw.playerId,
       sourceCardId: state.pendingOptionalDraw.sourceCardId,

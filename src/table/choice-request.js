@@ -1339,11 +1339,14 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
   let confirm = null;
   // CR 702.19b: przydział trample jest legalny, gdy albo cała moc poszła
   // w blokerów, albo każdy blokujący dostał co najmniej lethal.
+  // E8/B3 (CR 510.1a): bez trample suma MUSI równać się mocy — „niedopri-
+  // dzielonej" części nie wolno zgubić (wizard dotąd bramkował tylko sufit
+  // i warunek trample, przyjmując sumę < moc).
   const trampleCovered = (entry, amounts) => entry.blockers
     .every((b, idx) => amounts[idx] >= b.lethal);
   const assignmentLegal = () => state.entries.every((e) => {
-    if (!e.trample) return true;
     const total = e.amounts.reduce((a, b) => a + b, 0);
+    if (!e.trample) return total === e.power;
     return total >= e.power || trampleCovered(e, e.amounts);
   });
   const refreshConfirm = () => {
@@ -1370,14 +1373,21 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     // nadmiar ma płynąć na gracza. Startujemy więc od domyślnego lethal-first
     // (jak defaultDamageAssignment w silniku) — wizard od pierwszej chwili
     // pokazuje legalny stan, a gracz może go tylko świadomie zmienić.
+    // E8/B3 (CR 510.1a): bez trample pełna moc MUSI trafić w blokerów —
+    // startujemy identycznie jak silnik: lethal-first, a resztę dolewamy do
+    // OSTATNIEGO blokera (start legalny zamiast „niedoboru", który silnik
+    // teraz odrzuca).
     const amounts = entry.blockers.map(() => 0);
-    if (entry.trample) {
+    {
       let left = entry.power;
       entry.blockers.forEach((b, idx) => {
         const give = Math.min(left, b.lethal);
         amounts[idx] = give;
         left -= give;
       });
+      if (!entry.trample && left > 0 && amounts.length > 0) {
+        amounts[amounts.length - 1] += left;
+      }
     }
     const remainingEl = choiceNode(wrapper, 'div', 'damage-wizard-remaining',
       entry.trample ? `do gracza: ${entry.power}` : '');

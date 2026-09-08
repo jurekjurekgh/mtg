@@ -1233,6 +1233,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
     return pool + fromLands;
   };
+  /**
+   * E6/A1 (zgłoszenie właściciela, Moonscarred Werewolf): kandydat na
+   * ODBLOKOWANIE many liczy się tylko, gdy jest RZUTOWALNY W TYM KROKU —
+   * mana z tapu wyparuje na końcu bieżącego kroku (CR 500.4), więc tap w
+   * cudzym upkeepie pod sorcery/stwora (nielegalne poza własną główną,
+   * CR 307.1/117.1a) odblokowuje nic. Instant rzucisz w każdym kroku,
+   * gdy masz priorytet (CR 307.5). Wspólna lista dla M167/D (early-return)
+   * i M128 (unlocksSomething) — jedno źródło prawdy (L28/L41), deskryptory
+   * kind/types (ADR 0002).
+   */
+  const manaUnlockCandidates = (view) => (view.zones.hand ?? []).filter((o) => {
+    if (!o || o.kind === 'land' || (o.manaCost ?? 0) <= 0) return false;
+    if (o.kind === 'instant' || (o.types ?? []).includes('Instant')) return true;
+    // Kroki główne silnika nazywają się main1/main2 (turn.js; „main" to
+    // alias skoku) — akceptujemy oba plus alias dla widoków syntetycznych.
+    const step = view.turn.step;
+    return myTurn(view) && (step === 'main1' || step === 'main2' || step === 'main');
+  });
   const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
   /**
    * M135 — CZY TĘ KARTĘ CHCEMY DOBRAĆ? Wspólna wycena dla wszystkich decyzji
@@ -2238,6 +2256,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return friendly ? (own ? 30 + v : -20 - v) : (own ? -20 - v : 30 + v);
   };
 
+  // E1 planu 2026-09-07 (wyceny bota): telemetria „akcja bez wyceny".
+  // Trafienia `default: finish(0)` w scoreCommand oznaczają decyzję, której
+  // wynik zależy od KOLEJNOŚCI OFERT (antywzorzec L41 — klasa M131/M336),
+  // a nie od treści wariantów. chooseCommand zapisuje licznik per typ
+  // (unvaluedDecisions), a Tester czyta go przez mostek __mtgDebug —
+  // detektor detectUnvaluedBotChoices pilnuje, by NOWE typy komend silnika
+  // nie urodziły się już niewycenione.
+  let lastUnvaluedType = null;
+  const unvaluedCounts = new Map();
+
+  /** scoreCommand + znacznik „policzone gałęzią default" (E1, patrz wyżej). */
+  function scoreTracked(view, cmd) {
+    lastUnvaluedType = null;
+    const score = scoreCommand(view, cmd);
+    const unvalued = lastUnvaluedType;
+    lastUnvaluedType = null;
+    return { cmd, score, unvalued };
+  }
+
   function scoreCommand(view, cmd) {
     // M320/NA2: ward (CR 702.21) — dopłata za celowanie we wrogi permanent
     // z ward. Odejmowana od WYNIKU każdego wariantu (finish), więc warianty
@@ -2289,6 +2326,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         } else if (effect.type === 'create_token') {
           modeScore += 8;
         }
+      }
+      // E2/A (plan 2026-09-07): tryb z CELEM — dotąd modeScore był wspólny dla
+      // wszystkich kandydatów i wybór celu spadał na kolejność oferty (pump
+      // wzmacniał stwora PRZECIWNIKA, gdy stał pierwszy na polu). Znak efektów
+      // trybu rozstrzygają wspólne tablice kar (L41: jedno źródło prawdy o
+      // celu — jak przy cast_spell): wrogi efekt we własne rzeczy i przyjazny
+      // efekt we wroga są karane (M121/M179).
+      if (cmd.targetId != null) {
+        const targetObj = objectOnBoard(view, cmd.targetId);
+        modeScore -= selfHarmPenalty(view, modeEffects, cmd, targetObj);
+        modeScore -= friendlyMisaimPenalty(view, modeEffects, cmd, targetObj);
       }
       return finish(modeScore);
     }
@@ -2356,6 +2404,205 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (!cmd.cast) return finish(0);
         const exiled = cmd.cardId ? view.zones.exile.find((o) => o.id === cmd.cardId) : null;
         const effects = exiled?.spell?.effects ?? [];
+        let score = 70;
+        for (const effect of effects) {
+          if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
+          if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
+        }
+        score -= freeCastTargetPenalty(view, effects, cmd);
+        return finish(score);
+      }
+      case 'resolve_look_top_choice': {
+        // E2/C (plan 2026-09-07, Gurmag Drowner): JEDNĄ kartę z wierzchu
+        // bierzemy do ręki (reszta do grobu/spodu) — bierzemy najcenniejszą
+        // (cardKeepValue, wspólna miara kart z manifest_dread/discard), nie
+        // pierwszą z listy.
+        const card = decisionCandidateCard(view, cmd.cardId);
+        if (!card) return finish(0);
+        return finish(cardKeepValue(view, card));
+      }
+      case 'resolve_hand_top_choice': {
+        // E2/C (plan 2026-09-07, Chittering Rats): decydent odkłada kartę
+        // z WŁASNEJ ręki na WIERZCH własnej biblioteki — wróci przy najbliższym
+        // dobraniu, więc na wierzch idzie NAJCENNEJSZA (+cardKeepValue).
+        // Dotąd default 0 i kolejność ofert od najtańszej.
+        const card = handCard(view, cmd.cardId);
+        if (!card) return finish(0);
+        return finish(cardKeepValue(view, card));
+      }
+      case 'resolve_reveal_exile_grave': {
+        // E2/C (plan 2026-09-07, Dreams of Steel and Oil, M69): wybieramy
+        // kartę z GROBU PRZECIWNIKA do wygnania (grób = strefa jawna, CR 400.2)
+        // — wygnaj najcenniejszą (ucina recursję); brak kandydatów = oferta
+        // null. Lusterko resolve_reveal_exile_hand (ten sam efekt, inna strefa).
+        if (cmd.cardId == null) return finish(0);
+        const card = decisionCandidateCard(view, cmd.cardId);
+        if (!card) return finish(0);
+        return finish(10 + cardKeepValue(view, card));
+      }
+      case 'resolve_destroy_equipment_choice': {
+        // E2/C (plan 2026-09-07, Awaken the Sleeper): „you may destroy all
+        // Equipment attached". Liczy się KTO KONTROLUJE SPRZĘT, nie gospodarz:
+        // po Awaken przejęty stwór wroga nosi JEGO miecz (pin właściciela
+        // m257r5b/C2) — zniszczenie odbiera wrogowi ekwipunek, choć gospodarz
+        // jest nasz. Załączniki są publiczne (attachedTo w widoku, CR 400.2).
+        const hostId = view.pendingDestroyEquipment?.targetId;
+        if (hostId == null || !objectOnBoard(view, hostId)) return finish(cmd.destroy ? 0 : 0);
+        const enemyGear = (view.zones.battlefield ?? []).some((o) => o.attachedTo === hostId
+          && o.controllerId !== view.playerId);
+        if (cmd.destroy) return finish(enemyGear ? 8 : -8);
+        return finish(enemyGear ? -2 : 1);
+      }
+      case 'resolve_land_type_choice': {
+        // E2/C (plan 2026-09-07, Unstable Frontier): podstawowy typ pod
+        // potrzeby RĘKI — dokładnie ta sama miara pipów co
+        // resolve_color_choice (jeden mianownik, L41/L137).
+        const LAND_COLORS = { Plains: 'W', Island: 'U', Swamp: 'B', Mountain: 'R', Forest: 'G' };
+        const color = LAND_COLORS[cmd.landType];
+        if (!color) return finish(0);
+        const available = new Map();
+        for (const o of (view.zones.battlefield ?? [])) {
+          if (o.controllerId !== view.playerId) continue;
+          for (const c of getSourceForObject(o, null)?.colors ?? []) {
+            available.set(c, (available.get(c) ?? 0) + 1);
+          }
+        }
+        const need = new Map();
+        for (const o of view.zones.hand ?? []) {
+          if (!o || o.kind === 'land' || o.id == null) continue;
+          for (const jednostka of coloredPipsOf(o.cardId)) {
+            if (jednostka.some((k) => (available.get(k) ?? 0) > 0)) continue;
+            for (const k of jednostka) need.set(k, (need.get(k) ?? 0) + 1);
+          }
+        }
+        return finish((need.get(color) ?? 0) * 6);
+      }
+      case 'resolve_moonlit_choice': {
+        // E2/C (plan 2026-09-07, Moonlit Meditation, Temat 9): „instead create
+        // copies" opłaca się, gdy pierwowzór ma większe ciało niż zwykłe
+        // tokeny efektu; kwota nie-liczbowá (commander_casts) = zostaw zwykłe
+        // tokeny (handler liczy wtedy zero kopii).
+        const pending = view.pendingMoonlitChoice;
+        if (!pending || !Number.isInteger(pending.amount)) {
+          return finish(cmd.replace ? 0 : 1);
+        }
+        const enchanted = objectOnBoard(view, pending.enchantedId);
+        const copyBody = (enchanted?.power ?? 0) * P.creaturePowerWeight
+          + (enchanted?.toughness ?? 0) * P.creatureToughnessWeight;
+        const plainBody = (pending.tokenPower ?? 1) * P.creaturePowerWeight
+          + (pending.tokenToughness ?? 1) * P.creatureToughnessWeight;
+        const delta = copyBody - plainBody;
+        return finish(cmd.replace ? delta : -delta);
+      }
+      case 'cast_adventure_creature': {
+        // E2/C (plan 2026-09-07, CR 715.3a): strona-stwora przygody z EXILE za
+        // pełny koszt — dotąd default 0 (remis z pasem, wybór z kolejności).
+        // Wycena jak rzut stwora (ciało + bonus ETB jak w warp); koszt
+        // rozlicza silnik (oferta = walidacja, L48).
+        const card = (view.zones.exile ?? []).find((o) => o.id === cmd.objectId)
+          ?? zoneCard(view, cmd.objectId);
+        if (!card) return finish(0);
+        let score = P.creatureBase + (card.power ?? 0) * P.creaturePowerWeight
+          + (card.toughness ?? 0) * P.creatureToughnessWeight;
+        const def = card.cardId ? cardDef(card.cardId) : undefined;
+        if ((def?.abilities ?? []).some((a) => a?.trigger?.event === 'enter_battlefield')) score += 5;
+        return finish(score);
+      }
+      case 'resolve_optional_draw': {
+        // E2/A (plan 2026-09-07, M67/Force Away): ferocious „you may draw a
+        // card. If you do, discard a card." — dotąd default 0 i PIERWSZA oferta
+        // draw:false: bot nigdy nie dobierał. Kantryp (dobierz, odłóż
+        // najgorszą) podnosi jakość ręki — wartość jak mały cantrip; odmowa
+        // zostaje poniżej. Wyjątek CR 104.4c: przy PUSTEJ bibliotece dobrowolne
+        // dobranie to przegranie partii SBA — odmowa obowiązkowa.
+        if (!cmd.draw) return finish(view.zones.library.length === 0 ? 0 : -2);
+        if (view.zones.library.length === 0) return finish(-100);
+        return finish(5);
+      }
+      case 'resolve_damage_target': {
+        // E2/A (plan 2026-09-07, M66/Stomping Slabs): „any target" — dotąd
+        // default 0 i cel z KOLEJNOŚCI ofert (pierwszy kandydat mógł być
+        // własny stwór). Jedno źródło prawdy o celu obrażeń (L41): wspólny
+        // damageTargetValue z czarami i zdolnościami (dobicie gracza = 1000,
+        // własne rzeczy = zakaz, stwór wg tego, czy ginie).
+        const amount = view.pendingDamageTarget?.amount ?? 0;
+        return finish(damageTargetValue(view, cmd.targetId, amount));
+      }
+      case 'resolve_hand_creature': {
+        // E2/A (plan 2026-09-07, Dragon Arch): darmowe wyłonienie
+        // wielokolorowego stwora z ręki („you may") — dotąd default 0 i
+        // PIERWSZA oferta była ODMOWĄ (targetId:null), więc bot nigdy nie
+        // korzystał. Wycena jak ciało rzucanego stwora (P.creatureBase + P/T),
+        // bo koszt = 0; odmowa przepada.
+        if (cmd.targetId == null) return finish(-4);
+        const card = (view.zones.hand ?? []).find((o) => o.id === cmd.targetId);
+        if (!card) return finish(0);
+        const body = (card.power ?? 0) * P.creaturePowerWeight + (card.toughness ?? 0) * P.creatureToughnessWeight;
+        return finish(P.creatureBase + body);
+      }
+      case 'resolve_redirect_choice':
+      case 'resolve_copy_targets': {
+        // E2/B (plan 2026-09-07): przekierowanie (Willbender, CR 614.5-ish)
+        // i cel KOPII (Storm, CR 707.10) to TA SAMA decyzja o celu jednej
+        // listy efektów (L137 — rodzina w jednym miejscu). Dotąd default 0:
+        // Willbender potrafił przekierować obrażenia wroga WE WŁASNEGO
+        // stwora, a kopia trzymała cel oryginału z KOLEJNOŚCI oferty.
+        // Efekty czaru na stosie są publiczne (CR 400.2); cel liczy wspólny
+        // damageTargetValue dla obrażeń (L41 — jak cast_spell), a dla reszty
+        // — wspólne tablice kar M121/M179 + premia za trafienie wroga.
+        const retargetPending = cmd.type === 'resolve_redirect_choice'
+          ? view.pendingRedirectChoice
+          : view.pendingCopyTargets;
+        const spellId = cmd.type === 'resolve_redirect_choice' ? retargetPending?.stackId : cmd.copyId;
+        const spell = spellId ? (view.zones.stack ?? []).find((o) => o.id === spellId) : null;
+        const retargetEffects = spell?.spell?.effects ?? [];
+        const dmgEffect = retargetEffects.find((e) => e?.type === 'damage');
+        const hasHostilePerm = retargetEffects.some((e) => HOSTILE_PERMANENT_EFFECTS.has(e?.type));
+        const retargetValue = (id) => {
+          if (dmgEffect) return damageTargetValue(view, id, dmgEffect.amount ?? 0);
+          const t = objectOnBoard(view, id);
+          const pseudo = { targets: [id] };
+          let s = -(selfHarmPenalty(view, retargetEffects, pseudo, t)
+            + friendlyMisaimPenalty(view, retargetEffects, pseudo, t));
+          if (t && t.controllerId !== view.playerId && hasHostilePerm) {
+            s += 12 + (t.power ?? 0) + (t.toughness ?? 0);
+          }
+          return s;
+        };
+        return finish(retargetValue(cmd.targetId));
+      }
+      case 'resolve_enter_as_copy': {
+        // E2/B (plan 2026-09-07, CR 707.9d-ish „enter as a copy"): kopiujemy
+        // najmocniejszego kandydata — dotąd default 0 i wybór z KOLEJNOŚCI
+        // (silnik sortuje „najmocniejszy pierwszy", ale bot nie mógł tego
+        // wiedzieć — L41: nie polegamy na kolejności enumeracji). Odmowa
+        // (0/0) przepada.
+        if (cmd.targetId == null) return finish(-6);
+        const copied = objectOnBoard(view, cmd.targetId);
+        if (!copied) return finish(0);
+        return finish(10 + (copied.power ?? 0) * P.creaturePowerWeight
+          + (copied.toughness ?? 0) * P.creatureToughnessWeight);
+      }
+      case 'resolve_amass_choice': {
+        // E2/B (plan 2026-09-07, CR 701.43b): Amass z wieloma armiami —
+        // liczniki dostaje najsilniejsza armia (najlepsza platforma ataku),
+        // nie pierwsza z listy; przeskalowanie jest równe, więc kolejność
+        // ciała rozstrzyga wprost.
+        const army = objectOnBoard(view, cmd.armyId);
+        if (!army) return finish(0);
+        return finish((army.power ?? 0) * P.creaturePowerWeight
+          + (army.toughness ?? 0) * P.creatureToughnessWeight);
+      }
+      case 'resolve_epic_choice': {
+        // E2/B (plan 2026-09-07, Epic Experiment): dotąd default 0 i
+        // done:true jako PIERWSZA oferta — bot nigdy nie rzucał darmowych
+        // czarów z wygnania. Rodzina darmowych rzutów (L137): ten sam
+        // kształt co resolve_suspend_cast / resolve_rebound_cast — rzut
+        // wygrywa z done (reszta i tak idzie do grobu), chyba że czar nie
+        // ma sensownego celu (freeCastTargetPenalty).
+        if (cmd.done) return finish(0);
+        const exiled = cmd.cardId ? view.zones.exile.find((o) => o.id === cmd.cardId) : null;
+        const effects = freeCastVariantEffects(exiled, cmd);
         let score = 70;
         for (const effect of effects) {
           if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
@@ -2818,6 +3065,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               return effs.some((e) => HIGH_IMPACT.has(e?.type));
             });
             if (!targetImpactful) score -= 60; // trywialny cel — trzymaj kontrę
+          }
+          // E7/D2 (zgłoszenie właściciela): „counter unless its controller
+          // pays {N}" (Frightful Delusion) — kontroler CELU decyduje o dopłacie,
+          // więc gdy ma CZYM zapłacić, kontra najpewniej wygaśnie bezskutecznie:
+          // bot wymieniałby CAŁĄ kartę z ręki na {N} many przeciwnika (+ odrzut).
+          // Właściciel: „bot powinien czekać, aż [przeciwnik] wyda całą manę —
+          // inaczej marnuje swój czar". Zasoby płatnika liczymy jak
+          // `manaAvailableNow` (wyżej): pula + nietapnięte LĄDY — auto-tap
+          // silnika przy płatności obejmuje wyłącznie lądy (producibleMana).
+          // Bez zasobów na dopłatę — pełna premia jak counter_spell (Batch 44).
+          const unlessPays = effects.find((e) => e?.type === 'counter_spell_unless_pays');
+          if (unlessPays && foeTarget && !ownTarget) {
+            const foeEntryId = (targets ?? []).find((tid) => {
+              const entry = stack.find((item) => item.id === tid);
+              return entry && entry.controllerId !== view.playerId;
+            });
+            const payerId = stack.find((item) => item.id === foeEntryId)?.controllerId ?? null;
+            const payer = view.players.find((p) => p.id === payerId);
+            if (payer) {
+              const fromLands = view.zones.battlefield.filter((o) => o.controllerId === payerId
+                && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
+              if ((payer.mana ?? 0) + fromLands >= (unlessPays.amount ?? 1)) score -= 90;
+            }
           }
         }
         if (spell.fireball) {
@@ -3625,7 +3895,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // JEDYNYM efektem zdolności.
         const producesManaOnly = effects.length > 0 && effects.every((e) => e?.type === 'add_mana');
         if (producesManaOnly) {
-          const hasPlayableInHand = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
+          // E6/A1: „zagrawalne" liczone po TIMINGU (manaUnlockCandidates) —
+          // sorcery w ręce nie jest zagrawalne w cudzym upkeepie, więc tu
+          // działa ta sama kara co przy pustej ręce.
+          const hasPlayableInHand = manaUnlockCandidates(view).length > 0;
           if (!hasPlayableInHand) return finish(taps || tapsCreature ? -30 : -5);
         }
         // M106/Z8 (audyt stołu, CR 608.2b): jeżeli moja zdolność Z TEGO
@@ -4250,7 +4523,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Dodatkowa mana (Holdout Settlement, Apprentice Wizard, Treasure):
             // cenna tylko, gdy jest co zagrać. Liczy się BILANS: produkcja
             // minus koszt many zdolności (Wizard: 3 − 1 = +2).
-            const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
+            const hasPlayable = manaUnlockCandidates(view).length > 0;
             // M155 (audyt żywym testerem, Pristine Talisman): zdolność many
             // z riderem gain_life — tap NIGDY nie jest zmarnowany (daje
             // życie), więc kara M128 („tapowanie na zapas") nie ma sensu.
@@ -4281,10 +4554,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const availableAfter = availableNow + net;
             // Koszt karty czytamy z widoku (manaCost); pomijamy lądy (nie są
             // czarami) i karty, których i tak nie stać nas po aktywacji.
-            const unlocksSomething = view.zones.hand.some((o) => {
-              if (o.kind === 'land') return false;
+            // E6/A1: kandydaci po TIMINGU rzucania (manaUnlockCandidates) —
+            // rachunek progu (M128) bez zmian, ale sorcery/stwór w cudzym
+            // kroku już go nie „odblokowuje" (mana wyparuje, CR 500.4).
+            const unlocksSomething = manaUnlockCandidates(view).some((o) => {
               const cost = o.manaCost ?? 0;
-              if (cost <= 0) return false;
               return cost > availableNow && cost <= availableAfter;
             });
             // Wartość wyłącznie za realne odblokowanie zagrania.
@@ -5589,7 +5863,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(20 + (card.manaCost ?? 0) + (card.power ?? 0) + (card.toughness ?? 0));
       }
       case 'pass_priority': return finish(0);
-      default: return finish(0);
+      // E2/D (plan 2026-09-07): decyzje JEDNOWARIANTOWE — wycena nie może
+      // zmienić wyboru (jedyna legalna komenda albo warianty regułowo
+      // równoważne). Jawne case zamiast default: telemetria „niewycenione"
+      // (E1) oznacza od teraz wyłącznie naprawdę NOWY typ komendy silnika.
+      case 'resolve_damage_assignment':
+        return finish(0); // M66/R: dokładnie jeden wariant (lethal-first); człowiek ma wizard (CR 510.1c/d)
+      case 'resolve_replacement_choice':
+        return finish(0); // CR 616.1: regenerate vs shield — regułowo równoważne
+      case 'resolve_reveal_order':
+        return finish(0); // jedna komenda (kolejność jak w reveal — patrz oferta silnika)
+      case 'resolve_index_choice':
+        return finish(0); // jedna komenda (kolejność oryginalna; execute przyjmuje permutacje)
+      case 'resolve_modal_choice':
+        return finish(0); // skip (modeIndex null) tylko gdy żaden tryb nie ma kandydatów (L48)
+      default:
+        // E1: decyzja bez dedykowanej wyceny — wynik z kolejności ofert.
+        // Trafienie liczy scoreTracked/chooseCommand i raportuje jako
+        // „niewycenione" (detektor Testera); nowe typy komend silnika
+        // MUSZĄ dostać case (L137: rodzina w jednym miejscu).
+        lastUnvaluedType = cmd.type;
+        return finish(0);
     }
   }
 
@@ -5705,7 +5999,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Deterministyczne: klon + polityka greedyChoice, zero losowości.
    */
   function scoredWithLookahead(view, simulate) {
-    const scored = view.legalCommands.map((cmd) => ({ cmd, score: scoreCommand(view, cmd) }));
+    const scored = view.legalCommands.map((cmd) => scoreTracked(view, cmd));
     scored.sort((a, b) => b.score - a.score);
     const base = evalView(view);
     // W wyścigu (mała biblioteka / bliski lethal wroga) atak jest presją, nie
@@ -6089,16 +6383,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (!view?.legalCommands?.length) throw new Error('Widok nie zawiera legalnych komend');
       const scored = enabled && helpers?.simulate
         ? scoredWithLookahead(view, helpers.simulate)
-        : view.legalCommands.map((cmd) => ({ cmd, score: scoreCommand(view, cmd) }));
+        : view.legalCommands.map((cmd) => scoreTracked(view, cmd));
       scored.sort((a, b) => b.score - a.score);
       let pick = scored[0];
       if (randomness > 0 && scored.length > 1 && rng() < randomness) {
         const pool = scored.slice(0, Math.min(3, scored.length));
         pick = pool[Math.floor(rng() * pool.length)];
       }
+      // E1: wybrany wariant policzony gałęzią default — zapis w telemetrii
+      // (licznik per typ) i we wpisie historii, żeby przebieg był audytowalny.
+      if (pick.unvalued) {
+        unvaluedCounts.set(pick.unvalued, (unvaluedCounts.get(pick.unvalued) ?? 0) + 1);
+      }
       const wpis = {
         turn: view.turn.number, step: view.turn.step,
         chosen: summarize(pick.cmd, view), score: pick.score,
+        ...(pick.unvalued ? { unvalued: pick.unvalued } : {}),
         options: scored.map((entry) => ({ cmd: summarize(entry.cmd, view), score: entry.score })),
       };
       // Ex aequo na maksimum: doklej projekcję danych wszystkich wariantów z
@@ -6116,6 +6416,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     /** Ślad uzasadnień punktowych — diagnostyka decyzji bota. */
     trace() {
       return history.map((entry) => ({ ...entry, options: entry.options.map((o) => ({ ...o })) }));
+    },
+    /**
+     * E1 (plan 2026-09-07): licznik WYBRANYCH komend policzonych gałęzią
+     * default scoreCommand — „akcja bez wyceny" (wynik z kolejności ofert).
+     * Czytane przez mostek __mtgDebug.botUnvalued i detektor Testera.
+     */
+    unvaluedDecisions() {
+      return Object.fromEntries([...unvaluedCounts.entries()].sort(([a], [b]) => a.localeCompare(b)));
     },
   });
 }

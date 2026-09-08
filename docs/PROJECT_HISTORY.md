@@ -9109,3 +9109,241 @@ Dokumenty: aktualny README, handoff `HANDOFF_2026-09-07e.md`, L141 (pochodne
 sekretu też wymagają FoW), dopiski L12/L13/L138. Narracje L133/L135 do
 `LESSONS_PRZYPADKI.md` dla budżetu, bez utraty numerów i bez zmiany progu.
 PR #104 oddany do przeglądu; agent nie scala.
+
+
+## Sesja arena/01a07c4e — audyt PR #104, pętla jakości, PR #105 (2026-09-07)
+
+Plan `docs/plans/PLAN_2026-09-07-audyt-pr104-petla-jakosci.md` (`27ca7b0`)
+opublikowany przed kodem (ADR 0020 A: PR #105 na starcie). Audyt 36 plików
+diffu PR #104 (`9da8b88`), raport `docs/audits/AUDYT_PR104_2026-09-07.md`
+(commit `d24036f`). 11 prób mutacyjnych na testach #104: **10/10 fixów
+RED→GREEN** (M339–M345, M346–M348; 2 probe'y bezkrytyczne powtórzone
+celowanie po diagnozie — L114: przywracać kształt PRE-fix, nie dowolną
+mutację). Zero błędów → E2 n/d. Baza zmierzona: 4695/4695, build
+59 modułów / 3369,8 kB; budżet lektury 99 904/100 000.
+
+Pętla jakości (E3): 4 partie Żywym Testerem po buildzie (L76) —
+greedy theros|tarkir-bg s10421, explorer worek-basni|mirrodin-brg s10422,
+impatient final-fantasy|ravnica s10423 (`--snapshot-every 3`, pełna lektura
+transkryptu: triggery mill w kolejności, mana zachowana przy przerwanej
+płatności, odrzucenie `illegal_ability` przez silnik, cloak z kontrą
+latamania + Guildscorn Ward), random worek-mroczny|srodziemie s10424.
+Wszystkie: exit 0, puste stderr, „DETEKTORY: brak zgłoszeń"; osie
+M346–M348 nie powtarzane. Obserwacja kosmetyczna: duplikat bloku
+POKRYCIE/DETEKTORY na końcu logu (szerzy notatkę z audytu #104 o duplikacie
+na granicy przycięcia; bez klasy, bez naprawy).
+
+Sonda CR 608.2b (okolice bramki M343, CR 117.2a/603.3c): cel czaru
+[destroy_permanent, scry] umiera od SBA w kolejce komendy rzutu (0/0
+z fabryki — L116: addObject nie stosuje liczników ETB) → trigger dies
+rozlicza się na granicy komendy, czar w rozstrzygnięciu fizzluje W
+CAŁOŚCI — scry nie biegnie, brak decyzji, gra toczy się dalej. Silnik
+poprawny; pierwsza „anomalia" była błędem armatury sondy. Strażnik wg
+L39: `test/audyt-pr105-fizzle-martwy-cel.test.js` (3 testy: granica
+SBA+trigger, fizzl bez efektów, anty-over-fix z żywym celem).
+
+Końcowy kod: fast **4698/4698** (+3), full **4708/4708**, build **59
+modułów / 3369,8 kB** (rozmiar bez zmiany). README „Bieżący stan"
+zaktualizowany (L92). Bez nowych kart, talii, limitacji Oracle i pełnego
+B0 (ADR 0018/0029); brak nowego wpisu LESSONS (brak nowej klasy; budżet
+bez zmian). PR #105 oddany do przeglądu; agent nie scala.
+
+## Sesja arena/01a07c4e cz. 2 — wyceny bota i modale, PR #105 (2026-09-07)
+
+Kontynuacja PR #105 na tej samej gałęzi (ADR 0021, właściciel jeszcze nie
+scala). Prompt: Żywy Tester — taktyka bota, wycena każdego działania,
+generowanie ofert modalnych. Plan
+`docs/plans/PLAN_2026-09-07-wyceny-bota-i-modale.md` przed kodem.
+Baza: 4733/4733 fast (po E3), build 3385,7 kB.
+
+**E1 telemetria**: `scoreCommand` oznacza trafienia `default`
+(`lastUnvaluedType`), trace niesie `unvalued`, `unvaluedDecisions()`
+liczy per typ (pass_priority informacyjnie), mostek `__mtgDebug.botUnvalued()`,
+run-game drukuje „== NIEWYCENIONE ==", detektor `detectUnvaluedBotChoices`.
+`hashTrace` stripuje `unvalued` (golden-master stabilny). RED-first na
+detektorze.
+
+**E2 wyceny — 20 niepokrytych typów z rozpoznania zamknięte w 4 pakietach**:
+A `d7427b2` (`resolve_optional_draw` +5/−2 z karą pustej biblioteki CR
+104.4c, `resolve_damage_target` → damageTargetValue, `resolve_hand_creature`,
+kary celu trybów modalnych selfHarm/friendlyMisaim), B `36e2ea9`
+(`resolve_redirect_choice`+`resolve_copy_targets` jednym case po widoku
+stosu, `resolve_enter_as_copy`, `resolve_amass_choice`, `resolve_epic_choice`
+jak suspend), C `8b8ec70` (`resolve_look_top_choice` po cardKeepValue,
+`resolve_hand_top_choice`, `resolve_reveal_exile_grave` po znaku właściciela
+strefy, `resolve_destroy_equipment_choice` po kontrolerze SPRZĘTU —
+`attachedTo` doekspowany w widoku (decydent-only `pendingDestroyEquipment`,
+`pendingMoonlitChoice`), `resolve_land_type_choice` po potrzebach pipów,
+`resolve_moonlit_choice` po delcie P/T zaczarowanego vs token, 
+`cast_adventure_creature` kształtem stwora + bonus ETB), D `ce01f2c`
+(5 jawnych `finish(0)` z komentarzami dla jednowariantowych:
+damage_assignment, replacement_choice, reveal_order, index_choice, modal
+skip — `default` odtąd zarezerwowany wyłącznie dla PRZYSZŁYCH typów).
+Mutacje kontrolne pakietu C: 7/7 RED. Fixture
+`test/fixtures/bot-scoring-snapshot.json` zregenerowana świadomie
+(`--write`; drift scoreSum +14 w 1/6 partii, decyzje 188=188).
+
+**E3 modale**: enumeracja klasowa wszystkich 16 modalnych czarów katalogu
+i triggerów (etherwrought-page, inspiring-bard): oferta per legalny
+kandydat (źródło się liczy), tryb bez celu zawsze dostępny, pusta pula
+trybu celowanego nie usuwa trybu bezcelowego, same tryby celowane +
+pusto → dokładnie skip. **Zero błędów silnika** — oferta była poprawna,
+brak naprawy produkcyjnej; klasa piniowana testem
+`test/modale-generowanie-ofert.test.js` (L48).
+
+**E4 żywy stół**: 4 partie po buildzie (pary maksymalizujące ruch
+modalny): alara|wiedzmin greedy s10501, forgotten-realms|ravnica explorer
+s10502, final-fantasy|worek-basni impatient `--snapshot-every 3` s10503,
+tarkir-wur|mirrodin-wu defensive s10504. Wszystkie: exit 0, stderr 0 B,
+„DETEKTORY: brak zgłoszeń", **„NIEWYCENIONE: brak"** — każdy wybrany
+ruch bota miał dedykowaną wycenę (telemetria E1 potwierdza domknięcie
+E2 w żywej grze). Taktyka bez zarzutu: Chronic Flooding blokowało
+Basilisk Gate, Twiddle tapowało Plague Reaver, Agate Assault wygnawało
+Warrior's Sword (modal celowany w sprzęt), aury stackowane na własnym
+nosicielu, living weapon, blokada dwoma stworami; modale (Scry, Aerith —
+Winda) działały w UI bez zakłóceń.
+
+**E5 zamknięcie**: fast 4733/4733, `test:all` **4743/4743**, build
+**59 modułów / 3385,7 kB**, quick benchmark heuristic **84,8%**
+(570/672; vs random 96,1%; aggro 26,5%) — bot-benchmark w paśmie bazowym.
+README „Bieżący stan", `docs/setup/HANDOFF_2026-09-07g.md`. Bez nowych
+kart (ADR 0029), bez pełnego B0 (ADR 0018/0025), bez nowego wpisu
+LESSONS (brak nowej klasy; budżet lektury bez zmian). PR #105 oddany do
+przeglądu; agent nie scala.
+
+**E6 (redirect po zgłoszeniach właściciela z testów)**: (A1) bot tapował
+Moonscarred Werewolf dla many w upkeepie PRZECIWNIKA pod sorcery/stwora —
+„odblokowanie" M128 liczyło rękę bez TIMINGU rzucania (CR 307.1/500.4);
+fix `manaUnlockCandidates` (instant zawsze, reszta tylko własna główna)
+w trzech miejscach ścieżki many; RED na scenariuszu właściciela, mutacje
+2×RED, M243/E2 przywrócony aliasem kroku (main1/main2). (A2) transform
+wilkołaka BOTA znikał z panelu „Rozgrywka", gdy stos schodził po passie
+człowieka (poza BOT_RESOLUTION_EVENTS), a miniatury nie było nigdy —
+`TRANSFORM_DIGEST_EVENTS` + wpis w `BOT_MOVE_CARD_EVENTS`; testy na obie
+kolejności passów; weryfikacja żywa na seedzie zgłoszenia (s20603): OBA
+transformy w panelu. (B) hover kart specjalnych działa od PR #104 —
+domknięta szczelina strażnika (`renderSpeedPanel` niepinowany) + CSS
+`.speed-card`. Końcowe bramki: fast 4740/4740, test:all 4750/4750, build
+3388,1 kB, benchmark 85,0%. Bez nowych kart, bez pełnego B0, bez nowego
+wpisu LESSONS (klasy „timing rzucania w kandydatach many" i „transform
+jako treść panelu" mają wpisy w planie E6 i komentarzach kodu).
+
+## Sesja arena/01a07c4e cz. 3 — E8: wyzwanie wyłapywacza błędów, PR #105 (2026-09-08)
+
+Kontynuacja PR #105 (ADR 0021). Prompt: wyzwanie odznakowe — znaleźć i
+naprawić 5 unikalnych błędów/uproszczeń vs zasady MtG; każdy fix RED-first,
+osobny commit, plan pushnięty PRZED kodem (`63e31f7`, sekcja E8 z kotwicami
+w kodzie). Baza: fast 4750/4750, test:all 4760/4760.
+
+- **B1 `888a234`** — regeneracja konsumowała WSZYSTKIE tarcze naraz
+  (`filter(id !== object.id)`); CR 701.15b: jedna tarcza = jedno zniszczenie.
+  Fix `tryRegenerate`: konsumpcja dokładnie jednej instancji. Harness
+  `test/helpers/e8-destroy-harness.js` (realna ścieżka
+  `destroyPermanentByEffect`).
+- **B2 `4bcf5ab`** — flaga „nie odtapuje się" zużywana tylko przy `tapped`
+  (odkręcony cel nosił ją wiecznie → PÓŹNIEJSZY untap step błędnie skipowany)
+  i porównywana z controllerId-z-momentu-efektu (skip wypadał w cudzym untap
+  stepie po zmianie kontrolera). Fix `untapControlled`: zużycie na untap
+  stepie obecnego kontrolera niezależnie od stanu tapped.
+- **B3 `2b944c0`** — bez trample przydział mógł zostawić niedobór (stare
+  uproszczenie „niedobór legalny"); default lethal-first gubił resztę przy
+  wielu blokerach; wizard startował od 0, bramkował tylko trample. Fix:
+  `damage_must_be_fully_assigned` (CR 510.1a), dolewka reszty do ostatniego
+  blokera (konwencja M66), wizard prefill jak silnik + bramka pełnej sumy.
+  Zaktualizowane piny starego uproszczenia: trample-lethal-przed-graczem,
+  choice-request-ui (steppery, M101/B6, M150/B), m136-sonda, Sherlock 1c.
+- **B4 `2e15ba6`** — `lethalOf` ignorował protection: trample zatrzymywał się
+  na blokerze w pełni chronionym (CR 702.19b + 702.16d). Fix: lethal 0 przy
+  pełnej prewencji (walidacja/default/widok korzystają automatycznie).
+- **B5 `b0c02d9`** — `gain_control_until_end_of_turn` nie ruszał
+  `state.combat` (CR 506.4): przejęty bloker blokował swojego nowego
+  kontrolera, przejęty atakujący „atakował" w jego stronę. Fix:
+  `removeFromCombat` po przejęciu (helper jak przy regeneracji CR 701.12a).
+- **Zamknięcie `3e34e44`** — plan E8 odhaczony 5/5 + wyniki per bug; PR #105
+  część 5 (body przez REST API — `gh pr edit` pada na deprecację Projects
+  classic). `gh api repos/{owner}/{repo}/pulls/N -X PATCH --input body.json`.
+
+Bramki: fast **4762/4762**, test:all **4772/4772** (~222 s), build
+**3394,6 kB**, quick benchmark heuristic **85,0%** (571/672 — bez zmian).
+Handoff: `docs/setup/HANDOFF_2026-09-08.md`.
+
+## Sesja arena/01a07c4e cz. 4 — E9: wyzwanie wyłapywacza błędów II — kolejne 5 uproszczeń vs CR, PR #105 (2026-09-08)
+
+Srebrna runda odznakowa: 5 KOLEJNYCH unikalnych uproszczeń vs zasady MtG
+(unikalne względem E8). Plan (`dce786d`) pushnięty przed kodem; każdy fix
+RED-first, osobny commit; checkboxy + sekcja wykonania `c295da1`.
+
+- **F1 `bfd9cbc`** — powrót z grobu (Disa,
+  `put_graveyard_card_onto_battlefield`) bez choroby przywołania — ożywiony
+  stwór atakował w tej samej turze (CR 302.6). Fix: flaga PRZED
+  `applyEnterCounters`.
+- **F2 `fc3d492`** — masowa zmiana kontroli (`control_to_owners_all_creatures`,
+  Trostani) nie usuwała przejętych z walki (CR 506.4) — sister-bug E8/B5
+  w drugim efekcie. Fix: `removeFromCombat` po control_changed. Uwaga:
+  bloker kontrolowany przez nie-obrońcę = illegal przy declare_blockers.
+- **F3 `a7ae267`** — explore (Guidestone Compass) kolejkował decyzję
+  „wierzch albo grób" spoza CR (CR 701.54b): darmowy strict-upgrade,
+  podgląd biblioteki. Usunięta cała maszyna `pendingExplore` + typ
+  `resolve_explore_choice` z protokołu + case'y render + warianty botów
+  (aggro-bot preferował „na wierzch"); notka karty poprawiona. Strażnik A3
+  potwierdził, że usunięcie z COMMAND_TYPES to właściwa amortyzacja.
+- **F4 `d207034`** — `resolve_search_choice` → battlefield bez choroby
+  przywołania (CR 302.6; siostrzana klasa F1, inny moduł; landy nietknięte).
+- **F5 `03b71f0`** — Throne of the Dead Three: podwójna emisja zdarzenia
+  wejścia (object_moved→BF + permanent_entered_battlefield) → triggery ETB
+  2× (CR 603.6c). Fix: dedupe per wchodzący obiekt w jednym przebiegu
+  `processTriggersScan` (pomija cały blok matchera: też backup/devour/
+  dayNight). Puenta: jednostkowy test ETB wymaga pełnego kształtu obiektu
+  z `gameObjectDataOf` — ręczne abilities dawały fałszywe 0 w sondach.
+
+Bramki: fast **4770/4770**, test:all **4780/4780** (~226 s), build
+**3394,2 kB**, quick benchmark heuristic **85,0%** (571/672 — bez zmian).
+PR #105: część 6 opisu (REST PATCH). Handoff:
+`docs/setup/HANDOFF_2026-09-08b.md`.
+
+### Korekta E9/F3 (2026-09-08): sfalszowane znalezisko, cofnięty commit
+
+Właściciel zakwestionował F3 („explore daje wybór"). Weryfikacja u źródła
+potwierdziła jego rację: CR 701.44a (dawniej 701.54a) — „…puts a +1/+1
+counter on the exploring permanent and may put the revealed card into their
+graveyard"; reminder text: „then put the card back on top or into your
+graveyard". Wybór wierzch/grób jest pełnoprawną częścią reguły —
+oryginalna maszyna pendingExplore była poprawna, a „fix" `a7ae267`
+(usunięcie decyzji, obowiązkowy grób) WPROWADZAŁ buga.
+
+Cofnięto całość `a7ae267` (`613a379`, git revert): explore w effects.js,
+maszyna pendingExplore w game-state, typ `resolve_explore_choice` zwrócony
+do COMMAND_TYPES, case'y render, warianty botów, notka Guidestone Compass.
+Dodano test-guardię `test/e9-f3-refutacja-wyboru.test.js` (decyzja
+kolejkowana; „zostaw na wierzchu" zostawia kartę; „do gróbu" wysyła;
+land → ręka natychmiast) — blokuje przyszłe „uproszczenia" tego miejsca.
+Plan: F3 odhaczony z adnotacją SFALSZOWANE; potwierdzone znaleziska E9: 4/5
+(F1, F2, F4, F5). Puenta: przed zgłoszeniem znaleziska zweryfikować
+dosłowny tekst reguły — „you may" w reminder text to wybór, nie uproszczenie.
+
+Bramki po korekcie: fast **4771/4771**, test:all **4781/4781**, build
+**3396,6 kB**.
+
+### Korekta E8/B4 + ADR 0030 (2026-09-08): audyt → revert jedynego pozostałego błędnego fixu
+
+Audyt wewnętrzny wszystkich poprawek PR #105 wg dosłownych tekstów CR
+(`docs/audits/AUDYT_PR105_POPRAWKI_2026-09-08.md`, polecenie właściciela
+po refutacji F3): 8/9 fixów potwierdzonych (z korektą cytatu F5: 603.2c,
+nie 603.6c); **E8/B4 drugim fałszywym znaleziskiem** — CR 702.19b („…but
+not any abilities or effects that might change the amount of damage that's
+actually dealt") WYŁĄCZA prewencję z wyliczenia lethal przydziału; stan
+sprzed B4 był zgodny z regułami, a fix czynił legalnym przydział 0
+w blokera z protection (sonda: walidacja przepuszczała, boty przydzielały 0).
+
+Na polecenie właściciela: **ADR 0030** (`367e92c`) — zmiany regułowe
+(fix istniejącego kodu albo nowa mechanika) wymagają pobrania dosłownego
+tekstu CR i rulingów ze źródeł online; pamięć treningowa nie jest źródłem.
+**Revert `2e15ba6` + guardia** (`227c142`): lethalOf wraca do
+`deathtouch ? 1 : toughness − marked`; test/e8-b4 pinuje poprawną regułę
+(5 testów, w tym E2E: [0,3] odrzucone, [2,3] legalne). Skutek uboczny:
+strażnik budżetu lektury 101.2k/100k → kondensacja 65 bloków „Przypadek"
+w LESSONS do esencji+wskaźnika (narracja już w LESSONS_PRZYPADKI; nagłówki
+141/141) → 99.6k (`be09633`).
+
+Bramki: fast **4772/4772**, test:all **4782/4782**, build **3396,2 kB**,
+bench heuristic **85,0%** (571/672 — bez zmian).

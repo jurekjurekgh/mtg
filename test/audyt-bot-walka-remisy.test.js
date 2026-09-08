@@ -154,7 +154,12 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
   assert.ok(atak.rozroznialne <= 4, `attack groźb: ${atak.rozroznialne}\n${opis.join('\n')}`);
   // Sufit 6 po reaudycie 2026-09-06 (patrz nagłówek): 3 → 6 po zmianie składu
   // talii `wiedzmin`, cztery nowe pozycje przejrzane i zakwalifikowane do klas A/B.
-  assert.ok(blok.rozroznialne <= 6, `block groźb: ${blok.rozroznialne}\n${opis.join('\n')}`);
+  // Sufit 7 po E7/C (2026-09-07): Shock przeniesiony kaladesh → warhammer-ubr
+  // (plan wg kolumny właściciela), zmiana trajektorii pary tarkir-bg|warhammer-ubr
+  // dodała jedną pozycję TEJ SAMEJ klasy polityki bloków (s4009 t19: remis @10 —
+  // wariant „blokujący ginie, nikt nie ginie” vs „cztery ataki zabite”; trade
+  // obrażeń bez śmiertelnych danych — klasy A/B wg nagłówka, przejrzane).
+  assert.ok(blok.rozroznialne <= 7, `block groźb: ${blok.rozroznialne}\n${opis.join('\n')}`);
   // Klasy z projekcją wartości (tura 6): tu zero jest osiągalne i wymagane —
   // różnica kosztu many albo korpusu MUSI przechodzić na wynik.
   for (const nazwa of ['cast_permanent', 'cast_spell', 'activate_ability']) {

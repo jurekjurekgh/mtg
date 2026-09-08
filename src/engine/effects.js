@@ -1253,6 +1253,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       tempControlOwner: ownerId,
     });
     state.objects.set(targetId, updated);
+    // E8/B5 (wyzwanie wyłapywacza błędów, CR 506.4): zmiana kontrolera
+    // usuwa permanent z walki — przejęty bloker przestaje blokować, przejęty
+    // atakujący przestaje atakować. Dotąd stwór zostawał w state.combat po
+    // starej stronie (blokował/walkował przeciw SWOJEMU nowemu kontrolerowi).
+    if (state.combat) removeFromCombat(state, targetId);
     state.events.push(event('control_changed', {
       objectId: targetId, cardId: updated.cardId,
       controllerId, fromControllerId: object.controllerId, untilEndOfTurn: true,
@@ -1315,6 +1320,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         objectId: object.id, cardId: object.cardId,
         controllerId: ownerId, fromControllerId: object.controllerId, toOwner: true,
       }));
+      // E9/F2 (wyzwanie wyłapywacza błędów II, CR 506.4): zmiana kontrolera
+      // usuwa permanent z walki — jak w gain_control_until_end_of_turn
+      // (E8/B5). Dotąd przejęty atakujący zostawał w state.combat.attackers
+      // i „atakuwał" swojego nowego kontrolera (Trostani Discordant).
+      if (state.combat) removeFromCombat(state, object.id);
       moved.push(object.id);
     }
     return;
@@ -4567,6 +4577,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (card.kind === 'land' || card.kind === 'spell') return;
     const bfId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, cardId, 'battlefield', bfId);
+    // E9/F1 (wyzwanie wyłapywacza błędów II, CR 302.6): stwór stawiany z grobu
+    // podlega chorobie przywołania — CR 400.7 buduje obiekt „od zera", a każda
+    // ścieżka-rodzeństwo (reanimate, return_with_counter, throne, pyxis)
+    // ustawia `summoningSickness` jawnie. Dotąd Disa the Restless pozwalała
+    // ożywionemu Lhurgoyfowi zaatakować w tej samej turze.
+    const placed = (moved.kind === 'creature' || (moved.types ?? []).includes('Creature'))
+      ? Object.freeze({ ...moved, summoningSickness: true })
+      : moved;
+    if (placed !== moved) state.objects.set(bfId, placed);
     // M273 (błąd #24): liczniki wejścia — ta sama reguła co przy rzucie.
     applyEnterCounters(state, bfId);
     state.events.push(event('permanent_entered_battlefield', {
