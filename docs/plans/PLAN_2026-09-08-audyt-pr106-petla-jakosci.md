@@ -14,7 +14,7 @@ Batch 54 (karty 599–608) + badge Animatora + wspólny wybór odrzucenia.
   (= HEAD gałęzi). Kryterium: liczby fast/build zgodne z handoffem
   `HANDOFF_2026-09-08j` (all 4970/4970, build 60/3433,3 kB) albo rozjazd
   zgłoszony jawnie.
-- [ ] **P2: audyt PR #106** (ADR 0020 B / ADR 0016, bez pełnego B0):
+- [x] **P2: audyt PR #106** (ADR 0020 B / ADR 0016, bez pełnego B0):
   (a) poprawność zmian w engine (reguły, stan, FoW, determinizm);
   (b) zakodowanie kart batcha 54 vs Oracle text ze snapshotów Scryfall;
   (c) generyczność mechanik (deskryptory, zero przypadków po nazwie/ID —
