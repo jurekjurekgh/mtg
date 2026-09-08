@@ -1826,7 +1826,7 @@ export const REAL_CARDS = Object.freeze([
     artId: 484,
     plan: 'Ixalan',
     support: { status: 'limited', limitations: ['Tył karty dwustronnej (Lodestone Needle) — nie do talii ani kreatora; do gry trafia wyłącznie przez transform frontu'] },
-    notes: ['Explore: reveal top, if land → hand, else +1/+1 counter + choose back/graveyard; blokująca decyzja resolve_explore_choice'],
+    notes: ['Explore: reveal top, if land → hand, else +1/+1 counter, karta do grobu (CR 701.54b — bez wyboru; E9/F3)'],
   }),
 
   // 10. Panic Spellbomb (SOM) — Artifact, sacrifice for can't block, dies draw
