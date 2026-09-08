@@ -9266,3 +9266,37 @@ w kodzie). Baza: fast 4750/4750, test:all 4760/4760.
 Bramki: fast **4762/4762**, test:all **4772/4772** (~222 s), build
 **3394,6 kB**, quick benchmark heuristic **85,0%** (571/672 — bez zmian).
 Handoff: `docs/setup/HANDOFF_2026-09-08.md`.
+
+## Sesja arena/01a07c4e cz. 4 — E9: wyzwanie wyłapywacza błędów II — kolejne 5 uproszczeń vs CR, PR #105 (2026-09-08)
+
+Srebrna runda odznakowa: 5 KOLEJNYCH unikalnych uproszczeń vs zasady MtG
+(unikalne względem E8). Plan (`dce786d`) pushnięty przed kodem; każdy fix
+RED-first, osobny commit; checkboxy + sekcja wykonania `c295da1`.
+
+- **F1 `bfd9cbc`** — powrót z grobu (Disa,
+  `put_graveyard_card_onto_battlefield`) bez choroby przywołania — ożywiony
+  stwór atakował w tej samej turze (CR 302.6). Fix: flaga PRZED
+  `applyEnterCounters`.
+- **F2 `fc3d492`** — masowa zmiana kontroli (`control_to_owners_all_creatures`,
+  Trostani) nie usuwała przejętych z walki (CR 506.4) — sister-bug E8/B5
+  w drugim efekcie. Fix: `removeFromCombat` po control_changed. Uwaga:
+  bloker kontrolowany przez nie-obrońcę = illegal przy declare_blockers.
+- **F3 `a7ae267`** — explore (Guidestone Compass) kolejkował decyzję
+  „wierzch albo grób" spoza CR (CR 701.54b): darmowy strict-upgrade,
+  podgląd biblioteki. Usunięta cała maszyna `pendingExplore` + typ
+  `resolve_explore_choice` z protokołu + case'y render + warianty botów
+  (aggro-bot preferował „na wierzch"); notka karty poprawiona. Strażnik A3
+  potwierdził, że usunięcie z COMMAND_TYPES to właściwa amortyzacja.
+- **F4 `d207034`** — `resolve_search_choice` → battlefield bez choroby
+  przywołania (CR 302.6; siostrzana klasa F1, inny moduł; landy nietknięte).
+- **F5 `03b71f0`** — Throne of the Dead Three: podwójna emisja zdarzenia
+  wejścia (object_moved→BF + permanent_entered_battlefield) → triggery ETB
+  2× (CR 603.6c). Fix: dedupe per wchodzący obiekt w jednym przebiegu
+  `processTriggersScan` (pomija cały blok matchera: też backup/devour/
+  dayNight). Puenta: jednostkowy test ETB wymaga pełnego kształtu obiektu
+  z `gameObjectDataOf` — ręczne abilities dawały fałszywe 0 w sondach.
+
+Bramki: fast **4770/4770**, test:all **4780/4780** (~226 s), build
+**3394,2 kB**, quick benchmark heuristic **85,0%** (571/672 — bez zmian).
+PR #105: część 6 opisu (REST PATCH). Handoff:
+`docs/setup/HANDOFF_2026-09-08b.md`.
