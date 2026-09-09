@@ -107,3 +107,28 @@ test('F8: log zniszczenia do wygnania — „(licznik ostateczności)”', () =>
     { type: 'permanent_destroyed', cardId: 'leafcrown-dryad', toZone: 'exile' }, HELPERS);
   assert.ok(line.includes('(licznik ostateczności)'), `log: ${line}`);
 });
+
+// --- F9 (audyt PR #107, F-A2/1): strona TAP rdzenia — B54 zjednoczyło
+// „odkręć” (untap), ale `describeEffect` drukował surowy „tap” na ścieżce
+// publicznej tekstu karty (Twiddle, Lodestone Needle, Homicidal Brute,
+// Shiva, Aerith …). Regex „sąsiadów”: \btap\b zepsułoby „Tapnięcie”
+// (w JS ń nie jest \w), więc sprawdzamy sąsiedztwo polskich liter. ---
+const RAW_TAP = /(^|[^a-zA-Zą-ż])tap([^a-zA-Zą-ż]|$)/i;
+
+test('F9: Twiddle — „zatapnij” po stronie tap, bez surowego „tap”', () => {
+  const text = defText('twiddle');
+  assert.ok(text.includes('zatapnij'), `twiddle: ${text}`);
+  assert.ok(!RAW_TAP.test(text), `surowy tap: ${text}`);
+});
+
+test('F9: Shiva — „zatapnij wszystkie lądy przeciwnika”', () => {
+  const text = defText('shiva-warden-of-ice');
+  assert.ok(text.includes('zatapnij wszystkie lądy przeciwnika'), `shiva: ${text}`);
+  assert.ok(!RAW_TAP.test(text), `surowy tap: ${text}`);
+});
+
+test('F9: Aerith — „zatapnij permanenty” (adventure/mission)', () => {
+  const text = defText('aerith-rescue-mission');
+  assert.ok(text.includes('zatapnij permanenty'), `aerith: ${text}`);
+  assert.ok(!RAW_TAP.test(text), `surowy tap: ${text}`);
+});
