@@ -9531,3 +9531,19 @@ Morph/coven/surveil/investigate…), imiesłowy przy „karcie" („odrzucona
 z madness", „rzuć ją"), formuła Tarmogoyfa. 7 regresji (test/b7-jezyk.test.js).
 Brama: all5052/5052, fast5042/5042, build61/3446,3kB, quick84,5%(568/672)
 bez zmian (UI-only, silnik nietknięty).
+
+## 2026-09-09 — audyt PR #109 (PR #111, arena/01a08788)
+
+Audyt całego PR #109 (37 plików: A4/B5/B7 — madness-priorytet, wycena draw,
+faceDownCause w LKI, sourceCardId manifest_dread, etykiety stołu i logu,
+counter-labels do wspólnego modułu, detektor slugów w kaflach).
+Werdykt: **0 znalezisk wymagających fixa w kodzie** — zmiany silnika i bota
+poprawne i generyczne (ADR 0002), warstwa językowa root-cause ze strażnikami.
+A4-1 (madness restorePriorityTo) dowiedziony RED→GREEN (pin A4-1/4).
+2 findingi procesowo-dokumentacyjne (niski priorytet): plan sesji #109 scalony
+z pustym „Podsumowaniem" i checkboxami B3/B5/B6 nietkniętymi (handoff/HISTORY/
+README istnieją — nie F-B2/1 w pełnej sile), oraz pełne mutacje tylko dla A4.
+Bramki: npm test fast 5042/5042, test:all 5052/5052, build exit 0, próbka
+regresji bota 10/10; Żywy Tester 3 świeże partie (tarkir-bg/srodziemie 777,
+innistrad-wu/theros 31415, ravnica/dominaria-wu 271828) — DET0, 0 niewyc. ruchów.
+Raport docs/audits/AUDYT_PR109_2026-09-09.md, plan 09-09c, handoff 2026-09-09b.

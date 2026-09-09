@@ -68,7 +68,7 @@ Kryterium: `docs/audits/AUDYT_PR109_2026-09-09.md` z rejestrem finding→commit;
 wynik w opisie PR; `npm test` + `npm run build` zielone. Bez pełnego B0
 (ADR 0018); dopuszczalne `node --test test/bot-benchmark.test.js`.
 
-### C3. Pętla jakości (ADR 0021) — wg znalezisk audytu i otwartych uwag
+### C3. Pętla jakości (ADR 0021) — [X]
 Po audycie, jeśli nie ma znalezisk wymagających fixu — kierunek według
 otwartego stanu (backlog/handoff), bez nowego batcha kart (ADR 0029).
 
@@ -85,3 +85,12 @@ otwartego stanu (backlog/handoff), bez nowego batcha kart (ADR 0029).
   plik z polskim tekstem; bajty cytowań weryfikować.
 - Lektura/budżet — `test/dokumentacja-budzet-lektury.test.js`; nie rozrastać
   LESSONS/ADR bez potrzeby.
+
+## Podsumowanie wykonania
+
+C1: PR #111 na GitHubie (fc16dc4 plan). C2: audyt PR #109 — 0 fixów w kodzie;
+raport docs/audits/AUDYT_PR109_2026-09-09.md; 2 findingi procesowe (F-C2/1
+tracker planu #109, F-C2/2 mutacje pełne tylko dla A4). C3: świeży Żywy Tester
+3 partie DET0, brak nowych znalezisk. Sesja doc-only: bramki 5042/5042 (fast),
+5052/5052 (test:all), build 61/3446,3 kB, próbka bota 10/10. Domknięcie: wpis w
+PROJECT_HISTORY, HANDOFF_2026-09-09b, opis PR #111.
