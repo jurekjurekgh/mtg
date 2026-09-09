@@ -449,6 +449,13 @@ export const IDEMPOTENT_EOT_EFFECTS = new Set([
  */
 export const DECK_ARRANGING_EFFECTS = new Set([
   'scry', 'surveil', 'look_top_n', 'explore',
+  // A4-4 (triage sesji #106): Stomping Slabs — reveal 7 + „jeśli ujawniono
+  // Slabsa, 7 obrażeń”. thenDamage dla singletona jest NIEDOSTĘPNE (rzucana
+  // kopia na stosie; biblioteka bota zasłonięta), więc efekt to czyste
+  // przetasowanie — ta sama klasa wyceny co scry/surveil (main1: kara,
+  // main2: neutralne/lekki plus przed dobieraniem). Bez tego bot rzucał
+  // Slabsy w main1 za 3 many (spellBase 50 > pass), marnując turę na shuffle.
+  'reveal_top_to_bottom_order',
 ]);
 
 /**
@@ -3012,6 +3019,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // przegrać z passem — przy starcie od 0 remis szedł w rzut (sort
         // stabilny, czary przed passem w legalCommands).
         if (isUtilityOnly) score = -1;
+        // A4-4 (triage sesji #106, Inspiration): czar, którego CAŁA wartość to
+        // dobór (same efekty draw_cards — np. Inspiration, Village Rites,
+        // Cathartic Reunion) startuje od zera jak czysto-utylitarny (M146):
+        // premia „spellBase 50” by go niosła ponad pass, nawet gdy dobór jest
+        // ujemny dla bota (strefa deck-outu) albo idzie do PRZECIWNIKA
+        // (wariant celowy). Wartość dobrań (niżej, odbiorca-zależna) sama
+        // decyduje, czy rzut ma sens.
+        const isDrawOnly = effects.length > 0 && effects.every((e) => e?.type === 'draw_cards');
+        if (isDrawOnly) score = -1;
         score -= castSacrificePenalty(view);
         // M103/D: koszt Escape — wygnanie własnych kart z grobu to realna
         // strata (stworami więcej niż landami/innymi). Bez tego bot uciekał
@@ -3577,7 +3593,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') {
             const drawAmount = Number.isInteger(effect.amount) ? effect.amount : 1;
-            score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
+            // A4-4 (triage sesji #106, Inspiration „Target player draws two
+            // cards" — draw_cards applyTo: 'target'): odbiorca MA ZNACZENIE.
+            // Dotąd każdy dobór liczył się jak własny (+wartość, plus WŁASNY
+            // guard deck-outu nakładany nawet na dobór przeciwnika). W 1v1
+            // wada była maskowana kolejnością ofert [własny, przeciwnik]
+            // (remis wygrywał własny cel), więc fix jest prewencyjny: znak
+            // wyceny i guard zależą od kontrolera odbiorcy (generycznie po
+            // p polu efektu, nie po nazwie karty — ADR 0002).
+            const drawerId = effect.type === 'draw_cards' && effect.applyTo === 'target'
+              ? (cmd.targets?.[effect.targetIndex ?? 0] ?? view.playerId)
+              : view.playerId;
+            if (drawerId === view.playerId) {
+              score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
+            } else {
+              score -= P.drawCardValue * drawAmount;
+            }
           }
           // M218/4 — scry/surveil jako CZAR: okno jak przy zdolności (M211/A1).
           // Dla czystego scry/surveil (np. Index) kara musi przebić bazę 50 (L3),
