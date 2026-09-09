@@ -1,0 +1,1069 @@
+diff --git a/docs/audits/AUDYT_PR107_2026-09-09.md b/docs/audits/AUDYT_PR107_2026-09-09.md
+new file mode 100644
+index 0000000..9423cf9
+--- /dev/null
++++ b/docs/audits/AUDYT_PR107_2026-09-09.md
+@@ -0,0 +1,155 @@
++# Audyt PR #107 — audyt PR #106 (F1–F5), P4, pętla A–E (2026-09-09)
++
++Audytor: sesja `arena/01a08611-mtg` (etap A2 planu
++`docs/plans/PLAN_2026-09-09-audyt-pr107-petla-jakosci.md`).
++Zakres: `git diff 5677ffb..6e67895` = **122 pliki, +1566/−239** (PR #107,
++12 commitów: Plan; P2 audyt #106; P3 F1–F5; P4 exploit; P5 F1-edge +
++domknięcie; Plan A–E; A, E, B, C, D, B54).
++Metoda: pełny odczyt diffu (silnik/stół/bot/testy/deck-fixture/docs/narzędzia),
++niezależne pobrania CR (mtg.wiki, ancestral.vision; CR 2026-08-07) dla każdej
++reguły zmienionej w tym PR, weryfikacja producentów stanów (grep) i ścieżek
++execute() w kodzie bieżącym, sweep wszystkich 98 plików testowych (1347 linii
++zmian), wyjaśnienie delt liczby testów i rozmiaru buildu vs pomiar P5.
++
++Werdykt: **kod wysokiej jakości; reguły poprawne (508.2, 614.1d/614.12,
++614.5/614.6, 707.2/707.5 zweryfikowane dosłownie z źródeł pobranych dziś);
++2 znaleziska do naprawy (1 etykieta B54, 1 luka dokumentacji domknięcia PR),
++3 obserwacje bez naprawy.** Żadne znalezisko nie blokuje; oba fixy trafiają do
++tej sesji (A3/A6 — rejestr §6).
++
++## 1. Niezależnie POTWIERDZONE (pobrania własne audytora, 2026-09-09, CR 2026-08-07)
++
++- **CR 508.2** (mtg.wiki/page/Declare_attackers_step): „First, the active
++  player declares attackers. This turn-based action doesn't use the stack”
++  (508.1) + „Second, the active player gets priority. (See rule 117)” (508.2)
++  + 508.2b (triggered abilities na stosie PRZED priorytetem). → Zmiana **D**
++  (deklaracja zostaje w kroku, priorytet → aktywny, pełna runda passów,
++  potem bloki z priorytetem obrońcy) **POPRAWNA**. `declareAttackers()`
++  waliduje `phase==='combat' && step==='declare_attackers'` (combat.js:228),
++  re-deklaracja odrzucana bramką `!state.combat`, a execute() łapie wyjątki
++  w `illegal_attackers:` — brak drogi pominięcia kroku.
++- **CR 614.1d** (mtg.wiki/page/Replacement_effect): „Continuous effects that
++  read «[This permanent] enters . . .» or «[Objects] enter [the battlefield]
++  . . .» are replacement effects.” → **F2** (cytat „603.6d” zastąpiony
++  614.1d/614.12) **POPRAWNY** — stary cytat rzeczywiście nie istnieje
++  (603 to triggery; 614 to Replacement Effects).
++- **CR 614.12** (tamże, przykłady): „Scarwood Treefolk says 'This creature
++  enters tapped.' A Scarwood Treefolk that's put onto the battlefield from a
++  graveyard enters the battlefield tapped.” — dosłownie jak w komentarzach
++  F2/F3. → potwierdzone.
++- **CR 614.5/614.6** (tamże, dosłownie): „A replacement effect doesn't invoke
++  itself repeatedly; it gets only one opportunity to affect an event or any
++  modified events” / „If an event is replaced, it never happens. A modified
++  event occurs instead” → podstawa **F1** (tarcza ma okazję na ZDARZENIE
++  ZMODYFIKOWANE — zniszczenie aury wynikające z umbry) **POPRAWNA**.
++- **CR 707.2 + 707.5** (ancestral.vision/additional-rules/copying-objects.html):
++  kopia przejmuje „copiable values … derived from the text printed on the
++  object”; 707.5: „If the text that's being copied includes any abilities
++  that replace the enters-the-battlefield event … those abilities will take
++  effect” + przykład Clone/Skyshroud Behemoth (kopia wchodzi tapnięta). →
++  **F3** (enter-as-copy I token-kopie niosą `entersTapped`) **POPRAWNA**,
++  łącznie z korektą audytu #106 (luka w `create_copy_token` też istniała —
++  RED-test w PR #107).
++- **F4** (martwy kod): jedyny producent `state.pendingReplacementChoice` to
++  `destruction.js:31` — zawsze z `frame: work`; jedyny czyści `destruction.js:83`.
++  Usunięcie legacy gałęzi bez frame w execute() **BEZPIECZNE**; `destroy_permanents`
++  rzeczywiście nie ma użytkowników w kartach (Vandalize = `destroy_permanent`
++  z `targetIndices`).
++- **B** (debuff-kill bota): `HOSTILE_TRIGGER_TARGET_EFFECTS` + negatywny
++  `pump`/`buff_creature_until_end_of_turn` ⇒ `triggerEffectIsHostile` — efekty
++  debuffujące są zawsze wrogie, więc `debuff` i `friendly` są parami
++  niezdatnymi do jednoczesnego wystąpienia (brak kill-score w gałęzi friendly
++  jest OK). `debuffKills` (toughness+Δ ≤ 0 LUB marked ≥ toughness+Δ) zgodne z
++  704.5f (SBA: effective toughness; to nie destroy ⇒ nie omija indestructible/
++  regen wbrew oczekiwaniu).
++- **C** (deck-out): strefy `drawDeckingPenalty` (≤0 → −(120+6a), 1–3 → −(60+6a),
++  inaczej 0) nie ruszają pina Denizen (5→4 zostaje poza strefą) — zgodnie z
++  planem; obie ścieżki (czar/zdolność) przez wspólny helper.
++- **P4** (exploit tokena): `exploited` niesie `cardId` — log nazywa ofiarę
++  także gdy zniknęła ze sceny (wzorzec M66/C).
++- **A/E/B54** (etykiety): celem w trzech etyketach (flashback/escape/adventure
++  — wzorzec `cast_cleave`), tytuł „Rzuć: X — wygnaj stwora …” + regex detektora
++  bez lookaheadu (konsekwencja tytułu, nie nowa luka), unifikacja PL
++  F1–F8 z 10 pinami w `test/audyt-b54-tekst.test.js`.
++
++## 2. Znaleziska → naprawa w tej sesji (rejestr §6)
++
++### F-A2/1. Etykiety „tap” surowe na ścieżce publicznej (etykieta; niskie)
++`describeEffect` w `src/table/render.js` drukuje surowy angielski rdzeń po
++stronie TAP mimo, że strona UNTAP została poświadczona w B54 (F1):
++- L927 `tap_permanent: () => 'tap'`,
++- L1164 `tap_all_lands_opponents_control: () => 'tap wszystkie lądy przeciwnika'`,
++- L1165 `tap_permanents: () => 'tap permanenty'`.
++
++Kawalek (siódra `untap_permanent: 'odkręć'`) jest po polsku; ścieżka to
++PUBLICZNY tekst karty na stole (~16 użyć `tap_permanent` w katalogu).
++B54 nie pinowało strony tap — tester nie ujął jej w F1–F8 (detektory
++złapują to, co się pojawiło w transkrypcie). Fix A3: `'zatapnij cel'` /
++`'zatapnij wszystkie lądy przeciwnika'` / `'zatapnij permanenty'` (forma
++bezokolicznikowa zgodna z 'odkręć') + piny w `test/audyt-b54-tekst.test.js`
++(RED→GREEN). Log zdarzeń (`session.js`: 'zatapianie celu') już zgodny.
++
++### F-A2/2. Domknięcie PR #107: pętla A–E nieodnotowana w docs (docs; średnie)
++Wpis `docs/PROJECT_HISTORY.md` i `docs/setup/HANDOFF_2026-09-08k.md`
++pokrywają TYLKO P2→P5. Sześć commitów A–E (A, E, B, C, D, B54 — w tym
++ZMIANA REGUŁOWA D z oknem CR 508.2) nie ma wpisu w HISTORII ani w
++handoffie; `PLAN_2026-09-09-znaleziska-tester-a-e.md` nie ma zaznaczonych
++checkboxów. Liczby P5 (fast 4965, build 3433,2 kB, quick 570/672) zostały
++zmierzone PRZED commitami A–E, więc stan końcowy PR nie ma odnotowanych
++liczb finalnych (mierzonych dziś: fast 4993/4993, build 3438,3 kB — spójne
++z +38/−5 deklaratorem `test(` i for-pętlami po P5). Fix A6: dopisek A–E w
++HISTORY + `HANDOFF_2026-09-09.md` (pełna sesja, liczby finalne, quick po
++A–E mierzony w A6).
++
++## 3. Obserwacje (bez naprawy; jawne)
++
++- **O1.** F4 w execute() (game-state.js ~L5337): błąd wewnętrzny
++  (`pendingReplacementChoice` bez frame) rzuca raw `throw` poza try/catch,
++  podczas gdy reszta execute() zwraca `reject(...)`. Stan jest NIEOSIĄGALNY
++  (jeden producent — `destruction.js:31` — zawsze niesie frame, §1), więc
++  kod działa jako asercja; do tolerancji. Gdyby kiedyś stan był osiągalny,
++  execute() wyrzuciłby wyjątek zamiast maszynowo rozpoznawalnej odmowy — do
++  pamięci na przyszłość.
++- **O2.** F3: enter-as-copy przenosi `entersTappedCondition`, ale kopia
++  wchodzi tapnięta dopiero gdy warunek spełniony (auto-tap w
++  `moveObjectDirectly` działa bezwarunkowo tylko dla `entersTapped`).
++  Zgodne z 614.1d/614.12 (warunkowy „enters tapped if …” stosuje warunek) —
++  projekt M141/B, nie luka.
++- **O3.** Pozostałe surowe slugi w `describeEffect` poza zakresem B54
++  (surveil, clash, „start your engines!”, unearth, venture, station, morbid,
++  „basic landa”) — istniejące przed B54, niezatrzymane przez detektory
++  (nie pojawiły się w obserwowanych transkryptach). Kandydat do przyszłego
++  sweepu B54-owego; poza zakresem tej sesji (nowy zakres bez zlecenia).
++
++## 4. Sweep testów i liczb
++
++- 98 plików testowych, 1347 linii zmian — WSZYSTKIE w kategoriach: runda
++  passów D (CR 508.2), przepisany F1 (606: effect/sba + aura w batchu),
++  F4 (m270 ×3 na frame flow), piny B54 (F1–F8 + 10 testów w nowym pliku),
++  F3 (3 testy, nowy plik), B/C (4+4 testy, nowe pliki), D (7 testów, nowy
++  plik), P4 (1 test w batch28), E (regex detektora), golden master
++  `bot-scoring-snapshot.json` 53/53 (konsekwencja logiki wyceny B/C —
++  nie strojenie STROJENIE_BOTA, więc pełny B0 nie wymagany; quick w A6).
++- Deltys do handoffu k (P5): fast 4965→4993, build 3433,2→3438,3 kB —
++  wyjaśnione commitami A–E/B54 (pomiar P5 jest przed nimi, kolejność w
++  historii PR; +38/−5 deklaratorem test, w tym for-pętle ×2).
++- `tools/table-tester/detectors.mjs`: regex bez lookaheadu — konsekwencja
++  nowego tytułu E (poprzedni lookahead `(?=\s+—)` nie pasował do znacznika
++  na końcu); logika detektora nietknięta.
++- Decki: bez zmian (ADR 0029 — brak nowych kart); katalog/talie nietknięte.
++
++## 5. Zdrowie PR
++
++- `git status` czysty; gałąź sesji audytora od głównego `6e67895` (squash #107).
++- Baseline audytora (GREEN): `npm test` fast **4993/4993** (~181 s),
++  `npm run build` exit 0, **60 modułów / 3438,3 kB**.
++- Brama sesji: `npm run test:all` + build + quick (A6); Żywy Tester (A5).
++
++## 6. Weryfikacja A3/A6 (2026-09-09, ta sama sesja)
++
++Rejestr znalezisko → commit (gałąź `arena/01a08611-mtg`, PR #108):
++
++| Znalezisko | Commit | Strażnik |
++|---|---|---|
++| F-A2/1 (etykiety tap) | _(A3 — hash po lądowaniu)_ | piny w `test/audyt-b54-tekst.test.js` (RED→GREEN) |
++| F-A2/2 (docs A–E) | _(A6 — hash po lądowaniu)_ | dopisek HISTORY + `HANDOFF_2026-09-09.md` + checkboxes planu A–E |
+diff --git a/docs/plans/PLAN_2026-09-09-audyt-pr107-petla-jakosci.md b/docs/plans/PLAN_2026-09-09-audyt-pr107-petla-jakosci.md
+new file mode 100644
+index 0000000..5aa588a
+--- /dev/null
++++ b/docs/plans/PLAN_2026-09-09-audyt-pr107-petla-jakosci.md
+@@ -0,0 +1,93 @@
++# PLAN 2026-09-09 — sesja arena/01a08611: audyt PR #107 + pętla jakości
++
++Sesja: `arena/01a08611-mtg` (1 sesja = 1 gałąź = 1 PR, ADR 0013/0020).
++Tryb obowiązkowy: ADR 0020 (PR → audyt → inkrementalne commity → tylko
++przyrostowo). Prompt „kontynuujemy projekt" bez nazwanego tematu = pętla
++domyślna ADR 0021: audyt poprzedniego scalonego PR + pętla jakości.
++
++## Rozpoznanie (stan na start, zmierzone)
++
++- `main` = `6e67895` („Sesja arena/01a08274: audyt PR #106 + pętla jakości (#107)");
++  ostatni scalony PR = **#107** (122 pliki, +1566/−239, scalony 2026-09-08 19:19 UTC).
++- Brak otwartych PR. Handoff: `docs/setup/HANDOFF_2026-09-08k.md`.
++- **Baseline:** `npm test` (fast) = **4993/4993 pass, 0 fail** (~3 min);
++  `npm run build` = **60 modułów, 3438.3 kB**.
++  Rozjazd z handoffem 09-08k („fast 4965/4965, build 3433.2 kB") — do
++  wyjaśnienia w etapie A2 (prawdopodobnie commity P4/P5 po pomiarze;
++  potwierdzić, że to przyrost testów, a nie regresja środowiska).
++
++## Etapy
++
++### A1. Rozpoznanie + plan + PR na starcie — [X]
++Kryterium: PR istnieje na GitHubie (ADR 0020 A), plan commity i wypchnięty
++PRZED kodowaniem. Rozpoznanie + ten plik = pierwszy commit.
++
++### A2. Audyt PR #107 (ADR 0020 B / ADR 0016) — [ ]
++Przedgląd KAŻDEGO zmienionego pliku PR #107:
++- **engine/reguły:** D (okno odpowiedzi po deklaracji ataku, CR 508.2) i
++  „naprawa 170 testów" — czy zmiana jest zgodna z CR i nie regresuje
++  istniejących zachowań; E (etykieta rzutu z wygnania) — bez zmian reguł?
++- **batch #106 (10 kart 599–608 + Animator + wspólny wybór odrzucenia):**
++  zgodność z Oracle (snapshotty `docs/cards/scryfall-*.json`), generyczność
++  mechanik (ADR 0002), `limitations`/`notes` wg ADR 0022;
++- **fixy z audytu #106 (P2–P3, F1–F5):** czy weszły u root cause, czy testy
++  są weryfikowane mutacyjnie (L13) — nie tylko zielone;
++- **pętla jakości (A–E, B54):** etykiety, wyceny bota (B, C), okno 508.2 (D);
++- **spójność:** `git log` commity vs opis PR; liczby testów (rozjazd 4965→4993);
++  README/`PROJECT_HISTORY`/handoff zgodne ze stanem.
++- **CR tylko ze źródeł pobranych w tej sesji** (ADR 0030) — gdy audyt
++  wymaga twierdzenia regułowego.
++Kryterium: `docs/audits/AUDYT_PR107_2026-09-09.md` z rejestrem finding→commit;
++wynik w opisie PR; `npm test` zielone. **Bez pełnego B0** (ADR 0018).
++
++### A3. Fixy findings audytu — [ ]
++Każdy finding: repro → naprawa u root cause (ADR 0002) → test + mutacja
++(L13) → OSOBNY commit + push.
++
++### A4. Pętla jakości — otwarte itemy z handoffu 09-08k — [ ]
++„Jawnie NIE robione" (kolejność wg ryzyka):
++1. madness + batch-discard ×3 (interakcja mechanik),
++2. Vandalize vs aura-regen (obrona przed zniszczeniem),
++3. drugi atakujący przy PW (protection/planeswalker — rozdział atakujących),
++4. triage Slabs / Inspiration (pre-existing z sesji #106 — potwierdzić lub
++   zamknąć).
++Dla każdego: sonda silnika → werdykt → fix u root cause + test LUB uzasadnione
++zamknięcie. Osobny commit per item.
++
++### A5. Żywy Tester (docs/setup/TESTER_STOLU.md) — [ ]
++`npm run build` → `npm i` w `tools/table-tester` → partie (w tym na talie z
++nowych mechanik); czytać transkrypty ręcznie wzdłuż 3 osi; znaleziska →
++root cause + detektory (L27/L13). Braki narzędzia naprawiać w testerze (L12).
++Kryterium: ≥ kilka partii, `== DETEKTORY ==` bez alarmów LUB alarmy naprawione;
++`npm test` zielone.
++
++### A6. Domknięcie sesji — [ ]
++- profil SZYBKI `node tools/benchmark.mjs` (bez `--full`, ADR 0018) —
++  wynik w opisie PR (bez podnoszenia progów);
++- opis PR zaktualizowany kumulatywnie (rejestr finding→commit);
++- `docs/PROJECT_HISTORY.md` + `docs/setup/HANDOFF_2026-09-09.md`;
++- `npm run test:all` (brama PR) + `npm run build` zielone; drzewo czyste.
++
++## Ryzyka / pułapki (z LESSONS i ENVIRONMENT)
++
++- **reset workspace** (ENVIRONMENT §2): commit+push po KAŻDYM zielonym kroku;
++  przed resetem sprawdzać drzewo; nigdy force push (ADR 0020 D).
++- **dwa edity tego samego pliku w jednej turze gubią drugi** (handoff 09-08k,
++  P3/F1) — po edycji `git diff` całego pliku.
++- `edit_file` a polskie znaki → `python3` z `encoding='utf-8'` (ENVIRONMENT §4).
++- Żywy Tester ładuje `dist/`, nie `src/` — build po każdej zmianie (L76).
++- „Testy zielone" ≠ dowód (L13/L61) — mutacja obowiązkowa przy fixach.
++- Komisy z CR z pamięci zakazane (ADR 0030); brak sieci → odkładam z adnotacją.
++- Backlog NIE jest kolejką (ADR 0021): bez listy właściciela brak nowych kart.
++
++## Planowane commity (kolejność)
++
++1. `Plan sesji: audyt PR #107 + pętla jakości` (ten plik)
++2. `Audyt PR #107: …` (pliki audytu + opis PR; bez fixów)
++3..N. fixy per finding / per item A4 / per znalezisko A5
++ostatni. `Domknięcie: handoff + PROJECT_HISTORY + opis PR` (dokumentacja,
++dołączana do ostatniego commitu funkcjonalnego — ADR 0020 C wyjątek)
++
++## Podsumowanie wykonania
++
++_(dopisane na końcu sesji)_
+diff --git a/src/controllers/heuristic-bot.js b/src/controllers/heuristic-bot.js
+index e1986b2..d404584 100644
+--- a/src/controllers/heuristic-bot.js
++++ b/src/controllers/heuristic-bot.js
+@@ -449,6 +449,13 @@ export const IDEMPOTENT_EOT_EFFECTS = new Set([
+  */
+ export const DECK_ARRANGING_EFFECTS = new Set([
+   'scry', 'surveil', 'look_top_n', 'explore',
++  // A4-4 (triage sesji #106): Stomping Slabs — reveal 7 + „jeśli ujawniono
++  // Slabsa, 7 obrażeń”. thenDamage dla singletona jest NIEDOSTĘPNE (rzucana
++  // kopia na stosie; biblioteka bota zasłonięta), więc efekt to czyste
++  // przetasowanie — ta sama klasa wyceny co scry/surveil (main1: kara,
++  // main2: neutralne/lekki plus przed dobieraniem). Bez tego bot rzucał
++  // Slabsy w main1 za 3 many (spellBase 50 > pass), marnując turę na shuffle.
++  'reveal_top_to_bottom_order',
+ ]);
+ 
+ /**
+@@ -3012,6 +3019,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
+         // przegrać z passem — przy starcie od 0 remis szedł w rzut (sort
+         // stabilny, czary przed passem w legalCommands).
+         if (isUtilityOnly) score = -1;
++        // A4-4 (triage sesji #106, Inspiration): czar, którego CAŁA wartość to
++        // dobór (same efekty draw_cards — np. Inspiration, Village Rites,
++        // Cathartic Reunion) startuje od zera jak czysto-utylitarny (M146):
++        // premia „spellBase 50” by go niosła ponad pass, nawet gdy dobór jest
++        // ujemny dla bota (strefa deck-outu) albo idzie do PRZECIWNIKA
++        // (wariant celowy). Wartość dobrań (niżej, odbiorca-zależna) sama
++        // decyduje, czy rzut ma sens.
++        const isDrawOnly = effects.length > 0 && effects.every((e) => e?.type === 'draw_cards');
++        if (isDrawOnly) score = -1;
+         score -= castSacrificePenalty(view);
+         // M103/D: koszt Escape — wygnanie własnych kart z grobu to realna
+         // strata (stworami więcej niż landami/innymi). Bez tego bot uciekał
+@@ -3577,7 +3593,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
+           // Dobranie kart z czaru to przewaga kartowa.
+           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') {
+             const drawAmount = Number.isInteger(effect.amount) ? effect.amount : 1;
+-            score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
++            // A4-4 (triage sesji #106, Inspiration „Target player draws two
++            // cards" — draw_cards applyTo: 'target'): odbiorca MA ZNACZENIE.
++            // Dotąd każdy dobór liczył się jak własny (+wartość, plus WŁASNY
++            // guard deck-outu nakładany nawet na dobór przeciwnika). W 1v1
++            // wada była maskowana kolejnością ofert [własny, przeciwnik]
++            // (remis wygrywał własny cel), więc fix jest prewencyjny: znak
++            // wyceny i guard zależą od kontrolera odbiorcy (generycznie po
++            // p polu efektu, nie po nazwie karty — ADR 0002).
++            const drawerId = effect.type === 'draw_cards' && effect.applyTo === 'target'
++              ? (cmd.targets?.[effect.targetIndex ?? 0] ?? view.playerId)
++              : view.playerId;
++            if (drawerId === view.playerId) {
++              score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
++            } else {
++              score -= P.drawCardValue * drawAmount;
++            }
+           }
+           // M218/4 — scry/surveil jako CZAR: okno jak przy zdolności (M211/A1).
+           // Dla czystego scry/surveil (np. Index) kara musi przebić bazę 50 (L3),
+diff --git a/src/engine/game-state.js b/src/engine/game-state.js
+index 8f49515..d5b3c1a 100644
+--- a/src/engine/game-state.js
++++ b/src/engine/game-state.js
+@@ -4026,7 +4026,16 @@ export function execute(state, input) {
+         // otwarcie blokowało kolejne odrzucania w tym samym efekcie.
+         state.madnessQueue.push({
+           playerId: pending.playerId, objectId: exileId, cardId: moved.cardId,
+-          restorePriorityTo: state.turn.priorityPlayerId,
++          // A4-1 (handoff 09-08k, madness+batch-discard ×3): priorytet po
++          // decyzji madness wraca do posiadacza Z PRZED odrzuceniem
++          // (pending.restorePriorityTo — ustawione przy tworzeniu
++          // pendingDiscardChoice), NIE do odrzucającego (priorytet w chwili
++          // pusha = on sam). Celowane odrzucenie (Mindstab) dotąd kończyło
++          // tym samym czarem priorytet w innym miejscu zależnie od tego,
++          // czy odrzucona karta miała madness: ścieżka zwykła oddawała go
++          // źródłu czaru (restorePriorityTo, CR 117.3b), ścieżka madness —
++          // odrzucającemu.
++          restorePriorityTo: pending.restorePriorityTo ?? state.turn.priorityPlayerId,
+         });
+       } else {
+         const graveId = `grave-${state.objectSequence++}`;
+diff --git a/src/table/render.js b/src/table/render.js
+index 0cf2e1c..557bced 100644
+--- a/src/table/render.js
++++ b/src/table/render.js
+@@ -924,7 +924,9 @@ function describeEffect(e) {
+     remove_counter: () => `usuń licznik ${e.counter}`,
+     add_counter: () => `połóż licznik ${e.counter}`,
+     exile_permanent: () => 'wygnij artefakt/zaklęcie',
+-    tap_permanent: () => 'tap',
++    // F-A2/1 (audyt PR #107): B54 zjednoczyło stronę untap („odkręć”), ale tu
++    // drukowało surowe „tap” — ta sama ścieżka publiczna (tekst karty).
++    tap_permanent: () => 'zatapnij',
+     lock_untap: () => 'blokada odkręcania (póki źródło zatapnięte)',
+     dont_untap_next_untap_step: () => 'nie odkręca się w następnym kroku odkręcania',
+     surveil: () => `surveil ${e.amount ?? 1}`,
+@@ -1161,8 +1163,9 @@ function describeEffect(e) {
+     springbloom_sacrifice_search: () => 'poświęć ląd, szukaj 2 basic landów',
+     start_engines: () => 'start your engines!',
+     station_counters: () => `połóż liczniki charge (station)`,
+-    tap_all_lands_opponents_control: () => 'tap wszystkie lądy przeciwnika',
+-    tap_permanents: () => 'tap permanenty',
++    // F-A2/1 (audyt PR #107): surowe „tap” po B54 — patrz `tap_permanent`.
++    tap_all_lands_opponents_control: () => 'zatapnij wszystkie lądy przeciwnika',
++    tap_permanents: () => 'zatapnij permanenty',
+     transfer_counters_on_dies: () => 'przenieś liczniki',
+     turn_face_up: () => 'obróć twarzą do góry',
+     unearth_return: () => 'unearth (z grobu z haste, exile na końcu tury)',
+diff --git a/test/audyt-b54-tekst.test.js b/test/audyt-b54-tekst.test.js
+index 58b7fe0..8b34ab8 100644
+--- a/test/audyt-b54-tekst.test.js
++++ b/test/audyt-b54-tekst.test.js
+@@ -107,3 +107,28 @@ test('F8: log zniszczenia do wygnania — „(licznik ostateczności)”', () =>
+     { type: 'permanent_destroyed', cardId: 'leafcrown-dryad', toZone: 'exile' }, HELPERS);
+   assert.ok(line.includes('(licznik ostateczności)'), `log: ${line}`);
+ });
++
++// --- F9 (audyt PR #107, F-A2/1): strona TAP rdzenia — B54 zjednoczyło
++// „odkręć” (untap), ale `describeEffect` drukował surowy „tap” na ścieżce
++// publicznej tekstu karty (Twiddle, Lodestone Needle, Homicidal Brute,
++// Shiva, Aerith …). Regex „sąsiadów”: \btap\b zepsułoby „Tapnięcie”
++// (w JS ń nie jest \w), więc sprawdzamy sąsiedztwo polskich liter. ---
++const RAW_TAP = /(^|[^a-zA-Zą-ż])tap([^a-zA-Zą-ż]|$)/i;
++
++test('F9: Twiddle — „zatapnij” po stronie tap, bez surowego „tap”', () => {
++  const text = defText('twiddle');
++  assert.ok(text.includes('zatapnij'), `twiddle: ${text}`);
++  assert.ok(!RAW_TAP.test(text), `surowy tap: ${text}`);
++});
++
++test('F9: Shiva — „zatapnij wszystkie lądy przeciwnika”', () => {
++  const text = defText('shiva-warden-of-ice');
++  assert.ok(text.includes('zatapnij wszystkie lądy przeciwnika'), `shiva: ${text}`);
++  assert.ok(!RAW_TAP.test(text), `surowy tap: ${text}`);
++});
++
++test('F9: Aerith — „zatapnij permanenty” (adventure/mission)', () => {
++  const text = defText('aerith-rescue-mission');
++  assert.ok(text.includes('zatapnij permanenty'), `aerith: ${text}`);
++  assert.ok(!RAW_TAP.test(text), `surowy tap: ${text}`);
++});
+diff --git a/test/znaleziska-a4-drugi-atakujacy-pw.test.js b/test/znaleziska-a4-drugi-atakujacy-pw.test.js
+new file mode 100644
+index 0000000..992e8e7
+--- /dev/null
++++ b/test/znaleziska-a4-drugi-atakujacy-pw.test.js
+@@ -0,0 +1,151 @@
++// A4-3 (handoff 2026-09-08k, kolejność ryzyka #3): drugi atakujący przy PW
++// (protection/planeswalker — rozdział atakujących).
++//
++// Kontekst: audyt PR #106 §3 notował: „drugi atakujący PW (brak kart PW —
++// tylko składnia player_or_planeswalker otestowana)". Sonda 2026-09-09:
++//
++// WYNIK: silnik WOLNIE nie wspiera atakowania planeswalkerów — model walki
++// jest TYLKO na gracza-obroncę: state.combat nie trzyma celu PER ATAKUJĄCEGO
++// (brak 508.1b w tym silniku: „announces which player, planeswalker, or
++// battle each of the chosen creatures is attacking"), resolveCombatDamage
++// bierze JEDEN defendingPlayerId, a obrażenia nieblokujących idą do GRACZA.
++// Maszyna obrażeń PW ISTNIEJE i działa poza walką (CR 120.3c —
++// removeLoyaltyForDamage; CR 306.9 — zero loyalty to SBA-put; zweryfikowane
++// w audycie PR #106 §1 na pobranych CR). Katalog NIE MA kart PW (ADR 0029
++// — brak nowych kart), więc ścieżka nie jest osiągalna w żadnej grze.
++//
++// Zamknięcie UZASADNIONE (nie jest bugiem): implementacja celu PW w walce
++// to dodanie architektoniczne (cel per atakujący + rozdział obrażeń 510.1c
++// per cel + ogłoszenia) — decyzja właściciela, nie petla jakości. Testy
++// poniżej PINUJĄ obecny model (atakujący biją gracza, nie PW na stole) i
++// SYGNALIZUJĄ (strażnik katalogu, wzorzec M161/S9): pierwsza karta PW w
++// katalogu CZERWIEŃI ten test — wtedy decyzja o celu PW w walce staje się
++// wymuszona.
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
++import { createCardRegistry, REAL_CARDS } from '../src/cards/card-data.js';
++import { gameObjectDataOf } from '../src/cards/materialize.js';
++import { jumpToStep } from '../src/engine/turn.js';
++import { addMana } from '../src/engine/resources.js';
++import { addCounter } from '../src/engine/counters.js';
++
++const registry = createCardRegistry();
++
++function put(s, id, cardId, owner = 'p1', zone = 'battlefield') {
++  const d = registry.get(cardId);
++  assert.ok(d, cardId);
++  addObject(s, { ...gameObjectDataOf(d), types: d.types, keywords: d.keywords, subtypes: d.subtypes ?? [], id,
++    instanceId: `i-${id}`, cardId, ownerId: owner, controllerId: owner, zone });
++  return s.objects.get(id);
++}
++
++/** Syntetyczny planeswalker (katalogu nie ma — sonda mechaniki, nie karty). */
++function putPlaneswalker(s, id, ownerId = 'p2', loyalty = 7) {
++  addObject(s, {
++    id, instanceId: `i-${id}`, cardId: 'synthetic-pw', ownerId, controllerId: ownerId, zone: 'battlefield',
++    kind: 'planeswalker', types: ['Planeswalker'], subtypes: ['Synthetic'],
++    power: 0, toughness: 0, manaCost: 0,
++  });
++  addCounter(s, id, 'loyalty', loyalty);
++  return s.objects.get(id);
++}
++
++/** Pełna runda passów NIEZALEŻNIE od stosu (okna priorytetu D i M172/C
++ * wymagają passów także przy pustym stosie). Stoi, gdy krok się zmieni. */
++function passRound(s, maxPasses = 10) {
++  const before = `${s.turn.step}|${s.turn.number}`;
++  for (let i = 0; i < maxPasses && `${s.turn.step}|${s.turn.number}` === before; i++) {
++    const v = playerView(s, s.turn.priorityPlayerId);
++    const p = v.legalCommands.find((c) => c.type === 'pass_priority');
++    if (!p) return; // np. M255/F: pass domykający rundę w combat_damage — zamknięcie okna
++    assert.ok(execute(s, p).ok);
++  }
++}
++
++function resolveWindow(s, limit = 30) {
++  for (let i = 0; i < limit && s.zones.stack.length; i++) {
++    const v = playerView(s, s.turn.priorityPlayerId);
++    const c = v.legalCommands.find((c) => c.type === 'pass_priority');
++    if (c) {
++      assert.ok(execute(s, c).ok);
++      continue;
++    }
++    // Decyzja w środku resolva (np. search Exploding Borders) — weźpierwszą
++    // ofertę (test nie zależny od wyboru: asserty o lojalności/życiu).
++    const d = v.legalCommands.find((c) => c.type === 'resolve_search_choice');
++    assert.ok(d, `okno zablokowane bez decyzji i passu (${s.turn.step})`);
++    assert.ok(execute(s, d).ok);
++  }
++}
++
++test('A4-3/1: model walki — atakujący biją GRACZA-obroncę, PW na stole nietknięty', () => {
++  const s = createGameState({ seed: 443, players: [{ id: 'p1' }, { id: 'p2' }] });
++  s.turn = jumpToStep(s.turn, 'declare_attackers', 'p1');
++  put(s, 'atk1', 'scorpion-sentinel');
++  put(s, 'atk2', 'tenth-district-veteran');
++  const pw = putPlaneswalker(s, 'pw1', 'p2', 7);
++
++  // Dwa atakujący w jednym combacie — legalna deklaracja (CR 508.1).
++  const declare = playerView(s, 'p1').legalCommands.find((c) => c.type === 'declare_attackers');
++  assert.ok(declare, 'oferta deklaracji');
++  assert.ok(execute(s, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk1', 'atk2'] }).ok);
++
++  // Okno po deklaracji (CR 508.2): aktywny → obrońca → bloki.
++  passRound(s);
++  assert.equal(s.turn.step, 'declare_blockers');
++  assert.equal(s.turn.priorityPlayerId, 'p2');
++  // p2 bez kreatur — pusta deklaracja bloków (jedyna opcja).
++  const blockers = playerView(s, 'p2').legalCommands.find((c) => c.type === 'declare_blockers');
++  assert.ok(blockers, 'oferta pustej deklaracji bloków');
++  assert.ok(execute(s, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
++  // Okno po blokach (M172/C: najpierw obrońca) + pełna runda passów w
++  // combat_damage (M255/F) — priorytet wraca do aktywnego z zamkniętym
++  // licznikiem: jedyna komenda to resolve_combat.
++  passRound(s);
++  assert.equal(s.turn.step, 'combat_damage');
++  assert.equal(s.turn.priorityPlayerId, 'p1');
++  const passP1 = playerView(s, 'p1').legalCommands.find((c) => c.type === 'pass_priority');
++  assert.equal(passP1, undefined, 'pass aktywnego w combat_damage domyka rundę — odrzucany (M255/F)');
++  const resolve = playerView(s, 'p1').legalCommands.find((c) => c.type === 'resolve_combat');
++  assert.ok(resolve, 'oferta resolve_combat');
++  const r = execute(s, resolve);
++  assert.ok(r.ok, JSON.stringify(r));
++
++  const lifeP2 = s.players.find((p) => p.id === 'p2').life;
++  assert.equal(lifeP2, 20 - 3, 'oba atakujący zadali obrażenia GRACZU (1+2=3)');
++  assert.equal(s.objects.get('pw1')?.counters?.loyalty ?? pw.counters?.loyalty, 7,
++    'PW na stole NIE jest celem ataku (model: cel = gracz-obronca)');
++});
++
++test('A4-3/2: kontrola — ścieżka CZARU obraża PW (removeLoyaltyForDamage, CR 120.3c)', () => {
++  const s = createGameState({ seed: 444, players: [{ id: 'p1' }, { id: 'p2' }] });
++  s.turn = jumpToStep(s.turn, 'main', 'p1');
++  put(s, 'land1', 'basic-forest');
++  put(s, 'land2', 'basic-island');
++  put(s, 'lib0', 'basic-forest', 'p1', 'library');
++  const pw = putPlaneswalker(s, 'pw1', 'p2', 7);
++  put(s, 'eb', 'exploding-borders', 'p1', 'hand');
++  addMana(s, 'p1', 2, { colors: ['G'] });
++  addMana(s, 'p1', 2, { colors: ['R'] });
++
++  const cast = playerView(s, 'p1').legalCommands.find(
++    (c) => c.type === 'cast_spell' && c.objectId === 'eb' && c.targets?.[0] === 'pw1');
++  assert.ok(cast, 'Exploding Borders może celować w PW (player_or_planeswalker)');
++  assert.ok(execute(s, { ...cast, targets: ['pw1'] }).ok);
++  resolveWindow(s);
++
++  assert.equal(s.objects.get('pw1')?.counters?.loyalty, 5, 'obrażenia X=2 ściągnęły 2 lojalności (120.3c)');
++  assert.equal(s.players.find((p) => p.id === 'p2').life, 20, 'gracz nietknięty');
++});
++
++test('A4-3/3: strażnik katalogu — pierwsza karta PW sygnalizuje decyzję o celu w walce', () => {
++  // Wzorzec M161/S9: ścieżka walki przeciw PW jest NIEZAIMPLEMENTOWANA
++  // (cel per atakujący, 508.1b/510.1c). Dopóki katalogu nie ma PW,
++  // ograniczenie jest nieosiągalne w grze — test zielony. Pierwsza karta
++  // PW (ADR 0029: tylko decyzja właściciela) CZERWIEŃI test: wtedy albo
++  // implementujemy cel PW w walce, albo card nie atakuje/nie jest celem.
++  const pwCards = REAL_CARDS.filter((c) => (c.types ?? []).includes('Planeswalker'));
++  assert.equal(pwCards.length, 0,
++    `katalog dostał PW (${pwCards.map((c) => c.id).join(', ')}) — decyzja właściciela: cel PW w walce (508.1b/510.1c) albo wsparcie limitowane`);
++});
+diff --git a/test/znaleziska-a4-madness-batch-x3.test.js b/test/znaleziska-a4-madness-batch-x3.test.js
+new file mode 100644
+index 0000000..0b9cd14
+--- /dev/null
++++ b/test/znaleziska-a4-madness-batch-x3.test.js
+@@ -0,0 +1,203 @@
++// A4-1 (handoff 2026-09-08k, kolejność ryzyka #1): madness + batch-discard ×3.
++//
++// Pokrycie dotychczasowe: M258 = odrzucenia SEKWENCYJNE (jedna komenda
++// `cardId` na kartę; kolejka decyzji), owner-discard B = batch (`cardIds`)
++// na SCIEŻCE KOSZTU (Cathartic Reunion, count 2) i Mindstab z ręką krótszą
++// niż 3 (bez madness). NIEPOKRYTE PRZECIĘCIE: batch `cardIds` na SCIEŻCE
++// EFEKTU z licznikiem 3 (prawdziwy Mindstab) gdy odrzucane karty mają
++// madness — pętla L3999–4050 game-state.js (exile + madnessQueue w środku
++// batcha) nigdy nie została otestowana z count 3.
++//
++// Sonda ×3 (CR 702.34a: opcja rzutu po dokończeniu efektu odrzucania;
++// CR 702.34: madness trafia do exile):
++//  1. batch 3, jeden madness — decyzja otwiera się po batchu, nie w środku;
++//  2. batch 3, dwa madness — kolejka: decyzje sekwencyjnie w kolejności
++//     odrzuceń, żadna nie ginie;
++//  3. batch 3, trzy madness — rzut w ŚRODKU kolejki (stać = cast,
++//     nie stać = rezygnacja), potem reszta kolejki;
++//  4. pełna droga: cast_spell Mindstab → batch p2 z madness → rezygnacja
++//     → rozstrzygnięcie kończy się bez pendingów.
++//
++// WYNIK SONDY: 1–3 poprawne; 4 ZNALAZISKO — wpis madnessQueue łapał
++// priorytet W CHWILI PUSHA (odrzucający), a nie posiadacza z PRZED
++// odrzuceniem (pending.restorePriorityTo): ten sam Mindstab kończył
++// priorytetem u różnego gracza zależnie od madnessu w ręce (ścieżka
++// zwykła = źródło czaru, CR 117.3b). Fix u root cause: restorePriorityTo
++// dziedziczone z pending (patrz comment przy pushu w game-state.js).
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { createGameState, playerView, execute, addObject } from '../src/engine/game-state.js';
++import { createCardRegistry } from '../src/cards/card-data.js';
++import { jumpToStep } from '../src/engine/turn.js';
++import { addMana } from '../src/engine/resources.js';
++
++const REGISTRY = createCardRegistry();
++
++function game(playerId = 'p1') {
++  const state = createGameState({ seed: 441, players: [{ id: 'p1' }, { id: 'p2' }] });
++  state.turn = jumpToStep(state.turn, 'main', playerId);
++  state.turn.activePlayerId = playerId;
++  state.turn.priorityPlayerId = playerId;
++  return state;
++}
++
++function putCard(state, id, cardId, controllerId = 'p1', zone = 'hand', madness = null) {
++  const def = REGISTRY.get(cardId);
++  assert.ok(def, `karta ${cardId} w rejestrze`);
++  addObject(state, {
++    id, instanceId: `i-${id}`, cardId, controllerId, ownerId: controllerId, zone,
++    kind: def.types.includes('Creature') ? 'creature' : 'spell',
++    power: def.power, toughness: def.toughness, manaCost: def.manaCost,
++    abilities: def.abilities ?? [], colors: def.colors ?? [],
++    types: def.types ?? [], keywords: def.keywords ?? [], subtypes: def.subtypes ?? [],
++    spell: def.spell,
++    ...(madness ? { madness } : {}),
++  });
++  return state.objects.get(id);
++}
++
++/** pendingDiscardChoice efektu „odrzucić 3” (kształt jak po Mindstab). */
++function batch3(state, handIds, playerId = 'p1') {
++  state.pendingDiscardChoice = {
++    playerId, count: 3, handIds: [...handIds], purpose: 'effect',
++    sourceCardId: null, restorePriorityTo: playerId,
++  };
++  state.turn.priorityPlayerId = playerId;
++}
++
++const zonesOf = (state, cardId) =>
++  [...state.objects.values()].filter((o) => o.cardId === cardId)
++    .map((o) => o.zone).sort();
++
++test('A4-1/1: batch 3 z jednym madness — decyzja po batchu, pętla nie ginie karty', () => {
++  const state = game();
++  putCard(state, 'rev', 'revolutionist', 'p1', 'hand', { cost: 4, colors: ['R'] });
++  putCard(state, 'v1', 'tenth-district-veteran', 'p1');
++  putCard(state, 'v2', 'tenth-district-veteran', 'p1');
++  putCard(state, 'v3', 'tenth-district-veteran', 'p1');
++  batch3(state, ['rev', 'v1', 'v2', 'v3']);
++
++  const r = execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardIds: ['rev', 'v1', 'v2'] });
++  assert.ok(r.ok, `batch przyjęty: ${JSON.stringify(r)}`);
++  assert.equal(state.pendingDiscardChoice, null, 'sekwencja zamknięta');
++  assert.deepEqual(zonesOf(state, 'revolutionist'), ['exile'], 'madness → exile (702.34)');
++  assert.equal(state.objects.get('v3')?.zone, 'hand', 'nieodrzucona karta zostaje w ręce');
++  assert.ok(state.pendingMadnessCast, 'decyzja madness otwarta PO batchu (702.34a)');
++  assert.equal(state.madnessQueue.length, 0, 'kolejka pusta po promocji pierwszej');
++  // Żadnego podwójnego modala: discard_choice_resolved wcześniej niż madness_ready_required.
++  assert.ok(r.events.findIndex((e) => e.type === 'discard_choice_resolved')
++    < r.events.findIndex((e) => e.type === 'madness_ready_required'));
++
++  const decline = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
++  assert.ok(decline, 'oferta rezygnacji');
++  assert.ok(execute(state, decline).ok);
++  assert.deepEqual(zonesOf(state, 'revolutionist'), ['graveyard'], 'odmowa → cmentarz');
++  assert.equal(state.pendingMadnessCast, null);
++});
++
++test('A4-1/2: batch 3 z dwoma madness — kolejka: dwie decyzje sekwencyjnie', () => {
++  const state = game();
++  putCard(state, 'rev', 'revolutionist', 'p1', 'hand', { cost: 4, colors: ['R'] });
++  putCard(state, 'ta', 'terminal-agony', 'p1', 'hand', { cost: 2, colors: ['B', 'R'] });
++  putCard(state, 'v1', 'tenth-district-veteran', 'p1');
++  batch3(state, ['rev', 'ta', 'v1']);
++
++  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardIds: ['rev', 'ta', 'v1'] }).ok);
++  assert.equal(state.zones.exile.length, 2, 'obie karty z madness w exile');
++  assert.ok(state.pendingMadnessCast, 'pierwsza decyzja otwarta');
++  assert.equal(state.madnessQueue.length, 1, 'druga czeka w kolejce');
++
++  // Kolejność decyzji = kolejność odrzuceń: najpierw rev, potem ta.
++  assert.equal(state.pendingMadnessCast.cardId, 'revolutionist');
++  const d1 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
++  assert.ok(d1 && execute(state, d1).ok);
++  assert.equal(state.pendingMadnessCast?.cardId, 'terminal-agony', 'druga decyzja po pierwszej');
++
++  const d2 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
++  assert.ok(d2 && execute(state, d2).ok);
++  assert.equal(state.pendingMadnessCast, null, 'kolejka wyczerpana');
++  assert.deepEqual(zonesOf(state, 'terminal-agony'), ['graveyard']);
++  assert.deepEqual(zonesOf(state, 'revolutionist'), ['graveyard']);
++});
++
++test('A4-1/3: batch 3 z trzema madness — rzut w środku kolejki, reszta dalej', () => {
++  const state = game();
++  putCard(state, 'rev', 'revolutionist', 'p1', 'hand', { cost: 4, colors: ['R'] });
++  putCard(state, 'ta', 'terminal-agony', 'p1', 'hand', { cost: 2, colors: ['B', 'R'] });
++  putCard(state, 'ta2', 'terminal-agony', 'p1', 'hand', { cost: 2, colors: ['B', 'R'] });
++  batch3(state, ['rev', 'ta', 'ta2']);
++
++  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardIds: ['rev', 'ta', 'ta2'] }).ok);
++
++  // Decyzja 1 (revolutionist, permanent): stać → RZUT (castPermanent z exile)
++  // — permanent idzie na STOS (ścieżka czaro-podobna, jak rebound) i
++  // wchodzi na pole po rundzie passów.
++  addMana(state, 'p1', 4, { colors: ['R'] });
++  const cast1 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && c.cast);
++  assert.ok(cast1, 'oferta rzutu (stać na {4}R)');
++  assert.ok(execute(state, cast1).ok);
++  assert.equal(state.zones.stack.length, 1, 'rzut z madness na stosie');
++  assert.equal(state.pendingMadnessCast?.cardId, 'terminal-agony', 'kolejka idzie dalej po rzucie');
++  assert.equal(state.turn.priorityPlayerId, 'p1', 'priorytet do posiadacza przed odrzuceniem (fix A4-1)');
++
++  // Decyzja 2 (terminal agony, czar z celem): bez many → TYLKO rezygnacja
++  // (oferta=walidacja L48 — cast wymaga pipy {B}{R}).
++  const offers2 = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_madness_cast');
++  assert.ok(offers2.some((c) => !c.cast), 'rezygnacja dostępna');
++  assert.ok(!offers2.some((c) => c.cast), 'cast NIE jest oferowany (brak {B}{R})');
++  assert.ok(execute(state, offers2.find((c) => !c.cast)).ok);
++
++  // Decyzja 3 (drugie terminal agony): rezygnacja.
++  assert.equal(state.pendingMadnessCast?.cardId, 'terminal-agony');
++  const d3 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
++  assert.ok(d3 && execute(state, d3).ok);
++  assert.equal(state.pendingMadnessCast, null);
++  assert.equal(state.madnessQueue.length, 0);
++
++  // Runda passów: revolutionist zamyka stos i wchodzi na pole bitwy.
++  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
++  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok);
++  assert.ok([...state.objects.values()].some((o) => o.cardId === 'revolutionist' && o.zone === 'battlefield'),
++    'revolutionist po rundzie passów na polu bitwy');
++  assert.equal(state.zones.stack.length, 0);
++});
++
++test('A4-1/4: pełna droga — cast Mindstab, batch 3 z madness, koniec bez pendingów', () => {
++  const state = game('p1');
++  putCard(state, 'mind', 'mindstab', 'p1');
++  putCard(state, 'rev', 'revolutionist', 'p2', 'hand', { cost: 4, colors: ['R'] });
++  putCard(state, 'v1', 'tenth-district-veteran', 'p2');
++  putCard(state, 'v2', 'tenth-district-veteran', 'p2');
++  addMana(state, 'p1', 6, { colors: ['B'] });
++
++  const cast = playerView(state, 'p1').legalCommands.find(
++    (c) => c.type === 'cast_spell' && c.objectId === 'mind' && c.targets?.[0] === 'p2');
++  assert.ok(cast, 'rzut Mindstab na p2 oferowany');
++  assert.ok(execute(state, cast).ok);
++
++  // Czar idzie na stos; efekt odrzucenia otwiera się po rozstrzygnięciu.
++  for (let i = 0; i < 8 && !state.pendingDiscardChoice; i++) {
++    assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
++  }
++  assert.ok(state.pendingDiscardChoice, 'decyzja odrzucenia p2 otwarta');
++  assert.equal(playerView(state, 'p2').pendingDiscardChoice.count, 3, 'pełna ręka = count 3');
++
++  const batch = execute(state, { type: 'resolve_discard_choice', playerId: 'p2', cardIds: ['rev', 'v1', 'v2'] });
++  assert.ok(batch.ok, `batch p2 przyjęty: ${JSON.stringify(batch)}`);
++  assert.ok(state.pendingMadnessCast, 'madness p2 czeka na decyzję');
++  assert.equal(state.pendingMadnessCast.playerId, 'p2');
++
++  // p2 rezygnuje — po drodze nie wolno blokować innych graczy.
++  const decline = playerView(state, 'p2').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
++  assert.ok(decline && execute(state, decline).ok);
++
++  assert.equal(state.pendingMadnessCast, null);
++  assert.equal(state.pendingDiscardChoice, null);
++  assert.equal(state.pendingSpell, null);
++  assert.equal(state.zones.stack.length, 0, 'stos pusty — Mindstab rozstrzygnięty');
++  assert.deepEqual(zonesOf(state, 'revolutionist'), ['graveyard']);
++  assert.equal(state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p2').length, 0);
++  // Priorytet wrócił do źródła efektu (p1) — gra nie stoi.
++  assert.equal(state.turn.priorityPlayerId, 'p1');
++  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, 'p1 dalej może spasować');
++});
+diff --git a/test/znaleziska-a4-triage-slabs-inspiration.test.js b/test/znaleziska-a4-triage-slabs-inspiration.test.js
+new file mode 100644
+index 0000000..c869842
+--- /dev/null
++++ b/test/znaleziska-a4-triage-slabs-inspiration.test.js
+@@ -0,0 +1,108 @@
++// A4-4 (handoff 2026-09-08k, kolejność ryzyka #4): triage Slabs / Inspiration
++// (pre-existing z sesji #106 — „potwierdzić lub zamknąć").
++//
++// WYNIKI SOND (2026-09-09, createHeuristicBot.chooseCommand na playerView):
++//
++// 1. Stomping Slabs (MOR) — „Reveal top 7 … If a card named Stomping Slabs
++//    was revealed this way, deals 7 damage to any target". Sonda: bot w main1
++//    BEZ landa w ręce RZUCAŁ Slabsy za 3 many (score = spellBase 50 > pass) —
++//    czyste przetasowanie, a thenDamage jest NIEDOSTĘPNE dla singletona
++//    (rzucana kopia leży na stosie; druga kopia nie istnieje w talii, a
++//    biblioteka jest dla bota ZASŁONIONA — view: {hidden: true} — więc
++//    warunek obrażeń nie da się nawet zweryfikować). BŁĄD POTWIERDZONY.
++//    Fix: reveal_top_to_bottom_order → DECK_ARRANGING_EFFECTS (ta sama klasa
++//    co scry/surveil: w main1 kara −60, w main2 +6 — przetasowanie przed
++//    dobieraniem jest neutralne/lekko korzystne).
++//
++// 2. Inspiration (8ED) — „Target player draws two cards" (draw_cards
++//    applyTo: 'target'). Sonda: wycena czaru dawała +2·drawCardValue
++//    NIEZALEŻNIE od odbiorcy (i nakładała WŁASNY deck-out guard na dobór
++//    przeciwnika). W 1v1 zachowanie jest ZACHOWAWCZO poprawne, bo oferty
++//    idą w kolejności [własny, przeciwnik] i remis wygrywa własny cel —
++//    sonda: 15/15 → bot celuje w siebie; 5/15 (strefa kary) → pass.
++//    Wada wyceny zostaje NAPRAWIONA u root cause (odbiorca-zależny znak:
++//    +własny / −przeciwnik, guard deck-outu tylko dla własnego doboru) —
++//    strzeże to wyceny przed przyszłą zmianą kolejności ofert. Piny poniżej
++//    są GREEN przed i po fixie (zachowanie nie zmienia się w 1v1).
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { createGameState, playerView, addObject } from '../src/engine/game-state.js';
++import { createCardRegistry } from '../src/cards/card-data.js';
++import { gameObjectDataOf } from '../src/cards/materialize.js';
++import { jumpToStep } from '../src/engine/turn.js';
++import { addMana } from '../src/engine/resources.js';
++import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
++
++const REGISTRY = createCardRegistry();
++
++function put(state, id, cardId, controllerId, zone) {
++  const def = REGISTRY.get(cardId);
++  assert.ok(def, `karta ${cardId} w rejestrze`);
++  addObject(state, {
++    ...gameObjectDataOf(def), types: def.types, keywords: def.keywords, subtypes: def.subtypes ?? [],
++    id, instanceId: `i-${id}`, cardId, ownerId: controllerId, controllerId, zone,
++  });
++  return state.objects.get(id);
++}
++
++function mainGame(seed, step = 'main') {
++  const state = createGameState({ seed, players: [{ id: 'p1' }, { id: 'p2' }] });
++  state.turn = jumpToStep(state.turn, step, 'p1');
++  state.turn.activePlayerId = 'p1';
++  state.turn.priorityPlayerId = 'p1';
++  return state;
++}
++
++// --- 1. Stomping Slabs: czyste przetasowanie nie jest wart 3 many w main1 ---
++test('A4-4/1: Slabsy w main1 bez landa — bot HOLDUJE (RED przed fixem: rzucał za 50 pkt)', () => {
++  const state = mainGame(448);
++  put(state, 'slabs', 'stomping-slabs', 'p1', 'hand');
++  for (let i = 0; i < 20; i++) put(state, `lib${i}`, 'basic-mountain', 'p1', 'library');
++  for (let i = 0; i < 15; i++) put(state, `lib2${i}`, 'basic-swamp', 'p2', 'library');
++  addMana(state, 'p1', 3);
++
++  const choice = createHeuristicBot({ seed: 448 }).chooseCommand(playerView(state, 'p1'), {});
++  assert.notEqual(choice.type, 'cast_spell',
++    `bot nie powinien rzucać Slabsów (czyste shuffle; singleton — thenDamage niedostępne): ${JSON.stringify(choice)}`);
++});
++
++test('A4-4/2: Slabsy w main2 — przetasowanie przed dobieraniem jest akceptowalne', () => {
++  const state = mainGame(449, 'main2');
++  assert.equal(state.turn.step, 'main2');
++  put(state, 'slabs', 'stomping-slabs', 'p1', 'hand');
++  for (let i = 0; i < 20; i++) put(state, `lib${i}`, 'basic-mountain', 'p1', 'library');
++  for (let i = 0; i < 15; i++) put(state, `lib2${i}`, 'basic-swamp', 'p2', 'library');
++  addMana(state, 'p1', 3);
++
++  const choice = createHeuristicBot({ seed: 449 }).chooseCommand(playerView(state, 'p1'), {});
++  // W main2 kara nie obowiązuje (+6 dla deck-arranging) — rzut legalnym wyborem.
++  assert.ok(choice.type === 'cast_spell' || choice.type === 'pass_priority',
++    `spodziewany rzut albo pass: ${JSON.stringify(choice)}`);
++  if (choice.type === 'cast_spell') assert.equal(choice.objectId, 'slabs');
++});
++
++// --- 2. Inspiration: odbiorca ma znaczenie (piny zachowania 1v1) ---
++test('A4-4/3: Inspiration 15/15 — bot celuje w SIEBIE (card advantage własny)', () => {
++  const state = mainGame(446);
++  put(state, 'ins', 'inspiration', 'p1', 'hand');
++  for (let i = 0; i < 15; i++) put(state, `lib${i}`, 'basic-mountain', 'p1', 'library');
++  for (let i = 0; i < 15; i++) put(state, `lib2${i}`, 'basic-swamp', 'p2', 'library');
++  addMana(state, 'p1', 4, { colors: ['U'] });
++
++  const choice = createHeuristicBot({ seed: 446 }).chooseCommand(playerView(state, 'p1'), {});
++  assert.equal(choice.type, 'cast_spell', `Inspiration opłaca się (dobrań +2): ${JSON.stringify(choice)}`);
++  assert.equal(choice.objectId, 'ins');
++  assert.equal(choice.targets?.[0], 'p1', 'dobrań idą do SIEBIE, nie do przeciwnika');
++});
++
++test('A4-4/4: Inspiration przy 5 kartach w bibliotece (5→3, strefa kary) — pass', () => {
++  const state = mainGame(447);
++  put(state, 'ins', 'inspiration', 'p1', 'hand');
++  for (let i = 0; i < 5; i++) put(state, `lib${i}`, 'basic-mountain', 'p1', 'library');
++  for (let i = 0; i < 15; i++) put(state, `lib2${i}`, 'basic-swamp', 'p2', 'library');
++  addMana(state, 'p1', 4, { colors: ['U'] });
++
++  const choice = createHeuristicBot({ seed: 447 }).chooseCommand(playerView(state, 'p1'), {});
++  assert.notEqual(choice.type, 'cast_spell',
++    `dobieranie w strefę deck-outu (5→3) nie opłaca się: ${JSON.stringify(choice)}`);
++});
+diff --git a/test/znaleziska-a4-vandalize-regen-aura.test.js b/test/znaleziska-a4-vandalize-regen-aura.test.js
+new file mode 100644
+index 0000000..2452cdb
+--- /dev/null
++++ b/test/znaleziska-a4-vandalize-regen-aura.test.js
+@@ -0,0 +1,183 @@
++// A4-2 (handoff 2026-09-08k, kolejność ryzyka #2): Vandalize vs aura-regen
++// (obrona przed zniszczeniem).
++//
++// Kontekst: PR #106 przepisał Vandalize „Zniszcz oba" na WSPÓLNY helper
++// destroyPermanents z `targetIndices` (jednoczesność — warunek ochrony
++// umbra w grupie), ale ścieżka ZNISZCZENIA Z ODROBIONĄ OBRONĄ (regeneracja
++// + aura na hosta) przez ten nowy API nigdy nie została otestowana:
++//  1. tryb pojedynczy: artefakt-stwór z tarczą regen + aura na nim —
++//     regen zastępuje destroy, stwór ZOSTAJE na polu, aura NADAL dołączona,
++//     stwór tapnięty (CR 701.12a/b, 701.15a), tarcza zużyta (701.15b);
++//  2. tryb „Zniszcz oba" (targetIndices): cel chroniony (regen+aura) + land
++//     — jedno rozstrzygnięcie, ochrona jednego celu NIE gniecie drugiego;
++//  3. tryb „Zniszcz oba" z WYBOREM (regen + umbra na hostach): pełne okno
++//     replacement_choice w środku sekwencji dwucelowej — obie ścieżki
++//     wyboru (regenerate / umbra) kończą spójnie z landem.
++//
++// Źródły (pobrane 2026-09-09, CR 2026-08-07):
++//  - CR 701.12/701.15 (regeneration — audyt PR #106 §1, test/regeneration.test.js),
++//  - CR 702.89a (umbra armor — mtg.wiki/page/Umbra_armor, AUDYT_PR106 §1).
++
++// WYNIK SONDY (2026-09-09): ŚCIEŻKI POPRAWNE — regen przez targetIndices
++// ratuje stwora (tapnięty, obrażenia 0, tarcza zużyta), aura NADAL dołączona
++// (regen nie zmienia strefy), drugi cel (land) ginie w tym samym
++// rozstrzygnięciu, okno wyboru (regen+umbra) otwiera się i domyka spójnie
++// w sekwencji dwucelowej. Zamknięcie uzasadnione: piny powyżej strzegą
++// wspólnego helpera destroyPermanents przed przyszłymi regresjami.
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
++import { createCardRegistry } from '../src/cards/card-data.js';
++import { gameObjectDataOf } from '../src/cards/materialize.js';
++import { jumpToStep } from '../src/engine/turn.js';
++import { addMana } from '../src/engine/resources.js';
++import { replaceObject } from '../src/engine/permanents.js';
++import { addRegenerationShield } from '../src/engine/state-based.js';
++
++const registry = createCardRegistry();
++
++function put(s, id, cardId, owner = 'p1', zone = 'battlefield') {
++  const d = registry.get(cardId);
++  assert.ok(d, cardId);
++  addObject(s, { ...gameObjectDataOf(d), types: d.types, keywords: d.keywords, id,
++    instanceId: `i-${id}`, cardId, ownerId: owner, controllerId: owner, zone });
++  return s.objects.get(id);
++}
++
++function game() {
++  const s = createGameState({ seed: 442, players: [{ id: 'p1' }, { id: 'p2' }] });
++  s.turn = jumpToStep(s.turn, 'main', 'p1');
++  s.turn.priorityPlayerId = s.turn.activePlayerId = 'p1';
++  return s;
++}
++
++/** Vandalize w ręce p1 + mana; zwraca komendę rzutu dla wskazanego trybu. */
++function castVandalize(s, modeIndex, targets) {
++  put(s, 'vandalize', 'vandalize', 'p1', 'hand');
++  addMana(s, 'p1', 5, { colors: ['R'] });
++  const cmd = playerView(s, 'p1').legalCommands.find(
++    (c) => c.type === 'cast_spell' && c.objectId === 'vandalize' && c.modeIndex === modeIndex);
++  assert.ok(cmd, `oferta trybu ${modeIndex}`);
++  const cast = { ...cmd, targets: [...targets] };
++  assert.ok(execute(s, cast).ok, 'rzut Vandalize');
++  return s;
++}
++
++function resolveStack(s) {
++  for (let i = 0; i < 30 && s.zones.stack.length && !s.pendingReplacementChoice; i++) {
++    const v = playerView(s, s.turn.priorityPlayerId);
++    const c = v.legalCommands.find((c) => c.type === 'pass_priority');
++    assert.ok(c, 'oferta pass');
++    assert.ok(execute(s, c).ok);
++  }
++}
++
++function pick(s, choice) {
++  const p = s.pendingReplacementChoice;
++  assert.ok(p, 'pendingReplacementChoice otwarte');
++  const cmd = playerView(s, p.playerId).legalCommands.find(
++    (c) => c.type === 'resolve_replacement_choice' && c.choice === choice);
++  assert.ok(cmd, `oferta ${choice}`);
++  const r = execute(s, cmd);
++  assert.ok(r.ok, JSON.stringify(r));
++  return r;
++}
++
++
++/** Po zmianie strefy id obiektu się zmienia (grave-N) — szukaj po cardId. */
++const byCard = (s, cardId) => [...s.objects.values()].filter((o) => o.cardId === cardId);
++
++// Host: Scorpion Sentinel (artefakt-stwór 1/4, FIN) + aura Hobble (−2/−2).
++function hostWithAura(s) {
++  put(s, 'art1', 'scorpion-sentinel');
++  const a = put(s, 'aura1', 'hobble');
++  replaceObject(s, a, { kind: 'aura', attachedTo: 'art1' });
++  return s;
++}
++
++test('A4-2/1: tryb „Zniszcz artefakt” — regen ratuje stwora, aura zostaje dołączona', () => {
++  const s = game();
++  hostWithAura(s);
++  addRegenerationShield(s, 'art1');
++  castVandalize(s, 0, ['art1']);
++  resolveStack(s);
++
++  const host = s.objects.get('art1');
++  assert.equal(host.zone, 'battlefield', 'regen zastąpił destroy (701.12)');
++  assert.equal(host.damage, 0);
++  assert.equal(host.tapped, true, 'regen tapuje (701.15a)');
++  assert.equal(s.objects.get('aura1')?.zone, 'battlefield', 'aura NIE odłączona (stwór nie zmienił strefy)');
++  assert.equal(s.objects.get('aura1')?.attachedTo, 'art1', 'aura nadal na hoście');
++  assert.ok(!(s.regenerationShields ?? []).includes('art1'), 'tarcza zużyta (701.15b)');
++  assert.equal(s.pendingReplacementChoice, null, 'bez okna wyboru (jedyna opcja)');
++});
++
++test('A4-2/2: tryb „Zniszcz oba” — regen na artefakcie + land ginie w tym samym efekcie', () => {
++  const s = game();
++  hostWithAura(s);
++  put(s, 'land1', 'basic-swamp', 'p2');
++  addRegenerationShield(s, 'art1');
++  castVandalize(s, 2, ['art1', 'land1']);
++  resolveStack(s);
++
++  assert.equal(s.objects.get('art1').zone, 'battlefield', 'stwór ocalały');
++  assert.equal(s.objects.get('art1').tapped, true);
++  assert.equal(s.objects.get('aura1')?.attachedTo, 'art1', 'aura nienaruszona');
++  assert.equal(byCard(s, 'basic-swamp')[0].zone, 'graveyard', 'drugi cel (land) zniszczony w tym samym rozstrzygnięciu');
++  assert.equal(s.zones.stack.length, 0);
++  assert.equal(s.pendingReplacementChoice, null);
++});
++
++test('A4-2/3a: „Zniszcz oba” z wyborem — regen+umbra: wybór REGENERACJI, aura zostaje', () => {
++  const s = game();
++  put(s, 'art1', 'scorpion-sentinel');
++  const u = put(s, 'umbra1', 'treefolk-umbra');
++  replaceObject(s, u, { kind: 'aura', attachedTo: 'art1' });
++  put(s, 'land1', 'basic-swamp', 'p2');
++  addRegenerationShield(s, 'art1');
++  castVandalize(s, 2, ['art1', 'land1']);
++  resolveStack(s);
++
++  assert.ok(s.pendingReplacementChoice, 'okno wyboru otwarte w środku sekwencji');
++  assert.deepEqual([...s.pendingReplacementChoice.options].sort(), ['regenerate', 'umbra:umbra1']);
++  pick(s, 'regenerate');
++
++  assert.equal(s.objects.get('art1').zone, 'battlefield');
++  assert.equal(s.objects.get('art1').tapped, true);
++  assert.equal(s.objects.get('umbra1')?.zone, 'battlefield', 'wybrana regen → umbra NIE zużyta');
++  assert.equal(s.objects.get('umbra1')?.attachedTo, 'art1');
++  assert.equal(byCard(s, 'basic-swamp')[0].zone, 'graveyard', 'land zniszczony niezależnie od wyboru');
++  assert.equal(s.pendingReplacementChoice, null, 'sekwencja zamknięta');
++});
++
++test('A4-2/3b: „Zniszcz oba” z wyborem — regen+umbra: wybór UMBRY, aura ginie ze stworem ocalałym', () => {
++  const s = game();
++  put(s, 'art1', 'scorpion-sentinel');
++  const u = put(s, 'umbra1', 'treefolk-umbra');
++  replaceObject(s, u, { kind: 'aura', attachedTo: 'art1' });
++  put(s, 'land1', 'basic-swamp', 'p2');
++  replaceObject(s, s.objects.get('art1'), { damage: 1 });
++  addRegenerationShield(s, 'art1');
++  castVandalize(s, 2, ['art1', 'land1']);
++  resolveStack(s);
++
++  assert.ok(s.pendingReplacementChoice);
++  pick(s, 'umbra:umbra1');
++
++  assert.equal(s.objects.get('art1').zone, 'battlefield', 'stwór ocalały (umbra)');
++  assert.equal(s.objects.get('art1').damage, 0, '702.89a: obrażenia wyciągnięte');
++  assert.equal(byCard(s, 'treefolk-umbra')[0].zone, 'graveyard', 'aura umbra zniszczona (702.89a)');
++  assert.ok((s.regenerationShields ?? []).includes('art1'), 'tarcza regen NIE zużyta (wybrana umbra)');
++  assert.equal(byCard(s, 'basic-swamp')[0].zone, 'graveyard');
++  assert.equal(s.pendingReplacementChoice, null);
++});
++
++test('A4-2/4: kontrola — bez regen stwór ginie z aurą (orphan cleanup)', () => {
++  const s = game();
++  hostWithAura(s);
++  castVandalize(s, 0, ['art1']);
++  resolveStack(s);
++  assert.equal(byCard(s, 'scorpion-sentinel')[0].zone, 'graveyard', 'bez tarczy → zniszczony');
++  assert.equal(byCard(s, 'hobble')[0].zone, 'graveyard', 'aura ginie z hostem');
++  assert.equal(s.pendingReplacementChoice, null);
++});
