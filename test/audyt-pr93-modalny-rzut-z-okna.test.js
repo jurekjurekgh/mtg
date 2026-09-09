@@ -71,6 +71,8 @@ function resolveStack(state, limit = 40) {
 function attackUnblocked(state, attackerIds) {
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   return execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
@@ -98,6 +100,10 @@ function vaanExileState(topCardId) {
   state.zones.library = ['top', ...state.zones.library.filter((id) => id !== 'top')];
   const combat = attackUnblocked(state, ['atk']);
   assert.ok(combat.ok, combat.events[0]?.reason);
+  // D: przejście atak→bloki idzie rundą passów i (poprawnie, CR 500.4)
+  // czyści pulę — mana na rzut w oknie musi być świeża, nie przepłynięta
+  // przez całą walkę (stare skoki jej nie czyściły — latentny błąd).
+  addMana(state, 'p1', 10, { colors: ['W', 'U', 'B', 'R', 'G'] });
   resolveStack(state);
   assert.ok(state.pendingExileCast, 'decyzja rzut-albo-Skarb po triggerze Vaana');
   return state;

@@ -99,6 +99,8 @@ test('Dread Warlock: nie może być blokowany poza czarnymi stworami (CR)', () =
   addCreature(state, 'white', 'p2', 2, 2, { colors: ['W'] });
   addCreature(state, 'black', 'p2', 1, 1, { colors: ['B'] });
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['dw'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   // Biały blocker nie może blokować.
   const bad = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { dw: ['white'] } });
   assert.ok(!bad.ok, 'biały stwór nie może blokować Dread Warlock');
@@ -327,6 +329,8 @@ test('Inspire Awe: prewencja obrażeń bojowych poza zaczarowanymi/enchantment-c
   // Walka: atak 3/3 nie jest zaczarowany → obrażenia zapobiegnięte.
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const before = state.players[1].life;

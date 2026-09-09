@@ -283,6 +283,7 @@ test('Zoraline: flying — nie może być zablokowana przez stwora bez latania',
   // Po rozstrzygnięciu stosu priorytet ma aktywny (p1) — pass oddaje go
   // obrońcy, który deklaruje bloki (CR 509.1).
   execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
   const blocked = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { zoraline: ['ground'] } });
   assert.equal(blocked.ok, false, 'blok bez latania powinien być odrzucony');
   // Latający blocker jest legalny.

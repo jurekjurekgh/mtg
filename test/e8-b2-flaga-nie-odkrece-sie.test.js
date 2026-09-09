@@ -1,4 +1,4 @@
-// E8/B2 (wyzwanie wyłapywacza błędów): FLAGA „NIE ODTAPUJE SIĘ" (klasa
+// E8/B2 (wyzwanie wyłapywacza błędów): FLAGA „NIE ODKRĘCA SIĘ" (klasa
 // Wavecrash Triton / Chill of the Grave — „doesn't untap during its
 // controller's next untap step") nie jest zużywana, gdy cel jest w chwili
 // untap stepu odkręcony, oraz porównuje zapisany controllerId z aktywnym

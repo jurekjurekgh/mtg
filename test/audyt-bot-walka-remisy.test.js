@@ -66,6 +66,8 @@ function stol() {
   }
   const atak = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] });
   assert.equal(atak.ok, true, 'atak zadeklarowany (harness się nie rozjechał)');
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(state.turn.step, 'declare_blockers', 'silnik prowadzi do kroku bloków');
   return state;
 }

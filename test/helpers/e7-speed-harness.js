@@ -29,6 +29,8 @@ export function attackWithCreatureForLifeLoss(state, attackerId, defenderId) {
   state.turn.priorityPlayerId = controllerId;
   state.turn.passes = 0;
   if (!execute(state, { type: 'declare_attackers', playerId: controllerId, attackerIds: [attackerId] }).ok) return false;
+  execute(state, { type: 'pass_priority', playerId: controllerId }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: defenderId });
   execute(state, { type: 'declare_blockers', playerId: defenderId, assignments: {} });
   execute(state, { type: 'pass_priority', playerId: defenderId });
   const r = execute(state, { type: 'resolve_combat', playerId: controllerId, defendingPlayerId: defenderId });

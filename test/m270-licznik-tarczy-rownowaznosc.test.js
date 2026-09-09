@@ -7,7 +7,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addCounter } from '../src/engine/counters.js';
 import { markDamage } from '../src/engine/permanents.js';
 import { destroyPermanentByEffect } from '../src/engine/effects.js';
-import { runStateBasedActions } from '../src/engine/state-based.js';
+import { runStateBasedActions, addRegenerationShield } from '../src/engine/state-based.js';
 
 /**
  * M270 błąd #8 (CR 122.1b) — licznik shield zdejmowany DWIEMA ścieżkami:
@@ -35,12 +35,22 @@ function stan() {
 const typy = (state) => state.events.map((e) => e.type);
 const ile = (state, typ) => typy(state).filter((t) => t === typ).length;
 
+// F4 (audyt PR106): decyzję buduje PRAWDZIWY przepływ (tarcza + regeneracja
+// = dwie opcje we frame), nie ręczny pending bez frame. Legacy gałąź bez
+// frame nie ma producenta i została usunięta z game-state.js.
+function stanZDecyzja() {
+  const state = stan();
+  addRegenerationShield(state, 'c');
+  destroyPermanentByEffect(state, 'c');
+  assert.ok(state.pendingReplacementChoice?.frame, 'dwie opcje = prawdziwa decyzja');
+  return state;
+}
+
 test('obie ścieżki zdejmują licznik shield i raportują counter_removed', () => {
   const przezObrazenia = stan();
   markDamage(przezObrazenia, 'c', 3);
 
-  const przezZniszczenie = stan();
-  przezZniszczenie.pendingReplacementChoice = { playerId: 'p1', objectId: 'c', cardId: 'giant-spider' };
+  const przezZniszczenie = stanZDecyzja();
   execute(przezZniszczenie, { type: 'resolve_replacement_choice', playerId: 'p1', choice: 'shield' });
 
   assert.equal(przezObrazenia.objects.get('c').counters.shield ?? 0, 0);
@@ -53,16 +63,16 @@ test('obie ścieżki zdejmują licznik shield i raportują counter_removed', () 
 });
 
 test('zdarzenia nie dublują się w strumieniu stanu', () => {
-  const state = stan();
-  state.pendingReplacementChoice = { playerId: 'p1', objectId: 'c', cardId: 'giant-spider' };
+  const state = stanZDecyzja();
+  state.events.length = 0;
   execute(state, { type: 'resolve_replacement_choice', playerId: 'p1', choice: 'shield' });
   assert.equal(ile(state, 'shield_consumed'), 1, 'dokładnie jeden wpis o zużyciu tarczy');
   assert.equal(ile(state, 'counter_removed'), 1, 'dokładnie jeden wpis o zdjęciu licznika');
 });
 
 test('komenda zwraca te same zdarzenia, które trafiły do stanu', () => {
-  const state = stan();
-  state.pendingReplacementChoice = { playerId: 'p1', objectId: 'c', cardId: 'giant-spider' };
+  const state = stanZDecyzja();
+  state.events.length = 0;
   const wynik = execute(state, { type: 'resolve_replacement_choice', playerId: 'p1', choice: 'shield' });
   assert.equal(wynik.ok, true);
   const zwrocone = wynik.events.map((e) => e.type);

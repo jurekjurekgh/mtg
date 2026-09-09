@@ -95,6 +95,9 @@ test('B: bot nadal celuje ewazją we WŁASNEGO stwora (anty-over-fix)', () => {
   put(state, { id: 'enigma', cardId: 'enter-the-enigma', controllerId: 'p2', zone: 'hand', kind: 'spell' });
   putCreature(state, 'own-c', 'p2', 2, 2);
   putCreature(state, 'enemy-c', 'p1', 2, 2);
+  // C (znalezisko testera): Enigma dobiera — biblioteka musi istnieć, żeby
+  // guard deck-outu nie wetował (setup wcześniej miał 0 kart).
+  for (let i = 0; i < 10; i++) put(state, { id: `lib${i}`, cardId: 'highland-game', controllerId: 'p2', zone: 'library', kind: 'creature' });
   const choice = choose(state);
   assert.equal(choice.type, 'cast_spell', `ewazja + dobranie na własnym stworze to dobry ruch; bot wybrał: ${JSON.stringify(choice)}`);
   assert.deepEqual(choice.targets, ['own-c']);

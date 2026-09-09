@@ -162,6 +162,8 @@ test('menace: legalny blok wymaga dwóch blokujących — walidacja i enumeracja
   addSimpleCreature(state, 'blocker2', 'p2', { summoningSickness: false });
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['mauler'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   // NIELEGALNE: pojedynczy blok na menace.
   const single = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { mauler: ['blocker1'] } });
   assert.equal(single.ok, false);
@@ -185,6 +187,8 @@ test('menace: stwór bez menace nadal można blokować pojedynczym stworem (regr
   addSimpleCreature(state, 'blocker1', 'p2', { summoningSickness: false });
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['attacker'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { attacker: ['blocker1'] } }).ok);
 });
 

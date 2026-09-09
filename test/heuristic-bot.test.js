@@ -59,6 +59,8 @@ test('bot nie atakuje wymownie pod śmiertelną wymianę i blokuje pod presją',
   defend.turn = { ...defend.turn, activePlayerId: 'p2' };
   defend.turn = jumpToStep(defend.turn, 'declare_attackers', 'p2');
   execute(defend, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['big'] });
+  execute(defend, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(defend, { type: 'pass_priority', playerId: 'p1' });
   const block = createHeuristicBot({ seed: 1 }).chooseCommand(playerView(defend, 'p1'));
   assert.equal(block.type, 'declare_blockers');
   assert.ok(Object.keys(block.assignments).length > 0, 'bot powinien ponieść blok przeciw śmiertelnemu atakowi');

@@ -192,6 +192,8 @@ function twoBlockersState(attackerPower = 5, extra = {}) {
   const b2 = state.objects.get('b2');
   state.objects.set('b2', Object.freeze({ ...b2, power: 3, toughness: 3 }));
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   return state;
@@ -304,6 +306,8 @@ test('D1: 3/3 vs pojedynczy bloker 1/1 — atakujący zadaje 3 (pełna moc, CR 5
   const { modifyStats } = await import('../src/engine/permanents.js');
   modifyStats(state, 'att', { power: 1, toughness: 2 }); // 3/3
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
@@ -323,6 +327,8 @@ test('C1: deklaracje ataku/bloków niosą cardId w zdarzeniach (LKI dla logu)', 
   assert.ok(ra.ok);
   const evA = state.events.find((e) => e.type === 'attackers_declared');
   assert.deepEqual(evA.attackerCardIds, ['goblin-piker'], 'attackers_declared niesie cardIds');
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const rb = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } });
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(rb.ok);

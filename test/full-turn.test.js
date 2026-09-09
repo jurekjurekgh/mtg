@@ -93,6 +93,7 @@ test('pełna tura przechodzi wszystkie kroki przez legalCommands', () => {
   assert.ok(attacks.some((c) => c.attackerIds.length === 1 && c.attackerIds[0] === 'p1-veteran'));
   assert.equal(attacks.some((c) => c.attackerIds.includes(cubId)), false);
   doFor(state, 'p1', 'declare_attackers'); // pierwsza oferta — deterministyczny wybór pełnego ataku nie jest wymagany
+  passRound(state); // D: okno po deklaracji (CR 508.2)
   assert.equal(state.turn.step, 'declare_blockers');
 
   doFor(state, 'p2', 'declare_blockers');
@@ -154,6 +155,7 @@ test('pełna tura jest odtwarzalna z zapisu komend', () => {
   passRound(state);
   passRound(state);
   doFor(state, 'p1', 'declare_attackers');
+  passRound(state); // D: okno po deklaracji (CR 508.2)
   doFor(state, 'p2', 'declare_blockers');
   doFor(state, 'p2', 'pass_priority'); // M172/C: okno obrońcy po blokach
   doFor(state, 'p1', 'resolve_combat');

@@ -49,6 +49,8 @@ test('M107: po deklaracji atakujących widok niesie listę i broniącego się gr
 test('M107: po deklaracji bloków widok pokazuje przypisania i zablokowanych', () => {
   const state = combatState();
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['a1', 'a2'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const blockOption = playerView(state, 'p2').legalCommands
     .find((c) => c.type === 'declare_blockers' && JSON.stringify(c).includes('b1'));
   assert.ok(blockOption, 'jest wariant bloku');

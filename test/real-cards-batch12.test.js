@@ -196,6 +196,8 @@ test('Hysterical Blindness: stwór o ujemnej mocy zadaje 0 obrażeń w combat', 
   // Ustawiamy combat: p2 atakuje stworami o ujemnej mocy.
   state.turn = jumpToStep({ ...initialTurn('p2') }, 'declare_attackers', 'p2');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['att'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p1' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const result = execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' });

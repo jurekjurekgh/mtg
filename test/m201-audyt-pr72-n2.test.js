@@ -71,6 +71,8 @@ test('M201/N2: dwóch atakujących jednocześnie — trigger piłki odpala DOKŁ
   beast(state, 'atk2', 'p2', 3, 3);
   put(state, 'ball', 'contested-game-ball', 'p1', { tapped: true });
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk1', 'atk2'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} }).ok, true);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' }).ok, true);
@@ -86,6 +88,8 @@ test('M201/N2: anty-over-fix — jeden atakujący nadal odpala trigger', () => {
   beast(state, 'atk', 'p2', 3, 3);
   put(state, 'ball', 'contested-game-ball', 'p1', { tapped: true });
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} }).ok, true);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' }).ok, true);
@@ -99,6 +103,8 @@ test('M201/N2: anty-over-fix — trigger odpala się PONOWNIE w kolejnej walce',
   beast(state, 'atk', 'p2', 3, 3);
   put(state, 'ball', 'contested-game-ball', 'p1', { tapped: true });
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} }).ok, true);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' }).ok, true);
@@ -110,6 +116,8 @@ test('M201/N2: anty-over-fix — trigger odpala się PONOWNIE w kolejnej walce',
   beast(state2, 'atk', 'p1', 3, 3);
   put(state2, 'ball', 'contested-game-ball', 'p2', { tapped: true });
   assert.equal(execute(state2, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok, true);
+  execute(state2, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state2, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(execute(state2, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok, true);
   execute(state2, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(execute(state2, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok, true);

@@ -267,6 +267,8 @@ test('Skyclave Geopede: trample — nadmiar obrażeń przechodzi na gracza', () 
   addSimpleCreature(state, 'chump', 'p2', { power: 1, toughness: 1, summoningSickness: false });
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['ge'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { ge: ['chump'] } }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const lifeBefore = state.players[1].life;
@@ -289,6 +291,8 @@ test('Skyclave Geopede: bez trample nadmiar nie przechodzi (regresja)', () => {
   addSimpleCreature(state, 'chump', 'p2', { power: 1, toughness: 1, summoningSickness: false });
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['plain'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { plain: ['chump'] } });
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const lifeBefore = state.players[1].life;

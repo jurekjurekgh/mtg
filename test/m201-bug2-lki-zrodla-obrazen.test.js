@@ -51,6 +51,8 @@ function combatState(attacker) {
 
 function fight(state, attacker, defender, attackerIds, assignments) {
   assert.equal(execute(state, { type: 'declare_attackers', playerId: attacker, attackerIds }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: attacker }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: defender });
   assert.equal(execute(state, { type: 'declare_blockers', playerId: defender, assignments }).ok, true);
   execute(state, { type: 'pass_priority', playerId: defender });
   assert.equal(execute(state, { type: 'resolve_combat', playerId: attacker, defendingPlayerId: defender }).ok, true);

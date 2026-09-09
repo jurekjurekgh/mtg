@@ -1460,7 +1460,7 @@ export function playLand(state, playerId, objectId) {
   player.landPlays -= 1;
   // M168/A (uwaga właściciela, Idyllic Grange): entersTapped w zdarzeniu ma
   // być WYNIKIEM (shouldEnterTapped), nie deskryptorem karty — Grange przy
-  // 3+ Plains wchodzi ODTAPIONY, a log mówił „wchodzi zatapnięty".
+  // 3+ Plains wchodzi ODKRĘCONY, a log mówił „wchodzi zatapnięty".
   const e = event('land_played', { playerId, fromId: objectId, object: placed, entersTapped: Boolean(shouldEnterTapped) });
   state.events.push(e);
   return e;

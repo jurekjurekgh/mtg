@@ -136,10 +136,15 @@ test('M314/3 (pin silnika): okno po triggerze — atakujący MA priorytet, pump 
     execute(state, pass);
   }
   assert.equal(state.objects.get('gw').tapped, false, 'trigger ODTAPIA Wardena');
-  // OKNO: aktywny gracz pierwszy (CR 116.3c) — aktywacja Warden dostępna
-  const view = playerView(state, 'p1');
+  // D (CR 508.2): po deklaracji krok trwa — runda passów do kroku bloków.
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(state.turn.step, 'declare_blockers');
-  assert.equal(state.turn.priorityPlayerId, 'p1', 'priorytet atakującego po rozstrzygnięciu triggera');
+  assert.equal(state.turn.priorityPlayerId, 'p2', 'w kroku bloków zaczyna obrońca');
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // obrońca nie odpowiada w oknie
+  // OKNO: atakujący po passie obrońcy — aktywacja Warden dostępna
+  const view = playerView(state, 'p1');
+  assert.equal(state.turn.priorityPlayerId, 'p1', 'priorytet atakującego w oknie przed blokami');
   const cmd = view.legalCommands.find(
     (c) => c.objectId === 'gw' && c.type === 'activate_ability' && c.targets?.[0] === 'vet',
   );
@@ -162,20 +167,24 @@ test('M314/4 (pin silnika): okno po blokach — pump #2 możliwy też w combat_d
   const r = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['vet'] });
   assert.ok(r.ok);
   assert.equal(state.zones.stack.length, 1, 'trigger na stosie (auto-cel, M242)');
-  // obrońca passuje okno na odpowiedź; PO passie atakującego trigger
-  // się rozstrzyga (CR 117.4/116.4)
-  assert.equal(state.turn.priorityPlayerId, 'p2', 'po ataku priorytet ma obrońca');
-  const pass2 = playerView(state, 'p2').legalCommands.find((c) => c.type === 'pass_priority');
+  // D (CR 508.2): po deklaracji priorytet ma AKTYWNY; pełna runda
+  // passów rozstrzyga trigger (CR 117.4/116.4)
+  assert.equal(state.turn.priorityPlayerId, 'p1', 'po ataku priorytet ma aktywny (CR 508.2)');
+  const pass2 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'pass_priority');
   execute(state, pass2);
-  assert.equal(state.zones.stack.length, 1, 'trigger wciąż na stosie — czeka na pass atakującego');
-  const pass3 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'pass_priority');
+  assert.equal(state.zones.stack.length, 1, 'trigger wciąż na stosie — czeka na pass obrońcy');
+  const pass3 = playerView(state, 'p2').legalCommands.find((c) => c.type === 'pass_priority');
   execute(state, pass3);
   assert.equal(state.objects.get('gw').tapped, false, 'trigger odtapia Wardena');
   assert.equal(state.zones.stack.length, 0, 'stos pusty po rozstrzygnięciu triggera');
-  // okno przed blokami (M314/3) — celowo POMINIĘTE: p1 pass
+  // okno po deklaracji (M314/3) — celowo POMINIĘTE: p1 pass, p2 pass
+  // (pełna runda przechodzi do kroku bloków, priorytet obrońcy)
   assert.equal(state.turn.priorityPlayerId, 'p1', 'aktywny pierwszy po rozstrzygnięciu (CR 116.3c)');
   const pass4 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'pass_priority');
   execute(state, pass4);
+  const pass4b = playerView(state, 'p2').legalCommands.find((c) => c.type === 'pass_priority');
+  execute(state, pass4b);
+  assert.equal(state.turn.step, 'declare_blockers', 'runda passów doszła do kroku bloków');
   // p2 deklaruje puste bloki
   assert.equal(state.turn.priorityPlayerId, 'p2', 'bloki deklaruje obrońca');
   const blocks = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
@@ -268,7 +277,7 @@ test('M314/5 (sesja, bez pinezki): okno z pump #2 po odtapnięciu — Veteran bi
   const { session, state } = sessionScenario({ pinned: false });
   const view = session.view();
   assert.equal(view.turn.priorityPlayerId, HUMAN_ID, 'sesja zatrzymana na człowieku');
-  assert.equal(view.turn.step, 'declare_blockers', 'okno po rozstrzygnięciu triggera, przed blokami');
+  assert.equal(view.turn.step, 'declare_attackers', 'D: okno po rozstrzygnięciu triggera, przed blokami (CR 508.2)');
   const pump2 = view.legalCommands.find(
     (c) => c.objectId === 'gw' && c.type === 'activate_ability' && c.targets?.[0] === 'vet',
   );

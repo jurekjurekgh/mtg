@@ -70,7 +70,7 @@ function bfTileText(registry, cardId) {
 test('PR98: ETB z warunkiem i typem celu — Kor Sanctifiers mówi o kickerze i celu', () => {
   const registry = createCardRegistry();
   const text = bfTileText(registry, 'kor-sanctifiers');
-  assert.match(text, /Gdy wejdzie na pole bitwy \(gdy opłacono kicker\): zniszcz cel \(artefakt lub enchantment\)\./, text.slice(0, 250));
+  assert.match(text, /Gdy wejdzie na pole bitwy \(gdy opłacono kicker\): zniszcz cel \(artefakt lub zaklęcie\)\./, text.slice(0, 250));
 });
 
 test('PR98: ETB ifCast — Geological Appraiser mówi „rzuciłeś tę kartę"', () => {

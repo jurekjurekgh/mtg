@@ -299,6 +299,8 @@ test('B53: Rust-Shield Rampager — bloker o mocy 2 nie może blokować, o mocy 
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['ram'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const options = legalBlockerOptions(state, 'p2');
   assert.ok(options.some((assignment) => (assignment.ram ?? []).includes('strong')), 'silny bloker dostępny');
   for (const assignment of options) {
@@ -553,6 +555,8 @@ test('B53: Ichorclaw Myr — zablokowany dostaje +2/+2 (raz, nawet przy 2 bloker
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['myr'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(effectivePower(state.objects.get('myr'), state), 1, 'przed blokiem 1/1');
   const block = commands(state, 'p2').find((c) => c.type === 'declare_blockers'
     && Array.isArray(c.assignments?.myr) && c.assignments.myr.includes('blk1') && c.assignments.myr.includes('blk2'));
@@ -570,6 +574,8 @@ test('B53: Ichorclaw Myr — bez bloku brak pumpu', () => {
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['myr'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
   resolveStack(state);
   assert.equal(effectivePower(state.objects.get('myr'), state), 1);

@@ -132,7 +132,7 @@ test('C2: nakładka kafla pokazuje badge czasowych stanów', () => {
       grantedKeywords: [], lostKeywordsUntilEOT: [], counters: {},
     });
     assert.match(text, /osiodłany/, 'badge saddle');
-    assert.match(text, /nie odtapuje się/, 'badge untap-lock');
+    assert.match(text, /nie odkręca się/, 'badge untap-lock');
     assert.match(text, /kontrola do końca tury/, 'badge kontroli');
     assert.match(text, /bez regeneracji/, 'badge regeneracji');
   } finally {
@@ -202,9 +202,12 @@ test('E2: bot AKTYWUJE reach, gdy broni się przed zadeklarowanym atakiem z flyi
   const state = cobraSetup('p2');
   // p1 atakuje flyerem — deklaracja ataku otwiera okno bloków p2.
   putCard(state, 'flyer', 'rustwing-falcon', 'p1', 'battlefield', { summoningSickness: false });
-  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p1', priorityPlayerId: 'p1' };
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1'); // D: skok (spójny stepIndex), nie ręczna chirurgia
+  state.turn.activePlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['flyer'] }).ok);
-  state.turn.priorityPlayerId = 'p2';
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  addMana(state, 'p2', 2, { colors: ['G'] }); // D: runda passów czyści pulę (CR 500.4) — mana kobry musi być świeża
   const view = playerView(state, 'p2');
   const reach = view.legalCommands.find((c) => c.type === 'activate_ability'
     && c.objectId === 'cobra' && c.abilityIndex === 0);
@@ -217,10 +220,14 @@ test('E2: bot AKTYWUJE reach, gdy broni się przed zadeklarowanym atakiem z flyi
 test('E3: bot AKTYWUJE deathtouch dopiero, gdy kobra jest W STARCIU (blokuje)', () => {
   const state = cobraSetup('p2');
   putCard(state, 'bigfoe', 'segmented-krotiq', 'p1', 'battlefield', { summoningSickness: false }); // 6/5
-  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p1', priorityPlayerId: 'p1' };
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1'); // D: skok (spójny stepIndex), nie ręczna chirurgia
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['bigfoe'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { bigfoe: ['cobra'] } }).ok);
   // M172/C: po deklaracji bloków priorytet ma obrońca (p2) — okno tricku.
+  addMana(state, 'p2', 2, { colors: ['G'] }); // D: runda passów czyści pulę (CR 500.4) — mana kobry musi być świeża
   const view = playerView(state, 'p2');
   const dt = view.legalCommands.find((c) => c.type === 'activate_ability'
     && c.objectId === 'cobra' && c.abilityIndex === 1);

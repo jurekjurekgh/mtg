@@ -10426,8 +10426,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     spell: {
       timing: 'instant',
       modes: [
-        { name: 'Zadaj 4 obrażenia tapped stworowi', targets: [{ type: 'tapped_creature' }], effects: [{ type: 'damage', amount: 4 }] },
-        { name: 'Zniszcz enchantment', targets: [{ type: 'enchantment' }], effects: [{ type: 'destroy_permanent' }] },
+        { name: 'Zadaj 4 obrażenia zatapniętemu stworowi', targets: [{ type: 'tapped_creature' }], effects: [{ type: 'damage', amount: 4 }] },
+        { name: 'Zniszcz zaklęcie', targets: [{ type: 'enchantment' }], effects: [{ type: 'destroy_permanent' }] },
       ],
     },
     artId: 590, plan: 'Wiedźmin',

@@ -172,7 +172,7 @@ export function createCardDeck({ cardIds, ownerId, registry }) {
     data.keywords = card.keywords ?? [];
     data.subtypes = card.subtypes ?? [];
     // Pełna linia typów (np. ['Enchantment','Creature']) — predykaty mechanik
-    // (np. „artefakt lub enchantment" triggera Kap-py) nie opierają się na kind.
+    // (np. „artefakt lub zaklęcie" triggera Kap-py) nie opierają się na kind.
     data.types = card.types ?? [];
     // Karty dwustronne (transform): dane drugiej strony do obiektu gry,
     // żeby engine mógł obrócić kartę bez znajomości registry (ADR 0002).

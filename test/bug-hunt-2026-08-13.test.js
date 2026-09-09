@@ -129,6 +129,8 @@ test('BUG5: goaded creature MOŻE blokować (CR 701.38b — goad to wymóg ataku
   addCreature(state, 'gb', 'p2', 1, 1);
   state.objects.set('gb', Object.freeze({ ...state.objects.get('gb'), goaded: true, goadedUntilTurn: state.turn.number + 2 }));
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const r = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['gb'] } });
   assert.ok(r.ok, 'goad nie ogranicza blokowania (CR 701.38b) — deklaracja przyjęta');
   assert.ok(state.combat.blockers.get('atk')?.includes('gb'), 'goadowany stwór faktycznie blokuje');

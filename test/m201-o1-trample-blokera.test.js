@@ -32,6 +32,8 @@ test('M201/O1: trample BLOKERA nie zadaje nadwyżki graczowi (CR 702.19a)', () =
   creature(state, 'blk', 'p1', 6, 6, ['trample']); // bloker 6/6 z tramplem
 
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: { atk: ['blk'] } }).ok, true);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' }).ok, true);
@@ -49,6 +51,8 @@ test('M201/O1: anty-over-fix — trample ATAKUJĄCEGO nadal przelewa nadwyżkę'
   creature(state, 'atk', 'p2', 6, 6, ['trample']);
   creature(state, 'blk', 'p1', 1, 1);
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: { atk: ['blk'] } }).ok, true);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' }).ok, true);

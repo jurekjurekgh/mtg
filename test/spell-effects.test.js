@@ -63,6 +63,8 @@ test('pump zwiększa efektywną siłę w combat, a modyfikatory gasną w cleanup
   for (let i = 0; i < 4; i += 1) execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   assert.equal(state.turn.step, 'declare_attackers');
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['rat'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });

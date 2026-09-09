@@ -555,7 +555,7 @@ function bootstrapTable() {
       return;
     }
     const lookKind = lookWizardKindOf(request, choiceView);
-    // M260/A (uwaga właściciela z PR #89): decyzja „zaglądnij?” musi zapaść
+    // M260/A (uwaga właściciela z PR #89): decyzja „zajrzyj?” musi zapaść
     // PRZED pokazaniem kart, dlatego osobny wizard (scry od razu pokazuje
     // karty — tam „look” jest obowiązkowy). Nazwa funkcji idzie po czynności,
     // nie po karcie, która ją wprowadziła (ADR 0002, M293).
@@ -1383,7 +1383,7 @@ function bootstrapTable() {
   const PHASE_LABELS = {
     // Fazy: „beginning"/„ending" pomijamy (widać sam krok — uwaga A, 2026-08-11).
     beginning: '', combat: 'Walka', ending: '',
-    untap: 'Untap', upkeep: 'Upkeep', draw: 'Dobieranie',
+    untap: 'Odkręcenie', upkeep: 'Podtrzymanie', draw: 'Dobieranie',
     precombat_main: 'Główna 1', beginning_of_combat: 'Początek walki',
     declare_attackers: 'Atak', declare_blockers: 'Blok',
     combat_damage: 'Obrażenia', end_of_combat: 'Koniec walki',

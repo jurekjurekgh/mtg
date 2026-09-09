@@ -79,6 +79,7 @@ test('instant można rzucić w oknie priorytetu przeciwnika, sorcery nie', () =>
   addObject(state, { id: 'atk', instanceId: 'ia', cardId: 'A', controllerId: 'p2', zone: 'battlefield', kind: 'creature', power: 1, toughness: 1 });
   state.turn.phase = 'combat'; state.turn.step = 'declare_attackers'; state.turn.activePlayerId = 'p2'; state.turn.priorityPlayerId = 'p2';
   execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: po deklaracji priorytet ma AKTYWNY (CR 508.2) — oddaje obrońcy
   assert.equal(state.turn.priorityPlayerId, 'p1');
   const instant = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'shock', targets: ['bear'] });
   assert.equal(instant.ok, true);

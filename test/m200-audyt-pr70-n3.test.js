@@ -80,6 +80,8 @@ test('M200/N3: pełna ścieżka — p2 atakuje p1 (kontrolera piłki), piłka pr
   beast(state, 'atk', 'p2', 3, 3);
   put(state, 'ball', 'contested-game-ball', 'p1', 'battlefield', { tapped: true });
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} }).ok, true);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   resolveCombat(state, 'p2', 'p1');
@@ -123,6 +125,8 @@ test('M200/N3: anty-over-fix — obrażenia gracza NIE kontrolującego piłkę n
   beast(state, 'atk', 'p1', 3, 3);
   put(state, 'ball', 'contested-game-ball', 'p1', 'battlefield', { tapped: true });
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok, true);
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   resolveCombat(state, 'p1', 'p2');
@@ -158,6 +162,8 @@ test('M200/O-N3: intervening-if SPEŁNIONY — trigger z warunkiem odpala (pełn
   await ballWithConditionalTrigger(state, { noSpellsLastTurn: true });
   state.lastTurnSpellsCast = 0; // warunek spełniony
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} }).ok, true);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   resolveCombat(state, 'p2', 'p1');
@@ -173,6 +179,8 @@ test('M200/O-N3: intervening-if NIESPEŁNIONY — trigger z warunkiem jest ucisz
   await ballWithConditionalTrigger(state, { noSpellsLastTurn: true });
   state.lastTurnSpellsCast = 1; // warunek niespełniony — usunięcie pre-checku nie wyłączyło warunku
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} }).ok, true);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   resolveCombat(state, 'p2', 'p1');

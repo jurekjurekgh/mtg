@@ -197,7 +197,7 @@ test('M293/6: „zajrzyj → weź land" — rezygnacja ma klucz, wybór przy pe�
     const decline = buttonWith(host, 'Zrezygnuj');
     assert.ok(decline.dataset.optionKey, 'rezygnacja domyka decyzję — klucz musi być');
     assert.match(decline.dataset.optionKey, /skip/, 'klucz rezygnacji opisuje skip, nie wybór');
-    buttonWith(host, 'Zaglądnij').click();
+    buttonWith(host, 'Zajrzyj').click();
     assert.equal(buttonWith(host, 'na wierzch biblioteki').dataset.optionKey, undefined,
       'po wyborze zostaje sorter (reszta kart) — komenda jeszcze nieznana');
   });
@@ -212,7 +212,7 @@ test('M293/7: naprawiony rozjazd — wybór landa DOMYKAJĄCY wizard niesie kluc
       onComplete: (built) => wyslane.push(built),
       probeKeyFor: (built) => `k:${JSON.stringify(built)}`,
     });
-    buttonWith(host, 'Zaglądnij').click();
+    buttonWith(host, 'Zajrzyj').click();
     const pick = buttonStarting(host, 'Island na wierzch');
     assert.ok(pick.dataset.optionKey,
       'sorter nie zapyta (zostaje jedna karta), więc ten klik zna całą komendę — '
@@ -227,7 +227,7 @@ test('M293/7: naprawiony rozjazd — wybór landa DOMYKAJĄCY wizard niesie kluc
 // 3. szczelność zachowań przeniesionych do silnika
 // ---------------------------------------------------------------------------
 
-test('M293/8: przed „Zaglądnij" UI nie zna żadnej nazwy karty (M260/A1 — rezygnacja nie może być pozorna)', () => {
+test('M293/8: przed „Zajrzyj” UI nie zna żadnej nazwy karty (M260/A1 — rezygnacja nie może być pozorna)', () => {
   scenariusz((host) => {
     renderPeekPickOrderWizard(host, {
       cards: CARDS, basicLandIds: ['l1'], sourceName: 'Źródło', onComplete: () => {},
@@ -236,7 +236,7 @@ test('M293/8: przed „Zaglądnij" UI nie zna żadnej nazwy karty (M260/A1 — r
     for (const card of CARDS) {
       assert.ok(!txt.includes(card.name), `krok decydujący o patrzeniu nie może zdradzać „${card.name}"`);
     }
-    assert.match(txt, /Zaglądnij/, 'samo zaglądanie jest opcją');
+    assert.match(txt, /Zajrzyj/, 'samo zaglądanie jest opcją');
     assert.match(txt, /Źródło/, 'nazwa źródła decyzji pochodzi z danych (M201/F)');
   });
 });
@@ -246,7 +246,7 @@ test('M293/9: dopisek i znacznik chipa pochodzą z modelu (basic land, pozycja s
     renderPeekPickOrderWizard(host, {
       cards: CARDS, basicLandIds: ['l1', 'l2'], onComplete: () => {}, onCancel: () => {},
     });
-    buttonWith(host, 'Zaglądnij').click();
+    buttonWith(host, 'Zajrzyj').click();
     let chips = chipsOf(host);
     assert.equal(chips.length, 3, 'lista obejrzanych po zajrzeniu');
     assert.match(chips[0].textContent, / · basic land/, 'eligibilne karty są oznaczone');

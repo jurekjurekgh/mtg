@@ -11,7 +11,7 @@ import { modifyStats } from '../src/engine/permanents.js';
 /**
  * T5 — regeneracja (CR 701.12): aktywacja „regenerate\" zakłada tarczę;
  * następne ZNISZCZENIE w tej turze (śmiertelne obrażenia albo efekt destroy)
- * jest zastępowane — stwór zostaje odtapowany, bez obrażeń, poza walką.
+ * jest zastępowane — stwór zostaje odkręcony, bez obrażeń, poza walką.
  * Tarcza nie chroni przed poświęceniem, prawem legend ani wytrzymałością <= 0.
  */
 
@@ -69,7 +69,7 @@ test('aktywacja regenerate zakłada tarczę (koszt many)', () => {
   assert.equal(view.legalCommands.some((c) => c.type === 'activate_ability' && c.objectId === 'guy'), false);
 });
 
-test('śmiertelne obrażenia zamiast śmierci: regeneracja — stwór zostaje odtapowany, bez obrażeń, bez dies', () => {
+test('śmiertelne obrażenia zamiast śmierci: regeneracja — stwór zostaje odkręcony, bez obrażeń, bez dies', () => {
   const state = game();
   addRegenerator(state, 'guy', 'p1', { power: 2, toughness: 2 });
   addMana(state, 'p1', 1);

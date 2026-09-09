@@ -53,6 +53,8 @@ test('BUG5: przejęty atakujący nie zadaje obrażeń bojowych', () => {
   execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] });
   takeControl(state, 'atk', 'p1');
   runStateBasedActions(state);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} });
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   const res = execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' });
@@ -66,6 +68,8 @@ test('BUG5: przejęty BLOKER wychodzi z walki (a atakujący zostaje zablokowany 
   beast(state, 'atk', 'p2', 3, 3);
   beast(state, 'blk', 'p1', 2, 2);
   execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: { atk: ['blk'] } });
   takeControl(state, 'blk', 'p2'); // atakujący przejmuje własnego blokera
   runStateBasedActions(state);
@@ -84,6 +88,8 @@ test('BUG5 (anty-over-fix): bez zmiany kontroli walka przebiega normalnie', () =
   execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] });
   runStateBasedActions(state);
   assert.deepEqual(state.combat?.attackers ?? [], ['atk']);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} });
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' });

@@ -131,6 +131,8 @@ test('B3: blok — przeciwnik z pumpem i maną, bot nie wchodzi w zabójczy blok
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p2');
   const declared = execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['theirattacker'] });
   assert.ok(declared.ok, JSON.stringify(declared.events[0]));
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
 
   const botPump = createHeuristicBot({ registry: REGISTRY, seed: 1, opponentDeck: PUMP_DECK });
   const cmdPump = botPump.chooseCommand(playerView(state, 'p1'));

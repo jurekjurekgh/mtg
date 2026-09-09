@@ -336,6 +336,8 @@ test('bestow: reach z aury pozwala gospodarzowi blokować latającego', () => {
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p2');
   state.turn.activePlayerId = 'p2';
   execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['flyer'] });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   const options = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'declare_blockers');
   const withHost = options.find((c) => (c.assignments?.flyer ?? []).includes('host'));
   assert.ok(withHost, 'gospodarz z aurem reach nie dostał opcji bloku latającego');
@@ -412,6 +414,8 @@ test('bestow: Kappa może wygnąć załączoną aurę (dla predykatu wciąż jes
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p2');
   state.turn.activePlayerId = 'p2';
   execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['kappa'] });
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} });
   execute(state, { type: 'pass_priority', playerId: 'p1' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const result = execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' });
@@ -471,6 +475,8 @@ function combatWithFlyingAttacker({ blockerKeywords = [] } = {}) {
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['flyer'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   return state;
 }
 
@@ -499,6 +505,8 @@ test('Kappa Tech-Wrecker: trigger „artifact or enchantment" wygania Dryada (en
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['kappa'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
@@ -518,6 +526,8 @@ test('Kappa Tech-Wrecker: predykat nie sięga po stwora bez typu Artifact/Enchan
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['kappa'] });
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });

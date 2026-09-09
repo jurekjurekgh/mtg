@@ -8,7 +8,11 @@ import { moveObjectDirectly } from './objects.js';
  * Aura niszczona razem z hostem nadal chroni. Każdy replacement raz (614.5).
  * Frame jest zwykłymi danymi; żadnych callbacków/ukrytego stanu w protokole. */
 export function destroyPermanents(state, ids, { cause = 'effect', putIds = [], frame = null } = {}) {
-  const work = frame ?? { ids: [...new Set(ids)], cause, putIds, choices: {}, restorePriorityTo: state.turn.priorityPlayerId };
+  // F1 (audyt PR106): przyczyna jest PER-ID. Aura dopisana przez armor jest
+  // niszczona efektem umbra (CR 702.89a + 614.6), nie pierwotną przyczyną —
+  // jej tarcza działa także, gdy hosta zabijało SBA (CR 122.1c + 614.5).
+  const work = frame ?? { ids: [...new Set(ids)], cause, putIds, choices: {}, causes: {}, restorePriorityTo: state.turn.priorityPlayerId };
+  work.causes ??= {};
   const active = state.players.findIndex(p => p.id === state.turn.activePlayerId);
   const rank = id => (state.players.findIndex(p => p.id === state.objects.get(id)?.controllerId) - active + state.players.length) % state.players.length;
   for (let i = 0; i < work.ids.length; i++) {
@@ -21,7 +25,7 @@ export function destroyPermanents(state, ids, { cause = 'effect', putIds = [], f
     if (effectiveKeywords(object,state).includes('indestructible')) { work.choices[id] = 'skip'; continue; }
     const options = [];
     if ((state.regenerationShields ?? []).includes(id) && !(state.cantBeRegeneratedThisTurn ?? []).includes(id)) options.push('regenerate');
-    if (work.cause === 'effect' && (object.counters?.shield ?? 0) > 0) options.push('shield');
+    if ((work.causes[id] ?? work.cause) === 'effect' && (object.counters?.shield ?? 0) > 0) options.push('shield');
     for (const aura of attachmentsAttachedTo(state,id)) if (aura.aura?.umbraArmor) options.push(`umbra:${aura.id}`);
     if (options.length > 1) {
       state.pendingReplacementChoice = { playerId: object.controllerId, objectId:id, cardId:object.cardId,
@@ -67,7 +71,11 @@ export function destroyPermanents(state, ids, { cause = 'effect', putIds = [], f
 }
 function expandArmor(work,id) {
   const choice=work.choices[id];
-  if (choice?.startsWith('umbra:')) { const auraId=choice.slice(6);if(!work.ids.includes(auraId))work.ids.push(auraId); }
+  // F1: override przyczyny NIESKRÓCONY do dopisania — aura już w batchu
+  // (np. własna śmierć SBA obok hosta) też jest niszczona EFEKTEM umbra
+  // (614.6), więc jej tarcza dostaje szansę (614.5), o ile decyzja dla
+  // aury jeszcze nie zapadła (kolejność APNAP; jeden event na id).
+  if (choice?.startsWith('umbra:')) { const auraId=choice.slice(6);(work.causes ??= {})[auraId]='effect';if(!work.ids.includes(auraId))work.ids.push(auraId); }
 }
 export function chooseDestructionReplacement(state,choice) {
   const pending=state.pendingReplacementChoice;

@@ -38,7 +38,8 @@ for (const [cardId, zone, wording] of [
 ]) {
   test(`M347/A: koszt wygnania ${wording} ma kompletną etykietę, nie pustą cenę`, () => {
     const label = costGroup(cardId, zone);
-    assert.ok(label.includes(`Wygnaj stwora ${wording} (koszt) —`), label);
+    assert.ok(label.includes(`wygnaj stwora ${wording} (koszt)`), label);
+    assert.ok(label.startsWith('Rzuć:'), `E: tytuł to rzut: ${label}`);
     assert.deepEqual(detectEmptyCostDescriptor([`  AKCJE: ${label}`]), [], 'znacznik opisuje funkcję wygnania, nie zapowiada kwoty');
   });
 }

@@ -214,7 +214,7 @@ const FERTILE_CARDS = [
   { id: 'fe', cardId: 'hill-giant', name: 'Hill Giant' },
 ];
 
-test('M260/A1 (wizard): decyzja „zaglądnij?” PRZED pokazaniem kart; rezygnacja = skip', () => {
+test('M260/A1 (wizard): decyzja „zajrzyj?” PRZED pokazaniem kart; rezygnacja = skip', () => {
   const host = new MiniEl('div');
   const done = [];
   renderPeekPickOrderWizard(host, {
@@ -249,7 +249,7 @@ test('M260/A2+A3 (wizard): po zajrzeniu widać karty; tylko basic landy na wierz
     onOpenCard: () => {},
     probeKeyFor: () => 'probe',
   });
-  clickByText(buttonsOf(host), 'Zaglądnij');
+  clickByText(buttonsOf(host), 'Zajrzyj');
   const looked = host.textContent;
   for (const name of ['Forest', 'Goldmeadow Nomad', 'Plains', 'Shock', 'Hill Giant']) {
     assert.ok(looked.includes(name), `po zajrzeniu widać „${name}”`);
@@ -283,7 +283,7 @@ test('M260/A2 (wizard): brak basic landów — tylko „bez landa”, cała pią
     onOpenCard: () => {},
     probeKeyFor: () => 'probe',
   });
-  clickByText(buttonsOf(host), 'Zaglądnij');
+  clickByText(buttonsOf(host), 'Zajrzyj');
   assert.equal(buttonsOf(host).filter((b) => /na wierzch/.test(b.textContent)).length, 0,
     'żadnego basic landa do wzięcia na wierzch');
   clickByText(buttonsOf(host), 'Bez basic landa');

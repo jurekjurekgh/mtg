@@ -205,6 +205,32 @@ test('Silumgar Butcher: exploit — skip (bez poświęcenia) nie odpala triggera
   assert.ok(!state.events.some((e) => e.type === 'exploited'), 'brak zdarzenia exploited');
 });
 
+test('Silumgar Butcher: exploit — ofiara-token nazywa się w logu (P4, Żywy Tester)', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const state = mainPhase(game());
+  createBattlefieldToken(state, 'p1', { cardId: 'token_spirit', name: 'Spirit', power: 1, toughness: 1 });
+  const food = [...state.objects.values()].find((o) => o.cardId === 'token_spirit' && o.zone === 'battlefield');
+  assert.ok(food, 'token na stole');
+  addRealCard(state, 'butcher', 'silumgar-butcher', 'p1', 'hand');
+  addMana(state, 'p1', 5, { colors: ['B'] });
+  execute(state, { type: 'cast_permanent', playerId: 'p1', cardId: 'silumgar-butcher', objectId: 'butcher' });
+  resolveStackToExploit(state);
+  const view = playerView(state, 'p1');
+  const sac = view.legalCommands.find((c) => c.type === 'resolve_exploit_choice' && c.targetId === food.id);
+  assert.ok(sac, 'można poświęcić token');
+  execute(state, sac);
+  const exploited = state.events.find((e) => e.type === 'exploited');
+  assert.ok(exploited, 'zdarzenie exploited');
+  assert.equal(exploited.cardId, 'token_spirit', 'ofiara jedzie z cardId zdarzenia');
+  // Obiekt tokena już nie istnieje — tekst i tak nazywa ofiarę, bez „?".
+  assert.equal(state.objects.get(exploited.exploitedId), undefined);
+  const text = describeGameEvent(exploited,
+    { nameOf: (id) => REGISTRY.get(id)?.name ?? '?', nameOfObject: (id) => REGISTRY.get(state.objects.get(id)?.cardId)?.name ?? '?' },
+    { p1: 'Ty', p2: 'Nieprzyjaciel' });
+  assert.ok(!text.includes('?'), `log bez placeholdera: ${text}`);
+  assert.match(text, /Spirit/);
+});
+
 // --- Relic Robber ------------------------------------------------------------
 
 test('Relic Robber: combat damage do gracza → TEN gracz dostaje Goblin Construct 0/1 cantBlock', () => {
@@ -215,6 +241,8 @@ test('Relic Robber: combat damage do gracza → TEN gracz dostaje Goblin Constru
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['rr'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const noBlocks = playerView(state, 'p2').legalCommands.find((c) => c.type === 'declare_blockers');
   execute(state, noBlocks);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach
@@ -252,6 +280,8 @@ test('Flurry of Wings: X tokenów Bird Soldier = liczba atakujących', () => {
   state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['a1', 'a2'] }).ok);
   // p2 bez bloków (declare_blockers), potem p1 ma priorytet w combat_damage
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const nb = playerView(state, 'p2').legalCommands.find((c) => c.type === 'declare_blockers');
   execute(state, nb);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach

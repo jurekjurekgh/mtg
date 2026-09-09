@@ -96,6 +96,8 @@ test('M245/3: opcje blokerów też mają „wszyscy minus jeden" (ta sama funkcj
   addGround(state, 'att', 'p1', 'cacophodon'); // 2/5 atakuje
   for (let i = 0; i < 7; i += 1) addGround(state, `blk${i}`, 'p2', 'highland-game'); // 7× 2/1
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const view2 = playerView(state, 'p2');
   const blockerCmds = view2.legalCommands.filter((c) => c.type === 'declare_blockers');
   const full = { att: ['blk0', 'blk1', 'blk2', 'blk3', 'blk4', 'blk5', 'blk6'] };

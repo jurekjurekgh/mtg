@@ -847,7 +847,8 @@ test('B54 shield CR122.1c: oba kierunki walki, infect/lifelink, tylko jeden licz
     addCounter(s, victim, 'shield', 2);
     s.turn = jumpToStep(s.turn, 'declare_attackers', 'p1');
     run(s, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['attacker'] });
-    s.turn.priorityPlayerId = 'p2';
+    run(s, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+    run(s, { type: 'pass_priority', playerId: 'p2' });
     run(s, { type: 'declare_blockers', playerId: 'p2', assignments: { attacker: ['blocker'] } });
     s.turn.priorityPlayerId = 'p1';
     const result = execute(s, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });

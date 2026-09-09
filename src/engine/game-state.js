@@ -64,10 +64,11 @@ function commandIdentityKey(cmd) {
 import {
   HOSTILE_TRIGGER_TARGET_EFFECTS,
   triggerEffectIsHostile,
+  triggerTargetDebuffOf,
   triggerTargetEffectFriendly,
 } from './effect-intent.js';
 
-export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetEffectFriendly };
+export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetEffectFriendly };
 
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
@@ -3371,7 +3372,10 @@ export function execute(state, input) {
       fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, cardId: moved.cardId,
       exploit: true, toZone: exploitZone,
     }));
-    state.events.push(event('exploited', { exploiterId: pending.sourceId, exploitedId: moved.id }));
+    // P4 (audyt PR106 — Żywy Tester, 2026-09-08): nazwa ofiary jedzie
+    // z cardId ZDARZENIA (jak permanent_sacrificed powyżej), bo obiekt
+    // (zwłaszcza token) może już nie istnieć — log pokazywał „Exploit: ?".
+    state.events.push(event('exploited', { exploiterId: pending.sourceId, exploitedId: moved.id, cardId: moved.cardId }));
     state.events.push(event('exploit_choice_resolved', { playerId: pending.playerId, sourceId: pending.sourceId, exploitedId: moved.id }));
     if (state.pendingExploits.length > 0) state.turn.priorityPlayerId = state.pendingExploits[0].playerId;
     else if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -3505,6 +3509,14 @@ export function execute(state, input) {
             // (jak token-kopia). CR 707.2 — kopiowalne są WSZYSTKIE cechy.
             ...(target.station ? { station: target.station } : {}),
             ...(target.saga ? { saga: target.saga } : {}),
+            // F3 (audyt PR106, CR 707.2 + 614.1d): „enters tapped” to
+            // kopiowalny tekst karty. Obiekt jest JUŻ na polu (decyzja po
+            // permanent_entered_battlefield), więc samo pole go nie tapnie —
+            // tapnięcie ustawiamy wprost. To wejście tapnięte, nie „becomes
+            // tapped” (CR 701.21a — brak zdarzenia object_tapped jest poprawny).
+            ...(copyBase.entersTapped ? { entersTapped: true } : {}),
+            ...(copyBase.entersTappedCondition ? { entersTappedCondition: copyBase.entersTappedCondition } : {}),
+            ...(copyBase.entersTapped && !copyBase.entersTappedCondition ? { tapped: true } : {}),
             // M264/2.3 (CR 712.9): kopia na KARCIE jednostronnej (Jwari —
             // zwykła karta wchodząca jako kopia) nie ma drugiej strony.
             // „If a spell or ability instructs a player to transform ... any
@@ -4801,7 +4813,17 @@ export function execute(state, input) {
         events.push(event('priority_passed', { playerId: cmd.playerId, nextPlayerId: state.turn.activePlayerId }));
       } else {
         const previousTurnNumber = state.turn.number;
+        // D (CR 508.2): tędy przechodzi TYLKO combat_damage bez atakujących
+        // (z atakującymi krok domyka resolve_combat — gałąź M255/F powyżej).
+        // Taki pusty combat trzeba sprzątnąć, bo bramka oferty deklaracji
+        // (`!state.combat`) czyta go w NASTĘPNEJ walce.
+        if (state.turn.step === 'combat_damage') state.combat = null;
         state.turn = nextTurnStep(state.turn, state.players);
+        // D (CR 508.2): wejście w bloki po rundzie passów — deklaruje OBROŃCA
+        // (nieaktywny), jak w drodze przez starą komendę i ścieżkę M257.
+        if (state.turn.step === 'declare_blockers') {
+          state.turn.priorityPlayerId = state.players.find((p) => p.id !== state.turn.activePlayerId).id;
+        }
         events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
         // CR 504.1: akcja turowa kroku dobierania — aktywny gracz dobiera
         // kartę SAM, bez decyzji i bez stosu (M101/A). Wykonujemy zaraz po
@@ -5221,13 +5243,16 @@ export function execute(state, input) {
   }
 
   if (cmd.type === 'declare_attackers') {
+    // D (znalezisko testera, CR 508.2): po deklaracji priorytet dostaje
+    // AKTYWNY gracz i następuje pełna runda priorytetów W TYM kroku
+    // (precedens M172/C dla 509.4) — dotąd skok od razu do bloków kasował
+    // obrońcy okno „gdy Bot mnie zaatakuje”. Re-deklaracja odrzucana
+    // (oferta też zniknęła — bramka `!state.combat` przy ofercie).
+    if (state.combat) return reject('attackers_already_declared');
     try {
       const e = declareAttackers(state, cmd.playerId, cmd.attackerIds);
-      const defenderId = state.players.find((player) => player.id !== cmd.playerId).id;
-      state.turn = jumpToStep(state.turn, 'declare_blockers', defenderId);
-      const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
-      state.events.push(step);
-      return accepted(state, cmd, { ok: true, events: [e, step] });
+      state.turn.priorityPlayerId = cmd.playerId;
+      return accepted(state, cmd, { ok: true, events: [e] });
     } catch (error) {
       return reject(`illegal_attackers:${error.message}`);
     }
@@ -5273,9 +5298,8 @@ export function execute(state, input) {
     }
   }
 
-  // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — tarcza albo
-  // regeneracja. Rozstrzygamy decyzję i wracamy do akcji stanowych (accepted
-  // uruchamia je ponownie), więc permanent przeżywa dokładnie jednym sposobem.
+  // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego we frame B4b
+  // (tarcza/regeneracja/umbra, APNAP, kontynuacje resolution i walki).
   if (state.pendingReplacementChoice) {
     if (cmd.type !== 'resolve_replacement_choice') return reject('replacement_choice_unresolved');
     if (cmd.playerId !== state.pendingReplacementChoice.playerId) return reject('replacement_choice_not_your_decision');
@@ -5310,45 +5334,10 @@ export function execute(state, input) {
       }
       return accepted(state,cmd,{ok:true,events:state.events.slice(before)});
     }
-    if (cmd.choice !== 'shield' && cmd.choice !== 'regenerate') return reject('illegal_replacement_choice');
-    const pending = state.pendingReplacementChoice;
-    state.pendingReplacementChoice = null;
-    const object = state.objects.get(pending.objectId);
-    const e = [];
-    if (object && object.zone === 'battlefield') {
-      // M270 (błąd #8): zdjęcie licznika shield idzie przez WSPÓLNY helper
-      // `removeCounter`, nie przez ręczne przepisanie `counters`. Bliźniacza
-      // ścieżka (markDamage w permanents.js) helpera używa, więc ta sama
-      // operacja raportowała się dwojako: przy obrażeniach log stołu pisał
-      // „traci 1 licznik shield" (counter_removed), a przy zastąpieniu
-      // zniszczenia — nic. Helper synchronizuje też rodzaj station (CR 205.1),
-      // czego ręczna ścieżka nie robiła.
-      // Kontrakt tej gałęzi: zdarzenia zbieramy do `e`, a do `state.events`
-      // trafiają RAZ, na końcu (`state.events.push(...e, resolved)`).
-      // `removeCounter` pushuje od razu, więc jego wpis wycinamy ze
-      // `state.events` i przekładamy do `e` — inaczej log miałby duplikat.
-      const zdejmijTarcze = () => {
-        if ((state.objects.get(object.id)?.counters?.shield ?? 0) > 0) {
-          const przed = state.events.length;
-          removeCounter(state, object.id, 'shield', 1);
-          e.push(...state.events.splice(przed));
-        }
-        e.push(event('shield_consumed', { objectId: object.id, cardId: object.cardId, reason: 'destroy' }));
-      };
-      if (cmd.choice === 'shield') {
-        zdejmijTarcze();
-      } else if (!tryRegenerate(state, object, e)) {
-        // Tarcza regeneracji zniknęła między kolejką a decyzją (CR 701.12) —
-        // gracz traci wybór, ale nie permanent bez powodu: zostaje tarcza.
-        zdejmijTarcze();
-      }
-    }
-    const resolved = event('replacement_choice_resolved', {
-      playerId: pending.playerId, objectId: pending.objectId, cardId: pending.cardId ?? null, choice: cmd.choice,
-    });
-    state.events.push(...e, resolved);
-    e.push(resolved);
-    return accepted(state, cmd, { ok: true, events: e });
+    // F4 (audyt PR106): legacy gałąź bez frame nie ma producenta (ostatni —
+    // stara SBA — usunięty w B4b) i została skasowana. Taki stan to błąd
+    // wewnętrzny, nie legalna decyzja — nie przepuszczamy dalej.
+    throw new Error('pendingReplacementChoice bez frame (błąd wewnętrzny)');
   }
 
   // M66 (R): rozdzielanie obrażeń combat (CR 510.1c/d) — decyzja atakującego.
@@ -6513,6 +6502,9 @@ export function playerView(state, playerId) {
     // M150/A: flaga `friendly` (pump/licznik na własnym) niesiona w komendzie,
     // żeby bot NIE celował przyjaznego pumpu w WROGIEGO stwora.
     const triggerFriendly = triggerTargetEffectFriendly(triggerTargetHead.ability);
+    // B (znalezisko testera): debuff P/T w komendzie (jak friendly z M150) —
+    // bot premiuje zabójstwo, nie największy cel.
+    const triggerDebuff = triggerTargetDebuffOf(triggerTargetHead.ability);
     // M157/F4(a): wielocelowy trigger (count > 1, „each of up to N") —
     // warianty = podzbiory celów o rozmiarze 1..count (bez powtórzeń,
     // porządek deterministyczny) + zero celów przy upTo. CAP 32 wariantów
@@ -6540,7 +6532,7 @@ export function playerView(state, playerId) {
       // pierwszy wariant pełnego rozmiaru (deterministycznie: najwcześniejsze
       // kandydaty), a wariant pusty („up to") idzie na koniec.
       for (const targetIds of variants) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}) }));
       }
     } else {
       // M203/2 (konwencja „prezentacja = enumeracja"): kandydaci w kolejności
@@ -6548,10 +6540,10 @@ export function playerView(state, playerId) {
       // pierwszą ofertę), a odmowa („up to one"/„you may") jest OSTATNIA —
       // dawniej wymuszało to odwrócenie przez unshift.
       for (const targetId of legal) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}) }));
       }
       if (triggerTargetHead.allowNone) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}) }));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMoonlitChoice) {
@@ -7377,7 +7369,9 @@ export function playerView(state, playerId) {
   }
   if (state.status === 'active' && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
       && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && state.turn.priorityPlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingEscapeExile) {
-    if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
+    // D (CR 508.2): deklaracja raz na combat — po deklaracji (state.combat)
+    // krok trwa dalej jako okno odpowiedzi, bez oferty re-deklaracji.
+    if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId && !state.combat) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {
         const key = JSON.stringify(attackerIds);

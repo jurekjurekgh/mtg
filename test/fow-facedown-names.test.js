@@ -309,7 +309,8 @@ test('BUG A: widok podziału obrażeń nie zdradza cardId zakrytych blokerów', 
   addCreature(state, 'm2', 'def', 2, 2, { faceDown: true, cardId: KROTIQ });
   state.turn = jumpToStep({ ...initialTurn('att') }, 'declare_attackers', 'att');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'att', attackerIds: ['a'] }).ok);
-  state.turn.priorityPlayerId = 'def';
+  execute(state, { type: 'pass_priority', playerId: 'att' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'def' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'def', assignments: { a: ['m1', 'm2'] } }).ok);
   state.turn.priorityPlayerId = 'att';
   const r = execute(state, { type: 'resolve_combat', playerId: 'att', defendingPlayerId: 'def' });

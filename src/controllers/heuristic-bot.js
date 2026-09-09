@@ -961,7 +961,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   const drawDeckingPenalty = (view, amount = 1) => {
     const remaining = myLibraryCount(view) - amount;
-    return remaining <= 0 ? -(P.drawCardValue * amount + 40) : 0;
+    // C (znalezisko testera, Cathartic Reunion 6→3): dobieranie w OSTATNIE
+    // karty to wyrok — magnituda M162/B „samobójstwo” (−120), bo stara kara
+    // −(6a+40) nie przebijała bazy czaru (50+18−58=+10 > pass: bot rzucał
+    // Reunion także przy 3 kartach!). Strefa krytyczna 1–3 (~2 tury
+    // naturalnych dobrań do deck-outu) schodzi pod pass (−(60+6a) bije
+    // spellBase 50 + wartość dobrań). Próg 3 nie rusza pinu Denisena
+    // (5→4 = bezpieczne, test A–F/D).
+    if (remaining <= 0) return -(120 + P.drawCardValue * amount);
+    if (remaining <= 3) return -(60 + P.drawCardValue * amount);
+    return 0;
   };
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 
@@ -2442,6 +2451,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_hand_top_choice': {
         // Odkładamy kartę z własnej RĘKI, nie dobieramy jej z biblioteki.
         // Zachowaj cenniejszą dostępną teraz; odłóż najmniej potrzebną.
+        // F5 (audyt PR106): świadome odwrócenie E2/C („najcenniejsza na
+        // wierzch”) — opóźnij najtańszą kartę, najlepszą graj od razu.
         // cardKeepValue uwzględnia także niedobór/przesyt lądów.
         const card = handCard(view, cmd.cardId);
         if (!card) return finish(0);
@@ -3244,7 +3255,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // M257-r5b/C (zgłoszenie właściciela, Awaken the Sleeper): czasowe
           // przejęcie kreatury to SZTUCZKA BOJOWA — po rozstrzygnięciu cel
-          // jest odtapnięty i ma haste (generyczny efekt), więc atakuje W
+          // jest odkręcony i ma haste (generyczny efekt), więc atakuje W
           // TEJ turze właściciela. Wcześniejsza usterka: efekt nie miał ŻADNEJ
           // wyceny — wszystkie warianty celu dostawały bazę 50 i wygrywał
           // pierwszy z enumeracji (bot przejmował pierwszą kreaturę, nie tę
@@ -4963,7 +4974,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M257-r5b/C (zgłoszenie właściciela, Awaken the Sleeper):
             // stwór POŻYCZONY — czasowa kontrola (generyczna flaga widoku z
             // efektu gain_control_until_end_of_turn; po rozstrzygnięciu cel
-            // jest odtapnięty i ma haste). JEGO śmierć to NIE jest koszt
+            // jest odkręcony i ma haste). JEGO śmierć to NIE jest koszt
             // bota: przeżyje → wraca do właściciela, zginie → WŁAŚCICIEL
             // traci permanent. Właściciel: „jak już przejął to powinien
             // zaatakować właściciela” — gałęzie downside'u go nie dotyczą.
@@ -5469,6 +5480,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // licznik +1/+1) celuje WłASNY stwór — `cmd.friendly` niesie flagę
         // wyliczoną z deskryptora efektu (generycznie, ADR 0002).
         // M157/F4(a): wariant wielocelowy — suma wycen po celach (pusty = 0).
+        // B (znalezisko testera, Prowler): wrogi debuff toughness DOBIJA —
+        // 704.5f (toughness+delta ≤ 0 ginie mimo indestructible/regen, bo to
+        // nie destroy) albo lethal z oznaczonymi obrażeniami. Liczy się tylko
+        // ZMIANA wyniku (cel żywy → martwy); dobijanie trupa to strata.
+        const debuffKills = (t) => {
+          if (cmd.debuff == null || t?.toughness == null) return false;
+          const dT = Math.min(0, cmd.debuff.toughness ?? 0);
+          if (!(dT < 0)) return false;
+          const deadAfter = t.toughness + dT <= 0 || (t.damage ?? 0) >= t.toughness + dT;
+          const deadBefore = t.toughness <= 0 || (t.damage ?? 0) >= t.toughness;
+          return deadAfter && !deadBefore;
+        };
         if (Array.isArray(cmd.targetIds)) {
           let score = 0;
           for (const id of cmd.targetIds) {
@@ -5493,9 +5516,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M167/A (Voice of the Vermin): przyjazny buff celuje
             // WSPÓŁATAKUJĄCEGO (atak trwa do końca tury — buff „on orbit").
             const attackingNow2 = (view.combat?.attackers ?? []).includes(t2.id);
+            // B: zabójstwo debuffem bije rozmiar (+60 > realny rozrzut wartości
+            // celów); zabójstwo własnego to katastrofa (−60). Bez zabójstwa
+            // dotychczasowa polityka (największy wróg).
+            const kill2 = debuffKills(t2);
             score += (cmd.friendly
               ? (t2.controllerId === view.playerId ? 30 + v2 + (attackingNow2 ? 25 : 0) : -20 - v2)
-              : (t2.controllerId === view.playerId ? -20 - v2 : 30 + v2));
+              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 : -20 - v2) : (kill2 ? 30 + v2 + 60 : 30 + v2)));
           }
           return finish(score);
         }
@@ -5517,8 +5544,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (target.controllerId === view.playerId) return finish(30 + value + (attackingNow ? 25 : 0));
           return finish(-20 - value);
         }
-        if (target.controllerId === view.playerId) return finish(-20 - value);
-        return finish(30 + value);
+        // B: jak w gałęzi wielocelowej (L41) — zabójstwo debuffem bije rozmiar.
+        const kill = debuffKills(target);
+        if (target.controllerId === view.playerId) return finish(kill ? -60 - value : -20 - value);
+        return finish(kill ? 30 + value + 60 : 30 + value);
       }
       case 'resolve_optional_trigger_choice': {
         // M167/B (Circle of the Land Druid): opcjonalny SELF-MILL tylko przy

@@ -546,7 +546,7 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
  * zostaje nazwa po CZYNNOŚCI).
  *
  * Trzy kroki, dokładnie jak w oryginale z M260:
- *  1. „Zaglądnij?" — decyduje O PATRZENIU, zanim UI pokaże JAKĄKOLWIEK nazwę
+ *  1. „Zajrzyj?" — decyduje O PATRZENIU, zanim UI pokaże JAKĄKOLWIEK nazwę
  *     karty (inaczej rezygnacja jest pozorna: gracz i tak widział karty w
  *     etykietach opcji).
  *  2. Po zajrzeniu — pełna lista obejrzanych kart (klikalne nazwy) + przycisk
@@ -571,7 +571,7 @@ export function renderPeekPickOrderWizard(host, {
     // decyzji); fallback opisuje czynność, nie kartę.
     gate: {
       intro: `${sourceName ?? 'Zajrzenie w wierzch biblioteki'} — możesz zajrzeć w ${list.length} ${polishPluralCount(list.length, 'kartę', 'karty', 'kart')} z wierzchu biblioteki.`,
-      lookLabel: 'Zaglądnij (obejrzyj karty)',
+      lookLabel: 'Zajrzyj (obejrzyj karty)',
       declineLabel: 'Zrezygnuj — nie zaglądam',
     },
     pick: {

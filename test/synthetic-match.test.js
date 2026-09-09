@@ -2,14 +2,18 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { addObject, createGameState, execute } from '../src/engine/game-state.js';
 import { initializeResources } from '../src/engine/resources.js';
+import { jumpToStep } from '../src/engine/turn.js';
 
 test('syntetyczna partia przechodzi od permanenta do combat przez protokół', () => {
   const state = createGameState({ seed: 9, players: [{ id: 'p1' }, { id: 'p2' }] });
   initializeResources(state);
-  state.turn.phase = 'combat'; state.turn.step = 'declare_attackers'; state.turn.priorityPlayerId = 'p1';
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1'); // D: skok (spójny stepIndex), nie ręczna chirurgia
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   addObject(state, { id: 'attacker', instanceId: 'ia', cardId: 'A', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 3, toughness: 2 });
   addObject(state, { id: 'blocker', instanceId: 'ib', cardId: 'B', controllerId: 'p2', zone: 'battlefield', kind: 'creature', power: 1, toughness: 1 });
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['attacker'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(state.turn.step, 'declare_blockers');
   assert.equal(state.turn.priorityPlayerId, 'p2');
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { attacker: ['blocker'] } }).ok, true);

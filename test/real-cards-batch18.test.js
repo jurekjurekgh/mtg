@@ -230,6 +230,8 @@ test('Ainok Artillerist: reach z licznika pozwala blokować latającego (i tylko
   addSimpleCreature(state, 'flyer', 'p1', { keywords: ['flying'] });
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['flyer'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const illegalBlock = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { flyer: ['ainok'] } });
   assert.equal(illegalBlock.ok, false, 'bez licznika nie wolno blokować latającego');
   state.objects.set('ainok', Object.freeze({ ...state.objects.get('ainok'), counters: { '+1/+1': 1 } }));
@@ -1021,6 +1023,8 @@ test('Hobble: czarny gospodarz nie może blokować; nie-czarny może', () => {
   addSimpleCreature(state, 'attacker', 'p1');
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['attacker'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const block = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { attacker: ['black-host'] } });
   assert.equal(block.ok, false, 'czarny gospodarz nie blokuje („can\'t block if it\'s black\")');
 
@@ -1029,6 +1033,8 @@ test('Hobble: czarny gospodarz nie może blokować; nie-czarny może', () => {
   addSimpleCreature(state2, 'attacker', 'p1');
   state2.turn = jumpToStep(state2.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state2, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['attacker'] }).ok);
+  execute(state2, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state2, { type: 'pass_priority', playerId: 'p2' });
   const okBlock = execute(state2, { type: 'declare_blockers', playerId: 'p2', assignments: { attacker: ['red-host'] } });
   assert.ok(okBlock.ok, 'nie-czarny gospodarz blokuje normalnie');
 });
@@ -1040,6 +1046,8 @@ test('Hobble: odłączenie aury znosi ograniczenia', () => {
   moveObjectDirectly(state, findId(state, 'hobble'), 'graveyard', 'grave-hobble');
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['attacker'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   const block = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { attacker: ['host'] } });
   assert.ok(block.ok, 'po odłączeniu ograniczenie znika (liczenie przy odczycie)');
 });

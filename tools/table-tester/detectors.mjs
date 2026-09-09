@@ -1142,7 +1142,9 @@ export function detectEmptyCostDescriptor(lines, { windowRecords = null } = {}) 
     // Tytuł grupy wygnania już NAZYWA koszt („wygnaj stwora ...”). „(koszt)”
     // oznacza rolę tej czynności, nie slot kwoty. Usuwamy tylko ten znacznik
     // do analizy, nie cały panel — obok może naprawdę brakować ceny/dopłaty.
-    const pricedText = line.replace(/(Wygnaj stwora z (?:grobu|pola bitwy))\s+\(koszt\)(?=\s+—)/gi, '$1');
+    // E (znalezisko testera): tytuł to teraz „Rzuć: X — wygnaj stwora ...”
+    // (znacznik na końcu, bez „ —” po nim), więc bez lookaheadu.
+    const pricedText = line.replace(/(wygnaj stwora z (?:grobu|pola bitwy))\s+\(koszt\)/gi, '$1');
     const match = pricedText.match(EMPTY_COST);
     if (!match) continue;
     push(found, 'ui',

@@ -38,8 +38,11 @@ function setupBlockedCombat(state) {
   const atk = putCard(state, 'atk', 'highland-game', 'p2');
   state.objects.set('atk', Object.freeze({ ...atk, summoningSickness: false }));
   putCard(state, 'elk', 'dawntreader-elk', 'p1', 'battlefield', { summoningSickness: false });
-  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p2', priorityPlayerId: 'p2' };
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p2'); // D: skok (spójny stepIndex), nie ręczna chirurgia
+  state.turn.activePlayerId = 'p2'; state.turn.priorityPlayerId = 'p2';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok);
+  execute(state, { type: 'pass_priority', playerId: 'p2' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: { atk: ['elk'] } }).ok);
 }
 

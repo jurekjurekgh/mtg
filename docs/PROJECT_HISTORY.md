@@ -19,6 +19,22 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-08/09 — audyt PR #106 + pętla jakości P3→P5 (PR #107)
+
+P2: audyt `docs/audits/AUDYT_PR106_2026-09-08.md` (5 findings F1–F5, CR
+tylko z pobranych źródeł). P3 (`e12428b`): F1 przyczyna destroy per-ID
+(tarcza na aurze-umbra działa przy SBA) + P5 self-review override dla
+aury już w batchu; F2 cytat 614.1d/614.12; F3 enter-as-copy i token-kopie
+niosą entersTapped (707.2+614.1d; korekta audytu: luka w tokenach też
+była); F4 martwy kod skasowany (m270×3 na frame flow); F5 cross-ref E2/C.
+Wszystko RED→GREEN + mutacje zabite. P4 (`636247b`): 5 gier żywych,
+pre-existing „Exploit: ?” naprawiony (detektory 2→0), 4 sondy silnika
+czyste (w tym damage_division+umbra i Lyre×2 z §3 audytu). P5: finał
+all 4975/4975, fast 4965/4965, build 60/3433,2 kB. PR #106 MERGED w trakcie
+sesji; fixy w PR #107 (OPEN). Handoff: `docs/setup/HANDOFF_2026-09-08k.md`.
+Jawnie otwarte: madness+discard ×3, Vandalize vs regen-aura, drugi
+atakujący PW, triage Slabs/Inspiration.
+
 ## Zgłoszenie właściciela A — odznaka animacji (2026-09-08)
 
 PlayerView niesie linkedAnimationSource, renderer pokazuje „animowany przez

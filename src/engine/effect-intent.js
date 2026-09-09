@@ -50,6 +50,23 @@ export function triggerEffectIsHostile(effect) {
   if (effect.type === 'add_counter' && HOSTILE_COUNTERS.has(effect.counter)) return true;
   return false;
 }
+/**
+ * B (znalezisko testera, Fourth Bridge Prowler): debuff P/T triggera —
+ * {power, toughness} (ujemne delty) dla efektów osłabiających stwora
+ * (`pump` / `buff_creature_until_end_of_turn` z ujemną — ten sam warunek co
+ * w triggerEffectIsHostile), inaczej null. Generyczne (ADR 0002): bot
+ * premiuje ZABÓJSTWO debuffem (704.5f), nie największy cel.
+ */
+export function triggerTargetDebuffOf(ability) {
+  const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+  for (const e of effs) {
+    if ((e?.type === 'pump' || e?.type === 'buff_creature_until_end_of_turn')
+      && ((e.power ?? 0) < 0 || (e.toughness ?? 0) < 0)) {
+      return { power: Math.min(0, e.power ?? 0), toughness: Math.min(0, e.toughness ?? 0) };
+    }
+  }
+  return null;
+}
 // Keywordy SZKODLIWE dla obdarowanego (nadanie ich wrogowi to zysk, nie strata).
 // W katalogu dziś nie występują, ale klasyfikacja „każdy grant = przyjazny"
 // bez tego zbioru byłaby pułapką przy pierwszej karcie typu „gains defender".

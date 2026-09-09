@@ -342,8 +342,8 @@ test('Scorch Spitter: trigger attacks zadaje 1 obrażeń obrońcy', () => {
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   const r = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['spit'] });
   assert.equal(r.ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: po deklaracji priorytet ma AKTYWNY (CR 508.2)
   execute(state, { type: 'pass_priority', playerId: 'p2' });
-  execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(state.players[1].life, 19);
 });
 

@@ -62,14 +62,14 @@ test('A1b: log „aktywuje zdolność” nazywa keyword po polsku (zasięg), bez
   assert.doesNotMatch(line, /nadanie słów kluczowych/, `bez ogólnika: ${line}`);
 });
 
-test('A1c: druga zdolność Cobry loguje „dotykanie śmierci”', () => {
+test('A1c: druga zdolność Cobry loguje „dotyk śmierci”', () => {
   const state = game('p2');
   putCard(state, 'cobra', 'death-hood-cobra', 'p2', 'battlefield', { summoningSickness: false });
   addMana(state, 'p2', 2, { colors: ['G'] });
   execute(state, { type: 'activate_ability', playerId: 'p2', objectId: 'cobra', abilityIndex: 1 });
   const ev = state.events.filter((e) => e.type === 'ability_activated').at(-1);
   const line = describeGameEvent(ev, HELPERS);
-  assert.match(line, /dotykanie śmierci/, `log nazywa keyword: ${line}`);
+  assert.match(line, /dotyk śmierci/, `log nazywa keyword: ${line}`);
 });
 
 // ---- A2: bot nie dubluje grantu wiszącego na stosie --------------------------
@@ -78,10 +78,12 @@ function defendingCobra() {
   const state = game('p1');
   putCard(state, 'cobra', 'death-hood-cobra', 'p2', 'battlefield', { summoningSickness: false });
   putCard(state, 'flyer', 'rustwing-falcon', 'p1', 'battlefield', { summoningSickness: false });
-  addMana(state, 'p2', 4, { colors: ['G'] });
-  state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p1', priorityPlayerId: 'p1' };
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1'); // D: skok (spójny stepIndex), nie ręczna chirurgia
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['flyer'] }).ok);
-  state.turn.priorityPlayerId = 'p2';
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  addMana(state, 'p2', 4, { colors: ['G'] }); // D: runda passów czyści pulę (CR 500.4) — mana kobry musi być świeża
   return state;
 }
 
@@ -177,5 +179,5 @@ test('A3c (regresja m168/B pełną ścieżką): Gray Slaad — badge menace+deat
   info.isBattlefield = true;
   const badges = badgesOf(info);
   assert.ok(badges.some((t) => /postrach/i.test(t)), `badge Postrach: [${badges}]`);
-  assert.ok(badges.some((t) => /dotykanie śmierci/i.test(t)), `badge Dotykanie śmierci: [${badges}]`);
+  assert.ok(badges.some((t) => /dotyk śmierci/i.test(t)), `badge Dotyk śmierci: [${badges}]`);
 });

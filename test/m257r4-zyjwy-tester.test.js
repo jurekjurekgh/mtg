@@ -86,7 +86,7 @@ test('F3-b: kafel Kappy — „Ninjutsu {1}{G}” + męska gramatyka + linia lic
     `etykieta ninjutsu bez pipa zielonego / z gramatyką żeńską: ${text}`
   );
   assert.ok(!text.includes('zatapnięta i atakująca'), `forma żeńska na karcie męskiej: ${text}`);
-  assert.ok(text.includes('Wchodzi z 1 licznikiem Dotykanie śmierci'),
+  assert.ok(text.includes('Wchodzi z 1 licznikiem Dotyk śmierci'),
     `brak linii licznika wejścia: ${text}`);
 });
 
@@ -152,7 +152,7 @@ test('F3-d: silnik — ninjutsu {1}{G} opłacalne: oferta + płatność pipem zi
 test('F1: kafle kart wchodzących z licznikami pokazują linię „Wchodzi z …”', () => {
   const cases = [
     ['trigon-of-corruption', 'Wchodzi z 3 licznikami charge'],
-    ['kappa-tech-wrecker', 'Wchodzi z 1 licznikiem Dotykanie śmierci'],
+    ['kappa-tech-wrecker', 'Wchodzi z 1 licznikiem Dotyk śmierci'],
     ['servant-of-the-scale', 'Wchodzi z 1 licznikiem +1/+1'],
     ['necrosquito', 'Wchodzi z 2 licznikami oil'],
     ['voice-of-the-vermin', 'Wchodzi z 1 licznikiem shield'],
