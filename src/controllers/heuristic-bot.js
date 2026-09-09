@@ -5562,6 +5562,42 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               ? (t2.controllerId === view.playerId ? 30 + v2 + (attackingNow2 ? 25 : 0) : -20 - v2)
               : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 : -20 - v2) : (kill2 ? 30 + v2 + 60 : 30 + v2)));
           }
+          // F-D (Inferno Titan, plan 2026-09-09): trigger wielocelowy z efektem
+          // `damage_divided` dzieli STAŁĄ sumę (`divisionTotal`) na wybrane cele,
+          // każdy ≥ 1, suma = budżet (CR 603.3d / 601.2d). Powyższa pętla wycenia
+          // każdy cel osobno (~30+wartość) i nie zna budżetu — więc brała maksymalną
+          // liczbę celów (np. 3× toughness 2), a decyzja kwot potem była zmuszona do
+          // minimalnego 1/1/1 → nikt nie ginął. Tu: korygujemy o liczbę WROGICH
+          // stworów, które daje się zabić w tym budżecie przy obowiązkowym ≥1 na cel.
+          const divTotal = view.pendingTriggerTarget?.divisionTotal;
+          if (Number.isInteger(divTotal) && divTotal >= 1 && cmd.targetIds.length > 0) {
+            const chosenCount = cmd.targetIds.length;
+            if (chosenCount > divTotal) {
+              // Nie da się dać każdemu ≥1 przy sumie równej budżetowi — taki zestaw
+              // jest nielegalny w wizardzie kwot (n ≥ 1, suma = total). Silna kara.
+              score -= 100000;
+            } else {
+              // Punkty ponad obowiązkowe 1 na cel.
+              const bonus = divTotal - chosenCount;
+              const enemyNeeds = [];
+              for (const id of cmd.targetIds) {
+                const o = objectOnBoard(view, id);
+                if (!o || o.controllerId === view.playerId) continue; // gracz/własny stwór — slot bez śmiertelności
+                // Dodatkowe obrażenia ponad bazowe 1 potrzebne do zabicia (lethal:
+                // damage + przydzielone ≥ toughness).
+                enemyNeeds.push(Math.max(0, (o.toughness ?? 0) - (o.damage ?? 0) - 1));
+              }
+              enemyNeeds.sort((a, b) => a - b);
+              let used = 0;
+              let kills = 0;
+              for (const nb of enemyNeeds) {
+                if (used + nb <= bonus) { used += nb; kills += 1; } else break;
+              }
+              // 60/zabójstwo bije różnice wartości celów (jak premia debuffa wyżej):
+              // skupiony lethal wygrywa z rozstrzeleniem 1/1/1.
+              score += 60 * kills;
+            }
+          }
           return finish(score);
         }
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
