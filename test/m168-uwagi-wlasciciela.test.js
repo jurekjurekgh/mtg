@@ -96,7 +96,7 @@ test('B1: Gray Slaad — badge menace+deathtouch przy >=4 kartach stwora w grobi
     counters: {}, powerMod: 0, toughMod: 0,
   });
   assert.ok(badges.some((t) => t.includes('Postrach')), `badge Postrach: [${badges}]`);
-  assert.ok(badges.some((t) => t.includes('Dotykanie śmierci')), `badge Dotykanie śmierci: [${badges}]`);
+  assert.ok(badges.some((t) => t.includes('Dotyk śmierci')), `badge Dotyk śmierci: [${badges}]`);
 });
 
 test('B2: modyfikatory P/T, can\'t block i utrata keywordu — badge\'e', () => {

@@ -117,7 +117,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     madness: madness ? Object.freeze({ ...madness }) : null,
     madnessReady: Boolean(madnessReady),
     // Pełna linia typów z definicji (np. ['Enchantment','Creature']) — predykaty
-    // mechanik (np. „artefakt lub enchantment") nie opierają się na samym kind.
+    // mechanik (np. „artefakt lub zaklęcie") nie opierają się na samym kind.
     types: Object.freeze([...types]),
     // Cecha z definicji (np. Rupture Spire): permanent wchodzi na pole bitwy tapped.
     entersTapped: Boolean(entersTapped),

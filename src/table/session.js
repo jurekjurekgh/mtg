@@ -225,7 +225,7 @@ function defaultBotFactory(seed, ctx) {
     explore: 'explore (odsłonięcie wierzchu biblioteki)',
     gain_life: 'zdobycie życia',
     grant_keywords_until_end_of_turn: 'nadanie słów kluczowych do końca tury',
-    lock_untap: 'cel nie odtapuje podczas następnego untap kontrolera',
+    lock_untap: 'cel nie odkręca się podczas następnego kroku odkręcania kontrolera',
     look_top_put_one_hand_rest_bottom: 'spojrzenie na karty z wierzchu — jedna do ręki, reszta na spód',
     creatures_cant_block_this_turn: 'zakaz blokowania dla stworów w tej turze',
     lose_life_enchanted_permanent_controller: 'utrata życia przez kontrolera zaczarowanego permanentu',
@@ -244,7 +244,7 @@ function defaultBotFactory(seed, ctx) {
     station_counters: 'liczniki charge ze Station',
     take_initiative: 'objęcie inicjatywy',
     transform: 'transform karty',
-    untap_permanent: 'odtapnięcie celu',
+    untap_permanent: 'odkręcenie celu',
     venture_into_undercity: 'zagłębienie w Podziemia',
     // M255/C (pętla jakości Żywym Testerem): 29 typów efektów zdolności
     // AKTYWOWANYCH nie miało tu wpisu, więc log pokazywał gołą nazwę karty
@@ -278,7 +278,7 @@ function defaultBotFactory(seed, ctx) {
     put_multicolored_creature_from_hand: 'wprowadzenie wielokolorowego stwora z ręki',
     regenerate: 'regeneracja',
     return_to_battlefield_tapped: 'powrót karty na pole bitwy (zatapnięta)',
-    return_to_battlefield_under_control_at_upkeep: 'powrót karty na pole bitwy pod twoją kontrolą (upkeep)',
+    return_to_battlefield_under_control_at_upkeep: 'powrót karty na pole bitwy pod twoją kontrolą (podtrzymanie)',
     search_library_to_battlefield_tapped: 'szukanie karty — na pole bitwy zatapniętą',
     search_library_to_hand: 'szukanie karty do ręki',
     set_saddled: 'osiodłanie',
@@ -561,7 +561,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   permanents_you_control_leave_battlefield: 'odejście twoich permanentów z pola bitwy',
   player_casts_spell: 'rzucenie czaru przez gracza',
   turned_face_up: 'odkrycie twarzy',
-  upkeep: 'krok upkeep',
+  upkeep: 'krok podtrzymania',
   when_you_cast_spell: 'rzucenie czaru',
   you_cast_noncreature_spell: 'rzucenie czaru niebędącego stworem',
   you_cast_second_spell_each_turn: 'drugi czar w turze',
@@ -654,11 +654,11 @@ export const KEYWORD_EVENT_LABELS = Object.freeze({
   toxic: 'toksyczny (combat damage graczowi = poison)',
   // M258/F3 (CR 702.21): kwantyfikator dopłaty dokleja etykieta zdarzenia.
   ward: 'ward (przeciwnik dopłaca albo czar skontrowany)',
-  echo: 'echo (zapłać w swoim upkeepie albo poświęć)',
+  echo: 'echo (zapłać w swoim podtrzymaniu albo poświęć)',
   fabricate: 'fabricate (liczniki +1/+1 albo tokeny Servo)',
   haste: 'pośpiech', flying: 'latanie', trample: 'zadeptywanie', reach: 'zasięg',
-  vigilance: 'czujność', menace: 'postrach', lifelink: 'dotykanie życia',
-  deathtouch: 'dotykanie śmierci', first_strike: 'pierwsze uderzenie',
+  vigilance: 'czujność', menace: 'postrach', lifelink: 'więź życia',
+  deathtouch: 'dotyk śmierci', first_strike: 'pierwsze uderzenie',
   double_strike: 'podwójne uderzenie', hexproof: 'hexproof', indestructible: 'niezniszczalność',
   defender: 'obrońca', flash: 'flash', infect: 'infect', persist: 'persist',
   saddled: 'osiodłanie', exalted: 'egzaltacja',
@@ -1109,7 +1109,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'spell_discount_armed':
         return `następny czar (${e.subtype ?? 'dowolny'}) w tej turze tańszy o {${e.amount ?? 2}}`;
       case 'regeneration_shield_added': return `${nameOf(e.cardId)} — tarcza regeneracji (następne zniszczenie w tej turze)`;
-      case 'permanent_regenerated': return `${nameOf(e.cardId)} zostaje zregenerowany — odtapowany, bez obrażeń`;
+      case 'permanent_regenerated': return `${nameOf(e.cardId)} zostaje zregenerowany — odkręcony, bez obrażeń`;
       case 'damage_shield_created': {
         const targetName = isPlayer(e.target)
           ? whoN(e.target) : nameOfObject(e.target);
@@ -1308,7 +1308,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // zdarzenia, inaczej log pokazywał „? zostaje zniszczony".
       case 'permanent_destroyed': {
         const name = e.cardId ? nameOf(e.cardId) : nameOfObject(e.fromId);
-        const exileSuffix = e.toZone === 'exile' ? ' — odchodzi do wygnania (licznik finality)' : '';
+        const exileSuffix = e.toZone === 'exile' ? ' — odchodzi do wygnania (licznik ostateczności)' : '';
         return `${name} zostaje zniszczony${exileSuffix}`;
       }
       // A/D: ban regeneracji (Rage of Purphoros, Expunge) — było surowe „cant_be_regenerated_set".

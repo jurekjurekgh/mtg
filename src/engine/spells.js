@@ -386,7 +386,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // validateTargets dla trybów). Teraz validateTargets spójnie sprawdza
     // minimalną moc i heksproof.
     // „Target creature with flying" / tapped/untapped (Piercing Rays):
-    // cel-stwór w stanie TAPNIĘTYM albo ODTAPNIĘTYM — oferta i walidacja
+    // cel-stwór w stanie TAPNIĘTYM albo ODKRĘCONYM — oferta i walidacja
     // spójne (L48).
     if (spec?.type === 'tapped_creature') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);

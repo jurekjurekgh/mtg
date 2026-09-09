@@ -132,7 +132,7 @@ test('C2: nakładka kafla pokazuje badge czasowych stanów', () => {
       grantedKeywords: [], lostKeywordsUntilEOT: [], counters: {},
     });
     assert.match(text, /osiodłany/, 'badge saddle');
-    assert.match(text, /nie odtapuje się/, 'badge untap-lock');
+    assert.match(text, /nie odkręca się/, 'badge untap-lock');
     assert.match(text, /kontrola do końca tury/, 'badge kontroli');
     assert.match(text, /bez regeneracji/, 'badge regeneracji');
   } finally {

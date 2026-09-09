@@ -19,7 +19,7 @@ export const POISON_LOSS_LIMIT = 10;
 
 /**
  * Regeneracja (CR 701.12): tarcza z efektu „regenerate" zastępuje następne
- * ZNISZCZENIE permanentu w tej turze — zamiast śmierci: odtappowanie,
+ * ZNISZCZENIE permanentu w tej turze — zamiast śmierci: odkręcenie,
  * zdjęcie wszystkich obrażeń, usunięcie z walki i zużycie tarczy. Chroni
  * przed śmiertelnymi obrażeniami i efektami destroy; NIE chroni przed
  * poświęceniem, prawem legend ani wytrzymałością <= 0 (to nie jest
@@ -181,7 +181,7 @@ export function runStateBasedActions(state) {
     // an effect”. Lethal/deathtouch SBA NIE zużywa licznika i nie daje
     // wyboru shield vs regenerate. Prewencja shield działa przy obrażeniach,
     // zanim trafią tu; premaked damage (np. spadek toughness) zabija normalnie.
-    // Regeneracja (CR 701.12): zniszczenie z obrażeń zastępujemy odtapowaniem,
+    // Regeneracja (CR 701.12): zniszczenie z obrażeń zastępujemy odkręceniem,
     // zdjęciem obrażeń i usunięciem z walki — stwór NIE umiera (brak dies).
     // Wytrzymałość <= 0 NIE jest zniszczeniem — regeneracja nie chroni.
 

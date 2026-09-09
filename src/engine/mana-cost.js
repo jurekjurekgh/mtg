@@ -259,7 +259,7 @@ export function canPayManaCost(parsed, sources, phyrexianPayWithLife = 0, availa
   // availableMana to producibleMana (pool + untapped), ale dla kolorów patrzymy na wszystkie
   if (totalAvailable < totalNeeded) return false;
 
-  // Sprawdź kolorowe wymagania – potrzebujemy źródeł zdolnych je pokryć (wszystkie kontrolowane, nie tylko odtapnięte)
+  // Sprawdź kolorowe wymagania – potrzebujemy źródeł zdolnych je pokryć (wszystkie kontrolowane, nie tylko odkręcone)
   // Dla uproszczenia: sources to wszystkie kontrolowane kolorowe źródła (tapped+untapped)
   if (allColoredRequirements.length === 0) return true;
 

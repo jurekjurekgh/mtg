@@ -5,7 +5,7 @@
 //
 // Rozpoznanie (sonda żywa, build ownera i branch): ścieżka jest KOMPLETNA —
 // effects.js ustawia `dontUntapNextUntapStep` + stats_modified, playerView
-// projekcjonuje flagę (M173/C), a kafel buduje badge „nie odtapuje się"
+// projekcjonuje flagę (M173/C), a kafel buduje badge „nie odkręca się"
 // (render.js, gałąź untapLockedNow). Test jest PINEM regresyjnym tej pełnej
 // ścieżki silnik → widok → nakładka kafla, żeby żaden refactor jej nie uciął
 // po cichu (klasa L1/ADR 0017: skutek bez śladu = błąd).
@@ -31,7 +31,7 @@ function putFromOracle(state, cardId, controllerId, zone, id, extra = {}) {
   return state.objects.get(id);
 }
 
-test('E7/A: Chill of the Grave — flaga w widoku i badge „nie odtapuje się" na kaflu; untap zablokowany', () => {
+test('E7/A: Chill of the Grave — flaga w widoku i badge „nie odkręca się" na kaflu; untap zablokowany', () => {
   const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
   putFromOracle(state, 'chill-of-the-grave', 'p1', 'hand', 'chill');
   // Chill dobiera: bez biblioteki stary test sprawdzał już zakończoną grę.
@@ -53,7 +53,7 @@ test('E7/A: Chill of the Grave — flaga w widoku i badge „nie odtapuje się" 
   // 2) Widok: projekcja niesie flagę (M173/C).
   const entry = playerView(state, 'p1').zones.battlefield.find((o) => o.id === 'tgt');
   assert.ok(entry?.dontUntapNextUntapStep, 'widok gracza niesie flagę');
-  // 3) Nakładka kafla: badge „nie odtapuje się" (ten sam tor co renderTableView).
+  // 3) Nakładka kafla: badge „nie odkręca się" (ten sam tor co renderTableView).
   class MiniEl {
     constructor(tag) { this.tagName = tag; this.children = []; this.className = ''; this.text = ''; this.src = ''; this.alt = ''; this.loading = ''; this.dataset = {}; }
     set textContent(v) { this.text = String(v); this.children = []; }
@@ -75,7 +75,7 @@ test('E7/A: Chill of the Grave — flaga w widoku i badge „nie odtapuje się" 
       nameOf: (cardId) => REGISTRY.get(cardId)?.name ?? cardId,
     }, 'tgt');
     const texts = el.findAll((n) => String(n.className).includes('ovl-badge')).map((n) => n.textContent);
-    assert.ok(texts.includes('nie odtapuje się'), `badge na kaflu (badges: ${JSON.stringify(texts)})`);
+    assert.ok(texts.includes('nie odkręca się'), `badge na kaflu (badges: ${JSON.stringify(texts)})`);
   } finally {
     if (oldCreate) globalThis.document.createElement = oldCreate; else delete globalThis.document.createElement;
   }

@@ -76,18 +76,18 @@ function bfTileText(registry, cardId) {
 test('PR98/upkeep: wilkołak „day" — każdy upkeep + brak czarów w poprzedniej turze', () => {
   const registry = createCardRegistry();
   const text = bfTileText(registry, 'grizzled-outcasts');
-  assert.match(text, /Na początku każdego upkeep \(gdy w poprzedniej turze nie rzucano czarów\): transform \(obróć kartę\)\./, text.slice(0, 300));
+  assert.match(text, /Na początku każdego podtrzymania \(gdy w poprzedniej turze nie rzucano czarów\): transform \(obróć kartę\)\./, text.slice(0, 300));
 });
 
 test('PR98/upkeep: wilkołak „night" — każdy upkeep + 2+ czarów z deskryptora', () => {
   const registry = createCardRegistry();
   const text = bfTileText(registry, 'krallenhorde-wantons');
-  assert.match(text, /Na początku każdego upkeep \(gdy w poprzedniej turze rzucano 2\+ czary\): transform \(obróć kartę\)\./, text.slice(0, 300));
+  assert.match(text, /Na początku każdego podtrzymania \(gdy w poprzedniej turze rzucano 2\+ czary\): transform \(obróć kartę\)\./, text.slice(0, 300));
 });
 
 test('PR98/upkeep anty-over-fix: „your upkeep" BEZ warunku nie dostaje fałszywego „gdy rzucono 2+ czary"', () => {
   const registry = createCardRegistry();
   const text = bfTileText(registry, 'veiled-ascension');
-  assert.match(text, /Na początku twojego upkeep:/, text.slice(0, 300));
+  assert.match(text, /Na początku twojego podtrzymania:/, text.slice(0, 300));
   assert.ok(!text.includes('gdy rzucono 2+ czary'), `fałszywy warunek na kaflu: ${text.slice(0, 300)}`);
 });

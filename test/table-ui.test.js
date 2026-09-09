@@ -692,7 +692,7 @@ test('wskaźnik tury (2026-08-07): stała informacja „Tura N, gracz, faza" w l
   // Uwaga A (2026-08-11): skróty „T." / „On" / „ż." — panel ma się mieścić.
   assert.match(text, /T\. 1/, `wskaźnik nie pokazuje numeru tury: ${text}`);
   assert.match(text, /Ty|On|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik nie pokazuje gracza: ${text}`);
-  assert.match(text, /Główna|Dobieranie|Upkeep|Untap|Koniec|Walka|Atak|Blok|Obrażenia/, `wskaźnik nie pokazuje fazy: ${text}`);
+  assert.match(text, /Główna|Dobieranie|Podtrzymanie|Odkręcenie|Koniec|Walka|Atak|Blok|Obrażenia/, `wskaźnik nie pokazuje fazy: ${text}`);
   // Po zagraniu wskaźnik nadal obecny (rerender nie psuje go).
   const first = pickActionButton(dom.get('actions'));
   assert.ok(first, 'brak akcji');

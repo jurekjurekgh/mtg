@@ -3255,7 +3255,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // M257-r5b/C (zgłoszenie właściciela, Awaken the Sleeper): czasowe
           // przejęcie kreatury to SZTUCZKA BOJOWA — po rozstrzygnięciu cel
-          // jest odtapnięty i ma haste (generyczny efekt), więc atakuje W
+          // jest odkręcony i ma haste (generyczny efekt), więc atakuje W
           // TEJ turze właściciela. Wcześniejsza usterka: efekt nie miał ŻADNEJ
           // wyceny — wszystkie warianty celu dostawały bazę 50 i wygrywał
           // pierwszy z enumeracji (bot przejmował pierwszą kreaturę, nie tę
@@ -4974,7 +4974,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M257-r5b/C (zgłoszenie właściciela, Awaken the Sleeper):
             // stwór POŻYCZONY — czasowa kontrola (generyczna flaga widoku z
             // efektu gain_control_until_end_of_turn; po rozstrzygnięciu cel
-            // jest odtapnięty i ma haste). JEGO śmierć to NIE jest koszt
+            // jest odkręcony i ma haste). JEGO śmierć to NIE jest koszt
             // bota: przeżyje → wraca do właściciela, zginie → WŁAŚCICIEL
             // traci permanent. Właściciel: „jak już przejął to powinien
             // zaatakować właściciela” — gałęzie downside'u go nie dotyczą.

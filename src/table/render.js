@@ -162,14 +162,14 @@ const TARGET_TYPE_LABELS = Object.freeze({
   // M166/B (Cacophodon — untap target permanent).
   permanent: 'permanent',
   artifact: 'artefakt', artifact_or_creature: 'artefakt lub stwór',
-  artifact_or_enchantment: 'artefakt lub enchantment',
-  artifact_or_enchantment_or_land: 'artefakt, enchantment lub ląd',
-  artifact_or_creature_or_enchantment: 'artefakt, stwór lub enchantment',
-  artifact_or_creature_or_land: 'artefakt, stwór lub land',
+  artifact_or_enchantment: 'artefakt lub zaklęcie',
+  artifact_or_enchantment_or_land: 'artefakt, zaklęcie lub ląd',
+  artifact_or_creature_or_enchantment: 'artefakt, stwór lub zaklęcie',
+  artifact_or_creature_or_land: 'artefakt, stwór lub ląd',
   tapped_creature: 'zatapnięty stwór',
-  untapped_creature: 'odtapnięty stwór',
+  untapped_creature: 'odkręcony stwór',
   artifact_you_control: 'twój artefakt', land: 'ląd', land_you_control: 'twój ląd',
-  enchantment: 'enchantment', nonland_permanent: 'permanent niebędący lądem',
+  enchantment: 'zaklęcie', nonland_permanent: 'permanent niebędący lądem',
   other_nonland_permanent: 'inny permanent niebędący lądem',
   nonblack_creature: 'nieczarny stwór',
   nonartifact_nonblack_creature: 'stwór niebędący artefaktem ani czarnym',
@@ -756,10 +756,10 @@ export const KEYWORD_LABELS = Object.freeze({
   toxic: 'Toksyczny (combat damage graczowi = poison)',
   // M258/F3 (CR 702.21): kwantyfikator dokleja keywordLine („Ward {2}").
   ward: 'Ward (przeciwnik dopłaca albo czar skontrowany)',
-  echo: 'Echo (w pierwszym swoim upkeepie zapłać koszt echa albo poświęć)',
+  echo: 'Echo (w pierwszym swoim podtrzymaniu zapłać koszt echa albo poświęć)',
   fabricate: 'Fabricate (przy wejściu: liczniki +1/+1 albo tokeny Servo)',
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
-  haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
+  haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Więź życia', deathtouch: 'Dotyk śmierci',
   trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie', hexproof: 'Hexproof (niecelowalność)',
   daybound: 'Daybound', nightbound: 'Nightbound', persist: 'Persist', infect: 'Infect',
   // Diament (2026-08-11): brakujące polskie etykiety keywordów — surowe
@@ -784,7 +784,7 @@ const COUNTER_LABELS = Object.freeze({
   '+1/+1': '+1/+1', '-1/-1': '-1/-1', oil: 'oil', charge: 'charge', lore: 'lore',
   // Diament cz.2: znaczniki-liczniki zdolności po polsku (było surowe
   // „deathtouch"/„lifelink"/„flying" na kaflach).
-  flying: 'Latanie', deathtouch: 'Dotykanie śmierci', lifelink: 'Dotykanie życia', finality: 'Finality',
+  flying: 'Latanie', deathtouch: 'Dotyk śmierci', lifelink: 'Więź życia', finality: 'ostateczność',
   // M126/#5 (Żywy Tester): na kaflach świeciło surowe „stun×2" (37 wystąpień
   // w audytowanych partiach) — licznik ogłuszenia z Lodestone Needle. Audyt
   // wszystkich liczników w bazie wykazał też brakujący `level` (Kabira
@@ -808,7 +808,7 @@ const DYNAMIC_AMOUNT_LABELS = Object.freeze({
 /** Rzeczownikowa fraza dla dynamicznej liczby obrażeń („tyle obrażeń, ile ..."). */
 const DYNAMIC_AMOUNT_NOUNS = Object.freeze({
   artifacts_you_control: 'artefaktów kontrolujesz',
-  basic_land_types_you_control: 'różnych podstawowych typów mają kontrolowane przez ciebie lądy (domain)',
+  basic_land_types_you_control: 'różnych podstawowych typów mają kontrolowane przez ciebie lądy (dziedzina)',
 });
 
 /** Czytelna wartość P/T tokena, także dynamiczna (greatest_power_you_control). */
@@ -923,10 +923,10 @@ function describeEffect(e) {
     gain_life_target: () => `cel zyskuje ${lifeCount(e.amount)}`,
     remove_counter: () => `usuń licznik ${e.counter}`,
     add_counter: () => `połóż licznik ${e.counter}`,
-    exile_permanent: () => 'wygnij artefakt/enchantment',
+    exile_permanent: () => 'wygnij artefakt/zaklęcie',
     tap_permanent: () => 'tap',
     lock_untap: () => 'blokada odkręcania (póki źródło zatapnięte)',
-    dont_untap_next_untap_step: () => 'nie odkręca się w następnym untap step',
+    dont_untap_next_untap_step: () => 'nie odkręca się w następnym kroku odkręcania',
     surveil: () => `surveil ${e.amount ?? 1}`,
     clash: () => 'clash',
     take_initiative: () => 'obejmij inicjatywę',
@@ -935,7 +935,7 @@ function describeEffect(e) {
     lose_life: () => `utrata ${e.amount ?? 1} życia`,
     pay_mana: () => `zapłać ${e.amount} many`,
     pay_life: () => `zapłać ${e.amount} życia`,
-    return_permanent_from_graveyard: () => `wróć nonland permanent z grobu${e.finalityCounter ? ' z finality' : ''}`,
+    return_permanent_from_graveyard: () => `wróć permanent niebędący lądem z grobu${e.finalityCounter ? ' z licznikiem ostateczności' : ''}`,
     transform: () => 'transform (obróć kartę)',
     scry: () => `scry ${e.amount ?? 1}`,
     search_library_two_cards_hand_and_grave: () => 'przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie',
@@ -1060,7 +1060,7 @@ function describeEffect(e) {
     attacker_gains_control_and_untaps: () => 'gracz, który zadał ci obrażenia bojowe, przejmuje ten artefakt i go odkręca',
     sacrifice_self_if_counters_then_treasure: () => `przy ${e.threshold ?? 5} licznikach ${e.counter ?? 'point'}: poświęć to i stwórz Skarb`,
     subtype_spells_gain_flash_and_etb_fight_this_turn: () => `w tej turze twoje czary typu ${e.subtype ?? '?'} mają flash i po wejściu mogą walczyć`,
-    lose_life_enchanted_permanent_controller: () => `kontroler zaczarowanego permanentu traci ${e.amount ?? 1} życia w swoim upkeepie`,
+    lose_life_enchanted_permanent_controller: () => `kontroler zaczarowanego permanentu traci ${e.amount ?? 1} życia w swoim podtrzymaniu`,
     your_creatures_gain_keywords_until_end_of_turn: () => `twoje stwory zdobywają ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
     creatures_cant_block_this_turn: () => {
       const except = e.exceptTypes ?? [];
@@ -1144,7 +1144,7 @@ function describeEffect(e) {
     return_creature_card_to_hand: () => 'stwór z grobu na rękę',
     return_exiled_to_battlefield: () => 'wygnane wraca na pole bitwy',
     return_to_battlefield_tapped: () => 'wróć na pole bitwy zatapnięte',
-    return_to_battlefield_under_control_at_upkeep: () => 'wróć na pole bitwy na początku upkeep',
+    return_to_battlefield_under_control_at_upkeep: () => 'wróć na pole bitwy na początku podtrzymania',
     return_with_counter: () => 'wróć na pole bitwy z licznikiem',
     reveal_hand_choose_exile: () => 'odsłoń rękę, wybierz do wygnania',
     reveal_top_put_creature: () => 'odsłoń wierzch, stwór na pole bitwy',
@@ -1488,10 +1488,10 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
     // który fałszował etykietę kartom z upkeepem bez warunku (Veiled
     // Ascension) i nie mówił „każdego" przy wilkołakach.
     const clause = triggerConditionClause(trigger);
-    const czyj = trigger.condition?.eachUpkeep ? 'każdego upkeep'
-      : trigger.condition?.enchantedPlayerUpkeep ? 'upkeep zaczarowanego gracza'
-        : trigger.condition?.enchantedPermanentControllerUpkeep ? 'upkeep kontrolera zaczarowanego permanentu'
-          : 'twojego upkeep';
+    const czyj = trigger.condition?.eachUpkeep ? 'każdego podtrzymania'
+      : trigger.condition?.enchantedPlayerUpkeep ? 'podtrzymania zaczarowanego gracza'
+        : trigger.condition?.enchantedPermanentControllerUpkeep ? 'podtrzymania kontrolera zaczarowanego permanentu'
+          : 'twojego podtrzymania';
     return `Na początku ${czyj}${clause ? ` (gdy ${clause})` : ''}: ${parts}.`;
   }
   // Czytelne opisy powszechnych triggerów (audyt żywym testerem M80) — zamiast
@@ -3671,7 +3671,7 @@ export function buildStateOverlay(visual, info) {
     // M173/C: pozostałe czasowe stany z efektów — audyt na wniosek
     // właściciela (Panic Spellbomb — klasa objęta już przez cantBlockNow).
     if (info.saddledNow) flags.push(['kw', 'osiodłany']);
-    if (info.untapLockedNow) flags.push(['kw', 'nie odtapuje się']);
+    if (info.untapLockedNow) flags.push(['kw', 'nie odkręca się']);
     if (info.tempControlNow) flags.push(['kw', 'kontrola do końca tury']);
     if (info.linkedAnimationLabel) flags.push(['kw', info.linkedAnimationLabel]);
     if (info.cantRegenerateNow) flags.push(['kw', 'bez regeneracji']);
@@ -4745,7 +4745,7 @@ export function waitingExileStatus(object) {
       ? `Impuls · zagrywalna do końca tury ${impulseWindowOf(object)}`
       : 'Impuls · zagrywalna bez płacenia');
   }
-  if (object.reboundReady) parts.push('Rebound · rzut w Twoim upkeepie');
+  if (object.reboundReady) parts.push('Rebound · rzut w Twoim podtrzymaniu');
   if (object.madnessReady) parts.push('Madness · czeka na decyzję rzutu');
   // M260/B1 (Pyxis of Pandemonium): zakryte wygnanie — status mówi, że karta
   // jest odwrócona i że odkryje ją druga zdolność źródła (permanenty wejdą
