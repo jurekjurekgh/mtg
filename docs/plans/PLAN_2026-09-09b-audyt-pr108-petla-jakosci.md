@@ -23,7 +23,7 @@ domyślna ADR 0021: audyt poprzedniego scalonego PR + pętla jakości.
 Kryterium: PR istnieje na GitHubie (ADR 0020 A), plan commity i wypchnięty
 PRZED kodowaniem. Rozpoznanie + ten plik = pierwszy commit.
 
-### B2. Audyt PR #108 (ADR 0020 B / ADR 0016) — [ ]
+### B2. Audyt PR #108 (ADR 0020 B / ADR 0016) — [X]
 Przegląd KAŻDEGO zmienionego pliku PR #108 (4 pliki):
 - **engine/reguły:** brak zmian w `src/engine` — potwierdzić grepem, że PR #108
   nie ruszył silnika ani bota (tylko `src/table/render.js` — etykiety F-A2/1);
@@ -38,6 +38,9 @@ Przegląd KAŻDEGO zmienionego pliku PR #108 (4 pliki):
 - **spójność liczb:** baseline audytu (fast 4993, build 3438,3 kB) vs mój pomiar.
 Kryterium: `docs/audits/AUDYT_PR108_2026-09-09.md` z rejestrem finding→commit;
 wynik w opisie PR; `npm test` zielone. **Bez pełnego B0** (ADR 0018).
+Wynik: `docs/audits/AUDYT_PR108_2026-09-09.md` — fix F-A2/1 poprawny
+(F9 RED→GREEN mutacją), silnik/bot nietknięte; F-B2/1 (brak domknięcia
+sesji #108), F-B2/2 (proza audytu).
 
 ### B3. Fixy findings audytu — [ ]
 Każdy finding: repro → naprawa u root cause (ADR 0002) → test + mutacja
@@ -45,7 +48,7 @@ Każdy finding: repro → naprawa u root cause (ADR 0002) → test + mutacja
 brak handoffu sesji #108) zamykam rejestrem w moim audycie + własnym
 domknięciem (B6), nie edycją historii.
 
-### B4. Pętla jakości — otwarte itemy z handoffu 09-08k — [ ]
+### B4. Pętla jakości — otwarte itemy z handoffu 09-08k — [X] (adopcja patcha)
 „Jawnie NIE robione" (kolejność wg ryzyka):
 1. madness + batch-discard ×3 (interakcja mechanik),
 2. Vandalize vs aura-regen (obrona przed zniszczeniem),
@@ -54,7 +57,11 @@ domknięciem (B6), nie edycją historii.
 4. triage Slabs / Inspiration (wycena Stomping Slabs — singleton reveal;
    Inspiration w przeciwnika — draw_cards ignoruje odbiorcę).
 Dla każdego: sonda silnika → werdykt → fix u root cause + test LUB uzasadnione
-zamknięcie. Osobny commit per item. CR wyłącznie ze źródeł pobranych w tej
+zamknięcie. Osobny commit per item.
+Wynik: właściciel wrzucił patch zawieszonej sesji 01a08611 (etap A4) —
+zweryfikowany niezależnie i zaadoptowany: `3dd5196` (madness-priorytet),
+`6a4d0e6` (piny Vandalize + PW), `e23ff89` (Slabs/Inspiration + piny C).
+Szczegóły: AUDYT_PR108 §4. CR wyłącznie ze źródeł pobranych w tej
 sesji (ADR 0030) przy każdym twierdzeniu regułowym.
 
 ### B5. Żywy Tester (docs/setup/TESTER_STOLU.md) — [ ]
