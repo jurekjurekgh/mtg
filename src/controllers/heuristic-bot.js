@@ -5231,9 +5231,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           let totalBlockerPower = 0;
           let blockerValueLost = 0;
           let blockersUsed = 0;
+          const blockerObjs = [];
           for (const blockerId of blockerIds) {
             const blocker = objectOnBoard(view, blockerId);
             if (!blocker) continue;
+            blockerObjs.push(blocker);
             blockersUsed += 1;
             totalBlockerPower += combatPower(blocker);
             const blockerDies = attackerPower >= (blocker.toughness ?? 0) - (blocker.damage ?? 0);
@@ -5242,9 +5244,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Zablokowane obrażenia = uratowane życie.
           score += attackerPower;
           stoppedDamage += attackerPower;
-          // Multi-block: atakujący ginie, gdy łączna moc blokerów >= jego
-          // wytrzymałość — to wartość usuniętego zagrożenia.
-          const attackerDies = totalBlockerPower >= attackerToughness;
+          // M153/B + F-B (finding właściciela): atakujący ginie, gdy łączna moc
+          // blokerów >= jego wytrzymałość (multi-block kill, CR 510.1) ALBO gdy
+          // któryś z żywych blokerów ma deathtouch i moc > 0 — jedno obrażenie
+          // jest śmiertelne (CR 702.4), więc pojedynczy 1/2 deathtouch zabija
+          // 4/4. Dotąd `attackerDies` liczyło tylko surową sumę mocy i bot
+          // dokładał zbędnych blokerów, choć deathtouch i tak rozstrzygał.
+          const attackerDies = diesToDeathtouchBlocker(attackerObj, blockerObjs)
+            || totalBlockerPower >= attackerToughness;
           if (attackerDies) score += attackerPower * 2 + attackerToughness;
           // Koszt: utracone blokery.
           score -= blockerValueLost;
