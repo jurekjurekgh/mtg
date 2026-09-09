@@ -9547,3 +9547,20 @@ Bramki: npm test fast 5042/5042, test:all 5052/5052, build exit 0, próbka
 regresji bota 10/10; Żywy Tester 3 świeże partie (tarkir-bg/srodziemie 777,
 innistrad-wu/theros 31415, ravnica/dominaria-wu 271828) — DET0, 0 niewyc. ruchów.
 Raport docs/audits/AUDYT_PR109_2026-09-09.md, plan 09-09c, handoff 2026-09-09b.
+
+## 2026-09-09 — znaleziska właściciela A–D (PR #111, arena/01a08788)
+
+Cztery znaleziska właściciela z testów (plan 09-09d), warstwa pokazu/wyceny bota
+— silnik/legalność już poprawna (bez zmian reguł, ADR 0030). Każde: RED→GREEN,
+commit zielony.
+- **F-A** (2645c59): Wishful Merfolk — badge nadpisanego podtypu pokazuje
+  „do końca tury"; pole widoku `subtypesBeforeOverride` + overlay w renderze.
+- **F-B** (7785e80): scoring blokowania zna deathtouch (CR 702.4) — bot blokuje
+  samą Deadly Recluse, bez zbędnego 2/2.
+- **F-C** (150f3ec): etykieta grupy `damage_assignment` opisuje czynność bez
+  licznika „(N opcji)" (jak `damage_division`).
+- **F-D** (28684b8): bot przy `damage_divided` (Inferno Titan) uwzględnia budżet
+  `divisionTotal` w wyborze liczby celów — premiuje skupiony lethal (60/zabójstwo,
+  ≥1 na cel, suma=budżet), zamiast rozstrzelać 1/1/1.
+Bramki: npm test fast 5055/5055, test:all 5065/5065, build 61/3451,3 kB, próbka
+regresji bota 10/10. Plan 09-09d, handoff 2026-09-09c, opis PR #111.

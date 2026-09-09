@@ -17,7 +17,7 @@ Każdy finding: repro/test → fix u root cause → test RED→GREEN → commit 
 
 ## Etapy (każdy = commit, zielony)
 
-### F-A. Wishful Merfolk — badge „Human do końca tury"
+### F-A. Wishful Merfolk — badge „Human do końca tury" [X]
 Objaw: aktywacja zdejmuje `defender` (badge „bez: obrońca" jest) i nadpisuje
 podtypy na `Human` do końca tury (`subtypesBeforeOverride`), ale typ-line nie
 sygnalizuje CZASOWOŚCI. Fix: overlay/live badge przy aktywnym
@@ -26,7 +26,7 @@ sygnalizuje CZASOWOŚCI. Fix: overlay/live badge przy aktywnym
 Strażnik: test overlay badge dla Wishful Merfolk (aktywacja → badge;
 czyszczenie EOT → badge znika).
 
-### F-B. Scoring blokowania nie zna deathtouch — niepotrzebne bloki
+### F-B. Scoring blokowania nie zna deathtouch — niepotrzebne bloki [X]
 Objaw: bot blokuje Deadly Recluse + drugim stworem, choć deathtouch i tak
 zabija atakującego. Root cause: gałąź `declare_blockers` liczy `attackerDies =
 totalBlockerPower >= attackerToughness` (surowa suma mocy), ignorując że
@@ -37,7 +37,7 @@ mocy ≥ wytrzymałość; nie nagradzać 2× za blok z dodanym zbędnym blokerem
 (koszt i tak naliczany). Strażnik: test — atak 4/4, blokują Deadly Recluse
 (1/2 deathtouch) vs Recluse + 2/2; bot wybiera samą Recluse.
 
-### F-C. „Rozdzielanie obrażeń bojowych (1 opcja)" — szum UI
+### F-C. „Rozdzielanie obrażeń bojowych (1 opcja)" — szum UI [X]
 Objaw: w wyborze podziału obrażeń pokazuje się „(1 opcja)" — bezsensowne.
 Root cause: `choiceGroupLabel` dla `damage_assignment` nie ma specjalnego
 przypadku (inaczej niż `damage_division`); przy trample/nadmiarze, gdy legalny
@@ -46,7 +46,7 @@ opisuje CZYNNOŚĆ (jak `damage_division`: „rozdziel obrażenia bojowe X międ
 Y"), bez licznika opcji. Strażnik: test etykiety grupy (żywy widok z 1 i z N
 opcjami).
 
-### F-D. Inferno Titan — bot rozprasza 3 obrażenia 1/1/1
+### F-D. Inferno Titan — bot rozprasza 3 obrażenia 1/1/1 [X]
 Objaw: trigger ETB/atak dzieli 3 dmg 1/1/1 na 3 cele (toughness≥2) — nikt nie
 ginie; najlepiej 3 na jednego (zabić toughness 3) albo 2+1. Root cause: wybór
 LICZBY celów (`resolve_trigger_target` wielocelowy, requiresTarget upTo 3)
@@ -72,3 +72,22 @@ albo 2+1 tak, że ktoś ginie (zamiast 1/1/1).
   próbkę regresji `node --test test/bot-benchmark.test.js`; pełne B0 na komendę
   (ADR 0018).
 - Polskie znaki w edycji — przez `python3`/`write_file`.
+
+## Podsumowanie wykonania
+
+F-A: badge nadpisania podtypu „do końca tury" (Wishful Merfolk) — pole widoku
+(ADR 0017) + overlay w renderze; strażnik test/znaleziska-a-subtype-badge.test.js.
+F-B: scoring blokowania zna deathtouch (CR 702.4) — bot blokuje samą Recluse;
+strażnik test/znaleziska-b-deathtouch-block.test.js.
+F-C: etykieta grupy `damage_assignment` opisuje czynność bez licznika
+„(N opcji)" (jak `damage_division`); strażniki w test/choice-request-ui.test.js.
+F-D: bot w `resolve_trigger_target` wielocelowym uwzględnia budżet
+`damage_divided` (`view.pendingTriggerTarget.divisionTotal`) — premiuje skupiony
+lethal (60/zabójstwo; ≥1 na cel, suma = budżet), zamiast rozstrzeliwać 1/1/1;
+strażniki test/znaleziska-d-inferno-division.test.js (RED→GREEN).
+
+Bramki (zmierzone w tej sesji): `npm test` fast 5055/5055; `npm run test:all`
+5065/5065; `npm run build` 61 modułów / 3451,3 kB; próbka regresji bota 10/10
+(node --test test/bot-benchmark.test.js).
+Commity (PR #111): F-A 2645c59, F-B 7785e80, F-C 150f3ec, F-D 28684b8.
+Domknięcie: wpis PROJECT_HISTORY, HANDOFF_2026-09-09c, opis PR #111.
