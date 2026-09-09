@@ -4026,7 +4026,16 @@ export function execute(state, input) {
         // otwarcie blokowało kolejne odrzucania w tym samym efekcie.
         state.madnessQueue.push({
           playerId: pending.playerId, objectId: exileId, cardId: moved.cardId,
-          restorePriorityTo: state.turn.priorityPlayerId,
+          // A4-1 (handoff 09-08k, madness+batch-discard ×3): priorytet po
+          // decyzji madness wraca do posiadacza Z PRZED odrzuceniem
+          // (pending.restorePriorityTo — ustawione przy tworzeniu
+          // pendingDiscardChoice), NIE do odrzucającego (priorytet w chwili
+          // pusha = on sam). Celowane odrzucenie (Mindstab) dotąd kończyło
+          // tym samym czarem priorytet w innym miejscu zależnie od tego,
+          // czy odrzucona karta miała madness: ścieżka zwykła oddawała go
+          // źródłu czaru (restorePriorityTo, CR 117.3b), ścieżka madness —
+          // odrzucającemu.
+          restorePriorityTo: pending.restorePriorityTo ?? state.turn.priorityPlayerId,
         });
       } else {
         const graveId = `grave-${state.objectSequence++}`;
