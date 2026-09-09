@@ -150,10 +150,10 @@ test('D: pauza i render przy zejściu stunów i pierwszym untapie po stunie', ()
   while (session.state.status === 'active' && guard++ < 900) {
     if (session.botPausePending) {
       const texts = session.botMoves.map((m) => m.text ?? '');
-      if (texts.some((x) => x.includes('licznik stun'))) {
+      if (texts.some((x) => x.includes('licznik ogłuszenia'))) {
         seen.push({ kind: 'stun-removed', obj: session.state.objects.get('stunned') });
       }
-      if (texts.some((x) => x.includes('odkręca się (koniec liczników stun)'))) {
+      if (texts.some((x) => x.includes('odkręca się (koniec liczników ogłuszenia)'))) {
         seen.push({ kind: 'untap-visible', obj: session.state.objects.get('stunned') });
       }
       session.clearBotMoves();
@@ -169,9 +169,9 @@ test('D: pauza i render przy zejściu stunów i pierwszym untapie po stunie', ()
   }
 
   assert.equal(seen.filter((s) => s.kind === 'stun-removed').length, 2,
-    'dwa upkeepy ze zdjęciem licznika stun = dwie pauzy z widocznym licznikiem');
+    'dwa upkeepy ze zdjęciem licznika ogłuszenia = dwie pauzy z widocznym licznikiem');
   const untap = seen.find((s) => s.kind === 'untap-visible');
-  assert.ok(untap, 'pauza „odkręca się (koniec liczników stun)" w trzecim upkeepie');
+  assert.ok(untap, 'pauza „odkręca się (koniec liczników ogłuszenia)" w trzecim upkeepie');
   assert.equal(untap.obj.tapped, false, 'kafel rysowany odkręcony w momencie pauzy');
   assert.equal((untap.obj.counters ?? {}).stun ?? 0, 0, 'brak liczników stun');
 });

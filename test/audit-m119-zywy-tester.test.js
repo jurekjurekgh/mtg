@@ -43,9 +43,10 @@ test('M119/Z1: „dostaje +N licznik” odmienia się przez liczbę', () => {
 
 test('M119/Z1: „traci N licznik” też się odmienia', () => {
   const removed = (n) => describe({ type: 'counter_removed', objectId: 'o', counter: 'stun', amount: n, total: 0 });
-  assert.match(removed(1), /traci 1 licznik stun/);
-  assert.match(removed(2), /traci 2 liczniki stun/);
-  assert.match(removed(5), /traci 5 liczników stun/);
+  // B7: log używa dopełniacza z COUNTER_LABELS (był surowy „stun").
+  assert.match(removed(1), /traci 1 licznik ogłuszenia/);
+  assert.match(removed(2), /traci 2 liczniki ogłuszenia/);
+  assert.match(removed(5), /traci 5 liczników ogłuszenia/);
   // Anihilacja +1/+1 z −1/−1 ma własny opis i nie może się zepsuć.
   assert.match(
     describe({ type: 'counter_removed', objectId: 'o', counter: 'mixed', amount: 2, annihilated: true }),

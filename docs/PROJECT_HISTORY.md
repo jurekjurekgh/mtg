@@ -9519,3 +9519,15 @@ Manifest Dread z nazwą, Disa z Lhurgoyf — plus detektor slugów w kaflach
 build60/3444,6kB, quick84,5%(568/672; −2 z wyceny A4-4). W tym samym PR: A4
 (sondy ryzyka 09-08k: madness×3, Vandalize, PW, Slabs/Inspiration).
 Raport docs/audits/AUDYT_B5_STOL_2026-09-09.md, handoff2026-09-09.
+## 2026-09-09 — B7: backlog językowy B5 (PR #109)
+
+Liczniki/log/kafle wg konwencji: COUNTER_LABELS do wspólnego modułu
+(docelowo też log — „licznik ogłuszenia/tarczy/Latania", dopełniacz),
+tarcza dopisana (silnikowa, spoza M126), „zużywa tarczę" bez „(shield)",
+badge załącznika „Aura:/Equipment:" (koniec z imiesłowem żeńskim),
+Jyoti „dla stworów-lądów". Bez zmian jako konwencjonalne: Plot {1, W}
+(= equip/surge/etykiety kosztów), nazwy mechanik po angielsku (M127:
+Morph/coven/surveil/investigate…), imiesłowy przy „karcie" („odrzucona
+z madness", „rzuć ją"), formuła Tarmogoyfa. 7 regresji (test/b7-jezyk.test.js).
+Brama: all5052/5052, fast5042/5042, build61/3446,3kB, quick84,5%(568/672)
+bez zmian (UI-only, silnik nietknięty).

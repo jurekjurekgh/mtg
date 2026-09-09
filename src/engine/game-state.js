@@ -5663,7 +5663,7 @@ export function playerView(state, playerId) {
           // „jakością" (effectiveProtectionQualities czyta wyłącznie
           // deskryptory jakości i granty until-end-of-turn), więc widok jej
           // nie niósł i badge na zaczarowanym stworze pokazywał samo
-          // „zaczarowana: Benevolent Blessing" bez koloru. Dokładamy kolory
+          // „Aura: Benevolent Blessing" bez koloru. Dokładamy kolory
           // jako jakość `{ colors: [...] }` — ten sam kształt, który rozumie
           // `protectionBadges` („Ochrona przed: Czarny"), ADR 0017/0002.
           const protColors = effectiveProtectionFromColors(state, object);

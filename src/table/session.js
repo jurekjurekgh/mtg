@@ -7,6 +7,7 @@ import { stateFingerprint } from '../engine/fingerprint.js';
 import { createHeuristicBot } from '../controllers/heuristic-bot.js';
 import { effectiveKeywords } from '../engine/permanents.js';
 import { costSymbols } from './mana-icons.js';
+import { counterLabelGen } from './counter-labels.js';
 import { probeCommandEffect } from './noop-probe.js';
 
 /**
@@ -1603,7 +1604,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const zoneName = { graveyard: 'grobu', exile: 'wygnania', hand: 'ręki', library: 'biblioteki' }[e.zone] ?? e.zone;
         return `token ${e.name} przestaje istnieć (trafił do ${zoneName} — token istnieje tylko na polu bitwy)`;
       }
-      case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
+      // B7: „tarcza" jest w COUNTER_LABELS — angielski nawias to czysty szum.
+      case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę`;
       case 'players_lost_life_fraction':
         return `każdy gracz traci ${e.numerator ?? 1}/${e.denominator ?? 3} życia (zaokrąglone w górę)`;
       case 'became_subtype':
@@ -1617,13 +1619,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // „dostaje +1 licznik -1/-1" — mylący plus. Znak należy się tylko
         // licznikom, które same nie niosą minusa.
         const amountText = String(e.counter).startsWith('-') ? String(e.amount) : `+${e.amount}`;
-        return `${objectOrLki(e.objectId, e.cardId)} dostaje ${amountText} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (razem ${e.total})`;
+        return `${objectOrLki(e.objectId, e.cardId)} dostaje ${amountText} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${counterLabelGen(e.counter)} (razem ${e.total})`;
       }
       case 'counter_removed': {
         if (e.annihilated || e.counter === 'mixed') {
           return `${objectOrLki(e.objectId, e.cardId)}: anihilacja ${e.amount} par liczników +1/+1 i −1/−1`;
         }
-        return `${objectOrLki(e.objectId, e.cardId)} traci ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (zostało ${e.total})`;
+        return `${objectOrLki(e.objectId, e.cardId)} traci ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${counterLabelGen(e.counter)} (zostało ${e.total})`;
       }
       // Batch 51 (Renown, CR 702.112): stwór po raz pierwszy zadał obrażenia
       // bojowe graczowi — staje się „renowned" i dostaje N liczników +1/+1.
@@ -2782,7 +2784,7 @@ export function createSession(config) {
         significant = true;
         pushBotMove({
           type: 'object_untapped',
-          text: `${nameOfObject(e.objectId)} odkręca się (koniec liczników stun)`,
+          text: `${nameOfObject(e.objectId)} odkręca się (koniec liczników ${counterLabelGen('stun')})`,
           cardId: e.cardId ?? null,
         });
       }

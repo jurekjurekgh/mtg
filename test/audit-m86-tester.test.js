@@ -175,6 +175,6 @@ test('kafel: P/T i zaczarowana tylko raz (nie 2/22/2)', () => {
   renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
   const bf = els.bfOwn.textContent;
   assert.doesNotMatch(bf, /1\/21\/2/);
-  const enc = bf.match(/zaczarowana:/g) ?? [];
+  const enc = bf.match(/Aura:/g) ?? [];
   assert.equal(enc.length, 1, bf.slice(0, 280));
 });
