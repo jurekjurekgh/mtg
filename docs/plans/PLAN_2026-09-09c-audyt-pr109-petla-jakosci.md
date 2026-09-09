@@ -20,11 +20,11 @@ domyślna ADR 0021: audyt poprzedniego scalonego PR + pętla jakości.
 
 ## Etapy
 
-### C1. Rozpoznanie + plan + PR na starcie
+### C1. Rozpoznanie + plan + PR na starcie — [X]
 Kryterium: PR istnieje na GitHubie (ADR 0020 A), plan commity i wypchnięty
 PRZED kodowaniem. Rozpoznanie + ten plik = pierwszy commit.
 
-### C2. Audyt PR #109 (ADR 0020 B / ADR 0016)
+### C2. Audyt PR #109 (ADR 0020 B / ADR 0016) — [X]
 Przegląd KAŻDEGO zmienionego pliku PR #109 (37 plików; `gh pr diff 109`).
 Rdzeń audytu — kod źródłowy i reguły:
 - `src/engine/objects.js`: LKI niesie `faceDownCause` (G1 rozjazd manifest vs
