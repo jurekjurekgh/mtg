@@ -24,6 +24,12 @@ const SNAKE_CASE_EVENT = /\b[a-z]+(_[a-z]+){2,}\b/;
 // podkreślenie („token_wizard", „token_squirrel"), więc przechodziły przez
 // regułę wyżej — log pokazywał je graczowi, a detektory milczały (L27/L40).
 const RAW_TOKEN_ID = /\btoken_[a-z][a-z0-9_]*/;
+// B5 (audyt stołu 2026-09-09, G2/Membrane): kafle drukowały surowy
+// „attach_aura", a SNAKE_CASE_EVENT wymaga DWÓCH podkreślników (tę samą lukę
+// M189 łatał dla tokenów w logu). W kaflach każde snake_case to slug —
+// legalne teksty kafli podkreślników nie używają (kalibracja: G1–G4).
+const TILE_LINE = /^\s*(RĘKA|MOJE POLA|POLA WROGA|STOS)\s*:/;
+const TILE_SNAKE = /\b[a-z]+_[a-z][a-z0-9_]*\b/;
 // M171/Z4: „?:" (nazwa celu zastąpiona znakiem zapytania przed kwotą).
 const PLACEHOLDER = /(^|[\s:(])\?($|[\s:),.])|undefined|NaN|\[object |null\b/;
 
@@ -62,6 +68,22 @@ export function detectRawText(lines) {
     if (PLACEHOLDER.test(line.replace(/\(brak\)|\(pusty\)|\(puste\)|\(pusta\)/g, ''))) {
       push(found, 'ui', 'Placeholder (?/undefined/null) w tekście dla gracza', line);
     }
+  }
+  return found;
+}
+
+/**
+ * Oś 2 — surowy slug (snake_case) w KAFLE karty (RĘKA/POLA/STOS).
+ * Log pilnuje `detectRawText`, ale kafle mają własny format linii i własną
+ * lukę: jednodkreślnikowe slugi efektów (np. `attach_aura` z runtime'owego
+ * deskryptoru czaru aury) przechodziły bez zgłoszenia (B5/G2).
+ */
+export function detectTileRawSlug(lines) {
+  const found = [];
+  for (const line of lines ?? []) {
+    if (!TILE_LINE.test(line)) continue;
+    const m = line.match(TILE_SNAKE);
+    if (m) push(found, 'info', `Surowy slug „${m[0]}" w kafle karty`, line);
   }
   return found;
 }
@@ -1253,6 +1275,7 @@ export function detectUnvaluedBotChoices(botUnvalued) {
 export function runDetectors(lines, { actionRecords = [], windowRecords = null, runtimeErrors = [], profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set(), botUnvalued = null } = {}) {
   const all = [
     ...detectRawText(lines),
+    ...detectTileRawSlug(lines),
     ...detectRuntimeErrors(runtimeErrors),
     ...detectBotRepeats(lines),
     ...detectBotSelfTargeting(lines),

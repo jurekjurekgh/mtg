@@ -14,6 +14,7 @@ import {
   detectNoEffectOffers,
   detectBotUntapsMyPermanent,
   detectTokenRawId,
+  detectTileRawSlug,
   runDetectors, formatFindings,
 } from '../tools/table-tester/detectors.mjs';
 
@@ -1209,4 +1210,32 @@ test('noop: kontr wardem/regułą (spell_countered) to realny skutek — nie zg�
     }),
   }]);
   assert.equal(found.length, 0);
+});
+
+// B5 (audyt stołu 2026-09-09, G2/Membrane): kafel drukował surowy
+// „attach_aura", a SNAKE_CASE_EVENT wymaga DWÓCH podkreślników — reguła
+// kaflowa łapie każde snake_case w liniach RĘKA/POLA/STOS.
+test('detectTileRawSlug: łapie surowy slug efektu w kafle (info)', () => {
+  const found = detectTileRawSlug([
+    '  RĘKA: Containment Membrane · 3 · Enchantment — Aura · efekt (attach_aura) · cel: stwór · stwór nie odkręca się podczas kroku odkręcania swojego kontrolera',
+  ]);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].category, 'info');
+  assert.match(found[0].message, /attach_aura/);
+});
+
+test('detectTileRawSlug: zwykłe kafle (w tym z myślnikami i kosztem) ciche', () => {
+  const found = detectTileRawSlug([
+    '  RĘKA: Maritime Guard · 2 · Creature — Merfolk Soldier · 1/3 | Island · Basic Land — Island · T: dodaj 1 manę ×3',
+    '  MOJE POLA: Squirrel · 1/1 (token) | Plains · Basic Land — Plains',
+    '  POLA WROGA: Morph 2/2',
+    '  STOS: Trigger: Rigging Runner — dash (atakuje: tkacz)',
+  ]);
+  assert.deepEqual(found, [], `fałszywy alarm: ${JSON.stringify(found)}`);
+});
+
+test('detectTileRawSlug: linie spoza kafli ignorowane + wpięte w runDetectors', () => {
+  assert.deepEqual(detectTileRawSlug(['  LOG: foo_bar', '  AKCJE: [0] foo_bar']), []);
+  const all = runDetectors(['  RĘKA: X · efekt (attach_aura)']);
+  assert.ok(all.some((f) => f.category === 'info' && /kafl/i.test(f.message)), JSON.stringify(all));
 });

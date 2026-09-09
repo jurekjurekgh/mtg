@@ -840,7 +840,8 @@ export function polishPluralCount(n, one, few, many) {
 const DYNAMIC_PT_LABELS = Object.freeze({
   source_power: 'moc źródła',
   oil_counters: 'liczniki oil',
-  greatest_mana_among_other_artifacts: 'mana value innych artefaktów',
+  // B5 (audyt stołu 2026-09-09, G3): „mana value" to żargon reguł.
+  greatest_mana_among_other_artifacts: 'wartość many innych artefaktów',
   card_types_in_all_graveyards: 'liczba typów kart w grobach',
   card_types_in_all_graveyards_plus_1: 'liczba typów kart w grobach +1',
 });
@@ -927,6 +928,11 @@ function describeEffect(e) {
     // F-A2/1 (audyt PR #107): B54 zjednoczyło stronę untap („odkręć”), ale tu
     // drukowało surowe „tap” — ta sama ścieżka publiczna (tekst karty).
     tap_permanent: () => 'zatapnij',
+    // B5 (audyt stołu 2026-09-09, G2/Membrane): typ konstruowany w runtime
+    // przez castAuraSpell (resources.js) — poza rejestrem DB, więc strażnik
+    // M122 go nie widział i kafel drukował „efekt (attach_aura)".
+    attach_aura: () => 'zaczaruj',
+    attach_aura_player: () => 'zaczaruj gracza',
     lock_untap: () => 'blokada odkręcania (póki źródło zatapnięte)',
     dont_untap_next_untap_step: () => 'nie odkręca się w następnym kroku odkręcania',
     surveil: () => `surveil ${e.amount ?? 1}`,
@@ -1504,6 +1510,13 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'land_entered_under_your_control') return `Landfall — gdy land wchodzi pod ${mine ? 'twoją kontrolą' : 'kontrolą kontrolera'}: ${parts}.`;
   if (trigger.event === 'creature_you_control_enters') return `Gdy stwór wchodzi pod twoją kontrolą: ${parts}.`;
   if (trigger.event === 'artifact_you_control_enters') return `Gdy artefakt wchodzi pod twoją kontrolą: ${parts}.`;
+  // B5 (audyt stołu 2026-09-09, G3/Disa): filtr podtypu z triggera (silnik go
+  // egzekwuje — triggers.js) + „twój cmentarz" (matcher wymaga grobu
+  // kontrolera). Wcześniej generyk gubił oba: „Gdy karta trafi...".
+  if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') {
+    const what = (trigger.subtypes ?? []).length ? `karta ${trigger.subtypes.join(', ')}` : 'karta';
+    return `Gdy ${what} trafi na ${mine ? 'twój cmentarz' : 'cmentarz kontrolera'} spoza pola bitwy: ${parts}.`;
+  }
   if (trigger.event === 'other_creature_you_control_dies') {
     return `Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {${trigger.payMana ?? 0}} i wróć na rękę.`;
   }
@@ -3408,7 +3421,14 @@ export function cardInfo(session, object, combat = null) {
     damage: object.damage || 0,
     // A (2026-08-11): liczniki (np. +1/+1, oil, charge, lore) pokazane na karcie.
     counters: object.counters ?? {},
-    spell: details.spell || object.spell,
+    // B5 (audyt stołu 2026-09-09, G2/Membrane): object.spell na kartach
+    // w spoczynku (ręka/stół/grób) to OSAD po rzucie — castAuraSpell podpina
+    // instancję czaru na stosie (z runtime'owym attach_aura), a choke
+    // moveObjectDirectly niesie ją przez strefy. Żywy deskryptor tylko na
+    // stosie (rozstrzyganie) i wygnaniu (przygoda „on an adventure");
+    // gdzie indziej kafel ufa wyłącznie rejestrowi (aury go nie mają —
+    // ich semantyka siedzi w linii aury).
+    spell: details.spell ?? ((object.zone === 'stack' || object.zone === 'exile') ? object.spell : null),
     abilities: faceDown ? [] : (details.abilities || []),
     morph: details.morph || null,
     plot: details.plot || null,
