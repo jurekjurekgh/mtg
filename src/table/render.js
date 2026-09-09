@@ -3372,6 +3372,9 @@ export function cardInfo(session, object, combat = null) {
     grantedPower: faceDown ? 0 : Number(object.grantedPower ?? 0),
     grantedToughness: faceDown ? 0 : Number(object.grantedToughness ?? 0),
     lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
+    // F-A (Wishful Merfolk): nadpisanie podtypów DO KOŃCA TURY — widok niesie
+    // subtypesBeforeOverride (active), żywe `subtypes` to już cel („Human").
+    subtypesOverride: faceDown ? false : Boolean(object.subtypesBeforeOverride?.length),
     cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
@@ -3674,6 +3677,14 @@ export function buildStateOverlay(visual, info) {
     }
     for (const kw of info.lostKeywordsUntilEOT ?? []) {
       flags.push(['kw', `bez: ${KEYWORD_LABELS[kw] ?? kw}`]);
+    }
+    // F-A (znalezisko właściciela 2026-09-09, Wishful Merfolk): utrata
+    // keyworda („bez: obrońca") miała badge, ale NADPISANIE podtypu na Human
+    // do końca tury nie było sygnalizowane — typ-line (już „Human") nie mówił,
+    // że to stan czasowy. Badge jak pozostałe flagi „do końca tury"
+    // (tempControlNow/untapLockedNow). Nazwa podtypu = żywe info.subtypes.
+    if (info.subtypesOverride && (info.subtypes ?? []).length) {
+      flags.push(['kw', `typ: ${info.subtypes.join(' ')} do końca tury`]);
     }
     if (info.cantBlockNow) flags.push(['kw', 'nie może blokować']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
