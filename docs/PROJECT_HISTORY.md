@@ -9505,3 +9505,17 @@ wykryte na żywo: trwałość animate_linked (nie EOT) oraz dublet logu
 „kosztu zdolności” przy rozstrzygnięciu odrzucenia kart do czaru.
 Raport OWNER_ANIMATOR_DISCARD_2026-09-08.md, handoff2026-09-08j.
 A938882b/Bda70d10 CI SUCCESS; końcowy HEAD/checks w tym samym PR106 OPEN.
+## 2026-09-09 — B5: fixy UI/logu z audytu stołu G1–G4 (PR #109)
+
+Cztery partie żywym testerem (worek-mroczny/tarkir-wur 42, wiedzmin-wu/
+kaladesh 7, warhammer-ubr/dominaria-brg 11, srodziemie/zendikar 3 — wszystkie
+Bot win, DET0 przed i po). 7 root-cause naprawionych u źródła: Prowler wroga
+(„bierze ląd" zamiast „bierze żadnego lądu"), perspektywa mass buffa
+(„stwory Nieprzyjaciela"), przyczyna zakrycia w LKI (manifest≠Morph),
+„bezbarwne", kafel aury w ręce (strażnik strefowy + glosa attach_aura),
+Manifest Dread z nazwą, Disa z Lhurgoyf — plus detektor slugów w kaflach
+(luka M189-klasy), fabricate bez dubleta, „wartość many". 20 regresji
+(test/b5-*.test.js) + 3 testy detektora. Brama: all5045/5045, fast5035/5035,
+build60/3444,6kB, quick84,5%(568/672; −2 z wyceny A4-4). W tym samym PR: A4
+(sondy ryzyka 09-08k: madness×3, Vandalize, PW, Slabs/Inspiration).
+Raport docs/audits/AUDYT_B5_STOL_2026-09-09.md, handoff2026-09-09.
