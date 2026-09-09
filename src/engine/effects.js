@@ -5266,6 +5266,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('manifest_dread_required', {
       playerId: controllerId,
+      // B5 (audyt stołu 2026-09-09, G1): źródło decyzji — log nazywa nim
+      // wpis (klasa M162/C, ADR 0002), zamiast drukować „manifest dread".
+      sourceCardId: sourceObject?.cardId ?? null,
       objectIds: [...topIds],
       cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
     }));

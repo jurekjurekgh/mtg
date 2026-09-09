@@ -7,6 +7,7 @@ import { stateFingerprint } from '../engine/fingerprint.js';
 import { createHeuristicBot } from '../controllers/heuristic-bot.js';
 import { effectiveKeywords } from '../engine/permanents.js';
 import { costSymbols } from './mana-icons.js';
+import { counterLabelGen } from './counter-labels.js';
 import { probeCommandEffect } from './noop-probe.js';
 
 /**
@@ -383,7 +384,9 @@ export function manaEffectLabel(effect) {
   const count = single ? '1 manę' : `${amount} many`;
   if (isAnyColorMana(effect?.colors)) return `dodaj ${count} dowolnego koloru`;
   const colors = effect?.colors ?? [];
-  if (colors.length === 0) return `dodaj ${count} bezbarwną`;
+  // B5 (audyt stołu 2026-09-09, G2/Apprentice Wizard): „dodaj 3 many
+  // bezbarwną" — przymiotnik w pojedynczej przy mnogiej („bezbarwne").
+  if (colors.length === 0) return `dodaj ${count} ${single ? 'bezbarwną' : 'bezbarwne'}`;
   // M193/A1: „dodaj 1 manę niebieską lub czarną" zamiast „dodaj 1 manę ({U}, {B})".
   return `dodaj ${count} ${manaColorsLabel(colors, single)}`;
 }
@@ -1026,10 +1029,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const sign = (v) => (v > 0 ? `+${v}` : v < 0 ? `${v}` : (negative ? '-0' : '+0'));
         const count = (e.objectIds ?? []).length;
         if (count === 0) return null;
-        const who = e.scope === 'opponents' ? 'stwory przeciwnika'
-          : e.scope === 'your_lands' ? 'twoje stwory-lądy'
+        // B5 (audyt stołu 2026-09-09, G1/Marauder): fraza zależy od kontrolera
+        // źródła (e.playerId), nie od stałej — buff rzucony przez wroga mówił
+        // „twoje stwory" o JEGO stworach. Widz to zawsze człowiek.
+        const mine = e.playerId == null || e.playerId === HUMAN_ID;
+        const who = e.scope === 'opponents' ? (mine ? 'stwory Nieprzyjaciela' : 'twoje stwory')
+          : e.scope === 'your_lands' ? (mine ? 'twoje stwory-lądy' : 'stwory-lądy Nieprzyjaciela')
           : e.scope === 'attacking' ? 'atakujące stwory'
-          : 'twoje stwory';
+          : (mine ? 'twoje stwory' : 'stwory Nieprzyjaciela');
         const stats = (e.powerModifier || e.toughnessModifier)
           ? `${sign(e.powerModifier)}/${sign(e.toughnessModifier)}` : null;
         const keywords = (e.keywords ?? []).map((k) => KEYWORD_EVENT_LABELS[k] ?? k).filter(Boolean);
@@ -1466,8 +1473,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         }
         return `${srcName(e)}${whoN(e.playerId)} przestawia karty na wierzchu biblioteki`;
       }
+      // B5 (audyt stołu 2026-09-09, G1): nazwa źródła ze zdarzenia (klasa
+      // M162/C — „Nazwa — opis"), nie surowy slug mechaniki.
       case 'manifest_dread_required':
-        return `${whoN(e.playerId)} — manifest dread: wybór, którą z 2 kart z wierzchu zmanifestować`;
+        return `${whoN(e.playerId)} — ${srcName(e)}wybór, którą z 2 kart z wierzchu zmanifestować`;
       case 'manifest_dread_resolved':
         return `${whoN(e.playerId)} manifestuje kartę (2/2 twarzą w dół), drugą do grobu`;
       case 'look_top_started': {
@@ -1497,9 +1506,15 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         }
         return `${whoN(e.playerId)} odsłania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki — może wziąć ląd do ręki`;
       }
+      // B5 (audyt stołu 2026-09-09, G3/Prowler): trzy rozłączne fakty.
+      // Rezygnacja (pickId null) to „nie bierze żadnego lądu", ukryty wybór
+      // wroga to „bierze ląd" (silnik przyjmuje TYLKO lądy — walidacja
+      // pending.landIds), a nazwę pokazujemy wyłącznie właścicielowi.
+      // Wcześniej ukryty wybór wpadał w fallback „bierze żadnego lądu".
       case 'satyr_look_resolved': {
-        const pickName = (e.pickId != null && seesHiddenOf(e.playerId) && e.pickCardId) ? nameOf(e.pickCardId) : 'żadnego lądu';
-        return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (reszta do grobu)`;
+        if (e.pickId == null) return `${whoN(e.playerId)} nie bierze żadnego lądu z wierzchu do ręki (wszystkie do grobu)`;
+        if (seesHiddenOf(e.playerId) && e.pickCardId) return `${whoN(e.playerId)} bierze ${nameOf(e.pickCardId)} z wierzchu do ręki (reszta do grobu)`;
+        return `${whoN(e.playerId)} bierze ląd z wierzchu do ręki (reszta do grobu)`;
       }
       // M100/E4: karty Epic Experiment lecą na ODKRYTY exile (publiczne) —
       // nazwy dla obu graczy.
@@ -1556,7 +1571,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'clash_resolved': {
         const mine = e.myManaValue ?? '—';
         const theirs = e.opponentManaValue ?? '—';
-        return `Clash: ${whoN(e.playerId)} ${e.won ? 'wygrywa' : 'przegrywa'} (mana value ${mine} vs ${theirs})`;
+        // B5 (audyt stołu 2026-09-09, G1): „mana value" to żargon reguł —
+        // gracz czyta „wartość many" (jak „koszt many" w glosach).
+        return `Clash: ${whoN(e.playerId)} ${e.won ? 'wygrywa' : 'przegrywa'} (wartość many ${mine} vs ${theirs})`;
       }
       case 'clash_choice_resolved': return `${whoN(e.playerId)} ${e.putOnBottom ? 'odkłada odsłoniętą kartę na spód' : 'zostawia odsłoniętą kartę na wierzchu'} biblioteki`;
       case 'object_goaded': return `${nameOfObject(e.objectId)} jest sprowokowany (goad) — musi atakować do końca tury`;
@@ -1587,7 +1604,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const zoneName = { graveyard: 'grobu', exile: 'wygnania', hand: 'ręki', library: 'biblioteki' }[e.zone] ?? e.zone;
         return `token ${e.name} przestaje istnieć (trafił do ${zoneName} — token istnieje tylko na polu bitwy)`;
       }
-      case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
+      // B7: „tarcza" jest w COUNTER_LABELS — angielski nawias to czysty szum.
+      case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę`;
       case 'players_lost_life_fraction':
         return `każdy gracz traci ${e.numerator ?? 1}/${e.denominator ?? 3} życia (zaokrąglone w górę)`;
       case 'became_subtype':
@@ -1601,13 +1619,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // „dostaje +1 licznik -1/-1" — mylący plus. Znak należy się tylko
         // licznikom, które same nie niosą minusa.
         const amountText = String(e.counter).startsWith('-') ? String(e.amount) : `+${e.amount}`;
-        return `${objectOrLki(e.objectId, e.cardId)} dostaje ${amountText} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (razem ${e.total})`;
+        return `${objectOrLki(e.objectId, e.cardId)} dostaje ${amountText} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${counterLabelGen(e.counter)} (razem ${e.total})`;
       }
       case 'counter_removed': {
         if (e.annihilated || e.counter === 'mixed') {
           return `${objectOrLki(e.objectId, e.cardId)}: anihilacja ${e.amount} par liczników +1/+1 i −1/−1`;
         }
-        return `${objectOrLki(e.objectId, e.cardId)} traci ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (zostało ${e.total})`;
+        return `${objectOrLki(e.objectId, e.cardId)} traci ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${counterLabelGen(e.counter)} (zostało ${e.total})`;
       }
       // Batch 51 (Renown, CR 702.112): stwór po raz pierwszy zadał obrażenia
       // bojowe graczowi — staje się „renowned" i dostaje N liczników +1/+1.
@@ -2766,7 +2784,7 @@ export function createSession(config) {
         significant = true;
         pushBotMove({
           type: 'object_untapped',
-          text: `${nameOfObject(e.objectId)} odkręca się (koniec liczników stun)`,
+          text: `${nameOfObject(e.objectId)} odkręca się (koniec liczników ${counterLabelGen('stun')})`,
           cardId: e.cardId ?? null,
         });
       }

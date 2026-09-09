@@ -13,6 +13,7 @@ import {
   manaProducedLabel,
 } from './session.js';
 import { costSymbols, escapeHtml, manaCostHtml, manaSymbolsHtml } from './mana-icons.js';
+import { COUNTER_LABELS, counterLabelGen } from './counter-labels.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
 import { renderPickerRow } from './picker.js';
@@ -775,25 +776,13 @@ export const KEYWORD_LABELS = Object.freeze({
   devoid: 'Devoid (bezbarwna)',
 });
 
-// A (2026-08-11): czytelne nazwy liczników pokazywanych na kartach na stole.
+// B7: COUNTER_LABELS mieszka we wspólnym ./counter-labels.js (log też go używa;
+// bezpośredni import session→render dałby cykl).
 // M164: cyfry rzymskie rozdziałów Sagi — wspólny słownik dla rulesText
 // (M159/Z4) i badge'u etapu na nakładce kafla (pytanie właściciela 2026-08-20).
 const SAGA_ROMAN = ['I', 'II', 'III', 'IV', 'V'];
 
-const COUNTER_LABELS = Object.freeze({
-  '+1/+1': '+1/+1', '-1/-1': '-1/-1', oil: 'oil', charge: 'charge', lore: 'lore',
-  // Diament cz.2: znaczniki-liczniki zdolności po polsku (było surowe
-  // „deathtouch"/„lifelink"/„flying" na kaflach).
-  flying: 'Latanie', deathtouch: 'Dotyk śmierci', lifelink: 'Więź życia', finality: 'ostateczność',
-  // M126/#5 (Żywy Tester): na kaflach świeciło surowe „stun×2" (37 wystąpień
-  // w audytowanych partiach) — licznik ogłuszenia z Lodestone Needle. Audyt
-  // wszystkich liczników w bazie wykazał też brakujący `level` (Kabira
-  // Vindicator). Strażnik w testach pilnuje kompletności tej mapy.
-  stun: 'ogłuszenie', level: 'poziom', loyalty: 'lojalność',
-  // Batch 48 (Contested Game Ball): licznik punktowy — po piątym artefakt
-  // jest poświęcany w zamian za Skarb.
-  point: 'punkt',
-});
+// (definicja w ./counter-labels.js — patrz komentarz wyżej).
 
 /** Opis dynamicznej wartości amount (string zamiast liczby). */
 const DYNAMIC_AMOUNT_LABELS = Object.freeze({
@@ -840,7 +829,8 @@ export function polishPluralCount(n, one, few, many) {
 const DYNAMIC_PT_LABELS = Object.freeze({
   source_power: 'moc źródła',
   oil_counters: 'liczniki oil',
-  greatest_mana_among_other_artifacts: 'mana value innych artefaktów',
+  // B5 (audyt stołu 2026-09-09, G3): „mana value" to żargon reguł.
+  greatest_mana_among_other_artifacts: 'wartość many innych artefaktów',
   card_types_in_all_graveyards: 'liczba typów kart w grobach',
   card_types_in_all_graveyards_plus_1: 'liczba typów kart w grobach +1',
 });
@@ -927,6 +917,11 @@ function describeEffect(e) {
     // F-A2/1 (audyt PR #107): B54 zjednoczyło stronę untap („odkręć”), ale tu
     // drukowało surowe „tap” — ta sama ścieżka publiczna (tekst karty).
     tap_permanent: () => 'zatapnij',
+    // B5 (audyt stołu 2026-09-09, G2/Membrane): typ konstruowany w runtime
+    // przez castAuraSpell (resources.js) — poza rejestrem DB, więc strażnik
+    // M122 go nie widział i kafel drukował „efekt (attach_aura)".
+    attach_aura: () => 'zaczaruj',
+    attach_aura_player: () => 'zaczaruj gracza',
     lock_untap: () => 'blokada odkręcania (póki źródło zatapnięte)',
     dont_untap_next_untap_step: () => 'nie odkręca się w następnym kroku odkręcania',
     surveil: () => `surveil ${e.amount ?? 1}`,
@@ -974,7 +969,8 @@ function describeEffect(e) {
     // turn." — bez wpisu panel pokazywałby surowy slug (strażnik M122).
     buff_attacking_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla atakujących stworów do końca tury`,
     buff_creature_until_end_of_turn: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} do końca tury`,
-    buff_land_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla land creatures do końca tury`,
+    // B7: „stwory-lądy" jak w logu mass buffa (było surowe „land creatures").
+    buff_land_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla stworów-lądów do końca tury`,
     buff_opponents_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla stworów przeciwnika do końca tury`,
     cant_be_blocked: () => 'nie może być blokowany',
     cant_be_regenerated_this_turn: () => 'nie może być regenerowany',
@@ -1230,7 +1226,7 @@ const NON_MANA_COST_LABELS = Object.freeze([
   ['removeCounter', (c) => {
     const amount = c.amount ?? 1;
     const counter = c.name ?? 'charge';
-    return `zdejmij ${amount} ${polishPluralCount(amount, 'licznik', 'liczniki', 'liczników')} ${COUNTER_LABELS[counter] ?? counter}`;
+    return `zdejmij ${amount} ${polishPluralCount(amount, 'licznik', 'liczniki', 'liczników')} ${counterLabelGen(counter)}`;
   }],
 ]);
 
@@ -1305,7 +1301,7 @@ function describeStatic(ability) {
   if (cond.minCardsDrawnThisTurn) parts.push(`przy ${cond.minCardsDrawnThisTurn}+ dobranych kartach`);
   if (cond.controlsAnotherMulticolored) parts.push('gdy kontrolujesz inny wielokolorowy permanent');
   if (cond.controlsAnotherArtifact) parts.push('gdy kontrolujesz inny artefakt');
-  if (cond.hasCounter) parts.push(`gdy ma licznik ${COUNTER_LABELS[cond.hasCounter] ?? cond.hasCounter}`);
+  if (cond.hasCounter) parts.push(`gdy ma licznik ${counterLabelGen(cond.hasCounter)}`);
   if (cond.minCreatureCardsInGraveyard) parts.push(`przy ${cond.minCreatureCardsInGraveyard}+ stworach w grobie`);
   if (ability.cantBlock || ability.cant_block) parts.push('nie może blokować');
   if (ability.mustAttack) parts.push('musi atakować');
@@ -1397,7 +1393,7 @@ function triggerConditionClause(trigger) {
   if (cond.distinctCreaturePowersAtLeast != null) czlony.push(`kontrolujesz stwory o co najmniej ${cond.distinctCreaturePowersAtLeast} różnych wartościach siły (coven)`);
   if (cond.minTappedCreaturesControlled) czlony.push(`kontrolujesz ${cond.minTappedCreaturesControlled}+ zatapnięte stwory`);
   if (cond.subtypeCardInYourGraveyard) czlony.push(`w twoim grobie jest karta ${cond.subtypeCardInYourGraveyard}`);
-  if (cond.selfHasCounter) czlony.push(`ma licznik ${COUNTER_LABELS[cond.selfHasCounter] ?? cond.selfHasCounter}`);
+  if (cond.selfHasCounter) czlony.push(`ma licznik ${counterLabelGen(cond.selfHasCounter)}`);
   if (cond.didntAttackThisTurn) czlony.push('nie atakował w tej turze');
   if (cond.delirium) czlony.push('delirium');
   if (cond.wasKicked) czlony.push('opłacono kicker');
@@ -1504,6 +1500,13 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'land_entered_under_your_control') return `Landfall — gdy land wchodzi pod ${mine ? 'twoją kontrolą' : 'kontrolą kontrolera'}: ${parts}.`;
   if (trigger.event === 'creature_you_control_enters') return `Gdy stwór wchodzi pod twoją kontrolą: ${parts}.`;
   if (trigger.event === 'artifact_you_control_enters') return `Gdy artefakt wchodzi pod twoją kontrolą: ${parts}.`;
+  // B5 (audyt stołu 2026-09-09, G3/Disa): filtr podtypu z triggera (silnik go
+  // egzekwuje — triggers.js) + „twój cmentarz" (matcher wymaga grobu
+  // kontrolera). Wcześniej generyk gubił oba: „Gdy karta trafi...".
+  if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') {
+    const what = (trigger.subtypes ?? []).length ? `karta ${trigger.subtypes.join(', ')}` : 'karta';
+    return `Gdy ${what} trafi na ${mine ? 'twój cmentarz' : 'cmentarz kontrolera'} spoza pola bitwy: ${parts}.`;
+  }
   if (trigger.event === 'other_creature_you_control_dies') {
     return `Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {${trigger.payMana ?? 0}} i wróć na rękę.`;
   }
@@ -1747,7 +1750,7 @@ export function rulesText(info) {
     if (!ewc || typeof ewc !== 'object') return '';
     const parts = Object.entries(ewc)
       .filter(([, n]) => Number(n) > 0)
-      .map(([name, n]) => `z ${n === 1 ? '1 licznikiem' : `${n} licznikami`} ${COUNTER_LABELS[name] ?? name}`);
+      .map(([name, n]) => `z ${n === 1 ? '1 licznikiem' : `${n} licznikami`} ${counterLabelGen(name)}`);
     return parts.length ? `Wchodzi ${parts.join(', ')}` : '';
   })();
   return [keywordLine, spellLine, toughnessDamageLine, surgeLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, entersCountersLine, landLine].filter(Boolean).join(' · ');
@@ -3408,7 +3411,14 @@ export function cardInfo(session, object, combat = null) {
     damage: object.damage || 0,
     // A (2026-08-11): liczniki (np. +1/+1, oil, charge, lore) pokazane na karcie.
     counters: object.counters ?? {},
-    spell: details.spell || object.spell,
+    // B5 (audyt stołu 2026-09-09, G2/Membrane): object.spell na kartach
+    // w spoczynku (ręka/stół/grób) to OSAD po rzucie — castAuraSpell podpina
+    // instancję czaru na stosie (z runtime'owym attach_aura), a choke
+    // moveObjectDirectly niesie ją przez strefy. Żywy deskryptor tylko na
+    // stosie (rozstrzyganie) i wygnaniu (przygoda „on an adventure");
+    // gdzie indziej kafel ufa wyłącznie rejestrowi (aury go nie mają —
+    // ich semantyka siedzi w linii aury).
+    spell: details.spell ?? ((object.zone === 'stack' || object.zone === 'exile') ? object.spell : null),
     abilities: faceDown ? [] : (details.abilities || []),
     morph: details.morph || null,
     plot: details.plot || null,
@@ -3427,7 +3437,7 @@ export function cardInfo(session, object, combat = null) {
     attachedTo: object.attachedTo ?? null,
     hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty
-    // („zaczarowana: Moonlit Meditation", „wyposażona: …"). Scan pola bitwy w widoku.
+    // („Aura: Moonlit Meditation", „Equipment: …"). Scan pola bitwy w widoku.
     attachments: object.zone === 'battlefield' && object.id
       ? (session.view()?.zones?.battlefield ?? []).filter((o) => o.attachedTo === object.id && o.id !== object.id)
           .map((o) => ({ name: o.cardId ? (session.nameOf(o.cardId) || o.cardId) : o.cardId, kind: (o.aura || o.bestow) ? 'aura' : 'equip' }))
@@ -3548,7 +3558,7 @@ function buildFace(parent, info, { size = '', skipLiveState = false, textless = 
   // Pole reguł
   div(face, 'fbox', rulesText(info));
   // Znaczniki stanu (tylko pole bitwy). Na kaflu stołu żywy stan jest na
-  // nakładce (skipLiveState) — inaczej textContent dubluje P/T i „zaczarowana:”.
+  // nakładce (skipLiveState) — inaczej textContent dubluje P/T i „Aura:”.
   if (info.isBattlefield && !skipLiveState) {
     const flags = [];
     if (info.attachedAura || info.attachedEquipment) {
@@ -3575,8 +3585,10 @@ function buildFace(parent, info, { size = '', skipLiveState = false, textless = 
     // artefakty/enchantmenty nie dostają badge (audyt żywym testerem).
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push('choroba');
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty.
+    // B7: rzeczownik („Aura:/Equipment:") zamiast imiesłowu żeńskiego
+    // („zaczarowana:/wyposażona:" kłamały przy gospodarzu rodzaju męskiego).
     for (const att of info.attachments ?? []) {
-      flags.push(att.kind === 'aura' ? `zaczarowana: ${att.name}` : `wyposażona: ${att.name}`);
+      flags.push(att.kind === 'aura' ? `Aura: ${att.name}` : `Equipment: ${att.name}`);
     }
     // A (2026-08-11): liczniki na karcie (np. „+1/+1 ×2", „oil ×3", „charge ×5").
     for (const [name, count] of Object.entries(info.counters ?? {})) {
@@ -3722,9 +3734,9 @@ export function buildStateOverlay(visual, info) {
     }
     // F (2026-08-11): przypięte aury/equipmenty na nakładce gospodarza.
     for (const att of info.attachments ?? []) {
-      // Diament (2026-08-15): spójne z buildFace — „zaczarowana:/wyposażona:"
-      // (było angielskie „aura:/equip:" — niespójne z opadem syntetycznym).
-      flags.push(['att', att.kind === 'aura' ? `zaczarowana: ${att.name}` : `wyposażona: ${att.name}`]);
+      // Diament (2026-08-15): spójne z buildFace. B7: rzeczownik „Aura:/Equipment:"
+      // (było „zaczarowana:/wyposażona:" — rodzaj żeński; wcześniej „aura:/equip:").
+      flags.push(['att', att.kind === 'aura' ? `Aura: ${att.name}` : `Equipment: ${att.name}`]);
     }
   }
   const showPt = info.kind === 'creature' && info.livePower != null && info.liveToughness != null;

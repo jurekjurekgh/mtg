@@ -47,13 +47,20 @@ test('C: Reunion przy 3 kartach (dobranie do zera) ma wycenę samobójstwa', () 
   assert.notEqual(cmd.objectId, 're', `bot nie deck-outuje się czarem: ${cmd.type}`);
 });
 
-test('C: Reunion przy 7 kartach (7→4) nadal rzucany (granica strefy)', () => {
+test('C: Reunion przy 7 kartach (7→4) wart rzucenia, ale rozwój (stwor) pierwszy (A4-4)', () => {
   const { cmd, castScore } = scenario(7);
   assert.ok(castScore > 0, `poza strefą krytyczną dodatnie: ${castScore}`);
-  assert.equal(cmd.objectId, 're', 'bot rzuca przy bezpiecznej bibliotece');
+  // A4-4 (isDrawOnly, klasa M146): draw-only startuje spod passu, więc Reunion
+  // (17) wciąż bije pass, ale NIE bije rozwoju stworami (64.8): bot najpierw
+  // gra Pikera, zamiast wyrzucać oba stwory do Reunionu. Stare oczekiwanie
+  // (Reunion przed Pikerem) było artefaktem bazy 50, nie dobrą grą: linia
+  // Reunion-first kasowała własne stwory i zjeżdżała 7→4 w jednej turze.
+  // Intencja pliku (guard deck-outu) nietknięta: testy 6→3 i 3 karty RED-gdy-rzuca.
+  assert.equal(cmd.type, 'cast_permanent', `rozwoj przed selekcja: ${cmd.type} ${cmd.objectId}`);
 });
 
-test('C: Reunion przy 20 kartach rzucany (kontrola)', () => {
-  const { cmd } = scenario(20);
-  assert.equal(cmd.objectId, 're', 'bot rzuca przy pełnej bibliotece');
+test('C: Reunion przy 20 kartach dodatni, kontrola rozwoju (A4-4)', () => {
+  const { cmd, castScore } = scenario(20);
+  assert.ok(castScore > 0, `przy pelnej bibliotece dodatnie: ${castScore}`);
+  assert.equal(cmd.type, 'cast_permanent', `rozwoj przed selekcja: ${cmd.type} ${cmd.objectId}`);
 });

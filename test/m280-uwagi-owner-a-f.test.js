@@ -12,7 +12,7 @@
 //  D. Deepwood Denizen: bot nie dobiera kart, gdy opróżniłby bibliotekę
 //     (CR 121.4/704.5b — deck-out).
 //  E. Benevolent Blessing: badge zaczarowanej kreatury pokazuje kolor ochrony
-//     („Ochrona przed: Czarny") obok „zaczarowana: Benevolent Blessing".
+//     („Ochrona przed: Czarny") obok „Aura: Benevolent Blessing".
 //  F. Discover: oferta „rzuć za darmo" tylko dla kart w prostym zakresie
 //     (bez celów/kosztów dodatkowych/X/Fireball/modów) — koniec fizzlującego
 //     no-opa (CR 608.2b).

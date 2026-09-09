@@ -82,7 +82,8 @@ test('Z1: Hysterical Blindness (−4/−0 stworom przeciwnika) emituje opisywaln
   assert.equal(mass[0].scope, 'opponents');
   assert.equal(mass[0].objectIds.length, 2, 'zbiór ustalony przy rozstrzygnięciu (CR 611.2c)');
   const text = describeGameEvent(mass[0], HELPERS);
-  assert.match(text, /stwory przeciwnika/, `opis dla gracza: ${text}`);
+  // B5 (perspektywa viewer-relative): wróg nazywany wprost (jak whoN).
+  assert.match(text, /stwory Nieprzyjaciela/, `opis dla gracza: ${text}`);
   assert.match(text, /-4\/-0/, `konwencja MtG „-4/-0": ${text}`);
 });
 

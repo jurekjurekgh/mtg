@@ -1320,7 +1320,7 @@ test('Diament 10: keywordy po polsku (Podwójne uderzenie, nie double_strike)', 
   assert.match(bf, /Podwójne uderzenie/, bf.slice(0, 220));
 });
 
-test('Diament 15: nakładka gospodarza używa „zaczarowana:/wyposażona:" (nie aura:/equip:)', () => {
+test('Diament 15: nakładka gospodarza używa „Aura:/Equipment:" (rzeczownik, bez rodzaju)', () => {
   const registry = createCardRegistry();
   const view = miniview({ battlefield: [
     { id: 'host', cardId: 'rustwing-falcon', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 1, toughness: 2 },
@@ -1330,7 +1330,7 @@ test('Diament 15: nakładka gospodarza używa „zaczarowana:/wyposażona:" (nie
   const els = miniels();
   renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
   const bf = textOf(els.bfOwn);
-  assert.match(bf, /zaczarowana:/, bf.slice(0, 260));
+  assert.match(bf, /Aura:/, bf.slice(0, 260));
   assert.ok(!bf.includes('aura:'), `angielska etykieta aura:: ${bf.slice(0, 260)}`);
   assert.ok(!bf.includes('equip:'), `angielska etykieta equip:: ${bf.slice(0, 260)}`);
 });

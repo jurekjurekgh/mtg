@@ -1,7 +1,7 @@
 // M102/U7 — kafel aury/ekwipunku na STOLE nie mówi, do kogo jest przypięty.
 //
 // Objaw: na polu bitwy leży „Warrior's Sword" przypięty do „Ainok Tracker".
-// Kafel GOSPODARZA poprawnie pokazuje badge „wyposażona: Warrior's Sword",
+// Kafel GOSPODARZA poprawnie pokazuje badge „Equipment: Warrior's Sword",
 // ale kafel samego MIECZA nie pokazuje niczego — gracz nie widzi, kogo ten
 // ekwipunek wzmacnia. Przy dwóch stworach i dwóch ekwipunkach powiązania są
 // nie do odczytania bez klikania w każdą kartę.
@@ -154,7 +154,7 @@ test('U7: kafel EKWIPUNKU na stole mówi, kogo wyposaża', () => {
 
 test('U7: kafel GOSPODARZA nadal pokazuje przypięty ekwipunek (regresja)', () => {
   const text = renderBattlefield([HOST, SWORD]);
-  assert.ok(text.includes("wyposażona: Warrior's Sword"),
+  assert.ok(text.includes("Equipment: Warrior's Sword"),
     `gospodarz musi pokazywać badge załącznika; render:\n${text}`);
 });
 

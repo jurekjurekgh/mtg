@@ -334,7 +334,7 @@ test('M124: Steel Sabotage ma tryb „Kontra" (nie ucięte „Kontr")', () => {
 /** Klucze mapy `const NAZWA = Object.freeze({ ... })` ze źródła render.js. */
 function labelMapKeys(source, mapName) {
   const start = source.indexOf(`const ${mapName} = Object.freeze({`);
-  assert.ok(start > 0, `mapa ${mapName} istnieje w render.js`);
+  assert.ok(start > 0, `mapa ${mapName} istnieje`);
   const body = source.slice(start, source.indexOf('});', start));
   return new Set([...body.matchAll(/'?([a-zA-Z0-9_+/-]+)'?\s*:/g)].map((m) => m[1]));
 }
@@ -364,7 +364,8 @@ test('M126: każdy typ celu z bazy kart ma polską etykietę', () => {
 });
 
 test('M126: każdy licznik z bazy kart ma polską etykietę', () => {
-  const source = fs.readFileSync('src/table/render.js', 'utf8');
+  // B7: mapa liczników mieszka we wspólnym module (log też jej używa).
+  const source = fs.readFileSync('src/table/counter-labels.js', 'utf8');
   const known = labelMapKeys(source, 'COUNTER_LABELS');
   const registry = createCardRegistry();
   const missing = new Map();

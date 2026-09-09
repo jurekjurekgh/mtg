@@ -6,8 +6,8 @@
 // Root cause: `.ovl` ma `position: absolute; inset: 0` i
 // `justify-content: space-between` (rozpycha elementy). `.ovl-badges`
 // ma `flex-direction: column; gap: 2px` (zawijanie nie jest włączone).
-// Na kaflu z 5+ badge'ami (obrażenia, choroba, licznik, zaczarowana,
-// wyposażona) suma wysokości badge'ów przekracza dostępną wysokość
+// Na kaflu z 5+ badge'ami (obrażenia, choroba, licznik, Aura,
+// Equipment) suma wysokości badge'ów przekracza dostępną wysokość
 // `.ovl`, a `space-between` dzieli ją proporcjonalnie — wiersze
 // zaczynają na siebie nachodzić (głównie w `sm`).
 //

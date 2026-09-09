@@ -14,7 +14,10 @@ import { registerMover } from './mover.js';
  *
  * FoW (CR 708.2): dla obiektu zakrytego zapamiętujemy `faceDown: true`,
  * a tożsamość zostaje przy właścicielu — warstwa opisu decyduje, komu
- * wolno ją pokazać (jak dla żywego obiektu).
+ * wolno ją pokazać (jak dla żywego obiektu). B5 (audyt stołu 2026-09-09,
+ * G1 — rozjazd D): przyczynę zakrycia (`faceDownCause`) też niesiemy —
+ * bez niej martwy manifest wracał w logu jako „Morph" (atak opisany na
+ * żywym obiekcie mówił „Manifest", damage na LKI już „Morph").
  */
 export function rememberLastKnownObject(state, object) {
   if (!state || !object?.id) return;
@@ -23,6 +26,7 @@ export function rememberLastKnownObject(state, object) {
     cardId: object.cardId ?? null,
     name: object.name ?? null,
     faceDown: Boolean(object.faceDown),
+    faceDownCause: object.faceDownCause ?? null,
     controllerId: object.controllerId ?? null,
     isToken: Boolean(object.isToken),
     copyNumber: object.copyNumber ?? null,

@@ -4026,7 +4026,16 @@ export function execute(state, input) {
         // otwarcie blokowało kolejne odrzucania w tym samym efekcie.
         state.madnessQueue.push({
           playerId: pending.playerId, objectId: exileId, cardId: moved.cardId,
-          restorePriorityTo: state.turn.priorityPlayerId,
+          // A4-1 (handoff 09-08k, madness+batch-discard ×3): priorytet po
+          // decyzji madness wraca do posiadacza Z PRZED odrzuceniem
+          // (pending.restorePriorityTo — ustawione przy tworzeniu
+          // pendingDiscardChoice), NIE do odrzucającego (priorytet w chwili
+          // pusha = on sam). Celowane odrzucenie (Mindstab) dotąd kończyło
+          // tym samym czarem priorytet w innym miejscu zależnie od tego,
+          // czy odrzucona karta miała madness: ścieżka zwykła oddawała go
+          // źródłu czaru (restorePriorityTo, CR 117.3b), ścieżka madness —
+          // odrzucającemu.
+          restorePriorityTo: pending.restorePriorityTo ?? state.turn.priorityPlayerId,
         });
       } else {
         const graveId = `grave-${state.objectSequence++}`;
@@ -5654,7 +5663,7 @@ export function playerView(state, playerId) {
           // „jakością" (effectiveProtectionQualities czyta wyłącznie
           // deskryptory jakości i granty until-end-of-turn), więc widok jej
           // nie niósł i badge na zaczarowanym stworze pokazywał samo
-          // „zaczarowana: Benevolent Blessing" bez koloru. Dokładamy kolory
+          // „Aura: Benevolent Blessing" bez koloru. Dokładamy kolory
           // jako jakość `{ colors: [...] }` — ten sam kształt, który rozumie
           // `protectionBadges` („Ochrona przed: Czarny"), ADR 0017/0002.
           const protColors = effectiveProtectionFromColors(state, object);

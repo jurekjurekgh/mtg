@@ -8981,10 +8981,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
   // 6. Glint-Sleeve Artisan (2XM) — {2}{W} 2/2: Fabricate 1 (CR 702.122).
   //    NOWE: wybór kontrolera przy ETB — licznik +1/+1 ALBO token Servo.
+  //    B5 (audyt stołu 2026-09-09, G3): BEZ keywords ['fabricate'] — silnik
+  //    czyta TYLKO efekt 'fabricate' ze zdolności, a słowo kluczowe doklejało
+  //    drugi, redundantny opis („Fabricate (przy wejściu…) · Gdy wejdzie…").
   defineCard({
     id: 'glint-sleeve-artisan', name: 'Glint-Sleeve Artisan', set: '2XM',
     types: ['Creature'], subtypes: ['Dwarf', 'Artificer'], colors: ['W'],
-    power: 2, toughness: 2, manaCost: 3, keywords: ['fabricate'],
+    power: 2, toughness: 2, manaCost: 3,
     oracleText: 'Fabricate 1 (When this creature enters, put a +1/+1 counter on it or create a 1/1 colorless Servo artifact creature token.)',
     imageUri: 'https://cards.scryfall.io/large/front/1/c/1c2fd5ac-963b-49ea-bd72-d0958ef8eb3e.jpg?1783930215',
     abilities: [

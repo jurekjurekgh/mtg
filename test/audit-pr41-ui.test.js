@@ -8,8 +8,8 @@ import { jumpToStep } from '../src/engine/turn.js';
 /**
  * Audyt PR #41 (B9) — weryfikacja UI M72b:
  * E. właściciel permanentów w etykietach wyboru („(Ty)"/„(Nieprzyjaciel)"),
- * F. karta-gospodarz pokazuje przypięte aury/equipmenty („zaczarowana:"/
- *    „wyposażona:").
+ * F. karta-gospodarz pokazuje przypięte aury/equipmenty („Aura:"/„Equipment:"
+ *    — rzeczownik, bez rodzaju).
  */
 
 const REGISTRY = createCardRegistry();
@@ -66,7 +66,7 @@ test('B9/E: etykieta celu z pola bitwy dopisuje kontrolera — „(Ty)"/„(Niep
   assert.ok(!label2.includes('(Ty)'), `ręka bez dopisku kontrolera: ${label2}`);
 });
 
-test('B9/F: render oznacza załączniki gospodarza jako „zaczarowana:"/„wyposażona:"', () => {
+test('B9/F: render oznacza załączniki gospodarza jako „Aura:"/„Equipment:"', () => {
   const state = game();
   const host = Object.freeze({
     id: 'host', cardId: 'highland-game', name: 'Highland Game', controllerId: 'p1', ownerId: 'p1',
@@ -88,7 +88,7 @@ test('B9/F: render oznacza załączniki gospodarza jako „zaczarowana:"/„wypo
     zones: { battlefield: [host, aura, equip], stack: [], graveyard: [], hand: [], library: [], exile: [] },
   };
   // Render (render.js:1135): załączniki z attachedTo === gospodarz → badge
-  // „zaczarowana: X" (aura) / „wyposażona: X" (equipment).
+  // „Aura: X" (aura) / „Equipment: X" (equipment).
   const attachments = view.zones.battlefield
     .filter((o) => o.id !== 'host' && o.attachedTo === 'host')
     .map((o) => ({ kind: o.kind === 'aura' ? 'aura' : 'equip', name: session.nameOf(o.cardId) }));
@@ -97,7 +97,7 @@ test('B9/F: render oznacza załączniki gospodarza jako „zaczarowana:"/„wypo
   assert.equal(auraBadge?.name, 'Curiosity', 'aura przypięta do gospodarza');
   assert.equal(equipBadge?.name, 'Cloak of the Bat', 'equipment przypięty do gospodarza');
   const flags = [];
-  for (const att of attachments) flags.push(att.kind === 'aura' ? `zaczarowana: ${att.name}` : `wyposażona: ${att.name}`);
-  assert.ok(flags.includes('zaczarowana: Curiosity'), 'etykieta aury na gospodarzu');
-  assert.ok(flags.includes('wyposażona: Cloak of the Bat'), 'etykieta equipmentu na gospodarzu');
+  for (const att of attachments) flags.push(att.kind === 'aura' ? `Aura: ${att.name}` : `Equipment: ${att.name}`);
+  assert.ok(flags.includes('Aura: Curiosity'), 'etykieta aury na gospodarzu');
+  assert.ok(flags.includes('Equipment: Cloak of the Bat'), 'etykieta equipmentu na gospodarzu');
 });
