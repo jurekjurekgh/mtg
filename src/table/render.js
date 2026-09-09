@@ -924,7 +924,9 @@ function describeEffect(e) {
     remove_counter: () => `usuń licznik ${e.counter}`,
     add_counter: () => `połóż licznik ${e.counter}`,
     exile_permanent: () => 'wygnij artefakt/zaklęcie',
-    tap_permanent: () => 'tap',
+    // F-A2/1 (audyt PR #107): B54 zjednoczyło stronę untap („odkręć”), ale tu
+    // drukowało surowe „tap” — ta sama ścieżka publiczna (tekst karty).
+    tap_permanent: () => 'zatapnij',
     lock_untap: () => 'blokada odkręcania (póki źródło zatapnięte)',
     dont_untap_next_untap_step: () => 'nie odkręca się w następnym kroku odkręcania',
     surveil: () => `surveil ${e.amount ?? 1}`,
@@ -1161,8 +1163,9 @@ function describeEffect(e) {
     springbloom_sacrifice_search: () => 'poświęć ląd, szukaj 2 basic landów',
     start_engines: () => 'start your engines!',
     station_counters: () => `połóż liczniki charge (station)`,
-    tap_all_lands_opponents_control: () => 'tap wszystkie lądy przeciwnika',
-    tap_permanents: () => 'tap permanenty',
+    // F-A2/1 (audyt PR #107): surowe „tap” po B54 — patrz `tap_permanent`.
+    tap_all_lands_opponents_control: () => 'zatapnij wszystkie lądy przeciwnika',
+    tap_permanents: () => 'zatapnij permanenty',
     transfer_counters_on_dies: () => 'przenieś liczniki',
     turn_face_up: () => 'obróć twarzą do góry',
     unearth_return: () => 'unearth (z grobu z haste, exile na końcu tury)',
