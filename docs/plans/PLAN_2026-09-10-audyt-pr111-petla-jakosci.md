@@ -29,16 +29,18 @@
 - [x] E0. Rozpoznanie: lektura obowiązkowa (AGENTS.md, ADR 0001–0030, LESSONS.md
       L1–L141, ENVIRONMENT.md, handoff 2026-09-10), pomiar bazy
       (`npm test` 5055/5055, `npm run build` 61/3453,7 kB).
-- [ ] E1. PR na GitHubie PRZED kodowaniem (ADR 0020 A) + ten plan jako osobny
-      commit. Kryterium: PR widoczny na GitHubie z tytułem sesji.
-- [ ] E2. Audyt PR #111 — przegląd diff plik po pliku (logika, CR, ADR 0002,
-      kompletność PlayerView przy zmianach widoku, FoW).
-      Kryterium: `docs/audits/AUDYT_PR111_2026-09-10.md` z wnioskami per plik.
-- [ ] E3. Weryfikacja mutacyjna fixów z PR #111 (L13): cofnięcie każdej naprawy
-      → właściwy test RED; przywrócenie → GREEN. Kryterium: tabela mutacji
-      w audycie (finding → test → RED/GREEN).
-- [ ] E4. Zamknięcie audytu: commit audytu + aktualizacja opisu PR
-      (wynik audytu w opisie — ADR 0020 B).
+- [x] E1. PR #112 na GitHubie PRZED kodowaniem (ADR 0020 A) + ten plan jako
+      osobny commit (`210aaad`).
+- [x] E2. Audyt PR #111 — przegląd diff plik po pliku (logika, CR, ADR 0002,
+      kompletność PlayerView przy zmianach widoku, FoW). Wynik:
+      `docs/audits/AUDYT_PR111_2026-09-10.md` — 3 znalezione problemy (F1–F3).
+- [x] E3. Weryfikacja mutacyjna fixów z PR #111 (L13): F-A/F-B/F-C/F-D — RED po
+      cofnięciu każdej naprawy; M260/F1 i M348 — ZIELONO po cofnięciu (brak
+      strażników). Tabela mutacji w audycie.
+- [x] E4. Zamknięcie audytu: commit audytu + aktualizacja opisu PR #112.
+- [ ] E4b. Naprawa znalezisk audytu: F1 (test Thunderstaff), F2 (test etykiet
+      odrzuceń), F3 (guard FoW subtypesBeforeOverride/lostKeywordsUntilEOT
+      + test nierozróżnialności face-down) — każdy RED→GREEN.
 - [ ] E5. Pętla jakości Żywym Testerem: partie świeżych seedów, triaż osi 1–3,
       znalezione błędy: repro → fix u root cause → test regresji → re-run.
       Kryterium: każdy fix ma test RED→GREEN i re-run partii 0 zgłoszeń.
