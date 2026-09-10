@@ -1,11 +1,11 @@
 import { event } from '../protocol/types.js';
 import { assertZone, deathZoneFor } from './zones.js';
 import { addCounter, removeCounter, syncStationKind } from './counters.js';
-import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality } from './attachments.js';
+import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality } from './attachments.js';
 // M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
 // z ochroną kolorową); permanents.js re-eksportuje je, bo stamtąd biorą je
 // combat.js, effects.js i spells.js (i żeby nie robić cyklu importów).
-export { effectiveColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality };
+export { effectiveColors, effectiveProtectionQualities, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality };
 
 /** CR 306: także permanent o kilku typach, ale nie karta zakryta. */
 export function isPlaneswalker(object) {

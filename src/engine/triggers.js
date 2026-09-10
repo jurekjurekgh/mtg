@@ -1,5 +1,5 @@
 import { holdReplacementResolution } from './destruction.js';
-import { isProtectedFromSource, effectiveProtectionFromColors, effectiveColors } from './attachments.js';
+import { isTargetingBlockedByProtection } from './attachments.js';
 import { event } from '../protocol/types.js';
 import { singleTargetOfStackEntry } from './objects.js';
 import {
@@ -311,16 +311,11 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   // ZDOLNOŚCI TRIGGEROWANYCH i niezależnie od kontrolera (inaczej niż
   // hexproof — ochrona blokuje też własne źródła). Źródło = obiekt-źródło
   // triggera (LKI, gdy go brak, nie filtruje — jakości nieznane).
-  const protectedBlocked = (object) => {
-    if (!object || !sourceObject) return false;
-    // Jakość (deskryptor: rodzaj/podtyp/kolor/multicolor) + klasyczna ochrona
-    // od koloru (protectionFromColors) — oba źródła ochrony blokują celowanie
-    // (CR 702.16b).
-    if (isProtectedFromSource(state, object, sourceObject)) return true;
-    const protColors = effectiveProtectionFromColors(state, object);
-    if (protColors.length === 0) return false;
-    return effectiveColors(sourceObject).some((c) => protColors.includes(c));
-  };
+  const protectedBlocked = (object) => (sourceObject
+    // F2 (audyt PR #112): ta sama reguła celowania co w spells.js — jeden
+    // predykat zamiast kopii (L41/L107/L140). Jakości + drukowane kolory.
+    ? isTargetingBlockedByProtection(state, object, sourceObject)
+    : false);
   const isArtifactOrEnchantment = (object) => (object.types ?? []).includes('Artifact')
     || (object.types ?? []).includes('Enchantment')
     || object.kind === 'artifact'

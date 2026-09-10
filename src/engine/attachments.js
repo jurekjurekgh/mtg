@@ -401,6 +401,37 @@ export function isProtectedFromSource(state, target, source) {
   return qualities.some((quality) => sourceHasProtectionQuality(quality, source));
 }
 
+/**
+ * CR 702.16b (DEBT: **T** = targeted) — JEDYNA reguła „ochrona blokuje
+ * CELOWANIE", wspólna dla oferty i walidacji we wszystkich ścieżkach
+ * (czary, zdolności aktywowane, triggery, Fireball).
+ *
+ * Dosłownie (mtg.wiki, „Protection"): „**T**argeted by spells with the
+ * specified quality, or by abilities from sources of that quality."
+ *
+ * Ochrona ma w tym silniku dwa źródła danych i reguła musi czytać OBA:
+ *  - `effectiveProtectionQualities` — jakości (granty do końca tury i z
+ *    załączników, CR 702.16e — np. „protection from non-Human creatures");
+ *  - `effectiveProtectionFromColors` — drukowana ochrona od koloru.
+ * Kolory ŹRÓDŁA czyta `effectiveColors` (zakryty permanent i land są
+ * bezbarwne — CR 708.2a / 202.2); `sourceColors` pozwala ścieżce, która zna
+ * kolory źródła lepiej niż obiekt (walidacja rzutu czaru), podać je wprost.
+ *
+ * Historia (audyt PR #112, F2): ta reguła istniała w PIĘCIU ręcznych kopiach
+ * (`validateTargets`, `legalTargetCandidates`, `castFireball`,
+ * `legalFireballCasts`, `protectedBlocked` w triggers.js), z czego dwie
+ * (Fireball) nie znały wcale ochrony od JAKOŚCI — klasa L41/L107/L140:
+ * kopie tej samej reguły rozjeżdżają się cicho.
+ */
+export function isTargetingBlockedByProtection(state, target, source, { sourceColors = null } = {}) {
+  if (!target) return false;
+  if (isProtectedFromSource(state, target, source)) return true;
+  const protColors = effectiveProtectionFromColors(state, target);
+  if (protColors.length === 0) return false;
+  const colors = Array.isArray(sourceColors) ? sourceColors : effectiveColors(source);
+  return colors.some((color) => protColors.includes(color));
+}
+
 export function removeIllegalAttachments(state) {
   const events = [];
   for (const object of [...state.objects.values()]) {
