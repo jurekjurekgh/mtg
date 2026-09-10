@@ -293,3 +293,87 @@ test('bug B: odrzucona komenda podczas pauzy bota NIE gubi pauzy (droga wznowien
   const resumed = session.continueBotPlay();
   assert.ok(resumed.ok, 'wznowienie po odrzuconej komendzie musi działać');
 });
+
+// =============================================================================
+// F3 (audyt PR #112, 2026-09-10): PR #112 zawęził pauzy do zdarzeń „istotnych"
+// PO STRONIE BOTA („pauza ma mówić o jego zagraniu"); po stronie człowieka
+// zostało „zawsze pauzuj" (session.js:2805 — kontroler inny niż człowiek).
+// Ryzyko klasy L48 (asymetria bez strażnika): gdyby ktoś kiedyś zawęził także
+// stronę człowieka albo wyrzucił z modala opis zmiany strefy, informacja o ruchu
+// bota DOTYKAJĄCYM PERMANENTU CZŁOWIEKA zniknęłaby z gry. Zdarzenia zniszczenia
+// nie niosą pola sprawcy (destruction.js:63 — tylko controllerId ofiary), więc
+// „czyje to było" nie da się dziś odczytać z payloadu; strażnik pilnuje strony
+// informacyjnej: każda zmiana strefy permanentu człowieka w turze bota musi
+// zostać pokazana w modalu PRZED nagłówkiem tury człowieka, a przynajmniej
+// jedna — opisana JAKO zmiana strefy (nie tylko wspomniana przy obrażeniach).
+// Kilka seedów, bo w jednej partii takich zdarzeń jest 1-2 (zmierzone).
+// =============================================================================
+test('F3: zmiana strefy permanentu CZŁOWIEKA w turze bota dociera w modalu przed jego turą', () => {
+  const { registry, decks } = buildDecks();
+  const ZMIANY_STREFY = new Set([
+    'object_moved', 'creature_destroyed', 'permanent_destroyed', 'permanent_put_into_graveyard',
+  ]);
+  const OPIS_STREFY = /ginie|umiera|poświęc|wraca|opuszcza|wygnan|zniszczon/i;
+  let razemSledzone = 0;
+  let razemOpisane = 0;
+
+  for (const seed of [1, 3, 11]) {
+    const session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
+    const nazwa = (object) => (object
+      ? (registry.get(object.cardId)?.name ?? object.name ?? object.cardId) : null);
+    const oczekujace = new Set();   // nazwy, o których modal jeszcze nie powiedział
+    const obejrzane = new WeakSet(); // state.events bywa przycinany — deduplikacja po tożsamości
+    let tura = session.state.turn.activePlayerId;
+    let sledzone = 0;
+    let opisane = 0;
+
+    const przejrzZdarzenia = () => {
+      for (const e of session.state.events) {
+        if (obejrzane.has(e)) continue;
+        obejrzane.add(e);
+        if (e.type === 'turn_started') { tura = e.activePlayerId ?? tura; continue; }
+        if (tura !== BOT_ID || !ZMIANY_STREFY.has(e.type)) continue;
+        const object = e.object ?? session.state.objects.get(e.objectId ?? e.fromId);
+        if (object?.ownerId !== HUMAN_ID) continue;
+        oczekujace.add(nazwa(object));
+        sledzone += 1;
+      }
+    };
+
+    for (let i = 0; i < 3000 && session.state.status === 'active'; i += 1) {
+      if (session.botPausePending) {
+        przejrzZdarzenia();
+        const teksty = session.botMoves.map((m) => m.text ?? '');
+        for (const czekajaca of [...oczekujace]) {
+          const wzmianki = teksty.filter((t) => t.includes(czekajaca));
+          if (wzmianki.length === 0) continue;
+          // Ten SAMY wpis ma nieść nazwę i opis zmiany strefy („Typhoid Rats
+          // ginie") — sama wzmianka przy obrażeniach („Shock zadaje 2
+          // obrażenia (Typhoid Rats)") nie mówi, że permanent zniknął.
+          if (wzmianki.some((t) => OPIS_STREFY.test(t))) opisane += 1;
+          oczekujace.delete(czekajaca);
+        }
+        // Nagłówek tury człowieka zamyka turę bota (M261: paczka z granicy
+        // tury) — wtedy nic z tury bota nie może być jeszcze „niepokazane".
+        if (teksty.some((t) => /^Tura /.test(t)) && session.state.turn.activePlayerId === HUMAN_ID) {
+          assert.deepEqual([...oczekujace], [],
+            `seed ${seed}: nagłówek tury człowieka, a modal nie pokazał: ${[...oczekujace].join(', ')}`);
+        }
+        session.clearBotMoves();
+        session.continueBotPlay();
+        continue;
+      }
+      const view = session.view();
+      const result = session.apply(humanCommand(view));
+      assert.ok(result.ok, `seed ${seed}: komenda odrzucona: ${result.reason}`);
+      przejrzZdarzenia();
+    }
+    assert.deepEqual([...oczekujace], [], `seed ${seed}: na koniec partii zostało coś niepokazanego`);
+    razemSledzone += sledzone;
+    razemOpisane += opisane;
+  }
+  assert.ok(razemSledzone >= 3,
+    `setup: za mało zmian strefy permanentów człowieka w turach bota (${razemSledzone})`);
+  assert.ok(razemOpisane >= 1,
+    `żadna zmiana strefy nie została opisana JAKO zmiana strefy (tylko wzmianki: ${razemSledzone - razemOpisane})`);
+});
