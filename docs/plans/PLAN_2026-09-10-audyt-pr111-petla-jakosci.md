@@ -38,9 +38,33 @@
       cofnięciu każdej naprawy; M260/F1 i M348 — ZIELONO po cofnięciu (brak
       strażników). Tabela mutacji w audycie.
 - [x] E4. Zamknięcie audytu: commit audytu + aktualizacja opisu PR #112.
-- [ ] E4b. Naprawa znalezisk audytu: F1 (test Thunderstaff), F2 (test etykiet
-      odrzuceń), F3 (guard FoW subtypesBeforeOverride/lostKeywordsUntilEOT
-      + test nierozróżnialności face-down) — każdy RED→GREEN.
+- [x] E4b. Naprawa znalezisk audytu — każdy RED→GREEN, osobny commit:
+      - F1 `57ee498`: 3 testy Thunderstaffa w batch51 (mutacja RED: 2 z 3),
+      - F2 `6147b09`: test/m348-odrzucenia-etykiety.test.js (mutacja RED: 3 z 5),
+      - F3 `23bf9f2`: guard `!hiddenFromViewer` (2 linie) + test
+        nierozróżnialności face-down (RED przed guardem: 2 z 3).
+      Bramka po całości: `npm test` **5066/5066**, build 61 modułów / 3454,1 kB.
+- [x] E4.5 (zlecenie właściciela, PRIORYTET): 5 bugów rozgrywki, commit po
+      jednym — zakończone 2026-09-10:
+      - A `00e4cb3`: nagłówek tury przeciwnika nie znika (streamAutoEvents
+        tylko BOT zdarzenia + apply() czyści jedynie bufor już-pokazany, M261);
+        test/bug-a-pauza-naglowek-tury.test.js (3), mutacje zweryfikowane.
+      - B `03feae2`: Dismal Backwater w kreatorze many z kolorami (mostek
+        abilityInfo(id,null)→pełny stan; bez mapowania w MANA_SOURCE_MAP —
+        guard M193); test/bug-b-dismal-backwater-kreator.test.js (3).
+      - C1 `1a6f407`: Fireball — warianty niosą `cost` (X+{R}+{1}/cel ponad
+        pierwszy), etykieta i kreator celów pokazują łączny koszt przed
+        zatwierdzeniem (rozliczenia silnika były zgodne z CR — brakowało
+        widoku); test/bug-c1-fireball-koszt-widoczny.test.js (3).
+      - C2 `423ccb8`: panel „Twoje działania” bez licznika „(N opcji)”
+        (choiceGroupLabel = sam tytuł; optionsCountLabel usunięte);
+        test/bug-c2-licznik-opcji-panel.test.js (2) + piny zaktualizowane.
+      - D `ab6daf2`: hover Day/Night — revive na mousemove domyka szczelinę
+        mouseenter po przebudowaniu kafla pod kursorem (klik działał, hover
+        nie); test/bug-d-daynight-hover-revive.test.js (4), mutacje 2/2.
+      Bramka po całości: `npm test` **5081/5081**, build 61 modułów / 3460,7 kB.
+      Opis PR #112 zaktualizowany (gh api PATCH — `gh pr edit` odrzuca
+      Projects classic).
 - [ ] E5. Pętla jakości Żywym Testerem: partie świeżych seedów, triaż osi 1–3,
       znalezione błędy: repro → fix u root cause → test regresji → re-run.
       Kryterium: każdy fix ma test RED→GREEN i re-run partii 0 zgłoszeń.
