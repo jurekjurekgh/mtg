@@ -531,7 +531,9 @@ test('uwagi A+D (2026-08-10): etykiety akcji w jednym span.action-label, grupa a
     // Uwaga A (grupa celów aury): opis CO wybieramy + odmieniona liczba.
     const auraBtn = buttons.find((b) => b.textContent.includes('Aura: Benevolent Blessing'));
     assert.ok(auraBtn, `brak grupy „Aura: Benevolent Blessing": ${els.actions.textContent}`);
-    assert.match(auraBtn.textContent, /Aura: Benevolent Blessing \(2 opcje\)$/);
+    // C2 (2026-09-10): bez licznika „(N opcji)" — sam tytuł grupy.
+    assert.match(auraBtn.textContent, /Aura: Benevolent Blessing$/);
+    assert.doesNotMatch(auraBtn.textContent, /\(\d+ opcj/);
   } finally {
     mock.timers.reset();
   }

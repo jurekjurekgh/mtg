@@ -1753,6 +1753,19 @@ function bootstrapTable() {
     const abilityInfo = (objectId, abilityIndex) => {
       const obj = session.state?.objects?.get(objectId);
       if (!obj) return null;
+      // B (zgłoszenie właściciela 2026-09-10): indeks null = pytanie o
+      // produkcję „za samo {T}” całego obiektu — fallback kolorów lądów,
+      // których deskryptorów nie niesie widok (Dismal Backwater pokazywał
+      // się w kreatorze jako „bezbarwna” zamiast {U}{B}).
+      if (abilityIndex == null) {
+        const src = getSourceForObject(obj, session.state);
+        if (!src || (src.amount ?? 0) <= 0) return null;
+        return {
+          cardId: obj.cardId, colors: src.colors ?? [], amount: src.amount ?? 1,
+          manaCost: 0, costColors: [],
+          isLand: obj.kind === 'land' || (obj.types ?? []).includes('Land'),
+        };
+      }
       const ability = obj.abilities?.[abilityIndex];
       const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
       if (!effects.some((e) => e?.type === 'add_mana')) return null;

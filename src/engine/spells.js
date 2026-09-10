@@ -1852,32 +1852,38 @@ export function resolveTopOfStack(state) {
  * ręka właściciela). Wywoływane z execute po resolve_scry/resolve_surveil.
  */
 /**
- * Rozstrzyga Fireball: X obrażeń ROZDZIELA gracz między wybrane cele
- * (CR 119.4 „X damage divided among any number of targets"). Zamiast
- * Oracle JVC: „Fireball deals X damage divided evenly, rounded down, among
- * any number of targets." Podział jest DETERMINISTYCZNY — każdy z celów z
- * chwili rzutu dostaje floor(X / liczba celów); reszta z dzielenia przepada
- * („rounded down", CR 119.4). Nie ma decyzji gracza o ilościach: X i cele
- * wybiera się przy rzucie, podział wymusza karta. Cele, które przestały być
- * legalne przed rozstrzygnięciem (CR 608.2b), są pomijane — ich udziały
- * przepadają (oryginalny podział się nie zmienia). Brak żywych celów = fizzle.
+ * Rozstrzyga Fireball. Oracle (M10): „Fireball deals X damage divided evenly,
+ * rounded down, among any number of targets." Podział jest DETERMINISTYCZNY —
+ * gracz nie wybiera ilości (X i cele ustala rzut); każdy wciąż legalny cel
+ * dostaje floor(X / liczba wciąż legalnych celów), reszta przepada
+ * („rounded down", CR 119.4).
+ *
+ * Kluczowy ruling (WotC 2017-11-17, dosłownie ze Scryfall — audyt E5,
+ * 2026-09-10): „Fireball's damage is divided as Fireball RESOLVES, not as
+ * it's cast, because there are no choices involved. The division involves
+ * only targets that are still legal as Fireball resolves." — dzielnik to
+ * WYŁĄCZNIE cele wciąż legalne przy rozstrzygnięciu (poprzednio silnik
+ * dzielił przez liczbę celów z rzutu, gubiąc udziały nielegalnych celów).
+ * Drugi ruling: celów może być więcej niż X — gdy legalnych celów jest
+ * więcej niż X, floor(X/n)=0 i nikt nie dostaje obrażeń. Wszystkie cele
+ * nielegalne przy rozstrzygnięciu → czar skontrowany (CR 608.2b) do grobu.
  */
 function resolveFireball(state, stackId, object, before) {
   const X = object.fireballX ?? 0;
   const chosen = object.chosenTargets ?? [];
-  const fizzled = X === 0 || chosen.length === 0;
   // Żywe cele: gracze zawsze; stwory tylko na polu bitwy (CR 608.2b).
   const live = chosen.filter((tId) => {
     if (state.players.some((p) => p.id === tId)) return true;
     const target = state.objects.get(tId);
     return Boolean(target && target.zone === 'battlefield' && target.kind === 'creature');
   });
+  // Skontrowany tylko, gdy BYŁY cele i ŻADEN nie przeżył do rozstrzygnięcia
+  // (CR 608.2b). X=0 / zero celów to legalny czar bez efektu — rozstrzyga się.
+  const fizzled = chosen.length > 0 && live.length === 0;
   if (X > 0 && live.length > 0) {
-    // Podział po równo, zaokrąglony w dół (Oracle „divided evenly, rounded
-    // down"). Licznik N to LICZBA CELÓW Z RZUTU (nie tylko żywych) — udziały
-    // celów nielegalnych przy rozstrzygnięciu przepadają, nie są redystrybuowane.
-    const n = chosen.length;
-    const per = Math.floor(X / n);
+    // Podział po równo w dół między cele WYŁĄCZNIE wciąż legalne (ruling
+    // WotC 2017-11-17). floor(X/n)=0 przy n > X → nikt nie oberwie (ruling 4).
+    const per = Math.floor(X / live.length);
     const source = object; // źródło obrażeń = czar na stosie
     for (const tId of live) {
       if (per > 0) dealNonCombatDamage(state, source, tId, per);
@@ -2435,7 +2441,13 @@ export function legalSpellCasts(state, playerId) {
     // wybiera gracz; całkowity koszt = manaCost + X. Audyt PR #93: oferty liczy
     // `legalXCostCasts` — ten sam generator obsługuje też okno zdolności Vaana.
     if (object.spell?.xCost) {
-      for (const cast of legalXCostCasts(state, playerId, id, object, manaAvailable(object))) casts.push(cast);
+      // C1 (zgłoszenie właściciela 2026-09-10): wariant niesie ŁĄCZNY koszt
+      // (X + baza) — kreator/etykieta pokazują go graczowi, zanim ten
+      // potwierdzi rzut (inaczej „nagle" tapuje się więcej lądów, niż
+      // gracz oczekiwał; płatność silnika była poprawna, brakowało widoku).
+      for (const cast of legalXCostCasts(state, playerId, id, object, manaAvailable(object))) {
+        casts.push({ ...cast, cost: (cast.xValue ?? 0) + effectiveSpellManaCost(state, object) });
+      }
       continue;
     }
     // Fireball (X-cost, any-number-of-targets): oferujemy X od 1 do dostępnej
@@ -2443,7 +2455,15 @@ export function legalSpellCasts(state, playerId) {
     // gracze). Pełna enumeracja podzbiorów ograniczona do rozsądnego limitu.
     if (object.spell?.fireball) {
       const fbc = legalFireballCasts(state, playerId, id, object, manaAvailable(object));
-      for (const fc of fbc) casts.push(fc);
+      // C1: łączny koszt wariantu = X + {R} + {1} za każdy cel ponad pierwszy
+      // (Oracle: „This spell costs {1} more to cast for each target beyond
+      // the first") — dokładnie tyle pobierze castFireball. UI pokazuje tę
+      // liczbę PRZED potwierdzeniem, żeby gracz wiedział, ile źródeł będzie
+      // tapowanych (zgłoszenie: „wybrałem X=3, a tapnęło wszystkie 6 lądów"
+      // — wariant miał 3 cele i kosztował 6, czego nic nie zapowiadało).
+      for (const fc of fbc) {
+        casts.push({ ...fc, cost: fc.xValue + (object.manaCost ?? 0) + Math.max(0, fc.targets.length - 1) });
+      }
       continue;
     }
     const targetSpec = object.spell.targets ?? [];

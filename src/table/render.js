@@ -1759,18 +1759,6 @@ export function rulesText(info) {
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
  *  UWAGA: prefiksy („Dobierz kartę\", „Zagraj ląd\", „Rzuć:\"…) są częścią
  *  kontraktu testu UI — ikony dodajemy wyłącznie przez CSS (::before). */
-/**
- * Odmiana liczebnika „opcja" przy liczbie (uwaga właściciela A, 2026-08-10):
- * 1 opcja · 2–4 opcje · 5+ opcji · wyjątek 12–14 → opcji (i 22–24, 32–34… opcje).
- */
-function optionsCountLabel(count) {
-  if (count === 1) return '1 opcja';
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  const few = mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14);
-  return `${count} ${few ? 'opcje' : 'opcji'}`;
-}
-
 /** Deskryptory grup wyboru po typie żądania — rzeczowniki (bez „wybierz"). */
 const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
   declare_attackers: 'Deklaracja atakujących',
@@ -2072,11 +2060,11 @@ function choiceSourceTitle(cmd, session, view) {
 }
 
 /**
- * Pełna etykieta przycisku grupy wyborów w panelu „Twoje działania" (uwaga
- * właściciela A, 2026-08-10): opis CO wybieramy — nazwany tytuł („Aura:
- * Benevolent Blessing (3 opcje)") albo deskryptor czynności z prefiksem
- * („Wybierz: Mulligan (2 opcje)"), z odmienioną liczbą — nigdy generyczne
- * „Wybierz: wybierz (N opcji)".
+ * Pełna etykieta przycisku grupy wyborów w panelu „Twoje działania":
+ * opis CO wybieramy — nazwany tytuł („Aura: Benevolent Blessing") albo
+ * deskryptor czynności z prefiksem („Wybierz: Mulligan") — nigdy generyczne
+ * „Wybierz: wybierz". C2 (2026-09-10): bez licznika wariantów „(N opcji)"
+ * — przestarzała miara przy kreatorach/modalnych wyborach.
  */
 /** Tytuł grupy BEZ licznika — nagłówek modala wyboru (main.js introLabel). */
 // M240/K (audyt właściciela): gdy żadna doprecyzowana gałąź nie mówi,
@@ -2134,8 +2122,12 @@ export function choiceGroupLabel(request, session, view) {
     }
     return `${base} między blokujących`;
   }
-  const count = (request?.options ?? []).length;
-  return `${choiceGroupTitle(request, session, view)} (${optionsCountLabel(count)})`;
+  // C2 (zgłoszenie właściciela 2026-09-10): bez licznika „(N opcji)".
+  // To była miara ENUMERACJI wariantów (np. „Cel czaru: Fireball (145 opcji)"
+  // = podzbiory celów × wartości X), przestarzała od czasu kreatorów i
+  // wyborów modalnych — wpis panelu nazywa CZYNNOŚĆ (tytuł grupy), a realny
+  // wybór (ile celów, jaki X, ile mocy) dokonuje się wewnątrz kreatora.
+  return choiceGroupTitle(request, session, view);
 }
 
 /**
@@ -2548,7 +2540,19 @@ export function commandLabel(cmd, session, view) {
       // stun (legalModeCasts) — bez nazwy tego celu przyciski o różnych
       // skutkach wyglądają identycznie.
       const stunPart = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
+      // C1 (zgłoszenie właściciela 2026-09-10): warianty o koszcie zależnym
+      // od wyboru (Fireball: X + {R} + {1}/cel ponad pierwszy) niosą `cost`
+      // z silnika — etykieta pokazuje ŁĄCZNY koszt wariantu zamiast samego
+      // druku „{X}{R}", żeby gracz widział cenę PRZED potwierdzeniem.
+      let costHtml;
+      if (Number.isInteger(cmd.cost)) {
+        const raw = cardForMode?.cardId ? MANA_COSTS[cardForMode.cardId] : null;
+        const pips = (raw?.match(/\{[WUBRG]\}/g) ?? []).map((s) => s.slice(1, -1));
+        costHtml = manaCostHtml(costSymbols(cmd.cost, pips));
+      } else {
+        costHtml = costOfCard(cardForMode);
+      }
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -3855,6 +3859,12 @@ export function createScryfallHover(els) {
       // przekazał (martwa opcja, L67) — na kartach z artId miniaturka w
       // „Rozgrywce" obiecywała „scroll zmienia tor", którego nie było.
       { showCycleHint: false }),
+    // D (2026-09-10): ta sama szczelina co na stole — element przerysowany
+    // pod kursorem nie daje mouseenter; mousemove podnosi podgląd (tor stały).
+    revive: (info, e) => {
+      if (!els.hoverPreview || String(els.hoverPreview.className).includes('active')) return;
+      showHoverPreviewAt(els, info, e, 'scryfall', { showCycleHint: false });
+    },
     end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
   };
 }
@@ -4134,6 +4144,13 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   let currentHoverMode = hoverMode;
   const hover = TOUCH_DEVICE ? null : {
     start: (info, e) => showHoverPreviewAt(els, info, e, currentHoverMode),
+    // D (2026-09-10): patrz attachSpecialCardHover — podgląd ma wstać także,
+    // gdy kafl specjalny przebudował się POD kursorem (sam mouseenter wtedy
+    // milczy). Nieaktywny = brak klasy `active` na warstwie podglądu.
+    revive: (info, e) => {
+      if (!els.hoverPreview || String(els.hoverPreview.className).includes('active')) return;
+      showHoverPreviewAt(els, info, e, currentHoverMode);
+    },
     end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
     cycle: (info, e) => {
       if (!els.hoverPreview) return;
@@ -4414,6 +4431,15 @@ export function attachSpecialCardHover(card, hover, info) {
   card.addEventListener('mouseenter', (e) => hover.start(info, e));
   if (hover.end) card.addEventListener('mouseleave', hover.end);
   if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(info, e));
+  // D (zgłoszenie właściciela 2026-09-10): mouseenter nie odzywa się, gdy
+  // kafl zostaje PRZERYsowany pod kursorem (renderTableView podmienia
+  // element — nie ma „wejścia", jest już w środku). Panele specjalne
+  // (Day/Night, loch, trucizna, prędkość) przebudowują się przy każdej
+  // zmianie widoku, a kursor często spoczywa na panelu (obok karty jest
+  // tekst opisu) — wtedy podgląd nie wstawał, choć klik działał. `revive`
+  // domyka szczelinę: ruch myszy nad kaflą podnosi podgląd, jeśli jest
+  // nieaktywny (gdy aktywny — nic nie robi, zero migotania).
+  if (typeof hover.revive === 'function') card.addEventListener('mousemove', (e) => hover.revive(info, e));
   return true;
 }
 

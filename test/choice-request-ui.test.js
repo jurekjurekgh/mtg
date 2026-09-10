@@ -95,11 +95,11 @@ function requestOf(type, options) {
   return choiceRequest({ id: 'choice-x', type, options });
 }
 
-test('etykieta grupy: Mulligan — „Wybierz: Mulligan (2 opcje)" (uwaga A)', () => {
+test('etykieta grupy: Mulligan — „Wybierz: Mulligan" (uwaga A + C2 bez licznika)', () => {
   const keep = Object.freeze({ type: 'resolve_mulligan_choice', playerId: 'p1', keep: true });
   const mull = Object.freeze({ type: 'resolve_mulligan_choice', playerId: 'p1', keep: false });
   assert.equal(choiceGroupLabel(requestOf('command', [keep, mull]), LABEL_SESSION, { zones: {} }),
-    'Wybierz: Mulligan (2 opcje)');
+    'Wybierz: Mulligan');
 });
 
 test('etykieta grupy: deklaracje walki — „Deklaracja atakujących/blokujących" (uwaga A)', () => {
@@ -108,17 +108,17 @@ test('etykieta grupy: deklaracje walki — „Deklaracja atakujących/blokujący
   const entries = groupCombatDecisions([noAttack, oneAttack], { turn: { number: 1, step: 'combat' } });
   assert.equal(entries[0].request.type, 'declare_attackers');
   assert.equal(choiceGroupLabel(entries[0].request, LABEL_SESSION, { zones: {} }),
-    'Wybierz: Deklaracja atakujących (2 opcje)');
+    'Wybierz: Deklaracja atakujących');
 
   const b0 = Object.freeze({ type: 'declare_blockers', playerId: 'p2', assignments: {} });
   const b1 = Object.freeze({ type: 'declare_blockers', playerId: 'p2', assignments: { a: ['x'] } });
   const b2 = Object.freeze({ type: 'declare_blockers', playerId: 'p2', assignments: { a: ['y'] } });
   const bEntries = groupCombatDecisions([b0, b1, b2], { turn: { number: 1, step: 'combat' } });
   assert.equal(choiceGroupLabel(bEntries[bEntries.length - 1].request, LABEL_SESSION, { zones: {} }),
-    'Wybierz: Deklaracja blokujących (3 opcje)');
+    'Wybierz: Deklaracja blokujących');
 });
 
-test('etykieta grupy: aura — „Aura: Benevolent Blessing (3 opcje)" bez „Wybierz:" (uwaga A)', () => {
+test('etykieta grupy: aura — „Aura: Benevolent Blessing" bez „Wybierz:" (uwaga A + C2 bez licznika)', () => {
   const mk = (target) => Object.freeze({ type: 'cast_permanent', playerId: 'p1', objectId: 'aura-1', targets: [target] });
   const view = {
     zones: {
@@ -127,10 +127,10 @@ test('etykieta grupy: aura — „Aura: Benevolent Blessing (3 opcje)" bez „Wy
     },
   };
   assert.equal(choiceGroupLabel(requestOf('target', [mk('a'), mk('b'), mk('c')]), LABEL_SESSION, view),
-    'Aura: Benevolent Blessing (3 opcje)');
+    'Aura: Benevolent Blessing');
 });
 
-test('etykieta grupy: czar z celami — „Cel czaru: <nazwa>"', () => {
+test('etykieta grupy: czar z celami — „Cel czaru: <nazwa>" (C2 bez licznika)', () => {
   const mk = (target) => Object.freeze({ type: 'cast_spell', playerId: 'p1', objectId: 'shock-1', targets: [target] });
   const view = {
     zones: {
@@ -139,20 +139,17 @@ test('etykieta grupy: czar z celami — „Cel czaru: <nazwa>"', () => {
     },
   };
   assert.equal(choiceGroupLabel(requestOf('target', [mk('t1'), mk('t2')]), LABEL_SESSION, view),
-    'Cel czaru: szok-karta (2 opcje)');
+    'Cel czaru: szok-karta');
 });
 
-test('etykieta grupy: odmiana liczebnika opcja/opcje/opcji (uwaga A)', () => {
+test('C2 (zgłoszenie 2026-09-10): etykieta grupy bez licznika wariantów „(N opcji)"', () => {
   const mk = (n) => requestOf('command', Array.from({ length: n },
     (_, i) => Object.freeze({ type: 'resolve_mulligan_choice', playerId: 'p1', keep: i % 2 === 0 })));
   const view = { zones: {} };
-  assert.ok(choiceGroupLabel(mk(1), LABEL_SESSION, view).endsWith('(1 opcja)'), '1 opcja');
-  assert.ok(choiceGroupLabel(mk(2), LABEL_SESSION, view).endsWith('(2 opcje)'), '2 opcje');
-  assert.ok(choiceGroupLabel(mk(4), LABEL_SESSION, view).endsWith('(4 opcje)'), '4 opcje');
-  assert.ok(choiceGroupLabel(mk(5), LABEL_SESSION, view).endsWith('(5 opcji)'), '5 opcji');
-  assert.ok(choiceGroupLabel(mk(12), LABEL_SESSION, view).endsWith('(12 opcji)'), '12 opcji (wyjątek)');
-  assert.ok(choiceGroupLabel(mk(14), LABEL_SESSION, view).endsWith('(14 opcji)'), '14 opcji (wyjątek)');
-  assert.ok(choiceGroupLabel(mk(22), LABEL_SESSION, view).endsWith('(22 opcje)'), '22 opcje');
+  for (const n of [1, 2, 5, 12, 14, 22]) {
+    const label = choiceGroupLabel(mk(n), LABEL_SESSION, view);
+    assert.doesNotMatch(label, /\(\d+ opcj/, `licznik opcji usunięty (N=${n})`);
+  }
 });
 
 // =============================================================================

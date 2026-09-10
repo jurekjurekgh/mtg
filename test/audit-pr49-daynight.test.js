@@ -9,7 +9,8 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 
 /**
  * Audyt PR #49 (ADR 0016 A): luki day/night poza resolvePermanentSpell.
- * CR 730.2c — nightbound też ustawia dzień.
+ * CR 702.145d/g — przy „ani dzień, ani noc": daybound → dzień; nightbound →
+ * noc tylko, gdy brak daybound na polu (poprawka E5, 2026-09-10).
  * CR 702.145c — daybound wchodzący w nocy (reanimacja / search) transformuje.
  */
 
@@ -91,13 +92,34 @@ function resolveStack(state) {
   return state.zones.stack.length === 0;
 }
 
-test('CR 730.2c: wejscie nightbound przy null ustawia dzien i transformuje na daybound', () => {
+test('CR 702.145g: nightbound przy null BEZ daybound na polu — robi noc (bez transformu)', () => {
+  // Dosłowne brzmienie (CR 2026-08-07 „The Hobbit", za mtg.wiki — ADR 0030):
+  // „Any time a player controls a permanent with nightbound, if it's neither
+  // day nor night and there are no permanents with daybound on the
+  // battlefield, it becomes night." (Poprzedni pin zakładał dzień — wbrew
+  // 702.145g; poprawione w audycie E5, 2026-09-10.)
   const state = mainPhase(game());
   assert.equal(state.dayNight, null);
   addNightboundWolf(state, 'wolf', 'p1');
   enterBattlefield(state, 'wolf');
-  assert.equal(state.dayNight, 'day', 'nightbound tez robi dzien');
-  assert.equal(state.objects.get('wolf').cardId, 'syn-daybound-wolf', 'setDayNight(day) odwraza nightbound');
+  assert.equal(state.dayNight, 'night', 'nightbound bez daybound → noc (702.145g)');
+  assert.equal(state.objects.get('wolf').cardId, 'syn-nightbound-wolf',
+    'nightbound w nocy zostaje na stronie nightbound');
+});
+
+test('CR 702.145d/g: nightbound przy null, ale daybound JUŻ na polu — dzień i transform', () => {
+  // Release notes Innistrad: Midnight Hunt: „If it's neither day nor night,
+  // and a creature with daybound and a creature with nightbound somehow appear
+  // on the battlefield at the same time, it becomes day." — dzień ma
+  // pierwszeństwo; wchodzący nightbound transformuje (702.145e → day face).
+  const state = mainPhase(game());
+  assert.equal(state.dayNight, null);
+  addDayboundWolf(state, 'wolfA', 'p1'); // już na polu bitwy (daybound)
+  addNightboundWolf(state, 'wolfB', 'p2');
+  enterBattlefield(state, 'wolfB');
+  assert.equal(state.dayNight, 'day', 'daybound na polu → dzień');
+  assert.equal(state.objects.get('wolfB').cardId, 'syn-daybound-wolf',
+    'nightbound wszedł za dnia → transformuje na daybound');
 });
 
 test('CR 702.145c: daybound wchodzacy w nocy poza rzutem (reanimacja) jest nightbound', () => {

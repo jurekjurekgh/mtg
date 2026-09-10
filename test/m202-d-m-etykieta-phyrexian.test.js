@@ -76,7 +76,8 @@ test('M202/D+M: etykieta panelu „Twoje działania” też niesie nazwę karty'
   const { request, session, view } = phyrexianGroup('ruthless-invasion', 'ri', 'hand', 'cast_spell');
   const label = choiceGroupLabel(request, session, view);
   assert.match(label, /Ruthless Invasion/, `etykieta panelu: ${label}`);
-  assert.match(label, /2 opcje/, 'licznik opcji zostaje');
+  // C2 (2026-09-10): licznik wariantów usunięty z panelu.
+  assert.doesNotMatch(label, /\(\d+ opcj/, 'C2: licznik opcji usunięty');
 });
 
 test('M202/D+M (anty-over-fix): grupa bez karty nadal ma generyczny, ale odmieniony opis', () => {
