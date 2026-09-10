@@ -2790,7 +2790,20 @@ export function createSession(config) {
       recordTurnEvent(e);
       emitCastEvent(e);
       emitTransformEvent(e);
-      if (BOT_PAUSE_EVENTS.has(e.type)) significant = true;
+      // A (zgłoszenie właściciela 2026-09-10): auto-pass BOTA może jedynie
+      // rozstrzygać czar CZŁOWIEKA (bot spasował bez odpowiedzi) — to nie
+      // jest „istotne zagranie bota". Pauza na własnym rozstrzygającym się
+      // czarze („Zagrywasz X / wchodzi / zostaje rozstrzygnięty" jako jedyna
+      // treść modala) to szum, który stawia grę w pół tury i prowokuje
+      // klikanie W TRAKCIE pauzy (a to zjada nagłówki tur — patrz niżej
+      // i M261). Istotne są zdarzenia, których kontrolerem NIE jest człowiek;
+      // wpis do bufora i tak zostaje (noteBotMove), tylko nie wymusza pauzy.
+      // Kontroler wyprowadzamy jak trackStack: zdarzenie → obiekt w stanie.
+      if (BOT_PAUSE_EVENTS.has(e.type)) {
+        const ctrl = e.controllerId ?? e.playerId
+          ?? state.objects.get(e.objectId ?? e.sourceId)?.controllerId ?? null;
+        if (ctrl !== HUMAN_ID) significant = true;
+      }
       // M157/D: koniec blokady stun ma być WIDOCZNY na stole. (a) zdjęcie
       // licznika stun = pauza (gracz widzi zejście licznika na kaflu);
       // (b) pierwszy untap po stunie = pauza z jawnym wpisem w modalu —
@@ -3133,13 +3146,27 @@ export function createSession(config) {
       // triggerem upkeepu). Guard `startsWith(Tura N+1)` odpadał i para
       // nagłówkowa własnej tury ginęła przy czyszczeniu bufora. Przywracamy
       // nagłówek BIEŻĄCEJ tury (po numerze), nie „pierwszy z brzegu".
-      const currentTurnHeader = botMoves.find(
-        (m) => m.type === 'turn_started' && m.text?.startsWith(`Tura ${state.turn.number} — `),
-      );
-      botMoves.length = 0;
+      // A (zgłoszenie właściciela 2026-09-10): komenda potrafi przyjść
+      // W TRAKCIE niepotwierdzonej pauzy (ekran dotykowy: podwójne
+      // tapnięcie, przycisk z poprzedniego renderu). Taka komenda NIE może
+      // skasować niepokazanej zawartości bufora — czeka tam m.in. nagłówek
+      // „Tura N — …" (kontrakt M261: nagłówek tury jest OBOWIĄZKOWY
+      // i NIEpomijalny; zgłoszenie: „moja tura przeleciała, ale gra nie
+      // zatrzymała się, żeby mnie poinformować Tura X — Nieprzyjaciel").
+      // Czyścimy tylko bufor już POKAZANY (pauza potwierdzona =
+      // awaitingBotAck false); niepokazany zachowujemy i doklejamy do niego
+      // skutek tej komendy — gracz dostanie wszystko jednym modalem.
+      const hadPendingPause = awaitingBotAck;
+      let currentTurnHeader = null;
+      if (!hadPendingPause) {
+        currentTurnHeader = botMoves.find(
+          (m) => m.type === 'turn_started' && m.text?.startsWith(`Tura ${state.turn.number} — `),
+        );
+        botMoves.length = 0;
+      }
       // Konsument nie powinien aplikować komendy w trakcie pauzy (UI blokuje
-      // ją modalem) — po UDANEJ komendzie niedokończoną pauzę ignorujemy
-      // i gramy dalej.
+      // ją modalem) — po UDANEJ komendzie niedokończoną pauzę zamykamy,
+      // ale NIEpokazany bufor zostaje (wyżej) i gramy dalej.
       awaitingBotAck = false;
       let ownDraw = false;
       // M261 (korekta właściciela 2026-08-31): granica tury w strumieniu TEJ
