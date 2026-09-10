@@ -2548,7 +2548,19 @@ export function commandLabel(cmd, session, view) {
       // stun (legalModeCasts) — bez nazwy tego celu przyciski o różnych
       // skutkach wyglądają identycznie.
       const stunPart = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
+      // C1 (zgłoszenie właściciela 2026-09-10): warianty o koszcie zależnym
+      // od wyboru (Fireball: X + {R} + {1}/cel ponad pierwszy) niosą `cost`
+      // z silnika — etykieta pokazuje ŁĄCZNY koszt wariantu zamiast samego
+      // druku „{X}{R}", żeby gracz widział cenę PRZED potwierdzeniem.
+      let costHtml;
+      if (Number.isInteger(cmd.cost)) {
+        const raw = cardForMode?.cardId ? MANA_COSTS[cardForMode.cardId] : null;
+        const pips = (raw?.match(/\{[WUBRG]\}/g) ?? []).map((s) => s.slice(1, -1));
+        costHtml = manaCostHtml(costSymbols(cmd.cost, pips));
+      } else {
+        costHtml = costOfCard(cardForMode);
+      }
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');

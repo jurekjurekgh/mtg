@@ -1223,7 +1223,12 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         setStatus('Wskaż jeden wiersz', true);
       }
     } else if (cmd) {
-      setStatus(`Wybrano ${itemWord}: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}`, false);
+      // C1 (zgłoszenie właściciela 2026-09-10): łączny koszt wariantu
+      // (`cmd.cost` z silnika — np. Fireball: X + {R} + {1}/cel ponad
+      // pierwszy) na żywo w statusie, żeby gracz widział, ile many będzie
+      // zapłacone, zanim kliknie „Zatwierdź wybór".
+      const costPart = Number.isInteger(cmd.cost) ? ` · koszt: ${cmd.cost} many` : '';
+      setStatus(`Wybrano ${itemWord}: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}${costPart}`, false);
     } else {
       setStatus(`Wybór niedozwolony (${itemWord}: ${chosen.size}${plan.hasX ? `, X = ${xValue}` : ''})`, true);
     }

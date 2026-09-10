@@ -2435,7 +2435,13 @@ export function legalSpellCasts(state, playerId) {
     // wybiera gracz; całkowity koszt = manaCost + X. Audyt PR #93: oferty liczy
     // `legalXCostCasts` — ten sam generator obsługuje też okno zdolności Vaana.
     if (object.spell?.xCost) {
-      for (const cast of legalXCostCasts(state, playerId, id, object, manaAvailable(object))) casts.push(cast);
+      // C1 (zgłoszenie właściciela 2026-09-10): wariant niesie ŁĄCZNY koszt
+      // (X + baza) — kreator/etykieta pokazują go graczowi, zanim ten
+      // potwierdzi rzut (inaczej „nagle" tapuje się więcej lądów, niż
+      // gracz oczekiwał; płatność silnika była poprawna, brakowało widoku).
+      for (const cast of legalXCostCasts(state, playerId, id, object, manaAvailable(object))) {
+        casts.push({ ...cast, cost: (cast.xValue ?? 0) + effectiveSpellManaCost(state, object) });
+      }
       continue;
     }
     // Fireball (X-cost, any-number-of-targets): oferujemy X od 1 do dostępnej
@@ -2443,7 +2449,15 @@ export function legalSpellCasts(state, playerId) {
     // gracze). Pełna enumeracja podzbiorów ograniczona do rozsądnego limitu.
     if (object.spell?.fireball) {
       const fbc = legalFireballCasts(state, playerId, id, object, manaAvailable(object));
-      for (const fc of fbc) casts.push(fc);
+      // C1: łączny koszt wariantu = X + {R} + {1} za każdy cel ponad pierwszy
+      // (Oracle: „This spell costs {1} more to cast for each target beyond
+      // the first") — dokładnie tyle pobierze castFireball. UI pokazuje tę
+      // liczbę PRZED potwierdzeniem, żeby gracz wiedział, ile źródeł będzie
+      // tapowanych (zgłoszenie: „wybrałem X=3, a tapnęło wszystkie 6 lądów"
+      // — wariant miał 3 cele i kosztował 6, czego nic nie zapowiadało).
+      for (const fc of fbc) {
+        casts.push({ ...fc, cost: fc.xValue + (object.manaCost ?? 0) + Math.max(0, fc.targets.length - 1) });
+      }
       continue;
     }
     const targetSpec = object.spell.targets ?? [];
