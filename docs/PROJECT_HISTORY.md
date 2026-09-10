@@ -50,13 +50,15 @@ hoarder) — sonda `detectors.mjs` probe `passive opponent` słusznie Oś 4
   `/tmp/batch_2026-09-10.txt`) + 10 głębokich (`--steps 600 --tick-rate 0.15`,
   seedy 5483..5690) **10/10 DET0** (log `/tmp/batch2_2026-09-10.txt`) + 10
   celowanych warhammer-wg (`--steps 500`, seedy 6589..6760) **10/10 DET0**
-  (log `/tmp/batch3_2026-09-10.txt`); łącznie po fixie **50/50 DET0** (66 w całej pętli).
+  (log `/tmp/batch3_2026-09-10.txt`) + 15 mieszanych (`--steps 500/600`,
+  seedy 8271..8705) **15/15 DET0** (log `/tmp/batch4_2026-09-10.txt`); łącznie
+  po fixie **65/65 DET0** (81 w całej pętli).
 - **Bramki:** `npm test` fast **5055/5055**, `npm run test:all` **5065/5065**,
   `npm run build` exit 0, `node --test test/bot-benchmark.test.js` 10/10 (via
   `test:all`).
 
 Plan: `docs/plans/PLAN_2026-09-10-petla-jakosci-thunderstaff.md` (M260/F1);
-handoff: `docs/setup/HANDOFF_2026-09-10.md` (aktualizowany po 40 dodatkowych partiach: 20×400 + 10×600 + 10×500 warhammer-wg).
+handoff: `docs/setup/HANDOFF_2026-09-10.md` (aktualizowany po 55 dodatkowych partiach: 20×400 + 10×600 + 10×500 warhammer-wg + 15×500/600).
 
 ## Sesja 2026-09-08/09 — audyt PR #106 + pętla jakości P3→P5 (PR #107)
 
