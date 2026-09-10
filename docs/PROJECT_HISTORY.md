@@ -47,13 +47,15 @@ hoarder) — sonda `detectors.mjs` probe `passive opponent` słusznie Oś 4
 - **Kontynuacja pętli (bez kodu, do wyczerpania budżetu):** 20 świeżych partii
   (`--steps 400 --tick-rate 0.25`, 24 talie rotacyjnie, 6 profili, seedy
   `3000+i*17`) — **20/20 DET0**, 20/20 `NIEWYCENIONE: brak` (log
-  `/tmp/batch_2026-09-10.txt`); łącznie po fixie **30/30 DET0** (46 w całej pętli).
+  `/tmp/batch_2026-09-10.txt`) + 10 głębokich (`--steps 600 --tick-rate 0.15`,
+  seedy 5483..5690) **10/10 DET0** (log `/tmp/batch2_2026-09-10.txt`); łącznie
+  po fixie **40/40 DET0** (56 w całej pętli).
 - **Bramki:** `npm test` fast **5055/5055**, `npm run test:all` **5065/5065**,
   `npm run build` exit 0, `node --test test/bot-benchmark.test.js` 10/10 (via
   `test:all`).
 
 Plan: `docs/plans/PLAN_2026-09-10-petla-jakosci-thunderstaff.md` (M260/F1);
-handoff: `docs/setup/HANDOFF_2026-09-10.md` (aktualizowany po 20 dodatkowych partiach).
+handoff: `docs/setup/HANDOFF_2026-09-10.md` (aktualizowany po 30 dodatkowych partiach: 20×400 + 10×600 kroków).
 
 ## Sesja 2026-09-08/09 — audyt PR #106 + pętla jakości P3→P5 (PR #107)
 
