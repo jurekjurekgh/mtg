@@ -403,6 +403,55 @@ test('B51: Thunderstaff — NIELEGALNIE: bez 2 many brak oferty aktywacji', () =
   assert.equal(offered.length, 0, 'zdolność kosztuje {2} — bez many nie jest oferowana');
 });
 
+// -----------------------------------------------------------------------------
+// M260/F1 (audyt PR #111, F1): strażnik case'u `buff_attacking_creatures`
+// w effectIsNoOpOnTarget (abilities.js). Bez case'u oferta {2}, {T} jest
+// pokazywana poza walką, choć rozstrzyga się w nic: „Attacking creatures get
+// +1/+0 until end of turn" bierze zbiór atakujących z chwili ROZSTRZYGNIĘCIA
+// (CR 611.2c — effects.js: pusty zbiór ⇒ early-return). Audyt zmierzył, że
+// cofnięcie case'u NIE czerwieni żadnego testu (szybki rdzeń 5055/5055) —
+// te domknięcie luki L13. Polityka ukrywania oferty = U9/M103; legalność
+// aktywacji zostaje (patrz test niżej, CR 602.2).
+// -----------------------------------------------------------------------------
+
+test('M260/F1: Thunderstaff — poza walką {2}, {T} nie jest oferowane (efekt nic nie robi)', () => {
+  const state = game('p1', 'main');
+  addMana(state, 'p1', 5);
+  put(state, 'staff', 'thunderstaff', 'p1', 'battlefield');
+  const offered = commands(state).filter((c) => c.type === 'activate_ability' && c.objectId === 'staff');
+  assert.equal(offered.length, 0, 'bez atakujących buff rozstrzyga się w nic — oferta ukryta (U9/M103)');
+});
+
+test('M260/F1: Thunderstaff — atakujący na liście, ale nie żyje: oferta też ukryta', () => {
+  const state = game('p1', 'declare_blockers');
+  addMana(state, 'p1', 5);
+  put(state, 'staff', 'thunderstaff', 'p1', 'battlefield');
+  // Lista atakujących wskazuje obiekt, którego nie ma na polu bitwy —
+  // druga noga case'u (hasLiveAttacker).
+  state.combat = { attackingPlayerId: 'p1', attackers: ['nieistniejacy'], blockers: new Map(), blockedAttackers: new Set() };
+  const offered = commands(state).filter((c) => c.type === 'activate_ability' && c.objectId === 'staff');
+  assert.equal(offered.length, 0, 'brak ŻYWEGO atakującego — oferta ukryta');
+});
+
+test('M260/F1: Thunderstaff — ukrycie oferty NIE zmienia legalności (CR 602.2)', () => {
+  // CR 602.2 (dosłownie, CR 2026-08-07 via mtg.wiki/page/Activated_ability):
+  // „To activate an ability is to put it onto the stack and pay its costs [...]
+  // If, at any point during the activation of an ability, a player is unable to
+  // comply with any of those steps, the activation is illegal". CR 602.5
+  // wylicza zakazy aktywacji ({T}/{Q} bez kontroli od początku tury,
+  // ograniczenia „Activate only...") — żaden nie zabrania aktywacji efektu,
+  // który nic nie zrobi. execute() nie woła effectIsNoOpOnTarget (grep:
+  // jedyne wołanie to abilityEffectIsNoOp przy budowie oferty), więc ręcznie
+  // wysłana komenda jest przyjmowana nawet poza walką.
+  const state = game('p1', 'main');
+  addMana(state, 'p1', 5);
+  put(state, 'staff', 'thunderstaff', 'p1', 'battlefield');
+  const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'staff', abilityIndex: 1 });
+  assert.equal(result.ok, true, 'aktywacja legalna mimo pustego zbioru atakujących');
+  assert.equal(state.objects.get('staff').tapped, true, 'koszt {T} zapłacony');
+  assert.ok(state.zones.stack.length > 0, 'zdolność weszła na stos');
+});
+
 // =============================================================================
 // Savage Surge — instant: +2/+2 i odkręcenie
 // =============================================================================
