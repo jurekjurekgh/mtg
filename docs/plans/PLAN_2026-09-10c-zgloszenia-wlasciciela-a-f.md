@@ -55,4 +55,17 @@ oparty na opisach tekstowych i na kodzie.
 
 ## Podsumowanie wykonania
 
-(uzupełniane kolejnymi commitami)
+- **E1 — GOTOWE** (`a63a0dc`): skan triggerów w grobie wyklucza kartę, która
+  właśnie umarła, oraz współpoległych z tej samej partii SBA. Strażnik 3 testy
+  (własna śmierć → brak, jednoczesna → brak, Forebear w grobie + cudza śmierć →
+  trigger jest). RED przed fixem: 2; mutacje: pełny revert → 2 RED, bez nogi
+  „własna śmierć" → 2 RED, bez nogi „współpolegli" → 1 RED. `npm test`
+  **5106/5106**.
+- **A — GOTOWE** (`299c1b5`): klucz wariantu płatności w `countPaymentVariants`
+  niesie rodzaj źródła, więc Forest i Scorned Villager (`{G}` z obu) to dwa
+  kształty i kreator się otwiera. Strażnik 4 testy (w tym anty-over-fix: dwa
+  lądy = jeden kształt; dwa źródła-zdolności o tym samym profilu = jeden kształt
+  — świadoma granica). RED przed fixem: A/1; mutacja → 1 RED; rodzina kreatora
+  (7 plików) 53/53. `npm test` **5110/5110**.
+- Pozostałe (B1, B2, E2, E3, F, C, D) — w kolejności z planu, każde osobnym
+  zielonym commitem.
