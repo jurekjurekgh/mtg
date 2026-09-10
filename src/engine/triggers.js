@@ -1,4 +1,5 @@
 import { holdReplacementResolution } from './destruction.js';
+import { isProtectedFromSource, effectiveProtectionFromColors, effectiveColors } from './attachments.js';
 import { event } from '../protocol/types.js';
 import { singleTargetOfStackEntry } from './objects.js';
 import {
@@ -304,6 +305,22 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   const hexproofBlocked = (object) => object && object.zone === 'battlefield'
     && object.controllerId !== sourceObject.controllerId
     && (effectiveKeywords(object, state).includes('hexproof'));
+  // Protection (CR 702.16b, dosłownie CR 2026-08-07 „The Hobbit": „A
+  // permanent or player with protection can't be targeted by spells or
+  // abilities..." — od źródła o chronionej jakości): dotyczy także celów
+  // ZDOLNOŚCI TRIGGEROWANYCH i niezależnie od kontrolera (inaczej niż
+  // hexproof — ochrona blokuje też własne źródła). Źródło = obiekt-źródło
+  // triggera (LKI, gdy go brak, nie filtruje — jakości nieznane).
+  const protectedBlocked = (object) => {
+    if (!object || !sourceObject) return false;
+    // Jakość (deskryptor: rodzaj/podtyp/kolor/multicolor) + klasyczna ochrona
+    // od koloru (protectionFromColors) — oba źródła ochrony blokują celowanie
+    // (CR 702.16b).
+    if (isProtectedFromSource(state, object, sourceObject)) return true;
+    const protColors = effectiveProtectionFromColors(state, object);
+    if (protColors.length === 0) return false;
+    return effectiveColors(sourceObject).some((c) => protColors.includes(c));
+  };
   const isArtifactOrEnchantment = (object) => (object.types ?? []).includes('Artifact')
     || (object.types ?? []).includes('Enchantment')
     || object.kind === 'artifact'
@@ -320,7 +337,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     const creatures = state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       if (excludedHostId != null && objectId === excludedHostId) return false;
-      return object?.zone === 'battlefield' && object.kind === 'creature' && !hexproofBlocked(object);
+      return object?.zone === 'battlefield' && object.kind === 'creature' && (!hexproofBlocked(object) && !protectedBlocked(object));
     });
     const out = [];
     if (opponentId) out.push(opponentId);
@@ -333,7 +350,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.controllerId === damagedPlayerId && isArtifactOrEnchantment(object)
-        && !hexproofBlocked(object);
+        && (!hexproofBlocked(object) && !protectedBlocked(object));
     });
   }
   if (spec.type === 'player') {
@@ -432,7 +449,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       // M154 (Batch 38, Talion's Messenger): cel może być zawężony do podtypu
       // („target Faerie you control") — dane, nie warunek na nazwę karty.
       if (spec.subtype && !(object.subtypes ?? []).includes(spec.subtype)) return false;
-      return true;
+      return !protectedBlocked(object);
     });
   }
   if (spec.type === 'ally_creature_on_battlefield') {
@@ -450,7 +467,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return object && object.zone === 'battlefield' && object.kind === 'creature'
         && object.controllerId !== sourceObject.controllerId
         && object.damagedThisTurn
-        && !hexproofBlocked(object);
+        && (!hexproofBlocked(object) && !protectedBlocked(object));
     });
   }
   if (spec.type === 'creature_opponent_controls') {
@@ -460,7 +477,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield' && object.kind === 'creature'
         && object.controllerId !== sourceObject.controllerId
-        && !hexproofBlocked(object);
+        && (!hexproofBlocked(object) && !protectedBlocked(object));
     });
   }
   // M154 (Batch 38, Lotusguard Disciple): cel „creature or Vehicle" —
@@ -471,7 +488,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       if (!object || object.zone !== 'battlefield') return false;
       const isVehicle = (object.subtypes ?? []).includes('Vehicle');
       if (object.kind !== 'creature' && !isVehicle) return false;
-      return !hexproofBlocked(object);
+      return (!hexproofBlocked(object) && !protectedBlocked(object));
     });
   }
   if (spec.type === 'creature') {
@@ -489,7 +506,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       // (ADR 0002); ta sama lista napędza ofertę i walidację (L48).
       if (spec.notArtifact && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'))) return false;
       if (Array.isArray(spec.notColors) && spec.notColors.some((color) => (object.colors ?? []).includes(color))) return false;
-      if (hexproofBlocked(object)) return false;
+      if (hexproofBlocked(object) || protectedBlocked(object)) return false;
       return true;
     });
   }
@@ -501,7 +518,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield'
         && (isArtifactOrEnchantment(object) || isLand(object))
-        && !hexproofBlocked(object);
+        && (!hexproofBlocked(object) && !protectedBlocked(object));
     });
   }
   if (spec.type === 'artifact_or_enchantment' && !spec.controlledBy) {
@@ -509,7 +526,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.id !== sourceObject.id && isArtifactOrEnchantment(object)
-        && !hexproofBlocked(object);
+        && (!hexproofBlocked(object) && !protectedBlocked(object));
     });
   }
   if (spec.type === 'artifact_you_control') {
@@ -518,7 +535,8 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return object && object.zone === 'battlefield'
         && object.controllerId === sourceObject.controllerId
         && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'))
-        && object.id !== sourceObject.id;
+        && object.id !== sourceObject.id
+        && !protectedBlocked(object);
     });
   }
   // M166/B (Cacophodon — Enrage): „untap target permanent" — dowolny
@@ -537,7 +555,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
         // oferowałby na własne wejście permanent przeciwnika, a po wybraniu
         // go gracz oddawałby cudzy stwór zamiast swojego.
         if (spec.controlledBy === 'controller' && object?.controllerId !== sourceObject.controllerId) return false;
-        return object && object.zone === 'battlefield' && !hexproofBlocked(object);
+        return object && object.zone === 'battlefield' && (!hexproofBlocked(object) && !protectedBlocked(object));
       })
       .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
   }
@@ -546,7 +564,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield'
         && (object.kind === 'creature' || object.kind === 'artifact')
-        && object.id !== sourceObject.id && !hexproofBlocked(object);
+        && object.id !== sourceObject.id && (!hexproofBlocked(object) && !protectedBlocked(object));
     });
   }
   if (spec.type === 'other_nonland_permanent') {
@@ -557,7 +575,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       .filter((objectId) => {
         const object = state.objects.get(objectId);
         if (!object || object.id === sourceObject.id) return false;
-        if (hexproofBlocked(object)) return false;
+        if (hexproofBlocked(object) || protectedBlocked(object)) return false;
         if (isLand(object)) return false;
         return true;
       })
@@ -572,7 +590,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       .filter((objectId) => {
         const object = state.objects.get(objectId);
         return object && object.zone === 'battlefield' && object.kind === 'creature'
-          && object.controllerId === defendingPlayerId && !hexproofBlocked(object);
+          && object.controllerId === defendingPlayerId && (!hexproofBlocked(object) && !protectedBlocked(object));
       })
       .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
   }
@@ -582,7 +600,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
-      if (hexproofBlocked(object)) return false;
+      if (hexproofBlocked(object) || protectedBlocked(object)) return false;
       return (effectivePower(object, state) ?? 0) >= min;
     });
   }
@@ -597,7 +615,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       const object = state.objects.get(objectId);
       if (!object || object.zone !== 'battlefield') return false;
       if (object.id === sourceObject.id) return false;
-      if (hexproofBlocked(object)) return false;
+      if (hexproofBlocked(object) || protectedBlocked(object)) return false;
       if (spec.opponentControls && object.controllerId === sourceObject.controllerId) return false;
       const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
       return !isLand;
@@ -612,7 +630,8 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return object && object.zone === 'battlefield'
         && object.controllerId === sourceObject.controllerId
         && (object.kind === 'land' || (object.types ?? []).includes('Land'))
-        && object.id !== sourceObject.id;
+        && object.id !== sourceObject.id
+        && !protectedBlocked(object);
     });
   }
   return [];
