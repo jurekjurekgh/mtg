@@ -187,5 +187,7 @@ test('C2: grupa wariantów station nazywa kartę, nie „Wariant" (RED)', () => 
   assert.match(title, /Warmaker Gunship/, 'nazwa karty w tytule grupy');
   assert.doesNotMatch(title, /^Wybierz: Wariant$/, 'bez generycznego „Wariant"');
   const label = choiceGroupLabel(request, fakeSession, stationGroupView());
-  assert.match(label, /2 opcje/, 'licznik opcji zostaje');
+  // C2 (2026-09-10): licznik wariantów usunięty z panelu — przestarzała
+  // miara przy kreatorach/modalnych wyborach.
+  assert.doesNotMatch(label, /\(\d+ opcj/, 'C2: licznik opcji usunięty');
 });

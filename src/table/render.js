@@ -1759,18 +1759,6 @@ export function rulesText(info) {
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
  *  UWAGA: prefiksy („Dobierz kartę\", „Zagraj ląd\", „Rzuć:\"…) są częścią
  *  kontraktu testu UI — ikony dodajemy wyłącznie przez CSS (::before). */
-/**
- * Odmiana liczebnika „opcja" przy liczbie (uwaga właściciela A, 2026-08-10):
- * 1 opcja · 2–4 opcje · 5+ opcji · wyjątek 12–14 → opcji (i 22–24, 32–34… opcje).
- */
-function optionsCountLabel(count) {
-  if (count === 1) return '1 opcja';
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  const few = mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14);
-  return `${count} ${few ? 'opcje' : 'opcji'}`;
-}
-
 /** Deskryptory grup wyboru po typie żądania — rzeczowniki (bez „wybierz"). */
 const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
   declare_attackers: 'Deklaracja atakujących',
@@ -2072,11 +2060,11 @@ function choiceSourceTitle(cmd, session, view) {
 }
 
 /**
- * Pełna etykieta przycisku grupy wyborów w panelu „Twoje działania" (uwaga
- * właściciela A, 2026-08-10): opis CO wybieramy — nazwany tytuł („Aura:
- * Benevolent Blessing (3 opcje)") albo deskryptor czynności z prefiksem
- * („Wybierz: Mulligan (2 opcje)"), z odmienioną liczbą — nigdy generyczne
- * „Wybierz: wybierz (N opcji)".
+ * Pełna etykieta przycisku grupy wyborów w panelu „Twoje działania":
+ * opis CO wybieramy — nazwany tytuł („Aura: Benevolent Blessing") albo
+ * deskryptor czynności z prefiksem („Wybierz: Mulligan") — nigdy generyczne
+ * „Wybierz: wybierz". C2 (2026-09-10): bez licznika wariantów „(N opcji)"
+ * — przestarzała miara przy kreatorach/modalnych wyborach.
  */
 /** Tytuł grupy BEZ licznika — nagłówek modala wyboru (main.js introLabel). */
 // M240/K (audyt właściciela): gdy żadna doprecyzowana gałąź nie mówi,
@@ -2134,8 +2122,12 @@ export function choiceGroupLabel(request, session, view) {
     }
     return `${base} między blokujących`;
   }
-  const count = (request?.options ?? []).length;
-  return `${choiceGroupTitle(request, session, view)} (${optionsCountLabel(count)})`;
+  // C2 (zgłoszenie właściciela 2026-09-10): bez licznika „(N opcji)".
+  // To była miara ENUMERACJI wariantów (np. „Cel czaru: Fireball (145 opcji)"
+  // = podzbiory celów × wartości X), przestarzała od czasu kreatorów i
+  // wyborów modalnych — wpis panelu nazywa CZYNNOŚĆ (tytuł grupy), a realny
+  // wybór (ile celów, jaki X, ile mocy) dokonuje się wewnątrz kreatora.
+  return choiceGroupTitle(request, session, view);
 }
 
 /**
