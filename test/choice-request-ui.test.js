@@ -155,6 +155,67 @@ test('etykieta grupy: odmiana liczebnika opcja/opcje/opcji (uwaga A)', () => {
   assert.ok(choiceGroupLabel(mk(22), LABEL_SESSION, view).endsWith('(22 opcje)'), '22 opcje');
 });
 
+// =============================================================================
+// F-C (znalezisko właściciela 2026-09-09): „Rozdzielanie obrażeń bojowych
+// (1 opcja)" — przydział po walce to CZYNNOŚĆ (wizard), nie wybór spośród
+// wariantów. groupCombatDecisions pakuje resolve_damage_assignment zawsze
+// z JEDNYM domyślnym wariantem, więc licznik „(1 opcja)" to szum: realny
+// wybór (ile mocy na którego blokera / ile po trample na gracza) robi się
+// wewnątrz wizarda. Etykieta grupy opisuje czynność, bez licznika opcji.
+// =============================================================================
+
+function assignmentView(entries) {
+  return { zones: {}, pendingDamageAssignment: { playerId: 'p1', entries } };
+}
+
+const GOBLIN_PIKER = Object.freeze({ cardId: 'goblin-piker' });
+
+test('F-C: damage_assignment z JEDNĄ komendą nie mówi „(1 opcja)" — nazywa atakującego', () => {
+  const assign = Object.freeze({ type: 'resolve_damage_assignment', playerId: 'p1', assignments: {} });
+  const entries = groupCombatDecisions([assign], { turn: { number: 3, step: 'combat_damage' } });
+  const request = entries[0].request;
+  assert.equal(request.type, 'damage_assignment');
+  const view = assignmentView([{
+    attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: false,
+    blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3 }],
+  }]);
+  const label = choiceGroupLabel(request, COMBAT_SESSION, view);
+  assert.equal(label, 'Rozdziel obrażenia bojowe: Goblin Piker (moc 5)');
+  assert.ok(!/\(\d+ opcj[ei]\)/.test(label), 'bez licznika opcji w etykiecie czynności');
+});
+
+test('F-C: damage_assignment „obrażenia wg wytrzymałości" w nazwie sposobu', () => {
+  const assign = Object.freeze({ type: 'resolve_damage_assignment', playerId: 'p1', assignments: {} });
+  const entries = groupCombatDecisions([assign], { turn: { number: 3, step: 'combat_damage' } });
+  const view = assignmentView([{
+    attackerId: 'atk', attackerCardId: 'highland-game', power: 3, byToughness: true, trample: false,
+    blockers: [{ id: 'b1', cardId: 'goblin-piker', toughness: 2, damage: 0, lethal: 2 }],
+  }]);
+  const label = choiceGroupLabel(entries[0].request, COMBAT_SESSION, view);
+  assert.equal(label, 'Rozdziel obrażenia bojowe: Highland Game (obrażenia wg wytrzymałości 3)');
+});
+
+test('F-C: damage_assignment bez żywego widoku — generyczny opis czynności bez licznika', () => {
+  const assign = Object.freeze({ type: 'resolve_damage_assignment', playerId: 'p1', assignments: {} });
+  const entries = groupCombatDecisions([assign], { turn: { number: 3, step: 'combat_damage' } });
+  const label = choiceGroupLabel(entries[0].request, COMBAT_SESSION, { zones: {} });
+  assert.equal(label, 'Rozdziel obrażenia bojowe między blokujących');
+  assert.ok(!/\(\d+ opcj[ei]\)/.test(label), 'bez licznika opcji w etykiecie czynności');
+});
+
+test('F-C: damage_assignment nie nosi „(N opcji)" nawet przy N domyślnych wariantach', () => {
+  // Obrona na wypadek, gdyby kiedyś wejście niosło >1 wariantów: typ opisuje
+  // CZYNNOŚĆ, więc liczba komend nigdy nie ma trafić do etykiety panelu.
+  const mk = (targetId) => Object.freeze({ type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: targetId, amount: 5 }] } });
+  const request = requestOf('damage_assignment', [mk('b1'), mk('b2')]);
+  const view = assignmentView([{
+    attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: true,
+    blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3 }],
+  }]);
+  const label = choiceGroupLabel(request, COMBAT_SESSION, view);
+  assert.equal(label, 'Rozdziel obrażenia bojowe: Goblin Piker (moc 5)');
+});
+
 test('UI ChoiceRequest: nagłówek modala może nadpisać introLabel (opis grupy)', () => {
   const host = new ChoiceMiniEl('div');
   const keep = Object.freeze({ type: 'resolve_mulligan_choice', playerId: 'p1', keep: true });

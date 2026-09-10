@@ -19,6 +19,61 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-10 — pętla jakości Żywym Testerem: Thunderstaff noop (PR #111, arena/01a08788)
+
+Po domknięciu znalezisk właściciela A–D (F-A..F-D, PR #111) sesja przeszła w
+**pętlę jakości Żywym Testerem do wyczerpania budżetu** (ADR 0021) na tej samej
+gałęzi/PR (ADR 0013/0020). 16 partii (`--steps 500-600 --tick-rate 0-0.25`,
+`hoarder`/`explorer`/`greedy`, seedy 1..777) → **15× DET0, 1× `noop` Thunderstaff**
+w `T.16 Główna 1` przed deklaracją ataku (warhammer-wg vs tarkir-wur, seed 777,
+hoarder) — sonda `detectors.mjs` probe `passive opponent` słusznie Oś 4
+(„tylko koszt” 2 many + tap, bez efektu).
+
+- **Triaż:** `src/cards/card-data.js:10098-10110` (`buff_attacking_creatures`),
+  `src/engine/effects.js:2096-2125` early-return gdy `state.combat.attackers`
+  puste (CR 611.2c, zbiór atakujących mrożony w ROZSTRZYGNIĘCIU) — `emitMassBuff`
+  nie jest wołany; aktywacja poza walką to koszt bez skutku (nie fałszywy alarm
+  detektora). Luka `src/engine/abilities.js:325-420` — `effectIsNoOpOnTarget`
+  bez case `buff_attacking_creatures` → oferta `{2},{T}` widoczna także w
+  Głównej 1.
+- **F1 (M260/F1, `fix(abilities): hide Thunderstaff outside combat`):**
+  w `effectIsNoOpOnTarget` dodano case `buff_attacking_creatures`:
+  `attackers = state.combat?.attackers ?? []`; `length===0 → true`; inaczej
+  `hasLiveAttacker` na `zone===battlefield && kind===creature` → `!hasLiveAttacker`.
+  Ukrycie oferty (U9/M103), legalność CR 602.2b zachowana (execute nadal przyjmie).
+- **Weryfikacja:** `npm run build` 61 modułów / 3452,2 kB; re-run tego samego
+  seeda 777 hoarder: **1→0 zgłoszeń**; re-run 10 partii (warhammer-wg vs
+  tarkir-wur 6× + 4× diverse talie) — **10/10 DET0**, 0 niewycenionych.
+- **Kontynuacja pętli (bez kodu, do wyczerpania budżetu):** 20 świeżych partii
+  (`--steps 400 --tick-rate 0.25`, 24 talie rotacyjnie, 6 profili, seedy
+  `3000+i*17`) — **20/20 DET0**, 20/20 `NIEWYCENIONE: brak` (log
+  `/tmp/batch_2026-09-10.txt`) + 10 głębokich (`--steps 600 --tick-rate 0.15`,
+  seedy 5483..5690) **10/10 DET0** (log `/tmp/batch2_2026-09-10.txt`) + 10
+  celowanych warhammer-wg (`--steps 500`, seedy 6589..6760) **10/10 DET0**
+  (log `/tmp/batch3_2026-09-10.txt`) + 15 mieszanych (`--steps 500/600`,
+  seedy 8271..8705) **15/15 DET0** (log `/tmp/batch4_2026-09-10.txt`); łącznie
+  po F1 **65/65 DET0** (81 w całej pętli).
+- **BATCH5 / M348 — wyciek `discard_choice_unresolved` (INFO) → F2:** batch5 56-70
+  (22 talie rotacyjnie, 6 profili, `steps 550/600 --tick-rate 0.2`, seedy
+  `9000+i*29`) — przed fixem 14/15 DET0 + 1× INFO `LOG: snake_case discard_choice_unresolved`
+  (warhammer-ubr vs wiedzmin-wu seed 10885 impatient, Fledgling Imp + pending discard_choice);
+  fix `src/table/session.js` — `REJECTION_REASON_LABELS` +3 (`discard_choice_*`, `illegal_discard_choice`)
+  + `rejectionReasonLabel()` guard `≥2 _ → bez (reason)` (L6: dwa kanały — UI bez sluga,
+  `rejectionRecords` z kodem); `npm run build` 61/3453,7 kB; re-run seed 10885 → DET0
+  (`Ruch odrzucony: najpierw wybierz kartę do odrzucenia`); re-run batch5 56-70 → **15/15 DET0**
+  (log `/tmp/batch5_fixed.txt`); łącznie po obu fixach **80/80 DET0** (96 w całej pętli).
+- **BATCH6 + BATCH7 — kontynuacja pętli bez kodu (30 partii):** batch6 71-85 (22 talie,
+  6 profili, `steps 550/600 --tick-rate 0.2`, seedy `11000+i*31`) — **15/15 DET0**,
+  15/15 `NIEWYCENIONE: brak` (log `/tmp/batch6.txt`); batch7 86-100 (24 talie, 6 profili,
+  `steps 400/550 --tick-rate 0.25`, seedy `12000+i*23`) — **15/15 DET0**, 15/15 `NIEWYCENIONE: brak`
+  (log `/tmp/batch7.txt`); łącznie po obu fixach **110/110 DET0** (126 w całej pętli).
+- **Bramki:** `npm test` fast **5055/5055**, `npm run test:all` **5065/5065**,
+  `npm run build` 61/3453,7 kB, `node --test test/bot-benchmark.test.js` 10/10 (via
+  `test:all`).
+
+Plan: `docs/plans/PLAN_2026-09-10-petla-jakosci-thunderstaff.md` (M260/F1 + M348/BATCH5 + BATCH6/7);
+handoff: `docs/setup/HANDOFF_2026-09-10.md` (aktualizowany po 55+15+30 partiach: 20×400 + 10×600 + 10×500 warhammer-wg + 15×500/600 + 15×550/600 batch5 + 15×550/600 batch6 + 15×400/550 batch7).
+
 ## Sesja 2026-09-08/09 — audyt PR #106 + pętla jakości P3→P5 (PR #107)
 
 P2: audyt `docs/audits/AUDYT_PR106_2026-09-08.md` (5 findings F1–F5, CR
@@ -9531,3 +9586,36 @@ Morph/coven/surveil/investigate…), imiesłowy przy „karcie" („odrzucona
 z madness", „rzuć ją"), formuła Tarmogoyfa. 7 regresji (test/b7-jezyk.test.js).
 Brama: all5052/5052, fast5042/5042, build61/3446,3kB, quick84,5%(568/672)
 bez zmian (UI-only, silnik nietknięty).
+
+## 2026-09-09 — audyt PR #109 (PR #111, arena/01a08788)
+
+Audyt całego PR #109 (37 plików: A4/B5/B7 — madness-priorytet, wycena draw,
+faceDownCause w LKI, sourceCardId manifest_dread, etykiety stołu i logu,
+counter-labels do wspólnego modułu, detektor slugów w kaflach).
+Werdykt: **0 znalezisk wymagających fixa w kodzie** — zmiany silnika i bota
+poprawne i generyczne (ADR 0002), warstwa językowa root-cause ze strażnikami.
+A4-1 (madness restorePriorityTo) dowiedziony RED→GREEN (pin A4-1/4).
+2 findingi procesowo-dokumentacyjne (niski priorytet): plan sesji #109 scalony
+z pustym „Podsumowaniem" i checkboxami B3/B5/B6 nietkniętymi (handoff/HISTORY/
+README istnieją — nie F-B2/1 w pełnej sile), oraz pełne mutacje tylko dla A4.
+Bramki: npm test fast 5042/5042, test:all 5052/5052, build exit 0, próbka
+regresji bota 10/10; Żywy Tester 3 świeże partie (tarkir-bg/srodziemie 777,
+innistrad-wu/theros 31415, ravnica/dominaria-wu 271828) — DET0, 0 niewyc. ruchów.
+Raport docs/audits/AUDYT_PR109_2026-09-09.md, plan 09-09c, handoff 2026-09-09b.
+
+## 2026-09-09 — znaleziska właściciela A–D (PR #111, arena/01a08788)
+
+Cztery znaleziska właściciela z testów (plan 09-09d), warstwa pokazu/wyceny bota
+— silnik/legalność już poprawna (bez zmian reguł, ADR 0030). Każde: RED→GREEN,
+commit zielony.
+- **F-A** (2645c59): Wishful Merfolk — badge nadpisanego podtypu pokazuje
+  „do końca tury"; pole widoku `subtypesBeforeOverride` + overlay w renderze.
+- **F-B** (7785e80): scoring blokowania zna deathtouch (CR 702.4) — bot blokuje
+  samą Deadly Recluse, bez zbędnego 2/2.
+- **F-C** (150f3ec): etykieta grupy `damage_assignment` opisuje czynność bez
+  licznika „(N opcji)" (jak `damage_division`).
+- **F-D** (28684b8): bot przy `damage_divided` (Inferno Titan) uwzględnia budżet
+  `divisionTotal` w wyborze liczby celów — premiuje skupiony lethal (60/zabójstwo,
+  ≥1 na cel, suma=budżet), zamiast rozstrzelać 1/1/1.
+Bramki: npm test fast 5055/5055, test:all 5065/5065, build 61/3451,3 kB, próbka
+regresji bota 10/10. Plan 09-09d, handoff 2026-09-09c, opis PR #111.

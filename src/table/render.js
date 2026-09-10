@@ -2113,6 +2113,27 @@ export function choiceGroupLabel(request, session, view) {
     const src = view?.pendingTriggerTarget?.cardId ? session.nameOf(view.pendingTriggerTarget.cardId) : null;
     return `${src ? `${src} — ` : ''}podziel ${total ?? '?'} ${total === 1 ? 'obrażenie' : (total >= 2 && total <= 4 ? 'obrażenia' : 'obrażeń')} między cele`;
   }
+  // F-C (znalezisko właściciela 2026-09-09): „Rozdzielenie obrażeń bojowych
+  // (1 opcja)” to szum — przydział po walce to CZYNNOŚĆ (wizard rozdzielania,
+  // jak damage_division M172/E), nie wybór spośród wariantów. groupCombatDecisions
+  // zawsze pakuje tu JEDEN domyślny wariant (options: [command]), więc licznik
+  // „(1 opcja)” kłamie: realnego wyboru — ile mocy na którego blokera / ile po
+  // trample na gracza — dokonuje się dopiero WEWNĄTRZ wizarda. Wpis panelu
+  // opisuje czynność (nazywając atakującego z żywego widoku, gdy widać
+  // dokładnie jednego), bez licznika ofert.
+  if (request?.type === 'damage_assignment') {
+    const base = 'Rozdziel obrażenia bojowe';
+    const entries = view?.pendingDamageAssignment?.entries;
+    if (Array.isArray(entries) && entries.length === 1) {
+      const e = entries[0];
+      const name = e.attackerCardId ? session.nameOf(e.attackerCardId) : null;
+      if (name) {
+        const how = e.byToughness ? 'obrażenia wg wytrzymałości' : 'moc';
+        return `${base}: ${name} (${how} ${e.power})`;
+      }
+    }
+    return `${base} między blokujących`;
+  }
   const count = (request?.options ?? []).length;
   return `${choiceGroupTitle(request, session, view)} (${optionsCountLabel(count)})`;
 }
@@ -3372,6 +3393,9 @@ export function cardInfo(session, object, combat = null) {
     grantedPower: faceDown ? 0 : Number(object.grantedPower ?? 0),
     grantedToughness: faceDown ? 0 : Number(object.grantedToughness ?? 0),
     lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
+    // F-A (Wishful Merfolk): nadpisanie podtypów DO KOŃCA TURY — widok niesie
+    // subtypesBeforeOverride (active), żywe `subtypes` to już cel („Human").
+    subtypesOverride: faceDown ? false : Boolean(object.subtypesBeforeOverride?.length),
     cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
@@ -3674,6 +3698,14 @@ export function buildStateOverlay(visual, info) {
     }
     for (const kw of info.lostKeywordsUntilEOT ?? []) {
       flags.push(['kw', `bez: ${KEYWORD_LABELS[kw] ?? kw}`]);
+    }
+    // F-A (znalezisko właściciela 2026-09-09, Wishful Merfolk): utrata
+    // keyworda („bez: obrońca") miała badge, ale NADPISANIE podtypu na Human
+    // do końca tury nie było sygnalizowane — typ-line (już „Human") nie mówił,
+    // że to stan czasowy. Badge jak pozostałe flagi „do końca tury"
+    // (tempControlNow/untapLockedNow). Nazwa podtypu = żywe info.subtypes.
+    if (info.subtypesOverride && (info.subtypes ?? []).length) {
+      flags.push(['kw', `typ: ${info.subtypes.join(' ')} do końca tury`]);
     }
     if (info.cantBlockNow) flags.push(['kw', 'nie może blokować']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);

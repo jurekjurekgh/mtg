@@ -5690,6 +5690,14 @@ export function playerView(state, playerId) {
           if (activatable.length > 0) entry.activatableAbilities = JSON.parse(JSON.stringify(activatable));
         }
         if (object.lostKeywordsUntilEOT?.length) entry.lostKeywordsUntilEOT = [...object.lostKeywordsUntilEOT];
+        // F-A (znalezisko właściciela 2026-09-09, Wishful Merfolk): nadpisanie
+        // PODTYPÓW do końca tury (becomes_subtype_until_end_of_turn ustawia
+        // subtypesBeforeOverride) to widoczny skutek efektu (CR 611.2c) —
+        // ADR 0017: kafel musi pokazać, że karta „staje się Humanem do końca
+        // tury" (żywe `subtypes` to już cel; bez tego pola warstwa opisu nie
+        // odróżni trwałego podtypu od czasowego nadpisania). Jak
+        // lostKeywordsUntilEOT — tylko gdy nadpisanie aktywne.
+        if (object.subtypesBeforeOverride?.length) entry.subtypesBeforeOverride = [...object.subtypesBeforeOverride];
         // M173/C (uwaga właściciela — audyt WSZYSTKICH czasowych flag):
         // każdy widoczny skutek efektu ma być badge'em na kaflu; te pola
         // istniały tylko w stanie (klasa L1/ADR 0017).

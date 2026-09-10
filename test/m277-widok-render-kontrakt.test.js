@@ -112,6 +112,11 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
     'cantBeBlocked', 'cantBlock', 'cantBlockPrinted', 'cantBeRegeneratedThisTurn',
     'grantedKeywords', 'grantedPower', 'grantedToughness', 'lostKeywordsUntilEOT',
     'entersWithCounters', 'subtypes', 'keywords', 'counters',
+    // F-A (2026-09-09): tymczasowe NADPISANIE podtypu (Wishful Merfolk
+    // „becomes a Human until end of turn\") — widok dokłada field tylko, gdy
+    // na permanencie jest aktywne nadpisanie (jak tempControlUntilEOT /
+    // grantedKeywords / lostKeywordsUntilEOT), więc nie wchodzi w próbkę.
+    'subtypesBeforeOverride',
     // Aktywny link ze źródła spoza próbki; pełny ETB→widok→DOM w owner-animation-badge.
     'linkedAnimationSource',
   ]);
