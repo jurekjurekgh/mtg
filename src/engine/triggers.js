@@ -2406,7 +2406,16 @@ function processTriggersScan(state, recentEvents) {
       // nightbound i nie dublujemy.
       const enterKw = entered.keywords ?? [];
       if (state.dayNight === null && (enterKw.includes('daybound') || enterKw.includes('nightbound'))) {
-        setDayNight(state, 'day');
+        // CR 702.145d: kontrola permanentu z daybound przy „ani dzień, ani
+        // noc" → dzień. CR 702.145g (dosłownie, CR 2026-08-07): „Any time a
+        // player controls a permanent with nightbound, if it's neither day nor
+        // night and there are no permanents with daybound on the battlefield,
+        // it becomes night." — nightbound SAM robi noc; dzień tylko, gdy
+        // daybound jest gdzieś na polu (release notes: daybound i nightbound
+        // wchodzą razem → dzień; wchodzący nightbound wtedy transformuje).
+        const dayboundAnywhere = enterKw.includes('daybound')
+          || [...state.objects.values()].some((o) => o.zone === 'battlefield' && o.id !== entered.id && (o.keywords ?? []).includes('daybound'));
+        setDayNight(state, dayboundAnywhere ? 'day' : 'night');
         entered = state.objects.get(entered.id) ?? entered;
       } else if (state.dayNight === 'night' && enterKw.includes('daybound') && entered.transformTo) {
         applyEffect(state, { type: 'transform' }, entered, []);
