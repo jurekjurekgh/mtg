@@ -387,6 +387,23 @@ function effectIsNoOpOnTarget(state, effect, target, source = null) {
           && (card.colors ?? []).length >= 2;
       });
     }
+    // M260/F1 (Żywy Tester, Thunderstaff — oferta bez skutku): efekt
+    // `buff_attacking_creatures` trafia na żywe atakujące w chwili
+    // ROZSTRZYGNIĘCIA (CR 611.2c; effects.js: zbiór z state.combat.attackers).
+    // Poza walką — także tuż przed deklaracją, gdy kolumna atakujących
+    // wciąż jest pusta — koszt {2},{T} nie daje żadnej premii: aktywacja
+    // rozstrzyga się w nic (early-return przy pustej liście). Sonda `noop`
+    // w detektorach słusznie to złapała. Ofertę chowamy (U9/M103), a
+    // legalność wg CR 602.2b zostaje — execute nadal ją przyjmie.
+    case 'buff_attacking_creatures': {
+      const attackers = state.combat?.attackers ?? [];
+      if (attackers.length === 0) return true;
+      const hasLiveAttacker = attackers.some((id) => {
+        const obj = state.objects.get(id);
+        return obj && obj.zone === 'battlefield' && obj.kind === 'creature';
+      });
+      return !hasLiveAttacker;
+    }
     default:
       return false;
   }

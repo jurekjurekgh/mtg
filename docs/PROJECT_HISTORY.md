@@ -19,6 +19,38 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-10 — pętla jakości Żywym Testerem: Thunderstaff noop (PR #111, arena/01a08788)
+
+Po domknięciu znalezisk właściciela A–D (F-A..F-D, PR #111) sesja przeszła w
+**pętlę jakości Żywym Testerem do wyczerpania budżetu** (ADR 0021) na tej samej
+gałęzi/PR (ADR 0013/0020). 16 partii (`--steps 500-600 --tick-rate 0-0.25`,
+`hoarder`/`explorer`/`greedy`, seedy 1..777) → **15× DET0, 1× `noop` Thunderstaff**
+w `T.16 Główna 1` przed deklaracją ataku (warhammer-wg vs tarkir-wur, seed 777,
+hoarder) — sonda `detectors.mjs` probe `passive opponent` słusznie Oś 4
+(„tylko koszt” 2 many + tap, bez efektu).
+
+- **Triaż:** `src/cards/card-data.js:10098-10110` (`buff_attacking_creatures`),
+  `src/engine/effects.js:2096-2125` early-return gdy `state.combat.attackers`
+  puste (CR 611.2c, zbiór atakujących mrożony w ROZSTRZYGNIĘCIU) — `emitMassBuff`
+  nie jest wołany; aktywacja poza walką to koszt bez skutku (nie fałszywy alarm
+  detektora). Luka `src/engine/abilities.js:325-420` — `effectIsNoOpOnTarget`
+  bez case `buff_attacking_creatures` → oferta `{2},{T}` widoczna także w
+  Głównej 1.
+- **F1 (M260/F1, `fix(abilities): hide Thunderstaff outside combat`):**
+  w `effectIsNoOpOnTarget` dodano case `buff_attacking_creatures`:
+  `attackers = state.combat?.attackers ?? []`; `length===0 → true`; inaczej
+  `hasLiveAttacker` na `zone===battlefield && kind===creature` → `!hasLiveAttacker`.
+  Ukrycie oferty (U9/M103), legalność CR 602.2b zachowana (execute nadal przyjmie).
+- **Weryfikacja:** `npm run build` 61 modułów / 3452,2 kB; re-run tego samego
+  seeda 777 hoarder: **1→0 zgłoszeń**; re-run 10 partii (warhammer-wg vs
+  tarkir-wur 6× + 4× diverse talie) — **10/10 DET0**, 0 niewycenionych.
+- **Bramki:** `npm test` fast **5055/5055**, `npm run test:all` **5065/5065**,
+  `npm run build` exit 0, `node --test test/bot-benchmark.test.js` 10/10 (via
+  `test:all`).
+
+Plan: `docs/plans/PLAN_2026-09-10-petla-jakosci-thunderstaff.md` (M260/F1);
+handoff: `docs/setup/HANDOFF_2026-09-10.md`.
+
 ## Sesja 2026-09-08/09 — audyt PR #106 + pętla jakości P3→P5 (PR #107)
 
 P2: audyt `docs/audits/AUDYT_PR106_2026-09-08.md` (5 findings F1–F5, CR
