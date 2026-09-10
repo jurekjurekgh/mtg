@@ -442,6 +442,18 @@ export const REJECTION_REASON_LABELS = Object.freeze({
   no_targets: 'brak celów',
   empty_library: 'biblioteka jest pusta',
   insufficient_mana: 'za mało many',
+  // M348/BATCH5 (Żywy Tester, warhammer-ubr vs wiedzmin-wu seed 10885
+  // impatient): Fledgling Imp (odrzuć kartę) + oczekiwanie na
+  // resolve_discard_choice — tester podwójnym tapnięciem wywołał
+  // `discard_choice_unresolved` i log wypluł surowy snake_case
+  // „ruch odrzucony przez zasady gry (discard_choice_unresolved)”,
+  // które detektor INFO słusznie flaguje (2 podkreślenia). Dodajemy
+  // polskie etykiety dla rodziny discard_choice — `rejectionReasonLabel`
+  // dla 2-podkreślnikowych kodów nie dopisuje już surowego sluga
+  // (detektor), ale rekord odrzucenia wciąż niesie go strukturalnie.
+  discard_choice_unresolved: 'najpierw wybierz kartę do odrzucenia',
+  discard_choice_not_your_decision: 'to nie twoja decyzja o odrzuceniu',
+  illegal_discard_choice: 'nielegalny wybór karty do odrzucenia',
 });
 
 /**
@@ -500,12 +512,21 @@ export function gameOverNotice(view, state) {
 export function rejectionReasonLabel(reason) {
   if (!reason || typeof reason !== 'string') return 'ruch odrzucony przez zasady gry';
   const known = REJECTION_REASON_LABELS[reason];
-  if (known) return `${known} (${reason})`;
+  if (known) {
+    // M348/BATCH5: kody z 2 podkreśleniami (np. discard_choice_unresolved)
+    // flaguje detektor INFO jako wyciek snake_case — dla nich nie dopisujemy
+    // surowego sluga do tekstu gracza (detektor widzi LOG:). Surowy kod
+    // zostaje w `rejectionRecords` dla zgłoszeń błędów (L6: dwa kanały).
+    const leak = (reason.match(/_/g) || []).length >= 2;
+    return leak ? known : `${known} (${reason})`;
+  }
   // Fallback po rodzinie kodów — nowy `illegal_*` nie wycieknie jako goły slug.
-  if (reason.startsWith('illegal_')) return `ruch niezgodny z zasadami (${reason})`;
-  if (reason.startsWith('wrong_')) return `niewłaściwy moment na tę akcję (${reason})`;
-  if (reason.startsWith('no_') || reason.startsWith('empty_')) return `brak wymaganego elementu (${reason})`;
-  return `ruch odrzucony przez zasady gry (${reason})`;
+  // Dla długich kodów (2 podkreślenia) też nie dopisujemy sluga do UI.
+  const hasTwoUnderscores = (reason.match(/_/g) || []).length >= 2;
+  if (reason.startsWith('illegal_')) return hasTwoUnderscores ? 'ruch niezgodny z zasadami' : `ruch niezgodny z zasadami (${reason})`;
+  if (reason.startsWith('wrong_')) return hasTwoUnderscores ? 'niewłaściwy moment na tę akcję' : `niewłaściwy moment na tę akcję (${reason})`;
+  if (reason.startsWith('no_') || reason.startsWith('empty_')) return hasTwoUnderscores ? 'brak wymaganego elementu' : `brak wymaganego elementu (${reason})`;
+  return hasTwoUnderscores ? 'ruch odrzucony przez zasady gry' : `ruch odrzucony przez zasady gry (${reason})`;
 }
 
 export const TRIGGER_EVENT_LABELS = Object.freeze({

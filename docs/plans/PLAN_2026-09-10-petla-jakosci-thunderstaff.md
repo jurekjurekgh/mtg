@@ -43,6 +43,18 @@ Bramki: `npm test` 5055/5055, `npm run test:all` 5065/5065, `npm run build` 61/3
   (log `/tmp/batch3_2026-09-10.txt`) + 15 mieszanych (`--steps 500/600`, seedy 8271..8705)
   **15/15 DET0** (log `/tmp/batch4_2026-09-10.txt`); razem po fixie **65/65 DET0** (81 łącznie w pętli).
 
+### F2. Wyciek `discard_choice_unresolved` do logu — INFO detektora (M348/BATCH5) [X]
+Objaw: batch5 15 partii: 14× DET0, 1× INFO `LOG: Wiersz zawiera snake_case: discard_choice_unresolved`
+  w `warhammer-ubr vs wiedzmin-wu seed 10885 impatient` — tester podwójnym tapnięciem wywołał
+  `discard_choice_unresolved` (Fledgling Imp odrzuć kartę + oczekiwanie resolve_discard_choice)
+  i log wypluł `ruch odrzucony przez zasady gry (discard_choice_unresolved)` (2 podkreślenia).
+Fix: `src/table/session.js` — `REJECTION_REASON_LABELS` +3 (`discard_choice_unresolved`,
+  `discard_choice_not_your_decision`, `illegal_discard_choice`) + `rejectionReasonLabel()` guard
+  `≥2 _ → bez (reason)` — rekord odrzucenia wciąż niesie slug strukturalnie (L6: dwa kanały).
+Weryfikacja: `npm run build` 61/3453,7 kB; re-run seed 10885 → DET0 (log `Ruch odrzucony: najpierw
+  wybierz kartę do odrzucenia` bez sluga); re-run batch5 56-70 15/15 DET0 (log `/tmp/batch5_fixed.txt`).
+Bramki po F2: fast 5055/5055, build 61/3453,7 kB, 15/15 DET0; łącznie po obu fixach **80/80 DET0** (96 w całej pętli).
+
 ## Ryzyka / pułapki
 - Gałąź już na origin (`3f77da8`, PR #111) — tylko przyrostowo, bez force; `reset --hard` kasuje WD.
 - `dist/` gitignorowany — tester mierzy `dist/mtg-table.html`, więc po zmianie src **zawsze** `npm run build`.
@@ -56,7 +68,11 @@ ukrywa `{2},{T}` gdy brak żywych atakujących (CR 611.2c early-return w `effect
 re-run warhammer-wg vs tarkir-wur seed 777 hoarder: 1→0 zgłoszeń; 10 partii 10× DET0 + 20 partii
 świeżych 20/20 DET0 + 10×600 kroków 10/10 DET0 + 10 warhammer-wg 10/10 DET0 + 15 mieszanych 15/15 DET0
 (łącznie **65/65 po fixie**, 81 w całej pętli).
-Bramki: fast 5055/5055, all 5065/5065, build 61/3452,2 kB, benchmark 10/10.
-Commit kodu: `41bf0f4 fix(abilities): hide Thunderstaff outside combat` (M260/F1); doc-only:
-aktualizacja HANDOFF/PLAN/HISTORY/PR po 55 dodatkowych partiach (ten sam PR, bez zmian src).
+F2: `src/table/session.js` — `REJECTION_REASON_LABELS` +3 discard_* + `rejectionReasonLabel()` guard
+`≥2 _ → bez (reason)` — likwiduje wyciek `discard_choice_unresolved` do LOGu (INFO detektora);
+re-run seed 10885 → DET0; batch5 56-70 15/15 DET0 (łącznie **80/80 po obu fixach**, 96 w całej pętli).
+Bramki: fast 5055/5055, all 5065/5065, build 61/3453,7 kB, benchmark 10/10.
+Commity kodu: `41bf0f4 fix(abilities): hide Thunderstaff outside combat` (M260/F1);
+`M348/BATCH5 fix(table): hide 2-underscore discard slugs from player log` (wiadomość: `fix(table): …`);
+doc-only: aktualizacja HANDOFF/PLAN/HISTORY/PR po 55+15 partiach (ten sam PR).
 Domknięcie: wpis PROJECT_HISTORY, HANDOFF_2026-09-10, README, opis PR #111 (PATCH).

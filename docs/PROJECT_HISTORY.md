@@ -52,13 +52,22 @@ hoarder) — sonda `detectors.mjs` probe `passive opponent` słusznie Oś 4
   celowanych warhammer-wg (`--steps 500`, seedy 6589..6760) **10/10 DET0**
   (log `/tmp/batch3_2026-09-10.txt`) + 15 mieszanych (`--steps 500/600`,
   seedy 8271..8705) **15/15 DET0** (log `/tmp/batch4_2026-09-10.txt`); łącznie
-  po fixie **65/65 DET0** (81 w całej pętli).
+  po F1 **65/65 DET0** (81 w całej pętli).
+- **BATCH5 / M348 — wyciek `discard_choice_unresolved` (INFO) → F2:** batch5 56-70
+  (22 talie rotacyjnie, 6 profili, `steps 550/600 --tick-rate 0.2`, seedy
+  `9000+i*29`) — przed fixem 14/15 DET0 + 1× INFO `LOG: snake_case discard_choice_unresolved`
+  (warhammer-ubr vs wiedzmin-wu seed 10885 impatient, Fledgling Imp + pending discard_choice);
+  fix `src/table/session.js` — `REJECTION_REASON_LABELS` +3 (`discard_choice_*`, `illegal_discard_choice`)
+  + `rejectionReasonLabel()` guard `≥2 _ → bez (reason)` (L6: dwa kanały — UI bez sluga,
+  `rejectionRecords` z kodem); `npm run build` 61/3453,7 kB; re-run seed 10885 → DET0
+  (`Ruch odrzucony: najpierw wybierz kartę do odrzucenia`); re-run batch5 56-70 → **15/15 DET0**
+  (log `/tmp/batch5_fixed.txt`); łącznie po obu fixach **80/80 DET0** (96 w całej pętli).
 - **Bramki:** `npm test` fast **5055/5055**, `npm run test:all` **5065/5065**,
-  `npm run build` exit 0, `node --test test/bot-benchmark.test.js` 10/10 (via
+  `npm run build` 61/3453,7 kB, `node --test test/bot-benchmark.test.js` 10/10 (via
   `test:all`).
 
-Plan: `docs/plans/PLAN_2026-09-10-petla-jakosci-thunderstaff.md` (M260/F1);
-handoff: `docs/setup/HANDOFF_2026-09-10.md` (aktualizowany po 55 dodatkowych partiach: 20×400 + 10×600 + 10×500 warhammer-wg + 15×500/600).
+Plan: `docs/plans/PLAN_2026-09-10-petla-jakosci-thunderstaff.md` (M260/F1 + M348/BATCH5);
+handoff: `docs/setup/HANDOFF_2026-09-10.md` (aktualizowany po 55+15 partiach: 20×400 + 10×600 + 10×500 warhammer-wg + 15×500/600 + 15×550/600 batch5).
 
 ## Sesja 2026-09-08/09 — audyt PR #106 + pętla jakości P3→P5 (PR #107)
 
