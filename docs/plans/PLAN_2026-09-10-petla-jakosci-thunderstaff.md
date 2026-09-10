@@ -36,6 +36,9 @@ Strażnik: detektor `noop` w Testerze (istniejący) + re-run tego samego seeda 7
   hoarder — przed fixem 1 zgłoszeń, po fixie 0.
 Bramki: `npm test` 5055/5055, `npm run test:all` 5065/5065, `npm run build` 61/3452,2 kB,
   `bot-benchmark` 10/10, re-run 10 partii testera dla regresji (10/10 DET0).
+  Kontynuacja pętli (bez kodu): 20 świeżych partii (`--steps 400`, 24 talie rotacyjnie,
+  6 profili) — **20/20 DET0**, 20/20 `NIEWYCENIONE: brak` (log `/tmp/batch_2026-09-10.txt`);
+  razem po fixie **30/30 DET0** (46 łącznie w pętli).
 
 ## Ryzyka / pułapki
 - Gałąź już na origin (`3f77da8`, PR #111) — tylko przyrostowo, bez force; `reset --hard` kasuje WD.
@@ -47,7 +50,9 @@ Bramki: `npm test` 5055/5055, `npm run test:all` 5065/5065, `npm run build` 61/3
 
 F1: `src/engine/abilities.js` nowy case `buff_attacking_creatures` w `effectIsNoOpOnTarget` —
 ukrywa `{2},{T}` gdy brak żywych atakujących (CR 611.2c early-return w `effects.js:2096-2124`);
-re-run warhammer-wg vs tarkir-wur seed 777 hoarder: 1→0 zgłoszeń; 10 partii 10× DET0.
+re-run warhammer-wg vs tarkir-wur seed 777 hoarder: 1→0 zgłoszeń; 10 partii 10× DET0 + 20 partii
+świeżych 20/20 DET0 (łącznie **30/30 po fixie**, 46 w całej pętli).
 Bramki: fast 5055/5055, all 5065/5065, build 61/3452,2 kB, benchmark 10/10.
-Commit: `fix(abilities): hide Thunderstaff outside combat` (M260/F1).
+Commit kodu: `41bf0f4 fix(abilities): hide Thunderstaff outside combat` (M260/F1); doc-only:
+aktualizacja HANDOFF/PLAN/HISTORY/PR po 20 dodatkowych partiach (ten sam PR, bez zmian src).
 Domknięcie: wpis PROJECT_HISTORY, HANDOFF_2026-09-10, README, opis PR #111 (PATCH).

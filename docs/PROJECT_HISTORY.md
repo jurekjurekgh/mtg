@@ -44,12 +44,16 @@ hoarder) — sonda `detectors.mjs` probe `passive opponent` słusznie Oś 4
 - **Weryfikacja:** `npm run build` 61 modułów / 3452,2 kB; re-run tego samego
   seeda 777 hoarder: **1→0 zgłoszeń**; re-run 10 partii (warhammer-wg vs
   tarkir-wur 6× + 4× diverse talie) — **10/10 DET0**, 0 niewycenionych.
+- **Kontynuacja pętli (bez kodu, do wyczerpania budżetu):** 20 świeżych partii
+  (`--steps 400 --tick-rate 0.25`, 24 talie rotacyjnie, 6 profili, seedy
+  `3000+i*17`) — **20/20 DET0**, 20/20 `NIEWYCENIONE: brak` (log
+  `/tmp/batch_2026-09-10.txt`); łącznie po fixie **30/30 DET0** (46 w całej pętli).
 - **Bramki:** `npm test` fast **5055/5055**, `npm run test:all` **5065/5065**,
   `npm run build` exit 0, `node --test test/bot-benchmark.test.js` 10/10 (via
   `test:all`).
 
 Plan: `docs/plans/PLAN_2026-09-10-petla-jakosci-thunderstaff.md` (M260/F1);
-handoff: `docs/setup/HANDOFF_2026-09-10.md`.
+handoff: `docs/setup/HANDOFF_2026-09-10.md` (aktualizowany po 20 dodatkowych partiach).
 
 ## Sesja 2026-09-08/09 — audyt PR #106 + pętla jakości P3→P5 (PR #107)
 
