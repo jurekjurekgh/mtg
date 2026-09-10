@@ -2050,6 +2050,16 @@ function processTriggersScan(state, recentEvents) {
       for (const source of state.objects.values()) {
         if (source.zone !== 'graveyard') continue;
         if (died?.kind !== 'creature' || died?.controllerId !== source.controllerId) continue;
+        // Zgłoszenie właściciela E1 (2026-09-10), CR 603.6c + ruling WotC
+        // 2025-04-04 („If Furious Forebear dies at the same time as one or
+        // more creatures you control, its ability won't trigger"): warunkiem
+        // triggera jest pobyt karty W GROBIE **w chwili** śmierci stwora.
+        // Karta, która właśnie umarła, dopiero TAM JEDZIE — zdolności
+        // leaves-the-battlefield patrzą wstecz na stół, nie do przodu do
+        // grobu. To samo dotyczy współpoległych z tej samej partii SBA
+        // (walka, masowe -X/-X): w chwili zdarzenia jeszcze nie leżeli.
+        if (source.id === died.id) continue;
+        if (simultaneousFellows.some((fellow) => fellow?.id === source.id)) continue;
         for (const ability of effectiveAbilities(source)) {
           if (ability?.trigger?.event === 'other_creature_you_control_dies') {
             tryFire(state, ability, source, [], events, { diedCardId: died.cardId });
