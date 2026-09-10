@@ -105,11 +105,32 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
     ? null
     : new Set(Array.isArray(excludeSourceId) ? excludeSourceId : [excludeSourceId]);
   const land = untappedLandSourcesOf(view, playerId).filter((s) => !excluded?.has(s.id));
-  const sources = land.map((s) => ({
-    id: s.id, cardId: s.cardId, colors: s.colors, amount: s.amount ?? 1,
-    kind: 'land',
-    command: { type: 'tap_for_mana', playerId, objectId: s.id },
-  }));
+  const sources = land.map((s) => {
+    let colors = s.colors ?? [];
+    let amount = s.amount ?? 1;
+    // B (zgłoszenie właściciela 2026-09-10, Dismal Backwater): widok pola
+    // bitwy NIE niesie deskryptorów zdolności, więc lądy opisywane
+    // deskryptorem („{T}: Add {U} or {B}") wychodzą tu bezbarwne —
+    // getSourceForObject na obiekcie WIDOKU nie widzi zdolności i wpada
+    // w zachowawczy fallback. Silnik płacenia czyta pełny stan (rzut
+    // działa), rozjazd jest cichy (L14/L41). Mostek `abilityInfo` (pełny
+    // stan — ten sam, którego kreator używa dla źródeł nie-lądowych)
+    // dostarcza kolory z index null = produkcja „za samo {T}”. Lądy
+    // rzeczywiście bezbarwne (Basilisk Gate) zostają bezbarwne — pełny
+    // stan też im kolorów nie przypisze.
+    if (colors.length === 0 && typeof abilityInfo === 'function') {
+      const full = abilityInfo(s.id, null);
+      if (full && (full.colors?.length ?? 0) > 0) {
+        colors = [...full.colors];
+        amount = full.amount ?? amount;
+      }
+    }
+    return {
+      id: s.id, cardId: s.cardId, colors, amount,
+      kind: 'land',
+      command: { type: 'tap_for_mana', playerId, objectId: s.id },
+    };
+  });
   if (typeof abilityInfo !== 'function') return sources;
   const seen = new Set(land.map((s) => s.id));
   for (const cmd of view?.legalCommands ?? []) {
