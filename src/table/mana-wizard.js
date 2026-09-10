@@ -463,8 +463,14 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
     const allReqs = costPips.length > 0 ? [...requirements, ...costPips.map((c) => [c])] : requirements;
     if (size >= minSize && sumAmount - costGeneric >= need) {
       if (coveredRequirementCount(subset, allReqs) >= allReqs.length) {
+        // Zgłoszenie właściciela A (2026-09-10): klucz wariantu niesie też
+        // RODZAJ źródła. Forest i Scorned Villager produkują identyczne {G},
+        // ale to nie jest ten sam wybór — tapnięty STWÓR nie zaatakuje ani
+        // nie zablokuje w tej turze, więc przy tym samym profilu many gracz
+        // ma dwie realne decyzje i kreator musi się otworzyć. Dwa LĄDY o tym
+        // samym profilu zostają jednym kształtem (są zamienne).
         const key = subset
-          .map((s) => `${[...s.colors].sort().join('')}#${s.amount ?? 1}#`
+          .map((s) => `${s.kind ?? 'land'}:${[...s.colors].sort().join('')}#${s.amount ?? 1}#`
             + (s.activationCost ? `${s.activationCost.generic}:${[...(s.activationCost.colors ?? [])].sort().join('')}` : '-'))
           .sort()
           .join('|');
