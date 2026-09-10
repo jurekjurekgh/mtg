@@ -24,17 +24,29 @@ poprzedniego PR → inkrementalne commity) + pętla domyślna ADR 0021.
 - [x] **E3** Audyt PR #112 (ADR 0020 B / ADR 0016): diff plik po pliku,
       weryfikacja CR/rulingów U ŹRÓDŁA (ADR 0030), weryfikacja mutacyjna
       KAŻDEGO fixu (L13) → `docs/audits/AUDYT_PR112_2026-09-10.md`.
-- [ ] **E4** Naprawa znalezień audytu — osobny commit na znalezisko, każdy
-      z testem RED przed zmianą i mutacją po (L13):
-  - [ ] **F1** `docs/cards/scryfall-fireball.json` bez `rulings` (ADR 0028 §2).
-  - [ ] **F2** reguła „protection blokuje celowanie" w trzech kopiach
-        (L41/L140) → jeden predykat + strażnik źródła.
-  - [ ] **F3** kontrakt pauz po fixie A: strażnik „bot spowodował zmianę strefy
-        MOJEGO permanentu → gracz dostaje to w modalu" (pomiar A/B w audycie).
-  - [ ] **F4** domknięcie dokumentacyjne po PR #112: handoff sesji, wpis
-        `PROJECT_HISTORY.md`, liczby w README wg pomiaru (L92).
-- [ ] **E5** Pętla jakości (ADR 0021): Żywy Tester, świeże seedy/talie/profile,
-      bez pełnego B0 (ADR 0018); detektory + ręczna lektura osi 1–4.
+- [x] **E4** Naprawa znalezień audytu — osobny commit na znalezisko, każdy
+      z testem i weryfikacją mutacyjną (L13):
+  - [x] **F1** `3577dc4` — snapshot Fireballa niesie 4 rulingi WotC 2017-11-17
+        zapisane funkcjami produkcyjnymi `tools/fetch-card-rulings.mjs`;
+        `test/audyt-pr112-rulingi-fireball.test.js` (3 testy; mutacja
+        `rulings: null` → 3/3 RED). npm test **5095/5095**.
+  - [x] **F2** `e222ebb` — audyt doliczył się **PIĘCIU** kopii reguły (nie trzech:
+        dochodzą `castFireball` i `legalFireballCasts`, obie bez nogi jakości)
+        → jeden predykat `isTargetingBlockedByProtection` (attachments.js)
+        + `test/audyt-pr112-protection-jeden-predykat.test.js` (7 testów;
+        5 mutacji → RED, stan sprzed F2 → 2 RED). npm test **5102/5102**.
+  - [x] **F3** `f4de8b6` — strażnik dostarczenia informacji (3 seedy)
+        w `test/session-bot-pausa.test.js`; mutacja (zniszczenie wyrzucone
+        z bufora modala) → RED. npm test **5103/5103**.
+  - [x] **F4** domknięcie dokumentacyjne: wpis `PROJECT_HISTORY.md` dla PR #112
+        (został zamknięty bez niego), liczby w README wg pomiaru (L92),
+        handoff `HANDOFF_2026-09-10b.md`.
+- [x] **E5** Pętla jakości (ADR 0021): `npm run build` (61/3463,4 kB) → Żywy
+      Tester na 3 świeżych partiach (tarkir-bg/warhammer-ubr 20260910,
+      innistrad-wu/theros 161803, ravnica/dominaria-wu 3141592) — **DET0,
+      0 niewycenionych ruchów bota**, wszystkie partie dograne do końca;
+      quick benchmark `node tools/benchmark.mjs` → heuristic **84,7% (569/672)**,
+      bez pełnego B0 (ADR 0018).
 - [ ] **E6** Domknięcie: `npm run test:all`, `npm run build`, handoff,
       `PROJECT_HISTORY`, README, opis PR kumulatywnie, push.
 
