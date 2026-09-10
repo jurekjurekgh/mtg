@@ -62,12 +62,17 @@ hoarder) — sonda `detectors.mjs` probe `passive opponent` słusznie Oś 4
   `rejectionRecords` z kodem); `npm run build` 61/3453,7 kB; re-run seed 10885 → DET0
   (`Ruch odrzucony: najpierw wybierz kartę do odrzucenia`); re-run batch5 56-70 → **15/15 DET0**
   (log `/tmp/batch5_fixed.txt`); łącznie po obu fixach **80/80 DET0** (96 w całej pętli).
+- **BATCH6 + BATCH7 — kontynuacja pętli bez kodu (30 partii):** batch6 71-85 (22 talie,
+  6 profili, `steps 550/600 --tick-rate 0.2`, seedy `11000+i*31`) — **15/15 DET0**,
+  15/15 `NIEWYCENIONE: brak` (log `/tmp/batch6.txt`); batch7 86-100 (24 talie, 6 profili,
+  `steps 400/550 --tick-rate 0.25`, seedy `12000+i*23`) — **15/15 DET0**, 15/15 `NIEWYCENIONE: brak`
+  (log `/tmp/batch7.txt`); łącznie po obu fixach **110/110 DET0** (126 w całej pętli).
 - **Bramki:** `npm test` fast **5055/5055**, `npm run test:all` **5065/5065**,
   `npm run build` 61/3453,7 kB, `node --test test/bot-benchmark.test.js` 10/10 (via
   `test:all`).
 
-Plan: `docs/plans/PLAN_2026-09-10-petla-jakosci-thunderstaff.md` (M260/F1 + M348/BATCH5);
-handoff: `docs/setup/HANDOFF_2026-09-10.md` (aktualizowany po 55+15 partiach: 20×400 + 10×600 + 10×500 warhammer-wg + 15×500/600 + 15×550/600 batch5).
+Plan: `docs/plans/PLAN_2026-09-10-petla-jakosci-thunderstaff.md` (M260/F1 + M348/BATCH5 + BATCH6/7);
+handoff: `docs/setup/HANDOFF_2026-09-10.md` (aktualizowany po 55+15+30 partiach: 20×400 + 10×600 + 10×500 warhammer-wg + 15×500/600 + 15×550/600 batch5 + 15×550/600 batch6 + 15×400/550 batch7).
 
 ## Sesja 2026-09-08/09 — audyt PR #106 + pętla jakości P3→P5 (PR #107)
 
