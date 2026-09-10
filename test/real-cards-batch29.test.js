@@ -354,7 +354,7 @@ test('Fireball: cel z protection od red jest nielegalny (CR 702.16b)', () => {
   assert.equal(state.zones.stack.length, 0, 'czar nie trafił na stos');
 });
 
-test('Fireball: cel zniknięty przed rozstrzygnięciem — jego udział przepada (oryginalny podział)', () => {
+test('Fireball: cel zniknięty przed rozstrzygnięciem — podział między żywe cele (ruling WotC 2017-11-17)', () => {
   const state = mainPhase(game());
   addRealCard(state, 'fb', 'fireball', 'p1', 'hand');
   addRealCard(state, 't1', 'gloomfang-mauler', 'p2', 'battlefield');
@@ -364,8 +364,12 @@ test('Fireball: cel zniknięty przed rozstrzygnięciem — jego udział przepada
   // Cel 1 opuszcza pole bitwy przed rozstrzygnięciem (odpowiedź instanitem).
   moveObjectDirectly(state, 't1', 'exile', 'exile-t1');
   assert.ok(resolveStack(state), 'stos rozstrzygnięty');
-  assert.equal(state.objects.get('t2').damage, 2, 'żywy cel bierze swój udział (4/2)');
-  assert.equal(state.objects.get('exile-t1').damage ?? 0, 0, 'udział martwego celu przepada');
+  // Ruling dosłownie (Scryfall): „The division involves only targets that are
+  // still legal as Fireball resolves" → floor(4/1) = 4 dla jedynego żywego.
+  // (Wcześniejsza wersja testu pinowała podział przez liczbę celów z rzutu —
+  // niezgodny z rulingiem; poprawione w audycie E5, 2026-09-10.)
+  assert.equal(state.objects.get('t2').damage, 4, 'podział przez żywe cele: floor(4/1)=4');
+  assert.equal(state.objects.get('exile-t1').damage ?? 0, 0, 'nielegalny cel bez obrażeń');
 });
 
 test('Fireball: X=0 i 0 celów to legalny rzut bez efektu (any number of targets)', () => {
