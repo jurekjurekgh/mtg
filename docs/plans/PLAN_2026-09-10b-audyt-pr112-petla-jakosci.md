@@ -47,8 +47,10 @@ poprzedniego PR → inkrementalne commity) + pętla domyślna ADR 0021.
       0 niewycenionych ruchów bota**, wszystkie partie dograne do końca;
       quick benchmark `node tools/benchmark.mjs` → heuristic **84,7% (569/672)**,
       bez pełnego B0 (ADR 0018).
-- [ ] **E6** Domknięcie: `npm run test:all`, `npm run build`, handoff,
-      `PROJECT_HISTORY`, README, opis PR kumulatywnie, push.
+- [x] **E6** Domknięcie: `npm run test:all` **5113/5113**, `npm run build`
+      61/3463,4 kB, handoff `HANDOFF_2026-09-10b.md`, dwa wpisy
+      `PROJECT_HISTORY.md` (PR #112 + ta sesja), README wg pomiaru (L92),
+      opis PR #113 kumulatywnie (`gh api -X PATCH`).
 
 ## Ryzyka i pułapki
 
@@ -63,4 +65,13 @@ poprzedniego PR → inkrementalne commity) + pętla domyślna ADR 0021.
 
 ## Podsumowanie wykonania
 
-(uzupełniane kolejnymi commitami)
+Audyt PR #112 zakończony werdyktem „merytorycznie poprawny" (8/8 fixów
+przypiętych mutacją, źródła CR przetworzone niezależnie), cztery znaleziska
+dokumentacyjno-strukturalne naprawione w czterech niezależnych, zielonych
+krokach (F1 `3577dc4`, F2 `e222ebb`, F3 `f4de8b6`, F4 — domknięcie), każdy
+z testem i weryfikacją mutacyjną. Bramki końcowe: szybki rdzeń **5103/5103**,
+`test:all` **5113/5113**, build **61 modułów / 3463,4 kB**, quick benchmark
+**84,7% (569/672)**, Żywy Tester **3/3 DET0 i 0 niewycenionych ruchów bota**.
+Korekta własnego audytu: F2 to PIĘĆ kopii reguły, nie trzy (spis z
+`grep -rn effectiveProtectionFromColors src/` przy naprawie) — §5 i §7 audytu
+mają stan po korekcie.

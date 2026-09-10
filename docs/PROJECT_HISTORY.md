@@ -9619,3 +9619,59 @@ commit zielony.
   ≥1 na cel, suma=budżet), zamiast rozstrzelać 1/1/1.
 Bramki: npm test fast 5055/5055, test:all 5065/5065, build 61/3451,3 kB, próbka
 regresji bota 10/10. Plan 09-09d, handoff 2026-09-09c, opis PR #111.
+
+## 2026-09-10 — trzy poprawki CR (Fireball X, daybound/nightbound, ochrona w triggerach) — PR #112, arena/01a08b81
+
+Wpis uzupełniony ZWIĘŹLE z audytu (PR #112 został zamknięty bez wpisu tutaj,
+bez handoffu i bez odświeżenia README — to znalezisko F4 audytu; sesja
+arena/01a08d0e dopisuje brakujące domknięcie).
+
+Trzy poprawki reguł, wszystkie ze źródłami online (ADR 0030) i wszystkie
+dowiedzione mutacyjnie (L13):
+- **Fireball (CR 702.16b + rulingi WotC 2017-11-17)**: dzielnik obrażeń to
+  liczba celów ŻYJĄCYCH w chwili rozstrzygnięcia, nie wybranych przy rzucie
+  („The division involves only targets that are still legal as Fireball
+  resolves"); rzut z X=0 / bez celów rozstrzyga się, a nie fizzluje.
+- **Daybound/nightbound (CR 702.145d/g)**: „Any time a player controls a
+  permanent with daybound … it becomes day" — skan pola bitwy po wejściu
+  permanentu (`dayboundAnywhere ? 'day' : 'night'`), nie po kontrolerze.
+- **Ochrona w celach triggerów (CR 702.16b, DEBT: T)**: `protectedBlocked`
+  w `triggerTargetCandidates` — permanent z ochroną od jakości/koloru źródła
+  nie jest kandydatem na cel triggera (Spare from Evil + Inferno Titan).
+Plus zawężenie pauz po stronie bota (pauza ma mówić o ZAGRANIU bota, nie
+o rozstrzygającym się czarze człowieka — pomiar: 104 → 86 pauz na seedzie 1,
+wszystkie zdjęte wzorce to własne zagrania człowieka) i pole `cost` w widoku
+czaru (wyłącznie pokaz — ścieżka kosztów niezmieniona).
+
+Werdykt audytu (`docs/audits/AUDYT_PR112_2026-09-10.md`): **zmiany merytorycznie
+poprawne**, 8/8 fixów przypiętych mutacją, brak regresji wyceny bota, L48
+(oferta == walidacja) na ścieżce triggerów zachowana. Cztery znaleziska
+dokumentacyjno-strukturalne (F1–F4) naprawione w sesji następczej:
+F1 `3577dc4` (rulingi w snapshotcie Fireballa), F2 `e222ebb` (pięć kopii reguły
+celowania → jeden predykat `isTargetingBlockedByProtection`), F3 `f4de8b6`
+(strażnik dostarczenia informacji o zmianie strefy permanentu człowieka),
+F4 — ten wpis + README + handoff `HANDOFF_2026-09-10b.md`.
+
+## 2026-09-10 — audyt PR #112 i naprawa znalezisk F1–F4 (PR #113, arena/01a08d0e)
+
+Sesja „kontynuujemy projekt" w trybie ADR 0020/0021: PR otwarty przed kodem,
+audyt poprzedniego PR, inkrementalne commity.
+- **F1** — snapshot `docs/cards/scryfall-fireball.json` miał `rulings: null`,
+  choć kod cytuje cztery rulingi WotC; w słowniku ADR 0028 `null` znaczy „nikt
+  nie patrzył". Rulingi pobrane przez `fetch_page` i zapisane FUNKCJAMI
+  produkcyjnymi narzędzia; dodatkowo zmierzone, że para `jvc`/`214` ze
+  snapshotu NIE rozwiązuje się w Scryfall (HTTP 404), więc
+  `tools/fetch-card-rulings.mjs --only=fireball` nie mógł tej karty obsłużyć.
+- **F2** — reguła „protection blokuje celowanie" istniała w PIĘCIU ręcznych
+  kopiach (`validateTargets`, `legalTargetCandidates`, `castFireball`,
+  `legalFireballCasts`, `protectedBlocked`), z czego dwie Fireballa bez nogi
+  JAKOŚCI. Jeden predykat w `attachments.js` + strażnik źródła (L5): pięć
+  funkcji woła predykat i żadna nie czyta ochrony samodzielnie.
+- **F3** — asymetria pauz (bota wąskie / człowieka zawsze) bez strażnika po
+  stronie informacyjnej: test na 3 seedach pilnuje, że zmiana strefy permanentu
+  człowieka w turze bota zostaje pokazana w modalu przed nagłówkiem jego tury,
+  a przynajmniej jedna — opisana JAKO zmiana strefy.
+- **F4** — brak handoffu/wpisu/README po PR #112: uzupełnione.
+Pętla jakości (ADR 0021): build 61/3463,4 kB, Żywy Tester 3 świeże partie
+(20260910, 161803, 3141592) — DET0 i 0 niewycenionych ruchów bota; quick
+benchmark heuristic 84,7% (569/672), bez pełnego B0 (ADR 0018).
