@@ -3859,6 +3859,12 @@ export function createScryfallHover(els) {
       // przekazał (martwa opcja, L67) — na kartach z artId miniaturka w
       // „Rozgrywce" obiecywała „scroll zmienia tor", którego nie było.
       { showCycleHint: false }),
+    // D (2026-09-10): ta sama szczelina co na stole — element przerysowany
+    // pod kursorem nie daje mouseenter; mousemove podnosi podgląd (tor stały).
+    revive: (info, e) => {
+      if (!els.hoverPreview || String(els.hoverPreview.className).includes('active')) return;
+      showHoverPreviewAt(els, info, e, 'scryfall', { showCycleHint: false });
+    },
     end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
   };
 }
@@ -4138,6 +4144,13 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   let currentHoverMode = hoverMode;
   const hover = TOUCH_DEVICE ? null : {
     start: (info, e) => showHoverPreviewAt(els, info, e, currentHoverMode),
+    // D (2026-09-10): patrz attachSpecialCardHover — podgląd ma wstać także,
+    // gdy kafl specjalny przebudował się POD kursorem (sam mouseenter wtedy
+    // milczy). Nieaktywny = brak klasy `active` na warstwie podglądu.
+    revive: (info, e) => {
+      if (!els.hoverPreview || String(els.hoverPreview.className).includes('active')) return;
+      showHoverPreviewAt(els, info, e, currentHoverMode);
+    },
     end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
     cycle: (info, e) => {
       if (!els.hoverPreview) return;
@@ -4418,6 +4431,15 @@ export function attachSpecialCardHover(card, hover, info) {
   card.addEventListener('mouseenter', (e) => hover.start(info, e));
   if (hover.end) card.addEventListener('mouseleave', hover.end);
   if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(info, e));
+  // D (zgłoszenie właściciela 2026-09-10): mouseenter nie odzywa się, gdy
+  // kafl zostaje PRZERYsowany pod kursorem (renderTableView podmienia
+  // element — nie ma „wejścia", jest już w środku). Panele specjalne
+  // (Day/Night, loch, trucizna, prędkość) przebudowują się przy każdej
+  // zmianie widoku, a kursor często spoczywa na panelu (obok karty jest
+  // tekst opisu) — wtedy podgląd nie wstawał, choć klik działał. `revive`
+  // domyka szczelinę: ruch myszy nad kaflą podnosi podgląd, jeśli jest
+  // nieaktywny (gdy aktywny — nic nie robi, zero migotania).
+  if (typeof hover.revive === 'function') card.addEventListener('mousemove', (e) => hover.revive(info, e));
   return true;
 }
 
