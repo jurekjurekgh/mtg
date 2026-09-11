@@ -18,7 +18,7 @@ oparty na opisach tekstowych i na kodzie.
 | **E2** | Pytanie o płatność bota („zapłacić {1}{W}?") trafia do logu „Rozgrywka" | `src/table/session.js` — `describeEvent` dla okna wyboru płatności nie jest filtrowany z głównego logu (bramka `MAIN_LOG_NOISE`/`noteBotMove`) | decyzja UI właściciela: decyzje bota należą do sekcji „Ruch bota" | warstwa pokazu |
 | **E3** | `{1}{W}` w logu tekstem, nie ikonkami | `src/table/mana-icons.js:45` (`manaSymbolsHtml`) istnieje, ale ten wpis logu jest budowany surowym szablonem | spójność UI | warstwa pokazu |
 | **A** | Auto-płatność tapuje Forest, choć nietapnięty Scorned Villager też daje {G} — brak kreatora many | `src/table/mana-wizard.js:466-471` — klucz deduplikacji wariantów to `kolory#ilość#kosztAktywacji`, BEZ rodzaju źródła; Forest i Scorned Villager (oba `{G}`, 1) to ten sam „kształt" → 1 wariant → `shouldOpenManaWizard` = false | decyzja właściciela + MtG: tapnięcie stwora ma koszt alternatywny (nie atakuje/nie blokuje), więc wybór jest realny | warstwa pokazu (oferta) |
-| **F** | Curse of the Pierced Heart na przeciwniku bez badge'a „klątwa: Nieprzyjaciel" | badge'e kafla nie obejmują aur `enchantPlayer` (aura wisi na graczu, nie na permanencie) | spójność UI (badge'e istnieją dla aur na stworach) | warstwa pokazu |
+| **F** | Curse of the Pierced Heart na przeciwniku bez badge'a „klątwa: Nieprzyjaciel" | DWA źródła (zmierzone sondą na stanie z klątwą): (1) `playerView` nie wysyła `enchantPlayer`/`enchantedPlayerId` — oba `undefined`, jedyne „aurowe" pole wpisu to `aura`; (2) brak jakiejkolwiek gałęzi badge'a dla aury na graczu w `buildFace` i `buildStateOverlay` (aura na stworach ma badge przez gospodarza, tu gospodarza-permanentu nie ma) | CR 303.4 („Enchant player") + ADR 0017 (skutek widoczny w grze musi być widoczny w widoku); cel aury to informacja jawna, nie FoW | widok + warstwa pokazu |
 | **C** | Bot używa Exploit (Gurmag Drowner) przy 5 kartach w bibliotece i poświęca stwora z lataniem | wycena exploitu w `src/controllers/heuristic-bot.js` nie zna ani liczby kart w bibliotece, ani wartości poświęcanego stwora | Oracle: „look at the top four cards… put one into your hand and the rest into your graveyard" — mill 3 przy małej bibliotece = ryzyko przegranej | bot (wycena) |
 | **D** | Bot atakuje 3/1 (Furious Forebear) w nietapnięte 4/4 i 4/5 przy 3 własnego życia | scoring ataku nie liczy pewnej straty atakującego bez obrażeń dla przeciwnika (trade-down) | zdrowy rozsądek rozgrywki (brak zmiany reguł) | bot (scoring) |
 
@@ -143,4 +143,39 @@ oparty na opisach tekstowych i na kodzie.
   detektory 0 i zero promptów bota w głównym logu (w tych partiach nie było
   promptu płatności, więc ikony `{1}{W}` są pokryte testami, nie
   transkryptem).
-- Pozostałe (F, C, D) — w kolejności z planu, każde osobnym zielonym commitem.
+- **F — GOTOWE** (`baaba03`): widok pola bitwy niesie `enchantPlayer`
+  i `enchantedPlayerId` (informacja jawna — aura leży na stole, jej cel jest
+  częścią stanu partii), `cardInfo` wystawia JEDNO pole `cursedPlayerId`,
+  a z niego czerpią OBYDWA rendery (L100/3): `buildFace` (twarz
+  karty/tooltip) i `buildStateOverlay` (nakładka kafla) — etykieta
+  „Klątwa: Nieprzyjaciel" / „Klątwa: Ty" po `PLAYER_NAMES`. `buildFace`
+  wyeksportowana jak `buildStateOverlay` (M89), żeby badge na twarzy karty dał
+  się zmierzyć headless. Strażnik
+  `test/zgloszenie-f-badge-klatwy-na-graczu.test.js` (5): F/1 widok niesie
+  zaczarowanego gracza, F/2 badge na kaflu „Klątwa: Nieprzyjaciel", F/3 klątwa
+  na sobie = „Klątwa: Ty", F/4 anty-over-fix (zwykła aura na stworze bez
+  badge'a klątwy, na obu kaflach), F/5 ten sam badge na twarzy karty. RED przed
+  fixem: F/1, F/2, F/3 (F/4 zielony jako baza; F/5 urodził się zielony, ale
+  jego gałąź jest przypięta mutacją M3). Mutacje (L13): pole widoku cofnięte →
+  4 RED; badge w `buildStateOverlay` cofnięty → 2 RED; badge w `buildFace`
+  cofnięty → 1 RED (F/5); `cursedPlayerId` rozszerzone na `attachedTo`
+  (over-fix: klątwa na każdej aurze) → 1 RED (F/4). Strażnik kontraktu M277
+  złapał nowe pole (`cardInfo` czyta `enchantedPlayerId`, którego nie ma
+  w próbce widoku) — dopisane do jawnej listy `WARUNKOWE_SPOZA_PROBKI`
+  z powodem (L113), a realną obecność pola w widoku mierzy konstrukcyjnie F/1.
+  Bramki: rodzina 63 plików (kafel/render/widok/badge/overlay/stół/log/aura)
+  576/576, `npm test` **5129/5129**, `npm run build` 61 modułów / 3479.0 kB,
+  Żywy Tester na `dist/` seed 5001 (talia tymczasowa 4× klątwa + 56 Mountain,
+  usunięta po pomiarze i `dist/` przebudowany — bez tego 3 testy
+  `repo-decks` słusznie protestowały przeciw talii widmu): w snapshotach pola
+  bitwy „Curse of the Pierced Heart · 2 · Enchantment — Aura Curse · … ·
+  Klątwa: Ty", detektory 0. Uczciwie o pokryciu: w seeds 5002–5004 bot nie
+  rzucił klątwy, więc wariantu „Klątwa: Nieprzyjaciel" na żywym artefakcie
+  NIE zaobserwowałem — jest przypięty testem F/2.
+- **Obserwacja poza zakresem F (do decyzji właściciela, nic nie zmienione)**:
+  w partii 5001 greedy-profil testera rzucił klątwę NA SIEBIE i od niej zginął
+  („Curse of the Pierced Heart zadaje 1 obrażenie (Ty)" → „Przegrywasz").
+  Wygląda na kolejność opcji celu w modala (pierwsza = „Ty"), nie na błąd
+  reguł — ale „aura na graczu celuje wbrew oczywistemu zamiarowi" to temat na
+  osobne zgłoszenie.
+- Pozostałe (C, D) — w kolejności z planu, każde osobnym zielonym commitem.
