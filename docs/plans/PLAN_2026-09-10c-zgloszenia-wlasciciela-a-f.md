@@ -1,4 +1,4 @@
-# PLAN 2026-09-10c — zgłoszenia właściciela A–F z testów przy stole (PR #113, arena/01a08d0e)
+# PLAN 2026-09-10c — zgłoszenia właściciela A–H z testów przy stole (PR #113, arena/01a08d0e)
 
 Właściciel zgłosił sześć znalezisk z gry. Ta sama sesja/gałąź/PR (ADR 0013/0020,
 precedens PR #111: znaleziska właściciela A–D w tej samej sesji co pętla jakości).
@@ -22,6 +22,7 @@ oparty na opisach tekstowych i na kodzie.
 | **G** | Klątwa rzucona na WŁASNEGO gracza — właściciel: „to powinno mieć -1000 scoringu" (dopełnienie F) | Dwie przyczyny (zmierzone sondą + trace bota): (1) gałąź aury w `cast_permanent` szuka celu przez `objectOnBoard`, a celem klątwy jest GRACZ → `!target` → `auraNoTargetPenalty` dla OBU wariantów (`curse->wróg` = -45 i `curse->siebie` = -45, wybrane `pass_priority` — bot klątw nie rzucał wcale); (2) `auraIsHostile` znała tylko `applyTo: 'enchanted_controller'` + HOSTILE_PLAYER_EFFECTS, a klątwa niesie `damage_enchanted_player` bez `applyTo` → wyglądała jak buff | CR 303.4 („Enchant player") + decyzja właściciela (-1000) | bot (wycena) |
 | **C** | Bot używa Exploit (Gurmag Drowner) przy 5 kartach w bibliotece i poświęca stwora z lataniem | ZMIERZONE: `resolve_exploit_choice` = `skip: 20` / ofiara `40 - (moc*2 + wytrzymałość)` — biblioteka nie brała udziału w wycenie W OGÓLE (trigger miele 3: `look_top_put_one_hand_rest_grave`, amount 4), a ofiara była liczona tylko z P/T, więc przy wyborze token 3/3 vs Cloudbound Moogle 2/3 (flying + 2 zdolności) bot poświęcał MOOGLE'A (33 > 31). Dodatkowo komenda nie niosła `sourceId`, więc decydujący nie wiedział, CO robi trigger | Oracle: „look at the top four cards… put one into your hand and the rest into your graveyard" — mill 3 przy małej bibliotece = ryzyko przegranej (CR 121.4/704.5b) | silnik (widok komendy) + bot (wycena) |
 | **D** | Bot atakuje 3/1 (Furious Forebear) w nietapnięte 4/4 i 4/5 przy 3 własnego życia | ZMIERZONE: kara istniała (gałąź gangu M167/I, `-(toughness+8)` = -9), ale gałąź NIE podbijała `futileAttackers`, więc `wholeAttackFutile` = fałsz i atak dostawał premię wyścigu: `enemyBoardPower (9) >= myLife (3)` → racing, `totalPower (3) >= enemyLife-5 (2)` → **+20 przebijało -9** (klasa L3). Ten sam atak w JEDNEGO 4/4 trafiał w chumpa (-10, jałowy) — decyzja zależała od liczby blokerów, nie od sensu ataku | zdrowy rozsądek rozgrywki (brak zmiany reguł) | bot (scoring) |
+| **H** | Tor ilustracji po hoverze przełącza scroll — właściciel chce PPM, a scroll uwolniony dla przewijania strony (zgłoszenie 2026-09-11, po A–G) | ZMIERZONE: słuchacz `wheel` był podpięty w DWÓCH miejscach (`buildCardVisual` dla kafla karty i `attachSpecialCardHover` dla kart specjalnych), a `cycle` w `renderTableView` czytał kierunek z `e.deltaY` i wołał `preventDefault` — więc scroll nad kartą zarówno przełączał tor, jak i zjadał przewijanie. Podpowiedź w oknie podglądu głosiła „scroll zmienia tor" (jedno źródło, L100) | decyzja UX właściciela (brak zmiany reguł); reszta logiki torów bez zmian | warstwa pokazu |
 
 ## Kolejność pracy (niezależne kroki, każdy z bramką)
 
@@ -42,6 +43,9 @@ oparty na opisach tekstowych i na kodzie.
 7. **D** — scoring beznadziejnego ataku.
 8. Domknięcie: `npm test`, `npm run build`, `npm run test:all`, Żywy Tester na
    świeżych seedach, handoff/historia/README, opis PR kumulatywnie.
+9. **H** (zgłoszone 2026-09-11, PO domknięciu A–G) — wyzwalacz toru podglądu:
+   `wheel` → `contextmenu` w obu miejscach podpięcia, krok cyklu zawsze +1,
+   `preventDefault` tylko na `contextmenu`, podpowiedź „PPM zmienia tor".
 
 ## Ryzyka i pułapki
 
@@ -279,5 +283,41 @@ oparty na opisach tekstowych i na kodzie.
 - **Blokada pusha zdjęta (2026-09-11)**: token GitHub odświeżony przez
   właściciela; zaległe `da01e00` (C) i `e7a6bcd` (plan) wypchnięte
   (`e24d6a0..e7a6bcd`), patche z `/home/user/patches/` nie były potrzebne.
-- Wszystkie zgłoszenia A–G zamknięte. Zostało domknięcie sesji: opis PR
-  kumulatywnie, `npm run test:all` (bramka PR), handoff/historia/README (L92).
+- Wszystkie zgłoszenia A–G zamknięte. Bramka PR `npm run test:all`
+  **5151/5151** (exit 0), opis PR rozszerzony o sekcję A–G (`gh pr edit` pada
+  na GraphQL „Projects (classic)" — zadziałał REST `gh api -X PATCH`).
+- **Domknięcie sesji A–G — GOTOWE** (`d49318d`): `docs/setup/HANDOFF_2026-09-11.md`
+  (tabela commitów, bramki, kolejka otwarta, pułapki środowiska), sekcja sesji
+  w `docs/PROJECT_HISTORY.md` (na górze, ADR 0013), README wg pomiaru
+  (5103→5141, 3463,4→3486,9 kB, 5113→5151). Strażniki dokumentacji 51/51.
+  Commit powstał przy WYGAŚNIĘTYM tokenie (drugi raz tej sesji) — zabezpieczony
+  `git format-patch` do `/home/user/patches/0004-*.patch` i wypchnięty po
+  odświeżeniu (`0a945fc..d49318d`).
+- **H — GOTOWE** (`327a994`): tor ilustracji po hoverze przełącza PPM, scroll
+  wraca do przewijania strony. Oba miejsca podpięcia (`buildCardVisual`
+  i `attachSpecialCardHover`) na `contextmenu` — w `src/` nie zostaje ani jeden
+  słuchacz `wheel`; `cycle` ma krok zawsze +1 (RMB nie ma kierunku, a cykl torów
+  się zapętla: scryfall → FOT → KON → scryfall — ta sama kolejność, którą dawał
+  scroll w dół); `preventDefault` zostaje, ale na `contextmenu` (tłumi menu
+  przeglądarki, scrolla nie dotyka); podpowiedź „scroll zmienia tor" →
+  „PPM zmienia tor" (jedno źródło dla obu warstw, L100). Reszta logiki bez zmian:
+  kolejność torów, etykiety, kształty okna, globalność toru, pusty podgląd dla
+  kart bez `artId` (M146). Strażniki: test RMB w `table-card-art` (3 kliknięcia
+  = pełny cykl, `defaultPrevented` na contextmenu, brak słuchacza `wheel`,
+  scroll nie rusza toru i nie jest blokowany), `attachSpecialCardHover` na
+  `contextmenu` i bez `wheel`, hint w m258/A2 (A2b/A2c zaostrzone na
+  `/zmienia tor/`, żeby `doesNotMatch` nie stał się pusty po zmianie słowa).
+  RED przed fixem: 3/3. Mutacje: HM1 kafel→wheel · HM2 `wheel` DODANY obok
+  `contextmenu` (scroll nie uwolniony) · HM3 karty specjalne→wheel ·
+  HM4 bez `preventDefault` · HM5 hint→„scroll" · HM6 krok −1 — po 1 RED każda.
+  Pomiar żywy na `dist/mtg-table.html` (L76, sonda jednorazowa jsdom): kafl
+  z artId, FOT → RMB → „bestiariusz (KON) · PPM zmienia tor"
+  (`defaultPrevented=true`) → RMB → „pełna karta (Scryfall)" → RMB → FOT (cykl
+  domknięty); `wheel` deltaY=120: tor bez zmian, `defaultPrevented=false`.
+  UWAGA POMIAROWA: jsdom deklaruje `ontouchstart`, więc artefakt startuje
+  w trybie DOTYKOWYM i hover nie jest podpinany w ogóle (`TOUCH_DEVICE`) — sonda
+  musiała zdjąć znacznik w `beforeParse`; Żywy Tester ścieżek hover nie ćwiczy.
+  Bramki: `npm test` **5141/5141**, build 61 modułów / 3487,7 kB.
+  Dokumentacja: `docs/setup/ILUSTRACJE_KART.md` (sekcja PPM + poprawka opisu
+  fallbacku: brak `artId` = PUSTY podgląd, brak pliku = spadek na Scryfall)
+  i `docs/ROADMAP.md` (wpis M12 z datą zmiany wyzwalacza).

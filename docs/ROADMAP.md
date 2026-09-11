@@ -89,7 +89,8 @@ był od razu sprawdzalny na docelowym urządzeniu, a nie dopiero na końcu.
       z ręcznym przełącznikiem (`src/table/card-images.js`). **Rozszerzony 2026-08-02
       (M12):** kafle na stole renderują druk ze Scryfalla z `imageUri` definicji karty,
       hover i pełny podgląd ten sam obraz w `large`, syntetyczna twarz jest fallbackiem;
-      tory podglądu `scryfall`/`FOT`/`KON` przełączane scrollem jak w legacy, a numery
+      tory podglądu `scryfall`/`FOT`/`KON` przełączane PPM nad kartą (do 2026-09-11
+      scrollem jak w legacy — właściciel uwolnił scroll dla przewijania strony), a numery
       lokalnych ilustracji uzupełnia `tools/fetch-art-ids.mjs`
       ([docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md)). **Numery
       (`artId`) uzupełnione 2026-08-02 (M13)** dla wszystkich 13 realnych kart —
