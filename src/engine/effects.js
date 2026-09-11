@@ -941,9 +941,17 @@ export function applyEnterCounters(state, objectId) {
       }
     }
   }
-  // Bloodthirst N: „If an opponent was dealt damage this turn, this creature
-  // enters with N +1/+1 counters on it" — warunek sprawdzany przy WEJŚCIU.
-  if (object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[object.controllerId]) {
+  // Bloodthirst N (CR 702.54a): „If an OPPONENT was dealt damage this turn,
+  // this creature enters with N +1/+1 counters on it" — warunek sprawdzany
+  // przy WEJŚCIU, a jego podmiotem jest ODBIORCA obrażeń: liczy się każdy
+  // przeciwnik kontrolera wchodzącego permanentu, niezależnie od tego, kto
+  // kontrolował źródło (M12 FAQ 2011-05-25 — Manabarbs przeciwnika też działa).
+  // Wcześniej klucz stanowił kontroler źródła, więc samouszkodzenie
+  // przeciwnika nie działało, a obrażenia zadane MNIE dawały liczniki moim
+  // stworom — oba kierunki niezgodne z 702.54a.
+  const opponentWasDealtDamage = state.players.some((pl) => pl.id !== object.controllerId
+    && state.damageTakenByPlayerThisTurn?.[pl.id]);
+  if (object.bloodthirst && opponentWasDealtDamage) {
     addCounter(state, objectId, '+1/+1', object.bloodthirst);
   }
 }

@@ -202,8 +202,10 @@ test('M274 (#26, CR 702.54a): BLOODTHIRST działa przy reanimacji, nie tylko prz
 
   for (const typ of ['return_permanent_from_graveyard', 'return_to_battlefield_tapped']) {
     const { state } = stanZKarta(cardId);
-    // Warunek bloodthirst SPEŁNIONY: przeciwnik dostał obrażenia w tej turze.
-    state.dealtDamageToOpponentThisTurn = { p1: true };
+    // Warunek bloodthirst SPEŁNIONY: PRZECIWNIK (p2) dostał obrażenia w tej
+    // turze. CR 702.54a czyta ODBIORCĘ obrażeń — znacznik stanu jest per
+    // gracz, który oberwał (wyzwanie 1/5, 2026-09-11), nie per źródło.
+    state.damageTakenByPlayerThisTurn = { p2: true };
     applyEffect(state, { type: typ }, state.objects.get('src'), ['g1']);
     const permanent = [...state.objects.values()]
       .find((o) => o.zone === 'battlefield' && o.cardId === cardId);
@@ -218,7 +220,7 @@ test('M274: bloodthirst NIE działa, gdy przeciwnik nie oberwał w tej turze', (
   // Kontrola negatywna — inaczej test wyżej byłby zielony także wtedy, gdyby
   // liczniki nadawano bezwarunkowo.
   const { state } = stanZKarta('gorehorn-minotaurs');
-  state.dealtDamageToOpponentThisTurn = {};
+  state.damageTakenByPlayerThisTurn = {};
   applyEffect(state, { type: 'return_permanent_from_graveyard' }, state.objects.get('src'), ['g1']);
   const permanent = [...state.objects.values()]
     .find((o) => o.zone === 'battlefield' && o.cardId === 'gorehorn-minotaurs');

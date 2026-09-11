@@ -444,9 +444,13 @@ export function createGameState({ seed, players }) {
     // Landfall (Mysteries of the Deep): ile lądów weszło pod kontrolę gracza
     // w tej turze (klucz = playerId). Zerowany przy zmianie tury.
     landEnteredThisTurn: {},
-    // Bloodthirst (Gorehorn Minotaurs): czy gracz zadał obrażenia przeciwnikowi
-    // w tej turze. Klucz = playerId dealera.
-    dealtDamageToOpponentThisTurn: {},
+    // Bloodthirst (CR 702.54a — Gorehorn Minotaurs): który gracz DOSTAŁ
+    // obrażenia w tej turze. Klucz = playerId ODBIORCY (nie źródła!). Zerowany
+    // przy zmianie tury. Warunek wejścia brzmi „if an OPPONENT was dealt damage
+    // this turn" — podmiotem jest odbiorca, a kontroler źródła nie ma
+    // znaczenia (M12 FAQ 2011-05-25: „It doesn't matter who controlled the
+    // source of the damage dealt to your opponent").
+    damageTakenByPlayerThisTurn: {},
     // Speed (DFT „Start your engines!", Batch 24 — Glitch Ghost Surveyor):
     // speed gracza (0..4); speedIncreasedThisTurn pilnuje „increases once on
     // each of your turns" (raz na turę aktywnego gracza).
@@ -1377,13 +1381,17 @@ function accepted(state, cmd, result) {
         [ctrl]: (state.landEnteredThisTurn?.[ctrl] ?? 0) + 1,
       };
     }
-    // Bloodthirst (CR 702.80 — „if an opponent was dealt damage this turn"):
-    // zapobiegnięte obrażenia nie są zadane (CR 119.3) — event z amount 0 nie
-    // liczy się do obrażeń zadanych przeciwnikowi.
+    // Bloodthirst (CR 702.54a — „If an opponent was dealt damage this turn"):
+    // warunkiem jest ODBIORCA obrażeń, więc znacznik stawiamy per gracz,
+    // który je dostał. Kontroler źródła nie ma znaczenia (M12 FAQ 2011-05-25
+    // — także samouszkodzenie przeciwnika się liczy); jego odczyt był zresztą
+    // zawodny: po rozstrzygnięciu czaru obiekt źródła znika ze `state.objects`,
+    // więc przy zwykłym Shocku w przeciwnika znacznik nie powstawał wcale.
+    // Zapobieżone obrażenia nie są zadane (CR 119.3) — obie ścieżki obrażeń
+    // (combat i niecombat) niosą w evencie kwotę FAKTYCZNIE zadaną, więc
+    // amount 0 nie liczy się.
     if (e.type === 'damage_dealt' && e.amount > 0 && state.players.some((pl) => pl.id === e.target)) {
-      const src = state.objects.get(e.source);
-      const dealer = src?.controllerId;
-      if (dealer && dealer !== e.target) state.dealtDamageToOpponentThisTurn[dealer] = true;
+      state.damageTakenByPlayerThisTurn = { ...(state.damageTakenByPlayerThisTurn ?? {}), [e.target]: true };
     }
   }
   // Ślepe decyzje gasimy także PO triggerach — kandydat mógł zniknąć od
@@ -4996,7 +5004,7 @@ export function execute(state, input) {
           state.descendedThisTurn = {};
           state.creatureDiedThisTurn = false;
           state.landEnteredThisTurn = {};
-          state.dealtDamageToOpponentThisTurn = {};
+          state.damageTakenByPlayerThisTurn = {};
           state.speedIncreasedThisTurn = {};
           state.moonlitUsedThisTurn = {};
           // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
