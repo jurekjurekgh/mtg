@@ -5760,6 +5760,14 @@ export function playerView(state, playerId) {
         if (object.bestow) entry.bestow = object.bestow;
         if (object.aura) entry.aura = object.aura;
         if (object.equipment) entry.equipment = object.equipment;
+        // Aura na GRACZU (CR 303.4 „Enchant player" — klątwy): nie ma
+        // gospodarza-permanentu, więc jedyną wskazówką „kogo to dotyczy" jest
+        // zaczarowany gracz. To informacja JAWNA (aura leży na stole, jej cel
+        // jest częścią stanu partii — nic z FoW), a bez niej UI nie ma z czego
+        // zbudować badge'a (zgłoszenie właściciela F, ADR 0017: skutek
+        // widoczny w grze musi być widoczny w widoku).
+        if (object.enchantPlayer) entry.enchantPlayer = true;
+        if (object.enchantedPlayerId) entry.enchantedPlayerId = object.enchantedPlayerId;
         // Morph/megamorph (face-down): koszt obrotu twarzą do góry jest potrzebny
         // do etykiety akcji „Obróć twarzą do góry" (audyt M83: „(morph )" puste).
         // Kontroler zna swoją kartę; przeciwnik widzi 2/2 bez tożsamości (FoW) —

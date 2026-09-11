@@ -3488,6 +3488,12 @@ export function cardInfo(session, object, combat = null) {
     entersWithCounters: faceDown ? null : (details.entersWithCounters || object.entersWithCounters || null),
     attachedTo: object.attachedTo ?? null,
     hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
+    // Zgłoszenie właściciela F (2026-09-10): aura na GRACZU (CR 303.4
+    // „Enchant player", klątwy) nie ma gospodarza-permanentu, więc jedyną
+    // wskazówką „kogo to dotyczy" jest zaczarowany gracz. Pole publiczne
+    // (jak `attachedTo`) i JEDNO źródło etykiety dla obu warstw renderu
+    // (L100) — tooltip i nakładka kafla mówią to samo.
+    cursedPlayerId: object.enchantedPlayerId ?? null,
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty
     // („Aura: Moonlit Meditation", „Equipment: …"). Scan pola bitwy w widoku.
     attachments: object.zone === 'battlefield' && object.id
@@ -3588,8 +3594,14 @@ function buildCardVisual(parent, info, { size = '', zoom = false, skipLiveState 
   return visual;
 }
 
-/** Buduje syntetyczną „twarz\" karty (kolorowa ramka, koszt, typ, P/T). */
-function buildFace(parent, info, { size = '', skipLiveState = false, textless = false } = {}) {
+/**
+ * Buduje syntetyczną „twarz\" karty (kolorowa ramka, koszt, typ, P/T).
+ *
+ * Wyeksportowana jak `buildStateOverlay` (M89): badge na twarzy karty da się
+ * wtedy zmierzyć headless, bez JSDOM w głównej bramce (zgłoszenie F — badge
+ * klątwy jest w OBU warstwach i obie muszą mieć strażnika).
+ */
+export function buildFace(parent, info, { size = '', skipLiveState = false, textless = false } = {}) {
   const sizeClass = size === 'lg' ? ' lg' : size === 'sm' ? ' sm' : '';
   const face = div(parent, `face c-${colorKey(info.colors, info.kind)}${info.isToken ? ' token' : ''}${sizeClass}`);
   if (textless) {
@@ -3641,6 +3653,11 @@ function buildFace(parent, info, { size = '', skipLiveState = false, textless = 
     // („zaczarowana:/wyposażona:" kłamały przy gospodarzu rodzaju męskiego).
     for (const att of info.attachments ?? []) {
       flags.push(att.kind === 'aura' ? `Aura: ${att.name}` : `Equipment: ${att.name}`);
+    }
+    // Klątwa na graczu (CR 303.4): nazwij zaczarowanego, bo sama aura na
+    // karcie nie mówi, kogo dotyczy (zgłoszenie właściciela F).
+    if (info.cursedPlayerId) {
+      flags.push(`Klątwa: ${PLAYER_NAMES[info.cursedPlayerId] ?? info.cursedPlayerId}`);
     }
     // A (2026-08-11): liczniki na karcie (np. „+1/+1 ×2", „oil ×3", „charge ×5").
     for (const [name, count] of Object.entries(info.counters ?? {})) {
@@ -3711,6 +3728,12 @@ export function buildStateOverlay(visual, info) {
     if (info.attachedAura || info.attachedEquipment) {
       const label = info.attachedAura ? 'aura' : 'wyposaża';
       flags.push(['att', info.hostName ? `${label} → ${info.hostName}` : label]);
+    }
+    // Klątwa (aura na graczu): ten sam związek co „aura → gospodarz", tylko
+    // gospodarzem jest GRACZ — bez tego badge'a klątwa na stole jest
+    // anonimowa (zgłoszenie właściciela F). Etykieta 1:1 z buildFace (L100).
+    if (info.cursedPlayerId) {
+      flags.push(['att', `Klątwa: ${PLAYER_NAMES[info.cursedPlayerId] ?? info.cursedPlayerId}`]);
     }
     // Nadal pokazujemy załączniki GOSPODARZA (info.attachments) niżej.
     // M100/E12: kafel zakrytego permanentu niesie znacznik mechaniki (własny
