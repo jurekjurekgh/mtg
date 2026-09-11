@@ -19,6 +19,63 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-10/11 — zgłoszenia właściciela A–G z gry przy stole (PR #113, arena/01a08d0e)
+
+Właściciel zgłosił sześć znalezisk z partii przy stole (A–F), a w trakcie
+domknął dwa kolejne (G — klątwa na siebie „powinna mieć −1000 scoringu",
+i kolejność celów przy G). Ta sama gałąź/PR co audyt PR #112 (ADR 0013/0020);
+każde znalezisko: przyczyna **zmierzona** w kodzie → test RED → fix u źródła →
+mutacje (L13) → osobny zielony commit. Plan i pomiary:
+`docs/plans/PLAN_2026-09-10c-zgloszenia-wlasciciela-a-f.md`.
+
+- **A** (`299c1b5`): klucz wariantu płatności bez rodzaju źródła → Forest
+  i Scorned Villager (oba `{G}`) to jeden „kształt", więc kreator many się nie
+  otwierał; rodzaj źródła w kluczu (`countPaymentVariants`).
+- **B1+B2** (`fe37168`): rozdział III Sagi doczepiał grant do SAGI i ginął
+  z jej poświęceniem, a poświęcenie następowało PRZED rozstrzygnięciem
+  rozdziału. Nowy rejestr `state.turnAbilityGrants` (wpis z LKI źródła,
+  CR 603.10) + `sacrificeFinishedSagas` jako akcja stanowa (CR 714.4, po
+  przebiegu triggerów) + `queueSagaChaptersForLore` (CR 714.2b — rozdział
+  odpala KAŻDY licznik lore, także proliferate).
+- **E1** (`a63a0dc`): skan triggerów w grobie nie wykluczał karty, która
+  właśnie umarła, ani współpoległych z tej samej partii SBA (ruling WotC
+  2025-04-04 dla Furious Forebear).
+- **E2+E3** (`e6d3a5b`): prompt decyzji BOTA („zapłacić {1}{W}?") trafiał do
+  głównego logu gracza i był zapisany surowym tekstem. Czysty predykat
+  `isBotDecisionPrompt` (klasa zdarzeń + decydent, bez nazw kart) przy OBU
+  pisarzach logu (L41) + `appendTextWithManaIcons` (jedno źródło ikon:
+  `manaSymbolsHtml`).
+- **F** (`baaba03`): klątwa na polu bitwy nie miała badge'a, bo `playerView`
+  w ogóle nie wysyłał `enchantPlayer`/`enchantedPlayerId` (sonda: oba
+  `undefined`) — fix w widoku (ADR 0017) + `cursedPlayerId` w `cardInfo`
+  + badge w `buildFace` i `buildStateOverlay` (L100).
+- **G** (`90dfc48`): cel-gracz nie jest permanentem, więc gałąź aury
+  w `cast_permanent` dawała `auraNoTargetPenalty` OBU wariantom (−45 i −45) —
+  klątwa na siebie nie była odróżniona, a bot klątw nie rzucał wcale;
+  `auraIsHostile` nie znała `damage_enchanted_player`. Teraz: na siebie −1000
+  (parametr `curseSelfTargetPenalty`), na wroga +40 (`curseEnemyBase`).
+- **G/4** (`19be457`): kreator celu klątwy wymieniał „Ty" jako pierwszy wiersz
+  (`auraCastsForPayment` w kolejności `state.players`) — partia 5001: greedy
+  wziął pierwszy wiersz i rzucił klątwę na siebie. Teraz przeciwnik pierwszy.
+- **C** (`da01e00`): Exploit wyceniany `skip 20` / `40 − (P·2+T)` — biblioteka
+  poza wyceną w ogóle (trigger Gurmag Drowner miele 3), ofiara tylko z P/T
+  (bot poświęcał Cloudbound Moogle zamiast tokena 3/3, bo 33 > 31), komenda
+  bez `sourceId`. Teraz: koszt millu z danych karty, bramki zapasu biblioteki,
+  cena ofiary z keywordami/zdolnościami i premią za token.
+- **D** (`a75cc5d`): kara za atak w gang blokerów istniała (−9), ale gałąź nie
+  znaczyła ataku jako JAŁOWEGO, więc premia wyścigu +20 ją przebijała (klasa
+  L3) — 3/1 atakowało w 4/4+4/5 przy 3 własnego życia. `futileAttackers += 1`
+  w gałęzi gangu; świadoma regeneracja golden-mastera (1 z 6 partii).
+
+Bramki na koniec: `npm run test:all` **5151/5151**, `npm test` **5141/5141**,
+build 61 modułów / 3486,9 kB, benchmark quick 84,7% (569/672) — A/B bez zmian,
+Żywy Tester detektory 0 we wszystkich partiach pomiarowych.
+
+Uwagi środowiskowe z tej sesji: `gh pr edit` pada na tym repo (GraphQL
+„Projects (classic) is being deprecated") — działa REST
+(`gh api -X PATCH repos/…/pulls/113 -F body=@plik`); commit bez pusha przepada
+między turami, więc przy zablokowanym pushu `git format-patch` poza repo.
+
 ## Sesja 2026-09-10 — pętla jakości Żywym Testerem: Thunderstaff noop (PR #111, arena/01a08788)
 
 Po domknięciu znalezisk właściciela A–D (F-A..F-D, PR #111) sesja przeszła w
