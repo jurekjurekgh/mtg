@@ -99,6 +99,19 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // klątwy na wroga, a bot w ogóle klątw nie rzucał.
   'curseEnemyBase',              // zysk z klątwy rzuconej na PRZECIWNIKA
   'curseSelfTargetPenalty',      // kara za klątwę na WŁASNEGO gracza (właściciel: -1000)
+  // Zgłoszenie właściciela C (2026-09-10, Gurmag Drowner): Exploit przy 5
+  // kartach w bibliotece — trigger miele 3 (`look_top_put_one_hand_rest_grave`,
+  // amount 4), a ofiara była liczona tylko z P/T, więc użyteczny latający stwór
+  // był „tani" prawie jak token. Właściciel: exploit tylko przy DUŻEJ
+  // bibliotece (~15+) i ofiara = token bez zdolności.
+  'exploitSkipBase',             // zysk z POMINIĘCIA exploita (punkt odniesienia)
+  'exploitBase',                 // bazowy zysk z wykonania exploita
+  'exploitDeckOutPenalty',       // kara, gdy mill exploita sięga dna biblioteki (CR 121.4/704.5b)
+  'exploitThinLibraryPenalty',   // kara za exploit przy cienkiej bibliotece (ryzyko deck-outu)
+  'exploitSafeLibraryMargin',    // minimalny ZAPAS kart po millu, żeby exploit był bezpieczny
+  'exploitVictimKeywordWeight',  // waga keyworda ofiary (latanie itd. = realna wartość)
+  'exploitVictimAbilityWeight',  // waga zdolności ofiary z rejestru (użyteczny stwór)
+  'exploitTokenDiscount',        // premia za poświęcenie TOKENU (zamiast karty)
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -160,6 +173,14 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   auraProtectionThreatWeight: 12,
   curseEnemyBase: 40,
   curseSelfTargetPenalty: 1000,
+  exploitSkipBase: 20,
+  exploitBase: 40,
+  exploitDeckOutPenalty: 120,
+  exploitThinLibraryPenalty: 60,
+  exploitSafeLibraryMargin: 12,
+  exploitVictimKeywordWeight: 6,
+  exploitVictimAbilityWeight: 8,
+  exploitTokenDiscount: 8,
 });
 
 /**

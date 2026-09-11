@@ -958,6 +958,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const wastefulStep = (view) => myTurn(view) && ['untap', 'upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step);
   const myLibraryCount = (view) => view.zones.library.filter((o) => o.controllerId === view.playerId).length;
   /**
+   * Zgłoszenie właściciela C (2026-09-10, Gurmag Drowner): ile kart trigger
+   * exploita źródła wrzuca do grobu. „Look at the top four cards… put one of
+   * them into your hand and the rest into your graveyard" = amount - 1.
+   * Czytane z DANYCH karty po typie efektu, nie po nazwie (ADR 0002):
+   * Silumgar Butcher (exploit → pump -3/-3) nie miele nic, więc bramka
+   * biblioteczna go nie dotyczy.
+   */
+  const EXPLOIT_LIBRARY_COST = new Map([
+    ['look_top_put_one_hand_rest_grave', (amount) => Math.max(0, (amount ?? 1) - 1)],
+  ]);
+  function exploitMillAmount(def) {
+    let razem = 0;
+    for (const ability of def?.abilities ?? []) {
+      if (ability?.trigger?.event !== 'exploits') continue;
+      for (const eff of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+        const koszt = eff?.type ? EXPLOIT_LIBRARY_COST.get(eff.type) : undefined;
+        if (koszt) razem += koszt(eff.amount);
+      }
+    }
+    return razem;
+  }
+  /**
    * D (zgłoszenie właściciela, Deepwood Denizen): dobieranie kart, które
    * OPRÓŻNIA własną bibliotekę, to wyrok — CR 121.4/704.5b: próba dobrania
    * z pustej biblioteki przegrywa partię, a dobranie OSTATNIEJ karty zostawia
@@ -5856,16 +5878,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // (minimum straty); skip, jeżeli w ogóle nie ma co zyskać (np. bez
       // triggerów exploita na źródle — tu bezpieczna domyślna: poświęć słabego).
       case 'resolve_exploit_choice': {
-        if (cmd.skip === true) return finish(20);
+        if (cmd.skip === true) return finish(P.exploitSkipBase);
         const victim = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!victim || victim.controllerId !== view.playerId) return finish(-50);
-        // Wartość ofiary jak w resolve_sacrifice_choice (C-R3b).
+        // C (zgłoszenie właściciela 2026-09-10): trigger exploita bywa MILLEM,
+        // a biblioteka nie brała udziału w wycenie W OGÓLE — przy 5 kartach
+        // bot mielił 3 i zostawał z jedną (deck-out za dwa dobrania,
+        // CR 121.4/704.5b). Koszt czytamy z danych źródła (ADR 0002), więc
+        // exploit bez millu (Silumgar Butcher) nie jest blokowany.
+        const source = cmd.sourceId ? objectOnBoard(view, cmd.sourceId) : null;
+        const mill = exploitMillAmount(source ? cardDef(source.cardId) : undefined);
+        if (mill > 0) {
+          const zapas = myLibraryCount(view) - mill;
+          if (zapas <= 0) return finish(-P.exploitDeckOutPenalty);
+          if (zapas < P.exploitSafeLibraryMargin) return finish(-P.exploitThinLibraryPenalty);
+        }
+        // Wartość ofiary jak w resolve_sacrifice_choice (C-R3b) + to, czego
+        // samo P/T nie widzi: keywordy i zdolności z rejestru (użyteczny
+        // latający stwór NIE jest „tani"), a token jest tańszy niż karta
+        // (właściciel: „poświęcaj token bez zdolności").
+        const victimDef = victim.cardId ? cardDef(victim.cardId) : undefined;
         const value = victim.kind === 'creature' || (victim.types ?? []).includes('Creature')
           ? (victim.power ?? 0) * 2 + (victim.toughness ?? 0)
           : (victim.manaCost ?? 0) * 2;
-        // Poświęcenie jest warte mniej, im cenniejsza ofiara; preferuj najtańszego
-        // (chump/token 1/1). Bazowy zysk z exploita (≈15) musi przewyższyć stratę.
-        return finish(40 - value);
+        const cena = value
+          + P.exploitVictimKeywordWeight * (victim.keywords ?? []).length
+          + P.exploitVictimAbilityWeight * (victimDef?.abilities ?? []).length
+          - (victim.isToken ? P.exploitTokenDiscount : 0);
+        // Poświęcenie jest warte mniej, im cenniejsza ofiara; bazowy zysk
+        // z exploita musi przewyższyć stratę (inaczej wygrywa skip).
+        return finish(P.exploitBase - cena);
       }
       // M130 (Cuombajj Witches i pokrewne): przeciwnik wybiera cel OBRAŻEŃ
       // ({T}: zadać 1 obrażenie celowi). My (bot) wybieramy jako przeciwnik w

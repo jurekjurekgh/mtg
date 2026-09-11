@@ -6755,9 +6755,14 @@ export function playerView(state, playerId) {
     for (const targetId of pending.candidateIds) {
       const candidate = state.objects.get(targetId);
       if (!candidate || candidate.zone !== 'battlefield' || candidate.kind !== 'creature') continue;
-      legalCommands.push(command('resolve_exploit_choice', playerId, { targetId }));
+      // C (zgłoszenie właściciela 2026-09-10): `sourceId` — źródło exploita to
+      // jawny permanent na polu bitwy, a bez niego decydujący nie wie, CO robi
+      // trigger exploita (Gurmag Drowner miele 3 karty, Silumgar Butcher nie
+      // miele nic), więc nie może ocenić ryzyka deck-outu (ADR 0017: to, co
+      // potrzebne do decyzji, musi być w widoku).
+      legalCommands.push(command('resolve_exploit_choice', playerId, { targetId, sourceId: pending.sourceId }));
     }
-    legalCommands.push(command('resolve_exploit_choice', playerId, { skip: true }));
+    legalCommands.push(command('resolve_exploit_choice', playerId, { skip: true, sourceId: pending.sourceId }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeRevealExile) {
     // M69 (Dreams of Steel and Oil): najpierw wybór z ręki, potem z grobu.
     // Wybór jest OBOWIĄZKOWY („You choose an artifact or creature card from
