@@ -53,18 +53,22 @@ function hoverSpy() {
 }
 function cardEl(host, cls) { return host.findAll((el) => (el.className || '').includes(cls))[0]; }
 
-test('B: helper podłącza mouseenter/mouseleave/wheel i zwraca informację o karcie', () => {
+test('B: helper podłącza mouseenter/mouseleave/contextmenu i zwraca informację o karcie', () => {
   const card = new MiniEl('div');
   const hover = hoverSpy();
   const info = { name: 'Undercity', imageUri: 'https://x/undercity.jpg' };
   assert.equal(attachSpecialCardHover(card, hover, info), true, 'hover podpięty');
   card.emit('mouseenter', { clientX: 1, clientY: 2 });
   card.emit('mouseleave');
-  card.emit('wheel', { deltaY: -1, preventDefault: noop });
+  // Zgłoszenie H (2026-09-11): tor podglądu przełącza PPM (contextmenu),
+  // nie scroll — karty specjalne mają ten sam wyzwalacz co zwykłe kafle.
+  card.emit('contextmenu', { preventDefault: noop });
   assert.deepEqual(hover.seen.map((s) => s.at), ['start', 'end', 'cycle'],
     `kolejność zdarzeń: ${hover.seen.map((s) => s.at).join(',')}`);
   assert.equal(hover.seen[0].info.imageUri, info.imageUri,
     'start dostaje obraz KARTY SPECJALNEJ, nie kafla');
+  assert.equal(card.listeners.wheel, undefined,
+    'karta specjalna nie przechwytuje scrolla — strona się przewija');
 });
 
 test('B: brak hovera (dotyk) = żadnych słuchaczy i false — klik zostaje jedyną ścieżką', () => {

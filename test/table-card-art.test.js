@@ -320,7 +320,7 @@ test('hover pokazuje ten sam obraz w rozmiarze large i rotuje tory scrollem', ()
   assert.equal(imagesIn(local)[0].src, 'img/512KON.png');
 });
 
-test('scroll nad kartą na stole przełącza tor podglądu (kopia zachowania legacy)', () => {
+test('RMB nad kartą przełącza tor podglądu, a scroll zostaje dla strony (zgłoszenie H, 2026-09-11)', () => {
   const { session } = buildSession('tarkir-bg.txt');
   const els = makeEls();
   const seen = [];
@@ -330,7 +330,8 @@ test('scroll nad kartą na stole przełącza tor podglądu (kopia zachowania leg
   });
   // Kafel realnej karty z artId (ilustracją FOT/KON) — na nim etykieta toru
   // ma sens. Podstawowe landy (bez artId) w trybach FOT/KON pokazują PUSTY
-  // podgląd (M146 — uwaga właściciela), więc scroll nad nimi nie zmienia nic.
+  // podgląd (M146 — uwaga właściciela), więc przełączanie nad nimi niczego
+  // widocznego nie zmienia.
   const tileEl = els.hand.findAll((el) => el.className.startsWith('tile'))
     .find((el) => el.find(isImg) && !/Basic Land/.test(el.textContent));
   assert.ok(tileEl, 'ręka musi zawierać co najmniej jedną realną kartę z ilustracją');
@@ -339,14 +340,34 @@ test('scroll nad kartą na stole przełącza tor podglądu (kopia zachowania leg
   assert.equal(els.hoverPreview.className, 'hover-preview active');
   assert.match(els.hoverPreview.textContent, /Scryfall/);
 
+  // Zgłoszenie H (2026-09-11): wyzwalaczem toru jest PRAWY przycisk myszy
+  // (`contextmenu`), nie scroll. RMB nie ma kierunku „góra/dół", a cykl torów
+  // się zapętla, więc kolejne kliknięcia przechodzą scryfall → FOT → KON →
+  // scryfall — ta sama kolejność, którą wcześniej dawał scroll w dół.
   let prevented = 0;
-  tileEl.emit('wheel', { clientX: 100, clientY: 100, deltaY: 1, preventDefault: () => { prevented += 1; } });
-  assert.equal(prevented, 1, 'scroll nad kartą nie przewija strony');
+  const rmb = () => tileEl.emit('contextmenu', {
+    clientX: 100, clientY: 100, preventDefault: () => { prevented += 1; },
+  });
+  rmb();
+  assert.equal(prevented, 1, 'RMB nad kartą nie otwiera menu kontekstowego przeglądarki');
   assert.deepEqual(seen, ['fot'], 'tor zmienia się scryfall → fot');
   assert.match(els.hoverPreview.textContent, /panoramiczna/);
 
-  tileEl.emit('wheel', { clientX: 100, clientY: 100, deltaY: -1, preventDefault: () => {} });
-  assert.deepEqual(seen, ['fot', 'scryfall'], 'scroll w drugą stronę cofa tor');
+  rmb();
+  assert.deepEqual(seen, ['fot', 'kon'], 'drugi RMB: fot → kon');
+  assert.match(els.hoverPreview.textContent, /bestiariusz/);
+
+  rmb();
+  assert.deepEqual(seen, ['fot', 'kon', 'scryfall'], 'trzeci RMB domyka cykl (kon → scryfall)');
+  assert.match(els.hoverPreview.textContent, /pełna karta/);
+
+  // Scroll UWOLNIONY: kafel nie może mieć słuchacza `wheel` (przewijanie
+  // strony wraca do zachowania domyślnego), a samo zdarzenie nie rusza toru.
+  assert.equal(tileEl.listeners.wheel, undefined, 'kafel nie przechwytuje scrolla');
+  let scrollPrevented = 0;
+  tileEl.emit('wheel', { clientX: 100, clientY: 100, deltaY: 1, preventDefault: () => { scrollPrevented += 1; } });
+  assert.deepEqual(seen, ['fot', 'kon', 'scryfall'], 'scroll nie przełącza toru');
+  assert.equal(scrollPrevented, 0, 'scroll nie jest blokowany — strona się przewija');
 
   tileEl.emit('mouseleave', {});
   assert.equal(els.hoverPreview.className, 'hover-preview');

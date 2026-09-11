@@ -3703,7 +3703,9 @@ function tile(parent, info, opts) {
   if (opts.hover && opts.hover.start) {
     wrap.addEventListener('mouseenter', (e) => opts.hover.start(info, e));
     wrap.addEventListener('mouseleave', opts.hover.end);
-    if (opts.hover.cycle) wrap.addEventListener('wheel', (e) => opts.hover.cycle(info, e));
+    // Zgłoszenie H (2026-09-11): tor przełącza PPM, nie scroll — `wheel`
+    // zostaje przeglądarce (domyślne przewijanie strony).
+    if (opts.hover.cycle) wrap.addEventListener('contextmenu', (e) => opts.hover.cycle(info, e));
   }
   return wrap;
 }
@@ -3884,8 +3886,9 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCyc
   const art = artOf(info);
   const hasLocal = art.artId != null && art.artId !== '';
   // M257 r5/A: podgląd o torze STAŁYM (miniaturki w „Rozgrywce") nie cykluje
-  // scrollem — podpowiedź „scroll zmienia tor" byłaby kłamliwa.
-  const hint = hasLocal && showCycleHint ? ' · scroll zmienia tor' : '';
+  // wcale — podpowiedź o przełączaniu toru byłaby kłamliwa.
+  // Zgłoszenie H (2026-09-11): tor przełącza PPM, nie scroll.
+  const hint = hasLocal && showCycleHint ? ' · PPM zmienia tor' : '';
   div(host, 'hover-mode', `${hoverModeLabel(hoverMode)}${hint}`);
   return host;
 }
@@ -3893,7 +3896,7 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCyc
 /**
  * M257 r5/A (uwaga właściciela): hover scryfall na miniaturkach w modalu
  * „Rozgrywka" — ten sam podgląd co na stole (powiększona karta ze Scryfall),
- * ale tor STAŁY (bez trybów FOT i KON i bez cyklowania scrollem).
+ * ale tor STAŁY (bez trybów FOT i KON i bez cyklowania PPM).
  * `null` na dotyku — na tablecie hover nie istnieje (jak na stole, M7c);
  * tam miniaturkę otwiera tap (pełny ekran).
  */
@@ -3901,7 +3904,7 @@ export function createScryfallHover(els) {
   if (TOUCH_DEVICE || !els?.hoverPreview) return null;
   return {
     start: (info, e) => showHoverPreviewAt(els, info, e, 'scryfall',
-      // M258/A2 (audyt PR #88): tor STAŁY nie cykluje scrollem — bez mylącej
+      // M258/A2 (audyt PR #88): tor STAŁY nie cykluje — bez mylącej
       // podpowiedzi. Opcja showCycleHint istniała od r5/A, ale nikt jej nie
       // przekazał (martwa opcja, L67) — na kartach z artId miniaturka w
       // „Rozgrywce" obiecywała „scroll zmienia tor", którego nie było.
@@ -4194,8 +4197,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'handEnemy', 'actions', 'log']) clear(els[key]);
 
   // Hover (desktop): powiększona karta pod kursorem — ta sama ilustracja co na
-  // kaflu, w rozmiarze `large`, a przy jej braku syntetyczna twarz. Scroll nad
-  // kartą przełącza tor podglądu (scryfall → FOT → KON), jak w legacy HTML.
+  // kaflu, w rozmiarze `large`, a przy jej braku syntetyczna twarz. Tor
+  // podglądu (scryfall → FOT → KON) przełącza PPM nad kartą (zgłoszenie H,
+  // 2026-09-11; wcześniej scroll jak w legacy HTML).
   // Na dotyku (iPad/iPhone) hover pozostaje wyłączony — tapnięcie otwiera
   // wyłącznie menu kontekstowe (M7c).
   let currentHoverMode = hoverMode;
@@ -4211,11 +4215,16 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
     cycle: (info, e) => {
       if (!els.hoverPreview) return;
+      // Zgłoszenie H (2026-09-11): wyzwalaczem jest `contextmenu` (PPM), więc
+      // preventDefault tłumi menu kontekstowe przeglądarki — scrolla NIE
+      // dotykamy, przewijanie strony zostaje domyślne. RMB nie ma kierunku
+      // „góra/dół", a cykl torów się zapętla, więc krok jest zawsze +1
+      // (scryfall → FOT → KON → scryfall — ta sama kolejność co scroll w dół).
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
       // M146: tryby FOT/KON przełączają się globalnie niezależnie od karty;
       // dla kart bez artId hover w tych trybach jest po prostu pusty
       // (brak obrazka — patrz hoverImageSources).
-      currentHoverMode = nextHoverMode(currentHoverMode, (e && e.deltaY < 0) ? -1 : 1, HOVER_MODES);
+      currentHoverMode = nextHoverMode(currentHoverMode, 1, HOVER_MODES);
       if (onHoverModeChange) onHoverModeChange(currentHoverMode);
       hover.start(info, e);
     },
@@ -4487,7 +4496,9 @@ export function attachSpecialCardHover(card, hover, info) {
   if (!card || !hover || typeof hover.start !== 'function') return false;
   card.addEventListener('mouseenter', (e) => hover.start(info, e));
   if (hover.end) card.addEventListener('mouseleave', hover.end);
-  if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(info, e));
+  // Zgłoszenie H (2026-09-11): PPM, nie scroll — ten sam wyzwalacz co kafle
+  // (jedno miejsce reguły w `cycle`, L41).
+  if (hover.cycle) card.addEventListener('contextmenu', (e) => hover.cycle(info, e));
   // D (zgłoszenie właściciela 2026-09-10): mouseenter nie odzywa się, gdy
   // kafl zostaje PRZERYsowany pod kursorem (renderTableView podmienia
   // element — nie ma „wejścia", jest już w środku). Panele specjalne
