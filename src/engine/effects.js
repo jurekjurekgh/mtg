@@ -1,7 +1,7 @@
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { hasCreatureType, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -659,7 +659,7 @@ export function librarySearchMatches(object, qualifier, ownerId) {
   const typeMatch = (qualifier.types ?? []).length === 0
     || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
   const subtypeMatch = (qualifier.subtypes ?? []).length === 0
-    || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
+    || (qualifier.subtypes ?? []).some((subtype) => hasCreatureType(object, subtype));
   const kindMatch = !qualifier.kind || object.kind === qualifier.kind;
   const minMv = qualifier.minManaValue;
   const mvOk = minMv == null || (object.manaCost ?? 0) >= minMv;
@@ -1603,7 +1603,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const cardIds = state.zones.hand.filter((id) => {
       const card = state.objects.get(id);
       return card && card.controllerId === controllerId
-        && subtype != null && (card.subtypes ?? []).includes(subtype);
+        && subtype != null && hasCreatureType(card, subtype);
     });
     if (cardIds.length === 0) return;
     state.pendingRevealChoice = {
@@ -2106,7 +2106,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // CR 611.2c — jak cała lista objectIds).
     const buffIds = affectedCreatureIds(state, sourceObject.controllerId, false)
       .filter((id) => !effect.subtype
-        || (state.objects.get(id)?.subtypes ?? []).includes(effect.subtype));
+        || hasCreatureType(state.objects.get(id), effect.subtype, state));
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
       Object.freeze({
@@ -2356,7 +2356,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const subtype = effect.subtype ?? 'Orc';
     const armies = [...state.objects.values()].filter((object) => object.zone === 'battlefield'
       && object.controllerId === sourceObject.controllerId && object.kind === 'creature'
-      && (object.subtypes ?? []).includes('Army'));
+      && hasCreatureType(object, 'Army', state));
     // CR 701.43: „Amass N — Choose an Army you control or create one" — przy
     // 2+ armiach gracz wybiera (blokująca decyzja resolve_amass_choice).
     if (armies.length > 1) {
@@ -2627,7 +2627,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     for (const object of [...state.objects.values()]) {
       if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId) continue;
       if (object.kind !== 'creature') continue;
-      if (subtypes.length && !(object.subtypes ?? []).some((sub) => subtypes.includes(sub))) continue;
+      if (subtypes.length && !subtypes.some((sub) => hasCreatureType(object, sub, state))) continue;
       addCounter(state, object.id, effect.counter ?? '+1/+1', effect.amount ?? 1);
     }
     return;
@@ -2661,7 +2661,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       holds = sub != null && ![...state.objects.values()].some((object) => object.zone === 'battlefield'
         && object.controllerId === controllerId
         && object.kind === 'creature'
-        && (object.subtypes ?? []).includes(sub));
+        && hasCreatureType(object, sub, state));
     }
     if (effect.condition === 'controlsPlaneswalkerWithSubtype') {
       const sub = effect.subtype;
@@ -3421,7 +3421,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // Generycznie: po powrocie, jeśli karta ma podtyp z listy — dobierz
     // (filtr po podtypie, nie nazwie — ADR 0002).
     if (effect.drawIfSubtypes?.length
-      && (moved.subtypes ?? []).some((sub) => effect.drawIfSubtypes.includes(sub))) {
+      && effect.drawIfSubtypes.some((sub) => hasCreatureType(moved, sub, state))) {
       drawPlayerCards(state, sourceObject.controllerId, 1, 'effect');
     }
     return;

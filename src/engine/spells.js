@@ -5,7 +5,7 @@ import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
-import { isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, transformedCharacteristics } from './permanents.js';
+import { hasCreatureType, isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, transformedCharacteristics } from './permanents.js';
 import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
@@ -250,7 +250,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // Sterling Keykeeper: „target non-Mount creature" (walidacja spójna z ofertą).
     if (spec?.type === 'creature_without_subtype') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
-      if ((object.subtypes ?? []).includes(spec.subtype)) {
+      if (hasCreatureType(object, spec.subtype, state)) {
         throw new Error(`Nielegalny cel: ${targetId} (podtyp ${spec.subtype})`);
       }
       return object;
@@ -297,7 +297,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // Cel „creature_with_subtypes" (Lunar Rejection) — stwór z jednym ze spec.subtypes.
     if (spec?.type === 'creature_with_subtypes') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
-      const hasSubtype = (spec.subtypes ?? []).some((sub) => (object.subtypes ?? []).includes(sub));
+      const hasSubtype = (spec.subtypes ?? []).some((sub) => hasCreatureType(object, sub, state));
       if (!hasSubtype) throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
@@ -1038,7 +1038,7 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
         const object = state.objects.get(objectId);
         if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
         if (hasHexproofAgainst(state, object, playerId)) return false;
-        return (spec.subtypes ?? []).some((sub) => (object.subtypes ?? []).includes(sub));
+        return (spec.subtypes ?? []).some((sub) => hasCreatureType(object, sub, state));
       });
     case 'artifact': return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
@@ -1201,7 +1201,7 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
         const object = state.objects.get(objectId);
         if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
         if (hasHexproofAgainst(state, object, playerId)) return false;
-        return !(object.subtypes ?? []).includes(spec.subtype);
+        return !hasCreatureType(object, spec.subtype, state);
       });
     }
     case 'creature_with_keyword': {

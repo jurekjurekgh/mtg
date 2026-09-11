@@ -1,5 +1,5 @@
 import { chooseDestructionReplacement } from './destruction.js';
-import { combatDamageByToughness, effectiveSubtypes, isUntapStepLocked } from './permanents.js';
+import { combatDamageByToughness, effectiveSubtypes, hasCreatureType, isUntapStepLocked } from './permanents.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
@@ -7136,7 +7136,7 @@ export function playerView(state, playerId) {
       // („you may cast Dinosaur spells as though they had flash"), nie tylko
       // z wydrukowanego keywordu. Zbior podtypow trzymamy w stanie tury.
       const grantedFlash = (state.subtypeFlashThisTurn ?? []).some((grant) => grant.controllerId === playerId
-        && (object.subtypes ?? []).includes(grant.subtype));
+        && hasCreatureType(object, grant.subtype, state));
       if (!(object.keywords ?? []).includes('flash') && !grantedFlash) continue;
       if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
       if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;

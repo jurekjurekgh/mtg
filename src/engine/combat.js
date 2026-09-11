@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { combatDamageAmount, combatDamageByToughness, preventDamageWithShieldCounter, removeLoyaltyForDamage, attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
+import { hasCreatureType, combatDamageAmount, combatDamageByToughness, preventDamageWithShieldCounter, removeLoyaltyForDamage, attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
 import { attachmentsAttachedTo } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 
@@ -304,7 +304,7 @@ export function declareBlockers(state, playerId, assignments) {
     // Blazing Torch: „can't be blocked by Vampires or Zombies" — spójnie
     // z ofertą (canBlock), bo execute musi odrzucić złą komendę (L48).
     const blockSubtypes = attackerBlockSubtypeRestriction(state, attacker);
-    if (blockSubtypes && ids.some((b) => blockSubtypes.some((sub) => effectiveSubtypes(b).includes(sub)))) {
+    if (blockSubtypes && ids.some((b) => blockSubtypes.some((sub) => hasCreatureType(b, sub, state)))) {
       throw new Error('Stwora z „can\'t be blocked by [podtyp]" nie może blokować stwór tego podtypu');
     }
     // Landwalk (forestwalk): obrońca kontrolujący Forest nie może blokować.
@@ -1041,8 +1041,7 @@ function canBlock(state, attacker, blocker) {
   // o zakazanym podtypie nie może blokować (podtypy efektywne, jak w walce).
   const blockSubtypes = attackerBlockSubtypeRestriction(state, attacker);
   if (blockSubtypes) {
-    const blockerSubtypes = blocker.subtypes ?? [];
-    if (blockSubtypes.some((sub) => blockerSubtypes.includes(sub))) return false;
+    if (blockSubtypes.some((sub) => hasCreatureType(blocker, sub, state))) return false;
   }
   // Rust-Shield Rampager: bloker o efektywnej mocy <= próg nie może blokować
   // (moc po pumpach/licznikach — CR 702.x; już wykonany blok zostaje).

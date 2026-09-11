@@ -1411,7 +1411,7 @@ export const REAL_CARDS = Object.freeze([
     artId: 233,
     plan: 'Bloomburrow',
     support: { status: 'supported', limitations: [] },
-    notes: ['changeling reprezentowany jako keyword (żadna mechanika katalogu nie pyta o typy stwora)'],
+    notes: ['changeling = zdolność definiująca cechę (CR 702.73a): karta jest KAŻDYM typem stworów, w każdej strefie; porównania typów idą przez hasCreatureType (permanents.js), więc jest m.in. Mountem (cel „non-Mount" nielegalny), Lhurgoyfem, Wampirem, Zombie i Olbrzymem (wyzwanie 2/5)'],
   }),
   defineCard({
     id: 'undead-servant', name: 'Undead Servant', set: 'ORI',
