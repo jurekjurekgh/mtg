@@ -19,6 +19,7 @@ oparty na opisach tekstowych i na kodzie.
 | **E3** | `{1}{W}` w logu tekstem, nie ikonkami | `src/table/mana-icons.js:45` (`manaSymbolsHtml`) istnieje, ale ten wpis logu jest budowany surowym szablonem | spójność UI | warstwa pokazu |
 | **A** | Auto-płatność tapuje Forest, choć nietapnięty Scorned Villager też daje {G} — brak kreatora many | `src/table/mana-wizard.js:466-471` — klucz deduplikacji wariantów to `kolory#ilość#kosztAktywacji`, BEZ rodzaju źródła; Forest i Scorned Villager (oba `{G}`, 1) to ten sam „kształt" → 1 wariant → `shouldOpenManaWizard` = false | decyzja właściciela + MtG: tapnięcie stwora ma koszt alternatywny (nie atakuje/nie blokuje), więc wybór jest realny | warstwa pokazu (oferta) |
 | **F** | Curse of the Pierced Heart na przeciwniku bez badge'a „klątwa: Nieprzyjaciel" | DWA źródła (zmierzone sondą na stanie z klątwą): (1) `playerView` nie wysyła `enchantPlayer`/`enchantedPlayerId` — oba `undefined`, jedyne „aurowe" pole wpisu to `aura`; (2) brak jakiejkolwiek gałęzi badge'a dla aury na graczu w `buildFace` i `buildStateOverlay` (aura na stworach ma badge przez gospodarza, tu gospodarza-permanentu nie ma) | CR 303.4 („Enchant player") + ADR 0017 (skutek widoczny w grze musi być widoczny w widoku); cel aury to informacja jawna, nie FoW | widok + warstwa pokazu |
+| **G** | Klątwa rzucona na WŁASNEGO gracza — właściciel: „to powinno mieć -1000 scoringu" (dopełnienie F) | Dwie przyczyny (zmierzone sondą + trace bota): (1) gałąź aury w `cast_permanent` szuka celu przez `objectOnBoard`, a celem klątwy jest GRACZ → `!target` → `auraNoTargetPenalty` dla OBU wariantów (`curse->wróg` = -45 i `curse->siebie` = -45, wybrane `pass_priority` — bot klątw nie rzucał wcale); (2) `auraIsHostile` znała tylko `applyTo: 'enchanted_controller'` + HOSTILE_PLAYER_EFFECTS, a klątwa niesie `damage_enchanted_player` bez `applyTo` → wyglądała jak buff | CR 303.4 („Enchant player") + decyzja właściciela (-1000) | bot (wycena) |
 | **C** | Bot używa Exploit (Gurmag Drowner) przy 5 kartach w bibliotece i poświęca stwora z lataniem | wycena exploitu w `src/controllers/heuristic-bot.js` nie zna ani liczby kart w bibliotece, ani wartości poświęcanego stwora | Oracle: „look at the top four cards… put one into your hand and the rest into your graveyard" — mill 3 przy małej bibliotece = ryzyko przegranej | bot (wycena) |
 | **D** | Bot atakuje 3/1 (Furious Forebear) w nietapnięte 4/4 i 4/5 przy 3 własnego życia | scoring ataku nie liczy pewnej straty atakującego bez obrażeń dla przeciwnika (trade-down) | zdrowy rozsądek rozgrywki (brak zmiany reguł) | bot (scoring) |
 
@@ -178,4 +179,34 @@ oparty na opisach tekstowych i na kodzie.
   Wygląda na kolejność opcji celu w modala (pierwsza = „Ty"), nie na błąd
   reguł — ale „aura na graczu celuje wbrew oczywistemu zamiarowi" to temat na
   osobne zgłoszenie.
+- **G — GOTOWE** (`90dfc48`): wycena aury na GRACZU. Nowy zbiór
+  `HOSTILE_ENCHANTED_PLAYER_EFFECTS` + rozszerzony `auraIsHostile` (jedno
+  miejsce decyduje o wrogości aury, także na graczu — L41), a w
+  `cast_permanent` osobna gałąź po deskryptorze `aura.enchant === 'player'`:
+  wroga klątwa na własnego gracza = `-curseSelfTargetPenalty` (1000, liczba
+  właściciela), na przeciwnika = `+curseEnemyBase` (40); aura na graczu,
+  która nie szkodzi, dostaje lustro reguły. Parametry w heuristic-params
+  (klucze + wartości). Strażnik
+  `test/zgloszenie-g-klątwa-cel-wrog.test.js` (3): G/1 klątwa na siebie
+  = -900 w trace (param -1000 × waga rodziny „permanent" 0.9) + pochodzenie
+  z parametru; G/2 ta sama klątwa na przeciwnika jest zyskiem i bot ją rzuca;
+  G/3 anty-over-fix (Nature's Embrace +2/+2 na własnym stworze bez zmian).
+  RED przed fixem: G/1, G/2 (oba -45). Uwaga pomiarowa: pierwszym pojazdem
+  G/3 był Guildscorn Ward i był ZŁY — czysta ochrona przy braku
+  wielokolorowych celów jest słusznie na minusie (M209, -36). Mutacje (L13):
+  gałąź cofnięta → 2 RED; `auraIsHostile` ślepa na efekty w zaczarowanego
+  gracza → 2 RED; zamienione role siebie/wroga (over-fix) → 2 RED; gałąź
+  rozciągnięta na każdą aurę z celem (over-fix) → 1 RED (G/3); parametr 1000
+  → 50 → 1 RED, ale DOPIERO po przypięciu -900 dosłownie — próg liczony
+  z tego samego parametru był tautologią i mutacja przechodziła na zielono.
+  Bramki: rodzina 98 plików 541/541, `npm test` **5132/5132**, `npm run build`
+  61 modułów / 3481.6 kB, Żywy Tester na `dist/` (talia tymczasowa bota
+  4× klątwa + 56 Mountain, seeds 5002–5003): „Nieprzyjaciel rzuca Curse of
+  the Pierced Heart → cel: Ty", badge „Klątwa: Ty" na polu bitwy, detektory 0;
+  przed fixem w tych seedach bot nie rzucał klątwy wcale.
+- **Zmierzone przy G, bez zmian w kodzie**: reprodukcja właściciela z partii
+  5001 to rzut CZŁOWIEKA — kreator celu wymienił „Ty | Nieprzyjaciel"
+  (transkrypt: „wskaż cel (1): TyNieprzyjaciel"), a profil greedy Żywego
+  Testera bierze pierwszy wiersz. Wycena już tego nie puści (G), ale
+  KOLEJNOŚĆ opcji celu w kreatorze to osobna decyzja UI.
 - Pozostałe (C, D) — w kolejności z planu, każde osobnym zielonym commitem.
