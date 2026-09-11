@@ -1624,6 +1624,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['add_poison_counters', 45],
   ]);
 
+  // Zgłoszenie właściciela G (2026-09-11, klątwy): efekty, które z SAMEGO typu
+  // uderzają w zaczarowanego gracza (CR 303.4 „Enchant player"). Nie niosą
+  // `applyTo: 'enchanted_controller'`, więc bez nich Curse of the Pierced Heart
+  // („1 obrażenie zaczarowanemu graczowi w podtrzymaniu") wyglądała dla bota
+  // jak zwykły buff. Lista po typach efektów, nie po nazwach kart (ADR 0002).
+  const HOSTILE_ENCHANTED_PLAYER_EFFECTS = new Set(['damage_enchanted_player']);
+
   /**
    * Kara za skierowanie efektu ofensywnego we własne rzeczy.
    * Zwraca liczbę punktów DO ODJĘCIA (0 = nic podejrzanego).
@@ -1866,8 +1873,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return abilities.some((ability) => {
       if (ability?.type !== 'triggered') return false;
       const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-      return effs.some((e) => e?.applyTo === 'enchanted_controller'
-        && e?.type && HOSTILE_PLAYER_EFFECTS.has(e.type));
+      return effs.some((e) => {
+        if (!e?.type) return false;
+        // G: efekt wprost w zaczarowanego gracza (klątwy) nie potrzebuje
+        // `applyTo` — sam typ mówi, w kogo uderza.
+        if (HOSTILE_ENCHANTED_PLAYER_EFFECTS.has(e.type)) return true;
+        return e.applyTo === 'enchanted_controller' && HOSTILE_PLAYER_EFFECTS.has(e.type);
+      });
     });
   }
   const hasKeyword = (object, keyword) => (object?.keywords ?? []).includes(keyword);
@@ -2709,6 +2721,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // wzmacniany własnym zaczarowaniem jest błędem — wariant odrzucany.
           const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
           const descriptor = cmd.bestow ? card?.bestow : card?.aura;
+          // Zgłoszenie właściciela G (2026-09-11): aura na GRACZU (klątwa,
+          // CR 303.4). Cel-gracz nie jest permanentem, więc `target` jest null
+          // i cała ścieżka „gospodarz" sprowadzała oba warianty do
+          // `auraNoTargetPenalty` — klątwa na siebie była warta dokładnie tyle
+          // samo co klątwa na wroga (zmierzone: -45 i -45), a bot nie rzucał
+          // klątw wcale. Rozróżnienie po deskryptorze `enchant: 'player'`
+          // i po wrogości efektów (ADR 0002, bez nazw kart): wroga klątwa na
+          // WŁASNEGO gracza to strzał we własną stopę (-curseSelfTargetPenalty,
+          // właściciel: -1000), na przeciwnika — zysk.
+          if (cmd.targets?.[0] && descriptor?.enchant === 'player') {
+            const celKlatwy = cmd.targets[0];
+            const wroga = auraIsHostile(descriptor, card ? cardDef(card.cardId) : undefined);
+            if (wroga) {
+              if (celKlatwy === view.playerId) return finish(-P.curseSelfTargetPenalty);
+              if (celKlatwy === enemy(view)?.id) return finish(P.curseEnemyBase);
+              return finish(-P.auraNoTargetPenalty);
+            }
+            // Aura na graczu, która NIE szkodzi (w katalogu dziś takiej nie
+            // ma): lustro tamtej reguły — warto ją mieć na sobie.
+            return finish(celKlatwy === view.playerId ? P.auraBase : -P.auraHostileOwnPenalty);
+          }
           // M121: aura bywa KOTWICĄ, nie buffem (Spectral Prison — „doesn't
           // untap"; Hobble — „can't attack"). Taką zakładamy PRZECIWNIKOWI;
           // na własnym stworze to strzał we własną stopę, a wycena
