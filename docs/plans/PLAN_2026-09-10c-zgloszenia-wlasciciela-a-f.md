@@ -21,7 +21,7 @@ oparty na opisach tekstowych i na kodzie.
 | **F** | Curse of the Pierced Heart na przeciwniku bez badge'a „klątwa: Nieprzyjaciel" | DWA źródła (zmierzone sondą na stanie z klątwą): (1) `playerView` nie wysyła `enchantPlayer`/`enchantedPlayerId` — oba `undefined`, jedyne „aurowe" pole wpisu to `aura`; (2) brak jakiejkolwiek gałęzi badge'a dla aury na graczu w `buildFace` i `buildStateOverlay` (aura na stworach ma badge przez gospodarza, tu gospodarza-permanentu nie ma) | CR 303.4 („Enchant player") + ADR 0017 (skutek widoczny w grze musi być widoczny w widoku); cel aury to informacja jawna, nie FoW | widok + warstwa pokazu |
 | **G** | Klątwa rzucona na WŁASNEGO gracza — właściciel: „to powinno mieć -1000 scoringu" (dopełnienie F) | Dwie przyczyny (zmierzone sondą + trace bota): (1) gałąź aury w `cast_permanent` szuka celu przez `objectOnBoard`, a celem klątwy jest GRACZ → `!target` → `auraNoTargetPenalty` dla OBU wariantów (`curse->wróg` = -45 i `curse->siebie` = -45, wybrane `pass_priority` — bot klątw nie rzucał wcale); (2) `auraIsHostile` znała tylko `applyTo: 'enchanted_controller'` + HOSTILE_PLAYER_EFFECTS, a klątwa niesie `damage_enchanted_player` bez `applyTo` → wyglądała jak buff | CR 303.4 („Enchant player") + decyzja właściciela (-1000) | bot (wycena) |
 | **C** | Bot używa Exploit (Gurmag Drowner) przy 5 kartach w bibliotece i poświęca stwora z lataniem | ZMIERZONE: `resolve_exploit_choice` = `skip: 20` / ofiara `40 - (moc*2 + wytrzymałość)` — biblioteka nie brała udziału w wycenie W OGÓLE (trigger miele 3: `look_top_put_one_hand_rest_grave`, amount 4), a ofiara była liczona tylko z P/T, więc przy wyborze token 3/3 vs Cloudbound Moogle 2/3 (flying + 2 zdolności) bot poświęcał MOOGLE'A (33 > 31). Dodatkowo komenda nie niosła `sourceId`, więc decydujący nie wiedział, CO robi trigger | Oracle: „look at the top four cards… put one into your hand and the rest into your graveyard" — mill 3 przy małej bibliotece = ryzyko przegranej (CR 121.4/704.5b) | silnik (widok komendy) + bot (wycena) |
-| **D** | Bot atakuje 3/1 (Furious Forebear) w nietapnięte 4/4 i 4/5 przy 3 własnego życia | scoring ataku nie liczy pewnej straty atakującego bez obrażeń dla przeciwnika (trade-down) | zdrowy rozsądek rozgrywki (brak zmiany reguł) | bot (scoring) |
+| **D** | Bot atakuje 3/1 (Furious Forebear) w nietapnięte 4/4 i 4/5 przy 3 własnego życia | ZMIERZONE: kara istniała (gałąź gangu M167/I, `-(toughness+8)` = -9), ale gałąź NIE podbijała `futileAttackers`, więc `wholeAttackFutile` = fałsz i atak dostawał premię wyścigu: `enemyBoardPower (9) >= myLife (3)` → racing, `totalPower (3) >= enemyLife-5 (2)` → **+20 przebijało -9** (klasa L3). Ten sam atak w JEDNEGO 4/4 trafiał w chumpa (-10, jałowy) — decyzja zależała od liczby blokerów, nie od sensu ataku | zdrowy rozsądek rozgrywki (brak zmiany reguł) | bot (scoring) |
 
 ## Kolejność pracy (niezależne kroki, każdy z bramką)
 
@@ -242,4 +242,42 @@ oparty na opisach tekstowych i na kodzie.
   `/home/user/patches/0001-C-exploit-biblioteka-i-ofiara.patch`
   (`git apply --check --reverse` zgodny z drzewem). Po ponownym podłączeniu
   GitHuba: rytuał re-klonu → `git am` patcha → push.
-- Pozostałe (D) — w kolejności z planu, osobnym zielonym commitem.
+- **G — kolejność celów (dopełnienie, zlecenie właściciela 2026-09-11)
+  — GOTOWE** (`19be457`): właściciel: „przy G zmień kolejność — najpierw
+  Nieprzyjaciel, potem Ty". `auraCastsForPayment` wyliczała cele-graczy
+  w kolejności `state.players`, więc dla rzucającego p1 pierwszy był ON SAM
+  (partia 5001: kreator „Ty | Nieprzyjaciel", greedy bierze pierwszy wiersz →
+  klątwa na siebie → przegrana). Fix: sort stabilny, rzucający na koniec —
+  wyłącznie dla celów-graczy aury `enchantPlayer`. Strażnik: G/4 (oferta
+  `cast_permanent(curse)` dla p1 = ['p2','p1']); RED przed fixem G/4; mutacje:
+  sort cofnięty → 1 RED, sort odwrócony (over-fix) → 1 RED. Uwaga pomiarowa:
+  pierwsza wersja G/4 miała rzucającego p2 i PRZESZŁA bez fixu (przeciwnik
+  i tak wypadał pierwszy) — test pusty, poprawiony. Bramki: `npm test`
+  **5137/5137**, build 61/3486.9 kB, Żywy Tester seed 5001 (ta sama partia co
+  reprodukcja): kreator „wskaż cel (1): NieprzyjacielTy…", rzut „→ cel:
+  Nieprzyjaciel", badge „Klątwa: Nieprzyjaciel", detektory 0 — przy okazji
+  pierwszy żywy pomiar tego wariantu badge'a (przy F był tylko test).
+- **D — GOTOWE** (`a75cc5d`): gałąź gangu blokerów w `declare_attackers`
+  (M167/I) znaczy atak jako JAŁOWY (`futileAttackers += 1`), więc premii
+  wyścigu nie da się już przebić kary za atak, który nic nie zabija i ginie
+  (dokładnie scenariusz właściciela: 3/1 w 4/4+4/5 przy 3 własnego życia).
+  Wycena gałęzi bez zmian. Strażnik
+  `test/zgloszenie-d-jalowy-atak-w-gang.test.js` (4): D/1 scenariusz
+  właściciela → brak ataku; D/2 pusta plansza → atak; D/3 wymiana 3/1 za 3/3 →
+  atak; D/4 w wyścigu wymiana 1/1 za 1/1 → atak („jałowy" ≠ „zablokowany").
+  RED przed fixem: D/1. Mutacje (L13): licznik jałowości cofnięty → 1 RED;
+  bramka `wholeAttackFutile` wyłączona → 1 RED; bramka rozciągnięta na każdy
+  zablokowany atak (over-fix) → 1 RED (D/4 — dodany PO tym pomiarze, bo
+  pierwsza wersja strażnika tej mutacji nie łapała). Golden-master wycen:
+  ŚWIADOMA regeneracja (procedura z nagłówka testu), zmieniła się 1 z 6 partii
+  (ravnica|innistrad-wu seed 1001: decisions 307 → 305, scoreSum 2232.8036 →
+  2255.5063), po regeneracji 4/4. Benchmark quick (NIE pełne B0 — ADR
+  0018/0025): 672 mecze, heuristic 84.7% (569/672) przed i po (A/B przez
+  `git stash`) — neutralnie dla win-rate. Bramki: `npm test` **5141/5141**,
+  build 61/3486.9 kB. Uczciwie: scenariusz D nie wystąpił w partiach Żywego
+  Testera tego przebiegu, więc jest przypięty testami i benchmarkiem.
+- **Blokada pusha zdjęta (2026-09-11)**: token GitHub odświeżony przez
+  właściciela; zaległe `da01e00` (C) i `e7a6bcd` (plan) wypchnięte
+  (`e24d6a0..e7a6bcd`), patche z `/home/user/patches/` nie były potrzebne.
+- Wszystkie zgłoszenia A–G zamknięte. Zostało domknięcie sesji: opis PR
+  kumulatywnie, `npm run test:all` (bramka PR), handoff/historia/README (L92).
