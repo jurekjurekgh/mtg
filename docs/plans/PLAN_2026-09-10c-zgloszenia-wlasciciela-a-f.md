@@ -106,10 +106,41 @@ oparty na opisach tekstowych i na kodzie.
   `batch46/10b` (asercja `saga.abilityGrants` przypinała dokładnie ten błąd;
   teraz sprawdza rejestr i brak grantu na Sadze). Rodzina sag + proliferate
   (299 testów) zielona.
-- **Uwaga o środowisku (2026-09-11)**: klon w piaskownicy (sandbox) był odtworzony na `f7e4d11`
-  (`git reflog`: clone + checkout -b) — lokalna gałąź nie miała dziewięciu
-  commitów PR #113, choć zdalny head był poprawny (`8172cf3`). Przywrócone
-  przez `git fetch` + `git reset` (mixed, bez dotykania drzewa) do
-  `8172cf3`; diff po resecie = wyłącznie zmiany B (brak dryfu plików).
-- Pozostałe (E2, E3, F, C, D) — w kolejności z planu, każde osobnym zielonym
-  commitem.
+- **Uwaga o środowisku (2026-09-11, powtarza się co turę)**: workspace jest
+  re-klonowany na `f7e4d11` przy każdym starcie tury (`git reflog`: clone +
+  checkout -b), więc lokalna gałąź NIE ma commitów tej sesji, a cała praca
+  leży w drzewie jako niezatwierdzone zmiany; zdalny head jest poprawny.
+  Rytuał przed commitem: `git fetch origin arena/01a08d0e-mtg` →
+  `git reset <zdalny head>` (mixed, bez dotykania drzewa) → `git status`
+  musi pokazać WYŁĄCZNIE pliki bieżącej zmiany (brak dryfu). Tak przywrócone
+  `8172cf3` (segment B) i `9403798` (segment E2/E3). Uwaga ta sama dla
+  `tools/table-tester`: `node_modules` nie przetrwa tury, więc `npm i` przed
+  każdym przebiegiem Żywego Testera.
+- **E2 + E3 — GOTOWE** (`e6d3a5b`): prompt decyzji BOTA (`…_required`, np.
+  `optional_pay_required` z Furious Forebear) nie wchodzi do głównego logu
+  gracza — nowy czysty predykat `isBotDecisionPrompt` (klasa zdarzeń +
+  decydent, bez nazw kart) stoi przy OBU pisarzach logu (`streamAutoEvents`
+  i `apply`), a `noteBotMove` przyjmuje decyzję bota także wtedy, gdy wywołała
+  ją komenda człowieka (bez tego informacja by zniknęła). E3: symbole many
+  w wierszu logu i we wpisie modalu idą przez `appendTextWithManaIcons`
+  (jedno źródło: `manaSymbolsHtml`); wpisy bez symboli zostają na starej
+  ścieżce DOM. Strażnik
+  `test/zgloszenie-e2-e3-decyzje-bota-i-symbole-many.test.js` (6): E2/1 prompt
+  bota poza logiem + obecny w sekcji ruchu bota, E2/2 anty-over-fix (własna
+  decyzja gracza zostaje), E2/3 predykat, E3/1 ikony w logu, E3/2 ikony
+  w modalu, E3/3 anty-over-fix (tekst bez symboli bez zmian). RED przed fixem:
+  E2/1, E3/1, E3/2. Mutacje: bramka w `streamAutoEvents` cofnięta → 1 RED;
+  log bez ikon → 1 RED; modal bez ikon → 1 RED; predykat rozszerzony na
+  `_resolved` (over-fix) → 1 RED; **bramka w `apply` → 0 RED** (uczciwa luka:
+  prompt Forebeara wchodzi przez okno decyzyjne bota, a żadna karta katalogu
+  nie produkuje dziś promptu bota w strumieniu komendy człowieka — ward nie ma
+  karty; bramka jest pokryta tylko testem jednostkowym predykatu).
+  Zaktualizowany `audit-pr44-fixes` B1: asercja „decyzje człowieka nie
+  trafiają do botMoves" była typowa i łapała decyzję BOTA przy limicie ręki —
+  teraz mierzy decydenta (konwencja M82 z `session-autopass`). Bramki:
+  rodzina UI/sesji (210 plików) 1806/1806, `npm test` **5124/5124**,
+  `npm run build` 61 modułów / 3477.2 kB, Żywy Tester 3 partie (4010–4012)
+  detektory 0 i zero promptów bota w głównym logu (w tych partiach nie było
+  promptu płatności, więc ikony `{1}{W}` są pokryte testami, nie
+  transkryptem).
+- Pozostałe (F, C, D) — w kolejności z planu, każde osobnym zielonym commitem.
