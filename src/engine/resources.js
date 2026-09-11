@@ -243,7 +243,9 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       const cb = getSourceForObject(b)?.colors ?? [];
       const am = ca.some((c) => reqColors.has(c)) ? 0 : 1;
       const bm = cb.some((c) => reqColors.has(c)) ? 0 : 1;
-      return am - bm;
+      if (am !== bm) return am - bm;
+      // B: na równi kolorystycznej — najpierw źródła, które nie mielą biblioteki.
+      return (millsLibraryOnTap(state, a) ? 1 : 0) - (millsLibraryOnTap(state, b) ? 1 : 0);
     });
     let covered = false;
     for (const source of pipSources) {
@@ -289,7 +291,10 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       const cb = getSourceForObject(b)?.colors ?? [];
       const am = ca.some((c) => reqColors.has(c)) ? 0 : 1;
       const bm = cb.some((c) => reqColors.has(c)) ? 0 : 1;
-      return am - bm;
+      if (am !== bm) return am - bm;
+      // B (Chronic Flooding): kolor równy — najpierw źródła, których tapnięcie
+      // nie miele biblioteki kontrolera (wybór źródła jest dowolny, CR 601.2h).
+      return (millsLibraryOnTap(state, a) ? 1 : 0) - (millsLibraryOnTap(state, b) ? 1 : 0);
     });
     for (const source of sources) {
       // M215 (root cause CI na M214): warunek przerwania musi liczyć WYŁĄCZNIE
@@ -423,6 +428,44 @@ export function tapLandForMana(state, playerId, objectId, { grantColor = null } 
  * blokować nie marnujemy na produkcję many, póki starczają zwykłe landy.
  * Wewnątrz grup zachowujemy kolejność pola bitwy.
  */
+/**
+ * B (zgłoszenie właściciela 2026-09-11, Chronic Flooding): czy tapnięcie tego
+ * źródła zmieli bibliotekę jego kontrolera — trigger `self_becomes_tapped` na
+ * samym źródle albo `enchanted_permanent_tapped` na załączniku („Whenever
+ * enchanted land becomes tapped, its controller mills three cards";
+ * `applyTo: 'enchanted_controller'` = kontroler GOSPODARZA). Rozpoznanie po
+ * typie triggera i efektu z DANYCH karty (ADR 0002), bez nazw kart.
+ *
+ * Auto-tap (CR 601.2h) nie narzuca, KTÓRE źródła płacą — kolejność jest
+ * wygodą, więc działa tu ta sama zasada co istniejące pierwszeństwo kolorów:
+ * gdy wybór jest darmowy, nie tapujemy tego, co każe graczowi zapłacić kartami
+ * z własnej biblioteki. Legalności ani wyniku płatności nie zmienia (żadna
+ * reguła nie wymaga tapowania konkretnego źródła). Bot dokłada do tego karę,
+ * gdy mielące źródło i tak MUSI zapłacić (`libraryLossPenalty`).
+ */
+const MILL_ON_TAP_EVENTS = Object.freeze([
+  ['self_becomes_tapped', null],
+  ['enchanted_permanent_tapped', 'enchanted_controller'],
+]);
+export function millsLibraryOnTap(state, object) {
+  if (!object?.id) return false;
+  const miele = (ability) => MILL_ON_TAP_EVENTS.some(([zdarzenie, applyTo]) => {
+    if (ability?.trigger?.event !== zdarzenie) return false;
+    const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    return effs.some((eff) => eff?.type === 'mill_cards'
+      && (applyTo == null
+        ? [undefined, null, 'you', 'controller', 'source_controller'].includes(eff?.applyTo)
+        : eff?.applyTo === applyTo));
+  });
+  if ((object.abilities ?? []).some(miele)) return true;
+  for (const id of state.zones.battlefield) {
+    const zal = state.objects.get(id);
+    if (!zal || zal.zone !== 'battlefield' || zal.attachedTo !== object.id) continue;
+    if ((zal.abilities ?? []).some(miele)) return true;
+  }
+  return false;
+}
+
 export function untappedLandManaSources(state, playerId) {
   const lands = [];
   const landCreatures = [];

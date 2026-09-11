@@ -698,6 +698,20 @@ export const WARD_TAXED_TYPES = new Set([
   'activate_ability', 'resolve_trigger_target',
 ]);
 
+/**
+ * Zgłoszenie właściciela B (2026-09-11): rodzina rzutów karty, w której wycenie
+ * musi się zmieścić ryzyko deck-outu z POWTARZALNEGO triggera (Curiosity na
+ * własnym stworze: „whenever enchanted creature deals damage to an opponent,
+ * you may draw a card"). Wyprowadzona z kontraktu COMMAND_TYPES tak samo jak
+ * WARD_TAXED_TYPES — lekcja M324/F1: ręcznie wyliczona lista gubi warianty
+ * (przygoda, cleave, flashback, escape, surge). `tap_for_mana` nie należy do
+ * rodziny (to nie rzut), ale też podlega karze — patrz `libraryDrainTax`.
+ * Strażnik zakresu: test B/6 w test/zgloszenie-b-bot-cienka-biblioteka.test.js.
+ */
+export const LIBRARY_DRAIN_CAST_TYPES = new Set(
+  COMMAND_TYPES.filter((type) => type.startsWith('cast_') || type.endsWith('_cast')),
+);
+
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
@@ -1000,6 +1014,138 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (remaining <= 0) return -(120 + P.drawCardValue * amount);
     if (remaining <= 3) return -(60 + P.drawCardValue * amount);
     return 0;
+  };
+
+  /**
+   * B (zgłoszenie właściciela 2026-09-11): wspólna kara za uszczuplanie WŁASNEJ
+   * biblioteki. `drawDeckingPenalty` wyżej karze JEDNORAZOWY dobór z czaru albo
+   * zdolności; ta miara obsługuje dwie drogi, którymi bot sam sobie miele:
+   * tapowanie permanentu z triggerem millu (B/1, Chronic Flooding) i rzut karty
+   * tworzącej POWTARZALNE źródło dobierania (B/2, Curiosity). CR 121.4/704.5b:
+   * próba dobrania z pustej biblioteki przegrywa partię, a im mniej kart
+   * zostaje, tym bliżej wyroku — kara rośnie stopniowo, żeby przy zdrowej
+   * bibliotece przewaga kartowa zostawała wartością, nie ryzykiem. Właściciel
+   * (2026-09-11): przy ~<20 kartach bot nie powinien ani tapować mielących
+   * lądów, ani dokładać sobie powtarzalnych dobrań. Licznik biblioteki jest
+   * informacją publiczną (ADR 0017), kwota straty pochodzi z DANYCH karty
+   * (ADR 0002) — zero nazw kart. Zwraca wartość DODATNĄ (do odjęcia).
+   */
+  const libraryLossPenalty = (view, amount = 0) => {
+    if (!(amount > 0)) return 0;
+    const zapas = myLibraryCount(view) - amount;
+    if (zapas <= 0) return P.libraryDeckOutPenalty + P.drawCardValue * amount;
+    if (zapas < P.librarySafeMargin) {
+      return P.libraryThinPenalty + (P.librarySafeMargin - zapas) * P.libraryThinPerCardPenalty;
+    }
+    return 0;
+  };
+  // Efekty zabierające karty z biblioteki: mill wprost, dobranie też (karta
+  // opuszcza bibliotekę i przybliża deck-out — CR 121.4).
+  const LIBRARY_DRAIN_EFFECTS = new Set(['mill_cards', 'draw_cards']);
+  // Zdarzenia JEDNORAZOWE: trigger odpali raz (wejście na pole bitwy, śmierć
+  // źródła). To nie jest POWTARZALNE źródło, więc nie mnożymy go przez
+  // horyzont — jednorazowy dobór z czaru karze `drawDeckingPenalty`, a premię
+  // ETB wycenia `etbEnterBonusValue` (bez podwójnego liczenia, L41).
+  const ONE_SHOT_DRAIN_EVENTS = new Set(['enter_battlefield', 'dies']);
+  const drainAmount = (eff) => Math.max(1, Number.isInteger(eff?.amount) ? eff.amount : 1);
+  /** `applyTo` = karty traci kontroler źródła (ja), a nie cel ani przeciwnik. */
+  const drainsMyLibrary = (eff) => !eff?.applyTo
+    || ['you', 'controller', 'source_controller'].includes(eff.applyTo);
+  const drainEfekty = (ability, zdarzenie, mojaBiblioteka) => {
+    if (ability?.trigger?.event !== zdarzenie) return 0;
+    let razem = 0;
+    for (const eff of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+      if (!eff?.type || !LIBRARY_DRAIN_EFFECTS.has(eff.type)) continue;
+      if (mojaBiblioteka(eff)) razem += drainAmount(eff);
+    }
+    return razem;
+  };
+  /**
+   * B/1 — ile kart straci WŁASNA biblioteka, gdy ten permanent zostanie
+   * zatapowany. Dwa źródła, oba czytane z danych karty po typie triggera
+   * (tak samo odpala je silnik w `object_tapped`, triggers.js):
+   *   1. trigger na SAMYM permanencie — `self_becomes_tapped`,
+   *   2. załączniki (aury/sprzęty) — `enchanted_permanent_tapped`, np. Chronic
+   *      Flooding: „Whenever enchanted land becomes tapped, its controller
+   *      mills three cards"; `applyTo: 'enchanted_controller'` = kontroler
+   *      GOSPODARZA, czyli ja dla MOJEGO lądu (kto kontroluje aurę, nie ma
+   *      znaczenia — liczy się gospodarz).
+   */
+  const tapLibraryLoss = (view, objectId) => {
+    const plansza = view.zones.battlefield ?? [];
+    const cel = objectId == null ? null : plansza.find((o) => o.id === objectId);
+    if (!cel || cel.controllerId !== view.playerId) return 0;
+    let razem = 0;
+    for (const ability of (cel.cardId ? cardDef(cel.cardId)?.abilities : undefined) ?? []) {
+      razem += drainEfekty(ability, 'self_becomes_tapped', drainsMyLibrary);
+    }
+    for (const zal of plansza) {
+      if (zal.attachedTo !== objectId) continue;
+      for (const ability of (zal.cardId ? cardDef(zal.cardId)?.abilities : undefined) ?? []) {
+        razem += drainEfekty(ability, 'enchanted_permanent_tapped',
+          (eff) => eff.applyTo === 'enchanted_controller');
+      }
+    }
+    return razem;
+  };
+  /**
+   * B/2 — ile kart WŁASNEJ biblioteki zje karta tworząca POWTARZALNY trigger
+   * doboru/millu: karty na jedno odpalenie × horyzont `repeatLibraryDrainTurns`
+   * (ile odpaleń realnie zdąży nastąpić). `applyTo: 'enchanted_controller'`
+   * POMIJAMY: odbiorca zależy od WYBRANEGO CELU (Chronic Flooding rzucona na
+   * cudzy ląd miele PRZECIWNIKA), a ta kara jest liczona dla karty, zanim
+   * wariant wybierze cel — na planszy ten sam trigger łapie `tapLibraryLoss`.
+   */
+  const repeatLibraryDrain = (def) => {
+    let naOdpalenie = 0;
+    for (const ability of def?.abilities ?? []) {
+      if (!ability?.trigger?.event || ONE_SHOT_DRAIN_EVENTS.has(ability.trigger.event)) continue;
+      naOdpalenie += drainEfekty(ability, ability.trigger.event, drainsMyLibrary);
+    }
+    return naOdpalenie * P.repeatLibraryDrainTurns;
+  };
+  /**
+   * B/1b — ile kart WŁASNEJ biblioteki zje PŁATNOŚĆ za wariant. Auto-tap
+   * (`spendMana`) do-tapuje brakujące źródła, a silnik odkłada mielące na koniec
+   * (resources.js, `millsLibraryOnTap`), więc kara należy się tylko wtedy, gdy
+   * bez mielącego źródła się nie da: koszt − pula − czyste nietapnięte lądy.
+   * Jedno źródło = 1 mana (tak liczy `producibleMana`).
+   */
+  const paymentLibraryLoss = (view, cmd) => {
+    const koszt = reservedManaOf(view, cmd);
+    if (!(koszt > 0)) return 0;
+    const pula = view.players.find((p) => p.id === view.playerId)?.mana ?? 0;
+    let czyste = 0;
+    const mielace = [];
+    for (const o of view.zones.battlefield ?? []) {
+      if (o.controllerId !== view.playerId || o.tapped) continue;
+      const strata = tapLibraryLoss(view, o.id);
+      if (strata > 0) mielace.push(strata);
+      else if (o.kind === 'land' || (o.types ?? []).includes('Land')) czyste += 1;
+    }
+    const brak = Math.max(0, koszt - pula - czyste);
+    if (brak <= 0 || mielace.length === 0) return 0;
+    return mielace.slice(0, Math.min(mielace.length, Math.ceil(brak)))
+      .reduce((suma, x) => suma + x, 0);
+  };
+  /**
+   * Podatek biblioteczny wariantu — liczony RAZ w `scoreCommand` i odejmowany
+   * w `finish` (jak wardTax), bo ścieżki wyceny rzutu mają wiele wyjść (aura,
+   * bestow, epsilon gęstości), a ryzyko deck-outu dotyczy wariantu jako
+   * takiego, nie gałęzi, którą wycena poszła.
+   */
+  const libraryDrainTax = (view, cmd) => {
+    if (cmd?.type === 'tap_for_mana') return libraryLossPenalty(view, tapLibraryLoss(view, cmd.objectId));
+    // Aktywacja za manę: ten sam auto-tap (zdolność bywa warta mniej niż karty
+    // z biblioteki). Tapnięcie ŹRÓDŁA jako koszt pomijamy — w katalogu jedyny
+    // trigger millu na tapnięcie siedzi na aurze „Enchant land", więc źródło
+    // zdolności nie może go mieć (a `tap_for_mana` tę drogę już pokrywa).
+    if (cmd?.type === 'activate_ability') return libraryLossPenalty(view, paymentLibraryLoss(view, cmd));
+    if (!LIBRARY_DRAIN_CAST_TYPES.has(cmd?.type)) return 0;
+    const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    const drain = repeatLibraryDrain(karta?.cardId ? cardDef(karta.cardId) : undefined)
+      + paymentLibraryLoss(view, cmd);
+    return libraryLossPenalty(view, drain);
   };
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 
@@ -2362,7 +2508,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // bez strojenia parametrów. Nie podbijamy ocen szkodliwych zagrań.
     const surgeCard = cmd.surgeCast ? (handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId)) : null;
     const surgeSaving = surgeCard ? Math.max(0, (surgeCard.manaCost ?? 0) - reservedManaOf(view, cmd)) : 0;
-    const finish = (score) => weightedScore(cmd.type, score - wardTax + (score > 0 ? surgeSaving * P.creatureManaCostWeight : 0));
+    // B (zgłoszenie właściciela 2026-09-11): podatek biblioteczny — tapnięcie
+    // mielącego permanentu (Chronic Flooding) i rzut karty z powtarzalnym
+    // doborem (Curiosity) przy cienkiej bibliotece. Odejmowany tutaj, nie w
+    // gałęziach: `tap_for_mana` i rzuty mają wiele wyjść (patrz
+    // `libraryDrainTax`), a kara należy się wariantowi niezależnie od ścieżki.
+    const libraryTax = libraryDrainTax(view, cmd);
+    const finish = (score) => weightedScore(cmd.type, score - wardTax - libraryTax + (score > 0 ? surgeSaving * P.creatureManaCostWeight : 0));
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy

@@ -112,6 +112,16 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'exploitVictimKeywordWeight',  // waga keyworda ofiary (latanie itd. = realna wartość)
   'exploitVictimAbilityWeight',  // waga zdolności ofiary z rejestru (użyteczny stwór)
   'exploitTokenDiscount',        // premia za poświęcenie TOKENU (zamiast karty)
+  // Zgłoszenie właściciela B (2026-09-11, Chronic Flooding + Curiosity): bot
+  // z ~9 kartami w bibliotece tapował ląd, który miele mu 3 karty na każde
+  // tapnięcie, i dokładał własnemu stworowi aurę z powtarzalnym „draw a card".
+  // Wspólna kara za uszczuplanie WŁASNEJ biblioteki (CR 121.4/704.5b),
+  // sterowana danymi karty (ADR 0002) — patrz `libraryLossPenalty`.
+  'libraryDeckOutPenalty',       // kara, gdy strata sięga dna biblioteki (deck-out = przegrana)
+  'libraryThinPenalty',          // kara bazowa, gdy po stracie zapas < librarySafeMargin
+  'libraryThinPerCardPenalty',   // dopłata za każdą kartę brakującą do bezpiecznego zapasu
+  'librarySafeMargin',           // minimalny zapas kart po stracie (właściciel: ~20)
+  'repeatLibraryDrainTurns',     // horyzont: ile odpaleń powtarzalnego triggera zakładamy
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -181,6 +191,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   exploitVictimKeywordWeight: 6,
   exploitVictimAbilityWeight: 8,
   exploitTokenDiscount: 8,
+  libraryDeckOutPenalty: 120,
+  libraryThinPenalty: 60,
+  libraryThinPerCardPenalty: 6,
+  librarySafeMargin: 20,
+  repeatLibraryDrainTurns: 3,
 });
 
 /**
