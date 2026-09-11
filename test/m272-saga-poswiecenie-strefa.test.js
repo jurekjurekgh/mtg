@@ -6,6 +6,7 @@ import { createGameState, addObject } from '../src/engine/game-state.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addCounter } from '../src/engine/counters.js';
 import { processTriggers } from '../src/engine/triggers.js';
+import { runStateBasedActions, sacrificeFinishedSagas } from '../src/engine/state-based.js';
 import { resolveTopOfStack } from '../src/engine/spells.js';
 import { event } from '../src/protocol/types.js';
 
@@ -42,6 +43,13 @@ function dobijSage(cardId, { finality = false } = {}) {
   processTriggers(state, [event('step_advanced', { step: 'main1', phase: 'precombat_main' })]);
   let guard = 0;
   while (state.zones.stack.length > 0 && guard < 20) { resolveTopOfStack(state); guard += 1; }
+  // Zgłoszenie właściciela B2 (2026-09-10): poświęcenie Sagi po ostatnim
+  // rozdziale to AKCJA STANOWA (CR 714.4 / 704.5s), nie część rozstrzygania
+  // rozdziału. Silnik odpala ją w `execute` PO przebiegu triggerów
+  // (CR 704.3 — akcje stanowe powtarza się po włożeniu triggerów na stos),
+  // więc sterownik testu robi oba przebiegi w tej samej kolejności.
+  runStateBasedActions(state);
+  sacrificeFinishedSagas(state);
   const sacrificed = state.events.find((e) => e.type === 'permanent_sacrificed');
   return { state, sacrificed, zone: sacrificed ? state.objects.get(sacrificed.objectId)?.zone : null };
 }

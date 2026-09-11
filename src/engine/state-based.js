@@ -61,6 +61,61 @@ export function stateBasedActionsOpen(state) {
  * i zostaje (CR 702.103b), equipment zostaje odłączony (CR 704.5n), a czysta
  * aura trafia do grobu (CR 704.5m).
  */
+/**
+ * Zgłoszenie właściciela B2 (2026-09-10) — CR 714.4 (na liście akcji
+ * stanowych jako 704.5s): „If the number of lore counters on a Saga permanent
+ * with one or more chapter abilities is greater than or equal to its final
+ * chapter number, and it isn't the source of a chapter ability that has
+ * triggered but not yet left the stack, that Saga's controller sacrifices it.
+ * This state-based action doesn't use the stack."
+ * (mtg.wiki/Saga: „the Saga's controller sacrifices it as soon as its chapter
+ * ability has left the stack, most likely by resolving or being countered.")
+ *
+ * Wcześniej poświęcenie siedziało w środku `fireSagaChapter`, więc
+ * `permanent_sacrificed` lądowało w logu PRZED `trigger_resolved` — wyglądało
+ * jak poświęcenie przed rozstrzygnięciem rozdziału.
+ *
+ * Osobna funkcja (nie w `runStateBasedActions`): CR 704.3 każe powtórzyć akcje
+ * stanowe DOPIERO po włożeniu zdolności triggerowanych na stos, a ten engine
+ * robi przebieg SBA PRZED skanem triggerów. Gdyby reguła siedziała w zwykłym
+ * przebiegu, Saga dobita proliferatem (CR 701.27 → 714.2b) byłaby poświęcona
+ * zanim jej rozdział trafiłby na stos. Wołana z `execute` po `processTriggers`
+ * (jak cleanup tokenów z CR 704.5d).
+ *
+ * Poświęcenie to śmierć permanenta, więc obowiązuje zastąpienie strefy
+ * (`deathZoneFor` — licznik finality / „exile it instead", M272).
+ */
+export function sacrificeFinishedSagas(state) {
+  const events = [];
+  if (!stateBasedActionsOpen(state)) return events;
+  for (const object of [...state.objects.values()]) {
+    if (object.zone !== 'battlefield' || !object.saga) continue;
+    const chapters = object.saga.chapters ?? [];
+    if (chapters.length === 0) continue;
+    if ((object.counters?.lore ?? 0) < chapters.length) continue;
+    const rozdzialNaStosie = state.zones.stack.some((stackId) => {
+      const wpis = state.objects.get(stackId);
+      return wpis?.triggerEntry?.sourceId === object.id
+        && wpis.triggerEntry.extra?.sagaChapter != null;
+    });
+    // „…and it isn't the source of a chapter ability that has triggered but
+    // not yet left the stack": w tym engine rozdział z `requiresTarget` czeka
+    // najpierw na DECYZJĘ celu (resolve_trigger_target), a dopiero potem
+    // wchodzi na stos — obie te chwile znaczą „odpalił, jeszcze nie zszedł".
+    const czekaNaCel = (state.pendingTriggerTargets ?? []).some((p) => p?.sourceId === object.id);
+    if (rozdzialNaStosie || czekaNaCel) continue;
+    const toZone = deathZoneFor(state, object);
+    const graveId = `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, object.id, toZone, graveId);
+    const sacrificed = event('permanent_sacrificed', {
+      fromId: object.id, objectId: graveId, playerId: object.controllerId,
+      cardId: moved.cardId, saga: true, toZone,
+    });
+    state.events.push(sacrificed); events.push(sacrificed);
+  }
+  return events;
+}
+
 export function runStateBasedActions(state) {
   const events = [];
   // M202/odznaka #3 (CR 616.1): dopóki gracz nie rozstrzygnie wyboru efektu

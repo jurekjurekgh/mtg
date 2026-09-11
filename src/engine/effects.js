@@ -1032,10 +1032,31 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // tury — wykorzystujemy istniejący mechanizm grantAbilitiesUntilEndOfTurn,
   // więc trigger znika razem z końcem tury bez osobnego sprzątania.
   if (effect.type === 'grant_double_strike_on_noncreature_cast_this_turn') {
-    const source = state.objects.get(sourceObject.id);
-    if (!source || source.zone !== 'battlefield') return;
-    const granted = Object.freeze({
-      type: 'triggered',
+    // Zgłoszenie właściciela B1 (2026-09-10). Oracle (Scryfall, TDM):
+    // „III — Whenever you cast a noncreature spell this turn, **target creature
+    // you control** gains double strike until end of turn."
+    // Rozdział tworzy OPÓŹNIONĄ zdolność triggerowaną na tę turę — NIE nadaje
+    // Sadze podwójnego uderzenia. Stary kod doklejał grant do Sagi i emitował
+    // `keyword_granted` z jej id, więc log kłamał: „Rediscover the Way
+    // zyskuje: podwójne uderzenie".
+    // Ruling WotC 2025-04-04: „The triggered ability created by the chapter III
+    // ability may trigger multiple times during the turn, even though
+    // Rediscover the Way will likely no longer be on the battlefield."
+    // Dlatego wpis żyje w rejestrze stanowym `turnAbilityGrants`, a nie
+    // w `abilityGrants` obiektu: Saga jest poświęcana zaraz po rozdziale
+    // (CR 704.5s), a w grobie to nowy obiekt (CR 400.7) — grant by z nią zginął.
+    state.turnAbilityGrants = [...(state.turnAbilityGrants ?? []), Object.freeze({
+      cardId: sourceObject.cardId,
+      sourceId: sourceObject.id,
+      controllerId: sourceObject.controllerId,
+      armedOnTurn: state.turn.number,
+      // Ostatnia znana informacja (CR 603.10): Saga jest poświęcana zaraz po
+      // rozdziale, więc przy rzucie czaru nie-stwora obiekt `sourceId` już nie
+      // istnieje (przeniesienie do grobu nadaje nowe id). Bez LKI decyzja celu
+      // była zdejmowana przez `pruneDeadPendingDecisions`
+      // (triggerTargetDecisionPending → triggerSourceZoneLegal wymaga strefy
+      // pola bitwy) i trigger cicho nic nie robił.
+      sourceLki: sourceObject,
       trigger: Object.freeze({
         event: 'you_cast_noncreature_spell',
         requiresTarget: Object.freeze({ type: 'creature_you_control' }),
@@ -1043,12 +1064,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       effect: Object.freeze([Object.freeze({
         type: 'grant_keywords_until_end_of_turn', keywords: Object.freeze(['double_strike']),
       })]),
-    });
-    const grants = [...(source.abilityGrants ?? []), granted];
-    state.objects.set(source.id, Object.freeze({ ...source, abilityGrants: Object.freeze(grants) }));
-    state.events.push(event('keyword_granted', {
-      objectId: source.id, cardId: source.cardId,
-      keywords: ['double_strike'], delayed: true, untilEndOfTurn: true,
+    })];
+    state.events.push(event('delayed_trigger_armed', {
+      objectId: sourceObject.id, cardId: sourceObject.cardId,
+      playerId: sourceObject.controllerId, untilEndOfTurn: true,
+      description: 'gdy rzucisz w tej turze czar niebędący stworem: wybrany stwór pod twoją kontrolą dostaje podwójne uderzenie do końca tury',
     }));
     return;
   }

@@ -1084,6 +1084,9 @@ export function clearStatModifiers(state) {
   state.untilEndOfTurnBuffs = [];
   // M109: ochrona „do końca tury" (Spare from Evil) kończy się w cleanup.
   state.untilEndOfTurnProtections = [];
+  // Zgłoszenie właściciela B1: opóźnione zdolności „this turn" (rozdział III
+  // Sagi) wygasają razem z resztą efektów do końca tury.
+  state.turnAbilityGrants = [];
   // Batch 48 (Cherished Hatchling): flash nadany podtypowi „this turn".
   state.subtypeFlashThisTurn = [];
   for (const object of state.objects.values()) {

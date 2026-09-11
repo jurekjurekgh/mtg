@@ -25,7 +25,7 @@ import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, sus
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
-import { runStateBasedActions, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
+import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities } from './attachments.js';
@@ -461,6 +461,16 @@ export function createGameState({ seed, players }) {
     untilEndOfTurnBuffs: [],
     // M109 (Spare from Evil): ochrona przed JAKOŚCIĄ do końca tury.
     untilEndOfTurnProtections: [],
+    // Zgłoszenie właściciela B1 (2026-09-10): opóźnione zdolności triggerowane
+    // „do końca tury", których ŹRÓDŁO może zniknąć z pola bitwy (Saga
+    // poświęcona po ostatnim rozdziale — CR 704.5s; ruling WotC 2025-04-04:
+    // zdolność rozdziału III „may trigger multiple times during the turn,
+    // even though Rediscover the Way will likely no longer be on the
+    // battlefield"). Grant trzymany w obiekcie (abilityGrants) ginął razem
+    // z poświęconą Sagą (CR 400.7 — w nowej strefie to nowy obiekt), a skan
+    // triggerów czyta wyłącznie pole bitwy. Wpisy:
+    // { cardId, sourceId, controllerId, armedOnTurn, trigger, effect }.
+    turnAbilityGrants: [],
     moonlitUsedThisTurn: {},
     // „You may have this enter as a copy" — decyzja gracza (Jwari).
     pendingEnterAsCopy: null,
@@ -1410,6 +1420,19 @@ function accepted(state, cmd, result) {
       state.zones[token.zone] = (state.zones[token.zone] ?? []).filter((id) => id !== token.id);
       state.objects.delete(token.id);
     }
+  }
+  // Zgłoszenie właściciela B2 (2026-09-10), CR 714.4 / 704.5s: poświęcenie
+  // Sagi, której rozdział zszedł ze stosu. PO triggerach (jak cleanup tokenów
+  // z CR 704.5d powyżej), bo rozdział dołożony właśnie licznikiem lore
+  // (proliferate — CR 701.27 → 714.2b) musi najpierw trafić na stos: CR 704.3
+  // powtarza akcje stanowe dopiero po włożeniu triggerów na stos.
+  const sagaEvents = sacrificeFinishedSagas(state);
+  if (sagaEvents.length > 0) {
+    result.events = [...result.events, ...sagaEvents];
+    // Poświęcenie to śmierć permanenta (Shiva to Enchantment Creature) —
+    // triggery śmierci muszą zobaczyć to zdarzenie w tym samym przebiegu.
+    const sagaTriggerEvents = processTriggers(state, sagaEvents);
+    if (sagaTriggerEvents.length > 0) result.events = [...result.events, ...sagaTriggerEvents];
   }
   // Inwariant planowania decyzji: gdy po komendzie czeka blokująca decyzja,
   // priorytet należy do JEJ decydenta (pierwszej w porządku bramek execute).

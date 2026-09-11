@@ -1657,7 +1657,16 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         : `${nameOfObject(e.objectId)} spada poniżej progu Station i przestaje być stworem`;
       case 'saga_chapter_fired': return `${nameOf(e.cardId)} — rozdział Sagi ${['', 'I', 'II', 'III', 'IV'][e.chapter] ?? e.chapter}`;
       case 'opponents_lands_tapped': return `Landy przeciwników ${whoN(e.playerId)} zostają zatapnięte (${e.count})`;
-      case 'delayed_trigger_armed': return `${nameOf(e.cardId)} — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza ${whoN(e.playerId)}`;
+      case 'delayed_trigger_armed':
+        // Zgłoszenie właściciela B1: wpis niesie `description`, gdy opóźniona
+        // zdolność nie jest „powrotem w upkeep" (rozdział III Sagi). Bez tego
+        // każdy opóźniony trigger był opisywany tekstem Plague Reavera.
+        // Opis jest samowystarczalny („…do końca tury") — nie dokładamy
+        // drugiego sufiksu, żeby linia nie brzmiała „do końca tury (do końca
+        // tury)".
+        return e.description
+          ? `${objectOrLki(e.objectId ?? e.sourceId, e.cardId)} — ${e.description}`
+          : `${nameOf(e.cardId)} — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza ${whoN(e.playerId)}`;
       case 'devour_choice_required': return `Devour (${nameOf(e.cardId)}): ${whoN(e.playerId)} może poświęcać inne swoje stwory (po ${e.counters}× +1/+1 za każdego)`;
       case 'devour_choice_resolved': {
         if (e.skipped) return `Devour (${nameOf(e.cardId)}): brak stworów do poświęcenia — decyzja gaśnie bez efektu`;
