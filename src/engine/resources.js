@@ -1251,7 +1251,16 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false) {
   // Aura „Enchant player" (Curse): celem jest GRACZ, nie stwór — wybór celu
   // przez gracza (każdy gracz jest legalnym celem; przeciwnik zwykle cenniejszy).
   if (object.enchantPlayer) {
-    for (const targetId of state.players.map((p) => p.id)) {
+    // Zgłoszenie właściciela (2026-09-11, przy G): kolejność celów to NAJPIERW
+    // przeciwnik, potem rzucający. Klątwa z definicji dotyczy przeciwnika, a
+    // lista zaczynająca się od „Ty" kończy się samookaleczeniem przy kliknięciu
+    // pierwszego wiersza — zmierzone w partii 5001: kreator celu pokazał
+    // „Ty | Nieprzyjaciel", profil greedy Żywego Testera bierze pierwszy wiersz,
+    // klątwa wylądowała na rzucającym i go zabiła. `sort` jest stabilny, więc
+    // sami przeciwnicy zachowują kolejność z `state.players`.
+    const celeGracze = state.players.map((p) => p.id)
+      .sort((a, b) => (a === playerId ? 1 : 0) - (b === playerId ? 1 : 0));
+    for (const targetId of celeGracze) {
       for (const isBestow of options) out.push({ objectId: object.id, targetId, bestow: isBestow });
     }
     return out;

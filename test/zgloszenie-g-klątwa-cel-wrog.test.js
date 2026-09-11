@@ -26,16 +26,16 @@ import { DEFAULT_HEURISTIC_WEIGHTS } from '../src/controllers/heuristic-weights.
 
 const REGISTRY = createCardRegistry();
 
-function gra({ reka, pola = [] }) {
+function gra({ reka, pola = [], kto = 'p2' }) {
   const s = createGameState({ seed: 11, players: [{ id: 'p1' }, { id: 'p2' }] });
-  s.turn = jumpToStep(s.turn, 'main', 'p2');
-  s.turn.activePlayerId = 'p2';
-  s.turn.priorityPlayerId = 'p2';
+  s.turn = jumpToStep(s.turn, 'main', kto);
+  s.turn.activePlayerId = kto;
+  s.turn.priorityPlayerId = kto;
   for (const [id, cardId, zone] of reka) {
     const def = REGISTRY.get(cardId);
     assert.ok(def, `${cardId} w katalogu`);
     addObject(s, {
-      id, instanceId: `i-${id}`, cardId, controllerId: 'p2', ownerId: 'p2', zone,
+      id, instanceId: `i-${id}`, cardId, controllerId: kto, ownerId: kto, zone,
       ...gameObjectDataOf(def), types: def.types ?? [], keywords: def.keywords ?? [],
       subtypes: def.subtypes ?? [], spell: def.spell,
     });
@@ -49,7 +49,7 @@ function gra({ reka, pola = [] }) {
     });
     s.objects.set(id, Object.freeze({ ...s.objects.get(id), summoningSickness: false }));
   }
-  addMana(s, 'p2', 8, { colors: ['W', 'U', 'B', 'R', 'G'] });
+  addMana(s, kto, 8, { colors: ['W', 'U', 'B', 'R', 'G'] });
   return s;
 }
 
@@ -112,4 +112,21 @@ test('G/3 anty-over-fix: zwykła aura-buff na stworze nie dostaje kary klątwy',
     `kara klątwy nie może przeciekać na inne warianty: ${JSON.stringify(realne)}`,
   );
   assert.equal(cmd.type, 'cast_permanent', `bot ma rzucić aurę, wybrał ${cmd.type}`);
+});
+
+test('G/4: oferta celu klątwy wymienia NAJPIERW przeciwnika, potem rzucającego', () => {
+  // Zgłoszenie właściciela (2026-09-11, przy G): „zmień kolejność — najpierw
+  // Nieprzyjaciel, potem Ty". Zmierzone w partii 5001: kreator celu pokazał
+  // „Ty | Nieprzyjaciel", a profil greedy Żywego Testera bierze pierwszy
+  // wiersz → klątwa na siebie → przegrana. Kolejność bierze się z wyliczenia
+  // celów w `auraCastsForPayment` (state.players = [p1, p2]). Rzucającym musi
+  // być p1 — przy rzucającym p2 przeciwnik i tak wypada pierwszy, więc test
+  // byłby pusty (zmierzone: pierwsza wersja G/4 przeszła bez fixu).
+  const s = gra({ reka: [['curse', 'curse-of-the-pierced-heart', 'hand']], kto: 'p1' });
+  const view = playerView(s, 'p1');
+  const warianty = view.legalCommands
+    .filter((c) => c.type === 'cast_permanent' && c.objectId === 'curse')
+    .map((c) => c.targets?.[0]);
+  assert.deepEqual(warianty, ['p2', 'p1'],
+    `najpierw przeciwnik (p2), potem rzucający (p1); jest ${JSON.stringify(warianty)}`);
 });
