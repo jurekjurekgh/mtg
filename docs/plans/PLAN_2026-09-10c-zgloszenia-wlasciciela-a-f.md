@@ -20,7 +20,7 @@ oparty na opisach tekstowych i na kodzie.
 | **A** | Auto-płatność tapuje Forest, choć nietapnięty Scorned Villager też daje {G} — brak kreatora many | `src/table/mana-wizard.js:466-471` — klucz deduplikacji wariantów to `kolory#ilość#kosztAktywacji`, BEZ rodzaju źródła; Forest i Scorned Villager (oba `{G}`, 1) to ten sam „kształt" → 1 wariant → `shouldOpenManaWizard` = false | decyzja właściciela + MtG: tapnięcie stwora ma koszt alternatywny (nie atakuje/nie blokuje), więc wybór jest realny | warstwa pokazu (oferta) |
 | **F** | Curse of the Pierced Heart na przeciwniku bez badge'a „klątwa: Nieprzyjaciel" | DWA źródła (zmierzone sondą na stanie z klątwą): (1) `playerView` nie wysyła `enchantPlayer`/`enchantedPlayerId` — oba `undefined`, jedyne „aurowe" pole wpisu to `aura`; (2) brak jakiejkolwiek gałęzi badge'a dla aury na graczu w `buildFace` i `buildStateOverlay` (aura na stworach ma badge przez gospodarza, tu gospodarza-permanentu nie ma) | CR 303.4 („Enchant player") + ADR 0017 (skutek widoczny w grze musi być widoczny w widoku); cel aury to informacja jawna, nie FoW | widok + warstwa pokazu |
 | **G** | Klątwa rzucona na WŁASNEGO gracza — właściciel: „to powinno mieć -1000 scoringu" (dopełnienie F) | Dwie przyczyny (zmierzone sondą + trace bota): (1) gałąź aury w `cast_permanent` szuka celu przez `objectOnBoard`, a celem klątwy jest GRACZ → `!target` → `auraNoTargetPenalty` dla OBU wariantów (`curse->wróg` = -45 i `curse->siebie` = -45, wybrane `pass_priority` — bot klątw nie rzucał wcale); (2) `auraIsHostile` znała tylko `applyTo: 'enchanted_controller'` + HOSTILE_PLAYER_EFFECTS, a klątwa niesie `damage_enchanted_player` bez `applyTo` → wyglądała jak buff | CR 303.4 („Enchant player") + decyzja właściciela (-1000) | bot (wycena) |
-| **C** | Bot używa Exploit (Gurmag Drowner) przy 5 kartach w bibliotece i poświęca stwora z lataniem | wycena exploitu w `src/controllers/heuristic-bot.js` nie zna ani liczby kart w bibliotece, ani wartości poświęcanego stwora | Oracle: „look at the top four cards… put one into your hand and the rest into your graveyard" — mill 3 przy małej bibliotece = ryzyko przegranej | bot (wycena) |
+| **C** | Bot używa Exploit (Gurmag Drowner) przy 5 kartach w bibliotece i poświęca stwora z lataniem | ZMIERZONE: `resolve_exploit_choice` = `skip: 20` / ofiara `40 - (moc*2 + wytrzymałość)` — biblioteka nie brała udziału w wycenie W OGÓLE (trigger miele 3: `look_top_put_one_hand_rest_grave`, amount 4), a ofiara była liczona tylko z P/T, więc przy wyborze token 3/3 vs Cloudbound Moogle 2/3 (flying + 2 zdolności) bot poświęcał MOOGLE'A (33 > 31). Dodatkowo komenda nie niosła `sourceId`, więc decydujący nie wiedział, CO robi trigger | Oracle: „look at the top four cards… put one into your hand and the rest into your graveyard" — mill 3 przy małej bibliotece = ryzyko przegranej (CR 121.4/704.5b) | silnik (widok komendy) + bot (wycena) |
 | **D** | Bot atakuje 3/1 (Furious Forebear) w nietapnięte 4/4 i 4/5 przy 3 własnego życia | scoring ataku nie liczy pewnej straty atakującego bez obrażeń dla przeciwnika (trade-down) | zdrowy rozsądek rozgrywki (brak zmiany reguł) | bot (scoring) |
 
 ## Kolejność pracy (niezależne kroki, każdy z bramką)
@@ -209,4 +209,37 @@ oparty na opisach tekstowych i na kodzie.
   (transkrypt: „wskaż cel (1): TyNieprzyjaciel"), a profil greedy Żywego
   Testera bierze pierwszy wiersz. Wycena już tego nie puści (G), ale
   KOLEJNOŚĆ opcji celu w kreatorze to osobna decyzja UI.
-- Pozostałe (C, D) — w kolejności z planu, każde osobnym zielonym commitem.
+- **C — GOTOWE** (`da01e00`, commit lokalny — push zablokowany przez
+  wygasły token GitHub, patrz niżej): komenda `resolve_exploit_choice` niesie
+  `sourceId` (źródło exploita to jawny permanent; bez niego nie da się ocenić
+  ryzyka — ADR 0017), bot liczy koszt biblioteczny z DANYCH karty po typie
+  efektu (`EXPLOIT_LIBRARY_COST`: `look_top_put_one_hand_rest_grave` →
+  amount − 1), a nie po nazwie (ADR 0002): zapas po millu `<= 0` → kara
+  deck-outu, `< 12` → kara cienkiej biblioteki (przy millu 3 próg 12 = ~15
+  kart, liczba właściciela). Cena ofiary = P/T + 6/keyword + 8/zdolność
+  − 8 za token. Parametry: cała rodzina „exploit" w heuristic-params (skip 20
+  i baza 40 bez zmiany wartości). Strażnik
+  `test/zgloszenie-c-exploit-biblioteka-i-ofiara.test.js` (4): C/1 biblioteka
+  5 → skip; C/2 biblioteka 25 → ofiarą token 3/3, nie latacz ze zdolnościami;
+  C/3 biblioteka 3 (mill sięga dna) → skip; C/4 anty-over-fix — Silumgar
+  Butcher (exploit bez millu) działa przy cienkiej bibliotece. RED przed
+  fixem: C/1, C/2 (bot poświęcał moogle'a), C/3. Mutacje (L13): bramka
+  biblioteczna cofnięta → 2 RED; wagi ofiary cofnięte → 1 RED; próg 12 → 1 →
+  1 RED; bramka rozciągnięta na każdy exploit (over-fix) → 1 RED (C/4);
+  `sourceId` zabrany z komendy → 2 RED. Bramki: `npm test` **5136/5136**,
+  `npm run build` 61 modułów / 3485.6 kB, Żywy Tester: 2 partie z realną
+  `tarkir-bg` (detektory 0, „NIEWYCENIONE: brak", ale bez Gurmag/Silumgar
+  w grze — 0 wzmianek) + partia pomiarowa seed 7001 na talii tymczasowej
+  (4× Gurmag Drowner + 10× Typhoid Rats, usunięta po pomiarze): „Exploit:
+  Typhoid Rats zostaje poświęcony dla Gurmag Drowner" — ofiarą vanilla 1/1
+  bez zdolności, detektory 0. Uczciwie: transkrypt nie drukuje liczby kart
+  w bibliotece, więc bramka biblioteczna jest zmierzona testami (C/1, C/3),
+  nie żywą partią.
+- **BLOKADA pusha (2026-09-11)**: `gh auth status` → „github.com:
+  authentication failed — the github.com token in GH_TOKEN is no longer
+  valid", `git push` → „could not read Username for 'https://github.com'".
+  Commit C (`da01e00`) jest lokalny i zabezpieczony jako patch:
+  `/home/user/patches/0001-C-exploit-biblioteka-i-ofiara.patch`
+  (`git apply --check --reverse` zgodny z drzewem). Po ponownym podłączeniu
+  GitHuba: rytuał re-klonu → `git am` patcha → push.
+- Pozostałe (D) — w kolejności z planu, osobnym zielonym commitem.
