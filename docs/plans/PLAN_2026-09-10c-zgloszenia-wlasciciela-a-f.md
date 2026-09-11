@@ -318,6 +318,17 @@ oparty na opisach tekstowych i na kodzie.
   w trybie DOTYKOWYM i hover nie jest podpinany w ogóle (`TOUCH_DEVICE`) — sonda
   musiała zdjąć znacznik w `beforeParse`; Żywy Tester ścieżek hover nie ćwiczy.
   Bramki: `npm test` **5141/5141**, build 61 modułów / 3487,7 kB.
+  RESET WORKSPACE'U W TRAKCIE: token wygasł trzeci raz, a przy jego
+  odświeżeniu sandbox wrócił do `f7e4d11` — commity H (`327a994`, `61bb04f`)
+  przepadły z `.git`, a `/home/user/patches/` z patchami 0005/0006 został
+  skasowany (więc „zabezpieczenie poza repo" NIE działa — poprawka zapisana
+  w handoffie i historii). Przeżyły pliki drzewa: checkpoint całego drzewa
+  tagiem → `git reset --hard d49318d` → `git checkout <tag> -- <pliki>`
+  osobno dla fixu i dla dokumentów → `git diff <tag> HEAD` **pusty** (dowód
+  odtworzenia bajt w bajt) → bramki od nowa na tym drzewie: `npm test`
+  **5141/5141**, `npm run test:all` **5151/5151** exit 0, build 61/3487,7 kB
+  → push `d49318d..97f5209`. Commity H na zdalnej to **`8c9800d`** (fix)
+  i **`97f5209`** (dokumentacja).
   Dokumentacja: `docs/setup/ILUSTRACJE_KART.md` (sekcja PPM + poprawka opisu
   fallbacku: brak `artId` = PUSTY podgląd, brak pliku = spadek na Scryfall)
   i `docs/ROADMAP.md` (wpis M12 z datą zmiany wyzwalacza).

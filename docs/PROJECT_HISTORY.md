@@ -74,7 +74,11 @@ build 61 modułów / 3486,9 kB, benchmark quick 84,7% (569/672) — A/B bez zmia
 Uwagi środowiskowe z tej sesji: `gh pr edit` pada na tym repo (GraphQL
 „Projects (classic) is being deprecated") — działa REST
 (`gh api -X PATCH repos/…/pulls/113 -F body=@plik`); commit bez pusha przepada
-między turami, więc przy zablokowanym pushu `git format-patch` poza repo.
+między turami. **Zmierzone przy trzecim resecie workspace'u:** `git
+format-patch` poza repo (`~/patches/`) przepada razem z nim — przeżywają tylko
+pliki drzewa roboczego, więc odtwarza się commity z checkpointu drzewa
+(`git checkout <tag> -- <pliki>`) i dowodzi zgodności pustym `git diff <tag>
+HEAD` (tak wróciły commity zgłoszenia H: `8c9800d`, `97f5209`).
 
 ## Sesja 2026-09-10 — pętla jakości Żywym Testerem: Thunderstaff noop (PR #111, arena/01a08788)
 
