@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Guildsworn+Prowler&set=clb&format=json",
   "object": "card",
   "name": "Guildsworn Prowler",
   "lang": "en",
@@ -26,5 +27,6 @@
     "small": "https://cards.scryfall.io/small/front/d/7/d7efb10f-c760-431c-8ac6-904965d850dc.jpg?1783922760",
     "normal": "https://cards.scryfall.io/normal/front/d/7/d7efb10f-c760-431c-8ac6-904965d850dc.jpg?1783922760",
     "large": "https://cards.scryfall.io/large/front/d/7/d7efb10f-c760-431c-8ac6-904965d850dc.jpg?1783922760"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/d7efb10f-c760-431c-8ac6-904965d850dc): Commander Legends: Battle for Baldur's Gate (CLB) nr 130; UUID obrazu zgodny z `imageUri` w katalogu."
 }

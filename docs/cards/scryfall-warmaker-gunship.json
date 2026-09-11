@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Warmaker+Gunship&set=eoe&format=json",
   "object": "card",
   "name": "Warmaker Gunship",
   "layout": "normal",
@@ -8,13 +9,18 @@
   "cmc": 3.0,
   "power": "4",
   "toughness": "3",
-  "colors": ["R"],
-  "keywords": ["Station"],
+  "colors": [
+    "R"
+  ],
+  "keywords": [
+    "Station"
+  ],
   "set": "eoe",
   "set_name": "Edge of Eternities",
   "collector_number": "167",
   "rarity": "rare",
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/9/e/9e5957f4-1cae-4989-8b40-27fc6e2fcf5e.jpg?1783905944"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/9e5957f4-1cae-4989-8b40-27fc6e2fcf5e): Edge of Eternities (EOE) nr 167; UUID obrazu zgodny z `imageUri` w katalogu."
 }

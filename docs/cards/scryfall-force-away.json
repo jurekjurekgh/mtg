@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Force+Away&set=ktk&format=json",
   "object": "card",
   "name": "Force Away",
   "lang": "en",
@@ -24,5 +25,6 @@
     "small": "https://cards.scryfall.io/small/front/d/d/dda70b3e-4b70-404e-a579-41dd126be084.jpg?1783939088",
     "normal": "https://cards.scryfall.io/normal/front/d/d/dda70b3e-4b70-404e-a579-41dd126be084.jpg?1783939088",
     "large": "https://cards.scryfall.io/large/front/d/d/dda70b3e-4b70-404e-a579-41dd126be084.jpg?1783939088"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/dda70b3e-4b70-404e-a579-41dd126be084): Khans of Tarkir (KTK) nr 40; UUID obrazu zgodny z `imageUri` w katalogu."
 }

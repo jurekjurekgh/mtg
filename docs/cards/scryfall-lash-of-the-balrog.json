@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Lash+of+the+Balrog&set=ltr&format=json",
   "object": "card",
   "name": "Lash of the Balrog",
   "layout": "normal",
@@ -6,7 +7,9 @@
   "oracle_text": "As an additional cost to cast this spell, sacrifice a creature or pay {4}.\nDestroy target creature.",
   "mana_cost": "{B}",
   "cmc": 1.0,
-  "colors": ["B"],
+  "colors": [
+    "B"
+  ],
   "keywords": [],
   "set": "ltr",
   "set_name": "The Lord of the Rings: Tales of Middle-earth",
@@ -14,5 +17,6 @@
   "rarity": "common",
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/8/1/812fee97-e145-4458-b495-bc6ad227335b.jpg?1783916302"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/812fee97-e145-4458-b495-bc6ad227335b): The Lord of the Rings: Tales of Middle-earth (LTR) nr 92; UUID obrazu zgodny z `imageUri` w katalogu."
 }

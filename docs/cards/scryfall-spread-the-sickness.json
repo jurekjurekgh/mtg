@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Spread+the+Sickness&set=mbs&format=json",
   "object": "card",
   "name": "Spread the Sickness",
   "layout": "normal",
@@ -6,13 +7,19 @@
   "oracle_text": "Destroy target creature, then proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)",
   "mana_cost": "{4}{B}",
   "cmc": 5.0,
-  "colors": ["B"],
-  "keywords": ["Proliferate"],
+  "colors": [
+    "B"
+  ],
+  "keywords": [
+    "Proliferate"
+  ],
   "set": "mbs",
   "set_name": "Mirrodin Besieged",
-  "collector_number": "58",
+  "collector_number": "56",
   "rarity": "uncommon",
   "image_uris": {
-    "large": "https://cards.scryfall.io/large/front/0/0/003bc8f1-f282-491c-984d-1ce7ac027053.jpg?1783938409"
-  }
+    "large": "https://cards.scryfall.io/large/front/d/e/de42a771-4f5c-4295-b070-8cb857a0279e.jpg?1783941382"
+  },
+  "pobrano": "2026-09-12",
+  "poprawka": "Druk z arkusza kolekcji właściciela. Poprzednio snapshot i `imageUri` w katalogu niosły Modern Masters 2015 (MM2) nr 98, id 003bc8f1-f282-491c-984d-1ce7ac027053 — dane były składane ręcznie bez `source`, więc obraz pochodził z innego druku niż set karty (ten sam mechanizm co Curiosity/JMP ze zgłoszenia A). 2026-09-12 pobrano set-aware i potwierdzono właściwy druk: Mirrodin Besieged (MBS) nr 56, id de42a771-4f5c-4295-b070-8cb857a0279e."
 }

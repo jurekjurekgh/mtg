@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Tenth+District+Veteran&set=rna&format=json",
   "object": "card",
   "name": "Tenth District Veteran",
   "layout": "normal",
@@ -20,5 +21,6 @@
   "rarity": "common",
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/e/f/ef573e92-3106-4b42-90e8-0e165de0659f.jpg?1783933715"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/ef573e92-3106-4b42-90e8-0e165de0659f): Ravnica Allegiance (RNA) nr 26; UUID obrazu zgodny z `imageUri` w katalogu."
 }

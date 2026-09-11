@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Inspiration&set=8ed&format=json",
   "object": "card",
   "name": "Inspiration",
   "lang": "en",
@@ -21,5 +22,6 @@
     "small": "https://cards.scryfall.io/small/front/b/e/be039716-30fc-4f84-8f84-6019065560e4.jpg?1783944797",
     "normal": "https://cards.scryfall.io/normal/front/b/e/be039716-30fc-4f84-8f84-6019065560e4.jpg?1783944797",
     "large": "https://cards.scryfall.io/large/front/b/e/be039716-30fc-4f84-8f84-6019065560e4.jpg?1783944797"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/be039716-30fc-4f84-8f84-6019065560e4): Eighth Edition (8ED) nr 85; UUID obrazu zgodny z `imageUri` w katalogu."
 }

@@ -1,8 +1,12 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Welder%20Automaton&format=json",
+  "source": "https://api.scryfall.com/cards/named?exact=Welder+Automaton&set=aer&format=json",
+  "object": "card",
+  "layout": "normal",
+  "print": "aer",
+  "id": "88b5bae4-be97-4c10-b222-e1e317a8ffbc",
   "name": "Welder Automaton",
   "mana_cost": "{2}",
-  "cmc": 2.0,
+  "cmc": 2,
   "type_line": "Artifact Creature — Construct",
   "oracle_text": "{3}{R}: This creature deals 1 damage to each opponent.",
   "power": "2",
@@ -12,52 +16,19 @@
     "R"
   ],
   "keywords": [],
-  "set": "gnt",
-  "set_name": "Game Night",
-  "collector_number": "58",
+  "set": "aer",
+  "set_name": "Aether Revolt",
+  "collector_number": "183",
   "rarity": "common",
   "artist": "Victor Adame Minguez",
   "illustration_id": "8c7f4710-2151-457a-9ce8-7f5817f4c0e8",
   "image_uris": {
-    "small": "https://cards.scryfall.io/small/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.jpg?1783933968",
-    "normal": "https://cards.scryfall.io/normal/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.jpg?1783933968",
-    "large": "https://cards.scryfall.io/large/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.jpg?1783933968",
-    "png": "https://cards.scryfall.io/png/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.png?1783933968",
-    "art_crop": "https://cards.scryfall.io/art_crop/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.jpg?1783933968",
-    "border_crop": "https://cards.scryfall.io/border_crop/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.jpg?1783933968"
+    "small": "https://cards.scryfall.io/small/front/8/8/88b5bae4-be97-4c10-b222-e1e317a8ffbc.jpg?1783936718",
+    "normal": "https://cards.scryfall.io/normal/front/8/8/88b5bae4-be97-4c10-b222-e1e317a8ffbc.jpg?1783936718",
+    "large": "https://cards.scryfall.io/large/front/8/8/88b5bae4-be97-4c10-b222-e1e317a8ffbc.jpg?1783936718",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/8/8/88b5bae4-be97-4c10-b222-e1e317a8ffbc.jpg?1783936718",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/8/8/88b5bae4-be97-4c10-b222-e1e317a8ffbc.jpg?1783936718"
   },
-  "legalities": {
-    "modern": "legal",
-    "legacy": "legal",
-    "vintage": "legal",
-    "commander": "legal",
-    "pauper": "legal"
-  },
-  "games": [
-    "paper"
-  ],
-  "reserved": false,
-  "foil": false,
-  "nonfoil": true,
-  "oversized": false,
-  "promo": false,
-  "reprint": true,
-  "variation": false,
-  "digital": false,
-  "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
-  "artist_ids": [
-    "bd8f7368-5b10-4554-b6b8-d052c6aca89f"
-  ],
-  "border_color": "black",
-  "frame": "2015",
-  "full_art": false,
-  "textless": false,
-  "booster": false,
-  "story_spotlight": false,
-  "edhrec_rank": 24153,
-  "prices": {
-    "usd": "0.18"
-  },
-  "related_uris": {},
-  "purchase_uris": {}
+  "poprawka": "2026-09-12 (ta sama klasa co Curiosity, zgłoszenie A): pobranie bez `set=` dało druk DOMYŚLNY = GNT (Game Night nr 58, booster:false) i ten adres był w `imageUri`; druk właściciela wg arkusza to 113AER. Snapshot i `imageUri` przepisane z pobrania set-aware.",
+  "pobrano": "2026-09-12"
 }

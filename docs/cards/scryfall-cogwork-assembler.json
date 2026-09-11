@@ -1,6 +1,6 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Cogwork+Assembler",
-  "print": "2xm",
+  "source": "https://api.scryfall.com/cards/named?exact=Cogwork+Assembler&set=aer&format=json",
+  "print": "aer",
   "name": "Cogwork Assembler",
   "mana_cost": "{3}",
   "cmc": 3,
@@ -9,12 +9,13 @@
   "power": "2",
   "toughness": "3",
   "colors": [],
-  "set": "2xm",
-  "set_name": "Double Masters",
-  "collector_number": "242",
+  "set": "aer",
+  "set_name": "Aether Revolt",
+  "collector_number": "145",
   "rarity": "uncommon",
   "image_uris": {
-    "large": "https://cards.scryfall.io/large/front/e/4/e4bfde3f-f7d3-4902-b3cd-23f3fa53eff4.jpg?1783930116"
+    "large": "https://cards.scryfall.io/large/front/6/d/6dddacdd-bbc4-4f9b-be1c-5f2c64be3cbc.jpg?1783936731"
   },
-  "pobrano": "2026-08-13"
+  "pobrano": "2026-09-12",
+  "poprawka": "Druk z arkusza kolekcji właściciela. Poprzednio snapshot i `imageUri` w katalogu niosły Double Masters (2XM) nr 242, id e4bfde3f-f7d3-4902-b3cd-23f3fa53eff4 — dane były składane ręcznie bez `source`, więc obraz pochodził z innego druku niż set karty (ten sam mechanizm co Curiosity/JMP ze zgłoszenia A). 2026-09-12 pobrano set-aware i potwierdzono właściwy druk: Aether Revolt (AER) nr 145, id 6dddacdd-bbc4-4f9b-be1c-5f2c64be3cbc."
 }

@@ -1,18 +1,38 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Curiosity&set=isd&format=json",
   "object": "card",
-  "name": "Curiosity",
   "layout": "normal",
+  "print": "isd",
+  "id": "b212c36a-6d1f-4217-b384-1c2b0e07b68a",
+  "name": "Curiosity",
+  "mana_cost": "{U}",
+  "cmc": 1,
   "type_line": "Enchantment — Aura",
   "oracle_text": "Enchant creature\nWhenever enchanted creature deals damage to an opponent, you may draw a card.",
-  "mana_cost": "{U}",
-  "cmc": 1.0,
-  "colors": ["U"],
-  "keywords": ["Enchant"],
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Enchant"
+  ],
   "set": "isd",
   "set_name": "Innistrad",
-  "collector_number": "56",
+  "collector_number": "49",
   "rarity": "uncommon",
+  "artist": "Igor Kieryluk",
+  "illustration_id": "e8564faf-2b9e-4220-a104-959ece4a6f53",
   "image_uris": {
-    "large": "https://cards.scryfall.io/large/front/c/5/c5a0be10-c20f-4ac0-89a5-1770ecf48aad.jpg?1783930457"
-  }
+    "small": "https://cards.scryfall.io/small/front/b/2/b212c36a-6d1f-4217-b384-1c2b0e07b68a.jpg?1783940977",
+    "normal": "https://cards.scryfall.io/normal/front/b/2/b212c36a-6d1f-4217-b384-1c2b0e07b68a.jpg?1783940977",
+    "large": "https://cards.scryfall.io/large/front/b/2/b212c36a-6d1f-4217-b384-1c2b0e07b68a.jpg?1783940977",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/b/2/b212c36a-6d1f-4217-b384-1c2b0e07b68a.jpg?1783940977",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/b/2/b212c36a-6d1f-4217-b384-1c2b0e07b68a.jpg?1783940977"
+  },
+  "poprawka": "2026-09-12 (zgłoszenie właściciela A): poprzedni snapshot był złożony z pobrania BEZ `set=` (Scryfall zwraca wtedy swój DOMYŚLNY druk — dla Curiosity jest to JMP/Jumpstart nr 147, id c5a0be10-c20f-4ac0-89a5-1770ecf48aad) i ręcznie wpisanych pól set/collector_number (isd/56 — ISD ma nr 49). Adres druku JMP trafił do `imageUri` w card-data.js, więc stół pokazywał reprint z Jumpstarta zamiast druku właściciela (arkusz: 428ISD). Snapshot i `imageUri` przepisane z pobrania set-aware.",
+  "pobrano": "2026-09-12"
 }

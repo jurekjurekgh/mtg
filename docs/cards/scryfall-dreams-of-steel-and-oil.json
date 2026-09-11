@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Dreams+of+Steel+and+Oil&set=bro&format=json",
   "object": "card",
   "name": "Dreams of Steel and Oil",
   "layout": "normal",
@@ -15,5 +16,6 @@
   "rarity": "uncommon",
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/2/6/261ac92e-c61a-4c11-aa6a-9ae1cb703e5c.jpg?1783920092"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/261ac92e-c61a-4c11-aa6a-9ae1cb703e5c): The Brothers' War (BRO) nr 92; UUID obrazu zgodny z `imageUri` w katalogu."
 }

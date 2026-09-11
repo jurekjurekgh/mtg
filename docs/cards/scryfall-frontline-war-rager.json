@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Frontline+War-Rager&set=eoe&format=json",
   "object": "card",
   "name": "Frontline War-Rager",
   "layout": "normal",
@@ -8,7 +9,9 @@
   "cmc": 3.0,
   "power": "2",
   "toughness": "3",
-  "colors": ["R"],
+  "colors": [
+    "R"
+  ],
   "keywords": [],
   "set": "eoe",
   "set_name": "Edge of Eternities",
@@ -16,5 +19,6 @@
   "rarity": "common",
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/f/a/fa232943-818b-4944-be60-2d80c806bf62.jpg?1783905954"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/fa232943-818b-4944-be60-2d80c806bf62): Edge of Eternities (EOE) nr 134; UUID obrazu zgodny z `imageUri` w katalogu."
 }

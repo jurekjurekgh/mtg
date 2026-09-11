@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Silumgar+Butcher&set=dtk&format=json",
   "object": "card",
   "name": "Silumgar Butcher",
   "layout": "normal",
@@ -20,5 +21,6 @@
   "rarity": "common",
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/4/0/40cb67f7-b4e1-423b-8f55-d44ed383e778.jpg?1783938593"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/40cb67f7-b4e1-423b-8f55-d44ed383e778): Dragons of Tarkir (DTK) nr 122; UUID obrazu zgodny z `imageUri` w katalogu."
 }

@@ -18,5 +18,6 @@
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/5/8/587f91f6-b46e-4dd5-a86d-1048054dd3c0.jpg?1783942061"
   },
-  "pobrano": "2026-08-13"
+  "pobrano": "2026-08-13",
+  "uwaga": "Rozjazd z arkuszem właściciela (pomiar przy zgłoszeniu A, 2026-09-12): arkusz kolekcji ma `227ROE`, a katalog i ten snapshot niosą DOMYŚLNY druk Scryfalla z pobrania bez `set=` — WWK (Worldwake nr 32, id 587f91f6-b46e-4dd5-a86d-1048054dd3c0). Do rozstrzygnięcia siecią: czy Scryfall zna druk ROE (jak nie, to `ROE` w arkuszu jest etykietą planu Zendikar — precedens Ethersworn Shieldmage/CON, patrz jego `uwaga`). 2026-09-12 pobranie weryfikujące niedostępne (proxy: SignatureDoesNotMatch)."
 }
