@@ -203,6 +203,28 @@ export function isBotMoveNoise(e, { botActing = false, stackSize = 0, humanId = 
   return true;
 }
 
+/**
+ * Zgłoszenie właściciela E2 (2026-09-10): PYTANIE o decyzję (zdarzenie
+ * `…_required`) jest treścią dla DECYDENTA. Gdy decyduje bot, wpis należy do
+ * sekcji „Ruch bota" (`noteBotMove`), nie do głównego logu gracza — gracz nie
+ * ma tam nic do zrobienia, a surowy prompt („Furious Forebear — zapłacić
+ * {1}{W}? (wybór opcjonalny: Nieprzyjaciel)") czytał się jak błąd rozgrywki.
+ *
+ * Skutki decyzji (`…_resolved`) zostają w logu: to narracja partii, nie
+ * pytanie. Reguła jest generyczna (klasa zdarzeń, nie nazwa karty — ADR 0002):
+ * każdy prompt `…_required`, którego właścicielem nie jest człowiek.
+ *
+ * Brak właściciela w zdarzeniu = brak atrybucji = NIE chowamy (L24: zgubiona
+ * informacja jest większą stratą niż nadmiarowy wpis).
+ * Czysta funkcja (ADR 0011) — testowalna bez sesji i bez DOM-u.
+ */
+export function isBotDecisionPrompt(e, { humanId = HUMAN_ID } = {}) {
+  if (typeof e?.type !== 'string' || !e.type.endsWith('_required')) return false;
+  const decider = e.playerId ?? e.controllerId ?? null;
+  if (decider == null) return false;
+  return decider !== humanId;
+}
+
 function defaultBotFactory(seed, ctx) {
   // B3: bot modeluje rękę przeciwnika (człowieka) — zna jego talię.
   return createHeuristicBot({ seed, opponentDeck: ctx?.opponentDeck });
@@ -2594,7 +2616,12 @@ export function createSession(config) {
     // (M103/D), gracz ma widzieć w „Rozgrywce" co i skąd wygnano (CR 400.2:
     // strefy jawne). Format i mgła wojny jak wyżej (gałąź M192/Z1).
     const isAdditionalCostMove = e.type === 'object_moved' && e.additionalCost === true;
-    if (!botActing && !isAdditionalCostMove && !isRulesZoneMove(e)
+    // Zgłoszenie właściciela E2 (2026-09-10): decyzja BOTA (np. dopłata {1}{W}
+    // z Furious Forebear po śmierci jego stwora — w TURZE CZŁOWIEKA, więc
+    // `botActing` jest fałszem) należy do tej sekcji: główny log gracza jej
+    // nie przyjmuje (`isBotDecisionPrompt`), a informacja nie może zniknąć.
+    const isBotDecision = isBotDecisionPrompt(e);
+    if (!botActing && !isAdditionalCostMove && !isRulesZoneMove(e) && !isBotDecision
       && e.type !== 'turn_started' && e.type !== 'game_started'
       && e.type !== 'step_advanced'
       && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw
@@ -2793,7 +2820,9 @@ export function createSession(config) {
         if (header) sessionLog('event', header);
         noteBotMove(e); recordTurnEvent(e); continue;
       }
-      const text = describeEvent(e);
+      // Zgłoszenie właściciela E2: prompt decyzji BOTA nie należy do logu
+      // gracza (idzie do sekcji ruchu bota — noteBotMove niżej).
+      const text = isBotDecisionPrompt(e) ? null : describeEvent(e);
       if (text) sessionLog('event', text);
       noteBotMove(e);
       recordTurnEvent(e);
@@ -3192,7 +3221,9 @@ export function createSession(config) {
           if (header) sessionLog('event', header);
           noteBotMove(e); recordTurnEvent(e); continue;
         }
-        const text = describeEvent(e);
+        // Zgłoszenie właściciela E2: prompt decyzji BOTA nie należy do logu
+        // gracza (idzie do sekcji ruchu bota — noteBotMove niżej).
+        const text = isBotDecisionPrompt(e) ? null : describeEvent(e);
         if (text) sessionLog('event', text);
         // M100/E2 (symetria rozstrzygnięć): komenda CZŁOWIEKA też może
         // rozstrzygnąć stos (jego własny pass, pass bota po jego rzucie).

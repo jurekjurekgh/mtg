@@ -673,6 +673,30 @@ function interchangeableKey(command, view) {
  *
  * @returns {Array<{command?: object, request?: object, first?: object, label?: string}>}
  */
+/** Wzór symbolu many ({W}, {1}, {U/R}, {W/P}) — ten sam, co w mana-icons.js. */
+const MANA_SYMBOL_PATTERN = /\{[A-Za-z0-9/]+\}/;
+
+/**
+ * Zgłoszenie właściciela E3 (2026-09-10): fragment TEKSTU wstawiany do wiersza
+ * logu/wpisu modala, z symbolami many `{1}{W}` zamienionymi na ikony.
+ *
+ * Jedno źródło (L100/3): mapowanie i escape robi `manaSymbolsHtml`
+ * (mana-icons.js) — ta sama funkcja, którą kreator many i kafle renderują
+ * jako koszt. Dane logu zostają czystym tekstem (`{1}{W}`) dla przebiegu tur
+ * AI — ikony są wyłącznie prezentacją, więc wpis bez symboli wchodzi zwykłym
+ * węzłem tekstu (zero zmian w DOM dla zdecydowanej większości wpisów).
+ */
+function appendTextWithManaIcons(parent, chunk) {
+  if (!chunk) return;
+  if (!MANA_SYMBOL_PATTERN.test(chunk)) {
+    parent.appendChild(document.createTextNode(chunk));
+    return;
+  }
+  const wrap = document.createElement('span');
+  wrap.innerHTML = manaSymbolsHtml(chunk);
+  parent.appendChild(wrap);
+}
+
 /**
  * M167/E2 (uwaga właściciela): wypełnia wiersz logu tekstem, owijając NAZWY
  * KART w klikalne <span class="log-card" data-card-id="…"> (pełnoekranowa
@@ -698,10 +722,10 @@ export function appendLogLineWithCardLinks(line, text, cardIdByName) {
       if (at >= 0 && (bestAt < 0 || at < bestAt)) { bestAt = at; bestName = name; }
     }
     if (bestName == null) {
-      line.appendChild(document.createTextNode(rest));
+      appendTextWithManaIcons(line, rest);
       break;
     }
-    if (bestAt > 0) line.appendChild(document.createTextNode(rest.slice(0, bestAt)));
+    if (bestAt > 0) appendTextWithManaIcons(line, rest.slice(0, bestAt));
     const cardSpan = document.createElement('span');
     cardSpan.className = 'log-card';
     cardSpan.textContent = bestName;
@@ -4039,7 +4063,17 @@ export function renderBotMoves(host, moves, session, { onCardClick = null, hover
     // Tekst ruchu pod miniaturką (gdy cardId jest) lub zamiast niej
     // (wpisy bez karty — np. „Rozstrzygnięcie walki"). Pusty `bot-move-line`
     // daje klikalną podkładkę pod miniaturką (wypełnia flexbox kolumny).
-    div(row, `bot-move-line${entry.cardId ? ' key' : ''}`, `\n${entry.text}`);
+    // Zgłoszenie właściciela E3: koszt w wpisie modala też jest ikonami —
+    // prompt decyzji bota (np. „zapłacić {1}{W}?") mieszka właśnie tutaj.
+    // Wpisy BEZ symboli idą dotychczasową drogą (`div` z textContent) — zero
+    // zmian w DOM dla zdecydowanej większości wpisów (L24: nie psujemy tego,
+    // co działa).
+    const botLineText = `\n${entry.text ?? ''}`;
+    if (!MANA_SYMBOL_PATTERN.test(botLineText)) {
+      div(row, `bot-move-line${entry.cardId ? ' key' : ''}`, botLineText);
+    } else {
+      appendTextWithManaIcons(div(row, `bot-move-line${entry.cardId ? ' key' : ''}`, ''), botLineText);
+    }
   }
   return host;
 }
