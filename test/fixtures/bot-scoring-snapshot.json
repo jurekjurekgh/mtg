@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "deca09c57aaef5e0ab0a8b5a3d5d0eb12640fff7c803b80c44b193d4d7eb0cde",
+  "overallHash": "60d5048fd71880607d09dfe6acb14f98eef4a5fd28fd9b33bbc94f6e36d42375",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
@@ -26,19 +26,17 @@
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1001,
-      "hash": "fa8766c91b0baa69d255ddde9de74c0d1bfa3062ad9a2f7b312c711c607ea982",
-      "decisions": 307,
-      "scoreSum": 2232.8036,
+      "hash": "95e4260ea099efaee4339f6342a4991012f97169d81c503c663ab1b779f4b4af",
+      "decisions": 305,
+      "scoreSum": 2255.5063,
       "chosenKinds": {
-        "activate_ability": 2,
-        "attack": 7,
-        "block": 8,
-        "cast_permanent": 5,
+        "attack": 6,
+        "block": 9,
+        "cast_permanent": 6,
         "cast_spell": 4,
         "pass_priority": 255,
         "play_land": 8,
         "resolve_combat": 12,
-        "resolve_damage_assignment": 1,
         "resolve_mulligan_choice": 1,
         "resolve_optional_trigger_choice": 2,
         "resolve_proliferate": 1,

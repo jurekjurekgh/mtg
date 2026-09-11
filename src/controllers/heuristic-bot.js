@@ -5113,6 +5113,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M167/I: ginie od GANGU blokerów i nie zabija ŻADNEGO — czysta
             // strata stwora (2/4 w 1/3 + 3/3). Kara ponad wagę wyścigu.
             perAttacker = -(toughness + 8);
+            // Zgłoszenie właściciela D (2026-09-10, 3/1 w nietapnięte 4/4+4/5
+            // przy 3 własnego życia): ta gałąź NIE liczyła ataku jako jałowego,
+            // więc `wholeAttackFutile` było fałszem i atak dostawał premię
+            // wyścigu — przy `enemyBoardPower >= myLife` racing = true, a premia
+            // +20 przebijała karę -9 (klasa L3: kara musi być liczona względem
+            // premii). Ten sam atak w JEDNEGO 4/4 trafiał w chumpa (-10,
+            // jałowy), więc decyzja zależała od LICZBY blokerów, nie od sensu
+            // ataku. Z definicji tej gałęzi (nie zabija żadnego, ginie) atak
+            // jest jałowy — jak każda inna gałąź pewnej straty bez zysku.
+            futileAttackers += 1;
           } else if (blockedStats.toughness > effBlockerPower) {
             // Przeżyje, ale NIE zabije blokera (2/3 vs 2/3): nic nie zyskuje,
             // a tapnięty atakujący nie zablokuje w następnej turze — netto
