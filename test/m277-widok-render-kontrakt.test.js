@@ -119,6 +119,13 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
     'subtypesBeforeOverride',
     // Aktywny link ze źródła spoza próbki; pełny ETB→widok→DOM w owner-animation-badge.
     'linkedAnimationSource',
+    // Zgłoszenie właściciela F (2026-09-10): aura na GRACZU (CR 303.4,
+    // klątwy) — widok dokłada `enchantedPlayerId` tylko wtedy, gdy permanent
+    // jest taką aurą (jak `attachedTo`/`aura` wyżej), a w próbce nie ma
+    // klątwy, więc pole nie wchodzi w `wysylane`. Że widok REALNIE je niesie,
+    // mierzy konstrukcyjnie test/zgloszenie-f-badge-klatwy-na-graczu.test.js
+    // (F/1) — ta lista pilnuje tylko literówki w nazwie pola.
+    'enchantedPlayerId',
   ]);
 
   const poza = [...czytane]

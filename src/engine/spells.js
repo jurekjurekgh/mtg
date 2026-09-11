@@ -5,11 +5,11 @@ import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
-import { isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
+import { hasCreatureType, isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, transformedCharacteristics } from './permanents.js';
 import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
-import { effectiveProtectionFromColors } from './attachments.js';
+import { effectiveProtectionFromColors, isTargetingBlockedByProtection } from './attachments.js';
 import { addCounter } from './counters.js';
 import { shuffle } from './shuffle.js';
 import { changeLife, recordCardDrawn } from './players.js';
@@ -138,35 +138,21 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     if (object && object.zone === 'battlefield' && object.kind !== 'player' && hasHexproofAgainst(state, object, casterId)) {
       throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
     }
-    // Protection (CR 702.16): cel nie może być celem czaru/zdolności źródła
-    // chronionego koloru. Sprawdzamy kolory rzucającego (casterId → objects).
-    // Protection from color (CR 702.16): cel nie może być celem czaru/zdolności
-    // źródła chronionego koloru. Sprawdzamy _effectiveProtectionFromColors
-    // (obliczane przez effectiveKeywords z załączników i pól obiektu).
-    // M110 (CR 702.16b): ochrona przed JAKOŚCIĄ — cel nie może być celem
-    // czaru ani zdolności ŹRÓDŁA mającego tę jakość (Spare from Evil:
-    // „protection from non-Human creatures" — zdolność Zombie nie celuje).
-    if (object && sourceObject && isProtectedFromSource(state, object, sourceObject)) {
-      throw new Error(`Nielegalny cel: ${targetId} (protection)`);
-    }
+    // Protection (CR 702.16b — DEBT: T = targeted). F2 (audyt PR #112): jedna
+    // reguła dla oferty i walidacji — `isTargetingBlockedByProtection` czyta
+    // OBA źródła ochrony (jakości + drukowane kolory — M110: Spare from Evil
+    // „protection from non-Human creatures"); wcześniej żyły tu dwie
+    // osobne gałęzie, a Fireball miał własną kopię tylko od kolorów.
+    // Kolory ŹRÓDŁA: parametr `sourceColors` (ścieżka rzutu zna je najlepiej),
+    // inaczej obiekt rzucającego, a ostatecznie gracz (kompatybilność).
     if (object) {
-      const protColors = effectiveProtectionFromColors(state, object);
-      if (protColors.length > 0) {
-        // BUG 2026-08-11 (CR 702.16b): „A permanent with protection from a
-        // quality can't be the target of spells or abilities with that quality".
-        // Wcześniej brano kolory GRACZA (zawsze puste) — check był martwy,
-        // a czar/zdolność źródła chronionego koloru mógł celować w chronionego
-        // permanentu. Teraz `sourceColors` niesie kolory ŹRÓDŁA (czaru na
-        // stosie / zdolności permanentu) z miejsca wywołania; fallback na
-        // obiekt-castera, a ostatecznie gracza (kompatybilność).
-        let srcColors = Array.isArray(sourceColors) ? sourceColors : null;
-        if (!srcColors) {
-          const caster = state.objects.get(casterId) ?? state.players.find(p => p.id === casterId);
-          srcColors = caster?.colors ?? [];
-        }
-        if (srcColors.some((c) => protColors.includes(c))) {
-          throw new Error(`Nielegalny cel: ${targetId} (protection)`);
-        }
+      let srcColors = Array.isArray(sourceColors) ? sourceColors : null;
+      if (!srcColors) {
+        const caster = state.objects.get(casterId) ?? state.players.find(p => p.id === casterId);
+        srcColors = caster?.colors ?? [];
+      }
+      if (isTargetingBlockedByProtection(state, object, sourceObject, { sourceColors: srcColors })) {
+        throw new Error(`Nielegalny cel: ${targetId} (protection)`);
       }
     }
     if (spec?.type === 'creature') {
@@ -264,7 +250,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // Sterling Keykeeper: „target non-Mount creature" (walidacja spójna z ofertą).
     if (spec?.type === 'creature_without_subtype') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
-      if ((object.subtypes ?? []).includes(spec.subtype)) {
+      if (hasCreatureType(object, spec.subtype, state)) {
         throw new Error(`Nielegalny cel: ${targetId} (podtyp ${spec.subtype})`);
       }
       return object;
@@ -311,7 +297,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // Cel „creature_with_subtypes" (Lunar Rejection) — stwór z jednym ze spec.subtypes.
     if (spec?.type === 'creature_with_subtypes') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
-      const hasSubtype = (spec.subtypes ?? []).some((sub) => (object.subtypes ?? []).includes(sub));
+      const hasSubtype = (spec.subtypes ?? []).some((sub) => hasCreatureType(object, sub, state));
       if (!hasSubtype) throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
@@ -844,10 +830,10 @@ function castFireball(state, playerId, objectId, targets, xValue, abilityWindowC
     if (isPlayer) continue;
     if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') throw new Error(`Nielegalny cel czaru X: ${tId}`);
     if (hasHexproofAgainst(state, target, playerId)) throw new Error(`Nielegalny cel czaru X (hexproof): ${tId}`);
-    // Protection (CR 702.16b): permanent z protection od koloru czaru nie może
-    // być celem. Fireball to {R} — kolory źródła = kolory karty.
-    const protColors = effectiveProtectionFromColors(state, target);
-    if ((object.colors ?? []).some((c) => protColors.includes(c))) {
+    // Protection (CR 702.16b — DEBT: T): wspólny predykat (F2). Fireball to {R},
+    // ale reguła czyta też JAKOŚCI (np. „protection from creatures" — czar nie
+    // jest stworem, więc nie blokuje; wcześniej ta kopia wcale nie znała jakości).
+    if (isTargetingBlockedByProtection(state, target, object, { sourceColors: object.colors ?? [] })) {
       throw new Error(`Nielegalny cel czaru X (protection): ${tId}`);
     }
   }
@@ -1004,17 +990,9 @@ export function legalTargetCandidates(state, playerId, spec, sourceObject = null
   return candidates.filter((targetId) => {
     const target = state.objects.get(targetId);
     if (!target) return true; // cel-gracz (id gracza) — jakość go nie chroni
-    if (isProtectedFromSource(state, target, sourceObject)) return false;
-    // Protection from color (CR 702.16a — DEBT: T = targeting). Sprawdzamy
-    // kolory ŹRÓDŁA (czaru na stosie / zdolności permanentu) vs protection
-    // celu. Bez tego legalSpellCasts oferował cele chronione kolorem
-    // (np. biały czar na stwora z protection from white), a validateTargets
-    // je odrzucał — bot wybierał nielegalną komendę (benchmark crash).
-    const protColors = effectiveProtectionFromColors(state, target);
-    if (protColors.length > 0) {
-      const srcColors = effectiveColors(sourceObject);
-      if (srcColors.some((c) => protColors.includes(c))) return false;
-    }
+    // Protection (CR 702.16b — DEBT: T): ten sam predykat co walidacja (F2),
+    // żeby oferta nie proponowała celu, który engine odrzuci (L48, pułapka M82).
+    if (isTargetingBlockedByProtection(state, target, sourceObject)) return false;
     return true;
   });
 }
@@ -1060,7 +1038,7 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
         const object = state.objects.get(objectId);
         if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
         if (hasHexproofAgainst(state, object, playerId)) return false;
-        return (spec.subtypes ?? []).some((sub) => (object.subtypes ?? []).includes(sub));
+        return (spec.subtypes ?? []).some((sub) => hasCreatureType(object, sub, state));
       });
     case 'artifact': return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
@@ -1223,7 +1201,7 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
         const object = state.objects.get(objectId);
         if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
         if (hasHexproofAgainst(state, object, playerId)) return false;
-        return !(object.subtypes ?? []).includes(spec.subtype);
+        return !hasCreatureType(object, spec.subtype, state);
       });
     }
     case 'creature_with_keyword': {
@@ -2278,9 +2256,9 @@ export function legalFireballCasts(state, playerId, objectId, object, manaAvaila
     .map((id) => state.objects.get(id))
     .filter((candidate) => candidate?.zone === 'battlefield' && candidate.kind === 'creature'
       && !hasHexproofAgainst(state, candidate, playerId)
-      // Protection (CR 702.16b): cel z protection od koloru czaru ({R}) nie
-      // jest legalny — spójnie z walidacją castFireball.
-      && !effectiveProtectionFromColors(state, candidate).some((c) => (object.colors ?? []).includes(c)))
+      // Protection (CR 702.16b — DEBT: T): TEN SAM predykat co walidacja
+      // castFireball (F2) — oferta i walidacja nie mogą się rozjechać (L48).
+      && !isTargetingBlockedByProtection(state, candidate, object, { sourceColors: object.colors ?? [] }))
     .map((candidate) => candidate.id);
   const players = state.players.map((p) => p.id);
   const allTargets = [...creatures, ...players];

@@ -1,7 +1,7 @@
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { hasCreatureType, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -659,7 +659,7 @@ export function librarySearchMatches(object, qualifier, ownerId) {
   const typeMatch = (qualifier.types ?? []).length === 0
     || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
   const subtypeMatch = (qualifier.subtypes ?? []).length === 0
-    || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
+    || (qualifier.subtypes ?? []).some((subtype) => hasCreatureType(object, subtype));
   const kindMatch = !qualifier.kind || object.kind === qualifier.kind;
   const minMv = qualifier.minManaValue;
   const mvOk = minMv == null || (object.manaCost ?? 0) >= minMv;
@@ -941,9 +941,17 @@ export function applyEnterCounters(state, objectId) {
       }
     }
   }
-  // Bloodthirst N: „If an opponent was dealt damage this turn, this creature
-  // enters with N +1/+1 counters on it" — warunek sprawdzany przy WEJŚCIU.
-  if (object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[object.controllerId]) {
+  // Bloodthirst N (CR 702.54a): „If an OPPONENT was dealt damage this turn,
+  // this creature enters with N +1/+1 counters on it" — warunek sprawdzany
+  // przy WEJŚCIU, a jego podmiotem jest ODBIORCA obrażeń: liczy się każdy
+  // przeciwnik kontrolera wchodzącego permanentu, niezależnie od tego, kto
+  // kontrolował źródło (M12 FAQ 2011-05-25 — Manabarbs przeciwnika też działa).
+  // Wcześniej klucz stanowił kontroler źródła, więc samouszkodzenie
+  // przeciwnika nie działało, a obrażenia zadane MNIE dawały liczniki moim
+  // stworom — oba kierunki niezgodne z 702.54a.
+  const opponentWasDealtDamage = state.players.some((pl) => pl.id !== object.controllerId
+    && state.damageTakenByPlayerThisTurn?.[pl.id]);
+  if (object.bloodthirst && opponentWasDealtDamage) {
     addCounter(state, objectId, '+1/+1', object.bloodthirst);
   }
 }
@@ -1032,10 +1040,31 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // tury — wykorzystujemy istniejący mechanizm grantAbilitiesUntilEndOfTurn,
   // więc trigger znika razem z końcem tury bez osobnego sprzątania.
   if (effect.type === 'grant_double_strike_on_noncreature_cast_this_turn') {
-    const source = state.objects.get(sourceObject.id);
-    if (!source || source.zone !== 'battlefield') return;
-    const granted = Object.freeze({
-      type: 'triggered',
+    // Zgłoszenie właściciela B1 (2026-09-10). Oracle (Scryfall, TDM):
+    // „III — Whenever you cast a noncreature spell this turn, **target creature
+    // you control** gains double strike until end of turn."
+    // Rozdział tworzy OPÓŹNIONĄ zdolność triggerowaną na tę turę — NIE nadaje
+    // Sadze podwójnego uderzenia. Stary kod doklejał grant do Sagi i emitował
+    // `keyword_granted` z jej id, więc log kłamał: „Rediscover the Way
+    // zyskuje: podwójne uderzenie".
+    // Ruling WotC 2025-04-04: „The triggered ability created by the chapter III
+    // ability may trigger multiple times during the turn, even though
+    // Rediscover the Way will likely no longer be on the battlefield."
+    // Dlatego wpis żyje w rejestrze stanowym `turnAbilityGrants`, a nie
+    // w `abilityGrants` obiektu: Saga jest poświęcana zaraz po rozdziale
+    // (CR 704.5s), a w grobie to nowy obiekt (CR 400.7) — grant by z nią zginął.
+    state.turnAbilityGrants = [...(state.turnAbilityGrants ?? []), Object.freeze({
+      cardId: sourceObject.cardId,
+      sourceId: sourceObject.id,
+      controllerId: sourceObject.controllerId,
+      armedOnTurn: state.turn.number,
+      // Ostatnia znana informacja (CR 603.10): Saga jest poświęcana zaraz po
+      // rozdziale, więc przy rzucie czaru nie-stwora obiekt `sourceId` już nie
+      // istnieje (przeniesienie do grobu nadaje nowe id). Bez LKI decyzja celu
+      // była zdejmowana przez `pruneDeadPendingDecisions`
+      // (triggerTargetDecisionPending → triggerSourceZoneLegal wymaga strefy
+      // pola bitwy) i trigger cicho nic nie robił.
+      sourceLki: sourceObject,
       trigger: Object.freeze({
         event: 'you_cast_noncreature_spell',
         requiresTarget: Object.freeze({ type: 'creature_you_control' }),
@@ -1043,12 +1072,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       effect: Object.freeze([Object.freeze({
         type: 'grant_keywords_until_end_of_turn', keywords: Object.freeze(['double_strike']),
       })]),
-    });
-    const grants = [...(source.abilityGrants ?? []), granted];
-    state.objects.set(source.id, Object.freeze({ ...source, abilityGrants: Object.freeze(grants) }));
-    state.events.push(event('keyword_granted', {
-      objectId: source.id, cardId: source.cardId,
-      keywords: ['double_strike'], delayed: true, untilEndOfTurn: true,
+    })];
+    state.events.push(event('delayed_trigger_armed', {
+      objectId: sourceObject.id, cardId: sourceObject.cardId,
+      playerId: sourceObject.controllerId, untilEndOfTurn: true,
+      description: 'gdy rzucisz w tej turze czar niebędący stworem: wybrany stwór pod twoją kontrolą dostaje podwójne uderzenie do końca tury',
     }));
     return;
   }
@@ -1575,7 +1603,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const cardIds = state.zones.hand.filter((id) => {
       const card = state.objects.get(id);
       return card && card.controllerId === controllerId
-        && subtype != null && (card.subtypes ?? []).includes(subtype);
+        && subtype != null && hasCreatureType(card, subtype);
     });
     if (cardIds.length === 0) return;
     state.pendingRevealChoice = {
@@ -2078,7 +2106,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // CR 611.2c — jak cała lista objectIds).
     const buffIds = affectedCreatureIds(state, sourceObject.controllerId, false)
       .filter((id) => !effect.subtype
-        || (state.objects.get(id)?.subtypes ?? []).includes(effect.subtype));
+        || hasCreatureType(state.objects.get(id), effect.subtype, state));
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
       Object.freeze({
@@ -2328,7 +2356,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const subtype = effect.subtype ?? 'Orc';
     const armies = [...state.objects.values()].filter((object) => object.zone === 'battlefield'
       && object.controllerId === sourceObject.controllerId && object.kind === 'creature'
-      && (object.subtypes ?? []).includes('Army'));
+      && hasCreatureType(object, 'Army', state));
     // CR 701.43: „Amass N — Choose an Army you control or create one" — przy
     // 2+ armiach gracz wybiera (blokująca decyzja resolve_amass_choice).
     if (armies.length > 1) {
@@ -2599,7 +2627,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     for (const object of [...state.objects.values()]) {
       if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId) continue;
       if (object.kind !== 'creature') continue;
-      if (subtypes.length && !(object.subtypes ?? []).some((sub) => subtypes.includes(sub))) continue;
+      if (subtypes.length && !subtypes.some((sub) => hasCreatureType(object, sub, state))) continue;
       addCounter(state, object.id, effect.counter ?? '+1/+1', effect.amount ?? 1);
     }
     return;
@@ -2633,7 +2661,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       holds = sub != null && ![...state.objects.values()].some((object) => object.zone === 'battlefield'
         && object.controllerId === controllerId
         && object.kind === 'creature'
-        && (object.subtypes ?? []).includes(sub));
+        && hasCreatureType(object, sub, state));
     }
     if (effect.condition === 'controlsPlaneswalkerWithSubtype') {
       const sub = effect.subtype;
@@ -3393,7 +3421,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // Generycznie: po powrocie, jeśli karta ma podtyp z listy — dobierz
     // (filtr po podtypie, nie nazwie — ADR 0002).
     if (effect.drawIfSubtypes?.length
-      && (moved.subtypes ?? []).some((sub) => effect.drawIfSubtypes.includes(sub))) {
+      && effect.drawIfSubtypes.some((sub) => hasCreatureType(moved, sub, state))) {
       drawPlayerCards(state, sourceObject.controllerId, 1, 'effect');
     }
     return;

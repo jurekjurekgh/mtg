@@ -39,10 +39,14 @@ Szczegóły:
 - **Fog of War**: każda zakryta karta ma ten sam adres rewersu. Gdyby zależał
   od karty, samo pobranie pliku zdradzałoby tożsamość (ADR 0003).
 
-## Tory podglądu i scroll (jak w legacy HTML)
+## Tory podglądu i PPM (wyzwalacz zmieniony 2026-09-11)
 
-Na desktopie hover pokazuje powiększenie, a **scroll nad kartą przełącza tor**
-(`playtableState.hoverMode` w legacy):
+Na desktopie hover pokazuje powiększenie, a **prawy przycisk myszy (PPM) nad
+kartą przełącza tor** — `scryfall → FOT → KON → scryfall`, cykl się zapętla
+(zgłoszenie właściciela H, 2026-09-11; wcześniej robił to scroll jak
+`playtableState.hoverMode` w legacy HTML). Scroll jest wolny: przewija stronę
+domyślnie, bo nad kartą nie ma już słuchacza `wheel`. PPM nad kartą tłumi menu
+kontekstowe przeglądarki — i tylko nad kartą:
 
 | Tor | Źródło | Kształt okna |
 |---|---|---|
@@ -51,8 +55,11 @@ Na desktopie hover pokazuje powiększenie, a **scroll nad kartą przełącza tor
 | `kon` | `./img/<artId>KON.png` — bestiariusz 16:9 | 900×550 |
 
 Tory lokalne wymagają `artId` (numer z arkusza kolekcji) i plików w `./img/`.
-Gdy któregoś brakuje, podgląd cicho spada na pełną kartę ze Scryfalla.
-Tor żyje w pamięci strony — bez `localStorage`.
+Karta BEZ `artId` (basic landy, tokeny, Undercity) w torze FOT/KON pokazuje
+PUSTY podgląd — bez spadku na Scryfall i bez syntetycznej zaślepki (M146,
+uwaga właściciela). Gdy `artId` jest, a pliku brakuje na dysku, podgląd spada
+na pełną kartę ze Scryfalla. Tor jest WSPÓLNY dla wszystkich kart i żyje
+w pamięci strony — bez `localStorage`.
 
 Na urządzeniach dotykowych hover pozostaje wyłączony (M7c): tapnięcie otwiera
 menu kontekstowe, a pełny obraz jest pod pozycją „Pełny podgląd karty".

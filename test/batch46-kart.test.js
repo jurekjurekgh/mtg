@@ -465,9 +465,16 @@ test('B46/10b: Rediscover III — po rozdziale czar niebędący stworem daje dou
   // III rozdział: nadaje Sadze trigger „whenever you cast a noncreature spell".
   applyEffect(state, { type: 'grant_double_strike_on_noncreature_cast_this_turn' },
     state.objects.get('saga'), []);
-  const saga = state.objects.get('saga');
-  assert.equal((saga.abilityGrants ?? []).length, 1, 'trigger nadany na czas tury');
-  assert.equal(saga.abilityGrants[0].trigger.event, 'you_cast_noncreature_spell');
+  // Zgłoszenie właściciela B1 (2026-09-10): rozdział III NIE nadaje Sadze
+  // podwójnego uderzenia — tworzy OPÓŹNIONĄ zdolność w rejestrze stanowym
+  // `turnAbilityGrants`. Dawniej test przypinał tu `saga.abilityGrants`,
+  // czyli dokładnie ten błąd (log: „Rediscover the Way zyskuje: podwójne
+  // uderzenie"); grant ginął też z poświęconą Sagą (CR 400.7/704.5s).
+  assert.deepEqual(state.objects.get('saga').abilityGrants ?? [], [],
+    'Saga nie dostaje żadnej nadanej zdolności');
+  assert.equal((state.turnAbilityGrants ?? []).length, 1, 'opóźniona zdolność uzbrojona na czas tury');
+  assert.equal(state.turnAbilityGrants[0].trigger.event, 'you_cast_noncreature_spell');
+  assert.equal(state.turnAbilityGrants[0].sourceId, 'saga');
   // Rzucamy czar niebędący stworem — trigger celuje we własnego stwora.
   putCard(state, 'bolt', 'bring-low', 'p1', 'hand');
   putCard(state, 'foe', 'giant-spider', 'p2');

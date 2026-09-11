@@ -209,7 +209,15 @@ assert.ok(rCast.ok, rCast.events[0]?.reason);
 test('Gorehorn Minotaurs: po obrażeniach przeciwnika → 5/5 (bloodthirst 2)', () => {
   const state = game();
   mainPhase(state);
-  state.dealtDamageToOpponentThisTurn['p1'] = true;
+  // CR 702.54a czyta ODBIORCĘ obrażeń, więc zadajemy prawdziwe obrażenia
+  // (Shock w p2) zamiast ustawiać wewnętrzną flagę stanu (wyzwanie 1/5,
+  // 2026-09-11 — poprzednio test omijał ścieżkę zdarzeń i nie wykrył, że
+  // znacznik w ogóle nie powstawał przy obrażeniach z czaru).
+  addRealCard(state, 'shock', 'shock', 'p1', 'hand');
+  giveMana(state, 'p1', 1, ['R']);
+  const rShock = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'shock', targets: ['p2'] });
+  assert.ok(rShock.ok, rShock.events[0]?.reason);
+  resolveStack(state);
   giveMana(state, 'p1', 4, ['R']);
   addRealCard(state, 'gore', 'gorehorn-minotaurs', 'p1', 'hand');
   const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'gore' })

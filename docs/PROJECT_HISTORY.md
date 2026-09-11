@@ -19,6 +19,67 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-10/11 — zgłoszenia właściciela A–G z gry przy stole (PR #113, arena/01a08d0e)
+
+Właściciel zgłosił sześć znalezisk z partii przy stole (A–F), a w trakcie
+domknął dwa kolejne (G — klątwa na siebie „powinna mieć −1000 scoringu",
+i kolejność celów przy G). Ta sama gałąź/PR co audyt PR #112 (ADR 0013/0020);
+każde znalezisko: przyczyna **zmierzona** w kodzie → test RED → fix u źródła →
+mutacje (L13) → osobny zielony commit. Plan i pomiary:
+`docs/plans/PLAN_2026-09-10c-zgloszenia-wlasciciela-a-f.md`.
+
+- **A** (`299c1b5`): klucz wariantu płatności bez rodzaju źródła → Forest
+  i Scorned Villager (oba `{G}`) to jeden „kształt", więc kreator many się nie
+  otwierał; rodzaj źródła w kluczu (`countPaymentVariants`).
+- **B1+B2** (`fe37168`): rozdział III Sagi doczepiał grant do SAGI i ginął
+  z jej poświęceniem, a poświęcenie następowało PRZED rozstrzygnięciem
+  rozdziału. Nowy rejestr `state.turnAbilityGrants` (wpis z LKI źródła,
+  CR 603.10) + `sacrificeFinishedSagas` jako akcja stanowa (CR 714.4, po
+  przebiegu triggerów) + `queueSagaChaptersForLore` (CR 714.2b — rozdział
+  odpala KAŻDY licznik lore, także proliferate).
+- **E1** (`a63a0dc`): skan triggerów w grobie nie wykluczał karty, która
+  właśnie umarła, ani współpoległych z tej samej partii SBA (ruling WotC
+  2025-04-04 dla Furious Forebear).
+- **E2+E3** (`e6d3a5b`): prompt decyzji BOTA („zapłacić {1}{W}?") trafiał do
+  głównego logu gracza i był zapisany surowym tekstem. Czysty predykat
+  `isBotDecisionPrompt` (klasa zdarzeń + decydent, bez nazw kart) przy OBU
+  pisarzach logu (L41) + `appendTextWithManaIcons` (jedno źródło ikon:
+  `manaSymbolsHtml`).
+- **F** (`baaba03`): klątwa na polu bitwy nie miała badge'a, bo `playerView`
+  w ogóle nie wysyłał `enchantPlayer`/`enchantedPlayerId` (sonda: oba
+  `undefined`) — fix w widoku (ADR 0017) + `cursedPlayerId` w `cardInfo`
+  + badge w `buildFace` i `buildStateOverlay` (L100).
+- **G** (`90dfc48`): cel-gracz nie jest permanentem, więc gałąź aury
+  w `cast_permanent` dawała `auraNoTargetPenalty` OBU wariantom (−45 i −45) —
+  klątwa na siebie nie była odróżniona, a bot klątw nie rzucał wcale;
+  `auraIsHostile` nie znała `damage_enchanted_player`. Teraz: na siebie −1000
+  (parametr `curseSelfTargetPenalty`), na wroga +40 (`curseEnemyBase`).
+- **G/4** (`19be457`): kreator celu klątwy wymieniał „Ty" jako pierwszy wiersz
+  (`auraCastsForPayment` w kolejności `state.players`) — partia 5001: greedy
+  wziął pierwszy wiersz i rzucił klątwę na siebie. Teraz przeciwnik pierwszy.
+- **C** (`da01e00`): Exploit wyceniany `skip 20` / `40 − (P·2+T)` — biblioteka
+  poza wyceną w ogóle (trigger Gurmag Drowner miele 3), ofiara tylko z P/T
+  (bot poświęcał Cloudbound Moogle zamiast tokena 3/3, bo 33 > 31), komenda
+  bez `sourceId`. Teraz: koszt millu z danych karty, bramki zapasu biblioteki,
+  cena ofiary z keywordami/zdolnościami i premią za token.
+- **D** (`a75cc5d`): kara za atak w gang blokerów istniała (−9), ale gałąź nie
+  znaczyła ataku jako JAŁOWEGO, więc premia wyścigu +20 ją przebijała (klasa
+  L3) — 3/1 atakowało w 4/4+4/5 przy 3 własnego życia. `futileAttackers += 1`
+  w gałęzi gangu; świadoma regeneracja golden-mastera (1 z 6 partii).
+
+Bramki na koniec: `npm run test:all` **5151/5151**, `npm test` **5141/5141**,
+build 61 modułów / 3486,9 kB, benchmark quick 84,7% (569/672) — A/B bez zmian,
+Żywy Tester detektory 0 we wszystkich partiach pomiarowych.
+
+Uwagi środowiskowe z tej sesji: `gh pr edit` pada na tym repo (GraphQL
+„Projects (classic) is being deprecated") — działa REST
+(`gh api -X PATCH repos/…/pulls/113 -F body=@plik`); commit bez pusha przepada
+między turami. **Zmierzone przy trzecim resecie workspace'u:** `git
+format-patch` poza repo (`~/patches/`) przepada razem z nim — przeżywają tylko
+pliki drzewa roboczego, więc odtwarza się commity z checkpointu drzewa
+(`git checkout <tag> -- <pliki>`) i dowodzi zgodności pustym `git diff <tag>
+HEAD` (tak wróciły commity zgłoszenia H: `8c9800d`, `97f5209`).
+
 ## Sesja 2026-09-10 — pętla jakości Żywym Testerem: Thunderstaff noop (PR #111, arena/01a08788)
 
 Po domknięciu znalezisk właściciela A–D (F-A..F-D, PR #111) sesja przeszła w
@@ -9619,3 +9680,59 @@ commit zielony.
   ≥1 na cel, suma=budżet), zamiast rozstrzelać 1/1/1.
 Bramki: npm test fast 5055/5055, test:all 5065/5065, build 61/3451,3 kB, próbka
 regresji bota 10/10. Plan 09-09d, handoff 2026-09-09c, opis PR #111.
+
+## 2026-09-10 — trzy poprawki CR (Fireball X, daybound/nightbound, ochrona w triggerach) — PR #112, arena/01a08b81
+
+Wpis uzupełniony ZWIĘŹLE z audytu (PR #112 został zamknięty bez wpisu tutaj,
+bez handoffu i bez odświeżenia README — to znalezisko F4 audytu; sesja
+arena/01a08d0e dopisuje brakujące domknięcie).
+
+Trzy poprawki reguł, wszystkie ze źródłami online (ADR 0030) i wszystkie
+dowiedzione mutacyjnie (L13):
+- **Fireball (CR 702.16b + rulingi WotC 2017-11-17)**: dzielnik obrażeń to
+  liczba celów ŻYJĄCYCH w chwili rozstrzygnięcia, nie wybranych przy rzucie
+  („The division involves only targets that are still legal as Fireball
+  resolves"); rzut z X=0 / bez celów rozstrzyga się, a nie fizzluje.
+- **Daybound/nightbound (CR 702.145d/g)**: „Any time a player controls a
+  permanent with daybound … it becomes day" — skan pola bitwy po wejściu
+  permanentu (`dayboundAnywhere ? 'day' : 'night'`), nie po kontrolerze.
+- **Ochrona w celach triggerów (CR 702.16b, DEBT: T)**: `protectedBlocked`
+  w `triggerTargetCandidates` — permanent z ochroną od jakości/koloru źródła
+  nie jest kandydatem na cel triggera (Spare from Evil + Inferno Titan).
+Plus zawężenie pauz po stronie bota (pauza ma mówić o ZAGRANIU bota, nie
+o rozstrzygającym się czarze człowieka — pomiar: 104 → 86 pauz na seedzie 1,
+wszystkie zdjęte wzorce to własne zagrania człowieka) i pole `cost` w widoku
+czaru (wyłącznie pokaz — ścieżka kosztów niezmieniona).
+
+Werdykt audytu (`docs/audits/AUDYT_PR112_2026-09-10.md`): **zmiany merytorycznie
+poprawne**, 8/8 fixów przypiętych mutacją, brak regresji wyceny bota, L48
+(oferta == walidacja) na ścieżce triggerów zachowana. Cztery znaleziska
+dokumentacyjno-strukturalne (F1–F4) naprawione w sesji następczej:
+F1 `3577dc4` (rulingi w snapshotcie Fireballa), F2 `e222ebb` (pięć kopii reguły
+celowania → jeden predykat `isTargetingBlockedByProtection`), F3 `f4de8b6`
+(strażnik dostarczenia informacji o zmianie strefy permanentu człowieka),
+F4 — ten wpis + README + handoff `HANDOFF_2026-09-10b.md`.
+
+## 2026-09-10 — audyt PR #112 i naprawa znalezisk F1–F4 (PR #113, arena/01a08d0e)
+
+Sesja „kontynuujemy projekt" w trybie ADR 0020/0021: PR otwarty przed kodem,
+audyt poprzedniego PR, inkrementalne commity.
+- **F1** — snapshot `docs/cards/scryfall-fireball.json` miał `rulings: null`,
+  choć kod cytuje cztery rulingi WotC; w słowniku ADR 0028 `null` znaczy „nikt
+  nie patrzył". Rulingi pobrane przez `fetch_page` i zapisane FUNKCJAMI
+  produkcyjnymi narzędzia; dodatkowo zmierzone, że para `jvc`/`214` ze
+  snapshotu NIE rozwiązuje się w Scryfall (HTTP 404), więc
+  `tools/fetch-card-rulings.mjs --only=fireball` nie mógł tej karty obsłużyć.
+- **F2** — reguła „protection blokuje celowanie" istniała w PIĘCIU ręcznych
+  kopiach (`validateTargets`, `legalTargetCandidates`, `castFireball`,
+  `legalFireballCasts`, `protectedBlocked`), z czego dwie Fireballa bez nogi
+  JAKOŚCI. Jeden predykat w `attachments.js` + strażnik źródła (L5): pięć
+  funkcji woła predykat i żadna nie czyta ochrony samodzielnie.
+- **F3** — asymetria pauz (bota wąskie / człowieka zawsze) bez strażnika po
+  stronie informacyjnej: test na 3 seedach pilnuje, że zmiana strefy permanentu
+  człowieka w turze bota zostaje pokazana w modalu przed nagłówkiem jego tury,
+  a przynajmniej jedna — opisana JAKO zmiana strefy.
+- **F4** — brak handoffu/wpisu/README po PR #112: uzupełnione.
+Pętla jakości (ADR 0021): build 61/3463,4 kB, Żywy Tester 3 świeże partie
+(20260910, 161803, 3141592) — DET0 i 0 niewycenionych ruchów bota; quick
+benchmark heuristic 84,7% (569/672), bez pełnego B0 (ADR 0018).

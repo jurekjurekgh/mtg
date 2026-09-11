@@ -1,6 +1,6 @@
 import { isActivatedManaAbility } from './mana-sources.js';
 import { event } from '../protocol/types.js';
-import { activatableAbilities, deathZoneFor, effectiveKeywords, effectivePower, effectiveToughness, tapObject } from './permanents.js';
+import { activatableAbilities, deathZoneFor, hasCreatureType, effectiveKeywords, effectivePower, effectiveToughness, tapObject } from './permanents.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -623,7 +623,7 @@ export function legalActivatedAbilities(state, playerId) {
           // Przepięcie na INNEGO stwora pozostaje pełnoprawną ofertą.
           // Batch 48: koszt equipu dla TEGO celu (tanszy wariant po podtypie).
           const equipForActive = Boolean(object.equipment.equipFor
-            && (target?.subtypes ?? []).includes(object.equipment.equipFor.subtype));
+            && hasCreatureType(target, object.equipment.equipFor.subtype, state));
           const equipForTarget = equipForActive
             ? object.equipment.equipFor.equip
             : (object.equipment.equip ?? 0);
@@ -1782,7 +1782,7 @@ function matchesCyclingQualifier(object, qualifier) {
   const types = qualifier?.types ?? [];
   const subtypes = qualifier?.subtypes ?? [];
   if (types.some((type) => (object.types ?? []).includes(type))) return true;
-  return subtypes.some((subtype) => (object.subtypes ?? []).includes(subtype));
+  return subtypes.some((subtype) => hasCreatureType(object, subtype));
 }
 
 function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
@@ -2011,7 +2011,7 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
   // komenda, ktora UI wlasnie zaproponowalo).
   const equipTarget = state.objects.get(targets?.[0]);
   const equipForActive = Boolean(object.equipment.equipFor
-    && (equipTarget?.subtypes ?? []).includes(object.equipment.equipFor.subtype));
+    && hasCreatureType(equipTarget, object.equipment.equipFor.subtype, state));
   const equipCost = equipForActive
     ? object.equipment.equipFor.equip
     : (object.equipment.equip ?? 0);

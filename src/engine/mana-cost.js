@@ -14,6 +14,9 @@
  */
 
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
+// CR 702.73a — rabat „następny czar [podtyp]" czyta typy stworów przez
+// wspólny predykat (changeling jest każdym typem stworów, także w ręce).
+import { hasCreatureType } from './permanents.js';
 
 export function parseManaCost(manaCostStr) {
   if (!manaCostStr) return { generic: 0, colored: [], hybrid: [], phyrexian: [] };
@@ -80,7 +83,7 @@ export function consumePendingSpellDiscount(state, object) {
   if (!state || !object?.controllerId || !(state.pendingSpellDiscounts ?? []).length) return;
   const idx = (state.pendingSpellDiscounts ?? []).findIndex((d) => {
     if (d.playerId !== object.controllerId) return false;
-    if (d.subtype != null && !(object.subtypes ?? []).includes(d.subtype)) return false;
+    if (d.subtype != null && !hasCreatureType(object, d.subtype)) return false;
     return (d.amount ?? 0) > 0;
   });
   if (idx === -1) return;
@@ -96,7 +99,7 @@ export function costReductionForSpell(state, object) {
   // przy udanym rzucie (consumePendingSpellDiscount), wygasa w cleanup.
   for (const discount of state.pendingSpellDiscounts ?? []) {
     if (discount.playerId !== object.controllerId) continue;
-    if (discount.subtype != null && !(object.subtypes ?? []).includes(discount.subtype)) continue;
+    if (discount.subtype != null && !hasCreatureType(object, discount.subtype)) continue;
     reduction += discount.amount ?? 0;
   }
   for (const candidate of state.objects.values()) {
@@ -166,7 +169,7 @@ export function conditionalCostReduction(state, object) {
     return artifacts * amount;
   }
   if (condition.controlsSubtype != null) {
-    const has = controlled().some((c) => (c.subtypes ?? []).includes(condition.controlsSubtype));
+    const has = controlled().some((c) => hasCreatureType(c, condition.controlsSubtype, state));
     return has ? amount : 0;
   }
   return 0;

@@ -673,6 +673,30 @@ function interchangeableKey(command, view) {
  *
  * @returns {Array<{command?: object, request?: object, first?: object, label?: string}>}
  */
+/** Wzór symbolu many ({W}, {1}, {U/R}, {W/P}) — ten sam, co w mana-icons.js. */
+const MANA_SYMBOL_PATTERN = /\{[A-Za-z0-9/]+\}/;
+
+/**
+ * Zgłoszenie właściciela E3 (2026-09-10): fragment TEKSTU wstawiany do wiersza
+ * logu/wpisu modala, z symbolami many `{1}{W}` zamienionymi na ikony.
+ *
+ * Jedno źródło (L100/3): mapowanie i escape robi `manaSymbolsHtml`
+ * (mana-icons.js) — ta sama funkcja, którą kreator many i kafle renderują
+ * jako koszt. Dane logu zostają czystym tekstem (`{1}{W}`) dla przebiegu tur
+ * AI — ikony są wyłącznie prezentacją, więc wpis bez symboli wchodzi zwykłym
+ * węzłem tekstu (zero zmian w DOM dla zdecydowanej większości wpisów).
+ */
+function appendTextWithManaIcons(parent, chunk) {
+  if (!chunk) return;
+  if (!MANA_SYMBOL_PATTERN.test(chunk)) {
+    parent.appendChild(document.createTextNode(chunk));
+    return;
+  }
+  const wrap = document.createElement('span');
+  wrap.innerHTML = manaSymbolsHtml(chunk);
+  parent.appendChild(wrap);
+}
+
 /**
  * M167/E2 (uwaga właściciela): wypełnia wiersz logu tekstem, owijając NAZWY
  * KART w klikalne <span class="log-card" data-card-id="…"> (pełnoekranowa
@@ -698,10 +722,10 @@ export function appendLogLineWithCardLinks(line, text, cardIdByName) {
       if (at >= 0 && (bestAt < 0 || at < bestAt)) { bestAt = at; bestName = name; }
     }
     if (bestName == null) {
-      line.appendChild(document.createTextNode(rest));
+      appendTextWithManaIcons(line, rest);
       break;
     }
-    if (bestAt > 0) line.appendChild(document.createTextNode(rest.slice(0, bestAt)));
+    if (bestAt > 0) appendTextWithManaIcons(line, rest.slice(0, bestAt));
     const cardSpan = document.createElement('span');
     cardSpan.className = 'log-card';
     cardSpan.textContent = bestName;
@@ -3464,6 +3488,12 @@ export function cardInfo(session, object, combat = null) {
     entersWithCounters: faceDown ? null : (details.entersWithCounters || object.entersWithCounters || null),
     attachedTo: object.attachedTo ?? null,
     hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
+    // Zgłoszenie właściciela F (2026-09-10): aura na GRACZU (CR 303.4
+    // „Enchant player", klątwy) nie ma gospodarza-permanentu, więc jedyną
+    // wskazówką „kogo to dotyczy" jest zaczarowany gracz. Pole publiczne
+    // (jak `attachedTo`) i JEDNO źródło etykiety dla obu warstw renderu
+    // (L100) — tooltip i nakładka kafla mówią to samo.
+    cursedPlayerId: object.enchantedPlayerId ?? null,
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty
     // („Aura: Moonlit Meditation", „Equipment: …"). Scan pola bitwy w widoku.
     attachments: object.zone === 'battlefield' && object.id
@@ -3564,8 +3594,14 @@ function buildCardVisual(parent, info, { size = '', zoom = false, skipLiveState 
   return visual;
 }
 
-/** Buduje syntetyczną „twarz\" karty (kolorowa ramka, koszt, typ, P/T). */
-function buildFace(parent, info, { size = '', skipLiveState = false, textless = false } = {}) {
+/**
+ * Buduje syntetyczną „twarz\" karty (kolorowa ramka, koszt, typ, P/T).
+ *
+ * Wyeksportowana jak `buildStateOverlay` (M89): badge na twarzy karty da się
+ * wtedy zmierzyć headless, bez JSDOM w głównej bramce (zgłoszenie F — badge
+ * klątwy jest w OBU warstwach i obie muszą mieć strażnika).
+ */
+export function buildFace(parent, info, { size = '', skipLiveState = false, textless = false } = {}) {
   const sizeClass = size === 'lg' ? ' lg' : size === 'sm' ? ' sm' : '';
   const face = div(parent, `face c-${colorKey(info.colors, info.kind)}${info.isToken ? ' token' : ''}${sizeClass}`);
   if (textless) {
@@ -3618,6 +3654,11 @@ function buildFace(parent, info, { size = '', skipLiveState = false, textless = 
     for (const att of info.attachments ?? []) {
       flags.push(att.kind === 'aura' ? `Aura: ${att.name}` : `Equipment: ${att.name}`);
     }
+    // Klątwa na graczu (CR 303.4): nazwij zaczarowanego, bo sama aura na
+    // karcie nie mówi, kogo dotyczy (zgłoszenie właściciela F).
+    if (info.cursedPlayerId) {
+      flags.push(`Klątwa: ${PLAYER_NAMES[info.cursedPlayerId] ?? info.cursedPlayerId}`);
+    }
     // A (2026-08-11): liczniki na karcie (np. „+1/+1 ×2", „oil ×3", „charge ×5").
     for (const [name, count] of Object.entries(info.counters ?? {})) {
       // M165 (korekta właściciela): najpierw ILOŚĆ, potem co — „2x +1/+1"
@@ -3662,7 +3703,9 @@ function tile(parent, info, opts) {
   if (opts.hover && opts.hover.start) {
     wrap.addEventListener('mouseenter', (e) => opts.hover.start(info, e));
     wrap.addEventListener('mouseleave', opts.hover.end);
-    if (opts.hover.cycle) wrap.addEventListener('wheel', (e) => opts.hover.cycle(info, e));
+    // Zgłoszenie H (2026-09-11): tor przełącza PPM, nie scroll — `wheel`
+    // zostaje przeglądarce (domyślne przewijanie strony).
+    if (opts.hover.cycle) wrap.addEventListener('contextmenu', (e) => opts.hover.cycle(info, e));
   }
   return wrap;
 }
@@ -3687,6 +3730,12 @@ export function buildStateOverlay(visual, info) {
     if (info.attachedAura || info.attachedEquipment) {
       const label = info.attachedAura ? 'aura' : 'wyposaża';
       flags.push(['att', info.hostName ? `${label} → ${info.hostName}` : label]);
+    }
+    // Klątwa (aura na graczu): ten sam związek co „aura → gospodarz", tylko
+    // gospodarzem jest GRACZ — bez tego badge'a klątwa na stole jest
+    // anonimowa (zgłoszenie właściciela F). Etykieta 1:1 z buildFace (L100).
+    if (info.cursedPlayerId) {
+      flags.push(['att', `Klątwa: ${PLAYER_NAMES[info.cursedPlayerId] ?? info.cursedPlayerId}`]);
     }
     // Nadal pokazujemy załączniki GOSPODARZA (info.attachments) niżej.
     // M100/E12: kafel zakrytego permanentu niesie znacznik mechaniki (własny
@@ -3837,8 +3886,9 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCyc
   const art = artOf(info);
   const hasLocal = art.artId != null && art.artId !== '';
   // M257 r5/A: podgląd o torze STAŁYM (miniaturki w „Rozgrywce") nie cykluje
-  // scrollem — podpowiedź „scroll zmienia tor" byłaby kłamliwa.
-  const hint = hasLocal && showCycleHint ? ' · scroll zmienia tor' : '';
+  // wcale — podpowiedź o przełączaniu toru byłaby kłamliwa.
+  // Zgłoszenie H (2026-09-11): tor przełącza PPM, nie scroll.
+  const hint = hasLocal && showCycleHint ? ' · PPM zmienia tor' : '';
   div(host, 'hover-mode', `${hoverModeLabel(hoverMode)}${hint}`);
   return host;
 }
@@ -3846,7 +3896,7 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCyc
 /**
  * M257 r5/A (uwaga właściciela): hover scryfall na miniaturkach w modalu
  * „Rozgrywka" — ten sam podgląd co na stole (powiększona karta ze Scryfall),
- * ale tor STAŁY (bez trybów FOT i KON i bez cyklowania scrollem).
+ * ale tor STAŁY (bez trybów FOT i KON i bez cyklowania PPM).
  * `null` na dotyku — na tablecie hover nie istnieje (jak na stole, M7c);
  * tam miniaturkę otwiera tap (pełny ekran).
  */
@@ -3854,7 +3904,7 @@ export function createScryfallHover(els) {
   if (TOUCH_DEVICE || !els?.hoverPreview) return null;
   return {
     start: (info, e) => showHoverPreviewAt(els, info, e, 'scryfall',
-      // M258/A2 (audyt PR #88): tor STAŁY nie cykluje scrollem — bez mylącej
+      // M258/A2 (audyt PR #88): tor STAŁY nie cykluje — bez mylącej
       // podpowiedzi. Opcja showCycleHint istniała od r5/A, ale nikt jej nie
       // przekazał (martwa opcja, L67) — na kartach z artId miniaturka w
       // „Rozgrywce" obiecywała „scroll zmienia tor", którego nie było.
@@ -4039,7 +4089,17 @@ export function renderBotMoves(host, moves, session, { onCardClick = null, hover
     // Tekst ruchu pod miniaturką (gdy cardId jest) lub zamiast niej
     // (wpisy bez karty — np. „Rozstrzygnięcie walki"). Pusty `bot-move-line`
     // daje klikalną podkładkę pod miniaturką (wypełnia flexbox kolumny).
-    div(row, `bot-move-line${entry.cardId ? ' key' : ''}`, `\n${entry.text}`);
+    // Zgłoszenie właściciela E3: koszt w wpisie modala też jest ikonami —
+    // prompt decyzji bota (np. „zapłacić {1}{W}?") mieszka właśnie tutaj.
+    // Wpisy BEZ symboli idą dotychczasową drogą (`div` z textContent) — zero
+    // zmian w DOM dla zdecydowanej większości wpisów (L24: nie psujemy tego,
+    // co działa).
+    const botLineText = `\n${entry.text ?? ''}`;
+    if (!MANA_SYMBOL_PATTERN.test(botLineText)) {
+      div(row, `bot-move-line${entry.cardId ? ' key' : ''}`, botLineText);
+    } else {
+      appendTextWithManaIcons(div(row, `bot-move-line${entry.cardId ? ' key' : ''}`, ''), botLineText);
+    }
   }
   return host;
 }
@@ -4137,8 +4197,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'handEnemy', 'actions', 'log']) clear(els[key]);
 
   // Hover (desktop): powiększona karta pod kursorem — ta sama ilustracja co na
-  // kaflu, w rozmiarze `large`, a przy jej braku syntetyczna twarz. Scroll nad
-  // kartą przełącza tor podglądu (scryfall → FOT → KON), jak w legacy HTML.
+  // kaflu, w rozmiarze `large`, a przy jej braku syntetyczna twarz. Tor
+  // podglądu (scryfall → FOT → KON) przełącza PPM nad kartą (zgłoszenie H,
+  // 2026-09-11; wcześniej scroll jak w legacy HTML).
   // Na dotyku (iPad/iPhone) hover pozostaje wyłączony — tapnięcie otwiera
   // wyłącznie menu kontekstowe (M7c).
   let currentHoverMode = hoverMode;
@@ -4154,11 +4215,16 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
     cycle: (info, e) => {
       if (!els.hoverPreview) return;
+      // Zgłoszenie H (2026-09-11): wyzwalaczem jest `contextmenu` (PPM), więc
+      // preventDefault tłumi menu kontekstowe przeglądarki — scrolla NIE
+      // dotykamy, przewijanie strony zostaje domyślne. RMB nie ma kierunku
+      // „góra/dół", a cykl torów się zapętla, więc krok jest zawsze +1
+      // (scryfall → FOT → KON → scryfall — ta sama kolejność co scroll w dół).
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
       // M146: tryby FOT/KON przełączają się globalnie niezależnie od karty;
       // dla kart bez artId hover w tych trybach jest po prostu pusty
       // (brak obrazka — patrz hoverImageSources).
-      currentHoverMode = nextHoverMode(currentHoverMode, (e && e.deltaY < 0) ? -1 : 1, HOVER_MODES);
+      currentHoverMode = nextHoverMode(currentHoverMode, 1, HOVER_MODES);
       if (onHoverModeChange) onHoverModeChange(currentHoverMode);
       hover.start(info, e);
     },
@@ -4430,7 +4496,9 @@ export function attachSpecialCardHover(card, hover, info) {
   if (!card || !hover || typeof hover.start !== 'function') return false;
   card.addEventListener('mouseenter', (e) => hover.start(info, e));
   if (hover.end) card.addEventListener('mouseleave', hover.end);
-  if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(info, e));
+  // Zgłoszenie H (2026-09-11): PPM, nie scroll — ten sam wyzwalacz co kafle
+  // (jedno miejsce reguły w `cycle`, L41).
+  if (hover.cycle) card.addEventListener('contextmenu', (e) => hover.cycle(info, e));
   // D (zgłoszenie właściciela 2026-09-10): mouseenter nie odzywa się, gdy
   // kafl zostaje PRZERYsowany pod kursorem (renderTableView podmienia
   // element — nie ma „wejścia", jest już w środku). Panele specjalne

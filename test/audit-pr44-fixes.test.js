@@ -106,10 +106,18 @@ test('B1: niezablokowany atak człowieka — log i modal mają „zadaje … obr
   assert.match(logText, /zadaje .+ obraż/, `log bez obrażeń walki:\n${logText}`);
   const modalText = session.botMoves.map((m) => m.text).join('\n');
   assert.match(modalText, /zadaje .+ obraż/, `modal bez obrażeń walki:\n${modalText}`);
-  assert.ok(
-    !session.botMoves.some((m) => m.type === 'discard_choice_required' || m.type.startsWith('resolve_')),
-    'decyzje człowieka nie trafiają do botMoves',
+  // Zgłoszenie właściciela E2 (2026-09-10) + konwencja M82 (session-autopass,
+  // `humanDecision`): do botMoves nie trafiają decyzje CZŁOWIEKA. Decyzje BOTA
+  // — tu wybór odrzucenia przy limicie ręki („Nieprzyjaciel wybiera…") —
+  // należą tam z definicji: główny log gracza ich nie przyjmuje
+  // (`isBotDecisionPrompt`), a informacja nie może zniknąć. Dawniej asercja
+  // była typowa (`discard_choice_required`) i łapała też decyzje bota.
+  const ludzkieDecyzje = session.botMoves.filter(
+    (m) => (m.type === 'discard_choice_required' || m.type.startsWith('resolve_'))
+      && /\bTy\b/.test(m.text ?? ''),
   );
+  assert.deepEqual(ludzkieDecyzje.map((m) => m.type), [],
+    'decyzje człowieka nie trafiają do botMoves');
 });
 
 test('B2: openCardFullscreen / ByCardId nie chowają choice-request', () => {

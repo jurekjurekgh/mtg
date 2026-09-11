@@ -1,5 +1,5 @@
 import { chooseDestructionReplacement } from './destruction.js';
-import { combatDamageByToughness, effectiveSubtypes, isUntapStepLocked } from './permanents.js';
+import { combatDamageByToughness, effectiveSubtypes, hasCreatureType, isUntapStepLocked } from './permanents.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
@@ -25,7 +25,7 @@ import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, sus
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
-import { runStateBasedActions, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
+import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities } from './attachments.js';
@@ -444,9 +444,13 @@ export function createGameState({ seed, players }) {
     // Landfall (Mysteries of the Deep): ile lądów weszło pod kontrolę gracza
     // w tej turze (klucz = playerId). Zerowany przy zmianie tury.
     landEnteredThisTurn: {},
-    // Bloodthirst (Gorehorn Minotaurs): czy gracz zadał obrażenia przeciwnikowi
-    // w tej turze. Klucz = playerId dealera.
-    dealtDamageToOpponentThisTurn: {},
+    // Bloodthirst (CR 702.54a — Gorehorn Minotaurs): który gracz DOSTAŁ
+    // obrażenia w tej turze. Klucz = playerId ODBIORCY (nie źródła!). Zerowany
+    // przy zmianie tury. Warunek wejścia brzmi „if an OPPONENT was dealt damage
+    // this turn" — podmiotem jest odbiorca, a kontroler źródła nie ma
+    // znaczenia (M12 FAQ 2011-05-25: „It doesn't matter who controlled the
+    // source of the damage dealt to your opponent").
+    damageTakenByPlayerThisTurn: {},
     // Speed (DFT „Start your engines!", Batch 24 — Glitch Ghost Surveyor):
     // speed gracza (0..4); speedIncreasedThisTurn pilnuje „increases once on
     // each of your turns" (raz na turę aktywnego gracza).
@@ -461,6 +465,16 @@ export function createGameState({ seed, players }) {
     untilEndOfTurnBuffs: [],
     // M109 (Spare from Evil): ochrona przed JAKOŚCIĄ do końca tury.
     untilEndOfTurnProtections: [],
+    // Zgłoszenie właściciela B1 (2026-09-10): opóźnione zdolności triggerowane
+    // „do końca tury", których ŹRÓDŁO może zniknąć z pola bitwy (Saga
+    // poświęcona po ostatnim rozdziale — CR 704.5s; ruling WotC 2025-04-04:
+    // zdolność rozdziału III „may trigger multiple times during the turn,
+    // even though Rediscover the Way will likely no longer be on the
+    // battlefield"). Grant trzymany w obiekcie (abilityGrants) ginął razem
+    // z poświęconą Sagą (CR 400.7 — w nowej strefie to nowy obiekt), a skan
+    // triggerów czyta wyłącznie pole bitwy. Wpisy:
+    // { cardId, sourceId, controllerId, armedOnTurn, trigger, effect }.
+    turnAbilityGrants: [],
     moonlitUsedThisTurn: {},
     // „You may have this enter as a copy" — decyzja gracza (Jwari).
     pendingEnterAsCopy: null,
@@ -1367,13 +1381,17 @@ function accepted(state, cmd, result) {
         [ctrl]: (state.landEnteredThisTurn?.[ctrl] ?? 0) + 1,
       };
     }
-    // Bloodthirst (CR 702.80 — „if an opponent was dealt damage this turn"):
-    // zapobiegnięte obrażenia nie są zadane (CR 119.3) — event z amount 0 nie
-    // liczy się do obrażeń zadanych przeciwnikowi.
+    // Bloodthirst (CR 702.54a — „If an opponent was dealt damage this turn"):
+    // warunkiem jest ODBIORCA obrażeń, więc znacznik stawiamy per gracz,
+    // który je dostał. Kontroler źródła nie ma znaczenia (M12 FAQ 2011-05-25
+    // — także samouszkodzenie przeciwnika się liczy); jego odczyt był zresztą
+    // zawodny: po rozstrzygnięciu czaru obiekt źródła znika ze `state.objects`,
+    // więc przy zwykłym Shocku w przeciwnika znacznik nie powstawał wcale.
+    // Zapobieżone obrażenia nie są zadane (CR 119.3) — obie ścieżki obrażeń
+    // (combat i niecombat) niosą w evencie kwotę FAKTYCZNIE zadaną, więc
+    // amount 0 nie liczy się.
     if (e.type === 'damage_dealt' && e.amount > 0 && state.players.some((pl) => pl.id === e.target)) {
-      const src = state.objects.get(e.source);
-      const dealer = src?.controllerId;
-      if (dealer && dealer !== e.target) state.dealtDamageToOpponentThisTurn[dealer] = true;
+      state.damageTakenByPlayerThisTurn = { ...(state.damageTakenByPlayerThisTurn ?? {}), [e.target]: true };
     }
   }
   // Ślepe decyzje gasimy także PO triggerach — kandydat mógł zniknąć od
@@ -1410,6 +1428,19 @@ function accepted(state, cmd, result) {
       state.zones[token.zone] = (state.zones[token.zone] ?? []).filter((id) => id !== token.id);
       state.objects.delete(token.id);
     }
+  }
+  // Zgłoszenie właściciela B2 (2026-09-10), CR 714.4 / 704.5s: poświęcenie
+  // Sagi, której rozdział zszedł ze stosu. PO triggerach (jak cleanup tokenów
+  // z CR 704.5d powyżej), bo rozdział dołożony właśnie licznikiem lore
+  // (proliferate — CR 701.27 → 714.2b) musi najpierw trafić na stos: CR 704.3
+  // powtarza akcje stanowe dopiero po włożeniu triggerów na stos.
+  const sagaEvents = sacrificeFinishedSagas(state);
+  if (sagaEvents.length > 0) {
+    result.events = [...result.events, ...sagaEvents];
+    // Poświęcenie to śmierć permanenta (Shiva to Enchantment Creature) —
+    // triggery śmierci muszą zobaczyć to zdarzenie w tym samym przebiegu.
+    const sagaTriggerEvents = processTriggers(state, sagaEvents);
+    if (sagaTriggerEvents.length > 0) result.events = [...result.events, ...sagaTriggerEvents];
   }
   // Inwariant planowania decyzji: gdy po komendzie czeka blokująca decyzja,
   // priorytet należy do JEJ decydenta (pierwszej w porządku bramek execute).
@@ -4973,7 +5004,7 @@ export function execute(state, input) {
           state.descendedThisTurn = {};
           state.creatureDiedThisTurn = false;
           state.landEnteredThisTurn = {};
-          state.dealtDamageToOpponentThisTurn = {};
+          state.damageTakenByPlayerThisTurn = {};
           state.speedIncreasedThisTurn = {};
           state.moonlitUsedThisTurn = {};
           // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
@@ -5737,6 +5768,14 @@ export function playerView(state, playerId) {
         if (object.bestow) entry.bestow = object.bestow;
         if (object.aura) entry.aura = object.aura;
         if (object.equipment) entry.equipment = object.equipment;
+        // Aura na GRACZU (CR 303.4 „Enchant player" — klątwy): nie ma
+        // gospodarza-permanentu, więc jedyną wskazówką „kogo to dotyczy" jest
+        // zaczarowany gracz. To informacja JAWNA (aura leży na stole, jej cel
+        // jest częścią stanu partii — nic z FoW), a bez niej UI nie ma z czego
+        // zbudować badge'a (zgłoszenie właściciela F, ADR 0017: skutek
+        // widoczny w grze musi być widoczny w widoku).
+        if (object.enchantPlayer) entry.enchantPlayer = true;
+        if (object.enchantedPlayerId) entry.enchantedPlayerId = object.enchantedPlayerId;
         // Morph/megamorph (face-down): koszt obrotu twarzą do góry jest potrzebny
         // do etykiety akcji „Obróć twarzą do góry" (audyt M83: „(morph )" puste).
         // Kontroler zna swoją kartę; przeciwnik widzi 2/2 bez tożsamości (FoW) —
@@ -6724,9 +6763,14 @@ export function playerView(state, playerId) {
     for (const targetId of pending.candidateIds) {
       const candidate = state.objects.get(targetId);
       if (!candidate || candidate.zone !== 'battlefield' || candidate.kind !== 'creature') continue;
-      legalCommands.push(command('resolve_exploit_choice', playerId, { targetId }));
+      // C (zgłoszenie właściciela 2026-09-10): `sourceId` — źródło exploita to
+      // jawny permanent na polu bitwy, a bez niego decydujący nie wie, CO robi
+      // trigger exploita (Gurmag Drowner miele 3 karty, Silumgar Butcher nie
+      // miele nic), więc nie może ocenić ryzyka deck-outu (ADR 0017: to, co
+      // potrzebne do decyzji, musi być w widoku).
+      legalCommands.push(command('resolve_exploit_choice', playerId, { targetId, sourceId: pending.sourceId }));
     }
-    legalCommands.push(command('resolve_exploit_choice', playerId, { skip: true }));
+    legalCommands.push(command('resolve_exploit_choice', playerId, { skip: true, sourceId: pending.sourceId }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeRevealExile) {
     // M69 (Dreams of Steel and Oil): najpierw wybór z ręki, potem z grobu.
     // Wybór jest OBOWIĄZKOWY („You choose an artifact or creature card from
@@ -7092,7 +7136,7 @@ export function playerView(state, playerId) {
       // („you may cast Dinosaur spells as though they had flash"), nie tylko
       // z wydrukowanego keywordu. Zbior podtypow trzymamy w stanie tury.
       const grantedFlash = (state.subtypeFlashThisTurn ?? []).some((grant) => grant.controllerId === playerId
-        && (object.subtypes ?? []).includes(grant.subtype));
+        && hasCreatureType(object, grant.subtype, state));
       if (!(object.keywords ?? []).includes('flash') && !grantedFlash) continue;
       if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
       if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;

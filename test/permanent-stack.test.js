@@ -210,9 +210,10 @@ test('liczniki ETB i bloodthirst rozstrzygają się przy WEJŚCIU, nie przy rzuc
   assert.ok(servant);
   assert.equal((servant.counters ?? {})['+1/+1'], 1);
 
-  // Bloodthirst (Gorehorn Minotaurs {2}{R}{R}): przeciwnik obrażony w tej turze.
+  // Bloodthirst (Gorehorn Minotaurs {2}{R}{R}): PRZECIWNIK (p2) oberwał w tej
+  // turze — CR 702.54a czyta odbiorcę obrażeń (wyzwanie 1/5, 2026-09-11).
   const state2 = game();
-  state2.dealtDamageToOpponentThisTurn = { p1: true };
+  state2.damageTakenByPlayerThisTurn = { p2: true };
   giveMana(state2, 'p1', 4, ['R']);
   addRealCard(state2, 'gore', 'gorehorn-minotaurs', 'p1', 'hand');
   const cast2 = execute(state2, { type: 'cast_permanent', playerId: 'p1', objectId: 'gore' });

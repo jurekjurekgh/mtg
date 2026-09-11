@@ -5,8 +5,10 @@
   "type_line": "Sorcery",
   "oracle_text": "This spell costs {1} more to cast for each target beyond the first.\nFireball deals X damage divided evenly, rounded down, among any number of targets.",
   "mana_cost": "{X}{R}",
-  "cmc": 1.0,
-  "colors": ["R"],
+  "cmc": 1,
+  "colors": [
+    "R"
+  ],
   "keywords": [],
   "set": "jvc",
   "set_name": "Jumpstart 2025",
@@ -14,5 +16,29 @@
   "rarity": "uncommon",
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/d/f/df45a43e-a5b7-4fd4-873b-7b3c021be198.jpg?1783922739"
-  }
+  },
+  "rulings": [
+    {
+      "date": "2017-11-17",
+      "source": "wotc",
+      "comment": "For example, if X is 5 and you choose three target creatures, Fireball has a total cost of {7}{R} (even though its mana cost is just {5}{R} and its mana value is 6). If those creatures are all still legal targets as Fireball resolves, it deals 1 damage to each of them."
+    },
+    {
+      "date": "2017-11-17",
+      "source": "wotc",
+      "comment": "You may cast Fireball with zero targets, regardless of the value chosen for X. If you do so, it will not be a targeted spell, and no damage will actually be dealt when it resolves."
+    },
+    {
+      "date": "2017-11-17",
+      "source": "wotc",
+      "comment": "Fireball's damage is divided as Fireball resolves, not as it's cast, because there are no choices involved. The division involves only targets that are still legal as Fireball resolves."
+    },
+    {
+      "date": "2017-11-17",
+      "source": "wotc",
+      "comment": "You can target more than X creatures. However, if the number of legal targets at the time Fireball resolves is greater than X, none of them will be dealt any damage."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/df45a43e-a5b7-4fd4-873b-7b3c021be198/rulings",
+  "rulingsPobrano": "2026-09-10"
 }

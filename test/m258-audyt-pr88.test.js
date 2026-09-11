@@ -145,8 +145,8 @@ test('A2a: renderHoverPreview domyślnie (stół) pokazuje podpowiedź o scrollu
     renderHoverPreview(host, ART_INFO, 'scryfall');
     const modeLine = host.find((n) => String(n.className).includes('hover-mode'));
     assert.ok(modeLine, 'linia toru wyrenderowana');
-    assert.match(modeLine.textContent, /scroll zmienia tor/,
-      'domyślny hover (stół) cykluje scrollem — hint jest prawdziwy');
+    assert.match(modeLine.textContent, /PPM zmienia tor/,
+      'domyślny hover (stół) cykluje prawym przyciskiem myszy — hint jest prawdziwy');
   });
 });
 
@@ -155,7 +155,7 @@ test('A2b: renderHoverPreview z showCycleHint: false — tor stały bez podpowie
     renderHoverPreview(host, ART_INFO, 'scryfall', { showCycleHint: false });
     const modeLine = host.find((n) => String(n.className).includes('hover-mode'));
     assert.ok(modeLine, 'linia toru wyrenderowana');
-    assert.doesNotMatch(modeLine.textContent, /scroll zmienia tor/,
+    assert.doesNotMatch(modeLine.textContent, /zmienia tor/,
       'tor stały nie cykluje — podpowiedź byłaby kłamliwa');
   });
 });
@@ -167,7 +167,7 @@ test('A2c (okablowanie): createScryfallHover (miniaturki „Rozgrywka”) NIE po
     hover.start(ART_INFO, { clientX: 10, clientY: 20 });
     const modeLine = host.find((n) => String(n.className).includes('hover-mode'));
     assert.ok(modeLine, 'podgląd wyrenderowany przez start()');
-    assert.doesNotMatch(modeLine.textContent, /scroll zmienia tor/,
-      'M258/A2: okablowanie stałego toru nie może obiecywać cyklowania scrollem');
+    assert.doesNotMatch(modeLine.textContent, /zmienia tor/,
+      'M258/A2: okablowanie stałego toru nie może obiecywać cyklowania');
   });
 });

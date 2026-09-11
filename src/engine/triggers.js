@@ -1,5 +1,5 @@
 import { holdReplacementResolution } from './destruction.js';
-import { isProtectedFromSource, effectiveProtectionFromColors, effectiveColors } from './attachments.js';
+import { isTargetingBlockedByProtection } from './attachments.js';
 import { event } from '../protocol/types.js';
 import { singleTargetOfStackEntry } from './objects.js';
 import {
@@ -311,16 +311,11 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   // ZDOLNOŚCI TRIGGEROWANYCH i niezależnie od kontrolera (inaczej niż
   // hexproof — ochrona blokuje też własne źródła). Źródło = obiekt-źródło
   // triggera (LKI, gdy go brak, nie filtruje — jakości nieznane).
-  const protectedBlocked = (object) => {
-    if (!object || !sourceObject) return false;
-    // Jakość (deskryptor: rodzaj/podtyp/kolor/multicolor) + klasyczna ochrona
-    // od koloru (protectionFromColors) — oba źródła ochrony blokują celowanie
-    // (CR 702.16b).
-    if (isProtectedFromSource(state, object, sourceObject)) return true;
-    const protColors = effectiveProtectionFromColors(state, object);
-    if (protColors.length === 0) return false;
-    return effectiveColors(sourceObject).some((c) => protColors.includes(c));
-  };
+  const protectedBlocked = (object) => (sourceObject
+    // F2 (audyt PR #112): ta sama reguła celowania co w spells.js — jeden
+    // predykat zamiast kopii (L41/L107/L140). Jakości + drukowane kolory.
+    ? isTargetingBlockedByProtection(state, object, sourceObject)
+    : false);
   const isArtifactOrEnchantment = (object) => (object.types ?? []).includes('Artifact')
     || (object.types ?? []).includes('Enchantment')
     || object.kind === 'artifact'
@@ -651,6 +646,31 @@ function requiresCounter(ability, counterName) {
 }
 
 /**
+ * CR 714.2b — „{rN}—[Effect]" znaczy „When one or more lore counters are put
+ * onto this Saga, if the number of lore counters on it was less than N and
+ * became at least N, [effect]."
+ *
+ * Jedno miejsce wyliczające przekroczone progi (L41: kopie się rozjeżdżają).
+ * Zgłoszenie właściciela B2 (2026-09-10): poświęcenie Sagi jest AKCJĄ
+ * STANOWĄ (CR 714.4), więc od tej pory liczy się KAŻDA droga dołożenia
+ * licznika lore — proliferate (CR 701.27) też. Wcześniej rozdziały
+ * kolejkowały tylko wejście i akcja turowa, więc Saga dobita proliferatem do
+ * ostatniego progu była poświęcana bez rozstrzygnięcia rozdziału.
+ */
+function queueSagaChaptersForLore(state, sagaObject, previousTotal, newTotal, events) {
+  if (!sagaObject?.saga) return 0;
+  const chapters = sagaObject.saga.chapters ?? [];
+  let queued = 0;
+  for (let n = 1; n <= chapters.length; n += 1) {
+    // Próg przekroczony TYM dołożeniem: było < N, jest >= N (714.2b).
+    if (previousTotal >= n || newTotal < n) continue;
+    queueSagaChapter(state, sagaObject, n, events);
+    queued += 1;
+  }
+  return queued;
+}
+
+/**
  * Kolejkuje rozdział Sagi (CR 714.3) — Temat 2 dla Sag: rozdziały z
  * `requiresTarget` na którymkolwiek efekcie (Mesmerize Shiva I/II) wymagają
  * wyboru celu przez kontrolera Sagi. Kolejka przebiega tak, jak inne
@@ -763,26 +783,17 @@ function fireSagaChapter(state, sagaObject, chapterNumber, events, chapterTarget
   // jako strona przednia po Cold Snap) odpala NORMALNY skan processTriggers
   // (zdarzenie object_moved → battlefield) — pętla zagnieżdżona poniżej
   // (usunięta) odpalała je DRUGI raz (podwójne decyzje celu ETB od T6).
-  if (chapterNumber >= chapters.length) {
-    const current = state.objects.get(sagaObject.id);
-    if (current && current.zone === 'battlefield' && current.saga) {
-      // M272 (błąd #17, CR 704.5s + 122.1e): po ostatnim rozdziale kontroler
-      // POŚWIĘCA Sagę — a poświęcenie to śmierć permanenta, więc obowiązuje
-      // zastąpienie strefy (licznik finality / „exile it instead"). M269
-      // (błąd #5) sprowadził cztery ścieżki poświęcenia do `deathZoneFor`,
-      // ale ta — jedyna poza game-state/effects/spells — została na sztywnym
-      // grobie: Saga z licznikiem finality dawała się odzyskać z cmentarza.
-      const toZone = deathZoneFor(state, current);
-      const graveId = `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, current.id, toZone, graveId);
-      const sacrificed = event('permanent_sacrificed', {
-        fromId: current.id, objectId: graveId, playerId: current.controllerId,
-        cardId: moved.cardId, saga: true, toZone,
-      });
-      state.events.push(sacrificed);
-      events.push(sacrificed);
-    }
-  }
+  // Zgłoszenie właściciela B2 (2026-09-10): poświęcenie Sagi po ostatnim
+  // rozdziale to AKCJA STANOWA (CR 714.4, na liście SBA jako 704.5s) —
+  // mtg.wiki/Saga: „the Saga's
+  // controller sacrifices it as soon as its chapter ability has left the
+  // stack, most likely by resolving or being countered. This state-based
+  // action doesn't use the stack." Wcześniej siedziało tutaj, w środku
+  // rozstrzygania rozdziału, więc `permanent_sacrificed` lądowało w logu
+  // PRZED `trigger_resolved` („Rediscover the Way zostaje poświęcony" →
+  // „…trigger się rozstrzyga (rozdział 3)"). Teraz robi to
+  // `sacrificeFinishedSagas` (state-based.js, wołana z `execute` PO przebiegu
+  // triggerów) z bramką „zdolność rozdziału zeszła ze stosu".
 }
 
 /**
@@ -2055,6 +2066,16 @@ function processTriggersScan(state, recentEvents) {
       for (const source of state.objects.values()) {
         if (source.zone !== 'graveyard') continue;
         if (died?.kind !== 'creature' || died?.controllerId !== source.controllerId) continue;
+        // Zgłoszenie właściciela E1 (2026-09-10), CR 603.6c + ruling WotC
+        // 2025-04-04 („If Furious Forebear dies at the same time as one or
+        // more creatures you control, its ability won't trigger"): warunkiem
+        // triggera jest pobyt karty W GROBIE **w chwili** śmierci stwora.
+        // Karta, która właśnie umarła, dopiero TAM JEDZIE — zdolności
+        // leaves-the-battlefield patrzą wstecz na stół, nie do przodu do
+        // grobu. To samo dotyczy współpoległych z tej samej partii SBA
+        // (walka, masowe -X/-X): w chwili zdarzenia jeszcze nie leżeli.
+        if (source.id === died.id) continue;
+        if (simultaneousFellows.some((fellow) => fellow?.id === source.id)) continue;
         for (const ability of effectiveAbilities(source)) {
           if (ability?.trigger?.event === 'other_creature_you_control_dies') {
             tryFire(state, ability, source, [], events, { diedCardId: died.cardId });
@@ -2575,7 +2596,7 @@ function processTriggersScan(state, recentEvents) {
       // Shiva I/II) kolejkuja decyzję CELU zamiast iść od razu na stos.
       if (entered.saga) {
         addCounter(state, entered.id, 'lore', 1);
-        queueSagaChapter(state, state.objects.get(entered.id) ?? entered, 1, events);
+        queueSagaChaptersForLore(state, state.objects.get(entered.id) ?? entered, 0, 1, events);
       }
       // (Veiled Ascension „face-down enter with flying counter" realizowane
       // w samym efekcie cloak — patrz effects.js, generyczna zdolność
@@ -2704,6 +2725,28 @@ function processTriggersScan(state, recentEvents) {
             tryFire(state, ability, source, [], events, ev);
           }
         }
+      }
+      // Zgłoszenie właściciela B1 (2026-09-10): opóźnione zdolności „do końca
+      // tury" z rejestru stanowego (rozdział III Sagi). Ich źródło mogło już
+      // opuścić pole bitwy — Saga jest poświęcana po ostatnim rozdziale
+      // (CR 714.4), a ruling WotC 2025-04-04 wprost mówi, że zdolność
+      // rozdziału III „may trigger multiple times during the turn, even
+      // though Rediscover the Way will likely no longer be on the
+      // battlefield" — więc pętla po polu bitwy wyżej ich nie widzi.
+      for (const grant of state.turnAbilityGrants ?? []) {
+        if (grant.controllerId !== ev.playerId) continue;
+        if (grant.trigger?.event !== 'you_cast_noncreature_spell') continue;
+        const grantIsNoncreatureCast = ev.type !== 'permanent_cast' || ev.object?.kind !== 'creature';
+        if (!grantIsNoncreatureCast) continue;
+        // Źródło: żywy obiekt (jeśli jeszcze istnieje) albo LKI z chwili
+        // uzbrojenia (CR 603.10) — Saga zwykle jest już w grobie pod nowym id.
+        const grantSource = state.objects.get(grant.sourceId) ?? grant.sourceLki
+          ?? {
+            id: grant.sourceId, cardId: grant.cardId,
+            controllerId: grant.controllerId, zone: 'battlefield',
+          };
+        tryFire(state, { type: 'triggered', trigger: grant.trigger, effect: grant.effect },
+          grantSource, [], events, { manaSpent: ev.manaSpent ?? 0 });
       }
       // Spectral Prison: „When enchanted creature becomes the target of a
       // spell, sacrifice this Aura.\" Aury załączone do stwora, na które celuje
@@ -3118,6 +3161,19 @@ function processTriggersScan(state, recentEvents) {
         }));
       }
     }
+    // CR 714.2b: licznik lore dołożony DOWOLNĄ drogą (proliferate — CR 701.27,
+    // efekt „put a lore counter") triggeruje przekroczone rozdziały. Zdarzenie
+    // `counter_added` jest tu widoczne, bo pochodzi z ciała komendy
+    // (`state.events.slice(before)` w execute); liczniki z wejścia i z akcji
+    // turowej są dokładane WNĘTRZEM tego skanu, więc tam helper wołamy wprost
+    // (bez podwójnego odpalenia).
+    if (ev.type === 'counter_added' && ev.counter === 'lore') {
+      const loreSaga = state.objects.get(ev.objectId);
+      if (loreSaga?.zone === 'battlefield' && loreSaga.saga) {
+        const newTotal = Number.isInteger(ev.total) ? ev.total : (loreSaga.counters?.lore ?? 0);
+        queueSagaChaptersForLore(state, loreSaga, newTotal - (ev.amount ?? 1), newTotal, events);
+      }
+    }
     // Po kroku dobierania (CR 714.3b: „after your draw step") każda Saga
     // AKTYWNEGO gracza dostaje licznik lore i odpala kolejny rozdział.
     // Temat 2 dla Sag: rozdziały z `requiresTarget` kolejkuja decyzję CELU
@@ -3125,9 +3181,10 @@ function processTriggersScan(state, recentEvents) {
     if (ev.type === 'step_advanced' && ev.step === 'main1' && ev.phase === 'precombat_main') {
       for (const object of [...state.objects.values()]) {
         if (object.zone !== 'battlefield' || object.controllerId !== state.turn.activePlayerId || !object.saga) continue;
+        const loreBefore = object.counters?.lore ?? 0;
         addCounter(state, object.id, 'lore', 1);
         const current = state.objects.get(object.id) ?? object;
-        queueSagaChapter(state, current, current.counters?.lore ?? 0, events);
+        queueSagaChaptersForLore(state, current, loreBefore, current.counters?.lore ?? loreBefore + 1, events);
       }
     }
     // Krok end: triggery „at the beginning of your end step" (Canonized in

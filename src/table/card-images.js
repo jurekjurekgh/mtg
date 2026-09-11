@@ -25,7 +25,7 @@
 
 export const IMAGE_MODE = Object.freeze({ localFirst: 'local-first', remoteFirst: 'remote-first' });
 
-/** Tory podglądu przełączane scrollem myszy nad kartą (legacy: playtableState.hoverMode). */
+/** Tory podglądu przełączane PPM nad kartą (zgłoszenie H 2026-09-11; wcześniej scroll; legacy: playtableState.hoverMode). */
 export const HOVER_MODES = Object.freeze(['scryfall', 'fot', 'kon']);
 
 /**
@@ -151,7 +151,7 @@ export function hoverPreviewShape(hoverMode) {
   return Object.freeze({ width: 320, height: 448, fit: 'cover' });
 }
 
-/** Następny tor podglądu (scroll nad kartą, jak `onwheel` w legacy).
+/** Następny tor podglądu (PPM nad kartą — zgłoszenie H 2026-09-11; wcześniej `onwheel`).
  *  `availableModes` (opcjonalne) zawęża listę do rzeczywistych opcji.
  *  Karty bez `artId` (basic landy, tokeny, Undercity) nie mają FOT/KON —
  *  dla nich dostępny jest tylko tor `scryfall`. */

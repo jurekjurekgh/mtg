@@ -1,11 +1,11 @@
 import { event } from '../protocol/types.js';
 import { assertZone, deathZoneFor } from './zones.js';
 import { addCounter, removeCounter, syncStationKind } from './counters.js';
-import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality } from './attachments.js';
+import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality } from './attachments.js';
 // M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
 // z ochroną kolorową); permanents.js re-eksportuje je, bo stamtąd biorą je
 // combat.js, effects.js i spells.js (i żeby nie robić cyklu importów).
-export { effectiveColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality };
+export { effectiveColors, effectiveProtectionQualities, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality };
 
 /** CR 306: także permanent o kilku typach, ale nie karta zakryta. */
 export function isPlaneswalker(object) {
@@ -453,7 +453,7 @@ function anthemBonuses(state, object) {
       const creatureAffects = ability.scope.affects === 'other_creatures_you_control'
         || ability.scope.affects === 'all_creatures_you_control';
       if (!creatureAffects && !subtypeScope) continue;
-      if (subtypeScope && !(object.subtypes ?? []).includes(ability.scope.subtype)) continue;
+      if (subtypeScope && !hasCreatureType(object, ability.scope.subtype, state)) continue;
       // 'other_creatures_you_control' excludes the source itself; 'all_creatures_you_control' includes it.
       if (ability.scope.affects === 'other_creatures_you_control' && source.id === object.id) continue;
       if (source.controllerId !== object.controllerId) continue;
@@ -698,7 +698,7 @@ export function grantedActivatedAbilities(state, object) {
     for (const ability of source.abilities ?? []) {
       if (ability?.type !== 'static' || !ability.scope?.grantsAbilities?.length) continue;
       const scope = ability.scope;
-      if (scope.subtype && !(object.subtypes ?? []).includes(scope.subtype)) continue;
+      if (scope.subtype && !hasCreatureType(object, scope.subtype, state)) continue;
       // „OTHER Sliver creatures" — źródło nie nadaje zdolności samemu sobie
       // (ma ją wydrukowaną, inaczej pokazalibyśmy ofertę dwa razy).
       if (scope.excludeSelf !== false && source.id === object.id) continue;
@@ -750,6 +750,45 @@ export function attachmentSubtypes(state, object) {
     out.push(...(grant.subtypes ?? []));
   }
   return out;
+}
+
+/**
+ * Czy obiekt MA dany TYP STWORÓW — jedyne miejsce w silniku, które zna
+ * changelinga (L41: jedna reguła, jedno miejsce).
+ *
+ * CR 702.73a: „Changeling is a characteristic-defining ability. 'Changeling'
+ * means 'This object is every creature type.' This ability works everywhere,
+ * even outside the game. See rule 604.3."
+ * Lorwyn Rules Primer (2007-08-23): „Because a card with changeling is every
+ * creature type, it will be affected by any spell or ability that affects any
+ * creature type, regardless of what that creature type is. And because
+ * changeling is a characteristic-defining ability, this is true in all zones.
+ * For example, if a card tells you to reveal a Merfolk card from your hand,
+ * return a Goblin card from your graveyard to your hand, or gain control of a
+ * Goat, you can perform these actions on a card with changeling."
+ *
+ * Dlatego KAżDE porównanie typu stworów (cel „non-Mount", statyka plemienna,
+ * „can't be blocked by Vampires or Zombies", rabat „następny czar Olbrzyma",
+ * szukanie w bibliotece/grobie/ręce, amass) idzie przez ten predykat, a nie
+ * przez surowe `object.subtypes`. Podtypy czytane efektywnie: permanent
+ * zakryty (morph/cloak) nie ma żadnych typów (CR 708.2a), więc i jego
+ * changeling jest zakryty. Typy NIESTWOROWE (Gate, Town, Food, Saga, typy
+ * podstawowe lądów) tędy NIE przechodzą — changeling ich nie nadaje.
+ */
+export function hasCreatureType(object, subtype, state = null) {
+  if (!object || !subtype) return false;
+  const subtypes = state ? effectiveSubtypesOnBattlefield(state, object) : effectiveSubtypes(object);
+  if (subtypes.includes(subtype)) return true;
+  // Changeling czytamy BEZ `effectiveKeywords`: tamten resolver wchodzi w
+  // warstwę nadawania zdolności (grantedAbilities → scope.subtype → znowu ten
+  // predykat) i zapętlałby się. Wystarczą keywordy drukowane plus nadane
+  // „do końca tury" (keywordGrants); nadanie changelinga z załącznika/statyki
+  // w katalogu nie występuje, a CR 702.73a opisuje changeling jako CDA samej
+  // karty. Zakryty permanent (morph/cloak, CR 708.2a) nie ma żadnych typów
+  // ani keywordów karty pod spodem — więc i jego changeling jest zakryty.
+  if (object.faceDown) return false;
+  return (object.keywords ?? []).includes('changeling')
+    || (object.keywordGrants ?? []).includes('changeling');
 }
 
 /** Efektywne podtypy stwora na polu bitwy — własne + granty załączników. */
@@ -1084,6 +1123,9 @@ export function clearStatModifiers(state) {
   state.untilEndOfTurnBuffs = [];
   // M109: ochrona „do końca tury" (Spare from Evil) kończy się w cleanup.
   state.untilEndOfTurnProtections = [];
+  // Zgłoszenie właściciela B1: opóźnione zdolności „this turn" (rozdział III
+  // Sagi) wygasają razem z resztą efektów do końca tury.
+  state.turnAbilityGrants = [];
   // Batch 48 (Cherished Hatchling): flash nadany podtypowi „this turn".
   state.subtypeFlashThisTurn = [];
   for (const object of state.objects.values()) {

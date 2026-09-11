@@ -958,6 +958,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const wastefulStep = (view) => myTurn(view) && ['untap', 'upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step);
   const myLibraryCount = (view) => view.zones.library.filter((o) => o.controllerId === view.playerId).length;
   /**
+   * Zgłoszenie właściciela C (2026-09-10, Gurmag Drowner): ile kart trigger
+   * exploita źródła wrzuca do grobu. „Look at the top four cards… put one of
+   * them into your hand and the rest into your graveyard" = amount - 1.
+   * Czytane z DANYCH karty po typie efektu, nie po nazwie (ADR 0002):
+   * Silumgar Butcher (exploit → pump -3/-3) nie miele nic, więc bramka
+   * biblioteczna go nie dotyczy.
+   */
+  const EXPLOIT_LIBRARY_COST = new Map([
+    ['look_top_put_one_hand_rest_grave', (amount) => Math.max(0, (amount ?? 1) - 1)],
+  ]);
+  function exploitMillAmount(def) {
+    let razem = 0;
+    for (const ability of def?.abilities ?? []) {
+      if (ability?.trigger?.event !== 'exploits') continue;
+      for (const eff of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+        const koszt = eff?.type ? EXPLOIT_LIBRARY_COST.get(eff.type) : undefined;
+        if (koszt) razem += koszt(eff.amount);
+      }
+    }
+    return razem;
+  }
+  /**
    * D (zgłoszenie właściciela, Deepwood Denizen): dobieranie kart, które
    * OPRÓŻNIA własną bibliotekę, to wyrok — CR 121.4/704.5b: próba dobrania
    * z pustej biblioteki przegrywa partię, a dobranie OSTATNIEJ karty zostawia
@@ -1624,6 +1646,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['add_poison_counters', 45],
   ]);
 
+  // Zgłoszenie właściciela G (2026-09-11, klątwy): efekty, które z SAMEGO typu
+  // uderzają w zaczarowanego gracza (CR 303.4 „Enchant player"). Nie niosą
+  // `applyTo: 'enchanted_controller'`, więc bez nich Curse of the Pierced Heart
+  // („1 obrażenie zaczarowanemu graczowi w podtrzymaniu") wyglądała dla bota
+  // jak zwykły buff. Lista po typach efektów, nie po nazwach kart (ADR 0002).
+  const HOSTILE_ENCHANTED_PLAYER_EFFECTS = new Set(['damage_enchanted_player']);
+
   /**
    * Kara za skierowanie efektu ofensywnego we własne rzeczy.
    * Zwraca liczbę punktów DO ODJĘCIA (0 = nic podejrzanego).
@@ -1866,8 +1895,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return abilities.some((ability) => {
       if (ability?.type !== 'triggered') return false;
       const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-      return effs.some((e) => e?.applyTo === 'enchanted_controller'
-        && e?.type && HOSTILE_PLAYER_EFFECTS.has(e.type));
+      return effs.some((e) => {
+        if (!e?.type) return false;
+        // G: efekt wprost w zaczarowanego gracza (klątwy) nie potrzebuje
+        // `applyTo` — sam typ mówi, w kogo uderza.
+        if (HOSTILE_ENCHANTED_PLAYER_EFFECTS.has(e.type)) return true;
+        return e.applyTo === 'enchanted_controller' && HOSTILE_PLAYER_EFFECTS.has(e.type);
+      });
     });
   }
   const hasKeyword = (object, keyword) => (object?.keywords ?? []).includes(keyword);
@@ -2709,6 +2743,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // wzmacniany własnym zaczarowaniem jest błędem — wariant odrzucany.
           const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
           const descriptor = cmd.bestow ? card?.bestow : card?.aura;
+          // Zgłoszenie właściciela G (2026-09-11): aura na GRACZU (klątwa,
+          // CR 303.4). Cel-gracz nie jest permanentem, więc `target` jest null
+          // i cała ścieżka „gospodarz" sprowadzała oba warianty do
+          // `auraNoTargetPenalty` — klątwa na siebie była warta dokładnie tyle
+          // samo co klątwa na wroga (zmierzone: -45 i -45), a bot nie rzucał
+          // klątw wcale. Rozróżnienie po deskryptorze `enchant: 'player'`
+          // i po wrogości efektów (ADR 0002, bez nazw kart): wroga klątwa na
+          // WŁASNEGO gracza to strzał we własną stopę (-curseSelfTargetPenalty,
+          // właściciel: -1000), na przeciwnika — zysk.
+          if (cmd.targets?.[0] && descriptor?.enchant === 'player') {
+            const celKlatwy = cmd.targets[0];
+            const wroga = auraIsHostile(descriptor, card ? cardDef(card.cardId) : undefined);
+            if (wroga) {
+              if (celKlatwy === view.playerId) return finish(-P.curseSelfTargetPenalty);
+              if (celKlatwy === enemy(view)?.id) return finish(P.curseEnemyBase);
+              return finish(-P.auraNoTargetPenalty);
+            }
+            // Aura na graczu, która NIE szkodzi (w katalogu dziś takiej nie
+            // ma): lustro tamtej reguły — warto ją mieć na sobie.
+            return finish(celKlatwy === view.playerId ? P.auraBase : -P.auraHostileOwnPenalty);
+          }
           // M121: aura bywa KOTWICĄ, nie buffem (Spectral Prison — „doesn't
           // untap"; Hobble — „can't attack"). Taką zakładamy PRZECIWNIKOWI;
           // na własnym stworze to strzał we własną stopę, a wycena
@@ -5058,6 +5113,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M167/I: ginie od GANGU blokerów i nie zabija ŻADNEGO — czysta
             // strata stwora (2/4 w 1/3 + 3/3). Kara ponad wagę wyścigu.
             perAttacker = -(toughness + 8);
+            // Zgłoszenie właściciela D (2026-09-10, 3/1 w nietapnięte 4/4+4/5
+            // przy 3 własnego życia): ta gałąź NIE liczyła ataku jako jałowego,
+            // więc `wholeAttackFutile` było fałszem i atak dostawał premię
+            // wyścigu — przy `enemyBoardPower >= myLife` racing = true, a premia
+            // +20 przebijała karę -9 (klasa L3: kara musi być liczona względem
+            // premii). Ten sam atak w JEDNEGO 4/4 trafiał w chumpa (-10,
+            // jałowy), więc decyzja zależała od LICZBY blokerów, nie od sensu
+            // ataku. Z definicji tej gałęzi (nie zabija żadnego, ginie) atak
+            // jest jałowy — jak każda inna gałąź pewnej straty bez zysku.
+            futileAttackers += 1;
           } else if (blockedStats.toughness > effBlockerPower) {
             // Przeżyje, ale NIE zabije blokera (2/3 vs 2/3): nic nie zyskuje,
             // a tapnięty atakujący nie zablokuje w następnej turze — netto
@@ -5823,16 +5888,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // (minimum straty); skip, jeżeli w ogóle nie ma co zyskać (np. bez
       // triggerów exploita na źródle — tu bezpieczna domyślna: poświęć słabego).
       case 'resolve_exploit_choice': {
-        if (cmd.skip === true) return finish(20);
+        if (cmd.skip === true) return finish(P.exploitSkipBase);
         const victim = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!victim || victim.controllerId !== view.playerId) return finish(-50);
-        // Wartość ofiary jak w resolve_sacrifice_choice (C-R3b).
+        // C (zgłoszenie właściciela 2026-09-10): trigger exploita bywa MILLEM,
+        // a biblioteka nie brała udziału w wycenie W OGÓLE — przy 5 kartach
+        // bot mielił 3 i zostawał z jedną (deck-out za dwa dobrania,
+        // CR 121.4/704.5b). Koszt czytamy z danych źródła (ADR 0002), więc
+        // exploit bez millu (Silumgar Butcher) nie jest blokowany.
+        const source = cmd.sourceId ? objectOnBoard(view, cmd.sourceId) : null;
+        const mill = exploitMillAmount(source ? cardDef(source.cardId) : undefined);
+        if (mill > 0) {
+          const zapas = myLibraryCount(view) - mill;
+          if (zapas <= 0) return finish(-P.exploitDeckOutPenalty);
+          if (zapas < P.exploitSafeLibraryMargin) return finish(-P.exploitThinLibraryPenalty);
+        }
+        // Wartość ofiary jak w resolve_sacrifice_choice (C-R3b) + to, czego
+        // samo P/T nie widzi: keywordy i zdolności z rejestru (użyteczny
+        // latający stwór NIE jest „tani"), a token jest tańszy niż karta
+        // (właściciel: „poświęcaj token bez zdolności").
+        const victimDef = victim.cardId ? cardDef(victim.cardId) : undefined;
         const value = victim.kind === 'creature' || (victim.types ?? []).includes('Creature')
           ? (victim.power ?? 0) * 2 + (victim.toughness ?? 0)
           : (victim.manaCost ?? 0) * 2;
-        // Poświęcenie jest warte mniej, im cenniejsza ofiara; preferuj najtańszego
-        // (chump/token 1/1). Bazowy zysk z exploita (≈15) musi przewyższyć stratę.
-        return finish(40 - value);
+        const cena = value
+          + P.exploitVictimKeywordWeight * (victim.keywords ?? []).length
+          + P.exploitVictimAbilityWeight * (victimDef?.abilities ?? []).length
+          - (victim.isToken ? P.exploitTokenDiscount : 0);
+        // Poświęcenie jest warte mniej, im cenniejsza ofiara; bazowy zysk
+        // z exploita musi przewyższyć stratę (inaczej wygrywa skip).
+        return finish(P.exploitBase - cena);
       }
       // M130 (Cuombajj Witches i pokrewne): przeciwnik wybiera cel OBRAŻEŃ
       // ({T}: zadać 1 obrażenie celowi). My (bot) wybieramy jako przeciwnik w

@@ -203,6 +203,28 @@ export function isBotMoveNoise(e, { botActing = false, stackSize = 0, humanId = 
   return true;
 }
 
+/**
+ * Zgłoszenie właściciela E2 (2026-09-10): PYTANIE o decyzję (zdarzenie
+ * `…_required`) jest treścią dla DECYDENTA. Gdy decyduje bot, wpis należy do
+ * sekcji „Ruch bota" (`noteBotMove`), nie do głównego logu gracza — gracz nie
+ * ma tam nic do zrobienia, a surowy prompt („Furious Forebear — zapłacić
+ * {1}{W}? (wybór opcjonalny: Nieprzyjaciel)") czytał się jak błąd rozgrywki.
+ *
+ * Skutki decyzji (`…_resolved`) zostają w logu: to narracja partii, nie
+ * pytanie. Reguła jest generyczna (klasa zdarzeń, nie nazwa karty — ADR 0002):
+ * każdy prompt `…_required`, którego właścicielem nie jest człowiek.
+ *
+ * Brak właściciela w zdarzeniu = brak atrybucji = NIE chowamy (L24: zgubiona
+ * informacja jest większą stratą niż nadmiarowy wpis).
+ * Czysta funkcja (ADR 0011) — testowalna bez sesji i bez DOM-u.
+ */
+export function isBotDecisionPrompt(e, { humanId = HUMAN_ID } = {}) {
+  if (typeof e?.type !== 'string' || !e.type.endsWith('_required')) return false;
+  const decider = e.playerId ?? e.controllerId ?? null;
+  if (decider == null) return false;
+  return decider !== humanId;
+}
+
 function defaultBotFactory(seed, ctx) {
   // B3: bot modeluje rękę przeciwnika (człowieka) — zna jego talię.
   return createHeuristicBot({ seed, opponentDeck: ctx?.opponentDeck });
@@ -1657,7 +1679,16 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         : `${nameOfObject(e.objectId)} spada poniżej progu Station i przestaje być stworem`;
       case 'saga_chapter_fired': return `${nameOf(e.cardId)} — rozdział Sagi ${['', 'I', 'II', 'III', 'IV'][e.chapter] ?? e.chapter}`;
       case 'opponents_lands_tapped': return `Landy przeciwników ${whoN(e.playerId)} zostają zatapnięte (${e.count})`;
-      case 'delayed_trigger_armed': return `${nameOf(e.cardId)} — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza ${whoN(e.playerId)}`;
+      case 'delayed_trigger_armed':
+        // Zgłoszenie właściciela B1: wpis niesie `description`, gdy opóźniona
+        // zdolność nie jest „powrotem w upkeep" (rozdział III Sagi). Bez tego
+        // każdy opóźniony trigger był opisywany tekstem Plague Reavera.
+        // Opis jest samowystarczalny („…do końca tury") — nie dokładamy
+        // drugiego sufiksu, żeby linia nie brzmiała „do końca tury (do końca
+        // tury)".
+        return e.description
+          ? `${objectOrLki(e.objectId ?? e.sourceId, e.cardId)} — ${e.description}`
+          : `${nameOf(e.cardId)} — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza ${whoN(e.playerId)}`;
       case 'devour_choice_required': return `Devour (${nameOf(e.cardId)}): ${whoN(e.playerId)} może poświęcać inne swoje stwory (po ${e.counters}× +1/+1 za każdego)`;
       case 'devour_choice_resolved': {
         if (e.skipped) return `Devour (${nameOf(e.cardId)}): brak stworów do poświęcenia — decyzja gaśnie bez efektu`;
@@ -2585,7 +2616,12 @@ export function createSession(config) {
     // (M103/D), gracz ma widzieć w „Rozgrywce" co i skąd wygnano (CR 400.2:
     // strefy jawne). Format i mgła wojny jak wyżej (gałąź M192/Z1).
     const isAdditionalCostMove = e.type === 'object_moved' && e.additionalCost === true;
-    if (!botActing && !isAdditionalCostMove && !isRulesZoneMove(e)
+    // Zgłoszenie właściciela E2 (2026-09-10): decyzja BOTA (np. dopłata {1}{W}
+    // z Furious Forebear po śmierci jego stwora — w TURZE CZŁOWIEKA, więc
+    // `botActing` jest fałszem) należy do tej sekcji: główny log gracza jej
+    // nie przyjmuje (`isBotDecisionPrompt`), a informacja nie może zniknąć.
+    const isBotDecision = isBotDecisionPrompt(e);
+    if (!botActing && !isAdditionalCostMove && !isRulesZoneMove(e) && !isBotDecision
       && e.type !== 'turn_started' && e.type !== 'game_started'
       && e.type !== 'step_advanced'
       && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw
@@ -2784,7 +2820,9 @@ export function createSession(config) {
         if (header) sessionLog('event', header);
         noteBotMove(e); recordTurnEvent(e); continue;
       }
-      const text = describeEvent(e);
+      // Zgłoszenie właściciela E2: prompt decyzji BOTA nie należy do logu
+      // gracza (idzie do sekcji ruchu bota — noteBotMove niżej).
+      const text = isBotDecisionPrompt(e) ? null : describeEvent(e);
       if (text) sessionLog('event', text);
       noteBotMove(e);
       recordTurnEvent(e);
@@ -3183,7 +3221,9 @@ export function createSession(config) {
           if (header) sessionLog('event', header);
           noteBotMove(e); recordTurnEvent(e); continue;
         }
-        const text = describeEvent(e);
+        // Zgłoszenie właściciela E2: prompt decyzji BOTA nie należy do logu
+        // gracza (idzie do sekcji ruchu bota — noteBotMove niżej).
+        const text = isBotDecisionPrompt(e) ? null : describeEvent(e);
         if (text) sessionLog('event', text);
         // M100/E2 (symetria rozstrzygnięć): komenda CZŁOWIEKA też może
         // rozstrzygnąć stos (jego własny pass, pass bota po jego rzucie).
