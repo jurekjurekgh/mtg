@@ -27,9 +27,13 @@ oparty na opisach tekstowych i na kodzie.
 1. **E1** — wykluczenie własnej śmierci (i współpoległych SBA) ze skanu triggerów
    w grobie; test: samotna śmierć i jednoczesna śmierć → brak triggera, śmierć
    INNEGO stwora przy Forebearze w grobie → trigger jest (anty-over-fix).
-2. **B1 + B2** — rozdział III jako opóźniony trigger w `state.delayedTriggers`
+2. **B1 + B2** — rozdział III jako opóźniony trigger w rejestrze stanowym
    (przeżywa poświęcenie, cel = stwór pod kontrolą, może odpalić wiele razy
    w turze) + poświęcenie Sagi jako SBA po zejściu zdolności ze stosu.
+   ZMIERZONE: `state.delayedTriggers` się do tego NIE nadaje — to rejestr
+   opóźnień czasowych (powrót z exile w upkeep), konsumowany przez skan kroku
+   end; dodano `state.turnAbilityGrants` (wpis: cardId, sourceId, controllerId,
+   armedOnTurn, sourceLki, trigger, effect).
 3. **E2 + E3** — decyzje płatności bota poza głównym logiem + symbole many.
 4. **A** — rodzaj źródła w kluczu wariantów płatności (ląd vs zdolność).
 5. **F** — badge klątwy na graczu.
@@ -43,9 +47,11 @@ oparty na opisach tekstowych i na kodzie.
 - E1: wykluczenie musi objąć też JEDNOCZESNE zgony (ruling WotC) — samo
   `source.id === died.id` nie wystarczy; współpolegli są w `simultaneousFellows`
   (obiekty PO zmianie strefy, czyli z nowymi id — tak samo jak `died`).
-- B1: opóźniony trigger musi być w rejestrze stanowym (`state.delayedTriggers`,
-  jak np. effects.js:1441), nie w `abilityGrants` obiektu, który za chwilę
-  znika z pola bitwy (CR 400.7 — nowy obiekt w nowej strefie).
+- B1: opóźniony trigger musi być w rejestrze stanowym, nie w `abilityGrants`
+  obiektu, który za chwilę znika z pola bitwy (CR 400.7 — nowy obiekt w nowej
+  strefie). ZMIERZONE po fakcie: sam rejestr nie wystarcza — wpis musi nieść
+  LKI źródła, bo `pruneDeadPendingDecisions` → `triggerSourceZoneLegal`
+  wymaga pola bitwy i bez LKI decyzja celu jest gaszona jako „ślepa".
 - B2: przeprowadzka poświęcenia do SBA zmienia KOLEJNOŚĆ zdarzeń — pełny rdzeń
   + testy sag (Shiva/Cold Snap/Jill) przed commitem.
 - A: zmiana progu kreatora potrafi dodać kliknięcia przy wielu źródłach tego
@@ -67,5 +73,43 @@ oparty na opisach tekstowych i na kodzie.
   lądy = jeden kształt; dwa źródła-zdolności o tym samym profilu = jeden kształt
   — świadoma granica). RED przed fixem: A/1; mutacja → 1 RED; rodzina kreatora
   (7 plików) 53/53. `npm test` **5110/5110**.
-- Pozostałe (B1, B2, E2, E3, F, C, D) — w kolejności z planu, każde osobnym
-  zielonym commitem.
+- **B1 + B2 — GOTOWE** (`fe37168`): rozdział III Sagi to OPÓŹNIONA zdolność
+  w nowym rejestrze stanowym `state.turnAbilityGrants` (wpis niesie LKI źródła,
+  CR 603.10; czyszczenie w `clearStatModifiers`), a poświęcenie Sagi to akcja
+  stanowa `sacrificeFinishedSagas` (CR 714.4, na liście SBA jako 704.5s)
+  wołana z `execute` PO przebiegu triggerów (CR 704.3; jak cleanup tokenów
+  z 704.5d) z bramką „rozdział zszedł ze stosu" (stos LUB oczekująca decyzja
+  celu rozdziału). Strażnik
+  `test/zgloszenie-b-saga-rozdzial-i-poswiecenie.test.js` (8): B1/1 brak
+  `keyword_granted` na Sadze; B1/2 decyzja celu i double strike na WYBRANYM
+  stworze; B1/3 wiele odpaleń w turze (ruling WotC 2025-04-04); B2/1 brak
+  poświęcenia póki rozdział na stosie; B2/2 poświęcenie PO `trigger_resolved`;
+  B3 tekst logu; B4 licznik lore z proliferate (CR 714.2b) + anty-over-fix
+  (2 z 3 liczników → brak poświęcenia). RED przed fixem: 3 × B1 + B2/2.
+  Uwaga pomiarowa: asercja B2/2 musiała zostać przeniesiona z
+  `saga_chapter_fired` na `trigger_resolved` — na tym pierwszym przechodziła
+  także PRZED naprawą (zdarzenie jest pchane przed efektem rozdziału), czyli
+  nie mierzyła tego, co widzi gracz w logu. Mutacje (L13): pełny revert →
+  4 RED; bez LKI (stub z grobu) → 2 RED; skan rejestru wyłączony → 2 RED;
+  stary `keyword_granted` dopisany → 1 RED; SBA bez bramki stosu → 4 RED;
+  gałąź `counter_added(lore)` wyłączona → 1 RED (B4); poświęcenie z powrotem
+  w zwykłym przebiegu SBA (przed triggerami) → 1 RED (B4). Bramki:
+  `npm test` **5118/5118**, `npm run build` 61 modułów / 3473.9 kB.
+- **Skutek B2 wymuszony regułami** (nie opcjonalny, w tym samym commicie):
+  skoro poświęcenie jest akcją stanową, licznik lore dołożony DOWOLNĄ drogą
+  musi odpalać rozdział (CR 714.2b) — inaczej Saga dobita proliferatem
+  (CR 701.27) byłaby poświęcona bez rozstrzygnięcia rozdziału. Jeden helper
+  `queueSagaChaptersForLore` liczy przekroczone progi dla wejścia (714.3a),
+  akcji turowej (714.3c) i zdarzenia `counter_added`. Zaktualizowane testy
+  istniejące: `m272-saga-poswiecenie-strefa` (sterownik robi przebieg akcji
+  stanowych — poświęcenie nie jest już częścią rozstrzygania rozdziału) oraz
+  `batch46/10b` (asercja `saga.abilityGrants` przypinała dokładnie ten błąd;
+  teraz sprawdza rejestr i brak grantu na Sadze). Rodzina sag + proliferate
+  (299 testów) zielona.
+- **Uwaga o środowisku (2026-09-11)**: klon w piaskownicy (sandbox) był odtworzony na `f7e4d11`
+  (`git reflog`: clone + checkout -b) — lokalna gałąź nie miała dziewięciu
+  commitów PR #113, choć zdalny head był poprawny (`8172cf3`). Przywrócone
+  przez `git fetch` + `git reset` (mixed, bez dotykania drzewa) do
+  `8172cf3`; diff po resecie = wyłącznie zmiany B (brak dryfu plików).
+- Pozostałe (E2, E3, F, C, D) — w kolejności z planu, każde osobnym zielonym
+  commitem.
