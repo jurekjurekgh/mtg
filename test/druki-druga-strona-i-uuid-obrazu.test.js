@@ -181,18 +181,21 @@ test('D/12 karty dwustronne: UUID obrazu z card_faces, a gdy twarzy bez obrazów
   assert.ok(w.obrazPotwierdzony >= 458, `potwierdzonych offline co najmniej 458 (zmierzono ${w.obrazPotwierdzony})`);
 });
 
-test('D/14 nazwy snapshotów: konwencja scryfall-<id>.json i jedna udokumentowana sierota', () => {
+test('D/14 nazwy snapshotów: konwencja scryfall-<id>.json — sierot BRAK', () => {
   const pliki = fs.readdirSync('docs/cards')
     .filter((f) => f.startsWith('scryfall-') && f.endsWith('.json'))
     .map((f) => f.slice('scryfall-'.length, -'.json'.length));
   const idy = new Set(REGISTRY.all().map((d) => d.id));
-  const sieroty = pliki.filter((id) => !idy.has(id));
-  // `undercity-dungeon` to dane dungeonu (karta spoza rejestru kart — silnik tworzy ją
-  // dynamicznie jako `undercity` w src/engine/effects.js), jej source jest kanoniczne.
-  assert.deepEqual(sieroty, ['undercity-dungeon'],
-    'jedyna sierota to dungeon poza rejestrem; reszta nazw odpowiada id kart (inaczej narzędzie ich nie czyta)');
-  const s = JSON.parse(fs.readFileSync('docs/cards/scryfall-undercity-dungeon.json', 'utf8'));
-  assert.ok(sourceUuid(s.source), 'sierota ma kanoniczne source');
+  // 2026-09-12e: snapshot lochu Undercity był raportowany jako „sierota", bo model
+  // przeglądu znał wyłącznie karty z rejestru. To obiekt wsparcia (eksport
+  // `card-data.js` poza rejestrem — ADR 0029 zakazuje dopisać go do katalogu, bo nie
+  // ma go w arkuszu kolekcji), a jego plik nosił nazwę niezgodną z id obiektu
+  // (`undercity-dungeon` vs `undercity`). Po przeniesieniu na `scryfall-undercity.json`
+  // sierot nie ma; kategorię i cross-checki (set/numer z adresu panelu, UUID, Oracle
+  // obu twarzy vs `UNDERCITY_ROOMS`) pilnuje test/obiekty-wsparcia-poza-rejestrem.test.js.
+  assert.deepEqual(pliki.filter((id) => !idy.has(id)), ['undercity'],
+    'poza rejestrem jest wyłącznie snapshot obiektu wsparcia (reszta nazw = id kart, inaczej narzędzie ich nie czyta)');
+  assert.ok(snapshot('undercity'), 'plik lochu nazywa się zgodnie z id obiektu wsparcia');
   // Regresja po rename: token Tarmogoyf był zapisany jako `token-tarmogoyf` (myślnik) i przez to
   // niewidoczny dla przeglądu — teraz id i nazwa pliku są zgodne.
   assert.ok(snapshot('token_tarmogoyf'), 'token_tarmogoyf ma snapshot pod nazwą zgodną z id');

@@ -26,6 +26,13 @@
 // nazwę wśród `card_faces` — samo współdzielenie UUID nie wystarcza (token
 // `token_rat` dzieli UUID z `lab-rats`, a twarzą tej karty nie jest).
 //
+// OBIEKTY WSPARCIA (loch Undercity, znacznik Day // Night) są eksportami
+// `src/cards/card-data.js`, ale NIE kartami rejestru: nie ma ich w arkuszu
+// kolekcji, więc ADR 0029 zakazuje dopisywać ich do katalogu, a gra i tak ich
+// używa (panel specjalny po „Take the initiative", znacznik dnia/nocy). Ich
+// snapshoty nie są sierotami — są sprawdzane osobno (`przegladObiektowWsparcia`),
+// a lista obiektów jest WYPROWADZONA z modułu gry, nie wpisana na sztywno.
+//
 // Użycie: node tools/check-card-printings.mjs [--json]
 //   --json  dodatkowo wypisuje listę „DO POBRANIA” jako JSON na stdout.
 //
@@ -36,7 +43,7 @@
 // listy snapshotów bez `set=`/bez `source` nie rosły:
 // test/zgloszenie-a-druk-karty-z-arkusza.test.js.
 import fs from 'node:fs';
-import { createCardRegistry } from '../src/cards/card-data.js';
+import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../src/cards/card-data.js';
 import { artIdsBySetFromRows, parseCSV } from './fetch-art-ids.mjs';
 
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
@@ -84,6 +91,79 @@ export const pokrycieDrugiejStrony = (def, { registry, snapshotOf }) => {
     }
   }
   return { covered: false, powod: 'UUID współdzielony, ale nazwa nie jest twarzą snapshotu' };
+};
+
+/**
+ * Obiekty wsparcia: prymitywy gry obecne na stole, które NIE są kartami rejestru
+ * (loch Undercity — `src/engine/effects.js` tworzy go dynamicznie jako `undercity`;
+ * znacznik Day // Night — CR 708.9). Adresy obrazów mają w `card-data.js`, panel
+ * bierze je stamtąd (`src/table/render.js`), a snapshot w `docs/cards/` jest
+ * prowieniencją tych adresów i zapisem Oracle obu twarzy lochu.
+ *
+ * Lista jest WYPROWADZONA z modułu, którego używa gra — zero nazw wpisanych na
+ * sztywno w narzędziu (dryf dwóch implementacji: F7/L41).
+ */
+export const obiektyWsparcia = () => Object.freeze(
+  [UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN].filter(Boolean).map((o) => Object.freeze({
+    id: o.id,
+    name: o.name,
+    typeLine: o.typeLine ?? null,
+    obrazy: Object.freeze([o.imageUri, o.imageUriDay, o.imageUriNight].filter(Boolean)),
+  })),
+);
+
+/** Co dowodzi druku w adresie obrazu: para set/numer albo UUID. */
+export const adresDruku = (uri) => {
+  const para = String(uri ?? '').match(/\/cards\/([a-z0-9]+)\/([A-Za-z0-9\u2605]+)\?/i);
+  if (para) return { rodzaj: 'set-numer', set: para[1].toLowerCase(), numer: String(para[2]) };
+  const uuid = uuidOf(uri);
+  return uuid ? { rodzaj: 'uuid', uuid } : { rodzaj: 'brak', uuid: null, set: null, numer: null };
+};
+
+/**
+ * Przegląd obiektów wsparcia — czysta funkcja (jak `przegladDrukow`).
+ * Snapshot obiektu wsparcia potwierdza druk OFFLINE, gdy adres obrazu z
+ * `card-data.js` (ten sam, którego używa panel) zgadza się z `set`+
+ * `collector_number` snapshotu albo z jego UUID obrazu, a `source` niesie ten sam
+ * UUID co `image_uris`. Brak snapshotu nie jest błędem ani „rozjazdem": obiekt nie
+ * ma wpisu w arkuszu kolekcji, więc nie ma druku właściciela do udowodnienia —
+ * trafia na osobną listę (pobranie wymaga sieci).
+ */
+export const przegladObiektowWsparcia = ({ obiekty, snapshotOf }) => {
+  const wpisy = [];
+  for (const o of obiekty) {
+    const snap = snapshotOf(o.id);
+    if (!snap) {
+      wpisy.push({ ...o, klasa: 'W-bez-snapshotu', powod: 'adres obrazu w card-data.js; snapshot wymaga pobrania z sieci' });
+      continue;
+    }
+    const adresy = o.obrazy.map(adresDruku);
+    const snapUuid = uuidObrazuSnapshotu(snap);
+    const srcUuid = sourceUuid(snap.source ?? '');
+    const snapSet = String(snap.set ?? '').toLowerCase();
+    const snapNumer = snap.collector_number == null ? null : String(snap.collector_number);
+    const zgodnySetNumer = adresy.some((a) => a.rodzaj === 'set-numer' && a.set === snapSet && a.numer === snapNumer);
+    const zgodnyUuid = adresy.some((a) => a.rodzaj === 'uuid' && a.uuid === snapUuid);
+    const sourceSpojny = Boolean(srcUuid && snapUuid && srcUuid === snapUuid);
+    const twarze = twarzeSnapshotu(snap);
+    if ((zgodnySetNumer || zgodnyUuid) && sourceSpojny) {
+      wpisy.push({
+        ...o, klasa: 'W-potwierdzony-offline',
+        set: snap.set ?? null, numer: snapNumer, uuid: snapUuid, layout: snap.layout ?? null,
+        twarze, dowod: zgodnySetNumer ? `set ${snap.set} nr ${snapNumer} = adres w card-data.js` : `UUID ${snapUuid} = adres w card-data.js`,
+      });
+      continue;
+    }
+    wpisy.push({
+      ...o, klasa: 'W-snapshot-bez-zgodnosci',
+      powod: [
+        zgodnySetNumer || zgodnyUuid ? null : 'adres obrazu nie zgadza się z set/numer ani UUID snapshotu',
+        sourceSpojny ? null : 'source nie niesie UUID obrazu snapshotu',
+      ].filter(Boolean).join('; '),
+      set: snap.set ?? null, numer: snapNumer, uuid: snapUuid, twarze,
+    });
+  }
+  return { wpisy, potwierdzone: wpisy.filter((w) => w.klasa === 'W-potwierdzony-offline').length };
 };
 
 // Przegląd całej kolekcji — czysta funkcja (bez drukowania), żeby test mógł ją
@@ -197,6 +277,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log('\nDRUGIE STRONY pokryte snapshotem karty dwustronnej (osobny snapshot niepotrzebny —');
     console.log('Scryfall opisuje transform jako jeden obiekt z `card_faces`, arkusz daje obu twarzom ten sam artId+set):');
     for (const x of b2) console.log(`  ${x.id} | „${x.name}” ← snapshot ${x.frontId} (layout ${x.layout ?? '?'})`);
+  }
+
+  const wsparcie = przegladObiektowWsparcia({ obiekty: obiektyWsparcia(), snapshotOf: snapshotOfPlik });
+  console.log('\nOBIEKTY WSPARCIA poza rejestrem kart (nie ma ich w arkuszu kolekcji — ADR 0029;');
+  console.log('adres obrazu bierze się z card-data.js, snapshot jest jego prowieniencją):');
+  for (const w of wsparcie.wpisy) {
+    const plik = snapshotOfPlik(w.id) ? `snapshot scryfall-${w.id}.json` : 'BEZ snapshotu';
+    console.log(`  ${w.id} | „${w.name}” | ${w.klasa} | ${plik}${w.dowod ? ` | ${w.dowod}` : ''}${w.powod ? ` | ${w.powod}` : ''}`);
   }
 
   console.log(`\nDO POBRANIA ZE SCRYFALL (krok 2, wymaga sieci): ${wynik.doSieci.length}`);
