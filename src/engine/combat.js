@@ -472,6 +472,81 @@ function needsDamageAssignmentDecision(state, attacker, blockers) {
   return blockers.length > 1 || hasKeyword(state, attacker, 'trample');
 }
 
+/** Przynależność do przebiegu first strike (CR 510.4/510.5) — na poziomie modułu. */
+function inFirstStrikePassOf(state, id) {
+  const object = state.objects.get(id);
+  return Boolean(object) && (hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
+}
+function inRegularPassOf(state, id) {
+  const object = state.objects.get(id);
+  return Boolean(object) && (!hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
+}
+
+/**
+ * Przydziały pozostałych atakujących tego przebiegu skierowane w danego blokera:
+ * [{ attackerId, amount, deathtouch }]. Jawne — z mapy `assignments` (komenda
+ * niesie cały przydział gracza, CR 510.1e); dla atakujących bez decyzji —
+ * przydział domyślny (jeden bloker = pełna moc, CR 510.1c; wielu = lethal-first
+ * jak w przebiegu). Prewencja/protection celowo POMIJANE: reguła mówi
+ * o PRZYDZIALE, nie o faktycznie zadanych obrażeniach.
+ */
+function assignedToBlockerThisPass(state, pass, blockerId, excludeAttackerId, assignments = null) {
+  const alive = (id) => {
+    const object = state.objects.get(id);
+    return Boolean(object && object.zone === 'battlefield');
+  };
+  const sumFor = (list) => list
+    .filter((entry) => entry?.blockerId === blockerId)
+    .reduce((total, entry) => total + (Number.isInteger(entry.amount) && entry.amount > 0 ? entry.amount : 0), 0);
+  const out = [];
+  for (const attackerId of state.combat?.attackers ?? []) {
+    if (attackerId === excludeAttackerId) continue;
+    const attacker = state.objects.get(attackerId);
+    if (!attacker || attacker.zone !== 'battlefield') continue;
+    if (pass ? !inFirstStrikePassOf(state, attackerId) : !inRegularPassOf(state, attackerId)) continue;
+    const blockers = (state.combat.blockers?.get(attackerId) ?? []).filter(alive);
+    if (!blockers.includes(blockerId)) continue;
+    const deathtouch = hasKeyword(state, attacker, 'deathtouch');
+    const explicit = assignments?.[attackerId];
+    const amount = explicit
+      ? sumFor(explicit)
+      : (blockers.length === 1
+        ? combatDamageAmount(attacker, state)
+        : sumFor(defaultDamageAssignment(state, attacker, blockers, combatDamageAmount(attacker, state))));
+    out.push({ attackerId, amount, deathtouch });
+  }
+  return out;
+}
+
+/**
+ * W5 (CR 702.19b): suma obrażeń przydzielanych danemu blokerowi w TYM SAMYM
+ * przebiegu przez POZOSTAŁYCH atakujących — „take into account damage already
+ * marked on the creature and damage from other creatures that's being assigned
+ * during the same combat damage step".
+ */
+export function damageAssignedToBlockerThisPass(state, pass, blockerId, excludeAttackerId, assignments = null) {
+  return assignedToBlockerThisPass(state, pass, blockerId, excludeAttackerId, assignments)
+    .reduce((total, entry) => total + entry.amount, 0);
+}
+
+/**
+ * W5 (CR 702.2b): czy bloker ma JUŻ przydzielone lethal w tym przebiegu przez
+ * inne stwory — albo dlatego, że suma ich przydziałów sięga lethal, albo dlatego,
+ * że którekolwiek z nich jest niezerowe i pochodzi od źródła z deathtouch
+ * („Any nonzero amount of combat damage assigned to a creature by a source with
+ * deathtouch is considered to be lethal damage, regardless of that creature's
+ * toughness").
+ */
+export function lethalAssignedByOthersThisPass(state, pass, blockerId, excludeAttackerId, assignments = null) {
+  const blocker = state.objects.get(blockerId);
+  if (!blocker || blocker.zone !== 'battlefield') return false;
+  const lethal = Math.max(0, effectiveToughness(blocker, state) - (blocker.damage ?? 0));
+  if (lethal <= 0) return true;
+  const entries = assignedToBlockerThisPass(state, pass, blockerId, excludeAttackerId, assignments);
+  if (entries.some((entry) => entry.deathtouch && entry.amount > 0)) return true;
+  return entries.reduce((total, entry) => total + entry.amount, 0) >= lethal;
+}
+
 /** Lethal (CR 510.1c/702.19b — bez efektów zmieniających faktycznie zadane). */
 function lethalOf(state, attacker, blocker) {
   if (hasKeyword(state, attacker, 'deathtouch')) return 1;
@@ -698,6 +773,11 @@ export function buildDamageAssignmentView(state, viewerId = null) {
           toughness: effectiveToughness(blocker, state),
           damage: blocker.damage ?? 0,
           lethal: lethalOf(state, attacker, blocker),
+          // W5 (CR 702.19b): ile przydzielają mu w tym kroku inni atakujący —
+          // wizard odejmuje to od wymaganego lethal, żeby nie blokował legalnego
+          // przydziału (silnik i tak waliduje całość, CR 510.1e).
+          assignedByOthers: damageAssignedToBlockerThisPass(state, pass, id, attackerId, pending.assignmentsSoFar ?? null),
+          lethalByOthers: lethalAssignedByOthersThisPass(state, pass, id, attackerId, pending.assignmentsSoFar ?? null),
         };
       }),
     });
@@ -731,7 +811,7 @@ export function buildDefaultDamageAssignments(state) {
  * pełną sumę (CR 510.1a/c) i lethal przed graczem (CR 702.19b).
  * Zwraca null albo powód odrzucenia.
  */
-export function validateDamageAssignment(state, attackerId, assignment) {
+export function validateDamageAssignment(state, attackerId, assignment, context = null) {
   const attacker = state.objects.get(attackerId);
   if (!attacker || attacker.zone !== 'battlefield') return null; // atakujący zniknął — bez walidacji
   const blockers = (state.combat.blockers.get(attackerId) ?? []).filter((id) => {
@@ -768,7 +848,16 @@ export function validateDamageAssignment(state, attackerId, assignment) {
     for (const entry of assignment) {
       const blocker = state.objects.get(entry.blockerId);
       if (!blocker) continue;
-      if (entry.amount < lethalOf(state, attacker, blocker)) return 'trample_blocker_below_lethal';
+      // W5 (CR 702.19b): lethal blokera liczy się razem z obrażeniami, które
+      // przydzielają mu w tym samym kroku INNE stwory — bez `context` (wołania
+      // jednostkowe) zostaje dotychczasowe zachowanie.
+      const byOthers = context
+        ? damageAssignedToBlockerThisPass(state, context.pass, entry.blockerId, attackerId, context.assignments)
+        : 0;
+      // CR 702.2b: lethal może być już pokryty przez źródło z deathtouch.
+      const coveredByOthers = Boolean(context
+        && lethalAssignedByOthersThisPass(state, context.pass, entry.blockerId, attackerId, context.assignments));
+      if (!coveredByOthers && entry.amount + byOthers < lethalOf(state, attacker, blocker)) return 'trample_blocker_below_lethal';
     }
   }
   return null;
@@ -837,6 +926,10 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
       state.pendingDamageAssignment = {
         playerId: state.combat.attackingPlayerId,
         role: 'attacker',
+        // Źródło decyzji jawne (obok resumeFrom) — potrzebne, żeby komenda bez
+        // wpisu dla tego stwora oznaczała „akceptuję wariant domyślny" zamiast
+        // ponownego pytania o tę samą decyzję.
+        attackerId,
         pass,
         phase: 'assign-attackers',
         resumeFrom: i,

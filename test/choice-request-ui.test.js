@@ -831,3 +831,39 @@ test('renderDamageWizard (W3): podział blokera → assignments z kluczami attac
   assert.equal(confirm.disabled, true, 'niedobór (suma < mocy) blokuje Zatwierdź — CR 510.1a');
   assert.ok(!/do gracza: [1-9]/.test(host.textContent), 'bloker nie przenosi nadwyżki na gracza');
 });
+
+test('renderDamageWizard (W5, CR 702.19b/702.2b): lethal pokryty przez innego atakującego odblokowuje 0', () => {
+  const host = new ChoiceMiniEl('div');
+  const calls = [];
+  const pending = {
+    playerId: 'p1',
+    entries: [{
+      attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: true,
+      // y (3/3) blokuje tego samego stworza i przydziela mu całe 3 = lethal,
+      // więc trample może legalnie dać 0 blokerowi i 5 graczowi.
+      blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3, assignedByOthers: 3, lethalByOthers: true }],
+    }],
+  };
+  renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand: null, onComplete: (cmd) => calls.push(cmd) });
+  const confirm = findAll(host, 'button', 'Zatwierdź przydział')[0];
+  const minus = findAll(host, 'button', '−1')[0];
+  minus.click(); minus.click(); minus.click();
+  assert.match(host.textContent, /do gracza: 5/, 'cała moc przechodzi na gracza');
+  assert.equal(confirm.disabled, false, 'bramka trample liczy assignedByOthers/lethalByOthers z widoku');
+  confirm.click();
+  assert.deepEqual(calls, [{ type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b1', amount: 0 }] } }]);
+
+  // Bez pokrycia przez innego (assignedByOthers 0) ten sam zjazd do 0 blokuje.
+  const host2 = new ChoiceMiniEl('div');
+  const calls2 = [];
+  renderDamageWizard(host2, {
+    view: COMBAT_VIEW, session: COMBAT_SESSION,
+    pending: { playerId: 'p1', entries: [{ attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: true,
+      blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3, assignedByOthers: 0, lethalByOthers: false }] }] },
+    defaultCommand: null, onComplete: (cmd) => calls2.push(cmd),
+  });
+  const minus2 = findAll(host2, 'button', '−1')[0];
+  minus2.click(); minus2.click(); minus2.click();
+  assert.equal(findAll(host2, 'button', 'Zatwierdź przydział')[0].disabled, true, 'M101/B6 nadal działa bez pokrycia');
+  assert.deepEqual(calls2, [], 'zablokowany przycisk nie wysyła komendy');
+});

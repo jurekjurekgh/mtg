@@ -5393,16 +5393,28 @@ export function execute(state, input) {
     // albo — przy role 'blocker' — BLOKERZY (atakujący jako cele). Walidacja
     // musi być po tej samej stronie co decyzja (L48: oferta == walidacja).
     const isBlockerRole = pending.role === 'blocker';
-    for (const sourceId of Object.keys(submitted)) {
-      const err = isBlockerRole
-        ? validateBlockerDamageAssignment(state, sourceId, submitted[sourceId])
-        : validateDamageAssignment(state, sourceId, submitted[sourceId]);
-      if (err) return reject(`illegal_damage_assignment:${err}`);
-    }
     // W4 (CR 510.1/510.2): wszystkie przydziały ogłasza się PRZED zadaniem
     // obrażeń, więc przebieg zbiera kolejne decyzje i niesie je razem —
     // wcześniejsze wybory gracza nie mogą zostać zastąpione domyślnymi.
-    const assignments = { ...(pending.assignmentsSoFar ?? {}), ...submitted };
+    // Brak wpisu dla źródła TEJ decyzji = akceptacja wariantu domyślnego, czyli
+    // dokładnie tego, który niesie oferta w legalCommands (L48: oferta ==
+    // walidacja). Bez tego przebieg pytałby w kółko o tę samą decyzję, a pusta
+    // mapa jest legalną komendą protokołu, nie zawieszeniem.
+    const sourceId = isBlockerRole ? pending.blockerId : pending.attackerId;
+    const filled = { ...submitted };
+    if (sourceId && filled[sourceId] === undefined) {
+      const offered = buildDefaultDamageAssignments(state)[sourceId];
+      if (offered) filled[sourceId] = offered;
+    }
+    const assignments = { ...(pending.assignmentsSoFar ?? {}), ...filled };
+    for (const sourceId of Object.keys(submitted)) {
+      // W5 (CR 510.1e/702.19b): sprawdza się CAŁY przydział kroku, więc
+      // walidator trample widzi mapę wszystkich przydziałów i przebieg.
+      const err = isBlockerRole
+        ? validateBlockerDamageAssignment(state, sourceId, submitted[sourceId])
+        : validateDamageAssignment(state, sourceId, submitted[sourceId], { assignments, pass: pending.pass });
+      if (err) return reject(`illegal_damage_assignment:${err}`);
+    }
     state.pendingDamageAssignment = null;
     try {
       const e = resolveCombatDamage(state, pending.defendingPlayerId, {

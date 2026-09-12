@@ -1362,8 +1362,11 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
   // E8/B3 (CR 510.1a): bez trample suma MUSI równać się mocy — „niedopri-
   // dzielonej" części nie wolno zgubić (wizard dotąd bramkował tylko sufit
   // i warunek trample, przyjmując sumę < moc).
+  // W5 (CR 702.19b): lethal blokera może być pokryty także przez obrażenia,
+  // które przydzielają mu w tym samym kroku inni atakujący (`assignedByOthers`
+  // z widoku) — inaczej wizard blokowałby legalny przydział 0 + całość na gracza.
   const trampleCovered = (entry, amounts) => entry.targets
-    .every((b, idx) => amounts[idx] >= b.lethal);
+    .every((b, idx) => b.lethalByOthers || amounts[idx] + (b.assignedByOthers ?? 0) >= b.lethal);
   const assignmentLegal = () => state.entries.every((e) => {
     const total = e.amounts.reduce((a, b) => a + b, 0);
     if (!e.trample) return total === e.power;
