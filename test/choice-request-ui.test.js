@@ -867,3 +867,28 @@ test('renderDamageWizard (W5, CR 702.19b/702.2b): lethal pokryty przez innego at
   assert.equal(findAll(host2, 'button', 'Zatwierdź przydział')[0].disabled, true, 'M101/B6 nadal działa bez pokrycia');
   assert.deepEqual(calls2, [], 'zablokowany przycisk nie wysyła komendy');
 });
+
+test('renderDamageWizard (W5, oś 2 E6): etykieta celu mówi, że lethal pokrywają inne stwory', () => {
+  const host = new ChoiceMiniEl('div');
+  const pending = {
+    playerId: 'p1',
+    entries: [{
+      attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: true,
+      blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3, assignedByOthers: 3, lethalByOthers: true }],
+    }],
+  };
+  renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand: null, onComplete: () => {} });
+  assert.match(host.textContent, /śmiertelne 3, od innych w tym kroku: 3 \(śmiertelne pokryte\)/,
+    'gracz widzi powód, dla którego 0 na blokera jest legalne');
+
+  // Bez pokrycia przez inne stwory etykieta pozostaje dotychczasowa (bez szumu).
+  const host2 = new ChoiceMiniEl('div');
+  renderDamageWizard(host2, {
+    view: COMBAT_VIEW, session: COMBAT_SESSION,
+    pending: { playerId: 'p1', entries: [{ attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: true,
+      blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3 }] }] },
+    defaultCommand: null, onComplete: () => {},
+  });
+  assert.match(host2.textContent, /śmiertelne 3\)/, 'bez pól W5 etykieta bez dopisku');
+  assert.ok(!/od innych w tym kroku/.test(host2.textContent), 'dopisek tylko gdy jest co pokazać');
+});

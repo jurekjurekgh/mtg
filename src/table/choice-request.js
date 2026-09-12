@@ -1468,10 +1468,18 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
         // który nie przyjmował `onOpenCard` (uwaga właściciela: „elastyczne
         // komponenty z parametrami, nie równoległe funkcje" — konwencja była
         // złamana dokładnie w jednym miejscu i nikt jej nie pilnował).
+        // W5 (CR 702.19b/702.2b): gracz musi WIDZIEĆ, dlaczego bramka pozwala
+        // przydzielić mniej niż „śmiertelne" — lethal tego blokera pokrywają
+        // obrażenia przydzielane mu w tym samym kroku przez inne stwory (albo
+        // niezerowy przydział od źródła z deathtouch). Bez tej informacji
+        // poluzowanie bramki wyglądałoby na błąd UI.
+        const othersNote = (b.assignedByOthers ?? 0) > 0 || b.lethalByOthers
+          ? `, od innych w tym kroku: ${b.assignedByOthers ?? 0}${b.lethalByOthers ? ' (śmiertelne pokryte)' : ''}`
+          : '';
         const handle = renderPickerRow(rows, {
           id: b.id,
           kind: 'stepper',
-          label: `${blockerName} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal})`,
+          label: `${blockerName} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal}${othersNote})`,
           min: 0,
           max: entry.power,
           rowClassName: 'damage-wizard-row',
