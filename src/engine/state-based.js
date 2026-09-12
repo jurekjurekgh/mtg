@@ -169,7 +169,7 @@ export function runStateBasedActions(state) {
     for (const player of state.players) {
       const isZeroLife = player.life <= 0;
       const isPoisoned = (player.poison ?? 0) >= POISON_LOSS_LIMIT;
-      // M202 (CR 704.5m): gracz, który od ostatniego przebiegu akcji stanowych
+      // M202 (CR 704.5b): gracz, który od ostatniego przebiegu akcji stanowych
       // próbował dobrać kartę z pustej biblioteki, przegrywa. Rozstrzygamy to
       // TUTAJ, razem z życiem i trucizną, bo dopiero wtedy wiadomo, czy
       // przegranych jest więcej niż jeden — a wtedy CR 104.4b daje REMIS.

@@ -213,7 +213,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // i `formerAbilityGrants` to LKI (CR 603.10) — persist i Guildsworn
     // Prowler („if it wasn't blocking") czytają je PO opuszczeniu pola bitwy.
     damagedThisTurn: false, damagedByDeathtouch: false, attackedThisTurn: false,
-    attacking: false, blocking: false, saddled: false, monstrous: false,
+    attacking: false, blocking: false, saddled: false, monstrous: false, crewed: false,
     abilityResolvedThisTurn: 0, tempBasePT: null,
     // LKI płatności Skarbem NIE przechodzi przez zmianę strefy (CR 400.7) —
     // permanent wchodzący na pole bitwy inną drogą (reanimacja, token) nie
@@ -286,6 +286,8 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
           power: original.power,
           toughness: original.toughness,
           originalBeforeAnimation: null,
+          // A4: cofnięcie animacji gasi też znacznik crew (jak w cleanup).
+          crewed: false,
         });
         state.objects.set(targetId, reverted);
         // M201 (znalezisko #1, CR 506.4c): permanent, który przestał być

@@ -31,12 +31,14 @@ test('hybrydy i phyrexian też są w grupie', () => {
   assert.ok(html.includes('ms-hybrid'), 'ikony hybrydowe w środku');
 });
 
-test('tekst z symbolami jest cały atomowy (jeden koszt = jedna grupa)', () => {
-  // Kontrakt dla wywołań w render.js/mana-wizard.js: każdy wywołujący
-  // przekazuje JEDEN koszt (lub zwięzłą listę pipów), więc całość ma być
-  // jedną niełamliwą jednostką — separator „ i " też zostaje w grupie.
+test('osobne koszty to osobne grupy (proza między symbolami łamie przebieg)', () => {
+  // B (Abstruse Interference, L13): kontrakt „cały napis = jedna grupa"
+  // opierał się na FAŁSZYWYM założeniu, że każdy wywołujący przekazuje
+  // JEDEN koszt. render.js (wpisy Rozgrywki, E3) przekazuje pełne ZDANIA —
+  // całość w nowrap .ms-group rozpychała modal. Od teraz grupą jest każdy
+  // CIĄGŁY przebieg symboli: „{R} i {G}" to DWA koszty = dwie grupy.
   const html = manaSymbolsHtml('{R} i {G}');
-  assert.equal((html.match(/class="ms-group"/g) ?? []).length, 1);
+  assert.equal((html.match(/class="ms-group"/g) ?? []).length, 2);
 });
 
 test('tekst bez symboli nie jest owijany w grupę', () => {
@@ -44,11 +46,21 @@ test('tekst bez symboli nie jest owijany w grupę', () => {
   assert.equal(manaSymbolsHtml(''), '');
 });
 
-test('escapowanie tekstu działa wewnątrz grupy', () => {
+test('escapowanie działa, a proza jest POZA grupą (łamie się)', () => {
+  // B jw. (L13): proza nie wchodzi już do nowrap grupy.
   const html = manaSymbolsHtml('koszt {R} & <x>');
-  assert.match(html, /^<span class="ms-group">koszt /);
+  assert.match(html, /^koszt <span class="ms-group">/);
   assert.ok(html.includes('&amp;'));
   assert.ok(html.includes('&lt;x&gt;'));
+});
+
+test('B: zdanie z kosztem w środku — atomowy tylko koszt (Abstruse Interference)', () => {
+  // Regresja zgłoszenia: wpis „...zapłaci {1} (Abstruse Interference)"
+  // nie może być jedną niełamliwą jednostką (scroll w poziomie modala).
+  const html = manaSymbolsHtml('Call zostanie skontrowany, chyba że kontroler zapłaci {1} (Abstruse)');
+  assert.equal((html.match(/class="ms-group"/g) ?? []).length, 1, 'tylko koszt w grupie');
+  assert.match(html, /^Call zostanie skontrowany/, 'proza przed grupą (łamliwa)');
+  assert.match(html, /\(Abstruse\)$/, 'proza za grupą (łamliwa)');
 });
 
 test('manaCostHtml deleguje do grupowania', () => {

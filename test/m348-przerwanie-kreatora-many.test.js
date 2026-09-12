@@ -45,6 +45,9 @@ for (const nextNeedsWizard of [false, true]) {
       return nextNeedsWizard ? following : null;
     };
     ctx.playDirect = (cmd) => { assert.equal(cmd, next); calls.push('direct'); };
+    // A2: play() woła też crewPlanFor (kreator załogi przed kreatorem
+    // many) — M348 bada przerwanie kreatora MANY, więc załoga stubowana na null.
+    ctx.crewPlanFor = () => null;
     ctx.openManaWizard = (descriptor) => { assert.equal(descriptor, following); calls.push('open'); ctx.manaWizardDescriptor = descriptor; };
     const play = runInContext(`${localFunction('describeAbandonedCast')}\n${localFunction('play')}\nplay;`, ctx);
     assert.doesNotThrow(() => play(next), 'tablica session.log nie jest funkcją');
@@ -72,7 +75,8 @@ test('M348/C: bez poprzedniego kreatora nie ma anulowania ani próby logowania',
   const count = session.log.length;
   const calls = [];
   const cmd = { type: 'pass_priority', playerId: HUMAN_ID };
-  const ctx = createContext({ session, manaWizardDescriptor: null, manaWizardFor: () => null, playDirect: (c) => calls.push(c) });
+  // A2: jw. — play() woła crewPlanFor, stub na null (brak kreatora załogi).
+  const ctx = createContext({ session, manaWizardDescriptor: null, manaWizardFor: () => null, playDirect: (c) => calls.push(c), crewPlanFor: () => null });
   const play = runInContext(`${localFunction('play')}\nplay;`, ctx);
   play(cmd);
   assert.deepEqual(calls, [cmd]);

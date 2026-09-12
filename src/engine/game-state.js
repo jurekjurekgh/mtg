@@ -29,7 +29,7 @@ import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tr
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities } from './attachments.js';
-import { createBattlefieldToken, TREASURE_TOKEN_EFFECT } from './tokens.js';
+import { createBattlefieldToken, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
@@ -65,10 +65,12 @@ import {
   HOSTILE_TRIGGER_TARGET_EFFECTS,
   triggerEffectIsHostile,
   triggerTargetDebuffOf,
+  triggerTargetPowerPumpOf,
+  triggerTargetRemovesTargetOf,
   triggerTargetEffectFriendly,
 } from './effect-intent.js';
 
-export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetEffectFriendly };
+export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetPowerPumpOf, triggerTargetRemovesTargetOf, triggerTargetEffectFriendly };
 
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
@@ -3532,6 +3534,16 @@ export function execute(state, input) {
             abilities: [...(copyBase.abilities ?? target.abilities ?? [])],
             kind: copyBase.kind ?? target.kind,
             cardName: target.cardName ?? target.cardId,
+            // C (znalezisko właściciela 2026-09-12, Jwari Shapeshifter):
+            // CR 707.2 — NAZWA jest wartością kopiowalną. Kopia wchodzi pod
+            // nazwą celu + dostaje kolejny numer wśród żywych kopii tej nazwy
+            // — DOKŁADNIE jak token-kopia (effects.js, M172/D; jedna reguła,
+            // dwie ścieżki, wspólny helper, L48). Stół pokazuje „X (kopia N)"
+            // istniejącą ścieżką M172/D (render.js) — bez nowych badge'ów.
+            // Prawo legend (state-based.js) czyta cardName w pierwszej
+            // kolejności, więc ta zmiana go nie rusza.
+            name: target.cardName ?? target.cardId,
+            copyNumber: nextCopyNumber(state, target.cardName ?? target.cardId),
             // CR 707.2 + 202.3b (M258): koszt many jest wartością kopiowalną
             // — do tej pory kopia „enter as copy" nosiła własny koszt Jwari
             // zamiast kosztu celu. Wspólny helper z token-kopią (L48).
@@ -5565,6 +5577,10 @@ export function playerView(state, playerId) {
           // wysyłał (tylko name) → etykiety celów wracały do surowego
           // „token_squirrel” przez session.nameOf(cardId). Klasa L1/ADR 0017.
           ...(object.isToken ? { isToken: true, name: object.name } : {}),
+          // C (Jwari): kopia na KARCIE (enter-as-copy) też nosi nazwę celu —
+          // bez tego kafel wracał do session.nameOf(cardId) („Jwari
+          // Shapeshifter") i ścieżka M172/D („X (kopia N)") nie miała danych.
+          ...(!object.isToken && object.copyNumber > 0 && object.name ? { name: object.name } : {}),
           // M172/D: numer kopii (publiczny) — warstwy nazw dopisują
           // „(kopia N)" przy celach, blokach i na kaflu.
           ...(object.copyNumber ? { copyNumber: object.copyNumber } : {}),
@@ -5764,6 +5780,10 @@ export function playerView(state, playerId) {
         // animowany do EOT (crew rozstrzygnięty) nosi originalBeforeAnimation.
         // Widoczny stan → badge/decyzja bota (nie re-crewuj), ADR 0017.
         if (object.originalBeforeAnimation != null) entry.animatedUntilEOT = true;
+        // A4 (Balamb Garden): rozstrzygnięte crew (CR 702.122e) — kafel
+        // pokazuje „obsadzony". Osobne pole, bo animatedUntilEOT stawia
+        // też Skilled Animator / stacja, a badge nazywa załogę.
+        if (object.crewed === true) entry.crewed = true;
         // Źródło aktywnej animacji jest publiczne; nazwa zakrytej karty nie.
         const animationLink = (state.linkedAnimations ?? []).find(link => link.targetId === object.id);
         const animationSource = animationLink && state.objects.get(animationLink.sourceId);
@@ -6588,6 +6608,12 @@ export function playerView(state, playerId) {
     // B (znalezisko testera): debuff P/T w komendzie (jak friendly z M150) —
     // bot premiuje zabójstwo, nie największy cel.
     const triggerDebuff = triggerTargetDebuffOf(triggerTargetHead.ability);
+    // B (Battle-Rattle Shaman): pump siły w komendzie (jak debuff) —
+    // bot celuje stwora zdolnego do ataku, nie największego chorego.
+    const triggerPump = triggerTargetPowerPumpOf(triggerTargetHead.ability);
+    // C (Academy Journeymage): flaga usunięcia celu (jak friendly —
+    // zawsze bool): bot liczy zrywanie aur przyklejonych do celu.
+    const triggerRemovesTarget = triggerTargetRemovesTargetOf(triggerTargetHead.ability);
     // M157/F4(a): wielocelowy trigger (count > 1, „each of up to N") —
     // warianty = podzbiory celów o rozmiarze 1..count (bez powtórzeń,
     // porządek deterministyczny) + zero celów przy upTo. CAP 32 wariantów
@@ -6615,7 +6641,7 @@ export function playerView(state, playerId) {
       // pierwszy wariant pełnego rozmiaru (deterministycznie: najwcześniejsze
       // kandydaty), a wariant pusty („up to") idzie na koniec.
       for (const targetIds of variants) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
       }
     } else {
       // M203/2 (konwencja „prezentacja = enumeracja"): kandydaci w kolejności
@@ -6623,10 +6649,10 @@ export function playerView(state, playerId) {
       // pierwszą ofertę), a odmowa („up to one"/„you may") jest OSTATNIA —
       // dawniej wymuszało to odwrócenie przez unshift.
       for (const targetId of legal) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
       }
       if (triggerTargetHead.allowNone) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMoonlitChoice) {
@@ -7288,8 +7314,8 @@ export function playerView(state, playerId) {
       if (attackerId !== undefined) extra.attackerId = attackerId;
       if (targets !== undefined) extra.targets = targets;
       if (xValue !== undefined) extra.xValue = xValue;
-      // Crew (CR 701.36): wybór stworów do tapnięcia jedzie w komendzie —
-      // bez tego oferowana komenda byłaby odrzucana (nielegalny crew).
+      // Crew/Saddle (CR 702.122a/702.171a): wybór stworów do tapnięcia jedzie
+      // w komendzie — bez tego oferowana komenda byłaby odrzucana.
       if (crewCreatureIds !== undefined) extra.crewCreatureIds = crewCreatureIds;
       if (tapArtifactIds !== undefined) extra.tapArtifactIds = tapArtifactIds;
       if (tapCreatureId !== undefined) extra.tapCreatureId = tapCreatureId;

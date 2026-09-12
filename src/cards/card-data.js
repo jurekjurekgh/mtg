@@ -3475,7 +3475,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        // Crew (CR 701.36) NIE ma w Oracle „Activate only as a sorcery" —
+        // Crew (CR 702.122) NIE ma w Oracle „Activate only as a sorcery" —
         // aktywuje się jak instant (z priorytetem, także w turze przeciwnika).
         // Audyt Batchu 26 (M65): timing 'sorcery' blokował crew w odpowiedzi
         // na czar i w turze przeciwnika.
@@ -4484,7 +4484,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        // Crew (CR 701.36) — jak wyżej: instant, bez „Activate only as a
+        // Crew (CR 702.122) — jak wyżej: instant, bez „Activate only as a
         // sorcery" w Oracle (audyt Batchu 26, M65).
         cost: { crewPower: 3 },
         effect: { type: 'animate_permanent_until_end_of_turn', power: 5, toughness: 5, typesAdd: ['Creature'] },
@@ -8364,7 +8364,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        // Crew (CR 701.36) aktywuje się jak instant (audyt Batchu 26/M65).
+        // Crew (CR 702.122) aktywuje się jak instant (audyt Batchu 26/M65).
         cost: { crewPower: 1 },
         effect: { type: 'animate_permanent_until_end_of_turn', power: 5, toughness: 4, typesAdd: ['Creature'] },
       }),

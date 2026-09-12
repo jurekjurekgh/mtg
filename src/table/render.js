@@ -2711,25 +2711,37 @@ export function commandLabel(cmd, session, view) {
         ? (/^(odrzuć|poświęć|zapłać|wygnaj|wyrzuć)/.test(costHtml)
           ? ` (koszt: ${costHtml})` : ` (koszt ${costHtml})`)
         : '';
+      // A1 (znalezisko właściciela 2026-09-12, Balamb Garden): „Aktywuj: <nazwa>"
+      // nie mówiło, CO robi klik — crew/saddle nazywają czynność po imieniu
+      // (klik otwiera kreator wyboru załogi; default widać w ogonie etykiety).
+      const actionVerb = ability?.cost?.saddlePower ? 'Osiodłaj'
+        : (ability?.cost?.crewPower ? 'Obsadź' : 'Aktywuj');
       const tapPart = cmd.tapCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapCreatureId)}` : (cmd.tapOtherCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapOtherCreatureId)}` : '');
       // M160/B2 (Seismic Monstrosaur): koszt „poświęć ląd” enumeruje wariant
       // per ląd — etykieta MUSI nazwać, który ląd ginie (poświęcenie to
       // koszt, CR 601.2h; sześć identycznych wpisów było nierozróżnialnych).
       const sacCreaturePart = cmd.sacrificeCreatureId != null ? ` — poświęć: ${nameOfObjectId(cmd.sacrificeCreatureId)}` : '';
       const sacLandPart = cmd.sacrificeLandId != null ? ` — poświęć: ${nameOfObjectId(cmd.sacrificeLandId)}` : '';
-      // M101/B7: nazwij AKCJĘ, którą gracz wykonuje (crew albo saddle — nie
-      // oba naraz), i powiedz wprost, że wskazane stwory zostaną TAPNIĘTE.
-      // Tapnięcie to koszt (CR 701.36a/702.171a), więc gracz musi je widzieć
-      // przed kliknięciem.
-      const crewNames = (cmd.crewCreatureIds ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      const crewVerb = ability?.cost?.saddlePower ? 'osiodłaj' : 'załoga';
-      const crewPart = cmd.crewCreatureIds?.length ? ` — ${crewVerb}: tapnij ${crewNames}` : '';
+      // M101/B7 + A2-rewizja (decyzja właściciela 2026-09-12): klik w crew/
+      // saddle NIE tapuje wskazanych stworów — OTWIERA KREATOR (jak modale
+      // czarów: start pusty, zero preselekcji defaultu). Etykieta mówi więc,
+      // CO klik robi (wybór załogi w kreatorze), JAKIM kosztem (TAPNIĘCIE —
+      // CR 702.122a/702.171a, gracz musi je widzieć przed kliknięciem)
+      // i z JAKIM progiem (N z kosztu zdolności). Imion defaultu NIE
+      // wymieniamy — default to fallback wykonania, nie obietnica kliku.
+      const crewNeeded = ability?.cost?.saddlePower ?? ability?.cost?.crewPower;
+      const crewTail = ability?.cost?.saddlePower
+        ? 'wybierz stwory do tapnięcia'
+        : 'wybierz załogę do tapnięcia';
+      const crewPart = cmd.crewCreatureIds?.length
+        ? ` — ${crewTail}${crewNeeded > 0 ? ` (moc ≥ ${crewNeeded})` : ''}`
+        : '';
       // M126/#1: zdolność czytająca pustą bibliotekę zabierze koszt i nic nie da.
       const emptyLibWarn = abilityFizzlesOnEmptyLibrary(ability, view)
         ? ' — UWAGA: twoja biblioteka jest pusta, zdolność nie zadziała'
         : (abilityFizzlesOnHand(ability, view)
           ? ' — UWAGA: brak pasującej karty w ręce, zdolność nie zadziała' : '');
-      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${sacLandPart}${sacCreaturePart}${crewPart}${emptyLibWarn}`;
+      return `${actionVerb}: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${sacLandPart}${sacCreaturePart}${crewPart}${emptyLibWarn}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));
@@ -3434,6 +3446,9 @@ export function cardInfo(session, object, combat = null) {
     protection: faceDown ? [] : [...(object.protection ?? [])],
     // M173/C: czasowe stany z widoku (saddle/untap-lock/kontrola/regeneracja).
     saddledNow: Boolean(object.saddled),
+    // A4 (Balamb Garden): rozstrzygnięte crew (CR 702.122e) — osobne pole
+    // od animatedUntilEOT, bo badge nazywa załogę, nie dowolną animację.
+    crewedNow: Boolean(object.crewed),
     untapLockedNow: Boolean(object.untapLocked || object.dontUntapNextUntapStep),
     tempControlNow: Boolean(object.tempControlUntilEOT),
     linkedAnimationLabel: object.linkedAnimationSource
@@ -3774,6 +3789,9 @@ export function buildStateOverlay(visual, info) {
     // M173/C: pozostałe czasowe stany z efektów — audyt na wniosek
     // właściciela (Panic Spellbomb — klasa objęta już przez cantBlockNow).
     if (info.saddledNow) flags.push(['kw', 'osiodłany']);
+    // A4: obsadzony pojazd widać na kaflu (M230 zaplanował badge,
+    // ale nikt nie czytał flagi — stąd zgłoszenie).
+    if (info.crewedNow) flags.push(['kw', 'obsadzony']);
     if (info.untapLockedNow) flags.push(['kw', 'nie odkręca się']);
     if (info.tempControlNow) flags.push(['kw', 'kontrola do końca tury']);
     if (info.linkedAnimationLabel) flags.push(['kw', info.linkedAnimationLabel]);

@@ -10234,3 +10234,69 @@ blokerów: Skilled Animator (moc 1) vs Tiller of Flesh (śmiertelne 4) i Incubat
 a komenda przeszła przez `execute` bez błędu. Podwójnego bloku po obu stronach nie
 trafiła żadna z 7 partii, więc dowodem zmiany są testy deterministyczne P/1–P/10.
 Transkrypty poza repo (`tools/table-tester/tmp-audyt-p-2026-09-12/`, M239).
+
+## 2026-09-12d — znaleziska Crew A1–A4 + Shaman B (PR #115, arena/01a096f0)
+
+Zlecenie właściciela: Balamb Garden, Airborne (DFC, tył Crew 1) — niejasna
+etykieta „Aktywuj" (A1), klik w ścianę podzbiorów zamiast pickera (A2),
+silnik sam dobierał załogę przy 7 stworach (A3), brak badge'a po crew (A4);
+Battle-Rattle Shaman — bot buffował chorego zamiast atakującego (B).
+Plan: docs/plans/PLAN_2026-09-12f-znaleziska-crew-shaman.md (E0–E7).
+
+E0: audyt PR #114 (8 znalezisk, 0 blokujących, fabricate D5 702.123a).
+E1: CR 2026-08-07 — crew „other" już poprawne, tylko cytowania 701.36.
+E2/silnik (`7fda5c8`): JEDNA oferta crew/saddle z defaultem greedy
+(rosnąco po mocy, skip 0-power, determinizm); walidacja każdego legalnego
+podzbioru przy aktywacji; znacznik `crewed` na rozstrzygnięcie (702.122e).
+E3–E5 (`62c0f55`): czasownik Obsadź/Osiodłaj; kreator załogi (crewMode —
+wiersze z mocą, licznik ≥ N, pre-check defaultu, przed kreatorem many);
+badge „obsadzony"; sygnał `pump` w ofercie triggera + bot buffuje zdolnego
+do ataku (haste-aware, −60 niezdolnemu, odmowa przy samych chorych).
+E6: pełna suita **5314/5314** (re-run po 2 fixach uprzęży: m277 lista
+warunkowa `crewed`, m348 stub `crewPlanFor`); szybka **5306/5306**;
+`npm run build` 61 modułów / **3552.0 kB**; golden master BEZ churn;
+quick benchmark 672 mecze w 136.9 s: heuristic **84.2%** (566/672),
+aggro 26.5%, random 5.1% — IDENTYCZNIE jak sesja poprzednia (zmiany nie
+dotykają próbkowanych matchupów; pomiar dowodzi braku regresji).
+Aggro-bot: crew ignoruje z definicji (tylko equip), ryzyko E6 zamknięte.
+Żywy Tester na świeżym `dist/` (partie pojazdami + Shaman) — PO STRONIE
+WŁAŚCICIELA, przed scaleniem. Testy: 13 silnika + 14 stołu (w tym 2 DOM
+na żywym rendererze) + 6 bota.
+
+## 2026-09-12e — rewizja A2 (pusty start kreatora) + zgłoszenie C: Journeymage (PR #115, arena/01a096f0)
+
+Decyzja właściciela: kreator załogi BEZ preselekcji defaultu (spójność
+z modalami czarów) i ZAWSZE otwierany, także na 1 kandydata (ekran
+świadomej zgody na tapnięcie). `defaultIds` wypadło z planu; etykieta nie
+wymienia imion defaultu („wybierz załogę/stwory do tapnięcia (moc ≥ N)");
+piny M101/B7 zaktualizowane z uzasadnieniem (L13).
+C: Academy Journeymage — sygnał `removesTarget` w ofercie triggera
+(aury celu giną, CR 704.5m); bot ±30 za przyklejoną aurę (cudza +,
+własna −; sprzęt i bestow poza premią). Testy: kreator 13 (przepisane
+na pusty start) + bot-trigger-aura-strip 6. Bramki: pełna **5321/5321**,
+build 61 modułów / 3555.2 kB, golden master bez churn.
+
+## 2026-09-12f — runda 2: wsadowe szukanie (A) + Abstruse (B) + Jwari (C) + D1/D2/D3 (PR #115, arena/01a096f0)
+
+A: łańcuch szukań o identycznych parametrach (Springbloom/Roiling) to JEDEN
+modal-stepper („wskaż do N kart łącznie"), nie seria modali pojedynczych —
+`searchBatchPlanOf`/`searchBatchStepOf` (multi-target.js, czyste) +
+`renderSearchBatchWizard` (choice-request.js, steppery M292, podgląd po
+cardId) + synchroniczna pętla submitu w main.js (per krok: odcisk łańcucha,
+reprezentant cardId z AKTUALNEJ oferty, auto-decline tylko gdy oferowany;
+STOP oddaje grę panelowi akcji). Final Parting (mieszane destynacje) zostaje
+sekwencyjny. Silnik/bot/protokół NIETKNIĘTE. Testy a-search-batch 20 (w tym
+live nad silnikiem: [Forest, Forest] kładzie 2 tapnięte).
+B: Abstruse Interference rozpychany modal Rozgrywki — `manaSymbolsHtml`
+grupuje CIĄGŁE przebiegi symboli (nie cały napis w nowrap); koszt czysty
+bajtowo bez zmian; pas `overflow-wrap` na `.bot-move-line`; piny L13
+przepisane z uzasadnieniem.
+C: Jwari jako kopia nosi nazwę celu + `copyNumber` (lustro token-kopii L48,
+CR 707.2) — kafel „Rotting Legion (kopia 1)" istniejącą ścieżką M172/D;
+prawo legend czyta cardName, bez zmian. Testy c-enter-as-copy-name 5.
+D1: bot nie crewuje zatapowanego pojazdu (−10, bliźniak M230; Saddle
+niekarane — wyzwalacz „becomes saddled"). D2: silnik DOBRZE przegrywa przy
+doborze-zdoleniu z pustej (CR 704.5b/121.4 — mit „tylko draw step");
+poprawione 2 literówki komentarzy (704.5m→704.5b). D3: atak z drenażem
+biblioteki (Balamb) karany drabiną libraryLossPenalty — przy 3 kartach bot
+nie atakuje. Bramki: pełna **5341/5341**, build 61 modułów / 3572.8 kB.

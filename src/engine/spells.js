@@ -1628,6 +1628,19 @@ function resolveActivatedAbilityEntry(state, entry) {
     // ile liczników zaproponować.
     applyEffect(state, effect, source, targets, { xValue: payload.xValue ?? 0, sourceUntapVersion: lki.untapVersion ?? 0 });
   }
+  // A4 (znalezisko właściciela 2026-09-12, Balamb Garden): rozstrzygnięta
+  // zdolność crew OZNACZA pojazd. CR 702.122e: „Whenever [this Vehicle]
+  // becomes crewed" means "Whenever a crew ability of [this Vehicle]
+  // resolves." — znacznik jest tą chwilą (efekty już zastosowane, więc
+  // przy kontrze/fizzlu flaga nie stanie). Czyści go cleanup razem
+  // z animacją, zmiana strefy (CR 400.7) i nowa strona DFC; kafel pokazuje
+  // „obsadzony", bot nie re-crewuje (M230 już czyta animatedUntilEOT).
+  if (payload.ability?.cost?.crewPower) {
+    const crewed = state.objects.get(payload.sourceId);
+    if (crewed && crewed.zone === 'battlefield') {
+      state.objects.set(crewed.id, Object.freeze({ ...crewed, crewed: true }));
+    }
+  }
   const nth = payload.ability?.onNthResolve;
   if (nth && resolveCount === (nth.n ?? 3) && nth.effect) {
     if (nth.may) {

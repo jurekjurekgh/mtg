@@ -32,8 +32,8 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
-import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard } from './choice-request.js';
-import { discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf } from './multi-target.js';
+import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
 function runEngineSmoke() {
@@ -495,6 +495,53 @@ function bootstrapTable() {
     // sam kreator: wiersze radio, podgląd nazwą, Zatwierdź. Plan poświęcenia
     // (sacrificeCastPlanOf) ma PIERWSZEŃSTWO — grupy „cel + ofiara" też są
     // jednocelowe, ale mają dodatkowy wymiar, którego ten plan nie widzi.
+    // A (zlecenie właściciela 2026-09-12): WSADOWE szukanie — łańcuch szukań
+    // o identycznych parametrach (Springbloom Druid / Roiling Regrowth)
+    // to JEDEN modal-stepper („wskaż do N kart łącznie"), nie seria modali
+    // pojedynczych. MUSI biec PRZED singleTargetPlanOf, bo warianty
+    // resolve_search_choice pasują też do rodziny jednowyborowej.
+    // searchBatchPlanOf zwraca null dla Final Parting (mieszane destynacje),
+    // wyborów destynacji i szukań bez łańcucha — te idą starą ścieżką.
+    const searchOptions = request.options ?? [];
+    const searchBatch = searchOptions.length > 0
+      && searchOptions.every((cmd) => cmd?.type === 'resolve_search_choice')
+      ? searchBatchPlanOf(session.state?.pendingSearchChoice) : null;
+    if (searchBatch) {
+      // Wiersz na distinct cardId (oferty dedupują po cardId, M122/#2) —
+      // licznik wiersza = liczba egzemplarzy u decydenta; kolejność wierszy
+      // = kolejność ofert (biblioteki), deterministyczna (ADR 0005).
+      const batchCards = choiceView.pendingSearchChoice?.cards ?? [];
+      const cardIdOfFound = new Map(batchCards.map((c) => [c?.id, c?.cardId]));
+      const counts = new Map();
+      for (const c of batchCards) {
+        if (c?.cardId == null) continue;
+        counts.set(c.cardId, (counts.get(c.cardId) ?? 0) + 1);
+      }
+      const seenBatchCard = new Set();
+      searchBatch.rows = [];
+      for (const cmd of searchOptions) {
+        if (cmd.found == null) continue; // wariant decline — nie wiersz
+        const cardId = cardIdOfFound.get(cmd.found)
+          ?? session.state?.objects?.get(cmd.found)?.cardId ?? null;
+        if (cardId == null || seenBatchCard.has(cardId)) continue;
+        seenBatchCard.add(cardId);
+        searchBatch.rows.push({ cardId, count: Math.max(1, counts.get(cardId) ?? 1) });
+      }
+      renderSearchBatchWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: searchBatch,
+        commands: searchOptions,
+        sourceName: choiceView.pendingSearchChoice?.sourceCardId
+          ? session.nameOf(choiceView.pendingSearchChoice.sourceCardId) : null,
+        intro: `${choiceGroupTitle(request, session, choiceView)} — wskaż karty (do ${searchBatch.maxPicks} łącznie ze wszystkich szukań):`,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (picks) => { hideModal('choice-request'); submitSearchBatch(picks, searchBatch); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     const singlePlan = singleTargetPlanOf(request.options ?? []);
     if (singlePlan) {
       const sourceObject = singlePlan.objectId == null
@@ -1689,6 +1736,36 @@ function bootstrapTable() {
   }
 
   /** Jedyna droga akcji gracza: komenda → sesja → przerysowanie. */
+  /**
+   * A (wsadowe szukanie): synchroniczna pętla submitu. Zatwierdzenie modala
+   * (lista cardId z krotnościami) składamy w sekwencję komend — po jednej na
+   * krok łańcucha. KAŻDY krok liczy searchBatchStepOf na ŚWIEŻYCH danych
+   * (żywy pending + aktualna oferta): ta sama decyzja (odcisk łańcucha),
+   * reprezentant cardId w TEJ ofercie, auto-decline TYLKO gdy oferowany.
+   * null = STOP bez submitu (obca decyzja / wyczerpane wybory przy kroku
+   * obowiązkowym / nieświeży wybór) — grę przejmuje zwykły przepływ przez
+   * panel akcji (gracz dokończy ręcznie; decline kończy łańcuch dowodliwie,
+   * więc po auto-decline pętla też staje). Jeden task JS = brak przeplotu:
+   * między krokami biblioteka zmienia się wyłącznie naszymi submitami.
+   */
+  function submitSearchBatch(picks, batch) {
+    const list = Array.isArray(picks) ? picks : [];
+    for (let index = 0; index < batch.maxPicks; index += 1) {
+      const view = session.view();
+      const options = (view.legalCommands ?? [])
+        .filter((cmd) => cmd?.type === 'resolve_search_choice');
+      const cmd = searchBatchStepOf({
+        picks: list, index, batch,
+        pending: session.state?.pendingSearchChoice ?? null,
+        options,
+        cards: view.pendingSearchChoice?.cards ?? [],
+      });
+      if (!cmd) break;
+      play(cmd);
+      if (cmd.found == null) break; // decline nigdy nie kontynuuje łańcucha
+    }
+  }
+
   function playDirect(cmd, options) {
     // M201/N1b (zgłoszenie właściciela): awaria wewnątrz sesji (wyjątek pętli
     // bota) nie może zjeść kliknięcia. Sesja łapie ją i oddaje `internalError`
@@ -1721,7 +1798,7 @@ function bootstrapTable() {
    * otwierają kreator „tapnij źródło po jednym"; gdy płatność jest
    * jednoznaczna (0 tapów albo jedyny wariant) zostaje auto-tap M34.
    */
-  function play(cmd) {
+  function play(cmd, { skipCrewWizard = false } = {}) {
     if (!session) { playDirect(cmd); return; }
     // M106/Z10 (audyt stołu): przy OTWARTYM kreatorze many klik w inną akcję
     // szedł prosto do playDirect — wstrzymany rzut przepadał bez śladu, nowa
@@ -1736,6 +1813,15 @@ function bootstrapTable() {
         // M348/F10: log to tablica dla renderera; zapis idzie przez API sesji.
         session.logSystem(`Przerwano płatność many: ${describeAbandonedCast(abandoned)}. Mana w puli zostaje.`);
       }
+    }
+    // A2 (znalezisko właściciela 2026-09-12, Balamb Garden): oferta crew
+    // to default silnika, nie rozkaz — człowiek wybiera załogę w kreatorze
+    // (ptaszek + licznik mocy). PRZED kreatorem many: tapnięcia załogi
+    // schodzą z planszy, zanim auto-tap zacznie szukać źródeł (dziś żaden
+    // pojazd nie łączy crew z kosztem many, ale kolejność jest z CR 601.2h).
+    if (!skipCrewWizard) {
+      const crew = crewPlanFor(cmd);
+      if (crew) { openCrewWizard(crew); return; }
     }
     const descriptor = manaWizardFor(cmd);
     if (!descriptor) { playDirect(cmd); return; }
@@ -1801,6 +1887,47 @@ function bootstrapTable() {
     const source = session.state?.objects?.get(cmd.objectId);
     const ability = source?.abilities?.[cmd.abilityIndex];
     return ability?.cost?.tap ? cmd.objectId : null;
+  }
+
+  /**
+   * A2: plan kreatora załogi dla ludzkiej oferty crew/saddle albo null
+   * (obcy gracz / brak progu / brak kandydatów). Kandydaci z WIDOKU (kind,
+   * controllerId, tapped, power = effectivePower — te same liczby, które
+   * widzi gracz); próg N z deskryptora zdolności w pełnym stanie (widok
+   * go nie niesie). Kreator otwiera się ZAWSZE i startuje PUSTY
+   * (A2-rewizja: spójność z modalami czarów, świadoma zgoda na tapnięcie).
+   */
+  function crewPlanFor(cmd) {
+    const source = session.state?.objects?.get(cmd?.objectId);
+    const ability = source?.abilities?.[cmd?.abilityIndex];
+    const saddle = ability?.cost?.saddlePower != null;
+    // Próg N z deskryptora w pełnym stanie (widok go nie niesie);
+    // kandydatów i moce bierze czysty moduł z widoku pola bitwy.
+    const plan = crewWizardPlanFor({
+      cmd,
+      playerId: HUMAN_ID,
+      neededPower: saddle ? ability.cost.saddlePower : ability?.cost?.crewPower,
+      saddle,
+      battlefield: session.view().zones?.battlefield,
+    });
+    if (!plan) return null;
+    const verb = saddle ? 'Osiodłaj' : 'Obsadź';
+    return { plan, intro: `${verb}: ${session.nameOf(source?.cardId)} — zaznacz załogę do tapnięcia:` };
+  }
+
+  /** A2: modal kreatora załogi; Zatwierdź wraca do play() z pominięciem re-wejścia. */
+  function openCrewWizard({ plan, intro }) {
+    renderMultiTargetWizard(els.choiceRequestBody, {
+      view: session.view(),
+      session,
+      plan,
+      commands: [],
+      intro,
+      onOpenCard: openCardFullscreen,
+      onComplete: (built) => { hideModal('choice-request'); play(built, { skipCrewWizard: true }); },
+      onCancel: () => hideModal('choice-request'),
+    });
+    showModal('choice-request');
   }
 
   function manaWizardFor(cmd) {

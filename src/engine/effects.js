@@ -498,7 +498,7 @@ export function drawPlayerCards(state, playerId, amount, source = 'effect') {
     recordCardDrawn(state, playerId, { fromId: topId, object: drawnObj, source });
     drawn += 1;
   }
-  // CR 704.5m: gracz, który MUSI dobrać więcej kart, niż ma w bibliotece,
+  // CR 704.5b: gracz, który MUSI dobrać więcej kart, niż ma w bibliotece,
   // dobiera pozostałe, a następnie PRZEGRYWA — ale przegrana jest AKCJĄ
   // STANOWĄ (CR 704), a nie natychmiastowym skutkiem efektu. Poprzednio gra
   // kończyła się tutaj, więc o wyniku decydowała KOLEJNOŚĆ przetwarzania:

@@ -1141,6 +1141,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // trigger millu na tapnięcie siedzi na aurze „Enchant land", więc źródło
     // zdolności nie może go mieć (a `tap_for_mana` tę drogę już pokrywa).
     if (cmd?.type === 'activate_ability') return libraryLossPenalty(view, paymentLibraryLoss(view, cmd));
+    // D3 (znalezisko właściciela 2026-09-12, Balamb Garden): atak stworem
+    // z triggerem „attacks → dobierz/zmiel" zjada WŁASNĄ bibliotekę przy
+    // KAŻDYM ataku (`drainsMyLibrary` = czyja biblioteka; warunków triggera
+    // nie ewaluujemy — konserwatywne przybliżenie jak w repeatLibraryDrain;
+    // przy zdrowej bibliotece kara i tak wynosi 0). Przy cienkiej bibliotece
+    // drabina libraryLossPenalty (deckOut 120 / cienka 60+6×brak / margines
+    // 20) robi atak nieopłacalny — bot nie deck-outuje się za +4 obrażenia.
+    // Suma po WSZYSTKICH atakujących (wielu Balambów = wielokrotny drenaż).
+    if (cmd?.type === 'declare_attackers') {
+      let drain = 0;
+      for (const id of cmd.attackerIds ?? []) {
+        const attacker = objectOnBoard(view, id);
+        if (!attacker || attacker.controllerId !== view.playerId) continue;
+        for (const ability of cardDef(attacker.cardId)?.abilities ?? []) {
+          drain += drainEfekty(ability, 'attacks', drainsMyLibrary);
+        }
+      }
+      return libraryLossPenalty(view, drain);
+    }
     if (!LIBRARY_DRAIN_CAST_TYPES.has(cmd?.type)) return 0;
     const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     const drain = repeatLibraryDrain(karta?.cardId ? cardDef(karta.cardId) : undefined)
@@ -4150,6 +4169,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (abilityEffectTypes.includes('animate_permanent_until_end_of_turn') && source?.animatedUntilEOT === true) {
             return finish(-10);
           }
+          // D1 (znalezisko właściciela 2026-09-12, Balamb Garden): crew
+          // animuje pojazd do EOT — ale animacja ZATAPOWANEGO pojazdu nie
+          // daje nic (nie zaatakuje, nie zablokuje), a koszt (tap stwora)
+          // przepada; bot i tak crewował, bo widział tylko „3/1 → 5/4".
+          // Kara jak M230. Zakres TYLKO animate_permanent_until_end_of_turn:
+          // Saddle na zatapowanym wierzchowcu NIE jest karane — „becomes
+          // saddled" to wyzwalacz, który może odpalić wartościowy trigger
+          // (set_saddled ma osobny typ efektu, więc ten warunek go nie łapie).
+          if (abilityEffectTypes.includes('animate_permanent_until_end_of_turn') && source?.tapped === true) {
+            return finish(-10);
+          }
         }
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).
@@ -5747,6 +5777,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const deadBefore = t.toughness <= 0 || (t.damage ?? 0) >= t.toughness;
           return deadAfter && !deadBefore;
         };
+        // C (znalezisko właściciela 2026-09-12, Academy Journeymage):
+        // usunięcie stwora zrywa też przyklejone AURY (cmentarz właściciela,
+        // CR 704.5m). Każda CUDZA aura na celu to dodatkowa karta wroga
+        // w plecy (+30 — bazowa jednostka „karta" jak w podstawie 30);
+        // każda WŁASNA to strata (−30: nie wybijaj stwora spod własnego
+        // Pacifismu, skoro jest inny cel). Sprzęt zostaje na stole (tylko
+        // aury), a bestow po odczepieniu staje się stworem (nie ginie) —
+        // oba poza premią. Predykat aury jak w render.js (kind/aura +
+        // attachedTo), bez bestow.
+        const auraStripDelta = (t) => {
+          if (!cmd.removesTarget || !t) return 0;
+          return (view.zones?.battlefield ?? [])
+            .filter((o) => o?.attachedTo === t.id && (o.kind === 'aura' || o.aura) && !o.bestow)
+            .reduce((sum, o) => sum + (o.controllerId === view.playerId ? -30 : 30), 0);
+        };
         if (Array.isArray(cmd.targetIds)) {
           let score = 0;
           for (const id of cmd.targetIds) {
@@ -5775,9 +5820,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // celów); zabójstwo własnego to katastrofa (−60). Bez zabójstwa
             // dotychczasowa polityka (największy wróg).
             const kill2 = debuffKills(t2);
+            // B (Battle-Rattle Shaman): pump siły — premiuj stwora zdolnego
+            // do ataku (proxy zamiaru ataku; początek combatu jest PRZED
+            // deklaracją, więc sam bonus M167/A za atakujących nie wystarcza).
+            // Tylko na własnej turze (w cudzej pump siły wspiera BLOK —
+            // chory stwór blokuje normalnie). Kara -60 w skali zabójstwa:
+            // decydująca, a przy planszy samych chorych wygrywa odmowa (0).
+            let attackBonus2 = attackingNow2 ? 25 : 0;
+            if ((cmd.pump?.power ?? 0) > 0 && !attackingNow2 && myTurn(view)) {
+              const canAttack2 = !t2.tapped && (!t2.summoningSickness || hasKeyword(t2, 'haste'));
+              attackBonus2 = canAttack2 ? 15 : -60;
+            }
+            // C: w gałęzi wrogiej obie strony celu liczą zrywanie aur (L41).
+            const aura2 = auraStripDelta(t2);
             score += (cmd.friendly
-              ? (t2.controllerId === view.playerId ? 30 + v2 + (attackingNow2 ? 25 : 0) : -20 - v2)
-              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 : -20 - v2) : (kill2 ? 30 + v2 + 60 : 30 + v2)));
+              ? (t2.controllerId === view.playerId ? 30 + v2 + attackBonus2 : -20 - v2)
+              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 + aura2 : -20 - v2 + aura2) : (kill2 ? 30 + v2 + 60 + aura2 : 30 + v2 + aura2)));
           }
           // F-D (Inferno Titan, plan 2026-09-09): trigger wielocelowy z efektem
           // `damage_divided` dzieli STAŁĄ sumę (`divisionTotal`) na wybrane cele,
@@ -5832,13 +5890,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M167/A: buff idzie na współatakującego, nie na stojącego.
         const attackingNow = (view.combat?.attackers ?? []).includes(target.id);
         if (cmd.friendly) {
-          if (target.controllerId === view.playerId) return finish(30 + value + (attackingNow ? 25 : 0));
+          if (target.controllerId === view.playerId) {
+            // B (Battle-Rattle Shaman): jak w gałęzi wielocelowej (L41) —
+            // pump siły idzie na stwora, którym bot MOŻE atakować.
+            let attackBonus = attackingNow ? 25 : 0;
+            if ((cmd.pump?.power ?? 0) > 0 && !attackingNow && myTurn(view)) {
+              const canAttack = !target.tapped && (!target.summoningSickness || hasKeyword(target, 'haste'));
+              attackBonus = canAttack ? 15 : -60;
+            }
+            return finish(30 + value + attackBonus);
+          }
           return finish(-20 - value);
         }
         // B: jak w gałęzi wielocelowej (L41) — zabójstwo debuffem bije rozmiar.
         const kill = debuffKills(target);
-        if (target.controllerId === view.playerId) return finish(kill ? -60 - value : -20 - value);
-        return finish(kill ? 30 + value + 60 : 30 + value);
+        // C: jak w gałęzi wielocelowej (L41) — zrywanie aur przy usuwaniu.
+        const aura = auraStripDelta(target);
+        if (target.controllerId === view.playerId) return finish(kill ? -60 - value + aura : -20 - value + aura);
+        return finish(kill ? 30 + value + 60 + aura : 30 + value + aura);
       }
       case 'resolve_optional_trigger_choice': {
         // M167/B (Circle of the Land Druid): opcjonalny SELF-MILL tylko przy
