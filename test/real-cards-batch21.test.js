@@ -137,7 +137,7 @@ test('sanity: wszystkie 10 kart ma dane Scryfall i wpis kosztu many', () => {
     assert.equal(scryfallName, def.name, `${id}: nazwa Scryfall != definicja`);
   }
   // Token Tarmogoyf ma dane Scryfall (P/T dynamiczne — marker w engine).
-  const token = JSON.parse(fs.readFileSync('docs/cards/scryfall-token-tarmogoyf.json', 'utf8'));
+  const token = JSON.parse(fs.readFileSync('docs/cards/scryfall-token_tarmogoyf.json', 'utf8'));
   assert.equal(token.name, 'Tarmogoyf');
 });
 

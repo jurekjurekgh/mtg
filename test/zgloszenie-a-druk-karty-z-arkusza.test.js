@@ -28,14 +28,20 @@
 //       lista udokumentowanych odstępstw (`uwaga`) są ZAMROŻONE — mogą tylko
 //       maleć, nowy rozjazd wymaga świadomej zmiany fixture;
 //   A/6 procedura: HOW_TO_ADD_CARD.md każe pobierać set-aware i nazywa arkusz
-//       autorytetem (bez tego kolejny batch zrobi to samo).
+//       autorytetem (bez tego kolejny batch zrobi to samo);
+//   A/7 reguły porównania: wpisy syntetyczne (tokeny/ziemie) mają w katalogu `set: null`,
+//       więc nie ma z czym porównać setu; karty dwustronne trzymają obrazy przy
+//       `card_faces`, więc UUID obrazu czyta helper współdzielony z narzędziem.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { artIdsBySetFromRows, parseCSV } from '../tools/fetch-art-ids.mjs';
-
-const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
+// Helpery prowiniencji są TE SAME, których używa tools/check-card-printings.mjs (L41: jedna
+// reguła, jedno miejsce). Osobne kopie w tym teście rozjechały się 2026-09-12: test czytał UUID
+// obrazu tylko z `image_uris.large`, a karty dwustronne (layout `transform`) trzymają obrazy przy
+// `card_faces` — przez to porównanie `source` ↔ obraz było dla nich cicho pomijane.
+import { uuidOf, sourceUuid, sourceSet, uuidObrazuSnapshotu } from '../tools/check-card-printings.mjs';
 const REGISTRY = createCardRegistry();
 const ARKUSZ = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
 const ZAPADNIA = JSON.parse(fs.readFileSync('test/fixtures/druki-kart-zapadnia.json', 'utf8'));
@@ -44,16 +50,11 @@ function snapshotOf(id) {
   const sciezka = `docs/cards/scryfall-${id}.json`;
   return fs.existsSync(sciezka) ? JSON.parse(fs.readFileSync(sciezka, 'utf8')) : null;
 }
-const uuidOf = (adres) => String(adres ?? '').match(UUID_RE)?.[0] ?? null;
 /** `print` bywa kodem setu („ktk") albo legacy „Nazwa (KTK)" — liczy się kod. */
 const printKod = (print) => {
   const m = String(print ?? '').match(/\(([A-Za-z0-9]+)\)\s*$/);
   return (m ? m[1] : String(print ?? '')).toLowerCase();
 };
-/** Czy `source` to adres JEDNEJ karty (`/cards/<uuid>`), a nie wyszukiwanie. */
-const sourceUuid = (source) => String(source ?? '')
-  .match(/^https:\/\/api\.scryfall\.com\/cards\/([0-9a-f-]{36})/)?.[1] ?? null;
-const sourceSet = (source) => String(source ?? '').match(/[?&]set=([A-Za-z0-9]+)/)?.[1]?.toLowerCase() ?? null;
 
 /**
  * Jeden przebieg po katalogu — wszystkie asercje czytają jego wynik (spójne
@@ -73,11 +74,17 @@ function przegląd() {
     };
     if (snap) {
       out.zeSnapshotem += 1;
-      // A/2 — ten sam druk w snapshocie i w katalogu
-      if ((snap.set ?? '').toLowerCase() !== String(def.set ?? '').toLowerCase()) {
+      // A/2 — ten sam druk w snapshocie i w katalogu. Tokeny i ziemie podstawowe mają
+      // w katalogu `set: null` (44 wpisy syntetyczne, nie są kartami z kolekcji) — bez setu
+      // w katalogu nie ma z czym porównać, więc set Scryfalla w snapshocie (np. `tm3c` dla
+      // tokena Tarmogoyfa, z którego pochodzi jego obraz) NIE jest rozjazdem.
+      const katSet = String(def.set ?? '').toLowerCase();
+      if (katSet && (snap.set ?? '').toLowerCase() !== katSet) {
         odstepstwo(out.problemySetu, `${def.id}: snapshot set=${snap.set}, katalog set=${def.set}`);
       }
-      const snapUuid = uuidOf(snap.image_uris?.large);
+      // UUID obrazu: dla kart dwustronnych z `card_faces[0]` (Scryfall nie daje wtedy
+      // `image_uris` na wierzchu) — inaczej dowód druku transformów byłby pomijany.
+      const snapUuid = uuidObrazuSnapshotu(snap);
       const katUuid = uuidOf(def.imageUri);
       if (snapUuid && katUuid && snapUuid !== katUuid) {
         odstepstwo(out.problemyDruku,
@@ -172,6 +179,34 @@ test('A/5 (zapadnia): snapshoty pobrane bez `set=` i bez `source` — lista tylk
     + 'Popraw snapshot (pobranie set-aware) i usuń wpis z fixture — dopisanie nowego wymaga świadomej zmiany listy.');
   assert.deepEqual(WYNIK.bezZrodla, ZAPADNIA.bezZrodla,
     'snapshot bez pola `source` nie ma prowiniencji (ADR 0030 §3) — uzupełnij i usuń wpis z fixture');
+});
+
+test('A/7 (reguły porównania): token z set=null i karta dwustronna bez image_uris na wierzchu', () => {
+  // Token Tarmogoyf: katalog `set: null`, snapshot niesie set Scryfalla (`tm3c`) i kanoniczne
+  // source. To NIE jest rozjazd — ale reguła nie może być martwa: wpis syntetyczny bez setu
+  // naprawdę występuje w danych.
+  const token = REGISTRY.get('token_tarmogoyf');
+  const snapToken = snapshotOf('token_tarmogoyf');
+  assert.ok(token && snapToken, 'token i jego snapshot (nazwa pliku == id karty — inaczej przegląd go nie czyta)');
+  assert.equal(token.set, null, 'założenie: wpisy syntetyczne nie mają setu w katalogu');
+  assert.equal(snapToken.set, 'tm3c', 'snapshot ma set Scryfalla, z którego pochodzi obraz');
+  assert.equal(sourceUuid(snapToken.source), uuidObrazuSnapshotu(snapToken),
+    'source tokena to adres tej samej karty co jego obraz');
+  assert.ok(WYNIK.zeSnapshotem > 0 && !WYNIK.problemySetu.some((x) => x.startsWith('token_tarmogoyf')),
+    'token z set=null w katalogu nie jest rozjazdem setu');
+  assert.ok(REGISTRY.all().filter((d) => d.set == null && snapshotOf(d.id)).length >= 1,
+    'reguła nie jest martwa: co najmniej jeden wpis bez setu ma snapshot');
+
+  // Karta dwustronna: UUID obrazu musi być czytany z card_faces, a wtedy porównanie source ↔ obraz
+  // jest dla niej TAK samo ostre jak dla zwykłej karty.
+  const przod = REGISTRY.get('scorned-villager');
+  const snapPrzod = snapshotOf('scorned-villager');
+  assert.equal(snapPrzod.image_uris?.large, undefined, 'założenie: transform bez image_uris na wierzchu');
+  const uuidTwarzy = uuidObrazuSnapshotu(snapPrzod);
+  assert.ok(uuidTwarzy, 'UUID odczytany z card_faces[0]');
+  assert.equal(uuidTwarzy, uuidOf(przod.imageUri), 'UUID twarzy == imageUri katalogu');
+  assert.equal(sourceUuid(snapPrzod.source), uuidTwarzy, 'source wskazuje ten sam obiekt karty');
+  assert.deepEqual(WYNIK.problemyDruku, [], 'żaden rozjazd obrazu (w tym transformy)');
 });
 
 test('A/6 (procedura): HOW_TO_ADD_CARD.md każe pobierać druk set-aware i nazywa arkusz autorytetem', () => {

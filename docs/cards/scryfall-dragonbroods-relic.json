@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=!\"Dragonbroods%27%20Relic\"+e%3ATDM",
+  "source": "https://api.scryfall.com/cards/3d634087-77ba-4543-aa7a-8a3774d69cd7",
   "print": "tdm",
   "name": "Dragonbroods' Relic",
   "mana_cost": "{1}{G}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/3/d/3d634087-77ba-4543-aa7a-8a3774d69cd7.jpg?1783907343",
     "normal": "https://cards.scryfall.io/normal/front/3/d/3d634087-77ba-4543-aa7a-8a3774d69cd7.jpg?1783907343"
   },
-  "pobrano": "2026-08-03"
+  "pobrano": "2026-08-03",
+  "proweniencja": "2026-09-12: source zacieśnione z wyszukiwania do adresu /cards/<id> — UUID odczytany z image_uris tego snapshotu i równy imageUri katalogu (set TDM zgodny z arkuszem kolekcji tools/collection-art-ids.csv); poprzednie source: https://api.scryfall.com/cards/search?q=!\"Dragonbroods%27%20Relic\"+e%3ATDM"
 }

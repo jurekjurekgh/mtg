@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=!\"Angel%20of%20the%20Dawn\"+e%3AM19",
+  "source": "https://api.scryfall.com/cards/f4bae0e4-1143-4dc4-afb1-e6b4201ff101",
   "print": "m19",
   "name": "Angel of the Dawn",
   "mana_cost": "{4}{W}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/f/4/f4bae0e4-1143-4dc4-afb1-e6b4201ff101.jpg?1783934610",
     "normal": "https://cards.scryfall.io/normal/front/f/4/f4bae0e4-1143-4dc4-afb1-e6b4201ff101.jpg?1783934610"
   },
-  "pobrano": "2026-08-03"
+  "pobrano": "2026-08-03",
+  "proweniencja": "2026-09-12: source zacieśnione z wyszukiwania do adresu /cards/<id> — UUID odczytany z image_uris tego snapshotu i równy imageUri katalogu (set M19 zgodny z arkuszem kolekcji tools/collection-art-ids.csv); poprzednie source: https://api.scryfall.com/cards/search?q=!\"Angel%20of%20the%20Dawn\"+e%3AM19"
 }

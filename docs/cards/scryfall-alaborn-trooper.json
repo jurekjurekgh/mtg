@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=%22Alaborn+Trooper%22+e%3Apo2&unique=prints",
+  "source": "https://api.scryfall.com/cards/e1cd30b4-4ed8-467e-808e-b0caf4196d90",
   "print": "p02",
   "name": "Alaborn Trooper",
   "mana_cost": "{2}{W}",
@@ -16,5 +16,6 @@
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/e/1/e1cd30b4-4ed8-467e-808e-b0caf4196d90.jpg?1783946495"
   },
-  "pobrano": "2026-08-04"
+  "pobrano": "2026-08-04",
+  "proweniencja": "2026-09-12: source zacieśnione z wyszukiwania do adresu /cards/<id> — UUID odczytany z image_uris tego snapshotu i równy imageUri katalogu (set P02 zgodny z arkuszem kolekcji tools/collection-art-ids.csv); poprzednie source: https://api.scryfall.com/cards/search?q=%22Alaborn+Trooper%22+e%3Apo2&unique=prints"
 }

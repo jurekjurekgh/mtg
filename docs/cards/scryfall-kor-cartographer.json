@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=!\"Kor%20Cartographer\"+e%3ACMR",
+  "source": "https://api.scryfall.com/cards/583ef638-1ea1-4301-bb86-78cb2b5f3aab",
   "print": "cmr",
   "name": "Kor Cartographer",
   "mana_cost": "{3}{W}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/5/8/583ef638-1ea1-4301-bb86-78cb2b5f3aab.jpg?1783928881",
     "normal": "https://cards.scryfall.io/normal/front/5/8/583ef638-1ea1-4301-bb86-78cb2b5f3aab.jpg?1783928881"
   },
-  "pobrano": "2026-08-03"
+  "pobrano": "2026-08-03",
+  "proweniencja": "2026-09-12: source zacieśnione z wyszukiwania do adresu /cards/<id> — UUID odczytany z image_uris tego snapshotu i równy imageUri katalogu (set CMR zgodny z arkuszem kolekcji tools/collection-art-ids.csv); poprzednie source: https://api.scryfall.com/cards/search?q=!\"Kor%20Cartographer\"+e%3ACMR"
 }

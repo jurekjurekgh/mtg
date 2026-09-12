@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?order=released&q=oracleid%3Aee988017-fc7e-4d8a-8f5c-0a7e57a8d050&unique=prints",
+  "source": "https://api.scryfall.com/cards/c5340e18-faed-4787-a42c-c12935bb0646",
   "print": "arb",
   "name": "Ethersworn Shieldmage",
   "mana_cost": "{1}{W}{U}",
@@ -20,5 +20,6 @@
     "large": "https://cards.scryfall.io/large/front/c/5/c5340e18-faed-4787-a42c-c12935bb0646.jpg?1783942442"
   },
   "uwaga": "Scryfall zna wyłącznie druki ARC (Archenemy, nr 84) i ARB (Alara Reborn, nr 4). „CON\" z listy właściciela odnosiło się do planu Alara w arkuszu — druk ARB potwierdzony przez właściciela 2026-08-05. artId 536 dopasowane po nazwie.",
-  "pobrano": "2026-08-04"
+  "pobrano": "2026-08-04",
+  "proweniencja": "2026-09-12: source zacieśnione z wyszukiwania do adresu /cards/<id> — UUID odczytany z image_uris tego snapshotu i równy imageUri katalogu (set ARB zgodny z arkuszem kolekcji tools/collection-art-ids.csv; rozjazd setu udokumentowany polem `uwaga` — druk potwierdzony przez właściciela); poprzednie source: https://api.scryfall.com/cards/search?order=released&q=oracleid%3Aee988017-fc7e-4d8a-8f5c-0a7e57a8d050&unique=prints"
 }

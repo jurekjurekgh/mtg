@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=name%3A%22Negate%22+set%3Am20",
+  "source": "https://api.scryfall.com/cards/33b83158-78b4-425e-8379-be3ef038295c",
   "print": "m20",
   "name": "Negate",
   "mana_cost": "{1}{U}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/3/3/33b83158-78b4-425e-8379-be3ef038295c.jpg?1783933006",
     "normal": "https://cards.scryfall.io/normal/front/3/3/33b83158-78b4-425e-8379-be3ef038295c.jpg?1783933006"
   },
-  "pobrano": "2026-08-03"
+  "pobrano": "2026-08-03",
+  "proweniencja": "2026-09-12: source zacieśnione z wyszukiwania do adresu /cards/<id> — UUID odczytany z image_uris tego snapshotu i równy imageUri katalogu (set M20 zgodny z arkuszem kolekcji tools/collection-art-ids.csv); poprzednie source: https://api.scryfall.com/cards/search?q=name%3A%22Negate%22+set%3Am20"
 }

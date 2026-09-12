@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=t%3Atoken+name%3ATarmogoyf&format=json",
+  "source": "https://api.scryfall.com/cards/f26e1f55-284c-4540-bf5c-ebc7ab9687ab",
   "print": "tm3c",
   "name": "Tarmogoyf",
   "layout": "token",
@@ -19,5 +19,6 @@
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/f/2/f26e1f55-284c-4540-bf5c-ebc7ab9687ab.jpg?1783911122"
   },
-  "pobrano": "2026-08-07"
+  "pobrano": "2026-08-07",
+  "proweniencja": "2026-09-12: source zacieśnione z wyszukiwania tokenów do adresu /cards/<id> — UUID odczytany z image_uris tego snapshotu i równy imageUri katalogu (token Tarmogoyf, tm3c nr 22; tokeny nie mają wiersza w arkuszu kolekcji, więc autorytetem jest katalog); poprzednie source: https://api.scryfall.com/cards/search?q=t%3Atoken+name%3ATarmogoyf&format=json"
 }

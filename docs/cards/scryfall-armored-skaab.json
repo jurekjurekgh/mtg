@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=!\"Armored%20Skaab\"+e%3AISD",
+  "source": "https://api.scryfall.com/cards/ce4d00f2-30e6-41d5-b997-c66350fe783c",
   "print": "isd",
   "name": "Armored Skaab",
   "mana_cost": "{2}{U}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/c/e/ce4d00f2-30e6-41d5-b997-c66350fe783c.jpg?1783940980",
     "normal": "https://cards.scryfall.io/normal/front/c/e/ce4d00f2-30e6-41d5-b997-c66350fe783c.jpg?1783940980"
   },
-  "pobrano": "2026-08-03"
+  "pobrano": "2026-08-03",
+  "proweniencja": "2026-09-12: source zacieśnione z wyszukiwania do adresu /cards/<id> — UUID odczytany z image_uris tego snapshotu i równy imageUri katalogu (set ISD zgodny z arkuszem kolekcji tools/collection-art-ids.csv); poprzednie source: https://api.scryfall.com/cards/search?q=!\"Armored%20Skaab\"+e%3AISD"
 }
