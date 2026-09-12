@@ -189,7 +189,7 @@ const BOT_MOVE_NOISE = new Set([
  * jest komunikatem „Rozgrywka" (pełna legalność — własna wiedza); dobranie
  * BOTA w kroku dobierania zostaje szumem; dobrania z efektu (obu) są treścią.
  */
-function isRulesZoneMove(e) {
+export function isRulesZoneMove(e) {
   return e.type === 'object_moved' && (e.bounced === true || e.sba === 'zero_loyalty');
 }
 
@@ -2062,6 +2062,178 @@ export function collectTokenNames(registry) {
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// B5/F5 (audyt PR #113, obserwacja F5 — „niezspinane bramki `session.js`"):
+// bramki GŁÓWNEGO LOGU gracza wyekstrahowane z wnętrza `createSession` na
+// poziom modułu. Były lokalnymi domknięciami/wrostkowym warunkiem 14 członów,
+// więc nie dało się ich przypiąć testem bez uruchamiania całej sesji (jsdom),
+// a to właśnie te bramki decydują, co gracz widzi w panelu „Rozgrywka" —
+// historia zgłoszeń właściciela (D/E, M99, M100/E5, M100/E8, M106/Z3, M151,
+// M167/E, E2, E6/A2, E7/E) jest długa i każda zmiana była dotąd weryfikowana
+// wyłącznie ręcznym czytaniem transkryptów. Zachowanie BEZ zmian: każda
+// reguła ma swój człon w `isMainLogEvent`, a uzasadnienie przy zbiorach niżej.
+// ---------------------------------------------------------------------------
+
+/**
+ * M151 (audyt żywym testerem): szum GŁÓWNEGO LOGU gracza. TESTER_STOLU.md
+ * (oś 2) dokumentuje `mana_produced` i `step_advanced` jako wyciszone, a
+ * `describeEvent` zwraca dla nich tekst — więc `apply()`/`streamAutoEvents`
+ * wpisywały je do logu (18× „przygotowuje manę" i 140× „— faza/krok —"
+ * w jednej partii). Modal „Ruch bota" i tak ma własną bramkę BOT_MOVE_NOISE.
+ * `turn_started` NIE jest szumem (decyzja właściciela — początek tury to
+ * istotna informacja), więc zostaje.
+ */
+export const MAIN_LOG_NOISE = new Set(['mana_produced', 'step_advanced']);
+
+// E6/A2 (zgłoszenie właściciela, Moonscarred Werewolf s20603): transformacja
+// PERMANENTU jest publiczna (CR 400.2 — twarz na polu bitwy widzi każdy:
+// P/T, zdolności, daybound/nightbound) i zmienia ocenę pozycji, więc jest
+// treścią panelu „Rozgrywka" NIEZALEŻNIE od okna botActing/stosu. Dotąd
+// transform wilkołaka BOTA rozstrzygnięty po passie człowieka wypadał
+// z noteBotMove (poza BOT_RESOLUTION_EVENTS), choć sam trigger się pokazywał
+// — gracz widział skutek, nie widział transformacji.
+export const TRANSFORM_DIGEST_EVENTS = new Set(['object_transformed']);
+
+/** M100/E5: nagłówkowe zagrania CZŁOWIEKA w panelu „Rozgrywka" — panel
+ * jest wspólnym streszczeniem rozgrywki (uwaga właściciela: „inne istotne
+ * zagrania obu graczy"), a samo kliknięcie nie zawsze odzwierciedla stan
+ * (pauza przychodzi dopiero z odpowiedzią bota). Szum (mana, tap, passy,
+ * markery) zostaje odfiltrowany — jak u bota. */
+export const HUMAN_DIGEST_EVENTS = new Set([
+  'spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played',
+  'ability_activated', 'permanent_entered_battlefield', 'object_transformed',
+]);
+
+// Typy zdarzeń, które opisują SKUTEK rozstrzygnięcia (a nie decyzje człowieka).
+export const BOT_RESOLUTION_EVENTS = new Set([
+  'spell_resolved', 'ability_resolved',
+  'damage_dealt', 'life_changed', 'life_lost', 'life_gained',
+  'counter_added', 'counter_removed', 'keyword_granted', 'stats_modified',
+  // M106/Z1: masowy buff to CAŁA treść takiego czaru — nigdy szum.
+  'mass_stats_modified',
+  'permanent_entered_battlefield', 'permanent_destroyed', 'creature_destroyed',
+  'permanent_sacrificed', 'permanent_put_into_graveyard',
+  'object_moved', 'object_exiled', 'token_created',
+  'cards_drawn', 'card_drawn', 'cards_milled', 'card_discarded',
+  // M100/E13 (zgłoszenie A): przypięcie sprzętu/aury TO skutek
+  // rozstrzygnięcia — bez wpuszczenia object_attached deduplikacja equipa
+  // (ability_resolved → null) ukryłaby w modalu wynik aktywacji.
+  'object_attached',
+  // M100/E4 (uwaga właściciela): manipulacja biblioteką jako SKUTEK
+  // rozstrzygnięcia — podgląd/skutek, nie ukryta decyzja. Nazwy niosą
+  // wyłącznie warstwy legalne FoW: własne podejrzenia (opis w
+  // describeGameEvent nazywa tylko gdy playerId === HUMAN_ID), grób
+  // publiczny (card_milled) i jawne odsłonięcia (card_revealed, epic,
+  // tutor z kryterium — CR 701.20).
+  'card_milled', 'card_revealed',
+  // M101/D (zgłoszenie właściciela, „poważny błąd"): przejęcie kontroli nad
+  // permanentem to NAJWAŻNIEJSZY skutek, jaki gracz może przegapić — Puppeteer
+  // Clique zabierał mu stwora z cmentarza, atakował nim i wygnaniał w cleanup,
+  // a panel milczał. Kontrola nad obiektem zmienia ocenę całej pozycji.
+  'control_changed',
+  // M101/D cd.: trigger jest obiektem na stosie (CR 603.3) i jego
+  // rozstrzygnięcie jest takim samym skutkiem jak rozstrzygnięcie czaru —
+  // dotyczy to również triggerów opóźnionych (CR 603.7), które odpalają się
+  // w upkeep/cleanup, całkowicie poza jakąkolwiek komendą gracza.
+  'ability_triggered', 'trigger_resolved', 'delayed_trigger_armed',
+  'trigger_target_resolved', 'modal_trigger_resolved', 'optional_trigger_resolved',
+  'scry_started', 'scry_resolved', 'surveil_started', 'surveil_resolved',
+  'index_started', 'index_resolved', 'look_top_started', 'look_top_resolved',
+  'epic_experiment_started', 'epic_experiment_resolved',
+  'clash_resolved', 'clash_choice_resolved',
+]);
+
+/**
+ * M100/E5: nagłówek zdarzenia należy do człowieka, gdy którykolwiek z czterech
+ * nośników kontrolera w zdarzeniu wskazuje człowieka (różne zdarzenia niosą
+ * kontroler w innym polu — stąd cztery drogi, a nie jedna).
+ */
+export function isHumanControllerEvent(e, humanId = HUMAN_ID) {
+  return e?.playerId === humanId || e?.controllerId === humanId
+    || e?.object?.controllerId === humanId || e?.sourceControllerId === humanId;
+}
+
+/**
+ * Bramka głównego logu gracza (panel „Rozgrywka"): czy zdarzenie `e` ma szansę
+ * trafić do sekcji ruchu bota/rozgrywki, czy jest szumem auto-przewijania.
+ *
+ * Uwaga D/E (2026-08-11): isBotAdvancing jest prawdą także podczas
+ * auto-przewijania faz CZŁOWIEKA (advance() passuje też jego end/cleanup),
+ * więc zdarzenia decyzji człowieka (np. discard_choice_required przy limicie
+ * ręki) trafiały do modala „Rozgrywka". `botActing` jest prawdą TYLKO w gałęzi
+ * BOTA w advance() — i wtedy bramka puszcza wszystko (sekcja ma własny podział
+ * na `noteBotMove`/`pushBotMove`).
+ *
+ * Człony przy `botActing === false` (każdy z własną historią):
+ * - `turn_started`/`game_started` ZAWSZE (początek tury dowolnego gracza —
+ *   także po auto-passie cleanup człowieka, gdy zaczyna się tura bota; uwaga A);
+ * - `step_advanced` (M106/Z3: nagłówek fazy MUSI aktualizować się zawsze —
+ *   przejścia faz w turze bota wykonuje auto-pass CZŁOWIEKA, więc bez tego
+ *   przy zagraniu landa panel pokazywał nieaktualne „Faza: Podtrzymanie",
+ *   czyli land drop w upkeepie, coś nielegalnego wg CR 305.1);
+ * - CAŁA faza walki (`phase === 'combat'`, uwagi A/B1 2026-08-12):
+ *   resolve_combat człowieka idzie w advance() bez botActing. Whitelista typów
+ *   (tylko damage_dealt z flagą combat) gubiła bloki, obrażenia stwór–stwór
+ *   (event bez combat:true), truciznę (infect) i triggery z walki;
+ * - `isRulesZoneMove` (ruch strefowy z reguł: bounce, zero loyalty);
+ * - dodatkowy koszt rzucenia (E7/E, zgłoszenie właściciela): `object_moved`
+ *   z flagą `additionalCost` (np. Makeshift Mauler wygnanie z cmentarza)
+ *   przechodzi bramkę także przy akcji CZŁOWIEKA — to płatność jak mana
+ *   (M103/D), gracz ma widzieć w „Rozgrywka" co i skąd wygnano (CR 400.2:
+ *   strefy jawne);
+ * - decyzja BOTA (E2, zgłoszenie właściciela 2026-09-10): np. dopłata {1}{W}
+ *   z Furious Forebear po śmierci jego stwora — w TURZE CZŁOWIEKA, więc
+ *   `botActing` jest fałszem; główny log gracza jej nie przyjmuje
+ *   (`isBotDecisionPrompt`), a informacja nie może zniknąć;
+ * - rozstrzygnięcie stosu (M99, oś 2 audytu żywym testerem): czar bota
+ *   rozstrzyga się dopiero, gdy OBAJ gracze spasują — czyli w wyniku komendy
+ *   CZŁOWIEKA, gdy `botActing` jest już false. Bez tego członu rozstrzygnięcie
+ *   i skutki („Servant of the Scale dostaje +3/+3") lądowały wyłącznie w logu,
+ *   a modal kończył się na „Nieprzyjaciel rzuca Awaken the Bear". Kwalifikacja
+ *   po KONTROLERZE obiektu na stosie (dane zdarzenia), nie po nazwie karty
+ *   ani fazie;
+ * - nagłówkowe zagranie CZŁOWIEKA (M100/E5): jego własna komenda w apply()
+ *   też dostaje wpis — kontekst dla odpowiedzi bota w tym samym bloku;
+ * - dobranie CZŁOWIEKA (M100/E8, także w kroku dobierania): para nagłówkowa
+ *   każdej własnej tury („Tura N — Ty" + „Ty dobiera: X");
+ * - transformacja permanentu (E6/A2, zgłoszenie właściciela, Moonscarred
+ *   Werewolf s20603): jest publiczna (CR 400.2 — twarz na polu bitwy widzi
+ *   każdy: P/T, zdolności, daybound/nightbound) i zmienia ocenę pozycji, więc
+ *   jest treścią panelu NIEZALEŻNIE od okna botActing/stosu.
+ */
+export function isMainLogEvent(e, ctx = {}) {
+  const {
+    botActing = false, phase = null, stackSize = 0, humanId = HUMAN_ID,
+  } = ctx;
+  if (botActing) return true;
+  // Zdarzenie bez typu nie jest treścią panelu (odporność: `isRulesZoneMove`
+  // czyta `e.type` bez `?.`, więc bramka nie może go wywołać na null).
+  if (!e || typeof e.type !== 'string') return false;
+  if (e?.type === 'turn_started' || e?.type === 'game_started' || e?.type === 'step_advanced') return true;
+  if (phase === 'combat') return true;
+  if (isRulesZoneMove(e)) return true;
+  if (e?.type === 'object_moved' && e?.additionalCost === true) return true;
+  if (isBotDecisionPrompt(e, { humanId })) return true;
+  if (stackSize > 0 && BOT_RESOLUTION_EVENTS.has(e?.type)) return true;
+  if (HUMAN_DIGEST_EVENTS.has(e?.type) && isHumanControllerEvent(e, humanId)) return true;
+  if (e?.type === 'card_drawn' && e?.playerId === humanId) return true;
+  return TRANSFORM_DIGEST_EVENTS.has(e?.type);
+}
+
+/**
+ * M167/E (uwaga właściciela): nagłówki FAZ wracają do logu — po wyciszeniu
+ * `step_advanced` (M151) zniknęły całkiem, a są pomocne przy śledzeniu błędów.
+ * Kompromis szum/użyteczność: wpis TYLKO przy zmianie fazy (nie każdym kroku) —
+ * format zgodny z detekcją rodzaju 'step' w renderze (^—…—$).
+ * Postać CZYSTA (B5/F5): stan deduplikacji jest jawnym argumentem i wynikiem,
+ * więc regułę da się przypiąć testem bez tworzenia sesji.
+ */
+export function phaseHeaderText(e, lastLoggedPhase = null) {
+  if (e?.type !== 'step_advanced' || !e?.phase) return { header: null, lastLoggedPhase };
+  if (e.phase === lastLoggedPhase) return { header: null, lastLoggedPhase };
+  return { header: `— ${e.phase} —`, lastLoggedPhase: e.phase };
+}
+
 export function createSession(config) {
   const { seed, registry, decks } = config;
   // Feature 2026-08-11: opcje wyciszone przez gracza (ptaszek w panelu akcji)
@@ -2144,26 +2316,16 @@ export function createSession(config) {
     lines: [],
   };
   const TURN_NOISE = new Set(['step_advanced', 'mana_produced', 'turn_started']);
-  /**
-   * M151 (audyt żywym testerem): szum GŁÓWNEGO LOGU gracza. TESTER_STOLU.md
-   * (oś 2) dokumentuje `mana_produced` i `step_advanced` jako wyciszone, a
-   * `describeEvent` zwraca dla nich tekst — więc `apply()`/`streamAutoEvents`
-   * wpisywały je do logu (18× „przygotowuje manę" i 140× „— faza/krok —"
-   * w jednej partii). Modal „Ruch bota" i tak ma własną bramkę BOT_MOVE_NOISE.
-   * `turn_started` NIE jest szumem (decyzja właściciela — początek tury to
-   * istotna informacja), więc zostaje.
-   */
-  const MAIN_LOG_NOISE = new Set(['mana_produced', 'step_advanced']);
   // M167/E (uwaga właściciela): nagłówki FAZ wracają do logu — po wyciszeniu
   // step_advanced (M151) zniknęły całkiem, a są pomocne przy śledzeniu błędów.
   // Kompromis szum/użyteczność: wpis TYLKO przy zmianie fazy (nie każdym
   // kroku) — format zgodny z detekcją rodzaju 'step' w renderze (^—…—$).
   let lastLoggedPhase = null;
+  // B5/F5: logika w `phaseHeaderText` (modułowa, czysta) — tu tylko stan sesji.
   const phaseHeaderFor = (e) => {
-    if (e.type !== 'step_advanced' || !e.phase) return null;
-    if (e.phase === lastLoggedPhase) return null;
-    lastLoggedPhase = e.phase;
-    return `— ${e.phase} —`;
+    const result = phaseHeaderText(e, lastLoggedPhase);
+    lastLoggedPhase = result.lastLoggedPhase;
+    return result.header;
   };
   function recordTurnEvent(e) {
     if (e.type === 'turn_started') {
@@ -2421,24 +2583,7 @@ export function createSession(config) {
   // że przeciwnik dobrał X kart (zgłoszenie właściciela 2026-08-13,
   // M89 zadanie A).
 
-  /** M100/E5: nagłówkowe zagrania CZŁOWIEKA w panelu „Rozgrywka" — panel
-   * jest wspólnym streszczeniem rozgrywki (uwaga właściciela: „inne istotne
-   * zagrania obu graczy"), a samo kliknięcie nie zawsze odzwierciedla stan
-   * (pauza przychodzi dopiero z odpowiedzią bota). Szum (mana, tap, passy,
-   * markery) zostaje odfiltrowany — jak u bota. */
-  const HUMAN_DIGEST_EVENTS = new Set([
-    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played',
-    'ability_activated', 'permanent_entered_battlefield', 'object_transformed',
-  ]);
 
-  // E6/A2 (zgłoszenie właściciela, Moonscarred Werewolf s20603): transformacja
-  // PERMANENTU jest publiczna (CR 400.2 — twarz na polu bitwy widzi każdy:
-  // P/T, zdolności, daybound/nightbound) i zmienia ocenę pozycji, więc jest
-  // treścią panelu „Rozgrywka" NIEZALEŻNIE od okna botActing/stosu. Dotąd
-  // transform wilkołaka BOTA rozstrzygnięty po passie człowieka wypadał
-  // z noteBotMove (poza BOT_RESOLUTION_EVENTS), choć sam trigger się pokazywał
-  // — gracz widział skutek, nie widział transformacji.
-  const TRANSFORM_DIGEST_EVENTS = new Set(['object_transformed']);
 
   /** Zdarzenia, przy których warto pokazać ilustrację zagranej karty. */
   const BOT_MOVE_CARD_EVENTS = new Set([
@@ -2508,44 +2653,6 @@ export function createSession(config) {
   // drugiego gracza. M99 śledził wyłącznie czary BOTA; E2 dokłada
   // rozstrzygnięcia (i skutki) czarów CZŁOWIEKA, także modalnych z trybem.
   const stackObjects = new Set();
-  // Typy zdarzeń, które opisują SKUTEK rozstrzygnięcia (a nie decyzje człowieka).
-  const BOT_RESOLUTION_EVENTS = new Set([
-    'spell_resolved', 'ability_resolved',
-    'damage_dealt', 'life_changed', 'life_lost', 'life_gained',
-    'counter_added', 'counter_removed', 'keyword_granted', 'stats_modified',
-    // M106/Z1: masowy buff to CAŁA treść takiego czaru — nigdy szum.
-    'mass_stats_modified',
-    'permanent_entered_battlefield', 'permanent_destroyed', 'creature_destroyed',
-    'permanent_sacrificed', 'permanent_put_into_graveyard',
-    'object_moved', 'object_exiled', 'token_created',
-    'cards_drawn', 'card_drawn', 'cards_milled', 'card_discarded',
-    // M100/E13 (zgłoszenie A): przypięcie sprzętu/aury TO skutek
-    // rozstrzygnięcia — bez wpuszczenia object_attached deduplikacja equipa
-    // (ability_resolved → null) ukryłaby w modalu wynik aktywacji.
-    'object_attached',
-    // M100/E4 (uwaga właściciela): manipulacja biblioteką jako SKUTEK
-    // rozstrzygnięcia — podgląd/skutek, nie ukryta decyzja. Nazwy niosą
-    // wyłącznie warstwy legalne FoW: własne podejrzenia (opis w
-    // describeGameEvent nazywa tylko gdy playerId === HUMAN_ID), grób
-    // publiczny (card_milled) i jawne odsłonięcia (card_revealed, epic,
-    // tutor z kryterium — CR 701.20).
-    'card_milled', 'card_revealed',
-    // M101/D (zgłoszenie właściciela, „poważny błąd"): przejęcie kontroli nad
-    // permanentem to NAJWAŻNIEJSZY skutek, jaki gracz może przegapić — Puppeteer
-    // Clique zabierał mu stwora z cmentarza, atakował nim i wygnaniał w cleanup,
-    // a panel milczał. Kontrola nad obiektem zmienia ocenę całej pozycji.
-    'control_changed',
-    // M101/D cd.: trigger jest obiektem na stosie (CR 603.3) i jego
-    // rozstrzygnięcie jest takim samym skutkiem jak rozstrzygnięcie czaru —
-    // dotyczy to również triggerów opóźnionych (CR 603.7), które odpalają się
-    // w upkeep/cleanup, całkowicie poza jakąkolwiek komendą gracza.
-    'ability_triggered', 'trigger_resolved', 'delayed_trigger_armed',
-    'trigger_target_resolved', 'modal_trigger_resolved', 'optional_trigger_resolved',
-    'scry_started', 'scry_resolved', 'surveil_started', 'surveil_resolved',
-    'index_started', 'index_resolved', 'look_top_started', 'look_top_resolved',
-    'epic_experiment_started', 'epic_experiment_resolved',
-    'clash_resolved', 'clash_choice_resolved',
-  ]);
 
   /** Utrzymuje `stackObjects` — obiekty stosu OBU graczy (M100/E2 symetria). */
   function trackStack(e) {
@@ -2556,8 +2663,8 @@ export function createSession(config) {
     // { objectId, cardId, trigger }, bez controllerId/playerId. Trigger nie
     // otwierał więc okna rozstrzygnięcia i gdy był JEDYNYM obiektem na stosie
     // (opóźniony trigger w upkeep/cleanup, trigger śmierci po walce), cały jego
-    // skutek przepadał: `stackObjects` było puste, więc `isStackResolution`
-    // nigdy nie stawało się prawdą. Kontrolera dobieramy z obiektu w stanie gry,
+    // skutek przepadał: `stackObjects` było puste, więc człon rozstrzygnięcia
+    // stosu w `isMainLogEvent` nigdy nie stawał się prawdą. Kontrolera dobieramy z obiektu w stanie gry,
     // a gdy i tego nie ma — trigger i tak jest obiektem na stosie (CR 603.3)
     // i jego rozstrzygnięcie należy do panelu.
     const controller = e.controllerId ?? e.playerId
@@ -2574,62 +2681,12 @@ export function createSession(config) {
 
   function noteBotMove(e) {
     trackStack(e);
-    // Rejestrujemy zdarzenia z RZECZYWISTEGO ruchu bota (botActing).
-    // Uwaga D/E (2026-08-11): isBotAdvancing jest prawdą także podczas
-    // auto-przewijania faz CZŁOWIEKA (advance() passuje też jego end/cleanup),
-    // więc zdarzenia decyzji człowieka (np. discard_choice_required przy limicie
-    // ręki) trafiały do modala „Rozgrywka". botActing jest prawdą tylko
-    // w gałęzi BOTA w advance().
-    //
-    // Wyjątki (uwagi A/B1, 2026-08-12):
-    // - turn_started ZAWSZE (początek tury dowolnego gracza — także po
-    //   auto-passie cleanup człowieka, gdy zaczyna się tura bota);
-    // - CAŁA faza walki (phase === 'combat'): resolve_combat człowieka idzie
-    //   w advance() bez botActing. Whitelista typów (tylko damage_dealt z
-    //   flagą combat) gubiła bloki, obrażenia stwór–stwór (event bez
-    //   combat:true), truciznę (infect) i triggery z walki — to, co działało
-    //   przed M75, gdy isBotAdvancing obejmował auto-resolve.
-    const inCombatReport = state.turn.phase === 'combat';
-    // M99 (oś 2, audyt żywym testerem): czar bota rozstrzyga się dopiero, gdy
-    // OBAJ gracze spasują — czyli w wyniku komendy CZŁOWIEKA, gdy `botActing`
-    // jest już false. Rozstrzygnięcie i skutki („Servant of the Scale dostaje
-    // +3/+3") lądowały wyłącznie w logu, a modal kończył się na „Nieprzyjaciel
-    // rzuca Awaken the Bear". Gracz grający przez modale nie dowiadywał się,
-    // co czar zrobił. Kwalifikujemy po KONTROLERZE obiektu na stosie (dane
-    // zdarzenia), nie po nazwie karty ani fazie.
-    const isStackResolution = !botActing && stackObjects.size > 0
-      && BOT_RESOLUTION_EVENTS.has(e.type);
-    // M100/E5: nagłówkowe zagranie CZŁOWIEKA (jego własna komenda w apply)
-    // też dostaje wpis — kontekst dla odpowiedzi bota w tym samym bloku.
-    const isHumanHeadline = !botActing && HUMAN_DIGEST_EVENTS.has(e.type)
-      && (e.playerId === HUMAN_ID || e.controllerId === HUMAN_ID
-        || e.object?.controllerId === HUMAN_ID || e.sourceControllerId === HUMAN_ID);
-    // M100/E8: dobranie CZŁOWIEKA (także w kroku dobierania) — komunikat
-    // w Rozgrywka (para nagłówkowa każdej własnej tury: „Tura N — Ty"
-    // + „Ty dobiera: X").
-    const isHumanDraw = !botActing && e.type === 'card_drawn' && e.playerId === HUMAN_ID;
-    // M106/Z3 (audyt stołu): nagłówek fazy MUSI aktualizować się zawsze.
-    // Przejścia faz w turze bota wykonuje auto-pass CZŁOWIEKA (botActing =
-    // false), więc `step_advanced` dla „Główna 1” wypadał z bufora i przy
-    // zagraniu landa panel pokazywał nieaktualne „Faza: Podtrzymanie” —
-    // czyli land drop w upkeepie, coś nielegalnego wg CR 305.1. Nagłówek
-    // i tak jest OCZEKUJĄCY (pokazuje się tylko razem z realną akcją).
-    // E7/E (zgłoszenie właściciela): dodatkowy koszt rzucenia (object_moved
-    // z flagą `additionalCost`, np. Makeshift Mauler wygnanie z cmentarza)
-    // przechodzi bramkę takze przy akcji CZLOWIEKA — to płatność jak mana
-    // (M103/D), gracz ma widzieć w „Rozgrywce" co i skąd wygnano (CR 400.2:
-    // strefy jawne). Format i mgła wojny jak wyżej (gałąź M192/Z1).
-    const isAdditionalCostMove = e.type === 'object_moved' && e.additionalCost === true;
-    // Zgłoszenie właściciela E2 (2026-09-10): decyzja BOTA (np. dopłata {1}{W}
-    // z Furious Forebear po śmierci jego stwora — w TURZE CZŁOWIEKA, więc
-    // `botActing` jest fałszem) należy do tej sekcji: główny log gracza jej
-    // nie przyjmuje (`isBotDecisionPrompt`), a informacja nie może zniknąć.
-    const isBotDecision = isBotDecisionPrompt(e);
-    if (!botActing && !isAdditionalCostMove && !isRulesZoneMove(e) && !isBotDecision
-      && e.type !== 'turn_started' && e.type !== 'game_started'
-      && e.type !== 'step_advanced'
-      && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw
-      && !TRANSFORM_DIGEST_EVENTS.has(e.type)) return;
+    // B5/F5: bramka głównego logu gracza jest czystą funkcją modułową
+    // `isMainLogEvent` — uzasadnienia wszystkich członów (D/E, M99, M100/E5,
+    // M100/E8, M106/Z3, M151, E2, E6/A2, E7/E) przy jej definicji.
+    if (!isMainLogEvent(e, {
+      botActing, phase: state.turn.phase, stackSize: stackObjects.size,
+    })) return;
     let text;
     // Nowa tura: nagłówek „Tura N — <gracz>". Zawsze (uwaga A).
     // M261 (korekta właściciela 2026-08-31): `turn_started` emituje engine
