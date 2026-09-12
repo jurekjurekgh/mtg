@@ -9907,3 +9907,27 @@ auto-pass. W g2 oba nowe wizardy przeszły przez prawdziwy artefakt: Silumgar Bu
 Stampeding Elk Herd (trample) 5 → 3+2 i „do gracza: 0", zgony PO zadaniu całości (CR 510.2 + 704.3).
 
 Bramki: `npm test` **5195/5195**, `npm run build` 61 modułów / 3523,6 kB.
+
+## 2026-09-12 — E7: domknięcie sesji PR #114 (arena/01a0925f)
+
+Plan `PLAN_2026-09-11b-audyt-pr113-wyzwanie-3-5.md` odhaczony w całości (E1, E2, W3, W4, W5, E6, E7).
+Bramki końcowe: `npm test` **5195/5195**, `npm run test:all` **5205/5205**, `npm run build`
+61 modułów / **3523,6 kB**, quick benchmark **84,2% (566/672)** (aggro 26,5%, random 5,1%,
+672 mecze w 141,4 s) — IDENTYCZNIE jak przed W4/W5/E6, bez zawieszeń; golden master bota po W5
+i E6 bez churn (po W4 zregenerowany świadomie: jedna partia, +1 decyzja `resolve_damage_assignment`
+z score 0, `scoreSum` bez zmian).
+
+Korekta starego planu `PLAN_2026-09-11-wyzwanie-5-bledow-zasad.md` (E7, ENVIRONMENT §7): teza 3
+(parowanie +1/+1 z −1/−1 „brak SBA") i teza 5 („`lethalOf()` bez deathtouch") są NIEAKTUALNE —
+pierwsza istniała w silniku, druga opisuje kod, którego nie ma (`lethalOf` zwraca 1 dla źródła
+z deathtouch; kombinacja ma testy w `test/e8-b4-trample-protection.test.js`). Realny błąd
+w sąsiedztwie tezy 5 był inny i naprawiono go jako W5 (CR 702.19b/702.2b — lethal z obrażeń
+przydzielanych w tym samym kroku przez inne stwory). Dodana tabela stanu pięciu wyzwań:
+1–2 zrealizowane w PR #113, 4 jako W3 (+ W4 w sąsiedztwie), 5 jako W5; kroki E4/E6 skreślone.
+Wyzwanie właściciela (5 unikalnych błędów/uproszczeń vs CR) domknięte.
+
+Liczby w README wg pomiaru (5195/5195 rdzeń, 5205/5205 pełny zestaw, 3523,6 kB, 84,2%).
+Do decyzji właściciela: squash-merge PR #114 i ewentualny pełny B0 (ADR 0018 — bez polecenia
+nie uruchamiamy). Materiał na kolejną sesję: obserwacje audytu PR #113 (F1–F8, O1/O3/O4) oraz
+polityka bota przy przydziałach obrażeń (domyślny lethal-first nie korzysta z pokrycia lethal
+przez inne stwory — po W5 legalne, ale to wycena, nie reguły).
