@@ -29,7 +29,7 @@ import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tr
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities } from './attachments.js';
-import { createBattlefieldToken, TREASURE_TOKEN_EFFECT } from './tokens.js';
+import { createBattlefieldToken, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
@@ -3534,6 +3534,16 @@ export function execute(state, input) {
             abilities: [...(copyBase.abilities ?? target.abilities ?? [])],
             kind: copyBase.kind ?? target.kind,
             cardName: target.cardName ?? target.cardId,
+            // C (znalezisko właściciela 2026-09-12, Jwari Shapeshifter):
+            // CR 707.2 — NAZWA jest wartością kopiowalną. Kopia wchodzi pod
+            // nazwą celu + dostaje kolejny numer wśród żywych kopii tej nazwy
+            // — DOKŁADNIE jak token-kopia (effects.js, M172/D; jedna reguła,
+            // dwie ścieżki, wspólny helper, L48). Stół pokazuje „X (kopia N)"
+            // istniejącą ścieżką M172/D (render.js) — bez nowych badge'ów.
+            // Prawo legend (state-based.js) czyta cardName w pierwszej
+            // kolejności, więc ta zmiana go nie rusza.
+            name: target.cardName ?? target.cardId,
+            copyNumber: nextCopyNumber(state, target.cardName ?? target.cardId),
             // CR 707.2 + 202.3b (M258): koszt many jest wartością kopiowalną
             // — do tej pory kopia „enter as copy" nosiła własny koszt Jwari
             // zamiast kosztu celu. Wspólny helper z token-kopią (L48).
@@ -5567,6 +5577,10 @@ export function playerView(state, playerId) {
           // wysyłał (tylko name) → etykiety celów wracały do surowego
           // „token_squirrel” przez session.nameOf(cardId). Klasa L1/ADR 0017.
           ...(object.isToken ? { isToken: true, name: object.name } : {}),
+          // C (Jwari): kopia na KARCIE (enter-as-copy) też nosi nazwę celu —
+          // bez tego kafel wracał do session.nameOf(cardId) („Jwari
+          // Shapeshifter") i ścieżka M172/D („X (kopia N)") nie miała danych.
+          ...(!object.isToken && object.copyNumber > 0 && object.name ? { name: object.name } : {}),
           // M172/D: numer kopii (publiczny) — warstwy nazw dopisują
           // „(kopia N)" przy celach, blokach i na kaflu.
           ...(object.copyNumber ? { copyNumber: object.copyNumber } : {}),

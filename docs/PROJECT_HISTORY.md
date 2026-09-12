@@ -10275,3 +10275,28 @@ C: Academy Journeymage — sygnał `removesTarget` w ofercie triggera
 własna −; sprzęt i bestow poza premią). Testy: kreator 13 (przepisane
 na pusty start) + bot-trigger-aura-strip 6. Bramki: pełna **5321/5321**,
 build 61 modułów / 3555.2 kB, golden master bez churn.
+
+## 2026-09-12f — runda 2: wsadowe szukanie (A) + Abstruse (B) + Jwari (C) + D1/D2/D3 (PR #115, arena/01a096f0)
+
+A: łańcuch szukań o identycznych parametrach (Springbloom/Roiling) to JEDEN
+modal-stepper („wskaż do N kart łącznie"), nie seria modali pojedynczych —
+`searchBatchPlanOf`/`searchBatchStepOf` (multi-target.js, czyste) +
+`renderSearchBatchWizard` (choice-request.js, steppery M292, podgląd po
+cardId) + synchroniczna pętla submitu w main.js (per krok: odcisk łańcucha,
+reprezentant cardId z AKTUALNEJ oferty, auto-decline tylko gdy oferowany;
+STOP oddaje grę panelowi akcji). Final Parting (mieszane destynacje) zostaje
+sekwencyjny. Silnik/bot/protokół NIETKNIĘTE. Testy a-search-batch 20 (w tym
+live nad silnikiem: [Forest, Forest] kładzie 2 tapnięte).
+B: Abstruse Interference rozpychany modal Rozgrywki — `manaSymbolsHtml`
+grupuje CIĄGŁE przebiegi symboli (nie cały napis w nowrap); koszt czysty
+bajtowo bez zmian; pas `overflow-wrap` na `.bot-move-line`; piny L13
+przepisane z uzasadnieniem.
+C: Jwari jako kopia nosi nazwę celu + `copyNumber` (lustro token-kopii L48,
+CR 707.2) — kafel „Rotting Legion (kopia 1)" istniejącą ścieżką M172/D;
+prawo legend czyta cardName, bez zmian. Testy c-enter-as-copy-name 5.
+D1: bot nie crewuje zatapowanego pojazdu (−10, bliźniak M230; Saddle
+niekarane — wyzwalacz „becomes saddled"). D2: silnik DOBRZE przegrywa przy
+doborze-zdoleniu z pustej (CR 704.5b/121.4 — mit „tylko draw step");
+poprawione 2 literówki komentarzy (704.5m→704.5b). D3: atak z drenażem
+biblioteki (Balamb) karany drabiną libraryLossPenalty — przy 3 kartach bot
+nie atakuje. Bramki: pełna **5341/5341**, build 61 modułów / 3572.8 kB.

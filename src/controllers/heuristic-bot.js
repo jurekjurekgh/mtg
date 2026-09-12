@@ -1141,6 +1141,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // trigger millu na tapnięcie siedzi na aurze „Enchant land", więc źródło
     // zdolności nie może go mieć (a `tap_for_mana` tę drogę już pokrywa).
     if (cmd?.type === 'activate_ability') return libraryLossPenalty(view, paymentLibraryLoss(view, cmd));
+    // D3 (znalezisko właściciela 2026-09-12, Balamb Garden): atak stworem
+    // z triggerem „attacks → dobierz/zmiel" zjada WŁASNĄ bibliotekę przy
+    // KAŻDYM ataku (`drainsMyLibrary` = czyja biblioteka; warunków triggera
+    // nie ewaluujemy — konserwatywne przybliżenie jak w repeatLibraryDrain;
+    // przy zdrowej bibliotece kara i tak wynosi 0). Przy cienkiej bibliotece
+    // drabina libraryLossPenalty (deckOut 120 / cienka 60+6×brak / margines
+    // 20) robi atak nieopłacalny — bot nie deck-outuje się za +4 obrażenia.
+    // Suma po WSZYSTKICH atakujących (wielu Balambów = wielokrotny drenaż).
+    if (cmd?.type === 'declare_attackers') {
+      let drain = 0;
+      for (const id of cmd.attackerIds ?? []) {
+        const attacker = objectOnBoard(view, id);
+        if (!attacker || attacker.controllerId !== view.playerId) continue;
+        for (const ability of cardDef(attacker.cardId)?.abilities ?? []) {
+          drain += drainEfekty(ability, 'attacks', drainsMyLibrary);
+        }
+      }
+      return libraryLossPenalty(view, drain);
+    }
     if (!LIBRARY_DRAIN_CAST_TYPES.has(cmd?.type)) return 0;
     const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     const drain = repeatLibraryDrain(karta?.cardId ? cardDef(karta.cardId) : undefined)
@@ -4148,6 +4167,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Bomat do 11× w jednej turze. Flaga stanu z widoku (ADR 0017), nie
           // nazwa karty (ADR 0002).
           if (abilityEffectTypes.includes('animate_permanent_until_end_of_turn') && source?.animatedUntilEOT === true) {
+            return finish(-10);
+          }
+          // D1 (znalezisko właściciela 2026-09-12, Balamb Garden): crew
+          // animuje pojazd do EOT — ale animacja ZATAPOWANEGO pojazdu nie
+          // daje nic (nie zaatakuje, nie zablokuje), a koszt (tap stwora)
+          // przepada; bot i tak crewował, bo widział tylko „3/1 → 5/4".
+          // Kara jak M230. Zakres TYLKO animate_permanent_until_end_of_turn:
+          // Saddle na zatapowanym wierzchowcu NIE jest karane — „becomes
+          // saddled" to wyzwalacz, który może odpalić wartościowy trigger
+          // (set_saddled ma osobny typ efektu, więc ten warunek go nie łapie).
+          if (abilityEffectTypes.includes('animate_permanent_until_end_of_turn') && source?.tapped === true) {
             return finish(-10);
           }
         }

@@ -775,3 +775,106 @@ export function commandForCrewSelection(plan, selected) {
     crewCreatureIds: [...selected],
   };
 }
+
+// ===========================================================================
+// A (zlecenie właściciela 2026-09-12): WSADOWE szukanie w bibliotece.
+//
+// Springbloom Druid / Roiling Regrowth („up to two basic lands") to ŁAŃCUCH
+// dwóch decyzji resolve_search_choice o IDENTYCZNYCH parametrach (silnik:
+// pending.chain, game-state.js). Dotąd każda decyzja otwierała osobny modal
+// pojedynczego wyboru — dwa klikalne okna pod rząd dla jednego zamiaru
+// („znajdź dwa lądy"). Od teraz JEDEN modal-stepper: wiersz na distinct
+// kartę, licznik „ile egzemplarzy", łącznie do maxPicks — a pętla w main.js
+// (submitSearchBatch) składa zatwierdzenie w sekwencję legalnych komend,
+// po jednej na krok łańcucha (L48: każda komenda pochodzi z AKTUALNEJ oferty
+// silnika dla TEGO kroku, walidowana na świeżo — staleness kończy pętlę,
+// a grę przejmuje zwykły przepływ przez panel akcji).
+//
+// KLUCZOWA obserwacja (M122/#2): oferty silnika dedupują po (cardId,
+// destination) — wariant niesie tylko REPREZENTANTA instancji. Dlatego
+// wybory niosą cardId (nie id instancji!), a reprezentanta rozwiązujemy
+// per krok w searchBatchStepOf. Pętla jest synchroniczna (jeden task JS —
+// brak przeplotu), więc biblioteka między krokami zmienia się wyłącznie
+// naszymi submitami.
+// ===========================================================================
+
+/** Kanoniczny klucz kwalifikatora szukania (porównanie kroków łańcucha). */
+function searchQualifierKey(qualifier) {
+  return JSON.stringify(qualifier ?? {});
+}
+
+/**
+ * Plan wsadowego szukania albo null (wtedy zwykła ścieżka sekwencyjna).
+ * `pending` = ŻYWY pendingSearchChoice ze stanu silnika (ma `qualifier`,
+ * którego widok nie rzutuje) — main.js podaje session.state.pendingSearchChoice.
+ * Bramki batchowania (WSZYSTKIE naraz):
+ *  - łańcuch trwa (chain.remaining >= 1 — jest co batchować),
+ *  - brak wyboru destynacji (destinations == null — jeden cel dla całości),
+ *  - NASTĘPNE kroki mają tę samą destynację i ten sam kwalifikator co
+ *    bieżący (spread `{...chain, remaining - 1}` w silniku niesie je dalej
+ *    bez zmian, więc dowód z poziomu 0 obejmuje cały łańcuch).
+ * Final Parting (ręka→grób, różne destynacje) ZOSTAJE sekwencyjny — mieszane
+ * destynacje wymagają osobnej decyzji „która karta gdzie".
+ */
+export function searchBatchPlanOf(pending) {
+  const remaining = pending?.chain?.remaining;
+  if (!Number.isInteger(remaining) || remaining < 1) return null;
+  if (pending.destinations != null) return null;
+  const nextDestination = pending.chain.destination ?? pending.destination;
+  if (nextDestination !== pending.destination) return null;
+  if (searchQualifierKey(pending.chain.qualifier ?? pending.qualifier)
+      !== searchQualifierKey(pending.qualifier)) return null;
+  const maxPicks = 1 + remaining;
+  return {
+    type: 'resolve_search_choice',
+    searchBatchMode: true,
+    maxPicks,
+    // Krok 0 obowiązkowy (mandatory, brak oferty decline) = trzeba wziąć
+    // co najmniej 1 (kandydaci istnieją — żywy pending obowiązkowy je ma,
+    // bo queueSearchChoice bez kandydatów nie kolejkuje). Krok 0
+    // opcjonalny = 0 wyborów to rezygnacja z CAŁEGO szukania (decline
+    // nigdy nie kontynuuje łańcucha — game-state.js).
+    minPicks: pending.mandatory ? 1 : 0,
+    declinable: !pending.mandatory,
+    // Odcisk palca wsadu — pętla weryfikuje nim KAŻDY krok (ten sam łańcuch,
+    // nie obca decyzja, która pojawiła się po drodze, np. z pendingSpell).
+    sourceCardId: pending.sourceCardId ?? null,
+    destination: pending.destination ?? null,
+    qualifierKey: searchQualifierKey(pending.qualifier),
+  };
+}
+
+/**
+ * JEDEN krok pętli wsadowej (czysty): która komenda dla kroku `index`,
+ * albo null (= STOP — grę przejmuje zwykły przepływ: panel akcji pokaże
+ * kolejną decyzję, obowiązkową resztę gracz dokończy ręcznie).
+ * `picks` = zatwierdzone cardId (z krotnościami, w kolejności wierszy);
+ * `pending` = żywy pendingSearchChoice PRZED tym krokiem (stan silnika);
+ * `options` = AKTUALNE warianty resolve_search_choice tego kroku;
+ * `cards` = view.pendingSearchChoice.cards (mapa id instancji → cardId).
+ * Zwracana komenda ZAWSZE pochodzi z `options` (L48).
+ */
+export function searchBatchStepOf({ picks, index, batch, pending, options, cards }) {
+  if (!pending || !Array.isArray(options) || options.length === 0) return null;
+  // Wciąż ten sam łańcuch? Licznik remaining schodzi deterministycznie
+  // (krok `index` ma remaining = maxPicks-1-index; ostatni krok: chain null
+  // = 0) — obca decyzja (np. nowe szukanie z pendingSpell po naszym
+  // decline) ma inny odcisk i pętla oddaje jej stery, zamiast w nią klikać.
+  if ((pending.chain?.remaining ?? 0) !== batch.maxPicks - 1 - index) return null;
+  if ((pending.sourceCardId ?? null) !== batch.sourceCardId) return null;
+  if ((pending.destination ?? null) !== batch.destination) return null;
+  if (pending.destinations != null) return null;
+  if (searchQualifierKey(pending.qualifier) !== batch.qualifierKey) return null;
+  // Wybory wyczerpane = auto-decline reszty — TYLKO gdy silnik go oferuje
+  // (krok opcjonalny). Krok obowiązkowy bez wyborów = STOP (gracz bierze
+  // resztę ręcznie przez panel; zmyślanie decline byłoby odrzutem silnika).
+  if (index >= picks.length) {
+    return options.find((cmd) => cmd?.type === 'resolve_search_choice' && cmd.found == null) ?? null;
+  }
+  // Reprezentant cardId w TEJ ofercie (instancje przesuwają się po każdym
+  // wyjęciu — stąd rozwiązywanie per krok, nie niesienie id z modala).
+  const cardIdOf = new Map((cards ?? []).map((c) => [c?.id, c?.cardId]));
+  const want = picks[index];
+  return options.find((cmd) => cmd?.type === 'resolve_search_choice'
+    && cmd.found != null && (cardIdOf.get(cmd.found) ?? null) === want) ?? null;
+}
