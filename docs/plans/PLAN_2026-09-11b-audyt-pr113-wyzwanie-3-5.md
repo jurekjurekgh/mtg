@@ -130,7 +130,29 @@ dopisani po pomiarze, nie wymyśleni z góry).
       `resolve_damage_assignment` z score 0, scoreSum bez zmian. Bramki:
       `npm test` 5183/5183, build 61 modułów / 3515,4 kB, benchmark 84,2%
       (566/672) bez zmian i bez zawieszeń.
-- [ ] **W5 — wyzwanie 5/5**: j.w.
+- [ ] **W5 — wyzwanie 5/5: trample liczy lethal także z obrażeń przydzielanych
+      w tym samym kroku przez INNE stwory** (CR 702.19b, 702.2b). Kandydat
+      **ZMIERZONY** 2026-09-12 (sonda `tools/probe-w5-trample-lethal-w-kroku.mjs`):
+      p2 atakuje x (trample 5/5) i y (3/3), p1 blokuje OBA jednym w (2/2
+      z licznikiem +1/+1 = 3/3; drugi slot bloku ze statyki Cenn's Tactician).
+      y przydziela w całe 3 obrażenia = lethal, więc x może legalnie przydzielić
+      0 na w i 5 na gracza — silnik ODRZUCA to jako
+      `illegal_damage_assignment:trample_blocker_below_lethal`, bo `lethalOf`
+      liczy tylko obrażenia już OZNACZONE na blokerze.
+      Dowód online (dosłownie): CR 702.19b „When checking for assigned lethal
+      damage, take into account damage already marked on the creature **and
+      damage from other creatures that's being assigned during the same combat
+      damage step**, but not any abilities or effects that might change the
+      amount of damage that's actually dealt"; CR 702.2b (deathtouch) — każde
+      niezerowe obrażenia ze źródła z deathtouch są lethal, z tym samym zdaniem
+      o obrażeniach z tego samego kroku.
+      Kierunek: walidacja całego przydziału (CR 510.1e — „the total damage
+      assignment ... is checked"), czyli `validateDamageAssignment` dostaje mapę
+      przydziałów z komendy i przebieg, a lethal blokera liczy też kwoty
+      przydzielone mu przez pozostałych atakujących tego samego przebiegu
+      (jawne z mapy, domyślne dla tych bez decyzji); widok niesie
+      `assignedByOthers` dla bramki trample w wizardzie. Domyślna polityka
+      (lethal-first) BEZ zmian — chodzi o legalność, nie o wybór bota.
 - [ ] **E6 — pętla jakości** (ADR 0021 §4a): Żywy Tester na świeżym `dist/`
       (L76), min. 3 partie, transkrypty czyta­ne RĘCZNIE wzdłuż trzech osi
       (L27: zero z detektorów to pomiar narzędzia), każda klasa znaleziona
