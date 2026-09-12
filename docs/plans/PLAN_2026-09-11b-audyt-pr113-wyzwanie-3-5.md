@@ -78,8 +78,39 @@ dopisani po pomiarze, nie wymyśleni z góry).
       Mutacje (L13) złapane: 7 wariantów. Bramki: `npm test` 5175/5175,
       `test:all` 5185/5185, build 61 modułów / 3512,6 kB, benchmark 84,2%
       (566/672) bez zmian i bez zawieszeń, golden master bez churn.
-- [ ] **W4 — wyzwanie 4/5**: kandydat z audytu E2 albo z pętli jakości
-      (dopisany tu z pomiarem i źródłem online przed implementacją).
+- [ ] **W4 — wyzwanie 4/5: przydział obrażeń liczony ze stanu NA POCZĄTEK kroku
+      (CR 510.1/510.2)**. Kandydat **ZMIERZONY** 2026-09-12 tuż po W3 (sonda
+      `tools/probe-w4-infect-przydzial.mjs`, scenariusz z podwójnym blokiem
+      Cenn's Tactician): p2 atakuje Chained Throatseeker 5/5 (infect, wymaga
+      zatrutego obrońcy) i Gurmag Drowner 2/4; p1 blokuje OBA jednym Segmented
+      Krotiq 6/5 z licznikiem +1/+1 (7/6).
+      - CR 510.1/510.2: przydziały ogłasza się PRZED zadaniem obrażeń, a
+        obrażenia zadawane są RÓWNOCZEŚNIE → krotiq przydziela 7 (domyślnie
+        lethal-first: 5 na Throatseekera = śmierć, 2 na Drownera), sam dostaje
+        5 liczników −1/−1 i 2 obrażenia i ginie DOPIERO PO zadaniu swoich.
+      - Silnik po W3 (zmierzone): faza atakujących daje 5 liczników i 2
+        obrażenia, decyzja blokera jest zakolejkowana
+        (`damage_assignment_required`), po czym SBA po komendzie niszczy
+        krotiqa (`creature_destroyed` — kolejność zdarzeń w sondzie) → w fazie
+        blokerów stwór jest już poza polem bitwy i nie zadaje NIC (0). Widok
+        decyzji ma wtedy puste `entries`, a UI idzie w domyślny wariant
+        (`src/table/main.js:700`).
+      - Silnik PRZED W3: ten sam scenariusz dawał 2 i 2 (moc liczona już po
+        licznikach infect + pełna moc każdemu atakującemu) — dwa błędy naraz,
+        więc W3 nie jest regresją wobec zachowania poprawnego, tylko wobec
+        innego błędnego.
+      Do potwierdzenia online przed implementacją (ADR 0030): CR 510.1
+      (ogłaszanie przydziałów), 510.2 (równoczesność zadawania), 702.3 (infect:
+      liczniki −1/−1 zamiast obrażeń), 704.3/704.5g (SBA dopiero po zadaniu
+      obrażeń w kroku).
+      Kierunek naprawy: moc i lethal liczone RAZ na początku przebiegu i niesione
+      w decyzji (snapshot w `pendingDamageAssignment`), zadawanie obrażeń po
+      zebraniu WSZYSTKICH przydziałów oraz wstrzymanie SBA niszczącego stwory
+      z oznaczonymi obrażeniami, dopóki wisi decyzja przydziału (SBA po
+      `resolve_combat` biegnie w ścieżce `accepted`).
+      Ryzyko: dotyka rdzenia walki i kolejności zdarzeń (golden master bota,
+      transkrypty Żywego Testera) — najpierw test RED na tym scenariuszu, potem
+      mutacje (L13), potem pełne bramki.
 - [ ] **W5 — wyzwanie 5/5**: j.w.
 - [ ] **E6 — pętla jakości** (ADR 0021 §4a): Żywy Tester na świeżym `dist/`
       (L76), min. 3 partie, transkrypty czyta­ne RĘCZNIE wzdłuż trzech osi
