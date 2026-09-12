@@ -99,9 +99,26 @@ zlecenie na przegląd wszystkich kart. Handoff: `docs/setup/HANDOFF_2026-09-12.m
   pełnej sumy, zły decydent, resume bez fazy, zły walidator, brak decyzji,
   widok bez roli.
 
-Bramki: `npm test` 5175/5175, `npm run test:all` 5185/5185, build 61 modułów /
-3512,6 kB, `tools/check-card-printings.mjs` kod 0 (rozjazd 1, udokumentowany),
-quick benchmark heuristic 84,2% (566/672) — identycznie przed i po W3, wobec
+- **W4** (`41dc498`): przydziały obrażeń ogłaszane PRZED zadaniem czegokolwiek
+  (CR 510.1/510.2), obrażenia zadawane równocześnie, SBA dopiero po zadaniu
+  (CR 510.3 + 704.3/704.5g), drugi przebieg jako osobny krok (CR 510.4).
+  Pomiar sprzed zmiany (`tools/probe-w4-infect-przydzial.mjs`): Chained
+  Throatseeker 5/5 (infect) + Gurmag Drowner 2/4 vs Segmented Krotiq 7/6
+  blokujący obu — bloker dostawał 5 znaczników −1/−1 i 2 obrażenia w fazie
+  atakujących, jego decyzja była kolejkowana, SBA po komendzie go niszczyło i
+  nie zadawał NIC, a moc liczona była już po znacznikach (7 → 2). Przebieg ma
+  teraz trzy fazy (`assign-attackers`, `assign-blockers`, zadanie), widok niesie
+  wszystkie stwory czekające na przydział (jedna komenda zamyka fazę, CR 510.1e),
+  zebrane przydziały są niesione między decyzjami (`assignmentsSoFar`) i
+  resetowane między przebiegami; przy okazji drugi i kolejny atakujący przebiegu
+  dostaje prawdziwą decyzję zamiast defaultu w ciszy. Testy W4/1–W4/8, mutacje
+  złapane (5 wariantów). Golden master zregenerowany świadomie: jedna partia
+  (tarkir-bg|warhammer-ubr@1000), decyzje 221→222, nowy wpis
+  `resolve_damage_assignment` z score 0, `scoreSum` bez zmian (2989.0243).
+
+Bramki: `npm test` 5183/5183, build 61 modułów / 3515,4 kB (test:all do odświeżenia po W4 — ostatni pomiar
+5185/5185 przed W4), `tools/check-card-printings.mjs` kod 0 (rozjazd 1, udokumentowany),
+quick benchmark heuristic 84,2% (566/672) — identycznie przed i po W3 oraz po W4, wobec
 84,7% (569/672) przed B; golden master bota bez churn; bez pełnego B0 (ADR 0018
 — decyzja właściciela).
 

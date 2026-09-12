@@ -78,7 +78,7 @@ dopisani po pomiarze, nie wymyśleni z góry).
       Mutacje (L13) złapane: 7 wariantów. Bramki: `npm test` 5175/5175,
       `test:all` 5185/5185, build 61 modułów / 3512,6 kB, benchmark 84,2%
       (566/672) bez zmian i bez zawieszeń, golden master bez churn.
-- [ ] **W4 — wyzwanie 4/5: przydział obrażeń liczony ze stanu NA POCZĄTEK kroku
+- [x] **W4 — wyzwanie 4/5: przydział obrażeń liczony ze stanu NA POCZĄTEK kroku
       (CR 510.1/510.2)**. Kandydat **ZMIERZONY** 2026-09-12 tuż po W3 (sonda
       `tools/probe-w4-infect-przydzial.mjs`, scenariusz z podwójnym blokiem
       Cenn's Tactician): p2 atakuje Chained Throatseeker 5/5 (infect, wymaga
@@ -111,6 +111,25 @@ dopisani po pomiarze, nie wymyśleni z góry).
       Ryzyko: dotyka rdzenia walki i kolejności zdarzeń (golden master bota,
       transkrypty Żywego Testera) — najpierw test RED na tym scenariuszu, potem
       mutacje (L13), potem pełne bramki.
+      **WYKONANE `41dc498`**: dowód online (510.1, 510.1a, 510.2 „all combat
+      damage that's been assigned is dealt simultaneously ... No player has the
+      chance to cast spells or activate abilities between the time combat damage
+      is assigned and the time it's dealt", 510.3 + 704.3/704.5g — SBA dopiero po
+      zadaniu, 510.4 — drugi przebieg to osobny krok, 702.3 infect). Przebieg ma
+      teraz trzy fazy: `assign-attackers`, `assign-blockers`, zadanie — wszystkie
+      decyzje i przydziały domyślne są zbierane PRZED zadaniem czegokolwiek, więc
+      moc/lethal pochodzą ze stanu z początku przebiegu, a żaden stwór nie ginie
+      w trakcie ogłaszania. Widok niesie wszystkie stwory czekające na przydział
+      (jedna komenda zamyka fazę, CR 510.1e), zebrane przydziały są niesione
+      między decyzjami (`assignmentsSoFar`) i resetowane między przebiegami.
+      Efekt uboczny (też CR): drugi i kolejny atakujący przebiegu dostaje
+      PRAWDZIWĄ decyzję zamiast domyślnego przydziału w ciszy.
+      Testy W4/1–W4/8 (`test/wyzwanie-4-przydzial-przed-obrazeniami-510-2.test.js`),
+      mutacje złapane (5 wariantów). Golden master zregenerowany świadomie: jedna
+      partia (tarkir-bg|warhammer-ubr@1000), decyzje 221→222, nowy wpis to
+      `resolve_damage_assignment` z score 0, scoreSum bez zmian. Bramki:
+      `npm test` 5183/5183, build 61 modułów / 3515,4 kB, benchmark 84,2%
+      (566/672) bez zmian i bez zawieszeń.
 - [ ] **W5 — wyzwanie 5/5**: j.w.
 - [ ] **E6 — pętla jakości** (ADR 0021 §4a): Żywy Tester na świeżym `dist/`
       (L76), min. 3 partie, transkrypty czyta­ne RĘCZNIE wzdłuż trzech osi
