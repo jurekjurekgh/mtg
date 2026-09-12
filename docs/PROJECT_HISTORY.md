@@ -10126,3 +10126,111 @@ doinstalować osobno. KOREKTA zapisu: w opisie commitu padło stwierdzenie, że 
 i dlatego nie łapał wady etykiety; nie miał natomiast łańcucha realny stan → `playerView`, równoważności
 UI z walidatorem ani wykonania w silniku. Historia przepchnięta nie jest przepisywana (force push
 zakazany) — korekta zostaje w dokumentach.
+
+**Obiekty wsparcia poza rejestrem kart (2026-09-12e, `f1062cd`, zlecenie
+właściciela: sierota `scryfall-undercity-dungeon.json`, „karta jest w grze, panel
+działa, na pewno nie wolno tego skasować; czy JSON jest używany — nie wiem, do
+twojej decyzji").** Pomiar rozstrzygnął pytanie właściciela: plik NIE jest czytany
+w runtime ani w buildzie (`docs/cards/*.json` to materiał źródłowy do ręcznego
+kodowania `card-data.js`), ale jest prowieniencją tego, co panel pokazuje —
+`src/table/render.js` bierze obraz z `UNDERCITY_DUNGEON.imageUri`
+(`https://api.scryfall.com/cards/tclb/20?format=image`), a snapshot ma `set` `tclb`,
+`collector_number` `20`, `legacy_image_uri` IDENTYCZNE z tym adresem, `source`
+z UUID równym UUID obrazu oraz pełny Oracle obu twarzy („Undercity" z dziewięcioma
+komnatami i „The Initiative") — jedyny zapis, z którego zakodowano `UNDERCITY_ROOMS`
+w `src/engine/effects.js`. W arkuszu kolekcji nie ma ani `undercity`, ani `tclb`.
+Decyzja (delegowana agentowi): NIE kasować (zniszczyłoby to dowód Oracle i adresu)
+i NIE dopisywać do rejestru kart (ADR 0029 — katalog rośnie wyłącznie z kolekcji
+właściciela; zmieniłoby to liczbę kart 509 i klasyfikację narzędzia). Przyczyna
+źródłowa „sieroctwa" nie dotyczyła braku karty: model przeglądu zakładał, że każdy
+snapshot odpowiada karcie Z REJESTRU, a obiekty wsparcia (loch Undercity, znacznik
+Day // Night) są eksportami tego samego modułu poza rejestrem — i nazwa pliku nie
+była równa id obiektu (`undercity-dungeon` vs `undercity`), więc dopasowanie było
+niemożliwe. Naprawa: `git mv` na `docs/cards/scryfall-undercity.json` oraz kategoria
+w narzędziu WYPROWADZONA z modułu gry (`obiektyWsparcia()` czyta `UNDERCITY_DUNGEON`
+i `DAY_NIGHT_TOKEN` z `card-data.js` — zero nazw wpisanych na sztywno, F7/L41),
+`adresDruku()` (para set/numer albo UUID) i `przegladObiektowWsparcia()` z klasami
+`W-potwierdzony-offline` / `W-bez-snapshotu` / `W-snapshot-bez-zgodnosci` oraz
+sekcją w CLI. Pomiar: `undercity` = W-potwierdzony-offline (set `tclb` nr `20`
+= adres panelu, UUID `source` = UUID obrazu, twarze `Undercity` + `The Initiative`),
+`day-night` = W-bez-snapshotu (adres z UUID; pobranie wymaga sieci, w tym
+środowisku niedostępnej). Nowy test
+`test/obiekty-wsparcia-poza-rejestrem.test.js` (OW/1–OW/8): wyprowadzenie listy
+z modułu gry, brak wpisu w rejestrze i w arkuszu (ADR 0029), potwierdzenie druku
+offline ze sprzężeniem z panelem, zgodność Oracle z `UNDERCITY_ROOMS` (nazwy komnat
+i ich przejścia „(Leads to: …)" dosłownie z tekstu snapshotu), odnotowany brak
+snapshotu dla Day // Night, sierot brak, przypadki ujemne (mutacja set/numer/UUID)
+i trzy postaci adresu obrazu; D/14 przeformułowany (poza rejestrem jest wyłącznie
+snapshot obiektu wsparcia, regresja `token_tarmogoyf` zostaje). Klasy rejestru
+(A 349 / B 110 / B2 7 / brak 43) i `DO POBRANIA` = 0 bez zmian, narzędzie exit 0,
+`npm test` 5263/5263, build 3533.4 kB (snapshot nie wchodzi do bundla). Plan tury:
+`docs/plans/PLAN_2026-09-12e-wycena-przydzialow-i-obiekty-wsparcia.md`.
+
+**Wycena bota przy przydziałach obrażeń — pokrycie lethal po obu stronach
+(2026-09-12e, `08f6638`, zlecenie właściciela: „lethal-first nie wykorzystuje
+pokrycia lethal przez inne stwory — po W5/B1 legalne, ale bot z tego nie
+korzysta").** Pomiar ustawił zadanie inaczej, niż brzmiało: bot NIE ma czego
+wyceniać, bo `legalCommands` oferuje dokładnie JEDEN wariant
+`resolve_damage_assignment` (M66/R — kombinacji nie enumerujemy, człowiek ma wizard),
+a `src/controllers/heuristic-bot.js` odpowiada na ten typ `return finish(0)`.
+Jedyną dźwignią jest więc jakość deterministycznego planu domyślnego, który bot
+bierze w całości (i który jest punktem startowym wizarda człowieka). Pokrycie
+lethal istniało tylko w gałęzi trample (`defaultDamageAssignment` liczył `need`
+z kontekstem wyłącznie `if (trample && context)` — zakres B1), a strona BLOKERA nie
+miała kontekstu wcale: `defaultBlockerDamageAssignment` bez parametru,
+`buildDefaultDamageAssignments` bez mapy sekwencyjnej dla `role === 'blocker'`,
+faza 3 przebiegu bez akumulacji planów blokerów. Zmierzone straty (sondy na
+harnessie B1 — Cenn's Tactician daje stworowi z licznikiem +1/+1 drugi slot bloku):
+atakująca 4/4 bez trample blokowana przez 3/3 i 3/3, lethal pierwszego pokryty
+przez trzeciego stwora 3/3 → plan `[{b1:3},{b2:1}]`, JEDEN zabity (`b2` przeżywał
+z 1 obrażeniem); po zmianie `[{b1:0},{b2:4}]` — DWA zabite. Symetrycznie po stronie
+blokera: moc 4 na dwóch atakujących (2/2 i 3/3), lethal pierwszego pokryty przez
+drugiego blokera 2/2 → `[{a1:2},{a2:2}]`, `a2` przeżywał z 2 obrażeniami; po
+zmianie `[{a1:0},{a2:4}]` — obaj atakujący giną. Zmiana w `src/engine/combat.js`:
+helpery kierunku bloker → atakujący symetryczne do istniejących i z tymi samymi
+konwencjami (`assignedToAttackerThisPass`, `damageAssignedToAttackerThisPass`,
+`lethalAssignedByOtherBlockersThisPass` — przebieg first strike/zwykły, deathtouch
+→ każde niezerowe obrażenie jest lethal wg CR 702.2b, jawne przydziały z mapy wg
+CR 510.1e, `onlyAssigned` pomija stwory z decyzją, której jeszcze nie ogłoszono,
+prewencja/protection pomijane, bo reguła mówi o PRZYDZIALE), `need` z pokryciem
+niezależnie od trample (trample zachowuje dotychczasowe zachowanie — nadmiar
+legalnie idzie na gracza), kontekst i mapa sekwencyjna dla `role === 'blocker'`
+oraz kontekst + akumulacja `runningAssignments` w fazie 3 przebiegu. To WYCENA,
+nie reguły: suma przydziału się nie zmienia (cała moc rozdzielona, CR 510.1a),
+podział między cele jest swobodny (CR 510.1c/d), walidatory nietknięte, a liczba
+ofert bez zmian (M66/R). Reszta bez trample nadal idzie do OSTATNIEGO celu
+(konwencja E8/B3; pomiar: reszta > 0 zachodzi tylko gdy każdy cel dostał co
+najmniej swój lethal, więc wybór celu reszty jest neutralny dla wyniku — bez
+martwej gałęzi „pierwszy niezgładzony"). Nowy test
+`test/p-wycena-przydzialow-pokrycie-lethal.test.js` (P/1–P/10): oba zmierzone
+scenariusze end-to-end (oferta → `execute` → kto ginie), przypadki ujemne bez
+pokrycia (P/2 atakujący `[3,1]`, P/4 bloker `[2,2]` — plan IDENTYCZNY jak przed
+zmianą), deathtouch po stronie blokera (P/5), sekwencyjność przy dwóch blokerach
+z decyzją (P/6: `w [a1:2,a2:1]`, potem `v [a1:0,a2:3]` — bez overkillu),
+legalność i pełna suma w walidatorach (P/7), regresja trample z B1 (P/8:
+`[{b1:0},{b2:3}]` + 1 obrażenie na obrońcę), przypadek „wszystkie cele pokryte"
+(P/9: reszta do ostatniego, suma = moc) oraz helpery jednostkowo (P/10, w tym
+`onlyAssigned` i brak kontekstu = stare zachowanie). ŚWIADOMA KOREKTA testu B1/5:
+jego druga asercja utrwalała „bez trample pokrycie NIC nie zmienia" — dokładnie
+zachowanie, które właściciel kazał zmienić (`[{b1:3},{b2:3}]` → `[{b1:0},{b2:6}]`);
+uzasadnienie w teście: wynik w tamtym scenariuszu jest neutralny (obaj blokerzy
+i tak giną), ale jedna polityka pokrycia obowiązuje teraz zamiast specjalnego
+przypadku trample, a poprzednie uzasadnienie asercji było błędne (`b1` ginie od
+przydziału `z` niezależnie od decyzji `a`). Pierwsza część B1/5 (bez pokrycia →
+`[2,4]`) zostaje bez zmian, tak samo B1/1–B1/4 i B1/6. Bramki: `npm test`
+**5273/5273**, `npm run build` 61 modułów / **3538.7 kB** (+5.3 kB), golden master
+`bot-scoring-snapshot` BEZ churn, quick benchmark 672 mecze w 138.2 s: heuristic
+**84.2%** (566/672), aggro 26.5%, random 5.1% — IDENTYCZNIE jak przed zmianą, bo
+poprawka jest symetryczna (obie strony biorą ten sam plan domyślny, więc w macierzy
+win-rate się nie odznacza — uczciwie: ten pomiar NIE dowodzi zysku, dowodzi braku
+regresji; zysk jest zmierzony w P/1 i P/3 jako dodatkowe zabójstwo). Żywy Tester
+(L76) na świeżym `dist/`: 7 partii (worek-dziki/kaladesh/71/greedy,
+innistrad-brg/tarkir-bg/2027/impatient, zendikar/mirrodin-brg/44/defensive oraz
+4 partie sondujące z worek-mroczny — jedyną talią z Cenn's Tactician) — łącznie
+**317 sond no-op, 0 zgłoszeń detektorów, 0 niewycenionych ruchów bota**; w partii
+m3 (kaladesh vs worek-mroczny, seed 303) pojawił się żywy wizard przydziału wielu
+blokerów: Skilled Animator (moc 1) vs Tiller of Flesh (śmiertelne 4) i Incubator
+(śmiertelne 2) — bez pokrycia w tej pozycji, więc plan został lethal-first 1/0,
+a komenda przeszła przez `execute` bez błędu. Podwójnego bloku po obu stronach nie
+trafiła żadna z 7 partii, więc dowodem zmiany są testy deterministyczne P/1–P/10.
+Transkrypty poza repo (`tools/table-tester/tmp-audyt-p-2026-09-12/`, M239).

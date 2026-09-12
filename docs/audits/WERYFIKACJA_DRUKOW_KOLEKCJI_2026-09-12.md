@@ -91,11 +91,9 @@ Rozjazd `ethersworn-shieldmage` (arkusz `536CON` vs katalog `ARB`) pozostaje jed
 i jest udokumentowany polem `uwaga` — właściciel potwierdził druk ARB (2026-08-05),
 a `CON` w CSV to skrót płaszczyzny Alara, nie kod setu.
 
-Poza klasami zostaje jedna sierota: `docs/cards/scryfall-undercity-dungeon.json` —
-snapshot „Undercity // The Initiative" (tclb) dla karty, której NIE ma w rejestrze
-kart (silnik tworzy dungeon dynamicznie jako `undercity`, `src/engine/effects.js`).
-Plik ma kanoniczne `source`, więc nie psuje żadnej klasy; pilnuje go test D/14, żeby
-nowe sieroty nie pojawiały się cicho.
+Poza klasami nie zostaje nic: snapshot, który na koniec etapu 2 wyglądał na
+„sierotę" (`scryfall-undercity-dungeon.json`), okazał się **obiektem wsparcia**
+i dostał własną kategorię — patrz 7.7 (2026-09-12e, `f1062cd`).
 
 ## 7. Drugi etap — metoda i pomiary
 
@@ -156,9 +154,46 @@ polu `uri`. Kolejne pobrania przerwała awaria proxy środowiska (`SignatureDoes
 UUID z `card_faces`, wszystkie 7 par druga-twarz ← snapshot, przypadek ujemny
 `token_rat`, mutacja (snapshot „brata" bez `card_faces` → brak pokrycia), klasy
 problemowe puste, `DO POBRANIA` 0, jedyny rozjazd udokumentowany, konwencja nazw
-plików i sierota `undercity-dungeon`, reguła `set: null` z mutacją w drugą stronę.
+plików (od 2026-09-12e: sierot brak — patrz 7.7), reguła `set: null` z mutacją
+w drugą stronę.
 Ratchet rozszerzony o A/7 (reguły porównania: token z `set=null` i transform bez
 `image_uris`). `npm test` **5255/5255**.
+
+**7.7 Obiekty wsparcia poza rejestrem (2026-09-12e, `f1062cd`).** Snapshot
+`docs/cards/scryfall-undercity-dungeon.json` był raportowany jako „sierota" — plik
+bez karty w rejestrze. Pomiar rozstrzygnął, co to jest: karta JEST w grze (panel
+specjalny po „Take the initiative"), panel bierze obraz z
+`UNDERCITY_DUNGEON.imageUri` = `https://api.scryfall.com/cards/tclb/20?format=image`
+(`src/table/render.js`), a snapshot ma `set` `tclb`, `collector_number` `20`,
+`legacy_image_uri` IDENTYCZNE z adresem panelu oraz pełny Oracle obu twarzy
+(„Undercity" z dziewięcioma komnatami i „The Initiative") — jedyny zapis, z którego
+zakodowano `UNDERCITY_ROOMS` w `src/engine/effects.js`. Pliki `docs/cards/*.json`
+nie są czytane w runtime ani w buildzie: to materiał źródłowy do ręcznego kodowania
+`card-data.js`. W arkuszu kolekcji nie ma ani `undercity`, ani `tclb`.
+
+Decyzja (delegowana przez właściciela): **NIE kasować** (proweniencja adresu panelu
+i Oracle obu twarzy) i **NIE dopisywać do rejestru kart** (ADR 0029 — katalog rośnie
+wyłącznie z kolekcji właściciela). Przyczyna źródłowa „sieroctwa" była inna niż brak
+karty: model przeglądu zakładał, że każdy snapshot odpowiada karcie Z REJESTRU, a
+obiekty wsparcia (loch Undercity, znacznik Day // Night) są eksportami tego samego
+modułu poza rejestrem — i nazwa pliku nie była równa id obiektu (`undercity-dungeon`
+vs `undercity`), więc dopasowanie było niemożliwe.
+
+Naprawa: `git mv` na `scryfall-undercity.json` (nazwa = id obiektu, ta sama
+konwencja co karty) + kategoria w narzędziu WYPROWADZONA z modułu gry
+(`obiektyWsparcia()` czyta `UNDERCITY_DUNGEON` i `DAY_NIGHT_TOKEN` z
+`card-data.js` — zero nazw wpisanych na sztywno), `adresDruku()` (para set/numer
+albo UUID) i `przegladObiektowWsparcia()` z klasami `W-potwierdzony-offline` /
+`W-bez-snapshotu` / `W-snapshot-bez-zgodnosci`. Pomiar: `undercity` =
+**W-potwierdzony-offline** (set `tclb` nr `20` = adres panelu, UUID `source` = UUID
+obrazu, twarze `Undercity` + `The Initiative`), `day-night` = **W-bez-snapshotu**
+(adres z UUID; pobranie wymaga sieci). Testy OW/1–OW/8
+(`test/obiekty-wsparcia-poza-rejestrem.test.js`) pilnują wyprowadzenia listy, braku
+wpisu w rejestrze i w arkuszu (ADR 0029), potwierdzenia druku offline ze sprzężeniem
+z panelem, zgodności Oracle z `UNDERCITY_ROOMS` (nazwy komnat i ich przejścia
+„(Leads to: …)" dosłownie z tekstu), odnotowanego braku snapshotu dla Day // Night,
+braku sierot w `docs/cards/` oraz przypadków ujemnych (mutacja set/numer/UUID).
+Klasy rejestru i `DO POBRANIA` bez zmian, narzędzie exit **0**.
 
 ## 8. Odtworzenie pomiaru
 
@@ -167,5 +202,7 @@ node tools/check-card-printings.mjs                            # klasy prowienie
 node --test test/zgloszenie-a-druk-karty-z-arkusza.test.js      # ratchet druków (7/7)
 node --test test/druki-druga-strona-i-uuid-obrazu.test.js       # D/1–D/15
 node --test test/w3-wizard-podzialu-blokera-ui.test.js          # B/1–B/7 (wizard blokera)
-npm test                                                        # cały pakiet (5255/5255)
+node --test test/obiekty-wsparcia-poza-rejestrem.test.js        # OW/1–OW/8 (obiekty wsparcia)
+node --test test/p-wycena-przydzialow-pokrycie-lethal.test.js   # P/1–P/10 (pokrycie lethal)
+npm test                                                        # cały pakiet (5273/5273)
 ```

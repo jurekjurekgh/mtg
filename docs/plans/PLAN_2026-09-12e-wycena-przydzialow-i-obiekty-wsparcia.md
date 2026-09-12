@@ -180,3 +180,44 @@ przed każdym pushem `git log -1` + `git ls-remote` (incydent cofnięcia referen
   Pełny B0 (~23k meczów) tylko na polecenie właściciela (ADR 0018).
 * Nie dodajemy karty do rejestru (ADR 0029) i nie kasujemy snapshotu (proweniencja
   Oracle i adresu obrazu panelu).
+
+## Wynik (2026-09-12e) — plan odhaczony w całości
+
+**K1 — obiekt wsparcia jako kategoria przeglądu: ZROBIONE (`f1062cd`).**
+`git mv docs/cards/scryfall-undercity-dungeon.json → scryfall-undercity.json`;
+w `tools/check-card-printings.mjs` doszły `obiektyWsparcia()` (wyprowadzone
+z importu `UNDERCITY_DUNGEON`/`DAY_NIGHT_TOKEN` — zero nazw na sztywno),
+`adresDruku()` i `przegladObiektowWsparcia()` z klasami `W-potwierdzony-offline`
+/ `W-bez-snapshotu` / `W-snapshot-bez-zgodnosci` oraz sekcją w CLI. Pomiar:
+`undercity` = **W-potwierdzony-offline** (set `tclb` nr `20` = adres w
+`card-data.js`, UUID `source` = UUID obrazu, twarze `Undercity` + `The
+Initiative`), `day-night` = **W-bez-snapshotu** (adres z UUID, pobranie wymaga
+sieci). Nowy test `test/obiekty-wsparcia-poza-rejestrem.test.js` (OW/1–OW/8),
+w tym cross-check Oracle ↔ `UNDERCITY_ROOMS` (9 komnat i ich przejścia „(Leads
+to: …)" dosłownie z tekstu snapshotu) oraz sprzężenie z panelem
+(`legacy_image_uri == UNDERCITY_DUNGEON.imageUri`, `render.js` używa tego pola).
+D/14 przeformułowany: poza rejestrem jest wyłącznie snapshot obiektu wsparcia.
+Klasy rejestru i `DO POBRANIA` bez zmian, narzędzie exit 0, `npm test`
+**5263/5263**, build **3533.4 kB** (snapshot nie wchodzi do bundla).
+
+**K2 — pokrycie lethal po obu stronach: ZROBIONE (`08f6638`).** Helpery kierunku
+bloker → atakujący (`assignedToAttackerThisPass`,
+`damageAssignedToAttackerThisPass`, `lethalAssignedByOtherBlockersThisPass`),
+`need` z pokryciem niezależnie od trample, kontekst i mapa sekwencyjna dla
+`role === 'blocker'` w `buildDefaultDamageAssignments` oraz w fazie 3 przebiegu
+(plan każdego blokera trafia do `runningAssignments`). Testy P/1–P/10
+(`test/p-wycena-przydzialow-pokrycie-lethal.test.js`) + świadoma korekta drugiej
+asercji B1/5. Oba zmierzone scenariusze dają **dwa zabite zamiast jednego**.
+Liczba ofert bez zmian (M66/R), walidatory nietknięte (P/7). Bramki: `npm test`
+**5273/5273**, build **3538.7 kB** (+5.3 kB), golden master **bez churn**, quick
+benchmark **84.2% (566/672)** — identycznie (poprawka symetryczna: obie strony
+biorą ten sam plan). Żywy Tester **7 partii / 317 sond no-op / 0 zgłoszeń
+detektorów / 0 niewycenionych ruchów**; w partii m3 pojawił się żywy wizard
+przydziału wielu blokerów (Skilled Animator moc 1 vs Tiller of Flesh lethal 4 +
+Incubator lethal 2 — bez pokrycia w tej pozycji, plan został lethal-first 1/0,
+`execute` OK). Podwójnego bloku po obu stronach nie było w żadnej z 7 partii —
+dowodem są testy deterministyczne P/1–P/10.
+
+**K3 — dokumenty i PR:** ta sekcja, aktualizacja `HANDOFF_2026-09-12.md`,
+raportu druków (sierota → obiekt wsparcia), `PROJECT_HISTORY.md` i opisu PR #114
+(sekcja 13) przez REST PATCH.
