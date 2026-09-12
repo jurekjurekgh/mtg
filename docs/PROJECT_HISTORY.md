@@ -9876,3 +9876,34 @@ UI bez pól widoku, `lethalAssignedByOthersThisPass` → `false`.
 Bramki: `npm test` **5192/5192**, `npm run build` 61 modułów / 3521,5 kB, quick benchmark
 **84,2% (566/672)** (aggro 26,5%, random 5,1%, 672 mecze w 145,8 s) — IDENTYCZNIE jak przed W5,
 bez zawieszeń; `npm run test:all` 5193/5193 zmierzone po W4 (odświeżenie w E7).
+
+## 2026-09-12 — E6: pętla jakości żywym testerem po W3/W4/W5 (PR #114, arena/01a0925f, `078e6ed` + `ea63934`)
+
+Sześć partii człowiek-vs-bot na świeżym `dist/mtg-table.html` (L76), profile greedy ×2, explorer,
+defensive, impatient, hoarder; transkrypty czytane ręcznie wzdłuż trzech osi z
+`docs/setup/TESTER_STOLU.md` (L27: zero zgłoszeń detektorów to pomiar narzędzia). Raport:
+`docs/audits/AUDYT_E6_ZYWY_TESTER_2026-09-12.md`. Żadna partia nie utknęła, `== NIEWYCENIONE ==`
+puste w sześciu partiach, detektory: 1 zgłoszenie (g6).
+
+**F-E6-1 (`ea63934`) — nazwy tokenów mechanik silnika.** Log pisał „token_servo ginie": mapa nazw
+tokenów (`collectTokenNames`, M188/B) powstaje z KATALOGU kart, a Servo tworzy mechanika fabricate
+w kodzie silnika (CR 702.122a) — po śmierci token znika ze stanu (CR 111.7), więc opis miał tylko
+cardId. Klasa dotyczyła też `token_skeleton`, `token_hero`, `token_clue`, `token_incubator`,
+`token_phyrexian`, `token_clone`, `token_spirit`. Naprawa generyczna (ADR 0002): cardId tokenu to
+slug jego nazwy, więc reguła ma jedno źródło prawdy w `src/engine/tokens.js` (`tokenCardIdFromName`
++ odwrotność `tokenNameFromCardId`), a `nameOf` w sesji używa jej jako fallback (L41). Weryfikacja
+dwustronna (L27): ta sama partia PRZED — 1 zgłoszenie detektora, PO — 0 i „Servo wchodzi na pole
+bitwy"; wynik partii identyczny. Strażnik klasy: `test/e6-nazwy-tokenow-silnika.test.js`.
+
+**F-E6-2 (`078e6ed`) — wizard trample po W5.** Bramka pozwala przydzielić blokerowi mniej niż lethal
+(bo lethal pokrywają obrażenia przydzielane mu w tym samym kroku przez inne stwory, CR 702.19b/702.2b),
+ale gracz nie widział dlaczego. Etykieta celu dostaje dopisek z widoku: „(wytrz. 3, śmiertelne 3,
+od innych w tym kroku: 3 (śmiertelne pokryte))" — tylko gdy jest co pokazać.
+
+Oś 1 bez znalezisk produktowych (w g1 to tester z profilem greedy tapował własny ląd z Chronic
+Flooding aż do wyczerpania biblioteki — ograniczenie narzędzia, nie bota; zapisane, żeby nie wzięto
+tego za regresję). Oś 3: decyzje `resolve_*` (w tym nowe wizardy W3/W4/W5) poprawnie bez ptaszka
+auto-pass. W g2 oba nowe wizardy przeszły przez prawdziwy artefakt: Silumgar Butcher 4 → 3+1,
+Stampeding Elk Herd (trample) 5 → 3+2 i „do gracza: 0", zgony PO zadaniu całości (CR 510.2 + 704.3).
+
+Bramki: `npm test` **5195/5195**, `npm run build` 61 modułów / 3523,6 kB.

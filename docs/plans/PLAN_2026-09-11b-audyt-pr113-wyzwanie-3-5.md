@@ -158,10 +158,34 @@ dopisani po pomiarze, nie wymyśleni z góry).
       (jawne z mapy, domyślne dla tych bez decyzji); widok niesie
       `assignedByOthers` dla bramki trample w wizardzie. Domyślna polityka
       (lethal-first) BEZ zmian — chodzi o legalność, nie o wybór bota.
-- [ ] **E6 — pętla jakości** (ADR 0021 §4a): Żywy Tester na świeżym `dist/`
+- [x] **E6 — pętla jakości** (ADR 0021 §4a): Żywy Tester na świeżym `dist/`
       (L76), min. 3 partie, transkrypty czyta­ne RĘCZNIE wzdłuż trzech osi
       (L27: zero z detektorów to pomiar narzędzia), każda klasa znaleziona
       ręcznie → nowy detektor. Bez pełnego B0 (ADR 0018).
+      **ZROBIONE** — 6 partii (nie 3) na świeżym `dist/`, profile greedy ×2,
+      explorer, defensive, impatient, hoarder; wynik:
+      `docs/audits/AUDYT_E6_ZYWY_TESTER_2026-09-12.md`. Dwa znaleziska, oba
+      naprawione i oba z weryfikacją dwustronną (L27):
+      * **F-E6-1** (`ea63934`): log pisał „token_servo ginie" — tokeny mechanik
+        silnika (fabricate/Servo, Clue, Incubator, Hero, Spirit, Clone, Skeleton,
+        Phyrexian) nie mają deskryptora w katalogu, więc mapa nazw z
+        `collectTokenNames` (M188/B) ich nie widziała. Naprawa generyczna: reguła
+        sluga ma jedno źródło prawdy w `src/engine/tokens.js`
+        (`tokenCardIdFromName` + odwrotność `tokenNameFromCardId`), `nameOf`
+        w sesji używa jej jako fallback (ADR 0002, L41). Detektor: PRZED — 1
+        zgłoszenie, PO — 0; strażnik klasy `test/e6-nazwy-tokenow-silnika.test.js`.
+      * **F-E6-2** (`078e6ed`): po W5 bramka trample w wizardzie pozwala
+        przydzielić mniej niż lethal (bo lethal pokrywają inne stwory w tym samym
+        kroku), ale gracz nie widział dlaczego — etykieta celu dostaje dopisek
+        „od innych w tym kroku: N (śmiertelne pokryte)".
+      Oś 1 bez znalezisk (brak akcji bota przeciw sobie, `NIEWYCENIONE` puste,
+      brak pętli akcji; limit jednego lądu na turę nienaruszony), oś 2
+      skodyfikowana także w `test/m134-kompletnosc-zdarzen.test.js`, oś 3
+      w `test/session-autopass.test.js` (decyzje `resolve_*` bez ptaszka —
+      poprawnie). W g2 oba nowe wizardy W3/W4/W5 przeszły przez prawdziwy
+      artefakt: przydziały 3+1 i 3+2 („do gracza: 0"), zgony PO zadaniu całości.
+      Bramy: `npm test` 5195/5195, build 61 modułów / 3523,6 kB.
+
 - [ ] **E7 — domknięcie** (ENVIRONMENT §7): `npm run test:all`, `npm run build`,
       liczby w README wg pomiaru, wpis `docs/PROJECT_HISTORY.md`,
       `docs/setup/HANDOFF_2026-09-11b.md`, korekta starego planu (tezy 3 i 5
