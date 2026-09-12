@@ -728,14 +728,9 @@ export function buildDamageAssignmentView(state, viewerId = null) {
     const object = state.objects.get(id);
     return Boolean(object && object.zone === 'battlefield');
   };
-  const inFirstStrikePass = (id) => {
-    const object = state.objects.get(id);
-    return Boolean(object) && (hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
-  };
-  const inRegularPass = (id) => {
-    const object = state.objects.get(id);
-    return Boolean(object) && (!hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
-  };
+  // B3/O4 (L41): j.w. — przynależność do przebiegu tylko z definicji modułowych.
+  const inFirstStrikePass = (id) => inFirstStrikePassOf(state, id);
+  const inRegularPass = (id) => inRegularPassOf(state, id);
   if (pending.role === 'blocker') {
     // W3 (CR 510.1d): widok podziału BLOKERA — ten sam wizard co dla
     // atakującego, tylko role odwrócone (bloker = źródło mocy, atakujący = cele).
@@ -922,15 +917,12 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
   };
   // CR 510.4/510.5: w przebiegu first strike zadają stwory z first/double
   // strike, w zwykłym — bez first strike oraz z double strike.
-  const inFirstStrikePass = (id) => {
-    const object = state.objects.get(id);
-    return Boolean(object) && (hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
-  };
-  const inRegularPass = (id) => {
-    const object = state.objects.get(id);
-    return Boolean(object) && (!hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
-  };
-  const inPass = (id) => (pass ? inFirstStrikePass(id) : inRegularPass(id));
+  // B3/O4 (L41, L14 — jedna zasada, jedna implementacja): przynależność do
+  // przebiegu ma JEDENĄ definicję modułową (`inFirstStrikePassOf` /
+  // `inRegularPassOf`, dodaną przy W5 dla iteratora przydziałów); lokalne
+  // domknięcia o identycznej treści usunięte, żeby dwie kopie nie mogły się
+  // rozjechać przy pierwszej zmianie reguły.
+  const inPass = (id) => (pass ? inFirstStrikePassOf(state, id) : inRegularPassOf(state, id));
   // Zebrane dotąd przydziały (klucze: id atakujących i id blokerów — identyfikatory
   // obiektów się nie pokrywają, więc jedna mapa wystarcza na cały przebieg).
   const collected = assignments ?? {};
