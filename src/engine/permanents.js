@@ -793,9 +793,17 @@ export function hasCreatureType(object, subtype, state = null) {
 
 /** Efektywne podtypy stwora na polu bitwy — własne + granty załączników. */
 export function effectiveSubtypesOnBattlefield(state, object) {
-  // CR 708.2a — jak wyżej: zakryty permanent nie ma własnych podtypów.
+  // B4 (audyt PR #113, F7): część „własna" idzie przez `effectiveSubtypes`,
+  // a nie przez surowe `object.subtypes`. Były tu DWIE implementacje tej samej
+  // reguły (L41/L14) i rozjechały się po cichu: `effectiveSubtypes` honoruje
+  // zakrycie (CR 708.2a) i `typeGrant` — tymczasową zmianę podstawowego typu
+  // lądu (Unstable Frontier, `grantBasicLandTypeUntilEndOfTurn`) — a ta funkcja
+  // czytała podtypy DRUKOWANE, więc `hasCreatureType(..., state)` odpowiadała
+  // starym typem lądu (CR 305.7: nadanie podstawowego typu zabiera stare typy
+  // lądu; CR 613.1d: warstwa typów działa dla każdego czytającego). Znalezione
+  // testem rodzinnym B4/6 — przed nim zero testów dotykało tego predykatu.
   // Granty z załączników zostają (CR 122.1b/613 — efekty zewnętrzne działają).
-  const own = object?.faceDown ? [] : (object?.subtypes ?? []);
+  const own = effectiveSubtypes(object);
   const granted = attachmentSubtypes(state, object);
   return [...new Set([...own, ...granted])];
 }
