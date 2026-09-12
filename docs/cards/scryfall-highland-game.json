@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Highland+Game",
+  "source": "https://api.scryfall.com/cards/7fbb10a9-486a-4b9a-b3f5-c17f661af2b2",
   "print": "ktk",
   "name": "Highland Game",
   "mana_cost": "{1}{G}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/7/f/7fbb10a9-486a-4b9a-b3f5-c17f661af2b2.jpg?1783939067",
     "normal": "https://cards.scryfall.io/normal/front/7/f/7fbb10a9-486a-4b9a-b3f5-c17f661af2b2.jpg?1783939067"
   },
-  "pobrano": "2026-08-01"
+  "pobrano": "2026-08-01",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set KTK zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Highland+Game"
 }

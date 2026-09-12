@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Deepwood%20Denizen&format=json",
+  "source": "https://api.scryfall.com/cards/333f02f7-3b8a-41e3-9ae5-2151539e64ad",
   "name": "Deepwood Denizen",
   "mana_cost": "{2}{G}",
   "cmc": 3.0,
@@ -65,5 +65,6 @@
     "tix": "0.03"
   },
   "related_uris": {},
-  "purchase_uris": {}
+  "purchase_uris": {},
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set MH2 zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Deepwood%20Denizen&format=json"
 }

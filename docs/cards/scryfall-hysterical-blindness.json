@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Hysterical+Blindness",
+  "source": "https://api.scryfall.com/cards/5aeaa757-e3b0-4606-a689-e8a20a686c3a",
   "print": "isd",
   "name": "Hysterical Blindness",
   "mana_cost": "{2}{U}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/5/a/5aeaa757-e3b0-4606-a689-e8a20a686c3a.jpg?1783940973",
     "normal": "https://cards.scryfall.io/normal/front/5/a/5aeaa757-e3b0-4606-a689-e8a20a686c3a.jpg?1783940973"
   },
-  "pobrano": "2026-08-03"
+  "pobrano": "2026-08-03",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set ISD zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Hysterical+Blindness"
 }

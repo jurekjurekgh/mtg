@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Steel+Sabotage",
+  "source": "https://api.scryfall.com/cards/c227437d-1fc7-4a00-ace5-80795adc51d3",
   "print": "2xm",
   "name": "Steel Sabotage",
   "mana_cost": "{U}",
@@ -16,5 +16,6 @@
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/c/2/c227437d-1fc7-4a00-ace5-80795adc51d3.jpg?1783930190"
   },
-  "pobrano": "2026-08-13"
+  "pobrano": "2026-08-13",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set 2XM zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Steel+Sabotage"
 }

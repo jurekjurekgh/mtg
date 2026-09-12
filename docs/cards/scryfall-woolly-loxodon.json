@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=!\"Woolly Loxodon\"+e:ktk",
+  "source": "https://api.scryfall.com/cards/a890c55a-8746-4233-b75a-19cc760c1e8e",
   "print": "ktk",
   "name": "Woolly Loxodon",
   "mana_cost": "{5}{G}{G}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/a/8/a890c55a-8746-4233-b75a-19cc760c1e8e.jpg?1783939063",
     "normal": "https://cards.scryfall.io/normal/front/a/8/a890c55a-8746-4233-b75a-19cc760c1e8e.jpg?1783939063"
   },
-  "pobrano": "2026-08-02"
+  "pobrano": "2026-08-02",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set KTK zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/search?q=!\"Woolly Loxodon\"+e:ktk"
 }

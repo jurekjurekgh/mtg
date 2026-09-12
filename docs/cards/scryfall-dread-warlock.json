@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Dread+Warlock",
+  "source": "https://api.scryfall.com/cards/4f964660-c2db-4995-bb16-65383362cf19",
   "print": "m10",
   "name": "Dread Warlock",
   "mana_cost": "{1}{B}{B}",
@@ -18,5 +18,6 @@
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/4/f/4f964660-c2db-4995-bb16-65383362cf19.jpg?1783942384"
   },
-  "pobrano": "2026-08-13"
+  "pobrano": "2026-08-13",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set M10 zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Dread+Warlock"
 }

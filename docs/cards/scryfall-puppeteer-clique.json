@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=!\"Puppeteer Clique\"+e:shm",
+  "source": "https://api.scryfall.com/cards/6ff839e1-6f76-4a24-a87c-d4589b1abf66",
   "print": "shm",
   "name": "Puppeteer Clique",
   "mana_cost": "{3}{B}{B}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/6/f/6ff839e1-6f76-4a24-a87c-d4589b1abf66.jpg?1783942753",
     "normal": "https://cards.scryfall.io/normal/front/6/f/6ff839e1-6f76-4a24-a87c-d4589b1abf66.jpg?1783942753"
   },
-  "pobrano": "2026-08-02"
+  "pobrano": "2026-08-02",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set SHM zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/search?q=!\"Puppeteer Clique\"+e:shm"
 }

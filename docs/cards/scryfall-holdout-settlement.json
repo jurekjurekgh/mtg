@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Holdout+Settlement&format=json",
+  "source": "https://api.scryfall.com/cards/cf08c317-6f2d-47e3-ab5b-8af73fd3e404",
   "print": "ogw",
   "name": "Holdout Settlement",
   "mana_cost": "",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/c/f/cf08c317-6f2d-47e3-ab5b-8af73fd3e404.jpg?1783937892",
     "normal": "https://cards.scryfall.io/normal/front/c/f/cf08c317-6f2d-47e3-ab5b-8af73fd3e404.jpg?1783937892"
   },
-  "pobrano": "2026-08-02"
+  "pobrano": "2026-08-02",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set OGW zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Holdout+Settlement&format=json"
 }

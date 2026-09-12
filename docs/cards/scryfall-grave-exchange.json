@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Grave+Exchange",
+  "source": "https://api.scryfall.com/cards/14f420c4-801b-48e7-a10b-de44a2417265",
   "print": "avr",
   "name": "Grave Exchange",
   "mana_cost": "{4}{B}{B}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/1/4/14f420c4-801b-48e7-a10b-de44a2417265.jpg?1783940698",
     "normal": "https://cards.scryfall.io/normal/front/1/4/14f420c4-801b-48e7-a10b-de44a2417265.jpg?1783940698"
   },
-  "pobrano": "2026-08-03"
+  "pobrano": "2026-08-03",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set AVR zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Grave+Exchange"
 }

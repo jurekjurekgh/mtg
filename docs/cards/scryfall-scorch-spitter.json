@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Scorch%20Spitter&format=json",
+  "source": "https://api.scryfall.com/cards/bb701a84-24bd-41ed-9f06-25c8338902a5",
   "name": "Scorch Spitter",
   "mana_cost": "{R}",
   "cmc": 1.0,
@@ -64,5 +64,6 @@
     "tix": "0.03"
   },
   "related_uris": {},
-  "purchase_uris": {}
+  "purchase_uris": {},
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set M20 zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Scorch%20Spitter&format=json"
 }

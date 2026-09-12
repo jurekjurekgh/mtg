@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Jwar+Isle+Avenger",
+  "source": "https://api.scryfall.com/cards/0a5b059f-2fa3-474f-9c74-6d4021703add",
   "print": "ogw",
   "name": "Jwar Isle Avenger",
   "mana_cost": "{4}{U}",
@@ -15,5 +15,6 @@
   "collector_number": "58",
   "rarity": "common",
   "image_uris": { "large": "https://cards.scryfall.io/large/front/0/a/0a5b059f-2fa3-474f-9c74-6d4021703add.jpg?1783937918" },
-  "pobrano": "2026-08-26"
+  "pobrano": "2026-08-26",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set OGW zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Jwar+Isle+Avenger"
 }

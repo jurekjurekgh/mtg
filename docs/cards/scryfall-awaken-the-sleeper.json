@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Awaken+the+Sleeper",
+  "source": "https://api.scryfall.com/cards/3b92f866-2522-4f2a-a5ca-7d01ad79b927",
   "print": "one",
   "name": "Awaken the Sleeper",
   "mana_cost": "{3}{R}",
@@ -16,5 +16,6 @@
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/3/b/3b92f866-2522-4f2a-a5ca-7d01ad79b927.jpg?1783918036"
   },
-  "pobrano": "2026-08-13"
+  "pobrano": "2026-08-13",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set ONE zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Awaken+the+Sleeper"
 }

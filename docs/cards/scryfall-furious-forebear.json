@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Furious+Forebear",
+  "source": "https://api.scryfall.com/cards/a4f247b6-8212-4e78-a452-d2d3be228d8e",
   "print": "tdm",
   "name": "Furious Forebear",
   "mana_cost": "{1}{W}",
@@ -18,5 +18,6 @@
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/a/4/a4f247b6-8212-4e78-a452-d2d3be228d8e.jpg?1783907413"
   },
-  "pobrano": "2026-08-13"
+  "pobrano": "2026-08-13",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set TDM zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Furious+Forebear"
 }

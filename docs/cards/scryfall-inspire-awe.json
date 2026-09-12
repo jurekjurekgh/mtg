@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Inspire+Awe",
+  "source": "https://api.scryfall.com/cards/b23c8b5a-2e18-4dd8-b236-5b1fd356f867",
   "print": "thb",
   "name": "Inspire Awe",
   "mana_cost": "{3}{G}",
@@ -19,5 +19,6 @@
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/b/2/b23c8b5a-2e18-4dd8-b236-5b1fd356f867.jpg?1783931537"
   },
-  "pobrano": "2026-08-13"
+  "pobrano": "2026-08-13",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set THB zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Inspire+Awe"
 }
