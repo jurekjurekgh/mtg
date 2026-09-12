@@ -1,5 +1,5 @@
 {
-  "_opis": "Zapadnia (ratchet) dla zgłoszenia właściciela A (2026-09-12, druk karty niezgodny z arkuszem). `bezSetu` = snapshoty pobrane z `cards/named?exact=…` BEZ parametru `set=` — Scryfall zwraca wtedy swój DOMYŚLNY druk nazwy, nie druk właściciela (tak Curiosity dostała obraz z JMP zamiast ISD). `bezZrodla` = snapshoty bez pola `source` (proweniencja nieznana). `uwagaSet` = karty, których rozjazd z arkuszem/drukiem jest UDOKUMENTOWANY polem `uwaga` w snapshocie (odstępstwo świadome, z powodem). Listy mają tylko MALEĆ: po poprawieniu snapshotu (pobranie set-aware) wpis znika, a test czerwieni się, gdy lista jest nieaktualna w którąkolwiek stronę. 2026-09-12 wykonano pełny przegląd druków (509 kart, patrz docs/cards/WERYFIKACJA_DRUKOW_2026-09-12.md): poprawiono 5 kart (angelic-benediction, fireball, spread-the-sickness, cogwork-assembler, shivs-embrace) i dopisano `source` oraz `zweryfikowano` do 26 snapshotów składanych ręcznie — stąd `bezZrodla` 42→13, `bezSetu` 46→44, `uwagaSet` 4→2.",
+  "_opis": "Zapadnia (ratchet) dla zgłoszenia właściciela A (2026-09-12, druk karty niezgodny z arkuszem). `bezSetu` = snapshoty pobrane z `cards/named?exact=…` BEZ parametru `set=` — Scryfall zwraca wtedy swój DOMYŚLNY druk nazwy, nie druk właściciela (tak Curiosity dostała obraz z JMP zamiast ISD). `bezZrodla` = snapshoty bez pola `source` (proweniencja nieznana). `uwagaSet` = karty, których rozjazd z arkuszem/drukiem jest UDOKUMENTOWANY polem `uwaga` w snapshocie (odstępstwo świadome, z powodem). Listy mają tylko MALEĆ: po poprawieniu snapshotu (pobranie set-aware) wpis znika, a test czerwieni się, gdy lista jest nieaktualna w którąkolwiek stronę. 2026-09-12 wykonano pełny przegląd druków (509 kart, patrz docs/cards/WERYFIKACJA_DRUKOW_2026-09-12.md): poprawiono 5 kart (angelic-benediction, fireball, spread-the-sickness, cogwork-assembler, shivs-embrace) oraz kod setu w arkuszu u jwari-shapeshifter (`227ROE` → `227WWK`, pomyłka właściciela potwierdzona 2026-09-12) i dopisano `source` oraz `zweryfikowano` do 26 snapshotów składanych ręcznie — stąd `bezZrodla` 42→13, `bezSetu` 46→43, `uwagaSet` 4→1.",
   "bezSetu": [
     "apprentice-wizard",
     "assert-perfection",
@@ -24,7 +24,6 @@
     "impact-tremors",
     "inspire-awe",
     "jwar-isle-avenger",
-    "jwari-shapeshifter",
     "jyoti-moag-ancient",
     "kappa-tech-wrecker",
     "manifest-dread",
@@ -62,7 +61,6 @@
     "serras-embrace"
   ],
   "uwagaSet": [
-    "ethersworn-shieldmage",
-    "jwari-shapeshifter"
+    "ethersworn-shieldmage"
   ]
 }

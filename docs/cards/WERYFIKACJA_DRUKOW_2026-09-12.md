@@ -60,7 +60,15 @@ składaniu. Kolumna `Plan` w CSV to nazwa planu właściciela (np. „Warhammer 
 | Karta | Arkusz | Katalog/obraz | Stan |
 | --- | --- | --- | --- |
 | `ethersworn-shieldmage` | `536CON` | ARB | Właściciel potwierdził (2026-08-05), że `CON` w arkuszu to skrót płaszczyzny Alara, a karta to druk ARB. Bez zmian. |
-| `jwari-shapeshifter` | `227ROE` | WWK | Scryfall: `named?exact=Jwari+Shapeshifter&set=roe` → 404 „No cards found” (w ROE takiej karty nie ma); katalog i obraz niosą WWK. Kod setu w arkuszu wymaga potwierdzenia właściciela. |
+
+Drugi wpis tej tabeli zniknął jeszcze tego samego dnia: **właściciel potwierdził (2026-09-12), że
+`227ROE` w arkuszu to jego pomyłka** — Jwari Shapeshifter jest z Worldwake. Pomiar to wskazywał:
+Scryfall nie zna druku ROE (`named?exact=Jwari+Shapeshifter&set=roe` → 404 „No cards found”),
+a pobranie set-aware `&set=wwk` daje WWK nr 32, id `587f91f6-b46e-4dd5-a86d-1048054dd3c0`
+(Kev Walker) — dokładnie ten obraz, który od początku niósł katalog, więc aplikacja pokazywała
+właściwy druk. Kod w `tools/collection-art-ids.csv` poprawiono na `227WWK`, snapshot pobrano
+set-aware, a `uwaga` została zdjęta. (`ROE` to kolejny set bloku Zendikar i siedziba `Jwari Ruins`
+— stąd najpewniej pomyłka; kolumna `Plan` = „Zendikar” zostaje bez zmian.)
 
 ## Tabela weryfikacji online (krok 2)
 
@@ -115,13 +123,13 @@ Set z arkusza = set odczytany ze Scryfall dla UUID obrazu z katalogu. „ODSTĘP
 `node tools/check-card-printings.mjs` — kod wyjścia 0, rozjazdy tylko udokumentowane:
 
 * UUID obrazu potwierdzony offline (snapshot = katalog): **455** kart.
-* Klasy prowiniencji snapshotów: `source` z `set=` — **348**; `source` z UUID karty — **32**;
+* Klasy prowiniencji snapshotów: `source` z `set=` — **349**; `source` z UUID karty — **32**;
   wyszukiwanie z `oracleid`/`set:` — **21**; surowa odpowiedź API bez `source` (set zgodny
-  z arkuszem) — **13**; `source` tylko z nazwą, bez `set=` — **44**; brak snapshotu — **51**
+  z arkuszem) — **13**; `source` tylko z nazwą, bez `set=` — **43**; brak snapshotu — **51**
   (44 tokeny/ziemie podstawowe + 7 kart zweryfikowanych w kroku 2).
-* Rozjazdy katalog ↔ arkusz: **2**, oba z `uwaga` (`ethersworn-shieldmage`, `jwari-shapeshifter`).
-* Zapadnia `test/fixtures/druki-kart-zapadnia.json`: `bezSetu` 46 → **44**, `bezZrodla` 42 → **13**,
-  `uwagaSet` 4 → **2**. Listy mają tylko maleć.
+* Rozjazdy katalog ↔ arkusz: **1**, udokumentowany `uwaga` (`ethersworn-shieldmage`). Drugi (`jwari-shapeshifter`) zniknął 2026-09-12 — właściciel potwierdził WWK, kod w arkuszu poprawiono `227ROE` → `227WWK`.
+* Zapadnia `test/fixtures/druki-kart-zapadnia.json`: `bezSetu` 46 → **43**, `bezZrodla` 42 → **13**,
+  `uwagaSet` 4 → **1**. Listy mają tylko maleć.
 
 ## Co z tego wynika na przyszłość
 

@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Jwari+Shapeshifter",
+  "source": "https://api.scryfall.com/cards/named?exact=Jwari+Shapeshifter&set=wwk&format=json",
   "print": "wwk",
   "name": "Jwari Shapeshifter",
   "mana_cost": "{1}{U}",
@@ -15,9 +15,11 @@
   "set_name": "Worldwake",
   "collector_number": "32",
   "rarity": "rare",
+  "artist": "Kev Walker",
+  "illustration_id": "e461dc09-3e7c-4381-92ed-f3b08f433e84",
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/5/8/587f91f6-b46e-4dd5-a86d-1048054dd3c0.jpg?1783942061"
   },
-  "pobrano": "2026-08-13",
-  "uwaga": "Rozjazd z arkuszem właściciela (pomiar przy zgłoszeniu A, 2026-09-12): arkusz kolekcji ma `227ROE`, a katalog i ten snapshot niosą DOMYŚLNY druk Scryfalla z pobrania bez `set=` — WWK (Worldwake nr 32, id 587f91f6-b46e-4dd5-a86d-1048054dd3c0). Do rozstrzygnięcia siecią: czy Scryfall zna druk ROE (jak nie, to `ROE` w arkuszu jest etykietą planu Zendikar — precedens Ethersworn Shieldmage/CON, patrz jego `uwaga`). 2026-09-12 pobranie weryfikujące niedostępne (proxy: SignatureDoesNotMatch)."
+  "pobrano": "2026-09-12",
+  "zweryfikowano": "Druk potwierdzony 2026-09-12 pobraniem set-aware (`named?exact=Jwari+Shapeshifter&set=wwk`): Worldwake (WWK) nr 32, id 587f91f6-b46e-4dd5-a86d-1048054dd3c0, Kev Walker — ten sam obraz, który niesie `imageUri` w katalogu, więc aplikacja od początku pokazywała właściwy druk. Wcześniejszy rozjazd z arkuszem (`227ROE`) był pomyłką w arkuszu: Scryfall nie zna druku ROE (`&set=roe` → 404 „No cards found\"), a właściciel potwierdził 2026-09-12, że karta jest z WWK — kod w `tools/collection-art-ids.csv` poprawiono na `227WWK`, a `uwaga` została zdjęta."
 }
