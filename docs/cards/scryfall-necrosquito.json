@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Necrosquito&set=one&format=json",
   "object": "card",
   "name": "Necrosquito",
   "layout": "normal",
@@ -8,13 +9,18 @@
   "cmc": 4.0,
   "power": "0",
   "toughness": "0",
-  "colors": ["B"],
-  "keywords": ["Flying"],
+  "colors": [
+    "B"
+  ],
+  "keywords": [
+    "Flying"
+  ],
   "set": "one",
   "set_name": "Phyrexia: All Will Be One",
   "collector_number": "100",
   "rarity": "uncommon",
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/7/2/72af72d2-5995-4cad-82f1-e2d0c465d6f1.jpg?1783918044"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/72af72d2-5995-4cad-82f1-e2d0c465d6f1): Phyrexia: All Will Be One (ONE) nr 100; UUID obrazu zgodny z `imageUri` w katalogu."
 }

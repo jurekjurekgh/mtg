@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Impact+Tremors",
+  "source": "https://api.scryfall.com/cards/56fb4035-197b-4d28-9bf7-bb62c304067e",
   "print": "dtk",
   "name": "Impact Tremors",
   "mana_cost": "{1}{R}",
@@ -16,5 +16,6 @@
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/5/6/56fb4035-197b-4d28-9bf7-bb62c304067e.jpg?1783938589"
   },
-  "pobrano": "2026-08-13"
+  "pobrano": "2026-08-13",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set DTK zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Impact+Tremors"
 }

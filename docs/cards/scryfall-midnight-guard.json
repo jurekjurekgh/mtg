@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=!%22Midnight+Guard%22+e%3Adka&unique=prints",
+  "source": "https://api.scryfall.com/cards/2264b760-c527-470d-bad0-d8baaf543631",
   "print": "dka",
   "name": "Midnight Guard",
   "mana_cost": "{2}{W}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/2/2/2264b760-c527-470d-bad0-d8baaf543631.jpg?1783940853",
     "normal": "https://cards.scryfall.io/normal/front/2/2/2264b760-c527-470d-bad0-d8baaf543631.jpg?1783940853"
   },
-  "pobrano": "2026-08-02"
+  "pobrano": "2026-08-02",
+  "proweniencja": "2026-09-12: source zacieśnione z wyszukiwania do adresu /cards/<id> — UUID odczytany z image_uris tego snapshotu i równy imageUri katalogu (set DKA zgodny z arkuszem kolekcji tools/collection-art-ids.csv); poprzednie source: https://api.scryfall.com/cards/search?q=!%22Midnight+Guard%22+e%3Adka&unique=prints"
 }

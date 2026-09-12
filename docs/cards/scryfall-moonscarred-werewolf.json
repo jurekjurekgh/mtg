@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/6f35e364-81d9-4888-993b-acc7a53d963c?format=json",
   "object": "card",
   "name": "Moonscarred Werewolf",
   "layout": "transform",
@@ -21,5 +22,6 @@
   "rarity": "common",
   "image_uris": {
     "large": "https://cards.scryfall.io/large/back/6/f/6f35e364-81d9-4888-993b-acc7a53d963c.jpg?1783940808"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/6f35e364-81d9-4888-993b-acc7a53d963c): Dark Ascension (DKA) nr 125; UUID obrazu zgodny z `imageUri` w katalogu."
 }

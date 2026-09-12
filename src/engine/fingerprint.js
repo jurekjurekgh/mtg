@@ -7,9 +7,16 @@
  * MUSI trafić na tę listę (lekcja z M101/B2: zamrożony stan jest częścią
  * stanu gry, ADR 0005).
  */
-const PENDING_DECISION_FIELDS = Object.freeze([
+// Eksportowane dla strażnika pokrycia (test/b2-odcisk-straznik-pokrycia.test.js).
+export const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingAbilityActivation', 'pendingAmass', 'pendingColorChoice',
   'pendingEscapeExile',
+  'madnessQueue',
+  // B2 (audyt PR #113, F1): `madnessQueue` to KOLEJKA odroczonych decyzji
+  // madness (M258 — wpis zamiast natychmiastowego `pendingMadnessCast`, bo
+  // decyzja otwiera się po całej sekwencji odrzuceń). Wpis kolejki zmienia
+  // przyszłe możliwości (rzut z exile), więc należy do odcisku; strażnik B2/2
+  // wykrył brak automatycznie — dokładnie po to powstał.
   // Audyt PR #92 (2026-09-02, znalezisko 2): te dwie decyzje blokują grę
   // w firstPendingDecision, ale nie było ich w odcisku — strażnik L16 był
   // wtedy vacuous (delegat), więc luka nie świeciła. `pendingWardPay` żyje
@@ -36,6 +43,57 @@ const PENDING_DECISION_FIELDS = Object.freeze([
 ]);
 
 /** Serializacja odporna na Map/Set wewnątrz struktur decyzji. */
+// B2 (audyt PR #113, F1; klasy L15/L55/L70): liczniki i flagi tury, które
+// zmieniają PRZYSZŁE możliwości albo są warunkiem zdolności (threshold,
+// „jeśli w tej turze…", landfall, devour, soulbond, moonlit). Bez nich odcisk
+// był ślepy na ich zmianę, a sonda „oferta bez skutku" nie widziała realnego
+// skutku (ADR 0005). `objectSequence` to licznik utworzonych obiektów
+// (token/kopia) — jego wzrost jest skutkiem, nie szumem.
+// Stan efektów/udzieleń obowiązujących w turze: zapobieganie obrażeniom, tarcze,
+// powiązane animacje, udzielone zdolności „do końca tury", ostatni wydatek many.
+// Mierzone strażnikiem B2/2 — wszystkie były poza odciskiem (F1).
+const STATE_EFFECT_FIELDS = Object.freeze([
+  'preventDamageThisTurn', 'damageShields', 'linkedAnimations',
+  'turnAbilityGrants', 'lastManaSpend',
+]);
+
+const STATE_COUNTER_FIELDS = Object.freeze([
+  'spellsCastThisTurn', 'spellsCastThisTurnByPlayer',
+  'lastTurnSpellsCastByPlayer', 'lastTurnSpellsCast', 'mulliganCounts',
+  'cardsDrawnThisTurn', 'lifeGainedThisTurn', 'creatureDiedThisTurn',
+  'landEnteredThisTurn', 'damageTakenByPlayerThisTurn',
+  'speedIncreasedThisTurn', 'moonlitUsedThisTurn',
+  'preventCombatExceptEnchanted',
+]);
+
+// B2: pola-ETYKIETY świadomie poza odciskiem. Granica z M323/D
+// (test/m323-cloak-odcisk.test.js): odcisk pokazuje pola WARUNKUJĄCE
+// możliwości, nie nośniki nazw. Każdy wpis ma powód i jest przypięty testem
+// (B2/7), żeby granica nie przesuwała się po cichu w żadną stronę.
+export const OBJECT_FINGERPRINT_EXCLUSIONS = Object.freeze({
+  // M323/D: numer kopii/zakrycia nie zmienia żadnej legalnej komendy.
+  copyNumber: 'etykieta kopii (pin M323/D — „sam numer kopii nie jest faktem gry")',
+});
+
+export const STATE_FINGERPRINT_EXCLUSIONS = Object.freeze({
+  objectSequence: 'generator id/etykiet (abilities.js: `exile-${objectSequence++}`); fakt „obiekt powstał/zmienił strefę" widać w objects/zones',
+  commands: 'dziennik poleceń do replayu (createReplay) — pochodna wejść, nie stan',
+  events: 'dziennik rozgrywki — pochodna stanu, nie sam stan (ADR 0005)',
+  starterId: 'stała rozgrywki: nie zmienia się po starcie, nie jest skutkiem decyzji',
+  isDraw: 'stała rozgrywki: znacznik „remis", ustawiany tylko na końcu gry',
+  objects: 'rzutowane osobno per obiekt (parsed.objects)',
+  zones: 'rzutowane jako parsed.zones',
+  players: 'rzutowane jako parsed.players',
+  turn: 'rzutowane jako parsed.turn',
+  combat: 'rzutowane jako parsed.combat',
+});
+
+// Projekcja dowolnej wartości stanu (Map/Set/tablica/obiekt/liczba) w formie
+// stabilnej — ten sam mechanizm co `pendingDecisions`.
+function projectValue(value) {
+  return value === undefined ? null : JSON.parse(stableStringify(value));
+}
+
 function stableStringify(value) {
   return JSON.stringify(value, (key, v) => {
     if (v instanceof Map) return { __mtgMap: [...v.entries()] };
@@ -50,7 +108,16 @@ function stableStringify(value) {
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, frontFaceId, untapLockedBy, untapVersion, untapLockVersions, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBlockPrinted, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady, manifestReady, abilityResolvedThisTurn, cloakReady, ward }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, frontFaceId, untapLockedBy, untapVersion, untapLockVersions, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBlockPrinted, cantBeBlocked, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady, manifestReady, abilityResolvedThisTurn, cloakReady, ward, ...rest }) => ({
+      // B2 (audyt PR #113, F1): reszta pól obiektu w całości. Lista jawna była
+      // rejestrem ręcznym: 51 ze 100 pól fabryki nie było rzutowanych
+      // (ownerId, isToken, name, dontUntapNextUntapStep, saga, station,
+      // formerCounters, formerZone, toxic, echo, devour, endure, exploit,
+      // suspend/warp/rebound/madness/echo-ready, enteredOnTurn…), czyli odcisk
+      // nie zmieniał się po ich zmianie. Teraz nowe pole trafia do odcisku
+      // samo; jawne normalizacje poniżej nadpisują wartości surowe.
+      ...projectValue(Object.fromEntries(Object.entries(rest)
+        .filter(([key]) => !(key in OBJECT_FINGERPRINT_EXCLUSIONS)))),
       id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
       abilities: abilities ?? [],
       counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
@@ -219,6 +286,9 @@ export function stateFingerprint(state) {
       name: state.pendingLegendChoice.name,
       candidateIds: [...state.pendingLegendChoice.candidateIds],
     } : null,
+    // B2 (audyt PR #113, F1): liczniki/flagi tury i stan efektów z list powyżej.
+    counters: Object.fromEntries([...STATE_COUNTER_FIELDS, ...STATE_EFFECT_FIELDS]
+      .map((key) => [key, projectValue(state[key])])),
     // M103/A1: wstrzymujące decyzje bez własnej pozycji wyżej — pełna
     // projekcja przez stableStringify (puste tablice pomijamy: brak decyzji).
     pendingDecisions: Object.fromEntries(PENDING_DECISION_FIELDS

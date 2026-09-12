@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Angelic+Benediction&set=ala&format=json",
   "object": "card",
   "name": "Angelic Benediction",
   "layout": "normal",
@@ -6,13 +7,19 @@
   "oracle_text": "Exalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)\nWhenever a creature you control attacks alone, you may tap target creature.",
   "mana_cost": "{3}{W}",
   "cmc": 4.0,
-  "colors": ["W"],
-  "keywords": ["Exalted"],
+  "colors": [
+    "W"
+  ],
+  "keywords": [
+    "Exalted"
+  ],
   "set": "ala",
   "set_name": "Shards of Alara",
-  "collector_number": "9",
+  "collector_number": "3",
   "rarity": "uncommon",
   "image_uris": {
-    "large": "https://cards.scryfall.io/large/front/a/2/a2a782a3-cc30-47c2-aab3-18abcda3df0a.jpg?1783938785"
-  }
+    "large": "https://cards.scryfall.io/large/front/d/d/dd1b9071-7dde-4128-8b18-1d7b07904638.jpg?1783942585"
+  },
+  "pobrano": "2026-09-12",
+  "poprawka": "Druk z arkusza kolekcji właściciela. Poprzednio snapshot i `imageUri` w katalogu niosły Duel Decks Anthology: Divine vs. Demonic (DVD) nr 19, id a2a782a3-cc30-47c2-aab3-18abcda3df0a — dane były składane ręcznie bez `source`, więc obraz pochodził z innego druku niż set karty (ten sam mechanizm co Curiosity/JMP ze zgłoszenia A). 2026-09-12 pobrano set-aware i potwierdzono właściwy druk: Shards of Alara (ALA) nr 3, id dd1b9071-7dde-4128-8b18-1d7b07904638."
 }

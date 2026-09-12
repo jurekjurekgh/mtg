@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Curse+of+the+Pierced+Heart",
+  "source": "https://api.scryfall.com/cards/71010182-c004-4d18-adab-80319cd1e625",
   "print": "isd",
   "name": "Curse of the Pierced Heart",
   "mana_cost": "{1}{R}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/7/1/71010182-c004-4d18-adab-80319cd1e625.jpg?1783940940",
     "normal": "https://cards.scryfall.io/normal/front/7/1/71010182-c004-4d18-adab-80319cd1e625.jpg?1783940940"
   },
-  "pobrano": "2026-08-03"
+  "pobrano": "2026-08-03",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set ISD zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Curse+of+the+Pierced+Heart"
 }

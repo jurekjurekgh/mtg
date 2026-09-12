@@ -27,8 +27,15 @@ Przed wpisaniem czegokolwiek z pamięci pobierz dane każdej karty ze Scryfall
 (ADR 0010 §2a). Nie przepisuj kosztu many, typów, P/T ani Oracle text z głowy.
 
 ```bash
-# jeden przebieg dla całego batcha, poniżej 10 żądań/s (prośba Scryfall)
-curl -s "https://api.scryfall.com/cards/named?exact=Highland+Game&format=json"
+# jeden przebieg dla całego batcha, poniżej 10 żądań/s (prośba Scryfall).
+# `set=` jest OBOWIĄZKOWE: bez niego Scryfall zwraca swój DOMYŚLNY druk nazwy
+# (zwykle najnowszy reprint), a nie druk właściciela — tak Curiosity dostała
+# adres obrazu z JMP/Jumpstart zamiast ISD i stół pokazywał zły druk
+# (zgłoszenie właściciela A, 2026-09-12; ta sama klasa: Expunge → VMA,
+# Welder Automaton → GNT, Shiv's Embrace → M14).
+# Kod setu bierz z arkusza kolekcji: ostatnie znaki kolumny „Ilustracja"
+# w tools/collection-art-ids.csv („428ISD" → ISD, „5_2XM" → 2XM).
+curl -s "https://api.scryfall.com/cards/named?exact=Highland+Game&set=ktk&format=json"
 ```
 
 Zapisz wynik jako `docs/cards/scryfall-<slug>.json` (slug = identyfikator karty,
@@ -36,7 +43,7 @@ np. `scryfall-highland-game.json`). Wzorowy kształt pliku:
 
 ```json
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Highland+Game",
+  "source": "https://api.scryfall.com/cards/named?exact=Highland+Game&set=ktk&format=json",
   "print": "ktk",
   "name": "Highland Game",
   "mana_cost": "{1}{G}",
@@ -58,6 +65,25 @@ np. `scryfall-highland-game.json`). Wzorowy kształt pliku:
 Trzymaj potrzebne pola Oracle (koszt, typy, P/T, tekst) oraz `image_uris.large`
 (adres druku dla `imageUri` w definicji). Pole `pobrano` = data weryfikacji tekstu
 (łagodzenie ryzyka erraty z ADR 0010).
+
+**Wszystkie pola snapshotu muszą pochodzić z JEDNEGO pobrania** (ten sam druk):
+`source`, `print`, `set`, `set_name`, `collector_number` i `image_uris`. Rekord
+złożony z dwóch druków poznaje się po tym, że `set` nie zgadza się z adresem
+obrazu (Curiosity miała `set: isd` i obraz z JMP) — a wtedy `imageUri` w
+`src/cards/card-data.js` niesie na stół cudzy druk, bo kafel, hover i tory
+FOT/KON (fallback) biorą obraz właśnie stamtąd
+([docs/setup/ILUSTRACJE_KART.md](../setup/ILUSTRACJE_KART.md)).
+
+Strażnik: `test/zgloszenie-a-druk-karty-z-arkusza.test.js` — spójność
+snapshot ↔ katalog ↔ arkusz kolekcji (offline) plus zapadnia
+(`test/fixtures/druki-kart-zapadnia.json`) na snapshoty pobrane bez `set=`
+i bez pola `source`: te listy mogą tylko maleć.
+
+Gdy Scryfall w ogóle nie zna druku z arkusza (kod w arkuszu bywa etykietą
+planu, nie setu), odstępstwo zapisz w polu `uwaga` snapshotu z powodem i datą
+— precedens: Ethersworn Shieldmage („CON" w arkuszu = plan Alara, druk ARB
+potwierdzony przez właściciela 2026-08-05). Bez `uwaga` strażnik czerwieni się,
+więc rozjazd nie przechodzi cicho.
 
 ## Krok 2 — ustal `artId` ze słownika kolekcji
 

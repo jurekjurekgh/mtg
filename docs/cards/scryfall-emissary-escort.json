@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Emissary+Escort",
+  "source": "https://api.scryfall.com/cards/b52ba87f-3ac7-4f32-901c-d089df979f94",
   "print": "eoe",
   "name": "Emissary Escort",
   "mana_cost": "{1}{U}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/b/5/b52ba87f-3ac7-4f32-901c-d089df979f94.jpg?1783905982",
     "normal": "https://cards.scryfall.io/normal/front/b/5/b52ba87f-3ac7-4f32-901c-d089df979f94.jpg?1783905982"
   },
-  "pobrano": "2026-08-03"
+  "pobrano": "2026-08-03",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set EOE zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Emissary+Escort"
 }

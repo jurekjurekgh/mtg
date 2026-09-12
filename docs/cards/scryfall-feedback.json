@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Feedback&format=json",
+  "source": "https://api.scryfall.com/cards/1d452de7-3f44-4594-bb24-2178812da9d6",
   "name": "Feedback",
   "mana_cost": "{2}{U}",
   "cmc": 3.0,
@@ -61,5 +61,6 @@
     "usd": "0.16"
   },
   "related_uris": {},
-  "purchase_uris": {}
+  "purchase_uris": {},
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set 5ED zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Feedback&format=json"
 }

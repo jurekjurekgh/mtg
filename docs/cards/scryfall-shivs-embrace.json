@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Shiv%27s%20Embrace&format=json",
+  "source": "https://api.scryfall.com/cards/named?exact=Shiv%27s+Embrace&set=m11&format=json",
   "name": "Shiv's Embrace",
   "mana_cost": "{2}{R}{R}",
   "cmc": 4.0,
@@ -16,19 +16,19 @@
   "keywords": [
     "Enchant"
   ],
-  "set": "m14",
-  "set_name": "Magic 2014",
-  "collector_number": "153",
+  "set": "m11",
+  "set_name": "Magic 2011",
+  "collector_number": "156",
   "rarity": "uncommon",
   "artist": "Dave Kendall",
   "illustration_id": "708661d6-9e1b-4955-9454-c24f4723620b",
   "image_uris": {
-    "small": "https://cards.scryfall.io/small/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.jpg?1783939910",
-    "normal": "https://cards.scryfall.io/normal/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.jpg?1783939910",
-    "large": "https://cards.scryfall.io/large/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.jpg?1783939910",
-    "png": "https://cards.scryfall.io/png/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.png?1783939910",
-    "art_crop": "https://cards.scryfall.io/art_crop/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.jpg?1783939910",
-    "border_crop": "https://cards.scryfall.io/border_crop/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.jpg?1783939910"
+    "small": "https://cards.scryfall.io/small/front/3/8/386bfe05-602d-415d-8598-96a36b7b9a14.jpg?1783941802",
+    "normal": "https://cards.scryfall.io/normal/front/3/8/386bfe05-602d-415d-8598-96a36b7b9a14.jpg?1783941802",
+    "large": "https://cards.scryfall.io/large/front/3/8/386bfe05-602d-415d-8598-96a36b7b9a14.jpg?1783941802",
+    "png": "https://cards.scryfall.io/png/front/3/8/386bfe05-602d-415d-8598-96a36b7b9a14.png?1783941802",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/3/8/386bfe05-602d-415d-8598-96a36b7b9a14.jpg?1783941802",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/3/8/386bfe05-602d-415d-8598-96a36b7b9a14.jpg?1783941802"
   },
   "legalities": {
     "modern": "legal",
@@ -64,5 +64,7 @@
     "tix": "0.04"
   },
   "related_uris": {},
-  "purchase_uris": {}
+  "purchase_uris": {},
+  "pobrano": "2026-09-12",
+  "poprawka": "Druk z arkusza kolekcji właściciela. Poprzednio snapshot i `imageUri` w katalogu niosły Magic 2014 (M14) nr 153, id 8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e — dane były składane ręcznie bez `source`, więc obraz pochodził z innego druku niż set karty (ten sam mechanizm co Curiosity/JMP ze zgłoszenia A). 2026-09-12 pobrano set-aware i potwierdzono właściwy druk: Magic 2011 (M11) nr 156, id 386bfe05-602d-415d-8598-96a36b7b9a14."
 }

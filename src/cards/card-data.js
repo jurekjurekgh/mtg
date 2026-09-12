@@ -703,7 +703,7 @@ export const REAL_CARDS = Object.freeze([
   // 10. Enter the Enigma (MKM) {U} Instant — target creature can't be
   // blocked + draw 1 (re-uses cant_be_blocked i draw_cards).
   defineCard({
-    id: 'enter-the-enigma', name: 'Enter the Enigma', set: 'MKM',
+    id: 'enter-the-enigma', name: 'Enter the Enigma', set: 'DSK',
     // M259/B2: Oracle to SORCERY ({U}, DSK) — dotąd zamodelowana jako Instant.
     types: ['Sorcery'], colors: ['U'], manaCost: 1,
     oracleText: 'Target creature can\'t be blocked this turn.\nDraw a card.',
@@ -3729,7 +3729,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'expunge', name: 'Expunge', set: 'USG',
     types: ['Instant'], colors: ['B'], manaCost: 3,
     oracleText: 'Destroy target nonartifact, nonblack creature. It can\'t be regenerated.\nCycling {2} ({2}, Discard this card: Draw a card.)',
-    imageUri: 'https://cards.scryfall.io/large/front/1/b/1b4650f3-f3d5-48b1-9fc9-264d03442021.jpg?1783939291',
+    imageUri: 'https://cards.scryfall.io/large/front/0/5/0576ffe8-a7b9-479b-8ea0-418b430b1aa1.jpg?1783946344',
     spell: {
       timing: 'instant', targets: [{ type: 'nonartifact_nonblack_creature' }],
       effects: [
@@ -3755,7 +3755,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'shivs-embrace', name: "Shiv's Embrace", set: 'M11',
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['R'], manaCost: 4,
     oracleText: "Enchant creature\nEnchanted creature gets +2/+2 and has flying.\n{R}: Enchanted creature gets +1/+0 until end of turn.",
-    imageUri: 'https://cards.scryfall.io/large/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.jpg?1783939910',
+    imageUri: 'https://cards.scryfall.io/large/front/3/8/386bfe05-602d-415d-8598-96a36b7b9a14.jpg?1783941802',
     aura: { pump: { power: 2, toughness: 2 }, keywords: ['flying'] },
     abilities: [
       createAbility({
@@ -3794,7 +3794,7 @@ export const REAL_CARDS = Object.freeze([
     types: ['Artifact', 'Creature'], subtypes: ['Construct'], colors: [],
     power: 2, toughness: 1, manaCost: 2,
     oracleText: '{3}{R}: This creature deals 1 damage to each opponent.',
-    imageUri: 'https://cards.scryfall.io/large/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.jpg?1783933968',
+    imageUri: 'https://cards.scryfall.io/large/front/8/8/88b5bae4-be97-4c10-b222-e1e317a8ffbc.jpg?1783936718',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
@@ -5075,7 +5075,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'curiosity', name: 'Curiosity', set: 'ISD',
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 1,
     oracleText: 'Enchant creature\nWhenever enchanted creature deals damage to an opponent, you may draw a card.',
-    imageUri: 'https://cards.scryfall.io/large/front/c/5/c5a0be10-c20f-4ac0-89a5-1770ecf48aad.jpg?1783930457',
+    imageUri: 'https://cards.scryfall.io/large/front/b/2/b212c36a-6d1f-4217-b384-1c2b0e07b68a.jpg?1783940977',
     aura: { enchant: 'creature' },
     abilities: [
       createAbility({
@@ -5123,7 +5123,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Enchantment'], colors: ['W'], manaCost: 4,
     keywords: ['exalted'],
     oracleText: 'Exalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)\nWhenever a creature you control attacks alone, you may tap target creature.',
-    imageUri: 'https://cards.scryfall.io/large/front/a/2/a2a782a3-cc30-47c2-aab3-18abcda3df0a.jpg?1783938785',
+    imageUri: 'https://cards.scryfall.io/large/front/d/d/dd1b9071-7dde-4128-8b18-1d7b07904638.jpg?1783942585',
     abilities: [
       // Exalted: atakujący samotnie dostaje +1/+1 do końca tury.
       createAbility({
@@ -5183,7 +5183,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'fireball', name: 'Fireball', set: 'JVC',
     types: ['Sorcery'], colors: ['R'], manaCost: 1,
     oracleText: 'This spell costs {1} more to cast for each target beyond the first.\nFireball deals X damage divided evenly, rounded down, among any number of targets.',
-    imageUri: 'https://cards.scryfall.io/large/front/d/f/df45a43e-a5b7-4fd4-873b-7b3c021be198.jpg?1783922739',
+    imageUri: 'https://cards.scryfall.io/large/front/d/c/dcbdc3be-f187-4fb2-9506-06d5abc37785.jpg?1783938735',
     spell: { timing: 'sorcery', fireball: true, effects: [{ type: 'fireball_resolve' }] },
     artId: 436, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
@@ -5195,7 +5195,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'spread-the-sickness', name: 'Spread the Sickness', set: 'MBS',
     types: ['Sorcery'], colors: ['B'], manaCost: 5,
     oracleText: 'Destroy target creature, then proliferate.',
-    imageUri: 'https://cards.scryfall.io/large/front/0/0/003bc8f1-f282-491c-984d-1ce7ac027053.jpg?1783938409',
+    imageUri: 'https://cards.scryfall.io/large/front/d/e/de42a771-4f5c-4295-b070-8cb857a0279e.jpg?1783941382',
     spell: {
       timing: 'sorcery',
       targets: [{ type: 'creature' }],
@@ -5524,11 +5524,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
   // 5. Cogwork Assembler (2XM) {3} 2/3 — copy artifact token, haste, delayed exile
   defineCard({
-    id: 'cogwork-assembler', name: 'Cogwork Assembler', set: '2XM',
+    id: 'cogwork-assembler', name: 'Cogwork Assembler', set: 'AER',
     types: ['Artifact', 'Creature'], subtypes: ['Assembly-Worker'], colors: [],
     power: 2, toughness: 3, manaCost: 3,
     oracleText: "{7}: Create a token that's a copy of target artifact. That token gains haste. Exile it at the beginning of the next end step.",
-    imageUri: 'https://cards.scryfall.io/large/front/e/4/e4bfde3f-f7d3-4902-b3cd-23f3fa53eff4.jpg?1783930116',
+    imageUri: 'https://cards.scryfall.io/large/front/6/d/6dddacdd-bbc4-4f9b-be1c-5f2c64be3cbc.jpg?1783936731',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,

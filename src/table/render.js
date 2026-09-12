@@ -2135,16 +2135,19 @@ export function choiceGroupLabel(request, session, view) {
   // dokładnie jednego), bez licznika ofert.
   if (request?.type === 'damage_assignment') {
     const base = 'Rozdziel obrażenia bojowe';
-    const entries = view?.pendingDamageAssignment?.entries;
+    const pendingAssignment = view?.pendingDamageAssignment;
+    const entries = pendingAssignment?.entries;
     if (Array.isArray(entries) && entries.length === 1) {
       const e = entries[0];
-      const name = e.attackerCardId ? session.nameOf(e.attackerCardId) : null;
+      // W3 (CR 510.1d): po stronie blokera źródłem mocy jest bloker (pole cardId).
+      const cardId = e.attackerCardId ?? e.cardId;
+      const name = cardId ? session.nameOf(cardId) : null;
       if (name) {
         const how = e.byToughness ? 'obrażenia wg wytrzymałości' : 'moc';
         return `${base}: ${name} (${how} ${e.power})`;
       }
     }
-    return `${base} między blokujących`;
+    return pendingAssignment?.role === 'blocker' ? `${base} między atakujących` : `${base} między blokujących`;
   }
   // C2 (zgłoszenie właściciela 2026-09-10): bez licznika „(N opcji)".
   // To była miara ENUMERACJI wariantów (np. „Cel czaru: Fireball (145 opcji)"

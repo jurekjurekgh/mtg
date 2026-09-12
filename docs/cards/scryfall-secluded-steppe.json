@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=!\"Secluded%20Steppe\"+e%3ADDO",
+  "source": "https://api.scryfall.com/cards/dd65f598-c8f5-4e53-a011-9742c66a1698",
   "print": "ddo",
   "name": "Secluded Steppe",
   "mana_cost": "",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/d/d/dd65f598-c8f5-4e53-a011-9742c66a1698.jpg?1783938631",
     "normal": "https://cards.scryfall.io/normal/front/d/d/dd65f598-c8f5-4e53-a011-9742c66a1698.jpg?1783938631"
   },
-  "pobrano": "2026-08-03"
+  "pobrano": "2026-08-03",
+  "proweniencja": "2026-09-12: source zacieśnione z wyszukiwania do adresu /cards/<id> — UUID odczytany z image_uris tego snapshotu i równy imageUri katalogu (set DDO zgodny z arkuszem kolekcji tools/collection-art-ids.csv); poprzednie source: https://api.scryfall.com/cards/search?q=!\"Secluded%20Steppe\"+e%3ADDO"
 }

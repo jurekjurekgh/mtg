@@ -1342,7 +1342,18 @@ function controllerTag(view, id) {
 
 export function renderDamageWizard(host, { view, session, pending, defaultCommand, onComplete, onCancel, probeKeyFor = null, onOpenCard = null }) {
   clearChoiceElement(host);
-  choiceNode(host, 'div', 'choice-request-intro', 'Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:');
+  // W3 (CR 510.1d): ten sam wizard obsługuje podział po stronie BLOKERA (moc
+  // dzielona między atakujących, których blokuje) — role odwrócone, więc wpis
+  // normalizujemy: `sourceId` (stwór dzielący moc), `targets` (cele),
+  // `targetKey` (pole klucza celu w komendzie), `sourceCardId` (LKI nazwy).
+  // Trample istnieje tylko po stronie atakującego (CR 702.19b).
+  const isBlockerSide = pending.role === 'blocker';
+  const entries = pending.entries.map((entry) => (isBlockerSide
+    ? { ...entry, sourceId: entry.blockerId, sourceCardId: entry.cardId, targets: entry.attackers, targetKey: 'attackerId', trample: false }
+    : { ...entry, sourceId: entry.attackerId, sourceCardId: entry.attackerCardId, targets: entry.blockers, targetKey: 'blockerId' }));
+  choiceNode(host, 'div', 'choice-request-intro', isBlockerSide
+    ? 'Rozdziel obrażenia bojowe — przydziel moc blokera atakującym, których blokuje:'
+    : 'Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:');
   const list = choiceNode(host, 'div', 'damage-wizard-list');
   const state = { entries: [], renders: [] };
   let confirm = null;
@@ -1351,8 +1362,11 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
   // E8/B3 (CR 510.1a): bez trample suma MUSI równać się mocy — „niedopri-
   // dzielonej" części nie wolno zgubić (wizard dotąd bramkował tylko sufit
   // i warunek trample, przyjmując sumę < moc).
-  const trampleCovered = (entry, amounts) => entry.blockers
-    .every((b, idx) => amounts[idx] >= b.lethal);
+  // W5 (CR 702.19b): lethal blokera może być pokryty także przez obrażenia,
+  // które przydzielają mu w tym samym kroku inni atakujący (`assignedByOthers`
+  // z widoku) — inaczej wizard blokowałby legalny przydział 0 + całość na gracza.
+  const trampleCovered = (entry, amounts) => entry.targets
+    .every((b, idx) => b.lethalByOthers || amounts[idx] + (b.assignedByOthers ?? 0) >= b.lethal);
   const assignmentLegal = () => state.entries.every((e) => {
     const total = e.amounts.reduce((a, b) => a + b, 0);
     if (!e.trample) return total === e.power;
@@ -1365,16 +1379,16 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     confirm.classList?.toggle?.('is-disabled', !legal);
   };
 
-  for (const entry of pending.entries) {
+  for (const entry of entries) {
     const wrapper = choiceNode(list, 'div', 'damage-wizard-attacker');
     const trample = entry.trample ? ', trample' : '';
     // M100 (BUG A): etykieta z ŻYWEGO obiektu widoku — face-down pokazuje
     // „morph" (P/T zostają — informacja publiczna); cardId używamy dopiero,
     // gdy obiekt zniknął z widoku (LKI) albo jest odkryty.
-    const liveAttackerName = objectName(view, session, entry.attackerId);
+    const liveAttackerName = objectName(view, session, entry.sourceId);
     const attackerName = liveAttackerName !== '?'
       ? liveAttackerName
-      : (entry.attackerCardId ? session.nameOf(entry.attackerCardId) : '?');
+      : (entry.sourceCardId ? session.nameOf(entry.sourceCardId) : '?');
     choiceNode(wrapper, 'div', 'damage-wizard-head',
       `${attackerName} (${entry.byToughness ? 'obrażenia wg wytrzymałości' : 'moc'} ${entry.power}${trample})`);
     const rows = choiceNode(wrapper, 'div', 'damage-wizard-blockers');
@@ -1386,10 +1400,10 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     // startujemy identycznie jak silnik: lethal-first, a resztę dolewamy do
     // OSTATNIEGO blokera (start legalny zamiast „niedoboru", który silnik
     // teraz odrzuca).
-    const amounts = entry.blockers.map(() => 0);
+    const amounts = entry.targets.map(() => 0);
     {
       let left = entry.power;
-      entry.blockers.forEach((b, idx) => {
+      entry.targets.forEach((b, idx) => {
         const give = Math.min(left, b.lethal);
         amounts[idx] = give;
         left -= give;
@@ -1400,7 +1414,7 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     }
     const remainingEl = choiceNode(wrapper, 'div', 'damage-wizard-remaining',
       entry.trample ? `do gracza: ${entry.power}` : '');
-    const key = entry.attackerId;
+    const key = entry.sourceId;
 
     const rowHandles = [];
     const sum = () => amounts.reduce((a, b) => a + b, 0);
@@ -1409,7 +1423,7 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     const render = () => {
       // odśwież liczniki w wierszach (picker liczy z tego samego modelu, co
       // pozwala +/− — `setValue` wywołuje w środku `paint()`)
-      for (let idx = 0; idx < entry.blockers.length; idx += 1) {
+      for (let idx = 0; idx < entry.targets.length; idx += 1) {
         rowHandles[idx]?.setValue(amounts[idx]);
       }
       // M101/B6 (CR 702.19b): nadmiar trample idzie na gracza DOPIERO, gdy
@@ -1430,7 +1444,7 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     // Kolejność wierszy to wygoda UI i kolejność domyślnego przydziału,
     // nie wymóg lethal-first. CR 510.1c pozwala dzielić obrażenia dowolnie.
     const swapBlockerOrder = (idx, targetIdx) => {
-      const list = entry.blockers;
+      const list = entry.targets;
       const am = amounts;
       [list[idx], list[targetIdx]] = [list[targetIdx], list[idx]];
       [am[idx], am[targetIdx]] = [am[targetIdx], am[idx]];
@@ -1443,7 +1457,7 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
       // replaceChildren).
       rows.innerHTML = '';
       rowHandles.length = 0;
-      entry.blockers.forEach((b, idx) => {
+      entry.targets.forEach((b, idx) => {
         const liveBlockerName = objectName(view, session, b.id);
         const blockerName = liveBlockerName !== '?'
           ? liveBlockerName
@@ -1454,10 +1468,18 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
         // który nie przyjmował `onOpenCard` (uwaga właściciela: „elastyczne
         // komponenty z parametrami, nie równoległe funkcje" — konwencja była
         // złamana dokładnie w jednym miejscu i nikt jej nie pilnował).
+        // W5 (CR 702.19b/702.2b): gracz musi WIDZIEĆ, dlaczego bramka pozwala
+        // przydzielić mniej niż „śmiertelne" — lethal tego blokera pokrywają
+        // obrażenia przydzielane mu w tym samym kroku przez inne stwory (albo
+        // niezerowy przydział od źródła z deathtouch). Bez tej informacji
+        // poluzowanie bramki wyglądałoby na błąd UI.
+        const othersNote = (b.assignedByOthers ?? 0) > 0 || b.lethalByOthers
+          ? `, od innych w tym kroku: ${b.assignedByOthers ?? 0}${b.lethalByOthers ? ' (śmiertelne pokryte)' : ''}`
+          : '';
         const handle = renderPickerRow(rows, {
           id: b.id,
           kind: 'stepper',
-          label: `${blockerName} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal})`,
+          label: `${blockerName} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal}${othersNote})`,
           min: 0,
           max: entry.power,
           rowClassName: 'damage-wizard-row',
@@ -1490,12 +1512,12 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
         const down = choiceNode(handle.actions, 'button', 'ghost-btn damage-wizard-down', '↓');
         down.type = 'button';
         down.title = 'Przesuń niżej w kolejności przydziału';
-        down.addEventListener('click', () => { if (idx < entry.blockers.length - 1) swapBlockerOrder(idx, idx + 1); });
+        down.addEventListener('click', () => { if (idx < entry.targets.length - 1) swapBlockerOrder(idx, idx + 1); });
       });
     };
     buildRows();
     state.entries.push({
-      attackerId: key, blockers: entry.blockers, amounts,
+      sourceId: key, targets: entry.targets ?? entry.blockers, targetKey: entry.targetKey, amounts,
       trample: Boolean(entry.trample), power: entry.power,
     });
     state.renders.push(render);
@@ -1514,8 +1536,8 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
   const pendingDamageCommand = () => {
     const assignments = {};
     for (const e of state.entries) {
-      assignments[e.attackerId] = e.blockers.map((blocker, idx) => ({
-        blockerId: blocker.id, amount: e.amounts[idx],
+      assignments[e.sourceId] = e.targets.map((target, idx) => ({
+        [e.targetKey]: target.id, amount: e.amounts[idx],
       }));
     }
     return { type: 'resolve_damage_assignment', playerId: view.playerId, assignments };
@@ -1532,7 +1554,7 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     if (!assignmentLegal()) return; // CR 702.19b — silnik i tak by odrzucił
     const assignments = {};
     for (const e of state.entries) {
-      assignments[e.attackerId] = e.blockers.map((b, idx) => ({ blockerId: b.id, amount: e.amounts[idx] }));
+      assignments[e.sourceId] = e.targets.map((b, idx) => ({ [e.targetKey]: b.id, amount: e.amounts[idx] }));
     }
     onComplete?.({ type: 'resolve_damage_assignment', playerId: view.playerId, assignments });
   });
@@ -1542,7 +1564,13 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     // oś 2). Przycisk stosuje silnikowy przydział domyślny: każdy kolejny
     // bloker dostaje lethal przed następnym — to polityka domyślna,
     // nie ograniczenie legalnego podziału gracza (CR 510.1c).
-    const def = choiceNode(actions, 'button', 'action choice-request-option damage-wizard-default', 'Użyj domyślnego przydziału (zabójcze obrażenia po kolei blokerów)');
+    // W3 (CR 510.1d): wizard obsługuje obie role, więc etykieta też musi — przy
+    // podziale BLOKERA celami są atakujący, a „po kolei blokerów” opisywało cudzą
+    // sytuację (pomiar 2026-09-12: intro było role-aware, ten przycisk nie).
+    const def = choiceNode(actions, 'button', 'action choice-request-option damage-wizard-default',
+      isBlockerSide
+        ? 'Użyj domyślnego przydziału (zabójcze obrażenia po kolei atakujących)'
+        : 'Użyj domyślnego przydziału (zabójcze obrażenia po kolei blokerów)');
     def.type = 'button';
     def.addEventListener('click', () => onComplete?.(defaultCommand));
   }

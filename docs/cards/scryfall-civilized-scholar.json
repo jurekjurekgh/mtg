@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/7bf864db-4754-433d-9d77-6695f78f6c09?format=json",
   "object": "card",
   "name": "Civilized Scholar // Homicidal Brute",
   "lang": "en",
@@ -57,5 +58,6 @@
         "large": "https://cards.scryfall.io/large/back/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983"
       }
     }
-  ]
+  ],
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/7bf864db-4754-433d-9d77-6695f78f6c09): Innistrad (ISD) nr 47; UUID obrazu zgodny z `imageUri` w katalogu."
 }

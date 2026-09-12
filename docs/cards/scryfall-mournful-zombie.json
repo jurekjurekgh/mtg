@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Mournful+Zombie&set=apc&format=json",
   "object": "card",
   "name": "Mournful Zombie",
   "layout": "normal",
@@ -8,7 +9,9 @@
   "cmc": 3.0,
   "power": "2",
   "toughness": "1",
-  "colors": ["B"],
+  "colors": [
+    "B"
+  ],
   "keywords": [],
   "set": "apc",
   "set_name": "Apocalypse",
@@ -16,5 +19,6 @@
   "rarity": "common",
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/9/b/9ba12fb1-de8c-46c6-b33f-e0580ed2a3ee.jpg?1783945349"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/9ba12fb1-de8c-46c6-b33f-e0580ed2a3ee): Apocalypse (APC) nr 43; UUID obrazu zgodny z `imageUri` w katalogu."
 }

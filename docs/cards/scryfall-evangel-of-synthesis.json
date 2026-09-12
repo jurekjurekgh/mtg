@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=!\"Evangel of Synthesis\"+e:bro",
+  "source": "https://api.scryfall.com/cards/e8b60003-a987-49b0-a0f8-bb825c97da4d",
   "print": "bro",
   "name": "Evangel of Synthesis",
   "mana_cost": "{U}{B}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/e/8/e8b60003-a987-49b0-a0f8-bb825c97da4d.jpg?1783920031",
     "normal": "https://cards.scryfall.io/normal/front/e/8/e8b60003-a987-49b0-a0f8-bb825c97da4d.jpg?1783920031"
   },
-  "pobrano": "2026-08-02"
+  "pobrano": "2026-08-02",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set BRO zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/search?q=!\"Evangel of Synthesis\"+e:bro"
 }

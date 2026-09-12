@@ -44,11 +44,37 @@ export const TREASURE_TOKEN_EFFECT = Object.freeze({
   abilities: Object.freeze([TREASURE_TOKEN_ABILITY]),
 });
 
+/**
+ * Reguła identyfikatora tokenu: `token_<slug nazwy>` — JEDNO źródło prawdy
+ * (L41: dwie kopie tej samej reguły rozjeżdżają się cicho). Używają jej
+ * `createToken` (tworzenie) i `tokenNameFromCardId` (nazwa w logu gracza).
+ */
+export function tokenCardIdFromName(name) {
+  return 'token_' + String(name).toLowerCase().replace(/\s+/g, '_');
+}
+
+/**
+ * E6 (Żywy Tester 2026-09-12, partia g6): tokeny tworzone przez MECHANIKI
+ * silnika (fabricate → Servo, Clue, Incubator, Hero, Spirit, Clone, Skeleton,
+ * Phyrexian) nie mają deskryptora w katalogu kart, więc mapa nazw budowana
+ * z rejestru (`collectTokenNames`, M188/B) ich nie widziała i log pisał
+ * „token_servo ginie" — surowy identyfikator zamiast nazwy (oś 2 audytu:
+ * zdarzenie niewidzialne/nieczytelne dla gracza). Odwrotność reguły sluga
+ * odtwarza nazwę GENERYCZNIE dla każdego tokenu silnika, także przyszłego
+ * (ADR 0002 — bez listy nazw i bez przypadków po nazwie karty).
+ */
+export function tokenNameFromCardId(cardId) {
+  if (typeof cardId !== 'string' || !cardId.startsWith('token_')) return null;
+  const words = cardId.slice('token_'.length).split('_').filter(Boolean);
+  if (words.length === 0) return null;
+  return words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
 /** Stała definicja tokenu (do rozszerzeń poza engine). */
 export function createToken({ name = 'Token', kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [] }) {
   if (!name || !kind) throw new TypeError('Token musi mieć nazwę i rodzaj');
   return Object.freeze({
-    kind, cardId: 'token_' + name.toLowerCase().replace(/\s+/g, '_'),
+    kind, cardId: tokenCardIdFromName(name),
     name, colors, power, toughness, summoningSickness: true,
     tapped: false, damage: 0, zone: 'battlefield', controllerId: null,
     types: Object.freeze([...types]), subtypes: Object.freeze([...subtypes]),

@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Assert+Perfection",
+  "source": "https://api.scryfall.com/cards/6995b308-5582-4ca1-ab10-a536d5ca0a6d",
   "print": "Assert Perfection (ECL)",
   "name": "Assert Perfection",
   "mana_cost": "{1}{G}",
@@ -19,5 +19,6 @@
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/6/9/6995b308-5582-4ca1-ab10-a536d5ca0a6d.jpg?1783904435"
   },
-  "pobrano": "2026-08-22"
+  "pobrano": "2026-08-22",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set ECL zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Assert+Perfection"
 }

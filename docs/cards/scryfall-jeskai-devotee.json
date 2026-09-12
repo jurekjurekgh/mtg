@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Jeskai+Devotee&set=tdm&format=json",
   "object": "card",
   "name": "Jeskai Devotee",
   "lang": "en",
@@ -28,5 +29,6 @@
     "small": "https://cards.scryfall.io/small/front/2/7/27f31f9c-7149-4608-9b18-b3530a2efd4a.jpg?1783907361",
     "normal": "https://cards.scryfall.io/normal/front/2/7/27f31f9c-7149-4608-9b18-b3530a2efd4a.jpg?1783907361",
     "large": "https://cards.scryfall.io/large/front/2/7/27f31f9c-7149-4608-9b18-b3530a2efd4a.jpg?1783907361"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/27f31f9c-7149-4608-9b18-b3530a2efd4a): Tarkir: Dragonstorm (TDM) nr 110; UUID obrazu zgodny z `imageUri` w katalogu."
 }

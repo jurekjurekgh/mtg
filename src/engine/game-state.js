@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
@@ -5388,15 +5388,37 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_damage_assignment') return reject('damage_assignment_unresolved');
     if (cmd.playerId !== state.pendingDamageAssignment.playerId) return reject('damage_assignment_not_your_decision');
     const pending = state.pendingDamageAssignment;
-    const assignments = cmd.assignments ?? {};
-    for (const attackerId of Object.keys(assignments)) {
-      const err = validateDamageAssignment(state, attackerId, assignments[attackerId]);
+    const submitted = cmd.assignments ?? {};
+    // W3 (CR 510.1c/d): kluczami przydziału są ATAKUJĄCY (blokerzy jako cele)
+    // albo — przy role 'blocker' — BLOKERZY (atakujący jako cele). Walidacja
+    // musi być po tej samej stronie co decyzja (L48: oferta == walidacja).
+    const isBlockerRole = pending.role === 'blocker';
+    // W4 (CR 510.1/510.2): wszystkie przydziały ogłasza się PRZED zadaniem
+    // obrażeń, więc przebieg zbiera kolejne decyzje i niesie je razem —
+    // wcześniejsze wybory gracza nie mogą zostać zastąpione domyślnymi.
+    // Brak wpisu dla źródła TEJ decyzji = akceptacja wariantu domyślnego, czyli
+    // dokładnie tego, który niesie oferta w legalCommands (L48: oferta ==
+    // walidacja). Bez tego przebieg pytałby w kółko o tę samą decyzję, a pusta
+    // mapa jest legalną komendą protokołu, nie zawieszeniem.
+    const sourceId = isBlockerRole ? pending.blockerId : pending.attackerId;
+    const filled = { ...submitted };
+    if (sourceId && filled[sourceId] === undefined) {
+      const offered = buildDefaultDamageAssignments(state)[sourceId];
+      if (offered) filled[sourceId] = offered;
+    }
+    const assignments = { ...(pending.assignmentsSoFar ?? {}), ...filled };
+    for (const sourceId of Object.keys(submitted)) {
+      // W5 (CR 510.1e/702.19b): sprawdza się CAŁY przydział kroku, więc
+      // walidator trample widzi mapę wszystkich przydziałów i przebieg.
+      const err = isBlockerRole
+        ? validateBlockerDamageAssignment(state, sourceId, submitted[sourceId])
+        : validateDamageAssignment(state, sourceId, submitted[sourceId], { assignments, pass: pending.pass });
       if (err) return reject(`illegal_damage_assignment:${err}`);
     }
     state.pendingDamageAssignment = null;
     try {
       const e = resolveCombatDamage(state, pending.defendingPlayerId, {
-        pass: pending.pass, resumeFrom: pending.resumeFrom, assignments,
+        pass: pending.pass, resumeFrom: pending.resumeFrom, assignments, phase: pending.phase,
       });
       const resolved = event('damage_assignment_resolved', { playerId: pending.playerId });
       state.events.push(resolved);

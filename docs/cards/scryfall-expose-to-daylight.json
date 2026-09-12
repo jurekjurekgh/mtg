@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Expose+to+Daylight&set=rna&format=json",
   "object": "card",
   "name": "Expose to Daylight",
   "layout": "normal",
@@ -18,5 +19,6 @@
   "rarity": "common",
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/0/9/094c2ac3-040f-41fe-9a37-c037d90baec0.jpg?1783933723"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/094c2ac3-040f-41fe-9a37-c037d90baec0): Ravnica Allegiance (RNA) nr 8; UUID obrazu zgodny z `imageUri` w katalogu."
 }

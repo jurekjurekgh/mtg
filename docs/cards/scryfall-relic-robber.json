@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Relic+Robber&set=znr&format=json",
   "object": "card",
   "name": "Relic Robber",
   "layout": "normal",
@@ -20,5 +21,6 @@
   "rarity": "rare",
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/4/5/4540205c-eee8-4db3-8757-710de874b313.jpg?1783929355"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/4540205c-eee8-4db3-8757-710de874b313): Zendikar Rising (ZNR) nr 153; UUID obrazu zgodny z `imageUri` w katalogu."
 }

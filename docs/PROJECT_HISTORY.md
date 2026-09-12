@@ -19,6 +19,109 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-11/12 — zgłoszenia właściciela A (druk karty) i B (cienka biblioteka) + przegląd 509 kart (PR #114, arena/01a0925f)
+
+Sesja „kontynuujemy projekt" w trybie ADR 0020/0021: PR #114 otwarty przed
+kodowaniem, audyt PR #113 plik po pliku (żaden test nie został poluzowany), plan
+`docs/plans/PLAN_2026-09-11b-audyt-pr113-wyzwanie-3-5.md`. W trakcie właściciel
+zatrzymał poszukiwanie nowych błędów i zlecił dwa znaleziska z partii testowej
+(A — ilustracja karty, B — bot z cienką biblioteką), a przy A rozszerzył
+zlecenie na przegląd wszystkich kart. Handoff: `docs/setup/HANDOFF_2026-09-12.md`.
+
+- **Plan + audyt PR #113** (`17024f3`): triaż tez starego planu, w tym W3
+  (`combat.js` `processCombatPass` — obrońca zadaje PEŁNĄ moc każdemu
+  atakującemu, CR 510.1a/d wymaga podziału sumy; tylko trample zachowuje
+  702.19b). Kierunek naprawy wybrany wtedy jako eager per-pass +
+  interleaved dealing z deduplikacją; w implementacji (`c5adc97`) zastąpiony
+  dwiema fazami przebiegu w kolejności CR 510.1 (atakujący, potem blokujący) —
+  bez deduplikacji po pierwszym indeksie i bez ryzyka podwójnego zadania obrażeń
+  atakujących przy wznowieniu. Sesję przejęły najpierw zgłoszenia A i B.
+- **A** (`7889ad4`): Curiosity pokazywała druk JMP zamiast ISD z kolekcji.
+  Przyczyna zmierzona: `set: 'ISD'` w katalogu był poprawny od początku —
+  snapshot pobrano `cards/named?exact=Curiosity` BEZ `set=`, a Scryfall zwraca
+  wtedy DOMYŚLNY druk nazwy (JMP #147); warstwy FOT/KON biorą `imageUri` jako
+  fallback (`docs/setup/ILUSTRACJE_KART.md`). Fix: pobranie set-aware,
+  `imageUri` → ISD #49 (`b212c36a`), procedura w `docs/cards/HOW_TO_ADD_CARD.md`,
+  test `test/zgloszenie-a-druk-karty-z-arkusza.test.js` (A/1–A/6) + zapadnia
+  `test/fixtures/druki-kart-zapadnia.json`.
+- **Przegląd wszystkich kart** (zlecenie właściciela, ten sam commit): 509 kart,
+  krok 1 offline (arkusz CSV → katalog → snapshot → UUID obrazu → `source`; 455
+  potwierdzonych), krok 2 sieć (41 wpisów: 33 rekordy po UUID obrazu
+  + 1 wyszukiwanie wsadowe). Poprawiono 9 kart: curiosity JMP→ISD, expunge
+  VMA→USG, welder-automaton GNT→AER, enter-the-enigma set MKM→DSK,
+  angelic-benediction DVD→ALA #3, fireball CLB→JVC #56, spread-the-sickness
+  MM2→MBS #56, cogwork-assembler 2XM→AER (set + obraz), shivs-embrace M14→M11
+  #156. Wspólny mechanizm: snapshot składany ręcznie bez `source` (fireball miał
+  dodatkowo zmyślony `set_name` „Jumpstart 2025" zamiast „Duel Decks Anthology:
+  Jace vs. Chandra"). 26 snapshotów dostało `source` + `zweryfikowano`; zapadnia
+  `bezSetu` 46→43, `bezZrodla` 42→13, `uwagaSet` 4→1. Raport
+  `docs/cards/WERYFIKACJA_DRUKOW_2026-09-12.md`, narzędzie
+  `tools/check-card-printings.mjs`. Odstępstwa udokumentowane `uwaga`:
+  ethersworn-shieldmage (`536CON` = skrót płaszczyzny Alara, druk ARB — decyzja
+  właściciela 2026-08-05); jwari-shapeshifter rozstrzygnięty osobnym commitem.
+- **Jwari Shapeshifter** (`cdafc3c`): właściciel potwierdził (2026-09-12), że
+  `227ROE` w arkuszu to jego pomyłka — karta jest z WWK. Pomiar to wskazywał:
+  Scryfall nie zna druku ROE (`&set=roe` → 404), a katalog i obraz od początku
+  niosły WWK nr 32 (`587f91f6`), więc rozjeżdżał się wyłącznie arkusz. Kod
+  poprawiony na `227WWK`, snapshot pobrany set-aware, `uwaga` zdjęta, zapadnia
+  `bezSetu` 44→43 i `uwagaSet` 2→1.
+- **B** (`76c40d9`): bot z ~9 kartami w bibliotece tapował ląd z Chronic
+  Flooding (3 karty millu na tapnięcie) i dokładał własnemu stworowi Curiosity
+  (powtarzalne dobieranie) — CR 121.4/704.5b. Silnik: auto-tap (CR 601.2h)
+  odkłada na koniec źródła mielące bibliotekę kontrolera (`millsLibraryOnTap`,
+  dogrywka istniejącego pierwszeństwa kolorów). Bot: podatek biblioteczny
+  liczony raz w `scoreCommand` i odejmowany w `finish` (jak wardTax) —
+  `tap_for_mana` na mielącym permanencie, płatność wymagająca mielącego źródła
+  i rzut karty tworzącej POWTARZALNY trigger doboru/millu; triggery
+  jednorazowe (`enter_battlefield`, `dies`) wyłączone (L41 — bez podwójnego
+  liczenia z `etbEnterBonusValue`/`drawDeckingPenalty`); `applyTo:
+  'enchanted_controller'` przy rzucie pomijane (odbiorca zależy od celu). Kara
+  `libraryLossPenalty` rośnie stopniowo, 5 nowych parametrów (`librarySafeMargin`
+  20 = próg właściciela „~<20"). Pomiary: Curiosity 9 kart −63 (pass) / 25 kart
+  +66,6 (rzuca); Welder Automaton płacony zalanym lądem −63,9 / +65,7; ten sam
+  rzut z czystych lądów bez zmian; Giant Spider bez zmian; Scroll Thief karany
+  jak Curiosity; Chronic Flooding na cudzy ląd bez zmian (58,5) i wciąż wybierana.
+
+- **W3** (`c5adc97`): bloker blokujący dwóch lub więcej atakujących zadawał
+  KAŻDEMU z nich pełną moc (7/6 vs dwóch 2/4 → 7 i 7 = 14 > moc 7); CR 510.1a/d
+  wymaga podziału sumy, a CR 510.1 kolejności „najpierw atakujący, potem
+  blokujący". Przebieg obrażeń ma teraz dwie fazy; decyzja przydziału należy do
+  kontrolera BLOKERA (`pendingDamageAssignment` z `role: 'blocker'`, `phase`
+  w resume, mapy przydziałów rozdzielone wg fazy — dwie decyzje w jednym
+  przebiegu przechodzą po kolei); walidacja `validateBlockerDamageAssignment`
+  (pełna suma = moc, sufit, żywe cele, BEZ lethal-first — to trample
+  atakującego, CR 702.19b); wariant domyślny lethal-first dla botów (nadal
+  JEDNA oferta, `finish(0)` bez zmian); widok i wizard znormalizowane
+  (`sourceId`/`targets`/`targetKey`). Podwójny blok osiągalny przez statykę
+  Cenn's Tactician (M166/E, `blockSlotsFor`). Testy W3/1–W3/7
+  (`test/wyzwanie-3-bloker-dwóch-atakujacych-510-1d.test.js`) + test wizarda po
+  stronie blokera; mutacje (L13) złapane: pełna moc na każdego, brak wymogu
+  pełnej sumy, zły decydent, resume bez fazy, zły walidator, brak decyzji,
+  widok bez roli.
+
+- **W4** (`41dc498`): przydziały obrażeń ogłaszane PRZED zadaniem czegokolwiek
+  (CR 510.1/510.2), obrażenia zadawane równocześnie, SBA dopiero po zadaniu
+  (CR 510.3 + 704.3/704.5g), drugi przebieg jako osobny krok (CR 510.4).
+  Pomiar sprzed zmiany (`tools/probe-w4-infect-przydzial.mjs`): Chained
+  Throatseeker 5/5 (infect) + Gurmag Drowner 2/4 vs Segmented Krotiq 7/6
+  blokujący obu — bloker dostawał 5 znaczników −1/−1 i 2 obrażenia w fazie
+  atakujących, jego decyzja była kolejkowana, SBA po komendzie go niszczyło i
+  nie zadawał NIC, a moc liczona była już po znacznikach (7 → 2). Przebieg ma
+  teraz trzy fazy (`assign-attackers`, `assign-blockers`, zadanie), widok niesie
+  wszystkie stwory czekające na przydział (jedna komenda zamyka fazę, CR 510.1e),
+  zebrane przydziały są niesione między decyzjami (`assignmentsSoFar`) i
+  resetowane między przebiegami; przy okazji drugi i kolejny atakujący przebiegu
+  dostaje prawdziwą decyzję zamiast defaultu w ciszy. Testy W4/1–W4/8, mutacje
+  złapane (5 wariantów). Golden master zregenerowany świadomie: jedna partia
+  (tarkir-bg|warhammer-ubr@1000), decyzje 221→222, nowy wpis
+  `resolve_damage_assignment` z score 0, `scoreSum` bez zmian (2989.0243).
+
+Bramki: `npm test` 5183/5183, build 61 modułów / 3515,4 kB (test:all do odświeżenia po W4 — ostatni pomiar
+5185/5185 przed W4), `tools/check-card-printings.mjs` kod 0 (rozjazd 1, udokumentowany),
+quick benchmark heuristic 84,2% (566/672) — identycznie przed i po W3 oraz po W4, wobec
+84,7% (569/672) przed B; golden master bota bez churn; bez pełnego B0 (ADR 0018
+— decyzja właściciela).
+
 ## Sesja 2026-09-10/11 — zgłoszenia właściciela A–G z gry przy stole (PR #113, arena/01a08d0e)
 
 Właściciel zgłosił sześć znalezisk z partii przy stole (A–F), a w trakcie
@@ -9736,3 +9839,398 @@ audyt poprzedniego PR, inkrementalne commity.
 Pętla jakości (ADR 0021): build 61/3463,4 kB, Żywy Tester 3 świeże partie
 (20260910, 161803, 3141592) — DET0 i 0 niewycenionych ruchów bota; quick
 benchmark heuristic 84,7% (569/672), bez pełnego B0 (ADR 0018).
+
+## 2026-09-12 — W5: trample i lethal z obrażeń przydzielanych w tym samym kroku (PR #114, arena/01a0925f, `fa52619`)
+
+Trzeci i ostatni krok planu `PLAN_2026-09-11b-audyt-pr113-wyzwanie-3-5.md` (wyzwanie 5/5).
+Pomiar (`tools/probe-w5-trample-lethal-w-kroku.mjs`): p2 atakuje x (trample 5/5) i y (3/3),
+p1 blokuje OBA jednym w (2/2 z licznikiem +1/+1 = 3/3; drugi slot bloku ze statyki
+Cenn's Tactician). y przydziela w całe 3 = lethal, więc x może legalnie przydzielić 0 na w
+i 5 na gracza — silnik odrzucał to jako `illegal_damage_assignment:trample_blocker_below_lethal`,
+bo `lethalOf` liczyło tylko obrażenia już OZNACZONE na blokerze.
+
+Źródła online (ADR 0030, pobrane 2026-09-12; tappedout.net/mtg-questions/deathtouch-and-trample/,
+reddit.com/r/askajudge — cytaty dosłowne): CR 702.19b („When checking for assigned lethal damage,
+take into account damage already marked on the creature and damage from other creatures that's
+being assigned during the same combat damage step, but not any abilities or effects that might
+change the amount of damage that's actually dealt"), CR 702.2b (deathtouch: każde niezerowe
+obrażenia = lethal), CR 510.1e (sprawdza się SUMĘ przydziałów kroku).
+
+Naprawa: `assignedToBlockerThisPass` (wspólny iterator: jawne przydziały z mapy komendy, dla
+stworów bez decyzji — przydział domyślny, tylko ten sam przebieg, prewencja/protection pomijane),
+eksporty `damageAssignedToBlockerThisPass` i `lethalAssignedByOthersThisPass`,
+`validateDamageAssignment(..., context = { assignments, pass })`, pola `assignedByOthers`/
+`lethalByOthers` w widoku i bramka trample w wizardzie, która je odejmuje. Polityka domyślna
+(lethal-first) i oferta botów nietknięte → golden master bez churn. Przy okazji domknięta dziura
+klasy ZAWIESZENIE: komenda bez wpisu dla źródła bieżącej decyzji pytała w kółko o tę samą decyzję
+(`collected[id]` puste) — teraz brak wpisu = akceptacja wariantu domyślnego z oferty
+(L48: oferta == walidacja), a pending atakującego dostał jawne `attackerId`.
+
+Testy: W5/1–W5/8 (`test/wyzwanie-5-trample-lethal-z-tego-samego-kroku-702-19b.test.js`: pokrycie
+lethal przez drugiego atakującego, brak pokrycia, deathtouch CR 702.2b, izolacja przebiegów
+CR 510.4, pola widoku, walidator z kontekstem i bez, pusta mapa = default, pokrycie częściowe)
++ przypadek UI w `test/choice-request-ui.test.js`. Mutacje (L13) złapane: suma bez `byOthers`,
+brak pokrycia deathtouch, brak izolacji przebiegów, brak defaultu dla brakującego wpisu, bramka
+UI bez pól widoku, `lethalAssignedByOthersThisPass` → `false`.
+
+Bramki: `npm test` **5192/5192**, `npm run build` 61 modułów / 3521,5 kB, quick benchmark
+**84,2% (566/672)** (aggro 26,5%, random 5,1%, 672 mecze w 145,8 s) — IDENTYCZNIE jak przed W5,
+bez zawieszeń; `npm run test:all` 5193/5193 zmierzone po W4 (odświeżenie w E7).
+
+## 2026-09-12 — E6: pętla jakości żywym testerem po W3/W4/W5 (PR #114, arena/01a0925f, `078e6ed` + `ea63934`)
+
+Dziesięć partii człowiek-vs-bot na świeżym `dist/mtg-table.html` (L76; g1–g6 przed naprawami,
+g7–g10 uzupełniająco po nich), profile greedy ×3, explorer, defensive ×2, impatient, hoarder ×2, random; transkrypty czytane ręcznie wzdłuż trzech osi z
+`docs/setup/TESTER_STOLU.md` (L27: zero zgłoszeń detektorów to pomiar narzędzia). Raport:
+`docs/audits/AUDYT_E6_ZYWY_TESTER_2026-09-12.md`. Żadna partia nie utknęła, `== NIEWYCENIONE ==`
+puste w dziesięciu partiach, detektory: 1 zgłoszenie (g6). Partie uzupełniające bez znalezisk
+(w g10 trzy aktywacje Thunderstaffa zawsze po deklaracji ataku — nie pętla i nie akcja bez skutku).
+
+**F-E6-1 (`ea63934`) — nazwy tokenów mechanik silnika.** Log pisał „token_servo ginie": mapa nazw
+tokenów (`collectTokenNames`, M188/B) powstaje z KATALOGU kart, a Servo tworzy mechanika fabricate
+w kodzie silnika (CR 702.122a) — po śmierci token znika ze stanu (CR 111.7), więc opis miał tylko
+cardId. Klasa dotyczyła też `token_skeleton`, `token_hero`, `token_clue`, `token_incubator`,
+`token_phyrexian`, `token_clone`, `token_spirit`. Naprawa generyczna (ADR 0002): cardId tokenu to
+slug jego nazwy, więc reguła ma jedno źródło prawdy w `src/engine/tokens.js` (`tokenCardIdFromName`
++ odwrotność `tokenNameFromCardId`), a `nameOf` w sesji używa jej jako fallback (L41). Weryfikacja
+dwustronna (L27): ta sama partia PRZED — 1 zgłoszenie detektora, PO — 0 i „Servo wchodzi na pole
+bitwy"; wynik partii identyczny. Strażnik klasy: `test/e6-nazwy-tokenow-silnika.test.js`.
+
+**F-E6-2 (`078e6ed`) — wizard trample po W5.** Bramka pozwala przydzielić blokerowi mniej niż lethal
+(bo lethal pokrywają obrażenia przydzielane mu w tym samym kroku przez inne stwory, CR 702.19b/702.2b),
+ale gracz nie widział dlaczego. Etykieta celu dostaje dopisek z widoku: „(wytrz. 3, śmiertelne 3,
+od innych w tym kroku: 3 (śmiertelne pokryte))" — tylko gdy jest co pokazać.
+
+Oś 1 bez znalezisk produktowych (w g1 to tester z profilem greedy tapował własny ląd z Chronic
+Flooding aż do wyczerpania biblioteki — ograniczenie narzędzia, nie bota; zapisane, żeby nie wzięto
+tego za regresję). Oś 3: decyzje `resolve_*` (w tym nowe wizardy W3/W4/W5) poprawnie bez ptaszka
+auto-pass. W g2 oba nowe wizardy przeszły przez prawdziwy artefakt: Silumgar Butcher 4 → 3+1,
+Stampeding Elk Herd (trample) 5 → 3+2 i „do gracza: 0", zgony PO zadaniu całości (CR 510.2 + 704.3).
+
+Bramki: `npm test` **5195/5195**, `npm run build` 61 modułów / 3523,6 kB.
+
+## 2026-09-12 — E7: domknięcie sesji PR #114 (arena/01a0925f)
+
+Plan `PLAN_2026-09-11b-audyt-pr113-wyzwanie-3-5.md` odhaczony w całości (E1, E2, W3, W4, W5, E6, E7).
+Bramki końcowe: `npm test` **5195/5195**, `npm run test:all` **5205/5205**, `npm run build`
+61 modułów / **3523,6 kB**, quick benchmark **84,2% (566/672)** (aggro 26,5%, random 5,1%,
+672 mecze w 141,4 s) — IDENTYCZNIE jak przed W4/W5/E6, bez zawieszeń; golden master bota po W5
+i E6 bez churn (po W4 zregenerowany świadomie: jedna partia, +1 decyzja `resolve_damage_assignment`
+z score 0, `scoreSum` bez zmian).
+
+Korekta starego planu `PLAN_2026-09-11-wyzwanie-5-bledow-zasad.md` (E7, ENVIRONMENT §7): teza 3
+(parowanie +1/+1 z −1/−1 „brak SBA") i teza 5 („`lethalOf()` bez deathtouch") są NIEAKTUALNE —
+pierwsza istniała w silniku, druga opisuje kod, którego nie ma (`lethalOf` zwraca 1 dla źródła
+z deathtouch; kombinacja ma testy w `test/e8-b4-trample-protection.test.js`). Realny błąd
+w sąsiedztwie tezy 5 był inny i naprawiono go jako W5 (CR 702.19b/702.2b — lethal z obrażeń
+przydzielanych w tym samym kroku przez inne stwory). Dodana tabela stanu pięciu wyzwań:
+1–2 zrealizowane w PR #113, 4 jako W3 (+ W4 w sąsiedztwie), 5 jako W5; kroki E4/E6 skreślone.
+Wyzwanie właściciela (5 unikalnych błędów/uproszczeń vs CR) domknięte.
+
+Liczby w README wg pomiaru (5195/5195 rdzeń, 5205/5205 pełny zestaw, 3523,6 kB, 84,2%).
+Do decyzji właściciela: squash-merge PR #114 i ewentualny pełny B0 (ADR 0018 — bez polecenia
+nie uruchamiamy). Materiał na kolejną sesję: obserwacje audytu PR #113 (F1–F8, O1/O3/O4) oraz
+polityka bota przy przydziałach obrażeń (domyślny lethal-first nie korzysta z pokrycia lethal
+przez inne stwory — po W5 legalne, ale to wycena, nie reguły).
+
+## 2026-09-12c — obserwacje audytu PR #113 (F1–F8, O1/O3/O4) + polityka bota przy przydziałach
+
+Plan `PLAN_2026-09-12c-obserwacje-audytu-pr113-i-polityka-bota.md` odhaczony w całości (B1–B6).
+Zlecenie właściciela (B1, `2d30130`): domyślny przydział obrażeń atakującego z trample korzysta
+z lethal pokrywanego przez inne stwory w tym samym kroku (CR 702.19b/702.2b) — przydziały liczone
+SEKWENCYJNIE w kolejności deklaracji, a pokrycie czytane tylko z już ogłoszonych (`onlyAssigned`:
+polityka `true`, walidator W5 `false` — bez tego obaj atakujący zakładaliby, że lethal pokryje ten
+drugi, i dopłatę płaciłby ostatni zamiast pierwszego). Reguły się nie zmieniły (W5 już to
+zalegalizowało), zmienił się wybór domyślny: sonda pokazała ofertę `{x:[{w:3}]}` → `{x:[{w:0}]}`
+(5 obrażeń na gracza zamiast 3+2 marnowanych na blokera). Golden master bota BEZ zmian i quick
+benchmark IDENTYCZNY (84,2%, 566/672) — sytuacja nie występuje w korpusie 672 meczów, więc wartość
+zmiany to spójność polityki z walidatorem i lepszy punkt startowy wizarda dla człowieka.
+
+B2 (`ebae99d`, znalezisko F1): `stateFingerprint` rzutował 58 ze 100 pól obiektu i pomijał 23 klucze
+stanu — pomiar strażnikiem, nie notatką (notatka mówiła o 11 polach; klasa była większa). Projekcja
+generyczna reszty pól obiektu, 14 liczników tury, 5 pól stanu efektów i `madnessQueue` (kolejka
+odroczonych decyzji madness, M258) w `PENDING_DECISION_FIELDS`. Granica M323/D (odcisk pokazuje pola
+WARUNKUJĄCE możliwości, nie nośniki etykiet) zapisana jawnie z jednym źródłem prawdy w silniku:
+`copyNumber`, `objectSequence`, `commands`, `events`, `starterId`, `isDraw` — każde z powodem i pinem
+testowym. W sondzie no-op `lastManaSpend` (zapis zapłaconego kosztu, resources.js:346) stanął po
+stronie kosztu jak pula many; w odcisku został, bo warunkuje `treasureSpent`/`manaColorsSpent`
+(resources.js:1035). Cztery testy kodujące starą granicę (M323/D, probe U9 ×2, M104) przeszły bez
+zmian — granica uszanowana, nie nadpisana.
+
+B3 (`a00707d`, O4): trzy kopie reguły przynależności do przebiegu first strike (modułowa + dwie
+lokalne w `processCombatPass` i `buildDamageAssignmentView`) → jedna implementacja (L14/L41).
+
+B4 (`1e23847`, F7): `hasCreatureType` — jedyne miejsce w silniku znające changelinga, używane w 30
+miejscach w 8 modułach (notatka: 23) — miało ZERO pokrycia testowego. Test rodzinny (ADR 0002: karty
+i podtypy wyszukiwane mechanicznie w katalogu, kontrakt „typy niestworowe tędy nie przechodzą"
+sprawdzany skanem źródeł) od razu znalazł ROZJAZD REGUŁY: `effectiveSubtypesOnBattlefield` czytała
+surowe `object.subtypes` i ignorowała `typeGrant` (Unstable Frontier), więc `hasCreatureType(…, state)`
+odpowiadała starym typem lądu wbrew CR 305.7 („the land no longer has its old land type") i CR 613.1d;
+CR 205.3d wyjaśnia, dlaczego podtypy nielądowe (Dryad) zostają. Naprawa: delegacja do
+`effectiveSubtypes` (jedna implementacja); produkcja many już czytała poprawną ścieżką. Mutacje M1–M5
+złapane każda przez konkretny test.
+
+B5 (dowody w `docs/audits/AUDYT_PR113_2026-09-11.md`): F2 odrzucone
+(`armedOnTurn` jest diagnostyczne, rejestr czyści cleanup `permanents.js:1136`), F3 odrzucone
+(wszystkie trzy emisje `permanent_cast` niosą `object` — `?.` jest obroną, nie dziurą), F5
+potwierdzone i NAPRAWIONE (`f910765`): pomiar pokazał, że eksportowane `isBotMoveNoise` (2 pliki
+testów) i `describeGameEvent` (69 plików) piny mają, ale bramka GŁÓWNEGO LOGU gracza była
+wrostkowym warunkiem 14 członów w `noteBotMove` z lokalnymi domknięciami (`inCombatReport`,
+`isStackResolution`, `isHumanHeadline`, `isHumanDraw`, `isAdditionalCostMove`, `isBotDecision`),
+a `phaseHeaderFor` i zbiory `MAIN_LOG_NOISE`/`TRANSFORM_DIGEST_EVENTS`/`HUMAN_DIGEST_EVENTS`/
+`BOT_RESOLUTION_EVENTS` były lokalne w `createSession` — zero testów mogło ich dotknąć bez jsdom,
+więc każda zmiana bramek była weryfikowana wyłącznie ręcznym czytaniem transkryptów (a historia
+zgłoszeń właściciela jest długa: D/E, M99, M100/E5, M100/E8, M106/Z3, M151, M167/E, E2, E6/A2,
+E7/E). Ekstrakcja do czystych funkcji modułowych (`isMainLogEvent`, `phaseHeaderText`,
+`isHumanControllerEvent`, eksportowane `isRulesZoneMove` i zbiory) bez zmiany zachowania:
+równoważność udowodniona sondą wobec transkrypcji 1:1 starego warunku na macierzy **68 208
+kombinacji — 0 rozjazdów**; test rodzinny `test/b5-bramka-logu-gracza.test.js` (B5/1–B5/14)
+przypina każdy człon z jego zgłoszeniem, mutacje **9/9 złapane**; Żywy Tester 3 partie na świeżym
+`dist/`, 304 sondy no-op, 0 zgłoszeń, transkrypty porównane z partiami sprzed ekstrakcji.
+F8 naprawione (liczby z pomiaru),
+O1 nie do odtworzenia (`grep sentinel` w src/ znajduje tylko nazwy kart — potrzebny opis właściciela),
+O3 bez akcji, F4 nie wraca.
+
+B6 (dokumenty): audyt PR #113 zapisany jako REKONSTRUKCJA z pomiarem 2026-09-12 — wpis E2
+w `PLAN_2026-09-11b` okazał się nieprecyzyjny (plik w tamtej sesji nie powstał) i został skorygowany;
+`HANDOFF_2026-09-12` dostał werdykty i bramki z pomiaru; opis PR #114 zaktualizowany przez REST PATCH
+(`gh pr edit` na tym repo pada). Przy okazji uporządkowano sekcję „Kolejka / otwarte" tego handoffu:
+akapit „następne w kolejce: W5 — kandydat nie wybrany … potem W5, E6, E7" był nieaktualny i sam sobie
+przeczył (W5/E6/E7 były zrobione) — czyli dokładnie klasa F8 w dokumencie, który jest punktem
+zaczepienia następnej sesji; zastąpiony skróconą HISTORIĄ z odesłaniem. Punkt „transkrypt z realnym
+podwójnym blokiem (Cenn's Tactician) nieprzeczytany" zmierzono zamiast przepisywać: 4 partie workiem
+mrocznym (seedy 331/2026/44/909, profile greedy/hoarder, także jako bot) — Cenn był dobierany,
+rzucany i wchodził na stół, ale podwójnego bloku nie było. Punkt zawężono po uwadze właściciela
+(„przecież jest panel, jak blokuję") i ponownym pomiarze, bo pierwotny zapis był mylący (dotyczył
+tylko tych 4 partii i wzorca grep, który nie pasował do prawdziwych etykiet): panel DEKLARACJI
+BLOKÓW jest ćwiczony („Zatwierdź bloki" w 10 transkryptach, „Deklaracja blokujących" w 12, modal
+„Wybierz blokujących (przełączniki przy każdym atakującym)"), a wizard PODZIAŁU OBRAŻEŃ renderuje
+się od strony ATAKUJĄCEGO — `tmp-audyt-b5-2026-09-12/kaladesh-51-greedy.txt` linie 426–444:
+podwójny blok (Makeshift Mauler + Farbog Explorer na Merchant's Dockhand), modal „Rozdziel obrażenia
+bojowe — przydziel moc atakujących blokującym" z wierszami „wytrz. 5, śmiertelne 5" i steperami,
+przycisk „Użyj domyślnego przydziału (zabójcze obrażenia po kolei blokerów)", a w logu skutek 5 + 1
+— lethal-first w kolejności deklaracji (CR 510.1c), czyli polityka z B1 jest widoczna dla gracza.
+Otwarty zostaje TYLKO wizard po stronie BLOKERA (W3: jeden stwór blokujący dwóch atakujących dzieli
+własne obrażenia), bo wymaga Cenn's Tactician z licznikiem +1/+1 w momencie deklaracji bloków —
+potrzebny deterministyczny scenariusz stołu (wstrzyknięty stan) albo przegląd ręczny, nie polowanie
+na seed. Pokrycie regułowe tego przypadku w silniku jest (testy W3/W4 i B1/6: bez licznika drugi
+blok odrzucany „Blocker jest użyty więcej niż raz"). Wpis w handoffie brzmiał wcześniej „panel
+podziału obrażeń nie wyrenderował się ani razu" — klasa F8 we własnym dokumencie, skorygowana
+pomiarem zaraz po wykryciu.
+
+Bramki końcowe: `npm test` **5232/5232** (5201 przed sesją; +8 B2, +9 B4, +14 B5), `npm run build`
+61 modułów / **3533,1 kB**, quick benchmark **84,2% (566/672)** (aggro 26,5%, random 5,1%, 135,0 s),
+golden master bota bez zmian. Żywy Tester na świeżym `dist/` (L76): 10 partii, 666 sond no-op,
+0 zgłoszeń detektorów, 0 niewycenionych ruchów bota; transkrypty poza repo (`tmp-audyt-b2-2026-09-12/`,
+`tmp-audyt-b4-2026-09-12/`, `tmp-audyt-b5-2026-09-12/`, M239). Kolejka: O1 (odtworzenie wskazania
+z opisu właściciela), zapadnia druków (`bezSetu` 43, `bezZrodla` 13). Do decyzji właściciela:
+squash-merge PR #114 i ewentualny pełny B0 (ADR 0018 — bez polecenia nie uruchamiamy).
+
+**Zapadnia druków zamknięta (2026-09-12, `c0a1908`, zlecenie właściciela „(3) zrób teraz").**
+Ratchet `test/zgloszenie-a-druk-karty-z-arkusza.test.js` wyliczał 43 snapshoty z `source` wyszukiwania
+bez setu (klasa F narzędzia) i 13 bez pola `source` (klasa C) — razem 56 kart, których snapshot nie
+dowodził druku z kolekcji. Pomiar poprzedzający naprawę pokazał, że TREŚĆ jest już poprawna: 56/56 ma
+set snapshotu zgodny z arkuszem `tools/collection-art-ids.csv` (porównanie bez względu na wielkość
+liter — `2XM` w arkuszu i `2xm` w snapshocie to zgodność, nie rozjazd), UUID z `image_uris` równy
+`imageUri` katalogu oraz obecne `name`/`set`/`collector_number`; brakowało wyłącznie jawnego zapisu
+prowieniencji, więc sieć nie była potrzebna do naprawy. Reguła w dwóch przypadkach: 13 surowych
+odpowiedzi Scryfall ma własne `uri = https://api.scryfall.com/cards/<id>` oraz `id` równy UUID obrazu
+— `source` ustawiono na kopię tego pola (dowód w tym samym pliku, bez adnotacji); 43 pliki z `source`
+wyszukiwania dostały `source = https://api.scryfall.com/cards/<UUID z image_uris>` oraz klucz
+`proweniencja` z datą, metodą, stwierdzeniem zgodności setu z arkuszem i POPRZEDNIM adresem (historia
+nie ginie). Skrypt walidował wszystkie 56 zmian przed zapisem któregokolwiek pliku (JSON poprawny,
+`source` równy oczekiwanemu, brak zmian poza `source`/`proweniencja`) — dwie wcześniejsze próby
+zatrzymały się na bramkach (zły regex końca obiektu; trzy pliki w trzecim wariancie formatowania)
+i nie zapisały nic. Zakres weryfikacji online jest wąski i tak udokumentowany: schemat adresu
+potwierdzono JEDNYM pobraniem (Apprentice Wizard — `name`/`set` `2xm`/`collector_number` 40, `id`
+i UUID obrazu identyczne, pole `uri` odpowiedzi równe adresowi), kolejne dwa pobrania zwróciły awarię
+proxy środowiska (`SignatureDoesNotMatch`), więc pozostałych 55 nie sprawdzono w sieci i opiera się na
+cross-checku offline. Pomiar po (`node tools/check-card-printings.mjs`, HEAD `582ffbe` vs po):
+C-bez-source-surowa-odpowiedz 13 → **0**, F-source-bez-set 43 → **0**, B-source-uuid-spójny 32 → **88**,
+A-source-set-aware 349 i E-source-wyszukiwanie 21 bez zmian, brak-snapshotu 51 bez zmian; fixture
+ratcheta `bezSetu` 0 / `bezZrodla` 0 / `uwagaSet` 1, `node --test` tego pliku 6/6, `npm test`
+**5232/5232** (liczba asercji bez zmian — ratchet przelicza listy i porównuje z fixture). Raport:
+`docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md`. Poza tym zamknięciem pozostały: 21 kart klasy E
+(adres wyszukiwania Z kwalifikatorem setu — ratchet je uznaje, zacieśnienie do `/cards/<id>` możliwe tą
+samą metodą, ale to decyzja właściciela), 7 snapshotów wymagających pobrania z sieci
+(`krallenhorde-wantons` ISD, `guidestone-compass` LCI, `shiva-warden-of-ice` FIN, `homicidal-brute` ISD,
+`ballista-wielder` VOW, `dire-strain-brawler` MID, `balamb-garden-airborne` FIN; pozostałe 44 karty bez
+snapshotu to tokeny i ziemie bazowe poza arkuszem) oraz 1 udokumentowany rozjazd `ethersworn-shieldmage`
+(arkusz `536CON` vs katalog `ARB`, pole `uwaga`, druk ARB potwierdzony przez właściciela 2026-08-05).
+O1 właściciel polecił pominąć, więc nie wraca do kolejki.
+
+**Drugi etap zapadni druków: klasa E → 0 i drugie strony kart dwustronnych (2026-09-12, `3821187`,
+zlecenie właściciela „zrób teraz to co proponujesz — 21 klasy E" + jego wskazówka, że siedem kart
+„do pobrania" to rewersy).** Zacieśniono 21 snapshotów klasy E (adres wyszukiwania z kwalifikatorem
+setu → `/cards/<UUID obrazu>`); przed zapisem każdego zmierzono UUID obrazu == `imageUri` katalogu,
+set snapshotu == set z arkusza oraz obecność `name`/`set`/`collector_number`, a każdy plik dostał
+klucz `proweniencja` z metodą i POPRZEDNIM adresem. Siedem kart, które pierwszy etap zostawił jako
+„DO POBRANIA ZE SCRYFALL", okazało się tylnymi twarzami transformów — decyzja (delegowana agentowi):
+BEZ osobnych snapshotów, bo Scryfall opisuje transform jako jeden obiekt karty (jedno `id`, obie
+twarze w `card_faces`), katalogowe `imageUri` obu twarzy niesie ten sam UUID, a arkusz daje im ten
+sam `artId`+set — drugi plik byłby duplikatem bajtów i drugim źródłem prawdy dla jednego druku.
+Zamiast tego narzędzie dostało klasę `B2-druga-strona-pokryta-snapshotem` z mierzalnym warunkiem
+pokrycia: nazwa karty musi być twarzą snapshotu „brata" (przypadek ujemny z danych: `token_rat`
+dzieli UUID z `lab-rats`, a jego twarzą nie jest — test D/6). Przy okazji wyszły trzy przyczyny
+źródłowe: (1) UUID obrazu czytano wyłącznie z `image_uris.large`, a dwustronne trzymają obrazy przy
+twarzach — 3 snapshoty nie potwierdzały druku offline i po zacieśnieniu `source` narzędzie zgłaszało
+FAŁSZYWY rozjazd (helper `uuidObrazuSnapshotu` z zapasowym odczytem z `card_faces[0]`, potwierdzone
+offline 455 → 458); (2) porównanie setu snapshotu z katalogiem działało bezwarunkowo, a 44 wpisy
+syntetyczne mają `set: null` — po ujawnieniu snapshotu tokena Tarmogoyf pojawił się fałszywy rozjazd
+`tm3c vs null` (teraz porównanie tylko gdy obie strony mają set; różnica przy obu obecnych nadal
+rozjazdem, test D/15 z mutacją); (3) ratchet miał WŁASNE kopie `uuidOf`/`sourceUuid`/`sourceSet`
+i czytał UUID tylko z `image_uris.large` — dryf dwóch implementacji (F7/L41) sprawiał, że test
+i narzędzie różnie widziały transformy (ratchet importuje helpery z narzędzia, narzędzie ma eksporty,
+main-guard i czystą funkcję `przegladDrukow`). Dodatkowo snapshot tokena Tarmogoyf nosił nazwę
+niezgodną z konwencją (`scryfall-token-tarmogoyf.json` przy id `token_tarmogoyf`), przez co przegląd
+widział kartę jako „brak snapshotu" — `git mv` na nazwę równą id, ścieżka w
+`test/real-cards-batch21.test.js` poprawiona. Pomiar po: A 349, B 88 → **110**, B2 **7** (nowa),
+C 0, D 0, E 21 → **0**, F 0, rozjazdy UUID 0, brak-snapshotu 51 → **43** (wszystkie poza arkuszem),
+DO POBRANIA 7 → **0**, UUID potwierdzony offline 455 → **458**; Kart 509, w arkuszu 465, poza 44.
+Jedyny rozjazd setu pozostaje udokumentowany (`ethersworn-shieldmage`: arkusz `536CON` vs katalog
+`ARB`, druk ARB potwierdzony przez właściciela 2026-08-05, `CON` to skrót płaszczyzny Alara).
+Poza klasami została jedna sierota: `docs/cards/scryfall-undercity-dungeon.json` — snapshot dla
+karty nieobecnej w rejestrze (silnik tworzy dungeon dynamicznie jako `undercity`); pilnuje jej test
+D/14, żeby nowe sieroty nie pojawiały się cicho. Testy: nowy
+`test/druki-druga-strona-i-uuid-obrazu.test.js` (D/1–D/15) + ratchet rozszerzony o A/7 (reguły
+porównania), `npm test` **5255/5255**. Zakres online bez zmian i bez upiększeń: w sieci potwierdzono
+JEDEN adres (Apprentice Wizard), reszta to cross-check offline. Raport zaktualizowany:
+`docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md` sekcje 6–8.
+
+**Wizard podziału obrażeń po stronie BLOKUJĄCEGO (2026-09-12, `68c3801`, zlecenie właściciela
+„zrób ten wizard podziału po stronie blokera skoro jest potrzebny").** Pomiar wykazał, że panel
+blokującego istnieje i działa (poprawka opisu z `582ffbe`), ale podział obrażeń blokera nie miał
+żadnego testu end-to-end z prawdziwego stanu gry, a etykieta domyślnego przycisku wizarda brzmiała
+„po kolei blokerów" także po stronie blokującej, gdzie rozdzielamy obrażenia między ATAKUJĄCYCH
+(`src/table/choice-request.js`, `renderDamageWizard`). Naprawa minimalna i bez specjalnych przypadków:
+etykieta zależna od roli (`role === 'blocker'` → „po kolei atakujących"), reszta logiki bez zmian —
+stepper (`picker-step-dec/inc`, `damage-wizard-minus/plus`, `picker-value`) i kontrakt `picker.js`
+nienaruszone. Nowy `test/w3-wizard-podzialu-blokera-ui.test.js` (B/1–B/7) idzie całą drogą: realny
+stan → `playerView` z `pendingChoice` roli `blocker` (moc 7, dwóch atakujących, lethal 4) → wizard
+w DOM → komenda → `execute` w silniku (pierwszy atakujący ginie, drugi dostaje 3); osobno równoważność
+bramki UI z `validateBlockerDamageAssignment` na wszystkich 36 osiągalnych podziałach, odrzucenie 3
+podziałów ponad moc (`damage_exceeds_power`), wolny podział 0/7 dosłownie z CR 510.1c oraz brak
+powierzchni trample po stronie blokera (CR 702.19b dotyczy atakującego). Scenariusz `doubleBlock()`
+(cenns-tactician + segmented-krotiq z +1/+1 „wall" vs dwa gurmag-drowner) jest współdzielony z testem
+silnika W3. Żywy Tester: 3 partie na świeżym `dist` (worek-mroczny/kaladesh/51/greedy,
+innistrad-wu/tarkir-bg/2026/impatient, kaladesh/alara/44/defensive) — **129 sond noop, 0 zgłoszeń
+detektorów, 0 niewycenionych ruchów bota**; panele blokującego obecne w transkryptach
+(„Zatwierdź bloki" ×4, „Deklaracja blokujących" ×5), sam wizard podziału się nie pojawił, bo wymaga
+podwójnego bloku — dowodem jest test deterministyczny, a transkrypty leżą poza repo
+(`tools/table-tester/tmp-audyt-w3ui2-2026-09-12/`, M239). Przy okazji: `jsdom` nie jest zależnością
+głównego `package.json` — tester stołu ma własny manifest i lockfile
+(`tools/table-tester/package.json`, `npm ci` → 63 pakiety), więc po odtworzeniu środowiska trzeba go
+doinstalować osobno. KOREKTA zapisu: w opisie commitu padło stwierdzenie, że dla wizarda blokera
+„nie było ani jednego dowodu" — to przesada. Istniał syntetyczny test roli `blocker`
+(`test/choice-request-ui.test.js`, `renderDamageWizard (W3)`), który przechodził `defaultCommand: null`
+i dlatego nie łapał wady etykiety; nie miał natomiast łańcucha realny stan → `playerView`, równoważności
+UI z walidatorem ani wykonania w silniku. Historia przepchnięta nie jest przepisywana (force push
+zakazany) — korekta zostaje w dokumentach.
+
+**Obiekty wsparcia poza rejestrem kart (2026-09-12e, `f1062cd`, zlecenie
+właściciela: sierota `scryfall-undercity-dungeon.json`, „karta jest w grze, panel
+działa, na pewno nie wolno tego skasować; czy JSON jest używany — nie wiem, do
+twojej decyzji").** Pomiar rozstrzygnął pytanie właściciela: plik NIE jest czytany
+w runtime ani w buildzie (`docs/cards/*.json` to materiał źródłowy do ręcznego
+kodowania `card-data.js`), ale jest prowieniencją tego, co panel pokazuje —
+`src/table/render.js` bierze obraz z `UNDERCITY_DUNGEON.imageUri`
+(`https://api.scryfall.com/cards/tclb/20?format=image`), a snapshot ma `set` `tclb`,
+`collector_number` `20`, `legacy_image_uri` IDENTYCZNE z tym adresem, `source`
+z UUID równym UUID obrazu oraz pełny Oracle obu twarzy („Undercity" z dziewięcioma
+komnatami i „The Initiative") — jedyny zapis, z którego zakodowano `UNDERCITY_ROOMS`
+w `src/engine/effects.js`. W arkuszu kolekcji nie ma ani `undercity`, ani `tclb`.
+Decyzja (delegowana agentowi): NIE kasować (zniszczyłoby to dowód Oracle i adresu)
+i NIE dopisywać do rejestru kart (ADR 0029 — katalog rośnie wyłącznie z kolekcji
+właściciela; zmieniłoby to liczbę kart 509 i klasyfikację narzędzia). Przyczyna
+źródłowa „sieroctwa" nie dotyczyła braku karty: model przeglądu zakładał, że każdy
+snapshot odpowiada karcie Z REJESTRU, a obiekty wsparcia (loch Undercity, znacznik
+Day // Night) są eksportami tego samego modułu poza rejestrem — i nazwa pliku nie
+była równa id obiektu (`undercity-dungeon` vs `undercity`), więc dopasowanie było
+niemożliwe. Naprawa: `git mv` na `docs/cards/scryfall-undercity.json` oraz kategoria
+w narzędziu WYPROWADZONA z modułu gry (`obiektyWsparcia()` czyta `UNDERCITY_DUNGEON`
+i `DAY_NIGHT_TOKEN` z `card-data.js` — zero nazw wpisanych na sztywno, F7/L41),
+`adresDruku()` (para set/numer albo UUID) i `przegladObiektowWsparcia()` z klasami
+`W-potwierdzony-offline` / `W-bez-snapshotu` / `W-snapshot-bez-zgodnosci` oraz
+sekcją w CLI. Pomiar: `undercity` = W-potwierdzony-offline (set `tclb` nr `20`
+= adres panelu, UUID `source` = UUID obrazu, twarze `Undercity` + `The Initiative`),
+`day-night` = W-bez-snapshotu (adres z UUID; pobranie wymaga sieci, w tym
+środowisku niedostępnej). Nowy test
+`test/obiekty-wsparcia-poza-rejestrem.test.js` (OW/1–OW/8): wyprowadzenie listy
+z modułu gry, brak wpisu w rejestrze i w arkuszu (ADR 0029), potwierdzenie druku
+offline ze sprzężeniem z panelem, zgodność Oracle z `UNDERCITY_ROOMS` (nazwy komnat
+i ich przejścia „(Leads to: …)" dosłownie z tekstu snapshotu), odnotowany brak
+snapshotu dla Day // Night, sierot brak, przypadki ujemne (mutacja set/numer/UUID)
+i trzy postaci adresu obrazu; D/14 przeformułowany (poza rejestrem jest wyłącznie
+snapshot obiektu wsparcia, regresja `token_tarmogoyf` zostaje). Klasy rejestru
+(A 349 / B 110 / B2 7 / brak 43) i `DO POBRANIA` = 0 bez zmian, narzędzie exit 0,
+`npm test` 5263/5263, build 3533.4 kB (snapshot nie wchodzi do bundla). Plan tury:
+`docs/plans/PLAN_2026-09-12e-wycena-przydzialow-i-obiekty-wsparcia.md`.
+
+**Wycena bota przy przydziałach obrażeń — pokrycie lethal po obu stronach
+(2026-09-12e, `08f6638`, zlecenie właściciela: „lethal-first nie wykorzystuje
+pokrycia lethal przez inne stwory — po W5/B1 legalne, ale bot z tego nie
+korzysta").** Pomiar ustawił zadanie inaczej, niż brzmiało: bot NIE ma czego
+wyceniać, bo `legalCommands` oferuje dokładnie JEDEN wariant
+`resolve_damage_assignment` (M66/R — kombinacji nie enumerujemy, człowiek ma wizard),
+a `src/controllers/heuristic-bot.js` odpowiada na ten typ `return finish(0)`.
+Jedyną dźwignią jest więc jakość deterministycznego planu domyślnego, który bot
+bierze w całości (i który jest punktem startowym wizarda człowieka). Pokrycie
+lethal istniało tylko w gałęzi trample (`defaultDamageAssignment` liczył `need`
+z kontekstem wyłącznie `if (trample && context)` — zakres B1), a strona BLOKERA nie
+miała kontekstu wcale: `defaultBlockerDamageAssignment` bez parametru,
+`buildDefaultDamageAssignments` bez mapy sekwencyjnej dla `role === 'blocker'`,
+faza 3 przebiegu bez akumulacji planów blokerów. Zmierzone straty (sondy na
+harnessie B1 — Cenn's Tactician daje stworowi z licznikiem +1/+1 drugi slot bloku):
+atakująca 4/4 bez trample blokowana przez 3/3 i 3/3, lethal pierwszego pokryty
+przez trzeciego stwora 3/3 → plan `[{b1:3},{b2:1}]`, JEDEN zabity (`b2` przeżywał
+z 1 obrażeniem); po zmianie `[{b1:0},{b2:4}]` — DWA zabite. Symetrycznie po stronie
+blokera: moc 4 na dwóch atakujących (2/2 i 3/3), lethal pierwszego pokryty przez
+drugiego blokera 2/2 → `[{a1:2},{a2:2}]`, `a2` przeżywał z 2 obrażeniami; po
+zmianie `[{a1:0},{a2:4}]` — obaj atakujący giną. Zmiana w `src/engine/combat.js`:
+helpery kierunku bloker → atakujący symetryczne do istniejących i z tymi samymi
+konwencjami (`assignedToAttackerThisPass`, `damageAssignedToAttackerThisPass`,
+`lethalAssignedByOtherBlockersThisPass` — przebieg first strike/zwykły, deathtouch
+→ każde niezerowe obrażenie jest lethal wg CR 702.2b, jawne przydziały z mapy wg
+CR 510.1e, `onlyAssigned` pomija stwory z decyzją, której jeszcze nie ogłoszono,
+prewencja/protection pomijane, bo reguła mówi o PRZYDZIALE), `need` z pokryciem
+niezależnie od trample (trample zachowuje dotychczasowe zachowanie — nadmiar
+legalnie idzie na gracza), kontekst i mapa sekwencyjna dla `role === 'blocker'`
+oraz kontekst + akumulacja `runningAssignments` w fazie 3 przebiegu. To WYCENA,
+nie reguły: suma przydziału się nie zmienia (cała moc rozdzielona, CR 510.1a),
+podział między cele jest swobodny (CR 510.1c/d), walidatory nietknięte, a liczba
+ofert bez zmian (M66/R). Reszta bez trample nadal idzie do OSTATNIEGO celu
+(konwencja E8/B3; pomiar: reszta > 0 zachodzi tylko gdy każdy cel dostał co
+najmniej swój lethal, więc wybór celu reszty jest neutralny dla wyniku — bez
+martwej gałęzi „pierwszy niezgładzony"). Nowy test
+`test/p-wycena-przydzialow-pokrycie-lethal.test.js` (P/1–P/10): oba zmierzone
+scenariusze end-to-end (oferta → `execute` → kto ginie), przypadki ujemne bez
+pokrycia (P/2 atakujący `[3,1]`, P/4 bloker `[2,2]` — plan IDENTYCZNY jak przed
+zmianą), deathtouch po stronie blokera (P/5), sekwencyjność przy dwóch blokerach
+z decyzją (P/6: `w [a1:2,a2:1]`, potem `v [a1:0,a2:3]` — bez overkillu),
+legalność i pełna suma w walidatorach (P/7), regresja trample z B1 (P/8:
+`[{b1:0},{b2:3}]` + 1 obrażenie na obrońcę), przypadek „wszystkie cele pokryte"
+(P/9: reszta do ostatniego, suma = moc) oraz helpery jednostkowo (P/10, w tym
+`onlyAssigned` i brak kontekstu = stare zachowanie). ŚWIADOMA KOREKTA testu B1/5:
+jego druga asercja utrwalała „bez trample pokrycie NIC nie zmienia" — dokładnie
+zachowanie, które właściciel kazał zmienić (`[{b1:3},{b2:3}]` → `[{b1:0},{b2:6}]`);
+uzasadnienie w teście: wynik w tamtym scenariuszu jest neutralny (obaj blokerzy
+i tak giną), ale jedna polityka pokrycia obowiązuje teraz zamiast specjalnego
+przypadku trample, a poprzednie uzasadnienie asercji było błędne (`b1` ginie od
+przydziału `z` niezależnie od decyzji `a`). Pierwsza część B1/5 (bez pokrycia →
+`[2,4]`) zostaje bez zmian, tak samo B1/1–B1/4 i B1/6. Bramki: `npm test`
+**5273/5273**, `npm run build` 61 modułów / **3538.7 kB** (+5.3 kB), golden master
+`bot-scoring-snapshot` BEZ churn, quick benchmark 672 mecze w 138.2 s: heuristic
+**84.2%** (566/672), aggro 26.5%, random 5.1% — IDENTYCZNIE jak przed zmianą, bo
+poprawka jest symetryczna (obie strony biorą ten sam plan domyślny, więc w macierzy
+win-rate się nie odznacza — uczciwie: ten pomiar NIE dowodzi zysku, dowodzi braku
+regresji; zysk jest zmierzony w P/1 i P/3 jako dodatkowe zabójstwo). Żywy Tester
+(L76) na świeżym `dist/`: 7 partii (worek-dziki/kaladesh/71/greedy,
+innistrad-brg/tarkir-bg/2027/impatient, zendikar/mirrodin-brg/44/defensive oraz
+4 partie sondujące z worek-mroczny — jedyną talią z Cenn's Tactician) — łącznie
+**317 sond no-op, 0 zgłoszeń detektorów, 0 niewycenionych ruchów bota**; w partii
+m3 (kaladesh vs worek-mroczny, seed 303) pojawił się żywy wizard przydziału wielu
+blokerów: Skilled Animator (moc 1) vs Tiller of Flesh (śmiertelne 4) i Incubator
+(śmiertelne 2) — bez pokrycia w tej pozycji, więc plan został lethal-first 1/0,
+a komenda przeszła przez `execute` bez błędu. Podwójnego bloku po obu stronach nie
+trafiła żadna z 7 partii, więc dowodem zmiany są testy deterministyczne P/1–P/10.
+Transkrypty poza repo (`tools/table-tester/tmp-audyt-p-2026-09-12/`, M239).

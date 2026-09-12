@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=!\"Tumbleweed%20Rising\"+e%3AOTJ",
+  "source": "https://api.scryfall.com/cards/275d2d2a-ef85-48c9-919d-bc62cdad8a10",
   "print": "otj",
   "name": "Tumbleweed Rising",
   "mana_cost": "{1}{G}",
@@ -19,5 +19,6 @@
     "large": "https://cards.scryfall.io/large/front/2/7/275d2d2a-ef85-48c9-919d-bc62cdad8a10.jpg?1783911802",
     "normal": "https://cards.scryfall.io/normal/front/2/7/275d2d2a-ef85-48c9-919d-bc62cdad8a10.jpg?1783911802"
   },
-  "pobrano": "2026-08-03"
+  "pobrano": "2026-08-03",
+  "proweniencja": "2026-09-12: source zacieśnione z wyszukiwania do adresu /cards/<id> — UUID odczytany z image_uris tego snapshotu i równy imageUri katalogu (set OTJ zgodny z arkuszem kolekcji tools/collection-art-ids.csv); poprzednie source: https://api.scryfall.com/cards/search?q=!\"Tumbleweed%20Rising\"+e%3AOTJ"
 }

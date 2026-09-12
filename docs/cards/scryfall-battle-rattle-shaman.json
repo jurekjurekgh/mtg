@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Battle-Rattle+Shaman&set=m21&format=json",
   "object": "card",
   "name": "Battle-Rattle Shaman",
   "lang": "en",
@@ -23,5 +24,6 @@
     "small": "https://cards.scryfall.io/small/front/f/a/faca827d-0b35-48d7-acd6-13ecacc32b82.jpg?1783930695",
     "normal": "https://cards.scryfall.io/normal/front/f/a/faca827d-0b35-48d7-acd6-13ecacc32b82.jpg?1783930695",
     "large": "https://cards.scryfall.io/large/front/f/a/faca827d-0b35-48d7-acd6-13ecacc32b82.jpg?1783930695"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/faca827d-0b35-48d7-acd6-13ecacc32b82): Core Set 2021 (M21) nr 130; UUID obrazu zgodny z `imageUri` w katalogu."
 }

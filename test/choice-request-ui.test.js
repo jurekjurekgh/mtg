@@ -800,3 +800,95 @@ for (const trample of [false, true]) {
     assert.deepEqual(calls[1], calls[0], 'plus nie przekracza mocy');
   });
 }
+
+// W3 (CR 510.1d): ten sam wizard dzieli moc BLOKERA między atakujących, których
+// blokuje — klucze komendy to attackerId, a nadwyżka „do gracza" nie istnieje
+// (trample jest wyłącznie po stronie atakującego, CR 702.19b).
+test('renderDamageWizard (W3): podział blokera → assignments z kluczami attackerId', () => {
+  const host = new ChoiceMiniEl('div');
+  const calls = [];
+  const pending = {
+    playerId: 'p1', role: 'blocker', blockerId: 'wall',
+    entries: [{
+      blockerId: 'wall', cardId: 'highland-game', power: 7,
+      attackers: [
+        { id: 'a1', cardId: 'goblin-piker', toughness: 4, damage: 0, lethal: 4 },
+        { id: 'a2', cardId: 'rustwing-falcon', toughness: 4, damage: 0, lethal: 4 },
+      ],
+    }],
+  };
+  renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand: null, onComplete: (cmd) => calls.push(cmd) });
+  assert.match(host.textContent, /moc blokera atakującym/, 'etykieta strony blokera');
+  assert.match(host.textContent, /Highland Game \(moc 7\)/, 'źródłem mocy jest bloker');
+  const confirm = findAll(host, 'button', 'Zatwierdź przydział')[0];
+  assert.equal(confirm.disabled, false, 'start lethal-first 4+3 = pełna moc');
+  confirm.click();
+  assert.deepEqual(calls, [{
+    type: 'resolve_damage_assignment', playerId: 'p1',
+    assignments: { wall: [{ attackerId: 'a1', amount: 4 }, { attackerId: 'a2', amount: 3 }] },
+  }]);
+  findAll(host, 'button', '−1')[1].click();
+  assert.equal(confirm.disabled, true, 'niedobór (suma < mocy) blokuje Zatwierdź — CR 510.1a');
+  assert.ok(!/do gracza: [1-9]/.test(host.textContent), 'bloker nie przenosi nadwyżki na gracza');
+});
+
+test('renderDamageWizard (W5, CR 702.19b/702.2b): lethal pokryty przez innego atakującego odblokowuje 0', () => {
+  const host = new ChoiceMiniEl('div');
+  const calls = [];
+  const pending = {
+    playerId: 'p1',
+    entries: [{
+      attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: true,
+      // y (3/3) blokuje tego samego stworza i przydziela mu całe 3 = lethal,
+      // więc trample może legalnie dać 0 blokerowi i 5 graczowi.
+      blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3, assignedByOthers: 3, lethalByOthers: true }],
+    }],
+  };
+  renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand: null, onComplete: (cmd) => calls.push(cmd) });
+  const confirm = findAll(host, 'button', 'Zatwierdź przydział')[0];
+  const minus = findAll(host, 'button', '−1')[0];
+  minus.click(); minus.click(); minus.click();
+  assert.match(host.textContent, /do gracza: 5/, 'cała moc przechodzi na gracza');
+  assert.equal(confirm.disabled, false, 'bramka trample liczy assignedByOthers/lethalByOthers z widoku');
+  confirm.click();
+  assert.deepEqual(calls, [{ type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b1', amount: 0 }] } }]);
+
+  // Bez pokrycia przez innego (assignedByOthers 0) ten sam zjazd do 0 blokuje.
+  const host2 = new ChoiceMiniEl('div');
+  const calls2 = [];
+  renderDamageWizard(host2, {
+    view: COMBAT_VIEW, session: COMBAT_SESSION,
+    pending: { playerId: 'p1', entries: [{ attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: true,
+      blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3, assignedByOthers: 0, lethalByOthers: false }] }] },
+    defaultCommand: null, onComplete: (cmd) => calls2.push(cmd),
+  });
+  const minus2 = findAll(host2, 'button', '−1')[0];
+  minus2.click(); minus2.click(); minus2.click();
+  assert.equal(findAll(host2, 'button', 'Zatwierdź przydział')[0].disabled, true, 'M101/B6 nadal działa bez pokrycia');
+  assert.deepEqual(calls2, [], 'zablokowany przycisk nie wysyła komendy');
+});
+
+test('renderDamageWizard (W5, oś 2 E6): etykieta celu mówi, że lethal pokrywają inne stwory', () => {
+  const host = new ChoiceMiniEl('div');
+  const pending = {
+    playerId: 'p1',
+    entries: [{
+      attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: true,
+      blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3, assignedByOthers: 3, lethalByOthers: true }],
+    }],
+  };
+  renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand: null, onComplete: () => {} });
+  assert.match(host.textContent, /śmiertelne 3, od innych w tym kroku: 3 \(śmiertelne pokryte\)/,
+    'gracz widzi powód, dla którego 0 na blokera jest legalne');
+
+  // Bez pokrycia przez inne stwory etykieta pozostaje dotychczasowa (bez szumu).
+  const host2 = new ChoiceMiniEl('div');
+  renderDamageWizard(host2, {
+    view: COMBAT_VIEW, session: COMBAT_SESSION,
+    pending: { playerId: 'p1', entries: [{ attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: true,
+      blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3 }] }] },
+    defaultCommand: null, onComplete: () => {},
+  });
+  assert.match(host2.textContent, /śmiertelne 3\)/, 'bez pól W5 etykieta bez dopisku');
+  assert.ok(!/od innych w tym kroku/.test(host2.textContent), 'dopisek tylko gdy jest co pokazać');
+});

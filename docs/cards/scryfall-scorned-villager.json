@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=name%3A%22Scorned+Villager%22+set%3Adka",
+  "source": "https://api.scryfall.com/cards/6f35e364-81d9-4888-993b-acc7a53d963c",
   "print": "dka",
   "name": "Scorned Villager // Moonscarred Werewolf",
   "layout": "transform",
@@ -45,5 +45,6 @@
         "normal": "https://cards.scryfall.io/normal/back/6/f/6f35e364-81d9-4888-993b-acc7a53d963c.jpg?1783940808"
       }
     }
-  ]
+  ],
+  "proweniencja": "2026-09-12: source zacieśnione z wyszukiwania do adresu /cards/<id> — UUID odczytany z card_faces[0].image_uris tego snapshotu i równy imageUri katalogu (set DKA zgodny z arkuszem kolekcji tools/collection-art-ids.csv); poprzednie source: https://api.scryfall.com/cards/search?q=name%3A%22Scorned+Villager%22+set%3Adka"
 }

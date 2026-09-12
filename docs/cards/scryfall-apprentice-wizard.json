@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=!\"Apprentice Wizard\"+e:2xm",
+  "source": "https://api.scryfall.com/cards/e13026a8-7e3c-45b2-9838-080f14ae4b29",
   "print": "2xm",
   "name": "Apprentice Wizard",
   "mana_cost": "{1}{U}{U}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/e/1/e13026a8-7e3c-45b2-9838-080f14ae4b29.jpg?1783930205",
     "normal": "https://cards.scryfall.io/normal/front/e/1/e13026a8-7e3c-45b2-9838-080f14ae4b29.jpg?1783930205"
   },
-  "pobrano": "2026-08-02"
+  "pobrano": "2026-08-02",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set 2XM zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/search?q=!\"Apprentice Wizard\"+e:2xm"
 }

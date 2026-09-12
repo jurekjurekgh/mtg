@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=Giant+Spider&set=m19&format=json",
   "object": "card",
   "name": "Giant Spider",
   "lang": "en",
@@ -26,5 +27,6 @@
     "small": "https://cards.scryfall.io/small/front/8/0/80996b0d-cd44-445e-96de-677e0018255c.jpg?1783934535",
     "normal": "https://cards.scryfall.io/normal/front/8/0/80996b0d-cd44-445e-96de-677e0018255c.jpg?1783934535",
     "large": "https://cards.scryfall.io/large/front/8/0/80996b0d-cd44-445e-96de-677e0018255c.jpg?1783934535"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/80996b0d-cd44-445e-96de-677e0018255c): Core Set 2019 (M19) nr 183; UUID obrazu zgodny z `imageUri` w katalogu."
 }

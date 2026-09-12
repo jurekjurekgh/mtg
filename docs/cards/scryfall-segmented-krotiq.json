@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Segmented+Krotiq",
+  "source": "https://api.scryfall.com/cards/dcdbe824-f9c7-4f4d-af92-438b16057d99",
   "print": "dtk",
   "name": "Segmented Krotiq",
   "mana_cost": "{5}{G}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/d/c/dcdbe824-f9c7-4f4d-af92-438b16057d99.jpg?1783938576",
     "normal": "https://cards.scryfall.io/normal/front/d/c/dcdbe824-f9c7-4f4d-af92-438b16057d99.jpg?1783938576"
   },
-  "pobrano": "2026-08-01"
+  "pobrano": "2026-08-01",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set DTK zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Segmented+Krotiq"
 }

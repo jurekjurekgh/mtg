@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/search?q=!\"Scorpion%20Sentinel\"+e%3AFIN",
+  "source": "https://api.scryfall.com/cards/08ab5220-e5c1-472e-8217-97fd60e1773c",
   "print": "fin",
   "name": "Scorpion Sentinel",
   "mana_cost": "{1}{U}",
@@ -21,5 +21,6 @@
     "large": "https://cards.scryfall.io/large/front/0/8/08ab5220-e5c1-472e-8217-97fd60e1773c.jpg?1783906630",
     "normal": "https://cards.scryfall.io/normal/front/0/8/08ab5220-e5c1-472e-8217-97fd60e1773c.jpg?1783906630"
   },
-  "pobrano": "2026-08-03"
+  "pobrano": "2026-08-03",
+  "proweniencja": "2026-09-12: source zacieśnione z wyszukiwania do adresu /cards/<id> — UUID odczytany z image_uris tego snapshotu i równy imageUri katalogu (set FIN zgodny z arkuszem kolekcji tools/collection-art-ids.csv); poprzednie source: https://api.scryfall.com/cards/search?q=!\"Scorpion%20Sentinel\"+e%3AFIN"
 }

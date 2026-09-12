@@ -1,5 +1,5 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Nanoform+Sentinel",
+  "source": "https://api.scryfall.com/cards/3eeae8c3-7939-4c79-92f0-fbdb9c1b71d3",
   "print": "eoe",
   "name": "Nanoform Sentinel",
   "mana_cost": "{2}{U}",
@@ -15,5 +15,6 @@
   "collector_number": "71",
   "rarity": "common",
   "image_uris": { "large": "https://cards.scryfall.io/large/front/3/e/3eeae8c3-7939-4c79-92f0-fbdb9c1b71d3.jpg?1783905976" },
-  "pobrano": "2026-08-26"
+  "pobrano": "2026-08-26",
+  "proweniencja": "2026-09-12: source ustalone jako adres /cards/<id> — UUID odczytany z image_uris tego snapshotu (set EOE zgodny z arkuszem kolekcji tools/collection-art-ids.csv; schemat adresu potwierdzony online 2026-09-12 — docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md); poprzednie source: https://api.scryfall.com/cards/named?exact=Nanoform+Sentinel"
 }

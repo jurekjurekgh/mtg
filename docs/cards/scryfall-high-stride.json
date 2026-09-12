@@ -1,4 +1,5 @@
 {
+  "source": "https://api.scryfall.com/cards/named?exact=High+Stride&set=blb&format=json",
   "object": "card",
   "name": "High Stride",
   "lang": "en",
@@ -21,5 +22,6 @@
     "small": "https://cards.scryfall.io/small/front/0/9/09c8cf4b-8e65-4a1c-b458-28b5ab56b390.jpg?1783910809",
     "normal": "https://cards.scryfall.io/normal/front/0/9/09c8cf4b-8e65-4a1c-b458-28b5ab56b390.jpg?1783910809",
     "large": "https://cards.scryfall.io/large/front/0/9/09c8cf4b-8e65-4a1c-b458-28b5ab56b390.jpg?1783910809"
-  }
+  },
+  "zweryfikowano": "2026-09-12 — druk potwierdzony bezpośrednio ze Scryfall (api.scryfall.com/cards/09c8cf4b-8e65-4a1c-b458-28b5ab56b390): Bloomburrow (BLB) nr 176; UUID obrazu zgodny z `imageUri` w katalogu."
 }
