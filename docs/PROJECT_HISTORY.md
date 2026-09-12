@@ -9839,3 +9839,40 @@ audyt poprzedniego PR, inkrementalne commity.
 Pętla jakości (ADR 0021): build 61/3463,4 kB, Żywy Tester 3 świeże partie
 (20260910, 161803, 3141592) — DET0 i 0 niewycenionych ruchów bota; quick
 benchmark heuristic 84,7% (569/672), bez pełnego B0 (ADR 0018).
+
+## 2026-09-12 — W5: trample i lethal z obrażeń przydzielanych w tym samym kroku (PR #114, arena/01a0925f, `fa52619`)
+
+Trzeci i ostatni krok planu `PLAN_2026-09-11b-audyt-pr113-wyzwanie-3-5.md` (wyzwanie 5/5).
+Pomiar (`tools/probe-w5-trample-lethal-w-kroku.mjs`): p2 atakuje x (trample 5/5) i y (3/3),
+p1 blokuje OBA jednym w (2/2 z licznikiem +1/+1 = 3/3; drugi slot bloku ze statyki
+Cenn's Tactician). y przydziela w całe 3 = lethal, więc x może legalnie przydzielić 0 na w
+i 5 na gracza — silnik odrzucał to jako `illegal_damage_assignment:trample_blocker_below_lethal`,
+bo `lethalOf` liczyło tylko obrażenia już OZNACZONE na blokerze.
+
+Źródła online (ADR 0030, pobrane 2026-09-12; tappedout.net/mtg-questions/deathtouch-and-trample/,
+reddit.com/r/askajudge — cytaty dosłowne): CR 702.19b („When checking for assigned lethal damage,
+take into account damage already marked on the creature and damage from other creatures that's
+being assigned during the same combat damage step, but not any abilities or effects that might
+change the amount of damage that's actually dealt"), CR 702.2b (deathtouch: każde niezerowe
+obrażenia = lethal), CR 510.1e (sprawdza się SUMĘ przydziałów kroku).
+
+Naprawa: `assignedToBlockerThisPass` (wspólny iterator: jawne przydziały z mapy komendy, dla
+stworów bez decyzji — przydział domyślny, tylko ten sam przebieg, prewencja/protection pomijane),
+eksporty `damageAssignedToBlockerThisPass` i `lethalAssignedByOthersThisPass`,
+`validateDamageAssignment(..., context = { assignments, pass })`, pola `assignedByOthers`/
+`lethalByOthers` w widoku i bramka trample w wizardzie, która je odejmuje. Polityka domyślna
+(lethal-first) i oferta botów nietknięte → golden master bez churn. Przy okazji domknięta dziura
+klasy ZAWIESZENIE: komenda bez wpisu dla źródła bieżącej decyzji pytała w kółko o tę samą decyzję
+(`collected[id]` puste) — teraz brak wpisu = akceptacja wariantu domyślnego z oferty
+(L48: oferta == walidacja), a pending atakującego dostał jawne `attackerId`.
+
+Testy: W5/1–W5/8 (`test/wyzwanie-5-trample-lethal-z-tego-samego-kroku-702-19b.test.js`: pokrycie
+lethal przez drugiego atakującego, brak pokrycia, deathtouch CR 702.2b, izolacja przebiegów
+CR 510.4, pola widoku, walidator z kontekstem i bez, pusta mapa = default, pokrycie częściowe)
++ przypadek UI w `test/choice-request-ui.test.js`. Mutacje (L13) złapane: suma bez `byOthers`,
+brak pokrycia deathtouch, brak izolacji przebiegów, brak defaultu dla brakującego wpisu, bramka
+UI bez pól widoku, `lethalAssignedByOthersThisPass` → `false`.
+
+Bramki: `npm test` **5192/5192**, `npm run build` 61 modułów / 3521,5 kB, quick benchmark
+**84,2% (566/672)** (aggro 26,5%, random 5,1%, 672 mecze w 145,8 s) — IDENTYCZNIE jak przed W5,
+bez zawieszeń; `npm run test:all` 5193/5193 zmierzone po W4 (odświeżenie w E7).

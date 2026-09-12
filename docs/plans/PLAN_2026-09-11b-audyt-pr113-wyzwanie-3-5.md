@@ -130,7 +130,7 @@ dopisani po pomiarze, nie wymyśleni z góry).
       `resolve_damage_assignment` z score 0, scoreSum bez zmian. Bramki:
       `npm test` 5183/5183, build 61 modułów / 3515,4 kB, benchmark 84,2%
       (566/672) bez zmian i bez zawieszeń.
-- [ ] **W5 — wyzwanie 5/5: trample liczy lethal także z obrażeń przydzielanych
+- [x] **W5 — wyzwanie 5/5: trample liczy lethal także z obrażeń przydzielanych
       w tym samym kroku przez INNE stwory** (CR 702.19b, 702.2b). Kandydat
       **ZMIERZONY** 2026-09-12 (sonda `tools/probe-w5-trample-lethal-w-kroku.mjs`):
       p2 atakuje x (trample 5/5) i y (3/3), p1 blokuje OBA jednym w (2/2
@@ -161,6 +161,34 @@ dopisani po pomiarze, nie wymyśleni z góry).
       liczby w README wg pomiaru, wpis `docs/PROJECT_HISTORY.md`,
       `docs/setup/HANDOFF_2026-09-11b.md`, korekta starego planu (tezy 3 i 5
       nieaktualne), kumulatywny opis PR (REST PATCH — `gh pr edit` pada).
+
+      **ZROBIONE (`fa52619`)** — walidacja całego przydziału kroku, polityka
+      domyślna bez zmian:
+      * `assignedToBlockerThisPass` (wspólny iterator) + eksporty
+        `damageAssignedToBlockerThisPass` i `lethalAssignedByOthersThisPass`
+        (CR 702.2b: niezerowy przydział od źródła z deathtouch = lethal);
+        jawne przydziały z mapy komendy, dla stworów bez decyzji — przydział
+        domyślny, tylko ten sam przebieg (CR 510.4), prewencja/protection
+        pomijane („not any abilities or effects that might change the amount of
+        damage that's actually dealt").
+      * `validateDamageAssignment(..., context)` — `context = { assignments, pass }`;
+        warunek trample: `coveredByOthers || amount + byOthers >= lethal`.
+        Bez kontekstu zachowanie dotychczasowe (wołania jednostkowe).
+      * Widok niesie `assignedByOthers`/`lethalByOthers`, bramka trample
+        w wizardzie je odejmuje (inaczej UI blokowałoby przydział legalny wg CR).
+      * Przy okazji (dziura klasy ZAWIESZENIE, wykryta testem W5/7): komenda bez
+        wpisu dla źródła bieżącej decyzji pytała w kółko o to samo (`collected[id]`
+        puste). Teraz brak wpisu = akceptacja wariantu domyślnego z oferty
+        (L48: oferta == walidacja); pending atakującego dostał jawne `attackerId`.
+      * Testy: `test/wyzwanie-5-trample-lethal-z-tego-samego-kroku-702-19b.test.js`
+        W5/1–W5/8 + przypadek UI w `test/choice-request-ui.test.js`.
+        Mutacje (L13) złapane: suma bez `byOthers`, brak pokrycia deathtouch,
+        brak izolacji przebiegów, brak defaultu dla brakującego wpisu, bramka UI
+        bez pól widoku, `lethalAssignedByOthersThisPass` → `false`.
+      * Bramki: `npm test` **5192/5192** (golden master bota BEZ zmian — oferta
+        i polityka domyślna nietknięte), `npm run build` 61 modułów / 3521,5 kB,
+        quick benchmark **84,2% (566/672)**, aggro 26,5%, random 5,1%, 672 mecze
+        w 145,8 s — IDENTYCZNIE jak przed W5, bez zawieszeń.
 
 ## Kolejka commitów (każdy samodzielnie zielony: `npm test` + `npm run build`)
 
