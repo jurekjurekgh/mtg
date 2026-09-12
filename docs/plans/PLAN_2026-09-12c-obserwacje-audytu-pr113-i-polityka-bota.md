@@ -193,7 +193,11 @@ testowe do ponownego pomiaru (kod się od audytu zmienił).
 - Bramki końcowe: `npm test` **5232/5232**, build 61 modułów / **3533,1 kB**,
   benchmark **84,2% (566/672)** w 135,0 s, golden master bez zmian, Żywy Tester
   10 partii / 666 sond no-op / 0 zgłoszeń detektorów.
-- Kolejka na następną sesję: (1) O1 — odtworzenie wskazania „martwy sentinel"
-  z opisu właściciela (pomiar nie znalazł kandydata w logice), (2) do decyzji
-  właściciela: squash-merge PR #114, pełny B0 (ADR 0018), (3) zapadnia druków:
-  `bezSetu` 43 i `bezZrodla` 13 (snapshoty do przepisania pobraniem set-aware).
+- Kolejka na następną sesję — zaktualizowana decyzjami właściciela z 2026-09-12:
+  (1) O1 — **pominięte na polecenie właściciela** (pomiar nie znalazł kandydata
+  w logice); (2) do decyzji właściciela: squash-merge PR #114, pełny B0 (ADR 0018);
+  (3) zapadnia druków — **ZAMKNIĘTA** (`c0a1908`): `bezSetu` 43 → 0, `bezZrodla`
+  13 → 0, klasy narzędzia C 13 → 0 i F 43 → 0, B-source-uuid-spójny 32 → 88;
+  raport `docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md`. Otwarte
+  pozostały: 21 kart klasy E (wyszukiwanie z kwalifikatorem setu — zacieśnienie
+  do `/cards/<id>` to decyzja właściciela) i 7 snapshotów wymagających sieci.

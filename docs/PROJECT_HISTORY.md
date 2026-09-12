@@ -10025,3 +10025,36 @@ golden master bota bez zmian. Żywy Tester na świeżym `dist/` (L76): 10 partii
 `tmp-audyt-b4-2026-09-12/`, `tmp-audyt-b5-2026-09-12/`, M239). Kolejka: O1 (odtworzenie wskazania
 z opisu właściciela), zapadnia druków (`bezSetu` 43, `bezZrodla` 13). Do decyzji właściciela:
 squash-merge PR #114 i ewentualny pełny B0 (ADR 0018 — bez polecenia nie uruchamiamy).
+
+**Zapadnia druków zamknięta (2026-09-12, `c0a1908`, zlecenie właściciela „(3) zrób teraz").**
+Ratchet `test/zgloszenie-a-druk-karty-z-arkusza.test.js` wyliczał 43 snapshoty z `source` wyszukiwania
+bez setu (klasa F narzędzia) i 13 bez pola `source` (klasa C) — razem 56 kart, których snapshot nie
+dowodził druku z kolekcji. Pomiar poprzedzający naprawę pokazał, że TREŚĆ jest już poprawna: 56/56 ma
+set snapshotu zgodny z arkuszem `tools/collection-art-ids.csv` (porównanie bez względu na wielkość
+liter — `2XM` w arkuszu i `2xm` w snapshocie to zgodność, nie rozjazd), UUID z `image_uris` równy
+`imageUri` katalogu oraz obecne `name`/`set`/`collector_number`; brakowało wyłącznie jawnego zapisu
+prowieniencji, więc sieć nie była potrzebna do naprawy. Reguła w dwóch przypadkach: 13 surowych
+odpowiedzi Scryfall ma własne `uri = https://api.scryfall.com/cards/<id>` oraz `id` równy UUID obrazu
+— `source` ustawiono na kopię tego pola (dowód w tym samym pliku, bez adnotacji); 43 pliki z `source`
+wyszukiwania dostały `source = https://api.scryfall.com/cards/<UUID z image_uris>` oraz klucz
+`proweniencja` z datą, metodą, stwierdzeniem zgodności setu z arkuszem i POPRZEDNIM adresem (historia
+nie ginie). Skrypt walidował wszystkie 56 zmian przed zapisem któregokolwiek pliku (JSON poprawny,
+`source` równy oczekiwanemu, brak zmian poza `source`/`proweniencja`) — dwie wcześniejsze próby
+zatrzymały się na bramkach (zły regex końca obiektu; trzy pliki w trzecim wariancie formatowania)
+i nie zapisały nic. Zakres weryfikacji online jest wąski i tak udokumentowany: schemat adresu
+potwierdzono JEDNYM pobraniem (Apprentice Wizard — `name`/`set` `2xm`/`collector_number` 40, `id`
+i UUID obrazu identyczne, pole `uri` odpowiedzi równe adresowi), kolejne dwa pobrania zwróciły awarię
+proxy środowiska (`SignatureDoesNotMatch`), więc pozostałych 55 nie sprawdzono w sieci i opiera się na
+cross-checku offline. Pomiar po (`node tools/check-card-printings.mjs`, HEAD `582ffbe` vs po):
+C-bez-source-surowa-odpowiedz 13 → **0**, F-source-bez-set 43 → **0**, B-source-uuid-spójny 32 → **88**,
+A-source-set-aware 349 i E-source-wyszukiwanie 21 bez zmian, brak-snapshotu 51 bez zmian; fixture
+ratcheta `bezSetu` 0 / `bezZrodla` 0 / `uwagaSet` 1, `node --test` tego pliku 6/6, `npm test`
+**5232/5232** (liczba asercji bez zmian — ratchet przelicza listy i porównuje z fixture). Raport:
+`docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md`. Poza tym zamknięciem pozostały: 21 kart klasy E
+(adres wyszukiwania Z kwalifikatorem setu — ratchet je uznaje, zacieśnienie do `/cards/<id>` możliwe tą
+samą metodą, ale to decyzja właściciela), 7 snapshotów wymagających pobrania z sieci
+(`krallenhorde-wantons` ISD, `guidestone-compass` LCI, `shiva-warden-of-ice` FIN, `homicidal-brute` ISD,
+`ballista-wielder` VOW, `dire-strain-brawler` MID, `balamb-garden-airborne` FIN; pozostałe 44 karty bez
+snapshotu to tokeny i ziemie bazowe poza arkuszem) oraz 1 udokumentowany rozjazd `ethersworn-shieldmage`
+(arkusz `536CON` vs katalog `ARB`, pole `uwaga`, druk ARB potwierdzony przez właściciela 2026-08-05).
+O1 właściciel polecił pominąć, więc nie wraca do kolejki.
