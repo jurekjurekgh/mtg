@@ -10000,11 +10000,23 @@ przeczył (W5/E6/E7 były zrobione) — czyli dokładnie klasa F8 w dokumencie, 
 zaczepienia następnej sesji; zastąpiony skróconą HISTORIĄ z odesłaniem. Punkt „transkrypt z realnym
 podwójnym blokiem (Cenn's Tactician) nieprzeczytany" zmierzono zamiast przepisywać: 4 partie workiem
 mrocznym (seedy 331/2026/44/909, profile greedy/hoarder, także jako bot) — Cenn był dobierany,
-rzucany i wchodził na stół, ale panel podziału obrażeń nie wyrenderował się ani razu (0 wystąpień
-„podział/przydział/bloker"; jedyna karta z `grantsExtraBlockWithCounter` w katalogu i tylko w tym
-decku), więc punkt zostaje OTWARTY z wnioskiem, że potrzebny jest scenariusz deterministyczny na
-poziomie stołu, a nie polowanie na seed. Pokrycie regułowe podwójnego bloku w silniku jest
-(testy W4 i B1/6).
+rzucany i wchodził na stół, ale podwójnego bloku nie było. Punkt zawężono po uwadze właściciela
+(„przecież jest panel, jak blokuję") i ponownym pomiarze, bo pierwotny zapis był mylący (dotyczył
+tylko tych 4 partii i wzorca grep, który nie pasował do prawdziwych etykiet): panel DEKLARACJI
+BLOKÓW jest ćwiczony („Zatwierdź bloki" w 10 transkryptach, „Deklaracja blokujących" w 12, modal
+„Wybierz blokujących (przełączniki przy każdym atakującym)"), a wizard PODZIAŁU OBRAŻEŃ renderuje
+się od strony ATAKUJĄCEGO — `tmp-audyt-b5-2026-09-12/kaladesh-51-greedy.txt` linie 426–444:
+podwójny blok (Makeshift Mauler + Farbog Explorer na Merchant's Dockhand), modal „Rozdziel obrażenia
+bojowe — przydziel moc atakujących blokującym" z wierszami „wytrz. 5, śmiertelne 5" i steperami,
+przycisk „Użyj domyślnego przydziału (zabójcze obrażenia po kolei blokerów)", a w logu skutek 5 + 1
+— lethal-first w kolejności deklaracji (CR 510.1c), czyli polityka z B1 jest widoczna dla gracza.
+Otwarty zostaje TYLKO wizard po stronie BLOKERA (W3: jeden stwór blokujący dwóch atakujących dzieli
+własne obrażenia), bo wymaga Cenn's Tactician z licznikiem +1/+1 w momencie deklaracji bloków —
+potrzebny deterministyczny scenariusz stołu (wstrzyknięty stan) albo przegląd ręczny, nie polowanie
+na seed. Pokrycie regułowe tego przypadku w silniku jest (testy W3/W4 i B1/6: bez licznika drugi
+blok odrzucany „Blocker jest użyty więcej niż raz"). Wpis w handoffie brzmiał wcześniej „panel
+podziału obrażeń nie wyrenderował się ani razu" — klasa F8 we własnym dokumencie, skorygowana
+pomiarem zaraz po wykryciu.
 
 Bramki końcowe: `npm test` **5232/5232** (5201 przed sesją; +8 B2, +9 B4, +14 B5), `npm run build`
 61 modułów / **3533,1 kB**, quick benchmark **84,2% (566/672)** (aggro 26,5%, random 5,1%, 135,0 s),
