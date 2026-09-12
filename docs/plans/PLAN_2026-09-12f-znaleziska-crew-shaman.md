@@ -103,18 +103,28 @@ wybór (`validateBlockerDamageAssignment`). Mapowanie na Crew jest 1:1:
       do weryfikacji modelu celu przy fixie B). Rulingi Balamb: tylko
       DFC-generyczne (2025-06-06), brak crew-specyficznych. Dosłowne cytaty
       trafią do commitów i komentarzy strażników (ADR 0030 §3–4).
-- [ ] **E2. Silnik: domyślny podzbiór Crew/Saddle.** Kryterium: jedna oferta
-      z mądrym defaultem (testy: Crew 1/3, choroba, moc 0, n > 6, saddle,
-      determinizm); stare testy pinujące enumerację zaktualizowane
-      z uzasadnieniem (świadoma zmiana zachowania na zlecenie właściciela);
-      `npm test` + `npm run build` zielone.
-- [ ] **E3. UI: picker + etykiety (A1/A2).** Kryterium: testy DOM (picker
-      wielowyborowy, preselekcja defaultu, bramka sumy mocy, wysyłka jawnego
-      podzbioru, etykieta grupy); saddle komplementarnie; `npm test` + build.
-- [ ] **E4. A4: badge + linia typów.** Kryterium: repro (transform Balamb →
-      crew → kafel) PRZED naprawą; badge animacji + typy; testy; build.
-- [ ] **E5. B: Shaman.** Kryterium: testy (chory vs zdrowy, tapped, buff
-      defensywny bez zmiany, wielocelowo); mutacje L13; `npm test` + build.
+- [x] **E2. Silnik: domyślny podzbiór Crew/Saddle** (7fda5c8). Jedna oferta
+      z defaultem greedy (rosnąco po mocy, skip 0-power, determinizm po
+      battlefield order); silnik akceptuje każdy legalny podzbiór przy
+      aktywacji (jak discard); znacznik `crewed` na rozstrzygnięcie
+      (CR 702.122e), czyszczony z animacją/strefą/stroną DFC; sweep cytowań
+      701.36 → 702.122. Testy: test/zaloga-domyslny-podzbior (13).
+- [x] **E3. UI: picker + etykiety (A1/A2)** (62c0f55). Czasownik
+      Obsadź/Osiodłaj w commandLabel; kreator załogi (crewMode: wiersze
+      z mocą, licznik ≥ N, default pre-check, podgląd kart); czysty
+      crewWizardPlanFor (lustro filtra silnika) + cienki wiring w play()
+      PRZED kreatorem many (CR 601.2h). Testy: test/kreator-zalogi (12).
+- [x] **E4. A4: badge + linia typów** (7fda5c8 + 62c0f55). Znacznik
+      `crewed` w silniku (projekcja playerView) → info.crewedNow →
+      badge „obsadzony" (buildStateOverlay, obok „osiodłany"). Testy A4/1–4
+      (silnik) + A4/UI1–2 (mapowanie i badge). Linia typów: animacja już
+      wcześniej ustawiała typy stwora — brakujący był tylko badge.
+- [x] **E5. B: Shaman** (62c0f55). Sygnał `pump` w ofercie triggera
+      (triggerTargetPowerPumpOf, bliźniak debuffa, ADR 0002 — tylko dodatnia
+      SIŁA; +0/+Y i debuffy poza); bot na własnej turze: atakujący +25,
+      zdolny do ataku +15, niezdolny −60 (haste-aware); w cudzej turze
+      stara polityka (pump wspiera blok). Testy: test/bot-shaman-atakujacy
+      (6: sygnał, jednostka, sedno, haste, odmowa, cudza tura).
 - [ ] **E6. Pętla jakości.** Kryterium: quick benchmark (oczekiwana brak
       regresji / pomiar), golden master — jeśli churn, to ŚWIADOMY
       z uzasadnieniem jak W4; Żywy Tester na świeżym `dist/` (partie taliami
