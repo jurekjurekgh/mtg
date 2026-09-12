@@ -9932,3 +9932,61 @@ Do decyzji właściciela: squash-merge PR #114 i ewentualny pełny B0 (ADR 0018 
 nie uruchamiamy). Materiał na kolejną sesję: obserwacje audytu PR #113 (F1–F8, O1/O3/O4) oraz
 polityka bota przy przydziałach obrażeń (domyślny lethal-first nie korzysta z pokrycia lethal
 przez inne stwory — po W5 legalne, ale to wycena, nie reguły).
+
+## 2026-09-12c — obserwacje audytu PR #113 (F1–F8, O1/O3/O4) + polityka bota przy przydziałach
+
+Plan `PLAN_2026-09-12c-obserwacje-audytu-pr113-i-polityka-bota.md` odhaczony w całości (B1–B6).
+Zlecenie właściciela (B1, `2d30130`): domyślny przydział obrażeń atakującego z trample korzysta
+z lethal pokrywanego przez inne stwory w tym samym kroku (CR 702.19b/702.2b) — przydziały liczone
+SEKWENCYJNIE w kolejności deklaracji, a pokrycie czytane tylko z już ogłoszonych (`onlyAssigned`:
+polityka `true`, walidator W5 `false` — bez tego obaj atakujący zakładaliby, że lethal pokryje ten
+drugi, i dopłatę płaciłby ostatni zamiast pierwszego). Reguły się nie zmieniły (W5 już to
+zalegalizowało), zmienił się wybór domyślny: sonda pokazała ofertę `{x:[{w:3}]}` → `{x:[{w:0}]}`
+(5 obrażeń na gracza zamiast 3+2 marnowanych na blokera). Golden master bota BEZ zmian i quick
+benchmark IDENTYCZNY (84,2%, 566/672) — sytuacja nie występuje w korpusie 672 meczów, więc wartość
+zmiany to spójność polityki z walidatorem i lepszy punkt startowy wizarda dla człowieka.
+
+B2 (`ebae99d`, znalezisko F1): `stateFingerprint` rzutował 58 ze 100 pól obiektu i pomijał 23 klucze
+stanu — pomiar strażnikiem, nie notatką (notatka mówiła o 11 polach; klasa była większa). Projekcja
+generyczna reszty pól obiektu, 14 liczników tury, 5 pól stanu efektów i `madnessQueue` (kolejka
+odroczonych decyzji madness, M258) w `PENDING_DECISION_FIELDS`. Granica M323/D (odcisk pokazuje pola
+WARUNKUJĄCE możliwości, nie nośniki etykiet) zapisana jawnie z jednym źródłem prawdy w silniku:
+`copyNumber`, `objectSequence`, `commands`, `events`, `starterId`, `isDraw` — każde z powodem i pinem
+testowym. W sondzie no-op `lastManaSpend` (zapis zapłaconego kosztu, resources.js:346) stanął po
+stronie kosztu jak pula many; w odcisku został, bo warunkuje `treasureSpent`/`manaColorsSpent`
+(resources.js:1035). Cztery testy kodujące starą granicę (M323/D, probe U9 ×2, M104) przeszły bez
+zmian — granica uszanowana, nie nadpisana.
+
+B3 (`a00707d`, O4): trzy kopie reguły przynależności do przebiegu first strike (modułowa + dwie
+lokalne w `processCombatPass` i `buildDamageAssignmentView`) → jedna implementacja (L14/L41).
+
+B4 (`1e23847`, F7): `hasCreatureType` — jedyne miejsce w silniku znające changelinga, używane w 30
+miejscach w 8 modułach (notatka: 23) — miało ZERO pokrycia testowego. Test rodzinny (ADR 0002: karty
+i podtypy wyszukiwane mechanicznie w katalogu, kontrakt „typy niestworowe tędy nie przechodzą"
+sprawdzany skanem źródeł) od razu znalazł ROZJAZD REGUŁY: `effectiveSubtypesOnBattlefield` czytała
+surowe `object.subtypes` i ignorowała `typeGrant` (Unstable Frontier), więc `hasCreatureType(…, state)`
+odpowiadała starym typem lądu wbrew CR 305.7 („the land no longer has its old land type") i CR 613.1d;
+CR 205.3d wyjaśnia, dlaczego podtypy nielądowe (Dryad) zostają. Naprawa: delegacja do
+`effectiveSubtypes` (jedna implementacja); produkcja many już czytała poprawną ścieżką. Mutacje M1–M5
+złapane każda przez konkretny test.
+
+B5 (werdykty bez zmian w kodzie, dowody w `docs/audits/AUDYT_PR113_2026-09-11.md`): F2 odrzucone
+(`armedOnTurn` jest diagnostyczne, rejestr czyści cleanup `permanents.js:1136`), F3 odrzucone
+(wszystkie trzy emisje `permanent_cast` niosą `object` — `?.` jest obroną, nie dziurą), F5
+potwierdzone częściowo i przeniesione z przepisem (bez pinów są lokalne domknięcia bramki logu:
+`phaseHeaderFor`, `TRANSFORM_DIGEST_EVENTS`, `recordTurnEvent` i wrostkowa bramka 14 warunków ~2623;
+eksportowane `isBotMoveNoise` i `describeGameEvent` piny mają), F8 naprawione (liczby z pomiaru),
+O1 nie do odtworzenia (`grep sentinel` w src/ znajduje tylko nazwy kart — potrzebny opis właściciela),
+O3 bez akcji, F4 nie wraca.
+
+B6 (dokumenty): audyt PR #113 zapisany jako REKONSTRUKCJA z pomiarem 2026-09-12 — wpis E2
+w `PLAN_2026-09-11b` okazał się nieprecyzyjny (plik w tamtej sesji nie powstał) i został skorygowany;
+`HANDOFF_2026-09-12` dostał werdykty i bramki z pomiaru; opis PR #114 zaktualizowany przez REST PATCH
+(`gh pr edit` na tym repo pada).
+
+Bramki końcowe: `npm test` **5218/5218** (5201 przed sesją; +8 B2, +9 B4), `npm run build`
+61 modułów / **3530,6 kB**, quick benchmark **84,2% (566/672)** (aggro 26,5%, random 5,1%, 135,0 s),
+golden master bota bez zmian. Żywy Tester na świeżym `dist/` (L76): 7 partii, 362 sondy no-op,
+0 zgłoszeń detektorów, 0 niewycenionych ruchów bota; transkrypty poza repo (`tmp-audyt-b2-2026-09-12/`,
+`tmp-audyt-b4-2026-09-12/`, M239). Do decyzji właściciela: squash-merge PR #114 i ewentualny pełny B0
+(ADR 0018 — bez polecenia nie uruchamiamy).

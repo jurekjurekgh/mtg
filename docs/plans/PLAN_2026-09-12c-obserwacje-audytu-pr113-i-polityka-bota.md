@@ -84,7 +84,7 @@ testowe do ponownego pomiaru (kod się od audytu zmienił).
 
 ## Kroki
 
-- [ ] **B1 — polityka domyślna trample korzysta z pokrycia lethal (zlecenie
+- [x] **B1 — polityka domyślna trample korzysta z pokrycia lethal (zlecenie
       właściciela).** `defaultDamageAssignment` liczy przydziały SEKWENCYJNIE
       w kolejności deklaracji i dla atakującego z trample pomija dopłatę do
       lethal, który już pokrywają inni (CR 702.19b: „damage from other creatures
@@ -94,7 +94,7 @@ testowe do ponownego pomiaru (kod się od audytu zmienił).
       Pomiar: golden master (ile decyzji i jaki scoreSum), quick benchmark
       (win-rate przed/po — regresja = wycofać zmianę), test RED→GREEN + mutacje
       (L13). Etykieta wizarda już wyjaśnia pokrycie (F-E6-2, `078e6ed`).
-- [ ] **B2 — F1: odcisk obejmuje stan zmieniający przyszłe możliwości +
+- [x] **B2 — F1: odcisk obejmuje stan zmieniający przyszłe możliwości +
       STRAŻNIK.** Projekcja pól obiektu i liczników turowych; osobna, jawna
       lista pól POMIJANYCH z powodem (stałe gry: `starterId`, `isDraw`), żeby
       „pomijam, bo zapomniałem" i „pomijam, bo tak trzeba" były rozróżnialne.
@@ -102,20 +102,20 @@ testowe do ponownego pomiaru (kod się od audytu zmienił).
       projekcja ALBO wpis na białej liście — klasa nie może wrócić po cichu
       (L16/L28). Weryfikacja dwustronna (L27): na stanie sprzed naprawy strażnik
       MUSI krzyczeć, po naprawie milczeć.
-- [ ] **B3 — O4: jedna implementacja przynależności do przebiegu.** Usunąć
+- [x] **B3 — O4: jedna implementacja przynależności do przebiegu.** Usunąć
       lokalne domknięcia w `processCombatPass` na rzecz modułowych helperów
       (bez zmiany zachowania; testy W3/W4/W5 muszą pozostać zielone).
-- [ ] **B4 — F7: inwentaryzacja `hasCreatureType` + test.** Pomiar liczby miejsc
+- [x] **B4 — F7: inwentaryzacja `hasCreatureType` + test.** Pomiar liczby miejsc
       i pokrycia; jeśli brak testu jednostkowego — test na rodzinę (changeling,
       typy warunkowe, `creature_you_control`), nie po jednej karcie (ADR 0002).
-- [ ] **B5 — F2/F3/F5/F8/O1/O3: pomiar każdego wskaźnika z osobna i werdykt.**
+- [x] **B5 — F2/F3/F5/F8/O1/O3: pomiar każdego wskaźnika z osobna i werdykt.**
       Wskaźniki z notatki: `effects.js:1079` (F2), `triggers.js ~2735` (F3),
       `session.js:2623`/`:3226` (F5, numery przesunięte po E6), nieaktualne
       liczby w komentarzach (F8), martwy sentinel (O1), „nieszkodliwe" (O3).
       Każdy punkt: zmierzyć w dzisiejszym kodzie, zapisać werdykt (naprawa ALBO
       odrzucenie z dowodem) — bez zgadywania, co autor miał na myśli.
       F4 odrzucone wcześniej jako fałszywy pozytyw — NIE wracać.
-- [ ] **B6 — dokumenty.** Utworzenie `docs/audits/AUDYT_PR113_2026-09-11.md`
+- [x] **B6 — dokumenty.** Utworzenie `docs/audits/AUDYT_PR113_2026-09-11.md`
       jako REKONSTRUKCJI z dzisiejszym pomiarem (uczciwie oznaczonej: szczegół
       oryginalny utracony), korekta wpisu E2 w `PLAN_2026-09-11b`, wpisy
       w `docs/PROJECT_HISTORY.md` i `docs/setup/HANDOFF_2026-09-12.md`,
@@ -150,3 +150,45 @@ testowe do ponownego pomiaru (kod się od audytu zmienił).
   pola przez `state.objects.set(id, Object.freeze({...}))`, inaczej pomiar kłamie.
 - Zmiany dokumentów uruchamiają testy czytające dokumenty
   (`dokumentacja-budzet-lektury`, `m197-plany-kolekcji`, `family-audit.mjs`).
+
+## Wyniki (pomiar 2026-09-12, po wykonaniu)
+
+- **B1** (`2d30130`): domyślny przydział trample korzysta z pokrycia lethal
+  (CR 702.19b/702.2b), sekwencyjnie w kolejności deklaracji, `onlyAssigned`
+  oddziela politykę od walidatora. Sonda: oferta `{x:[{w:3}]}` → `{x:[{w:0}]}`
+  (5 na gracza zamiast 3+2). Golden master BEZ zmian, benchmark IDENTYCZNY
+  (84,2% / 566 z 672) — sytuacja nie występuje w korpusie; wartość = spójność
+  z W5 i lepszy domyślny przydział dla człowieka. Testy B1/1–B1/6; mutacje
+  M1/M2/M4/M5 złapane, **M3 równoważna** (udokumentowana, nie łapana na siłę).
+- **B2** (`ebae99d`): odcisk = 51 brakujących pól obiektu (projekcja generyczna
+  `...projectValue(rest)`) + 14 liczników tury + 5 pól stanu efektów +
+  `madnessQueue`; wykluczenia etykiet jawne z powodem (`copyNumber` — pin M323/D,
+  `objectSequence` — generator id, `commands`/`events` — dzienniki, `starterId`/
+  `isDraw` — stałe); strażnik pokrycia B2/1–B2/2 (uniwersum = fabryka ∪ token),
+  sondy zachowania B2/3–B2/5b, pin granicy B2/7. Sonda no-op: `lastManaSpend`
+  zaklasyfikowany po stronie KOSZTU. Cztery testy kodujące starą granicę
+  (M323/D, U9 ×2, M104) zostały zielone BEZ zmian. Strażnik dwustronny:
+  czerwony na `fingerprint.js` sprzed naprawy.
+- **B3** (`a00707d`): jedna implementacja przynależności do przebiegu — usunięte
+  lokalne domknięcia w `processCombatPass` i `buildDamageAssignmentView`
+  (`grep` po naprawie: 2 wystąpienia reguły, oba w definicjach modułowych).
+- **B4** (`1e23847`): test rodzinny `hasCreatureType` (B4/0–B4/8: changeling =
+  każdy typ stworów z katalogu, każda strefa, zakrycie CR 708.2a, grant EOT,
+  `typeGrant` przez silnik, straże, skan źródeł pod kontrakt „typy niestworowe
+  tędy nie przechodzą") + naprawa rozjazdu reguły: `effectiveSubtypesOnBattlefield`
+  deleguje do `effectiveSubtypes` (CR 305.7/613.1d/205.3d). Mutacje M1–M5 złapane.
+- **B5**: werdykty z dowodem w `docs/audits/AUDYT_PR113_2026-09-11.md` —
+  F2 i F3 odrzucone (pomiar: `armedOnTurn` diagnostyczne + cleanup czyści rejestr;
+  wszystkie emisje `permanent_cast` niosą `object`), F5 potwierdzone częściowo
+  i przeniesione z przepisem (lokalne domknięcia bramki logu), F8 naprawione
+  (liczby z pomiaru), O1 nie do odtworzenia, O3 bez akcji, F4 nie wraca.
+- **B6**: ten plan odhaczony, audyt zapisany jako REKONSTRUKCJA, wpis E2
+  w `PLAN_2026-09-11b` skorygowany, `HANDOFF_2026-09-12` i `PROJECT_HISTORY`
+  zaktualizowane, opis PR #114 przez REST PATCH, Żywy Tester: 7 partii na
+  świeżym `dist/`, 362 sondy no-op, 0 zgłoszeń detektorów.
+- Bramki końcowe: `npm test` **5218/5218**, build 61 modułów / **3530,6 kB**,
+  benchmark **84,2% (566/672)** w 135,0 s, golden master bez zmian.
+- Kolejka na następną sesję: (1) F5 — ekstrakcja wrostkowej bramki logu gracza
+  (`session.js` ~2623) do eksportowanego predykatu + test rodzinny (przepis
+  w pliku audytu), (2) O1 — odtworzenie wskazania z opisu właściciela,
+  (3) do decyzji właściciela: squash-merge PR #114, pełny B0 (ADR 0018).

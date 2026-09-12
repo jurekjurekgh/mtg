@@ -58,6 +58,16 @@ dopisani po pomiarze, nie wymyśleni z góry).
       testy RED→GREEN i weryfikacja mutacyjna (L13), kompletność widoku
       (ADR 0017 — `enchantPlayer`, `enchantedPlayerId`, `cursedPlayerId`),
       choke pointy (L107). Wynik: `docs/audits/AUDYT_PR113_2026-09-11.md`
+      **KOREKTA 2026-09-12c (L7/L92):** wpis był nieprecyzyjny — plik
+      `docs/audits/AUDYT_PR113_2026-09-11.md` w tamtej sesji NIE powstał
+      (`ls docs/audits` — brak takiej pozycji), a obserwacje F1–F8/O1–O4
+      przetrwały tylko jako jednozdaniowy skrót w
+      `docs/setup/HANDOFF_2026-09-12.md` (~linie 200–206). Audyt wykonano
+      ponownie POMIAREM 2026-09-12 i zapisano jako rekonstrukcję (uczciwie
+      oznaczoną) pod tym samym adresem. Werdykty: F1, F7, F8, O4 — naprawione
+      (`ebae99d`, `1e23847`, `a00707d`); F2, F3 — odrzucone z dowodem; F5 —
+      potwierdzone częściowo, naprawa przeniesiona z przepisem; O1 — nie do
+      odtworzenia (skrót nie wskazuje miejsca); O3 — bez akcji; F4 — nie wraca.
       + sekcja w opisie PR. Znalezione błędy → F1…Fn, każdy osobnym commitem.
       **ZROBIONE** — `docs/audits/AUDYT_PR113_2026-09-11.md` (54 pliki, znalezione
       F1–F8 + O1/O3/O4) i sekcja 1 opisu PR #114; naprawy znalezisk w commitach
