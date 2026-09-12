@@ -5388,17 +5388,21 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_damage_assignment') return reject('damage_assignment_unresolved');
     if (cmd.playerId !== state.pendingDamageAssignment.playerId) return reject('damage_assignment_not_your_decision');
     const pending = state.pendingDamageAssignment;
-    const assignments = cmd.assignments ?? {};
+    const submitted = cmd.assignments ?? {};
     // W3 (CR 510.1c/d): kluczami przydziału są ATAKUJĄCY (blokerzy jako cele)
     // albo — przy role 'blocker' — BLOKERZY (atakujący jako cele). Walidacja
     // musi być po tej samej stronie co decyzja (L48: oferta == walidacja).
     const isBlockerRole = pending.role === 'blocker';
-    for (const sourceId of Object.keys(assignments)) {
+    for (const sourceId of Object.keys(submitted)) {
       const err = isBlockerRole
-        ? validateBlockerDamageAssignment(state, sourceId, assignments[sourceId])
-        : validateDamageAssignment(state, sourceId, assignments[sourceId]);
+        ? validateBlockerDamageAssignment(state, sourceId, submitted[sourceId])
+        : validateDamageAssignment(state, sourceId, submitted[sourceId]);
       if (err) return reject(`illegal_damage_assignment:${err}`);
     }
+    // W4 (CR 510.1/510.2): wszystkie przydziały ogłasza się PRZED zadaniem
+    // obrażeń, więc przebieg zbiera kolejne decyzje i niesie je razem —
+    // wcześniejsze wybory gracza nie mogą zostać zastąpione domyślnymi.
+    const assignments = { ...(pending.assignmentsSoFar ?? {}), ...submitted };
     state.pendingDamageAssignment = null;
     try {
       const e = resolveCombatDamage(state, pending.defendingPlayerId, {

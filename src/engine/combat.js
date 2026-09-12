@@ -423,11 +423,10 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
   // W3 (CR 510.1d): przebieg ma dwie fazy — atakujący, potem blokujący.
   // Wznowienie po decyzji BLOKERA nie może powtórzyć fazy atakujących
   // (obrażenia zostały już zadane), więc resume niesie `phase`.
-  const startPhase = resume ? (resume.phase ?? 'attackers') : 'attackers';
-  // W3: przydziały z resume należą TYLKO do swojej fazy (klucze atakujących vs
-  // blokerów) — inaczej jedna decyzja gasiłaby drugą w tym samym przebiegu.
-  let assignmentResult = resume && startPhase !== 'blockers' ? resume.assignments : null;
-  let blockerAssignmentResult = resume && startPhase === 'blockers' ? resume.assignments : null;
+  const startPhase = resume ? (resume.phase ?? 'assign-attackers') : 'assign-attackers';
+  // W3/W4: jedna mapa zebranych przydziałów (klucze = id atakujących i id
+  // blokerów) niesiona przez kolejne decyzje tego samego przebiegu.
+  let assignments = resume ? resume.assignments : null;
   // Dwa przebiegi obrażeń (CR 510.4/510.5 w minimalnym wymiarze): w kroku
   // first strike zadają stwory z first strike (atakujący i blokujący), po
   // state-based actions — stwory bez first strike. W obrębie przebiegu
@@ -437,16 +436,15 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
     const pass = passes[pi];
     if (state.status !== 'active') break;
     const from = pi === startIndex ? startFrom : 0;
-    const phase = pi === startIndex ? startPhase : 'attackers';
+    const phase = pi === startIndex ? startPhase : 'assign-attackers';
     // M66 (R): rozdzielanie obrażeń przy wielu blokerach/trample to decyzja
     // ATAKUJĄCEGO (CR 510.1c/d). Gdy przebieg napotka taką sytuację, ustawia
     // pendingDamageAssignment i kończy komendę — reszta przebiegu wykona się
     // po resolve_damage_assignment (resume).
-    if (!processCombatPass(state, pass, events, defendingPlayerId, from, assignmentResult, phase, blockerAssignmentResult)) {
+    if (!processCombatPass(state, pass, events, defendingPlayerId, from, assignments, phase)) {
       return events;
     }
-    assignmentResult = null;
-    blockerAssignmentResult = null;
+    assignments = null;
     if (pass) {
       // Między przebiegami: state-based actions rozstrzygają śmiertelne
       // obrażenia z first strike — zabite stwory nie biorą udziału w zwykłym
@@ -643,11 +641,20 @@ export function buildDamageAssignmentView(state, viewerId = null) {
   if (pending.role === 'blocker') {
     // W3 (CR 510.1d): widok podziału BLOKERA — ten sam wizard co dla
     // atakującego, tylko role odwrócone (bloker = źródło mocy, atakujący = cele).
-    const blocker = state.objects.get(pending.blockerId);
-    if (blocker && blocker.zone === 'battlefield') {
-      const targets = blockedAttackersOf(state, pending.blockerId);
+    // W4 (CR 510.1): widok niesie WSZYSTKIE blokery czekające na przydział w tym
+    // przebiegu, więc jedna komenda gracza zamyka całą fazę ogłoszeń.
+    const collected = pending.assignmentsSoFar ?? {};
+    const order = blockerOrderOf(state);
+    for (let j = pending.resumeFrom; j < order.length; j += 1) {
+      const blockerId = order[j];
+      const blocker = state.objects.get(blockerId);
+      if (!blocker || blocker.zone !== 'battlefield') continue;
+      if (pass ? !inFirstStrikePass(blockerId) : !inRegularPass(blockerId)) continue;
+      if (collected[blockerId]) continue;
+      const targets = blockedAttackersOf(state, blockerId);
+      if (!needsBlockerDamageAssignmentDecision(state, blocker, targets)) continue;
       entries.push({
-        blockerId: pending.blockerId,
+        blockerId,
         cardId: faceId(blocker),
         power: combatDamageAmount(blocker, state),
         ...(combatDamageByToughness(state, blocker) ? { byToughness: true } : {}),
@@ -675,6 +682,8 @@ export function buildDamageAssignmentView(state, viewerId = null) {
     const wasBlocked = state.combat.blockedAttackers?.has(attackerId) ?? state.combat.blockers.has(attackerId);
     if (!wasBlocked || blockers.length === 0) continue;
     if (!needsDamageAssignmentDecision(state, attacker, blockers)) continue;
+    // W4: decyzje zebrane wcześniej (wizard niesie wszystkie wpisy) nie wracają.
+    if ((pending.assignmentsSoFar ?? {})[attackerId]) continue;
     entries.push({
       attackerId,
       attackerCardId: faceId(attacker),
@@ -766,14 +775,36 @@ export function validateDamageAssignment(state, attackerId, assignment) {
 }
 
 /**
- * Jeden przebieg obrażeń. Zwraca false, gdy zakolejkowano decyzję
+ * Jeden przebieg obrażeń (CR 510). Zwraca false, gdy zakolejkowano decyzję
  * rozdzielania (pendingDamageAssignment) — reszta przebiegu czeka.
+ *
+ * Przebieg ma TRZY fazy, dokładnie jak krok obrażeń bojowych:
+ *  1. `assign-attackers` — aktywny gracz ogłasza przydziały atakujących
+ *     (CR 510.1: „First, the active player announces how each attacking creature
+ *     assigns its combat damage");
+ *  2. `assign-blockers` — obrońca ogłasza przydziały blokujących („...then the
+ *     defending player announces how each blocking creature assigns its combat
+ *     damage");
+ *  3. zadanie obrażeń — „Second, all combat damage that's been assigned is dealt
+ *     simultaneously" (CR 510.2). Kwoty i przydziały domyślne liczone są RAZ, na
+ *     początku tej fazy, więc to, co dzieje się w trakcie zadawania (liczniki
+ *     −1/−1 z infect, CR 702.3), nie zmienia przydzielonej mocy.
+ * Między ogłoszeniem przydziałów a zadaniem obrażeń nie ma priorytetu ani akcji
+ * stanowych (CR 510.2: „No player has the chance to cast spells or activate
+ * abilities between the time combat damage is assigned and the time it's dealt";
+ * CR 704.3 — SBA są sprawdzane, gdy gracz DOSTAŁBY priorytet, a ten w kroku
+ * obrażeń jest dopiero po zadaniu, CR 510.3), więc stwór, który ginie od obrażeń
+ * tego samego kroku, NAJPIERW zadaje swoje. Dlatego decyzje zbieramy przed
+ * zadaniem czegokolwiek: fazy 1 i 2 widzą stan z początku przebiegu i nie trzeba
+ * trzymać snapshotów mocy w stanie gry.
  */
-function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, assignmentResult, phase = 'attackers', blockerAssignments = null) {
+function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, assignments, phase = 'assign-attackers') {
   const aliveOnBattlefield = (id) => {
     const object = state.objects.get(id);
     return Boolean(object && object.zone === 'battlefield');
   };
+  // CR 510.4/510.5: w przebiegu first strike zadają stwory z first/double
+  // strike, w zwykłym — bez first strike oraz z double strike.
   const inFirstStrikePass = (id) => {
     const object = state.objects.get(id);
     return Boolean(object) && (hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
@@ -782,87 +813,64 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
     const object = state.objects.get(id);
     return Boolean(object) && (!hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
   };
-  // ---- faza atakujących (CR 510.1: „First, the active player announces how
-  // each attacking creature assigns its combat damage...") ----
-  if (phase !== 'blockers') {
-  for (let i = resumeFrom; i < state.combat.attackers.length; i += 1) {
-    const attackerId = state.combat.attackers[i];
-    const attacker = state.objects.get(attackerId);
-    if (!attacker || attacker.zone !== 'battlefield') continue;
-    const attackersTurn = pass ? inFirstStrikePass(attackerId) : inRegularPass(attackerId);
-    const blockers = (state.combat.blockers.get(attackerId) ?? []).filter(aliveOnBattlefield);
-    const wasBlocked = state.combat.blockedAttackers?.has(attackerId) ?? state.combat.blockers.has(attackerId);
-    if (attackersTurn) {
-      const amount = combatDamageAmount(attacker, state);
-      if (!wasBlocked) {
-        dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, amount);
-      } else if (blockers.length === 0) {
-        // CR 509.1h: zablokowany atakujący nie zadaje obrażeń graczowi.
-        // Trample może przejść przez pustą listę blockerów, bo nie ma już
-        // obrażeń lethal do przydzielenia pozostałym stworom.
-        if (hasKeyword(state, attacker, 'trample')) {
-          dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, amount);
-        }
-      } else if (assignmentResult) {
-        // Wznowienie po decyzji gracza: przydziały gracza (albo domyślne dla
-        // atakujących, których decyzja nie dotyczyła).
-        const assignment = assignmentResult[attackerId] ?? defaultDamageAssignment(state, attacker, blockers, amount);
-        assignDamageToBlockers(state, events, attacker, attackerId, blockers, amount, assignment);
-      } else if (needsDamageAssignmentDecision(state, attacker, blockers)) {
-        // M66 (R): decyzja gracza — CR 510.1c/d. Bez enumeracji kombinacji:
-        // PlayerView niesie dane, legalCommands oferuje JEDEN domyślny wariant,
-        // gracz-człowiek dostaje wizard (choice-request.js).
-        state.pendingDamageAssignment = {
-          playerId: state.combat.attackingPlayerId,
-          pass,
-          resumeFrom: i,
-          defendingPlayerId,
-          restorePriorityTo: state.turn.priorityPlayerId,
-        };
-        state.turn.priorityPlayerId = state.combat.attackingPlayerId;
-        const required = event('damage_assignment_required', { playerId: state.combat.attackingPlayerId });
-        state.events.push(required);
-        events.push(required);
-        return false;
-      } else {
-        // Jeden bloker, bez trample — pełna moc (M66 D): 3/3 vs 1/1 zadaje 3.
-        const assignment = singleBlockerFullAssignment(blockers, amount);
-        assignDamageToBlockers(state, events, attacker, attackerId, blockers, amount, assignment);
-      }
+  const inPass = (id) => (pass ? inFirstStrikePass(id) : inRegularPass(id));
+  // Zebrane dotąd przydziały (klucze: id atakujących i id blokerów — identyfikatory
+  // obiektów się nie pokrywają, więc jedna mapa wystarcza na cały przebieg).
+  const collected = assignments ?? {};
+  const attackerIds = state.combat.attackers;
+  const blockerOrder = blockerOrderOf(state);
+  const blockersOf = (attackerId) => (state.combat.blockers.get(attackerId) ?? []).filter(aliveOnBattlefield);
+  const wasBlockedOf = (attackerId) => (state.combat.blockedAttackers?.has(attackerId) ?? state.combat.blockers.has(attackerId));
+
+  // ---- Faza 1: przydziały ATAKUJĄCYCH (CR 510.1c, trample CR 702.19b) ----
+  if (phase === 'assign-attackers') {
+    for (let i = resumeFrom; i < attackerIds.length; i += 1) {
+      const attackerId = attackerIds[i];
+      const attacker = state.objects.get(attackerId);
+      if (!attacker || attacker.zone !== 'battlefield' || !inPass(attackerId)) continue;
+      const blockers = blockersOf(attackerId);
+      if (!wasBlockedOf(attackerId) || blockers.length === 0) continue;
+      // Wizard niesie przydziały WSZYSTKICH wpisów widoku, więc raz zebrana
+      // decyzja nie jest pytana ponownie (CR 510.1e: sprawdza się sumę przydziałów).
+      if (collected[attackerId]) continue;
+      if (!needsDamageAssignmentDecision(state, attacker, blockers)) continue;
+      state.pendingDamageAssignment = {
+        playerId: state.combat.attackingPlayerId,
+        role: 'attacker',
+        pass,
+        phase: 'assign-attackers',
+        resumeFrom: i,
+        assignmentsSoFar: collected,
+        defendingPlayerId,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = state.combat.attackingPlayerId;
+      const required = event('damage_assignment_required', { playerId: state.combat.attackingPlayerId });
+      state.events.push(required);
+      events.push(required);
+      return false;
     }
   }
-  }
 
-  // ---- faza blokerów (CR 510.1: „...then the defending player announces how
-  // each blocking creature assigns its combat damage"; CR 510.1d: bloker dwóch
-  // lub więcej atakujących DZIELI moc między nich — stan sprzed W3 zadawał pełną
-  // moc każdemu z osobna). Kolejność = po atakujących, w kolejności deklaracji.
-  const blockerOrder = blockerOrderOf(state);
-  for (let j = phase === 'blockers' ? resumeFrom : 0; j < blockerOrder.length; j += 1) {
-    const blockerId = blockerOrder[j];
-    const blocker = state.objects.get(blockerId);
-    if (!blocker || blocker.zone !== 'battlefield') continue;
-    // CR 510.5: bloker z first strike zadaje w pierwszym przebiegu, bez — w drugim.
-    if (pass ? !inFirstStrikePass(blockerId) : !inRegularPass(blockerId)) continue;
-    const targets = blockedAttackersOf(state, blockerId);
-    if (targets.length === 0) continue; // CR 510.1d: nie blokuje → nie przydziela
-    const amount = combatDamageAmount(blocker, state);
-    let assignment;
-    if (blockerAssignments) {
-      // Wznowienie po decyzji BLOKERA: podział gracza (albo domyślny dla
-      // blokerów, których decyzja nie dotyczyła). Mapa jest osobna od
-      // `assignmentResult` (klucze atakujących) — inaczej wznowienie decyzji
-      // atakującego pochłaniałoby decyzję blokera w tej samej rundzie.
-      assignment = blockerAssignments[blockerId] ?? defaultBlockerDamageAssignment(state, blocker, targets, amount);
-    } else if (needsBlockerDamageAssignmentDecision(state, blocker, targets)) {
+  // ---- Faza 2: przydziały BLOKUJĄCYCH (CR 510.1d) ----
+  if (phase === 'assign-attackers' || phase === 'assign-blockers') {
+    for (let j = phase === 'assign-blockers' ? resumeFrom : 0; j < blockerOrder.length; j += 1) {
+      const blockerId = blockerOrder[j];
+      const blocker = state.objects.get(blockerId);
+      if (!blocker || blocker.zone !== 'battlefield' || !inPass(blockerId)) continue;
+      const targets = blockedAttackersOf(state, blockerId);
+      // Jeden atakujący = pełna moc (CR 510.1d), moc 0 = brak przydziału (510.1a).
+      if (targets.length < 2 || collected[blockerId]) continue;
+      if (!needsBlockerDamageAssignmentDecision(state, blocker, targets)) continue;
       state.pendingDamageAssignment = {
         playerId: blocker.controllerId,
         role: 'blocker',
         blockerId,
         attackerIds: targets,
         pass,
-        phase: 'blockers',
+        phase: 'assign-blockers',
         resumeFrom: j,
+        assignmentsSoFar: collected,
         defendingPlayerId,
         restorePriorityTo: state.turn.priorityPlayerId,
       };
@@ -871,13 +879,56 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
       state.events.push(required);
       events.push(required);
       return false;
-    } else {
-      // Jeden atakujący (CR 510.1d zdanie 3) albo moc 0 (CR 510.1a) — bez decyzji.
-      assignment = targets.length === 1
-        ? [{ attackerId: targets[0], amount }]
-        : defaultBlockerDamageAssignment(state, blocker, targets, amount);
     }
-    assignDamageToAttackers(state, events, blocker, blockerId, targets, amount, assignment);
+  }
+
+  // ---- Faza 3: plan obrażeń liczony w całości PRZED zadaniem (CR 510.2) ----
+  const attackerPlan = [];
+  for (const attackerId of attackerIds) {
+    const attacker = state.objects.get(attackerId);
+    if (!attacker || attacker.zone !== 'battlefield' || !inPass(attackerId)) continue;
+    const blockers = blockersOf(attackerId);
+    const wasBlocked = wasBlockedOf(attackerId);
+    const amount = combatDamageAmount(attacker, state);
+    if (!wasBlocked || blockers.length === 0) {
+      // CR 509.1h: zablokowany atakujący nie zadaje obrażeń graczowi. Trample
+      // może przejść przez pustą listę blokerów, bo nie ma już komu przydzielić
+      // obrażeń lethal (CR 702.19b).
+      attackerPlan.push({ attackerId, attacker, amount, blockers: null, assignment: null, toPlayer: !wasBlocked || hasKeyword(state, attacker, 'trample') });
+      continue;
+    }
+    const assignment = collected[attackerId]
+      ?? (needsDamageAssignmentDecision(state, attacker, blockers)
+        // M66 (R): przydział gracza albo domyślny lethal-first (boty).
+        ? defaultDamageAssignment(state, attacker, blockers, amount)
+        // Jeden bloker bez trample: pełna moc (M66 D) — 3/3 vs 1/1 zadaje 3.
+        : singleBlockerFullAssignment(blockers, amount));
+    attackerPlan.push({ attackerId, attacker, amount, blockers, assignment, toPlayer: false });
+  }
+  const blockerPlan = [];
+  for (const blockerId of blockerOrder) {
+    const blocker = state.objects.get(blockerId);
+    if (!blocker || blocker.zone !== 'battlefield' || !inPass(blockerId)) continue;
+    const targets = blockedAttackersOf(state, blockerId);
+    if (targets.length === 0) continue; // CR 510.1d: nie blokuje → nie przydziela
+    const amount = combatDamageAmount(blocker, state);
+    const assignment = collected[blockerId]
+      ?? (targets.length === 1
+        ? [{ attackerId: targets[0], amount }]
+        : defaultBlockerDamageAssignment(state, blocker, targets, amount));
+    blockerPlan.push({ blockerId, blocker, targets, amount, assignment });
+  }
+
+  // ---- Faza 3: zadanie (najpierw atakujący, potem blokujący — CR 510.1) ----
+  for (const plan of attackerPlan) {
+    if (plan.blockers === null) {
+      if (plan.toPlayer) dealCombatDamageToPlayer(state, events, plan.attackerId, defendingPlayerId, plan.amount);
+    } else {
+      assignDamageToBlockers(state, events, plan.attacker, plan.attackerId, plan.blockers, plan.amount, plan.assignment);
+    }
+  }
+  for (const plan of blockerPlan) {
+    assignDamageToAttackers(state, events, plan.blocker, plan.blockerId, plan.targets, plan.amount, plan.assignment);
   }
   return true;
 }
