@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { crewPlanOf, crewWizardPlanFor, crewSelectionPower, commandForCrewSelection } from '../src/table/multi-target.js';
 import { commandLabel, cardInfo, buildStateOverlay } from '../src/table/render.js';
+import { renderMultiTargetWizard } from '../src/table/choice-request.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 
 /**
@@ -25,10 +26,21 @@ const NAMES = {
 };
 
 class MiniEl {
-  constructor(tag) { this.tagName = tag; this.children = []; this.className = ''; this.text = ''; }
+  constructor(tag) {
+    this.tagName = tag; this.children = []; this.listeners = {};
+    this.className = ''; this.text = ''; this.type = ''; this.checked = false;
+    this.disabled = false; this.name = ''; this.dataset = {};
+  }
   set textContent(v) { this.text = String(v); this.children = []; }
   get textContent() { return this.text + this.children.map((c) => c.textContent).join(''); }
+  set innerHTML(v) { this.text = String(v).replace(/<[^>]*>/g, ''); this.children = []; }
   appendChild(child) { this.children.push(child); return child; }
+  replaceChildren(...nodes) { this.children = nodes.flat(); }
+  addEventListener(type, listener) { (this.listeners[type] ??= []).push(listener); }
+  click() { for (const l of this.listeners.click ?? []) l({ preventDefault() {}, stopPropagation() {} }); }
+  emit(type) { for (const l of this.listeners[type] ?? []) l({}); }
+  all(pred, out = []) { if (pred(this)) out.push(this); for (const c of this.children) c.all(pred, out); return out; }
+  byClass(cls) { return this.all((el) => String(el.className).split(/\s+/).includes(cls)); }
   descendants() { return this.children.flatMap((c) => [c, ...c.descendants()]); }
 }
 globalThis.document = { createElement: (tag) => new MiniEl(tag) };
@@ -238,4 +250,77 @@ test('A2/8: brak kreatora bez realnego wyboru (null → default prosto)', () => 
     cmd: { ...BASE },
     playerId: 'p1', neededPower: 3, battlefield: BF,
   }), null);
+});
+
+// --- A2/DOM: kreator załogi na żywym rendererze (MiniEl, wzorzec m301) ------
+
+const WIZ_VIEW = {
+  playerId: 'p1',
+  players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+  zones: {
+    battlefield: [
+      { id: 'veh', cardId: 'irontread-crusher', controllerId: 'p1' },
+      { id: 'big', cardId: 'woolly-loxodon', controllerId: 'p1' },
+      { id: 'pup', cardId: 'highland-game', controllerId: 'p1' },
+    ],
+  },
+};
+const WIZ_SESSION = { nameOf: (cardId) => REGISTRY.get(cardId)?.name ?? cardId };
+const WIZ_BF = [
+  { id: 'veh', controllerId: 'p1', kind: 'artifact', tapped: false, power: 0 },
+  { id: 'big', controllerId: 'p1', kind: 'creature', tapped: false, power: 4 },
+  { id: 'pup', controllerId: 'p1', kind: 'creature', tapped: false, power: 2 },
+];
+
+function renderCrew({ defaultIds, neededPower = 3, onComplete = () => {}, onCancel = () => {} }) {
+  const plan = crewWizardPlanFor({
+    cmd: { ...BASE, crewCreatureIds: defaultIds },
+    playerId: 'p1', neededPower, battlefield: WIZ_BF,
+  });
+  assert.ok(plan, 'plan kreatora');
+  const host = new MiniEl('div');
+  renderMultiTargetWizard(host, {
+    view: WIZ_VIEW, session: WIZ_SESSION, plan, commands: [],
+    intro: 'Obsadź: Irontread Crusher — zaznacz załogę do tapnięcia:',
+    onOpenCard: () => {}, onComplete, onCancel,
+  });
+  return host;
+}
+
+test('A2/DOM1: wiersze z mocą, default pre-check, bramka progu, Zatwierdź buduje komendę', () => {
+  let completed = null;
+  const host = renderCrew({ defaultIds: ['pup'], onComplete: (cmd) => { completed = cmd; } });
+  // Wiersze nazywają stwory i ich moce (kolejność = plan.targets).
+  const text = host.textContent;
+  assert.match(text, /Woolly Loxodon.*\(moc 4\)/);
+  assert.match(text, /Highland Game.*\(moc 2\)/);
+  const toggles = host.byClass('multi-target-toggle');
+  assert.equal(toggles.length, 2);
+  const status = () => host.byClass('multi-target-status')[0].textContent;
+  const confirm = host.byClass('multi-target-confirm')[0];
+  // Default (pup, moc 2 < 3) startuje zaznaczony, ale próg nie puszcza.
+  assert.equal(toggles[0].checked, false);
+  assert.equal(toggles[1].checked, true);
+  assert.match(status(), /Moc załogi: 2 \/ ≥ 3 — brakuje 1/);
+  assert.equal(confirm.disabled, true);
+  // Dołożenie big (4) przekracza próg — licznik i bramka puszczają.
+  toggles[0].checked = true; toggles[0].emit('change');
+  assert.match(status(), /Moc załogi: 6 \/ ≥ 3 — gotowe/);
+  assert.equal(confirm.disabled, false);
+  confirm.click();
+  assert.deepEqual(completed, {
+    type: 'activate_ability', playerId: 'p1', objectId: 'veh', abilityIndex: 0,
+    crewCreatureIds: ['pup', 'big'],
+  });
+});
+
+test('A2/DOM2: pusty start i Anuluj (ścieżka odmowy kreatora)', () => {
+  let cancelled = 0;
+  const host = renderCrew({ defaultIds: [], onCancel: () => { cancelled += 1; } });
+  const toggles = host.byClass('multi-target-toggle');
+  assert.ok(toggles.every((t) => t.checked === false));
+  assert.match(host.byClass('multi-target-status')[0].textContent, /Wybierz załogę o łącznej mocy ≥ 3/);
+  assert.equal(host.byClass('multi-target-confirm')[0].disabled, true);
+  host.byClass('multi-target-cancel')[0].click();
+  assert.equal(cancelled, 1);
 });
