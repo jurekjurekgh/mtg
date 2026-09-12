@@ -5764,6 +5764,10 @@ export function playerView(state, playerId) {
         // animowany do EOT (crew rozstrzygnięty) nosi originalBeforeAnimation.
         // Widoczny stan → badge/decyzja bota (nie re-crewuj), ADR 0017.
         if (object.originalBeforeAnimation != null) entry.animatedUntilEOT = true;
+        // A4 (Balamb Garden): rozstrzygnięte crew (CR 702.122e) — kafel
+        // pokazuje „obsadzony". Osobne pole, bo animatedUntilEOT stawia
+        // też Skilled Animator / stacja, a badge nazywa załogę.
+        if (object.crewed === true) entry.crewed = true;
         // Źródło aktywnej animacji jest publiczne; nazwa zakrytej karty nie.
         const animationLink = (state.linkedAnimations ?? []).find(link => link.targetId === object.id);
         const animationSource = animationLink && state.objects.get(animationLink.sourceId);
@@ -7288,8 +7292,8 @@ export function playerView(state, playerId) {
       if (attackerId !== undefined) extra.attackerId = attackerId;
       if (targets !== undefined) extra.targets = targets;
       if (xValue !== undefined) extra.xValue = xValue;
-      // Crew (CR 701.36): wybór stworów do tapnięcia jedzie w komendzie —
-      // bez tego oferowana komenda byłaby odrzucana (nielegalny crew).
+      // Crew/Saddle (CR 702.122a/702.171a): wybór stworów do tapnięcia jedzie
+      // w komendzie — bez tego oferowana komenda byłaby odrzucana.
       if (crewCreatureIds !== undefined) extra.crewCreatureIds = crewCreatureIds;
       if (tapArtifactIds !== undefined) extra.tapArtifactIds = tapArtifactIds;
       if (tapCreatureId !== undefined) extra.tapCreatureId = tapCreatureId;

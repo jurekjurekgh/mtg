@@ -1168,6 +1168,8 @@ export function clearStatModifiers(state) {
         power: object.originalBeforeAnimation.power,
         toughness: object.originalBeforeAnimation.toughness,
         originalBeforeAnimation: null,
+        // A4: koniec animacji = koniec „obsadzenia" (znacznik z crew).
+        crewed: false,
       });
       // M141/A (station + animacja): ożywiony Spacecraft (animacja 5/5)
       // po zakończeniu animacji w cleanup wracał do artefaktu nawet przy
@@ -1177,6 +1179,13 @@ export function clearStatModifiers(state) {
       // mimo spełnionego progu.
       syncStationKind(state, object.id);
       }
+    }
+    // A4: strażnik inwariantu „crewed ⟹ trwa animacja" — znacznik stawia
+    // wyłącznie rozstrzygnięcie crew (efekt animuje), ale gdyby przyszła
+    // karta crew miała inny efekt, flaga nie może przeżyć tury.
+    const afterAnim = state.objects.get(object.id);
+    if (afterAnim.crewed && !afterAnim.originalBeforeAnimation) {
+      replaceObject(state, afterAnim, { crewed: false });
     }
     const current = state.objects.get(object.id);
     if (current.saddled || current.tempBasePT || current.damagedThisTurn) {
@@ -1334,7 +1343,9 @@ export function transformedCharacteristics(back, previous = null) {
     ...(kind ? { kind } : {}),
     // Nowa strona nie dziedziczy trwającej animacji ani jej zapisu cofnięcia:
     // efekt „until end of turn” przestaje dotyczyć tej charakterystyki.
+    // A4: znacznik crew też nie przechodzi (to była animacja starej strony).
     originalBeforeAnimation: null,
+    crewed: false,
   };
 }
 

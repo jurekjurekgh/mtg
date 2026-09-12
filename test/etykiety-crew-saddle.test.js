@@ -4,7 +4,7 @@ import { commandLabel } from '../src/table/render.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 
 /**
- * M101/B7 — etykiety crew (CR 701.36) i saddle (CR 702.171) w panelu
+ * M101/B7 — etykiety crew (CR 702.122) i saddle (CR 702.171) w panelu
  * „Twoje działania".
  *
  * Zgłoszenie właściciela (2026-08-15): „saddle i vehicles można zasilić
