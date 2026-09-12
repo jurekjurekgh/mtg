@@ -1564,7 +1564,13 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     // oś 2). Przycisk stosuje silnikowy przydział domyślny: każdy kolejny
     // bloker dostaje lethal przed następnym — to polityka domyślna,
     // nie ograniczenie legalnego podziału gracza (CR 510.1c).
-    const def = choiceNode(actions, 'button', 'action choice-request-option damage-wizard-default', 'Użyj domyślnego przydziału (zabójcze obrażenia po kolei blokerów)');
+    // W3 (CR 510.1d): wizard obsługuje obie role, więc etykieta też musi — przy
+    // podziale BLOKERA celami są atakujący, a „po kolei blokerów” opisywało cudzą
+    // sytuację (pomiar 2026-09-12: intro było role-aware, ten przycisk nie).
+    const def = choiceNode(actions, 'button', 'action choice-request-option damage-wizard-default',
+      isBlockerSide
+        ? 'Użyj domyślnego przydziału (zabójcze obrażenia po kolei atakujących)'
+        : 'Użyj domyślnego przydziału (zabójcze obrażenia po kolei blokerów)');
     def.type = 'button';
     def.addEventListener('click', () => onComplete?.(defaultCommand));
   }
