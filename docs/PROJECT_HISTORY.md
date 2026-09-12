@@ -19,6 +19,73 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## Sesja 2026-09-11/12 — zgłoszenia właściciela A (druk karty) i B (cienka biblioteka) + przegląd 509 kart (PR #114, arena/01a0925f)
+
+Sesja „kontynuujemy projekt" w trybie ADR 0020/0021: PR #114 otwarty przed
+kodowaniem, audyt PR #113 plik po pliku (żaden test nie został poluzowany), plan
+`docs/plans/PLAN_2026-09-11b-audyt-pr113-wyzwanie-3-5.md`. W trakcie właściciel
+zatrzymał poszukiwanie nowych błędów i zlecił dwa znaleziska z partii testowej
+(A — ilustracja karty, B — bot z cienką biblioteką), a przy A rozszerzył
+zlecenie na przegląd wszystkich kart. Handoff: `docs/setup/HANDOFF_2026-09-12.md`.
+
+- **Plan + audyt PR #113** (`17024f3`): triaż tez starego planu, w tym W3
+  (`combat.js` `processCombatPass` — obrońca zadaje PEŁNĄ moc każdemu
+  atakującemu, CR 510.1a/d wymaga podziału sumy; tylko trample zachowuje
+  702.19b). Kierunek naprawy wybrany (eager per-pass blocker decision +
+  interleaved dealing z deduplikacją po pierwszym indeksie), **implementacja
+  nie rozpoczęta** — sesję przejęły zgłoszenia A i B.
+- **A** (`7889ad4`): Curiosity pokazywała druk JMP zamiast ISD z kolekcji.
+  Przyczyna zmierzona: `set: 'ISD'` w katalogu był poprawny od początku —
+  snapshot pobrano `cards/named?exact=Curiosity` BEZ `set=`, a Scryfall zwraca
+  wtedy DOMYŚLNY druk nazwy (JMP #147); warstwy FOT/KON biorą `imageUri` jako
+  fallback (`docs/setup/ILUSTRACJE_KART.md`). Fix: pobranie set-aware,
+  `imageUri` → ISD #49 (`b212c36a`), procedura w `docs/cards/HOW_TO_ADD_CARD.md`,
+  test `test/zgloszenie-a-druk-karty-z-arkusza.test.js` (A/1–A/6) + zapadnia
+  `test/fixtures/druki-kart-zapadnia.json`.
+- **Przegląd wszystkich kart** (zlecenie właściciela, ten sam commit): 509 kart,
+  krok 1 offline (arkusz CSV → katalog → snapshot → UUID obrazu → `source`; 455
+  potwierdzonych), krok 2 sieć (41 wpisów: 33 rekordy po UUID obrazu
+  + 1 wyszukiwanie wsadowe). Poprawiono 9 kart: curiosity JMP→ISD, expunge
+  VMA→USG, welder-automaton GNT→AER, enter-the-enigma set MKM→DSK,
+  angelic-benediction DVD→ALA #3, fireball CLB→JVC #56, spread-the-sickness
+  MM2→MBS #56, cogwork-assembler 2XM→AER (set + obraz), shivs-embrace M14→M11
+  #156. Wspólny mechanizm: snapshot składany ręcznie bez `source` (fireball miał
+  dodatkowo zmyślony `set_name` „Jumpstart 2025" zamiast „Duel Decks Anthology:
+  Jace vs. Chandra"). 26 snapshotów dostało `source` + `zweryfikowano`; zapadnia
+  `bezSetu` 46→43, `bezZrodla` 42→13, `uwagaSet` 4→1. Raport
+  `docs/cards/WERYFIKACJA_DRUKOW_2026-09-12.md`, narzędzie
+  `tools/check-card-printings.mjs`. Odstępstwa udokumentowane `uwaga`:
+  ethersworn-shieldmage (`536CON` = skrót płaszczyzny Alara, druk ARB — decyzja
+  właściciela 2026-08-05); jwari-shapeshifter rozstrzygnięty osobnym commitem.
+- **Jwari Shapeshifter** (`cdafc3c`): właściciel potwierdził (2026-09-12), że
+  `227ROE` w arkuszu to jego pomyłka — karta jest z WWK. Pomiar to wskazywał:
+  Scryfall nie zna druku ROE (`&set=roe` → 404), a katalog i obraz od początku
+  niosły WWK nr 32 (`587f91f6`), więc rozjeżdżał się wyłącznie arkusz. Kod
+  poprawiony na `227WWK`, snapshot pobrany set-aware, `uwaga` zdjęta, zapadnia
+  `bezSetu` 44→43 i `uwagaSet` 2→1.
+- **B** (`76c40d9`): bot z ~9 kartami w bibliotece tapował ląd z Chronic
+  Flooding (3 karty millu na tapnięcie) i dokładał własnemu stworowi Curiosity
+  (powtarzalne dobieranie) — CR 121.4/704.5b. Silnik: auto-tap (CR 601.2h)
+  odkłada na koniec źródła mielące bibliotekę kontrolera (`millsLibraryOnTap`,
+  dogrywka istniejącego pierwszeństwa kolorów). Bot: podatek biblioteczny
+  liczony raz w `scoreCommand` i odejmowany w `finish` (jak wardTax) —
+  `tap_for_mana` na mielącym permanencie, płatność wymagająca mielącego źródła
+  i rzut karty tworzącej POWTARZALNY trigger doboru/millu; triggery
+  jednorazowe (`enter_battlefield`, `dies`) wyłączone (L41 — bez podwójnego
+  liczenia z `etbEnterBonusValue`/`drawDeckingPenalty`); `applyTo:
+  'enchanted_controller'` przy rzucie pomijane (odbiorca zależy od celu). Kara
+  `libraryLossPenalty` rośnie stopniowo, 5 nowych parametrów (`librarySafeMargin`
+  20 = próg właściciela „~<20"). Pomiary: Curiosity 9 kart −63 (pass) / 25 kart
+  +66,6 (rzuca); Welder Automaton płacony zalanym lądem −63,9 / +65,7; ten sam
+  rzut z czystych lądów bez zmian; Giant Spider bez zmian; Scroll Thief karany
+  jak Curiosity; Chronic Flooding na cudzy ląd bez zmian (58,5) i wciąż wybierana.
+
+Bramki: `npm test` 5167/5167, `npm run test:all` 5177/5177, build 61 modułów /
+3502,8 kB, `tools/check-card-printings.mjs` kod 0 (rozjazd 1, udokumentowany),
+quick benchmark heuristic
+84,2% (566/672) wobec 84,7% (569/672) przed B; bez pełnego B0 (ADR 0018 —
+decyzja właściciela).
+
 ## Sesja 2026-09-10/11 — zgłoszenia właściciela A–G z gry przy stole (PR #113, arena/01a08d0e)
 
 Właściciel zgłosił sześć znalezisk z partii przy stole (A–F), a w trakcie
