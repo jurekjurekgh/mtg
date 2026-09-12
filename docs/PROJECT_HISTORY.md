@@ -9994,7 +9994,17 @@ O3 bez akcji, F4 nie wraca.
 B6 (dokumenty): audyt PR #113 zapisany jako REKONSTRUKCJA z pomiarem 2026-09-12 — wpis E2
 w `PLAN_2026-09-11b` okazał się nieprecyzyjny (plik w tamtej sesji nie powstał) i został skorygowany;
 `HANDOFF_2026-09-12` dostał werdykty i bramki z pomiaru; opis PR #114 zaktualizowany przez REST PATCH
-(`gh pr edit` na tym repo pada).
+(`gh pr edit` na tym repo pada). Przy okazji uporządkowano sekcję „Kolejka / otwarte" tego handoffu:
+akapit „następne w kolejce: W5 — kandydat nie wybrany … potem W5, E6, E7" był nieaktualny i sam sobie
+przeczył (W5/E6/E7 były zrobione) — czyli dokładnie klasa F8 w dokumencie, który jest punktem
+zaczepienia następnej sesji; zastąpiony skróconą HISTORIĄ z odesłaniem. Punkt „transkrypt z realnym
+podwójnym blokiem (Cenn's Tactician) nieprzeczytany" zmierzono zamiast przepisywać: 4 partie workiem
+mrocznym (seedy 331/2026/44/909, profile greedy/hoarder, także jako bot) — Cenn był dobierany,
+rzucany i wchodził na stół, ale panel podziału obrażeń nie wyrenderował się ani razu (0 wystąpień
+„podział/przydział/bloker"; jedyna karta z `grantsExtraBlockWithCounter` w katalogu i tylko w tym
+decku), więc punkt zostaje OTWARTY z wnioskiem, że potrzebny jest scenariusz deterministyczny na
+poziomie stołu, a nie polowanie na seed. Pokrycie regułowe podwójnego bloku w silniku jest
+(testy W4 i B1/6).
 
 Bramki końcowe: `npm test` **5232/5232** (5201 przed sesją; +8 B2, +9 B4, +14 B5), `npm run build`
 61 modułów / **3533,1 kB**, quick benchmark **84,2% (566/672)** (aggro 26,5%, random 5,1%, 135,0 s),
