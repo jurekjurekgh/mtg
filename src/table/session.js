@@ -1,4 +1,5 @@
 import { execute, playerView } from '../engine/game-state.js';
+import { tokenNameFromCardId } from '../engine/tokens.js';
 import { makeSimulate } from '../engine/lookahead.js';
 import { setupCardMatch } from '../cards/materialize.js';
 import { TOKEN_IMAGES } from '../cards/card-data.js';
@@ -2253,7 +2254,10 @@ export function createSession(config) {
   };
 
   function nameOf(cardId) {
-    return nameById.get(cardId) ?? cardId ?? '?';
+    // E6 (2026-09-12): token mechaniki silnika (np. Servo z fabricate) nie ma
+    // wpisu w rejestrze kart — nazwę odtwarzamy z identyfikatora regułą sluga
+    // (src/engine/tokens.js), zamiast pokazywać graczowi „token_servo".
+    return nameById.get(cardId) ?? tokenNameFromCardId(cardId) ?? cardId ?? '?';
   }
 
   /**
