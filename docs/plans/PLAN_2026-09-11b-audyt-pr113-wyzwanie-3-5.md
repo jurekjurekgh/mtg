@@ -51,7 +51,7 @@ dopisani po pomiarze, nie wymyśleni z góry).
 
 - [x] **E1 — plan + PR przed kodowaniem** (ADR 0020 A). Ten plik jako osobny
       commit, PR otwarty natychmiast po pushu (reguła nadrzędna A–D).
-- [ ] **E2 — audyt PR #113** (ADR 0020 B / ADR 0016): każdy z 54 zmienionych
+- [x] **E2 — audyt PR #113** (ADR 0020 B / ADR 0016): każdy z 54 zmienionych
       plików — zgodność z CR i ADR 0002 (brak przypadków po nazwie karty),
       generyczność mechanik (Saga/`turnAbilityGrants`, `hasCreatureType`,
       `isTargetingBlockedByProtection`, `sacrificeFinishedSagas`, bloodthirst),
@@ -59,6 +59,11 @@ dopisani po pomiarze, nie wymyśleni z góry).
       (ADR 0017 — `enchantPlayer`, `enchantedPlayerId`, `cursedPlayerId`),
       choke pointy (L107). Wynik: `docs/audits/AUDYT_PR113_2026-09-11.md`
       + sekcja w opisie PR. Znalezione błędy → F1…Fn, każdy osobnym commitem.
+      **ZROBIONE** — `docs/audits/AUDYT_PR113_2026-09-11.md` (54 pliki, znalezione
+      F1–F8 + O1/O3/O4) i sekcja 1 opisu PR #114; naprawy znalezisk w commitach
+      sesji (w tym A — druk karty, B — cienka biblioteka bota, przegląd 509 kart).
+      Odhaczone przy domykaniu planu (W5, `9ee170e`): punkt był zrealizowany
+      wcześniej, brakowało tylko skreślenia.
 - [x] **W3 — wyzwanie 3/5: bloker dzieli obrażenia między atakujących**
       (CR 510.1a/510.1c/510.1d). Dowód online (tekst CR dosłownie) → test RED
       `test/wyzwanie-3-bloker-dwóch-atakujacych-510-1d.test.js` → naprawa
