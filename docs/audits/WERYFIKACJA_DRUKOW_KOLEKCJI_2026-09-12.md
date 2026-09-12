@@ -75,7 +75,19 @@ test/zgloszenie-a-druk-karty-z-arkusza.test.js` → **6 pass / 0 fail**.
   do udowodnienia), a **7** to karty z kolekcji wymagające pobrania z sieci: `krallenhorde-wantons` (ISD),
   `guidestone-compass` (LCI), `shiva-warden-of-ice` (FIN), `homicidal-brute` (ISD), `ballista-wielder`
   (VOW), `dire-strain-brawler` (MID), `balamb-garden-airborne` (FIN). Sieć w tym środowisku jest
-  niedostępna dla `curl`/`node`, więc pozostają otwarte.
+  niedostępna dla `curl`/`node`, a `fetch_page` od awarii proxy zwraca `SignatureDoesNotMatch`, więc
+  pozostają otwarte. Adresy są już wyprowadzone z `imageUri` katalogu (do pobrania i porównania
+  `set` odpowiedzi z arkuszem — to dokładnie ta sama weryfikacja, która wykryła przypadek Curiosity):
+
+  ```text
+  krallenhorde-wantons    ISD  https://api.scryfall.com/cards/4b43b0cb-a5a3-47b4-9b6b-9d2638222bb6
+  guidestone-compass      LCI  https://api.scryfall.com/cards/dedd7a22-92e2-41fd-aa80-944c69653a5e
+  shiva-warden-of-ice     FIN  https://api.scryfall.com/cards/1f163763-4802-4a96-a5bc-f3c381db7b5c
+  homicidal-brute         ISD  https://api.scryfall.com/cards/7bf864db-4754-433d-9d77-6695f78f6c09
+  ballista-wielder        VOW  https://api.scryfall.com/cards/63d96c52-66ce-4b46-9a0b-7cd9a43f9253
+  dire-strain-brawler     MID  https://api.scryfall.com/cards/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7
+  balamb-garden-airborne  FIN  https://api.scryfall.com/cards/001e9f20-5b15-41cb-bf82-46172decc235
+  ```
 - **ROZJAZD 1: `ethersworn-shieldmage`** — arkusz `536CON` vs katalog `ARB`. Udokumentowane polem
   `uwaga` w snapshocie; właściciel potwierdził (2026-08-05) druk ARB, a `CON` w CSV to skrót planu
   Alara, nie kod setu. Bez zmian.
