@@ -1,4 +1,4 @@
-# AUDYT ŻYWYM TESTEREM E6 (2026-09-12) — pętla jakości PR #114: 6 partii na świeżym `dist/`, 1 znalezisko silnikowo-językowe (tokeny mechanik) + 1 UI (wizard trample po W5), oba naprawione
+# AUDYT ŻYWYM TESTEREM E6 (2026-09-12) — pętla jakości PR #114: 10 partii na świeżym `dist/`, 1 znalezisko silnikowo-językowe (tokeny mechanik) + 1 UI (wizard trample po W5), oba naprawione
 
 **Sesja:** `arena/01a0925f-mtg` (PR #114). **Etap:** E6 planu
 `docs/plans/PLAN_2026-09-11b-audyt-pr113-wyzwanie-3-5.md` (ADR 0021 §4a —
@@ -11,9 +11,12 @@ pętla jakości po zmianach reguł W3/W4/W5).
 
 ## Metoda
 
-- 6 partii człowiek-vs-bot, `tools/table-tester` (jsdom na prawdziwym artefakcie),
-  300 kroków, `--snapshot-every 25`; talie spoza jednej rodziny i profile
-  różne od siebie (greedy ×2, explorer, defensive, impatient, hoarder).
+- 10 partii człowiek-vs-bot, `tools/table-tester` (jsdom na prawdziwym artefakcie),
+  300 kroków, `--snapshot-every 25`; talie spoza jednej rodziny i profile różne od
+  siebie (greedy ×3, explorer, defensive ×2, impatient, hoarder ×2, random).
+  Serie dwie: g1–g6 na `dist/` z `abd19d6`, g7–g10 UZUPEŁNIAJĄCO na `dist/`
+  przebudowanym po naprawach F-E6-1/F-E6-2 (kontrola, czy naprawy nie wniosły
+  nic nowego i czy kolejne pary talii są czyste).
 - Lektura **ręczna** wzdłuż trzech osi z `docs/setup/TESTER_STOLU.md`
   (decyzja właściciela 2026-08-14): (1) bezsensowne działania bota,
   (2) zdarzenia niewidzialne/nieczytelne dla gracza, (3) ptaszki wyciszenia
@@ -32,8 +35,12 @@ pętla jakości po zmianach reguł W3/W4/W5).
 | g4 | warhammer-wg ↔ mirrodin-brg | 3001 | defensive | wygrywa Bot (życie −9) | 0 | 20/18, 0 modali |
 | g5 | alara ↔ srodziemie | 3002 | impatient | wygrywa Bot (życie 0) | 0 | 12/11, 0 modali |
 | g6 | wiedzmin-brg ↔ kaladesh | 3003 | hoarder | wygrywa Bot (życie −2) | **1 (`info`)** | 20/19, 1 modal |
+| g7 | forgotten-realms ↔ final-fantasy | 3004 | random | wygrywa Bot (życie −1) | 0 | 11/7, 0 modali |
+| g8 | mirrodin-wu ↔ tarkir-wur | 3005 | greedy | wygrywa Bot (życie 0) | 0 | 12/11, 0 modali |
+| g9 | innistrad-wu ↔ dominaria-wu | 3006 | defensive | wygrywa Bot (gracz wyczerpał bibliotekę przy 20 ż.) | 0 | 21/18, 0 modali |
+| g10 | srodziemie ↔ warhammer-wg | 3007 | hoarder | wygrywa Bot (życie −4) | 0 | 25/20, 0 modali |
 
-`== NIEWYCENIONE ==` w każdej partii: brak (każdy wybrany ruch bota miał
+`== NIEWYCENIONE ==` w każdej z dziesięciu partii: brak (każdy wybrany ruch bota miał
 dedykowaną wycenę). `[STOP] brak akcji` i `== LIMIT ==`: zero — żadna partia
 nie utknęła.
 
@@ -75,6 +82,19 @@ zachowanie wyglądało na błąd UI. Etykieta celu dostaje dopisek z widoku:
 dopisek pojawia się tylko gdy jest co pokazać (`assignedByOthers > 0` albo
 `lethalByOthers`), więc dotychczasowe ekrany zostają bez szumu. Bez zmiany reguł
 i polityki domyślnej. Test: przypadek w `test/choice-request-ui.test.js`.
+
+## Partie uzupełniające (g7–g10, po naprawach)
+
+Cztery kolejne pary talii i profile dotąd nieużyte (w tym `random`): zero
+zgłoszeń detektorów, zero partii utkniętych, `NIEWYCENIONE` puste. Lektura ręczna
+bez znalezisk: w g7 „Jill, Shiva's Dominant — cel odrzucony, trigger bez efektu"
+ma pełny opis (oś 2), w g9 bot tworzy tokeny Powerstone i ich nazwa wyświetla się
+poprawnie (klasa F-E6-1 po naprawie), w g10 trzy aktywacje Thunderstaffa wypadają
+w różnych turach i zawsze PO deklaracji atakujących („Atak: Invasive Species,
+Inspiring Captain" → „atakujące stwory (2 stwory): +1/+0 do końca tury"), więc nie
+są ani pętlą, ani akcją bez skutku (oś 1). Jedyna powtórka akcji pod rząd
+(„Nieprzyjaciel zagrywa Plains" ×2 w g9) jest rozdzielona granicą tury — limit
+jednego lądu na turę (CR 305.2) nienaruszony.
 
 ## Lektura osi — czego NIE znaleziono
 
@@ -119,6 +139,11 @@ cd tools/table-tester && npm i
 node run-game.mjs --human wiedzmin-brg --bot kaladesh --seed 3003 --steps 300 \
   --profile hoarder --snapshot-every 25 --out ../../tmp-audyt-e6-2026-09-12/g6.txt
 ```
+
+Partie uzupełniające: `--human forgotten-realms --bot final-fantasy --seed 3004`
+(random), `--human mirrodin-wu --bot tarkir-wur --seed 3005` (greedy),
+`--human innistrad-wu --bot dominaria-wu --seed 3006` (defensive),
+`--human srodziemie --bot warhammer-wg --seed 3007` (hoarder).
 
 Pozostałe partie: `--human dominaria-brg --bot ravnica --seed 42` (greedy),
 `--human tarkir-bg --bot warhammer-ubr --seed 7` (greedy),

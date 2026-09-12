@@ -9879,11 +9879,12 @@ bez zawieszeń; `npm run test:all` 5193/5193 zmierzone po W4 (odświeżenie w E7
 
 ## 2026-09-12 — E6: pętla jakości żywym testerem po W3/W4/W5 (PR #114, arena/01a0925f, `078e6ed` + `ea63934`)
 
-Sześć partii człowiek-vs-bot na świeżym `dist/mtg-table.html` (L76), profile greedy ×2, explorer,
-defensive, impatient, hoarder; transkrypty czytane ręcznie wzdłuż trzech osi z
+Dziesięć partii człowiek-vs-bot na świeżym `dist/mtg-table.html` (L76; g1–g6 przed naprawami,
+g7–g10 uzupełniająco po nich), profile greedy ×3, explorer, defensive ×2, impatient, hoarder ×2, random; transkrypty czytane ręcznie wzdłuż trzech osi z
 `docs/setup/TESTER_STOLU.md` (L27: zero zgłoszeń detektorów to pomiar narzędzia). Raport:
 `docs/audits/AUDYT_E6_ZYWY_TESTER_2026-09-12.md`. Żadna partia nie utknęła, `== NIEWYCENIONE ==`
-puste w sześciu partiach, detektory: 1 zgłoszenie (g6).
+puste w dziesięciu partiach, detektory: 1 zgłoszenie (g6). Partie uzupełniające bez znalezisk
+(w g10 trzy aktywacje Thunderstaffa zawsze po deklaracji ataku — nie pętla i nie akcja bez skutku).
 
 **F-E6-1 (`ea63934`) — nazwy tokenów mechanik silnika.** Log pisał „token_servo ginie": mapa nazw
 tokenów (`collectTokenNames`, M188/B) powstaje z KATALOGU kart, a Servo tworzy mechanika fabricate

@@ -190,8 +190,9 @@ dopisani po pomiarze, nie wymyśleni z góry).
       (L76), min. 3 partie, transkrypty czyta­ne RĘCZNIE wzdłuż trzech osi
       (L27: zero z detektorów to pomiar narzędzia), każda klasa znaleziona
       ręcznie → nowy detektor. Bez pełnego B0 (ADR 0018).
-      **ZROBIONE** — 6 partii (nie 3) na świeżym `dist/`, profile greedy ×2,
-      explorer, defensive, impatient, hoarder; wynik:
+      **ZROBIONE** — 10 partii (minimum planu: 3) na świeżym `dist/`, profile greedy ×3,
+      explorer, defensive ×2, impatient, hoarder ×2, random (g1–g6 przed
+      naprawami, g7–g10 uzupełniająco po nich); wynik:
       `docs/audits/AUDYT_E6_ZYWY_TESTER_2026-09-12.md`. Dwa znaleziska, oba
       naprawione i oba z weryfikacją dwustronną (L27):
       * **F-E6-1** (`ea63934`): log pisał „token_servo ginie" — tokeny mechanik
