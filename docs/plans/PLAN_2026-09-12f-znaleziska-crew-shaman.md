@@ -125,11 +125,11 @@ wybór (`validateBlockerDamageAssignment`). Mapowanie na Crew jest 1:1:
       zdolny do ataku +15, niezdolny −60 (haste-aware); w cudzej turze
       stara polityka (pump wspiera blok). Testy: test/bot-shaman-atakujacy
       (6: sygnał, jednostka, sedno, haste, odmowa, cudza tura).
-- [ ] **E6. Pętla jakości.** Kryterium: quick benchmark (oczekiwana brak
+- [x] **E6. Pętla jakości** (1d79d87 + 0d3f7de). Pełna 5314/5314, Kryterium: quick benchmark (oczekiwana brak
       regresji / pomiar), golden master — jeśli churn, to ŚWIADOMY
       z uzasadnieniem jak W4; Żywy Tester na świeżym `dist/` (partie taliami
       z pojazdami: final-fantasy, kaladesh + zendikar/Shaman); 0 detektorów.
-- [ ] **E7. Domknięcie.** Handoff, PROJECT_HISTORY, opis PR, README jeśli
+- [x] **E7. Domknięcie** (w toku: opis PR #115; po stronie właściciela: Żywy Tester na dist/). Handoff, PROJECT_HISTORY, opis PR, README jeśli
       liczby.
 
 ## 6. Ryzyka / pułapki
