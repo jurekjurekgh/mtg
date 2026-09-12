@@ -84,13 +84,25 @@ wybór (`validateBlockerDamageAssignment`). Mapowanie na Crew jest 1:1:
 
 ## 5. Etapy i kryteria ukończenia
 
-- [ ] **E0. PR sesji + audyt PR #114** (ADR 0020 A/B). Kryterium: PR otwarty
-      PRZED kodowaniem; `docs/audits/AUDYT_PR114_2026-09-12.md` (13 plików
-      `src/`, ~17 testów, 4 tools, snapshoty narzędziem + próbka, RED→GREEN);
-      wynik w opisie PR.
-- [ ] **E1. CR + rulingi** (ADR 0030, ADR 0028). Kryterium: dosłowny tekst CR
-      dla Crew (w kodzie cytowane 701.36 — ZWERYFIKOWAĆ numer!) i Saddle
-      w opisie commita / komentarzu strażnika; `rulings` w 4 snapshotach.
+- [x] **E0. PR sesji + audyt PR #114** (ADR 0020 A/B). PR #115 otwarty PRZED
+      kodowaniem; `docs/audits/AUDYT_PR114_2026-09-12.md` (13 plików `src/`
+      czytane w całości, 18 testów, 4 tools, snapshoty narzędziem + Scryfall
+      API na Enter the Enigma; przebiegi: 118/118 celowanych, 5283/5283 all,
+      build co do joty, benchmark co do meczu). Werdykt APPROVE, 7 znalezisk
+      nieblokujących (D1–D5, S1, T1, O1). Komentarze na PR #114.
+- [x] **E1. CR + rulingi** (ADR 0030, ADR 0028). CR 2026-08-07 (TXT z
+      media.wizards.com, pobrane 2026-09-12): **Crew = 702.122** (kod cytował
+      błędne 701.36 — do podmiany przy fixie), **Saddle = 702.171** (kod ma
+      dobry numer); oba: „Tap any number of **other** untapped creatures you
+      control with total power N or greater" — silnik już wyklucza źródło
+      (`id !== id`, walidacja), więc zachowanie OK, tylko cytaty do naprawy.
+      Fabricate = 702.123 (PR #114 cytuje 702.122a → D5 na PR #114). Oracle
+      (Scryfall API): Balamb back face (Crew 1, 5/4 Flying, attack-draw),
+      Irontread Crusher (Crew 3, 6/6), Bomat Bazaar Barge (Crew 3, ETB-draw),
+      Battle-Rattle Shaman („target creature", BEZ „you control" —
+      do weryfikacji modelu celu przy fixie B). Rulingi Balamb: tylko
+      DFC-generyczne (2025-06-06), brak crew-specyficznych. Dosłowne cytaty
+      trafią do commitów i komentarzy strażników (ADR 0030 §3–4).
 - [ ] **E2. Silnik: domyślny podzbiór Crew/Saddle.** Kryterium: jedna oferta
       z mądrym defaultem (testy: Crew 1/3, choroba, moc 0, n > 6, saddle,
       determinizm); stare testy pinujące enumerację zaktualizowane
