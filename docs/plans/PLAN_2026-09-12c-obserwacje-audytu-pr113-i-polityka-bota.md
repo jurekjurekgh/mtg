@@ -177,18 +177,23 @@ testowe do ponownego pomiaru (kod się od audytu zmienił).
   `typeGrant` przez silnik, straże, skan źródeł pod kontrakt „typy niestworowe
   tędy nie przechodzą") + naprawa rozjazdu reguły: `effectiveSubtypesOnBattlefield`
   deleguje do `effectiveSubtypes` (CR 305.7/613.1d/205.3d). Mutacje M1–M5 złapane.
-- **B5**: werdykty z dowodem w `docs/audits/AUDYT_PR113_2026-09-11.md` —
-  F2 i F3 odrzucone (pomiar: `armedOnTurn` diagnostyczne + cleanup czyści rejestr;
-  wszystkie emisje `permanent_cast` niosą `object`), F5 potwierdzone częściowo
-  i przeniesione z przepisem (lokalne domknięcia bramki logu), F8 naprawione
-  (liczby z pomiaru), O1 nie do odtworzenia, O3 bez akcji, F4 nie wraca.
+- **B5** (`f910765` dla F5; werdykty w `docs/audits/AUDYT_PR113_2026-09-11.md`):
+  F2 i F3 **odrzucone z dowodem** (pomiar: `armedOnTurn` diagnostyczne + cleanup
+  czyści rejestr `permanents.js:1136`; wszystkie trzy emisje `permanent_cast`
+  niosą `object`), **F5 POTWIERDZONE i NAPRAWIONE** — wrostkowa bramka 14 członów
+  w `noteBotMove` wyekstrahowana do `isMainLogEvent`, `phaseHeaderFor` →
+  `phaseHeaderText` (czysta), zbiory bramek na poziom modułu; równoważność
+  udowodniona na **68 208 kombinacjach, 0 rozjazdów**; test rodzinny B5/1–B5/14,
+  mutacje 9/9 złapane, Żywy Tester 3 partie / 304 sondy / 0 zgłoszeń. F8
+  naprawione (liczby z pomiaru), O1 nie do odtworzenia, O3 bez akcji, F4 nie wraca.
 - **B6**: ten plan odhaczony, audyt zapisany jako REKONSTRUKCJA, wpis E2
   w `PLAN_2026-09-11b` skorygowany, `HANDOFF_2026-09-12` i `PROJECT_HISTORY`
   zaktualizowane, opis PR #114 przez REST PATCH, Żywy Tester: 7 partii na
   świeżym `dist/`, 362 sondy no-op, 0 zgłoszeń detektorów.
-- Bramki końcowe: `npm test` **5218/5218**, build 61 modułów / **3530,6 kB**,
-  benchmark **84,2% (566/672)** w 135,0 s, golden master bez zmian.
-- Kolejka na następną sesję: (1) F5 — ekstrakcja wrostkowej bramki logu gracza
-  (`session.js` ~2623) do eksportowanego predykatu + test rodzinny (przepis
-  w pliku audytu), (2) O1 — odtworzenie wskazania z opisu właściciela,
-  (3) do decyzji właściciela: squash-merge PR #114, pełny B0 (ADR 0018).
+- Bramki końcowe: `npm test` **5232/5232**, build 61 modułów / **3533,1 kB**,
+  benchmark **84,2% (566/672)** w 135,0 s, golden master bez zmian, Żywy Tester
+  10 partii / 666 sond no-op / 0 zgłoszeń detektorów.
+- Kolejka na następną sesję: (1) O1 — odtworzenie wskazania „martwy sentinel"
+  z opisu właściciela (pomiar nie znalazł kandydata w logice), (2) do decyzji
+  właściciela: squash-merge PR #114, pełny B0 (ADR 0018), (3) zapadnia druków:
+  `bezSetu` 43 i `bezZrodla` 13 (snapshoty do przepisania pobraniem set-aware).

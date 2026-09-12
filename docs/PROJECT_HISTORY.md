@@ -9970,12 +9970,24 @@ CR 205.3d wyjaśnia, dlaczego podtypy nielądowe (Dryad) zostają. Naprawa: dele
 `effectiveSubtypes` (jedna implementacja); produkcja many już czytała poprawną ścieżką. Mutacje M1–M5
 złapane każda przez konkretny test.
 
-B5 (werdykty bez zmian w kodzie, dowody w `docs/audits/AUDYT_PR113_2026-09-11.md`): F2 odrzucone
+B5 (dowody w `docs/audits/AUDYT_PR113_2026-09-11.md`): F2 odrzucone
 (`armedOnTurn` jest diagnostyczne, rejestr czyści cleanup `permanents.js:1136`), F3 odrzucone
 (wszystkie trzy emisje `permanent_cast` niosą `object` — `?.` jest obroną, nie dziurą), F5
-potwierdzone częściowo i przeniesione z przepisem (bez pinów są lokalne domknięcia bramki logu:
-`phaseHeaderFor`, `TRANSFORM_DIGEST_EVENTS`, `recordTurnEvent` i wrostkowa bramka 14 warunków ~2623;
-eksportowane `isBotMoveNoise` i `describeGameEvent` piny mają), F8 naprawione (liczby z pomiaru),
+potwierdzone i NAPRAWIONE (`f910765`): pomiar pokazał, że eksportowane `isBotMoveNoise` (2 pliki
+testów) i `describeGameEvent` (69 plików) piny mają, ale bramka GŁÓWNEGO LOGU gracza była
+wrostkowym warunkiem 14 członów w `noteBotMove` z lokalnymi domknięciami (`inCombatReport`,
+`isStackResolution`, `isHumanHeadline`, `isHumanDraw`, `isAdditionalCostMove`, `isBotDecision`),
+a `phaseHeaderFor` i zbiory `MAIN_LOG_NOISE`/`TRANSFORM_DIGEST_EVENTS`/`HUMAN_DIGEST_EVENTS`/
+`BOT_RESOLUTION_EVENTS` były lokalne w `createSession` — zero testów mogło ich dotknąć bez jsdom,
+więc każda zmiana bramek była weryfikowana wyłącznie ręcznym czytaniem transkryptów (a historia
+zgłoszeń właściciela jest długa: D/E, M99, M100/E5, M100/E8, M106/Z3, M151, M167/E, E2, E6/A2,
+E7/E). Ekstrakcja do czystych funkcji modułowych (`isMainLogEvent`, `phaseHeaderText`,
+`isHumanControllerEvent`, eksportowane `isRulesZoneMove` i zbiory) bez zmiany zachowania:
+równoważność udowodniona sondą wobec transkrypcji 1:1 starego warunku na macierzy **68 208
+kombinacji — 0 rozjazdów**; test rodzinny `test/b5-bramka-logu-gracza.test.js` (B5/1–B5/14)
+przypina każdy człon z jego zgłoszeniem, mutacje **9/9 złapane**; Żywy Tester 3 partie na świeżym
+`dist/`, 304 sondy no-op, 0 zgłoszeń, transkrypty porównane z partiami sprzed ekstrakcji.
+F8 naprawione (liczby z pomiaru),
 O1 nie do odtworzenia (`grep sentinel` w src/ znajduje tylko nazwy kart — potrzebny opis właściciela),
 O3 bez akcji, F4 nie wraca.
 
@@ -9984,9 +9996,10 @@ w `PLAN_2026-09-11b` okazał się nieprecyzyjny (plik w tamtej sesji nie powsta�
 `HANDOFF_2026-09-12` dostał werdykty i bramki z pomiaru; opis PR #114 zaktualizowany przez REST PATCH
 (`gh pr edit` na tym repo pada).
 
-Bramki końcowe: `npm test` **5218/5218** (5201 przed sesją; +8 B2, +9 B4), `npm run build`
-61 modułów / **3530,6 kB**, quick benchmark **84,2% (566/672)** (aggro 26,5%, random 5,1%, 135,0 s),
-golden master bota bez zmian. Żywy Tester na świeżym `dist/` (L76): 7 partii, 362 sondy no-op,
+Bramki końcowe: `npm test` **5232/5232** (5201 przed sesją; +8 B2, +9 B4, +14 B5), `npm run build`
+61 modułów / **3533,1 kB**, quick benchmark **84,2% (566/672)** (aggro 26,5%, random 5,1%, 135,0 s),
+golden master bota bez zmian. Żywy Tester na świeżym `dist/` (L76): 10 partii, 666 sond no-op,
 0 zgłoszeń detektorów, 0 niewycenionych ruchów bota; transkrypty poza repo (`tmp-audyt-b2-2026-09-12/`,
-`tmp-audyt-b4-2026-09-12/`, M239). Do decyzji właściciela: squash-merge PR #114 i ewentualny pełny B0
-(ADR 0018 — bez polecenia nie uruchamiamy).
+`tmp-audyt-b4-2026-09-12/`, `tmp-audyt-b5-2026-09-12/`, M239). Kolejka: O1 (odtworzenie wskazania
+z opisu właściciela), zapadnia druków (`bezSetu` 43, `bezZrodla` 13). Do decyzji właściciela:
+squash-merge PR #114 i ewentualny pełny B0 (ADR 0018 — bez polecenia nie uruchamiamy).
