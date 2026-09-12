@@ -12,6 +12,12 @@
 // Pomiar sprzed zmiany: oferta dla x (trample 5/5) blokowanego przez w (3/3),
 // którego lethal pokrywa y (3/3), brzmiała `{x: [{w: 3}]}` — 2 obrażenia
 // marnowały się na blokerze, który i tak ginie. Po zmianie: `{x: [{w: 0}]}`.
+//
+// 2026-09-12e (zlecenie właściciela „wycena bota przy przydziałach"): polityka
+// pokrycia lethal obowiązuje już NIE TYLKO przy trample — atakujący bez trample
+// i BLOKERZY też przekierowują obrażenia z celów już zgładzonych (test P/*
+// w test/p-wycena-przydzialow-pokrycie-lethal.test.js). B1/5 poniżej ma z tego
+// powodu skorygowaną drugą asercję (pierwsza — bez pokrycia — zostaje bez zmian).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
@@ -131,7 +137,7 @@ test('B1/4: pokrycie przez źródło z deathtouch (CR 702.2b) → oferta 0 na bl
   assert.ok(!alive(state, 'w'), 'w ginie od deathtouch (CR 702.4)');
 });
 
-test('B1/5: bez trample pokrycie NIC nie zmienia — pełna moc w blokerów (CR 510.1a/c)', () => {
+test('B1/5: bez trample pełna moc zostaje w blokerach, a pokrycie lethal przekierowuje nadmiar (CR 510.1a/c)', () => {
   const state = createGameState({ seed: 5, players: [{ id: 'p1' }, { id: 'p2' }] });
   atStep(state, 'declare_attackers', 'p2');
   tactician(state, 'p1');
@@ -148,12 +154,19 @@ test('B1/5: bez trample pokrycie NIC nie zmienia — pełna moc w blokerów (CR 
   assert.deepEqual(defaultDamageAssignmentFor(state, 'a', ['b1', 'b2'], 6, { assignments: {}, pass: false }),
     [{ blockerId: 'b1', amount: 2 }, { blockerId: 'b2', amount: 4 }],
     'pokrycie lethal nie zwalnia z przydziału, gdy stwór nie ma trample');
-  // Osobny stan: a (6/6, BEZ trample) i z (3/3) atakują; b1 (2/2) blokuje obu
-  // (drugi slot ze statyki Cenn's Tactician), b2 (3/3) blokuje a. Lethal b1
-  // pokrywa z (3 >= 2). Bez trample dopłata i tak jest obowiązkowa w tym
-  // znaczeniu, że cała moc MUSI trafić w blokerów (CR 510.1a/c) — a
-  // przesunięcie obrażeń na b2 zostawiłoby b1 przy życiu (overkill na b2),
-  // więc pokrycie lethal NIE zmienia przydziału atakującego bez trample.
+  // Osobny stan — ŚWIADOMA KOREKTA asercji (2026-09-12e, zlecenie właściciela
+  // „wycena bota przy przydziałach"): a (6/6, BEZ trample) i z (3/3) atakują;
+  // b1 (3/3 po liczniku) blokuje obu, b2 (3/3) blokuje a. Lethal b1 pokrywa z
+  // (3 >= 3), więc dopłata od a jest stratą obrażeń i cała moc idzie w b2.
+  // Wcześniejsza asercja [{b1:3},{b2:3}] utrwalała stan, w którym bot marnował
+  // 3 obrażenia na stworze już zgładzonym; jej uzasadnienie („przesunięcie
+  // obrażeń na b2 zostawiłoby b1 przy życiu") było zresztą błędne — b1 ginie od
+  // przydziału z niezależnie od decyzji a. Ten scenariusz jest dla WYNIKU
+  // neutralny (obaj blokerzy giną tak czy inaczej), ale jedna polityka pokrycia
+  // obowiązuje teraz niezależnie od trample zamiast specjalnego przypadku.
+  // Zmierzony przypadek, w którym przekierowanie daje DODATKOWE zabójstwo
+  // (b2 przeżywał z 1 obrażeniem), jest w P/1
+  // (test/p-wycena-przydzialow-pokrycie-lethal.test.js).
   const s2 = createGameState({ seed: 6, players: [{ id: 'p1' }, { id: 'p2' }] });
   atStep(s2, 'declare_attackers', 'p2');
   tactician(s2, 'p1');
@@ -169,10 +182,13 @@ test('B1/5: bez trample pokrycie NIC nie zmienia — pełna moc w blokerów (CR 
   assert.ok(execute(s2, {
     type: 'declare_blockers', playerId: 'p1', assignments: { a: ['b1', 'b2'], z: ['b1'],
   } }).ok, 'b1 blokuje dwóch dzięki statyce');
-  assert.deepEqual(defaultDamageAssignmentFor(s2, 'a', ['b1', 'b2'], 6, {
+  const planA = defaultDamageAssignmentFor(s2, 'a', ['b1', 'b2'], 6, {
     assignments: { z: [{ blockerId: 'b1', amount: 3 }] }, pass: false,
-  }), [{ blockerId: 'b1', amount: 3 }, { blockerId: 'b2', amount: 3 }],
-  'pokrycie lethal przez z NIE zmienia przydziału atakującego bez trample');
+  });
+  assert.deepEqual(planA, [{ blockerId: 'b1', amount: 0 }, { blockerId: 'b2', amount: 6 }],
+    'pokrycie lethal przez z zwalnia a z dopłaty do b1 — cała moc idzie w b2');
+  assert.equal(planA.reduce((suma, e) => suma + e.amount, 0), 6,
+    'bez trample cała moc MUSI trafić w blokerów (CR 510.1a/c) — suma się nie zmienia, tylko rozkład');
 });
 
 test('B1/6: dwóch atakujących z trample — przydziały liczone SEKWENCYJNIE (kolejność deklaracji)', () => {

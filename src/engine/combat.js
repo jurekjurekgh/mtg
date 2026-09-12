@@ -576,13 +576,20 @@ function singleBlockerFullAssignment(blockers, amount) {
  * Domyślny (deterministyczny) przydział: lethal-first w kolejności deklaracji
  * bloków — dokładnie zachowanie sprzed M66 (boty biorą ten wariant).
  *
- * B1 (zlecenie właściciela 2026-09-12, CR 702.19b/702.2b): przy trample
- * dopłata do lethal blokera, którego lethal POKRYWAJĄ już obrażenia
- * przydzielane mu w tym samym kroku przez inne stwory, jest stratą obrażeń,
- * które legalnie mogą iść na gracza — więc `context = { assignments, pass }`
- * (ta sama mapa, którą widzi walidator po W5) zmniejsza wymóg tego blokera.
+ * B1 (zlecenie właściciela 2026-09-12, CR 702.19b/702.2b): dopłata do lethal
+ * blokera, którego lethal POKRYWAJĄ już obrażenia przydzielane mu w tym samym
+ * kroku przez inne stwory, jest stratą obrażeń — przy trample legalnie mogą iść
+ * na gracza, więc `context = { assignments, pass }` (ta sama mapa, którą widzi
+ * walidator po W5) zmniejsza wymóg tego blokera.
+ *
+ * 2026-09-12e (zlecenie właściciela — wycena bota): to samo dotyczy atakującego
+ * BEZ trample. Zmierzona strata sprzed zmiany: `a` 4/4 blokowana przez `b1` 2/2
+ * i `b2` 3/3, lethal `b1` pokryty przez `z` 3/3 → plan `[{b1:3},{b2:1}]`, czyli
+ * JEDEN zabity (`b2` przeżywał z 1 obrażeniem); po zmianie `[{b1:0},{b2:4}]` —
+ * DWA zabite. Suma przydziału się nie zmienia (cała moc w blokerów, CR 510.1a),
+ * więc reguły są nietknięte: podział między blokerów jest dowolny (CR 510.1c),
+ * a walidator bez trample sprawdza wyłącznie permutację, sufit mocy i pełną sumę.
  * Bez kontekstu (wołania jednostkowe, helper W5) zachowanie dotychczasowe.
- * Reguły się nie zmieniają: legalność tego przydziału zapewnia W5.
  */
 function defaultDamageAssignment(state, attacker, blockers, amount, context = null) {
   const out = [];
@@ -592,7 +599,7 @@ function defaultDamageAssignment(state, attacker, blockers, amount, context = nu
     const blocker = state.objects.get(blockerId);
     if (!blocker || blocker.zone !== 'battlefield') continue;
     let need = lethalOf(state, attacker, blocker);
-    if (trample && context) {
+    if (context) {
       need = lethalAssignedByOthersThisPass(state, context.pass, blockerId, attacker.id, context.assignments, true)
         ? 0
         : Math.max(0, need - damageAssignedToBlockerThisPass(state, context.pass, blockerId, attacker.id, context.assignments, true));
@@ -606,7 +613,11 @@ function defaultDamageAssignment(state, attacker, blockers, amount, context = nu
   // 2/2 i 3/3 → 2+3=4). Reszta idzie do OSTATNIEGO blokera w kolejności
   // (zwykła konwencja M66, spójna z CR 510.1c). Przy trample nadwyżka
   // LEGALNIE zostaje dla obrońcy-gracza (CR 702.19b) — nie ruszać.
-  if (remaining > 0 && out.length > 0 && !hasKeyword(state, attacker, 'trample')) {
+  if (remaining > 0 && out.length > 0 && !trample) {
+    // Reszta do OSTATNIEGO celu (konwencja E8/B3). Pomiar: reszta > 0 zachodzi
+    // tylko wtedy, gdy każdy cel dostał co najmniej swój (pomniejszony o pokrycie)
+    // lethal, więc wszystkie są już zgładzone i wybór celu reszty jest neutralny
+    // dla wyniku — bez martwej gałęzi „pierwszy niezgładzony".
     out[out.length - 1].amount += remaining;
   }
   return out;
@@ -653,18 +664,89 @@ function needsBlockerDamageAssignmentDecision(state, blocker, targets) {
 }
 
 /**
+ * 2026-09-12e (zlecenie właściciela): przydziały pozostałych BLOKERÓW tego
+ * przebiegu skierowane w danego atakującego — symetria
+ * `assignedToBlockerThisPass`, z tymi samymi konwencjami: jawne przydziały z mapy
+ * (CR 510.1e), dla blokerów bez decyzji — pełna moc (jeden cel) albo podział
+ * domyślny, deathtouch → każde niezerowe obrażenie jest lethal (CR 702.2b),
+ * `onlyAssigned` pomija blokery z decyzją, której jeszcze nie ogłoszono (polityka
+ * sekwencyjna B1 — inaczej każdy zakładałby, że lethal pokryje ktoś inny),
+ * prewencja/protection POMIJANE (reguła mówi o PRZYDZIALE, nie o zadanych).
+ */
+function assignedToAttackerThisPass(state, pass, attackerId, excludeBlockerId, assignments = null, onlyAssigned = false) {
+  const sumFor = (list) => list
+    .filter((entry) => entry?.attackerId === attackerId)
+    .reduce((total, entry) => total + (Number.isInteger(entry.amount) && entry.amount > 0 ? entry.amount : 0), 0);
+  const out = [];
+  for (const blockerId of state.combat?.blockers?.get(attackerId) ?? []) {
+    if (blockerId === excludeBlockerId) continue;
+    const blocker = state.objects.get(blockerId);
+    if (!blocker || blocker.zone !== 'battlefield') continue;
+    if (pass ? !inFirstStrikePassOf(state, blockerId) : !inRegularPassOf(state, blockerId)) continue;
+    const targets = blockedAttackersOf(state, blockerId);
+    if (!targets.includes(attackerId)) continue;
+    const deathtouch = hasKeyword(state, blocker, 'deathtouch');
+    const explicit = assignments?.[blockerId];
+    if (!explicit && onlyAssigned && needsBlockerDamageAssignmentDecision(state, blocker, targets)) continue;
+    const amount = explicit
+      ? sumFor(explicit)
+      : (targets.length === 1
+        ? combatDamageAmount(blocker, state)
+        // Podział domyślny BEZ kontekstu — tak samo jak po stronie atakujących:
+        // wewnątrz iteratora nie rozwijamy rekurencyjnie polityki pokrycia.
+        : sumFor(defaultBlockerDamageAssignment(state, blocker, targets, combatDamageAmount(blocker, state))));
+    out.push({ blockerId, amount, deathtouch });
+  }
+  return out;
+}
+
+/** Suma obrażeń przydzielanych danemu atakującemu w TYM SAMYM przebiegu przez inne blokery. */
+export function damageAssignedToAttackerThisPass(state, pass, attackerId, excludeBlockerId, assignments = null, onlyAssigned = false) {
+  return assignedToAttackerThisPass(state, pass, attackerId, excludeBlockerId, assignments, onlyAssigned)
+    .reduce((total, entry) => total + entry.amount, 0);
+}
+
+/**
+ * Czy atakujący ma JUŻ przydzielone lethal w tym przebiegu przez INNE blokery
+ * (suma sięga lethal albo któreś niezerowe obrażenie pochodzi ze źródła
+ * z deathtouch — CR 702.2b). Symetria `lethalAssignedByOthersThisPass`.
+ */
+export function lethalAssignedByOtherBlockersThisPass(state, pass, attackerId, excludeBlockerId, assignments = null, onlyAssigned = false) {
+  const attacker = state.objects.get(attackerId);
+  if (!attacker || attacker.zone !== 'battlefield') return false;
+  const lethal = Math.max(0, effectiveToughness(attacker, state) - (attacker.damage ?? 0));
+  if (lethal <= 0) return true;
+  const entries = assignedToAttackerThisPass(state, pass, attackerId, excludeBlockerId, assignments, onlyAssigned);
+  if (entries.some((entry) => entry.deathtouch && entry.amount > 0)) return true;
+  return entries.reduce((total, entry) => total + entry.amount, 0) >= lethal;
+}
+
+/**
  * Domyślny (deterministyczny) podział blokera: lethal-first w kolejności
  * deklaracji ataków — ta sama polityka, którą boty mają po stronie atakującego.
  * CR 510.1d NIE wymaga lethal-first (to swobodny wybór), ale CR 510.1a wymaga
  * całej mocy: bloker nie ma trample, więc reszta idzie na ostatni cel.
+ *
+ * 2026-09-12e (zlecenie właściciela): `context = { assignments, pass }` zmniejsza
+ * wymóg celu, którego lethal POKRYWAJĄ już obrażenia przydzielane mu w tym samym
+ * kroku przez inne blokery — dopłata do stwora, który i tak ginie, jest stratą
+ * obrażeń, które legalnie mogą zabić kolejnego (wycena, nie reguły: podział jest
+ * swobodny, a `validateBlockerDamageAssignment` wymaga tylko pełnej sumy i sufitu
+ * mocy). Bez kontekstu (wołania jednostkowe) zachowanie dotychczasowe.
  */
-function defaultBlockerDamageAssignment(state, blocker, targets, amount) {
+function defaultBlockerDamageAssignment(state, blocker, targets, amount, context = null) {
   const out = [];
   let remaining = amount;
   for (const attackerId of targets) {
     const attacker = state.objects.get(attackerId);
     if (!attacker || attacker.zone !== 'battlefield') continue;
-    const assigned = Math.min(remaining, lethalOf(state, blocker, attacker));
+    let need = lethalOf(state, blocker, attacker);
+    if (context) {
+      need = lethalAssignedByOtherBlockersThisPass(state, context.pass, attackerId, blocker.id, context.assignments, true)
+        ? 0
+        : Math.max(0, need - damageAssignedToAttackerThisPass(state, context.pass, attackerId, blocker.id, context.assignments, true));
+    }
+    const assigned = Math.min(remaining, need);
     out.push({ attackerId, amount: assigned });
     remaining -= assigned;
   }
@@ -673,8 +755,8 @@ function defaultBlockerDamageAssignment(state, blocker, targets, amount) {
 }
 
 /** Publiczna powierzchnia testowa (jak defaultDamageAssignmentFor). */
-export function defaultBlockerDamageAssignmentFor(state, blockerId, attackerIds, amount) {
-  return defaultBlockerDamageAssignment(state, state.objects.get(blockerId), attackerIds, amount);
+export function defaultBlockerDamageAssignmentFor(state, blockerId, attackerIds, amount, context = null) {
+  return defaultBlockerDamageAssignment(state, state.objects.get(blockerId), attackerIds, amount, context);
 }
 
 /**
@@ -808,19 +890,21 @@ export function buildDefaultDamageAssignments(state) {
   const view = buildDamageAssignmentView(state);
   if (!view) return {};
   const assignments = {};
+  const pass = state.pendingDamageAssignment?.pass ?? false;
   if (view.role === 'blocker') {
     // W3: wariant domyślny dla podziału blokera (boty i przycisk „domyślnie").
+    // 2026-09-12e: liczone SEKWENCYJNIE z przekazywaną mapą — kolejny bloker
+    // widzi, ile lethal pokrywają wcześniejsi (symetria gałęzi atakujących z B1).
     for (const entry of view.entries) {
       const blocker = state.objects.get(entry.blockerId);
-      assignments[entry.blockerId] = defaultBlockerDamageAssignment(state, blocker, entry.attackers.map((a) => a.id), entry.power);
+      assignments[entry.blockerId] = defaultBlockerDamageAssignment(state, blocker, entry.attackers.map((a) => a.id), entry.power, { assignments, pass });
     }
     return assignments;
   }
   // B1 (CR 702.19b): przydziały liczone SEKWENCYJNIE w kolejności deklaracji —
-  // kolejny atakujący z trample widzi, ile lethal pokrywają wcześniejsi. Mapa
-  // jest przekazywana do własnego wypełnienia (odczyt wewnątrz dotyczy tylko
-  // wpisów już policzonych).
-  const pass = state.pendingDamageAssignment?.pass ?? false;
+  // kolejny atakujący widzi, ile lethal pokrywają wcześniejsi. Mapa jest
+  // przekazywana do własnego wypełnienia (odczyt wewnątrz dotyczy tylko wpisów
+  // już policzonych).
   for (const entry of view.entries) {
     const attacker = state.objects.get(entry.attackerId);
     assignments[entry.attackerId] = defaultDamageAssignment(state, attacker, entry.blockers.map((b) => b.id), entry.power, { assignments, pass });
@@ -1033,8 +1117,11 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
     const assignment = collected[blockerId]
       ?? (targets.length === 1
         ? [{ attackerId: targets[0], amount }]
-        : defaultBlockerDamageAssignment(state, blocker, targets, amount));
+        : defaultBlockerDamageAssignment(state, blocker, targets, amount, { assignments: runningAssignments, pass }));
     blockerPlan.push({ blockerId, blocker, targets, amount, assignment });
+    // 2026-09-12e: kolejny bloker widzi przydziały wcześniejszych (symetria fazy
+    // atakujących z B1) — pokrycie lethal jest ogłoszone, nie zakładane.
+    if (assignment) runningAssignments[blockerId] = assignment;
   }
 
   // ---- Faza 3: zadanie (najpierw atakujący, potem blokujący — CR 510.1) ----
