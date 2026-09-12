@@ -10058,3 +10058,71 @@ samą metodą, ale to decyzja właściciela), 7 snapshotów wymagających pobran
 snapshotu to tokeny i ziemie bazowe poza arkuszem) oraz 1 udokumentowany rozjazd `ethersworn-shieldmage`
 (arkusz `536CON` vs katalog `ARB`, pole `uwaga`, druk ARB potwierdzony przez właściciela 2026-08-05).
 O1 właściciel polecił pominąć, więc nie wraca do kolejki.
+
+**Drugi etap zapadni druków: klasa E → 0 i drugie strony kart dwustronnych (2026-09-12, `3821187`,
+zlecenie właściciela „zrób teraz to co proponujesz — 21 klasy E" + jego wskazówka, że siedem kart
+„do pobrania" to rewersy).** Zacieśniono 21 snapshotów klasy E (adres wyszukiwania z kwalifikatorem
+setu → `/cards/<UUID obrazu>`); przed zapisem każdego zmierzono UUID obrazu == `imageUri` katalogu,
+set snapshotu == set z arkusza oraz obecność `name`/`set`/`collector_number`, a każdy plik dostał
+klucz `proweniencja` z metodą i POPRZEDNIM adresem. Siedem kart, które pierwszy etap zostawił jako
+„DO POBRANIA ZE SCRYFALL", okazało się tylnymi twarzami transformów — decyzja (delegowana agentowi):
+BEZ osobnych snapshotów, bo Scryfall opisuje transform jako jeden obiekt karty (jedno `id`, obie
+twarze w `card_faces`), katalogowe `imageUri` obu twarzy niesie ten sam UUID, a arkusz daje im ten
+sam `artId`+set — drugi plik byłby duplikatem bajtów i drugim źródłem prawdy dla jednego druku.
+Zamiast tego narzędzie dostało klasę `B2-druga-strona-pokryta-snapshotem` z mierzalnym warunkiem
+pokrycia: nazwa karty musi być twarzą snapshotu „brata" (przypadek ujemny z danych: `token_rat`
+dzieli UUID z `lab-rats`, a jego twarzą nie jest — test D/6). Przy okazji wyszły trzy przyczyny
+źródłowe: (1) UUID obrazu czytano wyłącznie z `image_uris.large`, a dwustronne trzymają obrazy przy
+twarzach — 3 snapshoty nie potwierdzały druku offline i po zacieśnieniu `source` narzędzie zgłaszało
+FAŁSZYWY rozjazd (helper `uuidObrazuSnapshotu` z zapasowym odczytem z `card_faces[0]`, potwierdzone
+offline 455 → 458); (2) porównanie setu snapshotu z katalogiem działało bezwarunkowo, a 44 wpisy
+syntetyczne mają `set: null` — po ujawnieniu snapshotu tokena Tarmogoyf pojawił się fałszywy rozjazd
+`tm3c vs null` (teraz porównanie tylko gdy obie strony mają set; różnica przy obu obecnych nadal
+rozjazdem, test D/15 z mutacją); (3) ratchet miał WŁASNE kopie `uuidOf`/`sourceUuid`/`sourceSet`
+i czytał UUID tylko z `image_uris.large` — dryf dwóch implementacji (F7/L41) sprawiał, że test
+i narzędzie różnie widziały transformy (ratchet importuje helpery z narzędzia, narzędzie ma eksporty,
+main-guard i czystą funkcję `przegladDrukow`). Dodatkowo snapshot tokena Tarmogoyf nosił nazwę
+niezgodną z konwencją (`scryfall-token-tarmogoyf.json` przy id `token_tarmogoyf`), przez co przegląd
+widział kartę jako „brak snapshotu" — `git mv` na nazwę równą id, ścieżka w
+`test/real-cards-batch21.test.js` poprawiona. Pomiar po: A 349, B 88 → **110**, B2 **7** (nowa),
+C 0, D 0, E 21 → **0**, F 0, rozjazdy UUID 0, brak-snapshotu 51 → **43** (wszystkie poza arkuszem),
+DO POBRANIA 7 → **0**, UUID potwierdzony offline 455 → **458**; Kart 509, w arkuszu 465, poza 44.
+Jedyny rozjazd setu pozostaje udokumentowany (`ethersworn-shieldmage`: arkusz `536CON` vs katalog
+`ARB`, druk ARB potwierdzony przez właściciela 2026-08-05, `CON` to skrót płaszczyzny Alara).
+Poza klasami została jedna sierota: `docs/cards/scryfall-undercity-dungeon.json` — snapshot dla
+karty nieobecnej w rejestrze (silnik tworzy dungeon dynamicznie jako `undercity`); pilnuje jej test
+D/14, żeby nowe sieroty nie pojawiały się cicho. Testy: nowy
+`test/druki-druga-strona-i-uuid-obrazu.test.js` (D/1–D/15) + ratchet rozszerzony o A/7 (reguły
+porównania), `npm test` **5255/5255**. Zakres online bez zmian i bez upiększeń: w sieci potwierdzono
+JEDEN adres (Apprentice Wizard), reszta to cross-check offline. Raport zaktualizowany:
+`docs/audits/WERYFIKACJA_DRUKOW_KOLEKCJI_2026-09-12.md` sekcje 6–8.
+
+**Wizard podziału obrażeń po stronie BLOKUJĄCEGO (2026-09-12, `68c3801`, zlecenie właściciela
+„zrób ten wizard podziału po stronie blokera skoro jest potrzebny").** Pomiar wykazał, że panel
+blokującego istnieje i działa (poprawka opisu z `582ffbe`), ale podział obrażeń blokera nie miał
+żadnego testu end-to-end z prawdziwego stanu gry, a etykieta domyślnego przycisku wizarda brzmiała
+„po kolei blokerów" także po stronie blokującej, gdzie rozdzielamy obrażenia między ATAKUJĄCYCH
+(`src/table/choice-request.js`, `renderDamageWizard`). Naprawa minimalna i bez specjalnych przypadków:
+etykieta zależna od roli (`role === 'blocker'` → „po kolei atakujących"), reszta logiki bez zmian —
+stepper (`picker-step-dec/inc`, `damage-wizard-minus/plus`, `picker-value`) i kontrakt `picker.js`
+nienaruszone. Nowy `test/w3-wizard-podzialu-blokera-ui.test.js` (B/1–B/7) idzie całą drogą: realny
+stan → `playerView` z `pendingChoice` roli `blocker` (moc 7, dwóch atakujących, lethal 4) → wizard
+w DOM → komenda → `execute` w silniku (pierwszy atakujący ginie, drugi dostaje 3); osobno równoważność
+bramki UI z `validateBlockerDamageAssignment` na wszystkich 36 osiągalnych podziałach, odrzucenie 3
+podziałów ponad moc (`damage_exceeds_power`), wolny podział 0/7 dosłownie z CR 510.1c oraz brak
+powierzchni trample po stronie blokera (CR 702.19b dotyczy atakującego). Scenariusz `doubleBlock()`
+(cenns-tactician + segmented-krotiq z +1/+1 „wall" vs dwa gurmag-drowner) jest współdzielony z testem
+silnika W3. Żywy Tester: 3 partie na świeżym `dist` (worek-mroczny/kaladesh/51/greedy,
+innistrad-wu/tarkir-bg/2026/impatient, kaladesh/alara/44/defensive) — **129 sond noop, 0 zgłoszeń
+detektorów, 0 niewycenionych ruchów bota**; panele blokującego obecne w transkryptach
+(„Zatwierdź bloki" ×4, „Deklaracja blokujących" ×5), sam wizard podziału się nie pojawił, bo wymaga
+podwójnego bloku — dowodem jest test deterministyczny, a transkrypty leżą poza repo
+(`tools/table-tester/tmp-audyt-w3ui2-2026-09-12/`, M239). Przy okazji: `jsdom` nie jest zależnością
+głównego `package.json` — tester stołu ma własny manifest i lockfile
+(`tools/table-tester/package.json`, `npm ci` → 63 pakiety), więc po odtworzeniu środowiska trzeba go
+doinstalować osobno. KOREKTA zapisu: w opisie commitu padło stwierdzenie, że dla wizarda blokera
+„nie było ani jednego dowodu" — to przesada. Istniał syntetyczny test roli `blocker`
+(`test/choice-request-ui.test.js`, `renderDamageWizard (W3)`), który przechodził `defaultCommand: null`
+i dlatego nie łapał wady etykiety; nie miał natomiast łańcucha realny stan → `playerView`, równoważności
+UI z walidatorem ani wykonania w silniku. Historia przepchnięta nie jest przepisywana (force push
+zakazany) — korekta zostaje w dokumentach.
