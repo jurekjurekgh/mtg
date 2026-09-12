@@ -5775,8 +5775,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // celów); zabójstwo własnego to katastrofa (−60). Bez zabójstwa
             // dotychczasowa polityka (największy wróg).
             const kill2 = debuffKills(t2);
+            // B (Battle-Rattle Shaman): pump siły — premiuj stwora zdolnego
+            // do ataku (proxy zamiaru ataku; początek combatu jest PRZED
+            // deklaracją, więc sam bonus M167/A za atakujących nie wystarcza).
+            // Tylko na własnej turze (w cudzej pump siły wspiera BLOK —
+            // chory stwór blokuje normalnie). Kara -60 w skali zabójstwa:
+            // decydująca, a przy planszy samych chorych wygrywa odmowa (0).
+            let attackBonus2 = attackingNow2 ? 25 : 0;
+            if ((cmd.pump?.power ?? 0) > 0 && !attackingNow2 && myTurn(view)) {
+              const canAttack2 = !t2.tapped && (!t2.summoningSickness || hasKeyword(t2, 'haste'));
+              attackBonus2 = canAttack2 ? 15 : -60;
+            }
             score += (cmd.friendly
-              ? (t2.controllerId === view.playerId ? 30 + v2 + (attackingNow2 ? 25 : 0) : -20 - v2)
+              ? (t2.controllerId === view.playerId ? 30 + v2 + attackBonus2 : -20 - v2)
               : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 : -20 - v2) : (kill2 ? 30 + v2 + 60 : 30 + v2)));
           }
           // F-D (Inferno Titan, plan 2026-09-09): trigger wielocelowy z efektem
@@ -5832,7 +5843,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M167/A: buff idzie na współatakującego, nie na stojącego.
         const attackingNow = (view.combat?.attackers ?? []).includes(target.id);
         if (cmd.friendly) {
-          if (target.controllerId === view.playerId) return finish(30 + value + (attackingNow ? 25 : 0));
+          if (target.controllerId === view.playerId) {
+            // B (Battle-Rattle Shaman): jak w gałęzi wielocelowej (L41) —
+            // pump siły idzie na stwora, którym bot MOŻE atakować.
+            let attackBonus = attackingNow ? 25 : 0;
+            if ((cmd.pump?.power ?? 0) > 0 && !attackingNow && myTurn(view)) {
+              const canAttack = !target.tapped && (!target.summoningSickness || hasKeyword(target, 'haste'));
+              attackBonus = canAttack ? 15 : -60;
+            }
+            return finish(30 + value + attackBonus);
+          }
           return finish(-20 - value);
         }
         // B: jak w gałęzi wielocelowej (L41) — zabójstwo debuffem bije rozmiar.

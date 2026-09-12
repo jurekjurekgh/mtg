@@ -2,7 +2,7 @@ import { choiceResponse } from '../protocol/types.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
-import { commandForDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection } from './multi-target.js';
+import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -1006,6 +1006,8 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // dedykowany plan/wizard (enumeracje, search, undercity, „1 kandydat
   // + odmowa”, wszystkie przyszłe kształty bez osobnych planów).
   const buttonsMode = Boolean(plan.buttonsMode);
+  // A2: wybór załogi — checkboksy + licznik mocy + default z oferty.
+  const crewMode = Boolean(plan.crewMode);
   const xLabel = plan.hasX ? ` oraz wartość X (${plan.xMin}–${plan.xMax})` : '';
   const range = plan.minTargets === plan.maxTargets
     ? `${plan.maxTargets}`
@@ -1083,7 +1085,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // konkretnymi instancjami), więc wybór „drugiej kopii" musi mapować się
   // na reprezentanta klasy — inaczej Zatwierdź milczy (klin z żywca).
   const defOfMulliganCard = (id) => session?.state?.objects?.get(id)?.cardId ?? null;
-  const currentCommand = () => (plan.discardMode
+  const currentCommand = () => (plan.crewMode
+    ? commandForCrewSelection(plan, [...chosen])
+    : plan.discardMode
     ? commandForDiscardSelection(plan, [...chosen])
     : plan.cardIdsMode
     ? commandForMulliganSelection(commands, [...chosen], defOfMulliganCard)
@@ -1120,7 +1124,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     for (const row of rows) row.handle.setChecked(pickOf(row));
   };
 
-  const addRow = (id, slot, { labelOverride = null, forceKind = null, groupOverride = undefined, cardId = null } = {}) => {
+  const addRow = (id, slot, { labelOverride = null, forceKind = null, groupOverride = undefined, cardId = null, nameSuffix = '' } = {}) => {
     // M298/A: wybór pojedynczy, mulligan, okna rzutu i tryb przyciskowy są
     // JEDNOWYBOROWE — radio w grupie, a model (`chosen`) czyści się przy
     // każdym nowym zaznaczeniu.
@@ -1141,7 +1145,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       // (commandLabel), nie kształt wyboru.
       label: (typeof labelOverride === 'string' && labelOverride.includes('<'))
         ? null
-        : (labelOverride ?? objectOrPlayerName(view, session, id)),
+        : (labelOverride ?? (objectOrPlayerName(view, session, id) + nameSuffix)),
       html: (typeof labelOverride === 'string' && labelOverride.includes('<'))
         ? labelOverride
         : null,
@@ -1222,6 +1226,13 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       } else {
         setStatus('Wskaż jeden wiersz', true);
       }
+    } else if (crewMode) {
+      // A2: licznik progu — ile mocy zaznaczono, ile brakuje do N.
+      const have = crewSelectionPower(plan, [...chosen]);
+      const need = plan.neededPower;
+      if (cmd) setStatus(`Moc załogi: ${have} / ≥ ${need} — gotowe`, false);
+      else if (chosen.size === 0) setStatus(`Wybierz załogę o łącznej mocy ≥ ${need}`, true);
+      else setStatus(`Moc załogi: ${have} / ≥ ${need} — brakuje ${need - have}`, true);
     } else if (cmd) {
       // C1 (zgłoszenie właściciela 2026-09-10): łączny koszt wariantu
       // (`cmd.cost` z silnika — np. Fireball: X + {R} + {1}/cel ponad
@@ -1262,6 +1273,12 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     // M298/A: mulligan — wiersze z ETYKIETAMI od wywołującego („Zatrzymaj
     // rękę (7 kart)” / „Weź mulligan”), nie z nazw obiektów.
     for (const row of plan.rows ?? []) addRow(row.id, null, { labelOverride: row.label });
+  } else if (crewMode) {
+    // A2: wiersz na kandydata z jego mocą (licznik progu N); podgląd karty
+    // działa jak w innych trybach (dopisek, nie labelOverride).
+    for (const id of plan.targets) {
+      addRow(id, null, { nameSuffix: ` (moc ${plan.powers?.[id] ?? '?'})` });
+    }
   } else if (singleMode) {
     // M298/A: wybór jednego celu — po wierszu na kandydata + opcjonalny
     // wiersz odmowy („you may”: targetId null w ofercie silnika).
@@ -1279,6 +1296,13 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   if (sacMode) {
     renderPickerSection(list, `${slotLabels[1] ?? 'Poświęcenie (koszt)'}:`, { className: 'multi-target-slot-label' });
     for (const id of plan.sacrifices) addRow(id, 'sac');
+  }
+
+  // A2: default silnika startuje zaznaczony (gracz tylko koryguje).
+  if (crewMode) {
+    for (const id of plan.defaultIds ?? []) {
+      if (plan.targets.includes(id)) chosen.add(id);
+    }
   }
 
   if (plan.hasX) {

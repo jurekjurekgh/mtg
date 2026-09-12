@@ -67,6 +67,27 @@ export function triggerTargetDebuffOf(ability) {
   }
   return null;
 }
+/**
+ * B (znalezisko właściciela 2026-09-12, Battle-Rattle Shaman): pump SIŁY
+ * triggera — {power, toughness} (dodatnie delty) dla efektów pompujących
+ * siłę stwora (`pump` / `buff_creature_until_end_of_turn` z power > 0
+ * i toughness ≥ 0 — ten sam warunek znakowy co „przyjazny" w
+ * triggerTargetEffectFriendly), inaczej null. Generyczne (ADR 0002): bot
+ * celuje pumpem siły stwora, którym MOŻE atakować — +X/+0 na stworze,
+ * który nie atakuje, wygasa bez skutku (Shaman odpala się na początku
+ * combatu, PRZED deklaracją ataku). Pump samej toughness (+0/+Y) celowo
+ * poza sygnałem: chory stwór nadal blokuje, więc buff ma sens.
+ */
+export function triggerTargetPowerPumpOf(ability) {
+  const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+  for (const e of effs) {
+    if ((e?.type === 'pump' || e?.type === 'buff_creature_until_end_of_turn')
+      && (e.power ?? 0) > 0 && (e.toughness ?? 0) >= 0) {
+      return { power: e.power ?? 0, toughness: e.toughness ?? 0 };
+    }
+  }
+  return null;
+}
 // Keywordy SZKODLIWE dla obdarowanego (nadanie ich wrogowi to zysk, nie strata).
 // W katalogu dziś nie występują, ale klasyfikacja „każdy grant = przyjazny"
 // bez tego zbioru byłaby pułapką przy pierwszej karcie typu „gains defender".

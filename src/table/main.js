@@ -33,7 +33,7 @@ import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard } from './choice-request.js';
-import { discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf } from './multi-target.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
 function runEngineSmoke() {
@@ -1721,7 +1721,7 @@ function bootstrapTable() {
    * otwierają kreator „tapnij źródło po jednym"; gdy płatność jest
    * jednoznaczna (0 tapów albo jedyny wariant) zostaje auto-tap M34.
    */
-  function play(cmd) {
+  function play(cmd, { skipCrewWizard = false } = {}) {
     if (!session) { playDirect(cmd); return; }
     // M106/Z10 (audyt stołu): przy OTWARTYM kreatorze many klik w inną akcję
     // szedł prosto do playDirect — wstrzymany rzut przepadał bez śladu, nowa
@@ -1736,6 +1736,15 @@ function bootstrapTable() {
         // M348/F10: log to tablica dla renderera; zapis idzie przez API sesji.
         session.logSystem(`Przerwano płatność many: ${describeAbandonedCast(abandoned)}. Mana w puli zostaje.`);
       }
+    }
+    // A2 (znalezisko właściciela 2026-09-12, Balamb Garden): oferta crew
+    // to default silnika, nie rozkaz — człowiek wybiera załogę w kreatorze
+    // (ptaszek + licznik mocy). PRZED kreatorem many: tapnięcia załogi
+    // schodzą z planszy, zanim auto-tap zacznie szukać źródeł (dziś żaden
+    // pojazd nie łączy crew z kosztem many, ale kolejność jest z CR 601.2h).
+    if (!skipCrewWizard) {
+      const crew = crewPlanFor(cmd);
+      if (crew) { openCrewWizard(crew); return; }
     }
     const descriptor = manaWizardFor(cmd);
     if (!descriptor) { playDirect(cmd); return; }
@@ -1801,6 +1810,46 @@ function bootstrapTable() {
     const source = session.state?.objects?.get(cmd.objectId);
     const ability = source?.abilities?.[cmd.abilityIndex];
     return ability?.cost?.tap ? cmd.objectId : null;
+  }
+
+  /**
+   * A2: plan kreatora załogi dla ludzkiej oferty crew/saddle albo null
+   * (brak wyboru / obcy gracz / brak progu). Kandydaci z WIDOKU (kind,
+   * controllerId, tapped, power = effectivePower — te same liczby, które
+   * widzi gracz i którymi liczy default silnika); próg N z deskryptora
+   * zdolności w pełnym stanie (widok go nie niesie).
+   */
+  function crewPlanFor(cmd) {
+    const source = session.state?.objects?.get(cmd?.objectId);
+    const ability = source?.abilities?.[cmd?.abilityIndex];
+    const saddle = ability?.cost?.saddlePower != null;
+    // Próg N z deskryptora w pełnym stanie (widok go nie niesie);
+    // kandydatów i moce bierze czysty moduł z widoku pola bitwy.
+    const plan = crewWizardPlanFor({
+      cmd,
+      playerId: HUMAN_ID,
+      neededPower: saddle ? ability.cost.saddlePower : ability?.cost?.crewPower,
+      saddle,
+      battlefield: session.view().zones?.battlefield,
+    });
+    if (!plan) return null;
+    const verb = saddle ? 'Osiodłaj' : 'Obsadź';
+    return { plan, intro: `${verb}: ${session.nameOf(source?.cardId)} — zaznacz załogę do tapnięcia:` };
+  }
+
+  /** A2: modal kreatora załogi; Zatwierdź wraca do play() z pominięciem re-wejścia. */
+  function openCrewWizard({ plan, intro }) {
+    renderMultiTargetWizard(els.choiceRequestBody, {
+      view: session.view(),
+      session,
+      plan,
+      commands: [],
+      intro,
+      onOpenCard: openCardFullscreen,
+      onComplete: (built) => { hideModal('choice-request'); play(built, { skipCrewWizard: true }); },
+      onCancel: () => hideModal('choice-request'),
+    });
+    showModal('choice-request');
   }
 
   function manaWizardFor(cmd) {
