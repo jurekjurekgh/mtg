@@ -59,13 +59,25 @@ dopisani po pomiarze, nie wymyśleni z góry).
       (ADR 0017 — `enchantPlayer`, `enchantedPlayerId`, `cursedPlayerId`),
       choke pointy (L107). Wynik: `docs/audits/AUDYT_PR113_2026-09-11.md`
       + sekcja w opisie PR. Znalezione błędy → F1…Fn, każdy osobnym commitem.
-- [ ] **W3 — wyzwanie 3/5: bloker dzieli obrażenia między atakujących**
+- [x] **W3 — wyzwanie 3/5: bloker dzieli obrażenia między atakujących**
       (CR 510.1a/510.1c/510.1d). Dowód online (tekst CR dosłownie) → test RED
       `test/wyzwanie-3-bloker-dwóch-atakujacych-510-1d.test.js` → naprawa
       u źródła (decyzja przydziału po stronie BLOKERÓW, generyczna, z wariantem
       domyślnym lethal-first dla botów) → mutacje → bramki.
       Ryzyko: nowa decyzja blokująca = checklista ~10 punktów integracji (L95)
       i brak zawieszeń w benchmarku (L48: oferta == walidacja).
+      **WYKONANE `c5adc97`**: dowód online (mtg.wiki/page/Combat_damage_step,
+      wydanie 2026-09-02 — 510.1 kolejność „atakujący, potem blokujący",
+      510.1a moc, 510.1d dowolny podział kontrolera), test RED
+      `test/wyzwanie-3-bloker-dwóch-atakujacych-510-1d.test.js` (W3/1–W3/7),
+      naprawa u źródła: przebieg w dwóch fazach, `pendingDamageAssignment`
+      z `role: 'blocker'` i `phase` w resume, `validateBlockerDamageAssignment`,
+      default lethal-first dla botów (jedna oferta, `finish(0)` bez zmian),
+      widok + wizard (`sourceId`/`targets`/`targetKey`). Kierunek „interleaved
+      dealing z deduplikacją" z tego planu zastąpiony dwiema fazami (CR 510.1).
+      Mutacje (L13) złapane: 7 wariantów. Bramki: `npm test` 5175/5175,
+      `test:all` 5185/5185, build 61 modułów / 3512,6 kB, benchmark 84,2%
+      (566/672) bez zmian i bez zawieszeń, golden master bez churn.
 - [ ] **W4 — wyzwanie 4/5**: kandydat z audytu E2 albo z pętli jakości
       (dopisany tu z pomiarem i źródłem online przed implementacją).
 - [ ] **W5 — wyzwanie 5/5**: j.w.

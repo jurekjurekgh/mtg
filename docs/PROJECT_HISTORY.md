@@ -31,9 +31,11 @@ zlecenie na przegląd wszystkich kart. Handoff: `docs/setup/HANDOFF_2026-09-12.m
 - **Plan + audyt PR #113** (`17024f3`): triaż tez starego planu, w tym W3
   (`combat.js` `processCombatPass` — obrońca zadaje PEŁNĄ moc każdemu
   atakującemu, CR 510.1a/d wymaga podziału sumy; tylko trample zachowuje
-  702.19b). Kierunek naprawy wybrany (eager per-pass blocker decision +
-  interleaved dealing z deduplikacją po pierwszym indeksie), **implementacja
-  nie rozpoczęta** — sesję przejęły zgłoszenia A i B.
+  702.19b). Kierunek naprawy wybrany wtedy jako eager per-pass +
+  interleaved dealing z deduplikacją; w implementacji (`c5adc97`) zastąpiony
+  dwiema fazami przebiegu w kolejności CR 510.1 (atakujący, potem blokujący) —
+  bez deduplikacji po pierwszym indeksie i bez ryzyka podwójnego zadania obrażeń
+  atakujących przy wznowieniu. Sesję przejęły najpierw zgłoszenia A i B.
 - **A** (`7889ad4`): Curiosity pokazywała druk JMP zamiast ISD z kolekcji.
   Przyczyna zmierzona: `set: 'ISD'` w katalogu był poprawny od początku —
   snapshot pobrano `cards/named?exact=Curiosity` BEZ `set=`, a Scryfall zwraca
@@ -80,11 +82,28 @@ zlecenie na przegląd wszystkich kart. Handoff: `docs/setup/HANDOFF_2026-09-12.m
   rzut z czystych lądów bez zmian; Giant Spider bez zmian; Scroll Thief karany
   jak Curiosity; Chronic Flooding na cudzy ląd bez zmian (58,5) i wciąż wybierana.
 
-Bramki: `npm test` 5167/5167, `npm run test:all` 5177/5177, build 61 modułów /
-3502,8 kB, `tools/check-card-printings.mjs` kod 0 (rozjazd 1, udokumentowany),
-quick benchmark heuristic
-84,2% (566/672) wobec 84,7% (569/672) przed B; bez pełnego B0 (ADR 0018 —
-decyzja właściciela).
+- **W3** (`c5adc97`): bloker blokujący dwóch lub więcej atakujących zadawał
+  KAŻDEMU z nich pełną moc (7/6 vs dwóch 2/4 → 7 i 7 = 14 > moc 7); CR 510.1a/d
+  wymaga podziału sumy, a CR 510.1 kolejności „najpierw atakujący, potem
+  blokujący". Przebieg obrażeń ma teraz dwie fazy; decyzja przydziału należy do
+  kontrolera BLOKERA (`pendingDamageAssignment` z `role: 'blocker'`, `phase`
+  w resume, mapy przydziałów rozdzielone wg fazy — dwie decyzje w jednym
+  przebiegu przechodzą po kolei); walidacja `validateBlockerDamageAssignment`
+  (pełna suma = moc, sufit, żywe cele, BEZ lethal-first — to trample
+  atakującego, CR 702.19b); wariant domyślny lethal-first dla botów (nadal
+  JEDNA oferta, `finish(0)` bez zmian); widok i wizard znormalizowane
+  (`sourceId`/`targets`/`targetKey`). Podwójny blok osiągalny przez statykę
+  Cenn's Tactician (M166/E, `blockSlotsFor`). Testy W3/1–W3/7
+  (`test/wyzwanie-3-bloker-dwóch-atakujacych-510-1d.test.js`) + test wizarda po
+  stronie blokera; mutacje (L13) złapane: pełna moc na każdego, brak wymogu
+  pełnej sumy, zły decydent, resume bez fazy, zły walidator, brak decyzji,
+  widok bez roli.
+
+Bramki: `npm test` 5175/5175, `npm run test:all` 5185/5185, build 61 modułów /
+3512,6 kB, `tools/check-card-printings.mjs` kod 0 (rozjazd 1, udokumentowany),
+quick benchmark heuristic 84,2% (566/672) — identycznie przed i po W3, wobec
+84,7% (569/672) przed B; golden master bota bez churn; bez pełnego B0 (ADR 0018
+— decyzja właściciela).
 
 ## Sesja 2026-09-10/11 — zgłoszenia właściciela A–G z gry przy stole (PR #113, arena/01a08d0e)
 
