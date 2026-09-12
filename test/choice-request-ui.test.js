@@ -800,3 +800,34 @@ for (const trample of [false, true]) {
     assert.deepEqual(calls[1], calls[0], 'plus nie przekracza mocy');
   });
 }
+
+// W3 (CR 510.1d): ten sam wizard dzieli moc BLOKERA między atakujących, których
+// blokuje — klucze komendy to attackerId, a nadwyżka „do gracza" nie istnieje
+// (trample jest wyłącznie po stronie atakującego, CR 702.19b).
+test('renderDamageWizard (W3): podział blokera → assignments z kluczami attackerId', () => {
+  const host = new ChoiceMiniEl('div');
+  const calls = [];
+  const pending = {
+    playerId: 'p1', role: 'blocker', blockerId: 'wall',
+    entries: [{
+      blockerId: 'wall', cardId: 'highland-game', power: 7,
+      attackers: [
+        { id: 'a1', cardId: 'goblin-piker', toughness: 4, damage: 0, lethal: 4 },
+        { id: 'a2', cardId: 'rustwing-falcon', toughness: 4, damage: 0, lethal: 4 },
+      ],
+    }],
+  };
+  renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand: null, onComplete: (cmd) => calls.push(cmd) });
+  assert.match(host.textContent, /moc blokera atakującym/, 'etykieta strony blokera');
+  assert.match(host.textContent, /Highland Game \(moc 7\)/, 'źródłem mocy jest bloker');
+  const confirm = findAll(host, 'button', 'Zatwierdź przydział')[0];
+  assert.equal(confirm.disabled, false, 'start lethal-first 4+3 = pełna moc');
+  confirm.click();
+  assert.deepEqual(calls, [{
+    type: 'resolve_damage_assignment', playerId: 'p1',
+    assignments: { wall: [{ attackerId: 'a1', amount: 4 }, { attackerId: 'a2', amount: 3 }] },
+  }]);
+  findAll(host, 'button', '−1')[1].click();
+  assert.equal(confirm.disabled, true, 'niedobór (suma < mocy) blokuje Zatwierdź — CR 510.1a');
+  assert.ok(!/do gracza: [1-9]/.test(host.textContent), 'bloker nie przenosi nadwyżki na gracza');
+});

@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
@@ -5389,14 +5389,20 @@ export function execute(state, input) {
     if (cmd.playerId !== state.pendingDamageAssignment.playerId) return reject('damage_assignment_not_your_decision');
     const pending = state.pendingDamageAssignment;
     const assignments = cmd.assignments ?? {};
-    for (const attackerId of Object.keys(assignments)) {
-      const err = validateDamageAssignment(state, attackerId, assignments[attackerId]);
+    // W3 (CR 510.1c/d): kluczami przydziału są ATAKUJĄCY (blokerzy jako cele)
+    // albo — przy role 'blocker' — BLOKERZY (atakujący jako cele). Walidacja
+    // musi być po tej samej stronie co decyzja (L48: oferta == walidacja).
+    const isBlockerRole = pending.role === 'blocker';
+    for (const sourceId of Object.keys(assignments)) {
+      const err = isBlockerRole
+        ? validateBlockerDamageAssignment(state, sourceId, assignments[sourceId])
+        : validateDamageAssignment(state, sourceId, assignments[sourceId]);
       if (err) return reject(`illegal_damage_assignment:${err}`);
     }
     state.pendingDamageAssignment = null;
     try {
       const e = resolveCombatDamage(state, pending.defendingPlayerId, {
-        pass: pending.pass, resumeFrom: pending.resumeFrom, assignments,
+        pass: pending.pass, resumeFrom: pending.resumeFrom, assignments, phase: pending.phase,
       });
       const resolved = event('damage_assignment_resolved', { playerId: pending.playerId });
       state.events.push(resolved);

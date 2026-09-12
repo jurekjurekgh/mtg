@@ -420,7 +420,14 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
   // CR 510.5). Mapa na indeks numeryczny: true→0 (first strike), false→1.
   const startIndex = resume ? (resume.pass ? 0 : 1) : 0;
   const startFrom = resume ? resume.resumeFrom : 0;
-  let assignmentResult = resume ? resume.assignments : null;
+  // W3 (CR 510.1d): przebieg ma dwie fazy — atakujący, potem blokujący.
+  // Wznowienie po decyzji BLOKERA nie może powtórzyć fazy atakujących
+  // (obrażenia zostały już zadane), więc resume niesie `phase`.
+  const startPhase = resume ? (resume.phase ?? 'attackers') : 'attackers';
+  // W3: przydziały z resume należą TYLKO do swojej fazy (klucze atakujących vs
+  // blokerów) — inaczej jedna decyzja gasiłaby drugą w tym samym przebiegu.
+  let assignmentResult = resume && startPhase !== 'blockers' ? resume.assignments : null;
+  let blockerAssignmentResult = resume && startPhase === 'blockers' ? resume.assignments : null;
   // Dwa przebiegi obrażeń (CR 510.4/510.5 w minimalnym wymiarze): w kroku
   // first strike zadają stwory z first strike (atakujący i blokujący), po
   // state-based actions — stwory bez first strike. W obrębie przebiegu
@@ -430,14 +437,16 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
     const pass = passes[pi];
     if (state.status !== 'active') break;
     const from = pi === startIndex ? startFrom : 0;
+    const phase = pi === startIndex ? startPhase : 'attackers';
     // M66 (R): rozdzielanie obrażeń przy wielu blokerach/trample to decyzja
     // ATAKUJĄCEGO (CR 510.1c/d). Gdy przebieg napotka taką sytuację, ustawia
     // pendingDamageAssignment i kończy komendę — reszta przebiegu wykona się
     // po resolve_damage_assignment (resume).
-    if (!processCombatPass(state, pass, events, defendingPlayerId, from, assignmentResult)) {
+    if (!processCombatPass(state, pass, events, defendingPlayerId, from, assignmentResult, phase, blockerAssignmentResult)) {
       return events;
     }
     assignmentResult = null;
+    blockerAssignmentResult = null;
     if (pass) {
       // Między przebiegami: state-based actions rozstrzygają śmiertelne
       // obrażenia z first strike — zabite stwory nie biorą udziału w zwykłym
@@ -507,6 +516,99 @@ function defaultDamageAssignment(state, attacker, blockers, amount) {
   return out;
 }
 
+// ---- W3 (CR 510.1d): podział obrażeń BLOKERA między atakujących ------------------
+
+/** Atakujący blokowani przez danego blokera (kolejność deklaracji, żywi na polu). */
+function blockedAttackersOf(state, blockerId) {
+  const out = [];
+  for (const attackerId of state.combat?.attackers ?? []) {
+    if (!(state.combat.blockers?.get(attackerId) ?? []).includes(blockerId)) continue;
+    const attacker = state.objects.get(attackerId);
+    if (!attacker || attacker.zone !== 'battlefield') continue;
+    out.push(attackerId);
+  }
+  return out;
+}
+
+/**
+ * Kolejność blokerów w przebiegu: po atakujących (kolejność deklaracji), bez
+ * powtórzeń — deterministyczna dla decyzji, widoku i odcisku (L95).
+ */
+function blockerOrderOf(state) {
+  const out = [];
+  const seen = new Set();
+  for (const attackerId of state.combat?.attackers ?? []) {
+    for (const blockerId of state.combat.blockers?.get(attackerId) ?? []) {
+      if (seen.has(blockerId)) continue;
+      seen.add(blockerId);
+      out.push(blockerId);
+    }
+  }
+  return out;
+}
+
+/**
+ * CR 510.1d: decyzja potrzebna, gdy bloker blokuje DWÓCH lub więcej atakujących
+ * (jeden → pełna moc, zdanie 3). Stwór o mocy 0 w ogóle nie przydziela obrażeń
+ * (CR 510.1a), więc nie ma czego dzielić.
+ */
+function needsBlockerDamageAssignmentDecision(state, blocker, targets) {
+  return targets.length > 1 && combatDamageAmount(blocker, state) > 0;
+}
+
+/**
+ * Domyślny (deterministyczny) podział blokera: lethal-first w kolejności
+ * deklaracji ataków — ta sama polityka, którą boty mają po stronie atakującego.
+ * CR 510.1d NIE wymaga lethal-first (to swobodny wybór), ale CR 510.1a wymaga
+ * całej mocy: bloker nie ma trample, więc reszta idzie na ostatni cel.
+ */
+function defaultBlockerDamageAssignment(state, blocker, targets, amount) {
+  const out = [];
+  let remaining = amount;
+  for (const attackerId of targets) {
+    const attacker = state.objects.get(attackerId);
+    if (!attacker || attacker.zone !== 'battlefield') continue;
+    const assigned = Math.min(remaining, lethalOf(state, blocker, attacker));
+    out.push({ attackerId, amount: assigned });
+    remaining -= assigned;
+  }
+  if (remaining > 0 && out.length > 0) out[out.length - 1].amount += remaining;
+  return out;
+}
+
+/** Publiczna powierzchnia testowa (jak defaultDamageAssignmentFor). */
+export function defaultBlockerDamageAssignmentFor(state, blockerId, attackerIds, amount) {
+  return defaultBlockerDamageAssignment(state, state.objects.get(blockerId), attackerIds, amount);
+}
+
+/**
+ * Waliduje podział gracza po stronie BLOKERA (resolve_damage_assignment,
+ * role 'blocker'): permutacja żywych atakujących, kwoty całkowite >= 0,
+ * sufit mocy i PEŁNA suma (CR 510.1a — nadwyżka nie ma gdzie pójść, bloker
+ * nigdy nie zadaje obrażeń graczowi). Bez warunku lethal (to trample, CR
+ * 702.19b, dotyczy wyłącznie atakującego). Zwraca null albo powód odrzucenia.
+ */
+export function validateBlockerDamageAssignment(state, blockerId, assignment) {
+  const blocker = state.objects.get(blockerId);
+  if (!blocker || blocker.zone !== 'battlefield') return null; // bloker zniknął — bez walidacji
+  const targets = blockedAttackersOf(state, blockerId);
+  if (targets.length === 0) return null; // nie ma już kogo rozdzielać
+  if (!Array.isArray(assignment) || assignment.length !== targets.length) return 'illegal_damage_assignment';
+  const live = new Set(targets);
+  const seen = new Set();
+  let sum = 0;
+  const amount = combatDamageAmount(blocker, state);
+  for (const entry of assignment) {
+    if (!entry || !Number.isInteger(entry.amount) || entry.amount < 0) return 'illegal_damage_amount';
+    if (!live.has(entry.attackerId) || seen.has(entry.attackerId)) return 'illegal_damage_attacker';
+    seen.add(entry.attackerId);
+    sum += entry.amount;
+  }
+  if (sum > amount) return 'damage_exceeds_power';
+  if (sum < amount) return 'damage_must_be_fully_assigned';
+  return null;
+}
+
 /**
  * Buduje widok decyzji rozdzielania obrażeń (PlayerView): atakujący z
  * przebiegu `pass` od indeksu resumeFrom, którzy są zablokowani i wymagają
@@ -538,6 +640,31 @@ export function buildDamageAssignmentView(state, viewerId = null) {
     const object = state.objects.get(id);
     return Boolean(object) && (!hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
   };
+  if (pending.role === 'blocker') {
+    // W3 (CR 510.1d): widok podziału BLOKERA — ten sam wizard co dla
+    // atakującego, tylko role odwrócone (bloker = źródło mocy, atakujący = cele).
+    const blocker = state.objects.get(pending.blockerId);
+    if (blocker && blocker.zone === 'battlefield') {
+      const targets = blockedAttackersOf(state, pending.blockerId);
+      entries.push({
+        blockerId: pending.blockerId,
+        cardId: faceId(blocker),
+        power: combatDamageAmount(blocker, state),
+        ...(combatDamageByToughness(state, blocker) ? { byToughness: true } : {}),
+        attackers: targets.map((id) => {
+          const target = state.objects.get(id);
+          return {
+            id,
+            cardId: faceId(target),
+            toughness: effectiveToughness(target, state),
+            damage: target.damage ?? 0,
+            lethal: lethalOf(state, blocker, target),
+          };
+        }),
+      });
+    }
+    return { playerId: pending.playerId, role: 'blocker', entries };
+  }
   for (let i = pending.resumeFrom; i < (state.combat?.attackers ?? []).length; i += 1) {
     const attackerId = state.combat.attackers[i];
     const attacker = state.objects.get(attackerId);
@@ -574,6 +701,14 @@ export function buildDefaultDamageAssignments(state) {
   const view = buildDamageAssignmentView(state);
   if (!view) return {};
   const assignments = {};
+  if (view.role === 'blocker') {
+    // W3: wariant domyślny dla podziału blokera (boty i przycisk „domyślnie").
+    for (const entry of view.entries) {
+      const blocker = state.objects.get(entry.blockerId);
+      assignments[entry.blockerId] = defaultBlockerDamageAssignment(state, blocker, entry.attackers.map((a) => a.id), entry.power);
+    }
+    return assignments;
+  }
   for (const entry of view.entries) {
     const attacker = state.objects.get(entry.attackerId);
     assignments[entry.attackerId] = defaultDamageAssignment(state, attacker, entry.blockers.map((b) => b.id), entry.power);
@@ -634,7 +769,7 @@ export function validateDamageAssignment(state, attackerId, assignment) {
  * Jeden przebieg obrażeń. Zwraca false, gdy zakolejkowano decyzję
  * rozdzielania (pendingDamageAssignment) — reszta przebiegu czeka.
  */
-function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, assignmentResult) {
+function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, assignmentResult, phase = 'attackers', blockerAssignments = null) {
   const aliveOnBattlefield = (id) => {
     const object = state.objects.get(id);
     return Boolean(object && object.zone === 'battlefield');
@@ -647,6 +782,9 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
     const object = state.objects.get(id);
     return Boolean(object) && (!hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
   };
+  // ---- faza atakujących (CR 510.1: „First, the active player announces how
+  // each attacking creature assigns its combat damage...") ----
+  if (phase !== 'blockers') {
   for (let i = resumeFrom; i < state.combat.attackers.length; i += 1) {
     const attackerId = state.combat.attackers[i];
     const attacker = state.objects.get(attackerId);
@@ -692,87 +830,136 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
         assignDamageToBlockers(state, events, attacker, attackerId, blockers, amount, assignment);
       }
     }
-    // Blokujący z first strike tego przebiegu odpowiadają atakującemu
-    // (CR 510.5 — obrażenia blokera rozstrzyga jego własny first strike,
-    // niezależnie od atakującego; po SBA pierwszego przebiegu nieżywi
-    // blokujący już tu nie ma).
-    if (attacker.zone !== 'battlefield') continue;
-    for (const blockerId of blockers) {
-      const blocker = state.objects.get(blockerId);
-      if (!blocker || blocker.zone !== 'battlefield') continue;
-      if (pass ? !inFirstStrikePass(blockerId) : !inRegularPass(blockerId)) continue;
-      // Bloker o ujemnej mocy też zadaje 0 obrażeń (CR 510.1).
-      const blockerDamage = combatDamageAmount(blocker, state);
-      // Filtr „prevent all damage to ... this turn" (Ethersworn Shieldmage)
-      // — kasuje CAŁOŚĆ obrażeń blokera (CR 119.3; spójnie ze ścieżką
-      // atakujący→bloker). Poprzednio filtr działał dopiero wewnątrz
-      // markDamage, a event/lifelink/deathtouch liczyły kwotę sprzed filtra.
-      const inspireBlocked = isCombatDamagePreventedByInspire(state, blocker) ? blockerDamage : 0;
-      const attackerFilterPrevented = (isDamagePrevented(state, attacker) ? blockerDamage : 0) + inspireBlocked;
-      if (attackerFilterPrevented > 0) {
-        const filterEvent = event('damage_prevented', { objectId: attackerId, amount: attackerFilterPrevented, cardId: attacker.cardId, inspireAwe: inspireBlocked > 0 });
-        state.events.push(filterEvent); events.push(filterEvent);
-      }
-      const shieldBefore = state.events.length;
-      const blockedPrevented = preventDamageTo(state, attackerId, blockerDamage - attackerFilterPrevented);
-      if (blockedPrevented > 0) events.push(...state.events.slice(shieldBefore));
-      // CR 119.3: event niesie kwotę faktycznie zadaną (po prewencji).
-      let blockerDealt = blockerDamage - attackerFilterPrevented - blockedPrevented;
-      // BUG 2026-08-11 (CR 702.16d + 702.15): protection zapobiega obrażeniom
-      // od źródła chronionego koloru w CAŁOŚCI — lifelink/deathtouch/infect
-      // liczą tylko FAKTYCZNIE zadane obrażenia. markDamage robił prewencję
-      // protection wewnętrznie, ale kwota lifelink/deathtouch liczona była
-      // z wartości sprzed prewencji (błędny zysk życia kontrolera blokera).
-      const attackerAtDeal = state.objects.get(attackerId);
-      const blockerProtPrevented = isDamagePreventedByProtection(state, attackerAtDeal, blocker) ? blockerDealt : 0;
-      blockerDealt -= blockerProtPrevented;
-      if (blockerProtPrevented > 0) {
-        const protEvent = event('damage_prevented', { objectId: attackerId, amount: blockerProtPrevented, cardId: blocker.cardId, protection: true });
-        state.events.push(protEvent); events.push(protEvent);
-      }
-      const counterBefore = state.events.length;
-      blockerDealt -= preventDamageWithShieldCounter(state, attackerId, blockerDealt);
-      events.push(...state.events.slice(counterBefore));
-      if (hasKeyword(state, blocker, 'infect')) {
-        if (blockerDealt > 0) {
-          // M296 (uwaga C właściciela): addCounter pushuje counter_added tylko
-          // do state.events — bez przeniesienia do `events` wynik komendy
-          // resolve_combat niósł sam damage_dealt i stół (log + Rozgrywka)
-          // milczał o znaczniku −1/−1, choć kafel go pokazywał.
-          const countersBefore = state.events.length;
-          removeLoyaltyForDamage(state, state.objects.get(attackerId), blockerDealt);
-          addCounter(state, attackerId, '-1/-1', blockerDealt);
-          events.push(...state.events.slice(countersBefore));
-          markDealtDamageThisTurn(state, attackerId);
-        }
-      } else if (blockerDealt > 0) {
-        markDamage(state, attackerId, blockerDealt, blockerId);
-      }
-      // Deathtouch (CR 702.4): obrażenia od blokera z deathtouch niszczą
-      // atakującego niezależnie od wytrzymałości. Prewencja kasuje
-      // obrażenia przed oznaczeniem (jak wyżej — CR 702.4b).
-      const attackerNow = state.objects.get(attackerId);
-      if (hasKeyword(state, blocker, 'deathtouch') && blockerDealt > 0 && !isDamagePrevented(state, attackerNow)) {
-        const updated = state.objects.get(attackerId);
-        if (updated) state.objects.set(attackerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
-      }
-      // Lifelink blokera (CR 702.15).
-      if (blockerDealt > 0 && hasKeyword(state, blocker, 'lifelink')) {
-        events.push(...changeLife(state, blocker.controllerId, blockerDealt));
-      }
-      const damage = event('damage_dealt', {
-        source: blockerId, target: attackerId, amount: blockerDealt, combat: true,
-        sourceCardId: blocker.cardId, targetCardId: attacker.cardId,
-        // M166/B (Enrage): LKI celu — trigger „is dealt damage" odpala też,
-        // gdy stwór zginął w SBA tej samej komendy (CR 603.10 looks-back).
-        targetLki: Object.freeze({ ...attacker }),
-      });
-      state.events.push(damage); events.push(damage);
+  }
+  }
+
+  // ---- faza blokerów (CR 510.1: „...then the defending player announces how
+  // each blocking creature assigns its combat damage"; CR 510.1d: bloker dwóch
+  // lub więcej atakujących DZIELI moc między nich — stan sprzed W3 zadawał pełną
+  // moc każdemu z osobna). Kolejność = po atakujących, w kolejności deklaracji.
+  const blockerOrder = blockerOrderOf(state);
+  for (let j = phase === 'blockers' ? resumeFrom : 0; j < blockerOrder.length; j += 1) {
+    const blockerId = blockerOrder[j];
+    const blocker = state.objects.get(blockerId);
+    if (!blocker || blocker.zone !== 'battlefield') continue;
+    // CR 510.5: bloker z first strike zadaje w pierwszym przebiegu, bez — w drugim.
+    if (pass ? !inFirstStrikePass(blockerId) : !inRegularPass(blockerId)) continue;
+    const targets = blockedAttackersOf(state, blockerId);
+    if (targets.length === 0) continue; // CR 510.1d: nie blokuje → nie przydziela
+    const amount = combatDamageAmount(blocker, state);
+    let assignment;
+    if (blockerAssignments) {
+      // Wznowienie po decyzji BLOKERA: podział gracza (albo domyślny dla
+      // blokerów, których decyzja nie dotyczyła). Mapa jest osobna od
+      // `assignmentResult` (klucze atakujących) — inaczej wznowienie decyzji
+      // atakującego pochłaniałoby decyzję blokera w tej samej rundzie.
+      assignment = blockerAssignments[blockerId] ?? defaultBlockerDamageAssignment(state, blocker, targets, amount);
+    } else if (needsBlockerDamageAssignmentDecision(state, blocker, targets)) {
+      state.pendingDamageAssignment = {
+        playerId: blocker.controllerId,
+        role: 'blocker',
+        blockerId,
+        attackerIds: targets,
+        pass,
+        phase: 'blockers',
+        resumeFrom: j,
+        defendingPlayerId,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = blocker.controllerId;
+      const required = event('damage_assignment_required', { playerId: blocker.controllerId, role: 'blocker', blockerId });
+      state.events.push(required);
+      events.push(required);
+      return false;
+    } else {
+      // Jeden atakujący (CR 510.1d zdanie 3) albo moc 0 (CR 510.1a) — bez decyzji.
+      assignment = targets.length === 1
+        ? [{ attackerId: targets[0], amount }]
+        : defaultBlockerDamageAssignment(state, blocker, targets, amount);
     }
+    assignDamageToAttackers(state, events, blocker, blockerId, targets, amount, assignment);
   }
   return true;
 }
 
+/**
+ * Zadaje obrażenia BLOKERA atakującym wg przydziału (CR 510.1d — podział
+ * wybrany przez kontrolera blokera, domyślnie lethal-first). Atakujący, który
+ * zniknął z pola bitwy między decyzją a rozstrzygnięciem, jest pomijany
+ * (CR 608.2b). Ciało = dotychczasowa ścieżka bloker→atakujący (prewencja,
+ * protection, infect, deathtouch, lifelink) bez zmian — zmienia się tylko
+ * KWOTA: z pełnej mocy na przydzieloną część.
+ */
+function assignDamageToAttackers(state, events, blocker, blockerId, targets, amount, assignment) {
+  const assignedById = new Map((assignment ?? []).map((entry) => [entry.attackerId, entry.amount]));
+  for (const attackerId of targets) {
+    const attacker = state.objects.get(attackerId);
+    if (!attacker || attacker.zone !== 'battlefield') continue;
+    // Bloker o ujemnej mocy też zadaje 0 obrażeń (CR 510.1a).
+    const blockerDamage = assignedById.has(attackerId) ? assignedById.get(attackerId) : amount;
+    const inspireBlocked = isCombatDamagePreventedByInspire(state, blocker) ? blockerDamage : 0;
+    const attackerFilterPrevented = (isDamagePrevented(state, attacker) ? blockerDamage : 0) + inspireBlocked;
+    if (attackerFilterPrevented > 0) {
+      const filterEvent = event('damage_prevented', { objectId: attackerId, amount: attackerFilterPrevented, cardId: attacker.cardId, inspireAwe: inspireBlocked > 0 });
+      state.events.push(filterEvent); events.push(filterEvent);
+    }
+    const shieldBefore = state.events.length;
+    const blockedPrevented = preventDamageTo(state, attackerId, blockerDamage - attackerFilterPrevented);
+    if (blockedPrevented > 0) events.push(...state.events.slice(shieldBefore));
+    // CR 119.3: event niesie kwotę faktycznie zadaną (po prewencji).
+    let blockerDealt = blockerDamage - attackerFilterPrevented - blockedPrevented;
+    // BUG 2026-08-11 (CR 702.16d + 702.15): protection zapobiega obrażeniom
+    // od źródła chronionego koloru w CAŁOŚCI — lifelink/deathtouch/infect
+    // liczą tylko FAKTYCZNIE zadane obrażenia. markDamage robił prewencję
+    // protection wewnętrznie, ale kwota lifelink/deathtouch liczona była
+    // z wartości sprzed prewencji (błędny zysk życia kontrolera blokera).
+    const attackerAtDeal = state.objects.get(attackerId);
+    const blockerProtPrevented = isDamagePreventedByProtection(state, attackerAtDeal, blocker) ? blockerDealt : 0;
+    blockerDealt -= blockerProtPrevented;
+    if (blockerProtPrevented > 0) {
+      const protEvent = event('damage_prevented', { objectId: attackerId, amount: blockerProtPrevented, cardId: blocker.cardId, protection: true });
+      state.events.push(protEvent); events.push(protEvent);
+    }
+    const counterBefore = state.events.length;
+    blockerDealt -= preventDamageWithShieldCounter(state, attackerId, blockerDealt);
+    events.push(...state.events.slice(counterBefore));
+    if (hasKeyword(state, blocker, 'infect')) {
+      if (blockerDealt > 0) {
+        // M296 (uwaga C właściciela): addCounter pushuje counter_added tylko
+        // do state.events — bez przeniesienia do `events` wynik komendy
+        // resolve_combat niósł sam damage_dealt i stół (log + Rozgrywka)
+        // milczał o znaczniku −1/−1, choć kafel go pokazywał.
+        const countersBefore = state.events.length;
+        removeLoyaltyForDamage(state, state.objects.get(attackerId), blockerDealt);
+        addCounter(state, attackerId, '-1/-1', blockerDealt);
+        events.push(...state.events.slice(countersBefore));
+        markDealtDamageThisTurn(state, attackerId);
+      }
+    } else if (blockerDealt > 0) {
+      markDamage(state, attackerId, blockerDealt, blockerId);
+    }
+    // Deathtouch (CR 702.4): obrażenia od blokera z deathtouch niszczą
+    // atakującego niezależnie od wytrzymałości. Prewencja kasuje
+    // obrażenia przed oznaczeniem (jak wyżej — CR 702.4b).
+    const attackerNow = state.objects.get(attackerId);
+    if (hasKeyword(state, blocker, 'deathtouch') && blockerDealt > 0 && !isDamagePrevented(state, attackerNow)) {
+      const updated = state.objects.get(attackerId);
+      if (updated) state.objects.set(attackerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
+    }
+    // Lifelink blokera (CR 702.15).
+    if (blockerDealt > 0 && hasKeyword(state, blocker, 'lifelink')) {
+      events.push(...changeLife(state, blocker.controllerId, blockerDealt));
+    }
+    const damage = event('damage_dealt', {
+      source: blockerId, target: attackerId, amount: blockerDealt, combat: true,
+      sourceCardId: blocker.cardId, targetCardId: attacker.cardId,
+      // M166/B (Enrage): LKI celu — trigger „is dealt damage" odpala też,
+      // gdy stwór zginął w SBA tej samej komendy (CR 603.10 looks-back).
+      targetLki: Object.freeze({ ...attacker }),
+    });
+    state.events.push(damage); events.push(damage);
+  }
+  }
 /**
  * Zadaje obrażenia atakującego blokerom wg przydziału (kolejność = kolejność
  * assignment — podział gracza CR 510.1c, domyślnie lethal-first). Bloker,
