@@ -65,10 +65,15 @@ test('saddle: etykieta nie pokazuje surowego sluga „set_saddled"', () => {
 });
 
 test('saddle: etykieta mówi o osiodłaniu i o TAPNIĘCIU stworów', () => {
+  // A2-rewizja (decyzja właściciela 2026-09-12, L13): klik NIE tapuje od razu
+  // wskazanego stwora — otwiera kreator z pustym startem (jak modale czarów).
+  // Imię defaultu zniknęło z etykiety celowo (nie obiecuje wykonania);
+  // zostały: czynność (Osiodłaj), koszt (tapnięcie) i próg mocy.
   const label = commandLabel(saddleCmd, SESSION, viewWith());
   assert.match(label, /siodł/i, `brak słowa o osiodłaniu: ${label}`);
-  assert.match(label, /tapnij/i, `nie widać, że stwory zostaną tapnięte: ${label}`);
-  assert.match(label, /Ainok Tracker/, `brak nazwy tapowanego stwora: ${label}`);
+  assert.match(label, /tapnięcia/i, `nie widać, że stwory zostaną tapnięte: ${label}`);
+  assert.match(label, /moc ≥ 2/, `brak progu mocy: ${label}`);
+  assert.doesNotMatch(label, /Ainok Tracker/, `etykieta nie wymienia defaultu: ${label}`);
 });
 
 test('saddle: etykieta pokazuje koszt (saddle 2)', () => {
@@ -77,11 +82,13 @@ test('saddle: etykieta pokazuje koszt (saddle 2)', () => {
 });
 
 test('crew: etykieta mówi „załoga" i o tapnięciu, bez słowa „saddle"', () => {
+  // A2-rewizja jw. (L13): imię defaultu nie jest już obietnicą kliku.
   const label = commandLabel(crewCmd, SESSION, viewWith());
   assert.match(label, /załog/i, `brak słowa o załodze: ${label}`);
-  assert.match(label, /tapnij/i, `nie widać tapnięcia: ${label}`);
+  assert.match(label, /tapnięcia/i, `nie widać tapnięcia: ${label}`);
   assert.doesNotMatch(label, /saddle/i, `crew nie powinien wspominać saddle: ${label}`);
-  assert.match(label, /Woolly Loxodon/, `brak nazwy stwora załogi: ${label}`);
+  assert.match(label, /moc ≥ 3/, `brak progu mocy: ${label}`);
+  assert.doesNotMatch(label, /Woolly Loxodon/, `etykieta nie wymienia defaultu: ${label}`);
 });
 
 test('crew: etykieta pokazuje koszt (crew 3) i skutek animacji', () => {

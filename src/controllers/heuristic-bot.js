@@ -5747,6 +5747,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const deadBefore = t.toughness <= 0 || (t.damage ?? 0) >= t.toughness;
           return deadAfter && !deadBefore;
         };
+        // C (znalezisko właściciela 2026-09-12, Academy Journeymage):
+        // usunięcie stwora zrywa też przyklejone AURY (cmentarz właściciela,
+        // CR 704.5m). Każda CUDZA aura na celu to dodatkowa karta wroga
+        // w plecy (+30 — bazowa jednostka „karta" jak w podstawie 30);
+        // każda WŁASNA to strata (−30: nie wybijaj stwora spod własnego
+        // Pacifismu, skoro jest inny cel). Sprzęt zostaje na stole (tylko
+        // aury), a bestow po odczepieniu staje się stworem (nie ginie) —
+        // oba poza premią. Predykat aury jak w render.js (kind/aura +
+        // attachedTo), bez bestow.
+        const auraStripDelta = (t) => {
+          if (!cmd.removesTarget || !t) return 0;
+          return (view.zones?.battlefield ?? [])
+            .filter((o) => o?.attachedTo === t.id && (o.kind === 'aura' || o.aura) && !o.bestow)
+            .reduce((sum, o) => sum + (o.controllerId === view.playerId ? -30 : 30), 0);
+        };
         if (Array.isArray(cmd.targetIds)) {
           let score = 0;
           for (const id of cmd.targetIds) {
@@ -5786,9 +5801,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const canAttack2 = !t2.tapped && (!t2.summoningSickness || hasKeyword(t2, 'haste'));
               attackBonus2 = canAttack2 ? 15 : -60;
             }
+            // C: w gałęzi wrogiej obie strony celu liczą zrywanie aur (L41).
+            const aura2 = auraStripDelta(t2);
             score += (cmd.friendly
               ? (t2.controllerId === view.playerId ? 30 + v2 + attackBonus2 : -20 - v2)
-              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 : -20 - v2) : (kill2 ? 30 + v2 + 60 : 30 + v2)));
+              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 + aura2 : -20 - v2 + aura2) : (kill2 ? 30 + v2 + 60 + aura2 : 30 + v2 + aura2)));
           }
           // F-D (Inferno Titan, plan 2026-09-09): trigger wielocelowy z efektem
           // `damage_divided` dzieli STAŁĄ sumę (`divisionTotal`) na wybrane cele,
@@ -5857,8 +5874,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         // B: jak w gałęzi wielocelowej (L41) — zabójstwo debuffem bije rozmiar.
         const kill = debuffKills(target);
-        if (target.controllerId === view.playerId) return finish(kill ? -60 - value : -20 - value);
-        return finish(kill ? 30 + value + 60 : 30 + value);
+        // C: jak w gałęzi wielocelowej (L41) — zrywanie aur przy usuwaniu.
+        const aura = auraStripDelta(target);
+        if (target.controllerId === view.playerId) return finish(kill ? -60 - value + aura : -20 - value + aura);
+        return finish(kill ? 30 + value + 60 + aura : 30 + value + aura);
       }
       case 'resolve_optional_trigger_choice': {
         // M167/B (Circle of the Land Druid): opcjonalny SELF-MILL tylko przy

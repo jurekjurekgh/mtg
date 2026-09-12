@@ -10262,3 +10262,16 @@ Aggro-bot: crew ignoruje z definicji (tylko equip), ryzyko E6 zamknięte.
 Żywy Tester na świeżym `dist/` (partie pojazdami + Shaman) — PO STRONIE
 WŁAŚCICIELA, przed scaleniem. Testy: 13 silnika + 14 stołu (w tym 2 DOM
 na żywym rendererze) + 6 bota.
+
+## 2026-09-12e — rewizja A2 (pusty start kreatora) + zgłoszenie C: Journeymage (PR #115, arena/01a096f0)
+
+Decyzja właściciela: kreator załogi BEZ preselekcji defaultu (spójność
+z modalami czarów) i ZAWSZE otwierany, także na 1 kandydata (ekran
+świadomej zgody na tapnięcie). `defaultIds` wypadło z planu; etykieta nie
+wymienia imion defaultu („wybierz załogę/stwory do tapnięcia (moc ≥ N)");
+piny M101/B7 zaktualizowane z uzasadnieniem (L13).
+C: Academy Journeymage — sygnał `removesTarget` w ofercie triggera
+(aury celu giną, CR 704.5m); bot ±30 za przyklejoną aurę (cudza +,
+własna −; sprzęt i bestow poza premią). Testy: kreator 13 (przepisane
+na pusty start) + bot-trigger-aura-strip 6. Bramki: pełna **5321/5321**,
+build 61 modułów / 3555.2 kB, golden master bez churn.

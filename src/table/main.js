@@ -1814,10 +1814,11 @@ function bootstrapTable() {
 
   /**
    * A2: plan kreatora załogi dla ludzkiej oferty crew/saddle albo null
-   * (brak wyboru / obcy gracz / brak progu). Kandydaci z WIDOKU (kind,
+   * (obcy gracz / brak progu / brak kandydatów). Kandydaci z WIDOKU (kind,
    * controllerId, tapped, power = effectivePower — te same liczby, które
-   * widzi gracz i którymi liczy default silnika); próg N z deskryptora
-   * zdolności w pełnym stanie (widok go nie niesie).
+   * widzi gracz); próg N z deskryptora zdolności w pełnym stanie (widok
+   * go nie niesie). Kreator otwiera się ZAWSZE i startuje PUSTY
+   * (A2-rewizja: spójność z modalami czarów, świadoma zgoda na tapnięcie).
    */
   function crewPlanFor(cmd) {
     const source = session.state?.objects?.get(cmd?.objectId);

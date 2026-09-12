@@ -66,10 +66,11 @@ import {
   triggerEffectIsHostile,
   triggerTargetDebuffOf,
   triggerTargetPowerPumpOf,
+  triggerTargetRemovesTargetOf,
   triggerTargetEffectFriendly,
 } from './effect-intent.js';
 
-export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetPowerPumpOf, triggerTargetEffectFriendly };
+export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetPowerPumpOf, triggerTargetRemovesTargetOf, triggerTargetEffectFriendly };
 
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
@@ -6596,6 +6597,9 @@ export function playerView(state, playerId) {
     // B (Battle-Rattle Shaman): pump siły w komendzie (jak debuff) —
     // bot celuje stwora zdolnego do ataku, nie największego chorego.
     const triggerPump = triggerTargetPowerPumpOf(triggerTargetHead.ability);
+    // C (Academy Journeymage): flaga usunięcia celu (jak friendly —
+    // zawsze bool): bot liczy zrywanie aur przyklejonych do celu.
+    const triggerRemovesTarget = triggerTargetRemovesTargetOf(triggerTargetHead.ability);
     // M157/F4(a): wielocelowy trigger (count > 1, „each of up to N") —
     // warianty = podzbiory celów o rozmiarze 1..count (bez powtórzeń,
     // porządek deterministyczny) + zero celów przy upTo. CAP 32 wariantów
@@ -6623,7 +6627,7 @@ export function playerView(state, playerId) {
       // pierwszy wariant pełnego rozmiaru (deterministycznie: najwcześniejsze
       // kandydaty), a wariant pusty („up to") idzie na koniec.
       for (const targetIds of variants) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
       }
     } else {
       // M203/2 (konwencja „prezentacja = enumeracja"): kandydaci w kolejności
@@ -6631,10 +6635,10 @@ export function playerView(state, playerId) {
       // pierwszą ofertę), a odmowa („up to one"/„you may") jest OSTATNIA —
       // dawniej wymuszało to odwrócenie przez unshift.
       for (const targetId of legal) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
       }
       if (triggerTargetHead.allowNone) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMoonlitChoice) {

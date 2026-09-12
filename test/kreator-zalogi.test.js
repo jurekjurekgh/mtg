@@ -76,51 +76,38 @@ const BASE = { type: 'activate_ability', playerId: 'p1', objectId: 'veh', abilit
 
 // --- crewPlanOf -----------------------------------------------------------
 
-test('A2/1: plan niesie kandydatów, moce, próg N i default z oferty', () => {
+test('A2/1: plan niesie kandydatów, moce i próg N (BEZ defaultu — start pusty)', () => {
   const plan = crewPlanOf({
     base: BASE,
     candidates: ['big', 'helper', 'pup'],
     powers: { big: 4, helper: 3, pup: 2 },
     neededPower: 3,
-    defaultIds: ['helper'],
   });
   assert.ok(plan?.crewMode);
   assert.deepEqual(plan.targets, ['big', 'helper', 'pup']);
   assert.deepEqual(plan.powers, { big: 4, helper: 3, pup: 2 });
   assert.equal(plan.neededPower, 3);
-  assert.deepEqual(plan.defaultIds, ['helper']);
+  assert.ok(!('defaultIds' in plan), 'rewizja: plan nie niesie defaultu');
   assert.equal(plan.saddle, false);
   assert.equal(plan.minTargets, 1);
   assert.equal(plan.objectId, 'veh');
 });
 
-test('A2/2: default spada do kandydatów (staleness: stwór zniknął)', () => {
-  const plan = crewPlanOf({
-    base: BASE,
-    candidates: ['big'],
-    powers: { big: 4 },
-    neededPower: 3,
-    defaultIds: ['big', 'ghost'],
-  });
-  assert.deepEqual(plan.defaultIds, ['big']);
-});
-
-test('A2/3: saddle niesie własną flagę i etykietę', () => {
+test('A2/2: saddle niesie własną flagę i etykietę', () => {
   const plan = crewPlanOf({
     base: { ...BASE, objectId: 'mount', abilityIndex: 1 },
     candidates: ['helper'],
     powers: { helper: 3 },
     neededPower: 2,
-    defaultIds: ['helper'],
     saddle: true,
   });
   assert.equal(plan.saddle, true);
   assert.match(plan.itemLabel, /osiodła/);
 });
 
-test('A2/4: plan odrzuca zły kształt (null zamiast kreatora-widma)', () => {
+test('A2/3: plan odrzuca zły kształt (null zamiast kreatora-widma)', () => {
   const good = {
-    base: BASE, candidates: ['big'], powers: { big: 4 }, neededPower: 3, defaultIds: ['big'],
+    base: BASE, candidates: ['big'], powers: { big: 4 }, neededPower: 3,
   };
   assert.equal(crewPlanOf({ ...good, base: { ...BASE, type: 'cast_spell' } }), null);
   assert.equal(crewPlanOf({ ...good, base: { ...BASE, objectId: null } }), null);
@@ -131,20 +118,20 @@ test('A2/4: plan odrzuca zły kształt (null zamiast kreatora-widma)', () => {
 
 // --- crewSelectionPower / commandForCrewSelection --------------------------
 
-test('A2/5: licznik sumuje moce zaznaczenia', () => {
+test('A2/4: licznik sumuje moce zaznaczenia', () => {
   const plan = crewPlanOf({
     base: BASE, candidates: ['big', 'pup'], powers: { big: 4, pup: 2 },
-    neededPower: 3, defaultIds: [],
+    neededPower: 3,
   });
   assert.equal(crewSelectionPower(plan, []), 0);
   assert.equal(crewSelectionPower(plan, ['pup']), 2);
   assert.equal(crewSelectionPower(plan, ['big', 'pup']), 6);
 });
 
-test('A2/6: komenda z zaznaczenia — kształt oferty silnika, próg N', () => {
+test('A2/5: komenda z zaznaczenia — kształt oferty silnika, próg N', () => {
   const plan = crewPlanOf({
     base: BASE, candidates: ['big', 'helper'], powers: { big: 4, helper: 3 },
-    neededPower: 3, defaultIds: ['helper'],
+    neededPower: 3,
   });
   assert.deepEqual(commandForCrewSelection(plan, ['big']), {
     type: 'activate_ability', playerId: 'p1', objectId: 'veh', abilityIndex: 0,
@@ -156,7 +143,7 @@ test('A2/6: komenda z zaznaczenia — kształt oferty silnika, próg N', () => {
   assert.equal(commandForCrewSelection(plan, ['ghost']), null);
   const needy = crewPlanOf({
     base: BASE, candidates: ['pup'], powers: { pup: 2 },
-    neededPower: 3, defaultIds: [],
+    neededPower: 3,
   });
   assert.equal(commandForCrewSelection(needy, ['pup']), null);
 });
@@ -170,13 +157,15 @@ test('A1/1: crew nazywa czynność „Obsadź", saddle „Osiodłaj"', () => {
     SESSION, view,
   );
   assert.match(crew, /^Obsadź: Irontread Crusher/);
-  assert.match(crew, /tapnij Woolly Loxodon/);
+  assert.match(crew, /wybierz załogę do tapnięcia \(moc ≥ 3\)/);
+  assert.doesNotMatch(crew, /Woolly Loxodon/, 'rewizja: etykieta nie wymienia defaultu');
   const saddle = commandLabel(
     { type: 'activate_ability', playerId: 'p1', objectId: 'mount', abilityIndex: 1, crewCreatureIds: ['helper'] },
     SESSION, view,
   );
   assert.match(saddle, /^Osiodłaj: Trained Arynx/);
-  assert.match(saddle, /tapnij Ainok Tracker/);
+  assert.match(saddle, /wybierz stwory do tapnięcia \(moc ≥ 2\)/);
+  assert.doesNotMatch(saddle, /Ainok Tracker/, 'rewizja: etykieta nie wymienia defaultu');
 });
 
 test('A1/2: zwykła zdolność zostaje przy „Aktywuj"', () => {
@@ -220,7 +209,7 @@ const BF = [
   { id: 'foe', controllerId: 'p2', kind: 'creature', tapped: false, power: 9 },
 ];
 
-test('A2/7: filtr kandydatów = lustro silnika (własne, nietapnięte, stwory, bez źródła)', () => {
+test('A2/6: filtr kandydatów = lustro silnika (własne, nietapnięte, stwory, bez źródła)', () => {
   const plan = crewWizardPlanFor({
     cmd: { ...BASE, crewCreatureIds: ['big'] },
     playerId: 'p1', neededPower: 3, battlefield: BF,
@@ -229,19 +218,20 @@ test('A2/7: filtr kandydatów = lustro silnika (własne, nietapnięte, stwory, b
   // i sam pojazd wypadają.
   assert.deepEqual(plan.targets, ['big', 'pup', 'sick']);
   assert.deepEqual(plan.powers, { big: 4, pup: 2, sick: 3 });
-  assert.deepEqual(plan.defaultIds, ['big']);
 });
 
-test('A2/8: brak kreatora bez realnego wyboru (null → default prosto)', () => {
+test('A2/7: kreator otwiera się ZAWSZE — także na 1 kandydata (rewizja: ekran zgody)', () => {
   const one = [
     { id: 'veh', controllerId: 'p1', kind: 'artifact', tapped: false, power: 0 },
     { id: 'big', controllerId: 'p1', kind: 'creature', tapped: false, power: 4 },
   ];
-  assert.equal(crewWizardPlanFor({
+  const plan = crewWizardPlanFor({
     cmd: { ...BASE, crewCreatureIds: ['big'] },
     playerId: 'p1', neededPower: 3, battlefield: one,
-  }), null);
-  // Obcy gracz i komenda spoza crew też nie otwierają kreatora.
+  });
+  assert.ok(plan?.crewMode, 'jeden kandydat też dostaje kreator (M301/B jak „wskaż cel (1)")');
+  assert.deepEqual(plan.targets, ['big']);
+  // Obcy gracz i komenda spoza crew nadal nie otwierają kreatora.
   assert.equal(crewWizardPlanFor({
     cmd: { ...BASE, playerId: 'p2', crewCreatureIds: ['big'] },
     playerId: 'p1', neededPower: 3, battlefield: BF,
@@ -272,9 +262,10 @@ const WIZ_BF = [
   { id: 'pup', controllerId: 'p1', kind: 'creature', tapped: false, power: 2 },
 ];
 
-function renderCrew({ defaultIds, neededPower = 3, onComplete = () => {}, onCancel = () => {} }) {
+function renderCrew({ neededPower = 3, onComplete = () => {}, onCancel = () => {} }) {
   const plan = crewWizardPlanFor({
-    cmd: { ...BASE, crewCreatureIds: defaultIds },
+    // Oferta nazywa default (kształt silnika), ale kreator startuje PUSTY.
+    cmd: { ...BASE, crewCreatureIds: ['pup'] },
     playerId: 'p1', neededPower, battlefield: WIZ_BF,
   });
   assert.ok(plan, 'plan kreatora');
@@ -287,9 +278,9 @@ function renderCrew({ defaultIds, neededPower = 3, onComplete = () => {}, onCanc
   return host;
 }
 
-test('A2/DOM1: wiersze z mocą, default pre-check, bramka progu, Zatwierdź buduje komendę', () => {
+test('A2/DOM1: pusty start, klikanie od zera, bramka progu, Zatwierdź buduje komendę', () => {
   let completed = null;
-  const host = renderCrew({ defaultIds: ['pup'], onComplete: (cmd) => { completed = cmd; } });
+  const host = renderCrew({ onComplete: (cmd) => { completed = cmd; } });
   // Wiersze nazywają stwory i ich moce (kolejność = plan.targets).
   const text = host.textContent;
   assert.match(text, /Woolly Loxodon.*\(moc 4\)/);
@@ -298,12 +289,16 @@ test('A2/DOM1: wiersze z mocą, default pre-check, bramka progu, Zatwierdź budu
   assert.equal(toggles.length, 2);
   const status = () => host.byClass('multi-target-status')[0].textContent;
   const confirm = host.byClass('multi-target-confirm')[0];
-  // Default (pup, moc 2 < 3) startuje zaznaczony, ale próg nie puszcza.
-  assert.equal(toggles[0].checked, false);
-  assert.equal(toggles[1].checked, true);
+  // Rewizja: NIC wstępnie zaznaczonego (oferta nazywa default pup, ale
+  // kreator go ignoruje — jak modale czarów). Bramka nie puszcza.
+  assert.ok(toggles.every((t) => t.checked === false), 'start pusty');
+  assert.match(status(), /Wybierz załogę o łącznej mocy ≥ 3/);
+  assert.equal(confirm.disabled, true);
+  // Kliknięcie pup (moc 2 < 3): licznik, ale bramka dalej nie puszcza.
+  toggles[1].checked = true; toggles[1].emit('change');
   assert.match(status(), /Moc załogi: 2 \/ ≥ 3 — brakuje 1/);
   assert.equal(confirm.disabled, true);
-  // Dołożenie big (4) przekracza próg — licznik i bramka puszczają.
+  // Dołożenie big (4): próg przekroczony — licznik i bramka puszczają.
   toggles[0].checked = true; toggles[0].emit('change');
   assert.match(status(), /Moc załogi: 6 \/ ≥ 3 — gotowe/);
   assert.equal(confirm.disabled, false);
@@ -316,7 +311,7 @@ test('A2/DOM1: wiersze z mocą, default pre-check, bramka progu, Zatwierdź budu
 
 test('A2/DOM2: pusty start i Anuluj (ścieżka odmowy kreatora)', () => {
   let cancelled = 0;
-  const host = renderCrew({ defaultIds: [], onCancel: () => { cancelled += 1; } });
+  const host = renderCrew({ onCancel: () => { cancelled += 1; } });
   const toggles = host.byClass('multi-target-toggle');
   assert.ok(toggles.every((t) => t.checked === false));
   assert.match(host.byClass('multi-target-status')[0].textContent, /Wybierz załogę o łącznej mocy ≥ 3/);

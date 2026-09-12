@@ -692,16 +692,16 @@ export function commandForDiscardSelection(plan, selected) {
  *    jak w silniku, CR 702.122a/702.171a „other untapped creatures"),
  *  - `powers`: moc efektywna kandydata (ta sama, którą liczy default),
  *  - `neededPower`: próg N z kosztu zdolności,
- *  - `defaultIds`: domyślny podzbiór z oferty (wstępne zaznaczenie),
  *  - `saddle`: true dla Saddle (etykiety „osiodłaj", inaczej „obsadź").
+ * (A2-rewizja: BEZ defaultIds — kreator startuje pusty jak modale czarów;
+ * oferta silnika niesie default tylko jako fallback wykonania.)
  */
-export function crewPlanOf({ base, candidates, powers, neededPower, defaultIds, saddle = false }) {
+export function crewPlanOf({ base, candidates, powers, neededPower, saddle = false }) {
   if (!base || base.type !== 'activate_ability' || base.objectId == null
     || !Number.isInteger(base.abilityIndex) || base.playerId == null) return null;
   const list = Array.isArray(candidates) ? [...new Set(candidates)] : [];
   if (list.length === 0 || !(neededPower > 0)) return null;
   if (list.some((id) => !Number.isFinite(powers?.[id]))) return null;
-  const pre = (Array.isArray(defaultIds) ? defaultIds : []).filter((id) => list.includes(id));
   return {
     type: 'activate_ability',
     playerId: base.playerId,
@@ -710,7 +710,6 @@ export function crewPlanOf({ base, candidates, powers, neededPower, defaultIds, 
     targets: list,
     powers: { ...powers },
     neededPower,
-    defaultIds: pre,
     minTargets: 1,
     maxTargets: list.length,
     hasX: false,
@@ -728,7 +727,10 @@ export function crewPlanOf({ base, candidates, powers, neededPower, defaultIds, 
  * „other untapped creatures you control"): własne, nietapnięte, stwory
  * (`kind === 'creature'` — te same, które liczy default), poza źródłem.
  * Choroba przywoływania NIE wyklucza (crew nie atakuje, nie ma C-hasta).
- * Kreator tylko przy realnym wyborze (≥2 kandydatów — jak manaWizard).
+ * Kreator otwiera się ZAWSZE (także na 1 kandydata — jak modale czarów
+ * „wskaż cel (1)", M301/B): to ekran ŚWIADOMEJ ZGODY na tapnięcie własnych
+ * stworów (duch M101/B7), a nie skrót do wykonania. Decyzja właściciela
+ * 2026-09-12 (spójność z modalami czarów > oszczędzony klik).
  */
 export function crewWizardPlanFor({ cmd, playerId, neededPower, saddle = false, battlefield }) {
   if (cmd?.type !== 'activate_ability' || !Array.isArray(cmd.crewCreatureIds)) return null;
@@ -737,14 +739,13 @@ export function crewWizardPlanFor({ cmd, playerId, neededPower, saddle = false, 
   const cands = (battlefield ?? []).filter((o) =>
     o && o.id !== cmd.objectId && o.controllerId === playerId
     && o.kind === 'creature' && !o.tapped);
-  if (cands.length < 2) return null;
+  if (cands.length < 1) return null;
   const powers = Object.fromEntries(cands.map((o) => [o.id, o.power ?? 0]));
   return crewPlanOf({
     base: cmd,
     candidates: cands.map((o) => o.id),
     powers,
     neededPower,
-    defaultIds: cmd.crewCreatureIds,
     saddle: Boolean(saddle),
   });
 }

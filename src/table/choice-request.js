@@ -1298,12 +1298,10 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     for (const id of plan.sacrifices) addRow(id, 'sac');
   }
 
-  // A2: default silnika startuje zaznaczony (gracz tylko koryguje).
-  if (crewMode) {
-    for (const id of plan.defaultIds ?? []) {
-      if (plan.targets.includes(id)) chosen.add(id);
-    }
-  }
+  // A2-rewizja (decyzja właściciela 2026-09-12): kreator załogi startuje
+  // PUSTY — jak modale czarów (Fireball, Wrap in Flames): nic wstępnie
+  // zaznaczonego, gracz klika od zera, a bramka progu pilnuje sumy mocy.
+  // (Celowo brak pre-checku defaultu silnika — spójność z innymi modalami.)
 
   if (plan.hasX) {
     const xRow = choiceNode(host, 'div', 'multi-target-x');

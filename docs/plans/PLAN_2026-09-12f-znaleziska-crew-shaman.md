@@ -153,3 +153,17 @@ wybór (`validateBlockerDamageAssignment`). Mapowanie na Crew jest 1:1:
 
 1. Ten plan. 2. Audyt PR #114. 3. CR/rulingi. 4. E2 silnik. 5. E3 UI.
 2. E4 badge. 7. E5 Shaman. 8. E6 pomiary. 9. Dokumenty zamknięcia.
+
+## 8. Addendum 2026-09-12b — rewizja A2 + zgłoszenie C (ta sama sesja/PR #115)
+
+- [x] **R1. Rewizja A2 (decyzja właściciela).** Kreator załogi startuje PUSTY
+      (koniec pre-checku defaultu — spójność z modalami czarów); otwiera się
+      ZAWSZE, także na 1 kandydata (M301/B „wskaż cel (1)": ekran świadomej
+      zgody na tapnięcie, duch M101/B7). `defaultIds` wypadło z planu
+      (martwy kontrakt usunięty, nie zostawiony). Etykieta nie wymienia imion
+      defaultu (nie obiecuje wykonania): „wybierz załogę/stwory do tapnięcia
+      (moc ≥ N)". Piny M101/B7 zaktualizowane z uzasadnieniem (L13).
+- [x] **C. Academy Journeymage.** Sygnał `removesTarget` w ofercie triggera
+      (zniszczenie/wygnanie/odbicie/poświęcenie — aury celu giną, CR 704.5m);
+      bot ±30 za przyklejoną aurę (cudza +, własna −; sprzęt i bestow poza).
+      Testy: test/bot-trigger-aura-strip (6).

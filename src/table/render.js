@@ -2722,13 +2722,20 @@ export function commandLabel(cmd, session, view) {
       // koszt, CR 601.2h; sześć identycznych wpisów było nierozróżnialnych).
       const sacCreaturePart = cmd.sacrificeCreatureId != null ? ` — poświęć: ${nameOfObjectId(cmd.sacrificeCreatureId)}` : '';
       const sacLandPart = cmd.sacrificeLandId != null ? ` — poświęć: ${nameOfObjectId(cmd.sacrificeLandId)}` : '';
-      // M101/B7: nazwij AKCJĘ, którą gracz wykonuje (crew albo saddle — nie
-      // oba naraz), i powiedz wprost, że wskazane stwory zostaną TAPNIĘTE.
-      // Tapnięcie to koszt (CR 702.122a/702.171a), więc gracz musi je widzieć
-      // przed kliknięciem.
-      const crewNames = (cmd.crewCreatureIds ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      const crewVerb = ability?.cost?.saddlePower ? 'osiodłaj' : 'załoga';
-      const crewPart = cmd.crewCreatureIds?.length ? ` — ${crewVerb}: tapnij ${crewNames}` : '';
+      // M101/B7 + A2-rewizja (decyzja właściciela 2026-09-12): klik w crew/
+      // saddle NIE tapuje wskazanych stworów — OTWIERA KREATOR (jak modale
+      // czarów: start pusty, zero preselekcji defaultu). Etykieta mówi więc,
+      // CO klik robi (wybór załogi w kreatorze), JAKIM kosztem (TAPNIĘCIE —
+      // CR 702.122a/702.171a, gracz musi je widzieć przed kliknięciem)
+      // i z JAKIM progiem (N z kosztu zdolności). Imion defaultu NIE
+      // wymieniamy — default to fallback wykonania, nie obietnica kliku.
+      const crewNeeded = ability?.cost?.saddlePower ?? ability?.cost?.crewPower;
+      const crewTail = ability?.cost?.saddlePower
+        ? 'wybierz stwory do tapnięcia'
+        : 'wybierz załogę do tapnięcia';
+      const crewPart = cmd.crewCreatureIds?.length
+        ? ` — ${crewTail}${crewNeeded > 0 ? ` (moc ≥ ${crewNeeded})` : ''}`
+        : '';
       // M126/#1: zdolność czytająca pustą bibliotekę zabierze koszt i nic nie da.
       const emptyLibWarn = abilityFizzlesOnEmptyLibrary(ability, view)
         ? ' — UWAGA: twoja biblioteka jest pusta, zdolność nie zadziała'
