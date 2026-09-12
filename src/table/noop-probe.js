@@ -320,6 +320,12 @@ export function probeCommandEffect(state, cmd, { maxCommands = MAX_PROBE_COMMAND
     // Pula many (player.mana / player.manaPool) to KOSZT lub produkcja —
     // nigdy „skutek" oferty w rozumieniu tego detektora.
     if (/^players\[\d+\]\.(mana|manaPool)/.test(path)) continue;
+    // B2 (audyt PR #113, F1): `lastManaSpend` to ZAPIS zapłaconego kosztu
+    // (resources.js:346 — kto, ile, z jakich kolorów i skarbów). Warunkuje
+    // przyszłe możliwości (resources.js:1035 — treasureSpent/manaColorsSpent),
+    // więc należy do odcisku, ale stoi po stronie KOSZTU, dokładnie jak pula
+    // many — inaczej każda oferta za manę wyglądała na „skutek poza kosztem".
+    if (/^counters\.lastManaSpend/.test(path)) continue;
     if (/^turn\./.test(path)) continue; // priorytet/fazy to nie skutek oferty
     effectDiffs.push(path);
   }
