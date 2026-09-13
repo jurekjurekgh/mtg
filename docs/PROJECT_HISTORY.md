@@ -10300,3 +10300,18 @@ doborze-zdoleniu z pustej (CR 704.5b/121.4 — mit „tylko draw step");
 poprawione 2 literówki komentarzy (704.5m→704.5b). D3: atak z drenażem
 biblioteki (Balamb) karany drabiną libraryLossPenalty — przy 3 kartach bot
 nie atakuje. Bramki: pełna **5341/5341**, build 61 modułów / 3572.8 kB.
+
+## 2026-09-13 — transpozycja: usunięcie planów Ikoria i Fiora (arena/01a096f0)
+
+Zlecenie właściciela: Vow of Flight (Fiora → Eldraine), Tiller of Flesh
+(Ikoria → Mirrodin), Unbreakable Bond (Ikoria → Ixalan). Zmienione: `plan`
+w katalogu, 3 wiersze słownika kolekcji (CSV) i mapa WOREK_DECKS (wpisy
+Fiora/Ikoria usunięte — zero kart); talie przeliczone generatorem:
+worek-legend → worek-baśni (Vow), worek-mroczny → mirrodin-wu (Tiller)
+i → worek-dziki (Bond). Efekt uboczny podziału Mirrodina (ADR 0024):
+Horizon Spellbomb mirrodin-wu → mirrodin-brg (balans 18/18, leak 0).
+Regeneracje po zmianie trajektorii (przejrzane): fixture golden-mastera
+(różnią się TYLKO 2 mecze z mirrodin-wu, pozostałe 4 bitowo te same)
+i progi M337/D (aggro domyka w 353 kroki, wygrana life_zero, tura 15 —
+czysto). Tabela talii w README zaktualizowana. Test-pin transpozycji x3.
+Bramki: pełna **5347/5347**.

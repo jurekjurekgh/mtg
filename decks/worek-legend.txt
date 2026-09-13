@@ -13,13 +13,12 @@
 1x Pain for All
 1x Ruinous Rampage
 1x Ulna Alley Shopkeep
-1x Vow of Flight
 1x Warmaker Gunship
 1x Wedgelight Rammer
 1x Weftblade Enhancer
 1x Sifter Wurm
-1x Plains
+2x Plains
 3x Island
-2x Swamp
+1x Swamp
 2x Mountain
 1x Forest

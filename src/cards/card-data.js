@@ -3995,7 +3995,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       effects: [{ type: 'return_permanent_from_graveyard', counters: { lifelink: 1 } }],
     },
     artId: 446,
-    plan: 'Ikoria',
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -6000,7 +6000,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'incubate', amount: 2 },
       }),
     ],
-    artId: 201, plan: 'Ikoria',
+    artId: 201, plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -9922,7 +9922,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/c/9/c9887121-6206-44bb-a1b4-520f28a61a17.jpg?1783928847',
     aura: { pump: { power: 2, toughness: 2 }, keywords: ['flying'], cantAttackYou: true },
     artId: 571,
-    plan: 'Fiora',
+    plan: 'Eldraine',
     support: { status: 'supported', limitations: [] },
     notes: ['can\'t attack you — w 1v1 stwór przeciwnika z Vow nie może atakować (jedyny przeciwnik to Ty)'],
   }),
