@@ -429,6 +429,25 @@ free-cast) i `Zostaw w wygnaniu (koniec odbicia/zawieszenia)`. Bez tych wzorców
 tester zatrzymywał się w oknie, w którym człowiek po prostu kliknąłby — a to
 blokowało audyt talii z tymi mechanikami (naprawiono w `run-game.mjs`).
 
+### E2 2026-09-13 — katalog czasowników w `actions.mjs` (koniec list w dwóch miejscach)
+
+Wzorce akcji testera i osi 3 detektorów („akcja bez ptaszka auto-pass") były
+utrzymywane ręcznie w dwóch plikach i rozjechały się z etykietami silnika:
+PR #115 (A1) przemianował crew/saddle na „Obsadź:"/„Osiodłaj:", a oba miejsca
+zostały na `^Aktywuj:` — przez 6 partii na taliach z pojazdami etykieta stała
+w panelu 54× i nie powstało ani jedno kliknięcie (klasa M256/L46: etykieta
+istnieje, więc detektory milczą). Detektory miały też martwe wpisy angielskie
+(`Escape:`, `Plot:`), których silnik nigdy nie wystawia.
+
+Od teraz **jedno źródło**: `tools/table-tester/actions.mjs` — tabela
+czasowników z klasyfikacją (pula / bezpieczne / priorytet `greedy`), z której
+budowane są `PLAY_REGEX`, `SAFE_REGEX`, `GREEDY_PRIORITY` i
+`IGNORABLE_LABEL_REGEX`. Nowy czasownik etykiety (albo zmiana nazwy) wymaga
+dopisania go **tam**; `test/tester-wzorce-akcji.test.js` (6 testów) generuje
+etykiety crew/saddle prawdziwym `commandLabel`, wymaga, by każdy czasownik
+tabeli istniał w `render.js` jako literał, i pilnuje spójności klasyfikacji.
+Zakres osi 3 celowo bez lądów i „Wybierz:" (mulligan/deklaracje walki).
+
 **M151 — detektor `detectFalseNoEffect` używa okna POJEDYNCZEGO (naprzód).**
 Poprzednie ±4 mieszało dwa niezależne triggery w tym samym oknie (Veiled
 Ascension „zerowy wynik” + osobny pump Akrasan Squire) i produkowało fałszywe
