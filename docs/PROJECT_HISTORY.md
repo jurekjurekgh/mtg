@@ -10489,5 +10489,31 @@ ten sam werdykt co STRICT/agregat). Uwaga testowa: attachedTo aury też zrzuca
 kontrakt addObject (jak tapped w A/10) — aurę rzucamy, nie podkładamy.
 Bramki: pełna **5400/5400** (w tym bot-benchmark 10/10), repro 2026 finished
 (220 kroków) i 2033 finished (316 kroków; było 488 — sim akceptuje więcej).
-Otwarta obserwacja (dane, nie luka): Consume Spirit to w silniku {X}{1}{B},
-a Oracle mówi {X}{B}{B} — do decyzji właściciela osobnym komitem.
+Sprostowanie (właściciel miał rację): Consume Spirit to {X}{1}{B} wg ORACLE
+(Scryfall) — silnik modeluje poprawnie, a rzekome {X}{B}{B} było moim błędem
+(patrz wpis Devotee niżej).
+
+## 2026-09-13 — Jeskai Devotee w silniku many (arena/01a096f0)
+
+Dwie korekty właściciela, obie słuszne: (1) Consume Spirit to {X}{1}{B}
+(Oracle, Scryfall) — silnik miał dobrze; (2) Jeskai Devotee to NIE jest
+„re-używalny bez tapnięcia” — Oracle: „{1}: Add {U}, {R}, or {W}. Activate
+only once each turn.” (TDM), a silnik ma deskryptor oncePerTurn z ewidencją
+abilityActivatedThisTurn. Wykluczenie Devotee z oferty było błędne (luką),
+więc wchodzi do silnika: untappedCostedManaSources przyjmuje kosztowe bez
+{T} przy oncePerTurn z niewykorzystanym budżetem (indeks zdolności niesie
+wpis); choroba przywołania blokuje tylko koszty z {T} (CR 302.6 — lustro
+tapBlockedBySummoningSickness; chory Devotee działa, chory Apprentice nie);
+tapCostedManaSource bez {T} nie tapuje obiektu (blokuje!) tylko spisuje
+budżet tą samą ewidencją co aktywacja manualna (L48 w obie strony).
+Obrona w głąb: własna zdolność once-per-turn nie finansuje własnego kosztu
+(wykluczenie precyzyjne id:indeks w manaForActivation i bramce kolorów —
+tylko ta zdolność, własny ląd inną płaci normalnie; w rejestrze i tak brak
+przypadku — Devotee netto-0 z generycznym kosztem jest podwójnie bezpieczny).
+Poza silnikiem zostają wyłącznie bez-{T} bez limitu (nieoferowalne z definicji;
+w rejestrze tylko poświęcenia — Scion/Skarby, decyzja strategiczna gracza).
+
+Testy: jeskai-devotee-once-per-turn 6 (D/0 oferta+płatność bez tapnięcia,
+D/1 budżet jednorazowy, D/2 chory działa, D/3 chory {T}-kosztowy nie,
+D/4 łańcuch Devotee→Devotee, D/5 manual wycofuje z oferty; 4 RED na 93335a2).
+Bramki: pełna **5406/5406** (w tym bot-benchmark 10/10).

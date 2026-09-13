@@ -745,18 +745,32 @@ export function untappedCostedManaSources(state, playerId, excludeSourceId = nul
     if (excluded != null && excluded.has(object.id)) continue;
     const isLandSource = object.kind === 'land' || (object.types ?? []).includes('Land');
     if (isLandSource) continue;
-    for (const ability of object.abilities ?? []) {
+    const ownAbilities = object.abilities ?? [];
+    for (let abilityIndex = 0; abilityIndex < ownAbilities.length; abilityIndex += 1) {
+      const ability = ownAbilities[abilityIndex];
       if (ability?.type !== 'activated') continue;
+      // Wykluczenie precyzyjne (id:indeks): własna zdolność nie finansuje
+      // własnej aktywacji (once-per-turn — budżet już wydany). Klucze
+      // indeksowe ignorują landy i źródła wolne (id się nie zgadza).
+      if (excluded != null && excluded.has(`${object.id}:${abilityIndex}`)) continue;
       const cost = ability.cost ?? {};
       const costKeys = Object.keys(cost).filter((key) => cost[key]);
-      // Koszt to {T} + cena many (mana i/lub pipy) — nic poza tym.
-      if (cost.tap !== true) continue;
+      // Koszt to {T} + cena many (mana i/lub pipy) ALBO sama cena many przy
+      // once-per-turn (Jeskai Devotee {1} — bez tapnięcia, ale jednorazowy;
+      // dostępność z tej samej ewidencji co aktywacja manualna).
+      const onceBudgetLeft = ability.oncePerTurn === true
+        && !state.abilityActivatedThisTurn?.[`${object.id}:${abilityIndex}`];
+      if (cost.tap !== true && !onceBudgetLeft) continue;
       if (!costKeys.every((key) => key === 'tap' || key === 'mana' || key === 'colors')) continue;
       if (!((cost.mana ?? 0) > 0 || (cost.colors?.length ?? 0) > 0)) continue;
       const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
       if (effects.length !== 1 || effects[0]?.type !== 'add_mana') continue;
       const isCreature = object.kind === 'creature' || (object.types ?? []).includes('Creature');
-      if (isCreature && object.summoningSickness && !effectiveKeywords(object, state).includes('haste')) continue;
+      // Choroba przywołania blokuje tylko koszty z {T} (CR 302.6 — lustro
+      // tapBlockedBySummoningSickness w aktywacji manualnej; chory Devotee
+      // działa, chory Apprentice nie).
+      if (cost.tap === true && isCreature && object.summoningSickness
+        && !effectiveKeywords(object, state).includes('haste')) continue;
       const spendOnly = effects[0].spendOnly ?? null;
       if (spendOnly === 'artifact' && restrictedManaBlocked(purpose)) break;
       if (spendOnly != null && spendOnly !== 'artifact') break;
@@ -767,7 +781,7 @@ export function untappedCostedManaSources(state, playerId, excludeSourceId = nul
       const costGeneric = Math.max(0, (cost.mana ?? 0) - costPips.length);
       out.push({
         object, amount: effects[0].amount ?? 1, colors: effects[0].colors ?? src?.colors ?? [],
-        spendOnly, costGeneric, costPips,
+        spendOnly, costGeneric, costPips, tapCost: cost.tap === true, abilityIndex,
       });
       break;
     }
@@ -1079,9 +1093,19 @@ export function tapCostedManaSource(state, playerId, entry, { preserveColors = [
     if ((player.treasureMana ?? 0) === 0) player.treasureManaColors = [];
     player.artifactOnlyMana = Object.values(player.restrictedPool ?? {}).reduce((a, b) => a + b, 0);
   }
-  // Aktywacja (lustro tapFreeManaSource: te same zdarzenia, produkcja z efektu).
-  state.objects.set(object.id, Object.freeze({ ...object, tapped: true }));
-  state.events.push(event('object_tapped', { objectId: object.id, playerId, forMana: true }));
+  // Aktywacja (lustro tapFreeManaSource: produkcja z efektu). Bez {T} w koszcie
+  // (Devotee) obiekt ZOSTAJE odkręcony (blokuje!), a schodzi budżet
+  // once-per-turn — ta sama ewidencja co aktywacja manualna, więc ręczne
+  // i auto dzielą jeden limit (L48: oferta = wykonanie w obie strony).
+  if (entry.tapCost === false) {
+    state.abilityActivatedThisTurn = {
+      ...(state.abilityActivatedThisTurn ?? {}),
+      [`${object.id}:${entry.abilityIndex}`]: true,
+    };
+  } else {
+    state.objects.set(object.id, Object.freeze({ ...object, tapped: true }));
+    state.events.push(event('object_tapped', { objectId: object.id, playerId, forMana: true }));
+  }
   addMana(state, playerId, entry.amount, { colors: entry.colors, spendOnly: entry.spendOnly ?? null });
   state.events.push(event('mana_produced', { playerId, source: object.id, amount: entry.amount, colors: [...entry.colors] }));
 }
@@ -1152,10 +1176,15 @@ export function planGrantManaColors(state, playerId, requirements, excludeSource
   // A: plan kosztowych Z GÓRY (granty zużyte finansowaniem wypadają z grantLands).
   const costedPlan = fundableCostedPlan(state, playerId, requirements, excludeSourceId, { castingSpell: true, artifactSpell: false });
   const units = expandManaPool(player.manaPool);
+  // Wykluczenia (M174/B + once-per-turn): id własne + klucze id:indeks
+  // (te drugie nie matchują lądów — celowo, tylko lister kosztowych).
+  const excludedGrant = excludeSourceId == null
+    ? null
+    : new Set(Array.isArray(excludeSourceId) ? excludeSourceId : [excludeSourceId]);
   const grantLands = [];
   for (const obj of untappedLandManaSources(state, playerId)) {
     // M174/B (L48): źródło tapowane kosztem zdolności nie płaci jej pipów.
-    if (excludeSourceId != null && obj.id === excludeSourceId) continue;
+    if (excludedGrant != null && excludedGrant.has(obj.id)) continue;
     // A: grant zużyty finansowaniem kosztowych — tapnięty-zniknięty (patrz wyżej).
     if (costedPlan.grantSpent.has(obj.id)) continue;
     const grant = grantManaOnLand(state, obj.id);

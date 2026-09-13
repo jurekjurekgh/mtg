@@ -263,14 +263,22 @@ export function isStatic(ability) { return ability?.type === ABILITY_TYPE.static
  * Wspólna funkcja oferty (legalActivatedAbilities) i walidacji (activateAbility),
  * żeby oferowana komenda zawsze była akceptowana.
  */
-function manaForActivation(state, playerId, object, ability, baseMana = producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) {
+function manaForActivation(state, playerId, object, ability, selfAbilityKey = null, baseMana = null) {
   // M180/Z1 (regresja M179/D, klasa L48): KAŻDE źródło many tapowane kosztem
   // własnej zdolności nie zapłaci tej zdolności — po M179/D nielandowe
   // źródła czystej many (Seer's Lantern) też liczą się w bazie, więc oferta
   // „{2},{T}: Scry 1” widziała własną manę latarni, a płatność padała.
   // producibleMana(excludeSourceId) wyklucza spójnie landy I źródła wolne.
   // A: pip(y) kosztu w obu ścieżkach (joint (iv) bramki źródeł kosztowych).
-  if (ability.cost?.tap && !object.tapped) return producibleMana(state, playerId, object.id, {}, colorRequirementsOf(ability.cost));
+  // Devotee: once-per-turn bez {T} wyklucza WŁASNĄ zdolność kluczem
+  // id:indeks (budżet już wydany tą aktywacją) — precyzyjnie tę zdolność,
+  // nie cały obiekt (własny ląd inną zdolnością płaci normalnie).
+  const reqs = colorRequirementsOf(ability.cost);
+  if (baseMana == null) baseMana = producibleMana(state, playerId, selfAbilityKey, {}, reqs);
+  if (ability.cost?.tap && !object.tapped) {
+    const excl = selfAbilityKey != null ? [object.id, selfAbilityKey] : object.id;
+    return producibleMana(state, playerId, excl, {}, reqs);
+  }
   return baseMana;
 }
 
@@ -525,7 +533,10 @@ export function legalActivatedAbilities(state, playerId) {
       // auto-tapu (CR 601.2h — stała musi być odkręcona w chwili płatności,
       // więc land-źródło z kosztem {T} nie może dać many na własną aktywację,
       // np. Prismari Campus „{4}, {T}: Scry 1").
-      const mana = manaForActivation(state, playerId, object, ability);
+      // Devotee: budżet once-per-turn wydaje TA aktywacja — własna zdolność
+      // nie finansuje własnego kosztu (klucz id:indeks, jak ewidencja).
+      const selfKey = ability.oncePerTurn ? `${id}:${index}` : null;
+      const mana = manaForActivation(state, playerId, object, ability, selfKey);
       // M174/B (Immersturm Skullcairn, L48 oferta=walidacja): źródło many
       // tapowane KOSZTEM zdolności nie zapłaci jej pipów kolorowych —
       // bramka kolorów liczy się z jego wykluczeniem (ilość already w
@@ -533,7 +544,13 @@ export function legalActivatedAbilities(state, playerId) {
       // „Brak kolorowej many").
       // M180/Z1: wykluczenie dotyczy KAŻDEGO źródła many z kosztem {T}
       // (po M179/D także nielandowych — planGrantManaColors je zna).
-      const colorExcludeId = (ability.cost?.tap && !object.tapped) ? id : null;
+      // Devotee: + klucz własnej zdolności once-per-turn (jw.).
+      const colorExcludeId = (() => {
+        const out = [];
+        if (ability.cost?.tap && !object.tapped) out.push(id);
+        if (selfKey != null) out.push(selfKey);
+        return out.length === 0 ? null : out;
+      })();
       // „Activate only once each turn\" (Snarling Wolf): po aktywacji zdolność
       // znika z legalnych akcji do końca tury (stan resetowany przy zmianie tury).
       if (ability.oncePerTurn && state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
@@ -1238,7 +1255,8 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   const player = state.players.find((entry) => entry.id === playerId);
   // Opłacalność po manie produkowalnej (z wyłączeniem źródła przy koszcie {T}
   // — jak w ofercie) — spendMana sam do-tapuje pozostałe landy.
-  if (manaCostPreview > manaForActivation(state, playerId, object, ability)) throw new Error('Niewystarczająca mana');
+  const selfKeyValidation = ability.oncePerTurn ? `${objectId}:${abilityIndex}` : null;
+  if (manaCostPreview > manaForActivation(state, playerId, object, ability, selfKeyValidation)) throw new Error('Niewystarczająca mana');
   // Kolorowe wymagania kosztu (CR 118.2): pipy muszą być pokryte kolorową pulą
   // lub nietapniętymi źródłami PRZED mutacją (CR 601.2h — jak czary).
   const colorReqs = colorRequirementsOf(cost);
