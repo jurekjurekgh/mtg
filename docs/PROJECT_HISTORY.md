@@ -19,6 +19,25 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-13 F1–F5 (audyt Żywym Testerem: 49 partii, transpozycja)
+
+Domknięcie znalezisk z audytu 49 partii Żywym Testerem (batch tmp-audyt-*, transkrypty poza repozytorium).
+Właściciel: greedy zostaje greedy, heurystyka bota bez przebudowy.
+
+- F1 (fix): bot NIGDY nie załogował (0× w 49 partiach; s29: Balamb + 3× Hero + Moogle + Bird) — crew nie miało
+  ŻADNEJ dodatniej wyceny (goła baza 2), a bez alternatyw bot crewował nawet bez sensu (postcombat, chory pojazd).
+  Wycena generyczna (ADR 0002/0017): okno ataku (własna precombat main, pojazd nietapnięty/zdrowy/nieanimowany) =
+  moc animowanego ciała ×2 + evasion − moc załogi; własna tura poza oknem = −6 (skala M230/D1); cudza tura bez
+  zmian (surprise-block poza zakresem). `src/controllers/heuristic-bot.js`.
+- F2 (weryfikacja): kreator załogi miał 0 żywych wykonań — po F1 bot załogował na żywo (weryfikacja 6 partii:
+  s104, bot kaladesh: 3× „Nieprzyjaciel aktywuje zdolność: Bomat Bazaar Barge" + 3× „Atak: Bomat Bazaar Barge").
+  Ścieżka sesji to dokładnie testowana (`session.js:2994`: chooseCommand(playerView(BOT_ID))).
+- F3/F4/F5 (piny, kod działał): Jwari — pierwszy test ŚCIEŻKI NATURALNEJ (rzut → pending tylko z Ally → kopia;
+  brak Ally / odmowa → 0/0 ginie); Tiller — pierwszy test ODPALENIA triggera (Shock w stwora → inkubuj 2;
+  w gracza / cudzy rzut → brak); Balamb — pierwszy test ROZSTRZYGNIĘCIA attack-draw (atak → +1 karta).
+  Wsad 2-pick był już pokryty (a-search-batch A/live) — bez zmian.
+- Suita: 5357/5357 (5347 + 10 nowych), zero regeneracji fixture'ów i progów (F1 nie ruszyło pinowanych trajektorii).
+
 ## Sesja 2026-09-11/12 — zgłoszenia właściciela A (druk karty) i B (cienka biblioteka) + przegląd 509 kart (PR #114, arena/01a0925f)
 
 Sesja „kontynuujemy projekt" w trybie ADR 0020/0021: PR #114 otwarty przed

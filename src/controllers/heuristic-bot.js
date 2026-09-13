@@ -4309,6 +4309,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               });
             score += removesRealBlocker ? 8 : -20;
           }
+          // F1 (audyt Żywym Testerem, 49 partii, s29 Balamb): crew
+          // (cost.crewPower + animate..._until_end_of_turn) nie miało ŻADNEJ
+          // dodatniej wyceny — goła baza 2, więc bot NIGDY nie załogował (0×),
+          // a gdy brakło alternatyw, crewował nawet bez sensu (postcombat,
+          // chory pojazd). Wycena generyczna po koszcie i stanie z PlayerView
+          // (ADR 0002/0017): zysk = nowy atakujący (moc ×2 jak ninjutsu +
+          // evasion), koszt = moc załogi, która w tej turze nie zaatakuje.
+          if (effect.type === 'animate_permanent_until_end_of_turn' && ability?.cost?.crewPower != null) {
+            const body = source;
+            const canAttackNow = body && !body.tapped && !body.summoningSickness && !body.animatedUntilEOT;
+            if (myTurn(view) && view.turn.phase === 'precombat_main' && canAttackNow) {
+              score += (effect.power ?? body.power ?? 0) * 2;
+              if (hasKeyword(body, 'flying') && untappedEnemyBlockers(view).every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += 8;
+              for (const cid of cmd.crewCreatureIds ?? []) {
+                const member = objectOnBoard(view, cid);
+                if (member && !member.summoningSickness) score -= (member.power ?? 0);
+              }
+            } else if (myTurn(view)) {
+              // Własna tura poza oknem ataku (postcombat, chory/tapnięty/
+              // animowany pojazd): animacja do EOT wygaśnie bez ataku, a tap
+              // załogi traci blok — kara w skali M230/D1. Cudza tura bez
+              // zmiany (baza 2): surprise-block poza zakresem F1.
+              score -= 6;
+            }
+          }
           // M96 (audyt Żywym Testerem): `pump_enchanted_creature`
           // (firebreathing — Shiv's Embrace) NIE wpadało do tej gałęzi, więc
           // zdolność dostawała gołe `score = 2` i bot pompował ją 10× w Głównej
