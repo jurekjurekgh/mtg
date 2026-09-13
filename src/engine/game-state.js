@@ -7137,7 +7137,7 @@ export function playerView(state, playerId) {
   // M202/N1: cel wydania liczony wspólnym `spellManaPurpose` — mana
   // ograniczona drukiem nie opłaci czaru nie-artefaktowego, ale opłaci
   // artefakt i KAŻDĄ płatność, która nie jest rzutem czaru (L48).
-  const manaAvailableFor = (object) => producibleMana(state, playerId, null, spellManaPurpose(object));
+  const manaAvailableFor = (object, reqs = null) => producibleMana(state, playerId, null, spellManaPurpose(object), reqs);
   // Batch 47: te RECZNE lancuchy pendingow pomijaly kilka decyzji (m.in.
   // pendingUndercityRoute z M190/B i pendingFabricate), wiec oferta rzutow
   // pojawiala sie MIMO czekajacej decyzji, a execute odbijal ja bramka
@@ -7185,7 +7185,7 @@ export function playerView(state, playerId) {
       const grantedFlash = (state.subtypeFlashThisTurn ?? []).some((grant) => grant.controllerId === playerId
         && hasCreatureType(object, grant.subtype, state));
       if (!(object.keywords ?? []).includes('flash') && !grantedFlash) continue;
-      if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
+      if (effectiveSpellManaCost(state, object) > manaAvailableFor(object, coloredPipsOf(object.cardId, 0))) continue;
       if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
       // M202/N4: koszt dodatkowy na obiekcie obowiązuje także przy rzucie
       // z flash (CR 601.2h) — oferta bez celu wygnania byłaby odrzucana (L48).
@@ -7255,7 +7255,7 @@ export function playerView(state, playerId) {
         const ex = state.objects.get(id);
         if (ex?.controllerId !== playerId || !ex.warpReady) continue;
         if (!warpTurnReached(ex, state)) continue;
-        if (effectiveSpellManaCost(state, ex) > manaAvailableFor(ex)) continue;
+        if (effectiveSpellManaCost(state, ex) > manaAvailableFor(ex, coloredPipsOf(ex.cardId, 0))) continue;
         if (!hasColorForCardId(state, playerId, ex.cardId, 0)) continue;
         legalCommands.push(command('cast_permanent', playerId, { objectId: id }));
       }
@@ -7283,7 +7283,7 @@ export function playerView(state, playerId) {
           && isImpulseWindowLive(object, state)) {
           const freeCast = hasFreeCastStamp(object);
           const affordable = freeCast
-            || (effectiveSpellManaCost(state, object) <= manaAvailableFor(object)
+            || (effectiveSpellManaCost(state, object) <= manaAvailableFor(object, coloredPipsOf(object.cardId, 0))
               && hasColorForCardId(state, playerId, object.cardId, 0));
           // M202/N4 (zmierzone): rzut impulsem zwalnia z KOSZTU MANY, nie
           // z kosztów dodatkowych (CR 601.2h/118.5). Bez tego oferta
@@ -7359,12 +7359,12 @@ export function playerView(state, playerId) {
       const symbols = object.phyrexianManaCost ?? 0;
       if (symbols === 0) return [null];
       const out = [];
-      const budget = manaAvailableFor(object);
       // M259/B3 (CR 202.3): object.manaCost zawiera symbole phyrexian —
       // wariant k wymaga manaCost - k many (reszta symbolem 2 życia).
+      // (A: budżet PER WARIANT (pip(y) po k opłaconych życiem) — joint (iv).)
       for (let k = 0; k <= symbols; k += 1) {
         const manaNeeded = (object.manaCost ?? 0) - k;
-        if (manaNeeded > budget) continue;
+        if (manaNeeded > manaAvailableFor(object, coloredPipsOf(object.cardId, k))) continue;
         if (2 * k > (player.life ?? 0)) continue;
         out.push(k);
       }
@@ -7382,7 +7382,7 @@ export function playerView(state, playerId) {
       const handExileCost = exileAdditionalCostCandidates(state, playerId, object);
       if (handExileCost) {
         for (const exileId of handExileCost) {
-          if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
+          if (effectiveSpellManaCost(state, object) > manaAvailableFor(object, coloredPipsOf(object.cardId, 0))) continue;
           if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
           legalCommands.push(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
         }
@@ -7390,7 +7390,7 @@ export function playerView(state, playerId) {
       }
       // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}) —
       // niezależnie od kosztu many karty (alternatywny koszt zagrania).
-      if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= manaAvailableFor(object)) {
+      if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= manaAvailableFor(object, [])) {
         // Morph jest bezbarwny (CR 702.37a — „no mana cost", samo {3};
         // 702.36 to Fear) – nie wymaga kolorowego źródła
         legalCommands.push(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
@@ -7432,7 +7432,7 @@ export function playerView(state, playerId) {
       {
         const phyrexianSymbols0 = object.phyrexianManaCost ?? 0;
         const lifePips = Math.min(phyrexianSymbols0, Math.floor((player.life ?? 0) / 2));
-        if (effectiveSpellManaCost(state, object) - lifePips > manaAvailableFor(object)) continue;
+        if (effectiveSpellManaCost(state, object) - lifePips > manaAvailableFor(object, coloredPipsOf(object.cardId, lifePips))) continue;
       }
       // Kolejność wariantów (M203/2): przy konwencji „prezentacja =
       // enumeracja" iterujemy wprost — wariant manowy (k=null) jest pierwszy
@@ -7451,8 +7451,8 @@ export function playerView(state, playerId) {
       // biorą najtańszy). Pipy kolorów kickera wchodzą do wymagań.
       if (object.kicker) {
         const kickerCost = object.kicker.cost ?? 0;
-        if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailableFor(object)) {
-          const kickerReqs = [...coloredPipsOf(object.cardId, 0), ...(object.kicker.colors ?? []).map((color) => [color])];
+        const kickerReqs = [...coloredPipsOf(object.cardId, 0), ...(object.kicker.colors ?? []).map((color) => [color])];
+        if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailableFor(object, kickerReqs)) {
           if (canPayColoredCost(state, playerId, kickerReqs)) {
             legalCommands.push(command('cast_permanent', playerId, { objectId: id, kicked: true }));
           }
@@ -7462,8 +7462,8 @@ export function playerView(state, playerId) {
       // `offspring: true` za naturalnym rzutem, z dopłatą i pipami kolorów.
       if (object.offspring) {
         const offspringCost = object.offspring.cost ?? 0;
-        if (effectiveSpellManaCost(state, object) + offspringCost <= manaAvailableFor(object)) {
-          const offspringReqs = [...coloredPipsOf(object.cardId, 0), ...(object.offspring.colors ?? []).map((color) => [color])];
+        const offspringReqs = [...coloredPipsOf(object.cardId, 0), ...(object.offspring.colors ?? []).map((color) => [color])];
+        if (effectiveSpellManaCost(state, object) + offspringCost <= manaAvailableFor(object, offspringReqs)) {
           if (canPayColoredCost(state, playerId, offspringReqs)) {
             legalCommands.push(command('cast_permanent', playerId, { objectId: id, offspring: true }));
           }

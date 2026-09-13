@@ -10454,9 +10454,40 @@ pipy-pierwsze/pula-pierwsza (bramka-(iv)/finansowanie-(1)/consume-matchPips),
 (3) REZERWA w spendMana (lądy/wolne tapują się tylko, gdy świeża baza po tapu
 kryje Σ kosztów albo świeże same domykają płatność; granty z planu zwolnione;
 tapnięcia konserwują jednostki w stronę puli, więc re-bramka przechodzi) oraz
-(4) pomijanie kosztowych spoza re-bramki (obrona w głąb). Luki świadome
-(bezpieczne = brak oferty): koszty z wildcardów puli, cykle współfinansowania
-(brak pary w rejestrze), grant+kosztowe ciasne. Testy: hybrid-mana-wizard-choice
+(4) pomijanie kosztowych spoza re-bramki (obrona w głąb). Dopisane tu wcześniej
+„luki świadome” zostały ZAŁATANE tego samego dnia komitem sim-bramki (patrz
+wpis niżej — projekt nie zostawia znanych luk). Testy: hybrid-mana-wizard-choice
 7 (B/0–B/6) + mana-cylix-costed-source 12 (A/0–A/11, w tym A/9 anty-korupcja
 M201 i A/10–A/11 kształty crashy). Bramki: pełna **5392/5392** (w tym
 bot-benchmark 10/10).
+
+## 2026-09-13 — bramka-symulacja źródeł kosztowych + threading reqs (arena/01a096f0)
+
+Decyzja właściciela: żadnych świadomych luk — wszystko, co wpis A+B zostawił
+jako „bezpieczny brak oferty”, załatane od razu, w tym komicie.
+
+Bramka warstwowa (i'')/(ii')/(iv)/STRICT zastąpiona SYMULACJĄ: fundableCostedPlan
+wykonuje na kopiach dokładnie te kroki co tapCostedManaSource ((1)/(2'')/(3))
+współdzielonym rdzeniem (matchPipAssignment, compareGenericConsume,
+poolPaysFreelyFor, firstUncoveredPipColor — consumeManaPool przepisana na ten
+sam rdzeń, zachowanie identyczne): (b) pipy kosztów z wildcardów (koniec
+plainBase); (c) koszty z puli dozwolone, gdy reszta kryje pipy (koniec STRICT,
+odrzut atomowy); (d) łańcuchy B→A (fixpoint + tap w kolejności akceptacji +
+domknięcie łańcucha w obu gałęziach spendMana), cykle odrzucane, prefiksy
+(najdłuższy przechodzący end-check zamiast agregatu); (e) granty w bramce
+(fundowanie z firstUncovered + elastyczność w end-checku + planGrant wyklucza
+granty zużyte — koniec podwójnego wydania). Po drodze: netto DOKŁADNE
+(amount − cały koszt, bez podłogi — dawne max(0, amount − costGeneric)
+zawyżało Apprentice {U} o 1, wektor korupcji M201) + filtr gałęzi sumy na
+prawdziwe netto. (f) budżety per-X w legalXCostCasts (Consume Spirit —
+dowiedzione: maxX + bramka kolorów już dźwięczne, per-X to obrona w głąb).
+Threading reqs: 9/9 manaAvailableFor w game-state.js (w tym budżet per wariant
+phyrexianu) + 6/6 lambd spells.js (w tym kicker/offspring/buyback/orPay/alt-costy).
+
+Testy: mana-sim-gate 8 (net/b/c/d1/d2/d3/e/f; 6 RED na bazie 7347b0b, (c)/(d2)
+ten sam werdykt co STRICT/agregat). Uwaga testowa: attachedTo aury też zrzuca
+kontrakt addObject (jak tapped w A/10) — aurę rzucamy, nie podkładamy.
+Bramki: pełna **5400/5400** (w tym bot-benchmark 10/10), repro 2026 finished
+(220 kroków) i 2033 finished (316 kroków; było 488 — sim akceptuje więcej).
+Otwarta obserwacja (dane, nie luka): Consume Spirit to w silniku {X}{1}{B},
+a Oracle mówi {X}{B}{B} — do decyzji właściciela osobnym komitem.
