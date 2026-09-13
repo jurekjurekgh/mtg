@@ -68,23 +68,35 @@ braku wyjątków po nazwie karty (ADR 0002).
 
 ## 2. Etapy i kryteria ukończenia
 
-- [ ] **E0. Plan + PR sesji** (ADR 0020 A). Ten plik wypchnięty osobnym commitem
+- [x] **E0. Plan + PR sesji** (ADR 0020 A). Ten plik wypchnięty osobnym commitem
       PRZED kodowaniem; PR otwarty na GitHubie (choćby z samym planem).
-- [ ] **E1. Audyt PR #115** — raport `docs/audits/AUDYT_PR115_2026-09-13.md`
+- [x] **E1. Audyt PR #115** — raport `docs/audits/AUDYT_PR115_2026-09-13.md`
       z werdyktem, tabelą znalezisk (ID, miejsce, treść, werdykt) i sekcją
       odtwarzalności; znaleziska blokujące naprawione u root cause osobnymi
       commitami (test RED→GREEN + weryfikacja mutacyjna).
-- [ ] **E2. Pętla jakości — Żywy Tester** na świeżym `dist/` (L76), partie
+- [x] **E2. Pętla jakości — Żywy Tester** na świeżym `dist/` (L76), partie
       taliami z obszaru zmian (pojazdy/Shaman/many), ręczna lektura transkryptów
       po trzech osiach (`TESTER_STOLU.md`), naprawy u root cause + detektory.
-- [ ] **E3. Polowanie na niezgodności z CR** inną ścieżką niż poprzednie sesje
+- [x] **E3. Polowanie na niezgodności z CR** inną ścieżką niż poprzednie sesje
       (obszar wskazany przez E1) — z cytatem reguły w komentarzu strażnika (ADR 0030).
-- [ ] **E4. Bramki**: `npm test` po każdym commicie; na koniec `npm run test:all`,
+- [x] **E4. Bramki**: `npm test` po każdym commicie; na koniec `npm run test:all`,
       `npm run build`, quick benchmark (`node tools/benchmark.mjs`) i golden master
       bota — churn tylko świadomy, z tabelą atrybucji (L124).
-- [ ] **E5. Domknięcie**: `docs/setup/HANDOFF_2026-09-13.md`, wpis w
+- [x] **E5. Domknięcie**: `docs/setup/HANDOFF_2026-09-13.md`, wpis w
       `docs/PROJECT_HISTORY.md`, README (liczby z pomiaru, L92), opis PR
       aktualizowany kumulacyjnie. Pełne B0 wyłącznie na komendę właściciela (ADR 0018).
+
+Wyniki (zmierzone): **E0** `818fb81` (PR #116 otwarty przed kodowaniem);
+**E1** `aa68716` — APPROVE, 0 blokujących (D1/D2/O1/O2), wejście 5406/5406;
+**E2** `b48d5d5` — 6 partii pętli + 2 celowane, znalezisko: katalog
+czasowników testera (Obsadź/Osiodłaj) + 6 strażników, crew i saddle
+przejechane end-to-end, 0 detektorów; **E3** `ef13afc` — 41 plików
++106/−106 + strażnik 11 testów; **E4** `npm test` 5413/5413,
+`npm run test:all` 5423/5423 (290,1 s), `npm run build` 61 modułów /
+3618,0 kB, quick benchmark 672 gry/111,6 s (heuristic 84,2%, aggro 28,0%,
+random 3,6%), golden master bota w pakiecie bez churnu (0 zmian silnika
+w tej sesji — brak tabeli atrybucji, bo brak churnu); **E5** ten plan
+odhaczony + `HANDOFF_2026-09-13.md` + PROJECT_HISTORY + README.
 
 ## 3. Kolejność commitów (każdy samodzielnie zielony: `npm test` + `npm run build`)
 

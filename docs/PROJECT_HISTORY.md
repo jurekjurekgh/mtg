@@ -10517,3 +10517,74 @@ Testy: jeskai-devotee-once-per-turn 6 (D/0 oferta+płatność bez tapnięcia,
 D/1 budżet jednorazowy, D/2 chory działa, D/3 chory {T}-kosztowy nie,
 D/4 łańcuch Devotee→Devotee, D/5 manual wycofuje z oferty; 4 RED na 93335a2).
 Bramki: pełna **5406/5406** (w tym bot-benchmark 10/10).
+
+## 2026-09-13 — audyt PR #115 + sweep numerów CR + katalog czasowników testera (PR #116, arena/01a09c9e)
+
+Sesja domyślna (ADR 0021): plan i PR #116 **przed** kodowaniem
+(`docs/plans/PLAN_2026-09-13-audyt-pr115-petla-jakosci.md`), potem audyt
+poprzedniego scalonego PR (#115), sweep zgodności z CR i pętla jakości
+Żywym Testerem.
+
+**E1 — audyt PR #115** (`docs/audits/AUDYT_PR115_2026-09-13.md`, `aa68716`):
+werdykt **APPROVE**, zero znalezisk blokujących. Zmierzony rozmiar: 59 plików,
++5159/−359 (diff 505 kB); `npm run test:all` na `8300db6` = **5406/5406**.
+Znaleziska nieblokujące: **D1** martwy parametr `baseMana` w
+`manaForActivation` (`abilities.js:266–282`); **D2** Oracle-vs-CR „other" —
+Irontread Crusher (Scryfall) nie ma „other", Gila Courser ma, więc filtr
+`id !== id` jest poprawny wobec CR 702.122a/702.171a; **O1**
+`planGrantManaColors` (`resources.js:1173`) ma zaszyty cel
+`{castingSpell:true, artifactSpell:false}` — nieosiągalny, bo oba tokeny
+Powerstone są `{tap}`-only; **O2** `fundableCostedPlan` zwraca najdłuższy
+PREFIKS planu, nie agregat (obserwacja, nie defekt).
+
+**E3 — sweep numerów CR** (`ef13afc`): 41 plików, +106/−106 w `src/`, `test/`
+i bieżących dokumentach (`docs/ENGINE_MILESTONES.md`, `docs/ROADMAP.md`).
+Poprawione pary (stan przed → kanon): deathtouch 702.4 → **702.2/702.2b**,
+first strike 702.4 → **702.7**, landwalk 702.33 → **702.14**, echo 702.29 →
+**702.30**, madness 702.34x → **702.35a/b**, flashback 702.34b → **702.34a**,
+fabricate 702.122 → **702.123**, reinforce 702.29a → **702.77a**, delirium
+702.34 → **207.2c** (ability word bez wpisu w CR), crew 701.36 → **702.122**
+w bieżących dokumentach. Dokumenty historyczne (PROJECT_HISTORY, stare plany,
+audyty) zachowują numerację z epoki. Źródło numeracji (ADR 0030): TXT CR
+`MagicCompRules%2020260819.txt` z media.wizards.com (efektywny 2026-08-07) —
+kanon: Deathtouch 702.2, Double strike 702.4, First strike 702.7, Landwalk
+702.14, Cycling 702.29, Echo 702.30, Kicker 702.33, Flashback 702.34,
+Madness 702.35, Reinforce 702.77, Crew 702.122/702.122a, Fabricate 702.123,
+Plot 702.170, Saddle 702.171/702.171a. Strażnik
+`test/cr-numery-mechanik-straznik.test.js` (11 testów) pilnuje par
+mechanika↔numer na `src/` + `test/` i cytuje regułę w komentarzu.
+
+**E2 — pętla jakości Żywym Testerem** (`b48d5d5`): sześć partii taliami
+z obszaru zmian (pojazdy: final-fantasy/kaladesh/warhammer-wg/worek-legend;
+Shaman: zendikar; szukanie: wiedzmin-brg) — 0 detektorów, 0 niewycenionych,
+modale Mulligan/Surveil/Fertile Thicket/Roiling Regrowth przećwiczone, ale
+**ścieżka kliku w pojazd ani razu nie powstała** (etykieta „Obsadź:" stała
+w panelu 54×, zero kliknięć). Root cause: PR #115 (A1) zmienił etykietę
+crew/saddle z „Aktywuj:" na „Obsadź:"/„Osiodłaj:", a ręcznie utrzymywane
+wzorce testera i detektorów zostały na `^Aktywuj:` — klasa M256, tym razem
+bez detektora (etykieta istnieje, więc L46 milczy). Naprawa u źródła: jedna
+tabela czasowników `tools/table-tester/actions.mjs` (pula / bezpieczne /
+priorytety greedy) + wspólna lista dla osi 3 detektorów + uzupełnienie
+czasowników znanych silnikowi od dawna (Ucieczka, Przygoda, Zagraj
+z przygody, Ninjutsu, Channel, Plotuj, Przygotuj manę, Zawieś, Rzuć
+z Cleave/odbiciem/wygnaną/zawieszone, Zagraj aurę/za bestow/za manę ze
+Skarbów, Obróć twarzą do góry) + usunięcie martwych angielskich wpisów
+(`Escape:`, `Plot:`). Strażnik `test/tester-wzorce-akcji.test.js` (6 testów)
+generuje etykiety crew/saddle prawdziwym `commandLabel` i wymaga, by każdy
+czasownik tabeli istniał w `render.js`. Dowód end-to-end: crew (Bomat Bazaar
+Barge → kreator załogi → „obsadzony · 5/5", partia 20–0, 0 detektorów) i
+saddle (Trained Arynx + Gila Courser → „zyskuje: osiodłanie", 29/30 akcji
+klikniętych, 0 detektorów). Po drodze naprawiony fałszywy alarm własnej
+zmiany: „Wybierz: Mulligan/Deklaracja atakujących" nie należy do osi 3
+(zakres historyczny osi zachowany).
+
+**E4 — bramki końcowe**: `npm test` **5413/5413**; `npm run test:all`
+**5423/5423** (290 123,44 ms); `npm run build` **61 modułów / 3618,0 kB**; quick benchmark
+**672 gry / 111,6 s** — heuristic **84,2%**, aggro **28,0%**, random **3,6%**
+(pary poniżej 100%: dominaria-brg|innistrad-brg 87,5%, dominaria-brg|dominaria-wu
+i dominaria-brg|final-fantasy i final-fantasy|innistrad-brg po 93,8%). Pełne B0
+niewykonane (ADR 0018 — tylko na komendę właściciela).
+
+**E5 — dokumenty**: ten wpis, `docs/setup/HANDOFF_2026-09-13.md`, README
+(liczby rdzenia/artefaktu z pomiaru; tabela talii bez zmian — PR #115
+zaktualizował ją poprawnie).
