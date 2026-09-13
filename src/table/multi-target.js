@@ -673,3 +673,208 @@ export function commandForDiscardSelection(plan, selected) {
     || new Set(selected).size !== selected.length || selected.some(id => !plan.targets.includes(id))) return null;
   return { type: 'resolve_discard_choice', playerId: plan.playerId, cardIds: [...selected] };
 }
+
+// ===========================================================================
+// A2 (znalezisko właściciela 2026-09-12, Balamb Garden): WYBÓR ZAŁOGI.
+// Klik w „Obsadź/Osiodłaj" nie wykonuje od razu domyślnego podzbioru ani nie
+// pokazuje ściany kombinacji (E2 usunął enumerację z silnika) — otwiera ten
+// kreator: lista kandydatów z ptaszkiem, licznik mocy na żywo, Zatwierdź.
+// Wzorzec discardMode (M195/C + C1): silnik daje JEDNĄ ofertę z defaultem,
+// UI buduje komendę z zaznaczenia, a silnik ją WALIDUJE (L48 — walidacja
+// crewCreatureIds w performActivation; kreator nie wymyśla legalności).
+// ===========================================================================
+
+/**
+ * Plan wyboru załogi albo null. Wejścia (z main.js — pełny stan daje N
+ * i moce, bo widok nie niesie deskryptorów zdolności):
+ *  - `base`: pola komendy silnika (type/playerId/objectId/abilityIndex),
+ *  - `candidates`: id własnych nietapniętych stworów poza źródłem (filtr
+ *    jak w silniku, CR 702.122a/702.171a „other untapped creatures"),
+ *  - `powers`: moc efektywna kandydata (ta sama, którą liczy default),
+ *  - `neededPower`: próg N z kosztu zdolności,
+ *  - `saddle`: true dla Saddle (etykiety „osiodłaj", inaczej „obsadź").
+ * (A2-rewizja: BEZ defaultIds — kreator startuje pusty jak modale czarów;
+ * oferta silnika niesie default tylko jako fallback wykonania.)
+ */
+export function crewPlanOf({ base, candidates, powers, neededPower, saddle = false }) {
+  if (!base || base.type !== 'activate_ability' || base.objectId == null
+    || !Number.isInteger(base.abilityIndex) || base.playerId == null) return null;
+  const list = Array.isArray(candidates) ? [...new Set(candidates)] : [];
+  if (list.length === 0 || !(neededPower > 0)) return null;
+  if (list.some((id) => !Number.isFinite(powers?.[id]))) return null;
+  return {
+    type: 'activate_ability',
+    playerId: base.playerId,
+    objectId: base.objectId,
+    abilityIndex: base.abilityIndex,
+    targets: list,
+    powers: { ...powers },
+    neededPower,
+    minTargets: 1,
+    maxTargets: list.length,
+    hasX: false,
+    crewMode: true,
+    saddle: Boolean(saddle),
+    itemLabel: saddle ? 'stwory do osiodłania' : 'załoga',
+  };
+}
+
+/**
+ * A2: plan kreatora załogi z oferty silnika albo null. Czysta asemblacja
+ * (testowalna bez DOM) — main.js dokleja tylko intro z nazwą: próg N
+ * i flaga saddle z deskryptora zdolności (pełny stan), kandydaci z widoku.
+ * Filtr to LUSTRO oferty silnika (abilities.js, CR 702.122a/702.171a
+ * „other untapped creatures you control"): własne, nietapnięte, stwory
+ * (`kind === 'creature'` — te same, które liczy default), poza źródłem.
+ * Choroba przywoływania NIE wyklucza (crew nie atakuje, nie ma C-hasta).
+ * Kreator otwiera się ZAWSZE (także na 1 kandydata — jak modale czarów
+ * „wskaż cel (1)", M301/B): to ekran ŚWIADOMEJ ZGODY na tapnięcie własnych
+ * stworów (duch M101/B7), a nie skrót do wykonania. Decyzja właściciela
+ * 2026-09-12 (spójność z modalami czarów > oszczędzony klik).
+ */
+export function crewWizardPlanFor({ cmd, playerId, neededPower, saddle = false, battlefield }) {
+  if (cmd?.type !== 'activate_ability' || !Array.isArray(cmd.crewCreatureIds)) return null;
+  if (cmd.playerId !== playerId) return null;
+  if (!(neededPower > 0)) return null;
+  const cands = (battlefield ?? []).filter((o) =>
+    o && o.id !== cmd.objectId && o.controllerId === playerId
+    && o.kind === 'creature' && !o.tapped);
+  if (cands.length < 1) return null;
+  const powers = Object.fromEntries(cands.map((o) => [o.id, o.power ?? 0]));
+  return crewPlanOf({
+    base: cmd,
+    candidates: cands.map((o) => o.id),
+    powers,
+    neededPower,
+    saddle: Boolean(saddle),
+  });
+}
+
+/** Suma mocy zaznaczenia (licznik kreatora). */
+export function crewSelectionPower(plan, selected) {
+  if (!plan?.crewMode || !Array.isArray(selected)) return 0;
+  return selected.reduce((sum, id) => sum + (plan.powers?.[id] ?? 0), 0);
+}
+
+/**
+ * Komenda z zaznaczenia załogi albo null (za mało mocy / pusty wybór /
+ * obcy kandydat / dublet). Kształt jak oferta silnika — silnik i tak
+ * re-waliduje przy aktywacji (staleness: stan mógł drgnąć między
+ * otwarciem kreatora a Zatwierdź — wtedy odrzucenie, nie cichy zły ruch).
+ */
+export function commandForCrewSelection(plan, selected) {
+  if (!plan?.crewMode || !Array.isArray(selected) || selected.length === 0) return null;
+  if (new Set(selected).size !== selected.length) return null;
+  if (selected.some((id) => !plan.targets.includes(id))) return null;
+  if (crewSelectionPower(plan, selected) < plan.neededPower) return null;
+  return {
+    type: 'activate_ability',
+    playerId: plan.playerId,
+    objectId: plan.objectId,
+    abilityIndex: plan.abilityIndex,
+    crewCreatureIds: [...selected],
+  };
+}
+
+// ===========================================================================
+// A (zlecenie właściciela 2026-09-12): WSADOWE szukanie w bibliotece.
+//
+// Springbloom Druid / Roiling Regrowth („up to two basic lands") to ŁAŃCUCH
+// dwóch decyzji resolve_search_choice o IDENTYCZNYCH parametrach (silnik:
+// pending.chain, game-state.js). Dotąd każda decyzja otwierała osobny modal
+// pojedynczego wyboru — dwa klikalne okna pod rząd dla jednego zamiaru
+// („znajdź dwa lądy"). Od teraz JEDEN modal-stepper: wiersz na distinct
+// kartę, licznik „ile egzemplarzy", łącznie do maxPicks — a pętla w main.js
+// (submitSearchBatch) składa zatwierdzenie w sekwencję legalnych komend,
+// po jednej na krok łańcucha (L48: każda komenda pochodzi z AKTUALNEJ oferty
+// silnika dla TEGO kroku, walidowana na świeżo — staleness kończy pętlę,
+// a grę przejmuje zwykły przepływ przez panel akcji).
+//
+// KLUCZOWA obserwacja (M122/#2): oferty silnika dedupują po (cardId,
+// destination) — wariant niesie tylko REPREZENTANTA instancji. Dlatego
+// wybory niosą cardId (nie id instancji!), a reprezentanta rozwiązujemy
+// per krok w searchBatchStepOf. Pętla jest synchroniczna (jeden task JS —
+// brak przeplotu), więc biblioteka między krokami zmienia się wyłącznie
+// naszymi submitami.
+// ===========================================================================
+
+/** Kanoniczny klucz kwalifikatora szukania (porównanie kroków łańcucha). */
+function searchQualifierKey(qualifier) {
+  return JSON.stringify(qualifier ?? {});
+}
+
+/**
+ * Plan wsadowego szukania albo null (wtedy zwykła ścieżka sekwencyjna).
+ * `pending` = ŻYWY pendingSearchChoice ze stanu silnika (ma `qualifier`,
+ * którego widok nie rzutuje) — main.js podaje session.state.pendingSearchChoice.
+ * Bramki batchowania (WSZYSTKIE naraz):
+ *  - łańcuch trwa (chain.remaining >= 1 — jest co batchować),
+ *  - brak wyboru destynacji (destinations == null — jeden cel dla całości),
+ *  - NASTĘPNE kroki mają tę samą destynację i ten sam kwalifikator co
+ *    bieżący (spread `{...chain, remaining - 1}` w silniku niesie je dalej
+ *    bez zmian, więc dowód z poziomu 0 obejmuje cały łańcuch).
+ * Final Parting (ręka→grób, różne destynacje) ZOSTAJE sekwencyjny — mieszane
+ * destynacje wymagają osobnej decyzji „która karta gdzie".
+ */
+export function searchBatchPlanOf(pending) {
+  const remaining = pending?.chain?.remaining;
+  if (!Number.isInteger(remaining) || remaining < 1) return null;
+  if (pending.destinations != null) return null;
+  const nextDestination = pending.chain.destination ?? pending.destination;
+  if (nextDestination !== pending.destination) return null;
+  if (searchQualifierKey(pending.chain.qualifier ?? pending.qualifier)
+      !== searchQualifierKey(pending.qualifier)) return null;
+  const maxPicks = 1 + remaining;
+  return {
+    type: 'resolve_search_choice',
+    searchBatchMode: true,
+    maxPicks,
+    // Krok 0 obowiązkowy (mandatory, brak oferty decline) = trzeba wziąć
+    // co najmniej 1 (kandydaci istnieją — żywy pending obowiązkowy je ma,
+    // bo queueSearchChoice bez kandydatów nie kolejkuje). Krok 0
+    // opcjonalny = 0 wyborów to rezygnacja z CAŁEGO szukania (decline
+    // nigdy nie kontynuuje łańcucha — game-state.js).
+    minPicks: pending.mandatory ? 1 : 0,
+    declinable: !pending.mandatory,
+    // Odcisk palca wsadu — pętla weryfikuje nim KAŻDY krok (ten sam łańcuch,
+    // nie obca decyzja, która pojawiła się po drodze, np. z pendingSpell).
+    sourceCardId: pending.sourceCardId ?? null,
+    destination: pending.destination ?? null,
+    qualifierKey: searchQualifierKey(pending.qualifier),
+  };
+}
+
+/**
+ * JEDEN krok pętli wsadowej (czysty): która komenda dla kroku `index`,
+ * albo null (= STOP — grę przejmuje zwykły przepływ: panel akcji pokaże
+ * kolejną decyzję, obowiązkową resztę gracz dokończy ręcznie).
+ * `picks` = zatwierdzone cardId (z krotnościami, w kolejności wierszy);
+ * `pending` = żywy pendingSearchChoice PRZED tym krokiem (stan silnika);
+ * `options` = AKTUALNE warianty resolve_search_choice tego kroku;
+ * `cards` = view.pendingSearchChoice.cards (mapa id instancji → cardId).
+ * Zwracana komenda ZAWSZE pochodzi z `options` (L48).
+ */
+export function searchBatchStepOf({ picks, index, batch, pending, options, cards }) {
+  if (!pending || !Array.isArray(options) || options.length === 0) return null;
+  // Wciąż ten sam łańcuch? Licznik remaining schodzi deterministycznie
+  // (krok `index` ma remaining = maxPicks-1-index; ostatni krok: chain null
+  // = 0) — obca decyzja (np. nowe szukanie z pendingSpell po naszym
+  // decline) ma inny odcisk i pętla oddaje jej stery, zamiast w nią klikać.
+  if ((pending.chain?.remaining ?? 0) !== batch.maxPicks - 1 - index) return null;
+  if ((pending.sourceCardId ?? null) !== batch.sourceCardId) return null;
+  if ((pending.destination ?? null) !== batch.destination) return null;
+  if (pending.destinations != null) return null;
+  if (searchQualifierKey(pending.qualifier) !== batch.qualifierKey) return null;
+  // Wybory wyczerpane = auto-decline reszty — TYLKO gdy silnik go oferuje
+  // (krok opcjonalny). Krok obowiązkowy bez wyborów = STOP (gracz bierze
+  // resztę ręcznie przez panel; zmyślanie decline byłoby odrzutem silnika).
+  if (index >= picks.length) {
+    return options.find((cmd) => cmd?.type === 'resolve_search_choice' && cmd.found == null) ?? null;
+  }
+  // Reprezentant cardId w TEJ ofercie (instancje przesuwają się po każdym
+  // wyjęciu — stąd rozwiązywanie per krok, nie niesienie id z modala).
+  const cardIdOf = new Map((cards ?? []).map((c) => [c?.id, c?.cardId]));
+  const want = picks[index];
+  return options.find((cmd) => cmd?.type === 'resolve_search_choice'
+    && cmd.found != null && (cardIdOf.get(cmd.found) ?? null) === want) ?? null;
+}

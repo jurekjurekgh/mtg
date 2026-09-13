@@ -17,9 +17,10 @@
 1x Dire Fleet Ravager
 1x Spinewoods Paladin
 1x Spreading Insurrection
+1x Unbreakable Bond
 1x Seismic Monstrosaur
 2x Plains
 1x Island
-2x Swamp
+3x Swamp
 2x Mountain
 2x Forest

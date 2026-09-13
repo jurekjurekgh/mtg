@@ -3475,7 +3475,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        // Crew (CR 701.36) NIE ma w Oracle „Activate only as a sorcery" —
+        // Crew (CR 702.122) NIE ma w Oracle „Activate only as a sorcery" —
         // aktywuje się jak instant (z priorytetem, także w turze przeciwnika).
         // Audyt Batchu 26 (M65): timing 'sorcery' blokował crew w odpowiedzi
         // na czar i w turze przeciwnika.
@@ -3995,7 +3995,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       effects: [{ type: 'return_permanent_from_graveyard', counters: { lifelink: 1 } }],
     },
     artId: 446,
-    plan: 'Ikoria',
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -4484,7 +4484,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        // Crew (CR 701.36) — jak wyżej: instant, bez „Activate only as a
+        // Crew (CR 702.122) — jak wyżej: instant, bez „Activate only as a
         // sorcery" w Oracle (audyt Batchu 26, M65).
         cost: { crewPower: 3 },
         effect: { type: 'animate_permanent_until_end_of_turn', power: 5, toughness: 5, typesAdd: ['Creature'] },
@@ -6000,7 +6000,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'incubate', amount: 2 },
       }),
     ],
-    artId: 201, plan: 'Ikoria',
+    artId: 201, plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -8364,7 +8364,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        // Crew (CR 701.36) aktywuje się jak instant (audyt Batchu 26/M65).
+        // Crew (CR 702.122) aktywuje się jak instant (audyt Batchu 26/M65).
         cost: { crewPower: 1 },
         effect: { type: 'animate_permanent_until_end_of_turn', power: 5, toughness: 4, typesAdd: ['Creature'] },
       }),
@@ -9922,7 +9922,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/c/9/c9887121-6206-44bb-a1b4-520f28a61a17.jpg?1783928847',
     aura: { pump: { power: 2, toughness: 2 }, keywords: ['flying'], cantAttackYou: true },
     artId: 571,
-    plan: 'Fiora',
+    plan: 'Eldraine',
     support: { status: 'supported', limitations: [] },
     notes: ['can\'t attack you — w 1v1 stwór przeciwnika z Vow nie może atakować (jedyny przeciwnik to Ty)'],
   }),

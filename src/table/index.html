@@ -843,6 +843,10 @@
   .bot-move-line {
     font-size: 14px; line-height: 1.35; padding: 7px 10px; border-radius: 8px;
     background: #f4f4f5; border: 1px solid #e4e4e7;
+    /* B (Abstruse Interference): treść modala Rozgrywka ZAWSZE łamie się
+       w wiersze — nigdy scrolla w poziomie (główny fix w manaSymbolsHtml:
+       proza poza nowrap .ms-group; to pas bezpieczeństwa). */
+    overflow-wrap: break-word;
   }
   .bot-move-line.key { background: #eef2ff; border-color: #c7d2fe; font-weight: 600; }
   .modal-foot { display: flex; justify-content: flex-end; padding: 10px 14px 14px; }

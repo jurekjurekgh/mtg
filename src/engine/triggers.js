@@ -273,10 +273,11 @@ function canPayTrigger(state, controllerId, trigger) {
   // gracza z nietapniętym landem, choć w MtG można go zatapnąć (bug złotej
   // odznaki; płatność resolve_optional_pay_choice i tak używa spendMana,
   // który auto-tapuje landy — check był niespójny z płatnością).
-  if ((trigger?.payMana ?? 0) > producibleMana(state, controllerId)) return false;
   // Kolorowe pipy opcjonalnej płatności (Panic Spellbomb — „you may pay {R}"):
   // muszą być pokryte kolorową pulą/nietapniętymi źródłami, jak koszty czarów.
+  // (A: przed strażnikiem (czyste) — joint (iv) bramki źródeł kosztowych.)
   const payReqs = (trigger?.payColors ?? []).map((color) => [color]);
+  if ((trigger?.payMana ?? 0) > producibleMana(state, controllerId, null, {}, payReqs)) return false;
   if (payReqs.length > 0 && !canPayColoredCost(state, controllerId, payReqs)) return false;
   // Płatność życia może zejść do 0, ale nie poniżej (CR 118.4).
   if ((trigger?.payLife ?? 0) > player.life) return false;
@@ -1151,7 +1152,7 @@ export function resolveTriggerEntry(state, entry) {
     const targetingOnStack = Boolean(targeting && targeting.zone === 'stack');
     if (targetingOnStack) {
       const payer = targeting.controllerId;
-      if (producibleMana(state, payer) >= extra.wardPay.amount) {
+      if (producibleMana(state, payer, null, {}, []) >= extra.wardPay.amount) {
         state.pendingWardPay = {
           playerId: payer,
           amount: extra.wardPay.amount,
@@ -1423,7 +1424,7 @@ function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo
   // M259/B7 (CR 702.29 + 118.2): koszt echa {2}{B} wymaga pipa {B} —
   // bramka opłacalności obejmuje KOLORY (pula + nietapnięte źródła), a sama
   // płatność pobiera pipy (patrz resolve_pay_or_sacrifice → pay_mana).
-  const canPay = producibleMana(state, controllerId) >= amount
+  const canPay = producibleMana(state, controllerId, null, {}, [colors]) >= amount
     && (colors.length === 0 || canPayColoredCost(state, controllerId, [colors]));
   if (!canPay) {
     const before = state.events.length;

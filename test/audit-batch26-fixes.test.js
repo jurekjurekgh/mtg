@@ -10,7 +10,7 @@ import { legalActivatedAbilities } from '../src/engine/abilities.js';
 
 /**
  * Audyt Batchu 26 (M65, sesja 2026-08-09) — behawioralny, nie definicyjny:
- *   A. Crew to instant (CR 701.36) — bomat-bazaar-barge, irontread-crusher.
+ *   A. Crew to instant (CR 702.122) — bomat-bazaar-barge, irontread-crusher.
  *   B. Kolorowe koszty zdolności (CR 118.2) — kabira-vindicator level up,
  *      bladed-sentinel {W}, trestle-troll regenerate, reassembling-skeleton.
  *   C. Index — wybór gracza (reorder top 5) widoczny w PlayerView (FoW).
@@ -403,7 +403,7 @@ test('F2: Trestle Troll {1}{B}{G} nie da się rzucić za same białe', () => {
 });
 
 // =============================================================================
-// A. Crew = instant (CR 701.36) — bomat-bazaar-barge, irontread-crusher
+// A. Crew = instant (CR 702.122) — bomat-bazaar-barge, irontread-crusher
 // =============================================================================
 
 test('A1: crew Bomat Bazaar Barge działa w turze przeciwnika (instant)', () => {

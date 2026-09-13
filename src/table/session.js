@@ -1219,7 +1219,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         }
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
-        // Crew (CR 701.36): zatapnione stwory w logu.
+        // Crew (CR 702.122): zatapnione stwory w logu.
         const crewPart = (e.crewCreatureIds ?? []).length
           ? ` — załoga: ${e.crewCreatureIds.map((id) => nameOfObject(id)).join(', ')}`
           : '';

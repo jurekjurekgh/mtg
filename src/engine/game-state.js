@@ -29,7 +29,7 @@ import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tr
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities } from './attachments.js';
-import { createBattlefieldToken, TREASURE_TOKEN_EFFECT } from './tokens.js';
+import { createBattlefieldToken, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
@@ -65,10 +65,12 @@ import {
   HOSTILE_TRIGGER_TARGET_EFFECTS,
   triggerEffectIsHostile,
   triggerTargetDebuffOf,
+  triggerTargetPowerPumpOf,
+  triggerTargetRemovesTargetOf,
   triggerTargetEffectFriendly,
 } from './effect-intent.js';
 
-export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetEffectFriendly };
+export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetPowerPumpOf, triggerTargetRemovesTargetOf, triggerTargetEffectFriendly };
 
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
@@ -624,7 +626,7 @@ function reject(reason) { return { ok: false, events: [event('command_rejected',
  * draws a card"). Wspólny kod dla AKCJI TUROWEJ (drawStepTurnBasedAction,
  * ścieżka normalna) i starej komendy `draw_card` (zgodność replayów).
  *
- * Pusta biblioteka: CR 704.5m — gracz, który próbował dobrać z pustej
+ * Pusta biblioteka: CR 704.5b — gracz, który próbował dobrać z pustej
  * biblioteki, przegrywa, ale rozstrzyga to AKCJA STANOWA w najbliższym
  * przebiegu (CR 704), a nie ta funkcja. Zwracamy { ok: true }, bo akcja
  * turowa doszła do skutku (próba dobrania), a nie została odrzucona.
@@ -634,7 +636,7 @@ function performDrawStepDraw(state, playerId, objectId = null) {
   const object = topId ? state.objects.get(topId) : null;
   if (!object) {
     if (state.zones.library.every((id) => state.objects.get(id)?.controllerId !== playerId)) {
-      // M202 (CR 704.5m + 104.4b): próba dobrania z pustej biblioteki jest
+      // M202 (CR 704.5b + 104.4b): próba dobrania z pustej biblioteki jest
       // ZNACZNIKIEM dla akcji stanowej, nie natychmiastowym końcem gry —
       // dokładnie jak w `drawPlayerCards`. Dzięki temu jednoczesne przegrane
       // (np. obie biblioteki puste) dają remis, a nie zwycięzcę z kolejności.
@@ -777,7 +779,7 @@ function freeCastAdditionalCostVariants(state, playerId, obj) {
     // Lash of the Balrog: „sacrifice a creature OR pay {4}" — wariant manowy
     // jest legalny także przy darmowym rzucie (płacimy tylko dodatek).
     if (additional.orPayMana != null
-      && producibleMana(state, playerId, null, spellManaPurpose(obj)) >= additional.orPayMana) {
+      && producibleMana(state, playerId, null, spellManaPurpose(obj), []) >= additional.orPayMana) {
       variants.push({ payAltCost: true });
     }
     return variants;
@@ -801,7 +803,7 @@ function payFreeCastAdditionalCost(state, playerId, obj, cmd) {
     // M202/N1: doplata {4} jest czescia RZUCENIA czaru (CR 118.5) — mana
     // ograniczona drukiem (Powerstone) nie moze jej oplacic.
     const purpose = spellManaPurpose(obj);
-    if (need == null || producibleMana(state, playerId, null, purpose) < need) return 'additional_cost_unpaid';
+    if (need == null || producibleMana(state, playerId, null, purpose, []) < need) return 'additional_cost_unpaid';
     spendMana(state, playerId, need, [], purpose);
     return null;
   }
@@ -854,13 +856,13 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
   // madness i darmowy rzut z grobu X nie rozliczają.
   if (spell.xCost) {
     if (!xCost) return [];
-    const budget = producibleMana(state, playerId, null, spellManaPurpose(obj));
+    const budget = producibleMana(state, playerId, null, spellManaPurpose(obj), coloredPipsOf(obj.cardId));
     return withCosts(legalXCostCasts(state, playerId, obj.id, obj, budget)
       .map((cast) => ({ cardId: obj.id, targets: cast.targets, xValue: cast.xValue })));
   }
   if (spell.fireball) {
     if (!xCost) return [];
-    const budget = producibleMana(state, playerId, null, spellManaPurpose(obj));
+    const budget = producibleMana(state, playerId, null, spellManaPurpose(obj), coloredPipsOf(obj.cardId));
     return withCosts(legalFireballCasts(state, playerId, obj.id, obj, budget)
       .map((cast) => ({ cardId: obj.id, targets: cast.targets, xValue: cast.xValue })));
   }
@@ -2309,7 +2311,7 @@ export function execute(state, input) {
     // z dowolnym X przechodziła (zmierzone: xValue 3 przy karcie MV 1 → ok).
     const xValue = card.manaCost ?? 0;
     if (!Number.isInteger(cmd.xValue) || cmd.xValue !== xValue) return reject('illegal_grave_free_cast_x');
-    if (producibleMana(state, cmd.playerId, null, spellManaPurpose(card)) < xValue) return reject('illegal_grave_free_cast');
+    if (producibleMana(state, cmd.playerId, null, spellManaPurpose(card), []) < xValue) return reject('illegal_grave_free_cast');
     // Cele/tryb jak przy Epic (walidacja przed płatnością — L4).
     const chosen = Array.isArray(cmd.targets) ? cmd.targets : [];
     let chosenTargets = [];
@@ -3221,7 +3223,7 @@ export function execute(state, input) {
     if (cmd.playerId !== state.pendingCounterPay.playerId) return reject('counter_pay_not_your_decision');
     const pending = state.pendingCounterPay;
     const before = state.events.length;
-    if (cmd.pay && (pending.amount ?? 0) > producibleMana(state, pending.playerId)) return reject('counter_pay_insufficient_mana');
+    if (cmd.pay && (pending.amount ?? 0) > producibleMana(state, pending.playerId, null, {}, [])) return reject('counter_pay_insufficient_mana');
     state.pendingCounterPay = null;
     const target = state.objects.get(pending.targetId);
     const targetOnStack = target && target.zone === 'stack';
@@ -3281,7 +3283,7 @@ export function execute(state, input) {
     const targeting = state.objects.get(pending.targetingStackId);
     const targetingOnStack = Boolean(targeting && targeting.zone === 'stack');
     if (cmd.pay) {
-      if ((pending.amount ?? 0) > producibleMana(state, pending.playerId)) return reject('ward_pay_insufficient_mana');
+      if ((pending.amount ?? 0) > producibleMana(state, pending.playerId, null, {}, [])) return reject('ward_pay_insufficient_mana');
       if ((pending.amount ?? 0) > 0) spendMana(state, pending.playerId, pending.amount, []);
     } else if (targetingOnStack) {
       counterStackObject(state, pending.targetingStackId, {
@@ -3532,6 +3534,16 @@ export function execute(state, input) {
             abilities: [...(copyBase.abilities ?? target.abilities ?? [])],
             kind: copyBase.kind ?? target.kind,
             cardName: target.cardName ?? target.cardId,
+            // C (znalezisko właściciela 2026-09-12, Jwari Shapeshifter):
+            // CR 707.2 — NAZWA jest wartością kopiowalną. Kopia wchodzi pod
+            // nazwą celu + dostaje kolejny numer wśród żywych kopii tej nazwy
+            // — DOKŁADNIE jak token-kopia (effects.js, M172/D; jedna reguła,
+            // dwie ścieżki, wspólny helper, L48). Stół pokazuje „X (kopia N)"
+            // istniejącą ścieżką M172/D (render.js) — bez nowych badge'ów.
+            // Prawo legend (state-based.js) czyta cardName w pierwszej
+            // kolejności, więc ta zmiana go nie rusza.
+            name: target.cardName ?? target.cardId,
+            copyNumber: nextCopyNumber(state, target.cardName ?? target.cardId),
             // CR 707.2 + 202.3b (M258): koszt many jest wartością kopiowalną
             // — do tej pory kopia „enter as copy" nosiła własny koszt Jwari
             // zamiast kosztu celu. Wspólny helper z token-kopią (L48).
@@ -5123,7 +5135,7 @@ export function execute(state, input) {
     const cardId = object.cardId;
     const cost = object.manifestTurnUpCost ?? 0;
     const purpose = spellManaPurpose(object);
-    if (producibleMana(state, cmd.playerId, null, purpose) < cost) return reject('manifest_turn_up_insufficient_mana');
+    if (producibleMana(state, cmd.playerId, null, purpose, coloredPipsOf(cardId, 0)) < cost) return reject('manifest_turn_up_insufficient_mana');
     if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('manifest_turn_up_no_colored_source');
     const before = state.events.length;
     spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
@@ -5149,7 +5161,7 @@ export function execute(state, input) {
     const cardId = object.cardId;
     const cost = object.cloakTurnUpCost ?? 0;
     const purpose = spellManaPurpose(object);
-    if (producibleMana(state, cmd.playerId, null, purpose) < cost) return reject('cloak_turn_up_insufficient_mana');
+    if (producibleMana(state, cmd.playerId, null, purpose, coloredPipsOf(cardId, 0)) < cost) return reject('cloak_turn_up_insufficient_mana');
     if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('cloak_turn_up_no_colored_source');
     const before = state.events.length;
     spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
@@ -5565,6 +5577,10 @@ export function playerView(state, playerId) {
           // wysyłał (tylko name) → etykiety celów wracały do surowego
           // „token_squirrel” przez session.nameOf(cardId). Klasa L1/ADR 0017.
           ...(object.isToken ? { isToken: true, name: object.name } : {}),
+          // C (Jwari): kopia na KARCIE (enter-as-copy) też nosi nazwę celu —
+          // bez tego kafel wracał do session.nameOf(cardId) („Jwari
+          // Shapeshifter") i ścieżka M172/D („X (kopia N)") nie miała danych.
+          ...(!object.isToken && object.copyNumber > 0 && object.name ? { name: object.name } : {}),
           // M172/D: numer kopii (publiczny) — warstwy nazw dopisują
           // „(kopia N)" przy celach, blokach i na kaflu.
           ...(object.copyNumber ? { copyNumber: object.copyNumber } : {}),
@@ -5764,6 +5780,10 @@ export function playerView(state, playerId) {
         // animowany do EOT (crew rozstrzygnięty) nosi originalBeforeAnimation.
         // Widoczny stan → badge/decyzja bota (nie re-crewuj), ADR 0017.
         if (object.originalBeforeAnimation != null) entry.animatedUntilEOT = true;
+        // A4 (Balamb Garden): rozstrzygnięte crew (CR 702.122e) — kafel
+        // pokazuje „obsadzony". Osobne pole, bo animatedUntilEOT stawia
+        // też Skilled Animator / stacja, a badge nazywa załogę.
+        if (object.crewed === true) entry.crewed = true;
         // Źródło aktywnej animacji jest publiczne; nazwa zakrytej karty nie.
         const animationLink = (state.linkedAnimations ?? []).find(link => link.targetId === object.id);
         const animationSource = animationLink && state.objects.get(animationLink.sourceId);
@@ -6031,7 +6051,7 @@ export function playerView(state, playerId) {
         if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.manifestReady) continue;
         if (obj.controllerId !== playerId) continue;
         const cost = obj.manifestTurnUpCost ?? 0;
-        if (producibleMana(state, playerId, null, spellManaPurpose(obj)) < cost) continue;
+        if (producibleMana(state, playerId, null, spellManaPurpose(obj), coloredPipsOf(obj.cardId, 0)) < cost) continue;
         if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0))) continue;
         legalCommands.push(command('turn_manifest_face_up', playerId, { objectId: objId }));
       }
@@ -6047,7 +6067,7 @@ export function playerView(state, playerId) {
         if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.cloakReady) continue;
         if (obj.controllerId !== playerId) continue;
         const cost = obj.cloakTurnUpCost ?? 0;
-        if (producibleMana(state, playerId, null, spellManaPurpose(obj)) < cost) continue;
+        if (producibleMana(state, playerId, null, spellManaPurpose(obj), coloredPipsOf(obj.cardId, 0)) < cost) continue;
         if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0))) continue;
         legalCommands.push(command('turn_cloak_face_up', playerId, { objectId: objId }));
       }
@@ -6468,7 +6488,7 @@ export function playerView(state, playerId) {
       targetId: state.pendingCounterPay.targetId ?? null,
     };
   // M203/2: kolejność prezentacji = enumeracja (dawniej odwracał unshift).
-    if ((state.pendingCounterPay.amount ?? 0) <= producibleMana(state, playerId)) {
+    if ((state.pendingCounterPay.amount ?? 0) <= producibleMana(state, playerId, null, {}, [])) {
       legalCommands.push(command('resolve_counter_pay_choice', playerId, { pay: true, ...counterPayInfo }));
     }
     legalCommands.push(command('resolve_counter_pay_choice', playerId, { pay: false, ...counterPayInfo }));
@@ -6487,7 +6507,7 @@ export function playerView(state, playerId) {
       sourceId: state.pendingWardPay.wardSourceId ?? null,
       targetId: state.pendingWardPay.targetingStackId ?? null,
     };
-    if ((state.pendingWardPay.amount ?? 0) <= producibleMana(state, playerId)) {
+    if ((state.pendingWardPay.amount ?? 0) <= producibleMana(state, playerId, null, {}, [])) {
       legalCommands.push(command('resolve_ward_pay_choice', playerId, { pay: true, ...wardInfo }));
     }
     legalCommands.push(command('resolve_ward_pay_choice', playerId, { pay: false, ...wardInfo }));
@@ -6588,6 +6608,12 @@ export function playerView(state, playerId) {
     // B (znalezisko testera): debuff P/T w komendzie (jak friendly z M150) —
     // bot premiuje zabójstwo, nie największy cel.
     const triggerDebuff = triggerTargetDebuffOf(triggerTargetHead.ability);
+    // B (Battle-Rattle Shaman): pump siły w komendzie (jak debuff) —
+    // bot celuje stwora zdolnego do ataku, nie największego chorego.
+    const triggerPump = triggerTargetPowerPumpOf(triggerTargetHead.ability);
+    // C (Academy Journeymage): flaga usunięcia celu (jak friendly —
+    // zawsze bool): bot liczy zrywanie aur przyklejonych do celu.
+    const triggerRemovesTarget = triggerTargetRemovesTargetOf(triggerTargetHead.ability);
     // M157/F4(a): wielocelowy trigger (count > 1, „each of up to N") —
     // warianty = podzbiory celów o rozmiarze 1..count (bez powtórzeń,
     // porządek deterministyczny) + zero celów przy upTo. CAP 32 wariantów
@@ -6615,7 +6641,7 @@ export function playerView(state, playerId) {
       // pierwszy wariant pełnego rozmiaru (deterministycznie: najwcześniejsze
       // kandydaty), a wariant pusty („up to") idzie na koniec.
       for (const targetIds of variants) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
       }
     } else {
       // M203/2 (konwencja „prezentacja = enumeracja"): kandydaci w kolejności
@@ -6623,10 +6649,10 @@ export function playerView(state, playerId) {
       // pierwszą ofertę), a odmowa („up to one"/„you may") jest OSTATNIA —
       // dawniej wymuszało to odwrócenie przez unshift.
       for (const targetId of legal) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
       }
       if (triggerTargetHead.allowNone) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, ...(triggerDebuff ? { debuff: triggerDebuff } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMoonlitChoice) {
@@ -6915,7 +6941,7 @@ export function playerView(state, playerId) {
       if (!['instant', 'sorcery'].includes(card.spell?.timing)) continue;
       if (card.spell?.additionalCost || card.spell?.xCost || card.spell?.fireball) continue;
       const xValue = card.manaCost ?? 0;
-      if (producibleMana(state, playerId, null, spellManaPurpose(card)) < xValue) continue;
+      if (producibleMana(state, playerId, null, spellManaPurpose(card), []) < xValue) continue;
       // Audyt PR #93 (znalezisko F): Halo Forager płaci {X} = MV, a CELE trybu
       // wybiera gracz (CR 601.2c) — „up to three target creatures” nie może
       // wyłączać karty z oferty, skoro Oracle mówi „any instant or sorcery
@@ -6976,7 +7002,7 @@ export function playerView(state, playerId) {
         // `legalAuraCastsForObject` (ten sam generator co dla ręki).
         for (const offer of epicCastOffers(state, playerId, exileCard, { aura: true })) pushExileCast(offer);
       } else {
-        const budget = producibleMana(state, playerId, null, spellManaPurpose(exileCard));
+        const budget = producibleMana(state, playerId, null, spellManaPurpose(exileCard), coloredPipsOf(exileCard.cardId, 0));
         const cost = effectiveSpellManaCost(state, exileCard);
         if (cost <= budget && hasColorForCardId(state, playerId, exileCard.cardId, 0)) {
           if (exileCard.kind === 'spell') {
@@ -7104,7 +7130,6 @@ export function playerView(state, playerId) {
   // Z tego powodu tap_for_mana NIE jest już enumerowany jako osobna akcja
   // (komenda pozostaje legalna w protokole — replaye i trigger ETB typu
   // „pay or sacrifice" korzystają z niej nadal).
-  const manaAvailable = producibleMana(state, playerId);
   // M201 (znalezisko #3): mana ograniczona drukiem (Powerstone — „only to cast
   // artifact spells") liczy się WYŁĄCZNIE przy czarach-artefaktach. Oferta
   // musi używać tego samego rachunku co płatność (L48), więc pytamy o budżet
@@ -7112,7 +7137,7 @@ export function playerView(state, playerId) {
   // M202/N1: cel wydania liczony wspólnym `spellManaPurpose` — mana
   // ograniczona drukiem nie opłaci czaru nie-artefaktowego, ale opłaci
   // artefakt i KAŻDĄ płatność, która nie jest rzutem czaru (L48).
-  const manaAvailableFor = (object) => producibleMana(state, playerId, null, spellManaPurpose(object));
+  const manaAvailableFor = (object, reqs = null) => producibleMana(state, playerId, null, spellManaPurpose(object), reqs);
   // Batch 47: te RECZNE lancuchy pendingow pomijaly kilka decyzji (m.in.
   // pendingUndercityRoute z M190/B i pendingFabricate), wiec oferta rzutow
   // pojawiala sie MIMO czekajacej decyzji, a execute odbijal ja bramka
@@ -7160,7 +7185,7 @@ export function playerView(state, playerId) {
       const grantedFlash = (state.subtypeFlashThisTurn ?? []).some((grant) => grant.controllerId === playerId
         && hasCreatureType(object, grant.subtype, state));
       if (!(object.keywords ?? []).includes('flash') && !grantedFlash) continue;
-      if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
+      if (effectiveSpellManaCost(state, object) > manaAvailableFor(object, coloredPipsOf(object.cardId, 0))) continue;
       if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
       // M202/N4: koszt dodatkowy na obiekcie obowiązuje także przy rzucie
       // z flash (CR 601.2h) — oferta bez celu wygnania byłaby odrzucana (L48).
@@ -7192,7 +7217,7 @@ export function playerView(state, playerId) {
       for (const id of state.zones.hand) {
         const object = state.objects.get(id);
         if (object?.controllerId === playerId && object.plot
-          && (object.plot.cost ?? 0) <= manaAvailable) {
+          && (object.plot.cost ?? 0) <= producibleMana(state, playerId, null, {}, (object.plot.colors ?? []).map((c) => [c]))) {
           // Koszt plot może nieść pipy kolorów (Plot {3}{G}) — oferta spójna
           // z walidacją plotCard.
           const plotColors = (object.plot.colors ?? []).map((c) => [c]);
@@ -7204,7 +7229,7 @@ export function playerView(state, playerId) {
         // z ręki, możesz zamiast tego zapłacić koszt i wygnać ją z licznikami
         // czasu" — ta sama specjalna akcja sorcery-speed co plot.
         if (object?.controllerId === playerId && object.suspend
-          && (object.suspend.cost ?? 0) <= manaAvailable) {
+          && (object.suspend.cost ?? 0) <= producibleMana(state, playerId, null, {}, (object.suspend.colors ?? []).map((c) => [c]))) {
           const suspendColors = (object.suspend.colors ?? []).map((c) => [c]);
           if (suspendColors.length === 0 || canPayColoredCost(state, playerId, suspendColors)) {
             legalCommands.push(command('suspend_card', playerId, { objectId: id }));
@@ -7214,7 +7239,7 @@ export function playerView(state, playerId) {
         // Trzymamy koszt warp NIŻSZY od normalnego (inaczej to bezsens) —
         // oferta jak dla plot/suspend (sorcery-speed, pusta faza main).
         if (object?.controllerId === playerId && object.warp
-          && (object.warp.cost ?? 0) <= manaAvailable) {
+          && (object.warp.cost ?? 0) <= producibleMana(state, playerId, null, spellManaPurpose(object), (object.warp.colors ?? []).map((c) => [c]))) {
           const warpColors = (object.warp.colors ?? []).map((c) => [c]);
           if (warpColors.length === 0 || canPayColoredCost(state, playerId, warpColors)) {
             legalCommands.push(command('warp_card', playerId, { objectId: id }));
@@ -7230,7 +7255,7 @@ export function playerView(state, playerId) {
         const ex = state.objects.get(id);
         if (ex?.controllerId !== playerId || !ex.warpReady) continue;
         if (!warpTurnReached(ex, state)) continue;
-        if (effectiveSpellManaCost(state, ex) > manaAvailableFor(ex)) continue;
+        if (effectiveSpellManaCost(state, ex) > manaAvailableFor(ex, coloredPipsOf(ex.cardId, 0))) continue;
         if (!hasColorForCardId(state, playerId, ex.cardId, 0)) continue;
         legalCommands.push(command('cast_permanent', playerId, { objectId: id }));
       }
@@ -7258,7 +7283,7 @@ export function playerView(state, playerId) {
           && isImpulseWindowLive(object, state)) {
           const freeCast = hasFreeCastStamp(object);
           const affordable = freeCast
-            || (effectiveSpellManaCost(state, object) <= manaAvailableFor(object)
+            || (effectiveSpellManaCost(state, object) <= manaAvailableFor(object, coloredPipsOf(object.cardId, 0))
               && hasColorForCardId(state, playerId, object.cardId, 0));
           // M202/N4 (zmierzone): rzut impulsem zwalnia z KOSZTU MANY, nie
           // z kosztów dodatkowych (CR 601.2h/118.5). Bez tego oferta
@@ -7288,8 +7313,8 @@ export function playerView(state, playerId) {
       if (attackerId !== undefined) extra.attackerId = attackerId;
       if (targets !== undefined) extra.targets = targets;
       if (xValue !== undefined) extra.xValue = xValue;
-      // Crew (CR 701.36): wybór stworów do tapnięcia jedzie w komendzie —
-      // bez tego oferowana komenda byłaby odrzucana (nielegalny crew).
+      // Crew/Saddle (CR 702.122a/702.171a): wybór stworów do tapnięcia jedzie
+      // w komendzie — bez tego oferowana komenda byłaby odrzucana.
       if (crewCreatureIds !== undefined) extra.crewCreatureIds = crewCreatureIds;
       if (tapArtifactIds !== undefined) extra.tapArtifactIds = tapArtifactIds;
       if (tapCreatureId !== undefined) extra.tapCreatureId = tapCreatureId;
@@ -7334,12 +7359,12 @@ export function playerView(state, playerId) {
       const symbols = object.phyrexianManaCost ?? 0;
       if (symbols === 0) return [null];
       const out = [];
-      const budget = manaAvailableFor(object);
       // M259/B3 (CR 202.3): object.manaCost zawiera symbole phyrexian —
       // wariant k wymaga manaCost - k many (reszta symbolem 2 życia).
+      // (A: budżet PER WARIANT (pip(y) po k opłaconych życiem) — joint (iv).)
       for (let k = 0; k <= symbols; k += 1) {
         const manaNeeded = (object.manaCost ?? 0) - k;
-        if (manaNeeded > budget) continue;
+        if (manaNeeded > manaAvailableFor(object, coloredPipsOf(object.cardId, k))) continue;
         if (2 * k > (player.life ?? 0)) continue;
         out.push(k);
       }
@@ -7357,7 +7382,7 @@ export function playerView(state, playerId) {
       const handExileCost = exileAdditionalCostCandidates(state, playerId, object);
       if (handExileCost) {
         for (const exileId of handExileCost) {
-          if (effectiveSpellManaCost(state, object) > manaAvailableFor(object)) continue;
+          if (effectiveSpellManaCost(state, object) > manaAvailableFor(object, coloredPipsOf(object.cardId, 0))) continue;
           if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
           legalCommands.push(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
         }
@@ -7365,7 +7390,7 @@ export function playerView(state, playerId) {
       }
       // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}) —
       // niezależnie od kosztu many karty (alternatywny koszt zagrania).
-      if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= manaAvailableFor(object)) {
+      if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= manaAvailableFor(object, [])) {
         // Morph jest bezbarwny (CR 702.37a — „no mana cost", samo {3};
         // 702.36 to Fear) – nie wymaga kolorowego źródła
         legalCommands.push(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
@@ -7392,7 +7417,7 @@ export function playerView(state, playerId) {
       if (object.surge && (state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) >= 1) {
         const surgeMana = object.surge.cost ?? 0;
         const surgeReqs = (object.surge.colors ?? []).map((color) => [color]);
-        if (producibleMana(state, playerId, null, spellManaPurpose(object)) >= surgeMana
+        if (producibleMana(state, playerId, null, spellManaPurpose(object), surgeReqs) >= surgeMana
           && canPayColoredCost(state, playerId, surgeReqs)) {
           legalCommands.push(command('cast_permanent', playerId, { objectId: id, surgeCast: true }));
         }
@@ -7407,7 +7432,7 @@ export function playerView(state, playerId) {
       {
         const phyrexianSymbols0 = object.phyrexianManaCost ?? 0;
         const lifePips = Math.min(phyrexianSymbols0, Math.floor((player.life ?? 0) / 2));
-        if (effectiveSpellManaCost(state, object) - lifePips > manaAvailableFor(object)) continue;
+        if (effectiveSpellManaCost(state, object) - lifePips > manaAvailableFor(object, coloredPipsOf(object.cardId, lifePips))) continue;
       }
       // Kolejność wariantów (M203/2): przy konwencji „prezentacja =
       // enumeracja" iterujemy wprost — wariant manowy (k=null) jest pierwszy
@@ -7426,8 +7451,8 @@ export function playerView(state, playerId) {
       // biorą najtańszy). Pipy kolorów kickera wchodzą do wymagań.
       if (object.kicker) {
         const kickerCost = object.kicker.cost ?? 0;
-        if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailableFor(object)) {
-          const kickerReqs = [...coloredPipsOf(object.cardId, 0), ...(object.kicker.colors ?? []).map((color) => [color])];
+        const kickerReqs = [...coloredPipsOf(object.cardId, 0), ...(object.kicker.colors ?? []).map((color) => [color])];
+        if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailableFor(object, kickerReqs)) {
           if (canPayColoredCost(state, playerId, kickerReqs)) {
             legalCommands.push(command('cast_permanent', playerId, { objectId: id, kicked: true }));
           }
@@ -7437,8 +7462,8 @@ export function playerView(state, playerId) {
       // `offspring: true` za naturalnym rzutem, z dopłatą i pipami kolorów.
       if (object.offspring) {
         const offspringCost = object.offspring.cost ?? 0;
-        if (effectiveSpellManaCost(state, object) + offspringCost <= manaAvailableFor(object)) {
-          const offspringReqs = [...coloredPipsOf(object.cardId, 0), ...(object.offspring.colors ?? []).map((color) => [color])];
+        const offspringReqs = [...coloredPipsOf(object.cardId, 0), ...(object.offspring.colors ?? []).map((color) => [color])];
+        if (effectiveSpellManaCost(state, object) + offspringCost <= manaAvailableFor(object, offspringReqs)) {
           if (canPayColoredCost(state, playerId, offspringReqs)) {
             legalCommands.push(command('cast_permanent', playerId, { objectId: id, offspring: true }));
           }

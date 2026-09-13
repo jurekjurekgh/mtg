@@ -160,6 +160,11 @@ test('M337/D: mecz z macierzy, który przerywał przebieg, dochodzi do końca', 
   // benchmarku. Bramka: ŻADNA komenda wybrana przez kontrolera nie może być
   // odrzucona przez silnik (runSimulation rzuca „Bot wybrał nielegalną
   // komendę" — i to jest błąd, nie wynik partii).
+  // Transpozycja 2026-09-13 (Ikoria/Fiora usunięte): mirrodin-wu stracił
+  // Horizon Spellbomb, a zyskał Tiller of Flesh — trajektoria się zmieniła
+  // i aggro domyka partię SZYBCIEJ (353 kroki, wygrana life_zero w turze 15
+  // zamiast 500+). Zakończenie jest czyste (zwycięzca, nie odrzut), więc
+  // intencja testu (mecz dochodzi do końca) jest spełniona na krótszej linii.
   const decksDir = path.join(process.cwd(), 'decks');
   const list = (n) => parseDeckText(readFileSync(path.join(decksDir, `${n}.txt`), 'utf8'), REGISTRY).cardIds;
   const state = setupCardMatch({
@@ -176,7 +181,9 @@ test('M337/D: mecz z macierzy, który przerywał przebieg, dochodzi do końca', 
     ]),
     maxCommands: 8000,
   });
-  assert.ok(results.length > 500, `partia przeszła daleko poza dawny punkt awarii (kroków: ${results.length})`);
+  assert.ok(results.length > 300, `partia przeszła kilkaset kroków bez odrzutu (kroków: ${results.length})`);
+  assert.equal(state.status, 'finished', 'mecz KOŃCZY się (zwycięstwo), nie przerywa odrzutem');
+  assert.ok(state.winnerId != null && !state.isDraw, `wygrana, nie remis ani klincz: ${state.winnerId}`);
   assert.ok(state.status === 'finished' || state.turn.number > 22,
     'mecz żył dalej niż dawniej (urażony był na 513. komendzie, tura 22)');
 });

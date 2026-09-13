@@ -498,7 +498,7 @@ export function drawPlayerCards(state, playerId, amount, source = 'effect') {
     recordCardDrawn(state, playerId, { fromId: topId, object: drawnObj, source });
     drawn += 1;
   }
-  // CR 704.5m: gracz, który MUSI dobrać więcej kart, niż ma w bibliotece,
+  // CR 704.5b: gracz, który MUSI dobrać więcej kart, niż ma w bibliotece,
   // dobiera pozostałe, a następnie PRZEGRYWA — ale przegrana jest AKCJĄ
   // STANOWĄ (CR 704), a nie natychmiastowym skutkiem efektu. Poprzednio gra
   // kończyła się tutaj, więc o wyniku decydowała KOLEJNOŚĆ przetwarzania:
@@ -507,7 +507,7 @@ export function drawPlayerCards(state, playerId, amount, source = 'effect') {
   // tymczasem CR 104.4b mówi, że gdy wszyscy pozostali gracze przegrywają
   // jednocześnie, partia jest REMISEM. Ten sam błąd był już naprawiony dla
   // życia/trucizny w `runStateBasedActions`; ścieżka dobrania go nie miała.
-  // Znacznik kasuje przebieg SBA (CR 704.5m: „since the last time state-based
+  // Znacznik kasuje przebieg SBA (CR 704.5b: „since the last time state-based
   // actions were checked”).
   if (drawn < amount && state.status === 'active') {
     state.emptyLibraryDraw = { ...(state.emptyLibraryDraw ?? {}), [playerId]: true };
@@ -3943,7 +3943,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const amount = effect.amount ?? 1;
     // CR 608.2g: nie pomijaj okna aktywacji ręcznego źródła many tylko
     // dlatego, że nie jest auto-tapowane (np. sacrificeSelf).
-    const canPay = producibleMana(state, payerId) >= amount || state.zones.battlefield.some(id => {
+    const canPay = producibleMana(state, payerId, null, {}, []) >= amount || state.zones.battlefield.some(id => {
       const source = state.objects.get(id);
       // Konserwatywna bramka: obecność źródła zachowuje OKNO płatności.
       // Nie obiecuje ani nie wykonuje aktywacji — legalManaAbilities w ofercie

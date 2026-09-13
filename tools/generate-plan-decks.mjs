@@ -102,8 +102,9 @@ export const WOREK_DECKS = Object.freeze({
   Amonkhet: 'worek-legend', Shandalar: 'worek-legend', Rabiah: 'worek-legend',
   Rath: 'worek-legend', Arcavios: 'worek-legend',
   'The Edge': 'worek-legend',
-  // Batch 50: Fiora (świat Commander Legends — intrygi/szlachta) → legendy.
-  Fiora: 'worek-legend',
+  // Transpozycja 2026-09-13 (zlecenie właściciela): Fiora i Ikoria USUNIĘTE
+  // (Vow of Flight → Eldraine, Unbreakable Bond → Ixalan, Tiller of Flesh
+  // → Mirrodin) — w mapie nie ma planów bez kart.
   // Batch 52: Kaladesh dobiło do 15 wspieranych kart (+Fourth Bridge Prowler)
   // i WYSZŁO z worka jako własna talia (auto-awans M181) — worek-dziki spadł
   // do 11 kart nielandowych, poniżej minimum walidatora. Thunder Junction
@@ -114,7 +115,7 @@ export const WOREK_DECKS = Object.freeze({
   'Final Fantasy': 'worek-mroczny', Duskmourn: 'worek-mroczny',
   Lorwyn: 'worek-mroczny',
   'New Capenna': 'worek-mroczny', Kaldheim: 'worek-mroczny',
-  Ikoria: 'worek-mroczny', Phyrexia: 'worek-mroczny',
+  Phyrexia: 'worek-mroczny',
 });
 
 export const WOREK_NAMES = Object.freeze({

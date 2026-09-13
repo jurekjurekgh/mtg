@@ -1,7 +1,6 @@
 # Mirrodin (WU)
 
 1x Crawling Chorus
-1x Horizon Spellbomb
 1x Panic Spellbomb
 1x Steel Sabotage
 1x Divine Offering
@@ -11,6 +10,7 @@
 1x Stoic Rebuttal
 1x Bladed Sentinel
 1x Fuel for the Cause
+1x Tiller of Flesh
 1x Trigon of Corruption
 1x Banishment Decree
 1x Quicksilver Fisher

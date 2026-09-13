@@ -2,7 +2,7 @@ import { choiceResponse } from '../protocol/types.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
-import { commandForDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection } from './multi-target.js';
+import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -1006,6 +1006,8 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // dedykowany plan/wizard (enumeracje, search, undercity, „1 kandydat
   // + odmowa”, wszystkie przyszłe kształty bez osobnych planów).
   const buttonsMode = Boolean(plan.buttonsMode);
+  // A2: wybór załogi — checkboksy + licznik mocy + default z oferty.
+  const crewMode = Boolean(plan.crewMode);
   const xLabel = plan.hasX ? ` oraz wartość X (${plan.xMin}–${plan.xMax})` : '';
   const range = plan.minTargets === plan.maxTargets
     ? `${plan.maxTargets}`
@@ -1083,7 +1085,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // konkretnymi instancjami), więc wybór „drugiej kopii" musi mapować się
   // na reprezentanta klasy — inaczej Zatwierdź milczy (klin z żywca).
   const defOfMulliganCard = (id) => session?.state?.objects?.get(id)?.cardId ?? null;
-  const currentCommand = () => (plan.discardMode
+  const currentCommand = () => (plan.crewMode
+    ? commandForCrewSelection(plan, [...chosen])
+    : plan.discardMode
     ? commandForDiscardSelection(plan, [...chosen])
     : plan.cardIdsMode
     ? commandForMulliganSelection(commands, [...chosen], defOfMulliganCard)
@@ -1120,7 +1124,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     for (const row of rows) row.handle.setChecked(pickOf(row));
   };
 
-  const addRow = (id, slot, { labelOverride = null, forceKind = null, groupOverride = undefined, cardId = null } = {}) => {
+  const addRow = (id, slot, { labelOverride = null, forceKind = null, groupOverride = undefined, cardId = null, nameSuffix = '' } = {}) => {
     // M298/A: wybór pojedynczy, mulligan, okna rzutu i tryb przyciskowy są
     // JEDNOWYBOROWE — radio w grupie, a model (`chosen`) czyści się przy
     // każdym nowym zaznaczeniu.
@@ -1141,7 +1145,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       // (commandLabel), nie kształt wyboru.
       label: (typeof labelOverride === 'string' && labelOverride.includes('<'))
         ? null
-        : (labelOverride ?? objectOrPlayerName(view, session, id)),
+        : (labelOverride ?? (objectOrPlayerName(view, session, id) + nameSuffix)),
       html: (typeof labelOverride === 'string' && labelOverride.includes('<'))
         ? labelOverride
         : null,
@@ -1222,6 +1226,13 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       } else {
         setStatus('Wskaż jeden wiersz', true);
       }
+    } else if (crewMode) {
+      // A2: licznik progu — ile mocy zaznaczono, ile brakuje do N.
+      const have = crewSelectionPower(plan, [...chosen]);
+      const need = plan.neededPower;
+      if (cmd) setStatus(`Moc załogi: ${have} / ≥ ${need} — gotowe`, false);
+      else if (chosen.size === 0) setStatus(`Wybierz załogę o łącznej mocy ≥ ${need}`, true);
+      else setStatus(`Moc załogi: ${have} / ≥ ${need} — brakuje ${need - have}`, true);
     } else if (cmd) {
       // C1 (zgłoszenie właściciela 2026-09-10): łączny koszt wariantu
       // (`cmd.cost` z silnika — np. Fireball: X + {R} + {1}/cel ponad
@@ -1262,6 +1273,12 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     // M298/A: mulligan — wiersze z ETYKIETAMI od wywołującego („Zatrzymaj
     // rękę (7 kart)” / „Weź mulligan”), nie z nazw obiektów.
     for (const row of plan.rows ?? []) addRow(row.id, null, { labelOverride: row.label });
+  } else if (crewMode) {
+    // A2: wiersz na kandydata z jego mocą (licznik progu N); podgląd karty
+    // działa jak w innych trybach (dopisek, nie labelOverride).
+    for (const id of plan.targets) {
+      addRow(id, null, { nameSuffix: ` (moc ${plan.powers?.[id] ?? '?'})` });
+    }
   } else if (singleMode) {
     // M298/A: wybór jednego celu — po wierszu na kandydata + opcjonalny
     // wiersz odmowy („you may”: targetId null w ofercie silnika).
@@ -1280,6 +1297,11 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     renderPickerSection(list, `${slotLabels[1] ?? 'Poświęcenie (koszt)'}:`, { className: 'multi-target-slot-label' });
     for (const id of plan.sacrifices) addRow(id, 'sac');
   }
+
+  // A2-rewizja (decyzja właściciela 2026-09-12): kreator załogi startuje
+  // PUSTY — jak modale czarów (Fireball, Wrap in Flames): nic wstępnie
+  // zaznaczonego, gracz klika od zera, a bramka progu pilnuje sumy mocy.
+  // (Celowo brak pre-checku defaultu silnika — spójność z innymi modalami.)
 
   if (plan.hasX) {
     const xRow = choiceNode(host, 'div', 'multi-target-x');
@@ -1642,4 +1664,100 @@ export function renderEscapeExileWizard(host, { candidates, exileCount, sourceNa
   }
   refresh();
   return host;
+}
+
+/**
+ * A (zlecenie właściciela 2026-09-12): WSADOWY kreator szukania w bibliotece.
+ *
+ * Łańcuch szukań o identycznych parametrach (Springbloom Druid / Roiling
+ * Regrowth — „up to two basic lands") to JEDEN zamiar gracza („znajdź dwa
+ * lądy"), a otwierał DWA modale pojedynczego wyboru pod rząd. Ten kreator
+ * zbiera całość naraz: wiersz-stepper na distinct kartę (oferty silnika
+ * dedupują po cardId, M122/#2), łącznie do plan.maxPicks. Zatwierdzenie
+ * zwraca listę cardId z krotnościami (np. ['forest','forest']), a pętla
+ * w main.js składa ją w sekwencję legalnych komend (po jednej na krok).
+ * 0 wyborów = rezygnacja z CAŁEGO szukania (dozwolona tylko gdy krok 0
+ * jest opcjonalny — plan.minPicks pilnuje kroku obowiązkowego).
+ * Wiersze buduje wywołujący (plan.rows: [{cardId, count}]) — ten sam wzorzec
+ * co mulliganKeep/castWindow. Nazwa wiersza otwiera pełny ekran po cardId (M201/C2).
+ */
+export function renderSearchBatchWizard(host, { view, session, plan, commands, sourceName = null, intro = null, onComplete, onCancel, onOpenCardByCardId = null }) {
+  clearChoiceElement(host);
+  const rows = plan.rows ?? [];
+  const maxPicks = plan.maxPicks;
+  const minPicks = plan.minPicks ?? 0;
+  choiceNode(host, 'div', 'choice-request-intro',
+    intro ?? `${sourceName ? `${sourceName} — ` : ''}wskaż do ${maxPicks} ${polishPluralCount(maxPicks, 'karty', 'karty', 'kart')} (łącznie ze wszystkich szukań):`);
+  const list = choiceNode(host, 'div', 'search-batch-list picker-list');
+  const amounts = rows.map(() => 0);
+  const handles = [];
+  let confirm = null;
+  let statusEl = null;
+  const total = () => amounts.reduce((a, b) => a + b, 0);
+  const legal = () => total() >= minPicks && total() <= maxPicks;
+  // M292: ten sam predykat rządzi akcją i stanem `disabled` (jak w podziale
+  // obrażeń) — widełki nie rozjadą się z wizualnym stanem przycisków.
+  const canGive = (idx) => total() < maxPicks && amounts[idx] < rows[idx].count;
+  const setStatus = (text, problem) => {
+    if (!statusEl) return;
+    statusEl.textContent = String(text);
+    statusEl.className = problem
+      ? 'picker-status search-batch-status is-problem'
+      : 'picker-status search-batch-status';
+  };
+  const refresh = () => {
+    rows.forEach((row, idx) => { handles[idx]?.setValue(amounts[idx]); });
+    const n = total();
+    if (n < minPicks) setStatus(`Wskaż co najmniej ${minPicks} ${polishPluralCount(minPicks, 'kartę', 'karty', 'kart')} (szukanie obowiązkowe)`, true);
+    else if (n === 0) setStatus('Wybrano: 0 (puste = rezygnacja z szukania)', false);
+    else setStatus(`Wybrano: ${n} / ${maxPicks}`, false);
+    if (confirm) {
+      const ok = legal();
+      confirm.disabled = !ok;
+      confirm.classList?.toggle?.('is-disabled', !ok);
+    }
+  };
+  rows.forEach((row, idx) => {
+    const name = session.nameOf(row.cardId)
+      + (row.count > 1 ? ` (×${row.count} w bibliotece)` : '');
+    const handle = renderPickerRow(list, {
+      id: row.cardId,
+      kind: 'stepper',
+      label: name,
+      min: 0,
+      max: row.count,
+      rowClassName: 'search-batch-row',
+      nameClassName: 'search-batch-name',
+      valueClassName: 'search-batch-count',
+      decClassName: 'ghost-btn search-batch-minus',
+      incClassName: 'ghost-btn search-batch-plus',
+      canDecrement: () => amounts[idx] > 0,
+      canIncrement: () => canGive(idx),
+      onStep: (delta) => {
+        const next = amounts[idx] + delta;
+        if (next < 0) return;
+        if (delta > 0 && !canGive(idx)) return;
+        amounts[idx] = next;
+        refresh();
+      },
+      onOpenCard: typeof onOpenCardByCardId === 'function' ? (cid) => onOpenCardByCardId(cid) : null,
+      openCardId: row.cardId,
+    });
+    handles[idx] = handle;
+  });
+  statusEl = choiceNode(host, 'div', 'picker-status search-batch-status', '');
+  const buttons = choiceNode(host, 'div', 'choice-request-actions');
+  confirm = choiceNode(buttons, 'button', 'primary-btn search-batch-confirm', 'Zatwierdź wybór');
+  confirm.disabled = !legal();
+  confirm.addEventListener('click', () => {
+    if (!legal()) return;
+    const picks = [];
+    rows.forEach((row, idx) => {
+      for (let k = 0; k < amounts[idx]; k += 1) picks.push(row.cardId);
+    });
+    onComplete(picks);
+  });
+  const cancel = choiceNode(buttons, 'button', 'ghost-btn', 'Anuluj');
+  cancel.addEventListener('click', () => onCancel?.());
+  refresh();
 }

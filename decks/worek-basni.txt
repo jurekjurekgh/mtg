@@ -14,13 +14,14 @@
 1x Halo Forager
 1x Talion's Messenger
 1x Thistledown Players
+1x Vow of Flight
 1x Zoraline, Cosmos Caller
 1x Downwind Ambusher
 1x Locthwain Paladin
 1x Rust-Shield Rampager
 1x Burning-Yard Trainer
 1x Greater Tanuki
-1x Plains
+2x Plains
 2x Island
 3x Swamp
 1x Mountain

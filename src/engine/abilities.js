@@ -263,13 +263,22 @@ export function isStatic(ability) { return ability?.type === ABILITY_TYPE.static
  * Wspólna funkcja oferty (legalActivatedAbilities) i walidacji (activateAbility),
  * żeby oferowana komenda zawsze była akceptowana.
  */
-function manaForActivation(state, playerId, object, ability, baseMana = producibleMana(state, playerId)) {
+function manaForActivation(state, playerId, object, ability, selfAbilityKey = null, baseMana = null) {
   // M180/Z1 (regresja M179/D, klasa L48): KAŻDE źródło many tapowane kosztem
   // własnej zdolności nie zapłaci tej zdolności — po M179/D nielandowe
   // źródła czystej many (Seer's Lantern) też liczą się w bazie, więc oferta
   // „{2},{T}: Scry 1” widziała własną manę latarni, a płatność padała.
   // producibleMana(excludeSourceId) wyklucza spójnie landy I źródła wolne.
-  if (ability.cost?.tap && !object.tapped) return producibleMana(state, playerId, object.id);
+  // A: pip(y) kosztu w obu ścieżkach (joint (iv) bramki źródeł kosztowych).
+  // Devotee: once-per-turn bez {T} wyklucza WŁASNĄ zdolność kluczem
+  // id:indeks (budżet już wydany tą aktywacją) — precyzyjnie tę zdolność,
+  // nie cały obiekt (własny ląd inną zdolnością płaci normalnie).
+  const reqs = colorRequirementsOf(ability.cost);
+  if (baseMana == null) baseMana = producibleMana(state, playerId, selfAbilityKey, {}, reqs);
+  if (ability.cost?.tap && !object.tapped) {
+    const excl = selfAbilityKey != null ? [object.id, selfAbilityKey] : object.id;
+    return producibleMana(state, playerId, excl, {}, reqs);
+  }
   return baseMana;
 }
 
@@ -435,52 +444,46 @@ function abilityEffectIsNoOp(state, source, ability, target) {
   return effects.every((effect) => effectIsNoOpOnTarget(state, effect, subject, source));
 }
 
-/** Limit oferowanych podzbiorów crew (jak COMBAT_OPTION_CAP w combacie). */
-const CREW_OPTION_CAP = 32;
-
 /**
- * Legalne podzbiory stworów do kosztu crew (CR 701.36): „Tap any number of
- * creatures you control with total power N or more". Deterministycznie
- * (ADR 0005): pierwszy jest minimalny zachłanny podzbiór (najsłabsze stwory
- * w kolejności pola bitwy — boty biorą najtańszy tap), potem pozostałe
- * podzbiory (maski bitowe w kolejności rosnącej liczności) do limitu.
+ * DOMYŚLNY podzbiór stworów do kosztu crew/saddle (JEDYNA oferta silnika —
+ * A2/A3, znaleziska właściciela 2026-09-12: enumeracja podzbiorów dawała
+ * modal ze ścianą kombinacji, a przy >6 stworach cap ucinał wszystko poza
+ * pierwszym wariantem, więc silnik „sam dobierał załogę").
+ *
+ * CR 702.122a (Crew; CR efektywny 2026-08-07, pobrane 2026-09-12):
+ * „Crew N" means "Tap any number of other untapped creatures you control
+ * with total power N or greater: This permanent becomes an artifact
+ * creature until end of turn."
+ * CR 702.171a (Saddle): „Saddle N" means "Tap any number of other untapped
+ * creatures you control with total power N or greater: This permanent
+ * becomes saddled until end of turn. Activate only as a sorcery."
+ *
+ * Default = zachłannie najsłabsze (rosnąco po mocy, remis po kolejności pola
+ * bitwy): tapuje chaff, zostawia atakujących. Deterministyczny (ADR 0005).
+ * Stwory o mocy 0 POMIJANE — dokładają tap za nic (A3: „tapnij Wizard
+ * (0 power), Hero" — Wizard był czystą stratą; każdy legalny podzbiór z zerem
+ * jest legalny i bez niego, więc pominięcie nigdy nie gubi oferty).
+ * Choroba przywołania NIE wyklucza (tapanie cudzym kosztem, CR 302.6 dotyczy
+ * własnych {T} i ataku) — jak dotąd, kandydatów filtruje wywołujący.
+ * Człowiek zmienia wybór w kreatorze załogi (UI), bot bierze default.
+ * Zwraca null, gdy mocy nie starcza (brak oferty).
  */
-function legalCrewSubsets(state, crewableIds, neededPower) {
-  if (crewableIds.length === 0) return [];
+function defaultCrewSubset(state, crewableIds, neededPower) {
+  if (!(neededPower > 0) || crewableIds.length === 0) return null;
   const powerOf = (id) => effectivePower(state.objects.get(id), state) ?? 0;
-  const ordered = [...crewableIds].sort((a, b) => powerOf(a) - powerOf(b));
+  const ordered = [...crewableIds]
+    .filter((id) => powerOf(id) > 0)
+    .sort((a, b) => powerOf(a) - powerOf(b));
   const totalPower = ordered.reduce((sum, id) => sum + powerOf(id), 0);
-  if (totalPower < neededPower) return [];
+  if (totalPower < neededPower) return null;
   const out = [];
-  // Minimalny zachłanny podzbiór — zawsze pierwszy.
-  const greedy = [];
   let acc = 0;
   for (const id of ordered) {
     if (acc >= neededPower) break;
-    greedy.push(id);
+    out.push(id);
     acc += powerOf(id);
   }
-  if (acc >= neededPower) out.push(greedy);
-  const key = (subset) => JSON.stringify(subset);
-  const seen = new Set(out.map(key));
-  const n = ordered.length;
-  if (n <= 6) {
-    for (let mask = 1; mask < (1 << n) && out.length < CREW_OPTION_CAP; mask += 1) {
-      const subset = [];
-      let sum = 0;
-      for (let i = 0; i < n; i += 1) {
-        if (mask & (1 << i)) {
-          subset.push(ordered[i]);
-          sum += powerOf(ordered[i]);
-        }
-      }
-      if (sum >= neededPower && !seen.has(key(subset))) {
-        seen.add(key(subset));
-        out.push(subset);
-      }
-    }
-  }
-  return out;
+  return acc >= neededPower ? out : null;
 }
 
 // CR 602.1a: poświęcenie stwora to koszt, NIE cel zdolności. „Another”
@@ -504,7 +507,8 @@ export function legalActivatedAbilities(state, playerId) {
   const player = state.players.find((p) => p.id === playerId);
   // Oferta po manie produkowalnej (pula + nietapnięte landy): zdolność jest
   // dostępną akcją od razu, a aktywacja sama do-tapuje landy (spendMana).
-  const baseMana = producibleMana(state, playerId);
+  // (A: budżet liczy się per zdolność w manaForActivation/blokach — z pipami
+  // kosztu dla jointu (iv) bramki źródeł kosztowych.)
   const sorcerySpeed = state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
     && state.zones.stack.length === 0;
@@ -529,7 +533,10 @@ export function legalActivatedAbilities(state, playerId) {
       // auto-tapu (CR 601.2h — stała musi być odkręcona w chwili płatności,
       // więc land-źródło z kosztem {T} nie może dać many na własną aktywację,
       // np. Prismari Campus „{4}, {T}: Scry 1").
-      const mana = manaForActivation(state, playerId, object, ability, baseMana);
+      // Devotee: budżet once-per-turn wydaje TA aktywacja — własna zdolność
+      // nie finansuje własnego kosztu (klucz id:indeks, jak ewidencja).
+      const selfKey = ability.oncePerTurn ? `${id}:${index}` : null;
+      const mana = manaForActivation(state, playerId, object, ability, selfKey);
       // M174/B (Immersturm Skullcairn, L48 oferta=walidacja): źródło many
       // tapowane KOSZTEM zdolności nie zapłaci jej pipów kolorowych —
       // bramka kolorów liczy się z jego wykluczeniem (ilość already w
@@ -537,7 +544,13 @@ export function legalActivatedAbilities(state, playerId) {
       // „Brak kolorowej many").
       // M180/Z1: wykluczenie dotyczy KAŻDEGO źródła many z kosztem {T}
       // (po M179/D także nielandowych — planGrantManaColors je zna).
-      const colorExcludeId = (ability.cost?.tap && !object.tapped) ? id : null;
+      // Devotee: + klucz własnej zdolności once-per-turn (jw.).
+      const colorExcludeId = (() => {
+        const out = [];
+        if (ability.cost?.tap && !object.tapped) out.push(id);
+        if (selfKey != null) out.push(selfKey);
+        return out.length === 0 ? null : out;
+      })();
       // „Activate only once each turn\" (Snarling Wolf): po aktywacji zdolność
       // znika z legalnych akcji do końca tury (stan resetowany przy zmianie tury).
       if (ability.oncePerTurn && state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
@@ -679,7 +692,7 @@ export function legalActivatedAbilities(state, playerId) {
           // Klasa Z1/M180: źródło ({T} w koszcie) ANI kandydat tapowany
           // kosztem nie zapłacą many — oferta liczy manę BEZ obu
           // (płatność tapuje je przed spendMana).
-          const manaWithout = producibleMana(state, playerId, ability.cost?.tap ? [id, tapId] : [tapId]);
+          const manaWithout = producibleMana(state, playerId, ability.cost?.tap ? [id, tapId] : [tapId], {}, colorRequirementsOf(ability.cost));
           if ((ability.cost?.mana ?? 0) > manaWithout) continue;
           out.push({ objectId: id, abilityIndex: index, ability, tapPermanentCostId: tapId });
         }
@@ -768,31 +781,31 @@ export function legalActivatedAbilities(state, playerId) {
         }
         continue;
       }
-      // Crew (CR 701.36, Irontread Crusher): „Tap any number of creatures you
-      // control with total power N or more: This Vehicle becomes an artifact
-      // creature until end of turn." Koszt to wybór stworów (crewCreatureIds);
-      // oferujemy podzbiory o łącznej mocy >= N, a efekt animuje źródło.
+      // Crew (CR 702.122a, Irontread Crusher): „Tap any number of OTHER
+      // untapped creatures you control with total power N or greater" —
+      // „other" wyklucza źródło (filtr `id !== id`); efekt animuje źródło.
+      // JEDNA oferta z domyślnym podzbiorem (A2/A3) — człowiek zmienia
+      // wybór w kreatorze załogi, silnik waliduje każdy podzbiór przy
+      // aktywacji (jak discard, nie enumeracja jak Fireball).
       if (ability.cost?.crewPower) {
         const crewables = state.zones.battlefield.filter((objectId) => {
           const candidate = state.objects.get(objectId);
           return candidate && candidate.id !== id && candidate.controllerId === playerId
             && candidate.kind === 'creature' && !candidate.tapped;
         });
-        for (const subset of legalCrewSubsets(state, crewables, ability.cost.crewPower)) {
-          out.push({ objectId: id, abilityIndex: index, ability, crewCreatureIds: subset });
-        }
+        const subset = defaultCrewSubset(state, crewables, ability.cost.crewPower);
+        if (subset) out.push({ objectId: id, abilityIndex: index, ability, crewCreatureIds: subset });
         continue;
       }
-      // Saddle (CR 702.171): jak crew, ale tylko jako sorcery; efekt set_saddled.
+      // Saddle (CR 702.171a): jak crew, ale tylko jako sorcery; efekt set_saddled.
       if (ability.cost?.saddlePower) {
         const saddlers = state.zones.battlefield.filter((objectId) => {
           const candidate = state.objects.get(objectId);
           return candidate && candidate.id !== id && candidate.controllerId === playerId
             && candidate.kind === 'creature' && !candidate.tapped;
         });
-        for (const subset of legalCrewSubsets(state, saddlers, ability.cost.saddlePower)) {
-          out.push({ objectId: id, abilityIndex: index, ability, crewCreatureIds: subset });
-        }
+        const subset = defaultCrewSubset(state, saddlers, ability.cost.saddlePower);
+        if (subset) out.push({ objectId: id, abilityIndex: index, ability, crewCreatureIds: subset });
         continue;
       }
       // Dodatkowy koszt „Discard a card" (Goblin Picker): wymaga karty w ręce.
@@ -978,7 +991,7 @@ export function legalActivatedAbilities(state, playerId) {
       const ability = object.equipment.grantedAbilities[index];
       if (ability?.type !== ABILITY_TYPE.activated) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
-      if ((ability.cost?.mana ?? 0) > baseMana) continue;
+      if ((ability.cost?.mana ?? 0) > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       const targetSpec = ability.targets ?? [];
       if (targetSpec.length === 0) {
@@ -1009,7 +1022,7 @@ export function legalActivatedAbilities(state, playerId) {
     for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated || !ability.cycling) continue;
-      if ((ability.cost?.mana ?? 0) > baseMana) continue;
+      if ((ability.cost?.mana ?? 0) > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
     }
@@ -1023,7 +1036,7 @@ export function legalActivatedAbilities(state, playerId) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated || !ability.channel) continue;
       const effManaChannel = effectiveAbilityManaCost(state, playerId, ability, object);
-      if (effManaChannel > baseMana) continue;
+      if (effManaChannel > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
     }
@@ -1038,7 +1051,7 @@ export function legalActivatedAbilities(state, playerId) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated || !ability.reinforce) continue;
       const effManaReinforce = effectiveAbilityManaCost(state, playerId, ability, object);
-      if (effManaReinforce > baseMana) continue;
+      if (effManaReinforce > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       const targetSpec = ability.targets ?? [];
       if (targetSpec.length === 0) {
@@ -1062,7 +1075,7 @@ export function legalActivatedAbilities(state, playerId) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated || !ability.bloodrush) continue;
       const effManaBloodrush = effectiveAbilityManaCost(state, playerId, ability, object);
-      if (effManaBloodrush > baseMana) continue;
+      if (effManaBloodrush > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       const targetSpec = ability.targets ?? [];
       if (targetSpec.length === 0) continue; // bloodrush bez celu to błąd danych
@@ -1084,7 +1097,7 @@ export function legalActivatedAbilities(state, playerId) {
         // „Only once each turn" — jak oncePerTurn (Snarling Wolf).
         if (state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
         const mana = effectiveAbilityManaCost(state, playerId, ability, object);
-        if (mana > baseMana) continue;
+        if (mana > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
         if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
         const targetSpec = ability.targets ?? [];
         if (targetSpec.length === 0) {
@@ -1108,7 +1121,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability?.type !== ABILITY_TYPE.activated || !ability.fromGraveyard) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
       if (!maxSpeedHolds(state, playerId, ability)) continue;
-      if ((ability.cost?.mana ?? 0) > baseMana) continue;
+      if ((ability.cost?.mana ?? 0) > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
     }
@@ -1128,7 +1141,7 @@ export function legalActivatedAbilities(state, playerId) {
       for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
         const ability = object.abilities[index];
         if (ability?.type !== ABILITY_TYPE.activated || ability.keyword !== 'ninjutsu') continue;
-        if ((ability.cost?.mana ?? 0) > baseMana) continue;
+        if ((ability.cost?.mana ?? 0) > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
         // M257 r4 (Kappa Tech-Wrecker, „Ninjutsu {1}{G}"): pipy kolorów
         // kosztu — oferta bez tego pozwalała ninjutsu dowolną maną, a
         // płatność ją przyjmowała (L48; jedyne aktywowane kosztowanie,
@@ -1242,7 +1255,8 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   const player = state.players.find((entry) => entry.id === playerId);
   // Opłacalność po manie produkowalnej (z wyłączeniem źródła przy koszcie {T}
   // — jak w ofercie) — spendMana sam do-tapuje pozostałe landy.
-  if (manaCostPreview > manaForActivation(state, playerId, object, ability)) throw new Error('Niewystarczająca mana');
+  const selfKeyValidation = ability.oncePerTurn ? `${objectId}:${abilityIndex}` : null;
+  if (manaCostPreview > manaForActivation(state, playerId, object, ability, selfKeyValidation)) throw new Error('Niewystarczająca mana');
   // Kolorowe wymagania kosztu (CR 118.2): pipy muszą być pokryte kolorową pulą
   // lub nietapniętymi źródłami PRZED mutacją (CR 601.2h — jak czary).
   const colorReqs = colorRequirementsOf(cost);
@@ -1403,8 +1417,10 @@ export function performActivation(state, ctx) {
     const chosen = state.objects.get(ctx.tapOtherCreatureId);
     if (!chosen || chosen.controllerId !== playerId || chosen.id === objectId || chosen.kind !== 'creature' || chosen.tapped) throw new Error('Nielegalny inny stwór do tapnięcia (koszt)');
   }
-  // Crew (CR 701.36): koszt „Tap any number of creatures you control with
-  // total power N or more" — walidacja wyboru PRZED jakąkolwiek mutacją.
+  // Crew/Saddle (CR 702.122a/702.171a): koszt „Tap any number of OTHER
+  // untapped creatures you control with total power N or greater" —
+  // walidacja wyboru PRZED jakąkolwiek mutacją (kreator załogi / bot
+  // przysyła dowolny podzbiór; default z oferty to tylko start).
   let crewCreaturesToTap = null;
   const saddleOrCrew = cost.crewPower ?? cost.saddlePower;
   if (saddleOrCrew) {
@@ -1490,7 +1506,7 @@ export function performActivation(state, ctx) {
     const tapId = ctx.tapOtherCreatureId ?? otherCreatureToTap;
     tapObject(state, tapId, playerId);
   }
-  // Koszt crew: tapujemy wybrane stwory (każdy osobny koszt, CR 701.36a).
+  // Koszt crew: tapujemy wybrane stwory (każde tapnięcie częścią kosztu, CR 702.122a).
   if (crewCreaturesToTap) {
     for (const crewId of crewCreaturesToTap) tapObject(state, crewId, playerId);
   }
@@ -1677,7 +1693,7 @@ export function performActivation(state, ctx) {
     // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
       // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
       xValue: (cost.manaX || cost.tapXArtifacts) ? (xValue ?? 0) : undefined,
-    // Crew (CR 701.36): zatapnięte stwory widoczne w logu.
+    // Crew (CR 702.122): zatapnięte stwory widoczne w logu.
     ...(crewCreaturesToTap ? { crewCreatureIds: [...crewCreaturesToTap] } : {}),
     // M153/A1: Station — id zatapianego INNEGO stwora w logu.
     ...(otherCreatureToTap ? { stationTappedCreatureId: otherCreatureToTap } : {}),

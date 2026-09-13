@@ -109,6 +109,11 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
     'attachedTo', 'aura', 'equipment', 'bestow', 'saga', 'spell', 'name',
     'copyNumber', 'faceDown', 'ward', 'cloakReady', 'protection', 'detained', 'goaded',
     'saddled', 'untapLocked', 'dontUntapNextUntapStep', 'tempControlUntilEOT',
+    // A4 (Balamb Garden, 2026-09-12): rozstrzygnięte crew (CR 702.122e) —
+    // widok dokłada `crewed` tylko obsadzonemu pojazdowi (jak `saddled`),
+    // więc nie wchodzi w próbkę. Konstrukcyjnie: test/zaloga (A4/1–4)
+    // i test/kreator-zalogi (A4/UI1–2).
+    'crewed',
     'cantBeBlocked', 'cantBlock', 'cantBlockPrinted', 'cantBeRegeneratedThisTurn',
     'grantedKeywords', 'grantedPower', 'grantedToughness', 'lostKeywordsUntilEOT',
     'entersWithCounters', 'subtypes', 'keywords', 'counters',

@@ -2711,25 +2711,37 @@ export function commandLabel(cmd, session, view) {
         ? (/^(odrzuć|poświęć|zapłać|wygnaj|wyrzuć)/.test(costHtml)
           ? ` (koszt: ${costHtml})` : ` (koszt ${costHtml})`)
         : '';
+      // A1 (znalezisko właściciela 2026-09-12, Balamb Garden): „Aktywuj: <nazwa>"
+      // nie mówiło, CO robi klik — crew/saddle nazywają czynność po imieniu
+      // (klik otwiera kreator wyboru załogi; default widać w ogonie etykiety).
+      const actionVerb = ability?.cost?.saddlePower ? 'Osiodłaj'
+        : (ability?.cost?.crewPower ? 'Obsadź' : 'Aktywuj');
       const tapPart = cmd.tapCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapCreatureId)}` : (cmd.tapOtherCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapOtherCreatureId)}` : '');
       // M160/B2 (Seismic Monstrosaur): koszt „poświęć ląd” enumeruje wariant
       // per ląd — etykieta MUSI nazwać, który ląd ginie (poświęcenie to
       // koszt, CR 601.2h; sześć identycznych wpisów było nierozróżnialnych).
       const sacCreaturePart = cmd.sacrificeCreatureId != null ? ` — poświęć: ${nameOfObjectId(cmd.sacrificeCreatureId)}` : '';
       const sacLandPart = cmd.sacrificeLandId != null ? ` — poświęć: ${nameOfObjectId(cmd.sacrificeLandId)}` : '';
-      // M101/B7: nazwij AKCJĘ, którą gracz wykonuje (crew albo saddle — nie
-      // oba naraz), i powiedz wprost, że wskazane stwory zostaną TAPNIĘTE.
-      // Tapnięcie to koszt (CR 701.36a/702.171a), więc gracz musi je widzieć
-      // przed kliknięciem.
-      const crewNames = (cmd.crewCreatureIds ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      const crewVerb = ability?.cost?.saddlePower ? 'osiodłaj' : 'załoga';
-      const crewPart = cmd.crewCreatureIds?.length ? ` — ${crewVerb}: tapnij ${crewNames}` : '';
+      // M101/B7 + A2-rewizja (decyzja właściciela 2026-09-12): klik w crew/
+      // saddle NIE tapuje wskazanych stworów — OTWIERA KREATOR (jak modale
+      // czarów: start pusty, zero preselekcji defaultu). Etykieta mówi więc,
+      // CO klik robi (wybór załogi w kreatorze), JAKIM kosztem (TAPNIĘCIE —
+      // CR 702.122a/702.171a, gracz musi je widzieć przed kliknięciem)
+      // i z JAKIM progiem (N z kosztu zdolności). Imion defaultu NIE
+      // wymieniamy — default to fallback wykonania, nie obietnica kliku.
+      const crewNeeded = ability?.cost?.saddlePower ?? ability?.cost?.crewPower;
+      const crewTail = ability?.cost?.saddlePower
+        ? 'wybierz stwory do tapnięcia'
+        : 'wybierz załogę do tapnięcia';
+      const crewPart = cmd.crewCreatureIds?.length
+        ? ` — ${crewTail}${crewNeeded > 0 ? ` (moc ≥ ${crewNeeded})` : ''}`
+        : '';
       // M126/#1: zdolność czytająca pustą bibliotekę zabierze koszt i nic nie da.
       const emptyLibWarn = abilityFizzlesOnEmptyLibrary(ability, view)
         ? ' — UWAGA: twoja biblioteka jest pusta, zdolność nie zadziała'
         : (abilityFizzlesOnHand(ability, view)
           ? ' — UWAGA: brak pasującej karty w ręce, zdolność nie zadziała' : '');
-      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${sacLandPart}${sacCreaturePart}${crewPart}${emptyLibWarn}`;
+      return `${actionVerb}: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${sacLandPart}${sacCreaturePart}${crewPart}${emptyLibWarn}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));
@@ -3434,6 +3446,9 @@ export function cardInfo(session, object, combat = null) {
     protection: faceDown ? [] : [...(object.protection ?? [])],
     // M173/C: czasowe stany z widoku (saddle/untap-lock/kontrola/regeneracja).
     saddledNow: Boolean(object.saddled),
+    // A4 (Balamb Garden): rozstrzygnięte crew (CR 702.122e) — osobne pole
+    // od animatedUntilEOT, bo badge nazywa załogę, nie dowolną animację.
+    crewedNow: Boolean(object.crewed),
     untapLockedNow: Boolean(object.untapLocked || object.dontUntapNextUntapStep),
     tempControlNow: Boolean(object.tempControlUntilEOT),
     linkedAnimationLabel: object.linkedAnimationSource
@@ -3774,6 +3789,9 @@ export function buildStateOverlay(visual, info) {
     // M173/C: pozostałe czasowe stany z efektów — audyt na wniosek
     // właściciela (Panic Spellbomb — klasa objęta już przez cantBlockNow).
     if (info.saddledNow) flags.push(['kw', 'osiodłany']);
+    // A4: obsadzony pojazd widać na kaflu (M230 zaplanował badge,
+    // ale nikt nie czytał flagi — stąd zgłoszenie).
+    if (info.crewedNow) flags.push(['kw', 'obsadzony']);
     if (info.untapLockedNow) flags.push(['kw', 'nie odkręca się']);
     if (info.tempControlNow) flags.push(['kw', 'kontrola do końca tury']);
     if (info.linkedAnimationLabel) flags.push(['kw', info.linkedAnimationLabel]);
@@ -4194,6 +4212,29 @@ function showHoverPreviewAt(els, info, e, mode, { showCycleHint = true } = {}) {
  *   onCardClick: (objectId: string, cardId: string) => void,
  *   onStackClick?: (objectId: string, cardId: string) => void }} args
  */
+// A (znalezisko właściciela z testów, 2026-09-13): dwa mechanizmy psuły tor hovera:
+// (1) karty BEZ artId cyklowały przez dwa puste, nieetykietowane stany (M148) —
+//     RMB „nic nie robił", a globalny tor przesuwał się w niewidoczny sposób;
+// (2) pojedynczy gest PPM bywał dostarczany 2–3× (odbicie styku / podwójne
+//     contextmenu) — +2 z KON ląduje w FOT (oscylacja FOT → KON → FOT),
+//     +3 robi pełne koło („nic nie robi" na kartach z artem).
+// Naprawa: (1) kreator cykluje po torach DOSTĘPNYCH dla karty (Scryfall zawsze;
+// FOT/KON tylko z artId — kontrakt nextHoverMode istniał od dawna, nikt go nie
+// używał); start/revive też zawężają, więc karta bez artu nigdy nie pokazuje
+// pustki, nawet gdy globalny tor stoi na FOT/KON. (2) strażnik 250 ms ignoruje
+// odbicia tego samego gestu (jak MODAL_OPEN_GUARD_MS w main.js), a
+// stopPropagation odcina ewentualną drugą obsługę wyżej w drzewie.
+const HOVER_CYCLE_GUARD_MS = 250;
+let lastHoverCycleAt = 0;
+function availableHoverModes(info) {
+  const hasLocal = info && info.artId != null && info.artId !== '';
+  return hasLocal ? HOVER_MODES : ['scryfall'];
+}
+function clampHoverMode(info, mode) {
+  const available = availableHoverModes(info);
+  return available.includes(mode) ? mode : available[0];
+}
+
 export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, onSpeedCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
@@ -4207,27 +4248,32 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // wyłącznie menu kontekstowe (M7c).
   let currentHoverMode = hoverMode;
   const hover = TOUCH_DEVICE ? null : {
-    start: (info, e) => showHoverPreviewAt(els, info, e, currentHoverMode),
+    start: (info, e) => showHoverPreviewAt(els, info, e, clampHoverMode(info, currentHoverMode)),
     // D (2026-09-10): patrz attachSpecialCardHover — podgląd ma wstać także,
     // gdy kafl specjalny przebudował się POD kursorem (sam mouseenter wtedy
     // milczy). Nieaktywny = brak klasy `active` na warstwie podglądu.
     revive: (info, e) => {
       if (!els.hoverPreview || String(els.hoverPreview.className).includes('active')) return;
-      showHoverPreviewAt(els, info, e, currentHoverMode);
+      showHoverPreviewAt(els, info, e, clampHoverMode(info, currentHoverMode));
     },
     end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
     cycle: (info, e) => {
       if (!els.hoverPreview) return;
-      // Zgłoszenie H (2026-09-11): wyzwalaczem jest `contextmenu` (PPM), więc
-      // preventDefault tłumi menu kontekstowe przeglądarki — scrolla NIE
-      // dotykamy, przewijanie strony zostaje domyślne. RMB nie ma kierunku
-      // „góra/dół", a cykl torów się zapętla, więc krok jest zawsze +1
-      // (scryfall → FOT → KON → scryfall — ta sama kolejność co scroll w dół).
+      // preventDefault ZAWSZE pierwsze — odbity (zignorowany niżej) event też
+      // nie może otworzyć menu kontekstowego przeglądarki.
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
-      // M146: tryby FOT/KON przełączają się globalnie niezależnie od karty;
-      // dla kart bez artId hover w tych trybach jest po prostu pusty
-      // (brak obrazka — patrz hoverImageSources).
-      currentHoverMode = nextHoverMode(currentHoverMode, 1, HOVER_MODES);
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+      const now = Date.now();
+      if (now - lastHoverCycleAt < HOVER_CYCLE_GUARD_MS) return;
+      lastHoverCycleAt = now;
+      // Zgłoszenie H (2026-09-11): wyzwalaczem jest `contextmenu` (PPM);
+      // RMB nie ma kierunku „góra/dół", a cykl torów się zapętla, więc krok
+      // jest zawsze +1 (ta sama kolejność co scroll w dół).
+      // A (2026-09-13, zastępuje M146): tryby FOT/KON istnieją TYLKO dla kart
+      // z artId — cykl idzie po torach dostępnych dla TEJ karty, więc landy
+      // i tokeny nie pokazują już pustych stanów ani nie przesuwają globalu
+      // w niewidoczny sposób.
+      currentHoverMode = nextHoverMode(currentHoverMode, 1, availableHoverModes(info));
       if (onHoverModeChange) onHoverModeChange(currentHoverMode);
       hover.start(info, e);
     },

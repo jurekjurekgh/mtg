@@ -57,12 +57,54 @@ export function triggerEffectIsHostile(effect) {
  * w triggerEffectIsHostile), inaczej null. Generyczne (ADR 0002): bot
  * premiuje ZABÓJSTWO debuffem (704.5f), nie największy cel.
  */
+/**
+ * C (znalezisko właściciela 2026-09-12, Academy Journeymage): czy
+ * rozstrzygnięcie triggera USUWA cel ze stołu (zniszczenie / wygnanie /
+ * odbicie do ręki / biblioteki / poświęcenie). Wtedy z celem giną też
+ * przyklejone do niego AURY (trafiają na cmentarz właściciela, CR 704.5m) —
+ * bot premiuje zdejmowanie obłożonego wrogiego stwora (dodatkowa karta
+ * wroga w plecy) i unika zrywania WŁASNYCH aur. Generyczne (ADR 0002):
+ * wyłącznie po typach efektów. Tapnięcie / shrink / obrażenia (bez
+ * gwarancji zejścia) celowo poza sygnałem — aury zostają na stole.
+ */
+const TARGET_REMOVING_TRIGGER_EFFECTS = new Set([
+  'destroy_permanent', 'destroy_if_least_power',
+  'exile_permanent', 'exile_target_creature', 'exile_opponent_creature',
+  'exile_nonland_permanent_linked',
+  'bounce_permanent', 'bounce_to_library_top',
+  'sacrifice_permanent',
+]);
+export function triggerTargetRemovesTargetOf(ability) {
+  const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+  return effs.some((e) => TARGET_REMOVING_TRIGGER_EFFECTS.has(e?.type));
+}
 export function triggerTargetDebuffOf(ability) {
   const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
   for (const e of effs) {
     if ((e?.type === 'pump' || e?.type === 'buff_creature_until_end_of_turn')
       && ((e.power ?? 0) < 0 || (e.toughness ?? 0) < 0)) {
       return { power: Math.min(0, e.power ?? 0), toughness: Math.min(0, e.toughness ?? 0) };
+    }
+  }
+  return null;
+}
+/**
+ * B (znalezisko właściciela 2026-09-12, Battle-Rattle Shaman): pump SIŁY
+ * triggera — {power, toughness} (dodatnie delty) dla efektów pompujących
+ * siłę stwora (`pump` / `buff_creature_until_end_of_turn` z power > 0
+ * i toughness ≥ 0 — ten sam warunek znakowy co „przyjazny" w
+ * triggerTargetEffectFriendly), inaczej null. Generyczne (ADR 0002): bot
+ * celuje pumpem siły stwora, którym MOŻE atakować — +X/+0 na stworze,
+ * który nie atakuje, wygasa bez skutku (Shaman odpala się na początku
+ * combatu, PRZED deklaracją ataku). Pump samej toughness (+0/+Y) celowo
+ * poza sygnałem: chory stwór nadal blokuje, więc buff ma sens.
+ */
+export function triggerTargetPowerPumpOf(ability) {
+  const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+  for (const e of effs) {
+    if ((e?.type === 'pump' || e?.type === 'buff_creature_until_end_of_turn')
+      && (e.power ?? 0) > 0 && (e.toughness ?? 0) >= 0) {
+      return { power: e.power ?? 0, toughness: e.toughness ?? 0 };
     }
   }
   return null;

@@ -19,6 +19,107 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-13 A+C (znaleziska właściciela z testów: tor hovera, samobójstwo Sarkhana)
+
+Właściciel po shippie F1–F5 zgłosił 3 znaleziska z własnych testów; A i C naprawione
+(TDD: testy pisane PRZED fixem, czerwone → zielone), B po wyczerpaniu analizy
+statycznej wraca do właściciela jako pytania (niżej). Pakiet: 5363/5363.
+
+A — tor hovera PPM nieprzewidywalny („czasem nic, czasem skok o dwa, czasem
+FOT → KON → FOT"). Dwie przyczyny, obie potwierdzone w kodzie i repro jsdom na
+prawdziwym artefakcie (`dist`, seed 7 — skasowane po robocie): (1) karty BEZ
+artId cyklowały przez DWA puste, nieetykietowane stany (M148) — „nic nie robił",
+a globalny tor przesuwał się w niewidoczny sposób (repro: Island RMB×3 =
+PUSTO → PUSTO → Scryfall); (2) pojedynczy gest PPM bywał dostarczany 2–3×
+(odbicie styku / podwójne `contextmenu`) — +2 z KON ląduje w FOT (dosłowna
+oscylacja FOT → KON → FOT), +3 robi pełne koło („nic" na kartach z artem).
+Naprawa (`src/table/render.js`, zastępuje M146): kreator i start/revive używają
+torów DOSTĘPNYCH dla karty (`availableHoverModes`/`clampHoverMode` — kontrakt
+`nextHoverMode(current, dir, availableModes)` istniał i był udokumentowany, nikt
+go nie przekazywał), strażnik 250 ms zjada odbicia (`lastHoverCycleAt`,
+jak MODAL_OPEN_GUARD_MS), `preventDefault` ZAWSZE pierwsze + `stopPropagation`.
+Testy: `test/a-hover-track-cycle.test.js` (A/1 łańcuch fot → kon → scryfall,
+A/2 land bez artu zawsze Scryfall, A/3 dublet w ticku = jeden krok + re-arm po
+300 ms); test H w `table-card-art.test.js` zaktualizowany (gesty rozdzielone —
+3 synchroniczne RMB = 3 kroki to dokładnie zachowanie, które fix eliminuje).
+
+C — bot przy 1 życiu rzucał Sarkhan's Rage bez Smoka i ginął od własnych
+2 obrażeń. Mechanizm: samouszkodzenie siedzi w `conditional`
+(controlsNoCreatureSubtype → damage_to_controller), a bot nie czytał ANI
+wrappera `conditional`, ANI typu `damage_to_controller` — widział „5 we wroga".
+Naprawa (`src/controllers/heuristic-bot.js`, lustro M169/K dla czarów):
+`viewConditionalHolds` (3 warunki weryfikowalne z PlayerView; landEnteredThisTurn
+nieweryfikowalny = konserwatywnie „zachodzi") + `unwrapConditionals` +
+`selfDamageOfEffects`; gałąź cast_spell wetuje rzut samobójczy twardo
+(`finish(-1000)`) i stosuje te same progi co ETB (≤5 żyć i lądowanie ≤2 → −80;
+≤5 żyć → −15×dmg; inaczej −2×dmg). Świadomie BEZ rozpoznania w selfHarmPenalty:
+żaden z 4 conditionali nie niesie celowanego self-harm i żadna aktywacja nie
+używa damage_to_controller (5 użyć: Sarkhan, Forge Devil ETB, token Goblin
+Construct + Relic Robber — ból u wroga, nie u nas) — byłoby martwe i podwójnie
+karało czary. Po drodze złapany własny crash fixa: weto wstawione przed
+`let score` (C/2 wyłapało). Testy: `test/c-sarkhan-self-harm-veto.test.js`
+(C/1 1 życie bez Smoka nie rzuca, C/2 10 żyć rzuca — anty-over-fix, C/3
+1 życie ZE Smokiem rzuca).
+
+B — „Wybierz: Deklaracja blokujących" wymaga przytrzymania (szybki klik
+„przesuwa kolumnę") — NIEROZWIĄZANE, zamknięte dowodem negatywnym (N=1, brak
+mechanizmu w kodzie; NIE ruszane celowo). Odpowiedzi właściciela: Chrome/Win,
+TYLKO blokujący (atakujący i cele czarów OK), „Rozgrywka" nie była otwarta,
+drgnęła CAŁA kolumna, konsola niesprawdzona, pierwsze blokowanie ~T5–7.
+ścieżka click → onChoiceRequest (render.js:4370) i declare_blockers →
+renderCombatWizard + showModal są bezwarunkowe, w aplikacji ZERO handlerów
+mousedown/mouseup/pointer/focus i ZERO timerów re-renderu — szybki klik
+i przytrzymanie są w kodzie nierozróżnialne. Wykluczone: backdrop-instant-close
+(strażnik 450 ms + target check), :active layout shift (translateY tylko na
+kompozytorze), nakładka (preview ma pointer-events:none), modal-za-drawerem
+(z-1500 > z-1300), scrollbar-reflow (2–3 przyciski nie przepełniają),
+focus-scroll, tap-delay, cicha gałąź bez modala. Do właściciela wraca 6 pytań:
+przeglądarka/OS, czy tylko blokujący czy wszystkie „Wybierz:", czy modal
+„Rozgrywka" był wtedy otwarty, drgnięcie przycisku czy całej kolumny, błędy
+w F12, świeże okno czy późna faza sesji. Odpowiedzi (2. tura pytań):
+„modal podniósł się o wiersz do góry na moment klikania", N=1 (od tej pory nie
+grał), konsola PEŁNA błędów ZASOBÓW (file:// + CORS: deck-store.js zablokowany,
+Scryfall /cards/named ERR_FILE_NOT_FOUND — ZERO błędów JS), środowisko
+standardowe (100%, mysz, brak rozszerzeń). Repro na artefakcie (seed 1,
+tymczasowy sterownik run-game + MutationObserver, skasowany po robocie):
+panel w oknie blokujących statyczny (0 przebudów w 1500 ms ciszy, 0 błędów),
+pojedynczy triplet mousedown/mouseup/click otwiera wizarda ZA PIERWSZYM RAZEM.
+Werdykt: w ustalonym oknie klik MUSI działać (statyczny DOM, brak styli press,
+brak nakładek — preview pointer-events:none, nieaktywne modale display:none
+bez tranzycji, FAB pod szufladą z-1200 < z-1300; closer tła ma strict target
+i strażnik 450 ms; wszystkie rendery synchroniczne w tasku klika; wizard
+tekstowy bez <img>; szuflada już otwarta; brak duplikatów). Wykluczone runtime:
+kaskada renderów, wyjątek w handlerze,przedawniony request, opóźniony modal
+„Rozgrywka" (wszystkie showBotMoves synchroniczne), focus-scroll (3 przyciski
+nie przepełniają szuflady; szuflada fixed), mis-click na „Dalej" (pass legalny
+— gra poszłaby widocznie dalej) i na „Poddaj" (natywny confirm nie do
+przeoczenia). Pozostałe hipotezy (behawioralne/środowiskowe, nierozstrzygalne
+przy N=1): pierwszy-widok-wizarda + odruchowe zamknięcie, glitch kompozytora
+(file:// + padające zasoby + backdrop-filter: blur), pomyłka celowania w
+emocjach. Jeśli wróci: N≥2 + nagranie + zapis partii. Kandydat na utwardzenie
+(niezwiązany z objawem — do decyzji właściciela): domknięcie tłem dopiero po
+PEŁNYM naciśnięciu (mousedown+mouseup na tle), żeby wolny dwuklik >450 ms nie
+gasił świeżego wizarda.
+
+## 2026-09-13 F1–F5 (audyt Żywym Testerem: 49 partii, transpozycja)
+
+Domknięcie znalezisk z audytu 49 partii Żywym Testerem (batch tmp-audyt-*, transkrypty poza repozytorium).
+Właściciel: greedy zostaje greedy, heurystyka bota bez przebudowy.
+
+- F1 (fix): bot NIGDY nie załogował (0× w 49 partiach; s29: Balamb + 3× Hero + Moogle + Bird) — crew nie miało
+  ŻADNEJ dodatniej wyceny (goła baza 2), a bez alternatyw bot crewował nawet bez sensu (postcombat, chory pojazd).
+  Wycena generyczna (ADR 0002/0017): okno ataku (własna precombat main, pojazd nietapnięty/zdrowy/nieanimowany) =
+  moc animowanego ciała ×2 + evasion − moc załogi; własna tura poza oknem = −6 (skala M230/D1); cudza tura bez
+  zmian (surprise-block poza zakresem). `src/controllers/heuristic-bot.js`.
+- F2 (weryfikacja): kreator załogi miał 0 żywych wykonań — po F1 bot załogował na żywo (weryfikacja 6 partii:
+  s104, bot kaladesh: 3× „Nieprzyjaciel aktywuje zdolność: Bomat Bazaar Barge" + 3× „Atak: Bomat Bazaar Barge").
+  Ścieżka sesji to dokładnie testowana (`session.js:2994`: chooseCommand(playerView(BOT_ID))).
+- F3/F4/F5 (piny, kod działał): Jwari — pierwszy test ŚCIEŻKI NATURALNEJ (rzut → pending tylko z Ally → kopia;
+  brak Ally / odmowa → 0/0 ginie); Tiller — pierwszy test ODPALENIA triggera (Shock w stwora → inkubuj 2;
+  w gracza / cudzy rzut → brak); Balamb — pierwszy test ROZSTRZYGNIĘCIA attack-draw (atak → +1 karta).
+  Wsad 2-pick był już pokryty (a-search-batch A/live) — bez zmian.
+- Suita: 5357/5357 (5347 + 10 nowych), zero regeneracji fixture'ów i progów (F1 nie ruszyło pinowanych trajektorii).
+
 ## Sesja 2026-09-11/12 — zgłoszenia właściciela A (druk karty) i B (cienka biblioteka) + przegląd 509 kart (PR #114, arena/01a0925f)
 
 Sesja „kontynuujemy projekt" w trybie ADR 0020/0021: PR #114 otwarty przed
@@ -10234,3 +10335,185 @@ blokerów: Skilled Animator (moc 1) vs Tiller of Flesh (śmiertelne 4) i Incubat
 a komenda przeszła przez `execute` bez błędu. Podwójnego bloku po obu stronach nie
 trafiła żadna z 7 partii, więc dowodem zmiany są testy deterministyczne P/1–P/10.
 Transkrypty poza repo (`tools/table-tester/tmp-audyt-p-2026-09-12/`, M239).
+
+## 2026-09-12d — znaleziska Crew A1–A4 + Shaman B (PR #115, arena/01a096f0)
+
+Zlecenie właściciela: Balamb Garden, Airborne (DFC, tył Crew 1) — niejasna
+etykieta „Aktywuj" (A1), klik w ścianę podzbiorów zamiast pickera (A2),
+silnik sam dobierał załogę przy 7 stworach (A3), brak badge'a po crew (A4);
+Battle-Rattle Shaman — bot buffował chorego zamiast atakującego (B).
+Plan: docs/plans/PLAN_2026-09-12f-znaleziska-crew-shaman.md (E0–E7).
+
+E0: audyt PR #114 (8 znalezisk, 0 blokujących, fabricate D5 702.123a).
+E1: CR 2026-08-07 — crew „other" już poprawne, tylko cytowania 701.36.
+E2/silnik (`7fda5c8`): JEDNA oferta crew/saddle z defaultem greedy
+(rosnąco po mocy, skip 0-power, determinizm); walidacja każdego legalnego
+podzbioru przy aktywacji; znacznik `crewed` na rozstrzygnięcie (702.122e).
+E3–E5 (`62c0f55`): czasownik Obsadź/Osiodłaj; kreator załogi (crewMode —
+wiersze z mocą, licznik ≥ N, pre-check defaultu, przed kreatorem many);
+badge „obsadzony"; sygnał `pump` w ofercie triggera + bot buffuje zdolnego
+do ataku (haste-aware, −60 niezdolnemu, odmowa przy samych chorych).
+E6: pełna suita **5314/5314** (re-run po 2 fixach uprzęży: m277 lista
+warunkowa `crewed`, m348 stub `crewPlanFor`); szybka **5306/5306**;
+`npm run build` 61 modułów / **3552.0 kB**; golden master BEZ churn;
+quick benchmark 672 mecze w 136.9 s: heuristic **84.2%** (566/672),
+aggro 26.5%, random 5.1% — IDENTYCZNIE jak sesja poprzednia (zmiany nie
+dotykają próbkowanych matchupów; pomiar dowodzi braku regresji).
+Aggro-bot: crew ignoruje z definicji (tylko equip), ryzyko E6 zamknięte.
+Żywy Tester na świeżym `dist/` (partie pojazdami + Shaman) — PO STRONIE
+WŁAŚCICIELA, przed scaleniem. Testy: 13 silnika + 14 stołu (w tym 2 DOM
+na żywym rendererze) + 6 bota.
+
+## 2026-09-12e — rewizja A2 (pusty start kreatora) + zgłoszenie C: Journeymage (PR #115, arena/01a096f0)
+
+Decyzja właściciela: kreator załogi BEZ preselekcji defaultu (spójność
+z modalami czarów) i ZAWSZE otwierany, także na 1 kandydata (ekran
+świadomej zgody na tapnięcie). `defaultIds` wypadło z planu; etykieta nie
+wymienia imion defaultu („wybierz załogę/stwory do tapnięcia (moc ≥ N)");
+piny M101/B7 zaktualizowane z uzasadnieniem (L13).
+C: Academy Journeymage — sygnał `removesTarget` w ofercie triggera
+(aury celu giną, CR 704.5m); bot ±30 za przyklejoną aurę (cudza +,
+własna −; sprzęt i bestow poza premią). Testy: kreator 13 (przepisane
+na pusty start) + bot-trigger-aura-strip 6. Bramki: pełna **5321/5321**,
+build 61 modułów / 3555.2 kB, golden master bez churn.
+
+## 2026-09-12f — runda 2: wsadowe szukanie (A) + Abstruse (B) + Jwari (C) + D1/D2/D3 (PR #115, arena/01a096f0)
+
+A: łańcuch szukań o identycznych parametrach (Springbloom/Roiling) to JEDEN
+modal-stepper („wskaż do N kart łącznie"), nie seria modali pojedynczych —
+`searchBatchPlanOf`/`searchBatchStepOf` (multi-target.js, czyste) +
+`renderSearchBatchWizard` (choice-request.js, steppery M292, podgląd po
+cardId) + synchroniczna pętla submitu w main.js (per krok: odcisk łańcucha,
+reprezentant cardId z AKTUALNEJ oferty, auto-decline tylko gdy oferowany;
+STOP oddaje grę panelowi akcji). Final Parting (mieszane destynacje) zostaje
+sekwencyjny. Silnik/bot/protokół NIETKNIĘTE. Testy a-search-batch 20 (w tym
+live nad silnikiem: [Forest, Forest] kładzie 2 tapnięte).
+B: Abstruse Interference rozpychany modal Rozgrywki — `manaSymbolsHtml`
+grupuje CIĄGŁE przebiegi symboli (nie cały napis w nowrap); koszt czysty
+bajtowo bez zmian; pas `overflow-wrap` na `.bot-move-line`; piny L13
+przepisane z uzasadnieniem.
+C: Jwari jako kopia nosi nazwę celu + `copyNumber` (lustro token-kopii L48,
+CR 707.2) — kafel „Rotting Legion (kopia 1)" istniejącą ścieżką M172/D;
+prawo legend czyta cardName, bez zmian. Testy c-enter-as-copy-name 5.
+D1: bot nie crewuje zatapowanego pojazdu (−10, bliźniak M230; Saddle
+niekarane — wyzwalacz „becomes saddled"). D2: silnik DOBRZE przegrywa przy
+doborze-zdoleniu z pustej (CR 704.5b/121.4 — mit „tylko draw step");
+poprawione 2 literówki komentarzy (704.5m→704.5b). D3: atak z drenażem
+biblioteki (Balamb) karany drabiną libraryLossPenalty — przy 3 kartach bot
+nie atakuje. Bramki: pełna **5341/5341**, build 61 modułów / 3572.8 kB.
+
+## 2026-09-13 — transpozycja: usunięcie planów Ikoria i Fiora (arena/01a096f0)
+
+Zlecenie właściciela: Vow of Flight (Fiora → Eldraine), Tiller of Flesh
+(Ikoria → Mirrodin), Unbreakable Bond (Ikoria → Ixalan). Zmienione: `plan`
+w katalogu, 3 wiersze słownika kolekcji (CSV) i mapa WOREK_DECKS (wpisy
+Fiora/Ikoria usunięte — zero kart); talie przeliczone generatorem:
+worek-legend → worek-baśni (Vow), worek-mroczny → mirrodin-wu (Tiller)
+i → worek-dziki (Bond). Efekt uboczny podziału Mirrodina (ADR 0024):
+Horizon Spellbomb mirrodin-wu → mirrodin-brg (balans 18/18, leak 0).
+Regeneracje po zmianie trajektorii (przejrzane): fixture golden-mastera
+(różnią się TYLKO 2 mecze z mirrodin-wu, pozostałe 4 bitowo te same)
+i progi M337/D (aggro domyka w 353 kroki, wygrana life_zero, tura 15 —
+czysto). Tabela talii w README zaktualizowana. Test-pin transpozycji x3.
+Bramki: pełna **5347/5347**.
+
+## 2026-09-13 — znaleziska A (Mana Cylix) + B (Esper Stormblade) (arena/01a096f0)
+
+A: Mana Cylix ({1},{T}: dowolny kolor) ignorowany w ofercie rzutów (czar {B} +
+Cylix + 2 lądy, brak Swampa → brak oferty). Root cause: silnik widział tylko
+źródła DARMOWE (koszt = samo {T}) — kosztowe (netto-0, konwertery walut) nie
+istniały w ofercie, na liście kreatora ani w płatności. Naprawa 3-częściowa:
+A1 — `untappedCostedManaSources` (longlista: {T}+mana, samo add_mana, lądy/
+poświęcenia/skutki-uboczne/re-używalne-bez-tapu poza) + `fundableCostedSources`
+(bramka warstwowa: koszty płaci baza darmowa ZANIM produkcja istnieje (CR
+601.2h) — (i'') suma, (ii') pipy w jednoznacznych jednostkach, (iv) joint
+pipy+wymagania jednym dopasowaniem, (iv-ścisły) tryb bez-pulowy) wpięta w
+`producibleMana` (5. parametr reqs, null = tryb ostrożny) i `planGrantManaColors`
+(jednostki bez wierszy — kształt nietknięty); A2 — kreator wystawia konwertery
+(produkcja ⊄ kosztu) z kosztem osobno (M311), czysta strata poza listą;
+A3 — `spendMana` odpala kosztowe (pipy: ostatnia deska w brakującym kolorze,
+suma: tylko netto-dodatnie) przez `tapCostedManaSource` (bramka-przed-mutacją,
+finansowanie świeże-pierwsze z `poolPaysFreely`, konsumpcja kosztu z preserve
+kolorów wymagań (nowy 5. parametr `consumeManaPool`), księgowanie lustrzane
+M201). Threading reqs przez walidatory/oferty (resources R1–R4, abilities
+B1–B5, spells S1–S9, game-state G1–G20, triggers T1–T3, effects E1); świadomie
+NIEtknięte (tryb ostrożny = brak oferty, ręczna aktywacja działa): lambda
+ofert ręki (phyrexian/kicker/morph) i lambdy ofert spells.js.
+B: Esper Stormblade ({W/B}{U}) — silnik sam wybrał W, kreator się nie otworzył.
+Root cause: solver jednoznaczności dostawał tylko ROZMIAR puli (poolMana):
+gałąź need<=0 zwracała 1 bez liczenia, a odcięcie size>=need ucinało zbiory
+kolorowo-wymuszone (0 wariantów) — w obu przypadkach cichy auto-tap pierwszego
+źródła. Naprawa: solver ZUNIFIKOWANY (pula (poolUnits z main.js) + tapnięty
+podzbiór; koszty M311 w podzbiorze; ∅-pierwsze; minimalność dokładna (nie
+odcięciem) — szybka (n−1) dla monotonicznych, pełna dla kosztowych; klucze
+M311 i cap-2 nietknięte).
+Lekcja L48 z benchmarku (dwa crashe offer→reject, seedy 2026/2033): oferta ≡
+płatność wymaga WSPÓLNYCH założeń o finansowaniu — (1) generic kosztu ze
+świeżych (nie z puli przypisanej pipom), (2) inwariant kolejności
+pipy-pierwsze/pula-pierwsza (bramka-(iv)/finansowanie-(1)/consume-matchPips),
+(3) REZERWA w spendMana (lądy/wolne tapują się tylko, gdy świeża baza po tapu
+kryje Σ kosztów albo świeże same domykają płatność; granty z planu zwolnione;
+tapnięcia konserwują jednostki w stronę puli, więc re-bramka przechodzi) oraz
+(4) pomijanie kosztowych spoza re-bramki (obrona w głąb). Dopisane tu wcześniej
+„luki świadome” zostały ZAŁATANE tego samego dnia komitem sim-bramki (patrz
+wpis niżej — projekt nie zostawia znanych luk). Testy: hybrid-mana-wizard-choice
+7 (B/0–B/6) + mana-cylix-costed-source 12 (A/0–A/11, w tym A/9 anty-korupcja
+M201 i A/10–A/11 kształty crashy). Bramki: pełna **5392/5392** (w tym
+bot-benchmark 10/10).
+
+## 2026-09-13 — bramka-symulacja źródeł kosztowych + threading reqs (arena/01a096f0)
+
+Decyzja właściciela: żadnych świadomych luk — wszystko, co wpis A+B zostawił
+jako „bezpieczny brak oferty”, załatane od razu, w tym komicie.
+
+Bramka warstwowa (i'')/(ii')/(iv)/STRICT zastąpiona SYMULACJĄ: fundableCostedPlan
+wykonuje na kopiach dokładnie te kroki co tapCostedManaSource ((1)/(2'')/(3))
+współdzielonym rdzeniem (matchPipAssignment, compareGenericConsume,
+poolPaysFreelyFor, firstUncoveredPipColor — consumeManaPool przepisana na ten
+sam rdzeń, zachowanie identyczne): (b) pipy kosztów z wildcardów (koniec
+plainBase); (c) koszty z puli dozwolone, gdy reszta kryje pipy (koniec STRICT,
+odrzut atomowy); (d) łańcuchy B→A (fixpoint + tap w kolejności akceptacji +
+domknięcie łańcucha w obu gałęziach spendMana), cykle odrzucane, prefiksy
+(najdłuższy przechodzący end-check zamiast agregatu); (e) granty w bramce
+(fundowanie z firstUncovered + elastyczność w end-checku + planGrant wyklucza
+granty zużyte — koniec podwójnego wydania). Po drodze: netto DOKŁADNE
+(amount − cały koszt, bez podłogi — dawne max(0, amount − costGeneric)
+zawyżało Apprentice {U} o 1, wektor korupcji M201) + filtr gałęzi sumy na
+prawdziwe netto. (f) budżety per-X w legalXCostCasts (Consume Spirit —
+dowiedzione: maxX + bramka kolorów już dźwięczne, per-X to obrona w głąb).
+Threading reqs: 9/9 manaAvailableFor w game-state.js (w tym budżet per wariant
+phyrexianu) + 6/6 lambd spells.js (w tym kicker/offspring/buyback/orPay/alt-costy).
+
+Testy: mana-sim-gate 8 (net/b/c/d1/d2/d3/e/f; 6 RED na bazie 7347b0b, (c)/(d2)
+ten sam werdykt co STRICT/agregat). Uwaga testowa: attachedTo aury też zrzuca
+kontrakt addObject (jak tapped w A/10) — aurę rzucamy, nie podkładamy.
+Bramki: pełna **5400/5400** (w tym bot-benchmark 10/10), repro 2026 finished
+(220 kroków) i 2033 finished (316 kroków; było 488 — sim akceptuje więcej).
+Sprostowanie (właściciel miał rację): Consume Spirit to {X}{1}{B} wg ORACLE
+(Scryfall) — silnik modeluje poprawnie, a rzekome {X}{B}{B} było moim błędem
+(patrz wpis Devotee niżej).
+
+## 2026-09-13 — Jeskai Devotee w silniku many (arena/01a096f0)
+
+Dwie korekty właściciela, obie słuszne: (1) Consume Spirit to {X}{1}{B}
+(Oracle, Scryfall) — silnik miał dobrze; (2) Jeskai Devotee to NIE jest
+„re-używalny bez tapnięcia” — Oracle: „{1}: Add {U}, {R}, or {W}. Activate
+only once each turn.” (TDM), a silnik ma deskryptor oncePerTurn z ewidencją
+abilityActivatedThisTurn. Wykluczenie Devotee z oferty było błędne (luką),
+więc wchodzi do silnika: untappedCostedManaSources przyjmuje kosztowe bez
+{T} przy oncePerTurn z niewykorzystanym budżetem (indeks zdolności niesie
+wpis); choroba przywołania blokuje tylko koszty z {T} (CR 302.6 — lustro
+tapBlockedBySummoningSickness; chory Devotee działa, chory Apprentice nie);
+tapCostedManaSource bez {T} nie tapuje obiektu (blokuje!) tylko spisuje
+budżet tą samą ewidencją co aktywacja manualna (L48 w obie strony).
+Obrona w głąb: własna zdolność once-per-turn nie finansuje własnego kosztu
+(wykluczenie precyzyjne id:indeks w manaForActivation i bramce kolorów —
+tylko ta zdolność, własny ląd inną płaci normalnie; w rejestrze i tak brak
+przypadku — Devotee netto-0 z generycznym kosztem jest podwójnie bezpieczny).
+Poza silnikiem zostają wyłącznie bez-{T} bez limitu (nieoferowalne z definicji;
+w rejestrze tylko poświęcenia — Scion/Skarby, decyzja strategiczna gracza).
+
+Testy: jeskai-devotee-once-per-turn 6 (D/0 oferta+płatność bez tapnięcia,
+D/1 budżet jednorazowy, D/2 chory działa, D/3 chory {T}-kosztowy nie,
+D/4 łańcuch Devotee→Devotee, D/5 manual wycofuje z oferty; 4 RED na 93335a2).
+Bramki: pełna **5406/5406** (w tym bot-benchmark 10/10).
