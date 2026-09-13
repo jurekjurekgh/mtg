@@ -617,13 +617,13 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   } else {
     markDamage(state, targetId, dealt);
   }
-  // Deathtouch (CR 702.4b): „Any amount of damage this deals to a creature is
+  // Deathtouch (CR 702.2b): „Any amount of damage this deals to a creature is
   // enough to destroy it" — dotyczy WSZYSTKICH obrażeń, także niecombatowych
   // (fight, „deals damage equal to its power", triggery). Wcześniej oznaczenie
   // damagedByDeathtouch ustawiał wyłącznie combat.js — stwór 1/2 z deathtouch
   // zadający 1 obrażenie w fight nie zabijał 4/4 (SBA nie miała flagi, a
   // obrażenia < wytrzymałości). Prewencja/protection kasują obrażenia przed
-  // oznaczeniem — CR 702.4b: bez zadanych obrażeń nie ma śmierci.
+  // oznaczeniem — CR 702.2b: bez zadanych obrażeń nie ma śmierci.
   if (targetObject?.kind === 'creature' && dealt > 0 && effectiveKeywords(sourceObject, state).includes('deathtouch')) {
     const current = state.objects.get(targetId);
     if (current && current.zone === 'battlefield') {
@@ -1030,7 +1030,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     for (const objectId of hit) dealNonCombatDamage(state, sourceObject, objectId, amount);
     return;
   }
-  // Batch 46 (Glint-Sleeve Artisan) — FABRICATE N (CR 702.122): „When this
+  // Batch 46 (Glint-Sleeve Artisan) — FABRICATE N (CR 702.123): „When this
   // creature enters, put N +1/+1 counters on it OR create N 1/1 colorless
   // Servo artifact creature tokens." Wybór należy do KONTROLERA, więc jest
   // blokującą decyzją (jak amass/endure), a nie deterministycznym efektem.

@@ -15,9 +15,9 @@ import { jumpToStep } from '../src/engine/turn.js';
  * testy jednostkowe (putCard + `...gameObjectDataOf(def)`) były zielone:
  *
  *   echo    → Bone Shredder (mirrodin-brg): brak echoUnpaid → brak pytania
- *             o płatność echo w upkeep (CR 702.29),
+ *             o płatność echo w upkeep (CR 702.30),
  *   madness → Revolutionist, Terminal Agony (warhammer-ubr): odrzucenie
- *             nie oferowało rzutu za koszt madness (CR 702.34),
+ *             nie oferowało rzutu za koszt madness (CR 702.35),
  *   surge   → Jwar Isle Avenger (zendikar): brak oferty rzutu za {2}{U}
  *             po innym czarze w turze (CR 702.111),
  *   toxic   → Crawling Chorus (mirrodin-wu): combat damage graczowi NIE dawał
@@ -83,7 +83,7 @@ test('M258/D2: toxic z talii działa — atak Crawling Chorus daje obrońcy pois
   assert.equal(p2.poison, 1, 'toxic 1 z ObiektU Z TALII → 1 poison counter (CR 702.180a)');
 });
 
-test('M258/D3: echo z talii działa — Bone Shredder wchodzi z echoUnpaid (CR 702.29)', () => {
+test('M258/D3: echo z talii działa — Bone Shredder wchodzi z echoUnpaid (CR 702.30)', () => {
   const state = matchWithCards();
   state.pendingMulligans = [];
   let boneId = null;

@@ -2871,7 +2871,7 @@ export const REAL_CARDS = Object.freeze([
         trigger: { event: 'enter_battlefield' },
         effect: [{ type: 'damage_each_opponent', amount: 4 }],
       }),
-      // Delirium (CR 702.34, intervening if CR 603.4): warunek 4+ typów kart
+      // Delirium (CR 207.2c, intervening if CR 603.4): warunek 4+ typów kart
       // w grobie kontrolera sprawdzany przy odpaleniu i przy rozstrzyganiu.
       // Cel (stwór poszkodowanego gracza) wybiera kontroler triggera
       // (resolve_delirium_target); obrażenia w wysokości zdarzenia.
@@ -7396,7 +7396,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['II: planeswalker-cel nie istnieje w 1v1 — obrażenia idą w przeciwnika', 'III: zadziała od razu po dodaniu pierwszej karty z podtypem Giant'],
   }),
 
-  // ---- Batch 39 — transza E: Madness (CR 702.34) ----
+  // ---- Batch 39 — transza E: Madness (CR 702.35) ----
   defineCard({
     id: 'revolutionist', name: 'Revolutionist', set: 'MH2',
     types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['R'],
@@ -7421,7 +7421,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     // M167/H: artId ze słownika kolekcji (tools/collection-art-ids.csv: 314MH2).
     artId: 314, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
-    notes: ['Madness: odrzucenie trafia do exile z jednorazową decyzją rzutu za {3}{R} (timing ignorowany — CR 702.34a) albo przełożenia do grobu'],
+    notes: ['Madness: odrzucenie trafia do exile z jednorazową decyzją rzutu za {3}{R} (timing ignorowany — CR 702.35a) albo przełożenia do grobu'],
   }),
 
   // =========================================================================
@@ -7816,7 +7816,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     madness: { cost: 2, colors: ['B', 'R'] },
     artId: 534, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
-    notes: ['madness: odrzucenie trafia do exile z decyzją rzutu za {B}{R} (timing ignorowany — CR 702.34e, także sorcery poza main fazą); cel wybierany przy rzucie'],
+    notes: ['madness: odrzucenie trafia do exile z decyzją rzutu za {B}{R} (timing ignorowany — CR 702.35b, także sorcery poza main fazą); cel wybierany przy rzucie'],
   }),
 
 // ---- Batch 41 — transza D: triggery bojowe + intimidate ----
@@ -8392,7 +8392,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
-  // 2. Farbog Explorer (AVR) — swampwalk (wzorzec Emerald Oryx, CR 702.33).
+  // 2. Farbog Explorer (AVR) — swampwalk (wzorzec Emerald Oryx, CR 702.14).
   defineCard({
     id: 'farbog-explorer', name: 'Farbog Explorer', set: 'AVR',
     types: ['Creature'], subtypes: ['Human', 'Scout'], colors: ['W'],
@@ -8979,7 +8979,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['„multicolored" = źródło o dwóch lub więcej kolorach (CR 105.4); ochrona znika natychmiast po odpięciu aury'],
   }),
 
-  // 6. Glint-Sleeve Artisan (2XM) — {2}{W} 2/2: Fabricate 1 (CR 702.122).
+  // 6. Glint-Sleeve Artisan (2XM) — {2}{W} 2/2: Fabricate 1 (CR 702.123).
   //    NOWE: wybór kontrolera przy ETB — licznik +1/+1 ALBO token Servo.
   //    B5 (audyt stołu 2026-09-09, G3): BEZ keywords ['fabricate'] — silnik
   //    czyta TYLKO efekt 'fabricate' ze zdolności, a słowo kluczowe doklejało
@@ -9003,13 +9003,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   // 7. Bone Shredder (MH2) — {2}{B} 1/1 flying: ETB destroy target
-  //    nonartifact, nonblack creature; Echo {2}{B} (CR 702.29).
+  //    nonartifact, nonblack creature; Echo {2}{B} (CR 702.30).
   defineCard({
     id: 'bone-shredder', name: 'Bone Shredder', set: 'MH2',
     types: ['Creature'], subtypes: ['Phyrexian', 'Minion'], colors: ['B'],
     power: 1, toughness: 1, manaCost: 3, keywords: ['flying', 'echo'],
     // M259/B7: echo {2}{B} — echoColors niesie pipy kolorowe (dotąd koszt
-    // płatny 3 bezbarwnymi; CR 702.29 + 118.2).
+    // płatny 3 bezbarwnymi; CR 702.30 + 118.2).
     echo: 3, echoColors: ['B'],
     oracleText: 'Flying\nEcho {2}{B} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)\nWhen this creature enters, destroy target nonartifact, nonblack creature.',
     imageUri: 'https://cards.scryfall.io/large/front/6/3/63d0b5f0-ed45-4b30-9c24-1c12011e3513.jpg?1783926787',
@@ -9022,7 +9022,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 326, plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
-    notes: ['echo płaci się w PIERWSZYM własnym upkeepie po wejściu (CR 702.29); bez many na opłatę stwór jest poświęcany'],
+    notes: ['echo płaci się w PIERWSZYM własnym upkeepie po wejściu (CR 702.30); bez many na opłatę stwór jest poświęcany'],
   }),
 
   // 8. Manor Gate (CLB) — land Gate: wchodzi tapnięty, przy wejściu wybór

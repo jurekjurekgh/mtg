@@ -271,7 +271,7 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
   const registry = createCardRegistry();
   const state = scenarioState('p1');
   scenarioPut(state, registry, 'foba', 'fear-of-burning-alive', 'p1', 'hand');
-  // Delirium: 4 RÓŻNE typy kart we własnym grobie (CR 702.34 intervening-if).
+  // Delirium: 4 RÓŻNE typy kart we własnym grobie (CR 207.2c (słowo zdolności; intervening-if CR 603.4)).
   scenarioPut(state, registry, 'g1', 'highland-game', 'p1', 'graveyard'); // creature
   scenarioPut(state, registry, 'g2', 'bone-splinters', 'p1', 'graveyard'); // sorcery
   scenarioPut(state, registry, 'g3', 'panic-spellbomb', 'p1', 'graveyard'); // artifact

@@ -65,7 +65,7 @@ test('kontrola negatywna: bez znacznika każda ścieżka idzie do grobu', () => 
   }
 });
 
-test('CR 702.34b: flashback wysyła czar modalny na wygnanie', () => {
+test('CR 702.34a: flashback wysyła czar modalny na wygnanie', () => {
   const { zone } = rozstrzygnij('your-temple-is-under-attack', {
     chosenMode: 0, chosenTargets: [], flashedBack: true,
   });

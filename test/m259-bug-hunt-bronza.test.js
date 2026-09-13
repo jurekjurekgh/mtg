@@ -201,7 +201,7 @@ test('B6: craft działa za {2}{U} i transformuje w Guidestone Compass', () => {
 });
 
 // =============================================================================
-// B7 — Bone Shredder: echo {2}{B} wymaga pipa {B} (CR 702.29)
+// B7 — Bone Shredder: echo {2}{B} wymaga pipa {B} (CR 702.30)
 // =============================================================================
 
 test('B7: echo {2}{B} nie jest opłacalne maną bezbarwną — stwór poświęcony', () => {
@@ -214,7 +214,7 @@ test('B7: echo {2}{B} nie jest opłacalne maną bezbarwną — stwór poświęco
     'bez źródła {B} echo NIE oferuje płatności (koszt {2}{B} nieopłacalny)');
   const after = state.objects.get('shredder');
   assert.ok(!after || after.zone !== 'battlefield',
-    'nieopłacone echo = poświęcenie (CR 702.29)');
+    'nieopłacone echo = poświęcenie (CR 702.30)');
 });
 
 test('B7: echo {2}{B} płacone źródłami z błękitem... z bagienkiem: decyzja + płatność', () => {

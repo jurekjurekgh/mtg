@@ -9,7 +9,7 @@
 // S1–S4 (O1): routing po kind — instant/sorcery z madness leci ścieżką
 //     czarów (cele + płatność kosztu madness + stos), nie castPermanent
 //     („Ten obiekt nie jest zagrywalnym permanentem"). Timing ignorowany
-//     (CR 702.34e, jak fix F1 M159).
+//     (CR 702.35b, jak fix F1 M159).
 // S5–S6 (O2): bramka kolorów przy koszcie alternatywnym sprawdza pipy
 //     KOSZTU MADNESS (madness.colors), nie pipy karty — karty o różnych
 //     kolorach kosztu madness i bazowego (dziś: żadna) przechodzą poprawnie.
@@ -141,7 +141,7 @@ test('S3: modalny instant z madness — oferta per tryb (modeIndex)', () => {
   assert.ok(knight, 'tryb C rozstrzygnięty: token Knight na stole');
 });
 
-test('S4: timing ignorowany (CR 702.34e) — cleanup i tura przeciwnika', () => {
+test('S4: timing ignorowany (CR 702.35b) — cleanup i tura przeciwnika', () => {
   // S4a: odrzucenie w cleanup (limit ręki) — sorcery z madness legalny.
   const a = game('p2');
   putCard(a, 'fy', 'forever-young', 'p1', 'hand', { cost: 2, colors: ['B'] });
@@ -153,7 +153,7 @@ test('S4: timing ignorowany (CR 702.34e) — cleanup i tura przeciwnika', () => 
   const castA = madnessCommands(a).find((c) => c.cast);
   assert.ok(castA, 'oferta rzutu sorcery-madness w cleanup');
   const resA = execute(a, castA);
-  assert.ok(resA.ok, `sorcery za madness w cleanup legalny (CR 702.34e), a był: ${resA.events?.[0]?.reason}`);
+  assert.ok(resA.ok, `sorcery za madness w cleanup legalny (CR 702.35b), a był: ${resA.events?.[0]?.reason}`);
   assert.ok(onZone(a, 'forever-young', 'stack'), 'sorcery na stosie');
 
   // S4b: tura przeciwnika — instant z madness legalny (czar bez celu, żeby

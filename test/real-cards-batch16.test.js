@@ -635,7 +635,7 @@ test('Ethersworn Shieldmage: prewencja chroni przed deathtouch (brak znacznika)'
   const ac = state.objects.get('ac');
   assert.ok(ac && ac.zone === 'battlefield', 'Artefaktowy bloker przeżył');
   assert.equal(ac.damage, 0, 'Zero oznaczonych obrażeń');
-  assert.ok(!ac.damagedByDeathtouch, 'Prewencja znosi też marker deathtouch (CR 702.4b)');
+  assert.ok(!ac.damagedByDeathtouch, 'Prewencja znosi też marker deathtouch (CR 702.2b)');
 });
 
 test('Ethersworn Shieldmage: prewencja wygasa w cleanup', () => {

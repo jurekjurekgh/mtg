@@ -112,7 +112,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // M158/Batch 39: tymczasowe nadpisanie podtypów + utrata keywordów (EOT).
     subtypesBeforeOverride: subtypesBeforeOverride ? Object.freeze([...subtypesBeforeOverride]) : null,
     lostKeywordsUntilEOT: Object.freeze([...(lostKeywordsUntilEOT ?? [])]),
-    // M158/Batch 39 (Revolutionist, CR 702.34): Madness — odrzucenie idzie do
+    // M158/Batch 39 (Revolutionist, CR 702.35): Madness — odrzucenie idzie do
     // exile (madnessReady) z jednorazową decyzją rzutu za koszt madness.
     madness: madness ? Object.freeze({ ...madness }) : null,
     madnessReady: Boolean(madnessReady),
@@ -211,10 +211,10 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Toxic (CR 702.180, Batch 45 — Crawling Chorus): combat damage graczowi
     // daje mu N poison counterów DODATKOWO do obrażeń (inaczej niż infect).
     toxic: toxic ?? null,
-    // Batch 46 (Bone Shredder) — ECHO (CR 702.29): koszt echa z karty oraz
+    // Batch 46 (Bone Shredder) — ECHO (CR 702.30): koszt echa z karty oraz
     // znacznik „nieopłacone echo" stawiany przy wejściu na pole bitwy.
     echo: echo ?? null,
-    // M259/B7 (CR 702.29 + 118.2): pipy kolorowe kosztu echa ({2}{B} Bone
+    // M259/B7 (CR 702.30 + 118.2): pipy kolorowe kosztu echa ({2}{B} Bone
     // Shreddera) — echoColors idzie przez strefy razem z kwotą.
     echoColors: echoColors ?? null,
     echoUnpaid: false,

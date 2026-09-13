@@ -121,7 +121,7 @@ function diesBeforeDealingDamage(attacker, blockers) {
 
 /**
  * M297/B (uwaga właściciela 2026-09-03): czy atakujący GINIE przy bloku, bo
- * bloker ma deathtouch (CR 702.4 — każde ≥1 obrażenie jest śmiertelne).
+ * bloker ma deathtouch (CR 702.2b — każde ≥1 obrażenie jest śmiertelne).
  * Nie dotyczy niezniszczalnych; bloker musi realnie móc zablokować tego
  * atakującego (flying/reach, menace) i mieć moc > 0 (0 mocy = brak obrażeń).
  */
@@ -181,7 +181,7 @@ function combatTrickWindow(view, recipient) {
  * wynik walki się zmienia”:
  *  - dwa przebiegi obrażeń: first/double strike (CR 702.7), potem regularny,
  *    z SBA między przebiegami (CR 510.2 — martwy nie zadaje w następnym);
- *  - deathtouch (CR 702.4): każde zadane ≥1 obrażenie jest śmiertelne —
+ *  - deathtouch (CR 702.2b): każde zadane ≥1 obrażenie jest śmiertelne —
  *    dotyczy progu śmierci ODBIORCY (dającego źródła), nie ilości zadanej;
  *  - atakujący rozdziela moc lethal-first (CR 510.1b), nadmiar: trample →
  *    twarz (CR 702.19), inaczej → ostatni bloker (overkill);
@@ -751,7 +751,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // M297/B (uwaga właściciela 2026-09-03): „kupowany deathtouch" — instant
   // dający deathtouch do końca tury (klasa Coat with Venom). Obrońca z maną
   // i DOWOLNYM blokerem wymienia taniego stwora za naszego drogiego
-  // atakującego (CR 702.4). Model jak B3 (deck + hipergeometria).
+  // atakującego (CR 702.2b). Model jak B3 (deck + hipergeometria).
   const deathtouchTricks = new Map(); // cardId → { cost, copies }
   for (const [id, copies] of opponentCounts) {
     const def = registry.get(id);
@@ -5498,7 +5498,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Obrońca z nietapniętym blokerem, maną i trikiem (instant w ręce
         // ALBO aktywowana zdolność widocznego stwora) daje blokerowi
         // deathtouch w oknie walki — wtedy KAŻDY bloker zabija naszego
-        // atakującego (CR 702.4). Bot ma nie atakować wartościowych stworów
+        // atakującego (CR 702.2b). Bot ma nie atakować wartościowych stworów
         // w takim oknie — dokładnie scenariusz właściciela (4/4 vs mały
         // stwór + Coat with Venom/Death-Hood Cobra + mana). Model ryzyka jak
         // B3 (hipergeometria dla ukrytego triku; pewność dla widocznej
@@ -5580,7 +5580,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // M153/B + F-B (finding właściciela): atakujący ginie, gdy łączna moc
           // blokerów >= jego wytrzymałość (multi-block kill, CR 510.1) ALBO gdy
           // któryś z żywych blokerów ma deathtouch i moc > 0 — jedno obrażenie
-          // jest śmiertelne (CR 702.4), więc pojedynczy 1/2 deathtouch zabija
+          // jest śmiertelne (CR 702.2b), więc pojedynczy 1/2 deathtouch zabija
           // 4/4. Dotąd `attackerDies` liczyło tylko surową sumę mocy i bot
           // dokładał zbędnych blokerów, choć deathtouch i tak rozstrzygał.
           const attackerDies = diesToDeathtouchBlocker(attackerObj, blockerObjs)
@@ -6299,7 +6299,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // nie miały case w scoreCommand (spadały do default: finish(0) →
       // pierwsza oferta).
       //
-      // Fabricate (CR 702.122, Servo Exhibition-type): wybierz „+1/+1 counter
+      // Fabricate (CR 702.123, Servo Exhibition-type): wybierz „+1/+1 counter
       // na źródle" ALBO „stwórz X 1/1 Servo tokenów". Preferuj tokeny, gdy
       // na stole jest mniej własnych stworów (rozlewają board); w innym wypadku
       // pompuj istniejące. Generycznie (ADR 0002): tokeny mają przewagę liczebną

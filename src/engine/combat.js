@@ -1194,9 +1194,9 @@ function assignDamageToAttackers(state, events, blocker, blockerId, targets, amo
     } else if (blockerDealt > 0) {
       markDamage(state, attackerId, blockerDealt, blockerId);
     }
-    // Deathtouch (CR 702.4): obrażenia od blokera z deathtouch niszczą
+    // Deathtouch (CR 702.2b): obrażenia od blokera z deathtouch niszczą
     // atakującego niezależnie od wytrzymałości. Prewencja kasuje
-    // obrażenia przed oznaczeniem (jak wyżej — CR 702.4b).
+    // obrażenia przed oznaczeniem (jak wyżej — CR 702.2b).
     const attackerNow = state.objects.get(attackerId);
     if (hasKeyword(state, blocker, 'deathtouch') && blockerDealt > 0 && !isDamagePrevented(state, attackerNow)) {
       const updated = state.objects.get(attackerId);
@@ -1274,9 +1274,9 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     } else if (dealt > 0) {
       markDamage(state, blockerId, dealt, attackerId);
     }
-    // Deathtouch (CR 702.4): obrażenia od stwora z deathtouch niszczą blokera
+    // Deathtouch (CR 702.2b): obrażenia od stwora z deathtouch niszczą blokera
     // niezależnie od wytrzymałości. Prewencja kasuje obrażenia przed
-    // oznaczeniem — znacznik deathtouch nie ma czego „zabić" (CR 702.4b).
+    // oznaczeniem — znacznik deathtouch nie ma czego „zabić" (CR 702.2b).
     const blockerNow = state.objects.get(blockerId);
     if (hasKeyword(state, attacker, 'deathtouch') && dealt > 0 && !isDamagePrevented(state, blockerNow)) {
       const updated = state.objects.get(blockerId);
@@ -1391,7 +1391,7 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       && hasAloneRestriction(state.objects.get(subset[0]), 'cantAttackAlone')));
 }
 
-/** Landwalk (CR 702.33, Emerald Oryx — forestwalk): podtyp lądu, którego
+/** Landwalk (CR 702.14, Emerald Oryx — forestwalk): podtyp lądu, którego
  * obecność u OBRONCY czyni atakującego nieblokowalnym — ze zdolności
  * statycznych atakującego (null = brak landwalka). */
 function attackerLandwalkSubtype(state, attacker) {
@@ -1490,7 +1490,7 @@ function canBlock(state, attacker, blocker) {
   // (moc po pumpach/licznikach — CR 702.x; już wykonany blok zostaje).
   const maxBlockPower = attackerBlockPowerRestriction(state, attacker);
   if (maxBlockPower != null && effectivePower(blocker, state) <= maxBlockPower) return false;
-  // Landwalk (CR 702.33, forestwalk): atakujący nie może być blokowany, gdy
+  // Landwalk (CR 702.14, forestwalk): atakujący nie może być blokowany, gdy
   // OBRONCA kontroluje ląd o podtypie landwalka (defender = kontroler blokera).
   const landwalkSub = attackerLandwalkSubtype(state, attacker);
   if (landwalkSub && controlsLandWithSubtype(state, blocker.controllerId, landwalkSub)) return false;

@@ -15,7 +15,7 @@ import { jumpToStep } from '../src/engine/turn.js';
  * „Bot wybrał nielegalną komendę" (test/real-cards-batch3.test.js, seed 31,
  * dominaria-brg vs warhammer-ubr — Revolutionist odrzucony w cleanupie).
  *
- * Kontrakt po fixie (CR 702.34a: opcja rzutu powstaje PO dokończeniu efektu
+ * Kontrakt po fixie (CR 702.35a: opcja rzutu powstaje PO dokończeniu efektu
  * odrzucania): karty z madness kolejkują się; pierwsza decyzja otwiera się
  * po zakończeniu sekwencji odrzuceń; kolejne — po rozstrzygnięciu
  * poprzedniej.
@@ -87,7 +87,7 @@ test('M258/M2: dwie karty z madness w jednym efekcie — decyzje SEKWENCYJNIE, �
   assert.ok(state.pendingMadnessCast, 'pierwsza decyzja madness otwarta');
   assert.equal(state.pendingMadnessCast.cardId, 'revolutionist');
   const exiled = [...state.objects.values()].filter((o) => o.cardId === 'revolutionist' && o.zone === 'exile');
-  assert.equal(exiled.length, 2, 'obie karty w exile (CR 702.34a)');
+  assert.equal(exiled.length, 2, 'obie karty w exile (CR 702.35a)');
 
   // Rezygnacja z pierwszej → druga decyzja otwiera się automatycznie.
   const d1 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);

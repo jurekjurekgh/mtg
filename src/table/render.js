@@ -2793,7 +2793,7 @@ export function commandLabel(cmd, session, view) {
     // gracz wchodzi (Oracle „Leads to: Forge, Lost Well").
     case 'resolve_undercity_route':
       return `Podziemia — idź do: ${escapeHtml(String(cmd.roomName ?? ''))}`;
-    // Batch 46 (fabricate, CR 702.122): dwa warianty wyboru kontrolera.
+    // Batch 46 (fabricate, CR 702.123): dwa warianty wyboru kontrolera.
     case 'resolve_fabricate':
       return cmd.mode === 'counters'
         ? 'Fabricate: liczniki +1/+1 na tym stworze'

@@ -87,7 +87,7 @@ export function defineCard(data) {
       timeCounters: data.suspend.timeCounters ?? 4,
     }) : null,
     // Warp (EOE, Weftblade Enhancer): alternatywny koszt { cost, colors } z ręki.
-    // M158/Batch 39 (Revolutionist, CR 702.34): Madness — alternatywny koszt
+    // M158/Batch 39 (Revolutionist, CR 702.35): Madness — alternatywny koszt
     // rzutu po odrzuceniu do exile.
     madness: data.madness ? Object.freeze({
       cost: data.madness.cost,
@@ -278,9 +278,9 @@ export function defineCard(data) {
     endure: data.endure ?? null,
     // Toxic N (CR 702.180) — wartość liczbowa keyworda (Batch 45).
     toxic: data.toxic ?? null,
-    // Batch 46 (Bone Shredder): koszt echa (CR 702.29).
+    // Batch 46 (Bone Shredder): koszt echa (CR 702.30).
     echo: data.echo ?? null,
-    // M259/B7 (CR 702.29 + 118.2): pipy kolorowe kosztu echa ({2}{B} — Bone
+    // M259/B7 (CR 702.30 + 118.2): pipy kolorowe kosztu echa ({2}{B} — Bone
     // Shredder); bez pola w defineCard deskryptor ginie po cichu (L21).
     echoColors: data.echoColors ? Object.freeze([...data.echoColors]) : null,
     // Batch 46 (Manor Gate): „as this enters, choose a color…" na PERMANENCIE

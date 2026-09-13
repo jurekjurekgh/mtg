@@ -98,7 +98,7 @@ test('M262: auto-deriwacja — unearth, flashback, finality, exileIfDiesThisTurn
   moveObjectDirectly(state, 'u1', 'graveyard', 'ex-u1');
   assert.equal(state.objects.get('ex-u1').meta?.exiledBy, 'unearth', 'redirect unearth');
 
-  // Flashback (CR 702.34b): karta po zapłaceniu flashback opuszcza stos → exile.
+  // Flashback (CR 702.34a): karta po zapłaceniu flashback opuszcza stos → exile.
   put(state, 'f1', 'goblin-piker', 'p1', 'stack', { flashedBack: true });
   moveObjectDirectly(state, 'f1', 'graveyard', 'ex-f1');
   assert.equal(state.objects.get('ex-f1').meta?.exiledBy, 'flashback', 'redirect flashback');

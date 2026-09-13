@@ -1274,7 +1274,7 @@ Zakres generyczny (ADR 0002) — pełne mechaniki, zero ograniczeń na kartach:
 - [x] **Defender (CR 702.3)** — keyword blokujący atak (`isLegalAttacker` sprawdza);
 - [x] **Flash (CR 702.8)** — permanent z flash można rzucić z priorytetem w każdej fazie;
 - [x] **Stun counters** — zamiast odkręcenia z licznikiem stun, zdejmij licznik;
-- [x] **Deathtouch w walce (CR 702.4)** — obrażenia ≥1 od stwora z deathtouch niszczą cel;
+- [x] **Deathtouch w walce (CR 702.2b)** — obrażenia ≥1 od stwora z deathtouch niszczą cel;
 - [x] **Conditional keywords wg tury** — equipment z `conditionalKeywords`;
 - [x] **Warunkowe entersTapped** — `entersTappedCondition` (life ≤13);
 - [x] **Food tokens + sacrifice choice** — `resolve_food_choice`;
@@ -1594,7 +1594,7 @@ nie może atakować; nie może blokować, gdy jest czarny; ETB draw). Tokeny:
   (Hobble);
 - trigger `you_cast_noncreature_spell` (**prowess**, działa też przy
   rzutach aur/bestow), warunek `condition.delirium` =
-  `graveyardCardTypeCount >= 4` (CR 702.34) z intervening-if przy
+  `graveyardCardTypeCount >= 4` (CR 207.2c) z intervening-if przy
   rozstrzyganiu, skan niecombat damage → kolejka `pendingDeliriumTargets`
   z wyborem celu przez gracza;
 - ETB **devour** / **endure** — kolejki `pendingDevours` / `pendingEndures`,
@@ -1845,7 +1845,7 @@ słownika kolekcji).
   `kicked: true` komendy `cast_permanent` (koszt + pipy kolorów), flaga
   `wasKicked` na permanencie, warunek triggera `{ wasKicked: true }`
   (Kor Sanctifiers).
-- **Crew / Vehicle (CR 701.36)** — koszt `{ crewPower: N }` zdolności
+- **Crew / Vehicle (CR 702.122)** — koszt `{ crewPower: N }` zdolności
   aktywowanej: gracz wybiera dowolną liczbę własnych nietapniętych stworów
   o łącznej mocy ≥ N (podzbiory oferowane deterministycznie, limit 32),
   tapnięcie jako koszt (CR 601.2h), efekt animuje źródło do końca tury
@@ -2445,7 +2445,7 @@ z MtG bez uproszczeń i ograniczeń". Sonda behawioralna (nie testy definicyjne!
 engine znalazła 4 tematy + 1 latentny crash pełnego B0. Plan:
 `docs/plans/PLAN_2026-08-09-audyt-b26.md`.
 
-1. **Crew = instant (CR 701.36)** — Oracle Bomat Bazaar Barge (B26) i Irontread Crusher
+1. **Crew = instant (CR 702.122)** — Oracle Bomat Bazaar Barge (B26) i Irontread Crusher
    (B21) nie ma „Activate only as a sorcery", a definicje ustawiały `timing: 'sorcery'`.
    Fix: usunięty timing (domyślne 'instant') — crew działa z priorytetem, w turze
    przeciwnika i w odpowiedzi na czar.
@@ -4360,7 +4360,7 @@ stwora, który może KUPIĆ zdolność deathtouch (Death-Hood Cobra / Coat with
 Venom), i mam na to manę — to trochę nierozsądne”.
 
 **Root cause.** `declare_attackers` heurystycznego bota nie modelował
-deathtoucha dokupionego w oknie walki (CR 702.4: dowolny bloker zabija
+deathtoucha dokupionego w oknie walki (CR 702.2b: dowolny bloker zabija
 atakującego). B3 (ryzyko removalu z talii przeciwnika) istniał tylko dla
 obrażeń — tricki keywordowe były białą plamą.
 

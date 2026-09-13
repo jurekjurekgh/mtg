@@ -227,7 +227,7 @@ export function runStateBasedActions(state) {
     // CR 704.5f: stwór o wytrzymałości <= 0 idzie do grobu (indestructible nie chroni).
     const killedByZeroToughness = toughness <= 0;
     const isIndestructible = effectiveKeywords(object, state).includes('indestructible');
-    // Deathtouch (CR 702.4): obrażenia od stwora z deathtouch niszczą
+    // Deathtouch (CR 702.2b): obrażenia od stwora z deathtouch niszczą
     // cel niezależnie od wytrzymałości (wystarczy 1 obrażenie).
     const killedByDamage = !isIndestructible && object.damage >= toughness;
     const killedByDeathtouch = !isIndestructible && object.damagedByDeathtouch && object.damage > 0;

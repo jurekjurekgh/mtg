@@ -713,12 +713,12 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
 /**
  * M161/O1 (zasada właściciela 2026-08-20: kod mechaniki gotowy na karty,
  * które dopiero przyjdą; obserwacja audytu PR #66): rzut INSTANT/SORCERY
- * za koszt madness (CR 702.34). W katalogu nie ma dziś takiej karty (strażnik
+ * za koszt madness (CR 702.35). W katalogu nie ma dziś takiej karty (strażnik
  * katalogu w test/m161-madness-spell-path.test.js sygnalizuje pierwszą),
  * ale routing resolve_madness_cast po kind kieruje tu obiekty spell.
  *
  * Wzorzec: handlery suspend/rebound — rzut z exile w rozstrzyganiu
- * jednorazowej decyzji, timing IGNOROWANY (CR 702.34e — także sorcery w
+ * jednorazowej decyzji, timing IGNOROWANY (CR 702.35b — także sorcery w
  * cleanup i w turze przeciwnika), cele walidowane jak przy zwykłym rzucie.
  * Różnica: koszt madness się PŁACI (redukcje generyczne i płatność pipami
  * madness.colors — lustro castPermanent, M161/O2).
@@ -757,7 +757,7 @@ export function castMadnessSpell(state, playerId, objectId, targets, modeIndex) 
   if (targetSpec.length > 0) {
     chosenTargets = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   }
-  // Koszt madness (CR 702.34a) z redukcjami generycznymi — jak w castPermanent.
+  // Koszt madness (CR 702.35a) z redukcjami generycznymi — jak w castPermanent.
   let cost = object.madness.cost ?? object.manaCost ?? 0;
   cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object) + conditionalCostReduction(state, object));
   // Pipy KOSZTU MADNESS, nie karty (M161/O2); spendMana egzekwuje kolory
