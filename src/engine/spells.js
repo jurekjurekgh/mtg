@@ -1507,7 +1507,7 @@ function resolveActivatedAbilityEntry(state, entry) {
         for (let i = 0; i < drawAmount; i += 1) {
           const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === payload.playerId);
           if (!topId) {
-            // M272 (błąd #21, CR 704.5m + 104.4b): próba dobrania z PUSTEJ
+            // M272 (błąd #21, CR 704.5b + 104.4b): próba dobrania z PUSTEJ
             // biblioteki to ZNACZNIK dla akcji stanowej, nie ciche „nic".
             // Ścieżka cyklowania po prostu przerywała pętlę, więc gracz, który
             // wycyklował ostatnią kartę, nigdy nie przegrywał — partia toczyła

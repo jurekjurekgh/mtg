@@ -507,7 +507,7 @@ export function drawPlayerCards(state, playerId, amount, source = 'effect') {
   // tymczasem CR 104.4b mówi, że gdy wszyscy pozostali gracze przegrywają
   // jednocześnie, partia jest REMISEM. Ten sam błąd był już naprawiony dla
   // życia/trucizny w `runStateBasedActions`; ścieżka dobrania go nie miała.
-  // Znacznik kasuje przebieg SBA (CR 704.5m: „since the last time state-based
+  // Znacznik kasuje przebieg SBA (CR 704.5b: „since the last time state-based
   // actions were checked”).
   if (drawn < amount && state.status === 'active') {
     state.emptyLibraryDraw = { ...(state.emptyLibraryDraw ?? {}), [playerId]: true };

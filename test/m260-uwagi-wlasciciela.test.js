@@ -31,7 +31,7 @@ import { describeGameEvent } from '../src/table/session.js';
 //     (jak Plot/Suspend), z informacją, że odkryje je druga zdolność.
 //
 // B2. Pusta biblioteka: wygnanie Pyxisem z pustej biblioteki NIE kończy gry
-//     (przegraną jest dopiero PRÓBA DOBORU, CR 704.5m) — potwierdzone przez
+//     (przegraną jest dopiero PRÓBA DOBORU, CR 704.5b) — potwierdzone przez
 //     właściciela („nie ma tematu"); poniżej regresja całego scenariusza.
 // =============================================================================
 
@@ -441,7 +441,7 @@ test('M260/B1 → M262 (boks wygnania): zakryta karta Pyxis na stole ze statusem
 // B2 — pusta biblioteka: wygnanie ≠ przegrana; przegrana dopiero przy doborze
 // -----------------------------------------------------------------------------
 
-test('M260/B2 (scenariusz): Pyxis na pustej bibliotece nie kończy gry; przegrana dopiero przy DOBORZE (CR 704.5m)', () => {
+test('M260/B2 (scenariusz): Pyxis na pustej bibliotece nie kończy gry; przegrana dopiero przy DOBORZE (CR 704.5b)', () => {
   const state = pyxisState();
   // p1 bez kart w bibliotece od początku (scenariusz właściciela: „miałem 0 kart”)
   state.zones.library = state.zones.library.filter((id) => state.objects.get(id)?.controllerId !== 'p1');

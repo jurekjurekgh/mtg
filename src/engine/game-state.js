@@ -626,7 +626,7 @@ function reject(reason) { return { ok: false, events: [event('command_rejected',
  * draws a card"). Wspólny kod dla AKCJI TUROWEJ (drawStepTurnBasedAction,
  * ścieżka normalna) i starej komendy `draw_card` (zgodność replayów).
  *
- * Pusta biblioteka: CR 704.5m — gracz, który próbował dobrać z pustej
+ * Pusta biblioteka: CR 704.5b — gracz, który próbował dobrać z pustej
  * biblioteki, przegrywa, ale rozstrzyga to AKCJA STANOWA w najbliższym
  * przebiegu (CR 704), a nie ta funkcja. Zwracamy { ok: true }, bo akcja
  * turowa doszła do skutku (próba dobrania), a nie została odrzucona.
@@ -636,7 +636,7 @@ function performDrawStepDraw(state, playerId, objectId = null) {
   const object = topId ? state.objects.get(topId) : null;
   if (!object) {
     if (state.zones.library.every((id) => state.objects.get(id)?.controllerId !== playerId)) {
-      // M202 (CR 704.5m + 104.4b): próba dobrania z pustej biblioteki jest
+      // M202 (CR 704.5b + 104.4b): próba dobrania z pustej biblioteki jest
       // ZNACZNIKIEM dla akcji stanowej, nie natychmiastowym końcem gry —
       // dokładnie jak w `drawPlayerCards`. Dzięki temu jednoczesne przegrane
       // (np. obie biblioteki puste) dają remis, a nie zwycięzcę z kolejności.

@@ -1,8 +1,8 @@
-// M202 — brązowa odznaka, znalezisko #1: CR 704.5m + CR 104.4b.
+// M202 — brązowa odznaka, znalezisko #1: CR 704.5b + CR 104.4b.
 //
 // Zgłoszenie: jednoczesny deck-out nie dawał remisu.
 //
-// CR 704.5m: „A player who attempted to draw a card from a library with no
+// CR 704.5b: „A player who attempted to draw a card from a library with no
 // cards in it since the last time state-based actions were checked loses the
 // game.” To AKCJA STANOWA — a nie natychmiastowy skutek efektu dobrania.
 // CR 104.4b: „If the game somehow enters a state in which all remaining players
@@ -78,7 +78,7 @@ test('M202/#1 (anty-over-fix): deck-out w kroku dobierania nadal kończy partię
   assert.equal(state.winnerId, 'p2');
 });
 
-test('M202/#1 (CR 704.5m): gracz, który dobrał część kart, przegrywa; przeciwnik wygrywa', () => {
+test('M202/#1 (CR 704.5b): gracz, który dobrał część kart, przegrywa; przeciwnik wygrywa', () => {
   const state = stateWith({ library1: 1, library2: 5 });
   drawPlayerCards(state, 'p1', 3, 'effect'); // biblioteka ma 1 kartę — dobiera 1 z 3
   assert.equal(state.status, 'active', 'dobranie samo w sobie nie kończy gry — rozstrzyga akcja stanowa');
@@ -87,7 +87,7 @@ test('M202/#1 (CR 704.5m): gracz, który dobrał część kart, przegrywa; przec
   assert.equal(state.winnerId, 'p2');
 });
 
-test('M202/#1 (CR 704.5m): znacznik wygasa po przebiegu akcji stanowych', () => {
+test('M202/#1 (CR 704.5b): znacznik wygasa po przebiegu akcji stanowych', () => {
   const state = stateWith({ library1: 0, library2: 5 });
   drawPlayerCards(state, 'p1', 1, 'effect');
   runStateBasedActions(state);
