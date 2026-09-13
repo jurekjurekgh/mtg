@@ -62,7 +62,10 @@ karało czary. Po drodze złapany własny crash fixa: weto wstawione przed
 1 życie ZE Smokiem rzuca).
 
 B — „Wybierz: Deklaracja blokujących" wymaga przytrzymania (szybki klik
-„przesuwa kolumnę") — NIEROZWIĄZANE statycznie i celowo nie ruszane:
+„przesuwa kolumnę") — NIEROZWIĄZANE, zamknięte dowodem negatywnym (N=1, brak
+mechanizmu w kodzie; NIE ruszane celowo). Odpowiedzi właściciela: Chrome/Win,
+TYLKO blokujący (atakujący i cele czarów OK), „Rozgrywka" nie była otwarta,
+drgnęła CAŁA kolumna, konsola niesprawdzona, pierwsze blokowanie ~T5–7.
 ścieżka click → onChoiceRequest (render.js:4370) i declare_blockers →
 renderCombatWizard + showModal są bezwarunkowe, w aplikacji ZERO handlerów
 mousedown/mouseup/pointer/focus i ZERO timerów re-renderu — szybki klik
@@ -73,7 +76,30 @@ kompozytorze), nakładka (preview ma pointer-events:none), modal-za-drawerem
 focus-scroll, tap-delay, cicha gałąź bez modala. Do właściciela wraca 6 pytań:
 przeglądarka/OS, czy tylko blokujący czy wszystkie „Wybierz:", czy modal
 „Rozgrywka" był wtedy otwarty, drgnięcie przycisku czy całej kolumny, błędy
-w F12, świeże okno czy późna faza sesji.
+w F12, świeże okno czy późna faza sesji. Odpowiedzi (2. tura pytań):
+„modal podniósł się o wiersz do góry na moment klikania", N=1 (od tej pory nie
+grał), konsola PEŁNA błędów ZASOBÓW (file:// + CORS: deck-store.js zablokowany,
+Scryfall /cards/named ERR_FILE_NOT_FOUND — ZERO błędów JS), środowisko
+standardowe (100%, mysz, brak rozszerzeń). Repro na artefakcie (seed 1,
+tymczasowy sterownik run-game + MutationObserver, skasowany po robocie):
+panel w oknie blokujących statyczny (0 przebudów w 1500 ms ciszy, 0 błędów),
+pojedynczy triplet mousedown/mouseup/click otwiera wizarda ZA PIERWSZYM RAZEM.
+Werdykt: w ustalonym oknie klik MUSI działać (statyczny DOM, brak styli press,
+brak nakładek — preview pointer-events:none, nieaktywne modale display:none
+bez tranzycji, FAB pod szufladą z-1200 < z-1300; closer tła ma strict target
+i strażnik 450 ms; wszystkie rendery synchroniczne w tasku klika; wizard
+tekstowy bez <img>; szuflada już otwarta; brak duplikatów). Wykluczone runtime:
+kaskada renderów, wyjątek w handlerze,przedawniony request, opóźniony modal
+„Rozgrywka" (wszystkie showBotMoves synchroniczne), focus-scroll (3 przyciski
+nie przepełniają szuflady; szuflada fixed), mis-click na „Dalej" (pass legalny
+— gra poszłaby widocznie dalej) i na „Poddaj" (natywny confirm nie do
+przeoczenia). Pozostałe hipotezy (behawioralne/środowiskowe, nierozstrzygalne
+przy N=1): pierwszy-widok-wizarda + odruchowe zamknięcie, glitch kompozytora
+(file:// + padające zasoby + backdrop-filter: blur), pomyłka celowania w
+emocjach. Jeśli wróci: N≥2 + nagranie + zapis partii. Kandydat na utwardzenie
+(niezwiązany z objawem — do decyzji właściciela): domknięcie tłem dopiero po
+PEŁNYM naciśnięciu (mousedown+mouseup na tle), żeby wolny dwuklik >450 ms nie
+gasił świeżego wizarda.
 
 ## 2026-09-13 F1–F5 (audyt Żywym Testerem: 49 partii, transpozycja)
 
