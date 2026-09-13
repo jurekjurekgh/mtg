@@ -19,6 +19,62 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-13 A+C (znaleziska właściciela z testów: tor hovera, samobójstwo Sarkhana)
+
+Właściciel po shippie F1–F5 zgłosił 3 znaleziska z własnych testów; A i C naprawione
+(TDD: testy pisane PRZED fixem, czerwone → zielone), B po wyczerpaniu analizy
+statycznej wraca do właściciela jako pytania (niżej). Pakiet: 5363/5363.
+
+A — tor hovera PPM nieprzewidywalny („czasem nic, czasem skok o dwa, czasem
+FOT → KON → FOT"). Dwie przyczyny, obie potwierdzone w kodzie i repro jsdom na
+prawdziwym artefakcie (`dist`, seed 7 — skasowane po robocie): (1) karty BEZ
+artId cyklowały przez DWA puste, nieetykietowane stany (M148) — „nic nie robił",
+a globalny tor przesuwał się w niewidoczny sposób (repro: Island RMB×3 =
+PUSTO → PUSTO → Scryfall); (2) pojedynczy gest PPM bywał dostarczany 2–3×
+(odbicie styku / podwójne `contextmenu`) — +2 z KON ląduje w FOT (dosłowna
+oscylacja FOT → KON → FOT), +3 robi pełne koło („nic" na kartach z artem).
+Naprawa (`src/table/render.js`, zastępuje M146): kreator i start/revive używają
+torów DOSTĘPNYCH dla karty (`availableHoverModes`/`clampHoverMode` — kontrakt
+`nextHoverMode(current, dir, availableModes)` istniał i był udokumentowany, nikt
+go nie przekazywał), strażnik 250 ms zjada odbicia (`lastHoverCycleAt`,
+jak MODAL_OPEN_GUARD_MS), `preventDefault` ZAWSZE pierwsze + `stopPropagation`.
+Testy: `test/a-hover-track-cycle.test.js` (A/1 łańcuch fot → kon → scryfall,
+A/2 land bez artu zawsze Scryfall, A/3 dublet w ticku = jeden krok + re-arm po
+300 ms); test H w `table-card-art.test.js` zaktualizowany (gesty rozdzielone —
+3 synchroniczne RMB = 3 kroki to dokładnie zachowanie, które fix eliminuje).
+
+C — bot przy 1 życiu rzucał Sarkhan's Rage bez Smoka i ginął od własnych
+2 obrażeń. Mechanizm: samouszkodzenie siedzi w `conditional`
+(controlsNoCreatureSubtype → damage_to_controller), a bot nie czytał ANI
+wrappera `conditional`, ANI typu `damage_to_controller` — widział „5 we wroga".
+Naprawa (`src/controllers/heuristic-bot.js`, lustro M169/K dla czarów):
+`viewConditionalHolds` (3 warunki weryfikowalne z PlayerView; landEnteredThisTurn
+nieweryfikowalny = konserwatywnie „zachodzi") + `unwrapConditionals` +
+`selfDamageOfEffects`; gałąź cast_spell wetuje rzut samobójczy twardo
+(`finish(-1000)`) i stosuje te same progi co ETB (≤5 żyć i lądowanie ≤2 → −80;
+≤5 żyć → −15×dmg; inaczej −2×dmg). Świadomie BEZ rozpoznania w selfHarmPenalty:
+żaden z 4 conditionali nie niesie celowanego self-harm i żadna aktywacja nie
+używa damage_to_controller (5 użyć: Sarkhan, Forge Devil ETB, token Goblin
+Construct + Relic Robber — ból u wroga, nie u nas) — byłoby martwe i podwójnie
+karało czary. Po drodze złapany własny crash fixa: weto wstawione przed
+`let score` (C/2 wyłapało). Testy: `test/c-sarkhan-self-harm-veto.test.js`
+(C/1 1 życie bez Smoka nie rzuca, C/2 10 żyć rzuca — anty-over-fix, C/3
+1 życie ZE Smokiem rzuca).
+
+B — „Wybierz: Deklaracja blokujących" wymaga przytrzymania (szybki klik
+„przesuwa kolumnę") — NIEROZWIĄZANE statycznie i celowo nie ruszane:
+ścieżka click → onChoiceRequest (render.js:4370) i declare_blockers →
+renderCombatWizard + showModal są bezwarunkowe, w aplikacji ZERO handlerów
+mousedown/mouseup/pointer/focus i ZERO timerów re-renderu — szybki klik
+i przytrzymanie są w kodzie nierozróżnialne. Wykluczone: backdrop-instant-close
+(strażnik 450 ms + target check), :active layout shift (translateY tylko na
+kompozytorze), nakładka (preview ma pointer-events:none), modal-za-drawerem
+(z-1500 > z-1300), scrollbar-reflow (2–3 przyciski nie przepełniają),
+focus-scroll, tap-delay, cicha gałąź bez modala. Do właściciela wraca 6 pytań:
+przeglądarka/OS, czy tylko blokujący czy wszystkie „Wybierz:", czy modal
+„Rozgrywka" był wtedy otwarty, drgnięcie przycisku czy całej kolumny, błędy
+w F12, świeże okno czy późna faza sesji.
+
 ## 2026-09-13 F1–F5 (audyt Żywym Testerem: 49 partii, transpozycja)
 
 Domknięcie znalezisk z audytu 49 partii Żywym Testerem (batch tmp-audyt-*, transkrypty poza repozytorium).

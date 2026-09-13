@@ -1832,6 +1832,54 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // `isNegativePump` i `temporaryPumpOf` żyją na poziomie modułu (wspólny
   // mianownik efektów pump — patrz komentarz przy `TEMPORARY_PUMP_EFFECTS`).
 
+  // C (znalezisko właściciela, Sarkhan's Rage): samouszkodzenie bywa
+  // ZAWINIĘTE w `conditional` (controlsNoCreatureSubtype → damage_to_controller)
+  // — bot widział tylko „5 obrażeń we wroga" i popełniał samobójstwo przy
+  // 1 życiu. Lustro semantyki silnika (effects.js: conditional + M166/C):
+  // warunek oceniamy z PlayerView (ADR 0017); nieweryfikowalny (np.
+  // landEnteredThisTurn — widok go nie niesie) = konserwatywnie „zachodzi"
+  // (L3: przy samouszkodzeniu zakładamy gorszy wariant).
+  function viewConditionalHolds(view, effect) {
+    const me = view.playerId;
+    const mine = (view.zones.battlefield ?? []).filter((o) => o.controllerId === me);
+    if (effect.condition === 'controlsNoCreatureSubtype') {
+      if (effect.subtype == null) return null;
+      const has = mine.some((o) => o.kind === 'creature'
+        && ((o.subtypes ?? []).includes(effect.subtype) || (o.keywords ?? []).includes('changeling')));
+      return !has;
+    }
+    if (effect.condition === 'controlsCreatureWithCounter') {
+      return mine.some((o) => o.kind === 'creature'
+        && Object.values(o.counters ?? {}).some((c) => c > 0));
+    }
+    if (effect.condition === 'controlsPlaneswalkerWithSubtype') {
+      if (effect.subtype == null) return null;
+      return mine.some((o) => (o.types ?? []).includes('Planeswalker')
+        && (o.subtypes ?? []).includes(effect.subtype));
+    }
+    return null;
+  }
+  // Efekty po rozwinięciu wrapperów `conditional` (gałąź wg warunku).
+  function unwrapConditionals(view, effects) {
+    const flat = [];
+    for (const e of effects ?? []) {
+      if (e?.type === 'conditional') {
+        const holds = viewConditionalHolds(view, e);
+        const branch = holds === false ? e.else : e.then;
+        if (branch) flat.push(...(Array.isArray(branch) ? branch : [branch]));
+      } else flat.push(e);
+    }
+    return flat;
+  }
+  // Suma samouszkodzenia (obrażenia/utrata życia kontrolera) w efektach.
+  function selfDamageOfEffects(view, effects) {
+    let total = 0;
+    for (const e of unwrapConditionals(view, effects)) {
+      if (e?.type === 'damage_to_controller') total += e.amount ?? 0;
+      if (e?.type === 'lose_life' && (e.scope === 'controller' || e.applyTo === 'self')) total += e.amount ?? 0;
+    }
+    return total;
+  }
   function selfHarmPenalty(view, effects, cmd, target) {
     let penalty = 0;
     const targets = cmd.targets ?? [];
@@ -3223,6 +3271,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
         let score = P.spellBase;
+        // C (Sarkhan's Rage): samouszkodzenie czaru (także warunkowe —
+        // selfDamageOfEffects rozwija `conditional`) — te same twarde progi
+        // co ETB (M169/K, L48: jedna reguła samobójstwa dla wchodzenia i rzutu).
+        {
+          const selfDmg = selfDamageOfEffects(view, effects);
+          if (selfDmg > 0) {
+            const life = myLife(view);
+            if (life - selfDmg <= 0) return finish(-1000); // samobójstwo
+            if (life <= 5 && life - selfDmg <= 2) score -= 80;
+            else if (life <= 5) score -= 15 * selfDmg;
+            else score -= 2 * selfDmg;
+          }
+        }
         // Phyrexian mana (CR 118.9): jak gałąź cast_permanent — bot woli manę
         // (wariant k=0 jest najtańszy; życiowe dostępne, gdy życie wytrzymuje).
         if (cmd.phyrexianPayWithLife != null && cmd.phyrexianPayWithLife > 0) {

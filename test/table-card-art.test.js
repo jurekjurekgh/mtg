@@ -320,7 +320,8 @@ test('hover pokazuje ten sam obraz w rozmiarze large i rotuje tory scrollem', ()
   assert.equal(imagesIn(local)[0].src, 'img/512KON.png');
 });
 
-test('RMB nad kartą przełącza tor podglądu, a scroll zostaje dla strony (zgłoszenie H, 2026-09-11)', () => {
+test('RMB nad kartą przełącza tor podglądu, a scroll zostaje dla strony (zgłoszenie H, 2026-09-11)', async () => {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const { session } = buildSession('tarkir-bg.txt');
   const els = makeEls();
   const seen = [];
@@ -353,10 +354,15 @@ test('RMB nad kartą przełącza tor podglądu, a scroll zostaje dla strony (zg�
   assert.deepEqual(seen, ['fot'], 'tor zmienia się scryfall → fot');
   assert.match(els.hoverPreview.textContent, /panoramiczna/);
 
+  // A (2026-09-13): strażnik 250 ms ignoruje odbicia TEGO SAMEGO gestu —
+  // kolejne KLIKNIĘCIA gracza dzieli czas, więc test czeka między nimi
+  // (odbicie w tym samym ticku = jeden krok — patrz a-hover-track-cycle A/3).
+  await sleep(300);
   rmb();
   assert.deepEqual(seen, ['fot', 'kon'], 'drugi RMB: fot → kon');
   assert.match(els.hoverPreview.textContent, /bestiariusz/);
 
+  await sleep(300);
   rmb();
   assert.deepEqual(seen, ['fot', 'kon', 'scryfall'], 'trzeci RMB domyka cykl (kon → scryfall)');
   assert.match(els.hoverPreview.textContent, /pełna karta/);
