@@ -779,7 +779,7 @@ function freeCastAdditionalCostVariants(state, playerId, obj) {
     // Lash of the Balrog: „sacrifice a creature OR pay {4}" — wariant manowy
     // jest legalny także przy darmowym rzucie (płacimy tylko dodatek).
     if (additional.orPayMana != null
-      && producibleMana(state, playerId, null, spellManaPurpose(obj)) >= additional.orPayMana) {
+      && producibleMana(state, playerId, null, spellManaPurpose(obj), []) >= additional.orPayMana) {
       variants.push({ payAltCost: true });
     }
     return variants;
@@ -803,7 +803,7 @@ function payFreeCastAdditionalCost(state, playerId, obj, cmd) {
     // M202/N1: doplata {4} jest czescia RZUCENIA czaru (CR 118.5) — mana
     // ograniczona drukiem (Powerstone) nie moze jej oplacic.
     const purpose = spellManaPurpose(obj);
-    if (need == null || producibleMana(state, playerId, null, purpose) < need) return 'additional_cost_unpaid';
+    if (need == null || producibleMana(state, playerId, null, purpose, []) < need) return 'additional_cost_unpaid';
     spendMana(state, playerId, need, [], purpose);
     return null;
   }
@@ -856,13 +856,13 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
   // madness i darmowy rzut z grobu X nie rozliczają.
   if (spell.xCost) {
     if (!xCost) return [];
-    const budget = producibleMana(state, playerId, null, spellManaPurpose(obj));
+    const budget = producibleMana(state, playerId, null, spellManaPurpose(obj), coloredPipsOf(obj.cardId));
     return withCosts(legalXCostCasts(state, playerId, obj.id, obj, budget)
       .map((cast) => ({ cardId: obj.id, targets: cast.targets, xValue: cast.xValue })));
   }
   if (spell.fireball) {
     if (!xCost) return [];
-    const budget = producibleMana(state, playerId, null, spellManaPurpose(obj));
+    const budget = producibleMana(state, playerId, null, spellManaPurpose(obj), coloredPipsOf(obj.cardId));
     return withCosts(legalFireballCasts(state, playerId, obj.id, obj, budget)
       .map((cast) => ({ cardId: obj.id, targets: cast.targets, xValue: cast.xValue })));
   }
@@ -2311,7 +2311,7 @@ export function execute(state, input) {
     // z dowolnym X przechodziła (zmierzone: xValue 3 przy karcie MV 1 → ok).
     const xValue = card.manaCost ?? 0;
     if (!Number.isInteger(cmd.xValue) || cmd.xValue !== xValue) return reject('illegal_grave_free_cast_x');
-    if (producibleMana(state, cmd.playerId, null, spellManaPurpose(card)) < xValue) return reject('illegal_grave_free_cast');
+    if (producibleMana(state, cmd.playerId, null, spellManaPurpose(card), []) < xValue) return reject('illegal_grave_free_cast');
     // Cele/tryb jak przy Epic (walidacja przed płatnością — L4).
     const chosen = Array.isArray(cmd.targets) ? cmd.targets : [];
     let chosenTargets = [];
@@ -3223,7 +3223,7 @@ export function execute(state, input) {
     if (cmd.playerId !== state.pendingCounterPay.playerId) return reject('counter_pay_not_your_decision');
     const pending = state.pendingCounterPay;
     const before = state.events.length;
-    if (cmd.pay && (pending.amount ?? 0) > producibleMana(state, pending.playerId)) return reject('counter_pay_insufficient_mana');
+    if (cmd.pay && (pending.amount ?? 0) > producibleMana(state, pending.playerId, null, {}, [])) return reject('counter_pay_insufficient_mana');
     state.pendingCounterPay = null;
     const target = state.objects.get(pending.targetId);
     const targetOnStack = target && target.zone === 'stack';
@@ -3283,7 +3283,7 @@ export function execute(state, input) {
     const targeting = state.objects.get(pending.targetingStackId);
     const targetingOnStack = Boolean(targeting && targeting.zone === 'stack');
     if (cmd.pay) {
-      if ((pending.amount ?? 0) > producibleMana(state, pending.playerId)) return reject('ward_pay_insufficient_mana');
+      if ((pending.amount ?? 0) > producibleMana(state, pending.playerId, null, {}, [])) return reject('ward_pay_insufficient_mana');
       if ((pending.amount ?? 0) > 0) spendMana(state, pending.playerId, pending.amount, []);
     } else if (targetingOnStack) {
       counterStackObject(state, pending.targetingStackId, {
@@ -5135,7 +5135,7 @@ export function execute(state, input) {
     const cardId = object.cardId;
     const cost = object.manifestTurnUpCost ?? 0;
     const purpose = spellManaPurpose(object);
-    if (producibleMana(state, cmd.playerId, null, purpose) < cost) return reject('manifest_turn_up_insufficient_mana');
+    if (producibleMana(state, cmd.playerId, null, purpose, coloredPipsOf(cardId, 0)) < cost) return reject('manifest_turn_up_insufficient_mana');
     if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('manifest_turn_up_no_colored_source');
     const before = state.events.length;
     spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
@@ -5161,7 +5161,7 @@ export function execute(state, input) {
     const cardId = object.cardId;
     const cost = object.cloakTurnUpCost ?? 0;
     const purpose = spellManaPurpose(object);
-    if (producibleMana(state, cmd.playerId, null, purpose) < cost) return reject('cloak_turn_up_insufficient_mana');
+    if (producibleMana(state, cmd.playerId, null, purpose, coloredPipsOf(cardId, 0)) < cost) return reject('cloak_turn_up_insufficient_mana');
     if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('cloak_turn_up_no_colored_source');
     const before = state.events.length;
     spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
@@ -6051,7 +6051,7 @@ export function playerView(state, playerId) {
         if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.manifestReady) continue;
         if (obj.controllerId !== playerId) continue;
         const cost = obj.manifestTurnUpCost ?? 0;
-        if (producibleMana(state, playerId, null, spellManaPurpose(obj)) < cost) continue;
+        if (producibleMana(state, playerId, null, spellManaPurpose(obj), coloredPipsOf(obj.cardId, 0)) < cost) continue;
         if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0))) continue;
         legalCommands.push(command('turn_manifest_face_up', playerId, { objectId: objId }));
       }
@@ -6067,7 +6067,7 @@ export function playerView(state, playerId) {
         if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.cloakReady) continue;
         if (obj.controllerId !== playerId) continue;
         const cost = obj.cloakTurnUpCost ?? 0;
-        if (producibleMana(state, playerId, null, spellManaPurpose(obj)) < cost) continue;
+        if (producibleMana(state, playerId, null, spellManaPurpose(obj), coloredPipsOf(obj.cardId, 0)) < cost) continue;
         if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0))) continue;
         legalCommands.push(command('turn_cloak_face_up', playerId, { objectId: objId }));
       }
@@ -6488,7 +6488,7 @@ export function playerView(state, playerId) {
       targetId: state.pendingCounterPay.targetId ?? null,
     };
   // M203/2: kolejność prezentacji = enumeracja (dawniej odwracał unshift).
-    if ((state.pendingCounterPay.amount ?? 0) <= producibleMana(state, playerId)) {
+    if ((state.pendingCounterPay.amount ?? 0) <= producibleMana(state, playerId, null, {}, [])) {
       legalCommands.push(command('resolve_counter_pay_choice', playerId, { pay: true, ...counterPayInfo }));
     }
     legalCommands.push(command('resolve_counter_pay_choice', playerId, { pay: false, ...counterPayInfo }));
@@ -6507,7 +6507,7 @@ export function playerView(state, playerId) {
       sourceId: state.pendingWardPay.wardSourceId ?? null,
       targetId: state.pendingWardPay.targetingStackId ?? null,
     };
-    if ((state.pendingWardPay.amount ?? 0) <= producibleMana(state, playerId)) {
+    if ((state.pendingWardPay.amount ?? 0) <= producibleMana(state, playerId, null, {}, [])) {
       legalCommands.push(command('resolve_ward_pay_choice', playerId, { pay: true, ...wardInfo }));
     }
     legalCommands.push(command('resolve_ward_pay_choice', playerId, { pay: false, ...wardInfo }));
@@ -6941,7 +6941,7 @@ export function playerView(state, playerId) {
       if (!['instant', 'sorcery'].includes(card.spell?.timing)) continue;
       if (card.spell?.additionalCost || card.spell?.xCost || card.spell?.fireball) continue;
       const xValue = card.manaCost ?? 0;
-      if (producibleMana(state, playerId, null, spellManaPurpose(card)) < xValue) continue;
+      if (producibleMana(state, playerId, null, spellManaPurpose(card), []) < xValue) continue;
       // Audyt PR #93 (znalezisko F): Halo Forager płaci {X} = MV, a CELE trybu
       // wybiera gracz (CR 601.2c) — „up to three target creatures” nie może
       // wyłączać karty z oferty, skoro Oracle mówi „any instant or sorcery
@@ -7002,7 +7002,7 @@ export function playerView(state, playerId) {
         // `legalAuraCastsForObject` (ten sam generator co dla ręki).
         for (const offer of epicCastOffers(state, playerId, exileCard, { aura: true })) pushExileCast(offer);
       } else {
-        const budget = producibleMana(state, playerId, null, spellManaPurpose(exileCard));
+        const budget = producibleMana(state, playerId, null, spellManaPurpose(exileCard), coloredPipsOf(exileCard.cardId, 0));
         const cost = effectiveSpellManaCost(state, exileCard);
         if (cost <= budget && hasColorForCardId(state, playerId, exileCard.cardId, 0)) {
           if (exileCard.kind === 'spell') {
@@ -7130,7 +7130,6 @@ export function playerView(state, playerId) {
   // Z tego powodu tap_for_mana NIE jest już enumerowany jako osobna akcja
   // (komenda pozostaje legalna w protokole — replaye i trigger ETB typu
   // „pay or sacrifice" korzystają z niej nadal).
-  const manaAvailable = producibleMana(state, playerId);
   // M201 (znalezisko #3): mana ograniczona drukiem (Powerstone — „only to cast
   // artifact spells") liczy się WYŁĄCZNIE przy czarach-artefaktach. Oferta
   // musi używać tego samego rachunku co płatność (L48), więc pytamy o budżet
@@ -7218,7 +7217,7 @@ export function playerView(state, playerId) {
       for (const id of state.zones.hand) {
         const object = state.objects.get(id);
         if (object?.controllerId === playerId && object.plot
-          && (object.plot.cost ?? 0) <= manaAvailable) {
+          && (object.plot.cost ?? 0) <= producibleMana(state, playerId, null, {}, (object.plot.colors ?? []).map((c) => [c]))) {
           // Koszt plot może nieść pipy kolorów (Plot {3}{G}) — oferta spójna
           // z walidacją plotCard.
           const plotColors = (object.plot.colors ?? []).map((c) => [c]);
@@ -7230,7 +7229,7 @@ export function playerView(state, playerId) {
         // z ręki, możesz zamiast tego zapłacić koszt i wygnać ją z licznikami
         // czasu" — ta sama specjalna akcja sorcery-speed co plot.
         if (object?.controllerId === playerId && object.suspend
-          && (object.suspend.cost ?? 0) <= manaAvailable) {
+          && (object.suspend.cost ?? 0) <= producibleMana(state, playerId, null, {}, (object.suspend.colors ?? []).map((c) => [c]))) {
           const suspendColors = (object.suspend.colors ?? []).map((c) => [c]);
           if (suspendColors.length === 0 || canPayColoredCost(state, playerId, suspendColors)) {
             legalCommands.push(command('suspend_card', playerId, { objectId: id }));
@@ -7240,7 +7239,7 @@ export function playerView(state, playerId) {
         // Trzymamy koszt warp NIŻSZY od normalnego (inaczej to bezsens) —
         // oferta jak dla plot/suspend (sorcery-speed, pusta faza main).
         if (object?.controllerId === playerId && object.warp
-          && (object.warp.cost ?? 0) <= manaAvailable) {
+          && (object.warp.cost ?? 0) <= producibleMana(state, playerId, null, spellManaPurpose(object), (object.warp.colors ?? []).map((c) => [c]))) {
           const warpColors = (object.warp.colors ?? []).map((c) => [c]);
           if (warpColors.length === 0 || canPayColoredCost(state, playerId, warpColors)) {
             legalCommands.push(command('warp_card', playerId, { objectId: id }));
@@ -7418,7 +7417,7 @@ export function playerView(state, playerId) {
       if (object.surge && (state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) >= 1) {
         const surgeMana = object.surge.cost ?? 0;
         const surgeReqs = (object.surge.colors ?? []).map((color) => [color]);
-        if (producibleMana(state, playerId, null, spellManaPurpose(object)) >= surgeMana
+        if (producibleMana(state, playerId, null, spellManaPurpose(object), surgeReqs) >= surgeMana
           && canPayColoredCost(state, playerId, surgeReqs)) {
           legalCommands.push(command('cast_permanent', playerId, { objectId: id, surgeCast: true }));
         }

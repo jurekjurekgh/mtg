@@ -3943,7 +3943,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const amount = effect.amount ?? 1;
     // CR 608.2g: nie pomijaj okna aktywacji ręcznego źródła many tylko
     // dlatego, że nie jest auto-tapowane (np. sacrificeSelf).
-    const canPay = producibleMana(state, payerId) >= amount || state.zones.battlefield.some(id => {
+    const canPay = producibleMana(state, payerId, null, {}, []) >= amount || state.zones.battlefield.some(id => {
       const source = state.objects.get(id);
       // Konserwatywna bramka: obecność źródła zachowuje OKNO płatności.
       // Nie obiecuje ani nie wykonuje aktywacji — legalManaAbilities w ofercie

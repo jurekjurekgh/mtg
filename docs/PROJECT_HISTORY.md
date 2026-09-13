@@ -10416,3 +10416,47 @@ Regeneracje po zmianie trajektorii (przejrzane): fixture golden-mastera
 i progi M337/D (aggro domyka w 353 kroki, wygrana life_zero, tura 15 —
 czysto). Tabela talii w README zaktualizowana. Test-pin transpozycji x3.
 Bramki: pełna **5347/5347**.
+
+## 2026-09-13 — znaleziska A (Mana Cylix) + B (Esper Stormblade) (arena/01a096f0)
+
+A: Mana Cylix ({1},{T}: dowolny kolor) ignorowany w ofercie rzutów (czar {B} +
+Cylix + 2 lądy, brak Swampa → brak oferty). Root cause: silnik widział tylko
+źródła DARMOWE (koszt = samo {T}) — kosztowe (netto-0, konwertery walut) nie
+istniały w ofercie, na liście kreatora ani w płatności. Naprawa 3-częściowa:
+A1 — `untappedCostedManaSources` (longlista: {T}+mana, samo add_mana, lądy/
+poświęcenia/skutki-uboczne/re-używalne-bez-tapu poza) + `fundableCostedSources`
+(bramka warstwowa: koszty płaci baza darmowa ZANIM produkcja istnieje (CR
+601.2h) — (i'') suma, (ii') pipy w jednoznacznych jednostkach, (iv) joint
+pipy+wymagania jednym dopasowaniem, (iv-ścisły) tryb bez-pulowy) wpięta w
+`producibleMana` (5. parametr reqs, null = tryb ostrożny) i `planGrantManaColors`
+(jednostki bez wierszy — kształt nietknięty); A2 — kreator wystawia konwertery
+(produkcja ⊄ kosztu) z kosztem osobno (M311), czysta strata poza listą;
+A3 — `spendMana` odpala kosztowe (pipy: ostatnia deska w brakującym kolorze,
+suma: tylko netto-dodatnie) przez `tapCostedManaSource` (bramka-przed-mutacją,
+finansowanie świeże-pierwsze z `poolPaysFreely`, konsumpcja kosztu z preserve
+kolorów wymagań (nowy 5. parametr `consumeManaPool`), księgowanie lustrzane
+M201). Threading reqs przez walidatory/oferty (resources R1–R4, abilities
+B1–B5, spells S1–S9, game-state G1–G20, triggers T1–T3, effects E1); świadomie
+NIEtknięte (tryb ostrożny = brak oferty, ręczna aktywacja działa): lambda
+ofert ręki (phyrexian/kicker/morph) i lambdy ofert spells.js.
+B: Esper Stormblade ({W/B}{U}) — silnik sam wybrał W, kreator się nie otworzył.
+Root cause: solver jednoznaczności dostawał tylko ROZMIAR puli (poolMana):
+gałąź need<=0 zwracała 1 bez liczenia, a odcięcie size>=need ucinało zbiory
+kolorowo-wymuszone (0 wariantów) — w obu przypadkach cichy auto-tap pierwszego
+źródła. Naprawa: solver ZUNIFIKOWANY (pula (poolUnits z main.js) + tapnięty
+podzbiór; koszty M311 w podzbiorze; ∅-pierwsze; minimalność dokładna (nie
+odcięciem) — szybka (n−1) dla monotonicznych, pełna dla kosztowych; klucze
+M311 i cap-2 nietknięte).
+Lekcja L48 z benchmarku (dwa crashe offer→reject, seedy 2026/2033): oferta ≡
+płatność wymaga WSPÓLNYCH założeń o finansowaniu — (1) generic kosztu ze
+świeżych (nie z puli przypisanej pipom), (2) inwariant kolejności
+pipy-pierwsze/pula-pierwsza (bramka-(iv)/finansowanie-(1)/consume-matchPips),
+(3) REZERWA w spendMana (lądy/wolne tapują się tylko, gdy świeża baza po tapu
+kryje Σ kosztów albo świeże same domykają płatność; granty z planu zwolnione;
+tapnięcia konserwują jednostki w stronę puli, więc re-bramka przechodzi) oraz
+(4) pomijanie kosztowych spoza re-bramki (obrona w głąb). Luki świadome
+(bezpieczne = brak oferty): koszty z wildcardów puli, cykle współfinansowania
+(brak pary w rejestrze), grant+kosztowe ciasne. Testy: hybrid-mana-wizard-choice
+7 (B/0–B/6) + mana-cylix-costed-source 12 (A/0–A/11, w tym A/9 anty-korupcja
+M201 i A/10–A/11 kształty crashy). Bramki: pełna **5392/5392** (w tym
+bot-benchmark 10/10).

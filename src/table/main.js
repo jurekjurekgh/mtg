@@ -1977,9 +1977,14 @@ function bootstrapTable() {
     // gdy istnieje REALNY wybór płatności. Przy jednym użytecznym źródle i puli,
     // która sama nie pokrywa kosztu, wyboru nie ma — kreator tylko klika się
     // „dalej”, zamiast zapłacić. Reguła w `shouldOpenManaWizard` (testowalna).
+    // Znalezisko B (Esper Stormblade): solver dostaje JEDNOSTKI puli, nie tylko
+    // jej rozmiar — pula jest częścią płatności (kolory z puli vs dotapowane).
+    // Widok niesie tylko liczbę many; jednostki czyta się z pełnego stanu sesji
+    // (jak refreshManaWizard poniżej).
+    const poolUnits = expandManaPool(session.state?.players?.find((pl) => pl.id === HUMAN_ID)?.manaPool);
     if (!shouldOpenManaWizard({
       sources, poolMana: pool, totalNeeded: descriptor.totalNeeded,
-      requirements: descriptor.requirements,
+      requirements: descriptor.requirements, poolUnits,
     })) return null;
     return { ...descriptor, cmd };
   }

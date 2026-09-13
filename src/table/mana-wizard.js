@@ -153,7 +153,13 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
     const costMana = info.manaCost ?? 0;
     const activationGeneric = Math.max(0, costMana - costColors.length);
     const produkcja = info.amount ?? 0;
-    if (produkcja - activationGeneric <= 0) continue; // netto nic nie zyskujemy
+    if (produkcja <= 0) continue; // nic nie produkuje (jak dotąd)
+    // A (Mana Cylix {1},{T}: dowolny kolor): konwerter WALUT (produkcja wnosi
+    // kolory spoza kosztu) jest wyborem, nie stratą — netto-0 w SUMIE, ale
+    // netto-dodatni w KOLORACH. Z listy wypada tylko czysta strata (netto ≤ 0
+    // w sumie I produkcja ⊆ kosztu, np. hipotetyczne {1},{T}: Add {C}).
+    const addsNewColors = (info.colors ?? []).some((c) => !costColors.includes(c));
+    if (produkcja - activationGeneric <= 0 && !addsNewColors) continue;
     seen.add(cmd.objectId);
     sources.push({
       id: cmd.objectId, cardId: info.cardId, colors: info.colors ?? [], amount: produkcja,
@@ -429,66 +435,107 @@ export function coveredRequirementCount(sources, requirements) {
 
 /**
  * Solver jednoznaczności płatności (E.3a): liczy RÓŻNE warianty tapowania —
- * minimalne co do wielkości zbiory źródeł, które pokrywają sumę i WSZYSTKIE
- * wymagania kolorów (zbiór to multizbiór PROFILI: kolory+amount, bez id —
- * dwie Wyspy to ten sam profil). Przecięcie na 2: odpowiedź to 0/1/„2+”.
+ * minimalne co do zawierania zbiory źródeł, które razem z AKTUALNĄ PULĄ
+ * pokrywają sumę i WSZYSTKIE wymagania kolorów (zbiór to multizbiór PROFILI:
+ * rodzaj+kolory+amount+koszt, bez id — dwie Wyspy to ten sam profil).
+ * Przecięcie na `cap` (domyślnie 2): odpowiedź to 0/1/„2+”.
  *
  * 1 = płatność jednoznaczna (auto-tap M34), 2 = jest wybór (kreator),
  * 0 = nieopłacalne w ogóle (nie powinno się zdarzyć dla oferty z PlayerView).
+ *
+ * Model ZUNIFIKOWANY (znalezisko B, Esper Stormblade {W/B}{U}): płatność to
+ * pula (STAŁA — kolory many już wyprodukowanej są przesądzone) + tapnięty
+ * podzbiór źródeł. Stąd solver bierze jednostki puli (`poolUnits` —
+ * expandManaPool, te same co wizardProgress), nie tylko jej rozmiar:
+ * - pula {U,W} przy {W/B}{U} pokrywa wszystko (pusty podzbiór wystarcza) → 1;
+ * - pula {U} wymaga DOTAPOWANIA hybrydy (Plains albo Swamp) → 2 (kreator);
+ * - pula {G,G} (zła waluta) wymaga dotapowania WSZYSTKICH kolorów → 2.
+ * Wcześniej solver widział tylko liczbę many: gałąź need<=0 zwracała 1 bez
+ * liczenia, a odcięcie `size>=need` ucinało zbiory wymuszone kolorami
+ * (0 wariantów) — w obu przypadkach silnik cicho tapował pierwsze źródło
+ * w kolejności stołu i gracz tracił wybór hybrydy.
+ *
+ * MINIMALNOŚĆ jest dokładna (nie odcięciem rozmiaru): zbiór liczy się tylko,
+ * gdy ŻADEN jego podzbiór właściwy nie wystarcza (nad-tapnięcia nigdy nie są
+ * wymagane — auto-tap płaci minimalnie). Dla źródeł bez kosztów pokrycie jest
+ * monotoniczne, więc wystarcza test podzbiorów (n−1); z kosztami aktywacji
+ * (M311 — koszt rośnie ze zbiorem) skan pełny, memoizowany (L48 z silnikiem:
+ * koszty płacą pula/INNE źródła, nigdy produkcja własna).
  */
-export function countPaymentVariants(sources, poolMana, totalNeeded, requirements, cap = 2) {
-  const need = totalNeeded - Math.max(0, poolMana);
-  if (need <= 0 && requirements.length === 0) return 1;
-  if (need <= 0) {
-    // Suma z puli, ale kolory muszą pokryć nietapnięte źródła — sprawdź,
-    // czy pokrycie jest jednoznaczne co do profilu.
-    if (coveredRequirementCount(sources, requirements) >= requirements.length) return 1;
-    return 0;
-  }
+export function countPaymentVariants(sources, poolMana, totalNeeded, requirements, cap = 2, poolUnits = []) {
   const usable = sources.filter((s) => (s.amount ?? 1) > 0);
+  const poolObjs = poolUnits.map((colors) => ({ colors }));
   const variants = new Set();
-  const maxAmount = Math.max(0, ...usable.map((s) => s.amount ?? 1));
-  const minSize = Math.max(1, Math.ceil(need / Math.max(1, maxAmount)));
-  const subset = [];
-  const walk = (start, size, sumAmount) => {
-    if (variants.size >= cap) return;
-    // M311: źródła-zdolności z kosztem aktywacji doliczają go do
-    // zapotrzebowania (CR 601.2h — koszt płaci pula/inne źródła PRZED
-    // produkcją): generic do sumy, pipy kolorowe jako DODATKOWE wymagania
-    // pokrywane przez INNE wybrane źródła (produkcja tego źródła nie płaci
-    // własnego kosztu). Dokładne rozliczenie robi silnik (spendMana);
-    // tu decyduje kształt płatności i liczba realnych wariantów.
-    const costGeneric = subset.reduce((acc, s) => acc + (s.activationCost?.generic ?? 0), 0);
-    const costPips = subset.flatMap((s) => s.activationCost?.colors ?? []);
-    const allReqs = costPips.length > 0 ? [...requirements, ...costPips.map((c) => [c])] : requirements;
-    if (size >= minSize && sumAmount - costGeneric >= need) {
-      if (coveredRequirementCount(subset, allReqs) >= allReqs.length) {
-        // Zgłoszenie właściciela A (2026-09-10): klucz wariantu niesie też
-        // RODZAJ źródła. Forest i Scorned Villager produkują identyczne {G},
-        // ale to nie jest ten sam wybór — tapnięty STWÓR nie zaatakuje ani
-        // nie zablokuje w tej turze, więc przy tym samym profilu many gracz
-        // ma dwie realne decyzje i kreator musi się otworzyć. Dwa LĄDY o tym
-        // samym profilu zostają jednym kształtem (są zamienne).
-        const key = subset
-          .map((s) => `${s.kind ?? 'land'}:${[...s.colors].sort().join('')}#${s.amount ?? 1}#`
-            + (s.activationCost ? `${s.activationCost.generic}:${[...(s.activationCost.colors ?? [])].sort().join('')}` : '-'))
-          .sort()
-          .join('|');
-        variants.add(key);
-        if (variants.size >= cap) return;
-      }
-      // Dłuższe zbiory nie są minimalne — nie rozgałęziamy w głąb.
-      if (size >= need) return;
+  // Memo pokrycia po kanonicznym kluczu (sortowane id) — te same podzbiory
+  // wracają w teście minimalności i w różnych gałęziach DFS (ADR 0005:
+  // kolejność wejściowa źródeł, determinizm zachowany).
+  const coverMemo = new Map();
+  const sufficient = (subset) => {
+    const key = subset.map((s) => s.id).sort().join(',');
+    let hit = coverMemo.get(key);
+    if (hit === undefined) {
+      // M311: źródła-zdolności z kosztem aktywacji doliczają go do
+      // zapotrzebowania (CR 601.2h — koszt płaci pula/inne źródła PRZED
+      // produkcją): generic do sumy, pipy kolorowe jako DODATKOWE wymagania.
+      const costGeneric = subset.reduce((acc, s) => acc + (s.activationCost?.generic ?? 0), 0);
+      const costPips = subset.flatMap((s) => s.activationCost?.colors ?? []);
+      const allReqs = costPips.length > 0 ? [...requirements, ...costPips.map((c) => [c])] : requirements;
+      const net = subset.reduce((acc, s) => acc + (s.amount ?? 1), 0) - costGeneric;
+      hit = (poolMana + net >= totalNeeded)
+        && coveredRequirementCount(poolObjs.concat(subset), allReqs) >= allReqs.length;
+      coverMemo.set(key, hit);
     }
-    if (size >= need) return;
+    return hit;
+  };
+  const isMinimal = (subset) => {
+    // Bez kosztów pokrycie jest monotoniczne (więcej źródeł = więcej many
+    // i kolorów przy tych samych wymaganiach) — pokrywający podzbiór właściwy
+    // zawiera się w jakimś (n−1), więc test (n−1) jest dokładny.
+    if (!subset.some((s) => s.activationCost != null)) {
+      for (let skip = 0; skip < subset.length; skip += 1) {
+        if (sufficient(subset.filter((_, i) => i !== skip))) return false;
+      }
+      return true;
+    }
+    const n = subset.length;
+    for (let mask = 0; mask < (1 << n) - 1; mask += 1) {
+      const sub = subset.filter((_, i) => (mask >> i) & 1);
+      if (sub.length === n) continue;
+      if (sufficient(sub)) return false;
+    }
+    return true;
+  };
+  // Zgłoszenie właściciela A (2026-09-10): klucz wariantu niesie też RODZAJ
+  // źródła. Forest i Scorned Villager produkują identyczne {G}, ale to nie
+  // jest ten sam wybór — tapnięty STWÓR nie zaatakuje ani nie zablokuje
+  // w tej turze, więc przy tym samym profilu many gracz ma dwie realne
+  // decyzje i kreator musi się otworzyć. Dwa LĄDY o tym samym profilu
+  // zostają jednym kształtem (są zamienne).
+  const variantKey = (subset) => subset
+    .map((s) => `${s.kind ?? 'land'}:${[...s.colors].sort().join('')}#${s.amount ?? 1}#`
+      + (s.activationCost ? `${s.activationCost.generic}:${[...(s.activationCost.colors ?? [])].sort().join('')}` : '-'))
+    .sort()
+    .join('|');
+  // Pula sama wystarcza (suma + kolory) → dokładnie 1 wariant („zapłać
+  // z puli, niczego nie tapuj"); każdy niepusty zbiór jest wtedy nieminimalny.
+  if (sufficient([])) return 1;
+  const subset = [];
+  const walk = (start) => {
     for (let i = start; i < usable.length; i += 1) {
+      if (variants.size >= cap) return;
       subset.push(usable[i]);
-      walk(i + 1, size + 1, sumAmount + (usable[i].amount ?? 1));
+      if (sufficient(subset)) {
+        // Pokrywający zbiór odcina gałąź: każdy nadzbiór zawiera pokrywający
+        // podzbiór właściwy, więc jest nieminimalny z definicji.
+        if (isMinimal(subset)) variants.add(variantKey(subset));
+      } else {
+        walk(i + 1);
+      }
       subset.pop();
       if (variants.size >= cap) return;
     }
   };
-  walk(0, 0, 0);
+  walk(0);
   return variants.size;
 }
 
@@ -511,12 +558,14 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
  * main.js do postaci testowalnej — zachowanie bez zmian, ale teraz przypięte
  * testami (wcześniej reguła była inline i nie miała żadnego testu).
  */
-export function shouldOpenManaWizard({ sources, poolMana, totalNeeded, requirements }) {
+export function shouldOpenManaWizard({ sources, poolMana, totalNeeded, requirements, poolUnits = [] }) {
   // `countPaymentVariants` liczy RÓŻNE KSZTAŁTY płatności (deduplikacja po
-  // profilu źródła „kolory#ilość”), więc dwa identyczne lasy to JEDEN kształt,
-  // a jedno źródło przy koszcie, którego pula nie pokrywa, daje 0 albo 1 —
-  // w obu przypadkach wyboru nie ma i kreator jest zbędny.
-  const variants = countPaymentVariants(sources, poolMana, totalNeeded, requirements);
+  // profilu źródła „rodzaj:kolory#ilość#koszt”), więc dwa identyczne lasy to
+  // JEDEN kształt. `poolUnits` (jednostki kolorowej puli, te same co czyta
+  // wizardProgress) są częścią płatności: pula {U} przy hybrydzie {W/B}
+  // zostawia wybór Plains/Swamp graczowi (znalezisko B) — bez nich solver
+  // nie widziałby, że kolory trzeba dopiero dotapować.
+  const variants = countPaymentVariants(sources, poolMana, totalNeeded, requirements, 2, poolUnits);
   return variants >= 2;
 }
 
