@@ -261,7 +261,7 @@ export function hasEnduringStory(state, playerId) {
 }
 
 /**
- * Statyczne zdolności warunkowe (CR 604.3): deskryptor
+ * Statyczne zdolności warunkowe (CR 611.3a): deskryptor
  * `{ type: 'static', condition, pump, keywords }` daje buff, dopóki warunek
  * jest spełniony — nie jest to efekt „do końca tury", tylko ciągła własność
  * przeliczana przy każdym odczycie statystyk (Evangel of Synthesis: „as long
@@ -333,7 +333,7 @@ function staticConditionHolds(state, object, condition) {
       && (candidate.kind === 'artifact' || (candidate.types ?? []).includes('Artifact')));
   }
   // Gearsmith Prodigy: „as long as you control an artifact" — ten sam predykat
-  // co Ramroller, ale BEZ wykluczania samego źródła (CR 604.3: warunek
+  // co Ramroller, ale BEZ wykluczania samego źródła (CR 611.3a: warunek
   // statyczny liczony przy każdym odczycie charakterystyk). Artefaktem jest
   // wszystko z typem Artifact — także artefaktowy stwór czy pojazd.
   if (condition.controlsArtifact) {
@@ -412,13 +412,13 @@ function staticBonuses(state, object) {
     if (ability.scope) continue;
     if (!staticConditionHolds(state, object, ability.condition)) continue;
     // Dynamiczny pump (np. Emissary Escort): `power` bywa markerem zamiast
-    // liczbą — wartość liczona z planszy, nie stała w definicji (CR 604.3).
+    // liczbą — wartość liczona z planszy, nie stała w definicji (CR 611.3a).
     let power = ability.pump?.power ?? 0;
     if (power === 'greatest_mana_among_other_artifacts') {
       power = greatestManaAmongOtherArtifacts(state, object);
     }
     // Necrosquito (ONE): „This creature gets +1/+1 for each oil counter on
-    // it." — dynamiczny pump liczony z liczników oil obiektu (CR 604.3).
+    // it." — dynamiczny pump liczony z liczników oil obiektu (CR 611.3a).
     if (power === 'oil_counters') {
       power = (object.counters ?? {})['oil'] ?? 0;
     }
@@ -646,7 +646,7 @@ export function effectivePower(object, state = null) {
 
 /**
  * M188/A (uwaga właściciela): bonus P/T pochodzący z efektów CIĄGŁYCH,
- * których nie widać w polach obiektu — statyki warunkowe (CR 604.3, Evangel
+ * których nie widać w polach obiektu — statyki warunkowe (CR 611.3a, Evangel
  * of Synthesis: „as long as you've drawn two or more cards"), załączniki,
  * anthemy i buffy „do końca tury". Kafel pokazuje go jako badge.
  *

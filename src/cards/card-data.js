@@ -949,7 +949,7 @@ export const REAL_CARDS = Object.freeze([
           { type: 'discard_cards', amount: 1 },
         ],
       }),
-      // Zdolność STATYCZNA (CR 604.3): buff obowiązuje, dopóki warunek jest
+      // Zdolność STATYCZNA (CR 611.3a): buff obowiązuje, dopóki warunek jest
       // spełniony — przeliczany przy każdym odczycie statystyk, nie „do końca
       // tury\" (licznik dobrań zeruje się przy zmianie tury).
       createAbility({
@@ -1557,7 +1557,7 @@ export const REAL_CARDS = Object.freeze([
     artId: 100,
     plan: 'The Edge',
     support: { status: 'supported', limitations: [] },
-    notes: ['X = największa mana value wśród INNYCH artefaktów kontrolera (bez samego źródła), przeliczane przy odczycie statystyk (CR 604.3)'],
+    notes: ['X = największa mana value wśród INNYCH artefaktów kontrolera (bez samego źródła), przeliczane przy odczycie statystyk (CR 611.3a)'],
   }),
   defineCard({
     id: 'snarling-wolf', name: 'Snarling Wolf', set: 'VOW',
@@ -2711,7 +2711,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'This creature has reach as long as it has a +1/+1 counter on it. (It can block creatures with flying.)',
     imageUri: 'https://cards.scryfall.io/large/front/3/a/3a4c8964-06e4-4a24-9a7e-9cac0fb8518e.jpg?1783938582',
     abilities: [
-      // Zdolność STATYCZNA (CR 604.3): reach obowiązuje, dopóki źródło ma
+      // Zdolność STATYCZNA (CR 611.3a): reach obowiązuje, dopóki źródło ma
       // co najmniej jeden licznik +1/+1 — przeliczanie przy każdym odczycie
       // (warunek generyczny hasCounter, kwalifikacja licznika danymi).
       createAbility({
@@ -5053,7 +5053,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/7/2/72af72d2-5995-4cad-82f1-e2d0c465d6f1.jpg?1783918044',
     abilities: [
       // Static: „This creature gets +1/+1 for each oil counter on it."
-      // (CR 604.3) — dynamiczny pump liczony w staticBonuses (oil_counters);
+      // (CR 611.3a) — dynamiczny pump liczony w staticBonuses (oil_counters);
       // sam licznik oil nie daje P/T (audyt PR #41, B5).
       createAbility({
         type: ABILITY_TYPE.static,
@@ -10788,7 +10788,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     oracleText: 'This creature gets +1/+0 as long as you control an artifact.',
     imageUri: 'https://cards.scryfall.io/large/front/7/7/77d9e666-d9c9-4ccd-89a5-83de79677fa6.jpg?1783934589',
     abilities: [
-      // CR 604.3: warunek statyczny liczony przy każdym odczycie charakterystyk
+      // CR 611.3a: warunek statyczny liczony przy każdym odczycie charakterystyk
       // (ta sama ścieżka co Ramroller, ale bez „another" — sam typ Artifact).
       createAbility({
         type: ABILITY_TYPE.static,
