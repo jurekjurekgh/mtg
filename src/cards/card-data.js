@@ -7816,7 +7816,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     madness: { cost: 2, colors: ['B', 'R'] },
     artId: 534, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
-    notes: ['madness: odrzucenie trafia do exile z decyzją rzutu za {B}{R} (timing ignorowany — CR 702.35b, także sorcery poza main fazą); cel wybierany przy rzucie'],
+    notes: ['madness: odrzucenie trafia do exile z decyzją rzutu za {B}{R} (rzut w rozstrzyganiu zdolności — CR 702.35a; timing ignorowany, ruling DMU 2023-01-06, także sorcery poza main fazą); cel wybierany przy rzucie'],
   }),
 
 // ---- Batch 41 — transza D: triggery bojowe + intimidate ----
