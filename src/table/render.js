@@ -1117,6 +1117,17 @@ function describeEffect(e) {
     },
     // M184/Z2: opis niósł ani liczby kart, ani nagrody za odmowę
     // (Blanchwood Prowler: licznik +1/+1) — gracz nie znał stawki decyzji.
+    // M354 (Brightwood Tracker): ten sam kształt decyzji co Satyr Wayfinder,
+    // ale filtr to karta-stwór, a reszta wraca na spód biblioteki w kolejności
+    // losowej. Opis czyta deskryptor (filtr + miejsce reszty), nie nazwę karty
+    // (ADR 0002) — kolejna karta z tym efektem dostanie poprawny opis sama.
+    reveal_top_pick_card_rest_bottom: () => {
+      const n = e.amount ?? 4;
+      const co = (e.pickTypes ?? []).includes('Creature') ? 'stwora' : 'kartę';
+      const gdzie = (e.restTo ?? 'graveyard') === 'library_bottom' ? 'na spód biblioteki' : 'do grobu';
+      const jak = (e.restOrder ?? 'preserve') === 'random' ? ' (losowo)' : '';
+      return `odsłoń ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')} z wierzchu: możesz wziąć ${co} do ręki, reszta ${gdzie}${jak}`;
+    },
     reveal_top_pick_land_rest_grave: () => {
       const n = e.amount ?? 4;
       const base = `odsłoń ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')} z wierzchu: możesz wziąć ląd do ręki, reszta do grobu`;
@@ -1947,7 +1958,11 @@ function choiceSourceTitle(cmd, session, view) {
   // bez podpisu. Źródło jadę z pendingu jak u M162/C (karta na polu bitwy —
   // publiczna), nie z nazwy zaszytej w warstwie opisu.
   if (cmd?.type === 'resolve_satyr_look_choice' && view?.pendingSatyrLook?.sourceCardId) {
-    return `${session.nameOf(view.pendingSatyrLook.sourceCardId)} — bierz ląd z odsłoniętych kart`;
+    // M354: ta sama rodzina decyzji obsługuje Satyr Wayfinder (ląd) i
+    // Brightwood Tracker (stwór) — tytuł czyta FILTR z pendingu, więc nie
+    // wmawia graczowi lądu tam, gdzie karta pozwala wziąć stwora (L6).
+    const co = (view.pendingSatyrLook.pickTypes ?? []).includes('Creature') ? 'stwora' : 'ląd';
+    return `${session.nameOf(view.pendingSatyrLook.sourceCardId)} — bierz ${co} z odsłoniętych kart`;
   }
   // M251/B (audyt Żywym Testerem, partia worek-mroczny/ravnica s=41): decyzja
   // Manifest Dread otwierała modal z generycznym „Wybierz: Wariant (2 opcje)"

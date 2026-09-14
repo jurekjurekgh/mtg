@@ -10,6 +10,9 @@ import { addMana } from '../src/engine/resources.js';
 import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
 import { addCounter } from '../src/engine/counters.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
+import { describeGameEvent } from '../src/table/session.js';
+import { choiceGroupTitle } from '../src/table/render.js';
 
 /**
  * Batch 55 (2026-09-14) — karty właściciela: 23, 609–617.
@@ -570,4 +573,179 @@ test('B55/B3: 615 Tah-Crop Skirmisher — bez {3}{U} brak oferty, odrzucona kome
 
   addMana(s, 'p1', 4, { colors: ['U'] });
   assert.ok(offer(), 'właściwy koszt kolorowy odblokowuje ofertę');
+});
+
+// ---------------------------------------------------------------------------
+// B4 (M354) — 23 Brightwood Tracker (podgląd wierzchu biblioteki)
+//
+// Oracle (snapshot `docs/cards/scryfall-brightwood-tracker.json`, 0 rulingów):
+// „{5}{G}, {T}: Look at the top four cards of your library. You may reveal
+// a creature card from among them and put it into your hand. Put the rest on
+// the bottom of your library in a random order.” Rodzina decyzji jest ta sama
+// co Satyr Wayfinder (`pendingSatyrLook`): „you may” + zbiór KANDYDATÓW, ale
+// filtr to karta-stwór, a reszta wraca na SPÓD w LOSOWEJ kolejności.
+// ---------------------------------------------------------------------------
+
+sanity('brightwood-tracker', 23, 'M20', 'Lorwyn');
+
+/** Wierzch biblioteki gracza wg `cardIds` (indeks 0 = wierzch). Zwraca id obiektów. */
+function setLibraryTop(s, playerId, cardIds) {
+  const ids = cardIds.map((cardId, i) => {
+    const id = `top-${playerId}-${i}`;
+    put(s, id, cardId, playerId, 'library');
+    return id;
+  });
+  s.zones.library = [...ids, ...s.zones.library.filter((id) => !ids.includes(id))];
+  return ids;
+}
+
+const lookOffers = (s, p = 'p1') => commands(s, p).filter((c) => c.type === 'resolve_satyr_look_choice');
+
+function activateTracker(s, id = 'tracker') {
+  addMana(s, 'p1', 6, { colors: ['G'] });
+  run(s, commands(s).find((c) => c.type === 'activate_ability' && c.objectId === id));
+  resolve(s);
+}
+
+test('B55/B4: 23 Brightwood Tracker — {5}{G}, {T}: brak oferty bez many, odrzucona komenda nie tapuje', () => {
+  const s = game();
+  put(s, 'tracker', 'brightwood-tracker', 'p1', 'battlefield');
+  const offer = () => commands(s).find((c) => c.type === 'activate_ability' && c.objectId === 'tracker');
+  assert.equal(offer(), undefined, 'brak many = brak oferty');
+
+  addMana(s, 'p1', 6, { colors: ['R'] });
+  assert.equal(offer(), undefined, 'sześć many złego koloru nie pokrywa {G} (CR 118.2)');
+
+  const r = execute(s, { type: 'activate_ability', playerId: 'p1', objectId: 'tracker', abilityIndex: 0 });
+  assert.equal(r.ok, false);
+  assert.equal(s.objects.get('tracker').tapped, false, 'odrzucona aktywacja nie tapuje źródła');
+
+  addMana(s, 'p1', 6, { colors: ['G'] });
+  assert.ok(offer(), 'właściwy koszt kolorowy odblokowuje ofertę');
+});
+
+test('B55/B4: 23 Brightwood Tracker — stwór z wierzchu do ręki, reszta NA SPÓD (nie do grobu)', () => {
+  const s = game();
+  put(s, 'tracker', 'brightwood-tracker', 'p1', 'battlefield');
+  const [a, b, c, d] = setLibraryTop(s, 'p1', ['rotting-legion', 'douse-in-gloom', 'kin-tree-nurturer', 'basic-island']);
+  activateTracker(s);
+
+  const picks = lookOffers(s).filter((x) => x.pickId != null);
+  assert.deepEqual(picks.map((x) => x.pickId), [a, c], 'kandydaci to WYŁĄCZNIE karty-stwory z obejrzanych');
+  assert.ok(lookOffers(s).some((x) => x.pickId === null), '„You may” — rezygnacja też jest w ofercie');
+  assert.ok(lookOffers(s).every((x) => !('bottomOrder' in x)), 'gracz nie wybiera kolejności spodu („in a random order”)');
+
+  run(s, lookOffers(s).find((x) => x.pickId === c));
+  // Zmiana strefy tworzy NOWY obiekt (CR 400.7) — szukamy karty po cardId,
+  // nie po id z biblioteki (id z `top-*` zostaje w bibliotece jako „znikło”).
+  const wRece = inZone(s, 'kin-tree-nurturer', 'hand');
+  assert.ok(wRece, 'karta-stwór trafia do ręki');
+  assert.equal(wRece.controllerId, 'p1');
+  assert.deepEqual([...s.zones.library.slice(-3)].sort(), [a, b, d].sort(), 'pozostałe trzy leżą na DOLNYCH trzech miejscach biblioteki');
+  assert.equal(s.events.filter((e) => e.type === 'object_moved' && e.milled).length, 0, 'to nie Satyr Wayfinder: NIC nie idzie do grobu');
+  const revealed = s.events.filter((e) => e.type === 'object_moved' && e.toZone === 'hand' && e.revealed);
+  assert.equal(revealed.length, 1, 'karta wchodzi do ręki jako ODSŁONIĘTA (CR 701.3)');
+});
+
+test('B55/B4: 23 Brightwood Tracker — kolejność spodu jest seedowana (replay), nie wybierana przez gracza', () => {
+  const bottomAfterPick = () => {
+    const s = game();
+    put(s, 'tracker', 'brightwood-tracker', 'p1', 'battlefield');
+    const [a] = setLibraryTop(s, 'p1', ['rotting-legion', 'kin-tree-nurturer', 'douse-in-gloom', 'basic-island']);
+    activateTracker(s);
+    run(s, lookOffers(s).find((x) => x.pickId === a));
+    return s.zones.library.slice(-3);
+  };
+  const pierwszy = bottomAfterPick();
+  const drugi = bottomAfterPick();
+  assert.deepEqual(pierwszy, drugi, 'ten sam seed = ta sama kolejność spodu (ADR 0005: replay partii)');
+  assert.equal(pierwszy.length, 3, 'trzy pozostałe karty na spodzie');
+});
+
+test('B55/B4: 23 Brightwood Tracker — bez stwora w czterech: tylko rezygnacja, wszystko na spód', () => {
+  const s = game();
+  put(s, 'tracker', 'brightwood-tracker', 'p1', 'battlefield');
+  const ids = setLibraryTop(s, 'p1', ['douse-in-gloom', 'act-of-treason', 'basic-island', 'bomat-bazaar-barge']);
+  activateTracker(s);
+
+  assert.deepEqual(lookOffers(s).filter((x) => x.pickId != null), [], 'nie ma czego wziąć — żadnej oferty karty');
+  const decline = lookOffers(s).find((x) => x.pickId == null);
+  assert.ok(decline, 'oferta rezygnacji jest zawsze („You may”)');
+  run(s, decline);
+
+  assert.equal(s.events.filter((e) => e.type === 'object_moved' && e.toZone === 'hand').length, 0, 'nic nie trafiło do ręki');
+  assert.deepEqual([...s.zones.library.slice(-4)].sort(), [...ids].sort(), 'wszystkie cztery karty na spodzie biblioteki');
+  assert.equal(s.events.filter((e) => e.type === 'object_moved' && e.milled).length, 0, 'nic do grobu');
+});
+
+test('B55/B4: 23 Brightwood Tracker — biblioteka krótsza niż cztery karty: patrzy na tyle, ile jest', () => {
+  const s = game();
+  put(s, 'tracker', 'brightwood-tracker', 'p1', 'battlefield');
+  const [creature, land] = setLibraryTop(s, 'p1', ['kin-tree-nurturer', 'basic-island']);
+  // biblioteka gracza = dokładnie te dwie karty: trzy Swampy z `game()`
+  // przenosimy na wygnanie RUchem strefowym (ręczne przepisanie
+  // `zones.library` zostawiłoby obiekty bez strefy — niespójny stan).
+  for (const id of [...s.zones.library]) {
+    if (id === creature || id === land) continue;
+    if (s.objects.get(id)?.controllerId === 'p1') moveObjectDirectly(s, id, 'exile', `exile-${id}`);
+  }
+  assert.equal(s.zones.library.filter((id) => s.objects.get(id)?.controllerId === 'p1').length, 2, 'biblioteka gracza ma 2 karty');
+  activateTracker(s);
+
+  const started = s.events.filter((e) => e.type === 'satyr_look_started');
+  assert.equal(started.length, 1);
+  assert.equal(started[0].count, 2, 'tyle kart, ile jest („look at the top four” bez dobierania na siłę)');
+  const picks = lookOffers(s).filter((x) => x.pickId != null);
+  assert.deepEqual(picks.map((x) => x.pickId), [creature], 'jedyny stwór jest kandydatem');
+  run(s, picks[0]);
+  assert.ok(inZone(s, 'kin-tree-nurturer', 'hand'), 'stwór do ręki (nowy obiekt po zmianie strefy)');
+  assert.equal(s.zones.library.at(-1), land, 'reszta (jedna karta) na spód');
+});
+
+test('B55/B4: 23 Brightwood Tracker — bot bierze NAJLEPSZEGO stwora, a bez stwora rezygnuje', () => {
+  const bot = createHeuristicBot({ seed: 7 });
+  const s = game();
+  put(s, 'tracker', 'brightwood-tracker', 'p1', 'battlefield');
+  const [best, , ,] = setLibraryTop(s, 'p1', ['rotting-legion', 'typhoid-rats', 'basic-island', 'douse-in-gloom']);
+  activateTracker(s);
+  const chosen = bot.chooseCommand(playerView(s, 'p1'));
+  assert.equal(chosen.type, 'resolve_satyr_look_choice');
+  assert.equal(chosen.pickId, best, 'wycena P*2+T wybiera 4/5 nad 1/1');
+
+  const s2 = game();
+  put(s2, 'tracker', 'brightwood-tracker', 'p1', 'battlefield');
+  setLibraryTop(s2, 'p1', ['douse-in-gloom', 'act-of-treason', 'basic-island', 'bomat-bazaar-barge']);
+  activateTracker(s2);
+  const bezStwora = bot.chooseCommand(playerView(s2, 'p1'));
+  assert.equal(bezStwora.type, 'resolve_satyr_look_choice');
+  assert.equal(bezStwora.pickId, null, 'bez kandydata jedyna sensowna oferta to rezygnacja');
+});
+
+test('B55/B4: 23 Brightwood Tracker — etykiety: modal i log mówią o STWORZE i o spodzie biblioteki', () => {
+  const s = game();
+  put(s, 'tracker', 'brightwood-tracker', 'p1', 'battlefield');
+  setLibraryTop(s, 'p1', ['kin-tree-nurturer', 'basic-island', 'douse-in-gloom', 'bomat-bazaar-barge']);
+  activateTracker(s);
+
+  const view = playerView(s, 'p1');
+  const title = choiceGroupTitle(
+    { type: 'satyr_look', options: lookOffers(s) },
+    { nameOf: (cardId) => registry.get(cardId)?.name ?? cardId },
+    view,
+  );
+  assert.match(title, /Brightwood Tracker/, `tytuł nazywa źródło: ${title}`);
+  assert.match(title, /stwora/, `tytuł nazywa to, co wolno wziąć: ${title}`);
+  assert.doesNotMatch(title, /ląd/, `tytuł nie mówi o lądzie (Satyr Wayfinder to inna karta): ${title}`);
+
+  const helpers = { nameOf: (cardId) => registry.get(cardId)?.name ?? cardId, nameOfObject: () => '?', isPlayer: (id) => id === 'p1' || id === 'p2' };
+  const started = s.events.find((e) => e.type === 'satyr_look_started');
+  const logStarted = describeGameEvent(started, helpers, { p1: 'Ty', p2: 'Nieprzyjaciel' });
+  assert.match(logStarted, /stwora/, `log startu nazywa stwora: ${logStarted}`);
+  assert.match(logStarted, /spód|na spód/, `log mówi, gdzie idzie reszta: ${logStarted}`);
+
+  run(s, lookOffers(s).find((x) => x.pickId != null));
+  const resolved = s.events.filter((e) => e.type === 'satyr_look_resolved').at(-1);
+  const logResolved = describeGameEvent(resolved, helpers, { p1: 'Ty', p2: 'Nieprzyjaciel' });
+  assert.match(logResolved, /Kin-Tree Nurturer/, `log nazywa wziętą kartę (właściciel widzi): ${logResolved}`);
+  assert.match(logResolved, /spód/, `log mówi o spodzie biblioteki: ${logResolved}`);
 });

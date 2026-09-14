@@ -2176,17 +2176,35 @@ export function execute(state, input) {
     if (cmd.playerId !== state.pendingSatyrLook.playerId) return reject('satyr_look_not_your_decision');
     const pending = state.pendingSatyrLook;
     const pickId = cmd.pickId ?? null;
-    if (pickId != null && !pending.landIds.includes(pickId)) return reject('illegal_satyr_look_choice');
+    if (pickId != null && !pending.pickIds.includes(pickId)) return reject('illegal_satyr_look_choice');
     const handId = pickId != null ? `hand-${state.objectSequence++}` : null;
     if (handId != null) {
       const movedHand = moveObjectDirectly(state, pickId, 'hand', handId);
       state.events.push(event('object_moved', { fromId: pickId, object: movedHand, fromZone: 'library', toZone: 'hand', revealed: true }));
     }
     const rest = pending.objectIds.filter((id) => id !== pickId);
-    for (const id of rest) {
-      const graveId = `grave-${state.objectSequence++}`;
-      const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
-      state.events.push(event('object_moved', { fromId: id, object: movedGrave, fromZone: 'library', toZone: 'graveyard', milled: true }));
+    const restTo = pending.restTo ?? 'graveyard';
+    if (restTo === 'library_bottom') {
+      // M354 (Brightwood Tracker): „Put the rest on the bottom of your library
+      // in a random order” — kolejność losowa sterowana seedem (ADR 0005, ta
+      // sama reguła co tasowanie biblioteki), więc partia odtwarza się z seeda.
+      // Gracz NIE ma tu wyboru: przy „in any order” (Merchant's Dockhand,
+      // Rediscover the Way) kolejność jedzie w komendzie jako `bottomOrder`,
+      // a tu nie ma takiego parametru.
+      const ordered = (pending.restOrder ?? 'preserve') === 'random'
+        ? shuffle(rest, state.seed + state.objectSequence)
+        : rest;
+      const bottomSet = new Set(ordered);
+      state.zones.library = [...state.zones.library.filter((id) => !bottomSet.has(id)), ...ordered];
+      for (const id of ordered) {
+        state.events.push(event('object_moved', { fromId: id, object: state.objects.get(id), fromZone: 'library', toZone: 'library', toBottom: true, looked: true }));
+      }
+    } else {
+      for (const id of rest) {
+        const graveId = `grave-${state.objectSequence++}`;
+        const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
+        state.events.push(event('object_moved', { fromId: id, object: movedGrave, fromZone: 'library', toZone: 'graveyard', milled: true }));
+      }
     }
     state.pendingSatyrLook = null;
     // Batch 44 (Blanchwood Prowler): „If you don't, put a +1/+1 counter on
@@ -2202,7 +2220,12 @@ export function execute(state, input) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
     state.events.push(event('satyr_look_resolved', {
-      playerId: pending.playerId, count: pending.objectIds.length, pickId, pickCardId: handId != null ? (state.objects.get(handId)?.cardId ?? null) : null,
+      playerId: pending.playerId, count: pending.objectIds.length, pickId,
+      pickCardId: handId != null ? (state.objects.get(handId)?.cardId ?? null) : null,
+      // M354: miejsce i porządek reszty jedzie ze zdarzeniem — warstwa opisu
+      // nie zgaduje ich z nazwy karty, a log nie kłamie o grobie (L6).
+      pickTypes: [...(pending.pickTypes ?? [])],
+      restTo, restOrder: pending.restOrder ?? 'preserve',
     }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - (rest.length + 2)) });
   }
@@ -6904,8 +6927,8 @@ export function playerView(state, playerId) {
     // flagę, żeby UI opisało stawkę decyzji.
     const satyrExtra = pending.counterIfNoneSourceId ? { counterIfNone: true } : {};
     legalCommands.push(command('resolve_satyr_look_choice', playerId, { pickId: null, ...satyrExtra }));
-    for (const landId of pending.landIds) {
-      legalCommands.push(command('resolve_satyr_look_choice', playerId, { pickId: landId, ...satyrExtra }));
+    for (const pickId of pending.pickIds) {
+      legalCommands.push(command('resolve_satyr_look_choice', playerId, { pickId, ...satyrExtra }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeRevealChoice) {
     // M158/Batch 39 (Invasion of the Giants II): „you may reveal a Giant
@@ -7809,6 +7832,13 @@ export function playerView(state, playerId) {
     pendingSatyrLook: activeSatyrLook
       ? {
         sourceCardId: state.pendingSatyrLook.sourceCardId ?? null,
+        // M354: dekoder decyzji — co wolno wziąć (filtr typu) i gdzie idzie
+        // reszta (grób / spód). Tytuł modala nazywa to z DANYCH, nie z nazwy
+        // karty (ADR 0002; Satyr Wayfinder bierze ląd, Brightwood Tracker
+        // stwora — ta sama rodzina decyzji).
+        pickTypes: Object.freeze([...(state.pendingSatyrLook.pickTypes ?? [])]),
+        restTo: state.pendingSatyrLook.restTo ?? 'graveyard',
+        restOrder: state.pendingSatyrLook.restOrder ?? 'preserve',
         // A1 (audyt PR #100): efekt każe odsłonić wierzch biblioteki
         // WYŁĄCZNIE jej właścicielowi (CR 701.3 „look at"), więc widok nosi
         // dane kandydatów tylko dla decydenta — dokładnie jak

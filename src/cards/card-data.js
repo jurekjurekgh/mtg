@@ -10741,7 +10741,26 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Elf', 'Scout'], colors: ['G'], power: 2, toughness: 4, manaCost: 4,
     oracleText: '{5}{G}, {T}: Look at the top four cards of your library. You may reveal a creature card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.',
     imageUri: 'https://cards.scryfall.io/large/front/e/1/e1fb9767-29bf-4a69-b37c-0925d41f6b46.jpg?1783932968',
-    artId: 23, plan: 'Lorwyn', support: { status: 'in-development', limitations: [] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        // {5}{G}, {T} — koszt many z zielonym pipem (CR 118.2) i zatapnięcie.
+        cost: { mana: 5, colors: ['G'], tap: true },
+        // „Look at the top four cards… You may reveal a creature card from
+        // among them and put it into your hand. Put the rest on the bottom of
+        // your library in a random order.” Ta sama rodzina decyzji co Satyr
+        // Wayfinder („you may” + kandydaci), ale filtr to karta-stwór,
+        // a reszta wraca NA SPÓD w kolejności losowej (seed z silnika).
+        effect: {
+          type: 'reveal_top_pick_card_rest_bottom',
+          amount: 4,
+          pickTypes: ['Creature'],
+          restTo: 'library_bottom',
+          restOrder: 'random',
+        },
+      }),
+    ],
+    artId: 23, plan: 'Lorwyn', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({

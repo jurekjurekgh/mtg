@@ -5371,9 +5371,19 @@ function markTemporaryExile(state, exileId, sourceObject) {
   // hand. Put the rest into your graveyard.” — blokująca decyzja kontrolera:
   // może wybrać LĄD z odsłoniętych do ręki (lub zrezygnować — „you may”);
   // reszta (i te bez wyboru) idzie do grobu. Nowy pendingSatyrLook.
-  if (effect.type === 'reveal_top_pick_land_rest_grave') {
+  // M354: rodzina „odsłoń wierzch, weź kartę z FILTRA, resztę połóż w strefie”.
+  // Deskryptor niesie filtr (`pickTypes`), cel reszty (`restTo`) i sposób jej
+  // ułożenia (`restOrder`) — bez gałęzi po nazwie karty (ADR 0002):
+  //   • reveal_top_pick_land_rest_grave  — Satyr Wayfinder, Blanchwood Prowler:
+  //     ląd do ręki, reszta do grobu (domyślne wartości pól niosą ten wariant);
+  //   • reveal_top_pick_card_rest_bottom — Brightwood Tracker: karta-stwór do
+  //     ręki, reszta NA SPÓD biblioteki w kolejności LOSOWEJ.
+  if (effect.type === 'reveal_top_pick_land_rest_grave' || effect.type === 'reveal_top_pick_card_rest_bottom') {
     const controllerId = sourceObject.controllerId;
     const n = effect.amount ?? 4;
+    const pickTypes = effect.pickTypes ?? ['Land'];
+    const restTo = effect.restTo ?? 'graveyard';
+    const restOrder = effect.restOrder ?? 'preserve';
     const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, n);
     // Batch 44 (Blanchwood Prowler): „mill three... You may put a land card
     // from among the cards milled this way into your hand. If you don't, put
@@ -5386,11 +5396,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
       }
       return;
     }
-    const landIds = topIds.filter((id) => {
+    const pickIds = topIds.filter((id) => {
       const o = state.objects.get(id);
-      return o && ((o.kind ?? '') === 'land' || (o.types ?? []).includes('Land'));
+      if (!o) return false;
+      const types = o.types ?? [];
+      // `kind` to ta sama informacja w innej postaci (land/creature/artifact) —
+      // akceptujemy oba źródła, jak dotychczasowa bramka lądów.
+      return pickTypes.some((t) => types.includes(t) || (o.kind ?? '') === t.toLowerCase());
     });
-    if (effect.counterIfNone && landIds.length === 0) {
+    if (effect.counterIfNone && pickIds.length === 0) {
       for (const id of topIds) {
         const graveId = `grave-${state.objectSequence++}`;
         const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
@@ -5405,7 +5419,13 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.pendingSatyrLook = {
       playerId: controllerId,
       objectIds: [...topIds],
-      landIds: [...landIds],
+      // `pickIds` = karty z odsłoniętych, które wolno wziąć (filtr typu).
+      // Rodzina nazywa się historycznie „satyrLook” (pierwsza karta z tą
+      // decyzją), ale obsługuje też Brightwood Tracker — pole jest wspólne.
+      pickIds: [...pickIds],
+      pickTypes: [...pickTypes],
+      restTo,
+      restOrder,
       // M240/B (zgłoszenie): tytuł decyzji nazywa ŹRÓDŁO (karta na polu
       // bitwy — informacja publiczna). Bez tego modal mówił „Wybierz:
       // Wariant (N opcji)” — gracz nie wiedział, jakiej to karty decyzja.
@@ -5416,7 +5436,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('satyr_look_started', {
       playerId: controllerId, count: topIds.length,
-      landCount: landIds.length,
+      // Logi i modal nazywają to, co wolno wziąć, oraz miejsce reszty —
+      // warstwa opisu nie zgaduje ich z nazwy karty (L6, ADR 0002).
+      pickCount: pickIds.length,
+      pickTypes: [...pickTypes],
+      restTo, restOrder,
       cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
     }));
     return true;

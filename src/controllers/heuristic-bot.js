@@ -467,7 +467,8 @@ export const DECK_ARRANGING_EFFECTS = new Set([
 export const STACKING_ACTIVATED_EFFECTS = new Set([
   'pump', 'pump_enchanted_creature', 'add_counter', 'add_mana', 'damage',
   'damage_each_opponent', 'draw_cards', 'discard_cards', 'create_token',
-  'create_copy_token', 'create_token_copy_of_source', 'station_counters', 'scry', 'regenerate',
+  'create_copy_token', 'create_token_copy_of_source', 'reveal_top_pick_card_rest_bottom',
+  'station_counters', 'scry', 'regenerate',
   'search_library_to_battlefield', 'search_library_to_battlefield_tapped',
   'put_graveyard_card_on_bottom', 'return_to_battlefield_tapped',
   'return_to_battlefield_under_control_at_upkeep', 'unearth_return',
@@ -858,6 +859,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return_permanent_from_graveyard: (e, view) => ((view.zones.graveyard ?? []).some((o) => o.controllerId === view.playerId) ? 10 : 0),
     put_graveyard_card_on_top: () => 4,
     reveal_top_pick_land_rest_grave: () => 5,
+    reveal_top_pick_card_rest_bottom: () => 6, // karta-stwór do ręki (M354)
     opponent_hand_card_to_top: () => 3,
     discard_each_opponent: () => 3,
     take_initiative: () => 6,
@@ -5113,6 +5115,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') {
             const drawAmount = Number.isInteger(effect.amount) ? effect.amount : 1;
             score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
+          }
+          // M354 (Brightwood Tracker): „zobacz N z wierzchu, weź kartę z filtra
+          // do ręki” z AKTYWOWANEJ zdolności — ta rodzina miała wycenę tylko
+          // w tabeli ETB (Satyr Wayfinder), więc aktywacja zostawała na bazie 2
+          // (L41: bliźniacze gałęzie czarów/zdolności idą razem).
+          if (effect.type === 'reveal_top_pick_card_rest_bottom'
+              || effect.type === 'reveal_top_pick_land_rest_grave') {
+            const ownLibrary = (view.zones.library ?? []).filter((o) => o.controllerId === view.playerId).length;
+            score += ownLibrary > 0 ? P.drawCardValue : -20;
           }
           // Batch 52 (Jolrael, Mwonvuli Recluse): „{4}{G}{G}: twoje stwory
           // mają bazowe X/X do końca tury (X = karty w ręce)". Bez wyceny
