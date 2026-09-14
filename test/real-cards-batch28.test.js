@@ -320,7 +320,8 @@ test('Expose to Daylight: niszczy artefakt/enchantment + scry 1', () => {
 test('Etherium Abomination: unearth z grobu — haste, exile na end step', () => {
   const state = mainPhase(game());
   addRealCard(state, 'ea', 'etherium-abomination', 'p1', 'graveyard');
-  // Unearth {1}{U}{B} (znalezisko właściciela K, 2026-09-14): TRZY many,
+  // Unearth {1}{U}{B} (audyt własny K, 2026-09-14 — starszy błąd danych,
+  // wykryty przy przeglądzie całego rejestru): TRZY many,
   // nie dwie — {U}{B} to była zaniżona wartość w danych karty.
   addMana(state, 'p1', 2, { colors: ['U', 'B'] });
   addMana(state, 'p1', 1, {});

@@ -2331,3 +2331,16 @@ duplikaty etykiet dla różnych kart; teraz zależą od jawnych wejść na stó�
 
 **Strażnik:** `test/m339-cloak-numeracja-fow.test.js` — pełny widok dla czterech
 wariantów zakrytych kart, etykiety obu widzów, ciągłość po obrocie/przejęciu.
+
+
+## L142 (2026-09-14) — Proweniencja znaleziska to fakt, nie ozdobnik: nie przypisuj właścicielowi słów, których nie napisał
+
+**Reguła:** „zgłoszenie właściciela" wolno wpisać tylko wtedy, gdy jego słowa
+są zacytowane w tej sesji albo w repo. Audyt z własnej inicjatywy jest równie
+dobry, ale musi być nazwany („audyt własny") — inaczej dokument kłamie
+o historii i zrzuca na właściciela odpowiedzialność za cudzy błąd.
+2026-09-14c: 4 realne rozjazdy kosztów zdolności (m.in. Embalm −1 many —
+błąd wprowadzony przez agenta w batchu 55) opisano jako „zgłoszenie
+właściciela"; sprostowanie objęło plan, historię, milestone, handoff i 2 testy.
+
+**Strażnik:** zwyczaj; sprostowanie w `docs/PROJECT_HISTORY.md` § 2026-09-14c.

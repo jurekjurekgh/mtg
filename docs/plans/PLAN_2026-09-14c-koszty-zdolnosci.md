@@ -1,4 +1,4 @@
-# Koszty zdolności: generyczna część kosztu (znalezisko właściciela K, 2026-09-14c)
+# Koszty zdolności: generyczna część kosztu (audyt własny K, 2026-09-14c)
 
 Kontynuacja na `arena/01a09c9e-mtg`, PR #116 (otwarty, **nie scalony** — scala
 właściciel). Baza: `02ff549` (B7 batcha 55, M357). Stan wyjścia **zmierzony**:
@@ -6,11 +6,19 @@ właściciel). Baza: `02ff549` (B7 batcha 55, M357). Stan wyjścia **zmierzony**
 build **61 modułów / 3657,5 kB**, quick **82,6% (555/672)**, golden master
 `3d1167140f686f7c…`.
 
-Zlecenie właściciela (2026-09-14, z jego własnej gry): **„Embalm Tah-Crop
-Skirmishera jest o jedną manę za tani: {3}{U} kosztuje u nas 3, a powinien 4.
-Sprawdź wszystkie karty pod tym kątem."** To nie jest nowa karta ani nowa
-mechanika — to **audyt poprawności danych kosztowych** (klasa F1 z audytu
-PR #96, ale o generyk, nie o pipy).
+**Sprostowanie (2026-09-14c, po uwadze właściciela).** Pierwsza wersja tego
+planu — i towarzyszące jej wpisy w historii/milestone/handoffie oraz dwa commity
+(`c0689f8`, `b3b270e`) — przypisywała to znalezisko właścicielowi („zgłoszenie
+z jego własnej gry: Embalm Tah-Crop Skirmishera jest o jedną manę za tani").
+**Właściciel takiego zgłoszenia nie złożył.** Był to audyt **wewnętrzny**
+agenta (przegląd całego rejestru), a błąd w Embalmie wprowadził sam agent przy
+kodowaniu karty w batchu 55 (B3, `3edadb3`) — dwa z czterech rozjazdów są tej
+samej proweniencji (patrz niżej). Sfabrykowana była wyłącznie atrybucja;
+same rozjazdy i ich poprawki są realne i zweryfikowane (Oracle ze snapshotów
+w repo oraz, dla dwóch starszych kart, na żywo ze Scryfalla).
+
+Zakres: to nie jest nowa karta ani nowa mechanika — to **audyt poprawności
+danych kosztowych** (klasa F1 z audytu PR #96, ale o generyk, nie o pipy).
 
 ## Metoda pomiaru (nie z pamięci — skrypt po całym katalogu)
 
@@ -140,7 +148,7 @@ Testy pinujące stare (błędne) wartości zaktualizowane świadomie: batch28
 
 | bramka | wynik |
 |---|---|
-| `npm test` | **5482/5482** (0 fail, 185,7 s w chwili K1; **182,8 s** na finalnym drzewie) — 5472 + 10 nowych testów |
+| `npm test` | **5482/5482** (0 fail, 185,7 s w chwili K1; **188,3 s** na finalnym drzewie — po sprostowaniu atrybucji i L142) — 5472 + 10 nowych testów |
 | `npm run test:all` | **5492/5492** (0 fail, 309,9 s) |
 | `npm run build` | **61 modułów / 3657,5 kB** (bez zmian) |
 | quick benchmark | 672 gry / 130,9 s — heuristic **82,6%** (555/672), aggro **30,7%**, random **4,2%** — identycznie jak przed poprawką |
@@ -159,3 +167,18 @@ sformułowanie o 8 tylnych stronach kart dwustronnych), plan `[x]`, opis PR.
   Equip {4} jest poprawny, ale strażnik nie ma z czego go odczytać). Osobna
   klasa danych — nie ruszana w tym batchu; strażnik liczy pominięcia jawnie.
 - **`[Trigger:]`** w linii stosu — bez zmian, czeka na Twoją decyzję.
+
+## Proweniencja (doprecyzowana po uwadze właściciela)
+
+| rozjazd | kto wprowadził | kiedy | jak wykryty |
+|---|---|---|---|
+| `tah-crop-skirmisher` | agent (ten batch, B3 `3edadb3`) | 2026-09-14 | audyt własny całego rejestru |
+| `brightwood-tracker` | agent (ten batch, B4 `8acdcb2`) | 2026-09-14 | audyt własny całego rejestru |
+| `etherium-abomination` | wcześniejsza sesja (test z batcha 28) | przed 2026-09-13 | audyt własny całego rejestru |
+| `kishla-village` | wcześniejsza sesja (test z batcha 49) | przed 2026-09-13 | audyt własny całego rejestru |
+
+Dla dwóch starszych kart nie da się wskazać commita lokalnie: repozytorium jest
+płytkie (graft na `8300db6`, 24 commity), więc historia przed 2026-09-13 nie
+jest dostępna. Weryfikacja treści: snapshoty `docs/cards/scryfall-*.json` +
+na żywo `api.scryfall.com` (`Etherium Abomination`: „Unearth {1}{U}{B}";
+`Kishla Village`: „{3}{G}, {T}: Surveil 2") — 2026-09-14.

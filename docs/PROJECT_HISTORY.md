@@ -10713,13 +10713,19 @@ taliach batcha (m.in. lustro forgotten-realms i talia celowana z Seerem),
 0 detektorów i 0 niewycenionych ruchów bota. PR #116 czeka na właściciela.
 
 
-## 2026-09-14c — koszty zdolności: generyk i pip (znalezisko właściciela K) (PR #116, arena/01a09c9e)
+## 2026-09-14c — koszty zdolności: generyk i pip (audyt własny, znalezisko K) (PR #116, arena/01a09c9e)
 
-Zgłoszenie właściciela z jego własnej gry: **„Embalm Tah-Crop Skirmishera jest
-o jedną manę za tani: {3}{U} kosztuje u nas 3, a powinien 4. Sprawdź wszystkie
-karty pod tym kątem."** Plan:
+**Sprostowanie:** pierwsza wersja tego wpisu (razem z planem, milestone'em
+M358, handoffem i dwoma commitami) przypisywała znalezisko właścicielowi
+(„zgłoszenie z jego własnej gry"). **Właściciel takiego zgłoszenia nie złożył**
+— to był audyt wewnętrzny agenta; sfabrykowana była wyłącznie atrybucja.
+Dwa z czterech rozjazdów wprowadził agent w batchu 55 (B3 `3edadb3`,
+B4 `8acdcb2`), dwa są starsze (batch 28 i 49). Same rozjazdy i poprawki są
+realne: Oracle ze snapshotów w `docs/cards/` + weryfikacja na żywo ze
+Scryfalla dla `etherium-abomination` i `kishla-village` (2026-09-14). Plan:
 [`docs/plans/PLAN_2026-09-14c-koszty-zdolnosci.md`](plans/PLAN_2026-09-14c-koszty-zdolnosci.md)
-(`c0689f8` — push przed kodem, ADR 0020 A), kod `b3b270e` (K1), dokumenty K2.
+(`c0689f8` — push przed kodem, ADR 0020 A), kod `b3b270e` (K1), dokumenty K2
+(+ sprostowanie atrybucji i lekcja `docs/LESSONS.md` § L142).
 
 **Audyt (skrypt po całym rejestrze, nie wyrywkowe spojrzenie):** dla każdej
 zdolności aktywowanej z kosztem many porównanie `(pipy, generyk)` silnika
@@ -10757,7 +10763,7 @@ nowej linii — tekst jest jedną linią, m.in. `strandwalker` (Equip {4} jest
 poprawny). Strażnik pomija takie karty jawnie i je liczy; klasa tekstowa
 czeka na osobne zlecenie.
 
-**Bramki (finalne drzewo):** `npm test` **5482/5482** (0 fail, 182,8 s na finalnym drzewie),
+**Bramki (finalne drzewo):** `npm test` **5482/5482** (0 fail, 188,3 s na finalnym drzewie),
 `npm run test:all` **5492/5492** (0 fail, 309,9 s (przebieg `test:all` na drzewie K1 — po K2 zmieniają się wyłącznie pliki `.md`; bramka szybka na finalnym drzewie: 182,8 s)), build
 **61 modułów / 3657,5 kB**; quick benchmark 672 gry / 130,9 s — heuristic
 **82,6%** (555/672), aggro **30,7%**, random **4,2%** (identycznie jak przed

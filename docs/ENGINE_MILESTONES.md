@@ -4781,13 +4781,15 @@ Bramki: `npm test` **5472/5472**, `npm run test:all` **5482/5482**
 Żywy Tester: 11 partii na taliach batcha, 0 detektorów, 0 niewycenionych.
 
 
-## M358 (2026-09-14) — koszt zdolności rozliczany W CAŁOŚCI: pipy + generyk (znalezisko właściciela K)
+## M358 (2026-09-14) — koszt zdolności rozliczany W CAŁOŚCI: pipy + generyk (audyt własny K)
 
 **Status:** zamknięty — 4 poprawki danych + strażnik klasowy; PR #116 czeka na
 właściciela.
 
-Zgłoszenie właściciela: Embalm Tah-Crop Skirmishera ({3}{U}) kosztował u nas
-tyle co {2}{U} — „sprawdź wszystkie karty pod tym kątem". Audyt całego rejestru
+Embalm Tah-Crop Skirmishera ({3}{U}) kosztował u nas tyle co {2}{U}; błąd
+wprowadził agent przy kodowaniu karty w batchu 55 (B3), a wykrył **audyt
+własny** całego rejestru (nie zgłoszenie właściciela — pierwsza wersja tego
+wpisu przypisywała mu zgłoszenie, co zostało sprostowane). Audyt całego rejestru
 (97 kart / 100 zdolności aktywowanych z kosztem many, porównanie pary
 `(pipy, generyk)` z nagłówkami Oracle) znalazł **cztery** rozjazdy: trzy karty
 z `cost.mana` równym samemu generykowi (`tah-crop-skirmisher` {2}{U} zamiast
@@ -4803,7 +4805,7 @@ niewidzialna) i jawnie pomija karty z literalnym `\n` w Oracle
 (znalezisko S-1, 20 kart — poza zakresem). Testy granic:
 `test/koszty-generyczne-zdolnosci.test.js` (±1 many).
 
-Bramki: `npm test` **5482/5482** (182,8 s na finalnym drzewie), `npm run test:all`
+Bramki: `npm test` **5482/5482** (188,3 s na finalnym drzewie), `npm run test:all`
 **5492/5492** (309,9 s (przebieg `test:all` na drzewie K1 — po K2 zmieniają się wyłącznie pliki `.md`; bramka szybka na finalnym drzewie: 182,8 s)), build **61 modułów / 3657,5 kB**, quick 672 gry / 130,9 s —
 heuristic **82,6%** (555/672), aggro **30,7%**, random **4,2%**
 (bez zmian wobec przedpoprawkowego pomiaru); golden master bez churnu

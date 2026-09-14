@@ -39,7 +39,8 @@ const GENERIC_TOKEN_RE = /^\{\d+\}$/;
  * Nagłówki kosztów Oracle jako pary (pipy, generyk). Generyk `null` = nieznany
  * (symbol, którego metoda nie umie wycenić) — dopasowanie po generyku wtedy nie
  * obowiązuje. Źródło JEDNO dla strażnika pipów (F1) i strażnika całego kosztu
- * (znalezisko właściciela K, 2026-09-14): rozjazd obu list byłby regresją klasy
+ * (audyt własny K, 2026-09-14 — NIE zgłoszenie właściciela): rozjazd obu
+ * list byłby regresją klasy
  * „dwa miejsca liczą to samo inaczej" (M138/Z10).
  */
 function oracleCostHeaders(oracleText) {
@@ -141,7 +142,7 @@ function auditAbilityCosts(card) {
 
 const abilityCostMisses = (card) => auditAbilityCosts(card).misses;
 
-test('koszty aktywacji: CAŁY koszt (pipy + generyk) ma pokrycie w Oracle (znalezisko właściciela K)', () => {
+test('koszty aktywacji: CAŁY koszt (pipy + generyk) ma pokrycie w Oracle (audyt własny K, 2026-09-14)', () => {
   const registry = createCardRegistry();
   const misses = [];
   let checked = 0;
@@ -159,7 +160,7 @@ test('koszty aktywacji: CAŁY koszt (pipy + generyk) ma pokrycie w Oracle (znale
   assert.deepEqual(misses, [], `koszt niezgodny z Oracle: ${misses.join('; ')}`);
 });
 
-test('znalezisko K: generyk zaniżony o 1 jest missem (kształt Embalm {3}{U})', () => {
+test('audyt K: generyk zaniżony o 1 jest missem (kształt Embalm {3}{U})', () => {
   const card = {
     id: 'test-embalm-zanizony',
     oracleText: 'Embalm {3}{U} ({3}{U}, Exile this card from your graveyard: Create a token.)',
@@ -168,7 +169,7 @@ test('znalezisko K: generyk zaniżony o 1 jest missem (kształt Embalm {3}{U})',
   assert.deepEqual(abilityCostMisses(card), ['test-embalm-zanizony#0 [U|generyk 2] brak zgodnego nagłówka kosztu w Oracle']);
 });
 
-test('znalezisko K: brak pipu jest missem nawet przy zgodnym generyku (kształt Kishla Village)', () => {
+test('audyt K: brak pipu jest missem nawet przy zgodnym generyku (kształt Kishla Village)', () => {
   const card = {
     id: 'test-brak-pipu',
     oracleText: '{3}{G}, {T}: Surveil 2.',
@@ -177,7 +178,7 @@ test('znalezisko K: brak pipu jest missem nawet przy zgodnym generyku (kształt 
   assert.deepEqual(abilityCostMisses(card), ['test-brak-pipu#0 [—|generyk 4] brak zgodnego nagłówka kosztu w Oracle']);
 });
 
-test('znalezisko K: generyk NIEZNANY ({X}, hybrydy) zawęża strażnika do pipów — jawna granica', () => {
+test('audyt K: generyk NIEZNANY ({X}, hybrydy) zawęża strażnika do pipów — jawna granica', () => {
   const card = {
     id: 'test-generyk-x',
     oracleText: '{X}{R}: Deal X damage.',

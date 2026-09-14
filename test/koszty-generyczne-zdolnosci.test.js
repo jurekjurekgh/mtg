@@ -7,12 +7,15 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 
 /**
- * Znalezisko właściciela K (2026-09-14): „Embalm Tah-Crop Skirmishera jest
- * o jedną manę za tani — {3}{U} kosztuje u nas 3. Sprawdź wszystkie karty pod
- * tym kątem."
+ * Audyt własny K (2026-09-14c) — **nie zgłoszenie właściciela** (pierwsza
+ * wersja dokumentacji błędnie mu je przypisywała; sprostowanie w
+ * `docs/plans/PLAN_2026-09-14c-koszty-zdolnosci.md`). Embalm Tah-Crop
+ * Skirmishera był o jedną manę za tani — {3}{U} kosztował u nas jak {2}{U};
+ * ten i Brightwood Tracker zakodował błędnie agent w batchu 55, dwa pozostałe
+ * rozjazdy są starsze (batch 28 i 49).
  *
  * Audyt całego katalogu (strażnik `test/ability-cost-pips.test.js`, sekcja
- * „znalezisko K") znalazł CZTERY rozjazdy tej samej rodziny: trzy karty
+ * „audyt K") znalazł CZTERY rozjazdy tej samej rodziny: trzy karty
  * zaniżone o generyk (etherium-abomination, brightwood-tracker,
  * tah-crop-skirmisher) i jedną z brakującym pipem (kishla-village). Ten plik
  * pinuje GRANICĘ ZACHOWANIA tych kosztów: o jedną manę mniej = brak oferty
@@ -54,7 +57,7 @@ const reject = (s, id, abilityIndex = 0) =>
 
 // --- Etherium Abomination: Unearth {1}{U}{B} (CR 702.84a) -------------------
 
-test('znalezisko K: Unearth to {1}{U}{B} — dwie many (U+B) nie wystarczą', () => {
+test('audyt K: Unearth to {1}{U}{B} — dwie many (U+B) nie wystarczą', () => {
   const s = game();
   put(s, 'ea', 'etherium-abomination', 'p1', 'graveyard');
   addMana(s, 'p1', 2, { colors: ['U', 'B'] });
@@ -70,7 +73,7 @@ test('znalezisko K: Unearth to {1}{U}{B} — dwie many (U+B) nie wystarczą', ()
 
 // --- Brightwood Tracker: {5}{G}, {T} ----------------------------------------
 
-test('znalezisko K: Brightwood Tracker to {5}{G}, {T} — pięć many nie wystarczy', () => {
+test('audyt K: Brightwood Tracker to {5}{G}, {T} — pięć many nie wystarczy', () => {
   const s = game();
   put(s, 'tracker', 'brightwood-tracker', 'p1', 'battlefield');
   addMana(s, 'p1', 4, {});
@@ -87,7 +90,7 @@ test('znalezisko K: Brightwood Tracker to {5}{G}, {T} — pięć many nie wystar
 
 // --- Tah-Crop Skirmisher: Embalm {3}{U} (CR 702.128a) -----------------------
 
-test('znalezisko K: Embalm to {3}{U} — trzy many (w tym {U}) nie wystarczą', () => {
+test('audyt K: Embalm to {3}{U} — trzy many (w tym {U}) nie wystarczą', () => {
   const s = game();
   put(s, 'grave', 'tah-crop-skirmisher', 'p1', 'graveyard');
   addMana(s, 'p1', 2, {});
@@ -102,7 +105,7 @@ test('znalezisko K: Embalm to {3}{U} — trzy many (w tym {U}) nie wystarczą', 
   assert.ok(offer(s, 'grave'), 'czwarta mana odblokowuje Embalm');
 });
 
-test('znalezisko K: Embalm za dokładnie {3}{U} płaci cztery many (pula wyczerpana)', () => {
+test('audyt K: Embalm za dokładnie {3}{U} płaci cztery many (pula wyczerpana)', () => {
   const s = game();
   put(s, 'grave', 'tah-crop-skirmisher', 'p1', 'graveyard');
   addMana(s, 'p1', 3, {});
@@ -115,7 +118,7 @@ test('znalezisko K: Embalm za dokładnie {3}{U} płaci cztery many (pula wyczerp
 
 // --- Kishla Village: {3}{G}, {T}: Surveil 2 ---------------------------------
 
-test('znalezisko K: Kishla Village wymaga {3}{G} — cztery many bez zieleni nie wystarczą', () => {
+test('audyt K: Kishla Village wymaga {3}{G} — cztery many bez zieleni nie wystarczą', () => {
   const s = game();
   put(s, 'village', 'kishla-village', 'p1', 'battlefield');
   addMana(s, 'p1', 4, { colors: ['R'] });
