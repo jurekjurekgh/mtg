@@ -10588,3 +10588,42 @@ niewykonane (ADR 0018 — tylko na komendę właściciela).
 **E5 — dokumenty**: ten wpis, `docs/setup/HANDOFF_2026-09-13.md`, README
 (liczby rdzenia/artefaktu z pomiaru; tabela talii bez zmian — PR #115
 zaktualizował ją poprawnie).
+
+
+## 2026-09-14 — znaleziska właściciela z testów: A (MMB zamiast PPM) + B (Wishful Merfolk) (PR #116, arena/01a09c9e)
+
+Zgłoszenie właściciela po testach ręcznych, dwa znaleziska:
+
+**M349/A — tor hovera przełącza MMB, nie PPM** (`a1d6b20`). Objaw: „zmiana
+scryfall->FOT->KON->scryfall następuje zarówno przy mouse pressed jak i przy
+mouse released, a czasem szybkie kliknięcie w ogóle nie zmienia toru".
+Przyczyna jest po stronie przeglądarki: `contextmenu` przychodzi raz przy
+wciśnięciu, raz przy zwolnieniu, a przy szybkim kliknięciu czasem wcale —
+żadna bramka czasowa tego nie naprawi. Wyzwalaczem jest odtąd MMB
+(`mousedown` z `button === 1` i `buttons === 4` — MASKĄ bitowa UI Events:
+1 = lewy, 2 = prawy, 4 = środkowy); jedno wciśnięcie = jeden krok,
+`mouseup` nie robi nic, PPM zostaje wolny dla menu kontekstowego. Dotyczy
+kafli i kart specjalnych (jedno miejsce reguły w `cycle`), podpowiedź
+w podglądzie mówi „MMB zmienia tor". Dowód na zbudowanym artefakcie (jsdom,
+sonda ze zdjętą detekcją dotyku): Scryfall → MMB down → FOT → mouseup bez
+zmian → MMB down → KON → MMB down → Scryfall; PPM/LPM bez zmian.
+
+**M350/B — Wishful Merfolk: efekt tylko z ZAMIAREM ataku** (`e2f7c73`).
+Objaw: „bot w swojej turze Główna 1 zapłacił za zamianę w człowieka i utratę
+defender. Po czym nie zaatakował. Koniec jego tury. Kompletnie zmarnowana
+mana." Bramka M202/L sprawdzała tylko okno i stan stwora — dopuszczała main1.
+Dziś trzy warunki łącznie: etap walki przed deklaracją atakujących, stwór
+może zaatakować ORAZ `attackIntendsCreature` — czyli wycena ataku bota
+(gałąź `declare_attackers` w `scoreCommand`, wołana na komendzie
+syntetycznej z bezpiecznikiem reentrancji, zestawy jak `boundedSubsets`)
+wskazuje atak opłacalny. Jedno źródło polityki — bez drugiej kopii reguł
+(klasa M256). Golden master: 4/6 partii bit w bit bez zmian, churn wyłącznie
+w `tarkir-bg|warhammer-ubr` — seed 1000 zmienia tylko wycenę nieużywanej
+zdolności (20 → −18), seed 1001 przestaje kupować ją w main1 (tura 9)
+i gra dalej (196 → 227 decyzji), a od tury 17 kupuje ją w
+`beginning_of_combat` (28) i realnie atakuje; fixture zregenerowany.
+Quick benchmark po zmianie: heuristic **84,2%** (566/672), aggro 28,0%,
+random 3,6% (672 gry / 116,1 s) — bez zmian wobec pomiaru sprzed zmiany.
+
+Bramki: `npm test` **5415/5415**, `npm run test:all` **5425/5425** (289 849,11 ms), build
+**61 modułów / 3622,9 kB**.
