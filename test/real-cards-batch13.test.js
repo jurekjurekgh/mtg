@@ -15,7 +15,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
  * - Curse of the Pierced Heart (ISD): ENCHANT PLAYER aura — zaczarowany gracz
  *   wybierany przy rzucaniu, upkeep zaczarowanego gracza → 1 obrażeń;
  * - Emissary Escort (EOE): statyczne +X/+0, X = największa mana value wśród
- *   INNYCH artefaktów kontrolera (CR 604.3, przeliczane przy odczycie);
+ *   INNYCH artefaktów kontrolera (CR 611.3a, przeliczane przy odczycie);
  * - Snarling Wolf (VOW): aktywowane {1}{G}: +2/+2 do końca tury, „activate
  *   only once each turn";
  * - Negate (M20): „Counter target noncreature spell" — cel czaru na stosie
