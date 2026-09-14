@@ -10828,7 +10828,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     // CR 702.174a (Gift): „You may promise an opponent a gift as you cast
     // this spell" — dodatkowy koszt BEZ many, wybierany przy rzucaniu razem
     // z odbiorcą. Dar wydaje się przy rozstrzyganiu, PRZED efektami czaru
-    // (ruling 2017-04-18? — BLB: „as part of the resolution of the spell");
+    // (ruling BLB 2024-07-26: „For instants and sorceries with gift, the gift
+    // is given … as part of the resolution of the spell. This happens before
+    // any of the spell's other effects would take place."; CR 702.174j);
     // czar skontrowany/nie-rozstrzygnięty daru nie daje.
     gift: {
       effect: {
