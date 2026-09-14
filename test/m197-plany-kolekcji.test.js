@@ -217,12 +217,24 @@ test('M197/K4: definicja karty nie ma ZDUBLOWANYCH pol artId/plan', () => {
   // W literale JS druga wartosc nadpisuje pierwsza po cichu, wiec
   // „artId: 47, plan: null," + „plan: 'Mirrodin'," w kolejnej linii DZIALALO
   // przypadkiem. Taki zapis to mina: przestawienie linii zmienia dane.
+  //
+  // L23 (batch 55, Embalm): poprzednia wersja skanowala plik leniwym
+  // regexem `id: '...'[\s\S]*?\n\s*support:` — konczyl sie on na pierwszym
+  // „support:" w nowej linii. Definicje z katalogu pisane inline
+  // („artId: 602, plan: 'Zendikar', support: {...},") nie mialy takiego
+  // zakonczenia, wiec ogon pliku nie byl skanowany W OGOLE — straznik
+  // sam sie wylaczal na tym fragmencie (dokladnie pulapka L23). Nowy token
+  // batcha 55 w stylu tokenow dostawil takie zakonczenie i dopiero wtedy
+  // regex zlozyl 14 definicji w jedna „definicje" i zglosil falszywy alarm.
+  // Skanujemy po GRANICACH definicji (`defineCard({`), nie po tresci pol.
   const src = fs.readFileSync('src/cards/card-data.js', 'utf8');
+  const chunks = src.split(/^  defineCard\(\{/m).slice(1);
+  assert.ok(chunks.length > 500, `definicji do przeskanowania: ${chunks.length}`);
   const offenders = [];
-  for (const block of src.match(/id: '[^']+'[\s\S]*?\n\s*support:/g) ?? []) {
-    const id = /id: '([^']+)'/.exec(block)?.[1] ?? '?';
+  for (const chunk of chunks) {
+    const id = /id: '([^']+)'/.exec(chunk)?.[1] ?? '?';
     for (const field of ['artId', 'plan']) {
-      const count = (block.match(new RegExp(`\\b${field}:`, 'g')) ?? []).length;
+      const count = (chunk.match(new RegExp(`\\b${field}:`, 'g')) ?? []).length;
       if (count > 1) offenders.push(`${id}: pole ${field} wystepuje ${count}x`);
     }
   }

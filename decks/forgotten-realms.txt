@@ -11,6 +11,7 @@
 1x Guildsworn Prowler
 1x Thieves' Tools
 1x Gray Slaad
+1x Jungleborn Pioneer
 1x Nefarious Imp
 1x Patron of the Arts
 1x Silvanus's Invoker
@@ -24,7 +25,7 @@
 1x Underdark Explorer
 1x Marut
 2x Plains
-2x Island
+1x Island
 3x Swamp
 2x Mountain
-3x Forest
+4x Forest

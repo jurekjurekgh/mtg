@@ -285,6 +285,7 @@ function defaultBotFactory(seed, ctx) {
     buff_creature_until_end_of_turn: 'premia P/T dla celu do końca tury',
     cant_be_blocked: 'cel nie może być blokowany',
     create_copy_token: 'stworzenie kopii stwora',
+    create_token_copy_of_source: 'stworzenie tokena-kopii karty (Embalm)',
     create_token: 'stworzenie tokena',
     damage_each_opponent: 'obrażenia dla każdego przeciwnika',
     destroy_permanent: 'zniszczenie permanentu',

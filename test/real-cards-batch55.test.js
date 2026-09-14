@@ -435,3 +435,139 @@ test('B55/B2: 614 Hunt the Weak — własny cel nielegalny: ani licznika, ani wa
   assert.equal(s.events.filter((e) => e.type === 'damage_dealt').length, 0);
   assert.equal(s.events.filter((e) => e.type === 'counter_added' && e.objectId === 'mine').length, 0);
 });
+
+// ---------------------------------------------------------------------------
+// B3 (M353) — 609 Jungleborn Pioneer, 615 Tah-Crop Skirmisher (Embalm)
+// ---------------------------------------------------------------------------
+
+sanity('jungleborn-pioneer', 609, 'RIX', 'Forgotten Realms');
+tooLittleMana('jungleborn-pioneer', 'cast_permanent', () => {}, 'R');
+
+const tokenOnBoard = (s, cardId) => [...s.objects.values()]
+  .find((o) => o.cardId === cardId && o.zone === 'battlefield' && o.isToken);
+const inZone = (s, cardId, zone) => [...s.objects.values()]
+  .find((o) => o.cardId === cardId && o.zone === zone);
+
+test('B55/B3: 609 Jungleborn Pioneer — ETB tworzy 1/1 niebieskiego Merfolka z hexproof', () => {
+  const s = game();
+  put(s, 'pioneer', 'jungleborn-pioneer');
+  addMana(s, 'p1', 3, { colors: ['G'] });
+
+  run(s, commands(s).find((c) => c.type === 'cast_permanent' && c.objectId === 'pioneer'));
+  resolve(s);
+
+  const token = tokenOnBoard(s, 'token_merfolk');
+  assert.ok(token, 'token Merfolk wjechał razem ze stworami (ETB)');
+  assert.equal(token.power, 1);
+  assert.equal(token.toughness, 1);
+  assert.deepEqual(token.colors, ['U'], '„1/1 blue Merfolk"');
+  assert.deepEqual(token.subtypes, ['Merfolk']);
+  assert.ok((token.keywords ?? []).includes('hexproof'), '„with hexproof"');
+  assert.equal(token.isToken, true);
+  assert.ok(s.events.some((e) => e.type === 'token_created' && e.cardId === 'token_merfolk'));
+});
+
+test('B55/B3: 609 Jungleborn Pioneer — hexproof: przeciwnik nie wyceluje tokenu, właściciel tak', () => {
+  const s = game();
+  put(s, 'pioneer', 'jungleborn-pioneer');
+  put(s, 'mine', 'douse-in-gloom', 'p1');
+  put(s, 'theirs', 'douse-in-gloom', 'p2');
+  addMana(s, 'p1', 3, { colors: ['G'] });
+  run(s, commands(s).find((c) => c.type === 'cast_permanent' && c.objectId === 'pioneer'));
+  resolve(s);
+  const token = tokenOnBoard(s, 'token_merfolk');
+  assert.ok(token);
+
+  addMana(s, 'p1', 3, { colors: ['B'] });
+  const mine = commands(s, 'p1').filter((c) => c.type === 'cast_spell' && c.objectId === 'mine');
+  assert.ok(mine.some((c) => c.targets?.includes(token.id)),
+    `właściciel może celować własny token: ${JSON.stringify(mine.map((c) => c.targets))}`);
+
+  // Cudza tura: przeciwnik ma ten sam czar i manę, ale hexproof blokuje cel.
+  s.turn = jumpToStep(s.turn, 'main', 'p2');
+  s.turn.activePlayerId = 'p2';
+  s.turn.priorityPlayerId = 'p2';
+  addMana(s, 'p2', 3, { colors: ['B'] });
+  const theirs = commands(s, 'p2').filter((c) => c.type === 'cast_spell' && c.objectId === 'theirs');
+  assert.ok(theirs.length > 0, 'przeciwnik ma ofertę rzutu (czar nie jest zablokowany)');
+  assert.equal(theirs.some((c) => c.targets?.includes(token.id)), false,
+    'żadna oferta przeciwnika nie wskazuje tokenu z hexproofem');
+});
+
+sanity('tah-crop-skirmisher', 615, 'AKH', 'Amonkhet');
+
+test('B55/B3: 615 Tah-Crop Skirmisher — Embalm istnieje TYLKO w grobie', () => {
+  const s = game();
+  put(s, 'hand', 'tah-crop-skirmisher', 'p1');
+  put(s, 'field', 'tah-crop-skirmisher', 'p1', 'battlefield');
+  put(s, 'grave', 'tah-crop-skirmisher', 'p1', 'graveyard');
+  addMana(s, 'p1', 4, { colors: ['U'] });
+
+  const offers = commands(s).filter((c) => c.type === 'activate_ability');
+  assert.deepEqual(offers.map((c) => c.objectId), ['grave'],
+    'zdolność z grobu (CR 113.6) istnieje wyłącznie dla karty w grobie');
+});
+
+test('B55/B3: 615 Tah-Crop Skirmisher — Embalm tylko w tempie sorcery', () => {
+  const s = game();
+  put(s, 'grave', 'tah-crop-skirmisher', 'p1', 'graveyard');
+  addMana(s, 'p1', 4, { colors: ['U'] });
+
+  s.turn = jumpToStep(s.turn, 'declare_attackers', 'p1');
+  s.turn.activePlayerId = 'p1';
+  s.turn.priorityPlayerId = 'p1';
+  assert.equal(commands(s).some((c) => c.type === 'activate_ability' && c.objectId === 'grave'), false,
+    'walka to nie tempo sorcery');
+
+  s.turn = jumpToStep(s.turn, 'main', 'p2');
+  s.turn.activePlayerId = 'p2';
+  s.turn.priorityPlayerId = 'p1';
+  assert.equal(commands(s, 'p1').some((c) => c.type === 'activate_ability' && c.objectId === 'grave'), false,
+    'cudza tura to nie tempo sorcery');
+});
+
+test('B55/B3: 615 Tah-Crop Skirmisher — Embalm: wygnanie karty i biały token-kopia Zombie bez kosztu many', () => {
+  const s = game();
+  put(s, 'grave', 'tah-crop-skirmisher', 'p1', 'graveyard');
+  addMana(s, 'p1', 4, { colors: ['U'] });
+
+  const offer = commands(s).find((c) => c.type === 'activate_ability' && c.objectId === 'grave');
+  assert.ok(offer, 'oferta Embalm w mojej głównej fazie');
+  run(s, offer);
+  resolve(s);
+
+  // Ruling 2017-04-18: karta wygnana NATYCHMIAST (jeszcze przed rozstrzygnięciem
+  // zdolności), więc nie da się jej drugi raz aktywować.
+  assert.equal(s.zones.graveyard.includes('grave'), false, 'karta opuściła grób');
+  assert.ok(inZone(s, 'tah-crop-skirmisher', 'exile'), 'karta jest w exile (koszt „Exile this card")');
+  assert.equal(commands(s).some((c) => c.type === 'activate_ability'), false,
+    'druga aktywacja niemożliwa — karta nie leży w grobie');
+
+  const token = tokenOnBoard(s, 'tah-crop-skirmisher');
+  assert.ok(token, 'token-kopia na polu bitwy');
+  assert.equal(token.power, 2, 'kopia kopiuje wydrukowane P/T');
+  assert.equal(token.toughness, 1);
+  assert.deepEqual(token.colors, ['W'], '„except it is white" — biały ZAMIast innych kolorów');
+  assert.deepEqual([...token.subtypes].sort(), ['Snake', 'Warrior', 'Zombie'],
+    'Zombie DODATKOWO do pozostałych typów (CR 702.128a)');
+  assert.equal(token.manaCost, 0, '„with no mana cost" — mana value 0 (CR 202.3b)');
+  assert.equal(token.isToken, true);
+});
+
+test('B55/B3: 615 Tah-Crop Skirmisher — bez {3}{U} brak oferty, odrzucona komenda nie rusza grobu', () => {
+  const s = game();
+  put(s, 'grave', 'tah-crop-skirmisher', 'p1', 'graveyard');
+  const offer = () => commands(s).find((c) => c.type === 'activate_ability' && c.objectId === 'grave');
+  assert.equal(offer(), undefined, 'brak many = brak oferty');
+
+  addMana(s, 'p1', 4, { colors: ['R'] });
+  assert.equal(offer(), undefined, 'cztery many złego koloru nie pokrywają {U} (CR 118.2)');
+
+  const r = execute(s, { type: 'activate_ability', playerId: 'p1', objectId: 'grave', abilityIndex: 0 });
+  assert.equal(r.ok, false);
+  assert.equal(s.objects.get('grave').zone, 'graveyard', 'odrzucona aktywacja nie wygania karty');
+  assert.equal(s.events.filter((e) => e.type === 'object_exiled').length, 0);
+
+  addMana(s, 'p1', 4, { colors: ['U'] });
+  assert.ok(offer(), 'właściwy koszt kolorowy odblokowuje ofertę');
+});

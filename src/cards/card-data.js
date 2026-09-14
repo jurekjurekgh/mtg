@@ -10749,7 +10749,18 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Merfolk', 'Scout'], colors: ['G'], power: 2, toughness: 2, manaCost: 3,
     oracleText: "When this creature enters, create a 1/1 blue Merfolk creature token with hexproof. (It can't be the target of spells or abilities your opponents control.)",
     imageUri: 'https://cards.scryfall.io/large/front/9/f/9f01ae0d-db1e-4912-b8ad-3069f6938e04.jpg?1783935285',
-    artId: 609, plan: 'Forgotten Realms', support: { status: 'in-development', limitations: [] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'create_token', cardId: 'token_merfolk', name: 'Merfolk',
+          kind: 'creature', power: 1, toughness: 1, colors: ['U'],
+          types: ['Creature'], subtypes: ['Merfolk'], keywords: ['hexproof'], amount: 1,
+        },
+      }),
+    ],
+    artId: 609, plan: 'Forgotten Realms', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({
@@ -10831,11 +10842,36 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   defineCard({
+    id: 'token_merfolk', name: 'Merfolk', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Merfolk'], colors: ['U'],
+    power: 1, toughness: 1, manaCost: 0,
+    oracleText: "Hexproof (This creature can't be the target of spells or abilities your opponents control.)",
+    imageUri: 'https://cards.scryfall.io/large/front/f/5/f5d353ad-7160-41fa-809c-d76b36478a2a.jpg?1783913608',  // tlci
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Jungleborn Pioneer'] },
+  }),
+  defineCard({
     id: 'tah-crop-skirmisher', name: 'Tah-Crop Skirmisher', set: 'AKH',
     types: ['Creature'], subtypes: ['Snake', 'Warrior'], colors: ['U'], power: 2, toughness: 1, manaCost: 2,
     oracleText: "Embalm {3}{U} ({3}{U}, Exile this card from your graveyard: Create a token that's a copy of it, except it's a white Zombie Snake Warrior with no mana cost. Embalm only as a sorcery.)",
     imageUri: 'https://cards.scryfall.io/large/front/a/b/ab0429ec-0809-4e68-9790-8c21bde201a2.jpg?1783936514',
-    artId: 615, plan: 'Amonkhet', support: { status: 'in-development', limitations: [] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        fromGraveyard: true,
+        timing: 'sorcery',
+        // Koszt {3}{U} z pipem (CR 118.2) i wygnaniem karty jako kosztem —
+        // karta znika z grobu NATYCHMIAST, jeszcze przed rozstrzygnięciem
+        // (ruling 2017-04-18), więc przeciwnik nie może jej przechwycić.
+        cost: { mana: 3, colors: ['U'], exileFromGraveyard: true },
+        effect: {
+          type: 'create_token_copy_of_source',
+          colors: ['W'],           // „except it's white" (CR 702.128a)
+          addSubtypes: ['Zombie'], // „Zombie in addition to its other types"
+        },
+      }),
+    ],
+    artId: 615, plan: 'Amonkhet', support: { status: 'supported', limitations: [] },
+    notes: ['token-kopia: biały Zombie Snake Warrior 2/1 bez kosztu many (MV 0); karta wyganiana jako koszt aktywacji'],
   }),
 
   defineCard({

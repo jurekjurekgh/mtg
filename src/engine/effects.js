@@ -1514,6 +1514,41 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     applyEnterCounters(state, token.id);
     return;
   }
+  if (effect.type === 'create_token_copy_of_source') {
+    // Embalm (CR 702.128a): „Exile this card from your graveyard: Create a token
+    // that's a copy of it, except it's a white Zombie Snake Warrior with no mana
+    // cost." — kopią jest KARTA, a nadpisania (kolor, dodatkowe podtypy, brak
+    // kosztu many) przychodzą danymi efektu (ADR 0002: żadnych nazw kart).
+    // Uwaga na kolejność: koszt „exileFromGraveyard" płaci się PRZED
+    // rozstrzygnięciem, więc źródłem efektu jest już obiekt w exile
+    // (`effectSource` w abilities.js) — charakterystyki wydrukowane zostają.
+    const src = state.objects.get(sourceObject.id) ?? sourceObject;
+    if (!src) return;
+    const ctrl = src.controllerId;
+    const copyName = src.cardName ?? src.cardId ?? 'Copy';
+    const subtypes = [...new Set([...(src.subtypes ?? []), ...(effect.addSubtypes ?? [])])];
+    const token = createBattlefieldToken(state, ctrl, {
+      cardId: src.cardId, name: copyName,
+      copyNumber: nextCopyNumber(state, copyName),
+      kind: src.kind ?? 'creature',
+      power: src.power ?? 1, toughness: src.toughness ?? 1,
+      // „except it's white" — kolor ZASTĘPUJEMY (CR 702.128a), nie dodajemy.
+      colors: [...(effect.colors ?? src.colors ?? [])],
+      types: [...(src.types ?? [])],
+      subtypes,
+      keywords: [...(src.keywords ?? [])],
+      abilities: [...(src.abilities ?? [])],
+      // „with no mana cost" — token nie ma kosztu, więc mana value 0 (CR 202.3b).
+      manaCost: 0,
+      ...(src.entersWithCounters ? { entersWithCounters: src.entersWithCounters } : {}),
+      ...(src.entersWithCountersIf ? { entersWithCountersIf: src.entersWithCountersIf } : {}),
+      ...(src.station ? { station: src.station } : {}),
+      ...(src.saga ? { saga: src.saga } : {}),
+      ...(src.transformTo ? { transformTo: src.transformTo } : {}),
+      ...(src.transformTo && src.frontFaceId ? { frontFaceId: src.frontFaceId } : {}),
+    });
+    return;
+  }
   if (effect.type === 'return_source_from_graveyard_to_hand') {
     // Furious Forebear: po zapłacie {1}{W} karta wraca z grobu na rękę
     // właściciela (CR 400.7 — nowy obiekt).

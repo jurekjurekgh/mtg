@@ -120,7 +120,7 @@ liczone z plików `decks/*.txt`).
 | `dominaria-brg` | Dominaria (BRG) | BRG | 26 | 9 | 17 |
 | `dominaria-wu` | Dominaria (WU) | WUB | 24 | 8 | 16 |
 | `final-fantasy` | Final Fantasy | WUBRG | 26 | 9 | 17 |
-| `forgotten-realms` | Forgotten Realms | WUBRG | 35 | 12 | 23 |
+| `forgotten-realms` | Forgotten Realms | WUBRG | 36 | 12 | 24 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 27 | 9 | 18 |
 | `innistrad-wu` | Innistrad (WU) | WU | 27 | 9 | 18 |
 | `kaladesh` | Kaladesh | WUBRG | 26 | 9 | 17 |
@@ -143,7 +143,7 @@ liczone z plików `decks/*.txt`).
 |---|---|---|---:|---:|---:|
 | `worek-basni` | Worek: Baśnie | WUBRG | 32 | 11 | 21 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 29 | 10 | 19 |
-| `worek-legend` | Worek: Legendy | WUBRG | 26 | 9 | 17 |
+| `worek-legend` | Worek: Legendy | WUBRG | 27 | 9 | 18 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 35 | 12 | 23 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
