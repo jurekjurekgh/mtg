@@ -3311,7 +3311,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           ? (spell.modes[cmd.modeIndex]?.effects ?? [])
           : null;
         const effects = (modalEffects
-          ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? [])).filter(e => !e?.condition?.wasKicked || cmd.kicked === true);
+          ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? []))
+          .filter(e => (!e?.condition?.wasKicked || cmd.kicked === true)
+            && (!e?.condition?.wasGifted || cmd.gifted === true));
         // M247 anti-overfix (Vandalize „Zniszcz ląd"): kara „czysty ląd jako
         // cel removalu" NIE obejmuje efektów ZAPROJEKTOWANYCH pod niszczenie
         // lądów — rozpoznajemy je po specu celu z deskryptora: slot typu
@@ -4206,6 +4208,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
         }
+        // CR 702.174 (Gift, M355): obietnica daru to KOSZT — obiecany
+        // przeciwnik dostaje realny zasób (tu: token Food). Warianty różnią
+        // się wyceną efektów warunkowych (`condition.wasGifted` wyżej), więc
+        // tu płacimy wyłącznie cenę daru: pół karty (Food wymaga jeszcze
+        // {2} i zatapnięcia, więc nie jest pełną kartą). Bez tej kary model
+        // bota widziałby sam zysk z „if the gift was promised” i obiecywał
+        // dar zawsze — także wtedy, gdy indestructible nic nie zmienia.
+        if (cmd.gifted === true) score -= P.drawCardValue * 0.5;
         return finish(score);
       }
       case 'activate_ability': {

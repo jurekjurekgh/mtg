@@ -84,6 +84,11 @@ export function gameObjectDataOf(card) {
     // Offspring (BLB, Rust-Shield Rampager): jak kicker, ale z ETB-triggerem
     // tokenu-kopii; deskryptor musi dojść na obiekt gry (L21).
     if (card.offspring) data.offspring = card.offspring;
+    // Gift (CR 702.174, M355): dar jest mechaniką CZARU (instant/sorcery),
+    // więc gałąź spell kopiuje pola ręcznie — klasa Z5/L21 (deskryptor ginie
+    // po cichu). Gałąź permanentu też go dostaje: gdy katalog dostanie
+    // permanent z darem, obiekt gry musi nieść deskryptor (ETB-trigger).
+    if (card.gift) data.gift = card.gift;
     // M113: warunkowa obniżka kosztu permanentu (Academy Journeymage).
     if (card.costReduction) data.costReduction = card.costReduction;
     // Adventure (CR 715, Gray Slaad): alternatywny rzut czaru z ręki, po
@@ -145,6 +150,10 @@ export function gameObjectDataOf(card) {
     const data = { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null, suspend: card.suspend ?? null, colors: colors(), abilities: card.abilities ?? [], cardName: card.name };
     // Batch 54: kicker musi dojść również z definicji instanta na obiekt.
     if (card.kicker) data.kicker = card.kicker;
+    // M355 (Crumb and Get It): Gift to mechanika INSTANTA/SORCERY — bez tego
+    // wpisu `object.gift` jest null i wariant rzutu z obietnicą nie istnieje
+    // (oferta i walidacja czytają to samo pole; L48).
+    if (card.gift) data.gift = card.gift;
     // M161/O1 (zasada właściciela: gotowość na przyszłe karty): instant/
     // sorcery z madness — deskryptor musi przejść na obiekt gry, inaczej
     // odrzucenie nie otworzy decyzji madness (klasa Z5/L21 — gałąź spell

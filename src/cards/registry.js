@@ -134,6 +134,14 @@ export function defineCard(data) {
       cost: data.offspring.cost,
       colors: Object.freeze([...(data.offspring.colors ?? [])]),
     }) : null,
+    // Gift (CR 702.174, Crumb and Get It): { effect } — „Gift a Food" to
+    // DODATKOWY KOSZT rzutu bez many; `effect` opisuje, co dostaje obiecany
+    // przeciwnik (dziś: token, tym samym kształtem co efekty czarów). Pole
+    // MUSI być przepisane tutaj — bez tego deskryptor ginie po cichu między
+    // card-data a silnikiem (klasa L21, ta sama co kicker/offspring).
+    gift: data.gift ? Object.freeze({
+      effect: Object.freeze({ ...data.gift.effect }),
+    }) : null,
     // Adventure (CR 715, Gray Slaad // Entropic Decay): { cost, colors, spell }
     // — alternatywny rzut czaru z ręki (sorcery); po rozstrzygnięciu karta
     // idzie do exile („on an adventure"), skąd można rzucić stronę-stwora

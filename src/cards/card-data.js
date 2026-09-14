@@ -10825,7 +10825,29 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Instant'], colors: ['W'], manaCost: 1,
     oracleText: 'Gift a Food (You may promise an opponent a gift as you cast this spell. If you do, they create a Food token before its other effects. It\'s an artifact with "{2}, {T}, Sacrifice this token: You gain 3 life.")\nTarget creature you control gets +2/+2 until end of turn. If the gift was promised, that creature also gains indestructible until end of turn.',
     imageUri: 'https://cards.scryfall.io/large/front/3/c/3c7b3b25-d4b3-4451-9f5c-6eb369541175.jpg?1783910863',
-    artId: 612, plan: 'Śródziemie', support: { status: 'in-development', limitations: [] },
+    // CR 702.174a (Gift): „You may promise an opponent a gift as you cast
+    // this spell" — dodatkowy koszt BEZ many, wybierany przy rzucaniu razem
+    // z odbiorcą. Dar wydaje się przy rozstrzyganiu, PRZED efektami czaru
+    // (ruling 2017-04-18? — BLB: „as part of the resolution of the spell");
+    // czar skontrowany/nie-rozstrzygnięty daru nie daje.
+    gift: {
+      effect: {
+        type: 'create_token', cardId: 'token_food', name: 'Food',
+        kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Food'],
+        abilities: [
+          createAbility({
+            type: ABILITY_TYPE.activated,
+            cost: { mana: 2, tap: true, sacrificeSelf: true },
+            effect: { type: 'gain_life', amount: 3 },
+          }),
+        ],
+      },
+    },
+    spell: { timing: 'instant', targets: [{ type: 'creature_you_control' }], effects: [
+      { type: 'pump', power: 2, toughness: 2 },
+      { type: 'grant_keywords_until_end_of_turn', keywords: ['indestructible'], condition: { wasGifted: true } },
+    ] },
+    artId: 612, plan: 'Śródziemie', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({

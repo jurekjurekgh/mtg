@@ -1258,7 +1258,7 @@ function bootstrapTable() {
     // Klucz grupowania – uproszczony odpowiednik choiceRequestGroupKey z render.js
     const groupKey = (cmd) => {
       // Batch 54: wspólny klucz rozdziela także CELOWANY czar z kickerem.
-      if (cmd.type === 'cast_spell') return choiceRequestGroupKey(cmd) ?? `spell:${cmd.objectId}:${Boolean(cmd.kicked)}`;
+      if (cmd.type === 'cast_spell') return choiceRequestGroupKey(cmd) ?? `spell:${cmd.objectId}:${Boolean(cmd.kicked)}${cmd.gifted ? `:gift:${cmd.giftRecipientId ?? '?'}` : ''}`;
       if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `cleave:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.targets?.length) return `perm:${cmd.objectId}:${Boolean(cmd.bestow)}`;
       if (cmd.type === 'cast_permanent' && cmd.phyrexianPayWithLife != null) return `perm-x:${cmd.objectId}`;

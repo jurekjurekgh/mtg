@@ -341,11 +341,11 @@ export function choiceRequestGroupKey(command) {
   // M87: tryby modalne (Steel Sabotage Kontr vs Odbicie) i warianty
   // poświęcenia (Village Rites) nie mogą wpadać do jednego „Cel czaru".
   if (command.type === 'cast_spell' && (command.targets?.length || command.sacrificeTargetId || command.modeIndex != null)) {
-    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}${command.kicked ? ':kicker' : ''}`;
+    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}${command.kicked ? ':kicker' : ''}${command.gifted ? `:gift:${command.giftRecipientId ?? '?'}` : ''}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
   if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
-    return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}`;
+    return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}${command.gifted ? ':gift' : ''}`;
   }
   if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {
@@ -2025,6 +2025,7 @@ function choiceSourceTitle(cmd, session, view) {
   // modala — escapeHtml dawał „Hunter&#39;s Blowgun" w oknie wyboru.
   const name = session.nameOf(object.cardId)
     + (cmd.type === 'cast_spell' && cmd.kicked ? ' (kicker)' : '')
+    + (cmd.type === 'cast_spell' && cmd.gifted ? ' (dar)' : '')
     + (cmd.surgeCast ? ' (surge)' : '');
   // M202/D+M (zgłoszenie właściciela, Ruthless Invasion i Porcelain Legionnaire):
   // warianty zapłaty many phyrexian ({W/P} — mana ALBO 2 życia) grupują się po
@@ -2581,6 +2582,12 @@ export function commandLabel(cmd, session, view) {
       const kickerPart = kickerDef
         ? ` + kicker ${manaCostHtml(costSymbols(kickerDef.cost, kickerDef.colors))}`
         : '';
+      // Gift (CR 702.174, M355): obietnica daru nie zmienia kosztu many, ale
+      // zmienia SKUTEK (przeciwnik dostaje dar) — etykieta musi to nazwać,
+      // bo dwa identyczne przyciski o różnym skutku to klasa M101/B.
+      const giftPart = cmd.gifted
+        ? ` · dar dla przeciwnika: ${(cardForMode?.gift?.effect?.name ?? 'dar')}`
+        : '';
       // Audyt PR #94 / K2 (M91/uwaga D, klasa przed tym PR przy rzucie z ręki):
       // tryb „… put a stun counter on ONE OF THEM” mnoży warianty per cel pod
       // stun (legalModeCasts) — bez nazwy tego celu przyciski o różnych
@@ -2598,7 +2605,7 @@ export function commandLabel(cmd, session, view) {
       } else {
         costHtml = costOfCard(cardForMode);
       }
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${giftPart}${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');

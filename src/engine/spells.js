@@ -6,7 +6,7 @@ import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaP
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
 import { hasCreatureType, isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, transformedCharacteristics } from './permanents.js';
-import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
+import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter, grantGift } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
 import { effectiveProtectionFromColors, isTargetingBlockedByProtection } from './attachments.js';
@@ -478,8 +478,23 @@ export function effectiveSpellManaCost(state, object) {
  * `castPermanent(…, options)`; lista poniżej jest JEDYNYM źródłem nazw, a
  * nieznany klucz odrzucamy, więc literówka w opcji nie udaje uprawnienia (L21).
  */
+/**
+ * CR 702.174a: odbiorcą daru jest PRZECIWNIK kontrolera czaru. Bez wskazania
+ * bierzemy jedynego przeciwnika (1v1); w grze wieloosobowej brak wskazania to
+ * błąd (nie zgadujemy za gracza — oferta zawsze enumeruje konkretne id).
+ */
+export function giftRecipientFor(state, playerId, giftRecipientId = null) {
+  const opponents = state.players.filter((p) => p.id !== playerId);
+  if (giftRecipientId != null) return opponents.find((p) => p.id === giftRecipientId) ?? null;
+  return opponents.length === 1 ? opponents[0] : null;
+}
+
 export const CAST_SPELL_OPTIONS = Object.freeze([
   'buyback', 'payAltCost', 'xValue', 'phyrexianPayWithLife', 'abilityWindowCast', 'kicked',
+  // CR 702.174 (Gift, M355): obietnica daru = dodatkowy koszt (bez many) +
+  // wskazany odbiorca. Dwie nazwy, bo to DWIE decyzje gracza (czy obiecać
+  // i komu) — jedna flaga z id w środku udawałaby jedną.
+  'gifted', 'giftRecipientId',
 ]);
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
@@ -491,7 +506,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   }
   const {
     buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0,
-    abilityWindowCast = false, kicked = false,
+    abilityWindowCast = false, kicked = false, gifted = false, giftRecipientId = null,
   } = options;
   const preObject = state.objects.get(objectId);
   // Kicker (CR 702.33) na instantach i sorcerych rozlicza TA funkcja. Ścieżki
@@ -503,6 +518,19 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     || preObject?.spell?.xCost || preObject?.spell?.fireball)) {
     throw new Error('Kicker nie łączy się z rzutem modalnym, z kosztem X ani z Fireballem');
   }
+  // CR 702.174a (Gift): obietnicę daru składa się przy rzucaniu czaru, który
+  // ma tę mechanikę; odbiorcą musi być PRZECIWNIK (wskazany razem z kosztem).
+  // Wariant modalny/Kosztu X ma osobne ścieżki i daru nie rozlicza — jawny
+  // błąd zamiast cichego zignorowania (L5; żadna karta z darem nie jest
+  // modalna, więc to bramka na wypadek złego płatnika).
+  if (gifted && preObject?.spell?.modes && modeIndex != null) {
+    throw new Error('Gift nie łączy się z rzutem modalnym');
+  }
+  if (gifted && !preObject?.gift) throw new Error('Ta karta nie ma mechaniki gift');
+  const giftRecipient = gifted
+    ? giftRecipientFor(state, playerId, giftRecipientId)
+    : null;
+  if (gifted && !giftRecipient) throw new Error('Nieprawidłowy odbiorca daru');
   // Modal „Choose one" (Aerith Rescue Mission): osobna ścieżka walidacji —
   // cele i efekty pochodzą z wybranego trybu, a nie z nadrzędnego deskryptora.
   if (preObject?.spell?.modes && modeIndex != null) {
@@ -633,6 +661,11 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // CR 702.33a: „was kicked" to własność CZARU na stosie — trigger wchodzący
     // po rozstrzygnięciu czyta ją z obiektu, nie ze zdarzenia rzutu.
     wasKicked: Boolean(kicker),
+    // CR 702.174a-b: obietnica daru (i jego odbiorca) jest własnością CZARU na
+    // stosie — dar wydajemy przy rozstrzygnięciu (instanty/sorcery), a nie
+    // w chwili rzucania, więc czar skontrowany nie daje niczego.
+    wasGifted: Boolean(giftRecipient),
+    giftRecipientId: giftRecipient?.id ?? null,
     ...(sacrificedToughness != null ? { sacrificedToughness } : {}),
   });
   state.objects.set(stackId, stacked);
@@ -680,6 +713,10 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // kicked spell" — triggers.js czyta `ev.kicked`; lustrzane pole
     // `permanent_cast` w resources.js).
     kicked: Boolean(kicker),
+    // Fakt obietnicy daru i jej odbiorca (jawny w logu; własność czaru na
+    // stosie — CR 702.174a).
+    gifted: Boolean(giftRecipient),
+    giftRecipientId: giftRecipient?.id ?? null,
   });
   state.events.push(e);
   // Storm (CR 702.40a): „When you cast this spell, copy it for each spell cast
@@ -1767,6 +1804,11 @@ export function resolveTopOfStack(state) {
   }
   const legalTargets = collectLegalTargets(state, targetSpec, chosen, object.controllerId, object.colors ?? [], object).map((entry) => entry?.id ?? null);
   const fizzled = targetSpec.length > 0 && legalTargets.every((entry) => entry === null);
+  // CR 702.174b (ruling): „For instants and sorceries with gift, the gift is
+  // given … as part of the resolution of the spell. This happens before any of
+  // the spell's other effects would take place." Czar, który się nie
+  // rozstrzyga (fizzle/kontra), nie daje daru.
+  if (!fizzled && object.wasGifted) grantGift(state, object);
   if (!fizzled) {
     const effects = object.cleaved && object.spell.cleave ? (object.spell.cleave.effects ?? object.spell.effects) : object.spell.effects;
     for (let i = 0; i < effects.length; i += 1) {
@@ -2400,6 +2442,18 @@ export function legalSpellCasts(state, playerId) {
         casts.push(kickedCast);
       }
     };
+    // Gift (CR 702.174, Crumb and Get It): wariant z obietnicą daru NIE zmienia
+    // kosztu many — dokładamy go za naturalnym rzutem, po jednym wariancie na
+    // PRZECIWnika (odbiorcę wskazuje się razem z kosztem; „You can’t pay a gift
+    // cost more than once”). Permanentów z darem katalog nie ma — dar dla nich
+    // działa przez trigger ETB (CR 702.174b), więc ta ścieżka powstanie razem
+    // z pierwszą taką kartą (dziś: jawny brak obsługi, nie ciche pominięcie).
+    const pushGiftSpellCasts = (cast) => {
+      if (!object.gift) return;
+      for (const opponentId of state.players.map((p) => p.id).filter((pid) => pid !== playerId)) {
+        casts.push({ ...cast, gifted: true, giftRecipientId: opponentId });
+      }
+    };
     const pushSpellCast = (cast) => {
       // Kolejność panelu (M203/2): przy konwencji „prezentacja = enumeracja"
       // wariant manowy (k=null) jest PIERWSZY wprost z tablicy wariantów —
@@ -2408,6 +2462,7 @@ export function legalSpellCasts(state, playerId) {
         casts.push(k == null ? cast : { ...cast, phyrexianPayWithLife: k });
       }
       pushKickerSpellCasts(cast);
+      pushGiftSpellCasts(cast);
     };
     if (object.spell.timing === 'sorcery') {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);

@@ -745,6 +745,8 @@ const DRUGA_OSOBA = Object.freeze({
   patrzy: 'patrzysz', plotuje: 'plotujesz', poddaje: 'poddajesz',
   poświęca: 'poświęcasz', przegrywa: 'przegrywasz', przeszukuje: 'przeszukujesz',
   przygotowuje: 'przygotowujesz', płaci: 'płacisz', rezygnuje: 'rezygnujesz',
+  // M355 (Crumb and Get It): „przy rzucie czaru obiecujesz dar przeciwnikowi".
+  obiecuje: 'obiecujesz',
   rozdziela: 'rozdzielasz', rozstrzyga: 'rozstrzygasz', rzuca: 'rzucasz',
   szuka: 'szukasz', tworzy: 'tworzysz', układa: 'układasz', używa: 'używasz',
   wskazuje: 'wskazujesz', wybiera: 'wybierasz', wygrywa: 'wygrywasz',
@@ -1581,6 +1583,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       }
       // M100/E4: karty Epic Experiment lecą na ODKRYTY exile (publiczne) —
       // nazwy dla obu graczy.
+      // CR 702.174 (Gift, M355): obietnica daru to NAZWANA mechanika — log
+      // mówi, kto go składa i kto dar dostaje (nazwa daru z deskryptora, nie
+      // z nazwy karty; ADR 0002).
+      case 'gift_given': {
+        const co = e.giftCardId ? nameOf(e.giftCardId) : 'dar';
+        return `${whoN(e.playerId)} obiecuje dar (${co}) — ${whoN(e.recipientId)} tworzy ${co} przed efektami czaru`;
+      }
       case 'epic_experiment_started': {
         const exiled = (e.cardIds ?? []).map((cid) => nameOf(cid)).join(', ');
         return `${srcName(e)}${whoN(e.playerId)} wygania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki${exiled ? `: ${exiled}` : ''}`;

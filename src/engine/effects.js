@@ -956,6 +956,32 @@ export function applyEnterCounters(state, objectId) {
   }
 }
 
+/**
+ * CR 702.174b (Gift, M355): wydanie obiecanego daru przez czar, który się
+ * rozstrzyga. Dar dostaje WSKAZANY przeciwnik (nie kontroler czaru), więc
+ * efekt aplikujemy z obiektem-źródłem o kontrolerze odbiorcy — dzięki temu
+ * `create_token` tworzy token pod jego kontrolą, a zdarzenia niosą dalej
+ * `cardId` czaru (log mówi, skąd dar). Katalog zna dziś jeden rodzaj daru
+ * (token Food); kolejne (karta, dodatkowa tura) dojdą z pierwszymi kartami,
+ * które ich używają — dar jest opisany deskryptorem, nie gałęzią po nazwie
+ * karty (ADR 0002).
+ *
+ * Kolejność: to woła resolveTopOfStack PRZED pętlą efektów czaru (ruling:
+ * „the gift is given … before any of the spell's other effects").
+ */
+export function grantGift(state, spell) {
+  const gift = spell?.gift ?? null;
+  const recipientId = spell?.giftRecipientId ?? null;
+  if (!gift?.effect || !recipientId) return;
+  if (!state.players.some((p) => p.id === recipientId)) return;
+  state.events.push(event('gift_given', {
+    playerId: spell.controllerId, recipientId,
+    sourceCardId: spell.cardId ?? null,
+    giftCardId: gift.effect?.cardId ?? null,
+  }));
+  applyEffect(state, gift.effect, { ...spell, controllerId: recipientId }, []);
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   if (state.pendingReplacementChoice?.frame) {
     state.pendingReplacementChoice.continuations.push({effect, sourceObject, targets, context});
@@ -976,6 +1002,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // próg niespełniony pomija TYLKO ten efekt, nie całą zdolność.
   // CR 702.33d: tylko opłacony kicker włącza warunkowy efekt czaru.
   if (effect.condition?.wasKicked && !sourceObject?.wasKicked) return;
+  // CR 702.174c (Gift, M355): „if the gift was promised" — klauzula czyta
+  // własność czaru na stosie (wasGifted ustawia castSpell), tak samo jak
+  // kicker czyta wasKicked. Dla permanentów flagę nosi permanent (ETB).
+  if (effect.condition?.wasGifted && !sourceObject?.wasGifted) return;
   if (effect.condition?.manaSpentAtLeast != null && (context?.manaSpent ?? 0) < effect.condition.manaSpentAtLeast) return;
   if (effect.type === 'damage') {
     // M111: `targetIndex` wskazuje slot celu (konwencja reszty efektów) —

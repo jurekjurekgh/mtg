@@ -80,6 +80,10 @@ export function installDeck(state, deck, { seed }) {
       station: card.station ?? null,
       adventure: card.adventure ?? null,
       kicker: card.kicker ?? null,
+      // CR 702.174 (Gift, M355): deskryptor daru (co dostaje obiecany
+      // przeciwnik) musi przetrwać materializację — bez tego cast_spell
+      // nie widzi `object.gift` i wariant z obietnicą nie istnieje.
+      gift: card.gift ?? null,
       buyback: card.buyback ?? null,
       protectionFromColors: card.protectionFromColors ?? null,
       exploit: card.exploit ?? null,

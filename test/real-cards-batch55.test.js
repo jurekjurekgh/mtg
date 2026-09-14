@@ -7,12 +7,12 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
-import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
+import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
 import { addCounter } from '../src/engine/counters.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { describeGameEvent } from '../src/table/session.js';
-import { choiceGroupTitle } from '../src/table/render.js';
+import { choiceGroupTitle, commandLabel } from '../src/table/render.js';
 
 /**
  * Batch 55 (2026-09-14) — karty właściciela: 23, 609–617.
@@ -748,4 +748,180 @@ test('B55/B4: 23 Brightwood Tracker — etykiety: modal i log mówią o STWORZE 
   const logResolved = describeGameEvent(resolved, helpers, { p1: 'Ty', p2: 'Nieprzyjaciel' });
   assert.match(logResolved, /Kin-Tree Nurturer/, `log nazywa wziętą kartę (właściciel widzi): ${logResolved}`);
   assert.match(logResolved, /spód/, `log mówi o spodzie biblioteki: ${logResolved}`);
+});
+
+// ---------------------------------------------------------------------------
+// B5 (M355) — 612 Crumb and Get It (Gift, CR 702.174)
+//
+// Oracle + 8 rulingów w `docs/cards/scryfall-crumb-and-get-it.json`:
+//   • obietnica daru to DODATKOWY KOSZT wybierany przy rzucaniu (bez many),
+//     a odbiorcę wskazuje się razem z kosztem;
+//   • dla instantów/sorcery dar jest wydawany PRZY ROZSTRZYGANIU i PRZED
+//     pozostałymi efektami czaru;
+//   • czar skontrowany/nie-rozstrzygnięty NIE daje daru (i nie robi nic);
+//   • „You can’t pay a gift cost more than once.”
+// ---------------------------------------------------------------------------
+
+sanity('crumb-and-get-it', 612, 'BLB', 'Śródziemie');
+tooLittleMana('crumb-and-get-it', 'cast_spell', (s) => put(s, 'tgt', 'kin-tree-nurturer', 'p1', 'battlefield'), 'U');
+
+const foodOnBoard = (s, p = 'p2') => [...s.objects.values()]
+  .find((o) => o.zone === 'battlefield' && o.isToken && (o.subtypes ?? []).includes('Food') && o.controllerId === p);
+const giftCasts = (s, p = 'p1') => commands(s, p)
+  .filter((c) => c.type === 'cast_spell' && c.objectId === 'crumb');
+
+test('B55/B5: 612 Crumb and Get It — bez obietnicy: +2/+2, bez Food i bez indestructible', () => {
+  const s = game();
+  put(s, 'crumb', 'crumb-and-get-it');
+  put(s, 'tgt', 'kin-tree-nurturer', 'p1', 'battlefield'); // 2/1
+  addMana(s, 'p1', 1, { colors: ['W'] });
+
+  assert.equal(giftCasts(s).filter((c) => c.gifted === true).length, 1,
+    'jedna oferta obietnicy na przeciwnika (ruling: „You can’t pay a gift cost more than once”)');
+  const plain = giftCasts(s).find((c) => c.gifted !== true && c.targets?.includes('tgt'));
+  assert.ok(plain, 'zwykły wariant rzutu jest w ofercie');
+  run(s, plain);
+  resolve(s);
+
+  assert.equal(effectivePower(s.objects.get('tgt'), s), 4, '„gets +2/+2”');
+  assert.equal(effectiveToughness(s.objects.get('tgt'), s), 3);
+  assert.equal(foodOnBoard(s), undefined, 'bez obietnicy NIKT nie tworzy Food');
+  assert.equal(s.events.some((e) => e.type === 'token_created'), false);
+  assert.ok(!effectiveKeywords(s.objects.get('tgt'), s).includes('indestructible'),
+    'indestructible jest warunkowe („if the gift was promised”)');
+});
+
+test('B55/B5: 612 Crumb and Get It — z obietnicą: Food u przeciwnika PRZED efektami czaru', () => {
+  const s = game();
+  put(s, 'crumb', 'crumb-and-get-it');
+  put(s, 'tgt', 'kin-tree-nurturer', 'p1', 'battlefield');
+  addMana(s, 'p1', 1, { colors: ['W'] });
+
+  const gifted = giftCasts(s).find((c) => c.gifted === true && c.giftRecipientId === 'p2' && c.targets?.includes('tgt'));
+  assert.ok(gifted, 'wariant z obietnicą daru dla przeciwnika');
+  run(s, gifted);
+  resolve(s);
+
+  const food = foodOnBoard(s);
+  assert.ok(food, 'przeciwnik tworzy token Food');
+  assert.equal(food.controllerId, 'p2');
+  assert.deepEqual(food.subtypes, ['Food']);
+  assert.ok((food.types ?? []).includes('Artifact'));
+  assert.ok(effectiveKeywords(s.objects.get('tgt'), s).includes('indestructible'), '„that creature also gains indestructible”');
+  assert.equal(effectivePower(s.objects.get('tgt'), s), 4);
+
+  const iToken = s.events.findIndex((e) => e.type === 'token_created');
+  const iPump = s.events.findIndex((e) => e.type === 'stats_modified' && e.objectId === 'tgt');
+  assert.ok(iToken >= 0 && iPump >= 0, 'oba zdarzenia są w logu');
+  assert.ok(iToken < iPump, `dar PRZED efektami czaru (ruling): token@${iToken}, pump@${iPump}`);
+
+  // Interakcja z katalogiem: token Food ma zdolność „{2}, {T}, poświęć: 3 życia”.
+  const widok = playerView(s, 'p2');
+  const wpis = (widok.zones.battlefield ?? []).find((o) => o.id === food.id);
+  const zdolnosci = wpis?.activatableAbilities ?? [];
+  assert.ok(zdolnosci.some((a) => a?.cost?.tap && a?.cost?.sacrificeSelf && a?.effect?.type === 'gain_life'),
+    `Food ma swoją zdolność z katalogu: ${JSON.stringify(zdolnosci)}`);
+});
+
+test('B55/B5: 612 Crumb and Get It — nielegalny odbiorca daru jest odrzucany', () => {
+  const s = game();
+  put(s, 'crumb', 'crumb-and-get-it');
+  put(s, 'tgt', 'kin-tree-nurturer', 'p1', 'battlefield');
+  addMana(s, 'p1', 1, { colors: ['W'] });
+
+  assert.equal(giftCasts(s).some((c) => c.gifted === true && c.giftRecipientId === 'p1'), false,
+    'oferta nie proponuje daru samemu sobie („promise an opponent a gift”)');
+  for (const bad of ['p1', 'p9']) {
+    const r = execute(s, {
+      type: 'cast_spell', playerId: 'p1', objectId: 'crumb', targets: ['tgt'],
+      gifted: true, giftRecipientId: bad,
+    });
+    assert.equal(r.ok, false, `odbiorca ${bad} musi być odrzucony: ${JSON.stringify(r.events)}`);
+    assert.equal(s.objects.get('crumb').zone, 'hand', 'odrzucony rzut nie rusza karty');
+  }
+});
+
+test('B55/B5: 612 Crumb and Get It — obietnica bez rozstrzygnięcia czaru: daru nie ma', () => {
+  const s = game();
+  put(s, 'crumb', 'crumb-and-get-it');
+  put(s, 'tgt', 'kin-tree-nurturer', 'p1', 'battlefield');
+  addMana(s, 'p1', 1, { colors: ['W'] });
+  run(s, giftCasts(s).find((c) => c.gifted === true && c.targets?.includes('tgt')));
+  // Cel staje się nielegalny, zanim czar się rozstrzygnie (CR 608.2b).
+  moveObjectDirectly(s, 'tgt', 'graveyard', 'tgt-grave');
+  resolve(s);
+
+  assert.equal(foodOnBoard(s), undefined,
+    'ruling: „If a spell … doesn’t resolve … the gift won’t be given”');
+  assert.equal(s.events.some((e) => e.type === 'token_created'), false);
+});
+
+test('B55/B5: 612 Crumb and Get It — bot: dar w oknie walki, czysty koszt poza walką', () => {
+  const bot = createHeuristicBot({ seed: 3 });
+  // Wycena wariantu: bot dostaje widok z JEDNYM wariantem rzutu (reszta akcji
+  // bez zmian), więc `trace().score` mówi wprost o tym wariancie — przy pełnej
+  // ofercie remis z „pass" maskowałby różnicę (M101/B: dwa przyciski o różnym
+  // skutku muszą mieć różną cenę).
+  const scoreVariant = (s, gifted) => {
+    const full = playerView(s, 'p1');
+    const view = {
+      ...full,
+      legalCommands: full.legalCommands.filter((c) => c.type === 'cast_spell' && (c.gifted === true) === gifted),
+    };
+    bot.chooseCommand(view);
+    return bot.trace().at(-1).score;
+  };
+  const wWalce = () => {
+    const s = game();
+    put(s, 'crumb', 'crumb-and-get-it');
+    put(s, 'tgt', 'skymarch-bloodletter', 'p1', 'battlefield');
+    put(s, 'blocker', 'typhoid-rats', 'p2', 'battlefield');
+    addMana(s, 'p1', 1, { colors: ['W'] });
+    // Okno bojowe: mój stwór jest zadeklarowanym atakującym (CR 508.1).
+    s.combat = { attackers: ['tgt'], blockers: new Map(), attackingPlayerId: 'p1' };
+    return s;
+  };
+  const pozaWalka = () => {
+    const s = game();
+    put(s, 'crumb', 'crumb-and-get-it');
+    put(s, 'tgt', 'skymarch-bloodletter', 'p1', 'battlefield');
+    addMana(s, 'p1', 1, { colors: ['W'] });
+    return s;
+  };
+
+  const s = wWalce();
+  const wybor = bot.chooseCommand(playerView(s, 'p1'));
+  assert.equal(wybor.objectId, 'crumb');
+  assert.equal(wybor.gifted, true, 'w oknie walki indestructible jest warte więcej niż Food dla przeciwnika');
+
+  // Ta sama ekonomia wprost: w oknie walki obietnica PODNOSI wycenę rzutu,
+  // poza oknem walki (bez blokowania) dar jest wyłącznie kosztem — wariant
+  // z obietnicą wypada niżej niż zwykły.
+  assert.ok(scoreVariant(wWalce(), false) < scoreVariant(wWalce(), true),
+    'w oknie walki wariant z darem musi być wyceniony wyżej niż bez daru');
+  const bezWalki = pozaWalka();
+  assert.ok(scoreVariant(bezWalki, true) < scoreVariant(bezWalki, false),
+    'poza walką obietnica daru to czysty koszt — wariant z darem wyceniony niżej');
+
+  // A w pełnej ofercie poza walką bot daru nie bierze (pump „na zapas" to
+  // marnowanie karty — bot może wtedy odpuścić rzut; to nie jest przedmiotem
+  // testu, przedmiotem jest to, że NIE płaci daru bez powodu).
+  const wybor2 = bot.chooseCommand(playerView(pozaWalka(), 'p1'));
+  assert.notEqual(wybor2.gifted, true, 'poza walką bot nie obiecuje daru');
+});
+
+test('B55/B5: 612 Crumb and Get It — etykieta wariantu z obietnicą różni się od zwykłego rzutu', () => {
+  const s = game();
+  put(s, 'crumb', 'crumb-and-get-it');
+  put(s, 'tgt', 'kin-tree-nurturer', 'p1', 'battlefield');
+  addMana(s, 'p1', 1, { colors: ['W'] });
+  const widok = playerView(s, 'p1');
+  const session = { nameOf: (cardId) => registry.get(cardId)?.name ?? cardId };
+  const zwykly = giftCasts(s).find((c) => c.gifted !== true && c.targets?.includes('tgt'));
+  const zDarem = giftCasts(s).find((c) => c.gifted === true && c.targets?.includes('tgt'));
+  const l1 = commandLabel(zwykly, session, widok);
+  const l2 = commandLabel(zDarem, session, widok);
+  assert.notEqual(l1, l2, `dwa różne skutki nie mogą mieć tej samej etykiety: ${l1}`);
+  assert.match(l2, /dar/i, `etykieta wariantu z obietnicą nazywa dar: ${l2}`);
+  assert.match(l2, /Food/, `etykieta mówi, CO jest darem: ${l2}`);
 });
