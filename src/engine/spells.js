@@ -755,7 +755,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
  * ale routing resolve_madness_cast po kind kieruje tu obiekty spell.
  *
  * Wzorzec: handlery suspend/rebound — rzut z exile w rozstrzyganiu
- * jednorazowej decyzji, timing IGNOROWANY (CR 702.35b — także sorcery w
+ * jednorazowej decyzji, timing IGNOROWANY (CR 702.35a + ruling DMU 2023-01-06 — także sorcery w
  * cleanup i w turze przeciwnika), cele walidowane jak przy zwykłym rzucie.
  * Różnica: koszt madness się PŁACI (redukcje generyczne i płatność pipami
  * madness.colors — lustro castPermanent, M161/O2).

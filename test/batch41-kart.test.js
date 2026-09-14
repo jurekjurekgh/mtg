@@ -258,7 +258,7 @@ test('C1: Terminal Agony — discard→exile→rzut za {B}{R} z CELEM niszczy st
     'czar po rozstrzygnięciu w grobie');
 });
 
-test('C2: Terminal Agony — sorcery z madness rzucany POZA main fazą (CR 702.35b)', () => {
+test('C2: Terminal Agony — sorcery z madness rzucany POZA main fazą (CR 702.35a)', () => {
   const state = game('p1');
   putCard(state, 'foe', 'highland-game', 'p2');
   state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers' };

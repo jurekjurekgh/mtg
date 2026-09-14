@@ -1,6 +1,6 @@
 // M159 — audyt PR #66: naprawy F1–F4 (RED→GREEN).
 //
-// F1: Madness (CR 702.35b) — rzut za koszt madness następuje przy
+// F1: Madness (CR 702.35a) — rzut za koszt madness następuje przy
 //     rozstrzyganiu i IGNORUJE timing; bramka „Zagranie poza main phase"
 //     odrzucała rzut po odrzuceniu w cleanup (limit ręki — najczęstsza
 //     realna ścieżka madness) i w turze przeciwnika, a heuristic-bot
@@ -49,7 +49,7 @@ function discardRevolutionist(state, objectId, purpose = 'effect', restoreTo = '
   assert.ok(state.pendingMadnessCast, 'decyzja madness otwarta');
 }
 
-// ---- F1: timing madness (CR 702.35b) ---------------------------------------
+// ---- F1: timing madness (CR 702.35a) ---------------------------------------
 
 test('F1a: odrzucenie w CLEANUP (limit ręki) — rzut za madness JEST legalny', () => {
   const state = game();
@@ -62,7 +62,7 @@ test('F1a: odrzucenie w CLEANUP (limit ręki) — rzut za madness JEST legalny',
   const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && c.cast);
   assert.ok(cast, 'oferta rzutu za madness w cleanup');
   const result = execute(state, cast);
-  assert.ok(result.ok, `rzut za madness w cleanup zaakceptowany (CR 702.35b), a był: ${result.events?.[0]?.reason}`);
+  assert.ok(result.ok, `rzut za madness w cleanup zaakceptowany (CR 702.35a), a był: ${result.events?.[0]?.reason}`);
   const onStack = [...state.objects.values()].find((o) => o.cardId === 'revolutionist' && o.zone === 'stack');
   assert.ok(onStack, 'czar madness na stosie');
 });
