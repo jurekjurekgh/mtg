@@ -10914,7 +10914,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         timing: 'sorcery',
         // Koszt {3}{U} z pipem (CR 118.2) i wygnaniem karty jako kosztem —
         // karta znika z grobu NATYCHMIAST, jeszcze przed rozstrzygnięciem
-        // (ruling 2017-04-18), więc przeciwnik nie może jej przechwycić.
+        // (ruling 2017-07-14: „Once you've activated an embalm ability, the
+        // card is immediately exiled. Opponents can't try to stop the
+        // ability…"), więc przeciwnik nie może jej przechwycić.
         cost: { mana: 4, colors: ['U'], exileFromGraveyard: true },
         effect: {
           type: 'create_token_copy_of_source',
