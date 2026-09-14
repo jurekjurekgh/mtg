@@ -49,6 +49,21 @@ test('bug D: OPTION_IGNORABLE_TYPES w render.js zawiera cast_spell (instant z wy
     'OPTION_IGNORABLE_TYPES MUSI zawierać cast_spell (Fake Your Own Death, Negate, Carrion Call)');
 });
 
+test('W1 (E2 audyt PR #116): rzuty za koszt alternatywny i odwrócenia manifestu mają ptaszek jak plot/suspend/cloak', () => {
+  // Oś 3 detektora Żywego Testera zgłosiła „Rzuć za warp:" bez ptaszka
+  // (worek-legend vs worek-mroczny s=55). Kontrakt tools/table-tester/
+  // actions.mjs (E2 PR #116): czasowniki „Rzuć za warp" i „Obróć twarzą do
+  // góry" są w osi wyciszalnych — UI musi to honorować dla WSZYSTKICH gałęzi
+  // etykiety, nie tylko plot/suspend/cloak.
+  const src = fs.readFileSync('src/table/render.js', 'utf8');
+  const match = src.match(/OPTION_IGNORABLE_TYPES\s*=\s*Object\.freeze\(\[\s*([^\]]+)\s*\]\)/);
+  assert.ok(match, 'OPTION_IGNORABLE_TYPES powinien istnieć w render.js');
+  for (const type of ['plot_card', 'suspend_card', 'warp_card', 'turn_manifest_face_up', 'turn_cloak_face_up']) {
+    assert.match(match[1], new RegExp(type),
+      `OPTION_IGNORABLE_TYPES MUSI zawierać ${type} (kontrakt actions.mjs: ptaszek wyciszenia)`);
+  }
+});
+
 test('bug D: openChoiceRequest w main.js przekazuje ignoredOptionKeys do renderChoiceRequest', () => {
   // openChoiceRequest w main.js wywołuje renderChoiceRequest — po fixie
   // musi przekazać ignoredOptionKeys i onToggleIgnoredOption (commandOptionKey
