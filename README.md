@@ -33,7 +33,7 @@ choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdzia�
 na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
-Bieżący stan: szybki rdzeń **5415/5415**, artefakt **61 modułów / 3622,9 kB** (batch 54 ukończony, **10/10 kart**). Pełny zestaw: **5425/5425**; quick **84,2% (566/672)**. Integracja i znane uwagi jakościowe: [raport B5](docs/audits/BATCH54_INTEGRATION_2026-09-08.md). Szczegóły:
+Bieżący stan: szybki rdzeń **5472/5472**, artefakt **61 modułów / 3657,5 kB** (batch 55 ukończony, **10/10 kart**: Gift, Embalm, odsłonięcie w podtrzymaniu). Pełny zestaw: **5482/5482**; quick 82,6% (555/672). Integracja i znane uwagi jakościowe: [handoff batcha 55](docs/setup/HANDOFF_2026-09-14.md). Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
@@ -197,7 +197,8 @@ Zbudowany plik otwiera się dwuklikiem — także na iPadzie i iPhonie, bez serw
 
 ## Najbliższy etap
 
-Etapy 1–5 zamknięte, Etap 2/3 przekroczony (436 kart realnych + 42 tokeny >> docelowe ~20), Etap 4 bota
+Etapy 1–5 zamknięte, Etap 2/3 przekroczony (472 wspierane karty realne + 8 w opracowaniu
++ 40 tokenów >> docelowe ~20), Etap 4 bota
 zamknięty (heurystyka + modelowanie, harness B0, tune-bot), Etap 5 stołu zamknięty
 (gra człowiek–bot na iPadzie przez Pages / file://).
 

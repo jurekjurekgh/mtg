@@ -4728,3 +4728,54 @@ zbierania płatności (live10607 + test sesji i UI). Umbra38/38; fast4928,
 all4938, build60/3428,4kB, quick84,8%. Golden zmienia tylko2 etykiety kroku,
 bez zmiany punktacji/komend; dowód izolacji i triage starych kart w
 `docs/audits/BATCH54_INTEGRATION_2026-09-08.md`. PR106 czeka na właściciela.
+
+## Batch 55 (2026-09-14) — 10 kart (23, 609–617): Gift, Embalm, odsłonięcie
+
+**Status:** zamknięty — 10/10 kart `supported`; PR #116 czeka na właściciela
+(agent nigdy nie scala, ADR 0007/0020).
+
+Zakres mechanik (każda generyczna, bez gałęzi po nazwie karty — ADR 0002):
+
+- **Embalm (CR 702.128a)** — nowy typ efektu `create_token_copy_of_source`:
+  token-kopia z wydruku źródła, `effect.colors` ZASTĘPUJE kolory („except it's
+  white"), `effect.addSubtypes` DODAJE podtypy (Zombie), `manaCost: 0`
+  (mana value 0, CR 707.2); wygnanie karty z grobu jest KOSZTEM aktywacji,
+  więc efekt czyta obiekt ze stanu (źródło jest już w exile), a druga
+  aktywacja tej samej karty jest niemożliwa (ruling 2017-04-18).
+- **Gift (CR 702.174)** — dodatkowy koszt bez many wybierany przy rzucaniu:
+  Food powstaje PRZED innymi efektami czaru, obietnica jedzie przez rejestr →
+  materializacja → `OBJECT_FIELDS` → widok ręki → stos; skontrowany/fizzle =
+  brak daru. Efekt warunkowy czyta `condition.wasGifted` (jedno miejsce
+  w `effects.js`).
+- **Odsłonięcie + mana value (613 Duskmantle Seer)** — trigger podtrzymania
+  liczy utraty życia WSZYSTKICH graczy, a aplikuje je jedną serią (jednoczesność:
+  dwie przegrane w jednym przebiegu SBA = remis, CR 104.4b); odsłonięcie jest
+  jawne (`card_revealed` z `cardId`), karty idą do ręki ruchem strefowym BEZ
+  `card_drawn` i bez licznika dobranych; mana value z KOSZTU DRUKU (L85).
+- **Podgląd wierzchu biblioteki** — rodzina `pendingSatyrLook` rozszerzona
+  deskryptorem (`pickTypes`, `restTo`, `restOrder`) zamiast nowej decyzji;
+  kolejność spodu seedowana (`shuffle(rest, state.seed + state.objectSequence)`).
+- **Liczniki i walka** — `add_counter_to_creatures_you_control.requireCounter`
+  (zbiór = stwory, które JUŻ mają licznik) realizuje „then" bez specjalnej
+  ścieżki; Hunt the Weak to `add_counter` → `fight` (moc liczona po liczniku).
+- **Pozostałe** — `condition.controlsArtifact` (bez „another"), przejęcie
+  kontroli do końca tury, „obrażenia + życie" (Douse in Gloom), statyczna
+  premia pod warunkiem.
+
+Strażnicy przy okazji: **Z1c** (katalog czasowników logu + `DRUGA_OSOBA` —
+nowy czasownik `obiecuje`), **M197/K4** (skan po GRANICACH `defineCard({` —
+stara wersja leniwego regexa sama się wyłączała na kartach ze `support:`
+w tej samej linii), **H7** (M256: `reveal_top_each_player_lose_life_mana_value`
+w `EMPTY_RECEIVER_EFFECTS` z powodem `empty_library`, selektor wspólny
+z efektem), **M122/M255/M179/M157** dla każdego nowego typu efektu (klasa L84),
+**M337/D** (mecz z macierzy skrócił się z 353 do 284 komend po dołożeniu Seera
+do talii `ravnica` — próg kroków zaktualizowany z uzasadnieniem).
+
+Golden master: **zmieniony** `3a5b59276c02ec30…` → `3d1167140f686f7c…`,
+z atrybucją: ta sama nowa wersja kodu na STAREJ talii `ravnica` odtwarza
+starą wartość bit w bit, więc churn to wyłącznie skład talii w parze fixture.
+
+Bramki: `npm test` **5472/5472**, `npm run test:all` **5482/5482**
+(297,7 s), build **61 modułów / 3657,5 kB**; quick benchmark 672 gry / 123,6 s — heuristic **82,6%** (555/672), aggro **30,7%**, random **4,2%**; kontrola na STAREJ talii `forgotten-realms` odtwarza poprzedni pomiar (84,2% / 28,0% / 3,6%), więc różnica to skład talii, nie regresja bota
+(pełne B0 niewykonane — wyłącznie na komendę właściciela, ADR 0018).
+Żywy Tester: 11 partii na taliach batcha, 0 detektorów, 0 niewycenionych.

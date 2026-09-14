@@ -10627,3 +10627,87 @@ random 3,6% (672 gry / 116,1 s) — bez zmian wobec pomiaru sprzed zmiany.
 
 Bramki: `npm test` **5415/5415**, `npm run test:all` **5425/5425** (289 849,11 ms), build
 **61 modułów / 3622,9 kB**.
+
+## 2026-09-14b — Batch 55: 10 kart właściciela (23, 609–617) — Gift, Embalm, Duskmantle Seer (PR #116, arena/01a09c9e)
+
+Druga część sesji 2026-09-14. Właściciel podał listę 10 kart ze swojej kolekcji
+i polecił: „Rozplanuj to sobie, podziel na etapy, wrzuć plan, a potem każdy
+etap osobny commit". Plan (`docs/plans/PLAN_2026-09-14-batch55-23-609-617.md`)
+poszedł na GitHub PRZED pierwszym kodem (ADR 0020 A), a każdy etap to osobny
+commit z własną bramką: B0b `976e3d0`, B1 `01f6894`, B2 `59e1afc`, B3 `3edadb3`,
+B4 `8acdcb2`, B5 `f41959e`, B6 `0762751`, B7 (ten wpis). Katalog rósł wyłącznie
+z kolekcji właściciela (ADR 0029), żadna karta nie dostała `supported` bez
+pełnego Oracle (ADR 0022).
+
+**Karty:** 23 Brightwood Tracker, 609 Jungleborn Pioneer, 610 Gearsmith Prodigy,
+611 Lifecrafter's Gift, 612 Crumb and Get It, 613 Duskmantle Seer,
+614 Hunt the Weak, 615 Tah-Crop Skirmisher, 616 Act of Treason,
+617 Douse in Gloom — 10/10 `supported`, w taliach planów: worek-mroczny,
+forgotten-realms, kaladesh (×2), śródziemie, ravnica, wiedzmin-bg,
+worek-legend, tarkir-wur, tarkir-bg.
+
+**Trzy nowe mechaniki silnika.** *Embalm* (CR 702.128a) dostał generyczny efekt
+`create_token_copy_of_source`: token jest kopią wydruku źródła, `colors`
+zastępuje kolory („except it's white"), `addSubtypes` dodaje podtypy, mana value
+tokenu to 0 (CR 707.2), a wygnanie karty z grobu jest KOSZTEM — zdolność
+rozstrzyga się, gdy karta leży już w exile, więc druga aktywacja jest
+niemożliwa (ruling 2017-04-18). *Gift* (CR 702.174) to dodatkowy koszt bez many
+wybierany przy rzucaniu: obietnica przechodzi przez rejestr, materializację,
+`OBJECT_FIELDS`, widok ręki i stos, Food powstaje PRZED innymi efektami czaru
+(ruling), a skontrowany czar daru nie daje; efekt warunkowy czyta
+`condition.wasGifted`. *Duskmantle Seer* (613) to trigger podtrzymania, który
+każe KAŻDEMU graczowi odsłonić wierzch biblioteki i stracić życie równe mana
+value tej karty: odsłonięcie jest jawe (zdarzenie `card_revealed` niesie
+nazwę), utraty życia są JEDNOCZESNE (jedna seria, więc dwie przegrane naraz to
+remis — CR 104.4b, a nie zwycięstwo gracza wcześniejszego w `state.players`),
+karty idą do ręki ruchem strefowym BEZ `card_drawn` (miracle nie widzi
+dobrania, którego nie było), a mana value bierze się z kosztu DRUKU (L85 —
+świadek Academy Journeymage: 5, nie 4, mimo obniżki kosztu).
+
+**Rozszerzenia generyczne zamiast gałęzi po nazwie** (ADR 0002):
+`condition.controlsArtifact` (bez „another" — Oracle Gearsmitha),
+`add_counter_to_creatures_you_control.requireCounter` (reguła „then": cel ma już
+swój licznik, więc grupa łapie też licznik grupowy), rodzina podglądu wierzchu
+(`pickTypes`/`restTo`/`restOrder` — Brightwood Tracker patrzy na STWORY i kładzie
+resztę na SPÓD w seedowanej kolejności, Satyr Wayfinder zostaje na domyślnych
+„lądy, grób, zachowaj kolejność").
+
+**Strażnicy naprawieni w locie.** Z1c (katalog czasowników logu) wymagał wpisu
+`obiecuje: 'obiecujesz'` w `DRUGA_OSOBA` — log daru używa czasu teraźniejszego.
+M197/K4 (zdublowane pola `artId`/`plan`) skanował plik leniwym regexem
+`id: '...' … \n\s*support:` i definicje ze `support:` w tej samej linii (styl
+kart batcha) nie były skanowane WCALE — strażnik sam się wyłączał na ogonie
+pliku; nowy token (pisany jak sąsiednie tokeny, `support:` w osobnej linii)
+sprawił, że regex złożył 14 definicji w jedną i zgłosił fałszywy alarm. Skan
+idzie teraz po granicach `defineCard({` (520 definicji, 0 zdublowanych pól).
+H7 (M256) dostał wpis w `EMPTY_RECEIVER_EFFECTS` z powodem `empty_library` dla
+nowego efektu zbiorowego, a selektor biblioteki jest WSPÓLNY z efektem
+(`libraryCardsOf`).
+
+**Golden master.** Churn był JEDEN i wyłącznie od składu talii: `ravnica`
+dostała Duskmantle Seera (i +1 land), a ta talia gra w parze fixture. Dowód
+izolacji: ta sama nowa wersja kodu na starej talii odtwarza poprzedni hash bit
+w bit (`3a5b59276c02ec30…`), po dołożeniu karty powstaje nowy
+(`3d1167140f686f7c…`). Fixture zregenerowany świadomie, bez zmian wag i progów.
+Konsekwencja poza fixture: `M337/D` (mecz z macierzy, seed 1001) skrócił się
+z 353 do 284 komend (wygrana p1 w turze 13) — próg kroków zaktualizowany
+z uzasadnieniem i wzmocniony asercją „mecz żył ≥ 8 tur".
+
+**Talie (generator, ADR 0023/0024):** kaladesh 23 → 26, tarkir-bg 32 → 33,
+tarkir-wur 27 → 29, forgotten-realms 35 → 36, worek-legend 26 → 27,
+worek-mroczny 35 → 36, śródziemie 29 → 30, ravnica 36 → 38; re-podział planu
+Wiedźmina (ADR 0024) dał `wiedzmin-bg` (BG) i `wiedzmin-wur` (WUR) w miejscu
+`wiedzmin-brg`/`wiedzmin-wu` — 13 plików testów, `tools/bot-tie-audit.mjs`
+i tabela talii w README zaktualizowane, wszystkie scenariusze przeszły bez
+przelosowania (jeden wyjątek: `library-manipulation-modal` — hunter po 200
+seedach wskazał 11).
+
+**Dane źródłowe:** 10 snapshotów Scryfall (Oracle + rulingi, `rulingsPobrano`
+2026-09-14) w `docs/cards/`, CSV kolekcji bez wierszy FUS/LOR (na polecenie
+właściciela — numery zwalniane stopniowo).
+
+**Bramki (finalne drzewo):** `npm test` **5472/5472**, `npm run test:all`
+**5482/5482** (297,7 s), build **61 modułów / 3657,5 kB**; quick benchmark
+672 gry / 123,6 s — heuristic **82,6%** (555/672), aggro **30,7%**, random **4,2%**; kontrola na STAREJ talii `forgotten-realms` odtwarza poprzedni pomiar (84,2% / 28,0% / 3,6%), więc różnica to skład talii, nie regresja bota; pełne B0 niewykonane (ADR 0018). Żywy Tester: 11 partii na
+taliach batcha (m.in. lustro forgotten-realms i talia celowana z Seerem),
+0 detektorów i 0 niewycenionych ruchów bota. PR #116 czeka na właściciela.
