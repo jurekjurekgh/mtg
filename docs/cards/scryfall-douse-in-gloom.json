@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Douse%20in%20Gloom&set=frf",
+  "print": "frf",
+  "name": "Douse in Gloom",
+  "mana_cost": "{2}{B}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Douse in Gloom deals 2 damage to target creature and you gain 2 life.",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "frf",
+  "set_name": "Fate Reforged",
+  "collector_number": "68",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/b/9b710fcd-0721-4720-a8fa-6d9ceb7b8104.jpg?1783938698",
+    "normal": "https://cards.scryfall.io/normal/front/9/b/9b710fcd-0721-4720-a8fa-6d9ceb7b8104.jpg?1783938698"
+  },
+  "pobrano": "2026-09-14",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/frf/68/rulings",
+  "rulingsPobrano": "2026-09-14"
+}

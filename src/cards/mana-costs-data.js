@@ -457,4 +457,15 @@ export const MANA_COSTS = {
   "oin-the-brave": "{1}{R}",
   "ichorclaw-myr": "{2}",
   "glorifier-of-suffering": "{2}{W}",
+  // Batch 55 (2026-09-14) — koszty wprost z Oracle (docs/cards/scryfall-*.json).
+  "brightwood-tracker": "{3}{G}",
+  "jungleborn-pioneer": "{2}{G}",
+  "gearsmith-prodigy": "{U}",
+  "lifecrafters-gift": "{3}{G}",
+  "crumb-and-get-it": "{W}",
+  "duskmantle-seer": "{2}{U}{B}",
+  "hunt-the-weak": "{3}{G}",
+  "tah-crop-skirmisher": "{1}{U}",
+  "act-of-treason": "{2}{R}",
+  "douse-in-gloom": "{2}{B}",
 };

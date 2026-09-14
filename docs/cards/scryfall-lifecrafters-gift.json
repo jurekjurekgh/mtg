@@ -1,0 +1,49 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Lifecrafter's%20Gift&set=cmr",
+  "print": "cmr",
+  "name": "Lifecrafter's Gift",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Instant",
+  "oracle_text": "Put a +1/+1 counter on target creature, then put a +1/+1 counter on each creature you control with a +1/+1 counter on it.",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "cmr",
+  "set_name": "Commander Legends",
+  "collector_number": "240",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/a/fa000086-e4aa-4bb6-8e66-f4c96e875749.jpg?1783928789",
+    "normal": "https://cards.scryfall.io/normal/front/f/a/fa000086-e4aa-4bb6-8e66-f4c96e875749.jpg?1783928789"
+  },
+  "pobrano": "2026-09-14",
+  "rulings": [
+    {
+      "date": "2020-11-10",
+      "source": "wotc",
+      "comment": "Each +1/+1 counter put on the target creature is a separate event. Replacement effects may affect each of these counters being put on the creature."
+    },
+    {
+      "date": "2020-11-10",
+      "source": "wotc",
+      "comment": "If the target creature is an illegal target by the time Lifecrafter's Gift tries to resolve, the spell doesn't resolve. No creatures receive +1/+1 counters."
+    },
+    {
+      "date": "2020-11-10",
+      "source": "wotc",
+      "comment": "If there is a +1/+1 counter on a noncreature permanent you control, such as a Vehicle that isn't crewed, it won't get another one from Lifecrafter's Gift."
+    },
+    {
+      "date": "2020-11-10",
+      "source": "wotc",
+      "comment": "The state-based action that removes matching +1/+1 and -1/-1 counters won't check until after Lifecrafter's Gift finishes resolving. It's possible put a +1/+1 counter on a creature with a -1/-1 counter on it and then give it a second +1/+1 counter."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/cmr/240/rulings",
+  "rulingsPobrano": "2026-09-14"
+}

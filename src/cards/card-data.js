@@ -10725,6 +10725,98 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 607, plan: 'Wiedźmin', support: { status: 'supported', limitations: [] },
   }),
 
+  // ---------------------------------------------------------------------------
+  // Batch 55 (2026-09-14) — lista właściciela: 23 (odzyskany numer po usunięciu
+  // kart FUS/LOR z kolekcji) oraz 609–617. Dane Oracle + rulingi: pobrane
+  // ze Scryfalla 2026-09-14 (docs/cards/scryfall-*.json).
+  //
+  // Etap B0b: wchodzą WYŁĄCZNIE dane karty (bez mechaniki) i status
+  // `in-development` — zgodnie z procedurą batcha karta dostaje `supported`
+  // dopiero w etapie, w którym ma pełne mechaniki i testy (ADR 0010 §4,
+  // ADR 0022). Kolejność etapów: B1 (616, 617, 610), B2 (611, 614),
+  // B3 (609, 615), B4 (23), B5 (612), B6 (613).
+  // ---------------------------------------------------------------------------
+  defineCard({
+    id: 'brightwood-tracker', name: 'Brightwood Tracker', set: 'M20',
+    types: ['Creature'], subtypes: ['Elf', 'Scout'], colors: ['G'], power: 2, toughness: 4, manaCost: 4,
+    oracleText: '{5}{G}, {T}: Look at the top four cards of your library. You may reveal a creature card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/1/e1fb9767-29bf-4a69-b37c-0925d41f6b46.jpg?1783932968',
+    artId: 23, plan: 'Lorwyn', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'jungleborn-pioneer', name: 'Jungleborn Pioneer', set: 'RIX',
+    types: ['Creature'], subtypes: ['Merfolk', 'Scout'], colors: ['G'], power: 2, toughness: 2, manaCost: 3,
+    oracleText: "When this creature enters, create a 1/1 blue Merfolk creature token with hexproof. (It can't be the target of spells or abilities your opponents control.)",
+    imageUri: 'https://cards.scryfall.io/large/front/9/f/9f01ae0d-db1e-4912-b8ad-3069f6938e04.jpg?1783935285',
+    artId: 609, plan: 'Forgotten Realms', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'gearsmith-prodigy', name: 'Gearsmith Prodigy', set: 'M19',
+    types: ['Creature'], subtypes: ['Human', 'Artificer'], colors: ['U'], power: 1, toughness: 2, manaCost: 1,
+    oracleText: 'This creature gets +1/+0 as long as you control an artifact.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/7/77d9e666-d9c9-4ccd-89a5-83de79677fa6.jpg?1783934589',
+    artId: 610, plan: 'Kaladesh', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'lifecrafters-gift', name: "Lifecrafter's Gift", set: 'CMR',
+    types: ['Instant'], colors: ['G'], manaCost: 4,
+    oracleText: 'Put a +1/+1 counter on target creature, then put a +1/+1 counter on each creature you control with a +1/+1 counter on it.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/a/fa000086-e4aa-4bb6-8e66-f4c96e875749.jpg?1783928789',
+    artId: 611, plan: 'Kaladesh', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'crumb-and-get-it', name: 'Crumb and Get It', set: 'BLB',
+    types: ['Instant'], colors: ['W'], manaCost: 1,
+    oracleText: 'Gift a Food (You may promise an opponent a gift as you cast this spell. If you do, they create a Food token before its other effects. It\'s an artifact with "{2}, {T}, Sacrifice this token: You gain 3 life.")\nTarget creature you control gets +2/+2 until end of turn. If the gift was promised, that creature also gains indestructible until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/c/3c7b3b25-d4b3-4451-9f5c-6eb369541175.jpg?1783910863',
+    artId: 612, plan: 'Śródziemie', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'duskmantle-seer', name: 'Duskmantle Seer', set: 'CLU',
+    types: ['Creature'], subtypes: ['Vampire', 'Wizard'], colors: ['B', 'U'], power: 4, toughness: 4, manaCost: 4,
+    keywords: ['flying'],
+    oracleText: "Flying\nAt the beginning of your upkeep, each player reveals the top card of their library, loses life equal to that card's mana value, then puts it into their hand.",
+    imageUri: 'https://cards.scryfall.io/large/front/4/d/4d6d4280-4a45-4e77-a33e-58955d096adc.jpg?1783912522',
+    artId: 613, plan: 'Ravnica', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'hunt-the-weak', name: 'Hunt the Weak', set: 'IMA',
+    types: ['Sorcery'], colors: ['G'], manaCost: 4,
+    oracleText: "Put a +1/+1 counter on target creature you control. Then that creature fights target creature you don't control. (Each deals damage equal to its power to the other.)",
+    imageUri: 'https://cards.scryfall.io/large/front/5/2/52f763a4-8a79-4056-8066-74899a0fb304.jpg?1783935519',
+    artId: 614, plan: 'Wiedźmin', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'tah-crop-skirmisher', name: 'Tah-Crop Skirmisher', set: 'AKH',
+    types: ['Creature'], subtypes: ['Snake', 'Warrior'], colors: ['U'], power: 2, toughness: 1, manaCost: 2,
+    oracleText: "Embalm {3}{U} ({3}{U}, Exile this card from your graveyard: Create a token that's a copy of it, except it's a white Zombie Snake Warrior with no mana cost. Embalm only as a sorcery.)",
+    imageUri: 'https://cards.scryfall.io/large/front/a/b/ab0429ec-0809-4e68-9790-8c21bde201a2.jpg?1783936514',
+    artId: 615, plan: 'Amonkhet', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'act-of-treason', name: 'Act of Treason', set: 'KTK',
+    types: ['Sorcery'], colors: ['R'], manaCost: 3,
+    oracleText: 'Gain control of target creature until end of turn. Untap that creature. It gains haste until end of turn. (It can attack and {T} this turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/2/e20d6dfd-5f7b-4c71-89e6-8f996d85801d.jpg?1783939076',
+    artId: 616, plan: 'Tarkir', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'douse-in-gloom', name: 'Douse in Gloom', set: 'FRF',
+    types: ['Instant'], colors: ['B'], manaCost: 3,
+    oracleText: 'Douse in Gloom deals 2 damage to target creature and you gain 2 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/b/9b710fcd-0721-4720-a8fa-6d9ceb7b8104.jpg?1783938698',
+    artId: 617, plan: 'Tarkir', support: { status: 'in-development', limitations: [] },
+  }),
+
 ]);
 
 /**
