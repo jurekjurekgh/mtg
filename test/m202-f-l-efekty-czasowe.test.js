@@ -89,14 +89,47 @@ test('M202/L: Wishful Merfolk NIE aktywuje „traci defender” w turze przeciwn
   assert.ok(!activated, `bot wybrał ${JSON.stringify(cmd)} — efekt wyparuje w cleanup, zanim stwór zaatakuje`);
 });
 
-test('M202/L (anty-over-fix): Wishful Merfolk aktywuje w swojej fazie main przed walką', () => {
-  const state = stateAt(3); // własna faza main przed walką
+// M350/B (znalezisko właściciela z testów, 2026-09-14): „bot w swojej turze
+// Główna 1 zapłacił za zamianę w człowieka i utratę defender. Po czym nie
+// zaatakował. Koniec jego tury. Kompletnie zmarnowana mana." Poprzednia
+// wersja bramki (M202/L) dopuszczała main1 — sprawdzała tylko okno i stan
+// stwora, bez ZAMIARU ataku. Dziś obowiązują trzy warunki łącznie:
+// (a) etap walki tej tury przed deklaracją atakujących, (b) stwór może
+// zaatakować, (c) bot realnie zamierza nim atakować — liczone JEGO WŁASNĄ
+// polityką ataku (`attackOptionScore`, wydzielone z gałęzi declare_attackers).
+test('M350/B: Wishful Merfolk NIE kupuje efektu w Głównej 1 (okno walki wyżej, właściciel 2026-09-14)', () => {
+  const state = stateAt(3); // main1 — jeszcze nie ma dowodu na atak
   put(state, 'mer', 'wishful-merfolk', 'p1', { summoningSickness: false, tapped: false });
   put(state, 'isle', 'basic-island', 'p1');
   put(state, 'isle2', 'basic-island', 'p1');
   const cmd = pick(state);
-  assert.equal(cmd?.type, 'activate_ability', `bot wybrał ${JSON.stringify(cmd)}`);
-  assert.equal(cmd.objectId, 'mer', 'zdolność umożliwia atak w tej turze');
+  const activated = cmd?.type === 'activate_ability' && cmd.objectId === 'mer';
+  assert.ok(!activated, `bot wybrał ${JSON.stringify(cmd)} — efekt kupiony przed walką marnuje manę, gdy atak nie dojdzie do skutku`);
+});
+
+test('M350/B: Wishful Merfolk kupuje efekt w etapie walki, gdy ZAMIERZA atakować', () => {
+  for (const step of [4, 5]) { // beginning_of_combat, declare_attackers
+    const state = stateAt(step);
+    put(state, 'mer', 'wishful-merfolk', 'p1', { summoningSickness: false, tapped: false });
+    put(state, 'isle', 'basic-island', 'p1');
+    put(state, 'isle2', 'basic-island', 'p1');
+    const cmd = pick(state);
+    assert.equal(cmd?.type, 'activate_ability', `krok ${step}: bot wybrał ${JSON.stringify(cmd)}`);
+    assert.equal(cmd.objectId, 'mer', 'zdolność umożliwia atak w tej turze');
+  }
+});
+
+test('M350/B: Wishful Merfolk NIE kupuje efektu, gdy atak jest nieopłacalny', () => {
+  // Wróg ma nietapnięte 5/5: 3/2 atakujący to chump (polityka ataku karze go
+  // poniżej passu), więc bot nie zamierza atakować i nie płaci za defender.
+  const state = stateAt(5); // declare_attackers
+  put(state, 'mer', 'wishful-merfolk', 'p1', { summoningSickness: false, tapped: false });
+  put(state, 'isle', 'basic-island', 'p1');
+  put(state, 'isle2', 'basic-island', 'p1');
+  put(state, 'wall', 'woolly-loxodon', 'p2', { tapped: false, summoningSickness: false });
+  const cmd = pick(state);
+  const activated = cmd?.type === 'activate_ability' && cmd.objectId === 'mer';
+  assert.ok(!activated, `bot wybrał ${JSON.stringify(cmd)} — atak nie zmienia wyniku, mana byłaby spalona`);
 });
 
 test('M202/L (anty-over-fix): tapnięty Merfolk nie marnuje many na „traci defender”', () => {

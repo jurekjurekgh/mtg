@@ -2552,6 +2552,56 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return { cmd, score, unvalued };
   }
 
+  /**
+   * M350/B (znalezisko właściciela z testów, 2026-09-14): czy bot ZAMIERZA
+   * zaatakować TYM stworem w tej turze — policzone JEGO WŁASNĄ wyceną ataku
+   * (gałąź `declare_attackers` w `scoreCommand`, wołana na komendzie
+   * syntetycznej), a nie drugą kopią reguł.
+   *
+   * Po co: efekty „do końca tury" kupowane MANĄ przed walką (Wishful Merfolk:
+   * „traci defender i staje się Humanem") mają wartość wyłącznie wtedy, gdy
+   * stwór realnie pójdzie do ataku. Poprzednia bramka (M202/L) sprawdzała
+   * tylko okno i stan stwora, więc bot kupował efekt w main1, po czym — widząc
+   * nieopłacalny atak — NIE atakował: „kompletnie zmarnowana mana".
+   *
+   * Semantyka: „zamierza" = istnieje legalny zestaw atakujących zawierający
+   * ten stwór, którego wycena jest DODATNIA (lepsza niż pass = 0). Zestawy
+   * enumerujemy jak silnik (`boundedSubsets`: wszystkie podzbiory przy małej
+   * liczbie atakujących, inaczej pojedyncze / wszystkie-bez-jednego /
+   * wszystkie) — bot wybiera jeden z nich w kroku deklaracji.
+   *
+   * Reentrancja: wycena ataku nie woła tej bramki (bramka siedzi wyłącznie
+   * w gałęzi `activate_ability`), ale flaga `attackIntentEval` jest
+   * bezpiecznikiem na przyszłość — bez niej dodanie bramki do wyceny ataku
+   * dałoby nieskończoną rekurencję.
+   */
+  let attackIntentEval = false;
+  function attackIntendsCreature(view, objectId) {
+    if (!objectId || attackIntentEval) return false;
+    const legal = myCreatures(view)
+      .filter((o) => !o.tapped && !o.summoningSickness && (o.power ?? 0) > 0)
+      .map((o) => o.id);
+    if (!legal.includes(objectId)) return false;
+    const subsets = [];
+    if (2 ** legal.length <= 32) {
+      for (let mask = 1; mask < 2 ** legal.length; mask += 1) {
+        const set = legal.filter((_, index) => (mask & (2 ** index)) !== 0);
+        if (set.includes(objectId)) subsets.push(set);
+      }
+    } else {
+      subsets.push([objectId], legal.slice());
+      subsets.push(...legal.filter((id) => id !== objectId).map((skip) => legal.filter((id) => id !== skip)));
+    }
+    attackIntentEval = true;
+    try {
+      return subsets.some((attackerIds) => scoreCommand(view, {
+        type: 'declare_attackers', playerId: view.playerId, attackerIds,
+      }) > 0);
+    } finally {
+      attackIntentEval = false;
+    }
+  }
+
   function scoreCommand(view, cmd) {
     // M320/NA2: ward (CR 702.21) — dopłata za celowanie we wrogi permanent
     // z ward. Odejmowana od WYNIKU każdego wariantu (finish), więc warianty
@@ -4540,10 +4590,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Reguła generyczna po deskryptorze `losesKeywords` (ADR 0002).
           if ((effect.losesKeywords ?? []).includes('defender')) {
             const self = objectOnBoard(view, cmd.objectId) ?? target;
-            const beforeCombat = myTurn(view)
-              && ['main1', 'main2', 'beginning_of_combat', 'declare_attackers'].includes(view.turn.step);
+            // M350/B (znalezisko właściciela z testów, 2026-09-14): samo okno
+            // i „stwór może zaatakować" NIE wystarczy — bot kupował efekt
+            // w main1, po czym nie atakował („kompletnie zmarnowana mana").
+            // Trzy warunki łącznie: (a) okno WALKI tej tury (etap walki przed
+            // deklaracją — beginning_of_combat/declare_attackers; main1 odpada,
+            // bo bot ma tam jeszcze inne plany i nie ma dowodu na atak),
+            // (b) stwór może zaatakować (odkręcony, bez choroby), (c) bot
+            // REALNIE zamierza nim atakować — liczone jego własną polityką
+            // (`attackIntendsCreature` → `attackOptionScore`, L41/L48).
+            const przedDeklaracja = myTurn(view)
+              && view.turn.phase === 'combat'
+              && ['beginning_of_combat', 'declare_attackers'].includes(view.turn.step);
             const canAttackNow2 = Boolean(self) && !self.tapped && !self.summoningSickness;
-            score += (beforeCombat && canAttackNow2) ? 10 + 2 * (self?.power ?? 0) : -20;
+            const intends = canAttackNow2 && przedDeklaracja
+              && attackIntendsCreature(view, self.id);
+            score += intends ? 10 + 2 * (self?.power ?? 0) : -20;
           }
           // M202/J (uwaga właściciela, Merfolk Mesmerist): „{U}, {T}: Target
           // player mills two cards” TAPUJE źródło, więc mill za cenę blokera ma
