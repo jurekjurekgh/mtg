@@ -1878,14 +1878,11 @@ o skutku jest fałszywie czerwona, a przy blokadzie decyzji drenaż ma prawo sta
 
 ## L117 (2026-09-02) — Remis punktów jest tak samo arbitralny jak brak wyceny; mierz go na śladzie
 
-**Przypadek:** audyt „działań niescoringowanych" bota. Statyczna inwentaryzacja
-`createHeuristicBot` (84 zagnieżdżone helpery) wskazała 6 podejrzanych miejsc — ale
-regiony funkcji nachodzą na siebie, więc wynik był zaniżony. Pomiar na `bot.trace()`
-z 12 partii: 30,4% decyzji z alternatywami to ex aequo na maksimum; `play_land` miał
-płaskie 90, więc wybór manabazy zapadał w kolejności `legalCommands` (i w rng puli
-top-3). Złapana przy okazji pułapka: wspólny sufit klampy (`min(16, suma)`) zgrywał do
-jednego wyniku ląd pokrywający 2 i 3 pipów — test jednostkowy „lepszy wygrywa" tego nie
-widział, bo oba warianty były „lepsze".
+**Przypadek:** audyt „działań niescoringowanych" bota — grep po źródle zaniżał
+wynik (regiony helperów nachodzą); pomiar na `bot.trace()` z 12 partii: 30,4% decyzji
+z alternatywami to ex aequo, a `play_land` z płaskim 90 wybierał manabazę w kolejności
+`legalCommands`. Pułapka: wspólny sufit klampy zgrywał ląd pokrywający 2 i 3 pipów —
+test „lepszy wygrywa" tego nie widział. Pełna narracja: PRZYPADKI (L117).
 **Reguła:** punkty decyzyjne bota audytuje się na rozegranych partiach, nie na grepie:
 identyczne `score` przy ≥2 opcjach ⇒ wycena nic nie rozstrzygnęła, niezależnie od tego,
 czy w źródle „jest gałąź punktująca". Klasyfikację remisów prowadź po **wejściach**
@@ -2266,6 +2263,7 @@ konsumentów, ilu formatuje ten sam tekst — szukaj ich grepem po treści:
 - jeśli mechanika jest rzadka w talii, zrób sondę partią na CHWILOWEJ talii
   (`docs/setup/TESTER_STOLU.md` → „Partia celowana pod mechanikę"), a plik
   usuń przed bramką (strażnicy M178 nie znoszą dubli w taliiach).
+- 2026-09-14 (W1): strona PTASZKA jest częścią kontraktu etykiety — `OPTION_IGNORABLE_TYPES` (UI) i `actions.mjs` (tester) muszą iść razem; strażnik `test/choice-ignore.test.js`.
 
 
 **Strażnik:** `test/m326-cloak-przyczyna.test.js` (7, w tym C2 — skan
@@ -2333,14 +2331,21 @@ duplikaty etykiet dla różnych kart; teraz zależą od jawnych wejść na stó�
 wariantów zakrytych kart, etykiety obu widzów, ciągłość po obrocie/przejęciu.
 
 
-## L142 (2026-09-14) — Proweniencja znaleziska to fakt, nie ozdobnik: nie przypisuj właścicielowi słów, których nie napisał
+## L142 (2026-09-14) — Proweniencja znaleziska to fakt, nie ozdobnik
 
-**Reguła:** „zgłoszenie właściciela" wolno wpisać tylko wtedy, gdy jego słowa
-są zacytowane w tej sesji albo w repo. Audyt z własnej inicjatywy jest równie
-dobry, ale musi być nazwany („audyt własny") — inaczej dokument kłamie
-o historii i zrzuca na właściciela odpowiedzialność za cudzy błąd.
-2026-09-14c: 4 realne rozjazdy kosztów zdolności (m.in. Embalm −1 many —
-błąd wprowadzony przez agenta w batchu 55) opisano jako „zgłoszenie
-właściciela"; sprostowanie objęło plan, historię, milestone, handoff i 2 testy.
+**Reguła:** „zgłoszenie właściciela" wolno wpisać tylko przy cytacie jego słów
+z sesji/repo; audyt własny musi być nazwany („audyt własny") — inaczej
+dokument kłamie o historii. 2026-09-14c: 4 rozjazdy kosztów (błąd agenta)
+opisane jako zgłoszenie właściciela; sprostowanie objęło plan, historię,
+milestone, handoff i 2 testy.
 
-**Strażnik:** zwyczaj; sprostowanie w `docs/PROJECT_HISTORY.md` § 2026-09-14c.
+**Strażnik:** zwyczaj. → narracja: PRZYPADKI (L142).
+
+## L143 (2026-09-14) — Sweep numerów CR zmienia NUMER, nie znaczenie
+
+**Reguła:** przy przenumerowaniu sprawdź, co podreguła znaczy DZIŚ: 702.34e
+(timing madnessu) nie istnieje w 702.35a–c (702.35b to koszt alternatywny;
+poprawnie 702.35a + ruling DMU 2023-01-06); „604.3" przy „liczone przy każdym
+odczycie" to CDA (właściwy: 611.3a).
+
+**Strażnik:** `test/cr-numery-mechanik-straznik.test.js` (2 pary). → narracja: PRZYPADKI (L143).

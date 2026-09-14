@@ -73,23 +73,23 @@ brak wyjątków po nazwie (ADR 0002).
 
 ## 2. Etapy i kryteria ukończenia
 
-- [ ] **E0. Plan + PR sesji** (ADR 0020 A) — ten plik osobnym commitem PRZED
+- [x] **E0. Plan + PR sesji** (ADR 0020 A) — ten plik osobnym commitem PRZED
       kodowaniem; PR otwarty na GitHubie.
-- [ ] **E1. Audyt PR #116** — raport `docs/audits/AUDYT_PR116_2026-09-14.md`
+- [x] **E1. Audyt PR #116** — APPROVE; raport docs/audits/AUDYT_PR116_2026-09-14.md (c5c138d); naprawy P1-P6 osobnymi commitami (52b1ad2..eeb7496) — raport `docs/audits/AUDYT_PR116_2026-09-14.md`
       z werdyktem, tabelą znalezisk (ID, miejsce, treść, werdykt) i sekcją
       odtwarzalności; znaleziska blokujące naprawione u root cause osobnymi
       commitami (RED→GREEN + weryfikacja mutacyjna).
-- [ ] **E2. Pętla jakości — Żywy Tester** na świeżym `dist/` (L76), partie
+- [x] **E2. Pętla jakości — Żywy Tester** — 12 partii (w tym celowane chwilowymi taliami, M331); Gift/Embalm/Seer zweryfikowane na żywo; znalezisko W1 (ptaszek dla warp_card i turn_manifest_face_up) naprawione fca3f4b z dowodem end-to-end na świeżym `dist/` (L76), partie
       taliami z obszaru zmian (Gift/Embalm/Seer), ręczna lektura transkryptów
       po trzech osiach (`TESTER_STOLU.md`), naprawy u root cause + detektory.
       Kandydat: `[Trigger:]` w linii stosu.
-- [ ] **E3. Polowanie na niezgodności z CR** inną ścieżką niż poprzednie sesje
+- [x] **E3. Polowanie na niezgodności z CR** — straznik 2 nowych par (madness+702.35b; przeliczane+604.3) z cytatami ADR 0030 i weryfikacja mutacyjna (4a67459) inną ścieżką niż poprzednie sesje
       (obszar wskazany przez E1: Embalm/Gift/odsłonięcie/koszty zdolności) —
       cytat reguły w komentarzu strażnika (ADR 0030).
-- [ ] **E4. Bramki**: `npm test` po każdym commicie; na koniec
+- [x] **E4. Bramki** — finalny head: npm test 5485/5485 (147,9 s), test:all 5495/5495 (304,6 s), build 61/3658,7 kB, quick 82,6% (555/672) / 30,7% / 4,2% (bez zmian), golden master bez churnu: `npm test` po każdym commicie; na koniec
       `npm run test:all`, `npm run build`, quick benchmark
       (`node tools/benchmark.mjs`), golden master — churn tylko świadomy (L124).
-- [ ] **E5. Domknięcie**: `docs/setup/HANDOFF_2026-09-14e.md`, wpis w
+- [x] **E5. Domknięcie** — HANDOFF_2026-09-14e, wpis PROJECT_HISTORY 2026-09-14e, README (liczby), LESSONS L143/L144, opis PR #118: `docs/setup/HANDOFF_2026-09-14e.md`, wpis w
       `docs/PROJECT_HISTORY.md`, README (liczby z pomiaru, L92), opis PR
       aktualizowany kumulatywnie. Pełne B0 wyłącznie na komendę właściciela
       (ADR 0018).
@@ -107,7 +107,7 @@ wypchnięty od razu (ADR 0020 C/D, L136).
   <plik>` sprawdzić `git diff --stat -- <plik>`.
 - Gift przenosi deskryptor przez **cztery warstwy** (L21/L84) — audyt sprawdza
   każdą, nie tylko `effects.js`.
-- Embalm: wygnanie z grobu to KOSZT (ruling 2017-04-18) — efekt czyta obiekt
+- Embalm: wygnanie z grobu to KOSZT (ruling 2017-07-14) — efekt czyta obiekt
   już z exile; druga aktywacja tej samej karty niemożliwa.
 - Duskmantle Seer: **nie** emituje `card_drawn`; utraty życia jednoczesne
   (CR 104.4b). Pamięć treningowa nie jest źródłem (ADR 0030).
