@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "107fd425c323865528089e1925e093b508a06c8239611f98fe5988cd755f66bd",
+  "overallHash": "3a5b59276c02ec30fb1d5ddc33b5e827f09ec257260cd58a93b521f0b2f63e54",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
@@ -89,40 +89,38 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "a76052c4b0efb5123d623d3c31e659ff381694262121c0ac23567659c32cdfa3",
-      "decisions": 222,
-      "scoreSum": 2989.0243,
+      "hash": "545f33c22b8e19b635d5375788fdcec07f5acf40778adc745dc492f11baddd87",
+      "decisions": 165,
+      "scoreSum": 2181.3054,
       "chosenKinds": {
-        "activate_ability": 1,
-        "attack": 3,
-        "block": 9,
-        "cast_permanent": 7,
-        "cast_spell": 2,
-        "pass_priority": 181,
-        "play_land": 8,
-        "resolve_combat": 9,
-        "resolve_damage_assignment": 1,
+        "activate_ability": 2,
+        "attack": 4,
+        "block": 7,
+        "cast_permanent": 4,
+        "pass_priority": 134,
+        "play_land": 3,
+        "resolve_combat": 7,
+        "resolve_discard_choice": 1,
+        "resolve_endure_choice": 2,
         "resolve_mulligan_choice": 1
       }
     },
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1001,
-      "hash": "5b8f8dbc0d241fd5c2d9f438006e4acd6994ca53b0354368bf4d61e25c381035",
-      "decisions": 227,
-      "scoreSum": 2867.327,
+      "hash": "d6416b80e8bfa1fce856af591e745f1c2d25e40d349965bad078bec5d533cb3f",
+      "decisions": 188,
+      "scoreSum": 2589.1279,
       "chosenKinds": {
-        "activate_ability": 3,
-        "attack": 7,
-        "block": 5,
-        "cast_permanent": 9,
-        "pass_priority": 182,
+        "activate_ability": 2,
+        "attack": 4,
+        "block": 6,
+        "cast_permanent": 7,
+        "cast_spell": 1,
+        "pass_priority": 154,
         "play_land": 5,
-        "resolve_combat": 9,
-        "resolve_damage_assignment": 3,
-        "resolve_endure_choice": 2,
-        "resolve_mulligan_choice": 1,
-        "resolve_trigger_target": 1
+        "resolve_combat": 8,
+        "resolve_mulligan_choice": 1
       }
     }
   ]

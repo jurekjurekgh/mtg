@@ -1325,6 +1325,7 @@ function describeStatic(ability) {
   if (cond.minCardsDrawnThisTurn) parts.push(`przy ${cond.minCardsDrawnThisTurn}+ dobranych kartach`);
   if (cond.controlsAnotherMulticolored) parts.push('gdy kontrolujesz inny wielokolorowy permanent');
   if (cond.controlsAnotherArtifact) parts.push('gdy kontrolujesz inny artefakt');
+  if (cond.controlsArtifact) parts.push('gdy kontrolujesz artefakt');
   if (cond.hasCounter) parts.push(`gdy ma licznik ${counterLabelGen(cond.hasCounter)}`);
   if (cond.minCreatureCardsInGraveyard) parts.push(`przy ${cond.minCreatureCardsInGraveyard}+ stworach w grobie`);
   if (ability.cantBlock || ability.cant_block) parts.push('nie może blokować');

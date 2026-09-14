@@ -123,13 +123,13 @@ liczone z plików `decks/*.txt`).
 | `forgotten-realms` | Forgotten Realms | WUBRG | 35 | 12 | 23 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 27 | 9 | 18 |
 | `innistrad-wu` | Innistrad (WU) | WU | 27 | 9 | 18 |
-| `kaladesh` | Kaladesh | WUBRG | 23 | 8 | 15 |
+| `kaladesh` | Kaladesh | WUBRG | 24 | 8 | 16 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 27 | 9 | 18 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
 | `ravnica` | Ravnica | WUBRG | 36 | 12 | 24 |
 | `srodziemie` | Śródziemie | WUBRG | 29 | 10 | 19 |
-| `tarkir-bg` | Tarkir (BG) | UBG | 32 | 11 | 21 |
-| `tarkir-wur` | Tarkir (WUR) | WUR | 27 | 9 | 18 |
+| `tarkir-bg` | Tarkir (BG) | UBG | 33 | 11 | 22 |
+| `tarkir-wur` | Tarkir (WUR) | WUR | 29 | 10 | 19 |
 | `theros` | Theros | WUBRG | 27 | 9 | 18 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 35 | 12 | 23 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |

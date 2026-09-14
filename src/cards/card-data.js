@@ -10757,7 +10757,16 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Human', 'Artificer'], colors: ['U'], power: 1, toughness: 2, manaCost: 1,
     oracleText: 'This creature gets +1/+0 as long as you control an artifact.',
     imageUri: 'https://cards.scryfall.io/large/front/7/7/77d9e666-d9c9-4ccd-89a5-83de79677fa6.jpg?1783934589',
-    artId: 610, plan: 'Kaladesh', support: { status: 'in-development', limitations: [] },
+    abilities: [
+      // CR 604.3: warunek statyczny liczony przy każdym odczycie charakterystyk
+      // (ta sama ścieżka co Ramroller, ale bez „another" — sam typ Artifact).
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { controlsArtifact: true },
+        pump: { power: 1, toughness: 0 },
+      }),
+    ],
+    artId: 610, plan: 'Kaladesh', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({
@@ -10806,7 +10815,10 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Sorcery'], colors: ['R'], manaCost: 3,
     oracleText: 'Gain control of target creature until end of turn. Untap that creature. It gains haste until end of turn. (It can attack and {T} this turn.)',
     imageUri: 'https://cards.scryfall.io/large/front/e/2/e20d6dfd-5f7b-4c71-89e6-8f996d85801d.jpg?1783939076',
-    artId: 616, plan: 'Tarkir', support: { status: 'in-development', limitations: [] },
+    spell: { timing: 'sorcery', targets: [{ type: 'creature' }], effects: [
+      { type: 'gain_control_until_end_of_turn' },
+    ] },
+    artId: 616, plan: 'Tarkir', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({
@@ -10814,7 +10826,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Instant'], colors: ['B'], manaCost: 3,
     oracleText: 'Douse in Gloom deals 2 damage to target creature and you gain 2 life.',
     imageUri: 'https://cards.scryfall.io/large/front/9/b/9b710fcd-0721-4720-a8fa-6d9ceb7b8104.jpg?1783938698',
-    artId: 617, plan: 'Tarkir', support: { status: 'in-development', limitations: [] },
+    spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [
+      { type: 'damage', amount: 2 },
+      { type: 'gain_life', amount: 2 },
+    ] },
+    artId: 617, plan: 'Tarkir', support: { status: 'supported', limitations: [] },
   }),
 
 ]);

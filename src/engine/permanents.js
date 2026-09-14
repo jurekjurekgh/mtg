@@ -332,6 +332,15 @@ function staticConditionHolds(state, object, condition) {
       && candidate.controllerId === object.controllerId
       && (candidate.kind === 'artifact' || (candidate.types ?? []).includes('Artifact')));
   }
+  // Gearsmith Prodigy: „as long as you control an artifact" — ten sam predykat
+  // co Ramroller, ale BEZ wykluczania samego źródła (CR 604.3: warunek
+  // statyczny liczony przy każdym odczycie charakterystyk). Artefaktem jest
+  // wszystko z typem Artifact — także artefaktowy stwór czy pojazd.
+  if (condition.controlsArtifact) {
+    return [...(state?.objects?.values?.() ?? [])].some((candidate) => candidate.zone === 'battlefield'
+      && candidate.controllerId === object.controllerId
+      && (candidate.kind === 'artifact' || (candidate.types ?? []).includes('Artifact')));
+  }
   // Carapace Forger — Metalcraft (CR 702.80): trzy lub więcej artefaktów.
   if (condition.minArtifactsControlled != null) {
     const count = [...(state?.objects?.values?.() ?? [])].filter((c) => c.zone === 'battlefield'
