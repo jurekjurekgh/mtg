@@ -33,7 +33,7 @@ choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdzia�
 na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
-Bieżący stan: szybki rdzeń **5413/5413**, artefakt **61 modułów / 3618,0 kB** (batch 54 ukończony, **10/10 kart**). Pełny zestaw: **5423/5423**; quick **84,2% (566/672)**. Integracja i znane uwagi jakościowe: [raport B5](docs/audits/BATCH54_INTEGRATION_2026-09-08.md). Szczegóły:
+Bieżący stan: szybki rdzeń **5415/5415**, artefakt **61 modułów / 3622,9 kB** (batch 54 ukończony, **10/10 kart**). Pełny zestaw: **5425/5425**; quick **84,2% (566/672)**. Integracja i znane uwagi jakościowe: [raport B5](docs/audits/BATCH54_INTEGRATION_2026-09-08.md). Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
