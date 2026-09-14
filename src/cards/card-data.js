@@ -10774,7 +10774,20 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Instant'], colors: ['G'], manaCost: 4,
     oracleText: 'Put a +1/+1 counter on target creature, then put a +1/+1 counter on each creature you control with a +1/+1 counter on it.',
     imageUri: 'https://cards.scryfall.io/large/front/f/a/fa000086-e4aa-4bb6-8e66-f4c96e875749.jpg?1783928789',
-    artId: 611, plan: 'Kaladesh', support: { status: 'in-development', limitations: [] },
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        // Kolejność „then" jest regułą, nie ozdobnikiem: najpierw licznik na
+        // celu, potem grupa — cel ma już licznik, więc łapie OBA (ruling
+        // 2020-11-10). Filtr grupy: własne STWORY z licznikiem +1/+1
+        // (`requireCounter`); nie-stwory i cudze stwory są pomijane.
+        { type: 'add_counter', counter: '+1/+1', amount: 1 },
+        { type: 'add_counter_to_creatures_you_control', counter: '+1/+1', amount: 1, requireCounter: '+1/+1' },
+      ],
+    },
+    artId: 611, plan: 'Kaladesh', support: { status: 'supported', limitations: [] },
+    notes: ['anihilacja liczników +1/+1 i -1/-1 to reguła stanu — sprawdzana dopiero po rozstrzygnięciu (CR 704.3)'],
   }),
 
   defineCard({
@@ -10799,7 +10812,22 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Sorcery'], colors: ['G'], manaCost: 4,
     oracleText: "Put a +1/+1 counter on target creature you control. Then that creature fights target creature you don't control. (Each deals damage equal to its power to the other.)",
     imageUri: 'https://cards.scryfall.io/large/front/5/2/52f763a4-8a79-4056-8066-74899a0fb304.jpg?1783935519',
-    artId: 614, plan: 'Wiedźmin', support: { status: 'in-development', limitations: [] },
+    spell: {
+      timing: 'sorcery',
+      targets: [
+        { type: 'creature_you_control' },
+        { type: 'creature_opponent_controls' },
+      ],
+      effects: [
+        // „Then that creature fights…" — walka TYM stworom, już po liczniku
+        // (obrażenia liczone z nowej mocy, CR 701.12b); jeśli któryś cel
+        // zniknął, walka nie wykonuje się wcale (CR 701.12c), a licznik na
+        // legalnym celu zostaje (ruling 2017-11-17).
+        { type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0 },
+        { type: 'fight', targetIndexA: 0, targetIndexB: 1 },
+      ],
+    },
+    artId: 614, plan: 'Wiedźmin', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({

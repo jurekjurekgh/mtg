@@ -9,6 +9,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
+import { addCounter } from '../src/engine/counters.js';
 
 /**
  * Batch 55 (2026-09-14) — karty właściciela: 23, 609–617.
@@ -92,13 +93,13 @@ function sanity(id, artId, set, plan) {
   });
 }
 
-function tooLittleMana(id, castType, setup = () => {}, wrongColor = 'U') {
+function tooLittleMana(id, castType, setup = () => {}, wrongColor = 'U', targets = ['tgt']) {
   test(`B55: ${id} — za mało many / zły kolor, brak oferty i odrzucona komenda`, () => {
     for (const [mana, colors] of [[0, []], [9, Array(9).fill(wrongColor)]]) {
       const s = game(); put(s, 'card', id); setup(s);
       if (mana) addMana(s, 'p1', mana, { colors });
       assert.equal(commands(s).some((c) => c.objectId === 'card' && c.type.startsWith('cast_')), false);
-      const r = execute(s, { type: castType, playerId: 'p1', objectId: 'card', targets: ['tgt'] });
+      const r = execute(s, { type: castType, playerId: 'p1', objectId: 'card', targets });
       assert.equal(r.ok, false); assert.ok(r.events.some((e) => typeof e.reason === 'string'));
       assert.equal(s.objects.get('card').zone, 'hand');
     }
@@ -240,4 +241,197 @@ test('B55/B1: 610 Gearsmith Prodigy — sam nie jest artefaktem, więc nie włą
   const prodigy = put(s, 'prodigy', 'gearsmith-prodigy', 'p1', 'battlefield');
   assert.ok(!(prodigy.types ?? []).includes('Artifact'), 'Oracle: Creature — Human Artificer');
   assert.equal(effectivePower(prodigy, s), 1, 'własny typ nie może włączyć warunku „kontrolujesz artefakt"');
+});
+
+// ---------------------------------------------------------------------------
+// B2 (M352) — 611 Lifecrafter's Gift, 614 Hunt the Weak
+// ---------------------------------------------------------------------------
+
+const countersOf = (s, id) => ({ ...(s.objects.get(id).counters ?? {}) });
+
+sanity('lifecrafters-gift', 611, 'CMR', 'Kaladesh');
+tooLittleMana('lifecrafters-gift', 'cast_spell', (s) => put(s, 'tgt', 'rotting-legion', 'p1', 'battlefield'), 'R');
+
+test("B55/B2: 611 Lifecrafter's Gift — „then\": cel łapie licznik PRZED policzeniem grupy", () => {
+  const s = game();
+  put(s, 'gift', 'lifecrafters-gift');
+  put(s, 'own', 'kin-tree-nurturer', 'p1', 'battlefield'); // 2/1, bez liczników
+  addMana(s, 'p1', 4, { colors: ['G'] });
+
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'gift'));
+  resolve(s);
+
+  // Ruling 2020-11-10: to są DWA osobne zdarzenia — cel dostaje licznik
+  // z pierwszej klauzuli, a potem drugi z grupy (bo JUŻ ma licznik +1/+1).
+  assert.deepEqual(countersOf(s, 'own'), { '+1/+1': 2 },
+    'dwa liczniki: z klauzuli celu i z klauzuli grupowej (kolejność „then")');
+  assert.equal(effectivePower(s.objects.get('own'), s), 4, '2/1 + dwa liczniki = 4/3');
+  assert.equal(effectiveToughness(s.objects.get('own'), s), 3);
+});
+
+test("B55/B2: 611 Lifecrafter's Gift — grupa: tylko MOJE STWORY z licznikiem +1/+1", () => {
+  const s = game();
+  put(s, 'gift', 'lifecrafters-gift');
+  put(s, 'target', 'rotting-legion', 'p1', 'battlefield');       // 4/5 bez liczników
+  put(s, 'withCounter', 'skymarch-bloodletter', 'p1', 'battlefield');
+  put(s, 'plain', 'typhoid-rats', 'p1', 'battlefield');          // bez licznika → pominięty
+  put(s, 'enemy', 'colossodon-yearling', 'p2', 'battlefield');   // cudzy z licznikiem → pominięty
+  put(s, 'art', 'bomat-bazaar-barge', 'p1', 'battlefield');      // nie-stwór (ruling 2020-11-10)
+  addCounter(s, 'withCounter', '+1/+1', 1);
+  addCounter(s, 'enemy', '+1/+1', 1);
+  addCounter(s, 'art', '+1/+1', 1);
+  addMana(s, 'p1', 4, { colors: ['G'] });
+
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'gift' && c.targets?.[0] === 'target'));
+  resolve(s);
+
+  assert.deepEqual(countersOf(s, 'target'), { '+1/+1': 2 },
+    'cel (mój stwór) łapie licznik z klauzuli celu I z grupy — ma już licznik');
+  assert.deepEqual(countersOf(s, 'withCounter'), { '+1/+1': 2 }, 'mój stwór z licznikiem wchodzi do grupy');
+  assert.deepEqual(countersOf(s, 'plain'), {}, 'mój stwór BEZ licznika nie łapie niczego');
+  assert.deepEqual(countersOf(s, 'enemy'), { '+1/+1': 1 }, 'cudzy stwór poza grupą');
+  assert.deepEqual(countersOf(s, 'art'), { '+1/+1': 1 },
+    'nie-stwór z licznikiem +1/+1 nie dostaje kolejnego (ruling 2020-11-10)');
+});
+
+test("B55/B2: 611 Lifecrafter's Gift — anihilacja +1/+1 z -1/-1 dopiero PO rozstrzygnięciu (CR 704.3)", () => {
+  const s = game();
+  put(s, 'gift', 'lifecrafters-gift');
+  put(s, 'own', 'rotting-legion', 'p1', 'battlefield'); // 4/5 z licznikiem -1/-1
+  addCounter(s, 'own', '-1/-1', 1);
+  addMana(s, 'p1', 4, { colors: ['G'] });
+
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'gift'));
+  resolve(s);
+
+  // Ruling 2020-11-10: „The state-based action that removes matching +1/+1 and
+  // -1/-1 counters won't check until after Lifecrafter's Gift finishes
+  // resolving." — stwór dostaje DWA liczniki +1/+1 (drugi dlatego, że po
+  // pierwszym już ma licznik), a dopiero po rozstrzygnięciu znika jedna para.
+  assert.deepEqual(countersOf(s, 'own'), { '+1/+1': 1 },
+    'dwa +1/+1 dodane w jednym rozstrzyganiu, potem zniknęła jedna para z -1/-1');
+  const added = s.events.filter((e) => e.type === 'counter_added' && e.objectId === 'own' && e.counter === '+1/+1');
+  assert.equal(added.length, 2, 'licznik z klauzuli celu + licznik z grupy');
+  const annihilated = s.events.filter((e) => e.type === 'counter_removed' && e.objectId === 'own' && e.annihilated);
+  assert.equal(annihilated.length, 1, 'jedna para anihilowana przez SBA');
+  assert.equal(annihilated[0].amount, 1);
+  assert.equal(s.objects.get('own').zone, 'battlefield', 'stwór przeżył (nie 0/0 — SBA nie działa w trakcie rozstrzygania)');
+});
+
+test("B55/B2: 611 Lifecrafter's Gift — nielegalny cel przy rozstrzygnięciu = czar nie rozstrzyga się wcale", () => {
+  const s = game();
+  put(s, 'gift', 'lifecrafters-gift');
+  put(s, 'target', 'kin-tree-nurturer', 'p1', 'battlefield');
+  put(s, 'withCounter', 'skymarch-bloodletter', 'p1', 'battlefield');
+  addCounter(s, 'withCounter', '+1/+1', 1);
+  addMana(s, 'p1', 4, { colors: ['G'] });
+  const eventsBefore = s.events.length;
+
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'gift' && c.targets?.[0] === 'target'));
+  moveObjectDirectly(s, 'target', 'graveyard', 'target-grave');
+  resolve(s);
+
+  // Ruling 2020-11-10: jedyny cel nielegalny → czar nie rozstrzyga się, więc
+  // klauzula grupowa też nie działa (CR 608.2b).
+  assert.deepEqual(countersOf(s, 'withCounter'), { '+1/+1': 1 }, 'grupa bez zmian');
+  assert.equal(
+    s.events.slice(eventsBefore).filter((e) => e.type === 'counter_added').length,
+    0,
+    'żadnego nowego licznika po rzuceniu czaru',
+  );
+});
+
+test("B55/B2: 611 Lifecrafter's Gift — wolno celować w CUDZEGO stwora; grupa liczy tylko moje", () => {
+  const s = game();
+  put(s, 'gift', 'lifecrafters-gift');
+  put(s, 'enemy', 'colossodon-yearling', 'p2', 'battlefield'); // 2/4
+  put(s, 'mine', 'typhoid-rats', 'p1', 'battlefield');
+  addCounter(s, 'mine', '+1/+1', 1);
+  addMana(s, 'p1', 4, { colors: ['G'] });
+
+  const offers = commands(s).filter((c) => c.type === 'cast_spell' && c.objectId === 'gift');
+  const offer = offers.find((c) => c.targets?.includes('enemy'));
+  assert.ok(offer, `cudzy stwór w ofercie celów: ${JSON.stringify(offers.map((c) => c.targets))}`);
+  run(s, offer);
+  resolve(s);
+
+  assert.deepEqual(countersOf(s, 'enemy'), { '+1/+1': 1 }, 'Oracle: „target creature" bez ograniczenia kontroli');
+  assert.deepEqual(countersOf(s, 'mine'), { '+1/+1': 2 }, 'grupa: „each creature YOU control with a +1/+1 counter"');
+});
+
+sanity('hunt-the-weak', 614, 'IMA', 'Wiedźmin');
+tooLittleMana('hunt-the-weak', 'cast_spell', (s) => {
+  put(s, 'tgt', 'typhoid-rats', 'p1', 'battlefield');
+  put(s, 'tgt2', 'colossodon-yearling', 'p2', 'battlefield');
+}, 'U', ['tgt', 'tgt2']);
+
+test('B55/B2: 614 Hunt the Weak — licznik, potem walka TYM wzmocnionym stworom („then")', () => {
+  const s = game();
+  put(s, 'hunt', 'hunt-the-weak');
+  put(s, 'mine', 'rotting-legion', 'p1', 'battlefield');  // 4/5 → 5/6
+  put(s, 'theirs', 'krotiq-nestguard', 'p2', 'battlefield'); // 4/4
+  addMana(s, 'p1', 4, { colors: ['G'] });
+
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'hunt'));
+  resolve(s);
+
+  // CR 701.12b: moce liczone PRZED zadaniem obrażeń, ale PO liczniku — stwór
+  // bije już jako 5/6 (inaczej zadałby 4, nie 5). Obrażenia czytamy ze zdarzeń,
+  // bo zabity stwór zmienia strefę (nowy obiekt w grobie).
+  assert.deepEqual(countersOf(s, 'mine'), { '+1/+1': 1 });
+  assert.equal(effectivePower(s.objects.get('mine'), s), 5);
+  const hit = s.events.find((e) => e.type === 'damage_dealt' && e.source === 'mine' && e.target === 'theirs');
+  assert.equal(hit?.amount, 5, 'obrażenia równe mocy PO liczniku');
+  assert.equal(find(s, 'krotiq-nestguard', 'graveyard') != null, true, '4/4 ginie od 5 obrażeń');
+  assert.equal(s.objects.get('mine').damage, 4, 'odwzajemnione obrażenia równe mocy przeciwnika');
+  assert.equal(s.objects.get('mine').zone, 'battlefield', '5/6 przeżywa 4 obrażenia');
+  assert.ok(s.events.some((e) => e.type === 'damage_dealt' && e.source === 'mine' && e.target === 'theirs'));
+});
+
+test('B55/B2: 614 Hunt the Weak — bez obu celów nie ma oferty rzutu (ruling 2017-11-17)', () => {
+  const s = game();
+  put(s, 'hunt', 'hunt-the-weak');
+  put(s, 'mine', 'kin-tree-nurturer', 'p1', 'battlefield');
+  addMana(s, 'p1', 4, { colors: ['G'] });
+
+  // Ruling: „You can't cast Hunt the Weak unless you choose both a creature you
+  // control and a creature you don't control as targets."
+  assert.equal(commands(s).some((c) => c.type === 'cast_spell' && c.objectId === 'hunt'), false,
+    'brak stworów przeciwnika → brak oferty rzutu');
+});
+
+test('B55/B2: 614 Hunt the Weak — drugi cel nielegalny: licznik zostaje, walki nie ma', () => {
+  const s = game();
+  put(s, 'hunt', 'hunt-the-weak');
+  put(s, 'mine', 'kin-tree-nurturer', 'p1', 'battlefield');
+  put(s, 'theirs', 'colossodon-yearling', 'p2', 'battlefield');
+  addMana(s, 'p1', 4, { colors: ['G'] });
+
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'hunt'));
+  moveObjectDirectly(s, 'theirs', 'graveyard', 'theirs-grave');
+  resolve(s);
+
+  // Ruling 2017-11-17: „If that creature is a legal target but the other
+  // creature isn't, you'll still put the counter on the creature you control."
+  assert.deepEqual(countersOf(s, 'mine'), { '+1/+1': 1 }, 'licznik zostaje mimo nieudanej walki');
+  assert.equal(s.objects.get('mine').damage ?? 0, 0, 'zniknięty cel nie zadaje obrażeń');
+  assert.equal(s.events.filter((e) => e.type === 'damage_dealt').length, 0);
+});
+
+test('B55/B2: 614 Hunt the Weak — własny cel nielegalny: ani licznika, ani walki', () => {
+  const s = game();
+  put(s, 'hunt', 'hunt-the-weak');
+  put(s, 'mine', 'kin-tree-nurturer', 'p1', 'battlefield');
+  put(s, 'theirs', 'colossodon-yearling', 'p2', 'battlefield');
+  addMana(s, 'p1', 4, { colors: ['G'] });
+
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'hunt'));
+  moveObjectDirectly(s, 'mine', 'graveyard', 'mine-grave');
+  resolve(s);
+
+  // Ruling 2017-11-17: oba warunki — brak licznika na nielegalnym celu
+  // i brak obrażeń po którejkolwiek stronie (CR 701.12c).
+  assert.equal(s.objects.get('theirs').damage ?? 0, 0);
+  assert.equal(s.events.filter((e) => e.type === 'damage_dealt').length, 0);
+  assert.equal(s.events.filter((e) => e.type === 'counter_added' && e.objectId === 'mine').length, 0);
 });

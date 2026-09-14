@@ -2,7 +2,7 @@ import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
 import { hasCreatureType, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
-import { addCounter, removeCounter } from './counters.js';
+import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
@@ -2622,12 +2622,21 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // Vaan, Street Thief (FIN): „put a +1/+1 counter on each Scout, Pirate, and
   // Rogue you control". Generycznie: licznik na każdym stworze kontrolera
   // źródła o podtypie z listy (ADR 0002 — filtr po podtypach, nie nazwach).
+  // Lifecrafter's Gift (CMR): „…then put a +1/+1 counter on each creature you
+  // control with a +1/+1 counter on it" — `requireCounter` zawęża zbiór do
+  // stworów, które JUŻ mają licznik danego typu. Kolejność „then" jest
+  // istotna: cel pierwszej klauzuli ma już swój licznik, więc łapie też
+  // licznik grupowy (ruling 2020-11-10, CR 608.2). Zbiór liczony przy
+  // rozstrzyganiu (CR 611.2c), więc stan liczników czytamy z żywego stanu,
+  // a nie z migawki sprzed efektu.
   if (effect.type === 'add_counter_to_creatures_you_control') {
     const subtypes = effect.subtypes ?? [];
+    const required = effect.requireCounter ?? null;
     for (const object of [...state.objects.values()]) {
       if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId) continue;
       if (object.kind !== 'creature') continue;
       if (subtypes.length && !subtypes.some((sub) => hasCreatureType(object, sub, state))) continue;
+      if (required && !hasCounter(object, required)) continue;
       addCounter(state, object.id, effect.counter ?? '+1/+1', effect.amount ?? 1);
     }
     return;

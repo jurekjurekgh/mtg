@@ -123,7 +123,7 @@ liczone z plików `decks/*.txt`).
 | `forgotten-realms` | Forgotten Realms | WUBRG | 35 | 12 | 23 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 27 | 9 | 18 |
 | `innistrad-wu` | Innistrad (WU) | WU | 27 | 9 | 18 |
-| `kaladesh` | Kaladesh | WUBRG | 24 | 8 | 16 |
+| `kaladesh` | Kaladesh | WUBRG | 26 | 9 | 17 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 27 | 9 | 18 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
 | `ravnica` | Ravnica | WUBRG | 36 | 12 | 24 |
@@ -133,8 +133,8 @@ liczone z plików `decks/*.txt`).
 | `theros` | Theros | WUBRG | 27 | 9 | 18 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 35 | 12 | 23 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
-| `wiedzmin-brg` | Wiedźmin (BRG) | BRG | 26 | 9 | 17 |
-| `wiedzmin-wu` | Wiedźmin (WU) | WU | 23 | 8 | 15 |
+| `wiedzmin-bg` | Wiedźmin (BG) | BG | 24 | 8 | 16 |
+| `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
 | `zendikar` | Zendikar | WURG | 32 | 11 | 21 |
 
 ### Worki (małe plany — przejściowe, ADR 0023)
