@@ -53,16 +53,17 @@ function hoverSpy() {
 }
 function cardEl(host, cls) { return host.findAll((el) => (el.className || '').includes(cls))[0]; }
 
-test('B: helper podłącza mouseenter/mouseleave/contextmenu i zwraca informację o karcie', () => {
+test('B: helper podłącza mouseenter/mouseleave/mousedown i zwraca informację o karcie', () => {
   const card = new MiniEl('div');
   const hover = hoverSpy();
   const info = { name: 'Undercity', imageUri: 'https://x/undercity.jpg' };
   assert.equal(attachSpecialCardHover(card, hover, info), true, 'hover podpięty');
   card.emit('mouseenter', { clientX: 1, clientY: 2 });
   card.emit('mouseleave');
-  // Zgłoszenie H (2026-09-11): tor podglądu przełącza PPM (contextmenu),
-  // nie scroll — karty specjalne mają ten sam wyzwalacz co zwykłe kafle.
-  card.emit('contextmenu', { preventDefault: noop });
+  // Zgłoszenie H (2026-09-11): tor podglądu przełącza przycisk myszy, nie
+  // scroll — karty specjalne mają ten sam wyzwalacz co zwykłe kafle.
+  // M349/A (2026-09-14): to MMB (środkowy, `mousedown` z button === 1 i buttons === 4), nie PPM.
+  card.emit('mousedown', { button: 1, buttons: 4, preventDefault: noop });
   assert.deepEqual(hover.seen.map((s) => s.at), ['start', 'end', 'cycle'],
     `kolejność zdarzeń: ${hover.seen.map((s) => s.at).join(',')}`);
   assert.equal(hover.seen[0].info.imageUri, info.imageUri,

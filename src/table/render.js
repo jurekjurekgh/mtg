@@ -3721,9 +3721,23 @@ function tile(parent, info, opts) {
   if (opts.hover && opts.hover.start) {
     wrap.addEventListener('mouseenter', (e) => opts.hover.start(info, e));
     wrap.addEventListener('mouseleave', opts.hover.end);
-    // Zgłoszenie H (2026-09-11): tor przełącza PPM, nie scroll — `wheel`
-    // zostaje przeglądarce (domyślne przewijanie strony).
-    if (opts.hover.cycle) wrap.addEventListener('contextmenu', (e) => opts.hover.cycle(info, e));
+    // Zgłoszenie H (2026-09-11): tor przełącza PRZYCISK myszy, nie scroll —
+    // `wheel` zostaje przeglądarce (domyślne przewijanie strony).
+    // M349/A (znalezisko właściciela z testów, 2026-09-14): PPM okazał się
+    // zawodny — przeglądarka dostarcza `contextmenu` różnie na różnych
+    // platformach (raz przy wciśnięciu, raz przy zwolnieniu, czasem wcale przy
+    // szybkim kliknięciu), a menu kontekstowe i tak czasem wygrywa. Wyzwalaczem
+    // jest ŚRODKOWY przycisk (MMB): `button === 1` i WYŁĄCZNIE wciśnięcie.
+    // `buttons` to MASKA (CR-like bitmask wg UI Events): 1 = lewy, 2 = prawy,
+    // 4 = środkowy — `buttons === 4` znaczy „wciśnięty sam środkowy" (samo
+    // `button === 1` nie wystarcza: mousedown dociska też inne przyciski, gdy
+    // któryś jest już trzymany). Jedno wciśnięcie = dokładnie jeden krok toru;
+    // zwolnienie nie robi nic (właściciel: „mouse released niech nie zmienia").
+    if (opts.hover.cycle) {
+      wrap.addEventListener('mousedown', (e) => {
+        if (e.button === 1 && e.buttons === 4) opts.hover.cycle(info, e);
+      });
+    }
   }
   return wrap;
 }
@@ -3908,8 +3922,9 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCyc
   const hasLocal = art.artId != null && art.artId !== '';
   // M257 r5/A: podgląd o torze STAŁYM (miniaturki w „Rozgrywce") nie cykluje
   // wcale — podpowiedź o przełączaniu toru byłaby kłamliwa.
-  // Zgłoszenie H (2026-09-11): tor przełącza PPM, nie scroll.
-  const hint = hasLocal && showCycleHint ? ' · PPM zmienia tor' : '';
+  // Zgłoszenie H (2026-09-11): tor przełącza przycisk myszy, nie scroll;
+  // M349/A (2026-09-14): dziś jest to MMB (środkowy), nie PPM.
+  const hint = hasLocal && showCycleHint ? ' · MMB zmienia tor' : '';
   div(host, 'hover-mode', `${hoverModeLabel(hoverMode)}${hint}`);
   return host;
 }
@@ -3917,7 +3932,7 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCyc
 /**
  * M257 r5/A (uwaga właściciela): hover scryfall na miniaturkach w modalu
  * „Rozgrywka" — ten sam podgląd co na stole (powiększona karta ze Scryfall),
- * ale tor STAŁY (bez trybów FOT i KON i bez cyklowania PPM).
+ * ale tor STAŁY (bez trybów FOT i KON i bez cyklowania MMB).
  * `null` na dotyku — na tablecie hover nie istnieje (jak na stole, M7c);
  * tam miniaturkę otwiera tap (pełny ekran).
  */
@@ -4222,8 +4237,14 @@ function showHoverPreviewAt(els, info, e, mode, { showCycleHint = true } = {}) {
 // FOT/KON tylko z artId — kontrakt nextHoverMode istniał od dawna, nikt go nie
 // używał); start/revive też zawężają, więc karta bez artu nigdy nie pokazuje
 // pustki, nawet gdy globalny tor stoi na FOT/KON. (2) strażnik 250 ms ignoruje
-// odbicia tego samego gestu (jak MODAL_OPEN_GUARD_MS w main.js), a
-// stopPropagation odcina ewentualną drugą obsługę wyżej w drzewie.
+// powtórzone zdarzenia tego samego gestu (jak MODAL_OPEN_GUARD_MS w main.js),
+// a stopPropagation odcina ewentualną drugą obsługę wyżej w drzewie.
+// M349/A (znalezisko właściciela z testów, 2026-09-14): sam WYZWALACZ PPM okazał
+// się wadliwy — przeglądarka dostarcza `contextmenu` raz przy wciśnięciu, raz
+// przy zwolnieniu, czasem wcale, więc tor bywał nieprzewidywalny. Dziś tor
+// przełącza MMB (`mousedown`, `button === 1` i `buttons === 4` — bitmaskę
+// przycisków opisuje komentarz w `tile`) i TYLKO wciśnięcie: jedno wciśnięcie =
+// jeden krok. Strażnik zostaje jako druga linia obrony (odbicia syntetyczne).
 const HOVER_CYCLE_GUARD_MS = 250;
 let lastHoverCycleAt = 0;
 function availableHoverModes(info) {
@@ -4242,8 +4263,8 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
 
   // Hover (desktop): powiększona karta pod kursorem — ta sama ilustracja co na
   // kaflu, w rozmiarze `large`, a przy jej braku syntetyczna twarz. Tor
-  // podglądu (scryfall → FOT → KON) przełącza PPM nad kartą (zgłoszenie H,
-  // 2026-09-11; wcześniej scroll jak w legacy HTML).
+  // podglądu (scryfall → FOT → KON) przełącza MMB nad kartą (zgłoszenie H,
+  // 2026-09-11; wcześniej scroll jak w legacy HTML; PPM → MMB w M349/A).
   // Na dotyku (iPad/iPhone) hover pozostaje wyłączony — tapnięcie otwiera
   // wyłącznie menu kontekstowe (M7c).
   let currentHoverMode = hoverMode;
@@ -4266,9 +4287,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       const now = Date.now();
       if (now - lastHoverCycleAt < HOVER_CYCLE_GUARD_MS) return;
       lastHoverCycleAt = now;
-      // Zgłoszenie H (2026-09-11): wyzwalaczem jest `contextmenu` (PPM);
-      // RMB nie ma kierunku „góra/dół", a cykl torów się zapętla, więc krok
-      // jest zawsze +1 (ta sama kolejność co scroll w dół).
+      // Zgłoszenie H (2026-09-11): wyzwalaczem jest przycisk myszy (dziś MMB,
+      // `mousedown` z button === 1 i buttons === 4 — patrz A2 wyżej); przycisk nie ma kierunku
+      // „góra/dół", a cykl torów się zapętla, więc krok jest zawsze +1
+      // (ta sama kolejność co scroll w dół).
       // A (2026-09-13, zastępuje M146): tryby FOT/KON istnieją TYLKO dla kart
       // z artId — cykl idzie po torach dostępnych dla TEJ karty, więc landy
       // i tokeny nie pokazują już pustych stanów ani nie przesuwają globalu
@@ -4545,9 +4567,15 @@ export function attachSpecialCardHover(card, hover, info) {
   if (!card || !hover || typeof hover.start !== 'function') return false;
   card.addEventListener('mouseenter', (e) => hover.start(info, e));
   if (hover.end) card.addEventListener('mouseleave', hover.end);
-  // Zgłoszenie H (2026-09-11): PPM, nie scroll — ten sam wyzwalacz co kafle
-  // (jedno miejsce reguły w `cycle`, L41).
-  if (hover.cycle) card.addEventListener('contextmenu', (e) => hover.cycle(info, e));
+  // Zgłoszenie H (2026-09-11): przycisk myszy, nie scroll — ten sam wyzwalacz
+  // co kafle (jedno miejsce reguły w `cycle`, L41).
+  // M349/A (2026-09-14): MMB (środkowy) + wyłącznie wciśnięcie — PPM jest
+  // niedeterministyczny między platformami (patrz komentarz przy kaflach).
+  if (hover.cycle) {
+    card.addEventListener('mousedown', (e) => {
+      if (e.button === 1 && e.buttons === 4) hover.cycle(info, e);
+    });
+  }
   // D (zgłoszenie właściciela 2026-09-10): mouseenter nie odzywa się, gdy
   // kafl zostaje PRZERYsowany pod kursorem (renderTableView podmienia
   // element — nie ma „wejścia", jest już w środku). Panele specjalne

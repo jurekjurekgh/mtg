@@ -145,8 +145,11 @@ test('A2a: renderHoverPreview domyślnie (stół) pokazuje podpowiedź o scrollu
     renderHoverPreview(host, ART_INFO, 'scryfall');
     const modeLine = host.find((n) => String(n.className).includes('hover-mode'));
     assert.ok(modeLine, 'linia toru wyrenderowana');
-    assert.match(modeLine.textContent, /PPM zmienia tor/,
-      'domyślny hover (stół) cykluje prawym przyciskiem myszy — hint jest prawdziwy');
+    // M349/A (2026-09-14): wyzwalaczem jest MMB (środkowy), nie PPM —
+  // podpowiedź musi mówić o tym samym przycisku, który realnie cykluje
+  // (L100: jedno źródło podpowiedzi i zachowania).
+  assert.match(modeLine.textContent, /MMB zmienia tor/,
+      'domyślny hover (stół) cykluje ŚRODKOWYM przyciskiem myszy — hint jest prawdziwy');
   });
 });
 

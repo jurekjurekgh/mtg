@@ -222,9 +222,9 @@ function bootstrapTable() {
   // (adres http(s) → Scryfall, plik z dysku → lokalne ./img/ z fallbackiem).
   const currentImageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
 
-  // Tor podglądu hover (scryfall → FOT → KON) przełączany PPM nad kartą
-  // (zgłoszenie H 2026-09-11; wcześniej scroll jak w legacy HTML). Trzymany
-  // w pamięci sesji strony — bez localStorage.
+  // Tor podglądu hover (scryfall → FOT → KON) przełączany MMB nad kartą
+  // (zgłoszenie H 2026-09-11; wyzwalacz PPM → MMB w M349/A 2026-09-14; wcześniej
+  // scroll jak w legacy HTML). Trzymany w pamięci sesji strony — bez localStorage.
   let currentHoverMode = 'scryfall';
 
   const AUTOSAVE_KEY = 'mtg-table-autosave-v1';
