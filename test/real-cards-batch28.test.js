@@ -320,7 +320,10 @@ test('Expose to Daylight: niszczy artefakt/enchantment + scry 1', () => {
 test('Etherium Abomination: unearth z grobu — haste, exile na end step', () => {
   const state = mainPhase(game());
   addRealCard(state, 'ea', 'etherium-abomination', 'p1', 'graveyard');
+  // Unearth {1}{U}{B} (znalezisko właściciela K, 2026-09-14): TRZY many,
+  // nie dwie — {U}{B} to była zaniżona wartość w danych karty.
   addMana(state, 'p1', 2, { colors: ['U', 'B'] });
+  addMana(state, 'p1', 1, {});
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'ea', abilityIndex: 0 });
   assert.ok(r.ok, r.events?.[0]?.reason);
   resolveStack(state); // D: zdolność na stosie → wrót na pole bitwy po rozstrzygnięciu

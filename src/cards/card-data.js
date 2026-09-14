@@ -4915,7 +4915,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         timing: 'sorcery',
-        cost: { mana: 2, colors: ['U', 'B'] },
+        cost: { mana: 3, colors: ['U', 'B'] },
         fromGraveyard: true,
         effect: { type: 'unearth_return' },
       }),
@@ -9781,7 +9781,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 4, tap: true },
+        cost: { mana: 4, colors: ['G'], tap: true },
         effect: { type: 'surveil', amount: 2 },
       }),
     ],
@@ -10745,7 +10745,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         // {5}{G}, {T} — koszt many z zielonym pipem (CR 118.2) i zatapnięcie.
-        cost: { mana: 5, colors: ['G'], tap: true },
+        cost: { mana: 6, colors: ['G'], tap: true },
         // „Look at the top four cards… You may reveal a creature card from
         // among them and put it into your hand. Put the rest on the bottom of
         // your library in a random order.” Ta sama rodzina decyzji co Satyr
@@ -10913,7 +10913,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         // Koszt {3}{U} z pipem (CR 118.2) i wygnaniem karty jako kosztem —
         // karta znika z grobu NATYCHMIAST, jeszcze przed rozstrzygnięciem
         // (ruling 2017-04-18), więc przeciwnik nie może jej przechwycić.
-        cost: { mana: 3, colors: ['U'], exileFromGraveyard: true },
+        cost: { mana: 4, colors: ['U'], exileFromGraveyard: true },
         effect: {
           type: 'create_token_copy_of_source',
           colors: ['W'],           // „except it's white" (CR 702.128a)
