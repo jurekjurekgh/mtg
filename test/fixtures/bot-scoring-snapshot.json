@@ -1,46 +1,44 @@
 {
   "version": 1,
-  "overallHash": "3a5b59276c02ec30fb1d5ddc33b5e827f09ec257260cd58a93b521f0b2f63e54",
+  "overallHash": "3d1167140f686f7cf014da00397382186ac09fdc0512f9d246fe8f320a5e241f",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1000,
-      "hash": "19b824d98b32b70957c7f834d073ded2bc915d75a291e9facaeab0284ea4062a",
-      "decisions": 297,
-      "scoreSum": 3520.5009,
+      "hash": "320a855008e7756755a5d69953810997ffac8c9ebf0c3a173180d00001e82079",
+      "decisions": 299,
+      "scoreSum": 2289.2991,
       "chosenKinds": {
-        "activate_ability": 4,
-        "attack": 8,
-        "block": 10,
-        "cast_permanent": 5,
-        "cast_spell": 3,
-        "pass_priority": 239,
+        "activate_ability": 3,
+        "attack": 7,
+        "block": 11,
+        "cast_permanent": 4,
+        "cast_spell": 4,
+        "pass_priority": 244,
         "play_land": 8,
         "resolve_combat": 11,
-        "resolve_counter_pay_choice": 1,
-        "resolve_discard_choice": 1,
         "resolve_mulligan_choice": 1,
-        "resolve_optional_trigger_choice": 6
+        "resolve_optional_trigger_choice": 5,
+        "resolve_proliferate": 1
       }
     },
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1001,
-      "hash": "95e4260ea099efaee4339f6342a4991012f97169d81c503c663ab1b779f4b4af",
-      "decisions": 305,
-      "scoreSum": 2255.5063,
+      "hash": "a5677b93f2cbaaae348144fe7796809781fed0a2f045df4939ad55235430a047",
+      "decisions": 158,
+      "scoreSum": 1404.5108,
       "chosenKinds": {
-        "attack": 6,
-        "block": 9,
-        "cast_permanent": 6,
-        "cast_spell": 4,
-        "pass_priority": 255,
-        "play_land": 8,
-        "resolve_combat": 12,
-        "resolve_mulligan_choice": 1,
-        "resolve_optional_trigger_choice": 2,
-        "resolve_proliferate": 1,
-        "resolve_trigger_target": 1
+        "activate_ability": 1,
+        "attack": 3,
+        "block": 6,
+        "cast_permanent": 4,
+        "cast_spell": 2,
+        "pass_priority": 128,
+        "play_land": 6,
+        "resolve_combat": 6,
+        "resolve_discard_choice": 1,
+        "resolve_mulligan_choice": 1
       }
     },
     {

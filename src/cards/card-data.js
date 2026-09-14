@@ -10856,7 +10856,17 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     keywords: ['flying'],
     oracleText: "Flying\nAt the beginning of your upkeep, each player reveals the top card of their library, loses life equal to that card's mana value, then puts it into their hand.",
     imageUri: 'https://cards.scryfall.io/large/front/4/d/4d6d4280-4a45-4e77-a33e-58955d096adc.jpg?1783912522',
-    artId: 613, plan: 'Ravnica', support: { status: 'in-development', limitations: [] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // „At the beginning of YOUR upkeep" — domyślna brama upkeepu pilnuje
+        // kontrolera (triggers.js): bez `eachUpkeep` odpala się wyłącznie
+        // w upkeepie gracza, który kontroluje Seera (CR 503.1).
+        trigger: { event: 'upkeep' },
+        effect: { type: 'reveal_top_each_player_lose_life_mana_value' },
+      }),
+    ],
+    artId: 613, plan: 'Ravnica', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({

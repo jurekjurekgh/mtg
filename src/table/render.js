@@ -1095,6 +1095,8 @@ function describeEffect(e) {
       return `${which} nie mogą blokować w tej turze`;
     },
     each_player_exiles_top_face_down: () => 'każdy gracz wygania wierzch swojej biblioteki zakryty',
+    // M356 (Duskmantle Seer): odsłonięcie + utrata życia = mana value + karta do ręki.
+    reveal_top_each_player_lose_life_mana_value: () => 'każdy gracz odsłania wierzch biblioteki, traci życia równą mana value i bierze tę kartę do ręki',
     turn_up_exiled_and_put_permanents: () => 'odkryj karty wygnane tym artefaktem — permanenty spośród nich wchodzą na pole bitwy',
     graveyard_card_to_library_top_choice: () => {
       const types = e.filter?.anyTypes ?? [];

@@ -11,6 +11,7 @@ import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/en
 import { moveObjectDirectly } from '../src/engine/objects.js';
 import { addCounter } from '../src/engine/counters.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
+import { processTriggers } from '../src/engine/triggers.js';
 import { describeGameEvent } from '../src/table/session.js';
 import { choiceGroupTitle, commandLabel } from '../src/table/render.js';
 
@@ -924,4 +925,128 @@ test('B55/B5: 612 Crumb and Get It — etykieta wariantu z obietnicą różni si
   assert.notEqual(l1, l2, `dwa różne skutki nie mogą mieć tej samej etykiety: ${l1}`);
   assert.match(l2, /dar/i, `etykieta wariantu z obietnicą nazywa dar: ${l2}`);
   assert.match(l2, /Food/, `etykieta mówi, CO jest darem: ${l2}`);
+});
+
+// ---------------------------------------------------------------------------
+// B6 (M356) — 613 Duskmantle Seer (upkeep: odsłonięcie wierzchu + mana value)
+// ---------------------------------------------------------------------------
+
+sanity('duskmantle-seer', 613, 'CLU', 'Ravnica');
+
+/** Wymusza krok upkeepu wskazanego gracza i odpala triggery upkeepu. */
+function toUpkeep(s, playerId) {
+  s.turn = jumpToStep(s.turn, 'upkeep', playerId);
+  s.turn.activePlayerId = playerId;
+  s.turn.priorityPlayerId = playerId;
+  processTriggers(s, [{ type: 'step_advanced', step: 'upkeep', phase: 'beginning' }]);
+}
+
+/** Ustawia WIERZCH biblioteki każdego z graczy (reszta zostaje pod spodem). */
+function libraryTops(s, tops) {
+  const ids = Object.entries(tops).map(([playerId, cardId]) => {
+    const id = `top-${playerId}`;
+    put(s, id, cardId, playerId, 'library');
+    return id;
+  });
+  s.zones.library = [...ids, ...s.zones.library.filter((id) => !ids.includes(id))];
+  return ids;
+}
+
+test('B55/B6: 613 Duskmantle Seer — upkeep: każdy odsłania wierzch, traci życia = mana value i bierze kartę', () => {
+  const s = game();
+  put(s, 'seer', 'duskmantle-seer', 'p1', 'battlefield');
+  libraryTops(s, { p1: 'inferno-titan', p2: 'typhoid-rats' });   // MV 6 i MV 1
+  const przed = { p1: life(s, 'p1'), p2: life(s, 'p2') };
+  toUpkeep(s, 'p1');
+  resolve(s);
+  assert.equal(life(s, 'p1'), przed.p1 - 6, 'p1 traci życia = mana value odsłoniętej karty');
+  assert.equal(life(s, 'p2'), przed.p2 - 1, 'p2 tak samo („each player", nie „each opponent")');
+  assert.ok(find(s, 'inferno-titan', 'hand'), 'karta wraca do ręki WŁAŚCICIELA');
+  assert.ok(find(s, 'typhoid-rats', 'hand'), 'każdy bierze SWOJĄ odsłoniętą kartę');
+  const revealed = s.events.filter((e) => e.type === 'card_revealed').map((e) => e.cardId);
+  assert.ok(revealed.includes('inferno-titan') && revealed.includes('typhoid-rats'),
+    `odsłonięcie jest JAWNE (event z cardId): ${JSON.stringify(revealed)}`);
+});
+
+test('B55/B6: 613 Duskmantle Seer — karty nie są „dobrane", a mana value to koszt DRUKU (L85)', () => {
+  const s = game();
+  put(s, 'seer', 'duskmantle-seer', 'p1', 'battlefield');
+  // Academy Journeymage: koszt {3}{U} + warunkowa obniżka o {1} przy naszym
+  // Wizardzie (Seer SAM jest Wizardem). Gdyby „mana value" myliło się z kosztem
+  // ZAPŁACONYM, wyszłoby 4 — Oracle i CR 202.3 każą liczyć koszt druku: 5.
+  libraryTops(s, { p1: 'academy-journeymage', p2: 'typhoid-rats' });
+  addMana(s, 'p1', 9, { colors: ['U'] });   // mana jest dostępna — nie ma znaczenia
+  const przed = life(s, 'p1');
+  toUpkeep(s, 'p1');
+  resolve(s);
+  assert.equal(life(s, 'p1'), przed - 5, 'mana value = koszt druku (5), nie koszt po obniżce (4)');
+  // Ruling: „The cards put into hands this way are not ‚drawn'" — ani zdarzenia
+  // card_drawn, ani licznika dobrań w turze (miracle/„first card drawn").
+  assert.equal(s.events.some((e) => e.type === 'card_drawn'), false, 'to NIE jest dobranie');
+  assert.equal(s.cardsDrawnThisTurn?.p1 ?? 0, 0, 'licznik dobrań w turze nietknięty');
+  assert.ok(find(s, 'academy-journeymage', 'hand'), 'karta trafiła do ręki mimo braku „draw"');
+});
+
+test('B55/B6: 613 Duskmantle Seer — trigger odpala się tylko w upkeepie KONTROLERA', () => {
+  const s = game();
+  put(s, 'seer', 'duskmantle-seer', 'p1', 'battlefield');
+  libraryTops(s, { p1: 'inferno-titan', p2: 'typhoid-rats' });
+  const przed = { p1: life(s, 'p1'), p2: life(s, 'p2') };
+  toUpkeep(s, 'p2');   // upkeep przeciwnika — Seer należy do p1
+  assert.equal(s.zones.stack.length, 0, '„At the beginning of YOUR upkeep" — brak triggera');
+  resolve(s);
+  assert.deepEqual({ p1: life(s, 'p1'), p2: life(s, 'p2') }, przed, 'życie bez zmian');
+  assert.equal(find(s, 'inferno-titan', 'library') != null, true, 'karta p1 zostaje w bibliotece');
+});
+
+test('B55/B6: 613 Duskmantle Seer — utrata życia kończy partię; obaj na 0 = remis (CR 104.4b)', () => {
+  // (a) przegrana przez samą utratę życia w upkeepie.
+  const s = game();
+  put(s, 'seer', 'duskmantle-seer', 'p1', 'battlefield');
+  libraryTops(s, { p1: 'inferno-titan', p2: 'typhoid-rats' });
+  s.players.find((p) => p.id === 'p1').life = 4;
+  toUpkeep(s, 'p1');
+  resolve(s);
+  assert.equal(s.status, 'finished', '6 ≥ 4 — partia skończona');
+  assert.equal(s.winnerId, 'p2', 'przegrywa gracz, który stracił życie');
+
+  // (b) utraty życia są JEDNOCZESNE (ruling): obaj ≤ 0 = remis, nie zwycięstwo
+  // gracza wcześniejszego w kolejności state.players.
+  const d = game();
+  put(d, 'seer', 'duskmantle-seer', 'p1', 'battlefield');
+  libraryTops(d, { p1: 'inferno-titan', p2: 'inferno-titan' });   // MV 6 u obu
+  d.players.find((p) => p.id === 'p1').life = 4;
+  d.players.find((p) => p.id === 'p2').life = 4;
+  toUpkeep(d, 'p1');
+  resolve(d);
+  assert.equal(d.status, 'finished');
+  assert.equal(d.isDraw, true, 'CR 104.4b + ruling: obie przegrane naraz = remis');
+  assert.equal(d.winnerId, null, 'remis nie ma zwycięzcy');
+});
+
+test('B55/B6: 613 Duskmantle Seer — pula 3 graczy: każdy odsłania i traci; pusta biblioteka nic nie robi', () => {
+  const s = game(['p1', 'p2', 'p3']);
+  put(s, 'seer', 'duskmantle-seer', 'p1', 'battlefield');
+  libraryTops(s, { p1: 'inferno-titan', p2: 'typhoid-rats', p3: 'colossodon-yearling' });
+  // p3 nie ma już nic pod wierzchem — po odsłonięciu jego biblioteka jest pusta,
+  // a w kolejnych turach nie ma czego odsłaniać (CR 701.3: bez dobierania „na siłę").
+  const przed = { p1: life(s, 'p1'), p2: life(s, 'p2'), p3: life(s, 'p3') };
+  toUpkeep(s, 'p1');
+  resolve(s);
+  assert.equal(life(s, 'p1'), przed.p1 - 6);
+  assert.equal(life(s, 'p2'), przed.p2 - 1);
+  assert.equal(life(s, 'p3'), przed.p3 - 3, 'trzeci gracz też (multiplayer)');
+
+  const pusty = game();
+  put(pusty, 'seer', 'duskmantle-seer', 'p1', 'battlefield');
+  // Pusta biblioteka: karty wyprowadzamy RUchem strefowym (inwariant „obiekt
+  // bez strefy" wywraca komendę), nie przepisaniem tablicy strefy.
+  for (const id of [...pusty.zones.library].filter((x) => pusty.objects.get(x)?.controllerId === 'p1')) {
+    moveObjectDirectly(pusty, id, 'exile', `ex-${id}`);
+  }
+  const przedP1 = life(pusty, 'p1');
+  toUpkeep(pusty, 'p1');
+  resolve(pusty);
+  assert.equal(life(pusty, 'p1'), przedP1, 'pusta biblioteka: brak odsłonięcia i brak utraty życia');
+  assert.equal(pusty.status, 'active');
 });

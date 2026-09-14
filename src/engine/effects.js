@@ -1747,6 +1747,53 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return;
   }
+  if (effect.type === 'reveal_top_each_player_lose_life_mana_value') {
+    // M356 (613 Duskmantle Seer): „At the beginning of your upkeep, each player
+    // reveals the top card of their library, loses life equal to that card's
+    // mana value, then puts it into their hand."
+    //
+    // Trzy rzeczy, które ta gałąź musi trzymać razem z CR/rulingami karty:
+    // 1. Odsłonięcia są JAWNE dla wszystkich (karta publiczna w tym momencie):
+    //    zdarzenie `card_revealed` niesie `cardId` — bez tego log i stół nie
+    //    mają nazwy, a wycena widza nie wie, co weszło do ręki (L24).
+    // 2. UTRATY ŻYCIA SĄ JEDNOCZESNE (ruling 2013-01-24): najpierw liczymy
+    //    wszystkie straty, dopiero potem je aplikujemy. Gdyby iść gracz po
+    //    graczu z `changeLife`, SBA mogłyby ogłosić zwycięzcę pierwszego
+    //    ocalałego, a CR 104.4b wymaga REMISU, gdy wszyscy przegrywają naraz
+    //    (state-based.js rozstrzyga komplet przegranych w jednym przebiegu).
+    // 3. Karty NIE są „dobrane" (ruling): idą do ręki ruchem strefowym
+    //    (`moveObjectDirectly`), bez `card_drawn` i bez licznika
+    //    `cardsDrawnThisTurn` — inaczej miracle/„first card you draw" widziałyby
+    //    dobranie, którego nie było.
+    const revealed = [];
+    for (const player of state.players) {
+      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === player.id);
+      // Pusta biblioteka: ten gracz nic nie odsłania, nie traci życia i nic nie
+      // bierze (CR 701.3 — odsłonięcie z pustej strefy nie tworzy karty;
+      // spójnie z rodziną reveal_top_*).
+      if (topId == null) continue;
+      const card = state.objects.get(topId);
+      state.events.push(event('card_revealed', {
+        playerId: player.id, objectId: topId, cardId: card.cardId ?? null,
+        sourceId: sourceObject.id, sourceCardId: sourceObject.cardId ?? null, revealTop: true,
+      }));
+      // Mana value bierzemy z KOSZTU DRUKU (object.manaCost, L85) — nie z many
+      // wydanej (karta nie była rzucana) ani z obniżek kosztu przy rzucie.
+      revealed.push({ playerId: player.id, topId, loss: card.manaCost ?? 0 });
+    }
+    for (const entry of revealed) {
+      if (entry.loss > 0) changeLife(state, entry.playerId, -entry.loss);
+    }
+    for (const entry of revealed) {
+      const handId = `hand-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, entry.topId, 'hand', handId);
+      state.events.push(event('object_moved', {
+        fromId: entry.topId, object: moved, fromZone: 'library', toZone: 'hand',
+        playerId: entry.playerId, revealedBy: sourceObject.cardId ?? null, revealTop: true,
+      }));
+    }
+    return;
+  }
   if (effect.type === 'damage_divided') {
     // M166/D (Inferno Titan, LTC): „deals 3 damage divided as you choose
     // among one, two, or three targets". Cele wybrane w decyzji multi-target

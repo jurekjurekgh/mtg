@@ -1352,6 +1352,13 @@ export const EMPTY_RECEIVER_EFFECTS = Object.freeze({
   mill_cards: (state, effect, source, targets) => (
     libraryCardsOf(state, millTargetPlayerId(state, effect, source, targets)).length === 0
       ? 'empty_library' : null),
+  // M356 (613 Duskmantle Seer): odbiorcą jest KAŻDY gracz (zawsze istnieje),
+  // więc zero zdarzeń może pochodzić wyłącznie z pustych bibliotek — powód to
+  // „pusta biblioteka", nie „brak celów" (ta sama rodzina co mill_cards).
+  // Selektor WSPÓLNY z efektem (`libraryCardsOf` z effects.js, L41/L48).
+  reveal_top_each_player_lose_life_mana_value: (state) => (
+    state.players.every((player) => libraryCardsOf(state, player.id).length === 0)
+      ? 'empty_library' : null),
 });
 
 /**

@@ -860,6 +860,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     put_graveyard_card_on_top: () => 4,
     reveal_top_pick_land_rest_grave: () => 5,
     reveal_top_pick_card_rest_bottom: () => 6, // karta-stwór do ręki (M354)
+    // M356 (Duskmantle Seer): efekt SYMETRYCZNY — każdy gracz (także bot)
+    // odsłania wierzch, bierze go do ręki i traci życia równą jego mana value.
+    // Karta wroga równoważy moją, a życiem płacą obaj, więc dla bota to nie
+    // jest zysk — wpis istnieje po to, żeby typ efektu nie wyglądał na
+    // nieoceniony (telemetria E1) i żeby trigger nie wchodził w „akcję bez
+    // wyceny" (L50).
+    reveal_top_each_player_lose_life_mana_value: () => 0,
     opponent_hand_card_to_top: () => 3,
     discard_each_opponent: () => 3,
     take_initiative: () => 6,
