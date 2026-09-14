@@ -1213,6 +1213,15 @@ dostaje LIMIT w dniu narodzin (`COMBAT_OPTION_CAP`, `CREW_OPTION_CAP`,
 `ESCAPE_OPTION_CAP` — 32) z porządkiem deterministycznym (ADR 0005). „Bot i tak
 nie wybierze gorszego" nie jest argumentem: wycena punktuje KAŻDY wariant.
 Kanarek eksplozji: czas próbki (~140 s / 1248 meczów).
+
+**2026-09-14f (dopisek) — mulligan to DECYZJA, nie dana.** Zgłoszenie „talie
+podejrzanie często startują bez lądów": pomiar pokazał talie zgodne z regułą
+1:2 (M132) i uczciwe tasowanie, a root cause w polityce BOTA (heuristic/aggro
+nigdy nie brały mulligana). Polityka: keep ⇔ ≥2 lądy albo cap 2 mulliganów;
+na spód najdroższe czary. Narracja: `docs/LESSONS_PRZYPADKI.md` (L19).
+**Reguła:** zgłoszenie „często startuje bez X" mierz NAJPIERW dane (kompozycja,
+uczciwość losowania), potem DECYZJE konsumenta — symptom może mieszkać
+w polityce kontrolera, nie w talii.
 ## L20 (2026-08-16) — Detektor mierzy tylko to, co narzędzie KLIKNIE — skanuj całe okno
 
 **Przypadek:** weryfikacja mutacyjna bramki ofert (M104) nie zadziałała: po cofnięciu bramki panel oferował „Aktywuj: Rustvine Cultivator — odkręć → cel: Forest", a oś `noop` raportowała zero.
@@ -1898,14 +1907,10 @@ mapowania, mapping musi być monotoniczny w zakresie realnie występującym — 
 
 ## L118 (2026-09-02) — Zanim wyłączysz klasę przypadków z pomiaru, udowodnij w teście, że jest równoważna
 
-**Przypadek:** audyt remisów bota (M285→M286): 208 z 308 remisów wyglądało na
-`block[]`/`attack[]` vs `pass_priority`, czyli „ten sam no-op" — i dość byłoby
-jedno zdanie w kodzie narzędzia, żeby je wyłączyć. Równocześnie reguła „brak
-projekcji u którejkolwiek opcji ⇒ bez danych" **wycinała findingi realne**
-(null przy passie pochłaniał całą decyzję). Po dowodzie regułowym
-(`test/audyt-bot-walka-remisy.test.js` test 1 — identyczny stan po obrażeniach)
-i po odrzuceniu tylko opcji bez projekcji wypłyneły 4 groźby, których wcześniejszy
-pomiar nie widział.
+**Przypadek:** audyt remisów bota (M285→M286): 208/308 remisów wyglądało na
+no-op (`block[]`/`attack[]` vs `pass_priority`), a reguła „brak projekcji ⇒
+bez danych" wycinała przy okazji findingi realne. Pełna narracja:
+`docs/LESSONS_PRZYPADKI.md` (L118).
 **Reguła:** każda klasyfikacja w narzędziu audytowym, która redukuje licznik,
 potrzebuje testu stwierdzającego równoważność (albo — dla metryk — porównuj
 wyłącznie dane mogące zmienić wynik: suma siły ataku przy ataku śmiertelnym jest
@@ -1919,13 +1924,11 @@ zero, którego projekt nie obwieścił, jest kłamstwem w teście (ADR 0019).
 
 ## L119 (2026-09-02) — Metryka audytowa nie może być modelem gorszym od mierzonego kodu
 
-**Przypadek:** audyt remisów bota (M286→M287). Projekcja „wartość ciała" liczona
-jako `power + toughness` flagowała pary słusznie uznane za zamienne, bo sama wycena
-waży siłę i wytrzymałość inaczej (2/pt vs 1/pt); projekcja „obrona zostawiona w
-domu" flagowała rzekomy brak ostrożności, którego nie ma — stwór tapnięty atakiem
-odświeża się w naszym następnym kroku odświeżania, czyli zdąży zablokować (CR 502.3,
-wyjątek „doesn't untap" ma osobną gałąź). Równolegle ta sama metryka, ale liczona po
-składnikach, znalazła rzecz prawdziwą: `cast_permanent` w ogóle nie znał kosztu many.
+**Przypadek:** audyt remisów bota (M286→M287): projekcja „wartość ciała"
+(`power + toughness`) flagowała pary słusznie zamienne, bo wycena waży
+składniki inaczej; równolegle metryka liczona po składnikach znalazła rzecz
+prawdziwą (`cast_permanent` nie znał kosztu many). Pełna narracja:
+`docs/LESSONS_PRZYPADKI.md` (L119).
 **Reguła:** porównuj warianty po **wejściach, które mierzony kod konsumuje**, w
 jednostkach, które ten kod szanuje — jeśli audyt ma gorszy model świata niż
 badany kod, produkuje findingi pozorne i zagłusza prawdziwe. Analogicznie od strony

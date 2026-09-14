@@ -14,18 +14,18 @@ Talie zostają bez zmian (reguła 1:2 trzymana z konstrukcji generatora).
 
 ## Zakres i kolejność
 
-- [ ] E1 — engine: warianty `resolve_mulligan_choice` niosą jawny licznik
+- [x] E1 — engine: warianty `resolve_mulligan_choice` niosą jawny licznik
       `mulligans` (informacja publiczna — jak licznik mulliganów w UI).
-- [ ] E2 — heuristic-bot: keep ⇔ (≥2 lądy w ręce ∨ już 2 mulligany — cap);
+- [x] E2 — heuristic-bot: keep ⇔ (≥2 lądy w ręce ∨ już 2 mulligany — cap);
       `resolve_mulligan_bottom_choice`: trzymaj lądy, oddawaj najdroższe czary.
-- [ ] E3 — aggro-bot: ten sam wyzwalacz i cap; ta sama reguła odkładania.
+- [x] E3 — aggro-bot: ten sam wyzwalacz i cap; ta sama reguła odkładania.
       random-bot bez zmian (szumowa linia bazowa).
-- [ ] E4 — testy: nowy `test/bot-mulligan.test.js` (wyzwalacz 0/1/2 lądów,
+- [x] E4 — testy: nowy `test/bot-mulligan.test.js` (wyzwalacz 0/1/2 lądów,
       cap, wybór spodu bez lądów, payload licznika); regeneracja golden-mastera
       śladu bota (`node tools/bot-scoring-snapshot.mjs --write`) z przeglądem
       diffu; `npm test`; `npm run test:all`; benchmark `--quick` i porównanie
       z bazą 82,6% (555/672) — zmiana POLITYKI bota jest świadoma i liczona.
-- [ ] E5 — dowód end-to-end Żywym Testerem (seed, w którym bot bierze
+- [x] E5 — dowód end-to-end Żywym Testerem (seed, w którym bot bierze
       mulligana; log „bierze mulligan (1)”; partia dochodzi do upkeepu);
       dokumentacja (PROJECT_HISTORY, README — liczby benchmarku, budżet
       lektury nienaruszony); opis PR #118.

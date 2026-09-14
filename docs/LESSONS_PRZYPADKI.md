@@ -1818,3 +1818,37 @@ wyciszenia, choć tabela deklarowała je w osi wyciszalnych. Złapał to detekto
 osi 3 w partii worek-legend vs worek-mroczny s=55 (profil greedy). Naprawa
 u źródła + regresja `test/choice-ignore.test.js` (W1); dowód end-to-end: ta
 sama partia po naprawie — 0 zgłoszeń.
+
+## L19 (2026-09-14f) — dopisek: mulligan to decyzja, nie dana
+
+**Zgłoszenie właściciela:** „Kilka talii podejrzanie często startuje bez
+lądów. Powinno to być w proporcji 1:2."
+
+**Pomiar (krok 1 — dane):** `tools/deck-land-ratio.mjs` (nowe narzędzie,
+commit 31f51a7): wszystkie 24 talie trzymają regułę 1:2 (M132 — co najmniej
+1 ląd na 2 nielandy; udział lądów 33,3–41,7%, limit górny 55%). Symulacja
+2000 rozdań na talię przez PRAWDZIWĄ ścieżkę silnika (`setupCardMatch`):
+częstość rąk 0-lądowych zgodna z rozkładem hipergeometrycznym (max 3,58% —
+talie na progu 33,3%; 1 na ~28 gier) — tasowanie i rozdanie uczciwe.
+
+**Root cause (krok 2 — decyzje):** boty NIGDY nie brały mulligana.
+heuristic-bot: `finish(cmd.keep ? 50 : 0)` — keep zawsze; aggro-bot:
+pierwszy wariant listy = keep. Ręka 0-lądowa była więc grana do końca,
+a w grach z botem wyglądało to jak „talia bez lądów".
+
+**Naprawa (plan 2026-09-14f):**
+- silnik: warianty `resolve_mulligan_choice` niosą jawny licznik `mulligans`
+  (informacja publiczna — ta sama, którą UI pokazuje graczowi; bot capuje);
+- heuristic + aggro: keep ⇔ ≥2 lądy w ręce albo cap 2 mulliganów; przy
+  odłożeniu N kart na spód trzymaj lądy (mulligan wzięty z braku many),
+  oddawaj najdroższe czary (niskie keep-value);
+- random-bot bez zmian (szumowa linia bazowa).
+
+**Weryfikacja:** `test/bot-mulligan.test.js` (11 testów: wyzwalacz 0/1/2
+lądów, cap, spód bez lądów, payload licznika, oba boty); golden-master śladu
+bota zregenerowany `--write` — diff dokładnie podpisany (scoreSum +10 na
+keep: 50→60; jeden mecz z realnym mulliganem: decisions 165→176); benchmark
+quick 82,6%→82,9% (555→557/672), aggro bez zmian 30,7%; Żywy Tester
+(innistrad-brg vs innistrad-wu, seed 25): „Nieprzyjaciel bierze mulligan
+(1) — nowa ręka 7 kart", odłożenie 1 karty na spód, zatrzymanie nowej ręki,
+partia gra do końca, detektory 0 zgłoszeń. Suity: 5496/5496 fast, 5506/5506 all.

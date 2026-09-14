@@ -6216,9 +6216,13 @@ export function playerView(state, playerId) {
     // M203/2: przy konwencji „prezentacja = enumeracja" keep idzie PIERWSZY
     // (boty i gracz biorą pierwszą ofertę — domyślna sugestia to zatrzymanie
     // ręki); dawniej wymuszało to odwrócenie przez unshift.
-    legalCommands.push(command('resolve_mulligan_choice', playerId, { keep: true }));
-    if ((state.mulliganCounts[playerId] ?? 0) < 7) {
-      legalCommands.push(command('resolve_mulligan_choice', playerId, { keep: false }));
+    // 2026-09-14f (zgłoszenie właściciela): warianty niosą JAWNY licznik
+    // mulliganów — to informacja publiczna (UI pokazuje ją graczowi), a bot
+    // potrzebuje jej do capu („max 2 mulligany, potem keep za wszelką cenę").
+    const mulligansSoFar = state.mulliganCounts[playerId] ?? 0;
+    legalCommands.push(command('resolve_mulligan_choice', playerId, { keep: true, mulligans: mulligansSoFar }));
+    if (mulligansSoFar < 7) {
+      legalCommands.push(command('resolve_mulligan_choice', playerId, { keep: false, mulligans: mulligansSoFar }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulliganBottom
     && state.pendingMulliganBottom.playerId === playerId) {

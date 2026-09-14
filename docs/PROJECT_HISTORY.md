@@ -10816,3 +10816,34 @@ test:all` 5495/5495 (304,6 s), build 61 modułów / 3658,7 kB, quick benchmark
 82,6% (555/672) / 30,7% / 4,2% — identyczny z bazą (polityka bota nietknięta),
 golden master bez churnu. Handoff:
 [`docs/setup/HANDOFF_2026-09-14e.md`](setup/HANDOFF_2026-09-14e.md).
+
+## 2026-09-14f — boty biorą mulligana przy ręce 0–1 lądów (PR #118, arena/01a09fda)
+
+Czwarta sesja 2026-09-14. Zgłoszenie właściciela: „Kilka talii podejrzanie
+często startuje bez lądów; proporcja lądów do nie-lądów powinna być 1:2".
+Pomiar [`tools/deck-land-ratio.mjs`](../tools/deck-land-ratio.mjs) (nowe
+narzędzie, commit `31f51a7`): wszystkie 24 talie trzymają regułę 1:2 (M132 —
+≥1 ląd na 2 nielandy; 33,3–41,7% lądów, próg górny 55%); symulacja 2000
+rozdań/talia przez prawdziwą ścieżkę silnika zgodna z rozkładem
+hipergeometrycznym (max 3,58% rąk 0-lądowych, 1/28 gier) — tasowanie
+uczciwe. Root cause: boty NIGDY nie brały mulligana (heuristic: keep=50
+zawsze; aggro: pierwsza oferta) i grały rękę 0-lądową do końca.
+
+Naprawa (decyzja właściciela — nauczyć boty mulliganować, talie bez zmian;
+plan [`docs/plans/PLAN_2026-09-14f-bot-mulligan.md`](plans/PLAN_2026-09-14f-bot-mulligan.md)):
+
+- silnik: warianty `resolve_mulligan_choice` niosą jawny licznik `mulligans`
+  (informacja publiczna; bot capuje nim decyzje);
+- heuristic-bot i aggro-bot: keep ⇔ ≥2 lądy w ręce albo cap 2 mulliganów;
+  przy odłożeniu N kart na spód trzymają lądy i oddają najdroższe czary;
+  random-bot bez zmian (linia szumowa);
+- `test/bot-mulligan.test.js` (11 testów); golden-master śladu bota
+  zregenerowany `--write` z przeglądem diffu (scoreSum +10 na keep: 50→60;
+  jeden mecz z realnym mulliganem: decisions 165→176);
+- bramki: `npm test` 5496/5496, `npm run test:all` 5506/5506, build
+  61 modułów / 3660,4 kB, quick benchmark 82,9% (557/672; baza 82,6%),
+  aggro 30,7% bez zmian; Żywy Tester (innistrad-brg vs innistrad-wu,
+  seed 25): „Nieprzyjaciel bierze mulligan (1) — nowa ręka 7 kart",
+  odłożenie na spód, zatrzymanie nowej ręki, partia do końca, 0 zgłoszeń
+  detektorów; LESSONS § L19 dopisek (narracja w LESSONS_PRZYPADKI,
+  budżet lektury zielony).
