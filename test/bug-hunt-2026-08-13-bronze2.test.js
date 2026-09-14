@@ -76,7 +76,7 @@ test('BUG1: Fierce Empath nie może wziąć stwora o MV < 6', () => {
   assert.ok(!bad.ok, 'walidacja odrzuca MV<6');
 });
 
-test('BUG2: flashbackowany czar po kontrze idzie do exile (CR 702.34b)', () => {
+test('BUG2: flashbackowany czar po kontrze idzie do exile (CR 702.34a)', () => {
   const state = mainPhase(game());
   addRealCard(state, 'dt', 'dream-twist', 'p1', 'graveyard');
   addRealCard(state, 'neg', 'negate', 'p2', 'hand');

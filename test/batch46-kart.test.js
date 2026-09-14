@@ -340,11 +340,11 @@ test('B46/7c: Bone Shredder — echo: w swoim upkeepie płacisz albo poświęcas
   processTriggers(state, events);
   resolveStack(state);
   assert.ok(state.pendingPayOrSacrifice,
-    'echo pyta: zapłać {2}{B} albo poświęć (CR 702.29)');
+    'echo pyta: zapłać {2}{B} albo poświęć (CR 702.30)');
   assert.equal(state.pendingPayOrSacrifice.amount, 3, 'koszt echa = {2}{B} (3 many)');
 });
 
-test('B46/7d: echo — bez many stwór jest POŚWIĘCANY (CR 702.29)', () => {
+test('B46/7d: echo — bez many stwór jest POŚWIĘCANY (CR 702.30)', () => {
   const state = game('p1');
   putCard(state, 'shredder', 'bone-shredder', 'p1');   // brak źródeł many
   state.objects.set('shredder', Object.freeze({

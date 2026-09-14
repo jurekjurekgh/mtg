@@ -125,7 +125,7 @@ test('A1/widok: odsłonięte karty satyra i ujawnionej ręki trafiają do payloa
   const land = kartaBiblioteki(state, 'lib-land', { cardId: 'basic-forest', kind: 'land', manaCost: 0 });
   kartaBiblioteki(state, 'lib-creature', { cardId: 'goblin-piker', kind: 'creature', manaCost: 2, power: 2, toughness: 2 });
   state.pendingSatyrLook = {
-    playerId: 'p1', objectIds: [land, 'lib-creature'], landIds: [land],
+    playerId: 'p1', objectIds: [land, 'lib-creature'], pickIds: [land],
     sourceCardId: 'satyr-wayfinder', restorePriorityTo: 'p1',
   };
   const view = playerView(state, 'p1');

@@ -12,7 +12,7 @@ import { addCounter } from '../src/engine/counters.js';
  *
  * Choke point `dealNonCombatDamage` niesie cały kontrakt obrażeń: fizzle celu
  * (CR 608.2b), protection (CR 702.16), filtr „prevent all damage this turn",
- * tarcze prewencji, infect (CR 702.90b), deathtouch (CR 702.4b) i lifelink
+ * tarcze prewencji, infect (CR 702.90b), deathtouch (CR 702.2b) i lifelink
  * (CR 702.15). Kopia w `damage_to_controller` (Forge Devil: „deals 1 damage
  * to target creature and 1 damage to you") znała wyłącznie tarcze i zmianę
  * życia.

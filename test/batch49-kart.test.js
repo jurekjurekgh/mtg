@@ -249,7 +249,7 @@ test('B49/B1: Kishla Village — dane karty i zdolności wg Oracle', () => {
   const mana = card.abilities.find((a) => a.effect?.type === 'add_mana');
   assert.deepEqual(mana.effect.colors, ['G'], '{T}: Add {G}');
   const surveil = card.abilities.find((a) => a.effect?.type === 'surveil');
-  assert.deepEqual(surveil.cost, { mana: 4, tap: true }, '{3}{G} = 4 many');
+  assert.deepEqual(surveil.cost, { mana: 4, colors: ['G'], tap: true }, '{3}{G} = 4 many z pipem (audyt własny K, 2026-09-14: brakowało {G})');
   assert.equal(surveil.effect.amount, 2);
 });
 

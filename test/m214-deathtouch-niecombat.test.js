@@ -1,7 +1,7 @@
 // M214 — audyt reguł MtG (odznaka wyłapywacza błędów, znalezisko #2):
-// deathtouch (CR 702.4) przy obrażeniach NIEcombatowych.
+// deathtouch (CR 702.2b) przy obrażeniach NIEcombatowych.
 //
-// CR 702.4b: „Any amount of damage this deals to a creature is enough to
+// CR 702.2b: „Any amount of damage this deals to a creature is enough to
 // destroy it." Reguła nie mówi „combat damage" — dotyczy KAŻDEGO zadania
 // obrażeń przez stwora z deathtouch: fight (Malamet Battle Glyph),
 // „deals damage equal to its power" (Assert Perfection), triggery.
@@ -35,7 +35,7 @@ function stateWithDeathtoucher({ deathtouch = true } = {}) {
   return state;
 }
 
-test('M214: 1 obrażenie z deathtouch w FIGHT zabija 4/4 (CR 702.4b)', () => {
+test('M214: 1 obrażenie z deathtouch w FIGHT zabija 4/4 (CR 702.2b)', () => {
   const state = stateWithDeathtoucher();
   dealNonCombatDamage(state, state.objects.get('a'), 'b', 1);
   assert.equal(state.objects.get('b').damagedByDeathtouch, true, 'flaga ustawiona po obrażeniach');

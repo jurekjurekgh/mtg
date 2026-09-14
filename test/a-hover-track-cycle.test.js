@@ -1,4 +1,4 @@
-// A — znalezisko właściciela z testów (tor hovera na PPM): rotacja
+// A — znalezisko właściciela z testów (tor hovera): rotacja
 // scryfall → FOT → KON bywała nieprzewidywalna — „czasem nic nie robi,
 // czasem przeskakuje o dwa tryby, czasem rotuje FOT → KON → FOT → KON".
 // Dwie przyczyny w kodzie:
@@ -10,6 +10,13 @@
 //     podwójne contextmenu) — +2/+3 na gest dawało „przeskoki" i oscylacje
 //     FOT → KON → FOT (podwójny krok z KON ląduje w FOT, omijając Scryfall).
 //     Naprawa: strażnik 250 ms (jak MODAL_OPEN_GUARD_MS w main.js).
+//
+// M349/A (znalezisko właściciela z testów, 2026-09-14): wyzwalacz PPM wymieniony
+// na ŚRODKOWY przycisk (MMB) — przeglądarka dostarcza `contextmenu` raz przy
+// wciśnięciu, raz przy zwolnieniu, czasem wcale, więc tor był
+// nieprzewidywalny (a czasem łapało menu kontekstowe). Kontrakt: jedno
+// WCIŚNIĘCIE MMB (`mousedown`, button === 1) = jeden krok; ZWOLNIENIE nie
+// zmienia nic; PPM (contextmenu / prawy przycisk) nie robi NIC.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCardRegistry } from '../src/cards/card-data.js';
@@ -86,10 +93,17 @@ function previewLabel(els) {
   return node ? node.textContent : null;
 }
 
-const rmb = () => ({ clientX: 120, clientY: 120, preventDefault() {} });
+// MMB = środkowy przycisk myszy: `button === 1` (numer przycisku) i
+// `buttons === 4` (MASKą bitowa UI Events: 1 = lewy, 2 = prawy, 4 = środkowy —
+// sam `button === 1` przepuszczałby mousedown dociskany przy trzymanym już
+// innym przycisku).
+const mmb = () => ({ clientX: 120, clientY: 120, button: 1, buttons: 4, preventDefault() {} });
+// PPM (prawy) i LPM — nie mogą ruszyć toru (dawne wyzwalacze / zwykły klik).
+const rmb = () => ({ clientX: 120, clientY: 120, button: 2, buttons: 2, preventDefault() {} });
+const lmb = () => ({ clientX: 120, clientY: 120, button: 0, buttons: 1, preventDefault() {} });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-test('A/1: karta Z artId rotuje scryfall → FOT → KON → scryfall (jeden krok na RMB)', async () => {
+test('A/1: karta Z artId rotuje scryfall → FOT → KON → scryfall (jeden krok na wciśnięcie MMB)', async () => {
   const els = makeEls();
   const modes = [];
   renderTableView({
@@ -99,14 +113,21 @@ test('A/1: karta Z artId rotuje scryfall → FOT → KON → scryfall (jeden kro
   const tile = handTile(els);
   tile.emit('mouseenter', { clientX: 120, clientY: 120 });
   assert.match(previewLabel(els) ?? '', /pełna karta \(Scryfall\)/, 'start: tor Scryfall');
-  tile.emit('contextmenu', rmb());
-  assert.match(previewLabel(els) ?? '', /ilustracja panoramiczna \(FOT\)/, 'RMB 1: FOT');
+  tile.emit('mousedown', mmb());
+  assert.match(previewLabel(els) ?? '', /ilustracja panoramiczna \(FOT\)/, 'MMB 1: FOT');
+  tile.emit('mouseup', mmb()); // zwolnienie NIE zmienia toru (A2)
+  assert.match(previewLabel(els) ?? '', /ilustracja panoramiczna \(FOT\)/, 'zwolnienie MMB: bez zmiany');
   await sleep(300); // gesty gracza dzieli czas — strażnik 250 ms puszcza kolejny krok
-  tile.emit('contextmenu', rmb());
-  assert.match(previewLabel(els) ?? '', /bestiariusz \(KON\)/, 'RMB 2: KON');
+  tile.emit('mousedown', mmb());
+  assert.match(previewLabel(els) ?? '', /bestiariusz \(KON\)/, 'MMB 2: KON');
   await sleep(300);
+  tile.emit('mousedown', mmb());
+  assert.match(previewLabel(els) ?? '', /pełna karta \(Scryfall\)/, 'MMB 3: z powrotem Scryfall');
+  // PPM i LPM nie są już wyzwalaczem toru (PPM zawiódł na różnych platformach).
+  tile.emit('mousedown', rmb());
+  tile.emit('mousedown', lmb());
   tile.emit('contextmenu', rmb());
-  assert.match(previewLabel(els) ?? '', /pełna karta \(Scryfall\)/, 'RMB 3: z powrotem Scryfall');
+  assert.match(previewLabel(els) ?? '', /pełna karta \(Scryfall\)/, 'PPM/LPM nie ruszają toru');
   assert.deepEqual(modes, ['fot', 'kon', 'scryfall'], 'globalny tor idzie w krok z podglądem');
 });
 
@@ -123,13 +144,13 @@ test('A/2: karta BEZ artId (land) nie pokazuje pustych torów — zawsze Scryfal
     'nawet przy globalnym FOT karta bez ilustracji pokazuje Scryfall');
   await sleep(300); // strażnik jest modułowy — czyścimy okno po teście A/1
   for (let i = 0; i < 3; i++) {
-    tile.emit('contextmenu', rmb());
+    tile.emit('mousedown', mmb());
     await sleep(300);
-    assert.match(previewLabel(els) ?? '', /pełna karta \(Scryfall\)/, `RMB ${i + 1}: nadal Scryfall`);
+    assert.match(previewLabel(els) ?? '', /pełna karta \(Scryfall\)/, `MMB ${i + 1}: nadal Scryfall`);
   }
 });
 
-test('A/3: podwójne contextmenu w tym samym geście (odbicie) = JEDEN krok na torze', async () => {
+test('A/3: podwójny mousedown w tym samym geście (odbicie) = JEDEN krok na torze', async () => {
   const els = makeEls();
   const modes = [];
   renderTableView({
@@ -139,11 +160,11 @@ test('A/3: podwójne contextmenu w tym samym geście (odbicie) = JEDEN krok na t
   const tile = handTile(els);
   tile.emit('mouseenter', { clientX: 120, clientY: 120 });
   await sleep(300); // strażnik jest modułowy — czyścimy okno po teście A/2
-  tile.emit('contextmenu', rmb());
-  tile.emit('contextmenu', rmb()); // to samo „kliknięcie", drugi event w tym samym ticku
+  tile.emit('mousedown', mmb());
+  tile.emit('mousedown', mmb()); // to samo „kliknięcie", drugi event w tym samym ticku
   assert.match(previewLabel(els) ?? '', /ilustracja panoramiczna \(FOT\)/,
     'odbicie nie przeskakuje do KON');
   await sleep(300); // strażnik uzbraja się ponownie
-  tile.emit('contextmenu', rmb());
+  tile.emit('mousedown', mmb());
   assert.match(previewLabel(els) ?? '', /bestiariusz \(KON\)/, 'po przerwie kolejny gest idzie dalej');
 });

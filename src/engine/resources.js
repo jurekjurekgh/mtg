@@ -1337,7 +1337,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // tutaj tylko ZERUJEMY koszt; bez tego pole byłoby martwe (L48: oferta
   // i płatność muszą znać tę samą regułę).
   const freeImpulse = isFreeImpulseCast(object);
-  // M158/Batch 39 (CR 702.34): rzut za koszt madness z exile (karta
+  // M158/Batch 39 (CR 702.35): rzut za koszt madness z exile (karta
   // odrzucona z madnessReady) — timing ignorowany (rzut w rozstrzyganiu
   // zdolności, jak rebound/suspend).
   const madnessLive = object?.zone === 'exile' && object.madnessReady;
@@ -1368,7 +1368,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
   // bez flash — tylko w swojej main phase (plot też rzuca się jako sorcery).
   const hasFlash = (object.keywords ?? []).includes('flash');
-  // M159/F1 (audyt PR #66, CR 702.34e): rzut za koszt madness następuje przy
+  // M159/F1 (audyt PR #66, CR 702.35b): rzut za koszt madness następuje przy
   // rozstrzyganiu jednorazowej decyzji (jak suspend/rebound) i IGNORUJE
   // timing — także w cleanup (odrzucenie ponad limit ręki) i w turze
   // przeciwnika. Bez wyjątku bramka odrzucała rzut, a heuristic-bot zawsze

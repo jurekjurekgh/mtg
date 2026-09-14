@@ -347,7 +347,7 @@ test('M218/2c: pump NIE rzucany, gdy nasz bloker 1/1 i tak ginie od 5/5', () => 
 });
 
 test('M218/2d: pump na 1/1 deathtouch+trample vs 5/5 rzucany (face 0→3)', () => {
-  // Deathtouch: 1 obrażenie wystarcza na zabicie blokera (CR 702.4), więc
+  // Deathtouch: 1 obrażenie wystarcza na zabicie blokera (CR 702.2b), więc
   // nadmiar z trample po lethal idzie na twarz (CR 702.19). Bez pumpu: 1/1
   // zadaje 1 (5/5 ginie od deathtouch), ale sam ginie od 5 — face 0.
   // Z +3/+3: 4/4 — lethal nadal 1, nadmiar 3 na twarz, ginie od 5 → face 3.

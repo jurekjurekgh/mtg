@@ -1,0 +1,58 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Tah-Crop%20Skirmisher&set=akh",
+  "print": "akh",
+  "name": "Tah-Crop Skirmisher",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Creature — Snake Warrior",
+  "oracle_text": "Embalm {3}{U} ({3}{U}, Exile this card from your graveyard: Create a token that's a copy of it, except it's a white Zombie Snake Warrior with no mana cost. Embalm only as a sorcery.)",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Embalm"
+  ],
+  "set": "akh",
+  "set_name": "Amonkhet",
+  "collector_number": "72",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/b/ab0429ec-0809-4e68-9790-8c21bde201a2.jpg?1783936514",
+    "normal": "https://cards.scryfall.io/normal/front/a/b/ab0429ec-0809-4e68-9790-8c21bde201a2.jpg?1783936514"
+  },
+  "pobrano": "2026-09-14",
+  "rulings": [
+    {
+      "date": "2017-07-14",
+      "source": "wotc",
+      "comment": "If a spell or ability puts a creature card with embalm into your graveyard during your main phase, you'll have priority immediately after that spell or ability resolves. You can activate the creature card's embalm ability before any player can exile it with an effect, such as that of Crook of Condemnation, if it's legal for you to do so."
+    },
+    {
+      "date": "2017-07-14",
+      "source": "wotc",
+      "comment": "Once you've activated an embalm ability, the card is immediately exiled. Opponents can't try to stop the ability by exiling the card with an effect such as that of Crook of Condemnation."
+    },
+    {
+      "date": "2017-04-18",
+      "source": "wotc",
+      "comment": "For each card with embalm, a corresponding game play supplement token can be found in some Amonkhet booster packs. These supplements are not required to play with cards with embalm; you can use the same items to represent an embalmed token as you would any other token."
+    },
+    {
+      "date": "2017-04-18",
+      "source": "wotc",
+      "comment": "The token copies exactly what was printed on the original card and nothing else. It doesn't copy any information about the object the card was before it was put into your graveyard."
+    },
+    {
+      "date": "2017-04-18",
+      "source": "wotc",
+      "comment": "The token is a Zombie in addition to its other types and is white instead of its other colors. It has no mana cost, and thus its mana value is 0. These are copiable values of the token that other effects may copy."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/akh/72/rulings",
+  "rulingsPobrano": "2026-09-14"
+}

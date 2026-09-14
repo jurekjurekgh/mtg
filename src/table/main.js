@@ -222,9 +222,9 @@ function bootstrapTable() {
   // (adres http(s) → Scryfall, plik z dysku → lokalne ./img/ z fallbackiem).
   const currentImageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
 
-  // Tor podglądu hover (scryfall → FOT → KON) przełączany PPM nad kartą
-  // (zgłoszenie H 2026-09-11; wcześniej scroll jak w legacy HTML). Trzymany
-  // w pamięci sesji strony — bez localStorage.
+  // Tor podglądu hover (scryfall → FOT → KON) przełączany MMB nad kartą
+  // (zgłoszenie H 2026-09-11; wyzwalacz PPM → MMB w M349/A 2026-09-14; wcześniej
+  // scroll jak w legacy HTML). Trzymany w pamięci sesji strony — bez localStorage.
   let currentHoverMode = 'scryfall';
 
   const AUTOSAVE_KEY = 'mtg-table-autosave-v1';
@@ -1258,7 +1258,7 @@ function bootstrapTable() {
     // Klucz grupowania – uproszczony odpowiednik choiceRequestGroupKey z render.js
     const groupKey = (cmd) => {
       // Batch 54: wspólny klucz rozdziela także CELOWANY czar z kickerem.
-      if (cmd.type === 'cast_spell') return choiceRequestGroupKey(cmd) ?? `spell:${cmd.objectId}:${Boolean(cmd.kicked)}`;
+      if (cmd.type === 'cast_spell') return choiceRequestGroupKey(cmd) ?? `spell:${cmd.objectId}:${Boolean(cmd.kicked)}${cmd.gifted ? `:gift:${cmd.giftRecipientId ?? '?'}` : ''}`;
       if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `cleave:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.targets?.length) return `perm:${cmd.objectId}:${Boolean(cmd.bestow)}`;
       if (cmd.type === 'cast_permanent' && cmd.phyrexianPayWithLife != null) return `perm-x:${cmd.objectId}`;

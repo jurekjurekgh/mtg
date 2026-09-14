@@ -104,7 +104,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
   if (object.zone === 'battlefield' && object.unearthExile && toZone !== 'exile') {
     toZone = 'exile';
   }
-  // Flashback (CR 702.34b): po zapłaceniu flashback karta opuszczająca stos
+  // Flashback (CR 702.34a): po zapłaceniu flashback karta opuszczająca stos
   // idzie do exile (kontrczar, bounce ze stosu, rozstrzygnięcie).
   if (object.zone === 'stack' && object.flashedBack && toZone !== 'exile') {
     toZone = 'exile';
@@ -183,7 +183,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
     // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).
     enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,
-    // M258 (Żywy Tester): ECHO (CR 702.29) — znacznik „nieopłacone echo"
+    // M258 (Żywy Tester): ECHO (CR 702.30) — znacznik „nieopłacone echo"
     // stawiało dotąd WYŁĄCZNIE addObject (helpery testowe), a realna ścieżka
     // rzutu (stos → pole bitwy przez ten choke point) go pomijała: Bone
     // Shredder rzucony z ręki nigdy nie pytał o płatność echo. Wchodzący

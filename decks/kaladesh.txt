@@ -2,6 +2,7 @@
 
 1x Sequestered Stash
 1x Fourth Bridge Prowler
+1x Gearsmith Prodigy
 1x Merchant's Dockhand
 1x Cathartic Reunion
 1x Silken Strength
@@ -14,9 +15,10 @@
 1x Skilled Animator
 1x Spin Out
 1x Bomat Bazaar Barge
+1x Lifecrafter's Gift
 1x Reclusive Artificer
 1x Plains
-2x Island
+3x Island
 2x Swamp
 2x Mountain
 1x Forest

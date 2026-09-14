@@ -10517,3 +10517,256 @@ Testy: jeskai-devotee-once-per-turn 6 (D/0 oferta+płatność bez tapnięcia,
 D/1 budżet jednorazowy, D/2 chory działa, D/3 chory {T}-kosztowy nie,
 D/4 łańcuch Devotee→Devotee, D/5 manual wycofuje z oferty; 4 RED na 93335a2).
 Bramki: pełna **5406/5406** (w tym bot-benchmark 10/10).
+
+## 2026-09-13 — audyt PR #115 + sweep numerów CR + katalog czasowników testera (PR #116, arena/01a09c9e)
+
+Sesja domyślna (ADR 0021): plan i PR #116 **przed** kodowaniem
+(`docs/plans/PLAN_2026-09-13-audyt-pr115-petla-jakosci.md`), potem audyt
+poprzedniego scalonego PR (#115), sweep zgodności z CR i pętla jakości
+Żywym Testerem.
+
+**E1 — audyt PR #115** (`docs/audits/AUDYT_PR115_2026-09-13.md`, `aa68716`):
+werdykt **APPROVE**, zero znalezisk blokujących. Zmierzony rozmiar: 59 plików,
++5159/−359 (diff 505 kB); `npm run test:all` na `8300db6` = **5406/5406**.
+Znaleziska nieblokujące: **D1** martwy parametr `baseMana` w
+`manaForActivation` (`abilities.js:266–282`); **D2** Oracle-vs-CR „other" —
+Irontread Crusher (Scryfall) nie ma „other", Gila Courser ma, więc filtr
+`id !== id` jest poprawny wobec CR 702.122a/702.171a; **O1**
+`planGrantManaColors` (`resources.js:1173`) ma zaszyty cel
+`{castingSpell:true, artifactSpell:false}` — nieosiągalny, bo oba tokeny
+Powerstone są `{tap}`-only; **O2** `fundableCostedPlan` zwraca najdłuższy
+PREFIKS planu, nie agregat (obserwacja, nie defekt).
+
+**E3 — sweep numerów CR** (`ef13afc`): 41 plików, +106/−106 w `src/`, `test/`
+i bieżących dokumentach (`docs/ENGINE_MILESTONES.md`, `docs/ROADMAP.md`).
+Poprawione pary (stan przed → kanon): deathtouch 702.4 → **702.2/702.2b**,
+first strike 702.4 → **702.7**, landwalk 702.33 → **702.14**, echo 702.29 →
+**702.30**, madness 702.34x → **702.35a/b**, flashback 702.34b → **702.34a**,
+fabricate 702.122 → **702.123**, reinforce 702.29a → **702.77a**, delirium
+702.34 → **207.2c** (ability word bez wpisu w CR), crew 701.36 → **702.122**
+w bieżących dokumentach. Dokumenty historyczne (PROJECT_HISTORY, stare plany,
+audyty) zachowują numerację z epoki. Źródło numeracji (ADR 0030): TXT CR
+`MagicCompRules%2020260819.txt` z media.wizards.com (efektywny 2026-08-07) —
+kanon: Deathtouch 702.2, Double strike 702.4, First strike 702.7, Landwalk
+702.14, Cycling 702.29, Echo 702.30, Kicker 702.33, Flashback 702.34,
+Madness 702.35, Reinforce 702.77, Crew 702.122/702.122a, Fabricate 702.123,
+Plot 702.170, Saddle 702.171/702.171a. Strażnik
+`test/cr-numery-mechanik-straznik.test.js` (11 testów) pilnuje par
+mechanika↔numer na `src/` + `test/` i cytuje regułę w komentarzu.
+
+**E2 — pętla jakości Żywym Testerem** (`b48d5d5`): sześć partii taliami
+z obszaru zmian (pojazdy: final-fantasy/kaladesh/warhammer-wg/worek-legend;
+Shaman: zendikar; szukanie: wiedzmin-brg) — 0 detektorów, 0 niewycenionych,
+modale Mulligan/Surveil/Fertile Thicket/Roiling Regrowth przećwiczone, ale
+**ścieżka kliku w pojazd ani razu nie powstała** (etykieta „Obsadź:" stała
+w panelu 54×, zero kliknięć). Root cause: PR #115 (A1) zmienił etykietę
+crew/saddle z „Aktywuj:" na „Obsadź:"/„Osiodłaj:", a ręcznie utrzymywane
+wzorce testera i detektorów zostały na `^Aktywuj:` — klasa M256, tym razem
+bez detektora (etykieta istnieje, więc L46 milczy). Naprawa u źródła: jedna
+tabela czasowników `tools/table-tester/actions.mjs` (pula / bezpieczne /
+priorytety greedy) + wspólna lista dla osi 3 detektorów + uzupełnienie
+czasowników znanych silnikowi od dawna (Ucieczka, Przygoda, Zagraj
+z przygody, Ninjutsu, Channel, Plotuj, Przygotuj manę, Zawieś, Rzuć
+z Cleave/odbiciem/wygnaną/zawieszone, Zagraj aurę/za bestow/za manę ze
+Skarbów, Obróć twarzą do góry) + usunięcie martwych angielskich wpisów
+(`Escape:`, `Plot:`). Strażnik `test/tester-wzorce-akcji.test.js` (6 testów)
+generuje etykiety crew/saddle prawdziwym `commandLabel` i wymaga, by każdy
+czasownik tabeli istniał w `render.js`. Dowód end-to-end: crew (Bomat Bazaar
+Barge → kreator załogi → „obsadzony · 5/5", partia 20–0, 0 detektorów) i
+saddle (Trained Arynx + Gila Courser → „zyskuje: osiodłanie", 29/30 akcji
+klikniętych, 0 detektorów). Po drodze naprawiony fałszywy alarm własnej
+zmiany: „Wybierz: Mulligan/Deklaracja atakujących" nie należy do osi 3
+(zakres historyczny osi zachowany).
+
+**E4 — bramki końcowe**: `npm test` **5413/5413**; `npm run test:all`
+**5423/5423** (290 123,44 ms); `npm run build` **61 modułów / 3618,0 kB**; quick benchmark
+**672 gry / 111,6 s** — heuristic **84,2%**, aggro **28,0%**, random **3,6%**
+(pary poniżej 100%: dominaria-brg|innistrad-brg 87,5%, dominaria-brg|dominaria-wu
+i dominaria-brg|final-fantasy i final-fantasy|innistrad-brg po 93,8%). Pełne B0
+niewykonane (ADR 0018 — tylko na komendę właściciela).
+
+**E5 — dokumenty**: ten wpis, `docs/setup/HANDOFF_2026-09-13.md`, README
+(liczby rdzenia/artefaktu z pomiaru; tabela talii bez zmian — PR #115
+zaktualizował ją poprawnie).
+
+
+## 2026-09-14 — znaleziska właściciela z testów: A (MMB zamiast PPM) + B (Wishful Merfolk) (PR #116, arena/01a09c9e)
+
+Zgłoszenie właściciela po testach ręcznych, dwa znaleziska:
+
+**M349/A — tor hovera przełącza MMB, nie PPM** (`a1d6b20`). Objaw: „zmiana
+scryfall->FOT->KON->scryfall następuje zarówno przy mouse pressed jak i przy
+mouse released, a czasem szybkie kliknięcie w ogóle nie zmienia toru".
+Przyczyna jest po stronie przeglądarki: `contextmenu` przychodzi raz przy
+wciśnięciu, raz przy zwolnieniu, a przy szybkim kliknięciu czasem wcale —
+żadna bramka czasowa tego nie naprawi. Wyzwalaczem jest odtąd MMB
+(`mousedown` z `button === 1` i `buttons === 4` — MASKĄ bitowa UI Events:
+1 = lewy, 2 = prawy, 4 = środkowy); jedno wciśnięcie = jeden krok,
+`mouseup` nie robi nic, PPM zostaje wolny dla menu kontekstowego. Dotyczy
+kafli i kart specjalnych (jedno miejsce reguły w `cycle`), podpowiedź
+w podglądzie mówi „MMB zmienia tor". Dowód na zbudowanym artefakcie (jsdom,
+sonda ze zdjętą detekcją dotyku): Scryfall → MMB down → FOT → mouseup bez
+zmian → MMB down → KON → MMB down → Scryfall; PPM/LPM bez zmian.
+
+**M350/B — Wishful Merfolk: efekt tylko z ZAMIAREM ataku** (`e2f7c73`).
+Objaw: „bot w swojej turze Główna 1 zapłacił za zamianę w człowieka i utratę
+defender. Po czym nie zaatakował. Koniec jego tury. Kompletnie zmarnowana
+mana." Bramka M202/L sprawdzała tylko okno i stan stwora — dopuszczała main1.
+Dziś trzy warunki łącznie: etap walki przed deklaracją atakujących, stwór
+może zaatakować ORAZ `attackIntendsCreature` — czyli wycena ataku bota
+(gałąź `declare_attackers` w `scoreCommand`, wołana na komendzie
+syntetycznej z bezpiecznikiem reentrancji, zestawy jak `boundedSubsets`)
+wskazuje atak opłacalny. Jedno źródło polityki — bez drugiej kopii reguł
+(klasa M256). Golden master: 4/6 partii bit w bit bez zmian, churn wyłącznie
+w `tarkir-bg|warhammer-ubr` — seed 1000 zmienia tylko wycenę nieużywanej
+zdolności (20 → −18), seed 1001 przestaje kupować ją w main1 (tura 9)
+i gra dalej (196 → 227 decyzji), a od tury 17 kupuje ją w
+`beginning_of_combat` (28) i realnie atakuje; fixture zregenerowany.
+Quick benchmark po zmianie: heuristic **84,2%** (566/672), aggro 28,0%,
+random 3,6% (672 gry / 116,1 s) — bez zmian wobec pomiaru sprzed zmiany.
+
+Bramki: `npm test` **5415/5415**, `npm run test:all` **5425/5425** (289 849,11 ms), build
+**61 modułów / 3622,9 kB**.
+
+## 2026-09-14b — Batch 55: 10 kart właściciela (23, 609–617) — Gift, Embalm, Duskmantle Seer (PR #116, arena/01a09c9e)
+
+Druga część sesji 2026-09-14. Właściciel podał listę 10 kart ze swojej kolekcji
+i polecił: „Rozplanuj to sobie, podziel na etapy, wrzuć plan, a potem każdy
+etap osobny commit". Plan (`docs/plans/PLAN_2026-09-14-batch55-23-609-617.md`)
+poszedł na GitHub PRZED pierwszym kodem (ADR 0020 A), a każdy etap to osobny
+commit z własną bramką: B0b `976e3d0`, B1 `01f6894`, B2 `59e1afc`, B3 `3edadb3`,
+B4 `8acdcb2`, B5 `f41959e`, B6 `0762751`, B7 (ten wpis). Katalog rósł wyłącznie
+z kolekcji właściciela (ADR 0029), żadna karta nie dostała `supported` bez
+pełnego Oracle (ADR 0022).
+
+**Karty:** 23 Brightwood Tracker, 609 Jungleborn Pioneer, 610 Gearsmith Prodigy,
+611 Lifecrafter's Gift, 612 Crumb and Get It, 613 Duskmantle Seer,
+614 Hunt the Weak, 615 Tah-Crop Skirmisher, 616 Act of Treason,
+617 Douse in Gloom — 10/10 `supported`, w taliach planów: worek-mroczny,
+forgotten-realms, kaladesh (×2), śródziemie, ravnica, wiedzmin-bg,
+worek-legend, tarkir-wur, tarkir-bg.
+
+**Trzy nowe mechaniki silnika.** *Embalm* (CR 702.128a) dostał generyczny efekt
+`create_token_copy_of_source`: token jest kopią wydruku źródła, `colors`
+zastępuje kolory („except it's white"), `addSubtypes` dodaje podtypy, mana value
+tokenu to 0 (CR 707.2), a wygnanie karty z grobu jest KOSZTEM — zdolność
+rozstrzyga się, gdy karta leży już w exile, więc druga aktywacja jest
+niemożliwa (ruling 2017-04-18). *Gift* (CR 702.174) to dodatkowy koszt bez many
+wybierany przy rzucaniu: obietnica przechodzi przez rejestr, materializację,
+`OBJECT_FIELDS`, widok ręki i stos, Food powstaje PRZED innymi efektami czaru
+(ruling), a skontrowany czar daru nie daje; efekt warunkowy czyta
+`condition.wasGifted`. *Duskmantle Seer* (613) to trigger podtrzymania, który
+każe KAŻDEMU graczowi odsłonić wierzch biblioteki i stracić życie równe mana
+value tej karty: odsłonięcie jest jawe (zdarzenie `card_revealed` niesie
+nazwę), utraty życia są JEDNOCZESNE (jedna seria, więc dwie przegrane naraz to
+remis — CR 104.4b, a nie zwycięstwo gracza wcześniejszego w `state.players`),
+karty idą do ręki ruchem strefowym BEZ `card_drawn` (miracle nie widzi
+dobrania, którego nie było), a mana value bierze się z kosztu DRUKU (L85 —
+świadek Academy Journeymage: 5, nie 4, mimo obniżki kosztu).
+
+**Rozszerzenia generyczne zamiast gałęzi po nazwie** (ADR 0002):
+`condition.controlsArtifact` (bez „another" — Oracle Gearsmitha),
+`add_counter_to_creatures_you_control.requireCounter` (reguła „then": cel ma już
+swój licznik, więc grupa łapie też licznik grupowy), rodzina podglądu wierzchu
+(`pickTypes`/`restTo`/`restOrder` — Brightwood Tracker patrzy na STWORY i kładzie
+resztę na SPÓD w seedowanej kolejności, Satyr Wayfinder zostaje na domyślnych
+„lądy, grób, zachowaj kolejność").
+
+**Strażnicy naprawieni w locie.** Z1c (katalog czasowników logu) wymagał wpisu
+`obiecuje: 'obiecujesz'` w `DRUGA_OSOBA` — log daru używa czasu teraźniejszego.
+M197/K4 (zdublowane pola `artId`/`plan`) skanował plik leniwym regexem
+`id: '...' … \n\s*support:` i definicje ze `support:` w tej samej linii (styl
+kart batcha) nie były skanowane WCALE — strażnik sam się wyłączał na ogonie
+pliku; nowy token (pisany jak sąsiednie tokeny, `support:` w osobnej linii)
+sprawił, że regex złożył 14 definicji w jedną i zgłosił fałszywy alarm. Skan
+idzie teraz po granicach `defineCard({` (520 definicji, 0 zdublowanych pól).
+H7 (M256) dostał wpis w `EMPTY_RECEIVER_EFFECTS` z powodem `empty_library` dla
+nowego efektu zbiorowego, a selektor biblioteki jest WSPÓLNY z efektem
+(`libraryCardsOf`).
+
+**Golden master.** Churn był JEDEN i wyłącznie od składu talii: `ravnica`
+dostała Duskmantle Seera (i +1 land), a ta talia gra w parze fixture. Dowód
+izolacji: ta sama nowa wersja kodu na starej talii odtwarza poprzedni hash bit
+w bit (`3a5b59276c02ec30…`), po dołożeniu karty powstaje nowy
+(`3d1167140f686f7c…`). Fixture zregenerowany świadomie, bez zmian wag i progów.
+Konsekwencja poza fixture: `M337/D` (mecz z macierzy, seed 1001) skrócił się
+z 353 do 284 komend (wygrana p1 w turze 13) — próg kroków zaktualizowany
+z uzasadnieniem i wzmocniony asercją „mecz żył ≥ 8 tur".
+
+**Talie (generator, ADR 0023/0024):** kaladesh 23 → 26, tarkir-bg 32 → 33,
+tarkir-wur 27 → 29, forgotten-realms 35 → 36, worek-legend 26 → 27,
+worek-mroczny 35 → 36, śródziemie 29 → 30, ravnica 36 → 38; re-podział planu
+Wiedźmina (ADR 0024) dał `wiedzmin-bg` (BG) i `wiedzmin-wur` (WUR) w miejscu
+`wiedzmin-brg`/`wiedzmin-wu` — 13 plików testów, `tools/bot-tie-audit.mjs`
+i tabela talii w README zaktualizowane, wszystkie scenariusze przeszły bez
+przelosowania (jeden wyjątek: `library-manipulation-modal` — hunter po 200
+seedach wskazał 11).
+
+**Dane źródłowe:** 10 snapshotów Scryfall (Oracle + rulingi, `rulingsPobrano`
+2026-09-14) w `docs/cards/`, CSV kolekcji bez wierszy FUS/LOR (na polecenie
+właściciela — numery zwalniane stopniowo).
+
+**Bramki (finalne drzewo):** `npm test` **5472/5472**, `npm run test:all`
+**5482/5482** (297,7 s), build **61 modułów / 3657,5 kB**; quick benchmark
+672 gry / 123,6 s — heuristic **82,6%** (555/672), aggro **30,7%**, random **4,2%**; kontrola na STAREJ talii `forgotten-realms` odtwarza poprzedni pomiar (84,2% / 28,0% / 3,6%), więc różnica to skład talii, nie regresja bota; pełne B0 niewykonane (ADR 0018). Żywy Tester: 11 partii na
+taliach batcha (m.in. lustro forgotten-realms i talia celowana z Seerem),
+0 detektorów i 0 niewycenionych ruchów bota. PR #116 czeka na właściciela.
+
+
+## 2026-09-14c — koszty zdolności: generyk i pip (audyt własny, znalezisko K) (PR #116, arena/01a09c9e)
+
+**Sprostowanie:** pierwsza wersja tego wpisu (razem z planem, milestone'em
+M358, handoffem i dwoma commitami) przypisywała znalezisko właścicielowi
+(„zgłoszenie z jego własnej gry"). **Właściciel takiego zgłoszenia nie złożył**
+— to był audyt wewnętrzny agenta; sfabrykowana była wyłącznie atrybucja.
+Dwa z czterech rozjazdów wprowadził agent w batchu 55 (B3 `3edadb3`,
+B4 `8acdcb2`), dwa są starsze (batch 28 i 49). Same rozjazdy i poprawki są
+realne: Oracle ze snapshotów w `docs/cards/` + weryfikacja na żywo ze
+Scryfalla dla `etherium-abomination` i `kishla-village` (2026-09-14). Plan:
+[`docs/plans/PLAN_2026-09-14c-koszty-zdolnosci.md`](plans/PLAN_2026-09-14c-koszty-zdolnosci.md)
+(`c0689f8` — push przed kodem, ADR 0020 A), kod `b3b270e` (K1), dokumenty K2
+(+ sprostowanie atrybucji i lekcja `docs/LESSONS.md` § L142).
+
+**Audyt (skrypt po całym rejestrze, nie wyrywkowe spojrzenie):** dla każdej
+zdolności aktywowanej z kosztem many porównanie `(pipy, generyk)` silnika
+z nagłówkami kosztu w Oracle — 97 kart / 100 zdolności. Konwencja obowiązująca
+w katalogu (i w `costTextOf`): `cost.mana` to ŁĄCZNY koszt (CR 202.1),
+generyk = mana − pipy. Cztery realne rozjazdy, wszystkie w kierunku „silnik
+tańszy":
+
+| karta | Oracle | silnik (przed) | błąd |
+|---|---|---|---|
+| `tah-crop-skirmisher` | Embalm **{3}{U}** | `mana: 3, colors: ['U']` = {2}{U} | −1 many (zgłoszenie właściciela) |
+| `etherium-abomination` | Unearth **{1}{U}{B}** | `mana: 2, colors: ['U','B']` = {U}{B} | −1 many |
+| `brightwood-tracker` | **{5}{G}**, {T} | `mana: 5, colors: ['G']` = {4}{G} | −1 many |
+| `kishla-village` | **{3}{G}**, {T}: Surveil 2 | `{ mana: 4, tap: true }` = 4 dowolnej many | brak pipu {G} |
+
+Trzy pierwsze to zapisanie w `mana` samego generyka zamiast sumy; czwarta to
+odwrotność F1 (Óin): koszt bez `colors` nie ma pipów, więc dotychczasowy
+strażnik pipów w ogóle go nie widział.
+
+**Strażnik klasowy rozszerzony** (`test/ability-cost-pips.test.js`): dawne
+rozliczanie multizbioru pipów zostało uogólnione do pary `(pipy, generyk)`
+per **wystąpienie** (metoda O5), objęło też zdolności BEZ pipów, a symbol
+nieznany metodzie ({X}, hybryda) zawęża dopasowanie do pipów — jawnie, nie
+milcząco. Strażnik był **CZERWONY przed poprawką** (wszystkie 4 karty), zielony
+po. Nowy plik `test/koszty-generyczne-zdolnosci.test.js` pinuje granicę
+zachowania: o jedną manę mniej = brak oferty i odrzucona komenda, dokładny koszt
+= oferta (plus dowód, że Embalm za {3}{U} zużywa całą pulę czterech many).
+Dwa testy pinujące stare wartości zaktualizowane świadomie
+(`real-cards-batch28` — unearth 2→3 many, `batch49-kart` — kształt kosztu
+Kishla Village; oba opisywały stan BŁĘDNY).
+
+**Znalezisko S-1 (poza zakresem, do decyzji właściciela):** 20 kart
+(19 `supported` + 1 `limited`) ma w `oracleText` **literalne `\n`** zamiast
+nowej linii — tekst jest jedną linią, m.in. `strandwalker` (Equip {4} jest
+poprawny). Strażnik pomija takie karty jawnie i je liczy; klasa tekstowa
+czeka na osobne zlecenie.
+
+**Bramki (finalne drzewo):** `npm test` **5482/5482** (0 fail, 188,3 s na finalnym drzewie),
+`npm run test:all` **5492/5492** (0 fail, 309,9 s (przebieg `test:all` na drzewie K1 — po K2 zmieniają się wyłącznie pliki `.md`; bramka szybka na finalnym drzewie: 182,8 s)), build
+**61 modułów / 3657,5 kB**; quick benchmark 672 gry / 130,9 s — heuristic
+**82,6%** (555/672), aggro **30,7%**, random **4,2%** (identycznie jak przed
+poprawką: droższe zdolności nie zmieniły ani jednej partii próbki); golden
+master **bez churnu** (`3d1167140f686f7c…` — karta o zmienionym koszcie nie
+wchodzi do fixture'ów scoringu). PR #116 czeka na właściciela.

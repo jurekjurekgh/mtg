@@ -134,7 +134,7 @@ test('B1/4: pokrycie przez źródło z deathtouch (CR 702.2b) → oferta 0 na bl
     '1 obrażenie z deathtouch = lethal, więc dopłata byłaby stratą');
   resolveWithOffer(state);
   assert.equal(life(state, 'p1'), 15);
-  assert.ok(!alive(state, 'w'), 'w ginie od deathtouch (CR 702.4)');
+  assert.ok(!alive(state, 'w'), 'w ginie od deathtouch (CR 702.2b)');
 });
 
 test('B1/5: bez trample pełna moc zostaje w blokerach, a pokrycie lethal przekierowuje nadmiar (CR 510.1a/c)', () => {

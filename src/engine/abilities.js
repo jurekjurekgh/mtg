@@ -179,7 +179,7 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // graczowi (hasEnduringStory w permanents.js), gdy >=3 kwalifikowane
     // permanenty (artefakty/legendy/Sagi, raz na permanent).
     storied: Boolean(storied),
-    // Landwalk (CR 702.33, Emerald Oryx — forestwalk): „This creature can't be
+    // Landwalk (CR 702.14, Emerald Oryx — forestwalk): „This creature can't be
     // blocked as long as defending player controls a [podtyp]". { subtype } —
     // generyczny (inne landwalki w przyszłości). Sprawdzane w canBlock.
     landwalk: landwalk ? Object.freeze({ ...landwalk }) : null,
@@ -202,7 +202,7 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     costModifier: costModifier ? Object.freeze({ ...costModifier }) : null,
     costReduction: costReduction ? Object.freeze({ ...costReduction }) : null,
     channel: channel ? Object.freeze({ ...channel }) : null,
-    // M166/B (Reinforce, CR 702.29a): zdolność karty w RĘCE — koszt mana +
+    // M166/B (Reinforce, CR 702.77a): zdolność karty w RĘCE — koszt mana +
     // odrzucenie karty; efekt: liczniki +1/+1 na celu stworze.
     reinforce: reinforce ? Object.freeze({ ...reinforce }) : null,
     // Batch 51 (Skinbrand Goblin): Bloodrush (CR 207.2c — słowo zdolności, nie
@@ -572,7 +572,7 @@ export function legalActivatedAbilities(state, playerId) {
       // pola bitwy i execute odrzucał „Channel aktywuje się z ręki" (regresja
       // benchmarku B0 po dodaniu Greater Tanuki do talii green).
       if (ability.channel) continue;
-      // M166/B fix (regresja benchmarku CI): Reinforce (CR 702.29a, Mosquito
+      // M166/B fix (regresja benchmarku CI): Reinforce (CR 702.77a, Mosquito
       // Guard) — jak channel/cycling: zdolność karty w RĘCE; na polu bitwy
       // jest martwa. Bez pominięcia bot dostawał ofertę z pola bitwy i
       // execute odrzucał „Reinforce aktywuje się z ręki" (crash sesji).
@@ -1041,7 +1041,7 @@ export function legalActivatedAbilities(state, playerId) {
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
-  // Reinforce (CR 702.29a, Mosquito Guard) — zdolność karty w RĘCE,
+  // Reinforce (CR 702.77a, Mosquito Guard) — zdolność karty w RĘCE,
   // dowolny moment z priorytetem (jak cycling); koszt mana + DISCARD;
   // efekt celuje w stwora (enumeracja celów jak forecast, L48).
   for (const id of state.zones.hand) {
@@ -1833,7 +1833,7 @@ function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
   });
 }
 /**
- * M166/B (Reinforce, CR 702.29a, Mosquito Guard): „{1}{W}, Discard this
+ * M166/B (Reinforce, CR 702.77a, Mosquito Guard): „{1}{W}, Discard this
  * card: Put a +1/+1 counter on target creature." Zdolność karty w RĘCE:
  * koszt = mana + ODRZUCENIE karty (przed wejściem zdolności na stos,
  * CR 117.11/601.2h jak cycling), efekt przez stos z wybranym celem —

@@ -1,13 +1,13 @@
 // F-B (znalezisko właściciela 2026-09-09): scoring blokowania nie zna
 // deathtouch. Objaw: atakuje 4/4, a my mamy Deadly Recluse (1/2 deathtouch)
-// i 2/2. Recluse SAMA zabija 4/4 (CR 702.4 — każde ≥1 obrażenie jest
+// i 2/2. Recluse SAMA zabija 4/4 (CR 702.2b — każde ≥1 obrażenie jest
 // śmiertelne), więc dokładanie 2/2 jest zbędne. Root cause: gałąź
 // `declare_blockers` liczyła `attackerDies = totalBlockerPower >=
 // attackerToughness` — surową SUMĘ MOCY — i dla pary 1/2 deathtouch + 2/2
 // dostawała 3 < 4, więc nie widziała, że deathtouch rozstrzyga wymianę.
 //
 // Fix: `attackerDies` jest prawdziwe, gdy któryś z żywych blokerów ma
-// deathtouch i moc > 0 (diesToDeathtouchBlocker — CR 702.4) ALBO suma mocy
+// deathtouch i moc > 0 (diesToDeathtouchBlocker — CR 702.2b) ALBO suma mocy
 // ≥ wytrzymałość. Bot ma blokować samą Recluse, bez zbędnego 2/2.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

@@ -313,7 +313,7 @@ test('D3: rozdział III — następny czar Olbrzyma tańszy o {2}, rabat jednora
 });
 
 
-// ---- Transza E: Revolutionist + Madness (CR 702.34) ----
+// ---- Transza E: Revolutionist + Madness (CR 702.35) ----
 test('E1: odrzucenie Revolutionista — exile + decyzja; rzut za {3}{R} wystawia stwora', () => {
   const state = game();
   putCard(state, 'rev', 'revolutionist', 'p1', 'hand');
@@ -324,7 +324,7 @@ test('E1: odrzucenie Revolutionista — exile + decyzja; rzut za {3}{R} wystawia
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev' }).ok);
 
   const exiled = [...state.objects.values()].find((o) => o.cardId === 'revolutionist' && o.zone === 'exile');
-  assert.ok(exiled, 'karta w exile (nie w grobie) — CR 702.34a');
+  assert.ok(exiled, 'karta w exile (nie w grobie) — CR 702.35a');
   assert.equal(exiled.madnessReady, true);
   assert.ok(state.pendingMadnessCast, 'decyzja madness otwarta');
 

@@ -38,7 +38,7 @@ test('M152: „Weź ląd do ręki" pokazuje nazwę lądu (nie „?") dla odsłon
   state.pendingSatyrLook = {
     playerId: 'p1',
     objectIds: [land1.id, 'lib-creature'],
-    landIds: [land1.id],
+    pickIds: [land1.id],
     restorePriorityTo: 'p1',
   };
   const view = playerView(state, 'p1');

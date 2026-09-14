@@ -89,7 +89,7 @@ test('Sherlock 2026-08-11 1a: stwór z first strike + trample zadaje obrażenia 
   assert.equal(life(state, 'def'), before - 1,
     'first strike zadaje lethal + trample w pierwszym przebiegu (CR 510.4); błąd: pierwszy przebieg pomijany');
   const b = state.objects.get('b');
-  assert.ok(!b || b.zone !== 'battlefield', 'bloker 2/2 ginie od first strike (CR 702.4/510.4)');
+  assert.ok(!b || b.zone !== 'battlefield', 'bloker 2/2 ginie od first strike (CR 702.7/510.4)');
 });
 
 // ---------------------------------------------------------------------------

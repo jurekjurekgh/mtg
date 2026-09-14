@@ -1,0 +1,46 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Hunt%20the%20Weak&set=ima",
+  "print": "ima",
+  "name": "Hunt the Weak",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Sorcery",
+  "oracle_text": "Put a +1/+1 counter on target creature you control. Then that creature fights target creature you don't control. (Each deals damage equal to its power to the other.)",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Fight"
+  ],
+  "set": "ima",
+  "set_name": "Iconic Masters",
+  "collector_number": "167",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/2/52f763a4-8a79-4056-8066-74899a0fb304.jpg?1783935519",
+    "normal": "https://cards.scryfall.io/normal/front/5/2/52f763a4-8a79-4056-8066-74899a0fb304.jpg?1783935519"
+  },
+  "pobrano": "2026-09-14",
+  "rulings": [
+    {
+      "date": "2018-01-19",
+      "source": "wotc",
+      "comment": "You can't cast Hunt the Weak unless you choose both a creature you control and a creature you don't control as targets."
+    },
+    {
+      "date": "2018-01-19",
+      "source": "wotc",
+      "comment": "If either target is an illegal target as Hunt the Weak resolves, neither creature will deal or be dealt damage."
+    },
+    {
+      "date": "2018-01-19",
+      "source": "wotc",
+      "comment": "If the creature you control is an illegal target as Hunt the Weak tries to resolve, you won't put a +1/+1 counter on it. If that creature is a legal target but the other creature isn't, you'll still put the counter on the creature you control."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/ima/167/rulings",
+  "rulingsPobrano": "2026-09-14"
+}

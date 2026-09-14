@@ -159,7 +159,10 @@ test('E4 (modal): własny surveil z Curate — nazwy w modalu; surveil bota — 
   // hunter po 60 seedach: 10 i 37 dają OBA warunki naraz (konwencja L25).
   // Batch 47 D (forgotten-realms +Caves of Chaos Adventurer, landy
   // przeliczone) — hunter: 34 daje OBA warunki naraz (kolejne: 35, 37).
-  for (const seed of [34]) {
+  // Batch 55 B3 (forgotten-realms +Jungleborn Pioneer, landy przeliczone):
+  // zmiana skladu talii przelosowala rozdania — hunter po 200 seedach:
+  // 11 daje OBA warunki naraz (kolejne: 33, 47, 52, 66, 98, 114, 134, 145).
+  for (const seed of [11]) {
     const { modalTexts } = playCollectingModals(makeSession(seed));
     for (const line of modalTexts.filter((t) => /^Wykonujesz surveil/.test(t ?? ''))) {
       checkedMine += 1;

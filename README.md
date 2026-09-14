@@ -33,7 +33,7 @@ choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdzia�
 na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
-Bieżący stan: szybki rdzeń **5195/5195**, artefakt **61 modułów / 3523,6 kB** (batch 54 ukończony, **10/10 kart**). Pełny zestaw: **5205/5205**; quick **84,2% (566/672)**. Integracja i znane uwagi jakościowe: [raport B5](docs/audits/BATCH54_INTEGRATION_2026-09-08.md). Szczegóły:
+Bieżący stan: szybki rdzeń **5482/5482**, artefakt **61 modułów / 3657,5 kB** (batch 55 ukończony, **10/10 kart**: Gift, Embalm, odsłonięcie w podtrzymaniu; audyt kosztów zdolności 2026-09-14c — **4 poprawki danych**: Embalm {3}{U}, Unearth {1}{U}{B}, Tracker {5}{G}, pip {G} Kishla Village). Pełny zestaw: **5492/5492**; quick 82,6% (555/672). Integracja i znane uwagi jakościowe: [handoff batcha 55](docs/setup/HANDOFF_2026-09-14.md). Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
@@ -120,21 +120,21 @@ liczone z plików `decks/*.txt`).
 | `dominaria-brg` | Dominaria (BRG) | BRG | 26 | 9 | 17 |
 | `dominaria-wu` | Dominaria (WU) | WUB | 24 | 8 | 16 |
 | `final-fantasy` | Final Fantasy | WUBRG | 26 | 9 | 17 |
-| `forgotten-realms` | Forgotten Realms | WUBRG | 35 | 12 | 23 |
+| `forgotten-realms` | Forgotten Realms | WUBRG | 36 | 12 | 24 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 27 | 9 | 18 |
 | `innistrad-wu` | Innistrad (WU) | WU | 27 | 9 | 18 |
-| `kaladesh` | Kaladesh | WUBRG | 23 | 8 | 15 |
+| `kaladesh` | Kaladesh | WUBRG | 26 | 9 | 17 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 27 | 9 | 18 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
-| `ravnica` | Ravnica | WUBRG | 36 | 12 | 24 |
-| `srodziemie` | Śródziemie | WUBRG | 29 | 10 | 19 |
-| `tarkir-bg` | Tarkir (BG) | UBG | 32 | 11 | 21 |
-| `tarkir-wur` | Tarkir (WUR) | WUR | 27 | 9 | 18 |
+| `ravnica` | Ravnica | WUBRG | 38 | 13 | 25 |
+| `srodziemie` | Śródziemie | WUBRG | 30 | 10 | 20 |
+| `tarkir-bg` | Tarkir (BG) | UBG | 33 | 11 | 22 |
+| `tarkir-wur` | Tarkir (WUR) | WUR | 29 | 10 | 19 |
 | `theros` | Theros | WUBRG | 27 | 9 | 18 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 35 | 12 | 23 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
-| `wiedzmin-brg` | Wiedźmin (BRG) | BRG | 26 | 9 | 17 |
-| `wiedzmin-wu` | Wiedźmin (WU) | WU | 23 | 8 | 15 |
+| `wiedzmin-bg` | Wiedźmin (BG) | BG | 24 | 8 | 16 |
+| `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
 | `zendikar` | Zendikar | WURG | 32 | 11 | 21 |
 
 ### Worki (małe plany — przejściowe, ADR 0023)
@@ -143,8 +143,8 @@ liczone z plików `decks/*.txt`).
 |---|---|---|---:|---:|---:|
 | `worek-basni` | Worek: Baśnie | WUBRG | 32 | 11 | 21 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 29 | 10 | 19 |
-| `worek-legend` | Worek: Legendy | WUBRG | 26 | 9 | 17 |
-| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 35 | 12 | 23 |
+| `worek-legend` | Worek: Legendy | WUBRG | 27 | 9 | 18 |
+| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 36 | 12 | 24 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
 
@@ -197,7 +197,8 @@ Zbudowany plik otwiera się dwuklikiem — także na iPadzie i iPhonie, bez serw
 
 ## Najbliższy etap
 
-Etapy 1–5 zamknięte, Etap 2/3 przekroczony (436 kart realnych + 42 tokeny >> docelowe ~20), Etap 4 bota
+Etapy 1–5 zamknięte, Etap 2/3 przekroczony (472 wspierane karty realne + 8 tylnych stron
+kart dwustronnych, poza taliami (`limited`) + 40 tokenów >> docelowe ~20), Etap 4 bota
 zamknięty (heurystyka + modelowanie, harness B0, tune-bot), Etap 5 stołu zamknięty
 (gra człowiek–bot na iPadzie przez Pages / file://).
 

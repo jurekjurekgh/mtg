@@ -57,7 +57,7 @@ export function deathZoneFor(state, object) {
  * `effects`, więc helper w `spells` oznaczałby CYKL; pilnuje tego
  * `test/module-graph.test.js`).
  *
- * `adventure` (CR 715.3), `flashedBack` (CR 702.34b) i `reboundCast`
+ * `adventure` (CR 715.3), `flashedBack` (CR 702.34a) i `reboundCast`
  * (CR 702.97) dotyczą wyłącznie pełnej ścieżki rozstrzygnięcia — przekazuje
  * je caller.
  */

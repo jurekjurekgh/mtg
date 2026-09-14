@@ -2871,7 +2871,7 @@ export const REAL_CARDS = Object.freeze([
         trigger: { event: 'enter_battlefield' },
         effect: [{ type: 'damage_each_opponent', amount: 4 }],
       }),
-      // Delirium (CR 702.34, intervening if CR 603.4): warunek 4+ typów kart
+      // Delirium (CR 207.2c, intervening if CR 603.4): warunek 4+ typów kart
       // w grobie kontrolera sprawdzany przy odpaleniu i przy rozstrzyganiu.
       // Cel (stwór poszkodowanego gracza) wybiera kontroler triggera
       // (resolve_delirium_target); obrażenia w wysokości zdarzenia.
@@ -4915,7 +4915,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         timing: 'sorcery',
-        cost: { mana: 2, colors: ['U', 'B'] },
+        cost: { mana: 3, colors: ['U', 'B'] },
         fromGraveyard: true,
         effect: { type: 'unearth_return' },
       }),
@@ -7396,7 +7396,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['II: planeswalker-cel nie istnieje w 1v1 — obrażenia idą w przeciwnika', 'III: zadziała od razu po dodaniu pierwszej karty z podtypem Giant'],
   }),
 
-  // ---- Batch 39 — transza E: Madness (CR 702.34) ----
+  // ---- Batch 39 — transza E: Madness (CR 702.35) ----
   defineCard({
     id: 'revolutionist', name: 'Revolutionist', set: 'MH2',
     types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['R'],
@@ -7421,7 +7421,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     // M167/H: artId ze słownika kolekcji (tools/collection-art-ids.csv: 314MH2).
     artId: 314, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
-    notes: ['Madness: odrzucenie trafia do exile z jednorazową decyzją rzutu za {3}{R} (timing ignorowany — CR 702.34a) albo przełożenia do grobu'],
+    notes: ['Madness: odrzucenie trafia do exile z jednorazową decyzją rzutu za {3}{R} (timing ignorowany — CR 702.35a) albo przełożenia do grobu'],
   }),
 
   // =========================================================================
@@ -7816,7 +7816,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     madness: { cost: 2, colors: ['B', 'R'] },
     artId: 534, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
-    notes: ['madness: odrzucenie trafia do exile z decyzją rzutu za {B}{R} (timing ignorowany — CR 702.34e, także sorcery poza main fazą); cel wybierany przy rzucie'],
+    notes: ['madness: odrzucenie trafia do exile z decyzją rzutu za {B}{R} (timing ignorowany — CR 702.35b, także sorcery poza main fazą); cel wybierany przy rzucie'],
   }),
 
 // ---- Batch 41 — transza D: triggery bojowe + intimidate ----
@@ -8392,7 +8392,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
-  // 2. Farbog Explorer (AVR) — swampwalk (wzorzec Emerald Oryx, CR 702.33).
+  // 2. Farbog Explorer (AVR) — swampwalk (wzorzec Emerald Oryx, CR 702.14).
   defineCard({
     id: 'farbog-explorer', name: 'Farbog Explorer', set: 'AVR',
     types: ['Creature'], subtypes: ['Human', 'Scout'], colors: ['W'],
@@ -8979,7 +8979,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['„multicolored" = źródło o dwóch lub więcej kolorach (CR 105.4); ochrona znika natychmiast po odpięciu aury'],
   }),
 
-  // 6. Glint-Sleeve Artisan (2XM) — {2}{W} 2/2: Fabricate 1 (CR 702.122).
+  // 6. Glint-Sleeve Artisan (2XM) — {2}{W} 2/2: Fabricate 1 (CR 702.123).
   //    NOWE: wybór kontrolera przy ETB — licznik +1/+1 ALBO token Servo.
   //    B5 (audyt stołu 2026-09-09, G3): BEZ keywords ['fabricate'] — silnik
   //    czyta TYLKO efekt 'fabricate' ze zdolności, a słowo kluczowe doklejało
@@ -9003,13 +9003,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   // 7. Bone Shredder (MH2) — {2}{B} 1/1 flying: ETB destroy target
-  //    nonartifact, nonblack creature; Echo {2}{B} (CR 702.29).
+  //    nonartifact, nonblack creature; Echo {2}{B} (CR 702.30).
   defineCard({
     id: 'bone-shredder', name: 'Bone Shredder', set: 'MH2',
     types: ['Creature'], subtypes: ['Phyrexian', 'Minion'], colors: ['B'],
     power: 1, toughness: 1, manaCost: 3, keywords: ['flying', 'echo'],
     // M259/B7: echo {2}{B} — echoColors niesie pipy kolorowe (dotąd koszt
-    // płatny 3 bezbarwnymi; CR 702.29 + 118.2).
+    // płatny 3 bezbarwnymi; CR 702.30 + 118.2).
     echo: 3, echoColors: ['B'],
     oracleText: 'Flying\nEcho {2}{B} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)\nWhen this creature enters, destroy target nonartifact, nonblack creature.',
     imageUri: 'https://cards.scryfall.io/large/front/6/3/63d0b5f0-ed45-4b30-9c24-1c12011e3513.jpg?1783926787',
@@ -9022,7 +9022,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 326, plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
-    notes: ['echo płaci się w PIERWSZYM własnym upkeepie po wejściu (CR 702.29); bez many na opłatę stwór jest poświęcany'],
+    notes: ['echo płaci się w PIERWSZYM własnym upkeepie po wejściu (CR 702.30); bez many na opłatę stwór jest poświęcany'],
   }),
 
   // 8. Manor Gate (CLB) — land Gate: wchodzi tapnięty, przy wejściu wybór
@@ -9781,7 +9781,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 4, tap: true },
+        cost: { mana: 4, colors: ['G'], tap: true },
         effect: { type: 'surveil', amount: 2 },
       }),
     ],
@@ -10723,6 +10723,229 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     oracleText: "Surge {U} (You may cast this spell for its surge cost if you or a teammate has cast another spell this turn.)\nEnchant creature\nEnchanted creature doesn't untap during its controller's untap step.", imageUri: "https://cards.scryfall.io/large/front/4/9/49dd3963-a4d7-4992-b6f8-753996390bbf.jpg?1783937919",
     surge: { cost: 1, colors: ['U'] }, aura: { doesntUntap: true },
     artId: 607, plan: 'Wiedźmin', support: { status: 'supported', limitations: [] },
+  }),
+
+  // ---------------------------------------------------------------------------
+  // Batch 55 (2026-09-14) — lista właściciela: 23 (odzyskany numer po usunięciu
+  // kart FUS/LOR z kolekcji) oraz 609–617. Dane Oracle + rulingi: pobrane
+  // ze Scryfalla 2026-09-14 (docs/cards/scryfall-*.json).
+  //
+  // Etap B0b: wchodzą WYŁĄCZNIE dane karty (bez mechaniki) i status
+  // `in-development` — zgodnie z procedurą batcha karta dostaje `supported`
+  // dopiero w etapie, w którym ma pełne mechaniki i testy (ADR 0010 §4,
+  // ADR 0022). Kolejność etapów: B1 (616, 617, 610), B2 (611, 614),
+  // B3 (609, 615), B4 (23), B5 (612), B6 (613).
+  // ---------------------------------------------------------------------------
+  defineCard({
+    id: 'brightwood-tracker', name: 'Brightwood Tracker', set: 'M20',
+    types: ['Creature'], subtypes: ['Elf', 'Scout'], colors: ['G'], power: 2, toughness: 4, manaCost: 4,
+    oracleText: '{5}{G}, {T}: Look at the top four cards of your library. You may reveal a creature card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/1/e1fb9767-29bf-4a69-b37c-0925d41f6b46.jpg?1783932968',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        // {5}{G}, {T} — koszt many z zielonym pipem (CR 118.2) i zatapnięcie.
+        cost: { mana: 6, colors: ['G'], tap: true },
+        // „Look at the top four cards… You may reveal a creature card from
+        // among them and put it into your hand. Put the rest on the bottom of
+        // your library in a random order.” Ta sama rodzina decyzji co Satyr
+        // Wayfinder („you may” + kandydaci), ale filtr to karta-stwór,
+        // a reszta wraca NA SPÓD w kolejności losowej (seed z silnika).
+        effect: {
+          type: 'reveal_top_pick_card_rest_bottom',
+          amount: 4,
+          pickTypes: ['Creature'],
+          restTo: 'library_bottom',
+          restOrder: 'random',
+        },
+      }),
+    ],
+    artId: 23, plan: 'Lorwyn', support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'jungleborn-pioneer', name: 'Jungleborn Pioneer', set: 'RIX',
+    types: ['Creature'], subtypes: ['Merfolk', 'Scout'], colors: ['G'], power: 2, toughness: 2, manaCost: 3,
+    oracleText: "When this creature enters, create a 1/1 blue Merfolk creature token with hexproof. (It can't be the target of spells or abilities your opponents control.)",
+    imageUri: 'https://cards.scryfall.io/large/front/9/f/9f01ae0d-db1e-4912-b8ad-3069f6938e04.jpg?1783935285',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'create_token', cardId: 'token_merfolk', name: 'Merfolk',
+          kind: 'creature', power: 1, toughness: 1, colors: ['U'],
+          types: ['Creature'], subtypes: ['Merfolk'], keywords: ['hexproof'], amount: 1,
+        },
+      }),
+    ],
+    artId: 609, plan: 'Forgotten Realms', support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'gearsmith-prodigy', name: 'Gearsmith Prodigy', set: 'M19',
+    types: ['Creature'], subtypes: ['Human', 'Artificer'], colors: ['U'], power: 1, toughness: 2, manaCost: 1,
+    oracleText: 'This creature gets +1/+0 as long as you control an artifact.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/7/77d9e666-d9c9-4ccd-89a5-83de79677fa6.jpg?1783934589',
+    abilities: [
+      // CR 604.3: warunek statyczny liczony przy każdym odczycie charakterystyk
+      // (ta sama ścieżka co Ramroller, ale bez „another" — sam typ Artifact).
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { controlsArtifact: true },
+        pump: { power: 1, toughness: 0 },
+      }),
+    ],
+    artId: 610, plan: 'Kaladesh', support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'lifecrafters-gift', name: "Lifecrafter's Gift", set: 'CMR',
+    types: ['Instant'], colors: ['G'], manaCost: 4,
+    oracleText: 'Put a +1/+1 counter on target creature, then put a +1/+1 counter on each creature you control with a +1/+1 counter on it.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/a/fa000086-e4aa-4bb6-8e66-f4c96e875749.jpg?1783928789',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        // Kolejność „then" jest regułą, nie ozdobnikiem: najpierw licznik na
+        // celu, potem grupa — cel ma już licznik, więc łapie OBA (ruling
+        // 2020-11-10). Filtr grupy: własne STWORY z licznikiem +1/+1
+        // (`requireCounter`); nie-stwory i cudze stwory są pomijane.
+        { type: 'add_counter', counter: '+1/+1', amount: 1 },
+        { type: 'add_counter_to_creatures_you_control', counter: '+1/+1', amount: 1, requireCounter: '+1/+1' },
+      ],
+    },
+    artId: 611, plan: 'Kaladesh', support: { status: 'supported', limitations: [] },
+    notes: ['anihilacja liczników +1/+1 i -1/-1 to reguła stanu — sprawdzana dopiero po rozstrzygnięciu (CR 704.3)'],
+  }),
+
+  defineCard({
+    id: 'crumb-and-get-it', name: 'Crumb and Get It', set: 'BLB',
+    types: ['Instant'], colors: ['W'], manaCost: 1,
+    oracleText: 'Gift a Food (You may promise an opponent a gift as you cast this spell. If you do, they create a Food token before its other effects. It\'s an artifact with "{2}, {T}, Sacrifice this token: You gain 3 life.")\nTarget creature you control gets +2/+2 until end of turn. If the gift was promised, that creature also gains indestructible until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/c/3c7b3b25-d4b3-4451-9f5c-6eb369541175.jpg?1783910863',
+    // CR 702.174a (Gift): „You may promise an opponent a gift as you cast
+    // this spell" — dodatkowy koszt BEZ many, wybierany przy rzucaniu razem
+    // z odbiorcą. Dar wydaje się przy rozstrzyganiu, PRZED efektami czaru
+    // (ruling 2017-04-18? — BLB: „as part of the resolution of the spell");
+    // czar skontrowany/nie-rozstrzygnięty daru nie daje.
+    gift: {
+      effect: {
+        type: 'create_token', cardId: 'token_food', name: 'Food',
+        kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Food'],
+        abilities: [
+          createAbility({
+            type: ABILITY_TYPE.activated,
+            cost: { mana: 2, tap: true, sacrificeSelf: true },
+            effect: { type: 'gain_life', amount: 3 },
+          }),
+        ],
+      },
+    },
+    spell: { timing: 'instant', targets: [{ type: 'creature_you_control' }], effects: [
+      { type: 'pump', power: 2, toughness: 2 },
+      { type: 'grant_keywords_until_end_of_turn', keywords: ['indestructible'], condition: { wasGifted: true } },
+    ] },
+    artId: 612, plan: 'Śródziemie', support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'duskmantle-seer', name: 'Duskmantle Seer', set: 'CLU',
+    types: ['Creature'], subtypes: ['Vampire', 'Wizard'], colors: ['B', 'U'], power: 4, toughness: 4, manaCost: 4,
+    keywords: ['flying'],
+    oracleText: "Flying\nAt the beginning of your upkeep, each player reveals the top card of their library, loses life equal to that card's mana value, then puts it into their hand.",
+    imageUri: 'https://cards.scryfall.io/large/front/4/d/4d6d4280-4a45-4e77-a33e-58955d096adc.jpg?1783912522',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // „At the beginning of YOUR upkeep" — domyślna brama upkeepu pilnuje
+        // kontrolera (triggers.js): bez `eachUpkeep` odpala się wyłącznie
+        // w upkeepie gracza, który kontroluje Seera (CR 503.1).
+        trigger: { event: 'upkeep' },
+        effect: { type: 'reveal_top_each_player_lose_life_mana_value' },
+      }),
+    ],
+    artId: 613, plan: 'Ravnica', support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'hunt-the-weak', name: 'Hunt the Weak', set: 'IMA',
+    types: ['Sorcery'], colors: ['G'], manaCost: 4,
+    oracleText: "Put a +1/+1 counter on target creature you control. Then that creature fights target creature you don't control. (Each deals damage equal to its power to the other.)",
+    imageUri: 'https://cards.scryfall.io/large/front/5/2/52f763a4-8a79-4056-8066-74899a0fb304.jpg?1783935519',
+    spell: {
+      timing: 'sorcery',
+      targets: [
+        { type: 'creature_you_control' },
+        { type: 'creature_opponent_controls' },
+      ],
+      effects: [
+        // „Then that creature fights…" — walka TYM stworom, już po liczniku
+        // (obrażenia liczone z nowej mocy, CR 701.12b); jeśli któryś cel
+        // zniknął, walka nie wykonuje się wcale (CR 701.12c), a licznik na
+        // legalnym celu zostaje (ruling 2017-11-17).
+        { type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0 },
+        { type: 'fight', targetIndexA: 0, targetIndexB: 1 },
+      ],
+    },
+    artId: 614, plan: 'Wiedźmin', support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'token_merfolk', name: 'Merfolk', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Merfolk'], colors: ['U'],
+    power: 1, toughness: 1, manaCost: 0,
+    oracleText: "Hexproof (This creature can't be the target of spells or abilities your opponents control.)",
+    imageUri: 'https://cards.scryfall.io/large/front/f/5/f5d353ad-7160-41fa-809c-d76b36478a2a.jpg?1783913608',  // tlci
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Jungleborn Pioneer'] },
+  }),
+  defineCard({
+    id: 'tah-crop-skirmisher', name: 'Tah-Crop Skirmisher', set: 'AKH',
+    types: ['Creature'], subtypes: ['Snake', 'Warrior'], colors: ['U'], power: 2, toughness: 1, manaCost: 2,
+    oracleText: "Embalm {3}{U} ({3}{U}, Exile this card from your graveyard: Create a token that's a copy of it, except it's a white Zombie Snake Warrior with no mana cost. Embalm only as a sorcery.)",
+    imageUri: 'https://cards.scryfall.io/large/front/a/b/ab0429ec-0809-4e68-9790-8c21bde201a2.jpg?1783936514',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        fromGraveyard: true,
+        timing: 'sorcery',
+        // Koszt {3}{U} z pipem (CR 118.2) i wygnaniem karty jako kosztem —
+        // karta znika z grobu NATYCHMIAST, jeszcze przed rozstrzygnięciem
+        // (ruling 2017-04-18), więc przeciwnik nie może jej przechwycić.
+        cost: { mana: 4, colors: ['U'], exileFromGraveyard: true },
+        effect: {
+          type: 'create_token_copy_of_source',
+          colors: ['W'],           // „except it's white" (CR 702.128a)
+          addSubtypes: ['Zombie'], // „Zombie in addition to its other types"
+        },
+      }),
+    ],
+    artId: 615, plan: 'Amonkhet', support: { status: 'supported', limitations: [] },
+    notes: ['token-kopia: biały Zombie Snake Warrior 2/1 bez kosztu many (MV 0); karta wyganiana jako koszt aktywacji'],
+  }),
+
+  defineCard({
+    id: 'act-of-treason', name: 'Act of Treason', set: 'KTK',
+    types: ['Sorcery'], colors: ['R'], manaCost: 3,
+    oracleText: 'Gain control of target creature until end of turn. Untap that creature. It gains haste until end of turn. (It can attack and {T} this turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/2/e20d6dfd-5f7b-4c71-89e6-8f996d85801d.jpg?1783939076',
+    spell: { timing: 'sorcery', targets: [{ type: 'creature' }], effects: [
+      { type: 'gain_control_until_end_of_turn' },
+    ] },
+    artId: 616, plan: 'Tarkir', support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'douse-in-gloom', name: 'Douse in Gloom', set: 'FRF',
+    types: ['Instant'], colors: ['B'], manaCost: 3,
+    oracleText: 'Douse in Gloom deals 2 damage to target creature and you gain 2 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/b/9b710fcd-0721-4720-a8fa-6d9ceb7b8104.jpg?1783938698',
+    spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [
+      { type: 'damage', amount: 2 },
+      { type: 'gain_life', amount: 2 },
+    ] },
+    artId: 617, plan: 'Tarkir', support: { status: 'supported', limitations: [] },
   }),
 
 ]);

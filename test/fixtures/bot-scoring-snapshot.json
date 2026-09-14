@@ -1,46 +1,44 @@
 {
   "version": 1,
-  "overallHash": "8e2ce7907541d3952093c3a1b2a78422697302697c8dfaaeb2095df719cf24ef",
+  "overallHash": "3d1167140f686f7cf014da00397382186ac09fdc0512f9d246fe8f320a5e241f",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1000,
-      "hash": "19b824d98b32b70957c7f834d073ded2bc915d75a291e9facaeab0284ea4062a",
-      "decisions": 297,
-      "scoreSum": 3520.5009,
+      "hash": "320a855008e7756755a5d69953810997ffac8c9ebf0c3a173180d00001e82079",
+      "decisions": 299,
+      "scoreSum": 2289.2991,
       "chosenKinds": {
-        "activate_ability": 4,
-        "attack": 8,
-        "block": 10,
-        "cast_permanent": 5,
-        "cast_spell": 3,
-        "pass_priority": 239,
+        "activate_ability": 3,
+        "attack": 7,
+        "block": 11,
+        "cast_permanent": 4,
+        "cast_spell": 4,
+        "pass_priority": 244,
         "play_land": 8,
         "resolve_combat": 11,
-        "resolve_counter_pay_choice": 1,
-        "resolve_discard_choice": 1,
         "resolve_mulligan_choice": 1,
-        "resolve_optional_trigger_choice": 6
+        "resolve_optional_trigger_choice": 5,
+        "resolve_proliferate": 1
       }
     },
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1001,
-      "hash": "95e4260ea099efaee4339f6342a4991012f97169d81c503c663ab1b779f4b4af",
-      "decisions": 305,
-      "scoreSum": 2255.5063,
+      "hash": "a5677b93f2cbaaae348144fe7796809781fed0a2f045df4939ad55235430a047",
+      "decisions": 158,
+      "scoreSum": 1404.5108,
       "chosenKinds": {
-        "attack": 6,
-        "block": 9,
-        "cast_permanent": 6,
-        "cast_spell": 4,
-        "pass_priority": 255,
-        "play_land": 8,
-        "resolve_combat": 12,
-        "resolve_mulligan_choice": 1,
-        "resolve_optional_trigger_choice": 2,
-        "resolve_proliferate": 1,
-        "resolve_trigger_target": 1
+        "activate_ability": 1,
+        "attack": 3,
+        "block": 6,
+        "cast_permanent": 4,
+        "cast_spell": 2,
+        "pass_priority": 128,
+        "play_land": 6,
+        "resolve_combat": 6,
+        "resolve_discard_choice": 1,
+        "resolve_mulligan_choice": 1
       }
     },
     {
@@ -89,39 +87,38 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "43862b3a3cdd330703c773c259ccc6ed2a1af20acdfcfc79d00d65420efe4584",
-      "decisions": 222,
-      "scoreSum": 2989.0243,
+      "hash": "545f33c22b8e19b635d5375788fdcec07f5acf40778adc745dc492f11baddd87",
+      "decisions": 165,
+      "scoreSum": 2181.3054,
       "chosenKinds": {
-        "activate_ability": 1,
-        "attack": 3,
-        "block": 9,
-        "cast_permanent": 7,
-        "cast_spell": 2,
-        "pass_priority": 181,
-        "play_land": 8,
-        "resolve_combat": 9,
-        "resolve_damage_assignment": 1,
+        "activate_ability": 2,
+        "attack": 4,
+        "block": 7,
+        "cast_permanent": 4,
+        "pass_priority": 134,
+        "play_land": 3,
+        "resolve_combat": 7,
+        "resolve_discard_choice": 1,
+        "resolve_endure_choice": 2,
         "resolve_mulligan_choice": 1
       }
     },
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1001,
-      "hash": "c82ef2b29e3fa6a98a9fe51ca3b849037ed7ccf134258f7e9c7199e6765e2100",
-      "decisions": 196,
-      "scoreSum": 2662.9279,
+      "hash": "d6416b80e8bfa1fce856af591e745f1c2d25e40d349965bad078bec5d533cb3f",
+      "decisions": 188,
+      "scoreSum": 2589.1279,
       "chosenKinds": {
-        "activate_ability": 3,
-        "attack": 6,
-        "block": 4,
+        "activate_ability": 2,
+        "attack": 4,
+        "block": 6,
         "cast_permanent": 7,
-        "pass_priority": 159,
+        "cast_spell": 1,
+        "pass_priority": 154,
         "play_land": 5,
         "resolve_combat": 8,
-        "resolve_endure_choice": 2,
-        "resolve_mulligan_choice": 1,
-        "resolve_trigger_target": 1
+        "resolve_mulligan_choice": 1
       }
     }
   ]

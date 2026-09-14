@@ -5,7 +5,7 @@
 //   i mam na to manę — to trochę nierozsądne.”
 //
 // Deathtouch kupiony w oknie walki oznacza, że DOWOLNY bloker zabija naszego
-// atakującego (CR 702.4). Bot modeluje już ryzyko removalu (B3) z talii
+// atakującego (CR 702.2b). Bot modeluje już ryzyko removalu (B3) z talii
 // przeciwnika — tu ta sama klasa dla trików deathtouch:
 //  (2) przeciwnik ma na polu nietapniętego stwora z aktywowaną zdolnością
 //      dającą deathtouch + manę — kupno pewne, ryzyko pełne;

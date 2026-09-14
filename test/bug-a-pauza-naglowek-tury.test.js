@@ -40,7 +40,7 @@ function buildDecks() {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/wiedzmin-wu.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/wiedzmin-wur.txt', 'utf8'), registry).cardIds],
   ]);
   return { registry, decks };
 }

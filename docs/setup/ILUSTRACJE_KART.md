@@ -39,14 +39,28 @@ Szczegóły:
 - **Fog of War**: każda zakryta karta ma ten sam adres rewersu. Gdyby zależał
   od karty, samo pobranie pliku zdradzałoby tożsamość (ADR 0003).
 
-## Tory podglądu i PPM (wyzwalacz zmieniony 2026-09-11)
+## Tory podglądu i MMB (wyzwalacz: scroll → PPM 2026-09-11 → MMB 2026-09-14)
 
-Na desktopie hover pokazuje powiększenie, a **prawy przycisk myszy (PPM) nad
-kartą przełącza tor** — `scryfall → FOT → KON → scryfall`, cykl się zapętla
-(zgłoszenie właściciela H, 2026-09-11; wcześniej robił to scroll jak
-`playtableState.hoverMode` w legacy HTML). Scroll jest wolny: przewija stronę
-domyślnie, bo nad kartą nie ma już słuchacza `wheel`. PPM nad kartą tłumi menu
-kontekstowe przeglądarki — i tylko nad kartą:
+Na desktopie hover pokazuje powiększenie, a **środkowy przycisk myszy (MMB, ten
+na scrollu) nad kartą przełącza tor** — `scryfall → FOT → KON → scryfall`, cykl
+się zapętla. **Jedno WCIŚNIĘCIE = dokładnie jeden krok; zwolnienie nie zmienia
+nic.** Scroll jest wolny (przewija stronę domyślnie, bo nad kartą nie ma
+słuchacza `wheel`), a PPM jest wolny od naszych zdarzeń — nie tłumimy już menu
+kontekstowego przeglądarki.
+
+Historia wyzwalacza: pierwotnie scroll (`playtableState.hoverMode` w legacy
+HTML) → 2026-09-11 prawy przycisk (zgłoszenie właściciela H) → 2026-09-14
+środkowy przycisk (znalezisko właściciela A2/M349). Powód ostatniej zmiany: PPM jest
+NIEprzewidywalny między platformami — przeglądarka dostarcza `contextmenu` raz
+przy wciśnięciu, raz przy zwolnieniu, a przy szybkim kliknięciu czasem wcale;
+menu kontekstowe potrafiło też wygrać z naszym słuchaczem. MMB w zdarzeniu
+`mousedown` (`button === 1`) jest deterministyczny: przychodzi raz, przy
+wciśnięciu, na każdej platformie. Autoscroll przeglądarki przy MMB zaczyna się
+dopiero w ruchu, więc samo wciśnięcie nie przewija strony.
+
+Karty specjalne (Undercity, dzień/noc, liczniki trucizny/prędkości) mają ten sam
+wyzwalacz co kafle — jedno miejsce reguły w `cycle` (`attachSpecialCardHover`).
+Podpowiedź w oknie podglądu głosi „MMB zmienia tor".
 
 | Tor | Źródło | Kształt okna |
 |---|---|---|

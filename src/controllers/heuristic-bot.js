@@ -121,7 +121,7 @@ function diesBeforeDealingDamage(attacker, blockers) {
 
 /**
  * M297/B (uwaga właściciela 2026-09-03): czy atakujący GINIE przy bloku, bo
- * bloker ma deathtouch (CR 702.4 — każde ≥1 obrażenie jest śmiertelne).
+ * bloker ma deathtouch (CR 702.2b — każde ≥1 obrażenie jest śmiertelne).
  * Nie dotyczy niezniszczalnych; bloker musi realnie móc zablokować tego
  * atakującego (flying/reach, menace) i mieć moc > 0 (0 mocy = brak obrażeń).
  */
@@ -181,7 +181,7 @@ function combatTrickWindow(view, recipient) {
  * wynik walki się zmienia”:
  *  - dwa przebiegi obrażeń: first/double strike (CR 702.7), potem regularny,
  *    z SBA między przebiegami (CR 510.2 — martwy nie zadaje w następnym);
- *  - deathtouch (CR 702.4): każde zadane ≥1 obrażenie jest śmiertelne —
+ *  - deathtouch (CR 702.2b): każde zadane ≥1 obrażenie jest śmiertelne —
  *    dotyczy progu śmierci ODBIORCY (dającego źródła), nie ilości zadanej;
  *  - atakujący rozdziela moc lethal-first (CR 510.1b), nadmiar: trample →
  *    twarz (CR 702.19), inaczej → ostatni bloker (overkill);
@@ -467,7 +467,8 @@ export const DECK_ARRANGING_EFFECTS = new Set([
 export const STACKING_ACTIVATED_EFFECTS = new Set([
   'pump', 'pump_enchanted_creature', 'add_counter', 'add_mana', 'damage',
   'damage_each_opponent', 'draw_cards', 'discard_cards', 'create_token',
-  'create_copy_token', 'station_counters', 'scry', 'regenerate',
+  'create_copy_token', 'create_token_copy_of_source', 'reveal_top_pick_card_rest_bottom',
+  'station_counters', 'scry', 'regenerate',
   'search_library_to_battlefield', 'search_library_to_battlefield_tapped',
   'put_graveyard_card_on_bottom', 'return_to_battlefield_tapped',
   'return_to_battlefield_under_control_at_upkeep', 'unearth_return',
@@ -751,7 +752,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // M297/B (uwaga właściciela 2026-09-03): „kupowany deathtouch" — instant
   // dający deathtouch do końca tury (klasa Coat with Venom). Obrońca z maną
   // i DOWOLNYM blokerem wymienia taniego stwora za naszego drogiego
-  // atakującego (CR 702.4). Model jak B3 (deck + hipergeometria).
+  // atakującego (CR 702.2b). Model jak B3 (deck + hipergeometria).
   const deathtouchTricks = new Map(); // cardId → { cost, copies }
   for (const [id, copies] of opponentCounts) {
     const def = registry.get(id);
@@ -858,6 +859,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return_permanent_from_graveyard: (e, view) => ((view.zones.graveyard ?? []).some((o) => o.controllerId === view.playerId) ? 10 : 0),
     put_graveyard_card_on_top: () => 4,
     reveal_top_pick_land_rest_grave: () => 5,
+    reveal_top_pick_card_rest_bottom: () => 6, // karta-stwór do ręki (M354)
+    // M356 (Duskmantle Seer): efekt SYMETRYCZNY — każdy gracz (także bot)
+    // odsłania wierzch, bierze go do ręki i traci życia równą jego mana value.
+    // Karta wroga równoważy moją, a życiem płacą obaj, więc dla bota to nie
+    // jest zysk — wpis istnieje po to, żeby typ efektu nie wyglądał na
+    // nieoceniony (telemetria E1) i żeby trigger nie wchodził w „akcję bez
+    // wyceny" (L50).
+    reveal_top_each_player_lose_life_mana_value: () => 0,
     opponent_hand_card_to_top: () => 3,
     discard_each_opponent: () => 3,
     take_initiative: () => 6,
@@ -2552,6 +2561,56 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return { cmd, score, unvalued };
   }
 
+  /**
+   * M350/B (znalezisko właściciela z testów, 2026-09-14): czy bot ZAMIERZA
+   * zaatakować TYM stworem w tej turze — policzone JEGO WŁASNĄ wyceną ataku
+   * (gałąź `declare_attackers` w `scoreCommand`, wołana na komendzie
+   * syntetycznej), a nie drugą kopią reguł.
+   *
+   * Po co: efekty „do końca tury" kupowane MANĄ przed walką (Wishful Merfolk:
+   * „traci defender i staje się Humanem") mają wartość wyłącznie wtedy, gdy
+   * stwór realnie pójdzie do ataku. Poprzednia bramka (M202/L) sprawdzała
+   * tylko okno i stan stwora, więc bot kupował efekt w main1, po czym — widząc
+   * nieopłacalny atak — NIE atakował: „kompletnie zmarnowana mana".
+   *
+   * Semantyka: „zamierza" = istnieje legalny zestaw atakujących zawierający
+   * ten stwór, którego wycena jest DODATNIA (lepsza niż pass = 0). Zestawy
+   * enumerujemy jak silnik (`boundedSubsets`: wszystkie podzbiory przy małej
+   * liczbie atakujących, inaczej pojedyncze / wszystkie-bez-jednego /
+   * wszystkie) — bot wybiera jeden z nich w kroku deklaracji.
+   *
+   * Reentrancja: wycena ataku nie woła tej bramki (bramka siedzi wyłącznie
+   * w gałęzi `activate_ability`), ale flaga `attackIntentEval` jest
+   * bezpiecznikiem na przyszłość — bez niej dodanie bramki do wyceny ataku
+   * dałoby nieskończoną rekurencję.
+   */
+  let attackIntentEval = false;
+  function attackIntendsCreature(view, objectId) {
+    if (!objectId || attackIntentEval) return false;
+    const legal = myCreatures(view)
+      .filter((o) => !o.tapped && !o.summoningSickness && (o.power ?? 0) > 0)
+      .map((o) => o.id);
+    if (!legal.includes(objectId)) return false;
+    const subsets = [];
+    if (2 ** legal.length <= 32) {
+      for (let mask = 1; mask < 2 ** legal.length; mask += 1) {
+        const set = legal.filter((_, index) => (mask & (2 ** index)) !== 0);
+        if (set.includes(objectId)) subsets.push(set);
+      }
+    } else {
+      subsets.push([objectId], legal.slice());
+      subsets.push(...legal.filter((id) => id !== objectId).map((skip) => legal.filter((id) => id !== skip)));
+    }
+    attackIntentEval = true;
+    try {
+      return subsets.some((attackerIds) => scoreCommand(view, {
+        type: 'declare_attackers', playerId: view.playerId, attackerIds,
+      }) > 0);
+    } finally {
+      attackIntentEval = false;
+    }
+  }
+
   function scoreCommand(view, cmd) {
     // M320/NA2: ward (CR 702.21) — dopłata za celowanie we wrogi permanent
     // z ward. Odejmowana od WYNIKU każdego wariantu (finish), więc warianty
@@ -3259,7 +3318,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           ? (spell.modes[cmd.modeIndex]?.effects ?? [])
           : null;
         const effects = (modalEffects
-          ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? [])).filter(e => !e?.condition?.wasKicked || cmd.kicked === true);
+          ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? []))
+          .filter(e => (!e?.condition?.wasKicked || cmd.kicked === true)
+            && (!e?.condition?.wasGifted || cmd.gifted === true));
         // M247 anti-overfix (Vandalize „Zniszcz ląd"): kara „czysty ląd jako
         // cel removalu" NIE obejmuje efektów ZAPROJEKTOWANYCH pod niszczenie
         // lądów — rozpoznajemy je po specu celu z deskryptora: slot typu
@@ -4154,6 +4215,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
         }
+        // CR 702.174 (Gift, M355): obietnica daru to KOSZT — obiecany
+        // przeciwnik dostaje realny zasób (tu: token Food). Warianty różnią
+        // się wyceną efektów warunkowych (`condition.wasGifted` wyżej), więc
+        // tu płacimy wyłącznie cenę daru: pół karty (Food wymaga jeszcze
+        // {2} i zatapnięcia, więc nie jest pełną kartą). Bez tej kary model
+        // bota widziałby sam zysk z „if the gift was promised” i obiecywał
+        // dar zawsze — także wtedy, gdy indestructible nic nie zmienia.
+        if (cmd.gifted === true) score -= P.drawCardValue * 0.5;
         return finish(score);
       }
       case 'activate_ability': {
@@ -4540,10 +4609,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Reguła generyczna po deskryptorze `losesKeywords` (ADR 0002).
           if ((effect.losesKeywords ?? []).includes('defender')) {
             const self = objectOnBoard(view, cmd.objectId) ?? target;
-            const beforeCombat = myTurn(view)
-              && ['main1', 'main2', 'beginning_of_combat', 'declare_attackers'].includes(view.turn.step);
+            // M350/B (znalezisko właściciela z testów, 2026-09-14): samo okno
+            // i „stwór może zaatakować" NIE wystarczy — bot kupował efekt
+            // w main1, po czym nie atakował („kompletnie zmarnowana mana").
+            // Trzy warunki łącznie: (a) okno WALKI tej tury (etap walki przed
+            // deklaracją — beginning_of_combat/declare_attackers; main1 odpada,
+            // bo bot ma tam jeszcze inne plany i nie ma dowodu na atak),
+            // (b) stwór może zaatakować (odkręcony, bez choroby), (c) bot
+            // REALNIE zamierza nim atakować — liczone jego własną polityką
+            // (`attackIntendsCreature` → `attackOptionScore`, L41/L48).
+            const przedDeklaracja = myTurn(view)
+              && view.turn.phase === 'combat'
+              && ['beginning_of_combat', 'declare_attackers'].includes(view.turn.step);
             const canAttackNow2 = Boolean(self) && !self.tapped && !self.summoningSickness;
-            score += (beforeCombat && canAttackNow2) ? 10 + 2 * (self?.power ?? 0) : -20;
+            const intends = canAttackNow2 && przedDeklaracja
+              && attackIntendsCreature(view, self.id);
+            score += intends ? 10 + 2 * (self?.power ?? 0) : -20;
           }
           // M202/J (uwaga właściciela, Merfolk Mesmerist): „{U}, {T}: Target
           // player mills two cards” TAPUJE źródło, więc mill za cenę blokera ma
@@ -5052,6 +5133,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const drawAmount = Number.isInteger(effect.amount) ? effect.amount : 1;
             score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
           }
+          // M354 (Brightwood Tracker): „zobacz N z wierzchu, weź kartę z filtra
+          // do ręki” z AKTYWOWANEJ zdolności — ta rodzina miała wycenę tylko
+          // w tabeli ETB (Satyr Wayfinder), więc aktywacja zostawała na bazie 2
+          // (L41: bliźniacze gałęzie czarów/zdolności idą razem).
+          if (effect.type === 'reveal_top_pick_card_rest_bottom'
+              || effect.type === 'reveal_top_pick_land_rest_grave') {
+            const ownLibrary = (view.zones.library ?? []).filter((o) => o.controllerId === view.playerId).length;
+            score += ownLibrary > 0 ? P.drawCardValue : -20;
+          }
           // Batch 52 (Jolrael, Mwonvuli Recluse): „{4}{G}{G}: twoje stwory
           // mają bazowe X/X do końca tury (X = karty w ręce)". Bez wyceny
           // zdolność dostawała gołe score=2 i bot aktywował ją nawet, gdy
@@ -5498,7 +5588,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Obrońca z nietapniętym blokerem, maną i trikiem (instant w ręce
         // ALBO aktywowana zdolność widocznego stwora) daje blokerowi
         // deathtouch w oknie walki — wtedy KAŻDY bloker zabija naszego
-        // atakującego (CR 702.4). Bot ma nie atakować wartościowych stworów
+        // atakującego (CR 702.2b). Bot ma nie atakować wartościowych stworów
         // w takim oknie — dokładnie scenariusz właściciela (4/4 vs mały
         // stwór + Coat with Venom/Death-Hood Cobra + mana). Model ryzyka jak
         // B3 (hipergeometria dla ukrytego triku; pewność dla widocznej
@@ -5580,7 +5670,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // M153/B + F-B (finding właściciela): atakujący ginie, gdy łączna moc
           // blokerów >= jego wytrzymałość (multi-block kill, CR 510.1) ALBO gdy
           // któryś z żywych blokerów ma deathtouch i moc > 0 — jedno obrażenie
-          // jest śmiertelne (CR 702.4), więc pojedynczy 1/2 deathtouch zabija
+          // jest śmiertelne (CR 702.2b), więc pojedynczy 1/2 deathtouch zabija
           // 4/4. Dotąd `attackerDies` liczyło tylko surową sumę mocy i bot
           // dokładał zbędnych blokerów, choć deathtouch i tak rozstrzygał.
           const attackerDies = diesToDeathtouchBlocker(attackerObj, blockerObjs)
@@ -6299,7 +6389,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // nie miały case w scoreCommand (spadały do default: finish(0) →
       // pierwsza oferta).
       //
-      // Fabricate (CR 702.122, Servo Exhibition-type): wybierz „+1/+1 counter
+      // Fabricate (CR 702.123, Servo Exhibition-type): wybierz „+1/+1 counter
       // na źródle" ALBO „stwórz X 1/1 Servo tokenów". Preferuj tokeny, gdy
       // na stole jest mniej własnych stworów (rozlewają board); w innym wypadku
       // pompuj istniejące. Generycznie (ADR 0002): tokeny mają przewagę liczebną

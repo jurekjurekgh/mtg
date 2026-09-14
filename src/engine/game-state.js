@@ -148,7 +148,7 @@ export function createGameState({ seed, players }) {
     pendingRoomTargets: [],
     // M190/B: wybór ścieżki w lochu (CR 309.4) — blokująca decyzja gracza.
     pendingUndercityRoute: null,
-    // M191/Batch 46 (fabricate, CR 702.122): wybór licznik ALBO tokeny.
+    // M191/Batch 46 (fabricate, CR 702.123): wybór licznik ALBO tokeny.
     pendingFabricate: null,
     // Batch 22: oczekująca decyzja proliferate (CR 701.27, Courage in
     // Crisis). Gracz wybiera DOWOLNĄ liczbę permanentów i/lub graczy
@@ -195,7 +195,7 @@ export function createGameState({ seed, players }) {
     // podtypu w tej turze ("The next Giant spell you cast this turn costs
     // {2} less"). Wpisy: { playerId, amount, subtype }.
     pendingSpellDiscounts: [],
-    // M158/Batch 39 (Revolutionist, CR 702.34): jednorazowa decyzja rzutu za
+    // M158/Batch 39 (Revolutionist, CR 702.35): jednorazowa decyzja rzutu za
     // koszt madness po odrzuceniu karty z madness do exile.
     // Wpis: { playerId, objectId, cardId, restorePriorityTo }.
     pendingMadnessCast: null,
@@ -514,7 +514,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'entersTappedCondition', 'bestow', 'aura', 'equipment', 'backup', 'colors',
   'phyrexianManaCost', 'enchantPlayer', 'saga', 'station', 'ownerId', 'devour', 'endure', 'toxic', 'echo', 'echoColors', 'chooseColor',
   'exploit', 'treasureAltCost', 'cardName', 'name', 'bloodthirst', 'renown', 'additionalCost',
-  'kicker', 'offspring', 'costReduction', 'adventure', 'buyback', 'protectionFromColors',
+  'kicker', 'offspring', 'gift', 'costReduction', 'adventure', 'buyback', 'protectionFromColors',
   'plottedAtTurn', 'enterAsCopy', 'suspend', 'suspended', 'timeCounters', 'suspendReady',
   'warp', 'warpReady', 'warpedAtTurn', 'surge', 'manifestReady', 'manifestTurnUpCost',
   'rebound', 'reboundCast', 'reboundReady',
@@ -579,15 +579,15 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, gift, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
-    // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.29).
+    // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.30).
     ? Object.freeze({ ...object, enteredOnTurn: state.turn.number, ...(object.echo != null ? { echoUnpaid: true } : {}) })
     : object;
   state.objects.set(id, placed);
@@ -944,7 +944,7 @@ function legalDeliriumTargetCandidates(state, pending) {
 }
 
 /**
- * Trigger delirium wciąż wymaga decyzji: intervening-if (CR 603.4/702.34)
+ * Trigger delirium wciąż wymaga decyzji: intervening-if (CR 603.4; delirium to słowo zdolności, CR 207.2c)
  * utrzymuje się przy rozstrzyganiu i jest legalny cel. Gdy warunek zniknął
  * albo celów nie ma, zdolność nic nie robi (execute czyści ślepą głowę
  * kolejki, a widok nie blokuje pass — jak cele pokoi lochu).
@@ -2176,17 +2176,35 @@ export function execute(state, input) {
     if (cmd.playerId !== state.pendingSatyrLook.playerId) return reject('satyr_look_not_your_decision');
     const pending = state.pendingSatyrLook;
     const pickId = cmd.pickId ?? null;
-    if (pickId != null && !pending.landIds.includes(pickId)) return reject('illegal_satyr_look_choice');
+    if (pickId != null && !pending.pickIds.includes(pickId)) return reject('illegal_satyr_look_choice');
     const handId = pickId != null ? `hand-${state.objectSequence++}` : null;
     if (handId != null) {
       const movedHand = moveObjectDirectly(state, pickId, 'hand', handId);
       state.events.push(event('object_moved', { fromId: pickId, object: movedHand, fromZone: 'library', toZone: 'hand', revealed: true }));
     }
     const rest = pending.objectIds.filter((id) => id !== pickId);
-    for (const id of rest) {
-      const graveId = `grave-${state.objectSequence++}`;
-      const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
-      state.events.push(event('object_moved', { fromId: id, object: movedGrave, fromZone: 'library', toZone: 'graveyard', milled: true }));
+    const restTo = pending.restTo ?? 'graveyard';
+    if (restTo === 'library_bottom') {
+      // M354 (Brightwood Tracker): „Put the rest on the bottom of your library
+      // in a random order” — kolejność losowa sterowana seedem (ADR 0005, ta
+      // sama reguła co tasowanie biblioteki), więc partia odtwarza się z seeda.
+      // Gracz NIE ma tu wyboru: przy „in any order” (Merchant's Dockhand,
+      // Rediscover the Way) kolejność jedzie w komendzie jako `bottomOrder`,
+      // a tu nie ma takiego parametru.
+      const ordered = (pending.restOrder ?? 'preserve') === 'random'
+        ? shuffle(rest, state.seed + state.objectSequence)
+        : rest;
+      const bottomSet = new Set(ordered);
+      state.zones.library = [...state.zones.library.filter((id) => !bottomSet.has(id)), ...ordered];
+      for (const id of ordered) {
+        state.events.push(event('object_moved', { fromId: id, object: state.objects.get(id), fromZone: 'library', toZone: 'library', toBottom: true, looked: true }));
+      }
+    } else {
+      for (const id of rest) {
+        const graveId = `grave-${state.objectSequence++}`;
+        const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
+        state.events.push(event('object_moved', { fromId: id, object: movedGrave, fromZone: 'library', toZone: 'graveyard', milled: true }));
+      }
     }
     state.pendingSatyrLook = null;
     // Batch 44 (Blanchwood Prowler): „If you don't, put a +1/+1 counter on
@@ -2202,7 +2220,12 @@ export function execute(state, input) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
     state.events.push(event('satyr_look_resolved', {
-      playerId: pending.playerId, count: pending.objectIds.length, pickId, pickCardId: handId != null ? (state.objects.get(handId)?.cardId ?? null) : null,
+      playerId: pending.playerId, count: pending.objectIds.length, pickId,
+      pickCardId: handId != null ? (state.objects.get(handId)?.cardId ?? null) : null,
+      // M354: miejsce i porządek reszty jedzie ze zdarzeniem — warstwa opisu
+      // nie zgaduje ich z nazwy karty, a log nie kłamie o grobie (L6).
+      pickTypes: [...(pending.pickTypes ?? [])],
+      restTo, restOrder: pending.restOrder ?? 'preserve',
     }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - (rest.length + 2)) });
   }
@@ -2513,7 +2536,7 @@ export function execute(state, input) {
     return ev;
   }
 
-  // M158/Batch 39 (Revolutionist, CR 702.34): Madness — jednorazowa decyzja
+  // M158/Batch 39 (Revolutionist, CR 702.35): Madness — jednorazowa decyzja
   // po odrzuceniu karty z madness do exile: rzuć za koszt madness (ignorując
   // timing — rzut następuje w rozstrzyganiu zdolności, jak rebound) albo
   // przełóż kartę do cmentarza.
@@ -2977,7 +3000,7 @@ export function execute(state, input) {
   // „Leads to: Forge, Lost Well". Decyzja blokuje grę jak każda inna;
   // po wejściu do pokoju wykonuje się jego efekt (może otworzyć kolejną
   // decyzję — cel pokoju — więc priorytet oddajemy dopiero, gdy jej nie ma).
-  // Batch 46 (Glint-Sleeve Artisan) — FABRICATE N (CR 702.122): kontroler
+  // Batch 46 (Glint-Sleeve Artisan) — FABRICATE N (CR 702.123): kontroler
   // wybiera N liczników +1/+1 na stworze ALBO N tokenów Servo 1/1.
   if (state.pendingFabricate) {
     const pending = state.pendingFabricate;
@@ -4050,7 +4073,7 @@ export function execute(state, input) {
     const before = state.events.length;
     for (const cardId of cardIds) {
       const card = state.objects.get(cardId);
-      // M158/Batch 39 (CR 702.34a): karta z Madness odrzucana jest do EXILE
+      // M158/Batch 39 (CR 702.35a): karta z Madness odrzucana jest do EXILE
       // (nie do grobu) z jednorazową decyzją: rzuć za koszt madness albo
       // przełóż do cmentarza.
       let moved = null;
@@ -4144,7 +4167,7 @@ export function execute(state, input) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
     // M258: sekwencja odrzuceń zakończona — jeśli w jej trakcie odrzucono
-    // kartę/karty z madness, PIERWSZA decyzja otwiera się teraz (CR 702.34a:
+    // kartę/karty z madness, PIERWSZA decyzja otwiera się teraz (CR 702.35a:
     // opcja rzutu powstaje po dokończeniu efektu odrzucania); kolejne po
     // rozstrzygnięciu tej (promoteNextMadness w bramce madness).
     const promoted = promoteNextMadness(state);
@@ -5220,6 +5243,9 @@ export function execute(state, input) {
       const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, {
         buyback: cmd.buyback, payAltCost: cmd.payAltCost, xValue: cmd.xValue,
         phyrexianPayWithLife: cmd.phyrexianPayWithLife, kicked: Boolean(cmd.kicked),
+        // CR 702.174 (Gift): obietnica daru to dodatkowy koszt rzutu; odbiorcę
+        // wskazuje się razem z kosztem (wariant komendy niesie jego id).
+        gifted: Boolean(cmd.gifted), giftRecipientId: cmd.giftRecipientId ?? null,
       });
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
@@ -5556,6 +5582,11 @@ export function playerView(state, playerId) {
           // katalog: test/m265-hand-view-alt-cost-descriptors.test.js.
           warp: object.warp ?? null, surge: object.surge ?? null,
           kicker: object.kicker ?? null, treasureAltCost: object.treasureAltCost ?? null,
+          // M355 (Gift, CR 702.174): dar jest PUBLICZNYM Oracle (jak kicker i
+          // koszt alternatywny wyżej) — bez niego etykieta wariantu z
+          // obietnicą nie umie nazwać daru (klasa L93/M265 w tej samej liście;
+          // strażnik test/m265-hand-view-alt-cost-descriptors.test.js).
+          gift: object.gift ?? null,
           // Kolory karty (publiczne) i fyryksyjskie symbole w koszcie —
           // bot planuje płatność „maną albo życiem" z widoku, nie z registry.
           colors: [...(object.colors ?? [])], phyrexianManaCost: object.phyrexianManaCost ?? 0,
@@ -6386,7 +6417,7 @@ export function playerView(state, playerId) {
     legalCommands.push(command('resolve_clash_choice', playerId, {}));
     legalCommands.push(command('resolve_clash_choice', playerId, { putOnBottom: true }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeFabricate) {
-    // Fabricate: dwa warianty (CR 702.122). Kolejność deterministyczna.
+    // Fabricate: dwa warianty (CR 702.123). Kolejność deterministyczna.
     legalCommands.push(command('resolve_fabricate', playerId, { mode: 'counters' }));
     legalCommands.push(command('resolve_fabricate', playerId, { mode: 'tokens' }));
   // M254 (pełna macierz benchmarku, 2026-08-28): KOLEJNOŚĆ OFERT MUSI
@@ -6904,8 +6935,8 @@ export function playerView(state, playerId) {
     // flagę, żeby UI opisało stawkę decyzji.
     const satyrExtra = pending.counterIfNoneSourceId ? { counterIfNone: true } : {};
     legalCommands.push(command('resolve_satyr_look_choice', playerId, { pickId: null, ...satyrExtra }));
-    for (const landId of pending.landIds) {
-      legalCommands.push(command('resolve_satyr_look_choice', playerId, { pickId: landId, ...satyrExtra }));
+    for (const pickId of pending.pickIds) {
+      legalCommands.push(command('resolve_satyr_look_choice', playerId, { pickId, ...satyrExtra }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeRevealChoice) {
     // M158/Batch 39 (Invasion of the Giants II): „you may reveal a Giant
@@ -7809,6 +7840,13 @@ export function playerView(state, playerId) {
     pendingSatyrLook: activeSatyrLook
       ? {
         sourceCardId: state.pendingSatyrLook.sourceCardId ?? null,
+        // M354: dekoder decyzji — co wolno wziąć (filtr typu) i gdzie idzie
+        // reszta (grób / spód). Tytuł modala nazywa to z DANYCH, nie z nazwy
+        // karty (ADR 0002; Satyr Wayfinder bierze ląd, Brightwood Tracker
+        // stwora — ta sama rodzina decyzji).
+        pickTypes: Object.freeze([...(state.pendingSatyrLook.pickTypes ?? [])]),
+        restTo: state.pendingSatyrLook.restTo ?? 'graveyard',
+        restOrder: state.pendingSatyrLook.restOrder ?? 'preserve',
         // A1 (audyt PR #100): efekt każe odsłonić wierzch biblioteki
         // WYŁĄCZNIE jej właścicielowi (CR 701.3 „look at"), więc widok nosi
         // dane kandydatów tylko dla decydenta — dokładnie jak

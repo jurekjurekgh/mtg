@@ -225,7 +225,7 @@ test('B2b: Toll — sama ręka LĄDÓW = nikt nic nie odrzuca (Oracle), amass dz
     'amass mimo braku odrzucenia');
 });
 
-// ---- Transza C: Terminal Agony — pierwszy CZAR z madness (CR 702.34) ---------
+// ---- Transza C: Terminal Agony — pierwszy CZAR z madness (CR 702.35) ---------
 
 function discardAgony(state) {
   putCard(state, 'agony', 'terminal-agony', 'p1', 'hand');
@@ -235,7 +235,7 @@ function discardAgony(state) {
   };
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'agony' }).ok);
   const exiled = [...state.objects.values()].find((o) => o.cardId === 'terminal-agony' && o.zone === 'exile');
-  assert.ok(exiled, 'karta w exile (CR 702.34a)');
+  assert.ok(exiled, 'karta w exile (CR 702.35a)');
   assert.equal(exiled.madnessReady, true, 'gotowość madness');
   assert.ok(state.pendingMadnessCast, 'decyzja madness otwarta');
   return exiled;
@@ -258,7 +258,7 @@ test('C1: Terminal Agony — discard→exile→rzut za {B}{R} z CELEM niszczy st
     'czar po rozstrzygnięciu w grobie');
 });
 
-test('C2: Terminal Agony — sorcery z madness rzucany POZA main fazą (CR 702.34e)', () => {
+test('C2: Terminal Agony — sorcery z madness rzucany POZA main fazą (CR 702.35b)', () => {
   const state = game('p1');
   putCard(state, 'foe', 'highland-game', 'p2');
   state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers' };
@@ -281,7 +281,7 @@ test('C3: Terminal Agony — odmowa albo brak celu = karta do grobu', () => {
   assert.ok(offers.every((c) => !c.cast), 'bez legalnego celu brak oferty rzutu (L48)');
   assert.ok(execute(state, offers[0]).ok);
   assert.ok([...state.objects.values()].some((o) => o.cardId === 'terminal-agony' && o.zone === 'graveyard'),
-    'odmowa → grób (CR 702.34)');
+    'odmowa → grób (CR 702.35)');
 });
 
 test('B3 (L4/L48): Skullcairn bez drugiego czarnego źródła — brak oferty i CZYSTE odrzucenie', () => {

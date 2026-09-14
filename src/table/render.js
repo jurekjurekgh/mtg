@@ -341,11 +341,11 @@ export function choiceRequestGroupKey(command) {
   // M87: tryby modalne (Steel Sabotage Kontr vs Odbicie) i warianty
   // poświęcenia (Village Rites) nie mogą wpadać do jednego „Cel czaru".
   if (command.type === 'cast_spell' && (command.targets?.length || command.sacrificeTargetId || command.modeIndex != null)) {
-    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}${command.kicked ? ':kicker' : ''}`;
+    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}${command.kicked ? ':kicker' : ''}${command.gifted ? `:gift:${command.giftRecipientId ?? '?'}` : ''}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
   if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
-    return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}`;
+    return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}${command.gifted ? ':gift' : ''}`;
   }
   if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {
@@ -915,6 +915,9 @@ function describeEffect(e) {
     // Ten sam helper co buff_* (`ptPair`), liczby bez zmian (D3).
     pump: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} do końca tury${e.upgradeIfCreatures ? ` (${signed(e.upgradeIfCreatures.power ?? 0)}/${signed(e.upgradeIfCreatures.toughness ?? 0)} przy ${e.upgradeIfCreatures.min}+ stworach)` : ''}`,
     exile_if_dies_this_turn: () => 'jeśli miałby umrzeć w tej turze, wygnaj go zamiast tego',
+    // Batch 55 (Embalm, Tah-Crop Skirmisher): zdolność z grobu tworzy kopię
+    // WYGNANEJ karty — panel mówi wprost, że to kopia, nie zwykły token.
+    create_token_copy_of_source: () => 'stwórz token-kopię tej karty (Embalm)',
     create_token: () => {
       const count = Number.isFinite(e.amount) && e.amount > 1 ? `×${e.amount} ` : '';
       const dynamicNote = typeof e.amount === 'string' ? ` (${dynamicAmount(e.amount)})` : '';
@@ -1092,6 +1095,8 @@ function describeEffect(e) {
       return `${which} nie mogą blokować w tej turze`;
     },
     each_player_exiles_top_face_down: () => 'każdy gracz wygania wierzch swojej biblioteki zakryty',
+    // M356 (Duskmantle Seer): odsłonięcie + utrata życia = mana value + karta do ręki.
+    reveal_top_each_player_lose_life_mana_value: () => 'każdy gracz odsłania wierzch biblioteki, traci życia równą mana value i bierze tę kartę do ręki',
     turn_up_exiled_and_put_permanents: () => 'odkryj karty wygnane tym artefaktem — permanenty spośród nich wchodzą na pole bitwy',
     graveyard_card_to_library_top_choice: () => {
       const types = e.filter?.anyTypes ?? [];
@@ -1114,6 +1119,17 @@ function describeEffect(e) {
     },
     // M184/Z2: opis niósł ani liczby kart, ani nagrody za odmowę
     // (Blanchwood Prowler: licznik +1/+1) — gracz nie znał stawki decyzji.
+    // M354 (Brightwood Tracker): ten sam kształt decyzji co Satyr Wayfinder,
+    // ale filtr to karta-stwór, a reszta wraca na spód biblioteki w kolejności
+    // losowej. Opis czyta deskryptor (filtr + miejsce reszty), nie nazwę karty
+    // (ADR 0002) — kolejna karta z tym efektem dostanie poprawny opis sama.
+    reveal_top_pick_card_rest_bottom: () => {
+      const n = e.amount ?? 4;
+      const co = (e.pickTypes ?? []).includes('Creature') ? 'stwora' : 'kartę';
+      const gdzie = (e.restTo ?? 'graveyard') === 'library_bottom' ? 'na spód biblioteki' : 'do grobu';
+      const jak = (e.restOrder ?? 'preserve') === 'random' ? ' (losowo)' : '';
+      return `odsłoń ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')} z wierzchu: możesz wziąć ${co} do ręki, reszta ${gdzie}${jak}`;
+    },
     reveal_top_pick_land_rest_grave: () => {
       const n = e.amount ?? 4;
       const base = `odsłoń ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')} z wierzchu: możesz wziąć ląd do ręki, reszta do grobu`;
@@ -1325,6 +1341,7 @@ function describeStatic(ability) {
   if (cond.minCardsDrawnThisTurn) parts.push(`przy ${cond.minCardsDrawnThisTurn}+ dobranych kartach`);
   if (cond.controlsAnotherMulticolored) parts.push('gdy kontrolujesz inny wielokolorowy permanent');
   if (cond.controlsAnotherArtifact) parts.push('gdy kontrolujesz inny artefakt');
+  if (cond.controlsArtifact) parts.push('gdy kontrolujesz artefakt');
   if (cond.hasCounter) parts.push(`gdy ma licznik ${counterLabelGen(cond.hasCounter)}`);
   if (cond.minCreatureCardsInGraveyard) parts.push(`przy ${cond.minCreatureCardsInGraveyard}+ stworach w grobie`);
   if (ability.cantBlock || ability.cant_block) parts.push('nie może blokować');
@@ -1943,7 +1960,11 @@ function choiceSourceTitle(cmd, session, view) {
   // bez podpisu. Źródło jadę z pendingu jak u M162/C (karta na polu bitwy —
   // publiczna), nie z nazwy zaszytej w warstwie opisu.
   if (cmd?.type === 'resolve_satyr_look_choice' && view?.pendingSatyrLook?.sourceCardId) {
-    return `${session.nameOf(view.pendingSatyrLook.sourceCardId)} — bierz ląd z odsłoniętych kart`;
+    // M354: ta sama rodzina decyzji obsługuje Satyr Wayfinder (ląd) i
+    // Brightwood Tracker (stwór) — tytuł czyta FILTR z pendingu, więc nie
+    // wmawia graczowi lądu tam, gdzie karta pozwala wziąć stwora (L6).
+    const co = (view.pendingSatyrLook.pickTypes ?? []).includes('Creature') ? 'stwora' : 'ląd';
+    return `${session.nameOf(view.pendingSatyrLook.sourceCardId)} — bierz ${co} z odsłoniętych kart`;
   }
   // M251/B (audyt Żywym Testerem, partia worek-mroczny/ravnica s=41): decyzja
   // Manifest Dread otwierała modal z generycznym „Wybierz: Wariant (2 opcje)"
@@ -2006,6 +2027,7 @@ function choiceSourceTitle(cmd, session, view) {
   // modala — escapeHtml dawał „Hunter&#39;s Blowgun" w oknie wyboru.
   const name = session.nameOf(object.cardId)
     + (cmd.type === 'cast_spell' && cmd.kicked ? ' (kicker)' : '')
+    + (cmd.type === 'cast_spell' && cmd.gifted ? ' (dar)' : '')
     + (cmd.surgeCast ? ' (surge)' : '');
   // M202/D+M (zgłoszenie właściciela, Ruthless Invasion i Porcelain Legionnaire):
   // warianty zapłaty many phyrexian ({W/P} — mana ALBO 2 życia) grupują się po
@@ -2562,6 +2584,12 @@ export function commandLabel(cmd, session, view) {
       const kickerPart = kickerDef
         ? ` + kicker ${manaCostHtml(costSymbols(kickerDef.cost, kickerDef.colors))}`
         : '';
+      // Gift (CR 702.174, M355): obietnica daru nie zmienia kosztu many, ale
+      // zmienia SKUTEK (przeciwnik dostaje dar) — etykieta musi to nazwać,
+      // bo dwa identyczne przyciski o różnym skutku to klasa M101/B.
+      const giftPart = cmd.gifted
+        ? ` · dar dla przeciwnika: ${(cardForMode?.gift?.effect?.name ?? 'dar')}`
+        : '';
       // Audyt PR #94 / K2 (M91/uwaga D, klasa przed tym PR przy rzucie z ręki):
       // tryb „… put a stun counter on ONE OF THEM” mnoży warianty per cel pod
       // stun (legalModeCasts) — bez nazwy tego celu przyciski o różnych
@@ -2579,7 +2607,7 @@ export function commandLabel(cmd, session, view) {
       } else {
         costHtml = costOfCard(cardForMode);
       }
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${giftPart}${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -2793,7 +2821,7 @@ export function commandLabel(cmd, session, view) {
     // gracz wchodzi (Oracle „Leads to: Forge, Lost Well").
     case 'resolve_undercity_route':
       return `Podziemia — idź do: ${escapeHtml(String(cmd.roomName ?? ''))}`;
-    // Batch 46 (fabricate, CR 702.122): dwa warianty wyboru kontrolera.
+    // Batch 46 (fabricate, CR 702.123): dwa warianty wyboru kontrolera.
     case 'resolve_fabricate':
       return cmd.mode === 'counters'
         ? 'Fabricate: liczniki +1/+1 na tym stworze'
@@ -3721,9 +3749,23 @@ function tile(parent, info, opts) {
   if (opts.hover && opts.hover.start) {
     wrap.addEventListener('mouseenter', (e) => opts.hover.start(info, e));
     wrap.addEventListener('mouseleave', opts.hover.end);
-    // Zgłoszenie H (2026-09-11): tor przełącza PPM, nie scroll — `wheel`
-    // zostaje przeglądarce (domyślne przewijanie strony).
-    if (opts.hover.cycle) wrap.addEventListener('contextmenu', (e) => opts.hover.cycle(info, e));
+    // Zgłoszenie H (2026-09-11): tor przełącza PRZYCISK myszy, nie scroll —
+    // `wheel` zostaje przeglądarce (domyślne przewijanie strony).
+    // M349/A (znalezisko właściciela z testów, 2026-09-14): PPM okazał się
+    // zawodny — przeglądarka dostarcza `contextmenu` różnie na różnych
+    // platformach (raz przy wciśnięciu, raz przy zwolnieniu, czasem wcale przy
+    // szybkim kliknięciu), a menu kontekstowe i tak czasem wygrywa. Wyzwalaczem
+    // jest ŚRODKOWY przycisk (MMB): `button === 1` i WYŁĄCZNIE wciśnięcie.
+    // `buttons` to MASKA (CR-like bitmask wg UI Events): 1 = lewy, 2 = prawy,
+    // 4 = środkowy — `buttons === 4` znaczy „wciśnięty sam środkowy" (samo
+    // `button === 1` nie wystarcza: mousedown dociska też inne przyciski, gdy
+    // któryś jest już trzymany). Jedno wciśnięcie = dokładnie jeden krok toru;
+    // zwolnienie nie robi nic (właściciel: „mouse released niech nie zmienia").
+    if (opts.hover.cycle) {
+      wrap.addEventListener('mousedown', (e) => {
+        if (e.button === 1 && e.buttons === 4) opts.hover.cycle(info, e);
+      });
+    }
   }
   return wrap;
 }
@@ -3908,8 +3950,9 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCyc
   const hasLocal = art.artId != null && art.artId !== '';
   // M257 r5/A: podgląd o torze STAŁYM (miniaturki w „Rozgrywce") nie cykluje
   // wcale — podpowiedź o przełączaniu toru byłaby kłamliwa.
-  // Zgłoszenie H (2026-09-11): tor przełącza PPM, nie scroll.
-  const hint = hasLocal && showCycleHint ? ' · PPM zmienia tor' : '';
+  // Zgłoszenie H (2026-09-11): tor przełącza przycisk myszy, nie scroll;
+  // M349/A (2026-09-14): dziś jest to MMB (środkowy), nie PPM.
+  const hint = hasLocal && showCycleHint ? ' · MMB zmienia tor' : '';
   div(host, 'hover-mode', `${hoverModeLabel(hoverMode)}${hint}`);
   return host;
 }
@@ -3917,7 +3960,7 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCyc
 /**
  * M257 r5/A (uwaga właściciela): hover scryfall na miniaturkach w modalu
  * „Rozgrywka" — ten sam podgląd co na stole (powiększona karta ze Scryfall),
- * ale tor STAŁY (bez trybów FOT i KON i bez cyklowania PPM).
+ * ale tor STAŁY (bez trybów FOT i KON i bez cyklowania MMB).
  * `null` na dotyku — na tablecie hover nie istnieje (jak na stole, M7c);
  * tam miniaturkę otwiera tap (pełny ekran).
  */
@@ -4222,8 +4265,14 @@ function showHoverPreviewAt(els, info, e, mode, { showCycleHint = true } = {}) {
 // FOT/KON tylko z artId — kontrakt nextHoverMode istniał od dawna, nikt go nie
 // używał); start/revive też zawężają, więc karta bez artu nigdy nie pokazuje
 // pustki, nawet gdy globalny tor stoi na FOT/KON. (2) strażnik 250 ms ignoruje
-// odbicia tego samego gestu (jak MODAL_OPEN_GUARD_MS w main.js), a
-// stopPropagation odcina ewentualną drugą obsługę wyżej w drzewie.
+// powtórzone zdarzenia tego samego gestu (jak MODAL_OPEN_GUARD_MS w main.js),
+// a stopPropagation odcina ewentualną drugą obsługę wyżej w drzewie.
+// M349/A (znalezisko właściciela z testów, 2026-09-14): sam WYZWALACZ PPM okazał
+// się wadliwy — przeglądarka dostarcza `contextmenu` raz przy wciśnięciu, raz
+// przy zwolnieniu, czasem wcale, więc tor bywał nieprzewidywalny. Dziś tor
+// przełącza MMB (`mousedown`, `button === 1` i `buttons === 4` — bitmaskę
+// przycisków opisuje komentarz w `tile`) i TYLKO wciśnięcie: jedno wciśnięcie =
+// jeden krok. Strażnik zostaje jako druga linia obrony (odbicia syntetyczne).
 const HOVER_CYCLE_GUARD_MS = 250;
 let lastHoverCycleAt = 0;
 function availableHoverModes(info) {
@@ -4242,8 +4291,8 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
 
   // Hover (desktop): powiększona karta pod kursorem — ta sama ilustracja co na
   // kaflu, w rozmiarze `large`, a przy jej braku syntetyczna twarz. Tor
-  // podglądu (scryfall → FOT → KON) przełącza PPM nad kartą (zgłoszenie H,
-  // 2026-09-11; wcześniej scroll jak w legacy HTML).
+  // podglądu (scryfall → FOT → KON) przełącza MMB nad kartą (zgłoszenie H,
+  // 2026-09-11; wcześniej scroll jak w legacy HTML; PPM → MMB w M349/A).
   // Na dotyku (iPad/iPhone) hover pozostaje wyłączony — tapnięcie otwiera
   // wyłącznie menu kontekstowe (M7c).
   let currentHoverMode = hoverMode;
@@ -4266,9 +4315,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       const now = Date.now();
       if (now - lastHoverCycleAt < HOVER_CYCLE_GUARD_MS) return;
       lastHoverCycleAt = now;
-      // Zgłoszenie H (2026-09-11): wyzwalaczem jest `contextmenu` (PPM);
-      // RMB nie ma kierunku „góra/dół", a cykl torów się zapętla, więc krok
-      // jest zawsze +1 (ta sama kolejność co scroll w dół).
+      // Zgłoszenie H (2026-09-11): wyzwalaczem jest przycisk myszy (dziś MMB,
+      // `mousedown` z button === 1 i buttons === 4 — patrz A2 wyżej); przycisk nie ma kierunku
+      // „góra/dół", a cykl torów się zapętla, więc krok jest zawsze +1
+      // (ta sama kolejność co scroll w dół).
       // A (2026-09-13, zastępuje M146): tryby FOT/KON istnieją TYLKO dla kart
       // z artId — cykl idzie po torach dostępnych dla TEJ karty, więc landy
       // i tokeny nie pokazują już pustych stanów ani nie przesuwają globalu
@@ -4545,9 +4595,15 @@ export function attachSpecialCardHover(card, hover, info) {
   if (!card || !hover || typeof hover.start !== 'function') return false;
   card.addEventListener('mouseenter', (e) => hover.start(info, e));
   if (hover.end) card.addEventListener('mouseleave', hover.end);
-  // Zgłoszenie H (2026-09-11): PPM, nie scroll — ten sam wyzwalacz co kafle
-  // (jedno miejsce reguły w `cycle`, L41).
-  if (hover.cycle) card.addEventListener('contextmenu', (e) => hover.cycle(info, e));
+  // Zgłoszenie H (2026-09-11): przycisk myszy, nie scroll — ten sam wyzwalacz
+  // co kafle (jedno miejsce reguły w `cycle`, L41).
+  // M349/A (2026-09-14): MMB (środkowy) + wyłącznie wciśnięcie — PPM jest
+  // niedeterministyczny między platformami (patrz komentarz przy kaflach).
+  if (hover.cycle) {
+    card.addEventListener('mousedown', (e) => {
+      if (e.button === 1 && e.buttons === 4) hover.cycle(info, e);
+    });
+  }
   // D (zgłoszenie właściciela 2026-09-10): mouseenter nie odzywa się, gdy
   // kafl zostaje PRZERYsowany pod kursorem (renderTableView podmienia
   // element — nie ma „wejścia", jest już w środku). Panele specjalne

@@ -131,7 +131,7 @@ test('W5/3: lethal pokrywa też niezerowy przydział od źródła z deathtouch (
   assert.ok(execute(state, { type: 'resolve_damage_assignment', playerId: 'p1', assignments: {} }).ok,
     'druga decyzja przebiegu (bloker) domknięta');
   assert.equal(life(state, 'p1'), 15, 'całe 5 x na obrońcę');
-  assert.ok(!alive(state, 'w'), 'w ginie od 1 obrażenia źródła z deathtouch (CR 702.4)');
+  assert.ok(!alive(state, 'w'), 'w ginie od 1 obrażenia źródła z deathtouch (CR 702.2b)');
   assert.equal(state.objects.get('y').damage, 0, 'y (1/1 deathtouch) nie dostał nic — bloker wybrał x');
 });
 

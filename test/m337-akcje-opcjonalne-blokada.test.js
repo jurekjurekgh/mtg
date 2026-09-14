@@ -165,6 +165,11 @@ test('M337/D: mecz z macierzy, który przerywał przebieg, dochodzi do końca', 
   // i aggro domyka partię SZYBCIEJ (353 kroki, wygrana life_zero w turze 15
   // zamiast 500+). Zakończenie jest czyste (zwycięzca, nie odrzut), więc
   // intencja testu (mecz dochodzi do końca) jest spełniona na krótszej linii.
+  // Batch 55 (M356): talia ravnica dostała Duskmantle Seera (4/4 flying,
+  // upkeep: każdy traci życia = mana value odsłoniętej karty) + 1 land, więc
+  // partia kończy się jeszcze szybciej — 284 komendy, wygrana p1 w turze 13.
+  // Próg kroków oddziela „mecz toczył się normalnie" od „odrzut na starcie";
+  // sam brak odrzutu pilnuje runSimulation (rzuca wyjątkiem).
   const decksDir = path.join(process.cwd(), 'decks');
   const list = (n) => parseDeckText(readFileSync(path.join(decksDir, `${n}.txt`), 'utf8'), REGISTRY).cardIds;
   const state = setupCardMatch({
@@ -181,7 +186,8 @@ test('M337/D: mecz z macierzy, który przerywał przebieg, dochodzi do końca', 
     ]),
     maxCommands: 8000,
   });
-  assert.ok(results.length > 300, `partia przeszła kilkaset kroków bez odrzutu (kroków: ${results.length})`);
+  assert.ok(results.length > 200, `partia przeszła kilkaset kroków bez odrzutu (kroków: ${results.length})`);
+  assert.ok(state.turn.number >= 8, `mecz żył dłużej niż kilka tur (tura: ${state.turn.number})`);
   assert.equal(state.status, 'finished', 'mecz KOŃCZY się (zwycięstwo), nie przerywa odrzutem');
   assert.ok(state.winnerId != null && !state.isDraw, `wygrana, nie remis ani klincz: ${state.winnerId}`);
   assert.ok(state.status === 'finished' || state.turn.number > 22,

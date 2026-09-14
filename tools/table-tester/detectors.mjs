@@ -17,6 +17,8 @@
  * i nie wymagają jsdom.
  */
 
+import { IGNORABLE_LABEL_REGEX } from './actions.mjs';
+
 /** Surowe identyfikatory, które nigdy nie powinny trafić do oczu gracza. */
 const RAW_IDENTIFIER = /\b(battlefield|graveyard|library|exile|stack|hand)\s*→|→\s*(battlefield|graveyard|library|exile|stack|hand)\b/;
 const SNAKE_CASE_EVENT = /\b[a-z]+(_[a-z]+){2,}\b/;
@@ -299,7 +301,11 @@ export function detectEmptyBotMoveModal(lines) {
  */
 export function detectMissingIgnoreTick(actionRecords) {
   const found = [];
-  const IGNORABLE = /^(Rzuć:|Zagraj:|Aktywuj:|Cycling:|Wyposaż:|Flashback:|Escape:|Przygoda:|Plot:|Cel czaru|Cel zdolności|Aura:|Bestow:)/;
+  // Czasowniki z JEDNEGO źródła (`actions.mjs`) — 2026-09-13 (E2) lista inline
+  // rozjechała się z etykietami silnika: znała „Aktywuj:" (a crew/saddle to
+  // od PR #115 „Obsadź:"/„Osiodłaj:") i angielskie „Escape:"/„Plot:", których
+  // silnik nigdy nie wystawia („Ucieczka:", „Plotuj:").
+  const IGNORABLE = IGNORABLE_LABEL_REGEX;
   for (const rec of actionRecords ?? []) {
     if (!IGNORABLE.test(rec.label)) continue;
     if (rec.hasTick) continue;

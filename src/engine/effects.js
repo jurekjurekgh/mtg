@@ -2,7 +2,7 @@ import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
 import { hasCreatureType, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
-import { addCounter, removeCounter } from './counters.js';
+import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
@@ -617,13 +617,13 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   } else {
     markDamage(state, targetId, dealt);
   }
-  // Deathtouch (CR 702.4b): „Any amount of damage this deals to a creature is
+  // Deathtouch (CR 702.2b): „Any amount of damage this deals to a creature is
   // enough to destroy it" — dotyczy WSZYSTKICH obrażeń, także niecombatowych
   // (fight, „deals damage equal to its power", triggery). Wcześniej oznaczenie
   // damagedByDeathtouch ustawiał wyłącznie combat.js — stwór 1/2 z deathtouch
   // zadający 1 obrażenie w fight nie zabijał 4/4 (SBA nie miała flagi, a
   // obrażenia < wytrzymałości). Prewencja/protection kasują obrażenia przed
-  // oznaczeniem — CR 702.4b: bez zadanych obrażeń nie ma śmierci.
+  // oznaczeniem — CR 702.2b: bez zadanych obrażeń nie ma śmierci.
   if (targetObject?.kind === 'creature' && dealt > 0 && effectiveKeywords(sourceObject, state).includes('deathtouch')) {
     const current = state.objects.get(targetId);
     if (current && current.zone === 'battlefield') {
@@ -956,6 +956,32 @@ export function applyEnterCounters(state, objectId) {
   }
 }
 
+/**
+ * CR 702.174b (Gift, M355): wydanie obiecanego daru przez czar, który się
+ * rozstrzyga. Dar dostaje WSKAZANY przeciwnik (nie kontroler czaru), więc
+ * efekt aplikujemy z obiektem-źródłem o kontrolerze odbiorcy — dzięki temu
+ * `create_token` tworzy token pod jego kontrolą, a zdarzenia niosą dalej
+ * `cardId` czaru (log mówi, skąd dar). Katalog zna dziś jeden rodzaj daru
+ * (token Food); kolejne (karta, dodatkowa tura) dojdą z pierwszymi kartami,
+ * które ich używają — dar jest opisany deskryptorem, nie gałęzią po nazwie
+ * karty (ADR 0002).
+ *
+ * Kolejność: to woła resolveTopOfStack PRZED pętlą efektów czaru (ruling:
+ * „the gift is given … before any of the spell's other effects").
+ */
+export function grantGift(state, spell) {
+  const gift = spell?.gift ?? null;
+  const recipientId = spell?.giftRecipientId ?? null;
+  if (!gift?.effect || !recipientId) return;
+  if (!state.players.some((p) => p.id === recipientId)) return;
+  state.events.push(event('gift_given', {
+    playerId: spell.controllerId, recipientId,
+    sourceCardId: spell.cardId ?? null,
+    giftCardId: gift.effect?.cardId ?? null,
+  }));
+  applyEffect(state, gift.effect, { ...spell, controllerId: recipientId }, []);
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   if (state.pendingReplacementChoice?.frame) {
     state.pendingReplacementChoice.continuations.push({effect, sourceObject, targets, context});
@@ -976,6 +1002,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // próg niespełniony pomija TYLKO ten efekt, nie całą zdolność.
   // CR 702.33d: tylko opłacony kicker włącza warunkowy efekt czaru.
   if (effect.condition?.wasKicked && !sourceObject?.wasKicked) return;
+  // CR 702.174c (Gift, M355): „if the gift was promised" — klauzula czyta
+  // własność czaru na stosie (wasGifted ustawia castSpell), tak samo jak
+  // kicker czyta wasKicked. Dla permanentów flagę nosi permanent (ETB).
+  if (effect.condition?.wasGifted && !sourceObject?.wasGifted) return;
   if (effect.condition?.manaSpentAtLeast != null && (context?.manaSpent ?? 0) < effect.condition.manaSpentAtLeast) return;
   if (effect.type === 'damage') {
     // M111: `targetIndex` wskazuje slot celu (konwencja reszty efektów) —
@@ -1030,7 +1060,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     for (const objectId of hit) dealNonCombatDamage(state, sourceObject, objectId, amount);
     return;
   }
-  // Batch 46 (Glint-Sleeve Artisan) — FABRICATE N (CR 702.122): „When this
+  // Batch 46 (Glint-Sleeve Artisan) — FABRICATE N (CR 702.123): „When this
   // creature enters, put N +1/+1 counters on it OR create N 1/1 colorless
   // Servo artifact creature tokens." Wybór należy do KONTROLERA, więc jest
   // blokującą decyzją (jak amass/endure), a nie deterministycznym efektem.
@@ -1514,6 +1544,41 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     applyEnterCounters(state, token.id);
     return;
   }
+  if (effect.type === 'create_token_copy_of_source') {
+    // Embalm (CR 702.128a): „Exile this card from your graveyard: Create a token
+    // that's a copy of it, except it's a white Zombie Snake Warrior with no mana
+    // cost." — kopią jest KARTA, a nadpisania (kolor, dodatkowe podtypy, brak
+    // kosztu many) przychodzą danymi efektu (ADR 0002: żadnych nazw kart).
+    // Uwaga na kolejność: koszt „exileFromGraveyard" płaci się PRZED
+    // rozstrzygnięciem, więc źródłem efektu jest już obiekt w exile
+    // (`effectSource` w abilities.js) — charakterystyki wydrukowane zostają.
+    const src = state.objects.get(sourceObject.id) ?? sourceObject;
+    if (!src) return;
+    const ctrl = src.controllerId;
+    const copyName = src.cardName ?? src.cardId ?? 'Copy';
+    const subtypes = [...new Set([...(src.subtypes ?? []), ...(effect.addSubtypes ?? [])])];
+    const token = createBattlefieldToken(state, ctrl, {
+      cardId: src.cardId, name: copyName,
+      copyNumber: nextCopyNumber(state, copyName),
+      kind: src.kind ?? 'creature',
+      power: src.power ?? 1, toughness: src.toughness ?? 1,
+      // „except it's white" — kolor ZASTĘPUJEMY (CR 702.128a), nie dodajemy.
+      colors: [...(effect.colors ?? src.colors ?? [])],
+      types: [...(src.types ?? [])],
+      subtypes,
+      keywords: [...(src.keywords ?? [])],
+      abilities: [...(src.abilities ?? [])],
+      // „with no mana cost" — token nie ma kosztu, więc mana value 0 (CR 202.3b).
+      manaCost: 0,
+      ...(src.entersWithCounters ? { entersWithCounters: src.entersWithCounters } : {}),
+      ...(src.entersWithCountersIf ? { entersWithCountersIf: src.entersWithCountersIf } : {}),
+      ...(src.station ? { station: src.station } : {}),
+      ...(src.saga ? { saga: src.saga } : {}),
+      ...(src.transformTo ? { transformTo: src.transformTo } : {}),
+      ...(src.transformTo && src.frontFaceId ? { frontFaceId: src.frontFaceId } : {}),
+    });
+    return;
+  }
   if (effect.type === 'return_source_from_graveyard_to_hand') {
     // Furious Forebear: po zapłacie {1}{W} karta wraca z grobu na rękę
     // właściciela (CR 400.7 — nowy obiekt).
@@ -1680,6 +1745,53 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       sourceId: sourceObject.id, cardId: sourceObject.cardId,
       numerator, denominator,
     }));
+    return;
+  }
+  if (effect.type === 'reveal_top_each_player_lose_life_mana_value') {
+    // M356 (613 Duskmantle Seer): „At the beginning of your upkeep, each player
+    // reveals the top card of their library, loses life equal to that card's
+    // mana value, then puts it into their hand."
+    //
+    // Trzy rzeczy, które ta gałąź musi trzymać razem z CR/rulingami karty:
+    // 1. Odsłonięcia są JAWNE dla wszystkich (karta publiczna w tym momencie):
+    //    zdarzenie `card_revealed` niesie `cardId` — bez tego log i stół nie
+    //    mają nazwy, a wycena widza nie wie, co weszło do ręki (L24).
+    // 2. UTRATY ŻYCIA SĄ JEDNOCZESNE (ruling 2013-01-24): najpierw liczymy
+    //    wszystkie straty, dopiero potem je aplikujemy. Gdyby iść gracz po
+    //    graczu z `changeLife`, SBA mogłyby ogłosić zwycięzcę pierwszego
+    //    ocalałego, a CR 104.4b wymaga REMISU, gdy wszyscy przegrywają naraz
+    //    (state-based.js rozstrzyga komplet przegranych w jednym przebiegu).
+    // 3. Karty NIE są „dobrane" (ruling): idą do ręki ruchem strefowym
+    //    (`moveObjectDirectly`), bez `card_drawn` i bez licznika
+    //    `cardsDrawnThisTurn` — inaczej miracle/„first card you draw" widziałyby
+    //    dobranie, którego nie było.
+    const revealed = [];
+    for (const player of state.players) {
+      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === player.id);
+      // Pusta biblioteka: ten gracz nic nie odsłania, nie traci życia i nic nie
+      // bierze (CR 701.3 — odsłonięcie z pustej strefy nie tworzy karty;
+      // spójnie z rodziną reveal_top_*).
+      if (topId == null) continue;
+      const card = state.objects.get(topId);
+      state.events.push(event('card_revealed', {
+        playerId: player.id, objectId: topId, cardId: card.cardId ?? null,
+        sourceId: sourceObject.id, sourceCardId: sourceObject.cardId ?? null, revealTop: true,
+      }));
+      // Mana value bierzemy z KOSZTU DRUKU (object.manaCost, L85) — nie z many
+      // wydanej (karta nie była rzucana) ani z obniżek kosztu przy rzucie.
+      revealed.push({ playerId: player.id, topId, loss: card.manaCost ?? 0 });
+    }
+    for (const entry of revealed) {
+      if (entry.loss > 0) changeLife(state, entry.playerId, -entry.loss);
+    }
+    for (const entry of revealed) {
+      const handId = `hand-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, entry.topId, 'hand', handId);
+      state.events.push(event('object_moved', {
+        fromId: entry.topId, object: moved, fromZone: 'library', toZone: 'hand',
+        playerId: entry.playerId, revealedBy: sourceObject.cardId ?? null, revealTop: true,
+      }));
+    }
     return;
   }
   if (effect.type === 'damage_divided') {
@@ -2622,12 +2734,21 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // Vaan, Street Thief (FIN): „put a +1/+1 counter on each Scout, Pirate, and
   // Rogue you control". Generycznie: licznik na każdym stworze kontrolera
   // źródła o podtypie z listy (ADR 0002 — filtr po podtypach, nie nazwach).
+  // Lifecrafter's Gift (CMR): „…then put a +1/+1 counter on each creature you
+  // control with a +1/+1 counter on it" — `requireCounter` zawęża zbiór do
+  // stworów, które JUŻ mają licznik danego typu. Kolejność „then" jest
+  // istotna: cel pierwszej klauzuli ma już swój licznik, więc łapie też
+  // licznik grupowy (ruling 2020-11-10, CR 608.2). Zbiór liczony przy
+  // rozstrzyganiu (CR 611.2c), więc stan liczników czytamy z żywego stanu,
+  // a nie z migawki sprzed efektu.
   if (effect.type === 'add_counter_to_creatures_you_control') {
     const subtypes = effect.subtypes ?? [];
+    const required = effect.requireCounter ?? null;
     for (const object of [...state.objects.values()]) {
       if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId) continue;
       if (object.kind !== 'creature') continue;
       if (subtypes.length && !subtypes.some((sub) => hasCreatureType(object, sub, state))) continue;
+      if (required && !hasCounter(object, required)) continue;
       addCounter(state, object.id, effect.counter ?? '+1/+1', effect.amount ?? 1);
     }
     return;
@@ -5327,9 +5448,19 @@ function markTemporaryExile(state, exileId, sourceObject) {
   // hand. Put the rest into your graveyard.” — blokująca decyzja kontrolera:
   // może wybrać LĄD z odsłoniętych do ręki (lub zrezygnować — „you may”);
   // reszta (i te bez wyboru) idzie do grobu. Nowy pendingSatyrLook.
-  if (effect.type === 'reveal_top_pick_land_rest_grave') {
+  // M354: rodzina „odsłoń wierzch, weź kartę z FILTRA, resztę połóż w strefie”.
+  // Deskryptor niesie filtr (`pickTypes`), cel reszty (`restTo`) i sposób jej
+  // ułożenia (`restOrder`) — bez gałęzi po nazwie karty (ADR 0002):
+  //   • reveal_top_pick_land_rest_grave  — Satyr Wayfinder, Blanchwood Prowler:
+  //     ląd do ręki, reszta do grobu (domyślne wartości pól niosą ten wariant);
+  //   • reveal_top_pick_card_rest_bottom — Brightwood Tracker: karta-stwór do
+  //     ręki, reszta NA SPÓD biblioteki w kolejności LOSOWEJ.
+  if (effect.type === 'reveal_top_pick_land_rest_grave' || effect.type === 'reveal_top_pick_card_rest_bottom') {
     const controllerId = sourceObject.controllerId;
     const n = effect.amount ?? 4;
+    const pickTypes = effect.pickTypes ?? ['Land'];
+    const restTo = effect.restTo ?? 'graveyard';
+    const restOrder = effect.restOrder ?? 'preserve';
     const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, n);
     // Batch 44 (Blanchwood Prowler): „mill three... You may put a land card
     // from among the cards milled this way into your hand. If you don't, put
@@ -5342,11 +5473,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
       }
       return;
     }
-    const landIds = topIds.filter((id) => {
+    const pickIds = topIds.filter((id) => {
       const o = state.objects.get(id);
-      return o && ((o.kind ?? '') === 'land' || (o.types ?? []).includes('Land'));
+      if (!o) return false;
+      const types = o.types ?? [];
+      // `kind` to ta sama informacja w innej postaci (land/creature/artifact) —
+      // akceptujemy oba źródła, jak dotychczasowa bramka lądów.
+      return pickTypes.some((t) => types.includes(t) || (o.kind ?? '') === t.toLowerCase());
     });
-    if (effect.counterIfNone && landIds.length === 0) {
+    if (effect.counterIfNone && pickIds.length === 0) {
       for (const id of topIds) {
         const graveId = `grave-${state.objectSequence++}`;
         const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
@@ -5361,7 +5496,13 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.pendingSatyrLook = {
       playerId: controllerId,
       objectIds: [...topIds],
-      landIds: [...landIds],
+      // `pickIds` = karty z odsłoniętych, które wolno wziąć (filtr typu).
+      // Rodzina nazywa się historycznie „satyrLook” (pierwsza karta z tą
+      // decyzją), ale obsługuje też Brightwood Tracker — pole jest wspólne.
+      pickIds: [...pickIds],
+      pickTypes: [...pickTypes],
+      restTo,
+      restOrder,
       // M240/B (zgłoszenie): tytuł decyzji nazywa ŹRÓDŁO (karta na polu
       // bitwy — informacja publiczna). Bez tego modal mówił „Wybierz:
       // Wariant (N opcji)” — gracz nie wiedział, jakiej to karty decyzja.
@@ -5372,7 +5513,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('satyr_look_started', {
       playerId: controllerId, count: topIds.length,
-      landCount: landIds.length,
+      // Logi i modal nazywają to, co wolno wziąć, oraz miejsce reszty —
+      // warstwa opisu nie zgaduje ich z nazwy karty (L6, ADR 0002).
+      pickCount: pickIds.length,
+      pickTypes: [...pickTypes],
+      restTo, restOrder,
       cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
     }));
     return true;

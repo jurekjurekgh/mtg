@@ -41,7 +41,7 @@ import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './
  */
 
 /**
- * Typy KART (delirium, CR 702.34): liczba różnych typów kart wśród kart
+ * Typy KART (delirium, CR 207.2c): liczba różnych typów kart wśród kart
  * w grobie gracza. Nadtypy (Basic, Legendary…) się nie liczą — filtrujemy
  * do zamkniętej listy typów kart. Tokeny w grobie nie są kartami (name
  * ustawione) i nie wnoszą typu.
@@ -177,7 +177,7 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
     if (!enchanted || enchanted.zone !== 'battlefield') return false;
     return enchanted.controllerId === state.turn.activePlayerId;
   }
-  // Delirium (CR 702.34, Fear of Burning Alive — intervening if):
+  // Delirium (CR 207.2c, Fear of Burning Alive — intervening if):
   // warunek spełniony, gdy w grobie kontrolera źródła są co najmniej
   // cztery typy kart (licznik graveyardCardTypeCount).
   if (condition.delirium) {
@@ -1352,6 +1352,13 @@ export const EMPTY_RECEIVER_EFFECTS = Object.freeze({
   mill_cards: (state, effect, source, targets) => (
     libraryCardsOf(state, millTargetPlayerId(state, effect, source, targets)).length === 0
       ? 'empty_library' : null),
+  // M356 (613 Duskmantle Seer): odbiorcą jest KAŻDY gracz (zawsze istnieje),
+  // więc zero zdarzeń może pochodzić wyłącznie z pustych bibliotek — powód to
+  // „pusta biblioteka", nie „brak celów" (ta sama rodzina co mill_cards).
+  // Selektor WSPÓLNY z efektem (`libraryCardsOf` z effects.js, L41/L48).
+  reveal_top_each_player_lose_life_mana_value: (state) => (
+    state.players.every((player) => libraryCardsOf(state, player.id).length === 0)
+      ? 'empty_library' : null),
 });
 
 /**
@@ -1410,7 +1417,7 @@ function firePayOrSacrifice(state, ability, source, events) {
 
 /**
  * Wspólna procedura „zapłać {N} albo poświęć" (CR 601.2h/702.1): Rupture Spire
- * (trigger ETB) i ECHO (CR 702.29, Bone Shredder — pierwszy własny upkeep po
+ * (trigger ETB) i ECHO (CR 702.30, Bone Shredder — pierwszy własny upkeep po
  * wejściu). Wydzielona w Batchu 46, żeby obie ścieżki miały JEDNĄ regułę
  * płatności i te same zdarzenia (L41).
  */
@@ -1421,7 +1428,7 @@ function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo
   // nietapnięte landy), kolejkujemy decyzję resolve_pay_or_sacrifice; samą
   // płatność (spendMana z auto-tapem) albo poświęcenie wykonuje komenda.
   // Bez możliwości zapłaty — automatyczne poświęcenie (jak dotąd).
-  // M259/B7 (CR 702.29 + 118.2): koszt echa {2}{B} wymaga pipa {B} —
+  // M259/B7 (CR 702.30 + 118.2): koszt echa {2}{B} wymaga pipa {B} —
   // bramka opłacalności obejmuje KOLORY (pula + nietapnięte źródła), a sama
   // płatność pobiera pipy (patrz resolve_pay_or_sacrifice → pay_mana).
   const canPay = producibleMana(state, controllerId, null, {}, [colors]) >= amount
@@ -2392,7 +2399,7 @@ function processTriggersScan(state, recentEvents) {
           if (ability?.trigger?.event !== 'noncombat_damage_to_opponent') continue;
           // Warunek intervening-if (delirium) sprawdzany przy odpaleniu;
           // powtórzony przy rozstrzyganiu celu (stan grobu mógł się zmienić)
-          // — reguła CR 702.34 wymaga weryfikacji w obu momentach.
+          // — reguła intervening-if (CR 603.4) wymaga weryfikacji w obu momentach.
           if (!conditionHolds(ability.trigger, state, source)) continue;
           const candidates = state.zones.battlefield.filter((objectId) => {
             const candidate = state.objects.get(objectId);
@@ -3088,7 +3095,7 @@ function processTriggersScan(state, recentEvents) {
         }
       }
     }
-    // Batch 46 (Bone Shredder) — ECHO (CR 702.29): „At the beginning of your
+    // Batch 46 (Bone Shredder) — ECHO (CR 702.30): „At the beginning of your
     // upkeep, if this came under your control since the beginning of your
     // last upkeep, sacrifice it unless you pay its echo cost." Znacznik
     // `echoUnpaid` stawia wejście na pole bitwy; pierwszy WŁASNY upkeep po

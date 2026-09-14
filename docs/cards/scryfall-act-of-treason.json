@@ -1,0 +1,39 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Act%20of%20Treason&set=ktk",
+  "print": "ktk",
+  "name": "Act of Treason",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Sorcery",
+  "oracle_text": "Gain control of target creature until end of turn. Untap that creature. It gains haste until end of turn. (It can attack and {T} this turn.)",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "95",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/2/e20d6dfd-5f7b-4c71-89e6-8f996d85801d.jpg?1783939076",
+    "normal": "https://cards.scryfall.io/normal/front/e/2/e20d6dfd-5f7b-4c71-89e6-8f996d85801d.jpg?1783939076"
+  },
+  "pobrano": "2026-09-14",
+  "rulings": [
+    {
+      "date": "2019-07-12",
+      "source": "wotc",
+      "comment": "Act of Treason can target any creature, even one that's untapped or one you already control."
+    },
+    {
+      "date": "2019-07-12",
+      "source": "wotc",
+      "comment": "Gaining control of a creature doesn't cause you to gain control of any Auras or Equipment attached to it."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/ktk/95/rulings",
+  "rulingsPobrano": "2026-09-14"
+}

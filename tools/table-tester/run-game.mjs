@@ -33,6 +33,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { extractBotMoves, extractModalChoice, extractTileText, chronologicalLogEntries } from './extract.mjs';
 import { runDetectors, formatFindings, harmfulCardNames } from './detectors.mjs';
 import { observeRuntimeErrors } from './runtime-errors.mjs';
+import { PLAY_REGEX, SAFE_REGEX, GREEDY_PRIORITY } from './actions.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ARTIFACT = path.resolve(__dirname, '../../dist/mtg-table.html');
@@ -498,7 +499,10 @@ export async function runTableGame({
     // Bez wzorca w puli profil `greedy` ZAWSZE zagrywał kartę („Zagraj:"),
     // więc przez 33 partie nie powstało ani jedno okno bloodrushu
     // (kardynał 2 z AUDYT_M255).
-    const plays = all(/Zagraj ląd|^Rzuć:|^Rzuć za warp:|^Rzuć za surge:|^Zagraj:|^Aktywuj:|^Cycling:|^Wyposaż:|^Flashback:|^Bloodrush:|^Cel czaru|^Cel zdolności:|^Bestow:|^Aura:|^Wybierz:|cel triggera|podziel \d+ obrażeni?[ae]?/);
+    // Wzorce w `actions.mjs` (wspólne z testem `test/tester-wzorce-akcji.test.js`).
+    // E2 2026-09-13: pula MUSI znać „Obsadź:/Osiodłaj:" — inaczej klik w pojazd
+    // (kreator załogi) nigdy nie powstaje, a transkrypt kłamie „brak akcji".
+    const plays = all(PLAY_REGEX);
     // M250 (audyt Żywym Testerem, theros vs wiedzmin s=13): source-titled
     // (choiceSourceTitle) blokujące decyzje łamią WIELKĄ literę wzorców —
     // „Chittering Rats — karta z ręki na wierzch biblioteki" nie łapało się
@@ -527,7 +531,7 @@ export async function runTableGame({
       case 'defensive': {
         // Gracz ostrożny: zdolności i lądy tak, agresywne czary rzadziej,
         // chętnie oddaje priorytet (więcej okien reakcji dla bota).
-        const safe = all(/Zagraj ląd|^Aktywuj:|^Cycling:|^Wyposaż:/);
+        const safe = all(SAFE_REGEX);
         if (safe.length > 0) return pickRandom(safe);
         if (decisions.length > 0) return decisions[0];
         if (pass && rnd() < 0.5) return pass;
@@ -565,17 +569,15 @@ export async function runTableGame({
       }
       case 'greedy':
       default:
-        // Zachowanie historyczne (regresja wyników z M80–M96).
-        return by(/Zagraj ląd/)
-          || by(/^Rzuć:/)
-          || by(/^Rzuć za warp:/)
-          || by(/^Zagraj:/)
-          || by(/^Aktywuj:/)
-          || by(/^Wybierz:/)
-          || by(/cel triggera/)
-          || by(/podziel \d+ obrażeni/) // M172/E: wizard podziału obrażeń
-          || by(/^Cel zdolności:|^Cel czaru:|^Bestow:|^Aura:/)
-          || (decisions.length > 0 ? decisions[0] : null)
+        // Zachowanie historyczne (regresja wyników z M80–M96) — kolejność
+        // w GREEDY_PRIORITY, nazwana i pilnowana testem (dopisywanie nowych
+        // czasowników etykiet tu, nie w łańcuchu `||`).
+        for (const re of GREEDY_PRIORITY) {
+          const hit = by(re);
+          if (hit) return hit;
+        }
+        // M172/E: wizard podziału obrażeń ma własne wzorce wyżej; dalej decyzje
+        return (decisions.length > 0 ? decisions[0] : null)
           || pass
           // M250 (audyt Żywym Testerem): dopóki w panelu jest JAKAKOLWIEK
           // klikalna akcja, „brak akcji" jest kłamstwem narzędzia, nie

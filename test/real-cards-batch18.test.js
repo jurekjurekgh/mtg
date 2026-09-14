@@ -835,7 +835,7 @@ test('Fear of Burning Alive: token w grobie nie liczy się do typów (nie jest k
   putTypesInGraveyard(state, 'p1', 2); // Instant + Sorcery
   addRealCard(state, 'gy-token', 'token_spirit', 'p1', 'graveyard');
   state.objects.set('gy-token', Object.freeze({ ...state.objects.get('gy-token'), name: 'Spirit' }));
-  assert.equal(graveyardCardTypeCount(state, 'p1'), 2, 'token nie wnosi typu (name ustawione, CR 702.34 — token nie jest kartą)');
+  assert.equal(graveyardCardTypeCount(state, 'p1'), 2, 'token nie wnosi typu (name ustawione, CR 207.2c — token nie jest kartą)');
   // Zdejmując oznaczenie tokena (name) z obiektu, typ Creature zaczyna się liczyć.
   state.objects.set('gy-token', Object.freeze({ ...state.objects.get('gy-token'), name: null }));
   assert.equal(graveyardCardTypeCount(state, 'p1'), 3, 'obiekt bez name liczy się jak karta (typ Creature)');

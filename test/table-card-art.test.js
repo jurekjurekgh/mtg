@@ -341,16 +341,19 @@ test('RMB nad kartą przełącza tor podglądu, a scroll zostaje dla strony (zg�
   assert.equal(els.hoverPreview.className, 'hover-preview active');
   assert.match(els.hoverPreview.textContent, /Scryfall/);
 
-  // Zgłoszenie H (2026-09-11): wyzwalaczem toru jest PRAWY przycisk myszy
-  // (`contextmenu`), nie scroll. RMB nie ma kierunku „góra/dół", a cykl torów
-  // się zapętla, więc kolejne kliknięcia przechodzą scryfall → FOT → KON →
-  // scryfall — ta sama kolejność, którą wcześniej dawał scroll w dół.
+  // Zgłoszenie H (2026-09-11): wyzwalaczem toru jest przycisk myszy, nie
+  // scroll. M349/A (2026-09-14): prawy przycisk (PPM/`contextmenu`) zawiódł —
+  // przeglądarka dostarcza go raz przy wciśnięciu, raz przy zwolnieniu, czasem
+  // wcale — więc tor przełącza ŚRODKOWY przycisk (MMB, `mousedown`
+  // z button === 1) i tylko wciśnięcie. Przycisk nie ma kierunku „góra/dół",
+  // a cykl torów się zapętla, więc kolejne wciśnięcia przechodzą scryfall →
+  // FOT → KON → scryfall — ta sama kolejność co dawniej scroll w dół.
   let prevented = 0;
-  const rmb = () => tileEl.emit('contextmenu', {
-    clientX: 100, clientY: 100, preventDefault: () => { prevented += 1; },
+  const mmb = () => tileEl.emit('mousedown', {
+    clientX: 100, clientY: 100, button: 1, buttons: 4, preventDefault: () => { prevented += 1; },
   });
-  rmb();
-  assert.equal(prevented, 1, 'RMB nad kartą nie otwiera menu kontekstowego przeglądarki');
+  mmb();
+  assert.equal(prevented, 1, 'MMB nad kartą nie otwiera autoprzewijania/scrolla');
   assert.deepEqual(seen, ['fot'], 'tor zmienia się scryfall → fot');
   assert.match(els.hoverPreview.textContent, /panoramiczna/);
 
@@ -358,13 +361,13 @@ test('RMB nad kartą przełącza tor podglądu, a scroll zostaje dla strony (zg�
   // kolejne KLIKNIĘCIA gracza dzieli czas, więc test czeka między nimi
   // (odbicie w tym samym ticku = jeden krok — patrz a-hover-track-cycle A/3).
   await sleep(300);
-  rmb();
-  assert.deepEqual(seen, ['fot', 'kon'], 'drugi RMB: fot → kon');
+  mmb();
+  assert.deepEqual(seen, ['fot', 'kon'], 'drugi MMB: fot → kon');
   assert.match(els.hoverPreview.textContent, /bestiariusz/);
 
   await sleep(300);
-  rmb();
-  assert.deepEqual(seen, ['fot', 'kon', 'scryfall'], 'trzeci RMB domyka cykl (kon → scryfall)');
+  mmb();
+  assert.deepEqual(seen, ['fot', 'kon', 'scryfall'], 'trzeci MMB domyka cykl (kon → scryfall)');
   assert.match(els.hoverPreview.textContent, /pełna karta/);
 
   // Scroll UWOLNIONY: kafel nie może mieć słuchacza `wheel` (przewijanie

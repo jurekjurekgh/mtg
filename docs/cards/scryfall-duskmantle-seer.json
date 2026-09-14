@@ -1,0 +1,45 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Duskmantle%20Seer&set=clu",
+  "print": "clu",
+  "name": "Duskmantle Seer",
+  "mana_cost": "{2}{U}{B}",
+  "cmc": 4,
+  "type_line": "Creature — Vampire Wizard",
+  "oracle_text": "Flying\nAt the beginning of your upkeep, each player reveals the top card of their library, loses life equal to that card's mana value, then puts it into their hand.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+    "B",
+    "U"
+  ],
+  "color_identity": [
+    "B",
+    "U"
+  ],
+  "keywords": [
+    "Flying"
+  ],
+  "set": "clu",
+  "set_name": "Ravnica: Clue Edition",
+  "collector_number": "188",
+  "rarity": "mythic",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/d/4d6d4280-4a45-4e77-a33e-58955d096adc.jpg?1783912522",
+    "normal": "https://cards.scryfall.io/normal/front/4/d/4d6d4280-4a45-4e77-a33e-58955d096adc.jpg?1783912522"
+  },
+  "pobrano": "2026-09-14",
+  "rulings": [
+    {
+      "date": "2013-01-24",
+      "source": "wotc",
+      "comment": "The loss of life is simultaneous. If this causes both players to end up at 0 or less life, the game will be a draw. In a multiplayer game, players with 0 or less life will lose the game."
+    },
+    {
+      "date": "2013-01-24",
+      "source": "wotc",
+      "comment": "The cards put into hands this way are not \"drawn.\" For example, you couldn't reveal a card with miracle put into your hand this way (but it also won't count as the first card you've drawn this turn either)."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/clu/188/rulings",
+  "rulingsPobrano": "2026-09-14"
+}

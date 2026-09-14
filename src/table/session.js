@@ -285,6 +285,8 @@ function defaultBotFactory(seed, ctx) {
     buff_creature_until_end_of_turn: 'premia P/T dla celu do końca tury',
     cant_be_blocked: 'cel nie może być blokowany',
     create_copy_token: 'stworzenie kopii stwora',
+    create_token_copy_of_source: 'stworzenie tokena-kopii karty (Embalm)',
+    reveal_top_pick_card_rest_bottom: 'spojrzenie na wierzch biblioteki — wybrana karta do ręki, reszta na spód (losowo)',
     create_token: 'stworzenie tokena',
     damage_each_opponent: 'obrażenia dla każdego przeciwnika',
     destroy_permanent: 'zniszczenie permanentu',
@@ -743,6 +745,8 @@ const DRUGA_OSOBA = Object.freeze({
   patrzy: 'patrzysz', plotuje: 'plotujesz', poddaje: 'poddajesz',
   poświęca: 'poświęcasz', przegrywa: 'przegrywasz', przeszukuje: 'przeszukujesz',
   przygotowuje: 'przygotowujesz', płaci: 'płacisz', rezygnuje: 'rezygnujesz',
+  // M355 (Crumb and Get It): „przy rzucie czaru obiecujesz dar przeciwnikowi".
+  obiecuje: 'obiecujesz',
   rozdziela: 'rozdzielasz', rozstrzyga: 'rozstrzygasz', rzuca: 'rzucasz',
   szuka: 'szukasz', tworzy: 'tworzysz', układa: 'układasz', używa: 'używasz',
   wskazuje: 'wskazujesz', wybiera: 'wybierasz', wygrywa: 'wygrywasz',
@@ -1544,11 +1548,16 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (${restLabel})`;
       }
       case 'satyr_look_started': {
+        // M354: rodzina obsługuje ląd (Satyr Wayfinder) i kartę-stwora
+        // (Brightwood Tracker) — bierzemy to z DESKRYPTORA zdarzenia, nie
+        // z nazwy karty (ADR 0002). Gdzie idzie reszta, też mówi zdarzenie.
+        const co = (e.pickTypes ?? []).includes('Creature') ? 'stwora' : 'ląd';
+        const gdzie = (e.restTo ?? 'graveyard') === 'library_bottom' ? 'na spód biblioteki' : 'do grobu';
         if (e.cardIds?.length && seesHiddenOf(e.playerId)) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
-          return `${whoN(e.playerId)} odsłania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (${names}) — może wziąć ląd do ręki`;
+          return `${whoN(e.playerId)} odsłania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (${names}) — może wziąć ${co} do ręki (reszta ${gdzie})`;
         }
-        return `${whoN(e.playerId)} odsłania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki — może wziąć ląd do ręki`;
+        return `${whoN(e.playerId)} odsłania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki — może wziąć ${co} do ręki (reszta ${gdzie})`;
       }
       // B5 (audyt stołu 2026-09-09, G3/Prowler): trzy rozłączne fakty.
       // Rezygnacja (pickId null) to „nie bierze żadnego lądu", ukryty wybór
@@ -1556,12 +1565,31 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // pending.landIds), a nazwę pokazujemy wyłącznie właścicielowi.
       // Wcześniej ukryty wybór wpadał w fallback „bierze żadnego lądu".
       case 'satyr_look_resolved': {
-        if (e.pickId == null) return `${whoN(e.playerId)} nie bierze żadnego lądu z wierzchu do ręki (wszystkie do grobu)`;
-        if (seesHiddenOf(e.playerId) && e.pickCardId) return `${whoN(e.playerId)} bierze ${nameOf(e.pickCardId)} z wierzchu do ręki (reszta do grobu)`;
-        return `${whoN(e.playerId)} bierze ląd z wierzchu do ręki (reszta do grobu)`;
+        // Konkret (ląd/stwór) i miejsce reszty (grób/spód) jadą ze zdarzenia —
+        // bez tego log kłamałby o Brightwood Trackerze („ląd", „do grobu").
+        const stwór = (e.pickTypes ?? []).includes('Creature');
+        const gdzie = (e.restTo ?? 'graveyard') === 'library_bottom'
+          ? ((e.restOrder ?? 'preserve') === 'random' ? 'reszta na spód biblioteki w losowej kolejności' : 'reszta na spód biblioteki')
+          : 'reszta do grobu';
+        // Rezygnacja dotyczy WSZYSTKICH obejrzanych kart, więc (i) dopełniacz
+        // („żadnego lądu/stwora”), a nie mianownik, i (ii) liczba mnoga
+        // („wszystkie do grobu”) — inaczej log mówi „reszta” o całości.
+        if (e.pickId == null) {
+          const gdzieWszystkie = (e.restTo ?? 'graveyard') === 'library_bottom' ? 'wszystkie na spód biblioteki' : 'wszystkie do grobu';
+          return `${whoN(e.playerId)} nie bierze żadnego ${stwór ? 'stwora' : 'lądu'} z wierzchu do ręki (${gdzieWszystkie})`;
+        }
+        if (seesHiddenOf(e.playerId) && e.pickCardId) return `${whoN(e.playerId)} bierze ${nameOf(e.pickCardId)} z wierzchu do ręki (${gdzie})`;
+        return `${whoN(e.playerId)} bierze ${stwór ? 'stwora' : 'ląd'} z wierzchu do ręki (${gdzie})`;
       }
       // M100/E4: karty Epic Experiment lecą na ODKRYTY exile (publiczne) —
       // nazwy dla obu graczy.
+      // CR 702.174 (Gift, M355): obietnica daru to NAZWANA mechanika — log
+      // mówi, kto go składa i kto dar dostaje (nazwa daru z deskryptora, nie
+      // z nazwy karty; ADR 0002).
+      case 'gift_given': {
+        const co = e.giftCardId ? nameOf(e.giftCardId) : 'dar';
+        return `${whoN(e.playerId)} obiecuje dar (${co}) — ${whoN(e.recipientId)} tworzy ${co} przed efektami czaru`;
+      }
       case 'epic_experiment_started': {
         const exiled = (e.cardIds ?? []).map((cid) => nameOf(cid)).join(', ');
         return `${srcName(e)}${whoN(e.playerId)} wygania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki${exiled ? `: ${exiled}` : ''}`;

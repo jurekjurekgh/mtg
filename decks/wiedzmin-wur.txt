@@ -1,4 +1,4 @@
-# Wiedźmin (WU)
+# Wiedźmin (WUR)
 
 1x Curiosity
 1x Fleeting Distraction
@@ -14,6 +14,9 @@
 1x Containment Membrane
 1x Ironclad Slayer
 1x Scroll Thief
+1x Ballista Watcher
 1x Inspiration
-2x Plains
+1x Bedhead Beastie
+1x Plains
 6x Island
+2x Mountain

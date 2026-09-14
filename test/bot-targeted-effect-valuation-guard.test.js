@@ -62,6 +62,11 @@ const REVIEWED_UNVALUED = new Map([
   // Przypięcie własnego equipmentu (Kazuul's Toll Collector) — kandydaci
   // własne; remis bez szkody dla strony.
   ['attach_equipment_to_source', 'remis = pierwszy własny equipment'],
+  // Licznik grupowy (Lifecrafter's Gift, Batch 55/B2) — wybór celu
+  // różnicuje `add_counter` (własny stwór +, cudzy −90, M155); klauzula
+  // „each creature you control with a +1/+1 counter" nie zależy od wyboru
+  // celu (własne stwory dostają licznik niezależnie od tego, kogo wskazano).
+  ['add_counter_to_creatures_you_control', 'rider przy add_counter (wycenionym); grupa niezależna od celu'],
 ]);
 
 function effs(e) {

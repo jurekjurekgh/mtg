@@ -133,7 +133,7 @@ test('projekcja walki istnieje — bez niej bramka milczałaby zamiast mierzyć'
 test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany', () => {
   const { global, rows } = audytRemisow({ pary: [
     ['ravnica', 'innistrad-wu'], ['dominaria-brg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ubr'],
-    ['wiedzmin-brg', 'tarkir-bg'], ['srodziemie', 'theros'], ['kaladesh', 'zendikar'],
+    ['wiedzmin-bg', 'tarkir-bg'], ['srodziemie', 'theros'], ['kaladesh', 'zendikar'],
     ['dominaria-wu', 'worek-mroczny'],
   ], gry: 1 });
   const dla = (k) => rows.find((r) => r.kind === k) ?? { rozroznialne: 0, akcyjne: 0, noOp: 0 };
@@ -153,7 +153,22 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
   // rozkład pozycji. Po świadomej regeneracji golden-mastera przykłady trzeba
   // PRZEJRZEĆ i podnieść próg ręcznie — nie automatycznie.
   const opis = [atak, blok, lad].flatMap((r) => r.przyklady.filter((x) => typeof x === 'string'));
-  assert.ok(atak.rozroznialne <= 4, `attack groźb: ${atak.rozroznialne}\n${opis.join('\n')}`);
+  // Sufit 7 po Batchu 55/B2 (2026-09-14): Lifecrafter's Gift weszła do talii
+  // `kaladesh`, co ZMIENIŁO TRAJEKTORIĘ pary `kaladesh|zendikar` (seed 4008 —
+  // stały, nazwy talii bez zmian). Rozjazd ZMIERZONY per para, nie zgadnięty
+  // (tools/bot-tie-audit.mjs, ten sam kod, podstawiane talie):
+  //   stare talie: ravnica|innistrad-wu 0, dominaria-brg|mirrodin-wu 0,
+  //   tarkir-bg|warhammer-ubr 1, wiedzmin|tarkir-bg 0, srodziemie|theros 0,
+  //   kaladesh|zendikar 0, dominaria-wu|worek-mroczny 2 → razem 3;
+  //   po B2: identyczne poza `kaladesh|zendikar` 0 → 4 (razem 7).
+  // Wiedźmin (re-podział ADR 0024 → wiedzmin-bg|wiedzmin-wur) nie dołożył nic.
+  // Cztery nowe pozycje przejrzane co do klasy — wszystkie to klasa B
+  // z nagłówka (płaski model addytywny: „atakuje 1 i ginie, zabijając 1”
+  // ex aequo z `attack[]`, oraz warianty wymiany liczby atakujących przy
+  // `smiertelny: 0`, czyli bez presji śmiertelnej — p1 tury 6, 8, 14 i p2
+  // tura 7, seed 4008). Żadna nie jest nową klasą przeoczenia ani zmianą wag,
+  // więc próg idzie do 7 ŚWIADOMIE (sufit, nie pin).
+  assert.ok(atak.rozroznialne <= 7, `attack groźb: ${atak.rozroznialne}\n${opis.join('\n')}`);
   // Sufit 6 po reaudycie 2026-09-06 (patrz nagłówek): 3 → 6 po zmianie składu
   // talii `wiedzmin`, cztery nowe pozycje przejrzane i zakwalifikowane do klas A/B.
   // Sufit 7 po E7/C (2026-09-07): Shock przeniesiony kaladesh → warhammer-ubr

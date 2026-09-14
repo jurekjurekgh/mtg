@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Gearsmith%20Prodigy&set=m19",
+  "print": "m19",
+  "name": "Gearsmith Prodigy",
+  "mana_cost": "{U}",
+  "cmc": 1,
+  "type_line": "Creature — Human Artificer",
+  "oracle_text": "This creature gets +1/+0 as long as you control an artifact.",
+  "power": "1",
+  "toughness": "2",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "m19",
+  "set_name": "Core Set 2019",
+  "collector_number": "57",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/7/77d9e666-d9c9-4ccd-89a5-83de79677fa6.jpg?1783934589",
+    "normal": "https://cards.scryfall.io/normal/front/7/7/77d9e666-d9c9-4ccd-89a5-83de79677fa6.jpg?1783934589"
+  },
+  "pobrano": "2026-09-14",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/m19/57/rulings",
+  "rulingsPobrano": "2026-09-14"
+}

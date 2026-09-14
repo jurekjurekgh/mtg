@@ -21,18 +21,12 @@ Ilustracja,Nazwa Karty,Plan
 20TDM,Jeskai Devotee,Tarkir
 21THS,Pyxis of Pandemonium,Theros
 22ORI,Titan's Strength,Theros
-23FUS,The Mountain's Gaze,Śródziemie
+23M20,Brightwood Tracker,Lorwyn
 24VOW,Lunar Rejection,Innistrad
-25FUS,Edge of the Mute God,Forgotten Realms
 26GTC,Ember Beast,Ravnica
-27FUS,Dust from a Deeper Dark,Forgotten Realms
-28FUS,Echo in the Mire,Forgotten Realms
 29FIN,You're Not Alone,Final Fantasy
-30FUS,Song of the Debt Unspoken,Forgotten Realms
 31SOM,Carrion Call,Mirrodin
-32FUS,Ignoble Revelation,Forgotten Realms
 33_2XM,Fierce Empath,Śródziemie
-34FUS,Debt Repaid in Ruin,Forgotten Realms
 35MOM,Halo Forager,Eldraine
 36ARB,Etherium Abomination,Alara
 37M10,Howl of the Night Pack,Wiedźmin
@@ -52,43 +46,30 @@ Ilustracja,Nazwa Karty,Plan
 51MH2,Deepwood Denizen,Śródziemie
 52_2XM,Divest,Wiedźmin
 53EOE,Illvoi Operative,The Edge
-54FUS,The Warden's Network Seized,Śródziemie
 55ARB,Etherwrought Page,Alara
 56EOE,Diplomatic Relations,The Edge
 57MKC,Veiled Ascension,Ravnica
-58FUS,The Sentinel Above the Rift,Śródziemie
 59FIN,Mysidian Elder,Final Fantasy
-60FUS,Forged in Dragonfire,Dominaria
 61DFT,Stall Out,Kaladesh
 62AVR,Grounded,Innistrad
-63FUS,Void-Fused Sliver,Dominaria
-64FUS,Voidbreak Excavation,Dominaria
 65STX,Curate,Arcavios
-66FUS,The Feather on the Boundary Stone,Śródziemie
 67FIN,Scorpion Sentinel,Final Fantasy
 68KTK,Ainok Tracker,Tarkir
 69M11,Tome Scour,Warhammer Fantasy
-70FUS,Where the Roots Met the Light,Śródziemie
 71SNC,Security Rhox,New Capenna
 72APC,Dragon Arch,Dominaria
 73MBS,Bladed Sentinel,Mirrodin
 74KTK,Rush of Battle,Tarkir
 75DMU,Phyrexian Rager,Dominaria
 76M15,Negate,Warhammer Fantasy
-77FUS,Lucid Rebuke,Wiedźmin
 78ORI,Nightsnare,Wiedźmin
 79OGW,Holdout Settlement,Zendikar
-80FUS,Chorus of the Awakened Gear,Forgotten Realms
 81TDM,Krotiq Nestguard,Tarkir
-82FUS,Echo of the Awakened Gear,Forgotten Realms
 83MM2,Gorehorn Minotaurs,Warhammer Fantasy
 84M11,Garruk's Companion,Dominaria
-85FUS,Debt Repaid in Bronze,Forgotten Realms
 86FIN,Cloudbound Moogle,Final Fantasy
 87ALA,Angelic Benediction,Alara
-88FUS,Momentum Shattered,New Capenna
 89MOR,Release the Ants,Lorwyn
-90FUS,Kindled Precision,Lorwyn
 91ISD,Curse of the Pierced Heart,Innistrad
 92DTK,Silumgar Butcher,Tarkir
 93ALA,Dispeller's Capsule,Alara
@@ -123,60 +104,26 @@ Ilustracja,Nazwa Karty,Plan
 122ISD,Blazing Torch,Innistrad
 123TDM,Trade Route Envoy,Tarkir
 124WAR,Courage in Crisis,Ravnica
-125FUS,The Healer in the Shattered Grove,Śródziemie
-126FUS,The Rat Finds the Broken Ward,New Capenna
-127FUS,Balzano's Overdue Arrival,New Capenna
 128ORI,Undead Servant,Dominaria
-129FUS,The Rat Hit the Wall,New Capenna
-130FUS,Unyielding Accord,New Capenna
-131FUS,"Iron Wings, Stolen Words",Warhammer Fantasy
 132GNT,Pilgrim's Eye,Zendikar
 133THS,Breaching Hippocamp,Theros
-134FUS,Ashen Standoff,Warhammer Fantasy
-135FUS,Waaagh! Resonance,Warhammer Fantasy
 136ALA,Bone Splinters,Alara
 137GPT,Withstand,Ravnica
-138FUS,Index of Ruin,Warhammer Fantasy
-139FUS,Flesh-Wrought Reckoning,Warhammer Fantasy
 140GRN,Boros Challenger,Ravnica
-141FUS,The Final Index,Warhammer Fantasy
-142FUS,Stillborn Reflection,Warhammer Fantasy
 143ROE,Kabira Vindicator,Zendikar
-144FUS,Claimant of Runed Flesh,Warhammer Fantasy
-145FUS,Fool's Inspection,Warhammer Fantasy
 146DTK,Palace Familiar,Tarkir
-147FUS,Ossuary Reflection,Warhammer Fantasy
-148FUS,Silence Beneath the Giant,Warhammer Fantasy
-149FUS,After the Giant's Passing,Warhammer Fantasy
 150FIN,"Balamb Garden, SeeD Academy",Final Fantasy
-151FUS,Stellar Intrusion,Wiedźmin
-152FUS,Glamour Overload,Wiedźmin
 153FIN,"Balamb Garden, Airborne",Final Fantasy
-154FUS,Drowned Dominion,Wiedźmin
-155FUS,Trail of Stolen Dreams,Wiedźmin
-156FUS,Thistledown-Tuned Harvester,Bloomburrow
-157FUS,Stilt-Tended Beacon,Bloomburrow
-158FUS,Agate-Scarred Beacon,Bloomburrow
 159AVR,Predator's Gambit,Innistrad
-160FUS,Mist-Bound Skaab,Innistrad
-161FUS,Wald's Burden,Innistrad
-162FUS,The Bell Finds the Sleeper,Innistrad
 163ISD,Ghoulcaller's Bell,Innistrad
-164FUS,Memory-Plucked Farmhand,Innistrad
-165FUS,Reflection of the Damned,Innistrad
 166WOE,Talion's Messenger,Eldraine
-167FUS,The Healer Steps Aside,Śródziemie
 168_2XM,Steel Sabotage,Mirrodin
 169M20,Greenwood Sentinel,Śródziemie
-170FUS,Lanternlit Dreamcage,Innistrad
 171ISD,Grizzled Outcasts,Innistrad
 172APC,Mournful Zombie,Dominaria
 173KTK,Awaken the Bear,Tarkir
-174FUS,Thorn of Stensia's Grudge,Innistrad
 175CLB,Caves of Chaos Adventurer,Forgotten Realms
-176FUS,Auspex Unsealed,Forgotten Realms
 177OTC,Dire Fleet Ravager,Ixalan
-178FUS,Uthgardt's Market Sundering,Forgotten Realms
 179APC,Index,Warhammer Fantasy
 180ISD,Homicidal Brute,Innistrad
 181AVR,Spectral Prison,Innistrad
@@ -190,27 +137,18 @@ Ilustracja,Nazwa Karty,Plan
 189_2XM,Glint-Sleeve Artisan,Kaladesh
 190ECL,Goldmeadow Nomad,Lorwyn
 191ARB,Esper Stormblade,Alara
-192FUS,Glade Thoughtweft Truce,Lorwyn
 193MH2,Floodhound,Wiedźmin
-194FUS,Ardenvale's Answer to Talion,Eldraine
 195THB,Entrancing Lyre,Theros
-196FUS,Sun-Rune Homestead Feast,Eldraine
 197M20,Dismal Backwater,Warhammer Fantasy
-198FUS,Homestead's Blue Thread,Eldraine
 199MOM,Gloomfang Mauler,Mirrodin
 200CLB,Cloak of the Bat,Forgotten Realms
 201MOM,Tiller of Flesh,Mirrodin
 202LTC,Inferno Titan,Śródziemie
-203FUS,Baldur's Pink Heist,Forgotten Realms
 204CMR,Skilled Animator,Kaladesh
-205FUS,Talion's Seal Recycled,Eldraine
 206BLB,High Stride,Bloomburrow
 207ONE,Feed the Infection,Mirrodin
-208FUS,The Recycled Beginning,Eldraine
 209ELD,Burning-Yard Trainer,Eldraine
-210FUS,"The Collector, Collected",Eldraine
 211LCI,Seismic Monstrosaur,Ixalan
-212FUS,Moon's Split Reflection,Innistrad
 213ORI,Reclusive Artificer,Kaladesh
 214VOW,Snarling Wolf,Innistrad
 215LCI,Malamet Battle Glyph,Ixalan
@@ -278,7 +216,6 @@ Ilustracja,Nazwa Karty,Plan
 277OTJ,Spinewoods Paladin,Thunder Junction
 278NEO,Kappa Tech-Wrecker,Kamigawa
 279M21,Village Rites,Wiedźmin
-280FUS,Skellige Debt in the Alley,Wiedźmin
 281EOE,Moonlit Meditation,The Edge
 282ISD,Hysterical Blindness,Innistrad
 283FIN,Magic Damper,Final Fantasy
@@ -395,7 +332,6 @@ Ilustracja,Nazwa Karty,Plan
 394STO,Spirit Dragons of Tarkir,Tarkir
 395MH1,Unearth,Warhammer Fantasy
 396CMR,Vow of Wildness,Tarkir
-397FUS,Orazca's Rotting God,Ixalan
 398STO,"Ureni, the Song Unending",Tarkir
 399VOW,Chill of the Grave,Innistrad
 400STO,The Vaults of Candlekeep,Forgotten Realms
@@ -607,3 +543,12 @@ Ilustracja,Nazwa Karty,Plan
 606MH1,Treefolk Umbra,Śródziemie
 607OGW,Containment Membrane,Wiedźmin
 608M19,Skymarch Bloodletter,Ixalan
+609RIX,Jungleborn Pioneer,Forgotten Realms
+610M19,Gearsmith Prodigy,Kaladesh
+611CMR,"Lifecrafter's Gift",Kaladesh
+612BLB,Crumb and Get It,Śródziemie
+613CLU,Duskmantle Seer,Ravnica
+614IMA,Hunt the Weak,Wiedźmin
+615AKH,Tah-Crop Skirmisher,Amonkhet
+616KTK,Act of Treason,Tarkir
+617FRF,Douse in Gloom,Tarkir
