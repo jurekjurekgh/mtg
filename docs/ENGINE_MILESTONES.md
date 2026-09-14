@@ -4779,3 +4779,32 @@ Bramki: `npm test` **5472/5472**, `npm run test:all` **5482/5482**
 (297,7 s), build **61 modułów / 3657,5 kB**; quick benchmark 672 gry / 123,6 s — heuristic **82,6%** (555/672), aggro **30,7%**, random **4,2%**; kontrola na STAREJ talii `forgotten-realms` odtwarza poprzedni pomiar (84,2% / 28,0% / 3,6%), więc różnica to skład talii, nie regresja bota
 (pełne B0 niewykonane — wyłącznie na komendę właściciela, ADR 0018).
 Żywy Tester: 11 partii na taliach batcha, 0 detektorów, 0 niewycenionych.
+
+
+## M358 (2026-09-14) — koszt zdolności rozliczany W CAŁOŚCI: pipy + generyk (znalezisko właściciela K)
+
+**Status:** zamknięty — 4 poprawki danych + strażnik klasowy; PR #116 czeka na
+właściciela.
+
+Zgłoszenie właściciela: Embalm Tah-Crop Skirmishera ({3}{U}) kosztował u nas
+tyle co {2}{U} — „sprawdź wszystkie karty pod tym kątem". Audyt całego rejestru
+(97 kart / 100 zdolności aktywowanych z kosztem many, porównanie pary
+`(pipy, generyk)` z nagłówkami Oracle) znalazł **cztery** rozjazdy: trzy karty
+z `cost.mana` równym samemu generykowi (`tah-crop-skirmisher` {2}{U} zamiast
+{3}{U}, `etherium-abomination` {U}{B} zamiast {1}{U}{B}, `brightwood-tracker`
+{4}{G} zamiast {5}{G}) i jedną z brakującym pipem (`kishla-village`
+`{ mana: 4, tap: true }` zamiast {3}{G}, {T}).
+
+Konwencja (zapisana w `costTextOf`, teraz strzeżona): **`cost.mana` = łączny
+koszt many (CR 202.1)**, generyk = `mana − colors.length`. Strażnik
+`test/ability-cost-pips.test.js` rozlicza teraz CAŁY koszt per wystąpienie
+(dawne O5), obejmuje zdolności bez pipów (dlatego Kishla Village była
+niewidzialna) i jawnie pomija karty z literalnym `\n` w Oracle
+(znalezisko S-1, 20 kart — poza zakresem). Testy granic:
+`test/koszty-generyczne-zdolnosci.test.js` (±1 many).
+
+Bramki: `npm test` **5482/5482** (182,8 s na finalnym drzewie), `npm run test:all`
+**5492/5492** (309,9 s (przebieg `test:all` na drzewie K1 — po K2 zmieniają się wyłącznie pliki `.md`; bramka szybka na finalnym drzewie: 182,8 s)), build **61 modułów / 3657,5 kB**, quick 672 gry / 130,9 s —
+heuristic **82,6%** (555/672), aggro **30,7%**, random **4,2%**
+(bez zmian wobec przedpoprawkowego pomiaru); golden master bez churnu
+(`3d1167140f686f7c…`).

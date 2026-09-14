@@ -10711,3 +10711,56 @@ właściciela — numery zwalniane stopniowo).
 672 gry / 123,6 s — heuristic **82,6%** (555/672), aggro **30,7%**, random **4,2%**; kontrola na STAREJ talii `forgotten-realms` odtwarza poprzedni pomiar (84,2% / 28,0% / 3,6%), więc różnica to skład talii, nie regresja bota; pełne B0 niewykonane (ADR 0018). Żywy Tester: 11 partii na
 taliach batcha (m.in. lustro forgotten-realms i talia celowana z Seerem),
 0 detektorów i 0 niewycenionych ruchów bota. PR #116 czeka na właściciela.
+
+
+## 2026-09-14c — koszty zdolności: generyk i pip (znalezisko właściciela K) (PR #116, arena/01a09c9e)
+
+Zgłoszenie właściciela z jego własnej gry: **„Embalm Tah-Crop Skirmishera jest
+o jedną manę za tani: {3}{U} kosztuje u nas 3, a powinien 4. Sprawdź wszystkie
+karty pod tym kątem."** Plan:
+[`docs/plans/PLAN_2026-09-14c-koszty-zdolnosci.md`](plans/PLAN_2026-09-14c-koszty-zdolnosci.md)
+(`c0689f8` — push przed kodem, ADR 0020 A), kod `b3b270e` (K1), dokumenty K2.
+
+**Audyt (skrypt po całym rejestrze, nie wyrywkowe spojrzenie):** dla każdej
+zdolności aktywowanej z kosztem many porównanie `(pipy, generyk)` silnika
+z nagłówkami kosztu w Oracle — 97 kart / 100 zdolności. Konwencja obowiązująca
+w katalogu (i w `costTextOf`): `cost.mana` to ŁĄCZNY koszt (CR 202.1),
+generyk = mana − pipy. Cztery realne rozjazdy, wszystkie w kierunku „silnik
+tańszy":
+
+| karta | Oracle | silnik (przed) | błąd |
+|---|---|---|---|
+| `tah-crop-skirmisher` | Embalm **{3}{U}** | `mana: 3, colors: ['U']` = {2}{U} | −1 many (zgłoszenie właściciela) |
+| `etherium-abomination` | Unearth **{1}{U}{B}** | `mana: 2, colors: ['U','B']` = {U}{B} | −1 many |
+| `brightwood-tracker` | **{5}{G}**, {T} | `mana: 5, colors: ['G']` = {4}{G} | −1 many |
+| `kishla-village` | **{3}{G}**, {T}: Surveil 2 | `{ mana: 4, tap: true }` = 4 dowolnej many | brak pipu {G} |
+
+Trzy pierwsze to zapisanie w `mana` samego generyka zamiast sumy; czwarta to
+odwrotność F1 (Óin): koszt bez `colors` nie ma pipów, więc dotychczasowy
+strażnik pipów w ogóle go nie widział.
+
+**Strażnik klasowy rozszerzony** (`test/ability-cost-pips.test.js`): dawne
+rozliczanie multizbioru pipów zostało uogólnione do pary `(pipy, generyk)`
+per **wystąpienie** (metoda O5), objęło też zdolności BEZ pipów, a symbol
+nieznany metodzie ({X}, hybryda) zawęża dopasowanie do pipów — jawnie, nie
+milcząco. Strażnik był **CZERWONY przed poprawką** (wszystkie 4 karty), zielony
+po. Nowy plik `test/koszty-generyczne-zdolnosci.test.js` pinuje granicę
+zachowania: o jedną manę mniej = brak oferty i odrzucona komenda, dokładny koszt
+= oferta (plus dowód, że Embalm za {3}{U} zużywa całą pulę czterech many).
+Dwa testy pinujące stare wartości zaktualizowane świadomie
+(`real-cards-batch28` — unearth 2→3 many, `batch49-kart` — kształt kosztu
+Kishla Village; oba opisywały stan BŁĘDNY).
+
+**Znalezisko S-1 (poza zakresem, do decyzji właściciela):** 20 kart
+(19 `supported` + 1 `limited`) ma w `oracleText` **literalne `\n`** zamiast
+nowej linii — tekst jest jedną linią, m.in. `strandwalker` (Equip {4} jest
+poprawny). Strażnik pomija takie karty jawnie i je liczy; klasa tekstowa
+czeka na osobne zlecenie.
+
+**Bramki (finalne drzewo):** `npm test` **5482/5482** (0 fail, 182,8 s na finalnym drzewie),
+`npm run test:all` **5492/5492** (0 fail, 309,9 s (przebieg `test:all` na drzewie K1 — po K2 zmieniają się wyłącznie pliki `.md`; bramka szybka na finalnym drzewie: 182,8 s)), build
+**61 modułów / 3657,5 kB**; quick benchmark 672 gry / 130,9 s — heuristic
+**82,6%** (555/672), aggro **30,7%**, random **4,2%** (identycznie jak przed
+poprawką: droższe zdolności nie zmieniły ani jednej partii próbki); golden
+master **bez churnu** (`3d1167140f686f7c…` — karta o zmienionym koszcie nie
+wchodzi do fixture'ów scoringu). PR #116 czeka na właściciela.

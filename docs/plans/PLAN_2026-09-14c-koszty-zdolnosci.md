@@ -54,8 +54,8 @@ multizbiór pipów**: `{U}{B}` i `{1}{U}{B}` mają ten sam multizbiór.
 
 ## Etapy — każdy = osobny, samodzielnie zielony commit
 
-- [ ] **K0 — plan** (ten dokument): push przed pierwszym kodem.
-- [ ] **K1 — strażnik + poprawki danych**: rozszerzenie strażnika
+- [x] **K0 — plan** (ten dokument): push przed pierwszym kodem (`c0689f8`).
+- [x] **K1 — strażnik + poprawki danych** (`b3b270e`): rozszerzenie strażnika
   `test/ability-cost-pips.test.js` o generyk (i o zdolności bez pipów —
   dziś są poza zasięgiem, dlatego `kishla-village` przeszedł),
   **RED przed poprawką** (4 karty), potem 4 poprawki w `src/cards/card-data.js`,
@@ -64,7 +64,7 @@ multizbiór pipów**: `{U}{B}` i `{1}{U}{B}` mają ten sam multizbiór.
   `test/batch49-kart.test.js` — kształt kosztu Kishla Village),
   nowy plik granic zachowania (`±1 many`; bez poprawki = RED),
   golden master rozliczony odtworzeniem starej talii (jeśli dryfnie).
-- [ ] **K2 — dokumentacja i domknięcie**: `PROJECT_HISTORY` (§ 2026-09-14c),
+- [x] **K2 — dokumentacja i domknięcie**: `PROJECT_HISTORY` (§ 2026-09-14c),
   `ENGINE_MILESTONES` (**M358**), `README` (liczby z **finalnego** przebiegu,
   nie przepisane), handoff dnia, plan `[x]` + sekcja Wyniki, opis PR #116
   zaktualizowany kumulacyjnie.
@@ -100,3 +100,62 @@ multizbiór pipów**: `{U}{B}` i `{1}{U}{B}` mają ten sam multizbiór.
 ## Wyniki
 
 _(wypełniane po każdym etapie)_
+
+### K0 — plan
+
+`c0689f8` — plan wypchnięty przed pierwszym kodem (ADR 0020 A); w planie
+zapisany pomiar wyjścia (5472/5482, 82,6%, `3d116714…`) i tabela 4 rozjazdów.
+
+### K1 — strażnik + poprawki danych (`b3b270e`)
+
+**RED przed poprawką** (dowód z przebiegu):
+
+- strażnik `ability-cost-pips.test.js` — nowy test katalogowy CZERWONY, lista
+  missów dokładnie: `etherium-abomination#0 [BU|generyk 0]`,
+  `kishla-village#1 [—|generyk 4]`, `brightwood-tracker#0 [G|generyk 4]`,
+  `tah-crop-skirmisher#0 [U|generyk 2]`;
+- `test/koszty-generyczne-zdolnosci.test.js` — **5/5 CZERWONYCH** przed
+  poprawką (cztery granice kosztu + dowód, że Embalm za {3}{U} nie zużywa całej
+  puli czterech many).
+
+**Zielone po poprawce:** oba pliki 14/14, potem cała bramka szybka.
+
+**Poprawki danych** (`src/cards/card-data.js`, tylko wartości — zero gałęzi po
+nazwie karty, ADR 0002):
+
+| karta | przed | po |
+|---|---|---|
+| `tah-crop-skirmisher` (Embalm) | `mana: 3, colors: ['U']` | `mana: 4, colors: ['U']` |
+| `etherium-abomination` (Unearth) | `mana: 2, colors: ['U','B']` | `mana: 3, colors: ['U','B']` |
+| `brightwood-tracker` | `mana: 5, colors: ['G']` | `mana: 6, colors: ['G']` |
+| `kishla-village` | `mana: 4, tap: true` | `mana: 4, colors: ['G'], tap: true` |
+
+Testy pinujące stare (błędne) wartości zaktualizowane świadomie: batch28
+(unearth: 2 → 3 many), batch49 (kształt kosztu Kishla Village + komentarz, że
+`{3}{G}` to 4 many Z PIPEM). Strażnik pomija `strandwalker` jawnie
+(znalezisko S-1: literalne `\n` skleja Oracle w jedną linię; licznik pominięć
+= 1, pinowany asercją).
+
+**Bramki K1 (na drzewie z poprawkami):**
+
+| bramka | wynik |
+|---|---|
+| `npm test` | **5482/5482** (0 fail, 185,7 s w chwili K1; **182,8 s** na finalnym drzewie) — 5472 + 10 nowych testów |
+| `npm run test:all` | **5492/5492** (0 fail, 309,9 s) |
+| `npm run build` | **61 modułów / 3657,5 kB** (bez zmian) |
+| quick benchmark | 672 gry / 130,9 s — heuristic **82,6%** (555/672), aggro **30,7%**, random **4,2%** — identycznie jak przed poprawką |
+| golden master | **bez churnu** (`3d1167140f686f7c…`) — karta o zmienionym koszcie nie wchodzi do fixture'ów scoringu |
+
+### K2 — dokumentacja i domknięcie
+
+`PROJECT_HISTORY` § 2026-09-14c, `ENGINE_MILESTONES` § M358, handoff dnia
+(bramki + stan końcowy), `README` (liczby z finalnego przebiegu + poprawione
+sformułowanie o 8 tylnych stronach kart dwustronnych), plan `[x]`, opis PR.
+
+## Znaleziska poza zakresem (do decyzji właściciela)
+
+- **S-1 — literalne `\n` w `oracleText`** (20 kart: 19 `supported` + 1
+  `limited`): tekst karty jest jedną linią (m.in. `strandwalker`, gdzie koszt
+  Equip {4} jest poprawny, ale strażnik nie ma z czego go odczytać). Osobna
+  klasa danych — nie ruszana w tym batchu; strażnik liczy pominięcia jawnie.
+- **`[Trigger:]`** w linii stosu — bez zmian, czeka na Twoją decyzję.
