@@ -31,12 +31,17 @@ limit ręki (nigdy całość — nietknięte z konstrukcji).
 
 ## Kroki
 
-- [ ] E0: ten plan (commit docs).
-- [ ] E1: test repro `test/owner-cathartic-reunion-auto-discard.test.js` → RED
-      (dziś: pending + modal przy 2/2).
-- [ ] E2: implementacja → GREEN + mutacja (strażnik auto: usunięcie gałęzi → RED).
-- [ ] E3: przegląd breaksów suity — znane: Mindstab w `owner-discard-selection`
-      (2/3), A4-1/4 (3/3); każdy break = intended albo bugfix, jawnie w commicie.
+- [x] E0: ten plan (commit docs).
+- [x] E1: test repro `test/owner-cathartic-reunion-auto-discard.test.js` → RED
+      (5 fail: Reunion 2/2, madness, Scholar, Reaver, ogon Nightsnare; strażniki green).
+- [x] E2: implementacja → GREEN (8/8) + mutacja predykatu (false → 5 RED, restore → 8/8).
+- [x] E3: 13 breaksów, każdy przeczytany: 1 PRAWDZIWY bug (kontrakt
+      declined.count — fix count: 0, log-identyczny); 10 intended (M258→2/3,
+      Bat, Toll→2 nonlandy, N2, Picker, Reaver, Óin, B44/13 ×2, Mindstab,
+      A4-1/4, Nightsnare-19); determinizm = skrypt zależny od bloku (biblioteka
+      p1 — skrypt NAPRAWDĘ się wykonuje); golden-master = uzasadniona regen
+      (1 wymuszona decyzja mniej, downstream bit w bit, 5/6 partii identyczne).
+- [x] Suita: 5522/5522 (5514 + 8 nowych).
 - [ ] E4: bramki (`npm test`, `test:all`, build, quick; golden-master: dryf tylko
       uzasadniony stanowo-identyczny) + domknięcie (dopiski handoff/PH/README,
       opis PR #123, lekcja tylko przy nowej klasie).

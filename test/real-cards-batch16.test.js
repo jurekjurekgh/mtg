@@ -723,19 +723,15 @@ test('Plague Reaver: discard 2 + sacrifice → powrót w następnym upkeep celu-
   assert.ok(hasCommand(playerView(state, 'p1'), 'activate_ability', (c) => c.objectId === 'reaver' && (c.targets ?? []).includes('p2')));
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'reaver', abilityIndex: 1, targets: ['p2'] });
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
-  // Temat 4: koszt-discard to SEKWENCYJNE decyzje kontrolera (2 karty).
-  assert.ok(state.pendingDiscardChoice, 'pierwsza decyzja kosztu czeka');
-  assert.equal(state.pendingDiscardChoice.count, 2);
-  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'h1' }).ok);
-  passBoth(state); // T6: rozstrzygnij trigger ze stosu
-  assert.ok(state.pendingDiscardChoice, 'druga decyzja czeka');
-  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'h2' }).ok);
-  passBoth(state); // T6: rozstrzygnij trigger ze stosu
+  // Znalezisko A: koszt 2 z 2 bez decyzji (sekwencyjność żyje przy wyborze).
+  assert.equal(state.pendingDiscardChoice, null, 'koszt-discard całości bez decyzji');
+  assert.equal(state.pendingAbilityActivation, null, 'aktywacja wykonana od razu');
   // Koszty: 2 karty odrzucone + Reaver poświęcony.
   assert.equal(state.objects.get('h1'), undefined, 'Karta 1 odrzucona');
   assert.equal(state.objects.get('h2'), undefined, 'Karta 2 odrzucona');
   const graveReaver = findId(state, 'plague-reaver', 'graveyard');
   assert.ok(graveReaver, 'Reaver w grobie po koszcie sacrifice');
+  passBoth(state); // zdolność ze stosu: uzbrojenie opóźnionego triggera
   assert.ok(eventsOfType(state, 'delayed_trigger_armed').some((e) => e.playerId === 'p2'));
   // Przejście do następnego upkeep p2.
   jumpStep(state, 'p1', 'ending', 'end', 10, 1);

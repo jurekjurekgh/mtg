@@ -818,10 +818,8 @@ test('Dementia Bat: ręka celu mniejsza niż 2 karty — odrzuca wszystko, co ma
   addHandCard(state, 'only', 'p2', 2);
   addMana(state, 'p1', 5);
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bat', abilityIndex: 0, targets: ['p2'] }).ok);
-  resolveStack(state); // D: zdolność na stosie → decyzja po rozstrzygnięciu
-  assert.ok(state.pendingDiscardChoice, 'decyzja czeka');
-  assert.equal(state.pendingDiscardChoice.count, 1, 'limit = rozmiar ręki');
-  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p2', cardId: 'only' }).ok);
+  resolveStack(state); // D: zdolność na stosie → 1 z 1 bez decyzji (znalezisko A)
+  assert.equal(state.pendingDiscardChoice, null, 'discard całości bez decyzji');
   passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.ok(findId(state, 'test-hand-2', 'graveyard'), 'jedyna karta odrzucona');
   assert.equal(handSize(state, 'p2'), 0);
@@ -994,6 +992,9 @@ test('determinizm: replay z mentor/discard/Tellah/Robbers daje identyczny stan',
     addHandCard(state, 'h3', 'p2', 3);
     addMana(state, 'p1', 5);
     execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bat', abilityIndex: 0, targets: ['p2'] });
+    // Znalezisko A: Bat nie zostawia wiszącej decyzji, więc dalsze komendy
+    // NAPRAWDĘ się wykonują (wcześniej cicho odrzucane) — biblioteka na draw 2.
+    for (let i = 0; i < 6; i++) addRealCard(state, `plib${i}`, 'highland-game', 'p1', 'library');
     // Tellah — czar za 5 (token + draw 2).
     addRealCard(state, 'tellah', 'tellah-great-sage', 'p1', 'battlefield');
     addTestInstant(state, 'mid', 'p1', 5, { effects: [] });

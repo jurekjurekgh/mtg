@@ -175,15 +175,11 @@ test('A4-1/4: pełna droga — cast Mindstab, batch 3 z madness, koniec bez pend
   assert.ok(cast, 'rzut Mindstab na p2 oferowany');
   assert.ok(execute(state, cast).ok);
 
-  // Czar idzie na stos; efekt odrzucenia otwiera się po rozstrzygnięciu.
-  for (let i = 0; i < 8 && !state.pendingDiscardChoice; i++) {
+  // Czar idzie na stos; efekt odrzucenia 3 z 3 rozstrzyga się SAM (znalezisko A).
+  for (let i = 0; i < 8 && state.zones.stack.length > 0; i++) {
     assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
   }
-  assert.ok(state.pendingDiscardChoice, 'decyzja odrzucenia p2 otwarta');
-  assert.equal(playerView(state, 'p2').pendingDiscardChoice.count, 3, 'pełna ręka = count 3');
-
-  const batch = execute(state, { type: 'resolve_discard_choice', playerId: 'p2', cardIds: ['rev', 'v1', 'v2'] });
-  assert.ok(batch.ok, `batch p2 przyjęty: ${JSON.stringify(batch)}`);
+  assert.equal(state.pendingDiscardChoice, null, 'discard 3 z 3 bez decyzji (znalezisko A)');
   assert.ok(state.pendingMadnessCast, 'madness p2 czeka na decyzję');
   assert.equal(state.pendingMadnessCast.playerId, 'p2');
 
