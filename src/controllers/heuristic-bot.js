@@ -412,8 +412,6 @@ export function protectionPreventsAnyLethal(view, notSubtype = null) {
   const isProtectedSource = notSubtype ? (o) => !(o.subtypes ?? []).includes(notSubtype) : () => false;
   const findObj = (id) => battlefield.find((o) => o.id === id) ?? null;
   const hasDeathtouch = (o) => (o.keywords ?? []).includes('deathtouch');
-  // DEBUG
-  // console.log('prot check', JSON.stringify(combat), battlefield.map(o=>({id:o.id, ctrl:o.controllerId, sub:o.subtypes, p:o.power, t:o.toughness})));
   // Dla każdego mojego stwora w walce sprawdź czy obrażenia od nie-Ludzkich źródeł są lethal
   for (const aid of combat.attackers ?? []) {
     const attacker = findObj(aid);
@@ -1306,13 +1304,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       return libraryLossPenalty(view, drain);
     }
-    // E (Murder of Crows may draw, Ferocious may draw): dobrowolne dobranie
-    // przy cienkiej bibliotece to deck-out — drabina deckOutOnly, nie thin 20.
-    // Przy 1 karcie zapas 0 => 0 kary (E2/A1 ma dobrać), przy 0 kart zwalniamy
-    // (scoreCommand i tak daje -100). Murder (optional_trigger) używa thin 20.
-    if (cmd?.type === 'resolve_optional_draw') {
-      return cmd.draw ? oneShotDeckOutPenalty(view, 1) : 0;
-    }
+    // AUDYT PR120/O1: gałąż `resolve_optional_draw` (Ferocious may draw)
+    // zwracała `oneShotDeckOutPenalty(view, 1)`, które jest matematycznie
+    // zawsze 0 (lib 0 → wczesne 0; lib ≥ 1 → zapas ≥ 0 → 0) — martwa (L5),
+    // myliła audytora. Prawdziwa blokada deck-outu siedzi w scoreCommand
+    // (pusta biblioteka + draw:true → −100). Usunięta; fallthrough do
+    // `LIBRARY_DRAIN_CAST_TYPES` i tak zwraca 0 (typ nie jest cast_*).
     // E (Murder mayFire trigger draw_then_discard): odpalenie zabiera 1 kartę
     // z biblioteki (draw). Dla repeatable triggerów (Murder) cienka 20 musi
     // karać już przy 4 kartach (zapas 3 <20), więc pełna libraryLossPenalty.
@@ -3782,8 +3779,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // B (zgłoszenie właściciela, Spare from Evil {1}{W} — protection from non-Human creatures):
           // Sztuczka ma wartość TYLKO gdy zapobiega LETHAL od nie-Człowieka na twoim stworze w
           // zadeklarowanej walce (CR 702.16 DEBT — damage prevention + 702.16e block restriction,
-          // ale po blokach liczy się prewencja obrażeń). Poza oknem po blokach (Main1, beginning_of_combat,
-          // przed blokami, bez walki) to strata karty i many — kara musi przebić bazę 50.
+          // ale po blokach liczy się prewencja obrażeń). Poza oknem po blokach (Main1,
+          // beginning_of_combat, przed blokami, bez walki) to strata karty i many — kara musi
+          // przebić bazę 50.
+          // AUDYT PR120/A4: end_of_combat WYPADA z okna — w tym kroku obrażenia
+          // są już rozdane (CR 510.2: rozdane jednocześnie, bez możliwości
+          // zaklęć między przydzieleniem a rozdanym; 511.1: krok bez akcji
+          // turn-based), a ochrona zapobiega obrażeniom, nie cofa rozdanych
+          // (DEBT: „Damage … (All such damage is prevented.)" dotyczy obrażeń
+          // jeszcze nie rozegranych). W modelu silnika (ADR 0011, M255/F)
+          // obrażenia combat rozdane są po pasie gracza aktywnego w
+          // combat_damage — stamtąd okno jest poprawne; z end_of_combat nie.
           // Wycena generyczna po deskryptorze protection.notSubtype (ADR 0002), nie po nazwie karty.
           // Symulacja „przed/po ochronie" używa tego samego modelu walki co pumpChangesOutcome (CR 510),
           // z tym że obrażenia od nie-Ludzkich źródeł do chronionego stwora są zerowane (CR 702.16d).
@@ -3795,7 +3801,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               score += combatOn ? 12 : -45;
             } else {
               const afterBlockers = view.combat && view.combat.blockers && Object.keys(view.combat.blockers).length > 0;
-              const correctStep = ['declare_blockers', 'combat_damage', 'end_of_combat'].includes(view.turn.step);
+              const correctStep = ['declare_blockers', 'combat_damage'].includes(view.turn.step);
               const inPostBlockWindow = afterBlockers && correctStep;
               if (!inPostBlockWindow) {
                 score -= 95; // poza oknem po blokach — musi przegrać z passem (50-95=-45) nawet z base
@@ -4350,8 +4356,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 return false;
               })();
               trick = hypotheticalSaves ? 14 : -75;
-            } else if (['upkeep', 'draw', 'end', 'cleanup', 'untap'].includes(view.turn.step)) trick = -75;
-            else trick = -75;
+            } else {
+              // AUDYT PR120/A6: przedtem DWA fallbacki (else-if na krokach
+              // upkeep/draw/end/cleanup/untap + else) z tym samym −75 —
+              // martwa gałąź (L5). Pojedynczy.
+              trick = -75;
+            }
             if (inCombat && !pumpChangesOutcome(view, target, delta)) trick = -75;
             score += trick + (target.power ?? 0);
           } else if (isPumpEffect && !isNegativePump(effect) && target && target.controllerId === view.playerId && !isSavageLikeSpell(spell)) {

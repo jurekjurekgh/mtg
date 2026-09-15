@@ -1830,8 +1830,10 @@ function bootstrapTable() {
 
   // D (Powerstone, CR 106.3): czy płatność dotyczy rzutu artefaktu —
   // wtedy wolno użyć many z spendOnly:'artifact' (pula restricted + tokeny).
-  // Używana w normalnym przepływie; funkcje wyciągane w teście vm mają
-  // własną kopię inline (patrz wyżej) i nie polegają na tej definicji.
+  // AUDYT PR120/A3: jedyna ścieżka produkcyjna to `manaWizardFor` poniżej.
+  // Fallback w `refreshManaWizard` NIE woła tej funkcji świadomie — test
+  // m348 wyciąga z tego pliku fragment do własnego vm, więc musi być
+  // samowystarczalny (własna kopia inline); to jedyne wyjątkowe miejsce.
   function artifactPurposeFor(cmd, descriptor) {
     if (!cmd || !String(cmd.type ?? '').startsWith('cast_')) return false;
     const cardId = descriptor?.cardId ?? session.state?.objects?.get(cmd.objectId)?.cardId ?? null;
@@ -1994,15 +1996,9 @@ function bootstrapTable() {
     if (!descriptor) return null;
     // D (Powerstone): pula i źródła filtrowane wg celu (artefakt vs inne).
     // Inline — test M348 wyciąga funkcję pojedynczo przez vm, bez helpera.
-    const isArtifact = (() => {
-      if (!cmd || !String(cmd.type ?? '').startsWith('cast_')) return false;
-      const cid = descriptor?.cardId ?? session.state?.objects?.get(cmd.objectId)?.cardId ?? null;
-      if (!cid) return false;
-      const reg = typeof registry !== 'undefined' ? registry : null;
-      if (!reg || typeof reg.get !== 'function') return false;
-      const card = reg.get(cid);
-      return Boolean(card && (card.types ?? []).includes('Artifact'));
-    })();
+    // AUDYT PR120/A3: wspólne sprawdzenie w `artifactPurposeFor` (przedtem
+    // kopia inline + martwa funkcja — klasa duplikacji, L41).
+    const isArtifact = artifactPurposeFor(cmd, descriptor);
     const humanPlayer = session.state?.players?.find((pl) => pl.id === HUMAN_ID);
     const poolUnitsUnrestricted = expandManaPool(humanPlayer?.manaPool);
     const poolUnitsRestricted = expandManaPool(humanPlayer?.restrictedPool ?? {});
