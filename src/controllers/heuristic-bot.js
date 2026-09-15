@@ -5373,7 +5373,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // widział gołe score=2 i potrafił przełożyć dobranie karty na pass
           // albo inny trywialny wariant. Wartość = karta (P.drawCardValue),
           // jak w cast_spell — generycznie po typie efektu (ADR 0002).
-          if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') {
+          // Żywy Tester (PR #121, seed 911 tarkir-bg vs innistrad-wu):
+          // Civilized Scholar „{T}: dobierz, potem odrzuć” to
+          // `draw_then_discard` — tej gałęzi tu NIE było, więc bot widział
+          // gołą bazę 2 (> pass 0) i aktywował dobór PRZY PUSTEJ BIBLIOTECE
+          // (przegrał na miejscu; CR 121.4/704.5b). Ten sam guard
+          // `drawDeckingPenalty` co draw_cards (klasy D/C + L41).
+          if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players'
+            || effect.type === 'draw_then_discard') {
             const drawAmount = Number.isInteger(effect.amount) ? effect.amount : 1;
             score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
           }
