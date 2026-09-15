@@ -403,7 +403,7 @@ function isSavageDefenseWindow(view, target) {
  * (CR 510 + CR 702.16d). Porównuje wynik walki przed/po ochronie: obrażenia od nie-Ludzkich źródeł do
  * chronionego stwora są zerowane. Wystarczy jeden uratowany stwór, żeby czar miał wartość.
  */
-export function protectionPreventsAnyLethal(view, notSubtype = null) {
+function protectionPreventsAnyLethal(view, notSubtype = null) {
   const combat = view.combat ?? null;
   if (!combat || !combat.blockers) return false;
   const battlefield = view.zones.battlefield ?? [];
@@ -412,8 +412,6 @@ export function protectionPreventsAnyLethal(view, notSubtype = null) {
   const isProtectedSource = notSubtype ? (o) => !(o.subtypes ?? []).includes(notSubtype) : () => false;
   const findObj = (id) => battlefield.find((o) => o.id === id) ?? null;
   const hasDeathtouch = (o) => (o.keywords ?? []).includes('deathtouch');
-  // DEBUG
-  // console.log('prot check', JSON.stringify(combat), battlefield.map(o=>({id:o.id, ctrl:o.controllerId, sub:o.subtypes, p:o.power, t:o.toughness})));
   // Dla każdego mojego stwora w walce sprawdź czy obrażenia od nie-Ludzkich źródeł są lethal
   for (const aid of combat.attackers ?? []) {
     const attacker = findObj(aid);
@@ -4352,11 +4350,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 return false;
               })();
               trick = hypotheticalSaves ? 14 : -75;
-            } else if (['upkeep', 'draw', 'end', 'cleanup', 'untap'].includes(view.turn.step)) trick = -75;
-            else trick = -75;
+            } else trick = -75;
             if (inCombat && !pumpChangesOutcome(view, target, delta)) trick = -75;
             score += trick + (target.power ?? 0);
-          } else if (isPumpEffect && !isNegativePump(effect) && target && target.controllerId === view.playerId && !isSavageLikeSpell(spell)) {
+          } else if (isPumpEffect && !isNegativePump(effect) && target && target.controllerId === view.playerId) {
             // M146 (uwaga właściciela): pump „do końca tury" ma wartość tylko
             // w oknie, w którym zdąży pomóc. Bot rzucał Fake Your Own Death
             // w swoim upkeepie i passował — czysta strata. Okna:
