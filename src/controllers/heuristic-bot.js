@@ -1306,13 +1306,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       return libraryLossPenalty(view, drain);
     }
-    // E (Murder of Crows may draw, Ferocious may draw): dobrowolne dobranie
-    // przy cienkiej bibliotece to deck-out — drabina deckOutOnly, nie thin 20.
-    // Przy 1 karcie zapas 0 => 0 kary (E2/A1 ma dobrać), przy 0 kart zwalniamy
-    // (scoreCommand i tak daje -100). Murder (optional_trigger) używa thin 20.
-    if (cmd?.type === 'resolve_optional_draw') {
-      return cmd.draw ? oneShotDeckOutPenalty(view, 1) : 0;
-    }
+    // O1 (audyt niezależny PR #122, port 2026-09-15): dawna gałąź
+    // `resolve_optional_draw` (Ferocious may draw) zwracała
+    // `oneShotDeckOutPenalty(view, 1)`, które jest matematycznie ZAWSZE 0
+    // (lib 0 → wczesne 0; lib ≥ 1 → zapas = lib−1 ≥ 0 → 0) — martwa gałąź
+    // (L5) myląca audytora. Prawdziwa blokada deck-outu siedzi w
+    // scoreCommand (pusta biblioteka + draw → −100); przejście do fallbacku
+    // niżej zwraca 0 (typ nie jest cast_*), więc usunięcie nie zmienia wyceny.
     // E (Murder mayFire trigger draw_then_discard): odpalenie zabiera 1 kartę
     // z biblioteki (draw). Dla repeatable triggerów (Murder) cienka 20 musi
     // karać już przy 4 kartach (zapas 3 <20), więc pełna libraryLossPenalty.
@@ -7262,6 +7262,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     if (cmd.type === 'resolve_springbloom') {
       return `resolve_springbloom(${cmd.sacrificeLandId ?? 'skip'})`;
+    }
+    // A1 (audyt niezależny PR #122, port 2026-09-15; klasa M131/L34):
+    // warianty „you may" (fire/skip) były w śladzie nierozróżnialne — test
+    // wyceny i audyt remisów nie miały czego parować. Etykieta nazywa WARIANT.
+    if (cmd.type === 'resolve_optional_trigger_choice') {
+      return `resolve_optional_trigger_choice(${cmd.fire ? 'fire' : 'skip'})`;
     }
     if (cmd.type === 'resolve_look_top_choice' || cmd.type === 'resolve_satyr_look_choice'
         || cmd.type === 'resolve_graveyard_top_choice' || cmd.type === 'resolve_delirium_target'
