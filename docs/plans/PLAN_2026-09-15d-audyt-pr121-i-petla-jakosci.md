@@ -82,7 +82,13 @@ Kryterium: `docs/audits/AUDYT_PR121_2026-09-15.md` + wynik w opisie PR.
   sesji (AUDYT_PR121_*) żyje do merge'a — stąd G3 ×4 + O5 dopisane w E2
   (wzorzec: §Zbieżność dopisany do raportu #121 w E9 tamtej sesji).
 
-## E3 — pętla jakości ADR 0021 (inna ścieżka niż sesja #121) [ ]
+## E3 — pętla jakości ADR 0021 (inna ścieżka niż sesja #121) [x]
+
+- [x] Wariant B (zamiast A — E2 to komentarze, partie celowane nieproporcjonalne):
+      audyt kontraktu `pendingDamageAssignment` (oferta vs walidacja, L48) —
+      CZYSTY, V8 potwierdzone z obu stron; wynik w raporcie (§Pętla jakości).
+- [x] Benchmark `--quick`: heuristic 82.9% (557/672) = README/main — tożsamość
+      behawioralna E2 zmierzona (672 mecze, ~141 s).
 
 Sesja #121 robiła Żywego Testera celowanego w naprawy (5 partii, Z1/Z2).
 Tutejsza pętla (dopóki właściciel nie wskaże tematu):
@@ -95,7 +101,14 @@ Tutejsza pętla (dopóki właściciel nie wskaże tematu):
       albo skan snapshotów Scryfall po danych kart (L96).
 - [ ] Każde znalezisko: repro → fix u root cause → test RED→GREEN → mutacja (L13).
 
-## E4 — domknięcie sesji (ENVIRONMENT §7) [ ]
+## E4 — domknięcie sesji (ENVIRONMENT §7) [x]
+
+- [x] Bramki ZMIERZONE: `npm test` 5514/5514, `test:all` 5524/5524, build
+      61/3685,6 kB, regresja B0 10/10, quick 82,9% (557/672, bez zmian).
+- [x] README „Bieżący stan" (3685,6 kB + notka PR #123), PROJECT_HISTORY
+      (§2026-09-15d), HANDOFF_2026-09-15c, opis PR #123 kumulatywnie.
+- [x] LESSONS.md: BEZ wpisu — G1 to klasa L44/L143 (cytat CR), nie nowa lekcja.
+- [x] Blok przekazania w czacie (ADR 0013).
 
 - [ ] `npm test` + `npm run build` + `test:all` (brama PR) + benchmark quick
       (bez `--full` — ADR 0018) — liczby ZMIERZONE (L56/L92).

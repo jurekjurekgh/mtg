@@ -10925,3 +10925,24 @@ w fazie obrażeń zapobiegło 5 obrażeniom), F2 obie strony (Sliver bez
 Powerstone w kreatorze, Altar z Powerstone tapniętym), atrybucja odrzucenia.
 Detektory: 0 zgłoszeń. Bramki: npm test 5514/5514, build 61/3685,0 kB,
 quick benchmark 82,9% (557/672) bez zmian.
+
+## 2026-09-15d — audyt PR #121 (APPROVE) + sprostowanie cytatów CR G1/G2/G3 (PR #123, arena/01a0a5a7-mtg)
+
+Zlecenie „Kontynuujemy projekt." bez tematu → pętla domyślna ADR 0021
+(PR sesji na starcie, audyt #121, brak niedokończonego planu na main).
+Raport `docs/audits/AUDYT_PR121_2026-09-15.md`: werdykt APPROVE — 10 weryfikacji
+mechanicznych (fixture bit w bit == arena/01a0a506-mtg sha256 `b5a5dbf3…`;
+mutacja pre-F1 → RED; cytat 702.16e dosłowny; Oracle Powerstone ze snapshotów
+repo; V8: okno combat_damage = CR 509.2, przydział+rozdanie razem bez okna na
+czary — podejrzenie dewiacji 510.2 wycofane po odczycie przepływu).
+Znaleziska wyłącznie komentarzowe, naprawione w E2 (zero zachowania):
+G1 (A4: „CR 510.1 = priorytet przed rozdaniem" → podstawa CR 509.2; komentarz
+bota + nagłówek testu), G2 (M172/C: 509.4→509.2, L143), G3 (M221/E z PR #107:
+4× 702.16c→702.16e + doprecyzowanie nagłówka; rozstrzyga niepokój z 15b).
+Pętla jakości inną ścieżką niż Żywy Tester #121: audyt kontraktu
+pendingDamageAssignment (oferta vs walidacja, L48) — czysty; benchmark --quick
+82,9% (557/672) = main (tożsamość behawioralna E2 zmierzona). Nowa obserwacja
+O5: inwentarz cytatów 702.16 o niezweryfikowanym kontekście (osobne zadanie).
+Bramki: npm test 5514/5514, test:all 5524/5524, build 61/3685,6 kB (+0,6 kB —
+komentarze w bundlu), regresja B0 10/10.
+Handoff: [`docs/setup/HANDOFF_2026-09-15c.md`](setup/HANDOFF_2026-09-15c.md).
