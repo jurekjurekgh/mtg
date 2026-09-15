@@ -400,10 +400,12 @@ function isSavageDefenseWindow(view, target) {
 }
 /**
  * B — czy ochrona przed nie-Ludźmi chroni którykolwiek własny stwór w zadeklarowanej walce przed lethal
- * (CR 510 + CR 702.16d). Porównuje wynik walki przed/po ochronie: obrażenia od nie-Ludzkich źródeł do
+ * (CR 510 + CR 702.16e: „Any damage that would be dealt by sources that have the
+ * stated quality to a permanent or player with protection is prevented." —
+ * weryfikacja ADR 0030 2026-09-15). Porównuje wynik walki przed/po ochronie: obrażenia od nie-Ludzkich źródeł do
  * chronionego stwora są zerowane. Wystarczy jeden uratowany stwór, żeby czar miał wartość.
  */
-export function protectionPreventsAnyLethal(view, notSubtype = null) {
+function protectionPreventsAnyLethal(view, notSubtype = null) {
   const combat = view.combat ?? null;
   if (!combat || !combat.blockers) return false;
   const battlefield = view.zones.battlefield ?? [];
@@ -412,8 +414,6 @@ export function protectionPreventsAnyLethal(view, notSubtype = null) {
   const isProtectedSource = notSubtype ? (o) => !(o.subtypes ?? []).includes(notSubtype) : () => false;
   const findObj = (id) => battlefield.find((o) => o.id === id) ?? null;
   const hasDeathtouch = (o) => (o.keywords ?? []).includes('deathtouch');
-  // DEBUG
-  // console.log('prot check', JSON.stringify(combat), battlefield.map(o=>({id:o.id, ctrl:o.controllerId, sub:o.subtypes, p:o.power, t:o.toughness})));
   // Dla każdego mojego stwora w walce sprawdź czy obrażenia od nie-Ludzkich źródeł są lethal
   for (const aid of combat.attackers ?? []) {
     const attacker = findObj(aid);
@@ -1306,13 +1306,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       return libraryLossPenalty(view, drain);
     }
-    // E (Murder of Crows may draw, Ferocious may draw): dobrowolne dobranie
-    // przy cienkiej bibliotece to deck-out — drabina deckOutOnly, nie thin 20.
-    // Przy 1 karcie zapas 0 => 0 kary (E2/A1 ma dobrać), przy 0 kart zwalniamy
-    // (scoreCommand i tak daje -100). Murder (optional_trigger) używa thin 20.
-    if (cmd?.type === 'resolve_optional_draw') {
-      return cmd.draw ? oneShotDeckOutPenalty(view, 1) : 0;
-    }
+    // O1 (audyt niezależny PR #122, port 2026-09-15): dawna gałąź
+    // `resolve_optional_draw` (Ferocious may draw) zwracała
+    // `oneShotDeckOutPenalty(view, 1)`, które jest matematycznie ZAWSZE 0
+    // (lib 0 → wczesne 0; lib ≥ 1 → zapas = lib−1 ≥ 0 → 0) — martwa gałąź
+    // (L5) myląca audytora. Prawdziwa blokada deck-outu siedzi w
+    // scoreCommand (pusta biblioteka + draw → −100); przejście do fallbacku
+    // niżej zwraca 0 (typ nie jest cast_*), więc usunięcie nie zmienia wyceny.
     // E (Murder mayFire trigger draw_then_discard): odpalenie zabiera 1 kartę
     // z biblioteki (draw). Dla repeatable triggerów (Murder) cienka 20 musi
     // karać już przy 4 kartach (zapas 3 <20), więc pełna libraryLossPenalty.
@@ -1322,10 +1322,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // gałęzi w scoreCommand.
       if (Number.isInteger(cmd.selfMill)) return 0;
       const pending = view.pendingOptionalTrigger;
-      const ability = pending?.ability;
+      // F1 (audyt PR #120): widok projektuje tę decyzję jako { sourceCardId,
+      // effect } (game-state.js ~7871) — pole `ability` NIE istnieje w widoku,
+      // więc czytanie go po cichu wyłączało karę cienkiej biblioteki (L1/L48).
+      const effect = pending?.effect;
       let drain = 0;
-      if (ability) {
-        for (const eff of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+      if (effect) {
+        for (const eff of (Array.isArray(effect) ? effect : [effect])) {
           if (!eff?.type || !LIBRARY_DRAIN_EFFECTS.has(eff.type)) continue;
           if (drainsMyLibrary(eff)) drain += drainAmount(eff);
         }
@@ -3780,12 +3783,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // M109 (Spare from Evil): ochrona do końca tury to SZTUCZKA BOJOWA — po deklaracji blokujących.
           // B (zgłoszenie właściciela, Spare from Evil {1}{W} — protection from non-Human creatures):
           // Sztuczka ma wartość TYLKO gdy zapobiega LETHAL od nie-Człowieka na twoim stworze w
-          // zadeklarowanej walce (CR 702.16 DEBT — damage prevention + 702.16e block restriction,
-          // ale po blokach liczy się prewencja obrażeń). Poza oknem po blokach (Main1, beginning_of_combat,
+          // zadeklarowanej walce (prewencja obrażeń wg CR 702.16e — dosłowny cytat w nagłówku
+          // protectionPreventsAnyLethal). Poza oknem po blokach (Main1, beginning_of_combat,
           // przed blokami, bez walki) to strata karty i many — kara musi przebić bazę 50.
           // Wycena generyczna po deskryptorze protection.notSubtype (ADR 0002), nie po nazwie karty.
           // Symulacja „przed/po ochronie" używa tego samego modelu walki co pumpChangesOutcome (CR 510),
-          // z tym że obrażenia od nie-Ludzkich źródeł do chronionego stwora są zerowane (CR 702.16d).
+          // z tym że obrażenia od nie-Ludzkich źródeł do chronionego stwora są zerowane (CR 702.16e).
           if (effect.type === 'grant_protection_until_end_of_turn') {
             const notSubtype = effect.protection?.notSubtype ?? null;
             const isSubtypeProtection = notSubtype != null && effect.protection?.kind === 'creature';
@@ -3794,7 +3797,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               score += combatOn ? 12 : -45;
             } else {
               const afterBlockers = view.combat && view.combat.blockers && Object.keys(view.combat.blockers).length > 0;
-              const correctStep = ['declare_blockers', 'combat_damage', 'end_of_combat'].includes(view.turn.step);
+              // A4 (audyt niezależny PR #122, port 2026-09-15): okno KOŃCZY się
+              // na combat_damage. W tym kroku priorytet JEST (CR 510.1) — przed
+              // rozdaniem obrażeń (CR 510.2: „all combat damage that's been
+              // assigned is dealt simultaneously"; silnik: pas aktywnego domyka
+              // krok i dopiero wtedy rozdaje, closingCombatPassBlocked) — ochrona
+              // jeszcze prewenuje. W end_of_combat (CR 511.1: sam priorytet,
+              // bez akcji turowych) obrażenia są JUŻ rozdane — ochrona nie cofa
+              // rozdanych (DEBT: „All such damage is prevented." dotyczy obrażeń,
+              // które dopiero BĘDĄ zadane), a protectionPreventsAnyLethal czyta
+              // wciąż dane walki i dałaby +35 za kartę zużytą bez efektu.
+              const correctStep = ['declare_blockers', 'combat_damage'].includes(view.turn.step);
               const inPostBlockWindow = afterBlockers && correctStep;
               if (!inPostBlockWindow) {
                 score -= 95; // poza oknem po blokach — musi przegrać z passem (50-95=-45) nawet z base
@@ -4349,11 +4362,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 return false;
               })();
               trick = hypotheticalSaves ? 14 : -75;
-            } else if (['upkeep', 'draw', 'end', 'cleanup', 'untap'].includes(view.turn.step)) trick = -75;
-            else trick = -75;
+            } else trick = -75;
             if (inCombat && !pumpChangesOutcome(view, target, delta)) trick = -75;
             score += trick + (target.power ?? 0);
-          } else if (isPumpEffect && !isNegativePump(effect) && target && target.controllerId === view.playerId && !isSavageLikeSpell(spell)) {
+          } else if (isPumpEffect && !isNegativePump(effect) && target && target.controllerId === view.playerId) {
             // M146 (uwaga właściciela): pump „do końca tury" ma wartość tylko
             // w oknie, w którym zdąży pomóc. Bot rzucał Fake Your Own Death
             // w swoim upkeepie i passował — czysta strata. Okna:
@@ -5361,7 +5373,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // widział gołe score=2 i potrafił przełożyć dobranie karty na pass
           // albo inny trywialny wariant. Wartość = karta (P.drawCardValue),
           // jak w cast_spell — generycznie po typie efektu (ADR 0002).
-          if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') {
+          // Żywy Tester (PR #121, seed 911 tarkir-bg vs innistrad-wu):
+          // Civilized Scholar „{T}: dobierz, potem odrzuć” to
+          // `draw_then_discard` — tej gałęzi tu NIE było, więc bot widział
+          // gołą bazę 2 (> pass 0) i aktywował dobór PRZY PUSTEJ BIBLIOTECE
+          // (przegrał na miejscu; CR 121.4/704.5b). Ten sam guard
+          // `drawDeckingPenalty` co draw_cards (klasy D/C + L41).
+          if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players'
+            || effect.type === 'draw_then_discard') {
             const drawAmount = Number.isInteger(effect.amount) ? effect.amount : 1;
             score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
           }
@@ -7250,6 +7269,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     if (cmd.type === 'resolve_springbloom') {
       return `resolve_springbloom(${cmd.sacrificeLandId ?? 'skip'})`;
+    }
+    // A1 (audyt niezależny PR #122, port 2026-09-15; klasa M131/L34):
+    // warianty „you may" (fire/skip) były w śladzie nierozróżnialne — test
+    // wyceny i audyt remisów nie miały czego parować. Etykieta nazywa WARIANT.
+    if (cmd.type === 'resolve_optional_trigger_choice') {
+      return `resolve_optional_trigger_choice(${cmd.fire ? 'fire' : 'skip'})`;
     }
     if (cmd.type === 'resolve_look_top_choice' || cmd.type === 'resolve_satyr_look_choice'
         || cmd.type === 'resolve_graveyard_top_choice' || cmd.type === 'resolve_delirium_target'

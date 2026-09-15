@@ -1,0 +1,142 @@
+# Plan 2026-09-15c — audyt PR #120 + naprawa znalezisk (ADR 0020 A/B)
+
+**Zlecenie:** „Kontynuujemy projekt." — prompt nie nazywa tematu → pętla domyślna
+ADR 0021: PR sesji → audyt ostatniego scalonego PR (**#120**) → naprawy → pętla jakości.
+
+**Stan wejściowy (zmierzony 2026-09-15):**
+- `main` = `01c22a9` (squash PR #120); gałąź sesji `arena/01a0a505-mtg` czysta.
+- `npm test` **5496/5496** (0 fail, ~204 s), `node --test test/bot-benchmark.test.js`
+  **10/10** (próbka regresji, ADR 0016), `npm run build` 61 modułów / 3660,4 kB.
+- Golden-master `test/bot-scoring-snapshot.test.js` 4/4 na main.
+
+## 0. Audyt PR #120 (ADR 0020 B)
+
+PR #120 = „Znaleziska A–G" (Savage Surge, Spare from Evil, Civilized Scholar log,
+Powerstone restricted, Murder/Skaab draw-mill, Altar badge). 8 plików: 2 dokumenty,
+6 źródłowych (+445/−18), **zero plików testowych**. Wyniki w
+`docs/audits/AUDYT_PR120_2026-09-15.md` (E1). Skrót:
+
+- **F1 (blokujące, naprawa E2)** — wycena `resolve_optional_trigger_choice` czyta
+  `view.pendingOptionalTrigger.ability`, a widok projektuje `{sourceCardId, effect}`
+  (`game-state.js` ~7871). Martwy kod: kara cienkiej biblioteki nigdy nie naliczona.
+  Repro headless: biblioteka 4 karty → bot pali triggera (score 50 > 0), identycznie
+  jak przy 25. Klaim commita „Murder przy 4 kartach teraz passują" niespełniony.
+- **F2 (naprawa E3)** — kreator many odcina Powerstone (`spendOnly: 'artifact'`) od
+  płatności za `activate_ability`; Oracle (Scryfall API, BRO token, 2026-09-15):
+  „This mana can't be spent to cast a nonartifact spell." — zdolności NIE są objęte;
+  silnik (`restrictedManaBlocked` = `castingSpell && !artifactSpell`) też pozwala.
+  Rozjazd kreator↔silnik (L48), zawężenie legalnej akcji gracza.
+- **F3 (sprzątanie E4)** — martwy kod z PR #120: nieużywana `artifactPurposeFor`
+  (0 wywołań), identyczne gałęzie `else if (...) trick = -75; else trick = -75;`,
+  zakomentowany `// DEBUG console.log` (L58), nieużywany `export`
+  `protectionPreventsAnyLethal` (test, dla którego był, nie istnieje w repo).
+- **F4 (dokumentacja E5)** — błędne numery CR w komentarzach: „CR 709.2a" przy
+  Altarze (CR 709 = „Split Cards" — weryfikacja online 2026-09-15); zamienione
+  d↔e przy protection (702.16e = prewencja obrażeń).
+- **F5 (proces, bez kodu)** — sesja #120 nie zamknęła dokumentacji: plan
+  `PLAN_2026-09-15b` z nieodhaczonymi E1–E7 i bez podsumowania; brak handoffu i
+  wpisu `PROJECT_HISTORY`; README „Bieżący stan" niezmierzony. Klaimy commitów bez
+  pokrycia w repo: „Snapshot zaktualizowany (--write)" (fixture identyczny przed i
+  po — test na main zielony), „11 testów zielonych" / „Test: Main1 -> pass" (testów
+  brak).
+
+## Etapy (inkrementalnie, każdy commit zielony: `npm test` + `npm run build`)
+
+- [x] **E0** — ten plan + PR sesji (ADR 0020 A)
+- [x] **E1** — raport audytu `docs/audits/AUDYT_PR120_2026-09-15.md` (pełny, z repro)
+- [x] **E2** — **F1**: czytanie `pending.effect` w wycenie optional-trigger + testy
+      (RED przed fixem: fire przy 4 kartach; GREEN po: pass przy 4, fire przy 25;
+      mutacja fixu → RED, L13)
+- [x] **E3** — **F2**: kreator many — ograniczenie `spendOnly` stosowane wyłącznie
+      do rzutów czarów nie-artefaktowych (mirror `restrictedManaBlocked`) + testy
+- [x] **E4** — **F3**: usunięcie martwego kodu z PR #120 (L5: martwy wartownik)
+- [x] **E5** — **F4**: sprostowanie cytatów CR w komentarzach (dosłowne cytaty,
+      ADR 0030 pkt 3)
+- [ ] **E6** — domknięcie: `npm run test:all`, README „Bieżący stan" (L92),
+      handoff, `PROJECT_HISTORY` (z adnotacją o braku zamknięcia sesji #120),
+      opis PR kumulacyjnie
+
+## Weryfikacja regułowa (ADR 0030 — źródła, 2026-09-15)
+
+- Powerstone token (BRO T7, `d45fe4b6…` — zgodne z `imageUri` w repo):
+  `{T}: Add {C}. This mana can't be spent to cast a nonartifact spell.`
+  → api.scryfall.com (fetch_page). Ograniczenie NIE obejmuje zdolności.
+- CR 709 = „Split Cards" (yawgatog + mtg.fandom/Fuse „see rule 709, Split Cards").
+- CR 702.16e = „Any damage that would be dealt by sources that have the stated
+  quality to a permanent or player with protection is prevented." (prewencja);
+  702.16f = atakujący z protection nie może być blokowany.
+- CR 400.2 = strefy publiczne (cmentarz jawnie publiczny) — cytaty w PR #120 poprawne.
+
+## Granice
+
+- Bez nowych kart (ADR 0029), bez zmian Oracle/katalogu.
+- Zero wyjątków po nazwie karty w core (ADR 0002).
+- Bot czyta PlayerView (ADR 0017) — naprawa F1 jest u root cause kontraktu widoku,
+  nie w heurystyce wokół brakującej informacji.
+- Surgical patching (ADR 0016), testy z weryfikacją mutacyjną (L13), B0 tylko na
+  komendę właściciela (ADR 0018).
+
+## E7 — port A4 z niezależnego audytu PR #122 (2026-09-15)
+
+- [x] Okno „po blokach" wyceny `grant_protection_until_end_of_turn` kończy się
+  na `combat_damage` (usunięty `end_of_combat`; CR 510.1/510.2/511.1, DEBT) —
+  commit `daec11c`.
+- [x] Test `test/audyt-pr120-spare-okno-end-of-combat.test.js` (3 testy:
+  okno wartościuje >0; end_of_combat <0 i bot nie rzucza; combat_damage
+  nadal okno). Mutacja (powrót end_of_combat) → RED, revert → GREEN (L13).
+- [x] Bramka: npm test 5506/5506, build 61/3682,2 kB; golden-master bez zmian
+  (zgodnie z #122: ich E3 z A4 też nie ruszył fixture).
+
+## E10 — Żywy Tester: Scholar, dobór z pustej biblioteki (2026-09-15)
+
+- [x] Partie celowane (innistrad-wu bota, seed 911/912; dominaria-wu gracza,
+  seedy 921–923) — transkrypty poza repo; raport:
+  [`docs/audits/AUDYT_PR121_ZYWY_2026-09-15.md`](../audits/AUDYT_PR121_ZYWY_2026-09-15.md).
+- [x] Z1: bot aktywował Civilized Scholar ({T}: dobierz, odrzuć) przy pustej
+  bibliotece i przegrał na miejscu (CR 704.5b) — `draw_then_discard` bez
+  gałęzi wyceny w `activate_ability` (L41+D/C) — naprawione w `148a6d3`
+  (wartość doboru + `drawDeckingPenalty`); test RED→GREEN z mutacją;
+  dowód żywy: ten sam seed — bot przestał się deck-outować dobrowolnie.
+- [x] Z2: „Aktywuj: Powerstone (Ty) — " bez kosztu/opisu + kafel bez tekstu
+  (wpisy token_powerstone/wizard/chocobo bez `abilities` w rejestrze;
+  `manaEffectLabel` bez `spendOnly`; `MANA_SOURCE_MAP` cieniująca deskryptor)
+  — naprawione w `96b9c2f`; strażnik zgodności deskryptor↔rejestr; dowód
+  żywy: pełna etykieta z restrykcją CR 106.3.
+- [x] Potwierdzenia żywe bez zmian w kodzie: A4 (Spare w fazie obrażeń,
+  „Obrażenia (5) … zapobiegnięte"), F2 obie strony (Sliver bez Powerstone,
+  Altar z Powerstone), atrybucja odrzucenia (PR #120/C). Detektory: 0 zgłoszeń.
+- [x] Bramki: npm test 5514/5514, build 61/3685,0 kB; quick benchmark
+  82,9% (557/672) — bez zmian.
+
+## E8 — port O1 + etykieta wariantu A1 + test murder-mayfire z PR #122 (2026-09-15)
+
+- [x] Usunięta martwa gałąź `resolve_optional_draw` w `libraryDrainTax`
+  (`oneShotDeckOutPenalty(view, 1)` ≡ 0; L5) — wycena bez zmian.
+- [x] `describeCommand` rozróżnia `resolve_optional_trigger_choice(fire|skip)`
+  (klasa M131/L34).
+- [x] Test `test/audyt-pr120-murder-mayfire-thin-library.test.js` przywieziony
+  z #122 (nota proweniencji w nagłówku) — 2/2 przy naprawie F1/E2 tego PR.
+- [x] Fixture golden-mastera regenerowany po etykiecie: **bit w bit identyczny
+  z PR #122** (overallHash `adc327be…`, 6/6 partii, decyzje/scoreSum bez zmian)
+  — krzyżowa walidacja równoważności obu implementacji.
+- [x] Bramka: npm test 5508/5508, build 61/3682,6 kB.
+
+## Podsumowanie wykonania (2026-09-15)
+
+- E0–E5 wykonane commitami `8ef681e`, `9170ff3`, `75a987d`, `0f979a8`, `56c918f`,
+  `bf8585d` (każdy samodzielnie zielony, ADR 0020 C/D). E6 = domknięcie
+  (test:all 5513/5513, README, handoff `HANDOFF_2026-09-15b.md`, dziennik,
+  opis PR #121 kumulatywnie).
+- F1 naprawione i przypięte testem z weryfikacją mutacyjną (RED przed/po).
+- F2 naprawione (wspólny kontrakt kreatora i silnika) + testy vm + mutacja.
+- F3/F4 posprzątane; F5 opisany w audycie i uzupełniony w tej sesji
+  (plan 15b, dziennik, README, handoff).
+- **Port z niezależnego audytu PR #122 (zlecenie właściciela 2026-09-15):**
+  E7 = A4 (okno Spare, `daec11c`), E8 = O1 + etykieta A1 + test
+  murder-mayfire + fixture (`39fe781`). A3/A5/A6/P1–P3 z #122 to duplikaty
+  F2/F3/F5 tego PR (rozwiane w raporcie, §Zbieżność); nieportowane —
+  rozwiązanie F2/E3 zostaje (jedno źródło reguły). Sprostowano O2
+  (CR 510.1: combat_damage MA priorytet przed rozdaniem obrażeń).
+- Pozostały obserwacje O1/O3/O4/O5 (raport audytu) — nieblokujące;
+  dopisane O3 z #122 (założenie ochrony wszystkich blokerów — poprawne
+  dla Spare).

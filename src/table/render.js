@@ -868,8 +868,9 @@ const DYNAMIC_PT_LABELS = Object.freeze({
   card_types_in_all_graveyards_plus_1: 'liczba typów kart w grobach +1',
 });
 function altarTypeCount(session) {
-  // G (Altar of the Goyf, CR 709.2a): liczba różnych typów kart we WSZYSTKICH
-  // grobach — informacja publiczna (CR 400.2). Liczy TYPOVED kart (types[]),
+  // G (Altar of the Goyf): liczba różnych typów kart we WSZYSTKICH grobach —
+  // X wg Oracle karty („where X is the number of card types among cards in all
+  // graveyards"), informacja publiczna (CR 400.2). Liczy TYPOVED kart (types[]),
   // nie supertypy; baza danych niesie je jawnie (ADR 0002). Używana do badge'a
   // Altaru i do opisu buffa +X/+X w overlayu. View ma już karty z grobów,
   // session dostarcza definicji typów (cardDetails).
@@ -3580,7 +3581,8 @@ export function cardInfo(session, object, combat = null) {
       ? (session.view()?.zones?.battlefield ?? []).filter((o) => o.attachedTo === object.id && o.id !== object.id)
           .map((o) => ({ name: o.cardId ? (session.nameOf(o.cardId) || o.cardId) : o.cardId, kind: (o.aura || o.bestow) ? 'aura' : 'equip' }))
       : [],
-    // G (Altar of the Goyf, CR 709.2a): aktualny X = liczba typów w grobach — badge na kafle
+    // G (Altar of the Goyf): aktualny X = liczba typów w grobach (Oracle karty;
+    // typy kart wg CR 205.2a) — badge na kafle
     // artefaktu (publiczna informacja, jak live P/T Tarmogoyfa). Liczone tu,
     // żeby overlay dostał gotową liczbę bez kolejnego skanu (L41: jedno źródło).
     // Deskryptor card-agnostic: każda karta której efekt liczy 'card_types_in_all_graveyards'

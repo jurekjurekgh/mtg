@@ -10847,3 +10847,81 @@ plan [`docs/plans/PLAN_2026-09-14f-bot-mulligan.md`](plans/PLAN_2026-09-14f-bot-
   odłożenie na spód, zatrzymanie nowej ręki, partia do końca, 0 zgłoszeń
   detektorów; LESSONS § L19 dopisek (narracja w LESSONS_PRZYPADKI,
   budżet lektury zielony).
+
+## 2026-09-15b — audyt PR #120 (APPROVE z zastrzeżeniami) + naprawy F1/F2/F3/F4 (PR #121, arena/01a0a505-mtg)
+
+Zlecenie „Kontynuujemy projekt." (bez tematu) → pętla domyślna ADR 0021: PR sesji
+przed kodem, pełny audyt ostatniego scalonego PR (#120, „Znaleziska A–G") wg
+ADR 0020 B/0016, naprawy u root cause. Raport:
+[`docs/audits/AUDYT_PR120_2026-09-15.md`](audits/AUDYT_PR120_2026-09-15.md);
+plan: [`docs/plans/PLAN_2026-09-15c-audyt-pr120-i-naprawy.md`](plans/PLAN_2026-09-15c-audyt-pr120-i-naprawy.md).
+
+Nota proweniencji (L142): sesje #119 (audyt #118) i #120 (A–G) NIE dopisały
+wpisów do tego dziennika i nie zamknęły dokumentacji (F5 audytu #120: plan
+bez odhaczeń, brak handoffu, klaimy commitów o regeneracji snapshotu i testach
+bez pokrycia w repo — fixture golden-mastera identyczny przed i po, zero plików
+testowych w diffie #120). Ten wpis pisze sesja audytowa #121; stan sesji
+#119/#120 odtworzony z ich artefaktów (handoff 2026-09-15, plan 15b, commity).
+
+Znaleziska i naprawy (każdy etap osobnym zielonym commit: 8ef681e E0 plan,
+9170ff3 E1 raport, 75a987d E2, 0f979a8 E3, 56c918f E4, bf8585d E5):
+
+- **F1 (E2)** — martwa wycena `resolve_optional_trigger_choice`: czytanie
+  `view.pendingOptionalTrigger.ability`, pole nieistniejące w widoku (widok:
+  `{sourceCardId, effect}`) → kara cienkiej biblioteki nigdy nie naliczana;
+  Murder of Crows palił „may draw" przy 4 kartach (repro: score 50 jak przy 25).
+  Fix: odczyt `pending.effect`; testy `test/audyt-pr120-optional-trigger-wycena.test.js`
+  (RED przed fixem, mutacja → RED); klasy: L1/ADR 0017 + L48.
+- **F2 (E3)** — kreator many odcinał Powerstone (`spendOnly:'artifact'`) od
+  `activate_ability`; Oracle (scryfall 2026-09-15, ADR 0030) i silnik
+  (`restrictedManaBlocked`) pozwalają. Fix: wspólna `restrictedSpellBlockedFor`
+  (jedno źródło zamiast trzech kopii, L41/L48); testy
+  `test/audyt-pr120-powerstone-kreator.test.js` (vm, wzorzec M348; RED przed
+  fixem); M348/B5 doposażony o helper (L96).
+- **F3 (E4)** — sprzątnięty martwy kod z #120: identyczne gałęzie `trick=-75`
+  (warunek martwy, L5), zakomentowany DEBUG-log (L58), pusty `export`,
+  redundancja filtru (L106).
+- **F4 (E5)** — sprostowane cytaty CR z #120: „CR 709.2a" (CR 709 = Split
+  Cards) → Oracle Altara + CR 205.2a; 702.16d↔e zamienione (prewencja = 702.16e,
+  cytat dosłowny w kodzie).
+
+Bramki finalne (zmierzone): `npm test` **5503/5503**, `npm run test:all`
+**5513/5513** (~343 s), build 61 modułów / 3681,4 kB, regresja botów 10/10,
+golden-master 4/4. Werdykt audytu #120: APPROVE z zastrzeżeniami (wyceny po
+deskryptorach, M212 ✓; wady: F1/F2 + brak testów przy zmianach wyceny).
+Obserwacje O1–O5 w raporcie (m.in. twardy prefiks „Altar:" przy deskryptorze
+generycznym — do etykiety mechanikowej, gdy wejdzie druga karta; komentarz
+M221/E z PR #107 cytuje 702.16e przy blokadzie — do weryfikacji u źródła).
+
+**Port z niezależnego audytu PR #122** (sesja `arena/01a0a506-mtg`; zlecenie
+właściciela: scalić komplety napraw, zamknąć #122). Audyty wykryły po jednym
+trafieniu, którego brakował drugiemu: #122 znalazło A4 (`end_of_combat` w oknie
+Spare — bot palił ochronę po rozdanych obrażeniach; u nas tylko błędna
+obserwacja O2, sprostowana wg CR 510.1) i O1 (martwa gałąź
+`resolve_optional_draw`, `oneShotDeckOutPenalty(1)` ≡ 0); #121 wykryło F2
+(Powerstone vs zdolności), F4 (cytaty CR) i F5 (klaimy commitów). Portowane
+commitami `daec11c` (E7: A4 + test 3/RED→GREEN z mutacją) i `39fe781` (E8:
+O1 + etykieta fire/skip w describeCommand + test murder-mayfire z #122 +
+fixture). Po portach golden-master regenerowany **bit w bit identycznie**
+z fixture PR #122 (overallHash `adc327be…`, 6/6 partii) — dwie niezależne
+implementacje napraw dają identyczny ślad bota; A3/A5/A6/P1–P3 z #122 to
+duplikaty F2/F3/F5 (mapowanie w raporcie, §Zbieżność). Bramki po portach:
+npm test 5508/5508, build 61 modułów / 3682,6 kB.
+Handoff: [`docs/setup/HANDOFF_2026-09-15b.md`](setup/HANDOFF_2026-09-15b.md).
+
+**Żywy Tester celowany w naprawy (2026-09-15, ten sam PR):** 5 partii na
+taliach z kartami naprawianymi (innistrad-wu, dominaria-wu; raport
+`docs/audits/AUDYT_PR121_ZYWY_2026-09-15.md`, transkrypty poza repo).
+Dwa nowe znaleziska naprawione u root cause: **Z1** (`148a6d3`) — bot
+aktywował Civilized Scholar ({T}: dobierz, odrzuć) przy pustej bibliotece
+i przegrywał na miejscu; `draw_then_discard` nie miał gałęzi wyceny
+`activate_ability` (bliźniaczy typ `draw_cards` miał, klasa L41+D/C);
+**Z2** (`96b9c2f`) — „Aktywuj: Powerstone (Ty) — " bez kosztu/opisu: wpisy
+tokenów (powerstone/wizard/chocobo) bez `abilities` w rejestrze +
+`manaEffectLabel` bez `spendOnly` + `MANA_SOURCE_MAP` cieniująca deskryptor
+(usunięta wg strażnika M200/N1); do tego strażnik zgodności
+deskryptor↔rejestr dla tokenów. Potwierdzenia żywe bez zmian: A4 (Spare
+w fazie obrażeń zapobiegło 5 obrażeniom), F2 obie strony (Sliver bez
+Powerstone w kreatorze, Altar z Powerstone tapniętym), atrybucja odrzucenia.
+Detektory: 0 zgłoszeń. Bramki: npm test 5514/5514, build 61/3685,0 kB,
+quick benchmark 82,9% (557/672) bez zmian.
