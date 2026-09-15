@@ -20,6 +20,9 @@ function runBundle(code) {
     style: {}, className: '',
     appendChild(child) { (this.children ??= []).push(child); },
     addEventListener() {},
+    // 15f: przyciski-toggle belki malują stan przez aria-pressed.
+    setAttribute(k, v) { (this.attrs ??= {})[k] = String(v); },
+    getAttribute(k) { return this.attrs?.[k] ?? null; },
   });
   globalThis.document = {
     getElementById(id) {

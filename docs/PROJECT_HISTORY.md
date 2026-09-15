@@ -10960,3 +10960,14 @@ zależny od bloku — biblioteka p1) + regen golden-mastera (uzasadniona: 1 wpis
 mniej, downstream bit w bit, overallHash `4e1dd246…`). Lekcja **L144** (wpis
 opłacony kondensacją L66 — budżet lektury 100k). Bramki: npm test 5522/5522,
 test:all 5532/5532, build 61/3693,6 kB, quick 82,9% (557/672, bez zmian).
+
+**Dopisek (ten sam dzień, ten sam PR #123): dźwięki czarów + ikonki-toggle
+(15f).** Zlecenie właściciela: nastrojowy dźwięk w chwili pokazania warstwy
+hi-gfx, inny na typ (synteza Web Audio, zero wavów: instant/sorcery/
+creature/enchantment/artifact/land/default; `src/table/spell-sounds.js`),
+przełącznik dźwięków w belce (domyślnie OFF) + ptaszek hi-gfx zamieniony
+na ikonkę (odtąd domyślnie ON; pamięć `mtg-table-prefs-v1`;
+`src/table/topbar-toggles.js`). Dźwięk gra razem z warstwą (kolejka
+M254/C), a bez warstwy — w chwili rzutu; ukryty rzut bota milczy (M257
+r3). Test `test/owner-spell-sounds.test.js` (20; mutacja 5 RED); harness
+`table-ui.test.js` wpina hiGfx:false (click-through bez pauzy).
