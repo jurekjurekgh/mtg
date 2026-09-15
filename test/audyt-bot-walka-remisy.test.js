@@ -186,6 +186,13 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
       + `${r.przyklady.filter((x) => typeof x === 'string').join('\n')}`);
   }
   // Grzechotka nie może być ślepa: te klasy muszą mieć w ogóle remisy akcyjne.
-  assert.ok(atak.akcyjne + blok.akcyjne >= 6,
+  // Podłoga 4 po 15g/C (2026-09-15): minima landów przesunęły ląd w `kaladesh`
+  // (Swamp 2→3, Mountain 2→1), co ZMIENIŁO TRAJEKTORIĘ pary kaladesh|zendikar:
+  // 4 przejrzane pozycje klasy B (atak) zniknęły, 1 remis bloków (roz=0)
+  // przybył. ZMIERZONE per para, nie zgadnięte (audytRemisow, stara vs nowa
+  // talia): pozostałe 6 par IDENTYCZNE (atak 2, blok 1), projekcja działa
+  // (test „projekcja walki istnieje" zielony), jedyne roz=1 to stara pozycja
+  // tarkir (klasa polityki, sufit 7 trzyma). Podłoga idzie 6 → 4 ŚWIADOMIE.
+  assert.ok(atak.akcyjne + blok.akcyjne >= 4,
     `remisy akcyjne w walce zniknęły (${atak.akcyjne}/${blok.akcyjne}) — sprawdź, czy projekcja nie przestała działać`);
 });

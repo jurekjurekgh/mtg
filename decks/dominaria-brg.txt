@@ -17,6 +17,6 @@
 1x Disa the Restless
 1x Final Parting
 1x Mindstab
-5x Swamp
-1x Mountain
+4x Swamp
+2x Mountain
 3x Forest
