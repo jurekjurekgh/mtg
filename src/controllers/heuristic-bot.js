@@ -1322,10 +1322,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // gałęzi w scoreCommand.
       if (Number.isInteger(cmd.selfMill)) return 0;
       const pending = view.pendingOptionalTrigger;
-      const ability = pending?.ability;
+      // F1 (audyt PR #120): widok projektuje tę decyzję jako { sourceCardId,
+      // effect } (game-state.js ~7871) — pole `ability` NIE istnieje w widoku,
+      // więc czytanie go po cichu wyłączało karę cienkiej biblioteki (L1/L48).
+      const effect = pending?.effect;
       let drain = 0;
-      if (ability) {
-        for (const eff of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+      if (effect) {
+        for (const eff of (Array.isArray(effect) ? effect : [effect])) {
           if (!eff?.type || !LIBRARY_DRAIN_EFFECTS.has(eff.type)) continue;
           if (drainsMyLibrary(eff)) drain += drainAmount(eff);
         }
