@@ -1050,7 +1050,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
   // Efekty zabierające karty z biblioteki: mill wprost, dobranie też (karta
   // opuszcza bibliotekę i przybliża deck-out — CR 121.4).
-  const LIBRARY_DRAIN_EFFECTS = new Set(['mill_cards', 'draw_cards']);
+  // E+F (znaleziska właściciela: Murder of Crows draw_then_discard, Armored
+  // Skaab mill 4): draw_then_discard to też dobranie (net 1 z biblioteki),
+  // mill_from_bottom to też mielenie (to samo co mill_cards — ADR 0002).
+  const LIBRARY_DRAIN_EFFECTS = new Set(['mill_cards', 'draw_cards', 'draw_then_discard', 'mill_from_bottom']);
   // Zdarzenia JEDNORAZOWE: trigger odpali raz (wejście na pole bitwy, śmierć
   // źródła). To nie jest POWTARZALNE źródło, więc nie mnożymy go przez
   // horyzont — jednorazowy dobór z czaru karze `drawDeckingPenalty`, a premię
@@ -1113,6 +1116,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return naOdpalenie * P.repeatLibraryDrainTurns;
   };
+  // E+F (Armored Skaab ETB mill 4): jednorazowy drenaż z ONE_SHOT eventów
+  // (enter_battlefield, dies) — np. Skaab „ETB mill 4", nie mnożymy przez
+  // horyzont. Razem z repeat + payment daje pełny obraz ryzyka deck-outu
+  // przy rzucie, zamiast per-karta patchy.
+  const oneShotLibraryDrain = (def) => {
+    let razem = 0;
+    for (const ability of def?.abilities ?? []) {
+      const ev = ability?.trigger?.event;
+      if (!ev || !ONE_SHOT_DRAIN_EVENTS.has(ev)) continue;
+      razem += drainEfekty(ability, ev, drainsMyLibrary);
+    }
+    return razem;
+  };
   /**
    * B/1b — ile kart WŁASNEJ biblioteki zje PŁATNOŚĆ za wariant. Auto-tap
    * (`spendMana`) do-tapuje brakujące źródła, a silnik odkłada mielące na koniec
@@ -1169,9 +1185,38 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       return libraryLossPenalty(view, drain);
     }
+    // E (Murder of Crows may draw, Ferocious may draw): dobrowolne dobranie
+    // przy cienkiej bibliotece to deck-out — ta sama drabina co dla rzutów.
+    // Horyzont nie dotyczy jednorazowej decyzji „czy dobrać teraz", więc kara
+    // liczona jest dla pojedynczego dobrania (1 karta).
+    if (cmd?.type === 'resolve_optional_draw') {
+      return cmd.draw ? libraryLossPenalty(view, 1) : 0;
+    }
+    // E (Murder mayFire trigger draw_then_discard): odpalenie zabiera 1 kartę
+    // z biblioteki (draw). Nagroda bazowa to 50, ale przy bibliotece ≤3 lub
+    // ≤0 drabina libraryLossPenalty przebija nagrodę (tak samo jak draw).
+    if (cmd?.type === 'resolve_optional_trigger_choice' && cmd.fire) {
+      // M167/B selfMill ma własną wycenę wyścigu (45 / -35 / -60) — nie
+      // dokładamy drugiej kary, żeby nie podwajać. Zostawiamy dedykowanej
+      // gałęzi w scoreCommand.
+      if (Number.isInteger(cmd.selfMill)) return 0;
+      const pending = view.pendingOptionalTrigger;
+      const ability = pending?.ability;
+      let drain = 0;
+      if (ability) {
+        for (const eff of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+          if (!eff?.type || !LIBRARY_DRAIN_EFFECTS.has(eff.type)) continue;
+          if (drainsMyLibrary(eff)) drain += drainAmount(eff);
+        }
+      }
+      if (drain > 0) return libraryLossPenalty(view, drain);
+      return 0;
+    }
     if (!LIBRARY_DRAIN_CAST_TYPES.has(cmd?.type)) return 0;
     const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
-    const drain = repeatLibraryDrain(karta?.cardId ? cardDef(karta.cardId) : undefined)
+    const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
+    const drain = repeatLibraryDrain(def)
+      + oneShotLibraryDrain(def)
       + paymentLibraryLoss(view, cmd);
     return libraryLossPenalty(view, drain);
   };
