@@ -12,6 +12,10 @@
  * Głośność: każdy przepis szczytuje ≤0,35 (nastrojowo, nie ogłuszająco),
  * czas ≤2,1 s. Strukturę trzyma tabela RECIPES za fasadą `play(key)` —
  * gdyby właściciel zapragnął wavów, podmiana to jedna funkcja na klucz.
+ *
+ * 15g/A: warstwa koloru. `play('sorcery:R')` gra bazę typu + nastrojową
+ * warstwę koloru (ogień/woda/mrok/chime/wzrost + bezbarwny/multi).
+ * Kompozycja, nie macierz receptur: 7 baz + 7 warstw = 49 brzmień.
  */
 
 /** Rodziny typów (słowa z `card.types` rejestru) → klucz brzmienia. */
@@ -52,6 +56,24 @@ export function soundKeyForTypes(types) {
   return meaningful ? 'creature' : 'default';
 }
 
+/**
+ * 15g/A: klucz koloru karty. Dokładnie jeden kolor → on; dwa lub więcej →
+ * 'multi'; brak (landy, artefakty, czary bezbarwne) → 'colorless'.
+ * Basic landy zostają neutralne (puste `colors`; tożsamość z many to
+ * osobny temat, nie ten tor).
+ */
+export function colorKeyForCard(card) {
+  const declared = Array.isArray(card?.colors) ? card.colors.filter((c) => 'WUBRG'.includes(c)) : [];
+  if (declared.length === 1) return declared[0];
+  if (declared.length > 1) return 'multi';
+  return 'colorless';
+}
+
+/** Pełny klucz brzmienia: typ + kolor (`sorcery:R`, `land:colorless`). */
+export function soundKeyForCard(card) {
+  return `${soundKeyForTypes(card?.types)}:${colorKeyForCard(card)}`;
+}
+
 /** Pojedynczy ton z obwiednią atak→wybrzmienie (do `dest`, zwykle głośnik). */
 function tone(ctx, dest, {
   type = 'sine', freq = 440, freqEnd = null, at = 0,
@@ -77,7 +99,7 @@ function tone(ctx, dest, {
 /** Porcja szumu przez filtr (oddech, świst, pomruk w tle tonów). */
 function noise(ctx, dest, buffer, {
   at = 0, attack = 0.2, peak = 0.12, dur = 1.2,
-  filterType = 'lowpass', filterFreq = 800, q = 0.7,
+  filterType = 'lowpass', filterFreq = 800, filterFreqEnd = null, q = 0.7,
 } = {}) {
   const t0 = ctx.currentTime + at;
   const src = ctx.createBufferSource();
@@ -86,6 +108,7 @@ function noise(ctx, dest, buffer, {
   const filter = ctx.createBiquadFilter();
   filter.type = filterType;
   filter.frequency.setValueAtTime(filterFreq, t0);
+  if (filterFreqEnd != null) filter.frequency.exponentialRampToValueAtTime(filterFreqEnd, t0 + dur);
   filter.Q.setValueAtTime(q, t0);
   const g = ctx.createGain();
   g.gain.setValueAtTime(0.0001, t0);
@@ -164,6 +187,51 @@ const RECIPES = {
 export const SOUND_KEYS = Object.keys(RECIPES);
 
 /**
+ * 15g/A: 7 warstw koloru — ciche (szczyt ≤0,15) dodatki do bazy typu.
+ * W: promienny chime; U: płynąca woda + krople; B: mroczny pomruk
+ * (dudnienie półtonu); R: trzask ognia + ryk; G: rosnący pomruk ziemi;
+ * colorless: puste metaliczne bicie; multi: migotliwe arpeggio.
+ */
+const COLOR_LAYERS = {
+  W(ctx, dest) {
+    tone(ctx, dest, { type: 'sine', freq: 1568, attack: 0.05, peak: 0.09, dur: 1.2 });
+    tone(ctx, dest, { type: 'sine', freq: 2093, at: 0.1, attack: 0.05, peak: 0.06, dur: 1.0 });
+  },
+  U(ctx, dest, buf) {
+    noise(ctx, dest, buf, { attack: 0.3, peak: 0.1, dur: 1.4, filterFreq: 400, filterFreqEnd: 2200 });
+    tone(ctx, dest, { type: 'sine', freq: 1200, freqEnd: 2400, at: 0.2, attack: 0.01, peak: 0.07, dur: 0.3 });
+    tone(ctx, dest, { type: 'sine', freq: 900, freqEnd: 1800, at: 0.5, attack: 0.01, peak: 0.06, dur: 0.3 });
+  },
+  B(ctx, dest) {
+    tone(ctx, dest, { type: 'sine', freq: 55, attack: 0.4, peak: 0.14, dur: 1.8 });
+    tone(ctx, dest, { type: 'sine', freq: 58.3, attack: 0.4, peak: 0.1, dur: 1.8 });
+  },
+  R(ctx, dest, buf) {
+    for (const at of [0, 0.18, 0.36, 0.55]) {
+      noise(ctx, dest, buf, { at, attack: 0.01, peak: 0.1, dur: 0.08, filterType: 'bandpass', filterFreq: 2000, q: 1.5 });
+    }
+    tone(ctx, dest, { type: 'sine', freq: 90, attack: 0.1, peak: 0.12, dur: 0.9 });
+  },
+  G(ctx, dest, buf) {
+    tone(ctx, dest, { type: 'triangle', freq: 130, freqEnd: 260, attack: 0.5, peak: 0.12, dur: 1.6 });
+    noise(ctx, dest, buf, { attack: 0.4, peak: 0.08, dur: 1.6, filterFreq: 400 });
+  },
+  colorless(ctx, dest) {
+    tone(ctx, dest, { type: 'sine', freq: 440, attack: 0.1, peak: 0.08, dur: 1.2 });
+    tone(ctx, dest, { type: 'sine', freq: 466, attack: 0.1, peak: 0.08, dur: 1.2 });
+    tone(ctx, dest, { type: 'sine', freq: 3200, at: 0.15, attack: 0.2, peak: 0.035, dur: 1.0 });
+  },
+  multi(ctx, dest) {
+    const notes = [660, 830, 990];
+    notes.forEach((freq, i) => {
+      tone(ctx, dest, { type: 'sine', freq, at: i * 0.12, attack: 0.02, peak: 0.05, dur: 0.5 });
+    });
+  },
+};
+
+export const COLOR_KEYS = Object.keys(COLOR_LAYERS);
+
+/**
  * Odtwarzacz. `createContext: () => AudioContext|null` — strona podaje
  * leniwy konstruktor (autoplay: kontekst powstaje dopiero na potrzebę,
  * wznawiany na gestach); brak audio (wyjątek/null) = cichy no-op.
@@ -216,12 +284,17 @@ export function createSpellSoundPlayer({ createContext }) {
     },
     play(key) {
       if (!enabled) return 'disabled';
-      const recipe = RECIPES[key];
+      const [base, color] = String(key).split(':');
+      const recipe = RECIPES[base];
       if (!recipe) return 'unknown-key';
+      const layer = color == null ? null : COLOR_LAYERS[color];
+      if (color != null && !layer) return 'unknown-key';
       const c = ensureCtx();
       if (!c) return 'no-audio';
       player.resume();
-      recipe(c, c.destination, ensureNoise(c));
+      const buf = ensureNoise(c);
+      recipe(c, c.destination, buf);
+      if (layer) layer(c, c.destination, buf);
       return 'played';
     },
   };
@@ -234,5 +307,5 @@ export function createSpellSoundPlayer({ createContext }) {
  */
 export function playCastSound({ player, card }) {
   if (!card) return 'no-card';
-  return player.play(soundKeyForTypes(card.types));
+  return player.play(soundKeyForCard(card));
 }

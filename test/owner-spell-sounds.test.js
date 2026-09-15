@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
-  SOUND_KEYS, soundKeyForTypes, createSpellSoundPlayer, playCastSound,
+  SOUND_KEYS, COLOR_KEYS, soundKeyForTypes, colorKeyForCard, soundKeyForCard,
+  createSpellSoundPlayer, playCastSound,
 } from '../src/table/spell-sounds.js';
 import {
   PREFS_KEY, DEFAULT_PREFS, TOGGLE_ICONS, loadPrefs, createTopbarToggles,
@@ -250,11 +251,11 @@ test('odtwarzacz: zawieszony kontekst wznawiany przy grze; głośność i czas w
   }
 });
 
-test('playCastSound: karta → klucz z typów; brak karty = no-op', () => {
+test('playCastSound: karta → klucz typ:kolor; brak karty = no-op', () => {
   const calls = [];
   const stub = { play: (k) => { calls.push(k); return 'played'; } };
-  assert.equal(playCastSound({ player: stub, card: { types: ['Sorcery'] } }), 'played');
-  assert.deepEqual(calls, ['sorcery']);
+  assert.equal(playCastSound({ player: stub, card: { types: ['Sorcery'], colors: ['B'] } }), 'played');
+  assert.deepEqual(calls, ['sorcery:B']);
   assert.equal(playCastSound({ player: stub, card: null }), 'no-card');
   assert.equal(calls.length, 1);
 });
@@ -342,4 +343,59 @@ test('pin: main.js podpina moduły dźwięku i nie czyta już ptaszka', () => {
   assert.ok(main.includes("from './spell-sounds.js'"), 'import odtwarzacza');
   assert.ok(main.includes("from './topbar-toggles.js'"), 'import przełączników');
   assert.ok(!main.includes('hiGfxToggle?.checked'), 'koniec ery checkboxa');
+});
+
+test('15g/A: kolor z karty — mono, multi, bezbarwne', () => {
+  assert.equal(colorKeyForCard({ colors: ['R'] }), 'R');
+  assert.equal(colorKeyForCard({ colors: ['G', 'U'] }), 'multi');
+  assert.equal(colorKeyForCard({ colors: [] }), 'colorless');
+  assert.equal(colorKeyForCard({}), 'colorless');
+  assert.equal(soundKeyForCard({ types: ['Sorcery'], colors: ['R'] }), 'sorcery:R');
+  assert.equal(soundKeyForCard({ types: ['Instant'], colors: ['U'] }), 'instant:U');
+  assert.equal(soundKeyForCard({ types: ['Creature'], colors: ['G', 'W'] }), 'creature:multi');
+  assert.equal(soundKeyForCard({ types: ['Land'], colors: [] }), 'land:colorless');
+});
+
+test('15g/A: play z kolorem gra bazę + warstwę; zły kolor to unknown-key', () => {
+  const ctx = new FakeAudioContext();
+  const p = createSpellSoundPlayer({ createContext: () => ctx });
+  p.setEnabled(true);
+  assert.equal(p.play('instant'), 'played');
+  const baseNodes = ctx.nodes.length;
+  assert.equal(p.play('instant:U'), 'played');
+  assert.ok(ctx.nodes.length > baseNodes, 'warstwa koloru dokłada węzły');
+  assert.equal(p.play('instant:Z'), 'unknown-key');
+});
+
+test('15g/A: macierz 7 typów × 7 kolorów = 49 różnych sygnatur', () => {
+  const sigs = new Set();
+  for (const t of SOUND_KEYS) {
+    for (const c of COLOR_KEYS) {
+      const ctx = new FakeAudioContext();
+      const p = createSpellSoundPlayer({ createContext: () => ctx });
+      p.setEnabled(true);
+      assert.equal(p.play(`${t}:${c}`), 'played', `${t}:${c} gra`);
+      sigs.add(JSON.stringify(featuresOf(ctx)));
+    }
+  }
+  assert.equal(sigs.size, SOUND_KEYS.length * COLOR_KEYS.length, 'każdy typ×kolor brzmi inaczej');
+});
+
+test('15g/A: warstwy koloru ciche (≤0,15) i krótkie', () => {
+  for (const c of COLOR_KEYS) {
+    const ctx = new FakeAudioContext();
+    const p = createSpellSoundPlayer({ createContext: () => ctx });
+    p.setEnabled(true);
+    p.play(`default:${c}`);
+    const f = featuresOf(ctx);
+    assert.ok(f.maxGain <= 0.4, `${c}: baza + warstwa w ryzach (${f.maxGain})`);
+    assert.ok(f.maxStop <= 100 + 2.5, `${c}: ≤2,5 s (${f.maxStop})`);
+  }
+});
+
+test('15g/A: playCastSound gra typem z kolorem karty', () => {
+  const calls = [];
+  const stub = { play: (k) => { calls.push(k); return 'played'; } };
+  playCastSound({ player: stub, card: { types: ['Creature'], colors: ['G'] } });
+  assert.deepEqual(calls, ['creature:G']);
 });
