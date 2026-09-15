@@ -10925,3 +10925,61 @@ w fazie obrażeń zapobiegło 5 obrażeniom), F2 obie strony (Sliver bez
 Powerstone w kreatorze, Altar z Powerstone tapniętym), atrybucja odrzucenia.
 Detektory: 0 zgłoszeń. Bramki: npm test 5514/5514, build 61/3685,0 kB,
 quick benchmark 82,9% (557/672) bez zmian.
+
+## 2026-09-15d — audyt PR #121 (APPROVE) + sprostowanie cytatów CR G1/G2/G3 (PR #123, arena/01a0a5a7-mtg)
+
+Zlecenie „Kontynuujemy projekt." bez tematu → pętla domyślna ADR 0021
+(PR sesji na starcie, audyt #121, brak niedokończonego planu na main).
+Raport `docs/audits/AUDYT_PR121_2026-09-15.md`: werdykt APPROVE — 10 weryfikacji
+mechanicznych (fixture bit w bit == arena/01a0a506-mtg sha256 `b5a5dbf3…`;
+mutacja pre-F1 → RED; cytat 702.16e dosłowny; Oracle Powerstone ze snapshotów
+repo; V8: okno combat_damage = CR 509.2, przydział+rozdanie razem bez okna na
+czary — podejrzenie dewiacji 510.2 wycofane po odczycie przepływu).
+Znaleziska wyłącznie komentarzowe, naprawione w E2 (zero zachowania):
+G1 (A4: „CR 510.1 = priorytet przed rozdaniem" → podstawa CR 509.2; komentarz
+bota + nagłówek testu), G2 (M172/C: 509.4→509.2, L143), G3 (M221/E z PR #107:
+4× 702.16c→702.16e + doprecyzowanie nagłówka; rozstrzyga niepokój z 15b).
+Pętla jakości inną ścieżką niż Żywy Tester #121: audyt kontraktu
+pendingDamageAssignment (oferta vs walidacja, L48) — czysty; benchmark --quick
+82,9% (557/672) = main (tożsamość behawioralna E2 zmierzona). Nowa obserwacja
+O5: inwentarz cytatów 702.16 o niezweryfikowanym kontekście (osobne zadanie).
+Bramki: npm test 5514/5514, test:all 5524/5524, build 61/3685,6 kB (+0,6 kB —
+komentarze w bundlu), regresja B0 10/10.
+Handoff: [`docs/setup/HANDOFF_2026-09-15c.md`](setup/HANDOFF_2026-09-15c.md).
+
+**Dopisek (ten sam dzień, ten sam PR #123): znalezisko A — wymuszony discard
+bez modala.** Właściciel: Cathartic Reunion przy dokładnie 2 kartach otwierał
+modal wyboru. Fix generyczny (plan `docs/plans/PLAN_2026-09-15e-*.md`): jeden
+predykat `shouldAutoDiscard` + jeden wykonawca `discardCardsForced`
+w `effects.js` (11 miejsc kolejkowania, resolver też; `hand_size` nietknięte),
+`promoteNextMadness` na poziom modułu + hook w `accepted()` (madness w tej
+samej komendzie). Test `test/owner-cathartic-reunion-auto-discard.test.js` (8;
+RED→GREEN, mutacja 5 RED). Triage 13 breaksów: 1 prawdziwy bug (kontrakt
+`declined.count` — jawne `count: 0`), reszta intended + determinizm (skrypt
+zależny od bloku — biblioteka p1) + regen golden-mastera (uzasadniona: 1 wpis
+mniej, downstream bit w bit, overallHash `4e1dd246…`). Lekcja **L144** (wpis
+opłacony kondensacją L66 — budżet lektury 100k). Bramki: npm test 5522/5522,
+test:all 5532/5532, build 61/3693,6 kB, quick 82,9% (557/672, bez zmian).
+
+**Dopisek (ten sam dzień, ten sam PR #123): dźwięki czarów + ikonki-toggle
+(15f).** Zlecenie właściciela: nastrojowy dźwięk w chwili pokazania warstwy
+hi-gfx, inny na typ (synteza Web Audio, zero wavów: instant/sorcery/
+creature/enchantment/artifact/land/default; `src/table/spell-sounds.js`),
+przełącznik dźwięków w belce (domyślnie OFF) + ptaszek hi-gfx zamieniony
+na ikonkę (odtąd domyślnie ON; pamięć `mtg-table-prefs-v1`;
+`src/table/topbar-toggles.js`). Dźwięk gra razem z warstwą (kolejka
+M254/C), a bez warstwy — w chwili rzutu; ukryty rzut bota milczy (M257
+r3). Test `test/owner-spell-sounds.test.js` (20; mutacja 5 RED); harness
+`table-ui.test.js` wpina hiGfx:false (click-through bez pauzy).
+
+**Dopisek (ten sam dzień, ten sam PR #123): 15g — dźwięki per kolor (A),
+scryfall na warstwie (B), minima landów (C).** (A) Warstwa koloru dźwięku:
+`play('sorcery:R')` = baza typu + ogień/woda/mrok/chime/wzrost (multi +
+bezbarwny też; 7+7 = 49 brzmień, macierz pinowana). (B) Wąski ekran
+(< 7/5) BEZ lokalnego KON pokazywał pustą warstwę: błąd KON znaczy wiersz
+`no-kon`, CSS pokazuje wtedy scryfalla; błąd sf zdejmuje `is-loading`
+(widoczny, nie czarny). Pre-existing (I2), odsłonięte przez default-ON.
+(C) `landSplit`: minimum per kolor = maks pipów jednej karty, dobór
+kosztem innych, overflow rośnie; regen 5 talii (±1 land, sumy stałe);
+fala: golden-master regen (`131cd510…`, 4/6 partii bit w bit) + podłoga
+remisów 6→4 (obie uzasadnione pomiarem, nie zgadnięte).

@@ -140,36 +140,47 @@ export function coloredPips(card) {
   return pips;
 }
 
-/** Rozkład landów: ceil(n/2) proporcjonalnie do pipów, min 1 na używany kolor. */
+/** Rozkład landów: ceil(n/2) proporcjonalnie do pipów, min 1 na używany kolor.
+ * 15g/C (zlecenie właściciela): minimum per kolor to maks pipów JEDNEJ karty
+ * (karta z {R}{R} wymusza 2 Góry — proporcja dałaby czasem 1, nie do
+ * rzucenia). Niedobór dobierany kosztem innych kolorów (suma stała, nie
+ * poniżej ICH minimów); gdy suma minimów przekracza total, total rośnie. */
 export function landSplit(cards) {
-  const total = Math.ceil(cards.length / 2);
+  let total = Math.ceil(cards.length / 2);
   const pips = { W: 0, U: 0, B: 0, R: 0, G: 0 };
+  const minNeed = { W: 0, U: 0, B: 0, R: 0, G: 0 };
   for (const card of cards) {
     const p = coloredPips(card);
-    for (const c of COLOR_ORDER) pips[c] += p[c];
+    for (const c of COLOR_ORDER) {
+      pips[c] += p[c];
+      if (p[c] > minNeed[c]) minNeed[c] = p[c];
+    }
   }
   const used = COLOR_ORDER.filter((c) => pips[c] > 0);
+  for (const c of used) if (minNeed[c] < 1) minNeed[c] = 1;
+  const minSum = used.reduce((acc, c) => acc + minNeed[c], 0);
+  if (minSum > total) total = minSum;
   const sum = used.reduce((acc, c) => acc + pips[c], 0);
   const out = {};
   let assigned = 0;
   const remainders = [];
   for (const c of used) {
     const exact = (pips[c] / sum) * total;
-    const base = Math.max(1, Math.floor(exact));
+    const base = Math.max(minNeed[c], Math.floor(exact));
     out[c] = base;
     assigned += base;
     remainders.push([c, exact - Math.floor(exact)]);
   }
   // Dobierz/odbierz do sumy: największe reszty dostają (deterministycznie,
   // remis → kolejność WUBRG); przy nadmiarze zabieraj od najmniejszych reszt,
-  // nie schodząc poniżej 1.
+  // nie schodząc poniżej minimum koloru (15g/C).
   remainders.sort((a, b) => (b[1] - a[1]) || (COLOR_ORDER.indexOf(a[0]) - COLOR_ORDER.indexOf(b[0])));
   let i = 0;
   while (assigned < total) { out[remainders[i % remainders.length][0]] += 1; assigned += 1; i += 1; }
   i = remainders.length - 1;
   while (assigned > total && i >= 0) {
     const c = remainders[i][0];
-    if (out[c] > 1) { out[c] -= 1; assigned -= 1; } else { i -= 1; }
+    if (out[c] > minNeed[c]) { out[c] -= 1; assigned -= 1; } else { i -= 1; }
   }
   return out;
 }

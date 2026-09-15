@@ -30,6 +30,9 @@ const SLOWNIK_REGUL = new Set([
   // źródeł wygnania (EXILE_KEYWORD_LABELS) — słownik reguł, nie odwołanie
   // do karty o tej nazwie (analogicznie do Treasure/Island wyżej).
   'Unearth',
+  // 15f: 'Powerstone' to podtyp artefaktu i nazwa tokena (jak Treasure/Clue/
+  // Food wyżej) — słowo z mapowania typ→dźwięk, nie odwołanie do karty.
+  'Powerstone',
 ]);
 const DOZWOLONE_ID = new Set([
   'basic-plains', 'basic-island', 'basic-swamp', 'basic-mountain', 'basic-forest',

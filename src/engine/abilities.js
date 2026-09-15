@@ -5,7 +5,7 @@ import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife } from './players.js';
-import { applyEffect, queueSearchChoice } from './effects.js';
+import { applyEffect, queueSearchChoice, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { validateTargets, hasHexproofAgainst, legalTargetCandidates } from './spells.js';
 import { attachEquipmentToCreature } from './attachments.js';
 import { shuffle } from './shuffle.js';
@@ -1317,6 +1317,15 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   const discardCount = cost.discardCard ? 1 : (cost.discardCards ?? 0);
   if (discardCount > 0) {
     const handIds = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId);
+    // Znalezisko A: koszt „odrzuć N" przy dokładnie N kartach płaci się sam
+    // i aktywacja idzie dalej TĄ SAMĄ ścieżką co brak kosztu (jeden
+    // performActivation na dole — bez wstrzymanej aktywacji).
+    if (shouldAutoDiscard({ count: discardCount, candidateIds: handIds })) {
+      discardCardsForced(state, {
+        playerId, cardIds: [...handIds], purpose: 'cost',
+        sourceCardId: object.cardId, restorePriorityTo: state.turn.priorityPlayerId,
+      });
+    } else {
     state.pendingDiscardChoice = {
       playerId, count: discardCount, handIds, purpose: 'cost',
       sourceCardId: object.cardId, restorePriorityTo: state.turn.priorityPlayerId,
@@ -1332,6 +1341,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     });
     state.events.push(e);
     return e;
+    }
   }
   return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetId: opponentTargetIdArg, grantedFromEquipment: grantedFromEquipmentArg ?? false, tapArtifactIds: tapArtifactIdsArg, tapPermanentCostId: extraCostsArg?.tapPermanentCostId, sacrificeCreatureIds: extraCostsArg?.sacrificeCreatureIds, sacrificeCreatureId: extraCostsArg?.sacrificeCreatureId });
 }

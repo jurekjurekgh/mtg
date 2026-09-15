@@ -1,7 +1,7 @@
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { hasCreatureType, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
+import { hasCreatureType, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, untapObject } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -677,6 +677,87 @@ export function librarySearchMatches(object, qualifier, ownerId) {
  * Zwraca true (blokada), gdy są kandydaci; bez kandydatów automatycznie
  * tasuje (szukanie z pustym/niepasującym zbiorem to samo „search... shuffle").
  */
+/**
+ * Znalezisko A (2026-09-15, Cathartic Reunion przy dokładnie 2 kartach):
+ * wymuszony discard CAŁOŚCI to nie decyzja — rozstrzyga się sam w tej samej
+ * komendzie, bez pendingDiscardChoice, bez discard_choice_required (modala).
+ * JEDEN predykat dla wszystkich miejsc kolejkowania (L41): auto wtedy i tylko
+ * wtedy, gdy brak opcji rezygnacji (allowDecline — Nightsnare „If you don't"
+ * to prawdziwy wybór nawet przy 1 karcie) i kandydatów jest tylu, ilu trzeba
+ * (mniej niż wymagane przy efekcie = odrzuć wszystkie, jak min() w miejscach
+ * kolejkowania). Kto wybiera, nie ma znaczenia (Toll of the Invasion,
+ * mandatory, przy 1 karcie nielądowej też nie ma wyboru).
+ */
+export function shouldAutoDiscard({ count, candidateIds, allowDecline }) {
+  return !allowDecline && (count ?? 0) > 0
+    && (candidateIds ?? []).length > 0 && candidateIds.length <= count;
+}
+
+/**
+ * Wspólne wykonanie odrzuceń (JEDNA implementacja, L41): używa jej resolver
+ * resolve_discard_choice (game-state.js) ORAZ wszystkie ścieżki auto.
+ * Dokładnie skutki ręcznego wyboru: madness do exile + kolejka M258,
+ * reszta do grobu, eventy card_discarded, onCreatureDiscard (Scholar M67).
+ * BEZ mutacji pending, BEZ priorytetu, BEZ kontynuacji (te należą do
+ * wywołującego: koszt/efekt kontynuuje normalnie zamiast zawieszać).
+ * Zwraca dopisane zdarzenia (wycinek strumienia od wejścia).
+ */
+export function discardCardsForced(state, { playerId, cardIds, purpose, sourceCardId, onCreatureDiscard, restorePriorityTo }) {
+  const before = state.events.length;
+  for (const cardId of cardIds) {
+    const card = state.objects.get(cardId);
+    // M158/Batch 39 (CR 702.35a): karta z Madness odrzucana jest do EXILE
+    // (nie do grobu) z jednorazową decyzją: rzuć za koszt madness albo
+    // przełóż do cmentarza.
+    let moved = null;
+    if (card.madness) {
+      const exileId = `exile-${state.objectSequence++}`;
+      // M262: madness to mechanika wygnania (CR 702.35) — badge „Wygnane: Madness".
+      moved = moveObjectDirectly(state, cardId, 'exile', exileId, { exiledBy: 'madness' });
+      state.objects.set(exileId, Object.freeze({ ...state.objects.get(exileId), madnessReady: true }));
+      state.events.push(event('card_discarded', {
+        playerId, fromId: cardId, objectId: exileId,
+        cardId: moved.cardId, choice: true, purpose, toZone: 'exile', madness: true,
+        sourceCardId: sourceCardId ?? null,
+      }));
+      // M258: wpis do KOLEJKI, nie bezpośrednio do pendingMadnessCast —
+      // decyzja otwiera się po zakończeniu całej sekwencji odrzuceń
+      // (promoteNextMadness w accepted() / gałęziach kończących resolvera).
+      state.madnessQueue.push({
+        playerId, objectId: exileId, cardId: moved.cardId,
+        // A4-1 (handoff 09-08k): priorytet po decyzji madness wraca do
+        // posiadacza Z PRZED odrzuceniem, NIE do odrzucającego.
+        restorePriorityTo: restorePriorityTo ?? state.turn.priorityPlayerId,
+      });
+    } else {
+      const graveId = `grave-${state.objectSequence++}`;
+      moved = moveObjectDirectly(state, cardId, 'graveyard', graveId);
+      state.events.push(event('card_discarded', {
+        playerId, fromId: cardId, objectId: graveId,
+        cardId: moved.cardId, choice: true, purpose,
+        sourceCardId: sourceCardId ?? null,
+      }));
+    }
+    // M67 (Civilized Scholar): „If a creature card is discarded this way,
+    // untap this creature, then transform it." — po odrzuceniu karty-stwora
+    // wykonaj akcje zapisane w pending (odkręcenie + transform źródła).
+    if (onCreatureDiscard && (moved.kind === 'creature' || (moved.types ?? []).includes('Creature'))) {
+      const target = onCreatureDiscard;
+      const source = state.objects.get(target.sourceId);
+      if (source && source.zone === 'battlefield') {
+        if (target.untap) {
+          const updated = untapObject(state, target.sourceId, playerId);
+          state.events.push(event('object_untapped', { objectId: target.sourceId, playerId }));
+        }
+        if (target.transform) {
+          applyEffect(state, { type: 'transform' }, state.objects.get(target.sourceId), []);
+        }
+      }
+    }
+  }
+  return state.events.slice(before);
+}
+
 export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null, mandatory = false }) {
   const ownerId = sourceObject.controllerId;
   const matches = (object) => librarySearchMatches(object, qualifier, ownerId);
@@ -2582,6 +2663,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === playerId);
     if (handIds.length === 0) return; // brak kart — nic do odrzucenia
+    // Znalezisko A: wymuszony discard całości bez decyzji (czar kontynuuje).
+    if (shouldAutoDiscard({ count: Math.min(amount, handIds.length), candidateIds: handIds })) {
+      discardCardsForced(state, {
+        playerId, cardIds: [...handIds], purpose: 'effect',
+        sourceCardId: sourceObject.cardId ?? null, restorePriorityTo: state.turn.priorityPlayerId,
+      });
+      return;
+    }
     state.pendingDiscardChoice = {
       playerId,
       count: Math.min(amount, handIds.length),
@@ -4083,6 +4172,14 @@ function markTemporaryExile(state, exileId, sourceObject) {
       if (discardCount === 0) return; // dalsze instrukcje czaru, bez odziedziczonego discard
       const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === payerId);
       if (handIds.length === 0) return; // bez ręki — nic więcej
+      // Znalezisko A: wymuszony discard całości bez decyzji (czar kontynuuje).
+      if (shouldAutoDiscard({ count: discardCount, candidateIds: handIds })) {
+        discardCardsForced(state, {
+          playerId: payerId, cardIds: [...handIds], purpose: 'effect',
+          sourceCardId: sourceObject.cardId ?? null, restorePriorityTo: state.turn.priorityPlayerId,
+        });
+        return;
+      }
       state.pendingDiscardChoice = {
         playerId: payerId, count: discardCount, handIds, purpose: 'effect',
         sourceCardId: sourceObject.cardId ?? null,
@@ -5310,6 +5407,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
     for (const opp of opponents) {
       const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === opp.id);
       if (handIds.length === 0) continue;
+      // Znalezisko A: wymuszony discard całości bez decyzji — i od razu
+      // następny przeciwnik (przy samych auto pętla kończy efekt bez zawieszenia).
+      if (shouldAutoDiscard({ count: Math.min(effect.amount ?? 1, handIds.length), candidateIds: handIds })) {
+        discardCardsForced(state, {
+          playerId: opp.id, cardIds: [...handIds], purpose: 'effect',
+          sourceCardId: sourceObject.cardId ?? null, restorePriorityTo: state.turn.priorityPlayerId,
+        });
+        continue;
+      }
       // Dla 1v1 tylko jeden przeciwnik — queue pierwsza decyzja, reszta via kolejka? Dla uproszczenia 1v1: jedna decyzja
       state.pendingDiscardChoice = {
         playerId: opp.id,
@@ -5533,6 +5639,17 @@ function markTemporaryExile(state, exileId, sourceObject) {
     drawPlayerCards(state, sourceObject.controllerId, effect.amount ?? 1, 'effect');
     const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === sourceObject.controllerId);
     if (handIds.length === 0) return;
+    // Znalezisko A: dobór do 1 karty = discard bez decyzji (efekt kontynuuje).
+    if (shouldAutoDiscard({ count: 1, candidateIds: handIds })) {
+      discardCardsForced(state, {
+        playerId: sourceObject.controllerId, cardIds: [...handIds], purpose: 'effect',
+        sourceCardId: sourceObject.cardId ?? null, restorePriorityTo: state.turn.priorityPlayerId,
+        onCreatureDiscard: effect.transformOnCreatureDiscard
+          ? { sourceId: sourceObject.id, untap: true, transform: true }
+          : null,
+      });
+      return;
+    }
     state.pendingDiscardChoice = {
       playerId: sourceObject.controllerId,
       count: 1,
@@ -5644,6 +5761,14 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // „If you don't" bez możliwości wyboru: od razu odrzucenie N kart
       // przez właściciela ręki (bez pustej oferty dla rzucającego).
       const count = Math.min(declineAmount, handIds.length);
+      // Znalezisko A: właściciel z dokładnie tyloma kartami nie wybiera.
+      if (shouldAutoDiscard({ count, candidateIds: handIds })) {
+        discardCardsForced(state, {
+          playerId: targetId, cardIds: [...handIds], purpose: 'effect',
+          sourceCardId: sourceObject.cardId ?? null, restorePriorityTo,
+        });
+        return;
+      }
       state.pendingDiscardChoice = {
         playerId: targetId, count, handIds, purpose: 'effect',
         sourceCardId: sourceObject.cardId ?? null, restorePriorityTo,
@@ -5654,6 +5779,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
         purpose: 'effect', sourceCardId: sourceObject.cardId ?? null,
       }));
       return true;
+    }
+    // Znalezisko A: wybór OBOWIĄZKOWY z 1 kandydata to brak wyboru
+    // (przy allowDecline rezygnacja jest opcją — decyzja zostaje).
+    if (shouldAutoDiscard({ count: 1, candidateIds: nonland, allowDecline: !mandatory })) {
+      discardCardsForced(state, {
+        playerId: targetId, cardIds: [...nonland], purpose: 'effect',
+        sourceCardId: sourceObject.cardId ?? null, restorePriorityTo,
+      });
+      return;
     }
     state.pendingDiscardChoice = {
       playerId: targetId,

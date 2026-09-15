@@ -1852,3 +1852,24 @@ quick 82,6%→82,9% (555→557/672), aggro bez zmian 30,7%; Żywy Tester
 (innistrad-brg vs innistrad-wu, seed 25): „Nieprzyjaciel bierze mulligan
 (1) — nowa ręka 7 kart", odłożenie 1 karty na spód, zatrzymanie nowej ręki,
 partia gra do końca, detektory 0 zgłoszeń. Suity: 5496/5496 fast, 5506/5506 all.
+
+## L144 (2026-09-15) — znalezisko A: Cathartic Reunion przy 2 kartach bez modala
+
+**Zgłoszenie:** „Mam dokładnie 2 karty i mam wyrzucić 2 karty — po co modal?"
+Silnik kolejkował `pendingDiscardChoice` ZAWSZE, gdy były karty (13 miejsc
+w 4 plikach), więc UI otwierało wybór bez wyboru. Naprawa generyczna, nie pod
+kartę: jeden predykat `shouldAutoDiscard` (brak allowDecline + kandydaci ==
+wymaganym) i jeden wykonawca `discardCardsForced` w `effects.js` (jedyny moduł
+bez cykli importów dla 4 konsumentów) — resolver ręczny używa tego samego
+helpera (L41), więc rozjazd wykonania jest niemożliwy z konstrukcji.
+
+**Dwie pułapki:** (1) efekt auto MUSI zwrócić „kontynuuj", nie „zawieś"
+(L138) — `return true` bez pending zatrzaskuje czar na stosie; (2) madness
+z auto-discarda nie ma synchronicznej promocji (ta żyje w resolverze), więc
+dopina ją hook w `accepted()`: kolejka + brak otwartych decyzji → promocja
+w tej samej komendzie; na ścieżce ręcznej no-op (decyzja już otwarta).
+Dowód tożsamości stanowej: pełne ślady golden-mastera old/new — 5/6 partii
+bit w bit, w szóstej dokładnie jeden wpis mniej (wymuszony discard z jedyną
+alternatywą concede), downstream identyczny. Poboczny połów: audyt kontraktów
+zdarzeń wyłapał brak `count` w gałęzi decline-0 (wcześniej 1/2 emiterów, pod
+progiem 0,6 — dziura L112); fix: jawne `count: 0`.

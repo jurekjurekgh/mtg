@@ -701,29 +701,17 @@ detektor jest gorsza od błędu, który naprawiała (L13/L61).
 
 ## L66 (2026-08-25) — Lektura obowiązkowa to BUDŻET: dokument bez limitu rośnie, aż zje kontekst
 
-**Przypadek:** lektura startowa z `AGENTS.md` §0 ważyła ~605 kB (~194-258 tys. tokenów), z czego **384 kB to `PROJECT_STATE.md`** — „bieżący stan projektu" urósł do 125 sekcji i 5904 linii (~80 sesji wstecz).
+**Przypadek:** lektura startowa ważyła ~605 kB, z czego 384 kB to dziennik
+125 sesji podszywający się pod „bieżący stan".
 
-**Reguła:**
-1. **Lista lektur ma budżet i strażnika** — bez progu nie ma sygnału. Tu:
-   100 tys. tokenów na `AGENTS` + ADR-y + `LESSONS` + `ENVIRONMENT`
-   (`test/dokumentacja-budzet-lektury.test.js`).
-2. **Rozdziel „zasady" od „dziennika".** Agent potrzebuje REGUŁ i PUNKTU
-   ZACZEPIENIA (ostatni PR, najnowszy handoff); historia jest do grepowania
-   punktowego. Dziennik nazywa się dziennikiem (`PROJECT_HISTORY.md`) i mówi
-   w nagłówku, że NIE jest lekturą startową.
-3. **Sygnał:** dokument, którego nazwa mówi „bieżący", a treść rośnie
-   monotonicznie. Sprawdź `grep -c '^## '` i datę najstarszej sekcji.
-4. **Zanim skrócisz, ZMIERZ rozkład.** Plan „skondensujmy LESSONS.md" dotyczył
-   16% problemu przy pełnym ryzyku utraty niuansu; pomiar przekierował pracę na
-   pozycję ważącą 2/3, którą dało się zdjąć z listy bez skasowania linijki.
-5. **Numery lekcji to API dokumentacji.** `L1`-`L65` są cytowane w kodzie
-   ~1150 razy w 242 plikach (`// klasa L48`). Renumeracja unieważniłaby je bez
-   jednego czerwonego testu — nagłówki `## L<nr>` są stabilnymi kotwicami.
+**Reguła:** lista lektur ma budżet i strażnika (100k tokenów;
+`test/dokumentacja-budzet-lektury.test.js`); rozdziel „zasady" od „dziennika"
+(HISTORY nie jest lekturą startową); zanim skrócisz — ZMIERZ rozkład (tu:
+pozycja 2/3 zdjęta z listy bez kasowania linijki); numery lekcji to API
+(cytowane ~1150 razy — nagłówki `## L<nr>` stabilne, bez renumeracji).
 
-**Strażnik:** M208 (`PROJECT_HISTORY.md`, `AGENTS.md` §0 z budżetem,
-`test/dokumentacja-budzet-lektury.test.js`).
-
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L66)
+**Strażnik:** M208. → narracja: `docs/LESSONS_PRZYPADKI.md` (L66)
+(skondensowana 2026-09-15 — płaci za L144 w budżecie lektury).
 
 ## L65 (2026-08-25) — Test, który przechodzi na przypadku odsianym przez WCZEŚNIEJSZY warunek, nie testuje tego warunku
 
@@ -2352,3 +2340,14 @@ poprawnie 702.35a + ruling DMU 2023-01-06); „604.3" przy „liczone przy każd
 odczycie" to CDA (właściwy: 611.3a).
 
 **Strażnik:** `test/cr-numery-mechanik-straznik.test.js` (2 pary). → narracja: PRZYPADKI (L143).
+
+## L144 (2026-09-15) — Decyzja z jedną opcją to nie decyzja: silnik rozstrzyga sam w chwili kolejkowania
+
+**Reguła:** wymuszony wybór całości („odrzuć N" przy N kartach, obowiązkowy
+1 z 1) NIE kolejkuje pending ani eventu — rozstrzyga się w tej samej komendzie
+wspólnym helperem (L41); kontynuacje lustrzą ścieżkę ręczną (kontynuuj zamiast
+„zawieś", L138; madness — hook w accepted()). Decyzja w chwili kolejkowania,
+nie post-pass ani auto-klik w UI: brak eventu = brak modala bez splicingu.
+Wyjątek: allowDecline ZAWSZE pyta, nawet przy 1 karcie.
+
+**Strażnik:** `test/owner-cathartic-reunion-auto-discard.test.js` (8). → narracja: PRZYPADKI (L144).

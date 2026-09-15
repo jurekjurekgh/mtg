@@ -28,6 +28,8 @@ import { effectiveSpellManaCost } from '../engine/spells.js';
 import { expandManaPool } from '../engine/resources.js';
 import { getSourceForObject } from '../engine/mana-sources.js';
 import { parseManaCost, reduceAlternativeCost } from '../engine/mana-cost.js';
+import { createSpellSoundPlayer, playCastSound } from './spell-sounds.js';
+import { createTopbarToggles } from './topbar-toggles.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
@@ -144,7 +146,6 @@ function bootstrapTable() {
     actionsFab: el('actions-fab'),
     actionsFabCount: el('actions-fab-count'),
     actionsDrawerClose: el('actions-drawer-close'),
-    hiGfxToggle: el('hi-gfx'),
     artShowcase: el('art-showcase'),
     cardFullscreen: el('card-fullscreen'),
     cardFullscreenBody: el('card-fullscreen-body'),
@@ -229,6 +230,29 @@ function bootstrapTable() {
 
   const AUTOSAVE_KEY = 'mtg-table-autosave-v1';
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
+
+  // 15f (zlecenie właściciela): ikonki-toggle belki + dźwięki czarów.
+  // Odtwarzacz PRZED przełącznikami (callback dźwięku go budzi — klik to
+  // gest, więc AudioContext wstaje zgodnie z polityką autoplay).
+  const castSoundPlayer = createSpellSoundPlayer({
+    createContext: () => {
+      try {
+        const AC = window.AudioContext ?? window.webkitAudioContext;
+        return AC ? new AC() : null;
+      } catch {
+        return null;
+      }
+    },
+  });
+  const topbarToggles = createTopbarToggles({
+    document,
+    storage,
+    onSoundsChange: (on) => {
+      castSoundPlayer.setEnabled(on);
+      if (on) castSoundPlayer.resume();
+    },
+  });
+  castSoundPlayer.setEnabled(topbarToggles.soundsOn());
 
   let session = null;
   // M103 (L15): mostek diagnostyczny Żywego Testera (tools/table-tester) —
@@ -877,7 +901,7 @@ function bootstrapTable() {
   }
   function openArtShowcase(cardId, playerId = null, { verb = 'Rzuca', label = null } = {}) {
     if (!session || !els.artShowcase) return false;
-    if (!els.hiGfxToggle?.checked) return false;
+    if (!topbarToggles.hiGfxOn()) return false;
     const card = session.cardDetails(cardId);
     if (!cardHasShowcaseArt(card)) return false;
     // I1 (zgłoszenie właściciela 2026-08-28): warstwa odpala się dla kart
@@ -892,6 +916,8 @@ function bootstrapTable() {
     els.artShowcase.className = 'art-showcase active';
     els.artShowcase.setAttribute('aria-hidden', 'false');
     artShowcaseOpenedAt = Date.now();
+    // 15f: dźwięk czaru GRA RAZEM z warstwą (także porcjami z kolejki).
+    playCastSound({ player: castSoundPlayer, card });
     return true;
   }
 
@@ -911,10 +937,21 @@ function bootstrapTable() {
     // FoW dotyczy tylko zagrań bota” — stąd krycie tylko gdy rzucający
     // to bot (widok = HUMAN_ID; rzucający zna swoją kartę, CR 708.6).
     if (isCastHiddenFromViewer({ faceDown, playerId }, HUMAN_ID)) return false;
-    if (!session || !els.hiGfxToggle?.checked) return false;
+    if (!session) return false;
+    // 15f: „moment analogiczny do pokazania warstwy" — gdy warstwy nie
+    // będzie (tryb OFF albo karta bez artId), dźwięk gra w chwili rzutu.
+    // Ukryty rzut (wyżej) milczy tak jak nie pokazuje warstwy (M257 r3).
+    if (!topbarToggles.hiGfxOn()) {
+      playCastSound({ player: castSoundPlayer, card: session.cardDetails(cardId) });
+      return false;
+    }
     const card = session.cardDetails(cardId);
-    if (!cardHasShowcaseArt(card)) return false;
-    // 'opened' | 'queued' — w obu przypadkach gra ma stanąć.
+    if (!cardHasShowcaseArt(card)) {
+      playCastSound({ player: castSoundPlayer, card });
+      return false;
+    }
+    // 'opened' | 'queued' — w obu przypadkach gra ma stanąć; dźwięk gra
+    // w openArtShowcase, czyli RAZEM z obrazem (bez rozjazdu kolejki).
     return artShowcaseQueue.push({ cardId, playerId }) != null;
   }
 
@@ -926,10 +963,19 @@ function bootstrapTable() {
    * (gracz widział już obie strony). Podpis „Przemiana: <karta>".
    */
   function onTransformShowcase({ cardId, playerId, objectId }) {
-    if (!session || !els.hiGfxToggle?.checked) return false;
+    if (!session) return false;
     if (objectId == null || transformedShowcaseShown.has(objectId)) return false;
+    if (!topbarToggles.hiGfxOn()) {
+      transformedShowcaseShown.add(objectId);
+      playCastSound({ player: castSoundPlayer, card: session.cardDetails(cardId) });
+      return false;
+    }
     const card = session.cardDetails(cardId);
-    if (!cardHasShowcaseArt(card)) return false;
+    if (!cardHasShowcaseArt(card)) {
+      transformedShowcaseShown.add(objectId);
+      playCastSound({ player: castSoundPlayer, card });
+      return false;
+    }
     transformedShowcaseShown.add(objectId);
     return artShowcaseQueue.push({
       cardId,

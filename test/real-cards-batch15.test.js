@@ -238,12 +238,9 @@ test('Goblin Picker: {R},{T},Discard a card dobiera kartę (koszt discard)', () 
   const before = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
   const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'picker', abilityIndex: 0 });
   assert.ok(result.ok, result.events?.map((e) => e.reason).join(''));
-  // Temat 4: koszt-discard to decyzja KONTROLERA (resolve_discard_choice).
-  assert.ok(state.pendingDiscardChoice, 'decyzja kosztu czeka');
-  assert.equal(state.pendingDiscardChoice.playerId, 'p1');
-  const resolve = execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'hand1' });
-  passBoth(state); // T6: rozstrzygnij trigger ze stosu
-  assert.ok(resolve.ok, resolve.events[0]?.reason);
+  // Znalezisko A: koszt 1 z 1 bez decyzji (kontroler nie ma wyboru).
+  assert.equal(state.pendingDiscardChoice, null, 'koszt-discard całości bez decyzji');
+  passBoth(state); // zdolność ze stosu: dobór 1
   const after = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
   // Odrzucono 1 (koszt), dobrano 1 → liczba w ręce bez zmian.
   assert.equal(after, before);

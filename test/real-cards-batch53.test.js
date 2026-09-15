@@ -389,9 +389,7 @@ test('B53: Óin — {1},{T}, odrzuć kartę: dobierz (mana BEZBARWNA wystarcza)'
   const activate = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'oin' && c.abilityIndex === 2);
   assert.ok(activate, 'oferta aktywacji {1},{T},Discard');
   assert.ok(execute(state, activate).ok);
-  const discard = commands(state).find((c) => c.type === 'resolve_discard_choice' && c.cardId === 'tmp');
-  assert.ok(discard, 'koszt odrzucenia wybiera kartę');
-  assert.ok(execute(state, discard).ok);
+  assert.equal(state.pendingDiscardChoice, null, 'koszt 1 z 1 bez decyzji (znalezisko A)');
   assert.equal(state.objects.get('oin').tapped, true, 'koszt tap zapłacony');
   resolveStack(state);
   assert.equal(state.zones.hand.length, before, 'odrzucenie 1 + dobór 1');
