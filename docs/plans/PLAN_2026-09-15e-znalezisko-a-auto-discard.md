@@ -42,9 +42,14 @@ limit ręki (nigdy całość — nietknięte z konstrukcji).
       p1 — skrypt NAPRAWDĘ się wykonuje); golden-master = uzasadniona regen
       (1 wymuszona decyzja mniej, downstream bit w bit, 5/6 partii identyczne).
 - [x] Suita: 5522/5522 (5514 + 8 nowych).
-- [ ] E4: bramki (`npm test`, `test:all`, build, quick; golden-master: dryf tylko
-      uzasadniony stanowo-identyczny) + domknięcie (dopiski handoff/PH/README,
-      opis PR #123, lekcja tylko przy nowej klasie).
+- [x] E4: bramki ZMIERZONE: `npm test` 5522/5522, `test:all` 5532/5532, build
+      61/3693,6 kB, quick 82,9% (557/672, bez zmian); golden-master regen
+      uzasadniona (5/6 partii bit w bit + 1 wpis mniej).
+- [x] Domknięcie: README (5522/5532/3693,6 + notka A), PROJECT_HISTORY
+      (dopisek 15d), HANDOFF_2026-09-15c (dopisek), PR #123 (zakres dopisany KOMENTARZEM —
+      edit tytułu/body blokuje błąd GraphQL projectCards po stronie GitHub),
+      lekcja L144 + PRZYPADKI (nowa klasa; L66 skondensowana — budżet 100k).
+- [x] Blok przekazania w czacie (ADR 0013).
 
 ## Ryzyka
 

@@ -10946,3 +10946,17 @@ O5: inwentarz cytatów 702.16 o niezweryfikowanym kontekście (osobne zadanie).
 Bramki: npm test 5514/5514, test:all 5524/5524, build 61/3685,6 kB (+0,6 kB —
 komentarze w bundlu), regresja B0 10/10.
 Handoff: [`docs/setup/HANDOFF_2026-09-15c.md`](setup/HANDOFF_2026-09-15c.md).
+
+**Dopisek (ten sam dzień, ten sam PR #123): znalezisko A — wymuszony discard
+bez modala.** Właściciel: Cathartic Reunion przy dokładnie 2 kartach otwierał
+modal wyboru. Fix generyczny (plan `docs/plans/PLAN_2026-09-15e-*.md`): jeden
+predykat `shouldAutoDiscard` + jeden wykonawca `discardCardsForced`
+w `effects.js` (11 miejsc kolejkowania, resolver też; `hand_size` nietknięte),
+`promoteNextMadness` na poziom modułu + hook w `accepted()` (madness w tej
+samej komendzie). Test `test/owner-cathartic-reunion-auto-discard.test.js` (8;
+RED→GREEN, mutacja 5 RED). Triage 13 breaksów: 1 prawdziwy bug (kontrakt
+`declined.count` — jawne `count: 0`), reszta intended + determinizm (skrypt
+zależny od bloku — biblioteka p1) + regen golden-mastera (uzasadniona: 1 wpis
+mniej, downstream bit w bit, overallHash `4e1dd246…`). Lekcja **L144** (wpis
+opłacony kondensacją L66 — budżet lektury 100k). Bramki: npm test 5522/5522,
+test:all 5532/5532, build 61/3693,6 kB, quick 82,9% (557/672, bez zmian).
