@@ -10892,4 +10892,19 @@ deskryptorach, M212 ✓; wady: F1/F2 + brak testów przy zmianach wyceny).
 Obserwacje O1–O5 w raporcie (m.in. twardy prefiks „Altar:" przy deskryptorze
 generycznym — do etykiety mechanikowej, gdy wejdzie druga karta; komentarz
 M221/E z PR #107 cytuje 702.16e przy blokadzie — do weryfikacji u źródła).
+
+**Port z niezależnego audytu PR #122** (sesja `arena/01a0a506-mtg`; zlecenie
+właściciela: scalić komplety napraw, zamknąć #122). Audyty wykryły po jednym
+trafieniu, którego brakował drugiemu: #122 znalazło A4 (`end_of_combat` w oknie
+Spare — bot palił ochronę po rozdanych obrażeniach; u nas tylko błędna
+obserwacja O2, sprostowana wg CR 510.1) i O1 (martwa gałąź
+`resolve_optional_draw`, `oneShotDeckOutPenalty(1)` ≡ 0); #121 wykryło F2
+(Powerstone vs zdolności), F4 (cytaty CR) i F5 (klaimy commitów). Portowane
+commitami `daec11c` (E7: A4 + test 3/RED→GREEN z mutacją) i `39fe781` (E8:
+O1 + etykieta fire/skip w describeCommand + test murder-mayfire z #122 +
+fixture). Po portach golden-master regenerowany **bit w bit identycznie**
+z fixture PR #122 (overallHash `adc327be…`, 6/6 partii) — dwie niezależne
+implementacje napraw dają identyczny ślad bota; A3/A5/A6/P1–P3 z #122 to
+duplikaty F2/F3/F5 (mapowanie w raporcie, §Zbieżność). Bramki po portach:
+npm test 5508/5508, build 61 modułów / 3682,6 kB.
 Handoff: [`docs/setup/HANDOFF_2026-09-15b.md`](setup/HANDOFF_2026-09-15b.md).

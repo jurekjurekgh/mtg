@@ -76,6 +76,30 @@ Powerstone restricted, Murder/Skaab draw-mill, Altar badge). 8 plików: 2 dokume
 - Surgical patching (ADR 0016), testy z weryfikacją mutacyjną (L13), B0 tylko na
   komendę właściciela (ADR 0018).
 
+## E7 — port A4 z niezależnego audytu PR #122 (2026-09-15)
+
+- [x] Okno „po blokach" wyceny `grant_protection_until_end_of_turn` kończy się
+  na `combat_damage` (usunięty `end_of_combat`; CR 510.1/510.2/511.1, DEBT) —
+  commit `daec11c`.
+- [x] Test `test/audyt-pr120-spare-okno-end-of-combat.test.js` (3 testy:
+  okno wartościuje >0; end_of_combat <0 i bot nie rzucza; combat_damage
+  nadal okno). Mutacja (powrót end_of_combat) → RED, revert → GREEN (L13).
+- [x] Bramka: npm test 5506/5506, build 61/3682,2 kB; golden-master bez zmian
+  (zgodnie z #122: ich E3 z A4 też nie ruszył fixture).
+
+## E8 — port O1 + etykieta wariantu A1 + test murder-mayfire z PR #122 (2026-09-15)
+
+- [x] Usunięta martwa gałąź `resolve_optional_draw` w `libraryDrainTax`
+  (`oneShotDeckOutPenalty(view, 1)` ≡ 0; L5) — wycena bez zmian.
+- [x] `describeCommand` rozróżnia `resolve_optional_trigger_choice(fire|skip)`
+  (klasa M131/L34).
+- [x] Test `test/audyt-pr120-murder-mayfire-thin-library.test.js` przywieziony
+  z #122 (nota proweniencji w nagłówku) — 2/2 przy naprawie F1/E2 tego PR.
+- [x] Fixture golden-mastera regenerowany po etykiecie: **bit w bit identyczny
+  z PR #122** (overallHash `adc327be…`, 6/6 partii, decyzje/scoreSum bez zmian)
+  — krzyżowa walidacja równoważności obu implementacji.
+- [x] Bramka: npm test 5508/5508, build 61/3682,6 kB.
+
 ## Podsumowanie wykonania (2026-09-15)
 
 - E0–E5 wykonane commitami `8ef681e`, `9170ff3`, `75a987d`, `0f979a8`, `56c918f`,
@@ -86,4 +110,12 @@ Powerstone restricted, Murder/Skaab draw-mill, Altar badge). 8 plików: 2 dokume
 - F2 naprawione (wspólny kontrakt kreatora i silnika) + testy vm + mutacja.
 - F3/F4 posprzątane; F5 opisany w audycie i uzupełniony w tej sesji
   (plan 15b, dziennik, README, handoff).
-- Pozostały obserwacje O1/O2/O3/O4/O5 (raport audytu) — nieblokujące.
+- **Port z niezależnego audytu PR #122 (zlecenie właściciela 2026-09-15):**
+  E7 = A4 (okno Spare, `daec11c`), E8 = O1 + etykieta A1 + test
+  murder-mayfire + fixture (`39fe781`). A3/A5/A6/P1–P3 z #122 to duplikaty
+  F2/F3/F5 tego PR (rozwiane w raporcie, §Zbieżność); nieportowane —
+  rozwiązanie F2/E3 zostaje (jedno źródło reguły). Sprostowano O2
+  (CR 510.1: combat_damage MA priorytet przed rozdaniem obrażeń).
+- Pozostały obserwacje O1/O3/O4/O5 (raport audytu) — nieblokujące;
+  dopisane O3 z #122 (założenie ochrony wszystkich blokerów — poprawne
+  dla Spare).
