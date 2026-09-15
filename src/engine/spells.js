@@ -6,7 +6,7 @@ import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaP
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
 import { hasCreatureType, isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, transformedCharacteristics } from './permanents.js';
-import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter, grantGift } from './effects.js';
+import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter, grantGift, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
 import { effectiveProtectionFromColors, isTargetingBlockedByProtection } from './attachments.js';
@@ -680,6 +680,14 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // blokującą decyzję; kontrczar nie zwraca odrzuconych kart.
   if (discardCost > 0) {
     const handIds = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId);
+    // Znalezisko A: koszt „odrzuć N" przy dokładnie N kartach płaci się sam
+    // (priorytet nietknięty — nie ma decyzji do oddawania).
+    if (shouldAutoDiscard({ count: Math.min(discardCost, handIds.length), candidateIds: handIds })) {
+      discardCardsForced(state, {
+        playerId, cardIds: [...handIds], purpose: 'cost',
+        sourceCardId: object.cardId ?? null, restorePriorityTo: state.turn.priorityPlayerId,
+      });
+    } else {
     state.pendingDiscardChoice = {
       playerId,
       count: Math.min(discardCost, handIds.length),
@@ -693,6 +701,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
       playerId, count: Math.min(discardCost, handIds.length), cardIds: [...handIds],
       purpose: 'cost', sourceCardId: object.cardId ?? null,
     }));
+    }
   }
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,

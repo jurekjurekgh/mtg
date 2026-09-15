@@ -33,7 +33,7 @@ import { createBattlefieldToken, nextCopyNumber, TREASURE_TOKEN_EFFECT } from '.
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
-import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject } from './effects.js';
+import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive, warpTurnReached } from './impulse-window.js';
 
 /**
@@ -1351,7 +1351,43 @@ function exploitDecisionPendingFor(state, playerId) {
  * state-based actions (idempotentne), waliduje inwarianty i dopiero wtedy
  * dopisuje komendę do logu replayu.
  */
+// M258 (Żywy Tester → regresja z pełnej partii bota): promocja następnej
+// decyzji madness z kolejki. Odrzucenie karty z madness w SEKWENCJI
+// odrzuceń (cleanup z kilkoma kartami, Cathartic Reunion) nie otwiera
+// decyzji natychmiast — w przeciwnym razie bramka madness (wyżej w
+// execute) odrzucała resolve_discard_choice kolejnej karty
+// ('madness_unresolved'), choć legalCommands oferowały odrzucanie — bot
+// kończył partię wyjątkiem. Karty kolejkują się; promocja następuje po
+// zakończeniu sekwencji odrzuceń, a potem po każdej rozstrzygniętej
+// decyzji (kolejność odrzuceń = kolejność decyzji).
+// Znalezisko A: poziom modułu (wcześniej zagnieżdżona w execute) — wołają ją
+// bramki resolvera (jak dotąd) ORAZ hook w accepted() dla ścieżek auto.
+function promoteNextMadness(state) {
+  const next = (state.madnessQueue ?? []).shift();
+  if (!next) return null;
+  state.pendingMadnessCast = next;
+  const ev = event('madness_ready_required', {
+    playerId: next.playerId, objectId: next.objectId, cardId: next.cardId,
+    cost: state.objects.get(next.objectId)?.madness?.cost ?? null,
+    // M266/E (L100 pkt 1): zdarzenie opisujące decyzję o koszcie musi nieść
+    // WSZYSTKIE składniki ceny — inaczej opis nie da się złożyć bez stanu.
+    costColors: state.objects.get(next.objectId)?.madness?.colors ?? null,
+  });
+  state.events.push(ev);
+  return ev;
+}
+
 function accepted(state, cmd, result) {
+  // Znalezisko A: auto-discard całości (bez decyzji) zostawia madness
+  // w KOLEJCE — promocja następuje tu, po domknięciu komendy, o ile nic nie
+  // czeka (lustro synchronicznej promocji w resolverze; kolejność „najpierw
+  // dokończ sekwencję/efekt, potem madness" zachowana, bo hook widzi stan po
+  // całej komendzie). Na ścieżce ręcznej no-op: decyzja madness jest już
+  // otwarta synchronicznie, więc firstPendingDecision nie jest puste.
+  if ((state.madnessQueue?.length ?? 0) > 0 && !firstPendingDecision(state)) {
+    const madnessEv = promoteNextMadness(state);
+    if (madnessEv) result.events = [...result.events, madnessEv];
+  }
   // CR 117.3c/117.4 (M90, bug C1): passy muszą następować po sobie BEZ akcji
   // pomiędzy — dopiero wtedy rozstrzyga się wierzch stosu. Każda zaakceptowana
   // komenda inna niż pass (rzut czaru, zdolność, ląd, deklaracja, decyzja
@@ -2512,30 +2548,6 @@ export function execute(state, input) {
     }
   }
 
-  // M258 (Żywy Tester → regresja z pełnej partii bota): promocja następnej
-  // decyzji madness z kolejki. Odrzucenie karty z madness w SEKWENCJI
-  // odrzuceń (cleanup z kilkoma kartami, Cathartic Reunion) nie otwiera
-  // decyzji natychmiast — w przeciwnym razie bramka madness (wyżej w
-  // execute) odrzucała resolve_discard_choice kolejnej karty
-  // ('madness_unresolved'), choć legalCommands oferowały odrzucanie — bot
-  // kończył partię wyjątkiem. Karty kolejkują się; promocja następuje po
-  // zakończeniu sekwencji odrzuceń, a potem po każdej rozstrzygniętej
-  // decyzji (kolejność odrzuceń = kolejność decyzji).
-  function promoteNextMadness(state) {
-    const next = (state.madnessQueue ?? []).shift();
-    if (!next) return null;
-    state.pendingMadnessCast = next;
-    const ev = event('madness_ready_required', {
-      playerId: next.playerId, objectId: next.objectId, cardId: next.cardId,
-      cost: state.objects.get(next.objectId)?.madness?.cost ?? null,
-      // M266/E (L100 pkt 1): zdarzenie opisujące decyzję o koszcie musi nieść
-      // WSZYSTKIE składniki ceny — inaczej opis nie da się złożyć bez stanu.
-      costColors: state.objects.get(next.objectId)?.madness?.colors ?? null,
-    });
-    state.events.push(ev);
-    return ev;
-  }
-
   // M158/Batch 39 (Revolutionist, CR 702.35): Madness — jednorazowa decyzja
   // po odrzuceniu karty z madness do exile: rzuć za koszt madness (ignorując
   // timing — rzut następuje w rozstrzyganiu zdolności, jak rebound) albo
@@ -3266,7 +3278,10 @@ export function execute(state, input) {
     // „That player discards a card" — wybór odrzucanej karty należy do
     // odrzucającego (CR 701.18); przy pustej ręce nic się nie dzieje.
     const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
-    if ((pending.discardCount ?? 0) > 0 && handIds.length > 0) {
+    // Znalezisko A: wymuszony discard całości bez decyzji (kontynuacja jak w gałęzi else).
+    const autoDiscard = (pending.discardCount ?? 0) > 0 && handIds.length > 0
+      && shouldAutoDiscard({ count: pending.discardCount, candidateIds: handIds });
+    if ((pending.discardCount ?? 0) > 0 && handIds.length > 0 && !autoDiscard) {
       state.pendingDiscardChoice = {
         playerId: pending.playerId, count: pending.discardCount, handIds, purpose: 'effect',
         sourceCardId: pending.sourceCardId ?? null,
@@ -3277,6 +3292,12 @@ export function execute(state, input) {
         sourceCardId: pending.sourceCardId ?? null,
       }));
     } else {
+      if (autoDiscard) {
+        discardCardsForced(state, {
+          playerId: pending.playerId, cardIds: [...handIds], purpose: 'effect',
+          sourceCardId: pending.sourceCardId ?? null, restorePriorityTo: pending.restorePriorityTo,
+        });
+      }
       if (state.pendingSpell) {
         const spellPending = state.pendingSpell;
         state.pendingSpell = null;
@@ -4027,7 +4048,7 @@ export function execute(state, input) {
       if (count === 0) {
         state.pendingDiscardChoice = null;
         const declined = event('discard_choice_declined', {
-          playerId: pending.playerId, chooserId: discardChooserId(pending),
+          playerId: pending.playerId, chooserId: discardChooserId(pending), count,
           purpose: pending.purpose, sourceCardId: pending.sourceCardId,
         });
         state.events.push(declined);
@@ -4045,6 +4066,33 @@ export function execute(state, input) {
         const promotedDecline = promoteNextMadness(state);
         if (promotedDecline) events.push(promotedDecline);
         return accepted(state, cmd, { ok: true, events });
+      }
+      // Znalezisko A: po rezygnacji właściciel z dokładnie tyloma kartami
+      // nie wybiera — epilog jak wprost z resolvera (decline istnieje tylko
+      // dla purpose 'effect'; madness dopina hook w accepted()).
+      if (shouldAutoDiscard({ count, candidateIds: handIds })) {
+        state.pendingDiscardChoice = null;
+        state.events.push(event('discard_choice_declined', {
+          playerId: pending.playerId, chooserId: discardChooserId(pending), count,
+          purpose: pending.purpose, sourceCardId: pending.sourceCardId,
+        }));
+        discardCardsForced(state, {
+          playerId: pending.playerId, cardIds: [...handIds], purpose: pending.purpose,
+          sourceCardId: pending.sourceCardId ?? null, onCreatureDiscard: pending.onCreatureDiscard ?? null,
+          restorePriorityTo: pending.restorePriorityTo,
+        });
+        state.events.push(event('discard_choice_resolved', {
+          playerId: pending.playerId, purpose: pending.purpose, sourceCardId: pending.sourceCardId,
+        }));
+        if (pending.purpose === 'effect' && state.pendingSpell) {
+          const spellPending = state.pendingSpell;
+          state.pendingSpell = null;
+          finishPendingSpell(state, spellPending.stackId, spellPending.effects);
+        }
+        if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
+          state.turn.priorityPlayerId = pending.restorePriorityTo;
+        }
+        return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
       }
       state.pendingDiscardChoice = {
         playerId: pending.playerId, count, handIds, purpose: pending.purpose,
@@ -4071,69 +4119,27 @@ export function execute(state, input) {
       return !pending.handIds.includes(id) || card?.zone !== 'hand' || card.controllerId !== pending.playerId;
     })) return reject('illegal_discard_choice');
     const before = state.events.length;
-    for (const cardId of cardIds) {
-      const card = state.objects.get(cardId);
-      // M158/Batch 39 (CR 702.35a): karta z Madness odrzucana jest do EXILE
-      // (nie do grobu) z jednorazową decyzją: rzuć za koszt madness albo
-      // przełóż do cmentarza.
-      let moved = null;
-      if (card.madness) {
-        const exileId = `exile-${state.objectSequence++}`;
-        // M262: madness to mechanika wygnania (CR 702.35) — badge „Wygnane: Madness".
-        moved = moveObjectDirectly(state, cardId, 'exile', exileId, { exiledBy: 'madness' });
-        state.objects.set(exileId, Object.freeze({ ...state.objects.get(exileId), madnessReady: true }));
-        state.events.push(event('card_discarded', {
-          playerId: pending.playerId, fromId: cardId, objectId: exileId,
-          cardId: moved.cardId, choice: true, purpose: pending.purpose, toZone: 'exile', madness: true,
-          sourceCardId: pending.sourceCardId ?? null,
-        }));
-        // M258: wpis do KOLEJKI, nie bezpośrednio do pendingMadnessCast —
-        // decyzja otwiera się po zakończeniu całej sekwencji odrzuceń
-        // (promoteNextMadness w gałęziach kończących poniżej). Natychmiastowe
-        // otwarcie blokowało kolejne odrzucania w tym samym efekcie.
-        state.madnessQueue.push({
-          playerId: pending.playerId, objectId: exileId, cardId: moved.cardId,
-          // A4-1 (handoff 09-08k, madness+batch-discard ×3): priorytet po
-          // decyzji madness wraca do posiadacza Z PRZED odrzuceniem
-          // (pending.restorePriorityTo — ustawione przy tworzeniu
-          // pendingDiscardChoice), NIE do odrzucającego (priorytet w chwili
-          // pusha = on sam). Celowane odrzucenie (Mindstab) dotąd kończyło
-          // tym samym czarem priorytet w innym miejscu zależnie od tego,
-          // czy odrzucona karta miała madness: ścieżka zwykła oddawała go
-          // źródłu czaru (restorePriorityTo, CR 117.3b), ścieżka madness —
-          // odrzucającemu.
-          restorePriorityTo: pending.restorePriorityTo ?? state.turn.priorityPlayerId,
-        });
-      } else {
-        const graveId = `grave-${state.objectSequence++}`;
-        moved = moveObjectDirectly(state, cardId, 'graveyard', graveId);
-        state.events.push(event('card_discarded', {
-          playerId: pending.playerId, fromId: cardId, objectId: graveId,
-          cardId: moved.cardId, choice: true, purpose: pending.purpose,
-          sourceCardId: pending.sourceCardId ?? null,
-        }));
-      }
-      // M67 (Civilized Scholar): „If a creature card is discarded this way,
-      // untap this creature, then transform it." — po odrzuceniu karty-stwora
-      // wykonaj akcje zapisane w pending (odkręcenie + transform źródła).
-      if (pending.onCreatureDiscard && (moved.kind === 'creature' || (moved.types ?? []).includes('Creature'))) {
-        const target = pending.onCreatureDiscard;
-        const source = state.objects.get(target.sourceId);
-        if (source && source.zone === 'battlefield') {
-          if (target.untap) {
-            const updated = untapObject(state, target.sourceId, pending.playerId);
-            state.events.push(event('object_untapped', { objectId: target.sourceId, playerId: pending.playerId }));
-          }
-          if (target.transform) {
-            applyEffect(state, { type: 'transform' }, state.objects.get(target.sourceId), []);
-          }
-        }
-      }
-    }
+    // Znalezisko A: wykonanie przez WSPÓLNY helper (ścieżki auto też) — L41.
+    discardCardsForced(state, {
+      playerId: pending.playerId, cardIds, purpose: pending.purpose,
+      sourceCardId: pending.sourceCardId ?? null, onCreatureDiscard: pending.onCreatureDiscard ?? null,
+      restorePriorityTo: pending.restorePriorityTo,
+    });
     const remaining = pending.count - cardIds.length;
     const stillInHand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
+    // Znalezisko A: reszta wymuszona (legacy pojedyncze picki, np. druga
+    // karta kosztu 2 z 2) dokańcza się SAMA — re-queue tylko przy wyborze.
+    const autoRest = remaining > 0 && stillInHand.length > 0
+      && shouldAutoDiscard({ count: remaining, candidateIds: stillInHand });
+    if (autoRest) {
+      discardCardsForced(state, {
+        playerId: pending.playerId, cardIds: [...stillInHand], purpose: pending.purpose,
+        sourceCardId: pending.sourceCardId ?? null, onCreatureDiscard: pending.onCreatureDiscard ?? null,
+        restorePriorityTo: pending.restorePriorityTo,
+      });
+    }
     const resolvedEvents = state.events.slice(before);
-    if (remaining > 0 && stillInHand.length > 0) {
+    if (!autoRest && remaining > 0 && stillInHand.length > 0) {
       // Kolejny wybór (Plague Reaver — dwie karty): decyzja sekwencyjna.
       state.pendingDiscardChoice = { ...pending, count: remaining, handIds: stillInHand, allowDecline: false };
       const required = event('discard_choice_required', {
