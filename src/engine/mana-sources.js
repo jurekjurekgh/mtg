@@ -49,11 +49,11 @@ const MANA_SOURCE_MAP = Object.freeze({
   // tym „cieniem danych karty", przed którym ostrzega komentarz pod MANA_SOURCE_MAP:
   // trzy miejsca (mapa, resources.js, katalog tokenów) trzymały tę samą regułę i żadne
   // z nich nie musiało się z niczym liczyć — rozjazd był bezgłośny (klasa L21).
-  // Static Net (BRO): Powerstone — „{T}: Add {C} — Spend this mana only to
-  // cast artifact spells.\" Produkuje bezbarwną {C}; ograniczenie niesie
-  // deskryptor zdolności (spendOnly:'artifact') z karty/tokenu i jest
-  // respektowane przez resources.js (restrictedPool — M214).
-  'token_powerstone': { colors: [], amount: 1 },
+  // Static Net (BRO): token_powerstone NIE wchodzi do mapy od PR #121
+  // (Żywy Tester): wpis katalogu ma teraz zdolność aktywowaną
+  // ({T}: Add {C}, spendOnly:'artifact') — kolory/ilość czyta deskryptor,
+  // restrykcję respektuje resources.js (restrictedPool — M214). Mapa nie
+  // cieniuje deskryptora (strażnik M200/N1).
   // Karty Z DARMOWĄ zdolnością „{T}: Add …" NIE wchodzą do mapy —
   // kolory/ilość czytane są z deskryptora (manaAbilityColors/Amount),
   // żeby mapa nie stała się cieniem danych karty (strażnik test/m200-...).

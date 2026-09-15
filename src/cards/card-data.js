@@ -757,6 +757,16 @@ export const REAL_CARDS = Object.freeze([
     power: 0, toughness: 1, manaCost: 0,
     oracleText: 'Whenever you cast a noncreature spell, this token deals 1 damage to each opponent.',
     imageUri: 'https://cards.scryfall.io/large/front/1/8/187fe54c-7d0c-4225-9d46-3affbead897d.jpg?1783906133',  // tfin
+    // Zdolność z deskryptora create_token (konwencja + strażnik zgodności,
+    // test/audyt-pr121-tokeny-zdolnosci-ui.test.js) — etykieta/kafl czytają
+    // rejestr (Żywy Tester PR #121).
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_cast_noncreature_spell' },
+        effect: { type: 'damage_each_opponent', amount: 1 },
+      }),
+    ],
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Mysidian Elder'] },
   }),
   defineCard({
@@ -779,6 +789,16 @@ export const REAL_CARDS = Object.freeze([
     power: 2, toughness: 2, manaCost: 0,
     oracleText: 'Whenever a land you control enters, this token gets +1/+0 until end of turn.',
     imageUri: 'https://cards.scryfall.io/large/front/1/f/1fbc471d-5948-47fc-b7cc-81cc13a4cd15.jpg?1783906133',  // tfin
+    // Zdolność z deskryptora create_token (konwencja + strażnik zgodności,
+    // test/audyt-pr121-tokeny-zdolnosci-ui.test.js) — etykieta/kafl czytają
+    // rejestr (Żywy Tester PR #121).
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'land_entered_under_your_control' },
+        effect: [{ type: 'pump', power: 1, toughness: 0 }],
+      }),
+    ],
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Call the Mountain Chocobo'] },
   }),
   // Batch 53 (Ghirapur Gearcrafter): drukowany token 1/1 Thopter z lataniem.
@@ -6915,6 +6935,19 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/d/4/d45fe4b6-aeaf-4f84-b660-c7b482ed8512.jpg?1783919908', // M157/B: token ze Scryfall
     types: ['Artifact', 'Token'], subtypes: ['Powerstone'], colors: [],
     manaCost: 0,
+    oracleText: "{T}: Add {C}. This mana can't be spent to cast nonartifact spells.",
+    // Żywy Tester (PR #121): etykieta panelu i kafel czytają zdolności z
+    // REJESTRU (session.abilitiesOf) — pusty wpis dawał „Aktywuj: Powerstone — "
+    // bez kosztu, opisu i restrykcji CR 106.3. Kopiujemy zdolności z
+    // deskryptora create_token (konwencja 8/11 tokenów); dryf pilnuje
+    // test/audyt-pr121-tokeny-zdolnosci-ui.test.js (L41).
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: [], spendOnly: 'artifact' },
+      }),
+    ],
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Static Net'] },
     notes: ['{T}: Add {C}; restrykcja „only to cast artifact spells\" (M214 — restrictedPool)'],
   }),

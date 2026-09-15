@@ -407,13 +407,19 @@ export function manaEffectLabel(effect) {
   const amount = effect?.amount ?? 1;
   const single = amount === 1;
   const count = single ? '1 manę' : `${amount} many`;
-  if (isAnyColorMana(effect?.colors)) return `dodaj ${count} dowolnego koloru`;
+  // Żywy Tester (PR #121): restrykcja many (Powerstone, CR 106.3 — „This mana
+  // can't be spent to cast nonartifact spells") była niewidoczna w opisie
+  // zdolności — gracz nie rozumiał, czemu kreator many odmawia tej many przy
+  // czarze nieartefaktowym (F2). Etykieta nazywa restrykcję po deskryptorze
+  // spendOnly (ADR 0002); nieznane wartości zostają bez dopisku.
+  const spendOnlyRider = effect?.spendOnly === 'artifact' ? ' (tylko na rzut czaru artefaktu)' : '';
+  if (isAnyColorMana(effect?.colors)) return `dodaj ${count} dowolnego koloru${spendOnlyRider}`;
   const colors = effect?.colors ?? [];
   // B5 (audyt stołu 2026-09-09, G2/Apprentice Wizard): „dodaj 3 many
   // bezbarwną" — przymiotnik w pojedynczej przy mnogiej („bezbarwne").
-  if (colors.length === 0) return `dodaj ${count} ${single ? 'bezbarwną' : 'bezbarwne'}`;
+  if (colors.length === 0) return `dodaj ${count} ${single ? 'bezbarwną' : 'bezbarwne'}${spendOnlyRider}`;
   // M193/A1: „dodaj 1 manę niebieską lub czarną" zamiast „dodaj 1 manę ({U}, {B})".
-  return `dodaj ${count} ${manaColorsLabel(colors, single)}`;
+  return `dodaj ${count} ${manaColorsLabel(colors, single)}${spendOnlyRider}`;
 }
 
 /** Odmiana polska rzeczownika wg liczby: (1 → one, 2-4 → few, 5+ → many). */
