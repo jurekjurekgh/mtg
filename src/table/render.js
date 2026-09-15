@@ -867,6 +867,31 @@ const DYNAMIC_PT_LABELS = Object.freeze({
   card_types_in_all_graveyards: 'liczba typów kart w grobach',
   card_types_in_all_graveyards_plus_1: 'liczba typów kart w grobach +1',
 });
+function altarTypeCount(session) {
+  // G (Altar of the Goyf, CR 709.2a): liczba różnych typów kart we WSZYSTKICH
+  // grobach — informacja publiczna (CR 400.2). Liczy TYPOVED kart (types[]),
+  // nie supertypy; baza danych niesie je jawnie (ADR 0002). Używana do badge'a
+  // Altaru i do opisu buffa +X/+X w overlayu. View ma już karty z grobów,
+  // session dostarcza definicji typów (cardDetails).
+  // Dozwolone typy kart = ALL_GRAVEYARD_CARD_TYPES z permanents.js (CR 205.2a).
+  // Filtr wyklucza supertypy (Basic, Legendary, Snow) — inaczej Basic Forest
+  // liczyłby się jako 2 typy (Basic+Land) zamiast 1 (Land).
+  const ALLOWED = new Set(['Artifact','Battle','Conspiracy','Creature','Dungeon','Enchantment','Instant','Kindred','Land','Phenomenon','Plane','Planeswalker','Scheme','Sorcery','Tribal','Vanguard']);
+  try {
+    const view = session.view();
+    const grave = view.zones?.graveyard ?? [];
+    const seen = new Set();
+    for (const obj of grave) {
+      const cardId = typeof obj === 'string' ? (session.state?.objects?.get(obj)?.cardId ?? null) : obj?.cardId;
+      if (!cardId) continue;
+      const details = session.cardDetails(cardId) ?? {};
+      const types = details.types ?? (typeof obj !== 'string' ? obj.types ?? [] : []);
+      for (const tp of types) if (ALLOWED.has(tp)) seen.add(tp);
+    }
+    return seen.size;
+  } catch { return 0; }
+}
+
 function ptAmount(n) {
   if (typeof n === 'number') return signed(n);
   return DYNAMIC_PT_LABELS[n] ?? n;
@@ -3555,6 +3580,22 @@ export function cardInfo(session, object, combat = null) {
       ? (session.view()?.zones?.battlefield ?? []).filter((o) => o.attachedTo === object.id && o.id !== object.id)
           .map((o) => ({ name: o.cardId ? (session.nameOf(o.cardId) || o.cardId) : o.cardId, kind: (o.aura || o.bestow) ? 'aura' : 'equip' }))
       : [],
+    // G (Altar of the Goyf, CR 709.2a): aktualny X = liczba typów w grobach — badge na kafle
+    // artefaktu (publiczna informacja, jak live P/T Tarmogoyfa). Liczone tu,
+    // żeby overlay dostał gotową liczbę bez kolejnego skanu (L41: jedno źródło).
+    // Deskryptor card-agnostic: każda karta której efekt liczy 'card_types_in_all_graveyards'
+    // (ADR 0002), nie nazwa karty (M212).
+    altarX: (!faceDown && object.zone === 'battlefield' && (() => {
+      try {
+        const def = session.cardDetails(cardId);
+        return (def?.abilities ?? []).some((ab) => {
+          const effs = Array.isArray(ab.effect) ? ab.effect : [ab.effect];
+          return effs.some((e) => e?.power === 'card_types_in_all_graveyards' || e?.toughness === 'card_types_in_all_graveyards');
+        });
+      } catch { return false; }
+    })())
+      ? altarTypeCount(session)
+      : null,
     faceDown,
     // M254/B: ilustracja PRAWDZIWEJ karty dla właściciela zakrytego
     // permanentu (hover i pełny ekran); `null` dla kart przeciwnika —
@@ -3703,6 +3744,11 @@ export function buildFace(parent, info, { size = '', skipLiveState = false, text
     // M73d (J): choroba przywołania dotyczy tylko stworów (CR 302.6) —
     // artefakty/enchantmenty nie dostają badge (audyt żywym testerem).
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push('choroba');
+    // G (Altar of the Goyf): badge w fallbacku twarzy (gdy overlay ukryty — np. przed wczytaniem obrazu).
+    if (info.altarX != null) {
+      const n = Number(info.altarX) || 0;
+      flags.push(`Altar: X = ${n} (${polishPluralCount(n, 'typ', 'typy', 'typów')} w grobach)`);
+    }
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty.
     // B7: rzeczownik („Aura:/Equipment:") zamiast imiesłowu żeńskiego
     // („zaczarowana:/wyposażona:" kłamały przy gospodarzu rodzaju męskiego).
@@ -3888,6 +3934,15 @@ export function buildStateOverlay(visual, info) {
       const lore = info.counters?.lore ?? 0;
       const roman = SAGA_ROMAN[lore - 1] ?? String(lore);
       flags.push(['saga', lore > 0 ? `Rozdział ${roman} (${lore}/${total})` : `Saga — ${total} rozdz.`]);
+    }
+    // G (Altar of the Goyf): badge z X = liczba typów kart we wszystkich grobach.
+    // Pokazujemy na KAFLU Altara (artefaktu), nie na buffowanym stworze — tam
+    // P/T i tak pokazuje live +X/+X, a X na Altarze mówi, ile będzie następny
+    // samotny atak (publiczne, CR 400.2; opis buffa w rulesText używa już
+    // ptPair z dynamicznym labelkiem „liczba typów kart w grobach").
+    if (info.altarX != null) {
+      const n = Number(info.altarX) || 0;
+      flags.push(['kw', `Altar: X = ${n} (${polishPluralCount(n, 'typ', 'typy', 'typów')} w grobach)`]);
     }
     // F (2026-08-11): przypięte aury/equipmenty na nakładce gospodarza.
     for (const att of info.attachments ?? []) {

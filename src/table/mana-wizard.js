@@ -125,9 +125,16 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
         amount = full.amount ?? amount;
       }
     }
+    // D (Powerstone): lądowe źródła mogą mieć spendOnly z pełnego stanu.
+    let spendOnly = null;
+    if (typeof abilityInfo === 'function') {
+      const full = abilityInfo(s.id, null);
+      if (full?.spendOnly) spendOnly = full.spendOnly;
+    }
     return {
       id: s.id, cardId: s.cardId, colors, amount,
       kind: 'land',
+      spendOnly,
       command: { type: 'tap_for_mana', playerId, objectId: s.id },
     };
   });
@@ -167,6 +174,7 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
         ? { generic: activationGeneric, colors: [...costColors] }
         : null,
       kind: 'ability',
+      spendOnly: info.spendOnly ?? null,
       command: { type: 'activate_ability', playerId, objectId: cmd.objectId, abilityIndex: cmd.abilityIndex },
     });
   }

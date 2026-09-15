@@ -4085,6 +4085,7 @@ export function execute(state, input) {
         state.events.push(event('card_discarded', {
           playerId: pending.playerId, fromId: cardId, objectId: exileId,
           cardId: moved.cardId, choice: true, purpose: pending.purpose, toZone: 'exile', madness: true,
+          sourceCardId: pending.sourceCardId ?? null,
         }));
         // M258: wpis do KOLEJKI, nie bezpośrednio do pendingMadnessCast —
         // decyzja otwiera się po zakończeniu całej sekwencji odrzuceń
@@ -4109,6 +4110,7 @@ export function execute(state, input) {
         state.events.push(event('card_discarded', {
           playerId: pending.playerId, fromId: cardId, objectId: graveId,
           cardId: moved.cardId, choice: true, purpose: pending.purpose,
+          sourceCardId: pending.sourceCardId ?? null,
         }));
       }
       // M67 (Civilized Scholar): „If a creature card is discarded this way,

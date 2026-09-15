@@ -1385,8 +1385,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // jako KOSZT zdolności wyglądało identycznie jak strata karty z ręki
         // („Odrzucasz Skinbrand Goblin”), a to zapłata, nie kara. Log nazywa
         // intencję, nie tylko ruch karty (wzorzec M100/E13 dla Equip).
+        // C (Civilized Scholar 309, zgłoszenie właściciela): odrzucenie jako
+        // SKUTEK zdolności (draw_then_discard z sourceCardId) — log nazywa
+        // ŹRÓDŁO, inaczej gracz nie wie, dlaczego karta została odrzucona
+        // (modal „Rozgrywka" pokazuje tę samą linię). CR 400.2 — grob jest jawny.
         const costNote = e.cost ? (e.bloodrush ? ' (koszt: bloodrush)' : ' (koszt zdolności)') : '';
-        return `${whoN(e.playerId)} odrzuca ${nameOf(e.cardId)}${costNote}`;
+        const sourceNote = e.sourceCardId && e.sourceCardId !== e.cardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        return `${whoN(e.playerId)} odrzuca ${nameOf(e.cardId)}${costNote}${sourceNote}`;
       }
       case 'card_milled': return `${whoN(e.playerId)} mieli ${nameOf(e.cardId)} do grobu`;
       case 'card_plotted': return `${whoN(e.playerId)} plotuje ${nameOf(e.cardId)} (karta trafia do exile)`;
@@ -2627,6 +2632,11 @@ export function createSession(config) {
     // bota pokazuje dobraną kartę (gracz chce widzieć, co bot dobrał
     // z efektu czaru, np. Curate Surveil 2 + Draw 1).
     'card_drawn',
+    // C (Civilized Scholar 309, zgłoszenie właściciela): karta odrzucana
+    // przez bota (draw_then_discard) — modal „Rozgrywka" musi pokazać
+    // MINIATURĘ odrzucanej karty (nie tylko log), inaczej gracz nie wie,
+    // CO bot odrzucił. CR 400.2 — odrzucenie do grobu jest jawne.
+    'card_discarded',
     // M89 cd. (bug C): token_created (Carrion Call, Raise the Alarm,
     // Scourge of Skemfar itd.) — modal ruchu bota MUSI pokazać wpis
     // o tokenie, choćby z syntetyczną twarzą (tokeny mają cardId typu
