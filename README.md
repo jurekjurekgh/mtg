@@ -33,7 +33,7 @@ choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdzia�
 na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
 maną, triggery na stosie, regeneracja.
 B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
-Bieżący stan: szybki rdzeń **5496/5496**, artefakt **61 modułów / 3660,4 kB** (batch 55 ukończony, **10/10 kart**: Gift, Embalm, odsłonięcie w podtrzymaniu; audyt kosztów zdolności 2026-09-14c — **4 poprawki danych**: Embalm {3}{U}, Unearth {1}{U}{B}, Tracker {5}{G}, pip {G} Kishla Village; audyt PR #116 — APPROVE, 6 znalezisk komentarzowych + W1; boty biorą mulligana przy ręce 0–1 lądów — zgłoszenie właściciela 2026-09-14f). Pełny zestaw: **5506/5506**; quick 82,9% (557/672). Integracja i znane uwagi jakościowe: [handoff 2026-09-14e](docs/setup/HANDOFF_2026-09-14e.md). Szczegóły:
+Bieżący stan: szybki rdzeń **5496/5496**, artefakt **61 modułów / 3660,4 kB** (batch 55 ukończony, **10/10 kart**: Gift, Embalm, odsłonięcie w podtrzymaniu; audyt kosztów zdolności 2026-09-14c — **4 poprawki danych**: Embalm {3}{U}, Unearth {1}{U}{B}, Tracker {5}{G}, pip {G} Kishla Village; audyt PR #116 — APPROVE, 6 znalezisk komentarzowych + W1; boty biorą mulligana przy ręce 0–1 lądów — zgłoszenie właściciela 2026-09-14f; audyt PR #118 — APPROVE, 1 naprawa dokumentacyjna (handoff 14e odświeżony) + 3 obserwacje). Pełny zestaw: **5506/5506**; quick 82,9% (557/672). Integracja i znane uwagi jakościowe: [handoff 2026-09-15](docs/setup/HANDOFF_2026-09-15.md). Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ```bash
