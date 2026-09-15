@@ -1321,15 +1321,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // dokładamy drugiej kary, żeby nie podwajać. Zostawiamy dedykowanej
       // gałęzi w scoreCommand.
       if (Number.isInteger(cmd.selfMill)) return 0;
+      // AUDYT PR120/A1 (klasa L1/ADR 0017): poprzednia wersja czytała
+      // `pending.ability` — pole, którego playerView NIE WYSTAWIA (widok niesie
+      // tylko `{sourceCardId, effect}`, kontrakt M221/B) → drain był zawsze 0
+      // i kara nigdy nie działała (bot odpalał may-fire do deck-outu przy 4
+      // kartach — zgłoszenie E z PR #120 pozostawało otwarte). Odczytujemy
+      // `effect` = główny efekt decyzji — to pole kontraktu widoku.
       const pending = view.pendingOptionalTrigger;
-      const ability = pending?.ability;
-      let drain = 0;
-      if (ability) {
-        for (const eff of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
-          if (!eff?.type || !LIBRARY_DRAIN_EFFECTS.has(eff.type)) continue;
-          if (drainsMyLibrary(eff)) drain += drainAmount(eff);
-        }
-      }
+      const eff = pending?.effect;
+      const drain = (eff && LIBRARY_DRAIN_EFFECTS.has(eff.type) && drainsMyLibrary(eff))
+        ? drainAmount(eff) : 0;
       if (drain > 0) return libraryLossPenalty(view, drain);
       return 0;
     }
@@ -7250,6 +7251,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     if (cmd.type === 'resolve_springbloom') {
       return `resolve_springbloom(${cmd.sacrificeLandId ?? 'skip'})`;
+    }
+    // AUDYT PR120/A1 (klasa M131/L34): warianty „you may" (fire/skip) były
+    // w śladzie nierozróżnialne — test wyceny i audyt remisów nie miały
+    // czego parować. Etykieta nazywa WARIANT.
+    if (cmd.type === 'resolve_optional_trigger_choice') {
+      return `resolve_optional_trigger_choice(${cmd.fire ? 'fire' : 'skip'})`;
     }
     if (cmd.type === 'resolve_look_top_choice' || cmd.type === 'resolve_satyr_look_choice'
         || cmd.type === 'resolve_graveyard_top_choice' || cmd.type === 'resolve_delirium_target'
