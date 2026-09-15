@@ -43,23 +43,23 @@ martwa).
 
 ## 1. Etapy (inkrementalnie, każdy commit zielony: `npm test` + `npm run build`)
 
-- [ ] **E0** — ten plan (commit + push + otwarcie PR sesji) — ADR 0020 A
-- [ ] **E1** — raport audytu `docs/audits/AUDYT_PR120_2026-09-15.md`
+- [x] **E0** — ten plan (commit + push + otwarcie PR sesji) — ADR 0020 A
+- [x] **E1** — raport audytu `docs/audits/AUDYT_PR120_2026-09-15.md`
       (komplet: A1–A6, O1–O4, P1–P3 + bramki + dodatek CR)
-- [ ] **E2** — **A1 fix**: `heuristic-bot.js` — gałąź `resolve_optional_trigger_choice`
+- [x] **E2** — **A1 fix**: `heuristic-bot.js` — gałąź `resolve_optional_trigger_choice`
       czyta `view.pendingOptionalTrigger.effect` (kontrakt widoku M221/B) +
       test regresyjny (Murder may-fire przy 4 kartach: odmowa wygrywa; mutacja
       pola widoku → RED)
-- [ ] **E3** — **A3+A4+A5+A6+O1**: `main.js` (unifikacja `artifactPurposeFor`) +
+- [x] **E3** — **A3+A4+A5+A6+O1**: `main.js` (unifikacja `artifactPurposeFor`) +
       `heuristic-bot.js` (okno Spare bez `end_of_combat`, usunięcie DEBUG,
       gałąź `-75/-75`, martwa gałąź `resolve_optional_draw`) — pin testem
       (okno: end_of_combat bez walki → kara; DEBUG/gałęzie: strażnik źródła)
-- [ ] **E4** — **A2 testy regresyjne** reszty znalezisk PR #120:
+- [x] **E4** — **A2 testy regresyjne** reszty znalezisk PR #120:
       F (rzut Skaab mill-4 przy cienkiej bibliotece), G (badge X Altara —
       `cardInfo.altarX` na realnej sesji), D (kreator: źródła `spendOnly`
       przez `manaSourcesOf`), C (log odrzucenia z źródłem — `describeGameEvent`
       + `card_discarded` w `BOT_MOVE_CARD_EVENTS`)
-- [ ] **E5** — **P1+P3**: plan PR #120 odhaczony + sprostowanie (L142),
+- [ ] **E5** — **P1+P3**: plan odhaczony + sprostowanie (L142),
       README „Bieżący stan" na finalnym headzie
 - [ ] **E6** — domknięcie: handoff sesji, `PROJECT_HISTORY`, opis PR
       kumulatywny, bramki finalne (`npm test` / `build` / quick benchmark)
@@ -67,8 +67,7 @@ martwa).
 ## 2. Weryfikacja (ADR 0030)
 
 Zmiany regułowe w tym PR to wyłącznie WYCENY BOTA i warstwy prezentacji —
-zero zmian semantyki silnika. Cytaty CR w raporcie: 508.1/508.2 (krok
-końcowy walki — po zadaniu obrażeń), 702.16 (protection), 121.4 (deck-out),
+zero zmian semantyki silnika. Cytaty CR w raporcie: 510.2/511.1 (stare 508 — po zadaniu obrażeń; renumeracja The Hobbit 2026-08-07), 702.16 (protection), 121.4 (deck-out),
 400.2 (jawność grobu), 205.2a (typy kart), 106.3 (restricted mana). Źródła:
 yawgatog/mtg.wiki (pobrane w E1/E3, data dostępu w raporcie).
 

@@ -27,13 +27,13 @@ E+F: wymaga **wspólnej mechaniki** wyceny uszczuplania własnej biblioteki (dra
 
 ## 2. Etapy (inkrementalnie, każdy commit zielony)
 - [x] **E0** — ten plan + audyt PR #119 (commit + push + PR) — ADR 0020 A/B
-- [ ] **E1** — **D Powerstone**: `src/table/mana-wizard.js` + `src/engine/resources.js` — wizard respektuje `spendOnly`, liczy `restrictedPool` per cel (`spellManaPurpose`)
-- [ ] **E2** — **E+F wspólna mechanika**: `src/controllers/heuristic-bot.js` — unifikacja `libraryDrain*` dla `draw_cards|mill_cards|draw_then_discard|discard` + ETB + `resolve_optional_trigger_choice` (may draw) + ETB mill (Skaab)
-- [ ] **E3** — **G Altar badge**: `src/table/render.js` — badge X live na kaflu Altar (`allGraveyardsCardTypeCount` przez view), test
-- [ ] **E4** — **C Scholar log**: `src/engine/game-state.js`/`effects.js` + `src/table/session.js` + `src/table/render.js` — `card_discarded` z `sourceCardId` i log „odrzuca <Karta> (Civilized Scholar)”; panel Rozgrywki nie wycisza
-- [ ] **E5** — **A Savage Surge combat trick**: wycena `buff_creature_until_end_of_turn` + `untap_permanent` tylko w oknach: własna tura przed `declare_attackers` na atakera ALBO cudza tura przed `declare_blockers` na blokera + pumpChangesOutcome + untap value
-- [ ] **E6** — **B Spare from Evil timing**: `grant_protection` tylko gdy lethal od non-Human w zadeklarowanej walce (symulacja z/without protection), po `declare_blockers`; w pozostałych oknach kara przebija bazę
-- [ ] **E7** — bramki końcowe, `npm test`/`build`/benchmark, handoff, opis PR, LESSONS jeśli klasa nowa
+- [x] **E1** — **D Powerstone**: `src/table/mana-wizard.js` + `src/engine/resources.js` — wizard respektuje `spendOnly`, liczy `restrictedPool` per cel (`spellManaPurpose`)
+- [x] **E2** — **E+F wspólna mechanika**: `src/controllers/heuristic-bot.js` — unifikacja `libraryDrain*` dla `draw_cards|mill_cards|draw_then_discard|discard` + ETB + `resolve_optional_trigger_choice` (may draw) + ETB mill (Skaab)
+- [x] **E3** — **G Altar badge**: `src/table/render.js` — badge X live na kaflu Altar (`allGraveyardsCardTypeCount` przez view), test
+- [x] **E4** — **C Scholar log**: `src/engine/game-state.js`/`effects.js` + `src/table/session.js` + `src/table/render.js` — `card_discarded` z `sourceCardId` i log „odrzuca <Karta> (Civilized Scholar)”; panel Rozgrywki nie wycisza
+- [x] **E5** — **A Savage Surge combat trick**: wycena `buff_creature_until_end_of_turn` + `untap_permanent` tylko w oknach: własna tura przed `declare_attackers` na atakera ALBO cudza tura przed `declare_blockers` na blokera + pumpChangesOutcome + untap value
+- [x] **E6** — **B Spare from Evil timing**: `grant_protection` tylko gdy lethal od non-Human w zadeklarowanej walce (symulacja z/without protection), po `declare_blockers`; w pozostałych oknach kara przebija bazę
+- [x] **E7** — bramki końcowe: **sprostowanie (L142)** — bramki (`npm test`/`build`) były zielone, ale sesja domknęła się BEZ handoffu (P2) i BEZ testów na A–G (A2); audyt PR #120 tej sesji (docs/audits/AUDYT_PR120_2026-09-15.md) ustalił REWORK: A1 blokujący (E nieczynne), domknięte w tej samej sesji (E2/E4/E6).
 
 ## 3. Weryfikacja (ADR 0030)
 CR cytaty w kodzie/komentarzach/testach:
