@@ -10971,3 +10971,15 @@ na ikonkę (odtąd domyślnie ON; pamięć `mtg-table-prefs-v1`;
 M254/C), a bez warstwy — w chwili rzutu; ukryty rzut bota milczy (M257
 r3). Test `test/owner-spell-sounds.test.js` (20; mutacja 5 RED); harness
 `table-ui.test.js` wpina hiGfx:false (click-through bez pauzy).
+
+**Dopisek (ten sam dzień, ten sam PR #123): 15g — dźwięki per kolor (A),
+scryfall na warstwie (B), minima landów (C).** (A) Warstwa koloru dźwięku:
+`play('sorcery:R')` = baza typu + ogień/woda/mrok/chime/wzrost (multi +
+bezbarwny też; 7+7 = 49 brzmień, macierz pinowana). (B) Wąski ekran
+(< 7/5) BEZ lokalnego KON pokazywał pustą warstwę: błąd KON znaczy wiersz
+`no-kon`, CSS pokazuje wtedy scryfalla; błąd sf zdejmuje `is-loading`
+(widoczny, nie czarny). Pre-existing (I2), odsłonięte przez default-ON.
+(C) `landSplit`: minimum per kolor = maks pipów jednej karty, dobór
+kosztem innych, overflow rośnie; regen 5 talii (±1 land, sumy stałe);
+fala: golden-master regen (`131cd510…`, 4/6 partii bit w bit) + podłoga
+remisów 6→4 (obie uzasadnione pomiarem, nie zgadnięte).
