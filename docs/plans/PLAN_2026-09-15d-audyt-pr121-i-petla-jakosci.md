@@ -16,7 +16,10 @@
 - [x] Plan w repo, commit, push, otwarcie PR przed jakimkolwiek kodowaniem.
 - [x] Bramka: `npm test` 5514/5514 (baseline z tła sesji).
 
-## E1 — raport audytu PR #121 (ADR 0020 B) [ ]
+## E1 — raport audytu PR #121 (ADR 0020 B) [x]
+
+- [x] `docs/audits/AUDYT_PR121_2026-09-15.md` — werdykt APPROVE, V1–V10, G1/G2/G3, O1–O4.
+- [x] Wynik w opisie PR #123 (kumulatywnie).
 
 Diff `01c22a9..1d5b5df`: 21 plików (+1400/−80), w tym 6 nowych plików testowych,
 5 miejsc `src/` (bot, mana-sources, main, render, session), fixture golden-mastera,
