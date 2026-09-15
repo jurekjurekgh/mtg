@@ -1828,18 +1828,21 @@ function bootstrapTable() {
     openManaWizard(descriptor);
   }
 
-  // D (Powerstone, CR 106.3): czy płatność dotyczy rzutu artefaktu —
-  // wtedy wolno użyć many z spendOnly:'artifact' (pula restricted + tokeny).
-  // Używana w normalnym przepływie; funkcje wyciągane w teście vm mają
-  // własną kopię inline (patrz wyżej) i nie polegają na tej definicji.
-  function artifactPurposeFor(cmd, descriptor) {
+  // D (Powerstone) + F2 (audyt PR #120): mana ograniczona drukiem jest
+  // NIEDOSTĘPNA wyłącznie dla rzutu czaru nie-artefaktowego — mirror
+  // `restrictedManaBlocked` z resources.js (Oracle tokena BRO: „This mana
+  // can't be spent to cast a nonartifact spell.", weryfikacja ADR 0030
+  // 2026-09-15). Zdolności i inne płatności wolno nią opłacać.
+  // Jedno źródło dla manaWizardFor i refreshManaWizard (L41/L48); funkcja
+  // vm-odporna (brak registry → false), wyjmowana w testach razem z konsumentem.
+  function restrictedSpellBlockedFor(cmd, descriptor) {
     if (!cmd || !String(cmd.type ?? '').startsWith('cast_')) return false;
     const cardId = descriptor?.cardId ?? session.state?.objects?.get(cmd.objectId)?.cardId ?? null;
     if (!cardId) return false;
     const reg = typeof registry !== 'undefined' ? registry : null;
     if (!reg || typeof reg.get !== 'function') return false;
     const card = reg.get(cardId);
-    return Boolean(card && (card.types ?? []).includes('Artifact'));
+    return Boolean(card && !(card.types ?? []).includes('Artifact'));
   }
 
   /**
@@ -1992,24 +1995,19 @@ function bootstrapTable() {
     }
     const descriptor = paymentDescriptorOf(cmd, view, opts);
     if (!descriptor) return null;
-    // D (Powerstone): pula i źródła filtrowane wg celu (artefakt vs inne).
-    // Inline — test M348 wyciąga funkcję pojedynczo przez vm, bez helpera.
-    const isArtifact = (() => {
-      if (!cmd || !String(cmd.type ?? '').startsWith('cast_')) return false;
-      const cid = descriptor?.cardId ?? session.state?.objects?.get(cmd.objectId)?.cardId ?? null;
-      if (!cid) return false;
-      const reg = typeof registry !== 'undefined' ? registry : null;
-      if (!reg || typeof reg.get !== 'function') return false;
-      const card = reg.get(cid);
-      return Boolean(card && (card.types ?? []).includes('Artifact'));
-    })();
+    // D (Powerstone) + F2: pula i źródła filtrowane WG KONTRAKTU SILNIKA
+    // (restrictedManaBlocked — blokada tylko dla rzutu czaru nie-artefaktu).
+    const restrictedBlocked = restrictedSpellBlockedFor(cmd, descriptor);
     const humanPlayer = session.state?.players?.find((pl) => pl.id === HUMAN_ID);
     const poolUnitsUnrestricted = expandManaPool(humanPlayer?.manaPool);
-    const poolUnitsRestricted = expandManaPool(humanPlayer?.restrictedPool ?? {});
-    const poolUnits = isArtifact ? [...poolUnitsUnrestricted, ...poolUnitsRestricted] : poolUnitsUnrestricted;
-    const pool = isArtifact ? (humanPlayer?.mana ?? 0) : poolUnitsUnrestricted.length;
+    const poolUnits = restrictedBlocked
+      ? poolUnitsUnrestricted
+      : [...poolUnitsUnrestricted, ...expandManaPool(humanPlayer?.restrictedPool ?? {})];
+    const pool = restrictedBlocked ? poolUnitsUnrestricted.length : (humanPlayer?.mana ?? 0);
     const allSources = manaSourcesForPlayer(selfTapExclusionFor(cmd));
-    const sources = isArtifact ? allSources : allSources.filter((s) => s.spendOnly !== 'artifact');
+    const sources = restrictedBlocked
+      ? allSources.filter((s) => s.spendOnly !== 'artifact')
+      : allSources;
     // M202/O (uwaga właściciela, Horizon Spellbomb): kreator otwieramy tylko,
     // gdy istnieje REALNY wybór płatności. Przy jednym użytecznym źródle i puli,
     // która sama nie pokrywa kosztu, wyboru nie ma — kreator tylko klika się
@@ -2022,7 +2020,7 @@ function bootstrapTable() {
       sources, poolMana: pool, totalNeeded: descriptor.totalNeeded,
       requirements: descriptor.requirements, poolUnits,
     })) return null;
-    return { ...descriptor, cmd, _isArtifact: isArtifact };
+    return { ...descriptor, cmd, _restrictedBlocked: restrictedBlocked };
   }
 
   /** Otwiera modal kreatora many dla wstrzymanej komendy. */
@@ -2056,25 +2054,24 @@ function bootstrapTable() {
   function refreshManaWizard() {
     if (!manaWizardDescriptor || !els.manaWizardBody || !session) return;
     const view = session.view();
+    // F2 (audyt PR #120): ten sam kontrakt co manaWizardFor — jedna funkcja
+    // (L41/L48); flaga z deskryptora to skrót, fallback liczy z kontraktu.
+    const restrictedBlocked = manaWizardDescriptor._restrictedBlocked
+      ?? restrictedSpellBlockedFor(manaWizardDescriptor.cmd, manaWizardDescriptor);
     const allSources = manaSourcesForPlayer(selfTapExclusionFor(manaWizardDescriptor.cmd));
-    const isArtifact = Boolean(manaWizardDescriptor._isArtifact ?? (() => {
-      const cmd = manaWizardDescriptor.cmd;
-      const desc = manaWizardDescriptor;
-      if (!cmd || !String(cmd.type ?? '').startsWith('cast_')) return false;
-      const cid = desc?.cardId ?? session.state?.objects?.get(cmd.objectId)?.cardId ?? null;
-      if (!cid) return false;
-      const reg = typeof registry !== 'undefined' ? registry : null;
-      if (!reg || typeof reg.get !== 'function') return false;
-      const card = reg.get(cid);
-      return Boolean(card && (card.types ?? []).includes('Artifact'));
-    })());
-    const sources = isArtifact ? allSources : allSources.filter((s) => s.spendOnly !== 'artifact');
+    const sources = restrictedBlocked
+      ? allSources.filter((s) => s.spendOnly !== 'artifact')
+      : allSources;
     // Kolorowa pula (cz. 8): pokrycie kolorów z jednostek many W PULI gracza
     // (odzwierciedlają tapnięte źródła). main.js czyta pulę z pełnego stanu sesji.
-    // D (Powerstone): pula restricted liczona tylko dla artefaktu.
+    // D (Powerstone) + F2: jednostki restricted dołączane, gdy cel dopuszcza
+    // manę ograniczoną (mirror restrictedManaBlocked — rzut czaru nie-artefaktu
+    // to jedyna blokada; zdolności wolno opłacać).
     const humanPlayer = session.state?.players?.find((pl) => pl.id === HUMAN_ID);
     const poolUnitsUnrestricted = expandManaPool(humanPlayer?.manaPool);
-    const poolUnits = isArtifact ? [...poolUnitsUnrestricted, ...expandManaPool(humanPlayer?.restrictedPool ?? {})] : poolUnitsUnrestricted;
+    const poolUnits = restrictedBlocked
+      ? poolUnitsUnrestricted
+      : [...poolUnitsUnrestricted, ...expandManaPool(humanPlayer?.restrictedPool ?? {})];
     const progress = wizardProgress(view, HUMAN_ID, manaWizardDescriptor, sources, poolUnits);
     if (progress.done) {
       const pending = manaWizardDescriptor;
