@@ -3797,7 +3797,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               score += combatOn ? 12 : -45;
             } else {
               const afterBlockers = view.combat && view.combat.blockers && Object.keys(view.combat.blockers).length > 0;
-              const correctStep = ['declare_blockers', 'combat_damage', 'end_of_combat'].includes(view.turn.step);
+              // A4 (audyt niezależny PR #122, port 2026-09-15): okno KOŃCZY się
+              // na combat_damage. W tym kroku priorytet JEST (CR 510.1) — przed
+              // rozdaniem obrażeń (CR 510.2: „all combat damage that's been
+              // assigned is dealt simultaneously"; silnik: pas aktywnego domyka
+              // krok i dopiero wtedy rozdaje, closingCombatPassBlocked) — ochrona
+              // jeszcze prewenuje. W end_of_combat (CR 511.1: sam priorytet,
+              // bez akcji turowych) obrażenia są JUŻ rozdane — ochrona nie cofa
+              // rozdanych (DEBT: „All such damage is prevented." dotyczy obrażeń,
+              // które dopiero BĘDĄ zadane), a protectionPreventsAnyLethal czyta
+              // wciąż dane walki i dałaby +35 za kartę zużytą bez efektu.
+              const correctStep = ['declare_blockers', 'combat_damage'].includes(view.turn.step);
               const inPostBlockWindow = afterBlockers && correctStep;
               if (!inPostBlockWindow) {
                 score -= 95; // poza oknem po blokach — musi przegrać z passem (50-95=-45) nawet z base
