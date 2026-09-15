@@ -755,7 +755,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
  * ale routing resolve_madness_cast po kind kieruje tu obiekty spell.
  *
  * Wzorzec: handlery suspend/rebound — rzut z exile w rozstrzyganiu
- * jednorazowej decyzji, timing IGNOROWANY (CR 702.35b — także sorcery w
+ * jednorazowej decyzji, timing IGNOROWANY (CR 702.35a + ruling DMU 2023-01-06 — także sorcery w
  * cleanup i w turze przeciwnika), cele walidowane jak przy zwykłym rzucie.
  * Różnica: koszt madness się PŁACI (redukcje generyczne i płatność pipami
  * madness.colors — lustro castPermanent, M161/O2).
@@ -1804,10 +1804,10 @@ export function resolveTopOfStack(state) {
   }
   const legalTargets = collectLegalTargets(state, targetSpec, chosen, object.controllerId, object.colors ?? [], object).map((entry) => entry?.id ?? null);
   const fizzled = targetSpec.length > 0 && legalTargets.every((entry) => entry === null);
-  // CR 702.174b (ruling): „For instants and sorceries with gift, the gift is
-  // given … as part of the resolution of the spell. This happens before any of
-  // the spell's other effects would take place." Czar, który się nie
-  // rozstrzyga (fizzle/kontra), nie daje daru.
+  // CR 702.174j (ruling BLB 2024-07-26): „For instants and sorceries with gift,
+  // the gift is given … as part of the resolution of the spell. This happens
+  // before any of the spell's other effects would take place." Czar, który się
+  // nie rozstrzyga (fizzle/kontra), nie daje daru.
   if (!fizzled && object.wasGifted) grantGift(state, object);
   if (!fizzled) {
     const effects = object.cleaved && object.spell.cleave ? (object.spell.cleave.effects ?? object.spell.effects) : object.spell.effects;

@@ -6099,13 +6099,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(cmd.fire ? 50 : 0);
       }
       case 'resolve_mulligan_choice': {
-        // Mulligan londyński (CR 103.4): bot zatrzymuje rękę (keep) —
-        // pierwsza oferta; mulligan to decyzja strategiczna człowieka.
-        return finish(cmd.keep ? 50 : 0);
+        // Mulligan londyński (CR 103.4). 2026-09-14f (zgłoszenie właściciela:
+        // „talie podejrzanie często startują bez lądów"): pomiar pokazał, że
+        // talie trzymają regułę 1:2, a winny jest bot, który ZAWSZE trzymał
+        // rękę — także 0-lądową. Polityka: keep ⇔ ≥2 lądy w ręce albo cap
+        // 2 mulliganów osiągnięty (ręka 5 kart — dalsze mulligany są gorsze
+        // niż granie z tym, co jest). Licznik bierze z payloadu komendy
+        // (informacja publiczna z silnika).
+        const lands = view.zones.hand.filter((o) => (o.kind ?? '') === 'land').length;
+        const mulligans = cmd.mulligans ?? 0;
+        const keepNow = lands >= 2 || mulligans >= 2;
+        return finish(cmd.keep ? (keepNow ? 60 : 0) : (keepNow ? 0 : 60));
       }
       case 'resolve_mulligan_bottom_choice': {
-        // Odłożenie N kart na spód: pierwsza oferta (najtańsze karty).
-        return finish(10);
+        // Odłożenie N kart na spód po mulliganie (CR 103.4): bot trzyma lądy
+        // (mulligan wziął właśnie z braku many — oddanie lądu odtwarzałoby
+        // problem) i oddaje karty o NAJNIŻSZEJ wartości: drogie czary
+        // (niegrywalne przez wiele tur = martwe dobranie), a tanie zostają.
+        const handById = new Map(view.zones.hand.map((o) => [o.id, o]));
+        const keepLoss = (ids) => ids.reduce((sum, id) => {
+          const card = handById.get(id);
+          if (!card) return sum;
+          const isLand = (card.kind ?? '') === 'land' || (card.types ?? []).includes('Land');
+          if (isLand) return sum + 100; // ląd zostaje, chyba że nie ma wyboru
+          const body = 2 * (card.power ?? 0) + (card.toughness ?? 0);
+          return sum + 60 - (card.manaCost ?? 0) * 5 + Math.min(body, 10);
+        }, 0);
+        return finish(-keepLoss(cmd.cardIds ?? []));
       }
       case 'resolve_graveyard_top_choice': {
         // Forever Young: odkupienie stwora z grobu na wierzch biblioteki.

@@ -297,6 +297,15 @@ export function describeSpellEffects(spell) {
 export const OPTION_IGNORABLE_TYPES = Object.freeze([
   'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
   'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'plot_card', 'suspend_card',
+  // W1 (E2 audytu PR #116, Żywy Tester worek-legend vs worek-mroczny s=55):
+  // oś 3 detektora („akcja bez ptaszka") zgłosiła „Rzuć za warp:" — warp_card
+  // to rzut za koszt alternatywny z ręki jak plot/suspend (kontrakt
+  // tools/table-tester/actions.mjs mówi, że „Rzuć za warp" ma ptaszek),
+  // a listy tu nie było. Turn_manifest_face_up ma tę samą lukę co cloak
+  // przed M315 („Obróć twarzą do góry" z tabeli actions.mjs — ptaszek miała
+  // tylko gałąź Cloak); manifest to ta sama rodzina opcjonalnej akcji
+  // kosztowej, ignorowanie = „nie odwracam".
+  'warp_card', 'turn_manifest_face_up',
   // M315: odsłonięcie cloakowanego — akcja opcjonalna (kosztowna), gracz może
   // wyciszyć („nie przerywaj auto-passu").
   'turn_cloak_face_up',

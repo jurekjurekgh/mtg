@@ -96,7 +96,7 @@ test('audyt K: Embalm to {3}{U} — trzy many (w tym {U}) nie wystarczą', () =>
   addMana(s, 'p1', 2, {});
   addMana(s, 'p1', 1, { colors: ['U'] });
 
-  assert.equal(offer(s, 'grave'), undefined, 'zgłoszenie właściciela: {3}{U} to cztery many, nie trzy');
+  assert.equal(offer(s, 'grave'), undefined, 'audyt własny: {3}{U} to cztery many, nie trzy');
   const r = reject(s, 'grave');
   assert.equal(r.ok, false);
   assert.equal(s.objects.get('grave').zone, 'graveyard', 'odrzucona aktywacja nie wygania karty');

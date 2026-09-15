@@ -1002,9 +1002,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // próg niespełniony pomija TYLKO ten efekt, nie całą zdolność.
   // CR 702.33d: tylko opłacony kicker włącza warunkowy efekt czaru.
   if (effect.condition?.wasKicked && !sourceObject?.wasKicked) return;
-  // CR 702.174c (Gift, M355): „if the gift was promised" — klauzula czyta
+  // CR 702.174b (Gift, M355): „if the gift was promised" — klauzula czyta
   // własność czaru na stosie (wasGifted ustawia castSpell), tak samo jak
   // kicker czyta wasKicked. Dla permanentów flagę nosi permanent (ETB).
+  // (702.174c to co innego: efekty, które TRYGERUJĄ, gdy ktoś daje dar.)
   if (effect.condition?.wasGifted && !sourceObject?.wasGifted) return;
   if (effect.condition?.manaSpentAtLeast != null && (context?.manaSpent ?? 0) < effect.condition.manaSpentAtLeast) return;
   if (effect.type === 'damage') {

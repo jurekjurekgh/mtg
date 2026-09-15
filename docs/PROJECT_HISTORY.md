@@ -10736,7 +10736,7 @@ tańszy":
 
 | karta | Oracle | silnik (przed) | błąd |
 |---|---|---|---|
-| `tah-crop-skirmisher` | Embalm **{3}{U}** | `mana: 3, colors: ['U']` = {2}{U} | −1 many (zgłoszenie właściciela) |
+| `tah-crop-skirmisher` | Embalm **{3}{U}** | `mana: 3, colors: ['U']` = {2}{U} | −1 many (audyt własny — wprowadzone w B3 batcha 55) |
 | `etherium-abomination` | Unearth **{1}{U}{B}** | `mana: 2, colors: ['U','B']` = {U}{B} | −1 many |
 | `brightwood-tracker` | **{5}{G}**, {T} | `mana: 5, colors: ['G']` = {4}{G} | −1 many |
 | `kishla-village` | **{3}{G}**, {T}: Surveil 2 | `{ mana: 4, tap: true }` = 4 dowolnej many | brak pipu {G} |
@@ -10770,3 +10770,80 @@ czeka na osobne zlecenie.
 poprawką: droższe zdolności nie zmieniły ani jednej partii próbki); golden
 master **bez churnu** (`3d1167140f686f7c…` — karta o zmienionym koszcie nie
 wchodzi do fixture'ów scoringu). PR #116 czeka na właściciela.
+
+## 2026-09-14e — audyt PR #116 (APPROVE, P1–P6) + pętla jakości (W1) (PR #118, arena/01a09fda)
+
+Trzecia sesja 2026-09-14, pętla domyślna ADR 0021 (prompt bez tematu): PR na
+starcie → audyt ostatniego scalonego PR → pętla jakości. PR #117 (sesja
+`arena/01a09fcc`, ten sam temat) został zamknięty przez właściciela bez
+scalenia, więc audyt wykonany od zera i dostarczony tutaj. Plan:
+[`docs/plans/PLAN_2026-09-14e-audyt-pr116-petla-jakosci.md`](plans/PLAN_2026-09-14e-audyt-pr116-petla-jakosci.md)
+(`9c9da75`), raport:
+[`docs/audits/AUDYT_PR116_2026-09-14.md`](audits/AUDYT_PR116_2026-09-14.md)
+(`c5c138d`).
+
+**Werdykt: APPROVE (zielone).** Pełne czytanie diffu (116 plików), niezależne
+pomiary na `main@4ccc055` (5482/5482, 5492/5492, 61 modułów), weryfikacja
+online każdego cytatu CR (edycja 2026-08-07) i każdego rulingu (API Scryfall).
+Sześć znalezisk KOMENTARZOWYCH (P1–P6; żadne nie dotyka zachowania):
+P1 wasGifted cytował 702.174c (ma być 702.174b; kolejność daru to 702.174j),
+P2 data rulingu BLB zapisana jako „2017-04-18?", P3 data wygnania-kosztu
+Embalma (ma być 2017-07-14), P4 „timing ignorowany — CR 702.35b" (702.35b to
+płatność kosztu alternatywnego; timing = 702.35a + ruling DMU 2023-01-06;
+10 miejsc z testami), P5 resztka atrybucji „zgłoszenie właściciela" po
+sprostowaniu L142, P6 „CR 604.3" przy warunkach statycznych (604.3 to CDA,
+604.3a(5) wyklucza warunkowe; właściwy przepis 611.3a; 11 miejsc). Obserwacje
+O1/O2: kopia stormowa daru i gift na permanencie — poprawnie z konstrukcji,
+dziś nieosiągalne. Naprawy: `52b1ad2`…`eeb7496` (każde znalezisko osobno).
+Strażnik E3 (`4a67459`): 2 nowe pary (madness+702.35b, „przeliczane"+604.3)
+z weryfikacją mutacyjną. Lekcje `docs/LESSONS.md` § L143 (numer ≠ znaczenie;
+P4/P6) + dopisek do § L137 (ptaszek dwukierunkowy, W1); narracje w
+`docs/LESSONS_PRZYPADKI.md` (L142/L143).
+
+**Pętla jakości (12 partii Żywym Testerem, świeży dist):** na żywo zweryfikowane
+Embalm (wygnanie → token-kopia 2/1 → walka), Gift (etykieta „dar dla
+przeciwnika: Food", log obietnicy, Food tworzony przez odbiorcę i aktywowany),
+Duskmantle Seer (upkeep: odsłonięcia, utrata życia = MV, do ręki bez
+„dobrania", FoW), Lifecrafter's Gift, Brightwood Tracker. **W1** (`fca3f4b`):
+oś 3 detektora zgłosiła „Rzuć za warp:" bez ptaszka — `warp_card` i
+`turn_manifest_face_up` spoza `OPTION_IGNORABLE_TYPES` (kontrakt
+`actions.mjs` dwukierunkowy; regresja w `test/choice-ignore.test.js`; dowód:
+ta sama partia 1 → 0 zgłoszeń). Chwilowe talie audytowe usunięte przed bramką
+(M178/ADR 0023).
+
+**Bramki finalnego headu:** `npm test` 5485/5485 (147,9 s), `npm run
+test:all` 5495/5495 (304,6 s), build 61 modułów / 3658,7 kB, quick benchmark
+82,6% (555/672) / 30,7% / 4,2% — identyczny z bazą (polityka bota nietknięta),
+golden master bez churnu. Handoff:
+[`docs/setup/HANDOFF_2026-09-14e.md`](setup/HANDOFF_2026-09-14e.md).
+
+## 2026-09-14f — boty biorą mulligana przy ręce 0–1 lądów (PR #118, arena/01a09fda)
+
+Czwarta sesja 2026-09-14. Zgłoszenie właściciela: „Kilka talii podejrzanie
+często startuje bez lądów; proporcja lądów do nie-lądów powinna być 1:2".
+Pomiar [`tools/deck-land-ratio.mjs`](../tools/deck-land-ratio.mjs) (nowe
+narzędzie, commit `31f51a7`): wszystkie 24 talie trzymają regułę 1:2 (M132 —
+≥1 ląd na 2 nielandy; 33,3–41,7% lądów, próg górny 55%); symulacja 2000
+rozdań/talia przez prawdziwą ścieżkę silnika zgodna z rozkładem
+hipergeometrycznym (max 3,58% rąk 0-lądowych, 1/28 gier) — tasowanie
+uczciwe. Root cause: boty NIGDY nie brały mulligana (heuristic: keep=50
+zawsze; aggro: pierwsza oferta) i grały rękę 0-lądową do końca.
+
+Naprawa (decyzja właściciela — nauczyć boty mulliganować, talie bez zmian;
+plan [`docs/plans/PLAN_2026-09-14f-bot-mulligan.md`](plans/PLAN_2026-09-14f-bot-mulligan.md)):
+
+- silnik: warianty `resolve_mulligan_choice` niosą jawny licznik `mulligans`
+  (informacja publiczna; bot capuje nim decyzje);
+- heuristic-bot i aggro-bot: keep ⇔ ≥2 lądy w ręce albo cap 2 mulliganów;
+  przy odłożeniu N kart na spód trzymają lądy i oddają najdroższe czary;
+  random-bot bez zmian (linia szumowa);
+- `test/bot-mulligan.test.js` (11 testów); golden-master śladu bota
+  zregenerowany `--write` z przeglądem diffu (scoreSum +10 na keep: 50→60;
+  jeden mecz z realnym mulliganem: decisions 165→176);
+- bramki: `npm test` 5496/5496, `npm run test:all` 5506/5506, build
+  61 modułów / 3660,4 kB, quick benchmark 82,9% (557/672; baza 82,6%),
+  aggro 30,7% bez zmian; Żywy Tester (innistrad-brg vs innistrad-wu,
+  seed 25): „Nieprzyjaciel bierze mulligan (1) — nowa ręka 7 kart",
+  odłożenie na spód, zatrzymanie nowej ręki, partia do końca, 0 zgłoszeń
+  detektorów; LESSONS § L19 dopisek (narracja w LESSONS_PRZYPADKI,
+  budżet lektury zielony).

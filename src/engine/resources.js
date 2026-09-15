@@ -1368,10 +1368,12 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
   // bez flash — tylko w swojej main phase (plot też rzuca się jako sorcery).
   const hasFlash = (object.keywords ?? []).includes('flash');
-  // M159/F1 (audyt PR #66, CR 702.35b): rzut za koszt madness następuje przy
-  // rozstrzyganiu jednorazowej decyzji (jak suspend/rebound) i IGNORUJE
-  // timing — także w cleanup (odrzucenie ponad limit ręki) i w turze
-  // przeciwnika. Bez wyjątku bramka odrzucała rzut, a heuristic-bot zawsze
+  // M159/F1 (audyt PR #66, CR 702.35a + ruling DMU 2023-01-06): rzut za koszt
+  // madness następuje przy rozstrzyganiu zdolności wyzwalanej (jak
+  // suspend/rebound) i IGNORUJE timing — ruling: „Casting a spell with madness
+  // ignores the timing rules based on the card's type." Także w cleanup
+  // (odrzucenie ponad limit ręki) i w turze przeciwnika. Bez wyjątku bramka
+  // odrzucała rzut, a heuristic-bot zawsze
   // wybierał cast:true → crash sesji „Bot wybrał nielegalną komendę".
   if (!hasFlash && !madnessCast && !abilityWindowCast && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
   // Timing sorcery (CR 307.1/117.1a): rzut permanenta bez flash wymaga
