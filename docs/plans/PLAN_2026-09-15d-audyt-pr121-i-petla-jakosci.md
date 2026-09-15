@@ -68,16 +68,19 @@ Wstępne wyniki (zweryfikowane w tej sesji, przed raportem):
 
 Kryterium: `docs/audits/AUDYT_PR121_2026-09-15.md` + wynik w opisie PR.
 
-## E2 — fix G1/G2 (+M221/E po potwierdzeniu): sprostowanie cytatów (komentarze) [ ]
+## E2 — fix G1/G2/G3: sprostowanie cytatów CR (komentarze) [x]
 
-- [ ] Komentarz A4 w `heuristic-bot.js`: 510.1→509.2 + mapowanie kroków silnika.
-- [ ] Nagłówek `test/audyt-pr120-spare-okno-end-of-combat.test.js`: ten sam cytat.
-- [ ] Komentarz M172/C w `game-state.js`: 509.4→509.2 (L143, pre-existing).
-- [ ] M221/E w `heuristic-bot.js` (~l.68): po odczycie — 702.16e→702.16f jeśli myli.
-- [ ] Raport audytu (E1) jako dokument mrożony: BEZ edycji wstecz — sprostowanie
-      żyje w raporcie bieżącym (wzorzec „SPROSTOWANE" z #121).
-- [ ] Bramka: `npm test` + `npm run build` zielone (zmiana komentarzy — brak
+- [x] G1: komentarz A4 w bocie + nagłówek testu (podstawa: CR 509.2, nie 510.1).
+- [x] G2: M172/C 509.4→509.2 (game-state.js).
+- [x] G3: M221/E — doprecyzowanie nagłówka + 4× 702.16c→702.16e w bocie.
+- [x] Raport: G3 ×4 + O5 (inwentarz pozostałych cytatów 702.16, poza zakresem).
+- [x] Weryfikacja: diff wyłącznie komentarzowy (grep `^[+-]` poza `//|*` pusty).
+
+- [x] Bramka: `npm test` + `npm run build` zielone (zmiana komentarzy — brak
       dryfu liczb; L92: liczb nie przepisuję z pamięci).
+- Notatka: raporty z MERGE'owanych sesji (AUDYT_PR120) mrożone; raport własnej
+  sesji (AUDYT_PR121_*) żyje do merge'a — stąd G3 ×4 + O5 dopisane w E2
+  (wzorzec: §Zbieżność dopisany do raportu #121 w E9 tamtej sesji).
 
 ## E3 — pętla jakości ADR 0021 (inna ścieżka niż sesja #121) [ ]
 

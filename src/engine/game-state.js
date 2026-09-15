@@ -5344,8 +5344,10 @@ export function execute(state, input) {
     if (state.zones.stack.length > 0) return reject('stack_not_empty');
     try {
       const e = declareBlockers(state, cmd.playerId, cmd.assignments ?? {});
-      // M172/C (uwaga właściciela, CR 509.4): po deklaracji bloków gracze
-      // dostają OKNO ODPOWIEDZI, zanim padną obrażenia — priorytet najpierw
+      // M172/C (uwaga właściciela, CR 509.2 — sprostowanie G2 w audycie PR #121,
+      // cytowane 509.4 to dziś „put onto battlefield blocking", L143): po
+      // deklaracji bloków gracze dostają OKNO ODPOWIEDZI, zanim padną obrażenia
+      // — priorytet najpierw
       // dla OBROŃCY (on właśnie zamknął deklaracje i chce reagować:
       // Dawntreader Elk, pumpy, prewencje). Dotąd priorytet szedł od razu
       // do atakującego, który natychmiast brał resolve_combat — obrońca
