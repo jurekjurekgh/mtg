@@ -4132,12 +4132,21 @@ export function renderCardArtShowcase(host, card, { casterName = null, verb = 'R
   const row = document.createElement('div');
   row.className = 'showcase-row';
   const kon = buildLocal('kon');
-  if (kon) row.appendChild(kon);
+  // 15g/B: media query chowa scryfalla, gdy obok jest KON — ale bez
+  // lokalnego artu (preview, świeży klon) KON pada na 404 i warstwa byłaby
+  // pusta. Klasa no-kon pozwala CSS pokazać wtedy scryfalla.
+  if (kon) {
+    kon.addEventListener('error', () => { row.className += ' no-kon'; });
+    row.appendChild(kon);
+  }
   const sf = document.createElement('img');
   sf.className = 'showcase-art showcase-scryfall is-loading';
   sf.alt = `${card.name ?? 'Karta'} — Scryfall`;
   sf.decoding = 'async';
   sf.addEventListener('load', () => { sf.className = sf.className.replace(/\s*is-loading/, ''); });
+  // 15g/B: błąd sf też zdejmuje is-loading (opacity 0) — zbity obrazek MA
+  // BYĆ widoczny (komentarz wyżej), nie czarny prostokąt bez diagnozy.
+  sf.addEventListener('error', () => { sf.className = sf.className.replace(/\s*is-loading/, ''); });
   // M254/A (zgłoszenie właściciela, Willbender): `scryfallImageUrl` buduje
   // adres po NAZWIE (`/cards/named?exact=`), a Scryfall oddaje wtedy druk
   // DOMYŚLNY, nie ten z kolekcji — na stole kafel brał `imageUri` (właściwy

@@ -828,6 +828,9 @@
      dokładnie DOTYCHSZASOWY widok jednej ilustracji (KON sam, wycentrowany). */
   @media (max-aspect-ratio: 7/5) {
     .art-showcase .showcase-row .showcase-scryfall { display: none; }
+    /* 15g/B: wąski ekran BEZ lokalnego KON (404) — scryfall to jedyny obraz
+       warstwy, więc wraca (selektorem mocniejszym od reguły wyżej). */
+    .art-showcase .showcase-row.no-kon .showcase-scryfall { display: block; max-width: 90vw; }
   }
   /* I1: mała informacja kto rzucił (nakładka — wielkości FOT/KON nietknięte). */
   .art-showcase .showcase-caster {
