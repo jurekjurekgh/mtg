@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "9b6f53c3cab1216acf54e944a43bc78c887531976db0913e2338008253c453de",
+  "overallHash": "350917d7964c01d15a577fcddc964bebdab89dde511924444317b23c0d33538c",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
@@ -65,22 +65,22 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1001,
-      "hash": "f4f27c3ae8bab1a9dbfc4a765de5636fa8b883923eef51f50a1f3cc65c1b30d4",
-      "decisions": 195,
-      "scoreSum": 3042.009,
+      "hash": "8e62429fdd6268c1d31bf6d48f85f9a8005e62fa4b7c0853917b13841464fe1f",
+      "decisions": 192,
+      "scoreSum": 3015.309,
       "chosenKinds": {
-        "activate_ability": 4,
+        "activate_ability": 2,
         "attack": 6,
         "block": 6,
         "cast_flashback": 1,
-        "cast_permanent": 4,
+        "cast_permanent": 5,
         "cast_spell": 2,
         "pass_priority": 149,
         "play_land": 8,
         "resolve_combat": 8,
-        "resolve_discard_choice": 3,
+        "resolve_discard_choice": 2,
         "resolve_mulligan_choice": 1,
-        "resolve_search_choice": 2,
+        "resolve_reveal_exile_hand": 1,
         "resolve_trigger_target": 1
       }
     },

@@ -3580,10 +3580,20 @@ export function cardInfo(session, object, combat = null) {
       ? (session.view()?.zones?.battlefield ?? []).filter((o) => o.attachedTo === object.id && o.id !== object.id)
           .map((o) => ({ name: o.cardId ? (session.nameOf(o.cardId) || o.cardId) : o.cardId, kind: (o.aura || o.bestow) ? 'aura' : 'equip' }))
       : [],
-    // G (Altar of the Goyf): aktualny X = liczba typów w grobach — badge na kafle
+    // G (Altar of the Goyf, CR 709.2a): aktualny X = liczba typów w grobach — badge na kafle
     // artefaktu (publiczna informacja, jak live P/T Tarmogoyfa). Liczone tu,
     // żeby overlay dostał gotową liczbę bez kolejnego skanu (L41: jedno źródło).
-    altarX: (!faceDown && cardId === 'altar-of-the-goyf' && object.zone === 'battlefield')
+    // Deskryptor card-agnostic: każda karta której efekt liczy 'card_types_in_all_graveyards'
+    // (ADR 0002), nie nazwa karty (M212).
+    altarX: (!faceDown && object.zone === 'battlefield' && (() => {
+      try {
+        const def = session.cardDetails(cardId);
+        return (def?.abilities ?? []).some((ab) => {
+          const effs = Array.isArray(ab.effect) ? ab.effect : [ab.effect];
+          return effs.some((e) => e?.power === 'card_types_in_all_graveyards' || e?.toughness === 'card_types_in_all_graveyards');
+        });
+      } catch { return false; }
+    })())
       ? altarTypeCount(session)
       : null,
     faceDown,
