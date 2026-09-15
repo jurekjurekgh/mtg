@@ -400,7 +400,9 @@ function isSavageDefenseWindow(view, target) {
 }
 /**
  * B — czy ochrona przed nie-Ludźmi chroni którykolwiek własny stwór w zadeklarowanej walce przed lethal
- * (CR 510 + CR 702.16d). Porównuje wynik walki przed/po ochronie: obrażenia od nie-Ludzkich źródeł do
+ * (CR 510 + CR 702.16e: „Any damage that would be dealt by sources that have the
+ * stated quality to a permanent or player with protection is prevented." —
+ * weryfikacja ADR 0030 2026-09-15). Porównuje wynik walki przed/po ochronie: obrażenia od nie-Ludzkich źródeł do
  * chronionego stwora są zerowane. Wystarczy jeden uratowany stwór, żeby czar miał wartość.
  */
 function protectionPreventsAnyLethal(view, notSubtype = null) {
@@ -3781,12 +3783,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // M109 (Spare from Evil): ochrona do końca tury to SZTUCZKA BOJOWA — po deklaracji blokujących.
           // B (zgłoszenie właściciela, Spare from Evil {1}{W} — protection from non-Human creatures):
           // Sztuczka ma wartość TYLKO gdy zapobiega LETHAL od nie-Człowieka na twoim stworze w
-          // zadeklarowanej walce (CR 702.16 DEBT — damage prevention + 702.16e block restriction,
-          // ale po blokach liczy się prewencja obrażeń). Poza oknem po blokach (Main1, beginning_of_combat,
+          // zadeklarowanej walce (prewencja obrażeń wg CR 702.16e — dosłowny cytat w nagłówku
+          // protectionPreventsAnyLethal). Poza oknem po blokach (Main1, beginning_of_combat,
           // przed blokami, bez walki) to strata karty i many — kara musi przebić bazę 50.
           // Wycena generyczna po deskryptorze protection.notSubtype (ADR 0002), nie po nazwie karty.
           // Symulacja „przed/po ochronie" używa tego samego modelu walki co pumpChangesOutcome (CR 510),
-          // z tym że obrażenia od nie-Ludzkich źródeł do chronionego stwora są zerowane (CR 702.16d).
+          // z tym że obrażenia od nie-Ludzkich źródeł do chronionego stwora są zerowane (CR 702.16e).
           if (effect.type === 'grant_protection_until_end_of_turn') {
             const notSubtype = effect.protection?.notSubtype ?? null;
             const isSubtypeProtection = notSubtype != null && effect.protection?.kind === 'creature';
