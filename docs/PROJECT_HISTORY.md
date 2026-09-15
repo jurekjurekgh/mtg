@@ -10847,3 +10847,49 @@ plan [`docs/plans/PLAN_2026-09-14f-bot-mulligan.md`](plans/PLAN_2026-09-14f-bot-
   odłożenie na spód, zatrzymanie nowej ręki, partia do końca, 0 zgłoszeń
   detektorów; LESSONS § L19 dopisek (narracja w LESSONS_PRZYPADKI,
   budżet lektury zielony).
+
+## 2026-09-15b — audyt PR #120 (APPROVE z zastrzeżeniami) + naprawy F1/F2/F3/F4 (PR #121, arena/01a0a505-mtg)
+
+Zlecenie „Kontynuujemy projekt." (bez tematu) → pętla domyślna ADR 0021: PR sesji
+przed kodem, pełny audyt ostatniego scalonego PR (#120, „Znaleziska A–G") wg
+ADR 0020 B/0016, naprawy u root cause. Raport:
+[`docs/audits/AUDYT_PR120_2026-09-15.md`](audits/AUDYT_PR120_2026-09-15.md);
+plan: [`docs/plans/PLAN_2026-09-15c-audyt-pr120-i-naprawy.md`](plans/PLAN_2026-09-15c-audyt-pr120-i-naprawy.md).
+
+Nota proweniencji (L142): sesje #119 (audyt #118) i #120 (A–G) NIE dopisały
+wpisów do tego dziennika i nie zamknęły dokumentacji (F5 audytu #120: plan
+bez odhaczeń, brak handoffu, klaimy commitów o regeneracji snapshotu i testach
+bez pokrycia w repo — fixture golden-mastera identyczny przed i po, zero plików
+testowych w diffie #120). Ten wpis pisze sesja audytowa #121; stan sesji
+#119/#120 odtworzony z ich artefaktów (handoff 2026-09-15, plan 15b, commity).
+
+Znaleziska i naprawy (każdy etap osobnym zielonym commit: 8ef681e E0 plan,
+9170ff3 E1 raport, 75a987d E2, 0f979a8 E3, 56c918f E4, bf8585d E5):
+
+- **F1 (E2)** — martwa wycena `resolve_optional_trigger_choice`: czytanie
+  `view.pendingOptionalTrigger.ability`, pole nieistniejące w widoku (widok:
+  `{sourceCardId, effect}`) → kara cienkiej biblioteki nigdy nie naliczana;
+  Murder of Crows palił „may draw" przy 4 kartach (repro: score 50 jak przy 25).
+  Fix: odczyt `pending.effect`; testy `test/audyt-pr120-optional-trigger-wycena.test.js`
+  (RED przed fixem, mutacja → RED); klasy: L1/ADR 0017 + L48.
+- **F2 (E3)** — kreator many odcinał Powerstone (`spendOnly:'artifact'`) od
+  `activate_ability`; Oracle (scryfall 2026-09-15, ADR 0030) i silnik
+  (`restrictedManaBlocked`) pozwalają. Fix: wspólna `restrictedSpellBlockedFor`
+  (jedno źródło zamiast trzech kopii, L41/L48); testy
+  `test/audyt-pr120-powerstone-kreator.test.js` (vm, wzorzec M348; RED przed
+  fixem); M348/B5 doposażony o helper (L96).
+- **F3 (E4)** — sprzątnięty martwy kod z #120: identyczne gałęzie `trick=-75`
+  (warunek martwy, L5), zakomentowany DEBUG-log (L58), pusty `export`,
+  redundancja filtru (L106).
+- **F4 (E5)** — sprostowane cytaty CR z #120: „CR 709.2a" (CR 709 = Split
+  Cards) → Oracle Altara + CR 205.2a; 702.16d↔e zamienione (prewencja = 702.16e,
+  cytat dosłowny w kodzie).
+
+Bramki finalne (zmierzone): `npm test` **5503/5503**, `npm run test:all`
+**5513/5513** (~343 s), build 61 modułów / 3681,4 kB, regresja botów 10/10,
+golden-master 4/4. Werdykt audytu #120: APPROVE z zastrzeżeniami (wyceny po
+deskryptorach, M212 ✓; wady: F1/F2 + brak testów przy zmianach wyceny).
+Obserwacje O1–O5 w raporcie (m.in. twardy prefiks „Altar:" przy deskryptorze
+generycznym — do etykiety mechanikowej, gdy wejdzie druga karta; komentarz
+M221/E z PR #107 cytuje 702.16e przy blokadzie — do weryfikacji u źródła).
+Handoff: [`docs/setup/HANDOFF_2026-09-15b.md`](setup/HANDOFF_2026-09-15b.md).

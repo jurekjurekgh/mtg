@@ -43,14 +43,14 @@ Powerstone restricted, Murder/Skaab draw-mill, Altar badge). 8 plików: 2 dokume
 ## Etapy (inkrementalnie, każdy commit zielony: `npm test` + `npm run build`)
 
 - [x] **E0** — ten plan + PR sesji (ADR 0020 A)
-- [ ] **E1** — raport audytu `docs/audits/AUDYT_PR120_2026-09-15.md` (pełny, z repro)
-- [ ] **E2** — **F1**: czytanie `pending.effect` w wycenie optional-trigger + testy
+- [x] **E1** — raport audytu `docs/audits/AUDYT_PR120_2026-09-15.md` (pełny, z repro)
+- [x] **E2** — **F1**: czytanie `pending.effect` w wycenie optional-trigger + testy
       (RED przed fixem: fire przy 4 kartach; GREEN po: pass przy 4, fire przy 25;
       mutacja fixu → RED, L13)
-- [ ] **E3** — **F2**: kreator many — ograniczenie `spendOnly` stosowane wyłącznie
+- [x] **E3** — **F2**: kreator many — ograniczenie `spendOnly` stosowane wyłącznie
       do rzutów czarów nie-artefaktowych (mirror `restrictedManaBlocked`) + testy
-- [ ] **E4** — **F3**: usunięcie martwego kodu z PR #120 (L5: martwy wartownik)
-- [ ] **E5** — **F4**: sprostowanie cytatów CR w komentarzach (dosłowne cytaty,
+- [x] **E4** — **F3**: usunięcie martwego kodu z PR #120 (L5: martwy wartownik)
+- [x] **E5** — **F4**: sprostowanie cytatów CR w komentarzach (dosłowne cytaty,
       ADR 0030 pkt 3)
 - [ ] **E6** — domknięcie: `npm run test:all`, README „Bieżący stan" (L92),
       handoff, `PROJECT_HISTORY` (z adnotacją o braku zamknięcia sesji #120),
@@ -75,3 +75,15 @@ Powerstone restricted, Murder/Skaab draw-mill, Altar badge). 8 plików: 2 dokume
   nie w heurystyce wokół brakującej informacji.
 - Surgical patching (ADR 0016), testy z weryfikacją mutacyjną (L13), B0 tylko na
   komendę właściciela (ADR 0018).
+
+## Podsumowanie wykonania (2026-09-15)
+
+- E0–E5 wykonane commitami `8ef681e`, `9170ff3`, `75a987d`, `0f979a8`, `56c918f`,
+  `bf8585d` (każdy samodzielnie zielony, ADR 0020 C/D). E6 = domknięcie
+  (test:all 5513/5513, README, handoff `HANDOFF_2026-09-15b.md`, dziennik,
+  opis PR #121 kumulatywnie).
+- F1 naprawione i przypięte testem z weryfikacją mutacyjną (RED przed/po).
+- F2 naprawione (wspólny kontrakt kreatora i silnika) + testy vm + mutacja.
+- F3/F4 posprzątane; F5 opisany w audycie i uzupełniony w tej sesji
+  (plan 15b, dziennik, README, handoff).
+- Pozostały obserwacje O1/O2/O3/O4/O5 (raport audytu) — nieblokujące.
