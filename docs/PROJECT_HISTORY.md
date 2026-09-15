@@ -10908,3 +10908,20 @@ implementacje napraw dają identyczny ślad bota; A3/A5/A6/P1–P3 z #122 to
 duplikaty F2/F3/F5 (mapowanie w raporcie, §Zbieżność). Bramki po portach:
 npm test 5508/5508, build 61 modułów / 3682,6 kB.
 Handoff: [`docs/setup/HANDOFF_2026-09-15b.md`](setup/HANDOFF_2026-09-15b.md).
+
+**Żywy Tester celowany w naprawy (2026-09-15, ten sam PR):** 5 partii na
+taliach z kartami naprawianymi (innistrad-wu, dominaria-wu; raport
+`docs/audits/AUDYT_PR121_ZYWY_2026-09-15.md`, transkrypty poza repo).
+Dwa nowe znaleziska naprawione u root cause: **Z1** (`148a6d3`) — bot
+aktywował Civilized Scholar ({T}: dobierz, odrzuć) przy pustej bibliotece
+i przegrywał na miejscu; `draw_then_discard` nie miał gałęzi wyceny
+`activate_ability` (bliźniaczy typ `draw_cards` miał, klasa L41+D/C);
+**Z2** (`96b9c2f`) — „Aktywuj: Powerstone (Ty) — " bez kosztu/opisu: wpisy
+tokenów (powerstone/wizard/chocobo) bez `abilities` w rejestrze +
+`manaEffectLabel` bez `spendOnly` + `MANA_SOURCE_MAP` cieniująca deskryptor
+(usunięta wg strażnika M200/N1); do tego strażnik zgodności
+deskryptor↔rejestr dla tokenów. Potwierdzenia żywe bez zmian: A4 (Spare
+w fazie obrażeń zapobiegło 5 obrażeniom), F2 obie strony (Sliver bez
+Powerstone w kreatorze, Altar z Powerstone tapniętym), atrybucja odrzucenia.
+Detektory: 0 zgłoszeń. Bramki: npm test 5514/5514, build 61/3685,0 kB,
+quick benchmark 82,9% (557/672) bez zmian.

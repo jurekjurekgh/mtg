@@ -87,6 +87,27 @@ Powerstone restricted, Murder/Skaab draw-mill, Altar badge). 8 plików: 2 dokume
 - [x] Bramka: npm test 5506/5506, build 61/3682,2 kB; golden-master bez zmian
   (zgodnie z #122: ich E3 z A4 też nie ruszył fixture).
 
+## E10 — Żywy Tester: Scholar, dobór z pustej biblioteki (2026-09-15)
+
+- [x] Partie celowane (innistrad-wu bota, seed 911/912; dominaria-wu gracza,
+  seedy 921–923) — transkrypty poza repo; raport:
+  [`docs/audits/AUDYT_PR121_ZYWY_2026-09-15.md`](../audits/AUDYT_PR121_ZYWY_2026-09-15.md).
+- [x] Z1: bot aktywował Civilized Scholar ({T}: dobierz, odrzuć) przy pustej
+  bibliotece i przegrał na miejscu (CR 704.5b) — `draw_then_discard` bez
+  gałęzi wyceny w `activate_ability` (L41+D/C) — naprawione w `148a6d3`
+  (wartość doboru + `drawDeckingPenalty`); test RED→GREEN z mutacją;
+  dowód żywy: ten sam seed — bot przestał się deck-outować dobrowolnie.
+- [x] Z2: „Aktywuj: Powerstone (Ty) — " bez kosztu/opisu + kafel bez tekstu
+  (wpisy token_powerstone/wizard/chocobo bez `abilities` w rejestrze;
+  `manaEffectLabel` bez `spendOnly`; `MANA_SOURCE_MAP` cieniująca deskryptor)
+  — naprawione w `96b9c2f`; strażnik zgodności deskryptor↔rejestr; dowód
+  żywy: pełna etykieta z restrykcją CR 106.3.
+- [x] Potwierdzenia żywe bez zmian w kodzie: A4 (Spare w fazie obrażeń,
+  „Obrażenia (5) … zapobiegnięte"), F2 obie strony (Sliver bez Powerstone,
+  Altar z Powerstone), atrybucja odrzucenia (PR #120/C). Detektory: 0 zgłoszeń.
+- [x] Bramki: npm test 5514/5514, build 61/3685,0 kB; quick benchmark
+  82,9% (557/672) — bez zmian.
+
 ## E8 — port O1 + etykieta wariantu A1 + test murder-mayfire z PR #122 (2026-09-15)
 
 - [x] Usunięta martwa gałąź `resolve_optional_draw` w `libraryDrainTax`
