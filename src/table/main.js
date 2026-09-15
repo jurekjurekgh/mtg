@@ -1828,6 +1828,20 @@ function bootstrapTable() {
     openManaWizard(descriptor);
   }
 
+  // D (Powerstone, CR 106.3): czy płatność dotyczy rzutu artefaktu —
+  // wtedy wolno użyć many z spendOnly:'artifact' (pula restricted + tokeny).
+  // Używana w normalnym przepływie; funkcje wyciągane w teście vm mają
+  // własną kopię inline (patrz wyżej) i nie polegają na tej definicji.
+  function artifactPurposeFor(cmd, descriptor) {
+    if (!cmd || !String(cmd.type ?? '').startsWith('cast_')) return false;
+    const cardId = descriptor?.cardId ?? session.state?.objects?.get(cmd.objectId)?.cardId ?? null;
+    if (!cardId) return false;
+    const reg = typeof registry !== 'undefined' ? registry : null;
+    if (!reg || typeof reg.get !== 'function') return false;
+    const card = reg.get(cardId);
+    return Boolean(card && (card.types ?? []).includes('Artifact'));
+  }
+
   /**
    * Połączona lista dostępnych źródeł many gracza (E.3a cz. A): nietapnięte
    * lądy (tap_for_mana) + nie-lądowe permanenty z aktywną zdolnością many
@@ -1847,16 +1861,22 @@ function bootstrapTable() {
       if (abilityIndex == null) {
         const src = getSourceForObject(obj, session.state);
         if (!src || (src.amount ?? 0) <= 0) return null;
+        // D (Powerstone): lądy nie mają spendOnly, ale sygnalizujemy jawnie.
+        const landSpendOnly = src?.spendOnly ?? null;
         return {
           cardId: obj.cardId, colors: src.colors ?? [], amount: src.amount ?? 1,
           manaCost: 0, costColors: [],
           isLand: obj.kind === 'land' || (obj.types ?? []).includes('Land'),
+          spendOnly: landSpendOnly,
         };
       }
       const ability = obj.abilities?.[abilityIndex];
       const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
       if (!effects.some((e) => e?.type === 'add_mana')) return null;
       const src = getSourceForObject(obj);
+      // D (Powerstone): deskryptor many niesie ograniczenie spendOnly
+      // (CR 106.3, token_powerstone — „only to cast artifact spells”).
+      const spendOnly = effects.find((e) => e?.type === 'add_mana')?.spendOnly ?? null;
       return {
         cardId: obj.cardId,
         colors: src?.colors ?? [],
@@ -1867,6 +1887,7 @@ function bootstrapTable() {
         // kolorowy kosztu musi trafić do zapotrzebowania osobno.
         costColors: ability?.cost?.colors ?? [],
         isLand: obj.kind === 'land' || (obj.types ?? []).includes('Land'),
+        spendOnly,
       };
     };
     return manaSourcesOf(view, HUMAN_ID, abilityInfo, { excludeSourceId });
@@ -1971,8 +1992,24 @@ function bootstrapTable() {
     }
     const descriptor = paymentDescriptorOf(cmd, view, opts);
     if (!descriptor) return null;
-    const pool = (view.players ?? []).find((p) => p.id === HUMAN_ID)?.mana ?? 0;
-    const sources = manaSourcesForPlayer(selfTapExclusionFor(cmd));
+    // D (Powerstone): pula i źródła filtrowane wg celu (artefakt vs inne).
+    // Inline — test M348 wyciąga funkcję pojedynczo przez vm, bez helpera.
+    const isArtifact = (() => {
+      if (!cmd || !String(cmd.type ?? '').startsWith('cast_')) return false;
+      const cid = descriptor?.cardId ?? session.state?.objects?.get(cmd.objectId)?.cardId ?? null;
+      if (!cid) return false;
+      const reg = typeof registry !== 'undefined' ? registry : null;
+      if (!reg || typeof reg.get !== 'function') return false;
+      const card = reg.get(cid);
+      return Boolean(card && (card.types ?? []).includes('Artifact'));
+    })();
+    const humanPlayer = session.state?.players?.find((pl) => pl.id === HUMAN_ID);
+    const poolUnitsUnrestricted = expandManaPool(humanPlayer?.manaPool);
+    const poolUnitsRestricted = expandManaPool(humanPlayer?.restrictedPool ?? {});
+    const poolUnits = isArtifact ? [...poolUnitsUnrestricted, ...poolUnitsRestricted] : poolUnitsUnrestricted;
+    const pool = isArtifact ? (humanPlayer?.mana ?? 0) : poolUnitsUnrestricted.length;
+    const allSources = manaSourcesForPlayer(selfTapExclusionFor(cmd));
+    const sources = isArtifact ? allSources : allSources.filter((s) => s.spendOnly !== 'artifact');
     // M202/O (uwaga właściciela, Horizon Spellbomb): kreator otwieramy tylko,
     // gdy istnieje REALNY wybór płatności. Przy jednym użytecznym źródle i puli,
     // która sama nie pokrywa kosztu, wyboru nie ma — kreator tylko klika się
@@ -1981,12 +2018,11 @@ function bootstrapTable() {
     // jej rozmiar — pula jest częścią płatności (kolory z puli vs dotapowane).
     // Widok niesie tylko liczbę many; jednostki czyta się z pełnego stanu sesji
     // (jak refreshManaWizard poniżej).
-    const poolUnits = expandManaPool(session.state?.players?.find((pl) => pl.id === HUMAN_ID)?.manaPool);
     if (!shouldOpenManaWizard({
       sources, poolMana: pool, totalNeeded: descriptor.totalNeeded,
       requirements: descriptor.requirements, poolUnits,
     })) return null;
-    return { ...descriptor, cmd };
+    return { ...descriptor, cmd, _isArtifact: isArtifact };
   }
 
   /** Otwiera modal kreatora many dla wstrzymanej komendy. */
@@ -2020,11 +2056,25 @@ function bootstrapTable() {
   function refreshManaWizard() {
     if (!manaWizardDescriptor || !els.manaWizardBody || !session) return;
     const view = session.view();
-    const sources = manaSourcesForPlayer(selfTapExclusionFor(manaWizardDescriptor.cmd));
+    const allSources = manaSourcesForPlayer(selfTapExclusionFor(manaWizardDescriptor.cmd));
+    const isArtifact = Boolean(manaWizardDescriptor._isArtifact ?? (() => {
+      const cmd = manaWizardDescriptor.cmd;
+      const desc = manaWizardDescriptor;
+      if (!cmd || !String(cmd.type ?? '').startsWith('cast_')) return false;
+      const cid = desc?.cardId ?? session.state?.objects?.get(cmd.objectId)?.cardId ?? null;
+      if (!cid) return false;
+      const reg = typeof registry !== 'undefined' ? registry : null;
+      if (!reg || typeof reg.get !== 'function') return false;
+      const card = reg.get(cid);
+      return Boolean(card && (card.types ?? []).includes('Artifact'));
+    })());
+    const sources = isArtifact ? allSources : allSources.filter((s) => s.spendOnly !== 'artifact');
     // Kolorowa pula (cz. 8): pokrycie kolorów z jednostek many W PULI gracza
     // (odzwierciedlają tapnięte źródła). main.js czyta pulę z pełnego stanu sesji.
+    // D (Powerstone): pula restricted liczona tylko dla artefaktu.
     const humanPlayer = session.state?.players?.find((pl) => pl.id === HUMAN_ID);
-    const poolUnits = expandManaPool(humanPlayer?.manaPool);
+    const poolUnitsUnrestricted = expandManaPool(humanPlayer?.manaPool);
+    const poolUnits = isArtifact ? [...poolUnitsUnrestricted, ...expandManaPool(humanPlayer?.restrictedPool ?? {})] : poolUnitsUnrestricted;
     const progress = wizardProgress(view, HUMAN_ID, manaWizardDescriptor, sources, poolUnits);
     if (progress.done) {
       const pending = manaWizardDescriptor;
