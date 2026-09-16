@@ -1772,19 +1772,31 @@ export function resolveTopOfStack(state) {
   // dodatkowego, np. celu stun). Tryby tu używane nie blokują rozstrzygania.
   if (object.chosenMode != null && object.spell.modes) {
     const mode = object.spell.modes[object.chosenMode];
-    const liveChosen = (object.chosenTargets ?? []).filter((tId) => {
-      // Cel-gracz (np. „target opponent" trybu modalnego) nie jest obiektem w
-      // strefie — zostawiamy go, żeby efekty „draw_cards_both_players" dostały
-      // prawidłowy cel (bez tego filtr pola bitwy upuszczałby id gracza).
-      if (state.players.some((p) => p.id === tId)) return true;
-      const target = state.objects.get(tId);
-      if (!target) return false;
-      // M87 / CR 608.2b: cel-permanent musi być na polu bitwy; cel-czar
-      // (Steel Sabotage Kontr — artifact_spell_on_stack) musi nadal być
-      // na stosie. Wcześniej filtr tylko battlefield zrzucał czar ze
-      // stosu i modalny counter_spell był no-opem.
-      return target.zone === 'battlefield' || target.zone === 'stack';
-    });
+    const modeTargets = mode.targets ?? object.spell.targets ?? [];
+    // M361/B5 (ZŁOTO; CR 608.2b, ADR 0030): cele trybu modalnego walidujemy
+    // przy rozstrzyganiu TYM SAMYM helperem co ścieżka zwykła (L48) —
+    // hexproof/protection/moc zyskane w oknie odpowiedzi też unieważniają
+    // cel, nie tylko zmiana strefy. Dotąd filtr liveChosen patrzył wyłącznie
+    // na strefę (battlefield/stack), więc modalny removal trafiał cel
+    // z hexproof (Selesnya Charm vs Magic Damper). Cele-gracze i cele-czary
+    // (M87: artifact_spell_on_stack) przechodzą przez validateTargets tak
+    // samo jak przy rzucie — parytet oferta/rzut/rozstrzygnięcie.
+    // Tryby ZMIENNE („up to N target …" — Wrap in Flames, Sea God's Scorn):
+    // collectLegalTargets mapuje spec↔cel 1:1, a tu JEDEN typ kryje wiele
+    // celów — każdy cel z osobna przeciw typowi trybu (lustro
+    // validateVariableTargets z rzutu: legalTargetCandidates filtruje
+    // hexproof i protection tym samym predykatem co walidacja — F2/L48).
+    let liveChosen;
+    if (mode.variableTargets) {
+      const spec = { type: mode.variableTargets.type ?? 'creature' };
+      const legal = new Set(legalTargetCandidates(state, object.controllerId, spec, object));
+      liveChosen = (object.chosenTargets ?? []).filter((tId) => legal.has(tId));
+    } else {
+      liveChosen = collectLegalTargets(state, modeTargets, object.chosenTargets ?? [],
+        object.controllerId, object.colors ?? [], object)
+        .map((entry) => entry?.id ?? null)
+        .filter((id) => id !== null);
+    }
     // M271 (błąd #13, CR 608.2b): „If all its targets ... are now illegal,
     // the spell or ability doesn't resolve." Ścieżka ZDOLNOŚCI ma ten test
     // od M90, bliźniacza ścieżka CZARU MODALNEGO go NIE miała: tryb, który
@@ -1793,9 +1805,13 @@ export function resolveTopOfStack(state) {
     // opponent" + „each player draws") dawał obu graczom karty, mimo że czar
     // w ogóle nie powinien się rozstrzygnąć.
     // Warunek dotyczy WYŁĄCZNIE trybów, które celów wymagają — tryb bez
-    // celów rozstrzyga się normalnie.
-    const modeTargets = mode.targets ?? object.spell.targets ?? [];
-    if (modeTargets.length > 0 && liveChosen.length === 0) {
+    // celów rozstrzyga się normalnie (modeTargets wyliczone wyżej, dla walidacji).
+    // Tryb zmienny rzucony z zerem celów (min 0, M146) celów NIE MA — fizzluje
+    // tylko taki, którego wybrane cele wszystkie stały się nielegalne.
+    const hadTargets = mode.variableTargets
+      ? (object.chosenTargets ?? []).length > 0
+      : modeTargets.length > 0;
+    if (hadTargets && liveChosen.length === 0) {
       // M271 (błąd #14): także fizzle respektuje `exileInsteadOfGraveyard`.
       const zoneFizzle = spellExitZone(object);
       const graveFizzle = `${zoneFizzle}-${state.objectSequence++}`;
@@ -2848,6 +2864,10 @@ function resolveModalEffectTargets(state, effect, object, liveChosen) {
     const key = effect.applyTo.slice('extra:'.length);
     const val = object.modeExtra?.[key];
     if (!val) return null;
+    // M361/B5: cel dodatkowy (stun) jest przy rzucie PODZBIOMEM chosen
+    // (validateVariableTargets: stunAmongTargets) — przy rozstrzygnięciu też
+    // musi być wciąż legalny (hexproof w odpowiedzi gasi i stuna).
+    if (!liveChosen.includes(val)) return null;
     const target = state.objects.get(val);
     if (!target || target.zone !== 'battlefield') return null;
     return [val];
