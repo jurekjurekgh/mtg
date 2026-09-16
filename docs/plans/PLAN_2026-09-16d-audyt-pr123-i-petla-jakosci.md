@@ -27,8 +27,8 @@ Gałąź: `arena/01a0aac8-mtg`. Bazowy HEAD: `1521ac8` (= main po scaleniu #123)
 
 ## Etapy
 
-- [ ] **E0 — plan sesji** (ten plik; commit 1, PR na GitHubie przed kodowaniem).
-- [ ] **E1 — audyt PR #123** (ADR 0020 B / 0016): przegląd każdego zmienionego
+- [x] **E0 — plan sesji** (ten plik; commit 1, PR na GitHubie przed kodowaniem).
+- [x] **E1 — audyt PR #123** (ADR 0020 B / 0016): przegląd każdego zmienionego
   pliku (logika, CR MtG, ADR 0002, RED→GREEN), w szczególności:
   - 15e: `shouldAutoDiscard`/`discardCardsForced` — 11 miejsc kolejkowania,
     hook madness, brak modala przy wymuszonym wyborze całości (L144); triage
@@ -40,15 +40,15 @@ Gałąź: `arena/01a0aac8-mtg`. Bazowy HEAD: `1521ac8` (= main po scaleniu #123)
     testu (ADR 0030), wycena/etykieta/warstwy (L84/L95), generyczność (ADR 0002);
   - spójność domknięcia: handoff vs README vs PH po M359–M361.
   Kryterium: raport `docs/audits/AUDYT_PR123_2026-09-16.md` + werdykt.
-- [ ] **E2 — naprawy znalezisk** (jeśli będą) u root cause, z testami
+- [x] **E2 — naprawy znalezisk** (jeśli będą) u root cause, z testami
   RED→GREEN; każdy zielony krok = osobny commit + push (ADR 0020 C).
-- [ ] **E3 — pętla jakości** (ADR 0021 §4, inna ścieżka niż poprzednia sesja
+- [x] **E3 — pętla jakości** (ADR 0021 §4, inna ścieżka niż poprzednia sesja
   = odznaki regułowe): **O5 — weryfikacja kontekstu cytatów 702.16**
   (otwarte zadanie z audytu #123): dla każdego z ~14 miejsc odczytać kontekst
   i potwierdzić/sprostować numer podreguły (ADR 0030: źródło online, nie
   pamięć). Kryterium: każde miejsce rozstrzygnięte (OK / poprawka + commit),
   wpis w PH/raporcie.
-- [ ] **E4 — domknięcie sesji**: liczby mierzone na finalnym HEAD
+- [x] **E4 — domknięcie sesji**: liczby mierzone na finalnym HEAD
   (`npm run test:all`, `npm run build`), README/PH/handoff, opis PR.
 
 ## Kolejność commitów (plan)

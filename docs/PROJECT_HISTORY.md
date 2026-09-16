@@ -19,6 +19,34 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-16 Audyt PR #123 + naprawy A1/A2 + domknięcie O5 (PR #124)
+
+Pętla domyślna ADR 0021: pełny audyt scalonego PR #123 (27 commitów:
+E1–E4, 15e auto-discard, 15f/15g dźwięki+landy, odznaki M359 Brąz /
+M360 Srebro / M361 Złoto) — werdykt APPROVE z zastrzeżeniami
+(raport `docs/audits/AUDYT_PR123_2026-09-16.md`), potem naprawy w PR #124:
+
+- **A1 (CR 514.3a):** SBA wykonane w cleanupie NIE otwierały priorytetu
+  (model M359 liczył tylko aktywność stosu; reguła literalnie daje priorytet
+  także po samych SBA). Potwierdzone sondu behawioralną (stwór na EOT-buffie
+  ginie przy wejściu w cleanup). Naprawa: `cleanupEventIsSbaEvidence`
+  (creature_destroyed / object_moved+sba / permanent_sacrificed Saga /
+  token_ceased_to_exist / counter_removed) — w zamkniętym cleanupie tylko SBA
+  może te emitować. Testy T1–T3 RED→GREEN + 2 mutacje.
+- **A2 (L16):** `pendingCombatSecondPass` (M360/B3) blokuje passy, ale był
+  poza fingerprintem — dopisany do `PENDING_DECISION_FIELDS`. Test T4
+  RED→GREEN + mutacja. Otwarta klasa: blokady spoza `firstPendingDecision`
+  nie mają strażnika (O2 w raporcie).
+- **E3 = O5 (z audytu #121):** pełny przegląd cytatów 702.16 (60+) przeciw
+  literalnemu CR 2026-08-07 — 24 sprostowania komentarzowe w 8 plikach
+  (blokowanie→f, prewencja→e, jakość→a, equip→d, zakresy b–f, „can't block"
+  ≠ ochrona → 509.1b, Offspring → 702.175).
+- Domknięcie: README (5614/5624/63 moduły/3745,3 kB), handoff
+  `docs/setup/HANDOFF_2026-09-16.md`.
+
+Bramki finalne: fast 5614/5614, test:all 5624/5624 (0 fail), build
+63 moduły / 3745,3 kB, bot-benchmark 10/10.
+
 ## 2026-09-16 Złoto M361 (wyzwanie 16c: 5 unikalnych błędów reguł)
 
 Wyzwanie Złote (plan `docs/plans/PLAN_2026-09-16c-challenge-zloto.md`):
