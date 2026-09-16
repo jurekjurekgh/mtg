@@ -494,10 +494,28 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
   }
   // Sesja combat kończy się przed state-based actions: śmierć stwora nie może
   // pozostawić odwołań do obiektów już poza battlefield (pilnuje inwariant).
+  // M360/B5: snapshot przed skasowaniem — okno ninjutsu w end_of_combat (BOK FAQ).
+  rememberClosedCombat(state);
   state.combat = null;
   events.push(...runStateBasedActions(state));
   if (state.pendingReplacementChoice) state.pendingReplacementChoice.continuations.push({combatFinish:true});
   return events;
+}
+
+/**
+ * M360/B5 (BOK FAQ, mtg.wiki/Ninjutsu 2026-09-16): ninjutsu działa też
+ * w end_of_combat, a wtedy `state.combat` już nie istnieje — zapamiętujemy
+ * kto atakował i kto był zablokowany. Stempel tury odcina stare snapshoty
+ * (oferta tylko w turze walki).
+ */
+export function rememberClosedCombat(state) {
+  if (!state.combat) return;
+  state.lastCombat = {
+    turn: state.turn.number,
+    attackingPlayerId: state.combat.attackingPlayerId,
+    attackers: [...(state.combat.attackers ?? [])],
+    blocked: [...(state.combat.blockedAttackers ?? [])],
+  };
 }
 
 /** Czy obrażenia tego atakującego wymagają decyzji gracza (CR 510.1c/d). */

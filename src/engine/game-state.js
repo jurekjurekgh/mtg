@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
@@ -5005,7 +5005,8 @@ export function execute(state, input) {
         // (z atakującymi krok domyka resolve_combat — gałąź M255/F powyżej).
         // Taki pusty combat trzeba sprzątnąć, bo bramka oferty deklaracji
         // (`!state.combat`) czyta go w NASTĘPNEJ walce.
-        if (state.turn.step === 'combat_damage') state.combat = null;
+        // M360/B5: snapshot przed sprzątnięciem (okno ninjutsu w end_of_combat).
+        if (state.turn.step === 'combat_damage') { rememberClosedCombat(state); state.combat = null; }
         // M359 (CR 514.3a): pełna runda passów przy pustym stosie WYCHODZI
         // z cleanupu w KOLEJNY cleanup (nie w następną turę), gdy w tym
         // cleanupie była aktywność stosu. Kolejny cleanup to TEN SAM krok

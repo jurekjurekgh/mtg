@@ -198,6 +198,8 @@ export function stateFingerprint(state) {
     players: state.players,
     turn: state.turn,
     combat,
+    // M360/B5: snapshot zamkniętej walki (okno ninjutsu) — część stanu oferty.
+    lastCombat: state.lastCombat ?? null,
     zones,
     objects,
     untilEndOfTurnBuffs: (state.untilEndOfTurnBuffs ?? []).map((b) => ({

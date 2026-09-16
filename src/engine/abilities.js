@@ -1126,14 +1126,24 @@ export function legalActivatedAbilities(state, playerId) {
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
-  const ninjutsuWindow = state.turn.step === 'combat_damage' && state.combat
+  // M360/B5 (BOK FAQ, mtg.wiki/Ninjutsu 2026-09-16): ninjutsu także w
+  // end_of_combat — po obrażeniach combat nie istnieje, więc niezablokowanych
+  // bierzemy ze snapshotu lastCombat (tylko z bieżącej tury).
+  const eocSnapshot = state.turn.step === 'end_of_combat'
+    && state.lastCombat?.turn === state.turn.number ? state.lastCombat : null;
+  const ninjutsuWindow = (state.turn.step === 'combat_damage' && state.combat || eocSnapshot)
     && state.turn.activePlayerId === playerId && state.turn.priorityPlayerId === playerId;
   if (ninjutsuWindow) {
-    const unblocked = state.combat.attackers.filter((id) => {
+    const attackers = state.combat?.attackers ?? eocSnapshot?.attackers ?? [];
+    const blockedSet = state.combat
+      ? (state.combat.blockedAttackers ?? new Set())
+      : new Set(eocSnapshot?.blocked ?? []);
+    const unblocked = attackers.filter((id) => {
       const object = state.objects.get(id);
-      const blocked = state.combat.blockedAttackers?.has(id)
-        ?? ((state.combat.blockers.get(id)?.length ?? 0) > 0);
-      return object?.controllerId === playerId && !blocked;
+      const blocked = state.combat
+        ? (state.combat.blockedAttackers?.has(id) ?? ((state.combat.blockers.get(id)?.length ?? 0) > 0))
+        : blockedSet.has(id);
+      return object?.zone === 'battlefield' && object?.controllerId === playerId && !blocked;
     });
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
@@ -2087,14 +2097,22 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
  */
 function activateNinjutsu(state, playerId, cardObject, abilityIndex, ability, attackerId) {
   if (cardObject.zone !== 'hand') throw new Error('Ninjutsu aktywuje się z ręki');
-  if (state.turn.step !== 'combat_damage' || !state.combat || state.turn.activePlayerId !== playerId || state.turn.priorityPlayerId !== playerId) {
+  // M360/B5: okno end_of_combat ze snapshotu (spójnie z ofertą, L48).
+  const eocSnapshot = state.turn.step === 'end_of_combat'
+    && state.lastCombat?.turn === state.turn.number ? state.lastCombat : null;
+  if ((state.turn.step !== 'combat_damage' || !state.combat) && !eocSnapshot
+    || state.turn.activePlayerId !== playerId || state.turn.priorityPlayerId !== playerId) {
     throw new Error('Ninjutsu tylko w oknie combat po blokach');
   }
   const attacker = state.objects.get(attackerId);
   if (!attacker || attacker.zone !== 'battlefield' || attacker.controllerId !== playerId || attacker.kind !== 'creature') {
     throw new Error('Nielegalny atakujący do ninjutsu');
   }
-  if (!state.combat.attackers.includes(attackerId) || state.combat.blockers.has(attackerId)) {
+  const attackers = state.combat?.attackers ?? eocSnapshot?.attackers ?? [];
+  const attackerBlocked = state.combat
+    ? state.combat.blockers.has(attackerId)
+    : (eocSnapshot.blocked ?? []).includes(attackerId);
+  if (!attackers.includes(attackerId) || attackerBlocked) {
     throw new Error('Ninjutsu wymaga nieblokowanego atakującego');
   }
   // M257 r4 (Kappa Tech-Wrecker, „Ninjutsu {1}{G}"): pipy kolorów — spójnie
@@ -2105,7 +2123,9 @@ function activateNinjutsu(state, playerId, cardObject, abilityIndex, ability, at
   // attacker you control to hand: ...") — następuje przed wejściem zdolności
   // na stos (CR 601.2h). Atakujący znika z combat PRZED zmianą strefy, żeby
   // inwariant combat (odwołania tylko do battlefield) był spełniony w trakcie.
-  state.combat.attackers = state.combat.attackers.filter((id) => id !== attackerId);
+  // M360/B5: w end_of_combat walka już sprzątnięta (combat null) — zwrot
+  // do ręki i tak następuje (koszt), tylko nie ma skąd wypisywać.
+  if (state.combat) state.combat.attackers = state.combat.attackers.filter((id) => id !== attackerId);
   const handId = `hand-${state.objectSequence++}`;
   moveObjectDirectly(state, attackerId, 'hand', handId);
   // Audyt PR #41 (B7.2, CR 702.48a + 602.2a): ninjutsu to aktywowana zdolność

@@ -1539,7 +1539,9 @@ function resolveActivatedAbilityEntry(state, entry) {
         const moved = moveObjectDirectly(state, cardInHand.id, 'battlefield', bfId);
         const permanent = Object.freeze({ ...moved, tapped: true, summoningSickness: true });
         state.objects.set(bfId, permanent);
-        state.combat.attackers.push(bfId);
+        // M360/B5: ninjutsu z end_of_combat — walka sprzątnięta, ninja wchodzi
+        // zatapnięty bez dopisu do atakujących (CR 511.3 i tak zdejmuje z walki).
+        state.combat?.attackers.push(bfId);
         if (permanent.entersWithCounters) {
           for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
             addCounter(state, bfId, name, amount);
