@@ -2663,12 +2663,31 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === playerId);
     if (handIds.length === 0) return; // brak kart — nic do odrzucenia
+    // M361/B2 (ZŁOTO, Talion's Messenger; Scryfall ruling 2023-09-01, ADR 0030):
+    // „a second 'reflexive' ability triggers when you discard a card this
+    // way" — odrzut z linką refleksywną (effect.reflexiveEvent) emituje
+    // zdarzenie refleksu PO faktycznym odrzuceniu (jak reflexive_sacrifice
+    // w Glorifierze). Snapshot zdolności bierzemy już teraz (źródło mogło
+    // odejść przed rozstrzygnięciem — refleks odpala z LKI, CR 603.10).
+    const reflexiveEvent = effect.reflexiveEvent ?? null;
+    const reflexiveSnapshot = reflexiveEvent ? (sourceObject?.zone === 'battlefield'
+      ? effectiveAbilities(sourceObject)
+      : (sourceObject?.lkiPrint?.abilities ?? [])
+    ).find((a) => a?.trigger?.event === reflexiveEvent) ?? null : null;
     // Znalezisko A: wymuszony discard całości bez decyzji (czar kontynuuje).
     if (shouldAutoDiscard({ count: Math.min(amount, handIds.length), candidateIds: handIds })) {
       discardCardsForced(state, {
         playerId, cardIds: [...handIds], purpose: 'effect',
         sourceCardId: sourceObject.cardId ?? null, restorePriorityTo: state.turn.priorityPlayerId,
       });
+      // Ścieżka auto też odrzuca („this way") — refleks należy się tak samo.
+      if (reflexiveEvent && handIds.length > 0) {
+        state.events.push(event(reflexiveEvent, {
+          sourceId: sourceObject.id, cardId: sourceObject?.cardId ?? null,
+          playerId, discardedCount: handIds.length,
+          reflexiveAbility: reflexiveSnapshot ? Object.freeze({ ...reflexiveSnapshot }) : null,
+        }));
+      }
       return;
     }
     state.pendingDiscardChoice = {
@@ -2678,6 +2697,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       purpose: 'effect',
       sourceCardId: sourceObject.cardId ?? null,
       restorePriorityTo: state.turn.priorityPlayerId,
+      sourceId: sourceObject.id,
+      reflexiveEvent,
+      reflexiveAbility: reflexiveSnapshot ? Object.freeze({ ...reflexiveSnapshot }) : null,
     };
     state.turn.priorityPlayerId = playerId;
     state.events.push(event('discard_choice_required', {

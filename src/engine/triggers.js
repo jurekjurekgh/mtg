@@ -1628,7 +1628,7 @@ function triggerSourceZoneLegal(source, triggerEvent) {
   // źródło jest w grobie/exile (Selhoff, Servant of the Scale).
   // Refleks „When you do" (Audyt Batch53/A1): dziecko rozstrzygniętej już
   // zdolności — niezależne od strefy źródła (ruling LCI 2023-11-10).
-  return ['dies', 'any_creature_dies', 'leaves_battlefield', 'reflexive_sacrifice'].includes(triggerEvent);
+  return ['dies', 'any_creature_dies', 'leaves_battlefield', 'reflexive_sacrifice', 'reflexive_discard'].includes(triggerEvent);
 }
 
 export function triggerTargetDecisionPending(state, pending) {
@@ -2313,6 +2313,30 @@ function processTriggersScan(state, recentEvents) {
           for (const ability of effectiveAbilities(source)) {
             if (ability?.trigger?.event === 'reflexive_sacrifice') {
               tryFire(state, ability, source, [], events, { sacrificedId: ev.sacrificedId ?? null });
+            }
+          }
+        }
+      }
+    }
+    // M361/B2 (ZŁOTO, Talion's Messenger; Scryfall ruling 2023-09-01, ADR 0030):
+    // „a second 'reflexive' ability triggers when you discard a card this
+    // way. You choose a target for that ability as it goes on the stack. Each
+    // player may respond to this triggered ability as normal." — handler jak
+    // reflexive_sacrifice (zdolność niesie zdarzenie; LKI, CR 603.10).
+    if (ev.type === 'reflexive_discard') {
+      if (ev.reflexiveAbility) {
+        const live = state.objects.get(ev.sourceId);
+        const source = (live && live.zone === 'battlefield') ? live : Object.freeze({
+          id: ev.sourceId, controllerId: ev.playerId ?? live?.controllerId ?? null,
+          cardId: ev.cardId ?? null, zone: 'none',
+        });
+        tryFire(state, ev.reflexiveAbility, source, [], events, { discardedCount: ev.discardedCount ?? 0 });
+      } else {
+        const source = state.objects.get(ev.sourceId);
+        if (source && source.zone === 'battlefield') {
+          for (const ability of effectiveAbilities(source)) {
+            if (ability?.trigger?.event === 'reflexive_discard') {
+              tryFire(state, ability, source, [], events, { discardedCount: ev.discardedCount ?? 0 });
             }
           }
         }

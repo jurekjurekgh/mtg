@@ -4219,9 +4219,12 @@ export function execute(state, input) {
       });
     }
     const resolvedEvents = state.events.slice(before);
+    // M361/B2: licznik faktycznie odrzuconych (ścieżka sekwencyjna dokłada;
+    // refleks „when you discard this way" wymaga ≥1 odrzucenia).
+    const discardedNow = cardIds.length + (autoRest ? stillInHand.length : 0);
     if (!autoRest && remaining > 0 && stillInHand.length > 0) {
       // Kolejny wybór (Plague Reaver — dwie karty): decyzja sekwencyjna.
-      state.pendingDiscardChoice = { ...pending, count: remaining, handIds: stillInHand, allowDecline: false };
+      state.pendingDiscardChoice = { ...pending, count: remaining, handIds: stillInHand, allowDecline: false, discardedCount: (pending.discardedCount ?? 0) + discardedNow };
       const required = event('discard_choice_required', {
         playerId: pending.playerId, count: remaining, cardIds: [...stillInHand],
         purpose: pending.purpose, sourceCardId: pending.sourceCardId,
@@ -4237,6 +4240,20 @@ export function execute(state, input) {
     });
     state.events.push(resolved);
     resolvedEvents.push(resolved);
+    // M361/B2 (ZŁOTO, Talion's Messenger; Scryfall ruling 2023-09-01): refleks
+    // „when you discard this way" — TYLKO gdy faktycznie odrzucono ≥1 kartę
+    // (pusta ręka = brak refleksu). Emisja przed dokończeniem pendingSpell —
+    // processTriggers (w accepted) kolejkuje refleks po zejściu rodzica.
+    const discardedTotal = (pending.discardedCount ?? 0) + discardedNow;
+    if (pending.reflexiveEvent && discardedTotal > 0) {
+      const reflexive = event(pending.reflexiveEvent, {
+        sourceId: pending.sourceId ?? null, cardId: pending.sourceCardId ?? null,
+        playerId: pending.playerId, discardedCount: discardedTotal,
+        reflexiveAbility: pending.reflexiveAbility ?? null,
+      });
+      state.events.push(reflexive);
+      resolvedEvents.push(reflexive);
+    }
     // Koszt zdolności: po dokończeniu wyborów wykonaj wstrzymaną aktywację.
     if (pending.purpose === 'cost' && state.pendingAbilityActivation) {
       const activation = state.pendingAbilityActivation;

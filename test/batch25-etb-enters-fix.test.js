@@ -271,6 +271,8 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'becomes_blocked',
   // Batch 53 (Glorifier of Suffering): reflexive „When you do" po poświęceniu.
   'reflexive_sacrifice',
+  // M361/B2 (Talion's Messenger): reflexive „when you discard this way".
+  'reflexive_discard',
   'card_put_into_graveyard_from_nonbattlefield', 'combat_damage_to_player',
   'dies', 'enchanted_creature_damage_to_opponent', 'end_step', 'enter_battlefield', 'equipped_creature_attacks',
   'equipped_creature_blocks_or_blocked_by', 'combat_damage_to_you',

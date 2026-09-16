@@ -7203,20 +7203,30 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     oracleText: 'Flying\nWhenever you attack with one or more Faeries, draw a card, then discard a card. When you discard a card this way, put a +1/+1 counter on target Faerie you control.',
     imageUri: 'https://cards.scryfall.io/large/front/3/5/35fb0640-5b04-4687-b863-46a8b8d36809.jpg?1783915114',
     abilities: [
+      // M361/B2 (ZŁOTO; Scryfall ruling 2023-09-01): rodzic BEZ celu —
+      // „You don't choose a target for Talion's Messenger's ability at the
+      // time it triggers." Odrzut niesie linkę refleksywną (discard_cards +
+      // reflexiveEvent, wzorzec Glorifiera).
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'faerie_attacks', requiresTarget: { type: 'creature_you_control', subtype: 'Faerie' } },
+        trigger: { event: 'faerie_attacks' },
         effect: [
           { type: 'draw_cards', amount: 1 },
-          { type: 'discard_cards', amount: 1 },
-          { type: 'add_counter', counter: '+1/+1', amount: 1 },
+          { type: 'discard_cards', amount: 1, reflexiveEvent: 'reflexive_discard' },
         ],
+      }),
+      // Refleks „When you discard a card this way" — cel przy wejściu na stos,
+      // z oknem odpowiedzi („Each player may respond … as normal").
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'reflexive_discard', requiresTarget: { type: 'creature_you_control', subtype: 'Faerie' } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
       }),
     ],
     artId: 166,
     plan: 'Eldraine',
     support: { status: 'supported', limitations: [] },
-    notes: ['faerie_attacks: odpala się raz na combat, gdy atakujący kontroler atakuje z ≥1 Faerie; licznik na docelowym Faerie (requiresTarget creature_you_control+subtype)', '„when you discard a card this way” uproszczone: zawsze dobiera+odrzuca, więc licznik zawsze się pojawia (po wyborze Faerie)'],
+    notes: ['faerie_attacks: odpala się raz na combat, gdy atakujący kontroler atakuje z ≥1 Faerie; rodzic bez celu, licznik kładzie refleks reflexive_discard (cel przy wejściu na stos, ruling 2023-09-01)'],
   }),
 
   // 10. Lotusguard Disciple (DFT) {2}{W} 2/2 Bird Cleric Flying — ETB: target
