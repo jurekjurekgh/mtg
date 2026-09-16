@@ -19,6 +19,36 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-16 Dopisek 2 (PR #124): znaleziska właściciela z testów — Manor Gate A1–A3, Undercity B
+
+Zlecenie właściciela po testach manualnych: cztery znaleziska, każde osobnym
+commitem z testem RED→GREEN:
+
+- **A1 (`53baa568`)** — tytuł wyboru koloru przy wejściu (panel „Twoje
+  działania" + modal) „Kolor (np. ochrona)": dopisek zgadywał CEL wyboru po
+  pierwszym użyciu deskryptora (aura), a ląd z chooseColor wybiera kolor
+  PRODUKOWANEJ many. pendingColorChoice niesie `purpose` ('mana'/'protection')
+  + `sourceCardId`; tytuł purpose-aware w choiceSourceTitle: „Manor Gate —
+  wybór koloru (produkcja many)".
+- **A2 (`1d4240ee`)** — brak śladu wyboru na karcie: playerView wystawia
+  `chosenColor` (jawny, ADR 0017; celowo poza kontraktem addObject — stan
+  nadają EFEKTY), kafel pokazuje badge „Wybrany kolor: Czarny" (helper
+  `chosenColorBadge`, wzorzec protectionBadges).
+- **A3 (`8c612528`)** — aktywacja {T} po wyborze czarnego obiecywała
+  (i produkowała) wyłącznie zieloną: effects.js `add_mana` złącza deskryptor
+  many z `chosenColor` (union, model M67) — ta sama reguła, którą kreator
+  many robił od M193/A (L41: dwie kopie reguły rozjechały się cicho);
+  etykieta (manaEffectLabel + threading przez describeEffect/describeAbility)
+  pokazuje „dodaj 1 manę zieloną lub czarną" w kaflu i wierszu „Aktywuj:".
+- **B (`dfa3e039`, regresja)** — „undercity — wybierz kartę do ręki" (nazwa
+  własna małą literą): wirtualne karty poza rejestrem (The Undercity,
+  Day // Night) nie były w mapie nazw sesji → nameOf spadał do surowego
+  cardId, odsłonięte przez etykiety źródłowe szukania. Eksportowana lista
+  `virtualCardNames()` zasiewa nameById (wzorzec M188/B).
+
+Bramki finalne: fast 5631/5631, test:all 5641/5641 (0 fail), build
+63 moduły / 3754,0 kB, bot-benchmark 10/10.
+
 ## 2026-09-16 Audyt PR #123 + naprawy A1/A2 + domknięcie O5 (PR #124)
 
 Pętla domyślna ADR 0021: pełny audyt scalonego PR #123 (27 commitów:
