@@ -19,6 +19,23 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-16 Dopisek 3 (PR #124): numeracja kopii nazw na polu bitwy
+
+Zlecenie właściciela (prośba wcześniejsza, niezakodowana): duplikaty nazwy u
+jednego gracza na polu bitwy (tokeny, lądy) nierozróżnialne przy celowaniu.
+Reguła systemowa (`2b3cc1e`): czysta `battlefieldNameNumbers` (per kontroler,
+klucz object.name ?? cardId, ordynał = kolejność wejścia; face-down/copyNumber
+poza numeracją) + sufiks „ #N" w `session.nameOfObject` i przez
+`session.nameOrdinalSuffix` w kaflu/etykietach/wizardach (baza nazwy po
+widoku — stuby testowe nietknięte; L41). Każdy członek grupy > 1 numerowany
+(także pierwszy), pojedyncze bez licznika, przeliczanie przy odczycie
+(ostatnia kopia traci numer). Strażnik N7 (unikalność nazw wyświetlanych per
+gracz po obu resolverach) + mutacja L13 5×RED. Odrzucone podejście: delegacja
+bazy nazwy do nameOfObject psuła 14 testów stubowych. Uwaga repo: ponowny
+reset lokalnej gałęzi do squash-main między sesjami — recovery
+fetch+reset --mixed (drzewo i zdalna gałąź nietknięte). Bramki: fast
+5638/5638, test:all 5648/5648, build 63/3758,6 kB, benchmark 10/10.
+
 ## 2026-09-16 Dopisek 2 (PR #124): znaleziska właściciela z testów — Manor Gate A1–A3, Undercity B
 
 Zlecenie właściciela po testach manualnych: cztery znaleziska, każde osobnym
