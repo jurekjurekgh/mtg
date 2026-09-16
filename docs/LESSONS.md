@@ -2338,3 +2338,16 @@ przy koszcie niesie wpis stosu (jak `sacrificedToughness`); rozstrzygnięcie:
 bez słowa „target" (tu: Station, Wedgelight Rammer).
 
 **Strażnik:** `test/m360-silver-station-lki.test.js` (3: LKI, pin żywy, pin pompy). → narracja: PRZYPADKI (L145).
+
+## L146 (2026-09-16) — Trigger podpina się pod ZDARZENIE REGUŁY, nie pod najczęstszą przyczynę
+
+**Reguła:** gdy Oracle mówi „loses life", hookiem jest `life_changed`,
+nie `damage_dealt` — damage to tylko jedna z dróg (obok lose_life,
+płatności życiem). Subskrypcja przyczyny gubi resztę po cichu, a testy
+na samej przyczynie tego nie łapią (speed rósł od obrażeń — brak testu
+na stratę-bez-damage). FixMatchers: zdarzenie węższe od pojęcia reguł
++ brak testu na alternatywną drogę. Wzorzec: jeden hook na pojęciu
+reguł (tu: strata życia obejmuje damage, prewencja/infect odpadają
+z natury), bramki („raz na turę") bez zmian.
+
+**Strażnik:** `test/m361-gold-speed-lifeloss.test.js` (5: RED strata-bez-damage, pin damage, dedup, bramki tury/własnej-straty).

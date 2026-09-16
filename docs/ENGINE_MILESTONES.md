@@ -4945,3 +4945,76 @@ Efekt uboczny (naprawiony w E6): wpis L145 przekroczył budżet lektury
 startowej (100,1k > 100k tokenów) — obowiązkowa kondensacja LESSONS.md
 (L91/L127/L98/L48/L13/L145: redakcja bez utraty faktów, nagłówki nietknięte),
 po: ~99,3k. Sondy i audyty skasowane.
+
+## M361 (2026-09-16) — Złota odznaka: 5 błędów reguł (exploit self-sac, Talion refleks, impuls-land, speed life-loss, modal-hexproof)
+
+**Status:** zamknięty — 5 błędów znalezionych i naprawionych, każdy
+zweryfikowany online (CR + Oracle + rulingi) przed zmianą i domknięty
+mutacją (odwrócenie fixa czerwieni test); wyzwanie Złote (5 UNIKALNYCH
+błędów vs M360, M359, milestone'y M1–M358, audyty PR, seria 15, łowy
+2026-08-11) zaliczone. Commity `16c/B1`…`16c/B5` + `16c/E6` na tej gałęzi.
+
+Wszystkie reguły sprawdzone na żywo, nie z pamięci: CR 702.110
+(VOW Release Notes, mtg.wiki/Exploit), ruling Talion's Messenger
+(Scryfall, 2023-09-01), CR 701.18a/b (mtg.wiki/Play), Speed
+(mtg.wiki/Speed — trigger „lose life"), CR 608.2b (cele modalne).
+
+**#1 — Exploit: źródło własnym kandydatem + trigger przy samopoświęceniu
+(CR 702.110, VOW Notes).** Filtr `candidate.id !== entered.id` wykluczał
+źródło, więc samotny Silumgar Butcher nie dostawał nawet decyzji — a mógł
+poświęcić siebie („This will cause its other ability to trigger"). Fix:
+kandydatem każdy stwór kontrolera + trigger „exploits" z LKI grobu przy
+`selfSacrifice` (bez flagi wymóg „na stole" zostaje — sekwencyjne
+multi-exploit milczy). Testy: `test/m361-gold-exploit-self.test.js` (4/4).
+Commit `465e0e4` (16c/B1).
+
+**#2 — Talion's Messenger: dwa triggery, refleks po odrzucie (Scryfall
+ruling 2023-09-01).** „A second 'reflexive' ability triggers when you
+discard a card this way. You choose a target for that ability as it goes
+on the stack." Fix: zdarzenie `reflexive_discard` niesie zdolność (LKI,
+CR 603.10) — cel po odrzucie, okno odpowiedzi, brak odrzutu = brak
+licznika. Testy: `test/m361-gold-talion-reflexive.test.js` (4/4).
+Commit `d987fa4` (16c/B2).
+
+**#3 — Land drop z exile w oknie impulsu (Gila Courser, CR 701.18a/b).**
+„To play a card means to play that card as a land or to cast that card"
++ „from the zone it's in" — impulsowe „you may play" obejmowało tylko
+rzuty. Fix: ścieżka play-land z exile w oknie (oferta + wykonanie, L48)
++ bot nie marnuje okna. Testy: `test/m361-gold-impulse-land.test.js`
+(5/5). Commit `2421ec0` (16c/B3).
+
+**#4 — Speed rośnie przy utracie życia, nie tylko damage (mtg.wiki/Speed).**
+„Whenever one or more opponents lose life during your turn..." — silnik
+podpinał wzrost tylko pod damage_dealt, więc czysta utrata życia
+(lose_life — Delta Bloodflies) nie podnosiła prędkości. Fix root-cause:
+JEDEN hook na life_changed (amount < 0) zamiast dwóch hooków damage —
+obrażenia wołają changeLife (ścieżka żyje), a prewencja/infect/samotarta
+odpadają z natury zdarzenia. Bramki „własna tura / raz / max 4" bez zmian
+(ADR 0030). Lekcja L146. Testy:
+`test/m361-gold-speed-lifeloss.test.js` (5/5: RED T1 strata-bez-damage,
+dedup T3, bramki T4/T5). Commit `f082bef` (16c/B4).
+
+**#5 — Modalne cele walidowane przy rezolucji (CR 608.2b).** Ścieżka
+modalna filtrowała cele tylko po strefie — Selesnya Charm (Wygnanie)
+wyganiał stwora z hexproof zyskany w odpowiedzi (Magic Damper), podczas
+gdy ścieżka zwykła fizzlowała poprawnie. Fix: tryb stały przez
+collectLegalTargets (L48); tryby ZMIENNE („up to N") per-cel przeciw
+typowi trybu (lustro validateVariableTargets); stun zostaje w liveChosen;
+fizzle zmiennego tylko gdy miał wybrane cele (M146). Po drodze regresja
+7 testów zmienno-modalnych (mapowanie 1:1) — naprawiona gałęzią per-cel.
+Testy: `test/m361-gold-modal-hexproof.test.js` (3/3). Commit `30e4991`
+(16c/B5).
+
+Tropy martwe (sondy inline, brak plików do sprzątania): G1 cumulative
+(brak silnika+kart), G4 warstwy (set+add OK), G5 can't-be-countered
+(brak), G6/G7 timing grobu/Discover (OK), renown-inline (brak Stifle —
+nietestowalne), shroud/changeling (audytowane), manifest/embalm/buyback
+(poprawne), landfall+Mysteries (M167/G), fail-to-find (M177/C), koszty
+ataku/fear/devotion/monarch/horsemanship (luki, nie bugi), landwalk
+(brak zmian podtypów landów), menace/bestow-fizzle/fateful-hour/domain/
+phyrexian (obie ścieżki)/forecast/unearth/kopie-707.2/trample-deathtouch
+(poprawne), kontrola trwała (tylko EOT+haste).
+
+Bramki: `npm test` **5610/5610**, `npm run test:all` **5620/5620**, build
+**63 moduły / 3742,6 kB**, quick 672 gry / 145,3 s — heuristic **82,0%**
+(551/672), aggro **32,7%** (110/336), random **3,3%** (11/336).

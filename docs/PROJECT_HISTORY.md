@@ -19,6 +19,29 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-16 Złoto M361 (wyzwanie 16c: 5 unikalnych błędów reguł)
+
+Wyzwanie Złote (plan `docs/plans/PLAN_2026-09-16c-challenge-zloto.md`):
+5 bugów, każdy zweryfikowany online PRZED zmianą, RED→GREEN + mutacja
+(odwrócenie fixa czerwieni test), własny strażnik, cytat online w kodzie
+(ADR 0030). Commity `16c/B1`…`16c/B5` + `16c/E6` (`465e0e4`, `d987fa4`,
+`2421ec0`, `f082bef`, `30e4991`); milestone M361; lekcja L146; sondy
+inline (brak plików do sprzątania).
+
+B1 — exploit: źródło własnym kandydatem + trigger LKI przy
+samopoświęceniu (CR 702.110, VOW Notes).
+B2 — Talion's Messenger: refleks reflexive_discard (Scryfall ruling
+2023-09-01: cel po odrzucie, okno odpowiedzi).
+B3 — land drop z exile w oknie impulsu (Gila Courser, CR 701.18a/b).
+B4 — speed przy utracie życia, nie tylko damage (mtg.wiki/Speed):
+jeden hook life_changed; lekcja L146.
+B5 — modalne cele przez validateTargets przy rezolucji (CR 608.2b):
+tryb stały + gałąź per-cel dla „up to N" (po drodze regresja 7 testów,
+naprawiona w B5).
+
+Bramki E6: `npm test` 5610/5610, `test:all` 5620/5620, build
+63/3742,6kB, quick 672 gry (heuristic 82,0%, aggro 32,7%, random 3,3%).
+
 ## 2026-09-16 Srebro M360 (wyzwanie 16b: 5 unikalnych błędów reguł)
 
 Wyzwanie Srebrne (plan `docs/plans/PLAN_2026-09-16b-challenge-srebro.md`):

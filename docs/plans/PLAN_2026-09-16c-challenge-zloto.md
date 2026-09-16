@@ -38,9 +38,30 @@ Rezerwa: day/night, monarch/inicjatywa/lochy, DFC, anihilator,
 ## Mini-roadmapa
 
 - [x] E0: tropy + plan (ten plik).
-- [ ] E1–E5: pięć bugów, każdy: cytat online → RED → fix → GREEN + mutacja.
-- [ ] E6: bramki (`npm test`, `test:all`, build, quick) + domknięcie
-      (milestone M361, PH, PR komentarzem, lekcja przy nowej klasie).
+- [x] E1/B1 (`465e0e4`): exploit — źródło własnym kandydatem + trigger LKI
+      przy samopoświęceniu (CR 702.110, VOW Notes). MARTWE z E0: G1 (brak
+      silnika+kart), G4 (set+add OK, brak 7e), G5 (brak silnika+kart),
+      G6-timing (sorcery-window OK), G7-timing (rzut bez czeku OK), G6-róg
+      (flashedBack redirect OK), echo-control (tylko kradzieże do EOT —
+      nietestowalne).
+- [x] E2/B2 (`d987fa4`): Talion's Messenger — dwa triggery, refleks
+      reflexive_discard (cel po odrzucie, okno odpowiedzi, brak odrzutu =
+      brak licznika; Scryfall ruling 2023-09-01).
+- [x] E3/B3 (`2421ec0`): land drop z exile w oknie impulsu (Gila Courser;
+      CR 701.18a/b „from the zone it's in").
+- [x] E4/B4 (`f082bef`): speed przy utracie życia, nie tylko damage
+      (mtg.wiki/Speed) — jeden hook life_changed; lekcja L146. MARTWE:
+      renown-inline (brak Stifle — nietestowalne), shroud/changeling
+      (audytowane), manifest/embalm/buyback/landfall/fail-to-find (poprawne),
+      koszty ataku/fear/devotion/monarch (luki), intimidate (OK).
+- [x] E5/B5 (`30e4991`): modalne cele przez validateTargets przy rezolucji
+      (CR 608.2b) — tryb stały + gałąź per-cel „up to N" (regresja 7 testów
+      naprawiona w B5). MARTWE: landwalk (brak zmian podtypów), menace,
+      bestow-fizzle, fateful-hour, domain, phyrexian (obie ścieżki),
+      forecast, unearth, kopie-707.2, trample-deathtouch (poprawne).
+- [x] E6: bramki (`npm test` 5610/5610, `test:all` 5620/5620, build
+      63/3742,6kB, quick 672: heuristic 82,0%) + domknięcie (milestone
+      M361, PH, lekcja L146).
 
 Commity: per bug (`16c/B1` … `16c/B5`) + `16c/E6`. Gałąź ta sama (sesja).
 Ryzyka: jak w 16a/16b (bug architektoniczny → dokumentuj i bierz następny).
