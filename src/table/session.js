@@ -2,7 +2,7 @@ import { execute, playerView } from '../engine/game-state.js';
 import { tokenNameFromCardId } from '../engine/tokens.js';
 import { makeSimulate } from '../engine/lookahead.js';
 import { setupCardMatch } from '../cards/materialize.js';
-import { TOKEN_IMAGES } from '../cards/card-data.js';
+import { TOKEN_IMAGES, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseReplay, playReplay, replayFromState, serializeReplay } from '../engine/replay.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createHeuristicBot } from '../controllers/heuristic-bot.js';
@@ -428,6 +428,18 @@ export function manaEffectLabel(effect, { chosenColor = null } = {}) {
   if (colors.length === 0) return `dodaj ${count} ${single ? 'bezbarwną' : 'bezbarwne'}${spendOnlyRider}`;
   // M193/A1: „dodaj 1 manę niebieską lub czarną" zamiast „dodaj 1 manę ({U}, {B})".
   return `dodaj ${count} ${manaColorsLabel(colors, single)}${spendOnlyRider}`;
+}
+
+/**
+ * B (znalezisko właściciela 2026-09-16, regresja): WIRTUALNE karty gry, które
+ * nie są w rejestrze batchowych kart (nie są talowalne) ani w deskryptorach
+ * tokenów — loch The Undercity (cardId 'undercity', źródło efektów pokoi) i
+ * token Day // Night. Bez wpisów w mapie nazw sesji nameOf(cardId) zwraca
+ * surowy identyfikator i do UI wycieka „undercity — wybierz kartę do ręki”
+ * (nazwa własna małą literą). Jedno źródło dla createSession i testów.
+ */
+export function virtualCardNames() {
+  return [UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN].map(({ id, name }) => ({ id, name }));
 }
 
 /** Odmiana polska rzeczownika wg liczby: (1 → one, 2-4 → few, 5+ → many). */
@@ -2330,6 +2342,15 @@ export function createSession(config) {
   // pilnuje, żeby każdy nowy token miał nazwę.
   for (const [cardId, name] of collectTokenNames(registry)) {
     if (!nameById.has(cardId)) nameById.set(cardId, name);
+  }
+  // B (znalezisko właściciela 2026-09-16, regresja): WIRTUALNE karty poza
+  // rejestrem — loch The Undercity i token Day // Night — też nie są w
+  // nameById, więc nameOf('undercity') spadał do surowego cardId i etykieta
+  // decyzji szukania z pokoju Secret Entrance brzmiała „undercity — wybierz
+  // kartę do ręki" (nazwa własna małą literą). Zasiewamy z eksportowanej
+  // listy virtualCardNames — jedno źródło dla sesji i testów (wzorzec M188/B).
+  for (const { id, name } of virtualCardNames()) {
+    if (!nameById.has(id)) nameById.set(id, name);
   }
   const colorsById = new Map(registry.all().map((card) => [card.id, card.colors ?? []]));
   const log = []; // { kind: 'event'|'rejection'|'system', text }
