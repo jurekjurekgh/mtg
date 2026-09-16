@@ -403,7 +403,7 @@ export function manaProducedLabel(amount, colors) {
 }
 
 /** Opis efektu `add_mana`: bezbarwna / dowolnego koloru / konkretne kolory. */
-export function manaEffectLabel(effect) {
+export function manaEffectLabel(effect, { chosenColor = null } = {}) {
   const amount = effect?.amount ?? 1;
   const single = amount === 1;
   const count = single ? '1 manę' : `${amount} many`;
@@ -414,7 +414,15 @@ export function manaEffectLabel(effect) {
   // spendOnly (ADR 0002); nieznane wartości zostają bez dopisku.
   const spendOnlyRider = effect?.spendOnly === 'artifact' ? ' (tylko na rzut czaru artefaktu)' : '';
   if (isAnyColorMana(effect?.colors)) return `dodaj ${count} dowolnego koloru${spendOnlyRider}`;
-  const colors = effect?.colors ?? [];
+  // A3 (znalezisko właściciela 2026-09-16, Manor Gate): „Add {G} or one mana
+  // of the chosen color" — w ścieżkach znających OBIEKT (kafel karty, wiersz
+  // „Aktywuj:" w panelu) deskryptor many złącza się z kolorem wybranym przy
+  // wejściu; bez kontekstu (np. podgląd Oracle z rejestru) etykieta zostaje
+  // po deskryptorze. Ta sama reguła co w effects.js add_mana (L41).
+  const descriptorColors = effect?.colors ?? [];
+  const colors = chosenColor && !descriptorColors.includes(chosenColor)
+    ? [...descriptorColors, chosenColor]
+    : descriptorColors;
   // B5 (audyt stołu 2026-09-09, G2/Apprentice Wizard): „dodaj 3 many
   // bezbarwną" — przymiotnik w pojedynczej przy mnogiej („bezbarwne").
   if (colors.length === 0) return `dodaj ${count} ${single ? 'bezbarwną' : 'bezbarwne'}${spendOnlyRider}`;

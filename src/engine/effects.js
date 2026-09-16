@@ -3066,7 +3066,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // M67 (Jeskai Devotee): efekt może podać kolory wprost ({1}: Add {U}, {R},
     // or {W}) — jednostka many ['U','R','W'] opłaca każdy z tych pipów (MtG:
     // gracz wybiera kolor przy produkcji; pula trzyma ją jako wielokolorową).
-    const colors = effect.colors ?? src?.colors ?? [];
+    const descriptorColors = effect.colors ?? src?.colors ?? [];
+    // A3 (znalezisko właściciela 2026-09-16, Manor Gate): „{T}: Add {G} or one
+    // mana of the chosen color" — deskryptor many ('G') złącza się z kolorem
+    // wybranym przy wejściu (chosenColor na OBIEKCIE — ustawianym przez
+    // resolve_color_choice) w jednostkę wielokolorową opłacającą dowolny z
+    // pipów. Bez tego kreator many (getSourceForObject robi ten sam union)
+    // oferował czarną, a aktywacja produkowała wyłącznie zieloną.
+    const colors = sourceObject?.chosenColor && !descriptorColors.includes(sourceObject.chosenColor)
+      ? [...descriptorColors, sourceObject.chosenColor]
+      : descriptorColors;
     addMana(state, sourceObject.controllerId, effect.amount ?? 1, {
       colors, fromTreasure: Boolean(effect.fromTreasure),
       // M201 (znalezisko #3): ograniczenie wydania jedzie z deskryptora

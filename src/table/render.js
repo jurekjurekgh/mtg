@@ -940,7 +940,7 @@ function lifeCount(n) {
 }
 
 /** Czytelny opis pojedynczego efektu (fallback dla nieznanych typów — polska nazwa). */
-function describeEffect(e) {
+function describeEffect(e, ctx = {}) {
   // M73d (A): puste efekty (effect: {} w cyclyng/static/level-up) to nie
   // „efekt (undefined)" — pomijamy (audyt żywym testerem).
   if (!e || typeof e.type !== 'string' || e.type === '') return '';
@@ -1008,7 +1008,7 @@ function describeEffect(e) {
     // kosztem. Deskryptor niesie `colors` — opisujemy go wprost:
     // pięć kolorów = „dowolnego koloru" (CR: „add one mana of any color"),
     // brak listy = mana bezbarwna ({C}), konkretna lista = te kolory.
-    add_mana: () => manaEffectLabel(e),
+    add_mana: () => manaEffectLabel(e, ctx),
     fabricate: () => `fabricate ${e.amount ?? 1} (liczniki +1/+1 albo tokeny Servo)`,
     reflexive_sacrifice: () => 'poświęć innego stwora albo artefakt (dobrowolnie: następuje refleks)',
     exile_top_playable_until_next_turn: () => 'wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury',
@@ -1099,7 +1099,7 @@ function describeEffect(e) {
     // CO się stanie (Sea God's Scorn wyglądał na pustą kartę) — opisujemy
     // efekty WEWNĘTRZNE rekurencyjnie.
     apply_to_each_target: () => {
-      const inner = (e.effects ?? []).map((ie) => describeEffect(ie)).filter(Boolean).join(' + ');
+      const inner = (e.effects ?? []).map((ie) => describeEffect(ie, ctx)).filter(Boolean).join(' + ');
       return inner ? `${inner} (każdy z celów)` : 'ten sam efekt na każdym z celów';
     },
     gain_life_if_target_dies_this_turn: () => `gdy ten stwór zginie w tej turze, zyskujesz ${e.amount ?? 1} życia`,
@@ -1185,8 +1185,8 @@ function describeEffect(e) {
     // M146 (audyt żywym testerem): surowy identyfikator zamiast polskiego opisu
     // (landEnteredThisTurn na kaflu Mysteries of the Deep).
     conditional: () => {
-      const thenDesc = e.then ? describeEffect(e.then) : '';
-      const elseDesc = e.else ? describeEffect(e.else) : '';
+      const thenDesc = e.then ? describeEffect(e.then, ctx) : '';
+      const elseDesc = e.else ? describeEffect(e.else, ctx) : '';
       // M229 (audyt nowych talii, Sarkhan's Rage): warunki opisujemy po polsku;
       // część niesie parametr `subtype` (np. „no Dragons"). Bez wpisu w mapie
       // na kafel wyciekał surowy identyfikator (controlsNoCreatureSubtype).
@@ -1392,7 +1392,7 @@ function describeStatic(ability) {
   return parts.join(' · ');
 }
 
-function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
+function describeAbility(ability, { withCost = true, withTarget = true, chosenColor = null } = {}) {
   // M73d (A): cyclyng/channel — czytelny opis zamiast „efekt (undefined)"
   // (definicje mają effect: {}; część kart nie ma keyword 'cycling').
   if (ability?.cycling) {
@@ -1426,7 +1426,8 @@ function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
   }
   if (ability?.type === 'static') return describeStatic(ability);
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
-  const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect);
+  const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '')
+    .map((e) => describeEffect(e, { chosenColor }));
   const target = (ability?.targets ?? [])[0];
   // M100/E10 (P11 — Żywy Tester h08): „any target" → „dowolny cel" bez
   // pleonazmu „cel: dowolny cel" (etykieta już zawiera słowo „cel").
@@ -1716,7 +1717,9 @@ export function rulesText(info) {
       // M100/E10 (P9 — Żywy Tester h09/h13): zdolność equip już opisuje
       // equipLine wyżej; bez tego describeAbility doklejało goły „{4}".
       if (a.keyword === 'equip' && info.equipment) return '';
-      return describeAbility(a);
+      // A3 (Manor Gate): kafel zna obiekt (chosenColor z widoku) — opis many
+      // „dodaj 1 manę zieloną lub czarną” mówi o obu kolorach jednostki.
+      return describeAbility(a, { chosenColor: info.chosenColor ?? null });
     }).filter(Boolean).join('  ·  ')
     : '';
   const spellLine = info.spell ? describeSpellEffects(info.spell) : '';
@@ -2848,7 +2851,7 @@ export function commandLabel(cmd, session, view) {
         ? ' — UWAGA: twoja biblioteka jest pusta, zdolność nie zadziała'
         : (abilityFizzlesOnHand(ability, view)
           ? ' — UWAGA: brak pasującej karty w ręce, zdolność nie zadziała' : '');
-      return `${actionVerb}: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${sacLandPart}${sacCreaturePart}${crewPart}${emptyLibWarn}`;
+      return `${actionVerb}: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false, chosenColor: object?.chosenColor ?? null })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${sacLandPart}${sacCreaturePart}${crewPart}${emptyLibWarn}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));
