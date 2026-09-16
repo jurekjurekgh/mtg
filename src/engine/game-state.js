@@ -5993,6 +5993,13 @@ export function playerView(state, playerId) {
           if (protColors.length > 0) qualities.push({ colors: protColors });
           if (qualities.length > 0) entry.protection = qualities;
         }
+        // A2 (znalezisko właściciela 2026-09-16, Manor Gate): WYBRANY przy
+        // wejściu kolor („as this enters, choose a color", CR 614.12 — wybór
+        // publicznego permanentu jest jawny) idzie do widoku: kafel pokazuje
+        // badge „Wybrany kolor: Czarny", a etykieta zdolności many („dodaj
+        // 1 manę zieloną lub czarną") czyta go z obiektu widoku. Zakryty
+        // permanent nie ujawnia tożsamości (CR 708.2) — jak kolory wyżej.
+        if (!hiddenFromViewer && object.chosenColor) entry.chosenColor = object.chosenColor;
         // M186/Z1 (Żywy Tester, ravnica vs innistrad s9): „can't attack/block
         // alone" JAWNIE w widoku — wizard walki walidował po entry.abilities,
         // których playerView NIGDY nie wysyłał (klasa L48/L1: martwa walidacja

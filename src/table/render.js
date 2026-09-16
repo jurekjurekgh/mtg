@@ -2360,6 +2360,18 @@ export function protectionBadges(protection) {
   return out;
 }
 
+/**
+ * A2 (znalezisko właściciela 2026-09-16, Manor Gate): badge koloru wybranego
+ * przy wejściu — „Wybrany kolor: Czarny". Etykieta w JEDNYM miejscu (wzorzec
+ * protectionBadges/graveyardTypesBadge, L41) dla kafelka i testów; kolor po
+ * mapie mianowników (PROTECTION_COLOR_NAMES — ta sama mapa co w badge'ach
+ * ochrony, CR 105.2 nazwy kolorów).
+ */
+export function chosenColorBadge(chosenColor) {
+  if (!chosenColor) return null;
+  return `Wybrany kolor: ${PROTECTION_COLOR_NAMES[chosenColor] ?? chosenColor}`;
+}
+
 /** Opis JAKOŚCI ochrony (CR 702.16b–f) po deskryptorze — bez nazw kart. */
 export function protectionQualityLabel(quality) {
   if (!quality) return 'wybranym źródłem';
@@ -3916,6 +3928,10 @@ export function buildStateOverlay(visual, info) {
     for (const badge of protectionBadges(info.protection)) {
       flags.push(['kw', badge]);
     }
+    // A2 (Manor Gate): wybrany przy wejściu kolor — jawny badge na kaflu,
+    // nie tylko wpis w logu (skutek widoczny w grze musi być widoczny na stole).
+    const chosenBadge = chosenColorBadge(info.chosenColor);
+    if (chosenBadge) flags.push(['kw', chosenBadge]);
     // M173/C: pozostałe czasowe stany z efektów — audyt na wniosek
     // właściciela (Panic Spellbomb — klasa objęta już przez cantBlockNow).
     if (info.saddledNow) flags.push(['kw', 'osiodłany']);
