@@ -1829,7 +1829,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   /** Stan faktów o lądzie i rekem, potrzebny do wyboru (bez punktów). */
   function landAnaliza(view, objectId) {
     const ja = view.playerId;
-    const karta = (view.zones.hand ?? []).find((o) => o?.id === objectId);
+    // M361/B3: land drop także z exile (okno impulsu, CR 701.18a) — wycena
+    // czyta kartę z obu stref (bez tego land z exile miał płaską deltę).
+    const karta = (view.zones.hand ?? []).find((o) => o?.id === objectId)
+      ?? (view.zones.exile ?? []).find((o) => o?.id === objectId);
     const def = cardDef(karta?.cardId);
     const pola = (view.zones.battlefield ?? [])
       .filter((o) => o?.controllerId === ja && o.kind === 'land');

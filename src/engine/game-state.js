@@ -34,7 +34,7 @@ import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTop
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
-import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive, warpTurnReached } from './impulse-window.js';
+import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive, warpTurnReached, canPlayByImpulseFromExile } from './impulse-window.js';
 
 /**
  * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
@@ -7696,6 +7696,14 @@ export function playerView(state, playerId) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land') legalCommands.push(command('play_land', playerId, { objectId: id }));
+    }
+    // M361/B3 (ZŁOTO; CR 701.18a/b): landy z exile w żywym oknie impulsu —
+    // „you may play that card" (Gila Courser). DOPISANE po landach z ręki
+    // (boty biorące pierwszą ofertę grają najpierw z ręki — bez dryfu).
+    for (const id of state.zones.exile) {
+      const object = state.objects.get(id);
+      if (object?.controllerId === playerId && object.kind === 'land'
+        && canPlayByImpulseFromExile(object, state)) legalCommands.push(command('play_land', playerId, { objectId: id }));
     }
   }
   if (state.status === 'active' && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
