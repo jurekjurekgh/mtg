@@ -6942,8 +6942,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     // Żywy Tester (PR #121): etykieta panelu i kafel czytają zdolności z
     // REJESTRU (session.abilitiesOf) — pusty wpis dawał „Aktywuj: Powerstone — "
     // bez kosztu, opisu i restrykcji CR 106.3. Kopiujemy zdolności z
-    // deskryptora create_token (konwencja 8/11 tokenów); dryf pilnuje
-    // test/audyt-pr121-tokeny-zdolnosci-ui.test.js (L41).
+    // deskryptora create_token (konwencja: każdy token z abilities w
+    // deskryptorze — 8 — ma je zdublowane we wpisie; dryf pilnuje
+    // test/audyt-pr121-tokeny-zdolnosci-ui.test.js, L41).
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,

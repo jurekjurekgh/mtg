@@ -8,9 +8,14 @@
 //
 // Root cause (klasa L31/L41): `commandLabel` czyta zdolności z REJESTRU
 // (`session.abilitiesOf(cardId)`), a konwencją katalogu jest duplikowanie
-// `abilities` tokenu we wpisie (8 z 11 tokenów z deskryptorowymi zdolnościami
-// je ma). token_powerstone / token_wizard / token_bird_chocobo wpisy miały
-// puste `abilities` — etykieta spadała do gołego „Aktywuj: <nazwa> — ".
+// `abilities` tokenu we wpisie. O3 (audyt PR #121, domknięcie 2026-09-16):
+// dawna proza „8 z 11" mieszała zbiory — poprawne rozbicie: 8 tokenów z
+// abilities w deskryptorach create_token (WSZYSTKIE mają zdublowane wpisy —
+// tego pilnuje ten strażnik) plus 3 wpisy z abilities poza deskryptorami
+// (token_clue/token_food/token_incubator — utrzymywane ręcznie, strażnik ich
+// nie widzi). Przed Z2 puste wpisy miały token_powerstone /
+// token_wizard / token_bird_chocobo — etykieta spadała do gołego
+// „Aktywuj: <nazwa> — ".
 // Dodatkowo `manaEffectLabel` pomijało `spendOnly` — restrykcja CR 106.3
 // była niewidoczna w każdym opisie zdolności manowej.
 //
