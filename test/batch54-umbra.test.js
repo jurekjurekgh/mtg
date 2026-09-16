@@ -73,7 +73,10 @@ for(const reverse of [false,true])test(`606: równoczesne destroy aura+host, rev
 for(const kw of [[],['double_strike'],['infect'],['lifelink']])test(`606 combat: niezablokowany ${kw}`,()=>{
  const s=board();replaceObject(s,s.objects.get('host'),{keywords:kw,damage:1});
  s.combat={attackers:['host'],blockers:new Map(),blockedAttackers:new Set(),attackingPlayerId:'p1'};
- resolveCombatDamage(s,'p2');const amount=kw.includes('double_strike')?12:6;
+ resolveCombatDamage(s,'p2');
+ // CR 510.4 (M360 B3): double strike = dwa kroki obrażeń; druga komenda kończy zwykły przebieg.
+ if(s.pendingCombatSecondPass){s.pendingCombatSecondPass=null;resolveCombatDamage(s,'p2',{secondPass:true,pass:false,resumeFrom:0});}
+ const amount=kw.includes('double_strike')?12:6;
  if(kw.includes('infect'))assert.equal(s.players[1].poison,6);else assert.equal(s.players[1].life,20-amount);
  if(kw.includes('lifelink'))assert.equal(s.players[0].life,26);
  assert.equal(effectivePower(s.objects.get('host'),s),2);
@@ -174,7 +177,10 @@ test('606: first strike czeka na wybór armor przed regularnym przebiegiem',()=>
  replaceObject(s,s.objects.get('host'),{keywords:['double_strike']});
  s.combat={attackers:['host'],blockers:new Map([['host',['block']]]),blockedAttackers:new Set(['host']),attackingPlayerId:'p1'};
  resolveCombatDamage(s,'p2');assert.ok(s.pendingReplacementChoice);assert.equal(s.objects.get('block').damage,8,'brak drugiego przebiegu przed wyborem');
- pick(s,'umbra:a0');assert.equal(s.objects.get('block').damage,14,'drugi przebieg wg nowej toughness6 po stracie aury');
+ pick(s,'umbra:a0');
+ // CR 510.4 (M360 B3): zwykły przebieg czeka na drugą komendę resolve_combat.
+ if(s.pendingCombatSecondPass){s.pendingCombatSecondPass=null;resolveCombatDamage(s,'p2',{secondPass:true,pass:false,resumeFrom:0});}
+ assert.equal(s.objects.get('block').damage,14,'drugi przebieg wg nowej toughness6 po stracie aury');
 });
 for (const firstStrike of [false,true]) test(`606: execute kończy krok walki po armor (first strike ${firstStrike})`,()=>{
  const s=board(2);s.turn=jumpToStep(s.turn,'combat_damage','p1');
@@ -182,8 +188,14 @@ for (const firstStrike of [false,true]) test(`606: execute kończy krok walki po
  s.combat={attackers:['host'],blockers:new Map([['host',['block']]]),blockedAttackers:new Set(['host']),attackingPlayerId:'p1'};
  assert.ok(execute(s,{type:'resolve_combat',playerId:'p1',defendingPlayerId:'p2'}).ok);
  assert.ok(s.pendingReplacementChoice);assert.equal(s.turn.step,'combat_damage');
- const r=pick(s,'umbra:a0');assert.equal(s.turn.step,'end_of_combat');
- assert.equal(r.events.filter(e=>e.type==='step_advanced'&&e.step==='end_of_combat').length,1);
+ const r=pick(s,'umbra:a0');
+ // CR 510.4 (M360 B3): first strike = zwykły przebieg wymaga drugiej komendy resolve_combat.
+ if(firstStrike){
+   assert.equal(s.turn.step,'combat_damage','drugi krok obrażeń czeka na komendę');
+   const r2=execute(s,{type:'resolve_combat',playerId:'p1',defendingPlayerId:'p2'});assert.ok(r2.ok,JSON.stringify(r2));
+   assert.equal(r2.events.filter(e=>e.type==='step_advanced'&&e.step==='end_of_combat').length,1);
+ } else assert.equal(r.events.filter(e=>e.type==='step_advanced'&&e.step==='end_of_combat').length,1);
+ assert.equal(s.turn.step,'end_of_combat');
  assert.equal(s.combat,null);assert.equal(s.objects.get('host').zone,'battlefield');
 });
 test('606: replacement wybierany APNAP mimo odwróconej kolejności grupy',async()=>{

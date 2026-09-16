@@ -5509,8 +5509,15 @@ export function execute(state, input) {
     if (state.turn.step !== 'combat_damage' || state.turn.priorityPlayerId !== cmd.playerId) return reject('wrong_combat_timing');
     if (state.turn.activePlayerId !== cmd.playerId) return reject('not_active_player');
     try {
-      const e = resolveCombatDamage(state, cmd.defendingPlayerId);
+      // M360/B3: drugi resolve po fladze robi TYLKO przebieg zwykły (CR 510.4).
+      const isSecondPass = state.pendingCombatSecondPass != null;
+      const e = isSecondPass
+        ? resolveCombatDamage(state, cmd.defendingPlayerId, { secondPass: true, pass: false, resumeFrom: 0 })
+        : resolveCombatDamage(state, cmd.defendingPlayerId);
+      if (isSecondPass) state.pendingCombatSecondPass = null;
       if (state.pendingReplacementChoice || state.pendingDamageAssignment) return accepted(state, cmd, {ok:true,events:e});
+      // Pierwszy krok zrobiony — krok się NIE zmienia, gra wraca do priorytetu (CR 510.3).
+      if (state.pendingCombatSecondPass) return accepted(state, cmd, { ok: true, events: e });
       state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
       const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
       state.events.push(step);
@@ -5537,7 +5544,9 @@ export function execute(state, input) {
         if (state.pendingReplacementChoice) { state.pendingReplacementChoice.continuations.push(item); continue; }
         if (item.combatResume || item.combatFinish) {
           if (item.combatResume) resolveCombatDamage(state,item.combatResume.defendingPlayerId,item.combatResume);
-          if (!state.pendingReplacementChoice && !state.pendingDamageAssignment) {
+          // M360/B3: wznowienie spomiędzy przebiegów przy splicie stawia flagę
+          // drugiego kroku (CR 510.4) — skok dopiero po drugim resolve_combat.
+          if (!state.pendingReplacementChoice && !state.pendingDamageAssignment && !state.pendingCombatSecondPass) {
             state.turn=jumpToStep(state.turn,'end_of_combat',state.turn.activePlayerId);
             state.events.push(event('step_advanced',{number:state.turn.number,phase:state.turn.phase,step:state.turn.step}));
           }
@@ -5602,12 +5611,18 @@ export function execute(state, input) {
     try {
       const e = resolveCombatDamage(state, pending.defendingPlayerId, {
         pass: pending.pass, resumeFrom: pending.resumeFrom, assignments, phase: pending.phase,
+        // M360/B3: wznowienie decyzji z drugiego kroku (CR 510.4) — zwykły
+        // przebieg wykonuje się od razu, bez stawiania flagi od nowa.
+        secondPass: pending.secondPass,
       });
       const resolved = event('damage_assignment_resolved', { playerId: pending.playerId });
       state.events.push(resolved);
       e.push(resolved);
       // Drugi pass mógł zakolejkować kolejną decyzję — kroku wtedy nie zmieniamy.
       if (state.pendingDamageAssignment || state.pendingReplacementChoice) return accepted(state, cmd, { ok: true, events: e });
+      // M360/B3: przy splicie (CR 510.4/510.3) zwykły przebieg czeka na drugi
+      // resolve_combat — krok stoi, wraca priorytet.
+      if (state.pendingCombatSecondPass) return accepted(state, cmd, { ok: true, events: e });
       state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
       const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
       state.events.push(step);

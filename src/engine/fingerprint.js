@@ -187,6 +187,7 @@ export function stateFingerprint(state) {
       attackers: [...state.combat.attackers],
       blockers: [...state.combat.blockers.entries()].map(([attackerId, blockerIds]) => [attackerId, [...blockerIds]]),
       blockedAttackers: [...(state.combat.blockedAttackers ?? [])],
+      firstStrikeAtStart: [...(state.combat.firstStrikeAtStart ?? [])],
     }
     : null;
   return JSON.stringify({

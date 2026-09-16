@@ -61,7 +61,7 @@ function tactician(state, controllerId = 'p1') {
  * p2 atakuje `x` (trample 5/5) i `y`; p1 blokuje OBA jednym `w` (2/2 z licznikiem
  * +1/+1 = 3/3; drugi slot bloku ze statyki Cenn's Tactician).
  */
-function combat({ yKeywords = [], yPower = 3, yToughness = 3, wToughness = 2, twoAttackers = true } = {}) {
+function combat({ yKeywords = [], yPower = 3, yToughness = 3, wToughness = 2, twoAttackers = true, secondPass = false } = {}) {
   const state = createGameState({ seed: 122, players: [{ id: 'p1' }, { id: 'p2' }] });
   atStep(state, 'declare_attackers', 'p2');
   tactician(state, 'p1');
@@ -79,6 +79,8 @@ function combat({ yKeywords = [], yPower = 3, yToughness = 3, wToughness = 2, tw
   assert.ok(blocks.ok, `podwójny blok legalny (statyka): ${blocks.events?.[0]?.reason}`);
   atStep(state, 'combat_damage', 'p2');
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' }).ok);
+  // CR 510.4+510.3 (M360 B3): przy first strike zwykły przebieg po drugiej komendzie.
+  if (secondPass) assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' }).ok);
   assert.ok(state.pendingDamageAssignment, 'decyzja trample zakolejkowana');
   return state;
 }
@@ -139,7 +141,7 @@ test('W5/4: drugi przebieg (first strike) to OSOBNY krok — przydziały z pierw
   // y (3/1 first strike) przydziela w pierwszym przebiegu 3 na w (3/6); x (trample
   // 5/5, bez first strike) przydziela w DRUGIM, gdzie y już nie przydziela — więc
   // pokrycie lethal musi dojść z x (oznaczone obrażenia liczą się, CR 702.19b).
-  const state = combat({ yKeywords: ['first_strike'], yPower: 3, yToughness: 1, wToughness: 6 });
+  const state = combat({ yKeywords: ['first_strike'], yPower: 3, yToughness: 1, wToughness: 6, secondPass: true });
   // W pierwszym przebiegu nikt nie potrzebuje decyzji (y ma jednego blokera,
   // x nie należy do przebiegu) → obrażenia zadane od razu.
   assert.equal(state.pendingDamageAssignment.pass, false, 'decyzja czeka w DRUGIM przebiegu');

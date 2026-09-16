@@ -109,6 +109,8 @@ test('Sherlock 2026-08-11 1b: stwór z double strike + trample zadaje w OBA prze
     assignments: { a: [{ blockerId: 'b', amount: 2 }] },
   });
   assert.ok(a.ok, 'rozdzielenie obrażeń: ' + (a.events?.[0]?.reason ?? ''));
+  // CR 510.4 (M360 B3): zwykły przebieg po drugiej komendzie resolve_combat.
+  resolveCombat(state);
   // Poprawnie: first strike 2 (bloker ginie)+1 trample; zwykły przebieg trample
   // 3. Gracz traci 4.
   assert.equal(life(state, 'def'), before - 4,
