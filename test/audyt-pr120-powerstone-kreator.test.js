@@ -31,8 +31,12 @@ function localFunction(name) {
   return source.slice(from, end + '\n  }'.length);
 }
 
-/** Uruchamia manaWizardFor w vm z pełnym zestawem stubów (patrz nagłówek). */
-function manaWizardForZwykany({ cmd, cardTypes, restrictedPoolUnits }) {
+/**
+ * Uruchamia manaWizardFor w vm z pełnym zestawem stubów (patrz nagłówek).
+ * O1 (audyt PR #121): `registry`/`noRegistry` pozwalają odtworzyć stany
+ * awaryjne (cardId nierozpoznany / brak rejestru w vm).
+ */
+function manaWizardForZwykany({ cmd, cardTypes, restrictedPoolUnits, registry, noRegistry }) {
   const captured = {};
   const session = {
     view: () => ({ legalCommands: [] }),
@@ -60,7 +64,7 @@ function manaWizardForZwykany({ cmd, cardTypes, restrictedPoolUnits }) {
     ]),
     selfTapExclusionFor: () => null,
     shouldOpenManaWizard: (args) => { captured.args = args; return true; },
-    registry: { get: () => ({ types: cardTypes }) },
+    registry: noRegistry ? undefined : (registry ?? { get: () => ({ types: cardTypes }) }),
   });
   const fn = runInContext(`${localFunction('restrictedSpellBlockedFor')}\n${localFunction('manaWizardFor')}\nmanaWizardFor;`, ctx);
   const result = fn(cmd);
@@ -89,4 +93,29 @@ test('F2 (naprawa): płatność za AKTYWACJĘ ZDOLNOŚCI — Powerstone widoczny
   assert.ok(captured.args, 'shouldOpenManaWizard wywołany');
   assert.equal(captured.args.sources.some((s) => s.id === 'pw'), true, 'silnik (restrictedManaBlocked) pozwala opłacić zdolność maną Powerstone — kreator nie może jej ukrywać (L48)');
   assert.equal(captured.args.poolUnits.length, 4, 'pula z jednostkami restricted');
+});
+
+test('O1 (audyt PR #121, domknięcie): cardId NIEROZPOZNANY — fail-CLOSED, Powerstone niewidoczny', () => {
+  // Oferta nie może obiecywać więcej niż walidacja (L48): silnik
+  // (restrictedManaBlocked) odrzuci manę ograniczoną przy rzucie czaru
+  // nie-artefaktu, więc kreator przy NIEROZPOZNANEJ karcie ma ją UKRYĆ,
+  // nie pokazać. Stary kierunek fail-open pokazywał (audyt #121, O1).
+  const { captured } = manaWizardForZwykany({
+    cmd: { type: 'cast_spell', objectId: 'karta', playerId: 'p1' },
+    registry: { get: () => undefined },
+  });
+  assert.ok(captured.args, 'kreator się otwiera');
+  assert.equal(captured.args.sources.some((s) => s.id === 'pw'), false,
+    'nierozpoznana karta = traktuj jak czar NIE-artefaktowy: manę ograniczoną ukryj (fail-closed)');
+  assert.equal(captured.args.sources.some((s) => s.id === 'wyspa'), true, 'zwykłe źródła zostają');
+});
+
+test('O1 (audyt PR #121, domknięcie): brak rejestru w vm — fail-CLOSED', () => {
+  const { captured } = manaWizardForZwykany({
+    cmd: { type: 'cast_spell', objectId: 'karta', playerId: 'p1' },
+    noRegistry: true,
+  });
+  assert.ok(captured.args, 'kreator się otwiera');
+  assert.equal(captured.args.sources.some((s) => s.id === 'pw'), false,
+    'bez rejestru też ukrywaj manę ograniczoną (strict, nie cichy fallback)');
 });

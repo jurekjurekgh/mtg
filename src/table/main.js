@@ -1880,15 +1880,24 @@ function bootstrapTable() {
   // can't be spent to cast a nonartifact spell.", weryfikacja ADR 0030
   // 2026-09-15). Zdolności i inne płatności wolno nią opłacać.
   // Jedno źródło dla manaWizardFor i refreshManaWizard (L41/L48); funkcja
-  // vm-odporna (brak registry → false), wyjmowana w testach razem z konsumentem.
+  // vm-odporna (brak registry → fail-closed, patrz O1 audytu #121 w ciele),
+  // wyjmowana w testach razem z konsumentem.
   function restrictedSpellBlockedFor(cmd, descriptor) {
     if (!cmd || !String(cmd.type ?? '').startsWith('cast_')) return false;
     const cardId = descriptor?.cardId ?? session.state?.objects?.get(cmd.objectId)?.cardId ?? null;
-    if (!cardId) return false;
     const reg = typeof registry !== 'undefined' ? registry : null;
-    if (!reg || typeof reg.get !== 'function') return false;
+    // O1 (audyt PR #121, domknięcie 2026-09-16): fail-CLOSED — nieznany
+    // cardId albo brak rejestru traktujemy jak czar NIE-artefaktowy (manę
+    // ograniczoną UKRYJ). Oferta nie może obiecywać więcej niż walidacja
+    // (L48): silnik (restrictedManaBlocked, resources.js) odrzuciłby tę
+    // manę przy płatności, a gracz kliknąłby źródło na darmo. Stary kierunek
+    // fail-open (od F2 z #120) pokazywał manę w stanie degenerowanym — dziś
+    // nieosiągalnym w realnej grze (karta zawsze w session.state), więc
+    // zmiana dotyka wyłącznie trybu awaryjnego. Kierunek strict krzyknie
+    // za głośno (brak Powerstone w kreatorze), nigdy za cicho.
+    if (!cardId || !reg || typeof reg.get !== 'function') return true;
     const card = reg.get(cardId);
-    return Boolean(card && !(card.types ?? []).includes('Artifact'));
+    return Boolean(card ? !(card.types ?? []).includes('Artifact') : true);
   }
 
   /**
