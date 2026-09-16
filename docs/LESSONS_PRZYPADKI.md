@@ -1873,3 +1873,17 @@ bit w bit, w szóstej dokładnie jeden wpis mniej (wymuszony discard z jedyną
 alternatywą concede), downstream identyczny. Poboczny połów: audyt kontraktów
 zdarzeń wyłapał brak `count` w gałęzi decline-0 (wcześniej 1/2 emiterów, pod
 progiem 0,6 — dziura L112); fix: jawne `count: 0`.
+
+## L145 (2026-09-16) — przypadek: Station z usuniętym stworem dawała 0 zamiast LKI
+
+**Zgłoszenie:** łowy Srebra M360/B4 — Station (Wedgelight Rammer) po Shocku
+w zatapniętego sierżanta nie kładła NIC (wczesny `return` z komentarzem
+„CR 608.2b: jeśli cel nie jest już legalny"). Błąd w komentarzu: stwór
+tapowany kosztem nie jest celem (tekst bez „target"), więc 608.2b nie
+fizzluje — EOE Release Notes wprost: „If that creature isn't on the
+battlefield at that time, use its power as it last existed on the
+battlefield." Naprawa wzorcem z silnika: snapshot mocy efektywnej w chwili
+kosztu (`stationTappedPower` na wpisie stosu, jak `sacrificedToughness`),
+rozstrzygnięcie bierze żywą moc albo snapshot. Trzy testy, bo fix ma dwie
+gałęzie: LKI (2 po Shocku), żywa moc (2 bez odpowiedzi) i pompa
+w odpowiedzi (5 — snapshot przy koszcie NIE może zabić żywego odczytu).

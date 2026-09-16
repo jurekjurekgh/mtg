@@ -19,6 +19,36 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-16 Srebro M360 (wyzwanie 16b: 5 unikalnych błędów reguł)
+
+Wyzwanie Srebrne (plan `docs/plans/PLAN_2026-09-16b-challenge-srebro.md`):
+5 bugów, każdy zweryfikowany online PRZED zmianą, RED→GREEN + mutacja
+(odwrócenie fixa czerwieni test), własny strażnik/pin, cytat online w kodzie
+(ADR 0030). Commity `16b/B1`…`16b/B5` + `16b/E6` (`3d00b55`, `a2187b8`,
+`a0b053d`, `d3a8702`, `5654844`); milestone M360; lekcja L145; sondy
+probe-silver7–11 i audyty skasowane w E6.
+
+B1 — Negate kontruje bestow-Aurę (CR 702.103b, mtg.wiki/Bestow + Scryfall):
+bestow jako Aura to czar nie-stworowy; `spell.aura` rozstrzyga (L48).
+B2 — Spectral Prison i Treefolk Umbra bez podtypu Aura (Oracle/Scryfall);
+Ironclad Slayer nie zawracał; niezmiennik w danych.
+B3 — first/double strike: DWA kroki obrażeń z priorytetem (CR 510.4+510.3,
+mtg.wiki/Combat_damage_step): snapshot `firstStrikeAtStart` + flaga
+`pendingCombatSecondPass`; migracje batch54/bug-hunt-08-11/wyzwanie-4-5/
+real-cards-batch21; golden-master świadomie zregenerowany (partia ze
+strikerem `865c0302…`, gra domyka się czysto).
+B4 — Station czyta LKI (EOE Release Notes, mtg.wiki/Station): snapshot
+`stationTappedPower` na wpisie stosu; żywy stwór: moc aktualna (→ L145).
+B5 — ninjutsu w end_of_combat (BOK FAQ, mtg.wiki/Ninjutsu): snapshot
+`rememberClosedCombat` ze stemplem tury; odcisk pokrywa `lastCombat`.
+
+Tropy martwe: trample+deathtouch, regen, fight, unless-pay, crew, blok-bez-
+blokera, próg stacji, H30–H42, S2/S6/S10 (szczegóły w M360).
+
+Bramki: `npm test` **5589/5589**, `test:all` **5599/5599**, build **63 / 3732,8 kB**,
+quick 672 gry — heuristic **82,1%**, aggro **32,7%**, random **3,0%**.
+Po drodze: kondensacja LESSONS.md (budżet lektury 100,1k→~99,3k, L145 + L91/L127/L98/L48/L13).
+
 ## 2026-09-13 A+C (znaleziska właściciela z testów: tor hovera, samobójstwo Sarkhana)
 
 Właściciel po shippie F1–F5 zgłosił 3 znaleziska z własnych testów; A i C naprawione

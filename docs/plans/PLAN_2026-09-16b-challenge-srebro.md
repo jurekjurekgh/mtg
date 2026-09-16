@@ -32,10 +32,12 @@ Z 16a (priorytet: mechaniki z kartą w katalogu):
 
 ## Mini-roadmapa
 
-- [ ] E0: tropy + plan (ten plik).
-- [ ] E1–E5: pięć bugów, każdy: cytat online → RED → fix → GREEN + mutacja.
-- [ ] E6: bramki (`npm test`, `test:all`, build, quick) + domknięcie
-      (milestone M360, PH, PR komentarzem, lekcja przy nowej klasie).
+- [x] E0: tropy + plan (ten plik).
+- [x] E1–E5: pięć bugów, każdy: cytat online → RED → fix → GREEN + mutacja.
+      B1 bestow/Negate (`3d00b55`), B2 podtyp Aura (`a2187b8`), B3 split
+      first-strike (`a0b053d`), B4 Station LKI (`d3a8702`), B5 ninjutsu EOC
+      (`5654844`).
+- [x] E6: bramki + domknięcie (milestone M360, PH, PR komentarzem, L145).
 
 Commity: per bug (`16b/B1` … `16b/B5`) + `16b/E6`. Gałąź ta sama (sesja).
 Ryzyka: jak w 16a (bug architektoniczny → dokumentuj i bierz następny trop).

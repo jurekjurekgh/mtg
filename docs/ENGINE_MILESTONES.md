@@ -4875,3 +4875,73 @@ Bramki: `npm test` **5574/5574**, `npm run test:all` **5584/5584**, build
 **63 moduły / 3724,4 kB**, quick 672 gry / 148,0 s — heuristic **82,4%**
 (554/672; −1 partia wobec 15g — poprawione tempo cleanupu/stosu, decyzje
 botów w golden-masterze identyczne), aggro **32,4%**, random **2,7%**.
+
+## M360 (2026-09-16) — Srebrna odznaka: 5 błędów reguł (bestow/Negate, Aura, split first-strike, Station LKI, ninjutsu EOC)
+
+**Status:** zamknięty — 5 błędów znalezionych i naprawionych, każdy
+zweryfikowany online (CR + Oracle + rulingi) przed zmianą i domknięty
+mutacją (odwrócenie fixa czerwieni test); wyzwanie Srebrne (5 UNIKALNYCH
+błędów vs M359, milestone'y M1–M358, audyty PR, seria 15, łowy 2026-08-11)
+zaliczone. Commity `16b/B1`…`16b/B5` + `16b/E6` na tej gałęzi.
+
+Wszystkie reguły sprawdzone na żywo, nie z pamięci: CR 702.103b
+(mtg.wiki/Bestow + Scryfall THS/161, M20/69), Oracle Spectral Prison
+i Treefolk Umbra (Scryfall: podtyp Aura), CR 510.4/510.3
+(mtg.wiki/Combat_damage_step, CR 2026-08-07), EOE Release Notes
+(mtg.wiki/Station — LKI stacji), BOK FAQ (mtg.wiki/Ninjutsu — okna).
+
+**#1 — Negate kontruje bestow-Aurę (CR 702.103b).** Bestow rzucony jako Aura
+to czar NIE-stworowy („it becomes an Aura enchantment"; ruling THS: nigdy
+oba naraz) — Negate go nie widział. Fix: `spell.aura` rozstrzyga, wspólny
+helper oferty i walidacji (L48). Testy: `test/m360-silver-bestow-negate.test.js`
+(3/3: B1a RED→GREEN + piny B1b/B1c). Commit `3d00b55` (16b/B1).
+
+**#2 — Aura bez podtypu Aura (dane vs Oracle).** Spectral Prison i Treefolk
+Umbra nie miały podtypu Aura — Ironclad Slayer nie zawracał ich z grobu.
+Fix: dane + niezmiennik „każda Aura w danych ma podtyp Aura".
+Testy: `test/m360-silver-aura-subtype.test.js` (3/3). Commit `a2187b8` (16b/B2).
+
+**#3 — Dwa kroki obrażeń przy first/double strike (CR 510.4+510.3).** Silnik
+robił oba przebiegi w jednej komendzie bez rundy priorytetu (Shock między
+krokami niemożliwy; IRL sierżant 2/2 FS przeżywa blok 4/3). Fix: snapshot
+`combat.firstStrikeAtStart` + flaga `pendingCombatSecondPass` — pierwszy
+resolve robi tylko first strike, zwykły czeka na drugi resolve po priorytecie;
+snapshot decyduje o zwykłym (nadany między krokami FS nie kasuje obrażeń —
+squires-lightblade). Bez nowego typu eventu (protokół zamknięty). Testy:
+`test/m360-silver-first-strike-window.test.js` (3/3: B3a okno, B3b snapshot,
+pin B3c). Migracje: batch54, bug-hunt-2026-08-11, wyzwanie-4, wyzwanie-5,
+real-cards-batch21; golden-master świadomie zregenerowany (partia ze
+strikerem dominaria-brg|mirrodin-wu@1000, `865c0302cfa99178…`, gra domyka
+się czysto). Commit `a0b053d` (16b/B3).
+
+**#4 — Station czyta LKI (EOE Release Notes, CR 608.2h).** Stwór tapowany
+kosztem station nie jest celem, więc usunięcie go w odpowiedzi nie fizzluje
+(dawne 608.2b było błędem) — liczniki wg ostatniej mocy z pola bitwy. Fix:
+snapshot `stationTappedPower` na wpisie stosu (wzorzec `sacrificedToughness`);
+żywy stwór: moc aktualna (pompa w odpowiedzi działa). Lekcja L145. Testy:
+`test/m360-silver-station-lki.test.js` (3/3). Commit `d3a8702` (16b/B4).
+
+**#5 — Ninjutsu w end_of_combat (BOK FAQ).** FAQ: okna declare blockers,
+combat damage LUB end of combat — silnik oferował tylko combat_damage, bo po
+obrażeniach combat znikał. Fix: `rememberClosedCombat` snapshotuje
+atakujących/zablokowanych ze stemplem tury; okno EOC czyta snapshot (oferta
++ walidacja, L48); odcisk pokrywa `lastCombat`. (Okno declare_blockers
+celowo złączone z combat_damage przez M172/C — poza zakresem.) Testy:
+`test/m360-silver-ninjutsu-eoc.test.js` (3/3: B5a + pin B5b + strażnik
+stempelka B5c). Commit `5654844` (16b/B5).
+
+Tropy martwe (sondy probe-silver7–11, audyty kosztów/danych/DFC — skasowane
+w E6): trample+deathtouch (lethal 1, CR 702.2 — działa), regenerate (pełny
+pakiet), fight (niecombatowe), unless-pay (pay/decline), crew z chorobą
+(poprawne 702.122a), zablokowany-bez-blokera (0 bez trample), próg stacji
+z chorobą (działa), H30–H42, S2/S6/S10 (brak kart / brak śladu).
+
+Bramki: `npm test` **5589/5589**, `npm run test:all` **5599/5599**, build
+**63 moduły / 3732,8 kB**, quick 672 gry / 149,5 s — heuristic **82,1%**
+(552/672; −2 partie wobec M359 — poprawiony split walki zmienia decyzje
+bota, regresja benchmarku zielona), aggro **32,7%**, random **3,0%**.
+
+Efekt uboczny (naprawiony w E6): wpis L145 przekroczył budżet lektury
+startowej (100,1k > 100k tokenów) — obowiązkowa kondensacja LESSONS.md
+(L91/L127/L98/L48/L13/L145: redakcja bez utraty faktów, nagłówki nietknięte),
+po: ~99,3k. Sondy i audyty skasowane.
