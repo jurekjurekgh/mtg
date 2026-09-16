@@ -47,6 +47,20 @@ M360 Srebro / M361 Złoto) — werdykt APPROVE z zastrzeżeniami
 Bramki finalne: fast 5614/5614, test:all 5624/5624 (0 fail), build
 63 moduły / 3745,3 kB, bot-benchmark 10/10.
 
+Dopisek (ta sama sesja, zlecenie właściciela — „napraw wszystkie
+pozostałości"): domknięcie obserwacji O1/O2 z audytu #123 oraz O1–O4 z
+audytu #121, każdy osobnym commitem z testem RED→GREEN i mutacją L13:
+`46ad2dc` landSplit bez kolorowych pipów (jawny błąd zamiast NaN),
+`279fccd` strażnik L16 engine-wide (70/70 pól pending pokrytych odciskiem),
+`c9895cea` kreator many fail-closed przy nieznanym cardId, `4466367d`
+pendingOptionalTrigger.effects (pełna tablica w widoku + wycena F1; mill
+na [1+] to NIE luka — oferta anotuje selfMill z dowolnej pozycji),
+`2b4638dd` dokładne zbiory tokenów zamiast „8 z 11", `16735581`
+badge graveyardTypesBadge (mechanika, nie nazwa karty). Po drodze naprawa
+lokalnego repo (branch zresetowany do squash-main przez odtworzenie
+sandboxu; refspec fetch okrojony do main — przywrócone fetch+reset --mixed,
+zdalna gałąź nietknięta).
+
 ## 2026-09-16 Złoto M361 (wyzwanie 16c: 5 unikalnych błędów reguł)
 
 Wyzwanie Złote (plan `docs/plans/PLAN_2026-09-16c-challenge-zloto.md`):
