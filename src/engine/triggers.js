@@ -2269,8 +2269,21 @@ function processTriggersScan(state, recentEvents) {
       }
     }
     if (ev.type === 'exploited') {
-      const exploiter = state.objects.get(ev.exploiterId);
-      if (exploiter && exploiter.zone === 'battlefield') {
+      let exploiter = state.objects.get(ev.exploiterId);
+      // M361/B1 (ZŁOTO; VOW Release Notes, mtg.wiki/Exploit 2026-09-16, ADR 0030):
+      // „You can sacrifice the creature with exploit if it's still on the
+      // battlefield. This will cause its other ability to trigger." — przy
+      // samopoświęceniu źródło jest już w grobie (moved.id), więc trigger
+      // „exploits" odpalamy z obiektu LKI (jak trigger dies), nie z pola bitwy.
+      // Bez flagi selfSacrifice wymóg „na stole" ZOSTAJE (VOW Notes: źródło
+      // musi stać w chwili poświęcania — inaczej „that last ability won't
+      // trigger"): pokrywa sekwencyjne kolejki multi-exploit (drugi exploiter
+      // poświęcony jako ofiara pierwszego milczy).
+      if ((!exploiter || exploiter.zone !== 'battlefield') && ev.selfSacrifice === true) {
+        const lastKnown = state.objects.get(ev.exploitedId);
+        if (lastKnown && (lastKnown.zone === 'graveyard' || lastKnown.zone === 'exile')) exploiter = lastKnown;
+      }
+      if (exploiter && (exploiter.zone === 'battlefield' || ev.selfSacrifice === true)) {
         for (const ability of effectiveAbilities(exploiter)) {
           if (ability?.trigger?.event === 'exploits') {
             tryFire(state, ability, exploiter, [], events, { exploitedId: ev.exploitedId });
@@ -2617,18 +2630,27 @@ function processTriggersScan(state, recentEvents) {
       // ..." — opcjonalna, blokująca decyzja kontrolera (resolve_exploit_choice:
       // poświęć stwora albo skip), jak devour. Po poświęceniu emitujemy zdarzenie
       // exploited, które odpala trigger „exploits" (niżej w processEvent).
+      // M361/B1 (ZŁOTO; VOW Release Notes, mtg.wiki/Exploit 2026-09-16, ADR 0030):
+      // kandydatem jest KAŻDY stwór kontrolera, WŁĄCZNIE ze źródłem („A player
+      // can sacrifice any creature they control when the exploit ability
+      // resolves, including the creature with exploit itself"). Dotąd filtr
+      // `candidate.id !== entered.id` wykluczał źródło, więc samotny Rzeźnik
+      // nie dostawał nawet decyzji — a mógł poświęcić siebie i odpalić
+      // „when this exploits" („This will cause its other ability to trigger").
+      // Decyzję kolejkujemy zawsze (źródło stoi na stole w chwili wejścia);
+      // odmowa = jawny skip („you don't have to").
       if (entered.kind === 'creature' && entered.exploit) {
         const exploitCandidates = state.zones.battlefield.filter((objectId) => {
           const candidate = state.objects.get(objectId);
           return candidate?.zone === 'battlefield' && candidate.kind === 'creature'
-            && candidate.controllerId === entered.controllerId && candidate.id !== entered.id;
+            && candidate.controllerId === entered.controllerId;
         });
-        // Bez innych stworów „you may sacrifice a creature" nie ma wyboru —
-        // decyzji nie kolejkujemy (jak devour), trigger „exploits" i tak nie
-        // odpali (nic nie poświęcono). To NIE przerywa przetwarzania wejścia:
-        // exploit to zdolność triggerowana (CR 702.110a — „When this creature
-        // enters"), wejście nastąpiło niezależnie od dostępności kandydatów,
-        // więc triggery wejścia (własne i innych permanentów) muszą odpalić.
+        // Kolejkujemy ZAWSZE (niezależnie od planszy — samo źródło jest
+        // kandydatem, więc lista nie bywa pusta): exploit to zdolność
+        // triggerowana (CR 702.110a — „When this creature enters"), wejście
+        // nastąpiło niezależnie od dostępności kandydatów, więc triggery
+        // wejścia (własne i innych permanentów) muszą odpalić — a rezygnacja
+        // to jawny skip decyzji, nie brak triggera.
         if (exploitCandidates.length > 0) {
           state.pendingExploits.push({
             playerId: entered.controllerId,

@@ -462,5 +462,7 @@ test('Gurmag Drowner z TALII: exploit oferowany, gdy są inne stwory', () => {
   }
   const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_exploit_choice');
   assert.ok(offers.some((c) => c.skip === true), 'oferta rezygnacji z exploit');
-  assert.equal(offers.filter((c) => !c.skip).length, 2, 'dwa stwory do poświęcenia (CR 702.109 exploit)');
+  // M361/B1: TRZY oferty (elk + bat + sam Drowner — źródło jest własnym
+  // kandydatem, VOW Release Notes, mtg.wiki/Exploit 2026-09-16).
+  assert.equal(offers.filter((c) => !c.skip).length, 3, 'trzy stwory do poświęcenia (CR 702.110 exploit + self)');
 });

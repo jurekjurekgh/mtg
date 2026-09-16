@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "865c0302cfa991785e00adc6933cc694929dd039eb59c3d2756ce05899753299",
+  "overallHash": "26da33854d3910234066ecd0cda5045a132c226778c8a8ee4a4e447af1794e48",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
@@ -86,7 +86,7 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "67c269545329f663d82c99dfae342192c8e38da374c29c324ac4dae1839f3232",
+      "hash": "62fcb9e5add457d9189b552113ae677d04d50bd60de68cfeda4f0cb45196ae82",
       "decisions": 176,
       "scoreSum": 2523.3171,
       "chosenKinds": {

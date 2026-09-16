@@ -6563,6 +6563,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // triggerów exploita na źródle — tu bezpieczna domyślna: poświęć słabego).
       case 'resolve_exploit_choice': {
         if (cmd.skip === true) return finish(P.exploitSkipBase);
+        // M361/B1 (strażnik benchmarku): samopoświęcenie źródła exploita jest
+        // legalne (VOW Release Notes), ale bot nie wycenia zysków dies/morbid —
+        // domyślnie pomija (człowiek może poświęcić jawnie). Bez tego heurystyka
+        // „kupowałaby" trigger -3/-3 ceną własnego 3/3 (23 > skip 20).
+        if (cmd.targetId && cmd.sourceId && cmd.targetId === cmd.sourceId) return finish(-50);
         const victim = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!victim || victim.controllerId !== view.playerId) return finish(-50);
         // C (zgłoszenie właściciela 2026-09-10): trigger exploita bywa MILLEM,

@@ -3497,8 +3497,10 @@ export function execute(state, input) {
   // tak/nie — jak opcjonalna płatność, ale bez kosztu.
   // M69 (Exploit, Silumgar Butcher — CR 702.110): „When this creature enters,
   // you may sacrifice a creature. When this creature exploits a creature, ..."
-  // Opcjonalna decyzja kontrolera: poświęć INNEGO stwora albo skip. Po
-  // poświęceniu emitujemy exploited (odpala trigger „exploits" na źródle).
+  // Opcjonalna decyzja kontrolera: poświęć DOWOLNEGO stwora (M361/B1: także
+  // źródło — VOW Release Notes) albo skip. Po poświęceniu emitujemy exploited
+  // (odpala trigger „exploits" na źródle; flaga selfSacrifice niesie
+  // samopoświęcenie dla odpału LKI w triggers.js).
   if (exploitDecisionPendingFor(state, cmd.playerId)) {
     const pending = state.pendingExploits[0];
     if (cmd.type !== 'resolve_exploit_choice') return reject('exploit_unresolved');
@@ -3530,7 +3532,7 @@ export function execute(state, input) {
     // P4 (audyt PR106 — Żywy Tester, 2026-09-08): nazwa ofiary jedzie
     // z cardId ZDARZENIA (jak permanent_sacrificed powyżej), bo obiekt
     // (zwłaszcza token) może już nie istnieć — log pokazywał „Exploit: ?".
-    state.events.push(event('exploited', { exploiterId: pending.sourceId, exploitedId: moved.id, cardId: moved.cardId }));
+    state.events.push(event('exploited', { exploiterId: pending.sourceId, exploitedId: moved.id, cardId: moved.cardId, selfSacrifice: cmd.targetId === pending.sourceId }));
     state.events.push(event('exploit_choice_resolved', { playerId: pending.playerId, sourceId: pending.sourceId, exploitedId: moved.id }));
     if (state.pendingExploits.length > 0) state.turn.priorityPlayerId = state.pendingExploits[0].playerId;
     else if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -7002,7 +7004,8 @@ export function playerView(state, playerId) {
       legalCommands.push(command('resolve_hand_creature', playerId, { targetId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeExploit) {
-    // M69 (Exploit): poświęć INNEGO stwora kontrolera (kandydaci żywi) albo skip.
+    // M69 (Exploit; M361/B1: także źródło, VOW Release Notes): poświęć DOWOLNEGO
+    // stwora kontrolera (kandydaci żywi) albo skip.
     const pending = state.pendingExploits[0];
     for (const targetId of pending.candidateIds) {
       const candidate = state.objects.get(targetId);
