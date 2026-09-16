@@ -53,3 +53,18 @@ test('min 1 na używany kolor zachowane (poprzednia reguła nie znika)', () => {
   const lands = landSplit(deck);
   assert.ok(lands.R >= 1 && lands.U >= 1, JSON.stringify(lands));
 });
+
+test('O1 (audyt PR #123): talia w całości bezkolorowa → JAWNY błąd, nie NaN-crash', () => {
+  // Pre-existing (od 15g/C): puste `used` → `remainders[i % 0]` → NaN →
+  // TypeError „Cannot read properties of undefined" głęboko w pętli doboru.
+  // Dziś żadna talia planu nie jest bezkolorowa, ale kontrakt narzędzia ma
+  // być loud z czytelnym powodem (L92: narzędzie diagnostyczne krzyczy
+  // po ludzku, nie stacktrace'em).
+  const colorless = firstWithPips({}, 4);
+  assert.ok(colorless.length === 4, '4 bezbarwne karty w katalogu');
+  assert.throws(
+    () => landSplit(colorless),
+    /kolorow/,
+    'jawny komunikat o braku kolorowych pipów zamiast TypeError z NaN',
+  );
+});
