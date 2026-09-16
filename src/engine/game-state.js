@@ -5291,6 +5291,12 @@ export function execute(state, input) {
           playerId: cmd.playerId,
           objectId: playedId,
           excludeColors: [...(played.chooseColor.exclude ?? [])],
+          // A1 (znalezisko właściciela 2026-09-16, Manor Gate): cel wyboru
+          // niesie pending — ląd z chooseColor wybiera kolor PRODUKOWANEJ
+          // many ('mana'); 'protection' rezerwują aury (spells.js). Bez tego
+          // UI zgadywało cel po pierwszym użyciu deskryptora („np. ochrona").
+          purpose: 'mana',
+          sourceCardId: played.cardId,
         };
         state.turn.priorityPlayerId = cmd.playerId;
         state.events.push(event('color_choice_required', {
@@ -8056,6 +8062,15 @@ export function playerView(state, playerId) {
     pendingHandTopChoice: activeHandTopChoice
       ? { sourceCardId: state.pendingHandTopChoice.sourceCardId ?? null }
       : null,
+    // A1 (znalezisko właściciela 2026-09-16, Manor Gate): cel wyboru koloru
+    // (purpose: 'mana' lądu / 'protection' aury) + źródło — tytuł grupy w
+    // panelu działań i modalu mówi, CO wybór ustala (poprzednio zgadywał
+    // „Kolor (np. ochrona)" także dla produkcji many). Źródło jak w
+    // pendingHandTopChoice: publiczna karta-źródło decyzji (M240/K).
+    pendingColorChoice: activeColorChoice ? {
+      purpose: state.pendingColorChoice.purpose ?? null,
+      sourceCardId: state.pendingColorChoice.sourceCardId ?? null,
+    } : null,
     // M241: wizard „wygnij N kart” czyta listę decyzji Escape — kandydatów z
     // WŁASNEGO grobu (wiedza decydenta — strefa publiczna) + parametry kosztu.
     pendingEscapeExile: activeEscapeExile

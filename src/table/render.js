@@ -1898,7 +1898,9 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_endure_choice: 'Endure — liczniki czy token?',
   resolve_explore_choice: 'Explore — co z odsłoniętą kartą?',
   resolve_craft_exile: 'Craft — karta do wygnania',
-  resolve_color_choice: 'Kolor (np. ochrona)',
+  // A1: goły deskryptor bez celu — pełną etykietę buduje gałąź purpose-aware
+  // w choiceSourceTitle („Manor Gate — wybór koloru (produkcja many)").
+  resolve_color_choice: 'Kolor',
   resolve_optional_trigger_choice: 'Efekt dobrowolny („you may")',
   resolve_enter_as_copy: 'Wejście jako kopia — który Ally?',
   resolve_destroy_equipment_choice: 'Zniszczyć equipment?',
@@ -2049,6 +2051,22 @@ function choiceSourceTitle(cmd, session, view) {
     const destLabel = SEARCH_DESTINATION_LABELS[cmd.destination ?? psc.destination] ?? null;
     if (destLabel) return `${src} — wybierz kartę ${destLabel}`;
     return `${src} — wybierz kartę`;
+  }
+  // A1 (znalezisko właściciela 2026-09-16, Manor Gate): deskryptor grupy
+  // „Kolor (np. ochrona)" zgadywał CEL wyboru po pierwszym użyciu deskryptora
+  // (aura), więc ląd z chooseColor proponował „ochronę", choć wybiera kolor
+  // PRODUKOWANEJ many. Cel niesie pending z engine (purpose: 'mana' lądu /
+  // 'protection' aury), a źródło idzie z sourceCardId (M240/K) — panel i
+  // modal mówią to, co log „Rozgrywki": „Manor Gate — wybór koloru (produkcja
+  // many)". Bez pendingu w widoku zostaje goły deskryptor „Kolor".
+  if (cmd?.type === 'resolve_color_choice' && view?.pendingColorChoice) {
+    const pcc = view.pendingColorChoice;
+    const purpose = pcc.purpose === 'mana' ? 'produkcja many'
+      : (pcc.purpose === 'protection' ? 'ochrona przed nim' : null);
+    const src = pcc.sourceCardId ? session.nameOf(pcc.sourceCardId) : null;
+    const tail = purpose ? ` (${purpose})` : '';
+    if (src) return `${src} — wybór koloru${tail}`;
+    if (purpose) return `Wybierz: Kolor${tail}`;
   }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
