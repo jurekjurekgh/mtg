@@ -125,6 +125,24 @@ export function hasHexproofAgainst(state, object, casterId) {
 }
 
 /** Waliduje cele zgodnie ze specyfikacją deskryptora; zwraca obiekty celów. */
+
+/**
+ * M360/B1 (CR 702.103b): czy obiekt na stosie jest czarem NIE-będącym stworem
+ * (cel Negate — „Counter target noncreature spell”). Czar aury rzucony za
+ * bestow niesie kind 'creature' (dziedziczy po karcie), ale na stosie jest
+ * czarem AURY (CR 702.103b: „it becomes an Aura enchantment”; ruling THS:
+ * „either a creature spell or an Aura spell. It's never both”) — deskryptor
+ * `spell.aura` rozstrzyga (mtg.wiki/Bestow + Scryfall THS/161, 2026-09-16).
+ * Jeden helper dla oferty i walidacji (L48).
+ */
+export function isNoncreatureSpellOnStack(object) {
+  if (!object || object.zone !== 'stack') return false;
+  // Zdolności (kind 'trigger'/'activated') to nie czary (CR 701.5a).
+  if (object.kind === 'trigger' || object.kind === 'activated') return false;
+  // Czar aury z bestow: kind 'creature', ale spell.aura — nie-stworowy.
+  if (object.kind === 'creature' && object.spell?.aura !== true) return false;
+  return true;
+}
 export function validateTargets(state, targetSpec, chosen, casterId, sourceColors = null, sourceObject = null) {
   return chosen.map((targetId, index) => {
     const spec = targetSpec[index];
@@ -318,14 +336,12 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „noncreature spell on the stack" (Negate) — czar na stosie, który
-    // NIE jest stworzeniem (instants/sorceries oraz czyste aury). Stwory
-    // zagrywane przez cast_permanent nie trafiają na stos w tym engine;
-    // cast bestow (kind 'creature') jest stworem i NIE jest celem Negate.
+    // NIE jest stworzeniem (instants/sorceries, czyste aury oraz bestow
+    // rzucony jako Aura — M360/B1, CR 702.103b: na stosie to czar AURY).
     if (spec?.type === 'noncreature_spell_on_stack') {
       // Zdolności triggerowane (kind 'trigger') i aktywowane (kind 'activated')
       // to nie czary — Negate ich nie kontruje (CR 701.5a: „counter target spell").
-      if (object && object.zone === 'stack' && object.kind !== 'creature'
-          && object.kind !== 'trigger' && object.kind !== 'activated') return object;
+      if (isNoncreatureSpellOnStack(object)) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „spell on the stack" (Stoic Rebuttal — „Counter target spell\"):
@@ -1175,12 +1191,9 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
     }
     case 'noncreature_spell_on_stack': {
       // Negate: czary na stosie, które nie są stworami (instants/sorceries,
-      // czyste aury). Bestow (kind 'creature') wykluczony — Negate liczy
-      // wyłącznie czary nie-stworowe; triggery (kind 'trigger') to nie czary.
-      return state.zones.stack.filter((objectId) => {
-        const object = state.objects.get(objectId);
-        return object?.zone === 'stack' && object.kind !== 'creature' && object.kind !== 'trigger' && object.kind !== 'activated';
-      });
+      // czyste aury oraz bestow jako Aura — M360/B1, CR 702.103b).
+      // Bestow jako STWÓR wykluczony; triggery (kind 'trigger') to nie czary.
+      return state.zones.stack.filter((objectId) => isNoncreatureSpellOnStack(state.objects.get(objectId)));
     }
     case 'spell_on_stack': {
       // Stoic Rebuttal („Counter target spell\"): dowolny czar na stosie,
