@@ -8104,6 +8104,24 @@ export function playerView(state, playerId) {
               ?? (Array.isArray(p.ability?.effect) ? p.ability.effect[0] : p.ability?.effect);
             return eff && typeof eff.type === 'string' ? { ...eff } : null;
           })(),
+          // O2 (audyt PR #121, domknięcie 2026-09-16): pełna tablica efektów
+          // decyzji „you may". `effect` (pierwsza pozycja) zostaje dla
+          // etykiety modala (M221/B), ale wyceny bota (F1 — kara cienkiej
+          // biblioteki) muszą widzieć WSZYSTKIE pozycje: przy fire
+          // queueTriggerToStack rozstrzyga CAŁĄ tablicę, a drenaż poza [0]
+          // omijał karę (dziś w katalogu brak ofiary — jedyny tablicowy
+          // mayFire to gain_life; warunek: mayFire z efektem-drenażem nie
+          // na pierwszej pozycji). resolveEffect (onNthResolve, spells.js)
+          // jest pojedynczym obiektem — pakujemy w tablicę.
+          effects: (() => {
+            const p = state.pendingOptionalTrigger;
+            const arr = p.resolveEffect != null
+              ? [p.resolveEffect]
+              : (Array.isArray(p.ability?.effect) ? p.ability.effect : [p.ability?.effect]);
+            return Object.freeze(arr
+              .filter((e) => e && typeof e.type === 'string')
+              .map((e) => ({ ...e })));
+          })(),
         }
       : null,
     // M166/D: kwoty podziału obrażeń — TYLKO właściciel decyzji (cele
