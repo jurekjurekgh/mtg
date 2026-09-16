@@ -642,6 +642,11 @@ test('Boros Challenger: atak kolejkuje decyzję mentora i blokuje grę; licznik 
   assert.ok(hasCommand(view, 'resolve_mentor_target', (c) => c.targetId === 'small'));
   assert.ok(!hasCommand(view, 'pass_priority'), 'decyzja mentora blokuje pass');
   assert.ok(execute(state, { type: 'resolve_mentor_target', playerId: 'p1', targetId: 'small' }).ok);
+  // M359 (CR 603.3): decyzja kładzie trigger mentora NA STOS (okno
+  // odpowiedzi) — licznik ląduje dopiero po rundzie passów.
+  assert.equal(state.zones.stack.length, 1, 'trigger mentora na stosie (M359)');
+  assert.equal(state.objects.get('small').counters?.['+1/+1'] ?? 0, 0, 'licznik jeszcze nie (M359)');
+  resolveStack(state);
   assert.equal(state.objects.get('small').counters['+1/+1'], 1, 'cel dostał licznik');
   assert.equal(state.objects.get('challenger').zone, 'battlefield');
   assert.equal(state.pendingMentorTargets.length, 0);

@@ -248,11 +248,17 @@ test('Backup: na inny stwór — +2/+2 trwale i menace do końca tury (znikają 
   maulerEnters(state);
   const resolved = execute(state, { type: 'resolve_backup', playerId: 'p1', targetId: 'other' });
   assert.ok(resolved.ok);
+  // M359 (CR 603.3): decyzja kładzie trigger backupa NA STOS (okno
+  // odpowiedzi) — liczniki i grant dopiero po rundzie passów.
+  assert.equal(state.zones.stack.length, 1, 'trigger backupa na stosie (M359)');
+  assert.equal(state.objects.get('other').counters?.['+1/+1'] ?? 0, 0, 'liczniki jeszcze nie (M359)');
+  resolveStack(state);
   const other = state.objects.get('other');
   assert.equal(other.counters['+1/+1'], 2);
   assert.deepEqual(other.keywordGrants, ['menace']);
   const events = resolved.events;
-  assert.ok(events.some((e) => e.type === 'backup_resolved' && e.self === false && e.grantedKeywords.includes('menace')));
+  assert.ok(events.some((e) => e.type === 'backup_resolved' && e.self === false && e.onStack === true));
+  assert.ok(state.events.some((e) => e.type === 'trigger_resolved' && e.backup === true && (e.grantedKeywords ?? []).includes('menace')));
   // Efektywność w walce: other jest 3/3 z menace (1/1 + 2 liczniki).
   const view = playerView(state, 'p1');
   const otherView = view.zones.battlefield.find((o) => o.id === 'other');
@@ -283,6 +289,7 @@ test('Backup: na samo źródło — tylko liczniki, bez grantu keywordów', () =
   const resolved = execute(state, { type: 'resolve_backup', playerId: 'p1', targetId: src.id });
   assert.ok(resolved.ok);
   assert.ok(resolved.events.some((e) => e.type === 'backup_resolved' && e.self === true && e.grantedKeywords.length === 0));
+  resolveStack(state); // M359: liczniki po rozstrzygnięciu triggera ze stosu.
   const mauler = state.objects.get(src.id);
   assert.equal(mauler.counters['+1/+1'], 2);
   assert.deepEqual(mauler.keywordGrants, []);
@@ -299,6 +306,7 @@ test('Backup: legalnym celem jest też stwór przeciwnika (widok wylicza wszystk
   assert.ok(variants.includes(src.id));
   const resolved = execute(state, { type: 'resolve_backup', playerId: 'p1', targetId: 'enemy' });
   assert.ok(resolved.ok);
+  resolveStack(state); // M359: liczniki i grant po rozstrzygnięciu ze stosu.
   assert.equal(state.objects.get('enemy').counters['+1/+1'], 2);
   assert.deepEqual(state.objects.get('enemy').keywordGrants, ['menace']);
 });

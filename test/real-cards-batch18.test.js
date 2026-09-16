@@ -771,6 +771,9 @@ test('Fear of Burning Alive: własne obrażenia ETB odpalają delirium (triggery
   assert.equal(state.pendingDeliriumTargets[0].amount, 4);
   const resolved = execute(state, { type: 'resolve_delirium_target', playerId: 'p1', targetId: 'victim' });
   assert.ok(resolved.ok);
+  // M359 (CR 603.3): decyzja kładzie trigger na stos — obrażenia po passach.
+  assert.equal(state.zones.stack.length, 1, 'trigger delirium na stosie (M359)');
+  resolveStack(state);
   assert.equal(state.objects.get('victim'), undefined, '1/1 ginie od 4 obrażeń delirium');
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
 });
@@ -801,7 +804,11 @@ test('Fear of Burning Alive: delirium — niecombatowe obrażenia z osobnej kome
   assert.equal(pass.ok, false, 'decyzja delirium blokuje grę');
   const resolved = execute(state, { type: 'resolve_delirium_target', playerId: 'p1', targetId: 'victim' });
   assert.ok(resolved.ok);
-  assert.ok(resolved.events.some((e) => e.type === 'damage_dealt' && e.target === 'victim' && e.amount === 1 && e.combat === false));
+  // M359 (CR 603.3): decyzja kładzie trigger na stos — damage_dealt po passach.
+  assert.equal(state.zones.stack.length, 1, 'trigger delirium na stosie (M359)');
+  assert.equal(state.objects.get('victim').damage ?? 0, 0, 'brak obrażeń przed passami (M359)');
+  resolveStack(state);
+  assert.ok(state.events.some((e) => e.type === 'damage_dealt' && e.target === 'victim' && e.amount === 1 && e.combat === false));
   assert.equal(state.objects.get('victim').damage, 1, 'obrażenia oznaczone na celu');
   assert.equal(state.pendingDeliriumTargets.length, 0);
 });

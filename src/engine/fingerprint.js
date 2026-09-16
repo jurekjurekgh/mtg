@@ -64,6 +64,9 @@ const STATE_COUNTER_FIELDS = Object.freeze([
   'landEnteredThisTurn', 'damageTakenByPlayerThisTurn',
   'speedIncreasedThisTurn', 'moonlitUsedThisTurn',
   'preventCombatExceptEnchanted',
+  // M359: stempel początku okna aktywności cleanup (CR 514.3a) — warunkuje
+  // decyzję o kolejnym cleanupie (recleanup), więc należy do odcisku.
+  'cleanupActivityFromEvent',
 ]);
 
 // B2: pola-ETYKIETY świadomie poza odciskiem. Granica z M323/D

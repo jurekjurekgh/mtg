@@ -4810,3 +4810,68 @@ Bramki: `npm test` **5482/5482** (188,3 s na finalnym drzewie), `npm run test:al
 heuristic **82,6%** (555/672), aggro **30,7%**, random **4,2%**
 (bez zmian wobec przedpoprawkowego pomiaru); golden master bez churnu
 (`3d1167140f686f7c…`).
+
+## M359 (2026-09-16) — Brązowa odznaka: 5 błędów reguł (cleanup 514 + triggery 603 na stos)
+
+**Status:** zamknięty — 5 błędów znalezionych i naprawionych, każdy
+zweryfikowany online (CR + Oracle) przed zmianą; wyzwanie Brązowe (5 UNIKALNYCH
+błędów vs poprzednie milestone'y, audyty i seria 15) zaliczone.
+
+Wszystkie reguły sprawdzone na żywo, nie z pamięci: CR 514.3/514.3a
+(mtg.wiki/Ending_phase), CR 603.3 (mtg.wiki/Triggered_ability), CR 605.3a
+(mtg.wiki/Mana_ability, uzasadnienie blokady `tap_for_mana` w zamkniętym
+cleanupie) oraz Oracle Boros Challenger (Scryfall: „Whenever this creature
+attacks…” — dowód, że mentor to zdolność triggerowana).
+
+**#1 — Cleanup bez pętli 514.3a.** Triggery w cleanupie (np. ETB
+Revolutionista rzuconego za madness po limicie ręki) nie otwierały KOLEJNEGO
+cleanupu — ręka 8 kart przeciekała do tury 2. Przyczyna: ścieżka wyjścia
+zawsze przechodziła do następnej tury. Naprawa: stempel wejścia
+(`cleanupActivityFromEvent`) + skan aktywności stosu; pełna runda passów przy
+pustym stosie ZOSTAJE w cleanupie (kolejny limit ręki, CR 514.1/514.2).
+Testy: `test/m359-bronze-cleanup-514.test.js` (T1/T1b/T1c/T2/T2b).
+
+**#2 — Priorytet w ZAMKNIĘTYM cleanupie (CR 514.3).** Przy pustym stosie i bez
+triggerów bot dostawał oferty `cast_spell`/`activate_ability` (m.in. zrzut
+stworów w cleanupie, żeby ominąć limit ręki — w prawdziwym Magicu priorytetu
+tam nie ma). Naprawa: `cleanupPriorityOpen` + `CLEANUP_LOCKED_COMMANDS`
+(`cleanup_no_priority`); jeden predykat dla oferty i walidacji (M255/G, L48).
+Dowód w golden-masterze: regeneracja fixture to DOKŁADNIE 6 wpisów `options`
+(porównanie śladu baseline ze stashu — decyzje i wyceny identyczne, znikają
+tylko nielegalne oferty w kroku cleanup).
+
+**#3 — Mentor z pominięciem stosu (CR 603.3).** `resolve_mentor_target`
+kładł licznik NATYCHMIAST — bez okna odpowiedzi (Shock w cel, Might of the
+Masses na cel, cel zdjęty z walki). Naprawa: decyzja kolejkuje trigger
+(`extra.mentorCounter` ze snapshotem siły źródła) przez `queueTriggerToStack`;
+rozstrzygnięcie re-waliduje cel (stwór na polu bitwy, nadal atakujący, siła
+wciąż mniejsza — od żywej siły albo snapshotu LKI, CR 603.10/608.2b).
+Testy: `test/m359-bronze-mentor-603.test.js` (5/5); batch19 zaktualizowany.
+
+**#4 — Backup z pominięciem stosu (CR 603.3 + 702.165a).** `resolve_backup`
+aplikował liczniki i grant natychmiast. Naprawa: ten sam wzorzec
+(`extra.backupApply`); grant keywordów tylko, gdy cel to INNY stwór niż
+źródło — liczy się tożsamość celu, nie przetrwanie źródła (źródło zabite
+w odpowiedzi nie zatrzymuje triggera, CR 113.7a).
+Testy: `test/m359-bronze-backup-603.test.js` (4/4); batch4 zaktualizowany.
+
+**#5 — Delirium z pominięciem stosu (CR 603.3 + intervening-if 603.4/207.2c).**
+`resolve_delirium_target` zadawał obrażenia natychmiast — bez okna na
+zabicie celu, utratę czwartego typu w grobie i zmianę kontroli celu.
+Naprawa: trigger (`extra.deliriumDamage` ze snapshotem amount); przy
+rozstrzyganiu re-walidacja celu (stwór poszkodowanego gracza) ORAZ
+intervening-if (4+ typy kart w grobie kontrolera); obrażenia generyczną
+ścieżką (protection/tarcze/infect/lifelink zachowane — M210 zielone).
+Testy: `test/m359-bronze-delirium-603.test.js` (5/5); batch18/batch38/M210
+zaktualizowane.
+
+Efekty uboczne (naprawione w locie): nowy klucz stanu w odcisku (B2/2 —
+`cleanupActivityFromEvent` w `STATE_COUNTER_FIELDS`); pętla cleanup wymaga
+kanonicznego wejścia (ręczny `jumpToStep` w testach nie zapętla na stęchłej
+historii — regresja E7/A); fixture golden-mastera zregenerowane świadomie
+(`de60e811217091e8…`, sam dowód #2).
+
+Bramki: `npm test` **5574/5574**, `npm run test:all` **5584/5584**, build
+**63 moduły / 3724,4 kB**, quick 672 gry / 148,0 s — heuristic **82,4%**
+(554/672; −1 partia wobec 15g — poprawione tempo cleanupu/stosu, decyzje
+botów w golden-masterze identyczne), aggro **32,4%**, random **2,7%**.

@@ -10,7 +10,7 @@ import {
 import { addCounter, hasCounter } from './counters.js';
 import { deathZoneFor } from './zones.js';
 import { changeLife, setPlayerSpeed } from './players.js';
-import { effectiveAbilities, effectiveKeywords, effectivePower, wardAmountOf } from './permanents.js';
+import { effectiveAbilities, effectiveKeywords, effectivePower, wardAmountOf, grantKeywordsUntilEndOfTurn } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './resources.js';
 
@@ -1204,6 +1204,77 @@ export function resolveTriggerEntry(state, entry) {
       objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId, suspend: true, noEffect: !card || card.zone !== 'exile' || !card.suspended,
     });
     state.events.push(resolved);
+    return state.events.slice(before);
+  }
+  // M359 (CR 603.3/608.2b): MENTOR z decyzji (Boros Challenger i rodzina).
+  // Cel re-walidowany przy rozstrzyganiu: stwór na polu bitwy, NADAL
+  // atakujący i o sile wciąż mniejszej od siły źródła (aktualnej, gdy
+  // źródło żyje, albo ostatniej znanej ze snapshotu odpalenia — CR 603.10).
+  if (extra.mentorCounter) {
+    const targetId = (payload.targets ?? [])[0] ?? null;
+    const target = targetId ? state.objects.get(targetId) : null;
+    const sourcePower = (liveSource && liveSource.zone === 'battlefield' && liveSource.kind === 'creature')
+      ? (effectivePower(liveSource, state) ?? 0)
+      : (extra.mentorCounter.sourcePower ?? (lki.power ?? 0) + (lki.powerModifier ?? 0));
+    const targetPower = target ? (effectivePower(target, state) ?? 0) : 0;
+    const legal = Boolean(target && target.zone === 'battlefield' && target.kind === 'creature'
+      && (state.combat?.attackers ?? []).includes(targetId)
+      && targetPower < sourcePower);
+    if (legal) addCounter(state, targetId, '+1/+1', 1);
+    state.events.push(event('trigger_resolved', {
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
+      mentor: true, targetId, targetPower, sourcePower, noEffect: !legal,
+      ...(!legal ? { reason: !target || target.zone !== 'battlefield' ? 'no_targets' : 'power_not_lesser' } : {}),
+    }));
+    return state.events.slice(before);
+  }
+  // M359 (CR 603.3/608.2b + 702.165a): BACKUP z decyzji (Gloomfang Mauler).
+  // Cel re-walidowany przy rozstrzyganiu (stwór na polu bitwy); liczniki
+  // zawsze, grant zdolności tylko, gdy cel to INNY stwór niż źródło
+  // (porównanie id — źródło mogło zginąć w odpowiedzi, liczy się tożsamość
+  // celu, nie przetrwanie źródła).
+  if (extra.backupApply) {
+    const targetId = (payload.targets ?? [])[0] ?? null;
+    const target = targetId ? state.objects.get(targetId) : null;
+    const legal = Boolean(target && target.zone === 'battlefield' && target.kind === 'creature');
+    const grantedKeywords = legal && targetId !== payload.sourceId
+      ? [...(extra.backupApply.grantKeywords ?? [])]
+      : [];
+    if (legal) {
+      addCounter(state, targetId, '+1/+1', extra.backupApply.counters ?? 0);
+      if (grantedKeywords.length > 0) grantKeywordsUntilEndOfTurn(state, targetId, grantedKeywords, { viaBackup: true });
+    }
+    state.events.push(event('trigger_resolved', {
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
+      backup: true, targetId, counters: extra.backupApply.counters ?? 0, grantedKeywords,
+      self: targetId === payload.sourceId, noEffect: !legal,
+      ...(!legal ? { reason: 'no_targets' } : {}),
+    }));
+    return state.events.slice(before);
+  }
+  // M359 (CR 603.3/603.4 + 207.2c): DELIRIUM z decyzji (Fear of Burning).
+  // Cel re-walidowany przy rozstrzyganiu: stwór na polu bitwy pod kontrolą
+  // poszkodowanego gracza („target creature that player controls"), ORAZ
+  // intervening-if: 4+ typy kart w grobie kontrolera triggera — oba
+  // sprawdzane PRZY ROZSTRZYGANIU (cel mógł zmienić kontrolera, typy
+  // mogły opuścić grób w oknie odpowiedzi). Śmierć źródła nie zatrzymuje
+  // triggera (CR 113.7a) — obrażenia idą ze snapshotu amount, źródłem
+  // jest żywy obiekt albo stub LKI (jak pre-fix, ale bogatszy).
+  if (extra.deliriumDamage) {
+    const targetId = (payload.targets ?? [])[0] ?? null;
+    const target = targetId ? state.objects.get(targetId) : null;
+    const targetLegal = Boolean(target && target.zone === 'battlefield' && target.kind === 'creature'
+      && target.controllerId === extra.deliriumDamage.opponentId);
+    const deliriumHeld = graveyardCardTypeCount(state, extra.deliriumDamage.controllerId) >= 4;
+    if (targetLegal && deliriumHeld) {
+      applyEffect(state, { type: 'damage', amount: extra.deliriumDamage.amount ?? 0 }, source, [targetId]);
+    }
+    state.events.push(event('trigger_resolved', {
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
+      delirium: true, targetId, amount: extra.deliriumDamage.amount ?? 0,
+      noEffect: !(targetLegal && deliriumHeld),
+      ...(!(targetLegal && deliriumHeld) ? { reason: !targetLegal ? 'no_targets' : 'delirium_lost' } : {}),
+    }));
     return state.events.slice(before);
   }
   // Rozdział Sagi (CR 714.3 — zdolność rozdziału to zdolność triggerowana):
@@ -3024,6 +3095,9 @@ function processTriggersScan(state, recentEvents) {
             state.pendingMentorTargets.push({
               playerId: attacker.controllerId,
               sourceId: attacker.id,
+              // M359: cardId źródła do wpisu stosu (LKI nazwy, gdy źródło
+              // zniknie przed decyzją — w grze niemożliwe, w testach tak).
+              cardId: attacker.cardId ?? null,
               sourcePower,
               candidateIds: candidates,
               restorePriorityTo: state.turn.priorityPlayerId,
