@@ -2311,6 +2311,20 @@ const PROTECTION_COLOR_NAMES = { W: 'Biały', U: 'Niebieski', B: 'Czarny', R: 'C
  * „Ochrona przed: <podtyp>". Reguła po deskryptorze jakości, bez nazw kart
  * (ADR 0002). Zwraca listę gotowych etykiet.
  */
+/**
+ * O4 (audyt PR #121, domknięcie 2026-09-16): etykieta MECHANIKOWA badge'a
+ * X = liczba typów kart we wszystkich grobach (deskryptor
+ * `card_types_in_all_graveyards`, ADR 0002). Dawniej twardy prefiks
+ * „Altar: X = …" (nazwa karty) przy GENERYCZNYM deskryptorze — przy drugiej
+ * karcie z tym samym deskryptorem badge kłamałby, nazywając cudzą kartę.
+ * Wyodrębnione ze stubu kafelka (wzorzec protectionBadges, L41: jedno
+ * źródło etykiety dla renderu i testów).
+ */
+export function graveyardTypesBadge(altarX) {
+  const n = Number(altarX) || 0;
+  return `X = ${n} (${polishPluralCount(n, 'typ', 'typy', 'typów')} kart w grobach)`;
+}
+
 export function protectionBadges(protection) {
   const out = [];
   for (const q of protection ?? []) {
@@ -3746,11 +3760,10 @@ export function buildFace(parent, info, { size = '', skipLiveState = false, text
     // M73d (J): choroba przywołania dotyczy tylko stworów (CR 302.6) —
     // artefakty/enchantmenty nie dostają badge (audyt żywym testerem).
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push('choroba');
-    // G (Altar of the Goyf): badge w fallbacku twarzy (gdy overlay ukryty — np. przed wczytaniem obrazu).
-    if (info.altarX != null) {
-      const n = Number(info.altarX) || 0;
-      flags.push(`Altar: X = ${n} (${polishPluralCount(n, 'typ', 'typy', 'typów')} w grobach)`);
-    }
+    // G (deskryptor card_types_in_all_graveyards): badge w fallbacku twarzy
+    // (gdy overlay ukryty — np. przed wczytaniem obrazu). O4 (audyt PR #121,
+    // domknięcie): etykieta MECHANIKOWA (graveyardTypesBadge), bez nazwy karty.
+    if (info.altarX != null) flags.push(graveyardTypesBadge(info.altarX));
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty.
     // B7: rzeczownik („Aura:/Equipment:") zamiast imiesłowu żeńskiego
     // („zaczarowana:/wyposażona:" kłamały przy gospodarzu rodzaju męskiego).
