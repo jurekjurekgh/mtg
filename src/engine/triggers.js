@@ -54,18 +54,26 @@ const DELIRIUM_CARD_TYPES = Object.freeze([
 
 /**
  * Speed (Batch 24, Glitch Ghost Surveyor — „Start your engines!"): wzrasta
- * RAZ na turę aktywnego gracza, gdy przeciwnik traci życie (combat lub
- * niecombat damage), do maksimum 4. Samo „start" robi efekt start_engines
+ * RAZ na własną turę, gdy PRZECIWNIK TRACI ŻYCIE (nie „gdy dostaje
+ * obrażenia"), do maksimum 4. Samo „start" robi efekt start_engines
  * (ETB źródła); speed jest cechą gracza i trwa po odejściu źródła.
+ * M361/B4 (ZŁOTO; mtg.wiki/page/Speed 2026-09-16, ADR 0030):
+ * „Whenever one or more opponents lose life during your turn, if your
+ * speed is less than 4, increase your speed by 1. This ability triggers
+ * only once each turn." — hook na life_changed obejmuje JEDNYM punktem
+ * obrażenia (combat/niecombat wołają changeLife) i czystą utratę życia
+ * (lose_life), a z natury pomija: obrażenia zapobiegnięte (brak
+ * life_changed), infect w gracza (tylko poison, bez changeLife — brak
+ * utraty życia) oraz utratę własnego życia (tracący ≠ „opponent").
+ * Bramki „tylko własna tura / raz na turę / max 4" bez zmian.
  */
-function bumpSpeedIfOpponentDamaged(state, source) {
-  const controllerId = source?.controllerId;
-  if (!controllerId) return;
-  const player = state.players.find((p) => p.id === controllerId);
-  if (!player || (player.speed ?? 0) <= 0) return;
-  if (state.turn.activePlayerId !== controllerId) return; // tylko własna tura
-  if (state.speedIncreasedThisTurn?.[controllerId]) return; // raz na turę
-  if ((player.speed ?? 0) >= 4) return; // max speed
+function bumpSpeedOnLifeLost(state, loserId) {
+  for (const player of state.players) {
+    if (player.id === loserId) continue; // tracący to nie „opponent" sam dla siebie
+    if ((player.speed ?? 0) <= 0) continue; // tylko gracze z prędkością
+    if (state.turn.activePlayerId !== player.id) continue; // tylko własna tura
+    if (state.speedIncreasedThisTurn?.[player.id]) continue; // raz na turę
+    if ((player.speed ?? 0) >= 4) continue; // max speed
   // Zapis wyłącznie przez choke point `setPlayerSpeed` (players.js) — ten sam,
   // który stosuje akcję stanową „Start your engines!” (state-based.js). Bramka
   // „czy wolno wzrosnąć” zostaje tutaj (to warunek triggera), mutacja nie.
@@ -73,8 +81,9 @@ function bumpSpeedIfOpponentDamaged(state, source) {
       // do `state.events` i dopiero potem je zwraca („wołający nie dubluje
       // pusha") — re-push tutaj dawał PODWÓJNY wpis „Zwiększasz prędkość"
       // w modalu Rozgrywka. Wołamy bez rozszerzania do dziennika.
-      setPlayerSpeed(state, controllerId, (player.speed ?? 0) + 1);
-  state.speedIncreasedThisTurn = { ...(state.speedIncreasedThisTurn ?? {}), [controllerId]: true };
+      setPlayerSpeed(state, player.id, (player.speed ?? 0) + 1);
+    state.speedIncreasedThisTurn = { ...(state.speedIncreasedThisTurn ?? {}), [player.id]: true };
+  }
 }
 
 /**
@@ -2409,9 +2418,8 @@ function processTriggersScan(state, recentEvents) {
       // Zdolności czytamy z LKI zdarzenia; brak jakiejkolwiek informacji
       // o źródle = pomijamy WYŁĄCZNIE gałęzie źródła, nie całe zdarzenie.
       const source = state.objects.get(ev.source) ?? ev.sourceLki ?? null;
-      // Speed (DFT „Start your engines!"): wzrost raz na turę aktywnego gracza
-      // przy obrażeniach combat przeciwnika (max 4) — patrz bumpSpeedIfOpponentDamaged.
-      if (source) bumpSpeedIfOpponentDamaged(state, source);
+      // Speed rośnie z life_changed (M361/B4) — obrażenia combat wołają
+      // changeLife, więc osobny hook tutaj już nie istnieje.
       // Inicjatywa (CR 725): stwory zadające combat damage posiadaczowi
       // inicjatywy przejmują ją (karta The Initiative; podstawa Underdark
       // Explorer). Pierwsze objęcie inicjatywy = venture do lochu.
@@ -2498,9 +2506,7 @@ function processTriggersScan(state, recentEvents) {
       const damageSource = state.objects.get(ev.source);
       const damageControllerId = damageSource?.controllerId ?? null;
       if (!damageControllerId || damageControllerId === ev.target) return;
-      // Speed (DFT „Start your engines!"): wzrost także przy obrażeniach
-      // niecombat (max 4, raz na turę aktywnego gracza).
-      bumpSpeedIfOpponentDamaged(state, damageSource);
+      // Speed rośnie z life_changed (M361/B4) — patrz gałąź niżej.
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield' || source.controllerId !== damageControllerId) continue;
         for (const ability of effectiveAbilities(source)) {
@@ -2537,6 +2543,13 @@ function processTriggersScan(state, recentEvents) {
           state.events.push(fired); events.push(fired);
         }
       }
+    }
+    // Speed (M361/B4, mtg.wiki/Speed): „Whenever one or more opponents lose
+    // life during your turn..." — JEDYNY punkt wzrostu: faktyczna utrata
+    // życia (amount < 0), niezależnie od przyczyny (obrażenia i lose_life
+    // wołają changeLife; infect/prewencja nie emitują straty życia).
+    if (ev.type === 'life_changed' && ev.amount < 0 && isPlayerId(state, ev.playerId)) {
+      bumpSpeedOnLifeLost(state, ev.playerId);
     }
     // Wejście na pole bitwy (rozstrzygnięty czar permanentu, powrót z grobu,
     // land drop, rozstrzygnięty czar aury bestow). permanent_cast NIE jest
