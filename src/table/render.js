@@ -2449,12 +2449,20 @@ export function commandLabel(cmd, session, view) {
     // żeby było wiadomo, czyja to karta. Skip, gdy kontroler nieznany.
     // Własny face-down ma już znacznik „(morph)" (obiekt z nazwą-kartą to
     // z definicji widoku NASZ — wrogi ma cardId null) — drugi nawias by szumiał.
+    // Numeracja kopii nazw (zlecenie właściciela 2026-09-16): duplikaty nazwy
+    // u JEDNEGO gracza dostają „ #N" (każdy członek grupy, także pierwszy) —
+    // celowanie po nazwie było niejednoznaczne (tapnięty? z aurą?). Ordynał z
+    // sesji (jedno źródło z nameOfObject), baza nazwy po widoku jak dotąd —
+    // stuby testowe bez nameOrdinalSuffix nie numerują (L41).
+    const copyOrdinal = object && !object.faceDown && object.zone === 'battlefield'
+      && !object.copyNumber && typeof session?.nameOrdinalSuffix === 'function'
+      ? session.nameOrdinalSuffix(id) : '';
     const ctrlSkip = Boolean(object?.faceDown && object.cardId != null);
     if (object && object.zone === 'battlefield' && object.controllerId != null && view.players?.length > 1 && !ctrlSkip) {
       const ctrl = playerNameOf(object.controllerId);
-      return escapeHtml(`${base} (${ctrl})`);
+      return escapeHtml(`${base}${copyOrdinal} (${ctrl})`);
     }
-    return escapeHtml(base);
+    return escapeHtml(`${base}${copyOrdinal}`);
   };
   // Koszt many karty → HTML z ikonami (MANA_COSTS: string typu „{2}{U}").
   const costOfCard = (card) => {
@@ -3496,18 +3504,25 @@ export function cardInfo(session, object, combat = null) {
   const keywordsNow = faceDown
     ? (object.keywords?.length ? [...object.keywords] : (object.ward != null ? ['ward'] : []))
     : (object.keywords?.length ? object.keywords : (details.keywords || []));
+  // Numeracja kopii nazw (zlecenie właściciela 2026-09-16): sufiks „ #N"
+  // dla duplikatów nazwy u JEDNEGO gracza — na kaflu, w modalach i w etykietach
+  // akcji (spójnie z nameOfObject). Guard typeof: testy wołają cardInfo ze
+  // stubami sesji bez nameOrdinalSuffix — wtedy bez numeru (L41).
+  const copyOrdinal = !faceDown && object.zone === 'battlefield' && !object.copyNumber
+    && typeof session?.nameOrdinalSuffix === 'function'
+    ? session.nameOrdinalSuffix(object.id) : '';
   return {
     objectId: object.id,
     cardId: faceDown ? null : cardId,
     isToken: Boolean(cardId && cardId.startsWith('token_')),
     // Face-down permanent (morph/megamorph): 2/2 bez nazwy, kolorów i kosztu
     // — własny z nazwą i znacznikiem (E12), wrogi bezimienny (FoW, CR 708.2).
-    name: faceDown
+    name: (faceDown
       ? (exiledFaceDown
         ? 'Wygnana zakryta'
         : (ownFaceDown ? session.nameOf(object.cardId) : 'Face-down creature'))
       // M172/D: kafel kopii pokazuje „Nazwa (kopia N)" — rozróżnialna od oryginału.
-      : (object.name ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name) : session.nameOf(cardId)),
+      : (object.name ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name) : session.nameOf(cardId))) + copyOrdinal,
     // M127 (uwaga A): znacznik z jednego źródła — „zakryty (Morph)" dla
     // własnego permanentu, sama nazwa mechaniki dla cudzego (FoW).
     // M260/B1: zakryte WYGNANIE nie jest morphem — sam znacznik nazwy

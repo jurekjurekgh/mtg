@@ -442,6 +442,36 @@ export function virtualCardNames() {
   return [UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN].map(({ id, name }) => ({ id, name }));
 }
 
+/**
+ * Numery kolejnych kopii tej samej nazwy na polu bitwy JEDNEGO gracza
+ * (zlecenie właściciela 2026-09-16): zwraca mapę id → ordynał (1-based)
+ * TYLKO dla grup (kontroler, nazwa) o liczności > 1; pojedyncze permanenty
+ * nie dostają wpisu. Obiekty przychodzą w kolejności strefy battlefield
+ * (kolejność wejścia) — ordynał = pozycja w grupie. Face-down (własna
+ * konwencja nazewnictwa zakryć, M319/NA1) i kopie (copyNumber > 0, wyróżnik
+ * „(kopia N)") są pomijane i nie podbijają licznika grupy. Czysto wyliczane
+ * przy każdym odczycie — bez stanu w silniku (odcisk/fingerprint nietknięty).
+ */
+export function battlefieldNameNumbers(objects) {
+  const counts = new Map();
+  for (const o of objects) {
+    if (!o || o.faceDown || o.copyNumber) continue;
+    const key = `${o.controllerId}\u2022${o.name ?? o.cardId}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const out = new Map();
+  const seen = new Map();
+  for (const o of objects) {
+    if (!o || o.faceDown || o.copyNumber) continue;
+    const key = `${o.controllerId}\u2022${o.name ?? o.cardId}`;
+    if ((counts.get(key) ?? 0) < 2) continue;
+    const n = (seen.get(key) ?? 0) + 1;
+    seen.set(key, n);
+    out.set(o.id, n);
+  }
+  return out;
+}
+
 /** Odmiana polska rzeczownika wg liczby: (1 → one, 2-4 → few, 5+ → many). */
 function polishPlural(n, one, few, many) {
     const mod10 = n % 10;
@@ -2500,6 +2530,42 @@ export function createSession(config) {
    * w zapisie „Przebieg tur (dla AI)" obserwator nie wie, kto jest morphem
    * (CR 708.2). W logu stołu (domyślnie) własny morph zostaje nazwany.
    */
+  /**
+   * Numeracja kopii nazw na polu bitwy (zlecenie właściciela 2026-09-16):
+   * permanenty JEDNEGO gracza o tej samej nazwie (np. tokeny, lądy) dostają
+   * sufiks „ #N" — KAŻDY członek grupy, także pierwsza kopia („Island #1,
+   * Island #2"); pojedyncze nie mają licznika. Celowanie pokazywało samą
+   * nazwę i nie wiadomo było, o który permanent chodzi (tapnięty? z aurą?).
+   *
+   * Reguła czysta (testowalna bez sesji): grupowanie per kontroler po kluczu
+   * nazwy (object.name dla tokenów, inaczej cardId), ordynał = kolejność
+   * w strefie battlefield (kolejność wejścia). Zakryte permanenty (face-down,
+   * własna konwencja M319/NA1) i kopie (copyNumber — wyróżnik „(kopia N)")
+   * nie biorą udziału w numeracji ani w liczniku grupy. Przeliczenie jest
+   * CzytANE przy każdym odpytaniu (nie stan): po odejściu kopii ostatnia
+   * zostaje bez numeru — reguła pojedynczych.
+   */
+  function withCopyOrdinal(base, object) {
+    return base + nameOrdinalSuffix(object.id);
+  }
+
+  /**
+   * Sufiks ordynału kopii nazwy („ #N") dla permanentu pola bitwy — patrz
+   * battlefieldNameNumbers; pusty string, gdy bez numeru. Eksponowany na
+   * sesji dla warstw WIDOKU (kafel cardInfo, etykiety akcji, wizardy), które
+   * liczą nazwę bazową z widoku (stubowalne w testach), a ordynał biorą z
+   * JEDNEGO źródła wspólnego z nameOfObject (L41). LKI (obiekt, który
+   * przestał istnieć) nie dostaje numeru — nie ma go w bieżącej strefie.
+   */
+  function nameOrdinalSuffix(objectId) {
+    const object = state.objects.get(objectId);
+    if (!object || object.zone !== 'battlefield' || object.faceDown || object.copyNumber) return '';
+    const ordinal = battlefieldNameNumbers(
+      state.zones.battlefield.map((id) => state.objects.get(id)),
+    ).get(objectId);
+    return ordinal ? ` #${ordinal}` : '';
+  }
+
   function nameOfObject(objectId, { fogOfWar = false } = {}) {
     // M73d (C): cel-gracz (np. Inspiration „target player draws") — imię
     // zamiast „?" (audyt żywym testerem: „rzuca Inspiration → cel: ?").
@@ -2538,9 +2604,10 @@ export function createSession(config) {
     // Nazwa tokenu z pola obiektu, nie z mapy rejestru kart.
     if (object.isToken && object.name != null) {
       // M172/D: token-kopia z numerem — „Nazwa (kopia N)".
-      return object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name;
+      const base = object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name;
+      return withCopyOrdinal(base, object);
     }
-    return nameOf(object.cardId);
+    return withCopyOrdinal(nameOf(object.cardId), object);
   }
 
   function who(playerId) {
@@ -3228,6 +3295,7 @@ export function createSession(config) {
     get state() { return state; },
     nameOf,
     nameOfObject,
+    nameOrdinalSuffix,
     // M200/B (uwaga właściciela): nazwy kart w logu są klikalne (M167/E2) —
     // render.js czyta tę mapę, żeby owinać nazwy w <span class="log-card">.
     // Karta NIGDY nie działała, bo mapa istniała tylko w closure sesji
