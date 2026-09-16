@@ -4916,13 +4916,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // Station (Wedgelight Rammer, Warmaker Gunship): „Tap another creature you
     // control: Put charge counters equal to its power on this Spacecraft.”
     // Zatapnięty w koszcie stwór przychodzi jako targets[0] (abilities.js
-    // tapOtherCreature). D (2026-08-11): zdolność idzie na STOS — przeciwnik
-    // mógł odpowiedzieć instanitem (usunąć zatapniętego stwora), więc przy
-    // rozstrzyganiu cel może być już poza polem bitwy. CR 608.2b: jeśli cel
-    // nie jest już legalny, efekt nic nie robi (koszt tap już zapłacony).
+    // tapOtherCreature). M360/B4 (EOE Release Notes, mtg.wiki/Station
+    // 2026-09-16): „If that creature isn't on the battlefield at that time,
+    // use its power as it last existed on the battlefield." Stwór NIE jest
+    // celem (brak słowa „target"), więc dawne 608.2b-fizzle było błędem —
+    // obowiązuje LKI (snapshot z chwili kosztu niesie wpis stosu).
     const tappedId = targets[0];
     const tapped = state.objects.get(tappedId);
-    if (!tapped || tapped.zone !== 'battlefield') return;
+    const tappedAlive = tapped && tapped.zone === 'battlefield';
+    if (!tappedAlive && sourceObject.stationTappedPower == null) return;
     // Źródło (Spacecraft) mogło opuścić pole bitwy przed rozstrzygnięciem
     // (CR 608.2b — zdolność na stosie, przeciwnik mógł odpowiedzieć) —
     // wtedy nie ma na co kłaść liczników.
@@ -4930,7 +4932,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (!stationSource || stationSource.zone !== 'battlefield') return;
     // Moc 0 (np. Apprentice Wizard) = zero liczników — zdolność rozstrzyga
     // się normalnie, koszt tap już zapłacony (CR 107.1c, 608.2b).
-    const amount = Math.max(0, effectivePower(tapped, state) ?? 0);
+    // Żywy: moc AKTUALNA w chwili rozstrzygnięcia (pompa w odpowiedzi
+    // działa); zniknięty: LKI ze snapshotu (ujemna moc → 0, CR 107.1c).
+    const amount = Math.max(0, tappedAlive
+      ? (effectivePower(tapped, state) ?? 0)
+      : (sourceObject.stationTappedPower ?? 0));
     if (amount > 0) addCounter(state, sourceObject.id, effect.counter ?? 'charge', amount);
     return;
   }

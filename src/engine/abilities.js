@@ -1376,6 +1376,9 @@ export function performActivation(state, ctx) {
     throw new Error('Nielegalny stwór do poświęcenia (koszt)');
   }
   let sacrificedToughness;
+  // M360/B4 (EOE Release Notes, mtg.wiki/Station 2026-09-16): snapshot mocy
+  // stwora tapowanego kosztem station — LKI na wypadek usunięcia w odpowiedzi.
+  let stationTappedPower;
   const colorReqs = colorRequirementsOf(cost);
   const targetSpec = (ability.targets ?? []).map((spec) => (spec.type === 'land_you_control'
     ? { ...spec, controllerId: playerId } : spec));
@@ -1514,6 +1517,9 @@ export function performActivation(state, ctx) {
   }
   if (otherCreatureToTap) {
     const tapId = ctx.tapOtherCreatureId ?? otherCreatureToTap;
+    // M360/B4: moc EFEKTYWNA w chwili płacenia kosztu (jak sacrificedToughness
+    // dla poświęcenia) — tapnięcie mocy nie zmienia, ale liczymy przed tapem.
+    stationTappedPower = effectivePower(state.objects.get(tapId), state);
     tapObject(state, tapId, playerId);
   }
   // Koszt crew: tapujemy wybrane stwory (każde tapnięcie częścią kosztu, CR 702.122a).
@@ -1669,7 +1675,7 @@ export function performActivation(state, ctx) {
     return queueActivatedAbilityToStack(state, {
       playerId, objectId, abilityIndex, ability,
       effectSourceId: effectSource.id,
-      effectTargets, sacrificedToughness,
+      effectTargets, sacrificedToughness, stationTappedPower,
       // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
       // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
       xValue: (cost.manaX || cost.tapXArtifacts) ? (xValue ?? 0) : undefined,
@@ -1728,7 +1734,7 @@ export function legalManaAbilities(state, playerId) {
  * się od razu. Tutaj: koszty są już zapłacone, kolejkujemy wpis na stos z LKI
  * źródła (CR 603.10), a efekty zastosuje resolveTopOfStack.
  */
-export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds, stationTappedCreatureId = null, sacrificedToughness, eventExtra = {} }) {
+export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds, stationTappedCreatureId = null, sacrificedToughness, stationTappedPower, eventExtra = {} }) {
   const source = state.objects.get(effectSourceId) ?? state.objects.get(objectId) ?? {
     id: effectSourceId, controllerId: playerId, cardId: null, zone: 'none', kind: null,
   };
@@ -1752,6 +1758,8 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
       crewCreatureIds: crewCreatureIds ? [...crewCreatureIds] : undefined,
       sourceLki,
       ...(sacrificedToughness != null ? { sacrificedToughness } : {}),
+      // M360/B4: snapshot mocy do LKI station (effects.js station_counters).
+      ...(stationTappedPower != null ? { stationTappedPower } : {}),
     }),
   });
   state.objects.set(id, entry);

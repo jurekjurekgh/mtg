@@ -1471,6 +1471,8 @@ function resolveActivatedAbilityEntry(state, entry) {
   // Źródło pozostaje tym samym obiektem dla cech (np. power/LKI).
   const source = Object.freeze({ ...sourceCharacteristics, controllerId: entry.controllerId,
     ...(payload.sacrificedToughness != null ? { sacrificedToughness: payload.sacrificedToughness } : {}),
+    // M360/B4: snapshot mocy do LKI station (effects.js station_counters).
+    ...(payload.stationTappedPower != null ? { stationTappedPower: payload.stationTappedPower } : {}),
   });
   state.zones.stack = state.zones.stack.filter((id) => id !== entry.id);
   state.objects.delete(entry.id);
