@@ -1635,7 +1635,10 @@ export const REAL_CARDS = Object.freeze([
   // 2. Spectral Prison (AVR) — Aura: doesn't untap, sac on targeting
   defineCard({
     id: 'spectral-prison', name: 'Spectral Prison', set: 'AVR',
-    types: ['Enchantment'], colors: ['U'], manaCost: 2,
+    // M360/B2: podtyp Aura wg Oracle („Enchantment — Aura”, AVR/75, Scryfall
+    // type_line zweryfikowany online 2026-09-16) — bez niego Ironclad Slayer
+    // („target Aura or Equipment card…”, CR 205.3h) nie widział karty w grobie.
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 2,
     oracleText: "Enchant creature\nEnchanted creature doesn't untap during its controller's untap step.\nWhen enchanted creature becomes the target of a spell, sacrifice this Aura.",
     imageUri: 'https://cards.scryfall.io/large/front/8/9/89d141bc-7307-40c2-a7ed-427caaec5efc.jpg?1783940711',
     aura: { keywords: [], doesntUntap: true },
@@ -10744,7 +10747,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
   defineCard({
     id: 'treefolk-umbra', name: 'Treefolk Umbra', set: 'MH1',
-    types: ['Enchantment'], colors: ['G'], manaCost: 3,
+    // M360/B2: podtyp Aura wg Oracle („Enchantment — Aura”, MH1/185, Scryfall
+    // type_line zweryfikowany online 2026-09-16) — jak wyżej dla Slayera.
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 3,
     oracleText: "Enchant creature\nEnchanted creature gets +0/+2 and assigns combat damage equal to its toughness rather than its power.\nUmbra armor (If enchanted creature would be destroyed, instead remove all damage from it and destroy this Aura.)", imageUri: "https://cards.scryfall.io/large/front/6/7/677166cf-4e1e-43ac-a67b-afaf33c0d14e.jpg?1783933088",
     aura: { pump: { power: 0, toughness: 2 }, combatDamageByToughness: true, umbraArmor: true },
     artId: 606, plan: 'Śródziemie', support: { status: 'supported', limitations: [] },
