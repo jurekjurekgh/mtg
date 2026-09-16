@@ -2328,7 +2328,7 @@ export function protectionBadges(protection) {
   return out;
 }
 
-/** Opis JAKOŚCI ochrony (CR 702.16b–e) po deskryptorze — bez nazw kart. */
+/** Opis JAKOŚCI ochrony (CR 702.16b–f) po deskryptorze — bez nazw kart. */
 export function protectionQualityLabel(quality) {
   if (!quality) return 'wybranym źródłem';
   const parts = [];

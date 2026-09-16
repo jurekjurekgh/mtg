@@ -3245,7 +3245,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           if (!target || target.controllerId !== view.playerId) return finish(-P.auraNoTargetPenalty);
           // M209 (audyt M207, Guildscorn Ward): aura, ktorej CALA wartoscia
-          // jest OCHRONA przed konkretna jakoscia (CR 702.16b-e), jest jalowa,
+          // jest OCHRONA przed konkretna jakoscia (CR 702.16b-f), jest jalowa,
           // gdy przeciwnik nie ma czym w nia uderzyc. Bot rzucal „protection
           // from multicolored" przy przeciwniku majacym 1 karte wielokolorowa
           // na 48 — placil karte i mane za nic. To ta sama klasa co M200/H

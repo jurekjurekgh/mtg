@@ -4876,7 +4876,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
           type: 'create_token', cardId: 'token_goblin_construct', name: 'Goblin Construct',
           kind: 'creature', power: 0, toughness: 1, colors: [], types: ['Artifact', 'Creature'],
           subtypes: ['Goblin', 'Construct'], controllerFromEvent: 'damagedPlayerId',
-          // „This token can't block" (CR 702.16e — stała cecha tokenu).
+          // „This token can't block" (CR 509.1b — stała cecha tokenu).
           cantBlock: true,
           // „At the beginning of your upkeep, this token deals 1 damage to you."
           abilities: [{
@@ -9013,7 +9013,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   // 5. Guildscorn Ward (GTC) — {W} aura: zaczarowany ma ochronę przed
-  //    WIELOKOLOROWYMI (CR 702.16e). NOWE: trwała ochrona po jakości na aurze.
+  //    WIELOKOLOROWYMI (CR 702.16a — jakość). NOWE: trwała ochrona po jakości na aurze.
   defineCard({
     id: 'guildscorn-ward', name: 'Guildscorn Ward', set: 'GTC',
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 1,

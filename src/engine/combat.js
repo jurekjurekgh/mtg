@@ -346,7 +346,7 @@ export function declareBlockers(state, playerId, assignments) {
     if (hasKeyword(state, attacker, 'menace') && ids.length === 1) {
       throw new Error('Stwora z menace może blokować wyłącznie dwóch lub więcej stworów');
     }
-    // Protection (CR 702.16a): atakujący z ochroną przed kolorem nie może
+    // Protection (CR 702.16f): atakujący z ochroną przed kolorem nie może
     // być blokowany przez stwory tego koloru. Walidacja spójna z canBlock.
     const attackerProtection = effectiveProtectionFromColors(state, attacker);
     if (attackerProtection.length > 0) {
@@ -357,7 +357,7 @@ export function declareBlockers(state, playerId, assignments) {
         }
       }
     }
-    // M109 (Spare from Evil, CR 702.16e): ochrona przed JAKOŚCIĄ — atakującego
+    // M109 (Spare from Evil, CR 702.16f): ochrona przed JAKOŚCIĄ — atakującego
     // nie może blokować stwór mający tę jakość (np. nie-Człowiek).
     for (const blocker of ids) {
       if (isProtectedFromSource(state, attacker, blocker)) {
@@ -1234,7 +1234,7 @@ function assignDamageToAttackers(state, events, blocker, blockerId, targets, amo
     if (blockedPrevented > 0) events.push(...state.events.slice(shieldBefore));
     // CR 119.3: event niesie kwotę faktycznie zadaną (po prewencji).
     let blockerDealt = blockerDamage - attackerFilterPrevented - blockedPrevented;
-    // BUG 2026-08-11 (CR 702.16d + 702.15): protection zapobiega obrażeniom
+    // BUG 2026-08-11 (CR 702.16e + 702.15): protection zapobiega obrażeniom
     // od źródła chronionego koloru w CAŁOŚCI — lifelink/deathtouch/infect
     // liczą tylko FAKTYCZNIE zadane obrażenia. markDamage robił prewencję
     // protection wewnętrznie, ale kwota lifelink/deathtouch liczona była
@@ -1317,7 +1317,7 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     if (shieldPrevented > 0) events.push(...state.events.slice(shieldBefore));
     // CR 119.3: event damage_dealt niesie kwotę FAKTYCZNIE zadaną (po prewencji).
     let dealt = assigned - filterPrevented - shieldPrevented;
-    // BUG 2026-08-11 (CR 702.16d + 702.15): protection blokera od koloru
+    // BUG 2026-08-11 (CR 702.16e + 702.15): protection blokera od koloru
     // atakującego zapobiega obrażeniom w całości — lifelink/deathtouch/infect
     // liczą tylko faktycznie zadane (markDamage prewencjonował w środku, ale
     // zysk życia i znacznik deathtouch liczyły kwotę sprzed prewencji).
@@ -1575,7 +1575,7 @@ function canBlock(state, attacker, blocker) {
     if (!blockerIsArtifact && !sharesColor) return false;
   }
   if (hasKeyword(state, attacker, 'flying') && !hasKeyword(state, blocker, 'flying') && !hasKeyword(state, blocker, 'reach')) return false;
-  // Protection (CR 702.16a): atakujący z ochroną przed kolorem NIE MOŻE
+  // Protection (CR 702.16f): atakujący z ochroną przed kolorem NIE MOŻE
   // być blokowany przez stwory tego koloru. Sprawdzamy ochronę ATAKUJĄCEGO
   // vs kolory blokera (nie odwrotnie).
   const attackerProt = effectiveProtectionFromColors(state, attacker);
@@ -1583,7 +1583,7 @@ function canBlock(state, attacker, blocker) {
     const blockerColors = effectiveColors(blocker);
     if (blockerColors.some(c => attackerProt.includes(c))) return false;
   }
-  // M109 (CR 702.16e): ochrona przed jakością blokera (Spare from Evil).
+  // M109 (CR 702.16f): ochrona przed jakością blokera (Spare from Evil).
   if (isProtectedFromSource(state, attacker, blocker)) return false;
   return true;
 }

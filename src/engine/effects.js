@@ -558,10 +558,10 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     }));
     return 0;
   }
-  // Protection (CR 702.16a): obrażenia od źródła chronionego koloru
+  // Protection (CR 702.16e): obrażenia od źródła chronionego koloru
   // są zapobiegane — sprawdzamy PRZED filtrem prewencji.
   if (!targetIsPlayer && rawAmount > 0 && targetObject) {
-    // M109 (CR 702.16d): ochrona przed JAKOŚCIĄ źródła (Spare from Evil —
+    // M109 (CR 702.16a): ochrona przed JAKOŚCIĄ źródła (Spare from Evil —
     // „protection from non-Human creatures").
     if (isProtectedFromSource(state, targetObject, sourceObject)) {
       state.events.push(event('damage_prevented', {
@@ -1587,7 +1587,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     });
     return;
   }
-  // Offspring (BLB, Rust-Shield Rampager, CR 702.16x?): „When this creature
+  // Offspring (BLB, Rust-Shield Rampager, CR 702.175a): „When this creature
   // enters, create a 1/1 token copy of it." Token kopia druk źródła (nie
   // liczniki/atachamenty/efekty poza drukiem — ruling WotC); dziedziczy
   // zdolności „enters" i „enters with" (ruling: będzie działać), więc
