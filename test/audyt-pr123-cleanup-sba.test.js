@@ -24,8 +24,16 @@
 
 
 //
+// A2 (M360/B3, klasa L16): `pendingCombatSecondPass` blokuje rundę passów
+// (game-state.js, bramka obok pendingDamageAssignment) i zmienia przyszłe
+// możliwości (czy następny resolve_combat wykona przebieg zwykły — CR 510.4),
+// więc dwa stany różniące się wyłącznie tą flagą NIE mogą mieć tego samego
+// odcisku (reguła M323/F3: pole zmieniające przyszłe możliwości należy do
+// fingerprintu; replay/no-op byłyby na nie ślepe).
+//
 // RED→GREEN: oba testy czerwone przed naprawą. Mutacje (L13):
 //  - usuń `creature_destroyed` z dowodów SBA w cleanupHadActivity → T2 RED;
+//  - usuń `pendingCombatSecondPass` z PENDING_DECISION_FIELDS → T4 RED.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -37,6 +45,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { addCounter } from '../src/engine/counters.js';
+import { stateFingerprint } from '../src/engine/fingerprint.js';
 
 
 const REGISTRY = createCardRegistry();
@@ -171,4 +180,17 @@ test('A1/T3 (anty-regresja 514.1): discard z limitu ręki NIE otwiera priorytetu
   assert.equal(cleanupPriorityOpen(state), false, 'discard 514.1 nie otwiera okna');
   passRound(state);
   assert.equal(state.turn.number, 2, 'brak aktywności = brak kolejnego cleanupu');
+});
+
+test('A2/T4 (L16/M323-F3): pendingCombatSecondPass musi być w odciskie stanu', () => {
+  // Flagę produkuje resolve_combat po pierwszym kroku obrażeń przy
+  // first/double strike (M360/B3, CR 510.4); tu ustawiamy ją wprost, bo test
+  // fingerprintu ma izolować pole (reset gry po walce to osobna ścieżka).
+  const bare = setup();
+  const withFlag = setup();
+  withFlag.pendingCombatSecondPass = { defendingPlayerId: 'p2' };
+  const fpBare = stateFingerprint(bare);
+  const fpFlag = stateFingerprint(withFlag);
+  assert.notEqual(fpBare, fpFlag,
+    'dwa stany różniące się tylko pendingCombatSecondPass muszą mieć różne odciski (replay/no-op)');
 });

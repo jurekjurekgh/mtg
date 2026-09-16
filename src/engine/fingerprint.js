@@ -40,6 +40,16 @@ export const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingRevealExile', 'pendingRevealOrder', 'pendingSearchChoice',
   'pendingSpellReturnToHand', 'pendingSpringbloom', 'pendingReboundCast',
   'pendingTriggerTargets', 'pendingSpellDiscounts',
+  // Audyt PR #123 / A2 (klasa L16, reguła M323/F3): flaga drugiego kroku
+  // obrażeń (M360/B3, CR 510.4) BLOKUJE rundę passów (bramka obok
+  // pendingDamageAssignment w accepted()) i zmienia przyszłe możliwości —
+  // czy następny resolve_combat wykona przebieg zwykły. Dwa stany różniące
+  // się wyłącznie tą flagą miały identyczny odcisk: weryfikacja replayów
+  // i sonda „oferta bez skutku" były na nią ślepe. Strażnik
+  // fingerprint-pending-decisions.test.js bierze ground truth z ciał
+  // firstPendingDecision* — tamtej bramki ta flaga nie konsultuje, dlatego
+  // luka nie świeciła; test RED→GREEN: audyt-pr123-cleanup-sba.test.js T4.
+  'pendingCombatSecondPass',
 ]);
 
 /** Serializacja odporna na Map/Set wewnątrz struktur decyzji. */
