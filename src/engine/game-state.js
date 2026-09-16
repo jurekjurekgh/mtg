@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
@@ -33,8 +33,8 @@ import { createBattlefieldToken, nextCopyNumber, TREASURE_TOKEN_EFFECT } from '.
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
-import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject } from './effects.js';
-import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive, warpTurnReached } from './impulse-window.js';
+import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
+import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive, warpTurnReached, canPlayByImpulseFromExile } from './impulse-window.js';
 
 /**
  * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
@@ -343,6 +343,11 @@ export function createGameState({ seed, players }) {
     // „This ability triggers only once each turn\" (Nanoform Sentinel) —
     // klucz `objectId:abilityIndex` → true; zerowane przy zmianie tury.
     triggerFiredThisTurn: {},
+    // M359 (brąz II, CR 514.3/514.3a): indeks w state.events, od którego
+    // liczy się aktywność stosu bieżącego cleanupu. Ustawiany przy KAŻDYM
+    // wejściu w cleanup (także w kolejny z pętli 514.3a); null przed
+    // pierwszym cleanupem gry (skan od 0 = nad-otwarty, bezpieczny kierunek).
+    cleanupActivityFromEvent: null,
     // Oczekująca decyzja poświęcenia Food (Insatiable Appetite):
     // blokująca decyzja jak scry/surveil.
     pendingFoodChoice: null,
@@ -1347,11 +1352,105 @@ function exploitDecisionPendingFor(state, playerId) {
 }
 
 /**
+ * M359 (brąz II, CR 514.3/514.3a — mtg.wiki/page/Ending_phase, CR 2026-08-07).
+ *
+ * Typy zdarzeń świadczące o AKTYWNOŚCI STOSU w cleanupie: rzucony czar,
+ * odpalona zdolność (stosowa — tap_for_mana emituje `mana_produced`, więc
+ * zdolności many nie otwierają priorytetu) oraz odpalony TRIGGER. Trzy
+ * kolejki triggerów nie emitują `ability_triggered` (modalne, opcjonalne
+ * „you may” i exploit) — ich własne `*_required` liczy się wprost.
+ * Celowo BRAK tu `discard_choice_required` z limitu ręki (CR 514.1):
+ * akcja turowa nie daje priorytetu i nie otwiera pętli.
+ */
+const CLEANUP_ACTIVITY_EVENT_TYPES = new Set([
+  'spell_cast', 'aura_spell_cast', 'ability_activated', 'ability_triggered',
+  'modal_trigger_required', 'optional_trigger_required', 'exploit_choice_required',
+  // Madness (CR 702.35a): trigger „when you do” nigdy nie trafia na stos
+  // (kolejka + decyzja), więc jego istnienie znaczy otwarcie decyzji —
+  // odmowa też zostawia priorytet otwarty i wymaga kolejnego cleanupu.
+  'madness_ready_required',
+]);
+
+/** Czy w bieżącym cleanupie była aktywność stosu (CR 514.3a). */
+function cleanupHadActivity(state) {
+  const from = state.cleanupActivityFromEvent ?? 0;
+  for (let i = from; i < state.events.length; i += 1) {
+    if (CLEANUP_ACTIVITY_EVENT_TYPES.has(state.events[i]?.type)) return true;
+  }
+  return false;
+}
+
+/**
+ * Czy w cleanupie priorytet jest OTWARTY (CR 514.3a): stos niepusty, decyzja
+ * madness (trigger „when you do”, CR 702.35a — kolejka nigdy nie trafia na
+ * stos, więc skan zdarzeń by jej nie znalazł) albo aktywność od wejścia.
+ * Poza cleanupem zawsze true. JEDEN predykat dla oferty (playerView) i
+ * walidacji (execute) — wzorzec M255/G, L48.
+ */
+export function cleanupPriorityOpen(state) {
+  if (state.turn.step !== 'cleanup') return true;
+  if (state.zones.stack.length > 0) return true;
+  if ((state.madnessQueue?.length ?? 0) > 0 || state.pendingMadnessCast) return true;
+  return cleanupHadActivity(state);
+}
+
+/**
+ * Komendy z priorytetu zablokowane w ZAMKNIĘTYM cleanupie (CR 514.3:
+ * „no spells can be cast and no abilities can be activated”). Decyzje
+ * resolve_*, pass i concede przechodzą (rozstrzyganie to nie akcja
+ * z priorytetu); akcje specjalne sorcery-speed (plot/suspend/warp/land)
+ * mają własne bramki fazy. tap_for_mana jest na liście SŁUSZNIE mimo
+ * CR 605.3a („whenever they have priority...”) — zdolność many wymaga
+ * priorytetu, a zamknięty cleanup go nie daje (mtg.wiki/Mana_ability,
+ * CR 08-2026); w OTWARTYM cleanupie zbiór nie obowiązuje.
+ */
+const CLEANUP_LOCKED_COMMANDS = new Set([
+  'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
+  'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'tap_for_mana',
+]);
+
+/**
  * Punkt zapisu każdej zaakceptowanej komendy. Centralnie uruchamia
  * state-based actions (idempotentne), waliduje inwarianty i dopiero wtedy
  * dopisuje komendę do logu replayu.
  */
+// M258 (Żywy Tester → regresja z pełnej partii bota): promocja następnej
+// decyzji madness z kolejki. Odrzucenie karty z madness w SEKWENCJI
+// odrzuceń (cleanup z kilkoma kartami, Cathartic Reunion) nie otwiera
+// decyzji natychmiast — w przeciwnym razie bramka madness (wyżej w
+// execute) odrzucała resolve_discard_choice kolejnej karty
+// ('madness_unresolved'), choć legalCommands oferowały odrzucanie — bot
+// kończył partię wyjątkiem. Karty kolejkują się; promocja następuje po
+// zakończeniu sekwencji odrzuceń, a potem po każdej rozstrzygniętej
+// decyzji (kolejność odrzuceń = kolejność decyzji).
+// Znalezisko A: poziom modułu (wcześniej zagnieżdżona w execute) — wołają ją
+// bramki resolvera (jak dotąd) ORAZ hook w accepted() dla ścieżek auto.
+function promoteNextMadness(state) {
+  const next = (state.madnessQueue ?? []).shift();
+  if (!next) return null;
+  state.pendingMadnessCast = next;
+  const ev = event('madness_ready_required', {
+    playerId: next.playerId, objectId: next.objectId, cardId: next.cardId,
+    cost: state.objects.get(next.objectId)?.madness?.cost ?? null,
+    // M266/E (L100 pkt 1): zdarzenie opisujące decyzję o koszcie musi nieść
+    // WSZYSTKIE składniki ceny — inaczej opis nie da się złożyć bez stanu.
+    costColors: state.objects.get(next.objectId)?.madness?.colors ?? null,
+  });
+  state.events.push(ev);
+  return ev;
+}
+
 function accepted(state, cmd, result) {
+  // Znalezisko A: auto-discard całości (bez decyzji) zostawia madness
+  // w KOLEJCE — promocja następuje tu, po domknięciu komendy, o ile nic nie
+  // czeka (lustro synchronicznej promocji w resolverze; kolejność „najpierw
+  // dokończ sekwencję/efekt, potem madness" zachowana, bo hook widzi stan po
+  // całej komendzie). Na ścieżce ręcznej no-op: decyzja madness jest już
+  // otwarta synchronicznie, więc firstPendingDecision nie jest puste.
+  if ((state.madnessQueue?.length ?? 0) > 0 && !firstPendingDecision(state)) {
+    const madnessEv = promoteNextMadness(state);
+    if (madnessEv) result.events = [...result.events, madnessEv];
+  }
   // CR 117.3c/117.4 (M90, bug C1): passy muszą następować po sobie BEZ akcji
   // pomiędzy — dopiero wtedy rozstrzyga się wierzch stosu. Każda zaakceptowana
   // komenda inna niż pass (rzut czaru, zdolność, ląd, deklaracja, decyzja
@@ -2512,30 +2611,6 @@ export function execute(state, input) {
     }
   }
 
-  // M258 (Żywy Tester → regresja z pełnej partii bota): promocja następnej
-  // decyzji madness z kolejki. Odrzucenie karty z madness w SEKWENCJI
-  // odrzuceń (cleanup z kilkoma kartami, Cathartic Reunion) nie otwiera
-  // decyzji natychmiast — w przeciwnym razie bramka madness (wyżej w
-  // execute) odrzucała resolve_discard_choice kolejnej karty
-  // ('madness_unresolved'), choć legalCommands oferowały odrzucanie — bot
-  // kończył partię wyjątkiem. Karty kolejkują się; promocja następuje po
-  // zakończeniu sekwencji odrzuceń, a potem po każdej rozstrzygniętej
-  // decyzji (kolejność odrzuceń = kolejność decyzji).
-  function promoteNextMadness(state) {
-    const next = (state.madnessQueue ?? []).shift();
-    if (!next) return null;
-    state.pendingMadnessCast = next;
-    const ev = event('madness_ready_required', {
-      playerId: next.playerId, objectId: next.objectId, cardId: next.cardId,
-      cost: state.objects.get(next.objectId)?.madness?.cost ?? null,
-      // M266/E (L100 pkt 1): zdarzenie opisujące decyzję o koszcie musi nieść
-      // WSZYSTKIE składniki ceny — inaczej opis nie da się złożyć bez stanu.
-      costColors: state.objects.get(next.objectId)?.madness?.colors ?? null,
-    });
-    state.events.push(ev);
-    return ev;
-  }
-
   // M158/Batch 39 (Revolutionist, CR 702.35): Madness — jednorazowa decyzja
   // po odrzuceniu karty z madness do exile: rzuć za koszt madness (ignorując
   // timing — rzut następuje w rozstrzyganiu zdolności, jak rebound) albo
@@ -2924,16 +2999,31 @@ export function execute(state, input) {
     }
     state.pendingBackups.shift();
     const before = state.events.length;
-    addCounter(state, target.id, '+1/+1', pending.counters);
-    // Grant zdolności tylko, gdy backup wskazał INNEGO stwora niż źródło
-    // (CR 702.165a): samo źródło dostaje wyłącznie liczniki.
-    const grantedKeywords = target.id === pending.sourceId ? [] : pending.grantKeywords;
-    if (grantedKeywords.length > 0) grantKeywordsUntilEndOfTurn(state, target.id, grantedKeywords, { viaBackup: true });
+    // M359 (CR 603.3): decyzja NIE aplikuje — trigger z wybranym celem idzie
+    // na STOS (okno odpowiedzi jak każdy trigger, T6); liczniki i grant
+    // kładzie rozstrzygnięcie (znacznik backupApply w resolveTriggerEntry)
+    // po re-walidacji celu (CR 608.2b). „Another creature” (CR 702.165a)
+    // rozstrzyga się przy rozstrzyganiu (porównanie id celu ze źródłem).
+    const liveBackup = state.objects.get(pending.sourceId);
+    const backupSource = (liveBackup && liveBackup.zone === 'battlefield' ? liveBackup : null)
+      ?? Object.freeze({
+        id: pending.sourceId, controllerId: pending.playerId,
+        cardId: pending.cardId ?? null,
+      });
+    queueTriggerToStack(state,
+      { type: 'triggered', trigger: { event: 'enter_battlefield', backup: true }, effect: [] },
+      backupSource, [target.id], [],
+      {
+        backupApply: Object.freeze({
+          counters: pending.counters ?? 0,
+          grantKeywords: Object.freeze([...(pending.grantKeywords ?? [])]),
+        }),
+      });
     const e = event('backup_resolved', {
       playerId: cmd.playerId, sourceId: pending.sourceId, sourceCardId: pending.cardId,
       targetId: target.id, targetCardId: target.cardId,
-      counters: pending.counters, grantedKeywords: [...grantedKeywords],
-      self: target.id === pending.sourceId, remaining: state.pendingBackups.length,
+      counters: pending.counters, grantedKeywords: [],
+      onStack: true, self: target.id === pending.sourceId, remaining: state.pendingBackups.length,
     });
     state.events.push(e);
     // Po decyzji: kolejka niepusta → priorytet do właściciela następnego
@@ -3266,7 +3356,10 @@ export function execute(state, input) {
     // „That player discards a card" — wybór odrzucanej karty należy do
     // odrzucającego (CR 701.18); przy pustej ręce nic się nie dzieje.
     const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
-    if ((pending.discardCount ?? 0) > 0 && handIds.length > 0) {
+    // Znalezisko A: wymuszony discard całości bez decyzji (kontynuacja jak w gałęzi else).
+    const autoDiscard = (pending.discardCount ?? 0) > 0 && handIds.length > 0
+      && shouldAutoDiscard({ count: pending.discardCount, candidateIds: handIds });
+    if ((pending.discardCount ?? 0) > 0 && handIds.length > 0 && !autoDiscard) {
       state.pendingDiscardChoice = {
         playerId: pending.playerId, count: pending.discardCount, handIds, purpose: 'effect',
         sourceCardId: pending.sourceCardId ?? null,
@@ -3277,6 +3370,12 @@ export function execute(state, input) {
         sourceCardId: pending.sourceCardId ?? null,
       }));
     } else {
+      if (autoDiscard) {
+        discardCardsForced(state, {
+          playerId: pending.playerId, cardIds: [...handIds], purpose: 'effect',
+          sourceCardId: pending.sourceCardId ?? null, restorePriorityTo: pending.restorePriorityTo,
+        });
+      }
       if (state.pendingSpell) {
         const spellPending = state.pendingSpell;
         state.pendingSpell = null;
@@ -3398,8 +3497,10 @@ export function execute(state, input) {
   // tak/nie — jak opcjonalna płatność, ale bez kosztu.
   // M69 (Exploit, Silumgar Butcher — CR 702.110): „When this creature enters,
   // you may sacrifice a creature. When this creature exploits a creature, ..."
-  // Opcjonalna decyzja kontrolera: poświęć INNEGO stwora albo skip. Po
-  // poświęceniu emitujemy exploited (odpala trigger „exploits" na źródle).
+  // Opcjonalna decyzja kontrolera: poświęć DOWOLNEGO stwora (M361/B1: także
+  // źródło — VOW Release Notes) albo skip. Po poświęceniu emitujemy exploited
+  // (odpala trigger „exploits" na źródle; flaga selfSacrifice niesie
+  // samopoświęcenie dla odpału LKI w triggers.js).
   if (exploitDecisionPendingFor(state, cmd.playerId)) {
     const pending = state.pendingExploits[0];
     if (cmd.type !== 'resolve_exploit_choice') return reject('exploit_unresolved');
@@ -3431,7 +3532,7 @@ export function execute(state, input) {
     // P4 (audyt PR106 — Żywy Tester, 2026-09-08): nazwa ofiary jedzie
     // z cardId ZDARZENIA (jak permanent_sacrificed powyżej), bo obiekt
     // (zwłaszcza token) może już nie istnieć — log pokazywał „Exploit: ?".
-    state.events.push(event('exploited', { exploiterId: pending.sourceId, exploitedId: moved.id, cardId: moved.cardId }));
+    state.events.push(event('exploited', { exploiterId: pending.sourceId, exploitedId: moved.id, cardId: moved.cardId, selfSacrifice: cmd.targetId === pending.sourceId }));
     state.events.push(event('exploit_choice_resolved', { playerId: pending.playerId, sourceId: pending.sourceId, exploitedId: moved.id }));
     if (state.pendingExploits.length > 0) state.turn.priorityPlayerId = state.pendingExploits[0].playerId;
     else if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -4027,7 +4128,7 @@ export function execute(state, input) {
       if (count === 0) {
         state.pendingDiscardChoice = null;
         const declined = event('discard_choice_declined', {
-          playerId: pending.playerId, chooserId: discardChooserId(pending),
+          playerId: pending.playerId, chooserId: discardChooserId(pending), count,
           purpose: pending.purpose, sourceCardId: pending.sourceCardId,
         });
         state.events.push(declined);
@@ -4045,6 +4146,33 @@ export function execute(state, input) {
         const promotedDecline = promoteNextMadness(state);
         if (promotedDecline) events.push(promotedDecline);
         return accepted(state, cmd, { ok: true, events });
+      }
+      // Znalezisko A: po rezygnacji właściciel z dokładnie tyloma kartami
+      // nie wybiera — epilog jak wprost z resolvera (decline istnieje tylko
+      // dla purpose 'effect'; madness dopina hook w accepted()).
+      if (shouldAutoDiscard({ count, candidateIds: handIds })) {
+        state.pendingDiscardChoice = null;
+        state.events.push(event('discard_choice_declined', {
+          playerId: pending.playerId, chooserId: discardChooserId(pending), count,
+          purpose: pending.purpose, sourceCardId: pending.sourceCardId,
+        }));
+        discardCardsForced(state, {
+          playerId: pending.playerId, cardIds: [...handIds], purpose: pending.purpose,
+          sourceCardId: pending.sourceCardId ?? null, onCreatureDiscard: pending.onCreatureDiscard ?? null,
+          restorePriorityTo: pending.restorePriorityTo,
+        });
+        state.events.push(event('discard_choice_resolved', {
+          playerId: pending.playerId, purpose: pending.purpose, sourceCardId: pending.sourceCardId,
+        }));
+        if (pending.purpose === 'effect' && state.pendingSpell) {
+          const spellPending = state.pendingSpell;
+          state.pendingSpell = null;
+          finishPendingSpell(state, spellPending.stackId, spellPending.effects);
+        }
+        if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
+          state.turn.priorityPlayerId = pending.restorePriorityTo;
+        }
+        return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
       }
       state.pendingDiscardChoice = {
         playerId: pending.playerId, count, handIds, purpose: pending.purpose,
@@ -4071,71 +4199,32 @@ export function execute(state, input) {
       return !pending.handIds.includes(id) || card?.zone !== 'hand' || card.controllerId !== pending.playerId;
     })) return reject('illegal_discard_choice');
     const before = state.events.length;
-    for (const cardId of cardIds) {
-      const card = state.objects.get(cardId);
-      // M158/Batch 39 (CR 702.35a): karta z Madness odrzucana jest do EXILE
-      // (nie do grobu) z jednorazową decyzją: rzuć za koszt madness albo
-      // przełóż do cmentarza.
-      let moved = null;
-      if (card.madness) {
-        const exileId = `exile-${state.objectSequence++}`;
-        // M262: madness to mechanika wygnania (CR 702.35) — badge „Wygnane: Madness".
-        moved = moveObjectDirectly(state, cardId, 'exile', exileId, { exiledBy: 'madness' });
-        state.objects.set(exileId, Object.freeze({ ...state.objects.get(exileId), madnessReady: true }));
-        state.events.push(event('card_discarded', {
-          playerId: pending.playerId, fromId: cardId, objectId: exileId,
-          cardId: moved.cardId, choice: true, purpose: pending.purpose, toZone: 'exile', madness: true,
-          sourceCardId: pending.sourceCardId ?? null,
-        }));
-        // M258: wpis do KOLEJKI, nie bezpośrednio do pendingMadnessCast —
-        // decyzja otwiera się po zakończeniu całej sekwencji odrzuceń
-        // (promoteNextMadness w gałęziach kończących poniżej). Natychmiastowe
-        // otwarcie blokowało kolejne odrzucania w tym samym efekcie.
-        state.madnessQueue.push({
-          playerId: pending.playerId, objectId: exileId, cardId: moved.cardId,
-          // A4-1 (handoff 09-08k, madness+batch-discard ×3): priorytet po
-          // decyzji madness wraca do posiadacza Z PRZED odrzuceniem
-          // (pending.restorePriorityTo — ustawione przy tworzeniu
-          // pendingDiscardChoice), NIE do odrzucającego (priorytet w chwili
-          // pusha = on sam). Celowane odrzucenie (Mindstab) dotąd kończyło
-          // tym samym czarem priorytet w innym miejscu zależnie od tego,
-          // czy odrzucona karta miała madness: ścieżka zwykła oddawała go
-          // źródłu czaru (restorePriorityTo, CR 117.3b), ścieżka madness —
-          // odrzucającemu.
-          restorePriorityTo: pending.restorePriorityTo ?? state.turn.priorityPlayerId,
-        });
-      } else {
-        const graveId = `grave-${state.objectSequence++}`;
-        moved = moveObjectDirectly(state, cardId, 'graveyard', graveId);
-        state.events.push(event('card_discarded', {
-          playerId: pending.playerId, fromId: cardId, objectId: graveId,
-          cardId: moved.cardId, choice: true, purpose: pending.purpose,
-          sourceCardId: pending.sourceCardId ?? null,
-        }));
-      }
-      // M67 (Civilized Scholar): „If a creature card is discarded this way,
-      // untap this creature, then transform it." — po odrzuceniu karty-stwora
-      // wykonaj akcje zapisane w pending (odkręcenie + transform źródła).
-      if (pending.onCreatureDiscard && (moved.kind === 'creature' || (moved.types ?? []).includes('Creature'))) {
-        const target = pending.onCreatureDiscard;
-        const source = state.objects.get(target.sourceId);
-        if (source && source.zone === 'battlefield') {
-          if (target.untap) {
-            const updated = untapObject(state, target.sourceId, pending.playerId);
-            state.events.push(event('object_untapped', { objectId: target.sourceId, playerId: pending.playerId }));
-          }
-          if (target.transform) {
-            applyEffect(state, { type: 'transform' }, state.objects.get(target.sourceId), []);
-          }
-        }
-      }
-    }
+    // Znalezisko A: wykonanie przez WSPÓLNY helper (ścieżki auto też) — L41.
+    discardCardsForced(state, {
+      playerId: pending.playerId, cardIds, purpose: pending.purpose,
+      sourceCardId: pending.sourceCardId ?? null, onCreatureDiscard: pending.onCreatureDiscard ?? null,
+      restorePriorityTo: pending.restorePriorityTo,
+    });
     const remaining = pending.count - cardIds.length;
     const stillInHand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
+    // Znalezisko A: reszta wymuszona (legacy pojedyncze picki, np. druga
+    // karta kosztu 2 z 2) dokańcza się SAMA — re-queue tylko przy wyborze.
+    const autoRest = remaining > 0 && stillInHand.length > 0
+      && shouldAutoDiscard({ count: remaining, candidateIds: stillInHand });
+    if (autoRest) {
+      discardCardsForced(state, {
+        playerId: pending.playerId, cardIds: [...stillInHand], purpose: pending.purpose,
+        sourceCardId: pending.sourceCardId ?? null, onCreatureDiscard: pending.onCreatureDiscard ?? null,
+        restorePriorityTo: pending.restorePriorityTo,
+      });
+    }
     const resolvedEvents = state.events.slice(before);
-    if (remaining > 0 && stillInHand.length > 0) {
+    // M361/B2: licznik faktycznie odrzuconych (ścieżka sekwencyjna dokłada;
+    // refleks „when you discard this way" wymaga ≥1 odrzucenia).
+    const discardedNow = cardIds.length + (autoRest ? stillInHand.length : 0);
+    if (!autoRest && remaining > 0 && stillInHand.length > 0) {
       // Kolejny wybór (Plague Reaver — dwie karty): decyzja sekwencyjna.
-      state.pendingDiscardChoice = { ...pending, count: remaining, handIds: stillInHand, allowDecline: false };
+      state.pendingDiscardChoice = { ...pending, count: remaining, handIds: stillInHand, allowDecline: false, discardedCount: (pending.discardedCount ?? 0) + discardedNow };
       const required = event('discard_choice_required', {
         playerId: pending.playerId, count: remaining, cardIds: [...stillInHand],
         purpose: pending.purpose, sourceCardId: pending.sourceCardId,
@@ -4151,6 +4240,20 @@ export function execute(state, input) {
     });
     state.events.push(resolved);
     resolvedEvents.push(resolved);
+    // M361/B2 (ZŁOTO, Talion's Messenger; Scryfall ruling 2023-09-01): refleks
+    // „when you discard this way" — TYLKO gdy faktycznie odrzucono ≥1 kartę
+    // (pusta ręka = brak refleksu). Emisja przed dokończeniem pendingSpell —
+    // processTriggers (w accepted) kolejkuje refleks po zejściu rodzica.
+    const discardedTotal = (pending.discardedCount ?? 0) + discardedNow;
+    if (pending.reflexiveEvent && discardedTotal > 0) {
+      const reflexive = event(pending.reflexiveEvent, {
+        sourceId: pending.sourceId ?? null, cardId: pending.sourceCardId ?? null,
+        playerId: pending.playerId, discardedCount: discardedTotal,
+        reflexiveAbility: pending.reflexiveAbility ?? null,
+      });
+      state.events.push(reflexive);
+      resolvedEvents.push(reflexive);
+    }
     // Koszt zdolności: po dokończeniu wyborów wykonaj wstrzymaną aktywację.
     if (pending.purpose === 'cost' && state.pendingAbilityActivation) {
       const activation = state.pendingAbilityActivation;
@@ -4695,21 +4798,34 @@ export function execute(state, input) {
     if (cmd.playerId !== pending.playerId) return reject('delirium_target_not_your_decision');
     if (!legalDeliriumTargetCandidates(state, pending).includes(cmd.targetId)) return reject('illegal_delirium_target');
     const before = state.events.length;
-    // CR 702.15/702.16a/702.90/615: obrażenia z delirium to ZWYKŁE obrażenia
-    // niecombatowe — podlegają ochronie, tarczom prewencji, infect i dają
-    // lifelink. Wcześniej ta ścieżka wołała markDamage wprost, więc omijała
-    // je wszystkie naraz (stwór z „protection from red" dostawał 4 obrażenia
-    // od czerwonego źródła). Generyczna ścieżka dealNonCombatDamage zna te
-    // reguły i emituje własne zdarzenie damage_dealt z LKI celu (M155/M166B).
-    const deliriumSource = state.objects.get(pending.sourceId)
-      ?? { id: pending.sourceId, cardId: pending.sourceCardId ?? null, controllerId: pending.playerId };
-    dealNonCombatDamage(state, deliriumSource, cmd.targetId, pending.amount);
+    // M359 (CR 603.3): decyzja NIE zadaje obrażeń — trigger ze snapshotem
+    // obrażeń i wybranym celem idzie na STOS (okno odpowiedzi jak każdy
+    // trigger, T6); obrażenia zadaje rozstrzygnięcie (znacznik deliriumDamage
+    // w resolveTriggerEntry) po re-walidacji celu i intervening-if (CR
+    // 603.4/207.2c). Same obrażenia zadaje generyczna ścieżka
+    // dealNonCombatDamage, więc respektują ochronę, tarcze, infect
+    // i lifelink źródła (CR 702.15/16a/90).
+    const liveDelirium = state.objects.get(pending.sourceId);
+    const deliriumSource = (liveDelirium && liveDelirium.zone === 'battlefield' ? liveDelirium : null)
+      ?? Object.freeze({
+        id: pending.sourceId, controllerId: pending.playerId,
+        cardId: pending.sourceCardId ?? null,
+      });
+    queueTriggerToStack(state,
+      { type: 'triggered', trigger: { event: 'noncombat_damage_to_opponent', delirium: true }, effect: [] },
+      deliriumSource, [cmd.targetId], [],
+      {
+        deliriumDamage: Object.freeze({
+          amount: pending.amount ?? 0, opponentId: pending.opponentId ?? null,
+          controllerId: pending.playerId,
+        }),
+      });
     state.pendingDeliriumTargets.shift();
     state.events.push(event('delirium_target_resolved', {
       playerId: cmd.playerId, sourceId: pending.sourceId,
       cardId: state.objects.get(pending.sourceId)?.cardId ?? null,
       targetId: cmd.targetId, targetCardId: state.objects.get(cmd.targetId)?.cardId ?? null,
-      amount: pending.amount, remaining: state.pendingDeliriumTargets.length,
+      amount: pending.amount, onStack: true, remaining: state.pendingDeliriumTargets.length,
     }));
     if (state.pendingDeliriumTargets.length > 0) {
       state.turn.priorityPlayerId = state.pendingDeliriumTargets[0].playerId;
@@ -4728,13 +4844,27 @@ export function execute(state, input) {
     if (cmd.playerId !== pending.playerId) return reject('mentor_target_not_your_decision');
     if (!legalMentorCandidates(state, pending).includes(cmd.targetId)) return reject('illegal_mentor_target');
     const before = state.events.length;
-    addCounter(state, cmd.targetId, '+1/+1', 1);
+    // M359 (CR 603.3): decyzja NIE kładzie licznika — trigger z wybranym
+    // celem idzie na STOS (okno odpowiedzi jak każdy trigger, T6); licznik
+    // kładzie rozstrzygnięcie (znacznik mentorCounter w resolveTriggerEntry)
+    // po re-walidacji celu (CR 608.2b). Migawka siły źródła niesie efektywną
+    // siłę z chwili odpalenia (LKI, gdy źródło zginie w odpowiedzi).
+    const liveMentor = state.objects.get(pending.sourceId);
+    const mentorSource = (liveMentor && liveMentor.zone === 'battlefield' ? liveMentor : null)
+      ?? Object.freeze({
+        id: pending.sourceId, controllerId: pending.playerId,
+        cardId: pending.cardId ?? null, power: pending.sourcePower ?? 0,
+      });
+    queueTriggerToStack(state,
+      { type: 'triggered', trigger: { event: 'mentor_attacks' }, effect: [] },
+      mentorSource, [cmd.targetId], [],
+      { mentorCounter: Object.freeze({ sourcePower: pending.sourcePower ?? 0 }) });
     state.pendingMentorTargets.shift();
     state.events.push(event('mentor_target_resolved', {
       playerId: cmd.playerId, sourceId: pending.sourceId,
-      cardId: state.objects.get(pending.sourceId)?.cardId ?? null,
+      cardId: state.objects.get(pending.sourceId)?.cardId ?? pending.cardId ?? null,
       targetId: cmd.targetId, targetCardId: state.objects.get(cmd.targetId)?.cardId ?? null,
-      remaining: state.pendingMentorTargets.length,
+      onStack: true, remaining: state.pendingMentorTargets.length,
     }));
     if (state.pendingMentorTargets.length > 0) {
       state.turn.priorityPlayerId = state.pendingMentorTargets[0].playerId;
@@ -4894,33 +5024,54 @@ export function execute(state, input) {
         // (z atakującymi krok domyka resolve_combat — gałąź M255/F powyżej).
         // Taki pusty combat trzeba sprzątnąć, bo bramka oferty deklaracji
         // (`!state.combat`) czyta go w NASTĘPNEJ walce.
-        if (state.turn.step === 'combat_damage') state.combat = null;
-        state.turn = nextTurnStep(state.turn, state.players);
-        // D (CR 508.2): wejście w bloki po rundzie passów — deklaruje OBROŃCA
-        // (nieaktywny), jak w drodze przez starą komendę i ścieżkę M257.
-        if (state.turn.step === 'declare_blockers') {
-          state.turn.priorityPlayerId = state.players.find((p) => p.id !== state.turn.activePlayerId).id;
+        // M360/B5: snapshot przed sprzątnięciem (okno ninjutsu w end_of_combat).
+        if (state.turn.step === 'combat_damage') { rememberClosedCombat(state); state.combat = null; }
+        // M359 (CR 514.3a): pełna runda passów przy pustym stosie WYCHODZI
+        // z cleanupu w KOLEJNY cleanup (nie w następną turę), gdy w tym
+        // cleanupie była aktywność stosu. Kolejny cleanup to TEN SAM krok
+        // (step_advanced z tą samą nazwą — żaden skan triggerów nie słucha
+        // cleanupu), z wyzerowanymi passami i priorytetem aktywnego gracza.
+        // Stempel null = wejście w cleanup poza kanoniczną ścieżką (ręczny
+        // jumpToStep w testach — silnik wchodzi tylko tędy, ze stemplem):
+        // NIE zapętlamy na stęchłej historii sprzed wejścia. Bramka oferty
+        // (cleanupPriorityOpen) celowo zostaje nad-wrażliwa (skan od 0),
+        // żeby nigdy nie zamknąć priorytetu, który ma być otwarty.
+        const cleanupLoop = state.turn.step === 'cleanup'
+          && state.cleanupActivityFromEvent != null
+          && (cleanupHadActivity(state) || (state.madnessQueue?.length ?? 0) > 0 || state.pendingMadnessCast);
+        if (cleanupLoop) {
+          state.turn.passes = 0;
+          state.turn.priorityPlayerId = state.turn.activePlayerId;
+        } else {
+          state.turn = nextTurnStep(state.turn, state.players);
+          // D (CR 508.2): wejście w bloki po rundzie passów — deklaruje OBROŃCA
+          // (nieaktywny), jak w drodze przez starą komendę i ścieżkę M257.
+          if (state.turn.step === 'declare_blockers') {
+            state.turn.priorityPlayerId = state.players.find((p) => p.id !== state.turn.activePlayerId).id;
+          }
         }
         events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
-        // CR 504.1: akcja turowa kroku dobierania — aktywny gracz dobiera
-        // kartę SAM, bez decyzji i bez stosu (M101/A). Wykonujemy zaraz po
-        // wejściu w krok, zanim ktokolwiek dostanie priorytet.
-        events.push(...drawStepTurnBasedAction(state));
-        // M257 r4/A (uwaga właściciela): „Deklaracja atakujących" bez
-        // kreatur. CR 508.1: gdy aktywny gracz nie ma ŻADNEGO legalnego
-        // atakującego, deklaracja jest pusta i AUTOMATYCZNA — decyzja nie
-        // istnieje (dotąd generator wystawiał jedną komendę z pustym
-        // zestawem, bo legalAttackerOptions → [[]]). Auto-przejście przy
-        // wejściu w krok, wzorzec auto-dobrania (CR 504.1): eventy lokalnie
-        // (pushToState: false — kolejność logu), priorytet kroku blokujących
-        // dla obrońcy (jak w drodze przez komendę).
-        if (state.turn.step === 'declare_attackers'
-            && !legalAttackerOptions(state, state.turn.activePlayerId, COMBAT_OPTION_CAP)
-              .some((attackerIds) => attackerIds.length > 0)) {
-          events.push(declareAttackers(state, state.turn.activePlayerId, [], { pushToState: false }));
-          const defenderId = state.players.find((player) => player.id !== state.turn.activePlayerId).id;
-          state.turn = jumpToStep(state.turn, 'declare_blockers', defenderId);
-          events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
+        if (!cleanupLoop) {
+          // CR 504.1: akcja turowa kroku dobierania — aktywny gracz dobiera
+          // kartę SAM, bez decyzji i bez stosu (M101/A). Wykonujemy zaraz po
+          // wejściu w krok, zanim ktokolwiek dostanie priorytet.
+          events.push(...drawStepTurnBasedAction(state));
+          // M257 r4/A (uwaga właściciela): „Deklaracja atakujących" bez
+          // kreatur. CR 508.1: gdy aktywny gracz nie ma ŻADNEGO legalnego
+          // atakującego, deklaracja jest pusta i AUTOMATYCZNA — decyzja nie
+          // istnieje (dotąd generator wystawiał jedną komendę z pustym
+          // zestawem, bo legalAttackerOptions → [[]]). Auto-przejście przy
+          // wejściu w krok, wzorzec auto-dobrania (CR 504.1): eventy lokalnie
+          // (pushToState: false — kolejność logu), priorytet kroku blokujących
+          // dla obrońcy (jak w drodze przez komendę).
+          if (state.turn.step === 'declare_attackers'
+              && !legalAttackerOptions(state, state.turn.activePlayerId, COMBAT_OPTION_CAP)
+                .some((attackerIds) => attackerIds.length > 0)) {
+            events.push(declareAttackers(state, state.turn.activePlayerId, [], { pushToState: false }));
+            const defenderId = state.players.find((player) => player.id !== state.turn.activePlayerId).id;
+            state.turn = jumpToStep(state.turn, 'declare_blockers', defenderId);
+            events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
+          }
         }
         // CR 500.4: „When a step or phase ends, any unused mana left in a
         // player's mana pool is lost" — czyli na końcu KAŻDEGO kroku i fazy
@@ -4941,6 +5092,10 @@ export function execute(state, input) {
           player.artifactOnlyMana = 0;
         }
         if (state.turn.step === 'cleanup') {
+          // M359: początek (kolejnego) cleanupu — aktywność liczy się od tej
+          // chwili; własne akcje wejścia (limit ręki, CR 514.1) nie są
+          // aktywnością stosu i pętli nie otwierają.
+          state.cleanupActivityFromEvent = state.events.length;
           clearMarkedDamage(state);
           clearStatModifiers(state);
           // Awaken the Sleeper (CR): „Gain control of target creature until
@@ -5113,6 +5268,12 @@ export function execute(state, input) {
     }
   }
 
+  // M359 (CR 514.3): zamknięty cleanup (pusty stos, brak triggerów) nie daje
+  // priorytetu — rzuty i aktywacje (łącznie z tapowaniem many) odrzucane.
+  // Za bramkami decyzji (resolve_* powyżej) i przed akcjami z priorytetu.
+  if (!cleanupPriorityOpen(state) && CLEANUP_LOCKED_COMMANDS.has(cmd.type)) {
+    return reject('cleanup_no_priority');
+  }
   if (cmd.type === 'tap_for_mana') {
     try {
       const events = tapLandForMana(state, cmd.playerId, cmd.objectId);
@@ -5344,8 +5505,10 @@ export function execute(state, input) {
     if (state.zones.stack.length > 0) return reject('stack_not_empty');
     try {
       const e = declareBlockers(state, cmd.playerId, cmd.assignments ?? {});
-      // M172/C (uwaga właściciela, CR 509.4): po deklaracji bloków gracze
-      // dostają OKNO ODPOWIEDZI, zanim padną obrażenia — priorytet najpierw
+      // M172/C (uwaga właściciela, CR 509.2 — sprostowanie G2 w audycie PR #121,
+      // cytowane 509.4 to dziś „put onto battlefield blocking", L143): po
+      // deklaracji bloków gracze dostają OKNO ODPOWIEDZI, zanim padną obrażenia
+      // — priorytet najpierw
       // dla OBROŃCY (on właśnie zamknął deklaracje i chce reagować:
       // Dawntreader Elk, pumpy, prewencje). Dotąd priorytet szedł od razu
       // do atakującego, który natychmiast brał resolve_combat — obrońca
@@ -5366,8 +5529,15 @@ export function execute(state, input) {
     if (state.turn.step !== 'combat_damage' || state.turn.priorityPlayerId !== cmd.playerId) return reject('wrong_combat_timing');
     if (state.turn.activePlayerId !== cmd.playerId) return reject('not_active_player');
     try {
-      const e = resolveCombatDamage(state, cmd.defendingPlayerId);
+      // M360/B3: drugi resolve po fladze robi TYLKO przebieg zwykły (CR 510.4).
+      const isSecondPass = state.pendingCombatSecondPass != null;
+      const e = isSecondPass
+        ? resolveCombatDamage(state, cmd.defendingPlayerId, { secondPass: true, pass: false, resumeFrom: 0 })
+        : resolveCombatDamage(state, cmd.defendingPlayerId);
+      if (isSecondPass) state.pendingCombatSecondPass = null;
       if (state.pendingReplacementChoice || state.pendingDamageAssignment) return accepted(state, cmd, {ok:true,events:e});
+      // Pierwszy krok zrobiony — krok się NIE zmienia, gra wraca do priorytetu (CR 510.3).
+      if (state.pendingCombatSecondPass) return accepted(state, cmd, { ok: true, events: e });
       state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
       const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
       state.events.push(step);
@@ -5394,7 +5564,9 @@ export function execute(state, input) {
         if (state.pendingReplacementChoice) { state.pendingReplacementChoice.continuations.push(item); continue; }
         if (item.combatResume || item.combatFinish) {
           if (item.combatResume) resolveCombatDamage(state,item.combatResume.defendingPlayerId,item.combatResume);
-          if (!state.pendingReplacementChoice && !state.pendingDamageAssignment) {
+          // M360/B3: wznowienie spomiędzy przebiegów przy splicie stawia flagę
+          // drugiego kroku (CR 510.4) — skok dopiero po drugim resolve_combat.
+          if (!state.pendingReplacementChoice && !state.pendingDamageAssignment && !state.pendingCombatSecondPass) {
             state.turn=jumpToStep(state.turn,'end_of_combat',state.turn.activePlayerId);
             state.events.push(event('step_advanced',{number:state.turn.number,phase:state.turn.phase,step:state.turn.step}));
           }
@@ -5459,12 +5631,18 @@ export function execute(state, input) {
     try {
       const e = resolveCombatDamage(state, pending.defendingPlayerId, {
         pass: pending.pass, resumeFrom: pending.resumeFrom, assignments, phase: pending.phase,
+        // M360/B3: wznowienie decyzji z drugiego kroku (CR 510.4) — zwykły
+        // przebieg wykonuje się od razu, bez stawiania flagi od nowa.
+        secondPass: pending.secondPass,
       });
       const resolved = event('damage_assignment_resolved', { playerId: pending.playerId });
       state.events.push(resolved);
       e.push(resolved);
       // Drugi pass mógł zakolejkować kolejną decyzję — kroku wtedy nie zmieniamy.
       if (state.pendingDamageAssignment || state.pendingReplacementChoice) return accepted(state, cmd, { ok: true, events: e });
+      // M360/B3: przy splicie (CR 510.4/510.3) zwykły przebieg czeka na drugi
+      // resolve_combat — krok stoi, wraca priorytet.
+      if (state.pendingCombatSecondPass) return accepted(state, cmd, { ok: true, events: e });
       state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
       const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
       state.events.push(step);
@@ -6843,7 +7021,8 @@ export function playerView(state, playerId) {
       legalCommands.push(command('resolve_hand_creature', playerId, { targetId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeExploit) {
-    // M69 (Exploit): poświęć INNEGO stwora kontrolera (kandydaci żywi) albo skip.
+    // M69 (Exploit; M361/B1: także źródło, VOW Release Notes): poświęć DOWOLNEGO
+    // stwora kontrolera (kandydaci żywi) albo skip.
     const pending = state.pendingExploits[0];
     for (const targetId of pending.candidateIds) {
       const candidate = state.objects.get(targetId);
@@ -7183,7 +7362,9 @@ export function playerView(state, playerId) {
   // zaleglaa decyzje, zamiast dopisywania kazdego nowego pendingu do dwoch
   // kopii lancucha (klasa L41/L48).
   if (state.status === 'active' && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && state.turn.priorityPlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingEscapeExile) {
+      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && state.turn.priorityPlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingEscapeExile && cleanupPriorityOpen(state)) {
+    // M359 (CR 514.3, L48): w zamkniętym cleanupie brak ofert rzutów
+    // i aktywacji (ten sam predykat co bramka w execute).
     for (const cast of legalSpellCasts(state, playerId)) {
       legalCommands.push(command('cast_spell', playerId, cast));
     }
@@ -7515,6 +7696,14 @@ export function playerView(state, playerId) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land') legalCommands.push(command('play_land', playerId, { objectId: id }));
+    }
+    // M361/B3 (ZŁOTO; CR 701.18a/b): landy z exile w żywym oknie impulsu —
+    // „you may play that card" (Gila Courser). DOPISANE po landach z ręki
+    // (boty biorące pierwszą ofertę grają najpierw z ręki — bez dryfu).
+    for (const id of state.zones.exile) {
+      const object = state.objects.get(id);
+      if (object?.controllerId === playerId && object.kind === 'land'
+        && canPlayByImpulseFromExile(object, state)) legalCommands.push(command('play_land', playerId, { objectId: id }));
     }
   }
   if (state.status === 'active' && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil

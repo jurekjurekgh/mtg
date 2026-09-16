@@ -253,8 +253,14 @@ function deliriumSetup(sourceKeywords = []) {
   return state;
 }
 
-const fireDelirium = (state) =>
-  execute(state, { type: 'resolve_delirium_target', playerId: 'p1', targetId: 'vic' });
+const fireDelirium = (state) => {
+  // M359 (CR 603.3): decyzja kładzie trigger na stos — obrażenia (wraz
+  // z protection/tarczami/infect/lifelink) dopiero po rundzie passów.
+  const resolved = execute(state, { type: 'resolve_delirium_target', playerId: 'p1', targetId: 'vic' });
+  if (!resolved.ok) return resolved;
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  return execute(state, { type: 'pass_priority', playerId: 'p2' });
+};
 
 test('M210/#5 (CR 702.16a): obrażenia z delirium respektują protection', () => {
   const state = deliriumSetup();

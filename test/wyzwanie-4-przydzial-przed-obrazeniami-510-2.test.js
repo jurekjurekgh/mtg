@@ -139,6 +139,9 @@ test('W4/4: drugi przebieg (first strike) to OSOBNY krok — moc liczona po znac
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: { att: ['fs'] } }).ok);
   atStep(state, 'combat_damage', 'p2');
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' }).ok);
+  // CR 510.4+510.3 (M360 B3): zwykły przebieg po drugiej komendzie resolve_combat.
+  state.turn.priorityPlayerId = 'p2';
+  assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' }).ok);
   assert.ok(alive(state, 'att'), 'atakujący przeżył pierwszy przebieg');
   assert.equal(state.objects.get('att').counters['-1/-1'], 1, 'infect z pierwszego przebiegu dał znacznik −1/−1');
   assert.ok(!alive(state, 'fs'), 'bloker z first strike zginął w drugim przebiegu');
@@ -272,7 +275,9 @@ test('W4/8: double strike — drugi przebieg ogłasza przydziały OD NOWA (CR 51
   }).ok, 'gracz kładzie całe 4 na b1');
   assert.ok(!alive(state, 'b1'), 'b1 zginął między przebiegami (SBA, CR 510.4)');
   assert.equal(state.pendingDamageAssignment, null, 'drugi przebieg: jeden żywy bloker = brak decyzji');
-  // Drugi przebieg jedzie w tej samej komendzie (po SBA), więc b2 jest już po.
+  // CR 510.4+510.3 (M360 B3): drugi przebieg po drugiej komendzie resolve_combat.
+  state.turn.priorityPlayerId = 'p1';
+  assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
   const toB2 = state.events.filter((entry) => entry.type === 'damage_dealt' && entry.target === 'b2' && entry.amount > 0);
   assert.deepEqual(toB2.map((entry) => entry.amount), [4],
     'b2 dostaje dokładnie raz 4 (drugi przebieg) — przydział 4/0 z pierwszego przebiegu NIE może zostać przeniesiony (CR 510.4)');

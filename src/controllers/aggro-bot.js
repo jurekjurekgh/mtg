@@ -69,6 +69,15 @@ export function createAggroBot() {
           const casts = byType(view, 'resolve_rebound_cast').filter((cmd) => cmd.cast);
           return (casts[0] ?? found);
         }
+        if (type === 'resolve_exploit_choice') {
+          // M361/B1 (strażnik benchmarku): źródło exploita jest legalnym
+          // kandydatem (VOW Release Notes), ale aggro nie poświęca samego
+          // siebie — bierzemy pierwszą INNĄ ofiarę, a bez niej skip.
+          const others = byType(view, 'resolve_exploit_choice').filter((cmd) => !cmd.skip && cmd.targetId !== cmd.sourceId);
+          if (others.length > 0) return others[0];
+          const skip = byType(view, 'resolve_exploit_choice').find((cmd) => cmd.skip === true);
+          return (skip ?? found);
+        }
         if (type === 'activate_ability') {
           // Aggro używa wyłącznie equipu własnego equipmentu — darmowy buff
           // najsilniejszego stwora pasuje do planu „atakuj". Zdolności z ręki

@@ -145,14 +145,16 @@ test('M187/N2: counter_spell_unless_pays — bez many na opłatę czar kontrowan
     .find((c) => c.type === 'cast_spell' && c.objectId === 'fd');
   assert.ok(counterCast, 'oferta kontrczaru');
   assert.ok(execute(state, { ...counterCast, targets: [stackId] }).ok);
-  for (let i = 0; i < 6 && state.zones.stack.length > 0 && !state.pendingDiscardChoice; i += 1) {
+  for (let i = 0; i < 6 && state.zones.stack.length > 0; i += 1) {
     execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   }
   assert.ok(!state.pendingCounterPay,
     'gracz bez many nie dostaje pustej decyzji „zapłać\" (mutacja canPay=true czerwieni ten test)');
   assert.ok(state.events.some((e) => e.type === 'spell_countered'),
     'czar skontrowany od razu (CR 601.2h — nie ma z czego zapłacić)');
-  assert.ok(state.pendingDiscardChoice, '„That player discards a card\" nadal następuje');
+  assert.equal(state.pendingDiscardChoice, null, 'discard 1 z 1 bez decyzji (znalezisko A)');
+  assert.ok(state.events.some((e) => e.type === 'card_discarded' && e.playerId === 'p2'),
+    '„That player discards a card\" nadal następuje');
 });
 
 // ---- Z1: podwojone zdarzenia w stanie po decyzji kończącej czar ----------

@@ -5,7 +5,7 @@ import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife } from './players.js';
-import { applyEffect, queueSearchChoice } from './effects.js';
+import { applyEffect, queueSearchChoice, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { validateTargets, hasHexproofAgainst, legalTargetCandidates } from './spells.js';
 import { attachEquipmentToCreature } from './attachments.js';
 import { shuffle } from './shuffle.js';
@@ -1126,14 +1126,24 @@ export function legalActivatedAbilities(state, playerId) {
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
-  const ninjutsuWindow = state.turn.step === 'combat_damage' && state.combat
+  // M360/B5 (BOK FAQ, mtg.wiki/Ninjutsu 2026-09-16): ninjutsu także w
+  // end_of_combat — po obrażeniach combat nie istnieje, więc niezablokowanych
+  // bierzemy ze snapshotu lastCombat (tylko z bieżącej tury).
+  const eocSnapshot = state.turn.step === 'end_of_combat'
+    && state.lastCombat?.turn === state.turn.number ? state.lastCombat : null;
+  const ninjutsuWindow = (state.turn.step === 'combat_damage' && state.combat || eocSnapshot)
     && state.turn.activePlayerId === playerId && state.turn.priorityPlayerId === playerId;
   if (ninjutsuWindow) {
-    const unblocked = state.combat.attackers.filter((id) => {
+    const attackers = state.combat?.attackers ?? eocSnapshot?.attackers ?? [];
+    const blockedSet = state.combat
+      ? (state.combat.blockedAttackers ?? new Set())
+      : new Set(eocSnapshot?.blocked ?? []);
+    const unblocked = attackers.filter((id) => {
       const object = state.objects.get(id);
-      const blocked = state.combat.blockedAttackers?.has(id)
-        ?? ((state.combat.blockers.get(id)?.length ?? 0) > 0);
-      return object?.controllerId === playerId && !blocked;
+      const blocked = state.combat
+        ? (state.combat.blockedAttackers?.has(id) ?? ((state.combat.blockers.get(id)?.length ?? 0) > 0))
+        : blockedSet.has(id);
+      return object?.zone === 'battlefield' && object?.controllerId === playerId && !blocked;
     });
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
@@ -1317,6 +1327,15 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   const discardCount = cost.discardCard ? 1 : (cost.discardCards ?? 0);
   if (discardCount > 0) {
     const handIds = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId);
+    // Znalezisko A: koszt „odrzuć N" przy dokładnie N kartach płaci się sam
+    // i aktywacja idzie dalej TĄ SAMĄ ścieżką co brak kosztu (jeden
+    // performActivation na dole — bez wstrzymanej aktywacji).
+    if (shouldAutoDiscard({ count: discardCount, candidateIds: handIds })) {
+      discardCardsForced(state, {
+        playerId, cardIds: [...handIds], purpose: 'cost',
+        sourceCardId: object.cardId, restorePriorityTo: state.turn.priorityPlayerId,
+      });
+    } else {
     state.pendingDiscardChoice = {
       playerId, count: discardCount, handIds, purpose: 'cost',
       sourceCardId: object.cardId, restorePriorityTo: state.turn.priorityPlayerId,
@@ -1332,6 +1351,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     });
     state.events.push(e);
     return e;
+    }
   }
   return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetId: opponentTargetIdArg, grantedFromEquipment: grantedFromEquipmentArg ?? false, tapArtifactIds: tapArtifactIdsArg, tapPermanentCostId: extraCostsArg?.tapPermanentCostId, sacrificeCreatureIds: extraCostsArg?.sacrificeCreatureIds, sacrificeCreatureId: extraCostsArg?.sacrificeCreatureId });
 }
@@ -1366,6 +1386,9 @@ export function performActivation(state, ctx) {
     throw new Error('Nielegalny stwór do poświęcenia (koszt)');
   }
   let sacrificedToughness;
+  // M360/B4 (EOE Release Notes, mtg.wiki/Station 2026-09-16): snapshot mocy
+  // stwora tapowanego kosztem station — LKI na wypadek usunięcia w odpowiedzi.
+  let stationTappedPower;
   const colorReqs = colorRequirementsOf(cost);
   const targetSpec = (ability.targets ?? []).map((spec) => (spec.type === 'land_you_control'
     ? { ...spec, controllerId: playerId } : spec));
@@ -1504,6 +1527,9 @@ export function performActivation(state, ctx) {
   }
   if (otherCreatureToTap) {
     const tapId = ctx.tapOtherCreatureId ?? otherCreatureToTap;
+    // M360/B4: moc EFEKTYWNA w chwili płacenia kosztu (jak sacrificedToughness
+    // dla poświęcenia) — tapnięcie mocy nie zmienia, ale liczymy przed tapem.
+    stationTappedPower = effectivePower(state.objects.get(tapId), state);
     tapObject(state, tapId, playerId);
   }
   // Koszt crew: tapujemy wybrane stwory (każde tapnięcie częścią kosztu, CR 702.122a).
@@ -1659,7 +1685,7 @@ export function performActivation(state, ctx) {
     return queueActivatedAbilityToStack(state, {
       playerId, objectId, abilityIndex, ability,
       effectSourceId: effectSource.id,
-      effectTargets, sacrificedToughness,
+      effectTargets, sacrificedToughness, stationTappedPower,
       // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
       // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
       xValue: (cost.manaX || cost.tapXArtifacts) ? (xValue ?? 0) : undefined,
@@ -1718,7 +1744,7 @@ export function legalManaAbilities(state, playerId) {
  * się od razu. Tutaj: koszty są już zapłacone, kolejkujemy wpis na stos z LKI
  * źródła (CR 603.10), a efekty zastosuje resolveTopOfStack.
  */
-export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds, stationTappedCreatureId = null, sacrificedToughness, eventExtra = {} }) {
+export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds, stationTappedCreatureId = null, sacrificedToughness, stationTappedPower, eventExtra = {} }) {
   const source = state.objects.get(effectSourceId) ?? state.objects.get(objectId) ?? {
     id: effectSourceId, controllerId: playerId, cardId: null, zone: 'none', kind: null,
   };
@@ -1742,6 +1768,8 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
       crewCreatureIds: crewCreatureIds ? [...crewCreatureIds] : undefined,
       sourceLki,
       ...(sacrificedToughness != null ? { sacrificedToughness } : {}),
+      // M360/B4: snapshot mocy do LKI station (effects.js station_counters).
+      ...(stationTappedPower != null ? { stationTappedPower } : {}),
     }),
   });
   state.objects.set(id, entry);
@@ -2069,14 +2097,22 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
  */
 function activateNinjutsu(state, playerId, cardObject, abilityIndex, ability, attackerId) {
   if (cardObject.zone !== 'hand') throw new Error('Ninjutsu aktywuje się z ręki');
-  if (state.turn.step !== 'combat_damage' || !state.combat || state.turn.activePlayerId !== playerId || state.turn.priorityPlayerId !== playerId) {
+  // M360/B5: okno end_of_combat ze snapshotu (spójnie z ofertą, L48).
+  const eocSnapshot = state.turn.step === 'end_of_combat'
+    && state.lastCombat?.turn === state.turn.number ? state.lastCombat : null;
+  if ((state.turn.step !== 'combat_damage' || !state.combat) && !eocSnapshot
+    || state.turn.activePlayerId !== playerId || state.turn.priorityPlayerId !== playerId) {
     throw new Error('Ninjutsu tylko w oknie combat po blokach');
   }
   const attacker = state.objects.get(attackerId);
   if (!attacker || attacker.zone !== 'battlefield' || attacker.controllerId !== playerId || attacker.kind !== 'creature') {
     throw new Error('Nielegalny atakujący do ninjutsu');
   }
-  if (!state.combat.attackers.includes(attackerId) || state.combat.blockers.has(attackerId)) {
+  const attackers = state.combat?.attackers ?? eocSnapshot?.attackers ?? [];
+  const attackerBlocked = state.combat
+    ? state.combat.blockers.has(attackerId)
+    : (eocSnapshot.blocked ?? []).includes(attackerId);
+  if (!attackers.includes(attackerId) || attackerBlocked) {
     throw new Error('Ninjutsu wymaga nieblokowanego atakującego');
   }
   // M257 r4 (Kappa Tech-Wrecker, „Ninjutsu {1}{G}"): pipy kolorów — spójnie
@@ -2087,7 +2123,9 @@ function activateNinjutsu(state, playerId, cardObject, abilityIndex, ability, at
   // attacker you control to hand: ...") — następuje przed wejściem zdolności
   // na stos (CR 601.2h). Atakujący znika z combat PRZED zmianą strefy, żeby
   // inwariant combat (odwołania tylko do battlefield) był spełniony w trakcie.
-  state.combat.attackers = state.combat.attackers.filter((id) => id !== attackerId);
+  // M360/B5: w end_of_combat walka już sprzątnięta (combat null) — zwrot
+  // do ręki i tak następuje (koszt), tylko nie ma skąd wypisywać.
+  if (state.combat) state.combat.attackers = state.combat.attackers.filter((id) => id !== attackerId);
   const handId = `hand-${state.objectSequence++}`;
   moveObjectDirectly(state, attackerId, 'hand', handId);
   // Audyt PR #41 (B7.2, CR 702.48a + 602.2a): ninjutsu to aktywowana zdolność

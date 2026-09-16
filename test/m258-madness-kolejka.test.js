@@ -58,7 +58,14 @@ test('M258/M1: odrzucenie 2 kart (pierwsza z madness) nie zakleszcza decyzji —
   const state = game();
   putCard(state, 'rev1', 'revolutionist', 'p1');
   putCard(state, 'other', 'tenth-district-veteran', 'p1');
-  discardChoice(state, ['rev1', 'other']);
+  putCard(state, 'third', 'basic-forest', 'p1');
+  // Znalezisko A: 2 z 3 — OBA picki to realne wybory (przy 2 z 2 reszta
+  // dokończyłaby się sama i test nie pinowałby kolejki M258).
+  state.pendingDiscardChoice = {
+    playerId: 'p1', count: 2, handIds: ['rev1', 'other', 'third'], purpose: 'effect',
+    sourceCardId: null, restorePriorityTo: 'p1',
+  };
+  state.turn.priorityPlayerId = 'p1';
 
   const r1 = execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev1' });
   assert.ok(r1.ok, 'pierwsze odrzucenie (karta z madness) przyjęte');
@@ -79,7 +86,13 @@ test('M258/M2: dwie karty z madness w jednym efekcie — decyzje SEKWENCYJNIE, �
   const state = game();
   putCard(state, 'rev1', 'revolutionist', 'p1');
   putCard(state, 'rev2', 'revolutionist', 'p1');
-  discardChoice(state, ['rev1', 'rev2']);
+  putCard(state, 'other', 'tenth-district-veteran', 'p1');
+  // Znalezisko A: 2 z 3 — jak w M1, sekwencja musi mieć realne wybory.
+  state.pendingDiscardChoice = {
+    playerId: 'p1', count: 2, handIds: ['rev1', 'rev2', 'other'], purpose: 'effect',
+    sourceCardId: null, restorePriorityTo: 'p1',
+  };
+  state.turn.priorityPlayerId = 'p1';
 
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev1' }).ok);
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev2' }).ok);

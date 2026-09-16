@@ -75,9 +75,9 @@ test('B: efekt odrzuć trzy z krótszą ręką wznawia rozstrzygnięcie',()=>{
  const s=setup();assert.ok(batch(s,['a','b']).ok);resolve(s);put(s,'mind','mindstab');addMana(s,'p1',6,{colors:['B']});
  put(s,'foe2','giant-spider','hand','p2');
  const cast=playerView(s,'p1').legalCommands.find(c=>c.objectId==='mind'&&c.type==='cast_spell'&&c.targets?.[0]==='p2');assert.ok(cast);assert.ok(execute(s,cast).ok);
- for(let i=0;i<8&&!s.pendingDiscardChoice;i++)assert.ok(execute(s,{type:'pass_priority',playerId:s.turn.priorityPlayerId}).ok);
- assert.equal(playerView(s,'p2').pendingDiscardChoice.count,2);assert.equal(playerView(s,'p1').pendingDiscardChoice,null);
- assert.ok(batch(s,['foe','foe2'],'p2').ok);assert.equal(s.pendingDiscardChoice,null);assert.equal(s.pendingSpell,null);
+ for(let i=0;i<8&&s.zones.stack.length;i++)assert.ok(execute(s,{type:'pass_priority',playerId:s.turn.priorityPlayerId}).ok);
+ assert.equal(s.pendingDiscardChoice,null,'2 z 2 bez decyzji (znalezisko A)');assert.equal(s.pendingSpell,null);
+ assert.deepEqual(s.zones.hand.filter(id=>s.objects.get(id)?.controllerId==='p2'),[],'obie karty p2 odrzucone');
 });
 
 class MiniEl {
@@ -143,8 +143,8 @@ test('B: Nightsnare zachowuje odmowę i przenosi wspólny wybór dwóch kart na 
  for(let i=0;i<8&&!s.pendingDiscardChoice;i++)assert.ok(execute(s,{type:'pass_priority',playerId:s.turn.priorityPlayerId}).ok);
  let v=playerView(s,'p1');assert.equal(plans.discardPlanOf(v.legalCommands.filter(c=>c.type==='resolve_discard_choice'),v),null,'pierwszy wybór pozostaje opcjonalnym single');
  assert.ok(execute(s,{type:'resolve_discard_choice',playerId:'p1',cardId:null}).ok);
- v=playerView(s,'p2');const plan=plans.discardPlanOf(v.legalCommands.filter(c=>c.type==='resolve_discard_choice'),v);assert.ok(plan);assert.equal(plan.count,2);
- assert.ok(execute(s,plans.commandForDiscardSelection(plan,['foe','foe2'])).ok);assert.equal(s.pendingDiscardChoice,null);
+ assert.equal(s.pendingDiscardChoice,null,'2 z 2 po rezygnacji bez kolejnego modala (znalezisko A)');
+ assert.deepEqual(s.zones.hand.filter(id=>s.objects.get(id)?.controllerId==='p2'),[],'właściciel odrzucił obie');
 });
 
 test('B UI: nagłówek grupy nazywa liczbę kart i koszt, nie pojedynczą kartę',()=>{

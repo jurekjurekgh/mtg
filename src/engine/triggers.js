@@ -10,7 +10,7 @@ import {
 import { addCounter, hasCounter } from './counters.js';
 import { deathZoneFor } from './zones.js';
 import { changeLife, setPlayerSpeed } from './players.js';
-import { effectiveAbilities, effectiveKeywords, effectivePower, wardAmountOf } from './permanents.js';
+import { effectiveAbilities, effectiveKeywords, effectivePower, wardAmountOf, grantKeywordsUntilEndOfTurn } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './resources.js';
 
@@ -54,18 +54,26 @@ const DELIRIUM_CARD_TYPES = Object.freeze([
 
 /**
  * Speed (Batch 24, Glitch Ghost Surveyor — „Start your engines!"): wzrasta
- * RAZ na turę aktywnego gracza, gdy przeciwnik traci życie (combat lub
- * niecombat damage), do maksimum 4. Samo „start" robi efekt start_engines
+ * RAZ na własną turę, gdy PRZECIWNIK TRACI ŻYCIE (nie „gdy dostaje
+ * obrażenia"), do maksimum 4. Samo „start" robi efekt start_engines
  * (ETB źródła); speed jest cechą gracza i trwa po odejściu źródła.
+ * M361/B4 (ZŁOTO; mtg.wiki/page/Speed 2026-09-16, ADR 0030):
+ * „Whenever one or more opponents lose life during your turn, if your
+ * speed is less than 4, increase your speed by 1. This ability triggers
+ * only once each turn." — hook na life_changed obejmuje JEDNYM punktem
+ * obrażenia (combat/niecombat wołają changeLife) i czystą utratę życia
+ * (lose_life), a z natury pomija: obrażenia zapobiegnięte (brak
+ * life_changed), infect w gracza (tylko poison, bez changeLife — brak
+ * utraty życia) oraz utratę własnego życia (tracący ≠ „opponent").
+ * Bramki „tylko własna tura / raz na turę / max 4" bez zmian.
  */
-function bumpSpeedIfOpponentDamaged(state, source) {
-  const controllerId = source?.controllerId;
-  if (!controllerId) return;
-  const player = state.players.find((p) => p.id === controllerId);
-  if (!player || (player.speed ?? 0) <= 0) return;
-  if (state.turn.activePlayerId !== controllerId) return; // tylko własna tura
-  if (state.speedIncreasedThisTurn?.[controllerId]) return; // raz na turę
-  if ((player.speed ?? 0) >= 4) return; // max speed
+function bumpSpeedOnLifeLost(state, loserId) {
+  for (const player of state.players) {
+    if (player.id === loserId) continue; // tracący to nie „opponent" sam dla siebie
+    if ((player.speed ?? 0) <= 0) continue; // tylko gracze z prędkością
+    if (state.turn.activePlayerId !== player.id) continue; // tylko własna tura
+    if (state.speedIncreasedThisTurn?.[player.id]) continue; // raz na turę
+    if ((player.speed ?? 0) >= 4) continue; // max speed
   // Zapis wyłącznie przez choke point `setPlayerSpeed` (players.js) — ten sam,
   // który stosuje akcję stanową „Start your engines!” (state-based.js). Bramka
   // „czy wolno wzrosnąć” zostaje tutaj (to warunek triggera), mutacja nie.
@@ -73,8 +81,9 @@ function bumpSpeedIfOpponentDamaged(state, source) {
       // do `state.events` i dopiero potem je zwraca („wołający nie dubluje
       // pusha") — re-push tutaj dawał PODWÓJNY wpis „Zwiększasz prędkość"
       // w modalu Rozgrywka. Wołamy bez rozszerzania do dziennika.
-      setPlayerSpeed(state, controllerId, (player.speed ?? 0) + 1);
-  state.speedIncreasedThisTurn = { ...(state.speedIncreasedThisTurn ?? {}), [controllerId]: true };
+      setPlayerSpeed(state, player.id, (player.speed ?? 0) + 1);
+    state.speedIncreasedThisTurn = { ...(state.speedIncreasedThisTurn ?? {}), [player.id]: true };
+  }
 }
 
 /**
@@ -1206,6 +1215,77 @@ export function resolveTriggerEntry(state, entry) {
     state.events.push(resolved);
     return state.events.slice(before);
   }
+  // M359 (CR 603.3/608.2b): MENTOR z decyzji (Boros Challenger i rodzina).
+  // Cel re-walidowany przy rozstrzyganiu: stwór na polu bitwy, NADAL
+  // atakujący i o sile wciąż mniejszej od siły źródła (aktualnej, gdy
+  // źródło żyje, albo ostatniej znanej ze snapshotu odpalenia — CR 603.10).
+  if (extra.mentorCounter) {
+    const targetId = (payload.targets ?? [])[0] ?? null;
+    const target = targetId ? state.objects.get(targetId) : null;
+    const sourcePower = (liveSource && liveSource.zone === 'battlefield' && liveSource.kind === 'creature')
+      ? (effectivePower(liveSource, state) ?? 0)
+      : (extra.mentorCounter.sourcePower ?? (lki.power ?? 0) + (lki.powerModifier ?? 0));
+    const targetPower = target ? (effectivePower(target, state) ?? 0) : 0;
+    const legal = Boolean(target && target.zone === 'battlefield' && target.kind === 'creature'
+      && (state.combat?.attackers ?? []).includes(targetId)
+      && targetPower < sourcePower);
+    if (legal) addCounter(state, targetId, '+1/+1', 1);
+    state.events.push(event('trigger_resolved', {
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
+      mentor: true, targetId, targetPower, sourcePower, noEffect: !legal,
+      ...(!legal ? { reason: !target || target.zone !== 'battlefield' ? 'no_targets' : 'power_not_lesser' } : {}),
+    }));
+    return state.events.slice(before);
+  }
+  // M359 (CR 603.3/608.2b + 702.165a): BACKUP z decyzji (Gloomfang Mauler).
+  // Cel re-walidowany przy rozstrzyganiu (stwór na polu bitwy); liczniki
+  // zawsze, grant zdolności tylko, gdy cel to INNY stwór niż źródło
+  // (porównanie id — źródło mogło zginąć w odpowiedzi, liczy się tożsamość
+  // celu, nie przetrwanie źródła).
+  if (extra.backupApply) {
+    const targetId = (payload.targets ?? [])[0] ?? null;
+    const target = targetId ? state.objects.get(targetId) : null;
+    const legal = Boolean(target && target.zone === 'battlefield' && target.kind === 'creature');
+    const grantedKeywords = legal && targetId !== payload.sourceId
+      ? [...(extra.backupApply.grantKeywords ?? [])]
+      : [];
+    if (legal) {
+      addCounter(state, targetId, '+1/+1', extra.backupApply.counters ?? 0);
+      if (grantedKeywords.length > 0) grantKeywordsUntilEndOfTurn(state, targetId, grantedKeywords, { viaBackup: true });
+    }
+    state.events.push(event('trigger_resolved', {
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
+      backup: true, targetId, counters: extra.backupApply.counters ?? 0, grantedKeywords,
+      self: targetId === payload.sourceId, noEffect: !legal,
+      ...(!legal ? { reason: 'no_targets' } : {}),
+    }));
+    return state.events.slice(before);
+  }
+  // M359 (CR 603.3/603.4 + 207.2c): DELIRIUM z decyzji (Fear of Burning).
+  // Cel re-walidowany przy rozstrzyganiu: stwór na polu bitwy pod kontrolą
+  // poszkodowanego gracza („target creature that player controls"), ORAZ
+  // intervening-if: 4+ typy kart w grobie kontrolera triggera — oba
+  // sprawdzane PRZY ROZSTRZYGANIU (cel mógł zmienić kontrolera, typy
+  // mogły opuścić grób w oknie odpowiedzi). Śmierć źródła nie zatrzymuje
+  // triggera (CR 113.7a) — obrażenia idą ze snapshotu amount, źródłem
+  // jest żywy obiekt albo stub LKI (jak pre-fix, ale bogatszy).
+  if (extra.deliriumDamage) {
+    const targetId = (payload.targets ?? [])[0] ?? null;
+    const target = targetId ? state.objects.get(targetId) : null;
+    const targetLegal = Boolean(target && target.zone === 'battlefield' && target.kind === 'creature'
+      && target.controllerId === extra.deliriumDamage.opponentId);
+    const deliriumHeld = graveyardCardTypeCount(state, extra.deliriumDamage.controllerId) >= 4;
+    if (targetLegal && deliriumHeld) {
+      applyEffect(state, { type: 'damage', amount: extra.deliriumDamage.amount ?? 0 }, source, [targetId]);
+    }
+    state.events.push(event('trigger_resolved', {
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
+      delirium: true, targetId, amount: extra.deliriumDamage.amount ?? 0,
+      noEffect: !(targetLegal && deliriumHeld),
+      ...(!(targetLegal && deliriumHeld) ? { reason: !targetLegal ? 'no_targets' : 'delirium_lost' } : {}),
+    }));
+    return state.events.slice(before);
+  }
   // Rozdział Sagi (CR 714.3 — zdolność rozdziału to zdolność triggerowana):
   // efekty + ewentualne poświęcenie po ostatnim rozdziale wykonuje
   // fireSagaChapter (zachowuje LKI, gdy Saga opuściła pole bitwy w oknie).
@@ -1557,7 +1637,7 @@ function triggerSourceZoneLegal(source, triggerEvent) {
   // źródło jest w grobie/exile (Selhoff, Servant of the Scale).
   // Refleks „When you do" (Audyt Batch53/A1): dziecko rozstrzygniętej już
   // zdolności — niezależne od strefy źródła (ruling LCI 2023-11-10).
-  return ['dies', 'any_creature_dies', 'leaves_battlefield', 'reflexive_sacrifice'].includes(triggerEvent);
+  return ['dies', 'any_creature_dies', 'leaves_battlefield', 'reflexive_sacrifice', 'reflexive_discard'].includes(triggerEvent);
 }
 
 export function triggerTargetDecisionPending(state, pending) {
@@ -2198,8 +2278,21 @@ function processTriggersScan(state, recentEvents) {
       }
     }
     if (ev.type === 'exploited') {
-      const exploiter = state.objects.get(ev.exploiterId);
-      if (exploiter && exploiter.zone === 'battlefield') {
+      let exploiter = state.objects.get(ev.exploiterId);
+      // M361/B1 (ZŁOTO; VOW Release Notes, mtg.wiki/Exploit 2026-09-16, ADR 0030):
+      // „You can sacrifice the creature with exploit if it's still on the
+      // battlefield. This will cause its other ability to trigger." — przy
+      // samopoświęceniu źródło jest już w grobie (moved.id), więc trigger
+      // „exploits" odpalamy z obiektu LKI (jak trigger dies), nie z pola bitwy.
+      // Bez flagi selfSacrifice wymóg „na stole" ZOSTAJE (VOW Notes: źródło
+      // musi stać w chwili poświęcania — inaczej „that last ability won't
+      // trigger"): pokrywa sekwencyjne kolejki multi-exploit (drugi exploiter
+      // poświęcony jako ofiara pierwszego milczy).
+      if ((!exploiter || exploiter.zone !== 'battlefield') && ev.selfSacrifice === true) {
+        const lastKnown = state.objects.get(ev.exploitedId);
+        if (lastKnown && (lastKnown.zone === 'graveyard' || lastKnown.zone === 'exile')) exploiter = lastKnown;
+      }
+      if (exploiter && (exploiter.zone === 'battlefield' || ev.selfSacrifice === true)) {
         for (const ability of effectiveAbilities(exploiter)) {
           if (ability?.trigger?.event === 'exploits') {
             tryFire(state, ability, exploiter, [], events, { exploitedId: ev.exploitedId });
@@ -2229,6 +2322,30 @@ function processTriggersScan(state, recentEvents) {
           for (const ability of effectiveAbilities(source)) {
             if (ability?.trigger?.event === 'reflexive_sacrifice') {
               tryFire(state, ability, source, [], events, { sacrificedId: ev.sacrificedId ?? null });
+            }
+          }
+        }
+      }
+    }
+    // M361/B2 (ZŁOTO, Talion's Messenger; Scryfall ruling 2023-09-01, ADR 0030):
+    // „a second 'reflexive' ability triggers when you discard a card this
+    // way. You choose a target for that ability as it goes on the stack. Each
+    // player may respond to this triggered ability as normal." — handler jak
+    // reflexive_sacrifice (zdolność niesie zdarzenie; LKI, CR 603.10).
+    if (ev.type === 'reflexive_discard') {
+      if (ev.reflexiveAbility) {
+        const live = state.objects.get(ev.sourceId);
+        const source = (live && live.zone === 'battlefield') ? live : Object.freeze({
+          id: ev.sourceId, controllerId: ev.playerId ?? live?.controllerId ?? null,
+          cardId: ev.cardId ?? null, zone: 'none',
+        });
+        tryFire(state, ev.reflexiveAbility, source, [], events, { discardedCount: ev.discardedCount ?? 0 });
+      } else {
+        const source = state.objects.get(ev.sourceId);
+        if (source && source.zone === 'battlefield') {
+          for (const ability of effectiveAbilities(source)) {
+            if (ability?.trigger?.event === 'reflexive_discard') {
+              tryFire(state, ability, source, [], events, { discardedCount: ev.discardedCount ?? 0 });
             }
           }
         }
@@ -2301,9 +2418,8 @@ function processTriggersScan(state, recentEvents) {
       // Zdolności czytamy z LKI zdarzenia; brak jakiejkolwiek informacji
       // o źródle = pomijamy WYŁĄCZNIE gałęzie źródła, nie całe zdarzenie.
       const source = state.objects.get(ev.source) ?? ev.sourceLki ?? null;
-      // Speed (DFT „Start your engines!"): wzrost raz na turę aktywnego gracza
-      // przy obrażeniach combat przeciwnika (max 4) — patrz bumpSpeedIfOpponentDamaged.
-      if (source) bumpSpeedIfOpponentDamaged(state, source);
+      // Speed rośnie z life_changed (M361/B4) — obrażenia combat wołają
+      // changeLife, więc osobny hook tutaj już nie istnieje.
       // Inicjatywa (CR 725): stwory zadające combat damage posiadaczowi
       // inicjatywy przejmują ją (karta The Initiative; podstawa Underdark
       // Explorer). Pierwsze objęcie inicjatywy = venture do lochu.
@@ -2390,9 +2506,7 @@ function processTriggersScan(state, recentEvents) {
       const damageSource = state.objects.get(ev.source);
       const damageControllerId = damageSource?.controllerId ?? null;
       if (!damageControllerId || damageControllerId === ev.target) return;
-      // Speed (DFT „Start your engines!"): wzrost także przy obrażeniach
-      // niecombat (max 4, raz na turę aktywnego gracza).
-      bumpSpeedIfOpponentDamaged(state, damageSource);
+      // Speed rośnie z life_changed (M361/B4) — patrz gałąź niżej.
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield' || source.controllerId !== damageControllerId) continue;
         for (const ability of effectiveAbilities(source)) {
@@ -2429,6 +2543,13 @@ function processTriggersScan(state, recentEvents) {
           state.events.push(fired); events.push(fired);
         }
       }
+    }
+    // Speed (M361/B4, mtg.wiki/Speed): „Whenever one or more opponents lose
+    // life during your turn..." — JEDYNY punkt wzrostu: faktyczna utrata
+    // życia (amount < 0), niezależnie od przyczyny (obrażenia i lose_life
+    // wołają changeLife; infect/prewencja nie emitują straty życia).
+    if (ev.type === 'life_changed' && ev.amount < 0 && isPlayerId(state, ev.playerId)) {
+      bumpSpeedOnLifeLost(state, ev.playerId);
     }
     // Wejście na pole bitwy (rozstrzygnięty czar permanentu, powrót z grobu,
     // land drop, rozstrzygnięty czar aury bestow). permanent_cast NIE jest
@@ -2546,18 +2667,27 @@ function processTriggersScan(state, recentEvents) {
       // ..." — opcjonalna, blokująca decyzja kontrolera (resolve_exploit_choice:
       // poświęć stwora albo skip), jak devour. Po poświęceniu emitujemy zdarzenie
       // exploited, które odpala trigger „exploits" (niżej w processEvent).
+      // M361/B1 (ZŁOTO; VOW Release Notes, mtg.wiki/Exploit 2026-09-16, ADR 0030):
+      // kandydatem jest KAŻDY stwór kontrolera, WŁĄCZNIE ze źródłem („A player
+      // can sacrifice any creature they control when the exploit ability
+      // resolves, including the creature with exploit itself"). Dotąd filtr
+      // `candidate.id !== entered.id` wykluczał źródło, więc samotny Rzeźnik
+      // nie dostawał nawet decyzji — a mógł poświęcić siebie i odpalić
+      // „when this exploits" („This will cause its other ability to trigger").
+      // Decyzję kolejkujemy zawsze (źródło stoi na stole w chwili wejścia);
+      // odmowa = jawny skip („you don't have to").
       if (entered.kind === 'creature' && entered.exploit) {
         const exploitCandidates = state.zones.battlefield.filter((objectId) => {
           const candidate = state.objects.get(objectId);
           return candidate?.zone === 'battlefield' && candidate.kind === 'creature'
-            && candidate.controllerId === entered.controllerId && candidate.id !== entered.id;
+            && candidate.controllerId === entered.controllerId;
         });
-        // Bez innych stworów „you may sacrifice a creature" nie ma wyboru —
-        // decyzji nie kolejkujemy (jak devour), trigger „exploits" i tak nie
-        // odpali (nic nie poświęcono). To NIE przerywa przetwarzania wejścia:
-        // exploit to zdolność triggerowana (CR 702.110a — „When this creature
-        // enters"), wejście nastąpiło niezależnie od dostępności kandydatów,
-        // więc triggery wejścia (własne i innych permanentów) muszą odpalić.
+        // Kolejkujemy ZAWSZE (niezależnie od planszy — samo źródło jest
+        // kandydatem, więc lista nie bywa pusta): exploit to zdolność
+        // triggerowana (CR 702.110a — „When this creature enters"), wejście
+        // nastąpiło niezależnie od dostępności kandydatów, więc triggery
+        // wejścia (własne i innych permanentów) muszą odpalić — a rezygnacja
+        // to jawny skip decyzji, nie brak triggera.
         if (exploitCandidates.length > 0) {
           state.pendingExploits.push({
             playerId: entered.controllerId,
@@ -3024,6 +3154,9 @@ function processTriggersScan(state, recentEvents) {
             state.pendingMentorTargets.push({
               playerId: attacker.controllerId,
               sourceId: attacker.id,
+              // M359: cardId źródła do wpisu stosu (LKI nazwy, gdy źródło
+              // zniknie przed decyzją — w grze niemożliwe, w testach tak).
+              cardId: attacker.cardId ?? null,
               sourcePower,
               candidateIds: candidates,
               restorePriorityTo: state.turn.priorityPlayerId,

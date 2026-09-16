@@ -58,6 +58,11 @@ test('Batch38/Z1: damage_dealt z resolve_delirium_target niesie targetCardId', (
   const before = state.events.length;
   const r = execute(state, { type: 'resolve_delirium_target', playerId: 'p1', targetId: 'victim' });
   assert.ok(r.ok, r.events?.[0]?.reason);
+  // M359 (CR 603.3): decyzja kładzie trigger na stos — damage_dealt dopiero
+  // po rundzie passów (restorePriorityTo p1).
+  assert.equal(state.zones.stack.length, 1, 'trigger delirium na stosie (M359)');
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok);
   const dd = state.events.slice(before).find((e) => e.type === 'damage_dealt');
   assert.ok(dd, 'jest damage_dealt');
   assert.equal(dd.target, 'victim');

@@ -794,8 +794,10 @@
   /* --- M232: tryb wysoko-graficzny (pełnoekranowe FOT+KON) ------------ */
   /* Czarne tło, dwie ilustracje jedna pod drugą, wycentrowane, wypełniają
      ekran w pionie i poziomie BEZ scrolla. z-index nad card-fullscreen. */
-  .hi-gfx-toggle { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer; white-space: nowrap; }
-  .hi-gfx-toggle input { cursor: pointer; }
+  .topbar .icon-toggle { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 26px; padding: 0; background: var(--bg-panel); border: 1px solid var(--border-2); border-radius: 6px; color: var(--text); cursor: pointer; }
+  .topbar .icon-toggle:hover { border-color: var(--gold-2); }
+  .topbar .icon-toggle[aria-pressed="true"] { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); color: var(--gold); }
+  .topbar .icon-toggle[aria-pressed="false"] { opacity: .55; }
   .art-showcase {
     display: none; position: fixed; inset: 0; z-index: 2700; background: #000;
     touch-action: manipulation; cursor: pointer; overflow: hidden;
@@ -826,6 +828,9 @@
      dokładnie DOTYCHSZASOWY widok jednej ilustracji (KON sam, wycentrowany). */
   @media (max-aspect-ratio: 7/5) {
     .art-showcase .showcase-row .showcase-scryfall { display: none; }
+    /* 15g/B: wąski ekran BEZ lokalnego KON (404) — scryfall to jedyny obraz
+       warstwy, więc wraca (selektorem mocniejszym od reguły wyżej). */
+    .art-showcase .showcase-row.no-kon .showcase-scryfall { display: block; max-width: 90vw; }
   }
   /* I1: mała informacja kto rzucił (nakładka — wielkości FOT/KON nietknięte). */
   .art-showcase .showcase-caster {
@@ -1007,12 +1012,12 @@
       <select id="deck-bot"></select>
       <button id="new-game">Rozpocznij partię</button>
       <button id="shuffle-seed" title="Losowe ziarno tasowania">Tasuj talię 🎲</button>
-      <!-- M232 (zlecenie właściciela): tryb wysoko-graficzny. Domyślnie
-           wyłączony. Włączenie pokazuje pełnoekranowe ilustracje (FOT+KON)
-           przy każdym rzuceniu czaru / wystawieniu non-basic lądu. -->
-      <label class="hi-gfx-toggle" for="hi-gfx" title="Pełnoekranowe ilustracje przy rzucaniu kart">
-        <input type="checkbox" id="hi-gfx"> Tryb wysoko-graficzny
-      </label>
+      <!-- 15f (zlecenie właściciela): ikonki-toggle. Dźwięki czarów
+           (domyślnie WYŁĄCZONE) i tryb wysoko-graficzny M232 (od 15f
+           domyślnie WŁĄCZONY; był ptaszek, jest ikonka). Ikony startowe
+           = domyślne; JS przemalowuje z pamięci przy starcie. -->
+      <button type="button" id="sound-toggle" class="icon-toggle" aria-pressed="false" title="Efekty dźwiękowe czarów (włącz/wyłącz)" aria-label="Efekty dźwiękowe"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" stroke="none"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
+      <button type="button" id="hi-gfx" class="icon-toggle" aria-pressed="true" title="Tryb wysoko-graficzny: pełnoekranowe ilustracje przy rzucaniu kart (włącz/wyłącz)" aria-label="Tryb wysoko-graficzny"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-4.5-4.5L9 18"/></svg></button>
     </div>
   </div>
 

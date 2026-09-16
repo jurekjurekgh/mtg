@@ -186,6 +186,7 @@ test('B2: Toll of the Invasion — reveal + OBOWIĄZKOWY wybór nonland + amass 
   putCard(state, 'toll', 'toll-of-the-invasion', 'p1', 'hand');
   putCard(state, 'oppland', 'basic-swamp', 'p2', 'hand');
   putCard(state, 'oppcrt', 'highland-game', 'p2', 'hand');
+  putCard(state, 'oppcrt2', 'goblin-piker', 'p2', 'hand');
   addMana(state, 'p1', 3, { colors: ['B'] });
   const cast = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'cast_spell' && c.objectId === 'toll' && c.targets?.[0] === 'p2');
@@ -196,11 +197,11 @@ test('B2: Toll of the Invasion — reveal + OBOWIĄZKOWY wybór nonland + amass 
   assert.ok(state.pendingDiscardChoice, 'decyzja wyboru z odsłoniętej ręki');
   assert.equal(state.pendingDiscardChoice.chooserId, 'p1', 'wybiera rzucający');
   assert.equal(state.pendingDiscardChoice.allowDecline, false, 'wybór obowiązkowy (bez rezygnacji)');
-  assert.deepEqual(state.pendingDiscardChoice.handIds, ['oppcrt'], 'tylko karta nieladowa');
+  assert.deepEqual(state.pendingDiscardChoice.handIds, ['oppcrt', 'oppcrt2'], 'tylko karty nieladowe');
   const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_discard_choice');
   assert.ok(offers.every((c) => c.cardId != null), 'brak oferty rezygnacji (mandatory)');
   assert.ok(execute(state, offers[0]).ok);
-  assert.ok([...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'graveyard'),
+  assert.ok([...state.objects.values()].some((o) => ['highland-game', 'goblin-piker'].includes(o.cardId) && o.zone === 'graveyard'),
     'wybrana karta odrzucona');
   // Amass Zombies 1: token Zombie Army 0/0 + licznik +1/+1.
   const army = [...state.objects.values()].find((o) => o.isToken && (o.subtypes ?? []).includes('Army'));

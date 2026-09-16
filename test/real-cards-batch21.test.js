@@ -466,6 +466,8 @@ test('True Conviction: niezablokowany atak 2/2 zadaje 4 i daje 4 życia', () => 
   state.combat = { attackingPlayerId: 'p1', attackers: ['atk'], blockers: new Map(), blockedAttackers: new Set() };
   const p1life0 = state.players.find((p) => p.id === 'p1').life;
   resolveCombatDamage(state, 'p2');
+  // CR 510.4 (M360 B3): double strike = drugi krok po drugiej komendzie.
+  if (state.pendingCombatSecondPass) { state.pendingCombatSecondPass = null; resolveCombatDamage(state, 'p2', { secondPass: true, pass: false, resumeFrom: 0 }); }
   const p1 = state.players.find((p) => p.id === 'p1');
   const p2 = state.players.find((p) => p.id === 'p2');
   assert.equal(p2.life, 16, 'double strike: 2+2 = 4 obrażeń');

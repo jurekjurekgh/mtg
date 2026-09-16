@@ -289,11 +289,8 @@ test('B44/13: Frightful Delusion — kontroler płaci {1} (czar zostaje) albo ni
   assert.ok(noPay, 'oferta „nie płać"');
   assert.ok(execute(state, noPay).ok);
   assert.ok(state.events.some((e) => e.type === 'spell_countered'), 'czar skontrowany');
-  // „That player discards a card" — wybór karty do odrzucenia.
-  const disc = playerView(state, 'p2').legalCommands
-    .find((c) => c.type === 'resolve_discard_choice');
-  assert.ok(disc, 'kontroler odrzuca kartę');
-  assert.ok(execute(state, disc).ok);
+  // „That player discards a card" — 1 z 1 bez decyzji (znalezisko A).
+  assert.equal(state.pendingDiscardChoice, null, 'discard całości bez decyzji');
   assert.ok(state.events.some((e) => e.type === 'card_discarded'), 'karta odrzucona');
   const fdGone = [...state.objects.values()].find((o) => o.cardId === 'frightful-delusion');
   assert.equal(fdGone.zone, 'graveyard', 'Frightful Delusion dokończył rozstrzyganie');
@@ -324,10 +321,8 @@ test('B44/13: Frightful Delusion — kontroler płaci {1} (czar zostaje) albo ni
     .find((c) => c.type === 'resolve_counter_pay_choice' && c.pay === true);
   assert.ok(pay, 'oferta zapłaty {1} (ma landa)');
   assert.ok(execute(s2, pay).ok);
-  const disc2 = playerView(s2, 'p2').legalCommands
-    .find((c) => c.type === 'resolve_discard_choice');
-  assert.ok(disc2, 'discard także po zapłacie');
-  assert.ok(execute(s2, disc2).ok);
+  assert.equal(s2.pendingDiscardChoice, null, 'discard 1 z 1 bez decyzji (znalezisko A)');
+  assert.ok(s2.events.some((e) => e.type === 'card_discarded'), 'discard także po zapłacie');
   assert.ok(!s2.events.some((e) => e.type === 'spell_countered'), 'czar NIE skontrowany');
   const spellObj = [...s2.objects.values()].find((o) => o.cardId === 'fleeting-distraction');
   assert.equal(spellObj.zone, 'stack', 'czar wciąż na stosie po zapłacie');

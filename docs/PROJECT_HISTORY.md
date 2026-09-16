@@ -19,6 +19,59 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-16 Złoto M361 (wyzwanie 16c: 5 unikalnych błędów reguł)
+
+Wyzwanie Złote (plan `docs/plans/PLAN_2026-09-16c-challenge-zloto.md`):
+5 bugów, każdy zweryfikowany online PRZED zmianą, RED→GREEN + mutacja
+(odwrócenie fixa czerwieni test), własny strażnik, cytat online w kodzie
+(ADR 0030). Commity `16c/B1`…`16c/B5` + `16c/E6` (`465e0e4`, `d987fa4`,
+`2421ec0`, `f082bef`, `30e4991`); milestone M361; lekcja L146; sondy
+inline (brak plików do sprzątania).
+
+B1 — exploit: źródło własnym kandydatem + trigger LKI przy
+samopoświęceniu (CR 702.110, VOW Notes).
+B2 — Talion's Messenger: refleks reflexive_discard (Scryfall ruling
+2023-09-01: cel po odrzucie, okno odpowiedzi).
+B3 — land drop z exile w oknie impulsu (Gila Courser, CR 701.18a/b).
+B4 — speed przy utracie życia, nie tylko damage (mtg.wiki/Speed):
+jeden hook life_changed; lekcja L146.
+B5 — modalne cele przez validateTargets przy rezolucji (CR 608.2b):
+tryb stały + gałąź per-cel dla „up to N" (po drodze regresja 7 testów,
+naprawiona w B5).
+
+Bramki E6: `npm test` 5610/5610, `test:all` 5620/5620, build
+63/3742,6kB, quick 672 gry (heuristic 82,0%, aggro 32,7%, random 3,3%).
+
+## 2026-09-16 Srebro M360 (wyzwanie 16b: 5 unikalnych błędów reguł)
+
+Wyzwanie Srebrne (plan `docs/plans/PLAN_2026-09-16b-challenge-srebro.md`):
+5 bugów, każdy zweryfikowany online PRZED zmianą, RED→GREEN + mutacja
+(odwrócenie fixa czerwieni test), własny strażnik/pin, cytat online w kodzie
+(ADR 0030). Commity `16b/B1`…`16b/B5` + `16b/E6` (`3d00b55`, `a2187b8`,
+`a0b053d`, `d3a8702`, `5654844`); milestone M360; lekcja L145; sondy
+probe-silver7–11 i audyty skasowane w E6.
+
+B1 — Negate kontruje bestow-Aurę (CR 702.103b, mtg.wiki/Bestow + Scryfall):
+bestow jako Aura to czar nie-stworowy; `spell.aura` rozstrzyga (L48).
+B2 — Spectral Prison i Treefolk Umbra bez podtypu Aura (Oracle/Scryfall);
+Ironclad Slayer nie zawracał; niezmiennik w danych.
+B3 — first/double strike: DWA kroki obrażeń z priorytetem (CR 510.4+510.3,
+mtg.wiki/Combat_damage_step): snapshot `firstStrikeAtStart` + flaga
+`pendingCombatSecondPass`; migracje batch54/bug-hunt-08-11/wyzwanie-4-5/
+real-cards-batch21; golden-master świadomie zregenerowany (partia ze
+strikerem `865c0302…`, gra domyka się czysto).
+B4 — Station czyta LKI (EOE Release Notes, mtg.wiki/Station): snapshot
+`stationTappedPower` na wpisie stosu; żywy stwór: moc aktualna (→ L145).
+B5 — ninjutsu w end_of_combat (BOK FAQ, mtg.wiki/Ninjutsu): snapshot
+`rememberClosedCombat` ze stemplem tury; odcisk pokrywa `lastCombat`.
+
+Tropy martwe: trample+deathtouch, regen, fight, unless-pay, crew, blok-bez-
+blokera, próg stacji, H30–H42, S2/S6/S10 (szczegóły w M360).
+
+Bramki: `npm test` **5589/5589**, `test:all` **5599/5599**, build **63 / 3732,8 kB**,
+quick 672 gry — heuristic **82,1%**, aggro **32,7%**, random **3,0%**.
+Po drodze: kondensacja LESSONS.md (budżet lektury 100,1k→~99,3k, L145 + L91/L127/L98/L48/L13).
+
 ## 2026-09-13 A+C (znaleziska właściciela z testów: tor hovera, samobójstwo Sarkhana)
 
 Właściciel po shippie F1–F5 zgłosił 3 znaleziska z własnych testów; A i C naprawione
@@ -10925,3 +10978,61 @@ w fazie obrażeń zapobiegło 5 obrażeniom), F2 obie strony (Sliver bez
 Powerstone w kreatorze, Altar z Powerstone tapniętym), atrybucja odrzucenia.
 Detektory: 0 zgłoszeń. Bramki: npm test 5514/5514, build 61/3685,0 kB,
 quick benchmark 82,9% (557/672) bez zmian.
+
+## 2026-09-15d — audyt PR #121 (APPROVE) + sprostowanie cytatów CR G1/G2/G3 (PR #123, arena/01a0a5a7-mtg)
+
+Zlecenie „Kontynuujemy projekt." bez tematu → pętla domyślna ADR 0021
+(PR sesji na starcie, audyt #121, brak niedokończonego planu na main).
+Raport `docs/audits/AUDYT_PR121_2026-09-15.md`: werdykt APPROVE — 10 weryfikacji
+mechanicznych (fixture bit w bit == arena/01a0a506-mtg sha256 `b5a5dbf3…`;
+mutacja pre-F1 → RED; cytat 702.16e dosłowny; Oracle Powerstone ze snapshotów
+repo; V8: okno combat_damage = CR 509.2, przydział+rozdanie razem bez okna na
+czary — podejrzenie dewiacji 510.2 wycofane po odczycie przepływu).
+Znaleziska wyłącznie komentarzowe, naprawione w E2 (zero zachowania):
+G1 (A4: „CR 510.1 = priorytet przed rozdaniem" → podstawa CR 509.2; komentarz
+bota + nagłówek testu), G2 (M172/C: 509.4→509.2, L143), G3 (M221/E z PR #107:
+4× 702.16c→702.16e + doprecyzowanie nagłówka; rozstrzyga niepokój z 15b).
+Pętla jakości inną ścieżką niż Żywy Tester #121: audyt kontraktu
+pendingDamageAssignment (oferta vs walidacja, L48) — czysty; benchmark --quick
+82,9% (557/672) = main (tożsamość behawioralna E2 zmierzona). Nowa obserwacja
+O5: inwentarz cytatów 702.16 o niezweryfikowanym kontekście (osobne zadanie).
+Bramki: npm test 5514/5514, test:all 5524/5524, build 61/3685,6 kB (+0,6 kB —
+komentarze w bundlu), regresja B0 10/10.
+Handoff: [`docs/setup/HANDOFF_2026-09-15c.md`](setup/HANDOFF_2026-09-15c.md).
+
+**Dopisek (ten sam dzień, ten sam PR #123): znalezisko A — wymuszony discard
+bez modala.** Właściciel: Cathartic Reunion przy dokładnie 2 kartach otwierał
+modal wyboru. Fix generyczny (plan `docs/plans/PLAN_2026-09-15e-*.md`): jeden
+predykat `shouldAutoDiscard` + jeden wykonawca `discardCardsForced`
+w `effects.js` (11 miejsc kolejkowania, resolver też; `hand_size` nietknięte),
+`promoteNextMadness` na poziom modułu + hook w `accepted()` (madness w tej
+samej komendzie). Test `test/owner-cathartic-reunion-auto-discard.test.js` (8;
+RED→GREEN, mutacja 5 RED). Triage 13 breaksów: 1 prawdziwy bug (kontrakt
+`declined.count` — jawne `count: 0`), reszta intended + determinizm (skrypt
+zależny od bloku — biblioteka p1) + regen golden-mastera (uzasadniona: 1 wpis
+mniej, downstream bit w bit, overallHash `4e1dd246…`). Lekcja **L144** (wpis
+opłacony kondensacją L66 — budżet lektury 100k). Bramki: npm test 5522/5522,
+test:all 5532/5532, build 61/3693,6 kB, quick 82,9% (557/672, bez zmian).
+
+**Dopisek (ten sam dzień, ten sam PR #123): dźwięki czarów + ikonki-toggle
+(15f).** Zlecenie właściciela: nastrojowy dźwięk w chwili pokazania warstwy
+hi-gfx, inny na typ (synteza Web Audio, zero wavów: instant/sorcery/
+creature/enchantment/artifact/land/default; `src/table/spell-sounds.js`),
+przełącznik dźwięków w belce (domyślnie OFF) + ptaszek hi-gfx zamieniony
+na ikonkę (odtąd domyślnie ON; pamięć `mtg-table-prefs-v1`;
+`src/table/topbar-toggles.js`). Dźwięk gra razem z warstwą (kolejka
+M254/C), a bez warstwy — w chwili rzutu; ukryty rzut bota milczy (M257
+r3). Test `test/owner-spell-sounds.test.js` (20; mutacja 5 RED); harness
+`table-ui.test.js` wpina hiGfx:false (click-through bez pauzy).
+
+**Dopisek (ten sam dzień, ten sam PR #123): 15g — dźwięki per kolor (A),
+scryfall na warstwie (B), minima landów (C).** (A) Warstwa koloru dźwięku:
+`play('sorcery:R')` = baza typu + ogień/woda/mrok/chime/wzrost (multi +
+bezbarwny też; 7+7 = 49 brzmień, macierz pinowana). (B) Wąski ekran
+(< 7/5) BEZ lokalnego KON pokazywał pustą warstwę: błąd KON znaczy wiersz
+`no-kon`, CSS pokazuje wtedy scryfalla; błąd sf zdejmuje `is-loading`
+(widoczny, nie czarny). Pre-existing (I2), odsłonięte przez default-ON.
+(C) `landSplit`: minimum per kolor = maks pipów jednej karty, dobór
+kosztem innych, overflow rośnie; regen 5 talii (±1 land, sumy stałe);
+fala: golden-master regen (`131cd510…`, 4/6 partii bit w bit) + podłoga
+remisów 6→4 (obie uzasadnione pomiarem, nie zgadnięte).

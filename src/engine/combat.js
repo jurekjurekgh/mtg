@@ -419,7 +419,35 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
   // first strike (stawory z first strike nie zadają też w zwykłym przebiegu —
   // CR 510.5). Mapa na indeks numeryczny: true→0 (first strike), false→1.
   const startIndex = resume ? (resume.pass ? 0 : 1) : 0;
-  const startFrom = resume ? resume.resumeFrom : 0;
+  const startFrom = resume ? (resume.resumeFrom ?? 0) : 0;
+  // M360/B3 (CR 510.4 + 510.3, mtg.wiki/Combat_damage_step 2026-09-16): przy first/double
+  // strike są DWA kroki obrażeń z priorytetem pomiędzy — nie dwa przebiegi
+  // w jednej komendzie. Pierwszy resolve robi przebieg first strike i stawia
+  // pendingCombatSecondPass; drugi (po rundzie priorytetu) — zwykły.
+  const secondPassCall = Boolean(resume?.secondPass);
+  if (!secondPassCall && state.combat && state.combat.firstStrikeAtStart == null) {
+    const ids = [...(state.combat.attackers ?? [])];
+    for (const blockerIds of state.combat.blockers?.values() ?? []) ids.push(...blockerIds);
+    state.combat.firstStrikeAtStart = ids.filter((id) => {
+      const combatant = state.objects.get(id);
+      return combatant && (hasKeyword(state, combatant, 'first_strike') || hasKeyword(state, combatant, 'double_strike'));
+    });
+  }
+  const splitSteps = (state.combat?.firstStrikeAtStart ?? []).length > 0;
+  // Które przebiegi w TYM wywołaniu: świeży drugi resolve — tylko zwykły;
+  // świeży pierwszy przy splicie — tylko first strike (flaga zamiast drugiego);
+  // wznowienie kontynuuje swój przebieg, ale przy splicie zwykły i tak czeka
+  // na flagę (kontynuacja replacement spomiędzy przebiegów też).
+  let doFirst = true;
+  let doRegular = true;
+  if (secondPassCall) {
+    doFirst = false;
+  } else if (resume) {
+    doFirst = resume.pass === true;
+    doRegular = !doFirst && !(splitSteps && resume.pass !== true);
+  } else if (splitSteps) {
+    doRegular = false;
+  }
   // W3 (CR 510.1d): przebieg ma dwie fazy — atakujący, potem blokujący.
   // Wznowienie po decyzji BLOKERA nie może powtórzyć fazy atakujących
   // (obrażenia zostały już zadane), więc resume niesie `phase`.
@@ -434,6 +462,8 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
   const passes = [true, false];
   for (let pi = startIndex; pi < passes.length; pi += 1) {
     const pass = passes[pi];
+    if (pass && !doFirst) continue;
+    if (!pass && !doRegular) continue;
     if (state.status !== 'active') break;
     const from = pi === startIndex ? startFrom : 0;
     const phase = pi === startIndex ? startPhase : 'assign-attackers';
@@ -441,7 +471,7 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
     // ATAKUJĄCEGO (CR 510.1c/d). Gdy przebieg napotka taką sytuację, ustawia
     // pendingDamageAssignment i kończy komendę — reszta przebiegu wykona się
     // po resolve_damage_assignment (resume).
-    if (!processCombatPass(state, pass, events, defendingPlayerId, from, assignments, phase)) {
+    if (!processCombatPass(state, pass, events, defendingPlayerId, from, assignments, phase, secondPassCall)) {
       return events;
     }
     assignments = null;
@@ -456,12 +486,36 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
       }
     }
   }
+  // M360/B3: pierwszy krok zrobiony, drugi czeka na rundę priorytetu (CR 510.3)
+  // — combat trwa, flaga woła drugi resolve_combat zamiast skoku kroku.
+  if (!secondPassCall && splitSteps && state.combat && state.status === 'active') {
+    state.pendingCombatSecondPass = { defendingPlayerId };
+    return events;
+  }
   // Sesja combat kończy się przed state-based actions: śmierć stwora nie może
   // pozostawić odwołań do obiektów już poza battlefield (pilnuje inwariant).
+  // M360/B5: snapshot przed skasowaniem — okno ninjutsu w end_of_combat (BOK FAQ).
+  rememberClosedCombat(state);
   state.combat = null;
   events.push(...runStateBasedActions(state));
   if (state.pendingReplacementChoice) state.pendingReplacementChoice.continuations.push({combatFinish:true});
   return events;
+}
+
+/**
+ * M360/B5 (BOK FAQ, mtg.wiki/Ninjutsu 2026-09-16): ninjutsu działa też
+ * w end_of_combat, a wtedy `state.combat` już nie istnieje — zapamiętujemy
+ * kto atakował i kto był zablokowany. Stempel tury odcina stare snapshoty
+ * (oferta tylko w turze walki).
+ */
+export function rememberClosedCombat(state) {
+  if (!state.combat) return;
+  state.lastCombat = {
+    turn: state.turn.number,
+    attackingPlayerId: state.combat.attackingPlayerId,
+    attackers: [...(state.combat.attackers ?? [])],
+    blocked: [...(state.combat.blockedAttackers ?? [])],
+  };
 }
 
 /** Czy obrażenia tego atakującego wymagają decyzji gracza (CR 510.1c/d). */
@@ -472,13 +526,25 @@ function needsDamageAssignmentDecision(state, attacker, blockers) {
   return blockers.length > 1 || hasKeyword(state, attacker, 'trample');
 }
 
-/** Przynależność do przebiegu first strike (CR 510.4/510.5) — na poziomie modułu. */
+/** Przynależność do przebiegu first strike (CR 510.4/510.5) — na poziomie modułu.
+ * M360/B3 (CR 510.4): „as the combat damage step begins” — gdy istnieje
+ * snapshot ze startu kroku (state.combat.firstStrikeAtStart), on rozstrzyga
+ * (nadanie/zabranie strike w oknie priorytetu między krokami go nie zmienia).
+ * Bez snapshotu (podglądy sprzed obrażeń) — bieżące keywordy jak dotąd. */
 function inFirstStrikePassOf(state, id) {
   const object = state.objects.get(id);
+  if (!object) return false;
+  const snap = state.combat?.firstStrikeAtStart;
+  if (Array.isArray(snap)) return snap.includes(id);
   return Boolean(object) && (hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
 }
 function inRegularPassOf(state, id) {
   const object = state.objects.get(id);
+  if (!object) return false;
+  const snap = state.combat?.firstStrikeAtStart;
+  // CR 510.4: w drugim kroku biją ci, co mieli ANI strike na początku
+  // pierwszego kroku, ORAZ ci, co AKTUALNIE mają double strike.
+  if (Array.isArray(snap)) return !snap.includes(id) || hasKeyword(state, object, 'double_strike');
   return Boolean(object) && (!hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
 }
 
@@ -994,7 +1060,7 @@ export function validateDamageAssignment(state, attackerId, assignment, context 
  * zadaniem czegokolwiek: fazy 1 i 2 widzą stan z początku przebiegu i nie trzeba
  * trzymać snapshotów mocy w stanie gry.
  */
-function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, assignments, phase = 'assign-attackers') {
+function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, assignments, phase = 'assign-attackers', secondPassCall = false) {
   const aliveOnBattlefield = (id) => {
     const object = state.objects.get(id);
     return Boolean(object && object.zone === 'battlefield');
@@ -1035,6 +1101,9 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
         // ponownego pytania o tę samą decyzję.
         attackerId,
         pass,
+        // M360/B3: decyzja w drugim kroku musi wznowić zwykły przebieg,
+        // nie stawiać flagi od nowa (symetria z rolą blokera niżej).
+        secondPass: secondPassCall,
         phase: 'assign-attackers',
         resumeFrom: i,
         assignmentsSoFar: collected,
@@ -1065,6 +1134,7 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
         blockerId,
         attackerIds: targets,
         pass,
+        secondPass: secondPassCall,
         phase: 'assign-blockers',
         resumeFrom: j,
         assignmentsSoFar: collected,

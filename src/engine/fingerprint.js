@@ -64,6 +64,9 @@ const STATE_COUNTER_FIELDS = Object.freeze([
   'landEnteredThisTurn', 'damageTakenByPlayerThisTurn',
   'speedIncreasedThisTurn', 'moonlitUsedThisTurn',
   'preventCombatExceptEnchanted',
+  // M359: stempel początku okna aktywności cleanup (CR 514.3a) — warunkuje
+  // decyzję o kolejnym cleanupie (recleanup), więc należy do odcisku.
+  'cleanupActivityFromEvent',
 ]);
 
 // B2: pola-ETYKIETY świadomie poza odciskiem. Granica z M323/D
@@ -184,6 +187,7 @@ export function stateFingerprint(state) {
       attackers: [...state.combat.attackers],
       blockers: [...state.combat.blockers.entries()].map(([attackerId, blockerIds]) => [attackerId, [...blockerIds]]),
       blockedAttackers: [...(state.combat.blockedAttackers ?? [])],
+      firstStrikeAtStart: [...(state.combat.firstStrikeAtStart ?? [])],
     }
     : null;
   return JSON.stringify({
@@ -194,6 +198,8 @@ export function stateFingerprint(state) {
     players: state.players,
     turn: state.turn,
     combat,
+    // M360/B5: snapshot zamkniętej walki (okno ninjutsu) — część stanu oferty.
+    lastCombat: state.lastCombat ?? null,
     zones,
     objects,
     untilEndOfTurnBuffs: (state.untilEndOfTurnBuffs ?? []).map((b) => ({

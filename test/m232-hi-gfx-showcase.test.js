@@ -160,3 +160,35 @@ test('onCast: pełna partia woła callback dla rzutów, NIGDY dla basic-lądów'
   }
 });
 
+
+test('15g/B: błąd KON → wiersz dostaje klasę no-kon (scryfall ratuje warstwę na wąskim ekranie)', () => {
+  // Media query (max-aspect-ratio 7/5) chowa scryfalla, gdy obok jest KON.
+  // Bez lokalnego artu (preview, świeży klon) KON pada na 404 i warstwa
+  // byłaby pusta Z KONSTRUKCJI — klasa no-kon pozwala CSS pokazać sf.
+  const host = new MiniEl('#art-showcase');
+  const card = REGISTRY.get('dimir-guildgate'); // ma artId 570
+  renderCardArtShowcase(host, card);
+  const row = host.children.find((el) => el.tagName !== 'img' && el.className.includes('showcase-row'));
+  const kon = row.children.find((el) => el.tagName === 'img' && el.className.includes('showcase-kon'));
+  assert.ok(!row.className.includes('no-kon'), 'przed błędem brak klasy');
+  kon.emit('error');
+  assert.equal(kon.style.display, 'none', 'zbity KON nadal chowany');
+  assert.ok(row.className.includes('no-kon'), 'wiersz znaczy brak KON');
+});
+
+test('15g/B: pin CSS — .no-kon nadpisuje media query (scryfall widoczny bez KON)', () => {
+  const html = fs.readFileSync('src/table/index.html', 'utf8');
+  assert.ok(html.includes('@media (max-aspect-ratio: 7/5)'), 'media query istnieje');
+  assert.ok(html.includes('.showcase-row.no-kon .showcase-scryfall'), 'nadpisanie dla braku KON istnieje');
+});
+
+test('15g/B: błąd sf → zdjęte is-loading (błąd MA BYĆ widoczny, nie czarny ekran)', () => {
+  // Komentarz rendera: URL Scryfalla istnieje ZAWSZE, więc jego brak to błąd
+  // widoczny. Tymczasem is-loading (opacity 0) zostawało na zawsze.
+  const host = new MiniEl('#art-showcase');
+  renderCardArtShowcase(host, REGISTRY.get('dimir-guildgate'));
+  const sf = imagesIn(host).find((el) => el.className.includes('showcase-scryfall'));
+  assert.ok(sf.className.includes('is-loading'), 'przed załadowaniem placeholder');
+  sf.emit('error');
+  assert.ok(!sf.className.includes('is-loading'), 'po błędzie zbity obrazek, nie opacity 0');
+});

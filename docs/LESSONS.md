@@ -251,33 +251,26 @@ Mutacja: `hiddenLive` bez `e.sourceId` → RED.
 
 ## L98 (2026-08-31) — Buforowane „dopisywanie" zamyka paczkę na granicy domenowej; promocję zatrzymanej połowy robią punkty WZNOWIENIA, nie wspólna pętla gry
 
-**Przypadek:** — modal „Rozgrywka" doklejał „Tura N — Ty" + „Dobierasz…" do ogona tury bota (rozstrzygnięty Divest, discardy z cleanup, obrażenia z walki)… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L98).
+**Przypadek:** modal „Rozgrywka" doklejał „Tura N — Ty" + „Dobierasz…" do ogona tury bota (rozstrzygnięty Divest, discardy z cleanup, obrażenia z walki)… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L98).
 
 
 **Reguła:**
-1. „Dopisywanie" w buforze UI zatrzymuje się na granicy, którą użytkownik
-   ma prawo zobaczyć jako OSOBNĄ paczkę (tu: tura). Sygnał podziału
-   niesie samo zdarzenie graniczne (`turn_started` przy niepustym
-   buforze → routing do `held`), nie heurystyka po treści.
-2. Promocję held → bufor wykonują TYLKO punkty wznowienia (klik
-   „Rozumiem", `continueBotPlay`/`continueArtPlay`/`recheckAutoPass`).
-   Wspólna pętla gry wołana także z `apply` NIE promuje — bufor zdążył
-   zebrać ogon, który ma być pokazany osobno, więc promocja w środku
-   skleiłaby paczki z powrotem (konkretny błąd z pierwszej wersji).
-3. Granica wymusza pauzę w KAŻDYM miejscu powstania bufora
-   (`streamAutoEvents` i `apply` — inaczej ogon wisi niepokazany do
-   najbliższej „naturalnej" pauzy) i sygnał konsumuje się raz, żeby nie
-   wyciekał do kolejnej komendy.
-4. Cały mechanizm gate'uje się na fladze trybu pauz — konsumenci
-   synchroniczni (testy silnika, benchmark) mają dostać STARE
-   zachowanie, held nie może się urodzić bez pauz.
+1. „Dopisywanie" staje na granicy OSOBNEJ paczki (tu: tura). Sygnał
+   niesie zdarzenie graniczne (`turn_started` przy niepustym buforze
+   → `held`), nie heurystyka treści.
+2. held → bufor promują TYLKO punkty wznowienia („Rozumiem",
+   `continueBotPlay`/`continueArtPlay`/`recheckAutoPass`). Pętla
+   z `apply` NIE promuje — skleiłaby paczki z powrotem (błąd v1).
+3. Granica wymusza pauzę w KAŻDYM miejscu bufora (`streamAutoEvents`,
+   `apply`), a sygnał konsumuje się raz (nie wycieka dalej).
+4. Gate na fladze pauz: konsumenci synchroniczni (testy, benchmark)
+   dostają STARE zachowanie.
 5. Test wariantów patrzy na BLOKI, nie na przebieg: co najwyżej jeden
    nagłówek tury na blok i nagłówek zawsze pierwszą linią, na wielu
    seedach — RED złapał „Divest zostaje rozstrzygnięty | Tura 3 — Ty".
 
 **Strażnik:** `test/m261-granica-tury-w-modalu.test.js` (3 testy, 8
-seedów) + `test/session-bot-pausa.test.js` (legalny powód pauzy:
-`botPauseAtTurnBoundary`, ogon tury bez zdarzeń „istotnych").
+seedów) + pauza (`botPauseAtTurnBoundary`, ogon bez „istotnych").
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L98)
 
@@ -701,29 +694,17 @@ detektor jest gorsza od błędu, który naprawiała (L13/L61).
 
 ## L66 (2026-08-25) — Lektura obowiązkowa to BUDŻET: dokument bez limitu rośnie, aż zje kontekst
 
-**Przypadek:** lektura startowa z `AGENTS.md` §0 ważyła ~605 kB (~194-258 tys. tokenów), z czego **384 kB to `PROJECT_STATE.md`** — „bieżący stan projektu" urósł do 125 sekcji i 5904 linii (~80 sesji wstecz).
+**Przypadek:** lektura startowa ważyła ~605 kB, z czego 384 kB to dziennik
+125 sesji podszywający się pod „bieżący stan".
 
-**Reguła:**
-1. **Lista lektur ma budżet i strażnika** — bez progu nie ma sygnału. Tu:
-   100 tys. tokenów na `AGENTS` + ADR-y + `LESSONS` + `ENVIRONMENT`
-   (`test/dokumentacja-budzet-lektury.test.js`).
-2. **Rozdziel „zasady" od „dziennika".** Agent potrzebuje REGUŁ i PUNKTU
-   ZACZEPIENIA (ostatni PR, najnowszy handoff); historia jest do grepowania
-   punktowego. Dziennik nazywa się dziennikiem (`PROJECT_HISTORY.md`) i mówi
-   w nagłówku, że NIE jest lekturą startową.
-3. **Sygnał:** dokument, którego nazwa mówi „bieżący", a treść rośnie
-   monotonicznie. Sprawdź `grep -c '^## '` i datę najstarszej sekcji.
-4. **Zanim skrócisz, ZMIERZ rozkład.** Plan „skondensujmy LESSONS.md" dotyczył
-   16% problemu przy pełnym ryzyku utraty niuansu; pomiar przekierował pracę na
-   pozycję ważącą 2/3, którą dało się zdjąć z listy bez skasowania linijki.
-5. **Numery lekcji to API dokumentacji.** `L1`-`L65` są cytowane w kodzie
-   ~1150 razy w 242 plikach (`// klasa L48`). Renumeracja unieważniłaby je bez
-   jednego czerwonego testu — nagłówki `## L<nr>` są stabilnymi kotwicami.
+**Reguła:** lista lektur ma budżet i strażnika (100k tokenów;
+`test/dokumentacja-budzet-lektury.test.js`); rozdziel „zasady" od „dziennika"
+(HISTORY nie jest lekturą startową); zanim skrócisz — ZMIERZ rozkład (tu:
+pozycja 2/3 zdjęta z listy bez kasowania linijki); numery lekcji to API
+(cytowane ~1150 razy — nagłówki `## L<nr>` stabilne, bez renumeracji).
 
-**Strażnik:** M208 (`PROJECT_HISTORY.md`, `AGENTS.md` §0 z budżetem,
-`test/dokumentacja-budzet-lektury.test.js`).
-
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L66)
+**Strażnik:** M208. → narracja: `docs/LESSONS_PRZYPADKI.md` (L66)
+(skondensowana 2026-09-15 — płaci za L144 w budżecie lektury).
 
 ## L65 (2026-08-25) — Test, który przechodzi na przypadku odsianym przez WCZEŚNIEJSZY warunek, nie testuje tego warunku
 
@@ -1114,30 +1095,25 @@ Strażnicy M348: `test/table-tester-runtime-errors.test.js`, żywe A/B.
 
 ## L13 (2026-08-15) — WERYFIKACJA MUTACYJNA: jedyny dowód, że test lub detektor działa
 
-**Przypadek:** **Detektor (L13, M102):** dziewięć detektorów Żywego Testera miało komplet testów jednostkowych.
+**Przypadek:** 9 detektorów Żywego Testera miało komplet testów jednostkowych (M102).
 
-**Wpis zbiorczy.** Numery L61, L70 i L114 zostają jako kotwice cytowań i odsyłają tutaj.
+**Wpis zbiorczy** (kotwice: L61, L70, L114).
 
 **Reguła:**
-1. Test regresyjny liczy się dopiero, gdy pokazano, że **czerwienieje po
-   cofnięciu naprawy**. Procedura (~30 s): mutacja odwracająca fix jedną linią →
-   uruchom plik testu (MUSI paść właściwy test) → cofnij → potwierdź zielone →
-   oba pomiary wpisz do commitu.
-2. Mutuj per GAŁĄŹ, nie per funkcję. Gałąź, której mutacja nie czerwieni, jest
-   podejrzana z definicji: albo brakuje testu, albo gałąź jest **zbędna**.
-   Najpierw sprawdź, czy powinna istnieć — usunięcie nadmiarowej reguły bije
-   utrwalenie jej testem.
-3. Detektor przechodzi cykl „przywróć bug → narzędzie zgłasza → przywróć fix →
-   0 zgłoszeń" w OBU trybach logowania. Test jednostkowy dowodzi reakcji na
-   SPREPAROWANE wejście, nie tego, że takie wejście powstanie w przebiegu.
+1. Test liczy się po dowodzie: **czerwienieje po cofnięciu naprawy**.
+   Procedura: mutacja 1-liniowa → test MUSI paść → cofnij → zieleń →
+   oba pomiary do commitu.
+2. Mutuj per GAŁĄŹ. Gałąź niemutowalna = brak testu albo **zbędna
+   reguła** — sprawdź istnienie; usunięcie bije utrwalenie testem.
+3. Detektor: cykl „bug → zgłoszenie → fix → 0" w OBU trybach logowania.
+   Unit dowodzi reakcji na SPREPAROWANE wejście, nie jego wystąpienia.
 4. Gdy mutacja nie czerwieni, dane testu nie mają kształtu produkcyjnego —
    odtwórz je z REALNEGO artefaktu.
 5. „Przypięte testem" bez pomiaru przed/po = zdanie do sprawdzenia, nie fakt.
-6. Oczekiwanie testu też wymaga Oracle/CR. Usunięcie nieistniejącego ETB
-   czerwieniło m334/C, a m336/E2 wymagał SBA w środku czaru (PR #104).
-   Nie utrwalaj błędnej reguły tylko po to, żeby zachować zielony pin.
-   Sprawdzaj datę wydania CR: świeżo pobrane archiwum może cytować starą
-   regułę (PR #106: obowiązkowe lethal-first).
+6. Oczekiwanie testu też wymaga Oracle/CR (m334/C: nieistniejące ETB;
+   m336/E2: SBA w środku czaru). Nie utrwalaj błędnej reguły dla
+   zielonego pinu. Sprawdzaj datę CR: archiwum może cytować starą
+   regułę (PR #106).
 
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L13)
@@ -1595,31 +1571,27 @@ przez realną ścieżkę (wzorzec L21 pkt 3), a nie obietnica wspólnej listy.
 
 ## L48 (2026-08-18) — OFERTA i WALIDACJA to jeden filtr, jeden porządek i jeden rejestr
 
-**Przypadek:** — Bot wybierał biały czar na cel z `protection from white`: `legalSpellCasts` filtrował tylko `isProtectedFromSource`, a `validateTargets… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L48).
+**Przypadek:** Bot wybierał biały czar na cel z `protection from white`: `legalSpellCasts` filtrował tylko `isProtectedFromSource`, a `validateTargets… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L48).
 
 
-**Wpis zbiorczy** — klasa z czterema powtórkami. Numer L90 zostaje jako kotwica
-i odsyła tutaj. Rozjazd oferty i walidacji to gotowy crash w benchmarku:
-silnik proponuje ruch, po czym sam go odrzuca („Bot wybrał nielegalną komendę").
+**Wpis zbiorczy** (4 powtórki; L90 to kotwica): rozjazd oferty i walidacji
+to crash w benchmarku („Bot wybrał nielegalną komendę").
 
 **Reguła:**
-1. Nowy typ ochrony albo nowy `pending*` trafia w TRZY miejsca naraz:
-   `legalTargetCandidates` (oferta, z `sourceObject`), `validateTargets`
-   i OBA boty (`heuristic` — fallback `anyResolve`; `aggro` — lista `simple`).
+1. Nowa ochrona / `pending*` trafia w TRZY miejsca: `legalTargetCandidates`
+   (oferta), `validateTargets` i OBA boty (`heuristic`: `anyResolve`;
+   `aggro`: `simple`).
 2. Nowe zdarzenie z rodziny trafia do KAŻDEGO skanu tej rodziny (`dies`,
    `leaves_battlefield`, „permanents you control leave").
-3. Kolejność „kto teraz decyduje" mieszka w JEDNEJ funkcji zwracającej
-   właściciela **i rodzaj** decyzji (`firstPendingDecision → { playerId, kind }`).
-   Zasada: **pierwszy właściciel decyzji = pierwsza bramka `execute` = pierwsza
-   gałąź ofert.**
-4. Bramka „coś czeka" jest warunkiem na WŁAŚCICIELA i RODZAJ, nigdy na sam fakt
-   niepustości kolejki — inaczej blokuje gracza, którego decyzja jest wcześniejsza.
+3. „Kto decyduje" to JEDNA funkcja (`firstPendingDecision → { playerId, kind }`):
+   pierwszy właściciel = pierwsza bramka `execute` = pierwsza gałąź ofert.
+4. Bramka „coś czeka" warunkuje na WŁAŚCICIELA i RODZAJ, nie na niepustość
+   kolejki (blokowałaby wcześniejszą decyzję).
 5. Predykat blokady jest jeden i wołają go OBIE strony (`exploitDecisionPendingFor`,
    `closingCombatPassBlocked`).
-6. Przy N-tej powtórce klasy szukaj WSPÓLNEGO MIANOWNIKA, nie kolejnego
-   przypadku (L28).
-7. Martwy wartownik to też błąd: warunek, którego mutacja nie czerwieni, usuń
-   zamiast zostawiać jako „dokumentację zamiaru" (L5).
+6. Przy N-tej powtórce szukaj WSPÓLNEGO MIANOWNIKA (L28).
+7. Martwy wartownik (mutacja nie czerwieni) do usunięcia, nie „dokumentacja
+   zamiaru" (L5).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L48)
 
@@ -1712,10 +1684,9 @@ To nie dwie kopie jednej reguły, lecz **dwa porządki tej samej reguły**.
 → Pełna klasa i reguła: [L48].
 ## L91 (2026-08-29) — „Trigger bez efektu" ma trzy różne przyczyny; liczenie zdarzeń to ich przybliżenie, nie reguła
 
-**Przypadek (M256, 18 partii Żywym Testerem):** — 12 komunikatów „trigger bez
+**Przypadek (M256, 18 partii Żywym Testerem):** 12 komunikatów „trigger bez
 efektu" na pięciu kartach (Trostani Discordant ×4, Veiled Ascension ×3,
 Jyoti, Moag Ancient ×3, Plague Reav… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L91).
-
 
 **Reguła:**
 1. **Powód mieszka w warstwie efektu.** Selektor zbioru odbiorców
@@ -1727,20 +1698,18 @@ Jyoti, Moag Ancient ×3, Plague Reav… Pełna narracja: `docs/LESSONS_PRZYPADKI
    'no_targets' | 'empty_library' | null` — kolejna przyczyna to kolejna
    WARTOŚĆ, nie kolejny `if` po typie efektu (L28/ADR 0002).
 3. **Efekt, który ma w zbiorze samego siebie, nie zgłasza pustego zbioru.**
-   Osobna pułapka z tej samej rodziny: efekt idempotentny działa nie zawsze na
-   ŹRÓDŁO — aura działa na GOSPODARZA (`attachedTo`), więc reguła „cel albo
-   źródło" (M189/Z2e) nie wystarcza (Silken Strength, M256/J).
-   Village Bell-Ringer („untap all creatures you control") zawsze jest własnym
-   odbiorcą, więc pustka jest niemożliwa; tam obowiązuje tabela idempotentności
-   ZBIOROWEJ (`STATE_IDEMPOTENT_MASS_EFFECTS`), bo „wszystkie już odkręcone" to
-   wykonana zdolność, nie porażka triggera (M106/Z2).
+   Pułapka z tej rodziny: efekt idempotentny nie zawsze działa na ŹRÓDŁO —
+   aura na GOSPODARZA (`attachedTo`), więc „cel albo źródło" (M189/Z2e)
+   nie wystarcza (Silken Strength, M256/J).
+   Village Bell-Ringer zawsze jest własnym odbiorcą (pustka niemożliwa);
+   tam tabela idempotentności ZBIOROWEJ (`STATE_IDEMPOTENT_MASS_EFFECTS`),
+   bo „wszystkie już odkręcone" to wykonana zdolność (M106/Z2).
 4. **Do każdego wpisu kontrola pozytywna**: test, w którym zbiór NIE jest
-   pusty (H1b/H2b/H3b/H4b/H5b/H6b). Bez niego asercja „brak komunikatu" bywa
-   zielona dlatego, że w ogóle nic się nie dzieje (klasa M255/G2).
-5. **Heurystyka NAZWY efektu (`_each_`, `_all_`) wolno mieszkać wyłącznie
-   w strażniku** (skan katalogu: każdy zbiorowy typ efektu ma wpis w tabeli
-   albo udokumentowany wyjątek). Silnik kluczuje po typie efektu i z nazwy nie
-   zgaduje — inaczej wracamy do `if` po nazwie typu.
+   pusty (H1b/H2b/H3b/H4b/H5b/H6b). Bez niej asercja „brak komunikatu"
+   bywa zielona, bo nic się nie dzieje (M255/G2).
+5. **Heurystyka NAZWY (`_each_`, `_all_`) wyłącznie w strażniku**
+   (skan: typ zbiorowy ma wpis albo wyjątek). Silnik kluczuje po typie,
+   z nazwy nie zgaduje.
 6. Komunikat dla gracza to NIE ozdoba: „brak legalnych celów" i „pusta
    biblioteka" mówią, co zrobić dalej; „nie było czego wykonać" mówi tylko, że
    coś nie zadziałało (oś 2: „wszystko poza szumem powinno tam być").
@@ -2078,26 +2047,22 @@ woła `document.createElement` na odinstalowanym oknie.
 **Reguła:** każde wykluczenie w predykacie zakresu pytaj „czy TA ścieżka potrafi
 to ROZLICZYĆ”, nie „czy karta to ma” — parametr per ścieżka (`allowTargets`,
 `allowModes`, `allowAdditionalCost`), jeden filtr, oferta i bramka wywołane z
-TYMI SAMYMI argumentami. Oferty trybów/celów liczy generator wspólny z rzutem
-z ręki (`legalModeCasts`), nie kopia okna. Gdy naprawa odbiera stempel albo
+TYMI SAMYMI argumentami. Tryby/cele liczy generator wspólny z ręką (`legalModeCasts`), nie kopia. Gdy naprawa odbiera stempel albo
 uprawnienie (ruling), sprawdź, czy nowe uprawnienie dotarło do KAŻDEJ gałęzi
 wykonania (`requireSpell`, `castPermanent`, `castModalSpell`, `castXCostSpell`,
 `castFireball`) — gałąź bez uprawnienia to rozjazd oferty i wykonania. Test
-odziedziczony po poprzedniej sesji traktuj jak hipotezę: sprawdź, czy jego stan
-przygotowawczy odtwarza to, co silnik robi DZIŚ (stempel zdjęty ⇒ test vacuous
-aż do usunięcia stempla z helpera). Koszt wymagający wyboru kart w trakcie
-płacenia („discard two cards”) zostaw bez oferty (L5) — pominięcie kosztu to
-złamanie reguł, nie naprawa. I wreszcie: wariant ruchu bez wyboru X (X = 0) jest
-pułapką, więc dopóki okno nie potrafi wyliczyć X, wyłączenie zostaje — ale jako
-świadomy wpis w backlogu, nie jako milczenie predykatu.
+odziedziczony traktuj jak hipotezę: czy setup odtwarza DZISIEJSZY silnik
+(stempel zdjęty ⇒ vacuous aż po fix helpera). Koszt z wyborem kart w trakcie
+(„discard two cards”) zostaje bez oferty (L5) — pominięcie to złamanie reguł.
+Wariant bez wyboru X (X = 0) to pułapka: dopóki okno nie liczy X, wyłączenie
+zostaje — jako wpis w backlogu, nie milczenie.
 
-**Strażnik:** `test/audyt-pr93-modalny-rzut-z-okna.test.js` (6, w tym skan
-katalogu: każdy z 12 czarów modalnych ma ofertę w oknie zdolności),
-`test/audyt-pr93-modalny-discover.test.js` (6, w tym etykieta stołu z nazwą
-trybu), `test/audyt-pr93-koszt-dodatkowy-z-exile.test.js` (7) oraz odwrócony
-`test/audyt-pr92-darmowy-rzut-zakres.test.js`. Znalezisko D — `test/audyt-pr93-koszt-x-z-exile.test.js` (7: każda karta X
-katalogu rzucalna w oknie zdolności, Discover milczy dla kart X). Dziewięć
-mutacji — tabela w §7 `docs/audits/AUDYT_PR93_2026-09-03.md`.
+**Strażnik:** `test/audyt-pr93-modalny-rzut-z-okna.test.js` (6 + skan: 12
+czarów modalnych z ofertą), `test/audyt-pr93-modalny-discover.test.js`
+(6 + etykieta trybu), `test/audyt-pr93-koszt-dodatkowy-z-exile.test.js` (7),
+odwrócony `test/audyt-pr92-darmowy-rzut-zakres.test.js`, znalezisko D —
+`test/audyt-pr93-koszt-x-z-exile.test.js` (7: X rzucalne, Discover milczy).
+Dziewięć mutacji — tabela w §7 `docs/audits/AUDYT_PR93_2026-09-03.md`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L127)
 
@@ -2352,3 +2317,37 @@ poprawnie 702.35a + ruling DMU 2023-01-06); „604.3" przy „liczone przy każd
 odczycie" to CDA (właściwy: 611.3a).
 
 **Strażnik:** `test/cr-numery-mechanik-straznik.test.js` (2 pary). → narracja: PRZYPADKI (L143).
+
+## L144 (2026-09-15) — Decyzja z jedną opcją to nie decyzja: silnik rozstrzyga sam w chwili kolejkowania
+
+**Reguła:** wymuszony wybór całości („odrzuć N" przy N kartach, obowiązkowy
+1 z 1) NIE kolejkuje pending ani eventu — rozstrzyga się w tej samej komendzie
+wspólnym helperem (L41); kontynuacje lustrzą ścieżkę ręczną (kontynuuj zamiast
+„zawieś", L138; madness — hook w accepted()). Decyzja w chwili kolejkowania,
+nie post-pass ani auto-klik w UI: brak eventu = brak modala bez splicingu.
+Wyjątek: allowDecline ZAWSZE pyta, nawet przy 1 karcie.
+
+**Strażnik:** `test/owner-cathartic-reunion-auto-discard.test.js` (8). → narracja: PRZYPADKI (L144).
+
+## L145 (2026-09-16) — Efekt bez słowa „target" nie fizzluje: zniknięty obiekt daje LKI, nie zero
+
+**Reguła:** efekt czytający cechę NIEncelowanego obiektu („its power")
+podlega LKI (CR 608.2h / ruling), nie 608.2b. Wzorzec: snapshot cechy
+przy koszcie niesie wpis stosu (jak `sacrificedToughness`); rozstrzygnięcie:
+żywa wartość albo snapshot. Alarm: komentarz wołający 608.2b przy karcie
+bez słowa „target" (tu: Station, Wedgelight Rammer).
+
+**Strażnik:** `test/m360-silver-station-lki.test.js` (3: LKI, pin żywy, pin pompy). → narracja: PRZYPADKI (L145).
+
+## L146 (2026-09-16) — Trigger podpina się pod ZDARZENIE REGUŁY, nie pod najczęstszą przyczynę
+
+**Reguła:** gdy Oracle mówi „loses life", hookiem jest `life_changed`,
+nie `damage_dealt` — damage to tylko jedna z dróg (obok lose_life,
+płatności życiem). Subskrypcja przyczyny gubi resztę po cichu, a testy
+na samej przyczynie tego nie łapią (speed rósł od obrażeń — brak testu
+na stratę-bez-damage). FixMatchers: zdarzenie węższe od pojęcia reguł
++ brak testu na alternatywną drogę. Wzorzec: jeden hook na pojęciu
+reguł (tu: strata życia obejmuje damage, prewencja/infect odpadają
+z natury), bramki („raz na turę") bez zmian.
+
+**Strażnik:** `test/m361-gold-speed-lifeloss.test.js` (5: RED strata-bez-damage, pin damage, dedup, bramki tury/własnej-straty).

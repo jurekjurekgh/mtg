@@ -11,10 +11,14 @@
 // („chroni przed lethal") → bot palił kartę i manę bez efektu (klasa oś 4:
 // oferta bez skutku).
 //
-// Reguła pinowana: okno „po blokach" = declare_blockers (priorytet przed
-// obrażeniami, CR 510.1) i combat_damage (silnik rozdaje dopiero po pasie
-// aktywnego — closingCombatPassBlocked). Anty-over-fix: w oknie bot NADAL
+// Reguła pinowana: okno „po blokach" = declare_blockers i combat_damage —
+// okno priorytetu PO BLOKACH (CR 509.2: „Second, the active player gets
+// priority."; silnik skacze declare_blockers→combat_damage, M172/C);
+// przydział i rozdanie dzieją się razem w resolve_combat (CR 510.1+510.2,
+// bez okna na czary pomiędzy). Anty-over-fix: w oknie bot NADAL
 // preparuje ochronę przed lethal (50+35=85 > pass).
+// (Cytat sprostowany G1 w audycie PR #121: wcześniej „CR 510.1" — 510.1 to
+// przydział, nie priorytet; priorytet przed rozdaniem daje 509.2.)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, playerView } from '../src/engine/game-state.js';

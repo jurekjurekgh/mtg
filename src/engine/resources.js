@@ -2046,7 +2046,14 @@ export function faceDownAbilities(object) {
 export function playLand(state, playerId, objectId) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
-  if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalny land drop');
+  // M361/B3 (ZŁOTO; CR 701.18a/b, mtg.wiki/Play 2026-09-16, ADR 0030): „To play
+  // a land means to put it onto the battlefield from the zone it's in
+  // (usually the hand)" — land drop także z exile w żywym oknie impulsu
+  // („you may play that card", np. Gila Courser). Timing i limit 1/turn
+  // bez zmian (bramki niżej wspólne dla obu stref).
+  const fromHand = object?.zone === 'hand';
+  const fromImpulseExile = canPlayByImpulseFromExile(object, state);
+  if (!player || !object || object.controllerId !== playerId || (!fromHand && !fromImpulseExile)) throw new Error('Nielegalny land drop');
   if (object.kind !== 'land') throw new Error('Obiekt nie jest landem');
   if (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     throw new Error('Land drop poza main phase');

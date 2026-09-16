@@ -6,7 +6,7 @@ import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaP
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
 import { hasCreatureType, isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, transformedCharacteristics } from './permanents.js';
-import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter, grantGift } from './effects.js';
+import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter, grantGift, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
 import { effectiveProtectionFromColors, isTargetingBlockedByProtection } from './attachments.js';
@@ -125,6 +125,24 @@ export function hasHexproofAgainst(state, object, casterId) {
 }
 
 /** Waliduje cele zgodnie ze specyfikacją deskryptora; zwraca obiekty celów. */
+
+/**
+ * M360/B1 (CR 702.103b): czy obiekt na stosie jest czarem NIE-będącym stworem
+ * (cel Negate — „Counter target noncreature spell”). Czar aury rzucony za
+ * bestow niesie kind 'creature' (dziedziczy po karcie), ale na stosie jest
+ * czarem AURY (CR 702.103b: „it becomes an Aura enchantment”; ruling THS:
+ * „either a creature spell or an Aura spell. It's never both”) — deskryptor
+ * `spell.aura` rozstrzyga (mtg.wiki/Bestow + Scryfall THS/161, 2026-09-16).
+ * Jeden helper dla oferty i walidacji (L48).
+ */
+export function isNoncreatureSpellOnStack(object) {
+  if (!object || object.zone !== 'stack') return false;
+  // Zdolności (kind 'trigger'/'activated') to nie czary (CR 701.5a).
+  if (object.kind === 'trigger' || object.kind === 'activated') return false;
+  // Czar aury z bestow: kind 'creature', ale spell.aura — nie-stworowy.
+  if (object.kind === 'creature' && object.spell?.aura !== true) return false;
+  return true;
+}
 export function validateTargets(state, targetSpec, chosen, casterId, sourceColors = null, sourceObject = null) {
   return chosen.map((targetId, index) => {
     const spec = targetSpec[index];
@@ -318,14 +336,12 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „noncreature spell on the stack" (Negate) — czar na stosie, który
-    // NIE jest stworzeniem (instants/sorceries oraz czyste aury). Stwory
-    // zagrywane przez cast_permanent nie trafiają na stos w tym engine;
-    // cast bestow (kind 'creature') jest stworem i NIE jest celem Negate.
+    // NIE jest stworzeniem (instants/sorceries, czyste aury oraz bestow
+    // rzucony jako Aura — M360/B1, CR 702.103b: na stosie to czar AURY).
     if (spec?.type === 'noncreature_spell_on_stack') {
       // Zdolności triggerowane (kind 'trigger') i aktywowane (kind 'activated')
       // to nie czary — Negate ich nie kontruje (CR 701.5a: „counter target spell").
-      if (object && object.zone === 'stack' && object.kind !== 'creature'
-          && object.kind !== 'trigger' && object.kind !== 'activated') return object;
+      if (isNoncreatureSpellOnStack(object)) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „spell on the stack" (Stoic Rebuttal — „Counter target spell\"):
@@ -680,6 +696,14 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // blokującą decyzję; kontrczar nie zwraca odrzuconych kart.
   if (discardCost > 0) {
     const handIds = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId);
+    // Znalezisko A: koszt „odrzuć N" przy dokładnie N kartach płaci się sam
+    // (priorytet nietknięty — nie ma decyzji do oddawania).
+    if (shouldAutoDiscard({ count: Math.min(discardCost, handIds.length), candidateIds: handIds })) {
+      discardCardsForced(state, {
+        playerId, cardIds: [...handIds], purpose: 'cost',
+        sourceCardId: object.cardId ?? null, restorePriorityTo: state.turn.priorityPlayerId,
+      });
+    } else {
     state.pendingDiscardChoice = {
       playerId,
       count: Math.min(discardCost, handIds.length),
@@ -693,6 +717,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
       playerId, count: Math.min(discardCost, handIds.length), cardIds: [...handIds],
       purpose: 'cost', sourceCardId: object.cardId ?? null,
     }));
+    }
   }
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
@@ -1166,12 +1191,9 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
     }
     case 'noncreature_spell_on_stack': {
       // Negate: czary na stosie, które nie są stworami (instants/sorceries,
-      // czyste aury). Bestow (kind 'creature') wykluczony — Negate liczy
-      // wyłącznie czary nie-stworowe; triggery (kind 'trigger') to nie czary.
-      return state.zones.stack.filter((objectId) => {
-        const object = state.objects.get(objectId);
-        return object?.zone === 'stack' && object.kind !== 'creature' && object.kind !== 'trigger' && object.kind !== 'activated';
-      });
+      // czyste aury oraz bestow jako Aura — M360/B1, CR 702.103b).
+      // Bestow jako STWÓR wykluczony; triggery (kind 'trigger') to nie czary.
+      return state.zones.stack.filter((objectId) => isNoncreatureSpellOnStack(state.objects.get(objectId)));
     }
     case 'spell_on_stack': {
       // Stoic Rebuttal („Counter target spell\"): dowolny czar na stosie,
@@ -1449,6 +1471,8 @@ function resolveActivatedAbilityEntry(state, entry) {
   // Źródło pozostaje tym samym obiektem dla cech (np. power/LKI).
   const source = Object.freeze({ ...sourceCharacteristics, controllerId: entry.controllerId,
     ...(payload.sacrificedToughness != null ? { sacrificedToughness: payload.sacrificedToughness } : {}),
+    // M360/B4: snapshot mocy do LKI station (effects.js station_counters).
+    ...(payload.stationTappedPower != null ? { stationTappedPower: payload.stationTappedPower } : {}),
   });
   state.zones.stack = state.zones.stack.filter((id) => id !== entry.id);
   state.objects.delete(entry.id);
@@ -1515,7 +1539,9 @@ function resolveActivatedAbilityEntry(state, entry) {
         const moved = moveObjectDirectly(state, cardInHand.id, 'battlefield', bfId);
         const permanent = Object.freeze({ ...moved, tapped: true, summoningSickness: true });
         state.objects.set(bfId, permanent);
-        state.combat.attackers.push(bfId);
+        // M360/B5: ninjutsu z end_of_combat — walka sprzątnięta, ninja wchodzi
+        // zatapnięty bez dopisu do atakujących (CR 511.3 i tak zdejmuje z walki).
+        state.combat?.attackers.push(bfId);
         if (permanent.entersWithCounters) {
           for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
             addCounter(state, bfId, name, amount);
@@ -1746,19 +1772,31 @@ export function resolveTopOfStack(state) {
   // dodatkowego, np. celu stun). Tryby tu używane nie blokują rozstrzygania.
   if (object.chosenMode != null && object.spell.modes) {
     const mode = object.spell.modes[object.chosenMode];
-    const liveChosen = (object.chosenTargets ?? []).filter((tId) => {
-      // Cel-gracz (np. „target opponent" trybu modalnego) nie jest obiektem w
-      // strefie — zostawiamy go, żeby efekty „draw_cards_both_players" dostały
-      // prawidłowy cel (bez tego filtr pola bitwy upuszczałby id gracza).
-      if (state.players.some((p) => p.id === tId)) return true;
-      const target = state.objects.get(tId);
-      if (!target) return false;
-      // M87 / CR 608.2b: cel-permanent musi być na polu bitwy; cel-czar
-      // (Steel Sabotage Kontr — artifact_spell_on_stack) musi nadal być
-      // na stosie. Wcześniej filtr tylko battlefield zrzucał czar ze
-      // stosu i modalny counter_spell był no-opem.
-      return target.zone === 'battlefield' || target.zone === 'stack';
-    });
+    const modeTargets = mode.targets ?? object.spell.targets ?? [];
+    // M361/B5 (ZŁOTO; CR 608.2b, ADR 0030): cele trybu modalnego walidujemy
+    // przy rozstrzyganiu TYM SAMYM helperem co ścieżka zwykła (L48) —
+    // hexproof/protection/moc zyskane w oknie odpowiedzi też unieważniają
+    // cel, nie tylko zmiana strefy. Dotąd filtr liveChosen patrzył wyłącznie
+    // na strefę (battlefield/stack), więc modalny removal trafiał cel
+    // z hexproof (Selesnya Charm vs Magic Damper). Cele-gracze i cele-czary
+    // (M87: artifact_spell_on_stack) przechodzą przez validateTargets tak
+    // samo jak przy rzucie — parytet oferta/rzut/rozstrzygnięcie.
+    // Tryby ZMIENNE („up to N target …" — Wrap in Flames, Sea God's Scorn):
+    // collectLegalTargets mapuje spec↔cel 1:1, a tu JEDEN typ kryje wiele
+    // celów — każdy cel z osobna przeciw typowi trybu (lustro
+    // validateVariableTargets z rzutu: legalTargetCandidates filtruje
+    // hexproof i protection tym samym predykatem co walidacja — F2/L48).
+    let liveChosen;
+    if (mode.variableTargets) {
+      const spec = { type: mode.variableTargets.type ?? 'creature' };
+      const legal = new Set(legalTargetCandidates(state, object.controllerId, spec, object));
+      liveChosen = (object.chosenTargets ?? []).filter((tId) => legal.has(tId));
+    } else {
+      liveChosen = collectLegalTargets(state, modeTargets, object.chosenTargets ?? [],
+        object.controllerId, object.colors ?? [], object)
+        .map((entry) => entry?.id ?? null)
+        .filter((id) => id !== null);
+    }
     // M271 (błąd #13, CR 608.2b): „If all its targets ... are now illegal,
     // the spell or ability doesn't resolve." Ścieżka ZDOLNOŚCI ma ten test
     // od M90, bliźniacza ścieżka CZARU MODALNEGO go NIE miała: tryb, który
@@ -1767,9 +1805,13 @@ export function resolveTopOfStack(state) {
     // opponent" + „each player draws") dawał obu graczom karty, mimo że czar
     // w ogóle nie powinien się rozstrzygnąć.
     // Warunek dotyczy WYŁĄCZNIE trybów, które celów wymagają — tryb bez
-    // celów rozstrzyga się normalnie.
-    const modeTargets = mode.targets ?? object.spell.targets ?? [];
-    if (modeTargets.length > 0 && liveChosen.length === 0) {
+    // celów rozstrzyga się normalnie (modeTargets wyliczone wyżej, dla walidacji).
+    // Tryb zmienny rzucony z zerem celów (min 0, M146) celów NIE MA — fizzluje
+    // tylko taki, którego wybrane cele wszystkie stały się nielegalne.
+    const hadTargets = mode.variableTargets
+      ? (object.chosenTargets ?? []).length > 0
+      : modeTargets.length > 0;
+    if (hadTargets && liveChosen.length === 0) {
       // M271 (błąd #14): także fizzle respektuje `exileInsteadOfGraveyard`.
       const zoneFizzle = spellExitZone(object);
       const graveFizzle = `${zoneFizzle}-${state.objectSequence++}`;
@@ -2822,6 +2864,10 @@ function resolveModalEffectTargets(state, effect, object, liveChosen) {
     const key = effect.applyTo.slice('extra:'.length);
     const val = object.modeExtra?.[key];
     if (!val) return null;
+    // M361/B5: cel dodatkowy (stun) jest przy rzucie PODZBIOMEM chosen
+    // (validateVariableTargets: stunAmongTargets) — przy rozstrzygnięciu też
+    // musi być wciąż legalny (hexproof w odpowiedzi gasi i stuna).
+    if (!liveChosen.includes(val)) return null;
     const target = state.objects.get(val);
     if (!target || target.zone !== 'battlefield') return null;
     return [val];

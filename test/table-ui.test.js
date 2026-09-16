@@ -24,7 +24,14 @@ class MiniEl {
     this.html = '';
     this.value = '';
     this.disabled = false;
+    // 15f: przyciski-toggle belki malują stan przez aria-pressed —
+    // stub dogania przeglądarkę (jak innerHTML w M70).
+    this.attrs = {};
   }
+
+  setAttribute(k, v) { this.attrs[k] = String(v); }
+
+  getAttribute(k) { return this.attrs[k] ?? null; }
 
   set textContent(v) {
     this.text = String(v);
@@ -219,6 +226,12 @@ globalThis.REPO_DECKS = {
   // odrzuca ją jawnym błędem, zamiast cicho brać pierwszy pasujący wpis.
   'many-wizard': '# Talia many-wizard\n\n26x Island\n6x Plains\n8x Curate (BRO)\n',
 };
+// 15f: przełączniki belki startują z pamięci — harness click-through wpina
+// hi-gfx OFF PRZED bootem (warstwa pauzuje grę czekając na zamknięcie;
+// poprzednio ptaszek był implicit-OFF przez brak .checked). Domyślne
+// produkcyjne (dźwięki OFF, hi-gfx ON) pinuje owner-spell-sounds.test.js.
+const { PREFS_KEY: TOPBAR_PREFS_KEY } = await import('../src/table/topbar-toggles.js');
+globalThis.localStorage.setItem(TOPBAR_PREFS_KEY, JSON.stringify({ sounds: false, hiGfx: false }));
 await import('../src/table/main.js');
 
 function restart(seed = '13') {

@@ -1635,7 +1635,10 @@ export const REAL_CARDS = Object.freeze([
   // 2. Spectral Prison (AVR) — Aura: doesn't untap, sac on targeting
   defineCard({
     id: 'spectral-prison', name: 'Spectral Prison', set: 'AVR',
-    types: ['Enchantment'], colors: ['U'], manaCost: 2,
+    // M360/B2: podtyp Aura wg Oracle („Enchantment — Aura”, AVR/75, Scryfall
+    // type_line zweryfikowany online 2026-09-16) — bez niego Ironclad Slayer
+    // („target Aura or Equipment card…”, CR 205.3h) nie widział karty w grobie.
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 2,
     oracleText: "Enchant creature\nEnchanted creature doesn't untap during its controller's untap step.\nWhen enchanted creature becomes the target of a spell, sacrifice this Aura.",
     imageUri: 'https://cards.scryfall.io/large/front/8/9/89d141bc-7307-40c2-a7ed-427caaec5efc.jpg?1783940711',
     aura: { keywords: [], doesntUntap: true },
@@ -7200,20 +7203,30 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     oracleText: 'Flying\nWhenever you attack with one or more Faeries, draw a card, then discard a card. When you discard a card this way, put a +1/+1 counter on target Faerie you control.',
     imageUri: 'https://cards.scryfall.io/large/front/3/5/35fb0640-5b04-4687-b863-46a8b8d36809.jpg?1783915114',
     abilities: [
+      // M361/B2 (ZŁOTO; Scryfall ruling 2023-09-01): rodzic BEZ celu —
+      // „You don't choose a target for Talion's Messenger's ability at the
+      // time it triggers." Odrzut niesie linkę refleksywną (discard_cards +
+      // reflexiveEvent, wzorzec Glorifiera).
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'faerie_attacks', requiresTarget: { type: 'creature_you_control', subtype: 'Faerie' } },
+        trigger: { event: 'faerie_attacks' },
         effect: [
           { type: 'draw_cards', amount: 1 },
-          { type: 'discard_cards', amount: 1 },
-          { type: 'add_counter', counter: '+1/+1', amount: 1 },
+          { type: 'discard_cards', amount: 1, reflexiveEvent: 'reflexive_discard' },
         ],
+      }),
+      // Refleks „When you discard a card this way" — cel przy wejściu na stos,
+      // z oknem odpowiedzi („Each player may respond … as normal").
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'reflexive_discard', requiresTarget: { type: 'creature_you_control', subtype: 'Faerie' } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
       }),
     ],
     artId: 166,
     plan: 'Eldraine',
     support: { status: 'supported', limitations: [] },
-    notes: ['faerie_attacks: odpala się raz na combat, gdy atakujący kontroler atakuje z ≥1 Faerie; licznik na docelowym Faerie (requiresTarget creature_you_control+subtype)', '„when you discard a card this way” uproszczone: zawsze dobiera+odrzuca, więc licznik zawsze się pojawia (po wyborze Faerie)'],
+    notes: ['faerie_attacks: odpala się raz na combat, gdy atakujący kontroler atakuje z ≥1 Faerie; rodzic bez celu, licznik kładzie refleks reflexive_discard (cel przy wejściu na stos, ruling 2023-09-01)'],
   }),
 
   // 10. Lotusguard Disciple (DFT) {2}{W} 2/2 Bird Cleric Flying — ETB: target
@@ -10744,7 +10757,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
   defineCard({
     id: 'treefolk-umbra', name: 'Treefolk Umbra', set: 'MH1',
-    types: ['Enchantment'], colors: ['G'], manaCost: 3,
+    // M360/B2: podtyp Aura wg Oracle („Enchantment — Aura”, MH1/185, Scryfall
+    // type_line zweryfikowany online 2026-09-16) — jak wyżej dla Slayera.
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 3,
     oracleText: "Enchant creature\nEnchanted creature gets +0/+2 and assigns combat damage equal to its toughness rather than its power.\nUmbra armor (If enchanted creature would be destroyed, instead remove all damage from it and destroy this Aura.)", imageUri: "https://cards.scryfall.io/large/front/6/7/677166cf-4e1e-43ac-a67b-afaf33c0d14e.jpg?1783933088",
     aura: { pump: { power: 0, toughness: 2 }, combatDamageByToughness: true, umbraArmor: true },
     artId: 606, plan: 'Śródziemie', support: { status: 'supported', limitations: [] },

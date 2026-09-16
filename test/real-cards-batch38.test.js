@@ -248,12 +248,17 @@ test('Weftblade Enhancer: warp {2}{W} z ręki, wygnanie w end step, warpReady w 
   assert.ok(exiled.warpReady, 'warpReady w exile');
 });
 
-// --- Talion's Messenger: faerie_attacks ---
-test('Talion\'s Messenger: trigger faerie_attacks na docelowym Faerie', () => {
+// --- Talion's Messenger: faerie_attacks + reflexive_discard ---
+// M361/B2: dwa triggery (Scryfall ruling 2023-09-01) — rodzic bez celu,
+// refleks „when you discard this way" z celem Faerie.
+test('Talion\'s Messenger: trigger faerie_attacks + refleks na docelowym Faerie', () => {
   const def = REGISTRY.get('talions-messenger');
   const ab = def.abilities.find((a) => a.trigger?.event === 'faerie_attacks');
   assert.ok(ab, 'trigger faerie_attacks');
-  assert.equal(ab.trigger.requiresTarget.type, 'creature_you_control');
-  assert.equal(ab.trigger.requiresTarget.subtype, 'Faerie');
+  assert.ok(!ab.trigger.requiresTarget, 'rodzic bez celu (ruling 2023-09-01)');
+  const child = def.abilities.find((a) => a.trigger?.event === 'reflexive_discard');
+  assert.ok(child, 'refleks reflexive_discard');
+  assert.equal(child.trigger.requiresTarget.type, 'creature_you_control');
+  assert.equal(child.trigger.requiresTarget.subtype, 'Faerie');
   assert.ok((def.keywords ?? []).includes('flying'), 'flying');
 });

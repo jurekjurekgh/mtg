@@ -4810,3 +4810,211 @@ Bramki: `npm test` **5482/5482** (188,3 s na finalnym drzewie), `npm run test:al
 heuristic **82,6%** (555/672), aggro **30,7%**, random **4,2%**
 (bez zmian wobec przedpoprawkowego pomiaru); golden master bez churnu
 (`3d1167140f686f7c…`).
+
+## M359 (2026-09-16) — Brązowa odznaka: 5 błędów reguł (cleanup 514 + triggery 603 na stos)
+
+**Status:** zamknięty — 5 błędów znalezionych i naprawionych, każdy
+zweryfikowany online (CR + Oracle) przed zmianą; wyzwanie Brązowe (5 UNIKALNYCH
+błędów vs poprzednie milestone'y, audyty i seria 15) zaliczone.
+
+Wszystkie reguły sprawdzone na żywo, nie z pamięci: CR 514.3/514.3a
+(mtg.wiki/Ending_phase), CR 603.3 (mtg.wiki/Triggered_ability), CR 605.3a
+(mtg.wiki/Mana_ability, uzasadnienie blokady `tap_for_mana` w zamkniętym
+cleanupie) oraz Oracle Boros Challenger (Scryfall: „Whenever this creature
+attacks…” — dowód, że mentor to zdolność triggerowana).
+
+**#1 — Cleanup bez pętli 514.3a.** Triggery w cleanupie (np. ETB
+Revolutionista rzuconego za madness po limicie ręki) nie otwierały KOLEJNEGO
+cleanupu — ręka 8 kart przeciekała do tury 2. Przyczyna: ścieżka wyjścia
+zawsze przechodziła do następnej tury. Naprawa: stempel wejścia
+(`cleanupActivityFromEvent`) + skan aktywności stosu; pełna runda passów przy
+pustym stosie ZOSTAJE w cleanupie (kolejny limit ręki, CR 514.1/514.2).
+Testy: `test/m359-bronze-cleanup-514.test.js` (T1/T1b/T1c/T2/T2b).
+
+**#2 — Priorytet w ZAMKNIĘTYM cleanupie (CR 514.3).** Przy pustym stosie i bez
+triggerów bot dostawał oferty `cast_spell`/`activate_ability` (m.in. zrzut
+stworów w cleanupie, żeby ominąć limit ręki — w prawdziwym Magicu priorytetu
+tam nie ma). Naprawa: `cleanupPriorityOpen` + `CLEANUP_LOCKED_COMMANDS`
+(`cleanup_no_priority`); jeden predykat dla oferty i walidacji (M255/G, L48).
+Dowód w golden-masterze: regeneracja fixture to DOKŁADNIE 6 wpisów `options`
+(porównanie śladu baseline ze stashu — decyzje i wyceny identyczne, znikają
+tylko nielegalne oferty w kroku cleanup).
+
+**#3 — Mentor z pominięciem stosu (CR 603.3).** `resolve_mentor_target`
+kładł licznik NATYCHMIAST — bez okna odpowiedzi (Shock w cel, Might of the
+Masses na cel, cel zdjęty z walki). Naprawa: decyzja kolejkuje trigger
+(`extra.mentorCounter` ze snapshotem siły źródła) przez `queueTriggerToStack`;
+rozstrzygnięcie re-waliduje cel (stwór na polu bitwy, nadal atakujący, siła
+wciąż mniejsza — od żywej siły albo snapshotu LKI, CR 603.10/608.2b).
+Testy: `test/m359-bronze-mentor-603.test.js` (5/5); batch19 zaktualizowany.
+
+**#4 — Backup z pominięciem stosu (CR 603.3 + 702.165a).** `resolve_backup`
+aplikował liczniki i grant natychmiast. Naprawa: ten sam wzorzec
+(`extra.backupApply`); grant keywordów tylko, gdy cel to INNY stwór niż
+źródło — liczy się tożsamość celu, nie przetrwanie źródła (źródło zabite
+w odpowiedzi nie zatrzymuje triggera, CR 113.7a).
+Testy: `test/m359-bronze-backup-603.test.js` (4/4); batch4 zaktualizowany.
+
+**#5 — Delirium z pominięciem stosu (CR 603.3 + intervening-if 603.4/207.2c).**
+`resolve_delirium_target` zadawał obrażenia natychmiast — bez okna na
+zabicie celu, utratę czwartego typu w grobie i zmianę kontroli celu.
+Naprawa: trigger (`extra.deliriumDamage` ze snapshotem amount); przy
+rozstrzyganiu re-walidacja celu (stwór poszkodowanego gracza) ORAZ
+intervening-if (4+ typy kart w grobie kontrolera); obrażenia generyczną
+ścieżką (protection/tarcze/infect/lifelink zachowane — M210 zielone).
+Testy: `test/m359-bronze-delirium-603.test.js` (5/5); batch18/batch38/M210
+zaktualizowane.
+
+Efekty uboczne (naprawione w locie): nowy klucz stanu w odcisku (B2/2 —
+`cleanupActivityFromEvent` w `STATE_COUNTER_FIELDS`); pętla cleanup wymaga
+kanonicznego wejścia (ręczny `jumpToStep` w testach nie zapętla na stęchłej
+historii — regresja E7/A); fixture golden-mastera zregenerowane świadomie
+(`de60e811217091e8…`, sam dowód #2).
+
+Bramki: `npm test` **5574/5574**, `npm run test:all` **5584/5584**, build
+**63 moduły / 3724,4 kB**, quick 672 gry / 148,0 s — heuristic **82,4%**
+(554/672; −1 partia wobec 15g — poprawione tempo cleanupu/stosu, decyzje
+botów w golden-masterze identyczne), aggro **32,4%**, random **2,7%**.
+
+## M360 (2026-09-16) — Srebrna odznaka: 5 błędów reguł (bestow/Negate, Aura, split first-strike, Station LKI, ninjutsu EOC)
+
+**Status:** zamknięty — 5 błędów znalezionych i naprawionych, każdy
+zweryfikowany online (CR + Oracle + rulingi) przed zmianą i domknięty
+mutacją (odwrócenie fixa czerwieni test); wyzwanie Srebrne (5 UNIKALNYCH
+błędów vs M359, milestone'y M1–M358, audyty PR, seria 15, łowy 2026-08-11)
+zaliczone. Commity `16b/B1`…`16b/B5` + `16b/E6` na tej gałęzi.
+
+Wszystkie reguły sprawdzone na żywo, nie z pamięci: CR 702.103b
+(mtg.wiki/Bestow + Scryfall THS/161, M20/69), Oracle Spectral Prison
+i Treefolk Umbra (Scryfall: podtyp Aura), CR 510.4/510.3
+(mtg.wiki/Combat_damage_step, CR 2026-08-07), EOE Release Notes
+(mtg.wiki/Station — LKI stacji), BOK FAQ (mtg.wiki/Ninjutsu — okna).
+
+**#1 — Negate kontruje bestow-Aurę (CR 702.103b).** Bestow rzucony jako Aura
+to czar NIE-stworowy („it becomes an Aura enchantment"; ruling THS: nigdy
+oba naraz) — Negate go nie widział. Fix: `spell.aura` rozstrzyga, wspólny
+helper oferty i walidacji (L48). Testy: `test/m360-silver-bestow-negate.test.js`
+(3/3: B1a RED→GREEN + piny B1b/B1c). Commit `3d00b55` (16b/B1).
+
+**#2 — Aura bez podtypu Aura (dane vs Oracle).** Spectral Prison i Treefolk
+Umbra nie miały podtypu Aura — Ironclad Slayer nie zawracał ich z grobu.
+Fix: dane + niezmiennik „każda Aura w danych ma podtyp Aura".
+Testy: `test/m360-silver-aura-subtype.test.js` (3/3). Commit `a2187b8` (16b/B2).
+
+**#3 — Dwa kroki obrażeń przy first/double strike (CR 510.4+510.3).** Silnik
+robił oba przebiegi w jednej komendzie bez rundy priorytetu (Shock między
+krokami niemożliwy; IRL sierżant 2/2 FS przeżywa blok 4/3). Fix: snapshot
+`combat.firstStrikeAtStart` + flaga `pendingCombatSecondPass` — pierwszy
+resolve robi tylko first strike, zwykły czeka na drugi resolve po priorytecie;
+snapshot decyduje o zwykłym (nadany między krokami FS nie kasuje obrażeń —
+squires-lightblade). Bez nowego typu eventu (protokół zamknięty). Testy:
+`test/m360-silver-first-strike-window.test.js` (3/3: B3a okno, B3b snapshot,
+pin B3c). Migracje: batch54, bug-hunt-2026-08-11, wyzwanie-4, wyzwanie-5,
+real-cards-batch21; golden-master świadomie zregenerowany (partia ze
+strikerem dominaria-brg|mirrodin-wu@1000, `865c0302cfa99178…`, gra domyka
+się czysto). Commit `a0b053d` (16b/B3).
+
+**#4 — Station czyta LKI (EOE Release Notes, CR 608.2h).** Stwór tapowany
+kosztem station nie jest celem, więc usunięcie go w odpowiedzi nie fizzluje
+(dawne 608.2b było błędem) — liczniki wg ostatniej mocy z pola bitwy. Fix:
+snapshot `stationTappedPower` na wpisie stosu (wzorzec `sacrificedToughness`);
+żywy stwór: moc aktualna (pompa w odpowiedzi działa). Lekcja L145. Testy:
+`test/m360-silver-station-lki.test.js` (3/3). Commit `d3a8702` (16b/B4).
+
+**#5 — Ninjutsu w end_of_combat (BOK FAQ).** FAQ: okna declare blockers,
+combat damage LUB end of combat — silnik oferował tylko combat_damage, bo po
+obrażeniach combat znikał. Fix: `rememberClosedCombat` snapshotuje
+atakujących/zablokowanych ze stemplem tury; okno EOC czyta snapshot (oferta
++ walidacja, L48); odcisk pokrywa `lastCombat`. (Okno declare_blockers
+celowo złączone z combat_damage przez M172/C — poza zakresem.) Testy:
+`test/m360-silver-ninjutsu-eoc.test.js` (3/3: B5a + pin B5b + strażnik
+stempelka B5c). Commit `5654844` (16b/B5).
+
+Tropy martwe (sondy probe-silver7–11, audyty kosztów/danych/DFC — skasowane
+w E6): trample+deathtouch (lethal 1, CR 702.2 — działa), regenerate (pełny
+pakiet), fight (niecombatowe), unless-pay (pay/decline), crew z chorobą
+(poprawne 702.122a), zablokowany-bez-blokera (0 bez trample), próg stacji
+z chorobą (działa), H30–H42, S2/S6/S10 (brak kart / brak śladu).
+
+Bramki: `npm test` **5589/5589**, `npm run test:all` **5599/5599**, build
+**63 moduły / 3732,8 kB**, quick 672 gry / 149,5 s — heuristic **82,1%**
+(552/672; −2 partie wobec M359 — poprawiony split walki zmienia decyzje
+bota, regresja benchmarku zielona), aggro **32,7%**, random **3,0%**.
+
+Efekt uboczny (naprawiony w E6): wpis L145 przekroczył budżet lektury
+startowej (100,1k > 100k tokenów) — obowiązkowa kondensacja LESSONS.md
+(L91/L127/L98/L48/L13/L145: redakcja bez utraty faktów, nagłówki nietknięte),
+po: ~99,3k. Sondy i audyty skasowane.
+
+## M361 (2026-09-16) — Złota odznaka: 5 błędów reguł (exploit self-sac, Talion refleks, impuls-land, speed life-loss, modal-hexproof)
+
+**Status:** zamknięty — 5 błędów znalezionych i naprawionych, każdy
+zweryfikowany online (CR + Oracle + rulingi) przed zmianą i domknięty
+mutacją (odwrócenie fixa czerwieni test); wyzwanie Złote (5 UNIKALNYCH
+błędów vs M360, M359, milestone'y M1–M358, audyty PR, seria 15, łowy
+2026-08-11) zaliczone. Commity `16c/B1`…`16c/B5` + `16c/E6` na tej gałęzi.
+
+Wszystkie reguły sprawdzone na żywo, nie z pamięci: CR 702.110
+(VOW Release Notes, mtg.wiki/Exploit), ruling Talion's Messenger
+(Scryfall, 2023-09-01), CR 701.18a/b (mtg.wiki/Play), Speed
+(mtg.wiki/Speed — trigger „lose life"), CR 608.2b (cele modalne).
+
+**#1 — Exploit: źródło własnym kandydatem + trigger przy samopoświęceniu
+(CR 702.110, VOW Notes).** Filtr `candidate.id !== entered.id` wykluczał
+źródło, więc samotny Silumgar Butcher nie dostawał nawet decyzji — a mógł
+poświęcić siebie („This will cause its other ability to trigger"). Fix:
+kandydatem każdy stwór kontrolera + trigger „exploits" z LKI grobu przy
+`selfSacrifice` (bez flagi wymóg „na stole" zostaje — sekwencyjne
+multi-exploit milczy). Testy: `test/m361-gold-exploit-self.test.js` (4/4).
+Commit `465e0e4` (16c/B1).
+
+**#2 — Talion's Messenger: dwa triggery, refleks po odrzucie (Scryfall
+ruling 2023-09-01).** „A second 'reflexive' ability triggers when you
+discard a card this way. You choose a target for that ability as it goes
+on the stack." Fix: zdarzenie `reflexive_discard` niesie zdolność (LKI,
+CR 603.10) — cel po odrzucie, okno odpowiedzi, brak odrzutu = brak
+licznika. Testy: `test/m361-gold-talion-reflexive.test.js` (4/4).
+Commit `d987fa4` (16c/B2).
+
+**#3 — Land drop z exile w oknie impulsu (Gila Courser, CR 701.18a/b).**
+„To play a card means to play that card as a land or to cast that card"
++ „from the zone it's in" — impulsowe „you may play" obejmowało tylko
+rzuty. Fix: ścieżka play-land z exile w oknie (oferta + wykonanie, L48)
++ bot nie marnuje okna. Testy: `test/m361-gold-impulse-land.test.js`
+(5/5). Commit `2421ec0` (16c/B3).
+
+**#4 — Speed rośnie przy utracie życia, nie tylko damage (mtg.wiki/Speed).**
+„Whenever one or more opponents lose life during your turn..." — silnik
+podpinał wzrost tylko pod damage_dealt, więc czysta utrata życia
+(lose_life — Delta Bloodflies) nie podnosiła prędkości. Fix root-cause:
+JEDEN hook na life_changed (amount < 0) zamiast dwóch hooków damage —
+obrażenia wołają changeLife (ścieżka żyje), a prewencja/infect/samotarta
+odpadają z natury zdarzenia. Bramki „własna tura / raz / max 4" bez zmian
+(ADR 0030). Lekcja L146. Testy:
+`test/m361-gold-speed-lifeloss.test.js` (5/5: RED T1 strata-bez-damage,
+dedup T3, bramki T4/T5). Commit `f082bef` (16c/B4).
+
+**#5 — Modalne cele walidowane przy rezolucji (CR 608.2b).** Ścieżka
+modalna filtrowała cele tylko po strefie — Selesnya Charm (Wygnanie)
+wyganiał stwora z hexproof zyskany w odpowiedzi (Magic Damper), podczas
+gdy ścieżka zwykła fizzlowała poprawnie. Fix: tryb stały przez
+collectLegalTargets (L48); tryby ZMIENNE („up to N") per-cel przeciw
+typowi trybu (lustro validateVariableTargets); stun zostaje w liveChosen;
+fizzle zmiennego tylko gdy miał wybrane cele (M146). Po drodze regresja
+7 testów zmienno-modalnych (mapowanie 1:1) — naprawiona gałęzią per-cel.
+Testy: `test/m361-gold-modal-hexproof.test.js` (3/3). Commit `30e4991`
+(16c/B5).
+
+Tropy martwe (sondy inline, brak plików do sprzątania): G1 cumulative
+(brak silnika+kart), G4 warstwy (set+add OK), G5 can't-be-countered
+(brak), G6/G7 timing grobu/Discover (OK), renown-inline (brak Stifle —
+nietestowalne), shroud/changeling (audytowane), manifest/embalm/buyback
+(poprawne), landfall+Mysteries (M167/G), fail-to-find (M177/C), koszty
+ataku/fear/devotion/monarch/horsemanship (luki, nie bugi), landwalk
+(brak zmian podtypów landów), menace/bestow-fizzle/fateful-hour/domain/
+phyrexian (obie ścieżki)/forecast/unearth/kopie-707.2/trample-deathtouch
+(poprawne), kontrola trwała (tylko EOT+haste).
+
+Bramki: `npm test` **5610/5610**, `npm run test:all` **5620/5620**, build
+**63 moduły / 3742,6 kB**, quick 672 gry / 145,3 s — heuristic **82,0%**
+(551/672), aggro **32,7%** (110/336), random **3,3%** (11/336).

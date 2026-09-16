@@ -65,7 +65,9 @@ function attackerCanBeBlocked(attacker, blockers) {
 /**
  * M221/E (zgłoszenie właściciela): czy `attacker` jest bezradny wobec obrony,
  * bo przeciwnik ma NIETAPNIĘTEGO blokera z ochroną od koloru atakującego
- * (CR 702.16e), który MOŻE go zablokować. Taki bloker zablokuje bez strat:
+ * (prewencja obrażeń, CR 702.16e; G3: klauzula blokowa 702.16f chroni
+ * ATAKUJĄCEGO z protekcją i blokera z protekcją nie dotyczy), który MOŻE go
+ * zablokować. Taki bloker zablokuje bez strat:
  * atakujący nie zada obrażeń (ani graczowi, ani blokerowi) i nie zginie —
  * atak, pump, equipment na tym atakującym są jałowe, dopóki protekcja żyje.
  *
@@ -83,10 +85,10 @@ function attackerNeutralizedByProtection(attacker, blockers) {
     if (!attackerCanBeBlocked(attacker, [b])) return false;
     const qualities = b.protection ?? [];
     // Bloker chroniony od któregokolwiek koloru atakującego = atak jałowy:
-    // obrażenia bojowe od atakującego są zapobiegane (CR 702.16c), a bloker
+    // obrażenia bojowe od atakującego są zapobiegane (CR 702.16e; G3), a bloker
     // przeżywa. `sourceHasProtectionQuality` liczy kolory ze `source`.
     if (!qualities.some((q) => sourceHasProtectionQuality(q, attacker))) return false;
-    // M239/1 (audyt PR #83, CR 702.19b + 702.16c): ale TRAMPLE przebija blok
+    // M239/1 (audyt PR #83, CR 702.19b + 702.16e; G3): ale TRAMPLE przebija blok
     // z ochroną. Podział obrażeń wymaga od atakującego z trample tylko lethal
     // na blokerach, a test lethal ignoruje prewencję — nadmiar mocy wpada
     // w gracza, który protekcji NIE ma (chroni się tylko bloker). Czyli atak
@@ -1827,7 +1829,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   /** Stan faktów o lądzie i rekem, potrzebny do wyboru (bez punktów). */
   function landAnaliza(view, objectId) {
     const ja = view.playerId;
-    const karta = (view.zones.hand ?? []).find((o) => o?.id === objectId);
+    // M361/B3: land drop także z exile (okno impulsu, CR 701.18a) — wycena
+    // czyta kartę z obu stref (bez tego land z exile miał płaską deltę).
+    const karta = (view.zones.hand ?? []).find((o) => o?.id === objectId)
+      ?? (view.zones.exile ?? []).find((o) => o?.id === objectId);
     const def = cardDef(karta?.cardId);
     const pola = (view.zones.battlefield ?? [])
       .filter((o) => o?.controllerId === ja && o.kind === 'land');
@@ -2343,7 +2348,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // M289 (tura 10, dopowiedzenie do tej samej zasady): „ile warta jest pompa"
     // zależy od tego, czy nosiciel umie ją spożytkować. Ciało, które legalnie NIE
     // atakuje (defender/detain/aura), albo takie, którego obrażenia są zapobiegane
-    // przez ochronę blokerów (CR 702.16c — jałowy atak), liczy tylko część
+    // przez ochronę blokerów (CR 702.16e — jałowy atak; G3), liczy tylko część
     // obronną siły: +1 siły wciąż zabija atakującego w bloku, ale nie robi
     // krzywdy graczowi. Bez tego gałąź przeniesienia stała jak zaklęta: równy co
     // do siły defender zatrzymywał sprzęt u siebie, choć przeniesienie za {1}
@@ -3797,12 +3802,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               score += combatOn ? 12 : -45;
             } else {
               const afterBlockers = view.combat && view.combat.blockers && Object.keys(view.combat.blockers).length > 0;
-              // A4 (audyt niezależny PR #122, port 2026-09-15): okno KOŃCZY się
-              // na combat_damage. W tym kroku priorytet JEST (CR 510.1) — przed
-              // rozdaniem obrażeń (CR 510.2: „all combat damage that's been
-              // assigned is dealt simultaneously"; silnik: pas aktywnego domyka
-              // krok i dopiero wtedy rozdaje, closingCombatPassBlocked) — ochrona
-              // jeszcze prewenuje. W end_of_combat (CR 511.1: sam priorytet,
+              // A4 (audyt niezależny PR #122, port 2026-09-15; cytat sprostowany
+              // G1 w audycie PR #121): okno KOŃCZY się na combat_damage. Priorytet
+              // w tym kroku to okno PO BLOKACH z CR 509.2 („Second, the active
+              // player gets priority.") — silnik skacze declare_blockers→
+              // combat_damage (M172/C), a przydział i rozdanie dzieją się razem
+              // w resolve_combat (CR 510.1+510.2: „all combat damage that's been
+              // assigned is dealt simultaneously"; między przydziałem a rozdaniem
+              // silnik nie daje okna na czary — bramki pendingDamageAssignment).
+              // Ochrona rzucona w combat_damage jeszcze prewenuje. W end_of_combat
+              // (CR 511.1: sam priorytet, bez akcji turowych) obrażenia są JUŻ
               // bez akcji turowych) obrażenia są JUŻ rozdane — ochrona nie cofa
               // rozdanych (DEBT: „All such damage is prevented." dotyczy obrażeń,
               // które dopiero BĘDĄ zadane), a protectionPreventsAnyLethal czyta
@@ -5646,7 +5655,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // M221/E (zgłoszenie właściciela): przeciwnik ma nietapniętego blokera
           // z ochroną od koloru atakującego (np. token 1/1 z protection from
           // black blokujący 7/7 czarnego). Taki bloker zablokuje bez strat —
-          // atakujący zada 0 obrażeń (CR 702.16c), nie zginie, tylko tapnie się.
+          // atakujący zada 0 obrażeń (CR 702.16e; G3), nie zginie, tylko tapnie się.
           // Atak co turę w tego blokera to marnotrawstwo (dokładnie objaw E).
           // Jałowy niezależnie od wyścigu (jak M188/C), więc premia go nie ratuje.
           const neutralizedByProtection = attackerNeutralizedByProtection(object, blockers);
@@ -6557,6 +6566,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // triggerów exploita na źródle — tu bezpieczna domyślna: poświęć słabego).
       case 'resolve_exploit_choice': {
         if (cmd.skip === true) return finish(P.exploitSkipBase);
+        // M361/B1 (strażnik benchmarku): samopoświęcenie źródła exploita jest
+        // legalne (VOW Release Notes), ale bot nie wycenia zysków dies/morbid —
+        // domyślnie pomija (człowiek może poświęcić jawnie). Bez tego heurystyka
+        // „kupowałaby" trigger -3/-3 ceną własnego 3/3 (23 > skip 20).
+        if (cmd.targetId && cmd.sourceId && cmd.targetId === cmd.sourceId) return finish(-50);
         const victim = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!victim || victim.controllerId !== view.playerId) return finish(-50);
         // C (zgłoszenie właściciela 2026-09-10): trigger exploita bywa MILLEM,
