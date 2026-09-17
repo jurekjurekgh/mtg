@@ -98,7 +98,7 @@ etapy I/H dodają wyłącznie WPISY TOKENÓW i grafikę, nie nowe karty do talii
   (`ad74c8a`, `9ee386b`, `6ae121f`, `1268b4d`), E5/E6 czekają na push
   (token GH nieważny).
 - [x] **E7 — integracja**: bramki finalne (`npm test` 5719/5719,
-  `npm run test:all` 5719/5719, build 64/3809,3 kB, regresja bota 10/10),
+  `npm run test:all` 5729/5729, build 64/3809,3 kB, regresja bota 10/10),
   quick 25 talii (pomiar w toku; liczby po zakończeniu przebiegu), dokumentacja
   (M369 w ENGINE_MILESTONES, PROJECT_HISTORY, HANDOFF_2026-09-17c, README)
   i lekcja L148 (rejestr przycięty tak, by zmieścić się w budżecie lektury

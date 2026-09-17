@@ -5306,7 +5306,7 @@ Uwaga operacyjna: sandbox przeładował repo w trakcie sesji (świeży shallow k
 + `reset --mixed FETCH_HEAD` (push fast-forward); kopia pracy poza gitem:
 `/home/user/recovery/`.
 
-**Pomiary finalne:** `npm test` **5719/5719**, `npm run test:all` **5719/5719**,
+**Pomiary finalne:** `npm test` **5719/5719**, `npm run test:all` **5729/5729**,
 build **64 moduły / 3809,3 kB**, regresja bota **10/10**, quick 25 talii —
 POMIAR W TOKU (liczby po zakończeniu przebiegu; poprzedni, batch 56:
 heuristic 86,0%, aggro 25,5%, 1 mecz niedokończony). Pełne B0 tylko na wyraźną

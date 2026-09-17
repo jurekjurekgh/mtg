@@ -45,7 +45,7 @@ handoff: [`docs/setup/HANDOFF_2026-09-17c.md`](setup/HANDOFF_2026-09-17c.md).
   (lethal wroga + TMC/walory zabijanego); TMC twarzą w dół = realny koszt {3};
   golden-master zregenerowany świadomie (jedna partia, reprodukcja realna).
 
-Bramki head sesji: `npm test` **5719/5719**, `npm run test:all` **5719/5719**,
+Bramki head sesji: `npm test` **5719/5719**, `npm run test:all` **5729/5729**,
 build **64 moduły / 3809,3 kB**, regresja bota **10/10**, quick 25 talii —
 POMIAR W TOKU (liczby po zakończeniu przebiegu).
 
