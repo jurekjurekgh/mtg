@@ -330,6 +330,16 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
   // nie są wydawane, więc nie mogą blokować (root cause: spendMana(0, [[G]])
   // rzucała „Brak kolorowej many" mimo zerowego kosztu).
   const payNothing = amount === 0;
+  // Atomowość (CR 601.2h) — bramka sumy PRZED pierwszą mutacją. Dotąd stała
+  // dopiero w auto-tapie (po fazie pipów), więc nieudana płatność zostawiała
+  // tapnięte źródła i manę w puli (L48, znalezisko benchmarku seed 2039:
+  // odrzucony rzut „Niewystarczająca mana" zużył Górę i wpłacił {R} do puli).
+  // Rachunek jest ten sam co bramki oferty (`producibleMana` liczy granty
+  // lądów i źródła kosztowe), a ścieżki, które płaciły, mają pulę ≥ kwoty,
+  // więc żadna udana płatność nie widzi różnicy.
+  if (!payNothing && producibleMana(state, playerId, null, purpose, requirements) < amount) {
+    throw new Error('Niewystarczająca mana');
+  }
   // Płacenie pipów KOLOROWYCH właściwą maną (CR 106.4/601.2h): pipy muszą
   // być pokryte przez SAMĄ pulę — jeśli nie są, do-tapujemy kolorowopasujące
   // źródła NAWET wtedy, gdy suma many już wystarcza. Root cause M40/M41:
@@ -363,10 +373,17 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       // Tapujemy wyłącznie źródła zdolne wyprodukować potrzebny kolor —
       // źródło generyczne nie pokryje pipa, a tapnięcie byłoby mutacją
       // nieudanej płatności. Grant: kolor z planu (ten sam backtracking
-      // co oferta), nie „pierwszy pip".
+      // co oferta), a bez wiersza planu — pierwszy niepokryty pip (jak
+      // w auto-tapie sumy i w bloku seeda 2027); ląd z grantem, którego
+      // płatność i tak dotyka, MUSI wyprodukować CAŁY grant, bo
+      // `producibleMana` liczy ten ląd jako `grant` jednostek (L48).
       const srcColors = getSourceForObject(source)?.colors ?? [];
       const plannedGrant = grantColorById.get(source.id) ?? null;
-      if (!srcColors.some((c) => reqColors.has(c)) && !plannedGrant) continue;
+      const sourceGrant = grantManaOnLand(state, source.id);
+      const grantColor = plannedGrant ?? (sourceGrant > 0
+        ? (firstUncoveredPipColor(expandManaPool(player.manaPool), requirements) ?? srcColors[0] ?? 'G')
+        : null);
+      if (!srcColors.some((c) => reqColors.has(c)) && grantColor == null) continue;
       // A (rezerwa finansowania, benchmark seed 2033): lądy tapane w pipach
       // nie mogą zjeść świeżej bazy pod koszty źródeł kosztowych (bramka
       // oferty liczyła ją NIETKNIĘTĄ; tapnięcia konserwują jednostki w stronę
@@ -382,7 +399,7 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
           if (freshAfter < untappedCostedTotal(state, playerId)) continue;
         }
       }
-      tapLandForMana(state, playerId, source.id, { grantColor: plannedGrant });
+      tapLandForMana(state, playerId, source.id, { grantColor });
       covered = matchColorRequirements(expandManaPool(player.manaPool), requirements);
     }
     // M179/D: pipy niedomknięte landami pokrywają nielandowe źródła
