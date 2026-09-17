@@ -502,6 +502,40 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       tapCostedManaSource(state, playerId, entry, { preserveColors: [...reqColors], requirements, purpose });
     }
   }
+  // Znalezisko benchmarku (seed 2027, random(wiedzmin-wur) vs heuristic(innistrad-wu)):
+  // auto-tap potrafi ZJEŚĆ jednostkę przeznaczoną na pip płatności — finansowanie
+  // źródła kosztowego (Apprentice Wizard {U},{T}: Add {C}{C}{C}) zapłaciło koszt {U}
+  // tą samą jednostką, którą faza pipów odłożyła na {U} rzucanego czaru. Pula
+  // przestała kryć `requirements`, a końcowy consumeManaPool rzucał „Brak kolorowej
+  // many w puli" — mimo że płatność JEST wykonalna (nietapnięty ląd pokrywa pip).
+  // Przed konsumpcją dociągamy więc pokrycie z nietapniętych źródeł (ten sam wybór
+  // koloru co faza pipów: grant → firstUncovered). Mutacja wyłącznie w stronę puli
+  // (dodajemy manę), więc ścieżki kończące się dotąd sukcesem nie widzą różnicy,
+  // a bramka oferty (end-check fundableCostedPlan) gwarantuje wykonalność.
+  const consumeSeesRestricted = !restrictedManaBlocked(purpose);
+  const payableUnits = () => [
+    ...expandManaPool(player.manaPool),
+    ...(consumeSeesRestricted ? expandManaPool(player.restrictedPool ?? {}) : []),
+  ];
+  if (!payNothing && !matchColorRequirements(payableUnits(), requirements)) {
+    const reqColors = new Set(requirements.flat());
+    for (const land of untappedLandManaSources(state, playerId)) {
+      if (matchColorRequirements(payableUnits(), requirements)) break;
+      const srcColors = getSourceForObject(land)?.colors ?? [];
+      const grant = grantManaOnLand(state, land.id);
+      if (grant <= 0 && !srcColors.some((c) => reqColors.has(c))) continue;
+      const need = grant > 0 ? firstUncoveredPipColor(expandManaPool(player.manaPool), requirements) : null;
+      tapLandForMana(state, playerId, land.id, { grantColor: grant > 0 ? (need ?? srcColors[0] ?? 'G') : null });
+    }
+    for (const entry of untappedFreeManaSources(state, playerId)) {
+      if (matchColorRequirements(payableUnits(), requirements)) break;
+      if (!entry.colors.some((c) => reqColors.has(c))) continue;
+      tapFreeManaSource(state, playerId, entry);
+    }
+    // Obrona w głąb: gdyby pokrycia nie dało się odtworzyć, płatność jest
+    // nielegalna — throw PRZED konsumpcją (nie zostawiamy mutacji puli).
+    if (!matchColorRequirements(payableUnits(), requirements)) throw new Error('Brak kolorowej many');
+  }
   // Konsumpcja z kolorowej puli: pipy do pasujących jednostek, reszta (generic)
   // od bezbarwnych — MtG: każdy pip koloru opłacony maną tego koloru.
   // Przy koszcie 0 pomijamy konsumpcję (nic nie jest wydawane).
