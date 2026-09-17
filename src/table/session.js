@@ -445,25 +445,34 @@ export function virtualCardNames() {
 /**
  * Numery kolejnych kopii tej samej nazwy na polu bitwy JEDNEGO gracza
  * (zlecenie właściciela 2026-09-16): zwraca mapę id → ordynał (1-based)
- * TYLKO dla grup (kontroler, nazwa) o liczności > 1; pojedyncze permanenty
- * nie dostają wpisu. Obiekty przychodzą w kolejności strefy battlefield
- * (kolejność wejścia) — ordynał = pozycja w grupie. Face-down (własna
- * konwencja nazewnictwa zakryć, M319/NA1) i kopie (copyNumber > 0, wyróżnik
- * „(kopia N)") są pomijane i nie podbijają licznika grupy. Czysto wyliczane
- * przy każdym odczycie — bez stanu w silniku (odcisk/fingerprint nietknięty).
+ * TYLKO dla grup (kontroler, nazwa WYŚWIETLANA) o liczności > 1; pojedyncze
+ * permanenty nie dostają wpisu. Obiekty przychodzą w kolejności strefy
+ * battlefield (kolejność wejścia) — ordynał = pozycja w grupie. Face-down
+ * (własna konwencja nazewnictwa zakryć, M319/NA1) i kopie (copyNumber > 0,
+ * wyróżnik „(kopia N)") są pomijane i nie podbijają licznika grupy. Czysto
+ * wyliczane przy każdym odczycie — bez stanu w silniku (odcisk/fingerprint
+ * nietknięty).
+ *
+ * `displayedNameOf` (O1 audytu PR #124, klasa L41): klucz grupowania to nazwa,
+ * którą gracz WIDZI, nie surowy cardId. Dwa wydruki tego samego permanentu
+ * (różne id, jedna nazwa) muszą się numerować jak kopie — domyślne
+ * `o.name ?? o.cardId` jest poprawne tylko dla tokenów (jawna nazwa) i dopóki
+ * katalog nie ma dwóch permanentów o jednej nazwie. Sesja podaje resolver
+ * lustrzany wobec `nameOfObject` (token → object.name, karta → nameOf(cardId)).
  */
-export function battlefieldNameNumbers(objects) {
+export function battlefieldNameNumbers(objects, displayedNameOf = (o) => o.name ?? o.cardId) {
+  const nameKey = (o) => `${o.controllerId}\u2022${displayedNameOf(o)}`;
   const counts = new Map();
   for (const o of objects) {
     if (!o || o.faceDown || o.copyNumber) continue;
-    const key = `${o.controllerId}\u2022${o.name ?? o.cardId}`;
+    const key = nameKey(o);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   const out = new Map();
   const seen = new Map();
   for (const o of objects) {
     if (!o || o.faceDown || o.copyNumber) continue;
-    const key = `${o.controllerId}\u2022${o.name ?? o.cardId}`;
+    const key = nameKey(o);
     if ((counts.get(key) ?? 0) < 2) continue;
     const n = (seen.get(key) ?? 0) + 1;
     seen.set(key, n);
@@ -2545,6 +2554,16 @@ export function createSession(config) {
    * CzytANE przy każdym odpytaniu (nie stan): po odejściu kopii ostatnia
    * zostaje bez numeru — reguła pojedynczych.
    */
+  /**
+   * Nazwa WYŚWIETLANA permanentu — jedno źródło spójne z `nameOfObject`
+   * (token → jawne `name`, karta → nameOf(cardId)). Klucz numeracji kopii
+   * musi być tą samą nazwą, którą gracz widzi (O1 audytu PR #124) — inaczej
+   * dwa wydruki jednego permanentu u jednego gracza zostają nierozróżnialne.
+   */
+  const displayedNameOf = (object) => (object.isToken && object.name != null
+    ? object.name
+    : nameOf(object.cardId));
+
   function withCopyOrdinal(base, object) {
     return base + nameOrdinalSuffix(object.id);
   }
@@ -2560,8 +2579,13 @@ export function createSession(config) {
   function nameOrdinalSuffix(objectId) {
     const object = state.objects.get(objectId);
     if (!object || object.zone !== 'battlefield' || object.faceDown || object.copyNumber) return '';
+    // O1 (audyt PR #124): grupowanie po nazwie WYŚWIETLANEJ — resolver
+    // lustrzany wobec nameOfObject (token → jawne `name`, karta → nameOf).
+    // Inaczej dwa wydruki tego samego permanentu u jednego gracza pokazałyby
+    // identyczną nazwę bez numeru (reguła właściciela: numer KAŻDEJ kopii).
     const ordinal = battlefieldNameNumbers(
       state.zones.battlefield.map((id) => state.objects.get(id)),
+      displayedNameOf,
     ).get(objectId);
     return ordinal ? ` #${ordinal}` : '';
   }

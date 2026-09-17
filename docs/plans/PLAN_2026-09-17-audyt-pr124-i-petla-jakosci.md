@@ -48,7 +48,7 @@ ADR 0021 §4. Gałąź sesji: `arena/01a0ae26-mtg`, bazowy HEAD: `e4befba`
   - spójność dokumentacji (README/handoff/PH/audyt #123).
   Kryterium: raport `docs/audits/AUDYT_PR124_2026-09-17.md` z werdyktem i
   weryfikacją mutacyjną znalezisk.
-- [ ] **E2 — naprawy znalezisk** (dziś: O1 z raportu — klucz numeracji kopii nazw po nazwie WYŚWIETLANEJ, dziś nieosiągalne, ale sprzeczne z regułą właściciela) u root cause (AGENTS.md), każda z testem
+- [x] **E2 — naprawy znalezisk** (O1 z raportu: numeracja kopii grupuje po nazwie WYŚWIETLANEJ — `battlefieldNameNumbers(objects, displayedNameOf)`, sesja podaje resolver lustrzany wobec `nameOfObject`; testy N8 jednostka + sesja RED→GREEN, 2 mutacje L13 RED) u root cause (AGENTS.md), każda z testem
   RED→GREEN i mutacją L13, osobnym commitem i pushem (ADR 0020 C).
 - [ ] **E3 — pętla jakości** (ADR 0021 §4b, inna ścieżka niż poprzednia
   sesja): audyt CR/ mechanik ścieżką, której #124 nie dotykał — kandydaci:
