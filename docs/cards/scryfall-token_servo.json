@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/60842b1a-6ae7-4b3b-a23f-0d94a3d89884",
+  "print": "tkld",
+  "name": "Servo",
+  "layout": "token",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Token Artifact Creature — Servo",
+  "oracle_text": "",
+  "power": "1",
+  "toughness": "1",
+  "colors": [],
+  "set": "tkld",
+  "set_name": "Kaladesh Tokens",
+  "collector_number": "4",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/0/60842b1a-6ae7-4b3b-a23f-0d94a3d89884.jpg?1783937239"
+  },
+  "pobrano": "2026-09-17",
+  "proweniencja": "2026-09-17 (znalezisko I): UUID 60842b1a-6ae7-4b3b-a23f-0d94a3d89884 z api.scryfall.com/cards/named?exact=Servo&set=tkld (L26 — adres i UUID odczytane z API, bez zgadywania); set_name z api.scryfall.com/sets/tkld. Pole rarity pominięto — nie było potrzebne do wpisu katalogowego (token: typ, statystyki, druk). Druk tkld/4 = token Kaladesh, tworzony m.in. przez Glint-Sleeve Artisan (2XM) i fabricate."
+}

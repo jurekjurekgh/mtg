@@ -11221,6 +11221,19 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Dragon Fodder'] },
   }),
 
+  // Token 1/1 bezbarwny Artefakt-Stwór Servo — druk tkld/4 (Kaladesh Tokens;
+  // Scryfall 60842b1a-6ae7-4b3b-a23f-0d94a3d89884; L26: UUID z API, nie
+  // z pamięci). Znalezisko I (2026-09-17c): silnik tworzy ten token przy
+  // fabricate (game-state.js, wybór „tokeny"), ale nie było wpisu w katalogu
+  // ani w TOKEN_IMAGES — kafel nie miał żadnej ilustracji.
+  defineCard({
+    id: 'token_servo', name: 'Servo', set: null,
+    types: ['Artifact', 'Creature', 'Token'], subtypes: ['Servo'], colors: [],
+    power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/6/0/60842b1a-6ae7-4b3b-a23f-0d94a3d89884.jpg?1783937239',
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez fabricate (Glint-Sleeve Artisan)'] },
+  }),
+
 ]);
 
 /**

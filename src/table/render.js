@@ -3722,6 +3722,10 @@ function artOf(info) {
   return {
     name: info.name, set: info.set ?? null, imageUri: info.imageUri ?? null,
     artId: info.artId ?? null, faceDown: Boolean(info.faceDown),
+    // Znalezisko H (2026-09-17c): pole bitwy rozstrzyga, KTÓRY rewers pokazać
+    // zakrytemu kaflowi — morpha na stole reprezentuje token Morph, a karty
+    // w strefach ukrytych (ręka bota) zostały przy rewersie karty.
+    battlefield: Boolean(info.isBattlefield),
   };
 }
 
