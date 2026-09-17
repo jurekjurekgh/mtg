@@ -115,6 +115,10 @@ export const WOREK_DECKS = Object.freeze({
   'Final Fantasy': 'worek-mroczny', Duskmourn: 'worek-mroczny',
   Lorwyn: 'worek-mroczny',
   'New Capenna': 'worek-mroczny', Kaldheim: 'worek-mroczny',
+  // Batch 56 (2026-09-17): nowy plan właściciela „Teenage Mutant Ninja Turtles”
+  // (karta 30 Containment Protocol) — motyw miejsko-mroczny, spójny z New
+  // Capenna i Duskmourn, więc worek-mroczny (nie ma jeszcze progu 15 kart).
+  'Teenage Mutant Ninja Turtles': 'worek-mroczny',
   Phyrexia: 'worek-mroczny',
 });
 

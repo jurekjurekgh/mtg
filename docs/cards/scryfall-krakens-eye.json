@@ -1,0 +1,35 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kraken%27s%20Eye&set=m11",
+  "print": "m11",
+  "name": "Kraken's Eye",
+  "mana_cost": "{2}",
+  "cmc": 2,
+  "type_line": "Artifact",
+  "oracle_text": "Whenever a player casts a blue spell, you may gain 1 life.",
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "set": "m11",
+  "set_name": "Magic 2011",
+  "collector_number": "210",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/f/bfcb47ef-9066-4ace-b88c-ea0d8f17ff8c.jpg?1783941790",
+    "normal": "https://cards.scryfall.io/normal/front/b/f/bfcb47ef-9066-4ace-b88c-ea0d8f17ff8c.jpg?1783941790"
+  },
+  "pobrano": "2026-09-17",
+  "rulings": [
+    {
+      "date": "2009-10-01",
+      "source": "wotc",
+      "comment": "The ability triggers whenever any player, not just you, casts a blue spell."
+    },
+    {
+      "date": "2009-10-01",
+      "source": "wotc",
+      "comment": "If a player casts a blue spell, Kraken’s Eye’s ability triggers and is put on the stack on top of that spell. Kraken’s Eye’s ability will resolve (causing you to gain 1 life) before the spell does."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/m11/210/rulings",
+  "rulingsPobrano": "2026-09-17"
+}

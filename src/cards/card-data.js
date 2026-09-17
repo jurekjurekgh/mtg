@@ -11001,6 +11001,116 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 617, plan: 'Tarkir', support: { status: 'supported', limitations: [] },
   }),
 
+  // ---------------------------------------------------------------------------
+  // Batch 56 (2026-09-17) — lista właściciela: 25, 27, 28, 30, 32, 34, 54, 58,
+  // 60, 63. Dane Oracle + rulingi pobrane ze Scryfalla 2026-09-17
+  // (docs/cards/scryfall-*.json).
+  //
+  // Etap B0b: wchodzą WYŁĄCZNIE dane karty (bez mechaniki) i status
+  // `in-development` — zgodnie z procedurą batcha karta dostaje `supported`
+  // dopiero w etapie, w którym ma pełne mechaniki i testy (ADR 0010 §4,
+  // ADR 0022). Kolejność etapów: B1 (32), B2 (27, 34), B3 (25, 30),
+  // B4 (58), B5 (54), B6 (63, 60).
+  // ---------------------------------------------------------------------------
+  defineCard({
+    id: 'bonds-of-faith', name: 'Bonds of Faith', set: 'ISD',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 2,
+    oracleText: "Enchant creature\nEnchanted creature gets +2/+2 as long as it's a Human. Otherwise, it can't attack or block.",
+    imageUri: 'https://cards.scryfall.io/large/front/c/c/cc8d1ce0-78c5-4e97-9cca-33e7b6ff3440.jpg?1783940998',
+    artId: 25, plan: 'Innistrad', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'erase', name: 'Erase', set: 'KTK',
+    types: ['Instant'], colors: ['W'], manaCost: 1,
+    oracleText: 'Exile target enchantment.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/1/d1dd0e10-2ad7-467f-8d4b-c70b95bf2e9c.jpg?1783939095',
+    artId: 27, plan: 'Tarkir', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'krakens-eye', name: "Kraken's Eye", set: 'M11',
+    types: ['Artifact'], colors: [], manaCost: 2,
+    oracleText: 'Whenever a player casts a blue spell, you may gain 1 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/f/bfcb47ef-9066-4ace-b88c-ea0d8f17ff8c.jpg?1783941790',
+    artId: 28, plan: 'Ixalan', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'containment-protocol', name: 'Containment Protocol', set: 'TMC',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 3,
+    oracleText: "Enchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature doesn't untap during its controller's untap step.",
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5a92ec45-3eb5-4212-bdbd-073cbd0299d7.jpg?1783904138',
+    artId: 30, plan: 'Teenage Mutant Ninja Turtles', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'shipwreck-moray', name: 'Shipwreck Moray', set: 'AER',
+    types: ['Creature'], subtypes: ['Fish'], colors: ['U'], power: 0, toughness: 5, manaCost: 4,
+    oracleText: 'When this creature enters, you get {E}{E}{E}{E} (four energy counters).\nPay {E}: This creature gets +2/-2 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/8/284c6de3-4e09-40d9-afdb-89ff08e1844b.jpg?1783936770',
+    artId: 32, plan: 'Ixalan', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'volcanic-submersion', name: 'Volcanic Submersion', set: 'ALA',
+    types: ['Sorcery'], colors: ['R'], manaCost: 5,
+    oracleText: 'Destroy target artifact or land.\nCycling {2} ({2}, Discard this card: Draw a card.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/e/0ec1f1fa-41c9-4bc0-9171-902cd456aa73.jpg?1783942556',
+    artId: 34, plan: 'Kaldheim', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'cautious-survivor', name: 'Cautious Survivor', set: 'DSK',
+    types: ['Creature'], subtypes: ['Elf', 'Survivor'], colors: ['G'], power: 4, toughness: 4, manaCost: 4,
+    oracleText: 'Survival — At the beginning of your second main phase, if this creature is tapped, you gain 2 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/e/ee2b4c1a-e058-4e06-bc46-e250fd9c9b54.jpg?1783909457',
+    artId: 54, plan: 'Kamigawa', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'mobile-garrison', name: 'Mobile Garrison', set: 'AER',
+    types: ['Artifact'], subtypes: ['Vehicle'], colors: [], power: 3, toughness: 4, manaCost: 3,
+    oracleText: 'Whenever this Vehicle attacks, untap another target artifact or creature you control.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/d/a/da443378-f5cb-4240-9524-2c40ec17c933.jpg?1783936724',
+    artId: 58, plan: 'New Capenna', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'thornwood-falls', name: 'Thornwood Falls', set: 'M20',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {G} or {U}.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/f/ef1b12d2-2f4f-4cfd-9728-edf8232c99e7.jpg?1783932932',
+    // Deskryptor zdolności many wchodzi JUŻ w B0b (nie dopiero w B6): strażnik
+    // M193/A parsuje Oracle „{T}: Add …" po CAŁYM katalogu i czerwienieje
+    // w dniu dodania karty bez zakodowanej produkcji kolorów (L28) — to jest
+    // jego zadanie, więc nie osłabiamy go filtrem statusu. Karta jest 1:1
+    // lustrem Dismal Backwater (M20), więc nie niesie żadnej nowej mechaniki;
+    // status `in-development` zostaje do etapu B6, w którym dojdą testy
+    // (ADR 0010 §4 — `supported` dopiero z testami).
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'gain_life', amount: 1 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['G', 'U'] },
+      }),
+    ],
+    artId: 60, plan: 'Eldraine', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'dragon-fodder', name: 'Dragon Fodder', set: 'ORI',
+    types: ['Sorcery'], colors: ['R'], manaCost: 2,
+    oracleText: 'Create two 1/1 red Goblin creature tokens.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/1/b19fc806-f1b7-4f82-be0e-b960699f9a36.jpg?1783938331',
+    artId: 63, plan: 'Kamigawa', support: { status: 'in-development', limitations: [] },
+  }),
+
 ]);
 
 /**

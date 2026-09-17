@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Dragon%20Fodder&set=ori",
+  "print": "ori",
+  "name": "Dragon Fodder",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Sorcery",
+  "oracle_text": "Create two 1/1 red Goblin creature tokens.",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "ori",
+  "set_name": "Magic Origins",
+  "collector_number": "140",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/1/b19fc806-f1b7-4f82-be0e-b960699f9a36.jpg?1783938331",
+    "normal": "https://cards.scryfall.io/normal/front/b/1/b19fc806-f1b7-4f82-be0e-b960699f9a36.jpg?1783938331"
+  },
+  "pobrano": "2026-09-17",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/ori/140/rulings",
+  "rulingsPobrano": "2026-09-17"
+}

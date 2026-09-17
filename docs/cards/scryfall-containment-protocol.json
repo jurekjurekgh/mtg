@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Containment%20Protocol&set=tmc",
+  "print": "tmc",
+  "name": "Containment Protocol",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature doesn't untap during its controller's untap step.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Enchant"
+  ],
+  "set": "tmc",
+  "set_name": "Teenage Mutant Ninja Turtles Eternal",
+  "collector_number": "108",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/a/5a92ec45-3eb5-4212-bdbd-073cbd0299d7.jpg?1783904138",
+    "normal": "https://cards.scryfall.io/normal/front/5/a/5a92ec45-3eb5-4212-bdbd-073cbd0299d7.jpg?1783904138"
+  },
+  "pobrano": "2026-09-17",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/tmc/108/rulings",
+  "rulingsPobrano": "2026-09-17"
+}

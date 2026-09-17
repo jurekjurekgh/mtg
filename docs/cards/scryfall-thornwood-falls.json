@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Thornwood%20Falls&set=m20",
+  "print": "m20",
+  "name": "Thornwood Falls",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {G} or {U}.",
+  "colors": [],
+  "color_identity": [
+    "G",
+    "U"
+  ],
+  "keywords": [],
+  "set": "m20",
+  "set_name": "Core Set 2020",
+  "collector_number": "258",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/f/ef1b12d2-2f4f-4cfd-9728-edf8232c99e7.jpg?1783932932",
+    "normal": "https://cards.scryfall.io/normal/front/e/f/ef1b12d2-2f4f-4cfd-9728-edf8232c99e7.jpg?1783932932"
+  },
+  "pobrano": "2026-09-17",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/m20/258/rulings",
+  "rulingsPobrano": "2026-09-17"
+}

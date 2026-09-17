@@ -1,0 +1,36 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Bonds%20of%20Faith&set=isd",
+  "print": "isd",
+  "name": "Bonds of Faith",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nEnchanted creature gets +2/+2 as long as it's a Human. Otherwise, it can't attack or block.",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Enchant"
+  ],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "5",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/c/cc8d1ce0-78c5-4e97-9cca-33e7b6ff3440.jpg?1783940998",
+    "normal": "https://cards.scryfall.io/normal/front/c/c/cc8d1ce0-78c5-4e97-9cca-33e7b6ff3440.jpg?1783940998"
+  },
+  "pobrano": "2026-09-17",
+  "rulings": [
+    {
+      "date": "2011-09-22",
+      "source": "wotc",
+      "comment": "Once the enchanted creature has been declared as an attacking or blocking creature, causing it to stop being a Human won’t remove it from combat. It will lose the +2/+2 bonus, however."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/isd/5/rulings",
+  "rulingsPobrano": "2026-09-17"
+}

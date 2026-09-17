@@ -468,4 +468,14 @@ export const MANA_COSTS = {
   "tah-crop-skirmisher": "{1}{U}",
   "act-of-treason": "{2}{R}",
   "douse-in-gloom": "{2}{B}",
+  // Batch 56 (2026-09-17) — koszty wprost z Oracle (docs/cards/scryfall-*.json).
+  "bonds-of-faith": "{1}{W}",
+  "erase": "{W}",
+  "krakens-eye": "{2}",
+  "containment-protocol": "{2}{U}",
+  "shipwreck-moray": "{3}{U}",
+  "volcanic-submersion": "{4}{R}",
+  "cautious-survivor": "{3}{G}",
+  "mobile-garrison": "{3}",
+  "dragon-fodder": "{1}{R}",
 };
