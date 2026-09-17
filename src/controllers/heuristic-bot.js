@@ -1094,6 +1094,37 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const EXPLOIT_LIBRARY_COST = new Map([
     ['look_top_put_one_hand_rest_grave', (amount) => Math.max(0, (amount ?? 1) - 1)],
   ]);
+  /**
+   * B (znalezisko właściciela 2026-09-17, Silumgar Butcher): trigger exploita
+   * bywa DEBUFFEM (pump o UJEMNEJ wytrzymałości). Taki exploit jest wart
+   * poświęcenia wyłącznie wtedy, gdy realnie ZABIJA wrogi stwór — inaczej
+   * oddajemy własny permanent za nic (bot poświęcił Morph 2/2, żeby dać
+   * -3/-3 na kreaturę 1/1). Zwraca najbardziej zabójczy debuff z deskryptorów
+   * karty (ADR 0002), albo null (np. mill Gurmag Drownera).
+   */
+  function exploitDebuff(def) {
+    let best = null;
+    for (const ability of def?.abilities ?? []) {
+      if (ability?.trigger?.event !== 'exploits') continue;
+      for (const eff of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+        if (eff?.type !== 'pump' || (eff.toughness ?? 0) >= 0) continue;
+        if (!best || eff.toughness < best.toughness) {
+          best = { power: eff.power ?? 0, toughness: eff.toughness };
+        }
+      }
+    }
+    return best;
+  }
+  /**
+   * Aury przyklejone do permanentu (bez bestow — po odczepieniu wraca jako
+   * stwór, nie ginie). Jedno źródło predykatu dla wyceny celu triggera
+   * (C, Academy Journeymage) i dla wyceny poświęcenia w exploicie (B).
+   */
+  function attachedAurasOf(view, target) {
+    if (!target) return [];
+    return (view.zones?.battlefield ?? [])
+      .filter((o) => o?.attachedTo === target.id && (o.kind === 'aura' || o.aura) && !o.bestow);
+  }
   function exploitMillAmount(def) {
     let razem = 0;
     for (const ability of def?.abilities ?? []) {
@@ -6250,8 +6281,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // attachedTo), bez bestow.
         const auraStripDelta = (t) => {
           if (!cmd.removesTarget || !t) return 0;
-          return (view.zones?.battlefield ?? [])
-            .filter((o) => o?.attachedTo === t.id && (o.kind === 'aura' || o.aura) && !o.bestow)
+          return attachedAurasOf(view, t)
             .reduce((sum, o) => sum + (o.controllerId === view.playerId ? -30 : 30), 0);
         };
         if (Array.isArray(cmd.targetIds)) {
@@ -6622,7 +6652,55 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const cena = value
           + P.exploitVictimKeywordWeight * (victim.keywords ?? []).length
           + P.exploitVictimAbilityWeight * (victimDef?.abilities ?? []).length
+          // Załączniki ofiary (aury) przepadają razem z nią — to dodatkowy
+          // koszt (te same 30 pkt co w wycenie celu triggera).
+          + P.exploitKillAuraValue * attachedAurasOf(view, victim).length
           - (victim.isToken ? P.exploitTokenDiscount : 0);
+        // B (znalezisko właściciela 2026-09-17, Silumgar Butcher): exploit
+        // DEBUFFUJĄCY (-X/-X) ma sens WYŁĄCZNIE jako wymiana — musi (a) zabić
+        // wrogi stwór i (b) być opłacalny: poświęcany stwór ma niższy TMC niż
+        // zabijany ALBO zabijany niesie istotne walory z PlayerView
+        // (keywordy, wartościowe aury — CR 704.5m: aury giną razem z nim;
+        // zdolności cudzych permanentów nie są jawne, ADR 0017).
+        // Wcześniej sam fakt posiadania triggera dawał +40, więc bot oddawał
+        // Morpha 2/2 za zabicie 1/1. Mill (Gurmag Drowner) nie ma debuffu —
+        // jego ścieżka (bramka biblioteczna) zostaje bez zmian.
+        const debuff = exploitDebuff(source ? cardDef(source.cardId) : undefined);
+        if (debuff) {
+          const dT = Math.min(0, debuff.toughness ?? 0);
+          // Realna zmiana wyniku (jak debuffKills): cel, który JUŻ nie żyje
+          // (wytrzymałość ≤ 0 albo dobity obrażeniami), nie jest zyskiem.
+          const debuffKillsNow = (o) => {
+            if (!o || o.controllerId === view.playerId || o.kind !== 'creature' || o.toughness == null) return false;
+            const deadAfter = o.toughness + dT <= 0 || (o.damage ?? 0) >= o.toughness + dT;
+            const deadBefore = o.toughness <= 0 || (o.damage ?? 0) >= o.toughness;
+            return deadAfter && !deadBefore;
+          };
+          const realKills = (view.zones?.battlefield ?? []).filter(debuffKillsNow);
+          // (a) brak zabójstwa → exploit nic nie kupuje (zysk zależy wyłącznie
+          // od triggera; sam fakt jego posiadania nie jest wartością).
+          if (realKills.length === 0) return finish(P.exploitSkipBase - P.exploitNoKillPenalty);
+          // Aury znikają razem z zabijanym (CR 704.5m): cudza aura to zysk,
+          // własna — strata (ta sama polityka i jednostka co w wycenie celu
+          // triggera, C/Academy Journeymage).
+          const auraNet = (o) => attachedAurasOf(view, o)
+            .reduce((sum, aura) => sum + (aura.controllerId === view.playerId ? -P.exploitKillAuraValue : P.exploitKillAuraValue), 0);
+          const killValue = (o) => (o.power ?? 0) * 2 + (o.toughness ?? 0)
+            + P.exploitVictimKeywordWeight * (o.keywords ?? []).length + auraNet(o);
+          const best = realKills.reduce((a, b) => (killValue(a) >= killValue(b) ? a : b));
+          // TMC: twarzą w dół permanent ma wartość many 0 (CR 708.2a), ale
+          // kontroler ZAPŁACIŁ za niego {3} — liczymy realny koszt wejścia
+          // (jawny morph.cost u kontrolera, inaczej stała „zagrania twarzą
+          // w dół"), bo z zerem Morph wychodził „darmowy".
+          const tmcOf = (o) => (o.faceDown ? (o.morph?.cost ?? P.exploitFaceDownEntryCost) : (o.manaCost ?? 0));
+          const sacrificeTmc = tmcOf(victim);
+          const killTmc = tmcOf(best);
+          const killAssets = P.exploitVictimKeywordWeight * (best.keywords ?? []).length + auraNet(best);
+          // (b) wymiana musi być opłacalna: zabijany droższy (TMC) ALBO
+          // niosący istotne walory z widoku (keywordy, aury — ADR 0017).
+          const worthIt = killTmc > sacrificeTmc || killAssets >= P.exploitKillAssetMargin;
+          if (!worthIt) return finish(P.exploitSkipBase - P.exploitNoKillPenalty);
+        }
         // Poświęcenie jest warte mniej, im cenniejsza ofiara; bazowy zysk
         // z exploita musi przewyższyć stratę (inaczej wygrywa skip).
         return finish(P.exploitBase - cena);

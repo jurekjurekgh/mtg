@@ -82,8 +82,21 @@ etapy I/H dodają wyłącznie WPISY TOKENÓW i grafikę, nie nowe karty do talii
   (auto-deklaracja off → 2 RED); poprawiony helper `passToNextTurn` w pinie
   srebrnej odznaki (goadowany stwór naprawdę atakuje — walkę domyka
   `resolve_combat`); `npm test` 5713/5713, build 64/3803,8 kB.
-- [ ] **E6 (B)** — wycena exploita (Silumgar Butcher): lethal albo
-  opłacalna wymiana (TMC/auras), pin + mutacje.
+- [x] **E6 (B)** — zrobione: exploit debuffujący (-X/-X) wchodzi tylko, gdy
+  (a) realnie zabija wrogi stwór i (b) wymiana jest opłacalna (TMC ofiary
+  niższy niż zabijanego ALBO zabijany niesie istotne walory z PlayerView:
+  keywordy/aury) — `exploitDebuff` + `attachedAurasOf` w `heuristic-bot.js`,
+  4 nowe parametry deskryptorowe; TMC twarzą w dół = realny koszt wejścia
+  (CR 708.2a + {3}), nie zero; mill (Gurmag Drowner) po staremu. 6 pinów
+  + 4 mutacje RED; fixture golden-mastera zregenerowany (świadoma zmiana
+  wyceny: w partii tarkir-bg|warhammer-ubr seed 1000 bot przestaje
+  poświęcać token ze Spirit, gdy wróg nie ma czym zginąć); `npm test`
+  5719/5719, build 64/3809,3 kB.
+  Uwaga operacyjna: lokalna historia sesji (batch 56 + E1–E4) została
+  USUNIĘTA przez przeładowanie sandboxa (`git reflog`: świeży shallow
+  klon `e4befba`); stan plików jest kompletny, commity E1–E4 są w origin
+  (`ad74c8a`, `9ee386b`, `6ae121f`, `1268b4d`), E5/E6 czekają na push
+  (token GH nieważny).
 - [ ] **E7 — integracja**: bramki finalne (`npm test`, `npm run test:all`,
   `npm run build`, regresja bota), quick 25 talii, Żywy Tester na kartach
   z A–J, dokumentacja (ENGINE_MILESTONES/PROJECT_HISTORY/HANDOFF/README),

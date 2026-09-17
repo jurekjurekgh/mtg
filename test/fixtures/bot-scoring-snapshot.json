@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "09fa17398978a46c32d442b9c4d474b8d8d156ce11a7b31a185f370f3a96feca",
+  "overallHash": "85163d3095342998baece867594408a2f832cf8f7b8b874eb61fd51951f52aed",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
@@ -85,22 +85,21 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "c8c4fc798a9848035209157e0a23d355d9ed1c39bcf6429fbfeaaeba22e16967",
-      "decisions": 176,
-      "scoreSum": 2525.3171,
+      "hash": "e81960c6e9468172bab87c27127ff3a385275a680de130a0cac6a80ac5e2fce9",
+      "decisions": 174,
+      "scoreSum": 2571.3171,
       "chosenKinds": {
         "activate_ability": 1,
         "attack": 6,
         "block": 7,
         "cast_permanent": 6,
-        "pass_priority": 137,
+        "pass_priority": 136,
         "play_land": 5,
         "resolve_combat": 7,
         "resolve_endure_choice": 2,
         "resolve_exploit_choice": 1,
         "resolve_mulligan_bottom_choice": 1,
-        "resolve_mulligan_choice": 2,
-        "resolve_trigger_target": 1
+        "resolve_mulligan_choice": 2
       }
     },
     {
