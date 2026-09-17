@@ -7,7 +7,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
-import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
+import { effectivePower, effectiveToughness, attachmentRestrictions, untapControlled } from '../src/engine/permanents.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
 import { addEnergyCounters } from '../src/engine/players.js';
@@ -61,6 +61,8 @@ function resolve(s) {
   assert.equal(s.zones.stack.length, 0, 'cały stos rozstrzygnięty');
 }
 
+/** Obiekt gry po id (nazwa `object` kolidowałaby z globalnym konstruktorem). */
+const state_object = (s, id) => s.objects.get(id);
 const find = (s, cardId, zone = 'battlefield') => [...s.objects.values()].find((o) => o.cardId === cardId && o.zone === zone);
 const player = (s, id) => s.players.find((p) => p.id === id);
 
@@ -261,4 +263,91 @@ test('B56/B2: 34 Volcanic Submersion — cycling {2} z ręki: odrzucenie i dobra
   const r = execute(bezMany, { type: 'activate_ability', playerId: 'p1', objectId: 'sub', abilityIndex: 0 });
   assert.equal(r.ok, false);
   assert.equal(bezMany.objects.get('sub').zone, 'hand', 'odrzucony cycling nie odrzuca karty');
+});
+
+// ---------------------------------------------------------------------------
+// B3 (M364) — 25 Bonds of Faith (warunkowy pump po podtypie + „otherwise"
+//             blokada) i 30 Containment Protocol (ETB tap + brak odkręcania)
+// ---------------------------------------------------------------------------
+
+sanity('bonds-of-faith', 25, 'ISD', 'Innistrad');
+sanity('containment-protocol', 30, 'TMC', 'Teenage Mutant Ninja Turtles');
+
+/** Rzut aury na wskazanego stwora (cast_permanent/cast_spell) i rozstrzygnięcie. */
+function castAura(s, auraId, hostId) {
+  const cmd = commands(s).find((c) => (c.type === 'cast_permanent' || c.type === 'cast_spell')
+    && c.objectId === auraId && c.targets?.[0] === hostId);
+  assert.ok(cmd, `rzut aury ${auraId} na ${hostId}`);
+  run(s, cmd);
+  resolve(s);
+}
+
+test('B56/B3: 25 Bonds of Faith — Human dostaje +2/+2, nie-Human nie atakuje i nie blokuje', () => {
+  const s = game();
+  put(s, 'aura', 'bonds-of-faith');
+  put(s, 'human', 'alaborn-trooper', 'p1', 'battlefield'); // Human 2/3
+  put(s, 'zwierz', 'highland-game', 'p1', 'battlefield'); // Elk 2/1 (nie-Human)
+  addMana(s, 'p1', 2, { colors: ['W', 'W'] });
+  castAura(s, 'aura', 'human');
+  const human = state_object(s, 'human');
+  assert.equal(effectivePower(human, s), 4, 'Human: +2 mocy');
+  assert.equal(effectiveToughness(human, s), 5, 'Human: +2 wytrzymałości');
+  const rHuman = attachmentRestrictions(s, human);
+  assert.equal(rHuman.cantAttack, false, 'Human może atakować');
+  assert.equal(rHuman.cantBlock, false, 'Human może blokować');
+
+  // Druga aura na nie-Humana: bez pompa, ale z blokadą ataku i bloku.
+  const s2 = game();
+  put(s2, 'aura', 'bonds-of-faith');
+  put(s2, 'zwierz', 'highland-game', 'p1', 'battlefield');
+  addMana(s2, 'p1', 2, { colors: ['W', 'W'] });
+  castAura(s2, 'aura', 'zwierz');
+  const zwierz = state_object(s2, 'zwierz');
+  assert.equal(effectivePower(zwierz, s2), 2, 'nie-Human BEZ pompa');
+  assert.equal(effectiveToughness(zwierz, s2), 1, 'nie-Human BEZ pompa');
+  const rZwierz = attachmentRestrictions(s2, zwierz);
+  assert.equal(rZwierz.cantAttack, true, '„Otherwise, it can\'t attack"');
+  assert.equal(rZwierz.cantBlock, true, '„Otherwise, it can\'t block"');
+});
+
+test('B56/B3: 25 Bonds of Faith — warunek czytany NA BIEŻĄCO (ruling 2011-09-22)', () => {
+  const s = game();
+  put(s, 'aura', 'bonds-of-faith');
+  put(s, 'host', 'alaborn-trooper', 'p1', 'battlefield'); // start: Human
+  addMana(s, 'p1', 2, { colors: ['W', 'W'] });
+  castAura(s, 'aura', 'host');
+  assert.equal(effectivePower(state_object(s, 'host'), s), 4, 'Human → pump działa');
+  // Ruling: „causing it to stop being a Human … will lose the +2/+2 bonus".
+  const host = state_object(s, 'host');
+  s.objects.set('host', Object.freeze({ ...host, subtypes: ['Soldier'] }));
+  const po = state_object(s, 'host');
+  assert.equal(effectivePower(po, s), 2, 'po utracie podtypu pump znika (odczyt bieżący)');
+  assert.equal(attachmentRestrictions(s, po).cantAttack, true, 'i pojawia się blokada ataku');
+});
+
+test('B56/B3: 30 Containment Protocol — ETB tapnij, potem brak odkręcania w untapie', () => {
+  const s = game();
+  put(s, 'aura', 'containment-protocol');
+  put(s, 'host', 'highland-game', 'p2', 'battlefield');
+  addMana(s, 'p1', 3, { colors: ['U', 'U', 'U'] });
+  castAura(s, 'aura', 'host');
+  const host = state_object(s, 'host');
+  assert.equal(host.tapped, true, '„When this Aura enters, tap enchanted creature"');
+  assert.equal(attachmentRestrictions(s, host).cantAttack, false, 'sama blokada odkręcania nie zakazuje ataku');
+  // Kolejny untap step kontrolera gospodarza nie odkręca go (CR 502.3).
+  untapControlled(s, 'p2');
+  assert.equal(state_object(s, 'host').tapped, true, '„doesn\'t untap during its controller\'s untap step"');
+});
+
+test('B56/B3: 30 Containment Protocol — aura odłączona oddaje odkręcanie (odczyt bieżący)', () => {
+  const s = game();
+  put(s, 'aura', 'containment-protocol');
+  put(s, 'host', 'highland-game', 'p2', 'battlefield');
+  addMana(s, 'p1', 3, { colors: ['U', 'U', 'U'] });
+  castAura(s, 'aura', 'host');
+  const aura = [...s.objects.values()].find((o) => o.cardId === 'containment-protocol' && o.zone === 'battlefield');
+  s.objects.delete(aura.id);
+  s.zones.battlefield = s.zones.battlefield.filter((id) => id !== aura.id);
+  untapControlled(s, 'p2');
+  assert.equal(state_object(s, 'host').tapped, false, 'bez aury stwór odkręca się normalnie');
 });

@@ -11017,7 +11017,16 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 2,
     oracleText: "Enchant creature\nEnchanted creature gets +2/+2 as long as it's a Human. Otherwise, it can't attack or block.",
     imageUri: 'https://cards.scryfall.io/large/front/c/c/cc8d1ce0-78c5-4e97-9cca-33e7b6ff3440.jpg?1783940998',
-    artId: 25, plan: 'Innistrad', support: { status: 'in-development', limitations: [] },
+    // Dwa rozłączne warunki odczytu („as long as it's a Human" / „Otherwise"):
+    // pump dostaje WYŁĄCZNIE Human, a blokadę ataku i bloku — każdy inny.
+    // Wszystko liczone read-time (ruling 2011-09-22: utrata podtypu zdejmuje
+    // +2/+2, ale nie usuwa z walki — stan walki to osobna warstwa).
+    aura: {
+      conditionalPump: [{ condition: { hostHasSubtype: 'Human' }, pump: { power: 2, toughness: 2 } }],
+      cantAttack: { hostLacksSubtype: 'Human' },
+      cantBlock: { hostLacksSubtype: 'Human' },
+    },
+    artId: 25, plan: 'Innistrad', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({
@@ -11047,7 +11056,15 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 3,
     oracleText: "Enchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature doesn't untap during its controller's untap step.",
     imageUri: 'https://cards.scryfall.io/large/front/5/a/5a92ec45-3eb5-4212-bdbd-073cbd0299d7.jpg?1783904138',
-    artId: 30, plan: 'Teenage Mutant Ninja Turtles', support: { status: 'in-development', limitations: [] },
+    aura: { doesntUntap: true },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'tap_enchanted_permanent' }],
+      }),
+    ],
+    artId: 30, plan: 'Teenage Mutant Ninja Turtles', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({

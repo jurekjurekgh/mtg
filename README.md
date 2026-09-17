@@ -122,7 +122,7 @@ liczone z plików `decks/*.txt`).
 | `final-fantasy` | Final Fantasy | WUBRG | 26 | 9 | 17 |
 | `forgotten-realms` | Forgotten Realms | WUBRG | 36 | 12 | 24 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 27 | 9 | 18 |
-| `innistrad-wu` | Innistrad (WU) | WU | 27 | 9 | 18 |
+| `innistrad-wu` | Innistrad (WU) | WU | 29 | 10 | 19 |
 | `kaladesh` | Kaladesh | WUBRG | 26 | 9 | 17 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 27 | 9 | 18 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
@@ -144,7 +144,7 @@ liczone z plików `decks/*.txt`).
 | `worek-basni` | Worek: Baśnie | WUBRG | 32 | 11 | 21 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 30 | 10 | 20 |
 | `worek-legend` | Worek: Legendy | WUBRG | 27 | 9 | 18 |
-| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 38 | 13 | 25 |
+| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 39 | 13 | 26 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
 

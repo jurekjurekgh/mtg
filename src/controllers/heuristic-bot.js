@@ -1976,6 +1976,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['sacrifice_permanent', 90],
     ['player_sacrifices_creature', 90],
     ['tap_permanent', 45],
+    // Batch 56 (Containment Protocol): ETB aury tapujący ZACZAROWANEGO
+    // stwora — dla wyboru gospodarza tak samo wrogi jak tap_permanent.
+    ['tap_enchanted_permanent', 45],
     ['tap_permanents', 45],
     ['lock_untap', 55],
     ['dont_untap_next_untap_step', 45],
@@ -4854,6 +4857,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += value;
           }
           if (effect.type === 'tap_permanent' || effect.type === 'tap_permanents'
+            || effect.type === 'tap_enchanted_permanent'
             || effect.type === 'lock_untap' || effect.type === 'dont_untap_next_untap_step') {
             // Neutralizacja wrogiego stwora (Lira): im większy cel, tym cenniej.
             // M139 (uwaga właściciela): liczy się też MOMENT — tapnięcie po

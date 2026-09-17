@@ -984,6 +984,8 @@ function describeEffect(e, ctx = {}) {
     // F-A2/1 (audyt PR #107): B54 zjednoczyło stronę untap („odkręć”), ale tu
     // drukowało surowe „tap” — ta sama ścieżka publiczna (tekst karty).
     tap_permanent: () => 'zatapnij',
+    // Batch 56 (Containment Protocol) — ETB aury tapujący gospodarza.
+    tap_enchanted_permanent: () => 'zatapnij zaczarowany permanent',
     // B5 (audyt stołu 2026-09-09, G2/Membrane): typ konstruowany w runtime
     // przez castAuraSpell (resources.js) — poza rejestrem DB, więc strażnik
     // M122 go nie widział i kafel drukował „efekt (attach_aura)".
@@ -1757,6 +1759,10 @@ export function rulesText(info) {
   // deskryptor aura niesie pompowanie/keywordy/grant many i to one SĄ
   // treścią karty dla gracza (CR 613 — efekt ciągły aury).
   const aura = info.aura;
+  /** Opis warunku gospodarza aury (Bonds of Faith: „Otherwise…" / „as long as"). */
+  const hostConditionLabel = (cond) => (cond?.hostHasSubtype ? `gdy jest ${cond.hostHasSubtype}`
+    : cond?.hostLacksSubtype ? `gdy nie jest ${cond.hostLacksSubtype}`
+      : cond?.hostHasColor ? `gdy jest ${cond.hostHasColor}` : 'warunkowo');
   const auraLine = aura
     ? [
     aura.umbraArmor ? 'Umbra armor — zamiast zniszczenia gospodarza usuń jego obrażenia i zniszcz tę aurę' : '',
@@ -1785,8 +1791,19 @@ export function rulesText(info) {
       // Meditation miała kafel „Enchantment — Aura” i nic więcej, mimo że
       // zmienia zasady tworzenia tokenów. Ta sama rodzina co Z9 — łatanie
       // pojedynczego pola zostawiłoby resztę na następny audyt.
-      aura.cantAttack ? 'zaczarowany nie może atakować' : '',
-      aura.cantBlock ? 'zaczarowany nie może blokować' : '',
+      // Batch 56: zakaz bywa WARUNKOWY (Bonds of Faith: „Otherwise, it can't
+      // attack or block") — kafel musi powiedzieć, KIEDY obowiązuje, inaczej
+      // gracz czyta bezwzględny zakaz tam, gdzie Human atakuje normalnie.
+      aura.cantAttack ? (typeof aura.cantAttack === 'object'
+        ? `zaczarowany nie może atakować (${hostConditionLabel(aura.cantAttack)})`
+        : 'zaczarowany nie może atakować') : '',
+      aura.cantBlock ? (typeof aura.cantBlock === 'object'
+        ? `zaczarowany nie może blokować (${hostConditionLabel(aura.cantBlock)})`
+        : 'zaczarowany nie może blokować') : '',
+      // Batch 56 (Bonds of Faith): warunkowy pump po podtypie gospodarza —
+      // ta sama rodzina co conditionalKeywords wyżej (M138/#11: każde pole
+      // deskryptora aury ma opis na kaflu).
+      ...(aura.conditionalPump ?? []).map((cp) => `stwór: ${signed(cp.pump?.power ?? 0)}/${signed(cp.pump?.toughness ?? 0)} (${hostConditionLabel(cp.condition)})`),
       // Batch 48 (Clawing Torment): aura bez klauzuli „you control" celuje
       // też w permanenty przeciwnika — to informacja dla gracza, bo
       // większość aur katalogu jest ograniczona do własnych permanentów.

@@ -1,7 +1,7 @@
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { hasCreatureType, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, untapObject } from './permanents.js';
+import { hasCreatureType, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, untapObject, tapObject } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -3038,6 +3038,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // M154 (Batch 38, Silken Strength): „When this Aura enters, untap enchanted
   // permanent." — odkręca GOSPODARZA aury (sourceObject.attachedTo). Generyczne:
   // jak pump_enchanted_creature, ale dla dowolnego zaczarowanego permanentu.
+  // Batch 56 (Containment Protocol): „When this Aura enters, tap enchanted
+  // creature." — LUSTRO untap_enchanted_permanent (poniżej): tapuje GOSPODARZA
+  // aury. Wspólny helper `tapObject` (nada zdarzenie object_tapped i respektuje
+  // już-zatapnięty obiekt).
+  if (effect.type === 'tap_enchanted_permanent') {
+    const enchantedId = sourceObject.attachedTo;
+    if (!enchantedId) return;
+    const object = state.objects.get(enchantedId);
+    if (!object || object.zone !== 'battlefield' || object.tapped) return;
+    // CR 701.20a: tapnięcie wykonuje KONTROLER permanentu (tapObject tego
+    // wymaga) — aura może należeć do innego gracza niż gospodarz.
+    tapObject(state, enchantedId, object.controllerId);
+    return;
+  }
   if (effect.type === 'untap_enchanted_permanent') {
     const enchantedId = sourceObject.attachedTo;
     if (!enchantedId) return;

@@ -1,44 +1,43 @@
 {
   "version": 1,
-  "overallHash": "26da33854d3910234066ecd0cda5045a132c226778c8a8ee4a4e447af1794e48",
+  "overallHash": "ad0a3245092e67fde740f898b6e52eaff41dd8dfc6e8fc4695ebc060d3ef1d5e",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1000,
-      "hash": "e6b687e750776df18dec63034de251aa93ad467de4c71f3889f8f0801e19b174",
-      "decisions": 299,
-      "scoreSum": 2299.2991,
+      "hash": "dd90bd15e5b0f17252030e3682884df54c97ae55bb01546cd402b7e5baf40c86",
+      "decisions": 308,
+      "scoreSum": 3218.9009,
       "chosenKinds": {
-        "activate_ability": 3,
-        "attack": 7,
+        "activate_ability": 1,
+        "attack": 9,
         "block": 11,
         "cast_permanent": 4,
-        "cast_spell": 4,
-        "pass_priority": 244,
-        "play_land": 8,
-        "resolve_combat": 11,
+        "cast_spell": 3,
+        "pass_priority": 251,
+        "play_land": 7,
+        "resolve_combat": 12,
         "resolve_mulligan_choice": 1,
-        "resolve_optional_trigger_choice": 5,
-        "resolve_proliferate": 1
+        "resolve_optional_trigger_choice": 7,
+        "resolve_trigger_target": 2
       }
     },
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1001,
-      "hash": "9a2a4903be9007f10a3c955047a6a414f527924fe3bec320ed0cb925509fa276",
-      "decisions": 158,
-      "scoreSum": 1414.5108,
+      "hash": "86194727eb428884102115681baffa48df854b4482410e67e7800723456b3533",
+      "decisions": 179,
+      "scoreSum": 1639.4117,
       "chosenKinds": {
-        "activate_ability": 1,
-        "attack": 3,
-        "block": 6,
-        "cast_permanent": 4,
+        "attack": 4,
+        "block": 7,
+        "cast_permanent": 5,
         "cast_spell": 2,
-        "pass_priority": 128,
-        "play_land": 6,
-        "resolve_combat": 6,
-        "resolve_discard_choice": 1,
-        "resolve_mulligan_choice": 1
+        "pass_priority": 145,
+        "play_land": 7,
+        "resolve_combat": 7,
+        "resolve_mulligan_choice": 1,
+        "resolve_scry": 1
       }
     },
     {
