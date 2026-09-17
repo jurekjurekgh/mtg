@@ -298,6 +298,9 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'dealt_damage',
   // Batch 45 (Pain for All): trigger na AURZE — host dostał obrażenia.
   'enchanted_creature_dealt_damage',
+  // Batch 56 (Cautious Survivor, M366): Survival — początek DRUGIEJ fazy
+  // głównej (skan step_advanced main2/postcombat_main w triggers.js).
+  'beginning_of_second_main',
 ]);
 
 test('strażnik: każdy trigger w registry używa zdarzenia obsługiwanego przez engine', () => {

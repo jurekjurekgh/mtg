@@ -11114,7 +11114,18 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Elf', 'Survivor'], colors: ['G'], power: 4, toughness: 4, manaCost: 4,
     oracleText: 'Survival — At the beginning of your second main phase, if this creature is tapped, you gain 2 life.',
     imageUri: 'https://cards.scryfall.io/large/front/e/e/ee2b4c1a-e058-4e06-bc46-e250fd9c9b54.jpg?1783909457',
-    artId: 54, plan: 'Kamigawa', support: { status: 'in-development', limitations: [] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // M366: nowe zdarzenie `beginning_of_second_main` (skan w triggers.js
+        // przy step_advanced main2/postcombat_main) + intervening-if
+        // { sourceTapped } — sprawdzany przy zgłoszeniu I przy rozstrzyganiu,
+        // z LKI, gdy źródło zniknęło (rulingi DSK 2024-09-20).
+        trigger: { event: 'beginning_of_second_main', condition: { sourceTapped: true } },
+        effect: [{ type: 'gain_life', amount: 2 }],
+      }),
+    ],
+    artId: 54, plan: 'Kamigawa', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({

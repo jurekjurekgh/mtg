@@ -7,7 +7,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
-import { effectivePower, effectiveToughness, attachmentRestrictions, untapControlled, tapObject } from '../src/engine/permanents.js';
+import { effectivePower, effectiveToughness, attachmentRestrictions, untapControlled, tapObject, untapByEffect } from '../src/engine/permanents.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
 import { addEnergyCounters } from '../src/engine/players.js';
@@ -456,4 +456,97 @@ test('B56/B4: 58 Mobile Garrison — załoga z za małą łączną mocą jest od
   assert.equal(state_object(s, 'gar').kind, 'creature');
   assert.equal(state_object(s, 'maly').tapped, true);
   assert.equal(state_object(s, 'maly2').tapped, true);
+});
+
+// ---------------------------------------------------------------------------
+// B5 (M366) — 54 Cautious Survivor: Survival (trigger POCZĄTKU drugiej fazy
+//            głównej + intervening-if „if this creature is tapped")
+// ---------------------------------------------------------------------------
+
+sanity('cautious-survivor', 54, 'DSK', 'Kamigawa');
+
+/** Pełna runda passów do wskazanego kroku tury. Triggery „na początku kroku"
+ *  odpalają się WYŁĄCZNIE przy wejściu w krok — jumpToStep tego nie emituje. */
+function walkTo(s, step) {
+  for (let i = 0; i < 60 && s.turn.step !== step; i++) {
+    const available = commands(s);
+    const next = available.find((c) => c.type === 'declare_attackers')
+      ?? available.find((c) => c.type === 'declare_blockers')
+      ?? available.find((c) => c.type === 'resolve_combat')
+      ?? available.find((c) => c.type === 'pass_priority');
+    assert.ok(next, `krok ${s.turn.step}: jest komenda do wykonania`);
+    run(s, next);
+  }
+  assert.equal(s.turn.step, step, `dotarto do kroku ${step}`);
+}
+
+const triggered = (s, id) => s.events.some((e) => e.type === 'ability_triggered' && e.objectId === id);
+
+test('B56/B5: 54 Cautious Survivor — deskryptor: trigger drugiej fazy głównej + warunek tapnięcia', () => {
+  const def = registry.get('cautious-survivor');
+  const ability = def.abilities.find((a) => a.trigger?.event === 'beginning_of_second_main');
+  assert.ok(ability, 'zdarzenie beginning_of_second_main');
+  assert.deepEqual(ability.trigger.condition, { sourceTapped: true });
+  assert.deepEqual(ability.effect, [{ type: 'gain_life', amount: 2 }]);
+  assert.deepEqual(def.subtypes, ['Elf', 'Survivor']);
+});
+
+test('B56/B5: 54 Cautious Survivor — tapnięty na starcie drugiej fazy daje 2 życia', () => {
+  const s = game();
+  put(s, 'surv', 'cautious-survivor', 'p1', 'battlefield');
+  tapObject(s, 'surv', 'p1');
+  walkTo(s, 'main2');
+  assert.ok(s.events.some((e) => e.type === 'ability_triggered' && e.objectId === 'surv'
+    && e.trigger === 'beginning_of_second_main'), 'trigger Survival poszedł na stos');
+  resolve(s);
+  assert.equal(player(s, 'p1').life, 22, '„you gain 2 life"');
+});
+
+test('B56/B5: 54 Cautious Survivor — nietapnięty nie odpala; tapnięcie w main2 nic nie da', () => {
+  const s = game();
+  put(s, 'surv', 'cautious-survivor', 'p1', 'battlefield');
+  walkTo(s, 'main2');
+  assert.equal(triggered(s, 'surv'), false,
+    'nietapnięty na starcie fazy = brak triggera (ruling 2024-09-20)');
+  tapObject(s, 'surv', 'p1'); // już PO starcie drugiej fazy głównej
+  resolve(s);
+  assert.equal(player(s, 'p1').life, 20, 'tapnięcie w fazie nie łapie triggera');
+});
+
+test('B56/B5: 54 Cautious Survivor — odkręcony przed rozstrzygnięciem = brak efektu', () => {
+  const s = game();
+  put(s, 'surv', 'cautious-survivor', 'p1', 'battlefield');
+  tapObject(s, 'surv', 'p1');
+  walkTo(s, 'main2');
+  assert.ok(triggered(s, 'surv'), 'trigger zaszedł (tapnięty na starcie fazy)');
+  untapByEffect(s, 'surv', 'p1'); // CR 603.4: warunek sprawdzany PONOWNIE
+  resolve(s);
+  assert.equal(player(s, 'p1').life, 20, '„untapped when the ability begins to resolve" → nic');
+  assert.ok(s.events.some((e) => e.type === 'trigger_resolved' && e.sourceId === 'surv' && e.noEffect === true),
+    'log mówi wprost, że trigger nic nie zrobił');
+});
+
+test('B56/B5: 54 Cautious Survivor — zejście z pola bitwy: rozstrzyga stan ostatni (LKI)', () => {
+  const s = game();
+  put(s, 'surv', 'cautious-survivor', 'p1', 'battlefield');
+  tapObject(s, 'surv', 'p1');
+  walkTo(s, 'main2');
+  // Ruling: „use its tapped or untapped status as it last existed on the
+  // battlefield" — stwór znika w oknie odpowiedzi, ale był tapnięty.
+  s.objects.delete('surv');
+  s.zones.battlefield = s.zones.battlefield.filter((id) => id !== 'surv');
+  resolve(s);
+  assert.equal(player(s, 'p1').life, 22, 'LKI: ostatni stan na polu bitwy = tapnięty');
+});
+
+test('B56/B5: 54 Cautious Survivor — w cudzej turze nie odpala', () => {
+  const s = game();
+  put(s, 'surv', 'cautious-survivor', 'p1', 'battlefield');
+  tapObject(s, 'surv', 'p1');
+  s.turn = jumpToStep(s.turn, 'main', 'p2');
+  s.turn.activePlayerId = s.turn.priorityPlayerId = 'p2';
+  walkTo(s, 'main2');
+  assert.equal(triggered(s, 'surv'), false, '„YOUR second main phase" — tylko kontroler');
+  resolve(s);
+  assert.equal(player(s, 'p1').life, 20);
 });

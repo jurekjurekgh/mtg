@@ -1489,6 +1489,9 @@ function triggerConditionClause(trigger) {
   if (cond.controlsCreatureWithCounter) czlony.push('kontrolujesz stwora z licznikiem');
   if (cond.notBlocking) czlony.push('nie blokował');
   if (cond.saddled) czlony.push('jest osiodłany');
+  // Batch 56 (Cautious Survivor): Survival — intervening-if na stanie
+  // zatapnięcia źródła (CR 603.4; sprawdzany przy zgłoszeniu I rozstrzyganiu).
+  if (cond.sourceTapped) czlony.push('jest tapnięty');
   if (cond.minTotalPowerYouControl) czlony.push(`łączna siła kontrolowanych stworów ≥ ${cond.minTotalPowerYouControl}`);
   if (cond.spellManaValueAtLeast != null) czlony.push(`rzucany czar ma koszt ≥ ${cond.spellManaValueAtLeast}`);
   if (cond.spellIsColorless) czlony.push('rzucany czar jest bezbarwny');
@@ -1626,6 +1629,13 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'you_cast_second_spell_each_turn') return `Gdy rzucisz drugi czar w turze: ${parts}.`;
   if (trigger.event === 'you_cast_noncreature_spell') return `Gdy rzucisz czar niebędący stworem: ${parts}.`;
   if (trigger.event === 'when_you_cast_spell') return `Gdy rzucisz czar: ${parts}.`;
+  if (trigger.event === 'beginning_of_second_main') {
+    // Batch 56 (Cautious Survivor, M366): Survival — „At the beginning of your
+    // second main phase, if this creature is tapped…" Kafel mówi CZAS (druga
+    // faza główna twojej tury) i warunek (wspólna klauzula).
+    const clause = triggerConditionClause(trigger);
+    return `Na początku twojej drugiej fazy głównej${clause ? ` (gdy ${clause})` : ''}: ${parts}.`;
+  }
   if (trigger.event === 'beginning_of_combat') {
     const clause = triggerConditionClause(trigger);
     const turn = trigger.eachCombat ? 'każdej walki' : `walki w turze ${mine ? 'twojej' : 'kontrolera'}`;

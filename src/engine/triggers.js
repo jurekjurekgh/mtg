@@ -216,6 +216,17 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.saddled) {
     return Boolean(sourceObject?.saddled);
   }
+  // Survival (DSK, Cautious Survivor; CR 603.4 + rulingi 2024-09-20): „At the
+  // beginning of your second main phase, IF THIS CREATURE IS TAPPED, you gain
+  // 2 life." — stan ZATAPNIĘCIA źródła. Warunek sprawdzany przy zgłoszeniu
+  // (nietapnięty na starcie fazy = brak triggera; tapnięcie w fazie już nie
+  // pomoże) I PONOWNIE przy rozstrzyganiu (odkręcony przed rozstrzygnięciem =
+  // nic), a gdy źródło opuściło pole bitwy — z LKI („use its tapped or
+  // untapped status as it last existed on the battlefield"): dlatego
+  // queueTriggerToStack zapisuje `tapped` w migawce, a stub LKI je niesie.
+  if (condition.sourceTapped) {
+    return sourceObject?.tapped === true;
+  }
   if (condition.didntAttackThisTurn) {
     return !(sourceObject?.attackedThisTurn === true);
   }
@@ -931,6 +942,11 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
     wasKicked: source.wasKicked === true,
     wasCast: source.wasCast === true,
     manaFromTreasureSpent: source.manaFromTreasureSpent ?? 0,
+    // Survival (batch 56, Cautious Survivor): stan zatapnięcia źródła jest
+    // faktem z chwili odpalenia triggera — re-check intervening-if (CR 603.4)
+    // czyta go, gdy źródło zniknęło z pola bitwy (ruling DSK 2024-09-20:
+    // „use its tapped or untapped status as it last existed").
+    tapped: source.tapped === true,
   });
   // Audyt PR #96/F3: migawka cech źródła do efektów kopiujących
   // (create_offspring_token) — ruling Offspring (BLB): token powstaje także
@@ -1067,6 +1083,9 @@ export function resolveTriggerEntry(state, entry) {
     wasKicked: lki.wasKicked === true,
     wasCast: lki.wasCast === true,
     manaFromTreasureSpent: lki.manaFromTreasureSpent ?? 0,
+    // Survival (batch 56): LKI niesie stan zatapnięcia — re-check warunku
+    // { sourceTapped } po śmierci/opuszczeniu pola bitwy (CR 603.4/603.10).
+    tapped: lki.tapped === true,
     // Audyt PR #96/F3: nośnik cech dla efektów kopiujących (ruling Offspring).
     lkiPrint: printLki ? Object.freeze({
       kind: printLki.kind ?? null, cardId: entry.cardId,
@@ -3391,6 +3410,21 @@ function processTriggersScan(state, recentEvents) {
           // katalogu pilnuje zgodności deskryptora z Oracle (L56).
           if (ability.trigger.eachCombat !== true && object.controllerId !== state.turn.activePlayerId) continue;
           tryFire(state, ability, object, [], events);
+        }
+      }
+    }
+    // Początek DRUGIEJ fazy głównej: triggery Survival (DSK, Cautious
+    // Survivor; CR 603.4 + ruling 2024-09-20). Skan odpala się DOKŁADNIE raz
+    // na wejściu w krok (main2/postcombat_main) — tapnięcie stwora już
+    // w drugiej fazie nie da triggera, bo zdarzenie minęło (ruling: „You
+    // won't be able to tap it during your second main phase in time"). Tura:
+    // tylko aktywny gracz („YOUR second main phase"); dodatkowe fazy główne
+    // nie istnieją w silniku (ruling: brak triggera w trzeciej i dalszych).
+    if (ev.type === 'step_advanced' && ev.step === 'main2' && ev.phase === 'postcombat_main') {
+      for (const object of state.objects.values()) {
+        if (object.zone !== 'battlefield' || object.controllerId !== state.turn.activePlayerId) continue;
+        for (const ability of effectiveAbilities(object)) {
+          if (ability?.trigger?.event === 'beginning_of_second_main') tryFire(state, ability, object, [], events);
         }
       }
     }

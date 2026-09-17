@@ -696,6 +696,9 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // M166/B (Batch 40, Cacophodon): Enrage.
   dealt_damage: 'otrzymanie obrażeń',
   enchanted_creature_dealt_damage: 'zaczarowany stwór otrzymał obrażenia',
+  // Batch 56 (Cautious Survivor, M366): Survival — „At the beginning of your
+  // second main phase…" (nowe zdarzenie silnika: skan w triggers.js).
+  beginning_of_second_main: 'początek drugiej fazy głównej',
   you_cast_spell_targeting_permanent: 'rzucenie czaru celującego w permanent',
   // Batch 52 (Vaan, Merfolk Falconer, Jolrael).
   you_cast_spell_you_dont_own: 'rzucenie czaru, którego nie posiadasz',
