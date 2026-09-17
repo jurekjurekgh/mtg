@@ -50,15 +50,17 @@ ADR 0021 §4. Gałąź sesji: `arena/01a0ae26-mtg`, bazowy HEAD: `e4befba`
   weryfikacją mutacyjną znalezisk.
 - [x] **E2 — naprawy znalezisk** (O1 z raportu: numeracja kopii grupuje po nazwie WYŚWIETLANEJ — `battlefieldNameNumbers(objects, displayedNameOf)`, sesja podaje resolver lustrzany wobec `nameOfObject`; testy N8 jednostka + sesja RED→GREEN, 2 mutacje L13 RED) u root cause (AGENTS.md), każda z testem
   RED→GREEN i mutacją L13, osobnym commitem i pushem (ADR 0020 C).
-- [ ] **E3 — pętla jakości** (ADR 0021 §4b, inna ścieżka niż poprzednia
-  sesja): audyt CR/ mechanik ścieżką, której #124 nie dotykał — kandydaci:
-  (a) Żywy Tester celowany w nowe warstwy #124 (etykiety wyboru koloru,
-  numeracja kopii, badge wybranego koloru) na osiach TESTER_STOLU;
-  (b) skan rodziny „wybór koloru / produkcja many" przez wszystkie
-  konsumentów (L107/L137: kto jeszcze czyta kolor obiektu vs produkowaną
-  manę); temat wybieram po wynikach E1.
-  Kryterium: co najmniej jedno domknięte znalezisko z testem-strażnikiem
-  albo udokumentowany pomiar „zero naruszeń" ze strażnikiem klasy.
+- [x] **E3 — pętla jakości** (ADR 0021 §4b, inna ścieżka niż poprzednia
+  sesja): wybrana ścieżka (a) — Żywy Tester. Znalezisko: tester nie znał
+  warstwy wysoko-graficznej (`#art-showcase`, hi-gfx domyślnie ON), która
+  pauzuje grę (`awaitingArtAck`) — każdy rzut z ilustracją kończył partię
+  fałszywym `[STOP]` i fałszywym detektorem „sam Poddaj partię" (identycznie
+  na #123 i #124 → luka NARZĘDZIA). Naprawa w `tools/table-tester/run-game.mjs`
+  (`closeArtShowcase`: gest + fallback Escape), strażnik
+  `test/e3-zywy-tester-warstwa-grafik.test.js` (6 testów, 2 mutacje RED),
+  dokumentacja w TESTER_STOLU + README narzędzia. Pomiar: 4 partie po 400
+  kroków (seeds 2026/7/42, profile greedy/explorer) kończą się naturalnie,
+  **0 zgłoszeń detektorów**.
 - [ ] **E4 — domknięcie sesji**: liczby zmierzone na finalnym HEAD
   (`npm test`, `npm run test:all`, `npm run build`,
   `node --test test/bot-benchmark.test.js`), README/PH/handoff/opis PR.

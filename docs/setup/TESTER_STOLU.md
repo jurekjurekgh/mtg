@@ -429,6 +429,40 @@ free-cast) i `Zostaw w wygnaniu (koniec odbicia/zawieszenia)`. Bez tych wzorców
 tester zatrzymywał się w oknie, w którym człowiek po prostu kliknąłby — a to
 blokowało audyt talii z tymi mechanikami (naprawiono w `run-game.mjs`).
 
+### E3 2026-09-17 — warstwa wysoko-graficzna (`art-showcase`) blokowała cały audyt
+
+Znalezisko pętli jakości ADR 0021 §4b (audyt PR #124, sesja PR #125). Tester
+zatrzymywał się po kilku krokach na `[STOP] brak akcji` z panelem „Poddaj
+partię", a `docs/audits` dostawał zgłoszenie detektora „gracz nie ma wyjścia".
+Stan sesji w tym momencie: `prio = bot`, `botPausePending = false`, brak
+modali — i **otwarta warstwa wysoko-graficzna** (`#art-showcase.art-showcase
+active`, hi-gfx jest domyślnie ON). To warstwa PREZENTACYJNA: sesja ustawia
+`awaitingArtAck`, `advance()` wraca (`return:artAck`), a wznowienie wymaga
+gestu gracza (tapnięcie) albo klawisza Escape — dopiero wtedy leci
+`session.continueArtPlay()`.
+
+Tester obsługiwał modale wyboru i pauzę bota („Wznów grę bota"), ale nie tę
+warstwę — więc **każdy rzut z ilustracją kończył partię fałszywym zacięciem**
+(klasa L1/L33: narzędzie mierzyło własną ślepotę, nie stół). Zmierzone
+identycznie na #123 i #124, na kilku parach talii i seedach, więc to luka
+NARZĘDZIA, nie regresja stołu.
+
+Naprawa (`run-game.mjs`, `closeArtShowcase`): na POCZĄTKU każdego kroku tester
+zamyka warstwę gestem (klik), a gdy gest przepadnie na bramce „odprysku"
+350 ms — Escape, tą samą ścieżką co klawiatura w `main.js`. W transkrypcie
+zostaje ślad `[warstwa grafik] zamykam planszę ilustracji: <rzucający>`.
+Po naprawie trzy partie po 400 kroków kończą się naturalnie i dają
+**0 zgłoszeń detektorów**.
+
+Strażnik: `test/e3-zywy-tester-warstwa-grafik.test.js` (6 testów) — zachowanie
+funkcji na stubach DOM (gest, fallback Escape, no-op przy zamkniętej warstwie)
+plus skan po `stripComments`, że `step()` faktycznie ją woła (L83: komentarz
+nie może nasycić strażnika).
+
+Konsekwencja dla audytów: `[STOP] brak akcji` z samym „Poddaj partię" trzeba
+odtąd czytać ze sprawdzeniem warstwy grafik — jeśli była otwarta, to był ślepy
+tester, nie zacięcie gry.
+
 ### E2 2026-09-13 — katalog czasowników w `actions.mjs` (koniec list w dwóch miejscach)
 
 Wzorce akcji testera i osi 3 detektorów („akcja bez ptaszka auto-pass") były

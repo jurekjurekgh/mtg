@@ -3,7 +3,9 @@
 Automatyczny **gracz** na prawdziwym artefakcie `dist/mtg-table.html` (headless
 DOM przez jsdom). Uruchamia partię człowiek-vs-bot i gra rolę człowieka:
 klika akcje w panelu „Twoje działania", odpowiada na modale (mulligan,
-szukanie, scry/surveil, wizardy walki), zamyka modal „Rozgrywka".
+szukanie, scry/surveil, wizardy walki), zamyka modal „Rozgrywka" i warstwę
+wysoko-graficzną (E3 2026-09-17 — `art-showcase` pauzuje grę; bez tego partia
+stawała na fałszywym `[STOP]` po pierwszym rzucie z ilustracją).
 
 Służy do audytu **rozgrywki i UI z perspektywy gracza** — etykiety, modale,
 zachowanie bota, kolejność rozstrzygania — rzeczy, których testy engine nie
@@ -57,6 +59,8 @@ których jedyną zmianą jest zapłacony koszt. Mostek wymaga świeżego
   nie wyglądu (wygląd: testy na telefonie).
 - Wymagany świeży `npm run build` przed uruchomieniem.
 - Sterownik nie testuje: hover, pełnego ekranu, gestów dotyku, kreatora talii.
+- Warstwa grafik jest zamykana automatycznie (E3) — transkrypt znaczy to
+  linią `[warstwa grafik] …`; audyt wyglądu ilustracji nadal wymaga telefonu.
 - Długie partie — limit kroków (`--steps`), przy przekroczeniu `== LIMIT ==`.
 
 Pełna dokumentacja: [`docs/setup/TESTER_STOLU.md`](../../docs/setup/TESTER_STOLU.md).
