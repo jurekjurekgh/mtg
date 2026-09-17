@@ -19,6 +19,36 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-17c Uwagi właściciela z gier testowych A–J — etapy E1–E7 (PR #125)
+
+Zlecenie właściciela (2026-09-17c): po batchu 56 dziesięć znalezisk z gier
+testowych, praca etapami z commitem i pushem po KAŻDYM etapie. Plan:
+[`docs/plans/PLAN_2026-09-17c-uwagi-wlasciciela-a-j.md`](plans/PLAN_2026-09-17c-uwagi-wlasciciela-a-j.md),
+handoff: [`docs/setup/HANDOFF_2026-09-17c.md`](setup/HANDOFF_2026-09-17c.md).
+
+- **E0 `83584a1`** — plan A–J z rozpoznaniem i etapami E1–E7.
+- **E1 `ad74c8a` (A)** — stopka publikacji w strefie CZYTELNIKA (`clock.js`),
+  dotyczy też autosave.
+- **E2 `9ee386b` (I, H)** — `token_servo` (tkld/4) z ilustracją; zakryty
+  permanent na polu bitwy = wspólny token Morph (tdtk/7), strefy ukryte =
+  rewers karty; strażnik „każdy token ma ilustrację".
+- **E3 `6ae121f` (C, F, G)** — tytuł decyzji X nazywa kartę i skutek, hover
+  niesie nazwę z numerem kopii, zdolności many znikają z panelu (zostają
+  w `legalCommands`).
+- **E4 `1268b4d` (D, E)** — kontrola z chwili śmierci (LKI, CR 603.10a) zamiast
+  kontrolera obiektu w grobie (CR 400.3) — lekcja **L148**; pin jednego
+  odpalenia „dies" po kampanii detektora (~1180 partii bota bez reprodukcji).
+- **E5 `2fa3e69` (J)** — runda passów nie pomija wymuszonego ataku (Ramroller,
+  goad): `mandatoryAttackerIds` jako jedno źródło prawdy dla oferty, walidacji
+  i auto-deklaracji.
+- **E6 `6d00a5a` (B)** — exploit debuffujący tylko jako opłacalna wymiana
+  (lethal wroga + TMC/walory zabijanego); TMC twarzą w dół = realny koszt {3};
+  golden-master zregenerowany świadomie (jedna partia, reprodukcja realna).
+
+Bramki head sesji: `npm test` **5719/5719**, `npm run test:all` **5719/5719**,
+build **64 moduły / 3809,3 kB**, regresja bota **10/10**, quick 25 talii —
+POMIAR W TOKU (liczby po zakończeniu przebiegu).
+
 ## 2026-09-17b Batch 56 — 10 kart (25–63): energia, aury warunkowe, pojazd, druga faza główna (PR #125)
 
 Zlecenie właściciela (2026-09-17b): nowy batch z listy (10 pozycji w kolejności

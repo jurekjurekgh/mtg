@@ -2350,8 +2350,16 @@ z natury), bramki („raz na turę") bez zmian.
 
 ## L147 (2026-09-17) — Płatność wieloetapowa: rezerwa pipów obowiązuje też FINANSOWANIE cudzego kosztu
 
-**Przypadek:** auto-tap zapłacił {U} zdolności źródła kosztowego (Apprentice Wizard: „{U}, {T}: Add {C}{C}{C}") jednostką odłożoną na pip {U} rzucanego czaru (Inspiration {3}{U}, seed 2027) — pula przestała kryć `requirements`, `consumeManaPool` rzucił „Brak kolorowej many", a nieudana komenda zostawiła mutację.
+**Przypadek:** auto-tap zapłacił {U} zdolności źródła kosztowego (Apprentice Wizard: „{U}, {T}: Add {C}{C}{C}") jednostką odłożoną na pip {U} rzucanego czaru (seed 2027) — pula przestała kryć `requirements`, a nieudana komenda zostawiła mutację.
 
 **Reguła:** każdy etap płatności (pipy → suma → źródła kosztowe) musi KOŃCZYĆ się pokryciem `requirements`; przed konsumpcją dociągnij brakujące pokrycie z nietapniętych źródeł — mutacja tylko w stronę puli. Bramka oferty (`fundableCostedPlan`) i płatność muszą kończyć w tym samym stanie.
 
 **Strażnik:** `test/mana-cylix-costed-source.test.js` A/12 (RED po cofnięciu fixa) + A/13 (kontrola: nielegalny kształt bez oferty, zero częściowej płatności).
+
+## L148 (2026-09-17) — „You control" w triggerach śmierci czytaj z LKI zdarzenia
+
+**Reguła:** obiekt w grobie należy do WŁAŚCICIELA (CR 400.3) — jego
+`controllerId` nie mówi, kto kontrolował go w chwili śmierci (CR 603.10a);
+kontrolera bierz ze zdarzenia (objaw: Necrosquito bez oil po śmierci stwora
+PRZEJĘTEGO; to samo w „dies"/„leaves the battlefield"). Strażnik:
+`test/m371-znaleziska-d-e-triggery-smierci.test.js`.

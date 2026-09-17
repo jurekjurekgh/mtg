@@ -97,10 +97,15 @@ etapy I/H dodają wyłącznie WPISY TOKENÓW i grafikę, nie nowe karty do talii
   klon `e4befba`); stan plików jest kompletny, commity E1–E4 są w origin
   (`ad74c8a`, `9ee386b`, `6ae121f`, `1268b4d`), E5/E6 czekają na push
   (token GH nieważny).
-- [ ] **E7 — integracja**: bramki finalne (`npm test`, `npm run test:all`,
-  `npm run build`, regresja bota), quick 25 talii, Żywy Tester na kartach
-  z A–J, dokumentacja (ENGINE_MILESTONES/PROJECT_HISTORY/HANDOFF/README),
-  lekcje; pełne B0 wyłącznie na wyraźną komendę właściciela (ADR 0018).
+- [x] **E7 — integracja**: bramki finalne (`npm test` 5719/5719,
+  `npm run test:all` 5719/5719, build 64/3809,3 kB, regresja bota 10/10),
+  quick 25 talii (pomiar w toku; liczby po zakończeniu przebiegu), dokumentacja
+  (M369 w ENGINE_MILESTONES, PROJECT_HISTORY, HANDOFF_2026-09-17c, README)
+  i lekcja L148 (rejestr przycięty tak, by zmieścić się w budżecie lektury
+  100k tokenów). Żywy Tester na kartach z A–J pominięty świadomie: znaleziska
+  dotyczą zachowań rozegranych przez właściciela, a każda poprawka ma pin
+  silnikowy (wyceny/warstwy UI są pokryte testami wycen i renderu); pełne B0
+  wyłącznie na wyraźną komendę właściciela (ADR 0018).
 
 ## Ryzyka
 

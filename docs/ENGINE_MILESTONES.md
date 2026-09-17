@@ -5232,6 +5232,86 @@ benchmarku (20 → 21 talii), batch47 (curate-stx → worek-dziki), transpozycja
 ikoria-fiora (unbreakable-bond → ixalan). Bramki etapu: `npm test` 5685/5685,
 build 63/3789,6 kB. Commit `7c02ab9`.
 
+## M369 (2026-09-17) — Znaleziska właściciela A–J z gier testowych: dziesięć uwag, etapy E1–E7
+
+Druga część sesji 2026-09-17 (po M368): właściciel zagrał partie testowe i zgłosił
+**dziesięć znalezisk** (A–J). Każde ma własny etap, commit, pin i mutację;
+plan: `docs/plans/PLAN_2026-09-17c-uwagi-wlasciciela-a-j.md`.
+
+1. **A (`ad74c8a`) — stopka publikacji w czasie czytelnika.** Build zapisywał
+   gotowy napis czasu serwera; teraz ISO trafia do `datetime`, a `clock.js`
+   (`formatLocalTimestamp`) liczy godzinę w strefie CZYTELNIKA — dotyczy też
+   autosave (ten sam stempel). Pin w `m189`.
+2. **I/H (`9ee386b`) — grafiki tokenów i Morph.** Zakryty permanent na polu
+   bitwy to dla gracza bezimienny 2/2 (CR 708.2), więc wszystkie zakryte
+   permanentny pola bitwy dostają WSPÓLNY obraz tokenu Morph (tdtk/7) —
+   rozstrzygany po strefie (`artOf.battlefield`), a nie po tożsamości; strefy
+   ukryte (ręka bota, wierzch biblioteki, zakryte wygnanie) zostają przy
+   rewersie karty. `token_servo` dostał wpis katalogowy z drukiem tkld/4
+   (ADR 0028) + snapshot; strażnik „każdy token silnika ma ilustrację" wykazał,
+   że brakował tylko Servo. Sierota `docs/cards/scryfall-token_morph.json`
+   (nie-karta, nie-obiekt wsparcia) usunięta.
+3. **C/F/G (`6ae121f`) — etykiety i panel akcji.** Tytuł decyzji „Wartość X"
+   nazywa kartę i skutek (deskryptor `endure_x` — „endure X — X liczników +1/+1
+   albo token Spirit X/X"), pasek hoveru dostaje nazwę z numerem porządkowym
+   kopii, a zdolności many (CR 605.1a — `isActivatedManaAbility`) znikają
+   z „Twoich działań" tak jak lądy podstawowe. Orzeczenie bierze SILNIK, nie
+   kształt komendy (L41); warianty z celem/X/kosztem zostają w panelu, a mana
+   nie ginie — `legalCommands` bez zmian, więc kreator many działa jak dotąd.
+4. **D (`1268b4d`) — kontrola z chwili śmierci (LKI).** Obiekt w grobie należy
+   do WŁAŚCICIELA (CR 400.3 — `moveObjectDirectly`), więc `died.controllerId`
+   kłamał o kontroli z chwili śmierci i Necrosquito nie dostał oil countera,
+   gdy zginął stwór PRZEJĘTY przez niego (Awaken the Sleeper). Fix:
+   `eventControllerAtDeath(ev, moved)` (kontroler wprost ze zdarzenia, dopiero
+   na końcu obiekt po ruchu) + LKI-widok źródła dla triggerów „dies",
+   Necrosquito, Furious Forebear, agregatu „permanents you control leave the
+   battlefield" i `leaves_battlefield`. `markDescended` celowo zostaje na
+   obiekcie w grobie (zstąpienie liczy się właścicielowi grobu).
+5. **E (`1268b4d`) — podwójne odpalenie „dies"?** Kampania detektora (~1180
+   partii bota: 4 pary talii × 100 seedów z 2× Highland Game + 4 przeciwników
+   × 60 seedów z taliami 30× Highland Game) NIE potwierdziła nadmiarowego
+   odpalenia: 0 nadmiarowych `ability_triggered`, 0 podwójnych zdarzeń śmierci,
+   0 powtórnych skanów tego samego zdarzenia (pierwsza wersja detektora dawała
+   fałszywe alarmy, bo liczyła `creature_destroyed` + `permanent_destroyed`
+   dla tej samej śmierci — zdarzenia równoległe w jednej komendzie). Wnioskiem
+   jest pin regresyjny: wymiana w walce i śmierć od pierwszego uderzenia mają
+   dawać DOKŁADNIE +2 życia i jedno zakolejkowanie.
+6. **J (`2fa3e69`) — wymóg ataku a runda passów.** Ramroller („This creature
+   attacks each combat if able", CR 508.1c) nie atakował, bo runda passów
+   przechodziła do blokowania BEZ deklaracji. Deklaracja atakujących to akcja
+   turowa (CR 508.1a), więc `pass_priority` auto-deklaruje MINIMALNY zestaw —
+   same stwory wymuszone (`mandatoryAttackerIds`: goad CR 701.38 + `mustAttack`,
+   z wyjątkiem „if able" M270). Jedno źródło prawdy zasila ofertę, walidację
+   i auto-deklarację (L41). Pin srebrnej odznaki (B1 goad) domyka teraz walkę
+   przez `resolve_combat` — goadowany stwór naprawdę atakuje.
+7. **B (`6d00a5a`) — exploit debuffujący to wymiana, nie zysk.** Bot poświęcił
+   Morph 2/2, żeby zadać −3/−3 kreaturze 1/1 (raport: „taktycznie ujemne").
+   Odtąd trigger debuffujący (`exploitDebuff`) wchodzi tylko gdy (a) realnie
+   zabija wrogi stwór (zmiana wyniku żywy → martwy) ORAZ (b) TMC poświęcanego
+   jest niższy niż zabijanego ALBO zabijany niesie istotne walory widoczne
+   w PlayerView (keywordy, aury — CR 704.5m; ADR 0017 nie daje zdolności
+   cudzych permanentów). TMC twarzą w dół to realny koszt wejścia {3}
+   (CR 708.2a: mana value 0), nie zero — inaczej Morph wychodził „darmowy".
+   Mill (Gurmag Drowner) bez zmian; golden-master zregenerowany ŚWIADOMIE —
+   reprodukcja realna: `tarkir-bg` seed 1000 oddawał 1/1 Spirit przy PUSTYM
+   stole wroga.
+
+Piny: `m369` (E2: 4), `m370` (E3: 3), `m371` (E4: 5), `m372` (E5: 5),
+`m373` (E6: 6) + korekta C/4 w `zgloszenie-c-exploit-biblioteka-i-ofiara`
+(anty-over-fix: nowa bramka (a) wymaga celu do zabicia). Mutacje RED:
+E2 ×2, E3 ×3, E4 ×2 (razem 6 czerwień), E5 ×1 (2), E6 ×4.
+
+Uwaga operacyjna: sandbox przeładował repo w trakcie sesji (świeży shallow klon
+`e4befba`) — commity E1–E4 żyły już w origin, E5/E6 odtworzono po `fetch`
++ `reset --mixed FETCH_HEAD` (push fast-forward); kopia pracy poza gitem:
+`/home/user/recovery/`.
+
+**Pomiary finalne:** `npm test` **5719/5719**, `npm run test:all` **5719/5719**,
+build **64 moduły / 3809,3 kB**, regresja bota **10/10**, quick 25 talii —
+POMIAR W TOKU (liczby po zakończeniu przebiegu; poprzedni, batch 56:
+heuristic 86,0%, aggro 25,5%, 1 mecz niedokończony). Pełne B0 tylko na wyraźną
+komendę właściciela (ADR 0018).
+
 ## M368 (2026-09-17) — Integracja batcha 56: cztery bugi silnika z pomiarów, detektor testera, bramki
 
 Pomiar quick **25 talii** (5 984 mecze) wyłapał cztery błędy silnika — każdy
