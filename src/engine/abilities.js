@@ -900,11 +900,16 @@ export function legalActivatedAbilities(state, playerId) {
         // X ograniczony dostępną maną (mana = manaForActivation — z kosztem
         // {T} źródła-landa odjętym). Z zerową maną brak ofert.
         const maxX = Math.min(mana, 20);
+        // Kandydaci ze WSPÓLNEGO źródła (L41/L48/M82): ta gałąź enumerowała
+        // `state.zones.battlefield` sama, więc nie widziała hexproofu ani
+        // ochrony przed jakością i oferowała cel, który `validateTargets`
+        // odrzuca — bot dostawał nielegalną komendę (znalezisko benchmarku B7:
+        // Entrancing Lyre vs token Merfolk z hexproof, seed 2030).
+        const candidates = legalTargetCandidates(state, playerId, targetSpec[0], object);
         for (let x = 1; x <= maxX; x += 1) {
-          for (const targetId of state.zones.battlefield) {
+          for (const targetId of candidates) {
             const target = state.objects.get(targetId);
             if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') continue;
-            if (target.controllerId !== playerId && targetSpec[0]?.type !== 'creature') continue;
             const power = effectivePower(target, state) ?? 0;
             if (power > x) continue;
             if (abilityEffectIsNoOp(state, object, ability, target)) continue; // M104
@@ -1004,9 +1009,12 @@ export function legalActivatedAbilities(state, playerId) {
         continue;
       }
       if (targetSpec.length === 1 && targetSpec[0].type === 'any_target') {
-        // „any target": gracze + stwory na polu bitwy (spójnie z validateTargets).
-        const candidates = [...state.players.map((entry) => entry.id),
-          ...state.zones.battlefield.filter((bfId) => state.objects.get(bfId)?.kind === 'creature')];
+        // „any target": gracze + stwory/planeswalkerzy — przez WSPÓLNE źródło
+        // kandydatów (L41/L48/M82). Ta gałąź enumerowała pole bitwy sama, więc
+        // oferowała m.in. cudzego stwora z hexproof, którego `validateTargets`
+        // odrzucała (znalezisko benchmarku B7: Blazing Torch; ta sama klasa co
+        // gałąź „target creature with power X or less").
+        const candidates = legalTargetCandidates(state, playerId, targetSpec[0], object);
         for (const targetId of candidates) {
           out.push({ objectId: id, abilityIndex: index, ability, grantedFromEquipment: true, targets: [targetId] });
         }
