@@ -65,9 +65,15 @@ etapy I/H dodają wyłącznie WPISY TOKENÓW i grafikę, nie nowe karty do talii
   zdolności many (CR 605.1a, `isActivatedManaAbility`) znikają z panelu,
   ale zostają w `legalCommands` dla kreatora many; 3 piny + 3 mutacje RED;
   `npm test` 5703/5703.
-- [ ] **E4 (D, E)** — triggery śmierci: Necrosquito (przejęty stwór) i
-  Highland Game (podwójne odpalenie) — reprodukcja, fix u root cause, piny
-  + mutacje.
+- [x] **E4 (D, E)** — zrobione: przyczyna D to odczyt kontroli z obiektu
+  W GROBIE (należy do właściciela — CR 400.3), a nie z LKI zdarzenia
+  (CR 603.10a) — poprawka w `triggers.js` (`eventControllerAtDeath` + LKI-widok
+  źródła dla `dies`, Necrosquito, Furious Forebear, agregat odejść i
+  `leaves_battlefield`), pin D1–D3 + mutacja D (3 RED). E: kampania detektora
+  (~1180 partii bota, talie 2× i 30× Highland Game) nie znalazła nadmiarowego
+  odpalenia ani podwójnego zdarzenia śmierci — pin E1–E2 (wymiana w walce
+  i śmierć od pierwszego uderzenia: dokładnie +2 życia) + mutacja E
+  (podwojone zdolności → 3 RED); `npm test` 5708/5708, build 64/3802,8 kB.
 - [ ] **E5 (J)** — wymóg ataku (Ramroller): auto-deklaracja/egzekwowanie
   w ofercie i UI, pin + mutacja.
 - [ ] **E6 (B)** — wycena exploita (Silumgar Butcher): lethal albo

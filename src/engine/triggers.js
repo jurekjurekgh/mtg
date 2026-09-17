@@ -2066,6 +2066,16 @@ function processTriggersScan(state, recentEvents) {
     return true;
   }
   /**
+   * Znalezisko D (2026-09-17): kontroler obiektu z CHWILI zdarzenia śmierci
+   * (CR 603.10a — LKI) — zdarzenia zniszczenia/poświęcenia niosą kontrolera
+   * wprost (`controllerId`/`playerId`), a `ev.object` to obiekt sprzed zmiany
+   * strefy (`moveObjectDirectly` nie mutuje referencji w zdarzeniu). Dopiero
+   * brak wszystkich tych pól schodzi na obiekt po ruchu (jego kontroler to
+   * właściciel — CR 400.3).
+   */
+  const eventControllerAtDeath = (ev, moved) =>
+    ev?.controllerId ?? ev?.playerId ?? ev?.object?.controllerId ?? moved?.controllerId ?? null;
+  /**
    * „You descended this turn" (CR 700.x, Canonized in Blood): gdy PERMANENT
    * CARD (nie token, nie czar) trafia do grobu gracza z dowolnej strefy.
    * Liczymy po kontrolerze obiektu (do czyjego grobu wpadł).
@@ -2102,9 +2112,19 @@ function processTriggersScan(state, recentEvents) {
     // legend). Wcześniej skan obejmował wyłącznie zgony SBA (creature_destroyed)
     // i object_moved — poświęcenia (Village Rites, devour) i zniszczenia
     // (Bone Splinters, Shatter) cicho gubiły triggery dies.
-    const fireDeathTriggers = (died, simultaneousFellows = [], formerId = null) => {
+    const fireDeathTriggers = (died, simultaneousFellows = [], formerId = null, controllerAtDeath = null) => {
       markDescended(died);
       if (!died) return;
+      // Znalezisko D (właściciel, 2026-09-17 — Necrosquito + Awaken the Sleeper):
+      // obiekt w grobie należy do WŁAŚCICIELA (CR 400.3 — patrz
+      // `moveObjectDirectly`), więc `died.controllerId` kłamie o kontroli
+      // z chwili śmierci. Wszystkie filtry „you control" i kontroler triggera
+      // czytamy z LKI zdarzenia (CR 603.10a: zdolności śmierci patrzą na stan
+      // SPRZED zdarzenia), a nie z obiektu po zmianie strefy.
+      const diedControllerId = controllerAtDeath ?? died.controllerId ?? null;
+      const diedLki = diedControllerId != null && diedControllerId !== died.controllerId
+        ? Object.freeze({ ...died, controllerId: diedControllerId })
+        : died;
       // Time to Feed (THS, CR 603.7a): opóźniony trigger „When that creature
       // dies this turn, you gain N life" — znacznik założony przy rozstrzyganiu
       // czaru na KONKRETNY obiekt. Odpala się raz, przy jego śmierci; wpis
@@ -2131,7 +2151,7 @@ function processTriggersScan(state, recentEvents) {
         if (ability?.trigger?.event === 'any_creature_dies' && ability.trigger.excludeSelf) continue;
         if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') {
           // M67 (Guildsworn): LKI „wasn't blocking" — flaga z chwili śmierci.
-          tryFire(state, ability, died, [], events, { wasBlocking: died?.isBlockingThisCombat === true });
+          tryFire(state, ability, diedLki, [], events, { wasBlocking: died?.isBlockingThisCombat === true });
         }
       }
       // M200/D+E2 (uwagi właściciela, CR 700.4c): „die” dotyczy STWORÓW —
@@ -2172,7 +2192,7 @@ function processTriggersScan(state, recentEvents) {
         const isCreatureOrArtifact = died?.kind === 'creature' || died?.kind === 'artifact'
           || (died?.types ?? []).includes('Creature') || (died?.types ?? []).includes('Artifact');
         if (!isCreatureOrArtifact) continue;
-        if (died?.controllerId !== source.controllerId) continue;
+        if (diedControllerId !== source.controllerId) continue;
         for (const ability of effectiveAbilities(source)) {
           if (ability?.trigger?.event === 'other_permanent_you_control_dies') tryFire(state, ability, source, [], events);
         }
@@ -2183,7 +2203,7 @@ function processTriggersScan(state, recentEvents) {
       // w GROBIE (karta), odpala się na śmierć kontrolowanego stwora.
       for (const source of state.objects.values()) {
         if (source.zone !== 'graveyard') continue;
-        if (died?.kind !== 'creature' || died?.controllerId !== source.controllerId) continue;
+        if (died?.kind !== 'creature' || diedControllerId !== source.controllerId) continue;
         // Zgłoszenie właściciela E1 (2026-09-10), CR 603.6c + ruling WotC
         // 2025-04-04 („If Furious Forebear dies at the same time as one or
         // more creatures you control, its ability won't trigger"): warunkiem
@@ -2212,21 +2232,30 @@ function processTriggersScan(state, recentEvents) {
           .filter((sibling) => sibling !== ev && sibling.type === 'creature_destroyed'
             && sibling.toZone !== 'exile'
             && (ev.simultaneousIds ?? []).includes(sibling.fromId))
-          .map((sibling) => state.objects.get(sibling.toId) ?? sibling.object)
+          .map((sibling) => {
+            const fellow = state.objects.get(sibling.toId) ?? sibling.object;
+            const fellowController = eventControllerAtDeath(sibling, fellow);
+            return fellow && fellowController != null && fellowController !== fellow.controllerId
+              ? Object.freeze({ ...fellow, controllerId: fellowController })
+              : fellow;
+          })
         : [];
       // M160/A: TOKEN po śmierci przestaje istnieć (SBA CR 704.5e usuwa
       // trupa z grobu) — bez fallbacku na LKI zdarzenia śmierć tokena była
       // NIEWIDZIALNA dla triggerów any_creature_dies (fireDeathTriggers
       // dostawał undefined i wychodził).
-      fireDeathTriggers(state.objects.get(ev.toId) ?? ev.object, fellows, ev.fromId);
+      fireDeathTriggers(state.objects.get(ev.toId) ?? ev.object, fellows, ev.fromId,
+        eventControllerAtDeath(ev, state.objects.get(ev.toId) ?? ev.object));
     }
     if (ev.type === 'permanent_sacrificed') {
       if (ev.toZone === 'exile') return; // finality
-      fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object, [], ev.objectId);
+      fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object, [], ev.objectId,
+        eventControllerAtDeath(ev, state.objects.get(ev.objectId) ?? ev.object));
     }
     if (ev.type === 'permanent_destroyed') {
       if (ev.toZone === 'exile') return; // finality
-      fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object, [], ev.objectId);
+      fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object, [], ev.objectId,
+        eventControllerAtDeath(ev, state.objects.get(ev.objectId) ?? ev.object));
     }
     // „Whenever one or more permanents you control leave the battlefield"
     // (Nefarious Imp). Jedno zdarzenie = jedno odejście; CR 603.2 mówi
@@ -2250,16 +2279,23 @@ function processTriggersScan(state, recentEvents) {
       const gone = ev.type === 'permanent_sacrificed'
         ? (state.objects.get(ev.objectId) ?? ev.object)
         : (state.objects.get(ev.toId) ?? state.objects.get(ev.object?.id) ?? state.objects.get(ev.objectId) ?? ev.object);
-      if (gone?.controllerId) leftBattlefield.add(gone.controllerId);
+      // CR 603.10a/400.3: „you control" przy odejściu też czytamy z LKI —
+      // przejęty permanent, który opuszcza pole bitwy, liczy się kontrolerowi
+      // z chwili odejścia (przed poprawką trafiał do właściciela).
+      const goneControllerId = eventControllerAtDeath(ev, gone);
+      if (goneControllerId) leftBattlefield.add(goneControllerId);
       // „When this creature leaves the battlefield" (Fear of Abduction —
       // powrót wygnanych kart): trigger własny obiektu na ODEJŚCIE z pola bitwy
       // (dowolna strefa docelowa: ręka, exile, grób — CR 603.6c). Uwaga:
       // obiekt po zmianie strefy to NOWY obiekt (CR 400.7) — zdolności
       // czytamy z LKI (formerAbilityGrants + abilities) przez abilitiesOnDeath.
       if (gone) {
+        const goneLki = goneControllerId != null && goneControllerId !== gone.controllerId
+          ? Object.freeze({ ...gone, controllerId: goneControllerId })
+          : gone;
         for (const ability of abilitiesOnDeath(gone)) {
           if (ability?.trigger?.event === 'leaves_battlefield') {
-            tryFire(state, ability, gone, [], events);
+            tryFire(state, ability, goneLki, [], events);
           }
         }
       }
@@ -2267,7 +2303,8 @@ function processTriggersScan(state, recentEvents) {
     if (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone === 'graveyard') {
       // Finality obsługują ścieżki zdarzeń z toZone (creature_destroyed itd.);
       // object_moved bez toZone-exile = zwykła śmierć (np. prawo legend).
-      fireDeathTriggers(state.objects.get(ev.object?.id), [], ev.fromId ?? ev.object?.id);
+      fireDeathTriggers(state.objects.get(ev.object?.id), [], ev.fromId ?? ev.object?.id,
+        eventControllerAtDeath(ev, state.objects.get(ev.object?.id)));
     }
     // Descended: permanent card wpada do grobu z ręki (odrzucenie), milla
     // albo poświęcenia — liczymy po kontrolerze docelowego obiektu.
