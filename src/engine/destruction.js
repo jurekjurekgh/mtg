@@ -119,6 +119,12 @@ export function regeneratePermanent(state, object, collected = null) {
   // Odcięcie od walki (CR 701.12a: „removed from combat").
   if (state.combat) {
     state.combat.attackers = (state.combat.attackers ?? []).filter((id) => id !== object.id);
+    // Znalezisko B7 (benchmark, seed 2030): klucz mapy bloków to ATAKUJĄCY —
+    // gdy odcinany permanent nim był, sam `filter` wyżej zostawiał klucz
+    // i inwariant stanu rzucał przy następnej komendzie („Combat ma blok
+    // nieistniejącego atakującego …"). `removeFromCombat` (objects.js) robi
+    // to samo od zawsze; regeneracja musi tak samo.
+    state.combat.blockers.delete(object.id);
     for (const [attackerId, blockerIds] of state.combat.blockers) {
       state.combat.blockers.set(attackerId, blockerIds.filter((id) => id !== object.id));
     }

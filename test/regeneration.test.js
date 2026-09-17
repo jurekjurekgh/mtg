@@ -5,7 +5,8 @@ import { addMana } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { markDamage } from '../src/engine/permanents.js';
 import { runStateBasedActions } from '../src/engine/state-based.js';
-import { applyEffect } from '../src/engine/effects.js';
+import { applyEffect, destroyPermanentByEffect } from '../src/engine/effects.js';
+import { assertStateInvariants } from '../src/engine/invariants.js';
 import { modifyStats } from '../src/engine/permanents.js';
 
 /**
@@ -154,4 +155,44 @@ test('tarcza znika w cleanup (CR 701.12a — „this turn\")', () => {
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(state.turn.step, 'cleanup', 'krok cleanup osiągnięty');
   assert.deepEqual(state.regenerationShields, [], 'tarcza wygasła w cleanup');
+});
+
+test('B7/benchmark (seed 2030): zregenerowany ATAKUJĄCY nie zostawia klucza w mapie bloków', () => {
+  // Znalezisko z pomiaru B7: mecz benchmarku random(mirrodin-wu) vs
+  // heuristic(mirrodin-brg), seed 2030 — random zabił zregenerowanego
+  // atakującego w oknie combat_damage. Ścieżka regeneracji (CR 701.12a
+  // „removed from combat") usuwała go z listy `attackers`, ale ZOSTAWIAŁA
+  // klucz w mapie `blockers` (klucz = atakujący) → inwariant stanu rzucał
+  // przy następnej komendzie („Combat ma blok nieistniejącego atakującego …")
+  // i kończył mecz błędem harnessu. `removeFromCombat` (objects.js) czyści
+  // klucz od zawsze — regeneracja musi tak samo.
+  const state = game();
+  addRegenerator(state, 'guy', 'p1', { power: 3, toughness: 3 });
+  addObject(state, {
+    id: 'chump', instanceId: 'i-chump', cardId: 'chump', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 1, toughness: 1, manaCost: 1,
+    types: ['Creature'], subtypes: [], colors: [], abilities: [], keywords: [],
+  });
+  for (const id of ['guy', 'chump']) {
+    state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
+  }
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['guy'] }).ok, true);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // okno 508.2
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  assert.equal(state.turn.step, 'declare_blockers');
+  assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { guy: ['chump'] } }).ok, true);
+  assert.equal(state.combat.blockers.get('guy').length, 1, 'harness: blok zarejestrowany');
+  // Tarcza regeneracji + zniszczenie ATAKUJĄCEGO (np. burn w oknie combat_damage).
+  state.turn.priorityPlayerId = 'p1'; // atakujący trzyma priorytet w krokach walki
+  addMana(state, 'p1', 1);
+  activateRegenerate(state, 'guy');
+  assert.equal(destroyPermanentByEffect(state, 'guy', { reason: 'b7-test' }), false, 'zniszczenie zastąpione');
+  assert.equal(state.objects.get('guy').zone, 'battlefield', 'stwór uratowany');
+  assert.equal(state.combat.attackers.includes('guy'), false, 'odcięty od walki (CR 701.12a)');
+  assert.equal(state.combat.blockers.has('guy'), false, 'klucz bloków po atakującym SPRZĄTNIĘTY');
+  assert.equal(state.combat.blockedAttackers.has('guy'), false, 'marker bloku sprzątnięty');
+  assert.doesNotThrow(() => assertStateInvariants(state), 'inwariant walki trzyma po regeneracji');
 });
