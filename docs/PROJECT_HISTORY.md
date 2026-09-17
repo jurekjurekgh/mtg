@@ -19,6 +19,33 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-17 Audyt PR #124 (APPROVE) + numeracja po nazwie wyświetlanej + tester vs warstwa grafik (PR #125)
+
+Pętla domyślna ADR 0020/0021, sesja `arena/01a0ae26-mtg`:
+
+- **E1 — audyt PR #124: APPROVE** (raport `docs/audits/AUDYT_PR124_2026-09-17.md`).
+  Pełny przegląd 32 plików; obie naprawy audytu #123 domknięte u root cause
+  i pilnowane testami, które realnie czerwienieją (mutacje: usunięcie
+  `pendingCombatSecondPass` → T4 RED; neutralizacja `cleanupEventIsSbaEvidence`
+  → T1+T2 RED, anty-regresja 514.1 zielona). Obserwacje: O1 numeracja kopii,
+  O2 nadmiarowy zestaw dowodów SBA, O3 `chosenColor` lądu vs aury.
+- **E2 — O1 naprawione:** `battlefieldNameNumbers(objects, displayedNameOf)` —
+  klucz grupowania to nazwa WYŚWIETLANA (sesja podaje resolver lustrzany wobec
+  `nameOfObject`). Test jednostkowy + sesyjny (rejestr z klonem Manor Gate jako
+  drugi „wydruk", bo katalog nie ma dziś duetów permanentów) + 2 mutacje.
+- **E3 — pętla jakości ADR 0021 §4b (inna ścieżka: Żywy Tester):** tester nie
+  znał warstwy wysoko-graficznej (`#art-showcase`, hi-gfx domyślnie ON), która
+  pauzuje grę przez `awaitingArtAck` — każdy rzut z ilustracją kończył partię
+  fałszywym `[STOP] brak akcji` i fałszywym detektorem „sam Poddaj partię"
+  (odtworzone na #123 i #124). Naprawa `closeArtShowcase` w `run-game.mjs`
+  (gest + fallback Escape), strażnik 6 testów, dokumentacja w TESTER_STOLU
+  i README narzędzia. Po naprawie 4 partie po 400 kroków — naturalne końce,
+  0 zgłoszeń detektorów.
+
+Bramki finalne: fast 5646/5646, test:all 5656/5656 (0 fail), build
+63 moduły / 3759,9 kB, bot-benchmark 10/10. Handoff:
+`docs/setup/HANDOFF_2026-09-17.md`.
+
 ## 2026-09-16 Dopisek 3 (PR #124): numeracja kopii nazw na polu bitwy
 
 Zlecenie właściciela (prośba wcześniejsza, niezakodowana): duplikaty nazwy u

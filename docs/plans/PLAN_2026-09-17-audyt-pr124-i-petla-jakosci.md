@@ -61,9 +61,9 @@ ADR 0021 §4. Gałąź sesji: `arena/01a0ae26-mtg`, bazowy HEAD: `e4befba`
   dokumentacja w TESTER_STOLU + README narzędzia. Pomiar: 4 partie po 400
   kroków (seeds 2026/7/42, profile greedy/explorer) kończą się naturalnie,
   **0 zgłoszeń detektorów**.
-- [ ] **E4 — domknięcie sesji**: liczby zmierzone na finalnym HEAD
-  (`npm test`, `npm run test:all`, `npm run build`,
-  `node --test test/bot-benchmark.test.js`), README/PH/handoff/opis PR.
+- [x] **E4 — domknięcie sesji**: liczby zmierzone na finalnym HEAD
+  (`npm test` 5646/5646, `npm run test:all` 5656/5656, build 63 moduły /
+  3759,9 kB, `bot-benchmark` 10/10), README/PH/`HANDOFF_2026-09-17.md`/opis PR.
 
 ## Kolejność commitów (plan)
 
