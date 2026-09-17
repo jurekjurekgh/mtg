@@ -8,6 +8,9 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { applyEffect } from '../src/engine/effects.js';
+import { createBattlefieldToken } from '../src/engine/tokens.js';
+import { assertStateInvariants } from '../src/engine/invariants.js';
+import { attachEquipmentToCreature } from '../src/engine/attachments.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -300,6 +303,38 @@ test('D1: Vanish from Sight — decyzja należy do WŁAŚCICIELA celu, wierzch d
   // Surveil 1 rzucającego uruchamia się PO decyzji.
   assert.ok(state.pendingSurveil, 'surveil po decyzji');
   assert.equal(state.pendingSurveil.playerId, 'p1', 'surveil należy do rzucającego');
+});
+
+test('D3 (B7-fix 3): token właściciela z załącznikiem — Vanish from Sight odpina equipment i nie wywraca stanu', () => {
+  // Znalezisko benchmarku (seed 2030, heuristic(mirrodin-wu) vs
+  // random(worek-dziki)): Living weapon (Strandwalker) trzyma się tokenu Germ;
+  // wybór „wierzch/spód biblioteki" dla tego tokenu kasował go BEZ odpięcia
+  // załącznika (M273 obsłużył tylko `state.combat`, L43 — niepełna lista
+  // konsumentów) → inwariant „załącznik wskazuje nieistniejącego gospodarza"
+  // wywracał partię przy następnej komendzie.
+  const state = game('p1');
+  putCard(state, 'vanish', 'vanish-from-sight', 'p1', 'hand');
+  // Token 1/1 (nie 0/0 Germ: bez statystyk SBA zabiera go przed rzutem),
+  // z przyczepionym equipmentem — to wystarcza, by odtworzyć kształt z benchmarku.
+  const tok = createBattlefieldToken(state, 'p2', {
+    cardId: 'token_soldier', name: 'Soldier', power: 1, toughness: 1, colors: ['W'],
+  });
+  putCard(state, 'eq', 'strandwalker', 'p2', 'battlefield');
+  // `attachedTo` NIE jest polem kontraktu `addObject` (L21 — ginie po cichu);
+  // załączenie idzie przez API załączników.
+  attachEquipmentToCreature(state, 'eq', tok.id);
+  addMana(state, 'p1', 4, { colors: ['U'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'vanish' && c.targets?.[0] === tok.id);
+  assert.ok(cast, 'oferta na token z załącznikiem');
+  assert.ok(execute(state, cast).ok);
+  resolveStack(state);
+  assert.ok(state.pendingLibraryPlacement, 'decyzja właściciela tokenu');
+  const resolved = execute(state, { type: 'resolve_library_placement', playerId: 'p2', placement: 'bottom' });
+  assert.equal(resolved.ok, true, 'komenda przyjęta');
+  assert.equal(state.objects.has(tok.id), false, 'token przestał istnieć (CR 111.7)');
+  assert.equal(state.objects.get('eq').attachedTo, null, 'equipment odpina się od kasowanego tokenu');
+  assert.doesNotThrow(() => assertStateInvariants(state), 'inwarianty stanu trzymają');
 });
 
 test('D2: Vanish from Sight — spód biblioteki (wybór właściciela)', () => {

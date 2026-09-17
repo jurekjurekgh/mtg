@@ -4046,6 +4046,16 @@ export function execute(state, input) {
       // (L43). `state.combat` trzymał wiszące id skasowanego tokena:
       // atakujący/bloker, którego nie ma w `state.objects`. Ten sam rodzaj
       // niespójności wywrócił partię w M271 (błąd #16).
+      //
+      // B7-fix 3 (2026-09-17, benchmark seed 2030, heuristic(mirrodin-wu) vs
+      // random(worek-dziki)): lista była NIEPEŁNA — brakowało ZAŁĄCZNIKÓW.
+      // Living weapon (Strandwalker) trzyma się tokenu Germ; wybór „wierzch/
+      // spód biblioteki" dla tego tokenu (Vanish from Sight) kasował go bez
+      // odpięcia equipmentu → inwariant „załącznik wskazuje nieistniejącego
+      // gospodarza" wywracał partię. Ta sama reguła co w M191 (SBA tokenów)
+      // i w `bounce_to_library_bottom` (effects.js): kasowanie obiektu
+      // z pola bitwy ZAWSZE zaczyna się od `detachAttachmentsFromHost`.
+      detachAttachmentsFromHost(state, pending.targetId);
       if (state.combat) removeFromCombat(state, pending.targetId);
       state.objects.delete(pending.targetId);
       state.zones.battlefield = state.zones.battlefield.filter((id) => id !== pending.targetId);
