@@ -2152,8 +2152,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // GRACZA, nie do permanentu. Wartość bierzemy z `amount` (deskryptor), a nie
   // z liczby symboli w Oracle — jedno źródło prawdy (L41).
   if (effect.type === 'get_energy') {
+    // F1 audytu PR #125 (M375, ADR 0016): slot celu bierzemy z `targets` —
+    // tak jak pozostałe gałęzie efektów. Dotąd stało tu `effectTargets`,
+    // którego w tym pliku NIE MA, więc ścieżka `targetIndex` rzucała
+    // `ReferenceError` (martwa dziś, latentna dla każdej karty „target
+    // player gets {E}"); nieaktualny cel schodzi na kontrolera źródła.
     const targetPlayerId = effect.targetIndex != null
-      ? (state.objects.get(effectTargets[effect.targetIndex])?.controllerId ?? sourceObject.controllerId)
+      ? (state.objects.get(targets[effect.targetIndex])?.controllerId ?? sourceObject.controllerId)
       : sourceObject.controllerId;
     if (!state.players.some((entry) => entry.id === targetPlayerId)) return;
     addEnergyCounters(state, targetPlayerId, effect.amount ?? 1);
