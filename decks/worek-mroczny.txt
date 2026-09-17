@@ -16,6 +16,7 @@
 1x Containment Protocol
 1x Crew Captain
 1x Kulrath Mystic
+1x Mobile Garrison
 1x Stomping Slabs
 1x Brightwood Tracker
 1x Security Rhox
@@ -26,7 +27,7 @@
 1x Volcanic Submersion
 1x Fear of Abduction
 1x Fear of Burning Alive
-2x Plains
+3x Plains
 2x Island
 3x Swamp
 4x Mountain

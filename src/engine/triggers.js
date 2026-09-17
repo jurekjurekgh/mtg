@@ -565,11 +565,22 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
   }
   if (spec.type === 'artifact_or_creature') {
+    // M365 (batch 56, Mobile Garrison): „untap ANOTHER target artifact or
+    // creature YOU CONTROL" — typ dostaje generyczne zawężenia (ADR 0002):
+    // `controlledBy: 'controller'` (wzorzec z 'permanent'/'land_you_control')
+    // oraz jawną deskę „another"/„other" (`notSelf`). Wykluczenie ŹRÓDŁA jest
+    // w tym typie DOMYŚLNE od Lodestone Needle („up to one target artifact or
+    // creature" na artefakcie, który właśnie wszedł — źródło nigdy nie było
+    // kandydatem), więc `notSelf` ma domyślnie wartość prawdziwą i służy
+    // udokumentowaniu deski w karcie; `notSelf: false` (dziś nieużywane)
+    // dopuściłoby źródło — CR 115.2 dla celów bez „another".
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
-      return object && object.zone === 'battlefield'
-        && (object.kind === 'creature' || object.kind === 'artifact')
-        && object.id !== sourceObject.id && (!hexproofBlocked(object) && !protectedBlocked(object));
+      if (!object || object.zone !== 'battlefield') return false;
+      if (object.kind !== 'creature' && object.kind !== 'artifact') return false;
+      if (spec.notSelf !== false && object.id === sourceObject.id) return false;
+      if (spec.controlledBy === 'controller' && object.controllerId !== sourceObject.controllerId) return false;
+      return !hexproofBlocked(object) && !protectedBlocked(object);
     });
   }
   if (spec.type === 'other_nonland_permanent') {

@@ -11122,7 +11122,25 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Artifact'], subtypes: ['Vehicle'], colors: [], power: 3, toughness: 4, manaCost: 3,
     oracleText: 'Whenever this Vehicle attacks, untap another target artifact or creature you control.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)',
     imageUri: 'https://cards.scryfall.io/large/front/d/a/da443378-f5cb-4240-9524-2c40ec17c933.jpg?1783936724',
-    artId: 58, plan: 'New Capenna', support: { status: 'in-development', limitations: [] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // „another target artifact or creature YOU CONTROL" — dwa zawężenia
+        // generyczne (M365): `controlledBy` (wzorzec 'permanent') i domyślne
+        // wykluczenie źródła dla deski „another" (CR 115.2; patrz
+        // triggerTargetCandidates w triggers.js).
+        trigger: { event: 'attacks', requiresTarget: { type: 'artifact_or_creature', controlledBy: 'controller' } },
+        effect: { type: 'untap_permanent' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        // Crew 2 (CR 702.122) — jak w pozostałych pojazdach: instant, bez
+        // „Activate only as a sorcery" w Oracle (audyt Batchu 26, M65).
+        cost: { crewPower: 2 },
+        effect: { type: 'animate_permanent_until_end_of_turn', power: 3, toughness: 4, typesAdd: ['Creature'] },
+      }),
+    ],
+    artId: 58, plan: 'New Capenna', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({

@@ -7,7 +7,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
-import { effectivePower, effectiveToughness, attachmentRestrictions, untapControlled } from '../src/engine/permanents.js';
+import { effectivePower, effectiveToughness, attachmentRestrictions, untapControlled, tapObject } from '../src/engine/permanents.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
 import { addEnergyCounters } from '../src/engine/players.js';
@@ -350,4 +350,110 @@ test('B56/B3: 30 Containment Protocol — aura odłączona oddaje odkręcanie (o
   s.zones.battlefield = s.zones.battlefield.filter((id) => id !== aura.id);
   untapControlled(s, 'p2');
   assert.equal(state_object(s, 'host').tapped, false, 'bez aury stwór odkręca się normalnie');
+});
+
+// ---------------------------------------------------------------------------
+// B4 (M365) — 58 Mobile Garrison: pojazd (crew 2) + trigger ataku
+//            „untap another target artifact or creature you control"
+// ---------------------------------------------------------------------------
+
+sanity('mobile-garrison', 58, 'AER', 'New Capenna');
+
+test('B56/B4: 58 Mobile Garrison — deskryptor: crew 2 + cel „you control" triggera', () => {
+  const def = registry.get('mobile-garrison');
+  assert.deepEqual(def.types, ['Artifact']);
+  assert.deepEqual(def.subtypes, ['Vehicle']);
+  assert.equal(def.power, 3);
+  assert.equal(def.toughness, 4);
+  assert.equal(def.manaCost, 3);
+  const crewAbility = def.abilities.find((a) => a.cost?.crewPower === 2);
+  assert.ok(crewAbility, 'crew 2 w deskryptorze');
+  assert.deepEqual(crewAbility.effect,
+    { type: 'animate_permanent_until_end_of_turn', power: 3, toughness: 4, typesAdd: ['Creature'] });
+  const trigger = def.abilities.find((a) => a.trigger?.event === 'attacks');
+  assert.deepEqual(trigger.trigger.requiresTarget,
+    { type: 'artifact_or_creature', controlledBy: 'controller' });
+  assert.deepEqual(trigger.effect, { type: 'untap_permanent' });
+});
+
+/** Deklaracja ataku z oknem priorytetu po deklaracji (CR 508.2). */
+function attack(s, attackerIds) {
+  s.turn = jumpToStep(s.turn, 'declare_attackers', 'p1');
+  s.turn.activePlayerId = s.turn.priorityPlayerId = 'p1';
+  assert.ok(execute(s, { type: 'declare_attackers', playerId: 'p1', attackerIds }).ok);
+  execute(s, { type: 'pass_priority', playerId: 'p1' });
+  execute(s, { type: 'pass_priority', playerId: 'p2' });
+}
+
+/** Załoga 2: oferta crew z domyślnym podzbiorem stworów (moc ≥ 2). */
+function crew(s, vehicleId = 'gar') {
+  const offer = commands(s).find((c) => c.type === 'activate_ability' && c.objectId === vehicleId
+    && state_object(s, vehicleId).abilities?.[c.abilityIndex]?.cost?.crewPower === 2);
+  assert.ok(offer, 'crew 2 jest oferowane');
+  run(s, offer);
+  resolve(s); // zdolność crew rozstrzyga się ze stosu → pojazd staje się stworem
+  return offer;
+}
+
+test('B56/B4: 58 Mobile Garrison — trigger ataku odkręca inny WŁASNY artefakt lub stwora', () => {
+  const s = game();
+  put(s, 'gar', 'mobile-garrison', 'p1', 'battlefield');
+  put(s, 'pilot', 'alaborn-trooper', 'p1', 'battlefield'); // 2/3 — pełna załoga
+  put(s, 'kilof', 'greatsword-of-tyr', 'p1', 'battlefield'); // artefakt własny
+  put(s, 'wrog', 'highland-game', 'p2', 'battlefield'); // cudzy stwór — nie kandydat
+  crew(s);
+  const gar = state_object(s, 'gar');
+  assert.equal(gar.kind, 'creature', 'crew 2 robi z pojazdu artefaktowego stwora');
+  assert.deepEqual([...gar.types].sort(), ['Artifact', 'Creature']);
+  assert.equal(effectivePower(gar, s), 3);
+  assert.equal(effectiveToughness(gar, s), 4);
+  assert.equal(state_object(s, 'pilot').tapped, true, 'crew tapnęło stwora');
+  tapObject(s, 'kilof', 'p1'); // cel triggera: zatapnięty własny artefakt
+  attack(s, ['gar']);
+  const offers = commands(s).filter((c) => c.type === 'resolve_trigger_target');
+  assert.deepEqual(offers.map((c) => c.targetId).sort(), ['kilof', 'pilot'],
+    'kandydaci: tylko własne artefakty/stwory poza źródłem („another", „you control")');
+  run(s, offers.find((c) => c.targetId === 'kilof'));
+  resolve(s);
+  assert.equal(state_object(s, 'kilof').tapped, false, 'trigger odkręcił wskazany artefakt');
+  assert.equal(state_object(s, 'gar').tapped, true, 'sam pojazd („another") został zatapnięty atakiem');
+  assert.ok(s.events.some((e) => e.type === 'object_untapped' && e.objectId === 'kilof'));
+});
+
+test('B56/B4: 58 Mobile Garrison — bez innego własnego artefaktu/stwora trigger nie robi nic', () => {
+  const s = game();
+  put(s, 'gar', 'mobile-garrison', 'p1', 'battlefield');
+  put(s, 'pilot', 'alaborn-trooper', 'p1', 'battlefield');
+  put(s, 'wrog', 'highland-game', 'p2', 'battlefield');
+  crew(s);
+  // Pilot opuszcza pole bitwy przed deklaracją ataku — „another" nie ma na co
+  // wskazać: pojazd jest źródłem (wykluczone), a stwór przeciwnika nie
+  // spełnia „you control".
+  s.objects.delete('pilot');
+  s.zones.battlefield = s.zones.battlefield.filter((id) => id !== 'pilot');
+  attack(s, ['gar']);
+  assert.equal(['p1', 'p2'].some((p) => commands(s, p).some((c) => c.type === 'resolve_trigger_target')), false,
+    'brak kandydatów = brak decyzji celu');
+  assert.ok(s.events.some((e) => e.type === 'trigger_resolved' && e.objectId === 'gar'
+    && e.noEffect === true && e.reason === 'no_targets'), 'zdarzenie o triggerze bez celu');
+  assert.equal(state_object(s, 'gar').tapped, true, 'nikt nie odkręcił atakującego pojazdu');
+});
+
+test('B56/B4: 58 Mobile Garrison — załoga z za małą łączną mocą jest odrzucana', () => {
+  const s = game();
+  put(s, 'gar', 'mobile-garrison', 'p1', 'battlefield');
+  put(s, 'maly', 'soulmender', 'p1', 'battlefield'); // 1/1 — moc 1 < 2
+  const crewIndex = state_object(s, 'gar').abilities.findIndex((a) => a.cost?.crewPower === 2);
+  assert.equal(crewIndex, 1, 'trigger (0) + crew (1)');
+  const r = execute(s, { type: 'activate_ability', playerId: 'p1', objectId: 'gar', abilityIndex: crewIndex, crewCreatureIds: ['maly'] });
+  assert.equal(r.ok, false, 'crew 2 nie przyjmie łącznej mocy 1');
+  assert.equal(state_object(s, 'maly').tapped, false, 'odrzucona załoga nie tapuje stwora');
+  assert.equal(state_object(s, 'gar').kind, 'artifact', 'pojazd nie stał się stworem');
+  // 1/1 + 1/1 = 2 → załoga legalna (jak w istniejących pojazdach).
+  put(s, 'maly2', 'soulmender', 'p1', 'battlefield');
+  run(s, { type: 'activate_ability', playerId: 'p1', objectId: 'gar', abilityIndex: crewIndex, crewCreatureIds: ['maly', 'maly2'] });
+  resolve(s);
+  assert.equal(state_object(s, 'gar').kind, 'creature');
+  assert.equal(state_object(s, 'maly').tapped, true);
+  assert.equal(state_object(s, 'maly2').tapped, true);
 });
