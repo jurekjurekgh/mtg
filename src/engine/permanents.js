@@ -1073,13 +1073,13 @@ export function preventDamageTo(state, targetId, amount) {
 
 /**
  * Czy obrażenia od źródła o danym kolorze są zapobiegane przez protection
- * celu (CR 702.16a — DEBT: D = damage prevention). Sprawdzamy kolory źródła
+ * celu (CR 702.16e — DEBT: D = damage prevention). Sprawdzamy kolory źródła
  * vs protection celu. Nie modyfikujemy zamrożonego obiektu.
  */
 export function isDamagePreventedByProtection(state, target, source) {
   if (!target || !source || target.zone !== 'battlefield') return false;
   // M109 (Spare from Evil): protection od JAKOŚCI innej niż kolor
-  // („protection from non-Human creatures") — CR 702.16d.
+  // („protection from non-Human creatures”) — CR 702.16a.
   if (isProtectedFromSource(state, target, source)) return true;
   const protColors = effectiveProtectionFromColors(state, target);
   if (protColors.length === 0) return false;
@@ -1105,7 +1105,7 @@ export function markDamage(state, objectId, amount, sourceId = null) {
     state.events.push(prevented);
     return object;
   }
-  // Protection (CR 702.16a): obrażenia od źródła chronionego koloru
+  // Protection (CR 702.16e): obrażenia od źródła chronionego koloru
   // są zapobiegane.
   if (amount > 0 && sourceId) {
     const source = state.objects.get(sourceId);

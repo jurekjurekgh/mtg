@@ -2081,6 +2081,10 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
       state.pendingColorChoice = {
         playerId: object.controllerId,
         auraId: newId,
+        // A1: cel wyboru niesie pending (symetrycznie do lądu w playLand) —
+        // aura z chooseColor wybiera kolor OCHRONY ('protection').
+        purpose: 'protection',
+        sourceCardId: object.cardId,
       };
       state.events.push(event('color_choice_required', { playerId: object.controllerId, auraId: newId }));
     }

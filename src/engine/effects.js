@@ -558,10 +558,10 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     }));
     return 0;
   }
-  // Protection (CR 702.16a): obrażenia od źródła chronionego koloru
+  // Protection (CR 702.16e): obrażenia od źródła chronionego koloru
   // są zapobiegane — sprawdzamy PRZED filtrem prewencji.
   if (!targetIsPlayer && rawAmount > 0 && targetObject) {
-    // M109 (CR 702.16d): ochrona przed JAKOŚCIĄ źródła (Spare from Evil —
+    // M109 (CR 702.16a): ochrona przed JAKOŚCIĄ źródła (Spare from Evil —
     // „protection from non-Human creatures").
     if (isProtectedFromSource(state, targetObject, sourceObject)) {
       state.events.push(event('damage_prevented', {
@@ -1587,7 +1587,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     });
     return;
   }
-  // Offspring (BLB, Rust-Shield Rampager, CR 702.16x?): „When this creature
+  // Offspring (BLB, Rust-Shield Rampager, CR 702.175a): „When this creature
   // enters, create a 1/1 token copy of it." Token kopia druk źródła (nie
   // liczniki/atachamenty/efekty poza drukiem — ruling WotC); dziedziczy
   // zdolności „enters" i „enters with" (ruling: będzie działać), więc
@@ -3066,7 +3066,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // M67 (Jeskai Devotee): efekt może podać kolory wprost ({1}: Add {U}, {R},
     // or {W}) — jednostka many ['U','R','W'] opłaca każdy z tych pipów (MtG:
     // gracz wybiera kolor przy produkcji; pula trzyma ją jako wielokolorową).
-    const colors = effect.colors ?? src?.colors ?? [];
+    const descriptorColors = effect.colors ?? src?.colors ?? [];
+    // A3 (znalezisko właściciela 2026-09-16, Manor Gate): „{T}: Add {G} or one
+    // mana of the chosen color" — deskryptor many ('G') złącza się z kolorem
+    // wybranym przy wejściu (chosenColor na OBIEKCIE — ustawianym przez
+    // resolve_color_choice) w jednostkę wielokolorową opłacającą dowolny z
+    // pipów. Bez tego kreator many (getSourceForObject robi ten sam union)
+    // oferował czarną, a aktywacja produkowała wyłącznie zieloną.
+    const colors = sourceObject?.chosenColor && !descriptorColors.includes(sourceObject.chosenColor)
+      ? [...descriptorColors, sourceObject.chosenColor]
+      : descriptorColors;
     addMana(state, sourceObject.controllerId, effect.amount ?? 1, {
       colors, fromTreasure: Boolean(effect.fromTreasure),
       // M201 (znalezisko #3): ograniczenie wydania jedzie z deskryptora

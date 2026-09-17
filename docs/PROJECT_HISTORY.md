@@ -19,6 +19,95 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-16 Dopisek 3 (PR #124): numeracja kopii nazw na polu bitwy
+
+Zlecenie właściciela (prośba wcześniejsza, niezakodowana): duplikaty nazwy u
+jednego gracza na polu bitwy (tokeny, lądy) nierozróżnialne przy celowaniu.
+Reguła systemowa (`2b3cc1e`): czysta `battlefieldNameNumbers` (per kontroler,
+klucz object.name ?? cardId, ordynał = kolejność wejścia; face-down/copyNumber
+poza numeracją) + sufiks „ #N" w `session.nameOfObject` i przez
+`session.nameOrdinalSuffix` w kaflu/etykietach/wizardach (baza nazwy po
+widoku — stuby testowe nietknięte; L41). Każdy członek grupy > 1 numerowany
+(także pierwszy), pojedyncze bez licznika, przeliczanie przy odczycie
+(ostatnia kopia traci numer). Strażnik N7 (unikalność nazw wyświetlanych per
+gracz po obu resolverach) + mutacja L13 5×RED. Odrzucone podejście: delegacja
+bazy nazwy do nameOfObject psuła 14 testów stubowych. Uwaga repo: ponowny
+reset lokalnej gałęzi do squash-main między sesjami — recovery
+fetch+reset --mixed (drzewo i zdalna gałąź nietknięte). Bramki: fast
+5638/5638, test:all 5648/5648, build 63/3758,6 kB, benchmark 10/10.
+
+## 2026-09-16 Dopisek 2 (PR #124): znaleziska właściciela z testów — Manor Gate A1–A3, Undercity B
+
+Zlecenie właściciela po testach manualnych: cztery znaleziska, każde osobnym
+commitem z testem RED→GREEN:
+
+- **A1 (`53baa568`)** — tytuł wyboru koloru przy wejściu (panel „Twoje
+  działania" + modal) „Kolor (np. ochrona)": dopisek zgadywał CEL wyboru po
+  pierwszym użyciu deskryptora (aura), a ląd z chooseColor wybiera kolor
+  PRODUKOWANEJ many. pendingColorChoice niesie `purpose` ('mana'/'protection')
+  + `sourceCardId`; tytuł purpose-aware w choiceSourceTitle: „Manor Gate —
+  wybór koloru (produkcja many)".
+- **A2 (`1d4240ee`)** — brak śladu wyboru na karcie: playerView wystawia
+  `chosenColor` (jawny, ADR 0017; celowo poza kontraktem addObject — stan
+  nadają EFEKTY), kafel pokazuje badge „Wybrany kolor: Czarny" (helper
+  `chosenColorBadge`, wzorzec protectionBadges).
+- **A3 (`8c612528`)** — aktywacja {T} po wyborze czarnego obiecywała
+  (i produkowała) wyłącznie zieloną: effects.js `add_mana` złącza deskryptor
+  many z `chosenColor` (union, model M67) — ta sama reguła, którą kreator
+  many robił od M193/A (L41: dwie kopie reguły rozjechały się cicho);
+  etykieta (manaEffectLabel + threading przez describeEffect/describeAbility)
+  pokazuje „dodaj 1 manę zieloną lub czarną" w kaflu i wierszu „Aktywuj:".
+- **B (`dfa3e039`, regresja)** — „undercity — wybierz kartę do ręki" (nazwa
+  własna małą literą): wirtualne karty poza rejestrem (The Undercity,
+  Day // Night) nie były w mapie nazw sesji → nameOf spadał do surowego
+  cardId, odsłonięte przez etykiety źródłowe szukania. Eksportowana lista
+  `virtualCardNames()` zasiewa nameById (wzorzec M188/B).
+
+Bramki finalne: fast 5631/5631, test:all 5641/5641 (0 fail), build
+63 moduły / 3754,0 kB, bot-benchmark 10/10.
+
+## 2026-09-16 Audyt PR #123 + naprawy A1/A2 + domknięcie O5 (PR #124)
+
+Pętla domyślna ADR 0021: pełny audyt scalonego PR #123 (27 commitów:
+E1–E4, 15e auto-discard, 15f/15g dźwięki+landy, odznaki M359 Brąz /
+M360 Srebro / M361 Złoto) — werdykt APPROVE z zastrzeżeniami
+(raport `docs/audits/AUDYT_PR123_2026-09-16.md`), potem naprawy w PR #124:
+
+- **A1 (CR 514.3a):** SBA wykonane w cleanupie NIE otwierały priorytetu
+  (model M359 liczył tylko aktywność stosu; reguła literalnie daje priorytet
+  także po samych SBA). Potwierdzone sondu behawioralną (stwór na EOT-buffie
+  ginie przy wejściu w cleanup). Naprawa: `cleanupEventIsSbaEvidence`
+  (creature_destroyed / object_moved+sba / permanent_sacrificed Saga /
+  token_ceased_to_exist / counter_removed) — w zamkniętym cleanupie tylko SBA
+  może te emitować. Testy T1–T3 RED→GREEN + 2 mutacje.
+- **A2 (L16):** `pendingCombatSecondPass` (M360/B3) blokuje passy, ale był
+  poza fingerprintem — dopisany do `PENDING_DECISION_FIELDS`. Test T4
+  RED→GREEN + mutacja. Otwarta klasa: blokady spoza `firstPendingDecision`
+  nie mają strażnika (O2 w raporcie).
+- **E3 = O5 (z audytu #121):** pełny przegląd cytatów 702.16 (60+) przeciw
+  literalnemu CR 2026-08-07 — 24 sprostowania komentarzowe w 8 plikach
+  (blokowanie→f, prewencja→e, jakość→a, equip→d, zakresy b–f, „can't block"
+  ≠ ochrona → 509.1b, Offspring → 702.175).
+- Domknięcie: README (5614/5624/63 moduły/3745,3 kB), handoff
+  `docs/setup/HANDOFF_2026-09-16.md`.
+
+Bramki finalne: fast 5614/5614, test:all 5624/5624 (0 fail), build
+63 moduły / 3745,3 kB, bot-benchmark 10/10.
+
+Dopisek (ta sama sesja, zlecenie właściciela — „napraw wszystkie
+pozostałości"): domknięcie obserwacji O1/O2 z audytu #123 oraz O1–O4 z
+audytu #121, każdy osobnym commitem z testem RED→GREEN i mutacją L13:
+`46ad2dc` landSplit bez kolorowych pipów (jawny błąd zamiast NaN),
+`279fccd` strażnik L16 engine-wide (70/70 pól pending pokrytych odciskiem),
+`c9895cea` kreator many fail-closed przy nieznanym cardId, `4466367d`
+pendingOptionalTrigger.effects (pełna tablica w widoku + wycena F1; mill
+na [1+] to NIE luka — oferta anotuje selfMill z dowolnej pozycji),
+`2b4638dd` dokładne zbiory tokenów zamiast „8 z 11", `16735581`
+badge graveyardTypesBadge (mechanika, nie nazwa karty). Po drodze naprawa
+lokalnego repo (branch zresetowany do squash-main przez odtworzenie
+sandboxu; refspec fetch okrojony do main — przywrócone fetch+reset --mixed,
+zdalna gałąź nietknięta).
+
 ## 2026-09-16 Złoto M361 (wyzwanie 16c: 5 unikalnych błędów reguł)
 
 Wyzwanie Złote (plan `docs/plans/PLAN_2026-09-16c-challenge-zloto.md`):

@@ -1327,13 +1327,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // F1 (audyt PR #120): widok projektuje tę decyzję jako { sourceCardId,
       // effect } (game-state.js ~7871) — pole `ability` NIE istnieje w widoku,
       // więc czytanie go po cichu wyłączało karę cienkiej biblioteki (L1/L48).
-      const effect = pending?.effect;
+      // O2 (audyt PR #121, domknięcie): czytamy PEŁNĄ tablicę `effects`
+      // (drenaż poza pierwszą pozycją też karany); `effect` zostaje jako
+      // fallback dla starszych rzutów widoku.
+      const effects = pending?.effects ?? (pending?.effect ? [pending.effect] : []);
       let drain = 0;
-      if (effect) {
-        for (const eff of (Array.isArray(effect) ? effect : [effect])) {
-          if (!eff?.type || !LIBRARY_DRAIN_EFFECTS.has(eff.type)) continue;
-          if (drainsMyLibrary(eff)) drain += drainAmount(eff);
-        }
+      for (const eff of effects) {
+        if (!eff?.type || !LIBRARY_DRAIN_EFFECTS.has(eff.type)) continue;
+        if (drainsMyLibrary(eff)) drain += drainAmount(eff);
       }
       if (drain > 0) return libraryLossPenalty(view, drain);
       return 0;
@@ -3245,7 +3246,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           if (!target || target.controllerId !== view.playerId) return finish(-P.auraNoTargetPenalty);
           // M209 (audyt M207, Guildscorn Ward): aura, ktorej CALA wartoscia
-          // jest OCHRONA przed konkretna jakoscia (CR 702.16b-e), jest jalowa,
+          // jest OCHRONA przed konkretna jakoscia (CR 702.16b-f), jest jalowa,
           // gdy przeciwnik nie ma czym w nia uderzyc. Bot rzucal „protection
           // from multicolored" przy przeciwniku majacym 1 karte wielokolorowa
           // na 48 — placil karte i mane za nic. To ta sama klasa co M200/H

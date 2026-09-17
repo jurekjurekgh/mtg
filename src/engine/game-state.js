@@ -1371,11 +1371,48 @@ const CLEANUP_ACTIVITY_EVENT_TYPES = new Set([
   'madness_ready_required',
 ]);
 
+/**
+ * Audyt PR #123 / A1 (CR 514.3a, klasa L16): dowód wykonania AKCJI STANOWYCH
+ * w strumieniu zdarzeń. Reguła otwiera priorytet nie tylko po triggerach —
+ * dosłownie (mtg.wiki/page/Ending_phase, CR 2026-08-07): „the game checks to
+ * see if any state-based actions would be performed AND/OR any triggered
+ * abilities are waiting… If so, those state-based actions are performed,
+ * then those triggered abilities are put on the stack, then the active
+ * player gets priority." Zestaw dowodów = zdarzenia, które w ZAMKNIĘTYM
+ * cleanupie (pusty stos, brak decyzji — efekty żyją na stosie) może wyemitować
+ * wyłącznie ścieżka SBA:
+ *  - `creature_destroyed` — emitowany WYŁĄCZNIE przez destruction.js
+ *    z cause==='sba' (śmierć stwora, np. 704.5f po zejściu buffa EOT);
+ *  - `object_moved` z polem `sba` — SBA-owa śmierć NIE-stwora
+ *    (planeswalker bez lojalności, CR 306.9);
+ *  - `permanent_sacrificed` — w zamkniętym cleanupie jedyne źródło to SBA
+ *    Sagi z ostatnim rozdziałem (704.5s);
+ *  - `token_ceased_to_exist` — SBA tokenu poza bitwą (CR 704.5e/111.7,
+ *    patrz state-based.js);
+ *  - `counter_removed` — anihilacja +1/+1/−1/−1 (SBA; w zamkniętym
+ *    cleanupie removeCounter nie ma innego wywołującego).
+ * Świadomie POZA zestawem: `object_moved` bez `sba` (discard limitu ręki
+ * 514.1 emituje object_moved — akcja turowa, patrz CLEANUP_ACTIVITY powyżej),
+ * `player_lost` (koniec gry — priorytet bez znaczenia) oraz
+ * `legend_rule_choice_started` (stawia decyzję blokującą firstPendingDecision,
+ * priorytet rozstrzygnie się po jej rozwiązaniu).
+ */
+function cleanupEventIsSbaEvidence(e) {
+  if (e?.type === 'creature_destroyed') return true;
+  if (e?.type === 'object_moved' && e.sba != null) return true;
+  return e?.type === 'permanent_sacrificed'
+    || e?.type === 'token_ceased_to_exist'
+    || e?.type === 'counter_removed';
+}
+
 /** Czy w bieżącym cleanupie była aktywność stosu (CR 514.3a). */
 function cleanupHadActivity(state) {
   const from = state.cleanupActivityFromEvent ?? 0;
   for (let i = from; i < state.events.length; i += 1) {
     if (CLEANUP_ACTIVITY_EVENT_TYPES.has(state.events[i]?.type)) return true;
+    // Audyt PR #123 / A1: same SBA też otwierają okno („…and/or any
+    // state-based actions would be performed…").
+    if (cleanupEventIsSbaEvidence(state.events[i])) return true;
   }
   return false;
 }
@@ -5254,6 +5291,12 @@ export function execute(state, input) {
           playerId: cmd.playerId,
           objectId: playedId,
           excludeColors: [...(played.chooseColor.exclude ?? [])],
+          // A1 (znalezisko właściciela 2026-09-16, Manor Gate): cel wyboru
+          // niesie pending — ląd z chooseColor wybiera kolor PRODUKOWANEJ
+          // many ('mana'); 'protection' rezerwują aury (spells.js). Bez tego
+          // UI zgadywało cel po pierwszym użyciu deskryptora („np. ochrona").
+          purpose: 'mana',
+          sourceCardId: played.cardId,
         };
         state.turn.priorityPlayerId = cmd.playerId;
         state.events.push(event('color_choice_required', {
@@ -5950,6 +5993,13 @@ export function playerView(state, playerId) {
           if (protColors.length > 0) qualities.push({ colors: protColors });
           if (qualities.length > 0) entry.protection = qualities;
         }
+        // A2 (znalezisko właściciela 2026-09-16, Manor Gate): WYBRANY przy
+        // wejściu kolor („as this enters, choose a color", CR 614.12 — wybór
+        // publicznego permanentu jest jawny) idzie do widoku: kafel pokazuje
+        // badge „Wybrany kolor: Czarny", a etykieta zdolności many („dodaj
+        // 1 manę zieloną lub czarną") czyta go z obiektu widoku. Zakryty
+        // permanent nie ujawnia tożsamości (CR 708.2) — jak kolory wyżej.
+        if (!hiddenFromViewer && object.chosenColor) entry.chosenColor = object.chosenColor;
         // M186/Z1 (Żywy Tester, ravnica vs innistrad s9): „can't attack/block
         // alone" JAWNIE w widoku — wizard walki walidował po entry.abilities,
         // których playerView NIGDY nie wysyłał (klasa L48/L1: martwa walidacja
@@ -8019,6 +8069,15 @@ export function playerView(state, playerId) {
     pendingHandTopChoice: activeHandTopChoice
       ? { sourceCardId: state.pendingHandTopChoice.sourceCardId ?? null }
       : null,
+    // A1 (znalezisko właściciela 2026-09-16, Manor Gate): cel wyboru koloru
+    // (purpose: 'mana' lądu / 'protection' aury) + źródło — tytuł grupy w
+    // panelu działań i modalu mówi, CO wybór ustala (poprzednio zgadywał
+    // „Kolor (np. ochrona)" także dla produkcji many). Źródło jak w
+    // pendingHandTopChoice: publiczna karta-źródło decyzji (M240/K).
+    pendingColorChoice: activeColorChoice ? {
+      purpose: state.pendingColorChoice.purpose ?? null,
+      sourceCardId: state.pendingColorChoice.sourceCardId ?? null,
+    } : null,
     // M241: wizard „wygnij N kart” czyta listę decyzji Escape — kandydatów z
     // WŁASNEGO grobu (wiedza decydenta — strefa publiczna) + parametry kosztu.
     pendingEscapeExile: activeEscapeExile
@@ -8066,6 +8125,24 @@ export function playerView(state, playerId) {
             const eff = p.resolveEffect
               ?? (Array.isArray(p.ability?.effect) ? p.ability.effect[0] : p.ability?.effect);
             return eff && typeof eff.type === 'string' ? { ...eff } : null;
+          })(),
+          // O2 (audyt PR #121, domknięcie 2026-09-16): pełna tablica efektów
+          // decyzji „you may". `effect` (pierwsza pozycja) zostaje dla
+          // etykiety modala (M221/B), ale wyceny bota (F1 — kara cienkiej
+          // biblioteki) muszą widzieć WSZYSTKIE pozycje: przy fire
+          // queueTriggerToStack rozstrzyga CAŁĄ tablicę, a drenaż poza [0]
+          // omijał karę (dziś w katalogu brak ofiary — jedyny tablicowy
+          // mayFire to gain_life; warunek: mayFire z efektem-drenażem nie
+          // na pierwszej pozycji). resolveEffect (onNthResolve, spells.js)
+          // jest pojedynczym obiektem — pakujemy w tablicę.
+          effects: (() => {
+            const p = state.pendingOptionalTrigger;
+            const arr = p.resolveEffect != null
+              ? [p.resolveEffect]
+              : (Array.isArray(p.ability?.effect) ? p.ability.effect : [p.ability?.effect]);
+            return Object.freeze(arr
+              .filter((e) => e && typeof e.type === 'string')
+              .map((e) => ({ ...e })));
           })(),
         }
       : null,

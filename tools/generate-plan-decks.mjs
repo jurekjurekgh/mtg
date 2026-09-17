@@ -157,6 +157,14 @@ export function landSplit(cards) {
     }
   }
   const used = COLOR_ORDER.filter((c) => pips[c] > 0);
+  // O1 (audyt PR #123): talia w całości bezkolorowa → JAWNY błąd zamiast
+  // NaN-crashu (`remainders[i % 0]` → TypeError głęboko w pętli doboru).
+  // Kontrakt narzędzia: basic landy dobieramy pod KOLOROWE pipy — plan bez
+  // żadnego pipa nie ma czego rozkładać (ewentualne Wastes to świadoma
+  // decyzja projektowa, nie wypadkowa proporcji).
+  if (used.length === 0) {
+    throw new Error(`landSplit: plan bez kolorowych pipów (${cards.length} kart) — co najmniej jedna karta musi mieć kolorowy symbol many`);
+  }
   for (const c of used) if (minNeed[c] < 1) minNeed[c] = 1;
   const minSum = used.reduce((acc, c) => acc + minNeed[c], 0);
   if (minSum > total) total = minSum;

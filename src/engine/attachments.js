@@ -58,7 +58,7 @@ export function attachmentGrant(object) {
     result.protectionFromColors = [descriptor.chosenColor];
   }
   // Batch 46 (Guildscorn Ward): TRWAŁA ochrona przed JAKOŚCIĄ źródła
-  // (CR 702.16b–e, „protection from multicolored"). Dotąd jakość mogła
+  // (CR 702.16b–f, „protection from multicolored"). Dotąd jakość mogła
   // pochodzić tylko z grantu „until end of turn" (Spare from Evil) —
   // aura potrzebuje tej samej reguły bez daty ważności.
   if (descriptor.protection) {
@@ -199,7 +199,7 @@ export function attachEquipmentToCreature(state, equipmentId, hostId) {
   }
   if (equipmentId === hostId) throw new Error('Equipment nie może wyposażyć samego siebie');
   if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Wyposażyć można tylko stwora na polu bitwy');
-  // M110 (CR 702.16c): permanent z ochroną przed jakością equipmentu nie może
+  // M110 (CR 702.16d): permanent z ochroną przed jakością equipmentu nie może
   // być nim wyposażony (ochrona kolorowa ma tę bramkę w SBA/ofercie equipu).
   if (isProtectedFromSource(state, host, equipment)) {
     throw new Error('Chroniony stwór nie może zostać wyposażony tym equipmentem');
@@ -375,7 +375,7 @@ export function effectiveProtectionQualities(state, object) {
   return out;
 }
 
-/** Czy ŹRÓDŁO ma jakość, przed którą chroni deskryptor (CR 702.16b–e). */
+/** Czy ŹRÓDŁO ma jakość, przed którą chroni deskryptor (CR 702.16b–f). */
 export function sourceHasProtectionQuality(quality, source) {
   if (!quality || !source) return false;
   if (quality.kind === 'creature') {
@@ -388,7 +388,7 @@ export function sourceHasProtectionQuality(quality, source) {
   // i land (CR 202.2) są bezbarwne, więc nie mają jakości „kolor”.
   const sourceColors = effectiveColors(source);
   if (Array.isArray(quality.colors) && !quality.colors.some((c) => sourceColors.includes(c))) return false;
-  // Batch 46 (Guildscorn Ward, CR 702.16e): „protection from multicolored" —
+  // Batch 46 (Guildscorn Ward, CR 702.16a): „protection from multicolored" —
   // źródłem jest obiekt o DWÓCH lub więcej kolorach (CR 105.4).
   if (quality.multicolored && sourceColors.length < 2) return false;
   return true;
@@ -411,7 +411,7 @@ export function isProtectedFromSource(state, target, source) {
  *
  * Ochrona ma w tym silniku dwa źródła danych i reguła musi czytać OBA:
  *  - `effectiveProtectionQualities` — jakości (granty do końca tury i z
- *    załączników, CR 702.16e — np. „protection from non-Human creatures");
+ *    załączników, CR 702.16a — np. „protection from non-Human creatures");
  *  - `effectiveProtectionFromColors` — drukowana ochrona od koloru.
  * Kolory ŹRÓDŁA czyta `effectiveColors` (zakryty permanent i land są
  * bezbarwne — CR 708.2a / 202.2); `sourceColors` pozwala ścieżce, która zna
@@ -442,7 +442,7 @@ export function removeIllegalAttachments(state) {
       detachOrphanedAttachment(state, object, object.attachedTo, events);
       continue;
     }
-    // Protection (CR 702.16b): aura/equipment of the protected color
+    // Protection (CR 702.16c/d): aura/equipment of the protected color
     // should be detached. General rule: ALL attachments of the protected
     // color fall off.
     // M141/C (Benevolent Blessing — Oracle: "This effect doesn't remove
@@ -481,7 +481,7 @@ export function removeIllegalAttachments(state) {
         }
       }
     }
-    // M110 (CR 702.16c): ochrona przed JAKOŚCIĄ zdejmuje też załączniki
+    // M110 (CR 702.16c/d): ochrona przed JAKOŚCIĄ zdejmuje też załączniki
     // mające tę jakość (np. „protection from Equipment").
     if (isProtectedFromSource(state, host, object)) {
       detachOrphanedAttachment(state, object, object.attachedTo, events);

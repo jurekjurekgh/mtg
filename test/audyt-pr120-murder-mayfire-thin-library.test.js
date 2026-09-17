@@ -96,3 +96,63 @@ test('AUDYT-PR120/A1b: zdrowa biblioteka (40 kart) — bot nadal odpala (anty-ov
     `fire=${opts[FIRE]} musi wygrywać przy zdrowej bibliotece (zapas 39 ≥ margines 20)`);
   assert.equal(cmd.fire, true, 'wybór bota = odpalenie');
 });
+
+test('O2 (audyt PR #121, domknięcie): drenaż poza pierwszą pozycją tablicy też karany', () => {
+  // Widok ucinał efekt may-trigger do `effect[0]` (M221/B) — drenaż na
+  // pozycji [1+] omijał karę F1 (cienka biblioteka). Uwaga: mill_cards
+  // na [1+] NIE jest luką — oferta (legalCommands) anotuje selfMill z
+  // DOWOLNEJ pozycji (M167/B, wyścig bibliotek); luka dotyczy drenaży
+  // bez adnotacji: draw_cards/draw_then_discard/mill_from_bottom.
+  // Warunek uruchomienia: pierwsza karta mayFire z takim efektem NIE na
+  // pierwszej pozycji (dziś w katalogu nie ma takiej karty — stan budowany
+  // ręcznie jak w setup(), w kształcie triggers.js dla tablicowego efektu).
+  const state = setup(4);
+  state.pendingOptionalTrigger = Object.freeze({
+    playerId: 'p1',
+    sourceId: 'moc',
+    ability: Object.freeze({
+      trigger: Object.freeze({ event: 'any_creature_dies', excludeSelf: true, mayFire: true }),
+      effect: Object.freeze([
+        Object.freeze({ type: 'gain_life', amount: 1 }),
+        Object.freeze({ type: 'draw_then_discard', amount: 1 }),
+      ]),
+    }),
+    extra: Object.freeze({}),
+    restorePriorityTo: 'p1',
+  });
+  const view = playerView(state, 'p1');
+  assert.ok(Array.isArray(view.pendingOptionalTrigger?.effects)
+    && view.pendingOptionalTrigger.effects.length === 2,
+    'widok niesie PEŁNĄ tablicę efektów decyzji „you may" (O2)');
+  assert.equal(view.pendingOptionalTrigger.effect?.type, 'gain_life',
+    'etykieta modala czyta pierwszy efekt (M221/B bez zmian)');
+  assert.equal(view.pendingOptionalTrigger.effects[1]?.type, 'draw_then_discard',
+    'drenaż z pozycji [1] widoczny dla wyceny');
+  const bot = createHeuristicBot({ seed: 1 });
+  const cmd = bot.chooseCommand(view, {});
+  const opts = Object.fromEntries(bot.trace().at(-1).options.map((o) => [o.cmd, o.score]));
+  assert.ok(FIRE in opts && SKIP in opts, 'oba warianty w śladzie');
+  assert.ok(opts[FIRE] < opts[SKIP],
+    `fire z draw_then_discard na [1] musi być poniżej skip (fire=${opts[FIRE]}, skip=${opts[SKIP]})`);
+  assert.equal(cmd.fire, false, 'cienka biblioteka (4) → bot odmawia may-fire');
+});
+
+test('O2 (anty-over-fix): zdrowa biblioteka — may-fire z tablicowym efektem nadal opłacalny', () => {
+  const state = setup(40);
+  state.pendingOptionalTrigger = Object.freeze({
+    playerId: 'p1',
+    sourceId: 'moc',
+    ability: Object.freeze({
+      trigger: Object.freeze({ event: 'any_creature_dies', excludeSelf: true, mayFire: true }),
+      effect: Object.freeze([
+        Object.freeze({ type: 'gain_life', amount: 1 }),
+        Object.freeze({ type: 'draw_then_discard', amount: 1 }),
+      ]),
+    }),
+    extra: Object.freeze({}),
+    restorePriorityTo: 'p1',
+  });
+  const bot = createHeuristicBot({ seed: 1 });
+  const cmd = bot.chooseCommand(playerView(state, 'p1'), {});
+  assert.equal(cmd.fire, true, 'zdrowa biblioteka (40) — bot odpala (kara tylko przy cienkiej)');
+});

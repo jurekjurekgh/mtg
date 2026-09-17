@@ -625,15 +625,21 @@ function objectName(view, session, id) {
       // kontroler przez `cloakReady`; przeciwnik dalej nie widzi card_ID
       // (FoW, CR 708.2a), więc dostaje „Cloak 1" zamiast kłamiącego „Morph".
       if (object.faceDown) return faceDownLabel(object, session.nameOf);
+      // Numeracja kopii nazw (zlecenie właściciela 2026-09-16): duplikaty
+      // nazwy u jednego gracza dostają „ #N" — ordynał z sesji (jedno źródło
+      // z nameOfObject), baza po widoku; stuby bez nameOrdinalSuffix nie
+      // numerują (L41).
+      const copyOrdinal = object.zone === 'battlefield' && !object.copyNumber
+        && session.nameOrdinalSuffix ? session.nameOrdinalSuffix(id) : '';
       // A1/A2 + M155: tokeny niosą JAWNĄ nazwę w polu `name` w playerView
       // (cardId typu token_servo nie istnieje w katalogu kart — nameOf zwracałby
       // surowe id, co psuje etykiety w wizardach przydziału obrażeń i celu).
       // Tak samo w nameOfObject w session.js (M155) — tu powtarzamy tę samą
       // regułę, bo wizard damage/celny szuka najpierw w widoku.
-      if (object.isToken && object.name) return object.name;
+      if (object.isToken && object.name) return object.name + copyOrdinal;
       // Karty w library przeciwnika nie mają cardId w widoku (FoW) – pomiń
       // i szukaj dalej (pendingSearchChoice.cards ma pełne dane dla decydenta).
-      if (object.cardId) return session.nameOf(object.cardId);
+      if (object.cardId) return session.nameOf(object.cardId) + copyOrdinal;
     }
   }
   // A1 (Final Parting): szukanie w bibliotece ujawnia karty TYLKO decydentowi

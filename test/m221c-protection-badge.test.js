@@ -13,7 +13,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { attachAuraToCreature } from '../src/engine/attachments.js';
-import { protectionBadges } from '../src/table/render.js';
+import { protectionBadges, graveyardTypesBadge } from '../src/table/render.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -60,4 +60,15 @@ test('M221/C: bez ochrony pole protection nie jest wystawiane', () => {
   });
   const cre = playerView(state, 'p1').zones.battlefield.find((o) => o.id === 'cre');
   assert.equal(cre.protection, undefined, 'brak ochrony = brak pola (bez szumu)');
+});
+
+test('O4 (audyt PR #121, domknięcie): badge X wg typów w grobach — etykieta MECHANIKOWA, bez nazwy karty', () => {
+  // Dawniej „Altar: X = 3 (typy w grobach)" — twardy prefiks nazwy karty
+  // przy deskryptorze generycznym card_types_in_all_graveyards (ADR 0002):
+  // przy drugiej karcie z tym deskryptorem badge nazywałby cudzą kartę.
+  assert.equal(graveyardTypesBadge(3), 'X = 3 (typy kart w grobach)');
+  assert.equal(graveyardTypesBadge(1), 'X = 1 (typ kart w grobach)');
+  assert.equal(graveyardTypesBadge(5), 'X = 5 (typów kart w grobach)');
+  assert.ok(!graveyardTypesBadge(3).includes('Altar'),
+    'etykieta nie może nazywać karty (deskryptor generyczny, ADR 0002)');
 });

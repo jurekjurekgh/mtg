@@ -940,7 +940,7 @@ function lifeCount(n) {
 }
 
 /** Czytelny opis pojedynczego efektu (fallback dla nieznanych typów — polska nazwa). */
-function describeEffect(e) {
+function describeEffect(e, ctx = {}) {
   // M73d (A): puste efekty (effect: {} w cyclyng/static/level-up) to nie
   // „efekt (undefined)" — pomijamy (audyt żywym testerem).
   if (!e || typeof e.type !== 'string' || e.type === '') return '';
@@ -1008,7 +1008,7 @@ function describeEffect(e) {
     // kosztem. Deskryptor niesie `colors` — opisujemy go wprost:
     // pięć kolorów = „dowolnego koloru" (CR: „add one mana of any color"),
     // brak listy = mana bezbarwna ({C}), konkretna lista = te kolory.
-    add_mana: () => manaEffectLabel(e),
+    add_mana: () => manaEffectLabel(e, ctx),
     fabricate: () => `fabricate ${e.amount ?? 1} (liczniki +1/+1 albo tokeny Servo)`,
     reflexive_sacrifice: () => 'poświęć innego stwora albo artefakt (dobrowolnie: następuje refleks)',
     exile_top_playable_until_next_turn: () => 'wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury',
@@ -1099,7 +1099,7 @@ function describeEffect(e) {
     // CO się stanie (Sea God's Scorn wyglądał na pustą kartę) — opisujemy
     // efekty WEWNĘTRZNE rekurencyjnie.
     apply_to_each_target: () => {
-      const inner = (e.effects ?? []).map((ie) => describeEffect(ie)).filter(Boolean).join(' + ');
+      const inner = (e.effects ?? []).map((ie) => describeEffect(ie, ctx)).filter(Boolean).join(' + ');
       return inner ? `${inner} (każdy z celów)` : 'ten sam efekt na każdym z celów';
     },
     gain_life_if_target_dies_this_turn: () => `gdy ten stwór zginie w tej turze, zyskujesz ${e.amount ?? 1} życia`,
@@ -1185,8 +1185,8 @@ function describeEffect(e) {
     // M146 (audyt żywym testerem): surowy identyfikator zamiast polskiego opisu
     // (landEnteredThisTurn na kaflu Mysteries of the Deep).
     conditional: () => {
-      const thenDesc = e.then ? describeEffect(e.then) : '';
-      const elseDesc = e.else ? describeEffect(e.else) : '';
+      const thenDesc = e.then ? describeEffect(e.then, ctx) : '';
+      const elseDesc = e.else ? describeEffect(e.else, ctx) : '';
       // M229 (audyt nowych talii, Sarkhan's Rage): warunki opisujemy po polsku;
       // część niesie parametr `subtype` (np. „no Dragons"). Bez wpisu w mapie
       // na kafel wyciekał surowy identyfikator (controlsNoCreatureSubtype).
@@ -1392,7 +1392,7 @@ function describeStatic(ability) {
   return parts.join(' · ');
 }
 
-function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
+function describeAbility(ability, { withCost = true, withTarget = true, chosenColor = null } = {}) {
   // M73d (A): cyclyng/channel — czytelny opis zamiast „efekt (undefined)"
   // (definicje mają effect: {}; część kart nie ma keyword 'cycling').
   if (ability?.cycling) {
@@ -1426,7 +1426,8 @@ function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
   }
   if (ability?.type === 'static') return describeStatic(ability);
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
-  const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect);
+  const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '')
+    .map((e) => describeEffect(e, { chosenColor }));
   const target = (ability?.targets ?? [])[0];
   // M100/E10 (P11 — Żywy Tester h08): „any target" → „dowolny cel" bez
   // pleonazmu „cel: dowolny cel" (etykieta już zawiera słowo „cel").
@@ -1716,7 +1717,9 @@ export function rulesText(info) {
       // M100/E10 (P9 — Żywy Tester h09/h13): zdolność equip już opisuje
       // equipLine wyżej; bez tego describeAbility doklejało goły „{4}".
       if (a.keyword === 'equip' && info.equipment) return '';
-      return describeAbility(a);
+      // A3 (Manor Gate): kafel zna obiekt (chosenColor z widoku) — opis many
+      // „dodaj 1 manę zieloną lub czarną” mówi o obu kolorach jednostki.
+      return describeAbility(a, { chosenColor: info.chosenColor ?? null });
     }).filter(Boolean).join('  ·  ')
     : '';
   const spellLine = info.spell ? describeSpellEffects(info.spell) : '';
@@ -1898,7 +1901,9 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_endure_choice: 'Endure — liczniki czy token?',
   resolve_explore_choice: 'Explore — co z odsłoniętą kartą?',
   resolve_craft_exile: 'Craft — karta do wygnania',
-  resolve_color_choice: 'Kolor (np. ochrona)',
+  // A1: goły deskryptor bez celu — pełną etykietę buduje gałąź purpose-aware
+  // w choiceSourceTitle („Manor Gate — wybór koloru (produkcja many)").
+  resolve_color_choice: 'Kolor',
   resolve_optional_trigger_choice: 'Efekt dobrowolny („you may")',
   resolve_enter_as_copy: 'Wejście jako kopia — który Ally?',
   resolve_destroy_equipment_choice: 'Zniszczyć equipment?',
@@ -2049,6 +2054,22 @@ function choiceSourceTitle(cmd, session, view) {
     const destLabel = SEARCH_DESTINATION_LABELS[cmd.destination ?? psc.destination] ?? null;
     if (destLabel) return `${src} — wybierz kartę ${destLabel}`;
     return `${src} — wybierz kartę`;
+  }
+  // A1 (znalezisko właściciela 2026-09-16, Manor Gate): deskryptor grupy
+  // „Kolor (np. ochrona)" zgadywał CEL wyboru po pierwszym użyciu deskryptora
+  // (aura), więc ląd z chooseColor proponował „ochronę", choć wybiera kolor
+  // PRODUKOWANEJ many. Cel niesie pending z engine (purpose: 'mana' lądu /
+  // 'protection' aury), a źródło idzie z sourceCardId (M240/K) — panel i
+  // modal mówią to, co log „Rozgrywki": „Manor Gate — wybór koloru (produkcja
+  // many)". Bez pendingu w widoku zostaje goły deskryptor „Kolor".
+  if (cmd?.type === 'resolve_color_choice' && view?.pendingColorChoice) {
+    const pcc = view.pendingColorChoice;
+    const purpose = pcc.purpose === 'mana' ? 'produkcja many'
+      : (pcc.purpose === 'protection' ? 'ochrona przed nim' : null);
+    const src = pcc.sourceCardId ? session.nameOf(pcc.sourceCardId) : null;
+    const tail = purpose ? ` (${purpose})` : '';
+    if (src) return `${src} — wybór koloru${tail}`;
+    if (purpose) return `Wybierz: Kolor${tail}`;
   }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
@@ -2311,6 +2332,20 @@ const PROTECTION_COLOR_NAMES = { W: 'Biały', U: 'Niebieski', B: 'Czarny', R: 'C
  * „Ochrona przed: <podtyp>". Reguła po deskryptorze jakości, bez nazw kart
  * (ADR 0002). Zwraca listę gotowych etykiet.
  */
+/**
+ * O4 (audyt PR #121, domknięcie 2026-09-16): etykieta MECHANIKOWA badge'a
+ * X = liczba typów kart we wszystkich grobach (deskryptor
+ * `card_types_in_all_graveyards`, ADR 0002). Dawniej twardy prefiks
+ * „Altar: X = …" (nazwa karty) przy GENERYCZNYM deskryptorze — przy drugiej
+ * karcie z tym samym deskryptorem badge kłamałby, nazywając cudzą kartę.
+ * Wyodrębnione ze stubu kafelka (wzorzec protectionBadges, L41: jedno
+ * źródło etykiety dla renderu i testów).
+ */
+export function graveyardTypesBadge(altarX) {
+  const n = Number(altarX) || 0;
+  return `X = ${n} (${polishPluralCount(n, 'typ', 'typy', 'typów')} kart w grobach)`;
+}
+
 export function protectionBadges(protection) {
   const out = [];
   for (const q of protection ?? []) {
@@ -2328,7 +2363,19 @@ export function protectionBadges(protection) {
   return out;
 }
 
-/** Opis JAKOŚCI ochrony (CR 702.16b–e) po deskryptorze — bez nazw kart. */
+/**
+ * A2 (znalezisko właściciela 2026-09-16, Manor Gate): badge koloru wybranego
+ * przy wejściu — „Wybrany kolor: Czarny". Etykieta w JEDNYM miejscu (wzorzec
+ * protectionBadges/graveyardTypesBadge, L41) dla kafelka i testów; kolor po
+ * mapie mianowników (PROTECTION_COLOR_NAMES — ta sama mapa co w badge'ach
+ * ochrony, CR 105.2 nazwy kolorów).
+ */
+export function chosenColorBadge(chosenColor) {
+  if (!chosenColor) return null;
+  return `Wybrany kolor: ${PROTECTION_COLOR_NAMES[chosenColor] ?? chosenColor}`;
+}
+
+/** Opis JAKOŚCI ochrony (CR 702.16b–f) po deskryptorze — bez nazw kart. */
 export function protectionQualityLabel(quality) {
   if (!quality) return 'wybranym źródłem';
   const parts = [];
@@ -2402,12 +2449,20 @@ export function commandLabel(cmd, session, view) {
     // żeby było wiadomo, czyja to karta. Skip, gdy kontroler nieznany.
     // Własny face-down ma już znacznik „(morph)" (obiekt z nazwą-kartą to
     // z definicji widoku NASZ — wrogi ma cardId null) — drugi nawias by szumiał.
+    // Numeracja kopii nazw (zlecenie właściciela 2026-09-16): duplikaty nazwy
+    // u JEDNEGO gracza dostają „ #N" (każdy członek grupy, także pierwszy) —
+    // celowanie po nazwie było niejednoznaczne (tapnięty? z aurą?). Ordynał z
+    // sesji (jedno źródło z nameOfObject), baza nazwy po widoku jak dotąd —
+    // stuby testowe bez nameOrdinalSuffix nie numerują (L41).
+    const copyOrdinal = object && !object.faceDown && object.zone === 'battlefield'
+      && !object.copyNumber && typeof session?.nameOrdinalSuffix === 'function'
+      ? session.nameOrdinalSuffix(id) : '';
     const ctrlSkip = Boolean(object?.faceDown && object.cardId != null);
     if (object && object.zone === 'battlefield' && object.controllerId != null && view.players?.length > 1 && !ctrlSkip) {
       const ctrl = playerNameOf(object.controllerId);
-      return escapeHtml(`${base} (${ctrl})`);
+      return escapeHtml(`${base}${copyOrdinal} (${ctrl})`);
     }
-    return escapeHtml(base);
+    return escapeHtml(`${base}${copyOrdinal}`);
   };
   // Koszt many karty → HTML z ikonami (MANA_COSTS: string typu „{2}{U}").
   const costOfCard = (card) => {
@@ -2804,7 +2859,7 @@ export function commandLabel(cmd, session, view) {
         ? ' — UWAGA: twoja biblioteka jest pusta, zdolność nie zadziała'
         : (abilityFizzlesOnHand(ability, view)
           ? ' — UWAGA: brak pasującej karty w ręce, zdolność nie zadziała' : '');
-      return `${actionVerb}: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${sacLandPart}${sacCreaturePart}${crewPart}${emptyLibWarn}`;
+      return `${actionVerb}: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false, chosenColor: object?.chosenColor ?? null })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${sacLandPart}${sacCreaturePart}${crewPart}${emptyLibWarn}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));
@@ -3449,18 +3504,25 @@ export function cardInfo(session, object, combat = null) {
   const keywordsNow = faceDown
     ? (object.keywords?.length ? [...object.keywords] : (object.ward != null ? ['ward'] : []))
     : (object.keywords?.length ? object.keywords : (details.keywords || []));
+  // Numeracja kopii nazw (zlecenie właściciela 2026-09-16): sufiks „ #N"
+  // dla duplikatów nazwy u JEDNEGO gracza — na kaflu, w modalach i w etykietach
+  // akcji (spójnie z nameOfObject). Guard typeof: testy wołają cardInfo ze
+  // stubami sesji bez nameOrdinalSuffix — wtedy bez numeru (L41).
+  const copyOrdinal = !faceDown && object.zone === 'battlefield' && !object.copyNumber
+    && typeof session?.nameOrdinalSuffix === 'function'
+    ? session.nameOrdinalSuffix(object.id) : '';
   return {
     objectId: object.id,
     cardId: faceDown ? null : cardId,
     isToken: Boolean(cardId && cardId.startsWith('token_')),
     // Face-down permanent (morph/megamorph): 2/2 bez nazwy, kolorów i kosztu
     // — własny z nazwą i znacznikiem (E12), wrogi bezimienny (FoW, CR 708.2).
-    name: faceDown
+    name: (faceDown
       ? (exiledFaceDown
         ? 'Wygnana zakryta'
         : (ownFaceDown ? session.nameOf(object.cardId) : 'Face-down creature'))
       // M172/D: kafel kopii pokazuje „Nazwa (kopia N)" — rozróżnialna od oryginału.
-      : (object.name ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name) : session.nameOf(cardId)),
+      : (object.name ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name) : session.nameOf(cardId))) + copyOrdinal,
     // M127 (uwaga A): znacznik z jednego źródła — „zakryty (Morph)" dla
     // własnego permanentu, sama nazwa mechaniki dla cudzego (FoW).
     // M260/B1: zakryte WYGNANIE nie jest morphem — sam znacznik nazwy
@@ -3746,11 +3808,10 @@ export function buildFace(parent, info, { size = '', skipLiveState = false, text
     // M73d (J): choroba przywołania dotyczy tylko stworów (CR 302.6) —
     // artefakty/enchantmenty nie dostają badge (audyt żywym testerem).
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push('choroba');
-    // G (Altar of the Goyf): badge w fallbacku twarzy (gdy overlay ukryty — np. przed wczytaniem obrazu).
-    if (info.altarX != null) {
-      const n = Number(info.altarX) || 0;
-      flags.push(`Altar: X = ${n} (${polishPluralCount(n, 'typ', 'typy', 'typów')} w grobach)`);
-    }
+    // G (deskryptor card_types_in_all_graveyards): badge w fallbacku twarzy
+    // (gdy overlay ukryty — np. przed wczytaniem obrazu). O4 (audyt PR #121,
+    // domknięcie): etykieta MECHANIKOWA (graveyardTypesBadge), bez nazwy karty.
+    if (info.altarX != null) flags.push(graveyardTypesBadge(info.altarX));
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty.
     // B7: rzeczownik („Aura:/Equipment:") zamiast imiesłowu żeńskiego
     // („zaczarowana:/wyposażona:" kłamały przy gospodarzu rodzaju męskiego).
@@ -3885,6 +3946,10 @@ export function buildStateOverlay(visual, info) {
     for (const badge of protectionBadges(info.protection)) {
       flags.push(['kw', badge]);
     }
+    // A2 (Manor Gate): wybrany przy wejściu kolor — jawny badge na kaflu,
+    // nie tylko wpis w logu (skutek widoczny w grze musi być widoczny na stole).
+    const chosenBadge = chosenColorBadge(info.chosenColor);
+    if (chosenBadge) flags.push(['kw', chosenBadge]);
     // M173/C: pozostałe czasowe stany z efektów — audyt na wniosek
     // właściciela (Panic Spellbomb — klasa objęta już przez cantBlockNow).
     if (info.saddledNow) flags.push(['kw', 'osiodłany']);

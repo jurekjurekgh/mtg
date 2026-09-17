@@ -15,7 +15,7 @@
 // — guard musi być RED.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createGameState } from '../src/engine/game-state.js';
@@ -195,6 +195,46 @@ function fingerprintCoveredFieldsFromSource() {
   return coveredFieldsFromFingerprintFile(readFileSync(join(ROOT, 'src/engine/fingerprint.js'), 'utf8'));
 }
 
+/**
+ * O2 (audyt PR #123, 2026-09-16 — domknięcie klasy luki A2): pola pending
+ * czytane w SILNIKU poza `firstPendingDecision`. Klasa: `pendingCombatSecondPass`
+ * (M360/B3) blokował i routingował priorytet w bramce `resolve_combat` —
+ * INNEJ niż ciała `firstPendingDecision*`, więc dotychczasowy ground truth
+ * był na tę klasę ślepy i luka nie świeciła. Reguła klasowa (L16 + M323/F3):
+ * KAŻDE pole `state.pending*` czytane w kodzie silnika (dowolna bramka,
+ * dowolny handler komendy — blokada, routing priorytetu, warunek kroku)
+ * zmienia przyszłe możliwości, więc musi być pokryte odciskiem.
+ *
+ * Skan: pliki src/engine/*.js poza fingerprint.js (tam czytanie `state.<pole>`
+ * jest WŁAŚNIE projekcją odcisku), po stripComments. Świadomie NIE maskNonCode:
+ * pliki silnika (inaczej niż fingerprint.js) zawierają LITERAŁY REGEX z
+ * apostrofami — maskowanie ciągów znakowych połyka wtedy prawdziwy kod i
+ * skan traci pola (zmierzone: 6 z ~70). stripComments zachowuje kod w całości;
+ * resztkowe ryzyko (wzmianka `state.pendingX` w ocalałym fragmencie komentarza
+ * lub w ciągu znakowym) błądzi w kierunku STRICT — strażnik zażąda pokrycia
+ * dla nie-czytania, czyli krzyknie za głośno, nigdy za cicho (L26/L83).
+ */
+function pendingReadsAcrossEngine() {
+  const files = readdirSync(join(ROOT, 'src/engine'))
+    .filter((name) => name.endsWith('.js') && name !== 'fingerprint.js');
+  const found = new Set();
+  for (const name of files) {
+    const noComments = stripComments(readFileSync(join(ROOT, 'src/engine', name), 'utf8'));
+    for (const m of noComments.matchAll(/state\.(pending[A-Z][A-Za-z]*)/g)) found.add(m[1]);
+  }
+  const sorted = [...found].sort();
+  // Próg nie-vacuous (L26): skan musi widzieć realną masę bramek — dziś
+  // ~70 pól. Spadek poniżej progu = refaktoryzacja rozjechała skan.
+  assert.ok(sorted.length >= 60,
+    `skan silnika widzi ${sorted.length} pól pending — przestał obejmować realne bramki`);
+  // Pin konkretnej luki A2: pole czytane WYŁĄCZNIE poza firstPendingDecision.
+  for (const field of ['pendingCombatSecondPass', 'pendingReplacementChoice', 'pendingDamageAssignment']) {
+    assert.ok(sorted.includes(field),
+      `${field} czytane w bramkach silnika, ale skan go nie widzi`);
+  }
+  return sorted;
+}
+
 test('STRAŻNIK nie jest vacuous: ground truth widzi decyzje wniesione po M258', () => {
   // Pin znaleziska 1 (audyt PR #92): te decyzje otwarto PO wprowadzeniu
   // delegatu i żadna nie trafiła do odcisku. Jeśli skan znowu przegapi
@@ -214,6 +254,19 @@ test('STRAŻNIK klasy L16: każdy pending blokujący grę jest pokryty w fingerp
     `Decyzje blokujące grę spoza fingerprintu (L16): ${missing.join(', ')}. `
     + 'Nowe pole wstrzymujące grę MUSI trafić do PENDING_DECISION_FIELDS '
     + 'w src/engine/fingerprint.js (albo mieć ręczną projekcję w stateFingerprint).');
+});
+
+test('O2 (audyt PR #123): pending czytany w DOWOLNEJ bramce silnika jest w odciskie (domknięcie klasy A2)', () => {
+  // Klasa luki A2: strażnik firstPendingDecision nie widzi blokad living
+  // w innych bramkach (resolve_combat, pass-round, routing po rozstrzygnięciu
+  // stosu). Ten test rozszerza ground truth na CAŁY silnik: każdy odczyt
+  // `state.pending*` to stan warunkujący przyszłe możliwości (L16/M323-F3).
+  const covered = fingerprintCoveredFieldsFromSource();
+  const missing = pendingReadsAcrossEngine().filter((field) => !covered.has(field));
+  assert.deepEqual(missing, [],
+    `Pola pending czytane w silniku spoza fingerprintu (klasa A2): ${missing.join(', ')}. `
+    + 'Nowa bramka/routing czytający state.pendingX MUSI iść do '
+    + 'PENDING_DECISION_FIELDS (albo mieć ręczną projekcję w stateFingerprint).');
 });
 
 test('A1+A2 (pin strażnika): pokrycie wyłącznie KOMENTARZEM albo CIĄGIEM ZNAKOWYM nie zamyka klasy L16', () => {
