@@ -973,6 +973,9 @@ function describeEffect(e, ctx = {}) {
       return `zyskaj ${lifeCount(e.amount ?? 0)}`;
     },
     gain_life_target: () => `cel zyskuje ${lifeCount(e.amount)}`,
+    // Batch 56 (energia, CR 122.1): „you get {E}{E}{E}{E}" — etykieta PL dla
+    // panelu akcji i kafla (M122/#5 nie przepuszcza typu bez opisu).
+    get_energy: () => `otrzymaj {E}×${e.amount ?? 1} energii`,
     remove_counter: () => `usuń licznik ${e.counter}`,
     add_counter: () => `połóż licznik ${e.counter}`,
     exile_permanent: () => 'wygnij artefakt/zaklęcie',
@@ -1293,6 +1296,8 @@ const NON_MANA_COST_LABELS = Object.freeze([
   // M177/E (Merchant's Dockhand): koszt „Tap X untapped artifacts you control”.
   ['tapXArtifacts', 'tapnij X swoich nietapniętych artefaktów'],
   ['crewPower', (n) => `załoga ${n}`],
+  // Batch 56 (CR 122.1): koszt „Pay {E}" — energia gracza, nie mana.
+  ['energy', (n) => `zapłać {E}×${n} energii`],
   // Batch 44 (Heap Gate): koszt „Tap an untapped Gate you control".
   ['tapUntappedSubtype', (sub) => `tapnij inny nietapnięty permanent (${sub})`],
   // Batch 44 (Angel's Herald): koszt „Sacrifice a green/white/blue creature".
@@ -4684,6 +4689,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Prędkość (M313) — panel jak Poison: tylko gracze z „Start your engines!" ---
   renderSpeedPanel(els, view, { onOpenCard: onSpeedCardClick, hover });
 
+  // --- Energia (Batch 56, CR 122.1) — panel jak Poison/Speed ------------------
+  renderEnergyPanel(els, view, { hover });
+
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view, { onClick: onUndercityClick, hover });
 }
@@ -4787,6 +4795,34 @@ export function renderPoisonPanel(els, view, { onOpenCard = null, hover = null }
     div(info, 'poison-count', `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${p.poison ?? 0} ${polishPluralCount(p.poison ?? 0, 'licznik', 'liczniki', 'liczników')} trucizny`);
   }
   div(info, 'poison-note', 'Gracz z 10 licznikami trucizny przegrywa (CR 704.10). Liczniki znikają tylko z końcem gry — obrażenia ich nie leczą.');
+}
+
+/**
+ * Panel energii (Batch 56, CR 122.1): liczniki {E} graczy — jawne, jak
+ * trucizna i prędkość (ADR 0017: widok niesie to, na co patrzy gracz).
+ * Pokazujemy panel tylko, gdy KTOKOLWIEK ma energię (zero = brak wiersza,
+ * żeby nie zaśmiecać stołu).
+ */
+export function renderEnergyPanel(els, view, { hover = null } = {}) {
+  if (!els.energy) return;
+  const gracze = (view.players ?? []).filter((p) => (p.energy ?? 0) > 0);
+  els.energy.hidden = gracze.length === 0;
+  if (gracze.length === 0) return;
+  clear(els.energy);
+  const card = div(els.energy, 'poison-card');
+  if (hover) {
+    hover.attach(card, {
+      name: 'Energia ({E})',
+      typeLine: 'Liczniki gracza',
+      oracle: 'Energia to licznik gracza (CR 122.1). Nie jest maną i nie znika z końcem kroków, faz ani tur — schodzi wyłącznie jako koszt „Pay {E}…”.',
+    });
+  }
+  const info = div(els.energy, 'poison-info');
+  div(info, 'poison-status', 'Energia ({E})');
+  for (const p of gracze) {
+    div(info, 'poison-count', `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${p.energy ?? 0} {E}`);
+  }
+  div(info, 'poison-note', 'Energia nie jest maną i nie znika z końcem tury (CR 122.1) — płacisz nią koszty „Pay {E}…”.');
 }
 
 export function renderSpeedPanel(els, view, { onOpenCard = null, hover = null } = {}) {

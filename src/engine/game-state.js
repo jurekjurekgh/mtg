@@ -7794,8 +7794,11 @@ export function playerView(state, playerId) {
   // z czego rysować. `manaPool` to mapa profil-kolorów → liczba jednostek
   // (klucz `manaUnitKey`: 'U', 'UR', '' = bezbarwna). Pula jest jawną
   // informacją stołową (jak `mana`), więc trafia do widoku OBU graczy.
-  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool, speed }) => ({
-    id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0,
+  // Batch 56 (energia, CR 122.1): licznik gracza jest JAWNY dla obu graczy
+  // (jak poison i speed) — bez niego gracz nie widziałby, ile energii ma,
+  // a bot nie miałby z czego wyceniać kosztu {E}.
+  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool, speed, energy }) => ({
+    id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0, energy: energy ?? 0,
     // M313 (zgłoszenie właściciela, Leonin Surveyor): prędkość (DFT „Start
     // your engines!", Batch 24) jest jawna dla OBU graczy — licznik publiczny,
     // jak poison; bez niej UI nie miało z czego rysować panelu speed.

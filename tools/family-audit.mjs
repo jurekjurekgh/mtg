@@ -136,6 +136,19 @@ export const FIELD_FAMILIES = [
     legal: ['player.poison === 9;', 'const poison = player.poison;'],
   },
   {
+    // Batch 56 (2026-09-17): energia ({E}, CR 122.1) — licznik GRACZA jak
+    // trucizna. Jedynym miejscem zapisu jest addEnergyCounters/payEnergyCounters
+    // (players.js); zapis wprost gubi zdarzenie energy_counters_added/paid,
+    // a przez to log, panel stołu i wycenę bota (klasa L107).
+    id: 'energy',
+    label: 'energia gracza ({E})',
+    owner: 'src/engine/players.js',
+    pattern: /\.energy\s*(?:\+=|-=|=(?!=))/,
+    why: 'zmienia energię poza addEnergyCounters/payEnergyCounters — gubi zdarzenie energy_counters_added/paid',
+    bypass: ['player.energy = 4;', 'state.players[1].energy += 2;'],
+    legal: ['player.energy === 3;', 'const energy = player.energy;', 'energy: energy ?? 0,'],
+  },
+  {
     id: 'speed',
     label: 'prędkość gracza (DFT „Start your engines!”)',
     owner: 'src/engine/players.js',

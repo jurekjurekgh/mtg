@@ -137,6 +137,7 @@ function bootstrapTable() {
     poison: el('poison'),
     undercity: el('undercity'),
     speed: el('speed'),
+    energy: el('energy'),
     hoverPreview: el('hover-preview'),
     contextMenu: el('context-menu'),
     contextMenuBody: el('context-menu-body'),

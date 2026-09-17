@@ -1250,6 +1250,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       }
       case 'life_changed': return `${whoN(e.playerId)}: życie ${e.before} → ${e.after}`;
       case 'poison_counters_added': return `${whoN(e.playerId)} otrzymuje znaki trucizny (+${e.amount}, łącznie: ${e.after})`;
+      // Batch 56 (energia, CR 122.1): zdarzenia mają pełne zdanie PL (L24) —
+      // licznik gracza bez opisu byłby dla gracza niewidzialny.
+      case 'energy_counters_added': return `${whoN(e.playerId)} otrzymuje {E}×${e.amount} energii (łącznie: ${e.after})`;
+      case 'energy_counters_paid': return `${whoN(e.playerId)} płaci {E}×${e.amount} energii (zostaje: ${e.after})`;
       case 'permanent_animated': {
         const duration = e.linkedTo ? ' (dopóki źródło jest na polu bitwy)' : ' do końca tury';
         return `${nameOfObject(e.objectId)} staje się stworzeniem ${e.power}/${e.toughness}${duration}`;

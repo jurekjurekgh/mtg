@@ -3,7 +3,7 @@ import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
 import { hasCreatureType, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, untapObject } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
-import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor } from './players.js';
+import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
 import { getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
@@ -2147,6 +2147,19 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return;
   }
+  // Batch 56 (CR 122.1): „you get {E}{E}{E}{E}" — jedno zdarzenie na całą
+  // pulę (ruling AER: „you get that many energy counters"), licznik należy do
+  // GRACZA, nie do permanentu. Wartość bierzemy z `amount` (deskryptor), a nie
+  // z liczby symboli w Oracle — jedno źródło prawdy (L41).
+  if (effect.type === 'get_energy') {
+    const targetPlayerId = effect.targetIndex != null
+      ? (state.objects.get(effectTargets[effect.targetIndex])?.controllerId ?? sourceObject.controllerId)
+      : sourceObject.controllerId;
+    if (!state.players.some((entry) => entry.id === targetPlayerId)) return;
+    addEnergyCounters(state, targetPlayerId, effect.amount ?? 1);
+    return;
+  }
+
   if (effect.type === 'create_token') {
     // Liczba tokenów: jawna (amount) albo dynamiczna „commander_casts"
     // (Jyoti — liczba rzuceń commandera z command zone; w obecnym formacie

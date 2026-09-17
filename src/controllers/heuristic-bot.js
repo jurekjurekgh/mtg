@@ -4278,6 +4278,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (effect.type === 'damage_each_opponent' || effect.type === 'lose_life_each_opponent') {
             score += opponentLifeEffectValue(view, effect);
           }
+          // Batch 56 (energia, CR 122.1): „you get {E}×N" w zdolności
+          // AKTYWOWANEJ (np. przyszłe karty Aether) — licznik jest trwałym
+          // zasobem, więc ma dodatnią wartość; bez wpisu aktywacja zostałaby
+          // na gołej bazie (L50: „akcja bez wyceny").
+          if (effect.type === 'get_energy') score += 2 * (effect.amount ?? 1);
           // M103/B (zgłoszenie właściciela): „cel nie może być blokowany"
           // (Enter the Enigma) — ewazja ma wartość WYŁĄCZNIE na własnym
           // atakującym; dana stworowi PRZECIWNIKA to realna strata (wróg
@@ -4597,6 +4602,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (allEffectsInertNow(view, effects, cmd)) return finish(-40);
         let score = 2; // drobna wartość za legalne zagranie rozwijające planszę
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
+        // Batch 56 (koszt energii, CR 122.1): liczniki {E} są zasobem TRWAŁYM
+        // (nie znikają z końcem tury), więc „Pay {E}" to realny koszt, nie
+        // darmowa aktywacja. Bez tej kary zdolność za sam {E} miała wycenę
+        // samego efektu i bot spamowałby nią do zera liczników (L3: kara musi
+        // przebijać bazowe +2). Wycena po KOSZCIE z deskryptora, nie po nazwie
+        // karty (ADR 0002).
+        if (ability?.cost?.energy) score -= 3 * ability.cost.energy;
         // M121: ta sama bramka co dla czarów — zdolność aktywowana potrafi
         // tapować/niszczyć/mielić dokładnie tak samo (Entrancing Lyre,
         // Sterling Keykeeper, Cellar Door).

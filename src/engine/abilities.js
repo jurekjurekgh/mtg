@@ -4,7 +4,7 @@ import { activatableAbilities, deathZoneFor, hasCreatureType, effectiveKeywords,
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
-import { changeLife } from './players.js';
+import { changeLife, payEnergyCounters } from './players.js';
 import { applyEffect, queueSearchChoice, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { validateTargets, hasHexproofAgainst, legalTargetCandidates } from './spells.js';
 import { attachEquipmentToCreature } from './attachments.js';
@@ -554,6 +554,11 @@ export function legalActivatedAbilities(state, playerId) {
       // „Activate only once each turn\" (Snarling Wolf): po aktywacji zdolność
       // znika z legalnych akcji do końca tury (stan resetowany przy zmianie tury).
       if (ability.oncePerTurn && state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
+      // Batch 56 (koszt energii, CR 122.1): „You can't pay more energy counters
+      // than you have" (ruling AER) — oferta milczy, gdy liczników brakuje.
+      // Sprawdzenie jest PRZED gałęziami szczegółowymi, więc obowiązuje każdą
+      // zdolność z kosztem {E} i nie rozjeżdża się z walidacją (L48).
+      if ((ability.cost?.energy ?? 0) > (state.players.find((p) => p.id === playerId)?.energy ?? 0)) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
       // Ninjutsu działa wyłącznie z ręki — na polu bitwy nie ma czego aktywować.
       if (ability.keyword === 'ninjutsu') continue;
@@ -1274,6 +1279,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     throw new Error('Brak kolorowego źródła many');
   }
   if (cost.tap && object.tapped) throw new Error('Obiekt jest już tapped');
+  // Koszt energii (CR 122.1): sprawdzany PRZED mutacją jak pozostałe części
+  // kosztu — odmowa nie może zabrać energii ani zatapnąć źródła.
+  if ((cost.energy ?? 0) > (player?.energy ?? 0)) throw new Error('Niewystarczająca energia');
   // Atomowa weryfikacja dodatkowych kosztów (CR 601.2h): discard a card +
   // remove a counter — sprawdzane PRZED mutacją, żeby nieudana aktywacja nie
   // zostawiła źródła zatapniętego/bez licznika. Koszty tap-other/crew są
@@ -1499,6 +1507,9 @@ export function performActivation(state, ctx) {
     if ((xValue ?? list.length) !== list.length) throw new Error('X musi równać się liczbie tapowanych artefaktów');
     artifactsToTap = list;
   }
+  // Batch 56 (koszt energii, CR 122.1): liczniki gracza płacimy razem z
+  // pozostałymi częściami kosztu (po walidacjach — atomowo, CR 601.2h).
+  if (cost.energy) payEnergyCounters(state, playerId, cost.energy);
   if (cost.tap) {
     tapObject(state, objectId, playerId);
   }

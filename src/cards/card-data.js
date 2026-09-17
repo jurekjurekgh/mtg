@@ -11049,7 +11049,21 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Fish'], colors: ['U'], power: 0, toughness: 5, manaCost: 4,
     oracleText: 'When this creature enters, you get {E}{E}{E}{E} (four energy counters).\nPay {E}: This creature gets +2/-2 until end of turn.',
     imageUri: 'https://cards.scryfall.io/large/front/2/8/284c6de3-4e09-40d9-afdb-89ff08e1844b.jpg?1783936770',
-    artId: 32, plan: 'Ixalan', support: { status: 'in-development', limitations: [] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'get_energy', amount: 4 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        // Koszt energii (CR 122.1): „Pay {E}" — zdolność zwykła (instant speed),
+        // bez {T}, więc działa wielokrotnie w turze, dopóki starczy liczników.
+        cost: { energy: 1 },
+        effect: { type: 'pump', power: 2, toughness: -2 },
+      }),
+    ],
+    artId: 32, plan: 'Ixalan', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({
