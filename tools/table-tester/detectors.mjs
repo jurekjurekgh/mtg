@@ -455,17 +455,69 @@ export function detectNoResponseWindow(lines) {
     // Zmierzone na seedzie 42 (dominaria vs ravnica): wpis pojawia się
     // dokładnie między „Nieprzyjaciel rzuca Withstand" a „Withstand zostaje
     // rozstrzygnięty".
-    /^\s*LOG:\s*Auto-pass:/,
+    // B7 (2026-09-17, kampania batcha 56): prefiks „LOG:" jest OPCJONALNY —
+    // po podziale echa na segmenty (patrz niżej) dowód bywa osobnym
+    // segmentem linii „LOG: …" i prefiksu już przy sobie nie ma.
+    /^\s*(?:LOG:\s*)?Auto-pass:/,
   ];
-  let pendingCast = null;
-  for (const line of lines) {
-    const cast = line.match(/\[ROZGRYWKA\]\s*•\s*Nieprzyjaciel rzuca ([^→|]+)/);
-    if (cast) { pendingCast = cast[1].trim(); continue; }
-    if (pendingCast && REGAINED_CONTROL.some((re) => re.test(line))) { pendingCast = null; continue; }
+  // B7 (2026-09-17, kampania na taliach batcha 56; transkrypt 2026-09-17,
+  // seed 2026, ixalan vs tarkir-wur): transkrypt niesie to samo zdarzenie
+  // DWA razy — echo ogona logu („LOG: …", segmenty sklejone „⏎") i blok
+  // `[ROZGRYWKA]`. Echo stoi PRZED blokiem, więc dowód oddania priorytetu
+  // („Auto-pass: …") trafiał do transkryptu WCZEŚNIEJ niż znacznik rzutu,
+  // którego szukał detektor — poprawne rozstrzygnięcie Kill Shota szło
+  // w zgłoszenia [info]. Naprawa: (1) linia = SEKWENCJA segmentów (echo to
+  // kilka zdarzeń w jednej linii), (2) znacznik rzutu czytamy w OBU formach,
+  // (3) rozstrzygnięcie bez dowodu w tej samej „instancji" bloku snapshotu
+  // jest echem instancji już osądzonej (raz osądzona nazwa w danym bloku nie
+  // zgłasza się ponownie). Moc detektora bez zmian: brak dowodu w NOWYM
+  // bloku/kroku nadal zgłasza (testy kontrolne w
+  // `test/table-tester-detectors.test.js`).
+  const segments = [];
+  let blockKey = 0;
+  // Delimitery snapshotów istnieją TYLKO w trybie ze snapshotami (`--quiet`
+  // wypisuje wyłącznie pojedyncze wpisy logu, bez echa „⏎" i bez „--- krok").
+  // Dowód z całego bloku wolno przypisać instancji tylko wtedy, gdy blok jest
+  // realną jednostką transkryptu — inaczej (--quiet) dowód z jednego zdarzenia
+  // uciszyłby wszystkie instancje w pliku (blok 0 = cały plik).
+  const hasBlocks = lines.some((line) => /^\s*---/.test(line));
+  const blockEvidence = new Set();
+  lines.forEach((line, lineIndex) => {
+    if (/^\s*---/.test(line)) blockKey = lineIndex;
+    for (const part of line.split('⏎')) segments.push({ text: part, line, block: blockKey });
+  });
+  const CAST = /Nieprzyjaciel rzuca ([^→|]+)/;
+  const judged = new Map();   // nazwa czaru -> blok, w którym okno już osądzono
+  let pending = null;         // { name, block, evidence }
+  for (const seg of segments) {
+    const cast = seg.text.match(CAST);
+    if (cast) {
+      const name = cast[1].trim();
+      // Powtórka tej samej nazwy w tym samym bloku to echo tego samego rzutu —
+      // nie otwiera nowej instancji (inaczej echo bez dowodu zgłaszałoby się
+      // drugi raz).
+      if (!pending || pending.name !== name || pending.block !== seg.block) {
+        pending = { name, block: seg.block, evidence: false };
+      }
+      continue;
+    }
+    // Dowód zbieramy PRZED sprawdzeniem otwartej instancji: echo logu potrafi
+    // nieść sam „Auto-pass: …" (bez wpisu rzutu), a i tak należy do okna
+    // w tym kroku — inaczej instancja z bloku zdarzeń zostałaby zgłoszona.
+    if (REGAINED_CONTROL.some((re) => re.test(seg.text))) {
+      blockEvidence.add(seg.block);
+      if (pending) pending.evidence = true;
+      continue;
+    }
+    if (!pending) continue;
     // Rozstrzygnięcie tego samego czaru bez śladu oddania priorytetu = brak okna.
-    if (pendingCast && new RegExp(`${pendingCast.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} zostaje rozstrzygni`).test(line)) {
-      push(found, 'info', `Czar bota „${pendingCast}" rzucony i rozstrzygnięty bez okna na odpowiedź gracza`, line);
-      pendingCast = null;
+    if (new RegExp(`${pending.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} zostaje rozstrzygni`).test(seg.text)) {
+      const windowConfirmed = pending.evidence || (hasBlocks && blockEvidence.has(seg.block));
+      if (!windowConfirmed && judged.get(pending.name) !== seg.block) {
+        push(found, 'info', `Czar bota „${pending.name}" rzucony i rozstrzygnięty bez okna na odpowiedź gracza`, seg.line);
+      }
+      judged.set(pending.name, seg.block);
+      pending = null;
     }
   }
   return found;

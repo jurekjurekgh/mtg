@@ -515,6 +515,59 @@ test('M205 (kontrola): BEZ wpisu o auto-passie ten sam przebieg jest nadal zgła
   assert.match(found[0].message, /Withstand/);
 });
 
+// --- B7 (2026-09-17, kampania batcha 56): echo logu przed blokiem zdarzeń ----
+// Transkrypt niesie to samo zdarzenie dwa razy: echo ogona logu („LOG: …" ze
+// segmentami sklejonymi „⏎") i blok `[ROZGRYWKA]`. Echo stoi PRZED blokiem,
+// więc dowód auto-passa trafiał do transkryptu wcześniej niż znacznik rzutu —
+// detektor zgłaszał [info] poprawne rozstrzygnięcie (zmierzone: seed 2026,
+// ixalan vs tarkir-wur, „Kill Shot"). Kształt linii skopiowany z transkryptu
+// 1:1 (łącznie z prefiksem „LOG: " i separatorem „⏎").
+test('B7: echo LOG przed blokiem [ROZGRYWKA] nie jest brakiem okna (Kill Shot)', () => {
+  const found = detectNoResponseWindow([
+    '--- krok 63 | T. 14BotGracz: 10 ż.Bot: 12 ż.Podtrzymanie ---',
+    '  LOG: Nieprzyjaciel rzuca Kill Shot → cel: Skymarch Bloodletter ⏎ Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga ⏎ Skymarch Bloodletter zostaje zniszczony ⏎ Kill Shot zostaje rozstrzygnięty',
+    '  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga',
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Atak: Skymarch Bloodletter',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Kill Shot → cel: Skymarch Bloodletter',
+    '  [ROZGRYWKA]   • Kill Shot zostaje rozstrzygnięty',
+  ]);
+  assert.deepEqual(found, [], `echo tego samego rozstrzygnięcia: ${JSON.stringify(found)}`);
+});
+
+test('B7 (kontrola): echo bez dowodu auto-passa nadal jest zgłaszane RAZ, nie dwa', () => {
+  // Mutacja przypadku wyżej: jedyna różnica to brak segmentu z auto-passem.
+  // Echo nie może zgłosić się drugi raz (to ta sama instancja rozstrzygnięcia),
+  // ale nie może też zniknąć — inaczej naprawa fałszywego alarmu wycięłaby
+  // detektor (L1/L13).
+  const found = detectNoResponseWindow([
+    '--- krok 63 | T. 14BotGracz: 10 ż.Bot: 12 ż.Podtrzymanie ---',
+    '  LOG: Nieprzyjaciel rzuca Kill Shot → cel: Skymarch Bloodletter ⏎ Skymarch Bloodletter zostaje zniszczony ⏎ Kill Shot zostaje rozstrzygnięty',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Kill Shot → cel: Skymarch Bloodletter',
+    '  [ROZGRYWKA]   • Kill Shot zostaje rozstrzygnięty',
+  ]);
+  assert.equal(found.length, 1, `jedno zgłoszenie na instancję: ${JSON.stringify(found)}`);
+  assert.match(found[0].message, /Kill Shot/);
+});
+
+test('B7 (kontrola moc): nowy krok bez dowodu nadal zgłasza ten sam czar', () => {
+  const found = detectNoResponseWindow([
+    '--- krok 10 | T. 3 ---',
+    '  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga ⏎ Kill Shot zostaje rozstrzygnięty',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Kill Shot → cel: X',
+    '  [ROZGRYWKA]   • Kill Shot zostaje rozstrzygnięty',
+    '--- krok 11 | T. 4 ---',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Kill Shot → cel: Y',
+    '  [ROZGRYWKA]   • Kill Shot zostaje rozstrzygnięty',
+  ]);
+  assert.equal(found.length, 1, `osąd per blok (nie per partia): ${JSON.stringify(found)}`);
+  assert.match(found[0].message, /Kill Shot/);
+  // Blok 10 ma dowód (auto-pass w echu) → okno potwierdzone; blok 11 nie ma
+  // żadnego śladu oddania priorytetu → zgłoszenie. To jest granica naprawy:
+  // echo nie może wyciszyć NOWEGO kroku.
+  assert.match(found[0].evidence, /rozstrzygnięty/);
+});
+
 test('M99: prawdziwy brak okna (jeden blok modala) nadal jest zgłaszany', () => {
   const found = detectNoResponseWindow([
     '  [ROZGRYWKA] Rozgrywka',
