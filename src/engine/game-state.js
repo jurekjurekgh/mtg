@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
@@ -5067,6 +5067,21 @@ export function execute(state, input) {
         events.push(event('priority_passed', { playerId: cmd.playerId, nextPlayerId: state.turn.activePlayerId }));
       } else {
         const previousTurnNumber = state.turn.number;
+        // Znalezisko J (właściciel, 2026-09-17 — Ramroller „This creature
+        // attacks each combat if able"): deklaracja atakujących jest akcją
+        // turową (CR 508.1a) — runda passów jej nie pomija. Stwór wymuszony
+        // (`mandatoryAttackerIds`: „attacks each combat if able" CR 508.1c
+        // albo goad CR 701.38) MUSI atakować, więc przed wyjściem z kroku
+        // deklarujemy MINIMALNY zestaw — same stwory wymuszone; te opcjonalne
+        // zostają decyzją gracza, który właśnie spasował (świadomie z nich
+        // zrezygnował). Wcześniej pass p1+p2 przechodził do blokowania bez
+        // deklaracji i Ramroller zostawał w domu.
+        if (state.turn.step === 'declare_attackers' && !state.combat) {
+          const forced = mandatoryAttackerIds(state, state.turn.activePlayerId);
+          if (forced.length > 0) {
+            events.push(declareAttackers(state, state.turn.activePlayerId, forced, { pushToState: false }));
+          }
+        }
         // D (CR 508.2): tędy przechodzi TYLKO combat_damage bez atakujących
         // (z atakującymi krok domyka resolve_combat — gałąź M255/F powyżej).
         // Taki pusty combat trzeba sprzątnąć, bo bramka oferty deklaracji

@@ -74,8 +74,14 @@ etapy I/H dodają wyłącznie WPISY TOKENÓW i grafikę, nie nowe karty do talii
   odpalenia ani podwójnego zdarzenia śmierci — pin E1–E2 (wymiana w walce
   i śmierć od pierwszego uderzenia: dokładnie +2 życia) + mutacja E
   (podwojone zdolności → 3 RED); `npm test` 5708/5708, build 64/3802,8 kB.
-- [ ] **E5 (J)** — wymóg ataku (Ramroller): auto-deklaracja/egzekwowanie
-  w ofercie i UI, pin + mutacja.
+- [x] **E5 (J)** — zrobione: deklaracja atakujących to akcja turowa
+  (CR 508.1a), a runda passów ją POMIJAŁA — Ramroller zostawał w domu.
+  `mandatoryAttackerIds` (jedno źródło prawdy: goad CR 701.38 + `mustAttack`
+  CR 508.1c, z wyjątkiem „if able" M270) zasila ofertę, walidację i nową
+  auto-deklarację minimalnego zestawu w `pass_priority`; 5 pinów + mutacja
+  (auto-deklaracja off → 2 RED); poprawiony helper `passToNextTurn` w pinie
+  srebrnej odznaki (goadowany stwór naprawdę atakuje — walkę domyka
+  `resolve_combat`); `npm test` 5713/5713, build 64/3803,8 kB.
 - [ ] **E6 (B)** — wycena exploita (Silumgar Butcher): lethal albo
   opłacalna wymiana (TMC/auras), pin + mutacje.
 - [ ] **E7 — integracja**: bramki finalne (`npm test`, `npm run test:all`,
