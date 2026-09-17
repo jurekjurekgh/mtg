@@ -11224,3 +11224,66 @@ bezbarwny też; 7+7 = 49 brzmień, macierz pinowana). (B) Wąski ekran
 kosztem innych, overflow rośnie; regen 5 talii (±1 land, sumy stałe);
 fala: golden-master regen (`131cd510…`, 4/6 partii bit w bit) + podłoga
 remisów 6→4 (obie uzasadnione pomiarem, nie zgadnięte).
+
+## 2026-09-17d — sesja „Kontynuujemy projekt." (PR #126): audyt PR #125, domknięcie E7bis, M374–M377
+
+Tryb obowiązkowy ADR 0020 (PR → audyt poprzedniego PR → inkrementalne commity)
++ pętla domyślna ADR 0021 §4. Gałąź `arena/01a0b0e5-mtg`; PR
+[#126](https://github.com/jurekjurekgh/mtg/pull/126) otwarty przed kodowaniem
+(plan `docs/plans/PLAN_2026-09-17d-audyt-pr125-i-domkniecie-e7bis.md`,
+commit `1f5e090`).
+
+**E1 — audyt scalonego PR #125** (`docs/audits/AUDYT_PR125_2026-09-17.md`,
+commit `49dda11`; uzupełnienie V7/V8 w `fde5ed9`): werdykt **APPROVE**;
+jedno znalezisko klasy błąd **F1** (`get_energy` czytało nieistniejący
+identyfikator `effectTargets` — dziś ścieżka martwa, bo katalog nie ma kart
+z `targetIndex` przy energii) i dwie obserwacje nieblokujące (brak snapshotu
+tokenu Goblin — konwencja repo; liczby bramek w opisie poprzedniego PR
+sprzed pinów `M374/1`). Weryfikacja mutacyjna pinów PR #125: `m374` 2/4,
+`m371` 3/5, `m372` 2/5, `batch56` 2/38, `m373` 3/6; porównanie danych
+dziesięciu kart batcha 56 ze snapshotami Scryfall — zero różnic (L96);
+skan generyczności rdzenia — lista długu M212/M213 pusta (ADR 0002).
+
+**E2 — naprawa F1** (commit `33366ed`): gałąź `get_energy` czyta slot celu
+z `targets`; pin `test/m375-get-energy-target-index.test.js` (3 przypadki:
+`targetIndex` → kontroler celu, brak `targetIndex` → kontroler źródła,
+nieistniejący id → spadek do źródła); RED 1/2 → GREEN 3/3 → mutacja 1/2.
+
+**E3 — domknięcie E7bis** (otwarta pozycja handoffu 2026-09-17c): quick
+25 talii po naprawie `M374/1` — **5952/5952 meczów, 0 niedokończonych,
+0 zacinek** (exit 0); znalezisko `illegal_spell: Niewystarczająca mana`
+(`random(wiedzmin-bg)` vs `heuristic(tarkir-wur)`, seed 2039) **nie wróciło**;
+heuristic **87,1%** zwycięstw (5183/5952; referencja quick-6 86,0%),
+aggro 23,5% (700/2976), random 2,3% (69/2976), ~232 ms/mecz. JSON:
+`/tmp/quick25.json`.
+
+**E4 — pętla jakości Żywym Testerem** (6 partii na taliach z nowymi kartami,
+transkrypty czytane ręcznie): dwa znaleziska, oba naprawione u root cause
+z pinem RED→GREEN i mutacją L13:
+- **M376** (`93b242e`) — aktywacja pompy musi POPRAWIĆ wymianę: Shipwreck
+  Moray („Pay {E}: +2/−2") aktywowany 4× w jednym kroku walki (energia
+  4 → 0), po trzecim rozstrzygnięciu bloker ginął z SBA; wycena liczy teraz
+  delty kopii czekających na stosie (`pendingPumpDelta`: `sourceId`,
+  `abilityIndex`, cele i efekty wpisu — ADR 0017) i wymaga poprawy wymiany
+  w co najmniej jednym wymiarze bez pogorszenia (`pumpImprovesOutcome`);
+  po fixie jedna aktywacja, a partia seeda 2031 kończy się naturalnie
+  (przed: limit kroków);
+- **M377** (`684fe91`) — martwe okno detektora testera musi się POWTARZAĆ:
+  pojedyncze okno z samym „Poddaj partię" to normalny auto-pass (bramka
+  `frozen` porównuje `newestLogEntry` z sąsiednimi rekordami; fałszywy alarm
+  klasy L33), piny w `test/table-tester-detectors.test.js`.
+
+**E5 — polowanie na niezgodności z CR**: `tools/family-audit.mjs`
+(„Rodziny efektów i mutacje pól: brak naruszeń") i
+`tools/event-contract-audit.mjs` („Kontrakty zdarzeń / kasowanie obiektów:
+brak naruszeń"); ścieżki: koszt `{E}` (oferta filtruje nieopłacalne,
+walidacja PRZED mutacją — CR 122.1/601.2h; zapisy energii wyłącznie
+w `players.js:71/:91`, brak czyszczenia na koniec tury), nowe zdarzenie
+`beginning_of_second_main` z intervening-if (CR 603.4 — `sourceTapped`
+sprawdzany przy odkładaniu i przy rozstrzyganiu) oraz kontrola z chwili
+śmierci (CR 603.10a) — piny w `test/real-cards-batch56.test.js`.
+
+**E6 — bramki i dokumentacja**: `npm test` **5732/5732**, `npm run test:all`
+**5742/5742**, `npm run build` **64 moduły / 3815,6 kB**; milestone'y
+**M374–M377** w `docs/ENGINE_MILESTONES.md`, wpis w historii, README
+z liczbami końcowymi (L92) i handoff `docs/setup/HANDOFF_2026-09-17d.md`.

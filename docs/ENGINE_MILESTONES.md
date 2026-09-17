@@ -5376,3 +5376,76 @@ build **63 moduły / 3793,4 kB**, regresja bota **10/10**, quick 25 talii — he
 Lekcje sesji: **L147** (rezerwa pipów obowiązuje też finansowanie cudzego
 kosztu) i kotwica w **L48** (nowa gałąź oferty celów idzie przez
 `legalTargetCandidates`).
+
+## M374 (2026-09-17) — M374/1: grant lądu w pipach płaci tyle, ile obiecuje oferta (CR 601.2h)
+
+Znalezisko pomiaru quick 25 talii (handoff 2026-09-17c): przebieg przerwany na
+2400/5952 komunikatem `illegal_spell: Niewystarczająca mana`
+(`random(wiedzmin-bg)` vs `heuristic(tarkir-wur)`, seed 2039). Odtworzenie
+bezpośrednie par 2026–2086 nie dawało powtórki — powtórką jest dokładna
+komenda pomiaru.
+
+Root cause: oferta „grant lądu" obiecywała pokrycie koloru (fallback
+`firstUncoveredPipColor`), ale w fazie pip płaciła tylko jedną jednostkę
+rezerwy, a bramka `producibleMana` (CR 601.2h — atomowość kosztu) stała PO
+pierwszej mutacji `spendMana`. Fix: `planGrantManaColors` z fallbackiem
+(`src/engine/resources.js:384`) i bramka sumy `producibleMana < amount` PRZED
+pierwszą mutacją (`resources.js:333`). Piny:
+`test/m374-l48-grant-w-pipach.test.js` (4; sonda mutacyjna → 2 RED).
+
+## M375 (2026-09-17) — gałąź `get_energy` czyta slot celu z `targets` (znalezisko F1 audytu PR #125)
+
+Sonda wykonawcza audytu: `applyEffect({ type: 'get_energy', targetIndex: 0 })`
+kończyła się `ReferenceError: effectTargets is not defined` — gałąź czytała
+nieistniejący identyfikator. Ścieżka jest dziś martwa (katalog nie ma kart
+z `targetIndex` przy energii), ale to dokładnie klasa, którą ADR 0022 ma
+wykluczać na zapas. Fix: `targets[effect.targetIndex]` w
+`src/engine/effects.js` (CR 122.1; bez nazw kart — ADR 0002). Piny:
+`test/m375-get-energy-target-index.test.js` (3: cel wskazany przez
+`targetIndex` → kontroler celu; brak `targetIndex` → kontroler źródła;
+nieistniejący id → spadek do kontrolera źródła). RED 1/2 → GREEN 3/3;
+mutacja bramy → 1/2.
+
+## M376 (2026-09-17) — aktywacja pompy musi POPRAWIĆ wymianę; kopie na stosie wchodzą do wyceny
+
+Znalezisko Żywego Testera (`worek-dziki` vs `ixalan`, seed 2031): bot
+aktywował Shipwreck Moray („Pay {E}: +2/−2 do końca tury") **cztery razy**
+w jednym kroku walki (liczniki energii 4 → 0), a po trzecim rozstrzygnięciu
+bloker zginął z SBA (CR 704.5f) — czwarta aktywacja nie zrobiła już nic.
+
+Root cause: wycena aktywacji używała kryterium CZARU JEDNORAZOWEGO
+(`pumpChangesOutcome` — „czy wynik walki się zmieni"), a plansza pod
+nierozstrzygniętymi kopiami wygląda niezmiennie, więc każda kolejna kopia
+była nierozróżnialna od pierwszej. Zdolność ma koszt POWTARZALNY (CR 602.2) —
+można poczekać, aż stos się rozstrzygnie — więc kopia musi poprawić wymianę,
+nie tylko ją zmienić.
+
+Fix: `pendingPumpDelta` (suma delt kopii TEJ SAMEJ zdolności z widoku stosu —
+`sourceId`, `abilityIndex`, cele i efekty są publiczne, ADR 0017) oraz
+`pumpImprovesOutcome` (kryterium z perspektywy celu: śmierci wroga w górę,
+śmierci własne w dół, obrażenia/zyski życia na moją korzyść; poprawa
+w co najmniej jednym wymiarze i ŻADNE pogorszenie) — używane wyłącznie
+w gałęzi `activate_ability` dla WŁASNYCH celów; cudze cele i czary zostają na
+`pumpChangesOutcome` (L41 — rozdzielenie świadome). Piny:
+`test/m376-pump-nie-zabija-swojego-stwora.test.js` (4; RED 2/4 → GREEN 4/4;
+mutacja bramy z powrotem na `pumpChangesOutcome` → 2/4). Pomiar po fixie:
+jedna aktywacja zamiast czterech, partia kończy się naturalnie (krok 220,
+„Gracz wyczerpał bibliotekę"), detektory bez zgłoszeń.
+
+## M377 (2026-09-17) — martwe okno musi się POWTARZAĆ (fałszywy alarm detektora testera)
+
+Znalezisko kampanii E4 (tester-2: `tarkir-wur` vs `worek-basni`, seed 2027,
+profil `impatient`): raport flagował `[ui]` „jedyna opcja: Poddaj partię",
+choć w LOGU tego okna był już nowy wpis („Nieprzyjaciel zagrywa Talion's
+Messenger"), a następne okno pokazało rozstrzygnięcie czaru — sesja
+auto-przewinęła okno bez odpowiedzi gracza. Detektor patrzył wyłącznie na
+`actions`, więc nie odróżniał okna przejściowego od zacięcia (klasa L33:
+narzędzie mierzy własną ślepotę).
+
+Fix w `tools/table-tester/detectors.mjs`: bramka `frozen` — okno (puste albo
+z samym „Poddaj partię") jest martwym zaułkiem tylko wtedy, gdy
+`newestLogEntry` nie zmienia się ani względem poprzedniego, ani następnego
+rekordu (log naprawdę stoi w miejscu — przypadek M90/B Forever Young).
+Piny: `test/table-tester-detectors.test.js` +2 (dane z partii: okno
+przejściowe bez zgłoszenia, okna powtarzające się nadal zgłaszane). Re-run
+tester-2 na naprawionym narzędziu: `DETEKTORY: brak zgłoszeń`.

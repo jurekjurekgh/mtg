@@ -27,9 +27,9 @@ historię pojedynczych commitów PR czytamy przez `gh api`, nie przez
 
 ## Etapy
 
-- [ ] **E0 — plan sesji** (ten plik, commit 1, PR na GitHubie przed kodowaniem
+- [x] **E0 — plan sesji** (ten plik, commit 1, PR na GitHubie przed kodowaniem
   — ADR 0020 A).
-- [ ] **E1 — pełny audyt PR #125** (raport `docs/audits/AUDYT_PR125_2026-09-17.md`)
+- [x] **E1 — pełny audyt PR #125** (raport `docs/audits/AUDYT_PR125_2026-09-17.md`)
   ADR 0020 B / 0016: przegląd każdego obszaru zmienionego pliku — stan po PR
   wobec stanu na jego starcie, zgodność z CR i ADR 0002, generyczność mechanik,
   cards vs Oracle/Scryfall, RED→GREEN (weryfikacja mutacyjna L13), spójność
@@ -55,24 +55,24 @@ historię pojedynczych commitów PR czytamy przez `gh api`, nie przez
     (E2/H), filtr zdolności many, hover z numerem kopii, tester (E3).
   - Kryterium: raport z werdyktem, listą znalezisk i weryfikacją mutacyjną
     (mutacje 1-liniowe, plik kopiowany `cp` do `/tmp` przed i po — L136).
-- [ ] **E2 — naprawy znalezisk audytu** u root cause, każda z pinem RED→GREEN
+- [x] **E2 — naprawy znalezisk audytu** u root cause, każda z pinem RED→GREEN
   i mutacją L13, osobnym commitem i pushem (ADR 0020 C). Znaleziska z E1
   (co najmniej F1: `effectTargets` — niezadeklarowany identyfikator w gałęzi
   `get_energy`).
-- [ ] **E3 — domknięcie pomiaru E7bis** (otwarta pozycja handoffu): przebieg
+- [x] **E3 — domknięcie pomiaru E7bis** (otwarta pozycja handoffu): przebieg
   quick 25 talii (`node tools/benchmark.mjs --quick --decks <wszystkie>`) bez
   potoku `| tail` (ENVIRONMENT §5) + kontrola, że znalezisko seeda 2039 nie
   wraca; wynik do planu, `docs/PROJECT_HISTORY.md` i opisu PR. Pełne B0
   wyłącznie na wyraźną komendę właściciela (ADR 0018) — NIE odpalamy.
-- [ ] **E4 — pętla jakości** (ADR 0021 §4a, inna ścieżka niż poprzednia sesja):
+- [x] **E4 — pętla jakości** (ADR 0021 §4a, inna ścieżka niż poprzednia sesja):
   Żywy Tester (`npm i` w `tools/table-tester`, `npm run build`, kilka partii
   na taliach z nowymi mechanikami), transkrypty czytane RĘCZNIE wzdłuż trzech
   osi; każda znaleziona klasa kończy się detektorem (L27), naprawa u root cause.
-- [ ] **E5 — polowanie na niezgodności z CR** (ADR 0021 §4b) na ścieżce
+- [x] **E5 — polowanie na niezgodności z CR** (ADR 0021 §4b) na ścieżce
   niebadanej w poprzedniej sesji (nowe mechaniki: koszt `{E}`/CR 122,
   `beginning_of_second_main`/CR 603.4, LKI kontroli przy śmierci) + narzędzia
   audytu (`tools/family-audit.mjs`, `tools/event-contract-audit.mjs`).
-- [ ] **E6 — domknięcie**: dokumentacja (milestone M374/M375, historia, README
+- [x] **E6 — domknięcie**: dokumentacja (milestone M374/M375, historia, README
   z liczbami zmierzonymi na końcu — L92), bramki `npm test` + `npm run test:all`
   + `npm run build`, aktualizacja opisu PR, handoff sesji.
 
@@ -88,3 +88,32 @@ historię pojedynczych commitów PR czytamy przez `gh api`, nie przez
 - **Katalog kart nie rośnie** z inicjatywy sesji (ADR 0029); nowe karty tylko
   z listy właściciela.
 - **Nie scala się PR** i nie rusza ustawień `main` (ADR 0007/0020).
+
+## Wyniki etapów (domknięcie 2026-09-17d)
+
+- **E0** (`1f5e090`): plan sesji + PR [#126](https://github.com/jurekjurekgh/mtg/pull/126)
+  otwarty przed kodowaniem (ADR 0020 A).
+- **E1** (`49dda11`, uzupełnienie `fde5ed9`): raport audytu PR #125,
+  werdykt **APPROVE** — F1 (błąd) + O1/O2 (obserwacje); weryfikacja
+  mutacyjna V1–V6, porównanie kart batcha 56 ze Scryfallem (V7, zero różnic),
+  skan generyczności rdzenia (V8, lista długu M212/M213 pusta).
+- **E2** (`33366ed`): naprawa F1 u root cause — `targets[effect.targetIndex]`
+  w gałęzi `get_energy`; pin `test/m375-get-energy-target-index.test.js`
+  (RED 1/2 → GREEN 3/3 → mutacja 1/2).
+- **E3**: quick 25 talii na naprawionym silniku — **5952/5952 meczów,
+  0 niedokończonych, bez zacinek** (exit 0); `illegal_spell` seeda 2039 nie
+  wróciło; heuristic **87,1%** (5183/5952; referencja 86,0%), aggro 23,5%,
+  random 2,3%; JSON `/tmp/quick25.json`.
+- **E4** (`93b242e`, `684fe91`): dwa znaleziska Żywego Testera —
+  **M376** (aktywacja pompy musi poprawić wymianę; kopie na stosie wchodzą do
+  wyceny) i **M377** (martwe okno detektora musi się powtarzać), oba
+  z pinami RED→GREEN i mutacją L13; po fixach 4 kolejne partie bez zgłoszeń.
+- **E5**: `family-audit` i `event-contract-audit` — brak naruszeń; ścieżki
+  `{E}` (CR 122.1 + atomowość CR 601.2h), `beginning_of_second_main`
+  (intervening-if CR 603.4) i LKI kontroli przy śmierci (CR 603.10a)
+  zweryfikowane (piny w `test/real-cards-batch56.test.js`).
+- **E6**: dokumentacja (M374–M377 w `docs/ENGINE_MILESTONES.md`, wpis
+  w `docs/PROJECT_HISTORY.md`, README z liczbami końcowymi, handoff
+  `docs/setup/HANDOFF_2026-09-17d.md`) + bramki końcowe zielone:
+  `npm test` **5732/5732**, `npm run test:all` **5742/5742** (bramka PR,
+  jak CI) i `npm run build` **64 moduły / 3815,6 kB**.
