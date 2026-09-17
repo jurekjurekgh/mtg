@@ -874,10 +874,6 @@ DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
 
 ## L54 (2026-08-22) — Kara wyceny bota musi być MIERZONA względem bazy; każda klasa zachowań dostaje whitelistę ze strażnikiem
 
-**Objaw (M179):** „kara −20 za trik we własnej main" (M146) nie działała od
-początku — bazowa wartość rzutu czaru (~50–65) zjadała ją w całości i bot
-dalej rzucał triki w Głównej 1. Klasa L50/L51, ale głębiej: kara ISTNIAŁA,
-tylko liczona w oderwaniu od sumy.
 **Reguła:**
 1. Kara/premia okna czasowego musi być zwymiarowana względem BAZY gałęzi
    (czary ~50–65), inaczej jest dekoracją. Test zachowania („bot NIE rzuca X
@@ -893,6 +889,8 @@ tylko liczona w oderwaniu od sumy.
 4. Klamry celowania są SYMETRYCZNE i centralne: wrogi efekt we własny cel
    (`selfHarmPenalty`) oraz przyjazny we wroga (`friendlyMisaimPenalty`) — w
    call-site'ach gałęzi, nie w każdej gałązce osobno.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L54)
+
 ## L53 (2026-08-22) — Test scenariuszowy na zamrożonym seedzie pełnej partii to dług odsetkowy
 
 Cztery testy etykiet w table-session miały po 10+ wpisów „przelosowane
@@ -1573,12 +1571,6 @@ przez realną ścieżkę (wzorzec L21 pkt 3), a nie obietnica wspólnej listy.
 **Wpis zbiorczy** (4 powtórki; L90 to kotwica): rozjazd oferty i walidacji
 to crash w benchmarku („Bot wybrał nielegalną komendę").
 
-**Powtórka (B7, quick 25 talii):** dwie gałęzie oferty z WŁASNĄ enumeracją
-pola bitwy — „{X}, {T}: cel o sile ≤ X" (Entrancing Lyre) i „any target"
-zdolności nadanej przez sprzęt (Blazing Torch) — proponowały cudzego stwora
-z hexproof, którego walidacja odrzucała. Nowa gałąź oferty CELÓW idzie przez
-`legalTargetCandidates`, nawet gdy typ celu „wynika z gałęzi".
-
 **Reguła:**
 1. Nowa ochrona / `pending*` trafia w TRZY miejsca: `legalTargetCandidates`
    (oferta), `validateTargets` i OBA boty (`heuristic`: `anyResolve`;
@@ -1686,9 +1678,8 @@ To nie dwie kopie jednej reguły, lecz **dwa porządki tej samej reguły**.
 → Pełna klasa i reguła: [L48].
 ## L91 (2026-08-29) — „Trigger bez efektu" ma trzy różne przyczyny; liczenie zdarzeń to ich przybliżenie, nie reguła
 
-**Przypadek (M256, 18 partii Żywym Testerem):** 12 komunikatów „trigger bez
-efektu" na pięciu kartach (Trostani Discordant ×4, Veiled Ascension ×3,
-Jyoti, Moag Ancient ×3, Plague Reav… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L91).
+**Przypadek:** 12 komunikatów „trigger bez efektu" na pięciu kartach (M256, 18 partii Żywym Testerem).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L91)
 
 **Reguła:**
 1. **Powód mieszka w warstwie efektu.** Selektor zbioru odbiorców jest
@@ -1712,13 +1703,7 @@ Jyoti, Moag Ancient ×3, Plague Reav… Pełna narracja: `docs/LESSONS_PRZYPADKI
 **Strażnik:** `test/m256-zywy-tester-runda2.test.js` (H1–H7, 15 testów).
 ## L108 (2026-08-31) — Deadlock reguł: szukaj par „musisz X" / „nie możesz X"
 
-Odkryte w M270 (błąd #9, CR 508.1c). Dotąd polowanie na błędy zakładało, że
-silnik robi coś **źle**. Istnieje groźniejsza klasa: silnik nie pozwala
-zrobić **niczego**. Goadowany stwór z „can't attack alone", jedyny zdolny do
-ataku, unieruchamiał krok deklaracji atakujących — każda możliwa komenda była
-odrzucana, partia stawała.
-
-Jak szukać: wypisz wszystkie ograniczenia jako WYMOGI („attacks each combat
+**Reguła:** wypisz wszystkie ograniczenia jako WYMOGI („attacks each combat
 if able", „must be blocked", „must attack a Planeswalker if able") i ZAKAZY
 („can't attack alone", „can't block", „can't attack unless..."). Dla każdej
 pary wymóg×zakaz dotyczącej tego samego obiektu sprawdź przypadek brzegowy,
@@ -1729,10 +1714,12 @@ naiwny zapis („zawsze wymagaj") jest sprzeczny z zakazem.
 
 Test na deadlock jest tani i powinien być domyślnym elementem strażnika
 każdego kroku z wyborem: **„gracz ZAWSZE ma co najmniej jedną legalną
-opcję"** — enumerator skonfrontowany z walidacją (L48). Ten test wyłapał
-drugą połowę błędu #9, której naprawa pierwszej połowy nie ruszyła:
-`legalAttackerOptions` zwracało pustą listę, więc silnik nie proponował nawet
-legalnej deklaracji pustej.
+opcję"** — enumerator skonfrontowany z walidacją (L48).
+
+**Strażnik:** `test/m270-wymog-ataku-if-able.test.js`,
+`test/m372-znaleziska-j-wymog-ataku-pass.test.js`.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L108)
+
 ## L109 (2026-08-31) — „Komentarz tłumaczący duplikat" to znacznik błędu
 
 **Przypadek:** W M271 (błędy #11/#12) ręczna kopia kodu przenoszenia miała komentarz: „ruch zrealizowany wprost, żeby nie tworzyć cyklu importów".
@@ -1999,26 +1986,17 @@ do `docs/LESSONS_PRZYPADKI.md` L124).
 
 ## L125 (2026-09-03) — Strażnik wyglądu ma mierzyć styl efektywny, nie tekst CSS
 
-**Przypadek:** M288/A zbudował jeden komponent wiersza (`src/table/picker.js`), a
-`test/m129-combat-wizard-dotyk.test.js` kazał każdej rodzinie kreatora mieć WŁASNĄ regułę
-`min-height: 44px` w `index.html`. Efekt: bloki bajt w bajt identyczne (po 261 znaków,
-różnił je tylko selektor), utrzymywane ręcznie w dwóch miejscach — i strażnik zielony także
-wtedy, gdy wspólna rodzina straciła próg dotyku, bo kopia w rodzinie kreatora nadal go
-miała. M292 odwrócił zależność: test liczy deklaracje rozwiązane po realnej liście klas z
-renderera, a drugi test pilnuje, żeby rodzina kreatora nie dublowała wyglądu wiersza.
-Dopiero wtedy kasacja duplikatu była bezpieczna, bo RED-em grozi zarówno regresja w
-komponencie współdzielonym, jak i dorzucenie kopii po stronie wołającego.
-
 **Reguła:** test, który sprawdzając wygląd czyta tekst stylesheetu, pilnuje duplikatu, nie
 faktu. Licz styl efektywny (klasy z kodu → reguły → scalone deklaracje) i dodaj asercję
 antyduplikacyjną. Tekst CSS badaj tylko tam, gdzie nie ma czego renderować (`:root`,
-`@media`). Przy okazji: parser CSS w teście musi wyciąć komentarze PRZED dzieleniem na
-reguły — inaczej reguła stojąca zaraz po bloku komentarza znika z listy i strażnik
-fałszywie zieloneje (to złapało mutację B w M292 za pierwszym podejściem).
+`@media`). Parser CSS w teście musi wyciąć komentarze PRZED dzieleniem na reguły —
+inaczej reguła stojąca zaraz po bloku komentarza znika z listy i strażnik fałszywie
+zieloneje.
 
 **Strażnik:** `test/m129-combat-wizard-dotyk.test.js`. Mutacje: wycięty `min-height` z
 `.picker-row` → RED, dopisana kopia `.damage-wizard-row { min-height… }` → RED, ręcznie
 lepiony `checkbox` poza `picker.js` → RED, ptaszek 16 px → RED.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L125)
 
 ## L126 (2026-09-03) — Zlanie dwóch „takich samych" kreatorów to test, czy naprawdę robiły to samo
 
@@ -2363,3 +2341,18 @@ z natury), bramki („raz na turę") bez zmian.
 kontrolera bierz ze zdarzenia (objaw: Necrosquito bez oil po śmierci stwora
 PRZEJĘTEGO; to samo w „dies"/„leaves the battlefield"). Strażnik:
 `test/m371-znaleziska-d-e-triggery-smierci.test.js`.
+
+## L149 (2026-09-17) — Grant lądu to JEDEN rachunek dla oferty i płatności (także w fazie pipów)
+
+**Przypadek:** Vandalize {4}{R} przy Górze z Nature's Embrace („{T}: Add two mana of any one color") — oferta obiecywała 5 many, ale płatność do-tapnęła Górę „za 1" i rzut został odrzucony, zostawiając tapnięty ląd i {R} w puli (seed 2039, quick-25).
+
+**Reguła:** ląd z grantem liczy się w ofercie jako `grant` jednostek (producibleMana), więc
+płatność MUSI wyprodukować tyle, ile oferta obiecuje — także wtedy, gdy tapnie go FAZA
+PIPÓW, a plan kolorów nie ma dla niego wiersza (grant „zużyty" finansowaniem źródła
+kosztowego): kolor bierz z `firstUncoveredPipColor`, jak auto-tap sumy. Druga strona tej
+samej klasy (L48): bramka sumy stoi PRZED pierwszą mutacją — po odrzuconej płatności żaden
+ląd nie jest tapnięty, a pula pusta (CR 601.2h).
+
+**Strażnik:** `test/m374-l48-grant-w-pipach.test.js` (4 piny; mutacje: brak fallbacku koloru
+grantu → piny 1 i 4 RED, brak bramki atomowości → piny 2 i 3 RED).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L149)

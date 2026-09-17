@@ -89,6 +89,12 @@ historię pojedynczych commitów PR czytamy przez `gh api`, nie przez
   z listy właściciela.
 - **Nie scala się PR** i nie rusza ustawień `main` (ADR 0007/0020).
 
+- [x] **E7 — wcielenie zaległej dokumentacji z pozostawionego PR #127**
+  (zlecenie właściciela): M374 w pełnej wersji, lekcja **L149** + przycięty
+  rejestr (budżet 99 696/100 000), plan `PLAN_2026-09-17d-l48-grant-w-pipach.md`,
+  handoff `docs/setup/HANDOFF_2026-09-17d-m374-grant-w-pipach.md`; kod był już
+  w `main` przez squash #125 (`git diff --stat cf51ae9 55e0461` = pusto).
+
 ## Wyniki etapów (domknięcie 2026-09-17d)
 
 - **E0** (`1f5e090`): plan sesji + PR [#126](https://github.com/jurekjurekgh/mtg/pull/126)
@@ -117,3 +123,9 @@ historię pojedynczych commitów PR czytamy przez `gh api`, nie przez
   `docs/setup/HANDOFF_2026-09-17d.md`) + bramki końcowe zielone:
   `npm test` **5732/5732**, `npm run test:all` **5742/5742** (bramka PR,
   jak CI) i `npm run build` **64 moduły / 3815,6 kB**.
+
+- **E7**: wcielenie zaległego PR #127 (zakres sprawdzony wobec `main`: wyłącznie
+  dokumentacja) — M374 (pełny), L149 + narracje w `docs/LESSONS_PRZYPADKI.md`, plan
+  L48 (F1–F4 `[x]`), handoff `2026-09-17d-m374-grant-w-pipach`, akapit M374 w README;
+  bramki po wcieleniu: `npm test` **5732/5732**, `npm run test:all` **5742/5742**,
+  build **64 moduły / 3815,6 kB**. PR #127 zamyka właściciel bez scalania.
