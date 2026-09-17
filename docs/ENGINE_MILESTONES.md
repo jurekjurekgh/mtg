@@ -5307,10 +5307,13 @@ Uwaga operacyjna: sandbox przeładował repo w trakcie sesji (świeży shallow k
 `/home/user/recovery/`.
 
 **Pomiary finalne:** `npm test` **5719/5719**, `npm run test:all` **5729/5729**,
-build **64 moduły / 3809,3 kB**, regresja bota **10/10**, quick 25 talii —
-POMIAR W TOKU (liczby po zakończeniu przebiegu; poprzedni, batch 56:
-heuristic 86,0%, aggro 25,5%, 1 mecz niedokończony). Pełne B0 tylko na wyraźną
-komendę właściciela (ADR 0018).
+build **64 moduły / 3809,3 kB**, regresja bota **10/10**, quick 6 talii —
+heuristic **84,1%** (1130/1344), aggro 27,7%, random 4,2%, 0 meczów
+niedokończonych. Pełny przebieg quick **25 talii** (5 952 mecze) przerwał się
+na 2400/5952 nowym znaleziskiem `illegal_spell: Niewystarczająca mana`
+(mecz `random(wiedzmin-bg) vs heuristic(tarkir-wur)`, seed 2039) — znalezisko
+OTWARTE (klasa L48: oferta != walidacja), punkt zaczepienia w handoffie
+2026-09-17c. Pełne B0 tylko na wyraźną komendę właściciela (ADR 0018).
 
 ## M368 (2026-09-17) — Integracja batcha 56: cztery bugi silnika z pomiarów, detektor testera, bramki
 

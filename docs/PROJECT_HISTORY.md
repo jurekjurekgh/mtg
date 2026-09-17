@@ -46,8 +46,10 @@ handoff: [`docs/setup/HANDOFF_2026-09-17c.md`](setup/HANDOFF_2026-09-17c.md).
   golden-master zregenerowany świadomie (jedna partia, reprodukcja realna).
 
 Bramki head sesji: `npm test` **5719/5719**, `npm run test:all` **5729/5729**,
-build **64 moduły / 3809,3 kB**, regresja bota **10/10**, quick 25 talii —
-POMIAR W TOKU (liczby po zakończeniu przebiegu).
+build **64 moduły / 3809,3 kB**, regresja bota **10/10**, quick 6 talii —
+heuristic 84,1% (1130/1344), 0 meczów niedokończonych. Pełny przebieg
+quick 25 talii przerwał się na nowym znalezisku `illegal_spell`
+(seed 2039; szczegóły: HANDOFF_2026-09-17c) — do domknięcia w następnej sesji.
 
 ## 2026-09-17b Batch 56 — 10 kart (25–63): energia, aury warunkowe, pojazd, druga faza główna (PR #125)
 
