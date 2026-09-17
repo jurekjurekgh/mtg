@@ -21,9 +21,9 @@ ADR 0021 §4. Gałąź sesji: `arena/01a0ae26-mtg`, bazowy HEAD: `e4befba`
 
 ## Etapy
 
-- [ ] **E0 — plan sesji** (ten plik, commit 1, PR na GitHubie przed kodowaniem
+- [x] **E0 — plan sesji** (ten plik, commit 1, PR na GitHubie przed kodowaniem
   — ADR 0020 A).
-- [ ] **E1 — pełny audyt PR #124** (ADR 0020 B / 0016): przegląd KAŻDEGO
+- [x] **E1 — pełny audyt PR #124** (raport `docs/audits/AUDYT_PR124_2026-09-17.md`, werdykt APPROVE; sondy mutacyjne V1/V2 potwierdzone) (ADR 0020 B / 0016): przegląd KAŻDEGO
   zmienionego pliku stanem po PR wobec stanu na jego starcie, w szczególności:
   - `src/engine/game-state.js` — A1 dowody SBA w cleanupie
     (`cleanupEventIsSbaEvidence`, CR 514.3a), `purpose`/`sourceCardId` w
@@ -48,7 +48,7 @@ ADR 0021 §4. Gałąź sesji: `arena/01a0ae26-mtg`, bazowy HEAD: `e4befba`
   - spójność dokumentacji (README/handoff/PH/audyt #123).
   Kryterium: raport `docs/audits/AUDYT_PR124_2026-09-17.md` z werdyktem i
   weryfikacją mutacyjną znalezisk.
-- [ ] **E2 — naprawy znalezisk** u root cause (AGENTS.md), każda z testem
+- [ ] **E2 — naprawy znalezisk** (dziś: O1 z raportu — klucz numeracji kopii nazw po nazwie WYŚWIETLANEJ, dziś nieosiągalne, ale sprzeczne z regułą właściciela) u root cause (AGENTS.md), każda z testem
   RED→GREEN i mutacją L13, osobnym commitem i pushem (ADR 0020 C).
 - [ ] **E3 — pętla jakości** (ADR 0021 §4b, inna ścieżka niż poprzednia
   sesja): audyt CR/ mechanik ścieżką, której #124 nie dotykał — kandydaci:
