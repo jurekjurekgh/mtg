@@ -5,6 +5,7 @@ import {
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
+import { isActivatedManaAbility } from '../engine/mana-sources.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
@@ -747,8 +748,37 @@ export function appendLogLineWithCardLinks(line, text, cardIdByName) {
   return line;
 }
 
+/**
+ * M369/G (znalezisko właściciela 2026-09-17c): zdolność many (CR 605.1a) nie
+ * jest ofertą panelu „Twoje działania" — manę zbiera automatyczna płatność,
+ * a źródła wybiera kreator many (main.js `manaSourcesForPlayer`). Lądy
+ * podstawowe nigdy tu nie trafiały (silnik nie enumeruje `tap_for_mana` jako
+ * akcji), ale stworzenia/artefakty z „{T}: Add …" trafiały jako
+ * `activate_ability` — akcja, która bez czaru do zapłaty nic nie zmienia.
+ * Orzeczenie bierzemy z SILNIKA (`isActivatedManaAbility`), nie z kształtu
+ * komendy — jedno źródło prawdy o tym, co jest zdolnością many (L41).
+ * Warianty z dodatkowym wyborem (cele, X, crew, koszty) zostają w panelu.
+ */
+const MANA_ABILITY_PAYLOAD_KEYS = Object.freeze([
+  'targets', 'attackerId', 'tapCreatureId', 'tapOtherCreatureId', 'tapArtifactIds',
+  'sacrificeLandId', 'sacrificeCreatureId', 'sacrificeCreatureIds', 'tapPermanentCostId',
+  'grantedFromEquipment', 'xValue',
+]);
+
+export function isManaAbilityCommand(command, session) {
+  if (command?.type !== 'activate_ability') return false;
+  for (const key of MANA_ABILITY_PAYLOAD_KEYS) {
+    const value = command[key];
+    if (Array.isArray(value) ? value.length > 0 : value != null) return false;
+  }
+  const object = session?.state?.objects?.get(command.objectId);
+  const ability = object?.abilities?.[command.abilityIndex]
+    ?? (object?.cardId ? session.abilitiesOf?.(object.cardId)?.[command.abilityIndex] : null);
+  return Boolean(ability && isActivatedManaAbility(ability));
+}
+
 export function buildActionEntries(commands, session, view) {
-  const entries = buildChoiceRequestEntries(commands, view);
+  const entries = buildChoiceRequestEntries(commands.filter((cmd) => !isManaAbilityCommand(cmd, session)), view);
   const byKey = new Map();
   const out = [];
   for (const entry of entries) {
@@ -2179,6 +2209,14 @@ function choiceSourceTitle(cmd, session, view) {
   // a opcje w środku mówiły „Wyposaż: Sprzęt → stwór" — dwie różne nazwy tej
   // samej akcji. Nazwa keyworda jest w deskryptorze, więc grupa może nazwać
   // rzecz po imieniu (jak station/crew w M103/C2).
+  // M369/C (znalezisko właściciela 2026-09-17c, Krumar Initiate): oferta
+  // zdolności z wyborem X pokazywała nagłówek „Wybierz: Wartość X" — bez
+  // nazwy karty i BEZ OPISU SKUTKU, więc gracz nie wiedział, co wybiera.
+  // Tytuł nazywa kartę i czynność deskryptorem efektu z DANYCH karty
+  // (ADR 0002), a konkretne X niosą etykiety opcji grupy.
+  if (cmd.type === 'activate_ability' && cmd.xValue != null) {
+    return `${name} — ${abilityXDescription(session, object, cmd)}`;
+  }
   if (cmd.type === 'activate_ability' && cmd.targets?.length) {
     const ability = session.state?.objects?.get(cmd.objectId)?.abilities?.[cmd.abilityIndex];
     if (ability?.keyword === 'equip') return `Wyposaż: ${name}`;
@@ -2211,6 +2249,22 @@ function choiceSourceTitle(cmd, session, view) {
 const CHOICE_GROUP_PENDING_SOURCE = Object.freeze({
   resolve_proliferate: (view) => view?.pendingProliferate?.sourceCardId ?? null,
 });
+
+/**
+ * Opis zdolności z wyborem X dla tytułu decyzji (M369/C). Deskryptor bierzemy
+ * z DANYCH karty (effect.type), nie z nazwy karty (ADR 0002) — druga karta
+ * z tym samym efektem dostaje ten sam, poprawny opis.
+ */
+const X_ABILITY_DESCRIPTIONS = Object.freeze({
+  endure_x: 'endure X — X liczników +1/+1 na tym stworze albo token Spirit X/X',
+});
+
+function abilityXDescription(session, object, command) {
+  const ability = object?.abilities?.[command.abilityIndex]
+    ?? (object?.cardId ? session.abilitiesOf?.(object.cardId)?.[command.abilityIndex] : null);
+  const effect = Array.isArray(ability?.effect) ? ability.effect[0] : ability?.effect;
+  return X_ABILITY_DESCRIPTIONS[effect?.type] ?? 'zdolność z wyborem X';
+}
 
 export function choiceGroupTitle(request, session, view) {
   const options = request?.options ?? [];
@@ -4122,7 +4176,11 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCyc
   // Zgłoszenie H (2026-09-11): tor przełącza przycisk myszy, nie scroll;
   // M349/A (2026-09-14): dziś jest to MMB (środkowy), nie PPM.
   const hint = hasLocal && showCycleHint ? ' · MMB zmienia tor' : '';
-  div(host, 'hover-mode', `${hoverModeLabel(hoverMode)}${hint}`);
+  // M369/F (znalezisko właściciela 2026-09-17c): pasek toru wymienia NAZWĘ
+  // podglądanej karty PRZED etykietą toru — z numerem porządkowym kopii,
+  // który niesie już `info.name` z kafla (session.nameOrdinalSuffix).
+  const cardTitle = info?.name ? `${info.name} — ` : '';
+  div(host, 'hover-mode', `${cardTitle}${hoverModeLabel(hoverMode)}${hint}`);
   return host;
 }
 
@@ -4594,7 +4652,11 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // poddanie partii są ostatnie Z ZASADY (1000/1001), a reszta wg ranku
   // (nierankowane 99, czyli przed nimi). Właściciel: pass/poddaj zawsze na
   // dole, „Przygoda" i inne efekty tam, gdzie inne czary.
-  const commands = view.legalCommands.slice().sort((a, b) => actionMenuRank(a.type) - actionMenuRank(b.type));
+  // M369/G: zdolności many wypadają z panelu — tak jak lądy podstawowe
+  // (patrz `isManaAbilityCommand`); zostają w kreatorze many i w płatności.
+  const commands = view.legalCommands.slice()
+    .filter((cmd) => !isManaAbilityCommand(cmd, session))
+    .sort((a, b) => actionMenuRank(a.type) - actionMenuRank(b.type));
   // M102/U5 (zgłoszenie właściciela 2026-08-16): nagłówek „Twoje działania"
   // NIE pokazuje już liczby. Liczyła surowe `legalCommands`, więc po scaleniu
   // duplikatów (U4) i pogrupowaniu wariantów w modale nie zgadzała się nawet

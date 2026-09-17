@@ -52,14 +52,19 @@ etapy I/H dodają wyłącznie WPISY TOKENÓW i grafikę, nie nowe karty do talii
 
 ## Etapy
 
-- [ ] **E1 (A)** — stempel publikacji i autosave w czasie lokalnym czytelnika
-  (+ strażnik na format i brak UTC).
-- [ ] **E2 (I, H)** — grafiki tokenów: wpisy `token_servo`/`token_treasure`
-  z `imageUri` (Scryfall, ADR 0028), rewers Morph z tokenu DTK, strażnik
-  „każdy token ma grafikę i wpis w rejestrze".
-- [ ] **E3 (C, F, G)** — etykiety i panel akcji: kontekst karty w decyzji
-  „Wartość X", nazwa (+ numer) w hoverze, ukrycie prostych zdolności many
-  w „Twoich działaniach" (kreator many bez zmian).
+- [x] **E1 (A)** — zrobione (`ad74c8a`): build zapisuje ISO w `datetime`, `clock.js`
+  liczy czas czytelnika, autosave bez krojenia ISO; piny w m189 + mutacja RED;
+  `npm test` 5696/5696.
+- [x] **E2 (I, H)** — zrobione (`9ee386b`): `token_servo` (tkld/4) + strażnik
+  „każdy token silnika ma ilustrację", `MORPH_BACK_URL` (tdtk/7) rozstrzygany
+  po strefie (`artOf.battlefield`), strefy ukryte bez zmian; mutacje RED;
+  `npm test` 5700/5700. (Uwaga: `token_treasure` miał już `imageUri` — audyt
+  pokazał tylko jeden brakujący token, nie dwa.)
+- [x] **E3 (C, F, G)** — zrobione: tytuł decyzji X nazywa kartę i skutek
+  (deskryptor `endure_x`), pasek hoveru dostaje nazwę z numerem kopii,
+  zdolności many (CR 605.1a, `isActivatedManaAbility`) znikają z panelu,
+  ale zostają w `legalCommands` dla kreatora many; 3 piny + 3 mutacje RED;
+  `npm test` 5703/5703.
 - [ ] **E4 (D, E)** — triggery śmierci: Necrosquito (przejęty stwór) i
   Highland Game (podwójne odpalenie) — reprodukcja, fix u root cause, piny
   + mutacje.
