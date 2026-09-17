@@ -1120,6 +1120,54 @@ zwykły artefakt.
 Potrzebny test semantyczny: „token-kopia ma ten sam `station`/`saga` co
 oryginał" (po deskryptorach, ADR 0002).
 
+## L108 (2026-08-31) — przypadek (M270, błąd #9, CR 508.1c)
+
+**Objaw:** goadowany stwór z „can't attack alone", jedyny zdolny do ataku,
+unieruchamiał krok deklaracji atakujących — KAŻDA możliwa komenda była
+odrzucana, partia stawała. Dotąd polowanie na błędy zakładało, że silnik robi
+coś źle; tu silnik nie pozwalał zrobić NICZEGO. Test na deadlock („gracz ZAWSZE
+ma co najmniej jedną legalną opcję") wyłapał drugą połowę błędu, której naprawa
+pierwszej nie ruszyła: `legalAttackerOptions` zwracało pustą listę, więc silnik
+nie proponował nawet legalnej deklaracji pustej.
+
+## L125 (2026-09-03) — przypadek (M288/A, M292)
+
+M288/A zbudował jeden komponent wiersza (`src/table/picker.js`), a
+`test/m129-combat-wizard-dotyk.test.js` kazał każdej rodzinie kreatora mieć
+WŁASNĄ regułę `min-height: 44px` w `index.html`. Efekt: bloki bajt w bajt
+identyczne (po 261 znaków, różnił je tylko selektor), utrzymywane ręcznie
+w dwóch miejscach — i strażnik zielony także wtedy, gdy wspólna rodzina straciła
+próg dotyku, bo kopia w rodzinie kreatora nadal go miała. M292 odwrócił
+zależność: test liczy deklaracje rozwiązane po realnej liście klas z renderera,
+a drugi test pilnuje, żeby rodzina kreatora nie dublowała wyglądu wiersza.
+Dopiero wtedy kasacja duplikatu była bezpieczna.
+
+## L54 (2026-08-22) — przypadek (M179, klasa L50/L51)
+
+**Objaw:** „kara −20 za trik we własnej main" (M146) nie działała od początku —
+bazowa wartość rzutu czaru (~50–65) zjadała ją w całości i bot dalej rzucał
+triki w Głównej 1. Kara ISTNIAŁA, tylko liczona w oderwaniu od sumy.
+
+## L149 (2026-09-17) — przypadek (M374, znalezisko benchmarku quick-25 seed 2039)
+
+**Objaw:** mecz `random(wiedzmin-bg) vs heuristic(tarkir-wur)`, seed 2039 —
+`illegal_spell: Niewystarczająca mana` na komendzie, którą silnik sam
+zaproponował: `cast_spell` Vandaliize {4}{R} (tryb „Zniszcz ląd"), gdy p2 miał
+Górę z Nature's Embrace p1 („{T}: Add two mana of any one color"), 2 Równiny,
+Wyspę i Jeskai Devotee ({1},{T}: Add {U}{R}{W}).
+
+**Przyczyna:** oferta liczyła grant jako 2 jednostki (producibleMana), ale plan
+kolorów (`planGrantManaColors`) uznawał grant za zużyty finansowaniem źródła
+kosztowego i zwracał PUSTY plan — więc faza PIPÓW tapowała Górę z
+`grantColor: null`, czyli za 1. Płatność produkowała 4 < 5 i rzucała
+„Niewystarczająca mana" PO tapnięciu (odrzucona komenda zostawiała tapniętą
+Górę i {R} w puli). Sonda `playerView` w chwili błędu pokazała 7 wariantów
+oferty i odrzucenie pierwszego z nich.
+
+**Naprawa:** (1) bez wiersza planu kolor grantu bierze `firstUncoveredPipColor`
+(ten sam wybór co auto-tap sumy) — ląd z grantem zawsze produkuje cały grant;
+(2) bramka sumy przeniesiona PRZED pierwszą mutację płatności (CR 601.2h).
+
 ## L48 (2026-08-18) — przypadek
 
 **Cztery warianty rozjazdu:**
@@ -1164,6 +1212,12 @@ mieć jedno ciało wołane z obu stron (u nas: `outsideHandCastScope`), a zmiana
 którejkolwiek strony wymaga drugiej w tym samym commicie. Test dowodowy: assertion
 na ODRZUCENIE komendy spoza oferty, nie tylko na brak oferty (samo „oferta pusta"
 byłoby zielone również przy lukawej walidacji).
+
+**Powtórka B7 (quick 25 talii, 2026-09-17b):** dwie gałęzie oferty z WŁASNĄ
+enumeracją pola bitwy — „{X}, {T}: cel o sile ≤ X" (Entrancing Lyre) i „any
+target" zdolności nadanej przez sprzęt (Blazing Torch) — proponowały cudzego
+stwora z hexproof, którego walidacja odrzucała. Nowa gałąź oferty CELÓW idzie
+przez `legalTargetCandidates`, nawet gdy typ celu „wynika z gałęzi".
 
 ## L49 (2026-08-18) — przypadek
 

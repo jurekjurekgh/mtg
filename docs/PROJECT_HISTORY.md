@@ -11224,3 +11224,30 @@ bezbarwny też; 7+7 = 49 brzmień, macierz pinowana). (B) Wąski ekran
 kosztem innych, overflow rośnie; regen 5 talii (±1 land, sumy stałe);
 fala: golden-master regen (`131cd510…`, 4/6 partii bit w bit) + podłoga
 remisów 6→4 (obie uzasadnione pomiarem, nie zgadnięte).
+
+## 2026-09-17d — L48 z E7 domknięte: grant lądu w fazie pipów płatności (M374, PR #125)
+
+Znalezisko OTWARTE z E7 (`illegal_spell: Niewystarczająca mana`,
+`random(wiedzmin-bg) vs heuristic(tarkir-wur)`, seed 2039) pociągnięte do
+końca. Sonda odtwarzająca dokładnie ten mecz (kopia `runSimulation` zamiast
+rzutu po odrzuceniu) dała reprodukcję w 0,4 s, a rozbiór stanu (źródła many,
+`planGrantManaColors`, stack rzutu) wskazał winowajcę: Nature's Embrace na
+Górze p2 liczyło się w ofercie jako 2 many (5 produkowalnych na koszt {4}{R}),
+ale faza PIPÓW płatności tapowała Górę z `grantColor: null` (plan kolorów
+pusty — grant „zużyty" finansowaniem Jeskai Devotee), czyli za 1. Suma
+płatności 4 < 5 → odrzucenie komendy z oferty, a bramka sumy stała już PO
+tapnięciu: odrzucona komenda zostawiała tapniętą Górę i {R} w puli.
+
+- **Naprawa `55e0461`** (`src/engine/resources.js`): ląd z grantem zawsze
+  produkuje cały grant (brak wiersza planu → `firstUncoveredPipColor`, jak
+  auto-tap sumy) ORAZ bramka sumy przeniesiona przed pierwszą mutację.
+- **Pin `test/m374-l48-grant-w-pipach.test.js`** (4): grant w pipach = 2 many
+  koloru pipa; atomowość; kontrola negatywna bez aury; każda oferta rzutu
+  wykonywalna. Mutacje: brak fallbacku koloru grantu → 1+4 RED, brak bramki
+  atomowości → 2+3 RED. Bramki: `npm test` **5723/5723**, quick-25 (5 952
+  mecze) — bez przerwania; build i `test:all` w handoffie 2026-09-17d.
+- **Rejestr lekcji**: nowa **L149** (grant = jeden rachunek oferty i płatności;
+  bramka przed mutacją); przy okazji narracja L48(B7)/L54/L91/L108/L125
+  wyniesiona do `docs/LESSONS_PRZYPADKI.md`, żeby budżet lektury (100k) zmieścił
+  wpis — rejestr przycięty, nie usunięty.
+- **Pomiar quick-25**: patrz handoff 2026-09-17d (sekcja „Pomiary").

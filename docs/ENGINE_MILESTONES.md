@@ -5376,3 +5376,54 @@ build **63 moduły / 3793,4 kB**, regresja bota **10/10**, quick 25 talii — he
 Lekcje sesji: **L147** (rezerwa pipów obowiązuje też finansowanie cudzego
 kosztu) i kotwica w **L48** (nowa gałąź oferty celów idzie przez
 `legalTargetCandidates`).
+
+## M374 (2026-09-17) — L48 z pomiaru E7: grant lądu musi płacić tyle, ile obiecuje oferta
+
+Pociągnięcie OTWARTEGO znaleziska z E7 (quick-25 przerwany na 2400/5952):
+`illegal_spell: Niewystarczająca mana`, mecz `random(wiedzmin-bg) vs
+heuristic(tarkir-wur)`, seed 2039. Sonda odtwarzająca dokładnie ten mecz
+(kopia pętli `runSimulation`, która nie rzuca po odrzuceniu, tylko zapisuje
+komendę i widok) reprodukuje błąd w **0,4 s** — bez dobierania seedów.
+`playerView` w chwili błędu pokazywał 7 wariantów rzutu, a `execute` odrzucał
+pierwszy z nich.
+
+**Root cause (L48: oferta != płatność).** Natura's Embrace p1 („{T}: Add two
+mana of any one color", `grantMana.amount = 2`) na Górze p2 dawała
+`producibleMana` = 5 (2 z grantu + 3 z pozostałych lądów), więc oferta
+proponowała Vandalize {4}{R}. Płatność ma trzy fazy (pipy → suma → źródła
+kosztowe); fazę PIPÓW obsługiwał `planGrantManaColors`, a ten — gdy plan
+kolorów uznał grant za ZUŻYTY finansowaniem źródła kosztowego (Jeskai Devotee
+`{1},{T}: Add {U}{R}{W}`, w feralnej partii na stole) — nie miał wiersza dla
+Góry i tapował ją z `grantColor: null`, czyli **za 1** zamiast 2. Suma
+płatności (4) była mniejsza od oferty (5), więc `spendMana` rzucał
+„Niewystarczająca mana" — a ponieważ bramka sumy stała PO fazie pipów,
+odrzucona komenda zostawiała ślad: tapniętą Górę i {R} w puli (CR 601.2h).
+Auto-tap sumy i blok naprawy seeda 2027 (L147) liczyły granty poprawnie —
+dziurą była tylko ścieżka pipów.
+
+**Naprawa (`55e0461`, `src/engine/resources.js`, dwie zmiany):**
+1. ląd z grantem, którego płatność dotyka, produkuje CAŁY grant — bez wiersza
+   planu kolor bierze `firstUncoveredPipColor` (ten sam wybór co auto-tap sumy
+   i blok seeda 2027), a warunek wejścia zna grant (`grantColor == null` zamiast
+   `!plannedGrant`), więc ląd z grantem może pokryć pip także własnym
+   „dowolnym kolorem";
+2. bramka sumy przeniesiona PRZED pierwszą mutację płatności — nieudana
+   płatność nie tapnie źródła ani nie wpłaci many do puli (CR 601.2h).
+
+**Pin `test/m374-l48-grant-w-pipach.test.js` (4, wszystkie z fiksturą
+z repro — Góra z grantem, 2 Równiny, Wyspa, Jeskai Devotee, Vandalize
+w ręce):** M374/1 grant w pipach = pełny grant (zdarzenie `mana_produced`
+z `amount: 2`, `grantMana: true`, kolor = kolor pipa; pula rozliczona do
+zera) + dowód triggera (`planGrantManaColors` zwraca `[]`); M374/2
+atomowość — nieopłacalna płatność nie zostawia śladu; M374/3 kontrola
+negatywna bez aury (4 many → brak oferty); M374/4 KAŻDA pozycja oferty tego
+rzutu jest wykonywalna (klasa L48). **Mutacje:** `grantColor = plannedGrant`
+→ M374/1 i M374/4 RED; wyłączona bramka atomowości → M374/2 i M374/3 RED.
+
+**Bramki i pomiar:** `npm test` **5723/5723**; quick-25 (5 952 mecze, komenda
+z E7) — patrz handoff `docs/setup/HANDOFF_2026-09-17d.md`; lekcja **L149**
+(reguła + strażnik), narracja w `docs/LESSONS_PRZYPADKI.md`.
+
+**Lekcja klasy:** „oferta = płatność" obowiązuje KAŻDĄ fazę płatności, nie
+tylko sumę — grant lądu jest jedną decyzją koloru podejmowaną w ofercie, więc
+każda faza, która tapnie taki ląd, musi ją respektować (L48 + L147).
