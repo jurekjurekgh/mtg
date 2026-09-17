@@ -62,11 +62,10 @@ function build({ out }) {
   // M189/L (uwaga właściciela): stempel niesie datę I GODZINĘ publikacji —
   // sama data nie odróżniała dwóch buildów z tego samego dnia, a to jedyny
   // sposób, żeby na telefonie sprawdzić, czy otwarty artefakt jest aktualny.
-  // Czas lokalny strefy budującej, bez sekund („YYYY-MM-DD HH:MM").
-  const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  const built = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-    + ` ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  // Znalezisko A (2026-09-17c): zapisujemy ISO (UTC, `datetime`), a widoczną
+  // godzinę liczy przeglądarka w strefie CZYTELNIKA (`clock.js`) — czas
+  // lokalny maszyny budującej (CI/sandbox w UTC) mylił gracza o 2 h.
+  const built = new Date().toISOString();
   const html = shell
     .replace('<!--BUNDLE-->', () => `<script>\n${fullCode}\n</script>`)
     .replace('<!--BUILT-->', () => built);

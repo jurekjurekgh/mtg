@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
 const SHELL = fs.readFileSync('src/table/index.html', 'utf8');
 /** Szablon bez komentarzy (HTML i CSS) — komentarz nie jest tekstem w UI. */
@@ -55,6 +56,40 @@ test('M189/L3: self-test nadal DZIAŁA jako bramka jakości (tylko bez UI)', () 
     'kontener self-testu istnieje, ale jest ukryty przed graczem');
   const main = fs.readFileSync('src/table/main.js', 'utf8');
   assert.match(main, /runSelfTest\(\)/, 'self-test nadal uruchamiany');
+});
+
+// ---- A (2026-09-17c): stempel publikacji w czasie LOKALNYM czytelnika ------
+
+test('A: stempel publikacji niesie ISO, a UI liczy czas lokalny czytelnika', () => {
+  const html = buildArtifact();
+  const stamp = /<time[^>]*id="build-stamp"[^>]*datetime="([^"]+)"/.exec(html);
+  assert.ok(stamp, 'stempel ma maszynowy znacznik czasu (`datetime`), nie zaszyty tekst');
+  assert.match(stamp[1], /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/, 'znacznik jest ISO (strefa jednoznaczna)');
+  const main = fs.readFileSync('src/table/main.js', 'utf8');
+  assert.match(main, /applyBuildStamp\(\)/, 'stempel jest formatowany przy starcie strony');
+  assert.match(main, /formatLocalTimestamp\(iso\)/, 'formatowanie idzie wspólnym helperem');
+  assert.match(main, /formatLocalTimestamp\(saved\.savedAt\)/,
+    'etykieta autosave też pokazuje czas lokalny');
+  assert.doesNotMatch(main, /savedAt\?\.slice/, 'koniec z krojeniem ISO — to zawsze UTC');
+});
+
+test('A: ta sama chwila w Warszawie jest o 2 h późniejsza niż w UTC', () => {
+  // Zachowanie, nie tekst: helper liczy z pól LOKALNYCH, więc w strefie
+  // czytelnika ta sama chwila daje inną godzinę niż w UTC (znalezisko: gracz
+  // w Warszawie widział czas maszyny budującej, o 2 h młodszy).
+  const url = pathToFileURL(path.resolve('src/table/clock.js')).href;
+  const out = execFileSync('node', ['--input-type=module', '-e',
+    `process.env.TZ = 'Europe/Warsaw';\n`
+    + `const { formatLocalTimestamp } = await import(${JSON.stringify(url)});\n`
+    + `console.log(formatLocalTimestamp('2026-09-17T14:38:00Z'));`,
+  ], { encoding: 'utf8' }).trim();
+  assert.equal(out, '2026-09-17 16:38', 'UTC+2 (wrzesień) — dokładnie to czyta gracz');
+  const utc = execFileSync('node', ['--input-type=module', '-e',
+    `process.env.TZ = 'UTC';\n`
+    + `const { formatLocalTimestamp } = await import(${JSON.stringify(url)});\n`
+    + `console.log(formatLocalTimestamp('2026-09-17T14:38:00Z'));`,
+  ], { encoding: 'utf8' }).trim();
+  assert.equal(utc, '2026-09-17 14:38', 'a w UTC ta sama chwila zostaje bez zmian');
 });
 
 // ---- M: „Ustawienia i pomoc" usunięte ------------------------------------

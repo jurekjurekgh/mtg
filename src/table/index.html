@@ -1241,7 +1241,11 @@
        test/table-ui.test.js) używają go jako dowodu, że sklejony artefakt
        naprawdę wykonuje silnik reguł w przeglądarce. -->
   <div id="selftest" hidden></div>
-  <div class="build-stamp">Wersja artefaktu: <!--BUILT--></div>
+  <!-- Znalezisko A (2026-09-17c): w atrybucie `datetime` ląduje ISO (UTC),
+       a widoczną datę/godzinę liczy przeglądarka w strefie CZYTELNIKA
+       (`applyBuildStamp` w main.js). id jest w szablonie, więc testowe
+       mini-DOM-y znają ten element. -->
+  <div class="build-stamp">Wersja artefaktu: <time id="build-stamp" datetime="<!--BUILT-->">—</time></div>
 
 </div>
 

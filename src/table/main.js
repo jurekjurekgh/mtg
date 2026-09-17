@@ -18,6 +18,7 @@ import { populateDeckSelects, combineDeckSources } from './deck-selects.js';
 import { createRng } from '../engine/rng.js';
 import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
+import { formatLocalTimestamp } from './clock.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TURN_NAMES, gameOverNotice } from './session.js';
@@ -1437,7 +1438,10 @@ function bootstrapTable() {
       const raw = storage.getItem(AUTOSAVE_KEY);
       if (!raw) { slot.textContent = ''; return; }
       const saved = JSON.parse(raw);
-      slot.textContent = `Ostatni autosave: ${saved.savedAt?.slice(0, 16).replace('T', ' ') ?? '?'} (seed ${saved.seed}) — możesz wznowić.`;
+      // Znalezisko A (2026-09-17c): ISO z autosave to UTC — pokazujemy czas
+      // LOKALNY czytelnika (dotąd `slice()` po ISO kłamał o 2 h w Warszawie).
+      const savedLocal = formatLocalTimestamp(saved.savedAt) ?? '?';
+      slot.textContent = `Ostatni autosave: ${savedLocal} (seed ${saved.seed}) — możesz wznowić.`;
     } catch { slot.textContent = ''; }
   }
 
@@ -2394,7 +2398,19 @@ function bootstrapTable() {
 }
 
 runSelfTest();
+applyBuildStamp();
 bootstrapTable();
+
+// Znalezisko A (2026-09-17c): stempel publikacji jest zapisany w artefakcie jako
+// ISO (`datetime`), a widoczna data/godzina powstaje TUTAJ — w strefie
+// czytelnika. Bez tego gracz w Warszawie widział czas maszyny budującej (UTC).
+function applyBuildStamp() {
+  const stamp = document.getElementById('build-stamp');
+  const iso = stamp?.getAttribute('datetime');
+  if (!stamp || !iso) return;
+  const local = formatLocalTimestamp(iso);
+  if (local) stamp.textContent = local;
+}
 
 // M203/C (uwaga właściciela 2026-08-25, druga próba): panel szybkich
 // informacji (#turn-indicator) jest warstwą `position: fixed`, więc nie
