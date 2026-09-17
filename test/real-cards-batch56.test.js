@@ -550,3 +550,133 @@ test('B56/B5: 54 Cautious Survivor — w cudzej turze nie odpala', () => {
   resolve(s);
   assert.equal(player(s, 'p1').life, 20);
 });
+
+// ---------------------------------------------------------------------------
+// B6 (M367) — 63 Dragon Fodder (dwa tokeny 1/1 R Goblin), 60 Thornwood Falls
+//            (bliźniak Dismal Backwater) i 28 Kraken's Eye (bliźniak
+//            Angel's Feather — domknięcie zaległości planu)
+// ---------------------------------------------------------------------------
+
+sanity('dragon-fodder', 63, 'ORI', 'Kamigawa');
+sanity('thornwood-falls', 60, 'M20', 'Eldraine');
+sanity('krakens-eye', 28, 'M11', 'Ixalan');
+
+test('B56/B6: 63 Dragon Fodder — dwa OSOBNE tokeny 1/1 czerwone Gobliny', () => {
+  const s = game();
+  put(s, 'fodder', 'dragon-fodder', 'p1', 'hand');
+  addMana(s, 'p1', 2, { colors: ['R', 'R'] });
+  let cast = commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'fodder');
+  assert.ok(cast, 'oferta rzucenia sorcery za {1}{R}');
+  run(s, cast);
+  resolve(s);
+  const goblins = [...s.objects.values()]
+    .filter((o) => o.cardId === 'token_goblin' && o.zone === 'battlefield');
+  assert.equal(goblins.length, 2, 'DOKŁADNIE dwa tokeny (nie jeden 2/2)');
+  for (const goblin of goblins) {
+    assert.equal(goblin.kind, 'creature');
+    assert.equal(effectivePower(goblin, s), 1);
+    assert.equal(effectiveToughness(goblin, s), 1);
+    assert.deepEqual(goblin.colors, ['R']);
+    assert.deepEqual(goblin.subtypes, ['Goblin']);
+  }
+  // Grafika i typ wpisu katalogowego (kafel czyta imageUri z rejestru, M202/K).
+  const def = registry.get('token_goblin');
+  assert.match(def.imageUri, /^https:\/\/cards\.scryfall\.io\//, 'grafika ze Scryfalla');
+  assert.deepEqual(def.types, ['Creature', 'Token']);
+  assert.deepEqual(def.colors, ['R']);
+  assert.equal(def.support.status, 'limited', 'token — nie taliowalny');
+});
+
+test('B56/B6: 63 Dragon Fodder — bez manny brak oferty (scenariusz nielegalny)', () => {
+  const s = game();
+  put(s, 'fodder', 'dragon-fodder', 'p1', 'hand');
+  assert.equal(commands(s).some((c) => c.type === 'cast_spell' && c.objectId === 'fodder'), false,
+    'brak dwóch many = brak oferty');
+  const r = execute(s, { type: 'cast_spell', playerId: 'p1', objectId: 'fodder', targets: [] });
+  assert.equal(r.ok, false);
+  assert.equal(state_object(s, 'fodder').zone, 'hand', 'odrzucony rzut nie rusza karty');
+});
+
+/** Karta katalogu o DOKŁADNIE takim koszcie — permanent bez celu (wzorzec M193). */
+function cardWithCost(cost) {
+  const card = registry.all().find((c) => MANA_COSTS[c.id] === cost
+    && (c.types ?? []).some((t) => ['Creature', 'Artifact', 'Enchantment'].includes(t))
+    && !(c.abilities ?? []).some((a) => a?.type === 'triggered' && a?.trigger?.requiresTarget)
+    && !c.spell?.targets?.length
+    && !c.additionalCost);
+  assert.ok(card, `katalog ma permanent bez celu o koszcie ${cost}`);
+  return card;
+}
+
+const hasCastOffer = (s, id, playerId = 'p1') => commands(s, playerId)
+  .some((c) => (c.type === 'cast_spell' || c.type === 'cast_permanent') && c.objectId === id);
+
+test('B56/B6: 60 Thornwood Falls — wchodzi tapnięty, ETB +1 życia, płaci {G} i {U}', () => {
+  const s = game();
+  put(s, 'falls', 'thornwood-falls', 'p1', 'hand'); // w ręce → play_land
+  const life0 = player(s, 'p1').life;
+  const play = commands(s).find((c) => c.type === 'play_land' && c.objectId === 'falls');
+  assert.ok(play, 'oferta zagrania landa');
+  run(s, play);
+  resolve(s);
+  // play_land przenosi kartę na pole bitwy z NOWYM id (moveObjectDirectly) —
+  // szukamy po cardId, jak w testach M193/B44.
+  const land = find(s, 'thornwood-falls');
+  assert.ok(land, 'land na polu bitwy');
+  assert.equal(land.zone, 'battlefield');
+  assert.equal(land.tapped, true, 'wchodzi tapnięty');
+  assert.equal(player(s, 'p1').life, life0 + 1, 'ETB: +1 życia');
+
+  // {T}: Add {G} or {U} — pip {G} i pip {U} opłacalne (generyk z drugiego landa).
+  for (const [cost, pip] of [['{1}{G}', 'G'], ['{1}{U}', 'U']]) {
+    const s2 = game();
+    put(s2, 'falls', 'thornwood-falls', 'p1', 'battlefield');
+    put(s2, 'mtn', 'basic-mountain', 'p1', 'battlefield');
+    const spell = cardWithCost(cost);
+    put(s2, 'spell', spell.id, 'p1', 'hand');
+    assert.ok(hasCastOffer(s2, 'spell'), `Thornwood Falls płaci pip {${pip}} (koszt ${cost})`);
+  }
+  // Kontrola negatywna: Oracle daje wyłącznie {G} albo {U}.
+  const s3 = game();
+  put(s3, 'falls', 'thornwood-falls', 'p1', 'battlefield');
+  put(s3, 'mtn', 'basic-mountain', 'p1', 'battlefield');
+  const black = cardWithCost('{1}{B}');
+  put(s3, 'spell', black.id, 'p1', 'hand');
+  assert.equal(hasCastOffer(s3, 'spell'), false, 'pip {B} nie ma z czego zapłacić');
+});
+
+test("B56/B6: 28 Kraken's Eye — niebieski czar PRZECIWNIKA: „you may gain 1 life”", () => {
+  const s = game();
+  put(s, 'eye', 'krakens-eye', 'p1', 'battlefield');
+  put(s, 'blue', 'maritime-guard', 'p2', 'hand'); // 1/2 za {1}{U}, bez zdolności
+  addMana(s, 'p2', 2, { colors: ['U', 'U'] });
+  // Tura przeciwnika (stwór = czar sorcery-timing, tylko w swojej fazie main);
+  // ruling: trigger Oka łapie czar DOWOLNEGO gracza.
+  s.turn.activePlayerId = s.turn.priorityPlayerId = 'p2';
+  const before = player(s, 'p1').life;
+  const castBlue = commands(s, 'p2').find((c) => c.type === 'cast_permanent' && c.objectId === 'blue');
+  assert.ok(castBlue, 'oferta rzucenia niebieskiego stwora');
+  run(s, castBlue);
+  const choice = commands(s, 'p1').find((c) => c.type === 'resolve_optional_trigger_choice');
+  assert.ok(choice, '„you may” — decyzja kontrolera Oka (ruling: dowolny gracz)');
+  run(s, { ...choice, fire: true });
+  assert.ok(s.zones.stack.length >= 1, 'trigger rozstrzyga się, gdy czar jest jeszcze na stosie');
+  resolve(s);
+  assert.equal(player(s, 'p1').life, before + 1, '„you may gain 1 life”');
+  // Permanent wchodzi z NOWYM id (moveObjectDirectly) — szukamy po cardId.
+  assert.equal(find(s, 'maritime-guard')?.zone, 'battlefield', 'czar przeciwnika rozstrzygnął się normalnie');
+});
+
+test("B56/B6: 28 Kraken's Eye — czar czerwony nie odpala (kolor z deskryptora)", () => {
+  const s = game();
+  put(s, 'eye', 'krakens-eye', 'p1', 'battlefield');
+  put(s, 'red', 'dragon-fodder', 'p2', 'hand');
+  addMana(s, 'p2', 2, { colors: ['R', 'R'] });
+  s.turn.activePlayerId = s.turn.priorityPlayerId = 'p2'; // sorcery — tura p2
+  const before = player(s, 'p1').life;
+  run(s, { type: 'cast_spell', playerId: 'p2', objectId: 'red', targets: [] });
+  assert.equal(commands(s, 'p1').some((c) => c.type === 'resolve_optional_trigger_choice'), false,
+    'czerwony czar nie jest niebieski');
+  resolve(s);
+  assert.equal(player(s, 'p1').life, before, 'brak triggera = brak życia');
+});

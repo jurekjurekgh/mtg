@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "overallHash": "ad0a3245092e67fde740f898b6e52eaff41dd8dfc6e8fc4695ebc060d3ef1d5e",
+  "overallHash": "09fa17398978a46c32d442b9c4d474b8d8d156ce11a7b31a185f370f3a96feca",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1000,
-      "hash": "dd90bd15e5b0f17252030e3682884df54c97ae55bb01546cd402b7e5baf40c86",
+      "hash": "18a63ef4092d49a92d4a57046235b1d80b235e08c695ed004e657a2632cf607a",
       "decisions": 308,
-      "scoreSum": 3218.9009,
+      "scoreSum": 3219.9009,
       "chosenKinds": {
         "activate_ability": 1,
         "attack": 9,
@@ -25,9 +25,9 @@
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1001,
-      "hash": "86194727eb428884102115681baffa48df854b4482410e67e7800723456b3533",
+      "hash": "f92131800f94f89cbb824bc64512d4a9e841e4bfa4bf9416950ae8c1c57e2d32",
       "decisions": 179,
-      "scoreSum": 1639.4117,
+      "scoreSum": 1640.4117,
       "chosenKinds": {
         "attack": 4,
         "block": 7,
@@ -43,9 +43,9 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1000,
-      "hash": "f3d5104dec4f7bab1a04df0f087de9c5eeed0f3f44ad2dd27591f143d519636c",
+      "hash": "5b3fc37cc2eb13bacf7b716f6424bb0b97b5ebf95304be36ecd2d6b7968cb73e",
       "decisions": 233,
-      "scoreSum": 2924.218,
+      "scoreSum": 2926.218,
       "chosenKinds": {
         "activate_ability": 1,
         "attack": 6,
@@ -64,9 +64,9 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1001,
-      "hash": "e715e4c3b7111497bd8c90970e9c3c9d7bc13c78534897e5f856bb3ebd380ab8",
+      "hash": "555d2dea96c6b832cf031985219aefaeeae6ca32d523bc456fcec2f7c48fc699",
       "decisions": 198,
-      "scoreSum": 2940.2099,
+      "scoreSum": 2943.2099,
       "chosenKinds": {
         "activate_ability": 3,
         "attack": 6,
@@ -85,9 +85,9 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "62fcb9e5add457d9189b552113ae677d04d50bd60de68cfeda4f0cb45196ae82",
+      "hash": "c8c4fc798a9848035209157e0a23d355d9ed1c39bcf6429fbfeaaeba22e16967",
       "decisions": 176,
-      "scoreSum": 2523.3171,
+      "scoreSum": 2525.3171,
       "chosenKinds": {
         "activate_ability": 1,
         "attack": 6,
@@ -106,9 +106,9 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1001,
-      "hash": "e0b2fda8355642a9c1e5ab75717707328897d4f0b8a46a9aff3851136b3dbf7b",
+      "hash": "e1b07e9164f9add43a7bfe4b1d083601c9de97f977221c3cb50bc2a3704b63c7",
       "decisions": 189,
-      "scoreSum": 2599.1279,
+      "scoreSum": 2602.1279,
       "chosenKinds": {
         "activate_ability": 2,
         "attack": 4,

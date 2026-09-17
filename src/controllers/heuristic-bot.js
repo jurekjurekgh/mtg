@@ -1928,7 +1928,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Ląd z zdolnościa poza manową (cykl, token, tarcza) zyskuje, gdy manabaza
     // jest juz wystarczajaca — wtedy liczy sie uzytecznosc, nie kolor.
     if (a.pola.length >= 2 && a.dodatkowaZdolnosc) delta += 2;
-    return Math.max(-14, Math.min(16, delta));
+    // REAUDYT (batch 56, B6): wspólna klamra 16 zgrywała RÓŻNE sygnatury —
+    // „pokrywa 3 + nowy kolor" (14+3) i „pokrywa 4 + nowy kolor" (15+3) obie
+    // dobijały do 16, a audyt remisorów zgłosił to jako remis przy danych,
+    // które bot ZNA (nowy worek-mroczny po awansie Ixalanu trafił taką rękę;
+    // przed zmianą talii `rozroznialne` = 0). Sufit pokrycia zostaje w mapie
+    // wyżej — ≥5 pipów nasycone ŚWIADOMIE — a premie (nowy kolor, {T}: dwa
+    // many, zdolność poza manową) są widoczne nad nim. Suma składników nie
+    // przekracza z natury 25, czyli wciąż daleko od bazy 90: ląd nadal nie ma
+    // prawa przeskoczyć np. śmiertelnego ataku (ta sama racja co przy mapie).
+    return Math.max(-14, Math.min(25, delta));
   }
 
   // ===========================================================================

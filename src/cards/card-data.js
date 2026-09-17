@@ -11048,7 +11048,19 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Artifact'], colors: [], manaCost: 2,
     oracleText: 'Whenever a player casts a blue spell, you may gain 1 life.',
     imageUri: 'https://cards.scryfall.io/large/front/b/f/bfcb47ef-9066-4ace-b88c-ea0d8f17ff8c.jpg?1783941790',
-    artId: 28, plan: 'Ixalan', support: { status: 'in-development', limitations: [] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // Bliźniak Angel's Feather (M11, artId 223): trigger na czar
+        // DOWOLNEGO gracza w kolorze {U} (ruling M11 2010-08-15: kolor
+        // sprawdzany w chwili rzucania, źródło bez znaczenia); „you may" =
+        // decyzja kontrolera resolve_optional_trigger_choice (mayFire,
+        // Temat 2).
+        trigger: { event: 'player_casts_spell', condition: { spellColorsInclude: ['U'] }, mayFire: true },
+        effect: [{ type: 'gain_life', amount: 1 }],
+      }),
+    ],
+    artId: 28, plan: 'Ixalan', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({
@@ -11178,7 +11190,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'add_mana', amount: 1, colors: ['G', 'U'] },
       }),
     ],
-    artId: 60, plan: 'Eldraine', support: { status: 'in-development', limitations: [] },
+    // B6: testy (wchodzi tapnięty, ETB daje życie, produkuje {G}/{U}) —
+    // lustro Dismal Backwater; karta dostaje `supported` (ADR 0010 §4).
+    artId: 60, plan: 'Eldraine', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({
@@ -11186,7 +11200,25 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Sorcery'], colors: ['R'], manaCost: 2,
     oracleText: 'Create two 1/1 red Goblin creature tokens.',
     imageUri: 'https://cards.scryfall.io/large/front/b/1/b19fc806-f1b7-4f82-be0e-b960699f9a36.jpg?1783938331',
-    artId: 63, plan: 'Kamigawa', support: { status: 'in-development', limitations: [] },
+    spell: {
+      timing: 'sorcery',
+      effects: [{
+        type: 'create_token', cardId: 'token_goblin', name: 'Goblin',
+        kind: 'creature', power: 1, toughness: 1, colors: ['R'],
+        types: ['Creature'], subtypes: ['Goblin'], amount: 2,
+      }],
+    },
+    artId: 63, plan: 'Kamigawa', support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token 1/1 R Goblin — druk tori/6 (Scryfall b21498f5-9098-4e50-b1d3-bd64cba1372a,
+  // part „token" karty Dragon Fodder ori/140; L26: bez zgadywania UUID).
+  defineCard({
+    id: 'token_goblin', name: 'Goblin', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Goblin'], colors: ['R'],
+    power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/b/2/b21498f5-9098-4e50-b1d3-bd64cba1372a.jpg?1783938294',
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Dragon Fodder'] },
   }),
 
 ]);

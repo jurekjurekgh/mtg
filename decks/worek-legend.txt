@@ -1,8 +1,6 @@
 # Worek: Legendy
 
-1x Prismari Campus
 1x Supernatural Stamina
-1x Curate (STX)
 1x Emissary Escort
 1x Illvoi Operative
 1x Tah-Crop Skirmisher
@@ -13,13 +11,12 @@
 1x Nanoform Sentinel
 1x Pain for All
 1x Ruinous Rampage
-1x Ulna Alley Shopkeep
 1x Warmaker Gunship
 1x Wedgelight Rammer
 1x Weftblade Enhancer
 1x Sifter Wurm
 1x Plains
 2x Island
-2x Swamp
+1x Swamp
 2x Mountain
 2x Forest

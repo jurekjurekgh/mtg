@@ -53,7 +53,9 @@ test('B47/A3: każdy egzemplarz trafia do talii SWOJEGO planu', () => {
     .filter((f) => deckOf(f).includes(cardId));
   for (const [cardId, oczekiwane] of [
     ['curate', 'forgotten-realms.txt'],
-    ['curate-stx', 'worek-legend.txt'],
+    // Batch 56 (B6): Arcavios przeszedł z worka-legend do worka-dziki przy
+    // przetasowaniu po awansie Ixalanu (ADR 0023 §4, generator WOREK_DECKS).
+    ['curate-stx', 'worek-dziki.txt'],
     ['negate', 'wiedzmin-wur.txt'],
     ['negate-m15', 'warhammer-ubr.txt'],
   ]) {

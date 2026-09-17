@@ -1,6 +1,7 @@
 export const MANA_COSTS = {
   "treefolk-umbra": "{2}{G}",
   "containment-membrane": "{2}{U}",
+  "thornwood-falls": "",
   "exploding-borders": "{2}{R}{G}",
   "candlegrove-witch": "{1}{W}",
   "consign-to-dream": "{2}{U}",

@@ -123,6 +123,7 @@ liczone z plików `decks/*.txt`).
 | `forgotten-realms` | Forgotten Realms | WUBRG | 36 | 12 | 24 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 27 | 9 | 18 |
 | `innistrad-wu` | Innistrad (WU) | WU | 29 | 10 | 19 |
+| `ixalan` | Ixalan | UBRG | 23 | 8 | 15 |
 | `kaladesh` | Kaladesh | WUBRG | 26 | 9 | 17 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 27 | 9 | 18 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
@@ -141,10 +142,10 @@ liczone z plików `decks/*.txt`).
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
 |---|---|---|---:|---:|---:|
-| `worek-basni` | Worek: Baśnie | WUBRG | 33 | 11 | 22 |
-| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 30 | 10 | 20 |
-| `worek-legend` | Worek: Legendy | WUBRG | 27 | 9 | 18 |
-| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 41 | 14 | 27 |
+| `worek-basni` | Worek: Baśnie | WUBRG | 36 | 12 | 24 |
+| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 27 | 9 | 18 |
+| `worek-legend` | Worek: Legendy | WUBRG | 23 | 8 | 15 |
+| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 27 | 9 | 18 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
 

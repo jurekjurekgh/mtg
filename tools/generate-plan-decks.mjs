@@ -100,7 +100,7 @@ export const WOREK_DECKS = Object.freeze({
   // auto-awansu, a generator i tak sprawdza próg przed mapą worków.
   Theros: 'worek-legend', 'Śródziemie': 'worek-legend',
   Amonkhet: 'worek-legend', Shandalar: 'worek-legend', Rabiah: 'worek-legend',
-  Rath: 'worek-legend', Arcavios: 'worek-legend',
+  Rath: 'worek-legend',
   'The Edge': 'worek-legend',
   // Transpozycja 2026-09-13 (zlecenie właściciela): Fiora i Ikoria USUNIĘTE
   // (Vow of Flight → Eldraine, Unbreakable Bond → Ixalan, Tiller of Flesh
@@ -112,9 +112,19 @@ export const WOREK_DECKS = Object.freeze({
   // Bilans: legendy 18, dzikie 17. Wpis Kaladesh zostaje jako MARTWY po awansie.
   'Thunder Junction': 'worek-dziki',
   Ixalan: 'worek-dziki', Kaladesh: 'worek-dziki', Muraganda: 'worek-dziki',
-  'Final Fantasy': 'worek-mroczny', Duskmourn: 'worek-mroczny',
+  // Batch 56 (B6, karta 28 Kraken's Eye, plan Ixalan): Ixalan dobił do 15
+  // wspieranych kart i AWANSUJE do własnej talii „ixalan" (M181) — razem
+  // z wcześniejszym awansem Kaladesh (B52) worek-dziki spada do 6 kart
+  // nielandowych (Thunder Junction), poniżej minimum walidatora.
+  // Przetasowanie mapy (ADR 0023 §4, liczby nielandowe po komplecie kart B6):
+  // do worka-dzikiego wchodzą Kaldheim (2 — nordyckie krainy dzikie),
+  // Duskmourn (5 — pełzający dom grozy, przetrwanie w dziczy) i Arcavios (2
+  // — dzika magia Snarls poza murami Strixhaven). Bilans po B6: baśnie 21,
+  // legendy 15, dzikie 15, mroczny 27.
+  Kaldheim: 'worek-dziki', Duskmourn: 'worek-dziki', Arcavios: 'worek-dziki',
+  'Final Fantasy': 'worek-mroczny',
   Lorwyn: 'worek-mroczny',
-  'New Capenna': 'worek-mroczny', Kaldheim: 'worek-mroczny',
+  'New Capenna': 'worek-mroczny',
   // Batch 56 (2026-09-17): nowy plan właściciela „Teenage Mutant Ninja Turtles”
   // (karta 30 Containment Protocol) — motyw miejsko-mroczny, spójny z New
   // Capenna i Duskmourn, więc worek-mroczny (nie ma jeszcze progu 15 kart).
