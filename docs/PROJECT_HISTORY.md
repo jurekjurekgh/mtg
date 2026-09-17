@@ -19,6 +19,46 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-17b Batch 56 — 10 kart (25–63): energia, aury warunkowe, pojazd, druga faza główna (PR #125)
+
+Zlecenie właściciela (2026-09-17b): nowy batch z listy (10 pozycji w kolejności
+artId), praca etapami z commitem i pushem po KAŻDYM etapie oraz kontrolą HEAD na
+starcie i po commitach (ENVIRONMENT §2). Plan:
+[`docs/plans/PLAN_2026-09-17b-batch56-25-63.md`](plans/PLAN_2026-09-17b-batch56-25-63.md).
+
+- **B0a `71c81fc`** — plan batcha (rozpoznanie mechanik, etapy B0b–B7, ryzyka).
+- **B0b `23c4811`** — dane źródłowe: 10 snapshotów Scryfall (Oracle + rulings),
+  10 wierszy arkusza, 10 kosztów w `MANA_COSTS`, definicje `in-development`,
+  wpis planu Teenage Mutant Ninja Turtles w `WOREK_DECKS`.
+- **B1 `f7e61d0` (M362)** — energia {E} jako zasób GRACZA + 32 Shipwreck Moray.
+- **B2 `bea4fbd` (M363)** — 27 Erase + 34 Volcanic Submersion (cel
+  `artifact_or_land`, cycling {2}).
+- **B3 `fb563ea` (M364)** — 25 Bonds of Faith + 30 Containment Protocol (aury
+  warunkowe; golden master zmieniony ŚWIADOMIE z atrybucją `26da3385` → `ad0a3245`).
+- **B4 `fda1ee6` (M365)** — 58 Mobile Garrison („another target artifact or
+  creature you control” + crew 2).
+- **B5 `76d0687` (M366)** — 54 Cautious Survivor (Survival — początek drugiej
+  fazy głównej, LKI).
+- **B6 `7c02ab9` (M367)** — 63 Dragon Fodder + 60 Thornwood Falls + zaległa
+  28 Kraken’s Eye; awans Ixalanu do własnej talii i przetasowanie `WOREK_DECKS`
+  (skutek uboczny zmierzony); korekta wspólnej klamry `landPlayDelta` (nowy remis
+  lądu) + golden master `ad0a3245` → `09fa1739` z atrybucją.
+- **B7 `038cc50`+`48087d5`+`3453593` (M368)** — pomiar quick 25 talii wyłapał
+  CZTERY bugi silnika; każdy zamknięty u root cause, z pinem czerwieniejącym bez
+  fixa: `3f4986f` (regeneracja blokowanego atakującego kasowała klucz
+  `combat.blockers`), `51e5bef` (auto-tap zjadał jednostkę odłożoną na pip
+  płatności — lekcja **L147**), `038cc50` (kasowanie tokenu nie odpinało
+  załączników: living weapon → inwariant stanu), `3453593` (oferta celów
+  zdolności omijała wspólne `legalTargetCandidates` — cudzy hexproof w ofercie;
+  kotwica L48). Poza tym fałszywy alarm
+  Żywego Testera naprawiony w NARZĘDZIU (`48087d5`: detektor czytał tylko jedną
+  z dwóch form echa logu) + kampania 10 partii na taliach z nowymi kartami
+  (0 zgłoszeń po fixie). Dokumentacja: `ENGINE_MILESTONES` (M362–M368), ten
+  wpis, `docs/setup/HANDOFF_2026-09-17b.md`; rejestr lekcji skrócony w tym
+  samym commicie (budżet lektury startowej).
+- **Bramki finalne:** `npm test` 5694/5694, `npm run test:all` **5704/5704**,
+  build 63 moduły/3793,4 kB, regresja bota 10/10, quick 25 talii heuristic **86,0%** (5147/5984), aggro 25,5% (763/2992), random 2,4% (73/2992), 1 mecz niedokończony (limit 8000 komend).
+
 ## 2026-09-17 Audyt PR #124 (APPROVE) + numeracja po nazwie wyświetlanej + tester vs warstwa grafik (PR #125)
 
 Pętla domyślna ADR 0020/0021, sesja `arena/01a0ae26-mtg`:

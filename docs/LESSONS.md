@@ -109,10 +109,9 @@ kontroli, typu, strefy).
 3. Rodzinę alt-kosztów enumeruj Z NAZWY (bestow, plot, suspend, madness, warp,
    surge, kicker, flashback, buyback, escape, cleave, adventure, morph) — skan
    po jednej mechanice zamyka jeden przypadek.
-4. Morph jest w tej rodzinie WYJĄTKIEM: ma dwa koszty (`cost` = rzut
-   zakryty, zawsze {3} bezbarwnych wg CR 702.37a; `morphCost`/
-   `megamorphCost` = odkrycie, tu żyją pipy). Skaner porównujący Oracle
-   z polem `cost` da 6 fałszywych trafień — porównuj koszt ODKRYCIA.
+4. Morph to WYJĄTEK: `cost` = rzut zakryty ({3}, CR 702.37a), a pipy żyją
+   w `morphCost`/`megamorphCost` (odkrycie) — skaner po `cost` da 6
+   fałszywych trafień; porównuj koszt ODKRYCIA.
 
 **Strażnik:** `test/m268-alt-koszt-pelna-rodzina.test.js` (11 testów: skan
 katalogu po 14 mechanikach, piny bestow/plot/morph/kicker, test ŹRÓDŁA
@@ -124,8 +123,7 @@ pipy obok kwoty w morph → 1 RED.
 
 ## L104 (2026-08-31) — Poprawny wynik z niepoprawnego źródła to bug uśpiony: alt-koszt musi nieść WŁASNE pipy, nie pożyczać ich z kosztu bazowego
 
-**Przypadek:** — panel pokazywał „Rzuć z Cleave: Lunar Rejection (koszt 4)" i „Ucieczka: Sweet Oblivion (koszt 4)", a Oracle mówi „Cleave {3}{U}" i „Escape {3}{U}". Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L104).
-
+**Przypadek:** panel pokazywał koszt 4 dla Cleave {3}{U} i Escape {3}{U} — kolory czytane z kosztu bazowego. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L104).
 
 **Reguła:**
 1. Alternatywny koszt (cleave, escape, madness, suspend, plot, bestow) to
@@ -133,11 +131,10 @@ pipy obok kwoty w morph → 1 RED.
    z kosztu bazowego jest błędem nawet gdy dziś daje dobry wynik: pierwsza
    karta o innym kolorze alt-kosztu złamie płatność (CR 601.2b). Wzorzec
    zrobiony dobrze: madness (M161/O2).
-2. „Testy zielone" nie zamyka pytania o ŹRÓDŁO. Gdy poprawność wynika ze
-   zbiegu okoliczności w danych, strażnik pinuje źródło, nie tylko wynik —
-   inaczej regres przyjdzie z nową kartą, nie ze zmianą kodu.
-3. Dokładając pole do deskryptora karty, przejdź WSZYSTKIE kopie jawnej listy
-   pól (L101); normalizacja w `registry.js` jest czwartą i najłatwiej o niej
+2. „Testy zielone" nie zamyka pytania o ŹRÓDŁO: gdy poprawność wynika ze
+   zbiegu okoliczności w danych, strażnik pinuje źródło, nie tylko wynik.
+3. Dokładając pole do deskryptora, przejdź WSZYSTKIE kopie jawnej listy pól
+   (L101); normalizacja w `registry.js` jest czwartą i najłatwiej o niej
    zapomnieć. Sygnał: pole widać w `card-data.js`, a `REGISTRY.get(id)` nie.
 4. Strażnik porównuje Oracle z definicją (regex po pipach) dla CAŁEGO
    katalogu, nie dla zgłoszonej karty.
@@ -1002,10 +999,9 @@ przyjęta. Operacje „na wszelki wypadek przed" zostawiają niespójność na k
 5. Testy UI renderują i sprawdzają WYNIK (drzewo elementów, reakcja na
    zdarzenie), nie obecność napisów w pliku.
 6. Pytanie kontrolne do każdego strażnika: **czy da się przejść tę kontrolę bez
-   zmiany kodu?** Jeśli tak — mierzy tekst. Obowiązuje też wobec strażników,
-   które sam piszesz, i to w dniu ich powstania (`repo-artefakty-audytu`
-   sprawdzał `.gitignore` przez `includes`, a komentarz cytował regułę
-   dosłownie — usunięcie reguły zostawiało zielono).
+   zmiany kodu?** Jeśli tak — mierzy tekst (przykład: `repo-artefakty-audytu`,
+   `.gitignore` przez `includes`). Obowiązuje też wobec strażników, które sam
+   piszesz, w dniu ich powstania.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L5)
 
@@ -1577,6 +1573,12 @@ przez realną ścieżkę (wzorzec L21 pkt 3), a nie obietnica wspólnej listy.
 **Wpis zbiorczy** (4 powtórki; L90 to kotwica): rozjazd oferty i walidacji
 to crash w benchmarku („Bot wybrał nielegalną komendę").
 
+**Powtórka (B7, quick 25 talii):** dwie gałęzie oferty z WŁASNĄ enumeracją
+pola bitwy — „{X}, {T}: cel o sile ≤ X" (Entrancing Lyre) i „any target"
+zdolności nadanej przez sprzęt (Blazing Torch) — proponowały cudzego stwora
+z hexproof, którego walidacja odrzucała. Nowa gałąź oferty CELÓW idzie przez
+`legalTargetCandidates`, nawet gdy typ celu „wynika z gałęzi".
+
 **Reguła:**
 1. Nowa ochrona / `pending*` trafia w TRZY miejsca: `legalTargetCandidates`
    (oferta), `validateTargets` i OBA boty (`heuristic`: `anyResolve`;
@@ -1689,30 +1691,24 @@ efektu" na pięciu kartach (Trostani Discordant ×4, Veiled Ascension ×3,
 Jyoti, Moag Ancient ×3, Plague Reav… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L91).
 
 **Reguła:**
-1. **Powód mieszka w warstwie efektu.** Selektor zbioru odbiorców
-   (`faceDownCreaturesYouControl`, `creaturesNotControlledByOwner`,
-   `landCreaturesYouControl`, …) jest eksportowany z `effects.js` i używany
-   także PRZEZ SAM EFEKT — jedna definicja zbioru, nie dwie kopie (L41/L48:
-   kopie się rozjeżdżają).
+1. **Powód mieszka w warstwie efektu.** Selektor zbioru odbiorców jest
+   eksportowany z `effects.js` i używany także PRZEZ SAM EFEKT — jedna
+   definicja zbioru, nie dwie kopie (L41/L48).
 2. **Tabela zwraca POWÓD, nie boolean.** `EMPTY_RECEIVER_EFFECTS[type](…) →
    'no_targets' | 'empty_library' | null` — kolejna przyczyna to kolejna
    WARTOŚĆ, nie kolejny `if` po typie efektu (L28/ADR 0002).
 3. **Efekt, który ma w zbiorze samego siebie, nie zgłasza pustego zbioru.**
-   Pułapka z tej rodziny: efekt idempotentny nie zawsze działa na ŹRÓDŁO —
-   aura na GOSPODARZA (`attachedTo`), więc „cel albo źródło" (M189/Z2e)
-   nie wystarcza (Silken Strength, M256/J).
-   Village Bell-Ringer zawsze jest własnym odbiorcą (pustka niemożliwa);
-   tam tabela idempotentności ZBIOROWEJ (`STATE_IDEMPOTENT_MASS_EFFECTS`),
-   bo „wszystkie już odkręcone" to wykonana zdolność (M106/Z2).
+   Efekt idempotentny nie zawsze działa na ŹRÓDŁO — aura na GOSPODARZA
+   (`attachedTo`), więc „cel albo źródło" (M189/Z2e) nie wystarcza
+   (Silken Strength, M256/J). Village Bell-Ringer zawsze jest własnym
+   odbiorcą — tam tabela zbiorowa (`STATE_IDEMPOTENT_MASS_EFFECTS`; M106/Z2).
 4. **Do każdego wpisu kontrola pozytywna**: test, w którym zbiór NIE jest
    pusty (H1b/H2b/H3b/H4b/H5b/H6b). Bez niej asercja „brak komunikatu"
    bywa zielona, bo nic się nie dzieje (M255/G2).
-5. **Heurystyka NAZWY (`_each_`, `_all_`) wyłącznie w strażniku**
-   (skan: typ zbiorowy ma wpis albo wyjątek). Silnik kluczuje po typie,
-   z nazwy nie zgaduje.
-6. Komunikat dla gracza to NIE ozdoba: „brak legalnych celów" i „pusta
-   biblioteka" mówią, co zrobić dalej; „nie było czego wykonać" mówi tylko, że
-   coś nie zadziałało (oś 2: „wszystko poza szumem powinno tam być").
+5. **Heurystyka NAZWY (`_each_`, `_all_`) wyłącznie w strażniku** (skan:
+   typ zbiorowy ma wpis albo wyjątek). Silnik kluczuje po typie.
+6. Komunikat dla gracza to NIE ozdoba: „brak legalnych celów" mówi, co
+   zrobić dalej; „nie było czego wykonać" — tylko że coś nie zadziałało.
 **Strażnik:** `test/m256-zywy-tester-runda2.test.js` (H1–H7, 15 testów).
 ## L108 (2026-08-31) — Deadlock reguł: szukaj par „musisz X" / „nie możesz X"
 
@@ -2351,3 +2347,11 @@ reguł (tu: strata życia obejmuje damage, prewencja/infect odpadają
 z natury), bramki („raz na turę") bez zmian.
 
 **Strażnik:** `test/m361-gold-speed-lifeloss.test.js` (5: RED strata-bez-damage, pin damage, dedup, bramki tury/własnej-straty).
+
+## L147 (2026-09-17) — Płatność wieloetapowa: rezerwa pipów obowiązuje też FINANSOWANIE cudzego kosztu
+
+**Przypadek:** auto-tap zapłacił {U} zdolności źródła kosztowego (Apprentice Wizard: „{U}, {T}: Add {C}{C}{C}") jednostką odłożoną na pip {U} rzucanego czaru (Inspiration {3}{U}, seed 2027) — pula przestała kryć `requirements`, `consumeManaPool` rzucił „Brak kolorowej many", a nieudana komenda zostawiła mutację.
+
+**Reguła:** każdy etap płatności (pipy → suma → źródła kosztowe) musi KOŃCZYĆ się pokryciem `requirements`; przed konsumpcją dociągnij brakujące pokrycie z nietapniętych źródeł — mutacja tylko w stronę puli. Bramka oferty (`fundableCostedPlan`) i płatność muszą kończyć w tym samym stanie.
+
+**Strażnik:** `test/mana-cylix-costed-source.test.js` A/12 (RED po cofnięciu fixa) + A/13 (kontrola: nielegalny kształt bez oferty, zero częściowej płatności).
