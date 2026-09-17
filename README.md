@@ -129,7 +129,7 @@ liczone z plików `decks/*.txt`).
 | `ravnica` | Ravnica | WUBRG | 38 | 13 | 25 |
 | `srodziemie` | Śródziemie | WUBRG | 30 | 10 | 20 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 33 | 11 | 22 |
-| `tarkir-wur` | Tarkir (WUR) | WUR | 29 | 10 | 19 |
+| `tarkir-wur` | Tarkir (WUR) | WUR | 30 | 10 | 20 |
 | `theros` | Theros | WUBRG | 27 | 9 | 18 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 35 | 12 | 23 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
@@ -144,7 +144,7 @@ liczone z plików `decks/*.txt`).
 | `worek-basni` | Worek: Baśnie | WUBRG | 32 | 11 | 21 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 30 | 10 | 20 |
 | `worek-legend` | Worek: Legendy | WUBRG | 27 | 9 | 18 |
-| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 36 | 12 | 24 |
+| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 38 | 13 | 25 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
 

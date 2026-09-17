@@ -22,10 +22,11 @@
 1x Vanish from Sight
 1x Voice of the Vermin
 1x Puppeteer Clique
+1x Volcanic Submersion
 1x Fear of Abduction
 1x Fear of Burning Alive
 2x Plains
 2x Island
 3x Swamp
-3x Mountain
+4x Mountain
 2x Forest

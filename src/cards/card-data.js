@@ -11025,7 +11025,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Instant'], colors: ['W'], manaCost: 1,
     oracleText: 'Exile target enchantment.',
     imageUri: 'https://cards.scryfall.io/large/front/d/1/d1dd0e10-2ad7-467f-8d4b-c70b95bf2e9c.jpg?1783939095',
-    artId: 27, plan: 'Tarkir', support: { status: 'in-development', limitations: [] },
+    // Ruling 2004-10-04: „The card does not go to the graveyard first" —
+    // exile_permanent przenosi bezpośrednio (moveObjectDirectly), bez tranzytu
+    // przez grób i bez zdarzenia „dies".
+    spell: { timing: 'instant', targets: [{ type: 'enchantment' }], effects: [
+      { type: 'exile_permanent' },
+    ] },
+    artId: 27, plan: 'Tarkir', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({
@@ -11071,7 +11077,19 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Sorcery'], colors: ['R'], manaCost: 5,
     oracleText: 'Destroy target artifact or land.\nCycling {2} ({2}, Discard this card: Draw a card.)',
     imageUri: 'https://cards.scryfall.io/large/front/0/e/0ec1f1fa-41c9-4bc0-9171-902cd456aa73.jpg?1783942556',
-    artId: 34, plan: 'Kaldheim', support: { status: 'in-development', limitations: [] },
+    spell: { timing: 'sorcery', targets: [{ type: 'artifact_or_land' }], effects: [
+      { type: 'destroy_permanent' },
+    ] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 2 },
+        cycling: { drawCards: 1 },
+        effect: [],
+      }),
+    ],
+    artId: 34, plan: 'Kaldheim', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({

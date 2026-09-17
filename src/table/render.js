@@ -167,6 +167,8 @@ const TARGET_TYPE_LABELS = Object.freeze({
   artifact_or_enchantment_or_land: 'artefakt, zaklęcie lub ląd',
   artifact_or_creature_or_enchantment: 'artefakt, stwór lub zaklęcie',
   artifact_or_creature_or_land: 'artefakt, stwór lub ląd',
+  // Batch 56 (Volcanic Submersion): „Destroy target artifact or land".
+  artifact_or_land: 'artefakt lub ląd',
   tapped_creature: 'zatapnięty stwór',
   untapped_creature: 'odkręcony stwór',
   artifact_you_control: 'twój artefakt', land: 'ląd', land_you_control: 'twój ląd',

@@ -171,3 +171,94 @@ test('B56/B1: 32 Shipwreck Moray — bot nie pali energii bez sensu, ale zna jej
   put(bez, 'moray', 'shipwreck-moray', 'p1', 'battlefield');
   assert.equal(playerView(bez, 'p1').legalCommands.some((c) => c.type === 'activate_ability' && c.objectId === 'moray'), false);
 });
+
+// ---------------------------------------------------------------------------
+// B2 (M363) — 27 Erase (exile enchantment) i 34 Volcanic Submersion
+//             (cel „artifact or land" + cycling {2})
+// ---------------------------------------------------------------------------
+
+sanity('erase', 27, 'KTK', 'Tarkir');
+sanity('volcanic-submersion', 34, 'ALA', 'Kaldheim');
+
+test('B56/B2: 27 Erase — wygnanie aury; karta NIE dotyka grobu (ruling 2004-10-04)', () => {
+  const s = game();
+  put(s, 'erase', 'erase');
+  // Cel: aura z KATALOGU (supported) — karta bez mechaniki (`in-development`)
+  // nie ma deskryptora `aura`, więc nie jest jeszcze aurą dla silnika.
+  put(s, 'aura', 'containment-membrane', 'p2', 'battlefield');
+  put(s, 'host', 'typhoid-rats', 'p2', 'battlefield');
+  // Załączona aura na polu bitwy ma kind 'aura' (inwariant: attachedTo tylko
+  // dla aury/equipmentu) — tak samo ustawia to castAuraSpell.
+  s.objects.set('aura', Object.freeze({ ...s.objects.get('aura'), kind: 'aura', attachedTo: 'host' }));
+  addMana(s, 'p1', 1, { colors: ['W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'erase' && c.targets?.[0] === 'aura'));
+  resolve(s);
+  const wygnana = [...s.objects.values()].find((o) => o.cardId === 'containment-membrane' && o.zone === 'exile');
+  assert.ok(wygnana, 'aura jest w exile');
+  assert.equal([...s.objects.values()].some((o) => o.cardId === 'containment-membrane' && o.zone === 'graveyard'), false,
+    'ruling: „The card does not go to the graveyard first" — brak tranzytu przez grób');
+  assert.equal(find(s, 'typhoid-rats')?.zone, 'battlefield', 'gospodarz aury zostaje na polu bitwy');
+});
+
+test('B56/B2: 27 Erase — cel nie-enchantment nie jest oferowany ani akceptowany', () => {
+  const s = game();
+  put(s, 'erase', 'erase');
+  put(s, 'tgt', 'typhoid-rats', 'p2', 'battlefield');
+  addMana(s, 'p1', 1, { colors: ['W'] });
+  assert.equal(commands(s).some((c) => c.type === 'cast_spell' && c.objectId === 'erase'), false,
+    'stwór nie jest legalnym celem (oferta milczy)');
+  const r = execute(s, { type: 'cast_spell', playerId: 'p1', objectId: 'erase', targets: ['tgt'] });
+  assert.equal(r.ok, false);
+  assert.ok(r.events.some((e) => typeof e.reason === 'string'));
+  assert.equal(s.objects.get('erase').zone, 'hand', 'odrzucony czar zostaje w ręce');
+});
+
+test('B56/B2: 34 Volcanic Submersion — niszczy artefakt ALBO land, ale nie stwora', () => {
+  for (const [cel, cardId] of [['art', 'bomat-bazaar-barge'], ['land', 'basic-mountain']]) {
+    const s = game();
+    put(s, 'sub', 'volcanic-submersion');
+    put(s, cel, cardId, 'p2', 'battlefield');
+    addMana(s, 'p1', 5, { colors: ['R'] });
+    const offer = commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'sub' && c.targets?.[0] === cel);
+    assert.ok(offer, `${cardId} jest legalnym celem (artifact or land)`);
+    run(s, offer);
+    resolve(s);
+    assert.equal([...s.objects.values()].some((o) => o.cardId === cardId && o.zone === 'graveyard'), true,
+      `${cardId} trafia do grobu`);
+  }
+  const s2 = game();
+  put(s2, 'sub', 'volcanic-submersion');
+  put(s2, 'stwór', 'typhoid-rats', 'p2', 'battlefield');
+  addMana(s2, 'p1', 5, { colors: ['R'] });
+  assert.equal(commands(s2).some((c) => c.type === 'cast_spell' && c.objectId === 'sub'), false,
+    'stwór nie jest celem „artifact or land"');
+  const r = execute(s2, { type: 'cast_spell', playerId: 'p1', objectId: 'sub', targets: ['stwór'] });
+  assert.equal(r.ok, false);
+  assert.equal(s2.objects.get('sub').zone, 'hand');
+});
+
+test('B56/B2: 34 Volcanic Submersion — cycling {2} z ręki: odrzucenie i dobranie; bez many brak oferty', () => {
+  const s = game();
+  put(s, 'sub', 'volcanic-submersion');
+  put(s, 'góra', 'basic-mountain', 'p1', 'library');
+  put(s, 'dół', 'basic-island', 'p1', 'library');
+  // Szczyt biblioteki = POCZĄTEK tablicy (konwencja `setLibraryTop` z batcha 55).
+  s.zones.library = ['góra', 'dół', ...s.zones.library.filter((id) => !['góra', 'dół'].includes(id))];
+  addMana(s, 'p1', 2, { colors: ['R', 'R'] });
+  const cycling = commands(s).find((c) => c.type === 'activate_ability' && c.objectId === 'sub');
+  assert.ok(cycling, 'cycling {2} jest w ofercie z ręki');
+  run(s, cycling);
+  resolve(s);
+  assert.equal([...s.objects.values()].some((o) => o.cardId === 'volcanic-submersion' && o.zone === 'graveyard'), true,
+    'karta po cyclingu trafia do grobu');
+  assert.equal([...s.objects.values()].some((o) => o.cardId === 'basic-mountain' && o.zone === 'hand'), true,
+    'cycling dobiera kartę (CR 702.29a)');
+
+  const bezMany = game();
+  put(bezMany, 'sub', 'volcanic-submersion');
+  assert.equal(commands(bezMany).some((c) => c.type === 'activate_ability' && c.objectId === 'sub'), false,
+    'brak dwóch many = brak oferty cyclingu');
+  const r = execute(bezMany, { type: 'activate_ability', playerId: 'p1', objectId: 'sub', abilityIndex: 0 });
+  assert.equal(r.ok, false);
+  assert.equal(bezMany.objects.get('sub').zone, 'hand', 'odrzucony cycling nie odrzuca karty');
+});
