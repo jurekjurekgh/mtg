@@ -335,6 +335,80 @@ function pumpChangesOutcome(view, recipient, delta = {}) {
   return JSON.stringify(before) !== JSON.stringify(after);
 }
 
+/**
+ * M376 (pętla jakości ADR 0021 §4a — Żywy Tester, worek-dziki vs ixalan, seed
+ * 2031): suma delt P/T kopii aktywacji TEJ SAMEJ zdolności (źródło + indeks +
+ * cele) czekających na stosie. Wpis zdolności na stosie jest informacją
+ * publiczną (ADR 0017: `sourceId`, `abilityIndex`, `targets`, `abilityEffects`),
+ * więc wycena ma obowiązek go widzieć — inaczej plansza pod wiszącymi kopiami
+ * wygląda niezmiennie i KAŻDA kolejna aktywacja jest nierozróżnialna od
+ * pierwszej (dokładnie tak bot przepalił 4 liczniki {E} Moraya do zera).
+ */
+function pendingPumpDelta(view, cmd, source) {
+  const total = { power: 0, toughness: 0 };
+  const sameTargets = (entry) => JSON.stringify(entry.targets ?? []) === JSON.stringify(cmd.targets ?? []);
+  for (const entry of (view.zones.stack ?? [])) {
+    if (entry.kind !== 'activated' || entry.controllerId !== view.playerId) continue;
+    if (entry.sourceId !== cmd.objectId || entry.abilityIndex !== (cmd.abilityIndex ?? 0)) continue;
+    if (!sameTargets(entry)) continue;
+    const effects = Array.isArray(entry.abilityEffects)
+      ? entry.abilityEffects
+      : (entry.abilityEffects ? [entry.abilityEffects] : []);
+    for (const pending of effects) {
+      const pump = temporaryPumpOf(pending, view);
+      if (!pump) continue;
+      total.power += pump.power ?? 0;
+      total.toughness += pump.toughness ?? 0;
+    }
+  }
+  return total;
+}
+
+/**
+ * M376: czy kopia aktywacji pompy POPRAWIA wynik walki względem kopii już
+ * oczekujących — delta `delta` rozliczona RAZEM z `pending` (model walki ten
+ * sam co `pumpChangesOutcome`, CR 510), ale kryterium jest ostrzejsze niż
+ * „cokolwiek się zmieni": poprawa w co najmniej jednym wymiarze wymiany
+ * i ŻADNE pogorszenie. Wymiar „na moją korzyść" zależy od roli celu w walce —
+ * dla mojego atakującego obrażenia twarzy to MÓJ wynik, dla blokera to
+ * obrażenia w MOJĄ twarz; zyski życia rozdzielone tak samo (atakujący/blokerzy
+ * w symulacji). Kryterium „musi poprawić" bierze się z powtarzalności kosztu:
+ * czar płacisz raz (wystarczy, że zmienia wynik), aktywację można powtórzyć po
+ * rozstrzygnięciu stosu i zachować priorytet — więc kopia, która tylko
+ * powtarza efekt, przepala zasób (CR 602.2; ADR 0016 — przyczyna, nie objaw).
+ */
+function pumpImprovesOutcome(view, recipient, pending, delta) {
+  if (recipient?.controllerId !== view.playerId) return false;
+  const before = combatOutcome(view, recipient, pending);
+  const after = combatOutcome(view, recipient, {
+    power: (pending.power ?? 0) + (delta.power ?? 0),
+    toughness: (pending.toughness ?? 0) + (delta.toughness ?? 0),
+  });
+  if (!before || !after) return false;
+  const attacking = (view.combat?.attackers ?? []).includes(recipient.id);
+  const mineDeaths = (o) => (attacking ? (o.attackerDies === true ? 1 : 0) : (o.deadBlockers ?? []).length);
+  const foeDeaths = (o) => (attacking ? (o.deadBlockers ?? []).length : (o.attackerDies ? 1 : 0));
+  const myDamageOut = (o) => (attacking ? (o.faceDamage ?? 0) : 0);
+  const myFaceDamage = (o) => (attacking ? 0 : (o.faceDamage ?? 0));
+  const myLifeGain = (o) => (attacking ? (o.attackerLifeGain ?? 0) : (o.blockerLifeGain ?? 0));
+  const foeLifeGain = (o) => (attacking ? (o.blockerLifeGain ?? 0) : (o.attackerLifeGain ?? 0));
+  const up = (a, b) => a > b;
+  const down = (a, b) => a < b;
+  const better = up(foeDeaths(after), foeDeaths(before))
+    || down(mineDeaths(after), mineDeaths(before))
+    || up(myDamageOut(after), myDamageOut(before))
+    || down(myFaceDamage(after), myFaceDamage(before))
+    || up(myLifeGain(after), myLifeGain(before))
+    || down(foeLifeGain(after), foeLifeGain(before));
+  const worse = up(mineDeaths(after), mineDeaths(before))
+    || down(foeDeaths(after), foeDeaths(before))
+    || down(myDamageOut(after), myDamageOut(before))
+    || up(myFaceDamage(after), myFaceDamage(before))
+    || down(myLifeGain(after), myLifeGain(before))
+    || up(foeLifeGain(after), foeLifeGain(before));
+  return better && !worse;
+}
+
 /** Rozmiar pumpu wg deskryptora (dynamiczne X z widoku — ADR 0017). */
 function pumpDelta(view, effect) {
   if (effect.type === 'pump_by_creature_count') {
@@ -4858,7 +4932,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // czarów — zdolność pompująca w oknie walki, ale bez zmiany
             // wyniku (1/1 vs 5/5), nie kupuje nic. Kara proporcjonalna do
             // wagi (L3 — musi przebić bazę ~2–10), nie karze pustych pomp.
-            if (inCombat && !pumpChangesOutcome(view, recipient, pumpDelta(view, effect))) value -= 26 + pGain;
+            // M376 (pętla jakości ADR 0021 §4a — Żywy Tester, worek-dziki vs
+            // ixalan, seed 2031): Shipwreck Moray ({E}: +2/-2) aktywowany 4×
+            // pod rząd (energia 4 → 0), bo cztery kopie na stosie rozliczano
+            // pojedynczo przeciw wciąż tej samej planszy 0/5 — każda wyglądała
+            // jak pierwsza, a trzecia zabiła blokera z SBA (CR 704.5f).
+            // Aktywacja ma POWTARZALNY koszt, więc (inaczej niż czar) kopia
+            // musi POPRAWIĆ wymianę, nie tylko ją zmienić; oczekujące kopie
+            // wchodzą do modelu. Cudze cele zostają na ścieżce czaru
+            // (`pumpChangesOutcome` — debuff wroga), L41: bliźniacze gałęzie
+            // rozdzielone świadomie, nie przez przypadkowy warunek.
+            const pumpNow = pumpDelta(view, effect);
+            if (inCombat) {
+              const pumpOk = recipient && recipient.controllerId === view.playerId
+                ? pumpImprovesOutcome(view, recipient, pendingPumpDelta(view, cmd, source), pumpNow)
+                : pumpChangesOutcome(view, recipient, pumpNow);
+              if (!pumpOk) value -= 26 + pGain;
+            }
             if (!inCombat && myTurn(view)) value -= 26;
             // Tura przeciwnika: pump poza walka byl dotad darmowy (kara wyzej
             // dotyczy tylko wlasnej tury), wiec bot palil mane w jego upkeepie
