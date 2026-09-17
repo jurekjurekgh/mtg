@@ -520,7 +520,21 @@ export function attachmentRestrictions(state, object) {
   for (const attachment of attachmentsAttachedTo(state, object.id)) {
     const descriptor = attachment.aura ?? attachment.equipment ?? null;
     if (!descriptor) continue;
-    if (descriptor.cantAttack) restrictions.cantAttack = true;
+    // Warunek podtypu gospodarza (Bonds of Faith: „Otherwise, it can't attack
+    // or block" = zakaz, gdy NIE jest Humanem). Odczytywany NA BIEŻĄCO —
+    // zmiana podtypu zmienia restrykcję bez żadnego cleanupu (ruling ISD:
+    // utrata bycia Humanem po deklaracji ataku nie usuwa z walki, ale
+    // zdejmuje +2/+2 — czyli wszystko liczy się przy odczycie).
+    const subtypeConditionHolds = (cond) => {
+      if (!cond) return false;
+      if (cond.hostHasSubtype && hasCreatureType(object, cond.hostHasSubtype, state)) return true;
+      if (cond.hostLacksSubtype && !hasCreatureType(object, cond.hostLacksSubtype, state)) return true;
+      if (cond.hostHasColor && (object.colors ?? []).includes(cond.hostHasColor)) return true;
+      return false;
+    };
+    if (descriptor.cantAttack === true) restrictions.cantAttack = true;
+    else if (descriptor.cantAttack && typeof descriptor.cantAttack === 'object'
+      && subtypeConditionHolds(descriptor.cantAttack)) restrictions.cantAttack = true;
     // Batch 23: Vow of Wildness — "can't attack you or planeswalkers you control"
     // W 1v1: jeśli aura zaczarowuje stwora przeciwnika, ten stwór nie może
     // atakować kontrolera aury (you). Sprawdzamy: aura controller != creature
@@ -537,9 +551,9 @@ export function attachmentRestrictions(state, object) {
     if (cantBlock === true) {
       restrictions.cantBlock = true;
     } else if (cantBlock && typeof cantBlock === 'object') {
-      if (cantBlock.hostHasColor && (object.colors ?? []).includes(cantBlock.hostHasColor)) {
-        restrictions.cantBlock = true;
-      }
+      // Wspólny ewaluator warunków podtypu/koloru (hostHasColor z Hobble'a,
+      // hostHasSubtype/hostLacksSubtype z Bonds of Faith) — jedno miejsce.
+      if (subtypeConditionHolds(cantBlock)) restrictions.cantBlock = true;
     }
   }
   return restrictions;
@@ -561,6 +575,18 @@ function attachmentBonuses(state, object) {
     // nosiciela. Przy rozdzielonych kontrolach (np. Awaken the Sleeper
     // przejmuje stwora, a Equipment zostaje u poprzedniego kontrolera)
     // „during your turn" = tura kontrolera Blowguna (M214, znalezisko #3).
+    // Warunkowy pump (Bonds of Faith): warunek liczy się względem GOSPODARZA
+    // („as long as it's a Human"), nie kontrolera aury (inaczej niż
+    // conditionalKeywords z „during your turn").
+    for (const cp of (grant.conditionalPump ?? [])) {
+      const cond = cp.condition ?? {};
+      const active = (cond.hostHasSubtype && hasCreatureType(object, cond.hostHasSubtype, state))
+        || (cond.hostLacksSubtype && !hasCreatureType(object, cond.hostLacksSubtype, state));
+      if (active) {
+        bonus.power += cp.pump?.power ?? 0;
+        bonus.toughness += cp.pump?.toughness ?? 0;
+      }
+    }
     for (const ck of (grant.conditionalKeywords ?? [])) {
       const cond = ck.condition ?? {};
       let active = false;

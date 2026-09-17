@@ -10,6 +10,7 @@ import { addCounter } from '../src/engine/counters.js';
 import { event } from '../src/protocol/types.js';
 import { effectivePower, effectiveSubtypes } from '../src/engine/permanents.js';
 import { getSourceForObject } from '../src/engine/mana-sources.js';
+import { attachEquipmentToCreature } from '../src/engine/attachments.js';
 
 /**
  * Weryfikacja mechanik zakodowanych kart vs Comprehensive Rules (challenge
@@ -636,6 +637,31 @@ test('T10: Entrancing Lyre — X mniejsze od mocy celu jest nielegalne', () => {
   assert.match(r.events[0]?.reason ?? '', /X \(2\) za małe/);
 });
 
+test('T10: Entrancing Lyre — oferta odrzuca hexproof tak samo jak walidacja (M82, znalezisko benchmarku)', () => {
+  // Benchmark B7 (seed 2030, forgotten-realms vs theros) wywalił partię
+  // komunikatem `illegal_ability:Nielegalny cel: token-16 (hexproof)`:
+  // gałąź oferty dla „{X}, {T}: cel o sile ≤ X" enumerowała
+  // `state.zones.battlefield` SAMODZIELNIE, więc hexproof (i ochrona przed
+  // jakością) nie odsiewały kandydatów — oferta proponowała cel, który
+  // walidacja odrzucała (L48/M82). Kandydaci idą teraz przez wspólne
+  // `legalTargetCandidates`.
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'lyre', 'entrancing-lyre', 'p1', 'battlefield');
+  addSimpleCreature(state, 'beast', 'p2', { power: 1, toughness: 1 });
+  addSimpleCreature(state, 'hex', 'p2', { power: 1, toughness: 1, keywords: ['hexproof'] });
+  addSimpleCreature(state, 'own-hex', 'p1', { power: 1, toughness: 1, keywords: ['hexproof'] });
+  giveMana(state, 'p1', 2);
+  const offers = (playerView(state, 'p1').legalCommands ?? [])
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'lyre');
+  assert.ok(offers.some((c) => c.targets?.[0] === 'beast'), 'zwykły stwór przeciwnika oferowany');
+  assert.ok(offers.some((c) => c.targets?.[0] === 'own-hex'), 'WŁASNY stwór z hexproof jest legalnym celem (CR 702.11b)');
+  assert.ok(!offers.some((c) => c.targets?.includes('hex')), 'cudzy hexproof NIE jest oferowany (oferta = walidacja)');
+  const illegal = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'lyre', abilityIndex: 0, targets: ['hex'], xValue: 1 });
+  assert.ok(!illegal.ok, 'walidacja nadal odrzuca cudzy hexproof');
+  assert.match(illegal.events[0]?.reason ?? '', /hexproof/);
+});
+
 // =============================================================================
 // ZŁOTA ODZNAKA — Tematy 11-15 (różne klasy reguł MtG)
 // =============================================================================
@@ -655,6 +681,28 @@ test('T11: hexproof — stwór z hexproof nie może być celem czaru przeciwnika
   resolveStack(state);
 assert.ok(rCast.ok, rCast.events[0]?.reason);
   assert.ok(!rCast.events.some((e) => e.type === 'damage_dealt'), 'trigger z hexproof celem nie może zadać obrażeń');
+});
+
+test('T11: Blazing Torch — zdolność nadana nosicielowi też odsiewa cudzy hexproof (ta sama klasa co „power X or less")', () => {
+  // Druga instancja znaleziska B7: gałąź oferty dla zdolności NADANYCH przez
+  // sprzęt enumerowała „any target" z `state.players` + pola bitwy, z pominięciem
+  // wspólnego filtra (hexproof + ochrona). Walidacja odrzucała taki cel, więc
+  // bot dostawał nielegalną komendę (M82).
+  const state = game();
+  mainPhase(state);
+  // `addRealCard` nie kopiuje pola `equipment` (sprzęt nadaje zdolności nosicielowi).
+  addRealCard(state, 'torch', 'blazing-torch', 'p1', 'battlefield', {
+    equipment: gameObjectDataOf(REGISTRY.get('blazing-torch')).equipment,
+  });
+  addSimpleCreature(state, 'host', 'p1');
+  attachEquipmentToCreature(state, 'torch', 'host');
+  addSimpleCreature(state, 'hex', 'p2', { power: 1, toughness: 1, keywords: ['hexproof'] });
+  giveMana(state, 'p1', 2);
+  const offers = (playerView(state, 'p1').legalCommands ?? [])
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'torch' && c.grantedFromEquipment);
+  assert.ok(offers.length > 0, 'zdolność nadana nosicielowi jest oferowana');
+  assert.ok(offers.some((c) => c.targets?.[0] === 'host'), 'własny nosiciel pozostaje legalnym celem (CR 702.11b)');
+  assert.ok(!offers.some((c) => c.targets?.includes('hex')), 'cudzy hexproof nie jest oferowany jako „any target"');
 });
 
 test('T11: hexproof — zdolność aktywowana nie oferuje celu z hexproof', () => {

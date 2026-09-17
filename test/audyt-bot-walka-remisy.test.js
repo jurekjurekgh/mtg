@@ -43,6 +43,16 @@
  * Żadna z nich nie jest nową klasą przeoczenia, więc próg `block` idzie do 6
  * ŚWIADOMIEJ (sufit, nie pin). Gdyby przydarzył się wzrost bez zmiany talii ani
  * wag — to już nie ten przypadek i trzeba diagnostyki, nie podnoszenia progu.
+ *
+ * REAUDYT 2026-09-17 (batch 56, B6 — awans Ixalanu przetasował worki):
+ * `play_land.rozroznialne` wróciło do 1 na parze `dominaria-wu|worek-mroczny`
+ * (nowy worek-mroczny trafił rękę z lądami „pokrywa 4" vs „pokrywa 3", oba
+ * nowego koloru). Pomiar: na talii z HEAD licznik był 0 — wzrost jest SKUTKIEM
+ * zmiany zawartości talii, nie dryfu wag. Źródło: wspólna klamra delty (16)
+ * zgrywała 14+3 i 15+3; naprawa w `landPlayDelta` (sufit pokrycia zostaje
+ * w mapie, premie widoczne nad nim, klamra 25 ≪ bazy 90) przywraca 0.
+ * Golden-master bota zregenerowany ŚWIADOMIE razem z tą zmianą (ad0a3245 →
+ * 09fa1739; różnica +1 pkt na jednej decyzji o lądzie).
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

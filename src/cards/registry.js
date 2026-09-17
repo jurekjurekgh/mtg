@@ -182,7 +182,12 @@ export function defineCard(data) {
       ...(data.aura.umbraArmor ? { umbraArmor: true } : {}),
       ...(data.aura.combatDamageByToughness ? { combatDamageByToughness: true } : {}),
       ...(data.aura.doesntUntap ? { doesntUntap: true } : {}),
-      ...(data.aura.cantAttack ? { cantAttack: true } : {}),
+      // Batch 56 (Bonds of Faith): zakaz ataku bywa WARUNKOWY — bool (Hobble)
+      // albo warunek oceniany przy odczycie ({ hostLacksSubtype }), tak samo
+      // jak `cantBlock` od M-reguły Hobble'a.
+      ...(data.aura.cantAttack === true ? { cantAttack: true }
+        : data.aura.cantAttack ? { cantAttack: Object.freeze({ ...data.aura.cantAttack }) }
+        : {}),
       ...(data.aura.cantAttackYou ? { cantAttackYou: true } : {}),
       // Odbiór keywordów gospodarzowi (Grounded: „loses flying").
       ...(data.aura.losesKeywords ? { losesKeywords: Object.freeze([...data.aura.losesKeywords]) } : {}),
@@ -214,6 +219,12 @@ export function defineCard(data) {
       // M174/D (Predator's Gambit, klasa L47): warunkowe keywordy aury —
       // ta sama zdolność co equipment (Hunter's Blowgun), gubiona przy
       // ręcznym przepisywaniu deskryptora.
+      // Batch 56 (Bonds of Faith): warunkowy PUMP po podtypie gospodarza —
+      // bliźniak `conditionalKeywords` (M174/D). Warunek oceniany przy każdym
+      // odczycie statystyk, więc zmiana podtypu działa natychmiast.
+      ...(data.aura.conditionalPump?.length
+        ? { conditionalPump: Object.freeze(data.aura.conditionalPump.map((cp) => Object.freeze({ condition: Object.freeze({ ...cp.condition }), pump: Object.freeze({ ...cp.pump }) }))) }
+        : {}),
       ...(data.aura.conditionalKeywords?.length
         ? { conditionalKeywords: Object.freeze(data.aura.conditionalKeywords.map((ck) => Object.freeze({ condition: Object.freeze({ ...ck.condition }), keywords: Object.freeze([...ck.keywords]) }))) }
         : {}),

@@ -33,6 +33,11 @@ const SLOWNIK_REGUL = new Set([
   // 15f: 'Powerstone' to podtyp artefaktu i nazwa tokena (jak Treasure/Clue/
   // Food wyżej) — słowo z mapowania typ→dźwięk, nie odwołanie do karty.
   'Powerstone',
+  // M369/I (znalezisko właściciela 2026-09-17c): 'Servo' to nazwa tokenu
+  // tworzonego przez fabricate (CR 702.123) — jak Treasure/Clue/Food wyżej
+  // PÓKI nie było wpisu katalogowego, silnik i render nie były zgłaszane;
+  // wpis token_servo (grafika Scryfalla) tylko ujawnił ten zastany dług.
+  'Servo',
 ]);
 const DOZWOLONE_ID = new Set([
   'basic-plains', 'basic-island', 'basic-swamp', 'basic-mountain', 'basic-forest',

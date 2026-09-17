@@ -224,6 +224,31 @@ function isLegalAttacker(state, object, playerId) {
   return true;
 }
 
+/**
+ * Znalezisko J (właściciel, 2026-09-17 — Ramroller „This creature attacks each
+ * combat if able"): JEDNO źródło prawdy o atakujących wymuszonych (L41) —
+ * goad (CR 701.38) i deskryptor `mustAttack` (CR 508.1c) — używane przez:
+ *   • ofertę `legalAttackerOptions` (każda opcja zawiera wymuszonych),
+ *   • walidację `declareAttackers` (pominięcie wymuszonego = odrzucenie),
+ *   • auto-deklarację rundy passów w `pass_priority` (deklaracja atakujących
+ *     to akcja turowa, CR 508.1a — spasowanie nie może jej pominąć).
+ * M270 (błąd #9, CR 508.1c): wymóg brzmi „attacks each combat IF ABLE" —
+ * stwór z „can't attack alone" (CR 508.1d), który jest jedynym zdolnym do
+ * ataku, atakować NIE MOŻE, więc nie jest wymuszony (inaczej deadlock).
+ */
+export function mandatoryAttackerIds(state, playerId) {
+  // Kolejność jak w `legalAttackerOptions` (kolejność pola bitwy) — opcje
+  // deklaracji muszą być deterministyczne i stabilne między wywołaniami.
+  const zdolniDoAtaku = state.zones.battlefield
+    .map((id) => state.objects.get(id))
+    .filter((object) => object && object.zone === 'battlefield'
+      && object.controllerId === playerId && isLegalAttacker(state, object, playerId));
+  return zdolniDoAtaku
+    .filter((object) => (object.goaded === true || hasMustAttack(object))
+      && !(hasAloneRestriction(object, 'cantAttackAlone') && zdolniDoAtaku.length < 2))
+    .map((object) => object.id);
+}
+
 export function declareAttackers(state, playerId, attackerIds, { pushToState = true } = {}) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_attackers') throw new Error('Nieprawidłowy krok deklaracji atakujących');
   if (state.turn.activePlayerId !== playerId) throw new Error('Nieaktywny gracz nie deklaruje atakujących');
@@ -232,24 +257,12 @@ export function declareAttackers(state, playerId, attackerIds, { pushToState = t
   if (attackers.some((object) => !isLegalAttacker(state, object, playerId))) throw new Error('Nielegalny atakujący');
   // Wymuszeni atakujący (CR 701.38 goad + CR 508.1c „attacks each combat if
   // able\" — Ramroller): zdolny do ataku stwór z wymogiem musi być zadeklarowany
-  // — deklaracja go pomijająca jest nielegalna.
-  const mandatory = [...state.objects.values()].filter((object) => object.zone === 'battlefield'
-    && object.controllerId === playerId
-    && (object.goaded === true || hasMustAttack(object))
-    && isLegalAttacker(state, object, playerId));
-  // M270 (błąd #9, CR 508.1c): wymóg brzmi „attacks each combat IF ABLE" —
-  // obowiązuje wyłącznie wtedy, gdy stwór faktycznie MOŻE zostać legalnie
-  // zadeklarowany. Stwór z „can't attack alone" (Ember Beast, CR 508.1d),
-  // który jest jedynym zdolnym do ataku stworem, atakować NIE MOŻE, więc
-  // wymóg go nie dotyczy. Bez tego wyłączenia goadowany Ember Beast bez
-  // partnera dawał DEADLOCK: pusta deklaracja łamała wymóg ataku, a
-  // deklaracja z nim samym łamała „can't attack alone" — gracz nie miał
-  // ani jednej legalnej komendy w kroku deklaracji atakujących.
-  const zdolniDoAtaku = [...state.objects.values()].filter((object) => object.zone === 'battlefield'
-    && object.controllerId === playerId && isLegalAttacker(state, object, playerId));
-  const wymogObowiazuje = (object) => !(hasAloneRestriction(object, 'cantAttackAlone')
-    && zdolniDoAtaku.length < 2);
-  const missing = mandatory.filter((object) => wymogObowiazuje(object) && !attackerIds.includes(object.id));
+  // — deklaracja go pomijająca jest nielegalna. Lista i wyjątek „if able"
+  // (M270, CR 508.1c/508.1d) mieszkają w `mandatoryAttackerIds` — tym samym
+  // źródle prawdy, z którego korzysta oferta i auto-deklaracja w `pass_priority`
+  // (znalezisko J: runda passów nie może pominąć wymuszonego ataku).
+  const missing = mandatoryAttackerIds(state, playerId)
+    .filter((id) => !attackerIds.includes(id));
   if (missing.length > 0) {
     throw new Error('Stwór z wymogiem ataku (goad lub „attacks each combat if able\") musi atakować w tym combacie');
   }
@@ -1438,19 +1451,11 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
     const object = state.objects.get(id);
     if (object && object.zone === 'battlefield' && isLegalAttacker(state, object, playerId)) legal.push(id);
   }
-  // Wymuszeni atakujący (goad CR 701.38 oraz „attacks each combat if able\"
+  // Wymuszeni atakujący (goad CR 701.38 oraz „attacks each combat if able"
   // CR 508.1c — Ramroller) MUSZĄ być w każdej opcji; wybór dotyczy tylko
-  // pozostałych stworów.
-  const mandatory = legal.filter((id) => {
-    const object = state.objects.get(id);
-    if (!(object?.goaded === true || hasMustAttack(object))) return false;
-    // M270 (błąd #9, CR 508.1c): „if able" — stwór z „can't attack alone",
-    // który jest jedynym zdolnym do ataku, atakować NIE MOŻE, więc nie jest
-    // wymuszony. Bez tego wyłączenia był wpychany do KAŻDEJ opcji, a filtr
-    // „can't attack alone" niżej kasował je wszystkie: oferta wychodziła
-    // PUSTA (druga połowa deadlocku — wizard nie miał czego pokazać).
-    return !(hasAloneRestriction(object, 'cantAttackAlone') && legal.length < 2);
-  });
+  // pozostałych stworów. Lista i wyjątek „if able" (M270) — wspólny helper
+  // (znalezisko J: oferta, walidacja i auto-deklaracja to jedno źródło).
+  const mandatory = mandatoryAttackerIds(state, playerId);
   const optional = legal.filter((id) => !mandatory.includes(id));
   return boundedSubsets(optional, cap)
     .map((subset) => [...mandatory, ...subset])

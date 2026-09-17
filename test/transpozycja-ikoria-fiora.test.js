@@ -30,7 +30,10 @@ test('transpozycja: każda z 3 kart w DOKŁADNIE jednej (nowej) talii', () => {
   for (const [cardId, oczekiwane] of [
     ['vow-of-flight', 'worek-basni.txt'],
     ['tiller-of-flesh', 'mirrodin-wu.txt'],
-    ['unbreakable-bond', 'worek-dziki.txt'],
+    // Batch 56 (B6): Ixalan dobił do progu 15 wspieranych kart i generator
+    // awansował go do własnej talii „ixalan" (M181, ADR 0023 §4) — karty
+    // planu wychodzą z worka-dzikiego razem z nim.
+    ['unbreakable-bond', 'ixalan.txt'],
   ]) {
     assert.deepEqual(gdzie(cardId), [oczekiwane],
       `${cardId} ma być w DOKŁADNIE jednej talii: ${oczekiwane}`);

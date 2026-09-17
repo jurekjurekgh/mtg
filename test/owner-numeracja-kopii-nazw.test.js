@@ -28,6 +28,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createGameState, addObject, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
+import { createRegistry } from '../src/cards/registry.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { createBattlefieldToken } from '../src/engine/tokens.js';
@@ -42,8 +43,8 @@ function game(playerId = 'p1') {
   return state;
 }
 
-function putCard(state, id, cardId, controllerId, zone = 'battlefield', patch = {}) {
-  const def = REGISTRY.get(cardId);
+function putCard(state, id, cardId, controllerId, zone = 'battlefield', patch = {}, registry = REGISTRY) {
+  const def = registry.get(cardId);
   assert.ok(def, `karta ${cardId} w rejestrze`);
   addObject(state, {
     id, instanceId: `i-${id}`, cardId, controllerId, ownerId: controllerId, zone,
@@ -120,6 +121,27 @@ function sessionWithDuplicates() {
   return session;
 }
 
+/**
+ * O1 (audyt PR #124): katalog nie ma DZIŚ dwóch permanentów o tej samej nazwie
+ * pod różnymi cardId, więc scenariusza nie da się zbudować realnymi kartami.
+ * Rejestr z klonem Manor Gate (drugi „wydruk" — inny id, ta sama nazwa) daje
+ * regule „grupa po nazwie WYŚWIETLANEJ" realne pokrycie dziś, zamiast czekania
+ * na dopisanie karty do katalogu (blokada ADR 0029: lista właściciela).
+ */
+function sessionWithSameNameDifferentCards() {
+  const real = createCardRegistry();
+  const duplicate = { ...real.get('manor-gate'), id: 'manor-gate-second' };
+  const registry = createRegistry([...real.all(), duplicate]);
+  const decks = new Map([
+    [HUMAN_ID, parseDeckText(readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(readFileSync('decks/innistrad-wu.txt', 'utf8'), registry).cardIds],
+  ]);
+  const session = createSession({ seed: 46, registry, decks });
+  putCard(session.state, 'gate-a', 'manor-gate', HUMAN_ID, 'battlefield', {}, registry);
+  putCard(session.state, 'gate-b', 'manor-gate-second', HUMAN_ID, 'battlefield', {}, registry);
+  return session;
+}
+
 test('N4: nameOfObject numeruje kopie na polu bitwy (lądy i tokeny); pojedynczy bez sufiksu', () => {
   const session = sessionWithDuplicates();
   assert.equal(session.nameOfObject('gate-a'), 'Manor Gate #1');
@@ -164,7 +186,38 @@ test('N6: po odejściu kopii grupa się przelicza — ostatnia kopia traci numer
   assert.deepEqual(rest.sort(), ['Soldier #1', 'Soldier #2'], 'przeliczenie po śmierci kopii');
 });
 
-// ---- Część 3: STRAŻNIK unikalności nazw wyświetlanych --------------------
+// ---- Część 3: klucz grupowania = nazwa WYŚWIETLANA (O1 audytu PR #124) ---
+
+test('N8/jednostka (O1): resolver nazwy wyświetlanej decyduje o grupie — różne cardId, jedna nazwa', () => {
+  // Klasa defektu (O1 audytu PR #124): grupowanie po `o.name ?? o.cardId`
+  // działa tylko dopóki nazwa wyświetlana == cardId. Reguła właściciela mówi
+  // o NAZWIE, którą gracz widzi — dwa różne wydruki tego samego permanentu
+  // muszą dostać „ #1"/„ #2" tak samo jak dwie kopie jednej karty.
+  const objects = [
+    { id: 'a', controllerId: 'p1', cardId: 'curate' },
+    { id: 'b', controllerId: 'p1', cardId: 'curate-stx' },
+  ];
+  const nums = battlefieldNameNumbers(objects, () => 'Curate');
+  assert.equal(nums.get('a'), 1, 'pierwszy wydruk numerowany');
+  assert.equal(nums.get('b'), 2, 'drugi wydruk tej samej nazwy — #2');
+  assert.equal(battlefieldNameNumbers(objects).size, 0,
+    'bez resolvera (surowe cardId) stare zachowanie: brak grupy — dowód, że numeruje RESOLVER, nie przypadek');
+});
+
+test('N8 (O1, sesja): dwa RÓŻNE cardId o tej samej nazwie wyświetlanej numerują się jak kopie', () => {
+  const session = sessionWithSameNameDifferentCards();
+  assert.equal(session.nameOfObject('gate-a'), 'Manor Gate #1', 'pierwszy wydruk');
+  assert.equal(session.nameOfObject('gate-b'), 'Manor Gate #2', 'drugi wydruk — ta sama nazwa wyświetlana');
+  // Strażnik klasy N7 także na tym scenariuszu: po obu resolverach nazwy
+  // permanentów jednego gracza są unikalne (kafel deleguje do sesji).
+  const tileNames = session.state.zones.battlefield
+    .map((id) => session.state.objects.get(id))
+    .filter((o) => o.controllerId === HUMAN_ID)
+    .map((o) => cardInfo(session, session.view().zones.battlefield.find((e) => e.id === o.id)).name);
+  assert.equal(new Set(tileNames).size, tileNames.length, `duplikat na kaflach: ${tileNames.join(', ')}`);
+});
+
+// ---- Część 4: STRAŻNIK unikalności nazw wyświetlanych --------------------
 
 test('N7/STRAŻNIK: nazwy wyświetlane permanentów jednego gracza są unikalne (modal i kafel)', () => {
   const session = sessionWithDuplicates();

@@ -4,7 +4,7 @@ import { activatableAbilities, deathZoneFor, hasCreatureType, effectiveKeywords,
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
-import { changeLife } from './players.js';
+import { changeLife, payEnergyCounters } from './players.js';
 import { applyEffect, queueSearchChoice, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { validateTargets, hasHexproofAgainst, legalTargetCandidates } from './spells.js';
 import { attachEquipmentToCreature } from './attachments.js';
@@ -554,6 +554,11 @@ export function legalActivatedAbilities(state, playerId) {
       // „Activate only once each turn\" (Snarling Wolf): po aktywacji zdolność
       // znika z legalnych akcji do końca tury (stan resetowany przy zmianie tury).
       if (ability.oncePerTurn && state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
+      // Batch 56 (koszt energii, CR 122.1): „You can't pay more energy counters
+      // than you have" (ruling AER) — oferta milczy, gdy liczników brakuje.
+      // Sprawdzenie jest PRZED gałęziami szczegółowymi, więc obowiązuje każdą
+      // zdolność z kosztem {E} i nie rozjeżdża się z walidacją (L48).
+      if ((ability.cost?.energy ?? 0) > (state.players.find((p) => p.id === playerId)?.energy ?? 0)) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
       // Ninjutsu działa wyłącznie z ręki — na polu bitwy nie ma czego aktywować.
       if (ability.keyword === 'ninjutsu') continue;
@@ -895,11 +900,16 @@ export function legalActivatedAbilities(state, playerId) {
         // X ograniczony dostępną maną (mana = manaForActivation — z kosztem
         // {T} źródła-landa odjętym). Z zerową maną brak ofert.
         const maxX = Math.min(mana, 20);
+        // Kandydaci ze WSPÓLNEGO źródła (L41/L48/M82): ta gałąź enumerowała
+        // `state.zones.battlefield` sama, więc nie widziała hexproofu ani
+        // ochrony przed jakością i oferowała cel, który `validateTargets`
+        // odrzuca — bot dostawał nielegalną komendę (znalezisko benchmarku B7:
+        // Entrancing Lyre vs token Merfolk z hexproof, seed 2030).
+        const candidates = legalTargetCandidates(state, playerId, targetSpec[0], object);
         for (let x = 1; x <= maxX; x += 1) {
-          for (const targetId of state.zones.battlefield) {
+          for (const targetId of candidates) {
             const target = state.objects.get(targetId);
             if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') continue;
-            if (target.controllerId !== playerId && targetSpec[0]?.type !== 'creature') continue;
             const power = effectivePower(target, state) ?? 0;
             if (power > x) continue;
             if (abilityEffectIsNoOp(state, object, ability, target)) continue; // M104
@@ -999,9 +1009,12 @@ export function legalActivatedAbilities(state, playerId) {
         continue;
       }
       if (targetSpec.length === 1 && targetSpec[0].type === 'any_target') {
-        // „any target": gracze + stwory na polu bitwy (spójnie z validateTargets).
-        const candidates = [...state.players.map((entry) => entry.id),
-          ...state.zones.battlefield.filter((bfId) => state.objects.get(bfId)?.kind === 'creature')];
+        // „any target": gracze + stwory/planeswalkerzy — przez WSPÓLNE źródło
+        // kandydatów (L41/L48/M82). Ta gałąź enumerowała pole bitwy sama, więc
+        // oferowała m.in. cudzego stwora z hexproof, którego `validateTargets`
+        // odrzucała (znalezisko benchmarku B7: Blazing Torch; ta sama klasa co
+        // gałąź „target creature with power X or less").
+        const candidates = legalTargetCandidates(state, playerId, targetSpec[0], object);
         for (const targetId of candidates) {
           out.push({ objectId: id, abilityIndex: index, ability, grantedFromEquipment: true, targets: [targetId] });
         }
@@ -1274,6 +1287,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     throw new Error('Brak kolorowego źródła many');
   }
   if (cost.tap && object.tapped) throw new Error('Obiekt jest już tapped');
+  // Koszt energii (CR 122.1): sprawdzany PRZED mutacją jak pozostałe części
+  // kosztu — odmowa nie może zabrać energii ani zatapnąć źródła.
+  if ((cost.energy ?? 0) > (player?.energy ?? 0)) throw new Error('Niewystarczająca energia');
   // Atomowa weryfikacja dodatkowych kosztów (CR 601.2h): discard a card +
   // remove a counter — sprawdzane PRZED mutacją, żeby nieudana aktywacja nie
   // zostawiła źródła zatapniętego/bez licznika. Koszty tap-other/crew są
@@ -1499,6 +1515,9 @@ export function performActivation(state, ctx) {
     if ((xValue ?? list.length) !== list.length) throw new Error('X musi równać się liczbie tapowanych artefaktów');
     artifactsToTap = list;
   }
+  // Batch 56 (koszt energii, CR 122.1): liczniki gracza płacimy razem z
+  // pozostałymi częściami kosztu (po walidacjach — atomowo, CR 601.2h).
+  if (cost.energy) payEnergyCounters(state, playerId, cost.energy);
   if (cost.tap) {
     tapObject(state, objectId, playerId);
   }

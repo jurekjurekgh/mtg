@@ -224,6 +224,15 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (!isLegal) throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
+    // Batch 56 (Volcanic Submersion): cel „artifact or land" — WYŁĄCZNIE te
+    // dwa typy (stwór NIE jest legalny, inaczej niż w szerszym Twiddle).
+    if (spec?.type === 'artifact_or_land') {
+      const isLegal = object && object.zone === 'battlefield'
+        && ((object.types ?? []).includes('Artifact')
+          || object.kind === 'land' || (object.types ?? []).includes('Land'));
+      if (!isLegal) throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
+    }
     // Cel „artifact_or_creature_or_land" (Twiddle): artefakt, stwór albo land
     // na polu bitwy (typy — obejmuje artifact creatures i land creatures).
     if (spec?.type === 'artifact_or_creature_or_land') {
@@ -1137,6 +1146,16 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
             || (object.types ?? []).includes('Enchantment')
             || object.kind === 'creature')
           && !hasHexproofAgainst(state, object, playerId);
+      });
+    }
+    // Batch 56: cel „artifact or land" (Volcanic Submersion).
+    case 'artifact_or_land': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        return (object.types ?? []).includes('Artifact')
+          || object.kind === 'land' || (object.types ?? []).includes('Land');
       });
     }
     case 'artifact_or_creature_or_land': {

@@ -1,0 +1,34 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Erase&set=ktk",
+  "print": "ktk",
+  "name": "Erase",
+  "mana_cost": "{W}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "Exile target enchantment.",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "9",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/1/d1dd0e10-2ad7-467f-8d4b-c70b95bf2e9c.jpg?1783939095",
+    "normal": "https://cards.scryfall.io/normal/front/d/1/d1dd0e10-2ad7-467f-8d4b-c70b95bf2e9c.jpg?1783939095"
+  },
+  "pobrano": "2026-09-17",
+  "rulings": [
+    {
+      "date": "2004-10-04",
+      "source": "wotc",
+      "comment": "The card does not go to the graveyard first."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/ktk/9/rulings",
+  "rulingsPobrano": "2026-09-17"
+}

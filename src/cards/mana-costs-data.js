@@ -1,6 +1,7 @@
 export const MANA_COSTS = {
   "treefolk-umbra": "{2}{G}",
   "containment-membrane": "{2}{U}",
+  "thornwood-falls": "",
   "exploding-borders": "{2}{R}{G}",
   "candlegrove-witch": "{1}{W}",
   "consign-to-dream": "{2}{U}",
@@ -468,4 +469,14 @@ export const MANA_COSTS = {
   "tah-crop-skirmisher": "{1}{U}",
   "act-of-treason": "{2}{R}",
   "douse-in-gloom": "{2}{B}",
+  // Batch 56 (2026-09-17) — koszty wprost z Oracle (docs/cards/scryfall-*.json).
+  "bonds-of-faith": "{1}{W}",
+  "erase": "{W}",
+  "krakens-eye": "{2}",
+  "containment-protocol": "{2}{U}",
+  "shipwreck-moray": "{3}{U}",
+  "volcanic-submersion": "{4}{R}",
+  "cautious-survivor": "{3}{G}",
+  "mobile-garrison": "{3}",
+  "dragon-fodder": "{1}{R}",
 };

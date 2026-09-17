@@ -1,0 +1,36 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Volcanic%20Submersion&set=ala",
+  "print": "ala",
+  "name": "Volcanic Submersion",
+  "mana_cost": "{4}{R}",
+  "cmc": 5,
+  "type_line": "Sorcery",
+  "oracle_text": "Destroy target artifact or land.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Cycling"
+  ],
+  "set": "ala",
+  "set_name": "Shards of Alara",
+  "collector_number": "121",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/e/0ec1f1fa-41c9-4bc0-9171-902cd456aa73.jpg?1783942556",
+    "normal": "https://cards.scryfall.io/normal/front/0/e/0ec1f1fa-41c9-4bc0-9171-902cd456aa73.jpg?1783942556"
+  },
+  "pobrano": "2026-09-17",
+  "rulings": [
+    {
+      "date": "2008-10-01",
+      "source": "wotc",
+      "comment": "Cycling is an activated ability. Effects that interact with activated abilities (such as Stifle or Rings of Brighthearth) will interact with cycling. Effects that interact with spells (such as Remove Soul or Faerie Tauntings) will not."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/ala/121/rulings",
+  "rulingsPobrano": "2026-09-17"
+}

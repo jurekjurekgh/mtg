@@ -19,6 +19,105 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-17c Uwagi właściciela z gier testowych A–J — etapy E1–E7 (PR #125)
+
+Zlecenie właściciela (2026-09-17c): po batchu 56 dziesięć znalezisk z gier
+testowych, praca etapami z commitem i pushem po KAŻDYM etapie. Plan:
+[`docs/plans/PLAN_2026-09-17c-uwagi-wlasciciela-a-j.md`](plans/PLAN_2026-09-17c-uwagi-wlasciciela-a-j.md),
+handoff: [`docs/setup/HANDOFF_2026-09-17c.md`](setup/HANDOFF_2026-09-17c.md).
+
+- **E0 `83584a1`** — plan A–J z rozpoznaniem i etapami E1–E7.
+- **E1 `ad74c8a` (A)** — stopka publikacji w strefie CZYTELNIKA (`clock.js`),
+  dotyczy też autosave.
+- **E2 `9ee386b` (I, H)** — `token_servo` (tkld/4) z ilustracją; zakryty
+  permanent na polu bitwy = wspólny token Morph (tdtk/7), strefy ukryte =
+  rewers karty; strażnik „każdy token ma ilustrację".
+- **E3 `6ae121f` (C, F, G)** — tytuł decyzji X nazywa kartę i skutek, hover
+  niesie nazwę z numerem kopii, zdolności many znikają z panelu (zostają
+  w `legalCommands`).
+- **E4 `1268b4d` (D, E)** — kontrola z chwili śmierci (LKI, CR 603.10a) zamiast
+  kontrolera obiektu w grobie (CR 400.3) — lekcja **L148**; pin jednego
+  odpalenia „dies" po kampanii detektora (~1180 partii bota bez reprodukcji).
+- **E5 `2fa3e69` (J)** — runda passów nie pomija wymuszonego ataku (Ramroller,
+  goad): `mandatoryAttackerIds` jako jedno źródło prawdy dla oferty, walidacji
+  i auto-deklaracji.
+- **E6 `6d00a5a` (B)** — exploit debuffujący tylko jako opłacalna wymiana
+  (lethal wroga + TMC/walory zabijanego); TMC twarzą w dół = realny koszt {3};
+  golden-master zregenerowany świadomie (jedna partia, reprodukcja realna).
+
+Bramki head sesji: `npm test` **5719/5719**, `npm run test:all` **5729/5729**,
+build **64 moduły / 3809,3 kB**, regresja bota **10/10**, quick 6 talii —
+heuristic 84,1% (1130/1344), 0 meczów niedokończonych. Pełny przebieg
+quick 25 talii przerwał się na nowym znalezisku `illegal_spell`
+(seed 2039; szczegóły: HANDOFF_2026-09-17c) — do domknięcia w następnej sesji.
+
+## 2026-09-17b Batch 56 — 10 kart (25–63): energia, aury warunkowe, pojazd, druga faza główna (PR #125)
+
+Zlecenie właściciela (2026-09-17b): nowy batch z listy (10 pozycji w kolejności
+artId), praca etapami z commitem i pushem po KAŻDYM etapie oraz kontrolą HEAD na
+starcie i po commitach (ENVIRONMENT §2). Plan:
+[`docs/plans/PLAN_2026-09-17b-batch56-25-63.md`](plans/PLAN_2026-09-17b-batch56-25-63.md).
+
+- **B0a `71c81fc`** — plan batcha (rozpoznanie mechanik, etapy B0b–B7, ryzyka).
+- **B0b `23c4811`** — dane źródłowe: 10 snapshotów Scryfall (Oracle + rulings),
+  10 wierszy arkusza, 10 kosztów w `MANA_COSTS`, definicje `in-development`,
+  wpis planu Teenage Mutant Ninja Turtles w `WOREK_DECKS`.
+- **B1 `f7e61d0` (M362)** — energia {E} jako zasób GRACZA + 32 Shipwreck Moray.
+- **B2 `bea4fbd` (M363)** — 27 Erase + 34 Volcanic Submersion (cel
+  `artifact_or_land`, cycling {2}).
+- **B3 `fb563ea` (M364)** — 25 Bonds of Faith + 30 Containment Protocol (aury
+  warunkowe; golden master zmieniony ŚWIADOMIE z atrybucją `26da3385` → `ad0a3245`).
+- **B4 `fda1ee6` (M365)** — 58 Mobile Garrison („another target artifact or
+  creature you control” + crew 2).
+- **B5 `76d0687` (M366)** — 54 Cautious Survivor (Survival — początek drugiej
+  fazy głównej, LKI).
+- **B6 `7c02ab9` (M367)** — 63 Dragon Fodder + 60 Thornwood Falls + zaległa
+  28 Kraken’s Eye; awans Ixalanu do własnej talii i przetasowanie `WOREK_DECKS`
+  (skutek uboczny zmierzony); korekta wspólnej klamry `landPlayDelta` (nowy remis
+  lądu) + golden master `ad0a3245` → `09fa1739` z atrybucją.
+- **B7 `038cc50`+`48087d5`+`3453593` (M368)** — pomiar quick 25 talii wyłapał
+  CZTERY bugi silnika; każdy zamknięty u root cause, z pinem czerwieniejącym bez
+  fixa: `3f4986f` (regeneracja blokowanego atakującego kasowała klucz
+  `combat.blockers`), `51e5bef` (auto-tap zjadał jednostkę odłożoną na pip
+  płatności — lekcja **L147**), `038cc50` (kasowanie tokenu nie odpinało
+  załączników: living weapon → inwariant stanu), `3453593` (oferta celów
+  zdolności omijała wspólne `legalTargetCandidates` — cudzy hexproof w ofercie;
+  kotwica L48). Poza tym fałszywy alarm
+  Żywego Testera naprawiony w NARZĘDZIU (`48087d5`: detektor czytał tylko jedną
+  z dwóch form echa logu) + kampania 10 partii na taliach z nowymi kartami
+  (0 zgłoszeń po fixie). Dokumentacja: `ENGINE_MILESTONES` (M362–M368), ten
+  wpis, `docs/setup/HANDOFF_2026-09-17b.md`; rejestr lekcji skrócony w tym
+  samym commicie (budżet lektury startowej).
+- **Bramki finalne:** `npm test` 5694/5694, `npm run test:all` **5704/5704**,
+  build 63 moduły/3793,4 kB, regresja bota 10/10, quick 25 talii heuristic **86,0%** (5147/5984), aggro 25,5% (763/2992), random 2,4% (73/2992), 1 mecz niedokończony (limit 8000 komend).
+
+## 2026-09-17 Audyt PR #124 (APPROVE) + numeracja po nazwie wyświetlanej + tester vs warstwa grafik (PR #125)
+
+Pętla domyślna ADR 0020/0021, sesja `arena/01a0ae26-mtg`:
+
+- **E1 — audyt PR #124: APPROVE** (raport `docs/audits/AUDYT_PR124_2026-09-17.md`).
+  Pełny przegląd 32 plików; obie naprawy audytu #123 domknięte u root cause
+  i pilnowane testami, które realnie czerwienieją (mutacje: usunięcie
+  `pendingCombatSecondPass` → T4 RED; neutralizacja `cleanupEventIsSbaEvidence`
+  → T1+T2 RED, anty-regresja 514.1 zielona). Obserwacje: O1 numeracja kopii,
+  O2 nadmiarowy zestaw dowodów SBA, O3 `chosenColor` lądu vs aury.
+- **E2 — O1 naprawione:** `battlefieldNameNumbers(objects, displayedNameOf)` —
+  klucz grupowania to nazwa WYŚWIETLANA (sesja podaje resolver lustrzany wobec
+  `nameOfObject`). Test jednostkowy + sesyjny (rejestr z klonem Manor Gate jako
+  drugi „wydruk", bo katalog nie ma dziś duetów permanentów) + 2 mutacje.
+- **E3 — pętla jakości ADR 0021 §4b (inna ścieżka: Żywy Tester):** tester nie
+  znał warstwy wysoko-graficznej (`#art-showcase`, hi-gfx domyślnie ON), która
+  pauzuje grę przez `awaitingArtAck` — każdy rzut z ilustracją kończył partię
+  fałszywym `[STOP] brak akcji` i fałszywym detektorem „sam Poddaj partię"
+  (odtworzone na #123 i #124). Naprawa `closeArtShowcase` w `run-game.mjs`
+  (gest + fallback Escape), strażnik 6 testów, dokumentacja w TESTER_STOLU
+  i README narzędzia. Po naprawie 4 partie po 400 kroków — naturalne końce,
+  0 zgłoszeń detektorów.
+
+Bramki finalne: fast 5646/5646, test:all 5656/5656 (0 fail), build
+63 moduły / 3759,9 kB, bot-benchmark 10/10. Handoff:
+`docs/setup/HANDOFF_2026-09-17.md`.
+
 ## 2026-09-16 Dopisek 3 (PR #124): numeracja kopii nazw na polu bitwy
 
 Zlecenie właściciela (prośba wcześniejsza, niezakodowana): duplikaty nazwy u

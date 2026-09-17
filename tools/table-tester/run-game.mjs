@@ -1068,6 +1068,40 @@ export async function runTableGame({
     return false;
   };
 
+  /**
+   * E3 (pętla jakości 2026-09-17, znalezisko audytu Żywym Testerem):
+   * WARSTWA WYSOKO-GRAFICZNA (`#art-showcase.art-showcase active`, hi-gfx
+   * domyślnie ON — topbar-toggles) WSTRZYMUJE grę: sesja ustawia
+   * `awaitingArtAck`, `advance()` wraca (`return:artAck`), a wznowienie idzie
+   * wyłącznie przez gest gracza (main.js: installTapGesture → closeArtShowcase
+   * → session.continueArtPlay; Escape to droga alternatywna).
+   *
+   * Tester tej warstwy nie znał — po pierwszym rzucie z ilustracją partia
+   * wyglądała na zawieszoną, a transkrypt niósł `[STOP] brak akcji` i
+   * fałszywy detektor „Jedyna opcja to «Poddaj partię»". Zmierzone na #123 i
+   * #124, na kilku parach talii i seedach — to luka NARZĘDZIA, nie stołu
+   * (stan sesji: `prio=p2`, `botPausePending=false`, `#art-showcase` active).
+   * Po domknięciu: 3 partie 400 kroków kończą się naturalnie, 0 zgłoszeń
+   * detektorów (raport E3 w docs/audits/AUDYT_PR124_2026-09-17.md).
+   *
+   * Gest tuż po otwarciu bywa zignorowany (bramka 350 ms „odprysku" w
+   * main.js), dlatego po kliknięciu jest fallback na Escape — tą samą ścieżką,
+   * którą zamyka warstwę klawiatura.
+   */
+  const closeArtShowcase = async () => {
+    const layer = $('#art-showcase');
+    if (!visible(layer)) return false;
+    const caster = text($('#art-showcase .showcase-caster'));
+    logL(`  [warstwa grafik] zamykam planszę ilustracji${caster ? `: ${caster}` : ''}`);
+    layer.click?.();
+    await sleep(60);
+    if (visible($('#art-showcase'))) {
+      domWindow.document.dispatchEvent(new domWindow.KeyboardEvent('keydown', { key: 'Escape' }));
+      await sleep(60);
+    }
+    return true;
+  };
+
   // Jedno źródło ogona dla snapshotu i pomiaru w KAŻDYM oknie, także --quiet.
   const captureLogWindow = () => {
     const entries = $$('#log .log-event, #log .log-rejection, #log .log-system')
@@ -1111,6 +1145,10 @@ export async function runTableGame({
   };
 
   const step = async () => {
+    // E3: warstwa grafik pauzuje grę tak samo jak pauza bota — gracz zamyka
+    // ją gestem (patrz closeArtShowcase). Bez tego kroku panel akcji jest
+    // pusty (tylko „Poddaj partię"), a detektor zgłasza fałszywe zacięcie.
+    if (await closeArtShowcase()) return 'art';
     // M205: dowody z głównego logu (auto-pass) zbieramy na POCZĄTKU kroku —
     // czyli po tym, jak sesja przewinęła grę w wyniku poprzedniego kliknięcia,
     // a przed zamknięciem modala. Kolejność w transkrypcie jest wtedy zgodna

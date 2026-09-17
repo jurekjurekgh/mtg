@@ -1,52 +1,51 @@
 {
   "version": 1,
-  "overallHash": "26da33854d3910234066ecd0cda5045a132c226778c8a8ee4a4e447af1794e48",
+  "overallHash": "85163d3095342998baece867594408a2f832cf8f7b8b874eb61fd51951f52aed",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1000,
-      "hash": "e6b687e750776df18dec63034de251aa93ad467de4c71f3889f8f0801e19b174",
-      "decisions": 299,
-      "scoreSum": 2299.2991,
+      "hash": "18a63ef4092d49a92d4a57046235b1d80b235e08c695ed004e657a2632cf607a",
+      "decisions": 308,
+      "scoreSum": 3219.9009,
       "chosenKinds": {
-        "activate_ability": 3,
-        "attack": 7,
+        "activate_ability": 1,
+        "attack": 9,
         "block": 11,
         "cast_permanent": 4,
-        "cast_spell": 4,
-        "pass_priority": 244,
-        "play_land": 8,
-        "resolve_combat": 11,
+        "cast_spell": 3,
+        "pass_priority": 251,
+        "play_land": 7,
+        "resolve_combat": 12,
         "resolve_mulligan_choice": 1,
-        "resolve_optional_trigger_choice": 5,
-        "resolve_proliferate": 1
+        "resolve_optional_trigger_choice": 7,
+        "resolve_trigger_target": 2
       }
     },
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1001,
-      "hash": "9a2a4903be9007f10a3c955047a6a414f527924fe3bec320ed0cb925509fa276",
-      "decisions": 158,
-      "scoreSum": 1414.5108,
+      "hash": "f92131800f94f89cbb824bc64512d4a9e841e4bfa4bf9416950ae8c1c57e2d32",
+      "decisions": 179,
+      "scoreSum": 1640.4117,
       "chosenKinds": {
-        "activate_ability": 1,
-        "attack": 3,
-        "block": 6,
-        "cast_permanent": 4,
+        "attack": 4,
+        "block": 7,
+        "cast_permanent": 5,
         "cast_spell": 2,
-        "pass_priority": 128,
-        "play_land": 6,
-        "resolve_combat": 6,
-        "resolve_discard_choice": 1,
-        "resolve_mulligan_choice": 1
+        "pass_priority": 145,
+        "play_land": 7,
+        "resolve_combat": 7,
+        "resolve_mulligan_choice": 1,
+        "resolve_scry": 1
       }
     },
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1000,
-      "hash": "f3d5104dec4f7bab1a04df0f087de9c5eeed0f3f44ad2dd27591f143d519636c",
+      "hash": "5b3fc37cc2eb13bacf7b716f6424bb0b97b5ebf95304be36ecd2d6b7968cb73e",
       "decisions": 233,
-      "scoreSum": 2924.218,
+      "scoreSum": 2926.218,
       "chosenKinds": {
         "activate_ability": 1,
         "attack": 6,
@@ -65,9 +64,9 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1001,
-      "hash": "e715e4c3b7111497bd8c90970e9c3c9d7bc13c78534897e5f856bb3ebd380ab8",
+      "hash": "555d2dea96c6b832cf031985219aefaeeae6ca32d523bc456fcec2f7c48fc699",
       "decisions": 198,
-      "scoreSum": 2940.2099,
+      "scoreSum": 2943.2099,
       "chosenKinds": {
         "activate_ability": 3,
         "attack": 6,
@@ -86,30 +85,29 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "62fcb9e5add457d9189b552113ae677d04d50bd60de68cfeda4f0cb45196ae82",
-      "decisions": 176,
-      "scoreSum": 2523.3171,
+      "hash": "e81960c6e9468172bab87c27127ff3a385275a680de130a0cac6a80ac5e2fce9",
+      "decisions": 174,
+      "scoreSum": 2571.3171,
       "chosenKinds": {
         "activate_ability": 1,
         "attack": 6,
         "block": 7,
         "cast_permanent": 6,
-        "pass_priority": 137,
+        "pass_priority": 136,
         "play_land": 5,
         "resolve_combat": 7,
         "resolve_endure_choice": 2,
         "resolve_exploit_choice": 1,
         "resolve_mulligan_bottom_choice": 1,
-        "resolve_mulligan_choice": 2,
-        "resolve_trigger_target": 1
+        "resolve_mulligan_choice": 2
       }
     },
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1001,
-      "hash": "e0b2fda8355642a9c1e5ab75717707328897d4f0b8a46a9aff3851136b3dbf7b",
+      "hash": "e1b07e9164f9add43a7bfe4b1d083601c9de97f977221c3cb50bc2a3704b63c7",
       "decisions": 189,
-      "scoreSum": 2599.1279,
+      "scoreSum": 2602.1279,
       "chosenKinds": {
         "activate_ability": 2,
         "attack": 4,

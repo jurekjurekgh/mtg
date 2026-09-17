@@ -2,8 +2,10 @@
 
 1x Idyllic Grange
 1x Mystic Sanctuary
+1x Thornwood Falls
 1x Clawing Torment
 1x High Stride
+1x Dragon Fodder
 1x Forever Young
 1x Insatiable Appetite
 1x Kappa Tech-Wrecker
@@ -16,6 +18,7 @@
 1x Thistledown Players
 1x Vow of Flight
 1x Zoraline, Cosmos Caller
+1x Cautious Survivor
 1x Downwind Ambusher
 1x Locthwain Paladin
 1x Rust-Shield Rampager
@@ -24,5 +27,5 @@
 2x Plains
 2x Island
 3x Swamp
-1x Mountain
+2x Mountain
 3x Forest

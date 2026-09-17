@@ -30,11 +30,22 @@ export const HOVER_MODES = Object.freeze(['scryfall', 'fot', 'kon']);
 
 /**
  * Rewers karty Magica ze Scryfall — jeden stały obraz dla każdej karty
- * zakrytej (morph/megamorph, ręka przeciwnika). Świadomie ten sam adres dla
- * wszystkich: gdyby zależał od karty, sam fakt pobrania pliku ujawniałby
- * tożsamość (FoW, ADR 0003).
+ * zakrytej w strefie UKRYTEJ (ręka przeciwnika, wierzch biblioteki, zakryte
+ * wygnanie). Świadomie ten sam adres dla wszystkich: gdyby zależał od karty,
+ * sam fakt pobrania pliku ujawniałby tożsamość (FoW, ADR 0003).
  */
 export const CARD_BACK_URL = 'https://backs.scryfall.io/large/0/a/0aeebaf5-8c7d-4636-9e82-8c27447861f7.jpg';
+
+/**
+ * Token „Morph" (DTK, tdtk/7) — reprezentacja zakrytego permanentu NA POLU
+ * BITWY. Znalezisko H (2026-09-17c): kafel morpha pokazywał rewers zwykłej
+ * karty, a na stole leży przecież dwustronny token 2/2 — gracz widzi więc
+ * drukowany token Morph (Scryfall 5f29231c-dd21-4a45-a1f0-464d338128ed),
+ * tak jak w papierowej grze. To informacja PUBLICZNA (CR 708.2 — twarz
+ * zakrytej karty nie jest znana nikomu), więc jeden wspólny obraz nadal
+ * nie zdradza tożsamości; strefy ukryte zostają przy `CARD_BACK_URL`.
+ */
+export const MORPH_BACK_URL = 'https://cards.scryfall.io/large/front/5/f/5f29231c-dd21-4a45-a1f0-464d338128ed.jpg?1783938560';
 
 /** Rozmiary obrazu Scryfall (kafel na stole vs powiększenie). */
 export const IMAGE_SIZE = Object.freeze({ tile: 'normal', zoom: 'large' });
@@ -116,7 +127,7 @@ export function cardImageSources(card, { mode = IMAGE_MODE.localFirst, size = IM
  * @param {object} card definicja karty (registry) albo `{ faceDown: true }`
  */
 export function tileImageSources(card) {
-  if (card?.faceDown) return [CARD_BACK_URL];
+  if (card?.faceDown) return [card.battlefield ? MORPH_BACK_URL : CARD_BACK_URL];
   // Kafel pokazuje obraz tylko dla karty z realnym drukiem (decyzja właściciela:
   // „na stole img ze Scryfall"). Karty syntetyczne i tokeny nie mają druku —
   // dla nich render zostaje przy kolorowej twarzy i nie rusza sieci.
@@ -130,7 +141,7 @@ export function tileImageSources(card) {
  * albo pliku nie ma na dysku — legacy w tej sytuacji pokazywał zbity obrazek.
  */
 export function hoverImageSources(card, { hoverMode = 'scryfall' } = {}) {
-  if (card?.faceDown) return [CARD_BACK_URL];
+  if (card?.faceDown) return [card.battlefield ? MORPH_BACK_URL : CARD_BACK_URL];
   const key = String(hoverMode || 'scryfall').toLowerCase();
   // M146 (uwaga właściciela): w trybach FOT/KON karty bez artId (basic landy,
   // tokeny, Undercity) nie mają lokalnych ilustracji — zamiast pokazywać

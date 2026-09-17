@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
@@ -4046,6 +4046,16 @@ export function execute(state, input) {
       // (L43). `state.combat` trzymał wiszące id skasowanego tokena:
       // atakujący/bloker, którego nie ma w `state.objects`. Ten sam rodzaj
       // niespójności wywrócił partię w M271 (błąd #16).
+      //
+      // B7-fix 3 (2026-09-17, benchmark seed 2030, heuristic(mirrodin-wu) vs
+      // random(worek-dziki)): lista była NIEPEŁNA — brakowało ZAŁĄCZNIKÓW.
+      // Living weapon (Strandwalker) trzyma się tokenu Germ; wybór „wierzch/
+      // spód biblioteki" dla tego tokenu (Vanish from Sight) kasował go bez
+      // odpięcia equipmentu → inwariant „załącznik wskazuje nieistniejącego
+      // gospodarza" wywracał partię. Ta sama reguła co w M191 (SBA tokenów)
+      // i w `bounce_to_library_bottom` (effects.js): kasowanie obiektu
+      // z pola bitwy ZAWSZE zaczyna się od `detachAttachmentsFromHost`.
+      detachAttachmentsFromHost(state, pending.targetId);
       if (state.combat) removeFromCombat(state, pending.targetId);
       state.objects.delete(pending.targetId);
       state.zones.battlefield = state.zones.battlefield.filter((id) => id !== pending.targetId);
@@ -5057,6 +5067,21 @@ export function execute(state, input) {
         events.push(event('priority_passed', { playerId: cmd.playerId, nextPlayerId: state.turn.activePlayerId }));
       } else {
         const previousTurnNumber = state.turn.number;
+        // Znalezisko J (właściciel, 2026-09-17 — Ramroller „This creature
+        // attacks each combat if able"): deklaracja atakujących jest akcją
+        // turową (CR 508.1a) — runda passów jej nie pomija. Stwór wymuszony
+        // (`mandatoryAttackerIds`: „attacks each combat if able" CR 508.1c
+        // albo goad CR 701.38) MUSI atakować, więc przed wyjściem z kroku
+        // deklarujemy MINIMALNY zestaw — same stwory wymuszone; te opcjonalne
+        // zostają decyzją gracza, który właśnie spasował (świadomie z nich
+        // zrezygnował). Wcześniej pass p1+p2 przechodził do blokowania bez
+        // deklaracji i Ramroller zostawał w domu.
+        if (state.turn.step === 'declare_attackers' && !state.combat) {
+          const forced = mandatoryAttackerIds(state, state.turn.activePlayerId);
+          if (forced.length > 0) {
+            events.push(declareAttackers(state, state.turn.activePlayerId, forced, { pushToState: false }));
+          }
+        }
         // D (CR 508.2): tędy przechodzi TYLKO combat_damage bez atakujących
         // (z atakującymi krok domyka resolve_combat — gałąź M255/F powyżej).
         // Taki pusty combat trzeba sprzątnąć, bo bramka oferty deklaracji
@@ -7794,8 +7819,11 @@ export function playerView(state, playerId) {
   // z czego rysować. `manaPool` to mapa profil-kolorów → liczba jednostek
   // (klucz `manaUnitKey`: 'U', 'UR', '' = bezbarwna). Pula jest jawną
   // informacją stołową (jak `mana`), więc trafia do widoku OBU graczy.
-  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool, speed }) => ({
-    id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0,
+  // Batch 56 (energia, CR 122.1): licznik gracza jest JAWNY dla obu graczy
+  // (jak poison i speed) — bez niego gracz nie widziałby, ile energii ma,
+  // a bot nie miałby z czego wyceniać kosztu {E}.
+  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool, speed, energy }) => ({
+    id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0, energy: energy ?? 0,
     // M313 (zgłoszenie właściciela, Leonin Surveyor): prędkość (DFT „Start
     // your engines!", Batch 24) jest jawna dla OBU graczy — licznik publiczny,
     // jak poison; bez niej UI nie miało z czego rysować panelu speed.

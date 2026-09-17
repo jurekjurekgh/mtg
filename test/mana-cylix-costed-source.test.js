@@ -207,3 +207,49 @@ test('A/11: kształt crash-1 (benchmark seed 2026) — pula-any + Cylix + 2 pipy
   const result = execute(state, { ...offer });
   assert.equal(result.ok, true, 'płatność przechodzi (bez rejectu)');
 });
+
+test('A/12: kształt crash-3 (benchmark seed 2027) — koszt źródła kosztowego nie zjada pipa płatności', () => {
+  // random(wiedzmin-wur) vs heuristic(innistrad-wu), seed 2027: Inspiration
+  // {3}{U} przy 2 Wyspach + Apprentice Wizard („{U}, {T}: Add {C}{C}{C}").
+  // Auto-tap zapłacił koszt {U} zdolności jednostką odłożoną na {U} rzucanego
+  // czaru → pula {C}{C}{C} bez pokrycia → consumeManaPool rzucał „Brak
+  // kolorowej many w puli" i zostawiał mutację (jedna Wyspa tapnięta, pula
+  // bez koloru). Legalna płatność to Wyspa+Wyspa+Wizard: druga Wyspa płaci
+  // koszt zdolności, produkcja {C}{C}{C} idzie na generic czaru.
+  const state = game('p1');
+  putCard(state, 'i1', 'basic-island', 'p1');
+  putCard(state, 'i2', 'basic-island', 'p1');
+  putCard(state, 'wiz', 'apprentice-wizard', 'p1');
+  state.objects.set('wiz', Object.freeze({ ...state.objects.get('wiz'), summoningSickness: false }));
+  putCard(state, 'insp', 'inspiration', 'p1', 'hand');
+  const view = playerView(state, 'p1');
+  const offer = (view.legalCommands ?? []).find((c) => c.type === 'cast_spell' && c.objectId === 'insp');
+  assert.ok(offer, 'oferta rzutu {3}{U} istnieje (oferta = płatność, L48)');
+  const result = execute(state, { ...offer });
+  assert.equal(result.ok, true, 'płatność przechodzi (bez rejectu)');
+  const p1 = state.players.find((p) => p.id === 'p1');
+  assert.equal(p1.mana, 0, 'mana rozliczona do zera');
+  assert.deepEqual(p1.manaPool, {}, 'pula pusta po zapłacie');
+  for (const id of ['i1', 'i2', 'wiz']) {
+    assert.equal(state.objects.get(id).tapped, true, `${id} tapnięty (cała produkcja zużyta)`);
+  }
+  const onStack = [...state.objects.values()].find((o) => o.cardId === 'inspiration' && o.zone === 'stack');
+  assert.ok(onStack, 'czar na stosie');
+});
+
+test('A/13: kształt crash-3 — JEDNA Wyspa + Wizard to za mało na {3}{U} (brak oferty)', () => {
+  // Ten sam układ bez drugiej Wyspy: produkcja 4 many wymaga zapłaty kosztu
+  // {U} zdolności (1 mana) — razem dostępne 3 → oferty nie ma, a nieudana
+  // płatność nie może zostawić tapniętej Wyspy ani manu w puli.
+  const state = game('p1');
+  putCard(state, 'i1', 'basic-island', 'p1');
+  putCard(state, 'wiz', 'apprentice-wizard', 'p1');
+  state.objects.set('wiz', Object.freeze({ ...state.objects.get('wiz'), summoningSickness: false }));
+  putCard(state, 'insp', 'inspiration', 'p1', 'hand');
+  const view = playerView(state, 'p1');
+  assert.equal((view.legalCommands ?? []).some((c) => c.type === 'cast_spell' && c.objectId === 'insp'), false,
+    'brak oferty rzutu {3}{U}');
+  const p1 = state.players.find((p) => p.id === 'p1');
+  assert.equal(p1.mana, 0, 'pula nietknięta (oferta nie mutuje)');
+  assert.equal(state.objects.get('i1').tapped, false, 'Wyspa odkręcona (zero częściowej płatności)');
+});

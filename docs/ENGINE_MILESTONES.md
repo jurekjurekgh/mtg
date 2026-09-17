@@ -5018,3 +5018,361 @@ phyrexian (obie ścieżki)/forecast/unearth/kopie-707.2/trample-deathtouch
 Bramki: `npm test` **5610/5610**, `npm run test:all` **5620/5620**, build
 **63 moduły / 3742,6 kB**, quick 672 gry / 145,3 s — heuristic **82,0%**
 (551/672), aggro **32,7%** (110/336), random **3,3%** (11/336).
+
+## Batch 56 (2026-09-17) — 10 kart (25–63): energia, aury warunkowe, pojazd, druga faza główna
+
+**Status:** zamknięty — 10/10 kart `supported` + token katalogowy `token_goblin`;
+PR #125 czeka na właściciela (agent nigdy nie scala, ADR 0007/0020).
+
+Zakres mechanik (każda generyczna, bez gałęzi po nazwie karty — ADR 0002):
+
+- **Energia {E}** — zasób GRACZA (nie permanentu): `addEnergyCounters`/
+  `payEnergyCounters` jako jedyne wejścia, zdarzenia `energy_counters_added`/
+  `_paid`, koszt zdolności `cost.energy`, efekt `get_energy`.
+- **Nowe cele**: `artifact_or_land` (Volcanic Submersion) i triggerowa deska
+  `artifact_or_creature` z `controlledBy: 'controller'` + domyślnym
+  wykluczeniem źródła („another”, CR 115.2) — Mobile Garrison.
+- **Aura warunkowa** — `aura.conditionalPump` + `cantAttack`/`cantBlock`
+  z warunkami `hostHasSubtype`/`hostLacksSubtype` (read-time) oraz
+  `aura.doesntUntap` + efekt `tap_enchanted_permanent`.
+- **Druga faza główna** — nowe zdarzenie `beginning_of_second_main`
+  (Survival) z intervening-if `{ sourceTapped }` i LKI po zniknięciu źródła.
+- **Kolor czaru w triggerze** — `spellColorsInclude` na `player_casts_spell`
+  (czar DOWOLNEGO gracza) + opcjonalne „you may” (`mayFire`).
+- **Nowy efekt**: `exile_permanent` bez tranzytu przez grób (Erase),
+  `untap_permanent` (pojazd), `get_energy` (Moray).
+
+Talie z generatora (ADR 0023/0024): Ixalan dobił do progu 15 wspieranych kart
+i awansował (M181) do własnej talii `decks/ixalan.txt`; `WOREK_DECKS` przyjął
+Kaldheim + Duskmourn + Arcavios do `worek-dziki` (próg 15 nielandów trzyma
+walidator; bilans 21/15/15/27). Podziały z B6: basni 36/12/24, dziki 27/9/18,
+legend 23/8/15, mroczny 27/9/18.
+
+Bramki batcha (finalne, po fixach B7): `npm test` **5694/5694**,
+`npm run test:all` ****5704/5704**** (0 fail), build **63 moduły / 3793,4 kB**,
+regresja bota (`test/bot-benchmark.test.js`) **10/10**, quick 25 talii —
+heuristic **86,0%** (5147/5984), aggro 25,5% (763/2992), random 2,4% (73/2992), 1 mecz niedokończony (limit 8000 komend) (szczegóły: M368).
+
+## M362 (2026-09-17) — Energia {E}: licznik gracza, nie permanentu
+
+Zasób wg CR 122.1 i rulingów AER (Scryfall 2024-06-07, snapshot
+`docs/cards/scryfall-shipwreck-moray.json`): energia to licznik GRACZA,
+„not associated with any specific permanents”, nie jest maną i **nie znika
+z końcem kroków, faz ani tur** — w silniku nie ma więc żadnego czyszczenia.
+
+Jedyna droga zapisu: `players.js` → `addEnergyCounters` / `payEnergyCounters`
+(wzorzec `addPoisonCounters`), z parą zdarzeń `energy_counters_added` /
+`energy_counters_paid` opisanych po polsku w `session.js`. Nowa rodzina
+w `tools/family-audit.mjs` (`energy`) zabrania zapisu wprost
+(`\.energy\s*(?:\+=|-=|=(?!=))`) — choke point, nie konwencja (L107).
+
+Koszt zdolności `cost.energy` rozliczany jak każdy inny (CR 601.2h): filtr
+oferty („You can’t pay more energy counters than you have”), walidacja przed
+mutacją i zapłata w `performActivation`. Efekt `get_energy` — jedno zdarzenie
+na całą pulę („if an effect says you get one or more {E}”).
+
+Widoczność i dowiązania L84: pole `energy` w projekcji gracza (ADR 0017 —
+widok nie wystawia pól „na zapas”), panel energii na stole
+(`index.html`/`render.js`), etykiety efektu i kosztu, wycena bota (pozyskanie
++2/E, zapłata −3/E). Odcisko stanu bez zmian kodu: `fingerprint.js` rzutuje
+CAŁYCH graczy, więc energia różnicuje stany — pin testem (ten sam stan bez
+energii ≠ z energią).
+
+Karta 32 Shipwreck Moray (`supported`): ETB `get_energy 4`; „Pay {E}: +2/−2
+until end of turn” (zwykła zdolność bez `{T}` — działa wielokrotnie w turze,
+dopóki starczy liczników). Testy w `test/real-cards-batch56.test.js`
+(B1, 5 testów: dokładnie 4 liczniki, zapłata i czas trwania, brak oferty bez
+energii ze stanem nietkniętym, przeżycie końca tury + odcisk, wycena bota).
+Mutacje: brak filtra oferty → 2 RED, brak zapłaty → 1 RED, brak nadania na ETB
+→ 1 RED. Bramki etapu: `npm test` 5652/5652, build 63/3780,9 kB. Commit
+`f7e61d0`.
+
+## M363 (2026-09-17) — Pojedynki usuwające: Erase i Volcanic Submersion
+
+**27 Erase** (`{W}` Instant): „Exile target enchantment” — cel `enchantment`
+(istniejący) + `exile_permanent`, który przenosi kartę BEZPOŚREDNIO
+(`moveObjectDirectly`), bez tranzytu przez grób i bez zdarzenia `dies`;
+ruling KTK 2004-10-04 („The card does not go to the graveyard first”) jest
+pinowany testem, a gospodarz aury zostaje na polu bitwy.
+
+**34 Volcanic Submersion** (`{4}{R}` Sorcery): „Destroy target artifact or
+land” + Cycling {2}. Nowy generyczny typ celu `artifact_or_land` dodany
+w OBU miejscach naraz — walidacji (`spells.js`, CR 601.2c) i kandydatach
+oferty (M82: oferta = walidacja, jeden filtr) — plus polska etykieta celu
+(M126). Cycling korzysta z istniejącej mechaniki (`cost {2}` + `drawCards 1`,
+CR 702.29, ruling ALA 2008-10-01 — zdolność aktywowana z ręki).
+
+Testy (B2, 5): wygnanie aury bez śladu w grobie; cel nie-enchantment
+nieofiltrowany i odrzucony; „artifact or land” przyjmuje land, odrzuca stwora;
+cycling z ręki (dobranie + karta w grobie) i brak oferty bez many. Mutacje:
+brak walidacji celu → 1 RED, brak kandydatów oferty → 1 RED, Erase niszczący
+zamiast wygnania → 1 RED. Talie: tarkir-wur 29/10/19 → 30/10/20, worek-mroczny
+36/12/24 → 38/13/25. Bramki etapu: `npm test` 5658/5658, build 63/3775,6 kB.
+Commit `bea4fbd`.
+
+## M364 (2026-09-17) — Aury warunkowe: Bonds of Faith i Containment Protocol
+
+**25 Bonds of Faith**: warunkowy pomp po PODTYPIE gospodarza
+(`aura.conditionalPump` — bliźniak `conditionalKeywords`) i warunkowe zakazy
+ataku/bloku (`cantAttack`/`cantBlock` jako warunek `{ hostLacksSubtype }`,
+obok istniejącego `{ hostHasColor }`). Wszystko liczone READ-TIME
+w `permanents.js`, więc zmiana podtypu działa natychmiast, a ruling ISD
+2011-09-22 jest respektowany: utrata bycia Humanem zdejmuje +2/+2, ale **nie
+usuwa z walki** (stan walki to osobna warstwa; ten sam wzorzec, co przy
+`conditionalKeywords`).
+
+Deskryptor przeszedł CAŁY łańcuch (L21/L84): `registry.js` → `identity.js`
+(druga normalizacja — bez niej pola ginęły na obiekcie gry; złapane testem
+i mutacją) → `attachments.js` → `permanents.js`; kafel opisuje warunek
+(„zaczarowany nie może atakować (gdy nie jest Human)”), strażnik M138/#11.
+
+**30 Containment Protocol**: `aura.doesntUntap` (mechanika istniejąca) + NOWY
+efekt `tap_enchanted_permanent` (lustro `untap_enchanted_permanent`; tapnięcie
+przez kontrolera permanentu, CR 701.20a) + etykieta PL + wycena bota.
+
+Testy (B3, 6): Human dostaje +2/+2 i może atakować; nie-Human nie atakuje, nie
+blokuje i NIE dostaje pompa; zmiana podtypu po deklaracji ataku nie usuwa
+z walki; ETB tapnie i nie odkręca w untapie; odłączenie aury oddaje
+odkręcanie. Mutacje: `identity.js` bez `conditionalPump` → 2 RED, odwrócony
+warunek podtypu → 2 RED, tap bez efektu → 1 RED. Talie: innistrad-wu
+27/9/18 → 29/10/19, worek-mroczny 38/13/25 → 39/13/26 (pin M228 36→37).
+Golden master ZMIENIONY świadomie z atrybucją: nowy kod na STAREJ talii
+odtwarza fixture bit w bit (`26da3385…`), po dołożeniu karty zmienia się hash
+pary ravnica|innistrad-wu (`ad0a3245…`, pozostałe 4 partie bez zmian).
+Bramki etapu: `npm test` 5664/5664, build 63/3782,0 kB. Commit `fb563ea`.
+
+## M365 (2026-09-17) — Pojazd w ataku: „another target artifact or creature you control”
+
+Trigger ataku Mobile Garrison dostał DWA generyczne zawężenia (ADR 0002) na
+istniejącej desce `artifact_or_creature`: `controlledBy: 'controller'`
+(wzorzec `'permanent'`/`'land_you_control'`) i jawną deskę „another”
+(`notSelf`; domyślnie źródło wykluczone — tak działa od Lodestone Needle,
+`notSelf: false` udokumentowane dla CR 115.2, dziś nieużywane). Oferta
+i walidacja czytają TĘ SAMĄ listę kandydatów (L48/M82).
+
+Karta 58 (`supported`): crew 2 jako `cost: { crewPower: 2 }` +
+`animate_permanent_until_end_of_turn` 3/4 `typesAdd Creature` (wzór
+irontread-crusher, bez „as a sorcery” — audyt M65) oraz efekt `untap_permanent`
+z istniejącej rodziny (`untapByEffect` respektuje stun, CR 122.1d).
+
+Testy (B4, 5): sanity druku + deskryptor; trigger odkręca inny WŁASNY
+artefakt/stwora (kandydaci bez źródła i bez cudzych); brak legalnego celu =
+brak oferty celu + `trigger_resolved` `no_targets`; crew 2 odrzuca 1 moc
+i przyjmuje dwa 1/1. Mutacje: brak `controlledBy` → 2 RED, źródło dopuszczone
+→ 2 RED, crew 2→3 → 4 RED. Talie: worek-mroczny 39/13/26 → 41/14/27 (pin
+M203/7 złapał literówkę przed commitem — drugi raz z rzędu). Bramki etapu:
+`npm test` 5669/5669, build 63/3783,8 kB. Commit `fda1ee6`.
+
+## M366 (2026-09-17) — Survival: „At the beginning of your second main phase, if …”
+
+Nowe zdarzenie triggerowe `beginning_of_second_main`: skan `processTriggers`
+przy `step_advanced` w main2/postcombat_main, dokładnie RAZ na wejściu w krok
+(ruling DSK 2024-09-20 — tapnięcie w fazie już nie łapie triggera) i tylko
+u AKTYWNEGO gracza („your second main phase”; silnik zna main1/main2).
+
+Intervening-if `{ sourceTapped }` w `conditionHolds` (CR 603.4) sprawdzany
+przy zgłoszeniu I ponownie w `resolveTriggerEntry` („untapped when the ability
+begins to resolve” → nic). Ruling LKI: gdy źródło opuściło pole bitwy, stan
+czytamy z migawki — `queueTriggerToStack` zapisuje `tapped` w `sourceLki`,
+a stub LKI w `resolveTriggerEntry` go niesie („use its tapped or untapped
+status as it last existed on the battlefield”).
+
+Dowiązania L84 domknięte czterema wejściami: etykieta PL w
+`TRIGGER_EVENT_LABELS` (`session.js`, strażnik M122/M202-C), gałąź opisu
+kafelka w `describeTriggered` + klauzula warunku w `triggerConditionClause`
+(`render.js`, strażnik pokrycia warunków), lista `HANDLED_TRIGGER_EVENTS`
+w strażniku batch25. Efekt `gain_life 2` ma wycenę bota bez zmian.
+
+Karta 54 Cautious Survivor (`supported`). Testy (B5, 6): tapnięty na starcie
+drugiej fazy → +2 życia; nietapnięty nie odpala (i tapnięcie w fazie nic nie
+da); odkręcony przed rozstrzygnięciem → `trigger_resolved` `noEffect`;
+zejście z pola bitwy → LKI `tapped` → +2; cudza tura → brak triggera.
+Mutacje: brak skanu main2 → 3 RED, warunek ignorowany → 2 RED, LKI bez
+`tapped` → 1 RED, trigger bez bramy tury → 1 RED. Talie: worek-basni
+32/11/21 → 33/11/22. Bramki etapu: `npm test` 5676/5676, build 63/3787,3 kB.
+Commit `76d0687`.
+
+## M367 (2026-09-17) — Dragon Fodder, Thornwood Falls, Kraken’s Eye + przetasowanie talii
+
+**63 Dragon Fodder** (`{1}{R}` Sorcery): „Create two 1/1 red Goblin creature
+tokens” — `create_token` z `cardId: 'token_goblin'`, `amount: 2` (dwa OSOBNE
+obiekty, nie jeden 2/2). Nowy wpis katalogowy tokenu: 1/1 czerwony Goblin,
+UUID i grafika wyłącznie z `all_parts` karty `ori/140` (L26), status
+`limited` (token — nie można umieścić w talii).
+
+**60 Thornwood Falls** (`Land`, `supported`): 1:1 lustro Dismal Backwater —
+`entersTapped`, ETB `gain_life 1`, `{T}: Add {G} or {U}`. Deskryptor
+zdolności many wszedł już w B0b, bo strażnik M193/A parsuje Oracle po CAŁYM
+katalogu i czerwienieje w dniu dodania karty bez zakodowanej produkcji (L28).
+
+**28 Kraken’s Eye** (`supported`, zaległość z listy właściciela): bliźniak
+Angel’s Feather — `player_casts_spell` + warunek `spellColorsInclude: ['U']`
+(nowy warunek w `triggers.js`, kolor DOWOLNEGO gracza; ruling M11 2010-08-15)
++ „you may” (`mayFire` → decyzja `resolve_optional_trigger_choice`, Temat 2).
+Zdolność rozstrzyga się PRZED czarem (2009-10-01).
+
+**Skutek uboczny w taliach (zmierzony):** Ixalan dobił do progu 15 wspieranych
+kart, więc generator awansował plan do własnej talii `decks/ixalan.txt`
+(M181), a worek-dziki spadł poniżej minimum → przetasowanie `WOREK_DECKS`
+(Kaldheim + Duskmourn + Arcavios → worek-dziki; bilans nielandowy 21/15/15/27).
+Audyt remisorów zgłosił JEDEN nowy remis lądu przy różnych danych
+(`dominaria-wu|worek-mroczny`, „pokrywa 4” vs „pokrywa 3”): wspólna klamra
+delty (16) zgrywała 14+3 i 15+3 → `landPlayDelta` przepuszcza premie NAD
+sufitem pokrycia (klamra 25 ≪ bazy 90), a nagłówek audytu notuje reaudyt.
+Golden master zregenerowany ŚWIADOMIE z atrybucją: `ad0a3245` → `09fa1739`
+(jedna decyzja o lądzie, +1 pkt; bez zmian progów benchmarku).
+
+Testy (B6, 5): dwa osobne tokeny + wpis katalogowy; brak oferty bez dwóch
+many; land wchodzi tapnięty, daje życie i płaci {G}/{U} (pip {B} nielegalny);
+Oko przeciwnika decyduje „you may” i rozstrzyga przed czarem; czar czerwony
+nie odpala. Mutacje: `amount` 1, token bez koloru, zły kolor czaru, brak {U}
+— każda czerwieni testy. Piny etapu: README (basni 36/12/24, dziki 27/9/18,
+legend 23/8/15, mroczny 27/9/18 + wiersz `ixalan` 23/8/15), `--help`
+benchmarku (20 → 21 talii), batch47 (curate-stx → worek-dziki), transpozycja
+ikoria-fiora (unbreakable-bond → ixalan). Bramki etapu: `npm test` 5685/5685,
+build 63/3789,6 kB. Commit `7c02ab9`.
+
+## M369 (2026-09-17) — Znaleziska właściciela A–J z gier testowych: dziesięć uwag, etapy E1–E7
+
+Druga część sesji 2026-09-17 (po M368): właściciel zagrał partie testowe i zgłosił
+**dziesięć znalezisk** (A–J). Każde ma własny etap, commit, pin i mutację;
+plan: `docs/plans/PLAN_2026-09-17c-uwagi-wlasciciela-a-j.md`.
+
+1. **A (`ad74c8a`) — stopka publikacji w czasie czytelnika.** Build zapisywał
+   gotowy napis czasu serwera; teraz ISO trafia do `datetime`, a `clock.js`
+   (`formatLocalTimestamp`) liczy godzinę w strefie CZYTELNIKA — dotyczy też
+   autosave (ten sam stempel). Pin w `m189`.
+2. **I/H (`9ee386b`) — grafiki tokenów i Morph.** Zakryty permanent na polu
+   bitwy to dla gracza bezimienny 2/2 (CR 708.2), więc wszystkie zakryte
+   permanentny pola bitwy dostają WSPÓLNY obraz tokenu Morph (tdtk/7) —
+   rozstrzygany po strefie (`artOf.battlefield`), a nie po tożsamości; strefy
+   ukryte (ręka bota, wierzch biblioteki, zakryte wygnanie) zostają przy
+   rewersie karty. `token_servo` dostał wpis katalogowy z drukiem tkld/4
+   (ADR 0028) + snapshot; strażnik „każdy token silnika ma ilustrację" wykazał,
+   że brakował tylko Servo. Sierota `docs/cards/scryfall-token_morph.json`
+   (nie-karta, nie-obiekt wsparcia) usunięta.
+3. **C/F/G (`6ae121f`) — etykiety i panel akcji.** Tytuł decyzji „Wartość X"
+   nazywa kartę i skutek (deskryptor `endure_x` — „endure X — X liczników +1/+1
+   albo token Spirit X/X"), pasek hoveru dostaje nazwę z numerem porządkowym
+   kopii, a zdolności many (CR 605.1a — `isActivatedManaAbility`) znikają
+   z „Twoich działań" tak jak lądy podstawowe. Orzeczenie bierze SILNIK, nie
+   kształt komendy (L41); warianty z celem/X/kosztem zostają w panelu, a mana
+   nie ginie — `legalCommands` bez zmian, więc kreator many działa jak dotąd.
+4. **D (`1268b4d`) — kontrola z chwili śmierci (LKI).** Obiekt w grobie należy
+   do WŁAŚCICIELA (CR 400.3 — `moveObjectDirectly`), więc `died.controllerId`
+   kłamał o kontroli z chwili śmierci i Necrosquito nie dostał oil countera,
+   gdy zginął stwór PRZEJĘTY przez niego (Awaken the Sleeper). Fix:
+   `eventControllerAtDeath(ev, moved)` (kontroler wprost ze zdarzenia, dopiero
+   na końcu obiekt po ruchu) + LKI-widok źródła dla triggerów „dies",
+   Necrosquito, Furious Forebear, agregatu „permanents you control leave the
+   battlefield" i `leaves_battlefield`. `markDescended` celowo zostaje na
+   obiekcie w grobie (zstąpienie liczy się właścicielowi grobu).
+5. **E (`1268b4d`) — podwójne odpalenie „dies"?** Kampania detektora (~1180
+   partii bota: 4 pary talii × 100 seedów z 2× Highland Game + 4 przeciwników
+   × 60 seedów z taliami 30× Highland Game) NIE potwierdziła nadmiarowego
+   odpalenia: 0 nadmiarowych `ability_triggered`, 0 podwójnych zdarzeń śmierci,
+   0 powtórnych skanów tego samego zdarzenia (pierwsza wersja detektora dawała
+   fałszywe alarmy, bo liczyła `creature_destroyed` + `permanent_destroyed`
+   dla tej samej śmierci — zdarzenia równoległe w jednej komendzie). Wnioskiem
+   jest pin regresyjny: wymiana w walce i śmierć od pierwszego uderzenia mają
+   dawać DOKŁADNIE +2 życia i jedno zakolejkowanie.
+6. **J (`2fa3e69`) — wymóg ataku a runda passów.** Ramroller („This creature
+   attacks each combat if able", CR 508.1c) nie atakował, bo runda passów
+   przechodziła do blokowania BEZ deklaracji. Deklaracja atakujących to akcja
+   turowa (CR 508.1a), więc `pass_priority` auto-deklaruje MINIMALNY zestaw —
+   same stwory wymuszone (`mandatoryAttackerIds`: goad CR 701.38 + `mustAttack`,
+   z wyjątkiem „if able" M270). Jedno źródło prawdy zasila ofertę, walidację
+   i auto-deklarację (L41). Pin srebrnej odznaki (B1 goad) domyka teraz walkę
+   przez `resolve_combat` — goadowany stwór naprawdę atakuje.
+7. **B (`6d00a5a`) — exploit debuffujący to wymiana, nie zysk.** Bot poświęcił
+   Morph 2/2, żeby zadać −3/−3 kreaturze 1/1 (raport: „taktycznie ujemne").
+   Odtąd trigger debuffujący (`exploitDebuff`) wchodzi tylko gdy (a) realnie
+   zabija wrogi stwór (zmiana wyniku żywy → martwy) ORAZ (b) TMC poświęcanego
+   jest niższy niż zabijanego ALBO zabijany niesie istotne walory widoczne
+   w PlayerView (keywordy, aury — CR 704.5m; ADR 0017 nie daje zdolności
+   cudzych permanentów). TMC twarzą w dół to realny koszt wejścia {3}
+   (CR 708.2a: mana value 0), nie zero — inaczej Morph wychodził „darmowy".
+   Mill (Gurmag Drowner) bez zmian; golden-master zregenerowany ŚWIADOMIE —
+   reprodukcja realna: `tarkir-bg` seed 1000 oddawał 1/1 Spirit przy PUSTYM
+   stole wroga.
+
+Piny: `m369` (E2: 4), `m370` (E3: 3), `m371` (E4: 5), `m372` (E5: 5),
+`m373` (E6: 6) + korekta C/4 w `zgloszenie-c-exploit-biblioteka-i-ofiara`
+(anty-over-fix: nowa bramka (a) wymaga celu do zabicia). Mutacje RED:
+E2 ×2, E3 ×3, E4 ×2 (razem 6 czerwień), E5 ×1 (2), E6 ×4.
+
+Uwaga operacyjna: sandbox przeładował repo w trakcie sesji (świeży shallow klon
+`e4befba`) — commity E1–E4 żyły już w origin, E5/E6 odtworzono po `fetch`
++ `reset --mixed FETCH_HEAD` (push fast-forward); kopia pracy poza gitem:
+`/home/user/recovery/`.
+
+**Pomiary finalne:** `npm test` **5719/5719**, `npm run test:all` **5729/5729**,
+build **64 moduły / 3809,3 kB**, regresja bota **10/10**, quick 6 talii —
+heuristic **84,1%** (1130/1344), aggro 27,7%, random 4,2%, 0 meczów
+niedokończonych. Pełny przebieg quick **25 talii** (5 952 mecze) przerwał się
+na 2400/5952 nowym znaleziskiem `illegal_spell: Niewystarczająca mana`
+(mecz `random(wiedzmin-bg) vs heuristic(tarkir-wur)`, seed 2039) — znalezisko
+OTWARTE (klasa L48: oferta != walidacja), punkt zaczepienia w handoffie
+2026-09-17c. Pełne B0 tylko na wyraźną komendę właściciela (ADR 0018).
+
+## M368 (2026-09-17) — Integracja batcha 56: cztery bugi silnika z pomiarów, detektor testera, bramki
+
+Pomiar quick **25 talii** (5 984 mecze) wyłapał cztery błędy silnika — każdy
+z reprodukcją w sondzie, pinem, mutacją i własnym commitem (wzorzec M191/M271/
+M273 — „niepełna lista konsumentów”):
+
+1. **`3f4986f` — regeneracja blokowanego atakującego kasowała klucz
+   `combat.blockers`** (seed 2030, `illegal_combat permanent-56`). Regeneracja
+   zdejmuje obrażenia, ale blokada zostaje w stanie walki; klucz wracał przy
+   następnej komendzie jako nielegalny. Pin: `test/regeneration.test.js` #8
+   (RED bez fixa; `priorityPlayerId` przed `activateRegenerate`).
+2. **`51e5bef` — auto-tap zjadał jednostkę odłożoną na pip** (seed 2027,
+   `illegal_spell: Brak kolorowej many w puli`, lekcja L147). `tapCostedManaSource`
+   finansował koszt {U} zdolności źródła (Apprentice Wizard → {C}{C}{C})
+   jednostką odłożoną na pip rzucanego czaru, po czym `consumeManaPool` rzucał,
+   zostawiając mutację (pula `{"":3}`, tapnięta wyspa). Fix: dociągnięcie
+   pokrycia pipów przed konsumpcją (throw PRZED mutacją). Piny:
+   `test/mana-cylix-costed-source.test.js` A/12 + A/13 (14/14; izolacja:
+   HEAD bez fixa → A/12 RED).
+3. **`038cc50` — kasowanie tokenu nie odpinało załączników** (seed 2030,
+   „Załącznik permanent-48 wskazuje nieistniejącego gospodarza token-50”,
+   inwariant `invariants.js:37`). Vanish from Sight celuje w token Germ
+   z przyczepionym Strandwalkerem (living weapon); gałąź tokenowa
+   `resolve_library_placement` sprzątała `combat`, ale nie załączniki.
+   Fix: `detachAttachmentsFromHost` przed kasowaniem (ta sama reguła, co
+   M191/bounce/`moveObjectDirectly`); audyt pozostałych miejsc `objects.delete()`
+   wypadł czysto (stos/strefy/ruchy). Pin: `test/batch42-kart.test.js` D3
+   (RED bez fixa; załączenie przez `attachEquipmentToCreature` — `attachedTo`
+   nie jest polem kontraktu `addObject`, L21).
+
+4. **`3453593` — oferta celów zdolności omijała wspólne źródło kandydatów**
+   (seed 2030, `illegal_ability: Nielegalny cel: token-16 (hexproof)`):
+   gałęzie „{X}, {T}: cel o sile ≤ X" (Entrancing Lyre) i „any target"
+   zdolności NADANEJ przez sprzęt (Blazing Torch) enumerowały pole bitwy
+   samodzielnie, więc oferowały cudzego stwora z hexproof, którego
+   `validateTargets` odrzucała (L48/M82). Piny: T10 + T11 w
+   `test/mtg-rules-fixes.test.js` (mutacje cofające fix → po 1 RED).
+   Audyt pozostałych gałęzi oferty: `land_you_control` i „equip" celują
+   wyłącznie we WŁASNE permanentny (hexproof ich nie chroni), a katalog nie ma
+   dziś ochrony, która odbiłaby cel własnego źródła w tych gałęziach (skan
+   `protection:` i keywordów: wybrana barwa, wielokolorowość, nie-Human).
+
+**Detektor testera (`48087d5`)**: kampania Żywego Testera zgłosiła „Kill Shot
+rozstrzygnięty bez okna na odpowiedź” — fałszywy alarm NARZĘDZIA: transkrypt
+niesie zdarzenia PODWÓJNIE (echo `LOG: …` z segmentami po `⏎` PRZED blokiem
+`[ROZGRYWKA]`), a detektor czytał tylko drugą formę i dowód auto-passa trafiał
+do pliku przed znacznikiem rzutu. Fix w `tools/table-tester/detectors.mjs`
+(segmenty po `⏎`, prefiks `LOG:` opcjonalny, dowód zbierany per blok snapshotu,
+`hasBlocks` dla trybu `--quiet`), 3 testy w `test/table-tester-detectors.test.js`
+(105/105; cofnięcie fixa → 2 RED). Re-skan transkryptu seeda 2026 → 0 zgłoszeń.
+
+**Kampania Żywego Testera** (10 partii, seedy 2027–2036, profile
+defensive/greedy/explorer/hoarder/random, talie z nowymi kartami): każda partia
+kończy się naturalnie, `exit=0`, POKRYCIE UI bez noopów poza panelem/modalem,
+„NIEWYCENIONE: brak”, po fixie detektora **0 zgłoszeń**.
+
+**Pomiary finalne:** `npm test` **5694/5694** (****5704/5704**** z `test:all`),
+build **63 moduły / 3793,4 kB**, regresja bota **10/10**, quick 25 talii — heuristic **86,0%** (5147/5984), aggro 25,5% (763/2992), random 2,4% (73/2992), 1 mecz niedokończony (limit 8000 komend). Pełne B0 tylko na wyraźną komendę właściciela (ADR 0018).
+Lekcje sesji: **L147** (rezerwa pipów obowiązuje też finansowanie cudzego
+kosztu) i kotwica w **L48** (nowa gałąź oferty celów idzie przez
+`legalTargetCandidates`).

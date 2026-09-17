@@ -21,7 +21,7 @@ import { effectivePower, effectiveToughness } from '../src/engine/permanents.js'
 import { scryfallCardUrl, scryfallImageUrl, hasPrintImage } from '../src/table/card-images.js';
 import { waitingExileStatus, cardInfo, renderHoverPreview } from '../src/table/render.js';
 import { createArtShowcaseQueue } from '../src/table/art-showcase.js';
-import { CARD_BACK_URL } from '../src/table/card-images.js';
+import { CARD_BACK_URL, MORPH_BACK_URL } from '../src/table/card-images.js';
 import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import fs from 'node:fs';
@@ -301,7 +301,11 @@ test('M254/B2 (anty-over-fix): zakryta karta PRZECIWNIKA dalej pokazuje rewers (
   const host = new MiniEl('#hover-enemy');
   renderHoverPreview(host, enemyInfo, 'scryfall');
   const img = [host, ...host.descendants()].find((el) => el.tagName === 'img');
-  assert.equal(img.src, CARD_BACK_URL, 'cudza karta zakryta = rewers (CR 708.2)');
+  // M369/H (znalezisko właściciela 2026-09-17c): zakryty permanent NA STOLE to
+  // drukowany token Morph, a nie rewers karty. FoW trzyma, bo to jeden wspólny
+  // obraz dla wszystkich zakrytych permanentów — nie niesie tożsamości karty.
+  assert.equal(img.src, MORPH_BACK_URL, 'cudza karta zakryta na stole = token Morph (CR 708.2)');
+  assert.notEqual(img.src, REGISTRY.get('willbender').imageUri, 'ilustracja karty nie wycieka');
 });
 
 // =============================================================================

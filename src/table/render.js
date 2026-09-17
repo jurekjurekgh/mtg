@@ -5,6 +5,7 @@ import {
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
+import { isActivatedManaAbility } from '../engine/mana-sources.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
@@ -167,6 +168,8 @@ const TARGET_TYPE_LABELS = Object.freeze({
   artifact_or_enchantment_or_land: 'artefakt, zaklęcie lub ląd',
   artifact_or_creature_or_enchantment: 'artefakt, stwór lub zaklęcie',
   artifact_or_creature_or_land: 'artefakt, stwór lub ląd',
+  // Batch 56 (Volcanic Submersion): „Destroy target artifact or land".
+  artifact_or_land: 'artefakt lub ląd',
   tapped_creature: 'zatapnięty stwór',
   untapped_creature: 'odkręcony stwór',
   artifact_you_control: 'twój artefakt', land: 'ląd', land_you_control: 'twój ląd',
@@ -745,8 +748,37 @@ export function appendLogLineWithCardLinks(line, text, cardIdByName) {
   return line;
 }
 
+/**
+ * M369/G (znalezisko właściciela 2026-09-17c): zdolność many (CR 605.1a) nie
+ * jest ofertą panelu „Twoje działania" — manę zbiera automatyczna płatność,
+ * a źródła wybiera kreator many (main.js `manaSourcesForPlayer`). Lądy
+ * podstawowe nigdy tu nie trafiały (silnik nie enumeruje `tap_for_mana` jako
+ * akcji), ale stworzenia/artefakty z „{T}: Add …" trafiały jako
+ * `activate_ability` — akcja, która bez czaru do zapłaty nic nie zmienia.
+ * Orzeczenie bierzemy z SILNIKA (`isActivatedManaAbility`), nie z kształtu
+ * komendy — jedno źródło prawdy o tym, co jest zdolnością many (L41).
+ * Warianty z dodatkowym wyborem (cele, X, crew, koszty) zostają w panelu.
+ */
+const MANA_ABILITY_PAYLOAD_KEYS = Object.freeze([
+  'targets', 'attackerId', 'tapCreatureId', 'tapOtherCreatureId', 'tapArtifactIds',
+  'sacrificeLandId', 'sacrificeCreatureId', 'sacrificeCreatureIds', 'tapPermanentCostId',
+  'grantedFromEquipment', 'xValue',
+]);
+
+export function isManaAbilityCommand(command, session) {
+  if (command?.type !== 'activate_ability') return false;
+  for (const key of MANA_ABILITY_PAYLOAD_KEYS) {
+    const value = command[key];
+    if (Array.isArray(value) ? value.length > 0 : value != null) return false;
+  }
+  const object = session?.state?.objects?.get(command.objectId);
+  const ability = object?.abilities?.[command.abilityIndex]
+    ?? (object?.cardId ? session.abilitiesOf?.(object.cardId)?.[command.abilityIndex] : null);
+  return Boolean(ability && isActivatedManaAbility(ability));
+}
+
 export function buildActionEntries(commands, session, view) {
-  const entries = buildChoiceRequestEntries(commands, view);
+  const entries = buildChoiceRequestEntries(commands.filter((cmd) => !isManaAbilityCommand(cmd, session)), view);
   const byKey = new Map();
   const out = [];
   for (const entry of entries) {
@@ -973,12 +1005,17 @@ function describeEffect(e, ctx = {}) {
       return `zyskaj ${lifeCount(e.amount ?? 0)}`;
     },
     gain_life_target: () => `cel zyskuje ${lifeCount(e.amount)}`,
+    // Batch 56 (energia, CR 122.1): „you get {E}{E}{E}{E}" — etykieta PL dla
+    // panelu akcji i kafla (M122/#5 nie przepuszcza typu bez opisu).
+    get_energy: () => `otrzymaj {E}×${e.amount ?? 1} energii`,
     remove_counter: () => `usuń licznik ${e.counter}`,
     add_counter: () => `połóż licznik ${e.counter}`,
     exile_permanent: () => 'wygnij artefakt/zaklęcie',
     // F-A2/1 (audyt PR #107): B54 zjednoczyło stronę untap („odkręć”), ale tu
     // drukowało surowe „tap” — ta sama ścieżka publiczna (tekst karty).
     tap_permanent: () => 'zatapnij',
+    // Batch 56 (Containment Protocol) — ETB aury tapujący gospodarza.
+    tap_enchanted_permanent: () => 'zatapnij zaczarowany permanent',
     // B5 (audyt stołu 2026-09-09, G2/Membrane): typ konstruowany w runtime
     // przez castAuraSpell (resources.js) — poza rejestrem DB, więc strażnik
     // M122 go nie widział i kafel drukował „efekt (attach_aura)".
@@ -1293,6 +1330,8 @@ const NON_MANA_COST_LABELS = Object.freeze([
   // M177/E (Merchant's Dockhand): koszt „Tap X untapped artifacts you control”.
   ['tapXArtifacts', 'tapnij X swoich nietapniętych artefaktów'],
   ['crewPower', (n) => `załoga ${n}`],
+  // Batch 56 (CR 122.1): koszt „Pay {E}" — energia gracza, nie mana.
+  ['energy', (n) => `zapłać {E}×${n} energii`],
   // Batch 44 (Heap Gate): koszt „Tap an untapped Gate you control".
   ['tapUntappedSubtype', (sub) => `tapnij inny nietapnięty permanent (${sub})`],
   // Batch 44 (Angel's Herald): koszt „Sacrifice a green/white/blue creature".
@@ -1480,6 +1519,9 @@ function triggerConditionClause(trigger) {
   if (cond.controlsCreatureWithCounter) czlony.push('kontrolujesz stwora z licznikiem');
   if (cond.notBlocking) czlony.push('nie blokował');
   if (cond.saddled) czlony.push('jest osiodłany');
+  // Batch 56 (Cautious Survivor): Survival — intervening-if na stanie
+  // zatapnięcia źródła (CR 603.4; sprawdzany przy zgłoszeniu I rozstrzyganiu).
+  if (cond.sourceTapped) czlony.push('jest tapnięty');
   if (cond.minTotalPowerYouControl) czlony.push(`łączna siła kontrolowanych stworów ≥ ${cond.minTotalPowerYouControl}`);
   if (cond.spellManaValueAtLeast != null) czlony.push(`rzucany czar ma koszt ≥ ${cond.spellManaValueAtLeast}`);
   if (cond.spellIsColorless) czlony.push('rzucany czar jest bezbarwny');
@@ -1617,6 +1659,13 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'you_cast_second_spell_each_turn') return `Gdy rzucisz drugi czar w turze: ${parts}.`;
   if (trigger.event === 'you_cast_noncreature_spell') return `Gdy rzucisz czar niebędący stworem: ${parts}.`;
   if (trigger.event === 'when_you_cast_spell') return `Gdy rzucisz czar: ${parts}.`;
+  if (trigger.event === 'beginning_of_second_main') {
+    // Batch 56 (Cautious Survivor, M366): Survival — „At the beginning of your
+    // second main phase, if this creature is tapped…" Kafel mówi CZAS (druga
+    // faza główna twojej tury) i warunek (wspólna klauzula).
+    const clause = triggerConditionClause(trigger);
+    return `Na początku twojej drugiej fazy głównej${clause ? ` (gdy ${clause})` : ''}: ${parts}.`;
+  }
   if (trigger.event === 'beginning_of_combat') {
     const clause = triggerConditionClause(trigger);
     const turn = trigger.eachCombat ? 'każdej walki' : `walki w turze ${mine ? 'twojej' : 'kontrolera'}`;
@@ -1750,6 +1799,10 @@ export function rulesText(info) {
   // deskryptor aura niesie pompowanie/keywordy/grant many i to one SĄ
   // treścią karty dla gracza (CR 613 — efekt ciągły aury).
   const aura = info.aura;
+  /** Opis warunku gospodarza aury (Bonds of Faith: „Otherwise…" / „as long as"). */
+  const hostConditionLabel = (cond) => (cond?.hostHasSubtype ? `gdy jest ${cond.hostHasSubtype}`
+    : cond?.hostLacksSubtype ? `gdy nie jest ${cond.hostLacksSubtype}`
+      : cond?.hostHasColor ? `gdy jest ${cond.hostHasColor}` : 'warunkowo');
   const auraLine = aura
     ? [
     aura.umbraArmor ? 'Umbra armor — zamiast zniszczenia gospodarza usuń jego obrażenia i zniszcz tę aurę' : '',
@@ -1778,8 +1831,19 @@ export function rulesText(info) {
       // Meditation miała kafel „Enchantment — Aura” i nic więcej, mimo że
       // zmienia zasady tworzenia tokenów. Ta sama rodzina co Z9 — łatanie
       // pojedynczego pola zostawiłoby resztę na następny audyt.
-      aura.cantAttack ? 'zaczarowany nie może atakować' : '',
-      aura.cantBlock ? 'zaczarowany nie może blokować' : '',
+      // Batch 56: zakaz bywa WARUNKOWY (Bonds of Faith: „Otherwise, it can't
+      // attack or block") — kafel musi powiedzieć, KIEDY obowiązuje, inaczej
+      // gracz czyta bezwzględny zakaz tam, gdzie Human atakuje normalnie.
+      aura.cantAttack ? (typeof aura.cantAttack === 'object'
+        ? `zaczarowany nie może atakować (${hostConditionLabel(aura.cantAttack)})`
+        : 'zaczarowany nie może atakować') : '',
+      aura.cantBlock ? (typeof aura.cantBlock === 'object'
+        ? `zaczarowany nie może blokować (${hostConditionLabel(aura.cantBlock)})`
+        : 'zaczarowany nie może blokować') : '',
+      // Batch 56 (Bonds of Faith): warunkowy pump po podtypie gospodarza —
+      // ta sama rodzina co conditionalKeywords wyżej (M138/#11: każde pole
+      // deskryptora aury ma opis na kaflu).
+      ...(aura.conditionalPump ?? []).map((cp) => `stwór: ${signed(cp.pump?.power ?? 0)}/${signed(cp.pump?.toughness ?? 0)} (${hostConditionLabel(cp.condition)})`),
       // Batch 48 (Clawing Torment): aura bez klauzuli „you control" celuje
       // też w permanenty przeciwnika — to informacja dla gracza, bo
       // większość aur katalogu jest ograniczona do własnych permanentów.
@@ -2145,6 +2209,14 @@ function choiceSourceTitle(cmd, session, view) {
   // a opcje w środku mówiły „Wyposaż: Sprzęt → stwór" — dwie różne nazwy tej
   // samej akcji. Nazwa keyworda jest w deskryptorze, więc grupa może nazwać
   // rzecz po imieniu (jak station/crew w M103/C2).
+  // M369/C (znalezisko właściciela 2026-09-17c, Krumar Initiate): oferta
+  // zdolności z wyborem X pokazywała nagłówek „Wybierz: Wartość X" — bez
+  // nazwy karty i BEZ OPISU SKUTKU, więc gracz nie wiedział, co wybiera.
+  // Tytuł nazywa kartę i czynność deskryptorem efektu z DANYCH karty
+  // (ADR 0002), a konkretne X niosą etykiety opcji grupy.
+  if (cmd.type === 'activate_ability' && cmd.xValue != null) {
+    return `${name} — ${abilityXDescription(session, object, cmd)}`;
+  }
   if (cmd.type === 'activate_ability' && cmd.targets?.length) {
     const ability = session.state?.objects?.get(cmd.objectId)?.abilities?.[cmd.abilityIndex];
     if (ability?.keyword === 'equip') return `Wyposaż: ${name}`;
@@ -2177,6 +2249,22 @@ function choiceSourceTitle(cmd, session, view) {
 const CHOICE_GROUP_PENDING_SOURCE = Object.freeze({
   resolve_proliferate: (view) => view?.pendingProliferate?.sourceCardId ?? null,
 });
+
+/**
+ * Opis zdolności z wyborem X dla tytułu decyzji (M369/C). Deskryptor bierzemy
+ * z DANYCH karty (effect.type), nie z nazwy karty (ADR 0002) — druga karta
+ * z tym samym efektem dostaje ten sam, poprawny opis.
+ */
+const X_ABILITY_DESCRIPTIONS = Object.freeze({
+  endure_x: 'endure X — X liczników +1/+1 na tym stworze albo token Spirit X/X',
+});
+
+function abilityXDescription(session, object, command) {
+  const ability = object?.abilities?.[command.abilityIndex]
+    ?? (object?.cardId ? session.abilitiesOf?.(object.cardId)?.[command.abilityIndex] : null);
+  const effect = Array.isArray(ability?.effect) ? ability.effect[0] : ability?.effect;
+  return X_ABILITY_DESCRIPTIONS[effect?.type] ?? 'zdolność z wyborem X';
+}
 
 export function choiceGroupTitle(request, session, view) {
   const options = request?.options ?? [];
@@ -3688,6 +3776,10 @@ function artOf(info) {
   return {
     name: info.name, set: info.set ?? null, imageUri: info.imageUri ?? null,
     artId: info.artId ?? null, faceDown: Boolean(info.faceDown),
+    // Znalezisko H (2026-09-17c): pole bitwy rozstrzyga, KTÓRY rewers pokazać
+    // zakrytemu kaflowi — morpha na stole reprezentuje token Morph, a karty
+    // w strefach ukrytych (ręka bota) zostały przy rewersie karty.
+    battlefield: Boolean(info.isBattlefield),
   };
 }
 
@@ -4084,7 +4176,11 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall', { showCyc
   // Zgłoszenie H (2026-09-11): tor przełącza przycisk myszy, nie scroll;
   // M349/A (2026-09-14): dziś jest to MMB (środkowy), nie PPM.
   const hint = hasLocal && showCycleHint ? ' · MMB zmienia tor' : '';
-  div(host, 'hover-mode', `${hoverModeLabel(hoverMode)}${hint}`);
+  // M369/F (znalezisko właściciela 2026-09-17c): pasek toru wymienia NAZWĘ
+  // podglądanej karty PRZED etykietą toru — z numerem porządkowym kopii,
+  // który niesie już `info.name` z kafla (session.nameOrdinalSuffix).
+  const cardTitle = info?.name ? `${info.name} — ` : '';
+  div(host, 'hover-mode', `${cardTitle}${hoverModeLabel(hoverMode)}${hint}`);
   return host;
 }
 
@@ -4556,7 +4652,11 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // poddanie partii są ostatnie Z ZASADY (1000/1001), a reszta wg ranku
   // (nierankowane 99, czyli przed nimi). Właściciel: pass/poddaj zawsze na
   // dole, „Przygoda" i inne efekty tam, gdzie inne czary.
-  const commands = view.legalCommands.slice().sort((a, b) => actionMenuRank(a.type) - actionMenuRank(b.type));
+  // M369/G: zdolności many wypadają z panelu — tak jak lądy podstawowe
+  // (patrz `isManaAbilityCommand`); zostają w kreatorze many i w płatności.
+  const commands = view.legalCommands.slice()
+    .filter((cmd) => !isManaAbilityCommand(cmd, session))
+    .sort((a, b) => actionMenuRank(a.type) - actionMenuRank(b.type));
   // M102/U5 (zgłoszenie właściciela 2026-08-16): nagłówek „Twoje działania"
   // NIE pokazuje już liczby. Liczyła surowe `legalCommands`, więc po scaleniu
   // duplikatów (U4) i pogrupowaniu wariantów w modale nie zgadzała się nawet
@@ -4684,6 +4784,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Prędkość (M313) — panel jak Poison: tylko gracze z „Start your engines!" ---
   renderSpeedPanel(els, view, { onOpenCard: onSpeedCardClick, hover });
 
+  // --- Energia (Batch 56, CR 122.1) — panel jak Poison/Speed ------------------
+  renderEnergyPanel(els, view, { hover });
+
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view, { onClick: onUndercityClick, hover });
 }
@@ -4787,6 +4890,34 @@ export function renderPoisonPanel(els, view, { onOpenCard = null, hover = null }
     div(info, 'poison-count', `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${p.poison ?? 0} ${polishPluralCount(p.poison ?? 0, 'licznik', 'liczniki', 'liczników')} trucizny`);
   }
   div(info, 'poison-note', 'Gracz z 10 licznikami trucizny przegrywa (CR 704.10). Liczniki znikają tylko z końcem gry — obrażenia ich nie leczą.');
+}
+
+/**
+ * Panel energii (Batch 56, CR 122.1): liczniki {E} graczy — jawne, jak
+ * trucizna i prędkość (ADR 0017: widok niesie to, na co patrzy gracz).
+ * Pokazujemy panel tylko, gdy KTOKOLWIEK ma energię (zero = brak wiersza,
+ * żeby nie zaśmiecać stołu).
+ */
+export function renderEnergyPanel(els, view, { hover = null } = {}) {
+  if (!els.energy) return;
+  const gracze = (view.players ?? []).filter((p) => (p.energy ?? 0) > 0);
+  els.energy.hidden = gracze.length === 0;
+  if (gracze.length === 0) return;
+  clear(els.energy);
+  const card = div(els.energy, 'poison-card');
+  if (hover) {
+    hover.attach(card, {
+      name: 'Energia ({E})',
+      typeLine: 'Liczniki gracza',
+      oracle: 'Energia to licznik gracza (CR 122.1). Nie jest maną i nie znika z końcem kroków, faz ani tur — schodzi wyłącznie jako koszt „Pay {E}…”.',
+    });
+  }
+  const info = div(els.energy, 'poison-info');
+  div(info, 'poison-status', 'Energia ({E})');
+  for (const p of gracze) {
+    div(info, 'poison-count', `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${p.energy ?? 0} {E}`);
+  }
+  div(info, 'poison-note', 'Energia nie jest maną i nie znika z końcem tury (CR 122.1) — płacisz nią koszty „Pay {E}…”.');
 }
 
 export function renderSpeedPanel(els, view, { onOpenCard = null, hover = null } = {}) {

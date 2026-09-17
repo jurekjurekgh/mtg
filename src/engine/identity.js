@@ -148,7 +148,14 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
       ...(aura.umbraArmor ? { umbraArmor: true } : {}),
       ...(aura.combatDamageByToughness ? { combatDamageByToughness: true } : {}),
       ...(aura.doesntUntap ? { doesntUntap: true } : {}),
-      ...(aura.cantAttack ? { cantAttack: true } : {}),
+      // Batch 56 (Bonds of Faith): zakaz ataku bywa WARUNKOWY — bool (Hobble)
+      // albo warunek oceniany na gospodarzu ({ hostLacksSubtype }); lustrzanie
+      // wobec registry.js (L41/L21: deskryptor musi przejść CAŁY łańcuch —
+      // bez tego pola warunkowe ginęły po cichu na obiekcie gry i aura była
+      // martwa).
+      ...(aura.cantAttack === true ? { cantAttack: true }
+        : aura.cantAttack ? { cantAttack: Object.freeze({ ...aura.cantAttack }) }
+        : {}),
       ...(aura.cantAttackYou ? { cantAttackYou: true } : {}),
       ...(aura.cantBlock !== undefined && aura.cantBlock !== false
         ? { cantBlock: aura.cantBlock === true ? true : Object.freeze({ ...aura.cantBlock }) }
@@ -170,6 +177,12 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
         ? { replaceTokenCreation: Object.freeze({ ...aura.replaceTokenCreation }) }
         : {}),
       ...(aura.keepOwnAttachmentsOnProtection ? { keepOwnAttachmentsOnProtection: true } : {}),
+      // Batch 56 (Bonds of Faith): warunkowy pump po podtypie gospodarza —
+      // lustro registry.js i attachments.js („gets +2/+2 as long as it's a
+      // Human").
+      ...(aura.conditionalPump?.length
+        ? { conditionalPump: Object.freeze(aura.conditionalPump.map((cp) => Object.freeze({ condition: Object.freeze({ ...cp.condition }), pump: Object.freeze({ ...cp.pump }) }))) }
+        : {}),
       // M174/D (klasa L47): warunkowe keywordy aury (Predator's Gambit).
       ...(aura.conditionalKeywords?.length
         ? { conditionalKeywords: Object.freeze(aura.conditionalKeywords.map((ck) => Object.freeze({ condition: Object.freeze({ ...ck.condition }), keywords: Object.freeze([...ck.keywords]) }))) }

@@ -112,6 +112,14 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'exploitVictimKeywordWeight',  // waga keyworda ofiary (latanie itd. = realna wartość)
   'exploitVictimAbilityWeight',  // waga zdolności ofiary z rejestru (użyteczny stwór)
   'exploitTokenDiscount',        // premia za poświęcenie TOKENU (zamiast karty)
+  // Znalezisko właściciela B (2026-09-17, Silumgar Butcher): exploit
+  // DEBUFFUJĄCY (-X/-X) jest wymianą, nie darmowym zyskiem — wchodzi tylko
+  // gdy zabija wrogi stwór (a), a ofiara jest tańsza niż zabijany (TMC) albo
+  // zabijany niesie istotne walory (keywordy/zdolności/aury) (b).
+  'exploitNoKillPenalty',        // kara, gdy debuff exploita nie zabija NICZEGO (schodzi pod skip)
+  'exploitKillAssetMargin',      // próg „istotnych walorów" zabijanego (keywordy/zdolności/aury)
+  'exploitKillAuraValue',        // wartość aury przyklejonej do zabijanego (ginie z nim, CR 704.5m)
+  'exploitFaceDownEntryCost',    // TMC permanentu twarzą w dół (CR 708.2a: mana value 0; zapłacono {3})
   // Zgłoszenie właściciela B (2026-09-11, Chronic Flooding + Curiosity): bot
   // z ~9 kartami w bibliotece tapował ląd, który miele mu 3 karty na każde
   // tapnięcie, i dokładał własnemu stworowi aurę z powtarzalnym „draw a card".
@@ -191,6 +199,10 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   exploitVictimKeywordWeight: 6,
   exploitVictimAbilityWeight: 8,
   exploitTokenDiscount: 8,
+  exploitNoKillPenalty: 30,
+  exploitKillAssetMargin: 12,
+  exploitKillAuraValue: 30,
+  exploitFaceDownEntryCost: 3,
   libraryDeckOutPenalty: 120,
   libraryThinPenalty: 60,
   libraryThinPerCardPenalty: 6,

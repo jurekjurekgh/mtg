@@ -69,9 +69,17 @@ function addCardFromRegistry(state, instanceId, cardId, controllerId, zone) {
 
 function passToNextTurn(state, changes) {
   let turns = 0;
-  for (let i = 0; i < 120 && turns < changes; i += 1) {
+  for (let i = 0; i < 240 && turns < changes; i += 1) {
     const before = state.turn.number;
-    const r = execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+    // Znalezisko J (2026-09-17): runda passów nie pomija wymuszonego ataku
+    // (goad CR 701.38 / „attacks each combat if able" CR 508.1c), więc
+    // goadowany stwór NAPRAWDĘ atakuje — walkę domyka `resolve_combat`
+    // (passy go pomijają tylko przy braku atakujących, CR 510).
+    const view = playerView(state, state.turn.priorityPlayerId);
+    const cmd = view.legalCommands.find((c) => c.type === 'resolve_combat')
+      ?? view.legalCommands.find((c) => c.type === 'pass_priority');
+    if (!cmd) return false;
+    const r = execute(state, cmd);
     if (!r.ok) return false;
     if (state.turn.number !== before) turns += 1;
   }

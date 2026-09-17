@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
-import { CARD_BACK_URL } from '../src/table/card-images.js';
+import { CARD_BACK_URL, MORPH_BACK_URL } from '../src/table/card-images.js';
 import { renderCardPreview, renderHoverPreview, renderMiniFace, renderTableView } from '../src/table/render.js';
 
 /**
@@ -211,7 +211,10 @@ test('karta zakryta PRZECIWNIKA pokazuje wspólny rewers, nie swoją ilustrację
   renderMiniFace(host, fakeSession(registry, object), 'permanent-1');
 
   const img = imagesIn(host)[0];
-  assert.equal(img.src, CARD_BACK_URL);
+  // M369/H (2026-09-17c): na stole zakryty permanent reprezentuje token Morph
+  // (jeden wspólny obraz) — nadal nie jest to ilustracja konkretnej karty.
+  assert.equal(img.src, MORPH_BACK_URL);
+  assert.notEqual(img.src, registry.get('kappa-tech-wrecker').imageUri, 'art karty nie wycieka');
   assert.equal(img.alt, 'Karta zakryta');
   assert.equal(host.textContent.includes('Kappa'), false, 'nazwa zakrytej karty nie może wyciec do DOM-u');
 });
@@ -226,7 +229,10 @@ test('M100/E12: WŁASNA karta zakryta pokazuje nazwę + rewers (CR 708.6) — na
   renderMiniFace(host, fakeSession(registry, object), 'permanent-1');
 
   const img = imagesIn(host)[0];
-  assert.equal(img.src, CARD_BACK_URL, 'art własnego morpha zostaje rewersem (nie pełna karta)');
+  // M369/H: „rewers" zakrytego permanentu to odtąd token Morph (wspólny obraz),
+  // a nie art karty — kafel nadal nie wygląda jak pełna kreatura.
+  assert.equal(img.src, MORPH_BACK_URL, 'art własnego morpha zostaje rewersem (nie pełna karta)');
+  assert.notEqual(img.src, registry.get('kappa-tech-wrecker').imageUri);
   assert.equal(img.alt, 'Karta zakryta');
   assert.ok(host.textContent.includes('Kappa Tech-Wrecker'), 'właściciel widzi nazwę własnego morpha');
   // M127 (uwaga A): znacznik pisany wielką literą — „zakryty (Morph)".

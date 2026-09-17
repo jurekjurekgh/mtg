@@ -48,6 +48,53 @@ export function addPoisonCounters(state, playerId, amount) {
 }
 
 /**
+ * Energia (CR 122.1, AER „you get {E}"): licznik GRACZA, nie permanentu.
+ * JEDYNA droga nadania energii (analogia: `addPoisonCounters` dla trucizny,
+ * `changeLife` dla życia) — rodzina pól gracza w `tools/family-audit.mjs`
+ * pilnuje, żeby żadna nowa ścieżka nie pisała wprost.
+ *
+ * Rulingi AER (Scryfall, 2024-06-07 — docs/cards/scryfall-shipwreck-moray.json):
+ *  - „If an effect says you get one or more {E}, you get that many energy
+ *    counters" — jedno zdarzenie na całą pulę, nie N zdarzeń;
+ *  - „They're not associated with any specific permanents" — licznik należy do
+ *    gracza, więc nie ginie razem ze źródłem;
+ *  - „Energy counters aren't mana. They don't go away as steps, phases, and
+ *    turns end" — brak jakiegokolwiek czyszczenia na koniec tury.
+ */
+export function addEnergyCounters(state, playerId, amount) {
+  if (!Number.isInteger(amount) || amount < 0 || !state.players.some((player) => player.id === playerId)) {
+    throw new TypeError('Nadanie energii wymaga gracza i nieujemnej wartości');
+  }
+  if (amount === 0) return [];
+  const player = state.players.find((entry) => entry.id === playerId);
+  const before = player.energy ?? 0;
+  player.energy = before + amount;
+  const events = [event('energy_counters_added', { playerId, before, after: player.energy, amount })];
+  state.events.push(...events);
+  return events;
+}
+
+/**
+ * Zapłata energii („Pay {E}"): zdjęcie liczników z gracza. Ruling AER:
+ * „You can't pay more energy counters than you have" — wołający MUSI sprawdzić
+ * dostępność PRZED mutacją (koszt atomowy, CR 601.2h); ta funkcja rzuca, gdy
+ * energia jest za mała, żeby nie dało się „zapłacić" w pustkę.
+ */
+export function payEnergyCounters(state, playerId, amount) {
+  if (!Number.isInteger(amount) || amount < 0 || !state.players.some((player) => player.id === playerId)) {
+    throw new TypeError('Zapłata energii wymaga gracza i nieujemnej wartości');
+  }
+  const player = state.players.find((entry) => entry.id === playerId);
+  const before = player.energy ?? 0;
+  if (amount > before) throw new Error('Niewystarczająca energia');
+  if (amount === 0) return [];
+  player.energy = before - amount;
+  const events = [event('energy_counters_paid', { playerId, before, after: player.energy, amount })];
+  state.events.push(...events);
+  return events;
+}
+
+/**
  * Speed gracza (DFT „Start your engines!", CR: akcja stanowa) — JEDYNY zapis
  * pola `player.speed` w silniku (analogia: `changeLife` dla życia,
  * `recordCardDrawn` dla dobrań; rodzina pól `speed` w `tools/family-audit.mjs`

@@ -49,6 +49,11 @@ export function attachmentGrant(object) {
   // Conditional keywords (Hunter's Blowgun): different keywords based on
   // a condition evaluated at read time (state required). Only included when
   // non-empty to preserve backward compatibility with existing tests.
+  // Batch 56 (Bonds of Faith): warunkowy pump („gets +2/+2 as long as it's a
+  // Human") — L21: bez przepisania pola ginie po cichu na obiekcie gry.
+  if (descriptor.conditionalPump && descriptor.conditionalPump.length > 0) {
+    result.conditionalPump = [...descriptor.conditionalPump];
+  }
   if (descriptor.conditionalKeywords && descriptor.conditionalKeywords.length > 0) {
     result.conditionalKeywords = [...descriptor.conditionalKeywords];
   }
