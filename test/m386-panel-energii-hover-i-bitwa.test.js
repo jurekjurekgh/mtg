@@ -123,8 +123,7 @@ test('M386/B: hover panelu energii działa jak w panelach Poison/Speed (A1)', ()
   const { session } = energySession();
   const els = makeEls();
   renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
-  const marker = els.energy.findAll((el) => String(el.className).includes('energy-card'))[0]
-    ?? els.energy.children[0];
+  const marker = els.energy.findAll((el) => String(el.className).includes('poison-card'))[0];
   assert.ok(marker, 'panel energii ma klikalny/najeżdżalny marker');
   marker.emit('mouseenter', { clientX: 120, clientY: 120 });
   assert.ok(String(els.hoverPreview.className).includes('active'),
@@ -321,6 +320,33 @@ test('M386/H: rerender ma siatkę bezpieczeństwa — ogon („Wznów grę bota�
     'ogonek renderu (przycisk wznowienia) wpadł do bloku try/catch');
   assert.match(src.slice(catchIdx, catchIdx + 400), /logSystem\(/,
     'połknięty błąd renderu bez śladu w logu partii');
+});
+
+test('M386/B2: marker energii jest KLIKALNY i otwiera pełny ekran jak Poison (A1)', () => {
+  // Zgłoszenie właściciela: „w panelu img tokena energy ze scryfall, dokładnie
+  // tak jak w przypadku Poison” — Poison ma klikalny marker (M169/M), więc
+  // panel energii musi mieć tę samą ścieżkę pełnego ekranu; inaczej opcja
+  // `onOpenCard` byłaby martwa (L67).
+  const { session } = energySession();
+  const els = makeEls();
+  const otwarte = [];
+  renderTableView({
+    els, session, play: () => {}, onCardClick: () => {},
+    onEnergyCardClick: (card) => otwarte.push(card),
+  });
+  const marker = els.energy.findAll((el) => String(el.className).includes('poison-card'))[0];
+  assert.ok(marker, 'panel energii bez markera (wzorzec Poison)');
+  assert.ok(String(marker.className).includes('clickable'),
+    `marker energii nie jest klikalny: ${marker.className}`);
+  marker.emit('click', {});
+  assert.equal(otwarte.length, 1, 'klik w marker energii nie otworzył pełnego ekranu');
+  assert.equal(otwarte[0].name, 'Energy Reserve', `pełny ekran z nie tej karty: ${otwarte[0].name}`);
+  assert.match(otwarte[0].imageUri, /6a2c1fa5-deed-48ba-afe4-6c8ea8d9135e/,
+    'pełny ekran otwiera inny obraz niż token energii ze Scryfall');
+  // Ścieżka main.js: rerender przekazuje onEnergyCardClick do renderTableView.
+  const mainSrc = readFileSync(new URL('../src/table/main.js', import.meta.url), 'utf8');
+  assert.match(mainSrc, /onEnergyCardClick: \(card\) => openSpecialCardFullscreen\(card\)/,
+    'main.js nie podłącza markera energii do pełnego ekranu');
 });
 
 test('M386/D2: panel energii rysuje się tylko, gdy ktoś MA energię (kontrola)', () => {

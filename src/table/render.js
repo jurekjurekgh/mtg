@@ -4526,7 +4526,7 @@ function clampHoverMode(info, mode) {
   return available.includes(mode) ? mode : available[0];
 }
 
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, onSpeedCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, onSpeedCardClick = null, onEnergyCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'handEnemy', 'actions', 'log']) clear(els[key]);
@@ -4791,7 +4791,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   renderSpeedPanel(els, view, { onOpenCard: onSpeedCardClick, hover });
 
   // --- Energia (Batch 56, CR 122.1) — panel jak Poison/Speed ------------------
-  renderEnergyPanel(els, view, { hover });
+  renderEnergyPanel(els, view, { onOpenCard: onEnergyCardClick, hover });
 
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view, { onClick: onUndercityClick, hover });
@@ -4945,9 +4945,9 @@ export function renderEnergyPanel(els, view, { onOpenCard = null, hover = null }
     card.addEventListener('click', () => onOpenCard({ name: ENERGY_MARKER.name, imageUri: ENERGY_MARKER.imageUri }));
   }
   attachSpecialCardHover(card, hover, {
-    name: 'Energia ({E})',
+    name: ENERGY_MARKER.name,
     imageUri: ENERGY_MARKER.imageUri,
-    artId: null, set: null, colors: [], kind: 'card', types: ['Card'], faceDown: false,
+    artId: null, set: null, colors: [], kind: 'card', types: ['Counter'], faceDown: false,
   });
   const img = document.createElement('img');
   img.src = ENERGY_MARKER.imageUri;

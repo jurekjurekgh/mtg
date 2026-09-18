@@ -1652,6 +1652,9 @@ function bootstrapTable() {
         onPoisonCardClick: (card) => openSpecialCardFullscreen(card),
         // M313: marker prędkości (Start Your Engines!) — pełny ekran.
         onSpeedCardClick: (card) => openSpecialCardFullscreen(card),
+        // M386: marker energii („Energy Reserve”, tdrc/17) — pełny ekran jak
+        // Poison/Speed (panel energii rysuje się, gdy ktokolwiek ma {E} > 0).
+        onEnergyCardClick: (card) => openSpecialCardFullscreen(card),
         hoverMode: currentHoverMode,
         onHoverModeChange: (mode) => { currentHoverMode = mode; },
       });
