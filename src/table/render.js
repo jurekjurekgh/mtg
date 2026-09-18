@@ -3693,6 +3693,13 @@ export function cardInfo(session, object, combat = null) {
     detained: Boolean(object.detained),
     damage: object.damage || 0,
     // A (2026-08-11): liczniki (np. +1/+1, oil, charge, lore) pokazane na karcie.
+    // M386/A1 (zgłoszenie właściciela 2026-09-18, partia seed 596891): UWAGA —
+    // liczniki ENERGII {E} NIE są tu i nie mogą tu trafić. Ruling WotC
+    // 2024-06-07 (Scryfall, Shipwreck Moray): „Energy counters are a kind of
+    // counter that a player may have. They're not associated with any specific
+    // permanents.” — kafel Moraya pokazujący {E} jako licznik permanentu
+    // kłamałby o regułach (i o tym, co ginie razem z kartą). Energia gracza
+    // należy do panelu energii (renderEnergyPanel, jak poison/speed).
     counters: object.counters ?? {},
     // B5 (audyt stołu 2026-09-09, G2/Membrane): object.spell na kartach
     // w spoczynku (ręka/stół/grób) to OSAD po rzucie — castAuraSpell podpina
@@ -4072,8 +4079,7 @@ export function buildStateOverlay(visual, info) {
         flags.push(['kw', `${signed(gPow)}/${signed(gTou)}`]);
       }
     }
-    if (info.combatRole) flags.push(['combat', info.combatRole]);
-    if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
+    if (info.combatRole) flags.push(['combat', info.combatRole]);    if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push(['sick', 'choroba']);
     // A (2026-08-11): liczniki na nakładce ilustracji.
     // M164: licznik `lore` Sagi pokazujemy WYŁĄCZNIE w badge etapu poniżej
@@ -4520,7 +4526,7 @@ function clampHoverMode(info, mode) {
   return available.includes(mode) ? mode : available[0];
 }
 
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, onSpeedCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, onSpeedCardClick = null, onEnergyCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'handEnemy', 'actions', 'log']) clear(els[key]);
@@ -4785,7 +4791,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   renderSpeedPanel(els, view, { onOpenCard: onSpeedCardClick, hover });
 
   // --- Energia (Batch 56, CR 122.1) — panel jak Poison/Speed ------------------
-  renderEnergyPanel(els, view, { hover });
+  renderEnergyPanel(els, view, { onOpenCard: onEnergyCardClick, hover });
 
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view, { onClick: onUndercityClick, hover });
@@ -4818,6 +4824,18 @@ const SPEED_MARKER = Object.freeze({
 const POISON_COUNTER_CARD = Object.freeze({
   name: 'Poison Counter',
   imageUri: 'https://cards.scryfall.io/large/front/8/a/8a9cb417-8709-4336-be36-2fb0cea31fe1.jpg?1783904328',
+});
+
+/**
+ * Marker energii (M386) — oficjalny druk „Energy Reserve\" (tdrc/17, layout
+ * `token`, Oracle: „(Place your energy counters in this area.)`). Ten sam wzorzec,
+ * co Poison Counter i Start Your Engines! — panel dostaje DRUK, nie pustą
+ * kolumnę; źródło: https://api.scryfall.com/cards/6a2c1fa5-deed-48ba-afe4-6c8ea8d9135e
+ * (odczyt 2026-09-18).
+ */
+const ENERGY_MARKER = Object.freeze({
+  name: 'Energy Reserve',
+  imageUri: 'https://cards.scryfall.io/large/front/6/a/6a2c1fa5-deed-48ba-afe4-6c8ea8d9135e.jpg?1783907668',
 });
 
 /**
@@ -4893,31 +4911,55 @@ export function renderPoisonPanel(els, view, { onOpenCard = null, hover = null }
 }
 
 /**
- * Panel energii (Batch 56, CR 122.1): liczniki {E} graczy — jawne, jak
- * trucizna i prędkość (ADR 0017: widok niesie to, na co patrzy gracz).
- * Pokazujemy panel tylko, gdy KTOKOLWIEK ma energię (zero = brak wiersza,
- * żeby nie zaśmiecać stołu).
+ * Panel energii (Batch 56, CR 122.1; M386 — marker + hover + pełny ekran):
+ * liczniki {E} graczy — jawne, jak trucizna i prędkość (ADR 0017: widok niesie
+ * to, na co patrzy gracz). Pokazujemy panel tylko, gdy KTOKOLWIEK ma energię
+ * (zero = brak wiersza, żeby nie zaśmiecać stołu).
+ *
+ * Energia to licznik GRACZA, nie permanentu — ruling WotC 2024-06-07
+ * (Scryfall, Shipwreck Moray): „Energy counters are a kind of counter that a
+ * player may have. They're not associated with any specific permanents.”,
+ * więc panel (a nie badge na kaflu Moraya) jest poprawnym miejscem prezentacji;
+ * badge na karcie pokazywałby stan gracza jako cechę karty.
  */
-export function renderEnergyPanel(els, view, { hover = null } = {}) {
+export function renderEnergyPanel(els, view, { onOpenCard = null, hover = null } = {}) {
   if (!els.energy) return;
   const gracze = (view.players ?? []).filter((p) => (p.energy ?? 0) > 0);
   els.energy.hidden = gracze.length === 0;
   if (gracze.length === 0) return;
   clear(els.energy);
+  // M386 (zgłoszenia właściciela 2026-09-18, A1/A2/B — partia seed 596891):
+  // tutaj stało `hover.attach(...)`, metody której obiekt hover NIE MA
+  // (ma start/revive/end/cycle). Panel rysuje się, gdy ktokolwiek ma {E} > 0
+  // — praktycznie zaraz po wejściu Shipwreck Moray — więc KAŻDY render stołu
+  // na desktopie rzucał `TypeError: hover.attach is not a function`, ZOSTAWIAJĄC
+  // panel widocznym i PUSTYM (hidden=false, treść nie doszła), a wyjątek
+  // uciekał z renderTableView do main.js: nie odpalał się modal „Rozgrywka\"
+  // (stąd brak opisu walki z Malamet Battle Glyph) ani przycisk
+  // „▶ Wznów grę bota\" przy pauzie bota (ekran z samym „Poddaj partię\",
+  // czyli zamrożenie partii). Podpięcie hovera idzie teraz WSPÓLNYM helperem
+  // paneli specjalnych (attachSpecialCardHover) — jedno miejsce reguły (L41/L137).
   const card = div(els.energy, 'poison-card');
-  if (hover) {
-    hover.attach(card, {
-      name: 'Energia ({E})',
-      typeLine: 'Liczniki gracza',
-      oracle: 'Energia to licznik gracza (CR 122.1). Nie jest maną i nie znika z końcem kroków, faz ani tur — schodzi wyłącznie jako koszt „Pay {E}…”.',
-    });
+  if (onOpenCard) {
+    card.className = `${card.className} clickable`.trim();
+    card.addEventListener('click', () => onOpenCard({ name: ENERGY_MARKER.name, imageUri: ENERGY_MARKER.imageUri }));
   }
+  attachSpecialCardHover(card, hover, {
+    name: ENERGY_MARKER.name,
+    imageUri: ENERGY_MARKER.imageUri,
+    artId: null, set: null, colors: [], kind: 'card', types: ['Counter'], faceDown: false,
+  });
+  const img = document.createElement('img');
+  img.src = ENERGY_MARKER.imageUri;
+  img.alt = ENERGY_MARKER.name;
+  img.loading = 'lazy';
+  card.appendChild(img);
   const info = div(els.energy, 'poison-info');
   div(info, 'poison-status', 'Energia ({E})');
   for (const p of gracze) {
     div(info, 'poison-count', `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${p.energy ?? 0} {E}`);
   }
-  div(info, 'poison-note', 'Energia nie jest maną i nie znika z końcem tury (CR 122.1) — płacisz nią koszty „Pay {E}…”.');
+  div(info, 'poison-note', 'Energia nie jest maną i nie znika z końcem tury (CR 122.1) — płacisz nią koszty „Pay {E}…”. Liczniki energii należą do GRACZA, nie do permanentu (ruling WotC 2024-06-07).');
 }
 
 export function renderSpeedPanel(els, view, { onOpenCard = null, hover = null } = {}) {

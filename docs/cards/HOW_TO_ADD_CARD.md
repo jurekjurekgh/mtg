@@ -171,7 +171,22 @@ listę PRZED pierwszym uruchomieniem pełnego testu:
 4. **`gameObjectDataOf`** (`src/cards/materialize.js`) — deskryptor z definicji
    karty musi dojść na obiekt gry, inaczej mechanika ginie w materializacji
    (L21: w Batchu 51 tak ginęło `renown`; test czytający definicję z rejestru
-   tego nie zauważy).
+   tego nie zauważy). **Dwa miejsca, nie jedno** (M379, audyt PR #126):
+   `gameObjectDataOf` to ścieżka helperów testowych, a `installDeck`
+   (`src/engine/deck.js`) ma WŁASNĄ, jawną listę pól — brak w niej deskryptora
+   zostawia obiekt gry z `null` mimo zielonych testów batcha (tak zginął
+   `offspring`, CR 702.175a: brak oferty dopłaty i brak tokenu). Strażnik
+   katalogowy porównuje KAŻDE pole `gameObjectDataOf` z obiektem po
+   `installDecks` (`test/m379-offspring-w-prawdziwej-talii.test.js`, pin C).
+
+5. **Nowy KLUCZ istniejącego deskryptora** (nie nowe pole) — dopisz go do
+   predykatów czytających kwalifikatory. `creatureTypes` (M385): qualifier
+   `.subtypes` to podtypy z linii typów (lądy/artefakty), a `.creatureTypes`
+   to typy STWORÓW — i tylko tam changeling pasuje (CR 702.73a: „»Changeling«
+   means »This object is every creature type.«"). Używaj
+   `matchesSubtypeQualifier` (`src/engine/permanents.js`); ręczne
+   `hasCreatureType` na ścieżce podtypu lądu wpuszcza changelinga jako
+   „Plains card” do szukania w bibliotece (znalezisko M385 z 2026-09-18).
 
 Warunki triggera czytaj też WŁAŚCIWE dane: `eventData.manaCost` przy rzucie to
 mana WYDATKOWANA (po obniżkach), nie mana value karty (L85).

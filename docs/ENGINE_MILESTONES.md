@@ -5893,3 +5893,83 @@ typów (w tym nie-basic ląd z podtypem Plains), (C) Kor Cartographer
 end-to-end (oferta bez changelinga, ląd wchodzi tapnięty), (D) Swampcycling
 end-to-end, (E) Call the Mountain Chocobo end-to-end.
 Bramy: `npm test` 5769/5769, `npm run build` 64 moduły / 3826,5 kB.
+
+## M386 (2026-09-18) — panel energii nie może wysypać stołu (zgłoszenia właściciela, seed 596891)
+
+Zgłoszenia z żywej partii (Ixalan vs Ravnica, seed 596891): (A1) po wejściu
+Shipwreck Moray nad ręką pojawiał się PUSTY panel („jak Poison, ale bez
+treści”), (A2) po ptaszku na zdolności „Pay {E}: +2/-2” Moraya gra stanęła
+z jedyną akcją „Poddaj partię”, (B) walka z Malamet Battle Glyph nie była
+opisana w modalu „Rozgrywka”.
+
+Root cause (jeden dla wszystkich trzech): `renderEnergyPanel` — rysowany, gdy
+ktokolwiek ma {E} > 0 — wołał `hover.attach(...)`, metodę której wspólny obiekt
+hover NIE ma (ma `start/revive/end/cycle`). `TypeError` leciał po
+`div(els.energy, 'poison-card')` i przed treścią (stąd panel widoczny i pusty),
+a dalej uciekał z `renderTableView` do `main.js`: przerywał `showBotMoves()`
+(brak opisu walki) i wstrzyknięcie „▶ Wznów grę bota” przy pauzie bota
+(deadlock; sesja czekała na klik, którego nie było na ekranie). Klasa L33:
+żaden z 5769 testów nie uruchamiał renderu stołu z niepustą energią.
+
+Fix: (1) panel energii podpina hover wspólnym helperem `attachSpecialCardHover`,
+dostaje marker „Energy Reserve” (tdrc/17 — ten sam obraz tokena ze Scryfall co
+w panelu Poison) oraz pełny ekran po klik jak Poison/Speed (parametr
+`onEnergyCardClick` → `openSpecialCardFullscreen`); (2) `rerender()` ma siatkę
+bezpieczeństwa — wyjątek panelu idzie do logu partii (`logSystem`), a ogon
+funkcji (przycisk wznowienia) wykonuje się dalej. Energia pozostaje licznikiem
+GRACZA (ruling WotC 2024-06-07: „They're not associated with any specific
+permanents.”) — panel jest poprawnym miejscem, kafel Moraya nie udaje licznika
+permanentu.
+
+Piny: `test/m386-panel-energii-hover-i-bitwa.test.js` (13: A/B — brak wyjątku
+i treść panelu, B2 — marker klikalny i pełny ekran, C — strażnik rodziny „hover ma tylko start/revive/end/cycle”,
+D — fight w buforze „Rozgrywki”, E/F — energia to licznik gracza, G — pauza
+bota + {E} > 0, H — siatka bezpieczeństwa `rerender`, I — pełna sekwencja
+`toggleIgnoredOption` (ptaszek → recheckAutoPass → render), J — wznowienie po
+odświeżeniu z energią z REALNYCH komend (`exportReplayText` →
+`resumeReplayText`), K — jawny powód nieudanego wznowienia w logu nowej partii,
+D2 — panel tylko przy {E} > 0).
+
+Wyjaśnienie „odświeżenie skasowało partię, log przepadł” (to samo zgłoszenie):
+`resumeFromSaved` odtwarza zapis i na końcu woła `rerender()`; wyjątek panelu
+energii wpadał do jego `catch`, więc strona startowała ŚWIEŻĄ partię, a notice
+o nieudanym wznowieniu przepadał pod `startGame()`. Po fixie wznowienie kończy
+się stanem sprzed odświeżenia (pin J), a gdy zapisu naprawdę nie da się
+wznowić, nowa partia dostaje wpis w logu z powodem (pin K).
+
+RED→GREEN: powrót `hover.attach` → 8/13 czerwonych; zdjęcie try/catch
+→ czerwony H; brak przekazania `onOpenCard` albo brak callbacku w main.js
+→ 12/13; usunięcie wpisu o nieudanym wznowieniu → 12/13 (pin K).
+Bramy: `npm test` 5782/5782, `npm run test:all` 5788/5788, `npm run build`
+64 moduły / 3831,2 kB. Audyt PR #126: `docs/audits/AUDYT_PR126_2026-09-18.md`.
+
+## M387 (2026-09-18) — legalność bloku: warstwa ZBIORU też ma jedno źródło prawdy (F-2 audytu PR #126)
+
+Znalezisko F-2 audytu PR #126 (raport `docs/audits/AUDYT_PR126_2026-09-18.md`):
+M380 sprowadził do jednego predykatu (`blockRestrictionError`) wyłącznie
+restrykcje PAROWE bloku, a reguły ZBIORU nadal żyły w dwóch równoległych
+kopiach — walidacja `declareBlockers` i oferta `legalBlockerOptions`
+(menace, „can't block alone", zakazy blokowania samego blokera). Oba miejsca
+były wtedy spójne, ale to ta sama klasa ryzyka, która dała defekt M380
+(oferta bez pary, walidacja ją przyjmowała).
+
+Fix: nowy eksportowany predykat `blockAssignmentViolation(state, attacker,
+blockerIds)` (zwraca komunikat naruszenia albo `null`) obejmuje CAŁĄ warstwę
+zbioru/kontekstu — własne zakazy blokowania (`creatureCantBlock`, restrykcje
+z załączników), restrykcje parowe (delegacja do `blockRestrictionError`),
+menace (CR 702.110b) i „can't block alone" (CR 509.1c). Wołają go: walidacja
+`declareBlockers`, filtr finalnych przypisań oferty oraz fallback oferty
+(warianty „wszystkie minus jeden"). Ręczna kopia `satisfiesMenace` usunięta
+(L67: martwy kod po refaktorze) — jej rolę przejmuje predykat.
+
+Strażnik: pin (D) w `test/m387-legalnosc-bloku-jedno-zrodlo.test.js` blokuje
+powrót reguł zbioru jako inline w `declareBlockers` (brak `hasAloneRestriction`
+i `hasKeyword(…, 'menace')` w ciele funkcji) oraz powrót `satisfiesMenace`.
+Pozostałe piny idą realnymi ścieżkami: (A) Ember Beast — samotny nie w ofercie
+i odrzucony, z partnerem przyjęty, (B) menace — singleton nie w ofercie
+i odrzucony, dwóch przyjętych, pusty blok legalny, (C) `cantBlock` — nie
+w ofercie i odrzucony, (E) macierz spójności: KAŻDE oferowane przypisanie
+(scena z menace + Ember Beast + `cantBlock` + próg mocy) jest przyjmowane
+przez `declare_blockers` (L48). RED→GREEN: mutacje — pusty predykat 1/4,
+oferta bez filtra 2/3, ręczna kopia menace w walidacji 4/1.
+Bramy: `npm test` 5787/5787, `npm run build` 64 moduły / 3831,8 kB.

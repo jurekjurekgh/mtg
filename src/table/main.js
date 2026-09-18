@@ -1445,6 +1445,13 @@ function bootstrapTable() {
     } catch { slot.textContent = ''; }
   }
 
+  // M386/A2 (zgłoszenie właściciela 2026-09-18: „odświeżenie skasowało partię,
+  // log przepadł"): powód nieudanego wznowienia trzymamy, żeby po starcie
+  // świeżej partii gracz zobaczył W LOGU, dlaczego zapis nie wrócił. Wcześniej
+  // `resumeFromSaved` pokazywał notice, ale `startGame()` zaraz potem otwierał
+  // nową partię i komunikat przepadał — gracz widział „reset" bez wyjaśnienia.
+  let lastResumeError = null;
+
   function resumeFromSaved(raw) {
     try {
       const saved = JSON.parse(raw);
@@ -1462,9 +1469,11 @@ function bootstrapTable() {
       showNotice(`Wznowiono partię (${summary.steps} komend).`);
       rerender();
       showBotMoves();
+      lastResumeError = null;
       return true;
     } catch (error) {
-      showNotice(`Nie udało się wznowić: ${error.message}`);
+      lastResumeError = error?.message ?? String(error);
+      showNotice(`Nie udało się wznowić: ${lastResumeError}`);
       return false;
     }
   }
@@ -1474,8 +1483,14 @@ function bootstrapTable() {
     try {
       const raw = storage?.getItem(AUTOSAVE_KEY);
       if (raw && resumeFromSaved(raw)) return;
-    } catch { /* uszkodzony zapis — startujemy nową grę */ }
+    } catch (error) {
+      // Uszkodzony zapis — startujemy nową grę, ale z jawnym powodem w logu.
+      lastResumeError = error?.message ?? String(error);
+    }
     startGame();
+    if (lastResumeError && session?.logSystem) {
+      session.logSystem(`Nie udało się wznowić zapisu: ${lastResumeError}. To nowa partia.`);
+    }
   }
 
   /** Polskie nazwy faz/kroków tury dla wskaźnika (lewy górny róg). */
@@ -1630,21 +1645,41 @@ function bootstrapTable() {
   function rerender() {
     if (!session) return;
     updateTurnIndicator();
-    renderTableView({
-      els, session, play, onCardClick, onChoiceRequest: openChoiceRequest,
-      ignoredOptionKeys, onToggleIgnoredOption: toggleIgnoredOption,
-      onCardDoubleClick: (objectId) => openCardFullscreen(objectId),
-      // Bug C: tapnięcie nazwy karty na stosie — pełny ekran z jej tekstem.
-      onStackClick: (objectId) => openCardFullscreen(objectId),
-      onUndercityClick: () => openUndercityFullscreen(),
-      onDayNightClick: () => openDayNightFullscreen(),
-      // M169/M: Poison Token w panelu trucizny — pełny ekran (karta specjalna).
-      onPoisonCardClick: (card) => openSpecialCardFullscreen(card),
-      // M313: marker prędkości (Start Your Engines!) — pełny ekran.
-      onSpeedCardClick: (card) => openSpecialCardFullscreen(card),
-      hoverMode: currentHoverMode,
-      onHoverModeChange: (mode) => { currentHoverMode = mode; },
-    });
+    // M386/A2 (zgłoszenie właściciela 2026-09-18, partia seed 596891): awaria
+    // JEDNEGO panelu nie może zjeść ogona tej funkcji — wstrzyknięcia
+    // „▶ Wznów grę bota” i modala „Rozgrywka”. Tak wyglądało zamrożenie:
+    // `renderEnergyPanel` rzucał `TypeError: hover.attach is not a function`
+    // (metoda, której obiekt hover nie ma), gracz widział panel akcji z samym
+    // „Poddaj partię”, a sesja czekała na klik wznowienia, którego nie było na
+    // ekranie. Ta sama zasada co M201/N1b przy komendach: wyjątek warstwy
+    // widoku nie może zablokować partii (L-klasa: jeden panel ≠ cały stół).
+    // Błąd NIE jest przemilczany — idzie do logu partii (widoczny dla gracza).
+    try {
+      renderTableView({
+        els, session, play, onCardClick, onChoiceRequest: openChoiceRequest,
+        ignoredOptionKeys, onToggleIgnoredOption: toggleIgnoredOption,
+        onCardDoubleClick: (objectId) => openCardFullscreen(objectId),
+        // Bug C: tapnięcie nazwy karty na stosie — pełny ekran z jej tekstem.
+        onStackClick: (objectId) => openCardFullscreen(objectId),
+        onUndercityClick: () => openUndercityFullscreen(),
+        onDayNightClick: () => openDayNightFullscreen(),
+        // M169/M: Poison Token w panelu trucizny — pełny ekran (karta specjalna).
+        onPoisonCardClick: (card) => openSpecialCardFullscreen(card),
+        // M313: marker prędkości (Start Your Engines!) — pełny ekran.
+        onSpeedCardClick: (card) => openSpecialCardFullscreen(card),
+        // M386: marker energii („Energy Reserve”, tdrc/17) — pełny ekran jak
+        // Poison/Speed (panel energii rysuje się, gdy ktokolwiek ma {E} > 0).
+        onEnergyCardClick: (card) => openSpecialCardFullscreen(card),
+        hoverMode: currentHoverMode,
+        onHoverModeChange: (mode) => { currentHoverMode = mode; },
+      });
+    } catch (error) {
+      // Panel, który nie umie się narysować, NIE MOŻE zatrzymać partii —
+      // logujemy jawnie (gracz widzi w „Rozgrywce”) i rysujemy resztę stołu.
+      try {
+        session.logSystem(`Błąd rysowania stołu: ${error?.message ?? error}. Zgłoś problem (partia jest kontynuowana).`);
+      } catch { /* log nie może rzucić drugi raz */ }
+    }
     const view = session.view();
     const me = view.players.find((p) => p.id === view.playerId);
     const foe = view.players.find((p) => p.id !== view.playerId);
