@@ -5772,3 +5772,67 @@ z `fromProliferate`), (C) gracz z trucizną i energią dostaje +1 KAŻDEGO typu,
 (`illegal_proliferate_target`), (E) kontrola: proliferate na permanencie działa
 jak przed zmianą.
 Bramy: `npm test` 5759/5759, `npm run build` 64 moduły / 3825,0 kB.
+## M384 (2026-09-18) — srebro #2: zdolność aktywowana NADANA cudzą statyką była oferowana, ale nie do wykonania (CR 604.2 + 602.2a, klasa L48)
+
+Zgłoszenie: to samo wyzwanie właściciela (5 unikalnych błędów/uproszczeń vs
+zasady MtG) — znalezisko #2. Objaw: drzewko legalnych komend pokazuje
+`activate_ability` na stworze, który nie ma wydrukowanej zdolności (dostał ją
+od innego permanenta), a `execute` tej samej komendy kończy się odrzuceniem
+`command_rejected` z komunikatem „Nieznana zdolność aktywowana".
+
+Karta-kotwica: **Enduring Sliver** (MH1, `enduring-sliver`) — Oracle
+(Scryfall, dostęp 2026-09-18): „Outlast {2} ({2}, {T}: Put a +1/+1 counter on
+this creature. Outlast only as a sorcery.) / **Other Sliver creatures you
+control have outlast {2}.**" Drugim Sliverem w katalogu jest changeling
+(Barkform Harvester — CR 702.73a: jest każdym typem stworów), więc para
+„Enduring Sliver + changeling" jest w tym katalogu pełnoprawnym, osiągalnym
+przypadkiem, nie sytuacją teoretyczną.
+
+Reguły (źródła online, ADR 0030):
+- **CR 702.107a** (cytat za https://mtg.wiki/page/Outlast, wydanie CR
+  2026-08-07): „Outlast is an activated ability. »Outlast [cost]« means
+  »[Cost], {T}: Put a +1/+1 counter on this creature. Activate only as a
+  sorcery.«"
+- **CR 604.2** (MagicCompRules 2026-08-19, efektywne 2026-08-07;
+  https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt):
+  „Static abilities create continuous effects … These effects are active as
+  long as the permanent with the ability remains on the battlefield and has
+  the ability" — nadanie zdolności jest efektem ciągłym (warstwa 6), więc
+  zdolność istnieje i da się ją aktywować.
+- **CR 602.2a/602.2b**: „Only an object's controller … can activate its
+  activated ability"; aktywacja przebiega krokami 601.2b–i (w tym płatność
+  kosztu, CR 601.2h).
+- Khans of Tarkir Release Notes (2014-09-18, cytowane na mtg.wiki/Outlast):
+  „The cost to activate a creature's outlast ability includes the tap symbol.
+  A creature's outlast ability can't be activated unless that creature has
+  been under your control continuously since the beginning of your turn."
+- Scryfall Enduring Sliver: lista rulings WotC pusta — brak dodatkowych
+  rozstrzygnięć; powyższe reguły wystarczają.
+
+Root cause (jedno źródło prawdy, `src/engine/abilities.js`): trzy kroki życia
+zdolności czytały zdolność z DWÓCH różnych list. Oferta
+(`legalActivatedAbilities`) i walidacja (`activateAbility`) enumerowały
+`activatableAbilities(state, object)` = zdolności własne + nadane cudzą
+statyką (`grantedActivatedAbilities`, Batch 47) + nadane grantem jednorazowym
+(`abilityGrants`), natomiast WYKONANIE (`performActivation`) czytało
+`(object.abilities ?? [])[abilityIndex]`. Dla zdolności nadanej indeks leży
+poza listą własną obiektu, więc `performActivation` rzucał „Nieznana zdolność
+aktywowana" — czyli dokładnie klasa L48: silnik publikuje ruch, którego sam
+nie przyjmuje (CR 604.2 + 602.2a mówią, że ruch jest legalny).
+
+Fix (root cause, jedna linia w `performActivation`): wykonanie czyta TĘ SAMĄ
+listę co oferta i walidacja — `activatableAbilities(state, object)
+[abilityIndex]` (gałąź sprzętu `grantedFromEquipment` bez zmian, bo ma własną
+przestrzeń indeksów). To przywraca jedną regułę w trzech miejscach zamiast
+dwóch kopii (L41/L48) i automatycznie obejmuje oba źródła nadania (statyka
+cudza i `abilityGrants`).
+
+Piny: `test/m384-nadane-zdolnosci-aktywowane.test.js` (5; RED 4/5 → GREEN
+5/5; na HEADzie czerwony był pin B — komenda z oferty odrzucona). (A) oferta
+zawiera nadany outlast (kontrola), (B) wykonanie oferty jest PRZYJMOWANE,
+płaci {2} + {T} i po rozstrzygnięciu daje +1/+1, (C) własna zdolność
+changelinga (indeks 0) nadal działa — brak przesunięcia indeksów, (D) choroba
+przywołania blokuje nadany outlast (koszt {T}, CR 302.6 + Release Notes),
+(E) „Other Sliver creatures" nie nadaje outlastu samemu źródłu.
+Bramy: `npm test` 5764/5764, `npm run build` 64 moduły / 3825,6 kB.
+
