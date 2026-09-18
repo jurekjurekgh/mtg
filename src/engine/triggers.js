@@ -2016,6 +2016,49 @@ function fireEnterBattlefieldTriggers(state, entered, events, context = {}) {
   }
 }
 
+/**
+ * M382 (CR 603.3b + CR 101.4): porządek APNAP dla PARTII zdolności, które
+ * trafiły na stos w jednym skanie triggerów. „If multiple abilities have
+ * triggered since the last time a player received priority, the abilities are
+ * placed on the stack in a two-part process. First, each player, in APNAP
+ * order, puts each triggered ability they control … on the stack in any order
+ * they choose." APNAP = gracz aktywny, potem każdy inny gracz w kolejności tur
+ * (CR 101.4) — w tym silniku kolejność tur to `state.players` cyklicznie od
+ * gracza aktywnego (tak samo liczy ją `nextTurnStep`, turn.js). Kolejność
+ * wewnątrz jednego kontrolera zostaje bez zmian (deterministyczna kolejność
+ * wykrycia — silnik nie pyta gracza o kolejność własnych zdolności).
+ *
+ * `stackStart` = długość stosu przed skanem, więc regulujemy WYŁĄCZNIE wpisy
+ * dodane przez ten skan (starsze wpisy stosu są nietykalne). Gdy w segmencie
+ * jest cokolwiek poza triggerami (np. kopia czaru z efektu natychmiastowego),
+ * nie przestawiamy niczego — mieszanie cudzych wpisów byłoby gorsze niż
+ * zachowanie kolejności wykrycia.
+ */
+function placeTriggerBatchInApnapOrder(state, stackStart) {
+  const stack = state.zones.stack;
+  if (!Array.isArray(stack) || stackStart >= stack.length || stackStart < 0) return;
+  const segment = stack.slice(stackStart);
+  if (!segment.every((id) => state.objects.get(id)?.kind === 'trigger')) return;
+  const activeId = state.turn?.activePlayerId ?? null;
+  const players = (state.players ?? []).map((player) => player.id);
+  const activeIndex = players.indexOf(activeId);
+  // Kolejność tur od gracza aktywnego (CR 101.4); przy braku gracza aktywnego
+  // zostaje kolejność z listy graczy.
+  const order = activeIndex === -1
+    ? [...players, null]
+    : [...players.slice(activeIndex), ...players.slice(0, activeIndex), null];
+  const rank = (id) => {
+    const controllerId = state.objects.get(id)?.controllerId ?? null;
+    const index = order.indexOf(controllerId);
+    return index === -1 ? order.length : index; // bez kontrolera = na końcu
+  };
+  const sorted = segment
+    .map((id, index) => ({ id, index }))
+    .sort((a, b) => rank(a.id) - rank(b.id) || a.index - b.index)
+    .map((entry) => entry.id);
+  for (let i = 0; i < sorted.length; i += 1) stack[stackStart + i] = sorted[i];
+}
+
 export function processTriggers(state, recentEvents) {
   const stateEventsStart = state.events.length;
   const produced = processTriggersScan(state, recentEvents);
@@ -2026,6 +2069,10 @@ export function processTriggers(state, recentEvents) {
 
 function processTriggersScan(state, recentEvents) {
   const events = [];
+  // M382 (CR 603.3b): wpisy stosu dodane przez TEN skan tworzą jedną partię
+  // zdolności wyzwolonych od ostatniego priorytetu — na końcu skanu
+  // przestawiamy je w kolejność APNAP (patrz helper niżej).
+  const stackStart = state.zones.stack.length;
   // Kontrolerzy, których permanenty opuściły pole bitwy w tej komendzie —
   // trigger „one or more permanents you control leave the battlefield"
   // odpala się RAZ na komendę, nie raz na permanent (CR 603.2).
@@ -3519,6 +3566,12 @@ function processTriggersScan(state, recentEvents) {
       fireEnterBattlefieldTriggers(state, entered, events, { enteredTapped: marker.enteredTapped });
     }
   }
+  // M382 (CR 603.3b): partia zdolności wyzwolonych w tym skanie idzie na stos
+  // w kolejności APNAP — bez tego o kolejności decydowała kolejność wstawienia
+  // obiektów do `state.objects` (praktycznie kolejność wejścia permanentów na
+  // pole bitwy), więc gdy permanent gracza nieaktywnego był wcześniejszy, jego
+  // zdolność rozstrzygała się OSTATNIA zamiast pierwszej.
+  placeTriggerBatchInApnapOrder(state, stackStart);
   // Uwaga: zdarzenia triggerów są JUŻ w state.events — fireTrigger i bloki
   // kroków dopisują je przy tworzeniu, a lokalny `events` zbiera wyłącznie
   // wycinki state.events (slice(before)). Ponowny push duplikowałby każde
