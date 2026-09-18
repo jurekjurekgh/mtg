@@ -826,6 +826,32 @@ export function hasCreatureType(object, subtype, state = null) {
     || (object.keywordGrants ?? []).includes('changeling');
 }
 
+/**
+ * Czy obiekt pasuje do kwalifikatora PODTYPÓW (szukanie w bibliotece: „Plains
+ * card", typecycling, channel). JEDNO miejsce tej reguły (L41) — wcześniej
+ * każda ścieżka miała własną kopię, a `librarySearchMatches` używała do
+ * podtypów `hasCreatureType`.
+ *
+ * CR 702.73a: changeling czyni obiekt KAŻDYM TYPEM STWORÓW — nie każdym
+ * podtypem. Dlatego:
+ *  - `subtypes` to ZWYKŁE podtypy z linii typów (lądy: Plains/Mountain/Swamp,
+ *    artefakty: Equipment, enchantmenty: Saga/Aura) — bez changelinga;
+ *  - `creatureTypes` to typy STWORÓW — tu (i tylko tu) changeling pasuje.
+ *
+ * M385 (znalezisko srebrnej odznaki): changeling w bibliotece był kandydatem
+ * na „Plains card" Kor Cartographera (i „Mountain card" Call the Mountain
+ * Chocobo) właśnie przez `hasCreatureType` użyte dla podtypu lądu.
+ */
+export function matchesSubtypeQualifier(object, qualifier) {
+  const subtypes = qualifier?.subtypes ?? [];
+  const creatureTypes = qualifier?.creatureTypes ?? [];
+  const subtypeOk = subtypes.length === 0
+    || subtypes.some((subtype) => effectiveSubtypes(object).includes(subtype));
+  const creatureOk = creatureTypes.length === 0
+    || creatureTypes.some((subtype) => hasCreatureType(object, subtype));
+  return subtypeOk && creatureOk;
+}
+
 /** Efektywne podtypy stwora na polu bitwy — własne + granty załączników. */
 export function effectiveSubtypesOnBattlefield(state, object) {
   // B4 (audyt PR #113, F7): część „własna" idzie przez `effectiveSubtypes`,

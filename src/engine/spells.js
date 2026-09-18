@@ -5,7 +5,7 @@ import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
-import { hasCreatureType, isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, transformedCharacteristics, grantAbilitiesUntilEndOfTurn } from './permanents.js';
+import { hasCreatureType, matchesSubtypeQualifier, isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, transformedCharacteristics, grantAbilitiesUntilEndOfTurn } from './permanents.js';
 import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter, grantGift, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
@@ -1620,6 +1620,9 @@ function resolveActivatedAbilityEntry(state, entry) {
       const searchQualifier = {
         types: qualifier?.allTypes ?? qualifier?.types ?? [],
         subtypes: qualifier?.subtypes ?? [],
+        // M385: typy stworów mają własny klucz (changeling pasuje tylko tu,
+        // CR 702.73a) — przenoszone razem z resztą kwalifikatora.
+        creatureTypes: qualifier?.creatureTypes ?? [],
       };
       const candidates = state.zones.library.filter((id) => {
         const candidate = state.objects.get(id);
@@ -1627,7 +1630,9 @@ function resolveActivatedAbilityEntry(state, entry) {
         const types = searchQualifier.types;
         const subtypes = searchQualifier.subtypes;
         const typeOk = types.length === 0 || types.every((t) => (candidate.types ?? []).includes(t));
-        const subtypeOk = subtypes.length === 0 || subtypes.some((s) => (candidate.subtypes ?? []).includes(s));
+        // M385: wspólny predykat podtypów (changeling wyłącznie dla typów
+        // stworów) — ta sama reguła co w librarySearchMatches (L41).
+        const subtypeOk = matchesSubtypeQualifier(candidate, searchQualifier);
         return typeOk && subtypeOk;
       });
       if (candidates.length === 0) {
