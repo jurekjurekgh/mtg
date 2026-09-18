@@ -306,76 +306,28 @@ export function declareBlockers(state, playerId, assignments) {
   for (const [attackerId, blockerIds] of Object.entries(assignments)) {
     if (!state.combat.attackers.includes(attackerId)) throw new Error('Blokowanie nieistniejącego atakującego');
     const attacker = getCreature(state, attackerId);
-    if (attacker.cantBeBlocked) throw new Error('Stwora z cantBeBlocked nie można blokować');
-    if (cantBeBlockedFromEquipment(state, attacker)) throw new Error('Nosiciel equipmentu z progiem mocy nie może być blokowany');
     const ids = blockerIds.map((id) => getCreature(state, id));
-    // Dread Warlock: „can't be blocked except by black creatures".
-    const blockColors = attackerBlockColorRestriction(state, attacker);
-    if (blockColors && ids.some((b) => !(effectiveColors(b).some((c) => blockColors.includes(c))))) {
-      throw new Error('Stwora z „can\'t be blocked except by [kolor]" może blokować tylko stwór tego koloru');
-    }
-    // Blazing Torch: „can't be blocked by Vampires or Zombies" — spójnie
-    // z ofertą (canBlock), bo execute musi odrzucić złą komendę (L48).
-    const blockSubtypes = attackerBlockSubtypeRestriction(state, attacker);
-    if (blockSubtypes && ids.some((b) => blockSubtypes.some((sub) => hasCreatureType(b, sub, state)))) {
-      throw new Error('Stwora z „can\'t be blocked by [podtyp]" nie może blokować stwór tego podtypu');
-    }
-    // Landwalk (forestwalk): obrońca kontrolujący Forest nie może blokować.
-    const landwalkSub = attackerLandwalkSubtype(state, attacker);
-    if (landwalkSub && controlsLandWithSubtype(state, playerId, landwalkSub)) {
-      throw new Error(`Stwora z landwalkiem (${landwalkSub}) nie może blokować obrońca z takim lądem`);
-    }
     if (ids.some((object) => object.controllerId !== playerId || object.tapped)) throw new Error('Nielegalny blokujący');
-    // Detain (CR 701.29, M177/E) — walidacja niezależna od oferty (L48:
-    // dwie ścieżki jak przy intimidate).
-    if (ids.some((object) => object.detained)) throw new Error('Zatrzymany (detain) stwór nie może blokować');
     // Ograniczenia z załączników (Hobble: „can't block if it's black") —
     // walidacja niezależna od enumeracji (execute musi odrzucić zła komendę).
     if (ids.some((object) => creatureCantBlock(object, state) || attachmentRestrictions(state, object).cantBlock)) throw new Error('Nielegalny blokujący');
+    // M380 (L41/L48): restrykcje PAROWE ewazji i „can't block" czytamy z
+    // JEDNEGO źródła (`blockRestrictionError` — ten sam kod, który decyduje
+    // o ofercie w canBlock). Ręczna kopia tej listy nie miała progu mocy
+    // (Rust-Shield Rampager), więc komenda z nielegalnym blokerem przechodziła.
+    for (const blocker of ids) {
+      const violation = blockRestrictionError(state, attacker, blocker);
+      if (violation) throw new Error(violation);
+    }
     // „Can't block alone" (Ember Beast, CR 509.1c): stwór może blokować tylko,
     // gdy tego samego atakującego blokuje też co najmniej jeden inny stwór.
     if (ids.length === 1 && ids.some((object) => hasAloneRestriction(object, 'cantBlockAlone'))) {
       throw new Error('Stwór z „can\'t block alone\" musi blokować z co najmniej jednym innym stworem');
     }
-    // Flying/reach (CR 702.9/702.17): atakującego z lataniem mogą blokować
-    // wyłącznie stwory z lataniem albo zasięgiem.
-    const cantBlockFlyer = (object) => !hasKeyword(state, object, 'flying') && !hasKeyword(state, object, 'reach');
-    if (hasKeyword(state, attacker, 'flying') && ids.some(cantBlockFlyer)) {
-      throw new Error('Atakującego z lataniem blokują tylko stwory z lataniem lub zasięgiem');
-    }
-    // Intimidate (CR 702.13, M174/D): blokować mogą wyłącznie artefaktowe
-    // stwory i/lub stwory dzielące kolor z atakującym (walidacja = canBlock).
-    if (hasKeyword(state, attacker, 'intimidate')) {
-      for (const blocker of ids) {
-        const blockerIsArtifact = (blocker.types ?? []).includes('Artifact');
-        const sharesColor = effectiveColors(blocker).some((c) => effectiveColors(attacker).includes(c));
-        if (!blockerIsArtifact && !sharesColor) {
-          throw new Error('Intimidate: blokują tylko artefaktowe stwory albo stwory o wspólnym kolorze');
-        }
-      }
-    }
-    // Menace (CR 702.110): atakującego z menace nie może blokować pojedynczy
-    // stwór — tylko dwóch lub więcej (albo nikt).
+    // Menace (CR 702.110/509.1c): atakującego z menace nie może blokować
+    // pojedynczy stwór — tylko dwóch lub więcej (albo nikt).
     if (hasKeyword(state, attacker, 'menace') && ids.length === 1) {
       throw new Error('Stwora z menace może blokować wyłącznie dwóch lub więcej stworów');
-    }
-    // Protection (CR 702.16f): atakujący z ochroną przed kolorem nie może
-    // być blokowany przez stwory tego koloru. Walidacja spójna z canBlock.
-    const attackerProtection = effectiveProtectionFromColors(state, attacker);
-    if (attackerProtection.length > 0) {
-      for (const blocker of ids) {
-        const blockerColors = effectiveColors(blocker);
-        if (blockerColors.some(c => attackerProtection.includes(c))) {
-          throw new Error('Chroniony stwór nie może być blokowany przez stwora tego koloru');
-        }
-      }
-    }
-    // M109 (Spare from Evil, CR 702.16f): ochrona przed JAKOŚCIĄ — atakującego
-    // nie może blokować stwór mający tę jakość (np. nie-Człowiek).
-    for (const blocker of ids) {
-      if (isProtectedFromSource(state, attacker, blocker)) {
-        throw new Error('Chroniony stwór nie może być blokowany przez stwora o tej jakości');
-      }
     }
     // M166/E: blokujący z „can block an additional creature" (statyka
     // Cenn's Tactician) może zostać przypisany do drugiego atakującego.
@@ -1556,59 +1508,91 @@ export function attackerBlockPowerRestriction(state, attacker) {
   return null;
 }
 
-/** Czy dany blocker może blokować danego atakującego (reguła latania/zasięgu). */
-function canBlock(state, attacker, blocker) {
-  if (!attacker || !blocker) return false;
+/**
+ * M380 (ODZNAKA, CR 509.1b + L41): JEDNO ŹRÓDŁO PRAWDY o PAROWEJ legalności
+ * bloku — „czy ten bloker może blokować tego atakującego". Zwraca komunikat
+ * naruszenia albo `null`. Korzystają z niej OBIE strony kontraktu L48:
+ *  • `canBlock` — enumeracja oferty (`legalBlockerOptions`, panel bloków),
+ *  • `declareBlockers` — walidacja komendy (turn-based action, CR 509.1).
+ *
+ * Przed M380 walidacja miała WŁASNĄ, ręcznie utrzymywaną kopię tej listy
+ * i nie zawierała `attackerBlockPowerRestriction` („This creature can't be
+ * blocked by creatures with power N or less", Rust-Shield Rampager):
+ * komenda `declare_blockers { ram: ['b2'] }` (bloker o mocy 2) była
+ * PRZYJMOWANA, mimo że oferta jej nie zawierała — czyli dokładnie złamany
+ * kontrakt „oferta = walidacja" (CR 509.1b: „If any restrictions are being
+ * disobeyed, the declaration of blockers is illegal"; CR 509.1: „the game
+ * returns to the moment before the declaration"). Rozjazd był możliwy,
+ * bo każda nowa restrykcja wymagała dopisania się w DWÓCH miejscach;
+ * teraz wymaga jednej.
+ */
+function blockRestrictionError(state, attacker, blocker) {
   // Detain (CR 701.29, M177/E): zatrzymany stwór nie blokuje.
-  if (blocker.detained) return false;
-  // CR 701.38b: goad nakłada WYŁĄCZNIE wymogi ataku („attacks each combat if
-  // able”, „attacks a player other than the goader if able”). Nie mówi nic
-  // o blokowaniu — goadowany stwór blokuje normalnie. Wcześniej silnik
-  // zabraniał mu blokowania, co odbierało obrońcy legalne bloki.
-  // Dread Warlock (CR): „can't be blocked except by black creatures" — bloker
+  if (blocker.detained) return 'Zatrzymany (detain) stwór nie może blokować';
+  // Dread Warlock: „can't be blocked except by black creatures" — bloker
   // musi mieć jeden z dozwolonych kolorów.
   const blockColors = attackerBlockColorRestriction(state, attacker);
   if (blockColors) {
     const blockerColors = effectiveColors(blocker);
-    if (!blockerColors.some((c) => blockColors.includes(c))) return false;
+    if (!blockerColors.some((c) => blockColors.includes(c))) {
+      return 'Stwora z „can\'t be blocked except by [kolor]" może blokować tylko stwór tego koloru';
+    }
   }
-  // Blazing Torch (CR): „can't be blocked by Vampires or Zombies" — bloker
+  // Blazing Torch: „can't be blocked by Vampires or Zombies" — bloker
   // o zakazanym podtypie nie może blokować (podtypy efektywne, jak w walce).
   const blockSubtypes = attackerBlockSubtypeRestriction(state, attacker);
-  if (blockSubtypes) {
-    if (blockSubtypes.some((sub) => hasCreatureType(blocker, sub, state))) return false;
+  if (blockSubtypes && blockSubtypes.some((sub) => hasCreatureType(blocker, sub, state))) {
+    return 'Stwora z „can\'t be blocked by [podtyp]" nie może blokować stwór tego podtypu';
   }
   // Rust-Shield Rampager: bloker o efektywnej mocy <= próg nie może blokować
-  // (moc po pumpach/licznikach — CR 702.x; już wykonany blok zostaje).
+  // (moc po pumpach/licznikach — CR 509.1b; już wykonany blok zostaje,
+  // ruling WotC 2024-07-26 dla Rust-Shield Rampager).
   const maxBlockPower = attackerBlockPowerRestriction(state, attacker);
-  if (maxBlockPower != null && effectivePower(blocker, state) <= maxBlockPower) return false;
+  if (maxBlockPower != null && effectivePower(blocker, state) <= maxBlockPower) {
+    return `Stwora z „can\'t be blocked by creatures with power ${maxBlockPower} or less" nie może blokować stwór o takiej mocy`;
+  }
   // Landwalk (CR 702.14, forestwalk): atakujący nie może być blokowany, gdy
   // OBRONCA kontroluje ląd o podtypie landwalka (defender = kontroler blokera).
   const landwalkSub = attackerLandwalkSubtype(state, attacker);
-  if (landwalkSub && controlsLandWithSubtype(state, blocker.controllerId, landwalkSub)) return false;
-  if (attacker.cantBeBlocked) return false;
-  if (cantBeBlockedFromEquipment(state, attacker)) return false;
+  if (landwalkSub && controlsLandWithSubtype(state, blocker.controllerId, landwalkSub)) {
+    return `Stwora z landwalkiem (${landwalkSub}) nie może blokować obrońca z takim lądem`;
+  }
+  if (attacker.cantBeBlocked) return 'Stwora z cantBeBlocked nie można blokować';
+  if (cantBeBlockedFromEquipment(state, attacker)) return 'Nosiciel equipmentu z progiem mocy nie może być blokowany';
   // Intimidate (CR 702.13, M174/D — Predator's Gambit): atakujący może być
   // blokowany wyłącznie przez ARTEFAKTOWE stwory i/lub stwory dzielące
   // z nim kolor.
   if (hasKeyword(state, attacker, 'intimidate')) {
     const blockerIsArtifact = (blocker.types ?? []).includes('Artifact');
     const sharesColor = effectiveColors(blocker).some((c) => effectiveColors(attacker).includes(c));
-    if (!blockerIsArtifact && !sharesColor) return false;
+    if (!blockerIsArtifact && !sharesColor) {
+      return 'Intimidate: blokują tylko artefaktowe stwory albo stwory o wspólnym kolorze';
+    }
   }
-  if (hasKeyword(state, attacker, 'flying') && !hasKeyword(state, blocker, 'flying') && !hasKeyword(state, blocker, 'reach')) return false;
-  // Protection (CR 702.16f): atakujący z ochroną przed kolorem NIE MOŻE
-  // być blokowany przez stwory tego koloru. Sprawdzamy ochronę ATAKUJĄCEGO
-  // vs kolory blokera (nie odwrotnie).
+  // Flying/reach (CR 702.9/702.17).
+  if (hasKeyword(state, attacker, 'flying')
+    && !hasKeyword(state, blocker, 'flying') && !hasKeyword(state, blocker, 'reach')) {
+    return 'Atakującego z lataniem blokują tylko stwory z lataniem lub zasięgiem';
+  }
+  // Protection (CR 702.16f): atakujący z ochroną przed kolorem nie może
+  // być blokowany przez stwory tego koloru.
   const attackerProt = effectiveProtectionFromColors(state, attacker);
-  if (attackerProt.length > 0) {
-    const blockerColors = effectiveColors(blocker);
-    if (blockerColors.some(c => attackerProt.includes(c))) return false;
+  if (attackerProt.length > 0 && effectiveColors(blocker).some((c) => attackerProt.includes(c))) {
+    return 'Chroniony stwór nie może być blokowany przez stwora tego koloru';
   }
   // M109 (CR 702.16f): ochrona przed jakością blokera (Spare from Evil).
-  if (isProtectedFromSource(state, attacker, blocker)) return false;
-  return true;
+  if (isProtectedFromSource(state, attacker, blocker)) {
+    return 'Chroniony stwór nie może być blokowany przez stwora o tej jakości';
+  }
+  return null;
 }
+
+/** Czy dany blocker może blokować danego atakującego (oferta: latanie, ochrona, ewazje). */
+function canBlock(state, attacker, blocker) {
+  if (!attacker || !blocker) return false;
+  return blockRestrictionError(state, attacker, blocker) === null;
+}
+
 
 /** Czy przypisanie spełnia menace: atakujący ma 0 albo ≥2 blokujących (CR 702.110b). */
 function satisfiesMenace(state, attackerId, blockerIds) {

@@ -5560,3 +5560,55 @@ pin (C) porównuje KAŻDE pole z `gameObjectDataOf(card)` z obiektem gry po
 partii: deskryptor na obiekcie z biblioteki, oferta dopłaty, 1/1 token-kopia
 oraz kontrola negatywna (zwykły rzut bez tokenu). RED 3/4 → GREEN 4/4.
 Bramy: `npm test` i `npm run build` — wyniki w opisie commita.
+
+## M380 (2026-09-18) — legalność bloku ma jedno źródło prawdy (CR 509.1b + L41)
+
+Wyzwanie „brązowa odznaka" (ADR 0030), znalezisko #3: **walidacja
+`declare_blockers` przyjmowała nielegalny blok, którego oferta nie zawierała**.
+Rust-Shield Rampager („This creature can't be blocked by creatures with power 2
+or less") — para atakujący/bloker o mocy 2:
+
+ 1. `legalBlockerOptions`/`playerView` NIE oferują tej pary
+    (`canBlock` zna `attackerBlockPowerRestriction`),
+ 2. ręcznie utrzymywana kopia restrykcji w `declareBlockers` tego progu NIE
+    miała, więc komenda `declare_blockers { ram: ['b2'] }` była PRZYJMOWANA:
+    `state.combat.blockers = [['ram', ['b2']]]`, atakujący stawał się
+    „zablokowany" (obrażenia szły w blokera zamiast w gracza).
+
+CR 509.1: „If at any point during the declaration of blockers, the defending
+player is unable to comply with any of the steps listed below, the declaration
+is illegal"; CR 509.1b: „The defending player checks each creature they control
+to see whether it's affected by any restrictions (…). If any restrictions are
+being disobeyed, the declaration of blockers is illegal. A restriction may be
+created by an evasion ability…"; CR 509.1a: „The chosen creatures must be
+untapped". Ruling WotC 2024-07-26 (Rust-Shield Rampager): obniżenie mocy
+blokera PO legalnej deklaracji nie usuwa go z walki — czyli próg mocy jest
+sprawdzany (tylko) przy deklaracji, co potwierdza kierunek fixu.
+
+Root cause (L41 — dwa źródła prawdy): `canBlock` (oferta) i lista sprawdzeń
+w `declareBlockers` (walidacja) opisywały tę samą regułę niezależnie; każda
+nowa restrykcja wymagała dopisania się w dwóch miejscach i próg mocy został
+pominięty. To ta sama klasa co M378, ale inna reguła (legalność deklaracji
+bloków, nie przypisanie obrażeń).
+
+Fix (root cause): jedno `blockRestrictionError(state, attacker, blocker)`
+zwracające komunikat naruszenia albo `null`; `canBlock` = `=== null`, a
+`declareBlockers` rzuca komunikat tej samej funkcji dla każdej pary. Sprawdzenia
+wieloparowe (menace, „can't block alone", sloty bloków) zostają lokalne, bo
+opisują deklarację, nie parę. Zachowane komunikaty istniejących sprawdzeń.
+
+Źródła online (dostęp 2026-09-18): CR 509.1/509.1a/509.1b —
+https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt
+(efektywne 2026-08-07); Oracle i rulings karty —
+https://api.scryfall.com/cards/named?exact=Rust-Shield%20Rampager,
+https://api.scryfall.com/cards/c96b01f5-83de-4237-a68d-f946c53e31a6/rulings.
+
+Piny: `test/m380-restrykcje-bloku-jedno-zrodlo.test.js` (4; RED 3/4 → GREEN
+4/4). (A) próg mocy: para z oferty = przyjęta, para spoza oferty = odrzucona,
+(B) odrzucenie ATOMOWE (krok i `state.combat` bez zmian — CR 509.1 „the game
+returns to the moment before the declaration"), (C) liczy się moc EFEKTYWNA
+(licznik +1/+1 podnosi 2 → 3 i blok jest legalny), (D) strażnik klasy L48:
+macierz atakujący×bloker (latanie/zasięg, menace, detain, „can't block",
+cantBeBlocked, próg mocy) sprawdza „w ofercie" ⇔ „komenda przyjęta" — na kodzie
+sprzed M380 scenariusz `ram <= p2` daje oferta=false, komenda=true. Bramy:
+`npm test` i `npm run build` — wyniki w opisie commita.
