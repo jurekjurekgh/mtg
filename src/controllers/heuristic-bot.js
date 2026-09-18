@@ -4216,6 +4216,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
             }
           }
+          // Uwaga B właściciela z testów (2026-09-18, Epic Experiment):
+          // „Ta karta ma jakikolwiek sens jeśli X>0, im większe X tym lepiej
+          // (chyba że bot ma wyczerpaną talię)”. Bez wyceny wszystkie warianty
+          // X dostawały identyczne P.spellBase — rzut za {U}{R} z X=0 nie robi
+          // NIC, a wygrywał (klasa L50). Wartość: szansa darmowych rzutów
+          // rośnie z X (zawartość biblioteki jest ukryta — FoW, liczymy po
+          // rozmiarze, L132); ryzyko: docięcie własnej biblioteki
+          // (CR 121.4/704.5b — drawDeckingPenalty bije dopiero przy dnie,
+          // więc zdrowa biblioteka nie ogranicza X). amount 'X' jest tu już
+          // rozwiązany do cmd.xValue (M237/1).
+          if (effect.type === 'epic_experiment') {
+            const X = Number.isInteger(effect.amount) ? effect.amount : 0;
+            if (X <= 0) {
+              score -= 80; // X=0: czar nie robi nic — gorzej niż pass
+            } else {
+              score += 5 * X + drawDeckingPenalty(view, X);
+            }
+          }
           // M174/B (Toll of the Invasion — strażnik L51): amass buduje WŁASNĄ
           // Armię niezależnie od celu czaru — stały zysk (token/licznik).
           if (effect.type === 'amass') {
