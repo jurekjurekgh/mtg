@@ -5836,3 +5836,60 @@ przywołania blokuje nadany outlast (koszt {T}, CR 302.6 + Release Notes),
 (E) „Other Sliver creatures" nie nadaje outlastu samemu źródłu.
 Bramy: `npm test` 5764/5764, `npm run build` 64 moduły / 3825,6 kB.
 
+## M385 — Changeling jako kandydat „Plains card" w szukaniu w bibliotece (srebro #3)
+
+Znalezisko #3 wyzwania „srebrna odznaka". `librarySearchMatches`
+(`src/engine/effects.js`) dopasowywało podtypy kwalifikatora szukania przez
+`hasCreatureType` (`src/engine/permanents.js`). Ta funkcja świadomie rozszerza
+dopasowanie o changeling — dla TYPÓW STWORÓW jest to poprawne (CR 702.73a:
+„This object is every creature type"), ale podtypy nie-stworze (typy lądów,
+artefaktów, enchantmentów) szły TĄ SAMĄ ścieżką. Changeling w bibliotece był
+więc kandydatem „Plains card" (Kor Cartographer), „Mountain card" (Call the
+Mountain Chocobo) i „Swamp card" (Swampcycling Gloomfang Maulera), a także
+Aura/Saga/Equipment. Martwa kopia tej samej reguły (`matchesCyclingQualifier`
+w `src/engine/abilities.js`) powtarzała błąd (klasa L41 — dwie kopie jednej
+reguły).
+
+Źródła online (ADR 0030, dostęp 2026-09-18):
+- CR TXT `media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt`
+  (efektywne 2026-08-07), chunk 68: **702.73a** „Changeling is a
+  characteristic-defining ability. »Changeling« means »This object is every
+  creature type.« This ability works everywhere, even outside the game."
+- ten sam dokument, chunk 20: **205.3i** „Lands have their own unique set of
+  subtypes; these subtypes are called land types. The land types are Cave,
+  Desert, Forest, Gate, Island, Lair, Locus, Mine, Mountain, Plains, Planet,
+  Power-Plant, Sphere, Swamp, Tower, Town, and Urza's. Of that list, Forest,
+  Island, Mountain, Plains, and Swamp are the basic land types." oraz
+  **205.3m** (lista typów stworów; Plains/Mountain/Swamp na niej NIE ma).
+- mtg.wiki/Changeling (cytat CR + Lorwyn Rules Primer): changeling działa we
+  wszystkich strefach, ale wyłącznie dla typów stworów („reveal a Merfolk
+  card … return a Goblin card … gain control of a Goat").
+- Scryfall Kor Cartographer (Oracle: „When this creature enters, you may
+  search your library for a Plains card, put it onto the battlefield tapped,
+  then shuffle."; rulings WotC puste), Call the Mountain Chocobo (Oracle
+  „Search your library for a Mountain card, reveal it, put it into your hand,
+  then shuffle. …"), Gloomfang Mauler (Oracle „Swampcycling {2} … Search your
+  library for a Swamp card …").
+
+Objaw (sonda `probe-s9.mjs`): w bibliotece leżał changeling (Barkform
+Harvester); po rzuceniu Kor Cartographera lista kandydatów zawierała go obok
+prawdziwej karty Plains. Bez fixu changeling przechodził predykat dla
+Plains/Goblin/Aura/Saga/Equipment/Sliver; zwykły stwór i podstawowy ląd
+odrzucane zgodnie z regułami.
+
+Root cause i fix u źródła (ADR 0016): nowy wspólny predykat
+`matchesSubtypeQualifier` (`permanents.js`) rozdziela domeny — `subtypes`
+czytane z linii typów przez `effectiveSubtypes` (bez changelinga), a
+`creatureTypes` (nowy klucz kwalifikatora) przez `hasCreatureType` (z
+changelingiem). `librarySearchMatches` i ścieżka typecycling/channel
+(`__cycling_resolve__` w `spells.js`) używają tego samego predykatu; usunięto
+martwą kopię `matchesCyclingQualifier`. Efekt: „Plains card" nie znajduje już
+changelinga, a wyszukiwania typów stworów nadal działają.
+
+Piny: `test/m385-changeling-kwalifikator-podtypow.test.js` (5; RED 4/5 →
+GREEN 5/5). (A) predykat: changeling nie pasuje na Plains/Mountain/Swamp/
+Equipment/Saga/Aura, pasuje na typy stworów, (B) kontrola — podtypy z linii
+typów (w tym nie-basic ląd z podtypem Plains), (C) Kor Cartographer
+end-to-end (oferta bez changelinga, ląd wchodzi tapnięty), (D) Swampcycling
+end-to-end, (E) Call the Mountain Chocobo end-to-end.
+Bramy: `npm test` 5769/5769, `npm run build` 64 moduły / 3826,5 kB.
