@@ -5520,3 +5520,43 @@ Piny: `test/m378-bronacy-gracz-z-meczu.test.js` (5; RED 3/5 → GREEN 5/5:
 spreparowana komenda odrzucona, brak pola = obrażenia do atakowanego,
 kontrola poprawna, ścieżka trucizny infect, kontrola z blokerem). Bramy:
 `npm test` 5737/5737, `npm run build` OK.
+
+## M379 (2026-09-18) — offspring ginął w ścieżce talii (CR 702.175a)
+
+Wyzwanie „brązowa odznaka" (ADR 0030), znalezisko #2: **deskryptor
+`offspring` nie docierał do obiektu gry w prawdziwej partii**. `createCardDeck`
+(materialize.js) kładzie go na wpisie talii, `gameObjectDataOf` niesie go do
+helperów testowych (`...gameObjectDataOf(def)`) — ale jawna lista pól w
+`installDeck` (src/engine/deck.js) go nie przenosiła, więc obiekt gry miał
+`offspring === null`. Skutki (CR 702.175a):
+
+ 1. brak oferty `cast_permanent { offspring: true }` (bramka `if
+    (object.offspring)` w game-state.js) — gracz nie mógł zapłacić dodatkowego
+    {2} („You may pay an additional [cost] as you cast this spell"),
+ 2. ETB-trigger `create_offspring_token` nigdy nie odpalał — 1/1 token-kopia
+    nie powstawał („When this permanent enters, if its offspring cost was
+    paid, create a token that's a copy of it, except it's 1/1").
+
+Klasa defektu jest znana z L21/M258 (echo, surge, warp, madness, toxic — „ta
+sama lista pól", „mechaniki martwe w PRAWDZIWYCH partiach przy zielonych
+testach"). Wszystkie istniejące piny offspring (Batch 53) budowały obiekt
+obok tej ścieżki, dlatego defekt był niewidoczny dla `npm test`.
+
+Źródła online (dostęp 2026-09-18): CR 702.175a (treść reguły) oraz Oracle
+i rulings WotC przez Scryfall
+(https://api.scryfall.com/cards/named?exact=Rust-Shield%20Rampager,
+https://api.scryfall.com/cards/c96b01f5-83de-4237-a68d-f946c53e31a6/rulings —
+„You can pay an offspring cost only once as you cast a spell with offspring.",
+„The token copies exactly what was printed on the original creature and
+nothing else, except it's a 1/1.", „If the spell resolves but the creature with
+offspring leaves the battlefield before the offspring ability resolves, you'll
+still create a token copy of it.").
+
+Fix (surgical, root cause): `installDeck` przenosi `offspring: card.offspring
+?? null`. Strażnik klasy L21: `test/m379-offspring-w-prawdziwej-talii.test.js`
+pin (C) porównuje KAŻDE pole z `gameObjectDataOf(card)` z obiektem gry po
+`installDecks` na wszystkich wspieranych kartach (przed fixem: 1 rozjazd —
+`offspring` na Rust-Shield Rampager; po: 0). Piny (A)+(B) idą realną drogą
+partii: deskryptor na obiekcie z biblioteki, oferta dopłaty, 1/1 token-kopia
+oraz kontrola negatywna (zwykły rzut bez tokenu). RED 3/4 → GREEN 4/4.
+Bramy: `npm test` i `npm run build` — wyniki w opisie commita.

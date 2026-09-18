@@ -62,6 +62,25 @@ export function installDeck(state, deck, { seed }) {
       backup: card.backup,
       devour: card.devour,
       endure: card.endure,
+      // M379 (ODZNAKA, L21/M258 — ta sama klasa co echo/surge/warp/madness):
+      // offspring (Rust-Shield Rampager, CR 702.175a) był JEDYNYM
+      // deskryptorem, który ginął w tej jawnej liście pól. `createCardDeck`
+      // kładł go na wpisie talii, `gameObjectDataOf` niósł go do helperów
+      // testowych — a obiekt gry w PRAWDZIWEJ partii miał
+      // `offspring === null`, więc:
+      //  • oferta `cast_permanent { offspring: true }` (game-state.js ~7756,
+      //    bramka `if (object.offspring)`) nie istniała — gracz nie mógł
+      //    zapłacić dodatkowego {2} (CR 702.175a, „You may pay an additional
+      //    [cost] as you cast this spell"),
+      //  • ETB-trigger `create_offspring_token` nie miał czego skopiować,
+      //    więc 1/1 token-kopia nigdy nie powstawał.
+      // Wszystkie istniejące testy offspring (real-cards-batch53) budowały
+      // obiekt przez `...gameObjectDataOf(def)`, czyli obok tej ścieżki —
+      // dlatego defekt był niewidoczny (lekcja L21: test MUSI iść realną
+      // drogą talii, inaczej mierzy helper, nie grę). Strażnik katalogowy:
+      // test/m379-offspring-w-prawdziwej-talii.test.js sprawdza teraz każde
+      // pole z `gameObjectDataOf` na WSZYSTKICH 482 wspieranych kartach.
+      offspring: card.offspring ?? null,
       colors: card.colors,
       phyrexianManaCost: card.phyrexianManaCost,
       // M113: warunkowa obniżka kosztu permanentu (Academy Journeymage) —
