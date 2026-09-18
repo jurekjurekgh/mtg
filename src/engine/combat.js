@@ -424,6 +424,23 @@ export function declareBlockers(state, playerId, assignments) {
  */
 export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
   if (!state.combat) throw new Error('Brak combat');
+  // M378 (CR 508.1b/510.1b): broniący się gracz to FAKT STANU GRY (ten, którego
+  // atakują), a nie parametr komendy. Dowód: `resolve_combat` niósł
+  // `defendingPlayerId` z `cmd` bez walidacji, a `dealCombatDamageToPlayer`
+  // dla NIEBLOKOWANEGO atakującego brał właśnie ten parametr — więc komenda
+  // z podmienionym id kierowała obrażenia do gracza, którego nikt nie atakuje
+  // (atakujący p1 zadawał obrażenia p1), a komenda bez pola odrzucała się
+  // W TRAKCIE rozstrzygania („Zmiana życia wymaga gracza…" / trucizna:
+  // „Dodanie znaczników trucizny wymaga gracza…"), gubiąc obrażenia.
+  // Ścieżka trample'owa liczyła już gracza ze stanu (`defendingPlayerIdOf`) —
+  // teraz jest JEDNO źródło prawdy dla całego rozstrzygania.
+  const derivedDefendingPlayerId = defendingPlayerIdOf(state);
+  if (defendingPlayerId != null && defendingPlayerId !== derivedDefendingPlayerId) {
+    throw new Error('Broniący się gracz nie jest graczem atakowanym w tej walce');
+  }
+  // Normalizacja: dalej liczy się wyłącznie wartość ze stanu gry (parametr
+  // bywa pominięty przez klienta; `null` przy braku przeciwnika zostaje).
+  const defenderId = derivedDefendingPlayerId;
   const events = [];
   // BUG 2026-08-11 (CR 510.4/510.5): `resume.pass` to boolean (true = przebieg
   // first strike, false = zwykły) i NIE wolno go używać jako indeksu tablicy
@@ -484,7 +501,7 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
     // ATAKUJĄCEGO (CR 510.1c/d). Gdy przebieg napotka taką sytuację, ustawia
     // pendingDamageAssignment i kończy komendę — reszta przebiegu wykona się
     // po resolve_damage_assignment (resume).
-    if (!processCombatPass(state, pass, events, defendingPlayerId, from, assignments, phase, secondPassCall)) {
+    if (!processCombatPass(state, pass, events, defenderId, from, assignments, phase, secondPassCall)) {
       return events;
     }
     assignments = null;
@@ -494,7 +511,7 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
       // przebiegu (CR 510.4/510.5 w minimalnym wymiarze).
       events.push(...runStateBasedActions(state));
       if (state.pendingReplacementChoice) {
-        state.pendingReplacementChoice.continuations.push({combatResume:{defendingPlayerId,pass:false,resumeFrom:0}});
+        state.pendingReplacementChoice.continuations.push({combatResume:{defendingPlayerId:defenderId,pass:false,resumeFrom:0}});
         return events;
       }
     }
@@ -502,7 +519,7 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
   // M360/B3: pierwszy krok zrobiony, drugi czeka na rundę priorytetu (CR 510.3)
   // — combat trwa, flaga woła drugi resolve_combat zamiast skoku kroku.
   if (!secondPassCall && splitSteps && state.combat && state.status === 'active') {
-    state.pendingCombatSecondPass = { defendingPlayerId };
+    state.pendingCombatSecondPass = { defendingPlayerId: defenderId };
     return events;
   }
   // Sesja combat kończy się przed state-based actions: śmierć stwora nie może

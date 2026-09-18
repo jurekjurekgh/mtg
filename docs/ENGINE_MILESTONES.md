@@ -5489,3 +5489,34 @@ rekordu (log naprawdę stoi w miejscu — przypadek M90/B Forever Young).
 Piny: `test/table-tester-detectors.test.js` +2 (dane z partii: okno
 przejściowe bez zgłoszenia, okna powtarzające się nadal zgłaszane). Re-run
 tester-2 na naprawionym narzędziu: `DETEKTORY: brak zgłoszeń`.
+
+## M378 (2026-09-18) — broniący się gracz to fakt stanu gry, nie parametr komendy
+
+Wyzwanie „brązowa odznaka" (ADR 0030 — najpierw źródło online). Sonda
+`resolve_combat` w kroku obrażeń z nieblokowanym atakującym p1 → p2:
+
+ 1. `resolve_combat{playerId:'p1', defendingPlayerId:'p1'}` — PRZYJĘTE;
+    życie 20/20 → **18/20**: atakujący zadał obrażenia SAM SOBIE
+    (CR 508.1b: broniącym się jest gracz atakowany, nie ten, którego wskaże
+    komenda; CR 510.1b: nieblokowany stwór przypisuje obrażenia graczowi,
+    którego atakuje),
+ 2. `resolve_combat{playerId:'p1'}` (bez pola) — ODRZUCONE
+    `illegal_combat:Zmiana życia wymaga gracza i całkowitej wartości`;
+    dla atakującego z infect: `Dodanie znaczników trucizny wymaga gracza…`
+    — obrażenia ginęły, a gracz czytał wewnętrzny błąd silnika.
+
+Root cause (L41 — dwa źródła prawdy): `resolveCombatDamage(state,
+defendingPlayerId)` brał gracza z `cmd` bez walidacji i przekazywał go do
+`dealCombatDamageToPlayer` dla NIEBLOKOWANEGO atakującego, podczas gdy ścieżka
+trample'owa liczyła go ze stanu (`defendingPlayerIdOf(state)`).
+
+Fix (surgical, jedno miejsce): `resolveCombatDamage` wylicza obrońcę ze stanu
+(`defendingPlayerIdOf`), odrzuca komendę wskazującą innego gracza
+(`illegal_combat:…` — atomowo, nikt nie traci życia) i normalizuje wartość dla
+całego rozstrzygania (drugi przebieg, wznowienia `pendingCombatSecondPass`
+i `combatResume` niosą już prawdę ze stanu).
+
+Piny: `test/m378-bronacy-gracz-z-meczu.test.js` (5; RED 3/5 → GREEN 5/5:
+spreparowana komenda odrzucona, brak pola = obrażenia do atakowanego,
+kontrola poprawna, ścieżka trucizny infect, kontrola z blokerem). Bramy:
+`npm test` 5737/5737, `npm run build` OK.
