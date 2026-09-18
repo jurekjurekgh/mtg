@@ -1074,7 +1074,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const phyrexian = e.phyrexianSymbols
           ? ` — phyrexian: ${paidWithLife > 0 ? `${paidWithLife}× po 2 życia` : 'za manę'}`
           : '';
-        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${phyrexian}${targets ? ` → cel: ${targets}` : ''}`;
+        // Uwaga B1 właściciela z testów (2026-09-18): gracz musi widzieć, za
+        // ile X rzucono czar („mogę to sobie tylko zgadywać po ilości
+        // zatapowanych lądów”). Zdarzenie niesie xValue (castXCostSpell /
+        // castFireball) — log, warstwa „Rozgrywka” i modal „Ruch bota” mają
+        // to jedno źródło brzmienia (L41). Wzór: ability_activated niżej.
+        const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
+        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${phyrexian}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {
         // M102/U6 (CR 708.2): zakryty permanent PRZECIWNIKA zostaje bezimienny
