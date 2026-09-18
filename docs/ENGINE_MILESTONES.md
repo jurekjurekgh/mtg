@@ -5612,3 +5612,55 @@ macierz atakujący×bloker (latanie/zasięg, menace, detain, „can't block",
 cantBeBlocked, próg mocy) sprawdza „w ofercie" ⇔ „komenda przyjęta" — na kodzie
 sprzed M380 scenariusz `ram <= p2` daje oferta=false, komenda=true. Bramy:
 `npm test` i `npm run build` — wyniki w opisie commita.
+
+## M381 (2026-09-18) — znalezisko #4 odznaki: grant tury na czar (flash + ETB fight)
+
+Zgłoszenie: wyzwanie właściciela „5 unikalnych błędów/uproszczeń vs zasady MtG".
+Karta: **Cherished Hatchling** (RIX) — „When this creature dies, you may cast
+Dinosaur spells this turn as though they had flash, and whenever you cast a
+Dinosaur spell this turn, it gains »When this creature enters, you may have it
+fight another target creature.«"
+
+Objaw (sonda `/home/user/p/probe-m381.mjs`): po śmierci Hatchlinga Dinozaur był
+OFEROWANY do rzutu w end stepie (`cast_permanent`), ale wykonanie oferty kończyło
+się `illegal_cast: Zagranie poza main phase`; a rzut Dinozaura w main phase nie
+dawał żadnego triggera ETB — walki nie było (wróg bez obrażeń, `abilityGrants`
+permanentu puste).
+
+Root cause (dwa niezależne braki w jednym efekcie):
+1. **L41 — dwa źródła prawdy:** pozwolenie „as though it had flash" znała tylko
+   OFERTA (`game-state.playerView` czytało `state.subtypeFlashThisTurn`),
+   a walidacja `castPermanent` patrzyła wyłącznie na wydrukowany keyword —
+   opublikowana komenda była odrzucana (złamany kontrakt „oferta = walidacja",
+   ta sama klasa co L48/M380).
+2. **Zapis bez odczytu:** efekt zapisywał w grancie flagę `etbFight: true`,
+   której NIKT w silniku nie czytał — druga połowa zdolności (nadanie czarowi
+   zdolności ETB) nie istniała; rzut Dinozaura nie miał żadnego efektu.
+
+Fix (root cause, ADR 0002/0016):
+- `permanents.hasFlashPermission` / `grantedFlashGrant` — wspólny predykat dla
+  oferty i walidacji (jedno źródło prawdy);
+- grant niesie **deskryptor zdolności z karty** (`createAbility`, warianty
+  `optional` dla „you may" i `fight.sourceIsFighter` — walczy ŹRÓDŁO zdolności,
+  nie dwa wskazane cele); rdzeń nie zna nazwy karty;
+- zdolność jest stemplowana na czarze w chwili rzutu (`grantedAbilitiesFromTurn`)
+  i doklejana do permanentu przy wejściu przez `grantAbilitiesUntilEndOfTurn`
+  (CR 603.6a — permanent ma ją już przy wejściu, a cleanup zdejmuje razem
+  z resztą „this turn"); stempel nie zostaje na permanencie.
+
+Źródła online (dostęp 2026-09-18): Oracle i rulings Cherished Hatchling —
+https://api.scryfall.com/cards/named?exact=Cherished%20Hatchling,
+https://api.scryfall.com/cards/0a14fe6c-b272-415b-974d-c60d016ab786/rulings
+(„you may cast any number of Dinosaurs as though they had flash"; „if … the
+Dinosaur that entered the battlefield has left the battlefield, no creature will
+deal or be dealt damage"); CR 702.8 (flash), CR 701.12/701.12b/c (fight),
+CR 603.6a (ETB) — https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt
+(efektywne 2026-08-07).
+
+Piny: `test/m381-grant-flash-i-etb-fight.test.js` (5; RED 4/5 → GREEN 5/5).
+(A) komenda z oferty w end stepie jest przyjmowana (grant flash), (B) nadana
+zdolność istnieje i walczy (6/5 vs 2/1 → bloker ginie, Dinozaur 2 obrażenia;
+life p2 rośnie wyłącznie o trigger śmierci Highland Game), (C) kontrola — bez
+grantu brak zdolności, (D) „you may" — oferta `targetId: null` nic nie robi,
+(E) grant wygasa w cleanupie razem z `subtypeFlashThisTurn`.
+Bramy: `npm test` 5750/5750, `npm run build` 64 moduły / 3821,0 kB.
