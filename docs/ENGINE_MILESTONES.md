@@ -5664,3 +5664,55 @@ life p2 rośnie wyłącznie o trigger śmierci Highland Game), (C) kontrola — 
 grantu brak zdolności, (D) „you may" — oferta `targetId: null` nic nie robi,
 (E) grant wygasa w cleanupie razem z `subtypeFlashThisTurn`.
 Bramy: `npm test` 5750/5750, `npm run build` 64 moduły / 3821,0 kB.
+
+## M382 (2026-09-18) — znalezisko #5 odznaki: kolejność równoległych zdolności (APNAP)
+
+Zgłoszenie: wyzwanie właściciela „5 unikalnych błędów/uproszczeń vs zasady MtG".
+Reguła: **CR 603.3b** („…the abilities are placed on the stack in a two-part
+process. First, each player, in APNAP order, puts each triggered ability they
+control … on the stack in any order they choose. (See rule 101.4.)") oraz
+**CR 101.4** (APNAP = gracz aktywny, potem pozostali w kolejności tur) i
+**CR 603.3** (zdolność wchodzi na wierzch stosu → LIFO).
+
+Objaw (sonda `/home/user/p/apnap2.mjs`): wymiana w walce 2/1 vs 2/1, obiekty
+gracza nieaktywnego (p2) wstawione do stanu PRZED obiektami gracza aktywnego
+(p1). Stos po zgonach: `[highland-game@p2, highland-game@p1]` (dol → góra) —
+zdolność gracza AKTYWNEGO na wierzchu, więc rozstrzygała się pierwsza, a
+zdolność gracza nieaktywnego ostatnia. Reguła wymaga odwrotnie (AP umieszcza
+swoje zdolności pierwsze). Po fixie stos:
+`[highland-game@p1, highland-game@p1, highland-game@p2, highland-game@p2]`, a
+zdarzenia `life_changed` idą `p2, p2, p1, p1` (nieaktywny rozstrzyga pierwszy).
+
+Root cause: kolejność partii zdolności wyzwolonych brała się z kolejności
+WSTAWIENIA obiektów do `state.objects` (praktycznie: kolejności wejścia
+permanentów na pole bitwy), bo skan triggerów obchodzi `state.objects.values()`,
+a `queueTriggerToStack` dopisuje wpis na koniec stosu w tej właśnie kolejności.
+Uwaga na przyszłość: wcześniejsza weryfikacja tej samej reguły (PROJECT_HISTORY,
+kandydat 2 z 2026-08-24, „CR 603.3b — zweryfikowane: stos [p1(AP), p2(NAP)]")
+użyła przypadku NIEROZRÓŻNIAJĄCEGO — obiekty gracza aktywnego były wstawione
+pierwsze, więc kolejność wstawienia przypadkiem pokrywała się z APNAP.
+
+Fix (root cause, jedno miejsce): `processTriggersScan` zapamiętuje `stackStart`
+(długość stosu przed skanem) i na końcu przestawia wyłącznie wpisy dodane przez
+ten skan — `placeTriggerBatchInApnapOrder`:
+- stabilny sort po kolejności tur (`state.players` cyklicznie od gracza
+  aktywnego) — kolejność WEWNĄTRZ kontrolera bez zmian (silnik nie pyta gracza o
+  kolejność własnych zdolności, wybiera deterministycznie kolejność wykrycia);
+- starsze wpisy stosu nietykalne; gdy w segmencie jest cokolwiek poza triggerami
+  (np. kopia czaru), nic nie jest przestawiane;
+- dwuetapowy proces 603.3b (najpierw zdolności, których warunek nie jest
+  zdolnością wyzwoloną przez inną zdolność) pozostaje uproszczeniem silnika —
+  świadomie poza zakresem tego fixu.
+
+Źródła online (dostęp 2026-09-18): CR 603.3b i CR 101.4 —
+https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt
+(efektywne 2026-08-07), cytaty w nagłówku pinu.
+
+Piny: `test/m382-apnap-kolejnosc-triggerow.test.js` (4; RED 3/4 → GREEN 4/4).
+(A) cztery równoczesne zdolności śmierci leżą na stosie w porządku APNAP,
+(B) LIFO: zdolności gracza nieaktywnego rozstrzygają się pierwsze (kolejność
+`life_changed` = `p2, p2, p1, p1`), (C) kontrola: przy odwrotnej kolejności
+wstawienia obiektów wynik identyczny (fix nie jest „odwróceniem" kolejności),
+(D) stabilność: przy wstawieniu przeplatanym (nap-a, ap-a, nap-b, ap-b)
+zdolności każdego kontrolera zachowują kolejność wykrycia.
+Bramy: `npm test` 5754/5754, `npm run build` 64 moduły / 3823,9 kB.
