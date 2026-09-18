@@ -88,24 +88,24 @@ ravnica).
 ## Etapy
 
 - [x] E0. Rozpoznanie + ten plan (commit i push PRZED kodowaniem — ADR 0020 A/C).
-- [ ] E1 (A). RED: test, w którym bot NIE atakuje mimo jedynego „blokera”
+- [x] E1 (A). RED: test, w którym bot NIE atakuje mimo jedynego „blokera”
   detained/cantBlock → fix `untappedEnemyBlockers` (jedno źródło, L41) →
   GREEN + mutacja (L13). Bramka: `npm test` + build. Commit + push.
-- [ ] E2 (B). RED: test, że bot rzuca Epic Experiment z X>0 (najwyższe
+- [x] E2 (B). RED: test, że bot rzuca Epic Experiment z X>0 (najwyższe
   opłacalne) i NIE rzuca X=0; anty-over-fix: cienka biblioteka ogranicza X
   (`libraryLossPenalty`) → wycena `epic_experiment` w gałęzi czarów (L50) →
   GREEN + mutacja. Bramka j.w. Commit + push.
-- [ ] E3 (B1). RED: `describeGameEvent('spell_cast', {xValue})` bez X w tekście
+- [x] E3 (B1). RED: `describeGameEvent('spell_cast', {xValue})` bez X w tekście
   → dopisać `xPart` w case `spell_cast` (jedno źródło brzmienia — log + modal
   „Ruch bota” + warstwa Rozgrywka, L41) → GREEN + mutacja + pin obu powierzchni
   (L99). Bramka j.w. Commit + push.
-- [ ] E4. Golden-master `test/bot-scoring-snapshot.test.js`: regeneracja
+- [x] E4. Golden-master `test/bot-scoring-snapshot.test.js`: regeneracja
   `--write` DOPIERO na gotowym drzewie wag (L124), z atrybucją w commicie;
   szybka próbka benchmarku (`test/bot-benchmark.test.js` w `npm test`) zielona.
-- [ ] E5. Pętla jakości: partie celowane Żywym Testerem na talii ravnica
+- [x] E5. Pętla jakości: partie celowane Żywym Testerem na talii ravnica
   (Epic Experiment + Azorius Justiciar) — potwierdzenie „X=” w logu
   i zachowania bota; detektory bez nowych zgłoszeń klasy A/B/B1.
-- [ ] E6. Domknięcie: plan [x], `npm run test:all` (brama PR), handoff
+- [x] E6. Domknięcie: plan [x], `npm run test:all` (brama PR), handoff
   2026-09-18c, wpis PROJECT_HISTORY, README (liczby zmierzone, L92),
   kumulatywny opis PR (gh api PATCH — `gh pr edit` odrzucane, ENVIRONMENT §3),
   blok przekazania w czacie.
