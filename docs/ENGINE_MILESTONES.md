@@ -5972,4 +5972,4 @@ w ofercie i odrzucony, (E) macierz spójności: KAŻDE oferowane przypisanie
 (scena z menace + Ember Beast + `cantBlock` + próg mocy) jest przyjmowane
 przez `declare_blockers` (L48). RED→GREEN: mutacje — pusty predykat 1/4,
 oferta bez filtra 2/3, ręczna kopia menace w walidacji 4/1.
-Bramy: `npm test` 5787/5787, `npm run build` 64 moduły / 3831,6 kB.
+Bramy: `npm test` 5787/5787, `npm run build` 64 moduły / 3831,8 kB.
