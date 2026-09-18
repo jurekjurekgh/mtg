@@ -5579,6 +5579,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const ownLibrary = (view.zones.library ?? []).filter((o) => o.controllerId === view.playerId).length;
             score += ownLibrary > 0 ? P.drawCardValue : -20;
           }
+          // Uwaga C1 właściciela (2026-09-19, Merchant's Dockhand): „Look at
+          // the top X cards… put one of them into your hand and the rest on
+          // the bottom” z amount:'x' — X niesie komenda (wariant oferty). Bez
+          // wyceny bot brał PIERWSZY wariant (L131), a po dołożeniu X=0 do
+          // oferty (E2) płaciłby {3}{U} i tap za efekt bez skutku. Reguła
+          // generyczna po typie efektu i X z komendy (ADR 0002/0017):
+          // - X=0 mocno ujemne — aktywacja legalna (CR 107.3), ale jałowa;
+          // - X>0: karta do ręki (wartość doboru) + niewielka opcjonalność
+          //   wyboru najlepszej z X widzianych − koszt tapowanych artefaktów
+          //   (każdy traci w tej turze możliwość tapnięcia). Wybór jest
+          //   WOLNY, więc wartość karty nie rośnie z X tak jak czysty dobór.
+          if (effect.type === 'look_top_put_one_hand_rest_bottom'
+              || effect.type === 'look_top_put_one_hand_rest_grave') {
+            const x = Number.isInteger(cmd.xValue)
+              ? cmd.xValue
+              : (Number.isInteger(effect.amount) ? effect.amount : 0);
+            if (x <= 0) {
+              score -= 40; // zapłacony koszt, obejrzane 0 kart — jałowa aktywacja
+            } else {
+              const ownLibrary = (view.zones.library ?? []).filter((o) => o.controllerId === view.playerId).length;
+              score += ownLibrary > 0 ? P.drawCardValue : -20;
+              score += Math.min(x - 1, 3); // opcjonalność: najlepsza z X widzianych
+              score -= (cmd.tapArtifactIds?.length ?? x); // koszt: tap X artefaktów
+            }
+          }
           // Batch 52 (Jolrael, Mwonvuli Recluse): „{4}{G}{G}: twoje stwory
           // mają bazowe X/X do końca tury (X = karty w ręce)". Bez wyceny
           // zdolność dostawała gołe score=2 i bot aktywował ją nawet, gdy
