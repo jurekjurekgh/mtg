@@ -130,3 +130,74 @@ test('D/3: walka z Malamet Battle Glyph (rzut BOTA) — linie efektów w modalu 
   assert.ok(session.botMoves.some((m) => m.type === 'damage_dealt'),
     `obrażenia walki bota w modalu: ${JSON.stringify(session.botMoves.map((m) => m.text))}`);
 });
+
+// ---------------------------------------------------------------------------
+// E — bot nie atakuje lataczem w blokera z reach (trzy źródła reach).
+// ---------------------------------------------------------------------------
+
+function stanWalki(seed = 5) {
+  const state = createGameState({ seed, players: [{ id: 'p1', name: 'A' }, { id: 'p2', name: 'B' }] });
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p2');
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p2';
+  return state;
+}
+function putRaw(state, registry, cardId, id, controller) {
+  const def = registry.get(cardId);
+  const data = gameObjectDataOf(def);
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId, controllerId: controller, ownerId: controller, zone: 'battlefield', ...data,
+    ...(def.keywords?.length ? { keywords: [...def.keywords] } : {}),
+  });
+}
+function decyzjaAtaku(state) {
+  const bot = createHeuristicBot({ seed: 42 });
+  const cmd = bot.chooseCommand(playerView(state, 'p2'), {});
+  return cmd;
+}
+
+test('E/1: reach nadany aurą (bestow) — bot NIE atakuje 2/2 latacza w tak wzmocnionego blokera', () => {
+  const registry = createCardRegistry();
+  const state = stanWalki();
+  putRaw(state, registry, 'dementia-bat', 'flyer', 'p2');        // 2/2 flying (bot)
+  putRaw(state, registry, 'greenwood-sentinel', 'wall', 'p1');   // 2/2 baza
+  putRaw(state, registry, 'leafcrown-dryad', 'dryad', 'p1');     // bestow +2/+2 + reach
+  attachAuraToCreature(state, 'dryad', 'wall');
+
+  const view = playerView(state, 'p2');
+  const wallEntry = view.zones.battlefield.find((o) => o.id === 'wall');
+  assert.ok((wallEntry?.keywords ?? []).includes('reach'), 'reach z aury jest w widoku bota (ADR 0017)');
+
+  const cmd = decyzjaAtaku(state);
+  const atakujeLataczem = cmd?.type === 'declare_attackers' && (cmd.attackerIds ?? []).includes('flyer');
+  assert.ok(!atakujeLataczem, `bot nie może atakować lataczem w reach-blokera: ${JSON.stringify(cmd)}`);
+});
+
+test('E/2: reach nadany do końca tury (grant EOT) — też blokuje atak latacza', () => {
+  const registry = createCardRegistry();
+  const state = stanWalki();
+  putRaw(state, registry, 'dementia-bat', 'flyer', 'p2');          // 2/2 flying
+  // 2/3 — po grancie reach latacz ginie nie zabijając blokera (atak jałowy,
+  // dokładnie scenariusz właściciela: flyer bez korzyści w reach-blokera).
+  putRaw(state, registry, 'tenth-district-veteran', 'wall', 'p1');
+  grantKeywordsUntilEndOfTurn(state, 'wall', ['reach']);
+
+  const view = playerView(state, 'p2');
+  const wallEntry = view.zones.battlefield.find((o) => o.id === 'wall');
+  assert.ok((wallEntry?.keywords ?? []).includes('reach'), 'grant EOT w widoku bota');
+
+  const cmd = decyzjaAtaku(state);
+  const atakujeLataczem = cmd?.type === 'declare_attackers' && (cmd.attackerIds ?? []).includes('flyer');
+  assert.ok(!atakujeLataczem, `bot nie atakuje lataczem w grantowanego reach-blokera: ${JSON.stringify(cmd)}`);
+});
+
+test('E/3 (kontrola — dowód, że test nie jest pusty): bez reach ten sam atak jest wybierany', () => {
+  const registry = createCardRegistry();
+  const state = stanWalki();
+  putRaw(state, registry, 'dementia-bat', 'flyer', 'p2');        // 2/2 flying
+  putRaw(state, registry, 'greenwood-sentinel', 'wall', 'p1');   // 2/2, NIE dosięga lataczy
+  const cmd = decyzjaAtaku(state);
+  assert.equal(cmd?.type, 'declare_attackers', 'bez reach bot atakuje');
+  assert.ok((cmd.attackerIds ?? []).includes('flyer'),
+    `latacz bez odpowiedzi u obrońcy idzie do ataku: ${JSON.stringify(cmd)}`);
+});
