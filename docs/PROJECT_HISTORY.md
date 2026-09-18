@@ -11330,3 +11330,39 @@ z liczbami przebiegu quick-25 z E3 (**87,1%**, 0 niedokończonych; przebieg #125
 87,0%), a opis PR #126 — notkę o wcieleniu. Bramki po wcieleniu: `npm test`
 **5732/5732**, `npm run test:all` **5742/5742**, build **64 moduły / 3815,6 kB**.
 PR #127 do zamknięcia bez scalania.
+
+
+## 2026-09-18b — sesja „Kontynuujemy projekt." (PR #129): audyt PR #128 + 4 naprawy + pętla jakości (arena/01a0b60e-mtg)
+
+Tryb obowiązkowy ADR 0020 + pętla domyślna ADR 0021. Baza `e0ad776` (squash
+PR #128). Plan: `docs/plans/PLAN_2026-09-18b-audyt-pr128-i-petla-jakosci.md`.
+
+**Audyt PR #128** (`docs/audits/AUDYT_PR128_2026-09-18.md`): 9 plików,
+werdykt „merytorycznie poprawny". Weryfikacja u źródła (ADR 0030): ruling WotC
+2024-06-07 (energia = licznik gracza) i marker „Energy Reserve" tdrc/17
+potwierdzone dosłownie na api.scryfall.com. **10 mutacji pinów M386/M387 —
+każda czerwieni ≥1 pin** (L13); ADR 0002: 0 porównań po cardId/nazwie.
+
+**Ctery znaleziska zamknięte osobnymi commitami** (pin RED → fix → GREEN):
+- F-1 (średnie, `429f564`): trzecia kopia reguł zbioru bloku w gałęzi fallback
+  `legalBlockerOptions` → `blockAssignmentViolation`; strażnik M387/D skanował
+  tylko `declareBlockers` (L5/L113). Pin: `test/audyt-pr129-kopia-zbioru-bloku.test.js`.
+- F-2 (niskie, `69b3947`): siatka bezpieczeństwa `rerender` zalewałaby log
+  identycznym wpisem przy każdym renderze → deduplikacja `lastRenderLogMessage`;
+  okno skanu M386/H 400→700. Pin: `test/audyt-pr129-log-spam.test.js`.
+- F-3 (niskie, `3ae56b9`): patch M386 skleił dwie instrukcje w
+  `buildStateOverlay` → podział linii (bez zmiany zachowania).
+- F-4 (dokument., `b845fcf`): handoff podawał „5/13 RED", pomiar daje 8/13
+  czerwonych → sprostowanie (L142).
+
+**Pętla jakości:** 6 partii Żywego Testera (ixalan vs ravnica/ixalan) —
+naturalne końce, 0 zgłoszeń. **Znalezisko narzędziowe:** snapshot `run-game.mjs`
+nie widział paneli liczników specjalnych (#poison/#speed/#energy) → naprawione
+(`849bf80`); energia pojawiła się na żywo z TREŚCIĄ („Gracz: 4 {E}") — ścieżka
+naprawy PR #128 potwierdzona w realnym renderze.
+
+**Bramy:** `npm test` 5790/5790, build 64 moduły / 3832,5 kB,
+bot-benchmark 10/10. Pełny B0 tylko na komendę (ADR 0018) — nie uruchamiany.
+PR #129 czeka na decyzję właściciela. Uwaga: sesja PR #128 nie zostawiła wpisu
+w tej historii (tylko handoff i audyt) — stan po #128 opisuje
+`docs/setup/HANDOFF_2026-09-18.md` i `docs/audits/AUDYT_PR128_2026-09-18.md`.
