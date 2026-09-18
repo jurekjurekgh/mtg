@@ -5027,9 +5027,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
         if (Object.values(object.counters ?? {}).some((count) => count > 0)) candidates.push(object.id);
       }
       for (const player of state.players) {
-        // CR 701.27a: gracze z licznikami też są celami proliferate — trucizna
-        // mieszka w player.poison (addPoisonCounters/SBA), nie player.counters.
-        if ((player.poison ?? 0) > 0) candidates.push(player.id);
+        // CR 701.34a (numeracja 2026; dawniej 701.27a): proliferate wybiera
+        // „any number of permanents and/or players THAT HAVE A COUNTER" —
+        // licznikami gracza są w tym silniku trucizna (player.poison) ORAZ
+        // energia (player.energy, CR 122.1 + mtg.wiki/Energy: „An energy
+        // counter is a counter that ... is placed on players rather than
+        // objects"). Gracz z energią, ale bez trucizny MUSI być kandydatem —
+        // wcześniej wypadał z listy, więc nie dało się go wybrać i nie
+        // dostawał kolejnego licznika energii.
+        if ((player.poison ?? 0) > 0 || (player.energy ?? 0) > 0) candidates.push(player.id);
       }
       if (candidates.length === 0) return false;
       state.pendingProliferate = {
@@ -5072,6 +5078,19 @@ function markTemporaryExile(state, exileId, sourceObject) {
           state.events.push(event('counter_added', {
             objectId: player.id, cardId: null, counter: 'poison', amount: 1,
             total: player.poison, fromProliferate: true,
+          }));
+          proliferated += 1;
+        }
+        // CR 701.34a: „additional counter of EACH KIND that … player already
+        // has" — energia to taki sam licznik gracza jak trucizna. Ten sam
+        // wzorzec co trucizna: wspólny helper (addEnergyCounters, CR 107.14)
+        // + `counter_added` w strumieniu liczników (fromProliferate).
+        if ((player.energy ?? 0) > 0) {
+          addEnergyCounters(state, player.id, 1);
+          state.events.push(event('counter_added', {
+            objectId: player.id, cardId: null, counter: 'energy', amount: 1,
+            total: state.players.find((p) => p.id === player.id)?.energy ?? 0,
+            fromProliferate: true,
           }));
           proliferated += 1;
         }
