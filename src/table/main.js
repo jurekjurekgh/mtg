@@ -1451,6 +1451,10 @@ function bootstrapTable() {
   // `resumeFromSaved` pokazywał notice, ale `startGame()` zaraz potem otwierał
   // nową partię i komunikat przepadał — gracz widział „reset" bez wyjaśnienia.
   let lastResumeError = null;
+  // F-2 audytu PR #128: siatka bezpieczeństwa `rerender` nie może zalewać logu
+  // partii tym samym wpisem przy każdym renderze (log nie jest przycinany —
+  // session.js `sessionLog` → `log.push`). Pamiętamy ostatni komunikat.
+  let lastRenderLogMessage = null;
 
   function resumeFromSaved(raw) {
     try {
@@ -1676,9 +1680,15 @@ function bootstrapTable() {
     } catch (error) {
       // Panel, który nie umie się narysować, NIE MOŻE zatrzymać partii —
       // logujemy jawnie (gracz widzi w „Rozgrywce”) i rysujemy resztę stołu.
-      try {
-        session.logSystem(`Błąd rysowania stołu: ${error?.message ?? error}. Zgłoś problem (partia jest kontynuowana).`);
-      } catch { /* log nie może rzucić drugi raz */ }
+      // F-2: ten sam komunikat tylko RAZ — trwały błąd renderu nie może
+      // zalewać logu identycznym wpisem przy każdym renderze.
+      const message = `Błąd rysowania stołu: ${error?.message ?? error}. Zgłoś problem (partia jest kontynuowana).`;
+      if (message !== lastRenderLogMessage) {
+        lastRenderLogMessage = message;
+        try {
+          session.logSystem(message);
+        } catch { /* log nie może rzucić drugi raz */ }
+      }
     }
     const view = session.view();
     const me = view.players.find((p) => p.id === view.playerId);
