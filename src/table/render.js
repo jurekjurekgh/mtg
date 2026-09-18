@@ -4079,7 +4079,8 @@ export function buildStateOverlay(visual, info) {
         flags.push(['kw', `${signed(gPow)}/${signed(gTou)}`]);
       }
     }
-    if (info.combatRole) flags.push(['combat', info.combatRole]);    if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
+    if (info.combatRole) flags.push(['combat', info.combatRole]);
+    if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push(['sick', 'choroba']);
     // A (2026-08-11): liczniki na nakładce ilustracji.
     // M164: licznik `lore` Sagi pokazujemy WYŁĄCZNIE w badge etapu poniżej
