@@ -826,6 +826,32 @@ export function hasCreatureType(object, subtype, state = null) {
     || (object.keywordGrants ?? []).includes('changeling');
 }
 
+/**
+ * Czy obiekt pasuje do kwalifikatora PODTYPÓW (szukanie w bibliotece: „Plains
+ * card", typecycling, channel). JEDNO miejsce tej reguły (L41) — wcześniej
+ * każda ścieżka miała własną kopię, a `librarySearchMatches` używała do
+ * podtypów `hasCreatureType`.
+ *
+ * CR 702.73a: changeling czyni obiekt KAŻDYM TYPEM STWORÓW — nie każdym
+ * podtypem. Dlatego:
+ *  - `subtypes` to ZWYKŁE podtypy z linii typów (lądy: Plains/Mountain/Swamp,
+ *    artefakty: Equipment, enchantmenty: Saga/Aura) — bez changelinga;
+ *  - `creatureTypes` to typy STWORÓW — tu (i tylko tu) changeling pasuje.
+ *
+ * M385 (znalezisko srebrnej odznaki): changeling w bibliotece był kandydatem
+ * na „Plains card" Kor Cartographera (i „Mountain card" Call the Mountain
+ * Chocobo) właśnie przez `hasCreatureType` użyte dla podtypu lądu.
+ */
+export function matchesSubtypeQualifier(object, qualifier) {
+  const subtypes = qualifier?.subtypes ?? [];
+  const creatureTypes = qualifier?.creatureTypes ?? [];
+  const subtypeOk = subtypes.length === 0
+    || subtypes.some((subtype) => effectiveSubtypes(object).includes(subtype));
+  const creatureOk = creatureTypes.length === 0
+    || creatureTypes.some((subtype) => hasCreatureType(object, subtype));
+  return subtypeOk && creatureOk;
+}
+
 /** Efektywne podtypy stwora na polu bitwy — własne + granty załączników. */
 export function effectiveSubtypesOnBattlefield(state, object) {
   // B4 (audyt PR #113, F7): część „własna" idzie przez `effectiveSubtypes`,
@@ -1248,6 +1274,31 @@ export function clearStatModifiers(state) {
       });
     }
   }
+}
+
+/**
+ * M381 (CR 702.8 + L41): pozwolenie na rzut „jakby permanent miał flash" —
+ * wydrukowany keyword ALBO grant na turę z `state.subtypeFlashThisTurn`
+ * (Cherished Hatchling: „you may cast Dinosaur spells this turn as though
+ * they had flash"). Zwraca SAM grant (albo null), bo grant niesie też
+ * `grantedAbility` doklejaną do rzuconego czaru.
+ *
+ * Jedno źródło prawdy dla OFERTY (game-state.playerView) i WALIDACJI
+ * (resources.castPermanent) — jak przy restrykcjach bloku (M380). Przed M381
+ * oferta znała grant, a walidacja patrzyła wyłącznie na wydrukowany keyword,
+ * więc opublikowana komenda `cast_permanent` była odrzucana
+ * („Zagranie poza main phase") — bot rzucający ofertę wywalał symulację.
+ */
+export function grantedFlashGrant(state, playerId, object) {
+  if (!state || !object || !playerId) return null;
+  return (state.subtypeFlashThisTurn ?? []).find((grant) => grant.controllerId === playerId
+    && hasCreatureType(object, grant.subtype, state)) ?? null;
+}
+
+/** Czy obiekt wolno rzucać tak, jakby miał flash (wydruk albo grant tury). */
+export function hasFlashPermission(state, playerId, object) {
+  if ((object?.keywords ?? []).includes('flash')) return true;
+  return grantedFlashGrant(state, playerId, object) != null;
 }
 
 /**

@@ -610,6 +610,40 @@ test('M99: puste okna PO końcu partii nadal nie są zgłaszane', () => {
   assert.deepEqual(found, [], 'panel po końcu partii jest pusty prawidłowo');
 });
 
+test('M377 (E4, Żywy Tester): PRZEJŚCIOWE okno z samym „Poddaj partię" nie jest martwym zaułkiem', () => {
+  // Dane z partii tester-2 (tarkir-wur vs worek-basni, seed 2027, `impatient`):
+  // bot rzucił Talion's Messenger, panel zdążył pokazać samo „Poddaj partię",
+  // a sesja przewinęła okno bez odpowiedzi gracza (numer kroku rósł w LOGU
+  // przed oknem i po nim) — to nie zacięcie, tylko auto-pass.
+  const found = detectDeadEndWindow([], {
+    windowRecords: [
+      { actions: ['▶ Wznów grę bota', 'Poddaj partię'], gameOver: false, newestLogEntry: 'Tura gracza Nieprzyjaciel' },
+      { actions: ['Poddaj partię'], gameOver: false, newestLogEntry: "Nieprzyjaciel zagrywa Talion's Messenger" },
+      { actions: ['Dalej (pass)', 'Poddaj partię'], gameOver: false, newestLogEntry: "Talion's Messenger zostaje rozstrzygnięty" },
+    ],
+  });
+  assert.deepEqual(found, [], JSON.stringify(found));
+});
+
+test('M377 (E4, Żywy Tester): POWTARZAJĄCE się okno z samym „Poddaj partię" nadal jest zgłaszane', () => {
+  // Prawdziwy martwy zaułek M90/B: log stoi w miejscu, więc kolejne rekordy
+  // niosą ten sam `newestLogEntry` — bramka przejściowości nie może tego schować.
+  const frozen = { gameOver: false, newestLogEntry: 'Nieprzyjaciel rzuca Forever Young' };
+  const found = detectDeadEndWindow([], {
+    windowRecords: [
+      { actions: ['Dalej (pass)', 'Poddaj partię'], gameOver: false, newestLogEntry: 'Forever Young zostaje rozstrzygnięty' },
+      { actions: ['Poddaj partię'], ...frozen },
+      { actions: ['Poddaj partię'], ...frozen },
+      { actions: ['Poddaj partię'], ...frozen },
+    ],
+  });
+  // Rekord, który PIERWSZY raz przyniósł ten sam wpis logu co poprzednik,
+  // jest jeszcze przejściem (poprzednik miał inny wpis — log rósł); zgłaszane
+  // są okna „w środku" zamrożenia, gdy log nie rośnie ani przed, ani po nich.
+  assert.equal(found.length, 1, JSON.stringify(found));
+  assert.ok(found.every((f) => /nie ma wyjścia/.test(f.message)));
+});
+
 test('M99: stary tryb (parsowanie linii AKCJE:) nadal działa — zgodność wstecz', () => {
   const found = detectDeadEndWindow(['  AKCJE: Poddaj partię']);
   assert.equal(found.length, 1);

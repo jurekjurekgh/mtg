@@ -101,9 +101,13 @@ etapy I/H dodają wyłącznie WPISY TOKENÓW i grafikę, nie nowe karty do talii
   `npm run test:all` 5729/5729, build 64/3809,3 kB, regresja bota 10/10),
   quick 6 talii (heuristic 84,1%, 0 niedokończonych) — pełny przebieg quick 25
   talii PRZERWANY nowym znaleziskiem `illegal_spell` (mecz
-  `random(wiedzmin-bg) vs heuristic(tarkir-wur)`, seed 2039; szczegóły
-  i punkt zaczepienia w handoffie 2026-09-17c — do domknięcia w następnej
-  sesji), dokumentacja
+  `random(wiedzmin-bg) vs heuristic(tarkir-wur)`, seed 2039). Znalezisko
+  **DOMKNIĘTE w 2026-09-17d** (M374, commit `55e0461`): root cause to grant
+  lądu (Nature's Embrace) tapowany w fazie pipów „za 1" zamiast za 2 — oferta
+  obiecywała 5 many, płatność produkowała 4; plan i szczegóły:
+  [`PLAN_2026-09-17d-l48-grant-w-pipach.md`](PLAN_2026-09-17d-l48-grant-w-pipach.md),
+  handoff [`HANDOFF_2026-09-17d-m374-grant-w-pipach.md`](../setup/HANDOFF_2026-09-17d-m374-grant-w-pipach.md).
+  Dokumentacja
   (M369 w ENGINE_MILESTONES, PROJECT_HISTORY, HANDOFF_2026-09-17c, README)
   i lekcja L148 (rejestr przycięty tak, by zmieścić się w budżecie lektury
   100k tokenów). Żywy Tester na kartach z A–J pominięty świadomie: znaleziska

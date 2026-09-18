@@ -25,7 +25,12 @@ Walidację wymusza `validateDeck` (`src/cards/deck-validation.js`) — domyślni
 `maxCopies=1`, `minNonland=15`. Format tekstowy i round-trip pilnuje
 `test/repo-decks.test.js`.
 
-## Bieżące talie (22 pliki = 18 jednoplanowych + 4 worki)
+## Bieżące talie
+
+> Liczb nie powtarzamy w nagłówku (dryfują przy każdym batchu kart — audyt PR #74;
+> przy okazji sesji #126 było tu „22 pliki”, gdy w `decks/` jest ich **25**: 21 talii
+> jednoplanowych + 4 worki). Stan bieżący wypisuje generator po zapisie, tabela
+> w [głównym README](../README.md) (sekcja „Talie”) i `run-game.mjs --list-decks`.
 
 Talie **buduje generator** `tools/generate-plan-decks.mjs` — on jest źródłem
 prawdy przydziału karty do talii, a `test/repo-decks.test.js` pilnuje, że pliki

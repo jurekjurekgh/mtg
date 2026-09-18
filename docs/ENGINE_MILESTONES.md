@@ -5376,3 +5376,520 @@ build **63 moduły / 3793,4 kB**, regresja bota **10/10**, quick 25 talii — he
 Lekcje sesji: **L147** (rezerwa pipów obowiązuje też finansowanie cudzego
 kosztu) i kotwica w **L48** (nowa gałąź oferty celów idzie przez
 `legalTargetCandidates`).
+
+## M374 (2026-09-17) — L48 z pomiaru E7: grant lądu musi płacić tyle, ile obiecuje oferta (CR 601.2h)
+
+Pociągnięcie OTWARTEGO znaleziska z E7 (quick-25 przerwany na 2400/5952):
+`illegal_spell: Niewystarczająca mana`, mecz `random(wiedzmin-bg) vs
+heuristic(tarkir-wur)`, seed 2039. Sonda odtwarzająca dokładnie ten mecz
+(kopia pętli `runSimulation`, która nie rzuca po odrzuceniu, tylko zapisuje
+komendę i widok) reprodukuje błąd w **0,4 s** — bez dobierania seedów.
+`playerView` w chwili błędu pokazywał 7 wariantów rzutu, a `execute` odrzucał
+pierwszy z nich.
+
+**Root cause (L48: oferta != płatność).** Natura's Embrace p1 („{T}: Add two
+mana of any one color", `grantMana.amount = 2`) na Górze p2 dawała
+`producibleMana` = 5 (2 z grantu + 3 z pozostałych lądów), więc oferta
+proponowała Vandalize {4}{R}. Płatność ma trzy fazy (pipy → suma → źródła
+kosztowe); fazę PIPÓW obsługiwał `planGrantManaColors`, a ten — gdy plan
+kolorów uznał grant za ZUŻYTY finansowaniem źródła kosztowego (Jeskai Devotee
+`{1},{T}: Add {U}{R}{W}`, w feralnej partii na stole) — nie miał wiersza dla
+Góry i tapował ją z `grantColor: null`, czyli **za 1** zamiast 2. Suma
+płatności (4) była mniejsza od oferty (5), więc `spendMana` rzucał
+„Niewystarczająca mana" — a ponieważ bramka sumy stała PO fazie pipów,
+odrzucona komenda zostawiała ślad: tapniętą Górę i {R} w puli (CR 601.2h).
+Auto-tap sumy i blok naprawy seeda 2027 (L147) liczyły granty poprawnie —
+dziurą była tylko ścieżka pipów.
+
+**Naprawa (`55e0461`, `src/engine/resources.js`, dwie zmiany):**
+1. ląd z grantem, którego płatność dotyka, produkuje CAŁY grant — bez wiersza
+   planu kolor bierze `firstUncoveredPipColor` (ten sam wybór co auto-tap sumy
+   i blok seeda 2027), a warunek wejścia zna grant (`grantColor == null` zamiast
+   `!plannedGrant`), więc ląd z grantem może pokryć pip także własnym
+   „dowolnym kolorem";
+2. bramka sumy przeniesiona PRZED pierwszą mutację płatności — nieudana
+   płatność nie tapnie źródła ani nie wpłaci many do puli (CR 601.2h).
+
+**Pin `test/m374-l48-grant-w-pipach.test.js` (4, wszystkie z fiksturą
+z repro — Góra z grantem, 2 Równiny, Wyspa, Jeskai Devotee, Vandalize
+w ręce):** M374/1 grant w pipach = pełny grant (zdarzenie `mana_produced`
+z `amount: 2`, `grantMana: true`, kolor = kolor pipa; pula rozliczona do
+zera) + dowód triggera (`planGrantManaColors` zwraca `[]`); M374/2
+atomowość — nieopłacalna płatność nie zostawia śladu; M374/3 kontrola
+negatywna bez aury (4 many → brak oferty); M374/4 KAŻDA pozycja oferty tego
+rzutu jest wykonywalna (klasa L48). **Mutacje:** `grantColor = plannedGrant`
+→ M374/1 i M374/4 RED; wyłączona bramka atomowości → M374/2 i M374/3 RED.
+
+**Bramki i pomiar:** `npm test` **5723/5723**; quick-25 (5 952 mecze, komenda
+z E7) — patrz handoff `docs/setup/HANDOFF_2026-09-17d-m374-grant-w-pipach.md`; lekcja **L149**
+(reguła + strażnik), narracja w `docs/LESSONS_PRZYPADKI.md`.
+
+**Lekcja klasy:** „oferta = płatność" obowiązuje KAŻDĄ fazę płatności, nie
+tylko sumę — grant lądu jest jedną decyzją koloru podejmowaną w ofercie, więc
+każda faza, która tapnie taki ląd, musi ją respektować (L48 + L147).
+
+**Domknięcie niezależne (sesja #126, E3):** przebieg quick-25 powtórzony na
+`93b242e` tą samą komendą — **5 952/5 952 meczów, 0 niedokończonych,
+`stalls: []`**, seed 2039 bez powtórki; heuristic **87,1%** (5183/5952),
+aggro 23,5%, random 2,3%.
+
+## M375 (2026-09-17) — gałąź `get_energy` czyta slot celu z `targets` (znalezisko F1 audytu PR #125)
+
+Sonda wykonawcza audytu: `applyEffect({ type: 'get_energy', targetIndex: 0 })`
+kończyła się `ReferenceError: effectTargets is not defined` — gałąź czytała
+nieistniejący identyfikator. Ścieżka jest dziś martwa (katalog nie ma kart
+z `targetIndex` przy energii), ale to dokładnie klasa, którą ADR 0022 ma
+wykluczać na zapas. Fix: `targets[effect.targetIndex]` w
+`src/engine/effects.js` (CR 122.1; bez nazw kart — ADR 0002). Piny:
+`test/m375-get-energy-target-index.test.js` (3: cel wskazany przez
+`targetIndex` → kontroler celu; brak `targetIndex` → kontroler źródła;
+nieistniejący id → spadek do kontrolera źródła). RED 1/2 → GREEN 3/3;
+mutacja bramy → 1/2.
+
+## M376 (2026-09-17) — aktywacja pompy musi POPRAWIĆ wymianę; kopie na stosie wchodzą do wyceny
+
+Znalezisko Żywego Testera (`worek-dziki` vs `ixalan`, seed 2031): bot
+aktywował Shipwreck Moray („Pay {E}: +2/−2 do końca tury") **cztery razy**
+w jednym kroku walki (liczniki energii 4 → 0), a po trzecim rozstrzygnięciu
+bloker zginął z SBA (CR 704.5f) — czwarta aktywacja nie zrobiła już nic.
+
+Root cause: wycena aktywacji używała kryterium CZARU JEDNORAZOWEGO
+(`pumpChangesOutcome` — „czy wynik walki się zmieni"), a plansza pod
+nierozstrzygniętymi kopiami wygląda niezmiennie, więc każda kolejna kopia
+była nierozróżnialna od pierwszej. Zdolność ma koszt POWTARZALNY (CR 602.2) —
+można poczekać, aż stos się rozstrzygnie — więc kopia musi poprawić wymianę,
+nie tylko ją zmienić.
+
+Fix: `pendingPumpDelta` (suma delt kopii TEJ SAMEJ zdolności z widoku stosu —
+`sourceId`, `abilityIndex`, cele i efekty są publiczne, ADR 0017) oraz
+`pumpImprovesOutcome` (kryterium z perspektywy celu: śmierci wroga w górę,
+śmierci własne w dół, obrażenia/zyski życia na moją korzyść; poprawa
+w co najmniej jednym wymiarze i ŻADNE pogorszenie) — używane wyłącznie
+w gałęzi `activate_ability` dla WŁASNYCH celów; cudze cele i czary zostają na
+`pumpChangesOutcome` (L41 — rozdzielenie świadome). Piny:
+`test/m376-pump-nie-zabija-swojego-stwora.test.js` (4; RED 2/4 → GREEN 4/4;
+mutacja bramy z powrotem na `pumpChangesOutcome` → 2/4). Pomiar po fixie:
+jedna aktywacja zamiast czterech, partia kończy się naturalnie (krok 220,
+„Gracz wyczerpał bibliotekę"), detektory bez zgłoszeń.
+
+## M377 (2026-09-17) — martwe okno musi się POWTARZAĆ (fałszywy alarm detektora testera)
+
+Znalezisko kampanii E4 (tester-2: `tarkir-wur` vs `worek-basni`, seed 2027,
+profil `impatient`): raport flagował `[ui]` „jedyna opcja: Poddaj partię",
+choć w LOGU tego okna był już nowy wpis („Nieprzyjaciel zagrywa Talion's
+Messenger"), a następne okno pokazało rozstrzygnięcie czaru — sesja
+auto-przewinęła okno bez odpowiedzi gracza. Detektor patrzył wyłącznie na
+`actions`, więc nie odróżniał okna przejściowego od zacięcia (klasa L33:
+narzędzie mierzy własną ślepotę).
+
+Fix w `tools/table-tester/detectors.mjs`: bramka `frozen` — okno (puste albo
+z samym „Poddaj partię") jest martwym zaułkiem tylko wtedy, gdy
+`newestLogEntry` nie zmienia się ani względem poprzedniego, ani następnego
+rekordu (log naprawdę stoi w miejscu — przypadek M90/B Forever Young).
+Piny: `test/table-tester-detectors.test.js` +2 (dane z partii: okno
+przejściowe bez zgłoszenia, okna powtarzające się nadal zgłaszane). Re-run
+tester-2 na naprawionym narzędziu: `DETEKTORY: brak zgłoszeń`.
+
+## M378 (2026-09-18) — broniący się gracz to fakt stanu gry, nie parametr komendy
+
+Wyzwanie „brązowa odznaka" (ADR 0030 — najpierw źródło online). Sonda
+`resolve_combat` w kroku obrażeń z nieblokowanym atakującym p1 → p2:
+
+ 1. `resolve_combat{playerId:'p1', defendingPlayerId:'p1'}` — PRZYJĘTE;
+    życie 20/20 → **18/20**: atakujący zadał obrażenia SAM SOBIE
+    (CR 508.1b: broniącym się jest gracz atakowany, nie ten, którego wskaże
+    komenda; CR 510.1b: nieblokowany stwór przypisuje obrażenia graczowi,
+    którego atakuje),
+ 2. `resolve_combat{playerId:'p1'}` (bez pola) — ODRZUCONE
+    `illegal_combat:Zmiana życia wymaga gracza i całkowitej wartości`;
+    dla atakującego z infect: `Dodanie znaczników trucizny wymaga gracza…`
+    — obrażenia ginęły, a gracz czytał wewnętrzny błąd silnika.
+
+Root cause (L41 — dwa źródła prawdy): `resolveCombatDamage(state,
+defendingPlayerId)` brał gracza z `cmd` bez walidacji i przekazywał go do
+`dealCombatDamageToPlayer` dla NIEBLOKOWANEGO atakującego, podczas gdy ścieżka
+trample'owa liczyła go ze stanu (`defendingPlayerIdOf(state)`).
+
+Fix (surgical, jedno miejsce): `resolveCombatDamage` wylicza obrońcę ze stanu
+(`defendingPlayerIdOf`), odrzuca komendę wskazującą innego gracza
+(`illegal_combat:…` — atomowo, nikt nie traci życia) i normalizuje wartość dla
+całego rozstrzygania (drugi przebieg, wznowienia `pendingCombatSecondPass`
+i `combatResume` niosą już prawdę ze stanu).
+
+Piny: `test/m378-bronacy-gracz-z-meczu.test.js` (5; RED 3/5 → GREEN 5/5:
+spreparowana komenda odrzucona, brak pola = obrażenia do atakowanego,
+kontrola poprawna, ścieżka trucizny infect, kontrola z blokerem). Bramy:
+`npm test` 5737/5737, `npm run build` OK.
+
+## M379 (2026-09-18) — offspring ginął w ścieżce talii (CR 702.175a)
+
+Wyzwanie „brązowa odznaka" (ADR 0030), znalezisko #2: **deskryptor
+`offspring` nie docierał do obiektu gry w prawdziwej partii**. `createCardDeck`
+(materialize.js) kładzie go na wpisie talii, `gameObjectDataOf` niesie go do
+helperów testowych (`...gameObjectDataOf(def)`) — ale jawna lista pól w
+`installDeck` (src/engine/deck.js) go nie przenosiła, więc obiekt gry miał
+`offspring === null`. Skutki (CR 702.175a):
+
+ 1. brak oferty `cast_permanent { offspring: true }` (bramka `if
+    (object.offspring)` w game-state.js) — gracz nie mógł zapłacić dodatkowego
+    {2} („You may pay an additional [cost] as you cast this spell"),
+ 2. ETB-trigger `create_offspring_token` nigdy nie odpalał — 1/1 token-kopia
+    nie powstawał („When this permanent enters, if its offspring cost was
+    paid, create a token that's a copy of it, except it's 1/1").
+
+Klasa defektu jest znana z L21/M258 (echo, surge, warp, madness, toxic — „ta
+sama lista pól", „mechaniki martwe w PRAWDZIWYCH partiach przy zielonych
+testach"). Wszystkie istniejące piny offspring (Batch 53) budowały obiekt
+obok tej ścieżki, dlatego defekt był niewidoczny dla `npm test`.
+
+Źródła online (dostęp 2026-09-18): CR 702.175a (treść reguły) oraz Oracle
+i rulings WotC przez Scryfall
+(https://api.scryfall.com/cards/named?exact=Rust-Shield%20Rampager,
+https://api.scryfall.com/cards/c96b01f5-83de-4237-a68d-f946c53e31a6/rulings —
+„You can pay an offspring cost only once as you cast a spell with offspring.",
+„The token copies exactly what was printed on the original creature and
+nothing else, except it's a 1/1.", „If the spell resolves but the creature with
+offspring leaves the battlefield before the offspring ability resolves, you'll
+still create a token copy of it.").
+
+Fix (surgical, root cause): `installDeck` przenosi `offspring: card.offspring
+?? null`. Strażnik klasy L21: `test/m379-offspring-w-prawdziwej-talii.test.js`
+pin (C) porównuje KAŻDE pole z `gameObjectDataOf(card)` z obiektem gry po
+`installDecks` na wszystkich wspieranych kartach (przed fixem: 1 rozjazd —
+`offspring` na Rust-Shield Rampager; po: 0). Piny (A)+(B) idą realną drogą
+partii: deskryptor na obiekcie z biblioteki, oferta dopłaty, 1/1 token-kopia
+oraz kontrola negatywna (zwykły rzut bez tokenu). RED 3/4 → GREEN 4/4.
+Bramy: `npm test` i `npm run build` — wyniki w opisie commita.
+
+## M380 (2026-09-18) — legalność bloku ma jedno źródło prawdy (CR 509.1b + L41)
+
+Wyzwanie „brązowa odznaka" (ADR 0030), znalezisko #3: **walidacja
+`declare_blockers` przyjmowała nielegalny blok, którego oferta nie zawierała**.
+Rust-Shield Rampager („This creature can't be blocked by creatures with power 2
+or less") — para atakujący/bloker o mocy 2:
+
+ 1. `legalBlockerOptions`/`playerView` NIE oferują tej pary
+    (`canBlock` zna `attackerBlockPowerRestriction`),
+ 2. ręcznie utrzymywana kopia restrykcji w `declareBlockers` tego progu NIE
+    miała, więc komenda `declare_blockers { ram: ['b2'] }` była PRZYJMOWANA:
+    `state.combat.blockers = [['ram', ['b2']]]`, atakujący stawał się
+    „zablokowany" (obrażenia szły w blokera zamiast w gracza).
+
+CR 509.1: „If at any point during the declaration of blockers, the defending
+player is unable to comply with any of the steps listed below, the declaration
+is illegal"; CR 509.1b: „The defending player checks each creature they control
+to see whether it's affected by any restrictions (…). If any restrictions are
+being disobeyed, the declaration of blockers is illegal. A restriction may be
+created by an evasion ability…"; CR 509.1a: „The chosen creatures must be
+untapped". Ruling WotC 2024-07-26 (Rust-Shield Rampager): obniżenie mocy
+blokera PO legalnej deklaracji nie usuwa go z walki — czyli próg mocy jest
+sprawdzany (tylko) przy deklaracji, co potwierdza kierunek fixu.
+
+Root cause (L41 — dwa źródła prawdy): `canBlock` (oferta) i lista sprawdzeń
+w `declareBlockers` (walidacja) opisywały tę samą regułę niezależnie; każda
+nowa restrykcja wymagała dopisania się w dwóch miejscach i próg mocy został
+pominięty. To ta sama klasa co M378, ale inna reguła (legalność deklaracji
+bloków, nie przypisanie obrażeń).
+
+Fix (root cause): jedno `blockRestrictionError(state, attacker, blocker)`
+zwracające komunikat naruszenia albo `null`; `canBlock` = `=== null`, a
+`declareBlockers` rzuca komunikat tej samej funkcji dla każdej pary. Sprawdzenia
+wieloparowe (menace, „can't block alone", sloty bloków) zostają lokalne, bo
+opisują deklarację, nie parę. Zachowane komunikaty istniejących sprawdzeń.
+
+Źródła online (dostęp 2026-09-18): CR 509.1/509.1a/509.1b —
+https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt
+(efektywne 2026-08-07); Oracle i rulings karty —
+https://api.scryfall.com/cards/named?exact=Rust-Shield%20Rampager,
+https://api.scryfall.com/cards/c96b01f5-83de-4237-a68d-f946c53e31a6/rulings.
+
+Piny: `test/m380-restrykcje-bloku-jedno-zrodlo.test.js` (4; RED 3/4 → GREEN
+4/4). (A) próg mocy: para z oferty = przyjęta, para spoza oferty = odrzucona,
+(B) odrzucenie ATOMOWE (krok i `state.combat` bez zmian — CR 509.1 „the game
+returns to the moment before the declaration"), (C) liczy się moc EFEKTYWNA
+(licznik +1/+1 podnosi 2 → 3 i blok jest legalny), (D) strażnik klasy L48:
+macierz atakujący×bloker (latanie/zasięg, menace, detain, „can't block",
+cantBeBlocked, próg mocy) sprawdza „w ofercie" ⇔ „komenda przyjęta" — na kodzie
+sprzed M380 scenariusz `ram <= p2` daje oferta=false, komenda=true. Bramy:
+`npm test` i `npm run build` — wyniki w opisie commita.
+
+## M381 (2026-09-18) — znalezisko #4 odznaki: grant tury na czar (flash + ETB fight)
+
+Zgłoszenie: wyzwanie właściciela „5 unikalnych błędów/uproszczeń vs zasady MtG".
+Karta: **Cherished Hatchling** (RIX) — „When this creature dies, you may cast
+Dinosaur spells this turn as though they had flash, and whenever you cast a
+Dinosaur spell this turn, it gains »When this creature enters, you may have it
+fight another target creature.«"
+
+Objaw (sonda `/home/user/p/probe-m381.mjs`): po śmierci Hatchlinga Dinozaur był
+OFEROWANY do rzutu w end stepie (`cast_permanent`), ale wykonanie oferty kończyło
+się `illegal_cast: Zagranie poza main phase`; a rzut Dinozaura w main phase nie
+dawał żadnego triggera ETB — walki nie było (wróg bez obrażeń, `abilityGrants`
+permanentu puste).
+
+Root cause (dwa niezależne braki w jednym efekcie):
+1. **L41 — dwa źródła prawdy:** pozwolenie „as though it had flash" znała tylko
+   OFERTA (`game-state.playerView` czytało `state.subtypeFlashThisTurn`),
+   a walidacja `castPermanent` patrzyła wyłącznie na wydrukowany keyword —
+   opublikowana komenda była odrzucana (złamany kontrakt „oferta = walidacja",
+   ta sama klasa co L48/M380).
+2. **Zapis bez odczytu:** efekt zapisywał w grancie flagę `etbFight: true`,
+   której NIKT w silniku nie czytał — druga połowa zdolności (nadanie czarowi
+   zdolności ETB) nie istniała; rzut Dinozaura nie miał żadnego efektu.
+
+Fix (root cause, ADR 0002/0016):
+- `permanents.hasFlashPermission` / `grantedFlashGrant` — wspólny predykat dla
+  oferty i walidacji (jedno źródło prawdy);
+- grant niesie **deskryptor zdolności z karty** (`createAbility`, warianty
+  `optional` dla „you may" i `fight.sourceIsFighter` — walczy ŹRÓDŁO zdolności,
+  nie dwa wskazane cele); rdzeń nie zna nazwy karty;
+- zdolność jest stemplowana na czarze w chwili rzutu (`grantedAbilitiesFromTurn`)
+  i doklejana do permanentu przy wejściu przez `grantAbilitiesUntilEndOfTurn`
+  (CR 603.6a — permanent ma ją już przy wejściu, a cleanup zdejmuje razem
+  z resztą „this turn"); stempel nie zostaje na permanencie.
+
+Źródła online (dostęp 2026-09-18): Oracle i rulings Cherished Hatchling —
+https://api.scryfall.com/cards/named?exact=Cherished%20Hatchling,
+https://api.scryfall.com/cards/0a14fe6c-b272-415b-974d-c60d016ab786/rulings
+(„you may cast any number of Dinosaurs as though they had flash"; „if … the
+Dinosaur that entered the battlefield has left the battlefield, no creature will
+deal or be dealt damage"); CR 702.8 (flash), CR 701.12/701.12b/c (fight),
+CR 603.6a (ETB) — https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt
+(efektywne 2026-08-07).
+
+Piny: `test/m381-grant-flash-i-etb-fight.test.js` (5; RED 4/5 → GREEN 5/5).
+(A) komenda z oferty w end stepie jest przyjmowana (grant flash), (B) nadana
+zdolność istnieje i walczy (6/5 vs 2/1 → bloker ginie, Dinozaur 2 obrażenia;
+life p2 rośnie wyłącznie o trigger śmierci Highland Game), (C) kontrola — bez
+grantu brak zdolności, (D) „you may" — oferta `targetId: null` nic nie robi,
+(E) grant wygasa w cleanupie razem z `subtypeFlashThisTurn`.
+Bramy: `npm test` 5750/5750, `npm run build` 64 moduły / 3821,0 kB.
+
+## M382 (2026-09-18) — znalezisko #5 odznaki: kolejność równoległych zdolności (APNAP)
+
+Zgłoszenie: wyzwanie właściciela „5 unikalnych błędów/uproszczeń vs zasady MtG".
+Reguła: **CR 603.3b** („…the abilities are placed on the stack in a two-part
+process. First, each player, in APNAP order, puts each triggered ability they
+control … on the stack in any order they choose. (See rule 101.4.)") oraz
+**CR 101.4** (APNAP = gracz aktywny, potem pozostali w kolejności tur) i
+**CR 603.3** (zdolność wchodzi na wierzch stosu → LIFO).
+
+Objaw (sonda `/home/user/p/apnap2.mjs`): wymiana w walce 2/1 vs 2/1, obiekty
+gracza nieaktywnego (p2) wstawione do stanu PRZED obiektami gracza aktywnego
+(p1). Stos po zgonach: `[highland-game@p2, highland-game@p1]` (dol → góra) —
+zdolność gracza AKTYWNEGO na wierzchu, więc rozstrzygała się pierwsza, a
+zdolność gracza nieaktywnego ostatnia. Reguła wymaga odwrotnie (AP umieszcza
+swoje zdolności pierwsze). Po fixie stos:
+`[highland-game@p1, highland-game@p1, highland-game@p2, highland-game@p2]`, a
+zdarzenia `life_changed` idą `p2, p2, p1, p1` (nieaktywny rozstrzyga pierwszy).
+
+Root cause: kolejność partii zdolności wyzwolonych brała się z kolejności
+WSTAWIENIA obiektów do `state.objects` (praktycznie: kolejności wejścia
+permanentów na pole bitwy), bo skan triggerów obchodzi `state.objects.values()`,
+a `queueTriggerToStack` dopisuje wpis na koniec stosu w tej właśnie kolejności.
+Uwaga na przyszłość: wcześniejsza weryfikacja tej samej reguły (PROJECT_HISTORY,
+kandydat 2 z 2026-08-24, „CR 603.3b — zweryfikowane: stos [p1(AP), p2(NAP)]")
+użyła przypadku NIEROZRÓŻNIAJĄCEGO — obiekty gracza aktywnego były wstawione
+pierwsze, więc kolejność wstawienia przypadkiem pokrywała się z APNAP.
+
+Fix (root cause, jedno miejsce): `processTriggersScan` zapamiętuje `stackStart`
+(długość stosu przed skanem) i na końcu przestawia wyłącznie wpisy dodane przez
+ten skan — `placeTriggerBatchInApnapOrder`:
+- stabilny sort po kolejności tur (`state.players` cyklicznie od gracza
+  aktywnego) — kolejność WEWNĄTRZ kontrolera bez zmian (silnik nie pyta gracza o
+  kolejność własnych zdolności, wybiera deterministycznie kolejność wykrycia);
+- starsze wpisy stosu nietykalne; gdy w segmencie jest cokolwiek poza triggerami
+  (np. kopia czaru), nic nie jest przestawiane;
+- dwuetapowy proces 603.3b (najpierw zdolności, których warunek nie jest
+  zdolnością wyzwoloną przez inną zdolność) pozostaje uproszczeniem silnika —
+  świadomie poza zakresem tego fixu.
+
+Źródła online (dostęp 2026-09-18): CR 603.3b i CR 101.4 —
+https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt
+(efektywne 2026-08-07), cytaty w nagłówku pinu.
+
+Piny: `test/m382-apnap-kolejnosc-triggerow.test.js` (4; RED 3/4 → GREEN 4/4).
+(A) cztery równoczesne zdolności śmierci leżą na stosie w porządku APNAP,
+(B) LIFO: zdolności gracza nieaktywnego rozstrzygają się pierwsze (kolejność
+`life_changed` = `p2, p2, p1, p1`), (C) kontrola: przy odwrotnej kolejności
+wstawienia obiektów wynik identyczny (fix nie jest „odwróceniem" kolejności),
+(D) stabilność: przy wstawieniu przeplatanym (nap-a, ap-a, nap-b, ap-b)
+zdolności każdego kontrolera zachowują kolejność wykrycia.
+Bramy: `npm test` 5754/5754, `npm run build` 64 moduły / 3823,9 kB.
+
+## M383 (2026-09-18) — srebro #1: proliferate daje licznik każdego typu także graczom z ENERGIA (CR 701.34a)
+
+Zgłoszenie: wyzwanie właściciela „5 UNIKALNYCH błędów/uproszczeń vs zasady MtG"
+(srebrna odznaka). Reguła: **CR 701.34a** (numeracja 2026; w kodzie starsze
+odnośniki „701.27"): „To proliferate means to choose any number of permanents
+and/or players **that have a counter**, then give each one additional counter of
+**each kind** that permanent or player already has." Do tego **CR 122.1** oraz
+**CR 107.14** z symbolem {E}, a źródłowo: mtg.wiki/Energy — „An energy counter is
+a counter that, unlike most other counters, is placed on **players** rather than
+objects" — i WotC (Magic: The Gathering — Fallout Mechanics, 2024-02-20):
+„Proliferate … If you have three energy counters, give yourself another! …
+If a player or permanent has more than one kind of counter and you choose to add
+counters, you must add one of each kind already there."
+
+Objaw (sonda `/home/user/p2/probe-s1.mjs`): p1 ma 4 liczniki energii (np. po
+Shipwreck Moray) i zero trucizny, na polu bitwy stwora z licznikiem +1/+1, w
+ręce Courage in Crisis. Po rzucie czaru lista kandydatów decyzji proliferate to
+`["bear"]` — **gracza z energią w niej nie ma**, oferta `resolve_proliferate`
+nie pozwala go wskazać, a wymuszona komenda z `targetIds: ["p1"]` jest
+odrzucana (`illegal_proliferate_target`, `game-state.js` bramka walidacji
+kandydatów). Po wyborze samego stwora energia p1 zostaje na 4 — mimo że
+proliferate ma dać „additional counter of each kind".
+
+Root cause (jedno źródło prawdy o kandydatach, `src/engine/effects.js`):
+`pendingProliferate.candidateIds` zbierało permanenty z licznikami oraz graczy
+**wyłącznie z trucizną** (`player.poison > 0`), a rozgałęzienie rezolucji dla
+celu-gracza obsługiwało tylko truciznę (`addPoisonCounters`) — energia nie
+występowała w żadnym z obu miejsc. Helper `addEnergyCounters` istniał
+(`players.js`, użyty m.in. przez `get_energy`), więc luka była czysto
+predykatowa.
+
+Fix (root cause, dwa miejsca w tym samym warunku-właścicielu):
+- kandydatem jest gracz z trucizną **LUB** energią: `(player.poison ?? 0) > 0
+  || (player.energy ?? 0) > 0` — zgodnie z „players that have a counter";
+- rezolucja celu-gracza dodaje po jednym liczniku **każdego** typu, który gracz
+  ma (all-or-nothing, jak w regule): obok istniejącej gałęzi trucizny gałąź
+  energii przez wspólny helper `addEnergyCounters` + zdarzenie `counter_added`
+  (`counter: 'energy'`, `fromProliferate: true`) — ten sam wzorzec strumienia
+  liczników co trucizna (M269).
+
+Źródła online (dostęp 2026-09-18): CR 701.34a i CR 107.14/122.1 —
+https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt
+(efektywne 2026-08-07); mtg.wiki/Energy_counter (cytat o licznikach na graczach);
+magic.wizards.com/en/news/feature/magic-the-gathering-fallout-mechanics (cytat
+„If you have three energy counters, give yourself another!"); oracle Courage in
+Crisis (Scryfall) — cytaty w nagłówku pinu.
+
+Piny: `test/m383-proliferate-liczniki-gracza.test.js` (5; RED 3/5 → GREEN 5/5).
+(A) gracz z licznikami energii jest kandydatem i pojawia się w ofercie,
+(B) wybór gracza daje +1 licznik energii (zdarzenie `counter_added`
+z `fromProliferate`), (C) gracz z trucizną i energią dostaje +1 KAŻDEGO typu,
+(D) strażnik: gracz bez żadnych liczników nadal nie jest kandydatem
+(`illegal_proliferate_target`), (E) kontrola: proliferate na permanencie działa
+jak przed zmianą.
+Bramy: `npm test` 5759/5759, `npm run build` 64 moduły / 3825,0 kB.
+## M384 (2026-09-18) — srebro #2: zdolność aktywowana NADANA cudzą statyką była oferowana, ale nie do wykonania (CR 604.2 + 602.2a, klasa L48)
+
+Zgłoszenie: to samo wyzwanie właściciela (5 unikalnych błędów/uproszczeń vs
+zasady MtG) — znalezisko #2. Objaw: drzewko legalnych komend pokazuje
+`activate_ability` na stworze, który nie ma wydrukowanej zdolności (dostał ją
+od innego permanenta), a `execute` tej samej komendy kończy się odrzuceniem
+`command_rejected` z komunikatem „Nieznana zdolność aktywowana".
+
+Karta-kotwica: **Enduring Sliver** (MH1, `enduring-sliver`) — Oracle
+(Scryfall, dostęp 2026-09-18): „Outlast {2} ({2}, {T}: Put a +1/+1 counter on
+this creature. Outlast only as a sorcery.) / **Other Sliver creatures you
+control have outlast {2}.**" Drugim Sliverem w katalogu jest changeling
+(Barkform Harvester — CR 702.73a: jest każdym typem stworów), więc para
+„Enduring Sliver + changeling" jest w tym katalogu pełnoprawnym, osiągalnym
+przypadkiem, nie sytuacją teoretyczną.
+
+Reguły (źródła online, ADR 0030):
+- **CR 702.107a** (cytat za https://mtg.wiki/page/Outlast, wydanie CR
+  2026-08-07): „Outlast is an activated ability. »Outlast [cost]« means
+  »[Cost], {T}: Put a +1/+1 counter on this creature. Activate only as a
+  sorcery.«"
+- **CR 604.2** (MagicCompRules 2026-08-19, efektywne 2026-08-07;
+  https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt):
+  „Static abilities create continuous effects … These effects are active as
+  long as the permanent with the ability remains on the battlefield and has
+  the ability" — nadanie zdolności jest efektem ciągłym (warstwa 6), więc
+  zdolność istnieje i da się ją aktywować.
+- **CR 602.2a/602.2b**: „Only an object's controller … can activate its
+  activated ability"; aktywacja przebiega krokami 601.2b–i (w tym płatność
+  kosztu, CR 601.2h).
+- Khans of Tarkir Release Notes (2014-09-18, cytowane na mtg.wiki/Outlast):
+  „The cost to activate a creature's outlast ability includes the tap symbol.
+  A creature's outlast ability can't be activated unless that creature has
+  been under your control continuously since the beginning of your turn."
+- Scryfall Enduring Sliver: lista rulings WotC pusta — brak dodatkowych
+  rozstrzygnięć; powyższe reguły wystarczają.
+
+Root cause (jedno źródło prawdy, `src/engine/abilities.js`): trzy kroki życia
+zdolności czytały zdolność z DWÓCH różnych list. Oferta
+(`legalActivatedAbilities`) i walidacja (`activateAbility`) enumerowały
+`activatableAbilities(state, object)` = zdolności własne + nadane cudzą
+statyką (`grantedActivatedAbilities`, Batch 47) + nadane grantem jednorazowym
+(`abilityGrants`), natomiast WYKONANIE (`performActivation`) czytało
+`(object.abilities ?? [])[abilityIndex]`. Dla zdolności nadanej indeks leży
+poza listą własną obiektu, więc `performActivation` rzucał „Nieznana zdolność
+aktywowana" — czyli dokładnie klasa L48: silnik publikuje ruch, którego sam
+nie przyjmuje (CR 604.2 + 602.2a mówią, że ruch jest legalny).
+
+Fix (root cause, jedna linia w `performActivation`): wykonanie czyta TĘ SAMĄ
+listę co oferta i walidacja — `activatableAbilities(state, object)
+[abilityIndex]` (gałąź sprzętu `grantedFromEquipment` bez zmian, bo ma własną
+przestrzeń indeksów). To przywraca jedną regułę w trzech miejscach zamiast
+dwóch kopii (L41/L48) i automatycznie obejmuje oba źródła nadania (statyka
+cudza i `abilityGrants`).
+
+Piny: `test/m384-nadane-zdolnosci-aktywowane.test.js` (5; RED 4/5 → GREEN
+5/5; na HEADzie czerwony był pin B — komenda z oferty odrzucona). (A) oferta
+zawiera nadany outlast (kontrola), (B) wykonanie oferty jest PRZYJMOWANE,
+płaci {2} + {T} i po rozstrzygnięciu daje +1/+1, (C) własna zdolność
+changelinga (indeks 0) nadal działa — brak przesunięcia indeksów, (D) choroba
+przywołania blokuje nadany outlast (koszt {T}, CR 302.6 + Release Notes),
+(E) „Other Sliver creatures" nie nadaje outlastu samemu źródłu.
+Bramy: `npm test` 5764/5764, `npm run build` 64 moduły / 3825,6 kB.
+
+## M385 — Changeling jako kandydat „Plains card" w szukaniu w bibliotece (srebro #3)
+
+Znalezisko #3 wyzwania „srebrna odznaka". `librarySearchMatches`
+(`src/engine/effects.js`) dopasowywało podtypy kwalifikatora szukania przez
+`hasCreatureType` (`src/engine/permanents.js`). Ta funkcja świadomie rozszerza
+dopasowanie o changeling — dla TYPÓW STWORÓW jest to poprawne (CR 702.73a:
+„This object is every creature type"), ale podtypy nie-stworze (typy lądów,
+artefaktów, enchantmentów) szły TĄ SAMĄ ścieżką. Changeling w bibliotece był
+więc kandydatem „Plains card" (Kor Cartographer), „Mountain card" (Call the
+Mountain Chocobo) i „Swamp card" (Swampcycling Gloomfang Maulera), a także
+Aura/Saga/Equipment. Martwa kopia tej samej reguły (`matchesCyclingQualifier`
+w `src/engine/abilities.js`) powtarzała błąd (klasa L41 — dwie kopie jednej
+reguły).
+
+Źródła online (ADR 0030, dostęp 2026-09-18):
+- CR TXT `media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt`
+  (efektywne 2026-08-07), chunk 68: **702.73a** „Changeling is a
+  characteristic-defining ability. »Changeling« means »This object is every
+  creature type.« This ability works everywhere, even outside the game."
+- ten sam dokument, chunk 20: **205.3i** „Lands have their own unique set of
+  subtypes; these subtypes are called land types. The land types are Cave,
+  Desert, Forest, Gate, Island, Lair, Locus, Mine, Mountain, Plains, Planet,
+  Power-Plant, Sphere, Swamp, Tower, Town, and Urza's. Of that list, Forest,
+  Island, Mountain, Plains, and Swamp are the basic land types." oraz
+  **205.3m** (lista typów stworów; Plains/Mountain/Swamp na niej NIE ma).
+- mtg.wiki/Changeling (cytat CR + Lorwyn Rules Primer): changeling działa we
+  wszystkich strefach, ale wyłącznie dla typów stworów („reveal a Merfolk
+  card … return a Goblin card … gain control of a Goat").
+- Scryfall Kor Cartographer (Oracle: „When this creature enters, you may
+  search your library for a Plains card, put it onto the battlefield tapped,
+  then shuffle."; rulings WotC puste), Call the Mountain Chocobo (Oracle
+  „Search your library for a Mountain card, reveal it, put it into your hand,
+  then shuffle. …"), Gloomfang Mauler (Oracle „Swampcycling {2} … Search your
+  library for a Swamp card …").
+
+Objaw (sonda `probe-s9.mjs`): w bibliotece leżał changeling (Barkform
+Harvester); po rzuceniu Kor Cartographera lista kandydatów zawierała go obok
+prawdziwej karty Plains. Bez fixu changeling przechodził predykat dla
+Plains/Goblin/Aura/Saga/Equipment/Sliver; zwykły stwór i podstawowy ląd
+odrzucane zgodnie z regułami.
+
+Root cause i fix u źródła (ADR 0016): nowy wspólny predykat
+`matchesSubtypeQualifier` (`permanents.js`) rozdziela domeny — `subtypes`
+czytane z linii typów przez `effectiveSubtypes` (bez changelinga), a
+`creatureTypes` (nowy klucz kwalifikatora) przez `hasCreatureType` (z
+changelingiem). `librarySearchMatches` i ścieżka typecycling/channel
+(`__cycling_resolve__` w `spells.js`) używają tego samego predykatu; usunięto
+martwą kopię `matchesCyclingQualifier`. Efekt: „Plains card" nie znajduje już
+changelinga, a wyszukiwania typów stworów nadal działają.
+
+Piny: `test/m385-changeling-kwalifikator-podtypow.test.js` (5; RED 4/5 →
+GREEN 5/5). (A) predykat: changeling nie pasuje na Plains/Mountain/Swamp/
+Equipment/Saga/Aura, pasuje na typy stworów, (B) kontrola — podtypy z linii
+typów (w tym nie-basic ląd z podtypem Plains), (C) Kor Cartographer
+end-to-end (oferta bez changelinga, ląd wchodzi tapnięty), (D) Swampcycling
+end-to-end, (E) Call the Mountain Chocobo end-to-end.
+Bramy: `npm test` 5769/5769, `npm run build` 64 moduły / 3826,5 kB.

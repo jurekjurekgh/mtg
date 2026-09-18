@@ -1,7 +1,7 @@
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { hasCreatureType, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, untapObject, tapObject } from './permanents.js';
+import { hasCreatureType, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, untapObject, tapObject } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -658,8 +658,9 @@ export function librarySearchMatches(object, qualifier, ownerId) {
   if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
   const typeMatch = (qualifier.types ?? []).length === 0
     || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
-  const subtypeMatch = (qualifier.subtypes ?? []).length === 0
-    || (qualifier.subtypes ?? []).some((subtype) => hasCreatureType(object, subtype));
+  // M385: podtypy kwalifikatora czytamy z linii typów; changeling rozszerza
+  // WYŁĄCZNIE typy stworów (CR 702.73a) — wspólny predykat (permanents.js).
+  const subtypeMatch = matchesSubtypeQualifier(object, qualifier);
   const kindMatch = !qualifier.kind || object.kind === qualifier.kind;
   const minMv = qualifier.minManaValue;
   const mvOk = minMv == null || (object.manaCost ?? 0) >= minMv;
@@ -1300,8 +1301,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // sobie NAWZAJEM obrażenia równe swojej mocy. Obie moce liczone PRZED
     // zadaniem (jednoczesność — CR 701.12b); jeśli którykolwiek przestał
     // być legalny, ŻADEN nie zadaje obrażeń (CR 701.12c).
-    const aId = targets[effect.targetIndexA ?? 0];
-    const bId = targets[effect.targetIndexB ?? 1];
+    // M381: `sourceIsFighter` — zdolność brzmi „it fights target creature",
+    // więc walczącym A jest ŹRÓDŁO zdolności, a B wybrany cel (ruling WotC
+    // 2018-01-19 dla Cherished Hatchling: gdy źródło opuściło pole bitwy,
+    // żaden stwór nie zadaje i nie otrzymuje obrażeń — ten sam warunek niżej).
+    const aId = effect.sourceIsFighter ? sourceObject?.id : targets[effect.targetIndexA ?? 0];
+    const bId = effect.sourceIsFighter ? targets[effect.targetIndexB ?? 0] : targets[effect.targetIndexB ?? 1];
     if (aId == null || bId == null) return;
     const a = state.objects.get(aId);
     const b = state.objects.get(bId);
@@ -2152,8 +2157,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // GRACZA, nie do permanentu. Wartość bierzemy z `amount` (deskryptor), a nie
   // z liczby symboli w Oracle — jedno źródło prawdy (L41).
   if (effect.type === 'get_energy') {
+    // F1 audytu PR #125 (M375, ADR 0016): slot celu bierzemy z `targets` —
+    // tak jak pozostałe gałęzie efektów. Dotąd stało tu `effectTargets`,
+    // którego w tym pliku NIE MA, więc ścieżka `targetIndex` rzucała
+    // `ReferenceError` (martwa dziś, latentna dla każdej karty „target
+    // player gets {E}"); nieaktualny cel schodzi na kontrolera źródła.
     const targetPlayerId = effect.targetIndex != null
-      ? (state.objects.get(effectTargets[effect.targetIndex])?.controllerId ?? sourceObject.controllerId)
+      ? (state.objects.get(targets[effect.targetIndex])?.controllerId ?? sourceObject.controllerId)
       : sourceObject.controllerId;
     if (!state.players.some((entry) => entry.id === targetPlayerId)) return;
     addEnergyCounters(state, targetPlayerId, effect.amount ?? 1);
@@ -4029,7 +4039,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
       Object.freeze({
         controllerId: sourceObject.controllerId,
         subtype: effect.subtype,
-        etbFight: true,
+        // M381: zdolność nadawana rzuconemu czarowi tego podtypu. Deskryptor
+        // przychodzi z KARTY (jak w `grant_abilities` Fake Your Own Death),
+        // a nie z nazwy karty w rdzeniu (ADR 0002). Przed M381 stała tu
+        // flaga `etbFight`, której NIKT nie czytał — połowa zdolności
+        // Cherished Hatchlinga nie istniała.
+        grantedAbility: effect.grantedAbility ? Object.freeze({ ...effect.grantedAbility }) : null,
       }),
     ];
     return;
@@ -5013,9 +5028,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
         if (Object.values(object.counters ?? {}).some((count) => count > 0)) candidates.push(object.id);
       }
       for (const player of state.players) {
-        // CR 701.27a: gracze z licznikami też są celami proliferate — trucizna
-        // mieszka w player.poison (addPoisonCounters/SBA), nie player.counters.
-        if ((player.poison ?? 0) > 0) candidates.push(player.id);
+        // CR 701.34a (numeracja 2026; dawniej 701.27a): proliferate wybiera
+        // „any number of permanents and/or players THAT HAVE A COUNTER" —
+        // licznikami gracza są w tym silniku trucizna (player.poison) ORAZ
+        // energia (player.energy, CR 122.1 + mtg.wiki/Energy: „An energy
+        // counter is a counter that ... is placed on players rather than
+        // objects"). Gracz z energią, ale bez trucizny MUSI być kandydatem —
+        // wcześniej wypadał z listy, więc nie dało się go wybrać i nie
+        // dostawał kolejnego licznika energii.
+        if ((player.poison ?? 0) > 0 || (player.energy ?? 0) > 0) candidates.push(player.id);
       }
       if (candidates.length === 0) return false;
       state.pendingProliferate = {
@@ -5058,6 +5079,19 @@ function markTemporaryExile(state, exileId, sourceObject) {
           state.events.push(event('counter_added', {
             objectId: player.id, cardId: null, counter: 'poison', amount: 1,
             total: player.poison, fromProliferate: true,
+          }));
+          proliferated += 1;
+        }
+        // CR 701.34a: „additional counter of EACH KIND that … player already
+        // has" — energia to taki sam licznik gracza jak trucizna. Ten sam
+        // wzorzec co trucizna: wspólny helper (addEnergyCounters, CR 107.14)
+        // + `counter_added` w strumieniu liczników (fromProliferate).
+        if ((player.energy ?? 0) > 0) {
+          addEnergyCounters(state, player.id, 1);
+          state.events.push(event('counter_added', {
+            objectId: player.id, cardId: null, counter: 'energy', amount: 1,
+            total: state.players.find((p) => p.id === player.id)?.energy ?? 0,
+            fromProliferate: true,
           }));
           proliferated += 1;
         }

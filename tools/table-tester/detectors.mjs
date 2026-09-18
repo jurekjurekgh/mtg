@@ -387,10 +387,26 @@ export function detectDeadEndWindow(lines, { windowRecords = null } = {}) {
   // więc detektor oglądał jedno okno na całą partię. Gdy sterownik je poda,
   // korzystamy z nich; parsowanie linii zostaje dla transkryptów z archiwum.
   if (windowRecords) {
-    for (const rec of windowRecords) {
+    for (let i = 0; i < windowRecords.length; i += 1) {
+      const rec = windowRecords[i];
       if (rec.gameOver) continue;
       const actions = (rec.actions ?? []).map((t) => String(t).trim()).filter(Boolean);
       const evidence = `AKCJE: ${actions.join('  ||  ') || '(brak)'}`;
+      // M377 (E4, pętla jakości ADR 0021 §4a — Żywy Tester, tester-2 seed
+      // 2027): okno z samym „Poddaj partię" BYWA PRZEJŚCIOWE. Pomiar: bot
+      // rzucił Talion's Messenger, panel zdążył narysować się zanim sesja
+      // auto-przewinęła okno bez odpowiedzi gracza — w LOGU tego okna był już
+      // nowy wpis („Nieprzyjaciel zagrywa Talion's Messenger"), a następne
+      // okno pokazało rozstrzygnięcie czaru. Prawdziwy martwy zaułek M90/B
+      // (Forever Young) to okno, które SIĘ POWTARZA: log nie rośnie ani przed
+      // nim, ani po nim (`newestLogEntry` identyczny w sąsiednich rekordach).
+      // Bez tej bramki raport zgłaszał „gracz nie ma wyjścia" w normalnym
+      // auto-passie — fałszywy alarm klasy L33 (narzędzie mierzy własną
+      // ślepotę), a raport ma być uczciwy (wymóg właściciela).
+      const newest = rec.newestLogEntry ?? null;
+      const frozen = (windowRecords[i - 1]?.newestLogEntry ?? null) === newest
+        && (windowRecords[i + 1]?.newestLogEntry ?? null) === newest;
+      if (!frozen) continue;
       if (actions.length === 0) { push(found, 'ui', 'Okno gracza BEZ żadnej akcji (martwe okno)', evidence); continue; }
       if (actions.every((t) => /^Poddaj/.test(t))) {
         push(found, 'ui', 'Jedyna opcja to „Poddaj partię" — gracz nie ma wyjścia', evidence);

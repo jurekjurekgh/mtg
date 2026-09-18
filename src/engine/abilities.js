@@ -1389,7 +1389,15 @@ export function performActivation(state, ctx) {
   // rozróżnienie po fladze grantedFromEquipment (jak wyżej).
   const ability = ctx.grantedFromEquipment
     ? (object.equipment?.grantedAbilities ?? [])[abilityIndex]
-    : (object.abilities ?? [])[abilityIndex];
+    // M384 (klasa L48 — oferta = walidacja = WYKONANIE): to ta sama lista,
+    // którą widzi oferta (`legalActivatedAbilities`) i walidacja
+    // (`activateAbility`): zdolności własne + nadane grantem jednorazowym
+    // (`abilityGrants`) + nadane cudzą zdolnością statyczną (Enduring Sliver:
+    // „Other Sliver creatures you control have outlast {2}", CR 604.2 +
+    // 702.107a). Wcześniej wykonanie czytało WYŁĄCZNIE `object.abilities`,
+    // więc oferta zdolności NADANEJ (indeks ≥ długość listy własnej) kończyła
+    // się odrzuceniem legalnej komendy: „Nieznana zdolność aktywowana".
+    : activatableAbilities(state, object)[abilityIndex];
   if (!ability || ability.type !== ABILITY_TYPE.activated) throw new Error('Nieznana zdolność aktywowana');
   if (ability.fromGraveyard) {
     if (object.zone !== 'graveyard') throw new Error('Zdolność z grobu wymaga źródła w grobie');
@@ -1825,29 +1833,12 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
   return entry;
 }
 
-/**
- * Cycling (CR 702.28): zapłać koszt many, odrzuć kartę (odrzut jest kosztem)
- * i przeszukaj bibliotekę pod kątem deskryptora kwalifikacji (np. typ
- * „Swamp" u swampcyclingu). Trafienie — karta jawna (reveal) — trafia do ręki,
- * po czym biblioteka jest tasowana deterministycznym RNG (ADR 0005).
- * Szukanie kart o zadanej jakości pozwala świadomie nie znaleźć (fail to
- * find, CR 701.19b) — wybór deterministyczny: pierwsza pasująca karta w
- * kolejności biblioteki (jak deterministyczny cel triggera Kap-py).
- */
-function matchesCyclingQualifier(object, qualifier) {
-  // Basic landcycling (Fiery Fall): karta musi mieć WSZYSTKIE wskazane typy
-  // naraz (Basic ∧ Land) — inaczej niż typy alternatywne (OR) zwykłego
-  // typecyclingu. Koniunkcja jest osobną właściwością deskryptora.
-  const allTypes = qualifier?.allTypes ?? [];
-  if (allTypes.length > 0) {
-    return allTypes.every((type) => (object.types ?? []).includes(type));
-  }
-  const types = qualifier?.types ?? [];
-  const subtypes = qualifier?.subtypes ?? [];
-  if (types.some((type) => (object.types ?? []).includes(type))) return true;
-  return subtypes.some((subtype) => hasCreatureType(object, subtype));
-}
-
+// M385: dopasowanie podtypów kwalifikatora (typecycling/channel) mieszka
+// w JEDNYM miejscu — `matchesSubtypeQualifier` (permanents.js); rozstrzyganie
+// szukania jest w spells.js (`__cycling_resolve__` / `__channel_resolve__`).
+// Usunięto martwą kopię `matchesCyclingQualifier`, która przez
+// `hasCreatureType` przepuszczała changelingi na podtypy lądów (ta sama
+// klasa błędu co w `librarySearchMatches`).
 function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
   if (cardObject.zone !== 'hand') throw new Error('Cycling aktywuje się z ręki');
   const qualifier = ability.cycling;

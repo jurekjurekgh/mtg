@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
-import { effectiveKeywords, untapControlled } from './permanents.js';
+import { effectiveKeywords, untapControlled, hasFlashPermission, grantedFlashGrant } from './permanents.js';
 import { effectiveProtectionFromColors, isProtectedFromSource } from './attachments.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
@@ -1418,7 +1418,15 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
   // bez flash — tylko w swojej main phase (plot też rzuca się jako sorcery).
-  const hasFlash = (object.keywords ?? []).includes('flash');
+  // M381 (L41): pozwolenie może pochodzić też z GRANTU TURY („you may cast
+  // Dinosaur spells this turn as though they had flash" — Cherished Hatchling).
+  // Jedno źródło prawdy z ofertą (`hasFlashPermission`); przed M381 walidacja
+  // patrzyła tylko na wydrukowany keyword i odrzucała komendę, którą sama
+  // oferta publikowała (L48).
+  const hasFlash = hasFlashPermission(state, playerId, object);
+  // Grant tej tury może nieść dodatkowo zdolność nadawaną rzuconemu czarowi
+  // („…and whenever you cast a Dinosaur spell this turn, it gains …").
+  const flashGrant = (object.keywords ?? []).includes('flash') ? null : grantedFlashGrant(state, playerId, object);
   // M159/F1 (audyt PR #66, CR 702.35a + ruling DMU 2023-01-06): rzut za koszt
   // madness następuje przy rozstrzyganiu zdolności wyzwalanej (jak
   // suspend/rebound) i IGNORUJE timing — ruling: „Casting a spell with madness
@@ -1708,6 +1716,11 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // Offspring (BLB, Rust-Shield Rampager): flaga na permanencie decyduje,
     // czy ETB-trigger stworzy token-kopię (condition wasOffspring).
     ...(offspringPaid ? { wasOffspring: true } : {}),
+    // M381: zdolność nadana przez grant tej tury (Cherished Hatchling) —
+    // stemplowana na czarze w chwili RZUTU („whenever you cast … this turn"),
+    // a doklejana do permanentu przy wejściu (resolvePermanentSpell), żeby
+    // ETB-trigger odpalił się razem z wejściem (CR 603.6a).
+    ...(flashGrant?.grantedAbility ? { grantedAbilitiesFromTurn: Object.freeze([flashGrant.grantedAbility]) } : {}),
   });
   state.objects.set(stackId, stacked);
   const e = event('permanent_cast', {
