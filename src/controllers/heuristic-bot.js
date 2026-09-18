@@ -1102,7 +1102,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const enemy = (view) => view.players.find((p) => p.id !== view.playerId);
   const myCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'creature');
   const enemyCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId !== view.playerId && o.kind === 'creature');
-  const untappedEnemyBlockers = (view) => enemyCreatures(view).filter((o) => !o.tapped);
+  // Potencjalni blokerzy = wrogie stwory, które FAKTYCZNIE mogą blokować.
+  // Uwaga A właściciela z testów (2026-09-18, Azorius Justiciar): jedyny
+  // wróg zatrzymany przez detain nie może blokować, a bot liczył go jako
+  // ryzyko i nie atakował. Zakazy są JAWNE w PlayerView (ADR 0017):
+  //  • `detained` — detain (CR 701.29): „Until your next turn, those
+  //    creatures can't attack or block…” (Oracle, snapshot
+  //    scryfall-azorius-justiciar.json; engine: blockRestrictionError);
+  //  • `cantBlock` — centralny odczyt silnika `creatureCantBlock`
+  //    + restrykcje załączników (game-state.js, L55).
+  // Silnik i tak odrzuci taki blok (blockAssignmentViolation), więc liczenie
+  // go w ryzyku jest wyłącznie szumem (L1: bot czyta to, co widok niesie).
+  const untappedEnemyBlockers = (view) => enemyCreatures(view)
+    .filter((o) => !o.tapped && o.cantBlock !== true && o.detained !== true);
   /**
    * M317 (zgłoszenie właściciela, Ghost Warden): wycena ataku ma zakładać,
    * że OBROŃCA może w oknie bloków pompać swojego blokera zdolnością ze
