@@ -1445,6 +1445,13 @@ function bootstrapTable() {
     } catch { slot.textContent = ''; }
   }
 
+  // M386/A2 (zgłoszenie właściciela 2026-09-18: „odświeżenie skasowało partię,
+  // log przepadł"): powód nieudanego wznowienia trzymamy, żeby po starcie
+  // świeżej partii gracz zobaczył W LOGU, dlaczego zapis nie wrócił. Wcześniej
+  // `resumeFromSaved` pokazywał notice, ale `startGame()` zaraz potem otwierał
+  // nową partię i komunikat przepadał — gracz widział „reset" bez wyjaśnienia.
+  let lastResumeError = null;
+
   function resumeFromSaved(raw) {
     try {
       const saved = JSON.parse(raw);
@@ -1462,9 +1469,11 @@ function bootstrapTable() {
       showNotice(`Wznowiono partię (${summary.steps} komend).`);
       rerender();
       showBotMoves();
+      lastResumeError = null;
       return true;
     } catch (error) {
-      showNotice(`Nie udało się wznowić: ${error.message}`);
+      lastResumeError = error?.message ?? String(error);
+      showNotice(`Nie udało się wznowić: ${lastResumeError}`);
       return false;
     }
   }
@@ -1474,8 +1483,14 @@ function bootstrapTable() {
     try {
       const raw = storage?.getItem(AUTOSAVE_KEY);
       if (raw && resumeFromSaved(raw)) return;
-    } catch { /* uszkodzony zapis — startujemy nową grę */ }
+    } catch (error) {
+      // Uszkodzony zapis — startujemy nową grę, ale z jawnym powodem w logu.
+      lastResumeError = error?.message ?? String(error);
+    }
     startGame();
+    if (lastResumeError && session?.logSystem) {
+      session.logSystem(`Nie udało się wznowić zapisu: ${lastResumeError}. To nowa partia.`);
+    }
   }
 
   /** Polskie nazwy faz/kroków tury dla wskaźnika (lewy górny róg). */

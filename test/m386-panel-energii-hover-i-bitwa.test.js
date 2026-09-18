@@ -33,7 +33,7 @@ import { execute } from '../src/engine/game-state.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
 import { addEnergyCounters } from '../src/engine/players.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
+import { BOT_ID, HUMAN_ID, commandOptionKey, createSession } from '../src/table/session.js';
 
 // --- minimalny DOM (wzorzec: test/bug-d-daynight-hover-revive.test.js) -----
 class MiniEl {
@@ -347,6 +347,118 @@ test('M386/B2: marker energii jest KLIKALNY i otwiera pełny ekran jak Poison (A
   const mainSrc = readFileSync(new URL('../src/table/main.js', import.meta.url), 'utf8');
   assert.match(mainSrc, /onEnergyCardClick: \(card\) => openSpecialCardFullscreen\(card\)/,
     'main.js nie podłącza markera energii do pełnego ekranu');
+});
+
+test('M386/I: pełna sekwencja ptaszka (jak toggleIgnoredOption) nie zatrzymuje partii (A2)', () => {
+  // Odtworzenie DOKŁADNEJ kolejności z main.js `toggleIgnoredOption`:
+  //   ignored.add(key) → rerender → recheckAutoPass → autosave → rerender →
+  //   showBotMoves.
+  // W wersji z błędem PIERWSZY rerender rzucał (panel energii), więc
+  // `recheckAutoPass()` nie wykonywał się wcale — gracz zostawał z panelem
+  // akcji z samym „Poddaj partię”, a sesja czekała na klik wznowienia,
+  // którego nie było na ekranie.
+  const registry = createCardRegistry();
+  const ignored = new Set();
+  const session = createSession({ seed: 596891, registry, decks: tinyDecks(registry), ignoredOptionKeys: ignored });
+  const state = session.state;
+  state.pendingMulligans = [];
+  state.pendingMulliganBottom = null;
+  state.turn = jumpToStep(state.turn, 'main1', HUMAN_ID);
+  state.turn.activePlayerId = HUMAN_ID;
+  state.turn.priorityPlayerId = HUMAN_ID;
+  moveObjectDirectly(state, findObjectId(state, 'shipwreck-moray'), 'battlefield', 'bf-moray-i');
+  addEnergyCounters(state, HUMAN_ID, 4);
+
+  const view = session.view();
+  const ability = view.legalCommands.find((c) => c.type === 'activate_ability'
+    && state.objects.get(c.objectId)?.cardId === 'shipwreck-moray');
+  assert.ok(ability, 'zdolność „Pay {E}: +2/-2” nie jest oferowana w Głównej 1 — scena pinu I nie ma sensu');
+
+  // Ptaszek na zdolności Moraya (to zgłoszenie właściciela) + wyciszenie
+  // pozostałych opcji z tego okna, żeby auto-pass miał dokąd przewinąć
+  // (w partii właściciela inne okna też były już wyciszone).
+  ignored.add(commandOptionKey(ability));
+  for (const cmd of view.legalCommands) {
+    if (cmd.type === 'concede' || cmd.type === 'pass_priority' || cmd.type.startsWith('resolve_')) continue;
+    ignored.add(commandOptionKey(cmd));
+  }
+
+  const before = `${session.state.turn.number}:${session.state.turn.step}`;
+  const els = makeEls();
+  // 1) rerender (main.js) — musi przejść, inaczej recheckAutoPass się nie wykona.
+  assert.doesNotThrow(() => renderTableView({ els, session, play: () => {}, onCardClick: () => {} }),
+    'rerender po ptaszku rzuca — recheckAutoPass nigdy się nie wykona (A2)');
+  // 2) recheckAutoPass — przewinięcie okna bez realnych decyzji.
+  session.recheckAutoPass();
+  const after = `${session.state.turn.number}:${session.state.turn.step}`;
+  assert.notEqual(after, before, 'auto-pass nie ruszył partii — gra stoi w miejscu');
+  // 3) drugi rerender (main.js) + ścieżka modala ruchu bota.
+  assert.doesNotThrow(() => renderTableView({ els, session, play: () => {}, onCardClick: () => {} }),
+    'render po auto-passie rzuca — kolejne kliknięcia nie mają jak zadziałać');
+  const offer = session.view().legalCommands.map((c) => c.type);
+  assert.ok(offer.length > 0, 'po przewinięciu gracz nie ma żadnej akcji (nawet „Poddaj”)');
+  assert.ok(session.botPausePending || offer.some((t) => t !== 'concede'),
+    `po przewinięciu zostało samo „Poddaj partię”: ${JSON.stringify(offer)}`);
+});
+
+test('M386/J: wznowienie po odświeżeniu nie resetuje partii z energią (A2)', () => {
+  // Zgłoszenie właściciela: „odświeżenie skasowało całą partię, log przepadł”.
+  // Mechanizm: `resumeFromSaved` (main.js) odtwarza zapis przez
+  // `session.resumeReplayText` i na końcu woła `rerender()` — wyjątek panelu
+  // energii wpadał do `catch` wznowienia, więc strona startowała ŚWIEŻĄ partię
+  // (stąd „reset”). Pin idzie REALNĄ drogą: energia musi powstać z komend
+  // (ETB Moraya), nie z preparowania stanu — inaczej zapis jej nie niesie.
+  const registry = createCardRegistry();
+  const decks = tinyDecks(registry);
+  const live = createSession({ seed: 596891, registry, decks });
+  const morayOnBoard = () => [...live.state.objects.values()]
+    .some((o) => o.cardId === 'shipwreck-moray' && o.zone === 'battlefield');
+  for (let i = 0; i < 400 && live.state.status === 'active'; i += 1) {
+    if (morayOnBoard() && (live.view().players.find((p) => p.id === HUMAN_ID).energy ?? 0) >= 4) break;
+    const view = live.view();
+    const keep = view.legalCommands.find((c) => c.type === 'resolve_mulligan_choice' && c.keep === true);
+    const morayCast = view.legalCommands.find((c) => c.type === 'cast_permanent'
+      && live.state.objects.get(c.objectId)?.cardId === 'shipwreck-moray');
+    const land = view.legalCommands.find((c) => c.type === 'play_land');
+    const pass = view.legalCommands.find((c) => c.type === 'pass_priority');
+    const cmd = keep ?? morayCast ?? land ?? pass;
+    if (!cmd || !live.apply(cmd).ok) break;
+  }
+  assert.equal(live.view().players.find((p) => p.id === HUMAN_ID).energy, 4,
+    'scena pinu J nie zbudowała energii realnymi komendami');
+  assert.ok(morayOnBoard(), 'Moray nie wszedł na pole bitwy realnym rzutem');
+  const replay = live.exportReplayText();
+  const turnBefore = live.state.turn.number;
+
+  const resumed = createSession({ seed: 1, registry, decks });
+  const summary = resumed.resumeReplayText(replay);
+  assert.ok(summary.steps > 0, 'zapis nie zawiera komend');
+  assert.equal(resumed.view().players.find((p) => p.id === HUMAN_ID).energy, 4,
+    'wznowienie zgubiło liczniki energii gracza');
+  assert.equal(resumed.state.turn.number, turnBefore, 'wznowienie cofnęło turę');
+  assert.ok([...resumed.state.objects.values()].some((o) => o.cardId === 'shipwreck-moray' && o.zone === 'battlefield'),
+    'wznowienie nie odtworzyło Moraya na polu bitwy');
+  const els = makeEls();
+  assert.doesNotThrow(() => renderTableView({ els, session: resumed, play: () => {}, onCardClick: () => {} }),
+    'render po wznowieniu rzuca (energia > 0) — resumeFromSaved wpada w catch i startuje ŚWIEŻĄ partię');
+  assert.match(els.energy.textContent, /4 \{E\}/, 'panel energii po wznowieniu bez liczników');
+});
+
+test('M386/K: nieudane wznowienie zapisu mówi w logu, dlaczego startuje nowa partia (A2)', () => {
+  // Ten sam incydent co pin J widziany od strony gracza: `resumeFromSaved`
+  // łapie wyjątek i pokazuje notice, ale `resumeOrStart` zaraz startuje
+  // ŚWIEŻĄ partię — komunikat przepadał, a gracz widział „reset” bez powodu.
+  // Pin: powód nieudanego wznowienia trafia do logu NOWEJ partii.
+  const src = readFileSync(new URL('../src/table/main.js', import.meta.url), 'utf8');
+  const start = src.indexOf('function resumeOrStart()');
+  assert.ok(start > 0, 'nie znaleziono resumeOrStart w main.js');
+  const body = src.slice(start, src.indexOf('\n  }', start));
+  assert.match(body, /lastResumeError/, 'brak zapamiętania powodu nieudanego wznowienia');
+  const afterStart = body.slice(body.indexOf('startGame()'));
+  assert.match(afterStart, /logSystem\(/,
+    'po nieudanym wznowieniu nowa partia nie mówi w logu, dlaczego zapis nie wrócił');
+  assert.match(src.slice(0, start), /let lastResumeError/,
+    'brak zmiennej lastResumeError przy resumeFromSaved');
 });
 
 test('M386/D2: panel energii rysuje się tylko, gdy ktoś MA energię (kontrola)', () => {
