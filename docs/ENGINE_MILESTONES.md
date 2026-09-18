@@ -5912,19 +5912,21 @@ a dalej uciekał z `renderTableView` do `main.js`: przerywał `showBotMoves()`
 żaden z 5769 testów nie uruchamiał renderu stołu z niepustą energią.
 
 Fix: (1) panel energii podpina hover wspólnym helperem `attachSpecialCardHover`,
-dostaje marker „Energy Reserve” (tdrc/17, ten sam wzorzec co Poison Counter
-i Start Your Engines!) oraz pełny ekran; (2) `rerender()` ma siatkę
+dostaje marker „Energy Reserve” (tdrc/17 — ten sam obraz tokena ze Scryfall co
+w panelu Poison) oraz pełny ekran po klik jak Poison/Speed (parametr
+`onEnergyCardClick` → `openSpecialCardFullscreen`); (2) `rerender()` ma siatkę
 bezpieczeństwa — wyjątek panelu idzie do logu partii (`logSystem`), a ogon
 funkcji (przycisk wznowienia) wykonuje się dalej. Energia pozostaje licznikiem
 GRACZA (ruling WotC 2024-06-07: „They're not associated with any specific
 permanents.”) — panel jest poprawnym miejscem, kafel Moraya nie udaje licznika
 permanentu.
 
-Piny: `test/m386-panel-energii-hover-i-bitwa.test.js` (9: A/B — brak wyjątku
-i treść panelu, C — strażnik rodziny „hover ma tylko start/revive/end/cycle”,
+Piny: `test/m386-panel-energii-hover-i-bitwa.test.js` (10: A/B — brak wyjątku
+i treść panelu, B2 — marker klikalny i pełny ekran, C — strażnik rodziny „hover ma tylko start/revive/end/cycle”,
 D — fight w buforze „Rozgrywki”, E/F — energia to licznik gracza, G — pauza
 bota + {E} > 0, H — siatka bezpieczeństwa `rerender`, D2 — panel tylko przy
-{E} > 0). RED→GREEN: powrót `hover.attach` → 5/9 czerwonych; zdjęcie try/catch
-→ czerwony H.
-Bramy: `npm test` 5778/5778, `npm run test:all` 5788/5788, `npm run build`
-64 moduły / 3830,2 kB. Audyt PR #126: `docs/audits/AUDYT_PR126_2026-09-18.md`.
+{E} > 0). RED→GREEN: powrót `hover.attach` → 5/10 czerwonych; zdjęcie try/catch
+→ czerwony H; brak przekazania `onOpenCard` albo brak callbacku w main.js
+→ 9/10.
+Bramy: `npm test` 5779/5779, `npm run test:all` 5788/5788, `npm run build`
+64 moduły / 3830,5 kB. Audyt PR #126: `docs/audits/AUDYT_PR126_2026-09-18.md`.
