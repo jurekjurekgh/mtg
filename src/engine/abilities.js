@@ -854,8 +854,13 @@ export function legalActivatedAbilities(state, playerId) {
       // (CR 118.4: nie zapłacisz więcej życia, niż masz).
       // M177/E (Merchant's Dockhand): „{3}{U}, {T}, Tap X untapped artifacts
       // you control” — X = liczba INNYCH nietapniętych artefaktów wskazanych
-      // w komendzie; warianty X=1..N (pierwsze N w porządku pola bitwy —
+      // w komendzie; warianty X=0..N (pierwsze N w porządku pola bitwy —
       // egzemplarze kosztu są z perspektywy zdolności równoważne).
+      // Uwaga C1 właściciela (2026-09-19): X=0 MUSI być w ofercie — „X może
+      // być 0” (CR 107.3), aktywacja jałowa, ale legalna; wcześniej oferta
+      // startowała od X=1 i Dockhand bez artefaktów nie oferował NIC.
+      // Człowiek nie wybiera z wariantów — dostaje kreator ze stepperem X
+      // (E4); warianty to kształt dla bota i testera (L135).
       if (targetSpec.length === 0 && ability.cost?.tapXArtifacts) {
         if ((ability.cost?.mana ?? 0) > mana) continue;
         if (ability.cost?.tap && object.tapped) continue;
@@ -866,7 +871,7 @@ export function legalActivatedAbilities(state, playerId) {
           return cand && cand.id !== id && cand.controllerId === playerId && !cand.tapped
             && (cand.kind === 'artifact' || (cand.types ?? []).includes('Artifact'));
         });
-        for (let x = 1; x <= artifactPool.length; x += 1) {
+        for (let x = 0; x <= artifactPool.length; x += 1) {
           out.push({ objectId: id, abilityIndex: index, ability, xValue: x, tapArtifactIds: artifactPool.slice(0, x) });
         }
         continue;
@@ -1512,15 +1517,21 @@ export function performActivation(state, ctx) {
   let artifactsToTap = null;
   if (cost.tapXArtifacts) {
     const list = Array.isArray(tapArtifactIds) ? tapArtifactIds : [];
-    if (list.length === 0 || new Set(list).size !== list.length) throw new Error('Koszt Tap X artifacts wymaga niepustej listy różnych artefaktów');
-    for (const aid of list) {
-      const cand = state.objects.get(aid);
-      const isArtifact = cand && (cand.kind === 'artifact' || (cand.types ?? []).includes('Artifact'));
-      if (!cand || cand.zone !== 'battlefield' || cand.controllerId !== playerId || cand.tapped || !isArtifact || cand.id === objectId) {
-        throw new Error('Nielegalny artefakt w koszcie Tap X artifacts');
+    if ((xValue ?? list.length) !== list.length) throw new Error('X musi równać się liczbie tapowanych artefaktów');
+    // Uwaga C1 właściciela (2026-09-19): pusta lista jest legalna WYŁĄCZNIE
+    // dla X=0 (CR 107.3 — X może być 0; aktywacja jałowa, ale legalna).
+    if (list.length === 0) {
+      if ((xValue ?? 0) !== 0) throw new Error('Pusta lista artefaktów legalna tylko przy X=0');
+    } else {
+      if (new Set(list).size !== list.length) throw new Error('Koszt Tap X artifacts wymaga listy różnych artefaktów');
+      for (const aid of list) {
+        const cand = state.objects.get(aid);
+        const isArtifact = cand && (cand.kind === 'artifact' || (cand.types ?? []).includes('Artifact'));
+        if (!cand || cand.zone !== 'battlefield' || cand.controllerId !== playerId || cand.tapped || !isArtifact || cand.id === objectId) {
+          throw new Error('Nielegalny artefakt w koszcie Tap X artifacts');
+        }
       }
     }
-    if ((xValue ?? list.length) !== list.length) throw new Error('X musi równać się liczbie tapowanych artefaktów');
     artifactsToTap = list;
   }
   // Batch 56 (koszt energii, CR 122.1): liczniki gracza płacimy razem z
