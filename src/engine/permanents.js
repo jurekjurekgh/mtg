@@ -1251,6 +1251,31 @@ export function clearStatModifiers(state) {
 }
 
 /**
+ * M381 (CR 702.8 + L41): pozwolenie na rzut „jakby permanent miał flash" —
+ * wydrukowany keyword ALBO grant na turę z `state.subtypeFlashThisTurn`
+ * (Cherished Hatchling: „you may cast Dinosaur spells this turn as though
+ * they had flash"). Zwraca SAM grant (albo null), bo grant niesie też
+ * `grantedAbility` doklejaną do rzuconego czaru.
+ *
+ * Jedno źródło prawdy dla OFERTY (game-state.playerView) i WALIDACJI
+ * (resources.castPermanent) — jak przy restrykcjach bloku (M380). Przed M381
+ * oferta znała grant, a walidacja patrzyła wyłącznie na wydrukowany keyword,
+ * więc opublikowana komenda `cast_permanent` była odrzucana
+ * („Zagranie poza main phase") — bot rzucający ofertę wywalał symulację.
+ */
+export function grantedFlashGrant(state, playerId, object) {
+  if (!state || !object || !playerId) return null;
+  return (state.subtypeFlashThisTurn ?? []).find((grant) => grant.controllerId === playerId
+    && hasCreatureType(object, grant.subtype, state)) ?? null;
+}
+
+/** Czy obiekt wolno rzucać tak, jakby miał flash (wydruk albo grant tury). */
+export function hasFlashPermission(state, playerId, object) {
+  if ((object?.keywords ?? []).includes('flash')) return true;
+  return grantedFlashGrant(state, playerId, object) != null;
+}
+
+/**
  * Nadaje stworowi zdolności „do końca tury" (Fake Your Own Death: trigger
  * „when this creature dies…"). Deskryptory są generyczne (createAbility),
  * a czyszczenie idzie tą samą ścieżką co pump i keywordy — cleanup.

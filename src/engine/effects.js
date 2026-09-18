@@ -1300,8 +1300,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // sobie NAWZAJEM obrażenia równe swojej mocy. Obie moce liczone PRZED
     // zadaniem (jednoczesność — CR 701.12b); jeśli którykolwiek przestał
     // być legalny, ŻADEN nie zadaje obrażeń (CR 701.12c).
-    const aId = targets[effect.targetIndexA ?? 0];
-    const bId = targets[effect.targetIndexB ?? 1];
+    // M381: `sourceIsFighter` — zdolność brzmi „it fights target creature",
+    // więc walczącym A jest ŹRÓDŁO zdolności, a B wybrany cel (ruling WotC
+    // 2018-01-19 dla Cherished Hatchling: gdy źródło opuściło pole bitwy,
+    // żaden stwór nie zadaje i nie otrzymuje obrażeń — ten sam warunek niżej).
+    const aId = effect.sourceIsFighter ? sourceObject?.id : targets[effect.targetIndexA ?? 0];
+    const bId = effect.sourceIsFighter ? targets[effect.targetIndexB ?? 0] : targets[effect.targetIndexB ?? 1];
     if (aId == null || bId == null) return;
     const a = state.objects.get(aId);
     const b = state.objects.get(bId);
@@ -4034,7 +4038,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
       Object.freeze({
         controllerId: sourceObject.controllerId,
         subtype: effect.subtype,
-        etbFight: true,
+        // M381: zdolność nadawana rzuconemu czarowi tego podtypu. Deskryptor
+        // przychodzi z KARTY (jak w `grant_abilities` Fake Your Own Death),
+        // a nie z nazwy karty w rdzeniu (ADR 0002). Przed M381 stała tu
+        // flaga `etbFight`, której NIKT nie czytał — połowa zdolności
+        // Cherished Hatchlinga nie istniała.
+        grantedAbility: effect.grantedAbility ? Object.freeze({ ...effect.grantedAbility }) : null,
       }),
     ];
     return;

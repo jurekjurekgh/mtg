@@ -9705,7 +9705,22 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.triggered,
         trigger: { event: 'dies' },
-        effect: [{ type: 'subtype_spells_gain_flash_and_etb_fight_this_turn', subtype: 'Dinosaur' }],
+        // M381 (CR 702.8): deskryptor zdolności, którą dostaje KAŻDY czar
+        // Dinozaura rzucony w tej turze — „When this creature enters, you may
+        // have it fight another target creature." (Oracle, Scryfall
+        // 2026-09-18). `sourceIsFighter`: walczy sam czar/permanent, a nie
+        // dwa wskazane cele; `optional` = „you may".
+        effect: [{
+          type: 'subtype_spells_gain_flash_and_etb_fight_this_turn', subtype: 'Dinosaur',
+          grantedAbility: createAbility({
+            type: ABILITY_TYPE.triggered,
+            trigger: {
+              event: 'enter_battlefield',
+              requiresTarget: { type: 'creature', notSelf: true, optional: true },
+            },
+            effect: { type: 'fight', sourceIsFighter: true },
+          }),
+        }],
       }),
     ],
     artId: 554, plan: 'Warhammer Fantasy',

@@ -1,5 +1,5 @@
 import { chooseDestructionReplacement } from './destruction.js';
-import { combatDamageByToughness, effectiveSubtypes, hasCreatureType, isUntapStepLocked } from './permanents.js';
+import { combatDamageByToughness, effectiveSubtypes, hasCreatureType, hasFlashPermission, isUntapStepLocked } from './permanents.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
@@ -7474,10 +7474,10 @@ export function playerView(state, playerId) {
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
       // Batch 48 (Cherished Hatchling): flash moze pochodzic z EFEKTU tej tury
       // („you may cast Dinosaur spells as though they had flash"), nie tylko
-      // z wydrukowanego keywordu. Zbior podtypow trzymamy w stanie tury.
-      const grantedFlash = (state.subtypeFlashThisTurn ?? []).some((grant) => grant.controllerId === playerId
-        && hasCreatureType(object, grant.subtype, state));
-      if (!(object.keywords ?? []).includes('flash') && !grantedFlash) continue;
+      // z wydrukowanego keywordu. M381 (L41): to TEN SAM predykat, którego
+      // używa walidacja (`hasFlashPermission`) — oferta nie może publikować
+      // komendy, którą `cast_permanent` odrzuca.
+      if (!hasFlashPermission(state, playerId, object)) continue;
       if (effectiveSpellManaCost(state, object) > manaAvailableFor(object, coloredPipsOf(object.cardId, 0))) continue;
       if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
       // M202/N4: koszt dodatkowy na obiekcie obowiązuje także przy rzucie

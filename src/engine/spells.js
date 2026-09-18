@@ -5,7 +5,7 @@ import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
-import { hasCreatureType, isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, transformedCharacteristics } from './permanents.js';
+import { hasCreatureType, isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, transformedCharacteristics, grantAbilitiesUntilEndOfTurn } from './permanents.js';
 import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter, grantGift, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
@@ -2138,8 +2138,18 @@ function resolvePermanentSpell(state, stackId, object, before) {
     ...moved,
     faceDown: Boolean(object.faceDown),
     manaFromTreasureSpent: object.manaFromTreasureSpent ?? 0,
+    // M381: stempel z chwili rzutu nie jest cechą permanentu — zdejmujemy go,
+    // żeby nie wisiał na obiekcie po wykorzystaniu (czystość fingerprintu).
+    grantedAbilitiesFromTurn: null,
   });
   state.objects.set(newId, permanent);
+  // M381 (Cherished Hatchling): zdolności nadane czarowi przez GRANT TURY
+  // („whenever you cast a Dinosaur spell this turn, it gains …") doklejamy
+  // w chwili wejścia — permanent ma je JUŻ, gdy skan triggerów widzi jego
+  // wejście (CR 603.6a), a cleanup zdejmuje grant jak resztę „this turn".
+  for (const ability of object.grantedAbilitiesFromTurn ?? []) {
+    if (ability) grantAbilitiesUntilEndOfTurn(state, newId, [ability]);
+  }
   // M68 (daybound, CR 708.9 — „Permanents enter the battlefield nightbound"):
   // gdy jest NOC, permanent z daybound wchodzi od razu na nightbound stronę —
   // transform PRZED zdarzeniem wejścia, żeby triggery ETB odpalily się na
