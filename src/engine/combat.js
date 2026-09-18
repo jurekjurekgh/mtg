@@ -308,27 +308,14 @@ export function declareBlockers(state, playerId, assignments) {
     const attacker = getCreature(state, attackerId);
     const ids = blockerIds.map((id) => getCreature(state, id));
     if (ids.some((object) => object.controllerId !== playerId || object.tapped)) throw new Error('Nielegalny blokujący');
-    // Ograniczenia z załączników (Hobble: „can't block if it's black") —
-    // walidacja niezależna od enumeracji (execute musi odrzucić zła komendę).
-    if (ids.some((object) => creatureCantBlock(object, state) || attachmentRestrictions(state, object).cantBlock)) throw new Error('Nielegalny blokujący');
-    // M380 (L41/L48): restrykcje PAROWE ewazji i „can't block" czytamy z
-    // JEDNEGO źródła (`blockRestrictionError` — ten sam kod, który decyduje
-    // o ofercie w canBlock). Ręczna kopia tej listy nie miała progu mocy
-    // (Rust-Shield Rampager), więc komenda z nielegalnym blokerem przechodziła.
-    for (const blocker of ids) {
-      const violation = blockRestrictionError(state, attacker, blocker);
-      if (violation) throw new Error(violation);
-    }
-    // „Can't block alone" (Ember Beast, CR 509.1c): stwór może blokować tylko,
-    // gdy tego samego atakującego blokuje też co najmniej jeden inny stwór.
-    if (ids.length === 1 && ids.some((object) => hasAloneRestriction(object, 'cantBlockAlone'))) {
-      throw new Error('Stwór z „can\'t block alone\" musi blokować z co najmniej jednym innym stworem');
-    }
-    // Menace (CR 702.110/509.1c): atakującego z menace nie może blokować
-    // pojedynczy stwór — tylko dwóch lub więcej (albo nikt).
-    if (hasKeyword(state, attacker, 'menace') && ids.length === 1) {
-      throw new Error('Stwora z menace może blokować wyłącznie dwóch lub więcej stworów');
-    }
+    // M387 (F-2 audytu PR #126, L41): CAŁA warstwa legalności przypisania
+    // (własne zakazy blokowania, restrykcje parowe ewazji, menace,
+    // „can't block alone") pochodzi z JEDNEGO predykatu — tego samego, którym
+    // `legalBlockerOptions` filtruje ofertę. Wcześniej walidacja i oferta
+    // trzymały równoległe kopie tych reguł (M380 znalazł rozjazd w warstwie
+    // parowej; ta sama klasa ryzyka została dla reguł zbioru).
+    const assignmentViolation = blockAssignmentViolation(state, attacker, ids.map((object) => object.id));
+    if (assignmentViolation) throw new Error(assignmentViolation);
     // M166/E: blokujący z „can block an additional creature" (statyka
     // Cenn's Tactician) może zostać przypisany do drugiego atakującego.
     for (const object of ids) {
@@ -1593,13 +1580,42 @@ function canBlock(state, attacker, blocker) {
   return blockRestrictionError(state, attacker, blocker) === null;
 }
 
-
-/** Czy przypisanie spełnia menace: atakujący ma 0 albo ≥2 blokujących (CR 702.110b). */
-function satisfiesMenace(state, attackerId, blockerIds) {
-  const attacker = state.objects.get(attackerId);
-  if (!hasKeyword(state, attacker, 'menace')) return true;
-  return (blockerIds ?? []).length !== 1;
+/**
+ * M387 (F-2 audytu PR #126, L41/L48): JEDNO źródło prawdy o legalności
+ * PRZYPISANIA — atakujący + lista blokerów (warstwa ZBIORU). Zwraca komunikat
+ * naruszenia albo `null`, gdy przypisanie jest legalne.
+ *
+ * Warstwy są rozdzielone świadomie: restrykcje PAROWE (ewazje, próg mocy,
+ * ochrona, landwalk) siedzą w `blockRestrictionError` (M380), a reguły
+ * ZBIORU/kontekstu tutaj: własne zakazy blokowania blokera
+ * (`creatureCantBlock`, restrykcje z załączników), menace (CR 702.110b:
+ * atakującego z menace blokuje 0 albo ≥2 stworów) oraz „can't block alone”
+ * (CR 509.1c: blokujący musi mieć partnera przy TYM SAMYM atakującym).
+ *
+ * Kontrakt: `declareBlockers` (walidacja komendy) i `legalBlockerOptions`
+ * (oferta) wołają TĘ SAME funkcję — nowa reguła dopisuje się w jednym miejscu,
+ * więc oferta nie może zaproponować czegoś, co walidacja odrzuca (ani odwrotnie,
+ * co było defektem M380 w warstwie par).
+ */
+export function blockAssignmentViolation(state, attacker, blockerIds) {
+  const ids = blockerIds ?? [];
+  if (!attacker) return 'Blokowanie nieistniejącego atakującego';
+  for (const id of ids) {
+    const blocker = state.objects.get(id);
+    if (!blocker || blocker.zone !== 'battlefield' || blocker.kind !== 'creature') return 'Nielegalny blokujący';
+    if (creatureCantBlock(blocker, state) || attachmentRestrictions(state, blocker).cantBlock) return 'Nielegalny blokujący';
+    const pairViolation = blockRestrictionError(state, attacker, blocker);
+    if (pairViolation) return pairViolation;
+  }
+  if (hasKeyword(state, attacker, 'menace') && ids.length === 1) {
+    return 'Stwora z menace może blokować wyłącznie dwóch lub więcej stworów';
+  }
+  if (ids.length === 1 && hasAloneRestriction(state.objects.get(ids[0]), 'cantBlockAlone')) {
+    return 'Stwór z „can\'t block alone" musi blokować z co najmniej jednym innym stworem';
+  }
+  return null;
 }
+
 
 /** Wszystkie legalne przypisania blokujących dla bieżącego combat. */
 export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
@@ -1643,12 +1659,12 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       }
       all.push(...extended);
     }
-    // Finalne przypisania nie mogą łamać menace (0 albo ≥2 blokujących)
-    // ani „can't block alone" (Ember Beast — blokujący musi mieć partnera
-    // przy TYM SAMYM atakującym; spójne z walidacją declareBlockers).
+    // Finalne przypisania przechodzą przez TEN SAM predykat co walidacja
+    // `declareBlockers` (M387/L41): oferta nie może zaproponować czegoś, co
+    // komenda odrzuci (L48) — dotyczy to zwłaszcza reguł zbioru (menace,
+    // „can't block alone") i zakazów blokowania samego blokera.
     return all.filter((assignment) => Object.entries(assignment)
-      .every(([attackerId, blockerIds]) => satisfiesMenace(state, attackerId, blockerIds)
-        && !(blockerIds.length === 1 && hasAloneRestriction(state.objects.get(blockerIds[0]), 'cantBlockAlone'))));
+      .every(([attackerId, blockerIds]) => blockAssignmentViolation(state, state.objects.get(attackerId), blockerIds) === null));
   }
   const options = [{}];
   for (const attackerId of attackers) {
@@ -1720,8 +1736,7 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       if (options.length >= cap) break;
       if (set.length === 0) continue;
       if (options.some((o) => JSON.stringify(o) === JSON.stringify({ [attackerId]: set }))) continue;
-      if (!satisfiesMenace(state, attackerId, set)) continue;
-      if (set.length === 1 && set.some((id) => hasAloneRestriction(state.objects.get(id), 'cantBlockAlone'))) continue;
+      if (blockAssignmentViolation(state, attacker, set) !== null) continue;
       options.push({ [attackerId]: set });
     }
   }

@@ -5942,3 +5942,34 @@ RED→GREEN: powrót `hover.attach` → 8/13 czerwonych; zdjęcie try/catch
 → 12/13; usunięcie wpisu o nieudanym wznowieniu → 12/13 (pin K).
 Bramy: `npm test` 5782/5782, `npm run test:all` 5788/5788, `npm run build`
 64 moduły / 3831,2 kB. Audyt PR #126: `docs/audits/AUDYT_PR126_2026-09-18.md`.
+
+## M387 (2026-09-18) — legalność bloku: warstwa ZBIORU też ma jedno źródło prawdy (F-2 audytu PR #126)
+
+Znalezisko F-2 audytu PR #126 (raport `docs/audits/AUDYT_PR126_2026-09-18.md`):
+M380 sprowadził do jednego predykatu (`blockRestrictionError`) wyłącznie
+restrykcje PAROWE bloku, a reguły ZBIORU nadal żyły w dwóch równoległych
+kopiach — walidacja `declareBlockers` i oferta `legalBlockerOptions`
+(menace, „can't block alone", zakazy blokowania samego blokera). Oba miejsca
+były wtedy spójne, ale to ta sama klasa ryzyka, która dała defekt M380
+(oferta bez pary, walidacja ją przyjmowała).
+
+Fix: nowy eksportowany predykat `blockAssignmentViolation(state, attacker,
+blockerIds)` (zwraca komunikat naruszenia albo `null`) obejmuje CAŁĄ warstwę
+zbioru/kontekstu — własne zakazy blokowania (`creatureCantBlock`, restrykcje
+z załączników), restrykcje parowe (delegacja do `blockRestrictionError`),
+menace (CR 702.110b) i „can't block alone" (CR 509.1c). Wołają go: walidacja
+`declareBlockers`, filtr finalnych przypisań oferty oraz fallback oferty
+(warianty „wszystkie minus jeden"). Ręczna kopia `satisfiesMenace` usunięta
+(L67: martwy kod po refaktorze) — jej rolę przejmuje predykat.
+
+Strażnik: pin (D) w `test/m387-legalnosc-bloku-jedno-zrodlo.test.js` blokuje
+powrót reguł zbioru jako inline w `declareBlockers` (brak `hasAloneRestriction`
+i `hasKeyword(…, 'menace')` w ciele funkcji) oraz powrót `satisfiesMenace`.
+Pozostałe piny idą realnymi ścieżkami: (A) Ember Beast — samotny nie w ofercie
+i odrzucony, z partnerem przyjęty, (B) menace — singleton nie w ofercie
+i odrzucony, dwóch przyjętych, pusty blok legalny, (C) `cantBlock` — nie
+w ofercie i odrzucony, (E) macierz spójności: KAŻDE oferowane przypisanie
+(scena z menace + Ember Beast + `cantBlock` + próg mocy) jest przyjmowane
+przez `declare_blockers` (L48). RED→GREEN: mutacje — pusty predykat 1/4,
+oferta bez filtra 2/3, ręczna kopia menace w walidacji 4/1.
+Bramy: `npm test` 5787/5787, `npm run build` 64 moduły / 3831,6 kB.
