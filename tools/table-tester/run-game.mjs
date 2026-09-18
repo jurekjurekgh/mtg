@@ -1127,6 +1127,19 @@ export async function runTableGame({
     logL(`  MOJE POLA: ${bfOwn.join(' | ') || '(puste)'}`);
     logL(`  POLA WROGA: ${bfEnemy.join(' | ') || '(puste)'}`);
     logL(`  LOG: ${logTail.join(' ⏎ ')}`);
+    // PR #129 (pętla jakości): liczniki specjalne (trucizna/prędkość/energia)
+    // były dotąd NIEWIDOCZNE dla testera — a to dokładnie warstwa, którą
+    // naprawiał PR #128 (panel energii). Raportujemy każdy WIDOCZNY panel;
+    // „widoczny, ale PUSTY" to ślad klasy błędu A1 (render rzuca wyjątek po
+    // postawieniu kontenera, treść nie dochodzi — L27: klasa → detektor).
+    const panelLine = (id) => {
+      const e = $('#' + id);
+      if (!e || e.hidden) return null;
+      const t = text(e).replace(/\s+/g, ' ').trim();
+      return `${id}: ${t || '(widoczny, ale PUSTY)'}`;
+    };
+    const panels = ['poison', 'speed', 'energy'].map(panelLine).filter(Boolean);
+    if (panels.length) logL(`  LICZNIKI: ${panels.join(' | ')}`);
   };
 
   // Czy partia już się skończyła (panel akcji jest wtedy pusty prawidłowo).
