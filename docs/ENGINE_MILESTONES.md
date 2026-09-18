@@ -5716,3 +5716,59 @@ wstawienia obiektów wynik identyczny (fix nie jest „odwróceniem" kolejności
 (D) stabilność: przy wstawieniu przeplatanym (nap-a, ap-a, nap-b, ap-b)
 zdolności każdego kontrolera zachowują kolejność wykrycia.
 Bramy: `npm test` 5754/5754, `npm run build` 64 moduły / 3823,9 kB.
+
+## M383 (2026-09-18) — srebro #1: proliferate daje licznik każdego typu także graczom z ENERGIA (CR 701.34a)
+
+Zgłoszenie: wyzwanie właściciela „5 UNIKALNYCH błędów/uproszczeń vs zasady MtG"
+(srebrna odznaka). Reguła: **CR 701.34a** (numeracja 2026; w kodzie starsze
+odnośniki „701.27"): „To proliferate means to choose any number of permanents
+and/or players **that have a counter**, then give each one additional counter of
+**each kind** that permanent or player already has." Do tego **CR 122.1** oraz
+**CR 107.14** z symbolem {E}, a źródłowo: mtg.wiki/Energy — „An energy counter is
+a counter that, unlike most other counters, is placed on **players** rather than
+objects" — i WotC (Magic: The Gathering — Fallout Mechanics, 2024-02-20):
+„Proliferate … If you have three energy counters, give yourself another! …
+If a player or permanent has more than one kind of counter and you choose to add
+counters, you must add one of each kind already there."
+
+Objaw (sonda `/home/user/p2/probe-s1.mjs`): p1 ma 4 liczniki energii (np. po
+Shipwreck Moray) i zero trucizny, na polu bitwy stwora z licznikiem +1/+1, w
+ręce Courage in Crisis. Po rzucie czaru lista kandydatów decyzji proliferate to
+`["bear"]` — **gracza z energią w niej nie ma**, oferta `resolve_proliferate`
+nie pozwala go wskazać, a wymuszona komenda z `targetIds: ["p1"]` jest
+odrzucana (`illegal_proliferate_target`, `game-state.js` bramka walidacji
+kandydatów). Po wyborze samego stwora energia p1 zostaje na 4 — mimo że
+proliferate ma dać „additional counter of each kind".
+
+Root cause (jedno źródło prawdy o kandydatach, `src/engine/effects.js`):
+`pendingProliferate.candidateIds` zbierało permanenty z licznikami oraz graczy
+**wyłącznie z trucizną** (`player.poison > 0`), a rozgałęzienie rezolucji dla
+celu-gracza obsługiwało tylko truciznę (`addPoisonCounters`) — energia nie
+występowała w żadnym z obu miejsc. Helper `addEnergyCounters` istniał
+(`players.js`, użyty m.in. przez `get_energy`), więc luka była czysto
+predykatowa.
+
+Fix (root cause, dwa miejsca w tym samym warunku-właścicielu):
+- kandydatem jest gracz z trucizną **LUB** energią: `(player.poison ?? 0) > 0
+  || (player.energy ?? 0) > 0` — zgodnie z „players that have a counter";
+- rezolucja celu-gracza dodaje po jednym liczniku **każdego** typu, który gracz
+  ma (all-or-nothing, jak w regule): obok istniejącej gałęzi trucizny gałąź
+  energii przez wspólny helper `addEnergyCounters` + zdarzenie `counter_added`
+  (`counter: 'energy'`, `fromProliferate: true`) — ten sam wzorzec strumienia
+  liczników co trucizna (M269).
+
+Źródła online (dostęp 2026-09-18): CR 701.34a i CR 107.14/122.1 —
+https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt
+(efektywne 2026-08-07); mtg.wiki/Energy_counter (cytat o licznikach na graczach);
+magic.wizards.com/en/news/feature/magic-the-gathering-fallout-mechanics (cytat
+„If you have three energy counters, give yourself another!"); oracle Courage in
+Crisis (Scryfall) — cytaty w nagłówku pinu.
+
+Piny: `test/m383-proliferate-liczniki-gracza.test.js` (5; RED 3/5 → GREEN 5/5).
+(A) gracz z licznikami energii jest kandydatem i pojawia się w ofercie,
+(B) wybór gracza daje +1 licznik energii (zdarzenie `counter_added`
+z `fromProliferate`), (C) gracz z trucizną i energią dostaje +1 KAŻDEGO typu,
+(D) strażnik: gracz bez żadnych liczników nadal nie jest kandydatem
+(`illegal_proliferate_target`), (E) kontrola: proliferate na permanencie działa
+jak przed zmianą.
+Bramy: `npm test` 5759/5759, `npm run build` 64 moduły / 3825,0 kB.
