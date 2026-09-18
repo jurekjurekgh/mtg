@@ -5921,12 +5921,24 @@ GRACZA (ruling WotC 2024-06-07: „They're not associated with any specific
 permanents.”) — panel jest poprawnym miejscem, kafel Moraya nie udaje licznika
 permanentu.
 
-Piny: `test/m386-panel-energii-hover-i-bitwa.test.js` (10: A/B — brak wyjątku
+Piny: `test/m386-panel-energii-hover-i-bitwa.test.js` (13: A/B — brak wyjątku
 i treść panelu, B2 — marker klikalny i pełny ekran, C — strażnik rodziny „hover ma tylko start/revive/end/cycle”,
 D — fight w buforze „Rozgrywki”, E/F — energia to licznik gracza, G — pauza
-bota + {E} > 0, H — siatka bezpieczeństwa `rerender`, D2 — panel tylko przy
-{E} > 0). RED→GREEN: powrót `hover.attach` → 5/10 czerwonych; zdjęcie try/catch
+bota + {E} > 0, H — siatka bezpieczeństwa `rerender`, I — pełna sekwencja
+`toggleIgnoredOption` (ptaszek → recheckAutoPass → render), J — wznowienie po
+odświeżeniu z energią z REALNYCH komend (`exportReplayText` →
+`resumeReplayText`), K — jawny powód nieudanego wznowienia w logu nowej partii,
+D2 — panel tylko przy {E} > 0).
+
+Wyjaśnienie „odświeżenie skasowało partię, log przepadł” (to samo zgłoszenie):
+`resumeFromSaved` odtwarza zapis i na końcu woła `rerender()`; wyjątek panelu
+energii wpadał do jego `catch`, więc strona startowała ŚWIEŻĄ partię, a notice
+o nieudanym wznowieniu przepadał pod `startGame()`. Po fixie wznowienie kończy
+się stanem sprzed odświeżenia (pin J), a gdy zapisu naprawdę nie da się
+wznowić, nowa partia dostaje wpis w logu z powodem (pin K).
+
+RED→GREEN: powrót `hover.attach` → 8/13 czerwonych; zdjęcie try/catch
 → czerwony H; brak przekazania `onOpenCard` albo brak callbacku w main.js
-→ 9/10.
-Bramy: `npm test` 5779/5779, `npm run test:all` 5788/5788, `npm run build`
-64 moduły / 3830,5 kB. Audyt PR #126: `docs/audits/AUDYT_PR126_2026-09-18.md`.
+→ 12/13; usunięcie wpisu o nieudanym wznowieniu → 12/13 (pin K).
+Bramy: `npm test` 5782/5782, `npm run test:all` 5788/5788, `npm run build`
+64 moduły / 3831,2 kB. Audyt PR #126: `docs/audits/AUDYT_PR126_2026-09-18.md`.
