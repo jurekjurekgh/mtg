@@ -1389,7 +1389,15 @@ export function performActivation(state, ctx) {
   // rozróżnienie po fladze grantedFromEquipment (jak wyżej).
   const ability = ctx.grantedFromEquipment
     ? (object.equipment?.grantedAbilities ?? [])[abilityIndex]
-    : (object.abilities ?? [])[abilityIndex];
+    // M384 (klasa L48 — oferta = walidacja = WYKONANIE): to ta sama lista,
+    // którą widzi oferta (`legalActivatedAbilities`) i walidacja
+    // (`activateAbility`): zdolności własne + nadane grantem jednorazowym
+    // (`abilityGrants`) + nadane cudzą zdolnością statyczną (Enduring Sliver:
+    // „Other Sliver creatures you control have outlast {2}", CR 604.2 +
+    // 702.107a). Wcześniej wykonanie czytało WYŁĄCZNIE `object.abilities`,
+    // więc oferta zdolności NADANEJ (indeks ≥ długość listy własnej) kończyła
+    // się odrzuceniem legalnej komendy: „Nieznana zdolność aktywowana".
+    : activatableAbilities(state, object)[abilityIndex];
   if (!ability || ability.type !== ABILITY_TYPE.activated) throw new Error('Nieznana zdolność aktywowana');
   if (ability.fromGraveyard) {
     if (object.zone !== 'graveyard') throw new Error('Zdolność z grobu wymaga źródła w grobie');
