@@ -62,24 +62,33 @@ Ilustracja,Nazwa Karty,Plan
 61DFT,Stall Out,Kaladesh
 62AVR,Grounded,Innistrad
 63ORI,Dragon Fodder,Kamigawa
+64DTK,Lightwalker,Tarkir
 65STX,Curate,Arcavios
+66KTK,Hooting Mandrills,Tarkir
 67FIN,Scorpion Sentinel,Final Fantasy
 68KTK,Ainok Tracker,Tarkir
 69M11,Tome Scour,Warhammer Fantasy
+70GRN,Capture Sphere,Arcavios
 71SNC,Security Rhox,New Capenna
 72APC,Dragon Arch,Dominaria
 73MBS,Bladed Sentinel,Mirrodin
 74KTK,Rush of Battle,Tarkir
 75DMU,Phyrexian Rager,Dominaria
 76M15,Negate,Warhammer Fantasy
+77OTJ,"Annie Flash, the Veteran",Thunder Junction
 78ORI,Nightsnare,Wiedźmin
 79OGW,Holdout Settlement,Zendikar
+80MOM,Merciless Repurposing,Mirrodin
 81TDM,Krotiq Nestguard,Tarkir
+82ARB,Messenger Falcons,Alara
 83MM2,Gorehorn Minotaurs,Warhammer Fantasy
 84M11,Garruk's Companion,Dominaria
+85APC,Phyrexian Rager,Mirrodin
 86FIN,Cloudbound Moogle,Final Fantasy
 87ALA,Angelic Benediction,Alara
+88TDC,Baral and Kari Zev,Kaladesh
 89MOR,Release the Ants,Lorwyn
+90M20,Tranquil Cove,Kamigawa
 91ISD,Curse of the Pierced Heart,Innistrad
 92DTK,Silumgar Butcher,Tarkir
 93ALA,Dispeller's Capsule,Alara
@@ -114,6 +123,7 @@ Ilustracja,Nazwa Karty,Plan
 122ISD,Blazing Torch,Innistrad
 123TDM,Trade Route Envoy,Tarkir
 124WAR,Courage in Crisis,Ravnica
+125HOB,Ordinary Bear,Śródziemie
 128ORI,Undead Servant,Dominaria
 132GNT,Pilgrim's Eye,Zendikar
 133THS,Breaching Hippocamp,Theros

@@ -1,0 +1,52 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Hooting%20Mandrills&set=ktk",
+  "print": "ktk",
+  "name": "Hooting Mandrills",
+  "mana_cost": "{5}{G}",
+  "cmc": 6,
+  "type_line": "Creature — Ape",
+  "oracle_text": "Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nTrample",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Delve",
+    "Trample"
+  ],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "137",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/9/090d678c-f0e4-4757-8900-93dfe67aefe9.jpg?1783939067",
+    "normal": "https://cards.scryfall.io/normal/front/0/9/090d678c-f0e4-4757-8900-93dfe67aefe9.jpg?1783939067"
+  },
+  "pobrano": "2026-09-19",
+  "rulings": [
+    {
+      "object": "ruling",
+      "source": "wotc",
+      "published_at": "2021-03-19",
+      "comment": "Delve doesn't change a spell's mana cost or mana value. For example, Treasure Cruise's mana value is 8 even if you exiled three cards to cast it."
+    },
+    {
+      "object": "ruling",
+      "source": "wotc",
+      "published_at": "2021-03-19",
+      "comment": "You can exile cards to pay only for generic mana, and you can't exile more cards than the generic mana requirement of a spell with delve. For example, you can't exile more than seven cards from your graveyard to cast Treasure Cruise unless an effect has increased its cost."
+    },
+    {
+      "object": "ruling",
+      "source": "wotc",
+      "published_at": "2021-03-19",
+      "comment": "Because delve isn't an alternative cost, it can be used in conjunction with alternative costs, such as flashback. It can also be used to pay for additional costs that include generic mana."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/ktk/137/rulings",
+  "rulingsPobrano": "2026-09-19"
+}

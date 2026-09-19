@@ -11256,6 +11256,139 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez fabricate (Glint-Sleeve Artisan)'] },
   }),
 
+  // ---------------------------------------------------------------------------
+  // Batch 57 (2026-09-19) — lista właściciela: 64, 66, 70, 77, 80, 82, 85, 88,
+  // 90, 125. Dane Oracle + rulingi pobrane ze Scryfalla 2026-09-19, set-aware
+  // (docs/cards/scryfall-*.json, ADR 0010 §2a).
+  //
+  // Etap B0b: wchodzą WYŁĄCZNIE dane karty (bez mechaniki) i status
+  // `in-development` — zgodnie z procedurą batcha karta dostaje `supported`
+  // dopiero w etapie, w którym ma pełne mechaniki i testy (ADR 0010 §4,
+  // ADR 0022). Kolejność etapów: B1 (64, 90, 125, 70, 85), B2 (82),
+  // B3 (80), B4 (66), B5 (77), B6 (88).
+  // ---------------------------------------------------------------------------
+  // Phyrexian Rager (APC) — DRUGI druk karty `phyrexian-rager` (DMU, artId 75),
+  // dokładnie jak Curate: arkusz kolekcji ma oba druki (75DMU Dominaria
+  // i 85APC Mirrodin), więc katalog ma dwa wpisy, każdy ze swoim planem,
+  // snapshotem i miejscem w talii (zgłoszenie właściciela 15, 2026-09-19;
+  // precedens: `curate` BRO + `curate-stx` STX, Batch 47). Mechanika jest
+  // identyczna (ETB: dobierz kartę i tracisz 1 życie) — etap B1 to weryfikuje
+  // testem na tym druku, a nie przepisuje kodu.
+  defineCard({
+    id: 'phyrexian-rager-apc', name: 'Phyrexian Rager', set: 'APC',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Horror'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'When this creature enters, you draw a card and you lose 1 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/a/3addf34c-ea54-42a3-bccd-b73453d964d2.jpg?1783945347',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [
+          { type: 'draw_cards', amount: 1 },
+          { type: 'lose_life', amount: 1, scope: 'controller' },
+        ],
+      }),
+    ],
+    artId: 85, plan: 'Mirrodin', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'lightwalker', name: 'Lightwalker', set: 'DTK',
+    types: ['Creature'], subtypes: ['Human', 'Warrior'], colors: ['W'],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: 'This creature has flying as long as it has a +1/+1 counter on it.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/1/01bf1837-41b0-4ff1-9cb1-ee2d75d410c7.jpg?1783938616',
+    artId: 64, plan: 'Tarkir', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'hooting-mandrills', name: 'Hooting Mandrills', set: 'KTK',
+    types: ['Creature'], subtypes: ['Ape'], colors: ['G'],
+    power: 4, toughness: 4, manaCost: 6,
+    oracleText: 'Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nTrample',
+    imageUri: 'https://cards.scryfall.io/large/front/0/9/090d678c-f0e4-4757-8900-93dfe67aefe9.jpg?1783939067',
+    artId: 66, plan: 'Tarkir', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'capture-sphere', name: 'Capture Sphere', set: 'GRN',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 4,
+    oracleText: "Flash\nEnchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature doesn't untap during its controller's untap step.",
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5a799ac8-5798-4a26-81c1-763d6dcfcbe8.jpg?1783934193',
+    artId: 70, plan: 'Arcavios', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'annie-flash-the-veteran', name: 'Annie Flash, the Veteran', set: 'OTJ',
+    types: ['Legendary', 'Creature'], subtypes: ['Human', 'Rogue'], colors: ['R', 'G', 'W'],
+    power: 4, toughness: 5, manaCost: 6,
+    oracleText: 'Flash\nWhen Annie Flash enters, if you cast it, return target permanent card with mana value 3 or less from your graveyard to the battlefield tapped.\nWhenever Annie Flash becomes tapped, exile the top two cards of your library. You may play those cards this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/d/8d4af7c3-a70d-4f71-b27d-b268c4a0f81e.jpg?1783911798',
+    artId: 77, plan: 'Thunder Junction', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'merciless-repurposing', name: 'Merciless Repurposing', set: 'MOM',
+    types: ['Instant'], colors: ['B'], manaCost: 6,
+    oracleText: 'Exile target creature. Incubate 3. (Create an Incubator token with three +1/+1 counters on it and "{2}: Transform this token." It transforms into a 0/0 Phyrexian artifact creature.)',
+    imageUri: 'https://cards.scryfall.io/large/front/7/0/70edec35-1770-47f0-9ad2-32e597ee0327.jpg?1783917004',
+    artId: 80, plan: 'Mirrodin', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'messenger-falcons', name: 'Messenger Falcons', set: 'ARB',
+    types: ['Creature'], subtypes: ['Bird'], colors: ['G', 'U', 'W'],
+    power: 2, toughness: 2, manaCost: 4,
+    oracleText: 'Flying\nWhen this creature enters, draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/0/f088f625-9c72-4949-8e53-c2313397a197.jpg?1783942408',
+    artId: 82, plan: 'Alara', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'baral-and-kari-zev', name: 'Baral and Kari Zev', set: 'TDC',
+    types: ['Legendary', 'Creature'], subtypes: ['Human'], colors: ['R', 'U'],
+    power: 2, toughness: 4, manaCost: 3,
+    oracleText: "First strike, menace\nWhenever you cast your first instant or sorcery spell each turn, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost. If you don't, create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/e/7/e777c383-161f-4a80-acb3-2a5c9ed5e927.jpg?1783907033',
+    artId: 88, plan: 'Kaladesh', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'tranquil-cove', name: 'Tranquil Cove', set: 'M20',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {W} or {U}.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/5/75fa37aa-ef2e-49ff-9496-86b0e69128a7.jpg?1783932932',
+    // Deskryptor zdolności many wchodzi JUŻ w B0b (precedens Thornwood Falls,
+    // Batch 56): strażnik M193/A parsuje Oracle „{T}: Add …" po CAŁYM katalogu,
+    // więc karta bez zakodowanej produkcji kolorów czerwienieje w dniu dodania
+    // (L28). Karta jest 1:1 lustrem Dismal Backwater / Thornwood Falls (M20),
+    // więc nie niesie nowej mechaniki; status `in-development` zostaje do etapu
+    // B1, w którym dojdą testy (ADR 0010 §4 — `supported` dopiero z testami).
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'gain_life', amount: 1 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['W', 'U'] },
+      }),
+    ],
+    artId: 90, plan: 'Kamigawa', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'ordinary-bear', name: 'Ordinary Bear', set: 'HOB',
+    types: ['Creature'], subtypes: ['Bear'], colors: ['G'],
+    power: 4, toughness: 5, manaCost: 4,
+    oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/0/f/0feb9817-56e1-465a-851c-b2fe202aa8ae.jpg?1785323277',
+    artId: 125, plan: 'Śródziemie', support: { status: 'in-development', limitations: [] },
+  }),
+
 ]);
 
 /**

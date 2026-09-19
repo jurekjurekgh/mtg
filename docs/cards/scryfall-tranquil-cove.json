@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Tranquil%20Cove&set=m20",
+  "print": "m20",
+  "name": "Tranquil Cove",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {W} or {U}.",
+  "colors": [],
+  "color_identity": [
+    "U",
+    "W"
+  ],
+  "keywords": [],
+  "set": "m20",
+  "set_name": "Core Set 2020",
+  "collector_number": "259",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/5/75fa37aa-ef2e-49ff-9496-86b0e69128a7.jpg?1783932932",
+    "normal": "https://cards.scryfall.io/normal/front/7/5/75fa37aa-ef2e-49ff-9496-86b0e69128a7.jpg?1783932932"
+  },
+  "pobrano": "2026-09-19",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/m20/259/rulings",
+  "rulingsPobrano": "2026-09-19"
+}
