@@ -585,6 +585,76 @@ export function commandForButtonsSelection(commands, rowId) {
   return commandForOptionRow(commands, rowId);
 }
 
+/**
+ * M2 (dokończenie zgłoszenia właściciela 2026-09-19b, Robbers) — KROK 1
+ * dwustopniowego rzutu czaru modalnego:
+ *
+ *   „(1) Klikam w »Twoje działania« w »Rzuć: You're Confronted by Robbers
+ *    (koszt)« → (2) Wybieram Stall for Time albo Call for Aid → (3) Otwiera
+ *    się nowy modal z możliwymi do tapnięcia kreaturami, których mogę
+ *    zaznaczyć »up to 3« i zatwierdzić.”
+ *
+ * Plan kroku 1: wiersz na TRYB (ten sam komponent co okna rzutu —
+ * `castWindowMode`: radio + Zatwierdź), a `reps` to komendy-reprezentanty
+ * trybów. Reprezentant = wariant z NAJMNIEJSZĄ liczbą celów: tryb „up to N”
+ * zawsze oferuje wariant pusty, więc wybór jest wykonalny dla każdego trybu
+ * (cele wybiera krok 2). Sam plan nie buduje komend (L48) — `reps` to
+ * komendy z ofert silnika.
+ */
+export function castModePlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2) return null;
+  // Wyłącznie warianty JEDNEGO rzutu: ta sama karta, ten sam typ komendy,
+  // każda komenda niesie tryb (deskryptor `modeIndex`, ADR 0002 — zero nazw kart).
+  if (!options.every((cmd) => cmd?.type === 'cast_spell' && cmd.modeIndex != null)) return null;
+  const objectId = options[0].objectId;
+  if (!options.every((cmd) => cmd.objectId === objectId)) return null;
+  const modes = [...new Set(options.map((cmd) => cmd.modeIndex))].sort((a, b) => a - b);
+  if (modes.length < 2) return null;
+  const reps = modes.map((modeIndex) => {
+    const variants = options.filter((cmd) => cmd.modeIndex === modeIndex);
+    return variants.reduce((best, cmd) =>
+      ((cmd.targets?.length ?? 0) < (best.targets?.length ?? 0) ? cmd : best));
+  });
+  return {
+    castModeMode: true,
+    type: 'cast_spell',
+    objectId,
+    modes,
+    reps,
+    targets: [],
+    hasX: false,
+    itemLabel: 'tryb',
+    // Ten sam komponent co okna rzutu (wiersz + radio + Zatwierdź).
+    castWindowMode: true,
+    rows: reps.map((cmd, i) => ({ id: `opt-${i}`, label: null, cardId: cmd.cardId ?? cmd.objectId })),
+  };
+}
+
+/**
+ * M2 — KROK 2 po wyborze trybu: co jeszcze trzeba rozstrzygnąć, żeby rzut był
+ * legalny. Ta sama kolejność planów co panel (L48 — komendy zawsze z ofert
+ * silnika, kreator nic nie buduje z palca):
+ *   `command` — tryb bez decyzji (np. „Call for Aid": trzy tokeny) → rzut wprost,
+ *   `multi`   — wielocelowy wybór („up to 3 target creatures") → picker ptaszków,
+ *   `single`  — jeden cel → picker jednokrotny,
+ *   `rows`    — lista gotowych wariantów trybu (fallback).
+ * `null` = brak planu (wywołujący zostaje przy reprezentancie).
+ */
+export function modeFollowUpPlanOf(commands) {
+  const subset = commands ?? [];
+  if (subset.length === 0) return null;
+  if (subset.length === 1) return { kind: 'command', command: subset[0] };
+  const multi = multiTargetPlanOf(subset);
+  if (multi) return { kind: 'multi', plan: multi };
+  const single = singleTargetPlanOf(subset);
+  if (single) return { kind: 'single', plan: single };
+  const windowPlan = castWindowPlanOf(subset);
+  if (windowPlan) return { kind: 'rows', plan: windowPlan };
+  const buttons = buttonsPlanOf(subset);
+  return buttons ? { kind: 'rows', plan: buttons } : null;
+}
+
 function commandForOptionRow(commands, rowId) {
   const match = /^opt-(\d+)$/.exec(String(rowId ?? ''));
   if (!match) return null;

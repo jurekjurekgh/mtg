@@ -2380,7 +2380,11 @@ export function choiceGroupTitle(request, session, view) {
   if (options.length > 0 && options.every((o) => o?.type === 'cast_spell' && o.objectId === options[0].objectId)) {
     const groupObject = findViewObject(options[0].objectId, view);
     if (groupObject && (groupObject.spell?.modes ?? []).length > 1 && groupModes.size > 0) {
-      return `Rzuć: ${session.nameOf(groupObject.cardId)}`;
+      // Koszt w tytule (zgłoszenie M, krok 1: „Rzuć: <karta> (koszt)"). Notacja
+      // `{3}{W}` jak w logu i regułach — tytuł idzie też do textContent
+      // nagłówka modala (M87), więc nie może nieść HTML-a ikon.
+      const rawCost = MANA_COSTS[groupObject.cardId];
+      return `Rzuć: ${session.nameOf(groupObject.cardId)}${rawCost ? ` (koszt ${rawCost})` : ''}`;
     }
   }
   const titled = choiceSourceTitle(options[0], session, view);

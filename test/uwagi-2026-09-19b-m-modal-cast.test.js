@@ -34,7 +34,9 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addMana } from '../src/engine/resources.js';
-import { buildActionEntries, choiceGroupTitle, choiceRequestGroupKey, commandLabel } from '../src/table/render.js';
+import { buildActionEntries, choiceGroupTitle, choiceRequestGroupKey, commandLabel, labelChoiceOptions } from '../src/table/render.js';
+import { renderMultiTargetWizard } from '../src/table/choice-request.js';
+import { castModePlanOf, modeFollowUpPlanOf, commandForCastWindowSelection, commandForSelection } from '../src/table/multi-target.js';
 
 const REGISTRY = createCardRegistry();
 const SESSION = {
@@ -105,14 +107,148 @@ test('M/1: rzut modalnego czaru to JEDEN wpis panelu (scena ze zgłoszenia)', ()
   assert.ok(warianty.length > 2, 'modal niesie też warianty celów trybu 0–3 stwory');
 });
 
-test('M/2: tytuł wpisu to czynność + karta („Rzuć: <karta>”), nie nazwa trybu', () => {
+test('M/2: tytuł wpisu to czynność + karta + koszt („Rzuć: <karta> (koszt …)”)', () => {
   const { state } = robbersBoard();
   const { view, wpisy } = robbersEntries(state);
   const tytul = choiceGroupTitle(wpisy[0].request, SESSION, view).replace(/<[^>]*>/g, '').trim();
-  assert.equal(tytul, "Rzuć: You're Confronted by Robbers",
-    `tytuł ma nazywać rzut karty, nie pierwszy tryb grupy: „${tytul}"`);
+  // M2 (krok 1 zgłoszenia): „Klikam w »Twoje działania« w »Rzuć: You're
+  // Confronted by Robbers (koszt)«" — koszt należy do tytułu wpisu, bo to
+  // jedyna informacja o cenie przed otwarciem modala.
+  assert.equal(tytul, "Rzuć: You're Confronted by Robbers (koszt {3}{W})",
+    `tytuł ma nazywać rzut karty z kosztem, nie pierwszy tryb grupy: „${tytul}"`);
   assert.doesNotMatch(tytul, /tryb:/, 'tryb wybiera się w modalu, nie w tytule panelu');
 });
+
+// ---------------------------------------------------------------------------
+// M2 (dokończenie zgłoszenia): DWUSTOPNIOWY rzut — tryb, potem cele.
+//   „(2) Wybieram Stall for Time albo Call for Aid → (3) Otwiera się nowy
+//    modal z możliwymi do tapnięcia kreaturami, których mogę zaznaczyć
+//    »up to 3« i zatwierdzić.”
+// ---------------------------------------------------------------------------
+
+/** Oferta rzutu Robbersami z widoku (oba tryby, wszystkie warianty celów). */
+function robbersOffers(state) {
+  const view = playerView(state, 'p1');
+  const oferty = view.legalCommands.filter((c) => c.type === 'cast_spell'
+    && c.objectId?.startsWith('youre-confronted-by-robbers'));
+  return { view, oferty };
+}
+
+test('M2/1: KROK 1 — plan trybów ma wiersz na tryb, nie na kombinację celów', () => {
+  const { state } = robbersBoard();
+  const { oferty } = robbersOffers(state);
+  const plan = castModePlanOf(oferty);
+  assert.ok(plan, 'grupa czaru modalnego daje plan kroku 1 (tryby)');
+  assert.equal(plan.rows.length, 2, `wiersz na tryb: ${JSON.stringify(plan.rows)}`);
+  assert.equal(new Set(plan.reps.map((c) => c.modeIndex)).size, 2, 'reprezentanty obu trybów');
+  assert.ok(plan.reps.every((c) => c.modeIndex != null), 'reprezentant niesie tryb');
+  // Zatwierdź kroku 1 zwraca komendę-reprezentanta trybu (L48: z ofert silnika).
+  const wybrany = commandForCastWindowSelection(plan.reps, 'opt-1');
+  assert.equal(wybrany.modeIndex, 1, 'wiersz 2 = tryb 2');
+  // Kontrola: to nie jest plan dla zwykłej grupy rzutów (anty-over-fix).
+  assert.equal(castModePlanOf([{ type: 'cast_spell', objectId: 'x', targets: [] }]), null);
+});
+
+test('M2/2: KROK 2 — tryb „up to 3” daje picker wielocelowy (nie listę kombinacji)', () => {
+  const { state, moj, obcy } = robbersBoard();
+  const { oferty } = robbersOffers(state);
+  const tryb0 = oferty.filter((c) => c.modeIndex === 0);
+  const follow = modeFollowUpPlanOf(tryb0);
+  assert.equal(follow.kind, 'multi', `tryb z „up to 3 target creatures” to picker: ${follow.kind}`);
+  assert.equal(follow.plan.minTargets, 0, 'zero celów jest legalne („up to”)');
+  assert.equal(follow.plan.maxTargets, 2, `sufit = liczba kandydatów: ${follow.plan.maxTargets}`);
+  assert.deepEqual([...follow.plan.targets].sort(), [moj, obcy].sort(), 'kandydaci = stwory z pola bitwy');
+  // Zatwierdź pickera z dwoma ptaszkami → komenda z ofert silnika, wykonalna.
+  const cmd = commandForSelection(tryb0, { targets: [moj, obcy] });
+  assert.ok(cmd, 'dwa zaznaczone cele dają legalną komendę');
+  assert.deepEqual(cmd.targets, [moj, obcy]);
+  assert.ok(execute(state, cmd).ok, 'komenda z pickera jest wykonalna');
+  resolveStack(state);
+  assert.equal(state.objects.get(moj).tapped, true, 'oba cele zatapnięte');
+  assert.equal(state.objects.get(obcy).tapped, true, 'oba cele zatapnięte (2/2)');
+});
+
+test('M2/3: KROK 2 — tryb bez decyzji (Call for Aid) rzuca od razu, bez pustego modala', () => {
+  const { state } = robbersBoard();
+  const { oferty } = robbersOffers(state);
+  const follow = modeFollowUpPlanOf(oferty.filter((c) => c.modeIndex === 1));
+  assert.equal(follow.kind, 'command', 'tryb bez celów nie otwiera drugiego modala');
+  assert.equal(follow.command.modeIndex, 1);
+});
+
+test('M2/4: oba modale (DOM) — najpierw tryby, potem ptaszki celów + Zatwierdź', () => {
+  const { state, moj, obcy } = robbersBoard();
+  const { view, oferty } = robbersOffers(state);
+  const plan = castModePlanOf(oferty);
+  const labels = labelChoiceOptions(plan.reps, SESSION, view);
+  plan.rows = plan.rows.map((row, i) => ({ ...row, label: labels[i] }));
+
+  const dom = installMiniDom();
+  const modeHost = dom.createElement('div');
+  let chosenMode = null;
+  renderMultiTargetWizard(modeHost, {
+    view, session: SESSION, plan, commands: plan.reps,
+    intro: "Rzuć: You're Confronted by Robbers (koszt {3}{W}) — wybierz tryb:",
+    onComplete: (cmd) => { chosenMode = cmd; }, onCancel: () => {},
+  });
+  assert.match(modeHost.textContent, /Zyskiwanie czasu/, `krok 1 nazywa tryb 1: ${modeHost.textContent}`);
+  assert.match(modeHost.textContent, /Wezwanie pomocy/, `krok 1 nazywa tryb 2: ${modeHost.textContent}`);
+  const modeRows = walkDom(modeHost).filter((el) => el.dataset?.multiTargetId === 'opt-1'
+    || String(el.className).includes('multi-target-toggle'));
+  assert.ok(modeRows.length >= 1, 'krok 1 ma wiersze wyboru');
+  // Zaznacz tryb 1 i zatwierdź.
+  const radio = walkDom(modeHost).find((el) => String(el.className).includes('multi-target-toggle'));
+  assert.ok(radio, 'krok 1 ma radio trybu');
+  radio.checked = true; radio.emit('change');
+  const confirm1 = walkDom(modeHost).find((el) => /Zatwierdź/.test(el.textContent) && el.tagName === 'BUTTON');
+  assert.ok(confirm1, 'krok 1 ma Zatwierdź');
+  confirm1.click();
+  assert.ok(chosenMode, 'Zatwierdź kroku 1 zwraca wybrany tryb');
+  const subset = oferty.filter((c) => c.modeIndex === chosenMode.modeIndex);
+  const follow = modeFollowUpPlanOf(subset);
+  assert.equal(follow.kind, 'multi', 'wybrany tryb 0 ma krok 2 (cele)');
+
+  const targetHost = dom.createElement('div');
+  let talCmd = null;
+  renderMultiTargetWizard(targetHost, {
+    view, session: SESSION, plan: follow.plan, commands: subset,
+    onComplete: (cmd) => { talCmd = cmd; }, onCancel: () => {},
+  });
+  const toggles = walkDom(targetHost).filter((el) => String(el.className).includes('multi-target-toggle'));
+  assert.equal(toggles.length, 2, `krok 2: ptaszek na kandydata (${toggles.length})`);
+  assert.match(targetHost.textContent, /0–2/, `krok 2 mówi „up to” zakresem: ${targetHost.textContent.slice(0, 140)}`);
+  toggles[0].checked = true; toggles[0].emit('change');
+  toggles[1].checked = true; toggles[1].emit('change');
+  const confirm2 = walkDom(targetHost).find((el) => /Zatwierdź/.test(el.textContent) && el.tagName === 'BUTTON');
+  assert.ok(confirm2, 'krok 2 ma Zatwierdź');
+  confirm2.click();
+  assert.ok(talCmd, 'Zatwierdź kroku 2 zwraca komendę rzutu');
+  assert.deepEqual([...talCmd.targets].sort(), [moj, obcy].sort(), 'komenda niesie oba zaznaczone cele');
+});
+
+/** Mini-DOM jak w testach kreatora (M104/bug-c1) — tylko to, czego używa picker. */
+function walkDom(el) { return [el, ...(el.children ?? []).flatMap(walkDom)]; }
+
+function installMiniDom() {
+  class MiniEl {
+    constructor(tag) {
+      this.tagName = String(tag).toUpperCase(); this.children = []; this.listeners = {};
+      this.className = ''; this.text = ''; this.html = '';
+      this.type = ''; this.checked = false; this.disabled = false; this.dataset = {};
+    }
+    set textContent(v) { this.text = String(v); this.html = ''; this.children = []; }
+    get textContent() { return this.text + this.children.map((c) => c.textContent).join(''); }
+    set innerHTML(v) { this.html = String(v); this.text = String(v).replace(/<[^>]*>/g, ''); this.children = []; }
+    get innerHTML() { return (this.html ? this.html : this.text) + this.children.map((c) => c.innerHTML).join(''); }
+    appendChild(c) { this.children.push(c); return c; }
+    replaceChildren(...n) { this.children = n.flat(); }
+    addEventListener(t, l) { (this.listeners[t] ??= []).push(l); }
+    click() { for (const l of this.listeners.click ?? []) l({}); }
+    emit(t, v) { for (const l of this.listeners[t] ?? []) l(v ?? {}); }
+  }
+  globalThis.document = { createElement: (tag) => new MiniEl(tag) };
+  return { createElement: (tag) => new MiniEl(tag) };
+}
 
 test('M/3: tryby są rozróżnialne w modalu (etykiety wariantów nazywają tryb)', () => {
   const { state } = robbersBoard();

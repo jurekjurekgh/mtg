@@ -73,7 +73,9 @@ test('M267: tryb Z celami to nadal nazwany rzut, nie „Cel czaru” per tryb', 
     options: [{ type: 'cast_spell', objectId: 'o1', modeIndex: 0, targets: ['e1'] }],
   };
   const title = choiceGroupTitle(request, SESSION, VIEW);
-  assert.match(title, /^Rzuć: You're Confronted by Robbers$/);
+  // M2 (krok 1 zgłoszenia): tytuł wpisu niesie też KOSZT — jedyna informacja
+  // o cenie przed otwarciem modala wyboru trybu.
+  assert.equal(title, "Rzuć: You're Confronted by Robbers (koszt {3}{W})");
 });
 
 test('M267 (klasa): każda komenda tworząca KLUCZ GRUPY ma nazwany tytuł', () => {

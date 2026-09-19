@@ -36,8 +36,9 @@ import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
-import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf } from './multi-target.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
+import { choiceRequest } from '../protocol/types.js';
 
 function runEngineSmoke() {
   // Minimalny, odtwarzalny przebieg: kilka rund passów przez komendy z widoku.
@@ -439,6 +440,40 @@ function bootstrapTable() {
     // (etykiety K1/K2: tryb, stun, X) albo odmowa. Wiersz na opcję + radio +
     // Zatwierdź; plan MUSI biec przed multiTargetPlanOf, bo warianty okien
     // niosą `targets` (multiTargetPlanOf gubił odmowę — test M300/1).
+    // M2 (dokończenie zgłoszenia właściciela 2026-09-19b, You're Confronted by
+    // Robbers): czar modalny to DWA modale, nie lista kombinacji.
+    //   krok 1 — tryb: „Zyskiwanie czasu" / „Wezwanie pomocy" (ten plan),
+    //   krok 2 — decyzje WEWNĄTRZ trybu (cele) zwykłym rozgałęzieniem panelu:
+    //            rekurencja z pod-zadaniem złożonym z wariantów wybranego trybu,
+    //            więc cele zbiera ten sam kreator, co dla zwykłego czaru.
+    // Wcześniej panel enumerował iloczyn „tryb × cele" (Robbers: 5 wierszy).
+    const castModePlan = castModePlanOf(request.options ?? []);
+    if (castModePlan) {
+      const modeOptions = request.options ?? [];
+      const repLabels = labelChoiceOptions(castModePlan.reps, session, choiceView);
+      castModePlan.rows = castModePlan.rows.map((row, i) => ({ ...row, label: repLabels[i] }));
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: castModePlan,
+        commands: castModePlan.reps,
+        intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz tryb:`,
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (repCmd) => {
+          const subset = modeOptions.filter((cmd) => cmd.modeIndex === repCmd.modeIndex);
+          if (subset.length === 1) { hideModal('choice-request'); play(subset[0]); return; }
+          openChoiceRequest(choiceRequest({
+            id: `${request.id ?? 'mode'}-tryb-${repCmd.modeIndex}`,
+            type: request.type ?? 'command',
+            options: subset,
+          }));
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     const castWindowPlan = castWindowPlanOf(request.options ?? []);
     if (castWindowPlan) {
       const opts = request.options ?? [];
