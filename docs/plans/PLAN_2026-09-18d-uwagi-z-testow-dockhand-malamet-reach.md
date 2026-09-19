@@ -106,30 +106,30 @@ L135; wzorzec: kreator załogi crew — `openCrewWizard`, A2/2026-09-12:
 ## Etapy
 
 - [x] E0. Rozpoznanie + ten plan (commit i push PRZED kodowaniem — ADR 0020 A/C).
-- [ ] E1 (C2). RED: przy jednej odsłanianej karcie sesja/silnik NIE kolejkuje
+- [x] E1 (C2). RED: przy jednej odsłanianej karcie sesja/silnik NIE kolejkuje
   modala — karta idzie do ręki automatycznie (L144: decyzja z jedną opcją to
   nie decyzja); dotyczy obu wariantów `look_top_put_one_hand_*` (rest_bottom
   z Dockhand i rest_grave). Fix w effects.js. GREEN + mutacja. Commit + push.
-- [ ] E2 (C1, silnik). Oferta zostaje wariantowa dla bota/testera (jak
+- [x] E2 (C1, silnik). Oferta zostaje wariantowa dla bota/testera (jak
   warianty X czarów — liniowa, NIE kombinatoryczna; zakazana enumeracja to
   wszystkie podzbiory artefaktów), ale OD X=0 (`tapArtifactIds: []`);
   walidacja: pusta lista legalna TYLKO dla X=0. Bramki zielone bez zmian
   u konsumentów (kształt komendy przyrostowy).
-- [ ] E3 (C1, bot). Wycena `look_top_put_one_hand_rest_bottom` w
+- [x] E3 (C1, bot). Wycena `look_top_put_one_hand_rest_bottom` w
   activate_ability (dziś BRAK — L131: bez wyceny bot brałby pierwszy
   wariant): X=0 mocno ujemna (4 many za nic), X>0: karta do ręki + opcjonalność
   wyboru − koszt tapowanych artefaktów. Mutacja + pin.
-- [ ] E4 (C1, UI + tester). Uniwersalny modal wyboru (picker.js, wzorzec
+- [x] E4 (C1, UI + tester). Uniwersalny modal wyboru (picker.js, wzorzec
   kreatora załogi): akcja „Aktywuj: <karta>” JEDNA (warianty tapXArtifacts
   scalone), po kliknięciu stepper X (0..N) + lista nietapniętych artefaktów
   gracza z ptaszkami (dokładnie X zaznaczeń) + „Zatwierdź” → komenda
   z wybranym xValue/tapArtifactIds. Sterownik testera klika nowy kreator
   (L135: nowy kształt = obsługa u każdego konsumenta).
-- [ ] E5 (D). Pin regresyjny: counter/damage/death z fight w buforze modala
+- [x] E5 (D). Pin regresyjny: counter/damage/death z fight w buforze modala
   i w przebiegu tur (rzut człowieka i bota). Zielony na starcie = strażnik.
-- [ ] E6 (E). Pin regresyjny: bot nie atakuje lataczem w blokera z reach
+- [x] E6 (E). Pin regresyjny: bot nie atakuje lataczem w blokera z reach
   (bestow / grant EOT / własny), gdy atak jest jałowy. Zielony na starcie.
-- [ ] E7. Bramy (`npm test`, build), pętla Żywym Testerem (talia z Dockhand
+- [x] E7. Bramy (`npm test`, build), pętla Żywym Testerem (talia z Dockhand
   — kaladesh), domknięcie: plan [x], handoff 2026-09-18d (aneks do 18c),
   PROJECT_HISTORY, README, PATCH opisu PR #129, blok przekazania.
 
@@ -152,3 +152,20 @@ L135; wzorzec: kreator załogi crew — `openCrewWizard`, A2/2026-09-12:
 klas C/D/E, wszystkie nowe piny zweryfikowane mutacją (L13), PR #129
 zaktualizowany kumulatywnie, modal Dockhand: X=0 osiągalny, wybór artefaktów
 ręczny, 1 karta brana automatycznie.
+
+## Wyniki (wykonane 2026-09-19)
+
+| Etap | Commit | Wynik |
+| --- | --- | --- |
+| E1 (C2) | `6270605` | effects.js: `takeSingleLookedCardToHand` — 1 karta brana automatycznie (oba warianty rest_bottom/rest_grave); 0 kart = pusty efekt; ≥2 = modal. Test 5/5, mutacja → 3 RED. |
+| E2 (C1, silnik) | `3691701` | Oferta `tapXArtifacts` od X=0 (CR 107.3); walidacja: pusta lista legalna tylko dla X=0. Test 5/5, mutacje → RED; atrybucja batch42 (wariantów 3). |
+| E3 (C1, bot) | `68761ca` | Wycena `look_top_put_one_hand_rest_bottom` w activate_ability: X=0 −40; X>0 = karta + opcjonalność − koszt tapów. Test 3/3, mutacja → 3 RED. |
+| E4 (C1, UI+tester) | `7778e8d` | `tapXArtifactsPlanOf`/`commandForTapXSelection` (multi-target.js), tryb tapXMode w renderMultiTargetWizard (stepper X + dokładnie X zaznaczeń), gałąź openChoiceRequest, opis efektu w render.js, gałąź testera. Test 8/8, mutacje → 6/8 RED. |
+| pętla testera | `8544b76` | Wzorce „przejrzyj X kart” (actions.mjs), gałąź crew w sterowniku (luka pre-istniejąca, kaladesh s77), reprezentant sondy = max X (fałszywy noop na X=0). |
+| E5 (D) | `266950a` | Pin 3/3: counter/damage/death z fight w buforze „Rozgrywka” i przebiegu tur (rzut człowieka i bota). Pomiar: objaw nieodtwarzalny po M386 (PR #128). |
+| E6 (E) | `a9b10b1` | Pin 3/3: bot nie atakuje lataczem w reach-blokera (bestow/grant EOT) + kontrola bez reach. Mutacja zdjęcia reach z `attackerCanBeBlocked` → 2 RED. Uwaga konstrukcyjna: gameObjectDataOf nie niesie keywordów (helper dokłada je z rejestru). |
+| E7 | ten commit | Bramy: npm test 5829/5829, test:all 5839/5839, build 64/3844.7 kB. Żywy Tester kaladesh (s 21/77/99/…): kreator tapX przećwiczony 3× na s99, 0 zgłoszeń detektorów. |
+
+Uwaga sesyjna: TRZECI reset workspace podczas tej sesji (po push E4) —
+odzyskany wzorem poprzednich (backup branch na commit-sierota + `git reset
+--hard FETCH_HEAD` + cherry-pick `f4827dd` → `7778e8d`).

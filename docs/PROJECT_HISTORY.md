@@ -19,6 +19,45 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-19 Uwagi z testów: C1/C2 (Merchant's Dockhand), D (Malamet), E (reach) (PR #129, dalszy ciąg)
+
+Zlecenie właściciela (2026-09-18, partia kaladesh): trzy uwagi. Plan:
+[`docs/plans/PLAN_2026-09-18d-uwagi-z-testow-dockhand-malamet-reach.md`](plans/PLAN_2026-09-18d-uwagi-z-testow-dockhand-malamet-reach.md),
+handoff: [`docs/setup/HANDOFF_2026-09-18d.md`](setup/HANDOFF_2026-09-18d.md).
+Kardynalna korekta właściciela (C1): żadnych enumeracji wariantów w UI —
+wyłącznie uniwersalny kreator (stepper X → zaznacz dokładnie X artefaktów).
+
+- **E1/C2 `6270605`** — przy jednej odsłanianej karcie efekt dobiera ją
+  automatycznie (`takeSingleLookedCardToHand`, effects.js; rodziny
+  rest_bottom/rest_grave); wcześniej modal „Weź – Forest” z opcją Pass
+  gubiącą kartę.
+- **E2/C1 `3691701`** — oferta `tapXArtifacts` od X=0 (CR 107.3; jawny błąd:
+  brakowało X=0), walidacja pustej listy tylko dla X=0; atrybucja batch42
+  (L135: liczba wariantów +1).
+- **E3/C1 `68761ca`** — wycena bota `look_top_put_one_hand_rest_bottom` dla
+  `activate_ability` (X=0 −40; X>0: karta + opcjonalność − koszt tapów).
+- **E4/C1 `7778e8d`** — kreator tapX: `tapXArtifactsPlanOf` /
+  `commandForTapXSelection` (multi-target.js), tryb `tapXMode` w
+  renderMultiTargetWizard (stepper 0–N, dokładnie N zaznaczeń), opis efektu
+  w render.js, gałąź sterowniku testera; test 8/8 + mutacje 6/8 RED.
+- **Pętla testera `8544b76`** — wzorzec grupy „przejrzyj X kart”
+  (actions.mjs), gałąź kreatora załogi w sterowniku (luka PRE-ISTNIEJĄCA:
+  generyczna polityka M203 zaznaczała jeden wiersz, kaladesh s77 stawał na
+  „Zatwierdź” niegasnącym), reprezentant sondy noop = wariant max-X (X=0
+  jest jałowy z definicji → fałszywe zgłoszenie w każdej partii).
+- **E5/D `266950a`** — pin 3/3: counter/obrażenia/zgony z fight Malamet
+  w buforze „Rozgrywka” i przebiegu tur (rzut człowieka i bota). Objaw
+  właściciela nieodtwarzalny po M386 (PR #128); pin chroni klasę.
+- **E6/E `a9b10b1`** — pin 3/3: bot nie atakuje lataczem w blokera z reach
+  nadanym aurą bestow/grant EOT + kontrola bez reach. Mutacja zdjęcia reach
+  z `attackerCanBeBlocked` → 2 RED. Pułapka sesji: `gameObjectDataOf` nie
+  niesie `keywords` — helper testowy dokłada je z rejestru.
+
+Bramy końcowe: npm test 5829/5829; test:all 5839/5839; build 64/3844.7 kB.
+Żywy Tester kaladesh (s99): kreator tapX przećwiczony 3× E2E, 0 zgłoszeń
+detektorów. Trzeci reset workspace w sesji odzyskany wzorem poprzednich
+(commit-sierota + reset do FETCH_HEAD + cherry-pick).
+
 ## 2026-09-18c Uwagi właściciela z testów: A (detain a atak), B/B1 (Epic Experiment X=0 i brak X w logu) (PR #129)
 
 Zlecenie właściciela (2026-09-18): trzy uwagi z testów talii ravnica. Plan:
