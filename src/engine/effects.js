@@ -5552,6 +5552,23 @@ function markTemporaryExile(state, exileId, sourceObject) {
   // the top four cards of your library. Put one of them into your hand and
   // the rest into your graveyard." — look top N, wybierz JEDNĄ do ręki,
   // reszta do grobu. Blokująca decyzja jak scry/surveil (pendingLookTopN).
+  /**
+   * Uwaga C2 właściciela z testów (2026-09-19): rozstrzygnięcie „put one of
+   * them into your hand” przy dokładnie JEDNEJ odsłoniętej karcie — wybór jest
+   * wymuszony, więc silnik wykonuje go sam (L144: decyzja z jedną opcją to nie
+   * decyzja; L138: ścieżka bez decyzji nie zgłasza blokady). Zdarzenia lustrzą
+   * ręczną ścieżkę resolve_look_top_choice (game-state.js), żeby log/opis
+   * dostały ten sam kształt (L6/L41).
+   */
+  function takeSingleLookedCardToHand(oneState, playerId, objectId, restTo) {
+    const handId = `hand-${oneState.objectSequence++}`;
+    const movedHand = moveObjectDirectly(oneState, objectId, 'hand', handId);
+    oneState.events.push(event('object_moved', { fromId: objectId, object: movedHand, fromZone: 'library', toZone: 'hand', looked: true }));
+    oneState.events.push(event('look_top_resolved', {
+      playerId, count: 1, pickId: objectId, pickCardId: movedHand.cardId, restTo,
+    }));
+  }
+
   if (effect.type === 'look_top_put_one_hand_rest_bottom') {
     // M177/E (Merchant's Dockhand): „Look at the top X cards… Put one of
     // them into your hand and the rest on the bottom of your library in any
@@ -5561,6 +5578,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const n = effect.amount === 'x' ? (context?.xValue ?? 0) : (effect.amount ?? 1);
     const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, n);
     if (topIds.length === 0) return;
+    // Uwaga C2 właściciela z testów (2026-09-19, Merchant's Dockhand): przy
+    // JEDNEJ odsłanianej karcie „put one of them into your hand” nie zostawia
+    // wyboru — L144: decyzja z jedną opcją to nie decyzja, silnik rozstrzyga
+    // sam w chwili kolejkowania (bez pending i bez modala; klik „Dalej” nie
+    // może pozbawić gracza jedynej karty, bo byłoby to sprzeczne z efektem).
+    if (topIds.length === 1) {
+      takeSingleLookedCardToHand(state, controllerId, topIds[0], 'library_bottom');
+      return;
+    }
     state.pendingLookTopN = {
       playerId: controllerId,
       objectIds: [...topIds],
@@ -5633,6 +5659,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const n = effect.amount ?? 4;
     const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, n);
     if (topIds.length === 0) return;
+    // Uwaga C2 (jak w wariancie spód-biblioteki): jedna karta = brak wyboru.
+    if (topIds.length === 1) {
+      takeSingleLookedCardToHand(state, controllerId, topIds[0], 'graveyard');
+      return;
+    }
     state.pendingLookTopN = {
       playerId: controllerId,
       objectIds: [...topIds],

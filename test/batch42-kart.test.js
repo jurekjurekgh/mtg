@@ -421,7 +421,8 @@ test('E3: Merchant\'s Dockhand — tap X artefaktów, top X: jedna do ręki, res
   addMana(state, 'p1', 4, { colors: ['U'] });
   const offers = playerView(state, 'p1').legalCommands
     .filter((c) => c.type === 'activate_ability' && c.objectId === 'dock');
-  assert.equal(offers.length, 2, 'warianty X=1 i X=2 (dwa inne artefakty)');
+  // Uwaga C1 właściciela (2026-09-19): oferta OD X=0 (CR 107.3) — wariantów 3.
+  assert.equal(offers.length, 3, 'warianty X=0, X=1 i X=2 (dwa inne artefakty)');
   const x2 = offers.find((c) => c.xValue === 2);
   assert.ok(x2 && (x2.tapArtifactIds ?? []).length === 2, 'X=2 tapuje dwa artefakty');
   assert.ok(execute(state, x2).ok);

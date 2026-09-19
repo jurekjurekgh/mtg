@@ -1102,7 +1102,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const enemy = (view) => view.players.find((p) => p.id !== view.playerId);
   const myCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'creature');
   const enemyCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId !== view.playerId && o.kind === 'creature');
-  const untappedEnemyBlockers = (view) => enemyCreatures(view).filter((o) => !o.tapped);
+  // Potencjalni blokerzy = wrogie stwory, które FAKTYCZNIE mogą blokować.
+  // Uwaga A właściciela z testów (2026-09-18, Azorius Justiciar): jedyny
+  // wróg zatrzymany przez detain nie może blokować, a bot liczył go jako
+  // ryzyko i nie atakował. Zakazy są JAWNE w PlayerView (ADR 0017):
+  //  • `detained` — detain (CR 701.29): „Until your next turn, those
+  //    creatures can't attack or block…” (Oracle, snapshot
+  //    scryfall-azorius-justiciar.json; engine: blockRestrictionError);
+  //  • `cantBlock` — centralny odczyt silnika `creatureCantBlock`
+  //    + restrykcje załączników (game-state.js, L55).
+  // Silnik i tak odrzuci taki blok (blockAssignmentViolation), więc liczenie
+  // go w ryzyku jest wyłącznie szumem (L1: bot czyta to, co widok niesie).
+  const untappedEnemyBlockers = (view) => enemyCreatures(view)
+    .filter((o) => !o.tapped && o.cantBlock !== true && o.detained !== true);
   /**
    * M317 (zgłoszenie właściciela, Ghost Warden): wycena ataku ma zakładać,
    * że OBROŃCA może w oknie bloków pompać swojego blokera zdolnością ze
@@ -4204,6 +4216,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
             }
           }
+          // Uwaga B właściciela z testów (2026-09-18, Epic Experiment):
+          // „Ta karta ma jakikolwiek sens jeśli X>0, im większe X tym lepiej
+          // (chyba że bot ma wyczerpaną talię)”. Bez wyceny wszystkie warianty
+          // X dostawały identyczne P.spellBase — rzut za {U}{R} z X=0 nie robi
+          // NIC, a wygrywał (klasa L50). Wartość: szansa darmowych rzutów
+          // rośnie z X (zawartość biblioteki jest ukryta — FoW, liczymy po
+          // rozmiarze, L132); ryzyko: docięcie własnej biblioteki
+          // (CR 121.4/704.5b — drawDeckingPenalty bije dopiero przy dnie,
+          // więc zdrowa biblioteka nie ogranicza X). amount 'X' jest tu już
+          // rozwiązany do cmd.xValue (M237/1).
+          if (effect.type === 'epic_experiment') {
+            const X = Number.isInteger(effect.amount) ? effect.amount : 0;
+            if (X <= 0) {
+              score -= 80; // X=0: czar nie robi nic — gorzej niż pass
+            } else {
+              score += 5 * X + drawDeckingPenalty(view, X);
+            }
+          }
           // M174/B (Toll of the Invasion — strażnik L51): amass buduje WŁASNĄ
           // Armię niezależnie od celu czaru — stały zysk (token/licznik).
           if (effect.type === 'amass') {
@@ -5548,6 +5578,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               || effect.type === 'reveal_top_pick_land_rest_grave') {
             const ownLibrary = (view.zones.library ?? []).filter((o) => o.controllerId === view.playerId).length;
             score += ownLibrary > 0 ? P.drawCardValue : -20;
+          }
+          // Uwaga C1 właściciela (2026-09-19, Merchant's Dockhand): „Look at
+          // the top X cards… put one of them into your hand and the rest on
+          // the bottom” z amount:'x' — X niesie komenda (wariant oferty). Bez
+          // wyceny bot brał PIERWSZY wariant (L131), a po dołożeniu X=0 do
+          // oferty (E2) płaciłby {3}{U} i tap za efekt bez skutku. Reguła
+          // generyczna po typie efektu i X z komendy (ADR 0002/0017):
+          // - X=0 mocno ujemne — aktywacja legalna (CR 107.3), ale jałowa;
+          // - X>0: karta do ręki (wartość doboru) + niewielka opcjonalność
+          //   wyboru najlepszej z X widzianych − koszt tapowanych artefaktów
+          //   (każdy traci w tej turze możliwość tapnięcia). Wybór jest
+          //   WOLNY, więc wartość karty nie rośnie z X tak jak czysty dobór.
+          if (effect.type === 'look_top_put_one_hand_rest_bottom'
+              || effect.type === 'look_top_put_one_hand_rest_grave') {
+            const x = Number.isInteger(cmd.xValue)
+              ? cmd.xValue
+              : (Number.isInteger(effect.amount) ? effect.amount : 0);
+            if (x <= 0) {
+              score -= 40; // zapłacony koszt, obejrzane 0 kart — jałowa aktywacja
+            } else {
+              const ownLibrary = (view.zones.library ?? []).filter((o) => o.controllerId === view.playerId).length;
+              score += ownLibrary > 0 ? P.drawCardValue : -20;
+              score += Math.min(x - 1, 3); // opcjonalność: najlepsza z X widzianych
+              score -= (cmd.tapArtifactIds?.length ?? x); // koszt: tap X artefaktów
+            }
           }
           // Batch 52 (Jolrael, Mwonvuli Recluse): „{4}{G}{G}: twoje stwory
           // mają bazowe X/X do końca tury (X = karty w ręce)". Bez wyceny

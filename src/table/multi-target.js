@@ -777,6 +777,69 @@ export function commandForCrewSelection(plan, selected) {
 }
 
 // ===========================================================================
+// Uwaga C1 właściciela (2026-09-19, Merchant's Dockhand): koszt „Tap X
+// untapped artifacts you control” — JEDNA decyzja ze stepperem X (0..N)
+// i listą artefaktów do zaznaczenia DOKŁADNIE X. Żadnej enumeracji wariantów
+// (kardynalna zasada właściciela); kontrakt jak crewMode: UI buduje komendę,
+// silnik re-waliduje przy aktywacji (L48). Warianty X=0..N wchodzą do oferty
+// po E2 (CR 107.3: X może być 0 — aktywacja jałowa, ale legalna).
+// ===========================================================================
+
+/**
+ * Plan kreatora „Tap X artefaktów” z grupy wariantów oferty (jeden przycisk
+ * „Aktywuj” w panelu) albo null dla obcego kształtu. Pula kandydatów to suma
+ * list `tapArtifactIds` wszystkich wariantów (największy wariant niesie całą
+ * pulę — oferta jest prefiksowa), bez duplikatów, w kolejności pola bitwy.
+ */
+export function tapXArtifactsPlanOf(commands) {
+  const all = commands ?? [];
+  if (all.length === 0) return null;
+  const first = all[0];
+  if (!all.every((cmd) => cmd?.type === 'activate_ability'
+    && cmd?.objectId === first.objectId
+    && cmd?.abilityIndex === first.abilityIndex
+    && Number.isInteger(cmd?.xValue)
+    && Array.isArray(cmd?.tapArtifactIds))) return null;
+  const targets = [];
+  for (const cmd of all) {
+    for (const id of cmd.tapArtifactIds) if (!targets.includes(id)) targets.push(id);
+  }
+  const maxX = Math.max(...all.map((cmd) => cmd.xValue));
+  return {
+    tapXMode: true,
+    hasX: true,
+    xMin: 0,
+    xMax: Math.max(maxX, targets.length),
+    targets,
+    objectId: first.objectId,
+    abilityIndex: first.abilityIndex,
+    playerId: first.playerId,
+    itemLabel: 'artefakty',
+  };
+}
+
+/**
+ * Komenda z zaznaczenia kreatora tapX albo null (liczba zaznaczeń ≠ X,
+ * dublet, obcy artefakt). X=0 z pustym zaznaczeniem jest LEGALNE — to
+ * jałowa aktywacja (CR 107.3), silnik i tak re-waliduje (L48).
+ */
+export function commandForTapXSelection(plan, selected, xValue) {
+  if (!plan?.tapXMode || !Array.isArray(selected)) return null;
+  if (!Number.isInteger(xValue) || xValue < 0 || xValue > (plan.xMax ?? 0)) return null;
+  if (selected.length !== xValue) return null;
+  if (new Set(selected).size !== selected.length) return null;
+  if (selected.some((id) => !plan.targets.includes(id))) return null;
+  return {
+    type: 'activate_ability',
+    playerId: plan.playerId,
+    objectId: plan.objectId,
+    abilityIndex: plan.abilityIndex,
+    xValue,
+    tapArtifactIds: [...selected],
+  };
+}
+
+// ===========================================================================
 // A (zlecenie właściciela 2026-09-12): WSADOWE szukanie w bibliotece.
 //
 // Springbloom Druid / Roiling Regrowth („up to two basic lands") to ŁAŃCUCH

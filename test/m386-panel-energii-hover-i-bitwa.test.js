@@ -318,7 +318,9 @@ test('M386/H: rerender ma siatkę bezpieczeństwa — ogon („Wznów grę bota�
     'brak try wokół renderTableView — wyjątek panelu zje „Wznów grę bota” (deadlock A2)');
   assert.ok(catchIdx > renderIdx && catchIdx < interjection,
     'ogonek renderu (przycisk wznowienia) wpadł do bloku try/catch');
-  assert.match(src.slice(catchIdx, catchIdx + 400), /logSystem\(/,
+  // F-2 audytu PR #128: deduplikacja wpisu (lastRenderLogMessage) odsunęła
+  // `logSystem(` od `catch` o komentarz i warunek — okno 700 znaków, nie 400.
+  assert.match(src.slice(catchIdx, catchIdx + 700), /logSystem\(/,
     'połknięty błąd renderu bez śladu w logu partii');
 });
 

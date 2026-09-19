@@ -702,6 +702,66 @@ export async function runTableGame({
     // Polityka gracza: zaznacz tyle opcji, ile żąda wizard (status „zaznacz
     // cele (N)"), potem zatwierdź; gdy nie da się złożyć — anuluj.
     const multiConfirm = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
+    // Uwaga C1 właściciela (2026-09-19, Merchant's Dockhand): kreator „Tap
+    // X artefaktów” (tapXMode) — stepper X + checkboksy artefaktów. Polityka
+    // testera: X = maksimum (tap wszystkie, największy przegląd biblioteki),
+    // zaznacz dokładnie X wierszy, Zatwierdź. X=0 nie wymaga zaznaczeń.
+    if (multiConfirm && $('#choice-request .multi-target-x')) {
+      const readX = () => Number(text($('#choice-request .multi-target-x-count')) || 0);
+      const plus = $('#choice-request .multi-target-x-plus');
+      let prevX = readX();
+      for (let i = 0; i < 40 && plus; i += 1) {
+        plus.click();
+        await sleep(15);
+        const curX = readX();
+        if (curX === prevX) break; // szczyt zakresu — licznik przestał rosnąć
+        prevX = curX;
+      }
+      const xChosen = readX();
+      const artifactRows = $$('#choice-request .multi-target-toggle').filter((b) => !b.disabled);
+      for (let i = 0; i < Math.min(xChosen, artifactRows.length); i += 1) {
+        artifactRows[i].click();
+        await sleep(15);
+      }
+      logL(`  [tap-x wizard] X=${xChosen}, artefaktów w puli ${artifactRows.length}`);
+      const confirmX = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
+      if (confirmX && !confirmX.disabled) { confirmX.click(); await sleep(80); return true; }
+      const cancelX = $$('#choice-request button').find((b) => /multi-target-cancel/.test(String(b.className)));
+      if (cancelX) { cancelX.click(); await sleep(60); }
+      return true;
+    }
+    // Kreator załogi (A2, crewMode — Bomat Bazaar Barge z kaladesh): generyczna
+    // polityka M203 zaznacza JEDEN wiersz, a zatwierdzenie wymaga sumy mocy ≥ N
+    // (licznik progu). Gdy wszyscy kandydaci są słabi (moc 1 < N, zmierzone
+    // seed 77: Skilled Animator + Dockhand + …), pojedynczy ptaszek nie
+    // wystarcza i kreator nie domykał się po 5 próbach. Polityka: klikiem od
+    // najsilniejszego zbieramy moc do progu (silnik potwierdza legalność
+    // stanem Zatwierdź — L48), potem zatwierdź; nie da się złożyć → anuluj.
+    if (multiConfirm && /^(Obsadź|Osiodłaj):/.test(intro)) {
+      const mocOf = (b) => {
+        const row = b.closest?.('label') ?? b.parentElement;
+        const m = /\(moc (\d+)\)/.exec(text(row) ?? '');
+        return m ? Number(m[1]) : 0;
+      };
+      const crewRows = $$('#choice-request .multi-target-toggle').filter((b) => !b.disabled)
+        .sort((a, b) => mocOf(b) - mocOf(a));
+      logL(`  [crew wizard] ${intro.slice(0, 80)} — kandydatów ${crewRows.length}`);
+      for (const row of crewRows) {
+        const c = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
+        if (c && !c.disabled) break;
+        row.click();
+        await sleep(20);
+      }
+      const confirmCrew = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
+      if (confirmCrew && !confirmCrew.disabled) {
+        confirmCrew.click();
+        await sleep(80);
+        return true;
+      }
+      const cancelCrew = $$('#choice-request button').find((b) => /multi-target-cancel/.test(String(b.className)));
+      if (cancelCrew) { cancelCrew.click(); await sleep(60); }
+      return true;
+    }
     if (multiConfirm) {
       // M258 (pętla jakości, PR #89): KREATOR „CEL + POŚWIĘCENIE (KOSZT)"
       // (sacMode z M257-r5/C — Lash of the Balrog). Intro tego kreatora nie
@@ -1127,6 +1187,19 @@ export async function runTableGame({
     logL(`  MOJE POLA: ${bfOwn.join(' | ') || '(puste)'}`);
     logL(`  POLA WROGA: ${bfEnemy.join(' | ') || '(puste)'}`);
     logL(`  LOG: ${logTail.join(' ⏎ ')}`);
+    // PR #129 (pętla jakości): liczniki specjalne (trucizna/prędkość/energia)
+    // były dotąd NIEWIDOCZNE dla testera — a to dokładnie warstwa, którą
+    // naprawiał PR #128 (panel energii). Raportujemy każdy WIDOCZNY panel;
+    // „widoczny, ale PUSTY" to ślad klasy błędu A1 (render rzuca wyjątek po
+    // postawieniu kontenera, treść nie dochodzi — L27: klasa → detektor).
+    const panelLine = (id) => {
+      const e = $('#' + id);
+      if (!e || e.hidden) return null;
+      const t = text(e).replace(/\s+/g, ' ').trim();
+      return `${id}: ${t || '(widoczny, ale PUSTY)'}`;
+    };
+    const panels = ['poison', 'speed', 'energy'].map(panelLine).filter(Boolean);
+    if (panels.length) logL(`  LICZNIKI: ${panels.join(' | ')}`);
   };
 
   // Czy partia już się skończyła (panel akcji jest wtedy pusty prawidłowo).

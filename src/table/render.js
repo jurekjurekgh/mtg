@@ -2257,6 +2257,11 @@ const CHOICE_GROUP_PENDING_SOURCE = Object.freeze({
  */
 const X_ABILITY_DESCRIPTIONS = Object.freeze({
   endure_x: 'endure X — X liczników +1/+1 na tym stworze albo token Spirit X/X',
+  // Uwaga C1 właściciela (2026-09-19, Merchant's Dockhand): opis efektu
+  // po TYPIE (ADR 0002) — tytuł grupy panelu nazywa czynność, a wybór X
+  // i artefaktów odbywa się w kreatorze (tapXMode).
+  look_top_put_one_hand_rest_bottom: 'przejrzyj X kart z wierzchu biblioteki — jedną weź do ręki, resztę na spód',
+  look_top_put_one_hand_rest_grave: 'przejrzyj X kart z wierzchu biblioteki — jedną weź do ręki, resztę do grobu',
 });
 
 function abilityXDescription(session, object, command) {
@@ -4079,7 +4084,8 @@ export function buildStateOverlay(visual, info) {
         flags.push(['kw', `${signed(gPow)}/${signed(gTou)}`]);
       }
     }
-    if (info.combatRole) flags.push(['combat', info.combatRole]);    if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
+    if (info.combatRole) flags.push(['combat', info.combatRole]);
+    if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push(['sick', 'choroba']);
     // A (2026-08-11): liczniki na nakładce ilustracji.
     // M164: licznik `lore` Sagi pokazujemy WYŁĄCZNIE w badge etapu poniżej
@@ -4688,7 +4694,18 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     // M103 (L15): klucz opcji na przycisku — sonda „oferta bez skutku"
     // Żywego Testera (window.__mtgDebug) mapuje klik na konkretną komendę.
     // Dla grup wyborów klucz pierwszej opcji = to, co kliknie gracz zachłanny.
-    const optionKeyCmd = entry.request ? (entry.request.options?.[0] ?? entry.first ?? cmd) : cmd;
+    // Uwaga C1 właściciela (2026-09-19, Merchant's Dockhand): grupa „Tap
+    // X artefaktów” zaczyna się od wariantu X=0 — legalnej, ale JAŁOWEJ
+    // aktywacji (CR 107.3). Sonda mierzona na niej zgłaszałaby fałszywe
+    // „oferta bez skutku” w każdej partii (L12: szum przykrywa znaleziska).
+    // Reprezentantem grupy jest wariant z NAJWIĘKSZYM X — ten realnie coś
+    // zmienia i właśnie go wykonuje kreator (tester: X = maksimum).
+    const tapXOptions = (entry.request?.options ?? [])
+      .filter((c) => c?.type === 'activate_ability' && Array.isArray(c.tapArtifactIds) && Number.isInteger(c.xValue));
+    const tapXRepresentative = tapXOptions.length > 0 && tapXOptions.length === (entry.request?.options ?? []).length
+      ? tapXOptions.reduce((best, c) => (c.xValue > best.xValue ? c : best), tapXOptions[0])
+      : null;
+    const optionKeyCmd = entry.request ? (tapXRepresentative ?? entry.request.options?.[0] ?? entry.first ?? cmd) : cmd;
     if (optionKeyCmd) button.dataset.optionKey = commandOptionKey(optionKeyCmd);
     if (entry.request) {
       button.className += ' choice-request-trigger';

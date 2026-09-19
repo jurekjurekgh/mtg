@@ -36,7 +36,7 @@ import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
-import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf } from './multi-target.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 
 function runEngineSmoke() {
@@ -456,6 +456,31 @@ function bootstrapTable() {
         intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz wariant:`,
         onOpenCard: openCardFullscreen,
         onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // Uwaga C1 właściciela (2026-09-19, Merchant's Dockhand): „Tap X
+    // untapped artifacts you control” — JEDEN przycisk „Aktywuj”, a po
+    // kliknięciu kreator ze stepperem X (0..N) i listą artefaktów do
+    // zaznaczenia DOKŁADNIE X. Żadnej enumeracji wariantów (kardynalna
+    // zasada właściciela). Musi biec PRZED multiTargetPlanOf (warianty nie
+    // niosą `targets`, więc tamten i tak ich nie weźmie — kolejność jawnie
+    // odnotowana jak przy castWindowPlanOf).
+    const tapXPlan = tapXArtifactsPlanOf(request.options ?? []);
+    if (tapXPlan) {
+      const tapXSource = (choiceView.zones?.battlefield ?? []).find((o) => o.id === tapXPlan.objectId);
+      const tapXName = tapXSource?.cardId ? session.nameOf(tapXSource.cardId) : null;
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: tapXPlan,
+        commands: request.options,
+        sourceName: tapXName,
+        intro: `${tapXName ? `${tapXName} — ` : ''}wybierz X (0–${tapXPlan.xMax}), potem zaznacz dokładnie X artefaktów do tapnięcia:`,
+        onOpenCard: openCardFullscreen,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
         onCancel: () => hideModal('choice-request'),
       });
@@ -1451,6 +1476,10 @@ function bootstrapTable() {
   // `resumeFromSaved` pokazywał notice, ale `startGame()` zaraz potem otwierał
   // nową partię i komunikat przepadał — gracz widział „reset" bez wyjaśnienia.
   let lastResumeError = null;
+  // F-2 audytu PR #128: siatka bezpieczeństwa `rerender` nie może zalewać logu
+  // partii tym samym wpisem przy każdym renderze (log nie jest przycinany —
+  // session.js `sessionLog` → `log.push`). Pamiętamy ostatni komunikat.
+  let lastRenderLogMessage = null;
 
   function resumeFromSaved(raw) {
     try {
@@ -1676,9 +1705,15 @@ function bootstrapTable() {
     } catch (error) {
       // Panel, który nie umie się narysować, NIE MOŻE zatrzymać partii —
       // logujemy jawnie (gracz widzi w „Rozgrywce”) i rysujemy resztę stołu.
-      try {
-        session.logSystem(`Błąd rysowania stołu: ${error?.message ?? error}. Zgłoś problem (partia jest kontynuowana).`);
-      } catch { /* log nie może rzucić drugi raz */ }
+      // F-2: ten sam komunikat tylko RAZ — trwały błąd renderu nie może
+      // zalewać logu identycznym wpisem przy każdym renderze.
+      const message = `Błąd rysowania stołu: ${error?.message ?? error}. Zgłoś problem (partia jest kontynuowana).`;
+      if (message !== lastRenderLogMessage) {
+        lastRenderLogMessage = message;
+        try {
+          session.logSystem(message);
+        } catch { /* log nie może rzucić drugi raz */ }
+      }
     }
     const view = session.view();
     const me = view.players.find((p) => p.id === view.playerId);

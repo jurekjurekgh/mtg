@@ -19,6 +19,99 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-19 Uwagi z testów: C1/C2 (Merchant's Dockhand), D (Malamet), E (reach) (PR #129, dalszy ciąg)
+
+Zlecenie właściciela (2026-09-18, partia kaladesh): trzy uwagi. Plan:
+[`docs/plans/PLAN_2026-09-18d-uwagi-z-testow-dockhand-malamet-reach.md`](plans/PLAN_2026-09-18d-uwagi-z-testow-dockhand-malamet-reach.md),
+handoff: [`docs/setup/HANDOFF_2026-09-18d.md`](setup/HANDOFF_2026-09-18d.md).
+Kardynalna korekta właściciela (C1): żadnych enumeracji wariantów w UI —
+wyłącznie uniwersalny kreator (stepper X → zaznacz dokładnie X artefaktów).
+
+- **E1/C2 `6270605`** — przy jednej odsłanianej karcie efekt dobiera ją
+  automatycznie (`takeSingleLookedCardToHand`, effects.js; rodziny
+  rest_bottom/rest_grave); wcześniej modal „Weź – Forest” z opcją Pass
+  gubiącą kartę.
+- **E2/C1 `3691701`** — oferta `tapXArtifacts` od X=0 (CR 107.3; jawny błąd:
+  brakowało X=0), walidacja pustej listy tylko dla X=0; atrybucja batch42
+  (L135: liczba wariantów +1).
+- **E3/C1 `68761ca`** — wycena bota `look_top_put_one_hand_rest_bottom` dla
+  `activate_ability` (X=0 −40; X>0: karta + opcjonalność − koszt tapów).
+- **E4/C1 `7778e8d`** — kreator tapX: `tapXArtifactsPlanOf` /
+  `commandForTapXSelection` (multi-target.js), tryb `tapXMode` w
+  renderMultiTargetWizard (stepper 0–N, dokładnie N zaznaczeń), opis efektu
+  w render.js, gałąź sterowniku testera; test 8/8 + mutacje 6/8 RED.
+- **Pętla testera `8544b76`** — wzorzec grupy „przejrzyj X kart”
+  (actions.mjs), gałąź kreatora załogi w sterowniku (luka PRE-ISTNIEJĄCA:
+  generyczna polityka M203 zaznaczała jeden wiersz, kaladesh s77 stawał na
+  „Zatwierdź” niegasnącym), reprezentant sondy noop = wariant max-X (X=0
+  jest jałowy z definicji → fałszywe zgłoszenie w każdej partii).
+- **E5/D `266950a`** — pin 3/3: counter/obrażenia/zgony z fight Malamet
+  w buforze „Rozgrywka” i przebiegu tur (rzut człowieka i bota). Objaw
+  właściciela nieodtwarzalny po M386 (PR #128); pin chroni klasę.
+- **E6/E `a9b10b1`** — pin 3/3: bot nie atakuje lataczem w blokera z reach
+  nadanym aurą bestow/grant EOT + kontrola bez reach. Mutacja zdjęcia reach
+  z `attackerCanBeBlocked` → 2 RED. Pułapka sesji: `gameObjectDataOf` nie
+  niesie `keywords` — helper testowy dokłada je z rejestru.
+
+Bramy końcowe: npm test 5829/5829; test:all 5839/5839; build 64/3844.7 kB.
+Żywy Tester kaladesh (s99): kreator tapX przećwiczony 3× E2E, 0 zgłoszeń
+detektorów. Trzeci reset workspace w sesji odzyskany wzorem poprzednich
+(commit-sierota + reset do FETCH_HEAD + cherry-pick).
+
+## 2026-09-18c Uwagi właściciela z testów: A (detain a atak), B/B1 (Epic Experiment X=0 i brak X w logu) (PR #129)
+
+Zlecenie właściciela (2026-09-18): trzy uwagi z testów talii ravnica. Plan:
+[`docs/plans/PLAN_2026-09-18c-uwagi-z-testow-detain-atak-i-epic-experiment.md`](plans/PLAN_2026-09-18c-uwagi-z-testow-detain-atak-i-epic-experiment.md),
+handoff: [`docs/setup/HANDOFF_2026-09-18c.md`](setup/HANDOFF_2026-09-18c.md).
+
+- **A `f28beac`** — bot liczył stwory `detained`/`cantBlock` przeciwnika jako
+  blokerów (zawyżone ryzyko → brak ataku). Fix: `untappedEnemyBlockers` czyta
+  centralne zakazy widoku (`o.cantBlock !== true && o.detained !== true`,
+  L41/L55 — silnik już był poprawny, wadliwy był doczyt bota; klasa L1
+  odwrotna). Pin: `test/uwagi-z-testow-a-detain-ryzyko-ataku.test.js` (4),
+  mutacja L13. Źródła: Oracle + rulingi WotC 2013-04-15 (detain nie usuwa
+  z walki już atakujących/blokujących). Golden-master: 1 para dryf
+  (dominaria-brg|mirrodin-wu@1000, decisions 233→233, scoreSum +16) —
+  regeneracja z atrybucją (L124).
+- **B `0224023`** — efekt `epic_experiment` bez wyceny (klasa L50): wszystkie
+  warianty X dostawały identyczne `P.spellBase` → bot rzucał za X=0 (2 many za
+  nic). Fix: gałąź w pętli efektów `cast_spell` — X≤0: −80, X>0: +5·X
+  + `drawDeckingPenalty(view, X)` (ograniczenie tylko przy dnie biblioteki,
+  CR 121.4/704.5b — zgodnie ze zleceniem „im większe X tym lepiej, chyba że
+  wyczerpana talia”). Pułapka sesji: pierwsza wersja fixa wylądowała w pętli
+  efektów `activate_ability` (dwa bliźniacze bloki `reveal_top_pick`) — test
+  pozostał RED i debug wskazał właściwą pętlę. Pin:
+  `test/uwagi-z-testow-b-epic-experiment-x.test.js` (4), mutacja L13,
+  golden-master bez dryfu.
+- **B1 `87a280e`** — zdarzenie `spell_cast` niosło `xValue`, ale
+  `describeGameEvent` go nie renderował. Fix: `xPart` w case `spell_cast`
+  (jedno źródło brzmienia — L41 — pokrywa log stołu, warstwę „Rozgrywka”
+  i modal „Ruch bota”; wzór: `ability_activated`). Pin:
+  `test/uwagi-z-testow-b1-x-w-logu.test.js` (4: opis 2./3. osoby,
+  anty-over-fix, E2E przez `createSession`), mutacja L13.
+- **E5** — Żywy Tester: 5 partii ravnica|ravnica (seedy 20260918, 777, 11, 22,
+  33), 0 zgłoszeń detektorów; sonda sesji potwierdziła w logu i przebiegu tur
+  „Nieprzyjaciel rzuca Epic Experiment (X=4)/(X=3)” — bot nigdy nie wybiera
+  X=0. Benchmark: heuristic 81,8% (672 mecze). Bramy: `npm test` 5802/5802,
+  build 64 moduły / 3834,8 kB.
+
+## 2026-09-18/18b Audyt PR #128 + naprawa znalezisk F-1–F-4 + pętla jakości (PR #129)
+
+Sesja kontynuacji (ADR 0020): audyt scalonego PR #128
+([`docs/audits/AUDYT_PR128_2026-09-18.md`](audits/AUDYT_PR128_2026-09-18.md),
+werdykt: poprawny, 10 zmutowanych pinów realnie czerwienieje) i cztery
+znaleziska własne zamknięte pinami RED→GREEN→mutacja: F-1 `429f564` (trzecia
+kopia reguł zbioru bloku w gałęzi fallback — woła `blockAssignmentViolation`),
+F-2 `69b3947` (siatka bezpieczeństwa `rerender` logowała ten sam błąd przy
+każdym renderze — wpis tylko przy zmianie komunikatu), F-3 `3ae56b9` (patch
+M386 skleił dwie instrukcje — podział linii), F-4 `b845fcf` (sprostowanie
+handoffu „5/13 RED” → pomiar 8/13). Naprawa testera `849bf80`. Pętla jakości
+Żywym Testerem: 6 partii (seedy 596891/596892/596893 + 3 kolejne), 0 zgłoszeń,
+energia na żywo. Domknięcie `f1a507b`: 5790/5790, build, handoff 2026-09-18b.
+Uwaga: sesja przeszła reset workspace (HEAD cofnięty do `e0ad776` przy
+zachowanym worktree) — praca odzyskana przez branch zapasowy
++ `git reset --hard FETCH_HEAD`.
+
 ## 2026-09-17c Uwagi właściciela z gier testowych A–J — etapy E1–E7 (PR #125)
 
 Zlecenie właściciela (2026-09-17c): po batchu 56 dziesięć znalezisk z gier
@@ -11330,3 +11423,39 @@ z liczbami przebiegu quick-25 z E3 (**87,1%**, 0 niedokończonych; przebieg #125
 87,0%), a opis PR #126 — notkę o wcieleniu. Bramki po wcieleniu: `npm test`
 **5732/5732**, `npm run test:all` **5742/5742**, build **64 moduły / 3815,6 kB**.
 PR #127 do zamknięcia bez scalania.
+
+
+## 2026-09-18b — sesja „Kontynuujemy projekt." (PR #129): audyt PR #128 + 4 naprawy + pętla jakości (arena/01a0b60e-mtg)
+
+Tryb obowiązkowy ADR 0020 + pętla domyślna ADR 0021. Baza `e0ad776` (squash
+PR #128). Plan: `docs/plans/PLAN_2026-09-18b-audyt-pr128-i-petla-jakosci.md`.
+
+**Audyt PR #128** (`docs/audits/AUDYT_PR128_2026-09-18.md`): 9 plików,
+werdykt „merytorycznie poprawny". Weryfikacja u źródła (ADR 0030): ruling WotC
+2024-06-07 (energia = licznik gracza) i marker „Energy Reserve" tdrc/17
+potwierdzone dosłownie na api.scryfall.com. **10 mutacji pinów M386/M387 —
+każda czerwieni ≥1 pin** (L13); ADR 0002: 0 porównań po cardId/nazwie.
+
+**Ctery znaleziska zamknięte osobnymi commitami** (pin RED → fix → GREEN):
+- F-1 (średnie, `429f564`): trzecia kopia reguł zbioru bloku w gałęzi fallback
+  `legalBlockerOptions` → `blockAssignmentViolation`; strażnik M387/D skanował
+  tylko `declareBlockers` (L5/L113). Pin: `test/audyt-pr129-kopia-zbioru-bloku.test.js`.
+- F-2 (niskie, `69b3947`): siatka bezpieczeństwa `rerender` zalewałaby log
+  identycznym wpisem przy każdym renderze → deduplikacja `lastRenderLogMessage`;
+  okno skanu M386/H 400→700. Pin: `test/audyt-pr129-log-spam.test.js`.
+- F-3 (niskie, `3ae56b9`): patch M386 skleił dwie instrukcje w
+  `buildStateOverlay` → podział linii (bez zmiany zachowania).
+- F-4 (dokument., `b845fcf`): handoff podawał „5/13 RED", pomiar daje 8/13
+  czerwonych → sprostowanie (L142).
+
+**Pętla jakości:** 6 partii Żywego Testera (ixalan vs ravnica/ixalan) —
+naturalne końce, 0 zgłoszeń. **Znalezisko narzędziowe:** snapshot `run-game.mjs`
+nie widział paneli liczników specjalnych (#poison/#speed/#energy) → naprawione
+(`849bf80`); energia pojawiła się na żywo z TREŚCIĄ („Gracz: 4 {E}") — ścieżka
+naprawy PR #128 potwierdzona w realnym renderze.
+
+**Bramy:** `npm test` 5790/5790, build 64 moduły / 3832,5 kB,
+bot-benchmark 10/10. Pełny B0 tylko na komendę (ADR 0018) — nie uruchamiany.
+PR #129 czeka na decyzję właściciela. Uwaga: sesja PR #128 nie zostawiła wpisu
+w tej historii (tylko handoff i audyt) — stan po #128 opisuje
+`docs/setup/HANDOFF_2026-09-18.md` i `docs/audits/AUDYT_PR128_2026-09-18.md`.

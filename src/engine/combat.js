@@ -1671,10 +1671,12 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
     const attacker = state.objects.get(attackerId);
     for (const blockerId of blockers) {
       const blocker = state.objects.get(blockerId);
-      // Pojedynczy blok na atakującym z menace jest nielegalny — nie oferujemy.
-      // To samo dla blokera z „can't block alone" (wymaga partnera).
-      if (canBlock(state, attacker, blocker) && !hasKeyword(state, attacker, 'menace')
-        && !hasAloneRestriction(blocker, 'cantBlockAlone')) options.push({ [attackerId]: [blockerId] });
+      // F-1 audytu PR #128 (L41/L48): pojedynczy blok przechodzi przez TEN SAM
+      // predykat co walidacja `declareBlockers` — warstwa zbioru (menace,
+      // „can't block alone", zakazy blokowania blokera) ma JEDNO źródło prawdy.
+      // Wcześniej ta gałąź trzymała własną, negowaną kopię reguł (trzecia kopia)
+      // poza zasięgiem strażnika rodziny M387/D.
+      if (blockAssignmentViolation(state, attacker, [blockerId]) === null) options.push({ [attackerId]: [blockerId] });
     }
   }
   const free = blockers.slice();
