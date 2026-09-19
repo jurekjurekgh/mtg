@@ -1064,6 +1064,89 @@ export function grantGift(state, spell) {
   applyEffect(state, gift.effect, { ...spell, controllerId: recipientId }, []);
 }
 
+/**
+ * Wykonanie wygnania w efekcie/koszcie Craft (CR 702.167): wygnanie wybranego
+ * artefaktu, wygnanie ŹRÓDŁA i powrót źródła na pole bitwy przemienionego.
+ *
+ * Jedno źródło prawdy dla DWÓCH wejść (L41):
+ *  - ścieżki AUTOMATYCZNEJ, gdy kandydat jest DOKŁADNIE JEDEN — wybór bez
+ *    alternatywy nie jest decyzją gracza (zasada właściciela z 2026-09-19:
+ *    „zawsze wybory bez alternatywne powinny być automatyczne”; zgłoszenie:
+ *    Lodestone Needle z jednym innym artefaktem kazała go „poświęcić”),
+ *  - komendy `resolve_craft_exile` (game-state.js deleguje tutaj — ten sam
+ *    kod, więc oferta i walidacja nie mogą się rozjechać, L48).
+ *
+ * Kontrakt: `chosenTargetId` puste w trybie automatycznym; przy >1 kandydacie
+ * funkcja NIC nie zmienia i zwraca `{ pending: true, candidates }` — zawołanie
+ * MUSI wtedy wystawić `state.pendingCraftExile` (decyzja gracza). Zwraca
+ * `null`, gdy nie ma czego wygnąć (CR 608.2b: „If you do” bez kandydata).
+ * Nie importuje game-state.js (ten importuje effects.js — cykl).
+ */
+export function resolveCraftExileOutcome(state, { sourceId, candidates = [], transformTo = null, chosenTargetId = null } = {}) {
+  const lista = Array.isArray(candidates) ? candidates : [];
+  if (chosenTargetId == null) {
+    if (lista.length !== 1) return lista.length === 0 ? null : { pending: true, candidates: [...lista] };
+  }
+  const targetId = chosenTargetId ?? lista[0];
+  if (targetId == null || !state.objects.get(targetId)) return null;
+  // 1. Wygnanie materiału (pole bitwy albo karta z grobu — strefa z obiektu).
+  const chosenObj = state.objects.get(targetId);
+  // M262: oba wygnania craftu (materiał + źródło) niosą kartę craftującą —
+  // self-exile źródła to „Wygnane: <ta sama karta>” (decyzja właściciela).
+  const craftCardId = state.objects.get(sourceId)?.cardId ?? 'craft';
+  const chosenExileId = `exile-${state.objectSequence++}`;
+  moveObjectDirectly(state, targetId, 'exile', chosenExileId, { exiledBy: craftCardId });
+  state.events.push(event('object_moved', { fromId: targetId, object: state.objects.get(chosenExileId), fromZone: chosenObj.zone, toZone: 'exile', craft: true }));
+  // 2. Wygnanie źródła.
+  const sourceExileId = `exile-${state.objectSequence++}`;
+  moveObjectDirectly(state, sourceId, 'exile', sourceExileId, { exiledBy: craftCardId });
+  state.events.push(event('object_moved', { fromId: sourceId, object: state.objects.get(sourceExileId), fromZone: 'battlefield', toZone: 'exile', craft: true }));
+  // 3. Powrót źródła przemienionego na pole bitwy.
+  const bfId = `permanent-${state.objectSequence++}`;
+  const moved = state.objects.get(sourceExileId);
+  if (moved) {
+    const previousSide = moved.originalBeforeAnimation ?? moved;
+    const transformed = Object.freeze({
+      ...moved,
+      id: bfId, zone: 'battlefield',
+      // M270 (CR 400.7): ta sama klasa co transform-return — craft składa
+      // obiekt RĘCZNIE (omija moveObjectDirectly), więc musi sam ostemplować
+      // turę wejścia. Baza `moved` przychodzi z wygnania z `enteredOnTurn:
+      // null`, przez co permanent wracający na pole bitwy nie liczył się jako
+      // „entered this turn” (Crew Captain).
+      enteredOnTurn: state.turn.number,
+      ...transformedCharacteristics(transformTo, previousSide),
+      // CR 202.3b (M258/Etap 2.3b): MV po crafcie = koszt twarzy przedniej;
+      // payload transformTo niesie go od materialize.
+      manaCost: transformTo?.manaCost ?? moved.manaCost ?? 0,
+      transformTo: {
+        cardId: moved.cardId,
+        cardName: moved.cardName ?? null,
+        kind: previousSide.kind ?? moved.kind,
+        power: previousSide.power ?? null,
+        toughness: previousSide.toughness ?? null,
+        abilities: moved.abilities,
+        keywords: moved.keywords ?? [],
+        subtypes: previousSide.subtypes ?? moved.subtypes ?? [],
+        types: previousSide.types ?? moved.types ?? [],
+        manaCost: transformTo?.manaCost ?? moved.manaCost ?? 0,
+      },
+    });
+    state.objects.delete(sourceExileId);
+    state.objects.set(bfId, transformed);
+    state.zones.exile = state.zones.exile.filter((id) => id !== sourceExileId);
+    state.zones.battlefield.push(bfId);
+    // M273 (błąd #24): craft wprowadza permanent na pole bitwy — liczniki
+    // wejścia (CR 121.6) obowiązują jak przy każdym innym wejściu.
+    applyEnterCounters(state, bfId);
+    state.events.push(event('object_moved', { fromId: sourceExileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', craft: true }));
+    // controllerId: warstwa stołu kwalifikuje transform do panelu
+    // „Rozgrywka” po kontrolerze (isHumanHeadline, M257/K4).
+    state.events.push(event('object_transformed', { objectId: bfId, fromCardId: moved.cardId, cardId: transformTo?.cardId ?? null, controllerId: transformed.controllerId }));
+  }
+  return { pending: false };
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   if (state.pendingReplacementChoice?.frame) {
     state.pendingReplacementChoice.continuations.push({effect, sourceObject, targets, context});
@@ -4612,16 +4695,24 @@ function markTemporaryExile(state, exileId, sourceObject) {
       }
     }
     if (candidates.length === 0) return; // CR 608.2b: „If you do" bez artefaktu do wygnania = no-op
-    // Queue blocking choice for which artifact to exile.
-    state.pendingCraftExile = {
-      playerId: controllerId,
-      sourceId: sourceObject.id,
-      candidateIds: candidates,
-      transformTo: target,
-      restorePriorityTo: state.turn.priorityPlayerId,
-    };
-    state.turn.priorityPlayerId = controllerId;
-    state.events.push(event('craft_exile_required', { playerId: controllerId, sourceId: sourceObject.id, candidates: [...candidates] }));
+    // Audyt PR #129 / zgłoszenie właściciela (2026-09-19): przy DOKŁADNIE
+    // JEDNYM kandydacie wygnanie jest automatyczne — wybór bez alternatywy
+    // nie jest decyzją (nie ma czego klikać: „poświęć ten jedyny inny
+    // artefakt”). Wspólna ścieżka z resolve_craft_exile (L41/L48).
+    const outcome = resolveCraftExileOutcome(state, { sourceId: sourceObject.id, candidates, transformTo: target });
+    if (!outcome) return;
+    if (outcome.pending) {
+      // Więcej niż jeden kandydat = realny wybór gracza (blokująca decyzja).
+      state.pendingCraftExile = {
+        playerId: controllerId,
+        sourceId: sourceObject.id,
+        candidateIds: candidates,
+        transformTo: target,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = controllerId;
+      state.events.push(event('craft_exile_required', { playerId: controllerId, sourceId: sourceObject.id, candidates: [...candidates] }));
+    }
     return true;
   }
   if (effect.type === 'bounce_permanent') {

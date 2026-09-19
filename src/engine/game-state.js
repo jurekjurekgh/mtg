@@ -30,7 +30,7 @@ import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queu
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities } from './attachments.js';
 import { createBattlefieldToken, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
-import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
+import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
@@ -4631,73 +4631,20 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_craft_exile') return reject('craft_exile_unresolved');
     if (cmd.playerId !== craft.playerId) return reject('craft_exile_not_your_decision');
     if (!craft.candidateIds.includes(cmd.targetId)) return reject('illegal_craft_target');
+    if (!state.objects.get(cmd.targetId)) return reject('illegal_craft_target');
     const before = state.events.length;
-    // 1. Exile the chosen artifact.
-    const chosenObj = state.objects.get(cmd.targetId);
-    if (!chosenObj) return reject('illegal_craft_target');
-    // M262: oba wygnania craftu (materiał + źródło) niosą kartę craftującą —
-    // self-exile źródła to „Wygnane: <ta sama karta>" (decyzja właściciela).
-    const craftCardId = state.objects.get(craft.sourceId)?.cardId ?? 'craft';
-    const chosenExileId = `exile-${state.objectSequence++}`;
-    moveObjectDirectly(state, cmd.targetId, 'exile', chosenExileId, { exiledBy: craftCardId });
-    state.events.push(event('object_moved', { fromId: cmd.targetId, object: state.objects.get(chosenExileId), fromZone: chosenObj.zone, toZone: 'exile', craft: true }));
-    // 2. Exile the source artifact.
-    const sourceExileId = `exile-${state.objectSequence++}`;
-    moveObjectDirectly(state, craft.sourceId, 'exile', sourceExileId, { exiledBy: craftCardId });
-    state.events.push(event('object_moved', { fromId: craft.sourceId, object: state.objects.get(sourceExileId), fromZone: 'battlefield', toZone: 'exile', craft: true }));
-    // 3. Return source transformed to battlefield.
-    const bfId = `permanent-${state.objectSequence++}`;
-    const moved = state.objects.get(sourceExileId);
-    if (moved) {
-      const target = craft.transformTo;
-      // CR 400.7/711.2: craft zwraca permanent przemieniony — bierze komplet
-      // charakterystyk drugiej strony (w tym `kind`/`types`) i porzuca
-      // animację „until end of turn”. Wcześniej ożywiony artefakt zostawał po
-      // crafcie stworem bez liczbowego P/T (CR 208.1) i był nieśmiertelny.
-      const previousSide = moved.originalBeforeAnimation ?? moved;
-      const transformed = Object.freeze({
-        ...moved,
-        id: bfId, zone: 'battlefield',
-        // M270 (CR 400.7): ta sama klasa co transform-return w effects.js —
-        // craft składa obiekt RĘCZNIE (omija moveObjectDirectly), więc musi
-        // sam ostemplować turę wejścia. Baza `moved` przychodzi z wygnania
-        // z `enteredOnTurn: null`, przez co permanent wracający na pole bitwy
-        // nie liczył się jako „entered this turn" (Crew Captain).
-        enteredOnTurn: state.turn.number,
-        ...transformedCharacteristics(target, previousSide),
-        // CR 202.3b (M258/Etap 2.3b): MV po crafcie = koszt twarzy przedniej;
-        // payload transformTo niesie go od materialize. Token-kopia TYLNEJ
-        // twarzy (MV 0) craftujący się na przód dostaje koszt przedni
-        // (CR 707.8a); fallback = dotychczasowa wartość (zwykły DFC —
-        // identyczny wynik, spread trzymał koszt przedni).
-        manaCost: target.manaCost ?? moved.manaCost ?? 0,
-        transformTo: {
-          cardId: moved.cardId,
-          cardName: moved.cardName ?? null,
-          kind: previousSide.kind ?? moved.kind,
-          power: previousSide.power ?? null,
-          toughness: previousSide.toughness ?? null,
-          abilities: moved.abilities,
-          keywords: moved.keywords ?? [],
-          subtypes: previousSide.subtypes ?? moved.subtypes ?? [],
-          types: previousSide.types ?? moved.types ?? [],
-          // MV obiektu z opuszczaną twarzą w górę (kontrakt symetryczny
-          // z efektem transform).
-          manaCost: target.manaCost ?? moved.manaCost ?? 0,
-        },
-      });
-      state.objects.delete(sourceExileId);
-      state.objects.set(bfId, transformed);
-      state.zones.exile = state.zones.exile.filter((id) => id !== sourceExileId);
-      state.zones.battlefield.push(bfId);
-      // M273 (błąd #24): craft wprowadza permanent na pole bitwy — liczniki
-      // wejścia (CR 121.6) obowiązują jak przy każdym innym wejściu.
-      applyEnterCounters(state, bfId);
-      state.events.push(event('object_moved', { fromId: sourceExileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', craft: true }));
-      // controllerId: warstwa stołu kwalifikuje transform do panelu
-      // „Rozgrywka" po kontrolerze (isHumanHeadline, M257/K4).
-      state.events.push(event('object_transformed', { objectId: bfId, fromCardId: moved.cardId, cardId: target.cardId, controllerId: transformed.controllerId }));
-    }
+    // Audyt PR #129 (2026-09-19): wykonanie wygnania craftu i powrót
+    // przemienionego źródła mieszka w JEDNYM miejscu (effects.js
+    // `resolveCraftExileOutcome`) — ta sama ścieżka, którą idzie wybór
+    // automatyczny przy dokładnie jednym kandydacie. Wcześniej kopiowała ją
+    // ta gałąź, więc każda zmiana wymagała dwóch edycji (L41/L48).
+    const outcome = resolveCraftExileOutcome(state, {
+      sourceId: craft.sourceId,
+      candidates: craft.candidateIds,
+      transformTo: craft.transformTo,
+      chosenTargetId: cmd.targetId,
+    });
+    if (!outcome) return reject('illegal_craft_target');
     state.pendingCraftExile = null;
     if (craft.restorePriorityTo && state.players.some((p) => p.id === craft.restorePriorityTo)) {
       state.turn.priorityPlayerId = craft.restorePriorityTo;

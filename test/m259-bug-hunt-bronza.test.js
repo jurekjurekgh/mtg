@@ -191,9 +191,11 @@ test('B6: craft działa za {2}{U} i transformuje w Guidestone Compass', () => {
   assert.ok(craft, 'oferta craftu przy dostępnej manie z {U}');
   assert.ok(execute(state, craft).ok);
   assert.ok(resolveStack(state), 'zdolność craft rozstrzygnięta na stosie');
-  assert.ok(state.pendingCraftExile, 'decyzja: który artefakt wygnać');
-  const r = execute(state, { type: 'resolve_craft_exile', playerId: 'p1', targetId: 'bomb' });
-  assert.ok(r.ok);
+  // Audyt PR #129 (2026-09-19): Spellbomb jest JEDYNYM kandydatem, więc
+  // wygnanie jest automatyczne (wybór bez alternatywy nie jest decyzją).
+  assert.equal(state.pendingCraftExile, null, 'jeden kandydat = bez pytania gracza');
+  assert.ok(state.zones.exile.some((id) => state.objects.get(id)?.cardId === 'panic-spellbomb'),
+    'materiał craftu (Spellbomb) w wygnaniu');
   assert.notEqual(state.objects.get('needle')?.zone, 'battlefield', 'przednia strona odchodzi');
   const transformed = [...state.objects.values()]
     .find((o) => o.zone === 'battlefield' && o.cardId === 'guidestone-compass');

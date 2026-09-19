@@ -134,22 +134,35 @@ test('M125/B: o przynależności karty w grobie decyduje ownerId (CR 400.7)', ()
 
 test('M125/B: walidacja odrzuca próbę wygnania cudzej karty', () => {
   // Obrona w głąb: nawet gdyby UI podsunęło zły cel, `execute` musi odmówić.
+  // Audyt PR #129 (2026-09-19): przy DOKŁADNIE jednym kandydacie Craft
+  // rozwiązuje się automatycznie (wybór bez alternatywy nie jest decyzją),
+  // więc scena walidacji potrzebuje DWÓCH legalnych kandydatów — dopiero
+  // wtedy powstaje blokująca decyzja `resolve_craft_exile`.
   const state = makeState();
   const needle = put(state, 'lodestone-needle', 'p1', 'battlefield');
-  put(state, 'seers-lantern', 'p1', 'graveyard'); // legalny kandydat
+  put(state, 'seers-lantern', 'p1', 'graveyard'); // legalny kandydat 1
+  put(state, 'angels-feather', 'p1', 'graveyard'); // legalny kandydat 2
   const foe = put(state, 'emissary-escort', 'p2', 'graveyard');
   applyEffect(state, { type: 'craft_transform' }, state.objects.get(needle), [], {});
+  assert.ok(state.pendingCraftExile, 'setup: dwóch kandydatów = decyzja gracza');
   const result = execute(state, { type: 'resolve_craft_exile', playerId: 'p1', targetId: foe });
   assert.equal(result.ok, false, 'wygnanie cudzej karty musi być odrzucone');
   assert.equal(result.events?.[0]?.reason, 'illegal_craft_target');
 });
 
 test('M125/B (anty-over-fix): własny artefakt w własnym grobie NADAL działa', () => {
+  // Audyt PR #129 (2026-09-19): jedyny kandydat wygnany automatycznie —
+  // pin patrzy na SKUTEK (karta w wygnaniu), nie na listę decyzji, której
+  // przy braku alternatywy już nie ma.
   const state = makeState();
   const needle = put(state, 'lodestone-needle', 'p1', 'battlefield');
   const mine = put(state, 'emissary-escort', 'p1', 'graveyard');
   applyEffect(state, { type: 'craft_transform' }, state.objects.get(needle), [], {});
-  const candidates = state.pendingCraftExile?.candidateIds ?? [];
-  assert.ok(candidates.includes(mine),
-    'artefakt z własnego grobu (np. po zmieleniu) to legalny koszt Craft');
+  assert.equal(state.pendingCraftExile, null,
+    'jeden kandydat = automat, bez pytania gracza o jedyny możliwy wybór');
+  const wygnaneKarty = state.zones.exile.map((id) => state.objects.get(id)?.cardId);
+  assert.ok(wygnaneKarty.includes('emissary-escort'),
+    `artefakt z własnego grobu (np. po zmieleniu) to legalny koszt Craft: ${JSON.stringify(wygnaneKarty)}`);
+  // (moveObjectDirectly nadaje wygnanej karcie NOWE id — stary id obiektu
+  // znika wraz z permanentem, jak przy każdym ruchu między strefami.)
 });
