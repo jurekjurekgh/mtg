@@ -353,11 +353,22 @@ export function choiceRequestGroupKey(command) {
   // M87: tryby modalne (Steel Sabotage Kontr vs Odbicie) i warianty
   // poświęcenia (Village Rites) nie mogą wpadać do jednego „Cel czaru".
   if (command.type === 'cast_spell' && (command.targets?.length || command.sacrificeTargetId || command.modeIndex != null)) {
-    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}${command.kicked ? ':kicker' : ''}${command.gifted ? `:gift:${command.giftRecipientId ?? '?'}` : ''}`;
+    // K (zgłoszenie właściciela 2026-09-19b, Crumb and Get It): „opcje pokazują
+    // mi się od razu w »Twoje działania« zamiast dopiero po rzuceniu karty
+    // w modalu wyboru. Wszystkie czary, które wymagają decyzji podczas rzucania,
+    // powinny mieć najpierw ofertę rzucenia w »Twoje działania«, a dopiero potem
+    // modal wyboru sposobu rzucenia.”
+    // Dar NIE jest osobnym rzutem, tylko WARIANTEM tego samego rzutu (CR 702.174a:
+    // „as you cast this spell”) — więc obietnica daru należy do tej samej grupy
+    // co rzut bazowy i trafia do modala razem z wariantami celu (etykieta mówi
+    // „· dar dla przeciwnika: …”, więc warianty są rozróżnialne).
+    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}${command.kicked ? ':kicker' : ''}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
   if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
-    return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}${command.gifted ? ':gift' : ''}`;
+    // K: dar jest wariantem tego samego rzutu — nie osobnym wpisem panelu
+    // (ten sam powód co wyżej; ADR 0002: po kształcie komendy, nie po karcie).
+    return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}`;
   }
   if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {

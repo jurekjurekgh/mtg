@@ -1070,6 +1070,15 @@ export function modifyStats(state, objectId, { power = 0, toughness = 0 }) {
   });
   state.events.push(event('stats_modified', {
     objectId, powerModifier: updated.powerModifier, toughnessModifier: updated.toughnessModifier,
+    // M99 + uwaga B (właściciel 2026-09-19b): modyfikatory `modifyStats` żyją
+    // DO KOŃCA TURY (cleanup je zeruje — patrz nagłówek funkcji), więc niosą
+    // `untilEndOfTurn`, tak jak każdy inny buff do końca tury (set_base_pt_*,
+    // mass buffy). Bez tej flagi bramka `isBotMoveNoise` (session.js) widziała
+    // tylko „P/T przelicza się przy każdym zdarzeniu” i WYCINAŁA skutek z modala
+    // „Rozgrywka”: gracz rzucał własny pump (You're Not Alone), widział „czar
+    // zostaje rozstrzygnięty”, a o +4/+4 dowiadywał się wyłącznie z kafla —
+    // dokładnie ta sama asymetria log↔modal, którą M99 naprawił dla czarów bota.
+    untilEndOfTurn: true,
   }));
   return updated;
 }
