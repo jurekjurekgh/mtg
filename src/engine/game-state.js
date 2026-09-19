@@ -7945,6 +7945,17 @@ export function playerView(state, playerId) {
   } : null;
   // Gurmag Drowner — look top N, wybierz jedną do ręki (reszta do grobu):
   // odsłonięte karty są jawne dla decydenta (jak index).
+  // Cuombajj Witches (M116): drugi cel wskazuje PRZECIWNIK decydującego gracza.
+  // Widok musi nieść ŹRÓDŁO decyzji (karta na polu bitwy — informacja
+  // publiczna, ADR 0017), bo bez tego panel „Twoje działania" pokazywał gołe
+  // „Wybierz: Cel" i przy kilku decyzjach na stosie nie było wiadomo, czego
+  // dotyczy wybór (zgłoszenie właściciela B, 2026-09-19).
+  const pendingOpponentTargetView = state.pendingOpponentTarget ? {
+    playerId: state.pendingOpponentTarget.playerId,
+    activatingPlayerId: state.pendingOpponentTarget.activatingPlayerId,
+    sourceId: state.pendingOpponentTarget.sourceId,
+    sourceCardId: state.pendingOpponentTarget.cardId ?? null,
+  } : null;
   const pendingLookTopNView = state.pendingLookTopN ? {
     playerId: state.pendingLookTopN.playerId,
     // Pętla jakości: źródło decyzji dla tytułu modala (publiczne — permanent
@@ -8033,6 +8044,7 @@ export function playerView(state, playerId) {
     playerId, status: state.status, winnerId: state.winnerId, isDraw: Boolean(state.isDraw), players, turn: { ...state.turn },
     zones, legalCommands, pendingScry, pendingSurveil, pendingFertileThicket: pendingFertileThicketView, pendingBackup: pendingBackupView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
+    pendingOpponentTarget: pendingOpponentTargetView,
     pendingLookTopN: pendingLookTopNView,
     pendingManifestDread: pendingManifestDreadView,
     pendingEpicExperiment: pendingEpicExperimentView,

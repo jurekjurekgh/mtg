@@ -1957,6 +1957,10 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_damage_division: 'Podział obrażeń między cele',
   resolve_damage_target: 'Cel obrażeń',
   resolve_sacrifice_choice: 'Poświęcenie stwora',
+  // Zgłoszenie B (2026-09-19): decyzja przeciwnika o celu nie może być gołym
+  // „Wybierz: Cel” — deskryptor mówi, KTO wybiera (a tytuł dokłada nazwę karty,
+  // gdy widok niesie źródło decyzji).
+  resolve_opponent_target: 'Cel wskazywany przez przeciwnika',
   resolve_devour_choice: 'Devour — poświęcenie stwora',
   resolve_food_choice: 'Food — poświęcić za wzmocnienie?',
   resolve_amass_choice: 'Amass — która Armia dostaje liczniki?',
@@ -2032,6 +2036,23 @@ function choiceSourceTitle(cmd, session, view) {
   // wystawiony w playerView wyłącznie właścicielowi decyzji).
   if (cmd?.type === 'resolve_hand_top_choice' && view?.pendingHandTopChoice?.sourceCardId) {
     return `${session.nameOf(view.pendingHandTopChoice.sourceCardId)} — karta z ręki na wierzch biblioteki`;
+  }
+  // Zgłoszenie właściciela B (2026-09-19): „Cuombajj Witches — aktywacja bota
+  // w «Twoich działaniach» pokazuje gołe «Wybierz: Cel», bez nazwy karty i
+  // efektu; przy kilku zdolnościach na stosie nie da się tego zidentyfikować”.
+  // Tytuł nazywa ŹRÓDŁO (karta na polu bitwy — publiczna) i SKUTEK czytany
+  // z deskryptora zdolności (effect.type — ADR 0002, zero nazw kart), wzorem
+  // pozostałych decyzji resolve_* (M162/C, M221/B, M166/D).
+  if (cmd?.type === 'resolve_opponent_target' && view?.pendingOpponentTarget?.sourceCardId) {
+    const src = session.nameOf(view.pendingOpponentTarget.sourceCardId);
+    const abilities = session.abilitiesOf?.(view.pendingOpponentTarget.sourceCardId) ?? [];
+    const ability = abilities.find((a) => a?.opponentChoosesTarget);
+    const effecty = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+    const moj = effecty.find((e) => e?.targetIndex === 1) ?? effecty[0];
+    const effLabel = moj ? describeEffect(moj) : '';
+    return effLabel
+      ? `${src} — ${effLabel} (cel wskazuje przeciwnik)`
+      : `${src} — cel wskazywany przez przeciwnika`;
   }
   // M221/B (zgłoszenie właściciela, Angel's Feather): decyzja „you may" musi
   // nazywać KARTĘ i CO robi — samo „Efekt dobrowolny (you may)" nic nie mówi.
