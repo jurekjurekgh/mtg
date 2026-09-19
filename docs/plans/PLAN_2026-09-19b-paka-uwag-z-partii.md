@@ -144,6 +144,7 @@ ADR 0018 (bez pełnego B0), ADR 0029 (katalog kart nie rośnie), ADR 0005
 | P7 | F/2 (log) | `65409d1` | `npm test` 5911/5911, build 64 / 3875,3 kB |
 | P8 | M | `6ae0dda` | `npm test` 5917/5917, build 64 / 3877,7 kB |
 | P8b | M2 | `385d998` | `npm test` 5921/5921, build 64 / 3882,8 kB |
+| P9 | H2 | `9599184` | `npm test` 5926/5926, build 64 / 3884,5 kB |
 
 Notka P5/F (pomiar, nie założenie): ścieżka kredytu „for each mana from
 a Treasure spent to cast it” jest w przepływie BOTA poprawna (pin F/1: bot
@@ -205,3 +206,17 @@ Teraz: krok 1 = wiersz na tryb (`castModePlanOf`, ten sam komponent co okna
 rzutu), krok 2 = zwykłe rozgałęzienie decyzji panelu na wariantach wybranego
 trybu (kreator wielocelowy z ptaszkami i zakresem „0–N”). Tytuł wpisu niesie
 koszt („Rzuć: <karta> (koszt {3}{W})”).
+
+### P9 — H2: pomiar P6 był niepełny — kreator płatności żądał kosztu za darmowy rzut
+
+Właściciel: „jak rzucałem Sheriff of Safe Passage z exile (po wcześniejszym
+Plocie) to zamiast bezpłatnego rzucania otworzył mi się Mana Wizard i musiałem
+zapłacić 3 many”. Pomiar P6 dotyczył SILNIKA (tam zawsze 0 many) i etykiety —
+a warstwa UI liczyła koszt z `MANA_COSTS`, więc bramka kreatora płatności
+otwierała się z pełnym kosztem {2}{W}. Gracz tapował lądy, silnik wydawał
+0 many, pula przepadała. Klasa L102/1 (etykieta i płatność to jedna rodzina
+warunków — P6 naprawił tylko etykietę). Fix: rdzeniowy predykat
+`castsWithoutPayingMana` (plot CR 702.170d albo darmowy impuls CR 701.51b)
+czytany przez OBU konsumentów — `waitingCastLabel` i `paymentDescriptorOf`
+(null = brak kreatora). Piny H2/1–H2/5 (w tym anty-over-fix dla płatnego
+impulsu i karty z ręki), mutacje H2-a/H2-b/H2-c.
