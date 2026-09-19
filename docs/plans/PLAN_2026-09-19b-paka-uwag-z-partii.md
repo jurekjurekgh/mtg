@@ -141,6 +141,7 @@ ADR 0018 (bez pełnego B0), ADR 0029 (katalog kart nie rośnie), ADR 0005
 | P4 | C, D | `a3a6587` | `npm test` 5887/5887, build 64 / 3863,2 kB |
 | P5 | F, I, J | `1f38cc9` | `npm test` 5899/5899, build 64 / 3869,3 kB |
 | P6 | G, H | `6130760` | `npm test` 5907/5907, build 64 / 3872,0 kB |
+| P7 | F/2 (log) | `65409d1` | `npm test` 5911/5911, build 64 / 3875,3 kB |
 
 Notka P5/F (pomiar, nie założenie): ścieżka kredytu „for each mana from
 a Treasure spent to cast it” jest w przepływie BOTA poprawna (pin F/1: bot
@@ -153,9 +154,22 @@ M128 uznawał kartę za wymagającą Skarba, choć wycena kastru była ≤ 0 —
 ginął bez zużycia many; po fixie 0/556 aktywacji bez zużycia (harness
 eventowy, 400 gier). Zgłoszenie właściciela bez odtworzenia w silniku.
 **Decyzja właściciela (2026-09-19b): F zamknięte** — „Może ta mana poszła na
-coś innego, jak mówisz, że jest w kodzie ok to jest ok”. Bez dalszych zmian
-w kodzie: piny F/1–F/6 (kredyt za KAŻDĄ wydaną sztukę, 0 przy wejściu inną
-drogą) i bramka `sacrificeSelf` zostają jako straż regresji.
+coś innego, jak mówisz, że jest w kodzie ok to jest ok”. Piny F/1–F/6 (kredyt
+za KAŻDĄ wydaną sztukę, 0 przy wejściu inną drogą) i bramka `sacrificeSelf`
+zostają jako straż regresji.
+
+**P7 (F/2) — log właściciela rozstrzygnął kolejność.** Sekwencja z partii
+(„Zagrywa Marut → aktywuje Treasure → Marut wchodzi → trigger bez efektu →
+Zagrywa Scorch Spitter”) odtworzyła się sceną 1:1 i pokazała, że brakujący
+token to wada WYCENY bota: rzut Maruta zapłaciły lądy, a mana ze Skarba
+(posunięta PO rzucie) sfinansowała Scorch Spittera. Karta Marut zwraca każdą
+manę ze Skarbów wydaną na rzut (deskryptor `create_token` +
+`mana_from_treasure_spent`), a płatność zużywa Skarb pierwszy (`spendMana`:
+treasure-first) — więc Skarb PRZED rzutem jest darmowy. Fix: akcja-przed
+`treasureRefundLead` (wszystkie dostępne Skarby przed rzutem, wartość z wyceny
+tego rzutu + margines). Pomiar (200 gier mirror, ten sam seed-set):
+przed — 4/78 rzutów Marutem z maną ze Skarbów (4 zwrócone sztuki);
+po — 17/77 rzutów i 31 zwróconych sztuk; benchmark heuristic 82,0%.
 
 Notka P5/I: Seer’s Lantern to NIE błąd płatności — rzut kosztuje 3 ({3}
 w katalogu i `mana-costs`), a „2” z uwagi to druga zdolność karty
