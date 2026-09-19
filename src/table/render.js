@@ -636,8 +636,22 @@ function buildChoiceRequestEntries(commands, view) {
     // z jednym wariantem to zupełnie inny przypadek (przymusowa decyzja),
     // a jego jedyna opcja i tak trafia wyżej gałęzią `< 2`.
     // =====================================================================
+    // A (zgłoszenie właściciela 2026-09-19b, Cloudbound Moogle — Plainscycling):
+    // „Gdy jest przynajmniej 1 [Plains w talii] to dostaję MODAL wyboru,
+    // a NIE OPCJE w »Twoje działania«. W tym modalu mam tyle opcji, ile mam
+    // Plainsów w talii, plus opcja »nie znajdujesz« — która jest legalna nawet
+    // gdy mam je w talii.”
+    //
+    // To ŚWIADOME odwrócenie reguły M131 dla SZUKANIA (wcześniejsze zgłoszenie
+    // dotyczyło swampcyclingu Gloomfanga i jest zachowane dla pozostałych
+    // rodzin decyzji). Szukanie to wybór KARTY: „znajdź TĘ kartę / nie znajduj
+    // żadnej” (CR 701.19b) — a nie potwierdzenie akcji, którą gracz już
+    // wykonał. Konsekwencja dla M131: kolaps „1 realny wariant + rezygnacja”
+    // nadal obowiązuje decyzje typu `skip` (Springbloom i pokrewne), ale NIE
+    // szukanie w bibliotece.
+    const isSearchGroup = entry.group.commands.every((cmd) => cmd?.type === 'resolve_search_choice');
     const declineIndex = entry.group.commands.findIndex(isDeclineOption);
-    if (declineIndex !== -1 && entry.group.commands.length === 2) {
+    if (!isSearchGroup && declineIndex !== -1 && entry.group.commands.length === 2) {
       const real = entry.group.commands[declineIndex === 0 ? 1 : 0];
       return { command: real, alsoOffer: entry.group.commands[declineIndex] };
     }
