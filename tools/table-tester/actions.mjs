@@ -74,10 +74,16 @@ const TABELA = [
  * Wzorce etykiet wyboru celu/decyzji, które też są akcjami gracza w panelu,
  * ale nie mają czasownika z tabeli (klasa etykiety grupowej, nie czasownika).
  */
-const WZORCE_GRUP = ['^Cel czaru', '^Cel zdolności:', '^Bestow:', '^Aura:', 'cel triggera', 'podziel \\d+ obrażeni?[ae]?'];
+// Uwaga C1 właściciela (2026-09-19, Merchant's Dockhand): grupa „Tap
+// X artefaktów” ma etykietę tytułową „<karta> — przejrzyj X kart…” (kreator
+// ze stepperem X), nie czasownika z tabeli — bez wzorca tester nigdy nie
+// klikał oferty i kreator tapX nie był ćwiczony na żywym stole (L135).
+const WZORCE_GRUP = ['^Cel czaru', '^Cel zdolności:', '^Bestow:', '^Aura:', 'cel triggera', 'podziel \\d+ obrażeni?[ae]?', 'przejrzyj X kart'];
 
 /** Ogon historycznej kolejności priorytetów profilu `greedy` (bez czasowników). */
-const PRIORYTET_GRUP = ['cel triggera', 'podziel \\d+ obrażeni?[ae]?', '^Cel zdolności:|^Cel czaru:|^Bestow:|^Aura:'];
+// „przejrzyj X kart” (uwaga C1 właściciela, 2026-09-19): grupa kreatora tapX
+// jest decyzją rozwijającą, więc należy do ogona grupowego jak cele zdolności.
+const PRIORYTET_GRUP = ['cel triggera', 'podziel \\d+ obrażeni?[ae]?', '^Cel zdolności:|^Cel czaru:|^Bestow:|^Aura:', 'przejrzyj X kart'];
 
 /** Czasowniki akcji (bez etykiet grupowych) — wspólne dla testera i detektorów. */
 export const ACTION_LABEL_REGEX = new RegExp(TABELA.filter((a) => a.pula).map((a) => a.re).join('|'));

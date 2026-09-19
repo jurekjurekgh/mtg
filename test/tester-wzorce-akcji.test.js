@@ -108,6 +108,9 @@ test('E2/3: katalog akcji nadal w puli (regresja katalogu, nie tylko nowości)',
     'Bloodrush: Skinbrand Goblin (koszt {R}, odrzuć) → atakujący +2/+0',
     'Wybierz: Deklaracja atakujących',
     'cel triggera: Bomat Bazaar Barge',
+    // Uwaga C1 właściciela (2026-09-19): etykieta tytułowa grupy kreatora
+    // tapX (bez czasownika z tabeli).
+    'Merchant’s Dockhand — przejrzyj X kart z wierzchu biblioteki — jedną weź do ręki, resztę na spód',
     'podziel 2 obrażenia',
     'Cel czaru: Lightning Bolt',
     'Cel zdolności: Prodigal Sorcerer',
@@ -154,7 +157,9 @@ test('E2/6: klasyfikacja czasowników jest spójna (pula ⊇ bezpieczne i priory
     assert.ok(ACTION_VERBS.includes(verb), `priorytet spoza tabeli: ${verb}`);
     assert.ok(PLAY_REGEX.test(`${verb}: X`), `priorytet musi być podzbiorem puli: ${verb}`);
   }
-  // Priorytety: jeden wzorzec na czasownik + trzy wzorce grupowe (cel triggera,
-  // podział obrażeń, grupy celów czarów/zdolności) — inaczej cicha zguba wpisu.
-  assert.equal(GREEDY_PRIORITY.length, GREEDY_VERBS.length + 3);
+  // Priorytety: jeden wzorzec na czasownik + cztery wzorce grupowe (cel
+  // triggera, podział obrażeń, grupy celów czarów/zdolności oraz grupa
+  // kreatora tapX „przejrzyj X kart” — uwaga C1 właściciela, 2026-09-19)
+  // — inaczej cicha zguba wpisu.
+  assert.equal(GREEDY_PRIORITY.length, GREEDY_VERBS.length + 4);
 });

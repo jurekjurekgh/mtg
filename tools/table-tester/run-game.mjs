@@ -730,6 +730,38 @@ export async function runTableGame({
       if (cancelX) { cancelX.click(); await sleep(60); }
       return true;
     }
+    // Kreator załogi (A2, crewMode — Bomat Bazaar Barge z kaladesh): generyczna
+    // polityka M203 zaznacza JEDEN wiersz, a zatwierdzenie wymaga sumy mocy ≥ N
+    // (licznik progu). Gdy wszyscy kandydaci są słabi (moc 1 < N, zmierzone
+    // seed 77: Skilled Animator + Dockhand + …), pojedynczy ptaszek nie
+    // wystarcza i kreator nie domykał się po 5 próbach. Polityka: klikiem od
+    // najsilniejszego zbieramy moc do progu (silnik potwierdza legalność
+    // stanem Zatwierdź — L48), potem zatwierdź; nie da się złożyć → anuluj.
+    if (multiConfirm && /^(Obsadź|Osiodłaj):/.test(intro)) {
+      const mocOf = (b) => {
+        const row = b.closest?.('label') ?? b.parentElement;
+        const m = /\(moc (\d+)\)/.exec(text(row) ?? '');
+        return m ? Number(m[1]) : 0;
+      };
+      const crewRows = $$('#choice-request .multi-target-toggle').filter((b) => !b.disabled)
+        .sort((a, b) => mocOf(b) - mocOf(a));
+      logL(`  [crew wizard] ${intro.slice(0, 80)} — kandydatów ${crewRows.length}`);
+      for (const row of crewRows) {
+        const c = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
+        if (c && !c.disabled) break;
+        row.click();
+        await sleep(20);
+      }
+      const confirmCrew = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
+      if (confirmCrew && !confirmCrew.disabled) {
+        confirmCrew.click();
+        await sleep(80);
+        return true;
+      }
+      const cancelCrew = $$('#choice-request button').find((b) => /multi-target-cancel/.test(String(b.className)));
+      if (cancelCrew) { cancelCrew.click(); await sleep(60); }
+      return true;
+    }
     if (multiConfirm) {
       // M258 (pętla jakości, PR #89): KREATOR „CEL + POŚWIĘCENIE (KOSZT)"
       // (sacMode z M257-r5/C — Lash of the Balrog). Intro tego kreatora nie

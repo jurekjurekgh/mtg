@@ -4694,7 +4694,18 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     // M103 (L15): klucz opcji na przycisku — sonda „oferta bez skutku"
     // Żywego Testera (window.__mtgDebug) mapuje klik na konkretną komendę.
     // Dla grup wyborów klucz pierwszej opcji = to, co kliknie gracz zachłanny.
-    const optionKeyCmd = entry.request ? (entry.request.options?.[0] ?? entry.first ?? cmd) : cmd;
+    // Uwaga C1 właściciela (2026-09-19, Merchant's Dockhand): grupa „Tap
+    // X artefaktów” zaczyna się od wariantu X=0 — legalnej, ale JAŁOWEJ
+    // aktywacji (CR 107.3). Sonda mierzona na niej zgłaszałaby fałszywe
+    // „oferta bez skutku” w każdej partii (L12: szum przykrywa znaleziska).
+    // Reprezentantem grupy jest wariant z NAJWIĘKSZYM X — ten realnie coś
+    // zmienia i właśnie go wykonuje kreator (tester: X = maksimum).
+    const tapXOptions = (entry.request?.options ?? [])
+      .filter((c) => c?.type === 'activate_ability' && Array.isArray(c.tapArtifactIds) && Number.isInteger(c.xValue));
+    const tapXRepresentative = tapXOptions.length > 0 && tapXOptions.length === (entry.request?.options ?? []).length
+      ? tapXOptions.reduce((best, c) => (c.xValue > best.xValue ? c : best), tapXOptions[0])
+      : null;
+    const optionKeyCmd = entry.request ? (tapXRepresentative ?? entry.request.options?.[0] ?? entry.first ?? cmd) : cmd;
     if (optionKeyCmd) button.dataset.optionKey = commandOptionKey(optionKeyCmd);
     if (entry.request) {
       button.className += ' choice-request-trigger';
