@@ -278,3 +278,58 @@ test('B57/82 Messenger Falcons: dobranie z pustej biblioteki kończy grę, nie w
   assert.equal(s.zones.library.length, 0, 'biblioteka nadal pusta');
   assert.equal(s.status, 'finished', 'próba dobrania z pustej biblioteki = przegrana (CR 104.3c), bez wyjątku');
 });
+
+// ---------------------------------------------------------------------------
+// B3 (M390) — 80 Merciless Repurposing: exile + inkubacja 3 (bliźniak
+// Tillera of Flesh). Ruling MOM 2023-04-14: nielegalny cel przy rozstrzyganiu
+// → czar nie robi NIC (CR 608.2b), inkubacja NIE biegnie.
+// ---------------------------------------------------------------------------
+sanity('merciless-repurposing', 80, 'MOM', 'Mirrodin');
+
+const incubatorsOf = (s, controllerId) => [...s.objects.values()]
+  .filter((o) => o.zone === 'battlefield' && o.cardId === 'token_incubator' && o.controllerId === controllerId);
+
+test('B57/80 Merciless Repurposing: wygania cel i inkubuje 3 (token z trzema licznikami)', () => {
+  const s = game();
+  put(s, 'bear', 'ordinary-bear', 'p2', 'battlefield');
+  put(s, 'repro', 'merciless-repurposing');
+  addMana(s, 'p1', 6, { colors: ['B'] });
+  const cast = commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'repro' && c.targets?.includes('bear'));
+  assert.ok(cast, 'oferta rzutu z celem-stworem');
+  run(s, cast);
+  resolve(s);
+  assert.ok(find(s, 'ordinary-bear', 'exile'), 'cel wygnany (nie w grobie; po przenosinach obiekt ma nowe id)');
+  const tokens = incubatorsOf(s, 'p1');
+  assert.equal(tokens.length, 1, 'jeden Incubator (CR 701.47)');
+  assert.equal((tokens[0].counters ?? {})['+1/+1'], 3, 'inkubuj 3 → trzy liczniki +1/+1');
+  assert.ok(find(s, 'merciless-repurposing', 'graveyard'), 'czar rozstrzygnięty idzie do grobu');
+  // {2}: transformacja tokenu w 0/0 Phyrexian — liczniki ZOSTAJĄ na tylnej
+  // stronie (stąd 3/3), a zdolność należy do TOKENU, nie do czaru.
+  addMana(s, 'p1', 2);
+  const act = commands(s).find((c) => c.type === 'activate_ability' && c.objectId === tokens[0].id);
+  assert.ok(act, 'oferta {2}: transformuj Incubator');
+  run(s, act);
+  resolve(s);
+  const phyrexian = [...s.objects.values()].find((o) => o.cardId === 'token_phyrexian' && o.zone === 'battlefield');
+  assert.ok(phyrexian, 'token transformował się w 0/0 Phyrexian (CR 701.51)');
+  assert.equal((phyrexian.counters ?? {})['+1/+1'], 3, 'trzy liczniki zostają → 3/3');
+});
+
+test('B57/80: nielegalny cel przy rozstrzyganiu → czar nic nie robi, brak inkubacji (CR 608.2b)', () => {
+  // Nośnik martwego celu jak w audycie PR #105: Servant of the Scale w fabryce
+  // testu jest 0/0, więc SBA na granicy komendy rzutu zabija go ZANIM czar
+  // zdąży się rozstrzygnąć.
+  const s = game();
+  put(s, 'victim', 'servant-of-the-scale', 'p2', 'battlefield');
+  put(s, 'repro', 'merciless-repurposing');
+  addMana(s, 'p1', 6, { colors: ['B'] });
+  const cast = commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'repro' && c.targets?.includes('victim'));
+  assert.ok(cast, 'rzut wybrany w 0/0 cel');
+  run(s, cast);
+  assert.ok(find(s, 'servant-of-the-scale', 'graveyard'), 'cel padł od SBA przy rzucie');
+  resolve(s);
+  const resolved = s.events.find((e) => e.type === 'spell_resolved' && e.cardId === 'merciless-repurposing');
+  assert.equal(resolved?.fizzled, true, 'jedyny cel nielegalny = fizzl (ruling MOM 2023-04-14)');
+  assert.equal(incubatorsOf(s, 'p1').length, 0, 'ruling: NIE inkubuj, gdy cel nielegalny');
+  assert.equal(s.zones.stack.length, 0, 'czar zszedł ze stosu');
+});

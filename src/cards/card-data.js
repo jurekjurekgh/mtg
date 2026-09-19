@@ -11359,7 +11359,20 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Instant'], colors: ['B'], manaCost: 6,
     oracleText: 'Exile target creature. Incubate 3. (Create an Incubator token with three +1/+1 counters on it and "{2}: Transform this token." It transforms into a 0/0 Phyrexian artifact creature.)',
     imageUri: 'https://cards.scryfall.io/large/front/7/0/70edec35-1770-47f0-9ad2-32e597ee0327.jpg?1783917004',
-    artId: 80, plan: 'Mirrodin', support: { status: 'in-development', limitations: [] },
+    // Bliźniak 1:1 Tillera of Flesh co do efektu inkubacji (`incubate`,
+    // CR 701.47 — token Incubator z trzema licznikami). Kolejność efektów ma
+    // znaczenie dla rulingi MOM (2023-04-14): gdy CEL stanie się nielegalny
+    // przed rozstrzygnięciem, czar fizzluje W CAŁOŚCI (CR 608.2b) — inkubacja
+    // NIE biegnie (pin w test/real-cards-batch57.test.js).
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'exile_permanent' },
+        { type: 'incubate', amount: 3 },
+      ],
+    },
+    artId: 80, plan: 'Mirrodin', support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({

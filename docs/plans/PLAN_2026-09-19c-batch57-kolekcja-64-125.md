@@ -197,12 +197,28 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
   przeciwnika` seed 2 → **seed 1** (hunter 1..80: 2 opóźnione triggery;
   kolejne trafienia 7, 13, 14, 17, 19, 21, 28) — zmiana składu alara
   przelosowała partię.
-- [ ] **B3 (M390) — usunięcie z inkubacją**: **80 Merciless Repurposing**
+- [x] **B3 (M390) — usunięcie z inkubacją**: **80 Merciless Repurposing**
   (`exile_permanent` + `incubate 3` + token Incubator z 3 licznikami).
   Testy: wygnanie stwora i token Incubator z trzema licznikami; przemiana
   tokenu w 0/0 Phyrexian; `{2}`: transformacja tylko tokenu; brak celu = brak
   oferty; nielegalny cel przy rozstrzyganiu = brak efektu i **brak inkubacji**
   (ruling MOM 2023-04-14).
+
+  **Wykonanie i pomiary.** Deskryptor `spell: { timing: 'instant', targets:
+  [{ type: 'creature' }], effects: [{ type: 'exile_permanent' }, { type:
+  'incubate', amount: 3 }] }` — 1:1 z Tillera of Flesh (M109); scenariusz
+  legalny pinuje też `{2}`: transformację tokenu w 0/0 Phyrexian z trzema
+  licznikami (3/3, CR 701.51). Dowód RED: stash `card-data.js` → 3 testy
+  czerwone (sanity + oba scenariusze). Bramy: `npm test` **5948/5948,
+  0 fail**; build 64 moduły / 3895,0 kB.
+
+  Churn: tylko `mirrodin-brg` (+Merciless Repurposing, Swamp 5→6; README
+  29/10/19) — talia poza `SNAPSHOT_CONFIG`, więc fixture golden-mastera
+  NIETKNIĘTY (regeneracja `--write` dała identyczny plik, `overallHash`
+  bez zmian). Strażnik wycen (`bot-targeted-effect-valuation-guard`):
+  `incubate` jako rider przy wycenionym `exile_permanent` dostał jawny wpis
+  `REVIEWED_UNVALUED` (efekt niecelowany; token Incubator bez wyceny w bocie
+  od M109) — bez tego strażnik czerwienił na nowym czarze celowanym.
 - [ ] **B4 (M391) — Delve**: **66 Hooting Mandrills** (`{5}{G}` → wygnanie
   kart z grobu, każda `{1}`; „you may", liczby 0..5). Testy: rzut bez delve
   (pełny koszt), z 1/2/5 kartami (koszt maleje, karty w exile), odmowa wygnania

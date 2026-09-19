@@ -67,6 +67,12 @@ const REVIEWED_UNVALUED = new Map([
   // „each creature you control with a +1/+1 counter" nie zależy od wyboru
   // celu (własne stwory dostają licznik niezależnie od tego, kogo wskazano).
   ['add_counter_to_creatures_you_control', 'rider przy add_counter (wycenionym); grupa niezależna od celu'],
+  // Inkubacja jako rider CELOWANEGO czaru (Merciless Repurposing, Batch 57/B3):
+  // warianty celu różnicuje `exile_permanent` (wyceniony, 90); `incubate` nie
+  // zależy od wskazanego celu (token powstaje u kontrolera czaru, nie u celu).
+  // Sam token Incubator jest w katalogu od M109 bez wyceny w bocie (Tiller of
+  // Flesh — trigger bezcelowy, poza tabelami). Wpis świadomy, nie brak decyzji.
+  ['incubate', 'rider przy exile_permanent (wycenionym); efekt nie jest celowany'],
 ]);
 
 function effs(e) {

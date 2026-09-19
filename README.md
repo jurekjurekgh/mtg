@@ -125,7 +125,7 @@ liczone z plików `decks/*.txt`).
 | `innistrad-wu` | Innistrad (WU) | WU | 29 | 10 | 19 |
 | `ixalan` | Ixalan | UBRG | 23 | 8 | 15 |
 | `kaladesh` | Kaladesh | WUBRG | 26 | 9 | 17 |
-| `mirrodin-brg` | Mirrodin (BRG) | BRG | 27 | 9 | 18 |
+| `mirrodin-brg` | Mirrodin (BRG) | BRG | 29 | 10 | 19 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 29 | 10 | 19 |
 | `ravnica` | Ravnica | WUBRG | 38 | 13 | 25 |
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |

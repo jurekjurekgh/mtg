@@ -17,7 +17,8 @@
 1x Ruthless Invasion
 1x Dementia Bat
 1x Spread the Sickness
+1x Merciless Repurposing
 1x Gloomfang Mauler
-5x Swamp
+6x Swamp
 2x Mountain
 2x Forest
