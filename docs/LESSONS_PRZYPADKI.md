@@ -1941,3 +1941,34 @@ kosztu (`stationTappedPower` na wpisie stosu, jak `sacrificedToughness`),
 rozstrzygnięcie bierze żywą moc albo snapshot. Trzy testy, bo fix ma dwie
 gałęzie: LKI (2 po Shocku), żywa moc (2 bez odpowiedzi) i pompa
 w odpowiedzi (5 — snapshot przy koszcie NIE może zabić żywego odczytu).
+
+## L150 (2026-09-19) — przypadek: Dawntreader Elk poświęcany po ląd przy 4 kartach biblioteki
+
+**Zgłoszenie właściciela (C):** „bot poświęca Dawntreader Elk (traci stwora), żeby wyciągnąć ląd, gdy w bibliotece zostały 4 karty (→3), będąc o krok od przegranej. Wycena musi się zmienić.”
+
+**Odtworzenie:** scena `createGameState` + `dawntreader-elk` i `basic-forest` na polu p1, 4× `basic-mountain` w bibliotece, `jumpToStep(state.turn,'main','p1')`, mana {G}; `createHeuristicBot({seed:42}).chooseCommand(playerView(state,'p1'), {})` → `activate_ability:elk` zarówno przy 4, jak i przy 25 kartach (identyczna decyzja w obu scenach).
+
+**Przyczyna:** bot karał ubytek własnej biblioteki tylko przez `paymentLibraryLoss` (mielące tapnięcia płatności) i `LIBRARY_DRAIN_EFFECTS` (mill/draw). Tutor (`search_library_to_battlefield`, effects.js → `queueSearchChoice`) nie był wyceniany nigdzie: aktywacja niosła ~2 pkt wartości efektu i wygrywała z passem niezależnie od stanu biblioteki.
+
+**Naprawa:** `LIBRARY_SEARCH_EFFECTS` (typy z deskryptora: search_library_to_hand / _to_battlefield / _to_battlefield_tapped / search_basic_land_morbid) + `searchLibraryLoss(view, cmd)` liczący karty zabrane z własnej biblioteki przez wariant; wynik wchodzi do tej samej drabiny `libraryLossPenalty` co dobrania — dla aktywacji (payment + tutor, suma dróg) i dla rzutów (repeat + payment + tutor, więc także ETB-tutory permanentów, np. Pilgrim's Eye). Granica marginesu: 21 kart aktywuje, 20 już nie (margines 20 kart). Objaw uboczny: pin `batch54` (lethal Exploding Borders przy 1 karcie w bibliotece) mierzył teraz karę cienkiej biblioteki za własny tutor — scena dostała 20 kart tła, asercja letalu bez zmian.
+
+## L151 (2026-09-19) — przypadek: potrójny blok legalny w silniku, nieobecny w ofercie
+
+**Punkt otwarty z poprzedniej sesji:** „kierunek odwrotny oferty bloków (`Math.min(slots, 2)`) — pin przy blokerze o >2 slotach”.
+
+**Pomiar:** scena 3 atakujących (Goblin Piker) i bloker z 3 slotami (licznik +1/+1 + 2× Cenn's Tactician, obaj taktycy zatapnięci — statyka działa niezależnie od tapnięcia) → `blockSlotsFor` = 3, ale `legalBlockerOptions` nie zawierało ANI JEDNEGO przypisania z blokerem użytym 3 razy, a `declareBlockers` (i `blockAssignmentViolation`) potrójny blok PRZYJMUJE. Oferta była więc niekompletna: człowiek w panelu bloków i bot nie mogli zadeklarować legalnego ruchu.
+
+**Przyczyna i naprawa:** liczba przebiegów blokera w enumeracji = `Math.min(slots, 2)` (obcięcie „na wygodę”) → `Math.min(slots, attackers.length)` (granica legalności). Przy okazji: enumeracja z powtórzeniami tworzyła to samo przypisanie wieloma ścieżkami (kolejność atakujących) i rosła do 34 opcji przy capie 32 — dodany klucz kanoniczny + `slice(0, cap)`.
+
+**Piny (oba kierunki):** potrójny blok jest w ofercie i przechodzi `declareBlockers`; KAŻDA opcja oferty przechodzi walidację; bloker o 1 slocie bez podwójnego bloku; brak duplikatów i cap. Mutacje M23/M24 → 1 RED każda.
+
+## L152 (2026-09-19) — przypadek: literalny „\n” w danych proweniencji i wyjątek, który to ukrywał
+
+**Polowanie inną ścieżką niż poprzednia sesja:** pełny diff `oracleText` katalogu z `docs/cards/scryfall-*.json` po wszystkich 480 kartach ze snapshotem (poprzednie audyty czytały diff ostatniego PR-a, nie dane).
+
+**Wynik:** 20 wpisów katalogu (m.in. instant-ramen, crew-captain, consume-spirit, moonlit-meditation, village-bell-ringer) i 7 plików snapshotu (altar-of-the-goyf, consume-spirit, crew-captain, gurmag-drowner, inspiring-bard, instant-ramen, seismic-monstrosaur) miało w polu Oracle literalny backslash+n zamiast nowej linii. Konsekwencja praktyczna: strażnik kosztów aktywacji (`test/ability-cost-pips.test.js`) nosił jawny wyjątek „znalezisko S-1” i po cichu pomijał zdolność `strandwalker` („przy literalnym 
+ Oracle karty jest jedną linią, więc karta bez ani jednego nagłówka nie daje punktu odniesienia”).
+
+**Naprawa danych + koniec wyjątku:** prawdziwe nowe linie w katalogu i snapshotach; strażnik `test/oracle-bez-literalnego-backslash-n.test.js` pilnuje obu stron (plus zgodność katalog==snapshot dla dotkniętych kart i dla DFC Lodestone Needle) i ma bramkę degeneracji (minimum sprawdzonych rekordów); `skippedEscapedText` w strażniku kosztów musi być 0 — `strandwalker` wrócił do audytu. Świadomie NIE naprawiane (sklasyfikowane): 8 różnic w tekście przypomnienia (CR 207.2 — to nie tekst reguły) i karta przygodowa `gray-slaad`, gdzie katalog celowo składa przednią twarz z linią przygody.
+
+**Mutacje:** M25 (przywrócenie literalnego „\n” w katalogu) → 2 RED, M26 (w 7 snapshotach) → 2 RED.

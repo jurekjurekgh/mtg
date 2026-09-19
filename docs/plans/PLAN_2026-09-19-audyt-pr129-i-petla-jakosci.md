@@ -21,10 +21,13 @@ kolejkę, pętla domyślna. Gałąź `arena/01a0b8fe-mtg`, baza `8af0c7c`
 
 ## Etapy
 
+Stan na koniec sesji: E1–E4 domknięte, E5 domknięte poza pushem
+i aktualizacją opisu PR (blokada poświadczeń GitHub — patrz handoff).
+
 ### E1 — PR na starcie (ADR 0020 A)
 
-- [ ] ten plik jako osobny commit + push;
-- [ ] otwarcie PR z gałęzi `arena/01a0b8fe-mtg` do `main` przed kodowaniem.
+- [x] ten plik jako osobny commit + push (`e8f7357`);
+- [x] otwarcie PR z gałęzi `arena/01a0b8fe-mtg` do `main` przed kodowaniem (PR [#130](https://github.com/jurekjurekgh/mtg/pull/130)).
 
 ### E2 — audyt PR #129 (ADR 0020 B / ADR 0016 / ADR 0027)
 
@@ -35,35 +38,35 @@ Zakres: 35 plików diffu `e0ad776…8af0c7c` (2445 insertions), w tym 9 plików
 `table/session.js`), 2 pliki `tools/table-tester/`, 9 nowych plików testów
 i 10 dokumentów.
 
-- [ ] przegląd każdego zmienionego pliku: logika, zgodność z CR (ADR 0030 —
+- [x] przegląd każdego zmienionego pliku: logika, zgodność z CR (ADR 0030 —
       twierdzenia regułowe weryfikowane u źródła), ADR 0002 (grep po
       nazwach/ID kart w nowym kodzie), FoW, determinizm;
-- [ ] sprawdzenie, czy testy testują to, co deklarują (RED→GREEN) —
+- [x] sprawdzenie, czy testy testują to, co deklarują (RED→GREEN) —
       weryfikacja mutacyjna (L13) pinów z PR #129;
-- [ ] raport `docs/audits/AUDYT_PR129_2026-09-19.md`.
+- [x] raport `docs/audits/AUDYT_PR129_2026-09-19.md` (commit `13acf1c`).
 
 Kryterium ukończenia: raport w repo, każde znalezisko z klasyfikacją
 (krytyczne/średnie/niskie) i decyzją (naprawiam w tej sesji / świadomie nie).
 
 ### E3 — naprawy znalezisk (każda: pin RED → fix → GREEN → mutacja → push)
 
-- [ ] znaleziska z E2 (nie zakładam wyniku audytu przed jego wykonaniem);
-- [ ] kontrola L107/L112: żadna nowa ścieżka nie omija choke pointu.
+- [x] znaleziska z E2: F-1 (`6ec5002`), F-2 (`cdb8fd5`), F-3 (`24fb1e5`) — każde z pinem i mutacją;
+- [x] kontrola L107/L112: brak nowych obejść choke pointów — craft ma jedno źródło wykonania (`resolveCraftExileOutcome`), oferta bloków jedno źródło predykatu (`blockAssignmentViolation`);
 
 ### E4 — pętla jakości (ADR 0021 pkt 4a/4b)
 
-- [ ] punkt otwarty z poprzednich sesji: kierunek odwrotny oferty bloków
+- [x] punkt otwarty z poprzednich sesji: kierunek odwrotny oferty bloków
       (`Math.min(slots, 2)`) — pin przy blokerze o >2 slotach;
-- [ ] Żywy Tester (po `npm run build`) na taliach z mechaniką objętą
+- [x] Żywy Tester (po `npm run build`) na taliach z mechaniką objętą
       audytem/zmianami; transkrypty czytane ręcznie, nie tylko detektory (L27);
-- [ ] polowanie na niezgodności z CR inną ścieżką niż poprzednia sesja.
+- [x] polowanie na niezgodności z CR inną ścieżką niż poprzednia sesja (pełny diff katalog↔snapshot, 480 kart → literalne „\\n” w 20 wpisach + 7 snapshotach, `7746e37`).
 
 ### E5 — domknięcie sesji
 
-- [ ] `npm test` + `npm run build` (liczby zmierzone, L92);
-- [ ] `docs/setup/HANDOFF_2026-09-19.md` + wpis `docs/PROJECT_HISTORY.md`;
-- [ ] odświeżenie „Bieżący stan" w `README.md` NA KONIEC (L92);
-- [ ] opis PR kumulatywny; blok przekazania w czacie (ADR 0013).
+- [x] `npm test` 5854/5854 + `npm run build` 64 moduły / 3853,3 kB (liczby zmierzone, L92);
+- [x] `docs/setup/HANDOFF_2026-09-19.md` + wpis `docs/PROJECT_HISTORY.md`;
+- [x] odświeżenie „Bieżący stan" w `README.md` NA KONIEC (L92);
+- [ ] opis PR kumulatywny; blok przekazania w czacie (ADR 0013) — do dokończenia po odzyskaniu pushu (token GitHub wygasł; commit `7746e37` lokalny).
 
 ## Ryzyka i pułapki
 
