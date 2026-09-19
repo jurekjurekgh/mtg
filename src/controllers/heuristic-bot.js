@@ -1816,6 +1816,49 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * i M128 (unlocksSomething) — jedno źródło prawdy (L28/L41), deskryptory
    * kind/types (ADR 0002).
    */
+  /**
+   * F (zgłoszenie właściciela 2026-09-19b, Marut/Skarb): typy komend, w których
+   * bot realnie ZAGRYWA kartę z ręki — potrzebne, żeby ocenić kartę TĄ SAMĄ
+   * funkcją co oferty (`scoreCommand`), zamiast drugą kopią reguł (L41).
+   */
+  const UNLOCK_CAST_TYPES = new Set([
+    'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape',
+    'cast_adventure', 'cast_adventure_creature',
+  ]);
+
+  /**
+   * F: ile warta jest dla bota karta z ręki, gdyby była do zagrania. Bierzemy
+   * NAJPIERW ofertę silnika (jeśli istnieje — wtedy wycena jest dokładnie tą,
+   * którą bot policzy w następnej decyzji, z celami i trybami), a gdy oferty
+   * nie ma — komendę syntetyczną po rodzaju karty.
+   *
+   * Brak wyceny (kształt nieznany gałęzi) zwraca +1 = „nie wetujemy":
+   * bramka ma odsiewać wyłącznie aktywacje, o których bot JEDNOZNACZNIE wie,
+   * że nic nie odblokują (L3 — kara przebija premię, ale nie blokuje planów).
+   * `lastUnvaluedType` jest przywracany: wycena sondowa nie może oznaczyć
+   * prawdziwej decyzji jako „bez wyceny" (E1 telemetria).
+   */
+  const castScoreForUnlock = (view, card) => {
+    const offered = (view.legalCommands ?? [])
+      .filter((c) => UNLOCK_CAST_TYPES.has(c.type) && c.objectId === card.id);
+    const synthetic = ((card.kind === 'instant' || card.kind === 'sorcery'
+      || (card.types ?? []).includes('Instant') || (card.types ?? []).includes('Sorcery'))
+      ? { type: 'cast_spell', playerId: view.playerId, objectId: card.id }
+      : { type: 'cast_permanent', playerId: view.playerId, objectId: card.id });
+    const saved = lastUnvaluedType;
+    let best = null;
+    try {
+      for (const cmd of (offered.length > 0 ? offered : [synthetic])) {
+        const value = scoreCommand(view, cmd);
+        if (!Number.isFinite(value)) continue;
+        best = best == null ? value : Math.max(best, value);
+      }
+    } finally {
+      lastUnvaluedType = saved;
+    }
+    return best == null ? 1 : best;
+  };
+
   const manaUnlockCandidates = (view) => (view.zones.hand ?? []).filter((o) => {
     if (!o || o.kind === 'land' || (o.manaCost ?? 0) <= 0) return false;
     if (o.kind === 'instant' || (o.types ?? []).includes('Instant')) return true;
@@ -5552,10 +5595,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // E6/A1: kandydaci po TIMINGU rzucania (manaUnlockCandidates) —
             // rachunek progu (M128) bez zmian, ale sorcery/stwór w cudzym
             // kroku już go nie „odblokowuje" (mana wyparuje, CR 500.4).
-            const unlocksSomething = manaUnlockCandidates(view).some((o) => {
+            const unlockedCards = manaUnlockCandidates(view).filter((o) => {
               const cost = o.manaCost ?? 0;
               return cost > availableNow && cost <= availableAfter;
             });
+            let unlocksSomething = unlockedCards.length > 0;
+            // F (zgłoszenie właściciela 2026-09-19b, „Skarb zużyty, nic się nie
+            // stało"): próg KOSZTU to nie to samo co „bot to zagra". Źródło
+            // JEDNORAZOWE (koszt: poświęcenie — Skarb, Powerstone) przepada
+            // razem z niewydaną maną (CR 500.4), a bot potrafił poświęcić Skarb
+            // „na" kartę, której sam nie chciał rzucić (zmierzone: seed 21,
+            // t. 12 — Cloak of the Bat odblokowany progiem, wyceniony -2,7).
+            // Dlatego dla takich źródeł odblokowanie musi mieć pokrycie w
+            // WYCENIE KASTRU — tej samej, którą bot stosuje do ofert (L41).
+            if (unlocksSomething && ability?.cost?.sacrificeSelf) {
+              unlocksSomething = unlockedCards.some((card) => castScoreForUnlock(view, card) > 0);
+            }
             // Wartość wyłącznie za realne odblokowanie zagrania.
             score += unlocksSomething ? 4 * Math.max(0, net) : 0;
             // M119/Z5 + M150/C1 (audyt żywym testerem + uwaga właściciela):

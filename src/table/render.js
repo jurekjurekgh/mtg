@@ -5,7 +5,7 @@ import {
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
-import { isActivatedManaAbility } from '../engine/mana-sources.js';
+import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
@@ -784,22 +784,17 @@ export function appendLogLineWithCardLinks(line, text, cardIdByName) {
  * komendy — jedno źródło prawdy o tym, co jest zdolnością many (L41).
  * Warianty z dodatkowym wyborem (cele, X, crew, koszty) zostają w panelu.
  */
-const MANA_ABILITY_PAYLOAD_KEYS = Object.freeze([
-  'targets', 'attackerId', 'tapCreatureId', 'tapOtherCreatureId', 'tapArtifactIds',
-  'sacrificeLandId', 'sacrificeCreatureId', 'sacrificeCreatureIds', 'tapPermanentCostId',
-  'grantedFromEquipment', 'xValue',
-]);
-
 export function isManaAbilityCommand(command, session) {
-  if (command?.type !== 'activate_ability') return false;
-  for (const key of MANA_ABILITY_PAYLOAD_KEYS) {
-    const value = command[key];
-    if (Array.isArray(value) ? value.length > 0 : value != null) return false;
-  }
-  const object = session?.state?.objects?.get(command.objectId);
-  const ability = object?.abilities?.[command.abilityIndex]
-    ?? (object?.cardId ? session.abilitiesOf?.(object.cardId)?.[command.abilityIndex] : null);
-  return Boolean(ability && isActivatedManaAbility(ability));
+  // J (zgłoszenie właściciela 2026-09-19b): predykat przeniesiony do SILNIKA
+  // (`isPureManaAbilityCommand` + `MANA_ABILITY_PAYLOAD_KEYS`) — tę samą
+  // regułę stosuje teraz auto-pass sesji (session.js), więc nie może mieć
+  // drugiej kopii tutaj (L41: jedno źródło prawdy dla panelu i auto-passu).
+  // Panel zostaje przy swoim wejściu (testy i main.js wołają po `session`),
+  // ale decyzję podejmuje silnik; `session.abilitiesOf` to fallback dla
+  // obiektów, których nie ma w stanie (deskryptory z rejestru).
+  const object = session?.state?.objects?.get(command?.objectId);
+  const fallback = object?.cardId ? session.abilitiesOf?.(object.cardId) : null;
+  return isPureManaAbilityCommand(command, object, fallback);
 }
 
 export function buildActionEntries(commands, session, view) {
