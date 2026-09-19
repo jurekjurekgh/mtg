@@ -151,8 +151,11 @@ przypadków „Skarb poświęcony w kroku, a rzut bez kredytu”. Zmierzony obok
 defekt (naprawiony bramką `sacrificeSelf` w wycenie kastru): próg odblokowania
 M128 uznawał kartę za wymagającą Skarba, choć wycena kastru była ≤ 0 — Skarb
 ginął bez zużycia many; po fixie 0/556 aktywacji bez zużycia (harness
-eventowy, 400 gier). Zgłoszenie właściciela bez odtworzenia w silniku —
-potrzebny fragment „Rozgrywki”, jeśli objaw wróci.
+eventowy, 400 gier). Zgłoszenie właściciela bez odtworzenia w silniku.
+**Decyzja właściciela (2026-09-19b): F zamknięte** — „Może ta mana poszła na
+coś innego, jak mówisz, że jest w kodzie ok to jest ok”. Bez dalszych zmian
+w kodzie: piny F/1–F/6 (kredyt za KAŻDĄ wydaną sztukę, 0 przy wejściu inną
+drogą) i bramka `sacrificeSelf` zostają jako straż regresji.
 
 Notka P5/I: Seer’s Lantern to NIE błąd płatności — rzut kosztuje 3 ({3}
 w katalogu i `mana-costs`), a „2” z uwagi to druga zdolność karty
