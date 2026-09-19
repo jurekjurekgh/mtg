@@ -925,6 +925,12 @@ function castFireball(state, playerId, objectId, targets, xValue, abilityWindowC
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     targets: chosen.slice(),
     targetCardIds: chosen.map((id) => state.objects.get(id)?.cardId ?? null), plotted: Boolean(object.plotted), manaSpent,
+    // Audyt PR #129 / F-1 (2026-09-19): zdarzenie musi nieść X tak samo jak
+    // castXCostSpell — inaczej B1 właściciela („widać, za ile X zagrano”)
+    // działał dla każdego czaru X prócz fireballowych, a `stacked.fireballX`
+    // zna tylko silnik. Jedno źródło brzmienia logu czyta `e.xValue`
+    // (session.js `spell_cast`, wzorzec L41).
+    xValue: X,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);

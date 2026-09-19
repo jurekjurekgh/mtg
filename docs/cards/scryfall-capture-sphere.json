@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Capture%20Sphere&set=grn",
+  "print": "grn",
+  "name": "Capture Sphere",
+  "mana_cost": "{3}{U}",
+  "cmc": 4,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Flash\nEnchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature doesn't untap during its controller's untap step.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Flash"
+  ],
+  "set": "grn",
+  "set_name": "Guilds of Ravnica",
+  "collector_number": "31",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/a/5a799ac8-5798-4a26-81c1-763d6dcfcbe8.jpg?1783934193",
+    "normal": "https://cards.scryfall.io/normal/front/5/a/5a799ac8-5798-4a26-81c1-763d6dcfcbe8.jpg?1783934193"
+  },
+  "pobrano": "2026-09-19",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/grn/31/rulings",
+  "rulingsPobrano": "2026-09-19"
+}

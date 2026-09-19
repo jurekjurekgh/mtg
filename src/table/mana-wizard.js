@@ -1,4 +1,5 @@
 import { getSourceForObject } from '../engine/mana-sources.js';
+import { castsWithoutPayingMana } from '../engine/impulse-window.js';
 import { escapeHtml, manaSymbolsHtml } from './mana-icons.js';
 import { parseManaCost, totalManaNeeded } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -336,6 +337,13 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
   const allCards = Object.values(view?.zones ?? {}).flat();
   const object = allCards.find((o) => o.id === cmd.objectId);
   if (!object) return null;
+  // H2 (zgłoszenie właściciela 2026-09-19b): rzut z wygnania BEZ KOSZTU MANY
+  // (plot albo darmowy impuls) nie ma czego rozkładać na źródła — kreator
+  // płatności jest tu nie tylko zbędny, ale szkodliwy: żądał pełnego kosztu,
+  // więc gracz tapował lądy i „płacił" za rzut, który silnik rozlicza jako
+  // darmowy (mana z puli przepadała). Zero kreatora = zero płatności.
+  // Reguła jest wspólna z etykietą oferty (jedno źródło, klasa L102/1).
+  if (castsWithoutPayingMana(object)) return null;
   const costStr = MANA_COSTS[object.cardId];
   if (!costStr) return null;
   const parsed = parseManaCost(costStr);

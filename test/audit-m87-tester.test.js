@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  choiceGroupTitle, commandLabel, describeSpellEffects, renderTableView,
+  buildActionEntries, choiceGroupTitle, commandLabel, describeSpellEffects, renderTableView,
 } from '../src/table/render.js';
 import { renderLookWizard } from '../src/table/choice-request.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
@@ -106,7 +106,13 @@ test('A: choiceGroupTitle Hunter\'s Blowgun nie escape\'uje apostrofu', () => {
   assert.match(title, /Cel zdolności/);
 });
 
-test('C: choiceGroupTitle Steel Sabotage rozróżnia tryby Kontr i Zwrot do ręki', () => {
+test('C: rzut Steel Sabotage to JEDEN tytuł, tryby rozróżnialne w OPcjach (M 2026-09-19b)', () => {
+  // M (zgłoszenie właściciela 2026-09-19b, You're Confronted by Robbers):
+  // „Rzucenie czaru powinno być jedną ofertą w »Twoje działania«, a potem
+  // modal wyboru.” Tryb jest decyzją W TRAKCIE rzucania (CR 601.2b), więc oba
+  // tryby należą do JEDNEJ grupy — a rozróżnialność, o którą walczył M87,
+  // przenosi się z tytułu panelu do ETYKIET WARIANTÓW w modalu (bez tego dwa
+  // przyciski o różnym skutku byłyby nierozróżnialne — klasa M101/B zostaje).
   const steel = REGISTRY.get('steel-sabotage');
   const view = baseView({
     zones: {
@@ -115,19 +121,21 @@ test('C: choiceGroupTitle Steel Sabotage rozróżnia tryby Kontr i Zwrot do ręk
     },
   });
   const session = fakeSession(view);
-  const kontr = choiceGroupTitle({
+  const request = {
     id: 'k', type: 'target',
-    options: [{ type: 'cast_spell', objectId: 'ss', modeIndex: 0, targets: ['stack-1'] }],
-  }, session, view);
-  const odbicie = choiceGroupTitle({
-    id: 'o', type: 'target',
-    options: [{ type: 'cast_spell', objectId: 'ss', modeIndex: 1, targets: ['art-1'] }],
-  }, session, view);
-  assert.match(kontr, /Steel Sabotage/);
-  assert.match(kontr, /Kontr/);
-  assert.match(odbicie, /Steel Sabotage/);
-  assert.match(odbicie, /Zwrot do ręki/);  // M202/E: było „Odbicie”
-  assert.notEqual(kontr, odbicie);
+    options: [
+      { type: 'cast_spell', objectId: 'ss', modeIndex: 0, targets: ['stack-1'] },
+      { type: 'cast_spell', objectId: 'ss', modeIndex: 1, targets: ['art-1'] },
+    ],
+  };
+  const title = choiceGroupTitle(request, session, view);
+  assert.match(title, /Steel Sabotage/, 'tytuł nazywa kartę');
+  assert.match(title, /^Rzuć:/, `grupa czaru modalnego to RZUT: ${title}`);
+  assert.doesNotMatch(title, /tryb:/, 'tryb wybiera się w modalu, nie w tytule panelu');
+  const labels = request.options.map((c) => commandLabel(c, session, view).replace(/<[^>]*>/g, ''));
+  assert.ok(labels.some((l) => /Kontr/.test(l)), `wariant trybu 0 nazwany: ${JSON.stringify(labels)}`);
+  assert.ok(labels.some((l) => /Zwrot do ręki/.test(l)), `wariant trybu 1 nazwany: ${JSON.stringify(labels)}`);  // M202/E
+  assert.notEqual(labels[0], labels[1], 'warianty o różnym skutku nie mogą wyglądać identycznie');
 });
 
 test('C: describeSpellEffects Steel Sabotage opisuje tryby, nie puste pole', () => {
@@ -189,7 +197,10 @@ test('B: pass + concede pokazuje alarm auto-passu', () => {
   assert.match(els.actions.textContent, /To nie powinno się zdarzyć/);
 });
 
-test('C: dwa tryby Steel Sabotage to dwa przyciski, nie jeden Wybierz', () => {
+test('C: tryby Steel Sabotage to jeden wpis rzutu z modalem, nie dwa przyciski (M 2026-09-19b)', () => {
+  // M (2026-09-19b) odwraca oczekiwanie M87 (dwa przyciski trybów): panel ma
+  // JEDEN wpis rzutu, a modal wyboru niesie oba tryby — bez generycznego
+  // „Wybierz:" i bez dwóch konwencji etykiety jednej akcji.
   const steel = REGISTRY.get('steel-sabotage');
   const view = baseView({
     zones: {
@@ -215,12 +226,20 @@ test('C: dwa tryby Steel Sabotage to dwa przyciski, nie jeden Wybierz', () => {
     onChoiceRequest: (req) => opened.push(req),
   });
   const buttons = els.actions.children.filter((el) => el.tagName === 'button');
-  const wybierz = buttons.filter((b) => /Wybierz/.test(b.textContent));
-  assert.equal(wybierz.length, 0, `nie oczekiwano jednego Wybierz: ${els.actions.textContent}`);
   const labels = buttons.map((b) => b.textContent);
-  assert.ok(labels.some((t) => /Kontr/.test(t)), `brak Kontr: ${labels.join(' | ')}`);
-  assert.ok(labels.some((t) => /Zwrot do ręki/.test(t)), `brak „Zwrot do ręki”: ${labels.join(' | ')}`);  // M202/E
-  assert.equal(opened.length, 0);
+  assert.equal(buttons.filter((b) => /Wybierz/.test(b.textContent)).length, 0,
+    `nie oczekiwano generycznego „Wybierz": ${labels.join(' | ')}`);
+  const rzuty = labels.filter((t) => /Rzuć: Steel Sabotage/.test(t));
+  assert.equal(rzuty.length, 1, `dokładnie JEDEN wpis rzutu, nie dwa przyciski trybów: ${labels.join(' | ')}`);
+  assert.equal(rzuty[0].includes('tryb:'), false, `tytuł wpisu nie wybiera trybu: ${rzuty[0]}`);
+  assert.equal(opened.length, 0, 'modal otwiera się dopiero po kliknięciu wpisu');
+  // Rozróżnialność trybów (intencja M87) jest w opcjach modala:
+  const wpis = buildActionEntries(view.legalCommands, fakeSession(view), view)
+    .find((e) => (e.request?.options ?? []).some((c) => c.type === 'cast_spell'));
+  assert.ok(wpis?.request, 'wpis rzutu otwiera modal wyboru trybu');
+  const opcje = wpis.request.options.map((c) => commandLabel(c, fakeSession(view), view).replace(/<[^>]*>/g, ''));
+  assert.ok(opcje.some((l) => /Kontr/.test(l)), `modal niesie tryb Kontr: ${JSON.stringify(opcje)}`);
+  assert.ok(opcje.some((l) => /Zwrot do ręki/.test(l)), `modal niesie tryb Zwrot do ręki: ${JSON.stringify(opcje)}`);
 });
 
 function game(seed = 87) {

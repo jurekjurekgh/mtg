@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ordinary%20Bear&set=hob",
+  "print": "hob",
+  "name": "Ordinary Bear",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Creature — Bear",
+  "oracle_text": "",
+  "power": "4",
+  "toughness": "5",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "hob",
+  "set_name": "The Hobbit",
+  "collector_number": "133",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/f/0feb9817-56e1-465a-851c-b2fe202aa8ae.jpg?1785323277",
+    "normal": "https://cards.scryfall.io/normal/front/0/f/0feb9817-56e1-465a-851c-b2fe202aa8ae.jpg?1785323277"
+  },
+  "pobrano": "2026-09-19",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/hob/133/rulings",
+  "rulingsPobrano": "2026-09-19"
+}

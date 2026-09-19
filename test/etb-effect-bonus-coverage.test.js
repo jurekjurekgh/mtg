@@ -50,6 +50,13 @@ const INTENTIONAL_EXCEPTIONS = {
   add_flying_counter_to_face_down_you_control: 'niszowe (veiled-ascension, 1 karta)',
   damage_from_enchanted_power: 'niszowe aura (pain-for-all, 1 karta)',
   untap_enchanted_permanent: 'minor aura (silken-strength, 1 karta)',
+  // Batch 57 (Capture Sphere + Containment Protocol, bliźniaki aury-kotwicy):
+  // sam ETB tylko TAPNIE gospodarza — wartość siedzi w statyce aury
+  // (`doesntUntap`), którą ścieżka rzutu aury widzi przez `auraIsHostile`
+  // (deskryptor `doesntUntap` → kara za zaczarowanie WŁASNEGO stwora
+  // i premia za unieruchomienie cudzego). Promocja do ETB_EFFECT_BONUS
+  // wymaga pomiaru B0 (Krok 7 procedury), więc zostaje świadomym wyjątkiem.
+  tap_enchanted_permanent: 'aura-kotwica: wartość niesie statyka doesntUntap (auraIsHostile), nie sam ETB',
   job_select: 'lagodne uporzadkowanie biblioteki (2 karty) — poza progiem wartosci',
 };
 

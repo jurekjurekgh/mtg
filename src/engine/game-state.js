@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
@@ -30,7 +30,7 @@ import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queu
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities } from './attachments.js';
 import { createBattlefieldToken, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
-import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom } from './effects.js';
+import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
@@ -4631,73 +4631,20 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_craft_exile') return reject('craft_exile_unresolved');
     if (cmd.playerId !== craft.playerId) return reject('craft_exile_not_your_decision');
     if (!craft.candidateIds.includes(cmd.targetId)) return reject('illegal_craft_target');
+    if (!state.objects.get(cmd.targetId)) return reject('illegal_craft_target');
     const before = state.events.length;
-    // 1. Exile the chosen artifact.
-    const chosenObj = state.objects.get(cmd.targetId);
-    if (!chosenObj) return reject('illegal_craft_target');
-    // M262: oba wygnania craftu (materiał + źródło) niosą kartę craftującą —
-    // self-exile źródła to „Wygnane: <ta sama karta>" (decyzja właściciela).
-    const craftCardId = state.objects.get(craft.sourceId)?.cardId ?? 'craft';
-    const chosenExileId = `exile-${state.objectSequence++}`;
-    moveObjectDirectly(state, cmd.targetId, 'exile', chosenExileId, { exiledBy: craftCardId });
-    state.events.push(event('object_moved', { fromId: cmd.targetId, object: state.objects.get(chosenExileId), fromZone: chosenObj.zone, toZone: 'exile', craft: true }));
-    // 2. Exile the source artifact.
-    const sourceExileId = `exile-${state.objectSequence++}`;
-    moveObjectDirectly(state, craft.sourceId, 'exile', sourceExileId, { exiledBy: craftCardId });
-    state.events.push(event('object_moved', { fromId: craft.sourceId, object: state.objects.get(sourceExileId), fromZone: 'battlefield', toZone: 'exile', craft: true }));
-    // 3. Return source transformed to battlefield.
-    const bfId = `permanent-${state.objectSequence++}`;
-    const moved = state.objects.get(sourceExileId);
-    if (moved) {
-      const target = craft.transformTo;
-      // CR 400.7/711.2: craft zwraca permanent przemieniony — bierze komplet
-      // charakterystyk drugiej strony (w tym `kind`/`types`) i porzuca
-      // animację „until end of turn”. Wcześniej ożywiony artefakt zostawał po
-      // crafcie stworem bez liczbowego P/T (CR 208.1) i był nieśmiertelny.
-      const previousSide = moved.originalBeforeAnimation ?? moved;
-      const transformed = Object.freeze({
-        ...moved,
-        id: bfId, zone: 'battlefield',
-        // M270 (CR 400.7): ta sama klasa co transform-return w effects.js —
-        // craft składa obiekt RĘCZNIE (omija moveObjectDirectly), więc musi
-        // sam ostemplować turę wejścia. Baza `moved` przychodzi z wygnania
-        // z `enteredOnTurn: null`, przez co permanent wracający na pole bitwy
-        // nie liczył się jako „entered this turn" (Crew Captain).
-        enteredOnTurn: state.turn.number,
-        ...transformedCharacteristics(target, previousSide),
-        // CR 202.3b (M258/Etap 2.3b): MV po crafcie = koszt twarzy przedniej;
-        // payload transformTo niesie go od materialize. Token-kopia TYLNEJ
-        // twarzy (MV 0) craftujący się na przód dostaje koszt przedni
-        // (CR 707.8a); fallback = dotychczasowa wartość (zwykły DFC —
-        // identyczny wynik, spread trzymał koszt przedni).
-        manaCost: target.manaCost ?? moved.manaCost ?? 0,
-        transformTo: {
-          cardId: moved.cardId,
-          cardName: moved.cardName ?? null,
-          kind: previousSide.kind ?? moved.kind,
-          power: previousSide.power ?? null,
-          toughness: previousSide.toughness ?? null,
-          abilities: moved.abilities,
-          keywords: moved.keywords ?? [],
-          subtypes: previousSide.subtypes ?? moved.subtypes ?? [],
-          types: previousSide.types ?? moved.types ?? [],
-          // MV obiektu z opuszczaną twarzą w górę (kontrakt symetryczny
-          // z efektem transform).
-          manaCost: target.manaCost ?? moved.manaCost ?? 0,
-        },
-      });
-      state.objects.delete(sourceExileId);
-      state.objects.set(bfId, transformed);
-      state.zones.exile = state.zones.exile.filter((id) => id !== sourceExileId);
-      state.zones.battlefield.push(bfId);
-      // M273 (błąd #24): craft wprowadza permanent na pole bitwy — liczniki
-      // wejścia (CR 121.6) obowiązują jak przy każdym innym wejściu.
-      applyEnterCounters(state, bfId);
-      state.events.push(event('object_moved', { fromId: sourceExileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', craft: true }));
-      // controllerId: warstwa stołu kwalifikuje transform do panelu
-      // „Rozgrywka" po kontrolerze (isHumanHeadline, M257/K4).
-      state.events.push(event('object_transformed', { objectId: bfId, fromCardId: moved.cardId, cardId: target.cardId, controllerId: transformed.controllerId }));
-    }
+    // Audyt PR #129 (2026-09-19): wykonanie wygnania craftu i powrót
+    // przemienionego źródła mieszka w JEDNYM miejscu (effects.js
+    // `resolveCraftExileOutcome`) — ta sama ścieżka, którą idzie wybór
+    // automatyczny przy dokładnie jednym kandydacie. Wcześniej kopiowała ją
+    // ta gałąź, więc każda zmiana wymagała dwóch edycji (L41/L48).
+    const outcome = resolveCraftExileOutcome(state, {
+      sourceId: craft.sourceId,
+      candidates: craft.candidateIds,
+      transformTo: craft.transformTo,
+      chosenTargetId: cmd.targetId,
+    });
+    if (!outcome) return reject('illegal_craft_target');
     state.pendingCraftExile = null;
     if (craft.restorePriorityTo && state.players.some((p) => p.id === craft.restorePriorityTo)) {
       state.turn.priorityPlayerId = craft.restorePriorityTo;
@@ -5945,6 +5892,15 @@ export function playerView(state, playerId) {
           const granted = grantedStatBonus(object, state);
           if (granted.power !== 0) entry.grantedPower = granted.power;
           if (granted.toughness !== 0) entry.grantedToughness = granted.toughness;
+          // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): gdy nadany
+          // bonus pochodzi ze zdolności WARUNKOWEJ, widok niesie też KLUCZ
+          // warunku (mechanikę nazwaną, np. `enduringStory`) — kafel nazywa
+          // ją na badge („Storied: +1/+0”) zamiast pokazywać gołe „+1/0”.
+          // Widok zostaje opisem stanu (deskryptor), słownik prezentacji
+          // mieszka w render.js (wzorzec grantedKeywords/grantedPower).
+          if (granted.mechanics?.length) {
+            entry.grantedStatMechanics = granted.mechanics.map((m) => ({ ...m }));
+          }
         }
         if (object.subtypes?.length && !hiddenFromViewer) entry.subtypes = [...object.subtypes];
         // M92 (audyt PlayerView): LINIA TYPÓW permanentu na polu bitwy jest
@@ -5987,6 +5943,19 @@ export function playerView(state, playerId) {
           entry.cantAttackStatic = true;
         }
         if (object.cantBeBlocked === true) entry.cantBeBlocked = true;
+        // C (zgłoszenie właściciela 2026-09-19b, Thieves' Tools): ewazja
+        // z ZAŁĄCZNIKA („Equipped creature can't be blocked as long as its
+        // power is 3 or less”) to ten sam fakt publiczny co `cantBeBlocked`
+        // z efektu (CR 509.1b) — bez tego bot widział nosiciela 1/1 jako
+        // blokowalnego i nie atakował darmowym obrażeniem, a kafel milczał
+        // o tym, że atak przejdzie (klasa L1/ADR 0017). Warunek progu liczy
+        // się przy każdym odczycie (moc EFEKTYWNA — pump/liczniki mogą
+        // zdjąć ewazję), więc widok pyta silnik o stan bieżący, zamiast
+        // kopiować deskryptor sprzętu.
+        else if (object.kind === 'creature' && !hiddenFromViewer
+          && cantBeBlockedFromEquipment(state, object)) {
+          entry.cantBeBlocked = true;
+        }
         // Audyt Batch53/C (Rust-Shield Rampager): próg ewazji mocowej
         // („can't be blocked by creatures with power N or less") to informacja
         // publiczna (skutek statyki) — bot czyta go wprost z widoku
@@ -7998,6 +7967,17 @@ export function playerView(state, playerId) {
   } : null;
   // Gurmag Drowner — look top N, wybierz jedną do ręki (reszta do grobu):
   // odsłonięte karty są jawne dla decydenta (jak index).
+  // Cuombajj Witches (M116): drugi cel wskazuje PRZECIWNIK decydującego gracza.
+  // Widok musi nieść ŹRÓDŁO decyzji (karta na polu bitwy — informacja
+  // publiczna, ADR 0017), bo bez tego panel „Twoje działania" pokazywał gołe
+  // „Wybierz: Cel" i przy kilku decyzjach na stosie nie było wiadomo, czego
+  // dotyczy wybór (zgłoszenie właściciela B, 2026-09-19).
+  const pendingOpponentTargetView = state.pendingOpponentTarget ? {
+    playerId: state.pendingOpponentTarget.playerId,
+    activatingPlayerId: state.pendingOpponentTarget.activatingPlayerId,
+    sourceId: state.pendingOpponentTarget.sourceId,
+    sourceCardId: state.pendingOpponentTarget.cardId ?? null,
+  } : null;
   const pendingLookTopNView = state.pendingLookTopN ? {
     playerId: state.pendingLookTopN.playerId,
     // Pętla jakości: źródło decyzji dla tytułu modala (publiczne — permanent
@@ -8086,6 +8066,7 @@ export function playerView(state, playerId) {
     playerId, status: state.status, winnerId: state.winnerId, isDraw: Boolean(state.isDraw), players, turn: { ...state.turn },
     zones, legalCommands, pendingScry, pendingSurveil, pendingFertileThicket: pendingFertileThicketView, pendingBackup: pendingBackupView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
+    pendingOpponentTarget: pendingOpponentTargetView,
     pendingLookTopN: pendingLookTopNView,
     pendingManifestDread: pendingManifestDreadView,
     pendingEpicExperiment: pendingEpicExperimentView,

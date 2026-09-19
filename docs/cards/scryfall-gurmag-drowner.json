@@ -5,7 +5,7 @@
   "mana_cost": "{3}{U}",
   "cmc": 4,
   "type_line": "Creature — Snake Wizard",
-  "oracle_text": "Exploit (When this creature enters, you may sacrifice a creature.)\\nWhen this creature exploits a creature, look at the top four cards of your library. Put one of them into your hand and the rest into your graveyard.",
+  "oracle_text": "Exploit (When this creature enters, you may sacrifice a creature.)\nWhen this creature exploits a creature, look at the top four cards of your library. Put one of them into your hand and the rest into your graveyard.",
   "colors": [
     "U"
   ],

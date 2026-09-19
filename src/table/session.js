@@ -10,6 +10,7 @@ import { effectiveKeywords } from '../engine/permanents.js';
 import { costSymbols } from './mana-icons.js';
 import { counterLabelGen } from './counter-labels.js';
 import { probeCommandEffect } from './noop-probe.js';
+import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
 
 /**
  * Sesja stołu: łączy UI z protokołem engine, zgodnie z granicą
@@ -153,6 +154,42 @@ export function commandOptionKey(cmd) {
   for (const k of fields) if (cmd[k] !== undefined) out[k] = cmd[k];
   return JSON.stringify(out);
 }
+/**
+ * J (zgłoszenie właściciela 2026-09-19b: „auto-pass zatrzymuje się na KAŻDEJ
+ * fazie"): czy okno człowieka ma REALNĄ decyzję? Reguła jest CZYSTĄ funkcją
+ * (ADR 0011 — jak BOT_MOVE_NOISE z M255/A), żeby dało się ją spiąć testem bez
+ * budowania sesji: dwa zależne od stołu predykaty przychodzą w `hooks`.
+ *
+ *  - `isIgnored(cmd)` — gracz wyciszył ten wariant ptaszkiem (Feature 2026-08-11);
+ *  - `isManaOnly(cmd)` — aktywacja to CZYSTA zdolność many (CR 605.1a):
+ *    panel jej nie pokazuje (render.js, M369/G), więc nie może zatrzymywać
+ *    auto-passu. Warianty z wyborem (cele/X/koszt) NIE są „mana only" i
+ *    decyzją pozostają.
+ */
+export function hasMeaningfulDecisionOf(view, { isIgnored = () => false, isManaOnly = () => false } = {}) {
+  if (view.status !== 'active') return false;
+  const decisions = view.legalCommands.filter((c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c.type));
+  return decisions.some((cmd) => {
+    // Feature 2026-08-11: gracz może wyciszyć konkretną opcję (ptaszek
+    // w panelu akcji) — taka opcja nie przerywa auto-passu. Inne opcje
+    // nadal przerywają; odznaczenie przywraca przerywanie.
+    if (isIgnored(cmd)) return false;
+    // M180/Z4: czysta REZYGNACJA (decline/skip) nie jest realną decyzją —
+    // gdy gracz wyciszył wszystkie warianty rzutu (Halo Forager), samotny
+    // wariant „Zrezygnuj" nie może dalej zatrzymywać auto-passu.
+    if (cmd.decline === true || cmd.skip === true || cmd.done === true) return false;
+    // J: czysta zdolność many — patrz komentarz wyżej (jedno źródło z panelem).
+    if (isManaOnly(cmd)) return false;
+    // Puste deklaracje ataku/bloków nie są decyzją (engine oferuje je
+    // zawsze w kroku deklaracji — bez stworów to czysty pass).
+    if (cmd.type === 'declare_attackers') return (cmd.attackerIds?.length ?? 0) > 0;
+    if (cmd.type === 'declare_blockers') return Object.keys(cmd.assignments ?? {}).length > 0;
+    // Wszystko inne w legalCommands (rzut, ląd, zdolność, resolve_*,
+    // draw_card) to realna, wykonalna akcja — engine za nią ręczy.
+    return true;
+  });
+}
+
 /**
  * Imiona do sekcji „Przebieg tur (dla AI)" — decyzja właściciela 2026-08-03:
  * Czarodziejka (człowiek) i Nieprzyjaciel (bot). Reszta stołu zachowuje
@@ -3292,24 +3329,19 @@ export function createSession(config) {
    * pozytywy: gracz klikał „Dalej" w każdej sekcji tury.
    */
   function hasMeaningfulDecision(view) {
-    if (view.status !== 'active') return false;
-    const decisions = view.legalCommands.filter((c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c.type));
-    return decisions.some((cmd) => {
-      // Feature 2026-08-11: gracz może wyciszyć konkretną opcję (ptaszek
-      // w panelu akcji) — taka opcja nie przerywa auto-passu. Inne opcje
-      // nadal przerywają; odznaczenie przywraca przerywanie.
-      if (ignoredOptionKeys.has(commandOptionKey(cmd))) return false;
-      // M180/Z4: czysta REZYGNACJA (decline/skip) nie jest realną decyzją —
-      // gdy gracz wyciszył wszystkie warianty rzutu (Halo Forager), samotny
-      // wariant „Zrezygnuj” nie może dalej zatrzymywać auto-passu.
-      if (cmd.decline === true || cmd.skip === true || cmd.done === true) return false;
-      // Puste deklaracje ataku/bloków nie są decyzją (engine oferuje je
-      // zawsze w kroku deklaracji — bez stworów to czysty pass).
-      if (cmd.type === 'declare_attackers') return (cmd.attackerIds?.length ?? 0) > 0;
-      if (cmd.type === 'declare_blockers') return Object.keys(cmd.assignments ?? {}).length > 0;
-      // Wszystko inne w legalCommands (rzut, ląd, zdolność, resolve_*,
-      // draw_card) to realna, wykonalna akcja — engine za nią ręczy.
-      return true;
+    return hasMeaningfulDecisionOf(view, {
+      isIgnored: (cmd) => ignoredOptionKeys.has(commandOptionKey(cmd)),
+      // J: czysta zdolność many (CR 605.1a) to ta sama oferta, której NIE ma
+      // panel (render.js → engine `isPureManaAbilityCommand`). Jedno źródło
+      // predykatu dla panelu i auto-passu (L41).
+      isManaOnly: (cmd) => {
+        const object = state.objects.get(cmd.objectId);
+        // Deskryptory z rejestru to fallback dla obiektów, których stan nie
+        // niesie zdolności (tokeny tworzone poza katalogiem) — ten sam zestaw
+        // danych, którego używa panel (render.js → session.abilitiesOf).
+        const fallback = object?.cardId ? registry.get(object.cardId)?.abilities ?? null : null;
+        return isPureManaAbilityCommand(cmd, object, fallback);
+      },
     });
   }
 

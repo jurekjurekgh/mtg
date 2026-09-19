@@ -4,8 +4,8 @@ import {
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
-import { hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
-import { isActivatedManaAbility } from '../engine/mana-sources.js';
+import { castsWithoutPayingMana, hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
+import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
@@ -353,11 +353,33 @@ export function choiceRequestGroupKey(command) {
   // M87: tryby modalne (Steel Sabotage Kontr vs Odbicie) i warianty
   // poświęcenia (Village Rites) nie mogą wpadać do jednego „Cel czaru".
   if (command.type === 'cast_spell' && (command.targets?.length || command.sacrificeTargetId || command.modeIndex != null)) {
-    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}${command.kicked ? ':kicker' : ''}${command.gifted ? `:gift:${command.giftRecipientId ?? '?'}` : ''}`;
+    // K (zgłoszenie właściciela 2026-09-19b, Crumb and Get It): „opcje pokazują
+    // mi się od razu w »Twoje działania« zamiast dopiero po rzuceniu karty
+    // w modalu wyboru. Wszystkie czary, które wymagają decyzji podczas rzucania,
+    // powinny mieć najpierw ofertę rzucenia w »Twoje działania«, a dopiero potem
+    // modal wyboru sposobu rzucenia.”
+    // Dar NIE jest osobnym rzutem, tylko WARIANTEM tego samego rzutu (CR 702.174a:
+    // „as you cast this spell”) — więc obietnica daru należy do tej samej grupy
+    // co rzut bazowy i trafia do modala razem z wariantami celu (etykieta mówi
+    // „· dar dla przeciwnika: …”, więc warianty są rozróżnialne).
+    //
+    // M (zgłoszenie właściciela 2026-09-19b, You're Confronted by Robbers):
+    // „Oferta w »Twoje działania« rozdzielona na dwie opcje. Rzucenie czaru
+    // powinno być jedną ofertą w »Twoje działania«, a potem modal wyboru.”
+    // Tryb modalnego czaru jest decyzją W TRAKCIE rzucania (CR 601.2b: „the
+    // player announces the mode”) — tak jak dar, więc tryby NIE tworzą
+    // osobnych wpisów panelu. Wpis jest jeden (per czar), a modal wymienia
+    // warianty; etykieta wariantu niesie nazwę trybu (`commandLabel`), więc
+    // opcje są rozróżnialne. M87 (Steel Sabotage) zostaje spełnione inaczej:
+    // grupa modalna jest TYTUŁOWANA rzutem („Rzuć: <karta>”), nie generycznym
+    // „Cel czaru”.
+    return `spell:${command.objectId}${command.kicked ? ':kicker' : ''}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
   if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
-    return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}${command.gifted ? ':gift' : ''}`;
+    // K: dar jest wariantem tego samego rzutu — nie osobnym wpisem panelu
+    // (ten sam powód co wyżej; ADR 0002: po kształcie komendy, nie po karcie).
+    return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}`;
   }
   if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {
@@ -636,8 +658,22 @@ function buildChoiceRequestEntries(commands, view) {
     // z jednym wariantem to zupełnie inny przypadek (przymusowa decyzja),
     // a jego jedyna opcja i tak trafia wyżej gałęzią `< 2`.
     // =====================================================================
+    // A (zgłoszenie właściciela 2026-09-19b, Cloudbound Moogle — Plainscycling):
+    // „Gdy jest przynajmniej 1 [Plains w talii] to dostaję MODAL wyboru,
+    // a NIE OPCJE w »Twoje działania«. W tym modalu mam tyle opcji, ile mam
+    // Plainsów w talii, plus opcja »nie znajdujesz« — która jest legalna nawet
+    // gdy mam je w talii.”
+    //
+    // To ŚWIADOME odwrócenie reguły M131 dla SZUKANIA (wcześniejsze zgłoszenie
+    // dotyczyło swampcyclingu Gloomfanga i jest zachowane dla pozostałych
+    // rodzin decyzji). Szukanie to wybór KARTY: „znajdź TĘ kartę / nie znajduj
+    // żadnej” (CR 701.19b) — a nie potwierdzenie akcji, którą gracz już
+    // wykonał. Konsekwencja dla M131: kolaps „1 realny wariant + rezygnacja”
+    // nadal obowiązuje decyzje typu `skip` (Springbloom i pokrewne), ale NIE
+    // szukanie w bibliotece.
+    const isSearchGroup = entry.group.commands.every((cmd) => cmd?.type === 'resolve_search_choice');
     const declineIndex = entry.group.commands.findIndex(isDeclineOption);
-    if (declineIndex !== -1 && entry.group.commands.length === 2) {
+    if (!isSearchGroup && declineIndex !== -1 && entry.group.commands.length === 2) {
       const real = entry.group.commands[declineIndex === 0 ? 1 : 0];
       return { command: real, alsoOffer: entry.group.commands[declineIndex] };
     }
@@ -759,22 +795,17 @@ export function appendLogLineWithCardLinks(line, text, cardIdByName) {
  * komendy — jedno źródło prawdy o tym, co jest zdolnością many (L41).
  * Warianty z dodatkowym wyborem (cele, X, crew, koszty) zostają w panelu.
  */
-const MANA_ABILITY_PAYLOAD_KEYS = Object.freeze([
-  'targets', 'attackerId', 'tapCreatureId', 'tapOtherCreatureId', 'tapArtifactIds',
-  'sacrificeLandId', 'sacrificeCreatureId', 'sacrificeCreatureIds', 'tapPermanentCostId',
-  'grantedFromEquipment', 'xValue',
-]);
-
 export function isManaAbilityCommand(command, session) {
-  if (command?.type !== 'activate_ability') return false;
-  for (const key of MANA_ABILITY_PAYLOAD_KEYS) {
-    const value = command[key];
-    if (Array.isArray(value) ? value.length > 0 : value != null) return false;
-  }
-  const object = session?.state?.objects?.get(command.objectId);
-  const ability = object?.abilities?.[command.abilityIndex]
-    ?? (object?.cardId ? session.abilitiesOf?.(object.cardId)?.[command.abilityIndex] : null);
-  return Boolean(ability && isActivatedManaAbility(ability));
+  // J (zgłoszenie właściciela 2026-09-19b): predykat przeniesiony do SILNIKA
+  // (`isPureManaAbilityCommand` + `MANA_ABILITY_PAYLOAD_KEYS`) — tę samą
+  // regułę stosuje teraz auto-pass sesji (session.js), więc nie może mieć
+  // drugiej kopii tutaj (L41: jedno źródło prawdy dla panelu i auto-passu).
+  // Panel zostaje przy swoim wejściu (testy i main.js wołają po `session`),
+  // ale decyzję podejmuje silnik; `session.abilitiesOf` to fallback dla
+  // obiektów, których nie ma w stanie (deskryptory z rejestru).
+  const object = session?.state?.objects?.get(command?.objectId);
+  const fallback = object?.cardId ? session.abilitiesOf?.(object.cardId) : null;
+  return isPureManaAbilityCommand(command, object, fallback);
 }
 
 export function buildActionEntries(commands, session, view) {
@@ -815,6 +846,21 @@ export function buildActionEntries(commands, session, view) {
 // gracz czyta „{1}{B}{G}: Regeneruj tego stwora”, nie „{1}{B}{G}: Regeneracja”.
 const ABILITY_KEYWORD_LABELS = Object.freeze({
   regenerate: 'Regeneruj tego stwora (następne zniszczenie zostaje odwrócone)',
+});
+
+/**
+ * L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): słownik NAZWANYCH
+ * mechanik, których warunek niesie zdolność statyczna — badge nadanego P/T
+ * mówi wtedy, SKĄD bonus jest („Storied: +1/+0”), a nie tylko ile wynosi.
+ *
+ * Klucz = deskryptor warunku z danych karty (`condition`), wartość = nazwa
+ * mechaniki z tekstu karty. Wpis dodaje się TYLKO dla mechaniki NAZWANEJ
+ * (wydrukowany keyword, jak „Storied” na karcie Óina) — warunek anonimowy
+ * (np. Evangel of Synthesis: liczba dobranych kart) zostaje bez etykiety,
+ * bo karta nie nazywa go mechaniką (ADR 0002: po kształcie zdolności).
+ */
+export const STATIC_CONDITION_MECHANIC_LABELS = Object.freeze({
+  enduringStory: 'Storied',
 });
 
 export const KEYWORD_LABELS = Object.freeze({
@@ -1048,7 +1094,13 @@ function describeEffect(e, ctx = {}) {
     add_mana: () => manaEffectLabel(e, ctx),
     fabricate: () => `fabricate ${e.amount ?? 1} (liczniki +1/+1 albo tokeny Servo)`,
     reflexive_sacrifice: () => 'poświęć innego stwora albo artefakt (dobrowolnie: następuje refleks)',
-    exile_top_playable_until_next_turn: () => 'wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury',
+    // G: dwa okna (this turn / next turn) — opis musi mówić to samo, co
+    // stempel silnika, inaczej karta z „this turn" tłumaczy się jak Gila.
+    // Uwaga na kształt mapy: `generic[type]()` woła się BEZ argumentów, więc
+    // deskryptor czytamy z domknięcia (`e` z describeEffect), nie z parametru.
+    exile_top_playable_until_next_turn: () => (e.window === 'this_turn'
+      ? 'wygnaj wierzch biblioteki — możesz zagrać tę kartę w tej turze'
+      : 'wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury'),
     grant_double_strike_on_noncreature_cast_this_turn: () => 'do końca tury: każdy twój czar niebędący stworem daje wybranemu stworowi podwójne uderzenie',
     add_flying_counter_to_face_down_you_control: () => 'połóż licznik flying na zakrytych stworach',
     amass: () => 'amass (stwórz/rozrośnij Armię)',
@@ -1957,6 +2009,10 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_damage_division: 'Podział obrażeń między cele',
   resolve_damage_target: 'Cel obrażeń',
   resolve_sacrifice_choice: 'Poświęcenie stwora',
+  // Zgłoszenie B (2026-09-19): decyzja przeciwnika o celu nie może być gołym
+  // „Wybierz: Cel” — deskryptor mówi, KTO wybiera (a tytuł dokłada nazwę karty,
+  // gdy widok niesie źródło decyzji).
+  resolve_opponent_target: 'Cel wskazywany przez przeciwnika',
   resolve_devour_choice: 'Devour — poświęcenie stwora',
   resolve_food_choice: 'Food — poświęcić za wzmocnienie?',
   resolve_amass_choice: 'Amass — która Armia dostaje liczniki?',
@@ -2008,6 +2064,21 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
 // źródła lista pokazywała dwie nie do rozróżnienia pozycje tej samej karty.
 const SEARCH_DESTINATION_LABELS = Object.freeze({ hand: 'do ręki', graveyard: 'do grobu', battlefield: 'na pole bitwy' });
 
+/**
+ * M (zgłoszenie właściciela 2026-09-19b): obiekt widoku po `objectId` komendy —
+ * tytuł grupy modalnego czaru musi nazwać kartę, a nie tylko tryb. Strefy te
+ * same co `choiceSourceTitle` (+ exile, bo stamtąd też rzuca się modalne czary
+ * plotem/impulsem).
+ */
+function findViewObject(objectId, view) {
+  if (objectId == null) return null;
+  for (const zone of ['hand', 'battlefield', 'stack', 'graveyard', 'library', 'exile']) {
+    const found = (view?.zones?.[zone] ?? []).find((o) => o.id === objectId);
+    if (found) return found;
+  }
+  return null;
+}
+
 function choiceSourceTitle(cmd, session, view) {
   // Uwaga C właściciela (2026-08-10): modal wyboru ma nazywać kartę, która
   // go wywołała. Komendy resolve_* nie niosą objectId — źródło czytamy
@@ -2032,6 +2103,23 @@ function choiceSourceTitle(cmd, session, view) {
   // wystawiony w playerView wyłącznie właścicielowi decyzji).
   if (cmd?.type === 'resolve_hand_top_choice' && view?.pendingHandTopChoice?.sourceCardId) {
     return `${session.nameOf(view.pendingHandTopChoice.sourceCardId)} — karta z ręki na wierzch biblioteki`;
+  }
+  // Zgłoszenie właściciela B (2026-09-19): „Cuombajj Witches — aktywacja bota
+  // w «Twoich działaniach» pokazuje gołe «Wybierz: Cel», bez nazwy karty i
+  // efektu; przy kilku zdolnościach na stosie nie da się tego zidentyfikować”.
+  // Tytuł nazywa ŹRÓDŁO (karta na polu bitwy — publiczna) i SKUTEK czytany
+  // z deskryptora zdolności (effect.type — ADR 0002, zero nazw kart), wzorem
+  // pozostałych decyzji resolve_* (M162/C, M221/B, M166/D).
+  if (cmd?.type === 'resolve_opponent_target' && view?.pendingOpponentTarget?.sourceCardId) {
+    const src = session.nameOf(view.pendingOpponentTarget.sourceCardId);
+    const abilities = session.abilitiesOf?.(view.pendingOpponentTarget.sourceCardId) ?? [];
+    const ability = abilities.find((a) => a?.opponentChoosesTarget);
+    const effecty = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+    const moj = effecty.find((e) => e?.targetIndex === 1) ?? effecty[0];
+    const effLabel = moj ? describeEffect(moj) : '';
+    return effLabel
+      ? `${src} — ${effLabel} (cel wskazuje przeciwnik)`
+      : `${src} — cel wskazywany przez przeciwnika`;
   }
   // M221/B (zgłoszenie właściciela, Angel's Feather): decyzja „you may" musi
   // nazywać KARTĘ i CO robi — samo „Efekt dobrowolny (you may)" nic nie mówi.
@@ -2277,6 +2365,27 @@ export function choiceGroupTitle(request, session, view) {
   if (options[0]?.type === 'resolve_discard_choice' && discard?.count > 1 && !discard.allowDecline) {
     const source = discard.sourceCardId ? `${session.nameOf(discard.sourceCardId)} — ` : '';
     return `${source}${discard.purpose === 'cost' ? 'koszt: ' : ''}odrzuć ${discard.count} ${polishPluralCount(discard.count, 'kartę', 'karty', 'kart')}`;
+  }
+  // M (zgłoszenie właściciela 2026-09-19b, You're Confronted by Robbers):
+  // grupa to JEDEN rzut czaru modalnego (warianty = tryby × cele), więc tytuł
+  // nazywa CZYNNOŚĆ i kartę — „Rzuć: <karta>”. Nazwy trybów zostają tam, gdzie
+  // ich miejsce: w etykietach opcji modala (`commandLabel`, M267). Bez tej
+  // gałęzi tytuł brał się z `options[0]` (pierwszy wariant pierwszego trybu)
+  // i panel pokazywał „<karta> — tryb: Zyskiwanie czasu” bez kosztu, obok
+  // drugiego wpisu „Rzuć: <karta> — Wezwanie pomocy (koszt …)”: dwie oferty
+  // jednego rzutu, dwie różne konwencje etykiety (zgłoszenie M).
+  // Deskryptorowo (ADR 0002): po kształcie grupy (jedna karta, `modeIndex`
+  // obecny), nie po nazwie karty.
+  const groupModes = new Set(options.filter((o) => o?.type === 'cast_spell' && o.modeIndex != null).map((o) => o.modeIndex));
+  if (options.length > 0 && options.every((o) => o?.type === 'cast_spell' && o.objectId === options[0].objectId)) {
+    const groupObject = findViewObject(options[0].objectId, view);
+    if (groupObject && (groupObject.spell?.modes ?? []).length > 1 && groupModes.size > 0) {
+      // Koszt w tytule (zgłoszenie M, krok 1: „Rzuć: <karta> (koszt)"). Notacja
+      // `{3}{W}` jak w logu i regułach — tytuł idzie też do textContent
+      // nagłówka modala (M87), więc nie może nieść HTML-a ikon.
+      const rawCost = MANA_COSTS[groupObject.cardId];
+      return `Rzuć: ${session.nameOf(groupObject.cardId)}${rawCost ? ` (koszt ${rawCost})` : ''}`;
+    }
   }
   const titled = choiceSourceTitle(options[0], session, view);
   if (titled) return titled;
@@ -2562,6 +2671,29 @@ export function commandLabel(cmd, session, view) {
     const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
     return raw ? manaCostHtml(raw) : (card?.manaCost != null ? escapeHtml(String(card.manaCost)) : '?');
   };
+  // H (zgłoszenie właściciela, Sheriff of Safe Passage) + ta sama klasa dla
+  // impulsu: rzut karty CZEKAJĄCEJ w wygnaniu (plot CR 702.170d, impuls
+  // CR 701.51b) nie jest zwykłym rzutem z ręki — kosztu many nie ma, a okno
+  // impulsu ma numer tury („this turn" kończy się w turze zdolności).
+  // Etykieta „Zagraj: X (koszt {2}{W})" kłamała o koszcie i milczała
+  // o oknie; gracz zgłosił to jako „plot nie działa".
+  const waitingCastLabel = (cmd, verb) => {
+    const card = obj(cmd.objectId);
+    if (card?.zone !== 'exile') return null;
+    const who = nameOfObjectId(cmd.objectId);
+    // H2: „bez kosztu many" czytamy z JEDNEGO predykatu rdzenia
+    // (`castsWithoutPayingMana`) — tego samego, którym bramkuje się kreator
+    // płatności. Dwie kopie tego warunku rozjechały się przy H (etykieta
+    // mówiła „bez kosztu", a kreator żądał 3 many), klasa L102/1.
+    const free = castsWithoutPayingMana(card);
+    if (card.plotted) return `${verb} z wygnania (Plot): ${who} — bez kosztu many`;
+    if (card.playableUntilTurn != null) {
+      return free
+        ? `${verb} z wygnania (Impuls): ${who} — bez kosztu many, do końca tury ${card.playableUntilTurn}`
+        : `${verb} z wygnania (Impuls): ${who} (koszt ${costOfCard(card)}) — do końca tury ${card.playableUntilTurn}`;
+    }
+    return null;
+  };
   // Koszt zdolności aktywowanej → ikony: {T} + {X}/{N} + pipy kolorów.
   const abilityCostHtml = (ability) => {
     const cost = ability?.cost ?? {};
@@ -2699,6 +2831,8 @@ export function commandLabel(cmd, session, view) {
       if (cmd.exileTargetId != null) {
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)}) — wygnaj ${nameOfObjectId(cmd.exileTargetId)}`;
       }
+      const waitingCast = waitingCastLabel(cmd, 'Zagraj');
+      if (waitingCast) return waitingCast;
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)})`;
     }
     case 'cast_spell': {
@@ -2790,6 +2924,8 @@ export function commandLabel(cmd, session, view) {
       } else {
         costHtml = costOfCard(cardForMode);
       }
+      const waitingCast = waitingCastLabel(cmd, 'Rzuć');
+      if (waitingCast) return waitingCast;
       return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${giftPart}${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
@@ -3653,6 +3789,11 @@ export function cardInfo(session, object, combat = null) {
     // buff do EOT) — widok liczy je jawnie, bo `powerModifier` ich nie niesie.
     grantedPower: faceDown ? 0 : Number(object.grantedPower ?? 0),
     grantedToughness: faceDown ? 0 : Number(object.grantedToughness ?? 0),
+    // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): SKĄD jest nadany
+    // bonus — klucze warunków zdolności statycznych (deskryptor z danych, nie
+    // nazwa karty). Badge nazywa wtedy mechanikę („Storied: +1/+0”), zamiast
+    // zostawiać gracza z gołym „+1/0”. Zakryty permanent: bez zmian (FoW).
+    grantedStatMechanics: faceDown ? [] : (object.grantedStatMechanics ?? []).map((m) => ({ ...m })),
     lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
     // F-A (Wishful Merfolk): nadpisanie podtypów DO KOŃCA TURY — widok niesie
     // subtypesBeforeOverride (active), żywe `subtypes` to już cel („Human").
@@ -4081,7 +4222,25 @@ export function buildStateOverlay(visual, info) {
         // Zapis jak w Oracle („gets +1/+0"): zero też z jawnym znakiem,
         // żeby badge czytało się jak tekst karty, a nie jak ułamek „+1/0".
         const signed = (n) => (n < 0 ? `${n}` : `+${n}`);
-        flags.push(['kw', `${signed(gPow)}/${signed(gTou)}`]);
+        // L (zgłoszenie właściciela 2026-09-19b): bonus z NAZWANEJ mechaniki
+        // dostaje własny badge z nazwą mechaniki („Storied: +1/+0”). Reszta
+        // nadanego P/T (anthemy, aury, granty bez nazwy) idzie osobnym
+        // badge'em — gdy mechanika wyjaśnia CAŁY bonus, goły „+1/+0” znika
+        // (inaczej gracz widziałby ten sam bonus dwa razy).
+        let restPow = gPow;
+        let restTou = gTou;
+        for (const entry of info.grantedStatMechanics ?? []) {
+          const label = STATIC_CONDITION_MECHANIC_LABELS[entry?.condition];
+          if (!label) continue;
+          const pow = Number(entry.power ?? 0);
+          const tou = Number(entry.toughness ?? 0);
+          restPow -= pow;
+          restTou -= tou;
+          flags.push(['kw', `${label}: ${signed(pow)}/${signed(tou)}`]);
+        }
+        if (restPow !== 0 || restTou !== 0) {
+          flags.push(['kw', `${signed(restPow)}/${signed(restTou)}`]);
+        }
       }
     }
     if (info.combatRole) flags.push(['combat', info.combatRole]);
@@ -5316,10 +5475,14 @@ export function waitingExileStatus(object) {
       ? `Plot · rzut bez kosztu od tury ${object.plottedAtTurn + 1}`
       : 'Plot · rzut bez kosztu w kolejnej turze');
   }
-  if (hasFreeCastStamp(object)) {
-    parts.push(impulseWindowOf(object) != null
-      ? `Impuls · zagrywalna do końca tury ${impulseWindowOf(object)}`
-      : 'Impuls · zagrywalna bez płacenia');
+  // G: okno impulsu ma numer tury i bywa PŁATNE (Gila Courser, Caves bez
+  // ukończonego lochu) — sam stempel „bez płacenia" milczał o obu faktach.
+  if (impulseWindowOf(object) != null) {
+    parts.push(hasFreeCastStamp(object)
+      ? `Impuls · zagrywalna do końca tury ${impulseWindowOf(object)} · bez kosztu many`
+      : `Impuls · zagrywalna do końca tury ${impulseWindowOf(object)} · za pełny koszt`);
+  } else if (hasFreeCastStamp(object)) {
+    parts.push('Impuls · zagrywalna bez płacenia');
   }
   if (object.reboundReady) parts.push('Rebound · rzut w Twoim podtrzymaniu');
   if (object.madnessReady) parts.push('Madness · czeka na decyzję rzutu');

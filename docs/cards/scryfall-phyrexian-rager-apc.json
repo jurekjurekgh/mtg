@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Phyrexian%20Rager&set=apc",
+  "print": "apc",
+  "name": "Phyrexian Rager",
+  "mana_cost": "{2}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Phyrexian Horror",
+  "oracle_text": "When this creature enters, you draw a card and you lose 1 life.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "apc",
+  "set_name": "Apocalypse",
+  "collector_number": "49",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/a/3addf34c-ea54-42a3-bccd-b73453d964d2.jpg?1783945347",
+    "normal": "https://cards.scryfall.io/normal/front/3/a/3addf34c-ea54-42a3-bccd-b73453d964d2.jpg?1783945347"
+  },
+  "pobrano": "2026-09-19",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/apc/49/rulings",
+  "rulingsPobrano": "2026-09-19"
+}

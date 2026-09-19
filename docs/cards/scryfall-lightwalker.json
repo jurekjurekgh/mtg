@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Lightwalker&set=dtk",
+  "print": "dtk",
+  "name": "Lightwalker",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Creature — Human Warrior",
+  "oracle_text": "This creature has flying as long as it has a +1/+1 counter on it.",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "dtk",
+  "set_name": "Dragons of Tarkir",
+  "collector_number": "24",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/1/01bf1837-41b0-4ff1-9cb1-ee2d75d410c7.jpg?1783938616",
+    "normal": "https://cards.scryfall.io/normal/front/0/1/01bf1837-41b0-4ff1-9cb1-ee2d75d410c7.jpg?1783938616"
+  },
+  "pobrano": "2026-09-19",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/dtk/24/rulings",
+  "rulingsPobrano": "2026-09-19"
+}

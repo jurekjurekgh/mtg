@@ -5,7 +5,7 @@
   "mana_cost": "{B}{R}{G}",
   "cmc": 3,
   "type_line": "Creature — Human Warrior",
-  "oracle_text": "Haste\\nThis creature has indestructible as long as it entered this turn.",
+  "oracle_text": "Haste\nThis creature has indestructible as long as it entered this turn.",
   "colors": [
     "B",
     "G",

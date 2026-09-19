@@ -35,6 +35,10 @@ const VIEW = {
 };
 const SESSION = { nameOf: (id) => (id === 'youre-confronted-by-robbers' ? "You're Confronted by Robbers" : String(id)) };
 
+// M (zgłoszenie właściciela 2026-09-19b): grupa modalnego czaru to JEDEN rzut
+// („Rzuć: <karta>”), a tryby są wariantami w modalu — tytuł przestał czytać
+// tryb z `options[0]`. Intencja M267 zostaje bez zmian: żadna grupa modalna
+// nie może spaść na generyczny „Wariant” ani zgubić karty.
 test('M267: tryb modalny z ZEROMA celów ma nazwany tytuł grupy', () => {
   // Dokładnie oferta z transkryptu: modeIndex 0, pusta lista celów.
   const request = {
@@ -47,7 +51,7 @@ test('M267: tryb modalny z ZEROMA celów ma nazwany tytuł grupy', () => {
   const title = choiceGroupTitle(request, SESSION, VIEW);
   assert.doesNotMatch(title, /Wariant/, 'generyczny fallback to objaw braku deskryptora');
   assert.match(title, /Confronted by Robbers/, 'tytuł nazywa kartę');
-  assert.match(title, /Zyskiwanie czasu/, 'tytuł nazywa TRYB (grupa jest per tryb)');
+  assert.match(title, /^Rzuć:/, `grupa modalna to RZUT (M 2026-09-19b): ${title}`);
 });
 
 test('M267: tryb bez celów w ogóle (Call for Aid) też ma nazwany tytuł', () => {
@@ -57,17 +61,21 @@ test('M267: tryb bez celów w ogóle (Call for Aid) też ma nazwany tytuł', () 
   };
   const title = choiceGroupTitle(request, SESSION, VIEW);
   assert.doesNotMatch(title, /Wariant/);
-  assert.match(title, /Wezwanie pomocy/);
+  assert.match(title, /Confronted by Robbers/);
+  assert.match(title, /^Rzuć:/);
 });
 
-test('M267: tryb Z celami zachowuje dotychczasowy tytuł (bez regresu)', () => {
+test('M267: tryb Z celami to nadal nazwany rzut, nie „Cel czaru” per tryb', () => {
+  // M87 (2026-09-19b) zszedł z tytułu do etykiet wariantów modala: tytuł nazywa
+  // CZYNNOŚĆ i kartę, a tryb/cel czyta się z opcji (M/3 w pinach zgłoszenia M).
   const request = {
     type: 'command',
     options: [{ type: 'cast_spell', objectId: 'o1', modeIndex: 0, targets: ['e1'] }],
   };
   const title = choiceGroupTitle(request, SESSION, VIEW);
-  assert.match(title, /Cel czaru/, 'stara ścieżka niezmieniona');
-  assert.match(title, /Zyskiwanie czasu/);
+  // M2 (krok 1 zgłoszenia): tytuł wpisu niesie też KOSZT — jedyna informacja
+  // o cenie przed otwarciem modala wyboru trybu.
+  assert.equal(title, "Rzuć: You're Confronted by Robbers (koszt {3}{W})");
 });
 
 test('M267 (klasa): każda komenda tworząca KLUCZ GRUPY ma nazwany tytuł', () => {

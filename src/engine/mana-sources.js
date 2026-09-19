@@ -345,3 +345,41 @@ export function isActivatedManaAbility(ability) {
   return effects.length > 0 && effects.some((e) => e?.type === 'add_mana')
     && effects.every((e) => e?.type === 'add_mana' || e?.type === 'gain_life');
 }
+
+/**
+ * J (zgłoszenie właściciela 2026-09-19b): pola komendy, które czynią z
+ * aktywacji zdolności many REALNĄ decyzję (cel, X, koszt wskazujący permanent).
+ * Wariant z którymkolwiek z nich nie jest „czystą" zdolnością many — zostaje
+ * ofertą panelu i przerywa auto-pass (gracz ma tam co wybrać).
+ *
+ * Lista mieszka w SILNIKU, bo opisuje KONTRAKT KOMEND (game-state: targets,
+ * xValue, crewCreatureIds, tapPermanentCostId…), a nie wygląd stołu: dotąd
+ * trzymał ją panel (render.js), więc auto-pass nie umiał tej samej reguły
+ * zastosować i zatrzymywał grę w każdym kroku na „{T}: Add {C}" źródła
+ * (Seer's Lantern, dorki) — mimo że panel tych akcji nie pokazywał.
+ */
+export const MANA_ABILITY_PAYLOAD_KEYS = Object.freeze([
+  'targets', 'attackerId', 'tapCreatureId', 'tapOtherCreatureId', 'tapArtifactIds',
+  'sacrificeLandId', 'sacrificeCreatureId', 'sacrificeCreatureIds', 'tapPermanentCostId',
+  'grantedFromEquipment', 'xValue',
+]);
+
+/**
+ * Czy komenda `activate_ability` to CZYSTA zdolność many (CR 605.1a) bez
+ * dodatkowego wyboru? JEDNO ŹRÓDŁO PRAWDY (L41) dla dwóch odbiorców:
+ *  - panel „Twoje działania" (render.js `isManaAbilityCommand` — M369/G),
+ *  - auto-pass sesji (session.js `hasMeaningfulDecision` — J).
+ * `object` to obiekt stanu gry; `fallbackAbilities` to deskryptory z rejestru
+ * (widok nie niesie abilities dla tokenów/obiektów spoza stanu).
+ */
+export function isPureManaAbilityCommand(command, object, fallbackAbilities = null) {
+  if (command?.type !== 'activate_ability') return false;
+  for (const key of MANA_ABILITY_PAYLOAD_KEYS) {
+    const value = command[key];
+    if (Array.isArray(value) ? value.length > 0 : value != null) return false;
+  }
+  const ability = object?.abilities?.[command.abilityIndex]
+    ?? fallbackAbilities?.[command.abilityIndex]
+    ?? null;
+  return Boolean(ability && isActivatedManaAbility(ability));
+}

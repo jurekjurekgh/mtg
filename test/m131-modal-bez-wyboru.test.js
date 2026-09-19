@@ -18,6 +18,14 @@
 // „fail to find" (CR 701.19b) jest dostępne dalej.
 //
 // Anty-over-fix: decyzja z DWOMA realnymi wariantami nadal otwiera modal.
+//
+// ODWRÓCENIE DLA SZUKANIA (zgłoszenie właściciela 2026-09-19b, Cloudbound
+// Moogle): „Gdy jest przynajmniej 1 [Plains w talii], dostaję MODAL wyboru,
+// a NIE OPCJE w »Twoje działania«. W modalu mam tyle opcji, ile mam Plainsów
+// w talii, plus opcja »nie znajdujesz«, która jest legalna nawet gdy mam je
+// w talii.” Kolaps „1 realny wariant + rezygnacja → panel” NIE dotyczy więc
+// szukania w bibliotece (to wybór karty, nie potwierdzenie akcji); dotyczy
+// nadal decyzji typu `skip` (Springbloom) — patrz ostatni test.
 // =============================================================================
 
 import test from 'node:test';
@@ -94,30 +102,34 @@ function panelOf(view) {
   return { modals, buttons };
 }
 
-test('M131/A: swampcycling NIE otwiera modala — jedyny wariant idzie wprost do panelu', () => {
+test('M131/A (odwrócone dla szukania): swampcycling otwiera MODAL, nie panele', () => {
   const view = searchDecisionBoard({ library: ['basic-swamp', 'basic-swamp', 'basic-swamp', 'basic-forest'] });
   const { modals, buttons } = panelOf(view);
-  assert.equal(modals.length, 0,
-    `decyzja z jednym realnym wariantem nie może otwierać modala: ${JSON.stringify(buttons)}`);
-  assert.ok(buttons.some((b) => /Szukanie:\s*Swamp/.test(b)),
-    `panel ma pokazać wprost, co się stanie: ${JSON.stringify(buttons)}`);
+  assert.equal(modals.length, 1,
+    `szukanie to wybór karty — ma iść modalem, nie przyciskami panelu: ${JSON.stringify(buttons)}`);
+  // Modal niesie realne warianty + rezygnację (CR 701.19b wolno wybrać zawsze).
+  assert.equal(modals[0].options.length, 2,
+    `modal: znalezienie + „nie znajduj karty”: ${JSON.stringify(modals[0].options)}`);
+  assert.ok(modals[0].options.some((c) => c.found == null), 'opcja rezygnacji jest w modalu');
+  assert.equal(buttons.length, 0,
+    `panel nie może dublować wariantów decyzji: ${JSON.stringify(buttons)}`);
 });
 
-test('M131/A: rezygnacja („fail to find", CR 701.19b) pozostaje dostępna', () => {
-  // Anty-over-fix: uproszczenie nie może odebrać legalnego ruchu.
+test('M131/A: rezygnacja („fail to find”, CR 701.19b) pozostaje dostępna', () => {
+  // Anty-over-fix: odwrócenie kolapsu nie może odebrać legalnego ruchu.
   const view = searchDecisionBoard({ library: ['basic-swamp', 'basic-forest'] });
-  const { buttons } = panelOf(view);
-  assert.ok(buttons.some((b) => /nie znajduj|rezygn/i.test(b)),
-    `gracz musi móc zrezygnować: ${JSON.stringify(buttons)}`);
-  assert.equal(buttons.length, 2, `dokładnie dwa przyciski (wykonaj / zrezygnuj): ${JSON.stringify(buttons)}`);
+  const { modals } = panelOf(view);
+  assert.ok(modals[0]?.options.some((c) => c.found == null),
+    'gracz musi móc zrezygnować („nie znajduj karty”)');
 });
 
-test('M131/A: etykieta nazywa kartę, nie surowy identyfikator obiektu', () => {
+test('M131/A: etykiety wariantów nazywają kartę, nie surowy identyfikator obiektu', () => {
   // L29: `MAPA[key] ?? key` to cichy wyciek. Tu nazwa idzie przez sesję.
   const view = searchDecisionBoard({ library: ['basic-swamp', 'basic-forest'] });
-  const { buttons } = panelOf(view);
-  const found = buttons.find((b) => b.startsWith('Szukanie:'));
-  assert.ok(found, 'jest przycisk szukania');
+  const { modals } = panelOf(view);
+  const labels = modals[0].options.map((c) => commandLabel(c, SESSION, view));
+  const found = labels.find((l) => /Szukanie:/.test(l));
+  assert.ok(found, `jest wariant szukania: ${JSON.stringify(labels)}`);
   assert.doesNotMatch(found, /#\d|p1-library|basic-swamp/,
     `etykieta ma nazywać kartę po ludzku, nie identyfikatorem: ${found}`);
 });

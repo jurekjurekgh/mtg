@@ -3,6 +3,7 @@
 1x Idyllic Grange
 1x Mystic Sanctuary
 1x Thornwood Falls
+1x Tranquil Cove
 1x Clawing Torment
 1x High Stride
 1x Dragon Fodder
@@ -25,7 +26,7 @@
 1x Burning-Yard Trainer
 1x Greater Tanuki
 2x Plains
-2x Island
-3x Swamp
+1x Island
+4x Swamp
 2x Mountain
-3x Forest
+4x Forest

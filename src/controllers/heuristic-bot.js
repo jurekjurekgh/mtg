@@ -1294,6 +1294,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // Skaab mill 4): draw_then_discard to też dobranie (net 1 z biblioteki),
   // mill_from_bottom to też mielenie (to samo co mill_cards — ADR 0002).
   const LIBRARY_DRAIN_EFFECTS = new Set(['mill_cards', 'draw_cards', 'draw_then_discard', 'mill_from_bottom']);
+  // C (zgłoszenie właściciela 2026-09-19, Dawntreader Elk): TUTOR — efekt
+  // „search your library for a card…" — też uszczupla WŁASNĄ bibliotekę
+  // (karta opuszcza bibliotekę bezpowrotnie), dokładnie tak samo jak dobranie
+  // czy mielenie. Kwota = liczba zabranych kart (deskryptor, ADR 0002);
+  // zdolność poświęcająca stwora po ląd przy cienkiej bibliotece to krok do
+  // przegranej, więc kara idzie tą samą drabiną (libraryLossPenalty).
+  const LIBRARY_SEARCH_EFFECTS = new Map([
+    ['search_library_to_hand', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 1)],
+    ['search_library_to_battlefield', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 1)],
+    ['search_library_to_battlefield_tapped', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 1)],
+    ['search_basic_land_morbid', () => 1],
+  ]);
   // Zdarzenia JEDNORAZOWE: trigger odpali raz (wejście na pole bitwy, śmierć
   // źródła). To nie jest POWTARZALNE źródło, więc nie mnożymy go przez
   // horyzont — jednorazowy dobór z czaru karze `drawDeckingPenalty`, a premię
@@ -1394,6 +1406,44 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       .reduce((suma, x) => suma + x, 0);
   };
   /**
+   * C (zgłoszenie właściciela 2026-09-19, Dawntreader Elk): ile kart zbierze
+   * z WŁASNEJ biblioteki ten wariant komendy (tutory). Jedno miejsce dla obu
+   * rodzin (aktywacja i rzut — bliźniacze gałęzie, L41): efekty czytamy
+   * z deskryptora obiektu gry (ADR 0002/0017), nie z nazwy karty.
+   */
+  const searchLibraryLoss = (view, cmd) => {
+    const efekt = (ability) => (Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []));
+    let effects = [];
+    if (cmd?.type === 'activate_ability') {
+      const object = objectOnBoard(view, cmd.objectId) ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+      const abilities = object?.activatableAbilities
+        ?? (object?.cardId ? cardDef(object.cardId)?.abilities : undefined) ?? [];
+      effects = efekt(abilities[cmd.abilityIndex ?? 0]);
+    } else {
+      const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+      const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
+      if (cmd?.type === 'cast_permanent') {
+        // ETB-tutor permanentu (Kor Cartographer i pokrewne): efekt triggera wejścia.
+        for (const ability of def?.abilities ?? []) {
+          if (ability?.trigger?.event !== 'enter_battlefield') continue;
+          effects.push(...efekt(ability));
+        }
+      } else {
+        const spell = karta?.spell ?? def?.spell;
+        const mode = cmd.modeIndex != null ? spell?.modes?.[cmd.modeIndex] : null;
+        effects = mode?.effects ?? spell?.effects ?? [];
+      }
+    }
+    let razem = 0;
+    for (const eff of effects) {
+      const amount = eff?.type ? LIBRARY_SEARCH_EFFECTS.get(eff.type) : null;
+      if (!amount) continue;
+      razem += amount(eff);
+    }
+    return razem;
+  };
+
+  /**
    * Podatek biblioteczny wariantu — liczony RAZ w `scoreCommand` i odejmowany
    * w `finish` (jak wardTax), bo ścieżki wyceny rzutu mają wiele wyjść (aura,
    * bestow, epsilon gęstości), a ryzyko deck-outu dotyczy wariantu jako
@@ -1405,7 +1455,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // z biblioteki). Tapnięcie ŹRÓDŁA jako koszt pomijamy — w katalogu jedyny
     // trigger millu na tapnięcie siedzi na aurze „Enchant land", więc źródło
     // zdolności nie może go mieć (a `tap_for_mana` tę drogę już pokrywa).
-    if (cmd?.type === 'activate_ability') return libraryLossPenalty(view, paymentLibraryLoss(view, cmd));
+    if (cmd?.type === 'activate_ability') {
+      // C (Dawntreader Elk): kara obejmuje OBIE drogi ubytku — mielące
+      // tapnięcia płatności ORAZ karty zabrane tutorem z efektu (dotąd tylko
+      // pierwsza była widziana, więc „poświęć stwora po ląd" przy 4 kartach
+      // w bibliotece wygrywało z passem).
+      return libraryLossPenalty(view, paymentLibraryLoss(view, cmd) + searchLibraryLoss(view, cmd));
+    }
     // D3 (znalezisko właściciela 2026-09-12, Balamb Garden): atak stworem
     // z triggerem „attacks → dobierz/zmiel" zjada WŁASNĄ bibliotekę przy
     // KAŻDYM ataku (`drainsMyLibrary` = czyja biblioteka; warunków triggera
@@ -1464,7 +1520,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const payment = paymentLibraryLoss(view, cmd);
     // Repeat + payment: pełna drabina (thin 20) — powtarzalne źródła.
     // OneShot ETB (Rager 1, Skaab 4): tylko deck-out, nie thin.
-    return libraryLossPenalty(view, repeat + payment) + oneShotDeckOutPenalty(view, oneShot);
+    // C (domknięcie rodziny, L41/L102): tutor z czaru (Caravan Vigil i
+    // pokrewne) uszczupla bibliotekę tak samo jak wariant aktywowany.
+    return libraryLossPenalty(view, repeat + payment + searchLibraryLoss(view, cmd)) + oneShotDeckOutPenalty(view, oneShot);
   };
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 
@@ -1758,6 +1816,49 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * i M128 (unlocksSomething) — jedno źródło prawdy (L28/L41), deskryptory
    * kind/types (ADR 0002).
    */
+  /**
+   * F (zgłoszenie właściciela 2026-09-19b, Marut/Skarb): typy komend, w których
+   * bot realnie ZAGRYWA kartę z ręki — potrzebne, żeby ocenić kartę TĄ SAMĄ
+   * funkcją co oferty (`scoreCommand`), zamiast drugą kopią reguł (L41).
+   */
+  const UNLOCK_CAST_TYPES = new Set([
+    'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape',
+    'cast_adventure', 'cast_adventure_creature',
+  ]);
+
+  /**
+   * F: ile warta jest dla bota karta z ręki, gdyby była do zagrania. Bierzemy
+   * NAJPIERW ofertę silnika (jeśli istnieje — wtedy wycena jest dokładnie tą,
+   * którą bot policzy w następnej decyzji, z celami i trybami), a gdy oferty
+   * nie ma — komendę syntetyczną po rodzaju karty.
+   *
+   * Brak wyceny (kształt nieznany gałęzi) zwraca +1 = „nie wetujemy":
+   * bramka ma odsiewać wyłącznie aktywacje, o których bot JEDNOZNACZNIE wie,
+   * że nic nie odblokują (L3 — kara przebija premię, ale nie blokuje planów).
+   * `lastUnvaluedType` jest przywracany: wycena sondowa nie może oznaczyć
+   * prawdziwej decyzji jako „bez wyceny" (E1 telemetria).
+   */
+  const castScoreForUnlock = (view, card) => {
+    const offered = (view.legalCommands ?? [])
+      .filter((c) => UNLOCK_CAST_TYPES.has(c.type) && c.objectId === card.id);
+    const synthetic = ((card.kind === 'instant' || card.kind === 'sorcery'
+      || (card.types ?? []).includes('Instant') || (card.types ?? []).includes('Sorcery'))
+      ? { type: 'cast_spell', playerId: view.playerId, objectId: card.id }
+      : { type: 'cast_permanent', playerId: view.playerId, objectId: card.id });
+    const saved = lastUnvaluedType;
+    let best = null;
+    try {
+      for (const cmd of (offered.length > 0 ? offered : [synthetic])) {
+        const value = scoreCommand(view, cmd);
+        if (!Number.isFinite(value)) continue;
+        best = best == null ? value : Math.max(best, value);
+      }
+    } finally {
+      lastUnvaluedType = saved;
+    }
+    return best == null ? 1 : best;
+  };
+
   const manaUnlockCandidates = (view) => (view.zones.hand ?? []).filter((o) => {
     if (!o || o.kind === 'land' || (o.manaCost ?? 0) <= 0) return false;
     if (o.kind === 'instant' || (o.types ?? []).includes('Instant')) return true;
@@ -1766,6 +1867,69 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const step = view.turn.step;
     return myTurn(view) && (step === 'main1' || step === 'main2' || step === 'main');
   });
+  /**
+   * F/2 (log właściciela 2026-09-19b): karta ZWRACA manę ze Skarbów wydaną na
+   * jej rzut — deskryptor `create_token` z `amount: 'mana_from_treasure_spent'`
+   * (ADR 0002: reguła po deskryptorze, zero nazw kart). Takie karty czynią
+   * manę ze Skarba darmową, więc kolejność „Skarb przed rzutem" jest istotna.
+   */
+  const refundsTreasureManaOnCast = (cardId) => {
+    const def = cardDef(cardId);
+    if (!def) return false;
+    const effects = [
+      ...(def.spell?.effects ?? []),
+      ...(def.abilities ?? []).flatMap((ability) => {
+        const fx = ability?.effect;
+        return Array.isArray(fx) ? fx : (fx ? [fx] : []);
+      }),
+    ];
+    return effects.some((e) => e?.type === 'create_token' && e.amount === 'mana_from_treasure_spent');
+  };
+
+  /** Czy aktywacja z `cmd` produkuje manę ZE SKARBA (deskryptor `fromTreasure`)? */
+  const activationProducesTreasureMana = (view, cmd) => {
+    const source = objectOnBoard(view, cmd.objectId);
+    const ability = (source?.activatableAbilities ?? [])[cmd.abilityIndex ?? 0];
+    if (!ability || (ability.targets ?? []).length > 0) return false;
+    const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    return effects.some((e) => e?.type === 'add_mana' && e.fromTreasure === true);
+  };
+
+  /**
+   * F/2 — „Skarb WYPRZEDZA rzut, który go zwraca".
+   *
+   * Log właściciela: bot rzuca Maruta (płatność auto-tapem lądów), a dopiero
+   * POTEM poświęca Skarb; jego mana finansuje następny, tańszy czar (Scorch
+   * Spitter), a ETB Maruta tworzy 0 tokenów. Tymczasem:
+   *  - karta zwraca każdą manę ze Skarbów wydaną na rzut (deskryptor wyżej),
+   *  - płatność zużywa Skarb PIERWSZY (`spendMana`: treasure-first),
+   * więc aktywacja Skarba PRZED rzutem jest darmowa (mana wraca tokenem),
+   * a aktywacja PO rzucie przepada. To wada WYCENY bota (kolejność akcji),
+   * nie płatności — dlatego decyzja jest akcją-przed, a wartość bierzemy
+   * z wyceny TEGO rzutu (ta sama funkcja co oferty, L41) + margines: po
+   * aktywacji rzut nadal jest dostępny, więc nic nie gubimy.
+   */
+  const treasureRefundLead = (view) => {
+    const refundCasts = (view.legalCommands ?? []).filter((cmd) => UNLOCK_CAST_TYPES.has(cmd.type)
+      && refundsTreasureManaOnCast((view.zones.hand ?? []).find((o) => o.id === cmd.objectId)?.cardId));
+    if (refundCasts.length === 0) return null;
+    const saved = lastUnvaluedType;
+    let best = null;
+    try {
+      for (const cast of refundCasts) {
+        const value = scoreCommand(view, cast);
+        if (Number.isFinite(value) && value > 0) best = best == null ? value : Math.max(best, value);
+      }
+    } finally {
+      lastUnvaluedType = saved;
+    }
+    if (best == null) return null;
+    const activation = (view.legalCommands ?? []).find((cmd) => cmd.type === 'activate_ability'
+      && activationProducesTreasureMana(view, cmd));
+    if (!activation) return null;
+    return { cmd: activation, score: best + 10 };
+  };
+
   const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + combatPower(o), 0);
   /**
    * M135 — CZY TĘ KARTĘ CHCEMY DOBRAĆ? Wspólna wycena dla wszystkich decyzji
@@ -2725,12 +2889,42 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // rygorystycznie (lifelink zawsze daje życie przy obrażeniach),
         // ale okno musi być bojowe.
         value += (attacking || blocking) ? (kw === 'lifelink' ? 4 : 6) : -10;
-      } else if (['menace', 'haste'].includes(kw)) {
-        // Evasion/agresja: nasz atak — zadeklarowany albo tuż przed.
-        if (attacking) value += 2 + (recipient.power ?? 0);
-        else if (myTurn(view) && canAttackNow(recipient)
-          && ['precombat_main', 'combat'].includes(view.turn.phase)) value += 2 + (recipient.power ?? 0);
-        else value -= 10;
+      } else if (kw === 'menace' || kw === 'haste') {
+        // D (zgłoszenie właściciela 2026-09-19b, Stirring Bard „Mantle of
+        // Inspiration — {T}: Target creature gains menace and haste until end
+        // of turn”): zgłoszenie brzmiało „bot tapuje Bardem w Main 1, a ma
+        // używać TYLKO w swojej turze na początku fazy ataku i tylko na
+        // (a) stwora z chorobą przyzwania, który zaatakuje (haste odblokowuje),
+        // albo (b) atakującego (menace utrudnia blok). Każde inne użycie =
+        // nie używać wcale.”
+        //
+        // Stara gałąź dawała pełną premię już w Main 1 („phase: precombat_main
+        // albo combat”), czyli dokładnie w oknie, w którym efekt jest jałowy:
+        // przed deklaracją atakujących bot nie wie jeszcze, kto zaatakuje,
+        // a tapnięty Bard nie zostaje na bloku (0/4 z obrońcą).
+        //
+        // Ocena jest dla PARY keywordów z jednej aktywacji (grupa), nie dla
+        // każdego z osobna: haste na atakującym nic już nie daje, ale grant
+        // menace jest wtedy tym, po co sięgamy — kara za „zbędną połowę”
+        // skasowałaby poprawną decyzję.
+        const firstOfGroup = fresh.find((k) => k === 'menace' || k === 'haste') === kw;
+        const attackWindow = myTurn(view) && view.turn.step === 'declare_attackers';
+        if (!firstOfGroup) {
+          // druga połowa grupy — wartość policzona przy pierwszej (0)
+        } else if (!attackWindow) {
+          value -= 10; // każde inne okno (Main 1/2, bloki, cudza tura) = nie używać
+        } else if (attacking) {
+          // (b) zadeklarowany atakujący: menace działa przy deklaracji bloków
+          // (CR 702.76), więc grant przed blokami realnie zmienia matematykę.
+          value += 2 + (recipient.power ?? 0);
+        } else if (recipient.summoningSickness === true && !recipient.tapped
+          && (recipient.power ?? 0) > 0 && recipient.cantAttackStatic !== true) {
+          // (a) chory stwór, którego haste realnie odblokuje w TEJ deklaracji
+          // (CR 302.6 sprawdza się przy deklaracji atakujących).
+          value += 2 + (recipient.power ?? 0);
+        } else {
+          value -= 10; // w oknie, ale bez przypadku (a)/(b): efekt jałowy
+        }
       } else if (kw === 'vigilance') {
         // M221/D + B (zgłoszenie właściciela, Bladed Sentinel „{W}: vigilance
         // do końca tury"): vigilance = „nie tapuje się, gdy atakuje" (CR 702.21).
@@ -5464,10 +5658,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // E6/A1: kandydaci po TIMINGU rzucania (manaUnlockCandidates) —
             // rachunek progu (M128) bez zmian, ale sorcery/stwór w cudzym
             // kroku już go nie „odblokowuje" (mana wyparuje, CR 500.4).
-            const unlocksSomething = manaUnlockCandidates(view).some((o) => {
+            const unlockedCards = manaUnlockCandidates(view).filter((o) => {
               const cost = o.manaCost ?? 0;
               return cost > availableNow && cost <= availableAfter;
             });
+            let unlocksSomething = unlockedCards.length > 0;
+            // F (zgłoszenie właściciela 2026-09-19b, „Skarb zużyty, nic się nie
+            // stało"): próg KOSZTU to nie to samo co „bot to zagra". Źródło
+            // JEDNORAZOWE (koszt: poświęcenie — Skarb, Powerstone) przepada
+            // razem z niewydaną maną (CR 500.4), a bot potrafił poświęcić Skarb
+            // „na" kartę, której sam nie chciał rzucić (zmierzone: seed 21,
+            // t. 12 — Cloak of the Bat odblokowany progiem, wyceniony -2,7).
+            // Dlatego dla takich źródeł odblokowanie musi mieć pokrycie w
+            // WYCENIE KASTRU — tej samej, którą bot stosuje do ofert (L41).
+            if (unlocksSomething && ability?.cost?.sacrificeSelf) {
+              unlocksSomething = unlockedCards.some((card) => castScoreForUnlock(view, card) > 0);
+            }
             // Wartość wyłącznie za realne odblokowanie zagrania.
             score += unlocksSomething ? 4 * Math.max(0, net) : 0;
             // M119/Z5 + M150/C1 (audyt żywym testerem + uwaga właściciela):
@@ -5499,9 +5705,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
             // Poświęcenie źródła jako koszt (Treasure) jest jednorazowe —
             // trzymamy token, dopóki mana nie jest realnie potrzebna.
-            if (ability?.cost?.sacrificeSelf && !unlocksSomething) score -= 6;
-            // Poświęcenie źródła jako koszt (Treasure) jest jednorazowe —
-            // trzymamy token, dopóki mana nie jest realnie potrzebna.
+            // UWAGA: warunek był w kodzie DWA razy (podwójna kara -12 zamiast
+            // -6 — copy-paste z PR #129); zostaje jeden.
             if (ability?.cost?.sacrificeSelf && !unlocksSomething) score -= 6;
           }
           if (effect.type === 'create_token') {
@@ -7552,6 +7757,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   return Object.freeze({
     chooseCommand(view, helpers) {
       if (!view?.legalCommands?.length) throw new Error('Widok nie zawiera legalnych komend');
+      // F/2 (log właściciela): Skarb wyprzedza rzut karty, która go zwraca —
+      // patrz `treasureRefundLead` (uzasadnienie i pomiar).
+      const refundLead = treasureRefundLead(view);
+      if (refundLead) {
+        history.push({
+          turn: view.turn.number, step: view.turn.step,
+          chosen: summarize(refundLead.cmd, view), score: refundLead.score,
+          options: [{ cmd: summarize(refundLead.cmd, view), score: refundLead.score }],
+        });
+        return refundLead.cmd;
+      }
       const scored = enabled && helpers?.simulate
         ? scoredWithLookahead(view, helpers.simulate)
         : view.legalCommands.map((cmd) => scoreTracked(view, cmd));

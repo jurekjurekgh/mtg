@@ -654,6 +654,35 @@ function objectName(view, session, id) {
   return session.nameOfObject ? session.nameOfObject(id) : String(id);
 }
 
+/**
+ * E1 (zgłoszenie właściciela 2026-09-19b, Inferno Titan): „modal podziału
+ * obrażeń nie mówi, KTO kontroluje kandydatów”. Lista celów miesza stwory
+ * obu graczy (i to nie jest szum — rozdzielenie 3 obrażeń między własnego
+ * stwora a cudzego to różne plany gry), a sama nazwa tego nie rozstrzyga,
+ * gdy obie strony mają ten sam stwór (np. dwie kopie tego samego elka).
+ *
+ * Zwraca dopisek kontrolera dla celu-permanentu wg widoku DECYDENTA
+ * (`view.playerId`): „Twój” / „Nieprzyjaciela”. Celem gracza (id w
+ * `view.players`) zajmuje się wołający — tam nazwę gracza niesie widok.
+ * Bez wpisu w widoku (np. cel spoza stref widocznych) — brak dopisku, nie
+ * zgadywanie (L41).
+ */
+function controllerSuffix(view, id) {
+  const zones = [view?.zones?.battlefield, view?.zones?.hand, view?.zones?.stack,
+    view?.zones?.graveyard, view?.zones?.library];
+  for (const zone of zones) {
+    const object = (zone ?? []).find((o) => o.id === id);
+    if (object?.controllerId) {
+      // Bez znanego decydenta (widok bez `playerId` — np. stub w teście albo
+      // stara ścieżka) NIE zgadujemy strony (L41): brak dopisku jest uczciwszy
+      // niż „Nieprzyjaciela” nad własnym stworem.
+      if (view?.playerId == null) return null;
+      return object.controllerId === view.playerId ? 'Twój' : 'Nieprzyjaciela';
+    }
+  }
+  return null;
+}
+
 /** Uwaga C (2026-08-11): „(atak, obrona)" stwora w wizardzie walki — żywe
  * P/T z widoku (jak na kaflu). Puste, gdy brak P/T (nie-stwór). */
 function creaturePT(view, id) {
@@ -919,9 +948,12 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
   };
   candidateIds.forEach((id, idx) => {
     const isPlayer = Boolean(view.players?.some((pl) => pl.id === id));
+    // E1: cel-permanent niesie kontrolera („(Twój)” / „(Nieprzyjaciela)”) —
+    // inaczej lista kandydatów nie mówi, czyje stwory dzielą obrażenia.
+    const suffix = isPlayer ? null : controllerSuffix(view, id);
     const name = isPlayer
       ? (view.players.find((pl) => pl.id === id)?.name ?? id)
-      : objectName(view, session, id);
+      : `${objectName(view, session, id)}${suffix ? ` (${suffix})` : ''}`;
     // Wiersz buduje JEDEN komponent (picker.js, `kind: 'stepper'`) — te same
     // 44 px i ta sama klikalna nazwa co w kreatorze wielocelowym i walce.
     // Klasy `damage-wizard-*` zostają jako haki `m136-*`, `m172-*` i Testera

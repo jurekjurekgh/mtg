@@ -109,6 +109,25 @@ export function hasFreeCastStamp(object) {
   return object?.playableWithoutPaying === true;
 }
 
+/**
+ * H2 (zgłoszenie właściciela 2026-09-19b, Sheriff of Safe Passage): rzut
+ * karty CZEKAJĄCEJ w wygnaniu, który NIE płaci kosztu many:
+ *  - plot (CR 702.170d/702.136: „cast it … without paying its mana cost"),
+ *  - darmowy impuls (CR 701.51b + stempel „bez płacenia").
+ *
+ * JEDNO źródło tej reguły dla obu konsumentów: etykiety oferty (render.js,
+ * `waitingCastLabel`) i bramki kreatora many (mana-wizard.js,
+ * `paymentDescriptorOf`). Zgłoszenie H pokazało, co się dzieje, gdy obie
+ * strony mają WŁASNĄ kopię warunku (klasa L102/1): etykieta mówiła „bez
+ * kosztu many", a kreator żądał pełnego kosztu i gracz musiał zapłacić
+ * 3 many za rzut, który silnik rozlicza jako darmowy.
+ *
+ * Bez znaczenia dla kart Z RĘKI (strefa != exile) — tam koszt zostaje pełny.
+ */
+export function castsWithoutPayingMana(object) {
+  return object?.zone === 'exile' && (object.plotted === true || hasFreeCastStamp(object));
+}
+
 /** Darmowy rzut impulsem: flaga + karta wciąż w exile (jak bramka kosztu w `castPermanent`). */
 export function isFreeImpulseCast(object) {
   return object?.zone === 'exile' && hasFreeCastStamp(object);

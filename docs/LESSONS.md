@@ -70,7 +70,7 @@ bywa cenniejsza od nowej, bo jej klasa zdążyła wrócić kilka razy.
 
 ## L107 (2026-08-31) — Najbogatsza żyła błędów: ścieżka robiąca to samo co helper, ale RĘCZNIE. Grep po mutacji pola, nie po nazwie mechaniki
 
-**Przypadek:** — silnik ma choke pointy (`addCounter`, `addPoisonCounters`, `deathZoneFor`, `untapObject`, `moveObjectDirectly`), a obok żyją ścieżki ro… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L107).
+**Przypadek:** — silnik ma choke pointy (`addCounter`, `addPoisonCounters`, `deathZoneFor`, `untapObject`, `moveObjectDirectly`), a obok żyją ścieżki ro…
 
 
 **Reguła:**
@@ -97,7 +97,7 @@ póki kryteria się zgadzają; testu szukaj tam, gdzie się rozjeżdżają (zmia
 kontroli, typu, strefy).
 ## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
 
-**Przypadek:** — handoff M267 odnotował, że etykiety `bestow`/`morph` składają koszt po staremu, ale „dziś ich koszty są generyczne, więc to ryzyko, nie b… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L105).
+**Przypadek:** — handoff M267 odnotował, że etykiety `bestow`/`morph` składają koszt po staremu, ale „dziś ich koszty są generyczne, więc to ryzyko, nie b…
 
 
 **Reguła:**
@@ -123,7 +123,7 @@ pipy obok kwoty w morph → 1 RED.
 
 ## L104 (2026-08-31) — Poprawny wynik z niepoprawnego źródła to bug uśpiony: alt-koszt musi nieść WŁASNE pipy, nie pożyczać ich z kosztu bazowego
 
-**Przypadek:** panel pokazywał koszt 4 dla Cleave {3}{U} i Escape {3}{U} — kolory czytane z kosztu bazowego. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L104).
+**Przypadek:** panel pokazywał koszt 4 dla Cleave {3}{U} i Escape {3}{U} — kolory czytane z kosztu bazowego.
 
 **Reguła:**
 1. Alternatywny koszt (cleave, escape, madness, suspend, plot, bestow) to
@@ -148,7 +148,7 @@ katalogu i test ŹRÓDŁA płatności czytający `spells.js`). Mutacje: usunięc
 
 ## L103 (2026-08-31) — Skrót „na 1v1" w modelu karty zmienia REGUŁY: brak słowa „target" w Oracle ⇒ brak `targets`, zakres należy do efektu
 
-**Przypadek:** — log pisał „Nieprzyjaciel rzuca Liliana's Triumph → cel: Ty", a Oracle brzmi „Each opponent sacrifices a creature of their choice" — bez słowa „target". Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L103).
+**Przypadek:** — log pisał „Nieprzyjaciel rzuca Liliana's Triumph → cel: Ty", a Oracle brzmi „Each opponent sacrifices a creature of their choice" — bez słowa „target".
 
 
 **Reguła:**
@@ -174,7 +174,7 @@ katalogu i test ŹRÓDŁA płatności czytający `spells.js`). Mutacje: usunięc
 
 ## L102 (2026-08-31) — Rodzina ofert dzieli WYCENĘ i WIDOK: nowy członek bez pinu odziedziczy stary błąd; skutek niewidoczny w odcisku to fałszywy no-op
 
-**Przypadek:** — `theros` vs `worek-basni` seed 332 — bot rzucił Sleep of the Dead (tap + „doesn't untap") we WŁASNEGO Blade-Blizzard Kitsune, który mia… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L102).
+**Przypadek:** — `theros` vs `worek-basni` seed 332 — bot rzucił Sleep of the Dead (tap + „doesn't untap") we WŁASNEGO Blade-Blizzard Kitsune, który mia…
 
 
 **Reguła:**
@@ -210,7 +210,7 @@ Tu dodatkowo, specyficzne dla widoku:
    różnym skutku to błąd panelu, nawet gdy silnik działa.
 ## L100 (2026-08-31) — Ten sam koszt renderowany w dwóch warstwach: zdarzenie musi nieść WSZYSTKIE składniki ceny, inaczej log kłamie obok poprawnego przycisku
 
-**Przypadek:** — modal „Rozgrywka" pisał „Zoraline, Cosmos Caller — zapłacić {2} i 2 życia?", a przycisk decyzji tuż pod nim „Zapłać {W}{B} + 2 życia — efekt odpali". Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L100).
+**Przypadek:** — modal „Rozgrywka" pisał „Zoraline, Cosmos Caller — zapłacić {2} i 2 życia?", a przycisk decyzji tuż pod nim „Zapłać {W}{B} + 2 życia — efekt odpali".
 
 
 **Reguła:**
@@ -248,7 +248,7 @@ Mutacja: `hiddenLive` bez `e.sourceId` → RED.
 
 ## L98 (2026-08-31) — Buforowane „dopisywanie" zamyka paczkę na granicy domenowej; promocję zatrzymanej połowy robią punkty WZNOWIENIA, nie wspólna pętla gry
 
-**Przypadek:** modal „Rozgrywka" doklejał „Tura N — Ty" + „Dobierasz…" do ogona tury bota (rozstrzygnięty Divest, discardy z cleanup, obrażenia z walki)… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L98).
+**Przypadek:** modal „Rozgrywka" doklejał „Tura N — Ty" + „Dobierasz…" do ogona tury bota (rozstrzygnięty Divest, discardy z cleanup, obrażenia z walki)…
 
 
 **Reguła:**
@@ -273,7 +273,7 @@ seedów) + pauza (`botPauseAtTurnBoundary`, ogon bez „istotnych").
 
 ## L97 (2026-08-31) — Warstwa prezentacji potrafi skłamać przy w 100% poprawnym silniku; decyzja „you may look” nie może wyciekać treści przed wyborem
 
-**Przypadek:** — trzy zgłoszenia do Fertile Thicket, przy których SILNIK był bezbłędny (skip/`chosenCardId:null`/ `bottomOrder` — pełny Oracle, walidacj… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L97).
+**Przypadek:** — trzy zgłoszenia do Fertile Thicket, przy których SILNIK był bezbłędny (skip/`chosenCardId:null`/ `bottomOrder` — pełny Oracle, walidacj…
 
 
 **Reguła:**
@@ -381,7 +381,7 @@ o dwóch nogach (kompozycja + ścieżka produkcyjna przez nią przechodzi).
 `docs/audits/AUDYT_PR86_2026-08-28.md`.
 ## L88 (2026-08-29) — Błąd bez adresu: narzędzie długiego biegu musi powiedzieć GDZIE (i jedna reguła = jedna funkcja dla oferty i walidacji)
 
-**Przypadek:** — `node tools/benchmark.mjs --full` kończył się „Kontroler nie znalazł ruchu mimo legalnych komend" — bez meczu, bez stanu. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L88).
+**Przypadek:** — `node tools/benchmark.mjs --full` kończył się „Kontroler nie znalazł ruchu mimo legalnych komend" — bez meczu, bez stanu.
 
 
 **Reguła:**
@@ -402,7 +402,7 @@ o dwóch nogach (kompozycja + ścieżka produkcyjna przez nią przechodzi).
 
 ## L87 (2026-08-29) — Skutek, którego nie widać, zamienia się w komunikat, że go NIE BYŁO (dwie bramki: zdarzenie i bramka szumu)
 
-**Przypadek:** — transkrypt `worek-mroczny vs theros` (seed 47): „Kulrath Mystic — trigger (rzucenie czaru)" + „trigger bez efektu (nie było czego wykonać… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L87).
+**Przypadek:** — transkrypt `worek-mroczny vs theros` (seed 47): „Kulrath Mystic — trigger (rzucenie czaru)" + „trigger bez efektu (nie było czego wykonać…
 
 
 **Reguła:**
@@ -420,7 +420,7 @@ o dwóch nogach (kompozycja + ścieżka produkcyjna przez nią przechodzi).
 
 ## L86 (2026-08-28) — Warstwa prezentacyjna potrzebuje WŁASNEJ pauzy: obserwator zdarzenia nie zakłada, że gra na niego czeka
 
-**Przypadek:** — „Rzuciłem czar, a akcja poszła dalej i zaczęła się następna tura i nieprzyjaciel rzucił czar i pokazał się ekran z grafikami tego ostat… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L86).
+**Przypadek:** — „Rzuciłem czar, a akcja poszła dalej i zaczęła się następna tura i nieprzyjaciel rzucił czar i pokazał się ekran z grafikami tego ostat…
 
 
 **Reguła:** UI pokazujące coś, co gracz ma ZOBACZYĆ (ilustracja, animacja,
@@ -455,7 +455,7 @@ rozliczenia" — w zdarzeniach silnika prawie zawsze to drugie.
 
 ## L84 (2026-08-28) — Nowy deskryptor mechaniki ma cztery dowiązania poza silnikiem: strażniki zgłaszają je osobno, więc dopisz je od razu
 
-**Przypadek:** — po dodaniu trzech elementów (`buff_attacking_creatures`, `buff_creature_until_end_of_turn`, zdarzenie `creature_became_renowned`) pełny… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L84).
+**Przypadek:** — po dodaniu trzech elementów (`buff_attacking_creatures`, `buff_creature_until_end_of_turn`, zdarzenie `creature_became_renowned`) pełny…
 
 
 **Reguła:** przy nowym deskryptorze (efekt, zdarzenie, filtr celu) odhacz
@@ -472,7 +472,7 @@ listę PRZED pierwszym uruchomieniem pełnego testu:
 
 ## L82 (2026-08-28) — Test UI wiąże SKUTEK z hakiem semantycznym (klasa/`data-*`), copy pina się OSOBNYM testem
 
-**Przypadek:** — poprawna etykieta „Użyj domyślnego przydziału (zabójcze obrażenia…)" złamała test `choice-request-ui` — test lokalizował przycisk po TE… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L82).
+**Przypadek:** — poprawna etykieta „Użyj domyślnego przydziału (zabójcze obrażenia…)" złamała test `choice-request-ui` — test lokalizował przycisk po TE…
 
 
 **Reguła:**
@@ -491,7 +491,7 @@ copy); naprawa żargonu „lethal-first" w wizardzie i `commandLabel`.
 
 ## L81 (2026-08-28) — Zastępując ręczną kopię „wspólną funkcją prawdy", porównaj FILTRY obu stron, nie tylko listę przedmiotów
 
-**Przypadek:** — bramka oferty `pass_priority` dostała `firstDecisionOwner == null` (dokończenie unifikacji z Batch 47). Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L81).
+**Przypadek:** — bramka oferty `pass_priority` dostała `firstDecisionOwner == null` (dokończenie unifikacji z Batch 47).
 
 
 **Reguła:**
@@ -595,7 +595,7 @@ zmiany w `src/`. Gdy wynik nie drgnął po realnej zmianie, najpierw podejrzewaj
 nieaktualny artefakt (L33 — najpierw podejrzewaj narzędzie).
 ## L71 (2026-08-25) — Zmiana strefy tworzy NOWY obiekt (CR 400.7); „ten sam" id to złudzenie
 
-**Przypadek:** — naprawa wyceny darmowego rzutu wyglądała na działającą (testy zielone), a była martwa: helper szukał opisu czaru po `cmd.cardId` w `view.… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L71).
+**Przypadek:** — naprawa wyceny darmowego rzutu wyglądała na działającą (testy zielone), a była martwa: helper szukał opisu czaru po `cmd.cardId` w `view.…
 
 
 **Reguła:** rozróżniaj tożsamość karty od tożsamości obiektu i sprawdzaj, po
@@ -674,7 +674,7 @@ the Spires, CR 613 warstwa 5), a zerowanie po typie by go zgubiło.
 podejrzana — najpierw pytaj, czy powinna istnieć.
 ## L67 (2026-08-25) — Helper, który istnieje, ale nie jest wołany w gałęzi, gdzie miał chronić
 
-**Przypadek:** — sweep Żywego Testera zaraportował `srodziemie vs ravnica s=7` jako `[STOP] brak akcji w kroku 59`, choć w tej samej linii stało „Koniec… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L67).
+**Przypadek:** — sweep Żywego Testera zaraportował `srodziemie vs ravnica s=7` jako `[STOP] brak akcji w kroku 59`, choć w tej samej linii stało „Koniec…
 
 
 **Reguła:** gdy narzędzie zgłasza awarię, sprawdź, czy w kodzie nie leży już
@@ -705,7 +705,7 @@ pozycja 2/3 zdjęta z listy bez kasowania linijki); numery lekcji to API
 
 ## L65 (2026-08-25) — Test, który przechodzi na przypadku odsianym przez WCZEŚNIEJSZY warunek, nie testuje tego warunku
 
-**Przypadek:** — `targetSlotsOf` ma dwie bramki: (1) warianty równej długości, (2) pozycje nie dzielą kandydatów. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L65).
+**Przypadek:** — `targetSlotsOf` ma dwie bramki: (1) warianty równej długości, (2) pozycje nie dzielą kandydatów.
 
 
 **Reguła:** pisząc test na warunek, sprawdź, czy przypadek do niego DOCIERA —
@@ -734,7 +734,7 @@ log liczby wierszy), `test/m195-multi-target.test.js` (M206).
 
 ## L64 (2026-08-25) — Bramka na FAZĘ nie jest bramką na MOMENT: „phase === 'combat'" przepuszcza krok przed deklaracją
 
-**Przypadek:** — bot aktywował pump „+2/+2 do końca tury" w kroku *Początek walki* i nie atakował (dwie many na efekt wygasający w cleanup); powtarzał to co turę. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L64).
+**Przypadek:** — bot aktywował pump „+2/+2 do końca tury" w kroku *Początek walki* i nie atakował (dwie many na efekt wygasający w cleanup); powtarzał to co turę.
 
 
 **Reguła:** wyceniając efekt ulotny, pytaj o STAN mający wpływ (czy stwór
@@ -757,7 +757,7 @@ istnieje, ma nazwę i komentarz, więc temat uchodzi za zabezpieczony.
 → Pełna procedura: [L13].
 ## L62 (2026-08-25) — Kolejność renderu to część kontraktu: log rysowany od najnowszego łamie liczenie „nowych" po indeksie
 
-**Przypadek:** — kolektor wpisów logu w Żywym Testerze („odpytuj nowe linie `#log` po indeksie" — wg handoffu) znajdował 0 wpisów, choć sesja je generow… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L62).
+**Przypadek:** — kolektor wpisów logu w Żywym Testerze („odpytuj nowe linie `#log` po indeksie" — wg handoffu) znajdował 0 wpisów, choć sesja je generow…
 
 
 **Reguła:** zanim oprzesz narzędzie na „nowe elementy = ogon listy", sprawdź w
@@ -788,7 +788,7 @@ DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
 
 ## L59 (2026-08-24) — Ograniczenie zasobu i koszt dodatkowy żyją w WIELU ścieżkach: definiuj przez ZAKAZ i pilnuj strażnikiem każdej ścieżki
 
-**Przypadek:** — **N1.** Powerstone: „{T}: Add {C}. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L59).
+**Przypadek:** — **N1.** Powerstone: „{T}: Add {C}.
 
 
 **Reguła:**
@@ -813,7 +813,7 @@ DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
 
 ## L58 (2026-08-23) — Kod stołu jedzie do PRZEGLĄDARKI: globalna Node w rdzeniu to awaria produktu, której testy nie widzą
 
-**Przypadek:** — w `scoreCommand` heuristic-bota została instrumentacja `if (process.env.BOT_DEBUG_SCORES && cmd.objectId === 'slaad') console.error(…)`. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L58).
+**Przypadek:** — w `scoreCommand` heuristic-bota została instrumentacja `if (process.env.BOT_DEBUG_SCORES && cmd.objectId === 'slaad') console.error(…)`.
 
 
 **Reguła:**
@@ -831,7 +831,7 @@ DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
 
 ## L57 (2026-08-23) — Zgłoszenie właściciela weryfikujesz wobec Oracle/CR PRZED wdrożeniem; rozbieżność zgłaszasz, nie wdrażasz
 
-**Przypadek:** — właściciel: „bot wszedł do Forge i wzmacnia MÓJ stwór — to bez sensu, powinien fizzle, gdy nie ma [własnej] kreatury". Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L57).
+**Przypadek:** — właściciel: „bot wszedł do Forge i wzmacnia MÓJ stwór — to bez sensu, powinien fizzle, gdy nie ma [własnej] kreatury".
 
 
 **Reguła:**
@@ -851,7 +851,7 @@ DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
 
 ## L55 (2026-08-22) — Jedno pole na „cechę trwałą" i „efekt do końca tury" to bomba zegarowa; badge liczony z pola technicznego kłamie
 
-**Przypadek:** — **M187/N1** — token Phyrexian Mite („This token can't block") zaczynał legalnie blokować po pierwszym cleanupie: `cantBlock` niosło EFEKT… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L55).
+**Przypadek:** — **M187/N1** — token Phyrexian Mite („This token can't block") zaczynał legalnie blokować po pierwszym cleanupie: `cantBlock` niosło EFEKT…
 
 
 **Reguła:**
@@ -902,7 +902,7 @@ gdzie testowana jest cała partia (fingerprint, determinizm, panel end-to-end).
 Fixtury talii bierz z talii JEDNOPLANOWYCH (worki są przejściowe — ADR 0023 §5).
 ## L51 (2026-08-20) — Efekt celowany bez klasyfikacji to remis wariantów; strażnik zamiast łatek
 
-**Przypadek:** — klasa L50 po raz szósty (M96, M135, M138/Z1, M146, M156/F1, M156/Q1+Q2): bot obdarowywał lifelink+indestructible stwora PRZECIWNIKA (Lo… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L51).
+**Przypadek:** — klasa L50 po raz szósty (M96, M135, M138/Z1, M146, M156/F1, M156/Q1+Q2): bot obdarowywał lifelink+indestructible stwora PRZECIWNIKA (Lo…
 
 
 **Reguła:**
@@ -922,7 +922,7 @@ Fixtury talii bierz z talii JEDNOPLANOWYCH (worki są przejściowe — ADR 0023 
 
 ## L50 (2026-08-18) — Nowy typ efektu w karcie batcha wymaga WYCENY w heuristic-bocie
 
-**Przypadek:** — dwie karty Batch 35 weszły z martwą wyceną: bot aktywował Basilisk Gate ({2},{T}: +X/+X) na stwora PRZECIWNIKA i rzucał Twiddle na górę w… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L50).
+**Przypadek:** — dwie karty Batch 35 weszły z martwą wyceną: bot aktywował Basilisk Gate ({2},{T}: +X/+X) na stwora PRZECIWNIKA i rzucał Twiddle na górę w…
 
 
 **Reguła:** przy nowym typie efektu sprawdź wycenę w OBU ścieżkach
@@ -1049,7 +1049,7 @@ punktowo (edycja odwrotna). Po każdym `git checkout` sprawdź `git diff`/testem
 
 ## L10 (2026-08-14) — Zanim zaczniesz szukać winy w konfiguracji, sprawdź dane
 
-**Przypadek:** — właściciel zgłosił, że PR od 30 minut nie ma opcji scalania ani informacji o CI. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L10).
+**Przypadek:** — właściciel zgłosił, że PR od 30 minut nie ma opcji scalania ani informacji o CI.
 
 
 **Wniosek:** stan po stronie GitHuba był poprawny — objaw dotyczył warstwy
@@ -1074,7 +1074,7 @@ obszary sprawdzone i POPRAWNE.
 
 ## L12 (2026-08-14) — Narzędzie audytowe też jest produktem: braki naprawiaj w nim
 
-**Przypadek:** — audyt Żywym Testerem (M96) stanął na `[STOP] brak akcji` w oknie z przyciskiem „Epic Experiment: zakończ (reszta kart do grobu)". Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L12).
+**Przypadek:** — audyt Żywym Testerem (M96) stanął na `[STOP] brak akcji` w oknie z przyciskiem „Epic Experiment: zakończ (reszta kart do grobu)".
 
 
 **Reguła (decyzja właściciela):** jeśli tester czegoś nie widzi albo nie
@@ -1114,7 +1114,7 @@ Strażnicy M348: `test/table-tester-runtime-errors.test.js`, żywe A/B.
 
 ## L14 (2026-08-15) — Jedna instrukcja, dwie zasady: sklejone reguły to gotowy bug
 
-**Przypadek:** — M101/B5 (CR 302.6) i B6 (CR 702.19b) to ten sam błąd w dwóch miejscach silnika: **dwie niezależne zasady wyrażone jedną instrukcją** —… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L14).
+**Przypadek:** — M101/B5 (CR 302.6) i B6 (CR 702.19b) to ten sam błąd w dwóch miejscach silnika: **dwie niezależne zasady wyrażone jedną instrukcją** —…
 
 
 **Wzorzec:** reguła B obowiązywała „przy okazji" reguły A. Kod nie był zły, był
@@ -1152,7 +1152,7 @@ komenda otworzyła decyzję).
 
 ## L17 (2026-08-16) — Bundler jednoplikowy nie zna aliasów importów, a jsdom nie zna structuredClone (M103)
 
-**Przypadek:** — sonda „oferta bez skutku" działała w Node, a w artefakcie umierała („runProbeCommandEffect is not defined", potem „structuredClone is not defined"). Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L17).
+**Przypadek:** — sonda „oferta bez skutku" działała w Node, a w artefakcie umierała („runProbeCommandEffect is not defined", potem „structuredClone is not defined").
 
 
 **Reguła:** kod trafiający do artefaktu: (a) bez aliasów importów, (b) żadnych
@@ -1233,7 +1233,7 @@ warstwach. Numery L93, L94 i L101 zostają jako kotwice cytowań i odsyłają tu
 
 ## L22 (2026-08-16) — Akcja, która PRZEWIJA grę, musi kończyć się ponownym renderem
 
-**Przypadek:** — po zaznaczeniu ptaszka „nie przerywaj auto-passu" kolejne tapnięcie gracza kończyło się „Ruch odrzucony: illegal_cast: Zagranie poza main… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L22).
+**Przypadek:** — po zaznaczeniu ptaszka „nie przerywaj auto-passu" kolejne tapnięcie gracza kończyło się „Ruch odrzucony: illegal_cast: Zagranie poza main…
 
 
 **Reguła:** każda ścieżka UI mogąca zmienić stan gry (`apply`,
@@ -1273,7 +1273,7 @@ klasy zdarzeń jako szumu (M99: `stats_modified`) wymaga sprawdzenia, czy dla
 którejś karty ta klasa nie jest CAŁĄ treścią.
 ## L25 (2026-08-17) — Test scenariuszowy nie może zależeć od tego, KTO wykonał akcję
 
-**Przypadek:** — po dołożeniu jednej karty do `decks/green.txt` posypało się pięć testów niezwiązanych z nowymi kartami („log nie opisuje tworzenia tokenu… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L25).
+**Przypadek:** — po dołożeniu jednej karty do `decks/green.txt` posypało się pięć testów niezwiązanych z nowymi kartami („log nie opisuje tworzenia tokenu…
 
 
 **Reguła:** asercja na TREŚĆ logu opisuje zdarzenie, nie osobę — dopuszczaj
@@ -1296,7 +1296,7 @@ testu — a zielony wynik sugerował coś odwrotnego.
 drugiego testu na OBECNOŚĆ danych.
 ## L27 (2026-08-17) — ZERO ZGŁOSZEŃ detektorów to pomiar NARZĘDZIA, nie produktu
 
-**Przypadek:** — Dwukrotnie ten sam wynik: 12 partii (L27) i 22 partie (L40) z pustą sekcją `== DETEKTORY ==`, a ręczna lektura TYCH SAMYCH transkryptów… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L27).
+**Przypadek:** — Dwukrotnie ten sam wynik: 12 partii (L27) i 22 partie (L40) z pustą sekcją `== DETEKTORY ==`, a ręczna lektura TYCH SAMYCH transkryptów…
 
 
 **Wpis zbiorczy.** Numery L40, L73 i L75 zostają jako kotwice i odsyłają tutaj.
@@ -1334,7 +1334,7 @@ typów (tu: 44 z `card-data.js`) i odwrócenie domyślności.
 
 ## L29 (2026-08-17) — Fallback `?? slug` to cichy wyciek, nie zabezpieczenie
 
-**Przypadek:** — Trzy z dziesięciu błędów M122 miały ten sam kształt: gracz widział surowy identyfikator (`trigger (enchanted_permanent_tapped)`, `efekt… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L29).
+**Przypadek:** — Trzy z dziesięciu błędów M122 miały ten sam kształt: gracz widział surowy identyfikator (`trigger (enchanted_permanent_tapped)`, `efekt…
 
 
 **Reguła:** wszędzie, gdzie jest mapa „identyfikator → tekst dla gracza",
@@ -1443,7 +1443,7 @@ dopiero przy `--seeds 16` i wyglądał jak skutek zmiany talii.
 REGUŁĘ, nie dane. Przy zmianie danych puść szerszą próbkę niż domyślna.
 ## L38 (2026-08-18) — Dług, którego nie spłacisz jednym commitem, spłaca się trybem ostrzegawczym
 
-**Przypadek:** — walidacja kontraktu `addObject` (L21) włączona twardo dała 141 czerwonych testów — „zrób to porządnie" oznaczało „nie rób tego nigdy" (le… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L38).
+**Przypadek:** — walidacja kontraktu `addObject` (L21) włączona twardo dała 141 czerwonych testów — „zrób to porządnie" oznaczało „nie rób tego nigdy" (le…
 
 
 **Reguła:** strażnik na istniejący kod projektuj DWUTRYBOWO: domyślnie
@@ -1490,7 +1490,7 @@ tylko tym, że gracz płaci koszt, o którym nie wiedział. Strażnik DWUSTRONNY
 
 ## L42 (2026-08-18) — Efekt „do odwołania" wycenia się razem z ZEGAREM, nie tylko z celem
 
-**Przypadek:** — „najefektywniejsze jest tapowanie kreatur przeciwnika po jego fazie untap — wtedy kreatura jest nieczynna i w ataku, i w obronie". Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L42).
+**Przypadek:** — „najefektywniejsze jest tapowanie kreatur przeciwnika po jego fazie untap — wtedy kreatura jest nieczynna i w ataku, i w obronie".
 
 
 **Reguła:** wyceniając efekt czasowy, zapytaj „do kiedy to działa i co
@@ -1525,7 +1525,7 @@ z zasadami).
 
 ## L45 (2026-08-18) — Mgła wojny wycieka polami pobocznymi, nie tożsamością
 
-**Przypadek:** — widok ukrywał `cardId` i linię typów zakrytego permanentu (CR 708.2), a każdy z pięciu morphów dawał się rozpoznać po `subtypes` („Bird",… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L45).
+**Przypadek:** — widok ukrywał `cardId` i linię typów zakrytego permanentu (CR 708.2), a każdy z pięciu morphów dawał się rozpoznać po `subtypes` („Bird",…
 
 
 **Reguła:** ukrytą informację testuj przez NIEROZRÓŻNIALNOŚĆ: weź wszystkie
@@ -1537,7 +1537,7 @@ tylko zapamiętane.
 
 ## L46 (2026-08-18) — Animacja „do końca tury" + trwały stan = cleanup musi resynchronizować
 
-**Przypadek:** — Spacecraft Wedgelight Rammer (próg 9+ charge → stwór) ożywiony animacją Skilled Animator do 5/5, po 9 charge i końcu tury wracał do art… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L46).
+**Przypadek:** — Spacecraft Wedgelight Rammer (próg 9+ charge → stwór) ożywiony animacją Skilled Animator do 5/5, po 9 charge i końcu tury wracał do art…
 
 
 **Reguła:** gdy encja ma efekt chwilowy i trwały warunek, cleanup przywracający
@@ -1548,7 +1548,7 @@ choć jego przyczyna nadal istnieje.
 
 ## L47 (2026-08-18) — Kopiowalne cechy to WSZYSTKIE drukowane deskryptory, nie tylko P/T
 
-**Przypadek:** — token-kopia Wedgelight Rammer (Cogwork Assembler, CR 707.2) rodziła się jako artefakt bez progu 9+ i nigdy nie stawała się stworem; ten s… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L47).
+**Przypadek:** — token-kopia Wedgelight Rammer (Cogwork Assembler, CR 707.2) rodziła się jako artefakt bez progu 9+ i nigdy nie stawała się stworem; ten s…
 
 
 **Reguła:** przy nowym deskryptorze karty (station, saga,
@@ -1565,7 +1565,7 @@ przez realną ścieżkę (wzorzec L21 pkt 3), a nie obietnica wspólnej listy.
 
 ## L48 (2026-08-18) — OFERTA i WALIDACJA to jeden filtr, jeden porządek i jeden rejestr
 
-**Przypadek:** Bot wybierał biały czar na cel z `protection from white`: `legalSpellCasts` filtrował tylko `isProtectedFromSource`, a `validateTargets… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L48).
+**Przypadek:** Bot wybierał biały czar na cel z `protection from white`: `legalSpellCasts` filtrował tylko `isProtectedFromSource`, a `validateTargets…
 
 
 **Wpis zbiorczy** (4 powtórki; L90 to kotwica): rozjazd oferty i walidacji
@@ -1591,7 +1591,7 @@ to crash w benchmarku („Bot wybrał nielegalną komendę").
 
 ## L49 (2026-08-18) — Plik startowy musi kazać CZYTAĆ ADR-y, zanim agent odezwie się w czacie
 
-**Przypadek:** — nowa sesja zapytała właściciela „co robimy?" zamiast wykonać ADR 0020 (PR → audyt poprzedniego PR → praca), choć ADR 0020, AGENTS i lekcje już istniały. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L49).
+**Przypadek:** — nowa sesja zapytała właściciela „co robimy?" zamiast wykonać ADR 0020 (PR → audyt poprzedniego PR → praca), choć ADR 0020, AGENTS i lekcje już istniały.
 
 
 **Reguła:** `AGENTS.md` to jedyny plik startowy niezależny od czatu. Jego
@@ -1605,7 +1605,7 @@ nie w pytaniu do właściciela.
 
 ## L52 (2026-08-20) — Ścieżka mechaniki zależna od przyszłych kart: zaimplementuj i zasygnalizuj, nie odnotuj
 
-**Przypadek:** — audyt PR #66 zostawił dwie obserwacje „bez zmian kodu": `resolve_madness_cast` wołał bezwarunkowo `castPermanent` (pierwsza karta insta… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L52).
+**Przypadek:** — audyt PR #66 zostawił dwie obserwacje „bez zmian kodu": `resolve_madness_cast` wołał bezwarunkowo `castPermanent` (pierwsza karta insta…
 
 
 **Reguła:** gdy audyt odkryje lukę ujawnioną dopiero przez hipotetyczną kartę:
@@ -1643,7 +1643,7 @@ nie w pytaniu do właściciela.
 
 ## L89 (2026-08-29) — Przebieg, którego nikt nie dograł: długi bieg loguje postęp, a rozmiar macierzy wyznacza budżet, nie liczba kombinacji
 
-**Przypadek:** — `node tools/benchmark.mjs --full` liczył się 63 minuty CPU bez jednej linii logu (raport powstaje po ostatnim meczu) — nie dało się odr… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L89).
+**Przypadek:** — `node tools/benchmark.mjs --full` liczył się 63 minuty CPU bez jednej linii logu (raport powstaje po ostatnim meczu) — nie dało się odr…
 
 
 **Reguła:**
@@ -1895,7 +1895,7 @@ kontra-przykład „większy korpus broni ceny") + grzechotka per kind w
 ## L120 (2026-09-02) — Opcjonalna zależność komponentu to dziura w drucie; pilnuj miejsca użycia
 
 **Przypadek:** — dwie z czterech uwag właściciela z żywej gry (2026-09-02) miały ten
-sam kształt. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L120).
+sam kształt.
 
 
 **Reguła:** jeśli komponent przyjmuje zależność opcjonalną (`hover = null`), zielony
@@ -2356,3 +2356,24 @@ ląd nie jest tapnięty, a pula pusta (CR 601.2h).
 **Strażnik:** `test/m374-l48-grant-w-pipach.test.js` (4 piny; mutacje: brak fallbacku koloru
 grantu → piny 1 i 4 RED, brak bramki atomowości → piny 2 i 3 RED).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L149)
+
+## L150 (2026-09-19) — Ubytek zasobu licz po WSZYSTKICH drogach; tutor też uszczupla bibliotekę
+
+**Przypadek:** Dawntreader Elk — bot poświęcał stwora po ląd przy 4 kartach w bibliotece, bo kara cienkiej biblioteki widziała tylko mielące tapnięcia płatności i mill/draw; tutor nie był wyceniany nigdzie.
+**Reguła:** (1) Wypisz WSZYSTKIE drogi ubytku zasobu (płatność, efekt wariantu, koszt poświęcenia) i prowadź je jedną drabiną kary. (2) Typy efektów czytaj z deskryptora (ADR 0002). (3) Kara na wariant, nie na turę — inaczej bot przestaje używać narzędzi.
+**Strażnik:** `test/dawntreader-elk-tutor-cienka-biblioteka.test.js` (5 pinów; M21 → 3 RED, M22 → 1 RED).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L150)
+
+## L151 (2026-09-19) — Enumeracja oferty musi pokryć granicę legalności; cap tnie OPCJE, nie użycia
+
+**Przypadek:** bloker o 3 slotach (licznik +1/+1 + 2× Cenn's Tactician) nie dostawał w ofercie potrójnego bloku (`Math.min(slots, 2)`), choć `declareBlockers` go przyjmuje — panel i bot nie mogły zagrać legalnego ruchu.
+**Reguła:** (1) Liczbę przebiegów tnij do granicy LEGALNOŚCI (min. sloty, liczba atakujących), nie „na wygodę”. (2) Enumerację z powtórzeniami deduplikuj kluczem kanonicznym i dopiero potem tnij do cap. (3) Pin na oba kierunki: kompletność (legalny ruch jest w ofercie) i dźwięczność (każda opcja przechodzi walidację).
+**Strażnik:** `test/block-slots-trojka-oferta.test.js` (4 piny; M23 → 1 RED, M24 → 1 RED).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L151)
+
+## L152 (2026-09-19) — Dane proweniencji też mają strażnika; „pomiń, bo dane zepsute” to dług
+
+**Przypadek:** pełny diff katalog↔snapshot (480 kart) wykrył literalne „\\n” w `oracleText` 20 wpisów i w 7 plikach `docs/cards/*.json`; strażnik kosztów aktywacji miał na to JAWNY wyjątek i pomijał zdolność `strandwalker`.
+**Reguła:** (1) Audyt danych to osobna ścieżka: porównuj CAŁE zbiory, nie pliki z ostatniego PR-a. (2) Wyjątek „ta karta wypada ze strażnika, bo dane są zepsute” znosi się naprawą danych i licznikiem pominięć = 0. (3) Strażnik danych pilnuje obu stron i ma bramkę na degenerację (minimum sprawdzonych rekordów).
+**Strażnik:** `test/oracle-bez-literalnego-backslash-n.test.js` (4 piny; M25 → 2 RED, M26 → 2 RED) + `test/ability-cost-pips.test.js` (pominięcia = 0).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L152)

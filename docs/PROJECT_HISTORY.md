@@ -11459,3 +11459,43 @@ bot-benchmark 10/10. Pełny B0 tylko na komendę (ADR 0018) — nie uruchamiany.
 PR #129 czeka na decyzję właściciela. Uwaga: sesja PR #128 nie zostawiła wpisu
 w tej historii (tylko handoff i audyt) — stan po #128 opisuje
 `docs/setup/HANDOFF_2026-09-18.md` i `docs/audits/AUDYT_PR128_2026-09-18.md`.
+
+**Sesja 2026-09-19 (audyt PR #129 + uwagi właściciela A/B/C + pętla jakości, PR #130).**
+Audyt scalonego PR #129 (`docs/audits/AUDYT_PR129_2026-09-19.md`, 35 plików diffu,
+16 mutacji) dał **trzy znaleziska, wszystkie naprawione w tej sesji** — każde
+z pinem czerwieniejącym bez fixa: **F-1** (`castFireball` nie niósł `xValue`
+w `spell_cast`, czyli uwaga B1 właściciela działała dla każdego czaru X prócz
+fireballowych, `6ec5002`, M17 → 2 RED), **F-2** (brak pinu reprezentanta grupy
+tapX w `render.js` — od niego zależy sonda noop Żywego Testera, `cdb8fd5`,
+M10 → 1 RED), **F-3** (pin dedup logu `main.js` był strażnikiem na zbyt luźny
+regex, `24fb1e5`, M16 → 1 RED). Potem trzy uwagi właściciela z gry:
+**A** — wybory bez alternatywy są automatyczne: Lodestone Needle z dokładnie
+jednym kandydatem rozstrzyga craft bez pytania (0 = no-op, 2+ = decyzja), jedno
+źródło wykonania `resolveCraftExileOutcome` dla obu ścieżek (`fa7ab1f`, 4 piny,
+M18 → 4 RED); **B** — tytuł decyzji nazywa kartę i efekt: `playerView` niesie
+`pendingOpponentTarget` z `sourceCardId`, a `choiceGroupTitle` składa
+„Cuombajj Witches — 1 obrażenie (cel wskazuje przeciwnik)” (`f4a671f`, 3 piny,
+M19 → 3 RED, M20 → 2 RED); **C** — tutor uszczupla WŁASNĄ bibliotekę, więc bot
+nie poświęca już Dawntreader Elka po ląd przy 4 kartach biblioteki
+(`LIBRARY_SEARCH_EFFECTS` + `searchLibraryLoss` w tej samej drabinie
+`libraryLossPenalty` co dobrania, `10be873`, 5 pinów, M21 → 3 RED, M22 → 1 RED).
+**Pętla jakości:** punkt otwarty „kierunek odwrotny oferty bloków” okazał się
+realnym defektem (L48) — bloker o 3 slotach nie dostawał potrójnego bloku
+w ofercie, choć silnik go przyjmuje; naprawa liczy przebiegi do granicy
+legalności i deduplikuje ofertę kluczem kanonicznym (`403b0a4`, 4 piny,
+M23/M24 → po 1 RED, L151); **polowanie na niezgodności Oracle inną ścieżką niż
+poprzednia sesja** (pełny diff katalog↔snapshot po 480 kartach) wykryło
+literalne „\n” w `oracleText` 20 wpisów i 7 snapshotów, a strażnik kosztów
+aktywacji miał na to jawny wyjątek i pomijał `strandwalker` — dane naprawione
+po obu stronach, strażnik `test/oracle-bez-literalnego-backslash-n.test.js`,
+licznik pominięć = 0 (`7746e37`, M25/M26 → po 2 RED, L152); **Żywy Tester**:
+5 partii (wiedzmin-bg/ixalan/tarkir-bg/kaladesh, seedy 42/7/11/23/5) bez
+`[STOP]`, 0 zgłoszeń detektorów, transkrypty czytane ręcznie (L27) —
+potwierdziły na żywo tytuł decyzji Cuombajj Witches i auto-cel „jedyny legalny
+— automatycznie”. Lekcje **L150–L152** dopisane, budżet lektury startowej
+utrzymany przez usunięcie 43 powtórzonych odsyłaczy w rejestrze.
+**Bramy:** `npm test` **5854/5854**, build **64 moduły / 3853,3 kB**,
+bot-benchmark 10/10, snapshot wycen bota 4/4. Push commita `7746e37` nie doszedł
+— token GitHub w sandboxie wygasł w trakcie sesji (`GH_TOKEN` nieważny);
+do zrobienia po ponownym połączeniu: `git push origin arena/01a0b8fe-mtg`
+i aktualizacja opisu PR #130. PR #130 czeka na decyzję właściciela.

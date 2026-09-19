@@ -5,7 +5,7 @@
   "mana_cost": "{X}{1}{B}",
   "cmc": 2,
   "type_line": "Sorcery",
-  "oracle_text": "Spend only black mana on X.\\nConsume Spirit deals X damage to any target and you gain X life.",
+  "oracle_text": "Spend only black mana on X.\nConsume Spirit deals X damage to any target and you gain X life.",
   "colors": [
     "B"
   ],

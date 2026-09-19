@@ -1,0 +1,67 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Annie%20Flash%2C%20the%20Veteran&set=otj",
+  "print": "otj",
+  "name": "Annie Flash, the Veteran",
+  "mana_cost": "{3}{R}{G}{W}",
+  "cmc": 6,
+  "type_line": "Legendary Creature — Human Rogue",
+  "oracle_text": "Flash\nWhen Annie Flash enters, if you cast it, return target permanent card with mana value 3 or less from your graveyard to the battlefield tapped.\nWhenever Annie Flash becomes tapped, exile the top two cards of your library. You may play those cards this turn.",
+  "power": "4",
+  "toughness": "5",
+  "colors": [
+    "G",
+    "R",
+    "W"
+  ],
+  "color_identity": [
+    "G",
+    "R",
+    "W"
+  ],
+  "keywords": [
+    "Flash"
+  ],
+  "set": "otj",
+  "set_name": "Outlaws of Thunder Junction",
+  "collector_number": "190",
+  "rarity": "mythic",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/d/8d4af7c3-a70d-4f71-b27d-b268c4a0f81e.jpg?1783911798",
+    "normal": "https://cards.scryfall.io/normal/front/8/d/8d4af7c3-a70d-4f71-b27d-b268c4a0f81e.jpg?1783911798"
+  },
+  "pobrano": "2026-09-19",
+  "rulings": [
+    {
+      "object": "ruling",
+      "source": "wotc",
+      "published_at": "2024-04-12",
+      "comment": "Annie Flash's second ability triggers if you cast it from any zone. It doesn't trigger if you put Annie Flash onto the battlefield without casting it."
+    },
+    {
+      "object": "ruling",
+      "source": "wotc",
+      "published_at": "2024-04-12",
+      "comment": "A permanent card is an artifact, battle, creature, enchantment, land, or planeswalker card."
+    },
+    {
+      "object": "ruling",
+      "source": "wotc",
+      "published_at": "2024-04-12",
+      "comment": "If the mana cost of a card in your graveyard includes {X}, X is 0 for the purpose of determining its mana value."
+    },
+    {
+      "object": "ruling",
+      "source": "wotc",
+      "published_at": "2024-04-12",
+      "comment": "If you return an Aura this way, you choose what the Aura will enchant just before it enters the battlefield. An Aura returning to the battlefield this way doesn't target the player or permanent it will enchant, so players or permanents with hexproof may be chosen; however, the chosen recipient must be able to legally be enchanted by the Aura, so a player or permanent with protection from one of the Aura's qualities can't be chosen this way. If there's nothing legal for the Aura to enchant, it stays in the graveyard."
+    },
+    {
+      "object": "ruling",
+      "source": "wotc",
+      "published_at": "2024-04-12",
+      "comment": "You pay all costs and follow all normal timing rules for cards played from exile with Annie Flash's last ability. For example, if the exiled card is a land card, you may play it only during your main phase while the stack is empty."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/otj/190/rulings",
+  "rulingsPobrano": "2026-09-19"
+}

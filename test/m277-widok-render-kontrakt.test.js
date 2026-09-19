@@ -116,6 +116,14 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
     'crewed',
     'cantBeBlocked', 'cantBlock', 'cantBlockPrinted', 'cantBeRegeneratedThisTurn',
     'grantedKeywords', 'grantedPower', 'grantedToughness', 'lostKeywordsUntilEOT',
+    // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): widok dokłada
+    // `grantedStatMechanics` TYLKO gdy nadany bonus pochodzi z nazwanej
+    // mechaniki warunkowej (Storied) — próbka w tym pliku nie ma takiej
+    // karty, więc pole nie wchodzi do `wysylane`. Że widok REALNIE je niesie
+    // i że kafel nazywa mechanikę („Storied: +1/+0”), mierzy konstrukcyjnie
+    // test/uwagi-2026-09-19b-e1e2l-division-i-storied.test.js (L/1–L/5) —
+    // ta lista pilnuje tylko literówki w nazwie pola (L113).
+    'grantedStatMechanics',
     'entersWithCounters', 'subtypes', 'keywords', 'counters',
     // F-A (2026-09-09): tymczasowe NADPISANIE podtypu (Wishful Merfolk
     // „becomes a Human until end of turn\") — widok dokłada field tylko, gdy

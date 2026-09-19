@@ -3382,7 +3382,7 @@ export const REAL_CARDS = Object.freeze([
       enchantType: 'artifact_or_creature',
       replaceTokenCreation: { copiesOfEnchanted: true, oncePerTurn: true, optional: true },
     },
-    oracleText: 'Enchant artifact or creature you control\\nThe first time you would create one or more tokens each turn, you may instead create that many tokens that are copies of enchanted permanent.',
+    oracleText: 'Enchant artifact or creature you control\nThe first time you would create one or more tokens each turn, you may instead create that many tokens that are copies of enchanted permanent.',
     imageUri: 'https://cards.scryfall.io/large/front/f/2/f2a56007-5bca-4edf-9cc4-5f77a273636c.jpg?1783905978',
     artId: 281, plan: 'The Edge',
     support: { status: 'supported', limitations: [] },
@@ -3796,7 +3796,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'deepwood-denizen', name: 'Deepwood Denizen', set: 'MH2',
     types: ['Creature'], subtypes: ['Elf', 'Warrior'], colors: ['G'],
     power: 3, toughness: 2, manaCost: 3, keywords: ['vigilance'],
-    oracleText: 'Vigilance\\n{5}{G}, {T}: Draw a card. This ability costs {1} less to activate for each +1/+1 counter on creatures you control.',
+    oracleText: 'Vigilance\n{5}{G}, {T}: Draw a card. This ability costs {1} less to activate for each +1/+1 counter on creatures you control.',
     imageUri: 'https://cards.scryfall.io/large/front/3/3/333f02f7-3b8a-41e3-9ae5-2151539e64ad.jpg?1783926833',
     abilities: [
       createAbility({
@@ -3834,7 +3834,7 @@ export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'feedback', name: 'Feedback', set: '5ED',
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 3,
-    oracleText: "Enchant enchantment\\nAt the beginning of the upkeep of enchanted enchantment's controller, this Aura deals 1 damage to that player.",
+    oracleText: "Enchant enchantment\nAt the beginning of the upkeep of enchanted enchantment's controller, this Aura deals 1 damage to that player.",
     imageUri: 'https://cards.scryfall.io/large/front/1/d/1d452de7-3f44-4594-bb24-2178812da9d6.jpg?1783946949',
     aura: { enchant: 'enchantment' },
     abilities: [
@@ -3852,7 +3852,7 @@ export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'vow-of-wildness', name: 'Vow of Wildness', set: 'CMR',
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 3,
-    oracleText: "Enchant creature\\nEnchanted creature gets +3/+3, has trample, and can't attack you or planeswalkers you control.",
+    oracleText: "Enchant creature\nEnchanted creature gets +3/+3, has trample, and can't attack you or planeswalkers you control.",
     imageUri: 'https://cards.scryfall.io/large/front/7/6/764fa7f1-b92b-42cc-983e-e0b5457369a7.jpg?1783928780',
     aura: { pump: { power: 3, toughness: 3 }, keywords: ['trample'], cantAttackYou: true },
     artId: 396,
@@ -3866,7 +3866,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'greater-tanuki', name: 'Greater Tanuki', set: 'NEO',
     types: ['Enchantment', 'Creature'], subtypes: ['Dog'], colors: ['G'],
     power: 6, toughness: 5, manaCost: 6, keywords: ['trample'],
-    oracleText: 'Trample\\nChannel — {2}{G}, Discard this card: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.',
+    oracleText: 'Trample\nChannel — {2}{G}, Discard this card: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.',
     imageUri: 'https://cards.scryfall.io/large/front/b/4/b4fbaee3-a10f-4b2d-b07e-d041a96a7e27.jpg?1783923849',
     abilities: [
       createAbility({
@@ -5672,7 +5672,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({
     id: 'dream-twist', name: 'Dream Twist', set: 'ISD',
     types: ['Instant'], colors: ['U'], manaCost: 1,
-    oracleText: "Target player mills three cards.\\nFlashback {1}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    oracleText: "Target player mills three cards.\nFlashback {1}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
     imageUri: 'https://cards.scryfall.io/large/front/d/5/d5dd8790-bfdf-427d-8e8d-a5c3a64a3063.jpg?1783940975',
     spell: {
       timing: 'instant',
@@ -5689,7 +5689,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Human', 'Citizen'], colors: ['G'],
     power: 2, toughness: 2, manaCost: 4,
     entersWithCounters: { shield: 1 },
-    oracleText: "This creature enters with a shield counter on it.\\nWhenever this creature attacks, target creature you control has base power and toughness 4/4 until end of turn.",
+    oracleText: "This creature enters with a shield counter on it.\nWhenever this creature attacks, target creature you control has base power and toughness 4/4 until end of turn.",
     imageUri: 'https://cards.scryfall.io/large/front/b/f/bfe4e0eb-23a5-46a5-b719-5a6f9a1fc4ce.jpg?1783923096',
     abilities: [
       createAbility({
@@ -5776,7 +5776,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'rustvine-cultivator', name: 'Rustvine Cultivator', set: 'ONE',
     types: ['Creature'], subtypes: ['Phyrexian', 'Elf', 'Druid'], colors: ['G'],
     power: 1, toughness: 2, manaCost: 1,
-    oracleText: "{T}: Put an oil counter on this creature.\\n{T}, Remove an oil counter from this creature: Untap target land.",
+    oracleText: "{T}: Put an oil counter on this creature.\n{T}, Remove an oil counter from this creature: Untap target land.",
     imageUri: 'https://cards.scryfall.io/large/front/6/b/6b71fd8f-e688-4210-bc5b-a3f19b5b3497.jpg?1783918010',
     abilities: [
       createAbility({
@@ -5799,7 +5799,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'trained-arynx', name: 'Trained Arynx', set: 'OTJ',
     types: ['Creature'], subtypes: ['Cat', 'Beast', 'Mount'], colors: ['W'],
     power: 3, toughness: 1, manaCost: 2,
-    oracleText: "Whenever this creature attacks while saddled, it gains first strike until end of turn. Scry 1.\\nSaddle 2 (Tap any number of other creatures you control with total power 2 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)",
+    oracleText: "Whenever this creature attacks while saddled, it gains first strike until end of turn. Scry 1.\nSaddle 2 (Tap any number of other creatures you control with total power 2 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)",
     imageUri: 'https://cards.scryfall.io/large/front/e/f/ef32a5f8-f69d-47dc-a800-4f0ddf4eada5.jpg?1783911851',
     abilities: [
       createAbility({
@@ -5825,7 +5825,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({
     id: 'natures-embrace', name: "Nature's Embrace", set: 'VOW',
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 3,
-    oracleText: "Enchant creature or land\\nAs long as enchanted permanent is a creature, it gets +2/+2.\\nAs long as enchanted permanent is a land, it has \"{T}: Add two mana of any one color.\"",
+    oracleText: "Enchant creature or land\nAs long as enchanted permanent is a creature, it gets +2/+2.\nAs long as enchanted permanent is a land, it has \"{T}: Add two mana of any one color.\"",
     imageUri: 'https://cards.scryfall.io/large/front/3/9/39d757af-86fd-4f99-a09a-0f3898ed95f6.jpg?1783924808',
     aura: { enchantType: 'creature_or_land', pump: { power: 2, toughness: 2 }, grantMana: { amount: 2 } },
     artId: 491, plan: 'Wiedźmin',
@@ -5836,7 +5836,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'ballista-watcher', name: 'Ballista Watcher', set: 'VOW',
     types: ['Creature'], subtypes: ['Human', 'Soldier', 'Werewolf'], colors: ['R'],
     power: 4, toughness: 3, manaCost: 4, keywords: ['daybound'],
-    oracleText: "{2}{R}, {T}: This creature deals 1 damage to any target.\\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    oracleText: "{2}{R}, {T}: This creature deals 1 damage to any target.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
     imageUri: 'https://cards.scryfall.io/large/front/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852',
     transformTo: 'ballista-wielder',
     abilities: [
@@ -5854,7 +5854,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'ballista-wielder', name: 'Ballista Wielder', set: 'VOW',
     types: ['Creature'], subtypes: ['Werewolf'], colors: ['R'],
     power: 5, toughness: 5, manaCost: 4, keywords: ['nightbound'],
-    oracleText: "{2}{R}: This creature deals 1 damage to any target. A creature dealt damage this way can't block this turn.\\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+    oracleText: "{2}{R}: This creature deals 1 damage to any target. A creature dealt damage this way can't block this turn.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
     imageUri: 'https://cards.scryfall.io/large/back/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852',
     transformTo: 'ballista-watcher',
     abilities: [
@@ -6816,7 +6816,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'palace-familiar', name: 'Palace Familiar', set: 'DTK',
     types: ['Creature'], subtypes: ['Bird'], colors: ['U'],
     keywords: ['flying'], power: 1, toughness: 1, manaCost: 2,
-    oracleText: 'Flying\\nWhen this creature dies, draw a card.',
+    oracleText: 'Flying\nWhen this creature dies, draw a card.',
     imageUri: 'https://cards.scryfall.io/large/front/f/c/fc0c17c9-54af-4dd4-8d4a-fd5a7b8c3c77.jpg',
     abilities: [
       createAbility({
@@ -6850,7 +6850,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'village-bell-ringer', name: 'Village Bell-Ringer', set: 'ISD',
     types: ['Creature'], subtypes: ['Human', 'Scout'], colors: ['W'],
     keywords: ['flash'], power: 1, toughness: 4, manaCost: 3,
-    oracleText: 'Flash (You may cast this spell any time you could cast an instant.)\\nWhen this creature enters, untap all creatures you control.',
+    oracleText: 'Flash (You may cast this spell any time you could cast an instant.)\nWhen this creature enters, untap all creatures you control.',
     imageUri: 'https://cards.scryfall.io/large/front/c/b/cb6912b3-bab9-4937-afdd-3711e6d792a0.jpg',
     abilities: [
       createAbility({
@@ -6867,7 +6867,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({
     id: 'ojutais-breath', name: "Ojutai's Breath", set: 'DTK',
     types: ['Instant'], colors: ['U'], manaCost: 3,
-    oracleText: "Tap target creature. It doesn't untap during its controller's next untap step.\\nRebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)",
+    oracleText: "Tap target creature. It doesn't untap during its controller's next untap step.\nRebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)",
     imageUri: 'https://cards.scryfall.io/large/front/a/f/af51e5a1-7d46-4dad-a25c-6767cbd03dff.jpg',
     spell: {
       timing: 'instant',
@@ -6888,7 +6888,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({
     id: 'static-net', name: 'Static Net', set: 'BRO',
     types: ['Enchantment'], colors: ['W'], manaCost: 4,
-    oracleText: "When this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield.\\nWhen this enchantment enters, you gain 2 life and create a tapped Powerstone token.",
+    oracleText: "When this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield.\nWhen this enchantment enters, you gain 2 life and create a tapped Powerstone token.",
     imageUri: 'https://cards.scryfall.io/large/front/5/a/5ab5cb30-3ced-4450-a3c4-b519f3762620.jpg',
     abilities: [
       createAbility({
@@ -6981,7 +6981,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({
     id: 'strandwalker', name: 'Strandwalker', set: 'MBS',
     types: ['Artifact'], subtypes: ['Equipment'], colors: [], manaCost: 5,
-    oracleText: "Living weapon (When this Equipment enters, create a 0/0 black Phyrexian Germ creature token, then attach this to it.)\\nEquipped creature gets +2/+4 and has reach.\\nEquip {4}",
+    oracleText: "Living weapon (When this Equipment enters, create a 0/0 black Phyrexian Germ creature token, then attach this to it.)\nEquipped creature gets +2/+4 and has reach.\nEquip {4}",
     imageUri: 'https://cards.scryfall.io/large/front/d/0/d0d7ff8f-7733-4323-8575-c50b3e730dbc.jpg',
     equipment: { equip: 4, pump: { power: 2, toughness: 4 }, keywords: ['reach'] },
     abilities: [
@@ -9359,6 +9359,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
           // „If you've completed a dungeon … without paying its mana cost."
           // Warunek w DANYCH; silnik sprawdza stan lochu (ADR 0002).
           freeIfCondition: { type: 'completed_dungeon' },
+          // G (zgłoszenie właściciela 2026-09-19b): Oracle obu gałęzi mówi
+          // „you may play that card THIS TURN" — okno kończy się w turze
+          // zdolności, nie w następnej (Gila Courser ma „your NEXT turn").
+          // Deskryptor okna, nie nazwa karty (ADR 0002); bez niego silnik
+          // stemplował +2 tury i etykieta kłamała („do końca tury 27"
+          // w turze 25).
+          window: 'this_turn',
         }],
       }),
     ],
@@ -9755,7 +9762,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Griffin'], colors: ['W'],
     power: 2, toughness: 2, manaCost: 4,
     keywords: ['flying', 'first_strike'],
-    oracleText: 'Flying (This creature can\'t be blocked except by creatures with flying or reach.)\\nFirst strike (This creature deals combat damage before creatures without first strike.)',
+    oracleText: 'Flying (This creature can\'t be blocked except by creatures with flying or reach.)\nFirst strike (This creature deals combat damage before creatures without first strike.)',
     imageUri: 'https://cards.scryfall.io/large/front/8/1/819e2046-9b78-4fd0-92f8-798bfac51195.jpg?1783945714',
     artId: 564, plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
@@ -10550,7 +10557,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'rust-shield-rampager', name: 'Rust-Shield Rampager', set: 'BLB',
     types: ['Creature'], subtypes: ['Raccoon', 'Warrior'], colors: ['G'],
     power: 4, toughness: 4, manaCost: 4,
-    oracleText: "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\\nThis creature can't be blocked by creatures with power 2 or less.",
+    oracleText: "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nThis creature can't be blocked by creatures with power 2 or less.",
     imageUri: 'https://cards.scryfall.io/large/front/c/9/c96b01f5-83de-4237-a68d-f946c53e31a6.jpg?1783910806',
     offspring: { cost: 2, colors: [] },
     abilities: [
@@ -10657,7 +10664,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'sheriff-of-safe-passage', name: 'Sheriff of Safe Passage', set: 'OTJ',
     types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['W'],
     power: 0, toughness: 0, manaCost: 3,
-    oracleText: 'This creature enters with a +1/+1 counter on it plus an additional +1/+1 counter on it for each other creature you control.\\nPlot {1}{W} (You may pay {1}{W} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)',
+    oracleText: 'This creature enters with a +1/+1 counter on it plus an additional +1/+1 counter on it for each other creature you control.\nPlot {1}{W} (You may pay {1}{W} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)',
     imageUri: 'https://cards.scryfall.io/large/front/c/3/c38a845d-f25d-45ab-9154-3fa5291b0ba0.jpg?1783911852',
     plot: { cost: 2, colors: ['W'] },
     entersWithCounters: { '+1/+1': 'other_creatures_you_control_plus_one' },
@@ -11247,6 +11254,167 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/6/0/60842b1a-6ae7-4b3b-a23f-0d94a3d89884.jpg?1783937239',
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez fabricate (Glint-Sleeve Artisan)'] },
+  }),
+
+  // ---------------------------------------------------------------------------
+  // Batch 57 (2026-09-19) — lista właściciela: 64, 66, 70, 77, 80, 82, 85, 88,
+  // 90, 125. Dane Oracle + rulingi pobrane ze Scryfalla 2026-09-19, set-aware
+  // (docs/cards/scryfall-*.json, ADR 0010 §2a).
+  //
+  // Etap B0b: wchodzą WYŁĄCZNIE dane karty (bez mechaniki) i status
+  // `in-development` — zgodnie z procedurą batcha karta dostaje `supported`
+  // dopiero w etapie, w którym ma pełne mechaniki i testy (ADR 0010 §4,
+  // ADR 0022). Kolejność etapów: B1 (64, 90, 125, 70, 85), B2 (82),
+  // B3 (80), B4 (66), B5 (77), B6 (88).
+  // ---------------------------------------------------------------------------
+  // Phyrexian Rager (APC) — DRUGI druk karty `phyrexian-rager` (DMU, artId 75),
+  // dokładnie jak Curate: arkusz kolekcji ma oba druki (75DMU Dominaria
+  // i 85APC Mirrodin), więc katalog ma dwa wpisy, każdy ze swoim planem,
+  // snapshotem i miejscem w talii (zgłoszenie właściciela 15, 2026-09-19;
+  // precedens: `curate` BRO + `curate-stx` STX, Batch 47). Mechanika jest
+  // identyczna (ETB: dobierz kartę i tracisz 1 życie) — etap B1 to weryfikuje
+  // testem na tym druku, a nie przepisuje kodu.
+  defineCard({
+    id: 'phyrexian-rager-apc', name: 'Phyrexian Rager', set: 'APC',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Horror'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'When this creature enters, you draw a card and you lose 1 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/a/3addf34c-ea54-42a3-bccd-b73453d964d2.jpg?1783945347',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [
+          { type: 'draw_cards', amount: 1 },
+          { type: 'lose_life', amount: 1, scope: 'controller' },
+        ],
+      }),
+    ],
+    artId: 85, plan: 'Mirrodin', support: { status: 'supported', limitations: [] },
+    notes: ['drugi druk karty `phyrexian-rager` (DMU) — osobny egzemplarz kolekcji, własny plan i własna talia (wzorzec Curate)'],
+  }),
+
+  defineCard({
+    id: 'lightwalker', name: 'Lightwalker', set: 'DTK',
+    types: ['Creature'], subtypes: ['Human', 'Warrior'], colors: ['W'],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: 'This creature has flying as long as it has a +1/+1 counter on it.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/1/01bf1837-41b0-4ff1-9cb1-ee2d75d410c7.jpg?1783938616',
+    // Bliźniak Ainok Artillerist (DTK, artId 321): zdolność STATYCZNA
+    // (CR 611.3a) — flying obowiązuje, dopóki źródło ma co najmniej jeden
+    // licznik +1/+1; przeliczanie przy każdym odczycie, bez zdarzeń.
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { hasCounter: '+1/+1' },
+        keywords: ['flying'],
+      }),
+    ],
+    artId: 64, plan: 'Tarkir', support: { status: 'supported', limitations: [] },
+    notes: ['flying warunkowy licznikiem +1/+1 — znika wraz ze zdjęciem licznika (przeliczanie przy odczycie)'],
+  }),
+
+  defineCard({
+    id: 'hooting-mandrills', name: 'Hooting Mandrills', set: 'KTK',
+    types: ['Creature'], subtypes: ['Ape'], colors: ['G'],
+    power: 4, toughness: 4, manaCost: 6,
+    oracleText: 'Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nTrample',
+    imageUri: 'https://cards.scryfall.io/large/front/0/9/090d678c-f0e4-4757-8900-93dfe67aefe9.jpg?1783939067',
+    artId: 66, plan: 'Tarkir', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'capture-sphere', name: 'Capture Sphere', set: 'GRN',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 4,
+    oracleText: "Flash\nEnchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature doesn't untap during its controller's untap step.",
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5a799ac8-5798-4a26-81c1-763d6dcfcbe8.jpg?1783934193',
+    // Bliźniak Containment Protocol (TMC, artId 30): aura `doesntUntap` (CR 611.3a)
+    // + trigger wejścia tapnij ZACZAROWANEGO stwora (effect
+    // `tap_enchanted_permanent`, bez wyboru celu — cel wynika z załącznika);
+    // flash daje okno rzutu poza swoją turą (CR 702.8, `keywords: ['flash']`).
+    keywords: ['flash'],
+    aura: { doesntUntap: true },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'tap_enchanted_permanent' }],
+      }),
+    ],
+    artId: 70, plan: 'Arcavios', support: { status: 'supported', limitations: [] },
+    notes: ['flash: rzut w dowolnym momencie, gdy można rzucić instant (CR 702.8)'],
+  }),
+
+  defineCard({
+    id: 'annie-flash-the-veteran', name: 'Annie Flash, the Veteran', set: 'OTJ',
+    types: ['Legendary', 'Creature'], subtypes: ['Human', 'Rogue'], colors: ['R', 'G', 'W'],
+    power: 4, toughness: 5, manaCost: 6,
+    oracleText: 'Flash\nWhen Annie Flash enters, if you cast it, return target permanent card with mana value 3 or less from your graveyard to the battlefield tapped.\nWhenever Annie Flash becomes tapped, exile the top two cards of your library. You may play those cards this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/d/8d4af7c3-a70d-4f71-b27d-b268c4a0f81e.jpg?1783911798',
+    artId: 77, plan: 'Thunder Junction', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'merciless-repurposing', name: 'Merciless Repurposing', set: 'MOM',
+    types: ['Instant'], colors: ['B'], manaCost: 6,
+    oracleText: 'Exile target creature. Incubate 3. (Create an Incubator token with three +1/+1 counters on it and "{2}: Transform this token." It transforms into a 0/0 Phyrexian artifact creature.)',
+    imageUri: 'https://cards.scryfall.io/large/front/7/0/70edec35-1770-47f0-9ad2-32e597ee0327.jpg?1783917004',
+    artId: 80, plan: 'Mirrodin', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'messenger-falcons', name: 'Messenger Falcons', set: 'ARB',
+    types: ['Creature'], subtypes: ['Bird'], colors: ['G', 'U', 'W'],
+    power: 2, toughness: 2, manaCost: 4,
+    oracleText: 'Flying\nWhen this creature enters, draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/0/f088f625-9c72-4949-8e53-c2313397a197.jpg?1783942408',
+    artId: 82, plan: 'Alara', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'baral-and-kari-zev', name: 'Baral and Kari Zev', set: 'TDC',
+    types: ['Legendary', 'Creature'], subtypes: ['Human'], colors: ['R', 'U'],
+    power: 2, toughness: 4, manaCost: 3,
+    oracleText: "First strike, menace\nWhenever you cast your first instant or sorcery spell each turn, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost. If you don't, create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/e/7/e777c383-161f-4a80-acb3-2a5c9ed5e927.jpg?1783907033',
+    artId: 88, plan: 'Kaladesh', support: { status: 'in-development', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'tranquil-cove', name: 'Tranquil Cove', set: 'M20',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {W} or {U}.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/5/75fa37aa-ef2e-49ff-9496-86b0e69128a7.jpg?1783932932',
+    // Deskryptor zdolności many wchodzi JUŻ w B0b (precedens Thornwood Falls,
+    // Batch 56): strażnik M193/A parsuje Oracle „{T}: Add …" po CAŁYM katalogu,
+    // więc karta bez zakodowanej produkcji kolorów czerwienieje w dniu dodania
+    // (L28). Karta jest 1:1 lustrem Dismal Backwater / Thornwood Falls (M20),
+    // więc nie niesie nowej mechaniki; status `in-development` zostaje do etapu
+    // B1, w którym dojdą testy (ADR 0010 §4 — `supported` dopiero z testami).
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'gain_life', amount: 1 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['W', 'U'] },
+      }),
+    ],
+    artId: 90, plan: 'Kamigawa', support: { status: 'supported', limitations: [] },
+    notes: ['bliźniak Dismal Backwater / Thornwood Falls (M20): wchodzi tapnięty, ETB daje 1 życie, produkuje {W} albo {U}'],
+  }),
+
+  defineCard({
+    id: 'ordinary-bear', name: 'Ordinary Bear', set: 'HOB',
+    types: ['Creature'], subtypes: ['Bear'], colors: ['G'],
+    power: 4, toughness: 5, manaCost: 4,
+    oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/0/f/0feb9817-56e1-465a-851c-b2fe202aa8ae.jpg?1785323277',
+    artId: 125, plan: 'Śródziemie', support: { status: 'supported', limitations: [] },
+    notes: ['vanilla 4/5 za {3}{G} — brak tekstu Oracle, brak zdolności (sanity: karta bez wpisów w abilities)'],
   }),
 
 ]);
