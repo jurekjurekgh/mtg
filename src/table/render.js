@@ -842,6 +842,21 @@ const ABILITY_KEYWORD_LABELS = Object.freeze({
   regenerate: 'Regeneruj tego stwora (następne zniszczenie zostaje odwrócone)',
 });
 
+/**
+ * L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): słownik NAZWANYCH
+ * mechanik, których warunek niesie zdolność statyczna — badge nadanego P/T
+ * mówi wtedy, SKĄD bonus jest („Storied: +1/+0”), a nie tylko ile wynosi.
+ *
+ * Klucz = deskryptor warunku z danych karty (`condition`), wartość = nazwa
+ * mechaniki z tekstu karty. Wpis dodaje się TYLKO dla mechaniki NAZWANEJ
+ * (wydrukowany keyword, jak „Storied” na karcie Óina) — warunek anonimowy
+ * (np. Evangel of Synthesis: liczba dobranych kart) zostaje bez etykiety,
+ * bo karta nie nazywa go mechaniką (ADR 0002: po kształcie zdolności).
+ */
+export const STATIC_CONDITION_MECHANIC_LABELS = Object.freeze({
+  enduringStory: 'Storied',
+});
+
 export const KEYWORD_LABELS = Object.freeze({
   intimidate: 'zastraszenie (blok: artefakty/wspólny kolor)',
   toxic: 'Toksyczny (combat damage graczowi = poison)',
@@ -3699,6 +3714,11 @@ export function cardInfo(session, object, combat = null) {
     // buff do EOT) — widok liczy je jawnie, bo `powerModifier` ich nie niesie.
     grantedPower: faceDown ? 0 : Number(object.grantedPower ?? 0),
     grantedToughness: faceDown ? 0 : Number(object.grantedToughness ?? 0),
+    // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): SKĄD jest nadany
+    // bonus — klucze warunków zdolności statycznych (deskryptor z danych, nie
+    // nazwa karty). Badge nazywa wtedy mechanikę („Storied: +1/+0”), zamiast
+    // zostawiać gracza z gołym „+1/0”. Zakryty permanent: bez zmian (FoW).
+    grantedStatMechanics: faceDown ? [] : (object.grantedStatMechanics ?? []).map((m) => ({ ...m })),
     lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
     // F-A (Wishful Merfolk): nadpisanie podtypów DO KOŃCA TURY — widok niesie
     // subtypesBeforeOverride (active), żywe `subtypes` to już cel („Human").
@@ -4127,7 +4147,25 @@ export function buildStateOverlay(visual, info) {
         // Zapis jak w Oracle („gets +1/+0"): zero też z jawnym znakiem,
         // żeby badge czytało się jak tekst karty, a nie jak ułamek „+1/0".
         const signed = (n) => (n < 0 ? `${n}` : `+${n}`);
-        flags.push(['kw', `${signed(gPow)}/${signed(gTou)}`]);
+        // L (zgłoszenie właściciela 2026-09-19b): bonus z NAZWANEJ mechaniki
+        // dostaje własny badge z nazwą mechaniki („Storied: +1/+0”). Reszta
+        // nadanego P/T (anthemy, aury, granty bez nazwy) idzie osobnym
+        // badge'em — gdy mechanika wyjaśnia CAŁY bonus, goły „+1/+0” znika
+        // (inaczej gracz widziałby ten sam bonus dwa razy).
+        let restPow = gPow;
+        let restTou = gTou;
+        for (const entry of info.grantedStatMechanics ?? []) {
+          const label = STATIC_CONDITION_MECHANIC_LABELS[entry?.condition];
+          if (!label) continue;
+          const pow = Number(entry.power ?? 0);
+          const tou = Number(entry.toughness ?? 0);
+          restPow -= pow;
+          restTou -= tou;
+          flags.push(['kw', `${label}: ${signed(pow)}/${signed(tou)}`]);
+        }
+        if (restPow !== 0 || restTou !== 0) {
+          flags.push(['kw', `${signed(restPow)}/${signed(restTou)}`]);
+        }
       }
     }
     if (info.combatRole) flags.push(['combat', info.combatRole]);

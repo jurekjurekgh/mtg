@@ -5892,6 +5892,15 @@ export function playerView(state, playerId) {
           const granted = grantedStatBonus(object, state);
           if (granted.power !== 0) entry.grantedPower = granted.power;
           if (granted.toughness !== 0) entry.grantedToughness = granted.toughness;
+          // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): gdy nadany
+          // bonus pochodzi ze zdolności WARUNKOWEJ, widok niesie też KLUCZ
+          // warunku (mechanikę nazwaną, np. `enduringStory`) — kafel nazywa
+          // ją na badge („Storied: +1/+0”) zamiast pokazywać gołe „+1/0”.
+          // Widok zostaje opisem stanu (deskryptor), słownik prezentacji
+          // mieszka w render.js (wzorzec grantedKeywords/grantedPower).
+          if (granted.mechanics?.length) {
+            entry.grantedStatMechanics = granted.mechanics.map((m) => ({ ...m }));
+          }
         }
         if (object.subtypes?.length && !hiddenFromViewer) entry.subtypes = [...object.subtypes];
         // M92 (audyt PlayerView): LINIA TYPÓW permanentu na polu bitwy jest

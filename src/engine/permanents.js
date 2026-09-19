@@ -403,7 +403,7 @@ function greatestManaAmongOtherArtifacts(state, object) {
 }
 
 function staticBonuses(state, object) {
-  const bonus = { power: 0, toughness: 0, keywords: [] };
+  const bonus = { power: 0, toughness: 0, keywords: [], mechanics: [] };
   if (!state || object.zone !== 'battlefield' || object.faceDown) return bonus;
   for (const ability of object.abilities ?? []) {
     if (ability?.type !== 'static') continue;
@@ -437,6 +437,18 @@ function staticBonuses(state, object) {
     bonus.power += power;
     bonus.toughness += toughness;
     bonus.keywords.push(...(ability.keywords ?? []));
+    // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): zdolność
+    // WARUNKOWA to mechanika NAZWANA na karcie (Storied / enduring story) —
+    // niosąc samą różnicę P/T, widok skazywał kafel na gołe „+1/0”, z którego
+    // gracz nie odczytał, skąd bonus jest. Kolekcjonujemy WIĘC klucz warunku
+    // razem z jego wkładem do P/T (deskryptor, nie nazwa karty — ADR 0002);
+    // etykietę mechaniki nadaje warstwa opisu (render.js), bo to słownik
+    // prezentacji, nie reguła silnika.
+    if (power !== 0 || toughness !== 0) {
+      for (const key of Object.keys(ability.condition ?? {})) {
+        bonus.mechanics.push({ condition: key, power, toughness });
+      }
+    }
   }
   return bonus;
 }
@@ -683,7 +695,7 @@ export function effectivePower(object, state = null) {
  * wartości EFEKTYWNE; różnicę musi policzyć warstwa, która zna składniki.
  */
 export function grantedStatBonus(object, state = null) {
-  if (!object || object.power === null) return { power: 0, toughness: 0 };
+  if (!object || object.power === null) return { power: 0, toughness: 0, mechanics: [] };
   const attachment = attachmentBonuses(state, object);
   const statics = staticBonuses(state, object);
   const anthem = anthemBonuses(state, object);
@@ -691,6 +703,10 @@ export function grantedStatBonus(object, state = null) {
   return {
     power: attachment.power + statics.power + anthem.power + untilEot.power,
     toughness: attachment.toughness + statics.toughness + anthem.toughness + untilEot.toughness,
+    // L: źródła NAZWANYCH mechanik spośród statyk własnych obiektu (Óin).
+    // Anthemy/załączniki nie mają jeszcze mechanik warunkowych w katalogu —
+    // gdy taki się pojawi, dokłada tu swoje wpisy ten sam wzorzec.
+    mechanics: statics.mechanics,
   };
 }
 
