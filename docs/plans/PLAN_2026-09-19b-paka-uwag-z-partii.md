@@ -142,6 +142,7 @@ ADR 0018 (bez pełnego B0), ADR 0029 (katalog kart nie rośnie), ADR 0005
 | P5 | F, I, J | `1f38cc9` | `npm test` 5899/5899, build 64 / 3869,3 kB |
 | P6 | G, H | `6130760` | `npm test` 5907/5907, build 64 / 3872,0 kB |
 | P7 | F/2 (log) | `65409d1` | `npm test` 5911/5911, build 64 / 3875,3 kB |
+| P8 | M | `6ae0dda` | `npm test` 5917/5917, build 64 / 3877,7 kB |
 
 Notka P5/F (pomiar, nie założenie): ścieżka kredytu „for each mana from
 a Treasure spent to cast it” jest w przepływie BOTA poprawna (pin F/1: bot
@@ -178,3 +179,16 @@ koszty).
 
 Notka P3/E2 (bez zmian): brak Merfolk Tokena w modalu podziału obrażeń jest
 POPRAWNY — hexproof (CR 702.11b) wyklucza cel; pin dokumentacyjny.
+
+## P8 — M: rzut czaru modalnego = jedna oferta + modal trybu
+
+Zgłoszenie M (You're Confronted by Robbers) było w tej samej rodzinie co K
+(„najpierw oferta rzucenia, potem modal wyboru sposobu rzucenia”), ale innym
+objawem: K rozbijał panel sufiksem daru w kluczu grupy, a M — sufiksem
+`modeIndex` (`spell:<id>:<tryb>`). Tryb modalnego czaru jest decyzją W TRAKCIE
+rzucania (CR 601.2b), więc grupa jest jedna per czar, a tytuł wpisu nazywa
+czynność i kartę („Rzuć: <karta>”); nazwy trybów zostają w etykietach
+wariantów modala. Piny M/1–M/6 (w tym anty-over-fix dla czaru bez trybów)
+i mutacje M-Ma/M-Mb/M-Mc. Piny M87 i M267 zsynchronizowane z nową regułą
+(obie stare oczekiwały trybów jako osobnych przycisków — zgłoszenie
+właściciela to odwraca, intencje obu pinów zachowane).
