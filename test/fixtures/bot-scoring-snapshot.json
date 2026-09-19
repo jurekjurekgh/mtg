@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "0cbed44e526684cecc37a2398ea876dae9115d222db55b3120736fb9c03f6f30",
+  "overallHash": "f85569002f2593cd6f03757558302fe957ff002cf39c333eef8be8c4ad217d58",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
@@ -86,38 +86,40 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "e81960c6e9468172bab87c27127ff3a385275a680de130a0cac6a80ac5e2fce9",
-      "decisions": 174,
-      "scoreSum": 2571.3171,
+      "hash": "376c5b17fdf2521d80412f1921adb196043adaaff90298f784a3560ed26e9c3a",
+      "decisions": 157,
+      "scoreSum": 2499.8054,
       "chosenKinds": {
-        "activate_ability": 1,
-        "attack": 6,
-        "block": 7,
+        "activate_ability": 2,
+        "attack": 5,
+        "block": 6,
         "cast_permanent": 6,
-        "pass_priority": 136,
+        "cast_spell": 1,
+        "pass_priority": 123,
         "play_land": 5,
-        "resolve_combat": 7,
-        "resolve_endure_choice": 2,
-        "resolve_exploit_choice": 1,
-        "resolve_mulligan_bottom_choice": 1,
-        "resolve_mulligan_choice": 2
+        "resolve_combat": 6,
+        "resolve_endure_choice": 1,
+        "resolve_mulligan_choice": 1,
+        "resolve_trigger_target": 1
       }
     },
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1001,
-      "hash": "e1b07e9164f9add43a7bfe4b1d083601c9de97f977221c3cb50bc2a3704b63c7",
-      "decisions": 189,
-      "scoreSum": 2602.1279,
+      "hash": "a90df951dc0ce71daf7f72020c5994537b9c6228476196a81bdb16252e44fbb8",
+      "decisions": 165,
+      "scoreSum": 2517.9189,
       "chosenKinds": {
-        "activate_ability": 2,
         "attack": 4,
         "block": 6,
-        "cast_permanent": 7,
+        "cast_permanent": 6,
         "cast_spell": 1,
-        "pass_priority": 155,
-        "play_land": 5,
-        "resolve_combat": 8,
+        "pass_priority": 131,
+        "play_land": 6,
+        "resolve_combat": 7,
+        "resolve_damage_assignment": 1,
+        "resolve_delve_exile": 1,
+        "resolve_endure_choice": 1,
         "resolve_mulligan_choice": 1
       }
     }

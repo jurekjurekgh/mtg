@@ -1375,7 +1375,7 @@ export function canPayMadnessCost(state, playerId, object) {
   return hasColorRequirements(state, playerId, requirements);
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, offspring = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, abilityWindowCast = false } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, offspring = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, abilityWindowCast = false, delveExileIds = null } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
@@ -1533,7 +1533,29 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // kosztu many (3 za {2}{W/P} maną; 2 + 2 życia za wariant życiowy).
   // Wzór dotychczasowy `cost + (phyrexian - lifePaid)` zakładał, że manaCost
   // symboli NIE zawiera (stare dane: Porcelain manaCost=2).
-  const totalMana = cost - lifePaid + (kicker?.cost ?? 0) + (offspringPaid?.cost ?? 0);
+  // CR 702.66 (Delve, Batch 57/B4 — Hooting Mandrills): wygnanie kart z
+  // WŁASNEGO grobu podczas rzucania pokrywa część GENERYCZNĄ kosztu. To nie
+  // koszt alternatywny (ruling KTK 2021-03-19): koszt i mana value czaru się
+  // nie zmieniają, nie wolno wygnać więcej kart niż wynosi część generyczna,
+  // a wygnanie JEST kosztem (CR 601.2h) — karty zostają w exile nawet, gdy
+  // czar zostanie skontrowany. Walidacja przed jakąkolwiek mutacją (L48:
+  // oferta liczy tak samo jak płatność).
+  const delveIds = delveExileIds ?? null;
+  let delveDeduct = 0;
+  if (delveIds != null) {
+    if (!object.delve) throw new Error('Ta karta nie ma mechaniki delve');
+    if (!Array.isArray(delveIds) || new Set(delveIds).size !== delveIds.length) {
+      throw new Error('Nieprawidłowy koszt Delve (exile)');
+    }
+    const parsedCost = MANA_COSTS[object.cardId] != null ? parseManaCost(MANA_COSTS[object.cardId]) : null;
+    const genericPart = parsedCost ? parsedCost.generic : (object.manaCost ?? 0);
+    if (delveIds.length > genericPart) throw new Error('Delve: nie wolno wygnać więcej kart niż część generyczna');
+    const ownGrave = new Set(state.zones.graveyard.filter((id) => id !== objectId
+      && state.objects.get(id)?.controllerId === playerId));
+    if (!delveIds.every((exId) => ownGrave.has(exId))) throw new Error('Nieprawidłowy koszt Delve (exile)');
+    delveDeduct = delveIds.length;
+  }
+  const totalMana = cost - lifePaid + (kicker?.cost ?? 0) + (offspringPaid?.cost ?? 0) - delveDeduct;
   // Opłacalność liczona po MANIE PRODUKOWALNEJ (pula + nietapnięte landy) —
   // spendMana sam do-tapuje brakujące landy. Koszt alternatywny ze Skarbów
   // ma własną walidację (treasureManaAvailable) poniżej.
@@ -1610,6 +1632,13 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
       need -= ability.amount;
     }
     if ((player.treasureMana ?? 0) < totalMana) throw new Error('Niewystarczająca mana ze Skarbów');
+  }
+  for (const exId of delveIds ?? []) {
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, exId, 'exile', exileId, { exiledBy: object.cardId });
+    state.events.push(event('object_moved', {
+      fromId: exId, object: moved, fromZone: 'graveyard', toZone: 'exile', delve: true,
+    }));
   }
   spendMana(state, playerId, totalMana, requirements, manaPurpose);
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);

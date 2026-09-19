@@ -35,7 +35,7 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
-import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
+import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
 import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
@@ -823,6 +823,38 @@ function bootstrapTable() {
         onComplete: (exileIds) => {
           hideModal('choice-request');
           play({ type: 'resolve_escape_exile', playerId: choiceView.playerId, exileIds });
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // Batch 57/B4 (Delve, CR 702.66): koszt rzutu to wygnanie DOWOLNEJ liczby
+    // kart z własnego grobu (każda `{1}` części generycznej) — jak Escape
+    // wybiera się to ptaszkami, ale liczba jest zmienna, więc wizard pokazuje
+    // koszt po każdej zmianie i blokuje liczby nieopłacalne (L48).
+    if (request.type === 'delve_exile') {
+      const pending = choiceView.pendingDelveExile;
+      if (!pending || pending.sourceCardId == null || !Array.isArray(pending.candidateIds)) {
+        hideModal('choice-request');
+        play(request.options[0]);
+        return;
+      }
+      const cards = pending.candidateIds.map((id) => {
+        const object = session.state?.objects?.get(id);
+        return { id, cardId: object?.cardId ?? null, name: session.nameOfObject(id) ?? id };
+      });
+      renderDelveExileWizard(els.choiceRequestBody, {
+        candidates: cards,
+        maxExile: pending.maxExile,
+        affordableCounts: pending.affordableCounts ?? null,
+        sourceName: pending.sourceCardId ? session.nameOf(pending.sourceCardId) : null,
+        manaCost: pending.manaCost ?? null,
+        playerId: choiceView.playerId,
+        onOpenCard: (cardId) => openCardFullscreenByCardId(cardId),
+        onComplete: (exileIds) => {
+          hideModal('choice-request');
+          play({ type: 'resolve_delve_exile', playerId: choiceView.playerId, exileIds });
         },
         onCancel: () => hideModal('choice-request'),
       });

@@ -6015,3 +6015,107 @@ snapshot ↔ katalog ↔ arkusz, 8 scenariuszy legalnych/nielegalnych, w tym
 kontrola negatywna flash na Containment Membrane i rozdział druków Ragera).
 Bramy: `npm test` **5939/5939, 0 fail**, `npm run build` 64 moduły /
 3894,1 kB.
+
+## M389 (2026-09-19) — Batch 57/B2: Messenger Falcons — hybrydowy pip `{G/U}` w rozkładzie landów + ETB dobranie
+
+Zakres: karta 82 ARB (`{2}{G/U}{W}`, Bird 2/2, flying + ETB dobierz kartę)
+wchodzi jako `supported` — `keywords: ['flying']` + trigger wejścia
+`draw_cards` (bliźniak kształtu triggera Phyrexian Ragera), koszt hybrydowy
+płacony `{G}` albo `{U}`.
+
+Mechanika narzędziowa (generyczna, ADR 0002): `coloredPips`
+(`tools/generate-plan-decks.mjs`) czytał wyłącznie symbole pojedynczych
+kolorów, więc hybryda `{W/B}`/`{G/U}` znikała z rozkładu landów (usterka
+ukryta na Esper Stormblade `{W/B}{U}` w `decks/alara.txt`). Nowa reguła:
+hybryda DWÓCH kolorów liczy się do PIERWSZEGO koloru pary w WUBRG
+(deterministycznie) — talia dostaje źródło jednego z kolorów pary; `{W/P}`
+i `{2/W}` zostają pominięte ŚWIADOMIE (alternatywa płatna bez koloru —
+pomiar: liczenie `{W/P}` jak pipu zawyżało `mirrodin-wu` 4/6 → 5/5 „bez
+powodu", bo Porcelain Legionnaire jest opłacalny życiem).
+
+Dowód izolacji (L124): generator z fixem, ale BEZ nowej karty (`git stash` na
+`card-data.js`) zostawia `decks/alara.txt` = committed — usterka pipów była
+realna (`{W:0}` → `{W:1}`), ale w tej talii niewidoczna (Esper Stormblade ma
+źródła W/B z pozostałych kart); dopiero wejście Messenger Falcons zmienia
+alara: `+Messenger Falcons`, `Mountain 1→2` (README M203/7: 36/12/24 →
+38/13/25). Zero churnu w pozostałych 24 taliach.
+
+Piny: `test/real-cards-batch57.test.js` — 19 testów (sanity + rozkład landów
+z hybrydą, płatność `{G}`/`{U}` i odmowa, gdy brak obu, dobranie z pustej
+biblioteki). RED→GREEN na stashu źródeł: 5 czerwonych bez fixu. Przeloosowanie
+scenariusza (L25): `panel-rozgrywka-tura-przeciwnika` seed 2 → 1 (zmiana
+składu talii przelosowała partię).
+
+Bramy: `npm test` **5945/5945, 0 fail**, `npm run build` 64 moduły /
+3894,4 kB.
+
+## M390 (2026-09-19) — Batch 57/B3: Merciless Repurposing — wygnanie celu + inkubacja 3
+
+Zakres: karta 80 MOM (`{4}{B}{B}` instant) — deskryptor 1:1 z Tiller of Flesh
+(M109): `exile_permanent` + `incubate 3` (token Incubator z trzema licznikami
+`+1/+1`, CR 701.47/701.51). Ruling MOM (2023-04-14) dopięty pinem: nielegalny
+cel przy rozstrzyganiu → czar nic nie robi i NIE inkubuje.
+
+Piny: `test/real-cards-batch57.test.js` — 22/22 (fizzl na 0/0 celu, `{2}`:
+transformacja tokenu w 0/0 Phyrexian z zachowaniem 3 liczników → 3/3).
+RED→GREEN na stashu `card-data.js`: 3 czerwone.
+
+Strażnik wycen (`bot-targeted-effect-valuation-guard`): `incubate` jako rider
+przy wycenionym `exile_permanent` dostał jawny wpis `REVIEWED_UNVALUED` (token
+Incubator bez wyceny w bocie od M109 — dodanie punktacji wymaga pomiaru B0).
+
+Churn: tylko `mirrodin-brg` (`+Merciless Repurposing`, Swamp 5→6; README
+29/10/19) — talia poza `SNAPSHOT_CONFIG`, więc golden-master NIETKNIĘTY
+(`--write` dał identyczny plik, `overallHash` bez zmian).
+
+Bramy: `npm test` **5948/5948, 0 fail**, `npm run build` 64 moduły /
+3895,0 kB.
+
+## M391 (2026-09-19) — Batch 57/B4: Delve (CR 702.66) — Hooting Mandrills
+
+Zakres: karta 66 KTK (`{5}{G}` 4/4 Ape, Delve + Trample) oraz GENERYCZNA
+mechanika Delve — najszersza zmiana batcha (koszt, oferta, walidacja, wizard,
+bot, odcisk). Ruling KTK (2021-03-19) wdrożony 1:1: delve **nie zmienia**
+kosztu ani mana value czaru (nie jest kosztem alternatywnym), każda wygnana
+karta pokrywa `{1}` części GENERICZNEJ i nie wolno wygnać więcej kart niż ta
+część, a liczba kart jest zmienna (0..limit).
+
+Model decyzji (wzorzec ucieczki/Escape, M241 — ale z liczbą ZMIENNĄ):
+deklaracja rzutu (`cast_permanent`/`cast_spell`) kolejkuje `pendingDelveExile`
+(`delve_exile_required`), a gracz domyka ją komendą `resolve_delve_exile
+{ exileIds }`. Oferta decyzji enumeruje podzbiory z `affordableCounts` (cap
+`DELVE_OPTION_CAP = 32`), więc protokół i płatność liczą tak samo (L48).
+`resolveDelveExile` odpala właściwy rzut z `delveExileIds`; wygnanie jest
+KOSZTEM (CR 601.2h) — karty zostają w exile nawet po skontrowaniu czaru.
+
+Deskryptor: `delve: true` TOP-LEVEL na obiekcie gry (jak kicker/offspring —
+decyzja o kształcie podyktowana tym, że mechanika działa na permanentach
+i czarach, a `spell.*` jest w silniku cechą czaru na stosie). Przeprowadzony
+przez CAŁY łańcuch L21: `registry.defineCard` (biała lista pól!) →
+`gameObjectDataOf` (obie gałęzie) → `deck.js` (jawna lista pól) →
+`createGameObject` → `ADD_OBJECT_FIELDS` addObject → fingerprint (przez
+`...rest`, więc pole wchodzi do odcisku samo).
+
+Ścieżki zmienione: `legalSpellCasts` (bramka many przepuszcza wariant
+z obniżką), `legalCommands` (jedna oferta rzutu + gałąź decyzji), wizard
+`renderDelveExileWizard` (ptaszki + koszt po obniżce + blokada liczby
+nieopłacalnej), etykiety modala/panelu (tytuł z `pendingDelveExile`),
+`session.commandOptionKey` (+`exileIds` — warianty decyzji różnicują się
+w sondzie i ptaszku), bot (`resolve_delve_exile`: strata kart wg miary Escape
++ premia za zaoszczędzoną manę; bez premii mechanika byłaby w partiach martwa).
+
+Piny: `test/real-cards-batch57.test.js` — 29/29 (sanity + rzut bez delve,
+1/2/5 wygnanych kart, limity: część generyczna / cudzy grób / duplikat /
+liczba nieopłacalna, mana value bez zmian, składanie z obniżką kosztu,
+ścieżka CZARU na syntetycznym instancie oraz pin L21 „prawdziwa talia").
+RED→GREEN na stashu źródeł: 7 czerwonych.
+
+Churn: tylko `tarkir-bg` (`+Hooting Mandrills`, Forest 6→7; README
+33/11/22 → 35/12/23). Golden-master wycen zregenerowany ŚWIADOMIE
+(`0cbed44e…` → `f85569002f2593cd…`) — para `tarkir-bg` vs `warhammer-ubr`
+jest w `SNAPSHOT_CONFIG`, a talia zmieniła skład. Przeloosowanie scenariuszy
+(L25): `session-bot-pausa` seed 11 → 12, `uwagi-...-b-pump-w-modalu` seed
+3 → 2 (oba po hunterze, z komentarzami w testach).
+
+Bramy: `npm test` **5955/5955, 0 fail**, `npm run build` 64 moduły /
+3921,7 kB.

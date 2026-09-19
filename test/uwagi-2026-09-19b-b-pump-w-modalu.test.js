@@ -147,7 +147,10 @@ function reachHumanMainWithCreature(session) {
 
 test('B/3: skutek czaru CZŁOWIEKA widać w modalu „Rozgrywka" (nie tylko log)', () => {
   let checked = 0;
-  for (const seed of [3, 42, 17]) {
+  // L25 (B4/M391): tarkir-bg (talia CZŁOWIEKA w tym pinie) dostała Hooting
+  // Mandrills — seed 3 nie dobiera już Omenspeakera pod pump w oknie modala.
+  // Hunter 2..12: 2 daje ten sam scenariusz (42 i 17 zostają bez zmian).
+  for (const seed of [2, 42, 17]) {
     const decks = new Map([
       [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds],
       [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), REGISTRY).cardIds],

@@ -520,6 +520,10 @@ export const CAST_SPELL_OPTIONS = Object.freeze([
   // wskazany odbiorca. Dwie nazwy, bo to DWIE decyzje gracza (czy obiecać
   // i komu) — jedna flaga z id w środku udawałaby jedną.
   'gifted', 'giftRecipientId',
+  // CR 702.66 (Delve, Batch 57/B4): karty wygnane z grobu jako część kosztu —
+  // opcja jedzie w tej samej komendzie co reszta decyzji rzutu (deklaracja
+  // czeka w `pendingDelveExile`, a wybór gracza wraca tu jako lista id).
+  'delveExileIds',
 ]);
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
@@ -532,6 +536,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const {
     buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0,
     abilityWindowCast = false, kicked = false, gifted = false, giftRecipientId = null,
+    delveExileIds = null,
   } = options;
   const preObject = state.objects.get(objectId);
   // Kicker (CR 702.33) na instantach i sorcerych rozlicza TA funkcja. Ścieżki
@@ -645,8 +650,34 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // (object.manaCost) zawiera już symbole phyrexian — odejmujemy lifePaid.
   // Kicker to koszt DODATKOWY (CR 601.2f): nie podlega obnizkom kosztu czaru
   // i placa go takze rzuty „without paying its mana cost" (plot/suspend).
-  const manaSpent = baseMana + altManaExtra - lifePaid + (kicker?.cost ?? 0);
+  // CR 702.66 (Delve, Batch 57/B4): wygnanie kart z własnego grobu podczas
+  // rzucania pokrywa część GENERYCZNĄ. Jak w ścieżce permanentów
+  // (`castPermanent`): nie koszt alternatywny, limit = część generyczna,
+  // wygnanie jest kosztem (CR 601.2h), walidacja przed mutacją.
+  const delveIds = delveExileIds ?? null;
+  let delveDeduct = 0;
+  if (delveIds != null) {
+    if (!object.delve) throw new Error('Ta karta nie ma mechaniki delve');
+    if (!Array.isArray(delveIds) || new Set(delveIds).size !== delveIds.length) {
+      throw new Error('Nieprawidłowy koszt Delve (exile)');
+    }
+    const parsedCost = MANA_COSTS[object.cardId] != null ? parseManaCost(MANA_COSTS[object.cardId]) : null;
+    const genericPart = parsedCost ? parsedCost.generic : (object.manaCost ?? 0);
+    if (delveIds.length > genericPart) throw new Error('Delve: nie wolno wygnać więcej kart niż część generyczna');
+    const ownGrave = new Set(state.zones.graveyard.filter((id) => id !== objectId
+      && state.objects.get(id)?.controllerId === playerId));
+    if (!delveIds.every((exId) => ownGrave.has(exId))) throw new Error('Nieprawidłowy koszt Delve (exile)');
+    delveDeduct = delveIds.length;
+  }
+  const manaSpent = baseMana + altManaExtra - lifePaid + (kicker?.cost ?? 0) - delveDeduct;
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
+  for (const exId of delveIds ?? []) {
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, exId, 'exile', exileId, { exiledBy: object.cardId });
+    state.events.push(event('object_moved', {
+      fromId: exId, object: moved, fromZone: 'graveyard', toZone: 'exile', delve: true,
+    }));
+  }
   spendMana(state, playerId, manaSpent, [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips], spellManaPurpose(object));
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   consumePendingSpellDiscount(state, object);
@@ -2485,8 +2516,21 @@ export function legalSpellCasts(state, playerId) {
     const spellPhyrexianVariants = (() => {
       if (phyrexianSymbols === 0) {
         if (object.plotted || object.suspendReady || freeImpulseCast) return [null];
-        const base = effectiveSpellManaCost(state, object);
-        return (base <= manaAvailable(object, coloredPipsOf(object.cardId, 0)) && hasColorForSpell(state, playerId, object.cardId, 0)) ? [null] : [];
+        // CR 702.66 (Delve, Batch 57/B4): część generyczna kosztu może zostać
+        // pokryta wygnaniem kart z własnego grobu — oferta musi liczyć tak samo
+        // jak płatność (L48), więc bramka many przepuszcza czar, gdy opłacalny
+        // jest KTÓRYKOLWIEK wariant 0..limit (decyzję i tak podejmie
+        // `pendingDelveExile`, więc nie enumerujemy tu podzbiorów).
+        const delveLimit = object.delve ? delveExileLimit(state, playerId, object) : 0;
+        const payable = delveLimit > 0
+          ? (() => {
+            for (let k = 0; k <= delveLimit; k += 1) {
+              if (delveManaAfter(state, playerId, object, k) <= manaAvailable(object, coloredPipsOf(object.cardId, 0))) return true;
+            }
+            return false;
+          })()
+          : effectiveSpellManaCost(state, object) <= manaAvailable(object, coloredPipsOf(object.cardId, 0));
+        return (payable && hasColorForSpell(state, playerId, object.cardId, 0)) ? [null] : [];
       }
       const base = effectiveSpellManaCost(state, object);
       const out = [];
@@ -3002,6 +3046,119 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
 
 /** Limit oferowanych podzbiorów wygnania Escape (jak CREW_OPTION_CAP). */
 export const ESCAPE_OPTION_CAP = 32;
+
+/** Limit oferowanych podzbiorów wygnania Delve (jak ESCAPE_OPTION_CAP). */
+export const DELVE_OPTION_CAP = 32;
+
+/**
+ * Delve (CR 702.66, Hooting Mandrills): „Each card you exile from your
+ * graveyard while casting this spell pays for {1}." — mechanika NIE jest
+ * kosztem alternatywnym (ruling KTK 2021-03-19): nie zmienia kosztu ani mana
+ * value czaru, obniża wyłącznie część GENERICZNĄ, nie wolno wygnać więcej kart
+ * niż wynosi ta część, a liczba kart jest zmienna (0..limit).
+ *
+ * Wzorzec przepływu jak Escape (M241): deklaracja rzutu kolej­kuje decyzję
+ * (`pendingDelveExile` → `resolve_delve_exile`), bo podzbiory × cele nie mogą
+ * iść do oferty. Różnica: Escape ma FIXED `exileCount`, delve — widełki.
+ */
+export function delveExileLimit(state, playerId, object) {
+  if (!object?.delve) return 0;
+  const cost = MANA_COSTS[object.cardId] ?? null;
+  const generic = cost != null ? parseManaCost(cost).generic : (object.manaCost ?? 0);
+  const own = state.zones.graveyard.filter((id) => id !== object.id
+    && state.objects.get(id)?.controllerId === playerId);
+  return Math.max(0, Math.min(generic, own.length));
+}
+
+/** Koszt many czaru/permanentu z delve po wygnaniu `delveCount` kart. */
+export function delveManaAfter(state, playerId, object, delveCount) {
+  const base = object?.kind === 'spell'
+    ? effectiveSpellManaCost(state, object)
+    : reduceGenericCost(object.cardId, object.manaCost ?? 0,
+      costReductionForSpell(state, object) + conditionalCostReduction(state, object));
+  return Math.max(0, base - Math.max(0, delveCount));
+}
+
+/**
+ * Deklaracja rzutu czaru/permanentu z Delve. Waliduje, że PRZYNAJMNIEJ JEDEN
+ * wariant kosztu jest opłacalny (od 0 do limitu wygnania — L48: oferta nie
+ * publikuje ruchu, którego płatność nie przyjmie), a wybór liczby i kart
+ * odkłada do `pendingDelveExile`.
+ */
+export function declareDelveCast(state, playerId, objectId, call) {
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || !object.delve) {
+    throw new Error('To nie jest czar z Delve w twojej ręce');
+  }
+  const maxExile = delveExileLimit(state, playerId, object);
+  if (maxExile === 0) throw new Error('Delve: brak kart w grobie (albo brak części generycznej)');
+  if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  const manaFor = (k) => producibleMana(state, playerId, null, spellManaPurpose(object), coloredPipsOf(object.cardId));
+  const affordable = [];
+  for (let k = 0; k <= maxExile; k += 1) {
+    if (delveManaAfter(state, playerId, object, k) <= manaFor(k)) affordable.push(k);
+  }
+  if (affordable.length === 0) throw new Error('Niewystarczająca mana na rzut z Delve');
+  const own = state.zones.graveyard.filter((id) => id !== objectId
+    && state.objects.get(id)?.controllerId === playerId);
+  state.pendingDelveExile = {
+    playerId,
+    objectId,
+    cardId: object.cardId ?? null,
+    call,
+    maxExile,
+    minExile: affordable[0],
+    affordableCounts: affordable,
+    candidateIds: [...own],
+    manaCostBase: delveManaAfter(state, playerId, object, 0),
+    restorePriorityTo: state.turn.priorityPlayerId,
+  };
+  state.turn.priorityPlayerId = playerId;
+  const e = event('delve_exile_required', {
+    playerId, sourceId: objectId, cardId: object.cardId ?? null,
+    maxExile, minExile: affordable[0], candidateIds: [...own],
+  });
+  state.events.push(e);
+  return e;
+}
+
+/**
+ * Domknięcie kosztu Delve: wygnij `exileIds` (0..limit) z własnego grobu,
+ * zapłać obniżoną manę i połóż czar na stosie. Rzut wykonuje ścieżka
+ * wskazana w `pending.call` (permanent albo czar) z opcją `delveExileIds`,
+ * która między innymi pilnuje CR 702.66 (limit części generycznej).
+ */
+export function resolveDelveExile(state, playerId, exileIds) {
+  const pending = state.pendingDelveExile;
+  if (!pending || pending.playerId !== playerId) throw new Error('To nie jest twoja decyzja Delve');
+  const object = state.objects.get(pending.objectId);
+  if (!object || object.zone !== 'hand') { state.pendingDelveExile = null; throw new Error('Czar zniknął z ręki'); }
+  const own = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === playerId);
+  const ids = Array.isArray(exileIds) ? [...exileIds] : null;
+  const valid = ids
+    && new Set(ids).size === ids.length
+    && ids.length <= pending.maxExile
+    // L48: wykonanie nie może przyjąć wyboru, którego OFERTA nie opublikowała
+    // (liczba kart musi być wśród opłacalnych — inaczej rzut padłby na
+    // płatności, już po zdjęciu decyzji).
+    && (pending.affordableCounts ?? []).includes(ids.length)
+    && ids.every((exId) => exId !== pending.objectId && own.includes(exId));
+  if (!valid) throw new Error('Nieprawidłowy koszt Delve (exile)');
+  state.pendingDelveExile = null;
+  if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+    state.turn.priorityPlayerId = pending.restorePriorityTo;
+  }
+  const call = pending.call ?? {};
+  const e = call.kind === 'spell'
+    ? castSpell(state, playerId, pending.objectId, call.targets ?? [], call.sacrificeTargetId ?? null,
+      call.modeIndex ?? null, call.stunTargetId ?? null, { ...(call.options ?? {}), delveExileIds: ids })
+    : castPermanent(state, playerId, pending.objectId, { ...(call.options ?? {}), delveExileIds: ids });
+  state.events.push(event('delve_exile_resolved', {
+    playerId, sourceId: pending.objectId, cardId: pending.cardId,
+    exileIds: ids.slice(), delveCount: ids.length,
+  }));
+  return e;
+}
 
 /**
  * Escape (CR 702.138, Sweet Oblivion): czar z deskryptorem spell.escape w grobie

@@ -11,6 +11,10 @@
 export const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingAbilityActivation', 'pendingAmass', 'pendingColorChoice',
   'pendingEscapeExile',
+  // Batch 57/B4 (Delve, CR 702.66): deklaracja rzutu czeka na wybór liczby
+  // i kart wygnania — zamrożony stan jest częścią stanu gry (ADR 0005),
+  // a `affordableCounts` decyduje o ofercie (L48).
+  'pendingDelveExile',
   'madnessQueue',
   // B2 (audyt PR #113, F1): `madnessQueue` to KOLEJKA odroczonych decyzji
   // madness (M258 — wpis zamiast natychmiastowego `pendingMadnessCast`, bo

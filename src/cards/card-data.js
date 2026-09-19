@@ -11320,7 +11320,18 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     power: 4, toughness: 4, manaCost: 6,
     oracleText: 'Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nTrample',
     imageUri: 'https://cards.scryfall.io/large/front/0/9/090d678c-f0e4-4757-8900-93dfe67aefe9.jpg?1783939067',
-    artId: 66, plan: 'Tarkir', support: { status: 'in-development', limitations: [] },
+    // CR 702.66 (Delve, Batch 57/B4): statyczna zdolność funkcjonująca
+    // w trakcie rzucania — koszt NIEalternatywny (ruling KTK 2021-03-19):
+    // każda wygnana z grobu karta pokrywa `{1}` części GENERICZNEJ, koszt
+    // i mana value czaru się nie zmieniają, a liczba kart jest zmienna
+    // (0..część generyczna). Deskryptor top-level jak kicker/offspring.
+    delve: true,
+    keywords: ['trample'],
+    artId: 66, plan: 'Tarkir', support: { status: 'supported', limitations: [] },
+    notes: [
+      'Delve: wybór liczby kart jest decyzją w trakcie rzucania (pendingDelveExile); karty zostają w exile także po skontrowaniu czaru (CR 601.2h)',
+      'mana value bez zmian — Treasure Cruise/Hooting Mandrills liczą się do triggerów po koszcie wydrukowanym (ruling KTK 2021-03-19)',
+    ],
   }),
 
   defineCard({

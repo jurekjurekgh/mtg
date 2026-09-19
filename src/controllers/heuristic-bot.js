@@ -3790,6 +3790,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }, 0);
         return finish(-costSum);
       }
+      case 'resolve_delve_exile': {
+        // Batch 57/B4 (CR 702.66): każda wygnana karta pokrywa `{1}` kosztu
+        // generycznego, więc wynik = (strata kart grobu wg tej samej miary co
+        // Escape) + premia za ZAOSZCZĘDZONĄ manę. Bez drugiego członu każda
+        // karta grobu jest „droższa" niż jedna mana, więc bot NIGDY nie
+        // wybierałby delve — mechanika byłaby w partiach martwa.
+        const ids = cmd.exileIds ?? [];
+        const costSum = ids.reduce((sum, exId) => {
+          const o = view.zones.graveyard.find((entry) => entry.id === exId);
+          return sum + (o ? escapeExileCostOf(view, o) : 0);
+        }, 0);
+        return finish(-costSum + P.creatureManaCostWeight * ids.length);
+      }
       case 'cast_spell':
       case 'cast_cleave':
       case 'cast_escape':
@@ -7595,6 +7608,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }, 0);
       return { count: ids.length, value: sumValue };
     }
+    // Batch 57/B4: ta sama klasa decyzji co Escape (warianty = różne
+    // podzbiory grobu) — projekcja musi nieść liczbę i „wagę" kart, inaczej
+    // remis wariantów wygląda na uczciwy (L32/audyt remisów).
+    if (cmd?.type === 'resolve_delve_exile') {
+      const ids = cmd.exileIds ?? [];
+      const sumValue = ids.reduce((s, id) => {
+        const o = view.zones.graveyard.find((x) => x.id === id);
+        return s + (o ? (o.manaCost ?? 0) : 0);
+      }, 0);
+      return { count: ids.length, value: sumValue };
+    }
     if (cmd?.type === 'resolve_rebound_cast' || cmd?.type === 'resolve_grave_free_cast'
         || cmd?.type === 'resolve_madness_cast' || cmd?.type === 'resolve_exile_cast') {
       return { cast: cmd.cast ? 1 : 0, cardId: cmd.objectId ?? cmd.cardId ?? null };
@@ -7729,6 +7753,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     if (cmd.type === 'resolve_escape_exile') {
       return `resolve_escape_exile(${(cmd.exileIds ?? []).join('+') || '?'})`;
+    }
+    if (cmd.type === 'resolve_delve_exile') {
+      return `resolve_delve_exile(${(cmd.exileIds ?? []).join('+') || '?'})`;
     }
     if (cmd.type === 'resolve_rebound_cast' || cmd.type === 'resolve_grave_free_cast'
         || cmd.type === 'resolve_madness_cast' || cmd.type === 'resolve_exile_cast') {

@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { gameObjectDataOf } from '../src/cards/materialize.js';
+import { gameObjectDataOf, setupCardMatch } from '../src/cards/materialize.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectiveKeywords, tapObject } from '../src/engine/permanents.js';
+import { moveObjectDirectly } from '../src/engine/objects.js';
 import { addCounter } from '../src/engine/counters.js';
 import { landSplit, coloredPips } from '../tools/generate-plan-decks.mjs';
 
@@ -332,4 +333,173 @@ test('B57/80: nielegalny cel przy rozstrzyganiu → czar nic nie robi, brak inku
   assert.equal(resolved?.fizzled, true, 'jedyny cel nielegalny = fizzl (ruling MOM 2023-04-14)');
   assert.equal(incubatorsOf(s, 'p1').length, 0, 'ruling: NIE inkubuj, gdy cel nielegalny');
   assert.equal(s.zones.stack.length, 0, 'czar zszedł ze stosu');
+});
+
+// ---------------------------------------------------------------------------
+// B4 (M391) — Delve: 66 Hooting Mandrills ({5}{G}, Ape 4/4 trample).
+// CR 702.66: podczas rzucania można wygnać DOWOLNĄ liczbę kart z własnego
+// grobu; każda pokrywa `{1}` części GENERICZNEJ. Rulingi KTK (2021-03-19):
+// delve to NIE koszt alternatywny — koszt i mana value czaru są bez zmian,
+// nie wolno wygnać więcej kart niż część generyczna, a wygnanie jest kosztem
+// (CR 601.2h), więc karty zostają w exile także po skontrowaniu czaru.
+// ---------------------------------------------------------------------------
+sanity('hooting-mandrills', 66, 'KTK', 'Tarkir');
+
+/** Karty własnego grobu — kandydaci kosztu delve. */
+function delveFodder(s, count, playerId = 'p1') {
+  const ids = [];
+  for (let i = 0; i < count; i++) {
+    put(s, `fodder-${i}`, 'basic-swamp', playerId, 'graveyard');
+    ids.push(`fodder-${i}`);
+  }
+  return ids;
+}
+
+const delveOffer = (s) => commands(s).find((c) => c.type === 'cast_permanent' && c.objectId === 'mandrills');
+const delveResolve = (exileIds) => ({ type: 'resolve_delve_exile', playerId: 'p1', exileIds });
+
+test('B57/66: rzut bez delve płaci pełne {5}{G} i nie rusza grobu', () => {
+  const s = game();
+  delveFodder(s, 2);
+  put(s, 'mandrills', 'hooting-mandrills');
+  addMana(s, 'p1', 6, { colors: ['G'] });
+  run(s, delveOffer(s));
+  assert.ok(s.pendingDelveExile, 'deklaracja rzutu otwiera decyzję kosztu („you may")');
+  run(s, delveResolve([])); // 0 kart = pełny koszt wydrukowany
+  resolve(s);
+  const ape = find(s, 'hooting-mandrills');
+  assert.ok(ape, 'Hooting Mandrills na polu bitwy');
+  assert.equal(effectiveKeywords(ape, s).includes('trample'), true, 'Trample działa');
+  assert.equal(s.zones.exile.length, 0, 'bez delve nic nie idzie do exile');
+  assert.equal(player(s, 'p1').mana, 0, 'zapłacone pełne 6 many');
+  assert.equal(ape.manaCost, 6, 'mana value bez zmian (ruling KTK 2021-03-19)');
+});
+
+test('B57/66: delve 1/2/5 — koszt maleje, karty w exile, mana value bez zmian', () => {
+  for (const k of [1, 2, 5]) {
+    const s = game();
+    const fodder = delveFodder(s, k);
+    put(s, 'mandrills', 'hooting-mandrills');
+    addMana(s, 'p1', 6 - k, { colors: ['G'] });
+    const offer = delveOffer(s);
+    assert.ok(offer, `oferta rzutu istnieje, gdy mana starcza tylko na wariant z delve (k=${k})`);
+    run(s, offer);
+    const pending = playerView(s, 'p1').pendingDelveExile;
+    assert.equal(pending.maxExile, k, `limit wygnania = min(część generyczna {5}, karty w grobie = ${k})`);
+    run(s, delveResolve(fodder));
+    resolve(s);
+    const ape = find(s, 'hooting-mandrills');
+    assert.ok(ape, `stwór wchodzi (delve ${k})`);
+    assert.equal(s.zones.exile.length, k, 'wygnane karty kosztu leżą w exile');
+    assert.equal(fodder.filter((id) => s.objects.get(id)?.zone === 'graveyard').length, 0, 'koszt zniknął z grobu');
+    assert.equal(player(s, 'p1').mana, 0, `zapłacone ${6 - k} many (6 − ${k} wygnanych)`);
+    assert.equal(ape.manaCost, 6, 'mana value nadal 6 — obniżka dotyczy tylko ZAPŁACONEJ many');
+  }
+});
+
+test('B57/66: wielkość kosztu jest ograniczona (część generyczna, własny grób, opłacalność)', () => {
+  const s = game();
+  const fodder = delveFodder(s, 7); // więcej niż część generyczna
+  put(s, 'foe', 'basic-swamp', 'p2', 'graveyard');
+  put(s, 'mandrills', 'hooting-mandrills');
+  addMana(s, 'p1', 1, { colors: ['G'] }); // wariant opłacalny tylko z 5 wygnanymi
+  run(s, delveOffer(s));
+  const pending = playerView(s, 'p1').pendingDelveExile;
+  assert.equal(pending.maxExile, 5, 'limit = część generyczna {5} (ruling: nigdy więcej)');
+  assert.equal(pending.candidateIds.length, 7, 'kandydaci to WYŁĄCZNIE własny grób');
+  assert.deepEqual(pending.affordableCounts, [5], 'przy 1 manie opłacalne jest tylko k=5 (L48)');
+  assert.equal(execute(s, delveResolve(fodder.slice(0, 6))).ok, false, '6 kart > część generyczna → nielegalne');
+  assert.equal(execute(s, delveResolve([...fodder.slice(0, 4), 'foe'])).ok, false, 'cudza karta z grobu → nielegalne (CR 702.66a)');
+  assert.equal(execute(s, delveResolve([fodder[0], fodder[0]])).ok, false, 'duplikat obiektu → nielegalne');
+  assert.equal(execute(s, delveResolve(fodder.slice(0, 4))).ok, false, 'k=4 nieopłacalne przy 1 manie → nielegalne (oferta = protokół)');
+  assert.ok(s.pendingDelveExile, 'po odrzuceniach decyzja nadal czeka (gracz może wybrać legalnie)');
+  assert.ok(execute(s, delveResolve(fodder.slice(0, 5))).ok, 'k=5 przyjęte');
+  resolve(s);
+  assert.ok(find(s, 'hooting-mandrills'), 'rzut domknięty legalnym kosztem');
+  assert.equal(s.objects.get('foe')?.zone, 'graveyard', 'cudzy grób nietknięty (karta przeciwnika nie jest kandydatem)');
+});
+
+test('B57/66: delve dokłada się do obniżki kosztu (nie jest kosztem alternatywnym)', () => {
+  const s = game();
+  // Syntetyczny reduktor (wzorzec test/cost-reduction-alt-costs.test.js):
+  // „czary stworów kosztują {1} mniej" — reguła po deskryptorze, nie po nazwie.
+  addObject(s, {
+    id: 'reducer', instanceId: 'i-reducer', cardId: 'x-reducer', controllerId: 'p1',
+    zone: 'battlefield', kind: 'artifact', manaCost: 2, keywords: [], subtypes: [],
+    types: ['Artifact'], colors: [], cardName: 'Reduktor',
+    abilities: [Object.freeze({
+      type: 'static', costModifier: Object.freeze({ spellTypes: ['Creature'], amount: 1 }),
+      cost: null, effect: null, trigger: null,
+    })],
+  });
+  const fodder = delveFodder(s, 2);
+  put(s, 'mandrills', 'hooting-mandrills');
+  addMana(s, 'p1', 3, { colors: ['G'] }); // 6 − 1 (obniżka) − 2 (delve) = 3
+  run(s, delveOffer(s));
+  run(s, delveResolve(fodder));
+  resolve(s);
+  assert.ok(find(s, 'hooting-mandrills'), 'rzut z obniżką i delve domknięty');
+  assert.equal(player(s, 'p1').mana, 0, 'zapłacono dokładnie 3 many');
+  assert.equal(s.zones.exile.length, 2, 'delve działa OBOK obniżki (koszt niealternatywny)');
+});
+
+test('B57/66: ścieżka CZARU (instant) z delve — ta sama obniżka części generycznej', () => {
+  const s = game();
+  const fodder = delveFodder(s, 3);
+  // Żadna karta katalogu nie jest czarem z delve — reguła jest generyczna
+  // (ADR 0002), a bez wpisu w MANA_COSTS limit bierze się z manaCost (CR 202.3).
+  addObject(s, {
+    id: 'bolt', instanceId: 'i-bolt', cardId: 'x-delve-bolt', controllerId: 'p1', zone: 'hand',
+    kind: 'spell', manaCost: 5, keywords: [], subtypes: [], types: ['Instant'], colors: ['R'],
+    cardName: 'Delve Bolt', delve: true,
+    spell: Object.freeze({ timing: 'instant', targets: [], effects: Object.freeze([{ type: 'draw_cards', amount: 1 }]) }),
+  });
+  addMana(s, 'p1', 2);
+  const cast = commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'bolt');
+  assert.ok(cast, 'oferta rzutu czaru z delve przy manie na koszt PO obniżce (L48)');
+  run(s, cast);
+  assert.ok(s.pendingDelveExile, 'ścieżka czaru też otwiera decyzję kosztu');
+  run(s, delveResolve(fodder));
+  resolve(s);
+  assert.equal(s.zones.exile.length, 3, 'karty kosztu w exile');
+  assert.equal(player(s, 'p1').mana, 0, 'zapłacone 2 many (5 − 3 wygnane)');
+  assert.ok(find(s, 'x-delve-bolt', 'graveyard'), 'czar rozstrzygnięty → grób');
+});
+
+test('B57/66: prawdziwa talia — obiekt gry niesie deskryptor delve (L21/M379)', () => {
+  // Helpery `...gameObjectDataOf` nie wystarczą: deskryptor musi przejść przez
+  // jawną listę pól `deck.js`, inaczej mechanika jest martwa w prawdziwych
+  // partiach przy zielonych testach (klasa L21/M379 — offspring).
+  const state = setupCardMatch({
+    seed: 66,
+    players: [{ id: 'p1' }, { id: 'p2' }],
+    decks: new Map([
+      ['p1', [...Array.from({ length: 10 }, () => 'hooting-mandrills'), ...Array.from({ length: 14 }, () => 'basic-forest')]],
+      ['p2', [...Array.from({ length: 10 }, () => 'hooting-mandrills'), ...Array.from({ length: 14 }, () => 'basic-forest')]],
+    ]),
+    registry,
+  });
+  state.pendingMulligans = [];
+  const inLibrary = [...state.objects.values()].find((o) => o.cardId === 'hooting-mandrills' && o.controllerId === 'p1');
+  assert.ok(inLibrary, 'Hooting Mandrills w partii');
+  assert.equal(inLibrary.delve, true, 'obiekt gry z prawdziwej talii niesie `delve` (inaczej oferta nie istnieje)');
+  // Ta sama ścieżka co w grze: karta z biblioteki do ręki, mana i rzut z delve.
+  const handId = moveObjectDirectly(state, inLibrary.id, 'hand', `hand-b57-${inLibrary.id}`).id;
+  for (let i = 0; i < 3; i++) put(state, `grave-real-${i}`, 'hooting-mandrills', 'p1', 'graveyard');
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  state.turn.passes = 0;
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  const offer = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === handId);
+  assert.ok(offer, 'oferta rzutu z delve w prawdziwej partii');
+  assert.ok(execute(state, offer).ok, 'deklaracja przyjęta');
+  assert.ok(execute(state, { type: 'resolve_delve_exile', playerId: 'p1', exileIds: ['grave-real-0', 'grave-real-1', 'grave-real-2'] }).ok, 'koszt Delve domknięty');
+  for (let i = 0; i < 40 && state.zones.stack.length > 0; i += 1) {
+    const pass = playerView(state, state.turn.priorityPlayerId).legalCommands.find((c) => c.type === 'pass_priority');
+    assert.ok(pass && execute(state, pass).ok, 'stos rozstrzygnięty');
+  }
+  assert.ok(find(state, 'hooting-mandrills', 'battlefield'), 'stwór z prawdziwej talii na polu bitwy');
+  assert.equal(player(state, 'p1').mana, 0, 'zapłacone 3 many (6 − 3 wygnane karty)');
 });

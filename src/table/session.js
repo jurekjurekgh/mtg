@@ -139,6 +139,13 @@ export function commandOptionKey(cmd) {
     'buyback', 'payAltCost', 'bestow', 'surgeCast', 'faceDown', 'sacrificeTargetId',
     'stunTargetId', 'attackerId', 'crewCreatureIds', 'tapCreatureId',
     'tapOtherCreatureId', 'escapeExileIds',
+    // Batch 57/B4: koszt Delve (resolve_delve_exile.exileIds) musi różnicować
+    // klucze wariantów — bez tego każde wygnanie miało ten sam klucz
+    // (ptaszek wyciszenia obejmował całą decyzję, sonda „oferta bez skutku"
+    // mierzyła nie ten wariant; L32: dedup po pełnej tożsamości komendy).
+    'exileIds',
+    // Batch 57/B4: ptaszek/klucz sondy dla wyboru kart wygnania w Delve.
+    'delveExileIds',
     // M112: komendy WALKI budowane przez wizard (declare_attackers /
     // declare_blockers) — bez tych pól wszystkie warianty ataku miały ten sam
     // klucz, więc sonda „oferta bez skutku" mierzyłaby nie tę komendę,
@@ -2045,6 +2052,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // Zdarzenie pary: object_moved+escape już nazywają przeniesione karty —
       // resolved to dublet informacji (Uwaga D: świadome pominięcie).
       case 'escape_exile_resolved': return null;
+      // Batch 57/B4 (Delve, CR 702.66): jak Escape, ale liczba kart jest
+      // ZMIENNA (0..część generyczna) — komunikat mówi widełki i limit.
+      case 'delve_exile_required': {
+        const max = e.maxExile ?? 0;
+        return `${nameOf(e.cardId)} — ${whoN(e.playerId)} wybiera dowolną liczbę kart do wygnania (0–${max}, koszt Delve)`;
+      }
+      case 'delve_exile_resolved': return null;
       // card_discarded już nazywa każdą kartę. Zakończenie decyzji nie jest
       // kolejnym odrzuceniem ani zawsze pojedynczym kosztem zdolności.
       case 'discard_choice_resolved': return null;

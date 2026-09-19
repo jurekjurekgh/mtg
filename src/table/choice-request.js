@@ -1725,6 +1725,73 @@ export function renderEscapeExileWizard(host, { candidates, exileCount, sourceNa
 }
 
 /**
+ * Batch 57/B4 (Delve, CR 702.66 — Hooting Mandrills): koszt rzutu wybiera się
+ * ptaszkami z listy kart WŁASNEGO grobu, ale — inaczej niż Escape (M241) —
+ * liczba kart jest DOWOLNA (0..limit), bo każda wygnana karta pokrywa `{1}`
+ * części generycznej (ruling KTK 2021-03-19: nigdy więcej niż część
+ * generyczna). Wizard pokazuje koszt pozostały po wygnaniu i blokuje
+ * „Zatwierdź” dla liczby, której płatność odrzuci (L48: oferta = protokół),
+ * a listę opłacalnych liczb dostaje w `affordableCounts`.
+ *
+ * Ptaszek = „wygnij tę kartę” (koszt), odznaczenie cofa — wiersze klikalne
+ * całą nazwą; lupa (onOpenCard) jak w innych wizardach.
+ */
+export function renderDelveExileWizard(host, { candidates, maxExile, affordableCounts = null, sourceName, manaCost, onComplete, onCancel, onOpenCard, playerId = null }) {
+  clearChoiceElement(host);
+  const picked = new Set();
+  const affordable = new Set(Array.isArray(affordableCounts) && affordableCounts.length > 0
+    ? affordableCounts
+    : Array.from({ length: maxExile + 1 }, (_, i) => i));
+  const baseMana = Number.isInteger(manaCost) ? manaCost : null;
+  const intro = choiceNode(host, 'div', 'choice-request-intro');
+  intro.textContent = (sourceName ? `${sourceName} — ` : '')
+    + `Delve: wygnij dowolną liczbę kart z własnego grobu (0–${maxExile}); każda pokrywa {1} kosztu.`;
+  const progress = choiceNode(host, 'div', 'delve-exile-progress', `Wybrano 0 z ${maxExile}`);
+  const hint = choiceNode(host, 'div', 'delve-exile-hint');
+  const list = choiceNode(host, 'div', 'delve-exile-list');
+  const buttons = choiceNode(host, 'div', 'choice-request-buttons');
+  const confirm = choiceNode(buttons, 'button', 'primary-btn delve-exile-confirm', 'Zatwierdź');
+  const cancel = choiceNode(buttons, 'button', 'secondary-btn', 'Anuluj');
+  cancel.addEventListener('click', () => { if (onCancel) onCancel(); });
+
+  const affordableNow = () => affordable.has(picked.size);
+  const refresh = () => {
+    const left = baseMana == null ? null : baseMana - picked.size;
+    progress.textContent = `Wybrano ${picked.size} z ${maxExile}`
+      + (left == null ? '' : ` (pozostały koszt: ${left} many)`);
+    const legal = affordableNow();
+    confirm.disabled = !legal;
+    hint.textContent = legal ? '' : 'Za mało many na tyle wygnania — wygnij więcej kart albo wybierz inną liczbę.';
+    // Klucz sondy aktualizuje się po każdej zmianie — jak w M112.
+    if (playerId) {
+      const ids = [...picked].sort();
+      confirm.dataset.optionKey = commandOptionKey({ type: 'resolve_delve_exile', playerId, exileIds: ids });
+    }
+  };
+  confirm.addEventListener('click', () => {
+    if (confirm.disabled) return;
+    onComplete([...picked].sort());
+  });
+
+  for (const candidate of candidates) {
+    renderPickerRow(list, {
+      id: candidate.cardId ?? candidate.id,
+      label: candidate.name ?? candidate.id,
+      rowClassName: 'delve-exile-row',
+      toggleClassName: 'delve-exile-toggle',
+      nameClassName: 'delve-exile-name',
+      onToggle: (on) => {
+        if (on) picked.add(candidate.id); else picked.delete(candidate.id);
+        refresh();
+      },
+      onOpenCard: typeof onOpenCard === 'function' ? (cardId) => onOpenCard(cardId) : undefined,
+    });
+  }
+  refresh();
+  return host;
+}
+
+/**
  * A (zlecenie właściciela 2026-09-12): WSADOWY kreator szukania w bibliotece.
  *
  * Łańcuch szukań o identycznych parametrach (Springbloom Druid / Roiling

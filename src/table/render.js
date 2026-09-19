@@ -393,6 +393,8 @@ export function choiceRequestGroupKey(command) {
     return `escape:${command.objectId}`;
   }
   if (command.type === 'resolve_escape_exile') return 'resolve_escape_exile';
+  // Batch 57/B4: koszt Delve to JEDNA decyzja (wizard multiselect) — jak escape.
+  if (command.type === 'resolve_delve_exile') return 'resolve_delve_exile';
   if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
     return `permanent-x:${command.objectId}`;
   }
@@ -492,6 +494,7 @@ export function choiceRequestType(commands) {
   const first = commands[0];
   if (first.type === 'cast_escape') return 'escape';
   if (first.type === 'resolve_escape_exile') return 'escape_exile';
+  if (first.type === 'resolve_delve_exile') return 'delve_exile';
   if (first.type === 'cast_flashback') return 'flashback';
   if (first.type === 'resolve_scry') return 'scry';
   if (first.type === 'resolve_surveil') return 'surveil';
@@ -1970,6 +1973,8 @@ const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
   phyrexian: 'Zapłata: mana czy życie?',
   escape: 'Ucieczka (Escape) — karty do wygnania',
   escape_exile: 'Ucieczka (Escape) — karty do wygnania',
+  // Batch 57/B4: koszt Delve (CR 702.66) — liczba wygnanych kart jest zmienna.
+  delve_exile: 'Delve — karty do wygnania z grobu',
   'room-target': 'Cel pokoju lochu',
 });
 
@@ -2000,6 +2005,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_delirium_target: 'Delirium — cel obrażeń',
   resolve_mentor_target: 'Mentor — kto dostaje licznik?',
   resolve_graveyard_top_choice: 'Karta z grobu na wierzch biblioteki',
+  resolve_delve_exile: 'Delve — karty do wygnania z grobu',
   resolve_hand_creature: 'Stwór do położenia obok kosztu',
   resolve_legend_choice: 'Prawo legend — który zostaje?',
   resolve_redirect_choice: 'Przekierowanie obrażeń',
@@ -2175,6 +2181,12 @@ function choiceSourceTitle(cmd, session, view) {
   // nigdy z nazwy zaszytej w warstwie opisu (ADR 0002).
   if (cmd?.type === 'resolve_escape_exile' && view?.pendingEscapeExile?.sourceCardId) {
     return `${session.nameOf(view.pendingEscapeExile.sourceCardId)} — Ucieczka (Escape): karty do wygnania`;
+  }
+  // Batch 57/B4: ta sama klasa decyzji co Escape, ale liczba kart jest ZMIENNA
+  // (0..limit) — tytuł niesie widełki z pendingu (ADR 0002: z danych, nie
+  // z nazwy karty w warstwie opisu).
+  if (cmd?.type === 'resolve_delve_exile' && view?.pendingDelveExile?.sourceCardId) {
+    return `${session.nameOf(view.pendingDelveExile.sourceCardId)} — Delve: karty do wygnania (0–${view.pendingDelveExile.maxExile})`;
   }
   // Pętla jakości (Żywy Tester, tarkir-wur vs innistrad-brg, seed 316):
   // decyzja „look top N, jedną do ręki” (resolve_look_top_choice — Gurmag
@@ -3497,6 +3509,12 @@ export function commandLabel(cmd, session, view) {
       // (ptaszki + Zatwierdź); etykieta dotyczy kształtu protokołu (L48).
       const count = Array.isArray(cmd.exileIds) ? cmd.exileIds.length : 0;
       return `Ucieczka (Escape): wygnij ${count} ${polishPluralCount(count, 'kartę', 'karty', 'kart')}`;
+    }
+    case 'resolve_delve_exile': {
+      // Batch 57/B4: jw. — liczba zmienna, więc etykieta mówi, ILE wygnano
+      // (koszt jest tym samym licznikiem; ADR 0002 — po kształcie protokołu).
+      const count = Array.isArray(cmd.exileIds) ? cmd.exileIds.length : 0;
+      return `Delve: wygnij ${count} ${polishPluralCount(count, 'kartę', 'karty', 'kart')}`;
     }
     case 'resolve_discard_choice': {
       if (Array.isArray(cmd.cardIds)) return `Odrzuć: ${cmd.cardIds.map(id => nameOfObjectId(id)).join(', ')}`;

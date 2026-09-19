@@ -84,6 +84,12 @@ export function gameObjectDataOf(card) {
     // Offspring (BLB, Rust-Shield Rampager): jak kicker, ale z ETB-triggerem
     // tokenu-kopii; deskryptor musi dojść na obiekt gry (L21).
     if (card.offspring) data.offspring = card.offspring;
+    // Delve (CR 702.66, Batch 57/B4 — Hooting Mandrills): statyczna zdolność
+    // funkcjonująca w trakcie rzucania (koszt niealternatywny: każda wygnana
+    // karta z grobu pokrywa `{1}` części generycznej). Deskryptor idzie na
+    // obiekt gry top-level, jak kicker/offspring (L21 — gałąź stworów kopiuje
+    // pola ręcznie, więc pominięcie = mechanika martwa w prawdziwej talii).
+    if (card.delve) data.delve = true;
     // Gift (CR 702.174, M355): dar jest mechaniką CZARU (instant/sorcery),
     // więc gałąź spell kopiuje pola ręcznie — klasa Z5/L21 (deskryptor ginie
     // po cichu). Gałąź permanentu też go dostaje: gdy katalog dostanie
@@ -150,6 +156,10 @@ export function gameObjectDataOf(card) {
     const data = { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null, suspend: card.suspend ?? null, colors: colors(), abilities: card.abilities ?? [], cardName: card.name };
     // Batch 54: kicker musi dojść również z definicji instanta na obiekt.
     if (card.kicker) data.kicker = card.kicker;
+    // Batch 57/B4: delve jest mechaniką KAŻDEGO typu czaru (CR 702.66a) —
+    // gałąź instanta/sorcery też musi nieść deskryptor (gotowość na przyszłe
+    // karty; dziś jedyną kartą z delve jest stwór).
+    if (card.delve) data.delve = true;
     // M355 (Crumb and Get It): Gift to mechanika INSTANTA/SORCERY — bez tego
     // wpisu `object.gift` jest null i wariant rzutu z obietnicą nie istnieje
     // (oferta i walidacja czytają to samo pole; L48).

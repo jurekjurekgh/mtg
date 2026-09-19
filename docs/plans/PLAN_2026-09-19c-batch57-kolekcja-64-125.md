@@ -219,12 +219,45 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
   `incubate` jako rider przy wycenionym `exile_permanent` dostał jawny wpis
   `REVIEWED_UNVALUED` (efekt niecelowany; token Incubator bez wyceny w bocie
   od M109) — bez tego strażnik czerwienił na nowym czarze celowanym.
-- [ ] **B4 (M391) — Delve**: **66 Hooting Mandrills** (`{5}{G}` → wygnanie
+- [x] **B4 (M391) — Delve**: **66 Hooting Mandrills** (`{5}{G}` → wygnanie
   kart z grobu, każda `{1}`; „you may", liczby 0..5). Testy: rzut bez delve
   (pełny koszt), z 1/2/5 kartami (koszt maleje, karty w exile), odmowa wygnania
   więcej niż generic (nielegalna), **mana value się nie zmienia** (ruling),
   walka z flashbackiem (koszt alternatywny + delve), Trample działa,
   wizard many pokazuje koszt PO obniżce, bot wycenia.
+
+  **Wykonanie i pomiary.** Model decyzji jak przy Escape (M241), ale z liczbą
+  ZMIENNĄ: deklaracja rzutu kolejkuje `pendingDelveExile`
+  (`delve_exile_required`), a gracz domyka ją `resolve_delve_exile
+  { exileIds }`; oferta decyzji enumeruje podzbiory wyłącznie z
+  `affordableCounts` (cap `DELVE_OPTION_CAP = 32`), więc protokół = płatność
+  (L48). Wygnanie jest KOSZTEM (CR 601.2h) — karty zostają w exile nawet po
+  skontrowaniu; limit = część generyczna (`delveExileLimit` z `parseManaCost`),
+  własny grób, zakaz duplikatów. Deskryptor `delve: true` jest TOP-LEVEL na
+  obiekcie (kicker/offspring — mechanika działa i na permanentach, i na
+  czarach) i przeszedł CAŁY łańcuch L21: `defineCard` (biała lista pól!) →
+  `gameObjectDataOf` (obie gałęzie) → `deck.js` → `createGameObject` →
+  `ADD_OBJECT_FIELDS`; fingerprint łapie pole przez `...rest`.
+
+  „Walka z flashbackiem" z planu zrealizowana jako reguła OGÓLNIEJSZA:
+  syntetyczny reduktor („czary stworów kosztują {1} mniej", wzorzec
+  `cost-reduction-alt-costs`) dowodzi, że delve DOKŁADA SIĘ do obniżki zamiast
+  zastępować koszt — koszt całkowity 6 → 3 przy 1 obniżki i 2 wygnanych kartach
+  (żadna karta katalogu nie jest czarem z delve, więc nie ma czego łączyć
+  z realnym flashbackiem; ścieżka CZARU ma osobny pin na syntetycznym
+  instancie). Bot: `resolve_delve_exile` = strata kart grobu (miara Escape)
+  + premia za zaoszczędzoną manę — bez drugiego członu delve byłby w partiach
+  martwy (każda karta grobu „droższa" niż 1 mana).
+
+  Churn: tylko `tarkir-bg` (`+Hooting Mandrills`, Forest 6→7; README
+  33/11/22 → 35/12/23). Golden-master zregenerowany świadomie (`0cbed44e…` →
+  `f85569002f2593cd…` — para `tarkir-bg` vs `warhammer-ubr` jest
+  w `SNAPSHOT_CONFIG`). Przeloosowania (L25, po hunterze): `session-bot-pausa`
+  seed 11 → 12; `uwagi-2026-09-19b-b-pump-w-modalu` seed 3 → 2.
+
+  Bramy: `npm test` **5955/5955, 0 fail**; `npm run build` 64 moduły /
+  3921,7 kB. Piny: `test/real-cards-batch57.test.js` 29/29 (RED→GREEN na
+  stashu źródeł: 7 czerwonych), w tym pin L21 „prawdziwa talia".
 - [ ] **B5 (M392) — Annie Flash**: **77 Annie Flash, the Veteran** — powrót
   permanentu MV≤3 z własnego grobu (`allowLands`, `entersTapped`), trigger
   `self_becomes_tapped` → wygnaj 2 wierzchnie karty grywalne w tej turze,
