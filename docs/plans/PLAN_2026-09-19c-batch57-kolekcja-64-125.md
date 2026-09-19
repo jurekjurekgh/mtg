@@ -303,6 +303,28 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
   sorcery); „nie znajduję karty" (odmowa) → token Ragavan; rzut wchodzi na stos
   i rozstrzyga się przed czarem wywołującym; czar zagrany przed wejściem
   Barala w tej samej turze nie odpala triggera (ruling); Menace + First strike.
+
+  **Rozpoznanie (przed B6, stan po B5).** Co już jest w silniku:
+  1. licznik rzutów PER GRACZ istnieje (`state.spellsCastThisTurnByPlayer`,
+     inkrementowany w `triggers.js` na `spell_cast`/`permanent_cast`/
+     `aura_spell_cast` — Illvoi Operative „your second spell"), ale liczy
+     WSZYSTKIE czary; „pierwszy instant/sorcery" potrzebuje licznika z filtrem
+     typu (nowe pole stanu, do odcisku),
+  2. najbliższy wzorzec darmowego rzutu to `pendingGraveFreeCast`
+     (`grave_free_cast_required` / `resolve_grave_free_cast`, effects.js :2666,
+     whitelist komendy w aggro-bocie i pełna obsługa w heuristic-bocie) —
+     rzut z GROBU, więc B6 potrzebuje bliźniaka dla RĘKI,
+  3. `menace` i `first strike` są w katalogu od dawna (bez pracy),
+  4. token Ragavan (`705adcf9-c15b-4f75-afae-939f59aeb308`, legendary 2/1 red
+     Monkey Pirate, haste) nie ma jeszcze deskryptora — do dodania w
+     `tokens.js`/`card-data.js` według wzorca tokenów legendarnych.
+
+  Podział wykonawczy: **B6a** = licznik „pierwszy instant/sorcery" + blokująca
+  decyzja darmowego rzutu z ręki (`resolve_hand_free_cast`, kandydaci: czary
+  z ręki o MNIEJSZEJ MV dzielące typ z czarem wyzwalającym, X=0; bez kosztów
+  alternatywnych; rzut wchodzi na stos NAD triggerem i rozstrzyga się przed
+  czarem wyzwalającym). **B6b** = ścieżka „If you don't" → token First Mate
+  Ragavan z haste (odmowa i brak kandydata).
 - [ ] **B7 — talie i dokumentacja**: `node tools/generate-plan-decks.mjs`
   (atrybucja churnu per talia), `test/repo-decks.test.js` bez zmian treści
   poza liczbami, `docs/PROJECT_HISTORY.md` + `docs/ENGINE_MILESTONES.md`
