@@ -5,7 +5,7 @@
   "mana_cost": "{4}{R}{R}",
   "cmc": 6,
   "type_line": "Creature — Dinosaur",
-  "oracle_text": "Trample\\n{2}{R}, Sacrifice a land: Draw a card.\\nMountaincycling {2} ({2}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)",
+  "oracle_text": "Trample\n{2}{R}, Sacrifice a land: Draw a card.\nMountaincycling {2} ({2}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)",
   "colors": [
     "R"
   ],

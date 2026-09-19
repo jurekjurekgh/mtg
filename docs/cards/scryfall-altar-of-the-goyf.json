@@ -5,7 +5,7 @@
   "mana_cost": "{5}",
   "cmc": 5,
   "type_line": "Kindred Artifact — Lhurgoyf",
-  "oracle_text": "Whenever a creature you control attacks alone, it gets +X/+X until end of turn, where X is the number of card types among cards in all graveyards.\\nLhurgoyf creatures you control have trample.",
+  "oracle_text": "Whenever a creature you control attacks alone, it gets +X/+X until end of turn, where X is the number of card types among cards in all graveyards.\nLhurgoyf creatures you control have trample.",
   "colors": [],
   "set": "mh2",
   "image_uris": {
