@@ -362,7 +362,18 @@ export function choiceRequestGroupKey(command) {
     // „as you cast this spell”) — więc obietnica daru należy do tej samej grupy
     // co rzut bazowy i trafia do modala razem z wariantami celu (etykieta mówi
     // „· dar dla przeciwnika: …”, więc warianty są rozróżnialne).
-    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}${command.kicked ? ':kicker' : ''}`;
+    //
+    // M (zgłoszenie właściciela 2026-09-19b, You're Confronted by Robbers):
+    // „Oferta w »Twoje działania« rozdzielona na dwie opcje. Rzucenie czaru
+    // powinno być jedną ofertą w »Twoje działania«, a potem modal wyboru.”
+    // Tryb modalnego czaru jest decyzją W TRAKCIE rzucania (CR 601.2b: „the
+    // player announces the mode”) — tak jak dar, więc tryby NIE tworzą
+    // osobnych wpisów panelu. Wpis jest jeden (per czar), a modal wymienia
+    // warianty; etykieta wariantu niesie nazwę trybu (`commandLabel`), więc
+    // opcje są rozróżnialne. M87 (Steel Sabotage) zostaje spełnione inaczej:
+    // grupa modalna jest TYTUŁOWANA rzutem („Rzuć: <karta>”), nie generycznym
+    // „Cel czaru”.
+    return `spell:${command.objectId}${command.kicked ? ':kicker' : ''}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
   if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
@@ -2053,6 +2064,21 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
 // źródła lista pokazywała dwie nie do rozróżnienia pozycje tej samej karty.
 const SEARCH_DESTINATION_LABELS = Object.freeze({ hand: 'do ręki', graveyard: 'do grobu', battlefield: 'na pole bitwy' });
 
+/**
+ * M (zgłoszenie właściciela 2026-09-19b): obiekt widoku po `objectId` komendy —
+ * tytuł grupy modalnego czaru musi nazwać kartę, a nie tylko tryb. Strefy te
+ * same co `choiceSourceTitle` (+ exile, bo stamtąd też rzuca się modalne czary
+ * plotem/impulsem).
+ */
+function findViewObject(objectId, view) {
+  if (objectId == null) return null;
+  for (const zone of ['hand', 'battlefield', 'stack', 'graveyard', 'library', 'exile']) {
+    const found = (view?.zones?.[zone] ?? []).find((o) => o.id === objectId);
+    if (found) return found;
+  }
+  return null;
+}
+
 function choiceSourceTitle(cmd, session, view) {
   // Uwaga C właściciela (2026-08-10): modal wyboru ma nazywać kartę, która
   // go wywołała. Komendy resolve_* nie niosą objectId — źródło czytamy
@@ -2339,6 +2365,23 @@ export function choiceGroupTitle(request, session, view) {
   if (options[0]?.type === 'resolve_discard_choice' && discard?.count > 1 && !discard.allowDecline) {
     const source = discard.sourceCardId ? `${session.nameOf(discard.sourceCardId)} — ` : '';
     return `${source}${discard.purpose === 'cost' ? 'koszt: ' : ''}odrzuć ${discard.count} ${polishPluralCount(discard.count, 'kartę', 'karty', 'kart')}`;
+  }
+  // M (zgłoszenie właściciela 2026-09-19b, You're Confronted by Robbers):
+  // grupa to JEDEN rzut czaru modalnego (warianty = tryby × cele), więc tytuł
+  // nazywa CZYNNOŚĆ i kartę — „Rzuć: <karta>”. Nazwy trybów zostają tam, gdzie
+  // ich miejsce: w etykietach opcji modala (`commandLabel`, M267). Bez tej
+  // gałęzi tytuł brał się z `options[0]` (pierwszy wariant pierwszego trybu)
+  // i panel pokazywał „<karta> — tryb: Zyskiwanie czasu” bez kosztu, obok
+  // drugiego wpisu „Rzuć: <karta> — Wezwanie pomocy (koszt …)”: dwie oferty
+  // jednego rzutu, dwie różne konwencje etykiety (zgłoszenie M).
+  // Deskryptorowo (ADR 0002): po kształcie grupy (jedna karta, `modeIndex`
+  // obecny), nie po nazwie karty.
+  const groupModes = new Set(options.filter((o) => o?.type === 'cast_spell' && o.modeIndex != null).map((o) => o.modeIndex));
+  if (options.length > 0 && options.every((o) => o?.type === 'cast_spell' && o.objectId === options[0].objectId)) {
+    const groupObject = findViewObject(options[0].objectId, view);
+    if (groupObject && (groupObject.spell?.modes ?? []).length > 1 && groupModes.size > 0) {
+      return `Rzuć: ${session.nameOf(groupObject.cardId)}`;
+    }
   }
   const titled = choiceSourceTitle(options[0], session, view);
   if (titled) return titled;
