@@ -1,7 +1,6 @@
 # Mirrodin (BRG)
 
 1x Great Furnace
-1x Horizon Spellbomb
 1x Rustvine Cultivator
 1x Carapace Forger
 1x Consume Spirit
@@ -9,6 +8,7 @@
 1x Ichorclaw Myr
 1x Shatter
 1x Bone Shredder
+1x Phyrexian Rager (APC)
 1x Awaken the Sleeper
 1x Carrion Call
 1x Exterminator Magmarch

@@ -140,7 +140,7 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
   `1x Curate (BRO)`); liczności bez zmian, więc golden-master wycen i tabela
   w README zostają nietknięte (dowód izolacji: `git checkout -- decks/` +
   regeneracja odtwarza tę samą, jednolinijkową różnicę).
-- [ ] **B1 (M388) — proste bliźniaki**: **64 Lightwalker** (warunkowy flying
+- [x] **B1 (M388) — proste bliźniaki**: **64 Lightwalker** (warunkowy flying
   licznikiem +1/+1), **90 Tranquil Cove** (gainland — bliźniak Dismal
   Backwater), **125 Ordinary Bear** (vanilla bez zdolności), **70 Capture
   Sphere** (flash aura + `tap_enchanted_permanent` + `doesntUntap`),
@@ -150,7 +150,25 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
   wchodzi tapnięty, daje 1 życie i produkuje `{W}`/`{U}` (`{B}` nielegalny);
   Bear nie ma żadnej zdolności; Capture Sphere rzucana w turze przeciwnika
   (flash), tapnie gospodarza i nie odkręci go w untapie; Rager: +1 karta
-  i −1 życie, a przy 1 życiu przegrywa (SBA).
+  i −1 życie, a przy 1 życiu przegrywa (SBA). Piny: 13 w
+  `test/real-cards-batch57.test.js` (5× sanity danych + 8 scenariuszy), w tym
+  kontrola negatywna flash (Containment Membrane — ten sam koszt, bez flash,
+  NIE jest oferowana w cudzej turze) i „drugi druk Ragera nie koliduje z DMU".
+
+  **Churn talii B1 (atrybucja L124)** — 5 kart wchodzi do talii przez
+  generator: `tarkir-wur` (+Lightwalker), `srodziemie` (+Ordinary Bear),
+  `mirrodin-brg` (+Phyrexian Rager APC; Horizon Spellbomb → `mirrodin-wu`),
+  `worek-basni` (+Tranquil Cove), `worek-dziki` (+Capture Sphere) + przeliczone
+  landy. Skutki: golden-master wycen zregenerowany świadomie
+  (`45dbff9a…` → `0cbed44e…`; para `dominaria-brg` vs `mirrodin-wu` jest
+  w konfiguracji, bot NIETKNIĘTY — `git status src/controllers/` puste)
+  i liczby w README (mirrodin-wu 29/10/19, srodziemie 32/11/21,
+  tarkir-wur 32/11/21, worek-basni 38/13/25, worek-dziki 29/10/19).
+  `tap_enchanted_permanent` trafił do `INTENTIONAL_EXCEPTIONS` strażnika
+  ETB_EFFECT_BONUS (wartość niesie statyka `doesntUntap` przez `auraIsHostile`;
+  promocja do wyceny wymaga pomiaru B0 — Krok 7 procedury).
+
+  Bramy: `npm test` **5939/5939, 0 fail**.
 - [ ] **B2 (M389) — hybryda i dobranie**: **82 Messenger Falcons**
   (`coloredPips` rozumie `{G/U}`: talia ma źródło któregoś z kolorów pary;
   proporcja i minima pozostałych kolorów bez zmian; dowód izolacji na

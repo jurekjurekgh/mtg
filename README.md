@@ -126,11 +126,11 @@ liczone z plików `decks/*.txt`).
 | `ixalan` | Ixalan | UBRG | 23 | 8 | 15 |
 | `kaladesh` | Kaladesh | WUBRG | 26 | 9 | 17 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 27 | 9 | 18 |
-| `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
+| `mirrodin-wu` | Mirrodin (WU) | WU | 29 | 10 | 19 |
 | `ravnica` | Ravnica | WUBRG | 38 | 13 | 25 |
-| `srodziemie` | Śródziemie | WUBRG | 30 | 10 | 20 |
+| `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 33 | 11 | 22 |
-| `tarkir-wur` | Tarkir (WUR) | WUR | 30 | 10 | 20 |
+| `tarkir-wur` | Tarkir (WUR) | WUR | 32 | 11 | 21 |
 | `theros` | Theros | WUBRG | 27 | 9 | 18 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 35 | 12 | 23 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
@@ -142,8 +142,8 @@ liczone z plików `decks/*.txt`).
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
 |---|---|---|---:|---:|---:|
-| `worek-basni` | Worek: Baśnie | WUBRG | 36 | 12 | 24 |
-| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 27 | 9 | 18 |
+| `worek-basni` | Worek: Baśnie | WUBRG | 38 | 13 | 25 |
+| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 29 | 10 | 19 |
 | `worek-legend` | Worek: Legendy | WUBRG | 23 | 8 | 15 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 27 | 9 | 18 |
 

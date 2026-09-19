@@ -11290,7 +11290,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         ],
       }),
     ],
-    artId: 85, plan: 'Mirrodin', support: { status: 'in-development', limitations: [] },
+    artId: 85, plan: 'Mirrodin', support: { status: 'supported', limitations: [] },
+    notes: ['drugi druk karty `phyrexian-rager` (DMU) — osobny egzemplarz kolekcji, własny plan i własna talia (wzorzec Curate)'],
   }),
 
   defineCard({
@@ -11299,7 +11300,18 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     power: 2, toughness: 1, manaCost: 2,
     oracleText: 'This creature has flying as long as it has a +1/+1 counter on it.',
     imageUri: 'https://cards.scryfall.io/large/front/0/1/01bf1837-41b0-4ff1-9cb1-ee2d75d410c7.jpg?1783938616',
-    artId: 64, plan: 'Tarkir', support: { status: 'in-development', limitations: [] },
+    // Bliźniak Ainok Artillerist (DTK, artId 321): zdolność STATYCZNA
+    // (CR 611.3a) — flying obowiązuje, dopóki źródło ma co najmniej jeden
+    // licznik +1/+1; przeliczanie przy każdym odczycie, bez zdarzeń.
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { hasCounter: '+1/+1' },
+        keywords: ['flying'],
+      }),
+    ],
+    artId: 64, plan: 'Tarkir', support: { status: 'supported', limitations: [] },
+    notes: ['flying warunkowy licznikiem +1/+1 — znika wraz ze zdjęciem licznika (przeliczanie przy odczycie)'],
   }),
 
   defineCard({
@@ -11316,7 +11328,21 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 4,
     oracleText: "Flash\nEnchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature doesn't untap during its controller's untap step.",
     imageUri: 'https://cards.scryfall.io/large/front/5/a/5a799ac8-5798-4a26-81c1-763d6dcfcbe8.jpg?1783934193',
-    artId: 70, plan: 'Arcavios', support: { status: 'in-development', limitations: [] },
+    // Bliźniak Containment Protocol (TMC, artId 30): aura `doesntUntap` (CR 611.3a)
+    // + trigger wejścia tapnij ZACZAROWANEGO stwora (effect
+    // `tap_enchanted_permanent`, bez wyboru celu — cel wynika z załącznika);
+    // flash daje okno rzutu poza swoją turą (CR 702.8, `keywords: ['flash']`).
+    keywords: ['flash'],
+    aura: { doesntUntap: true },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'tap_enchanted_permanent' }],
+      }),
+    ],
+    artId: 70, plan: 'Arcavios', support: { status: 'supported', limitations: [] },
+    notes: ['flash: rzut w dowolnym momencie, gdy można rzucić instant (CR 702.8)'],
   }),
 
   defineCard({
@@ -11377,7 +11403,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'add_mana', amount: 1, colors: ['W', 'U'] },
       }),
     ],
-    artId: 90, plan: 'Kamigawa', support: { status: 'in-development', limitations: [] },
+    artId: 90, plan: 'Kamigawa', support: { status: 'supported', limitations: [] },
+    notes: ['bliźniak Dismal Backwater / Thornwood Falls (M20): wchodzi tapnięty, ETB daje 1 życie, produkuje {W} albo {U}'],
   }),
 
   defineCard({
@@ -11386,7 +11413,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     power: 4, toughness: 5, manaCost: 4,
     oracleText: '',
     imageUri: 'https://cards.scryfall.io/large/front/0/f/0feb9817-56e1-465a-851c-b2fe202aa8ae.jpg?1785323277',
-    artId: 125, plan: 'Śródziemie', support: { status: 'in-development', limitations: [] },
+    artId: 125, plan: 'Śródziemie', support: { status: 'supported', limitations: [] },
+    notes: ['vanilla 4/5 za {3}{G} — brak tekstu Oracle, brak zdolności (sanity: karta bez wpisów w abilities)'],
   }),
 
 ]);

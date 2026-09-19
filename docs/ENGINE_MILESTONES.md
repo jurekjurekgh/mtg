@@ -5973,3 +5973,45 @@ w ofercie i odrzucony, (E) macierz spójności: KAŻDE oferowane przypisanie
 przez `declare_blockers` (L48). RED→GREEN: mutacje — pusty predykat 1/4,
 oferta bez filtra 2/3, ręczna kopia menace w walidacji 4/1.
 Bramy: `npm test` 5787/5787, `npm run build` 64 moduły / 3831,8 kB.
+
+## M388 (2026-09-19) — Batch 57/B1: proste bliźniaki (Lightwalker, Tranquil Cove, Ordinary Bear, Capture Sphere, Phyrexian Rager APC)
+
+Zakres: pięć kart właściciela z arkusza kolekcji (64 DTK, 90 M20, 125 HOB,
+70 GRN, 85 APC) wchodzi do katalogu jako `supported` — każda jako bliźniak
+istniejącego wzorca, bez nowych mechanik w `src/engine/`:
+
+- **Lightwalker** (64, DTK, `{1}{W}` 2/1) — warunkowy `flying` przez statyk
+  `condition.hasCounter: '+1/+1'` (bliźniak Ainok Artillerist, artId 321);
+  przeliczanie przy każdym odczycie (CR 611.3a), bez zdarzeń.
+- **Tranquil Cove** (90, M20) — gainland 1:1 z Dismal Backwater / Thornwood
+  Falls: `entersTapped`, ETB +1 życie, `{T}`: `{W}` albo `{U}`.
+- **Ordinary Bear** (125, HOB, `{3}{G}` 4/5) — karta vanilla: sanity dowodzi
+  braku zdolności i pustego `oracleText`.
+- **Capture Sphere** (70, GRN) — aura-kotwica z `flash`: `aura.doesntUntap`
+  + trigger wejścia `tap_enchanted_permanent` (bliźniak Containment Protocol).
+- **Phyrexian Rager (APC)** (85, Mirrodin) — DRUGI DRUK karty z katalogu
+  (`phyrexian-rager`, DMU/75, Dominaria) — arkusz kolekcji ma oba druki, więc
+  oba są w katalogu, każdy na swoim planie i w swojej talii (wzorzec Curate
+  BRO/STX, Batch 47). Wpis DMU zostaje nietknięty (zgłoszenie właściciela 15:
+  „nie usunąłeś z DMU i Dominarii tylko dopisałeś drugą wersję").
+
+Generyczne mechaniki nowe: **brak** — etap celowo „bliźniaczy". Strażnik
+pokrycia wycen ETB (`test/etb-effect-bonus-coverage.test.js`) wymusił
+świadomą decyzję dla `tap_enchanted_permanent` (2 karty): typ zostaje
+w `INTENTIONAL_EXCEPTIONS` — wartość aury-kotwicy niesie statyka
+`doesntUntap` widziana przez `auraIsHostile` w ścieżce rzutu aury; promocja do
+`ETB_EFFECT_BONUS` wymaga pomiaru B0 (Krok 7 procedury `HOW_TO_ADD_CARD`).
+
+Churn talii (atrybucja L124): generator dołożył karty do `tarkir-wur`
+(Lightwalker), `srodziemie` (Ordinary Bear), `mirrodin-brg` (Rager APC —
+Horizon Spellbomb przeszedł do `mirrodin-wu`), `worek-basni` (Tranquil Cove),
+`worek-dziki` (Capture Sphere) i przeliczył landy tych talii. Skutki:
+golden-master wycen zregenerowany świadomie (`45dbff9a…` → `0cbed44e…`; pary
+z konfiguracji zawierają `mirrodin-wu`, bot NIETKNIĘTY) oraz liczby talii
+w README (M203/7).
+
+Piny: `test/real-cards-batch57.test.js` — 13 testów (5× sanity danych
+snapshot ↔ katalog ↔ arkusz, 8 scenariuszy legalnych/nielegalnych, w tym
+kontrola negatywna flash na Containment Membrane i rozdział druków Ragera).
+Bramy: `npm test` **5939/5939, 0 fail**, `npm run build` 64 moduły /
+3894,1 kB.

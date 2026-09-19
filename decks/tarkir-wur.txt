@@ -7,6 +7,7 @@
 1x Furious Forebear
 1x Impact Tremors
 1x Jeskai Devotee
+1x Lightwalker
 1x Palace Familiar
 1x Act of Treason
 1x Jeskai Windscout
@@ -20,6 +21,6 @@
 1x Sarkhan's Rage
 1x Vandalize
 1x Ainok Tracker
-3x Plains
+4x Plains
 3x Island
 4x Mountain
