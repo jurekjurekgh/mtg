@@ -1083,7 +1083,13 @@ function describeEffect(e, ctx = {}) {
     add_mana: () => manaEffectLabel(e, ctx),
     fabricate: () => `fabricate ${e.amount ?? 1} (liczniki +1/+1 albo tokeny Servo)`,
     reflexive_sacrifice: () => 'poświęć innego stwora albo artefakt (dobrowolnie: następuje refleks)',
-    exile_top_playable_until_next_turn: () => 'wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury',
+    // G: dwa okna (this turn / next turn) — opis musi mówić to samo, co
+    // stempel silnika, inaczej karta z „this turn" tłumaczy się jak Gila.
+    // Uwaga na kształt mapy: `generic[type]()` woła się BEZ argumentów, więc
+    // deskryptor czytamy z domknięcia (`e` z describeEffect), nie z parametru.
+    exile_top_playable_until_next_turn: () => (e.window === 'this_turn'
+      ? 'wygnaj wierzch biblioteki — możesz zagrać tę kartę w tej turze'
+      : 'wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury'),
     grant_double_strike_on_noncreature_cast_this_turn: () => 'do końca tury: każdy twój czar niebędący stworem daje wybranemu stworowi podwójne uderzenie',
     add_flying_counter_to_face_down_you_control: () => 'połóż licznik flying na zakrytych stworach',
     amass: () => 'amass (stwórz/rozrośnij Armię)',
@@ -2618,6 +2624,24 @@ export function commandLabel(cmd, session, view) {
     const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
     return raw ? manaCostHtml(raw) : (card?.manaCost != null ? escapeHtml(String(card.manaCost)) : '?');
   };
+  // H (zgłoszenie właściciela, Sheriff of Safe Passage) + ta sama klasa dla
+  // impulsu: rzut karty CZEKAJĄCEJ w wygnaniu (plot CR 702.170d, impuls
+  // CR 701.51b) nie jest zwykłym rzutem z ręki — kosztu many nie ma, a okno
+  // impulsu ma numer tury („this turn" kończy się w turze zdolności).
+  // Etykieta „Zagraj: X (koszt {2}{W})" kłamała o koszcie i milczała
+  // o oknie; gracz zgłosił to jako „plot nie działa".
+  const waitingCastLabel = (cmd, verb) => {
+    const card = obj(cmd.objectId);
+    if (card?.zone !== 'exile') return null;
+    const who = nameOfObjectId(cmd.objectId);
+    if (card.plotted) return `${verb} z wygnania (Plot): ${who} — bez kosztu many`;
+    if (card.playableUntilTurn != null) {
+      return card.playableWithoutPaying
+        ? `${verb} z wygnania (Impuls): ${who} — bez kosztu many, do końca tury ${card.playableUntilTurn}`
+        : `${verb} z wygnania (Impuls): ${who} (koszt ${costOfCard(card)}) — do końca tury ${card.playableUntilTurn}`;
+    }
+    return null;
+  };
   // Koszt zdolności aktywowanej → ikony: {T} + {X}/{N} + pipy kolorów.
   const abilityCostHtml = (ability) => {
     const cost = ability?.cost ?? {};
@@ -2755,6 +2779,8 @@ export function commandLabel(cmd, session, view) {
       if (cmd.exileTargetId != null) {
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)}) — wygnaj ${nameOfObjectId(cmd.exileTargetId)}`;
       }
+      const waitingCast = waitingCastLabel(cmd, 'Zagraj');
+      if (waitingCast) return waitingCast;
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)})`;
     }
     case 'cast_spell': {
@@ -2846,6 +2872,8 @@ export function commandLabel(cmd, session, view) {
       } else {
         costHtml = costOfCard(cardForMode);
       }
+      const waitingCast = waitingCastLabel(cmd, 'Rzuć');
+      if (waitingCast) return waitingCast;
       return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${giftPart}${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
@@ -5395,10 +5423,14 @@ export function waitingExileStatus(object) {
       ? `Plot · rzut bez kosztu od tury ${object.plottedAtTurn + 1}`
       : 'Plot · rzut bez kosztu w kolejnej turze');
   }
-  if (hasFreeCastStamp(object)) {
-    parts.push(impulseWindowOf(object) != null
-      ? `Impuls · zagrywalna do końca tury ${impulseWindowOf(object)}`
-      : 'Impuls · zagrywalna bez płacenia');
+  // G: okno impulsu ma numer tury i bywa PŁATNE (Gila Courser, Caves bez
+  // ukończonego lochu) — sam stempel „bez płacenia" milczał o obu faktach.
+  if (impulseWindowOf(object) != null) {
+    parts.push(hasFreeCastStamp(object)
+      ? `Impuls · zagrywalna do końca tury ${impulseWindowOf(object)} · bez kosztu many`
+      : `Impuls · zagrywalna do końca tury ${impulseWindowOf(object)} · za pełny koszt`);
+  } else if (hasFreeCastStamp(object)) {
+    parts.push('Impuls · zagrywalna bez płacenia');
   }
   if (object.reboundReady) parts.push('Rebound · rzut w Twoim podtrzymaniu');
   if (object.madnessReady) parts.push('Madness · czeka na decyzję rzutu');

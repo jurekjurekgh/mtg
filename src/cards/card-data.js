@@ -9359,6 +9359,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
           // „If you've completed a dungeon … without paying its mana cost."
           // Warunek w DANYCH; silnik sprawdza stan lochu (ADR 0002).
           freeIfCondition: { type: 'completed_dungeon' },
+          // G (zgłoszenie właściciela 2026-09-19b): Oracle obu gałęzi mówi
+          // „you may play that card THIS TURN" — okno kończy się w turze
+          // zdolności, nie w następnej (Gila Courser ma „your NEXT turn").
+          // Deskryptor okna, nie nazwa karty (ADR 0002); bez niego silnik
+          // stemplował +2 tury i etykieta kłamała („do końca tury 27"
+          // w turze 25).
+          window: 'this_turn',
         }],
       }),
     ],

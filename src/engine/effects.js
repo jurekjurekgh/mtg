@@ -1290,11 +1290,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const moved = moveObjectDirectly(state, topId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     // „Until the end of your NEXT turn" — jeśli to twoja tura, chodzi o tę
     // następną (numer + 2 przy dwóch graczach); poza swoją turą o najbliższą.
+    // G (zgłoszenie właściciela, Caves of Chaos Adventurer): karta mówiąca
+    // „you may play that card THIS TURN" niesie deskryptor `window`
+    // (ADR 0002 — reguła w danych, nie nazwa karty); wtedy okno kończy się
+    // w BIEŻĄCEJ turze, niezależnie od tego, czyja jest tura.
     const isMyTurn = state.turn.activePlayerId === controllerId;
+    const thisTurnOnly = effect.window === 'this_turn';
     // Stempel pisany przez choke point (audyt PR #93, tura 3) — dawniej dwie
     // ręczne klejenia pól w jednym if-ie (obiekt + zdarzenie), które mogły się
     // rozjechać bez żadnego testu.
-    const oknoImpulsu = { untilTurn: state.turn.number + (isMyTurn ? 2 : 1) };
+    const oknoImpulsu = {
+      untilTurn: thisTurnOnly ? state.turn.number : state.turn.number + (isMyTurn ? 2 : 1),
+    };
     // Batch 47 (Caves of Chaos Adventurer): „If you've COMPLETED A DUNGEON,
     // you may play that card this turn without paying its mana cost.
     // Otherwise, you may play that card this turn." Warunek jest deskryptorem
