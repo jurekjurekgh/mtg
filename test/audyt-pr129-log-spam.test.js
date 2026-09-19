@@ -22,6 +22,16 @@ test('PR129/F-2: siatka bezpieczeństwa rerender nie zalewa logu tym samym wpise
   assert.match(block, /logSystem\(/, 'błąd renderu bez śladu w logu partii');
   assert.match(block, /lastRenderLogMessage/,
     'F-2: siatka bezpieczeństwa nie pamięta ostatnio zalogowanego komunikatu');
-  assert.match(block, /!==\s*lastRenderLogMessage|lastRenderLogMessage\s*!==/,
-    'F-2: brak porównania z poprzednim komunikatem — trwały błąd renderu zalewałby log');
+  // F-3 audytu PR #129 (2026-09-19): sam `!==` był za luźny — wariant
+  // `if (lastRenderLogMessage === null && message !== lastRenderLogMessage)`
+  // (log tylko raz w życiu sesji, kolejne INNE błędy przepadają) przechodził
+  // zielono (mutacja M16: 0 RED). Pin wymaga DOKŁADNEJ postaci bramki
+  // deduplikacji: porównanie bieżącego komunikatu z poprzednim i przypisanie
+  // w tym samym bloku, bez dodatkowego warunku na „null”.
+  assert.match(block, /if\s*\(\s*message\s*!==\s*lastRenderLogMessage\s*\)\s*\{/,
+    'F-2: bramka ma porównywać BIEŻĄCY komunikat z poprzednim — nie dowolny warunek z `!==`');
+  assert.match(block, /lastRenderLogMessage\s*=\s*message;/,
+    'F-2: brak przypisania ostatniego komunikatu w bloku deduplikacji');
+  assert.doesNotMatch(block, /lastRenderLogMessage\s*===\s*null/,
+    'F-2: warunek „null” loguje błąd tylko raz w całej sesji — kolejne inne błędy przepadają');
 });
