@@ -2,7 +2,7 @@ import { choiceResponse } from '../protocol/types.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
-import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection } from './multi-target.js';
+import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -1014,6 +1014,10 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   const buttonsMode = Boolean(plan.buttonsMode);
   // A2: wybór załogi — checkboksy + licznik mocy + default z oferty.
   const crewMode = Boolean(plan.crewMode);
+  // Uwaga C1 właściciela (2026-09-19, Merchant's Dockhand): „Tap X untapped
+  // artifacts” — stepper X (0..N, hasX) + checkboksy artefaktów sprzężone
+  // z licznikiem: legalne jest DOKŁADNIE X zaznaczeń (X=0 = pusty wybór).
+  const tapXMode = Boolean(plan.tapXMode);
   const xLabel = plan.hasX ? ` oraz wartość X (${plan.xMin}–${plan.xMax})` : '';
   const range = plan.minTargets === plan.maxTargets
     ? `${plan.maxTargets}`
@@ -1091,7 +1095,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // konkretnymi instancjami), więc wybór „drugiej kopii" musi mapować się
   // na reprezentanta klasy — inaczej Zatwierdź milczy (klin z żywca).
   const defOfMulliganCard = (id) => session?.state?.objects?.get(id)?.cardId ?? null;
-  const currentCommand = () => (plan.crewMode
+  const currentCommand = () => (plan.tapXMode
+    ? commandForTapXSelection(plan, [...chosen], xValue)
+    : plan.crewMode
     ? commandForCrewSelection(plan, [...chosen])
     : plan.discardMode
     ? commandForDiscardSelection(plan, [...chosen])
@@ -1232,6 +1238,16 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       } else {
         setStatus('Wskaż jeden wiersz', true);
       }
+    } else if (tapXMode) {
+      // Uwaga C1 właściciela (2026-09-19): status sprzęga licznik X
+      // z zaznaczeniami — „wybierz dokładnie X artefaktów” (X=0 = pusto).
+      if (cmd) {
+        setStatus(xValue === 0
+          ? 'X = 0 — aktywacja bez efektu (jałowa, ale legalna)'
+          : `X = ${xValue} — zaznaczono ${chosen.size}/${xValue} artefaktów — gotowe`, false);
+      } else {
+        setStatus(`X = ${xValue} — zaznacz dokładnie ${xValue} artefaktów (masz ${chosen.size})`, true);
+      }
     } else if (crewMode) {
       // A2: licznik progu — ile mocy zaznaczono, ile brakuje do N.
       const have = crewSelectionPower(plan, [...chosen]);
@@ -1279,6 +1295,10 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     // M298/A: mulligan — wiersze z ETYKIETAMI od wywołującego („Zatrzymaj
     // rękę (7 kart)” / „Weź mulligan”), nie z nazw obiektów.
     for (const row of plan.rows ?? []) addRow(row.id, null, { labelOverride: row.label });
+  } else if (tapXMode) {
+    // Uwaga C1 właściciela (2026-09-19): wiersz na każdy nietapnięty artefakt
+    // gracza — gracz zaznacza dokładnie X (stepper nad listą, jak w crew).
+    for (const id of plan.targets) addRow(id, null);
   } else if (crewMode) {
     // A2: wiersz na kandydata z jego mocą (licznik progu N); podgląd karty
     // działa jak w innych trybach (dopisek, nie labelOverride).

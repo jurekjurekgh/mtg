@@ -2257,6 +2257,11 @@ const CHOICE_GROUP_PENDING_SOURCE = Object.freeze({
  */
 const X_ABILITY_DESCRIPTIONS = Object.freeze({
   endure_x: 'endure X — X liczników +1/+1 na tym stworze albo token Spirit X/X',
+  // Uwaga C1 właściciela (2026-09-19, Merchant's Dockhand): opis efektu
+  // po TYPIE (ADR 0002) — tytuł grupy panelu nazywa czynność, a wybór X
+  // i artefaktów odbywa się w kreatorze (tapXMode).
+  look_top_put_one_hand_rest_bottom: 'przejrzyj X kart z wierzchu biblioteki — jedną weź do ręki, resztę na spód',
+  look_top_put_one_hand_rest_grave: 'przejrzyj X kart z wierzchu biblioteki — jedną weź do ręki, resztę do grobu',
 });
 
 function abilityXDescription(session, object, command) {

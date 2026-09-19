@@ -702,6 +702,34 @@ export async function runTableGame({
     // Polityka gracza: zaznacz tyle opcji, ile żąda wizard (status „zaznacz
     // cele (N)"), potem zatwierdź; gdy nie da się złożyć — anuluj.
     const multiConfirm = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
+    // Uwaga C1 właściciela (2026-09-19, Merchant's Dockhand): kreator „Tap
+    // X artefaktów” (tapXMode) — stepper X + checkboksy artefaktów. Polityka
+    // testera: X = maksimum (tap wszystkie, największy przegląd biblioteki),
+    // zaznacz dokładnie X wierszy, Zatwierdź. X=0 nie wymaga zaznaczeń.
+    if (multiConfirm && $('#choice-request .multi-target-x')) {
+      const readX = () => Number(text($('#choice-request .multi-target-x-count')) || 0);
+      const plus = $('#choice-request .multi-target-x-plus');
+      let prevX = readX();
+      for (let i = 0; i < 40 && plus; i += 1) {
+        plus.click();
+        await sleep(15);
+        const curX = readX();
+        if (curX === prevX) break; // szczyt zakresu — licznik przestał rosnąć
+        prevX = curX;
+      }
+      const xChosen = readX();
+      const artifactRows = $$('#choice-request .multi-target-toggle').filter((b) => !b.disabled);
+      for (let i = 0; i < Math.min(xChosen, artifactRows.length); i += 1) {
+        artifactRows[i].click();
+        await sleep(15);
+      }
+      logL(`  [tap-x wizard] X=${xChosen}, artefaktów w puli ${artifactRows.length}`);
+      const confirmX = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
+      if (confirmX && !confirmX.disabled) { confirmX.click(); await sleep(80); return true; }
+      const cancelX = $$('#choice-request button').find((b) => /multi-target-cancel/.test(String(b.className)));
+      if (cancelX) { cancelX.click(); await sleep(60); }
+      return true;
+    }
     if (multiConfirm) {
       // M258 (pętla jakości, PR #89): KREATOR „CEL + POŚWIĘCENIE (KOSZT)"
       // (sacMode z M257-r5/C — Lash of the Balrog). Intro tego kreatora nie
