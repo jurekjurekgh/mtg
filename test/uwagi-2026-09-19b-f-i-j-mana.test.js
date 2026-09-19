@@ -221,36 +221,30 @@ test('F/5: dwie sztuki many ze Skarbów na rzut Marutem → 2 nowe Skarby („fo
   assert.equal(onField('token_treasure'), 2, 'ETB tworzy DOKŁADNIE 2 Skarby (po jednym za sztukę)');
 });
 
-test('F/6: rzut zapłacony samymi lądami nie tworzy Skarbów („inną drogą” → 0)', () => {
+test('F/6: rzut zapłacony samymi lądami (bez Skarbów na polu) nie tworzy Skarbów', () => {
+  // P7 (log właściciela) zmienił KOLEJNOŚĆ decyzji bota: gdy w ręce jest karta
+  // ze zwrotem many ze Skarbów, bot najpierw aktywuje Skarb (mana wraca
+  // tokenem). Dlatego „wejście inną drogą = 0" mierzymy na SILNIKU — czysty
+  // rzut bez Skarbów na polu nie ma czego policzyć w LKI.
   const state = game();
   put(state, 'marut', 'marut', 'p1', 'hand');
-  for (let i = 0; i < 8; i += 1) put(state, `land${i}`, 'basic-plains', 'p1');
-  treasureToken(state, 'p1'); // leży nietknięty — LKI rzutu nie może go policzyć
-  const bot = gameBot();
-  const onField = (cardId) => [...state.objects.values()]
-    .filter((o) => o.zone === 'battlefield' && o.cardId === cardId).length;
-  let castMarut = false;
-  for (let i = 0; i < 40 && state.status === 'active'; i += 1) {
-    if (castMarut && onField('marut') > 0 && state.zones.stack.length === 0) break;
-    if (state.zones.stack.length > 0) {
-      const rv = playerView(state, state.turn.priorityPlayerId);
-      const resolve = rv.legalCommands.find((c) => c.type.startsWith('resolve_'))
-        ?? rv.legalCommands.find((c) => c.type === 'pass_priority');
-      if (!resolve) break;
-      assert.ok(execute(state, resolve).ok);
-      continue;
-    }
-    const view = playerView(state, 'p1');
-    const cmd = bot.chooseCommand(view);
-    assert.ok(cmd, 'bot ma komendę (same lądy)');
-    if (cmd.type === 'cast_permanent' && state.objects.get(cmd.objectId)?.cardId === 'marut') castMarut = true;
-    assert.ok(execute(state, cmd).ok, `komenda ${cmd.type} legalna`);
-    if (cmd.type === 'pass_priority' && !castMarut) break;
+  addMana(state, 'p1', 8, { colors: [] });
+  assert.equal(treasuresOnBattlefield(state), 0, 'brak Skarbów na polu bitwy');
+  const view = playerView(state, 'p1');
+  const cast = view.legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === 'marut');
+  assert.ok(cast, 'oferta rzutu z 8 many w puli');
+  assert.ok(execute(state, cast).ok);
+  for (let i = 0; i < 10 && state.zones.stack.length > 0; i += 1) {
+    const rv = playerView(state, state.turn.priorityPlayerId);
+    const resolve = rv.legalCommands.find((c) => c.type.startsWith('resolve_'))
+      ?? rv.legalCommands.find((c) => c.type === 'pass_priority');
+    if (!resolve) break;
+    assert.ok(execute(state, resolve).ok);
   }
-  const cast = state.events.find((e) => e.type === 'permanent_cast' && e.object?.cardId === 'marut');
-  assert.ok(cast, 'Marut rzucony z samych lądów');
-  assert.equal(cast.manaFromTreasureSpent ?? 0, 0, 'stempel: 0 many ze Skarbów');
-  assert.equal(onField('token_treasure'), 1, 'Skarb nietknięty i żaden nowy nie powstał');
+  const ev = state.events.find((e) => e.type === 'permanent_cast' && e.object?.cardId === 'marut');
+  assert.ok(ev, 'Marut rzucony');
+  assert.equal(ev.manaFromTreasureSpent ?? 0, 0, 'stempel: 0 many ze Skarbów');
+  assert.equal(treasuresOnBattlefield(state), 0, 'ETB nie tworzy Skarbów (nie było czego wykonać)');
 });
 
 // ---------------------------------------------------------------------------

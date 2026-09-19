@@ -1867,6 +1867,69 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const step = view.turn.step;
     return myTurn(view) && (step === 'main1' || step === 'main2' || step === 'main');
   });
+  /**
+   * F/2 (log właściciela 2026-09-19b): karta ZWRACA manę ze Skarbów wydaną na
+   * jej rzut — deskryptor `create_token` z `amount: 'mana_from_treasure_spent'`
+   * (ADR 0002: reguła po deskryptorze, zero nazw kart). Takie karty czynią
+   * manę ze Skarba darmową, więc kolejność „Skarb przed rzutem" jest istotna.
+   */
+  const refundsTreasureManaOnCast = (cardId) => {
+    const def = cardDef(cardId);
+    if (!def) return false;
+    const effects = [
+      ...(def.spell?.effects ?? []),
+      ...(def.abilities ?? []).flatMap((ability) => {
+        const fx = ability?.effect;
+        return Array.isArray(fx) ? fx : (fx ? [fx] : []);
+      }),
+    ];
+    return effects.some((e) => e?.type === 'create_token' && e.amount === 'mana_from_treasure_spent');
+  };
+
+  /** Czy aktywacja z `cmd` produkuje manę ZE SKARBA (deskryptor `fromTreasure`)? */
+  const activationProducesTreasureMana = (view, cmd) => {
+    const source = objectOnBoard(view, cmd.objectId);
+    const ability = (source?.activatableAbilities ?? [])[cmd.abilityIndex ?? 0];
+    if (!ability || (ability.targets ?? []).length > 0) return false;
+    const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    return effects.some((e) => e?.type === 'add_mana' && e.fromTreasure === true);
+  };
+
+  /**
+   * F/2 — „Skarb WYPRZEDZA rzut, który go zwraca".
+   *
+   * Log właściciela: bot rzuca Maruta (płatność auto-tapem lądów), a dopiero
+   * POTEM poświęca Skarb; jego mana finansuje następny, tańszy czar (Scorch
+   * Spitter), a ETB Maruta tworzy 0 tokenów. Tymczasem:
+   *  - karta zwraca każdą manę ze Skarbów wydaną na rzut (deskryptor wyżej),
+   *  - płatność zużywa Skarb PIERWSZY (`spendMana`: treasure-first),
+   * więc aktywacja Skarba PRZED rzutem jest darmowa (mana wraca tokenem),
+   * a aktywacja PO rzucie przepada. To wada WYCENY bota (kolejność akcji),
+   * nie płatności — dlatego decyzja jest akcją-przed, a wartość bierzemy
+   * z wyceny TEGO rzutu (ta sama funkcja co oferty, L41) + margines: po
+   * aktywacji rzut nadal jest dostępny, więc nic nie gubimy.
+   */
+  const treasureRefundLead = (view) => {
+    const refundCasts = (view.legalCommands ?? []).filter((cmd) => UNLOCK_CAST_TYPES.has(cmd.type)
+      && refundsTreasureManaOnCast((view.zones.hand ?? []).find((o) => o.id === cmd.objectId)?.cardId));
+    if (refundCasts.length === 0) return null;
+    const saved = lastUnvaluedType;
+    let best = null;
+    try {
+      for (const cast of refundCasts) {
+        const value = scoreCommand(view, cast);
+        if (Number.isFinite(value) && value > 0) best = best == null ? value : Math.max(best, value);
+      }
+    } finally {
+      lastUnvaluedType = saved;
+    }
+    if (best == null) return null;
+    const activation = (view.legalCommands ?? []).find((cmd) => cmd.type === 'activate_ability'
+      && activationProducesTreasureMana(view, cmd));
+    if (!activation) return null;
+    return { cmd: activation, score: best + 10 };
+  };
+
   const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + combatPower(o), 0);
   /**
    * M135 — CZY TĘ KARTĘ CHCEMY DOBRAĆ? Wspólna wycena dla wszystkich decyzji
@@ -5642,9 +5705,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
             // Poświęcenie źródła jako koszt (Treasure) jest jednorazowe —
             // trzymamy token, dopóki mana nie jest realnie potrzebna.
-            if (ability?.cost?.sacrificeSelf && !unlocksSomething) score -= 6;
-            // Poświęcenie źródła jako koszt (Treasure) jest jednorazowe —
-            // trzymamy token, dopóki mana nie jest realnie potrzebna.
+            // UWAGA: warunek był w kodzie DWA razy (podwójna kara -12 zamiast
+            // -6 — copy-paste z PR #129); zostaje jeden.
             if (ability?.cost?.sacrificeSelf && !unlocksSomething) score -= 6;
           }
           if (effect.type === 'create_token') {
@@ -7695,6 +7757,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   return Object.freeze({
     chooseCommand(view, helpers) {
       if (!view?.legalCommands?.length) throw new Error('Widok nie zawiera legalnych komend');
+      // F/2 (log właściciela): Skarb wyprzedza rzut karty, która go zwraca —
+      // patrz `treasureRefundLead` (uzasadnienie i pomiar).
+      const refundLead = treasureRefundLead(view);
+      if (refundLead) {
+        history.push({
+          turn: view.turn.number, step: view.turn.step,
+          chosen: summarize(refundLead.cmd, view), score: refundLead.score,
+          options: [{ cmd: summarize(refundLead.cmd, view), score: refundLead.score }],
+        });
+        return refundLead.cmd;
+      }
       const scored = enabled && helpers?.simulate
         ? scoredWithLookahead(view, helpers.simulate)
         : view.legalCommands.map((cmd) => scoreTracked(view, cmd));
