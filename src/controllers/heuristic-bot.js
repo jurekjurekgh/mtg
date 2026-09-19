@@ -2783,12 +2783,42 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // rygorystycznie (lifelink zawsze daje życie przy obrażeniach),
         // ale okno musi być bojowe.
         value += (attacking || blocking) ? (kw === 'lifelink' ? 4 : 6) : -10;
-      } else if (['menace', 'haste'].includes(kw)) {
-        // Evasion/agresja: nasz atak — zadeklarowany albo tuż przed.
-        if (attacking) value += 2 + (recipient.power ?? 0);
-        else if (myTurn(view) && canAttackNow(recipient)
-          && ['precombat_main', 'combat'].includes(view.turn.phase)) value += 2 + (recipient.power ?? 0);
-        else value -= 10;
+      } else if (kw === 'menace' || kw === 'haste') {
+        // D (zgłoszenie właściciela 2026-09-19b, Stirring Bard „Mantle of
+        // Inspiration — {T}: Target creature gains menace and haste until end
+        // of turn”): zgłoszenie brzmiało „bot tapuje Bardem w Main 1, a ma
+        // używać TYLKO w swojej turze na początku fazy ataku i tylko na
+        // (a) stwora z chorobą przyzwania, który zaatakuje (haste odblokowuje),
+        // albo (b) atakującego (menace utrudnia blok). Każde inne użycie =
+        // nie używać wcale.”
+        //
+        // Stara gałąź dawała pełną premię już w Main 1 („phase: precombat_main
+        // albo combat”), czyli dokładnie w oknie, w którym efekt jest jałowy:
+        // przed deklaracją atakujących bot nie wie jeszcze, kto zaatakuje,
+        // a tapnięty Bard nie zostaje na bloku (0/4 z obrońcą).
+        //
+        // Ocena jest dla PARY keywordów z jednej aktywacji (grupa), nie dla
+        // każdego z osobna: haste na atakującym nic już nie daje, ale grant
+        // menace jest wtedy tym, po co sięgamy — kara za „zbędną połowę”
+        // skasowałaby poprawną decyzję.
+        const firstOfGroup = fresh.find((k) => k === 'menace' || k === 'haste') === kw;
+        const attackWindow = myTurn(view) && view.turn.step === 'declare_attackers';
+        if (!firstOfGroup) {
+          // druga połowa grupy — wartość policzona przy pierwszej (0)
+        } else if (!attackWindow) {
+          value -= 10; // każde inne okno (Main 1/2, bloki, cudza tura) = nie używać
+        } else if (attacking) {
+          // (b) zadeklarowany atakujący: menace działa przy deklaracji bloków
+          // (CR 702.76), więc grant przed blokami realnie zmienia matematykę.
+          value += 2 + (recipient.power ?? 0);
+        } else if (recipient.summoningSickness === true && !recipient.tapped
+          && (recipient.power ?? 0) > 0 && recipient.cantAttackStatic !== true) {
+          // (a) chory stwór, którego haste realnie odblokuje w TEJ deklaracji
+          // (CR 302.6 sprawdza się przy deklaracji atakujących).
+          value += 2 + (recipient.power ?? 0);
+        } else {
+          value -= 10; // w oknie, ale bez przypadku (a)/(b): efekt jałowy
+        }
       } else if (kw === 'vigilance') {
         // M221/D + B (zgłoszenie właściciela, Bladed Sentinel „{W}: vigilance
         // do końca tury"): vigilance = „nie tapuje się, gdy atakuje" (CR 702.21).

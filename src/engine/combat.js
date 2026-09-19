@@ -11,7 +11,7 @@ import { effectiveProtectionFromColors } from './attachments.js';
  * przypiętego do atakującego, oceniany przy deklaracji blokerów (moc
  * EFEKTYWNA — pumpy i liczniki mogą wynieść nosiciela ponad próg).
  */
-function cantBeBlockedFromEquipment(state, attacker) {
+export function cantBeBlockedFromEquipment(state, attacker) {
   for (const attachment of attachmentsAttachedTo(state, attacker.id)) {
     const maxPower = attachment.equipment?.cantBeBlockedMaxPower;
     if (maxPower != null && effectivePower(attacker, state) <= maxPower) return true;

@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
@@ -5943,6 +5943,19 @@ export function playerView(state, playerId) {
           entry.cantAttackStatic = true;
         }
         if (object.cantBeBlocked === true) entry.cantBeBlocked = true;
+        // C (zgłoszenie właściciela 2026-09-19b, Thieves' Tools): ewazja
+        // z ZAŁĄCZNIKA („Equipped creature can't be blocked as long as its
+        // power is 3 or less”) to ten sam fakt publiczny co `cantBeBlocked`
+        // z efektu (CR 509.1b) — bez tego bot widział nosiciela 1/1 jako
+        // blokowalnego i nie atakował darmowym obrażeniem, a kafel milczał
+        // o tym, że atak przejdzie (klasa L1/ADR 0017). Warunek progu liczy
+        // się przy każdym odczycie (moc EFEKTYWNA — pump/liczniki mogą
+        // zdjąć ewazję), więc widok pyta silnik o stan bieżący, zamiast
+        // kopiować deskryptor sprzętu.
+        else if (object.kind === 'creature' && !hiddenFromViewer
+          && cantBeBlockedFromEquipment(state, object)) {
+          entry.cantBeBlocked = true;
+        }
         // Audyt Batch53/C (Rust-Shield Rampager): próg ewazji mocowej
         // („can't be blocked by creatures with power N or less") to informacja
         // publiczna (skutek statyki) — bot czyta go wprost z widoku
