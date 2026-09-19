@@ -14,7 +14,7 @@ import { createBattlefieldToken, nextCopyNumber, nextFaceDownCopyNumber, TREASUR
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
-import { attachEquipmentToCreature, detachAttachmentsFromHost } from './attachments.js';
+import { attachAuraToCreature, attachEquipmentToCreature, detachAttachmentsFromHost, isLegalAuraHost } from './attachments.js';
 
 /**
  * Loch „Undercity" (komponent inicjatywy, CR 725; karta „Undercity //
@@ -52,6 +52,11 @@ export const UNDERCITY_ROOMS = Object.freeze([
 ]);
 
 /** Wirtualne źródło efektów lochu (nie jest obiektem w strefie — jak emblem). */
+/** Karta-ląd (kind albo typ) — jedno miejsce prawdy dla efektów-reanimacji. */
+function isLandCard(object) {
+  return object?.kind === 'land' || (object?.types ?? []).includes('Land');
+}
+
 function dungeonSource(playerId) {
   return { id: `dungeon-${playerId}`, controllerId: playerId, cardId: 'undercity', kind: 'card' };
 }
@@ -1283,11 +1288,19 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // a znacznik wygasa sam — nie trzeba go sprzątać cleanupem.
   if (effect.type === 'exile_top_playable_until_next_turn') {
     const controllerId = sourceObject.controllerId;
-    const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === controllerId);
-    if (topId == null) return;
-    const card = state.objects.get(topId);
-    const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, topId, 'exile', exileId, { exiledBy: sourceObject.cardId });
+    // `count` (deskryptor, ADR 0002): Annie Flash wygania DWIE wierzchnie
+    // karty („exile the top two cards"), Gila Courser/Caves of Chaos jedną.
+    // Każda karta dostaje WŁASNY stempel okna — to jedna zdolność, ale N
+    // niezależnych pozwoleń (CR 601.2b).
+    const count = Math.max(1, effect.count ?? 1);
+    const topIds = [];
+    for (const id of state.zones.library) {
+      const object = state.objects.get(id);
+      if (object?.controllerId !== controllerId) continue;
+      topIds.push(id);
+      if (topIds.length === count) break;
+    }
+    if (topIds.length === 0) return;
     // „Until the end of your NEXT turn" — jeśli to twoja tura, chodzi o tę
     // następną (numer + 2 przy dwóch graczach); poza swoją turą o najbliższą.
     // G (zgłoszenie właściciela, Caves of Chaos Adventurer): karta mówiąca
@@ -1312,12 +1325,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const freeCondition = effect.freeIfCondition ?? null;
     oknoImpulsu.withoutPaying = freeCondition?.type === 'completed_dungeon'
       && hasCompletedDungeon(state, controllerId);
-    state.objects.set(exileId, stampImpulseWindow(moved, oknoImpulsu));
-    const stempl = impulseWindowFields(oknoImpulsu);
-    state.events.push(event('object_exiled', {
-      fromId: topId, objectId: exileId, object: state.objects.get(exileId),
-      cardId: card?.cardId ?? null, playerId: controllerId, ...stempl,
-    }));
+    for (const topId of topIds) {
+      const card = state.objects.get(topId);
+      if (!card || card.zone !== 'library') continue;
+      const exileId = `exile-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, topId, 'exile', exileId, { exiledBy: sourceObject.cardId });
+      state.objects.set(exileId, stampImpulseWindow(moved, oknoImpulsu));
+      const stempl = impulseWindowFields(oknoImpulsu);
+      state.events.push(event('object_exiled', {
+        fromId: topId, objectId: exileId, object: state.objects.get(exileId),
+        cardId: card?.cardId ?? null, playerId: controllerId, ...stempl,
+      }));
+    }
     return;
   }
   // Vaan, Street Thief (FIN): „exile the top card of that player's library.
@@ -3228,15 +3247,42 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (T6 — odpowiedź na triggerze) — brak efektu.
     const targetId = targets[0];
     const object = state.objects.get(targetId);
-    if (!object || object.zone !== 'graveyard' || object.kind === 'land' || object.kind === 'spell') return;
+    // CR 110.4a + ruling OTJ (2024-04-12, Annie Flash): „permanent card" to
+    // karta artefaktu/bitwy/stwora/zaklęcia/landu/planeswalkera — land też,
+    // o ile deskryptor na to pozwala (`allowLands`). Domyślnie lądów nie ma
+    // (Zoraline, Unearth, Unbreakable Bond — „nonland"/„creature").
+    if (!object || object.zone !== 'graveyard' || object.kind === 'spell') return;
+    if (isLandCard(object) && !effect.allowLands) return;
+    // CR 303.4f + ruling OTJ (2024-04-12, Annie Flash): aura wracająca z grobu
+    // wybiera zaczarowany obiekt PRZED wejściem — to nie celowanie, więc
+    // hexproof/protection NIE blokują; blokuje brak jakiegokolwiek legalnego
+    // gospodarza (wtedy karta ZOSTAJE w grobie). Zbiór gospodarzy liczy ta
+    // sama funkcja co SBA i rzut aury (`isLegalAuraHost` — L41).
+    let auraHostId = null;
+    if ((object.subtypes ?? []).includes('Aura')) {
+      auraHostId = state.zones.battlefield.find((hostId) => isLegalAuraHost(object, state.objects.get(hostId))) ?? null;
+      if (auraHostId == null) {
+        state.events.push(event('aura_returned_without_host', {
+          objectId: targetId, cardId: object.cardId, playerId: object.controllerId ?? null,
+        }));
+        return;
+      }
+    }
     const newId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
-    const permanent = Object.freeze({ ...moved, summoningSickness: true });
+    // Ruling Annie Flash: wraca TAPNIĘTA (deskryptor `entersTapped` — ADR 0002).
+    const permanent = Object.freeze({
+      ...moved, summoningSickness: true,
+      ...(effect.entersTapped ? { tapped: true } : {}),
+    });
     state.objects.set(newId, permanent);
     // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
     // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
     // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
     applyEnterCounters(state, newId);
+    // Załączenie aury PO wejściu na pole bitwy (kolejność: obiekt musi już
+    // istnieć w strefie, żeby `attachAuraToCreature` przeszło walidację).
+    if (auraHostId != null) attachAuraToCreature(state, newId, auraHostId);
     if (effect.finalityCounter) addCounter(state, newId, 'finality', 1);
     // Batch 24 (Unbreakable Bond): „return ... with a lifelink counter on it" —
     // wejście z licznikami (CR 122.1b — licznik lifelink nadaje keyword).

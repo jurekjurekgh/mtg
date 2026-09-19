@@ -2058,6 +2058,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const max = e.maxExile ?? 0;
         return `${nameOf(e.cardId)} — ${whoN(e.playerId)} wybiera dowolną liczbę kart do wygnania (0–${max}, koszt Delve)`;
       }
+      // Batch 57/B5 (Annie Flash): aura wracająca z grobu bez legalnego
+      // gospodarza zostaje w grobie — bez wpisu wyglądałoby to na zgubioną
+      // zdolność (M106/Z2).
+      case 'aura_returned_without_host':
+        return `${nameOf(e.cardId)} zostaje w grobie — aura bez legalnego gospodarza na polu bitwy`;
       case 'delve_exile_resolved': return null;
       // card_discarded już nazywa każdą kartę. Zakończenie decyzji nie jest
       // kolejnym odrzuceniem ani zawsze pojedynczym kosztem zdolności.

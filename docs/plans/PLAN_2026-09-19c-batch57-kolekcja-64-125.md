@@ -258,7 +258,7 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
   Bramy: `npm test` **5955/5955, 0 fail**; `npm run build` 64 moduły /
   3921,7 kB. Piny: `test/real-cards-batch57.test.js` 29/29 (RED→GREEN na
   stashu źródeł: 7 czerwonych), w tym pin L21 „prawdziwa talia".
-- [ ] **B5 (M392) — Annie Flash**: **77 Annie Flash, the Veteran** — powrót
+- [x] **B5 (M392) — Annie Flash**: **77 Annie Flash, the Veteran** — powrót
   permanentu MV≤3 z własnego grobu (`allowLands`, `entersTapped`), trigger
   `self_becomes_tapped` → wygnaj 2 wierzchnie karty grywalne w tej turze,
   Flash, `condition.ifCast`. Testy: ETB z ręki wraca permanent tapnięty;
@@ -267,6 +267,33 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
   w grobie; tapnięcie (atak/zdolność) wygania DOKŁADNIE dwie karty i pozwala
   zagrać obie w tej turze (w tym land tylko w main), a w następnej turze
   uprawnienie wygasa.
+
+  **Wykonanie i pomiary.** Wszystkie trzy rulingi OTJ (2024-04-12) są
+  deskryptorami: `condition.ifCast`, spec `permanent_card_in_graveyard`
+  z `allowLands` („permanent card" obejmuje land — inaczej niż Zoraline
+  „nonland"; domyślnie lądy nadal wykluczone, więc Zoraline/Unearth bez
+  zmian), efekt `return_permanent_from_graveyard` z `allowLands`
+  i `entersTapped` (wraca TAPNIĘTA). Aura wracająca tą drogą wybiera
+  gospodarza PRZED wejściem (CR 303.4f — to nie celowanie, więc
+  hexproof/protection nie blokują); brak jakiegokolwiek legalnego gospodarza →
+  karta zostaje w grobie + zdarzenie `aura_returned_without_host` w logu
+  (M106/Z2). Trzecia zdolność: `exile_top_playable_until_next_turn` dostał
+  deskryptor `count` (2) + okno `this_turn` — dokładnie DWIE karty, grywalne
+  tylko w tej turze i normalnie (land dopiero w main).
+
+  **Znalezisko generyczne (klasa L24):** tapnięcie przez ATAK nie docierało do
+  skanu triggerów — `declareAttackers` wołał `tapObject` (pisze do
+  `state.events`), a `accepted()` karmi `processTriggers` wyłącznie listą
+  zdarzeń ZWRACANĄ przez komendę. „Whenever this creature becomes tapped"
+  (Nanoform Sentinel, teraz Annie) nie odpalał więc nigdy od ataku.
+  Naprawa: `tapObject` przyjmuje opcjonalny kolektor zdarzeń (wzorzec M114
+  i M117), a `declareAttackers` przekazuje go dalej.
+
+  Churn: `worek-dziki` +Annie Flash (landy przeliczone 3I/1S/3M/1F →
+  2/2/2/2; README 29/10/19 → 30/10/20). Golden-master bez zmian (talia poza
+  `SNAPSHOT_CONFIG`). Bramy: `npm test` **5963/5963, 0 fail**; build 64
+  moduły / 3927,0 kB. Piny: `test/real-cards-batch57.test.js` 37/37 (8 nowych;
+  RED→GREEN na stashu 9 plików: 6 czerwonych).
 - [ ] **B6 (M393) — Baral and Kari Zev**: **88 Baral and Kari Zev** — licznik
   „pierwszy instant/sorcery w turze" per gracz, darmowy rzut z ręki (lesser MV
   + wspólny typ karty, bez kosztów alternatywnych, `{X}` = 0), alternatywa

@@ -249,7 +249,7 @@ export function mandatoryAttackerIds(state, playerId) {
     .map((object) => object.id);
 }
 
-export function declareAttackers(state, playerId, attackerIds, { pushToState = true } = {}) {
+export function declareAttackers(state, playerId, attackerIds, { pushToState = true, events: collectedEvents = null } = {}) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_attackers') throw new Error('Nieprawidłowy krok deklaracji atakujących');
   if (state.turn.activePlayerId !== playerId) throw new Error('Nieaktywny gracz nie deklaruje atakujących');
   if (!Array.isArray(attackerIds) || new Set(attackerIds).size !== attackerIds.length) throw new Error('Atakujący nie może wystąpić więcej niż raz');
@@ -274,7 +274,7 @@ export function declareAttackers(state, playerId, attackerIds, { pushToState = t
   }
   for (const attacker of attackers) {
     // Vigilance: stwór nie tapuje się przy ataku.
-    if (!hasKeyword(state, attacker, 'vigilance')) tapObject(state, attacker.id, playerId);
+    if (!hasKeyword(state, attacker, 'vigilance')) tapObject(state, attacker.id, playerId, collectedEvents);
     // M67 (Homicidal Brute — tył Civilized Scholar): „if this creature didn't
     // attack this turn" — atakujący dostaje flagę (czyszczona w cleanup).
     const withFlag = state.objects.get(attacker.id);

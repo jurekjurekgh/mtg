@@ -56,13 +56,20 @@ export function replaceObject(state, object, patch) {
   return updated;
 }
 
-export function tapObject(state, objectId, playerId) {
+export function tapObject(state, objectId, playerId, events = null) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) throw new Error('Nie można tapować tego obiektu');
   if (object.tapped) throw new Error('Obiekt jest już tapped');
   const updated = replaceObject(state, object, { tapped: true });
   const e = event('object_tapped', { objectId, playerId });
   state.events.push(e);
+  // M114/M117 (ta sama klasa co tapnięcie landa za manę i regeneracja):
+  // zdarzenie musi trafić TAKŻE do listy zwracanej przez komendę, bo
+  // `accepted()` karmi `processTriggers` tą listą, a nie całym `state.events`
+  // (Batch 57/B5: atak Annie Flash nie odpalał „whenever becomes tapped").
+  // Kolektor jest opcjonalny — ścieżki, które budują własną listę zdarzeń,
+  // podają ją jawnie (combat.declareAttackers).
+  if (events) events.push(e);
   return updated;
 }
 

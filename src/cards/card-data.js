@@ -11359,10 +11359,37 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({
     id: 'annie-flash-the-veteran', name: 'Annie Flash, the Veteran', set: 'OTJ',
     types: ['Legendary', 'Creature'], subtypes: ['Human', 'Rogue'], colors: ['R', 'G', 'W'],
-    power: 4, toughness: 5, manaCost: 6,
+    power: 4, toughness: 5, manaCost: 6, keywords: ['flash'],
     oracleText: 'Flash\nWhen Annie Flash enters, if you cast it, return target permanent card with mana value 3 or less from your graveyard to the battlefield tapped.\nWhenever Annie Flash becomes tapped, exile the top two cards of your library. You may play those cards this turn.',
     imageUri: 'https://cards.scryfall.io/large/front/8/d/8d4af7c3-a70d-4f71-b27d-b268c4a0f81e.jpg?1783911798',
-    artId: 77, plan: 'Thunder Junction', support: { status: 'in-development', limitations: [] },
+    // B5 (M392). Trzy reguły z rulingów OTJ (2024-04-12) są DESKRYPTORAMI:
+    //  - „if you cast it" → `condition.ifCast` (ten sam mechanizm co
+    //    Geological Appraiser; reanimacja/token triggera nie odpala),
+    //  - „permanent card … from your graveyard" → spec triggera
+    //    `permanent_card_in_graveyard` z `allowLands` (land to permanent card,
+    //    inaczej niż u Zoraline/„nonland"),
+    //  - „to the battlefield TAPPED" → `entersTapped` efektu zwrotu.
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          condition: { ifCast: true },
+          requiresTarget: { type: 'permanent_card_in_graveyard', controlledBy: 'controller', allowLands: true, maxManaValue: 3 },
+        },
+        effect: [{ type: 'return_permanent_from_graveyard', allowLands: true, entersTapped: true }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'self_becomes_tapped' },
+        effect: [{ type: 'exile_top_playable_until_next_turn', count: 2, window: 'this_turn' }],
+      }),
+    ],
+    artId: 77, plan: 'Thunder Junction', support: { status: 'supported', limitations: [] },
+    notes: [
+      'druga zdolność: „you may play those cards THIS TURN" — okno impulsu domyka się w turze zdolności (deskryptor `window`, ten sam co Caves of Chaos)',
+      'ruling OTJ: aura wracająca tą drogą wybiera gospodarza PRZED wejściem i nie celuje; bez legalnego gospodarza zostaje w grobie (CR 704.5m pilnuje tego po wejściu)',
+    ],
   }),
 
   defineCard({

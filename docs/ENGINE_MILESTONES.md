@@ -6119,3 +6119,49 @@ jest w `SNAPSHOT_CONFIG`, a talia zmieniła skład. Przeloosowanie scenariuszy
 
 Bramy: `npm test` **5955/5955, 0 fail**, `npm run build` 64 moduły /
 3921,7 kB.
+
+## M392 (2026-09-19) — Batch 57/B5: Annie Flash, the Veteran — powrót permanentu z grobu i okno „play this turn"
+
+Zakres: karta 77 OTJ (`{3}{R}{G}{W}` 4/5 Legendary Human Rogue, Flash) wchodzi
+jako `supported` z trzema regułami prosto z rulingów OTJ (2024-04-12):
+
+- **ETB „if you cast it" + powrót permanentu MV≤3 tapniętego**
+  (`condition.ifCast`, spec triggera `permanent_card_in_graveyard`, efekt
+  `return_permanent_from_graveyard`). Ruling mówi wprost, że „permanent card"
+  OBEJMUJE land (inaczej niż u Zoraline — „nonland"), więc oba deskryptory
+  dostały `allowLands`, a wejście — `entersTapped`. Domyślne zachowanie
+  pozostałych kart (Zoraline/Unearth/Unbreakable Bond) bez zmian: brak flagi =
+  lądy wykluczone (zbiór bez regresji).
+- **Aura wracająca tą drogą wybiera gospodarza PRZED wejściem** (CR 303.4f) —
+  to nie jest celowanie, więc hexproof/protection nie blokują; brak
+  JAKIEGOKOLWIEK legalnego gospodarza = karta ZOSTAJE w grobie (zdarzenie
+  `aura_returned_without_host`, wpis w logu — bez niego wyglądałoby to na
+  zgubioną zdolność, M106/Z2). Zbiór gospodarzy liczy ta sama funkcja co SBA
+  i rzut aury (`isLegalAuraHost`, L41).
+- **„Whenever becomes tapped" → wygnaj DWIE wierzchnie karty, graj je w tej
+  turze.** `exile_top_playable_until_next_turn` dostał DESKRYPTOR `count`
+  (Gila Courser/Caves of Chaos = 1, Annie = 2; każde wygnanie to osobny
+  stempel okna), a okno `window: 'this_turn'` domyka się w turze zdolności.
+
+**Naprawa generyczna (klasa L24/M114/M117):** tapnięcie przez ATAK nie
+docierało do skanu triggerów — `combat.declareAttackers` wołał `tapObject`
+(które pisze do `state.events`), a `accepted()` karmi `processTriggers` tylko
+listą zdarzeń ZWRACANĄ przez komendę. Skutek: „whenever this creature becomes
+tapped" (Nanoform Sentinel od M360, teraz Annie) nigdy nie odpalał od ataku.
+`tapObject` przyjmuje teraz opcjonalny kolektor zdarzeń (wzorzec M114 dla
+tapu lądu i M117 dla regeneracji), a `declareAttackers` przekazuje go dalej —
+komenda zwraca `[object_tapped…, attackers_declared]`.
+
+Piny: `test/real-cards-batch57.test.js` — 37/37 (8 nowych: sanity, ETB
+z ręki → tapnięty, wejście BEZ rzutu nie odpala, land MV 0 jako „permanent
+card", MV 4 poza zasięgiem, aura bez gospodarza zostaje w grobie, aura
+z gospodarzem wchodzi ZAŁĄCZONA, tapnięcie wygania dokładnie DWIE karty
+i pozwala zagrać land dopiero w main). RED→GREEN na stashu dziewięciu plików
+źródłowych: 6 czerwonych.
+
+Churn: `worek-dziki` (plan „Thunder Junction") — `+Annie Flash, the Veteran`,
+landy przeliczone 3×Island/1×Swamp/3×Mountain/1×Forest →
+2/2/2/2, README 29/10/19 → 30/10/20. Talia poza `SNAPSHOT_CONFIG`, więc
+golden-master bez zmian.
+
+Bramy: `npm test` **5963/5963, 0 fail**, `npm run build` 64 moduły / 3927,0 kB.

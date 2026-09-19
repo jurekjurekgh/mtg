@@ -438,7 +438,12 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       const object = state.objects.get(objectId);
       if (!object || object.controllerId !== sourceObject.controllerId) return false;
       if (object.name != null) return false; // tokeny nie są kartami (CR 108.2b)
-      if (object.kind === 'land' || object.kind === 'spell') return false;
+      if (object.kind === 'spell') return false;
+      // CR 110.4a + ruling OTJ (2024-04-12, Annie Flash): „permanent card"
+      // łapie TAKŻE land (Zoraline mówi „nonland" — jej deskryptor nie ma
+      // `allowLands`). Jedna reguła dla oferty i walidacji (L48).
+      const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+      if (isLand && !spec.allowLands) return false;
       return (object.manaCost ?? 0) <= (spec.maxManaValue ?? Number.POSITIVE_INFINITY);
     });
   }

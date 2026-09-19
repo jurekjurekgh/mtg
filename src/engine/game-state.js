@@ -5043,7 +5043,7 @@ export function execute(state, input) {
         if (state.turn.step === 'declare_attackers' && !state.combat) {
           const forced = mandatoryAttackerIds(state, state.turn.activePlayerId);
           if (forced.length > 0) {
-            events.push(declareAttackers(state, state.turn.activePlayerId, forced, { pushToState: false }));
+            events.push(declareAttackers(state, state.turn.activePlayerId, forced, { pushToState: false, events }));
           }
         }
         // D (CR 508.2): tędy przechodzi TYLKO combat_damage bez atakujących
@@ -5093,7 +5093,7 @@ export function execute(state, input) {
           if (state.turn.step === 'declare_attackers'
               && !legalAttackerOptions(state, state.turn.activePlayerId, COMBAT_OPTION_CAP)
                 .some((attackerIds) => attackerIds.length > 0)) {
-            events.push(declareAttackers(state, state.turn.activePlayerId, [], { pushToState: false }));
+            events.push(declareAttackers(state, state.turn.activePlayerId, [], { pushToState: false, events }));
             const defenderId = state.players.find((player) => player.id !== state.turn.activePlayerId).id;
             state.turn = jumpToStep(state.turn, 'declare_blockers', defenderId);
             events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
@@ -5569,9 +5569,11 @@ export function execute(state, input) {
     // (oferta też zniknęła — bramka `!state.combat` przy ofercie).
     if (state.combat) return reject('attackers_already_declared');
     try {
-      const e = declareAttackers(state, cmd.playerId, cmd.attackerIds);
+      const tapEvents = [];
+      const e = declareAttackers(state, cmd.playerId, cmd.attackerIds, { events: tapEvents });
       state.turn.priorityPlayerId = cmd.playerId;
-      return accepted(state, cmd, { ok: true, events: [e] });
+      // Kolejność jak w logu: najpierw tapnięcia atakujących, potem deklaracja.
+      return accepted(state, cmd, { ok: true, events: [...tapEvents, e] });
     } catch (error) {
       return reject(`illegal_attackers:${error.message}`);
     }

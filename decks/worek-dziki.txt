@@ -17,10 +17,11 @@
 1x Vanish from Sight
 1x Spinewoods Paladin
 1x Volcanic Submersion
+1x Annie Flash, the Veteran
 1x Fear of Abduction
 1x Fear of Burning Alive
 2x Plains
-3x Island
-1x Swamp
-3x Mountain
-1x Forest
+2x Island
+2x Swamp
+2x Mountain
+2x Forest

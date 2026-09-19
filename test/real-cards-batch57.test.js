@@ -10,6 +10,7 @@ import { addMana } from '../src/engine/resources.js';
 import { effectiveKeywords, tapObject } from '../src/engine/permanents.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
 import { addCounter } from '../src/engine/counters.js';
+import { isImpulseWindowLive } from '../src/engine/impulse-window.js';
 import { landSplit, coloredPips } from '../tools/generate-plan-decks.mjs';
 
 /**
@@ -78,7 +79,10 @@ function sanity(id, artId, set, plan) {
     assert.equal(def.oracleText, src.oracle_text);
     assert.equal(def.imageUri, src.image_uris.large);
     assert.equal(def.manaCost, src.cmc); assert.equal(MANA_COSTS[id], src.mana_cost);
-    assert.deepEqual(def.colors, src.colors);
+    // Snapshot zapisuje kolory w porządku ALFABETYCZNYM, katalog — w kolejności
+    // wydrukowanego kosztu (precedens spoza batcha: Zoraline katalog `W,B`
+    // vs snapshot `B,W`). Zgodność ZBIORU kolorów to reguła, kolejność — nie.
+    assert.deepEqual([...def.colors].sort(), [...src.colors].sort());
     assert.equal(def.support.status, 'supported'); assert.deepEqual(def.support.limitations, []);
   });
 }
@@ -502,4 +506,136 @@ test('B57/66: prawdziwa talia — obiekt gry niesie deskryptor delve (L21/M379)'
   }
   assert.ok(find(state, 'hooting-mandrills', 'battlefield'), 'stwór z prawdziwej talii na polu bitwy');
   assert.equal(player(state, 'p1').mana, 0, 'zapłacone 3 many (6 − 3 wygnane karty)');
+});
+
+// ---------------------------------------------------------------------------
+// B5 (M392) — 77 Annie Flash, the Veteran: powrót permanentu MV≤3 z grobu
+// (tapnięty, land też — ruling OTJ 2024-04-12), trigger tapnięcia → wygnanie
+// DWÓCH wierzchnich kart grywalnych do końca TURY, Flash.
+// ---------------------------------------------------------------------------
+sanity('annie-flash-the-veteran', 77, 'OTJ', 'Thunder Junction');
+
+test('B57/77: ETB po rzuceniu wraca permanent MV≤3 z grobu TAPNIĘTY', () => {
+  const s = game();
+  put(s, 'annie', 'annie-flash-the-veteran');
+  put(s, 'gy-lightwalker', 'lightwalker', 'p1', 'graveyard');
+  addMana(s, 'p1', 6, { colors: ['R', 'G', 'W'] });
+  const offer = commands(s).find((c) => c.type === 'cast_permanent' && c.objectId === 'annie');
+  run(s, offer);
+  resolve(s);
+  assert.ok(find(s, 'annie-flash-the-veteran', 'battlefield'), 'Annie na polu bitwy');
+  const wrocil = find(s, 'lightwalker', 'battlefield');
+  assert.ok(wrocil, 'Lightwalker wrócił z grobu');
+  assert.equal(wrocil.tapped, true, 'wraca TAPNIĘTY (ruling OTJ)');
+  assert.equal(find(s, 'lightwalker', 'graveyard'), undefined, 'grób opuszczony');
+});
+
+test('B57/77: wejście BEZ rzutu nie odpala ETB (ruling: reanimacja/token)', () => {
+  const s = game();
+  put(s, 'annie', 'annie-flash-the-veteran');
+  put(s, 'gy-lightwalker', 'lightwalker', 'p1', 'graveyard');
+  // Ruling OTJ 2024-04-12: „It doesn't trigger if you put Annie Flash onto the
+  // battlefield without casting it." — wejście wprost z ręki (bez stosu).
+  moveObjectDirectly(s, 'annie', 'battlefield', 'annie-bf');
+  run(s, commands(s).find((c) => c.type === 'pass_priority'));
+  assert.equal(
+    commands(s).some((c) => c.type === 'resolve_trigger_target'),
+    false,
+    'brak decyzji celu — trigger „if you cast it" nie odpalił',
+  );
+  assert.ok(find(s, 'lightwalker', 'graveyard'), 'karta została w grobie');
+});
+
+test('B57/77: land (MV 0) jest „permanent card" — wraca tapnięty', () => {
+  const s = game();
+  put(s, 'annie', 'annie-flash-the-veteran');
+  put(s, 'gy-forest', 'basic-forest', 'p1', 'graveyard');
+  addMana(s, 'p1', 6, { colors: ['R', 'G', 'W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_permanent' && c.objectId === 'annie'));
+  resolve(s);
+  const land = find(s, 'basic-forest', 'battlefield');
+  assert.ok(land, 'land wrócił z grobu (ruling: permanent card obejmuje land)');
+  assert.equal(land.tapped, true, 'wraca tapnięty');
+});
+
+test('B57/77: MV 4 nie jest legalnym celem — brak triggera i grób bez zmian', () => {
+  const s = game();
+  put(s, 'annie', 'annie-flash-the-veteran');
+  put(s, 'gy-falcons', 'messenger-falcons', 'p1', 'graveyard'); // MV 4
+  addMana(s, 'p1', 6, { colors: ['R', 'G', 'W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_permanent' && c.objectId === 'annie'));
+  resolve(s);
+  assert.ok(find(s, 'annie-flash-the-veteran', 'battlefield'));
+  assert.equal(commands(s).some((c) => c.type === 'resolve_trigger_target'), false, 'brak celu → brak triggera');
+  assert.ok(find(s, 'messenger-falcons', 'graveyard'), 'MV 4 zostaje w grobie');
+});
+
+test('B57/77: aura bez gospodarza zostaje w grobie (ruling OTJ 2024-04-12)', () => {
+  const s = game();
+  put(s, 'annie', 'annie-flash-the-veteran');
+  // Chronic Flooding = „Enchant land", a na polu bitwy stoi tylko Annie
+  // (stwór) — aura nie ma żadnego legalnego gospodarza, więc NIE wchodzi
+  // (CR 303.4f: wybór zaczarowanego obiektu następuje przed wejściem).
+  put(s, 'gy-flood', 'chronic-flooding', 'p1', 'graveyard'); // aura MV 2
+  addMana(s, 'p1', 6, { colors: ['R', 'G', 'W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_permanent' && c.objectId === 'annie'));
+  resolve(s);
+  assert.ok(find(s, 'annie-flash-the-veteran', 'battlefield'));
+  assert.equal(find(s, 'chronic-flooding', 'battlefield'), undefined, 'aura bez gospodarza nie wchodzi');
+  assert.ok(
+    [...s.objects.values()].some((o) => o.cardId === 'chronic-flooding' && o.zone === 'graveyard'),
+    'zostaje w grobie',
+  );
+  assert.ok(s.events.some((e) => e.type === 'aura_returned_without_host'), 'zdarzenie mówi, co się stało');
+});
+
+test('B57/77: aura z legalnym gospodarzem wchodzi ZAŁĄCZONA (wybór przed wejściem, nie cel)', () => {
+  const s = game();
+  put(s, 'annie', 'annie-flash-the-veteran');
+  put(s, 'gy-membrane', 'containment-membrane', 'p1', 'graveyard'); // „Enchant creature", MV 3
+  addMana(s, 'p1', 6, { colors: ['R', 'G', 'W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_permanent' && c.objectId === 'annie'));
+  resolve(s);
+  const annieBf = find(s, 'annie-flash-the-veteran', 'battlefield');
+  const aura = find(s, 'containment-membrane', 'battlefield');
+  assert.ok(aura, 'aura wróciła na pole bitwy');
+  assert.equal(aura.attachedTo, annieBf.id, 'załączona do Annie (jedynego legalnego gospodarza)');
+});
+
+test('B57/77: tapnięcie wygania DOKŁADNIE dwie wierzchnie karty i pozwala zagrać je w tej turze', () => {
+  const s = game();
+  put(s, 'annie-bf', 'annie-flash-the-veteran', 'p1', 'battlefield');
+  const wygnanePrzed = [...s.objects.values()].filter((o) => o.zone === 'exile').length;
+  // Tapnięcie przez ATAK (tapObject to helper testowy — nie przechodzi przez
+  // komendę, więc nie odpalałby triggera); atak = zwykłe tapnięcie, CR 508.1f.
+  s.turn = jumpToStep(s.turn, 'declare_attackers', 'p1');
+  s.turn.activePlayerId = s.turn.priorityPlayerId = 'p1';
+  s.turn.passes = 0;
+  run(s, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['annie-bf'] });
+  resolve(s);
+  const wygnane = [...s.objects.values()].filter((o) => o.zone === 'exile');
+  assert.equal(wygnane.length - wygnanePrzed, 2, 'DOKŁADNIE dwie karty wygnane');
+  for (const o of wygnane) {
+    assert.equal(o.playableUntilTurn, s.turn.number, 'okno kończy się w TEJ turze (nie następnej)');
+    assert.equal(isImpulseWindowLive(o, s), true, 'okno żywe');
+  }
+  // Normalne zasady zagrania (ruling OTJ): land z okna w kroku atakujących
+  // NIE jest oferowany…
+  const landZTalie = wygnane.find((o) => o.kind === 'land');
+  assert.ok(landZTalie, 'wśród wygnanych jest land (harness)');
+  assert.equal(
+    commands(s).some((c) => c.type === 'play_land' && c.objectId === landZTalie.id),
+    false,
+    'poza main land z exile nie jest oferowany',
+  );
+  // …a w main można go położyć prosto z exile (CR 305.1, M361).
+  s.turn = jumpToStep(s.turn, 'main', 'p1');
+  s.turn.activePlayerId = s.turn.priorityPlayerId = 'p1';
+  assert.ok(
+    commands(s).find((c) => c.type === 'play_land' && c.objectId === landZTalie.id),
+    'land z okna impulsu jest grywalny w main',
+  );
+  // W następnej turze uprawnienie wygasa samo (stempel = numer tury).
+  s.turn.number += 1;
+  for (const o of wygnane) assert.equal(isImpulseWindowLive(o, s), false, 'okno wygasło');
 });
