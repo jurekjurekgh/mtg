@@ -1294,6 +1294,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // Skaab mill 4): draw_then_discard to też dobranie (net 1 z biblioteki),
   // mill_from_bottom to też mielenie (to samo co mill_cards — ADR 0002).
   const LIBRARY_DRAIN_EFFECTS = new Set(['mill_cards', 'draw_cards', 'draw_then_discard', 'mill_from_bottom']);
+  // C (zgłoszenie właściciela 2026-09-19, Dawntreader Elk): TUTOR — efekt
+  // „search your library for a card…" — też uszczupla WŁASNĄ bibliotekę
+  // (karta opuszcza bibliotekę bezpowrotnie), dokładnie tak samo jak dobranie
+  // czy mielenie. Kwota = liczba zabranych kart (deskryptor, ADR 0002);
+  // zdolność poświęcająca stwora po ląd przy cienkiej bibliotece to krok do
+  // przegranej, więc kara idzie tą samą drabiną (libraryLossPenalty).
+  const LIBRARY_SEARCH_EFFECTS = new Map([
+    ['search_library_to_hand', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 1)],
+    ['search_library_to_battlefield', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 1)],
+    ['search_library_to_battlefield_tapped', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 1)],
+    ['search_basic_land_morbid', () => 1],
+  ]);
   // Zdarzenia JEDNORAZOWE: trigger odpali raz (wejście na pole bitwy, śmierć
   // źródła). To nie jest POWTARZALNE źródło, więc nie mnożymy go przez
   // horyzont — jednorazowy dobór z czaru karze `drawDeckingPenalty`, a premię
@@ -1394,6 +1406,44 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       .reduce((suma, x) => suma + x, 0);
   };
   /**
+   * C (zgłoszenie właściciela 2026-09-19, Dawntreader Elk): ile kart zbierze
+   * z WŁASNEJ biblioteki ten wariant komendy (tutory). Jedno miejsce dla obu
+   * rodzin (aktywacja i rzut — bliźniacze gałęzie, L41): efekty czytamy
+   * z deskryptora obiektu gry (ADR 0002/0017), nie z nazwy karty.
+   */
+  const searchLibraryLoss = (view, cmd) => {
+    const efekt = (ability) => (Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []));
+    let effects = [];
+    if (cmd?.type === 'activate_ability') {
+      const object = objectOnBoard(view, cmd.objectId) ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+      const abilities = object?.activatableAbilities
+        ?? (object?.cardId ? cardDef(object.cardId)?.abilities : undefined) ?? [];
+      effects = efekt(abilities[cmd.abilityIndex ?? 0]);
+    } else {
+      const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+      const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
+      if (cmd?.type === 'cast_permanent') {
+        // ETB-tutor permanentu (Kor Cartographer i pokrewne): efekt triggera wejścia.
+        for (const ability of def?.abilities ?? []) {
+          if (ability?.trigger?.event !== 'enter_battlefield') continue;
+          effects.push(...efekt(ability));
+        }
+      } else {
+        const spell = karta?.spell ?? def?.spell;
+        const mode = cmd.modeIndex != null ? spell?.modes?.[cmd.modeIndex] : null;
+        effects = mode?.effects ?? spell?.effects ?? [];
+      }
+    }
+    let razem = 0;
+    for (const eff of effects) {
+      const amount = eff?.type ? LIBRARY_SEARCH_EFFECTS.get(eff.type) : null;
+      if (!amount) continue;
+      razem += amount(eff);
+    }
+    return razem;
+  };
+
+  /**
    * Podatek biblioteczny wariantu — liczony RAZ w `scoreCommand` i odejmowany
    * w `finish` (jak wardTax), bo ścieżki wyceny rzutu mają wiele wyjść (aura,
    * bestow, epsilon gęstości), a ryzyko deck-outu dotyczy wariantu jako
@@ -1405,7 +1455,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // z biblioteki). Tapnięcie ŹRÓDŁA jako koszt pomijamy — w katalogu jedyny
     // trigger millu na tapnięcie siedzi na aurze „Enchant land", więc źródło
     // zdolności nie może go mieć (a `tap_for_mana` tę drogę już pokrywa).
-    if (cmd?.type === 'activate_ability') return libraryLossPenalty(view, paymentLibraryLoss(view, cmd));
+    if (cmd?.type === 'activate_ability') {
+      // C (Dawntreader Elk): kara obejmuje OBIE drogi ubytku — mielące
+      // tapnięcia płatności ORAZ karty zabrane tutorem z efektu (dotąd tylko
+      // pierwsza była widziana, więc „poświęć stwora po ląd" przy 4 kartach
+      // w bibliotece wygrywało z passem).
+      return libraryLossPenalty(view, paymentLibraryLoss(view, cmd) + searchLibraryLoss(view, cmd));
+    }
     // D3 (znalezisko właściciela 2026-09-12, Balamb Garden): atak stworem
     // z triggerem „attacks → dobierz/zmiel" zjada WŁASNĄ bibliotekę przy
     // KAŻDYM ataku (`drainsMyLibrary` = czyja biblioteka; warunków triggera
@@ -1464,7 +1520,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const payment = paymentLibraryLoss(view, cmd);
     // Repeat + payment: pełna drabina (thin 20) — powtarzalne źródła.
     // OneShot ETB (Rager 1, Skaab 4): tylko deck-out, nie thin.
-    return libraryLossPenalty(view, repeat + payment) + oneShotDeckOutPenalty(view, oneShot);
+    // C (domknięcie rodziny, L41/L102): tutor z czaru (Caravan Vigil i
+    // pokrewne) uszczupla bibliotekę tak samo jak wariant aktywowany.
+    return libraryLossPenalty(view, repeat + payment + searchLibraryLoss(view, cmd)) + oneShotDeckOutPenalty(view, oneShot);
   };
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 

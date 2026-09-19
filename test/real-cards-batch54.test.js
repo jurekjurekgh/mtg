@@ -750,6 +750,12 @@ test('B54 Borders: PL domain i bot rozpoznaje obrażenia (bez czytania bibliotek
   const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
   assert.match(describeSpellEffects(registry.get('exploding-borders').spell), /typów.*ląd/);
   const s = bordersBoard(); s.players[1].life = 2;
+  // C (zgłoszenie właściciela 2026-09-19): tutor („search your library…”)
+  // uszczupla WŁASNĄ bibliotekę, więc przy scenie z jedną kartą w bibliotece
+  // wycena lethalnego rzutu jest pomniejszana o karę cienkiej biblioteki
+  // (libraryLossPenalty). Zdrowa biblioteka (margines 20 kart) zdejmuje tę
+  // karę, a pin nadal mierzy to, co mierzył: rozpoznanie letalu (pasmo 1000+).
+  for (let i = 0; i < 20; i += 1) put(s, `tlo${i}`, 'basic-mountain', 'p1', 'library');
   const bot = createHeuristicBot({ seed: 54, registry });
   const chosen = bot.chooseCommand(playerView(s, 'p1'));
   assert.equal(chosen.type, 'cast_spell'); assert.equal(chosen.targets?.[0], 'p2');
