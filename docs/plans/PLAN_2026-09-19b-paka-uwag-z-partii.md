@@ -143,6 +143,7 @@ ADR 0018 (bez pełnego B0), ADR 0029 (katalog kart nie rośnie), ADR 0005
 | P6 | G, H | `6130760` | `npm test` 5907/5907, build 64 / 3872,0 kB |
 | P7 | F/2 (log) | `65409d1` | `npm test` 5911/5911, build 64 / 3875,3 kB |
 | P8 | M | `6ae0dda` | `npm test` 5917/5917, build 64 / 3877,7 kB |
+| P8b | M2 | `385d998` | `npm test` 5921/5921, build 64 / 3882,8 kB |
 
 Notka P5/F (pomiar, nie założenie): ścieżka kredytu „for each mana from
 a Treasure spent to cast it” jest w przepływie BOTA poprawna (pin F/1: bot
@@ -192,3 +193,15 @@ wariantów modala. Piny M/1–M/6 (w tym anty-over-fix dla czaru bez trybów)
 i mutacje M-Ma/M-Mb/M-Mc. Piny M87 i M267 zsynchronizowane z nową regułą
 (obie stare oczekiwały trybów jako osobnych przycisków — zgłoszenie
 właściciela to odwraca, intencje obu pinów zachowane).
+
+### P8b — M2: dwustopniowy rzut czaru modalnego (dokończenie zgłoszenia M)
+
+Właściciel doprecyzował przepływ: „(1) klikam »Rzuć: … (koszt)« → (2) wybieram
+Stall for Time albo Call for Aid → (3) otwiera się nowy modal z możliwymi do
+tapnięcia kreaturami, które mogę zaznaczyć »up to 3« i zatwierdzić”. P8 dawał
+jeden wpis panelu, ale modal był jeszcze LISTĄ KOMBINACJI (5 wierszy: tryby ×
+cele) — klasa, którą projekt wycofywał już przy oknach rzutu, tap X i Fireballu.
+Teraz: krok 1 = wiersz na tryb (`castModePlanOf`, ten sam komponent co okna
+rzutu), krok 2 = zwykłe rozgałęzienie decyzji panelu na wariantach wybranego
+trybu (kreator wielocelowy z ptaszkami i zakresem „0–N”). Tytuł wpisu niesie
+koszt („Rzuć: <karta> (koszt {3}{W})”).
