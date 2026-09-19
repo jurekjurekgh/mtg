@@ -4,7 +4,7 @@ import {
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
-import { hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
+import { castsWithoutPayingMana, hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
 import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
@@ -2681,9 +2681,14 @@ export function commandLabel(cmd, session, view) {
     const card = obj(cmd.objectId);
     if (card?.zone !== 'exile') return null;
     const who = nameOfObjectId(cmd.objectId);
+    // H2: „bez kosztu many" czytamy z JEDNEGO predykatu rdzenia
+    // (`castsWithoutPayingMana`) — tego samego, którym bramkuje się kreator
+    // płatności. Dwie kopie tego warunku rozjechały się przy H (etykieta
+    // mówiła „bez kosztu", a kreator żądał 3 many), klasa L102/1.
+    const free = castsWithoutPayingMana(card);
     if (card.plotted) return `${verb} z wygnania (Plot): ${who} — bez kosztu many`;
     if (card.playableUntilTurn != null) {
-      return card.playableWithoutPaying
+      return free
         ? `${verb} z wygnania (Impuls): ${who} — bez kosztu many, do końca tury ${card.playableUntilTurn}`
         : `${verb} z wygnania (Impuls): ${who} (koszt ${costOfCard(card)}) — do końca tury ${card.playableUntilTurn}`;
     }
