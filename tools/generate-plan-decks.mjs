@@ -147,7 +147,30 @@ export function coloredPips(card) {
   const cost = MANA_COSTS[card.id];
   const pips = { W: 0, U: 0, B: 0, R: 0, G: 0 };
   if (cost) {
-    for (const m of cost.matchAll(/\{([WUBRG])\}/g)) pips[m[1]] += 1;
+    // M389 (Batch 57, Messenger Falcons {2}{G/U}{W}; usterka ukryta na Esper
+    // Stormblade {W/B}{U} w alara.txt): symbol hybrydowy `{X/Y}` płaci JEDEN
+    // z dwóch kolorów, więc talia musi mieć co najmniej jedno źródło KTÓREGÓ-
+    // KOLWIEK z pary. Rozstrzygamy deterministycznie: pip liczy się do
+    // PIERWSZEGO koloru pary w kolejności WUBRG (stabilne, niezależne od
+    // kolejności kart; proporcja liczona jak dotąd — jeden pip = jedno
+    // wymaganie). Stary regex `\{([WUBRG])\}` gubił cały symbol, więc talia
+    // dostawała wyłącznie źródła drugiego koloru pary.
+    //
+    // ŚWIADOMY ZAKRES: liczy się WYŁĄCZNIE hybryda dwóch KOLORÓW (`{G/U}`).
+    // `{W/P}` (Phyrexian, Porcelain Legionnaire) i `{2/W}` (dwubrid) mają
+    // alternatywę płatną bez koloru (2 życia / 2 generyczne), więc nie nakładają
+    // wymogu źródła — liczenie ich jak pip koloru zawyżałoby proporcję
+    // (mirrodin-wu: 4/6 → 5/5 bez powodu; zmierzone w B2).
+    for (const m of cost.matchAll(/\{([^}]+)\}/g)) {
+      const parts = m[1].split('/');
+      if (parts.length === 1) {
+        if (pips[parts[0]] != null) pips[parts[0]] += 1;
+        continue;
+      }
+      if (parts.length !== 2 || !parts.every((symbol) => pips[symbol] != null)) continue;
+      const color = COLOR_ORDER.indexOf(parts[0]) < COLOR_ORDER.indexOf(parts[1]) ? parts[0] : parts[1];
+      pips[color] += 1;
+    }
   } else {
     for (const c of card.colors ?? []) if (pips[c] != null) pips[c] += 1;
   }

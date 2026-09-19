@@ -169,13 +169,34 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
   promocja do wyceny wymaga pomiaru B0 — Krok 7 procedury).
 
   Bramy: `npm test` **5939/5939, 0 fail**.
-- [ ] **B2 (M389) — hybryda i dobranie**: **82 Messenger Falcons**
+- [x] **B2 (M389) — hybryda i dobranie**: **82 Messenger Falcons**
   (`coloredPips` rozumie `{G/U}`: talia ma źródło któregoś z kolorów pary;
   proporcja i minima pozostałych kolorów bez zmian; dowód izolacji na
   Esper Stormblade z `alara.txt`) + ETB dobierz kartę. Testy: rozkład landów
   dla talii z hybrydą, koszt `{2}{G/U}{W}` płacony `{G}` albo `{U}`
   (i odrzucany, gdy brak obu), dobranie karty z pustą biblioteką nie wywraca
   stanu.
+
+  **Wykonanie i pomiary.** Fix `coloredPips` liczy WYŁĄCZNIE hybrydę dwóch
+  kolorów (`{G/U}` → pierwszy kolor pary w WUBRG), a `{W/P}`/`{2/W}` zostają
+  pominięte świadomie (alternatywa płatna bez koloru: 2 życia / 2 generyczne —
+  pomiar na `porcelain-legionnaire`: liczenie `{W/P}` jak pipu zawyżało
+  mirrodin-wu 4/6 → 5/5 „bez powodu"). Dowód izolacji (L124): generator
+  uruchomiony z fixem, ale BEZ nowej karty (`git stash` na `card-data.js`)
+  zostawia `decks/alara.txt` = committed (Esper Stormblade ma już źródła W/B
+  z pozostałych kart — usterka pipów była realna w `coloredPips`
+  `{W:0}`→`{W:1}`, ale niewidoczna w rozkładzie tej talii); dopiero wejście
+  Messenger Falcons zmienia alara: `+Messenger Falcons`, `Mountain 1→2`
+  (razem 38/13/25 w README). Zero churnu w pozostałych 24 taliach, fixture
+  golden-mastera bez zmian (alara poza `SNAPSHOT_CONFIG`).
+
+  Bramy: `npm test` **5945/5945, 0 fail**; `npm run build` 64 moduły /
+  3894,4 kB. Piny: `test/real-cards-batch57.test.js` 19/19 (5× sanity + 14
+  scenariuszy), w tym RED→GREEN na stashu źródeł: 5 czerwonych bez fixu.
+  Przeloosowanie scenariusza (konwencja L25): `panel-rozgrywka-tura-
+  przeciwnika` seed 2 → **seed 1** (hunter 1..80: 2 opóźnione triggery;
+  kolejne trafienia 7, 13, 14, 17, 19, 21, 28) — zmiana składu alara
+  przelosowała partię.
 - [ ] **B3 (M390) — usunięcie z inkubacją**: **80 Merciless Repurposing**
   (`exile_permanent` + `incubate 3` + token Incubator z 3 licznikami).
   Testy: wygnanie stwora i token Incubator z trzema licznikami; przemiana

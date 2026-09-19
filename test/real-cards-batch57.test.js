@@ -9,6 +9,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectiveKeywords, tapObject } from '../src/engine/permanents.js';
 import { addCounter } from '../src/engine/counters.js';
+import { landSplit, coloredPips } from '../tools/generate-plan-decks.mjs';
 
 /**
  * Batch 57 (2026-09-19) — karty właściciela: 64, 66, 70, 77, 80, 82, 85,
@@ -197,4 +198,83 @@ test('B57/85: drugi druk ma własny wpis i nie koliduje z DMU', () => {
   assert.equal(dmu.set, 'DMU'); assert.equal(dmu.artId, 75); assert.equal(dmu.plan, 'Dominaria',
     'pierwszy druk zostaje na planie Dominaria (zgłoszenie właściciela 15)');
   assert.notEqual(apc.imageUri, dmu.imageUri, 'każdy druk ma własny adres obrazu');
+});
+
+// ---------------------------------------------------------------------------
+// B2 (M389) — 82 Messenger Falcons: pip hybrydowy {G/U} w rozkładzie landów
+// (narzędzie) + koszt płacony jednym z pary + ETB dobranie karty.
+// ---------------------------------------------------------------------------
+sanity('messenger-falcons', 82, 'ARB', 'Alara');
+
+test('B57/82 coloredPips: hybryda {G/U} liczona do PIERWSZEGO koloru pary w WUBRG (M389)', () => {
+  const falcons = coloredPips(registry.get('messenger-falcons'));
+  assert.deepEqual(falcons, { W: 1, U: 1, B: 0, R: 0, G: 0 },
+    '{2}{G/U}{W} → {W} + hybryda do U (U przed G w WUBRG); G NIE znika z pary, ale nie wymaga osobnego źródła');
+  // Usterka naprawiana w M389: stary regex `\{([WUBRG])\}` gubił CAŁY symbol
+  // hybrydowy, więc `{W/B}{U}` dawało wyłącznie {U} i talia nie miała wymogu
+  // źródła W/B dla Esper Stormblade (decks/alara.txt).
+  assert.deepEqual(coloredPips(registry.get('esper-stormblade')), { W: 1, U: 1, B: 0, R: 0, G: 0 },
+    '{W/B}{U} → hybryda do W (W przed B w WUBRG) + {U}');
+  // Świadomy zakres: `{W/P}` (Phyrexian) i `{2/W}` (dwubrid) płatne bez koloru
+  // (2 życia / 2 generyczne), więc NIE wymagają źródła — nie liczą się jak pip.
+  assert.deepEqual(coloredPips(registry.get('porcelain-legionnaire')), { W: 0, U: 0, B: 0, R: 0, G: 0 },
+    '{2}{W/P} nie zawyża proporcji W (alternatywa: 2 życia)');
+});
+
+test('B57/82 landSplit: talia z samą hybrydą dostaje źródło wybranego koloru pary', () => {
+  // Przed M389: pip `{W/B}` był niewidoczny → landSplit([stormblade]) dawał
+  // tylko wyspę ({U}), bez żadnego źródła W/B. Po naprawie: {W} i {U}.
+  const lands = landSplit([registry.get('esper-stormblade')]);
+  assert.deepEqual(lands, { W: 1, U: 1 },
+    'hybryda wnosi wymóg min. 1 źródła z pary (deterministycznie W), obok {U}');
+  const falconsDeck = landSplit([registry.get('messenger-falcons')]);
+  assert.ok(falconsDeck.U >= 1 && falconsDeck.W >= 1, JSON.stringify(falconsDeck));
+});
+
+test('B57/82 Messenger Falcons: koszt {2}{G/U}{W} płacony {G} albo {U}; flying + ETB dobranie', () => {
+  for (const hybridColor of ['G', 'U']) {
+    const s = game();
+    put(s, 'falcons', 'messenger-falcons');
+    const libBefore = s.zones.library.length;
+    addMana(s, 'p1', 4, { colors: [hybridColor, 'W'] });
+    const cast = commands(s).find((c) => c.type === 'cast_permanent' && c.objectId === 'falcons');
+    assert.ok(cast, `hybrydę {G/U} pokrywa pula {${hybridColor}}+{W}`);
+    run(s, cast);
+    resolve(s);
+    const bf = find(s, 'messenger-falcons');
+    assert.ok(bf, 'ptak na polu bitwy');
+    assert.ok(effectiveKeywords(bf, s).includes('flying'), 'flying z danych karty');
+    assert.equal(s.zones.library.length, libBefore - 1, 'ETB: dobrana karta z biblioteki');
+    assert.equal(s.zones.hand.length, 1, 'dobrana karta trafia do ręki');
+  }
+});
+
+test('B57/82 Messenger Falcons: ani G, ani U → brak oferty (hybryda nie jest „dowolna mana")', () => {
+  const s = game();
+  put(s, 'falcons', 'messenger-falcons');
+  addMana(s, 'p1', 4, { colors: ['B'] });
+  assert.equal(commands(s).filter((c) => c.objectId === 'falcons').length, 0, 'cztery czarne many nie pokrywają {G/U}');
+  const s2 = game();
+  put(s2, 'falcons', 'messenger-falcons');
+  addMana(s2, 'p1', 4, { colors: ['G'] });
+  assert.equal(commands(s2).filter((c) => c.objectId === 'falcons').length, 0, 'sama hybryda nie pokrywa {W}');
+});
+
+test('B57/82 Messenger Falcons: dobranie z pustej biblioteki kończy grę, nie wywraca stanu', () => {
+  // Biblioteka pusta od startu (scenariusz graniczny z planu B2).
+  const s = createGameState({ seed: 82, players: [{ id: 'p1' }, { id: 'p2' }] });
+  s.turn = jumpToStep(s.turn, 'main', 'p1');
+  s.turn.activePlayerId = s.turn.priorityPlayerId = 'p1';
+  const def = registry.get('messenger-falcons');
+  addObject(s, {
+    id: 'falcons', instanceId: 'i-falcons', cardId: 'messenger-falcons',
+    controllerId: 'p1', ownerId: 'p1', zone: 'hand',
+    ...gameObjectDataOf(def), types: def.types, subtypes: def.subtypes, keywords: def.keywords,
+  });
+  addMana(s, 'p1', 4, { colors: ['G', 'W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_permanent' && c.objectId === 'falcons'));
+  resolve(s);
+  assert.equal(find(s, 'messenger-falcons')?.zone, 'battlefield', 'stwór wszedł na pole bitwy');
+  assert.equal(s.zones.library.length, 0, 'biblioteka nadal pusta');
+  assert.equal(s.status, 'finished', 'próba dobrania z pustej biblioteki = przegrana (CR 104.3c), bez wyjątku');
 });

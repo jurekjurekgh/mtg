@@ -11365,10 +11365,18 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({
     id: 'messenger-falcons', name: 'Messenger Falcons', set: 'ARB',
     types: ['Creature'], subtypes: ['Bird'], colors: ['G', 'U', 'W'],
-    power: 2, toughness: 2, manaCost: 4,
+    power: 2, toughness: 2, manaCost: 4, keywords: ['flying'],
     oracleText: 'Flying\nWhen this creature enters, draw a card.',
     imageUri: 'https://cards.scryfall.io/large/front/f/0/f088f625-9c72-4949-8e53-c2313397a197.jpg?1783942408',
-    artId: 82, plan: 'Alara', support: { status: 'in-development', limitations: [] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 82, plan: 'Alara', support: { status: 'supported', limitations: [] },
+    notes: ['hybrydowy pip `{G/U}` kosztu — pierwszeństwo WUBRG rozstrzyga `coloredPips` w generatorze talii (M389)'],
   }),
 
   defineCard({

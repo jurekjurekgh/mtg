@@ -169,7 +169,10 @@ test('M101/D: trigger jako JEDYNY obiekt na stosie też raportuje swój skutek',
   // Seed 2 po Batchu 52 (alara +Leonin Surveyor, innistrad +Cemetery
   // Recruitment, landy przeliczone) — hunter 1..60 (3 opóźnione; kolejne
   // trafienia: 4, 7, 11, 14, 16, 17). Konwencja L25.
-  const { shown, log } = playCollectingPanel(makeSession(2, 'alara.txt'));
+  // Seed 1 po Batchu 57 B2 (alara +Messenger Falcons, Mountain 1→2) — hunter
+  // 1..80 (2 opóźnione; kolejne trafienia: 7, 13, 14, 17, 19, 21, 28…).
+  // Konwencja L25: zmiana składu talii przelosowuje seedy scenariuszowe.
+  const { shown, log } = playCollectingPanel(makeSession(1, 'alara.txt'));
   const panel = shown.join('\n');
   const opoznione = log.filter((l) => /trigger się rozstrzyga \(opóźniony\)/.test(l));
   assert.ok(opoznione.length > 0, 'seed 1 miał zawierać opóźnione triggery — zmienił się przebieg partii');
