@@ -130,3 +130,34 @@ hexproof), kończy się pinem dokumentacyjnym i notką w raporcie — nie cichym
 pominięciem (L27). Ograniczenia bez zmian: ADR 0002 (reguły bez nazw kart),
 ADR 0018 (bez pełnego B0), ADR 0029 (katalog kart nie rośnie), ADR 0005
 (determinizm), L92 (liczby bram mierzone, nie przepisywane).
+
+## Stan realizacji (2026-09-19b, domknięcie)
+
+| Paka | Punkty | Commit | Bramy po pace |
+|---|---|---|---|
+| P1 | A | `8564adb` | `npm test` 5870/5870, build 64 / 3856,6 kB |
+| P2 | B, K | `804e4a8` | `npm test` 5876/5876, build 64 / 3855,5 kB |
+| P3 | E1, E2, L | `3d7bc31` | `npm test` 5876/5876, build 64 / 3860,6 kB |
+| P4 | C, D | `a3a6587` | `npm test` 5887/5887, build 64 / 3863,2 kB |
+| P5 | F, I, J | `1f38cc9` | `npm test` 5899/5899, build 64 / 3869,3 kB |
+| P6 | G, H | `6130760` | `npm test` 5907/5907, build 64 / 3872,0 kB |
+
+Notka P5/F (pomiar, nie założenie): ścieżka kredytu „for each mana from
+a Treasure spent to cast it” jest w przepływie BOTA poprawna (pin F/1: bot
+aktywuje Skarb → bot rzuca Maruta → 1 nowy token; F/5: 2 sztuki → 2 tokeny;
+F/6: rzut z samych lądów → 0 nowych). Fuzz 480 scen decyzyjnych bota (5–9
+lądów × 1–2 Skarby × 4 ręce × 12 seedów) dał 384 rzuty Marutem i ZERO
+przypadków „Skarb poświęcony w kroku, a rzut bez kredytu”. Zmierzony obok
+defekt (naprawiony bramką `sacrificeSelf` w wycenie kastru): próg odblokowania
+M128 uznawał kartę za wymagającą Skarba, choć wycena kastru była ≤ 0 — Skarb
+ginął bez zużycia many; po fixie 0/556 aktywacji bez zużycia (harness
+eventowy, 400 gier). Zgłoszenie właściciela bez odtworzenia w silniku —
+potrzebny fragment „Rozgrywki”, jeśli objaw wróci.
+
+Notka P5/I: Seer’s Lantern to NIE błąd płatności — rzut kosztuje 3 ({3}
+w katalogu i `mana-costs`), a „2” z uwagi to druga zdolność karty
+(„{2}, {T}: Scry 1”); pin dokumentacyjny I/1–I/2 (etykiety rozdzielają oba
+koszty).
+
+Notka P3/E2 (bez zmian): brak Merfolk Tokena w modalu podziału obrażeń jest
+POPRAWNY — hexproof (CR 702.11b) wyklucza cel; pin dokumentacyjny.
