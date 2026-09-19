@@ -66,7 +66,7 @@ Kryterium ukończenia: raport w repo, każde znalezisko z klasyfikacją
 - [x] `npm test` 5854/5854 + `npm run build` 64 moduły / 3853,3 kB (liczby zmierzone, L92);
 - [x] `docs/setup/HANDOFF_2026-09-19.md` + wpis `docs/PROJECT_HISTORY.md`;
 - [x] odświeżenie „Bieżący stan" w `README.md` NA KONIEC (L92);
-- [ ] opis PR kumulatywny; blok przekazania w czacie (ADR 0013) — do dokończenia po odzyskaniu pushu (token GitHub wygasł; commit `7746e37` lokalny).
+- [x] opis PR kumulatywny (`gh api -X PATCH` #130, 2026-09-19 12:11 UTC) + blok przekazania w czacie (ADR 0013); push dokończony po odświeżeniu tokenu (`403b0a4..5a658de`).
 
 ## Ryzyka i pułapki
 
