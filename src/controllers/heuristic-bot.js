@@ -890,7 +890,7 @@ export const LIBRARY_DRAIN_CAST_TYPES = new Set(
   COMMAND_TYPES.filter((type) => type.startsWith('cast_') || type.endsWith('_cast')),
 );
 
-export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
+export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, ownDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
   const rng = createRng(seed);
@@ -910,6 +910,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   for (const id of (Array.isArray(opponentDeck) ? opponentDeck : [])) {
     opponentCounts.set(id, (opponentCounts.get(id) ?? 0) + 1);
   }
+  // Zgłoszenie B (2026-09-20, uwagi z gry): gracz ZNA SWOJĄ TALIĘ — więc bot
+  // też ją zna (`ownDeck` z sesji/benchmarku; brak talii = zachowanie z
+  // przed zgłoszenia, dla testów jednostkowych i botów bez kontekstu).
+  // Wykorzystanie: „czy w bibliotece może jeszcze być cel wyszukiwania"
+  // (typecycling i basic landcycling — patrz `searchTargetsRemaining`).
+  const ownCounts = new Map();
+  for (const id of (Array.isArray(ownDeck) ? ownDeck : [])) {
+    ownCounts.set(id, (ownCounts.get(id) ?? 0) + 1);
+  }
+  const knownOwnDeck = ownCounts.size > 0;
   const removalSpells = new Map(); // cardId → { cost, amount, copies }
   const pumpSpells = new Map();    // cardId → { cost, copies }
   for (const [id, copies] of opponentCounts) {
@@ -1113,6 +1123,56 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   //    + restrykcje załączników (game-state.js, L55).
   // Silnik i tak odrzuci taki blok (blockAssignmentViolation), więc liczenie
   // go w ryzyku jest wyłącznie szumem (L1: bot czyta to, co widok niesie).
+  /**
+   * Zgłoszenie B (2026-09-20, uwagi z gry — Seismic Monstrosaur): „bot aktywuje
+   * Mountaincycling nie mając w talii Mountains… grający zna swoją talię i wie,
+   * że jeśli ma określoną ilość basic lands na stole, to więcej w talii nie ma".
+   *
+   * `searchTargetsRemaining(view, criteria)` liczy DOLNĄ granicę kart, które
+   * mogą jeszcze leżeć w bibliotece: kopie zadeklarowane w talii (`ownDeck`)
+   * minus kopie WIDOCZNE poza biblioteką (pole bitwy, ręka, grób, stos,
+   * wygnanie). Świadomie dolna granica: karta wrócona do biblioteki efektem
+   * (tutor „na wierzch") jest dla nas niepewna, więc jej NIE dodajemy — bot
+   * odpuszcza dopiero wtedy, gdy nie może się mylić (0). Karty bez `cardId`
+   * (tokeny) i kopie-czary (np. kopia stworzona efektem) nie mają wpisu
+   * w talii, więc ich nie odejmujemy — to szum w stronę ostrożności.
+   *
+   * Kryteria pochodzą z DESKRYPTORA zdolności (ADR 0002), nie z nazwy karty:
+   *  • typecycling (`cycling.subtypes`, np. Mountaincycling) — karta ma
+   *    wszystkie podane podtypy,
+   *  • basic landcycling (`cycling.allTypes`, np. Fiery Fall) — karta ma
+   *    wszystkie podane typy.
+   * `null` = brak wiedzy o własnej talii → brak kary (zachowanie jak dotąd).
+   */
+  const matchesSearchCriteria = (cardId, criteria) => {
+    const def = registry.get(cardId);
+    if (!def) return false;
+    const subtypes = criteria.subtypes ?? [];
+    const types = criteria.allTypes ?? [];
+    if (subtypes.length === 0 && types.length === 0) return false;
+    const hasAll = (list, values) => list.every((v) => (values ?? []).includes(v));
+    return hasAll(subtypes, def.subtypes) && hasAll(types, def.types);
+  };
+  const searchTargetsRemaining = (view, criteria) => {
+    if (!knownOwnDeck) return null;
+    let expected = 0;
+    for (const [cardId, copies] of ownCounts) {
+      if (matchesSearchCriteria(cardId, criteria)) expected += copies;
+    }
+    if (expected === 0) return 0;
+    let known = 0;
+    const zones = view.zones ?? {};
+    for (const zone of ['battlefield', 'hand', 'graveyard', 'exile', 'stack']) {
+      for (const object of zones[zone] ?? []) {
+        // Biblioteka jest ukryta (wpisy `{id, hidden}` bez cardId) — nie liczy
+        // się tu z definicji; liczymy tylko JAWNE kopie poza nią.
+        if (!object?.cardId || object.hidden) continue;
+        if (matchesSearchCriteria(object.cardId, criteria)) known += 1;
+      }
+    }
+    return Math.max(0, expected - known);
+  };
+
   const untappedEnemyBlockers = (view) => enemyCreatures(view)
     .filter((o) => !o.tapped && o.cantBlock !== true && o.detained !== true);
   /**
@@ -5969,6 +6029,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += cycled.kind === 'land' ? 8 : 2;
           } else {
             if ((cycled.manaCost ?? 0) <= myLandCount(view) + 1) return finish(-5);
+            // Zgłoszenie B (2026-09-20): typecycling/basic landcycling, którego
+            // CELU nie ma już w bibliotece, to zmarnowana mana I karta — gracz
+            // zna swoją talię, więc wie, że szukanie nie znajdzie nic
+            // (CR 701.19b „fail to find" jest legalne, ale bezsensowne).
+            // Kara poniżej passu (L3: musi przebić premię +2).
+            const remaining = searchTargetsRemaining(view, ability.cycling ?? {});
+            if (remaining === 0) return finish(-12);
             score += 2;
           }
         }

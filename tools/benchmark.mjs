@@ -58,7 +58,8 @@ import { createProxySampler } from './proxy-reward.mjs';
  */
 export const BENCH_BOT_FACTORIES = Object.freeze({
   aggro: (seed) => createAggroBot(seed),
-  // B3: bot dostaje talie obu graczy (ctx.opponentDeck) i modeluje rękę
+  // B3: bot dostaje talie OBIE (opponentDeck = model ręki przeciwnika,
+  // ownDeck = wiedza o własnej bibliotece — zgłoszenie B 2026-09-20)
   // przeciwnika hipergeometrycznie. B2-w2: lookahead gotowy (lookahead: 1)
   // ale domyślnie wyłączony — zbyt kosztowny na pełną macierz (~4x wolniej).
   // Infra: improved evalView (creature quality, evasion, deck-out pressure)
@@ -66,6 +67,7 @@ export const BENCH_BOT_FACTORIES = Object.freeze({
   heuristic: (seed, ctx) => createHeuristicBot({
     seed,
     opponentDeck: ctx?.opponentDeck,
+    ownDeck: ctx?.ownDeck,
     weights: ctx?.heuristicWeights,
     params: ctx?.heuristicParams,
   }),
@@ -353,11 +355,13 @@ function playBenchMatch({ firstBot, firstDeck, secondBot, secondDeck, seed, deck
       // model dotyczy ręki przeciwnika).
       ['p1', createController(firstBot, seed + 1, {
         opponentDeck: deckLists.get(secondDeck),
+        ownDeck: deckLists.get(firstDeck),
         heuristicWeights,
         heuristicParams,
       })],
       ['p2', createController(secondBot, seed + 2, {
         opponentDeck: deckLists.get(firstDeck),
+        ownDeck: deckLists.get(secondDeck),
         heuristicWeights,
         heuristicParams,
       })],

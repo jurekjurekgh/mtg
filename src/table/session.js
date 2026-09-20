@@ -272,7 +272,11 @@ export function isBotDecisionPrompt(e, { humanId = HUMAN_ID } = {}) {
 
 function defaultBotFactory(seed, ctx) {
   // B3: bot modeluje rękę przeciwnika (człowieka) — zna jego talię.
-  return createHeuristicBot({ seed, opponentDeck: ctx?.opponentDeck });
+  // Zgłoszenie B (2026-09-20): bot zna też WŁASNĄ talię (`ownDeck`) — realny
+  // gracz ją zna i wie, że jeśli nie ma już celu wyszukiwania (np. Gór pod
+  // Mountaincycling), to nie ma czego szukać. Backward-compat: brak talii =
+  // zachowanie jak dotąd (testy jednostkowe botów bez kontekstu).
+  return createHeuristicBot({ seed, opponentDeck: ctx?.opponentDeck, ownDeck: ctx?.ownDeck });
 }
 
   /**
@@ -2460,7 +2464,9 @@ export function createSession(config) {
   if (!(decks instanceof Map) || decks.size !== 2) throw new TypeError('Sesja wymaga dwóch talii (Map)');
   if (!decks.has(HUMAN_ID) || !decks.has(BOT_ID)) throw new TypeError('Talia musi istnieć dla gracza i bota');
   const botFactory = config.botFactory ?? defaultBotFactory;
-  const botCtx = { opponentDeck: decks.get(HUMAN_ID) };
+  // `ownDeck`: talia BOTA (zgłoszenie B — bot liczy, co jeszcze może być
+  // w jego bibliotece; `opponentDeck` to talia człowieka, B3).
+  const botCtx = { opponentDeck: decks.get(HUMAN_ID), ownDeck: decks.get(BOT_ID) };
   let bot = botFactory(seed + 1, botCtx);
   const names = Object.entries(PLAYER_NAMES).map(([id, name]) => ({ id, name }));
   let state = setupCardMatch({ seed, players: names, decks, registry });
