@@ -36,7 +36,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addMana } from '../src/engine/resources.js';
 import { buildActionEntries, choiceGroupTitle, choiceRequestGroupKey, commandLabel, labelChoiceOptions } from '../src/table/render.js';
 import { renderMultiTargetWizard } from '../src/table/choice-request.js';
-import { castModePlanOf, modeFollowUpPlanOf, commandForCastWindowSelection, commandForSelection } from '../src/table/multi-target.js';
+import { castModePlanOf, castWindowPlanOf, multiTargetPlanOf, commandForCastWindowSelection, commandForSelection } from '../src/table/multi-target.js';
 
 const REGISTRY = createCardRegistry();
 const SESSION = {
@@ -153,11 +153,19 @@ test('M2/2: KROK 2 — tryb „up to 3” daje picker wielocelowy (nie listę ko
   const { state, moj, obcy } = robbersBoard();
   const { oferty } = robbersOffers(state);
   const tryb0 = oferty.filter((c) => c.modeIndex === 0);
-  const follow = modeFollowUpPlanOf(tryb0);
-  assert.equal(follow.kind, 'multi', `tryb z „up to 3 target creatures” to picker: ${follow.kind}`);
-  assert.equal(follow.plan.minTargets, 0, 'zero celów jest legalne („up to”)');
-  assert.equal(follow.plan.maxTargets, 2, `sufit = liczba kandydatów: ${follow.plan.maxTargets}`);
-  assert.deepEqual([...follow.plan.targets].sort(), [moj, obcy].sort(), 'kandydaci = stwory z pola bitwy');
+  // E7 (2026-09-20c): krok 2 liczy PRODUKCJA — `main.js` po wyborze trybu wchodzi
+  // ponownie w tę samą kaskadę panelu (castWindowPlanOf → tapXArtifactsPlanOf →
+  // multiTargetPlanOf → … → buttonsPlanOf) z podzbiorem wariantów trybu. Pin
+  // opisuje odtąd funkcje, które naprawdę woła gracz, a nie ich kopię
+  // (`modeFollowUpPlanOf` usunięte: lustro miało INNĄ kolejność — multi przed
+  // window, choć M300/1 wymaga odwrotnie — i nie znało części planów).
+  assert.equal(castWindowPlanOf(tryb0), null,
+    'warianty celów trybu nie są grupą okna rzutu — kaskada produkcji idzie dalej (M300/1)');
+  const plan = multiTargetPlanOf(tryb0);
+  assert.ok(plan, 'tryb z „up to 3 target creatures” to picker wielocelowy');
+  assert.equal(plan.minTargets, 0, 'zero celów jest legalne („up to”)');
+  assert.equal(plan.maxTargets, 2, `sufit = liczba kandydatów: ${plan.maxTargets}`);
+  assert.deepEqual([...plan.targets].sort(), [moj, obcy].sort(), 'kandydaci = stwory z pola bitwy');
   // Zatwierdź pickera z dwoma ptaszkami → komenda z ofert silnika, wykonalna.
   const cmd = commandForSelection(tryb0, { targets: [moj, obcy] });
   assert.ok(cmd, 'dwa zaznaczone cele dają legalną komendę');
@@ -171,9 +179,13 @@ test('M2/2: KROK 2 — tryb „up to 3” daje picker wielocelowy (nie listę ko
 test('M2/3: KROK 2 — tryb bez decyzji (Call for Aid) rzuca od razu, bez pustego modala', () => {
   const { state } = robbersBoard();
   const { oferty } = robbersOffers(state);
-  const follow = modeFollowUpPlanOf(oferty.filter((c) => c.modeIndex === 1));
-  assert.equal(follow.kind, 'command', 'tryb bez celów nie otwiera drugiego modala');
-  assert.equal(follow.command.modeIndex, 1);
+  // Produkcja (main.js, gałąź castModePlan → onComplete): podzbiór jednego trybu
+  // o JEDNEJ komendzie jest rzucany wprost, bez drugiego modala.
+  const tryb1 = oferty.filter((c) => c.modeIndex === 1);
+  assert.equal(tryb1.length, 1, 'tryb bez celów ma dokładnie jeden wariant — nie ma czego wybierać');
+  assert.equal(tryb1[0].modeIndex, 1);
+  assert.ok(execute(robbersBoard().state, tryb1[0]).ok !== undefined,
+    'wariant trybu 1 jest komendą silnika (nie konstrukcją kreatora)');
 });
 
 test('M2/4: oba modale (DOM) — najpierw tryby, potem ptaszki celów + Zatwierdź', () => {
@@ -205,13 +217,14 @@ test('M2/4: oba modale (DOM) — najpierw tryby, potem ptaszki celów + Zatwierd
   confirm1.click();
   assert.ok(chosenMode, 'Zatwierdź kroku 1 zwraca wybrany tryb');
   const subset = oferty.filter((c) => c.modeIndex === chosenMode.modeIndex);
-  const follow = modeFollowUpPlanOf(subset);
-  assert.equal(follow.kind, 'multi', 'wybrany tryb 0 ma krok 2 (cele)');
+  // Krok 2 = kaskada produkcji na podzbiorze (jak w M2/2), nie osobne lustro.
+  const followPlan = multiTargetPlanOf(subset);
+  assert.ok(followPlan, 'wybrany tryb 0 ma krok 2 (cele)');
 
   const targetHost = dom.createElement('div');
   let talCmd = null;
   renderMultiTargetWizard(targetHost, {
-    view, session: SESSION, plan: follow.plan, commands: subset,
+    view, session: SESSION, plan: followPlan, commands: subset,
     onComplete: (cmd) => { talCmd = cmd; }, onCancel: () => {},
   });
   const toggles = walkDom(targetHost).filter((el) => String(el.className).includes('multi-target-toggle'));
