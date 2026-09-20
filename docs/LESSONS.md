@@ -1,64 +1,45 @@
 # Lekcje projektowe (trwały rejestr)
 
-Powtarzalne wnioski z pracy nad projektem — to, co kolejna sesja ma wiedzieć,
-zanim popełni ten sam błąd.
+Mapa dokumentów: `AGENTS.md` §„Gdzie zapisać regułę"; tu uzupełnienie —
+`docs/PROJECT_HISTORY.md` (dziennik sesji) i `docs/LESSONS_PRZYPADKI.md`
+(narracja Objaw/Przyczyna) są trwałe, ale **NIE** są lekturą startową: szukać
+grepem. Rejestr niesie REGUŁĘ i STRAŻNIKA. Lekcja idzie tu, gdy jest powtarzalna
+i nie jest decyzją architektoniczną (te → ADR); wymusza zmianę sposobu pracy →
+`AGENTS.md`; ustala granicę komponentów → ADR + odsyłacz. Lekcji nie kasujemy:
+nieaktualną oznaczamy z odsyłaczem do nowszej.
 
-Mapa dokumentów (zakres/trwałość): `AGENTS.md` §„Gdzie zapisać regułę" — ta
-sama tabela, więc tu zostają tylko dwa wpisy uzupełniające:
-`docs/PROJECT_HISTORY.md` = dziennik sesji (żywy, **NIE** lektura startowa),
-`docs/LESSONS_PRZYPADKI.md` = narracja przypadków Objaw/Przyczyna (trwałe
-archiwum, **NIE** lektura startowa).
+**Wzorzec wpisu (obowiązkowy, bez ozdobników):** `## LN (YYYY-MM-DD) — reguła
+w jednym zdaniu` / **Przypadek:** JEDNO zdanie z konkretami (karta, test, numer
+CR) — po nim poznaje się klasę w nowym przebraniu / **Reguła:** 1–4 punkty,
+imperatyw / **Strażnik:** `plik/funkcja` — co czerwienieje po cofnięciu naprawy
+/ `→ narracja: docs/LESSONS_PRZYPADKI.md (LN)`.
 
-Rejestr podaje REGUŁĘ i STRAŻNIKA; narracja (Objaw/Przyczyna) mieszka
-w `docs/LESSONS_PRZYPADKI.md` pod tym samym numerem — szukać grepem, nie
-czytać na starcie.
-
-Lekcja idzie tu, gdy jest powtarzalna i NIE jest decyzją architektoniczną
-(te → ADR). Wymusza zmianę sposobu pracy? Dopisz do `AGENTS.md`. Ustala
-granicę komponentów? ADR + tu odsyłacz. Lekcji nie kasujemy: nieaktualną
-oznaczamy z odsyłaczem do nowszej.
-
-**Wzorzec wpisu (obowiązkowy, bez ozdobników):**
-
-```
-## LN (YYYY-MM-DD) — reguła w jednym zdaniu
-
-**Przypadek:** JEDNO zdanie z konkretami (karta, test, numer CR) — po nim
-poznaje się klasę w nowym przebraniu.
-**Reguła:** 1–4 punkty, imperatyw.
-**Strażnik:** `plik/funkcja` — co czerwienieje po cofnięciu naprawy.
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (LN)
-```
-
-Pól **Objaw**/**Przyczyna** nie ma — to proza, idzie do archiwum pod tym samym
-numerem (`test/docs-decisions.test.js`: odsyłacz ma adresata, wpis ma regułę
-lub strażnika).
-
-Wpis niesie FAKTY (pliki, testy, karty, numery CR) i regułę — nie narrację (ta
-zostaje w `docs/audits/`). Rejestr to największa pozycja budżetu lektury
+Pól **Objaw**/**Przyczyna** nie ma — proza idzie do archiwum pod tym samym
+numerem, a wpis niesie FAKTY (pliki, testy, karty, numery CR) i regułę; narracja
+zostaje w `docs/audits/` (`test/docs-decisions.test.js`: odsyłacz ma adresata,
+wpis ma regułę lub strażnika). Rejestr to największa pozycja budżetu lektury
 (`test/dokumentacja-budzet-lektury.test.js`, próg 100k): nowy wpis płaci się
-skróceniem innego, progu NIE podnosimy. L15–L19: daty z numerów kamieni
-milowych (M102/M103 = 2026-08-16), oryginalne zaginęły przy migracji M208.
+skróceniem innego, progu NIE podnosimy. L15–L19: daty z kamieni milowych
+(M102/M103 = 2026-08-16), oryginalne zaginęły przy migracji M208.
 
 ## Wpisy zbiorcze (mapa klas)
 
-M275 zebrał lekcje o jednej klasie we **wpisy zbiorcze** (pełna klasa, tabela
-wariantów, reguła w jednym miejscu), a reszta numerów zostaje **kotwicami**
-(krótki przypadek + odsyłacz). Numery są cytowane w kodzie ~1150 razy, więc
-**żaden nie znika**; narracja najdłuższych przypadków jest w archiwum.
+M275: lekcje jednej klasy mają **wpis zbiorczy** (pełna klasa, tabela wariantów,
+reguła w jednym miejscu), reszta numerów to **kotwice** (krótki przypadek +
+odsyłacz). Numery są cytowane w kodzie ~1150 razy, więc **żaden nie znika**.
 
 | Klasa | Wpis główny | Kotwice |
 |---|---|---|
-| Jawna lista pól gubi dane po cichu (fabryka → generator → transport → widok) | **L21** | L93, L94, L101 |
-| Weryfikacja mutacyjna: jedyny dowód, że test/detektor działa | **L13** | L61, L70, L114 |
+| Jawna lista pól gubi dane (fabryka → generator → transport → widok) | **L21** | L93, L94, L101 |
+| Weryfikacja mutacyjna: dowód, że test/detektor działa | **L13** | L61, L70, L114 |
 | Strażnik mierzy regułę, nie tekst źródła | **L5** | L26, L31, L44, L83 |
 | Zero zgłoszeń detektorów to pomiar narzędzia | **L27** | L40, L73, L75 |
 | Oferta i walidacja: jeden filtr, porządek i rejestr | **L48** | L90 |
 | Choke point istnieje, ale ścieżka go omija | **L107** | L109, L110, L112, L113 |
 
 **Zasada scalania:** wpisy łączymy, gdy opisują JEDNĄ klasę — nigdy dlatego, że
-są stare. Lekcji nie kasujemy i nie skracamy o fakty (karta, test, numer CR);
-usuwamy wyłącznie powtórzoną regułę, zastępując ją odsyłaczem.
+są stare. Lekcji nie kasujemy ani nie skracamy o fakty (karta, test, CR);
+usuwamy tylko powtórzoną regułę, wstawiając odsyłacz.
 
 ---
 
@@ -935,7 +916,7 @@ przyjęta. Operacje „na wszelki wypadek przed" zostawiają niespójność na k
 
 **Przypadek:** Strażnik, który da się przejść bez zmiany kodu, nie jest strażnikiem.
 
-**Wpis zbiorczy.** Numery L26, L31, L44 i L83 zostają jako kotwice i odsyłają tutaj.
+**Wpis zbiorczy** (kotwice: L26, L31, L44, L83).
 
 **Reguła:**
 1. Strażnik wydobywa fakty z KONSTRUKTÓW (literał tablicy, odczyt `state.pole`),
@@ -1158,8 +1139,7 @@ oferty panelu.)
 
 **Przypadek:** dane karty jadą do gry przez kilka miejsc, z których KAŻDE
 wymienia pola z nazwy (destrukturyzacja configu albo ręcznie budowany obiekt).
-**Wpis zbiorczy** dla klasy, która wystąpiła w czterech warstwach; L93, L94
-i L101 zostają kotwicami cytowań i odsyłają tutaj.
+**Wpis zbiorczy** (klasa w czterech warstwach; kotwice: L93, L94, L101).
 **Reguła:** (1) Dodając pole mechaniki do `defineCard`, przejdź **wszystkie
 cztery warstwy** (nie tylko tę, w której zgłoszono błąd; grep „M146"
 w `deck.js`) — kierunek docelowy: transportować deskryptory ZBIORCZO (spread
@@ -1241,7 +1221,7 @@ drugiego testu na OBECNOŚĆ danych.
 
 **Przypadek:** — Dwukrotnie ten sam wynik: 12 partii (L27) i 22 partie (L40) z pustą sekcją `== DETEKTORY ==`, a ręczna lektura TYCH SAMYCH transkryptów…
 
-**Wpis zbiorczy.** Numery L40, L73 i L75 zostają jako kotwice i odsyłają tutaj.
+**Wpis zbiorczy** (kotwice: L40, L73, L75).
 
 **Reguła:**
 1. Raport detektorów to DOLNA GRANICA. Czytaj „zero zgłoszeń" jako **„moje
@@ -2356,3 +2336,19 @@ koloru), a sekcji nie przybywa drugie pole — właściciel odrzucił oba
 **Strażnik:** `test/zgloszenie-j-tapniecia-many-w-logu.test.js` — 3 piny
 (reguła; wpis w logu; granice), przed poprawką plik czerwony.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L157)
+
+## L158 (2026-09-20) — Menu opcji to nie pula możliwości gracza
+
+**Przypadek:** `legalBlockerOptions` ponad `COMBAT_OPTION_CAP` kończy się
+`slice(0, cap)`, a wizard bloków brał kandydatów z SUMY OFERT — 6×6 traciło
+5 legalnych par (atakujący, bloker), 10×10 — 69 (CR 509.1b).
+**Reguła:** (1) cap ogranicza ROZMIAR MENU, nie zbiór ruchów dozwolonych: pula
+kandydatów z reguł (`blockCandidatePool`) idzie osobnym polem widoku; (2) gdy UI
+buduje komendę z zaznaczeń, brak wiersza = brak ruchu, więc pin idzie od KOMENDY
+(brute-force `execute`) przez widok po UI; (3) pomiar/sprzątanie bez strażnika
+klasy gnije (skan cyrylicy wrócił jako 15 znaków w 13 plikach); (4) lustro cudzej
+kaskady pinowane testami kłamie (`modeFollowUpPlanOf`: inna kolejność niż
+produkcja po M300/1) — pinuj funkcje, które woła gracz.
+**Strażnik:** `test/e6-pula-blokerow-ponad-cap.test.js` (+E6/5),
+`test/e5-znaki-nielacinskie-w-zrodlach.test.js`, D/5.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L158)

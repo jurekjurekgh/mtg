@@ -6501,3 +6501,92 @@ sesji PR #130 (85,9%); pełnej macierzy B0 nie uruchamiano (ADR 0018),
 budżet lektury startowej **99 953 / 100 000** (wpis L48 pkt 8 opłacony
 kondensacją wstępu rejestru — próg bez zmian). Lekcja: **L48 pkt 8** (nowy
 `pending*` ma siedem bramek do zmutowania, nie jedną ścieżkę).
+
+## M398 (2026-09-20d) — cztery pozycje „otwarte, nienaprawiane" z audytu PR #130: pomiar zamiast kategorii
+
+Ciąg dalszy sesji PR #131 (gałąź `arena/01a0bf64-mtg`). Właściciel po lekturze
+opisu PR zakwestionował samą kategorię §6 audytu: „Czemu świadomie nie
+naprawiane? Błędy powinny być natychmiast naprawiane, a nie «świadomie nie
+naprawiane». O co chodzi???". Każda pozycja dostała pomiar; trzy były źle
+zakwalifikowane (dziura w pinie albo realny defekt), czwarta kopią reguły.
+
+**E6 — `blockCandidatePool`: pula blokerów niezależna od cap-a menu (CR 509.1b).**
+`legalBlockerOptions` ponad `COMBAT_OPTION_CAP` (32) wchodzi w fallback i kończy
+się `slice(0, cap)`; `renderCombatWizard` brał kandydatów z SUMY OFERT, a komendę
+budował z ptaszków — para wycięta przez cap nie miała wiersza, więc legalny blok
+był dla człowieka nieosiągalny (silnik by go przyjął). Pomiar braków: 2×5 → 0,
+4×4 → 0, **6×6 → 5**, 6×6 z menace → 4, **8×8 → 33**, **10×10 → 69**. Naprawa
+rozdziela dwa pojęcia sklejone w jedno (L41): menu zostaje skrótem z cap-em,
+a nowy eksport `blockCandidatePool(state, playerId)` liczy PEŁNĄ pulę per
+atakujący wprost z reguł (legalność z `blockAssignmentViolation` — ten sam
+predykat co `declareBlockers`, M387; dla menace / „can't block alone" kandydat
+wchodzi, gdy istnieje partner). Widok niesie ją jako `blockCandidates` (tylko
+broniącemu, tylko w kroku deklaracji bloków, przy pustym stosie i
+niezadeklarowanych blokach — warunki lustrzane wobec `legalCommands`), a wizard
+rysuje wiersze z puli uzupełnionej ofertami; `main.js` podaje pulę z widoku.
+Piny: `test/e6-pula-blokerow-ponad-cap.test.js` — E6/1 pula = prawda z
+brute-force `execute(declare_blockers)` na klonach (ground truth z walidacji, nie
+z predykatów, L48), E6/2 sześć scen 2×5…10×10 (pula pełna wszędzie, menu ≤ cap,
+a 10×10 faktycznie wycina pary — pin ma przedmiot), E6/3 tapnięci poza pulą +
+determinizm + brak mutacji stanu, E6/4 widok (tylko broniący, znika po
+deklaracji i poza walką), E6/6 strażnik łańcucha silnik → widok → `main.js` →
+wizard oraz zakaz liczenia legalności w warstwie UI; plus E6/5 w
+`test/choice-request-ui.test.js` (kontrola NEGATYWNA: bez puli wierszy nie ma;
+z pulą gracz deklaruje blok, którego menu nie oferowało). Mutacje: brak eksportu
+→ E6/1–E6/3 RED; usunięte przekazanie w `main.js` → E6/6 RED.
+
+**E5 — strażnik klasy: znaki pisma niełacińskiego w tekstach repozytorium.**
+Jednorazowy skan sesji 2026-09-20c wyszedł czysto, ale nie zostawił pinu —
+ponowny pomiar tego samego dnia: **15 znaków w 13 plikach** — cyrylica wklejona
+w polskie słowa (2 w `src/`: „stwory", „wybierane", „mogliśmy"; 2 w `test/`:
+„stwory", „Wardem"; 11 w `docs/`: „kontrakt" ×2, „slucha", „dokleja", „ida",
+„luki", „zagranie" ×2, „stwory", „charakterystyka"; znaki U+0430, U+0431, U+0434,
+U+0435, U+043A–U+0442, U+044B, U+0456, U+0443, U+0444). Wszystkie w komentarzach
+i dokumentacji (zachowanie gry niezmienione), ale psuły grep po haśle. Naprawa:
+14 skażeń usuniętych +
+`test/e5-znaki-nielacinskie-w-zrodlach.test.js` (3 piny): E5/1 zakaz pisma
+niełacińskiego (cyrylica, hebrajski, arabski, CJK, kana, hangul, pełnoszerokie
+ASCII, tajski, dewanagari) z jawnymi wyjątkami; E5/2 ratchet w obie strony
+(liczba wyjątków przypięta = 1: cytowany znak CJK U+672C U+5730 w
+`PROJECT_HISTORY.md`, bo jest TREŚCIĄ wpisu; pomijany tylko plik strażnika;
+każdy dozwolony grecki symbol musi
+być faktycznie użyty); E5/3 dowód, że detektor DZIAŁA (pliki w katalogu
+tymczasowym: cyrylica i CJK wykryte, `node_modules` pomijane) — samo „repo
+czyste" nie dowodzi niczego. Greka osobno: Δ ×25, β ×37, Σ ×9, μ ×1, λ ×1 to
+symbole matematyczne tabel benchmarków (`docs/BOT_ROADMAP.md`). Mutacja:
+wstrzyknięty cyrylicki U+044B w komentarz `combat.js` → E5/1 RED ze wskazaniem pliku.
+
+**D/5 — niezmiennik pipów zdolności domknięty dla kart KOLOROWYCH.** D/4
+pilnował wyłącznie kart bezkolorowych (`continue` dla kolorowych), więc pozycja
+§6.7 audytu („pipy zdolności na kartach kolorowych") była dziurą w pinie, nie
+decyzją. Pomiar po 25 taliach: DWA naruszenia — `mournful-zombie` w
+`dominaria-brg.txt` (B 2/1 za {2}{B} ze zdolnością „{W}, {T}: zyskaj 1 życie";
+siostra WU płaci {W}, ale nie ma czerni → karta nierzuca) oraz
+`dragonbroods-relic` w `tarkir-bg.txt` (artefakt G za {1}{G}; druga zdolność
+wymaga {3}{W}{U}{B}{R}{G}, czyli color_identity WUBRG — niepłacalna w żadnej
+talii 2–3-kolorowej, a pierwsza zdolność daje manę dowolnego koloru i w BG łata
+brak W/U/R). Strażnik wymaga, by każdy taki przypadek był nazwany, zliczony
+(ratchet w obie strony — martwy wyjątek też czerwieni) i usprawiedliwiony
+MECHANICZNIE: talia pokrywa kolory karty (rzucalność wg `MANA_COSTS`), siostra
+płaci brakujące pipy, ale NIE pokrywa kolorów karty, a pipy we wpisie są zgodne
+z rejestrem. Drugie naruszenie znalazł dopiero ten strażnik — jednorazowy skrypt
+pomiarowy audytu go nie pokazał. Mutacje: dopisanie `1x Mournful Zombie` do
+`tarkir-bg.txt` → RED (wyjątek jest przypięty do talii); usunięcie wpisu
+`dragonbroods-relic` → RED z komunikatem naprawy.
+
+**E7 — usunięte lustro kaskady panelu.** `modeFollowUpPlanOf`
+(`src/table/multi-target.js`) kopiowało kaskadę `main.js` („co jest krokiem 2 po
+wyborze trybu"): znało 4 z 11 planów i w INNEJ kolejności (multiTarget przed
+castWindow, choć M300/1 wymaga odwrotnie — warianty okien niosą `targets`, więc
+`castWindowPlanOf` musi biec pierwszy). Wołały je wyłącznie testy M2/2–M2/4,
+więc zielone piny opisywały ścieżkę, którą gracz nigdy nie idzie (L5). Kopia
+usunięta, testy przełączone na funkcje produkcji (`castWindowPlanOf` → null,
+`multiTargetPlanOf` → picker 0–2, warunek jednej komendy dla trybu bez decyzji).
+
+**Bramy:** `node tools/run-tests.mjs all` **6058/6058**, 0 fail; `npm run build`
+**59 modułów / 3970,7 kB**; budżet lektury startowej **99 966/100 000** (wpis
+L158 opłacony kondensacją wstępu rejestru, pięciu linii „wpis zbiorczy" i §4
+`docs/setup/ENVIRONMENT.md` — próg bez zmian). Pełnej macierzy B0 nie
+uruchamiano (ADR 0018). Lekcja: **L158** (menu opcji to nie pula możliwości
+gracza; pomiar bez strażnika klasy gnije; lustro cudzej kaskady pinowane testami
+kłamie).

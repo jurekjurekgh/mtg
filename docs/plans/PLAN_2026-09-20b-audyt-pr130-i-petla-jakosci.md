@@ -229,3 +229,77 @@ Username for 'https://github.com'`). Cztery commity (`9de9f7a`, `2919bf1`,
 `8a641dc`, `da74a5e`) są lokalne i bezpieczne; do dopchnięcia natychmiast po
 ponownym połączeniu GitHub w Arena. Wcześniej w tej samej sesji identyczna
 blokada puściła sama po ponowieniu (push `b1c66e1`…`613ba99` przeszedł).
+
+---
+
+## F — ciąg dalszy 2026-09-20d: pomiar pozycji §6 audytu (zgłoszenie właściciela)
+
+Zgłoszenie: „Czemu świadomie nie naprawiane? Błędy powinny być natychmiast
+naprawiane, a nie «świadomie nie naprawiane». O co chodzi???" — dotyczy pozycji
+§6 raportu `docs/audits/AUDYT_PR130_2026-09-20.md` i zdania z opisu PR #131.
+Zasada pracy (ta sama sesja, wcześniejsza uwaga właściciela): każdy zakodowany
+element commitowany i pushowany natychmiast. Nazwy w kodzie/commitach: E5, D/5,
+E6, E7 (poniżej F1–F4 to pozycje tego planu).
+
+### F1 — znaki pisma niełacińskiego: strażnik klasy (w kodzie: E5)
+
+- [x] pomiar: ponowny skan trackowanych plików tekstowych (poprzedni,
+      jednorazowy, z sesji 2026-09-20c wyszedł czysto i nie zostawił pinu) —
+      **15 znaków w 13 plikach** (2 `src/`, 2 `test/`, 11 `docs/`);
+- [x] naprawa 14 skażeń (jeden znak zostaje: dosłowny cytat incydentu — CJK
+      U+672C U+5730 w `PROJECT_HISTORY.md`);
+- [x] strażnik `test/e5-znaki-nielacinskie-w-zrodlach.test.js`: E5/1 zakaz,
+      E5/2 ratchet wyjątków w obie strony + dozwolone symbole greckie muszą być
+      użyte, E5/3 dowód działania detektora na plikach tymczasowych;
+- [x] mutacja: wstrzyknięty cyrylicki U+044B w `combat.js` → E5/1 RED;
+- [x] commit + push `d6eb27a`.
+
+### F2 — pipy zdolności kart KOLOROWYCH (w kodzie: D/5)
+
+- [x] pomiar po 25 taliach (`abilityCostColorsOf` vs sufiks talii): 2 naruszenia
+      (`mournful-zombie`/`dominaria-brg.txt`, `dragonbroods-relic`/`tarkir-bg.txt`);
+      drugiego jednorazowy skrypt audytu NIE pokazał — znalazł je strażnik;
+- [x] niezmiennik D/5 + wyjątki nazwane, zliczone (ratchet w obie strony)
+      i usprawiedliwione mechanicznie (rzucalność wg `MANA_COSTS` tu, strata
+      w talii siostrzanej tam, pipy zgodne z rejestrem);
+- [x] mutacje: karta z wyjątkiem dopisana do innej talii → RED; usunięty wpis
+      wyjątku → RED z komunikatem naprawy;
+- [x] commit + push `1222c46`.
+
+### F3 — pula blokerów ponad cap-em menu (w kodzie: E6, CR 509.1b)
+
+- [x] pomiar łańcucha: `legalBlockerOptions` → `slice(0, cap)` → `legalCommands`
+      → `renderCombatWizard` (kandydaci = suma ofert) → komenda z ptaszków;
+      braki legalnych par: 6×6 → 5, 6×6 z menace → 4, 8×8 → 33, 10×10 → 69;
+- [x] `blockCandidatePool(state, playerId)` — pełna pula wprost z reguł
+      (legalność z `blockAssignmentViolation`, M387/L41), bez enumeracji;
+- [x] widok: `blockCandidates` (tylko broniący, tylko krok deklaracji bloków,
+      pusty stos, bloki niezadeklarowane — warunki lustrzane `legalCommands`);
+- [x] UI: wiersze z puli uzupełnionej ofertami + `main.js` podaje pulę;
+- [x] piny E6/1–E6/4 + E6/6 (łańcuch) i E6/5 (MiniDom, kontrola negatywna);
+- [x] mutacje: brak eksportu → RED; usunięte przekazanie w `main.js` → E6/6 RED;
+- [x] commit + push `4004f1b`.
+
+### F4 — lustro kaskady panelu (w kodzie: E7)
+
+- [x] pomiar: `modeFollowUpPlanOf` zna 4 z 11 planów `main.js` i w innej
+      kolejności (multi przed window, choć M300/1 wymaga odwrotnie); wołają je
+      wyłącznie testy M2/2–M2/4;
+- [x] kopia usunięta, testy przełączone na funkcje produkcji;
+- [x] commit `0da56a9` (push po odnowieniu tokenu GitHub).
+
+### F5 — domknięcie
+
+- [x] bramy: `node tools/run-tests.mjs all` **6058/6058**; `npm run build`
+      **59 modułów / 3970,7 kB**; budżet lektury **99 966/100 000**;
+- [ ] `node --test test/bot-benchmark.test.js` i `node tools/benchmark.mjs --quick`
+      (mierzone na koniec — wpisać wynik poniżej);
+- [x] dokumentacja: §9 audytu PR #130, **M398**, sekcja 2026-09-20d dziennika,
+      **L158** (+ narracja), aktualizacja handoffa `2026-09-20c`, „Bieżący stan"
+      w `README.md`;
+- [ ] opis PR #131 uzupełniony o wynik pomiaru §6 (`gh pr edit 131 --body-file
+      /home/user/pr131-body.md`) — wymaga działającego tokenu GitHub.
+
+**Blokada techniczna:** token GitHub wygasał w tej sesji trzy razy; push
+`d6eb27a`/`1222c46`/`4004f1b` przeszedł po odnowieniu, `0da56a9` i dokumentacja
+czekały na kolejne. Gałąź append-only, nic nie zginęło.

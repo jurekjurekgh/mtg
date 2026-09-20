@@ -11826,3 +11826,71 @@ raz odświeżył się sam (push `b1c66e1` przeszedł po ponowieniu), drugi raz
 ponownego połączenia GitHub w Arena. Commity są lokalne i bezpieczne; zasada
 „push po każdym zielonym kroku" (ADR 0020 C/D) wymaga więc PONAWIANIA pusha,
 a nie tylko jednorazowej próby.
+
+## 2026-09-20d — „czemu świadomie nie naprawiane?": pomiar czterech pozycji audytu PR #130 (PR #131, arena/01a0bf64-mtg)
+
+Sesja zaczęła się od pytania właściciela o jedno zdanie z opisu PR #131:
+pozycje audytu PR #130 §6 zapisane jako „otwarte, nienaprawiane (świadomie —
+niskie ryzyko, brak reguły CR)". „Błędy powinny być natychmiast naprawiane,
+a nie «świadomie nie naprawiane». O co chodzi???" — i to była uwaga słuszna:
+przy pomiarze wyszło, że kategoria §6 była w trzech miejscach wygodnym workiem
+na dziury w pinach, a w jednym na realny defekt warstwy gracza.
+
+Kolejność pracy (każdy element commitowany i pushowany osobno — zasada
+właściciela z tej samej sesji: „każdy zakodowany element commitujesz i
+pushujesz"):
+
+1. **E5 (`d6eb27a`)** — ponowny skan znaków pisma niełacińskiego (ten sam, który
+   w sesji 2026-09-20c wyszedł czysto i nie zostawił strażnika) dał **15 znaków
+   w 13 plikach** — cyrylicę wklejoną w polskie słowa: `heuristic-bot.js`
+   („stwory"), `combat.js` („wybierane", „mogliśmy"), testy `m257r5b` („stwory")
+   i `m317` („Wardem"), jedenaście miejsc w `docs/` („kontrakt" ×2, „slucha",
+   „dokleja", „ida", „luki", „zagranie" ×2, „stwory", „charakterystyka"; znaki
+   U+0430/U+0431/U+0434/U+0435/U+043A–U+0442/U+044B/U+0456/U+0443/U+0444). Wszystko w
+   komentarzach i dokumentach — zachowanie gry niezmienione, ale grep po haśle
+   przestawał działać. Naprawa: 14 skażeń usuniętych, jeden znak CJK (U+672C
+   U+5730) zostaje jako dosłowny cytat incydentu w `PROJECT_HISTORY.md`, i stały
+   strażnik `test/e5-znaki-nielacinskie-w-zrodlach.test.js` z ratchetem w obie
+   strony oraz dowodem, że detektor działa (E5/3 — pliki w katalogu
+   tymczasowym). Greka dozwolona jako symbole matematyczne (Δ/β/Σ/μ/λ w
+   tabelach `docs/BOT_ROADMAP.md`), lista przypięta i sprawdzana pod kątem
+   martwych pozwoleń.
+2. **D/5 (`1222c46`)** — pozycja §6.7 („pipy zdolności na kartach kolorowych")
+   okazała się dziurą w pinie: D/4 pilnował kart bezkolorowych, kolorowe
+   pomijał przez `continue`. Niezmiennik domknięty, a pomiar po 25 taliach dał
+   dwa naruszenia (Mournful Zombie, Dragonbroods' Relic) — oba to konflikty
+   dwustronne, więc zostały jako wyjątki nazwane, zliczone i usprawiedliwione
+   mechanicznie (talia pokrywa kolory karty, siostra płaci pipy, ale nie pokrywa
+   kolorów). Drugiego naruszenia jednorazowy skrypt audytu NIE pokazał — znalazł
+   je dopiero strażnik.
+3. **E6 (`4004f1b`)** — pozycja §6.6 („zbiór blokerów poprawny, ale niekoniecznie
+   najlepszy") okazała się defektem gracza: `legalBlockerOptions` ponad cap-em
+   tnie listę przez `slice(0, cap)`, a wizard bloków brał kandydatów z sumy
+   ofert i sam budował komendę z ptaszków. Pomiar: 6×6 → 5 legalnych par bez
+   wiersza, 8×8 → 33, 10×10 → 69. Naprawa: `blockCandidatePool` (pełna pula
+   wprost z reguł, legalność z `blockAssignmentViolation`), pole widoku
+   `blockCandidates` (tylko broniący, tylko krok deklaracji bloków, pusty stos),
+   wiersze wizarda z puli uzupełnionej ofertami, strażnik łańcucha E6/6.
+4. **E7 (`0da56a9`)** — pozycja §6.1 (`modeFollowUpPlanOf` jako „martwy eksport,
+   kosmetyka") okazała się kopią kaskady panelu: 4 z 11 planów, kolejność
+   odwrotna niż wymaga M300/1, wołana wyłącznie przez testy. Kopia usunięta,
+   testy M2/2–M2/4 przełączone na funkcje, które naprawdę woła gracz.
+
+Dokumentacja: dodatek **§9** do `docs/audits/AUDYT_PR130_2026-09-20.md` (status
+każdej pozycji §6 po pomiarze, w tym te, które pozostają otwarte — teraz z
+warunkiem, przy którym stają się błędem), **M398**
+(`docs/ENGINE_MILESTONES.md`), **L158** (`docs/LESSONS.md` + narracja w
+`docs/LESSONS_PRZYPADKI.md`), wpis E6–E8 w
+`docs/plans/PLAN_2026-09-20b-audyt-pr130-i-petla-jakosci.md`, aktualizacja
+`docs/setup/HANDOFF_2026-09-20c.md` i „Bieżącego stanu" w `README.md`.
+
+Budżet lektury startowej: wpis L158 opłacony kondensacją (wstęp rejestru, pięć
+linii „wpis zbiorczy", §4 `ENVIRONMENT.md`) — **99 966/100 000**, próg bez zmian.
+
+Bramki: `node tools/run-tests.mjs all` **6058/6058**, `npm run build`
+**59 modułów / 3970,7 kB**.
+
+Przerwy techniczne: token GitHub wygasał w trakcie sesji trzykrotnie — push
+`d6eb27a`/`1222c46`/`4004f1b` przeszedł po odnowieniu, commit `0da56a9` i
+dokumentacja czekały na kolejne odnowienie (gałąź jest append-only, nic nie
+zginęło; `git push origin arena/01a0bf64-mtg` po ponownym połączeniu).

@@ -126,29 +126,24 @@ sklejać znaczniki konfliktu.
 
 - **Arbitralny egress HTTPS jest zablokowany, ale rejestr npm NIE.**
   Zmierzone 2026-08-24 (M202): `curl https://api.scryfall.com/...` → kod 000,
-  `fetch` w Node → `ECONNRESET`/`fetch failed`, za to `npm i` w `tools/table-tester`
-  przechodzi (63 pakiety, ~1 s). Czyli: Żywego Testera da się uruchomić
-  w sesji (nie trzeba zainstalowanego wcześniej `node_modules`), ale danych
-  kart z Scryfalla nadal pobieraj narzędziem `fetch_page` i zapisuj do
-  repozytorium (ADR 0010). `fetch_page` działa też na czystym JSON-ie (zmierzone
-  2026-09-02: te same URL-e, co `curl`-owi zwracają kod 000, wracają normalnie) —
-  rulingi WotC, dawniej „nie do potwierdzenia z repo", bierz z
-  `api.scryfall.com/cards/<set>/<collector_number>/rulings` przez
-  `node tools/fetch-card-rulings.mjs` (w sesji sandboxowej ściągnij je
-  `fetch_page`em i zapisz przez `python3`).
+  `fetch` w Node → `ECONNRESET`, za to `npm i` w `tools/table-tester` przechodzi
+  (63 pakiety, ~1 s) — Żywy Tester działa w sesji bez wcześniejszego
+  `node_modules`. Dane kart z Scryfalla pobieraj `fetch_page` i zapisuj do repo
+  (ADR 0010). `fetch_page` działa też na czystym JSON-ie (zmierzone 2026-09-02:
+  URL-e, które `curl`-owi dają 000, wracają normalnie) — rulingi WotC bierz z
+  `api.scryfall.com/cards/<set>/<collector_number>/rulings`
+  (`node tools/fetch-card-rulings.mjs`; w sandboxie ściągnij `fetch_page`em
+  i zapisz przez `python3`).
 - **`write_file` działa tylko w workspace.** Skrypty pomocnicze twórz przez
   `bash` z heredokiem, jeśli mają wylądować poza repo.
-- **Polskie znaki:** narzędzie `edit_file` potrafi je uszkodzić. Do edycji
-  plików z polskim tekstem używaj `python3` + `pathlib.Path` (czytaj/zapisuj
-  z `encoding='utf-8'`).
+- **Polskie znaki:** `edit_file` potrafi je uszkodzić — pliki z polskim tekstem
+  edytuj przez `python3` (`encoding='utf-8'`).
 - **Żywy Tester** wymaga `npm run build`, a przy pierwszym użyciu `npm i`
-  w `tools/table-tester` (jsdom nie jest instalowany w katalogu głównym).
-  **Tester ładuje `dist/mtg-table.html`, nie `src/`.** Po każdej zmianie
-  w `src/` trzeba przebudować — inaczej mierzy się STARY kod i wygląda to
-  jak „naprawa nie działa" (M213: pierwszy przebieg po naprawie sondy dał
-  niezmienioną liczbę zgłoszeń właśnie dlatego).
-- **Testy UI** w `test/` korzystają z własnego mini-harnessu DOM, bo `jsdom`
-  nie jest zależnością repozytorium — nie importuj go w testach core.
+  w `tools/table-tester` (jsdom nie siedzi w katalogu głównym). **Tester ładuje
+  `dist/mtg-table.html`, nie `src/`** — po każdej zmianie w `src/` przebuduj,
+  inaczej mierzysz STARY kod i wygląda to jak „naprawa nie działa" (M213).
+- **Testy UI** mają własny mini-harness DOM (`jsdom` nie jest zależnością repo)
+  — nie importuj go w testach core.
 
 ---
 

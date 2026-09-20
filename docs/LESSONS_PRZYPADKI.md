@@ -2086,3 +2086,54 @@ w odpowiedzi (5 — snapshot przy koszcie NIE może zabić żywego odczytu).
 **Korekta po uwadze właściciela (2026-09-20d).** Pierwsza wersja paczki J dołożyła wpisom własny rodzaj (`tap`) i wyciszony kolor (`.log-tap`), a paczka C — pole tekstowe z logiem (`<pre id="log-text">`) obok listy. Właściciel odrzucił jedno i drugie: „W sekcji «Log partii» nie ma i ma nie być żadnych dwóch streamów… Miałeś tylko w zleceniu C dodać możliwość kopiowania tego loga (albo określonej tury) do clipboardu. Plus zmiana chronologii… Tu nie ma i ma nie być żadnych kolorów. Ma zostać dokładnie tak samo jak było”. Naprawa: wpis loguje się zwykłym rodzajem `event` (jak „Zagrywasz Forest”), własny kolor zniknął, a z sekcji „Log partii” usunięto nadmiarowe pole tekstowe razem z jego stylem — zostaje JEDNA lista logu (z podlinkowanymi nazwami kart) + select zakresu + dwa przyciski kopiowania. Strażnik `test/zgloszenie-c-log-partii-tury.test.js` dostał pin struktury sekcji (żadnego `log-text`, żadnego własnego koloru wpisów), a test J — pin rodzaju wpisu. Bramy: 6026/6026.
 
 **Uwaga o opisie dla właściciela.** W raporcie napisałem „na stole symbole many renderują się jako ikony, a w polu «Log partii» jest pełny zapis z symbolami” — to było mylące („stół” to ta sama lista logu w tej samej sekcji, a „pole” to mój nadmiarowy element). Wniosek: raport opisuje ELEMENTY UI nazwami z ekranu właściciela, nie skrótami z kodu.
+
+## L158 (2026-09-20) — Menu opcji to nie pula możliwości gracza
+
+**Objaw:** audyt PR #130 §6 zapisał `legalBlockerOptions` ponad cap-em jako
+„zbiór blokerów jest poprawny, ale niekoniecznie najlepszy z możliwych" i
+zostawił bez naprawy („cap tnie OPCJE, nie użycia", L151). Właściciel:
+„Czemu świadomie nie naprawiane? Błędy powinny być natychmiast naprawiane".
+Pomiar pokazał, że zapis był za optymistyczny: na planszy 6 atakujących ×
+6 blokerów (zwykła późna tura) suma ofert traciła 5 legalnych par
+(atakujący, bloker), 8×8 → 33, 10×10 → 69. Wizard bloków rysował wiersze
+z sumy ofert i sam budował komendę z ptaszków, więc para bez wiersza była
+dla człowieka nieosiągalna — mimo że `declareBlockers` by ją przyjął.
+
+**Przyczyna:** dwa różne pojęcia sklejone w jedno. Menu szybkich przypisań
+(`legalBlockerOptions`, ograniczone `COMBAT_OPTION_CAP` = 32 dla czytelności
+listy) było JEDYNYM nośnikiem wiedzy o tym, kto może blokować kogo. Gdy jeden
+artefakt pełni dwie role (lista do klikania + definicja możliwości), limit
+pierwszej roli po cichu staje się limitem drugiej.
+
+**Naprawa:** `blockCandidatePool(state, playerId)` — pełna pula per atakujący,
+liczona wprost z reguł (bez enumeracji, więc bez wykładnika i bez capu),
+legalnością z TEGO SAMEGO predykatu co walidacja (`blockAssignmentViolation`,
+M387/L41). Widok niesie ją jako `blockCandidates` (tylko broniącemu, tylko
+w kroku deklaracji bloków, przy pustym stosie — warunki lustrzane wobec
+`legalCommands`), a `renderCombatWizard` rysuje wiersze z puli uzupełnionej
+ofertami. Menu zostaje skrótem.
+
+**Warianty tej samej klasy w tej sesji:**
+- (3) jednorazowy pomiar bez strażnika: skan znaków niełacińskich wykonany
+  2026-09-20c wyszedł czysto, ale nie zostawił pinu — przy ponownym pomiarze
+  tego samego dnia było 15 znaków w 13 plikach: cyrylica wklejona w polskie
+  słowa („stwory" z U+044B, „Wardem" z U+0435/U+043D, „wybierane" z
+  U+043E/U+0431, „kontrakt" z U+043A–U+0442, „slucha" z U+0430, „luki"
+  z U+0456) — grep po haśle przestawał działać. Naprawa: stały strażnik
+  `test/e5-znaki-nielacinskie-w-zrodlach.test.js` z jawnymi wyjątkami
+  (ratchet w obie strony) i dowodem, że detektor DZIAŁA (pliki w katalogu
+  tymczasowym), bo samo „repo czyste" nie dowodzi niczego.
+- (4) lustro cudzej kaskady: `modeFollowUpPlanOf` kopiowało cztery z
+  jedenastu planów `main.js` i w INNEJ kolejności (multi przed window, choć
+  M300/1 wymaga odwrotnie). Wołały je wyłącznie testy, więc zielone piny
+  opisywały ścieżkę, którą gracz nigdy nie idzie. Naprawa: kopia usunięta,
+  testy M2/2–M2/4 pinują funkcje produkcji.
+- Dziura w pinie zamiast odmowy: D/4 pilnował pipów zdolności tylko kart
+  BEZKOLOROWYCH (`continue` dla kolorowych), więc „pipy kart kolorowych"
+  nie były świadomą rezygnacją, tylko niezmierzoną klasą. D/5 domyka
+  niezmiennik i pokazuje 2 nazwane, mechanicznie usprawiedliwione wyjątki
+  (Mournful Zombie, Dragonbroods' Relic).
+
+**Reguła pracy:** wpis „nie naprawiamy świadomie" wymaga (a) pomiaru,
+(b) powodu z reguły CR albo kosztu, (c) pinu, który pilnuje, że stan się nie
+pogorszy. Bez tych trzech to jest po prostu nieznaleziony błąd.
