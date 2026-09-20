@@ -5,7 +5,7 @@ import { effectiveProtectionFromColors, isProtectedFromSource } from './attachme
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount, delveGenericMana } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, manaUnitKey, treasureManaAbilityOf, ANY_COLOR_MANA } from './mana-sources.js';
 import { canPlayByImpulseFromExile, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 
@@ -1547,15 +1547,31 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     if (!Array.isArray(delveIds) || new Set(delveIds).size !== delveIds.length) {
       throw new Error('Nieprawidłowy koszt Delve (exile)');
     }
-    const parsedCost = MANA_COSTS[object.cardId] != null ? parseManaCost(MANA_COSTS[object.cardId]) : null;
-    const genericPart = parsedCost ? parsedCost.generic : (object.manaCost ?? 0);
-    if (delveIds.length > genericPart) throw new Error('Delve: nie wolno wygnać więcej kart niż część generyczna');
+    // CR 702.66a/66b (audyt PR #130, znalezisko B): limit to część generyczna
+    // kosztu CAŁKOWITEGO (po obniżkach z CR 601.2f), nie liczba z wydruku —
+    // `delveGenericMana` jest JEDNYM źródłem reguły dla `delveExileLimit`,
+    // tej walidacji i ścieżki czarów (`castSpell`); wcześniej druk pozwalał
+    // wygnać więcej, niż wynosił koszt, więc `totalMana` stawał się ujemny.
+    if (delveIds.length > delveGenericMana(state, object)) {
+      throw new Error('Delve: nie wolno wygnać więcej kart niż część generyczna kosztu całkowitego');
+    }
+    // Rzuty bez składnika manowego (plot, darmowy impuls) oraz koszty
+    // alternatywne (morph/warp/madness/surge/Skarby) mają część generyczną
+    // MNIEJSZĄ niż wydrukowana — taki przeszacowany limit odrzuca twardy
+    // strażnik sumy poniżej (CR 118.7: składnik zredukowany do niczego to {0}).
     const ownGrave = new Set(state.zones.graveyard.filter((id) => id !== objectId
       && state.objects.get(id)?.controllerId === playerId));
     if (!delveIds.every((exId) => ownGrave.has(exId))) throw new Error('Nieprawidłowy koszt Delve (exile)');
     delveDeduct = delveIds.length;
   }
   const totalMana = cost - lifePaid + (kicker?.cost ?? 0) + (offspringPaid?.cost ?? 0) - delveDeduct;
+  // Strażnik sumy PRZED pierwszą mutacją kosztu (audyt PR #130, znalezisko B):
+  // wygnanie kart Delve idzie niżej, więc ujemna suma (koszt alternatywny
+  // mniejszy niż liczba wygnań) zostawiłaby grób w exile przy odrzuconej
+  // komendzie. Koszt ma być atomowy (CR 601.2h) — jak bramka sumy w `spendMana`.
+  if (delveIds != null && (!Number.isInteger(totalMana) || totalMana < 0)) {
+    throw new Error('Delve: wygnanie przewyższa część generyczną kosztu całkowitego');
+  }
   // Opłacalność liczona po MANIE PRODUKOWALNEJ (pula + nietapnięte landy) —
   // spendMana sam do-tapuje brakujące landy. Koszt alternatywny ze Skarbów
   // ma własną walidację (treasureManaAvailable) poniżej.

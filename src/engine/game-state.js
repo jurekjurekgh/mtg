@@ -21,7 +21,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
-import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, delveManaAfter, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
+import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -5358,6 +5358,11 @@ export function execute(state, input) {
           events.push(...applyDayNightAtTurnStart(state, previousActive));
           state.spellsCastThisTurn = 0;
           state.spellsCastThisTurnByPlayer = {};
+          // „Your FIRST instant or sorcery spell EACH TURN” (Baral and Kari
+          // Zev, ruling TDC 2023-04-14) — licznik jest zakresu tury, więc
+          // zeruje się z nową turą jak licznik rzutów i dobrań. Audyt PR #130
+          // (znalezisko C): bez tego resetu trigger odpalał RAZ NA PARTIĘ.
+          state.instantSorceryCastThisTurnByPlayer = {};
           state.cardsDrawnThisTurn = {};
           state.lifeGainedThisTurn = {};
           // „Activate only once each turn" (Snarling Wolf) — limit aktywacji
@@ -5547,7 +5552,12 @@ export function execute(state, input) {
       // (`pendingDelveExile` → `resolve_delve_exile`), a właściwy rzut (z już
       // wybranymi kartami w `delveExileIds`) idzie tą samą ścieżką co zwykły.
       const delveObject = state.objects.get(cmd.objectId);
-      if (delveObject?.delve && cmd.delveExileIds == null) {
+      // Limit 0 (pusty grób / brak części generycznej w koszcie całkowitym) NIE
+      // otwiera decyzji: wygnanie jest opcjonalne (CR 702.66a), a wybór bez
+      // alternatywy domyka się sam — rzut idzie zwykłą ścieżką za pełny koszt
+      // (audyt PR #130, znalezisko A).
+      if (delveObject?.delve && cmd.delveExileIds == null
+        && delveExileLimit(state, cmd.playerId, delveObject) > 0) {
         const before = state.events.length;
         const e = declareDelveCast(state, cmd.playerId, cmd.objectId, {
           kind: 'permanent',
@@ -5602,7 +5612,9 @@ export function execute(state, input) {
       // w ścieżce `cast_permanent` (kartą z delve w tym katalogu jest stwór,
       // ale reguła jest generyczna — ADR 0002).
       const delveSpell = state.objects.get(cmd.objectId);
-      if (delveSpell?.delve && cmd.delveExileIds == null) {
+      // Limit 0 = brak decyzji (jak w `cast_permanent` — jedno źródło reguły).
+      if (delveSpell?.delve && cmd.delveExileIds == null
+        && delveExileLimit(state, cmd.playerId, delveSpell) > 0) {
         const beforeSkill = state.events.length;
         const e = declareDelveCast(state, cmd.playerId, cmd.objectId, {
           kind: 'spell',
@@ -7944,17 +7956,15 @@ export function playerView(state, playerId) {
       // CR 702.66 (Delve, Batch 57/B4): kartę z delve oferujemy jako JEDNĄ
       // deklarację rzutu (liczba i karty wygnania to decyzja `pendingDelveExile`).
       // Publikujemy ją tylko wtedy, gdy któryś wariant kosztu (0..limit) jest
-      // opłacalny — oferta liczy tak samo jak płatność (L48).
+      // opłacalny — oferta liczy tak samo jak płatność (L48). Reguła siedzi
+      // w `affordableDelveCounts` (spells.js) — jednym źródle z deklaracją i z
+      // bramką czarów: audyt PR #130 (znalezisko A) — warunek `limit > 0`
+      // odbierał rzut przy PUSTYM grobie, choć wygnanie jest opcjonalne
+      // („you MAY exile”), a przy limicie 0 wariantem jest koszt pełny.
       if (object.delve) {
-        const delveLimit = delveExileLimit(state, playerId, object);
-        const affordableDelve = delveLimit > 0 && hasColorForCardId(state, playerId, object.cardId, 0)
-          && (() => {
-            for (let k = 0; k <= delveLimit; k += 1) {
-              if (delveManaAfter(state, playerId, object, k) <= manaAvailableFor(object, coloredPipsOf(object.cardId, 0))) return true;
-            }
-            return false;
-          })();
-        if (affordableDelve) legalCommands.push(command('cast_permanent', playerId, { objectId: id }));
+        if (affordableDelveCounts(state, playerId, object).length > 0) {
+          legalCommands.push(command('cast_permanent', playerId, { objectId: id }));
+        }
         continue;
       }
       // M259/B3: bramka licuje się z wariantami phyrexian — najtańszy wariant
