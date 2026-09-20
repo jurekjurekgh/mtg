@@ -1058,9 +1058,22 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const hits = e.foundCardId ? ` — trafiono ${nameOf(e.foundCardId)}` : '';
         return `${whoN(e.playerId)} wykonuje discover (${e.amount})${hits}`;
       }
-      case 'discover_resolved': return e.foundCardId
-        ? `${nameOf(e.foundCardId)} — discover${e.castFree ? ' (rzut za darmo)' : ''}`
-        : null;
+      // I (zgłoszenie właściciela 2026-09-20): brak trafienia w discover było
+      // w logu CICHE (null) — gracz widział tylko odsłaniane karty i nie
+      // wiedział, że biblioteka się wyczerpała ani że karty wróciły na spód
+      // w losowej kolejności (CR 701.53). Teraz oba przypadki mają pełny wpis.
+      case 'discover_resolved': {
+        const naSpod = e.bottomCount > 0
+          ? `odsłonięte karty (${e.bottomCount}) na spód biblioteki w losowej kolejności`
+          : 'biblioteka bez zmian';
+        if (e.foundCardId) {
+          return `${nameOf(e.foundCardId)} — discover${e.castFree ? ' (rzut za darmo)' : ''}; ${naSpod}`;
+        }
+        const powod = e.libraryExhausted
+          ? `biblioteka się wyczerpała (przejrzano ${e.revealedCardIds?.length ?? e.bottomCount ?? 0} kart)`
+          : `brak karty o mana value ≤ ${e.amount}`;
+        return `${whoN(e.playerId)} nie znajduje karty dla discover (${e.amount}) — ${powod}; ${naSpod}`;
+      }
       case 'explore_choice_required': return `${whoN(e.playerId)} rozstrzyga explore — ${nameOf(e.cardId)} na wierzchu biblioteki`;
       case 'explore_resolved': {
         if (e.isLand) return `Explore: ${nameOf(e.foundCardId)} trafia do ręki`;
@@ -2302,6 +2315,11 @@ export const TRANSFORM_DIGEST_EVENTS = new Set(['object_transformed']);
 export const HUMAN_DIGEST_EVENTS = new Set([
   'spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played',
   'ability_activated', 'permanent_entered_battlefield', 'object_transformed',
+  // I (zgłoszenie właściciela 2026-09-20): bieg i wynik discover to WŁASNE
+  // zagranie gracza (jego biblioteka, jego karty) — musi trafić do panelu
+  // „Rozgrywka” także wtedy, gdy trigger zdążył już zejść ze stosu
+  // (stackSize 0 nie może ukryć własnego odsłaniania biblioteki).
+  'discover_started', 'discover_resolved',
 ]);
 
 // Typy zdarzeń, które opisują SKUTEK rozstrzygnięcia (a nie decyzje człowieka).
@@ -2341,6 +2359,12 @@ export const BOT_RESOLUTION_EVENTS = new Set([
   'index_started', 'index_resolved', 'look_top_started', 'look_top_resolved',
   'epic_experiment_started', 'epic_experiment_resolved',
   'clash_resolved', 'clash_choice_resolved',
+  // I (zgłoszenie właściciela 2026-09-20): bieg discover (odsłanianie kart
+  // z biblioteki do rozstrzygnięcia) to SKUTEK rozstrzygnięcia triggera —
+  // bez tych typów wpis „brak trafienia / karty na spód w losowej kolejności"
+  // nie dochodził do modala „Rozgrywka" (do logu gracza dochodzi teraz, bo
+  // `isMainLogEvent` przepuszcza typy z tego zbioru przy stosie > 0).
+  'discover_started', 'discover_resolved',
 ]);
 
 /**

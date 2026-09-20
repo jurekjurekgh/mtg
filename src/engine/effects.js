@@ -4661,6 +4661,13 @@ function markTemporaryExile(state, exileId, sourceObject) {
         break;
       }
     }
+    // I (zgłoszenie właściciela 2026-09-20): brak trafienia musi być widoczne
+    // w logu i w „Rozgrywce" — odsłonięte karty wracają na spód biblioteki
+    // w LOSOWEJ kolejności (CR 701.53), a bez tej informacji wpis kończył się
+    // na „trigger się rozstrzyga" i gracz nie wiedział, co się stało z jego
+    // biblioteką. Nazwy odsłoniętych kart są już jawne (`card_revealed`),
+    // więc zdarzenie może nieść ich cardId.
+    const revealedCardIds = exiled.map((id) => state.objects.get(id)?.cardId ?? null).filter(Boolean);
     // Przenieś odsłonięte karty do exile.
     const exileIds = [];
     for (const id of exiled) {
@@ -4672,7 +4679,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (!foundId) {
       // Nie znaleziono karty — karty wracają na spód biblioteki.
       shuffleAndPlaceOnBottom(state, ownerId, exileIds);
-      state.events.push(event('discover_resolved', { playerId: ownerId, amount: x, found: false }));
+      state.events.push(event('discover_resolved', {
+        playerId: ownerId, amount: x, found: false,
+        revealedCardIds,
+        // Ile kart wróciło na spód i czy w ogóle coś zostało w bibliotece
+        // („biblioteka się wyczerpała" vs „brak karty z MV ≤ X") — oba fakty
+        // muszą trafić do opisu zdarzenia (warstwa tekstu w session.js).
+        bottomCount: exileIds.length,
+        libraryExhausted: exileIds.length >= ownLibrary.length,
+      }));
       return;
     }
     // Blokująca decyzja: rzuć bez kosztu albo weź do ręki.

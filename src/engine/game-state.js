@@ -4739,7 +4739,13 @@ export function execute(state, input) {
         moveObjectDirectly(state, exileId, 'library', libId);
       }
     }
-    state.events.push(event('discover_resolved', { playerId: disc.playerId, amount: disc.amount, foundCardId: disc.foundCardId, castFree: cmd.castFree }));
+    state.events.push(event('discover_resolved', {
+      playerId: disc.playerId, amount: disc.amount, foundCardId: disc.foundCardId, castFree: cmd.castFree,
+      // I (zgłoszenie właściciela 2026-09-20): także przy TRAFIENIU log musi
+      // powiedzieć, że resztę odłożono na spód biblioteki w losowej kolejności
+      // (CR 701.53) — inaczej karty po prostu „ginęły" z narracji.
+      bottomCount: disc.restExileIds.length,
+    }));
     state.pendingDiscover = null;
     if (disc.restorePriorityTo && state.players.some((p) => p.id === disc.restorePriorityTo)) {
       state.turn.priorityPlayerId = disc.restorePriorityTo;
