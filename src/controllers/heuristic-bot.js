@@ -6702,7 +6702,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_craft_exile': {
         // Lodestone Needle: exile artifact do craft. Bot wybiera
         // najsłabszy artefakt (minimalizuje stratę).
-        const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
+        // Audyt PR #131 (E2, znalezisko F7): kandydat może leżeć na polu
+        // bitwy ALBO w grobie (własnym) — `objectOnBoard` widział tylko pole,
+        // więc karty z grobu dostawały 0 i wybór był arbitralny (pierwsza
+        // oferta), mimo że komentarz obiecuje minimalizację straty.
+        // `zoneCard` indeksuje strefy jawne dla decydenta (L41 — jedno źródło
+        // wyszukiwania, ta sama funkcja co przy kartach spoza ręki).
+        const target = cmd.targetId ? zoneCard(view, cmd.targetId) : null;
         if (!target) return finish(0);
         const value = (target.power ?? 0) * 2 + (target.toughness ?? 0) + (target.manaCost ?? 0);
         return finish(40 - value);
@@ -7777,9 +7783,43 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }, 0);
       return { count: ids.length, value: sumValue };
     }
+    // E2 (audyt PR #131, znalezisko F8): projekcje decyzji, które ich nie
+    // miały — bez nich remis wariantów wpadał do „bez danych" audytu remisów
+    // (narzędzie nie mogło odróżnić uczciwego remisu od ślepoty wyceny), choć
+    // dane są wprost w widoku (L28/L34/L40). Lustro wejść wyceny: te same
+    // pola i te same generatory, co w `scoreCommand`/`scoreCommandValue`.
+    if (cmd?.type === 'resolve_aura_host') {
+      const host = objectOnBoard(view, cmd.auraHostId);
+      return host
+        ? { mine: host.controllerId === view.playerId ? 1 : 0, value: combatPower(host) }
+        : { host: 0 };
+    }
+    if (cmd?.type === 'resolve_craft_exile') {
+      // Ta sama ścieżka wyszukiwania co wycena (F7) — kandydat z grobu.
+      const target = cmd.targetId ? zoneCard(view, cmd.targetId) : null;
+      return {
+        value: target ? (target.power ?? 0) * 2 + (target.toughness ?? 0) + (target.manaCost ?? 0) : null,
+      };
+    }
+    if (cmd?.type === 'resolve_hand_creature') {
+      if (cmd.targetId == null) return { skip: 1 };
+      const card = (view.zones.hand ?? []).find((o) => o.id === cmd.targetId);
+      return {
+        value: card
+          ? (card.power ?? 0) * P.creaturePowerWeight + (card.toughness ?? 0) * P.creatureToughnessWeight
+          : null,
+      };
+    }
     if (cmd?.type === 'resolve_rebound_cast' || cmd?.type === 'resolve_grave_free_cast'
+        || cmd?.type === 'resolve_hand_free_cast'
         || cmd?.type === 'resolve_madness_cast' || cmd?.type === 'resolve_exile_cast') {
-      return { cast: cmd.cast ? 1 : 0, cardId: cmd.objectId ?? cmd.cardId ?? null };
+      // E2 (audyt PR #131, F8): `cast` nie zawsze jest w komendzie — warianty
+      // rzutu okien grobu/handlu nie niosą `cast: true`, tylko rezygnacja ma
+      // `decline`/`cast: false`. Poprzednie `cmd.cast ? 1 : 0` dawało
+      // WSZYSTKIM wariantom rzutu 0, więc projekcja nie odróżniała rzutu od
+      // odmowy; `resolve_hand_free_cast` nie miał projekcji w ogóle.
+      const cast = cmd.cast === false || cmd.decline === true ? 0 : 1;
+      return { cast, cardId: cmd.objectId ?? cmd.cardId ?? null };
     }
     if (cmd?.type === 'resolve_scry' || cmd?.type === 'resolve_surveil') {
       const bottoms = cmd.bottomIds ?? cmd.millIds ?? [];
@@ -7915,6 +7955,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd.type === 'resolve_delve_exile') {
       return `resolve_delve_exile(${(cmd.exileIds ?? []).join('+') || '?'})`;
     }
+    // E2 (audyt PR #131, znalezisko F8): nazwy WARIANTÓW decyzji, które
+    // wcześniej streszczały się do samego typu (klasa M195/B i M203/2):
+    // bez nich audyt remisów nie ma czego parować, a diagnostyka nie odróżnia
+    // wariantów (`resolve_craft_exile` × N wyglądało jak jedna opcja).
+    if (cmd.type === 'resolve_aura_host') return `resolve_aura_host(${cmd.auraHostId ?? '?'})`;
+    if (cmd.type === 'resolve_craft_exile') return `resolve_craft_exile(${cmd.targetId ?? '?'})`;
+    if (cmd.type === 'resolve_hand_creature') return `resolve_hand_creature(${cmd.targetId ?? 'skip'})`;
     if (cmd.type === 'resolve_rebound_cast' || cmd.type === 'resolve_grave_free_cast'
         || cmd.type === 'resolve_hand_free_cast'
         || cmd.type === 'resolve_madness_cast' || cmd.type === 'resolve_exile_cast') {
