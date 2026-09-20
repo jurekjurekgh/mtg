@@ -1762,6 +1762,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         }
         return base;
       }
+      // Audyt PR #130 (znalezisko D, CR 303.4f): wybór gospodarza aury
+      // wracającej z grobu — bez wpisu gracz nie wie, że silnik na niego czeka
+      // (M106/Z2), a wynik i tak nazwie `object_moved` + `object_attached`.
+      case 'aura_host_choice_required':
+        return `${nameOf(e.sourceCardId)} — ${whoN(e.playerId)} wybiera, co zaczaruje ${nameOf(e.cardId)} (kandydaci: ${(e.candidateIds ?? []).length})`;
+      case 'aura_host_resolved': return null;
       case 'hand_free_cast_resolved':
         if (!e.declined) return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)} z ręki bez płacenia kosztu many (${nameOf(e.sourceCardId)})`;
         // B6b: przy braku kandydatów silnik domyka decyzję sam (wybór bez

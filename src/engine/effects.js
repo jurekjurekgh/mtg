@@ -1152,6 +1152,43 @@ export function resolveCraftExileOutcome(state, { sourceId, candidates = [], tra
   return { pending: false };
 }
 
+/**
+ * Wejście permanentu wracającego z grobu (CR 303.4f/121.6/122.1b) — JEDNO
+ * źródło dla ścieżki natychmiastowej (brak aury albo dokładnie jeden legalny
+ * gospodarz) i dla wznowienia po decyzji gracza `resolve_aura_host`
+ * (`pendingAuraHost` → game-state.js). Wzorzec `resolveCraftExileOutcome`
+ * (L41): reguła wejścia nie może mieć dwóch kopii, bo rozjadą się przy
+ * pierwszej zmianie (audyt PR #130, znalezisko D).
+ *
+ * @returns {string} id nowego obiektu na polu bitwy
+ */
+export function returnPermanentFromGraveyardOutcome(state, targetId, effect, auraHostId = null) {
+  const newId = `permanent-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
+  // Ruling Annie Flash (OTJ 2024-04-12): wraca TAPNIĘTA (deskryptor
+  // `entersTapped` — ADR 0002).
+  const permanent = Object.freeze({
+    ...moved, summoningSickness: true,
+    ...(effect?.entersTapped ? { tapped: true } : {}),
+  });
+  state.objects.set(newId, permanent);
+  // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
+  // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
+  // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
+  applyEnterCounters(state, newId);
+  // Załączenie aury PO wejściu na pole bitwy (kolejność: obiekt musi już
+  // istnieć w strefie, żeby `attachAuraToCreature` przeszła walidację).
+  if (auraHostId != null) attachAuraToCreature(state, newId, auraHostId);
+  if (effect?.finalityCounter) addCounter(state, newId, 'finality', 1);
+  // Batch 24 (Unbreakable Bond): „return ... with a lifelink counter on it" —
+  // wejście z licznikami (CR 122.1b — licznik lifelink nadaje keyword).
+  for (const [name, amount] of Object.entries(effect?.counters ?? {})) {
+    addCounter(state, newId, name, amount);
+  }
+  state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
+  return newId;
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   if (state.pendingReplacementChoice?.frame) {
     state.pendingReplacementChoice.continuations.push({effect, sourceObject, targets, context});
@@ -3301,36 +3338,39 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // sama funkcja co SBA i rzut aury (`isLegalAuraHost` — L41).
     let auraHostId = null;
     if ((object.subtypes ?? []).includes('Aura')) {
-      auraHostId = state.zones.battlefield.find((hostId) => isLegalAuraHost(object, state.objects.get(hostId))) ?? null;
-      if (auraHostId == null) {
+      const hosts = state.zones.battlefield.filter((hostId) => isLegalAuraHost(object, state.objects.get(hostId)));
+      if (hosts.length === 0) {
         state.events.push(event('aura_returned_without_host', {
           objectId: targetId, cardId: object.cardId, playerId: object.controllerId ?? null,
         }));
         return;
       }
+      // Audyt PR #130 (znalezisko D): „you choose what it will enchant" to
+      // REALNA decyzja gracza, gdy legalnych gospodarzy jest więcej niż jeden —
+      // `find(...)` brał pierwszego z brzegu (kolejność strefy), odbierając
+      // wybór. Przy JEDNYM kandydacie wybór domyka się sam (wybór bez
+      // alternatywy nie jest decyzją — wzorzec craft exile, L41).
+      if (hosts.length > 1) {
+        const decydent = object.controllerId ?? object.ownerId ?? null;
+        state.pendingAuraHost = {
+          playerId: decydent,
+          targetId,
+          cardId: object.cardId ?? null,
+          sourceCardId: sourceObject?.cardId ?? null,
+          candidateIds: [...hosts],
+          effect,
+          restorePriorityTo: state.turn.priorityPlayerId,
+        };
+        if (decydent != null) state.turn.priorityPlayerId = decydent;
+        state.events.push(event('aura_host_choice_required', {
+          playerId: decydent, cardId: object.cardId ?? null, objectId: targetId,
+          sourceCardId: sourceObject?.cardId ?? null, candidateIds: [...hosts],
+        }));
+        return;
+      }
+      auraHostId = hosts[0];
     }
-    const newId = `permanent-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
-    // Ruling Annie Flash: wraca TAPNIĘTA (deskryptor `entersTapped` — ADR 0002).
-    const permanent = Object.freeze({
-      ...moved, summoningSickness: true,
-      ...(effect.entersTapped ? { tapped: true } : {}),
-    });
-    state.objects.set(newId, permanent);
-    // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
-    // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
-    // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
-    applyEnterCounters(state, newId);
-    // Załączenie aury PO wejściu na pole bitwy (kolejność: obiekt musi już
-    // istnieć w strefie, żeby `attachAuraToCreature` przeszło walidację).
-    if (auraHostId != null) attachAuraToCreature(state, newId, auraHostId);
-    if (effect.finalityCounter) addCounter(state, newId, 'finality', 1);
-    // Batch 24 (Unbreakable Bond): „return ... with a lifelink counter on it" —
-    // wejście z licznikami (CR 122.1b — licznik lifelink nadaje keyword).
-    for (const [name, amount] of Object.entries(effect.counters ?? {})) {
-      addCounter(state, newId, name, amount);
-    }
-    state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
+    returnPermanentFromGraveyardOutcome(state, targetId, effect, auraHostId);
     return;
   }
   if (effect.type === 'transform') {

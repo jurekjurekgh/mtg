@@ -60,6 +60,8 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_discover_choice: 'Discover (wybór)',
   resolve_explore_choice: 'Explore (wybór)',
   resolve_craft_exile: 'Craft (wybór wygnania)',
+  // Audyt PR #130 (D, CR 303.4f): aura wracająca z grobu wybiera gospodarza.
+  resolve_aura_host: 'Aura z grobu (kogo zaczaruje?)',
   resolve_hand_creature: 'Położenie stwora z ręki',
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
   resolve_trigger_target: 'Cel triggera (wybór)',
@@ -445,6 +447,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_discover_choice') return 'resolve_discover_choice';
   if (command.type === 'resolve_explore_choice') return 'resolve_explore_choice';
   if (command.type === 'resolve_craft_exile') return 'resolve_craft_exile';
+  if (command.type === 'resolve_aura_host') return 'resolve_aura_host';
   if (command.type === 'resolve_hand_creature') return 'resolve_hand_creature';
   if (command.type === 'resolve_legend_choice') return 'resolve_legend_choice';
   if (command.type === 'resolve_redirect_choice') return 'resolve_redirect_choice';
@@ -526,6 +529,9 @@ export function choiceRequestType(commands) {
   if (first.type === 'resolve_exile_cast') return 'command';
   if (first.type === 'resolve_explore_choice') return 'command';
   if (first.type === 'resolve_craft_exile') return 'command';
+  // Audyt PR #130 (D): warianty to konkretni gospodarze z pola bitwy — grupa
+  // „cel" (podgląd karty), jak przy Dragon Arch i prawie legend.
+  if (first.type === 'resolve_aura_host') return 'target';
   if (first.type === 'resolve_hand_creature') return 'target';
   if (first.type === 'resolve_legend_choice') return 'target';
   if (first.type === 'resolve_redirect_choice') return 'target';
@@ -2022,6 +2028,8 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_mentor_target: 'Mentor — kto dostaje licznik?',
   resolve_graveyard_top_choice: 'Karta z grobu na wierzch biblioteki',
   resolve_delve_exile: 'Delve — karty do wygnania z grobu',
+  // Audyt PR #130 (D, CR 303.4f): aura wracająca z grobu wybiera gospodarza.
+  resolve_aura_host: 'Aura z grobu — kogo zaczaruje?',
   resolve_hand_creature: 'Stwór do położenia obok kosztu',
   resolve_legend_choice: 'Prawo legend — który zostaje?',
   resolve_redirect_choice: 'Przekierowanie obrażeń',
@@ -3362,6 +3370,12 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_craft_exile': {
       // Craft (Lodestone Needle): wybór artefaktu do wygnania.
       return `Craft: wygnaj ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_aura_host': {
+      // Audyt PR #130 (znalezisko D, CR 303.4f): aura wracająca z grobu wybiera
+      // zaczarowany obiekt przy wejściu — etykieta nazywa GOSPODARZA (nazwa
+      // aury jedzie w tytule grupy z `pendingAuraHost`, ADR 0017).
+      return `Zaczaruj: ${nameOfObjectId(cmd.auraHostId)}`;
     }
     case 'resolve_hand_creature': {
       // Dragon Arch: połóż wielokolorowego stwora z ręki (albo nic — you may).

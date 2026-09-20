@@ -31,6 +31,10 @@ export const PENDING_DECISION_FIELDS = Object.freeze([
   // Strażnik: test/fingerprint-pending-decisions.test.js.
   'pendingManifestDread', 'pendingSuspendCast', 'pendingOpponentTarget',
   'pendingFabricate', 'pendingCopyTargets',
+  // Audyt PR #130 (znalezisko D, CR 303.4f): wybór gospodarza aury wracającej
+  // z grobu blokuje grę w `firstPendingDecision`, więc należy do odcisku
+  // (klasa L16/B2 — strażnik `test/b2-odcisk-straznik-pokrycia.test.js`).
+  'pendingAuraHost',
   'pendingCraftExile', 'pendingDamageAssignment', 'pendingDamageTarget',
   'pendingDestroyEquipment', 'pendingDiscardChoice', 'pendingDiscover',
   'pendingEnterAsCopy', 'pendingEpicExperiment', 'pendingExploits',
