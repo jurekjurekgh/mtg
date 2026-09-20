@@ -21,7 +21,8 @@
 1x Rakshasa Vizier
 1x Silumgar Butcher
 1x Stampeding Elk Herd
+1x Hooting Mandrills
 1x Woolly Loxodon
 1x Island
 4x Swamp
-6x Forest
+7x Forest

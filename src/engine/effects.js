@@ -9,12 +9,12 @@ import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
 import { getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
-import { createBattlefieldToken, nextCopyNumber, nextFaceDownCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
+import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, nextFaceDownCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
 
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
-import { attachEquipmentToCreature, detachAttachmentsFromHost } from './attachments.js';
+import { attachAuraToCreature, attachEquipmentToCreature, detachAttachmentsFromHost, isLegalAuraHost } from './attachments.js';
 
 /**
  * Loch „Undercity" (komponent inicjatywy, CR 725; karta „Undercity //
@@ -52,6 +52,11 @@ export const UNDERCITY_ROOMS = Object.freeze([
 ]);
 
 /** Wirtualne źródło efektów lochu (nie jest obiektem w strefie — jak emblem). */
+/** Karta-ląd (kind albo typ) — jedno miejsce prawdy dla efektów-reanimacji. */
+function isLandCard(object) {
+  return object?.kind === 'land' || (object?.types ?? []).includes('Land');
+}
+
 function dungeonSource(playerId) {
   return { id: `dungeon-${playerId}`, controllerId: playerId, cardId: 'undercity', kind: 'card' };
 }
@@ -1064,6 +1069,89 @@ export function grantGift(state, spell) {
   applyEffect(state, gift.effect, { ...spell, controllerId: recipientId }, []);
 }
 
+/**
+ * Wykonanie wygnania w efekcie/koszcie Craft (CR 702.167): wygnanie wybranego
+ * artefaktu, wygnanie ŹRÓDŁA i powrót źródła na pole bitwy przemienionego.
+ *
+ * Jedno źródło prawdy dla DWÓCH wejść (L41):
+ *  - ścieżki AUTOMATYCZNEJ, gdy kandydat jest DOKŁADNIE JEDEN — wybór bez
+ *    alternatywy nie jest decyzją gracza (zasada właściciela z 2026-09-19:
+ *    „zawsze wybory bez alternatywne powinny być automatyczne”; zgłoszenie:
+ *    Lodestone Needle z jednym innym artefaktem kazała go „poświęcić”),
+ *  - komendy `resolve_craft_exile` (game-state.js deleguje tutaj — ten sam
+ *    kod, więc oferta i walidacja nie mogą się rozjechać, L48).
+ *
+ * Kontrakt: `chosenTargetId` puste w trybie automatycznym; przy >1 kandydacie
+ * funkcja NIC nie zmienia i zwraca `{ pending: true, candidates }` — zawołanie
+ * MUSI wtedy wystawić `state.pendingCraftExile` (decyzja gracza). Zwraca
+ * `null`, gdy nie ma czego wygnąć (CR 608.2b: „If you do” bez kandydata).
+ * Nie importuje game-state.js (ten importuje effects.js — cykl).
+ */
+export function resolveCraftExileOutcome(state, { sourceId, candidates = [], transformTo = null, chosenTargetId = null } = {}) {
+  const lista = Array.isArray(candidates) ? candidates : [];
+  if (chosenTargetId == null) {
+    if (lista.length !== 1) return lista.length === 0 ? null : { pending: true, candidates: [...lista] };
+  }
+  const targetId = chosenTargetId ?? lista[0];
+  if (targetId == null || !state.objects.get(targetId)) return null;
+  // 1. Wygnanie materiału (pole bitwy albo karta z grobu — strefa z obiektu).
+  const chosenObj = state.objects.get(targetId);
+  // M262: oba wygnania craftu (materiał + źródło) niosą kartę craftującą —
+  // self-exile źródła to „Wygnane: <ta sama karta>” (decyzja właściciela).
+  const craftCardId = state.objects.get(sourceId)?.cardId ?? 'craft';
+  const chosenExileId = `exile-${state.objectSequence++}`;
+  moveObjectDirectly(state, targetId, 'exile', chosenExileId, { exiledBy: craftCardId });
+  state.events.push(event('object_moved', { fromId: targetId, object: state.objects.get(chosenExileId), fromZone: chosenObj.zone, toZone: 'exile', craft: true }));
+  // 2. Wygnanie źródła.
+  const sourceExileId = `exile-${state.objectSequence++}`;
+  moveObjectDirectly(state, sourceId, 'exile', sourceExileId, { exiledBy: craftCardId });
+  state.events.push(event('object_moved', { fromId: sourceId, object: state.objects.get(sourceExileId), fromZone: 'battlefield', toZone: 'exile', craft: true }));
+  // 3. Powrót źródła przemienionego na pole bitwy.
+  const bfId = `permanent-${state.objectSequence++}`;
+  const moved = state.objects.get(sourceExileId);
+  if (moved) {
+    const previousSide = moved.originalBeforeAnimation ?? moved;
+    const transformed = Object.freeze({
+      ...moved,
+      id: bfId, zone: 'battlefield',
+      // M270 (CR 400.7): ta sama klasa co transform-return — craft składa
+      // obiekt RĘCZNIE (omija moveObjectDirectly), więc musi sam ostemplować
+      // turę wejścia. Baza `moved` przychodzi z wygnania z `enteredOnTurn:
+      // null`, przez co permanent wracający na pole bitwy nie liczył się jako
+      // „entered this turn” (Crew Captain).
+      enteredOnTurn: state.turn.number,
+      ...transformedCharacteristics(transformTo, previousSide),
+      // CR 202.3b (M258/Etap 2.3b): MV po crafcie = koszt twarzy przedniej;
+      // payload transformTo niesie go od materialize.
+      manaCost: transformTo?.manaCost ?? moved.manaCost ?? 0,
+      transformTo: {
+        cardId: moved.cardId,
+        cardName: moved.cardName ?? null,
+        kind: previousSide.kind ?? moved.kind,
+        power: previousSide.power ?? null,
+        toughness: previousSide.toughness ?? null,
+        abilities: moved.abilities,
+        keywords: moved.keywords ?? [],
+        subtypes: previousSide.subtypes ?? moved.subtypes ?? [],
+        types: previousSide.types ?? moved.types ?? [],
+        manaCost: transformTo?.manaCost ?? moved.manaCost ?? 0,
+      },
+    });
+    state.objects.delete(sourceExileId);
+    state.objects.set(bfId, transformed);
+    state.zones.exile = state.zones.exile.filter((id) => id !== sourceExileId);
+    state.zones.battlefield.push(bfId);
+    // M273 (błąd #24): craft wprowadza permanent na pole bitwy — liczniki
+    // wejścia (CR 121.6) obowiązują jak przy każdym innym wejściu.
+    applyEnterCounters(state, bfId);
+    state.events.push(event('object_moved', { fromId: sourceExileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', craft: true }));
+    // controllerId: warstwa stołu kwalifikuje transform do panelu
+    // „Rozgrywka” po kontrolerze (isHumanHeadline, M257/K4).
+    state.events.push(event('object_transformed', { objectId: bfId, fromCardId: moved.cardId, cardId: transformTo?.cardId ?? null, controllerId: transformed.controllerId }));
+  }
+  return { pending: false };
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   if (state.pendingReplacementChoice?.frame) {
     state.pendingReplacementChoice.continuations.push({effect, sourceObject, targets, context});
@@ -1200,18 +1288,33 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // a znacznik wygasa sam — nie trzeba go sprzątać cleanupem.
   if (effect.type === 'exile_top_playable_until_next_turn') {
     const controllerId = sourceObject.controllerId;
-    const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === controllerId);
-    if (topId == null) return;
-    const card = state.objects.get(topId);
-    const exileId = `exile-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, topId, 'exile', exileId, { exiledBy: sourceObject.cardId });
+    // `count` (deskryptor, ADR 0002): Annie Flash wygania DWIE wierzchnie
+    // karty („exile the top two cards"), Gila Courser/Caves of Chaos jedną.
+    // Każda karta dostaje WŁASNY stempel okna — to jedna zdolność, ale N
+    // niezależnych pozwoleń (CR 601.2b).
+    const count = Math.max(1, effect.count ?? 1);
+    const topIds = [];
+    for (const id of state.zones.library) {
+      const object = state.objects.get(id);
+      if (object?.controllerId !== controllerId) continue;
+      topIds.push(id);
+      if (topIds.length === count) break;
+    }
+    if (topIds.length === 0) return;
     // „Until the end of your NEXT turn" — jeśli to twoja tura, chodzi o tę
     // następną (numer + 2 przy dwóch graczach); poza swoją turą o najbliższą.
+    // G (zgłoszenie właściciela, Caves of Chaos Adventurer): karta mówiąca
+    // „you may play that card THIS TURN" niesie deskryptor `window`
+    // (ADR 0002 — reguła w danych, nie nazwa karty); wtedy okno kończy się
+    // w BIEŻĄCEJ turze, niezależnie od tego, czyja jest tura.
     const isMyTurn = state.turn.activePlayerId === controllerId;
+    const thisTurnOnly = effect.window === 'this_turn';
     // Stempel pisany przez choke point (audyt PR #93, tura 3) — dawniej dwie
     // ręczne klejenia pól w jednym if-ie (obiekt + zdarzenie), które mogły się
     // rozjechać bez żadnego testu.
-    const oknoImpulsu = { untilTurn: state.turn.number + (isMyTurn ? 2 : 1) };
+    const oknoImpulsu = {
+      untilTurn: thisTurnOnly ? state.turn.number : state.turn.number + (isMyTurn ? 2 : 1),
+    };
     // Batch 47 (Caves of Chaos Adventurer): „If you've COMPLETED A DUNGEON,
     // you may play that card this turn without paying its mana cost.
     // Otherwise, you may play that card this turn." Warunek jest deskryptorem
@@ -1222,12 +1325,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const freeCondition = effect.freeIfCondition ?? null;
     oknoImpulsu.withoutPaying = freeCondition?.type === 'completed_dungeon'
       && hasCompletedDungeon(state, controllerId);
-    state.objects.set(exileId, stampImpulseWindow(moved, oknoImpulsu));
-    const stempl = impulseWindowFields(oknoImpulsu);
-    state.events.push(event('object_exiled', {
-      fromId: topId, objectId: exileId, object: state.objects.get(exileId),
-      cardId: card?.cardId ?? null, playerId: controllerId, ...stempl,
-    }));
+    for (const topId of topIds) {
+      const card = state.objects.get(topId);
+      if (!card || card.zone !== 'library') continue;
+      const exileId = `exile-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, topId, 'exile', exileId, { exiledBy: sourceObject.cardId });
+      state.objects.set(exileId, stampImpulseWindow(moved, oknoImpulsu));
+      const stempl = impulseWindowFields(oknoImpulsu);
+      state.events.push(event('object_exiled', {
+        fromId: topId, objectId: exileId, object: state.objects.get(exileId),
+        cardId: card?.cardId ?? null, playerId: controllerId, ...stempl,
+      }));
+    }
     return;
   }
   // Vaan, Street Thief (FIN): „exile the top card of that player's library.
@@ -2226,8 +2335,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const tokenController = effect.controllerFromEvent
       ? (context[effect.controllerFromEvent] ?? sourceObject.controllerId)
       : sourceObject.controllerId;
+    const createdTokenIds = [];
     for (let i = 0; i < amount; i += 1) {
-      createBattlefieldToken(state, tokenController, {
+      createdTokenIds.push(createBattlefieldToken(state, tokenController, {
         cardId: effect.cardId,
         name: effect.name,
         kind: effect.kind ?? 'creature',
@@ -2246,7 +2356,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         ...(effect.toxic != null ? { toxic: effect.toxic } : {}),
         // M147 (Static Net — Powerstone): token wchodzi ZATAPNIĘTY.
         tapped: Boolean(effect.tapped),
-      });
+      })?.id);
+    }
+    // „It gains haste until end of turn" (Baral and Kari Zev, ruling TDC
+    // 2023-04-14; CR 611.2c) — nadanie CZASOWE (`keywordGrants`), nie
+    // wydrukowany keyword: w cleanupie znika, a token zachowuje resztę cech.
+    // Deskryptor generyczny (ADR 0002), nie warunek na nazwę karty. Identy
+    // tworzonych tokenów zbieramy z `token_created`, żeby nadać DOKŁADNIE im
+    // (kolejność strefy bywa zajęta przez inne efekty tego samego kroku).
+    for (const keyword of effect.keywordsUntilEndOfTurn ?? []) {
+      for (const created of createdTokenIds) grantKeywordsUntilEndOfTurn(state, created, [keyword]);
     }
     return;
   }
@@ -2553,6 +2672,37 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // graveyard, exile it instead." Model: JEDNA decyzja (wybór karty = X i
   // rzut; rezygnacja = nic) — wzorzec pendingMadnessCast/Epic; kandydaci
   // liczeni ŻYWO w playerView (dowolny grób, MV == X, w zakresie epicCastOffers).
+  // Batch 57/B6a (Baral and Kari Zev, ruling TDC 2023-04-14): „you may cast a
+  // spell with lesser mana value that shares a card type with it from your hand
+  // without paying its mana cost" — decyzja BLOKUJĄCA (rzut następuje w trakcie
+  // rozstrzygania zdolności, więc timing czaru jest ignorowany). Kandydatów
+  // (i wspólny typ / próg MV) liczy jedyny predykat w game-state (L48:
+  // oferta = walidacja); zdolność nie zna żadnej nazwy karty (ADR 0002).
+  if (effect.type === 'free_cast_from_hand') {
+    const castTypes = (context.spellCardTypes ?? []).filter((t) => t === 'Instant' || t === 'Sorcery');
+    state.pendingHandFreeCast = {
+      playerId: sourceObject.controllerId,
+      sourceId: sourceObject.id,
+      sourceCardId: sourceObject.cardId ?? null,
+      cardTypes: castTypes,
+      maxManaValue: context.spellManaValue ?? 0,
+      // „If you don't, create First Mate Ragavan …" — efekt rezygnacji jest
+      // CZĘŚCIĄ TEJ SAMEJ decyzji (deskryptor w danych karty). Bez niego
+      // odmowa byłaby pustym ruchem i bot zawsze brałby pierwszą ofertę.
+      elseEffect: effect.elseEffect ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('hand_free_cast_required', {
+      // Skutek rezygnacji jedzie z decyzją do widoku i logu (jedno źródło —
+      // `elseEffectSummary`); panel nazywa go w etykiecie przycisku, więc
+      // gracz widzi, CO dostaje, gdy nie rzuci czaru.
+      ...(effect.elseEffect ? { alternative: elseEffectSummary(effect.elseEffect) } : {}),
+      playerId: sourceObject.controllerId, sourceCardId: sourceObject.cardId ?? null,
+      maxManaValue: context.spellManaValue ?? 0, cardTypes: castTypes,
+    }));
+    return true;
+  }
   if (effect.type === 'pay_x_cast_from_graveyard') {
     state.pendingGraveFreeCast = {
       playerId: sourceObject.controllerId,
@@ -3138,15 +3288,42 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (T6 — odpowiedź na triggerze) — brak efektu.
     const targetId = targets[0];
     const object = state.objects.get(targetId);
-    if (!object || object.zone !== 'graveyard' || object.kind === 'land' || object.kind === 'spell') return;
+    // CR 110.4a + ruling OTJ (2024-04-12, Annie Flash): „permanent card" to
+    // karta artefaktu/bitwy/stwora/zaklęcia/landu/planeswalkera — land też,
+    // o ile deskryptor na to pozwala (`allowLands`). Domyślnie lądów nie ma
+    // (Zoraline, Unearth, Unbreakable Bond — „nonland"/„creature").
+    if (!object || object.zone !== 'graveyard' || object.kind === 'spell') return;
+    if (isLandCard(object) && !effect.allowLands) return;
+    // CR 303.4f + ruling OTJ (2024-04-12, Annie Flash): aura wracająca z grobu
+    // wybiera zaczarowany obiekt PRZED wejściem — to nie celowanie, więc
+    // hexproof/protection NIE blokują; blokuje brak jakiegokolwiek legalnego
+    // gospodarza (wtedy karta ZOSTAJE w grobie). Zbiór gospodarzy liczy ta
+    // sama funkcja co SBA i rzut aury (`isLegalAuraHost` — L41).
+    let auraHostId = null;
+    if ((object.subtypes ?? []).includes('Aura')) {
+      auraHostId = state.zones.battlefield.find((hostId) => isLegalAuraHost(object, state.objects.get(hostId))) ?? null;
+      if (auraHostId == null) {
+        state.events.push(event('aura_returned_without_host', {
+          objectId: targetId, cardId: object.cardId, playerId: object.controllerId ?? null,
+        }));
+        return;
+      }
+    }
     const newId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
-    const permanent = Object.freeze({ ...moved, summoningSickness: true });
+    // Ruling Annie Flash: wraca TAPNIĘTA (deskryptor `entersTapped` — ADR 0002).
+    const permanent = Object.freeze({
+      ...moved, summoningSickness: true,
+      ...(effect.entersTapped ? { tapped: true } : {}),
+    });
     state.objects.set(newId, permanent);
     // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
     // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
     // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
     applyEnterCounters(state, newId);
+    // Załączenie aury PO wejściu na pole bitwy (kolejność: obiekt musi już
+    // istnieć w strefie, żeby `attachAuraToCreature` przeszło walidację).
+    if (auraHostId != null) attachAuraToCreature(state, newId, auraHostId);
     if (effect.finalityCounter) addCounter(state, newId, 'finality', 1);
     // Batch 24 (Unbreakable Bond): „return ... with a lifelink counter on it" —
     // wejście z licznikami (CR 122.1b — licznik lifelink nadaje keyword).
@@ -4484,6 +4661,13 @@ function markTemporaryExile(state, exileId, sourceObject) {
         break;
       }
     }
+    // I (zgłoszenie właściciela 2026-09-20): brak trafienia musi być widoczne
+    // w logu i w „Rozgrywce" — odsłonięte karty wracają na spód biblioteki
+    // w LOSOWEJ kolejności (CR 701.53), a bez tej informacji wpis kończył się
+    // na „trigger się rozstrzyga" i gracz nie wiedział, co się stało z jego
+    // biblioteką. Nazwy odsłoniętych kart są już jawne (`card_revealed`),
+    // więc zdarzenie może nieść ich cardId.
+    const revealedCardIds = exiled.map((id) => state.objects.get(id)?.cardId ?? null).filter(Boolean);
     // Przenieś odsłonięte karty do exile.
     const exileIds = [];
     for (const id of exiled) {
@@ -4495,7 +4679,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (!foundId) {
       // Nie znaleziono karty — karty wracają na spód biblioteki.
       shuffleAndPlaceOnBottom(state, ownerId, exileIds);
-      state.events.push(event('discover_resolved', { playerId: ownerId, amount: x, found: false }));
+      state.events.push(event('discover_resolved', {
+        playerId: ownerId, amount: x, found: false,
+        revealedCardIds,
+        // Ile kart wróciło na spód i czy w ogóle coś zostało w bibliotece
+        // („biblioteka się wyczerpała" vs „brak karty z MV ≤ X") — oba fakty
+        // muszą trafić do opisu zdarzenia (warstwa tekstu w session.js).
+        bottomCount: exileIds.length,
+        libraryExhausted: exileIds.length >= ownLibrary.length,
+      }));
       return;
     }
     // Blokująca decyzja: rzuć bez kosztu albo weź do ręki.
@@ -4544,6 +4736,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
       playerId: ownerId,
       objectId: topId,
       cardId: topCard.cardId,
+      // Zgłoszenie H (właściciel, 2026-09-20): decyzja „co z odsłoniętą kartą?"
+      // musi nazwać ŹRÓDŁO eksploracji (karta na polu bitwy — informacja
+      // publiczna), tak jak pozostałe decyzje resolve_* nazywają źródło
+      // (M162/C, M163/A, M240/K). UI czyta to z widoku decydenta.
+      sourceCardId: sourceObject.cardId ?? null,
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = ownerId;
@@ -4612,16 +4809,24 @@ function markTemporaryExile(state, exileId, sourceObject) {
       }
     }
     if (candidates.length === 0) return; // CR 608.2b: „If you do" bez artefaktu do wygnania = no-op
-    // Queue blocking choice for which artifact to exile.
-    state.pendingCraftExile = {
-      playerId: controllerId,
-      sourceId: sourceObject.id,
-      candidateIds: candidates,
-      transformTo: target,
-      restorePriorityTo: state.turn.priorityPlayerId,
-    };
-    state.turn.priorityPlayerId = controllerId;
-    state.events.push(event('craft_exile_required', { playerId: controllerId, sourceId: sourceObject.id, candidates: [...candidates] }));
+    // Audyt PR #129 / zgłoszenie właściciela (2026-09-19): przy DOKŁADNIE
+    // JEDNYM kandydacie wygnanie jest automatyczne — wybór bez alternatywy
+    // nie jest decyzją (nie ma czego klikać: „poświęć ten jedyny inny
+    // artefakt”). Wspólna ścieżka z resolve_craft_exile (L41/L48).
+    const outcome = resolveCraftExileOutcome(state, { sourceId: sourceObject.id, candidates, transformTo: target });
+    if (!outcome) return;
+    if (outcome.pending) {
+      // Więcej niż jeden kandydat = realny wybór gracza (blokująca decyzja).
+      state.pendingCraftExile = {
+        playerId: controllerId,
+        sourceId: sourceObject.id,
+        candidateIds: candidates,
+        transformTo: target,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = controllerId;
+      state.events.push(event('craft_exile_required', { playerId: controllerId, sourceId: sourceObject.id, candidates: [...candidates] }));
+    }
     return true;
   }
   if (effect.type === 'bounce_permanent') {

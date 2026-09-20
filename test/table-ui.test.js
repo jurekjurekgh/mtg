@@ -225,6 +225,10 @@ globalThis.REPO_DECKS = {
   // talia wskazuje DRUK — sama nazwa jest odtąd niejednoznaczna i parser
   // odrzuca ją jawnym błędem, zamiast cicho brać pierwszy pasujący wpis.
   'many-wizard': '# Talia many-wizard\n\n26x Island\n6x Plains\n8x Curate (BRO)\n',
+  // Zgłoszenie G (właściciel, 2026-09-20): koszt {1}{B} przy CZTERECH
+  // nietapniętych podstawowych lądach (Wyspa, Góra, Las, Bagno) — dokładnie
+  // układ ze zgłoszenia („kreator kazał tapnąć 4 lądy do czaru za 2”).
+  'g-canonized': '# Talia G\n\n4x Island\n4x Mountain\n4x Forest\n4x Swamp\n24x Canonized in Blood (LCI)\n',
 };
 // 15f: przełączniki belki startują z pamięci — harness click-through wpina
 // hi-gfx OFF PRZED bootem (warstwa pauzuje grę czekając na zamknięcie;
@@ -263,23 +267,17 @@ test('strona stołu przechodzi self-test i startuje partię na pierwszej decyzji
   assert.ok(!/\bcard-\d|\bhand-\d/.test(handText), 'brak surowych identyfikatorów obiektów');
 });
 
-test('kreator talii pokazuje supported, liczy kopie i egzekwuje min. 15 nielandowych', () => {
+test('kreator talii NIE jest montowany: panel wyłączony w aplikacji (zgłoszenie F)', () => {
+  // Zgłoszenie F (właściciel, 2026-09-20): sekcja „Kreator talii” nie pokazuje
+  // się w aplikacji — markup jest zakomentowany w index.html, a main.js nie
+  // woła `mountDeckBuilder`. Guard struktury (index.html + main.js) pinuje
+  // osobny test `zgloszenie-f-kreator-talii-wylaczony.test.js`; tutaj
+  // sprawdzamy SKUTEK w uruchomionej aplikacji: po boocie stół nie wypełnia
+  // żadnego elementu kreatora talii (nie ma listy kart ani eksportu).
   restart();
-  assert.match(textOf(dom.get('deck-builder-summary')), /0 kart/);
-  assert.match(textOf(dom.get('deck-builder-card-list')), /Highland|Plains|Forest/);
-
-  dom.get('deck-builder-name').value = 'Talia UI';
-  for (const listener of dom.get('deck-builder-name').listeners.input ?? []) listener({});
-  // 1 karta (< 15 nielandowych) → brak eksportu (nowa zasada singleton + min 15).
-  const firstRow = dom.get('deck-builder-card-list').children[0];
-  const controls = firstRow.children[1];
-  controls.children[controls.children.length - 1].click();
-  assert.match(textOf(dom.get('deck-builder-summary')), /1 kart/);
-  assert.equal(dom.get('deck-builder-output').value, '', 'talia < 15 nielandowych nie ma eksportu');
-
-  // „Dodaj po 1 (z filtrów)" → ≥15 nielandowych → eksport dostępny.
-  dom.get('deck-builder-add-filtered').click();
-  assert.match(dom.get('deck-builder-output').value, /^# Talia UI\n\n\d+x /);
+  assert.equal(dom.get('deck-builder-card-list').children.length, 0,
+    'panel kreatora talii nie może być montowany (karta listy bez bootu)');
+  assert.equal(dom.get('deck-builder-output').value, '', 'brak eksportu talii z panelu');
 });
 
 test('gracz klika się przez całą partię do baneru końca gry', () => {
@@ -616,6 +614,71 @@ test('kreator many (E.3a): dwukolorowa płatność Curate otwiera wizard, źród
   assert.equal(dom.get('mana-wizard').className, 'modal', 'po zebraniu sumy kreator ma się zamknąć');
   assert.match(textOf(dom.get('stack-zone')), /Curate/, 'Curate po zebraniu many nie trafił na stos');
   assert.doesNotMatch(dom.get('notice').className, /active/);
+});
+
+test('kreator many (zgłoszenie G): {1}{B} przy czterech lądach domyka się w DWÓCH tapnięciach', () => {
+  // Polityka gracza jak w zgłoszeniu: tapujemy PIERWSZY wiersz kreatora
+  // (bez zastanowienia, „po kolei z góry”). Kontrakt: kreator nie może prosić
+  // o tapnięcie źródła, które nic nie wnosi — płatność {1}{B} to 2 tapnięcia,
+  // niezależnie od tego, na której pozycji stoi ląd z brakującym kolorem.
+  dom.get('seed').value = '3';
+  dom.get('deck-human').value = 'g-canonized';
+  dom.get('deck-bot').value = 'g-canonized';
+  dom.get('new-game').click();
+  let taps = 0;
+  let wizardOpened = false;
+  let domknięte = false;
+  let rekaPrzed = null;
+  for (let i = 0; i < 400; i += 1) {
+    if (dom.get('bot-move').className === 'modal active') {
+      dom.get('bot-move-ok').click();
+      continue;
+    }
+    if (dom.get('mana-wizard').className === 'modal active') {
+      // Ręka w chwili otwarcia kreatora: po zapłacie karta schodzi z ręki —
+      // to pinuje, że płatność SKOŃCZYŁA SIĘ RZUTEM (stos w Mini-DOM-ie
+      // potrafi się już rozstrzygnąć, więc „karta na stosie” nie jest
+      // stabilną asercją).
+      if (!wizardOpened) rekaPrzed = dom.get('hand').children.length;
+      wizardOpened = true;
+      const rows = wizardSourceButtons();
+      assert.ok(rows.length > 0, `kreator bez źródeł w kroku ${taps}: ${textOf(dom.get('mana-wizard-body'))}`);
+      rows[0].click();
+      taps += 1;
+      if (dom.get('mana-wizard').className !== 'modal active') { domknięte = true; break; }
+      continue;
+    }
+    const buttons = dom.get('actions').children.filter((c) => (c.listeners.click ?? []).length > 0);
+    const cast = buttons.find((b) => /^Rzuć/.test(b.text) && /Canonized in Blood/.test(b.text));
+    if (cast) { cast.click(); continue; }
+    const button = pickActionButton(dom.get('actions'));
+    if (!button) break;
+    button.click();
+  }
+  assert.ok(wizardOpened, 'kreator many nie otworzył się przy rzucie Canonized in Blood ({1}{B})');
+  assert.ok(domknięte, 'płatność nie domknęła się po tapnięciach');
+  assert.ok(taps <= 2, `kreator zażądał ${taps} tapnięć przy koszcie 2 many (max 2)`);
+  assert.equal(dom.get('hand').children.length, rekaPrzed - 1,
+    `po zapłacie karta nie zeszła z ręki (${textOf(dom.get('hand')).slice(0, 80)})`);
+
+  // J (zgłoszenie właściciela 2026-09-20): „w sekcji «Log partii» chcę widzieć
+  // dodatkowo każdy permanent tapnięty na manę — co i kiedy”. Pin end-to-end:
+  // po płatności log STOŁU ma wiersz rodzaju `tap` z nazwą źródła i kolorem,
+  // ten sam wiersz widać w polu „Log partii”, a zapis tur dla AI zostaje czysty
+  // (decyzja właściciela 2026-08-02: modal/AI bez tapowania many).
+  // Uwaga: wiersze logu trzymają treść w DZIECIACH (nazwy kart są owijane
+  // w klikalne <span data-card-id>), a symbole many renderują się jako IKONY —
+  // dlatego w logu czytamy „→ B”. Wpis jest ZWYKŁYM wierszem logu (bez
+  // własnej klasy i koloru — uwaga właściciela 2026-09-20), więc szukamy go
+  // po treści, nie po klasie.
+  const wierszeTap = dom.get('log').children
+    .filter((row) => /na manę:/.test(textOf(row)));
+  assert.ok(wierszeTap.length >= 1,
+    `log bez wiersza tapnięcia po zapłacie: ${textOf(dom.get('log')).slice(-200)}`);
+  assert.match(textOf(dom.get('log')), /Ty tapujesz na manę: Swamp → B/,
+    `log bez wiersza tapnięcia z nazwą źródła i kolorem: ${textOf(dom.get('log')).slice(-200)}`);
+  assert.doesNotMatch(textOf(dom.get('turn-history')), /na manę/,
+    'tapnięcia na manę nie należą do zapisu tur dla AI');
 });
 
 test('kreator many (E.3a): Anuluj przerywa płatność — rzut nie odpala, mana zostaje w puli', () => {

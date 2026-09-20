@@ -70,8 +70,7 @@ bywa cenniejsza od nowej, bo jej klasa zdążyła wrócić kilka razy.
 
 ## L107 (2026-08-31) — Najbogatsza żyła błędów: ścieżka robiąca to samo co helper, ale RĘCZNIE. Grep po mutacji pola, nie po nazwie mechaniki
 
-**Przypadek:** — silnik ma choke pointy (`addCounter`, `addPoisonCounters`, `deathZoneFor`, `untapObject`, `moveObjectDirectly`), a obok żyją ścieżki ro… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L107).
-
+**Przypadek:** — silnik ma choke pointy (`addCounter`, `addPoisonCounters`, `deathZoneFor`, `untapObject`, `moveObjectDirectly`), a obok żyją ścieżki ro…
 
 **Reguła:**
 1. **Szukaj po MUTACJI POLA, nie po nazwie funkcji:** `grep -rn "tapped: true"`,
@@ -90,66 +89,50 @@ bywa cenniejsza od nowej, bo jej klasa zdążyła wrócić kilka razy.
 kradzież stwora kasowała bonus (4/6 → 2/4), a buff ujemny po przejęciu leczył
 —… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L106).
 
-
 **Reguła:** (1) Dokładając precyzyjniejsze kryterium, USUŃ stare — dwa filtry
 tej samej przynależności to jeden za dużo. (2) Redundancja jest niewidoczna,
 póki kryteria się zgadzają; testu szukaj tam, gdzie się rozjeżdżają (zmiana
 kontroli, typu, strefy).
 ## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
 
-**Przypadek:** — handoff M267 odnotował, że etykiety `bestow`/`morph` składają koszt po staremu, ale „dziś ich koszty są generyczne, więc to ryzyko, nie b… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L105).
-
-
-**Reguła:**
-1. „Dziś to tylko ryzyko" jest HIPOTEZĄ o danych — zamyka się ją skanem
-   katalogu w tej samej sesji, nie wpisem w handoffie.
-2. Pipy kolorów wchodzą W RAMACH kwoty (`{3}{G}` = 4 many), nigdy obok.
-   Jedyne źródło to `costSymbols(amount, colors)`; strażnik regexem szuka
-   sklejek `.colors ?? []).map(...).join('')` w `render.js`.
-3. Rodzinę alt-kosztów enumeruj Z NAZWY (bestow, plot, suspend, madness, warp,
-   surge, kicker, flashback, buyback, escape, cleave, adventure, morph) — skan
-   po jednej mechanice zamyka jeden przypadek.
-4. Morph to WYJĄTEK: `cost` = rzut zakryty ({3}, CR 702.37a), a pipy żyją
-   w `morphCost`/`megamorphCost` (odkrycie) — skaner po `cost` da 6
-   fałszywych trafień; porównuj koszt ODKRYCIA.
-
+**Reguła:** „dziś to tylko ryzyko" jest HIPOTEZĄ o danych — zamyka się ją
+skanem katalogu w tej samej sesji, nie wpisem w handoffie. Pipy kolorów wchodzą
+W RAMACH kwoty (`{3}{G}` = 4 many), nigdy obok; jedyne źródło to
+`costSymbols(amount, colors)`, a strażnik regexem szuka sklejek
+`.colors ?? []).map(...).join('')` w `render.js`. Rodzinę alt-kosztów enumeruj
+Z NAZWY (bestow, plot, suspend, madness, warp, surge, kicker, flashback,
+buyback, escape, cleave, adventure, morph) — skan po jednej mechanice zamyka
+jeden przypadek. Morph to WYJĄTEK: `cost` = rzut zakryty ({3}, CR 702.37a),
+a pipy żyją w `morphCost`/`megamorphCost` (odkrycie) — skaner po `cost` da
+6 fałszywych trafień; porównuj koszt ODKRYCIA.
 **Strażnik:** `test/m268-alt-koszt-pelna-rodzina.test.js` (11 testów: skan
 katalogu po 14 mechanikach, piny bestow/plot/morph/kicker, test ŹRÓDŁA
-płatności, strażnik regexowy przeciw kolejnym sklejkom). Mutacje: `colors`
-z normalizacji bestow → 4 RED; `coloredPipsOf(cardId)` w bestow → 1 RED;
-pipy obok kwoty w morph → 1 RED.
-
+płatności, strażnik regexowy). Mutacje: `colors` z normalizacji bestow →
+4 RED; `coloredPipsOf(cardId)` w bestow → 1 RED; pipy obok kwoty → 1 RED.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L105)
 
 ## L104 (2026-08-31) — Poprawny wynik z niepoprawnego źródła to bug uśpiony: alt-koszt musi nieść WŁASNE pipy, nie pożyczać ich z kosztu bazowego
 
-**Przypadek:** panel pokazywał koszt 4 dla Cleave {3}{U} i Escape {3}{U} — kolory czytane z kosztu bazowego. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L104).
-
-**Reguła:**
-1. Alternatywny koszt (cleave, escape, madness, suspend, plot, bestow) to
-   OSOBNA cena — jego pipy należą do jego deskryptora. Czytanie kolorów
-   z kosztu bazowego jest błędem nawet gdy dziś daje dobry wynik: pierwsza
-   karta o innym kolorze alt-kosztu złamie płatność (CR 601.2b). Wzorzec
-   zrobiony dobrze: madness (M161/O2).
-2. „Testy zielone" nie zamyka pytania o ŹRÓDŁO: gdy poprawność wynika ze
-   zbiegu okoliczności w danych, strażnik pinuje źródło, nie tylko wynik.
-3. Dokładając pole do deskryptora, przejdź WSZYSTKIE kopie jawnej listy pól
-   (L101); normalizacja w `registry.js` jest czwartą i najłatwiej o niej
-   zapomnieć. Sygnał: pole widać w `card-data.js`, a `REGISTRY.get(id)` nie.
-4. Strażnik porównuje Oracle z definicją (regex po pipach) dla CAŁEGO
-   katalogu, nie dla zgłoszonej karty.
-
+**Reguła:** alternatywny koszt (cleave, escape, madness, suspend, plot, bestow)
+to OSOBNA cena — jego pipy należą do jego deskryptora, a czytanie kolorów
+z kosztu bazowego jest błędem nawet wtedy, gdy dziś daje dobry wynik (pierwsza
+karta o innym kolorze alt-kosztu łamie płatność, CR 601.2b); wzorzec zrobiony
+dobrze: madness (M161/O2). „Testy zielone" nie zamyka pytania o ŹRÓDŁO: gdy
+poprawność wynika ze zbiegu okoliczności w danych, strażnik pinuje źródło, nie
+wynik. Dokładając pole do deskryptora, przejdź WSZYSTKIE kopie jawnej listy pól
+(L101) — normalizacja w `registry.js` jest czwartą i najłatwiej o niej
+zapomnieć (sygnał: pole widać w `card-data.js`, a `REGISTRY.get(id)` nie).
+Strażnik porównuje Oracle z definicją dla CAŁEGO katalogu, nie dla zgłoszonej
+karty.
 **Strażnik:** `test/m267-alt-koszt-kolory.test.js` (5 testów, w tym skan
-katalogu i test ŹRÓDŁA płatności czytający `spells.js`). Mutacje: usunięcie
-`colors` z normalizacji `registry.js` → testy 1–3; powrót do
-`coloredPipsOf(object.cardId)` w ścieżce cleave/escape → test 5.
-
+katalogu i test ŹRÓDŁA płatności czytający `spells.js`). Mutacje: `colors`
+z normalizacji `registry.js` → testy 1–3; `coloredPipsOf(object.cardId)`
+w cleave/escape → test 5.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L104)
 
 ## L103 (2026-08-31) — Skrót „na 1v1" w modelu karty zmienia REGUŁY: brak słowa „target" w Oracle ⇒ brak `targets`, zakres należy do efektu
 
-**Przypadek:** — log pisał „Nieprzyjaciel rzuca Liliana's Triumph → cel: Ty", a Oracle brzmi „Each opponent sacrifices a creature of their choice" — bez słowa „target". Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L103).
-
+**Przypadek:** log pisał „Nieprzyjaciel rzuca Liliana's Triumph → cel: Ty", a Oracle: „Each opponent sacrifices a creature of their choice".
 
 **Reguła:**
 1. `targets` w definicji karty deklaruje wyłącznie to, co Oracle nazywa
@@ -174,8 +157,7 @@ katalogu i test ŹRÓDŁA płatności czytający `spells.js`). Mutacje: usunięc
 
 ## L102 (2026-08-31) — Rodzina ofert dzieli WYCENĘ i WIDOK: nowy członek bez pinu odziedziczy stary błąd; skutek niewidoczny w odcisku to fałszywy no-op
 
-**Przypadek:** — `theros` vs `worek-basni` seed 332 — bot rzucił Sleep of the Dead (tap + „doesn't untap") we WŁASNEGO Blade-Blizzard Kitsune, który mia… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L102).
-
+**Przypadek:** — `theros` vs `worek-basni` seed 332 — bot rzucił Sleep of the Dead (tap + „doesn't untap") we WŁASNEGO Blade-Blizzard Kitsune, który mia…
 
 **Reguła:**
 1. Naprawiając wycenę/widok dla JEDNEJ komendy, wypisz całą jej rodzinę
@@ -210,8 +192,7 @@ Tu dodatkowo, specyficzne dla widoku:
    różnym skutku to błąd panelu, nawet gdy silnik działa.
 ## L100 (2026-08-31) — Ten sam koszt renderowany w dwóch warstwach: zdarzenie musi nieść WSZYSTKIE składniki ceny, inaczej log kłamie obok poprawnego przycisku
 
-**Przypadek:** — modal „Rozgrywka" pisał „Zoraline, Cosmos Caller — zapłacić {2} i 2 życia?", a przycisk decyzji tuż pod nim „Zapłać {W}{B} + 2 życia — efekt odpali". Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L100).
-
+**Przypadek:** modal „Rozgrywka" pisał „Zoraline, Cosmos Caller — zapłacić {2} i 2 życia?", a przycisk pod nim „Zapłać {W}{B} + 2 życia".
 
 **Reguła:**
 1. Zdarzenie opisujące DECYZJĘ o koszcie musi nieść komplet składników ceny
@@ -230,7 +211,7 @@ w narracji: `payColors` ze zdarzenia → 1, 2, 5; goły `{N}` w opisie → 2, 3)
 
 ## L99 (2026-08-31) — Fix wdrożony w dwóch warstwach potrzebuje pinu w OBU; test warstwy tekstu nie chroni warstwy obrazu
 
-**Przypadek:** M264 zamknął wyciek nazwy zakrytej karty przy `trigger_resolved` w DWÓCH miejscach `src/table/session.js` — w opisie tekstowym (`objectOrLki`) i w bramce SKANU karty (`hiddenLive` w `noteBotMove`).
+**Przypadek:** ten sam wyciek nazwy zakrytej karty trzeba było zamknąć w DWÓCH miejscach `session.js` — w opisie tekstowym i w bramce SKANU karty.
 
 **Reguła:**
 1. Kiedy jedna naprawa dotyka N miejsc w kodzie, policz je jawnie w opisie
@@ -248,8 +229,7 @@ Mutacja: `hiddenLive` bez `e.sourceId` → RED.
 
 ## L98 (2026-08-31) — Buforowane „dopisywanie" zamyka paczkę na granicy domenowej; promocję zatrzymanej połowy robią punkty WZNOWIENIA, nie wspólna pętla gry
 
-**Przypadek:** modal „Rozgrywka" doklejał „Tura N — Ty" + „Dobierasz…" do ogona tury bota (rozstrzygnięty Divest, discardy z cleanup, obrażenia z walki)… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L98).
-
+**Przypadek:** modal „Rozgrywka" doklejał „Tura N — Ty" + „Dobierasz…" do ogona tury bota (rozstrzygnięty Divest, discardy z cleanup, obrażenia z walki)…
 
 **Reguła:**
 1. „Dopisywanie" staje na granicy OSOBNEJ paczki (tu: tura). Sygnał
@@ -273,8 +253,7 @@ seedów) + pauza (`botPauseAtTurnBoundary`, ogon bez „istotnych").
 
 ## L97 (2026-08-31) — Warstwa prezentacji potrafi skłamać przy w 100% poprawnym silniku; decyzja „you may look” nie może wyciekać treści przed wyborem
 
-**Przypadek:** — trzy zgłoszenia do Fertile Thicket, przy których SILNIK był bezbłędny (skip/`chosenCardId:null`/ `bottomOrder` — pełny Oracle, walidacj… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L97).
-
+**Przypadek:** — trzy zgłoszenia do Fertile Thicket, przy których SILNIK był bezbłędny (skip/`chosenCardId:null`/ `bottomOrder` — pełny Oracle, walidacj…
 
 **Reguła:**
 1. Etykieta opcji opisuje skutek WŁASNEJ komendy — fallback tekstowy
@@ -298,7 +277,7 @@ pustej biblioteki). Czerwienieją po cofnięciu każdej z czterech napraw.
 
 ## L96 (2026-08-30) — Snapshotty Scryfall w repo = darmowy masowy audyt danych kart; audytuj po registry.all(), nie po nazwie eksportu
 
-**Przypadek:** 7 błędów vs zasady w katalogu kart (Instant zamiast Sorcery ×2, MV bez symboli phyrexian, złe subtypy ×2, koszt craft/echo bez pipów kolorowych) — po ~15 audytach PR i wielu bug-huntach.
+**Przypadek:** 7 błędów vs zasady w katalogu kart (Instant zamiast Sorcery ×2, MV bez symboli phyrexian, złe subtypy ×2, koszt craft/echo bez pipów) — po ~15 audytach PR.
 
 **Reguła:** przy jakimkolwiek przeglądzie kart — najpierw automatyczne
 diffowanie pól ze snapshotami (one już są w repo dla 155+ kart), potem
@@ -312,7 +291,7 @@ część fixu, nie opcja).
 
 ## L95 (2026-08-30) — Nowa decyzja blokująca to NIE handler: checklista ~10 punktów integracji; pierwsze redy testów to brakujące REJESTRY
 
-**Przypadek:** mechanika resolve_ward_pay_choice działała regułowo po napisaniu handlera w game-state.js — a testy W2 padały na `invalid_command` (COMMAND_TYPES), potem na wyjątek w event() (EVENT_TYPES).
+**Przypadek:** resolve_ward_pay_choice działało po napisaniu handlera, a testy W2 padały na `invalid_command` (COMMAND_TYPES), potem na wyjątek w event() (EVENT_TYPES).
 
 **Reguła:** „dodaję decyzję blokującą" = checklista: (1) stan pendingX
 w createGameState, (2) detektor decyzji blokujących, (3) bramka
@@ -348,7 +327,7 @@ Tu dodatkowo: pełne partie botów (`real-cards-batch3`) łapią zakleszczenia d
 których unit nie widzi — po zmianie warstwy decyzji odpal choć jeden taki test.
 ## L92 (2026-08-30) — Liczby „bieżącego stanu" aktualizuje się na KONIEC sesji; odświeżenie w środku PR gwarantuje dryf
 
-**Przypadek:** README mówił „3735/3735 testów, 2894.7 kB" — to stan sprzed 8 etapów TEGO SAMEGO PR-a (naprawa D1 z audytu PR #87 weszła w etapie 1, potem etapy 3–10 dołożyły 76 testów i 39 kB).
+**Przypadek:** README mówił „3735/3735 testów, 2894.7 kB" — stan sprzed 8 etapów TEGO SAMEGO PR-a (D1 z audytu PR #87 wszedł w etapie 1).
 
 **Reguła:**
 1. Sekcje „Bieżący stan" (liczby testów, rozmiar artefaktu, liczba kart)
@@ -381,8 +360,7 @@ o dwóch nogach (kompozycja + ścieżka produkcyjna przez nią przechodzi).
 `docs/audits/AUDYT_PR86_2026-08-28.md`.
 ## L88 (2026-08-29) — Błąd bez adresu: narzędzie długiego biegu musi powiedzieć GDZIE (i jedna reguła = jedna funkcja dla oferty i walidacji)
 
-**Przypadek:** — `node tools/benchmark.mjs --full` kończył się „Kontroler nie znalazł ruchu mimo legalnych komend" — bez meczu, bez stanu. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L88).
-
+**Przypadek:** — `node tools/benchmark.mjs --full` kończył się „Kontroler nie znalazł ruchu mimo legalnych komend" — bez meczu, bez stanu.
 
 **Reguła:**
 1. Narzędzie liczące godzinę musi nieść ADRES błędu (mecz/seed/stan) —
@@ -402,8 +380,7 @@ o dwóch nogach (kompozycja + ścieżka produkcyjna przez nią przechodzi).
 
 ## L87 (2026-08-29) — Skutek, którego nie widać, zamienia się w komunikat, że go NIE BYŁO (dwie bramki: zdarzenie i bramka szumu)
 
-**Przypadek:** — transkrypt `worek-mroczny vs theros` (seed 47): „Kulrath Mystic — trigger (rzucenie czaru)" + „trigger bez efektu (nie było czego wykonać… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L87).
-
+**Przypadek:** — transkrypt `worek-mroczny vs theros` (seed 47): „Kulrath Mystic — trigger (rzucenie czaru)" + „trigger bez efektu…
 
 **Reguła:**
 1. Skutek bez zdarzenia = skutek niewidoczny: każdy efekt zapisujący stan
@@ -420,8 +397,7 @@ o dwóch nogach (kompozycja + ścieżka produkcyjna przez nią przechodzi).
 
 ## L86 (2026-08-28) — Warstwa prezentacyjna potrzebuje WŁASNEJ pauzy: obserwator zdarzenia nie zakłada, że gra na niego czeka
 
-**Przypadek:** — „Rzuciłem czar, a akcja poszła dalej i zaczęła się następna tura i nieprzyjaciel rzucił czar i pokazał się ekran z grafikami tego ostat… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L86).
-
+**Przypadek:** — „Rzuciłem czar, a akcja poszła dalej i zaczęła się następna tura i nieprzyjaciel rzucił czar i pokazał się ekran z grafikami tego ostat…
 
 **Reguła:** UI pokazujące coś, co gracz ma ZOBACZYĆ (ilustracja, animacja,
 „Ruch bota"), potrzebuje:
@@ -441,7 +417,7 @@ testy C1–C3 w `test/m254-uwagi-wlasciciela.test.js`.
 
 ## L85 (2026-08-28) — `eventData.manaCost` to mana WYDATKOWANA, nie mana value karty
 
-**Przypadek:** warunek `spellManaValueAtLeast: 4` czytał `eventData.manaCost` zdarzenia `permanent_cast`: przepuszczał czar z obniżką (MV 5 zapłacone {3}) i odrzucał czar bez obniżki przy koszcie alternatywnym.
+**Przypadek:** warunek `spellManaValueAtLeast: 4` czytał `eventData.manaCost` — przepuszczał czar z obniżką, odrzucał koszt alternatywny.
 
 **Reguła:** warunek na mana value czyta OBIEKT. Przy dopisywaniu warunku do
 triggera sprawdź, czy dane wejściowe to „wartość z karty" czy „wynik
@@ -455,8 +431,7 @@ rozliczenia" — w zdarzeniach silnika prawie zawsze to drugie.
 
 ## L84 (2026-08-28) — Nowy deskryptor mechaniki ma cztery dowiązania poza silnikiem: strażniki zgłaszają je osobno, więc dopisz je od razu
 
-**Przypadek:** — po dodaniu trzech elementów (`buff_attacking_creatures`, `buff_creature_until_end_of_turn`, zdarzenie `creature_became_renowned`) pełny… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L84).
-
+**Przypadek:** — po dodaniu trzech elementów (`buff_attacking_creatures`, `buff_creature_until_end_of_turn`, zdarzenie `creature_became_renowned`) pełny…
 
 **Reguła:** przy nowym deskryptorze (efekt, zdarzenie, filtr celu) odhacz
 listę PRZED pierwszym uruchomieniem pełnego testu:
@@ -472,8 +447,7 @@ listę PRZED pierwszym uruchomieniem pełnego testu:
 
 ## L82 (2026-08-28) — Test UI wiąże SKUTEK z hakiem semantycznym (klasa/`data-*`), copy pina się OSOBNYM testem
 
-**Przypadek:** — poprawna etykieta „Użyj domyślnego przydziału (zabójcze obrażenia…)" złamała test `choice-request-ui` — test lokalizował przycisk po TE… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L82).
-
+**Przypadek:** — poprawna etykieta „Użyj domyślnego przydziału (zabójcze obrażenia…)" złamała test `choice-request-ui` — test lokalizował przycisk po TE…
 
 **Reguła:**
 1. Test zachowania („klik → komenda X") lokalizuje element po haku
@@ -491,8 +465,7 @@ copy); naprawa żargonu „lethal-first" w wizardzie i `commandLabel`.
 
 ## L81 (2026-08-28) — Zastępując ręczną kopię „wspólną funkcją prawdy", porównaj FILTRY obu stron, nie tylko listę przedmiotów
 
-**Przypadek:** — bramka oferty `pass_priority` dostała `firstDecisionOwner == null` (dokończenie unifikacji z Batch 47). Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L81).
-
+**Przypadek:** — bramka oferty `pass_priority` dostała `firstDecisionOwner == null` (dokończenie unifikacji z Batch 47).
 
 **Reguła:**
 1. Przy zamianie kopii na wspólną funkcję zrób tabelę „co kopia sprawdza" ×
@@ -514,7 +487,7 @@ copy); naprawa żargonu „lethal-first" w wizardzie i `commandLabel`.
 
 ## L80 (2026-08-26) — „Dubel na stosie" to nie to samo co „efekt już zastosowany": strażnik idempotencji patrzy na STAN, nie tylko na stos
 
-**Przypadek:** bot aktywował Saddle na Trained Arynx (`set_saddled`, idempotentny do EOT) 3× w jednej turze, tapując kolejne stwory za nic — mimo że `set_saddled` był w `IDEMPOTENT_EOT_EFFECTS`..
+**Przypadek:** bot aktywował Saddle na Trained Arynx (`set_saddled`, idempotentny do EOT) 3× w turze, tapując stwory za nic.
 
 **Reguła:** efekt idempotentny do EOT z ODCZYTYWALNĄ flagą stanu (`saddled`,
 `cantBlock`, `monstrous`…) ma strażnik o DWÓCH nogach: (1) brak bliźniaka na
@@ -546,7 +519,7 @@ już emituje zdarzenie z tą samą treścią?
 `test/m219-log-land-type-duplikat.test.js`.
 ## L78 (2026-08-26) — Lektura obowiązkowa czytana fragmentami to lektura NIEwykonana
 
-**Przypadek:** `docs/LESSONS.md` (1930 linii) i część ADR-ów zostały obejrzane we fragmentach (kilka najnowszych lekcji + nagłówki), bo narzędzie czytające zwracało pliki z ucięciem (`truncated`/`hasMore`).
+**Przypadek:** lektura startowa była czytana WE FRAGMENTACH (narzędzie ucinało pliki) — luki w regułach zostają niewidoczne.
 
 **Reguła:**
 1. Plik uznajesz za przeczytany dopiero po OSTATNIEJ linii — sprawdź `wc -l`
@@ -562,7 +535,7 @@ W CAŁOŚCI…").
 
 ## L77 (2026-08-26) — Wejście na pole bitwy to ZDARZENIE o wielu następstwach: decyzja blokująca ani `return` nie mogą wycinać reszty
 
-**Przypadek:** **Devour** (Gorger Wurm, CR 702.82a): trigger ETB (Impact Tremors) odpalał w tym samym przebiegu skanu, w którym do kolejki trafiała decyzja devour — widział stwora PRZED licznikami.
+**Przypadek:** **Devour** (Gorger Wurm, CR 702.82a): trigger ETB (Impact Tremors) odpalał w tym samym skanie, co decyzja devour — widział stwora PRZED licznikami.
 
 **Reguła:** w zdarzeniu wejścia blokująca decyzja (devour/exploit/endure…)
 pomija TYLKO własne następstwo; reszta biegnie dalej. Pytanie kontrolne: czy
@@ -595,8 +568,7 @@ zmiany w `src/`. Gdy wynik nie drgnął po realnej zmianie, najpierw podejrzewaj
 nieaktualny artefakt (L33 — najpierw podejrzewaj narzędzie).
 ## L71 (2026-08-25) — Zmiana strefy tworzy NOWY obiekt (CR 400.7); „ten sam" id to złudzenie
 
-**Przypadek:** — naprawa wyceny darmowego rzutu wyglądała na działającą (testy zielone), a była martwa: helper szukał opisu czaru po `cmd.cardId` w `view.… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L71).
-
+**Przypadek:** — naprawa wyceny darmowego rzutu wyglądała na działającą (testy zielone), a była martwa: helper szukał czaru po `cmd.cardId`…
 
 **Reguła:** rozróżniaj tożsamość karty od tożsamości obiektu i sprawdzaj, po
 czym indeksowana jest strefa. Gdy lookup zwraca `undefined`, kod nie jest
@@ -643,7 +615,7 @@ opisuje CZYNNOść (rzeczownik odczasownikowy), nigdy źródło implementacji
 (ADR 0002).
 ## L68 (2026-08-25) — Sonda, która „nie znalazła błędu", bo komenda została cicho odrzucona
 
-**Przypadek:** sonda sprawdzająca, czy obrażenia z delirium respektują `protection from red`, wypisała „OK — brak obrażeń". sonda mierzyła STAN KOŃCOWY (`damage === 0`), nie sprawdzając, czy badana ścieżka w ogóle pobiegła.
+**Przypadek:** sonda mierzyła STAN KOŃCOWY, nie sprawdzając, czy badana ścieżka w ogóle pobiegła.
 
 **Reguła:** sonda silnika NAJPIERW asertuje, że komenda przeszła
 (`assert.equal(result.ok, true)`), potem bada skutek; gdy ma udowodnić BŁĄD,
@@ -654,7 +626,7 @@ pokazuje stan pośredni (zdarzenie, licznik, zmiana pola). To samo w testach:
 
 ## L69 (2026-08-25) — Dane karty i mechanika to dwa źródła prawdy o tym samym: kolor vs. produkowana mana
 
-**Przypadek:** podstawowe landy miały `colors: ['R']` — pole „kolor" zapisano jako „jaką manę produkuje". dwa pojęcia w jednym polu, bo dla landu „czarny" brzmi tak samo w obu znaczeniach.
+**Przypadek:** podstawowe landy miały `colors: ['R']` — pole „kolor" zapisano jako „jaką manę produkuje".
 
 **Reguła:** gdy pole da się czytać na dwa sposoby, sprawdź, która ścieżka
 silnika je czyta i po co. Kolor obiektu = wyłącznie CR 202.2; produkowana mana
@@ -674,8 +646,7 @@ the Spires, CR 613 warstwa 5), a zerowanie po typie by go zgubiło.
 podejrzana — najpierw pytaj, czy powinna istnieć.
 ## L67 (2026-08-25) — Helper, który istnieje, ale nie jest wołany w gałęzi, gdzie miał chronić
 
-**Przypadek:** — sweep Żywego Testera zaraportował `srodziemie vs ravnica s=7` jako `[STOP] brak akcji w kroku 59`, choć w tej samej linii stało „Koniec… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L67).
-
+**Przypadek:** — sweep Żywego Testera zaraportował `srodziemie vs ravnica s=7` jako `[STOP] brak akcji w kroku 59`, choć w tej samej linii stało „Koniec…
 
 **Reguła:** gdy narzędzie zgłasza awarię, sprawdź, czy w kodzie nie leży już
 gotowy warunek odróżniający awarię od stanu normalnego — i czy jest wołany na
@@ -705,8 +676,7 @@ pozycja 2/3 zdjęta z listy bez kasowania linijki); numery lekcji to API
 
 ## L65 (2026-08-25) — Test, który przechodzi na przypadku odsianym przez WCZEŚNIEJSZY warunek, nie testuje tego warunku
 
-**Przypadek:** — `targetSlotsOf` ma dwie bramki: (1) warianty równej długości, (2) pozycje nie dzielą kandydatów. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L65).
-
+**Przypadek:** — `targetSlotsOf` ma dwie bramki: (1) warianty równej długości, (2) pozycje nie dzielą kandydatów.
 
 **Reguła:** pisząc test na warunek, sprawdź, czy przypadek do niego DOCIERA —
 najprościej mutacją (skasuj warunek; zielone = przypadek odsiewany wcześniej).
@@ -718,7 +688,7 @@ przeżyła" znaczy „mam lukę w danych", nie „mutacja jest równoważna".
 
 ## L63 (2026-08-25) — Selektor sterownika, który nie pasuje do niczego, nie daje błędu — daje CICHĄ PĘTLĘ i fałszywe „brak zgłoszeń"
 
-**Przypadek:** przebiegi Żywego Testera na części seedów nie kończyły się w limicie kroków: 300 identycznych linii o tym samym oknie, zero ruchów — i pogodne `== DETEKTORY: brak zgłoszeń ==`..
+**Przypadek:** przebiegi Żywego Testera na części seedów nie kończyły się w limicie kroków: 300 identycznych linii, zero ruchów — i `== DETEKTORY: brak zgłoszeń ==`.
 
 **Reguła:** gałąź sterownika obsługująca modal: (1) loguje, ILE elementów
 znalazła („opcji 0" to alarm); (2) ma licznik nieudanych prób zamknięcia TEGO
@@ -734,8 +704,7 @@ log liczby wierszy), `test/m195-multi-target.test.js` (M206).
 
 ## L64 (2026-08-25) — Bramka na FAZĘ nie jest bramką na MOMENT: „phase === 'combat'" przepuszcza krok przed deklaracją
 
-**Przypadek:** — bot aktywował pump „+2/+2 do końca tury" w kroku *Początek walki* i nie atakował (dwie many na efekt wygasający w cleanup); powtarzał to co turę. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L64).
-
+**Przypadek:** bot aktywował pump „+2/+2 do końca tury" w *Początku walki* i nie atakował (dwie many na efekt gasnący w cleanup) — co turę.
 
 **Reguła:** wyceniając efekt ulotny, pytaj o STAN mający wpływ (czy stwór
 walczy, czy cel zadeklarowany), nie o nazwę fazy/kroku; sprawdź w `TURN_STEPS`,
@@ -757,8 +726,7 @@ istnieje, ma nazwę i komentarz, więc temat uchodzi za zabezpieczony.
 → Pełna procedura: [L13].
 ## L62 (2026-08-25) — Kolejność renderu to część kontraktu: log rysowany od najnowszego łamie liczenie „nowych" po indeksie
 
-**Przypadek:** — kolektor wpisów logu w Żywym Testerze („odpytuj nowe linie `#log` po indeksie" — wg handoffu) znajdował 0 wpisów, choć sesja je generow… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L62).
-
+**Przypadek:** — kolektor wpisów logu w Żywym Testerze („odpytuj nowe linie `#log` po indeksie") znajdował 0 wpisów, choć sesja je generow…
 
 **Reguła:** zanim oprzesz narzędzie na „nowe elementy = ogon listy", sprawdź w
 renderze kierunek rysowania (`reverse()`, `prepend`, `insertBefore`,
@@ -788,8 +756,7 @@ DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
 
 ## L59 (2026-08-24) — Ograniczenie zasobu i koszt dodatkowy żyją w WIELU ścieżkach: definiuj przez ZAKAZ i pilnuj strażnikiem każdej ścieżki
 
-**Przypadek:** — **N1.** Powerstone: „{T}: Add {C}. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L59).
-
+**Przypadek:** — **N1.** Powerstone: „{T}: Add {C}.
 
 **Reguła:**
 1. Ograniczenie definiuj przez to, czego druk ZAKAZUJE:
@@ -813,8 +780,7 @@ DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
 
 ## L58 (2026-08-23) — Kod stołu jedzie do PRZEGLĄDARKI: globalna Node w rdzeniu to awaria produktu, której testy nie widzą
 
-**Przypadek:** — w `scoreCommand` heuristic-bota została instrumentacja `if (process.env.BOT_DEBUG_SCORES && cmd.objectId === 'slaad') console.error(…)`. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L58).
-
+**Przypadek:** — w `scoreCommand` heuristic-bota została instrumentacja `if (process.env.BOT_DEBUG_SCORES && cmd.objectId === 'slaad') console.error(…)`.
 
 **Reguła:**
 1. Każdy moduł osiągalny z `src/table/main.js` to KOD PRZEGLĄDARKOWY (także
@@ -831,8 +797,7 @@ DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
 
 ## L57 (2026-08-23) — Zgłoszenie właściciela weryfikujesz wobec Oracle/CR PRZED wdrożeniem; rozbieżność zgłaszasz, nie wdrażasz
 
-**Przypadek:** — właściciel: „bot wszedł do Forge i wzmacnia MÓJ stwór — to bez sensu, powinien fizzle, gdy nie ma [własnej] kreatury". Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L57).
-
+**Przypadek:** — właściciel: „bot wszedł do Forge i wzmacnia MÓJ stwór — to bez sensu, powinien fizzle, gdy nie ma [własnej] kreatury".
 
 **Reguła:**
 1. Przed wdrożeniem zmiany ze zgłoszenia przeczytaj Oracle/CR
@@ -851,8 +816,7 @@ DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
 
 ## L55 (2026-08-22) — Jedno pole na „cechę trwałą" i „efekt do końca tury" to bomba zegarowa; badge liczony z pola technicznego kłamie
 
-**Przypadek:** — **M187/N1** — token Phyrexian Mite („This token can't block") zaczynał legalnie blokować po pierwszym cleanupie: `cantBlock` niosło EFEKT… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L55).
-
+**Przypadek:** — **M187/N1**: token Phyrexian Mite („This token can't block") blokował po pierwszym cleanupie — `cantBlock` niosło EFEKT…
 
 **Reguła:**
 1. Pole opisujące stan trwały i wygasający rozdziel (`cantBlockPrinted` vs
@@ -902,8 +866,7 @@ gdzie testowana jest cała partia (fingerprint, determinizm, panel end-to-end).
 Fixtury talii bierz z talii JEDNOPLANOWYCH (worki są przejściowe — ADR 0023 §5).
 ## L51 (2026-08-20) — Efekt celowany bez klasyfikacji to remis wariantów; strażnik zamiast łatek
 
-**Przypadek:** — klasa L50 po raz szósty (M96, M135, M138/Z1, M146, M156/F1, M156/Q1+Q2): bot obdarowywał lifelink+indestructible stwora PRZECIWNIKA (Lo… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L51).
-
+**Przypadek:** — klasa L50 po raz szósty (M96, M135, M138/Z1, M146, M156/F1, M156/Q1+Q2): bot obdarowywał lifelink+indestructible stwora PRZECIWNIKA (Lo…
 
 **Reguła:**
 1. Typ efektu w triggerze z celem musi być sklasyfikowany: wrogi
@@ -922,8 +885,7 @@ Fixtury talii bierz z talii JEDNOPLANOWYCH (worki są przejściowe — ADR 0023 
 
 ## L50 (2026-08-18) — Nowy typ efektu w karcie batcha wymaga WYCENY w heuristic-bocie
 
-**Przypadek:** — dwie karty Batch 35 weszły z martwą wyceną: bot aktywował Basilisk Gate ({2},{T}: +X/+X) na stwora PRZECIWNIKA i rzucał Twiddle na górę w… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L50).
-
+**Przypadek:** — dwie karty Batch 35 weszły z martwą wyceną: bot aktywował Basilisk Gate ({2},{T}: +X/+X) na stwora PRZECIWNIKA, a Twiddle…
 
 **Reguła:** przy nowym typie efektu sprawdź wycenę w OBU ścieżkach
 (`cast_spell`, `activate_ability`); sonda: grep typu w
@@ -934,7 +896,7 @@ z nowymi mechanikami obejmuje partie, gdzie BOT ma te karty.
 
 ## L1 (2026-08-14) — „Bot robi coś głupiego" bywa ślepotą, nie głupotą
 
-**Przypadek:** bot pompował liczniki Station bez końca (M84), celował zdolnością w nielegalne obiekty (M82), rzucił Inspire Awe i atakował we własną prewencję (M91). `PlayerView` nie niosło danych potrzebnych do decyzji.
+**Przypadek:** `PlayerView` nie niosło danych, których potrzebowały decyzje kontrolera (M82/M84/M91).
 
 **Reguła:** zanim uznasz zachowanie kontrolera za błąd heurystyki, sprawdź, czy
 widok niesie potrzebne dane. Strojenie wag wokół brakującej informacji to
@@ -1033,7 +995,7 @@ punktowo (edycja odwrotna). Po każdym `git checkout` sprawdź `git diff`/testem
 **Więcej pułapek:** [docs/setup/ENVIRONMENT.md](setup/ENVIRONMENT.md).
 ## L9 (2026-08-14) — Praca istnieje dopiero po `git push`
 
-**Przypadek:** (a) handoff twierdził, że pięć fixów przepadło z workspace — bo nie zostały wypchnięte; (b) sandbox odtworzył workspace ze świeżego klona w środku pracy i commit wylądował na `main`..
+**Przypadek:** (a) handoff twierdził, że pięć fixów przepadło — bo nie były wypchnięte; (b) sandbox odtworzył workspace w środku pracy i commit wylądował na `main`.
 
 **Reguła:**
 - Commituj i pushuj po każdym samodzielnie zielonym kroku, nie zbieraj
@@ -1049,8 +1011,7 @@ punktowo (edycja odwrotna). Po każdym `git checkout` sprawdź `git diff`/testem
 
 ## L10 (2026-08-14) — Zanim zaczniesz szukać winy w konfiguracji, sprawdź dane
 
-**Przypadek:** — właściciel zgłosił, że PR od 30 minut nie ma opcji scalania ani informacji o CI. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L10).
-
+**Przypadek:** — właściciel zgłosił, że PR od 30 minut nie ma opcji scalania ani informacji o CI.
 
 **Wniosek:** stan po stronie GitHuba był poprawny — objaw dotyczył warstwy
 prezentacji u zgłaszającego (cache przeglądarki).
@@ -1074,8 +1035,7 @@ obszary sprawdzone i POPRAWNE.
 
 ## L12 (2026-08-14) — Narzędzie audytowe też jest produktem: braki naprawiaj w nim
 
-**Przypadek:** — audyt Żywym Testerem (M96) stanął na `[STOP] brak akcji` w oknie z przyciskiem „Epic Experiment: zakończ (reszta kart do grobu)". Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L12).
-
+**Przypadek:** — audyt Żywym Testerem (M96) stanął na `[STOP] brak akcji` w oknie z przyciskiem „Epic Experiment: zakończ (reszta kart do grobu)".
 
 **Reguła (decyzja właściciela):** jeśli tester czegoś nie widzi albo nie
 obsługuje — POPRAWIAMY TESTER, nie akceptujemy braku. Zmiany w narzędziu idą
@@ -1083,7 +1043,6 @@ tym samym rygorem co produkcja (test + opis w commicie). Wyjątki JS i stderr
 nie mogą znikać za „partia ukończona / 0 flag”: obserwuj `error` i
 `unhandledrejection` od startu artefaktu, także w profilu impatient.
 Strażnicy M348: `test/table-tester-runtime-errors.test.js`, żywe A/B.
-
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L12)
 
@@ -1109,13 +1068,11 @@ Strażnicy M348: `test/table-tester-runtime-errors.test.js`, żywe A/B.
    zielonego pinu. Sprawdzaj datę CR: archiwum może cytować starą
    regułę (PR #106).
 
-
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L13)
 
 ## L14 (2026-08-15) — Jedna instrukcja, dwie zasady: sklejone reguły to gotowy bug
 
-**Przypadek:** — M101/B5 (CR 302.6) i B6 (CR 702.19b) to ten sam błąd w dwóch miejscach silnika: **dwie niezależne zasady wyrażone jedną instrukcją** —… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L14).
-
+**Przypadek:** — M101/B5 (CR 302.6) i B6 (CR 702.19b) to ten sam błąd w dwóch miejscach: **dwie niezależne zasady wyrażone jedną instrukcją** —…
 
 **Wzorzec:** reguła B obowiązywała „przy okazji" reguły A. Kod nie był zły, był
 NIEDOSPECYFIKOWANY — w miejscu, gdzie testy przechodziły, bo szczęśliwa
@@ -1140,7 +1097,7 @@ dwa z trzech błędów.
 
 ## L16 (2026-08-16) — Sonda „oferta bez skutku" wymaga, by OCZEKUJĄCA DECYZJA była stanem (M103)
 
-**Przypadek:** detektor `noop` (automatyzacja L15) dostał fałszywy alarm na craftcie Lodestone Needle: „jedyna zmiana to zapłacony koszt", choć kliknięcie otwierało WYBÓR artefaktu do wygnania.
+**Przypadek:** detektor `noop` (L15) dał alarm na Lodestone Needle: „jedyna zmiana to zapłacony koszt", choć klik otwierał WYBÓR artefaktu do wygnania.
 
 **Reguła:** każda struktura BLOKUJĄCA priorytet musi być częścią
 fingerprintu — generyczna sekcja `pendingDecisions` z listą
@@ -1152,8 +1109,7 @@ komenda otworzyła decyzję).
 
 ## L17 (2026-08-16) — Bundler jednoplikowy nie zna aliasów importów, a jsdom nie zna structuredClone (M103)
 
-**Przypadek:** — sonda „oferta bez skutku" działała w Node, a w artefakcie umierała („runProbeCommandEffect is not defined", potem „structuredClone is not defined"). Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L17).
-
+**Przypadek:** — sonda „oferta bez skutku" działała w Node, a w artefakcie umierała („runProbeCommandEffect is not defined", potem „structuredClone is not defined").
 
 **Reguła:** kod trafiający do artefaktu: (a) bez aliasów importów, (b) żadnych
 Node-globali (`structuredClone`, `Buffer`, `process`), (c) po zmianie mostka
@@ -1194,7 +1150,7 @@ uczciwość losowania), potem DECYZJE konsumenta — symptom może mieszkać
 w polityce kontrolera, nie w talii.
 ## L20 (2026-08-16) — Detektor mierzy tylko to, co narzędzie KLIKNIE — skanuj całe okno
 
-**Przypadek:** weryfikacja mutacyjna bramki ofert (M104) nie zadziałała: po cofnięciu bramki panel oferował „Aktywuj: Rustvine Cultivator — odkręć → cel: Forest", a oś `noop` raportowała zero.
+**Przypadek:** weryfikacja mutacyjna bramki ofert (M104) nie zadziałała: po jej cofnięciu panel oferował „Aktywuj: Rustvine Cultivator…", a oś `noop` raportowała zero.
 
 **Reguła:** gdy sonda pracuje na KLONIE stanu, mierz KAŻDĄ ofertę widoczną w
 oknie (z dedupem po kluczu opcji i limitem na partię). Pytanie ogólne: czy
@@ -1206,35 +1162,29 @@ oferty panelu.)
 
 ## L21 (2026-08-16) — JAWNA LISTA PÓL gubi dane po cichu — w każdej z czterech warstw
 
-**Przypadek:** dane karty jadą do gry przez kilka miejsc, z których KAŻDE wymienia pola z nazwy (destrukturyzacja configu albo ręcznie budowany obiekt).
-
-**Wpis zbiorczy** dla jednej klasy błędu, która wystąpiła w czterech różnych
-warstwach. Numery L93, L94 i L101 zostają jako kotwice cytowań i odsyłają tutaj.
-
-**Reguła:**
-1. Dodając pole mechaniki do `defineCard`, przejdź **wszystkie cztery
-   warstwy** — nie tylko tę, w której zgłoszono błąd (grep „M146" w `deck.js`).
-   Kierunek docelowy: transportować deskryptory ZBIORCZO (spread listy pól),
-   żeby lista była jedna.
-2. Stan spoza kontraktu fabryki ustawiaj JAWNIE po dodaniu obiektu
-   (`state.objects.set(id, Object.freeze({ ...obj, tapped: true }))`)
-   i sprawdź, czy asercja odróżnia stan POCZĄTKOWY od skutku.
-3. Pin idzie przez **realną ścieżkę** (`setupCardMatch`: registry →
-   createCardDeck → installDeck → obiekt), nigdy przez własny helper.
-4. Strażnik jest KLASOWY: enumeruje `REGISTRY.all()`, buduje obiekt realną
-   drogą i porównuje pola wejścia z polami wyjścia. Pin na jedną kartę zamyka
-   jeden przypadek i usypia klasę.
-5. Test anty-over-fix obowiązkowy (np. kopia PRZODU zachowuje koszt) — sam fix
-   „tył → 0" przeszedłby zielono także z fabryką ignorującą pole.
-6. „Silnik liczy dobrze" nie zamyka zgłoszenia: `legalCommands` czyta
-   z OBIEKTU, `commandLabel` z WIDOKU — to dwa różne źródła.
-
+**Przypadek:** dane karty jadą do gry przez kilka miejsc, z których KAŻDE
+wymienia pola z nazwy (destrukturyzacja configu albo ręcznie budowany obiekt).
+**Wpis zbiorczy** dla klasy, która wystąpiła w czterech warstwach; L93, L94
+i L101 zostają kotwicami cytowań i odsyłają tutaj.
+**Reguła:** (1) Dodając pole mechaniki do `defineCard`, przejdź **wszystkie
+cztery warstwy** (nie tylko tę, w której zgłoszono błąd; grep „M146"
+w `deck.js`) — kierunek docelowy: transportować deskryptory ZBIORCZO (spread
+listy pól), żeby lista była jedna. (2) Stan spoza kontraktu fabryki ustawiaj
+JAWNIE po dodaniu obiektu (`state.objects.set(id, Object.freeze({ ...obj,
+tapped: true }))`) i sprawdź, czy asercja odróżnia stan POCZĄTKOWY od skutku.
+(3) Pin idzie przez **realną ścieżkę** (`setupCardMatch`: registry →
+createCardDeck → installDeck → obiekt), nigdy przez własny helper. (4) Strażnik
+jest KLASOWY: enumeruje `REGISTRY.all()`, buduje obiekt realną drogą i porównuje
+pola wejścia z polami wyjścia. (5) Test anty-over-fix obowiązkowy (np. kopia
+PRZODU zachowuje koszt) — bez niego fix „tył → 0" przechodzi zielono także
+z fabryką ignorującą pole. (6) „Silnik liczy dobrze" nie zamyka zgłoszenia:
+`legalCommands` czyta z OBIEKTU, `commandLabel` z WIDOKU — dwa różne źródła.
+Pełne przykłady per warstwa: archiwum.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L21)
 
 ## L22 (2026-08-16) — Akcja, która PRZEWIJA grę, musi kończyć się ponownym renderem
 
-**Przypadek:** — po zaznaczeniu ptaszka „nie przerywaj auto-passu" kolejne tapnięcie gracza kończyło się „Ruch odrzucony: illegal_cast: Zagranie poza main… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L22).
-
+**Przypadek:** — po zaznaczeniu ptaszka „nie przerywaj auto-passu" kolejne tapnięcie gracza dawało „Ruch odrzucony: illegal_cast…
 
 **Reguła:** każda ścieżka UI mogąca zmienić stan gry (`apply`,
 `continueBotPlay`, `recheckAutoPass`, wznowienie zapisu) kończy się tą samą
@@ -1247,7 +1197,7 @@ szukaj brakującego renderu, zanim podejrzewasz reguły.
 
 ## L23 (2026-08-16) — Koszt karty to DANE: pipy kolorowe i mana value weryfikujesz maszynowo
 
-**Przypadek:** w katalogu siedziały trzy błędy kosztów: „{B}{B}" i „{R}" zapisane jako sama liczba many (zdolność opłacalna dowolnym kolorem) oraz {2}{U} zapisane jako `manaCost: 2` (karta o manę tańsza).
+**Przypadek:** w katalogu siedziały trzy błędy kosztów: „{B}{B}" i „{R}" jako sama liczba many, a {2}{U} jako `manaCost: 2` (karta o manę tańsza).
 
 **Reguła:** dane w dwóch reprezentacjach dostają strażnika porównującego je
 maszynowo (`manaCost` = mana value stringa kosztu dla KAŻDEJ karty; osobny skan
@@ -1273,8 +1223,7 @@ klasy zdarzeń jako szumu (M99: `stats_modified`) wymaga sprawdzenia, czy dla
 którejś karty ta klasa nie jest CAŁĄ treścią.
 ## L25 (2026-08-17) — Test scenariuszowy nie może zależeć od tego, KTO wykonał akcję
 
-**Przypadek:** — po dołożeniu jednej karty do `decks/green.txt` posypało się pięć testów niezwiązanych z nowymi kartami („log nie opisuje tworzenia tokenu… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L25).
-
+**Przypadek:** — po dołożeniu jednej karty do `decks/green.txt` posypało się pięć testów niezwiązanych z nowymi kartami („log nie opisuje tworzenia tokenu…
 
 **Reguła:** asercja na TREŚĆ logu opisuje zdarzenie, nie osobę — dopuszczaj
 obie formy (`/tworzy(sz)? token/`) albo sprawdzaj zdarzenie w
@@ -1296,8 +1245,7 @@ testu — a zielony wynik sugerował coś odwrotnego.
 drugiego testu na OBECNOŚĆ danych.
 ## L27 (2026-08-17) — ZERO ZGŁOSZEŃ detektorów to pomiar NARZĘDZIA, nie produktu
 
-**Przypadek:** — Dwukrotnie ten sam wynik: 12 partii (L27) i 22 partie (L40) z pustą sekcją `== DETEKTORY ==`, a ręczna lektura TYCH SAMYCH transkryptów… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L27).
-
+**Przypadek:** — Dwukrotnie ten sam wynik: 12 partii (L27) i 22 partie (L40) z pustą sekcją `== DETEKTORY ==`, a ręczna lektura TYCH SAMYCH transkryptów…
 
 **Wpis zbiorczy.** Numery L40, L73 i L75 zostają jako kotwice i odsyłają tutaj.
 
@@ -1323,7 +1271,7 @@ drugiego testu na OBECNOŚĆ danych.
 
 ## L28 (2026-08-17) — Kary dopisywane „przy okazji zgłoszenia" zostawiają dziurę na każdy nowy typ
 
-**Przypadek:** Bot tapował własne stwory (Chill of the Grave, Entrancing Lyre) i zakładał aurę-kotwicę na własnego stwora, choć kary za niszczenie/wygnanie/obrażenia we własne rzeczy istniały od M91–M96.
+**Przypadek:** Bot tapował własne stwory (Chill of the Grave) i zakładał aurę na własnego stwora — kary za krzywdzenie własnych rzeczy istniały od M91–M96.
 
 **Reguła:** dla rodziny reguł tego samego kształtu („nie rób X samemu sobie")
 buduj **tabelę typów + jedną funkcję egzekwującą**, nie n rozproszonych `if`.
@@ -1334,8 +1282,7 @@ typów (tu: 44 z `card-data.js`) i odwrócenie domyślności.
 
 ## L29 (2026-08-17) — Fallback `?? slug` to cichy wyciek, nie zabezpieczenie
 
-**Przypadek:** — Trzy z dziesięciu błędów M122 miały ten sam kształt: gracz widział surowy identyfikator (`trigger (enchanted_permanent_tapped)`, `efekt… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L29).
-
+**Przypadek:** — Trzy z dziesięciu błędów M122 miały ten sam kształt: gracz widział surowy identyfikator (`trigger (enchanted_permanent_tapped)`…
 
 **Reguła:** wszędzie, gdzie jest mapa „identyfikator → tekst dla gracza",
 napisz **test-niezmiennik**: każdy klucz występujący w danych ma wpis w mapie.
@@ -1443,8 +1390,7 @@ dopiero przy `--seeds 16` i wyglądał jak skutek zmiany talii.
 REGUŁĘ, nie dane. Przy zmianie danych puść szerszą próbkę niż domyślna.
 ## L38 (2026-08-18) — Dług, którego nie spłacisz jednym commitem, spłaca się trybem ostrzegawczym
 
-**Przypadek:** — walidacja kontraktu `addObject` (L21) włączona twardo dała 141 czerwonych testów — „zrób to porządnie" oznaczało „nie rób tego nigdy" (le… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L38).
-
+**Przypadek:** — walidacja kontraktu `addObject` (L21) włączona twardo dała 141 czerwonych testów — „zrób to porządnie" oznaczało „nie rób tego nigdy" (le…
 
 **Reguła:** strażnik na istniejący kod projektuj DWUTRYBOWO: domyślnie
 ostrzeżenie z podpowiedzią i deduplikacją (jedno na pole, nie na wywołanie),
@@ -1479,7 +1425,7 @@ oferty, nie OPISY, więc kafel kłamiący o koszcie przechodził bez echa.
 → Pełna klasa: [L27].
 ## L41 (2026-08-18) — Trzy kopie tej samej logiki rozjeżdżają się cicho i kłamią graczowi
 
-**Przypadek:** kafel Goblin Pickera obiecywał „{1}, {T}: dobierz 1 kartę", a aktywacja odrzucała kartę z ręki i wymagała czerwonej many (Oracle: `{R}, {T}, Discard a card: Draw a card`).
+**Przypadek:** kafel Goblin Pickera obiecywał „{1}, {T}: dobierz 1 kartę", a aktywacja odrzucała kartę i wymagała czerwonej many.
 
 **Reguła:** ta sama informacja formatowana w kilku miejscach = JEDNA tabela
 używana wszędzie (L28 dla prezentacji). Rozjazd nie wywala testów: objawia się
@@ -1490,8 +1436,7 @@ tylko tym, że gracz płaci koszt, o którym nie wiedział. Strażnik DWUSTRONNY
 
 ## L42 (2026-08-18) — Efekt „do odwołania" wycenia się razem z ZEGAREM, nie tylko z celem
 
-**Przypadek:** — „najefektywniejsze jest tapowanie kreatur przeciwnika po jego fazie untap — wtedy kreatura jest nieczynna i w ataku, i w obronie". Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L42).
-
+**Przypadek:** — „najefektywniejsze jest tapowanie kreatur przeciwnika po jego fazie untap — wtedy kreatura jest nieczynna i w ataku, i w obronie".
 
 **Reguła:** wyceniając efekt czasowy, zapytaj „do kiedy to działa i co
 przeciwnik straci w tym oknie?". Untap step odkręca permanenty AKTYWNEGO gracza
@@ -1525,8 +1470,7 @@ z zasadami).
 
 ## L45 (2026-08-18) — Mgła wojny wycieka polami pobocznymi, nie tożsamością
 
-**Przypadek:** — widok ukrywał `cardId` i linię typów zakrytego permanentu (CR 708.2), a każdy z pięciu morphów dawał się rozpoznać po `subtypes` („Bird",… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L45).
-
+**Przypadek:** — widok ukrywał `cardId` i linię typów zakrytego permanentu (CR 708.2), a każdy z pięciu morphów dawał się rozpoznać po `subtypes` („Bird",…
 
 **Reguła:** ukrytą informację testuj przez NIEROZRÓŻNIALNOŚĆ: weź wszystkie
 obiekty, które mają wyglądać tak samo, policz odcisk widoku każdego i wymagaj
@@ -1537,8 +1481,7 @@ tylko zapamiętane.
 
 ## L46 (2026-08-18) — Animacja „do końca tury" + trwały stan = cleanup musi resynchronizować
 
-**Przypadek:** — Spacecraft Wedgelight Rammer (próg 9+ charge → stwór) ożywiony animacją Skilled Animator do 5/5, po 9 charge i końcu tury wracał do art… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L46).
-
+**Przypadek:** — Spacecraft Wedgelight Rammer (próg 9+ charge → stwór) ożywiony do 5/5 animacją Skilled Animator wracał do art…
 
 **Reguła:** gdy encja ma efekt chwilowy i trwały warunek, cleanup przywracający
 chwilowy MUSI przeliczyć trwały. Inaczej trwały stan ginie razem z chwilowym,
@@ -1548,8 +1491,7 @@ choć jego przyczyna nadal istnieje.
 
 ## L47 (2026-08-18) — Kopiowalne cechy to WSZYSTKIE drukowane deskryptory, nie tylko P/T
 
-**Przypadek:** — token-kopia Wedgelight Rammer (Cogwork Assembler, CR 707.2) rodziła się jako artefakt bez progu 9+ i nigdy nie stawała się stworem; ten s… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L47).
-
+**Przypadek:** — token-kopia Wedgelight Rammer (Cogwork Assembler, CR 707.2) rodziła się jako artefakt bez progu 9+ i nigdy nie stawała się stworem; ten s…
 
 **Reguła:** przy nowym deskryptorze karty (station, saga,
 `entersWithCounters`…) dopisz go w KAŻDEJ ścieżce kopiowania — rodzinę
@@ -1565,8 +1507,7 @@ przez realną ścieżkę (wzorzec L21 pkt 3), a nie obietnica wspólnej listy.
 
 ## L48 (2026-08-18) — OFERTA i WALIDACJA to jeden filtr, jeden porządek i jeden rejestr
 
-**Przypadek:** Bot wybierał biały czar na cel z `protection from white`: `legalSpellCasts` filtrował tylko `isProtectedFromSource`, a `validateTargets… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L48).
-
+**Przypadek:** Bot wybierał biały czar na cel z `protection from white`: `legalSpellCasts` filtrował tylko `isProtectedFromSource`, a `validateTargets…
 
 **Wpis zbiorczy** (4 powtórki; L90 to kotwica): rozjazd oferty i walidacji
 to crash w benchmarku („Bot wybrał nielegalną komendę").
@@ -1591,8 +1532,7 @@ to crash w benchmarku („Bot wybrał nielegalną komendę").
 
 ## L49 (2026-08-18) — Plik startowy musi kazać CZYTAĆ ADR-y, zanim agent odezwie się w czacie
 
-**Przypadek:** — nowa sesja zapytała właściciela „co robimy?" zamiast wykonać ADR 0020 (PR → audyt poprzedniego PR → praca), choć ADR 0020, AGENTS i lekcje już istniały. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L49).
-
+**Przypadek:** nowa sesja zapytała właściciela „co robimy?" zamiast wykonać ADR 0020, choć AGENTS i lekcje już istniały.
 
 **Reguła:** `AGENTS.md` to jedyny plik startowy niezależny od czatu. Jego
 PIERWSZA sekcja to obowiązkowa lektura: ten plik → **wszystkie** ADR-y →
@@ -1605,8 +1545,7 @@ nie w pytaniu do właściciela.
 
 ## L52 (2026-08-20) — Ścieżka mechaniki zależna od przyszłych kart: zaimplementuj i zasygnalizuj, nie odnotuj
 
-**Przypadek:** — audyt PR #66 zostawił dwie obserwacje „bez zmian kodu": `resolve_madness_cast` wołał bezwarunkowo `castPermanent` (pierwsza karta insta… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L52).
-
+**Przypadek:** — audyt PR #66 zostawił dwie obserwacje „bez zmian kodu": `resolve_madness_cast` wołał bezwarunkowo `castPermanent` (pierwsza karta insta…
 
 **Reguła:** gdy audyt odkryje lukę ujawnioną dopiero przez hipotetyczną kartę:
 1. **implementuj generycznie** (routing po `kind`/deskryptorach, bramki wg
@@ -1643,8 +1582,7 @@ nie w pytaniu do właściciela.
 
 ## L89 (2026-08-29) — Przebieg, którego nikt nie dograł: długi bieg loguje postęp, a rozmiar macierzy wyznacza budżet, nie liczba kombinacji
 
-**Przypadek:** — `node tools/benchmark.mjs --full` liczył się 63 minuty CPU bez jednej linii logu (raport powstaje po ostatnim meczu) — nie dało się odr… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L89).
-
+**Przypadek:** — `node tools/benchmark.mjs --full` liczył się 63 minuty CPU bez jednej linii logu (raport powstaje po ostatnim meczu) — nie dało się odr…
 
 **Reguła:**
 1. Przebieg dłuższy niż ~1 minutę loguje postęp PRZYROSTOWO: done/total,
@@ -1678,29 +1616,19 @@ To nie dwie kopie jednej reguły, lecz **dwa porządki tej samej reguły**.
 → Pełna klasa i reguła: [L48].
 ## L91 (2026-08-29) — „Trigger bez efektu" ma trzy różne przyczyny; liczenie zdarzeń to ich przybliżenie, nie reguła
 
-**Przypadek:** 12 komunikatów „trigger bez efektu" na pięciu kartach (M256, 18 partii Żywym Testerem).
+**Reguła:** powód mieszka w warstwie EFEKTU — tabela `EMPTY_RECEIVER_EFFECTS[type]`
+zwraca POWÓD (nie boolean), a selektor zbioru odbiorców jest JEDEN dla oferty,
+strażnika i samego efektu (L41/L48). Każdy wpis tabeli ma kontrolę POZYTYWNĄ
+(zbiór NIE jest pusty), bo bez niej asercja „brak komunikatu" bywa zielona, gdy
+nic się nie dzieje (M255/G2). Efekt, który ma w zbiorze samego siebie, nie
+zgłasza pustego zbioru — ale idempotentny działa na GOSPODARZA (`attachedTo`),
+nie na źródło; są wyjątki zbiorowe (`STATE_IDEMPOTENT_MASS_EFFECTS`, M106/Z2).
+Heurystyka NAZWY (`_each_`, `_all_`) żyje wyłącznie w strażniku (silnik kluczuje
+po typie), a komunikat dla gracza mówi, co zrobić dalej — nie tylko, że coś nie
+zadziałało. Szczegóły punktów 3–5: archiwum.
+**Strażnik:** `test/m256-zywy-tester-runda2.test.js` (H1–H7, 15 testów).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L91)
 
-**Reguła:**
-1. **Powód mieszka w warstwie efektu.** Selektor zbioru odbiorców jest
-   eksportowany z `effects.js` i używany także PRZEZ SAM EFEKT — jedna
-   definicja zbioru, nie dwie kopie (L41/L48).
-2. **Tabela zwraca POWÓD, nie boolean.** `EMPTY_RECEIVER_EFFECTS[type](…) →
-   'no_targets' | 'empty_library' | null` — kolejna przyczyna to kolejna
-   WARTOŚĆ, nie kolejny `if` po typie efektu (L28/ADR 0002).
-3. **Efekt, który ma w zbiorze samego siebie, nie zgłasza pustego zbioru.**
-   Efekt idempotentny nie zawsze działa na ŹRÓDŁO — aura na GOSPODARZA
-   (`attachedTo`), więc „cel albo źródło" (M189/Z2e) nie wystarcza
-   (Silken Strength, M256/J). Village Bell-Ringer zawsze jest własnym
-   odbiorcą — tam tabela zbiorowa (`STATE_IDEMPOTENT_MASS_EFFECTS`; M106/Z2).
-4. **Do każdego wpisu kontrola pozytywna**: test, w którym zbiór NIE jest
-   pusty (H1b/H2b/H3b/H4b/H5b/H6b). Bez niej asercja „brak komunikatu"
-   bywa zielona, bo nic się nie dzieje (M255/G2).
-5. **Heurystyka NAZWY (`_each_`, `_all_`) wyłącznie w strażniku** (skan:
-   typ zbiorowy ma wpis albo wyjątek). Silnik kluczuje po typie.
-6. Komunikat dla gracza to NIE ozdoba: „brak legalnych celów" mówi, co
-   zrobić dalej; „nie było czego wykonać" — tylko że coś nie zadziałało.
-**Strażnik:** `test/m256-zywy-tester-runda2.test.js` (H1–H7, 15 testów).
 ## L108 (2026-08-31) — Deadlock reguł: szukaj par „musisz X" / „nie możesz X"
 
 **Reguła:** wypisz wszystkie ograniczenia jako WYMOGI („attacks each combat
@@ -1839,22 +1767,18 @@ o skutku jest fałszywie czerwona, a przy blokadzie decyzji drenaż ma prawo sta
 
 ## L117 (2026-09-02) — Remis punktów jest tak samo arbitralny jak brak wyceny; mierz go na śladzie
 
-**Przypadek:** audyt „działań niescoringowanych" bota — grep po źródle zaniżał
-wynik (regiony helperów nachodzą); pomiar na `bot.trace()` z 12 partii: 30,4% decyzji
-z alternatywami to ex aequo, a `play_land` z płaskim 90 wybierał manabazę w kolejności
-`legalCommands`. Pułapka: wspólny sufit klampy zgrywał ląd pokrywający 2 i 3 pipów —
-test „lepszy wygrywa" tego nie widział. Pełna narracja: PRZYPADKI (L117).
-**Reguła:** punkty decyzyjne bota audytuje się na rozegranych partiach, nie na grepie:
-identyczne `score` przy ≥2 opcjach ⇒ wycena nic nie rozstrzygnęła, niezależnie od tego,
-czy w źródle „jest gałąź punktująca". Klasyfikację remisów prowadź po **wejściach**
-wyceny (projekcja danych wystawiona do śladu przez samego bota), nie po tożsamości
-wariantów: zamienne opcje muszą pozostać w remisie, bo sztuczny tie-breaker wygląda w
-metrykach jak działająca wycena i kłamie. Jeśli bramka ma łapać niedoinfekcyjność
-mapowania, mapping musi być monotoniczny w zakresie realnie występującym — klampa
-„na wszelki wypadek" go psuje.
-**Strażnik:** `tools/bot-tie-audit.mjs` (eksport `audytRemisow`, CLI `--gate=<kind>`)
-+ `test/audyt-bot-wybior-landu.test.js`; mutacje: płaska wycena ⇒ RED 1/3/5, kara za
-`entersTapped` usunięta ⇒ RED 3/5, ślad bez karty ⇒ RED 1/2/3/4.
+**Reguła:** punkty decyzyjne bota audytuje się na ROZEGRANYCH partiach, nie na
+grepie po źródle (regiony helperów nachodzą): identyczne `score` przy ≥2 opcjach
+⇒ wycena niczego nie rozstrzygnęła, niezależnie od tego, czy w źródle „jest
+gałąź punktująca". Klasyfikację remisów prowadź po **wejściach** wyceny
+(projekcja danych wystawiona do śladu przez samego bota), nie po tożsamości
+wariantów: opcje zamienne muszą zostać w remisie, bo sztuczny tie-breaker
+wygląda w metrykach jak działająca wycena i kłamie. Bramka mapowania musi być
+monotoniczna w zakresie realnie występującym — klampa „na wszelki wypadek" go
+psuje (płaski `play_land` = 90 wybierał manabazę kolejnością `legalCommands`).
+**Strażnik:** `tools/bot-tie-audit.mjs` (`audytRemisow`, CLI `--gate=<kind>`)
++ `test/audyt-bot-wybior-landu.test.js`; mutacje: płaska wycena ⇒ RED 1/3/5,
+kara za `entersTapped` usunięta ⇒ RED 3/5, ślad bez karty ⇒ RED 1/2/3/4.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L117). → Pokrewne: L1, L5, L48.
 
 ## L118 (2026-09-02) — Zanim wyłączysz klasę przypadków z pomiaru, udowodnij w teście, że jest równoważna
@@ -1895,8 +1819,7 @@ kontra-przykład „większy korpus broni ceny") + grzechotka per kind w
 ## L120 (2026-09-02) — Opcjonalna zależność komponentu to dziura w drucie; pilnuj miejsca użycia
 
 **Przypadek:** — dwie z czterech uwag właściciela z żywej gry (2026-09-02) miały ten
-sam kształt. Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L120).
-
+sam kształt.
 
 **Reguła:** jeśli komponent przyjmuje zależność opcjonalną (`hover = null`), zielony
 test tego komponentu NIE jest dowodem, że ktoś ją podaje — zależy to od jednego
@@ -1948,7 +1871,6 @@ wniosek zapisany w `docs/backlog.md` §1 i §4.
 
 ## L123 (2026-09-02) — Semantyka zaimplementowana w jednym torze nie istnieje w drugim
 
-
 **Reguła:** przy każdej wielocelowości audytuj WSZYSTKIE tory, którymi efekt może
 nadejść (czar ze stosu, zdolność aktywowana, trigger, tryb modalny, kopia czaru) i
 dla każdego z nich zapisz test na DWU celach. Zdanie „silnik to wspiera" bez nazwy
@@ -1957,7 +1879,6 @@ Druga połówka lekcji: blokada środowiska nie zamyka zadania, jeśli procedura
 opisany kanał awaryjny — `docs/cards/HOW_TO_ADD_CARD.md` dopuszcza ściągnięcie tych
 samych URL-i przez `fetch_page`, a ja w turze 10 uznałem brak egressu za koniec
 wątku (b).
-
 
 **Strażnik:** dziś żaden — rodzina `test/m291-*.test.js` (dwa cele / jeden / zero oraz
 to, że silnik nie zna nazw kart i że `allTargets` nie łączy się z efektem blokującym
@@ -1982,7 +1903,6 @@ przedwczesnym `--write`) oraz tabela atrybucji i kolejność wejścia karty w
 `test/audyt-bot-walka-remisy.test.js` (historia sufitu `block` przeniesiona
 do `docs/LESSONS_PRZYPADKI.md` L124).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L124)
-
 
 ## L125 (2026-09-03) — Strażnik wyglądu ma mierzyć styl efektywny, nie tekst CSS
 
@@ -2019,29 +1939,27 @@ woła `document.createElement` na odinstalowanym oknie.
 ## L127 (2026-09-03) — Zakres rzutu kartą spoza ręki to cecha ŚCIEŻKI, nie karty: jeden predykat z parametrem „co ta ścieżka potrafi rozliczyć”
 
 **Reguła:** każde wykluczenie w predykacie zakresu pytaj „czy TA ścieżka potrafi
-to ROZLICZYĆ”, nie „czy karta to ma” — parametr per ścieżka (`allowTargets`,
-`allowModes`, `allowAdditionalCost`), jeden filtr, oferta i bramka wywołane z
-TYMI SAMYMI argumentami. Tryby/cele liczy generator wspólny z ręką (`legalModeCasts`), nie kopia. Gdy naprawa odbiera stempel albo
-uprawnienie (ruling), sprawdź, czy nowe uprawnienie dotarło do KAŻDEJ gałęzi
-wykonania (`requireSpell`, `castPermanent`, `castModalSpell`, `castXCostSpell`,
-`castFireball`) — gałąź bez uprawnienia to rozjazd oferty i wykonania. Test
-odziedziczony traktuj jak hipotezę: czy setup odtwarza DZISIEJSZY silnik
-(stempel zdjęty ⇒ vacuous aż po fix helpera). Koszt z wyborem kart w trakcie
-(„discard two cards”) zostaje bez oferty (L5) — pominięcie to złamanie reguł.
-Wariant bez wyboru X (X = 0) to pułapka: dopóki okno nie liczy X, wyłączenie
-zostaje — jako wpis w backlogu, nie milczenie.
+to ROZLICZYĆ", nie „czy karta to ma" — parametr per ścieżka (`allowTargets`,
+`allowModes`, `allowAdditionalCost`), JEDEN filtr, oferta i bramka wywołane
+z TYMI SAMYMI argumentami; tryby/cele bierz z generatora wspólnego z ręką
+(`legalModeCasts`), nigdy z kopii. Nowe uprawnienie (ruling) musi dotrzeć do
+KAŻDEJ gałęzi wykonania (`requireSpell`, `castPermanent`, `castModalSpell`,
+`castXCostSpell`, `castFireball`) — gałąź bez uprawnienia to rozjazd oferty
+i wykonania. Test odziedziczony traktuj jak hipotezę (czy setup odtwarza
+DZISIEJSZY silnik — inaczej jest vacuous), koszt z wyborem kart w trakcie
+(„discard two cards") zostaje bez oferty (L5), a wariant „X = 0" bez okna
+liczenia X to pułapka do backlogu, nie milczenie.
+**Strażnik:** `test/audyt-pr93-modalny-rzut-z-okna.test.js`,
+`test/audyt-pr93-modalny-discover.test.js`,
+`test/audyt-pr93-koszt-dodatkowy-z-exile.test.js`,
+`test/audyt-pr93-koszt-x-z-exile.test.js`, odwr
 
-**Strażnik:** `test/audyt-pr93-modalny-rzut-z-okna.test.js` (6 + skan: 12
-czarów modalnych z ofertą), `test/audyt-pr93-modalny-discover.test.js`
-(6 + etykieta trybu), `test/audyt-pr93-koszt-dodatkowy-z-exile.test.js` (7),
-odwrócony `test/audyt-pr92-darmowy-rzut-zakres.test.js`, znalezisko D —
-`test/audyt-pr93-koszt-x-z-exile.test.js` (7: X rzucalne, Discover milczy).
-Dziewięć mutacji — tabela w §7 `docs/audits/AUDYT_PR93_2026-09-03.md`.
-
+ócony
+`test/audyt-pr92-darmowy-rzut-zakres.test.js` — 9 mutacji, tabela w §7
+`docs/audits/AUDYT_PR93_2026-09-03.md`.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L127)
 
 ## L128 (2026-09-03) — Mechanika z dwiema ścieżkami rzutu: reguła ma jedno miejsce prawdy, a skan musi PORÓWNYWAĆ ścieżki, nie tylko liczyć oferty
-
 
 **Reguła:** pozwolenie na rzut z exile, które realizuje więcej niż jedna
 ścieżka kodu (czary vs permanenty, ręka vs exile), dostaje JEDEN predykat
@@ -2051,7 +1969,6 @@ grywalności z wygnania (`plottedTurnReached`, `warpTurnReached`). Skan
 rozjazdu między ścieżkami: obie odpowiedziały „tak", tyle że na inne pytania.
 Dlatego skan mechaniki pyta per ścieżka i ZESTAWIA odpowiedzi — to ta sama
 metoda, która w L48 kazała zestawiać ofertę z walidacją.
-
 
 **Strażnik:** `test/audyt-pr93-plot-pozniejsza-tura.test.js` (6: czar i stwór,
 obie strony granicy, anty-over-fix dla ręki/impulsu/braku stempla) oraz
@@ -2064,7 +1981,6 @@ predykacie czerwieni testy OBU mechanik naraz (5 RED).
 
 ## L129 (2026-09-03) — Otwarcie mechaniki w nowym oknie to CAŁY łańcuch wyboru: oferta → walidacja → obiekt stosu → log → etykieta
 
-
 **Reguła:** wspólny generator ofert NIE gwarantuje kompletności łańcucha —
 każde okno samo pushuje komendy i samo składa obiekt stosu. Dodając mechanikę
 do okna, przechodzę listę: (1) czy push niesie WSZYSTKIE pola wariantu
@@ -2074,7 +1990,6 @@ zdarzenie `spell_cast` niesie `modeName`/wybory, które loguje session.js,
 (5) czy etykieta rozróżnia warianty o różnych skutkach. Skan po wspólnym
 generatorze (L128) pyta „czy oferta istnieje”; ta lista pyta „czy da się nią
 zagrać i czy gracz widzi, co wybiera”.
-
 
 **Strażnik:** `test/audyt-pr94-stun-z-grobu.test.js` (7 testów: warianty niosą
 stun cel, każda oferta wykonalna, licznik na WYBRANYM celu, etykiety trzech
@@ -2110,14 +2025,12 @@ ale tym samym wynikiem).
 
 ## L132 (2026-09-06) — Wycena oparta o STREFĘ UKRYTĄ jest inertna; audyt czytający to samo źródło tego nie zobaczy
 
-
 **Reguła:** Wycena i projekcja kart ze strefy ukrytej (biblioteka, cudza ręka)
 biorą dane z PAYLOADU decyzji, nie ze strefy — silnik tak już robi dla
 `pendingSearchChoice.cards`, `pendingManifestDread.cards`, `pendingLookTopN.cards`
 tylko dla decydenta (FoW nietknięta). Brak payloadu = luka kompletności widoku
 (ADR 0017) do domknięcia w SILNIKU, nie zgadywanie w bocie. Jeden helper
 (`decisionCandidateCard`) dla wyceny i projekcji razem.
-
 
 **Strażnik:** `test/m305-hidden-candidate-valuation.test.js` — różne dane
 kandydatów muszą dawać różne punkty, plus strażnik źródła (w bocie nie ma
@@ -2140,7 +2053,6 @@ i bez `[STOP]` (zmierzone w tej sesji: 4 partie, 0 zgłoszeń detektorów).
 
 **Przypadek:** — sesja PR #93 potrzebowała karty do testu `counter_ability` i
 dopisała do katalogu realną kartę `Stifle` — poprawną, ze snapshotem Scryf… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L134).
-
 
 **Reguła:** katalog rośnie wyłącznie z list właściciela (ADR 0029); wolno tylko
 tokenom i landom podstawowym. Test potrzebujący nośnika buduje kartę
@@ -2191,27 +2103,21 @@ pilnuje, żeby artefakty testera nie weszły do indeksu przy takim sprzątaniu.
 
 ## L137 (2026-09-07) — etykieta to rodzina: jedno źródło brzmienia, test na PRAWDZIWYM widoku, partia celowana
 
-
 **Reguła:** fakt prezentowany w UI ma JEDNO źródło brzmienia i tylu
-konsumentów, ilu formatuje ten sam tekst — szukaj ich grepem po treści:
-- podnosząc nowe pole do widoku, zrób grep po WSZYSTKICH miejscach, które
-  formatują DANY TEKST (nie po nazwie pola!), i przepnij je na jeden helper —
-  konsumentem jest TEŻ log (`nameOfObject`) i karty (cardInfo), nie tylko kafel,
-- asercję kładź na PRAWDZIWYM `playerView`/`createSession`, a fikcje testowe
-  zaktualizuj do nowego kształtu (inaczej test pinuje nieaktualny stan),
-- dodaj strażnika ŹRÓDŁOWEGO dla rodziny etykiety (L107): skan „żaden
-  konsument nie wyprowadza znacznika z `.cloakReady`" — to on łapie szóste
-  miejsce, zanim ktoś je znajdzie na stole,
-- jeśli mechanika jest rzadka w talii, zrób sondę partią na CHWILOWEJ talii
-  (`docs/setup/TESTER_STOLU.md` → „Partia celowana pod mechanikę"), a plik
-  usuń przed bramką (strażnicy M178 nie znoszą dubli w taliiach).
-- 2026-09-14 (W1): strona PTASZKA jest częścią kontraktu etykiety — `OPTION_IGNORABLE_TYPES` (UI) i `actions.mjs` (tester) muszą iść razem; strażnik `test/choice-ignore.test.js`.
-
-
+konsumentów, ilu formatuje ten sam tekst — podnosząc nowe pole do widoku zrób
+grep po WSZYSTKICH miejscach formatujących DANY TEKST (nie po nazwie pola!)
+i przepnij je na jeden helper; konsumentem jest TEŻ log (`nameOfObject`)
+i karty (`cardInfo`), nie tylko kafel. Asercję kładź na PRAWDZIWYM
+`playerView`/`createSession` (fikcje testowe zaktualizuj do nowego kształtu —
+inaczej test pinuje nieaktualny stan), dodaj strażnika ŹRÓDŁOWEGO rodziny
+(L107: skan „żaden konsument nie wyprowadza znacznika z pola
+znajomości-reguły"), a mechanikę rzadką w talii sprawdź partią na CHWILOWEJ
+talii (`docs/setup/TESTER_STOLU.md`; plik usuń przed bramką — M178 nie znosi
+dubli). Strona PTASZKA (`OPTION_IGNORABLE_TYPES` w UI i `actions.mjs`
+w testerze) jest częścią kontraktu etykiety — idą razem (W1).
 **Strażnik:** `test/m326-cloak-przyczyna.test.js` (7, w tym C2 — skan
-`src/table/*.js` pod `.cloakReady`), `test/m331-log-przyczyna.test.js` (4,
-w tym D — skan `nameOfObject`: zero ręcznego `faceDownName`, oraz B — numeracja
-po jawnej przyczynie dla obu widzów).
+`src/table/*.js`), `test/m331-log-przyczyna.test.js` (4, w tym D — skan
+`nameOfObject`), `test/choice-ignore.test.js`.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L137)
 
 ## L138 (2026-09-07) — zwrot prawdy z efektu = blokada; ścieżka bez decyzji nie może jej zgłaszać
@@ -2260,7 +2166,6 @@ pending rozsypie którąś kopię (M337: padł cały B0). Zostań przy JEDNYM
 predykacie ze wspólnego źródła + strażnik źródła przeciw czwartej kopii.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L140)
 
-
 ## L141 (2026-09-07) — Pochodna tajnej informacji też może ujawnić kartę
 
 **Reguła:** FoW obejmuje pochodne danych: numer grupy, liczność i kolejność,
@@ -2271,7 +2176,6 @@ duplikaty etykiet dla różnych kart; teraz zależą od jawnych wejść na stó�
 
 **Strażnik:** `test/m339-cloak-numeracja-fow.test.js` — pełny widok dla czterech
 wariantów zakrytych kart, etykiety obu widzów, ciągłość po obrocie/przejęciu.
-
 
 ## L142 (2026-09-14) — Proweniencja znaleziska to fakt, nie ozdobnik
 
@@ -2328,7 +2232,7 @@ z natury), bramki („raz na turę") bez zmian.
 
 ## L147 (2026-09-17) — Płatność wieloetapowa: rezerwa pipów obowiązuje też FINANSOWANIE cudzego kosztu
 
-**Przypadek:** auto-tap zapłacił {U} zdolności źródła kosztowego (Apprentice Wizard: „{U}, {T}: Add {C}{C}{C}") jednostką odłożoną na pip {U} rzucanego czaru (seed 2027) — pula przestała kryć `requirements`, a nieudana komenda zostawiła mutację.
+**Przypadek:** auto-tap zapłacił pip czaru {U} jednostką odłożoną na KOSZT zdolności źródła (seed 2027) — pula przestała kryć `requirements`.
 
 **Reguła:** każdy etap płatności (pipy → suma → źródła kosztowe) musi KOŃCZYĆ się pokryciem `requirements`; przed konsumpcją dociągnij brakujące pokrycie z nietapniętych źródeł — mutacja tylko w stronę puli. Bramka oferty (`fundableCostedPlan`) i płatność muszą kończyć w tym samym stanie.
 
@@ -2344,15 +2248,111 @@ PRZEJĘTEGO; to samo w „dies"/„leaves the battlefield"). Strażnik:
 
 ## L149 (2026-09-17) — Grant lądu to JEDEN rachunek dla oferty i płatności (także w fazie pipów)
 
-**Przypadek:** Vandalize {4}{R} przy Górze z Nature's Embrace („{T}: Add two mana of any one color") — oferta obiecywała 5 many, ale płatność do-tapnęła Górę „za 1" i rzut został odrzucony, zostawiając tapnięty ląd i {R} w puli (seed 2039, quick-25).
+**Przypadek:** Vandalize przy „lądzie za dwa many”: oferta obiecywała 5 many, płatność do-tapnęła ląd „za 1”, rzut odrzucony (seed 2039).
 
 **Reguła:** ląd z grantem liczy się w ofercie jako `grant` jednostek (producibleMana), więc
-płatność MUSI wyprodukować tyle, ile oferta obiecuje — także wtedy, gdy tapnie go FAZA
-PIPÓW, a plan kolorów nie ma dla niego wiersza (grant „zużyty" finansowaniem źródła
-kosztowego): kolor bierz z `firstUncoveredPipColor`, jak auto-tap sumy. Druga strona tej
-samej klasy (L48): bramka sumy stoi PRZED pierwszą mutacją — po odrzuconej płatności żaden
-ląd nie jest tapnięty, a pula pusta (CR 601.2h).
+płatność MUSI wyprodukować tyle, ile oferta obiecuje — także gdy tapnie go FAZA PIPÓW bez
+wiersza w planie kolorów: kolor bierz z `firstUncoveredPipColor`, jak auto-tap sumy. Druga
+strona klasy (L48): bramka sumy stoi PRZED pierwszą mutacją (CR 601.2h, pula pusta).
 
 **Strażnik:** `test/m374-l48-grant-w-pipach.test.js` (4 piny; mutacje: brak fallbacku koloru
 grantu → piny 1 i 4 RED, brak bramki atomowości → piny 2 i 3 RED).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L149)
+
+## L150 (2026-09-19) — Ubytek zasobu licz po WSZYSTKICH drogach; tutor też uszczupla bibliotekę
+
+**Przypadek:** Dawntreader Elk — bot poświęcał stwora po ląd, bo kara cienkiej biblioteki widziała tylko mill/draw, a tutor nie był wyceniany nigdzie.
+**Reguła:** (1) Wypisz WSZYSTKIE drogi ubytku zasobu (płatność, efekt wariantu, koszt poświęcenia) i prowadź je jedną drabiną kary. (2) Typy efektów czytaj z deskryptora (ADR 0002). (3) Kara na wariant, nie na turę — inaczej bot przestaje używać narzędzi.
+**Strażnik:** `test/dawntreader-elk-tutor-cienka-biblioteka.test.js` (5 pinów; M21 → 3 RED, M22 → 1 RED).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L150)
+
+## L151 (2026-09-19) — Enumeracja oferty musi pokryć granicę legalności; cap tnie OPCJE, nie użycia
+
+**Przypadek:** bloker o 3 slotach nie dostawał w ofercie potrójnego bloku, choć `declareBlockers` go przyjmuje.
+**Reguła:** (1) Liczbę przebiegów tnij do granicy LEGALNOŚCI (min. sloty, liczba atakujących), nie „na wygodę”. (2) Enumerację z powtórzeniami deduplikuj kluczem kanonicznym i dopiero potem tnij do cap. (3) Pin na oba kierunki: kompletność (legalny ruch jest w ofercie) i dźwięczność (każda opcja przechodzi walidację).
+**Strażnik:** `test/block-slots-trojka-oferta.test.js` (4 piny; M23 → 1 RED, M24 → 1 RED).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L151)
+
+## L152 (2026-09-19) — Dane proweniencji też mają strażnika; „pomiń, bo dane zepsute” to dług
+
+**Przypadek:** pełny diff katalog↔snapshot wykrył literalne „\n” w `oracleText` 20 wpisów i w 7 plikach `docs/cards/*.json`.
+**Reguła:** (1) Audyt danych to osobna ścieżka: porównuj CAŁE zbiory, nie pliki z ostatniego PR-a. (2) Wyjątek „ta karta wypada ze strażnika, bo dane są zepsute” znosi się naprawą danych i licznikiem pominięć = 0. (3) Strażnik danych pilnuje obu stron i ma bramkę na degenerację (minimum sprawdzonych rekordów).
+**Strażnik:** `test/oracle-bez-literalnego-backslash-n.test.js` (4 piny; M25 → 2 RED, M26 → 2 RED) + `test/ability-cost-pips.test.js` (pominięcia = 0).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L152)
+
+## L153 (2026-09-19) — Zdarzenie wywołane WEWNĄTRZ komendy musi wrócić z komendą
+
+**Reguła:** każda funkcja pomocnicza, która mutuje stan i emituje zdarzenie,
+przyjmuje OPCJONALNY kolektor `events` i dopisuje do niego obok `state.events`
+(wzorzec M114 dla tapu lądu, M117 dla regeneracji, teraz `tapObject`
+i `declareAttackers`). Komenda zwraca PEŁNĄ listę zdarzeń swojej pracy
+(`[...tapEvents, e]`), bo tylko ona wchodzi w skan triggerów — zdarzenie
+zostawione wyłącznie w stanie jest dla triggerów niewidzialne. Pin pisz na
+ścieżce UŻYCIA (atak), nie na samym helperze: helper był zielony, czerwony był
+efekt („whenever this creature becomes tapped" nie odpalał od ATAKU).
+**Strażnik:** `test/real-cards-batch57.test.js` (pin „tapnięcie wygania
+dokładnie DWIE karty"), `test/m257r5b-awaken-sleeper.test.js`.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L153)
+
+## L154 (2026-09-19) — Skutek odmowy jest częścią decyzji, a wybór bez alternatywy domyka silnik
+
+**Reguła:** (1) Gałąź „If you don't …" jedzie w DESKRYPTORZE decyzji
+(`elseEffect`) i wykonuje się przy odmowie — inaczej odmowa jest ruchem
+jałowym, a wycena bota kłamie o połowie Oracle. (2) JEDEN predykat
+(`elseEffectSummary`) karmi widok gracza, log, etykietę przycisku i wycenę —
+przycisk odmowy musi nazywać nagrodę za odmowę („utwórz token …"). (3) Gdy
+zbiór legalnych wariantów jest PUSTY, decyzja nie ma o co pytać: silnik
+domyka ją sam, wykonuje skutek i loguje, DLACZEGO (`noCandidates`), zamiast
+pokazywać modal z jednym przyciskiem.
+**Strażnik:** `test/real-cards-batch57.test.js` — 5 pinów B6b (token 2/1
+Legendary z `keywordGrants: ['haste']` atakujący w tej samej turze;
+auto-domknięcie z `noCandidates`; pusta ręka; rzut zabiera gałąź „If you
+don't"; etykiety panelu i logu).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L154)
+
+## L155 (2026-09-20) — Premię za zegar licz razem z ceną gardy
+
+**Przypadek:** bot z 2 życia atakował 2/2 w 2/2 (zgłoszenie właściciela).
+**Reguła:** wycenę ataku licz na stanie PO ataku — gdy garda wystarczała do
+przeżycia, a po ataku już nie, premia za wyścig znika i wchodzi jawna kara.
+Wyjątki: atak wygrywający teraz oraz atak letalny (wróg MUSI blokować).
+**Strażnik:** `test/zgloszenie-e-oddana-garda.test.js` — 6/6, RED 5/1.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L155)
+
+## L156 (2026-09-20) — Trzy warstwy zgłoszenia: prowadzenie płatności, dane decyzji, narracja zdarzenia
+
+**Przypadek:** paczka F–I: kreator many kazał tapnąć 4 lądy do czaru za 2,
+modal Explore pytał „co z odsłoniętą kartą?” BEZ nazwy karty, a discover bez
+trafienia nie zostawił w logu ŻADNEGO wpisu.
+
+**Reguła:** (1) ścieżka płatności proponuje tylko kroki, które przybliżają
+koszt — źródła brakującego koloru pierwsze, nadmiarowe po zebranej sumie nie
+są proponowane (tapnięć ≤ koszt); (2) decyzja bez karty w komendzie bierze ją
+z OCZEKUJĄCEJ decyzji wystawionej decydentowi (tytuł + podgląd), a nie z logu;
+(3) każde rozstrzygnięcie potrzebuje trzech warstw: FAKTY w zdarzeniu, TEKST
+opisu (nigdy `null`) i BRAMKĘ logu/„Rozgrywki”.
+
+**Strażnik:** `test/zgloszenie-{f,g,h,i}-*.test.js` (RED 0/3, 0/4, 0/3, 0/4 →
+GREEN; end-to-end G w `test/table-ui.test.js`: 4 lądy → 2 tapnięcia).
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L156)
+
+## L157 (2026-09-20) — Log debugowy bierze zdarzenie o treści, której szuka gracz
+
+**Przypadek:** „w «Log partii» chcę widzieć DODATKOWO każdy permanent tapnięty
+na manę (co i kiedy) — to ułatwi debugowanie”.
+
+**Reguła:** (1) do logu bierz zdarzenie, które niesie pytanie gracza:
+`mana_produced` (źródło + kolory + kto) mówi „co i kiedy”, `object_tapped` nie
+mówi nic; (2) „dodatkowo” nie znaczy „wszędzie” — wpis idzie do logu stołu
+(czyta go „Log partii”), a granicę (brak wpisu w modalu „Rozgrywka” i w zapisie
+tur dla AI — decyzja właściciela 2026-08-02) pinuj testem; (3) pomocnik istnieje
+tylko w SWOIM closure: `whoN` z deskryptora zdarzeń nie jest widoczny w zasięgu
+sesji — wołaj `who()` z tego samego zakresu; (4) zlecenie „dodaj wpis do logu”
+nie jest zgodą na dodatki obok: wpis dostaje zwykły rodzaj (bez własnego
+koloru), a sekcji nie przybywa drugie pole — właściciel odrzucił oba
+(2026-09-20d).
+
+**Strażnik:** `test/zgloszenie-j-tapniecia-many-w-logu.test.js` — 3 piny
+(reguła; wpis w logu; granice), przed poprawką plik czerwony.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L157)

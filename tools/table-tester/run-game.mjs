@@ -302,7 +302,7 @@ export async function runTableGame({
   const MAIN_LOG_EVIDENCE = /^Auto-pass:/;
   const collectRejections = (action) => {
     const entries = $$('#log .log-rejection').map((e) => text(e).trim()).filter(Boolean);
-    // M346/F8: nowe odrzucenia też są na początku DOM, nie za starym indeksem.
+    // M346/F8 + C3: nowe odrzucenia są NA KOŃCU DOM (log chronologiczny).
     if (entries.length < rejectionsSeen) rejectionsSeen = 0;
     const fresh = chronologicalLogEntries(entries, entries.length - rejectionsSeen);
     for (const reason of fresh) {
@@ -326,11 +326,12 @@ export async function runTableGame({
   const collectMainLog = () => {
     const entries = $$('#log .log-event, #log .log-rejection, #log .log-system')
       .map((e) => text(e).trim()).filter(Boolean);
-    // UWAGA: `render.js` rysuje log od NAJNOWSZEGO (`[...session.log].reverse()`),
-    // więc nowe wpisy dokładają się na POCZĄTKU listy DOM, nie na końcu.
-    // Liczenie indeksem od przodu czytałoby najstarsze wpisy jako „nowe" —
-    // pierwsza wersja tego kodu tak właśnie robiła i nie znalazła ani jednego
-    // wpisu (pomiar: 0 trafień w transkrypcie mimo obecności wpisu w logu).
+    // UWAGA: C3 (zgłoszenie 2026-09-20) zmienił kolejność renderu na
+    // CHRONOLOGICZNĄ — nowe wpisy dokładają się na KOŃCU listy DOM.
+    // Liczenie indeksem od końca (a nie od przodu) jest istotne: pierwsza
+    // wersja tego kodu czytała najstarsze wpisy jako „nowe" i nie znalazła
+    // ani jednego wpisu (pomiar: 0 trafień w transkrypcie mimo obecności
+    // wpisu w logu).
     if (entries.length < mainLogSeen) mainLogSeen = 0;  // log przycięty/przerysowany
     const freshCount = entries.length - mainLogSeen;
     // Ta sama kolejność co w snapshotach i kolektorze odrzuceń (M346/F8).
@@ -1167,8 +1168,9 @@ export async function runTableGame({
     const entries = $$('#log .log-event, #log .log-rejection, #log .log-system')
       .map((e) => text(e).trim()).filter(Boolean);
     // Niezależny punkt odniesienia dla detektora: najnowszy wpis wprost z DOM,
-    // nie z ekstraktora, którego kolejność właśnie sprawdzamy.
-    const newestLogEntry = entries[0] ?? null;
+    // nie z ekstraktora, którego kolejność właśnie sprawdzamy. C3: log jest
+    // chronologiczny, więc najnowszy wpis to OSTATNI wiersz listy.
+    const newestLogEntry = entries.at(-1) ?? null;
     return { logTail: chronologicalLogEntries(entries, 6), newestLogEntry };
   };
 

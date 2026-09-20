@@ -129,6 +129,11 @@ export function installDeck(state, deck, { seed }) {
       // koloru (testy B46 robiły `...gameObjectDataOf`, więc były zielone).
       chooseColor: card.chooseColor ?? null,
       madness: card.madness ?? null,
+      // Batch 57/B4 (Delve, CR 702.66): deskryptor statycznej zdolności
+      // rzutu (jak kicker/offspring) — bez tego wpisu karta z talii nie ma
+      // mechaniki, a testy budujące obiekt przez `...gameObjectDataOf`
+      // byłyby zielone (klasa L21).
+      delve: card.delve ?? false,
       surge: card.surge ?? null,
       toxic: card.toxic ?? null,
       warp: card.warp ?? null,

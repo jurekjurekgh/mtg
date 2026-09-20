@@ -11,7 +11,7 @@ import { effectiveProtectionFromColors } from './attachments.js';
  * przypiętego do atakującego, oceniany przy deklaracji blokerów (moc
  * EFEKTYWNA — pumpy i liczniki mogą wynieść nosiciela ponad próg).
  */
-function cantBeBlockedFromEquipment(state, attacker) {
+export function cantBeBlockedFromEquipment(state, attacker) {
   for (const attachment of attachmentsAttachedTo(state, attacker.id)) {
     const maxPower = attachment.equipment?.cantBeBlockedMaxPower;
     if (maxPower != null && effectivePower(attacker, state) <= maxPower) return true;
@@ -249,7 +249,7 @@ export function mandatoryAttackerIds(state, playerId) {
     .map((object) => object.id);
 }
 
-export function declareAttackers(state, playerId, attackerIds, { pushToState = true } = {}) {
+export function declareAttackers(state, playerId, attackerIds, { pushToState = true, events: collectedEvents = null } = {}) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_attackers') throw new Error('Nieprawidłowy krok deklaracji atakujących');
   if (state.turn.activePlayerId !== playerId) throw new Error('Nieaktywny gracz nie deklaruje atakujących');
   if (!Array.isArray(attackerIds) || new Set(attackerIds).size !== attackerIds.length) throw new Error('Atakujący nie może wystąpić więcej niż raz');
@@ -274,7 +274,7 @@ export function declareAttackers(state, playerId, attackerIds, { pushToState = t
   }
   for (const attacker of attackers) {
     // Vigilance: stwór nie tapuje się przy ataku.
-    if (!hasKeyword(state, attacker, 'vigilance')) tapObject(state, attacker.id, playerId);
+    if (!hasKeyword(state, attacker, 'vigilance')) tapObject(state, attacker.id, playerId, collectedEvents);
     // M67 (Homicidal Brute — tył Civilized Scholar): „if this creature didn't
     // attack this turn" — atakujący dostaje flagę (czyszczona w cleanup).
     const withFlag = state.objects.get(attacker.id);
@@ -1632,9 +1632,16 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
     // M166/E: blokujący z dodatkowym slotem przetwarzany jest drugi raz
     // (przypisanie do INNEGO atakującego); duplikat w tej samej liście
     // odcina warunek includes poniżej.
+    // E4 sesji 2026-09-19 (odwrotny kierunek oferty, L41/L48): liczba
+    // przebiegów = PRAWDZIWA liczba slotów ograniczona liczbą atakujących
+    // (bloker nie zablokuje więcej atakujących, niż ich jest). Wcześniejsze
+    // `Math.min(slots, 2)` obcinało legalne przypisanie: bloker o 3 slotach
+    // (Highland Game z licznikiem + 2× Cenn's Tactician) NIE dostawał w
+    // ofercie potrójnego bloku, choć `declareBlockers` go przyjmuje —
+    // człowiek i bot nie mogli zadeklarować legalnego ruchu.
     const rounds = blockers.flatMap((id) => {
       const slots = blockSlotsFor(state, state.objects.get(id));
-      return Array.from({ length: Math.min(slots, 2) }, () => id);
+      return Array.from({ length: Math.min(slots, attackers.length) }, () => id);
     });
     for (const blockerId of rounds) {
       const blocker = state.objects.get(blockerId);
@@ -1663,8 +1670,21 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
     // `declareBlockers` (M387/L41): oferta nie może zaproponować czegoś, co
     // komenda odrzuci (L48) — dotyczy to zwłaszcza reguł zbioru (menace,
     // „can't block alone") i zakazów blokowania samego blokera.
-    return all.filter((assignment) => Object.entries(assignment)
+    const legal = all.filter((assignment) => Object.entries(assignment)
       .every(([attackerId, blockerIds]) => blockAssignmentViolation(state, state.objects.get(attackerId), blockerIds) === null));
+    // E4 sesji 2026-09-19: enumeracja z dodatkowymi slotami tworzy to samo
+    // przypisanie wieloma ścieżkami (kolejność atakujących, powtórzone
+    // przebiegi blokera) — oferta musi mieć JEDEN wpis na przypisanie, inaczej
+    // „liczba opcji” rośnie szybciej niż cap. Klucz kanoniczny: atakujący
+    // posortowani, listy blokujących jak są (kolejność w liście jest istotna
+    // wyłącznie jako zbiór — walidacja i tak liczy użycia).
+    const unique = new Map();
+    for (const assignment of legal) {
+      const key = Object.keys(assignment).sort()
+        .map((attackerId) => `${attackerId}=${assignment[attackerId].join(',')}`).join('|');
+      if (!unique.has(key)) unique.set(key, assignment);
+    }
+    return [...unique.values()].slice(0, cap);
   }
   const options = [{}];
   for (const attackerId of attackers) {

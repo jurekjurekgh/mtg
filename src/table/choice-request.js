@@ -57,7 +57,7 @@ const CHOICE_TYPE_LABELS = Object.freeze({
  * znany katalogowi i zwraca `null`, gdy to nie karta (np. cel-gracz) — dzięki
  * temu funkcja jest czysta i testowalna bez sesji (wstrzyknięcie, nie import).
  */
-export function previewCardIdOfOption(option, resolveCardId) {
+export function previewCardIdOfOption(option, resolveCardId, view = null) {
   if (!option || typeof option !== 'object' || typeof resolveCardId !== 'function') return null;
   const ordered = [
     // cele (zdolności, czary, decyzje wyboru celu)
@@ -77,6 +77,16 @@ export function previewCardIdOfOption(option, resolveCardId) {
     if (typeof id !== 'string') continue;
     const cardId = resolveCardId(id);
     if (cardId) return cardId;
+  }
+  // H (zgłoszenie właściciela 2026-09-20, Guidestone Compass): są decyzje,
+  // których KOMENDA nie niesie żadnej karty — „Explore: co z odsłoniętą
+  // kartą?” ma dwa warianty (wierzch/grób) bez identyfikatora karty, bo
+  // przedmiot decyzji siedzi w OCZEKUJĄCEJ decyzji. Bez tego gracz nie miał
+  // jak zobaczyć karty, o której wybiera (musiał szukać jej w logu).
+  // `view` jest opcjonalny — bez niego zachowanie jak dotąd.
+  if (view && option.type === 'resolve_explore_choice') {
+    const revealed = view.pendingExplore?.cardId;
+    return typeof revealed === 'string' && revealed ? revealed : null;
   }
   return null;
 }
@@ -654,6 +664,35 @@ function objectName(view, session, id) {
   return session.nameOfObject ? session.nameOfObject(id) : String(id);
 }
 
+/**
+ * E1 (zgłoszenie właściciela 2026-09-19b, Inferno Titan): „modal podziału
+ * obrażeń nie mówi, KTO kontroluje kandydatów”. Lista celów miesza stwory
+ * obu graczy (i to nie jest szum — rozdzielenie 3 obrażeń między własnego
+ * stwora a cudzego to różne plany gry), a sama nazwa tego nie rozstrzyga,
+ * gdy obie strony mają ten sam stwór (np. dwie kopie tego samego elka).
+ *
+ * Zwraca dopisek kontrolera dla celu-permanentu wg widoku DECYDENTA
+ * (`view.playerId`): „Twój” / „Nieprzyjaciela”. Celem gracza (id w
+ * `view.players`) zajmuje się wołający — tam nazwę gracza niesie widok.
+ * Bez wpisu w widoku (np. cel spoza stref widocznych) — brak dopisku, nie
+ * zgadywanie (L41).
+ */
+function controllerSuffix(view, id) {
+  const zones = [view?.zones?.battlefield, view?.zones?.hand, view?.zones?.stack,
+    view?.zones?.graveyard, view?.zones?.library];
+  for (const zone of zones) {
+    const object = (zone ?? []).find((o) => o.id === id);
+    if (object?.controllerId) {
+      // Bez znanego decydenta (widok bez `playerId` — np. stub w teście albo
+      // stara ścieżka) NIE zgadujemy strony (L41): brak dopisku jest uczciwszy
+      // niż „Nieprzyjaciela” nad własnym stworem.
+      if (view?.playerId == null) return null;
+      return object.controllerId === view.playerId ? 'Twój' : 'Nieprzyjaciela';
+    }
+  }
+  return null;
+}
+
 /** Uwaga C (2026-08-11): „(atak, obrona)" stwora w wizardzie walki — żywe
  * P/T z widoku (jak na kaflu). Puste, gdy brak P/T (nie-stwór). */
 function creaturePT(view, id) {
@@ -919,9 +958,12 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
   };
   candidateIds.forEach((id, idx) => {
     const isPlayer = Boolean(view.players?.some((pl) => pl.id === id));
+    // E1: cel-permanent niesie kontrolera („(Twój)” / „(Nieprzyjaciela)”) —
+    // inaczej lista kandydatów nie mówi, czyje stwory dzielą obrażenia.
+    const suffix = isPlayer ? null : controllerSuffix(view, id);
     const name = isPlayer
       ? (view.players.find((pl) => pl.id === id)?.name ?? id)
-      : objectName(view, session, id);
+      : `${objectName(view, session, id)}${suffix ? ` (${suffix})` : ''}`;
     // Wiersz buduje JEDEN komponent (picker.js, `kind: 'stepper'`) — te same
     // 44 px i ta sama klikalna nazwa co w kreatorze wielocelowym i walce.
     // Klasy `damage-wizard-*` zostają jako haki `m136-*`, `m172-*` i Testera
@@ -1681,6 +1723,73 @@ export function renderEscapeExileWizard(host, { candidates, exileCount, sourceNa
       rowClassName: 'escape-exile-row',
       toggleClassName: 'escape-exile-toggle',
       nameClassName: 'escape-exile-name',
+      onToggle: (on) => {
+        if (on) picked.add(candidate.id); else picked.delete(candidate.id);
+        refresh();
+      },
+      onOpenCard: typeof onOpenCard === 'function' ? (cardId) => onOpenCard(cardId) : undefined,
+    });
+  }
+  refresh();
+  return host;
+}
+
+/**
+ * Batch 57/B4 (Delve, CR 702.66 — Hooting Mandrills): koszt rzutu wybiera się
+ * ptaszkami z listy kart WŁASNEGO grobu, ale — inaczej niż Escape (M241) —
+ * liczba kart jest DOWOLNA (0..limit), bo każda wygnana karta pokrywa `{1}`
+ * części generycznej (ruling KTK 2021-03-19: nigdy więcej niż część
+ * generyczna). Wizard pokazuje koszt pozostały po wygnaniu i blokuje
+ * „Zatwierdź” dla liczby, której płatność odrzuci (L48: oferta = protokół),
+ * a listę opłacalnych liczb dostaje w `affordableCounts`.
+ *
+ * Ptaszek = „wygnij tę kartę” (koszt), odznaczenie cofa — wiersze klikalne
+ * całą nazwą; lupa (onOpenCard) jak w innych wizardach.
+ */
+export function renderDelveExileWizard(host, { candidates, maxExile, affordableCounts = null, sourceName, manaCost, onComplete, onCancel, onOpenCard, playerId = null }) {
+  clearChoiceElement(host);
+  const picked = new Set();
+  const affordable = new Set(Array.isArray(affordableCounts) && affordableCounts.length > 0
+    ? affordableCounts
+    : Array.from({ length: maxExile + 1 }, (_, i) => i));
+  const baseMana = Number.isInteger(manaCost) ? manaCost : null;
+  const intro = choiceNode(host, 'div', 'choice-request-intro');
+  intro.textContent = (sourceName ? `${sourceName} — ` : '')
+    + `Delve: wygnij dowolną liczbę kart z własnego grobu (0–${maxExile}); każda pokrywa {1} kosztu.`;
+  const progress = choiceNode(host, 'div', 'delve-exile-progress', `Wybrano 0 z ${maxExile}`);
+  const hint = choiceNode(host, 'div', 'delve-exile-hint');
+  const list = choiceNode(host, 'div', 'delve-exile-list');
+  const buttons = choiceNode(host, 'div', 'choice-request-buttons');
+  const confirm = choiceNode(buttons, 'button', 'primary-btn delve-exile-confirm', 'Zatwierdź');
+  const cancel = choiceNode(buttons, 'button', 'secondary-btn', 'Anuluj');
+  cancel.addEventListener('click', () => { if (onCancel) onCancel(); });
+
+  const affordableNow = () => affordable.has(picked.size);
+  const refresh = () => {
+    const left = baseMana == null ? null : baseMana - picked.size;
+    progress.textContent = `Wybrano ${picked.size} z ${maxExile}`
+      + (left == null ? '' : ` (pozostały koszt: ${left} many)`);
+    const legal = affordableNow();
+    confirm.disabled = !legal;
+    hint.textContent = legal ? '' : 'Za mało many na tyle wygnania — wygnij więcej kart albo wybierz inną liczbę.';
+    // Klucz sondy aktualizuje się po każdej zmianie — jak w M112.
+    if (playerId) {
+      const ids = [...picked].sort();
+      confirm.dataset.optionKey = commandOptionKey({ type: 'resolve_delve_exile', playerId, exileIds: ids });
+    }
+  };
+  confirm.addEventListener('click', () => {
+    if (confirm.disabled) return;
+    onComplete([...picked].sort());
+  });
+
+  for (const candidate of candidates) {
+    renderPickerRow(list, {
+      id: candidate.cardId ?? candidate.id,
+      label: candidate.name ?? candidate.id,
+      rowClassName: 'delve-exile-row',
+      toggleClassName: 'delve-exile-toggle',
+      nameClassName: 'delve-exile-name',
       onToggle: (on) => {
         if (on) picked.add(candidate.id); else picked.delete(candidate.id);
         refresh();

@@ -5973,3 +5973,455 @@ w ofercie i odrzucony, (E) macierz spójności: KAŻDE oferowane przypisanie
 przez `declare_blockers` (L48). RED→GREEN: mutacje — pusty predykat 1/4,
 oferta bez filtra 2/3, ręczna kopia menace w walidacji 4/1.
 Bramy: `npm test` 5787/5787, `npm run build` 64 moduły / 3831,8 kB.
+
+## M388 (2026-09-19) — Batch 57/B1: proste bliźniaki (Lightwalker, Tranquil Cove, Ordinary Bear, Capture Sphere, Phyrexian Rager APC)
+
+Zakres: pięć kart właściciela z arkusza kolekcji (64 DTK, 90 M20, 125 HOB,
+70 GRN, 85 APC) wchodzi do katalogu jako `supported` — każda jako bliźniak
+istniejącego wzorca, bez nowych mechanik w `src/engine/`:
+
+- **Lightwalker** (64, DTK, `{1}{W}` 2/1) — warunkowy `flying` przez statyk
+  `condition.hasCounter: '+1/+1'` (bliźniak Ainok Artillerist, artId 321);
+  przeliczanie przy każdym odczycie (CR 611.3a), bez zdarzeń.
+- **Tranquil Cove** (90, M20) — gainland 1:1 z Dismal Backwater / Thornwood
+  Falls: `entersTapped`, ETB +1 życie, `{T}`: `{W}` albo `{U}`.
+- **Ordinary Bear** (125, HOB, `{3}{G}` 4/5) — karta vanilla: sanity dowodzi
+  braku zdolności i pustego `oracleText`.
+- **Capture Sphere** (70, GRN) — aura-kotwica z `flash`: `aura.doesntUntap`
+  + trigger wejścia `tap_enchanted_permanent` (bliźniak Containment Protocol).
+- **Phyrexian Rager (APC)** (85, Mirrodin) — DRUGI DRUK karty z katalogu
+  (`phyrexian-rager`, DMU/75, Dominaria) — arkusz kolekcji ma oba druki, więc
+  oba są w katalogu, każdy na swoim planie i w swojej talii (wzorzec Curate
+  BRO/STX, Batch 47). Wpis DMU zostaje nietknięty (zgłoszenie właściciela 15:
+  „nie usunąłeś z DMU i Dominarii tylko dopisałeś drugą wersję").
+
+Generyczne mechaniki nowe: **brak** — etap celowo „bliźniaczy". Strażnik
+pokrycia wycen ETB (`test/etb-effect-bonus-coverage.test.js`) wymusił
+świadomą decyzję dla `tap_enchanted_permanent` (2 karty): typ zostaje
+w `INTENTIONAL_EXCEPTIONS` — wartość aury-kotwicy niesie statyka
+`doesntUntap` widziana przez `auraIsHostile` w ścieżce rzutu aury; promocja do
+`ETB_EFFECT_BONUS` wymaga pomiaru B0 (Krok 7 procedury `HOW_TO_ADD_CARD`).
+
+Churn talii (atrybucja L124): generator dołożył karty do `tarkir-wur`
+(Lightwalker), `srodziemie` (Ordinary Bear), `mirrodin-brg` (Rager APC —
+Horizon Spellbomb przeszedł do `mirrodin-wu`), `worek-basni` (Tranquil Cove),
+`worek-dziki` (Capture Sphere) i przeliczył landy tych talii. Skutki:
+golden-master wycen zregenerowany świadomie (`45dbff9a…` → `0cbed44e…`; pary
+z konfiguracji zawierają `mirrodin-wu`, bot NIETKNIĘTY) oraz liczby talii
+w README (M203/7).
+
+Piny: `test/real-cards-batch57.test.js` — 13 testów (5× sanity danych
+snapshot ↔ katalog ↔ arkusz, 8 scenariuszy legalnych/nielegalnych, w tym
+kontrola negatywna flash na Containment Membrane i rozdział druków Ragera).
+Bramy: `npm test` **5939/5939, 0 fail**, `npm run build` 64 moduły /
+3894,1 kB.
+
+## M389 (2026-09-19) — Batch 57/B2: Messenger Falcons — hybrydowy pip `{G/U}` w rozkładzie landów + ETB dobranie
+
+Zakres: karta 82 ARB (`{2}{G/U}{W}`, Bird 2/2, flying + ETB dobierz kartę)
+wchodzi jako `supported` — `keywords: ['flying']` + trigger wejścia
+`draw_cards` (bliźniak kształtu triggera Phyrexian Ragera), koszt hybrydowy
+płacony `{G}` albo `{U}`.
+
+Mechanika narzędziowa (generyczna, ADR 0002): `coloredPips`
+(`tools/generate-plan-decks.mjs`) czytał wyłącznie symbole pojedynczych
+kolorów, więc hybryda `{W/B}`/`{G/U}` znikała z rozkładu landów (usterka
+ukryta na Esper Stormblade `{W/B}{U}` w `decks/alara.txt`). Nowa reguła:
+hybryda DWÓCH kolorów liczy się do PIERWSZEGO koloru pary w WUBRG
+(deterministycznie) — talia dostaje źródło jednego z kolorów pary; `{W/P}`
+i `{2/W}` zostają pominięte ŚWIADOMIE (alternatywa płatna bez koloru —
+pomiar: liczenie `{W/P}` jak pipu zawyżało `mirrodin-wu` 4/6 → 5/5 „bez
+powodu", bo Porcelain Legionnaire jest opłacalny życiem).
+
+Dowód izolacji (L124): generator z fixem, ale BEZ nowej karty (`git stash` na
+`card-data.js`) zostawia `decks/alara.txt` = committed — usterka pipów była
+realna (`{W:0}` → `{W:1}`), ale w tej talii niewidoczna (Esper Stormblade ma
+źródła W/B z pozostałych kart); dopiero wejście Messenger Falcons zmienia
+alara: `+Messenger Falcons`, `Mountain 1→2` (README M203/7: 36/12/24 →
+38/13/25). Zero churnu w pozostałych 24 taliach.
+
+Piny: `test/real-cards-batch57.test.js` — 19 testów (sanity + rozkład landów
+z hybrydą, płatność `{G}`/`{U}` i odmowa, gdy brak obu, dobranie z pustej
+biblioteki). RED→GREEN na stashu źródeł: 5 czerwonych bez fixu. Przeloosowanie
+scenariusza (L25): `panel-rozgrywka-tura-przeciwnika` seed 2 → 1 (zmiana
+składu talii przelosowała partię).
+
+Bramy: `npm test` **5945/5945, 0 fail**, `npm run build` 64 moduły /
+3894,4 kB.
+
+## M390 (2026-09-19) — Batch 57/B3: Merciless Repurposing — wygnanie celu + inkubacja 3
+
+Zakres: karta 80 MOM (`{4}{B}{B}` instant) — deskryptor 1:1 z Tiller of Flesh
+(M109): `exile_permanent` + `incubate 3` (token Incubator z trzema licznikami
+`+1/+1`, CR 701.47/701.51). Ruling MOM (2023-04-14) dopięty pinem: nielegalny
+cel przy rozstrzyganiu → czar nic nie robi i NIE inkubuje.
+
+Piny: `test/real-cards-batch57.test.js` — 22/22 (fizzl na 0/0 celu, `{2}`:
+transformacja tokenu w 0/0 Phyrexian z zachowaniem 3 liczników → 3/3).
+RED→GREEN na stashu `card-data.js`: 3 czerwone.
+
+Strażnik wycen (`bot-targeted-effect-valuation-guard`): `incubate` jako rider
+przy wycenionym `exile_permanent` dostał jawny wpis `REVIEWED_UNVALUED` (token
+Incubator bez wyceny w bocie od M109 — dodanie punktacji wymaga pomiaru B0).
+
+Churn: tylko `mirrodin-brg` (`+Merciless Repurposing`, Swamp 5→6; README
+29/10/19) — talia poza `SNAPSHOT_CONFIG`, więc golden-master NIETKNIĘTY
+(`--write` dał identyczny plik, `overallHash` bez zmian).
+
+Bramy: `npm test` **5948/5948, 0 fail**, `npm run build` 64 moduły /
+3895,0 kB.
+
+## M391 (2026-09-19) — Batch 57/B4: Delve (CR 702.66) — Hooting Mandrills
+
+Zakres: karta 66 KTK (`{5}{G}` 4/4 Ape, Delve + Trample) oraz GENERYCZNA
+mechanika Delve — najszersza zmiana batcha (koszt, oferta, walidacja, wizard,
+bot, odcisk). Ruling KTK (2021-03-19) wdrożony 1:1: delve **nie zmienia**
+kosztu ani mana value czaru (nie jest kosztem alternatywnym), każda wygnana
+karta pokrywa `{1}` części GENERICZNEJ i nie wolno wygnać więcej kart niż ta
+część, a liczba kart jest zmienna (0..limit).
+
+Model decyzji (wzorzec ucieczki/Escape, M241 — ale z liczbą ZMIENNĄ):
+deklaracja rzutu (`cast_permanent`/`cast_spell`) kolejkuje `pendingDelveExile`
+(`delve_exile_required`), a gracz domyka ją komendą `resolve_delve_exile
+{ exileIds }`. Oferta decyzji enumeruje podzbiory z `affordableCounts` (cap
+`DELVE_OPTION_CAP = 32`), więc protokół i płatność liczą tak samo (L48).
+`resolveDelveExile` odpala właściwy rzut z `delveExileIds`; wygnanie jest
+KOSZTEM (CR 601.2h) — karty zostają w exile nawet po skontrowaniu czaru.
+
+Deskryptor: `delve: true` TOP-LEVEL na obiekcie gry (jak kicker/offspring —
+decyzja o kształcie podyktowana tym, że mechanika działa na permanentach
+i czarach, a `spell.*` jest w silniku cechą czaru na stosie). Przeprowadzony
+przez CAŁY łańcuch L21: `registry.defineCard` (biała lista pól!) →
+`gameObjectDataOf` (obie gałęzie) → `deck.js` (jawna lista pól) →
+`createGameObject` → `ADD_OBJECT_FIELDS` addObject → fingerprint (przez
+`...rest`, więc pole wchodzi do odcisku samo).
+
+Ścieżki zmienione: `legalSpellCasts` (bramka many przepuszcza wariant
+z obniżką), `legalCommands` (jedna oferta rzutu + gałąź decyzji), wizard
+`renderDelveExileWizard` (ptaszki + koszt po obniżce + blokada liczby
+nieopłacalnej), etykiety modala/panelu (tytuł z `pendingDelveExile`),
+`session.commandOptionKey` (+`exileIds` — warianty decyzji różnicują się
+w sondzie i ptaszku), bot (`resolve_delve_exile`: strata kart wg miary Escape
++ premia za zaoszczędzoną manę; bez premii mechanika byłaby w partiach martwa).
+
+Piny: `test/real-cards-batch57.test.js` — 29/29 (sanity + rzut bez delve,
+1/2/5 wygnanych kart, limity: część generyczna / cudzy grób / duplikat /
+liczba nieopłacalna, mana value bez zmian, składanie z obniżką kosztu,
+ścieżka CZARU na syntetycznym instancie oraz pin L21 „prawdziwa talia").
+RED→GREEN na stashu źródeł: 7 czerwonych.
+
+Churn: tylko `tarkir-bg` (`+Hooting Mandrills`, Forest 6→7; README
+33/11/22 → 35/12/23). Golden-master wycen zregenerowany ŚWIADOMIE
+(`0cbed44e…` → `f85569002f2593cd…`) — para `tarkir-bg` vs `warhammer-ubr`
+jest w `SNAPSHOT_CONFIG`, a talia zmieniła skład. Przeloosowanie scenariuszy
+(L25): `session-bot-pausa` seed 11 → 12, `uwagi-...-b-pump-w-modalu` seed
+3 → 2 (oba po hunterze, z komentarzami w testach).
+
+Bramy: `npm test` **5955/5955, 0 fail**, `npm run build` 64 moduły /
+3921,7 kB.
+
+## M392 (2026-09-19) — Batch 57/B5: Annie Flash, the Veteran — powrót permanentu z grobu i okno „play this turn"
+
+Zakres: karta 77 OTJ (`{3}{R}{G}{W}` 4/5 Legendary Human Rogue, Flash) wchodzi
+jako `supported` z trzema regułami prosto z rulingów OTJ (2024-04-12):
+
+- **ETB „if you cast it" + powrót permanentu MV≤3 tapniętego**
+  (`condition.ifCast`, spec triggera `permanent_card_in_graveyard`, efekt
+  `return_permanent_from_graveyard`). Ruling mówi wprost, że „permanent card"
+  OBEJMUJE land (inaczej niż u Zoraline — „nonland"), więc oba deskryptory
+  dostały `allowLands`, a wejście — `entersTapped`. Domyślne zachowanie
+  pozostałych kart (Zoraline/Unearth/Unbreakable Bond) bez zmian: brak flagi =
+  lądy wykluczone (zbiór bez regresji).
+- **Aura wracająca tą drogą wybiera gospodarza PRZED wejściem** (CR 303.4f) —
+  to nie jest celowanie, więc hexproof/protection nie blokują; brak
+  JAKIEGOKOLWIEK legalnego gospodarza = karta ZOSTAJE w grobie (zdarzenie
+  `aura_returned_without_host`, wpis w logu — bez niego wyglądałoby to na
+  zgubioną zdolność, M106/Z2). Zbiór gospodarzy liczy ta sama funkcja co SBA
+  i rzut aury (`isLegalAuraHost`, L41).
+- **„Whenever becomes tapped" → wygnaj DWIE wierzchnie karty, graj je w tej
+  turze.** `exile_top_playable_until_next_turn` dostał DESKRYPTOR `count`
+  (Gila Courser/Caves of Chaos = 1, Annie = 2; każde wygnanie to osobny
+  stempel okna), a okno `window: 'this_turn'` domyka się w turze zdolności.
+
+**Naprawa generyczna (klasa L24/M114/M117):** tapnięcie przez ATAK nie
+docierało do skanu triggerów — `combat.declareAttackers` wołał `tapObject`
+(które pisze do `state.events`), a `accepted()` karmi `processTriggers` tylko
+listą zdarzeń ZWRACANĄ przez komendę. Skutek: „whenever this creature becomes
+tapped" (Nanoform Sentinel od M360, teraz Annie) nigdy nie odpalał od ataku.
+`tapObject` przyjmuje teraz opcjonalny kolektor zdarzeń (wzorzec M114 dla
+tapu lądu i M117 dla regeneracji), a `declareAttackers` przekazuje go dalej —
+komenda zwraca `[object_tapped…, attackers_declared]`.
+
+Piny: `test/real-cards-batch57.test.js` — 37/37 (8 nowych: sanity, ETB
+z ręki → tapnięty, wejście BEZ rzutu nie odpala, land MV 0 jako „permanent
+card", MV 4 poza zasięgiem, aura bez gospodarza zostaje w grobie, aura
+z gospodarzem wchodzi ZAŁĄCZONA, tapnięcie wygania dokładnie DWIE karty
+i pozwala zagrać land dopiero w main). RED→GREEN na stashu dziewięciu plików
+źródłowych: 6 czerwonych.
+
+Churn: `worek-dziki` (plan „Thunder Junction") — `+Annie Flash, the Veteran`,
+landy przeliczone 3×Island/1×Swamp/3×Mountain/1×Forest →
+2/2/2/2, README 29/10/19 → 30/10/20. Talia poza `SNAPSHOT_CONFIG`, więc
+golden-master bez zmian.
+
+Bramy: `npm test` **5963/5963, 0 fail**, `npm run build` 64 moduły / 3927,0 kB.
+
+## M393a (2026-09-19) — Batch 57/B6a: Baral and Kari Zev — licznik „pierwszy instant/sorcery" i darmowy rzut z ręki
+
+Zakres: karta 88 TDC (`{1}{U}{R}` 2/4 Legendary Human, First strike, menace):
+„Whenever you cast your first instant or sorcery spell each turn, you may cast
+a spell with lesser mana value that shares a card type with it from your hand
+without paying its mana cost. If you don't, create First Mate Ragavan …".
+Etap obejmuje licznik i CAŁĄ decyzję (oferta + rzut albo rezygnacja); sam
+skutek odmowy (token) wchodzi w M393b — do tego czasu karta zostaje
+`in-development` (ADR 0010 §4).
+
+**Licznik per typ czaru:**
+`state.instantSorceryCastThisTurnByPlayer` rośnie w tym samym skanie zdarzeń
+co `spellsCastThisTurnByPlayer` (jedno miejsce, L41), filtrując TYP KARTY na
+zdarzeniu rzutu — dzięki temu czar rzucony PRZED wejściem Barala też się
+liczy (ruling TDC 2023-04-14: „It counts spells cast earlier in the turn even
+if Baral wasn't on the battlefield then"), a każde zdarzenie rzutu trafia do
+licznika dokładnie raz. Trigger `first_instant_sorcery_cast` odpala przy
+licznik == 1 i niesie `extra` = `{ spellCardId, spellManaValue, spellCardTypes }`
+(wzorzec `spellColorsInclude`; ADR 0002 — żadnej nazwy karty w kodzie).
+
+**Decyzja blokująca:** efekt `free_cast_from_hand` kolejkuje
+`state.pendingHandFreeCast` (`{playerId, sourceId, sourceCardId, cardTypes,
+maxManaValue, restorePriorityTo}`) i zdarzenie `hand_free_cast_required`.
+Gracz domyka ją komendą `resolve_hand_free_cast` (rezygnacja albo rzut).
+Kandydatów liczy JEDEN predykat `handFreeCastOffers` — oferta panelu i bramka
+wykonania czytają ten sam zbiór (L48; komenda spoza oferty jest odrzucana):
+czar instant/sorcery z ręki kontrolera, wspólny typ z czarem wyzwalającym,
+MV OSTRO mniejsze (ruling: „lesser mana value"), warianty celów/trybów/
+kosztów dodatkowych z `epicCastOffers` (`variableTargets`), BEZ kosztu X —
+przy rzucie bez kosztu many X = 0 (CR 107.3b), czyli ruch jałowy, więc nie
+jest ofertą (ta sama zasada co `allowX` w Discover).
+
+**Nowa opcja rzutu `handFreeCast`** (`CAST_SPELL_OPTIONS`): znosi koszt many,
+pipy koloru i symbole phyrexian (CR 118.9a), ale NIE kickera ani kosztu
+dodatkowego (ruling: „additional costs are allowed … mandatory"; koszty
+alternatywne nie są oferowane). Ważna WYŁĄCZNIE dla karty w ręce i nadawana
+tylko przez tę decyzję — komendy `cast_spell`/`cast_permanent` jej nie
+przekazują (inaczej dałoby się rzucać za darmo z panelu). Jedna definicja
+„kosztu zniesionego" (`manaCostWaived`) obsługuje wszystkie bramki `castSpell`
+i ścieżkę modalną (`castModalSpell` z parametrem uprawnienia), więc walidacja
+kolorów i pipów nie żąda kolorów od rzutu, który kosztuje 0 (L41/L48).
+
+Panel: grupowanie `resolve_hand_free_cast`, etykiety komendy/tytułu/grupy,
+komunikaty logu. Bot: gałąź wyceny (bliźniak rodziny darmowych rzutów, baza
+45 — karta + efekt za 0 many), kind `ability`, etykieta śladu; aggro-bot na
+whitelist. Ward: `resolve_hand_free_cast` w `WARD_TAXED_TYPES` (pin w
+`test/m324-bot-ward-rodzina.test.js`) — ward przeciwnika to osobny koszt.
+
+Piny: `test/real-cards-batch57.test.js` — 5 nowych (licznik odpala RAZ; czar
+sprzed wejścia Barala liczy się do licznika; oferta zawiera tylko mniejszą MV
+i wspólny typ; komenda spoza oferty i decyzja innego gracza odrzucone;
+rezygnacja domyka decyzję i przywraca pass). RED→GREEN na stashu jedenastu
+plików źródłowych: 5 czerwonych. Strażniki pełnej bramy zgłosiły brakujące
+rejestracje nowego typu decyzji (M122 etykieta triggera i opis efektu,
+M202/C slug grupy, M324/A1 pin) — domknięte w `session.js`, `render.js`
+i w pinie testu.
+
+Bramy: `npm test` **5968/5968, 0 fail**, `npm run build` 64 moduły /
+3942,7 kB.
+
+## M393b (2026-09-19) — Batch 57/B6b: Baral and Kari Zev — ścieżka „If you don't" (token) i wybór bez alternatywy
+
+Domyka kartę 88 (status `supported`, ADR 0010 §4): gałąź odmowy tworzy
+**First Mate Ragavan** — legendarny 2/1 czerwony Monkey Pirate z haste
+DO KOŃCA TURY.
+
+**Skutek rezygnacji jest częścią TEJ SAMEJ decyzji.** Efekt
+`free_cast_from_hand` niesie w danych karty `elseEffect` (deskryptor generyczny,
+ADR 0002), a `pendingHandFreeCast` kolejkuje go razem z decyzją — dlatego
+odmowa nie jest pustym ruchem, a komenda `resolve_hand_free_cast{decline}`
+wykonuje efekt z LKI źródła (stub `{id, controllerId, cardId}` — źródło mogło
+już opuścić pole bitwy, CR 603.10; token kontroluje gracz decyzji).
+
+**Wybór bez alternatywy jest automatyczny** (zasada właściciela): gdy
+`handFreeCastOffers` jest PUSTE (pusta ręka albo brak czaru o mniejszej MV
+i wspólnym typie), jedynym legalnym wyborem jest rezygnacja — więc
+`pruneDeadPendingDecisions` domyka decyzję sam, wykonuje `elseEffect`
+i emituje `hand_free_cast_resolved{declined: true, noCandidates: true}`.
+Gracz nie widzi modala z jednym przyciskiem, a token i tak powstaje.
+
+**Skutek odmowy jedzie JEDNYM predykatem do prezentacji i wyceny**:
+`elseEffectSummary` (tokens.js) redukuje deskryptor do postaci widokowej
+(`{type, name, power, toughness, keywords, keywordsUntilEndOfTurn}`) i ten
+sam obiekt dostaje widok gracza (`view.pendingHandFreeCast.alternative`),
+zdarzenie `hand_free_cast_required`/`hand_free_cast_resolved` i heurystyka.
+Panel nazywa przycisk „Zrezygnuj — utwórz token First Mate Ragavan 2/1
+(Pośpiech do końca tury)", log — „jeśli nie — token …", a bot nie wycenia już
+odmowy jako ruchu jałowego: bierze wartość tokenu z tej samej skali co
+generyczne `create_token` (12), więc nadal woli darmowy czar (45), ale ma
+z czym porównywać (L41/L48 — jedno źródło dla panelu, logu i wyceny).
+
+**Token w katalogu**: `token_first_mate_ragavan` z drukiem ttdc/18
+(Scryfall `705adcf9-…`, UUID z API — L26), `set: null`, status `limited`
+(„token — nie można umieścić w talii"), `imageUri` z `cards.scryfall.io`.
+Strażniki M202/K (wpis + grafika + zgodność z deskryptorem) i M369/I
+(każdy token silnika ma ilustrację) czerwieniły się na brak wpisu — dlatego
+wpis jest w tym samym commicie co mechanika.
+
+**Haste tokenu jest nadaniem CZASOWYM** (`keywordsUntilEndOfTurn` →
+`grantKeywordsUntilEndOfTurn`), nie wydrukowanym keywordem: zdolność znika
+w cleanupie, a token zachowuje resztę cech (CR 611.2c). Identy utworzonych
+tokenów zbieramy z `token_created` w tym samym efekcie, żeby nadać DOKŁADNIE
+im (kolejność strefy bywa zajęta przez inne efekty tego samego kroku).
+
+Piny: `test/real-cards-batch57.test.js` — 5 nowych (rezygnacja tworzy token
+2/1 Legendary Monkey Pirate z `keywordGrants: ['haste']` i realnie atakuje
+w tej samej turze; brak kandydatów = auto-domknięcie z `noCandidates: true`
+i bez komendy w panelu; to samo przy pustej ręce; rzut zabiera gałąź „If you
+don't" — token NIE powstaje; panel i log nazywają skutek odmowy). RED→GREEN
+na stashu czterech plików źródłowych: 3 czerwone.
+
+Churn: `kaladesh` (plan „Kaladesh" — Baral and Kari Zev) — liczności
+26/9/17 → **27/9/18** (README z pomiaru M203/7, nie z ręki), landy
+3×Swamp/1×Mountain → 2/2. Talia poza `SNAPSHOT_CONFIG`, więc golden-master
+bez zmian.
+
+Bramy: `npm test` **5974/5974, 0 fail**, `npm run build` 64 moduły /
+3953,0 kB.
+
+## M394 (2026-09-20) — uwagi z gry A–E: plan karty, landcycling bez celu, „Log partii", pipy zdolności w podziale, garda bota
+
+Pięć zgłoszeń właściciela z partii (2026-09-20), naprawianych paczkami na
+gałęzi PR #130; plan i tabela stanu:
+`docs/plans/PLAN_2026-09-20-uwagi-z-gry-a-e.md`.
+
+**A (`633178f`) — Time to Feed w talii Theros.** Karta wjechała do
+`decks/theros.txt`, bo w danych proweniencji (`tools/collection-art-ids.csv`)
+jej plan był przepisany z NAZWY SETU (THS), a nie z arkusza kolekcji
+(ADR 0029); arkusz mówi „Wiedźmin". Dane wracają do arkusza, karta jedzie do
+talii planu „Wiedźmin" (mono-zielona → strona BG), liczności README
+z pomiaru M203/7. Strażnik: `test/zgloszenie-a-time-to-feed-plan.test.js`.
+
+**B (`a92f982`) — landcycling, gdy w bibliotece nie ma już celu.** Bot
+aktywował Mountaincycling Seismic Monstrosaura bez Gór w bibliotece — karta
+z ręki i mana szły w pustkę. Bot zna teraz WŁASNĄ talię (`ownDeck`; przekazują
+ją sesja i benchmark, brak talii = zachowanie sprzed zgłoszenia) i liczy DOLNĄ
+granicę „kopie w talii − kopie widoczne poza biblioteką" (pole bitwy, ręka,
+grób, stos, wygnanie); 0 → kara `finish(-12)` zamiast premii. Oba warianty
+cyklowania: typecycling (`cycling.subtypes`) i basic landcycling
+(`cycling.allTypes`). Strażnik: `test/zgloszenie-b-landcycling-bez-celu.test.js`
+(4 przypadki, w tym kontrola pozytywna i brak wiedzy o talii).
+
+**C (`998afc8`) — „Log partii": kopiowanie i chronologia.** Panel po stronie
+AI dostał lustrzane narzędzia: select z WSZYSTKIMI turami (pierwotnie z pozycją
+„cała partia", usuniętą w `b3dd389` — uwaga właściciela 2026-09-20e: skoro
+przełączanie tury nic nie zmienia w liście logu, a całość kopiuje osobny
+przycisk, lista ma nieść tylko rzeczywiste tury; domyślnym zakresem jest
+najnowsza tura), przyciski „Kopiuj wybraną turę"/„Kopiuj całą partię"; lista
+renderuje się CHRONOLOGICZNIE (najnowsze na dole, nowe wiersze na końcu).
+Zakresy liczy jedno źródło w sesji
+(`logEntries`/`logTurnEntries`/`logTextAll`/`logTextFor`) — wpisy logu niosą
+numer tury i aktywnego gracza. KOREKTA (2026-09-20d, uwaga właściciela):
+sekcja miała wtedy dodatkowe pole z tekstem logu (`<pre id="log-text">`) —
+nadmiarowe wobec zlecenia (kopiowanie + chronologia); pole i jego styl
+usunięte, sekcja to jedna lista logu. Strażnik:
+`test/zgloszenie-c-log-partii-tury.test.js` (m.in. pin „sekcja = jedna lista +
+select + dwa przyciski, żadnego `log-text` i żadnego własnego koloru wpisów").
+
+**D (`b9a22ce`) — bezkolorowe karty z kolorowymi pipami zdolności.**
+`splitColorsOf` czytało dla artefaktu wyłącznie kolory PRODUKOWANEJ many, więc
+Simian Simulacrum (unearth {2}{G}{G}) trafiał jako „wypełniacz" do Dominarii WU.
+Nowy `abilityCostColorsOf` (pipy kosztów zdolności aktywowanych oraz kosztów
+alternatywnych/dodatkowych czaru) decyduje o stronie karty BEZKOLOROWEJ;
+`effects[].colors` świadomie poza zakresem (to kolor TWORZONEGO TOKENU, nie
+karty — pułapka Call the Mountain Chocobo). Pełne wejście pipów do funkcji celu
+podziału zmierzone i odrzucone (przenosiło CAŁY podział Dominarii, 46
+czerwonych testów); maski i nazwy talii bez zmian. Strażnik:
+`test/zgloszenie-d-pipy-zdolnosci-podzial.test.js` (4/4).
+
+**E (`7cdcc3d`) — bot oddawał gardę przy 2 życiach.** Wycena per-stwór
+(wymiana → `power - 1`) była podbijana premią za wyścig (+8, przy życiu ≤ 2
++20), więc atak bez planu na kontratak wychodził na plus. `declare_attackers`
+liczy teraz `throwsGuard` (przed atakiem garda wystarczała do przeżycia, po
+ataku już nie, a atak nie wygrywa teraz), wtedy POMIJA premię za wyścig
+(L3 — inaczej przebija każdą drobną karę) i odejmuje `crackbackPenalty: 12`
+(`heuristic-params.js`); atak letalny na stole zmusza wroga do blokowania,
+a blokery ginące w wymuszonych blokach znikają z kontrataku (`forcedBlockLoss`).
+Zmiana premii dla pinów D/3 (ten sam atak 3/1 vs 3/3 przy 3 życiach)
+odnotowana w commicie. Strażnik: `test/zgloszenie-e-oddana-garda.test.js`
+(6/6; RED 5/1 — czerwone tylko E/1, scenariusz właściciela).
+
+**Bramy:** `npm test` **5997/5997**, `npm run build` 64 moduły / **3970,2 kB**,
+benchmark quick 672 mecze: heuristic 85,9% (przed zmianą 86,0% — szum),
+golden-master `overallHash` 4514c1cf65d99082… **bez zmian** po pkgu E (kara nie
+dotyka próbkowanych decyzji).
+
+## M395 — Uwagi z gry F–I: prowadzenie płatności, dane decyzji, narracja zdarzeń
+
+Druga paczka zgłoszeń właściciela z 2026-09-20 (plan:
+`docs/plans/PLAN_2026-09-20-uwagi-z-gry-f-i.md`); cztery paczki, każda z
+osobnym commitem i push (stała zasada właściciela).
+
+**F (`4355c51`) — martwa sekcja „Kreator talii”.** Panel `#deck-builder`
+w `src/table/index.html` jest zakomentowany (markup zostaje — odwracalność),
+`mountDeckBuilder` nie jest wołany w `main.js` (dwa montaże zakomentowane),
+a moduły i ADR 0012 zostają nietknięte. Bundle: 64 → 59 modułów. Strażnik:
+`test/zgloszenie-f-kreator-talii-wylaczony.test.js` (RED 0/3).
+
+**G (`de28378`) — „4 lądy do czaru za 2”.** Silnik był czysty (koszt `{1}{B}`,
+deskryptor 2 many, postęp domyka się w 2 tapnięciach); wadliwa była warstwa
+prowadzenia płatności — lista źródeł szła w porządku stołu, a po zebraniu sumy
+kreator dalej proponował lądy bez brakującego koloru. `guideManaSources`
+(kolejność: brakujący kolor pierwszy; zakres: po zebranej sumie tylko źródła
+dające brakujący kolor) + `missingColors`/`coversMissing` w modelu i etykieta
+„— pokrywa {B}”. Strażnicy: `test/zgloszenie-g-kreator-many-brakujacy-kolor.test.js`
+oraz end-to-end w `test/table-ui.test.js` (talia „g-canonized”; RED 3 tapnięcia
+przy koszcie 2, po: 2).
+
+**H (`eea273a`) — Explore bez nazwy karty.** Decyzja idzie przez wspólny
+`renderChoiceRequest`, brakowało DANYCH: `pendingExplore` niesie teraz
+`sourceCardId`, `playerView` wystawia `{ sourceCardId, cardId }` decydentowi,
+`choiceSourceTitle` nazywa źródło i odsłoniętą kartę, a
+`previewCardIdOfOption(option, resolveCardId, view)` bierze kartę z oczekującej
+decyzji → oba warianty dostają „🔍 Podgląd karty”. Strażnik:
+`test/zgloszenie-h-explore-nazwa-karty.test.js` (RED 0/3).
+
+**I (`9baaf89`) — cichy discover.** Brak trafienia w `discover_resolved` nie
+niósł faktów i mapował się na `null` w logu. Trzy warstwy: FAKTY w zdarzeniu
+(`revealedCardIds`, `bottomCount`, `libraryExhausted`; przy trafieniu
+`bottomCount`), TEKST opisu (biblioteka wyczerpana / brak karty MV ≤ X, karty
+na spód w losowej kolejności, CR 701.53) i BRAMKA (`discover_started`/
+`discover_resolved` w `BOT_RESOLUTION_EVENTS` i `HUMAN_DIGEST_EVENTS`).
+Strażnik: `test/zgloszenie-i-discover-brak-trafienia.test.js` (RED 0/4).
+
+**Bramy:** `node tools/run-tests.mjs all` **6022/6022**, `npm run build`
+59 modułów / **3948,2 kB**, benchmark quick 672 mecze: heuristic 85,9%
+(baseline 86,0% — szum). Lekcja: **L156** (trzy warstwy: prowadzenie płatności,
+dane decyzji z oczekującej decyzji, fakty → tekst → bramka).
+
+## M396 (2026-09-20) — paczka J: tapnięcia na manę w „Logu partii"
+
+**J (zgłoszenie właściciela)** — „w sekcji «Log partii» chcę widzieć dodatkowo
+każdy permanent tapnięty na manę (co i kiedy) — to ułatwi debugowanie błędów”.
+Pomiar: `mana_produced` (`resources.js` — `{ playerId, source: objectId,
+amount, colors }`) niósł komplet danych, ale chodził wyłącznie przez szum
+`TURN_NOISE`/`MAIN_LOG_NOISE` do bufora „Rozgrywki” dla bota; w logu stołu nie
+było po nim śladu (sonda pełnej partii: 10 produkcji many bota, ZERO wpisów
+w `logEntries()`). Opisujemy PRODUKCJĘ many, nie `object_tapped`: tapnięcie nie
+zna ani liczby jednostek, ani kolorów — a bez nich wpis nie mówi, co zapłacono.
+
+Naprawa: czysta, eksportowana `manaSourceLogText(e, { nameOfObject, who })`
+(„Ty tapujesz na manę: Wyspa → {U}”; druga osoba „tapuje”; symbole w liczbie
+`max(amount, colors.length)` — „{C}{C}{C}”; `null` dla zdarzeń bez nazwy
+źródła) + wrapper `logManaSource` wołający `sessionLog('event', …)` po nagłówku
+fazy w OBU gałęziach `MAIN_LOG_NOISE` (komendy gracza i pętla bota) — wpis jest
+ZWYKŁYM wpisem logu, bez własnego rodzaju, klasy i koloru (uwaga właściciela
+2026-09-20d: log ma wyglądać tak, jak wyglądał). Granice pinuje
+strażnik: wpis NIE trafia do modala „Rozgrywka” (`botMoves`) ani do zapisu tur
+dla AI (`turnHistory`) — decyzja właściciela z 2026-08-02 zostaje w mocy.
+Pułapka złapana testem: pierwsza wersja wrappera wołała `whoN` (istnieje tylko
+w closures deskryptorów zdarzeń) → `RuntimeError: whoN is not defined`;
+naprawa na `who()` z zasięgu sesji.
+
+Strażnik: `test/zgloszenie-j-tapniecia-many-w-logu.test.js` (3 piny; przed
+poprawką plik czerwony) + e2e w `test/table-ui.test.js` (talia „g-canonized”: po
+zapłacie wiersz „Ty tapujesz na manę: Swamp → B” w logu; zero „na manę”
+w zapisie tur dla AI; RED przed poprawką — brak wiersza). Bramy: `node tools/run-tests.mjs all` **6025/6025**
+(6022 + 3), `npm run build` 59 modułów / **3950,9 kB**. Lekcja: **L157** (log
+debugowy bierze zdarzenie o treści, której szuka gracz — i ma granicę).

@@ -317,7 +317,11 @@ test('F3: zmiana strefy permanentu CZŁOWIEKA w turze bota dociera w modalu prze
   let razemSledzone = 0;
   let razemOpisane = 0;
 
-  for (const seed of [1, 3, 11]) {
+  // L25 (seeds przelosowane świadomie, B4/M391): talia tarkir-bg dostała
+  // Hooting Mandrills + Forest (12. land), więc scenariusz przy seedzie 11
+  // nie odtwarza już śladu, który ta straż pilnuje. Hunter 2..40 (poza 11/13)
+  // → 12 daje ten sam przebieg co przed regenem (pary 1 i 3 zostają).
+  for (const seed of [1, 3, 12]) {
     const session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
     const nazwa = (object) => (object
       ? (registry.get(object.cardId)?.name ?? object.name ?? object.cardId) : null);

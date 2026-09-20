@@ -33,6 +33,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'attackThroughBonus',      // premia, gdy atakujący bezpiecznie zadaje moc (dawniej +3 w power+3)
   'attackOpenBoardBonus',    // premia za atak w pustą planszę przeciwnika (dawniej +8)
   'attackEvasionBonus',      // premia za ewazję latania omijającą blokerów (dawniej +3)
+  // E (zgłoszenie właściciela 2026-09-20): kara za ODDANIE GARDY — atak
+  // tapnięciem stwora, który był potrzebny, by przeżyć następną turę
+  // (crackback). Kara (nie premia), bo tylko ona niweluje dodatnią wycenę
+  // ataku; premia wyścigu jest przy takim ataku POMIJANA (L3).
+  'crackbackPenalty',
   // Rodzina „removal, obrażenia i przewaga kartowa" (B6 T1) — wycena efektów
   // czarów najczęstszych w cast_spell. Same PREMIE za trafienie CELU WROGA
   // (kary za zły cel/własny permanent zostają twardymi stałymi). Deskryptory
@@ -144,6 +149,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   attackThroughBonus: 3,
   attackOpenBoardBonus: 8,
   attackEvasionBonus: 3,
+  crackbackPenalty: 12,
   removalEnemyBase: 22,
   removalWorthWeight: 2,
   bounceEnemyBase: 25,

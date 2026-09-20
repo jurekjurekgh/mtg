@@ -7,6 +7,12 @@ import { runDetectors } from '../tools/table-tester/detectors.mjs';
 
 const source = readFileSync(new URL('../tools/table-tester/run-game.mjs', import.meta.url), 'utf8');
 
+// C3 (zgłoszenie właściciela 2026-09-20): `renderTableView` rysuje log
+// CHRONOLOGICZNIE (najnowsze na dole), więc fixtures tego strażnika podają
+// wiersze DOM od najstarszego do najnowszego — intencja asercji (dowód
+// w transkrypcie w kolejności chronologicznej, nowe wpisy rozpoznane po
+// KOŃCU listy) zostaje bez zmian.
+
 // Wykonujemy rzeczywiste lokalne funkcje sterownika na minimalnym DOM-ie,
 // bez jsdom w głównej bramce. Nie jest to kopia algorytmu z run-game.
 // Dzięki temu RED mierzy stare slice(-6)/indeks od końca, nie brak nowego API.
@@ -50,19 +56,19 @@ function collector(name, extra = {}) {
 }
 
 test('M346/A: snapshot loguje sześć najnowszych wpisów w kolejności chronologicznej', () => {
-  const rows = ['ósmy', 'siódmy', 'szósty', 'piąty', 'czwarty', 'trzeci', 'drugi', 'pierwszy'];
+  const rows = ['pierwszy', 'drugi', 'trzeci', 'czwarty', 'piąty', 'szósty', 'siódmy', 'ósmy'];
   assert.equal(snapshotLog(rows), '  LOG: trzeci ⏎ czwarty ⏎ piąty ⏎ szósty ⏎ siódmy ⏎ ósmy');
 });
 
 test('M346/B: krótki i pusty log nie gubią wpisów ani nie odwracają chronologii', () => {
-  assert.equal(snapshotLog(['nowszy', 'starszy']), '  LOG: starszy ⏎ nowszy');
+  assert.equal(snapshotLog(['starszy', 'nowszy']), '  LOG: starszy ⏎ nowszy');
   assert.equal(snapshotLog([]), '  LOG: ');
 });
 
 test('M346/C: kolektor odrzuceń przypisuje nowe powody do nowej akcji, nie powtarza starego', () => {
   const c = collector('collectRejections');
   c.setRows(['pierwszy błąd']); c.collect('akcja A');
-  c.setRows(['trzeci błąd', 'drugi błąd', 'pierwszy błąd']);
+  c.setRows(['pierwszy błąd', 'drugi błąd', 'trzeci błąd']);
   c.ctx.tickedThisWindow = true;
   c.collect('akcja B'); c.collect('bez nowego odrzucenia');
   assert.deepEqual(c.records.map((r) => [r.action, r.reason, r.afterTick]), [
@@ -74,7 +80,7 @@ test('M346/C: kolektor odrzuceń przypisuje nowe powody do nowej akcji, nie powt
 
 test('M346/D: po skróceniu logu kolektor odrzuceń rozpoczyna od nowej zawartości', () => {
   const c = collector('collectRejections');
-  c.setRows(['stary 2', 'stary 1']); c.collect('poprzednia partia');
+  c.setRows(['stary 1', 'stary 2']); c.collect('poprzednia partia');
   c.setRows(['nowy']); c.collect('nowa partia');
   assert.equal(c.records.length, 3);
   assert.equal(c.records.at(-1).reason, 'nowy');
@@ -89,15 +95,16 @@ test('M346/E: dwa identyczne odrzucenia są dwoma zdarzeniami, nie deduplikujemy
 
 test('M346/F: istniejący kolektor dowodów auto-pass zachowuje kolejność i filtr', () => {
   const c = collector('collectMainLog');
-  c.setRows(['Auto-pass: stary', 'Nowa partia']); c.collect();
-  c.setRows(['Auto-pass: drugi', 'zwykły wpis', 'Auto-pass: pierwszy', 'Auto-pass: stary', 'Nowa partia']);
+  c.setRows(['Nowa partia', 'Auto-pass: stary']); c.collect();
+  c.setRows(['Nowa partia', 'Auto-pass: stary', 'Auto-pass: pierwszy', 'zwykły wpis', 'Auto-pass: drugi']);
   c.collect(); c.collect();
   assert.deepEqual(c.printed, ['  LOG: Auto-pass: stary', '  LOG: Auto-pass: pierwszy', '  LOG: Auto-pass: drugi']);
 });
 
-test('M346/G: wspólny ekstraktor nie mutuje wejścia i dla zera nowych wpisów daje pustkę', () => {
+test('M346/G: wspólny ekstraktor bierze najnowsze N z KOŃCA listy i nie mutuje wejścia', () => {
   assert.equal(typeof extractors.chronologicalLogEntries, 'function');
-  const rows = Object.freeze(['nowy', 'starszy', 'najstarszy']);
+  // C3: DOM jest chronologiczny, więc „nowe wpisy" to ogon listy.
+  const rows = Object.freeze(['najstarszy', 'starszy', 'nowy']);
   assert.deepEqual(extractors.chronologicalLogEntries(rows, 2), ['starszy', 'nowy']);
   assert.deepEqual(extractors.chronologicalLogEntries(rows, 0), []);
   assert.deepEqual(extractors.chronologicalLogEntries(rows, -1), []);

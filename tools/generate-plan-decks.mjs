@@ -36,7 +36,44 @@ function isNonBasic(card) {
  *  3. Źródło bezbarwne ({C}), any-color albo NIE-źródło many → pusta lista →
  *     wypełniacz (balansuje strony, bez tożsamości koloru).
  */
-function splitColorsOf(card) {
+/**
+ * D (zgłoszenie właściciela 2026-09-20, Simian Simulacrum): kolorowa TOŻSAMOŚĆ
+ * karty BEZKOLOROWEJ to suma (a) kolorów produkowanej many (jak dotąd) i
+ * (b) PIPÓW KOSZTÓW JEJ ZDOLNOŚCI — aktywowanych (`ability.cost.colors`, np.
+ * unearth, cycling, equip) oraz alternatywnych/dodatkowych kosztów czaru
+ * (bezpośrednie deskryptory `spell.*` niosące kolory: escape, flashback,
+ * buyback, cleave). Tak liczy tożsamość koloru sama gra (CR 903.4: symbole
+ * many w kosztach zdolności), więc decyzja nie jest arbitralna.
+ *
+ * ŚWIADOMY ZAKRES: NIE czytamy `effects[]` ani `qualifier` — tamte `colors`
+ * opisują np. TOKEN albo wybór w efekcie, nie kartę (Call the Mountain
+ * Chocobo tworzy zielonego ptaka, ale sam jest czerwony). Pipy ukryte głębiej
+ * niż jedno piętro (np. w `additionalCost.*`) też pomijamy — katalog dziś ich
+ * nie ma, a reguła ma zostać czytelna (nowy kształt danych = świadoma decyzja).
+ */
+export function abilityCostColorsOf(card) {
+  const found = new Set();
+  const add = (colors) => {
+    for (const color of Array.isArray(colors) ? colors : []) {
+      if (COLOR_ORDER.includes(color)) found.add(color);
+    }
+  };
+  const objectsIn = (block) => (block && typeof block === 'object' && !Array.isArray(block)
+    ? Object.values(block).filter((value) => value && typeof value === 'object' && !Array.isArray(value))
+    : []);
+  for (const ability of card.abilities ?? []) {
+    add(ability?.cost?.colors);
+    for (const nested of objectsIn(ability?.cost)) add(nested.colors);
+  }
+  const spell = card.spell && typeof card.spell === 'object' ? card.spell : null;
+  for (const descriptor of objectsIn(spell)) add(descriptor.colors);
+  for (const key of ['additionalCost', 'additionalCosts']) {
+    for (const nested of objectsIn(spell?.[key])) add(nested.colors);
+  }
+  return COLOR_ORDER.filter((color) => found.has(color));
+}
+
+export function splitColorsOf(card) {
   const declared = Array.isArray(card.colors) ? card.colors.filter((c) => 'WUBRG'.includes(c)) : [];
   if (declared.length > 0) return declared;
   // Bezkolorowa: sprawdź produkcję many (ląd / artefakt / devoid — bez różnicy).
@@ -47,6 +84,13 @@ function splitColorsOf(card) {
     types: card.types ?? [], subtypes: card.subtypes ?? [],
     abilities: card.abilities ?? [], colors: [],
   }, null);
+  // D (zgłoszenie 2026-09-20): pipy kosztów zdolności (patrz
+  // `abilityCostColorsOf`) NIE wchodzą do tożsamości sterującej WYBOREM
+  // podziału — pełne wejście do funkcji celu przenosi CAŁY podział planu
+  // (Dominaria: WU|BRG → UB|WRG, czyli rename plików i unieważnienie
+  // fixture'ów) zamiast załatwić zgłoszenie „karta bezkolorowa ma trafić tam,
+  // gdzie da się zapłacić za jej zdolność". Pipy sterują stroną karty
+  // bezkolorowej w `distributeColorless` (trzeci argument splitPlanByColors).
   return src?.colors ?? [];
 }
 
@@ -147,7 +191,30 @@ export function coloredPips(card) {
   const cost = MANA_COSTS[card.id];
   const pips = { W: 0, U: 0, B: 0, R: 0, G: 0 };
   if (cost) {
-    for (const m of cost.matchAll(/\{([WUBRG])\}/g)) pips[m[1]] += 1;
+    // M389 (Batch 57, Messenger Falcons {2}{G/U}{W}; usterka ukryta na Esper
+    // Stormblade {W/B}{U} w alara.txt): symbol hybrydowy `{X/Y}` płaci JEDEN
+    // z dwóch kolorów, więc talia musi mieć co najmniej jedno źródło KTÓREGÓ-
+    // KOLWIEK z pary. Rozstrzygamy deterministycznie: pip liczy się do
+    // PIERWSZEGO koloru pary w kolejności WUBRG (stabilne, niezależne od
+    // kolejności kart; proporcja liczona jak dotąd — jeden pip = jedno
+    // wymaganie). Stary regex `\{([WUBRG])\}` gubił cały symbol, więc talia
+    // dostawała wyłącznie źródła drugiego koloru pary.
+    //
+    // ŚWIADOMY ZAKRES: liczy się WYŁĄCZNIE hybryda dwóch KOLORÓW (`{G/U}`).
+    // `{W/P}` (Phyrexian, Porcelain Legionnaire) i `{2/W}` (dwubrid) mają
+    // alternatywę płatną bez koloru (2 życia / 2 generyczne), więc nie nakładają
+    // wymogu źródła — liczenie ich jak pip koloru zawyżałoby proporcję
+    // (mirrodin-wu: 4/6 → 5/5 bez powodu; zmierzone w B2).
+    for (const m of cost.matchAll(/\{([^}]+)\}/g)) {
+      const parts = m[1].split('/');
+      if (parts.length === 1) {
+        if (pips[parts[0]] != null) pips[parts[0]] += 1;
+        continue;
+      }
+      if (parts.length !== 2 || !parts.every((symbol) => pips[symbol] != null)) continue;
+      const color = COLOR_ORDER.indexOf(parts[0]) < COLOR_ORDER.indexOf(parts[1]) ? parts[0] : parts[1];
+      pips[color] += 1;
+    }
   } else {
     for (const c of card.colors ?? []) if (pips[c] != null) pips[c] += 1;
   }
@@ -270,7 +337,7 @@ export function buildDecks(registry = createCardRegistry()) {
     if (file.startsWith('worek')) { splitDecks.set(file, entry); continue; }
     const nonBasic = entry.cards.filter(isNonBasic);
     if (!needsSplit(nonBasic.length)) { splitDecks.set(file, entry); continue; }
-    const split = splitPlanByColors(nonBasic, splitColorsOf);
+    const split = splitPlanByColors(nonBasic, splitColorsOf, abilityCostColorsOf);
     if (!split) {
       // Fallback (decyzja właściciela „fill_then_keep"): plan zbyt jednokolorowy,
       // by dać dwie talie >=15 — ZOSTAW jedną talię i ostrzeż. Nie tworzymy

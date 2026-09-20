@@ -11,6 +11,10 @@
 export const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingAbilityActivation', 'pendingAmass', 'pendingColorChoice',
   'pendingEscapeExile',
+  // Batch 57/B4 (Delve, CR 702.66): deklaracja rzutu czeka na wybór liczby
+  // i kart wygnania — zamrożony stan jest częścią stanu gry (ADR 0005),
+  // a `affordableCounts` decyduje o ofercie (L48).
+  'pendingDelveExile',
   'madnessQueue',
   // B2 (audyt PR #113, F1): `madnessQueue` to KOLEJKA odroczonych decyzji
   // madness (M258 — wpis zamiast natychmiastowego `pendingMadnessCast`, bo
@@ -68,7 +72,7 @@ const STATE_EFFECT_FIELDS = Object.freeze([
 ]);
 
 const STATE_COUNTER_FIELDS = Object.freeze([
-  'spellsCastThisTurn', 'spellsCastThisTurnByPlayer',
+  'spellsCastThisTurn', 'spellsCastThisTurnByPlayer', 'instantSorceryCastThisTurnByPlayer',
   'lastTurnSpellsCastByPlayer', 'lastTurnSpellsCast', 'mulliganCounts',
   'cardsDrawnThisTurn', 'lifeGainedThisTurn', 'creatureDiedThisTurn',
   'landEnteredThisTurn', 'damageTakenByPlayerThisTurn',
@@ -248,6 +252,9 @@ export function stateFingerprint(state) {
     } : null,
     // M174/E: darmowy rzut z grobu (Halo Forager) — stan decyzji.
     pendingGraveFreeCast: state.pendingGraveFreeCast ? { playerId: state.pendingGraveFreeCast.playerId } : null,
+    pendingHandFreeCast: state.pendingHandFreeCast
+      ? { playerId: state.pendingHandFreeCast.playerId, maxManaValue: state.pendingHandFreeCast.maxManaValue }
+      : null,
     pendingSpell: state.pendingSpell ? { stackId: state.pendingSpell.stackId, effects: (state.pendingSpell.effects ?? []).length } : null,
     pendingClash: state.pendingClash ? {
       choices: [...state.pendingClash.choices],

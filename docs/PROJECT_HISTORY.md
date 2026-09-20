@@ -19,6 +19,193 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-20e — „Log partii": lista tylko z rzeczywistymi turami
+
+Właściciel po obejrzeniu korekty: „Skoro przełączanie tury nie zmienia nic
+w logu poniżej to niepotrzebna jest opcja: cała partia. Cały zapis kopiuje się
+guzikiem Kopiuj całą partię, więc nie ma sensu utrzymywać w liście rozwijanej
+opcji «cała partia», niech będą tylko rzeczywiste tury.”
+
+**Zmiana (`b3dd389`):** select wypełnia się wyłącznie turami z sesji
+(`logTurnEntries()`) — statyczna opcja „cała partia" zniknęła z markupu
+i z renderu; `selectedLogTurn` zwraca numer tury albo `null` (koniec zakresu
+`'all'`), „Kopiuj wybraną turę" czyta `logTextFor(n)`, a przy braku tur select
+jest pusty i wyłączony. Domyślnym zakresem kopiowania jest NAJNOWSZA tura;
+świadomy wybór gracza przetrwa pojawienie się nowej tury (`dataset.logPick`
+zapisywany przy zmianie w `main.js`) — inaczej każda nowa tura zrywałaby
+wybór. Parametr `selected` zniknął z `renderLogPanel` (zakres czyta się z DOM),
+a call site w `renderTableView` został uproszczony.
+
+**Strażnicy:** `test/zgloszenie-c-log-partii-tury.test.js` — lista = wszystkie
+tury (zero opcji `all`/„cała partia"), domyślnie najnowsza tura, wybór gracza
+przetrwa nową turę, brak tur = select wyłączony, pin struktury sekcji (brak
+statycznej opcji w markupie). RED przed zmianą: 6/9 (3 czerwone piny).
+
+**Bramy:** `node tools/run-tests.mjs all` **6027/6027** (6026 + 1 nowy pin),
+`npm run build` 59 modułów / **3950,9 kB**. Sonda sesyjna na pełnej partii:
+13 tur → 13 opcji, brak „całej partii", domyślnie tura 13.
+
+## 2026-09-20d — korekta po uwadze właściciela: jeden log, żadnych dodatków
+
+Właściciel zakwestionował opis i implementację z dwóch paczek naraz:
+(1) mój raport mówił o „logu na stole” i „polu «Log partii»” jak o dwóch
+miejscach — a to JEDNA sekcja („Log partii”) i jedna lista logu; (2) sam
+dodałem w paczce C pole tekstowe z logiem (`<pre id="log-text">`, obok listy),
+a w paczce J własny rodzaj i wyciszony kolor wpisów tapnięć (`.log-tap`) —
+choć zlecenie C obejmowało wyłącznie kopiowanie logu/wybranej tury do schowka
+i chronologię, a J tylko same wpisy.
+
+**Zmiany:** wpis o produkcji many loguje się zwykłym rodzajem `event`
+(zniknął `kind: 'tap'` i CSS `.log-tap`), a z sekcji „Log partii” usunięto
+nadmiarowe pole tekstowe razem z jego stylem (`renderLogPanel` obsługuje już
+tylko select zakresu). Sekcja to odtąd JEDNA lista logu (nazwy kart klikalne,
+symbole many jako ikony — zachowanie od zgłoszenia E3 z 2026-09-10) + select
+„Tura:” + „Kopiuj wybraną turę”/„Kopiuj całą partię”; chronologia bez zmian
+(najnowsze na dole).
+
+**Strażnicy:** nowy pin w `test/zgloszenie-c-log-partii-tury.test.js`
+(sekcja = jedna lista + select + dwa przyciski; zero `id="log-text"`, zero
+`.log-text-box`, zero `.log-tap`), a `test/zgloszenie-j-tapniecia-many-w-logu.test.js`
+pinuje zwykły rodzaj wpisu. Bramy: `node tools/run-tests.mjs all` **6026/6026**,
+`npm run build` 59 modułów / **3949,8 kB**. Lekcja **L157** rozszerzona o regułę
+„zlecenie «dodaj wpis» nie jest zgodą na dodatki obok” (opłacone skróceniami
+opisów przypadków; budżet **99 984 / 100 000**).
+
+**Środowisko (pułapka §2 ENVIRONMENT wróciła):** w trakcie tej sesji workspace
+odtworzył się ze świeżego klona i gałąź lokalna stanęła na `8af0c7c` (main) —
+cała praca została w DRZEWIE, historii nie było. Procedura z pamięci podręcznej
+(`git fetch --depth=1 origin arena/01a0b8fe-mtg` → `git reset --mixed
+FETCH_HEAD`) odtworzyła wskaźnik do `37b6590` bez ruszania plików; `git status`
+pokazał dokładnie bieżące poprawki (12 plików). Znowu potwierdzone: NIGDY
+`--hard`, gdy w drzewie jest niecommitowana praca.
+
+## 2026-09-20c — trzecia paczka uwag z gry (J): tapnięcia na manę w „Logu partii"
+
+Właściciel po odświeżeniu tokenu GitHub: „Wypychaj” + nowe zgłoszenie —
+„w sekcji «Log partii» chcę widzieć dodatkowo każdy permanent tapnięty na manę
+(co i kiedy); to ułatwi debugowanie błędów”. Push dokumentacji F–I (`ecb1a8f`,
+po amendzie) i sekcji F–I w opisie PR #130 wykonane.
+
+**J (`7ebe4f5`)** — silnik od dawna niesie `mana_produced` (`{ playerId,
+source: objectId, amount, colors }`), ale zdarzenie chodziło tylko przez szum
+`MAIN_LOG_NOISE` do bufora „Rozgrywki”: w logu stołu nie było po nim śladu
+(sonda pełnej partii: 10 produkcji many bota, 0 wpisów w `logEntries()`).
+Dodane: czysta `manaSourceLogText(…)` („Ty tapujesz na manę: Wyspa → {U}”,
+symbole w liczbie `max(amount, colors.length)`, `null` bez nazwy źródła)
++ `logManaSource` w obu gałęziach szumu — wpis jest ZWYKŁYM wpisem logu
+(bez własnego rodzaju, klasy i koloru).
+Granice: bez wpisu w modalu „Rozgrywka” (`botMoves`) i w zapisie tur dla AI
+(`turnHistory`) — decyzja właściciela 2026-08-02 o szumie modala w mocy.
+Po drodze złapana pułapka zasięgu: `whoN` istnieje tylko w closures
+deskryptorów zdarzeń (`RuntimeError` w teście); naprawa na `who()` sesji.
+
+Pin end-to-end (Mini-DOM, talia „g-canonized”): po zapłacie wiersz „Ty
+tapujesz na manę: Swamp → B” w logu, zero „na manę” w zapisie tur dla AI
+(RED przed poprawką).
+
+**Bramy:** `node tools/run-tests.mjs all` **6025/6025**, `npm run build`
+59 modułów / **3950,9 kB**. Lekcja **L157** dopisana; budżet lektury startowej
+**99 971 / 100 000** (zapłacona skróceniem opisów przypadków w rejestrze).
+Plan: `docs/plans/PLAN_2026-09-20-uwagi-z-gry-j.md`. PR #130 czeka na decyzję
+właściciela.
+
+## 2026-09-20 — paka uwag z gry A–E (PR #130, gałąź arena/01a0b8fe-mtg)
+
+Zlecenie właściciela (2026-09-20), zaraz po zamknięciu batcha 57: pięć
+zgłoszeń z partii, „do naprawienia jeszcze w tym PR", praca paczkami z commitem
+i pushem po każdej. Plan i tabela stanu:
+[`docs/plans/PLAN_2026-09-20-uwagi-z-gry-a-e.md`](plans/PLAN_2026-09-20-uwagi-z-gry-a-e.md),
+milestone `M394`, lekcja `L155`.
+
+**A** `633178f` — Time to Feed wrócił do planu „Wiedźmin": dane proweniencji
+były przepisane z nazwy setu (ADR 0029), a nie z arkusza kolekcji; talie
+`theros` 26/9/17 i `wiedzmin-bg` 26/9/17 (Forest 4), README z pomiaru M203/7.
+**B** `a92f982` — bot zna WŁASNĄ talię (`ownDeck`) i nie aktywuje landcyclingu,
+gdy w bibliotece nie może już być celu (dolna granica: kopie w talii − kopie
+widoczne poza biblioteką); dotyczy wszystkich land-cyclingów (typecycling
+i basic landcycling). **C** `998afc8` — „Log partii": select wszystkich tur
+z „cała partia" (domyślnie), przyciski kopiowania i chronologia z najnowszymi
+na DOLE; jedno źródło zakresów w sesji. **D** `b9a22ce` — bezkolorowe karty
+z pipami kosztów zdolności idą na stronę, która może je zapłacić (Simian
+Simulacrum → `dominaria-brg`); pełne wejście pipów do funkcji celu podziału
+zmierzone i odrzucone (46 czerwonych testów), golden-master zregenerowany
+świadomie (L25). **E** `7cdcc3d` — wycena `declare_attackers` karze oddanie
+gardy (`crackbackPenalty: 12`), pomija wtedy premię za wyścig i zna wymuszone
+bloki przy ataku letalnym (lekcja L155).
+
+**Bramy:** `npm test` 5997/5997, build 64 moduły / 3970,2 kB, benchmark quick
+672 mecze (heuristic 85,9%, przed zmianą 86,0% — szum), snapshot wycen bota bez
+zmian (`overallHash` 4514c1cf65d99082…). PR #130 czeka na decyzję właściciela.
+
+**Reset workspace w trakcie sesji (pułapka środowiska, §2 ENVIRONMENT):**
+środowisko odtworzyło workspace ze świeżego klona (reflog: `clone: from …`)
+i cofnęło gałąź do `main` — CAŁA niecommitowana praca została w drzewie,
+historia nie. `git ls-remote`/`git fetch` zadziałały ANONIMOWO (repo publiczne,
+mimo wygasłego `GH_TOKEN`), więc `git fetch --depth=1 origin
+arena/01a0b8fe-mtg` odtworzył historię do pkg C (`998afc8`), `git reset --mixed`
+przeniósł wskaźnik bez ruszania plików, a `git status` pokazał dokładnie pkgi
+D + E — odtworzone (nowe SHA: `b9a22ce`/`7cdcc3d`) i wypchnięte. Reguła:
+**przed resetem zawsze sprawdź `git status`; `--mixed` zamiast `--hard`, gdy
+drzewo niesie niecommitowaną pracę.**
+
+## 2026-09-19b Batch 57 (kolekcja 64–125) — 10 kart właściciela, etapy B0a–B7 (PR #130)
+
+Zlecenie właściciela (2026-09-19): dziesięć kart z jego arkusza kolekcji
+(artId 64, 66, 70, 77, 80, 82, 85, 88, 90, 125), z poleceniem: rozplanuj,
+ściągnij dane z sieci, podziel na etapy i realizuj z commitem oraz pushem po
+KAŻDYM etapie. Plan: [`docs/plans/PLAN_2026-09-19c-batch57-kolekcja-64-125.md`](plans/PLAN_2026-09-19c-batch57-kolekcja-64-125.md),
+handoff: [2026-09-19b](setup/HANDOFF_2026-09-19b.md).
+
+**Etapy (każdy: zielony `npm test` + `npm run build` przed commitem).**
+B0a `895c49e` (plan), B0b `3929e82` (dane Scryfall + drugi druk Phyrexian
+Ragera), B1 `b0fed28` (M388 — Lightwalker, Tranquil Cove, Ordinary Bear,
+Capture Sphere, Phyrexian Rager APC), B2 `926117f` (M389 — Messenger Falcons),
+B3 `2d9cb81` (M390 — Merciless Repurposing), B4 `7e398f5` (M391 — Hooting
+Mandrills / Delve), B5 `e10f43b` (M392 — Annie Flash), B6 `4569323`
+(rozpoznanie), B6a `07666f2` (M393a) + `bfeeb62` (dokumentacja M393a), B6b
+`6bc8652` (M393b — token First Mate Ragavan), B7 (ten wpis).
+
+**Korekta właściciela (wiążąca, w trakcie B0b):** żaden istniejący druk nie
+jest usuwany ani podmieniany. Kolekcja ma oba wydania Phyrexian Ragera
+(75DMU Dominaria i 85APC Mirrodin), więc katalog ma DWA wpisy —
+`phyrexian-rager` (DMU/75, plan Dominaria, nietknięty) i
+`phyrexian-rager-apc` (APC/85, plan Mirrodin), wzorzec Curate (BRO + STX);
+talia rozróżnia je sufiksem setu („1x Phyrexian Rager (DMU)").
+
+**Mechaniki silnika (M388–M393b).** Warunkowy flying czytany z liczników
+(`{hasCounter: '+1/+1'}`), pipy HYBRYDOWE w rozkładzie landów generatora,
+inkubacja po usunięciu celu, Delve (CR 702.66 — wygnanie z grobu płaci
+generic, MV się nie zmienia), powrót permanentu z grobu z wyborem gospodarza
+aury przed wejściem (CR 303.4f) i okno „play this turn", licznik „pierwszy
+instant/sorcery w turze" + darmowy rzut z ręki (bez kosztu many, pipów
+i phyrexianu; kicker i koszty dodatkowe nadal płacone) oraz ścieżka „If you
+don't" → token First Mate Ragavan z haste nadanym do końca tury. Przy okazji
+domknięto generyczną lukę: zdarzenia wywołane WEWNĄTRZ komendy (tapnięcie
+przez ATAK) nie docierały do skanu triggerów — lekcja **L153**.
+
+**Znalezisko regułowe (zasada właściciela „wybory bez alternatywy są
+automatyczne"):** decyzja darmowego rzutu z ręki bez ANI JEDNEGO kandydata
+domyka się sama (silnik wykonuje gałąź „If you don't" i loguje
+`noCandidates`), a skutek odmowy jedzie z decyzją do widoku, logu i wyceny
+bota — lekcja **L154**.
+
+**Talie (generator, ADR 0023/0024):** churn per etap z atrybucją —
+`dominaria-brg` (B0b), `mirrodin-wu`/`mirrodin-brg`/`srodziemie`/`tarkir-wur`/
+`worek-basni`/`worek-dziki` (B1), `alara` (B2), `mirrodin-brg` (B3),
+`tarkir-bg` (B4), `worek-dziki` (B5), `kaladesh` (B6b: 26/9/17 → **27/9/18**).
+Liczności w README wyłącznie z pomiaru strażnika M203/7. Golden master bez
+zmian składu (`SNAPSHOT_CONFIG` = tarkir-bg vs warhammer-ubr nietknięte przez
+ten batch).
+
+**Pomiar (B7, quick-25 — komenda z E7):** 5 952/5 952 mecze ukończone,
+0 niedokończonych, 0 zacin; heuristic **86,7%** (5162/5952), aggro 24,4%,
+random 2,2%, `heuristic | aggro` 75,6%, `heuristic | random` 97,8%. Bramy:
+`npm test` **5974/5974, 0 fail**, build 64 moduły / 3953,0 kB. Pełne B0
+(10 000 meczów) wyłącznie na wyraźną komendę właściciela (ADR 0018).
+
+**Lekcje:** L153 (zdarzenie z wnętrza komendy musi wrócić z komendą) i L154
+(skutek odmowy jest częścią decyzji; brak wariantów = automat).
+
 ## 2026-09-19 Uwagi z testów: C1/C2 (Merchant's Dockhand), D (Malamet), E (reach) (PR #129, dalszy ciąg)
 
 Zlecenie właściciela (2026-09-18, partia kaladesh): trzy uwagi. Plan:
@@ -11459,3 +11646,84 @@ bot-benchmark 10/10. Pełny B0 tylko na komendę (ADR 0018) — nie uruchamiany.
 PR #129 czeka na decyzję właściciela. Uwaga: sesja PR #128 nie zostawiła wpisu
 w tej historii (tylko handoff i audyt) — stan po #128 opisuje
 `docs/setup/HANDOFF_2026-09-18.md` i `docs/audits/AUDYT_PR128_2026-09-18.md`.
+
+**Sesja 2026-09-19 (audyt PR #129 + uwagi właściciela A/B/C + pętla jakości, PR #130).**
+Audyt scalonego PR #129 (`docs/audits/AUDYT_PR129_2026-09-19.md`, 35 plików diffu,
+16 mutacji) dał **trzy znaleziska, wszystkie naprawione w tej sesji** — każde
+z pinem czerwieniejącym bez fixa: **F-1** (`castFireball` nie niósł `xValue`
+w `spell_cast`, czyli uwaga B1 właściciela działała dla każdego czaru X prócz
+fireballowych, `6ec5002`, M17 → 2 RED), **F-2** (brak pinu reprezentanta grupy
+tapX w `render.js` — od niego zależy sonda noop Żywego Testera, `cdb8fd5`,
+M10 → 1 RED), **F-3** (pin dedup logu `main.js` był strażnikiem na zbyt luźny
+regex, `24fb1e5`, M16 → 1 RED). Potem trzy uwagi właściciela z gry:
+**A** — wybory bez alternatywy są automatyczne: Lodestone Needle z dokładnie
+jednym kandydatem rozstrzyga craft bez pytania (0 = no-op, 2+ = decyzja), jedno
+źródło wykonania `resolveCraftExileOutcome` dla obu ścieżek (`fa7ab1f`, 4 piny,
+M18 → 4 RED); **B** — tytuł decyzji nazywa kartę i efekt: `playerView` niesie
+`pendingOpponentTarget` z `sourceCardId`, a `choiceGroupTitle` składa
+„Cuombajj Witches — 1 obrażenie (cel wskazuje przeciwnik)” (`f4a671f`, 3 piny,
+M19 → 3 RED, M20 → 2 RED); **C** — tutor uszczupla WŁASNĄ bibliotekę, więc bot
+nie poświęca już Dawntreader Elka po ląd przy 4 kartach biblioteki
+(`LIBRARY_SEARCH_EFFECTS` + `searchLibraryLoss` w tej samej drabinie
+`libraryLossPenalty` co dobrania, `10be873`, 5 pinów, M21 → 3 RED, M22 → 1 RED).
+**Pętla jakości:** punkt otwarty „kierunek odwrotny oferty bloków” okazał się
+realnym defektem (L48) — bloker o 3 slotach nie dostawał potrójnego bloku
+w ofercie, choć silnik go przyjmuje; naprawa liczy przebiegi do granicy
+legalności i deduplikuje ofertę kluczem kanonicznym (`403b0a4`, 4 piny,
+M23/M24 → po 1 RED, L151); **polowanie na niezgodności Oracle inną ścieżką niż
+poprzednia sesja** (pełny diff katalog↔snapshot po 480 kartach) wykryło
+literalne „\n” w `oracleText` 20 wpisów i 7 snapshotów, a strażnik kosztów
+aktywacji miał na to jawny wyjątek i pomijał `strandwalker` — dane naprawione
+po obu stronach, strażnik `test/oracle-bez-literalnego-backslash-n.test.js`,
+licznik pominięć = 0 (`7746e37`, M25/M26 → po 2 RED, L152); **Żywy Tester**:
+5 partii (wiedzmin-bg/ixalan/tarkir-bg/kaladesh, seedy 42/7/11/23/5) bez
+`[STOP]`, 0 zgłoszeń detektorów, transkrypty czytane ręcznie (L27) —
+potwierdziły na żywo tytuł decyzji Cuombajj Witches i auto-cel „jedyny legalny
+— automatycznie”. Lekcje **L150–L152** dopisane, budżet lektury startowej
+utrzymany przez usunięcie 43 powtórzonych odsyłaczy w rejestrze.
+**Bramy:** `npm test` **5854/5854**, build **64 moduły / 3853,3 kB**,
+bot-benchmark 10/10, snapshot wycen bota 4/4. Push commita `7746e37` nie doszedł
+— token GitHub w sandboxie wygasł w trakcie sesji (`GH_TOKEN` nieważny);
+do zrobienia po ponownym połączeniu: `git push origin arena/01a0b8fe-mtg`
+i aktualizacja opisu PR #130. PR #130 czeka na decyzję właściciela.
+
+## 2026-09-20b — druga paczka uwag z gry (F–I) w PR #130
+
+Cztery zgłoszenia właściciela z partii, domknięte paczkami — commit i push po
+KAŻDEJ (stała zasada właściciela), wszystko w PR #130.
+
+**F (`4355c51`)** — martwa sekcja „Kreator talii”: panel `#deck-builder` w
+`index.html` zakomentowany (markup zostaje — odwracalność), import i oba
+montaże `mountDeckBuilder` w `main.js` zakomentowane, moduły + ADR 0012 bez
+zmian. Bundle 64 → 59 modułów. Strażnik: brak żywego `id="deck-builder"` i
+zero żywych wywołań montażu (RED 0/3).
+
+**G (`de28378`)** — „4 lądy do czaru za 2”: silnik czysty (koszt `{1}{B}`,
+deskryptor 2 many, postęp domyka się w dwóch tapnięciach); wadliwa była warstwa
+prowadzenia płatności (lista szła porządkiem stołu, a po zebranej sumie kreator
+dalej proponował lądy bez brakującego koloru). `guideManaSources` — kolejność
+„brakujący kolor pierwszy” + filtr nadmiarowych źródeł; model niesie
+`missingColors`/`coversMissing`, wiersz mówi „— pokrywa {B}”. End-to-end na
+Mini-DOM: talia „g-canonized”, gracz tapie pierwszy wiersz — RED 3 tapnięcia,
+po poprawce 2 (= koszt).
+
+**H (`eea273a`)** — Explore bez nazwy karty: decyzja idzie przez wspólny
+`renderChoiceRequest` (odpowiedź dla właściciela), brakowało DANYCH —
+`pendingExplore` niesie `sourceCardId`, widok wystawia `{ sourceCardId, cardId }`
+decydentowi, `choiceSourceTitle` nazywa źródło i odsłoniętą kartę, a
+`previewCardIdOfOption(…, view)` daje obu wariantom „🔍 Podgląd karty”.
+Strażnik: RED 0/3 (RED cytował dosłownie stary tytuł „Wybierz: Explore — co
+z odsłoniętą kartą?”).
+
+**I (`9baaf89`)** — cichy discover: `discover_resolved` bez faktów i `null`
+w logu. Naprawa w trzech warstwach: fakty w zdarzeniu (`revealedCardIds`,
+`bottomCount`, `libraryExhausted`; przy trafieniu `bottomCount`), pełny tekst
+(biblioteka wyczerpana / brak karty MV ≤ X, karty na spód w losowej kolejności,
+CR 701.53) i bramka (`discover_started`/`discover_resolved` w
+`BOT_RESOLUTION_EVENTS` i `HUMAN_DIGEST_EVENTS`). Strażnik: RED 0/4.
+
+**Bramy:** `node tools/run-tests.mjs all` **6022/6022**, `npm run build`
+59 modułów / **3948,2 kB**, benchmark quick 672 mecze: heuristic 85,9%.
+Lekcja **L156** dopisana, budżet lektury startowej utrzymany (99 929 / 100 000)
+przez skrócenie sześciu opisów przypadków w rejestrze (narracja w archiwum).
+PR #130 czeka na decyzję właściciela.

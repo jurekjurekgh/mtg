@@ -156,7 +156,14 @@ test('koszty aktywacji: CAŁY koszt (pipy + generyk) ma pokrycie w Oracle (audyt
   }
 
   assert.ok(checked >= 90, `strażnik objął ${checked} zdolności z kosztem many (oczekiwane ≥ 90)`);
-  assert.equal(skippedEscapedText, 1, 'jedna zdolność (strandwalker, znalezisko S-1) poza zasięgiem przez literalne \\n w oracleText');
+  // E4 sesji 2026-09-19 (polowanie na niezgodności Oracle pełnym diffem
+  // katalog↔snapshot): literalny „\n” w `oracleText` był uszkodzeniem DANYCH
+  // (20 wpisów katalogu + 7 snapshotów), nie cechą karty — naprawiony, więc
+  // żadna karta nie wypada już z audytu. Mechanizm pominięcia zostaje jako
+  // bezpiecznik, ale jego licznik musi być ZEREM: niezerowy = ktoś znów wniósł
+  // literalny separator i ukrył przed strażnikiem zdolność (patrz
+  // test/oracle-bez-literalnego-backslash-n.test.js).
+  assert.equal(skippedEscapedText, 0, 'literalne „\\n” w oracleText zostało usunięte z danych (E4 2026-09-19)');
   assert.deepEqual(misses, [], `koszt niezgodny z Oracle: ${misses.join('; ')}`);
 });
 

@@ -479,4 +479,17 @@ export const MANA_COSTS = {
   "cautious-survivor": "{3}{G}",
   "mobile-garrison": "{3}",
   "dragon-fodder": "{1}{R}",
+  // Batch 57 (2026-09-19) — koszty wprost z Oracle (docs/cards/scryfall-*.json).
+  // Hybryda zapisywana jak w Esper Stormblade: "{W/B}" (jedna z dwóch opcji).
+  "lightwalker": "{1}{W}",
+  "hooting-mandrills": "{5}{G}",
+  "capture-sphere": "{3}{U}",
+  "annie-flash-the-veteran": "{3}{R}{G}{W}",
+  "merciless-repurposing": "{4}{B}{B}",
+  "messenger-falcons": "{2}{G/U}{W}",
+  // Drugi druk Phyrexian Ragera (APC) — osobny wpis jak `curate-stx`.
+  "phyrexian-rager-apc": "{2}{B}",
+  "baral-and-kari-zev": "{1}{U}{R}",
+  "tranquil-cove": "",
+  "ordinary-bear": "{3}{G}",
 };

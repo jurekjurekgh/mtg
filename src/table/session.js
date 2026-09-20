@@ -10,6 +10,7 @@ import { effectiveKeywords } from '../engine/permanents.js';
 import { costSymbols } from './mana-icons.js';
 import { counterLabelGen } from './counter-labels.js';
 import { probeCommandEffect } from './noop-probe.js';
+import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
 
 /**
  * Sesja stołu: łączy UI z protokołem engine, zgodnie z granicą
@@ -138,6 +139,13 @@ export function commandOptionKey(cmd) {
     'buyback', 'payAltCost', 'bestow', 'surgeCast', 'faceDown', 'sacrificeTargetId',
     'stunTargetId', 'attackerId', 'crewCreatureIds', 'tapCreatureId',
     'tapOtherCreatureId', 'escapeExileIds',
+    // Batch 57/B4: koszt Delve (resolve_delve_exile.exileIds) musi różnicować
+    // klucze wariantów — bez tego każde wygnanie miało ten sam klucz
+    // (ptaszek wyciszenia obejmował całą decyzję, sonda „oferta bez skutku"
+    // mierzyła nie ten wariant; L32: dedup po pełnej tożsamości komendy).
+    'exileIds',
+    // Batch 57/B4: ptaszek/klucz sondy dla wyboru kart wygnania w Delve.
+    'delveExileIds',
     // M112: komendy WALKI budowane przez wizard (declare_attackers /
     // declare_blockers) — bez tych pól wszystkie warianty ataku miały ten sam
     // klucz, więc sonda „oferta bez skutku" mierzyłaby nie tę komendę,
@@ -153,6 +161,42 @@ export function commandOptionKey(cmd) {
   for (const k of fields) if (cmd[k] !== undefined) out[k] = cmd[k];
   return JSON.stringify(out);
 }
+/**
+ * J (zgłoszenie właściciela 2026-09-19b: „auto-pass zatrzymuje się na KAŻDEJ
+ * fazie"): czy okno człowieka ma REALNĄ decyzję? Reguła jest CZYSTĄ funkcją
+ * (ADR 0011 — jak BOT_MOVE_NOISE z M255/A), żeby dało się ją spiąć testem bez
+ * budowania sesji: dwa zależne od stołu predykaty przychodzą w `hooks`.
+ *
+ *  - `isIgnored(cmd)` — gracz wyciszył ten wariant ptaszkiem (Feature 2026-08-11);
+ *  - `isManaOnly(cmd)` — aktywacja to CZYSTA zdolność many (CR 605.1a):
+ *    panel jej nie pokazuje (render.js, M369/G), więc nie może zatrzymywać
+ *    auto-passu. Warianty z wyborem (cele/X/koszt) NIE są „mana only" i
+ *    decyzją pozostają.
+ */
+export function hasMeaningfulDecisionOf(view, { isIgnored = () => false, isManaOnly = () => false } = {}) {
+  if (view.status !== 'active') return false;
+  const decisions = view.legalCommands.filter((c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c.type));
+  return decisions.some((cmd) => {
+    // Feature 2026-08-11: gracz może wyciszyć konkretną opcję (ptaszek
+    // w panelu akcji) — taka opcja nie przerywa auto-passu. Inne opcje
+    // nadal przerywają; odznaczenie przywraca przerywanie.
+    if (isIgnored(cmd)) return false;
+    // M180/Z4: czysta REZYGNACJA (decline/skip) nie jest realną decyzją —
+    // gdy gracz wyciszył wszystkie warianty rzutu (Halo Forager), samotny
+    // wariant „Zrezygnuj" nie może dalej zatrzymywać auto-passu.
+    if (cmd.decline === true || cmd.skip === true || cmd.done === true) return false;
+    // J: czysta zdolność many — patrz komentarz wyżej (jedno źródło z panelem).
+    if (isManaOnly(cmd)) return false;
+    // Puste deklaracje ataku/bloków nie są decyzją (engine oferuje je
+    // zawsze w kroku deklaracji — bez stworów to czysty pass).
+    if (cmd.type === 'declare_attackers') return (cmd.attackerIds?.length ?? 0) > 0;
+    if (cmd.type === 'declare_blockers') return Object.keys(cmd.assignments ?? {}).length > 0;
+    // Wszystko inne w legalCommands (rzut, ląd, zdolność, resolve_*,
+    // draw_card) to realna, wykonalna akcja — engine za nią ręczy.
+    return true;
+  });
+}
+
 /**
  * Imiona do sekcji „Przebieg tur (dla AI)" — decyzja właściciela 2026-08-03:
  * Czarodziejka (człowiek) i Nieprzyjaciel (bot). Reszta stołu zachowuje
@@ -228,7 +272,11 @@ export function isBotDecisionPrompt(e, { humanId = HUMAN_ID } = {}) {
 
 function defaultBotFactory(seed, ctx) {
   // B3: bot modeluje rękę przeciwnika (człowieka) — zna jego talię.
-  return createHeuristicBot({ seed, opponentDeck: ctx?.opponentDeck });
+  // Zgłoszenie B (2026-09-20): bot zna też WŁASNĄ talię (`ownDeck`) — realny
+  // gracz ją zna i wie, że jeśli nie ma już celu wyszukiwania (np. Gór pod
+  // Mountaincycling), to nie ma czego szukać. Backward-compat: brak talii =
+  // zachowanie jak dotąd (testy jednostkowe botów bez kontekstu).
+  return createHeuristicBot({ seed, opponentDeck: ctx?.opponentDeck, ownDeck: ctx?.ownDeck });
 }
 
   /**
@@ -704,6 +752,9 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   you_cast_spell_you_dont_own: 'rzucenie czaru, którego nie posiadasz',
   you_cast_kicked_spell: 'rzucenie czaru z opłaconym kickerem',
   you_draw_second_card_each_turn: 'dobranie drugiej karty w turze',
+  // Batch 57/B6a (Baral and Kari Zev): „your first instant or sorcery spell
+  // each turn" — zdarzenie silnika (licznik per gracz w triggers.js).
+  first_instant_sorcery_cast: 'rzucenie pierwszego instantu/sorcery w turze',
 });
 
 /**
@@ -1007,9 +1058,22 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const hits = e.foundCardId ? ` — trafiono ${nameOf(e.foundCardId)}` : '';
         return `${whoN(e.playerId)} wykonuje discover (${e.amount})${hits}`;
       }
-      case 'discover_resolved': return e.foundCardId
-        ? `${nameOf(e.foundCardId)} — discover${e.castFree ? ' (rzut za darmo)' : ''}`
-        : null;
+      // I (zgłoszenie właściciela 2026-09-20): brak trafienia w discover było
+      // w logu CICHE (null) — gracz widział tylko odsłaniane karty i nie
+      // wiedział, że biblioteka się wyczerpała ani że karty wróciły na spód
+      // w losowej kolejności (CR 701.53). Teraz oba przypadki mają pełny wpis.
+      case 'discover_resolved': {
+        const naSpod = e.bottomCount > 0
+          ? `odsłonięte karty (${e.bottomCount}) na spód biblioteki w losowej kolejności`
+          : 'biblioteka bez zmian';
+        if (e.foundCardId) {
+          return `${nameOf(e.foundCardId)} — discover${e.castFree ? ' (rzut za darmo)' : ''}; ${naSpod}`;
+        }
+        const powod = e.libraryExhausted
+          ? `biblioteka się wyczerpała (przejrzano ${e.revealedCardIds?.length ?? e.bottomCount ?? 0} kart)`
+          : `brak karty o mana value ≤ ${e.amount}`;
+        return `${whoN(e.playerId)} nie znajduje karty dla discover (${e.amount}) — ${powod}; ${naSpod}`;
+      }
       case 'explore_choice_required': return `${whoN(e.playerId)} rozstrzyga explore — ${nameOf(e.cardId)} na wierzchu biblioteki`;
       case 'explore_resolved': {
         if (e.isLand) return `Explore: ${nameOf(e.foundCardId)} trafia do ręki`;
@@ -1684,6 +1748,28 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'epic_experiment_resolved': return `${srcName(e)}${whoN(e.playerId)} kończy darmowe rzuty (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
       case 'grave_free_cast_required':
         return `${whoN(e.playerId)} może zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu (${nameOf(e.sourceCardId)})`;
+      // Batch 57/B6a (Baral and Kari Zev): decyzja darmowego rzutu z ręki —
+      // bez widełek MV i wspólnego typu w komunikacie gracz nie wie, czego
+      // dotyczy wybór (M106/Z2).
+      case 'hand_free_cast_required': {
+        const typ = (e.cardTypes ?? []).join('/').toLowerCase() || 'instant/sorcery';
+        const base = `${nameOf(e.sourceCardId)} — ${whoN(e.playerId)} może rzucić czar (${typ}) o MV < ${e.maxManaValue} z ręki bez płacenia kosztu many`;
+        // B6b: gdy odmowa ma skutek („If you don't, create …"), komunikat
+        // mówi, co gracz dostaje za rezygnację — inaczej log opisuje połowę
+        // decyzji (deskryptor z decyzji, nie nazwa karty w kodzie).
+        if (e.alternative?.type === 'create_token') {
+          return `${base}; jeśli nie — token ${e.alternative.name} ${e.alternative.power}/${e.alternative.toughness}`;
+        }
+        return base;
+      }
+      case 'hand_free_cast_resolved':
+        if (!e.declined) return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)} z ręki bez płacenia kosztu many (${nameOf(e.sourceCardId)})`;
+        // B6b: przy braku kandydatów silnik domyka decyzję sam (wybór bez
+        // alternatywy) — gracz nie klikał, więc log musi powiedzieć DLACZEGO
+        // (M106/Z2), a nie udawać jego decyzji.
+        return e.noCandidates
+          ? `${nameOf(e.sourceCardId)} — brak czaru o mniejszej mana value we wspólnym typie, więc ${whoN(e.playerId)} nie rzuca (automatycznie)`
+          : `${whoN(e.playerId)} nie rzuca darmowego czaru z ręki (${nameOf(e.sourceCardId)})`;
       case 'grave_free_cast_resolved':
         return e.declined
           ? `${whoN(e.playerId)} rezygnuje z rzutu z grobu (${nameOf(e.sourceCardId)})`
@@ -2008,6 +2094,18 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // Zdarzenie pary: object_moved+escape już nazywają przeniesione karty —
       // resolved to dublet informacji (Uwaga D: świadome pominięcie).
       case 'escape_exile_resolved': return null;
+      // Batch 57/B4 (Delve, CR 702.66): jak Escape, ale liczba kart jest
+      // ZMIENNA (0..część generyczna) — komunikat mówi widełki i limit.
+      case 'delve_exile_required': {
+        const max = e.maxExile ?? 0;
+        return `${nameOf(e.cardId)} — ${whoN(e.playerId)} wybiera dowolną liczbę kart do wygnania (0–${max}, koszt Delve)`;
+      }
+      // Batch 57/B5 (Annie Flash): aura wracająca z grobu bez legalnego
+      // gospodarza zostaje w grobie — bez wpisu wyglądałoby to na zgubioną
+      // zdolność (M106/Z2).
+      case 'aura_returned_without_host':
+        return `${nameOf(e.cardId)} zostaje w grobie — aura bez legalnego gospodarza na polu bitwy`;
+      case 'delve_exile_resolved': return null;
       // card_discarded już nazywa każdą kartę. Zakończenie decyzji nie jest
       // kolejnym odrzuceniem ani zawsze pojedynczym kosztem zdolności.
       case 'discard_choice_resolved': return null;
@@ -2217,6 +2315,11 @@ export const TRANSFORM_DIGEST_EVENTS = new Set(['object_transformed']);
 export const HUMAN_DIGEST_EVENTS = new Set([
   'spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played',
   'ability_activated', 'permanent_entered_battlefield', 'object_transformed',
+  // I (zgłoszenie właściciela 2026-09-20): bieg i wynik discover to WŁASNE
+  // zagranie gracza (jego biblioteka, jego karty) — musi trafić do panelu
+  // „Rozgrywka” także wtedy, gdy trigger zdążył już zejść ze stosu
+  // (stackSize 0 nie może ukryć własnego odsłaniania biblioteki).
+  'discover_started', 'discover_resolved',
 ]);
 
 // Typy zdarzeń, które opisują SKUTEK rozstrzygnięcia (a nie decyzje człowieka).
@@ -2256,6 +2359,12 @@ export const BOT_RESOLUTION_EVENTS = new Set([
   'index_started', 'index_resolved', 'look_top_started', 'look_top_resolved',
   'epic_experiment_started', 'epic_experiment_resolved',
   'clash_resolved', 'clash_choice_resolved',
+  // I (zgłoszenie właściciela 2026-09-20): bieg discover (odsłanianie kart
+  // z biblioteki do rozstrzygnięcia) to SKUTEK rozstrzygnięcia triggera —
+  // bez tych typów wpis „brak trafienia / karty na spód w losowej kolejności"
+  // nie dochodził do modala „Rozgrywka" (do logu gracza dochodzi teraz, bo
+  // `isMainLogEvent` przepuszcza typy z tego zbioru przy stosie > 0).
+  'discover_started', 'discover_resolved',
 ]);
 
 /**
@@ -2349,6 +2458,36 @@ export function phaseHeaderText(e, lastLoggedPhase = null) {
   return { header: `— ${e.phase} —`, lastLoggedPhase: e.phase };
 }
 
+/**
+ * J (zgłoszenie właściciela, 2026-09-20): „w sekcji «Log partii» chcę widzieć
+ * DODATKOWO każdy permanent tapnięty na manę — do debugowania: co i kiedy
+ * zostało tapnięte”.
+ *
+ * Silnik niesie komplet danych w zdarzeniu `mana_produced`
+ * (`resources.js`: `{ playerId, source: objectId, amount, colors }`).
+ * Świadomie opisujemy PRODUKCJĘ many, nie samo `object_tapped`: tapnięcie nie
+ * zna kolorów, a bez nich wpis nie mówi nic o płatności. Każda produkcja to
+ * konkretne źródło (ląd, stwór-źródło many, artefakt, Skarb) — a więc i to,
+ * czego szuka właściciel.
+ *
+ * Czysta funkcja (ADR 0011): nazwę źródła i osobę dostaje w argumentach, więc
+ * pinuje ją test bez sesji. Zwraca `null`, gdy zdarzenie nie jest produkcją
+ * many albo nie umiemy nazwać źródła (`?` = brak wiedzy → wpis byłby szumem).
+ */
+export function manaSourceLogText(e, { nameOfObject = null, who = null } = {}) {
+  if (!e || e.type !== 'mana_produced' || e.source == null) return null;
+  if (typeof nameOfObject !== 'function') return null;
+  const name = nameOfObject(e.source);
+  if (!name || name === '?') return null;
+  const ile = Number.isInteger(e.amount) && e.amount > 0 ? e.amount : 1;
+  const colors = Array.isArray(e.colors) && e.colors.length > 0 ? e.colors : ['C'];
+  // Produkcja wielu many jednego koloru (np. „{T}: Add {C}{C}{C}”) ma pokazać
+  // WSZYSTKIE jednostki — inaczej debug płatności nie zgadza się z pulą.
+  const symbols = Array.from({ length: Math.max(ile, colors.length) }, (_, i) => `{${colors[i % colors.length]}}`).join('');
+  const verb = who === 'Ty' ? 'tapujesz' : 'tapuje';
+  return `${who ? `${who} ` : ''}${verb} na manę: ${name} → ${symbols}`;
+}
+
 export function createSession(config) {
   const { seed, registry, decks } = config;
   // Feature 2026-08-11: opcje wyciszone przez gracza (ptaszek w panelu akcji)
@@ -2379,7 +2518,9 @@ export function createSession(config) {
   if (!(decks instanceof Map) || decks.size !== 2) throw new TypeError('Sesja wymaga dwóch talii (Map)');
   if (!decks.has(HUMAN_ID) || !decks.has(BOT_ID)) throw new TypeError('Talia musi istnieć dla gracza i bota');
   const botFactory = config.botFactory ?? defaultBotFactory;
-  const botCtx = { opponentDeck: decks.get(HUMAN_ID) };
+  // `ownDeck`: talia BOTA (zgłoszenie B — bot liczy, co jeszcze może być
+  // w jego bibliotece; `opponentDeck` to talia człowieka, B3).
+  const botCtx = { opponentDeck: decks.get(HUMAN_ID), ownDeck: decks.get(BOT_ID) };
   let bot = botFactory(seed + 1, botCtx);
   const names = Object.entries(PLAYER_NAMES).map(([id, name]) => ({ id, name }));
   let state = setupCardMatch({ seed, players: names, decks, registry });
@@ -2405,8 +2546,47 @@ export function createSession(config) {
     if (!nameById.has(id)) nameById.set(id, name);
   }
   const colorsById = new Map(registry.all().map((card) => [card.id, card.colors ?? []]));
-  const log = []; // { kind: 'event'|'rejection'|'system', text }
-  const sessionLog = (kind, text) => log.push({ kind, text });
+  const log = []; // { kind: 'event'|'rejection'|'system', text, turn, playerId }
+  /**
+   * Zgłoszenie C (2026-09-20, uwagi z gry): „Log partii" ma dostać narzędzia
+   * kopiowania po turach, więc każdy wpis niesie numer tury i aktywnego
+   * gracza w chwili zdarzenia. `logTurns` trzyma PORZĄDEK pierwszego
+   * wystąpienia tury w logu — z niego powstaje lista rozwijana (ta sama
+   * etykieta co w panelu AI: „Tura N — Czarodziejka/Nieprzyjaciel"), a tura
+   * bieżąca dokłada się w chwili odczytu, żeby select był zawsze kompletny.
+   */
+  const logTurns = [];
+  function rememberLogTurn() {
+    const number = state.turn.number;
+    const activePlayerId = state.turn.activePlayerId;
+    const last = logTurns.at(-1);
+    if (!last || last.number !== number || last.activePlayerId !== activePlayerId) {
+      logTurns.push({ number, activePlayerId });
+    }
+    return { number, activePlayerId };
+  }
+  const sessionLog = (kind, text) => {
+    const turn = rememberLogTurn();
+    log.push({ kind, text, turn: turn.number, playerId: turn.activePlayerId });
+  };
+  /**
+   * J: tapnięcie/produkcja many trafia do LOGU (a przez to także do tekstu
+   * „Log partii”, który czyta ten sam strumień). Świadomie NIE do bufora
+   * modala „Rozgrywka” (`botMoves`) — decyzja właściciela (2026-08-02): modal
+   * nie pokazuje tapowania many, bo zamienia się w klikanie bez treści.
+   *
+   * Wpis jest ZWYKŁYM wpisem logu (rodzaj `event`, jak „Zagrywasz Forest”) —
+   * bez własnego rodzaju, klasy i koloru: log ma wyglądać dokładnie tak, jak
+   * wyglądał (uwaga właściciela 2026-09-20). Jedyna nowość to sama TREŚĆ
+   * zdania z nazwą źródła i symbolami wyprodukowanej many.
+   */
+  const logManaSource = (e) => {
+    const text = manaSourceLogText(e, {
+      nameOfObject: (id) => nameOfObject(id),
+      who: e.playerId != null ? who(e.playerId) : null,
+    });
+    if (text) sessionLog('event', text);
+  };
   // M167/E2: odwrócona mapa nazwa→cardId — render logu owija nazwy kart
   // w klikalne znaczniki (pełnoekranowa ilustracja przez delegację w main).
   const cardIdByName = new Map([...nameById.entries()].map(([id, name]) => [name, id]));
@@ -2525,6 +2705,66 @@ export function createSession(config) {
     const records = turnHistory.slice(-Math.max(1, Math.min(2, count)));
     if (records.length === 0) return '';
     return records.map(formatTurnRecord).join('\n\n');
+  }
+
+  /**
+   * Zgłoszenie C (2026-09-20): zakresy LOGU PARTII — lustro API sekcji
+   * „Przebieg tur (dla AI)" (turnHistoryEntries/TextFor/TextAll), żeby panel
+   * „Log partii" dostał dokładnie te same narzędzia, ale nad logiem stołu.
+   * Log stołu nie ma Fog of War (M199 dotyczy wyłącznie zapisu dla AI) —
+   * gracz widzi w nim swoje karty, więc tutaj nic nie ukrywamy.
+   */
+  function logEntries() {
+    return log.map((entry, index) => ({
+      index,
+      kind: entry.kind,
+      text: entry.text,
+      turn: entry.turn ?? null,
+      activePlayerId: entry.playerId ?? null,
+    }));
+  }
+
+  /** Wszystkie tury obecne w logu (dla selecta) — etykiety jak w panelu AI. */
+  function logTurnEntries() {
+    const list = logTurns.slice();
+    const current = { number: state.turn.number, activePlayerId: state.turn.activePlayerId };
+    if (!list.some((record) => record.number === current.number)) list.push(current);
+    return list.map((record) => ({
+      number: record.number,
+      activePlayerId: record.activePlayerId,
+      label: `Tura ${record.number} — ${TURN_NAMES[record.activePlayerId] ?? record.activePlayerId}`,
+    }));
+  }
+
+  /**
+   * Wspólny format tekstu logu (L41/L48 — jedno źródło dla „całej partii"
+   * i dla pojedynczej tury): treść wpisów BEZ zmian (te same zdania co na
+   * stole), z nagłówkiem `**Tura N — kto` przy zmianie tury — jak blok AI,
+   * żeby wklejony tekst był czytelny bez kontekstu.
+   */
+  function logTextOf(entries) {
+    const lines = [];
+    let lastTurn = null;
+    for (const entry of entries) {
+      if (entry.turn != null && entry.turn !== lastTurn) {
+        const who = TURN_NAMES[entry.activePlayerId] ?? entry.activePlayerId ?? '';
+        if (lines.length > 0) lines.push('');
+        lines.push(`**Tura ${entry.turn}${who ? ` — ${who}` : ''}**`);
+        lastTurn = entry.turn;
+      }
+      lines.push(entry.text);
+    }
+    return lines.join('\n');
+  }
+
+  /** Cała partia jako tekst (zakres domyślny) — rośnie z każdym wpisem. */
+  function logTextAll() {
+    return logTextOf(logEntries());
+  }
+
+  /** Tekst jednej tury logu (pusty, gdy tura nie ma wpisów). */
+  function logTextFor(turnNumber) {
+    return logTextOf(logEntries().filter((entry) => entry.turn === turnNumber));
   }
   const captureBotReasoning = () => {
     const last = bot.trace?.().at(-1);
@@ -3060,6 +3300,9 @@ export function createSession(config) {
       if (MAIN_LOG_NOISE.has(e.type)) {
         const header = phaseHeaderFor(e);
         if (header) sessionLog('event', header);
+        // J: tapnięcie na manę ma WŁASNY wpis w logu stołu (szum modala
+        // „Rozgrywka” zostaje bez zmian — patrz `logManaSource`).
+        logManaSource(e);
         noteBotMove(e); recordTurnEvent(e); continue;
       }
       // Zgłoszenie właściciela E2: prompt decyzji BOTA nie należy do logu
@@ -3292,24 +3535,19 @@ export function createSession(config) {
    * pozytywy: gracz klikał „Dalej" w każdej sekcji tury.
    */
   function hasMeaningfulDecision(view) {
-    if (view.status !== 'active') return false;
-    const decisions = view.legalCommands.filter((c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c.type));
-    return decisions.some((cmd) => {
-      // Feature 2026-08-11: gracz może wyciszyć konkretną opcję (ptaszek
-      // w panelu akcji) — taka opcja nie przerywa auto-passu. Inne opcje
-      // nadal przerywają; odznaczenie przywraca przerywanie.
-      if (ignoredOptionKeys.has(commandOptionKey(cmd))) return false;
-      // M180/Z4: czysta REZYGNACJA (decline/skip) nie jest realną decyzją —
-      // gdy gracz wyciszył wszystkie warianty rzutu (Halo Forager), samotny
-      // wariant „Zrezygnuj” nie może dalej zatrzymywać auto-passu.
-      if (cmd.decline === true || cmd.skip === true || cmd.done === true) return false;
-      // Puste deklaracje ataku/bloków nie są decyzją (engine oferuje je
-      // zawsze w kroku deklaracji — bez stworów to czysty pass).
-      if (cmd.type === 'declare_attackers') return (cmd.attackerIds?.length ?? 0) > 0;
-      if (cmd.type === 'declare_blockers') return Object.keys(cmd.assignments ?? {}).length > 0;
-      // Wszystko inne w legalCommands (rzut, ląd, zdolność, resolve_*,
-      // draw_card) to realna, wykonalna akcja — engine za nią ręczy.
-      return true;
+    return hasMeaningfulDecisionOf(view, {
+      isIgnored: (cmd) => ignoredOptionKeys.has(commandOptionKey(cmd)),
+      // J: czysta zdolność many (CR 605.1a) to ta sama oferta, której NIE ma
+      // panel (render.js → engine `isPureManaAbilityCommand`). Jedno źródło
+      // predykatu dla panelu i auto-passu (L41).
+      isManaOnly: (cmd) => {
+        const object = state.objects.get(cmd.objectId);
+        // Deskryptory z rejestru to fallback dla obiektów, których stan nie
+        // niesie zdolności (tokeny tworzone poza katalogiem) — ten sam zestaw
+        // danych, którego używa panel (render.js → session.abilitiesOf).
+        const fallback = object?.cardId ? registry.get(object.cardId)?.abilities ?? null : null;
+        return isPureManaAbilityCommand(cmd, object, fallback);
+      },
     });
   }
 
@@ -3355,6 +3593,14 @@ export function createSession(config) {
       return card?.abilities ?? [];
     },
     log,
+    /** Zgłoszenie C: wpisy logu z numerem tury i aktywnym graczem. */
+    logEntries,
+    /** Zgłoszenie C: tury w logu + etykiety dla selecta („Tura N — …"). */
+    logTurnEntries,
+    /** Zgłoszenie C: tekst całej partii z logu (zakres domyślny w panelu). */
+    logTextAll,
+    /** Zgłoszenie C: tekst jednej wybranej tury logu. */
+    logTextFor,
     /** M348/F10: komunikat UI, bez podszywania się pod zdarzenie silnika. */
     logSystem(text) { sessionLog('system', text); },
     reasoning,
@@ -3462,6 +3708,8 @@ export function createSession(config) {
         if (MAIN_LOG_NOISE.has(e.type)) {
           const header = phaseHeaderFor(e);
           if (header) sessionLog('event', header);
+          // J: to samo co w strumieniu auto (jedno źródło reguły).
+          logManaSource(e);
           noteBotMove(e); recordTurnEvent(e); continue;
         }
         // Zgłoszenie właściciela E2: prompt decyzji BOTA nie należy do logu

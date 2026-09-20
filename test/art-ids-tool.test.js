@@ -79,7 +79,10 @@ test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z duble
   // Batch 55 (zlecenie właściciela 2026-09-14): −65 wierszy FUS (właściciel
   // usunął te karty z kolekcji, a numery 1–22 zwolniły się pod nowe wpisy),
   // +10 pozycji batcha 55 (23, 609–617) → 553.
-  assert.equal(data.length, 563, 'pełna lista kolekcji (563 unikalne pozycje; FUS usunięte 2026-09-14, batch 56 +10)');
+  // Batch 57 (zlecenie właściciela 2026-09-19, karty 64–125): +10 pozycji
+  // (64, 66, 70, 77, 80, 82, 85, 88, 90, 125) → 573. Wpis 85APC to druk
+  // właściciela Phyrexian Ragera; wiersz 75DMU zostaje jako inny druk kolekcji.
+  assert.equal(data.length, 573, 'pełna lista kolekcji (573 unikalne pozycje; FUS usunięte 2026-09-14, batch 56 +10, batch 57 +10)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -127,7 +130,10 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 53, domknięcie: +2 karty (589, 593) → 455.
   // Batch 55 (B0b, dane wszystkich 10 kart od razu): +10 → 465.
   // Batch 55 (etapy B1–B6, karty dostają `supported`): 465 → 475.
-  assert.equal(withArt.length, 485, 'wszystkie realne karty mają artId (Batche 1–56)');
+  // Batch 57 (B0b, dane wszystkich 10 kart od razu): +10 NOWYCH numerów —
+  // 9 nowych kart i 10. pozycja to DRUGI druk Phyrexian Ragera (APC/85;
+  // pierwszy druk DMU/75 zostaje jako osobny wpis, wzorzec Curate): 485 → 495.
+  assert.equal(withArt.length, 495, 'wszystkie realne karty mają artId (Batche 1–57)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

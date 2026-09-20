@@ -119,6 +119,11 @@ export function defineCard(data) {
     // za każdy symbol (Porcelain Legionnaire). Engine płaci deterministycznie:
     // najpierw maną, przy braku many — życiem.
     phyrexianManaCost: data.phyrexianManaCost ?? 0,
+    // Delve (CR 702.66, Batch 57/B4 — Hooting Mandrills): statyczna zdolność
+    // funkcjonująca w trakcie rzucania — koszt NIEalternatywny, wygnanie kart
+    // z własnego grobu pokrywa część generyczną. Deskryptor jest FLAGĄ (jak
+    // `morph`), bo reguła jest jedna dla wszystkich kart (ADR 0002).
+    delve: Boolean(data.delve),
     // Kicker (CR 702.33): { cost, colors } — opcjonalny dodatkowy koszt rzutu
     // (Kor Sanctifiers: „Kicker {W}" = { cost: 1, colors: ['W'] }). Wariant
     // `kicked: true` komendy cast_permanent; flaga wasKicked ląduje na

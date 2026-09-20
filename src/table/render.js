@@ -4,8 +4,8 @@ import {
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
-import { hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
-import { isActivatedManaAbility } from '../engine/mana-sources.js';
+import { castsWithoutPayingMana, hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
+import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
@@ -64,6 +64,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
   resolve_trigger_target: 'Cel triggera (wybór)',
   resolve_grave_free_cast: 'Darmowy rzut z grobu (zapłać {X})',
+  resolve_hand_free_cast: 'Darmowy rzut z ręki (Baral i Kari Zev)',
   resolve_exile_cast: 'Rzut wygnanej karty (Vaan)',
   resolve_opponent_target: 'Wskaż cel obrażeń (wybór przeciwnika)',
   resolve_optional_trigger_choice: 'Efekt „you may"',
@@ -353,11 +354,33 @@ export function choiceRequestGroupKey(command) {
   // M87: tryby modalne (Steel Sabotage Kontr vs Odbicie) i warianty
   // poświęcenia (Village Rites) nie mogą wpadać do jednego „Cel czaru".
   if (command.type === 'cast_spell' && (command.targets?.length || command.sacrificeTargetId || command.modeIndex != null)) {
-    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}${command.kicked ? ':kicker' : ''}${command.gifted ? `:gift:${command.giftRecipientId ?? '?'}` : ''}`;
+    // K (zgłoszenie właściciela 2026-09-19b, Crumb and Get It): „opcje pokazują
+    // mi się od razu w »Twoje działania« zamiast dopiero po rzuceniu karty
+    // w modalu wyboru. Wszystkie czary, które wymagają decyzji podczas rzucania,
+    // powinny mieć najpierw ofertę rzucenia w »Twoje działania«, a dopiero potem
+    // modal wyboru sposobu rzucenia.”
+    // Dar NIE jest osobnym rzutem, tylko WARIANTEM tego samego rzutu (CR 702.174a:
+    // „as you cast this spell”) — więc obietnica daru należy do tej samej grupy
+    // co rzut bazowy i trafia do modala razem z wariantami celu (etykieta mówi
+    // „· dar dla przeciwnika: …”, więc warianty są rozróżnialne).
+    //
+    // M (zgłoszenie właściciela 2026-09-19b, You're Confronted by Robbers):
+    // „Oferta w »Twoje działania« rozdzielona na dwie opcje. Rzucenie czaru
+    // powinno być jedną ofertą w »Twoje działania«, a potem modal wyboru.”
+    // Tryb modalnego czaru jest decyzją W TRAKCIE rzucania (CR 601.2b: „the
+    // player announces the mode”) — tak jak dar, więc tryby NIE tworzą
+    // osobnych wpisów panelu. Wpis jest jeden (per czar), a modal wymienia
+    // warianty; etykieta wariantu niesie nazwę trybu (`commandLabel`), więc
+    // opcje są rozróżnialne. M87 (Steel Sabotage) zostaje spełnione inaczej:
+    // grupa modalna jest TYTUŁOWANA rzutem („Rzuć: <karta>”), nie generycznym
+    // „Cel czaru”.
+    return `spell:${command.objectId}${command.kicked ? ':kicker' : ''}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
   if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
-    return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}${command.gifted ? ':gift' : ''}`;
+    // K: dar jest wariantem tego samego rzutu — nie osobnym wpisem panelu
+    // (ten sam powód co wyżej; ADR 0002: po kształcie komendy, nie po karcie).
+    return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}`;
   }
   if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {
@@ -371,6 +394,8 @@ export function choiceRequestGroupKey(command) {
     return `escape:${command.objectId}`;
   }
   if (command.type === 'resolve_escape_exile') return 'resolve_escape_exile';
+  // Batch 57/B4: koszt Delve to JEDNA decyzja (wizard multiselect) — jak escape.
+  if (command.type === 'resolve_delve_exile') return 'resolve_delve_exile';
   if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
     return `permanent-x:${command.objectId}`;
   }
@@ -403,6 +428,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice_choice';
   if (command.type === 'resolve_trigger_target') return 'resolve_trigger_target';
   if (command.type === 'resolve_grave_free_cast') return 'resolve_grave_free_cast';
+  if (command.type === 'resolve_hand_free_cast') return 'resolve_hand_free_cast';
   if (command.type === 'resolve_exile_cast') return 'resolve_exile_cast';
   if (command.type === 'resolve_opponent_target') return 'resolve_opponent_target';
   if (command.type === 'resolve_search_choice') return 'resolve_search_choice';
@@ -470,6 +496,8 @@ export function choiceRequestType(commands) {
   const first = commands[0];
   if (first.type === 'cast_escape') return 'escape';
   if (first.type === 'resolve_escape_exile') return 'escape_exile';
+  if (first.type === 'resolve_delve_exile') return 'delve_exile';
+  if (first.type === 'resolve_hand_free_cast') return 'hand_free_cast';
   if (first.type === 'cast_flashback') return 'flashback';
   if (first.type === 'resolve_scry') return 'scry';
   if (first.type === 'resolve_surveil') return 'surveil';
@@ -636,8 +664,22 @@ function buildChoiceRequestEntries(commands, view) {
     // z jednym wariantem to zupełnie inny przypadek (przymusowa decyzja),
     // a jego jedyna opcja i tak trafia wyżej gałęzią `< 2`.
     // =====================================================================
+    // A (zgłoszenie właściciela 2026-09-19b, Cloudbound Moogle — Plainscycling):
+    // „Gdy jest przynajmniej 1 [Plains w talii] to dostaję MODAL wyboru,
+    // a NIE OPCJE w »Twoje działania«. W tym modalu mam tyle opcji, ile mam
+    // Plainsów w talii, plus opcja »nie znajdujesz« — która jest legalna nawet
+    // gdy mam je w talii.”
+    //
+    // To ŚWIADOME odwrócenie reguły M131 dla SZUKANIA (wcześniejsze zgłoszenie
+    // dotyczyło swampcyclingu Gloomfanga i jest zachowane dla pozostałych
+    // rodzin decyzji). Szukanie to wybór KARTY: „znajdź TĘ kartę / nie znajduj
+    // żadnej” (CR 701.19b) — a nie potwierdzenie akcji, którą gracz już
+    // wykonał. Konsekwencja dla M131: kolaps „1 realny wariant + rezygnacja”
+    // nadal obowiązuje decyzje typu `skip` (Springbloom i pokrewne), ale NIE
+    // szukanie w bibliotece.
+    const isSearchGroup = entry.group.commands.every((cmd) => cmd?.type === 'resolve_search_choice');
     const declineIndex = entry.group.commands.findIndex(isDeclineOption);
-    if (declineIndex !== -1 && entry.group.commands.length === 2) {
+    if (!isSearchGroup && declineIndex !== -1 && entry.group.commands.length === 2) {
       const real = entry.group.commands[declineIndex === 0 ? 1 : 0];
       return { command: real, alsoOffer: entry.group.commands[declineIndex] };
     }
@@ -759,22 +801,17 @@ export function appendLogLineWithCardLinks(line, text, cardIdByName) {
  * komendy — jedno źródło prawdy o tym, co jest zdolnością many (L41).
  * Warianty z dodatkowym wyborem (cele, X, crew, koszty) zostają w panelu.
  */
-const MANA_ABILITY_PAYLOAD_KEYS = Object.freeze([
-  'targets', 'attackerId', 'tapCreatureId', 'tapOtherCreatureId', 'tapArtifactIds',
-  'sacrificeLandId', 'sacrificeCreatureId', 'sacrificeCreatureIds', 'tapPermanentCostId',
-  'grantedFromEquipment', 'xValue',
-]);
-
 export function isManaAbilityCommand(command, session) {
-  if (command?.type !== 'activate_ability') return false;
-  for (const key of MANA_ABILITY_PAYLOAD_KEYS) {
-    const value = command[key];
-    if (Array.isArray(value) ? value.length > 0 : value != null) return false;
-  }
-  const object = session?.state?.objects?.get(command.objectId);
-  const ability = object?.abilities?.[command.abilityIndex]
-    ?? (object?.cardId ? session.abilitiesOf?.(object.cardId)?.[command.abilityIndex] : null);
-  return Boolean(ability && isActivatedManaAbility(ability));
+  // J (zgłoszenie właściciela 2026-09-19b): predykat przeniesiony do SILNIKA
+  // (`isPureManaAbilityCommand` + `MANA_ABILITY_PAYLOAD_KEYS`) — tę samą
+  // regułę stosuje teraz auto-pass sesji (session.js), więc nie może mieć
+  // drugiej kopii tutaj (L41: jedno źródło prawdy dla panelu i auto-passu).
+  // Panel zostaje przy swoim wejściu (testy i main.js wołają po `session`),
+  // ale decyzję podejmuje silnik; `session.abilitiesOf` to fallback dla
+  // obiektów, których nie ma w stanie (deskryptory z rejestru).
+  const object = session?.state?.objects?.get(command?.objectId);
+  const fallback = object?.cardId ? session.abilitiesOf?.(object.cardId) : null;
+  return isPureManaAbilityCommand(command, object, fallback);
 }
 
 export function buildActionEntries(commands, session, view) {
@@ -815,6 +852,21 @@ export function buildActionEntries(commands, session, view) {
 // gracz czyta „{1}{B}{G}: Regeneruj tego stwora”, nie „{1}{B}{G}: Regeneracja”.
 const ABILITY_KEYWORD_LABELS = Object.freeze({
   regenerate: 'Regeneruj tego stwora (następne zniszczenie zostaje odwrócone)',
+});
+
+/**
+ * L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): słownik NAZWANYCH
+ * mechanik, których warunek niesie zdolność statyczna — badge nadanego P/T
+ * mówi wtedy, SKĄD bonus jest („Storied: +1/+0”), a nie tylko ile wynosi.
+ *
+ * Klucz = deskryptor warunku z danych karty (`condition`), wartość = nazwa
+ * mechaniki z tekstu karty. Wpis dodaje się TYLKO dla mechaniki NAZWANEJ
+ * (wydrukowany keyword, jak „Storied” na karcie Óina) — warunek anonimowy
+ * (np. Evangel of Synthesis: liczba dobranych kart) zostaje bez etykiety,
+ * bo karta nie nazywa go mechaniką (ADR 0002: po kształcie zdolności).
+ */
+export const STATIC_CONDITION_MECHANIC_LABELS = Object.freeze({
+  enduringStory: 'Storied',
 });
 
 export const KEYWORD_LABELS = Object.freeze({
@@ -1027,11 +1079,20 @@ function describeEffect(e, ctx = {}) {
     clash: () => 'clash',
     take_initiative: () => 'obejmij inicjatywę',
     pay_x_cast_from_graveyard: () => 'możesz zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu za darmo (potem wygnanie)',
+    // Batch 57/B6a (Baral and Kari Zev): decyzja darmowego rzutu z ręki.
+    // B6b: gdy odmowa MA skutek („If you don't, create …"), opis musi go
+    // wymienić — inaczej opis zdolności kłamie o połowie efektu (L1: etykieta
+    // z pominięciem gałęzi = niepełny Oracle). Deskryptor generyczny, bez
+    // nazwy karty w kodzie (ADR 0002) — nazwa i P/T jadą z danych karty.
+    free_cast_from_hand: () => 'możesz rzucić z ręki czar o mniejszym mana value i wspólnym typie bez płacenia kosztu many'
+      + (e.elseEffect?.type === 'create_token'
+        ? `; jeśli nie — utwórz token ${e.elseEffect.name ?? '?'} ${e.elseEffect.power ?? '?'}/${e.elseEffect.toughness ?? '?'}`
+        : ''),
     draw_cards: () => `dobierz ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     lose_life: () => `utrata ${e.amount ?? 1} życia`,
     pay_mana: () => `zapłać ${e.amount} many`,
     pay_life: () => `zapłać ${e.amount} życia`,
-    return_permanent_from_graveyard: () => `wróć permanent niebędący lądem z grobu${e.finalityCounter ? ' z licznikiem ostateczności' : ''}`,
+    return_permanent_from_graveyard: () => `wróć ${e.allowLands ? 'permanent' : 'permanent niebędący lądem'} z grobu${e.entersTapped ? ' (tapnięty)' : ''}${e.finalityCounter ? ' z licznikiem ostateczności' : ''}`,
     transform: () => 'transform (obróć kartę)',
     scry: () => `scry ${e.amount ?? 1}`,
     search_library_two_cards_hand_and_grave: () => 'przeszukaj bibliotekę: jedna karta do ręki, druga do grobu, potem tasowanie',
@@ -1048,7 +1109,13 @@ function describeEffect(e, ctx = {}) {
     add_mana: () => manaEffectLabel(e, ctx),
     fabricate: () => `fabricate ${e.amount ?? 1} (liczniki +1/+1 albo tokeny Servo)`,
     reflexive_sacrifice: () => 'poświęć innego stwora albo artefakt (dobrowolnie: następuje refleks)',
-    exile_top_playable_until_next_turn: () => 'wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury',
+    // G: dwa okna (this turn / next turn) — opis musi mówić to samo, co
+    // stempel silnika, inaczej karta z „this turn" tłumaczy się jak Gila.
+    // Uwaga na kształt mapy: `generic[type]()` woła się BEZ argumentów, więc
+    // deskryptor czytamy z domknięcia (`e` z describeEffect), nie z parametru.
+    exile_top_playable_until_next_turn: () => (e.window === 'this_turn'
+      ? 'wygnaj wierzch biblioteki — możesz zagrać tę kartę w tej turze'
+      : 'wygnaj wierzch biblioteki — możesz zagrać tę kartę do końca swojej następnej tury'),
     grant_double_strike_on_noncreature_cast_this_turn: () => 'do końca tury: każdy twój czar niebędący stworem daje wybranemu stworowi podwójne uderzenie',
     add_flying_counter_to_face_down_you_control: () => 'połóż licznik flying na zakrytych stworach',
     amass: () => 'amass (stwórz/rozrośnij Armię)',
@@ -1918,6 +1985,11 @@ const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
   phyrexian: 'Zapłata: mana czy życie?',
   escape: 'Ucieczka (Escape) — karty do wygnania',
   escape_exile: 'Ucieczka (Escape) — karty do wygnania',
+  // Batch 57/B4: koszt Delve (CR 702.66) — liczba wygnanych kart jest zmienna.
+  delve_exile: 'Delve — karty do wygnania z grobu',
+  // Batch 57/B6a (Baral and Kari Zev): jedna decyzja = wybór czaru z ręki
+  // (albo rezygnacja → token, B6b).
+  hand_free_cast: 'Darmowy rzut czaru z ręki',
   'room-target': 'Cel pokoju lochu',
 });
 
@@ -1936,6 +2008,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_backup: 'Backup — który stwór dostaje liczniki?',
   resolve_trigger_target: 'Cel wyzwalonej zdolności',
   resolve_grave_free_cast: 'Rzut z grobu za {X}',
+  resolve_hand_free_cast: 'Darmowy rzut czaru z ręki',
   // M266/C1 (zgłoszenie właściciela, Terminal Agony): decyzja rzutu z madness
   // pokazywała generyczne „Wybierz: Wariant (5 opcji)". Rodzina jednorazowych
   // decyzji „rzuć wygnany czar albo odpuść" dostaje deskryptory KOMPLETEM
@@ -1948,6 +2021,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_delirium_target: 'Delirium — cel obrażeń',
   resolve_mentor_target: 'Mentor — kto dostaje licznik?',
   resolve_graveyard_top_choice: 'Karta z grobu na wierzch biblioteki',
+  resolve_delve_exile: 'Delve — karty do wygnania z grobu',
   resolve_hand_creature: 'Stwór do położenia obok kosztu',
   resolve_legend_choice: 'Prawo legend — który zostaje?',
   resolve_redirect_choice: 'Przekierowanie obrażeń',
@@ -1957,6 +2031,10 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_damage_division: 'Podział obrażeń między cele',
   resolve_damage_target: 'Cel obrażeń',
   resolve_sacrifice_choice: 'Poświęcenie stwora',
+  // Zgłoszenie B (2026-09-19): decyzja przeciwnika o celu nie może być gołym
+  // „Wybierz: Cel” — deskryptor mówi, KTO wybiera (a tytuł dokłada nazwę karty,
+  // gdy widok niesie źródło decyzji).
+  resolve_opponent_target: 'Cel wskazywany przez przeciwnika',
   resolve_devour_choice: 'Devour — poświęcenie stwora',
   resolve_food_choice: 'Food — poświęcić za wzmocnienie?',
   resolve_amass_choice: 'Amass — która Armia dostaje liczniki?',
@@ -2008,6 +2086,21 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
 // źródła lista pokazywała dwie nie do rozróżnienia pozycje tej samej karty.
 const SEARCH_DESTINATION_LABELS = Object.freeze({ hand: 'do ręki', graveyard: 'do grobu', battlefield: 'na pole bitwy' });
 
+/**
+ * M (zgłoszenie właściciela 2026-09-19b): obiekt widoku po `objectId` komendy —
+ * tytuł grupy modalnego czaru musi nazwać kartę, a nie tylko tryb. Strefy te
+ * same co `choiceSourceTitle` (+ exile, bo stamtąd też rzuca się modalne czary
+ * plotem/impulsem).
+ */
+function findViewObject(objectId, view) {
+  if (objectId == null) return null;
+  for (const zone of ['hand', 'battlefield', 'stack', 'graveyard', 'library', 'exile']) {
+    const found = (view?.zones?.[zone] ?? []).find((o) => o.id === objectId);
+    if (found) return found;
+  }
+  return null;
+}
+
 function choiceSourceTitle(cmd, session, view) {
   // Uwaga C właściciela (2026-08-10): modal wyboru ma nazywać kartę, która
   // go wywołała. Komendy resolve_* nie niosą objectId — źródło czytamy
@@ -2024,6 +2117,19 @@ function choiceSourceTitle(cmd, session, view) {
     }
     return `${base} — cel triggera`;
   }
+  // H (zgłoszenie właściciela 2026-09-20, Guidestone Compass): modal pytał
+  // „Explore — co z odsłoniętą kartą?” — bez NAZWY karty. Gracz musiał szukać
+  // jej w logu, żeby zdecydować świadomie. Tytuł nazywa ŹRÓDŁO decyzji
+  // (publiczny permanent, jak M162/C i M163/A) i ODSŁONIĘTĄ KARTĘ (jest już
+  // odsłonięta, więc to informacja publiczna). Opcje niosą skutek („zostaw na
+  // wierzchu” / „do grobu”).
+
+  if (cmd?.type === 'resolve_explore_choice' && view?.pendingExplore?.cardId) {
+    const source = view.pendingExplore.sourceCardId
+      ? `${session.nameOf(view.pendingExplore.sourceCardId)} — `
+      : '';
+    return `${source}Explore: ${session.nameOf(view.pendingExplore.cardId)} na wierzchu biblioteki`;
+  }
   if (cmd?.type === 'resolve_modal_choice' && view?.pendingModalTrigger?.cardId) {
     return `${session.nameOf(view.pendingModalTrigger.cardId)} — wybór trybu`;
   }
@@ -2032,6 +2138,23 @@ function choiceSourceTitle(cmd, session, view) {
   // wystawiony w playerView wyłącznie właścicielowi decyzji).
   if (cmd?.type === 'resolve_hand_top_choice' && view?.pendingHandTopChoice?.sourceCardId) {
     return `${session.nameOf(view.pendingHandTopChoice.sourceCardId)} — karta z ręki na wierzch biblioteki`;
+  }
+  // Zgłoszenie właściciela B (2026-09-19): „Cuombajj Witches — aktywacja bota
+  // w «Twoich działaniach» pokazuje gołe «Wybierz: Cel», bez nazwy karty i
+  // efektu; przy kilku zdolnościach na stosie nie da się tego zidentyfikować”.
+  // Tytuł nazywa ŹRÓDŁO (karta na polu bitwy — publiczna) i SKUTEK czytany
+  // z deskryptora zdolności (effect.type — ADR 0002, zero nazw kart), wzorem
+  // pozostałych decyzji resolve_* (M162/C, M221/B, M166/D).
+  if (cmd?.type === 'resolve_opponent_target' && view?.pendingOpponentTarget?.sourceCardId) {
+    const src = session.nameOf(view.pendingOpponentTarget.sourceCardId);
+    const abilities = session.abilitiesOf?.(view.pendingOpponentTarget.sourceCardId) ?? [];
+    const ability = abilities.find((a) => a?.opponentChoosesTarget);
+    const effecty = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+    const moj = effecty.find((e) => e?.targetIndex === 1) ?? effecty[0];
+    const effLabel = moj ? describeEffect(moj) : '';
+    return effLabel
+      ? `${src} — ${effLabel} (cel wskazuje przeciwnik)`
+      : `${src} — cel wskazywany przez przeciwnika`;
   }
   // M221/B (zgłoszenie właściciela, Angel's Feather): decyzja „you may" musi
   // nazywać KARTĘ i CO robi — samo „Efekt dobrowolny (you may)" nic nie mówi.
@@ -2087,6 +2210,12 @@ function choiceSourceTitle(cmd, session, view) {
   // nigdy z nazwy zaszytej w warstwie opisu (ADR 0002).
   if (cmd?.type === 'resolve_escape_exile' && view?.pendingEscapeExile?.sourceCardId) {
     return `${session.nameOf(view.pendingEscapeExile.sourceCardId)} — Ucieczka (Escape): karty do wygnania`;
+  }
+  // Batch 57/B4: ta sama klasa decyzji co Escape, ale liczba kart jest ZMIENNA
+  // (0..limit) — tytuł niesie widełki z pendingu (ADR 0002: z danych, nie
+  // z nazwy karty w warstwie opisu).
+  if (cmd?.type === 'resolve_delve_exile' && view?.pendingDelveExile?.sourceCardId) {
+    return `${session.nameOf(view.pendingDelveExile.sourceCardId)} — Delve: karty do wygnania (0–${view.pendingDelveExile.maxExile})`;
   }
   // Pętla jakości (Żywy Tester, tarkir-wur vs innistrad-brg, seed 316):
   // decyzja „look top N, jedną do ręki” (resolve_look_top_choice — Gurmag
@@ -2277,6 +2406,27 @@ export function choiceGroupTitle(request, session, view) {
   if (options[0]?.type === 'resolve_discard_choice' && discard?.count > 1 && !discard.allowDecline) {
     const source = discard.sourceCardId ? `${session.nameOf(discard.sourceCardId)} — ` : '';
     return `${source}${discard.purpose === 'cost' ? 'koszt: ' : ''}odrzuć ${discard.count} ${polishPluralCount(discard.count, 'kartę', 'karty', 'kart')}`;
+  }
+  // M (zgłoszenie właściciela 2026-09-19b, You're Confronted by Robbers):
+  // grupa to JEDEN rzut czaru modalnego (warianty = tryby × cele), więc tytuł
+  // nazywa CZYNNOŚĆ i kartę — „Rzuć: <karta>”. Nazwy trybów zostają tam, gdzie
+  // ich miejsce: w etykietach opcji modala (`commandLabel`, M267). Bez tej
+  // gałęzi tytuł brał się z `options[0]` (pierwszy wariant pierwszego trybu)
+  // i panel pokazywał „<karta> — tryb: Zyskiwanie czasu” bez kosztu, obok
+  // drugiego wpisu „Rzuć: <karta> — Wezwanie pomocy (koszt …)”: dwie oferty
+  // jednego rzutu, dwie różne konwencje etykiety (zgłoszenie M).
+  // Deskryptorowo (ADR 0002): po kształcie grupy (jedna karta, `modeIndex`
+  // obecny), nie po nazwie karty.
+  const groupModes = new Set(options.filter((o) => o?.type === 'cast_spell' && o.modeIndex != null).map((o) => o.modeIndex));
+  if (options.length > 0 && options.every((o) => o?.type === 'cast_spell' && o.objectId === options[0].objectId)) {
+    const groupObject = findViewObject(options[0].objectId, view);
+    if (groupObject && (groupObject.spell?.modes ?? []).length > 1 && groupModes.size > 0) {
+      // Koszt w tytule (zgłoszenie M, krok 1: „Rzuć: <karta> (koszt)"). Notacja
+      // `{3}{W}` jak w logu i regułach — tytuł idzie też do textContent
+      // nagłówka modala (M87), więc nie może nieść HTML-a ikon.
+      const rawCost = MANA_COSTS[groupObject.cardId];
+      return `Rzuć: ${session.nameOf(groupObject.cardId)}${rawCost ? ` (koszt ${rawCost})` : ''}`;
+    }
   }
   const titled = choiceSourceTitle(options[0], session, view);
   if (titled) return titled;
@@ -2483,6 +2633,27 @@ export function protectionQualityLabel(quality) {
   return parts.length ? parts.join(' i ') : 'wybranym źródłem';
 }
 
+/**
+ * Etykieta przycisku REZYGNACJI w decyzji darmowego rzutu z ręki
+ * (Baral and Kari Zev, 88). Gdy odmowa ma własny skutek („If you don't,
+ * create …"), przycisk nazywa go — z deskryptora decyzji
+ * (`view.pendingHandFreeCast.alternative`, jedno źródło z efektem), więc
+ * działa dla każdej karty o tym wzorze, a nie tylko dla tej jednej
+ * (ADR 0002: żadnej nazwy karty w kodzie).
+ */
+function declineLabelForHandFreeCast(view) {
+  const alternative = view?.pendingHandFreeCast?.alternative;
+  if (alternative?.type !== 'create_token') return 'Zrezygnuj (nie rzucam darmowego czaru)';
+  const keywords = [
+    ...(alternative.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k),
+    // „It gains haste until end of turn" — nadanie CZASOWE, więc etykieta
+    // mówi to wprost (odmowa daje stwora zdolnego do ataku w tej turze).
+    ...(alternative.keywordsUntilEndOfTurn ?? []).map((k) => `${KEYWORD_LABELS[k] ?? k} do końca tury`),
+  ];
+  const name = `${alternative.name ?? 'token'} ${alternative.power ?? '?'}/${alternative.toughness ?? '?'}`;
+  return `Zrezygnuj — utwórz token ${name}${keywords.length > 0 ? ` (${keywords.join(', ')})` : ''}`;
+}
+
 export function commandLabel(cmd, session, view) {
   // M223 (audyt Batch 50): karty ujawnione decydentowi przez blokującą decyzję
   // (scry / look_top / manifest dread) są w BIBLIOTECE (ukrytej), więc etykieta
@@ -2561,6 +2732,29 @@ export function commandLabel(cmd, session, view) {
   const costOfCard = (card) => {
     const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
     return raw ? manaCostHtml(raw) : (card?.manaCost != null ? escapeHtml(String(card.manaCost)) : '?');
+  };
+  // H (zgłoszenie właściciela, Sheriff of Safe Passage) + ta sama klasa dla
+  // impulsu: rzut karty CZEKAJĄCEJ w wygnaniu (plot CR 702.170d, impuls
+  // CR 701.51b) nie jest zwykłym rzutem z ręki — kosztu many nie ma, a okno
+  // impulsu ma numer tury („this turn" kończy się w turze zdolności).
+  // Etykieta „Zagraj: X (koszt {2}{W})" kłamała o koszcie i milczała
+  // o oknie; gracz zgłosił to jako „plot nie działa".
+  const waitingCastLabel = (cmd, verb) => {
+    const card = obj(cmd.objectId);
+    if (card?.zone !== 'exile') return null;
+    const who = nameOfObjectId(cmd.objectId);
+    // H2: „bez kosztu many" czytamy z JEDNEGO predykatu rdzenia
+    // (`castsWithoutPayingMana`) — tego samego, którym bramkuje się kreator
+    // płatności. Dwie kopie tego warunku rozjechały się przy H (etykieta
+    // mówiła „bez kosztu", a kreator żądał 3 many), klasa L102/1.
+    const free = castsWithoutPayingMana(card);
+    if (card.plotted) return `${verb} z wygnania (Plot): ${who} — bez kosztu many`;
+    if (card.playableUntilTurn != null) {
+      return free
+        ? `${verb} z wygnania (Impuls): ${who} — bez kosztu many, do końca tury ${card.playableUntilTurn}`
+        : `${verb} z wygnania (Impuls): ${who} (koszt ${costOfCard(card)}) — do końca tury ${card.playableUntilTurn}`;
+    }
+    return null;
   };
   // Koszt zdolności aktywowanej → ikony: {T} + {X}/{N} + pipy kolorów.
   const abilityCostHtml = (ability) => {
@@ -2699,6 +2893,8 @@ export function commandLabel(cmd, session, view) {
       if (cmd.exileTargetId != null) {
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)}) — wygnaj ${nameOfObjectId(cmd.exileTargetId)}`;
       }
+      const waitingCast = waitingCastLabel(cmd, 'Zagraj');
+      if (waitingCast) return waitingCast;
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)})`;
     }
     case 'cast_spell': {
@@ -2790,6 +2986,8 @@ export function commandLabel(cmd, session, view) {
       } else {
         costHtml = costOfCard(cardForMode);
       }
+      const waitingCast = waitingCastLabel(cmd, 'Rzuć');
+      if (waitingCast) return waitingCast;
       return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${giftPart}${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
@@ -3277,6 +3475,22 @@ export function commandLabel(cmd, session, view) {
       });
       return parts.length > 0 ? `Podziel obrażenia — ${parts.join(', ')}` : 'Podział obrażeń';
     }
+    case 'resolve_hand_free_cast': {
+      // Batch 57/B6a: N wariantów = N czarów z ręki × zestawy celów/trybów —
+      // bez nazwy karty i celu wszystkie wyglądają identycznie (L29).
+      // B6b: rezygnacja, która MA skutek („If you don't, create …"), musi go
+      // nazwać — inaczej przycisk wygląda jak ruch jałowy i gracz nie wie, że
+      // za odmowę dostaje token (deskryptor z decyzji, nie z nazwy karty).
+      if (cmd.decline || cmd.objectId == null) return declineLabelForHandFreeCast(view);
+
+      const hfcTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      const hfcCard = obj(cmd.objectId);
+      const hfcMode = (cmd.modeIndex != null && hfcCard?.spell?.modes) ? hfcCard.spell.modes[cmd.modeIndex] : null;
+      const hfcModeName = hfcMode?.name ? ` — ${hfcMode.name}` : '';
+      const hfcStun = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
+      const hfcSac = cmd.sacrificeTargetId != null ? ` · poświęć: ${nameOfObjectId(cmd.sacrificeTargetId)}` : '';
+      return `Rzuć z ręki za darmo: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${hfcModeName}${hfcTargets ? ` → cel: ${hfcTargets}` : ''}${hfcStun}${hfcSac}`;
+    }
     case 'resolve_grave_free_cast': {
       // M174/E: oferta nazywa kartę, koszt X i cele — inaczej N wpisów
       // wygląda identycznie (L29).
@@ -3361,6 +3575,12 @@ export function commandLabel(cmd, session, view) {
       // (ptaszki + Zatwierdź); etykieta dotyczy kształtu protokołu (L48).
       const count = Array.isArray(cmd.exileIds) ? cmd.exileIds.length : 0;
       return `Ucieczka (Escape): wygnij ${count} ${polishPluralCount(count, 'kartę', 'karty', 'kart')}`;
+    }
+    case 'resolve_delve_exile': {
+      // Batch 57/B4: jw. — liczba zmienna, więc etykieta mówi, ILE wygnano
+      // (koszt jest tym samym licznikiem; ADR 0002 — po kształcie protokołu).
+      const count = Array.isArray(cmd.exileIds) ? cmd.exileIds.length : 0;
+      return `Delve: wygnij ${count} ${polishPluralCount(count, 'kartę', 'karty', 'kart')}`;
     }
     case 'resolve_discard_choice': {
       if (Array.isArray(cmd.cardIds)) return `Odrzuć: ${cmd.cardIds.map(id => nameOfObjectId(id)).join(', ')}`;
@@ -3653,6 +3873,11 @@ export function cardInfo(session, object, combat = null) {
     // buff do EOT) — widok liczy je jawnie, bo `powerModifier` ich nie niesie.
     grantedPower: faceDown ? 0 : Number(object.grantedPower ?? 0),
     grantedToughness: faceDown ? 0 : Number(object.grantedToughness ?? 0),
+    // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): SKĄD jest nadany
+    // bonus — klucze warunków zdolności statycznych (deskryptor z danych, nie
+    // nazwa karty). Badge nazywa wtedy mechanikę („Storied: +1/+0”), zamiast
+    // zostawiać gracza z gołym „+1/0”. Zakryty permanent: bez zmian (FoW).
+    grantedStatMechanics: faceDown ? [] : (object.grantedStatMechanics ?? []).map((m) => ({ ...m })),
     lostKeywordsUntilEOT: faceDown ? [] : [...(object.lostKeywordsUntilEOT ?? [])],
     // F-A (Wishful Merfolk): nadpisanie podtypów DO KOŃCA TURY — widok niesie
     // subtypesBeforeOverride (active), żywe `subtypes` to już cel („Human").
@@ -4081,7 +4306,25 @@ export function buildStateOverlay(visual, info) {
         // Zapis jak w Oracle („gets +1/+0"): zero też z jawnym znakiem,
         // żeby badge czytało się jak tekst karty, a nie jak ułamek „+1/0".
         const signed = (n) => (n < 0 ? `${n}` : `+${n}`);
-        flags.push(['kw', `${signed(gPow)}/${signed(gTou)}`]);
+        // L (zgłoszenie właściciela 2026-09-19b): bonus z NAZWANEJ mechaniki
+        // dostaje własny badge z nazwą mechaniki („Storied: +1/+0”). Reszta
+        // nadanego P/T (anthemy, aury, granty bez nazwy) idzie osobnym
+        // badge'em — gdy mechanika wyjaśnia CAŁY bonus, goły „+1/+0” znika
+        // (inaczej gracz widziałby ten sam bonus dwa razy).
+        let restPow = gPow;
+        let restTou = gTou;
+        for (const entry of info.grantedStatMechanics ?? []) {
+          const label = STATIC_CONDITION_MECHANIC_LABELS[entry?.condition];
+          if (!label) continue;
+          const pow = Number(entry.power ?? 0);
+          const tou = Number(entry.toughness ?? 0);
+          restPow -= pow;
+          restTou -= tou;
+          flags.push(['kw', `${label}: ${signed(pow)}/${signed(tou)}`]);
+        }
+        if (restPow !== 0 || restTou !== 0) {
+          flags.push(['kw', `${signed(restPow)}/${signed(restTou)}`]);
+        }
       }
     }
     if (info.combatRole) flags.push(['combat', info.combatRole]);
@@ -4534,6 +4777,18 @@ function clampHoverMode(info, mode) {
 
 export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, onSpeedCardClick = null, onEnergyCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
+  // Zgłoszenie C3 (2026-09-20): log rośnie W DÓŁ (najnowsze na dole), a render
+  // przebudowuje listę od zera — bez zapamiętania suwaka gracz czytający
+  // historię wracałby do najstarszych wpisów po każdym ruchu bota. Zapamiętujemy
+  // pozycję PRZED czyszczeniem (po nim scrollTop/scrollHeight są już zerowe)
+  // i odtwarzamy po wypełnieniu: „przy dole" = dołącz nowe wpisy i zostań na
+  // dole, inaczej zachowaj pozycję czytania.
+  const logScroll = els.log ? {
+    top: els.log.scrollTop ?? 0,
+    height: els.log.scrollHeight ?? 0,
+    client: els.log.clientHeight ?? 0,
+    fresh: els.log.dataset?.logBuilt !== '1',
+  } : null;
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'handEnemy', 'actions', 'log']) clear(els[key]);
 
@@ -4775,8 +5030,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Log -------------------------------------------------------------
   // M157/E (uwaga właściciela): log pokazuje CAŁĄ rozgrywkę — bez okna
   // ostatnich 80 wpisów (≈4 pełne tury), które wyglądało jak cykliczne
-  // czyszczenie sekcji. Najnowsze nadal na górze (reverse).
-  const entries = [...session.log].reverse();
+  // czyszczenie sekcji.
+  // C3 (zgłoszenie 2026-09-20): kolejność CHRONOLOGICZNA — najstarsze u góry,
+  // najnowsze na dole (nowe wiersze dopisywane na końcu), jak w konsoli.
+  const entries = typeof session.logEntries === 'function' ? session.logEntries() : [...session.log];
   for (const entry of entries) {
     const kind = entry.kind === 'event' && /^—.*—$/.test(entry.text) ? 'step' : entry.kind;
     const line = document.createElement('div');
@@ -4788,6 +5045,14 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     appendLogLineWithCardLinks(line, entry.text, session.cardIdByName ?? null);
     els.log.appendChild(line);
   }
+  if (els.log && logScroll) {
+    const nearBottom = logScroll.height - logScroll.client - logScroll.top <= 24;
+    els.log.scrollTop = logScroll.fresh || nearBottom ? els.log.scrollHeight : logScroll.top;
+    if (els.log.dataset) els.log.dataset.logBuilt = '1';
+  }
+
+  // --- Log partii: kopiowanie po turach (zgłoszenie C1/C2) --------------
+  renderLogPanel(els, session);
 
   // M198/G (zlecenie właściciela): panel „Rozumowanie bota" usunięty —
   // właściciel z niego nie korzystał. Sesja nadal zbiera ślad decyzji bota
@@ -5173,6 +5438,60 @@ export function renderPlayerMeta(host, view, playerId) {
  * gotowy tekst do skopiowania modelowi AI. Imiona: Czarodziejka / Nieprzyjaciel
  * (decyzja właściciela 2026-08-03). Licznik pokazuje liczbę ukończonych tur.
  */
+/**
+ * Zgłoszenie C (2026-09-20, uwagi z gry): sekcja „Log partii" dostaje te same
+ * narzędzia co „Przebieg tur (dla AI)", ale nad logiem stołu: select
+ * z WSZYSTKIMI turami (bez pozycji „cała partia" — uwaga właściciela
+ * 2026-09-20e: przełączanie tury nic nie zmienia w liście logu, a cały zapis
+ * i tak kopiuje osobny przycisk) oraz dwa przyciski kopiowania.
+ *
+ * Select jest wyłącznie ZAKRESEM KOPIOWANIA („Kopiuj wybraną turę") —
+ * lista logu niżej pokazuje zawsze cały log, chronologicznie.
+ */
+export function selectedLogTurn(els) {
+  const raw = els?.logTurnSelect?.value;
+  if (raw == null || raw === '') return null;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function renderLogPanel(els, session) {
+  if (!els?.logTurnSelect) return;
+  const turns = typeof session.logTurnEntries === 'function' ? session.logTurnEntries() : [];
+  const select = els.logTurnSelect;
+  // Odbudowa listy tylko przy zmianie zestawu tur (wzorzec M188/K) — inaczej
+  // każdy render zamykałby rozwinięty select pod palcem gracza.
+  const signature = turns.map((entry) => entry.number).join(',');
+  if (select.dataset?.logTurns !== signature) {
+    // Domyślnie zakresem jest NAJNOWSZA tura (kopiowanie „na bieżąco"), ale
+    // świadomy wybór gracza jest respektowany, dopóki jego tura istnieje.
+    const picked = Number.parseInt(select.dataset?.logPick ?? '', 10);
+    const newest = turns.length > 0 ? turns[turns.length - 1].number : null;
+    const wanted = turns.some((entry) => entry.number === picked) ? picked : newest;
+    if (select.dataset) {
+      select.dataset.logTurns = signature;
+      if (Number.isFinite(picked) && picked !== wanted) delete select.dataset.logPick;
+    }
+    clear(select);
+    if (turns.length === 0) {
+      // Sesji jeszcze nie ma — select nie ma czego kopiować (nie udajemy tury).
+      const brak = document.createElement('option');
+      brak.value = '';
+      brak.textContent = '— brak tur —';
+      select.appendChild(brak);
+    } else {
+      for (const entry of turns) {
+        const option = document.createElement('option');
+        option.value = String(entry.number);
+        option.textContent = entry.label;
+        select.appendChild(option);
+      }
+    }
+    if (wanted != null) select.value = String(wanted);
+  }
+  select.disabled = turns.length === 0;
+}
+
 /** Numer tury wybrany w selekcie „Przebieg tur" (null = brak wyboru). */
 export function selectedTurnHistory(els) {
   const raw = els?.turnHistorySelect?.value;
@@ -5316,10 +5635,14 @@ export function waitingExileStatus(object) {
       ? `Plot · rzut bez kosztu od tury ${object.plottedAtTurn + 1}`
       : 'Plot · rzut bez kosztu w kolejnej turze');
   }
-  if (hasFreeCastStamp(object)) {
-    parts.push(impulseWindowOf(object) != null
-      ? `Impuls · zagrywalna do końca tury ${impulseWindowOf(object)}`
-      : 'Impuls · zagrywalna bez płacenia');
+  // G: okno impulsu ma numer tury i bywa PŁATNE (Gila Courser, Caves bez
+  // ukończonego lochu) — sam stempel „bez płacenia" milczał o obu faktach.
+  if (impulseWindowOf(object) != null) {
+    parts.push(hasFreeCastStamp(object)
+      ? `Impuls · zagrywalna do końca tury ${impulseWindowOf(object)} · bez kosztu many`
+      : `Impuls · zagrywalna do końca tury ${impulseWindowOf(object)} · za pełny koszt`);
+  } else if (hasFreeCastStamp(object)) {
+    parts.push('Impuls · zagrywalna bez płacenia');
   }
   if (object.reboundReady) parts.push('Rebound · rzut w Twoim podtrzymaniu');
   if (object.madnessReady) parts.push('Madness · czeka na decyzję rzutu');

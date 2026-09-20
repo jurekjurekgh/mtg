@@ -22,7 +22,7 @@ import { formatLocalTimestamp } from './clock.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TURN_NAMES, gameOverNotice } from './session.js';
-import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
+import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
@@ -33,11 +33,15 @@ import { createSpellSoundPlayer, playCastSound } from './spell-sounds.js';
 import { createTopbarToggles } from './topbar-toggles.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
-import { mountDeckBuilder } from './deck-builder.js';
+// Zgłoszenie F (właściciel, 2026-09-20): panel „Kreator talii” jest wyłączony
+// w aplikacji — import i montaż zakomentowane (kod modułu w src/table/
+// deck-builder.js zostaje; ADR 0012 bez zmian).
+// import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
-import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
-import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf } from './multi-target.js';
+import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
+import { choiceRequest } from '../protocol/types.js';
 
 function runEngineSmoke() {
   // Minimalny, odtwarzalny przebieg: kilka rund passów przez komendy z widoku.
@@ -101,7 +105,8 @@ function bootstrapTable() {
   // K1: rejestrujemy talie własne (import z pliku / biblioteka IndexedDB).
   const importedDecks = new Map();
   let windowAllDecks = { ...repoDecks };
-  mountDeckBuilder({ registry, repoDecks, onDeckImported: (name, text) => { importedDecks.set(name, text); rebuildDeckSelects(); } });
+  // Zgłoszenie F: montaż kreatora talii zakomentowany (panel wyłączony).
+  // mountDeckBuilder({ registry, repoDecks, onDeckImported: (name, text) => { importedDecks.set(name, text); rebuildDeckSelects(); } });
 
   const el = (id) => document.getElementById(id);
   const els = {
@@ -123,6 +128,12 @@ function bootstrapTable() {
     handEnemyLabel: el('hand-enemy-label'),
     actions: el('actions'),
     log: el('log'),
+    // Zgłoszenie C (2026-09-20): narzędzia sekcji „Log partii" — select zakresu
+    // + kopiowanie wybranej tury / całej partii. Sekcja zostaje jedną listą
+    // logu: żadnego dodatkowego pola z tekstem (uwaga właściciela 2026-09-20d).
+    logTurnSelect: el('log-turn-select'),
+    logCopyTurn: el('log-copy-turn'),
+    logCopyAll: el('log-copy-all'),
     turnHistory: el('turn-history'),
     turnHistoryCount: el('turn-history-count'),
     turnHistoryCopy: el('turn-history-copy'),
@@ -194,6 +205,34 @@ function bootstrapTable() {
     const text = typeof session.turnHistoryTextAll === 'function' ? session.turnHistoryTextAll() : '';
     if (!text) return;
     copyTextToClipboard(text, els.turnHistoryCopyAll);
+  });
+
+  // Zgłoszenie C (2026-09-20): sekcja „Log partii" — ten sam wzorzec co
+  // „Przebieg tur (dla AI)", ale źródłem tekstu jest LOG (sesja wystawia
+  // logTextFor(n)/logTextAll), a nie zapis dla AI w trzeciej osobie.
+  // Lista tur nie ma pozycji „cała partia" (uwaga właściciela 2026-09-20e):
+  // select wybiera TYLKO zakres przycisku „Kopiuj wybraną turę", a cały
+  // zapis kopiuje osobny „Kopiuj całą partię". Wybór gracza zapamiętujemy,
+  // żeby nowa tura nie zrywała mu wyboru (render tylko odbudowuje listę).
+  els.logTurnSelect?.addEventListener('change', () => {
+    if (els.logTurnSelect.dataset) els.logTurnSelect.dataset.logPick = els.logTurnSelect.value;
+    rerender();
+  });
+  els.logCopyTurn?.addEventListener('click', () => {
+    if (!session) return;
+    const scope = selectedLogTurn(els);
+    if (scope == null) return;
+    const text = typeof session.logTextFor === 'function' ? session.logTextFor(scope) : '';
+    if (!text) return;
+    copyTextToClipboard(text, els.logCopyTurn);
+  });
+
+  // „Kopiuj całą partię" kopiuje CAŁY log niezależnie od wyboru w selekcie.
+  els.logCopyAll?.addEventListener('click', () => {
+    if (!session) return;
+    const text = typeof session.logTextAll === 'function' ? session.logTextAll() : '';
+    if (!text) return;
+    copyTextToClipboard(text, els.logCopyAll);
   });
 
   /** Kopiuje tekst do schowka: Clipboard API, a przy file:// fallback textarea. */
@@ -320,10 +359,13 @@ function bootstrapTable() {
     windowAllDecks = decks;
     populateDeckSelects([el('deck-human'), el('deck-bot')], decks, { labelOf });
   }
-  mountDeckBuilder({
-    registry, repoDecks,
-    onDeckImported: (name, text) => { importedDecks.set(name, text); rebuildDeckSelects(); },
-  });
+  // Zgłoszenie F (właściciel, 2026-09-20): panel „Kreator talii” nie pokazuje się
+  // w aplikacji — montaż zakomentowany. Biblioteka talii własnych (IndexedDB →
+  // selecty talii) działa dalej niezależnie od panelu.
+  // mountDeckBuilder({
+  //   registry, repoDecks,
+  //   onDeckImported: (name, text) => { importedDecks.set(name, text); rebuildDeckSelects(); },
+  // });
   // Bootstrap: biblioteka IndexedDB (przeżywa reload przeglądarki) — każda
   // zapisana talia od razu dostępna w grze, zanim właściciel ją opublikuje.
   void (async () => {
@@ -439,6 +481,40 @@ function bootstrapTable() {
     // (etykiety K1/K2: tryb, stun, X) albo odmowa. Wiersz na opcję + radio +
     // Zatwierdź; plan MUSI biec przed multiTargetPlanOf, bo warianty okien
     // niosą `targets` (multiTargetPlanOf gubił odmowę — test M300/1).
+    // M2 (dokończenie zgłoszenia właściciela 2026-09-19b, You're Confronted by
+    // Robbers): czar modalny to DWA modale, nie lista kombinacji.
+    //   krok 1 — tryb: „Zyskiwanie czasu" / „Wezwanie pomocy" (ten plan),
+    //   krok 2 — decyzje WEWNĄTRZ trybu (cele) zwykłym rozgałęzieniem panelu:
+    //            rekurencja z pod-zadaniem złożonym z wariantów wybranego trybu,
+    //            więc cele zbiera ten sam kreator, co dla zwykłego czaru.
+    // Wcześniej panel enumerował iloczyn „tryb × cele" (Robbers: 5 wierszy).
+    const castModePlan = castModePlanOf(request.options ?? []);
+    if (castModePlan) {
+      const modeOptions = request.options ?? [];
+      const repLabels = labelChoiceOptions(castModePlan.reps, session, choiceView);
+      castModePlan.rows = castModePlan.rows.map((row, i) => ({ ...row, label: repLabels[i] }));
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: castModePlan,
+        commands: castModePlan.reps,
+        intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz tryb:`,
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (repCmd) => {
+          const subset = modeOptions.filter((cmd) => cmd.modeIndex === repCmd.modeIndex);
+          if (subset.length === 1) { hideModal('choice-request'); play(subset[0]); return; }
+          openChoiceRequest(choiceRequest({
+            id: `${request.id ?? 'mode'}-tryb-${repCmd.modeIndex}`,
+            type: request.type ?? 'command',
+            options: subset,
+          }));
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     const castWindowPlan = castWindowPlanOf(request.options ?? []);
     if (castWindowPlan) {
       const opts = request.options ?? [];
@@ -794,6 +870,38 @@ function bootstrapTable() {
       showModal('choice-request');
       return;
     }
+    // Batch 57/B4 (Delve, CR 702.66): koszt rzutu to wygnanie DOWOLNEJ liczby
+    // kart z własnego grobu (każda `{1}` części generycznej) — jak Escape
+    // wybiera się to ptaszkami, ale liczba jest zmienna, więc wizard pokazuje
+    // koszt po każdej zmianie i blokuje liczby nieopłacalne (L48).
+    if (request.type === 'delve_exile') {
+      const pending = choiceView.pendingDelveExile;
+      if (!pending || pending.sourceCardId == null || !Array.isArray(pending.candidateIds)) {
+        hideModal('choice-request');
+        play(request.options[0]);
+        return;
+      }
+      const cards = pending.candidateIds.map((id) => {
+        const object = session.state?.objects?.get(id);
+        return { id, cardId: object?.cardId ?? null, name: session.nameOfObject(id) ?? id };
+      });
+      renderDelveExileWizard(els.choiceRequestBody, {
+        candidates: cards,
+        maxExile: pending.maxExile,
+        affordableCounts: pending.affordableCounts ?? null,
+        sourceName: pending.sourceCardId ? session.nameOf(pending.sourceCardId) : null,
+        manaCost: pending.manaCost ?? null,
+        playerId: choiceView.playerId,
+        onOpenCard: (cardId) => openCardFullscreenByCardId(cardId),
+        onComplete: (exileIds) => {
+          hideModal('choice-request');
+          play({ type: 'resolve_delve_exile', playerId: choiceView.playerId, exileIds });
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     if (request.type === 'damage_assignment') {
       const pending = choiceView.pendingDamageAssignment;
       if (!pending || pending.playerId !== choiceView.playerId || pending.entries.length === 0) {
@@ -1121,7 +1229,10 @@ function bootstrapTable() {
       if (session.cardDetails(id)) return id; // jawny cardId w komendzie
       const cardId = session.state?.objects?.get(id)?.cardId ?? null;
       return cardId && session.cardDetails(cardId) ? cardId : null;
-    });
+    },
+    // H (zgłoszenie właściciela 2026-09-20): decyzje bez karty w komendzie
+    // (Explore) biorą kartę z oczekującej decyzji w widoku.
+    session.view());
   }
 
   function openCardFullscreenByCardId(cardId) {
@@ -2217,6 +2328,10 @@ function bootstrapTable() {
       costStr: manaWizardDescriptor.costStr,
       remainingTotal: progress.remainingTotal,
       requirements: progress.requirements,
+      // G (zgłoszenie właściciela): brakujące KOLORY jadą do renderu — wiersz
+      // źródła mówi „— pokrywa {B}”, a pusta lista mówi wprost, że żadne
+      // dostępne źródło nie daje tego koloru.
+      missingColors: progress.missingColors,
       untappedSources: progress.untappedSources.map((src) => ({ ...src, name: session.nameOf(src.cardId) })),
     }, {
       // Tapnięcie źródła: ląd → tap_for_mana, zdolność many → activate_ability

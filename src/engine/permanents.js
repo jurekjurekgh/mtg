@@ -56,13 +56,20 @@ export function replaceObject(state, object, patch) {
   return updated;
 }
 
-export function tapObject(state, objectId, playerId) {
+export function tapObject(state, objectId, playerId, events = null) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) throw new Error('Nie można tapować tego obiektu');
   if (object.tapped) throw new Error('Obiekt jest już tapped');
   const updated = replaceObject(state, object, { tapped: true });
   const e = event('object_tapped', { objectId, playerId });
   state.events.push(e);
+  // M114/M117 (ta sama klasa co tapnięcie landa za manę i regeneracja):
+  // zdarzenie musi trafić TAKŻE do listy zwracanej przez komendę, bo
+  // `accepted()` karmi `processTriggers` tą listą, a nie całym `state.events`
+  // (Batch 57/B5: atak Annie Flash nie odpalał „whenever becomes tapped").
+  // Kolektor jest opcjonalny — ścieżki, które budują własną listę zdarzeń,
+  // podają ją jawnie (combat.declareAttackers).
+  if (events) events.push(e);
   return updated;
 }
 
@@ -403,7 +410,7 @@ function greatestManaAmongOtherArtifacts(state, object) {
 }
 
 function staticBonuses(state, object) {
-  const bonus = { power: 0, toughness: 0, keywords: [] };
+  const bonus = { power: 0, toughness: 0, keywords: [], mechanics: [] };
   if (!state || object.zone !== 'battlefield' || object.faceDown) return bonus;
   for (const ability of object.abilities ?? []) {
     if (ability?.type !== 'static') continue;
@@ -437,6 +444,18 @@ function staticBonuses(state, object) {
     bonus.power += power;
     bonus.toughness += toughness;
     bonus.keywords.push(...(ability.keywords ?? []));
+    // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): zdolność
+    // WARUNKOWA to mechanika NAZWANA na karcie (Storied / enduring story) —
+    // niosąc samą różnicę P/T, widok skazywał kafel na gołe „+1/0”, z którego
+    // gracz nie odczytał, skąd bonus jest. Kolekcjonujemy WIĘC klucz warunku
+    // razem z jego wkładem do P/T (deskryptor, nie nazwa karty — ADR 0002);
+    // etykietę mechaniki nadaje warstwa opisu (render.js), bo to słownik
+    // prezentacji, nie reguła silnika.
+    if (power !== 0 || toughness !== 0) {
+      for (const key of Object.keys(ability.condition ?? {})) {
+        bonus.mechanics.push({ condition: key, power, toughness });
+      }
+    }
   }
   return bonus;
 }
@@ -683,7 +702,7 @@ export function effectivePower(object, state = null) {
  * wartości EFEKTYWNE; różnicę musi policzyć warstwa, która zna składniki.
  */
 export function grantedStatBonus(object, state = null) {
-  if (!object || object.power === null) return { power: 0, toughness: 0 };
+  if (!object || object.power === null) return { power: 0, toughness: 0, mechanics: [] };
   const attachment = attachmentBonuses(state, object);
   const statics = staticBonuses(state, object);
   const anthem = anthemBonuses(state, object);
@@ -691,6 +710,10 @@ export function grantedStatBonus(object, state = null) {
   return {
     power: attachment.power + statics.power + anthem.power + untilEot.power,
     toughness: attachment.toughness + statics.toughness + anthem.toughness + untilEot.toughness,
+    // L: źródła NAZWANYCH mechanik spośród statyk własnych obiektu (Óin).
+    // Anthemy/załączniki nie mają jeszcze mechanik warunkowych w katalogu —
+    // gdy taki się pojawi, dokłada tu swoje wpisy ten sam wzorzec.
+    mechanics: statics.mechanics,
   };
 }
 
@@ -1070,6 +1093,15 @@ export function modifyStats(state, objectId, { power = 0, toughness = 0 }) {
   });
   state.events.push(event('stats_modified', {
     objectId, powerModifier: updated.powerModifier, toughnessModifier: updated.toughnessModifier,
+    // M99 + uwaga B (właściciel 2026-09-19b): modyfikatory `modifyStats` żyją
+    // DO KOŃCA TURY (cleanup je zeruje — patrz nagłówek funkcji), więc niosą
+    // `untilEndOfTurn`, tak jak każdy inny buff do końca tury (set_base_pt_*,
+    // mass buffy). Bez tej flagi bramka `isBotMoveNoise` (session.js) widziała
+    // tylko „P/T przelicza się przy każdym zdarzeniu” i WYCINAŁA skutek z modala
+    // „Rozgrywka”: gracz rzucał własny pump (You're Not Alone), widział „czar
+    // zostaje rozstrzygnięty”, a o +4/+4 dowiadywał się wyłącznie z kafla —
+    // dokładnie ta sama asymetria log↔modal, którą M99 naprawił dla czarów bota.
+    untilEndOfTurn: true,
   }));
   return updated;
 }

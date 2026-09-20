@@ -32,6 +32,13 @@ tapnięcie tapniętego, M106/Z2). Dotychczasowe rozróżnienie brało pod uwagę
 z nich; trzecie („nikt nie pasuje do efektu") było nierozróżnialne od „efekt
 wykonał się bez skutku", bo oba nie produkują zdarzeń.
 
+
+
+**Reguła (szczegóły punktów 3–6, wyniesione z rejestru przy kondensacji 2026-09-19b):**
+3. Efekt, który ma w zbiorze samego siebie, nie zgłasza pustego zbioru. Efekt idempotentny nie zawsze działa na ŹRÓDŁO — aura na GOSPODARZA (`attachedTo`), więc „cel albo źródło" (M189/Z2e) nie wystarcza (Silken Strength, M256/J). Village Bell-Ringer zawsze jest własnym odbiorcą — tam tabela zbiorowa (`STATE_IDEMPOTENT_MASS_EFFECTS`; M106/Z2).
+4. Do każdego wpisu kontrola pozytywna: test, w którym zbiór NIE jest pusty (H1b/H2b/H3b/H4b/H5b/H6b). Bez niej asercja „brak komunikatu" bywa zielona, bo nic się nie dzieje (M255/G2).
+5. Heurystyka NAZWY (`_each_`, `_all_`) wyłącznie w strażniku (skan: typ zbiorowy ma wpis albo wyjątek). Silnik kluczuje po typie.
+6. Komunikat dla gracza to NIE ozdoba: „brak legalnych celów" mówi, co zrobić dalej; „nie było czego wykonać" — tylko że coś nie zadziałało.
 ## L106 (2026-08-31) — przypadek
 
 **Objaw (M269):** po „Creatures you control get +2/+2 until end of turn"
@@ -1941,3 +1948,122 @@ kosztu (`stationTappedPower` na wpisie stosu, jak `sacrificedToughness`),
 rozstrzygnięcie bierze żywą moc albo snapshot. Trzy testy, bo fix ma dwie
 gałęzie: LKI (2 po Shocku), żywa moc (2 bez odpowiedzi) i pompa
 w odpowiedzi (5 — snapshot przy koszcie NIE może zabić żywego odczytu).
+
+## L150 (2026-09-19) — przypadek: Dawntreader Elk poświęcany po ląd przy 4 kartach biblioteki
+
+**Zgłoszenie właściciela (C):** „bot poświęca Dawntreader Elk (traci stwora), żeby wyciągnąć ląd, gdy w bibliotece zostały 4 karty (→3), będąc o krok od przegranej. Wycena musi się zmienić.”
+
+**Odtworzenie:** scena `createGameState` + `dawntreader-elk` i `basic-forest` na polu p1, 4× `basic-mountain` w bibliotece, `jumpToStep(state.turn,'main','p1')`, mana {G}; `createHeuristicBot({seed:42}).chooseCommand(playerView(state,'p1'), {})` → `activate_ability:elk` zarówno przy 4, jak i przy 25 kartach (identyczna decyzja w obu scenach).
+
+**Przyczyna:** bot karał ubytek własnej biblioteki tylko przez `paymentLibraryLoss` (mielące tapnięcia płatności) i `LIBRARY_DRAIN_EFFECTS` (mill/draw). Tutor (`search_library_to_battlefield`, effects.js → `queueSearchChoice`) nie był wyceniany nigdzie: aktywacja niosła ~2 pkt wartości efektu i wygrywała z passem niezależnie od stanu biblioteki.
+
+**Naprawa:** `LIBRARY_SEARCH_EFFECTS` (typy z deskryptora: search_library_to_hand / _to_battlefield / _to_battlefield_tapped / search_basic_land_morbid) + `searchLibraryLoss(view, cmd)` liczący karty zabrane z własnej biblioteki przez wariant; wynik wchodzi do tej samej drabiny `libraryLossPenalty` co dobrania — dla aktywacji (payment + tutor, suma dróg) i dla rzutów (repeat + payment + tutor, więc także ETB-tutory permanentów, np. Pilgrim's Eye). Granica marginesu: 21 kart aktywuje, 20 już nie (margines 20 kart). Objaw uboczny: pin `batch54` (lethal Exploding Borders przy 1 karcie w bibliotece) mierzył teraz karę cienkiej biblioteki za własny tutor — scena dostała 20 kart tła, asercja letalu bez zmian.
+
+## L151 (2026-09-19) — przypadek: potrójny blok legalny w silniku, nieobecny w ofercie
+
+**Punkt otwarty z poprzedniej sesji:** „kierunek odwrotny oferty bloków (`Math.min(slots, 2)`) — pin przy blokerze o >2 slotach”.
+
+**Pomiar:** scena 3 atakujących (Goblin Piker) i bloker z 3 slotami (licznik +1/+1 + 2× Cenn's Tactician, obaj taktycy zatapnięci — statyka działa niezależnie od tapnięcia) → `blockSlotsFor` = 3, ale `legalBlockerOptions` nie zawierało ANI JEDNEGO przypisania z blokerem użytym 3 razy, a `declareBlockers` (i `blockAssignmentViolation`) potrójny blok PRZYJMUJE. Oferta była więc niekompletna: człowiek w panelu bloków i bot nie mogli zadeklarować legalnego ruchu.
+
+**Przyczyna i naprawa:** liczba przebiegów blokera w enumeracji = `Math.min(slots, 2)` (obcięcie „na wygodę”) → `Math.min(slots, attackers.length)` (granica legalności). Przy okazji: enumeracja z powtórzeniami tworzyła to samo przypisanie wieloma ścieżkami (kolejność atakujących) i rosła do 34 opcji przy capie 32 — dodany klucz kanoniczny + `slice(0, cap)`.
+
+**Piny (oba kierunki):** potrójny blok jest w ofercie i przechodzi `declareBlockers`; KAŻDA opcja oferty przechodzi walidację; bloker o 1 slocie bez podwójnego bloku; brak duplikatów i cap. Mutacje M23/M24 → 1 RED każda.
+
+## L152 (2026-09-19) — przypadek: literalny „\n” w danych proweniencji i wyjątek, który to ukrywał
+
+**Polowanie inną ścieżką niż poprzednia sesja:** pełny diff `oracleText` katalogu z `docs/cards/scryfall-*.json` po wszystkich 480 kartach ze snapshotem (poprzednie audyty czytały diff ostatniego PR-a, nie dane).
+
+**Wynik:** 20 wpisów katalogu (m.in. instant-ramen, crew-captain, consume-spirit, moonlit-meditation, village-bell-ringer) i 7 plików snapshotu (altar-of-the-goyf, consume-spirit, crew-captain, gurmag-drowner, inspiring-bard, instant-ramen, seismic-monstrosaur) miało w polu Oracle literalny backslash+n zamiast nowej linii. Konsekwencja praktyczna: strażnik kosztów aktywacji (`test/ability-cost-pips.test.js`) nosił jawny wyjątek „znalezisko S-1” i po cichu pomijał zdolność `strandwalker` („przy literalnym 
+ Oracle karty jest jedną linią, więc karta bez ani jednego nagłówka nie daje punktu odniesienia”).
+
+**Naprawa danych + koniec wyjątku:** prawdziwe nowe linie w katalogu i snapshotach; strażnik `test/oracle-bez-literalnego-backslash-n.test.js` pilnuje obu stron (plus zgodność katalog==snapshot dla dotkniętych kart i dla DFC Lodestone Needle) i ma bramkę degeneracji (minimum sprawdzonych rekordów); `skippedEscapedText` w strażniku kosztów musi być 0 — `strandwalker` wrócił do audytu. Świadomie NIE naprawiane (sklasyfikowane): 8 różnic w tekście przypomnienia (CR 207.2 — to nie tekst reguły) i karta przygodowa `gray-slaad`, gdzie katalog celowo składa przednią twarz z linią przygody.
+
+**Mutacje:** M25 (przywrócenie literalnego „\n” w katalogu) → 2 RED, M26 (w 7 snapshotach) → 2 RED.
+
+## L153 (2026-09-19) — przypadek: tapnięcie przez ATAK nie odpalało „becomes tapped"
+
+**Zgłoszenie z etapu B5 (Annie Flash, the Veteran):** „Whenever this creature becomes tapped, exile the top two cards…" nie odpalało, gdy Annie tapowała się ATAKIEM (działało tylko przy tapnięciu zdolnością/efektem).
+
+**Pomiar:** scena `setupCardMatch` + `moveObjectDirectly` — `declare_attackers` tapował atakującego, `object_tapped` był w `state.events`, ale `processTriggers` w `accepted()` widzi wyłącznie zdarzenia zwrócone przez komendę. `combat.declareAttackers` wołał `tapObject(state, id, playerId)` bez kolektora, więc tapnięcie z ataku w skanie nie istniało — trigger był martwy dla całej rodziny „becomes tapped" (Nanoform Sentinel od M360 też).
+
+**Naprawa:** `tapObject(state, objectId, playerId, events = null)` — gdy kolektor podany, zdarzenie ląduje w OBU miejscach (`state.events` i kolektorze); `declareAttackers({ pushToState, events })` przekazuje kolektor z `game-state.js`, a komenda zwraca `[...tapEvents, e]`. Wzorzec jest ten sam co M114 (tap lądu na manę) i M117 (regeneracja): zdarzenie wywołane wewnątrz komendy MUSI wrócić z komendą, inaczej skan triggerów go nie zobaczy.
+
+**Pin:** `test/real-cards-batch57.test.js` (B5) — atak Annie wygania dokładnie dwie wierzchnie karty i pozwala zagrać land dopiero w main; mutacja (cofnięcie kolektora) → 1 RED. Dodatkowo `test/m257r5b-awaken-sleeper.test.js` pilnuje tapnięcia zdolnością.
+
+## L154 (2026-09-19) — przypadek: odmowa bez skutku (Baral and Kari Zev)
+
+**Etapy B6a/B6b (karta 88 TDC):** „Whenever you cast your first instant or sorcery spell each turn, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost. If you don't, create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn."
+
+**Objaw etapu B6a:** decyzja `resolve_hand_free_cast` istniała, ale rezygnacja była pustym ruchem — w wycenie bota `cmd.decline → 4` pkt, więc bot zawsze brał pierwszą ofertę rzutu (nawet gdy w ręce leżał marginalny instant), a przycisk w panelu mówił tylko „Zrezygnuj (nie rzucam darmowego czaru)". Gracz nie miał jak się dowiedzieć, że odmowa daje 2/1 z pośpiechem.
+
+**Naprawa (B6b):** deskryptor `elseEffect` w danych karty jedzie z decyzją (`pendingHandFreeCast`), a `resolve_hand_free_cast{decline}` wykonuje go ze stubem źródła (LKI — źródło mogło już opuścić pole bitwy, CR 603.10). JEDEN predykat `elseEffectSummary` (tokens.js) redukuje deskryptor do postaci widokowej i karmi: widok gracza (`pendingHandFreeCast.alternative`), zdarzenia `hand_free_cast_required`/`_resolved`, etykietę przycisku w `render.js`, komunikat logu w `session.js` i wycenę bota (odmowa = wartość generycznego `create_token`, ta sama skala 12 pkt, więc nadal przegrywa z darmowym czarem za 45, ale ma z czym konkurować).
+
+**Druga połowa reguły (automat):** gdy `handFreeCastOffers` jest PUSTE (pusta ręka / brak czaru o mniejszej MV i wspólnym typie), jedynym legalnym wyborem jest rezygnacja — więc `pruneDeadPendingDecisions` domyka decyzję sam, wykonuje `elseEffect` i emituje `hand_free_cast_resolved{declined: true, noCandidates: true}`. Gracz nie dostaje modala z jednym przyciskiem, a token i tak powstaje (zasada właściciela: wybory bez alternatywy są automatyczne).
+
+**Piny:** `test/real-cards-batch57.test.js` — token 2/1 Legendary Monkey Pirate z `keywordGrants: ['haste']`, który realnie atakuje w turze wejścia; brak kandydatów = auto-domknięcie bez komendy w panelu; pusta ręka; rzut zabiera gałąź „If you don't"; panel i log nazywają skutek odmowy. Mutacja (cofnięcie `elseEffect` + auto-domknięcia) → 3 RED.
+
+## L155 (2026-09-20) — przypadek: bot oddawał gardę przy 2 życiach
+
+**Zgłoszenie z partii:** „Bot ma 2 życia i jedną kreaturę 2/2 na stole. Ja też mam jedną 2/2, ale mam 18 życia. Bot atakuje, przepuszczam, dostaję 2, potem dobijam bota. To bez sensu działanie bota. Nie powinien się odsłaniać mając tak mało życia."
+
+**Pomiar:** `declare_attackers` wyceniał atak per-stwór (gałąź wymiany → `power - 1`) i dokładał premię za wyścig, gdy `enemyBoardPower(view) >= myLife(view)` — premia +8 (a przy życiu ≤ 2 nawet +20) przewyższała wszystkie kary za oddanie blokera, więc 2/2 atakujący 2/2 przy moich 2 życiach dostawał wynik dodatni. Kary „co się stanie w następnej turze, gdy atakujący są tapnięci" nie liczył nikt.
+
+**Naprawa:** model gardy po deskryptorach (ADR 0002): `guardToughness(declared)` to suma wytrzymałości moich niezatapniętych, niezadeklarowanych blokerów (`cantBlock`/`detained` poza rachunkiem), a `enemyCrackbackPower(view)` to moc wrogich stworów mogących zaatakować w następnej turze (tapnięte liczą się — w turze wroga się odtapiają). `throwsGuard` = atak NIE wygrywa teraz (`winsNow`: przebicie ≥ życie wroga albo wygrana trucizną), kontratak w ogóle grozi (`crackbackPower > 0`), a przeżycie przed atakiem istniało i po ataku znika (`crackbackPower − guardToughness` przestaje być mniejsze od mojego życia). Wtedy premia za wyścig jest POMIJANA (L3 — kara musi być liczona razem z premią, nie obok niej) i wchodzi `score -= P.crackbackPenalty` (12).
+
+**Wyjątek zmierzony w pinie:** atak LETALNY na stole (suma mocy ≥ życie wroga) zmusza wroga do blokowania — blokery z wytrzymałością ≤ najmocniejszy atak giną, więc ich moc znika z kontrataku (`forcedBlockLoss`, absorbowanie od najtańszego). Bez tego strażnik fałszywie karał atak, który właśnie kończy grę (pin E/2b).
+
+**Kolizja z pinem D/3:** ten sam atak 3/1 za 3/3 przy 3 życiach jest teraz poprawnie karany (wróg może NIE blokować i dobić kontrą), więc `test/zgloszenie-d-jalowy-atak-w-gang.test.js` mierzy granicę klasyfikacji „jałowego ataku" przy 12 życiach — scenariusz crackbacku ma własny pin.
+
+**Piny:** `test/zgloszenie-e-oddana-garda.test.js` — 6 przypadków (scenariusz właściciela; atak letalny zostaje; wymuszony blok oddaje gardę; atakujący z lataniem; wymiana przy pełnym życiu; dwa 2/2 — jeden zostaje w domu). RED: stash `heuristic-bot.js` + `heuristic-params.js` → 5/1.
+
+## L156 (2026-09-20) — przypadek: trzy warstwy zgłoszenia (F–I)
+
+**Zgłoszenia z partii** (druga paczka uwag tego samego dnia, PR #130):
+
+- **F** — „sekcja Deck Builder jest martwa; nie używam jej i nie będę — zakomentuj ją w aplikacji, tak, żeby nie pokazywała się w ogóle”.
+- **G** — „Canonized in Blood (koszt «CB» = 2 many): kreator many kazał mi tapnąć 4 lądy”.
+- **H** — „Guidestone Compass Explore — modal «Wybierz: Explore — co z odsłoniętą kartą?» ma wymienić i podlinkować odsłoniętą kartę; teraz trzeba jej szukać w logu”.
+- **I** — „Geological Appraiser ETB Discover 3: cała biblioteka przejrzana, brak trafienia; karty wróciły, ale «Rozgrywka»/log nie mówią, że biblioteka się wyczerpała, że nie było trafienia ani że karty wróciły na spód w losowej kolejności”.
+
+**G — pomiar przed naprawą.** Silnik był czysty: koszt `{1}{B}` (`mana-costs-data.js`), `effectiveSpellManaCost` = 2, deskryptor `{costStr: '{1}{B}', totalNeeded: 2, requirements: [['B']]}`, a `wizardProgress` po tapnięciu Bagna i dowolnego lądu dawał `done: true`. Cztery niezależne próby (oferta, deskryptor, surowy `tap_for_mana` ×4, rzut z pustą pulą) nie reprodukowały „4 lądów” — wada była w WARSTWIE PROWADZENIA: lista źródeł szła porządkiem stołu, a po zebraniu sumy kreator dalej proponował lądy BEZ brakującego koloru. Gracz tapujący „po kolei z góry” (Wyspa, Góra, Las, Bagno) potrzebował 4 tapnięć: dwa pierwsze zaspokajały sumę, trzecie (Las) nic nie wnosiło, dopiero czwarte pokrywało `{B}`.
+
+**G — naprawa.** `guideManaSources(sources, missingColors, totalMet)`: sort stabilny „źródła brakującego koloru pierwsze” + filtr „po zebranej sumie zostają tylko źródła dające brakujący kolor” (nadmiarowe źródło dodałoby manę, której płatność już nie potrzebuje). `wizardProgress` dokłada `missingColors` i `coversMissing` per źródło, a render pokazuje „— pokrywa {B}” i — gdy nie ma czym pokryć koloru przy zebranej sumie — mówi wprost „Żadne dostępne źródło nie daje B — Anuluj płatność”. Świadomie NIE auto-tapnięto wymuszonego źródła: płatność jest jawną decyzją gracza o zasobach (CR 601.2h), kreator prowadzi kolejnością i zakresem.
+
+**H — pomiar.** Decyzja Explore idzie przez wspólny `renderChoiceRequest` (odpowiedź dla właściciela: TAK, to uniwersalny kreator wyboru), ale komenda `resolve_explore_choice` ma dwa warianty (wierzch/grób) bez żadnego identyfikatora karty, a odsłonięta karta siedziała w `state.pendingExplore` i nie była wystawiana w widoku. Tytuł modala spadał do deskryptora typu: „Wybierz: Explore — co z odsłoniętą kartą?”.
+
+**H — naprawa.** `pendingExplore` niesie `sourceCardId` (źródło eksploracji to publiczny permanent — wzorzec M162/C, M163/A, M240/K), `playerView` wystawia `{ sourceCardId, cardId }` właścicielowi decyzji, `choiceSourceTitle` ma gałąź `resolve_explore_choice` („Guidestone Compass — Explore: Fathom Fleet Cutthroat na wierzchu biblioteki”), a `previewCardIdOfOption(option, resolveCardId, view)` bierze kartę z oczekującej decyzji, gdy komenda jej nie niesie — oba warianty dostają wspólny przycisk „🔍 Podgląd karty” (pełnoekranowa ilustracja).
+
+**I — pomiar.** `discover_resolved` przy braku trafienia niosło wyłącznie `found: false` (bez liczby odsłoniętych kart i bez informacji, czy biblioteka się wyczerpała), a warstwa tekstu w `session.js` mapowała je na `null` — wpis CICHY. Dodatkowo typ zdarzenia nie przechodził bramki logu gracza poza oknem stosu, więc nawet poprawiony tekst mógł nie dotrzeć do „Rozgrywki”.
+
+**I — naprawa.** Trzy warstwy: (1) FAKTY — `effects.js` dokłada `revealedCardIds`, `bottomCount` i `libraryExhausted` (brak trafienia), a `game-state.js` `bottomCount` (trafienie, „reszta na spód w losowej kolejności”, CR 701.53); (2) TEKST — brak trafienia opisywany wprost („nie znajduje karty dla discover (3) — biblioteka się wyczerpała (przejrzano N kart); odsłonięte karty (N) na spód biblioteki w losowej kolejności”); (3) BRAMKA — `discover_started`/`discover_resolved` w `BOT_RESOLUTION_EVENTS` i `HUMAN_DIGEST_EVENTS`.
+
+**F — naprawa.** Panel `#deck-builder` w bloku komentarza HTML (markup zachowany → odwracalność; wewnętrzne komentarze HTML mają myślniki zamienione na encje, żeby `--` nie zamknął komentarza zewnętrznego), import i oba montaże `mountDeckBuilder` zakomentowane, moduły i ADR 0012 bez zmian, biblioteka talii własnych (IndexedDB → selecty) działa dalej. Bundle: 64 → 59 modułów.
+
+**Piny:** `test/zgloszenie-f-kreator-talii-wylaczony.test.js` (3), `test/zgloszenie-g-kreator-many-brakujacy-kolor.test.js` (4) + end-to-end `test/table-ui.test.js` (talia „g-canonized”: gracz tapuje ZAWSZE pierwszy wiersz kreatora; RED 3 tapnięcia przy koszcie 2), `test/zgloszenie-h-explore-nazwa-karty.test.js` (3), `test/zgloszenie-i-discover-brak-trafienia.test.js` (4). Wszystkie czerwone przed poprawką (0/3, 0/4+RED taps, 0/3, 0/4).
+
+**Wniosek dla procesu:** zgłoszenie „kreator/X kazał zrobić coś sprzecznego z regułą” mierzymy warstwami od silnika w górę (koszt → oferta → deskryptor → postęp → render), a naprawę pinujemy na warstwie, która realnie zawiodła — inaczej „fix w silniku” przechodzi zielono, a gracz dalej tapie cztery lądy.
+
+## L157 (2026-09-20) — przypadek: log tapnięć na manę (paczka J)
+
+**Zgłoszenie z partii** (trzecia paczka uwag tego samego dnia, PR #130):
+„Chciałbym w sekcji «Log partii» widzieć dodatkowo każdy tapnięty na manę permanent. To nam ułatwi debugowanie błędów — będzie widać co i kiedy zostało tapnięte”.
+
+**Pomiar przed naprawą.** Silnik od dawna niesie komplet danych, ale w logu stołu nie było po nich ŚLADU: `object_tapped` mapuje się na `null` w tekstach zdarzeń (log pokazuje tylko ruchy istotne), a `mana_produced` (`resources.js`: `{ playerId, source: objectId, amount, colors, grantMana }`) chodzi wyłącznie przez szum `TURN_NOISE`/`MAIN_LOG_NOISE` do bufora „Rozgrywki” dla bota. Sonda na pełnej partii (talia `ixalan` vs `warhammer-ubr`) potwierdziła: dziesięć produkcji many Nieprzyjaciela, ZERO wpisów w `logEntries()`.
+
+**Decyzja o zdarzeniu.** Opisujemy PRODUKCJĘ many, nie samo tapnięcie: `object_tapped` nie wie ani ile many powstało, ani jakiej — a bez tego wpis nie odpowiada na pytanie „co zapłacił”. `mana_produced` niesie źródło (obiekt na polu bitwy, więc działa też dla stwora-źródła many, artefaktu i Skarbu) oraz kolory. Wpis dotyczy więc dokładnie tego, czego szukał właściciel.
+
+**Naprawa.** (1) Czysta, eksportowana `manaSourceLogText(e, { nameOfObject, who })` — jedno miejsce z regułą tekstu: „Ty tapujesz na manę: Wyspa → {U}” (druga osoba: „tapuje”), symbole w liczbie `max(amount, colors.length)` („{C}{C}{C}” dla trzech bezbarwnych, powtórzenia przy dwóch jednostkach jednego koloru), `null` gdy zdarzenie nie jest produkcją, brak nazwy źródła albo nazwa to `?` (wpis bez wiedzy byłby szumem). (2) Wrapper `logManaSource(e)` w sesji woła `sessionLog('tap', …)` po nagłówku fazy — w OBU gałęziach `MAIN_LOG_NOISE` (strumień auto i pętla bota), jedno źródło reguły dla obu. (3) UI: `.log-tap` w `index.html` (wyciszony kolor — wpis debugowy, nie narracja).
+
+**Granice (świadome).** Wpis NIE wchodzi do modala „Rozgrywka” (`botMoves`) ani do zapisu tur dla AI (`turnHistory`) — decyzja właściciela z 2026-08-02 (modal nie pokazuje tapowania many) zostaje w mocy; miejscem na debug jest „Log partii”, który czyta ten sam strumień. Pin 3 strażnika pilnuje obu granic maszynowo.
+
+**Pułapka zasięgu (RED w trakcie prac).** Pierwsza wersja wrappera wołała `whoN(e.playerId)` — a `whoN` istnieje wyłącznie w closures deskryptorów zdarzeń (`session.js`), nie w closures sesji. Test czerwienił się na `RuntimeError: whoN is not defined` (1/3). Naprawa: `who()` z zasięgu sesji (ta sama mapa `PLAYER_NAMES`, której domyślnie używa `sessionLog`). Wniosek: nazwa pomocnika „obecna w pliku” nie znaczy „widoczna w moim zasięgu” — nowy konsument sprawdza SWÓJ closure.
+
+**Kolejność weryfikacji (RED → GREEN).** Odłożenie `src` (stash) → strażnik czerwony (brak eksportu), po przywróceniu 3/3. Sonda pełnej partii po naprawie: 10 wpisów `kind: 'tap'` w 3 turach, „Nieprzyjaciel tapuje na manę: Mountain #1 → {R}”, `botMoves` i `turnHistory` bez ani jednego „na manę”. Bramy: `node tools/run-tests.mjs all` **6025/6025** (6022 + 3 nowe piny).
+
+**Piny:** e2e w `test/table-ui.test.js` (ten sam scenariusz co pin G, talia „g-canonized”): po zapłacie log stołu ma wiersz `log-tap` z „Swamp → B” (symbole many to ikony), pole „Log partii” niesie pełny zapis z symbolami, a zapis tur dla AI jest czysty — i `test/zgloszenie-j-tapniecia-many-w-logu.test.js` — 3 przypadki: (1) reguła `manaSourceLogText` (jedna jednostka, druga osoba, trzy bezbarwne, dwie tego samego koloru, `null` dla obcych zdarzeń i bez nazwy); (2) realne `tap_for_mana` na stole dokłada wpis `kind: 'tap'` z nazwą i kolorem, a „Log partii” (`logTextAll`) go pokazuje; (3) wpis NIE trafia do `botMoves` ani `turnHistory`.
+
+**Wniosek dla procesu:** zgłoszenie „chcę dodatkowo widzieć X” to zamówienie na DWIE rzeczy naraz — treść wpisu (dobierz zdarzenie, które niesie pytanie gracza, a nie pierwsze z brzegu o podobnej nazwie) i jego granicę (gdzie wpis ma NIE trafić). Jedno i drugie jest pinowalne, więc obie strony lądują w strażniku.
+
+**Korekta po uwadze właściciela (2026-09-20d).** Pierwsza wersja paczki J dołożyła wpisom własny rodzaj (`tap`) i wyciszony kolor (`.log-tap`), a paczka C — pole tekstowe z logiem (`<pre id="log-text">`) obok listy. Właściciel odrzucił jedno i drugie: „W sekcji «Log partii» nie ma i ma nie być żadnych dwóch streamów… Miałeś tylko w zleceniu C dodać możliwość kopiowania tego loga (albo określonej tury) do clipboardu. Plus zmiana chronologii… Tu nie ma i ma nie być żadnych kolorów. Ma zostać dokładnie tak samo jak było”. Naprawa: wpis loguje się zwykłym rodzajem `event` (jak „Zagrywasz Forest”), własny kolor zniknął, a z sekcji „Log partii” usunięto nadmiarowe pole tekstowe razem z jego stylem — zostaje JEDNA lista logu (z podlinkowanymi nazwami kart) + select zakresu + dwa przyciski kopiowania. Strażnik `test/zgloszenie-c-log-partii-tury.test.js` dostał pin struktury sekcji (żadnego `log-text`, żadnego własnego koloru wpisów), a test J — pin rodzaju wpisu. Bramy: 6026/6026.
+
+**Uwaga o opisie dla właściciela.** W raporcie napisałem „na stole symbole many renderują się jako ikony, a w polu «Log partii» jest pełny zapis z symbolami” — to było mylące („stół” to ta sama lista logu w tej samej sekcji, a „pole” to mój nadmiarowy element). Wniosek: raport opisuje ELEMENTY UI nazwami z ekranu właściciela, nie skrótami z kodu.

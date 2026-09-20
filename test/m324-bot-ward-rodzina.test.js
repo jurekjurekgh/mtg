@@ -76,6 +76,10 @@ test('M324/A1 (strażnik klasy): każdy typ rzutu z kontraktu podlega podatkowi 
   assert.deepEqual([...WARD_TAXED_TYPES].sort(), [
     'activate_ability', 'cast_adventure', 'cast_adventure_creature', 'cast_cleave', 'cast_escape',
     'cast_flashback', 'cast_permanent', 'cast_spell', 'resolve_grave_free_cast', 'resolve_exile_cast',
+    // Batch 57/B6a (Baral and Kari Zev): darmowy rzut czaru z ręki też celuje —
+    // ward przeciwnika jest osobnym kosztem, więc podlega temu samemu
+    // podatkowi w wycenie bota (jak okno Vaana i rzut z grobu).
+    'resolve_hand_free_cast',
     'resolve_madness_cast', 'resolve_rebound_cast', 'resolve_suspend_cast', 'resolve_trigger_target',
   ].sort(), 'zestaw typów objętych podatkiem ward');
 });

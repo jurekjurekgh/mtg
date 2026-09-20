@@ -77,10 +77,11 @@ test('M140/B1: craft ożywionego artefaktu daje permanent drugiej strony, nie st
     subtypes: [], keywords: [], abilities: [], colors: [], manaCost: 1,
   });
   applyEffect(state, { type: 'craft_transform' }, state.objects.get('needle'), []);
-  assert.ok(state.pendingCraftExile, 'craft kolejkuje wybór karty do wygnania');
-  assert.ok(execute(state, {
-    type: 'resolve_craft_exile', playerId: 'p1', targetId: 'fodder',
-  }).ok, 'craft rozstrzygnięty');
+  // Audyt PR #129 (2026-09-19): jeden kandydat = wygnanie automatyczne
+  // (wybór bez alternatywy nie jest decyzją) — craft rozstrzyga się od razu.
+  assert.equal(state.pendingCraftExile, null, 'jedyny artefakt wygnany bez pytania gracza');
+  assert.ok(state.zones.exile.some((id) => state.objects.get(id)?.cardId === 'fodder-card'),
+    'materiał craftu w wygnaniu');
 
   const crafted = [...state.objects.values()].find((o) => o.zone === 'battlefield' && o.transformTo?.cardId === 'lodestone-needle');
   assert.ok(crafted, 'przemieniony permanent stoi na polu bitwy');
