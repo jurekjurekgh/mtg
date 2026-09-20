@@ -2458,6 +2458,36 @@ export function phaseHeaderText(e, lastLoggedPhase = null) {
   return { header: `— ${e.phase} —`, lastLoggedPhase: e.phase };
 }
 
+/**
+ * J (zgłoszenie właściciela, 2026-09-20): „w sekcji «Log partii» chcę widzieć
+ * DODATKOWO każdy permanent tapnięty na manę — do debugowania: co i kiedy
+ * zostało tapnięte”.
+ *
+ * Silnik niesie komplet danych w zdarzeniu `mana_produced`
+ * (`resources.js`: `{ playerId, source: objectId, amount, colors }`).
+ * Świadomie opisujemy PRODUKCJĘ many, nie samo `object_tapped`: tapnięcie nie
+ * zna kolorów, a bez nich wpis nie mówi nic o płatności. Każda produkcja to
+ * konkretne źródło (ląd, stwór-źródło many, artefakt, Skarb) — a więc i to,
+ * czego szuka właściciel.
+ *
+ * Czysta funkcja (ADR 0011): nazwę źródła i osobę dostaje w argumentach, więc
+ * pinuje ją test bez sesji. Zwraca `null`, gdy zdarzenie nie jest produkcją
+ * many albo nie umiemy nazwać źródła (`?` = brak wiedzy → wpis byłby szumem).
+ */
+export function manaSourceLogText(e, { nameOfObject = null, who = null } = {}) {
+  if (!e || e.type !== 'mana_produced' || e.source == null) return null;
+  if (typeof nameOfObject !== 'function') return null;
+  const name = nameOfObject(e.source);
+  if (!name || name === '?') return null;
+  const ile = Number.isInteger(e.amount) && e.amount > 0 ? e.amount : 1;
+  const colors = Array.isArray(e.colors) && e.colors.length > 0 ? e.colors : ['C'];
+  // Produkcja wielu many jednego koloru (np. „{T}: Add {C}{C}{C}”) ma pokazać
+  // WSZYSTKIE jednostki — inaczej debug płatności nie zgadza się z pulą.
+  const symbols = Array.from({ length: Math.max(ile, colors.length) }, (_, i) => `{${colors[i % colors.length]}}`).join('');
+  const verb = who === 'Ty' ? 'tapujesz' : 'tapuje';
+  return `${who ? `${who} ` : ''}${verb} na manę: ${name} → ${symbols}`;
+}
+
 export function createSession(config) {
   const { seed, registry, decks } = config;
   // Feature 2026-08-11: opcje wyciszone przez gracza (ptaszek w panelu akcji)
@@ -2538,6 +2568,21 @@ export function createSession(config) {
   const sessionLog = (kind, text) => {
     const turn = rememberLogTurn();
     log.push({ kind, text, turn: turn.number, playerId: turn.activePlayerId });
+  };
+  /**
+   * J: tapnięcie/produkcja many trafia do LOGU STOŁU (a przez to także do
+   * „Log partii”, który czyta ten sam strumień). Świadomie NIE do bufora
+   * modala „Rozgrywka” (`botMoves`) — decyzja właściciela (2026-08-02): modal
+   * nie pokazuje tapowania many, bo zamienia się w klikanie bez treści.
+   * Rodzaj wpisu `tap` daje w logu własny kolor (`log-tap`), a w tekstach
+   * „Log partii” pełne zdanie z kolorem many.
+   */
+  const logManaSource = (e) => {
+    const text = manaSourceLogText(e, {
+      nameOfObject: (id) => nameOfObject(id),
+      who: e.playerId != null ? who(e.playerId) : null,
+    });
+    if (text) sessionLog('tap', text);
   };
   // M167/E2: odwrócona mapa nazwa→cardId — render logu owija nazwy kart
   // w klikalne znaczniki (pełnoekranowa ilustracja przez delegację w main).
@@ -3252,6 +3297,9 @@ export function createSession(config) {
       if (MAIN_LOG_NOISE.has(e.type)) {
         const header = phaseHeaderFor(e);
         if (header) sessionLog('event', header);
+        // J: tapnięcie na manę ma WŁASNY wpis w logu stołu (szum modala
+        // „Rozgrywka” zostaje bez zmian — patrz `logManaSource`).
+        logManaSource(e);
         noteBotMove(e); recordTurnEvent(e); continue;
       }
       // Zgłoszenie właściciela E2: prompt decyzji BOTA nie należy do logu
@@ -3657,6 +3705,8 @@ export function createSession(config) {
         if (MAIN_LOG_NOISE.has(e.type)) {
           const header = phaseHeaderFor(e);
           if (header) sessionLog('event', header);
+          // J: to samo co w strumieniu auto (jedno źródło reguły).
+          logManaSource(e);
           noteBotMove(e); recordTurnEvent(e); continue;
         }
         // Zgłoszenie właściciela E2: prompt decyzji BOTA nie należy do logu
