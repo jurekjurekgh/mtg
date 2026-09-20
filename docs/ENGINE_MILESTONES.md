@@ -6165,3 +6165,63 @@ landy przeliczone 3×Island/1×Swamp/3×Mountain/1×Forest →
 golden-master bez zmian.
 
 Bramy: `npm test` **5963/5963, 0 fail**, `npm run build` 64 moduły / 3927,0 kB.
+
+## M393a (2026-09-19) — Batch 57/B6a: Baral and Kari Zev — licznik „pierwszy instant/sorcery" i darmowy rzut z ręki
+
+Zakres: karta 88 TDC (`{1}{U}{R}` 2/4 Legendary Human, First strike, menace):
+„Whenever you cast your first instant or sorcery spell each turn, you may cast
+a spell with lesser mana value that shares a card type with it from your hand
+without paying its mana cost. If you don't, create First Mate Ragavan …".
+Etap obejmuje licznik i CAŁĄ decyzję (oferta + rzut albo rezygnacja); sam
+skutek odmowy (token) wchodzi w M393b — do tego czasu karta zostaje
+`in-development` (ADR 0010 §4).
+
+**Licznik per typ czaru:**
+`state.instantSorceryCastThisTurnByPlayer` rośnie w tym samym skanie zdarzeń
+co `spellsCastThisTurnByPlayer` (jedno miejsce, L41), filtrując TYP KARTY na
+zdarzeniu rzutu — dzięki temu czar rzucony PRZED wejściem Barala też się
+liczy (ruling TDC 2023-04-14: „It counts spells cast earlier in the turn even
+if Baral wasn't on the battlefield then"), a każde zdarzenie rzutu trafia do
+licznika dokładnie raz. Trigger `first_instant_sorcery_cast` odpala przy
+licznik == 1 i niesie `extra` = `{ spellCardId, spellManaValue, spellCardTypes }`
+(wzorzec `spellColorsInclude`; ADR 0002 — żadnej nazwy karty w kodzie).
+
+**Decyzja blokująca:** efekt `free_cast_from_hand` kolejkuje
+`state.pendingHandFreeCast` (`{playerId, sourceId, sourceCardId, cardTypes,
+maxManaValue, restorePriorityTo}`) i zdarzenie `hand_free_cast_required`.
+Gracz domyka ją komendą `resolve_hand_free_cast` (rezygnacja albo rzut).
+Kandydatów liczy JEDEN predykat `handFreeCastOffers` — oferta panelu i bramka
+wykonania czytają ten sam zbiór (L48; komenda spoza oferty jest odrzucana):
+czar instant/sorcery z ręki kontrolera, wspólny typ z czarem wyzwalającym,
+MV OSTRO mniejsze (ruling: „lesser mana value"), warianty celów/trybów/
+kosztów dodatkowych z `epicCastOffers` (`variableTargets`), BEZ kosztu X —
+przy rzucie bez kosztu many X = 0 (CR 107.3b), czyli ruch jałowy, więc nie
+jest ofertą (ta sama zasada co `allowX` w Discover).
+
+**Nowa opcja rzutu `handFreeCast`** (`CAST_SPELL_OPTIONS`): znosi koszt many,
+pipy koloru i symbole phyrexian (CR 118.9a), ale NIE kickera ani kosztu
+dodatkowego (ruling: „additional costs are allowed … mandatory"; koszty
+alternatywne nie są oferowane). Ważna WYŁĄCZNIE dla karty w ręce i nadawana
+tylko przez tę decyzję — komendy `cast_spell`/`cast_permanent` jej nie
+przekazują (inaczej dałoby się rzucać za darmo z panelu). Jedna definicja
+„kosztu zniesionego" (`manaCostWaived`) obsługuje wszystkie bramki `castSpell`
+i ścieżkę modalną (`castModalSpell` z parametrem uprawnienia), więc walidacja
+kolorów i pipów nie żąda kolorów od rzutu, który kosztuje 0 (L41/L48).
+
+Panel: grupowanie `resolve_hand_free_cast`, etykiety komendy/tytułu/grupy,
+komunikaty logu. Bot: gałąź wyceny (bliźniak rodziny darmowych rzutów, baza
+45 — karta + efekt za 0 many), kind `ability`, etykieta śladu; aggro-bot na
+whitelist. Ward: `resolve_hand_free_cast` w `WARD_TAXED_TYPES` (pin w
+`test/m324-bot-ward-rodzina.test.js`) — ward przeciwnika to osobny koszt.
+
+Piny: `test/real-cards-batch57.test.js` — 5 nowych (licznik odpala RAZ; czar
+sprzed wejścia Barala liczy się do licznika; oferta zawiera tylko mniejszą MV
+i wspólny typ; komenda spoza oferty i decyzja innego gracza odrzucone;
+rezygnacja domyka decyzję i przywraca pass). RED→GREEN na stashu jedenastu
+plików źródłowych: 5 czerwonych. Strażniki pełnej bramy zgłosiły brakujące
+rejestracje nowego typu decyzji (M122 etykieta triggera i opis efektu,
+M202/C slug grupy, M324/A1 pin) — domknięte w `session.js`, `render.js`
+i w pinie testu.
+
+Bramy: `npm test` **5968/5968, 0 fail**, `npm run build` 64 moduły /
+3942,7 kB.
