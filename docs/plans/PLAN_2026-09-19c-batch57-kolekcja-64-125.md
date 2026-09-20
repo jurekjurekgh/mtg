@@ -294,7 +294,7 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
   `SNAPSHOT_CONFIG`). Bramy: `npm test` **5963/5963, 0 fail**; build 64
   moduły / 3927,0 kB. Piny: `test/real-cards-batch57.test.js` 37/37 (8 nowych;
   RED→GREEN na stashu 9 plików: 6 czerwonych).
-- [ ] **B6 (M393) — Baral and Kari Zev**: **88 Baral and Kari Zev** — licznik
+- [ ] **B6 (M393) — Baral and Kari Zev** [B6a zrobione, B6b w toku]: **88 Baral and Kari Zev** — licznik
   „pierwszy instant/sorcery w turze" per gracz, darmowy rzut z ręki (lesser MV
   + wspólny typ karty, bez kosztów alternatywnych, `{X}` = 0), alternatywa
   „If you don't" → token First Mate Ragavan 2/1 z haste. Testy: pierwszy
@@ -319,12 +319,45 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
      Monkey Pirate, haste) nie ma jeszcze deskryptora — do dodania w
      `tokens.js`/`card-data.js` według wzorca tokenów legendarnych.
 
-  Podział wykonawczy: **B6a** = licznik „pierwszy instant/sorcery" + blokująca
-  decyzja darmowego rzutu z ręki (`resolve_hand_free_cast`, kandydaci: czary
-  z ręki o MNIEJSZEJ MV dzielące typ z czarem wyzwalającym, X=0; bez kosztów
-  alternatywnych; rzut wchodzi na stos NAD triggerem i rozstrzyga się przed
-  czarem wyzwalającym). **B6b** = ścieżka „If you don't" → token First Mate
-  Ragavan z haste (odmowa i brak kandydata).
+  Podział wykonawczy: **B6a ✅** = licznik „pierwszy instant/sorcery" +
+  blokująca decyzja darmowego rzutu z ręki. **B6b** = ścieżka „If you don't" →
+  token First Mate Ragavan z haste (odmowa i brak kandydata) + flip karty na
+  `supported` i churn talii.
+
+  **Wykonanie B6a (pomiary).** Licznik `instantSorceryCastThisTurnByPlayer`
+  (per gracz, filtr typu karty na ZDARZENIU rzutu) jest liczony w tym samym
+  skanie co `spellsCastThisTurnByPlayer`, więc każde zdarzenie rzutu wchodzi
+  do licznika dokładnie raz; trigger `first_instant_sorcery_cast` odpala
+  z `extra` = `{ spellCardId, spellManaValue, spellCardTypes }` (jak
+  `spellColorsInclude` dla „whenever you cast a RED spell" — ADR 0002, żadnej
+  nazwy karty). Efekt `free_cast_from_hand` kolejkuje `pendingHandFreeCast`
+  (`hand_free_cast_required`), a gracz domyka go komendą
+  `resolve_hand_free_cast` — rezygnacja (decline) albo rzut.
+
+  Kandydatów liczy JEDEN predykat `handFreeCastOffers` (oferta i walidacja —
+  L48): czar instant/sorcery kontrolera decyzji z ręki, wspólny typ z czarem
+  wyzwalającym, **ostro** mniejsze MV (ruling: „lesser mana value"),
+  warianty celów/trybów/kosztów dodatkowych z `epicCastOffers`
+  (`variableTargets`), bez kosztu X — przy rzucie bez kosztu many X = 0
+  (CR 107.3b), czyli ruch, który nic nie robi, więc nie jest ofertą (ta sama
+  zasada co `allowX` w Discover). Koszty dodatkowe są PŁACONE (ruling:
+  „additional costs are allowed … mandatory"), a nowa opcja rzutu
+  `handFreeCast` (ważna wyłącznie dla karty w RĘCE i nadawana tylko przez tę
+  decyzję — komendy `cast_spell`/`cast_permanent` jej nie przekazują) znosi
+  koszt many, pipy koloru i symbole phyrexian, nie znosząc kickera ani
+  kosztu dodatkowego. Bomba: bramka „kolorowego źródła na kickera"
+  i `spendMana` też czytają ten sam predykat, więc nie żądają kolorów od
+  rzutu, który kosztuje 0 (CR 118.9a).
+
+  Piny: `test/real-cards-batch57.test.js` — 5 nowych (licznik odpala RAZ;
+  czar sprzed wejścia Barala liczy się do licznika; oferta = tylko mniejsza
+  MV i wspólny typ; komenda spoza oferty i decyzja innego gracza odrzucone;
+  rezygnacja domyka decyzję i przywraca pass). RED→GREEN na stashu
+  jedenastu plików: 5 czerwonych. Strażniki: M122 (etykiety triggera/efektu),
+  M324/A1 (pin `WARD_TAXED_TYPES` + podatek wardu w wycenie) i lista
+  obsłużonych zdarzeń triggerów w `test/batch25-etb-enters-fix.test.js`.
+  Bramy: `npm test` **5968/5968, 0 fail**; build 64 moduły / 3942,7 kB.
+  Karta zostaje `in-development` — `supported` dopiero w B6b (ADR 0010 §4).
 - [ ] **B7 — talie i dokumentacja**: `node tools/generate-plan-decks.mjs`
   (atrybucja churnu per talia), `test/repo-decks.test.js` bez zmian treści
   poza liczbami, `docs/PROJECT_HISTORY.md` + `docs/ENGINE_MILESTONES.md`

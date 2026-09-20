@@ -68,6 +68,30 @@ function resolve(s) {
 
 const find = (s, cardId, zone = 'battlefield') => [...s.objects.values()].find((o) => o.cardId === cardId && o.zone === zone);
 const player = (s, id) => s.players.find((p) => p.id === id);
+/**
+ * Oddaje priorytet, aż `gotowe()` zwróci true (albo minie limit). Potrzebne
+ * przy decyzjach tworzonych PRZEZ trigger: `resolve()` z góry pliku rozstrzyga
+ * pierwszą komendę `resolve_*`, więc zamiatałoby też samą decyzję.
+ */
+function passUntil(s, gotowe, limit = 8) {
+  for (let i = 0; i < limit && !gotowe(); i += 1) {
+    const pass = commands(s).find((c) => c.type === 'pass_priority');
+    assert.ok(pass, 'jest komenda pass_priority');
+    run(s, pass);
+  }
+  assert.ok(gotowe(), `warunek osiągnięty w ${limit} passach`);
+}
+
+/** Rozstrzyga CAŁY stos bez dotykania decyzji `resolve_hand_free_cast`. */
+function resolveIgnoringHandFreeCast(s) {
+  for (let i = 0; s.zones.stack.length && i < 40; i += 1) {
+    const choices = commands(s);
+    const pick = choices.find((c) => c.type.startsWith('resolve_') && c.type !== 'resolve_hand_free_cast')
+      ?? choices.find((c) => c.type === 'pass_priority');
+    assert.ok(pick, 'jest czym rozstrzygnąć stos');
+    run(s, pick);
+  }
+}
 
 /** Sanity danych karty: snapshot ↔ katalog ↔ arkusz (jedna reguła dla sekcji). */
 function sanity(id, artId, set, plan) {
@@ -638,4 +662,127 @@ test('B57/77: tapnięcie wygania DOKŁADNIE dwie wierzchnie karty i pozwala zagr
   // W następnej turze uprawnienie wygasa samo (stempel = numer tury).
   s.turn.number += 1;
   for (const o of wygnane) assert.equal(isImpulseWindowLive(o, s), false, 'okno wygasło');
+});
+
+// ---------------------------------------------------------------------------
+// B6a (M393a) — 88 Baral and Kari Zev: licznik „pierwszy instant/sorcery w
+// turze" + darmowy rzut czaru z ręki o MNIEJSZEJ MV i wspólnym typie
+// (ruling TDC 2023-04-14). Karta zostaje `in-development` do B6b (ścieżka
+// „If you don't" → token First Mate Ragavan).
+// ---------------------------------------------------------------------------
+test('B57/88: trigger odpala się tylko przy PIERWSZYM instant/sorcery w turze', () => {
+  const s = game();
+  put(s, 'baral', 'baral-and-kari-zev', 'p1', 'battlefield');
+  put(s, 'i1', 'brute-force', 'p1', 'hand');   // instant MV1
+  put(s, 'i2', 'brute-force', 'p1', 'hand');
+  put(s, 'foe', 'lightwalker', 'p2', 'battlefield');
+  addMana(s, 'p1', 2, { colors: ['R', 'G'] });
+  assert.ok(commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'i1'), 'oferta rzutu pierwszego instanta');
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'i1'));
+  passUntil(s, () => s.pendingHandFreeCast != null);
+  assert.ok(s.events.some((e) => e.type === 'hand_free_cast_required'), 'pierwszy instant odpala trigger');
+  assert.equal(s.pendingHandFreeCast.playerId, 'p1', 'decyzja należy do kontrolera Barala');
+  run(s, commands(s).find((c) => c.type === 'resolve_hand_free_cast' && c.decline));
+  resolveIgnoringHandFreeCast(s);
+  // Drugi instant w tej samej turze NIE odpala triggera (ruling: „first … each turn").
+  const przed = s.events.filter((e) => e.type === 'hand_free_cast_required').length;
+  assert.ok(commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'i2'), 'drugi instant rzucalny');
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'i2'));
+  resolveIgnoringHandFreeCast(s);
+  assert.equal(
+    s.events.filter((e) => e.type === 'hand_free_cast_required').length, przed,
+    'drugi instant/sorcery w turze nie odpala triggera',
+  );
+});
+
+test('B57/88: czar zagrany przed wejściem Barala liczy się do licznika (ruling)', () => {
+  const s = game();
+  put(s, 'i1', 'brute-force', 'p1', 'hand');
+  put(s, 'i2', 'brute-force', 'p1', 'hand');
+  put(s, 'foe', 'lightwalker', 'p2', 'battlefield');
+  addMana(s, 'p1', 3, { colors: ['R', 'G', 'G'] });
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'i1'));
+  resolveIgnoringHandFreeCast(s);
+  // Baral wchodzi PO pierwszym instancie (tu: wprost na pole bitwy).
+  put(s, 'baral', 'baral-and-kari-zev', 'p1', 'battlefield');
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'i2'));
+  resolveIgnoringHandFreeCast(s);
+  // Ruling TDC: „It counts spells cast earlier in the turn even if Baral and
+  // Kari Zev wasn't on the battlefield then" — to był DRUGI czar, więc trigger
+  // nie odpala.
+  assert.equal(commands(s).some((c) => c.type === 'resolve_hand_free_cast'), false, 'brak decyzji (drugi czar w turze)');
+});
+
+test('B57/88: oferta zawiera TYLKO czary o mniejszej MV i wspólnym typie', () => {
+  const s = game();
+  put(s, 'baral', 'baral-and-kari-zev', 'p1', 'battlefield');
+  put(s, 'trig', 'raise-the-alarm', 'p1', 'hand');     // instant MV2
+  put(s, 'mniejsze', 'brute-force', 'p1', 'hand');      // instant MV1 — w ofercie
+  put(s, 'rowne-mv', 'negate', 'p1', 'hand');           // instant MV2 — „lesser" wyklucza
+  put(s, 'inny-typ', 'tome-scour', 'p1', 'hand');       // sorcery MV1 — inny typ
+  put(s, 'wieksze', 'merciless-repurposing', 'p1', 'hand'); // instant MV6
+  put(s, 'foe', 'lightwalker', 'p2', 'battlefield');
+  addMana(s, 'p1', 2, { colors: ['R', 'W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'trig'));
+  passUntil(s, () => s.pendingHandFreeCast != null);
+  const oferty = commands(s).filter((c) => c.type === 'resolve_hand_free_cast' && !c.decline);
+  assert.ok(oferty.length > 0, 'są oferty darmowego rzutu');
+  assert.deepEqual(
+    [...new Set(oferty.map((c) => c.cardId))].sort(), ['brute-force'],
+    'tylko instant o mniejszej MV (nie: równa MV, inny typ, większa MV)',
+  );
+  // Darmowy rzut nie pobiera many i kładzie czar na stos NAD triggerem.
+  const celBaral = oferty.find((c) => (c.targets ?? [])[0] === 'baral');
+  assert.ok(celBaral, 'wariant z celem własnego stwora istnieje (oferta = walidacja)');
+  const manaPrzed = player(s, 'p1').mana;
+  run(s, celBaral);
+  assert.equal(player(s, 'p1').mana, manaPrzed, 'koszt many = 0 (CR 118.9a)');
+  assert.equal(find(s, 'brute-force', 'battlefield'), undefined, 'czar poszedł na stos, nie na pole');
+  assert.ok(s.zones.stack.length >= 1, 'czar na stosie (nad triggerem)');
+  assert.ok(
+    [...s.objects.values()].some((o) => o.cardId === 'brute-force' && o.zone === 'stack'),
+    'obiekt stosu to rzucony czar',
+  );
+});
+
+test('B57/88: komenda spoza oferty jest odrzucana (oferta = walidacja, L48)', () => {
+  const s = game();
+  put(s, 'baral', 'baral-and-kari-zev', 'p1', 'battlefield');
+  put(s, 'trig', 'raise-the-alarm', 'p1', 'hand');
+  put(s, 'mniejsze', 'brute-force', 'p1', 'hand');
+  put(s, 'foe', 'lightwalker', 'p2', 'battlefield');
+  addMana(s, 'p1', 2, { colors: ['R', 'W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'trig'));
+  passUntil(s, () => s.pendingHandFreeCast != null);
+  // Równa MV (negate) nie jest oferowana — celowo nie ma jej w ręce; próbujemy
+  // rzucić kartę SPOZA zakresu (sorcery) przez tę samą komendę.
+  put(s, 'inny-typ', 'tome-scour', 'p1', 'hand');
+  const zly = execute(s, {
+    type: 'resolve_hand_free_cast', playerId: 'p1', objectId: 'inny-typ', cardId: 'tome-scour', targets: [],
+  });
+  assert.equal(zly.ok, false, 'rzut karty spoza oferty odrzucony');
+  assert.match(String(zly.events?.[0]?.reason ?? zly.events?.[0]), /illegal_hand_free_cast/);
+  // Nie nasza decyzja też jest odrzucana.
+  const nieNasza = execute(s, { type: 'resolve_hand_free_cast', playerId: 'p2', decline: true });
+  assert.equal(nieNasza.ok, false, 'decyzja innego gracza odrzucona');
+});
+
+test('B57/88: rezygnacja domyka decyzję i przywraca priorytet', () => {
+  const s = game();
+  put(s, 'baral', 'baral-and-kari-zev', 'p1', 'battlefield');
+  put(s, 'trig', 'raise-the-alarm', 'p1', 'hand');
+  put(s, 'mniejsze', 'brute-force', 'p1', 'hand');
+  put(s, 'foe', 'lightwalker', 'p2', 'battlefield');
+  addMana(s, 'p1', 2, { colors: ['R', 'W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'trig'));
+  passUntil(s, () => s.pendingHandFreeCast != null);
+  assert.equal(commands(s).filter((c) => c.type === 'cast_spell').length, 0, 'w trakcie decyzji brak zwykłych ofert rzutu');
+  assert.equal(commands(s).find((c) => c.type === 'pass_priority'), undefined, 'pass też jest zablokowany');
+  run(s, commands(s).find((c) => c.type === 'resolve_hand_free_cast' && c.decline));
+  assert.equal(s.pendingHandFreeCast, null, 'decyzja domknięta');
+  assert.ok(commands(s).find((c) => c.type === 'pass_priority'), 'pass wrócił po decyzji');
+  assert.ok(
+    [...s.objects.values()].some((o) => o.cardId === 'brute-force' && o.zone === 'hand'),
+    'karta została w ręce',
+  );
 });

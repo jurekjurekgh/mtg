@@ -2662,6 +2662,29 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // graveyard, exile it instead." Model: JEDNA decyzja (wybór karty = X i
   // rzut; rezygnacja = nic) — wzorzec pendingMadnessCast/Epic; kandydaci
   // liczeni ŻYWO w playerView (dowolny grób, MV == X, w zakresie epicCastOffers).
+  // Batch 57/B6a (Baral and Kari Zev, ruling TDC 2023-04-14): „you may cast a
+  // spell with lesser mana value that shares a card type with it from your hand
+  // without paying its mana cost" — decyzja BLOKUJĄCA (rzut następuje w trakcie
+  // rozstrzygania zdolności, więc timing czaru jest ignorowany). Kandydatów
+  // (i wspólny typ / próg MV) liczy jedyny predykat w game-state (L48:
+  // oferta = walidacja); zdolność nie zna żadnej nazwy karty (ADR 0002).
+  if (effect.type === 'free_cast_from_hand') {
+    const castTypes = (context.spellCardTypes ?? []).filter((t) => t === 'Instant' || t === 'Sorcery');
+    state.pendingHandFreeCast = {
+      playerId: sourceObject.controllerId,
+      sourceId: sourceObject.id,
+      sourceCardId: sourceObject.cardId ?? null,
+      cardTypes: castTypes,
+      maxManaValue: context.spellManaValue ?? 0,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('hand_free_cast_required', {
+      playerId: sourceObject.controllerId, sourceCardId: sourceObject.cardId ?? null,
+      maxManaValue: context.spellManaValue ?? 0, cardTypes: castTypes,
+    }));
+    return true;
+  }
   if (effect.type === 'pay_x_cast_from_graveyard') {
     state.pendingGraveFreeCast = {
       playerId: sourceObject.controllerId,

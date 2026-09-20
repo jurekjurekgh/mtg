@@ -301,6 +301,9 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   // Batch 56 (Cautious Survivor, M366): Survival — początek DRUGIEJ fazy
   // głównej (skan step_advanced main2/postcombat_main w triggers.js).
   'beginning_of_second_main',
+  // Batch 57/B6a (Baral and Kari Zev): „your first instant or sorcery spell
+  // each turn" — skan licznika per gracz w triggers.js.
+  'first_instant_sorcery_cast',
 ]);
 
 test('strażnik: każdy trigger w registry używa zdarzenia obsługiwanego przez engine', () => {

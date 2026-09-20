@@ -208,6 +208,10 @@ export function createGameState({ seed, players }) {
     // M174/E (Halo Forager): decyzja „zapłać {X} i rzuć instant/sorcery
     // MV=X z DOWOLNEGO grobu za darmo" (exile zamiast grobu po rozstrzygnięciu).
     pendingGraveFreeCast: null,
+    // Batch 57/B6a (Baral and Kari Zev): „your first instant or sorcery spell
+    // each turn" — licznik per gracz; decyzja darmowego rzutu z ręki.
+    pendingHandFreeCast: null,
+    instantSorceryCastThisTurnByPlayer: {},
     // Vaan, Street Thief (FIN): jednorazowa decyzja „rzuć wyegzilowaną kartę
     // TERAZ (ignorując timing — zdolność jest jeszcze na stosie) albo zrezygnuj
     // → stwórz token Treasure" (resolve_exile_cast).
@@ -900,6 +904,58 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
   return withCosts(cartesianTargetPools(pools).map((combo) => ({ cardId: obj.id, targets: combo })));
 }
 
+/**
+ * Batch 57/B6a (Baral and Kari Zev, ruling TDC 2023-04-14): oferty darmowego
+ * rzutu czaru z RĘKI w oknie zdolności. Jedno źródło prawdy dla panelu
+ * (offer) i dla bramki `resolve_hand_free_cast` (L48 — oferta = walidacja):
+ *  - czar instant/sorcery z ręki KONTROLERA decyzji (CR 601.2a),
+ *  - MNIEJSZE mana value niż czar wyzwalający (ruling: „lesser mana value”;
+ *    „lesser" = ostro mniejsze, więc MV równy odpada),
+ *  - wspólny typ karty z czarem wyzwalającym (instant/sorcery),
+ *  - bez kosztu X: przy rzucie bez kosztu many X = 0 (CR 107.3b), czyli ruch
+ *    który nic nie robi — taka „oferta" byłaby pułapką (ta sama zasada co
+ *    `allowX` w `outsideHandCastScope` dla Discover),
+ *  - warianty celów/trybów/kosztów dodatkowych z tego samego generatora co
+ *    okno zdolności Vaana (`epicCastOffers`). Koszty dodatkowe są PŁACONE
+ *    (ruling: „additional costs are allowed … mandatory"), a kosztów
+ *    alternatywnych ten generator nie oferuje.
+ */
+function handFreeCastOffers(state, playerId, pending) {
+  const offers = [];
+  const sharedTypes = pending?.cardTypes ?? [];
+  if (sharedTypes.length === 0) return offers;
+  for (const handId of state.zones.hand) {
+    const card = state.objects.get(handId);
+    if (!card || card.zone !== 'hand' || card.kind !== 'spell') continue;
+    if (card.controllerId !== playerId) continue;
+    if (!(card.types ?? []).some((type) => sharedTypes.includes(type))) continue;
+    if ((card.manaCost ?? 0) >= (pending.maxManaValue ?? 0)) continue;
+    const spell = card.spell ?? {};
+    if (!['instant', 'sorcery'].includes(spell.timing)) continue;
+    if (spell.xCost || spell.fireball) continue;
+    for (const offer of epicCastOffers(state, playerId, card, { variableTargets: true })) {
+      // Uwaga na kolejność: `epicCastOffers` zwraca `cardId` = id OBIEKTU
+      // (w tamtych ścieżkach obiekt jest kartą w strefie publicznej), a tu
+      // karta leży w RĘCE — pole `cardId` ma nieść identyfikator karty
+      // z katalogu, więc nadpisujemy je PO spreadingowaniu oferty.
+      offers.push({ ...offer, objectId: handId, cardId: card.cardId });
+    }
+  }
+  return offers;
+}
+
+/** Dopasowanie wariantu komendy do oferty (te same pola — L48). */
+function handFreeCastOfferMatches(offer, cmd) {
+  if (offer.objectId !== cmd.objectId) return false;
+  if ((offer.modeIndex ?? null) !== (cmd.modeIndex ?? null)) return false;
+  if ((offer.stunTargetId ?? null) !== (cmd.stunTargetId ?? null)) return false;
+  if ((offer.sacrificeTargetId ?? null) !== (cmd.sacrificeTargetId ?? null)) return false;
+  if (Boolean(offer.payAltCost) !== Boolean(cmd.payAltCost)) return false;
+  const a = offer.targets ?? [];
+  const b = cmd.targets ?? [];
+  return a.length === b.length && a.every((id, index) => id === b[index]);
+}
+
 /** Warianty rzutu zawieszonego czaru (suspend, CR 702.62): te same co epic,
  *  ale z flagą cast:true — komenda resolve_suspend_cast. */
 function suspendCastOffers(state, playerId, obj) {
@@ -1256,6 +1312,7 @@ function firstPendingDecision(state) {
   }
   if (state.pendingDamageDivision) return { playerId: state.pendingDamageDivision.playerId, kind: 'damageDivision' };
   if (state.pendingGraveFreeCast) return { playerId: state.pendingGraveFreeCast.playerId, kind: 'graveFreeCast' };
+  if (state.pendingHandFreeCast) return { playerId: state.pendingHandFreeCast.playerId, kind: 'handFreeCast' };
   if (state.pendingExileCast) return { playerId: state.pendingExileCast.playerId, kind: 'exileCast' };
   if (state.pendingEpicExperiment) return { playerId: state.pendingEpicExperiment.playerId, kind: 'epicExperiment' };
   if (state.pendingSuspendCast) return { playerId: state.pendingSuspendCast.playerId, kind: 'suspendCast' };
@@ -2565,6 +2622,51 @@ export function execute(state, input) {
       cardId: card.cardId, xPaid: xValue, declined: false,
     }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
+
+  // Batch 57/B6a (Baral and Kari Zev): darmowy rzut z RĘKI — decyzja
+  // utworzona przez trigger „first instant or sorcery spell each turn".
+  // Rezygnacja (decline) jest pełnoprawnym wyborem: część „If you don't,
+  // create First Mate Ragavan" należy do tej samej decyzji (B6b).
+  if (state.pendingHandFreeCast) {
+    if (cmd.type !== 'resolve_hand_free_cast') return reject('hand_free_cast_unresolved');
+    if (cmd.playerId !== state.pendingHandFreeCast.playerId) return reject('hand_free_cast_not_your_decision');
+    const pending = state.pendingHandFreeCast;
+    const before = state.events.length;
+    const finish = (patch) => {
+      state.pendingHandFreeCast = null;
+      if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+        state.turn.priorityPlayerId = pending.restorePriorityTo;
+      }
+      state.events.push(event('hand_free_cast_resolved', {
+        playerId: pending.playerId, sourceCardId: pending.sourceCardId, ...patch,
+      }));
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+    };
+    if (cmd.decline || cmd.objectId == null) return finish({ declined: true });
+    // L48: wariant komendy musi odpowiadać jednej z ofert (liczonym tym samym
+    // predykatem co panel). Dzięki temu walidacja celów/trybów/kosztów
+    // dodatkowych jest dokładnie tą, którą gracz widział.
+    const offers = handFreeCastOffers(state, cmd.playerId, pending);
+    const offer = offers.find((entry) => handFreeCastOfferMatches(entry, cmd));
+    if (!offer) return reject('illegal_hand_free_cast');
+    const card = state.objects.get(offer.objectId);
+    if (!card || card.zone !== 'hand') return reject('illegal_hand_free_cast');
+    try {
+      // Rzut następuje w rozstrzyganiu zdolności → timing czaru ignorowany
+      // (CR 601.2b pomijany; ruling: „The spell is cast during the resolution
+      // of the triggered ability, so timing restrictions are ignored"), a
+      // koszt many wynosi 0 (CR 118.9a — „without paying its mana cost").
+      castSpell(state, cmd.playerId, offer.objectId, offer.targets ?? [],
+        offer.sacrificeTargetId ?? null, offer.modeIndex ?? null, offer.stunTargetId ?? null, {
+          abilityWindowCast: true,
+          handFreeCast: true,
+          ...(offer.payAltCost === true ? { payAltCost: true } : {}),
+        });
+    } catch (error) {
+      return reject(`illegal_hand_free_cast:${error.message}`);
+    }
+    return finish({ declined: false, objectId: offer.objectId, cardId: offer.cardId });
   }
 
   // Vaan, Street Thief (FIN): „You may cast it. If you don't, create a
@@ -7308,6 +7410,22 @@ export function playerView(state, playerId) {
           ...(offer.stunTargetId != null ? { stunTargetId: offer.stunTargetId } : {}),
         }));
       }
+    }
+  } else if (state.status === 'active' && !blockedByOthersDecision
+    && state.pendingHandFreeCast && state.pendingHandFreeCast.playerId === playerId) {
+    // Batch 57/B6a (Baral and Kari Zev): oferta = rezygnacja + rzut per karta
+    // z ręki (i per wariant celów/trybu/kosztu dodatkowego). Warianty liczy
+    // ten sam predykat co bramka wykonania (`handFreeCastOffers`, L48).
+    legalCommands.push(command('resolve_hand_free_cast', playerId, { decline: true }));
+    for (const offer of handFreeCastOffers(state, playerId, state.pendingHandFreeCast)) {
+      legalCommands.push(command('resolve_hand_free_cast', playerId, {
+        objectId: offer.objectId, cardId: offer.cardId,
+        targets: offer.targets ?? [],
+        ...(offer.modeIndex != null ? { modeIndex: offer.modeIndex } : {}),
+        ...(offer.stunTargetId != null ? { stunTargetId: offer.stunTargetId } : {}),
+        ...(offer.sacrificeTargetId != null ? { sacrificeTargetId: offer.sacrificeTargetId } : {}),
+        ...(offer.payAltCost === true ? { payAltCost: true } : {}),
+      }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision
     && state.pendingExileCast && state.pendingExileCast.playerId === playerId) {

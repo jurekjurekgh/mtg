@@ -748,6 +748,9 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   you_cast_spell_you_dont_own: 'rzucenie czaru, którego nie posiadasz',
   you_cast_kicked_spell: 'rzucenie czaru z opłaconym kickerem',
   you_draw_second_card_each_turn: 'dobranie drugiej karty w turze',
+  // Batch 57/B6a (Baral and Kari Zev): „your first instant or sorcery spell
+  // each turn" — zdarzenie silnika (licznik per gracz w triggers.js).
+  first_instant_sorcery_cast: 'rzucenie pierwszego instantu/sorcery w turze',
 });
 
 /**
@@ -1728,6 +1731,17 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'epic_experiment_resolved': return `${srcName(e)}${whoN(e.playerId)} kończy darmowe rzuty (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
       case 'grave_free_cast_required':
         return `${whoN(e.playerId)} może zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu (${nameOf(e.sourceCardId)})`;
+      // Batch 57/B6a (Baral and Kari Zev): decyzja darmowego rzutu z ręki —
+      // bez widełek MV i wspólnego typu w komunikacie gracz nie wie, czego
+      // dotyczy wybór (M106/Z2).
+      case 'hand_free_cast_required': {
+        const typ = (e.cardTypes ?? []).join('/').toLowerCase() || 'instant/sorcery';
+        return `${nameOf(e.sourceCardId)} — ${whoN(e.playerId)} może rzucić czar (${typ}) o MV < ${e.maxManaValue} z ręki bez płacenia kosztu many`;
+      }
+      case 'hand_free_cast_resolved':
+        return e.declined
+          ? `${whoN(e.playerId)} nie rzuca darmowego czaru z ręki (${nameOf(e.sourceCardId)})`
+          : `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)} z ręki bez płacenia kosztu many (${nameOf(e.sourceCardId)})`;
       case 'grave_free_cast_resolved':
         return e.declined
           ? `${whoN(e.playerId)} rezygnuje z rzutu z grobu (${nameOf(e.sourceCardId)})`

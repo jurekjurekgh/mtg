@@ -2899,6 +2899,40 @@ function processTriggersScan(state, recentEvents) {
         [ev.playerId]: (state.spellsCastThisTurnByPlayer?.[ev.playerId] ?? 0) + 1,
       };
       const castNumberThisTurn = state.spellsCastThisTurnByPlayer[ev.playerId];
+      // Batch 57/B6a (Baral and Kari Zev, CR 603.2 + ruling TDC 2023-04-14):
+      // „Whenever you cast your FIRST instant or sorcery spell each turn" —
+      // licznik PER GRACZ i PER TYP KARTY, niezależny od tego, co stoi na polu
+      // bitwy. Ruling mówi wprost: liczą się czary rzucone wcześniej w turze,
+      // nawet jeśli Baral wszedł dopiero później — dlatego licznik jest
+      // w stanie gry, a nie na permanencie. Zdarzenie rzutu przechodzi skan
+      // dokładnie raz (ta sama gwarancja co `spellsCastThisTurnByPlayer`),
+      // więc inkrement nie może się podwoić.
+      const castTypes = ev.object?.types ?? [];
+      const instantSorcery = castTypes.includes('Instant') || castTypes.includes('Sorcery');
+      if (instantSorcery && ev.type === 'spell_cast') {
+        const instantSorceryNumber = (state.instantSorceryCastThisTurnByPlayer?.[ev.playerId] ?? 0) + 1;
+        state.instantSorceryCastThisTurnByPlayer = {
+          ...state.instantSorceryCastThisTurnByPlayer,
+          [ev.playerId]: instantSorceryNumber,
+        };
+        if (instantSorceryNumber === 1) {
+          for (const source of state.objects.values()) {
+            if (source.zone !== 'battlefield' || source.controllerId !== ev.playerId) continue;
+            for (const ability of effectiveAbilities(source)) {
+              if (ability?.trigger?.event !== 'first_instant_sorcery_cast') continue;
+              // Dane czaru wyzwalającego jadą w `extra` (jak `spellColorsInclude`
+              // dla „whenever you cast a RED spell"): efekt decyzji liczy
+              // z nich typ wspólny i próg MV. Zdolność wyzwalana przez czar,
+              // który sam jest instant/sorcery — czyli zawsze (deskryptor).
+              tryFire(state, ability, source, [], events, {
+                spellCardId: ev.cardId ?? null,
+                spellManaValue: ev.object?.manaCost ?? 0,
+                spellCardTypes: castTypes.filter((t) => t === 'Instant' || t === 'Sorcery'),
+              });
+            }
+          }
+        }
+      }
       // CR 502.2 / 730.2: dzien/noc zmienia sie na poczatku tury (applyDayNightAtTurnStart), nie przy rzucie.
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield') continue;

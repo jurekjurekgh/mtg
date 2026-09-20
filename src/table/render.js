@@ -64,6 +64,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
   resolve_trigger_target: 'Cel triggera (wybór)',
   resolve_grave_free_cast: 'Darmowy rzut z grobu (zapłać {X})',
+  resolve_hand_free_cast: 'Darmowy rzut z ręki (Baral i Kari Zev)',
   resolve_exile_cast: 'Rzut wygnanej karty (Vaan)',
   resolve_opponent_target: 'Wskaż cel obrażeń (wybór przeciwnika)',
   resolve_optional_trigger_choice: 'Efekt „you may"',
@@ -427,6 +428,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice_choice';
   if (command.type === 'resolve_trigger_target') return 'resolve_trigger_target';
   if (command.type === 'resolve_grave_free_cast') return 'resolve_grave_free_cast';
+  if (command.type === 'resolve_hand_free_cast') return 'resolve_hand_free_cast';
   if (command.type === 'resolve_exile_cast') return 'resolve_exile_cast';
   if (command.type === 'resolve_opponent_target') return 'resolve_opponent_target';
   if (command.type === 'resolve_search_choice') return 'resolve_search_choice';
@@ -495,6 +497,7 @@ export function choiceRequestType(commands) {
   if (first.type === 'cast_escape') return 'escape';
   if (first.type === 'resolve_escape_exile') return 'escape_exile';
   if (first.type === 'resolve_delve_exile') return 'delve_exile';
+  if (first.type === 'resolve_hand_free_cast') return 'hand_free_cast';
   if (first.type === 'cast_flashback') return 'flashback';
   if (first.type === 'resolve_scry') return 'scry';
   if (first.type === 'resolve_surveil') return 'surveil';
@@ -1076,6 +1079,8 @@ function describeEffect(e, ctx = {}) {
     clash: () => 'clash',
     take_initiative: () => 'obejmij inicjatywę',
     pay_x_cast_from_graveyard: () => 'możesz zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu za darmo (potem wygnanie)',
+    // Batch 57/B6a (Baral and Kari Zev): decyzja darmowego rzutu z ręki.
+    free_cast_from_hand: () => 'możesz rzucić z ręki czar o mniejszym mana value i wspólnym typie bez płacenia kosztu many',
     draw_cards: () => `dobierz ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     lose_life: () => `utrata ${e.amount ?? 1} życia`,
     pay_mana: () => `zapłać ${e.amount} many`,
@@ -1975,6 +1980,9 @@ const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
   escape_exile: 'Ucieczka (Escape) — karty do wygnania',
   // Batch 57/B4: koszt Delve (CR 702.66) — liczba wygnanych kart jest zmienna.
   delve_exile: 'Delve — karty do wygnania z grobu',
+  // Batch 57/B6a (Baral and Kari Zev): jedna decyzja = wybór czaru z ręki
+  // (albo rezygnacja → token, B6b).
+  hand_free_cast: 'Darmowy rzut czaru z ręki',
   'room-target': 'Cel pokoju lochu',
 });
 
@@ -1993,6 +2001,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_backup: 'Backup — który stwór dostaje liczniki?',
   resolve_trigger_target: 'Cel wyzwalonej zdolności',
   resolve_grave_free_cast: 'Rzut z grobu za {X}',
+  resolve_hand_free_cast: 'Darmowy rzut czaru z ręki',
   // M266/C1 (zgłoszenie właściciela, Terminal Agony): decyzja rzutu z madness
   // pokazywała generyczne „Wybierz: Wariant (5 opcji)". Rodzina jednorazowych
   // decyzji „rzuć wygnany czar albo odpuść" dostaje deskryptory KOMPLETEM
@@ -3424,6 +3433,18 @@ export function commandLabel(cmd, session, view) {
         return targetId == null ? `${amount}` : `${nameOfObjectId(targetId)}: ${amount}`;
       });
       return parts.length > 0 ? `Podziel obrażenia — ${parts.join(', ')}` : 'Podział obrażeń';
+    }
+    case 'resolve_hand_free_cast': {
+      // Batch 57/B6a: N wariantów = N czarów z ręki × zestawy celów/trybów —
+      // bez nazwy karty i celu wszystkie wyglądają identycznie (L29).
+      if (cmd.decline || cmd.objectId == null) return 'Zrezygnuj (nie rzucam darmowego czaru)';
+      const hfcTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      const hfcCard = obj(cmd.objectId);
+      const hfcMode = (cmd.modeIndex != null && hfcCard?.spell?.modes) ? hfcCard.spell.modes[cmd.modeIndex] : null;
+      const hfcModeName = hfcMode?.name ? ` — ${hfcMode.name}` : '';
+      const hfcStun = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
+      const hfcSac = cmd.sacrificeTargetId != null ? ` · poświęć: ${nameOfObjectId(cmd.sacrificeTargetId)}` : '';
+      return `Rzuć z ręki za darmo: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${hfcModeName}${hfcTargets ? ` → cel: ${hfcTargets}` : ''}${hfcStun}${hfcSac}`;
     }
     case 'resolve_grave_free_cast': {
       // M174/E: oferta nazywa kartę, koszt X i cele — inaczej N wpisów

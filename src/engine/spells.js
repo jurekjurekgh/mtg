@@ -524,6 +524,12 @@ export const CAST_SPELL_OPTIONS = Object.freeze([
   // opcja jedzie w tej samej komendzie co reszta decyzji rzutu (deklaracja
   // czeka w `pendingDelveExile`, a wybór gracza wraca tu jako lista id).
   'delveExileIds',
+  // Batch 57/B6a (Baral and Kari Zev): „you may cast a spell … from your hand
+  // WITHOUT PAYING ITS MANA COST" — rzut z RĘKI w oknie zdolności. Uprawnienie
+  // nadaje wyłącznie `resolve_hand_free_cast` (decyzja), więc komenda
+  // `cast_spell`/`cast_permanent` tej opcji nie przekazuje (jak
+  // `abilityWindowCast`) — inaczej każdy mógłby rzucić darmowo.
+  'handFreeCast',
 ]);
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
@@ -536,7 +542,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const {
     buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0,
     abilityWindowCast = false, kicked = false, gifted = false, giftRecipientId = null,
-    delveExileIds = null,
+    delveExileIds = null, handFreeCast = false,
   } = options;
   const preObject = state.objects.get(objectId);
   // Kicker (CR 702.33) na instantach i sorcerych rozlicza TA funkcja. Ścieżki
@@ -567,7 +573,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // Audyt PR #93: ścieżka modalna musi znać to samo uprawnienie co `requireSpell`
     // — inaczej czar z „Choose one" wygnany w oknie zdolności nie ma żadnej drogi
     // autoryzacji (Vaan: stempel `playableUntilTurn` zdjęty słusznie, ruling WotC).
-    return castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId, abilityWindowCast);
+    return castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId, abilityWindowCast, handFreeCast);
   }
   // Generyczny X-cost (Consume Spirit, Epic Experiment): koszt = manaCost + X.
   if (preObject?.spell?.xCost) {
@@ -582,6 +588,12 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets, false, abilityWindowCast);
   const player = state.players.find((entry) => entry.id === playerId);
   const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
+  // Batch 57/B6a: „bez płacenia kosztu many" to JEDEN predykat używany przez
+  // wszystkie bramki kosztu poniżej (kolor, phyrexian, budżet kosztu
+  // dodatkowego) — inaczej walidacje rozjeżdżają się z płatnością (L41/L48).
+  // Uprawnienie jest ważne wyłącznie dla karty w RĘCE (strefa sprawdzana tu,
+  // bo tylko ta ścieżka woła `handFreeCast`).
+  if (handFreeCast && object.zone !== 'hand') throw new Error('Darmowy rzut bez kosztu many dotyczy karty z ręki');
   // Dodatkowy koszt „sacrifice a creature" (Village Rites): walidacja celu-
   // poświęcenia PRZED jakąkolwiek mutacją (CR 601.2h) — nieudany rzut nie może
   // utracić many ani zostawić karty na stosie.
@@ -598,7 +610,11 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     }
   }
   if (sacrificeCost && payAltCost) {
-    if (orPayMana == null || effectiveSpellManaCost(state, object) + orPayMana > producibleMana(state, playerId, null, spellManaPurpose(object), coloredPipsOf(object.cardId))) {
+    // Koszt bazowy czaru = 0, gdy rzut jest darmowy (plot/suspend/impuls/B6a) —
+    // inaczej bramka żądałaby many, której rzut w ogóle nie pobiera.
+    const baseForAlt = (object.plotted || object.suspendReady || isFreeImpulseCast(object) || handFreeCast)
+      ? 0 : effectiveSpellManaCost(state, object);
+    if (orPayMana == null || baseForAlt + orPayMana > producibleMana(state, playerId, null, spellManaPurpose(object), coloredPipsOf(object.cardId))) {
       throw new Error('Za mało many na alternatywny koszt dodatkowy');
     }
   }
@@ -614,16 +630,20 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Batch 47: impulse „bez placenia" (Caves of Chaos Adventurer po ukonczonym
   // lochu) omija koszt i kolorowa walidacje — jak plot/suspend.
   const freeImpulse = isFreeImpulseCast(object);
+  // Batch 57/B6a (Baral): jedyna definicja „kosztu many zniesionego" dla tej
+  // ścieżki — trzy niżej bramki (kolor/nośnik phyrexian/koszt bazowy) muszą
+  // czytać to samo, bo inaczej oferta i płatność się rozjeżdżają.
+  const manaCostWaived = object.plotted || object.suspendReady || freeImpulse || handFreeCast;
   // Phyrexian mana (CR 118.9): każdy pip {R/P} płaci się maną LUB 2 życiem —
   // ta sama reguła co ścieżka permanentów (cast_permanent: warianty
   // phyrexianPayWithLife + changeLife). Batch 48 (Ruthless Invasion): PIERWSZY
   // czar z pitem phyrexian — dotąd ścieżka czarów znała tylko pipy kolorowe
   // (koszt liczony bez pipa = karta o manę tańsza; płatność życiem
   // niedostępna — klasa L23 + CR 118.9).
-  const phyrexianSymbols = (object.plotted || object.suspendReady || freeImpulse) ? 0 : (object.phyrexianManaCost ?? 0);
+  const phyrexianSymbols = manaCostWaived ? 0 : (object.phyrexianManaCost ?? 0);
   const lifePaid = phyrexianSymbols > 0 ? (phyrexianPayWithLife ?? 0) : 0;
   if (lifePaid < 0 || lifePaid > phyrexianSymbols) throw new Error('Nieprawidłowa liczba symboli phyrexian płaconych życiem');
-  if (!object.plotted && !object.suspendReady && !freeImpulse && !hasColorForObject(state, playerId, object, lifePaid)) throw new Error('Brak kolorowego źródła many');
+  if (!manaCostWaived && !hasColorForObject(state, playerId, object, lifePaid)) throw new Error('Brak kolorowego źródła many');
   // Kicker (CR 702.33) na czarach — ta sama zasada co na ścieżce permanentów
   // (`castPermanent` w resources.js): „You may pay an additional [cost] as you
   // cast this spell." — koszt dodatkowy dokłada się do sumy, JEGO pipy kolorów
@@ -637,13 +657,15 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const kicker = kicked ? (object.kicker ?? null) : null;
   const kickerPips = (kicker?.colors ?? []).map((color) => [color]);
   if (kickerPips.length > 0
-    && !canPayColoredCost(state, playerId, [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips])) {
+    && !canPayColoredCost(state, playerId, [
+      ...(manaCostWaived ? [] : coloredPipsOf(object.cardId, lifePaid)), ...kickerPips,
+    ])) {
     throw new Error('Brak kolorowego źródła many na kickera');
   }
   // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal) oraz modyfikatory
   // z permanentów (Etherium Sculptor): płacimy efektywny koszt wyliczony
   // w chwili rzutu (warunki i modyfikatory oceniane na bieżącej planszy).
-  const baseMana = (object.plotted || object.suspendReady || freeImpulse) ? 0 : effectiveSpellManaCost(state, object);
+  const baseMana = manaCostWaived ? 0 : effectiveSpellManaCost(state, object);
   const altManaExtra = (sacrificeCost && payAltCost) ? (orPayMana ?? 0) : 0;
   // Pip phyrexian płacony maną to pełna jednostka many (CR 118.9); pipy
   // opłacone życiem nie biorą udziału w koszcie many. M259/B3: baseMana
@@ -678,7 +700,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
       fromId: exId, object: moved, fromZone: 'graveyard', toZone: 'exile', delve: true,
     }));
   }
-  spendMana(state, playerId, manaSpent, [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips], spellManaPurpose(object));
+  spendMana(state, playerId, manaSpent, [
+    ...(manaCostWaived ? [] : coloredPipsOf(object.cardId, lifePaid)), ...kickerPips,
+  ], spellManaPurpose(object));
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
@@ -2969,7 +2993,7 @@ function resolveModalEffectTargets(state, effect, object, liveChosen) {
  * Rzuca czar modalny (Aerith Rescue Mission): waliduje cele wybranego trybu
  * (stałe albo zmienne) i kładzie czar na stos z wybranym trybem + celami.
  */
-function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId, abilityWindowCast = false) {
+function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId, abilityWindowCast = false, handFreeCast = false) {
   const object = state.objects.get(objectId);
   // M228/3 (błąd odkryty przez rotującą próbkę benchmarku): czar MODALNY
   // z exile jest rzucalny nie tylko gdy `plotted`, ale też jako suspend-ready
@@ -2994,7 +3018,7 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   // nie zmienia kosztu rzutu, więc nie ma powodu, by omijał Etherium Sculptor.
   // Rzut bez płacenia (plot albo impulse „without paying its mana cost" po
   // ukończonym lochu) kosztuje 0; zwykły impulse — pełny koszt.
-  const freeCast = object.plotted || object.suspendReady || isFreeImpulseCast(object);
+  const freeCast = object.plotted || object.suspendReady || isFreeImpulseCast(object) || handFreeCast;
   const modalCost = freeCast ? 0 : effectiveSpellManaCost(state, object);
   if (modalCost > producibleMana(state, playerId, null, spellManaPurpose(object), coloredPipsOf(object.cardId))) throw new Error('Niewystarczająca mana');
   if (!freeCast && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
@@ -3020,7 +3044,9 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
     chosenTargets = chosen.slice();
   }
   const manaSpent = modalCost;
-  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId), spellManaPurpose(object));
+  // Tryb wybrany przy darmowym rzucie (Baral) nie płaci pipów czaru — inaczej
+  // spendMana żądałby kolorów od rzutu, który kosztuje 0 (CR 118.9a).
+  spendMana(state, playerId, manaSpent, freeCast ? [] : coloredPipsOf(object.cardId), spellManaPurpose(object));
   consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;

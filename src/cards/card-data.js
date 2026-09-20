@@ -11433,9 +11433,19 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({
     id: 'baral-and-kari-zev', name: 'Baral and Kari Zev', set: 'TDC',
     types: ['Legendary', 'Creature'], subtypes: ['Human'], colors: ['R', 'U'],
-    power: 2, toughness: 4, manaCost: 3,
+    power: 2, toughness: 4, manaCost: 3, keywords: ['first_strike', 'menace'],
     oracleText: "First strike, menace\nWhenever you cast your first instant or sorcery spell each turn, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost. If you don't, create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn.",
     imageUri: 'https://cards.scryfall.io/large/front/e/7/e777c383-161f-4a80-acb3-2a5c9ed5e927.jpg?1783907033',
+    // B6a: licznik „pierwszy instant/sorcery w turze" (`first_instant_sorcery_cast`)
+    // + decyzja darmowego rzutu z ręki (`free_cast_from_hand`). Typ wspólny
+    // i próg MV liczy silnik z danych zdarzenia (ADR 0002 — żadnej nazwy karty).
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'first_instant_sorcery_cast' },
+        effect: [{ type: 'free_cast_from_hand' }],
+      }),
+    ],
     artId: 88, plan: 'Kaladesh', support: { status: 'in-development', limitations: [] },
   }),
 
