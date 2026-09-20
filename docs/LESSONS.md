@@ -3,23 +3,20 @@
 Powtarzalne wnioski z pracy nad projektem — to, co kolejna sesja ma wiedzieć,
 zanim popełni ten sam błąd.
 
-| Dokument | Zakres | Trwałość |
-|---|---|---|
-| `docs/setup/HANDOFF_*.md` | stan JEDNEJ sesji | jednorazowy |
-| `docs/plans/PLAN_*.md` | roadmapa JEDNEGO zadania | jednorazowy |
-| `docs/PROJECT_HISTORY.md` | dziennik sesji | żywy, **NIE** jest lekturą startową |
-| `docs/decisions/*.md` (ADR) | wiążąca decyzja architektoniczna | trwała, formalna |
-| `docs/LESSONS_PRZYPADKI.md` | narracja przypadków (Objaw/Przyczyna) | trwałe archiwum, **NIE** lektura startowa |
-| **`docs/LESSONS.md`** | **wniosek / heurystyka diagnostyczna** | **trwała, nieformalna** |
+Mapa dokumentów (zakres/trwałość): `AGENTS.md` §„Gdzie zapisać regułę" — ta
+sama tabela, więc tu zostają tylko dwa wpisy uzupełniające:
+`docs/PROJECT_HISTORY.md` = dziennik sesji (żywy, **NIE** lektura startowa),
+`docs/LESSONS_PRZYPADKI.md` = narracja przypadków Objaw/Przyczyna (trwałe
+archiwum, **NIE** lektura startowa).
 
-Rejestr podaje REGUŁĘ i STRAŻNIKA; pełna narracja (Objaw/Przyczyna) wpisów
-skondensowanych w PR #93 mieszka w `docs/LESSONS_PRZYPADKI.md` pod tym
-samym numerem — szukać grepem, nie czytać na starcie.
+Rejestr podaje REGUŁĘ i STRAŻNIKA; narracja (Objaw/Przyczyna) mieszka
+w `docs/LESSONS_PRZYPADKI.md` pod tym samym numerem — szukać grepem, nie
+czytać na starcie.
 
-Lekcja idzie tu, gdy jest powtarzalna, ale NIE jest decyzją architektoniczną
-(te → ADR). Wymusza zmianę sposobu pracy? Dopisz ją też do `AGENTS.md`.
-Ustala granicę komponentów? ADR + tu odsyłacz. Lekcji nie kasujemy:
-nieaktualną oznaczamy z odsyłaczem do nowszej.
+Lekcja idzie tu, gdy jest powtarzalna i NIE jest decyzją architektoniczną
+(te → ADR). Wymusza zmianę sposobu pracy? Dopisz do `AGENTS.md`. Ustala
+granicę komponentów? ADR + tu odsyłacz. Lekcji nie kasujemy: nieaktualną
+oznaczamy z odsyłaczem do nowszej.
 
 **Wzorzec wpisu (obowiązkowy, bez ozdobników):**
 
@@ -33,24 +30,22 @@ poznaje się klasę w nowym przebraniu.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (LN)
 ```
 
-W rejestrze nie ma osobnych pól **Objaw** i **Przyczyna** — to proza, więc idzie
-do archiwum pod tym samym numerem (pilnuje tego `test/docs-decisions.test.js`:
-odsyłacz musi mieć adresata, a wpis — regułę lub strażnika).
+Pól **Objaw**/**Przyczyna** nie ma — to proza, idzie do archiwum pod tym samym
+numerem (`test/docs-decisions.test.js`: odsyłacz ma adresata, wpis ma regułę
+lub strażnika).
 
-Wpis niesie FAKTY (nazwy plików, testów, kart, numery CR) i regułę — nie
-narrację (ta zostaje w `docs/audits/`). Rejestr to największa pozycja budżetu lektury
-startowej (`test/dokumentacja-budzet-lektury.test.js`, próg 100k), więc nowy
-wpis płaci się skróceniem innego — progu NIE podnosimy. L15–L19 są datowane po
-numerze kamienia milowego (M102/M103 = 2026-08-16 wg `PROJECT_HISTORY.md`):
-oryginalne daty zaginęły przy migracji M208.
+Wpis niesie FAKTY (pliki, testy, karty, numery CR) i regułę — nie narrację (ta
+zostaje w `docs/audits/`). Rejestr to największa pozycja budżetu lektury
+(`test/dokumentacja-budzet-lektury.test.js`, próg 100k): nowy wpis płaci się
+skróceniem innego, progu NIE podnosimy. L15–L19: daty z numerów kamieni
+milowych (M102/M103 = 2026-08-16), oryginalne zaginęły przy migracji M208.
 
 ## Wpisy zbiorcze (mapa klas)
 
-Kilka lekcji opisywało tę samą klasę z różnych stron; M275 zebrał je we **wpisy
-zbiorcze**: pełna klasa, tabela wariantów i reguła w jednym miejscu, a reszta
-numerów zostaje jako **kotwice** (krótki przypadek + odsyłacz). Numery są cytowane
-w kodzie ~1150 razy, więc **żaden nie znika**; narrację najdłuższych przypadków
-wynosimy do `docs/LESSONS_PRZYPADKI.md`.
+M275 zebrał lekcje o jednej klasie we **wpisy zbiorcze** (pełna klasa, tabela
+wariantów, reguła w jednym miejscu), a reszta numerów zostaje **kotwicami**
+(krótki przypadek + odsyłacz). Numery są cytowane w kodzie ~1150 razy, więc
+**żaden nie znika**; narracja najdłuższych przypadków jest w archiwum.
 
 | Klasa | Wpis główny | Kotwice |
 |---|---|---|
@@ -63,8 +58,7 @@ wynosimy do `docs/LESSONS_PRZYPADKI.md`.
 
 **Zasada scalania:** wpisy łączymy, gdy opisują JEDNĄ klasę — nigdy dlatego, że
 są stare. Lekcji nie kasujemy i nie skracamy o fakty (karta, test, numer CR);
-usuwamy wyłącznie powtórzoną regułę, zastępując ją odsyłaczem. Stara lekcja
-bywa cenniejsza od nowej, bo jej klasa zdążyła wrócić kilka razy.
+usuwamy wyłącznie powtórzoną regułę, zastępując ją odsyłaczem.
 
 ---
 
@@ -1527,6 +1521,12 @@ to crash w benchmarku („Bot wybrał nielegalną komendę").
 6. Przy N-tej powtórce szukaj WSPÓLNEGO MIANOWNIKA (L28).
 7. Martwy wartownik (mutacja nie czerwieni) do usunięcia, nie „dokumentacja
    zamiaru" (L5).
+8. Nowy `pending*` ma SIEDEM bramek do zmutowania, nie jedną ścieżkę: oferta po
+   wariancie, cudzy decydent odrzucony, właściciel bez passa (M337), pole
+   w odcisku (B2), etykieta + grupowanie (m163/m201), wycena bota, re-walidacja
+   przy wykonaniu (CR 608.2b). Pin ścieżki „szczęśliwej” zostawia pięć żywych
+   (audyt PR #130/D: `resolve_aura_host` — mutacje Q3–Q5 przeżyły). Strażnik:
+   `test/audyt-pr130-gospodarz-aury.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L48)
 
