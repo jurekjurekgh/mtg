@@ -97,24 +97,24 @@ pin czerwienieje (L13/L34) → `npm test` + `npm run build` → commit → push
 
 ### E4 — pętla jakości (ADR 0021 pkt 4a/4b)
 
-- [ ] Żywy Tester (`tools/table-tester`, po `npm run build` — L76) na taliach
+- [x] Żywy Tester (`tools/table-tester`, po `npm run build` — L76) na taliach
       z mechanikami batcha 57 (delve: `tarkir-bg`; Annie Flash: `worek-dziki`;
       Baral: talia z Izzet) — transkrypty czytane RĘCZNIE wzdłuż trzech osi
       (L27), nie tylko detektory; braki narzędzia naprawiane w narzędziu (L12).
-- [ ] polowanie na niezgodności z CR **inną ścieżką** niż poprzednia sesja
+- [x] polowanie na niezgodności z CR **inną ścieżką** niż poprzednia sesja
       (poprzednia: pełny diff katalog↔snapshot po 480 kartach). Kandydat:
       skan rodziny `pending*`/decyzji blokujących pod kątem odcisku stanu
       (L16) i kompletności łańcucha oferta → walidacja → log → etykieta (L129).
-- [ ] NIE wymyślam nowego batcha kart (ADR 0021 pkt 4c, ADR 0029).
+- [x] NIE wymyślam nowego batcha kart (ADR 0021 pkt 4c, ADR 0029).
 
 ### E5 — domknięcie sesji
 
-- [ ] bramy zmierzone NA KONIEC (L92): `npm test`, `npm run build`,
+- [x] bramy zmierzone NA KONIEC (L92): `npm test`, `npm run build`,
       `node --test test/bot-benchmark.test.js`, benchmark `--quick`;
-- [ ] `docs/setup/HANDOFF_2026-09-20b.md` + wpis `docs/PROJECT_HISTORY.md`
+- [x] `docs/setup/HANDOFF_2026-09-20c.md` (etykieta „2026-09-20b" w dzienniku oznacza paczkę F–I z PR #130) + wpis `docs/PROJECT_HISTORY.md`
       + milestone w `docs/ENGINE_MILESTONES.md`;
-- [ ] „Bieżący stan" w `README.md` odświeżony na koniec (L92);
-- [ ] opis PR kumulatywny + blok przekazania w czacie (ADR 0013).
+- [x] „Bieżący stan" w `README.md` odświeżony na koniec (L92);
+- [ ] opis PR kumulatywny + blok przekazania w czacie (ADR 0013) — **zablokowane**: token GitHub wygasł w trakcie sesji (`gh auth status`: „token in GH_TOKEN is no longer valid"); treść opisu gotowa w `/home/user/pr131-body.md`, do wklejenia po ponownym połączeniu GitHub w Arena.
 
 ## Ryzyka i pułapki
 
@@ -174,3 +174,58 @@ Mutacje własnych napraw: P1–P7 i Q1–Q5 — **12/12 wykrytych**. Dodatkowo t
 istniejące strażniki zapaliły się same na nowym polu stanu (B2/2 odcisku,
 `fingerprint-pending-decisions`, guardy renderu `m163` A3 / `m201`) — dowód,
 że sieć strażników działa (§5 raportu).
+
+### E4 — pętla jakości: wykonana
+
+Osiem partii Żywym Testerem na zbudowanym `dist/mtg-table.html` (L76):
+tarkir-bg (Delve), worek-dziki (Annie Flash), kaladesh (Baral), worek-basni
+(Zoraline); seedy 42–45 i 101–104, 500–600 kroków. **8/8 zakończonych
+naturalnie, 0 zgłoszeń detektorów, 0 `[STOP]`, `== NIEWYCENIONE == brak`.**
+Zero zgłoszeń to pomiar narzędzia (L27) → transkrypty przeczytane ręcznie:
+
+| # | Ważność | Znalezisko | Naprawa | Piny |
+|---|---|---|---|---|
+| E | średnia | Delve NIEMY na karcie: w ręce „Hooting Mandrills · 6 · Creature — Ape · Zadeptywanie · 4/4" (seed 101), a mechanika zmienia sposób płacenia kosztu — `cardInfo`/`renderCardPreview` nie przenosiły `delve`, `rulesText` nie miał linii (klasa M138/#11) | `2919bf1` | `test/e4-delve-na-kaflu.test.js` (4; mutacje M1–M3 wykryte) |
+| F | niska (narzędzie) | intro modalu w transkrypcie z `textContent` całego ciała: „wskaż cel (1): Gila CourserInvasion of the GiantsTrained ArynxI" (seed 43) — artefakt pomiaru, nie stołu (L12) | `9de9f7a` | `test/e4-tester-intro-modali.test.js` (3; mutacje M1/M2 wykryte) |
+
+Druga ścieżka polowania na CR (inna niż pełny diff katalog↔snapshot z PR #130):
+rodzina decyzji blokujących — **69 typów `resolve_*` × cztery warstwy** (wycena
+bota, odcisk stanu, etykieta renderu, grupowanie) → **0 luk**; `chooseCommand`
+punktuje WSZYSTKIE oferty, więc typ bez dedykowanej wyceny nie zostawia bota bez
+ruchu (telemetria `unvalued`, potwierdzona `== NIEWYCENIONE == brak` w 8
+przebiegach). Pokrycie odcisku/etykiet pilnują strażniki, które zapaliły się
+same na `pendingAuraHost` (§5 raportu).
+
+Nowego batcha kart NIE wymyślano (ADR 0021 pkt 4c, ADR 0029).
+
+**Granica pokrycia przebiegów (zapisana, nie dług):** Delve i decyzja wyboru
+gospodarza aury (≥2 legalnych) nie wystąpiły w żadnym z 8 przebiegów — tarkir-bg
+ma 1× Hooting Mandrills (w seedzie 101 doszedł do ręki startowej, partia
+skończyła się przed rzutem), Annie/Zoraline wracały stwory, nie aury. Piny
+silnika: 8 (Delve) + 6 (gospodarz aury).
+
+### E5 — domknięcie sesji: wykonane (poza opisem PR)
+
+| Brama | Wynik |
+|---|---|
+| `npm test` (szybki rdzeń) | **6038/6038, 0 fail** (~215 s) |
+| `node tools/run-tests.mjs all` | **6048/6048, 0 fail** (~351 s) |
+| `npm run build` | **59 modułów / 3966,4 kB** |
+| `node --test test/bot-benchmark.test.js` | **10/10** |
+| `node tools/benchmark.mjs --quick` | **672 mecze / 154,8 s, 0 niedokończonych**; heuristic **85,9%**, aggro 26,8%, random 1,5% — bez regresji (pomiar PR #130: 85,9%) |
+| budżet lektury startowej | **99 953 / 100 000** (zapas 47 tokenów; przed sesją 15) |
+
+Dokumentacja: **M397** (`docs/ENGINE_MILESTONES.md`), sekcja 2026-09-20c
+(`docs/PROJECT_HISTORY.md`), `docs/setup/HANDOFF_2026-09-20c.md`,
+„Bieżący stan" w `README.md`, narracja L48 wariant 5
+(`docs/LESSONS_PRZYPADKI.md`), wpis **L48 pkt 8** w rejestrze (opłacony
+kondensacją wstępu — próg bez zmian, `8a641dc`).
+
+Pełnej macierzy B0 nie uruchamiano (ADR 0018).
+
+**Blokada na koniec sesji:** token GitHub wygasł (`gh auth status` → „The
+github.com token in GH_TOKEN is no longer valid"; `git push` → `could not read
+Username for 'https://github.com'`). Cztery commity (`9de9f7a`, `2919bf1`,
+`8a641dc`, `da74a5e`) są lokalne i bezpieczne; do dopchnięcia natychmiast po
+ponownym połączeniu GitHub w Arena. Wcześniej w tej samej sesji identyczna
+blokada puściła sama po ponowieniu (push `b1c66e1`…`613ba99` przeszedł).
