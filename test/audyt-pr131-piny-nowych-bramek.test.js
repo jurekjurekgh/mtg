@@ -445,3 +445,45 @@ function stripComments(text) {
   assert.match(projBody, /cmd\.cast === false \|\| cmd\.decline === true \? 0 : 1/,
     'projekcja rodziny free-cast musi rozpoznawać rzut po braku `cast: false`/`decline`');
 });
+
+// --- F11 --------------------------------------------------------------------
+// Znalezisko audytu: bramki `!state.pendingAuraHost` w łańcuchach auto-passu
+// (`execute`) i w łańcuchach ofert (`playerView`) nie mają pinu — mutacje
+// usuwające je pojedynczo nie zmieniają NICZEGO obserwowalnego (sprawdzone
+// sondą `probe-aura-advance.mjs`: priorytet, krok i oferta bez zmian), bo
+// decyzję trzymają DWA wcześniejsze mechanizmy: top-level guard
+// `aura_host_unresolved` w `execute` i `firstPendingDecision` (odcisk B2).
+// Pin mierzy więc NIEZMENNIK, który te bramki tylko osłaniają (L48/L112):
+// otwarta decyzja blokuje priorytet, ofertę i próby popchnięcia gry.
+test('F11: otwarta decyzja gospodarza aury wstrzymuje priorytet i ofertę (CR 303.4f, L48)', () => {
+  const s = game();
+  annieReturnsAura(s, { extraCreatures: 1 });
+  const decydent = s.pendingAuraHost.playerId;
+  const drugi = decydent === 'p1' ? 'p2' : 'p1';
+
+  // 1. Priorytet został u decydenta — decyzja nie jest „przeskakiwana" automatem.
+  assert.equal(s.turn.priorityPlayerId, decydent, 'priorytet u decydenta');
+  assert.equal(s.turn.step, 'main1', 'krok bez zmian (bez auto-przejścia)');
+
+  // 2. Oferta decydenta: WYŁĄCZNIE rozstrzygnięcie decyzji (+ koncesja, CR 104.3a).
+  //    Typ oferty jest tu kontraktem: gdyby decyzja nie blokowała łańcuchów,
+  //    gracz zobaczyłby `pass_priority`/`play_land`, których silnik nie przyjmie.
+  const ofertaDecydenta = [...new Set(commands(s, decydent).map((c) => c.type))].sort();
+  assert.deepEqual(ofertaDecydenta, ['concede', 'resolve_aura_host'],
+    `decydent widzi tylko decyzję (dostał: ${ofertaDecydenta.join(', ')})`);
+
+  // 3. Nikt nie może popchnąć gry: `pass_priority` OBU graczy odrzucony z powodem.
+  for (const playerId of [decydent, drugi]) {
+    const r = execute(s, { type: 'pass_priority', playerId });
+    assert.equal(r.ok, false, `pass_priority(${playerId}) odrzucony`);
+    assert.match(reasonOf(r), /aura_host_unresolved/, 'powód nazywa nierozstrzygniętą decyzję');
+  }
+  assert.equal(s.pendingAuraHost?.playerId, decydent, 'decyzja nadal czeka po odrzuceniach');
+  assert.equal(s.turn.priorityPlayerId, decydent, 'priorytet nietknięty próbami');
+
+  // 4. Decyzja jest JEDYNĄ drogą naprzód — po rozstrzygnięciu wraca normalne okno.
+  run(s, commands(s, decydent).find((c) => c.type === 'resolve_aura_host'));
+  assert.ok(s.pendingAuraHost == null, 'decyzja domknięta');
+  assert.ok(commands(s, decydent).some((c) => c.type === 'pass_priority'),
+    'po decyzji priorytet wraca do zwykłej oferty (gracz nie zostaje zablokowany)');
+});
