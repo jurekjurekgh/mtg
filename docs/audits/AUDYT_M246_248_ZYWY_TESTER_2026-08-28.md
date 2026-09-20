@@ -46,7 +46,7 @@ warunek spełniony, bez ostrzeżenia — M248/2/3). Engine tied-logika zweryfiko
 z CR (effectivePower === min ⇒ zniszczenie). Commit **5bdf9bc**.
 
 ## Sprawdzone i UZNANE za poprawne (bez zmian)
-- Stos-trigger ping-pong Plague Reavera (cr-жафistykę kosztu odrzutu ×2 +
+- Stos-trigger ping-pong Plague Reavera (CR-owy koszt odrzutu ×2 +
   poświęcenia ✔) i opóźniony powrót w upkeep celu (CR 603.7).
 - Veiled Ascension: cloak „(may)" trafia na stos jako decyzja; licznik flying
   na face-down stworze ✔.

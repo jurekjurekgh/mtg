@@ -126,7 +126,7 @@ test('C1: otwarte pole — bot przejmuję i atakuje przejętym stworem (obrażen
 
 // --- C2: scenariusz właściciela — 5/5 z equipmentem + 5/5 bloker ----------
 // Bot: przejmuję 5/5, NISZCZY equipment, atakuje. Bloker 5/5 go blokuje →
-// wymiana — oba stworы WŁAŚCICIELA giną, bot nie traci niczego. Przed fixem
+// wymiana — oba stwory WŁAŚCICIELA giną, bot nie traci niczego. Przed fixem
 // atak był opłacalny i tak (wymiana power-1), ale test pilnuje całości:
 // przejęcie + destroy + atak w jednym przebiegu.
 

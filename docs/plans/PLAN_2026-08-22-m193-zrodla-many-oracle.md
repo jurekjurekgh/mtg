@@ -29,7 +29,7 @@ jej zdolnosc niesie `{ type: 'add_mana', colors: ['U','B'] }` (zgodnie
 z Oracle „{T}: Add {U} or {B}").
 
 To klasa L14/L41: **dwa zrodla prawdy** o tej samej regule. Deskryptor
-zdolnosci (Oracle) mowi swoje, mapa mowi swoje, a silnik sluchа mapy.
+zdolnosci (Oracle) mowi swoje, mapa mowi swoje, a silnik slucha mapy.
 Kazda nowa karta ze zdolnoscia many, ktorej autor nie dopisze recznie do
 mapy, po cichu produkuje mane bezbarwna. Objaw dla gracza jest dokladnie
 taki, jak w zgloszeniu: koszty generyczne dzialaja, kolorowe pipy nie.
@@ -50,7 +50,7 @@ Fertile Thicket ma dodatkowo BRAK deskryptora zdolnosci many (Oracle
 ## Root cause (A1)
 
 `ABILITY_EFFECT_LABELS.add_mana` to staly napis „dodanie many do puli",
-do ktorego log doklеja liste symboli w nawiasie. M190/A2 naprawilo tylko
+do ktorego log dokleja liste symboli w nawiasie. M190/A2 naprawilo tylko
 przypadek PIECIU kolorow („1 mana dowolnego koloru"); konkretna lista nadal
 wychodzi zargonem symboli („({U}, {B})") zamiast polskim zdaniem.
 

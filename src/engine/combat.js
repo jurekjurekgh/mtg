@@ -1743,10 +1743,10 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
     }
   }
   // M245 (zgłoszenie M właściciela): w trybie ograniczonym kończyliśmy na
-  // parytach/singletonach/greedy — nie móglny zadeklarować „blokuję WSZYSTKIM
+  // parytach/singletonach/greedy — nie mogliśmy zadeklarować „blokuję WSZYSTKIM
   // poza jedną sztuką" (najczęstszy świadomy ruch: ochronić najdroższego
   // blokera przed tracącym blokiem). Dokładamy pełne przypisanie oraz warianty
-  // „wszystkie minus jeden" per atakujący, póki mieści cap (обectomywane
+  // „wszystkie minus jeden" per atakujący, póki mieści cap (wybierane
   // deterministycznie, ADR 0005). Każde przypisanie walidujemy tymi samymi
   // regułami co walidacja declareBlockers (canBlock/menace/cantBlockAlone),
   // by oferta pozostała spójna z engine (L48).

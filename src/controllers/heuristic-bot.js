@@ -4281,7 +4281,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const attackers = myCreatures(view).filter((c) => !c.tapped
               && (!c.summoningSickness || hasKeyword(c, 'haste')) && combatPower(c) > 0);
             const totalPower = attackers.reduce((sum, c) => sum + combatPower(c), 0);
-            // Blokerzy, których czar faktycznie usuwa: nietapnięte stworы
+            // Blokerzy, których czar faktycznie usuwa: nietapnięte stwory
             // przeciwnika POZA wyjątkami (Ruthless: artifact-creatures
             // blokują mimo zakazu). Zbiór ustala się przy rozstrzygnięciu —
             // stwór wchodzący później blokuje normalnie (nota karty).

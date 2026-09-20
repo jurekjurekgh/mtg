@@ -80,7 +80,7 @@ Zlecenie właściciela po testach na iPhonie (screenshoty): 4 uwagi A/B/C/D.
 - `edit_file` psuje PL → python3 Path.read_text/write_text; dłuższe skrypty
   przez /tmp; commit msg przez /tmp.
 - Sandbox cofa HEAD do main → push po KAŻDYM commicie.
-- Test-контракт: prefiksy etykiet („Rzuć:”, „Zagraj:”…) są asercjami testów UI —
+- Test-kontrakt: prefiksy etykiet („Rzuć:”, „Zagraj:”…) są asercjami testów UI —
   sprawdzić testy po zmianach; MiniEl textContent musi dalej pokrywać treść.
 - `renderChoiceRequest` jest też używany dla czysto-tekstowych opcji — innerHTML
   z zachowaniem escape (commandLabel escape'uje nazwy przez escapeHtml).

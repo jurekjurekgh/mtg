@@ -100,7 +100,7 @@ test('M317/B3: TAPNIĘTY Warden — pump niedostępny, bot atakuje', () => {
   assert.ok(attackers.includes('atk'), `tapnięte źródło nie pompuje: ${JSON.stringify(attackers)}`);
 });
 
-test('M317/B4: silny atakujący nie odpuści przez +1/+1 (5/5 w 2/2 z Wardенem nadal atakuje)', () => {
+test('M317/B4: silny atakujący nie odpuści przez +1/+1 (5/5 w 2/2 z Wardem nadal atakuje)', () => {
   const { attackers } = attackView((state) => {
     vanilla(state, 'atk', 'p2', 5, 5);
     vanilla(state, 'blk', 'p1', 2, 2);
