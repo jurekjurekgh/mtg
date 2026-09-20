@@ -631,29 +631,14 @@ export function castModePlanOf(commands) {
   };
 }
 
-/**
- * M2 — KROK 2 po wyborze trybu: co jeszcze trzeba rozstrzygnąć, żeby rzut był
- * legalny. Ta sama kolejność planów co panel (L48 — komendy zawsze z ofert
- * silnika, kreator nic nie buduje z palca):
- *   `command` — tryb bez decyzji (np. „Call for Aid": trzy tokeny) → rzut wprost,
- *   `multi`   — wielocelowy wybór („up to 3 target creatures") → picker ptaszków,
- *   `single`  — jeden cel → picker jednokrotny,
- *   `rows`    — lista gotowych wariantów trybu (fallback).
- * `null` = brak planu (wywołujący zostaje przy reprezentancie).
- */
-export function modeFollowUpPlanOf(commands) {
-  const subset = commands ?? [];
-  if (subset.length === 0) return null;
-  if (subset.length === 1) return { kind: 'command', command: subset[0] };
-  const multi = multiTargetPlanOf(subset);
-  if (multi) return { kind: 'multi', plan: multi };
-  const single = singleTargetPlanOf(subset);
-  if (single) return { kind: 'single', plan: single };
-  const windowPlan = castWindowPlanOf(subset);
-  if (windowPlan) return { kind: 'rows', plan: windowPlan };
-  const buttons = buttonsPlanOf(subset);
-  return buttons ? { kind: 'rows', plan: buttons } : null;
-}
+// E7 (2026-09-20c): usunięto stąd `modeFollowUpPlanOf` — lustrzaną kopię kaskady
+// panelu z `main.js` („co jest krokiem 2 po wyborze trybu"). Produkcja po wyborze
+// trybu wchodzi PONOWNIE w tę samą kaskadę (`openChoiceRequest` z podzbiorem
+// wariantów), więc krok 2 ma jedno źródło i zna wszystkie plany; lustro znało ich
+// cztery i w INNEJ kolejności (multi przed window, choć M300/1 wymaga odwrotnie —
+// `castWindowPlanOf` musi biec pierwszy, bo warianty okien niosą `targets`).
+// Kopię wołały wyłącznie testy M2/2–M2/4, które teraz pinują funkcje produkcji
+// (L5: pin ma opisywać ścieżkę gracza; L41: jedna reguła — jedno miejsce).
 
 function commandForOptionRow(commands, rowId) {
   const match = /^opt-(\d+)$/.exec(String(rowId ?? ''));

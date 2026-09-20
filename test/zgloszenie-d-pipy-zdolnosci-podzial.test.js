@@ -110,3 +110,143 @@ test('D/4: niezmiennik talii dzielonych — bezkolorowa karta z pipami ma je pok
   assert.deepEqual(abilityCostColorsOf(registry.get('simian-simulacrum')).length > 0, true);
   assert.equal(typeof splitColorsOf, 'function', 'tożsamość z produkcji many zostaje jedną funkcją (L41)');
 });
+
+// -----------------------------------------------------------------------------
+// D/5 (uzupełnienie 2026-09-20c) — ten sam niezmiennik co D/4, ale dla KART
+// KOLOROWYCH. Zgłoszenie właściciela: „Czemu świadomie nie naprawiane? Błędy
+// powinny być natychmiast naprawiane" — pozycja audytu PR #130 §6 („pipy
+// zdolności kart kolorowych") była dziurą w pinie: D/4 pomija karty z kolorem
+// w tożsamości (`continue`), więc klasa była NIEZMIERZONA, nie „świadomie
+// nienaprawiona".
+//
+// Pomiar 2026-09-20c (wszystkie 25 talii w `decks/`, pipy z
+// `abilityCostColorsOf` vs sufiks talii): DWA naruszenia, oba poniżej nazwane i
+// usprawiedliwione mechanicznie. Drugie (Dragonbroods' Relic) znalazł DOPIERO
+// ten strażnik — jednorazowy skrypt pomiarowy z audytu go nie pokazał, co jest
+// najlepszym dowodem, że klasa potrzebuje pinu, a nie sprzątania (L5).
+// „Pary" z raportu audytu (balamb-garden-seed-academy UG, merchants-dockhand /
+// welder-automaton R, secluded-steppe W, immersturm-skullcairn) naruszeniami NIE
+// są: sufiksy ich talii pokrywają te pipy.
+//
+// Strażnik wymaga, by każdy taki przypadek był (a) nazwany, (b) zliczony
+// (ratchet w obie strony — martwy wyjątek też czerwieni), (c) usprawiedliwiony
+// MECHANICZNIE: talia pokrywa kolory karty (rzucalność wg `MANA_COSTS`), talia
+// siostrzana płaci brakujące pipy, ale NIE pokrywa kolorów karty (przeniesienie
+// byłoby stratą większą), a pipy zdolności są zgodne z rejestrem.
+const WYJATKI_PIPY_KART_KOLOROWYCH = new Map([
+  ['mournful-zombie', {
+    talia: 'dominaria-brg.txt',
+    pipyPozaSufiksem: 'w',
+    pipyZdolnosci: 'W',
+    powod: 'stwór B 2/1 za {2}{B} ze zdolnością „{W}, {T}: Target player gains '
+      + '1 life". Strona BRG pozwala go rzucić i używać jako ciała; strona WU '
+      + 'płaci {W}, ale nie ma czerni — tam karta jest nierzuca. Mniejsza '
+      + 'strata: zdolność opcjonalna (CR 602.2), nie sama karta.',
+  }],
+  ['dragonbroods-relic', {
+    talia: 'tarkir-bg.txt',
+    pipyPozaSufiksem: 'wur',
+    pipyZdolnosci: 'WUBRG',
+    powod: 'artefakt G za {1}{G}: „{T}, Tap an untapped creature you control: '
+      + 'Add one mana of any color" + „{3}{W}{U}{B}{R}{G}, Sacrifice this '
+      + 'artifact: create 4/4 Reliquary Dragon". Druga zdolność wymaga '
+      + 'WSZYSTKICH pięciu kolorów (color_identity WUBRG — '
+      + 'docs/cards/scryfall-dragonbroods-relic.json), więc NIE PŁACI jej '
+      + 'żadna talia dzielona (2–3 kolory): w BG brakuje W/U/R, w WUR brakuje '
+      + 'B/G (i karty nie da się rzucić, bo koszt to {1}{G}). Podział wg '
+      + 'tożsamości karty (G → BG) jest więc jedyny sensowny, a pierwsza '
+      + 'zdolność (mana dowolnego koloru) działa w każdej talii — w BG nawet '
+      + 'łata brak W/U/R.',
+  }],
+]);
+
+function sufiksTalii(plik) {
+  const suffix = plik.replace(/\.txt$/, '').split('-').pop() ?? '';
+  return /^[wubrg]+$/.test(suffix) && new Set(suffix).size === suffix.length ? suffix : null;
+}
+
+function talieDzielone() {
+  return fs.readdirSync('decks').filter((plik) => plik.endsWith('.txt') && sufiksTalii(plik));
+}
+
+function rodzinaTalii(plik) {
+  return plik.replace(/\.txt$/, '').split('-').slice(0, -1).join('-');
+}
+
+test('D/5: niezmiennik talii dzielonych — kolorowa karta z pipami zdolności poza sufiksem musi być nazwanym, usprawiedliwionym wyjątkiem', () => {
+  const talie = talieDzielone();
+  assert.ok(talie.length >= 8, `talie dzielone: ${talie.length}`);
+
+  const naruszenia = [];
+  for (const plik of talie) {
+    const suffix = sufiksTalii(plik);
+    const cardIds = parseDeckText(fs.readFileSync(`decks/${plik}`, 'utf8'), registry).cardIds;
+    for (const cardId of cardIds) {
+      const card = registry.get(cardId);
+      // D/4 pilnuje kart BEZKOLOROWYCH — tu domykamy kolorowe (ta sama klasa).
+      if (!card || !(card.colors ?? []).some((color) => 'WUBRG'.includes(color))) continue;
+      const missing = abilityCostColorsOf(card)
+        .filter((color) => !suffix.includes(color.toLowerCase()));
+      if (missing.length > 0) {
+        naruszenia.push({
+          plik, cardId,
+          missing: missing.map((c) => c.toLowerCase()).join(''), // porządek WUBRG (jak abilityCostColorsOf)
+          kolory: (card.colors ?? []).join(''),
+        });
+      }
+    }
+  }
+
+  // (a) każde naruszenie ma nazwany wyjątek — inaczej jest dziurą po cichu.
+  for (const n of naruszenia) {
+    const w = WYJATKI_PIPY_KART_KOLOROWYCH.get(n.cardId);
+    assert.ok(w,
+      `${n.plik}: kolorowa karta ${n.cardId} (kolory ${n.kolory}) ma pipy {${n.missing.toUpperCase()}} `
+      + 'poza sufiksem talii — przenieś ją do talii, która je płaci, albo dopisz nazwany '
+      + 'wyjątek z usprawiedliwieniem (D/5)');
+    assert.equal(w.talia, n.plik,
+      `wyjątek dla ${n.cardId} wskazuje ${w.talia}, a naruszenie jest w ${n.plik}`);
+    assert.equal(w.pipyPozaSufiksem, n.missing,
+      `wyjątek dla ${n.cardId} opisuje pipy poza sufiksem ${w.pipyPozaSufiksem}, a brakujące to ${n.missing}`);
+  }
+
+  // (b) ratchet w dół: martwy wyjątek (naruszenie zniknęło) czerwieni test.
+  const trafione = new Set(naruszenia.map((n) => n.cardId));
+  for (const cardId of WYJATKI_PIPY_KART_KOLOROWYCH.keys()) {
+    assert.ok(trafione.has(cardId),
+      `wyjątek ${cardId} jest martwy — naruszenie zniknęło (karta przeniesiona albo zmieniona), usuń wpis`);
+  }
+  // (b) ratchet w górę: liczba wyjątków jest przypięta do pomiaru.
+  assert.equal(WYJATKI_PIPY_KART_KOLOROWYCH.size, 2,
+    `nazwanych wyjątków „kolorowa karta z niepłacalnym pipem zdolności" jest `
+    + `${WYJATKI_PIPY_KART_KOLOROWYCH.size}, a pomiar 2026-09-20c po 25 taliach dał 2`);
+
+  // (c) usprawiedliwienie mechaniczne (nie „bo tak"): rzucalność tu, strata tam.
+  for (const [cardId, w] of WYJATKI_PIPY_KART_KOLOROWYCH) {
+    assert.ok(w.powod && w.powod.length > 40, `wyjątek ${cardId} musi mieć opisane usprawiedliwienie`);
+    const card = registry.get(cardId);
+    assert.ok(card, `wyjątek ${cardId} dotyczy karty nieobecnej w rejestrze`);
+    assert.equal(abilityCostColorsOf(card).join(''), w.pipyZdolnosci,
+      `wyjątek ${cardId} opisuje pipy zdolności ${w.pipyZdolnosci}, a rejestr daje ${abilityCostColorsOf(card).join('')}`);
+    const suffix = sufiksTalii(w.talia);
+    assert.ok(suffix, `wyjątek ${cardId} wskazuje talię bez sufiksu kolorów: ${w.talia}`);
+    const kolory = (card.colors ?? []).map((c) => c.toLowerCase());
+    assert.deepEqual(kolory.filter((c) => !suffix.includes(c)), [],
+      `${w.talia} nie pokrywa kolorów karty ${cardId} (${kolory.join('')}) — karta byłaby `
+      + 'nierzuca, więc wyjątek nie dotyczy pipów zdolności, tylko złego podziału');
+    const missing = w.pipyPozaSufiksem.split('');
+    const siostry = talie.filter((plik) => plik !== w.talia && rodzinaTalii(plik) === rodzinaTalii(w.talia));
+    assert.ok(siostry.length >= 1,
+      `${w.talia} nie ma talii siostrzanej (rodzina ${rodzinaTalii(w.talia)}) — przypadek nie jest `
+      + 'konfliktem dwustronnym, więc kartę da się po prostu przenieść');
+    for (const siostra of siostry) {
+      const suffixS = sufiksTalii(siostra);
+      assert.ok(missing.every((pip) => suffixS.includes(pip)),
+        `${siostra} nie płaci pipów {${missing.join('').toUpperCase()}} karty ${cardId} — `
+        + 'przeniesienie nic by nie dało, więc wyjątek jest bezprzedmiotowy');
+      assert.ok(kolory.some((c) => !suffixS.includes(c)),
+        `${siostra} pokrywa kolory karty ${cardId} (${kolory.join('')}) — przeniesienie tam byłoby `
+        + `lepsze niż ${w.talia}; popraw podział zamiast trzymać wyjątek`);
+    }
+  }
+});

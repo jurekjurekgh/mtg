@@ -14,7 +14,7 @@ import { addCounter } from './counters.js';
 import { shuffle } from './shuffle.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, coloredPipsOf, consumePendingSpellDiscount } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, coloredPipsOf, consumePendingSpellDiscount, delveGenericMana } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
 
 function hasColorForSpell(state, playerId, cardId, phyrexianPay = 0) {
@@ -683,9 +683,15 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     if (!Array.isArray(delveIds) || new Set(delveIds).size !== delveIds.length) {
       throw new Error('Nieprawidłowy koszt Delve (exile)');
     }
-    const parsedCost = MANA_COSTS[object.cardId] != null ? parseManaCost(MANA_COSTS[object.cardId]) : null;
-    const genericPart = parsedCost ? parsedCost.generic : (object.manaCost ?? 0);
-    if (delveIds.length > genericPart) throw new Error('Delve: nie wolno wygnać więcej kart niż część generyczna');
+    // CR 702.66a/66b (audyt PR #130, znalezisko B): limit to część generyczna
+    // kosztu CAŁKOWITEGO, nie wydruku — `delveGenericMana` jest JEDNYM źródłem
+    // tej reguły dla `delveExileLimit`, tej walidacji i `castPermanent`.
+    // Rzut bez płacenia kosztu many (plot, impuls, darmowy rzut z ręki) nie ma
+    // części generycznej do pokrycia — taki przypadek odrzuca strażnik sumy
+    // poniżej (CR 118.7: składnik manowy zredukowany do niczego to {0}).
+    if (delveIds.length > delveGenericMana(state, object)) {
+      throw new Error('Delve: nie wolno wygnać więcej kart niż część generyczna kosztu całkowitego');
+    }
     const ownGrave = new Set(state.zones.graveyard.filter((id) => id !== objectId
       && state.objects.get(id)?.controllerId === playerId));
     if (!delveIds.every((exId) => ownGrave.has(exId))) throw new Error('Nieprawidłowy koszt Delve (exile)');
@@ -693,6 +699,22 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   }
   const manaSpent = baseMana + altManaExtra - lifePaid + (kicker?.cost ?? 0) - delveDeduct;
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
+  // Atomowość kosztu (CR 601.2h; audyt PR #130, znalezisko B): wygnanie kart
+  // Delve jest MUTACJĄ, więc cała płatność musi być zwalidowana przed nią —
+  // ujemna suma (wygnanie ponad część generyczną) albo brak many kończyły się
+  // rzutem `spendMana` DOPIERO PO wygnaniu, więc odrzucona komenda zostawiała
+  // grób w exile. Ta sama bramka, którą `castPermanent` ma przed mutacjami.
+  if (delveIds != null) {
+    if (!Number.isInteger(manaSpent) || manaSpent < 0) {
+      throw new Error('Delve: wygnanie przewyższa część generyczną kosztu całkowitego');
+    }
+    const delveRequirements = [
+      ...(manaCostWaived ? [] : coloredPipsOf(object.cardId, lifePaid)), ...kickerPips,
+    ];
+    if (producibleMana(state, playerId, null, spellManaPurpose(object), delveRequirements) < manaSpent) {
+      throw new Error('Niewystarczająca mana na rzut z Delve');
+    }
+  }
   for (const exId of delveIds ?? []) {
     const exileId = `exile-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, exId, 'exile', exileId, { exiledBy: object.cardId });
@@ -2542,18 +2564,14 @@ export function legalSpellCasts(state, playerId) {
         if (object.plotted || object.suspendReady || freeImpulseCast) return [null];
         // CR 702.66 (Delve, Batch 57/B4): część generyczna kosztu może zostać
         // pokryta wygnaniem kart z własnego grobu — oferta musi liczyć tak samo
-        // jak płatność (L48), więc bramka many przepuszcza czar, gdy opłacalny
-        // jest KTÓRYKOLWIEK wariant 0..limit (decyzję i tak podejmie
-        // `pendingDelveExile`, więc nie enumerujemy tu podzbiorów).
-        const delveLimit = object.delve ? delveExileLimit(state, playerId, object) : 0;
-        const payable = delveLimit > 0
-          ? (() => {
-            for (let k = 0; k <= delveLimit; k += 1) {
-              if (delveManaAfter(state, playerId, object, k) <= manaAvailable(object, coloredPipsOf(object.cardId, 0))) return true;
-            }
-            return false;
-          })()
-          : effectiveSpellManaCost(state, object) <= manaAvailable(object, coloredPipsOf(object.cardId, 0));
+        // jak płatność (L48), więc bramka przepuszcza czar, gdy opłacalny jest
+        // KTÓRYKOLWIEK wariant 0..limit (decyzję i tak podejmie
+        // `pendingDelveExile`, więc nie enumerujemy tu podzbiorów). Reguła
+        // siedzi w `affordableDelveCounts` — jednym źródle dla deklaracji i dla
+        // obu bramek oferty (audyt PR #130, znalezisko A: bramka „limit > 0”
+        // odbierała rzut przy pustym grobie, choć wygnanie jest opcjonalne).
+        if (object.delve) return affordableDelveCounts(state, playerId, object).length > 0 ? [null] : [];
+        const payable = effectiveSpellManaCost(state, object) <= manaAvailable(object, coloredPipsOf(object.cardId, 0));
         return (payable && hasColorForSpell(state, playerId, object.cardId, 0)) ? [null] : [];
       }
       const base = effectiveSpellManaCost(state, object);
@@ -3089,8 +3107,13 @@ export const DELVE_OPTION_CAP = 32;
  */
 export function delveExileLimit(state, playerId, object) {
   if (!object?.delve) return 0;
-  const cost = MANA_COSTS[object.cardId] ?? null;
-  const generic = cost != null ? parseManaCost(cost).generic : (object.manaCost ?? 0);
+  // CR 702.66a/66b (audyt PR #130, znalezisko B): limit to część generyczna
+  // kosztu CAŁKOWITEGO (po obniżkach z CR 601.2f), nie liczba z wydruku —
+  // „applies only after the total cost of the spell with delve is determined”.
+  // Jedno źródło reguły: `delveGenericMana` (mana-cost.js) — czytają ją też
+  // obie walidacje płatności (`castSpell`, `castPermanent`), więc oferta,
+  // decyzja i wykonanie nie mogą się rozjechać (L48/L107).
+  const generic = delveGenericMana(state, object);
   const own = state.zones.graveyard.filter((id) => id !== object.id
     && state.objects.get(id)?.controllerId === playerId);
   return Math.max(0, Math.min(generic, own.length));
@@ -3098,11 +3121,33 @@ export function delveExileLimit(state, playerId, object) {
 
 /** Koszt many czaru/permanentu z delve po wygnaniu `delveCount` kart. */
 export function delveManaAfter(state, playerId, object, delveCount) {
-  const base = object?.kind === 'spell'
-    ? effectiveSpellManaCost(state, object)
-    : reduceGenericCost(object.cardId, object.manaCost ?? 0,
-      costReductionForSpell(state, object) + conditionalCostReduction(state, object));
+  // `effectiveSpellManaCost` = druk minus obniżki (modyfikatory z permanentów
+  // + warunkowe z karty), wyłącznie w części generycznej — to samo, co liczyła
+  // tu kiedyś osobna gałąź dla permanentów (dwa wzory, jedna reguła: L41).
+  const base = effectiveSpellManaCost(state, object);
   return Math.max(0, base - Math.max(0, delveCount));
+}
+
+/**
+ * Opłacalne liczby wygnania Delve (0..limit) — JEDNO źródło dla deklaracji
+ * (`declareDelveCast`) i dla OBU bramek oferty (czary tutaj, permanenty w
+ * `game-state.js`), żeby oferta nie publikowała ruchu, którego płatność
+ * odrzuci (L48), i żeby PUSTY GRÓB nie odbierał rzutu za pełny koszt: przy
+ * limicie 0 jedynym wariantem jest k=0, opłacalny dokładnie wtedy, gdy
+ * opłacalny jest zwykły rzut (CR 702.66a — „you MAY exile”; audyt PR #130,
+ * znalezisko A: bramka `limit > 0` czyniła Hooting Mandrills niegrywalnym bez
+ * materiału w grobie). Pusta lista = żaden wariant nie jest opłacalny.
+ */
+export function affordableDelveCounts(state, playerId, object) {
+  if (!object?.delve) return [];
+  if (!hasColorForObject(state, playerId, object)) return [];
+  const limit = delveExileLimit(state, playerId, object);
+  const available = producibleMana(state, playerId, null, spellManaPurpose(object), coloredPipsOf(object.cardId, 0));
+  const counts = [];
+  for (let k = 0; k <= limit; k += 1) {
+    if (delveManaAfter(state, playerId, object, k) <= available) counts.push(k);
+  }
+  return counts;
 }
 
 /**
@@ -3117,13 +3162,15 @@ export function declareDelveCast(state, playerId, objectId, call) {
     throw new Error('To nie jest czar z Delve w twojej ręce');
   }
   const maxExile = delveExileLimit(state, playerId, object);
-  if (maxExile === 0) throw new Error('Delve: brak kart w grobie (albo brak części generycznej)');
+  // Limit 0 (pusty grób albo brak części generycznej w koszcie całkowitym) NIE
+  // znaczy „brak rzutu”: wygnanie jest opcjonalne (CR 702.66a), a decyzja bez
+  // alternatywy nie jest decyzją — wołający (game-state.js) rzuca wtedy wprost
+  // zwykłą ścieżką, bez otwierania `pendingDelveExile`.
+  if (maxExile === 0) throw new Error('Delve: brak kart do wygnania (rzut idzie zwykłą ścieżką)');
   if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
-  const manaFor = (k) => producibleMana(state, playerId, null, spellManaPurpose(object), coloredPipsOf(object.cardId));
-  const affordable = [];
-  for (let k = 0; k <= maxExile; k += 1) {
-    if (delveManaAfter(state, playerId, object, k) <= manaFor(k)) affordable.push(k);
-  }
+  // Opłacalność wariantów liczy JEDNA funkcja — ta sama, którą czytają bramki
+  // oferty (L48: oferta nie publikuje ruchu, którego płatność odrzuci).
+  const affordable = affordableDelveCounts(state, playerId, object);
   if (affordable.length === 0) throw new Error('Niewystarczająca mana na rzut z Delve');
   const own = state.zones.graveyard.filter((id) => id !== objectId
     && state.objects.get(id)?.controllerId === playerId);

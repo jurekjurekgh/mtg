@@ -155,3 +155,26 @@ export function chronologicalLogEntries(entries, count = entries.length) {
   const limit = Math.max(0, count);
   return entries.slice(Math.max(0, entries.length - limit));
 }
+
+
+/**
+ * E4 (audyt PR #130, pętla jakości ADR 0021 §4b): intro MODALU do transkryptu.
+ *
+ * `textContent` całego ciała modalu zlewa intro i etykiety opcji w jeden ciąg
+ * bez granic („…wskaż cel (1): Gila CourserInvasion of the GiantsTrained
+ * ArynxI"): `textContent` NIE wstawia spacji między dziećmi blokowymi, więc
+ * audytor czytał zupę znaków dokładnie tam, gdzie miał czytać wybory gracza
+ * (L27 — transkrypt czyta się ręcznie; L12 — brak narzędzia naprawiamy
+ * w narzędziu). Dzieci blokowe (`.choice-request-intro`, wiersze pickera,
+ * źródła kreatora many) sklejamy jawnym separatorem; kontener bez dzieci
+ * (tekst wprost) zwraca zwykły tekst, `null` → pusty łańcuch.
+ *
+ * @param {Element|null} el — ciało modalu (`#choice-request-body`, `#mana-wizard-body`)
+ * @param {string} [sep] — separator dzieci
+ * @returns {string}
+ */
+export function modalIntroText(el, sep = ' | ') {
+  if (!el) return '';
+  const parts = [...(el.children ?? [])].map((child) => readText(child)).filter(Boolean);
+  return parts.length > 0 ? parts.join(sep) : readText(el);
+}

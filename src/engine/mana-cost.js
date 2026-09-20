@@ -175,6 +175,34 @@ export function conditionalCostReduction(state, object) {
   return 0;
 }
 
+/**
+ * CR 702.66a/66b (Delve): część GENERYCZNA kosztu CAŁKOWITEGO czaru —
+ * „For each generic mana in this spell's total cost, you may exile a card from
+ * your graveyard rather than pay that mana”, a sama zdolność „applies only
+ * after the total cost of the spell with delve is determined”. Limit wygnania
+ * NIE jest więc liczbą z wydruku: obniżki (CR 601.2f — modyfikatory z
+ * permanentów i warunkowe z samej karty) zmniejszają część generyczną, a
+ * efekt zwiększający koszt by ją zwiększył (ruling KTK 2021-03-19: „you can't
+ * exile more cards than the generic mana requirement of a spell with delve …
+ * unless an effect has increased its cost”). Podwyżek kosztu katalog nie
+ * modeluje (ADR 0022 — żadna karta kolekcji ich nie ma), więc wzór obejmuje
+ * druk minus obniżki, nigdy poniżej {0} (CR 118.7).
+ *
+ * JEDNO źródło dla limitu (`delveExileLimit` w spells.js) i dla walidacji obu
+ * ścieżek płatności (`castSpell`, `castPermanent`) — klasa L107: bliźniacza
+ * reguła policzona dwa razy rozjeżdża się (audyt PR #130, znalezisko B: limit
+ * z wydruku pozwalał wygnać więcej, niż wynosił koszt, więc `manaSpent`
+ * stawał się ujemny i `spendMana` rzucała RangeError PO wygnaniu kart).
+ * Dla kart spoza `MANA_COSTS` (obiekty syntetyczne) cały `manaCost` liczy się
+ * jak generyczny — ta sama konwencja co `reduceGenericCost`.
+ */
+export function delveGenericMana(state, object) {
+  const costStr = MANA_COSTS[object?.cardId] ?? null;
+  const printed = costStr != null ? parseManaCost(costStr).generic : (object?.manaCost ?? 0);
+  const reduction = Math.max(0, costReductionForSpell(state, object) + conditionalCostReduction(state, object));
+  return Math.max(0, printed - Math.min(reduction, printed));
+}
+
 export function reduceAlternativeCost(state, object, totalCost, colors = []) {
   const base = totalCost ?? 0;
   const reduction = costReductionForSpell(state, object);

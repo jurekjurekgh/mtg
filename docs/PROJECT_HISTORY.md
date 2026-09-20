@@ -11727,3 +11727,170 @@ CR 701.53) i bramka (`discover_started`/`discover_resolved` w
 Lekcja **L156** dopisana, budżet lektury startowej utrzymany (99 929 / 100 000)
 przez skrócenie sześciu opisów przypadków w rejestrze (narracja w archiwum).
 PR #130 czeka na decyzję właściciela.
+
+## 2026-09-20c — sesja „Kontynuujemy projekt." (PR #131): audyt PR #130 — cztery znaleziska (A–D) + pętla jakości E4 (arena/01a0bf64-mtg)
+
+Start z promptu „Kontynuujemy projekt." → ADR 0021: pętla domyślna bez pytania
+o kolejkę. PR #131 otwarty PRZED kodowaniem (ADR 0020 A) z planem
+`docs/plans/PLAN_2026-09-20b-audyt-pr130-i-petla-jakosci.md`. W tym dzienniku
+etykieta „2026-09-20b" oznacza drugą paczkę uwag F–I w PR #130 — stąd „c".
+
+**Rozpoznanie (zmierzone):** HEAD `0b49b12` (squash PR #130),
+`node tools/run-tests.mjs all` 6027/6027, build 59 modułów / 3950,9 kB, budżet
+lektury 99 985/100 000 — wszystkie trzy zgodne z deklaracją
+`docs/setup/HANDOFF_2026-09-20.md`. Lektura obowiązkowa (AGENTS.md §0)
+wykonana przed pierwszym commitem: AGENTS.md, wszystkie ADR-y 0001–0030,
+LESSONS (L1–L157), ENVIRONMENT, HANDOFF_2026-09-20, opis i diff PR #130.
+
+**Audyt (ADR 0020 B / 0016 / 0030):** wszystkie 134 pliki diffu
+`8af0c7c..0b49b12`, w tym 28 w `src/` (+2807/−250) i 52 testowe (28 nowych —
+przeczytane wszystkie). Kontrole ADR: 0002 — zero porównań po `cardId`/nazwie
+w dodanym kodzie `src/`; 0005 — zero nowych `Math.random`; 0017 —
+`pendingDelveExile`/`pendingCraftExile` mapowane do widoku; 0029/0022 — druki
+w `docs/cards/`, deck-builder uśpiony. Ważność pinów PR #130 zmierzona
+mutacjami PA–PH: 8/8 wykrytych. Raport:
+`docs/audits/AUDYT_PR130_2026-09-20.md` (commit `c3c26b8`).
+
+**Znaleziska i naprawy** (każda: pin RED → fix u root cause → GREEN → mutacja
+→ bramy → commit → push; ADR 0020 C):
+
+- **A (`b1c66e1`)** — Delve na permanentie: bramka `delveLimit > 0` odbierała
+  rzut przy pustym grobie (CR 702.66a — wygnanie jest OPCJONALNE); ścieżka
+  czarów miała to poprawnie, bliźniacze bramki się rozjechały (L107). Reguła
+  w jednym `affordableDelveCounts`; przy limicie 0 brak decyzji bez alternatywy.
+- **B (`b1c66e1`)** — limit z kosztu WYDRUKOWANEGO zamiast części generycznej
+  kosztu CAŁKOWITEGO (CR 702.66a/b; ruling KTK 2021-03-19). Przy reduktorze
+  gracz mógł wygnać więcej niż koszt → ujemne `manaSpent`, `RangeError`
+  w `spendMana`, a ponieważ wygnanie szło PRZED płatnością, odrzucona komenda
+  zostawiała karty grobu w exile (klasa L149/L48). Naprawa: `delveGenericMana`
+  jako jedno źródło limitu, strażnik sumy przed pierwszą mutacją, bramka
+  `producibleMana` w `castSpell`.
+- **C (`b1c66e1`)** — `instantSorceryCastThisTurnByPlayer` (Baral and Kari Zev,
+  ruling TDC 2023-04-14) bez resetu przy zmianie tury: trigger raz na partię
+  zamiast raz na turę.
+- **D (`19f47fa`)** — gospodarza aury wracającej z grobu wybierał AUTOMAT
+  (`battlefield.find(isLegalAuraHost)` = pierwszy w kolejności strefy), a CR
+  303.4f i ruling OTJ 2024-04-12 (Annie Flash, the Veteran) dają wybór
+  graczowi. Osiągalne kartami z kolekcji: Zoraline i Annie Flash mogą wrócić
+  aurę — w katalogu 23 aury o MV ≤ 3. Naprawa wzorcem `resolveCraftExileOutcome`
+  (L41): `returnPermanentFromGraveyardOutcome` z trzema gałęziami (0 → zostaje
+  w grobie, 1 → domknięcie automatyczne, ≥2 → blokująca decyzja), a nowa
+  decyzja `pendingAuraHost`/`resolve_aura_host` przeszła przez siedem warstw
+  (oferta, walidacja przy wykonaniu, `firstPendingDecision`, odcisk, widok,
+  log/etykieta/grupowanie, oba boty).
+- **Piny mutacyjne D (`69b69e2`)** — mutacje Q3 (cudzy decydent), Q4
+  (`firstPendingDecision`) i Q5 (wycena bota) PRZEŻYŁY pierwszą wersję trzech
+  pinów: pokrywały tylko ścieżkę „szczęśliwą". Domknięte trzema testami (obcy
+  decydent odrzucony, właściciel bez passa — M337, bot wybiera po znaku aury
+  `auraIsHostile`) + re-walidacją gospodarza w chwili wejścia (CR 608.2b/LKI).
+  Stąd wpis **L48 pkt 8**.
+
+**E4 — pętla jakości (ADR 0021 §4a/4b):** osiem partii Żywym Testerem na
+artefakcie `dist/` (tarkir-bg, worek-dziki, kaladesh, worek-basni; seedy 42–45,
+101–104; 500–600 kroków) — 8/8 zakończonych naturalnie, 0 zgłoszeń detektorów,
+0 `[STOP]`, `== NIEWYCENIONE == brak` w każdym przebiegu. Zero zgłoszeń to
+pomiar narzędzia (L27), więc transkrypty przeczytane RĘCZNIE wzdłuż osi
+narracji/decyzji/stanu — dwa znaleziska, oba naprawione:
+
+- **E (`2919bf1`)** — Delve NIEMY na karcie: transkrypt tarkir-bg (seed 101)
+  pokazał w ręce „Hooting Mandrills · 6 · Creature — Ape · Zadeptywanie · 4/4"
+  bez słowa o mechanice, która zmienia sposób płacenia kosztu; modal „Delve —
+  karty do wygnania z grobu" pojawiał się dopiero przy rzucie. Przyczyna:
+  `cardInfo` i `renderCardPreview` nie przenosiły deskryptora `delve`,
+  a `rulesText` nie miał linii (klasa M138/#11). Piny: 4 (w tym strażnik
+  klasowy po katalogu); mutacje M1–M3 wykryte.
+- **F (`9de9f7a`)** — intro modalu w transkrypcie bez granic: „wskaż cel (1):
+  Gila CourserInvasion of the GiantsTrained ArynxI" (worek-dziki, seed 43).
+  Artefakt POMIARU (`textContent` całego ciała modalu nie wstawia spacji między
+  dziećmi blokowymi), nie stołu → naprawa w narzędziu (L12): `modalIntroText`
+  w `extract.mjs`, oba ciała modali w `run-game.mjs`. Piny: 3; mutacje M1/M2
+  wykryte.
+
+Druga ścieżka polowania na niezgodności z CR (inna niż w PR #130, który szedł
+pełnym diffem katalog↔snapshot): skan rodziny decyzji blokujących — 69 typów
+`resolve_*` × cztery warstwy (wycena bota, odcisk stanu, etykieta renderu,
+grupowanie) → 0 luk; `chooseCommand` punktuje wszystkie oferty, więc typ bez
+dedykowanej wyceny nie zostawia bota bez ruchu (telemetria `unvalued`).
+
+**Bramy na koniec:** `node tools/run-tests.mjs all` **6048/6048**,
+`npm run build` **59 modułów / 3966,4 kB**, `node --test
+test/bot-benchmark.test.js` **10/10**, benchmark `--quick` **672 mecze
+w 154,8 s, 0 niedokończonych** (heuristic **85,9%** — bez regresji wobec
+pomiaru PR #130), budżet lektury **99 953/100 000** (zapas 47 tokenów; wpis
+L48 pkt 8 opłacony kondensacją wstępu rejestru — próg bez zmian). Pełnej
+macierzy B0 nie uruchamiano (ADR 0018).
+
+**Pułapka sesji:** token GitHub wygasał w trakcie sesji DWA razy — pierwszy
+raz odświeżył się sam (push `b1c66e1` przeszedł po ponowieniu), drugi raz
+(`9de9f7a`, `2919bf1`, `8a641dc` i dalsze) zablokował push do czasu
+ponownego połączenia GitHub w Arena. Commity są lokalne i bezpieczne; zasada
+„push po każdym zielonym kroku" (ADR 0020 C/D) wymaga więc PONAWIANIA pusha,
+a nie tylko jednorazowej próby.
+
+## 2026-09-20d — „czemu świadomie nie naprawiane?": pomiar czterech pozycji audytu PR #130 (PR #131, arena/01a0bf64-mtg)
+
+Sesja zaczęła się od pytania właściciela o jedno zdanie z opisu PR #131:
+pozycje audytu PR #130 §6 zapisane jako „otwarte, nienaprawiane (świadomie —
+niskie ryzyko, brak reguły CR)". „Błędy powinny być natychmiast naprawiane,
+a nie «świadomie nie naprawiane». O co chodzi???" — i to była uwaga słuszna:
+przy pomiarze wyszło, że kategoria §6 była w trzech miejscach wygodnym workiem
+na dziury w pinach, a w jednym na realny defekt warstwy gracza.
+
+Kolejność pracy (każdy element commitowany i pushowany osobno — zasada
+właściciela z tej samej sesji: „każdy zakodowany element commitujesz i
+pushujesz"):
+
+1. **E5 (`d6eb27a`)** — ponowny skan znaków pisma niełacińskiego (ten sam, który
+   w sesji 2026-09-20c wyszedł czysto i nie zostawił strażnika) dał **15 znaków
+   w 13 plikach** — cyrylicę wklejoną w polskie słowa: `heuristic-bot.js`
+   („stwory"), `combat.js` („wybierane", „mogliśmy"), testy `m257r5b` („stwory")
+   i `m317` („Wardem"), jedenaście miejsc w `docs/` („kontrakt" ×2, „slucha",
+   „dokleja", „ida", „luki", „zagranie" ×2, „stwory", „charakterystyka"; znaki
+   U+0430/U+0431/U+0434/U+0435/U+043A–U+0442/U+044B/U+0456/U+0443/U+0444). Wszystko w
+   komentarzach i dokumentach — zachowanie gry niezmienione, ale grep po haśle
+   przestawał działać. Naprawa: 14 skażeń usuniętych, jeden znak CJK (U+672C
+   U+5730) zostaje jako dosłowny cytat incydentu w `PROJECT_HISTORY.md`, i stały
+   strażnik `test/e5-znaki-nielacinskie-w-zrodlach.test.js` z ratchetem w obie
+   strony oraz dowodem, że detektor działa (E5/3 — pliki w katalogu
+   tymczasowym). Greka dozwolona jako symbole matematyczne (Δ/β/Σ/μ/λ w
+   tabelach `docs/BOT_ROADMAP.md`), lista przypięta i sprawdzana pod kątem
+   martwych pozwoleń.
+2. **D/5 (`1222c46`)** — pozycja §6.7 („pipy zdolności na kartach kolorowych")
+   okazała się dziurą w pinie: D/4 pilnował kart bezkolorowych, kolorowe
+   pomijał przez `continue`. Niezmiennik domknięty, a pomiar po 25 taliach dał
+   dwa naruszenia (Mournful Zombie, Dragonbroods' Relic) — oba to konflikty
+   dwustronne, więc zostały jako wyjątki nazwane, zliczone i usprawiedliwione
+   mechanicznie (talia pokrywa kolory karty, siostra płaci pipy, ale nie pokrywa
+   kolorów). Drugiego naruszenia jednorazowy skrypt audytu NIE pokazał — znalazł
+   je dopiero strażnik.
+3. **E6 (`4004f1b`)** — pozycja §6.6 („zbiór blokerów poprawny, ale niekoniecznie
+   najlepszy") okazała się defektem gracza: `legalBlockerOptions` ponad cap-em
+   tnie listę przez `slice(0, cap)`, a wizard bloków brał kandydatów z sumy
+   ofert i sam budował komendę z ptaszków. Pomiar: 6×6 → 5 legalnych par bez
+   wiersza, 8×8 → 33, 10×10 → 69. Naprawa: `blockCandidatePool` (pełna pula
+   wprost z reguł, legalność z `blockAssignmentViolation`), pole widoku
+   `blockCandidates` (tylko broniący, tylko krok deklaracji bloków, pusty stos),
+   wiersze wizarda z puli uzupełnionej ofertami, strażnik łańcucha E6/6.
+4. **E7 (`0da56a9`)** — pozycja §6.1 (`modeFollowUpPlanOf` jako „martwy eksport,
+   kosmetyka") okazała się kopią kaskady panelu: 4 z 11 planów, kolejność
+   odwrotna niż wymaga M300/1, wołana wyłącznie przez testy. Kopia usunięta,
+   testy M2/2–M2/4 przełączone na funkcje, które naprawdę woła gracz.
+
+Dokumentacja: dodatek **§9** do `docs/audits/AUDYT_PR130_2026-09-20.md` (status
+każdej pozycji §6 po pomiarze, w tym te, które pozostają otwarte — teraz z
+warunkiem, przy którym stają się błędem), **M398**
+(`docs/ENGINE_MILESTONES.md`), **L158** (`docs/LESSONS.md` + narracja w
+`docs/LESSONS_PRZYPADKI.md`), wpis E6–E8 w
+`docs/plans/PLAN_2026-09-20b-audyt-pr130-i-petla-jakosci.md`, aktualizacja
+`docs/setup/HANDOFF_2026-09-20c.md` i „Bieżącego stanu" w `README.md`.
+
+Budżet lektury startowej: wpis L158 opłacony kondensacją (wstęp rejestru, pięć
+linii „wpis zbiorczy", §4 `ENVIRONMENT.md`) — **99 966/100 000**, próg bez zmian.
+
+Bramki: `node tools/run-tests.mjs all` **6058/6058**, `npm run build`
+**59 modułów / 3970,7 kB**.
+
+Przerwy techniczne: token GitHub wygasał w trakcie sesji trzykrotnie — push
+`d6eb27a`/`1222c46`/`4004f1b` przeszedł po odnowieniu, commit `0da56a9` i
+dokumentacja czekały na kolejne odnowienie (gałąź jest append-only, nic nie
+zginęło; `git push origin arena/01a0bf64-mtg` po ponownym połączeniu).

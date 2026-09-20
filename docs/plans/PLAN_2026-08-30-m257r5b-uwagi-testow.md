@@ -126,7 +126,7 @@ benchmark przed/po (ADR 0018, bez `--full`).
      + wartość usuniętego stwora przeciwnika (`power + toughness`) —
      właściciel traci permanent (albo stwór wraca, gdy nie zginie);
    - wymiana (zabija blokera i ginie): jak wyżej + moc zablokowanego obrażeń
-     nie przejdzie, ale właściciel traci DWA stworы — najkorzystniejszy
+     nie przejdzie, ale właściciel traci DWA stwory — najkorzystniejszy
      wariant.
    Cel ataku: właściciel (jedyne legalne cele to gracze) — bez zmian.
 2. Wycena celu `cast_spell` (pętla efektów): gałąż

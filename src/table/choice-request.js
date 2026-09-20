@@ -720,7 +720,7 @@ function viewCreatureHasStatic(view, id, field) {
  * (2^n atakujących, iloczyn przy blokach) — przełącznik tak/nie przy każdym
  * zdolnym stworze + „Zatwierdź". Finalną komendę buduje się z zaznaczonych.
  */
-export function renderCombatWizard(host, { kind, view, session, options, onComplete, onCancel, onOpenCard }) {
+export function renderCombatWizard(host, { kind, view, session, options, blockCandidates = null, onComplete, onCancel, onOpenCard }) {
   clearChoiceElement(host);
   const isAttackers = kind === 'attackers';
   // Unikalni kandydaci: suma id ze wszystkich oferowanych wariantów.
@@ -735,6 +735,14 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
         pushId(attackerId);
         for (const id of blockerIds) pushId(id);
       }
+    }
+    // E6 (2026-09-20c): `options` to MENU ograniczone `COMBAT_OPTION_CAP`, a
+    // pula kandydatów z widoku jest liczona wprost z reguł — bez niej pary
+    // wycięte przez cap nie miałyby wiersza i legalny blok (CR 509.1b) byłby
+    // dla człowieka nieosiągalny (pomiar: 6×6 → 5 par, 10×10 → 69 par).
+    for (const [attackerId, blockerIds] of Object.entries(blockCandidates ?? {})) {
+      pushId(attackerId);
+      for (const id of blockerIds ?? []) pushId(id);
     }
   }
   // Obowiązkowi (goad / must-attack): obecni w KAŻDYM wariancie.
@@ -788,6 +796,10 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
         if (!seen.has(id)) { seen.add(id); cand.push(id); }
       }
     }
+    // E6: pula z widoku domyka kandydatów, których menu (cap) nie pokazało.
+    for (const id of blockCandidates?.[attackerId] ?? []) {
+      if (!seen.has(id)) { seen.add(id); cand.push(id); }
+    }
     const current = blockedBy.get(attackerId) ?? [];
     for (const blockerId of cand) {
       const label = objectName(view, session, blockerId) + creaturePT(view, blockerId);
@@ -811,6 +823,11 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
     const attackerIds = [];
     const seen = new Set();
     for (const cmd of options) for (const id of Object.keys(cmd.assignments ?? {})) {
+      if (!seen.has(id)) { seen.add(id); attackerIds.push(id); }
+    }
+    // E6: atakujący, dla którego cap wyciął WSZYSTKIE oferty bloku, i tak musi
+    // mieć sekcję (pula może dla niego mieć kandydatów).
+    for (const id of Object.keys(blockCandidates ?? {})) {
       if (!seen.has(id)) { seen.add(id); attackerIds.push(id); }
     }
     for (const attackerId of attackerIds) renderAttackerBlockers(attackerId);
@@ -892,7 +909,7 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
       if (mandatory.size > 0) {
         const hint = choiceNode(host, 'div', 'zone-empty', 'Stwory z przymusem ataku muszą atakować — odznaczono pozostałe.');
         hint.className = 'zone-empty combat-wizard-error';
-        renderCombatWizard(host, { kind, view, session, options, onComplete, onCancel });
+        renderCombatWizard(host, { kind, view, session, options, blockCandidates, onComplete, onCancel });
         return;
       }
       const wanted = [...mandatory];

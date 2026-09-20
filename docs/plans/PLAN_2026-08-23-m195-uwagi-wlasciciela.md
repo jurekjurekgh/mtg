@@ -12,7 +12,7 @@ zrodel) powinien byc wizard."
 **Rozpoznanie:** `manaWizardFor` w `src/table/main.js` obsluguje rzuty
 (`cast_*`) i `activate_ability`, ale NIE komendy decyzji platniczych
 (`resolve_pay_or_sacrifice`, `resolve_optional_pay_choice`,
-`resolve_counter_pay_choice`). Te iда prosto do `session.apply`, a silnik
+`resolve_counter_pay_choice`). Te ida prosto do `session.apply`, a silnik
 auto-tapuje zrodla wg swojej kolejnosci. Regula wlasciciela jest ogolna:
 **kazda** niejednoznaczna platnosc ma miec wizard, nie tylko rzuty.
 

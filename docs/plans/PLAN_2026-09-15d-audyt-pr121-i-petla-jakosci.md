@@ -97,7 +97,7 @@ Tutejsza pętla (dopóki właściciel nie wskaże tematu):
       potwierdzenie żywe okna `combat_damage` i odmowy may-draw przy cienkiej
       bibliotece (talie: `innistrad-wu` — Murder/Spare; seed hunter).
 - [ ] Wariant B (fallback, gdy tester drogi): polowanie CR inną ścieżką —
-      audyt контракта `pendingDamageAssignment` (oferta vs walidacja, L48)
+      audyt kontraktu `pendingDamageAssignment` (oferta vs walidacja, L48)
       albo skan snapshotów Scryfall po danych kart (L96).
 - [ ] Każde znalezisko: repro → fix u root cause → test RED→GREEN → mutacja (L13).
 
