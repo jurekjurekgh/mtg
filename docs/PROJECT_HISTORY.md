@@ -11596,3 +11596,44 @@ bot-benchmark 10/10, snapshot wycen bota 4/4. Push commita `7746e37` nie doszed�
 — token GitHub w sandboxie wygasł w trakcie sesji (`GH_TOKEN` nieważny);
 do zrobienia po ponownym połączeniu: `git push origin arena/01a0b8fe-mtg`
 i aktualizacja opisu PR #130. PR #130 czeka na decyzję właściciela.
+
+## 2026-09-20b — druga paczka uwag z gry (F–I) w PR #130
+
+Cztery zgłoszenia właściciela z partii, domknięte paczkami — commit i push po
+KAŻDEJ (stała zasada właściciela), wszystko w PR #130.
+
+**F (`4355c51`)** — martwa sekcja „Kreator talii”: panel `#deck-builder` w
+`index.html` zakomentowany (markup zostaje — odwracalność), import i oba
+montaże `mountDeckBuilder` w `main.js` zakomentowane, moduły + ADR 0012 bez
+zmian. Bundle 64 → 59 modułów. Strażnik: brak żywego `id="deck-builder"` i
+zero żywych wywołań montażu (RED 0/3).
+
+**G (`de28378`)** — „4 lądy do czaru za 2”: silnik czysty (koszt `{1}{B}`,
+deskryptor 2 many, postęp domyka się w dwóch tapnięciach); wadliwa była warstwa
+prowadzenia płatności (lista szła porządkiem stołu, a po zebranej sumie kreator
+dalej proponował lądy bez brakującego koloru). `guideManaSources` — kolejność
+„brakujący kolor pierwszy” + filtr nadmiarowych źródeł; model niesie
+`missingColors`/`coversMissing`, wiersz mówi „— pokrywa {B}”. End-to-end na
+Mini-DOM: talia „g-canonized”, gracz tapie pierwszy wiersz — RED 3 tapnięcia,
+po poprawce 2 (= koszt).
+
+**H (`eea273a`)** — Explore bez nazwy karty: decyzja idzie przez wspólny
+`renderChoiceRequest` (odpowiedź dla właściciela), brakowało DANYCH —
+`pendingExplore` niesie `sourceCardId`, widok wystawia `{ sourceCardId, cardId }`
+decydentowi, `choiceSourceTitle` nazywa źródło i odsłoniętą kartę, a
+`previewCardIdOfOption(…, view)` daje obu wariantom „🔍 Podgląd karty”.
+Strażnik: RED 0/3 (RED cytował dosłownie stary tytuł „Wybierz: Explore — co
+z odsłoniętą kartą?”).
+
+**I (`9baaf89`)** — cichy discover: `discover_resolved` bez faktów i `null`
+w logu. Naprawa w trzech warstwach: fakty w zdarzeniu (`revealedCardIds`,
+`bottomCount`, `libraryExhausted`; przy trafieniu `bottomCount`), pełny tekst
+(biblioteka wyczerpana / brak karty MV ≤ X, karty na spód w losowej kolejności,
+CR 701.53) i bramka (`discover_started`/`discover_resolved` w
+`BOT_RESOLUTION_EVENTS` i `HUMAN_DIGEST_EVENTS`). Strażnik: RED 0/4.
+
+**Bramy:** `node tools/run-tests.mjs all` **6022/6022**, `npm run build`
+59 modułów / **3948,2 kB**, benchmark quick 672 mecze: heuristic 85,9%.
+Lekcja **L156** dopisana, budżet lektury startowej utrzymany (99 929 / 100 000)
+przez skrócenie sześciu opisów przypadków w rejestrze (narracja w archiwum).
+PR #130 czeka na decyzję właściciela.

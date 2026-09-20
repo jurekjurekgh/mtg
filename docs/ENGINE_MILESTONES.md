@@ -6344,3 +6344,46 @@ odnotowana w commicie. Strażnik: `test/zgloszenie-e-oddana-garda.test.js`
 benchmark quick 672 mecze: heuristic 85,9% (przed zmianą 86,0% — szum),
 golden-master `overallHash` 4514c1cf65d99082… **bez zmian** po pkgu E (kara nie
 dotyka próbkowanych decyzji).
+
+## M395 — Uwagi z gry F–I: prowadzenie płatności, dane decyzji, narracja zdarzeń
+
+Druga paczka zgłoszeń właściciela z 2026-09-20 (plan:
+`docs/plans/PLAN_2026-09-20-uwagi-z-gry-f-i.md`); cztery paczki, każda z
+osobnym commitem i push (stała zasada właściciela).
+
+**F (`4355c51`) — martwa sekcja „Kreator talii”.** Panel `#deck-builder`
+w `src/table/index.html` jest zakomentowany (markup zostaje — odwracalność),
+`mountDeckBuilder` nie jest wołany w `main.js` (dwa montaże zakomentowane),
+a moduły i ADR 0012 zostają nietknięte. Bundle: 64 → 59 modułów. Strażnik:
+`test/zgloszenie-f-kreator-talii-wylaczony.test.js` (RED 0/3).
+
+**G (`de28378`) — „4 lądy do czaru za 2”.** Silnik był czysty (koszt `{1}{B}`,
+deskryptor 2 many, postęp domyka się w 2 tapnięciach); wadliwa była warstwa
+prowadzenia płatności — lista źródeł szła w porządku stołu, a po zebraniu sumy
+kreator dalej proponował lądy bez brakującego koloru. `guideManaSources`
+(kolejność: brakujący kolor pierwszy; zakres: po zebranej sumie tylko źródła
+dające brakujący kolor) + `missingColors`/`coversMissing` w modelu i etykieta
+„— pokrywa {B}”. Strażnicy: `test/zgloszenie-g-kreator-many-brakujacy-kolor.test.js`
+oraz end-to-end w `test/table-ui.test.js` (talia „g-canonized”; RED 3 tapnięcia
+przy koszcie 2, po: 2).
+
+**H (`eea273a`) — Explore bez nazwy karty.** Decyzja idzie przez wspólny
+`renderChoiceRequest`, brakowało DANYCH: `pendingExplore` niesie teraz
+`sourceCardId`, `playerView` wystawia `{ sourceCardId, cardId }` decydentowi,
+`choiceSourceTitle` nazywa źródło i odsłoniętą kartę, a
+`previewCardIdOfOption(option, resolveCardId, view)` bierze kartę z oczekującej
+decyzji → oba warianty dostają „🔍 Podgląd karty”. Strażnik:
+`test/zgloszenie-h-explore-nazwa-karty.test.js` (RED 0/3).
+
+**I (`9baaf89`) — cichy discover.** Brak trafienia w `discover_resolved` nie
+niósł faktów i mapował się na `null` w logu. Trzy warstwy: FAKTY w zdarzeniu
+(`revealedCardIds`, `bottomCount`, `libraryExhausted`; przy trafieniu
+`bottomCount`), TEKST opisu (biblioteka wyczerpana / brak karty MV ≤ X, karty
+na spód w losowej kolejności, CR 701.53) i BRAMKA (`discover_started`/
+`discover_resolved` w `BOT_RESOLUTION_EVENTS` i `HUMAN_DIGEST_EVENTS`).
+Strażnik: `test/zgloszenie-i-discover-brak-trafienia.test.js` (RED 0/4).
+
+**Bramy:** `node tools/run-tests.mjs all` **6022/6022**, `npm run build`
+59 modułów / **3948,2 kB**, benchmark quick 672 mecze: heuristic 85,9%
+(baseline 86,0% — szum). Lekcja: **L156** (trzy warstwy: prowadzenie płatności,
+dane decyzji z oczekującej decyzji, fakty → tekst → bramka).

@@ -2015,3 +2015,30 @@ w odpowiedzi (5 — snapshot przy koszcie NIE może zabić żywego odczytu).
 **Kolizja z pinem D/3:** ten sam atak 3/1 za 3/3 przy 3 życiach jest teraz poprawnie karany (wróg może NIE blokować i dobić kontrą), więc `test/zgloszenie-d-jalowy-atak-w-gang.test.js` mierzy granicę klasyfikacji „jałowego ataku" przy 12 życiach — scenariusz crackbacku ma własny pin.
 
 **Piny:** `test/zgloszenie-e-oddana-garda.test.js` — 6 przypadków (scenariusz właściciela; atak letalny zostaje; wymuszony blok oddaje gardę; atakujący z lataniem; wymiana przy pełnym życiu; dwa 2/2 — jeden zostaje w domu). RED: stash `heuristic-bot.js` + `heuristic-params.js` → 5/1.
+
+## L156 (2026-09-20) — przypadek: trzy warstwy zgłoszenia (F–I)
+
+**Zgłoszenia z partii** (druga paczka uwag tego samego dnia, PR #130):
+
+- **F** — „sekcja Deck Builder jest martwa; nie używam jej i nie będę — zakomentuj ją w aplikacji, tak, żeby nie pokazywała się w ogóle”.
+- **G** — „Canonized in Blood (koszt «CB» = 2 many): kreator many kazał mi tapnąć 4 lądy”.
+- **H** — „Guidestone Compass Explore — modal «Wybierz: Explore — co z odsłoniętą kartą?» ma wymienić i podlinkować odsłoniętą kartę; teraz trzeba jej szukać w logu”.
+- **I** — „Geological Appraiser ETB Discover 3: cała biblioteka przejrzana, brak trafienia; karty wróciły, ale «Rozgrywka»/log nie mówią, że biblioteka się wyczerpała, że nie było trafienia ani że karty wróciły na spód w losowej kolejności”.
+
+**G — pomiar przed naprawą.** Silnik był czysty: koszt `{1}{B}` (`mana-costs-data.js`), `effectiveSpellManaCost` = 2, deskryptor `{costStr: '{1}{B}', totalNeeded: 2, requirements: [['B']]}`, a `wizardProgress` po tapnięciu Bagna i dowolnego lądu dawał `done: true`. Cztery niezależne próby (oferta, deskryptor, surowy `tap_for_mana` ×4, rzut z pustą pulą) nie reprodukowały „4 lądów” — wada była w WARSTWIE PROWADZENIA: lista źródeł szła porządkiem stołu, a po zebraniu sumy kreator dalej proponował lądy BEZ brakującego koloru. Gracz tapujący „po kolei z góry” (Wyspa, Góra, Las, Bagno) potrzebował 4 tapnięć: dwa pierwsze zaspokajały sumę, trzecie (Las) nic nie wnosiło, dopiero czwarte pokrywało `{B}`.
+
+**G — naprawa.** `guideManaSources(sources, missingColors, totalMet)`: sort stabilny „źródła brakującego koloru pierwsze” + filtr „po zebranej sumie zostają tylko źródła dające brakujący kolor” (nadmiarowe źródło dodałoby manę, której płatność już nie potrzebuje). `wizardProgress` dokłada `missingColors` i `coversMissing` per źródło, a render pokazuje „— pokrywa {B}” i — gdy nie ma czym pokryć koloru przy zebranej sumie — mówi wprost „Żadne dostępne źródło nie daje B — Anuluj płatność”. Świadomie NIE auto-tapnięto wymuszonego źródła: płatność jest jawną decyzją gracza o zasobach (CR 601.2h), kreator prowadzi kolejnością i zakresem.
+
+**H — pomiar.** Decyzja Explore idzie przez wspólny `renderChoiceRequest` (odpowiedź dla właściciela: TAK, to uniwersalny kreator wyboru), ale komenda `resolve_explore_choice` ma dwa warianty (wierzch/grób) bez żadnego identyfikatora karty, a odsłonięta karta siedziała w `state.pendingExplore` i nie była wystawiana w widoku. Tytuł modala spadał do deskryptora typu: „Wybierz: Explore — co z odsłoniętą kartą?”.
+
+**H — naprawa.** `pendingExplore` niesie `sourceCardId` (źródło eksploracji to publiczny permanent — wzorzec M162/C, M163/A, M240/K), `playerView` wystawia `{ sourceCardId, cardId }` właścicielowi decyzji, `choiceSourceTitle` ma gałąź `resolve_explore_choice` („Guidestone Compass — Explore: Fathom Fleet Cutthroat na wierzchu biblioteki”), a `previewCardIdOfOption(option, resolveCardId, view)` bierze kartę z oczekującej decyzji, gdy komenda jej nie niesie — oba warianty dostają wspólny przycisk „🔍 Podgląd karty” (pełnoekranowa ilustracja).
+
+**I — pomiar.** `discover_resolved` przy braku trafienia niosło wyłącznie `found: false` (bez liczby odsłoniętych kart i bez informacji, czy biblioteka się wyczerpała), a warstwa tekstu w `session.js` mapowała je na `null` — wpis CICHY. Dodatkowo typ zdarzenia nie przechodził bramki logu gracza poza oknem stosu, więc nawet poprawiony tekst mógł nie dotrzeć do „Rozgrywki”.
+
+**I — naprawa.** Trzy warstwy: (1) FAKTY — `effects.js` dokłada `revealedCardIds`, `bottomCount` i `libraryExhausted` (brak trafienia), a `game-state.js` `bottomCount` (trafienie, „reszta na spód w losowej kolejności”, CR 701.53); (2) TEKST — brak trafienia opisywany wprost („nie znajduje karty dla discover (3) — biblioteka się wyczerpała (przejrzano N kart); odsłonięte karty (N) na spód biblioteki w losowej kolejności”); (3) BRAMKA — `discover_started`/`discover_resolved` w `BOT_RESOLUTION_EVENTS` i `HUMAN_DIGEST_EVENTS`.
+
+**F — naprawa.** Panel `#deck-builder` w bloku komentarza HTML (markup zachowany → odwracalność; wewnętrzne komentarze HTML mają myślniki zamienione na encje, żeby `--` nie zamknął komentarza zewnętrznego), import i oba montaże `mountDeckBuilder` zakomentowane, moduły i ADR 0012 bez zmian, biblioteka talii własnych (IndexedDB → selecty) działa dalej. Bundle: 64 → 59 modułów.
+
+**Piny:** `test/zgloszenie-f-kreator-talii-wylaczony.test.js` (3), `test/zgloszenie-g-kreator-many-brakujacy-kolor.test.js` (4) + end-to-end `test/table-ui.test.js` (talia „g-canonized”: gracz tapuje ZAWSZE pierwszy wiersz kreatora; RED 3 tapnięcia przy koszcie 2), `test/zgloszenie-h-explore-nazwa-karty.test.js` (3), `test/zgloszenie-i-discover-brak-trafienia.test.js` (4). Wszystkie czerwone przed poprawką (0/3, 0/4+RED taps, 0/3, 0/4).
+
+**Wniosek dla procesu:** zgłoszenie „kreator/X kazał zrobić coś sprzecznego z regułą” mierzymy warstwami od silnika w górę (koszt → oferta → deskryptor → postęp → render), a naprawę pinujemy na warstwie, która realnie zawiodła — inaczej „fix w silniku” przechodzi zielono, a gracz dalej tapie cztery lądy.

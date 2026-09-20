@@ -216,7 +216,7 @@ w narracji: `payColors` ze zdarzenia → 1, 2, 5; goły `{N}` w opisie → 2, 3)
 
 ## L99 (2026-08-31) — Fix wdrożony w dwóch warstwach potrzebuje pinu w OBU; test warstwy tekstu nie chroni warstwy obrazu
 
-**Przypadek:** M264 zamknął wyciek nazwy zakrytej karty przy `trigger_resolved` w DWÓCH miejscach `src/table/session.js` — w opisie tekstowym (`objectOrLki`) i w bramce SKANU karty (`hiddenLive` w `noteBotMove`).
+**Przypadek:** ten sam wyciek nazwy zakrytej karty trzeba było zamknąć w DWÓCH miejscach `session.js` — w opisie tekstowym i w bramce SKANU karty.
 
 **Reguła:**
 1. Kiedy jedna naprawa dotyka N miejsc w kodzie, policz je jawnie w opisie
@@ -427,7 +427,7 @@ testy C1–C3 w `test/m254-uwagi-wlasciciela.test.js`.
 
 ## L85 (2026-08-28) — `eventData.manaCost` to mana WYDATKOWANA, nie mana value karty
 
-**Przypadek:** warunek `spellManaValueAtLeast: 4` czytał `eventData.manaCost` zdarzenia `permanent_cast`: przepuszczał czar z obniżką (MV 5 zapłacone {3}) i odrzucał czar bez obniżki przy koszcie alternatywnym.
+**Przypadek:** warunek `spellManaValueAtLeast: 4` czytał `eventData.manaCost` — przepuszczał czar z obniżką, odrzucał koszt alternatywny.
 
 **Reguła:** warunek na mana value czyta OBIEKT. Przy dopisywaniu warunku do
 triggera sprawdź, czy dane wejściowe to „wartość z karty" czy „wynik
@@ -532,7 +532,7 @@ już emituje zdarzenie z tą samą treścią?
 `test/m219-log-land-type-duplikat.test.js`.
 ## L78 (2026-08-26) — Lektura obowiązkowa czytana fragmentami to lektura NIEwykonana
 
-**Przypadek:** `docs/LESSONS.md` (1930 linii) i część ADR-ów zostały obejrzane we fragmentach (kilka najnowszych lekcji + nagłówki), bo narzędzie czytające zwracało pliki z ucięciem (`truncated`/`hasMore`).
+**Przypadek:** lektura startowa była czytana WE FRAGMENTACH (narzędzie ucinało pliki) — luki w regułach zostają niewidoczne.
 
 **Reguła:**
 1. Plik uznajesz za przeczytany dopiero po OSTATNIEJ linii — sprawdź `wc -l`
@@ -629,7 +629,7 @@ opisuje CZYNNOść (rzeczownik odczasownikowy), nigdy źródło implementacji
 (ADR 0002).
 ## L68 (2026-08-25) — Sonda, która „nie znalazła błędu", bo komenda została cicho odrzucona
 
-**Przypadek:** sonda sprawdzająca, czy obrażenia z delirium respektują `protection from red`, wypisała „OK — brak obrażeń". sonda mierzyła STAN KOŃCOWY (`damage === 0`), nie sprawdzając, czy badana ścieżka w ogóle pobiegła.
+**Przypadek:** sonda mierzyła STAN KOŃCOWY, nie sprawdzając, czy badana ścieżka w ogóle pobiegła.
 
 **Reguła:** sonda silnika NAJPIERW asertuje, że komenda przeszła
 (`assert.equal(result.ok, true)`), potem bada skutek; gdy ma udowodnić BŁĄD,
@@ -920,7 +920,7 @@ z nowymi mechanikami obejmuje partie, gdzie BOT ma te karty.
 
 ## L1 (2026-08-14) — „Bot robi coś głupiego" bywa ślepotą, nie głupotą
 
-**Przypadek:** bot pompował liczniki Station bez końca (M84), celował zdolnością w nielegalne obiekty (M82), rzucił Inspire Awe i atakował we własną prewencję (M91). `PlayerView` nie niosło danych potrzebnych do decyzji.
+**Przypadek:** `PlayerView` nie niosło danych, których potrzebowały decyzje kontrolera (M82/M84/M91).
 
 **Reguła:** zanim uznasz zachowanie kontrolera za błąd heurystyki, sprawdź, czy
 widok niesie potrzebne dane. Strojenie wag wokół brakującej informacji to
@@ -2288,7 +2288,7 @@ z natury), bramki („raz na turę") bez zmian.
 
 ## L147 (2026-09-17) — Płatność wieloetapowa: rezerwa pipów obowiązuje też FINANSOWANIE cudzego kosztu
 
-**Przypadek:** auto-tap zapłacił {U} zdolności źródła kosztowego (Apprentice Wizard: „{U}, {T}: Add {C}{C}{C}") jednostką odłożoną na pip {U} rzucanego czaru (seed 2027) — pula przestała kryć `requirements`, a nieudana komenda zostawiła mutację.
+**Przypadek:** auto-tap zapłacił pip czaru {U} jednostką odłożoną na KOSZT zdolności źródła (seed 2027) — pula przestała kryć `requirements`.
 
 **Reguła:** każdy etap płatności (pipy → suma → źródła kosztowe) musi KOŃCZYĆ się pokryciem `requirements`; przed konsumpcją dociągnij brakujące pokrycie z nietapniętych źródeł — mutacja tylko w stronę puli. Bramka oferty (`fundableCostedPlan`) i płatność muszą kończyć w tym samym stanie.
 
@@ -2304,7 +2304,7 @@ PRZEJĘTEGO; to samo w „dies"/„leaves the battlefield"). Strażnik:
 
 ## L149 (2026-09-17) — Grant lądu to JEDEN rachunek dla oferty i płatności (także w fazie pipów)
 
-**Przypadek:** Vandalize {4}{R} przy Górze z Nature's Embrace („{T}: Add two mana of any one color") — oferta obiecywała 5 many, ale płatność do-tapnęła Górę „za 1" i rzut został odrzucony, zostawiając tapnięty ląd i {R} w puli (seed 2039, quick-25).
+**Przypadek:** Vandalize przy „lądzie za dwa many” — oferta obiecywała 5 many, płatność do-tapnęła ląd „za 1” i rzut został odrzucony (seed 2039).
 
 **Reguła:** ląd z grantem liczy się w ofercie jako `grant` jednostek (producibleMana), więc
 płatność MUSI wyprodukować tyle, ile oferta obiecuje — także gdy tapnie go FAZA PIPÓW bez
@@ -2317,21 +2317,21 @@ grantu → piny 1 i 4 RED, brak bramki atomowości → piny 2 i 3 RED).
 
 ## L150 (2026-09-19) — Ubytek zasobu licz po WSZYSTKICH drogach; tutor też uszczupla bibliotekę
 
-**Przypadek:** Dawntreader Elk — bot poświęcał stwora po ląd przy 4 kartach w bibliotece, bo kara cienkiej biblioteki widziała tylko mielące tapnięcia płatności i mill/draw; tutor nie był wyceniany nigdzie.
+**Przypadek:** Dawntreader Elk — bot poświęcał stwora po ląd, bo kara cienkiej biblioteki widziała tylko mill/draw, a tutor nie był wyceniany nigdzie.
 **Reguła:** (1) Wypisz WSZYSTKIE drogi ubytku zasobu (płatność, efekt wariantu, koszt poświęcenia) i prowadź je jedną drabiną kary. (2) Typy efektów czytaj z deskryptora (ADR 0002). (3) Kara na wariant, nie na turę — inaczej bot przestaje używać narzędzi.
 **Strażnik:** `test/dawntreader-elk-tutor-cienka-biblioteka.test.js` (5 pinów; M21 → 3 RED, M22 → 1 RED).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L150)
 
 ## L151 (2026-09-19) — Enumeracja oferty musi pokryć granicę legalności; cap tnie OPCJE, nie użycia
 
-**Przypadek:** bloker o 3 slotach (licznik +1/+1 + 2× Cenn's Tactician) nie dostawał w ofercie potrójnego bloku (`Math.min(slots, 2)`), choć `declareBlockers` go przyjmuje — panel i bot nie mogły zagrać legalnego ruchu.
+**Przypadek:** bloker o 3 slotach nie dostawał w ofercie potrójnego bloku, choć `declareBlockers` go przyjmuje.
 **Reguła:** (1) Liczbę przebiegów tnij do granicy LEGALNOŚCI (min. sloty, liczba atakujących), nie „na wygodę”. (2) Enumerację z powtórzeniami deduplikuj kluczem kanonicznym i dopiero potem tnij do cap. (3) Pin na oba kierunki: kompletność (legalny ruch jest w ofercie) i dźwięczność (każda opcja przechodzi walidację).
 **Strażnik:** `test/block-slots-trojka-oferta.test.js` (4 piny; M23 → 1 RED, M24 → 1 RED).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L151)
 
 ## L152 (2026-09-19) — Dane proweniencji też mają strażnika; „pomiń, bo dane zepsute” to dług
 
-**Przypadek:** pełny diff katalog↔snapshot (480 kart) wykrył literalne „\\n” w `oracleText` 20 wpisów i w 7 plikach `docs/cards/*.json`; strażnik kosztów aktywacji miał na to JAWNY wyjątek i pomijał zdolność `strandwalker`.
+**Przypadek:** pełny diff katalog↔snapshot wykrył literalne „\n” w `oracleText` 20 wpisów i w 7 plikach `docs/cards/*.json`.
 **Reguła:** (1) Audyt danych to osobna ścieżka: porównuj CAŁE zbiory, nie pliki z ostatniego PR-a. (2) Wyjątek „ta karta wypada ze strażnika, bo dane są zepsute” znosi się naprawą danych i licznikiem pominięć = 0. (3) Strażnik danych pilnuje obu stron i ma bramkę na degenerację (minimum sprawdzonych rekordów).
 **Strażnik:** `test/oracle-bez-literalnego-backslash-n.test.js` (4 piny; M25 → 2 RED, M26 → 2 RED) + `test/ability-cost-pips.test.js` (pominięcia = 0).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L152)
@@ -2375,3 +2375,21 @@ przeżycia, a po ataku już nie, premia za wyścig znika i wchodzi jawna kara.
 Wyjątki: atak wygrywający teraz oraz atak letalny (wróg MUSI blokować).
 **Strażnik:** `test/zgloszenie-e-oddana-garda.test.js` — 6/6, RED 5/1.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L155)
+
+## L156 (2026-09-20) — Trzy warstwy zgłoszenia: prowadzenie płatności, dane decyzji, narracja zdarzenia
+
+**Przypadek:** paczka F–I: kreator many kazał tapnąć 4 lądy do czaru za 2,
+modal Explore pytał „co z odsłoniętą kartą?” BEZ nazwy karty, a discover bez
+trafienia nie zostawił w logu ŻADNEGO wpisu.
+
+**Reguła:** (1) ścieżka płatności proponuje tylko kroki, które przybliżają
+koszt — źródła brakującego koloru pierwsze, nadmiarowe po zebranej sumie nie
+są proponowane (tapnięć ≤ koszt); (2) decyzja bez karty w komendzie bierze ją
+z OCZEKUJĄCEJ decyzji wystawionej decydentowi (tytuł + podgląd), a nie z logu;
+(3) każde rozstrzygnięcie potrzebuje trzech warstw: FAKTY w zdarzeniu, TEKST
+opisu (nigdy `null`) i BRAMKĘ logu/„Rozgrywki”.
+
+**Strażnik:** `test/zgloszenie-{f,g,h,i}-*.test.js` (RED 0/3, 0/4, 0/3, 0/4 →
+GREEN; end-to-end G w `test/table-ui.test.js`: 4 lądy → 2 tapnięcia).
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L156)
