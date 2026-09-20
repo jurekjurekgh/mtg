@@ -15,8 +15,10 @@ import { jumpToStep } from '../src/engine/turn.js';
  * 1. CZYSTA REGUŁA (`manaSourceLogText`): produkcja many daje zdanie
  *    z nazwą źródła i KOMPLETEM kolorów (też „{C}{C}{C}” i powtórzenia),
  *    a zdarzenie bez nazwy źródła nie zaśmieca logu;
- * 2. LOG STOŁU (ten sam strumień, który czyta „Log partii”): tapnięcie lądu
- *    na manę realnie dokłada wpis rodzaju `tap` z nazwą i kolorem;
+ * 2. LOG (sekcja „Log partii” drukuje ten sam strumień): tapnięcie lądu na
+ *    manę realnie dokłada wpis z nazwą i kolorem — wpis ZWYKŁY (tak jak
+ *    „Zagrywasz Forest”), bez własnego rodzaju, klasy i koloru: uwaga
+ *    właściciela (2026-09-20) — log ma wyglądać dokładnie tak, jak wyglądał;
  * 3. GRANICE: wpis nie wchodzi do modala „Rozgrywka” (botMoves) ani do
  *    zapisu tur dla AI (turnHistory) — decyzja właściciela o szumie modala
  *    zostaje w mocy; „Log partii” jest miejscem na debug.
@@ -90,16 +92,19 @@ function przygotujLad(session) {
 
 test('J: tapnięcie lądu na manę zostawia wpis w logu (i w «Log partii»)', () => {
   const session = sesja();
-  const przed = session.logEntries().filter((entry) => entry.kind === 'tap').length;
+  const przed = session.logEntries().filter((entry) => /na manę: /.test(entry.text)).length;
   // Ląd na polu bitwy gracza + komenda tapnięcia na manę (dokładnie ta droga,
   // którą chodzi kreator many i auto-płatność).
   const land = przygotujLad(session);
   const result = session.apply({ type: 'tap_for_mana', playerId: HUMAN_ID, objectId: land.id });
   assert.equal(result.ok, true, `tapnięcie odrzucone: ${result.reason}`);
 
-  const wpisy = session.logEntries().filter((entry) => entry.kind === 'tap');
+  const wpisy = session.logEntries().filter((entry) => /na manę: /.test(entry.text));
   assert.equal(wpisy.length, przed + 1, 'tapnięcie na manę nie zostawiło wpisu w logu');
   const wpis = wpisy.at(-1);
+  // Wpis przechodzi przez ten sam strumień co zwykłe zdarzenia — żadnego
+  // nowego rodzaju ani klasy (`log-…`) dla tapnięć na manę.
+  assert.equal(wpis.kind, 'event', `tapnięcie ma własny rodzaj wpisu: ${wpis.kind}`);
   assert.match(wpis.text, /na manę:/, `wpis bez treści tapnięcia: ${wpis.text}`);
   assert.match(wpis.text, /Island|Swamp/, `wpis bez nazwy permanentu: ${wpis.text}`);
   assert.match(wpis.text, /\{U\}|\{B\}/, `wpis bez koloru many: ${wpis.text}`);

@@ -46,13 +46,16 @@ oraz `docs/plans/PLAN_2026-09-20-uwagi-z-gry-f-i.md`.
   po nagłówku fazy w OBU gałęziach `MAIN_LOG_NOISE` (strumień komend gracza
   i pętla bota) — jedno źródło reguły dla obu ścieżek, bez zmiany zawartości
   szumu dla modala „Rozgrywka”.
-- **UI**: `src/table/index.html` → `.log-tap { color: var(--muted-2); }` —
-  wpis debugowy wizualnie nie konkuruje z narracją (render nada klasę
-  `log-tap` automatycznie, bo buduje ją z rodzaju wpisu).
+- **Zwykły wpis logu**: bez nowego rodzaju, klasy i koloru — `sessionLog`
+  dostaje `'event'`, czyli dokładnie ten sam rodzaj co „Zagrywasz Forest”
+  (uwaga właściciela 2026-09-20d: log ma wyglądać tak, jak wyglądał; jedyna
+  nowość to TREŚĆ zdania).
 
 ## Granice (świadome)
 
-Wpis **nie** wchodzi do:
+Pole „Log partii” to JEDNA lista logu (select + dwa przyciski kopiowania nad
+nią) — wpis pojawia się w niej i w tekście, który idzie do schowka. Wpis **nie**
+wchodzi do:
 
 - modala „Rozgrywka” (`botMoves`) — decyzja właściciela z 2026-08-02: modal nie
   pokazuje tapowania many (zamienia się w klikanie bez treści); miejsce na
@@ -66,10 +69,10 @@ Oba ograniczenia pinuje test 3 strażnika.
 - `test/zgloszenie-j-tapniecia-many-w-logu.test.js` — 3 piny; przed poprawką
   plik czerwony (brak eksportu reguły), po: 3/3.
 - e2e w `test/table-ui.test.js` (talia „g-canonized”, ten sam test co pin G):
-  po zapłacie log stołu ma wiersz `log-tap` („Ty tapujesz na manę: Swamp →
-  B” — symbole renderują się jako ikony), pole „Log partii” ma pełny zapis
-  z symbolami, a „Przebieg tur (dla AI)” nie zawiera „na manę”. Przed
-  poprawką pada `wierszeTap.length >= 1` (log bez wiersza „tap”).
+  po zapłacie listę logu czyta wiersz „Ty tapujesz na manę: Swamp → B”
+  (symbol many renderuje się jako ikona — tak jak w każdym innym wpisie od
+  zgłoszenia E3 z 2026-09-10), a „Przebieg tur (dla AI)” nie zawiera
+  „na manę”. Przed poprawką pada szukanie wiersza w logu.
 - `node tools/run-tests.mjs all` → **6025/6025** (6022 + 3 nowe).
 - `npm run build` → **59 modułów / 3950,9 kB** (modułów bez zmian; +2,7 kB treści).
 

@@ -5452,7 +5452,7 @@ export function selectedLogTurn(els) {
 }
 
 export function renderLogPanel(els, session, selected = 'all') {
-  if (!els?.logText && !els?.logTurnSelect) return;
+  if (!els?.logTurnSelect) return;
   const turns = typeof session.logTurnEntries === 'function' ? session.logTurnEntries() : [];
   const wanted = selected === 'all' || turns.some((entry) => entry.number === selected)
     ? selected
@@ -5478,21 +5478,6 @@ export function renderLogPanel(els, session, selected = 'all') {
     }
     select.disabled = false;
     select.value = String(wanted);
-  }
-  if (els.logText) {
-    const text = wanted === 'all'
-      ? (typeof session.logTextAll === 'function' ? session.logTextAll() : '')
-      : (typeof session.logTextFor === 'function' ? session.logTextFor(wanted) : '');
-    // Pole tekstowe też rośnie w dół: pokaż najnowsze, ale nie zabieraj
-    // pozycji graczowi, który przewinął wyżej, żeby czytać starsze wpisy.
-    const before = {
-      top: els.logText.scrollTop ?? 0,
-      height: els.logText.scrollHeight ?? 0,
-      client: els.logText.clientHeight ?? 0,
-    };
-    els.logText.textContent = text || 'Log jest pusty — rozegraj kilka ruchów, a pojawi się tutaj.';
-    const nearBottom = before.height - before.client - before.top <= 24;
-    els.logText.scrollTop = nearBottom ? els.logText.scrollHeight : before.top;
   }
 }
 

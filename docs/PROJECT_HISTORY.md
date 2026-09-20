@@ -19,6 +19,40 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-20d — korekta po uwadze właściciela: jeden log, żadnych dodatków
+
+Właściciel zakwestionował opis i implementację z dwóch paczek naraz:
+(1) mój raport mówił o „logu na stole” i „polu «Log partii»” jak o dwóch
+miejscach — a to JEDNA sekcja („Log partii”) i jedna lista logu; (2) sam
+dodałem w paczce C pole tekstowe z logiem (`<pre id="log-text">`, obok listy),
+a w paczce J własny rodzaj i wyciszony kolor wpisów tapnięć (`.log-tap`) —
+choć zlecenie C obejmowało wyłącznie kopiowanie logu/wybranej tury do schowka
+i chronologię, a J tylko same wpisy.
+
+**Zmiany:** wpis o produkcji many loguje się zwykłym rodzajem `event`
+(zniknął `kind: 'tap'` i CSS `.log-tap`), a z sekcji „Log partii” usunięto
+nadmiarowe pole tekstowe razem z jego stylem (`renderLogPanel` obsługuje już
+tylko select zakresu). Sekcja to odtąd JEDNA lista logu (nazwy kart klikalne,
+symbole many jako ikony — zachowanie od zgłoszenia E3 z 2026-09-10) + select
+„Tura:” + „Kopiuj wybraną turę”/„Kopiuj całą partię”; chronologia bez zmian
+(najnowsze na dole).
+
+**Strażnicy:** nowy pin w `test/zgloszenie-c-log-partii-tury.test.js`
+(sekcja = jedna lista + select + dwa przyciski; zero `id="log-text"`, zero
+`.log-text-box`, zero `.log-tap`), a `test/zgloszenie-j-tapniecia-many-w-logu.test.js`
+pinuje zwykły rodzaj wpisu. Bramy: `node tools/run-tests.mjs all` **6026/6026**,
+`npm run build` 59 modułów / **3949,8 kB**. Lekcja **L157** rozszerzona o regułę
+„zlecenie «dodaj wpis» nie jest zgodą na dodatki obok” (opłacone skróceniami
+opisów przypadków; budżet **99 984 / 100 000**).
+
+**Środowisko (pułapka §2 ENVIRONMENT wróciła):** w trakcie tej sesji workspace
+odtworzył się ze świeżego klona i gałąź lokalna stanęła na `8af0c7c` (main) —
+cała praca została w DRZEWIE, historii nie było. Procedura z pamięci podręcznej
+(`git fetch --depth=1 origin arena/01a0b8fe-mtg` → `git reset --mixed
+FETCH_HEAD`) odtworzyła wskaźnik do `37b6590` bez ruszania plików; `git status`
+pokazał dokładnie bieżące poprawki (12 plików). Znowu potwierdzone: NIGDY
+`--hard`, gdy w drzewie jest niecommitowana praca.
+
 ## 2026-09-20c — trzecia paczka uwag z gry (J): tapnięcia na manę w „Logu partii"
 
 Właściciel po odświeżeniu tokenu GitHub: „Wypychaj” + nowe zgłoszenie —
@@ -32,15 +66,16 @@ source: objectId, amount, colors }`), ale zdarzenie chodziło tylko przez szum
 (sonda pełnej partii: 10 produkcji many bota, 0 wpisów w `logEntries()`).
 Dodane: czysta `manaSourceLogText(…)` („Ty tapujesz na manę: Wyspa → {U}”,
 symbole w liczbie `max(amount, colors.length)`, `null` bez nazwy źródła)
-+ `logManaSource` w obu gałęziach szumu + rodzaj wpisu `tap` (CSS `.log-tap`).
++ `logManaSource` w obu gałęziach szumu — wpis jest ZWYKŁYM wpisem logu
+(bez własnego rodzaju, klasy i koloru).
 Granice: bez wpisu w modalu „Rozgrywka” (`botMoves`) i w zapisie tur dla AI
 (`turnHistory`) — decyzja właściciela 2026-08-02 o szumie modala w mocy.
 Po drodze złapana pułapka zasięgu: `whoN` istnieje tylko w closures
 deskryptorów zdarzeń (`RuntimeError` w teście); naprawa na `who()` sesji.
 
-Pin end-to-end (Mini-DOM, talia „g-canonized”): po zapłacie wiersz `log-tap`
-z „Swamp → B” w logu stołu, ten sam wpis z symbolami w polu „Log
-partii”, zero „na manę” w zapisie tur dla AI (RED przed poprawką).
+Pin end-to-end (Mini-DOM, talia „g-canonized”): po zapłacie wiersz „Ty
+tapujesz na manę: Swamp → B” w logu, zero „na manę” w zapisie tur dla AI
+(RED przed poprawką).
 
 **Bramy:** `node tools/run-tests.mjs all` **6025/6025**, `npm run build`
 59 modułów / **3950,9 kB**. Lekcja **L157** dopisana; budżet lektury startowej

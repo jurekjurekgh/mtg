@@ -6310,12 +6310,16 @@ cyklowania: typecycling (`cycling.subtypes`) i basic landcycling
 
 **C (`998afc8`) — „Log partii": kopiowanie i chronologia.** Panel po stronie
 AI dostał lustrzane narzędzia: select z WSZYSTKIMI turami + „cała partia"
-(domyślnie, drukowana na bieżąco), przyciski „Kopiuj wybraną turę"/„Kopiuj
-całą partię" i pole tekstowe odświeżane przy każdym renderze; lista renderuje
-się CHRONOLOGICZNIE (najnowsze na dole, nowe wiersze na końcu). Zakresy liczy
-jedno źródło w sesji (`logEntries`/`logTurnEntries`/`logTextAll`/`logTextFor`)
-— wpisy logu niosą numer tury i aktywnego gracza. Strażnik:
-`test/zgloszenie-c-log-partii-tury.test.js`.
+(domyślnie), przyciski „Kopiuj wybraną turę"/„Kopiuj całą partię"; lista
+renderuje się CHRONOLOGICZNIE (najnowsze na dole, nowe wiersze na końcu).
+Zakresy liczy jedno źródło w sesji
+(`logEntries`/`logTurnEntries`/`logTextAll`/`logTextFor`) — wpisy logu niosą
+numer tury i aktywnego gracza. KOREKTA (2026-09-20d, uwaga właściciela):
+sekcja miała wtedy dodatkowe pole z tekstem logu (`<pre id="log-text">`) —
+nadmiarowe wobec zlecenia (kopiowanie + chronologia); pole i jego styl
+usunięte, sekcja to jedna lista logu. Strażnik:
+`test/zgloszenie-c-log-partii-tury.test.js` (m.in. pin „sekcja = jedna lista +
+select + dwa przyciski, żadnego `log-text` i żadnego własnego koloru wpisów").
 
 **D (`b9a22ce`) — bezkolorowe karty z kolorowymi pipami zdolności.**
 `splitColorsOf` czytało dla artefaktu wyłącznie kolory PRODUKOWANEJ many, więc
@@ -6402,9 +6406,10 @@ zna ani liczby jednostek, ani kolorów — a bez nich wpis nie mówi, co zapłac
 Naprawa: czysta, eksportowana `manaSourceLogText(e, { nameOfObject, who })`
 („Ty tapujesz na manę: Wyspa → {U}”; druga osoba „tapuje”; symbole w liczbie
 `max(amount, colors.length)` — „{C}{C}{C}”; `null` dla zdarzeń bez nazwy
-źródła) + wrapper `logManaSource` wołający `sessionLog('tap', …)` po nagłówku
-fazy w OBU gałęziach `MAIN_LOG_NOISE` (komendy gracza i pętla bota) + CSS
-`.log-tap` (wyciszony kolor — wpis debugowy, nie narracja). Granice pinuje
+źródła) + wrapper `logManaSource` wołający `sessionLog('event', …)` po nagłówku
+fazy w OBU gałęziach `MAIN_LOG_NOISE` (komendy gracza i pętla bota) — wpis jest
+ZWYKŁYM wpisem logu, bez własnego rodzaju, klasy i koloru (uwaga właściciela
+2026-09-20d: log ma wyglądać tak, jak wyglądał). Granice pinuje
 strażnik: wpis NIE trafia do modala „Rozgrywka” (`botMoves`) ani do zapisu tur
 dla AI (`turnHistory`) — decyzja właściciela z 2026-08-02 zostaje w mocy.
 Pułapka złapana testem: pierwsza wersja wrappera wołała `whoN` (istnieje tylko
@@ -6412,6 +6417,8 @@ w closures deskryptorów zdarzeń) → `RuntimeError: whoN is not defined`;
 naprawa na `who()` z zasięgu sesji.
 
 Strażnik: `test/zgloszenie-j-tapniecia-many-w-logu.test.js` (3 piny; przed
-poprawką plik czerwony) + e2e w `test/table-ui.test.js` (talia „g-canonized”: po zapłacie wiersz `log-tap` z „Swamp → B” w logu stołu, ten sam wpis z symbolami („→ {B}”) w polu „Log partii”, zero „na manę” w zapisie tur dla AI; RED przed poprawką — `wierszeTap.length >= 1` pada). Bramy: `node tools/run-tests.mjs all` **6025/6025**
+poprawką plik czerwony) + e2e w `test/table-ui.test.js` (talia „g-canonized”: po
+zapłacie wiersz „Ty tapujesz na manę: Swamp → B” w logu; zero „na manę”
+w zapisie tur dla AI; RED przed poprawką — brak wiersza). Bramy: `node tools/run-tests.mjs all` **6025/6025**
 (6022 + 3), `npm run build` 59 modułów / **3950,9 kB**. Lekcja: **L157** (log
 debugowy bierze zdarzenie o treści, której szuka gracz — i ma granicę).

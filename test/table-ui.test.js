@@ -668,15 +668,15 @@ test('kreator many (zgłoszenie G): {1}{B} przy czterech lądach domyka się w D
   // (decyzja właściciela 2026-08-02: modal/AI bez tapowania many).
   // Uwaga: wiersze logu trzymają treść w DZIECIACH (nazwy kart są owijane
   // w klikalne <span data-card-id>), a symbole many renderują się jako IKONY —
-  // dlatego na stole czytamy „→ B”, a pełny zapis z symbolami („→ {B}”) jest
-  // w polu „Log partii” (czysty tekst danych, ten sam, który idzie do schowka).
-  const wierszeTap = dom.get('log').children.filter((row) => /log-tap/.test(row.className));
+  // dlatego w logu czytamy „→ B”. Wpis jest ZWYKŁYM wierszem logu (bez
+  // własnej klasy i koloru — uwaga właściciela 2026-09-20), więc szukamy go
+  // po treści, nie po klasie.
+  const wierszeTap = dom.get('log').children
+    .filter((row) => /na manę:/.test(textOf(row)));
   assert.ok(wierszeTap.length >= 1,
-    `log stołu bez wiersza „tap” po zapłacie: ${textOf(dom.get('log')).slice(-200)}`);
+    `log bez wiersza tapnięcia po zapłacie: ${textOf(dom.get('log')).slice(-200)}`);
   assert.match(textOf(dom.get('log')), /Ty tapujesz na manę: Swamp → B/,
-    `log stołu bez wiersza tapnięcia z nazwą źródła i kolorem: ${textOf(dom.get('log')).slice(-200)}`);
-  assert.match(textOf(dom.get('log-text')), /Ty tapujesz na manę: Swamp → \{B\}/,
-    '„Log partii” (pole tekstowe) nie pokazuje tapnięcia na manę');
+    `log bez wiersza tapnięcia z nazwą źródła i kolorem: ${textOf(dom.get('log')).slice(-200)}`);
   assert.doesNotMatch(textOf(dom.get('turn-history')), /na manę/,
     'tapnięcia na manę nie należą do zapisu tur dla AI');
 });

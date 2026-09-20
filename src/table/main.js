@@ -128,10 +128,10 @@ function bootstrapTable() {
     handEnemyLabel: el('hand-enemy-label'),
     actions: el('actions'),
     log: el('log'),
-    // Zgłoszenie C (2026-09-20): narzędzia sekcji „Log partii" (select zakresu
-    // + kopiowanie wybranej tury / całej partii + pole z tekstem logu).
+    // Zgłoszenie C (2026-09-20): narzędzia sekcji „Log partii" — select zakresu
+    // + kopiowanie wybranej tury / całej partii. Sekcja zostaje jedną listą
+    // logu: żadnego dodatkowego pola z tekstem (uwaga właściciela 2026-09-20d).
     logTurnSelect: el('log-turn-select'),
-    logText: el('log-text'),
     logCopyTurn: el('log-copy-turn'),
     logCopyAll: el('log-copy-all'),
     turnHistory: el('turn-history'),

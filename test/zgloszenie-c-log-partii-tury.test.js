@@ -5,8 +5,13 @@
 //        drukowana na bieżąco);
 //   C3 — chronologia: najnowsze na DOLE, nowe wiersze dopisywane na końcu.
 // Test pilnuje zakresów sesji (log niesie numer tury i gracza) oraz renderu
-// (kolejność listy, opcje selecta, pole tekstowe, brak duplikatów po dwóch
-// renderach — plan A–E, ryzyko 3).
+// (kolejność listy, opcje selecta, brak duplikatów po dwóch renderach —
+// plan A–E, ryzyko 3).
+//
+// Korekta właściciela (2026-09-20): jego zlecenie C obejmowało WYŁĄCZNIE
+// kopiowanie logu/wybranej tury do schowka i chronologię. Sekcja „Log partii”
+// ma zostać jedną listą logu + select zakresu + dwa przyciski; żadnego
+// dodatkowego pola tekstowego obok (to była nadmiarowa implementacja).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -79,7 +84,7 @@ function makeEls() {
   const els = {};
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn',
     'exileZone', 'hand', 'handEnemy', 'actions', 'log', 'turnHistory', 'turnHistoryCount',
-    'turnHistorySelect', 'logText', 'logTurnSelect', 'metaFoe', 'metaOwn', 'daynight',
+    'turnHistorySelect', 'logTurnSelect', 'metaFoe', 'metaOwn', 'daynight',
     'undercity', 'poison', 'speed', 'hoverPreview']) {
     const tag = key === 'logTurnSelect' ? 'select' : 'div';
     els[key] = new MiniEl(tag);
@@ -169,32 +174,50 @@ test('C/2: tekst „cała partia" rośnie na bieżąco (nowe wpisy na końcu)', 
   assert.ok(after.startsWith(before), 'wcześniejsze zdania zostają na początku (dopisywanie na końcu)');
 });
 
-test('C/1+C2: render panelu — select z „cała partia" domyślnie, pole tekstowe wg zakresu', () => {
+test('C/1+C2: render panelu — select z „cała partia" domyślnie, zakres wg wyboru', () => {
   const { registry, decks } = buildDecks();
   const session = createSession({ seed: 35, registry, decks });
   playSome(session, 20);
   const els = makeEls();
   renderLogPanel(els, session, selectedLogTurn(els));
-  // Domyślnie: „cała partia" na czele listy i wybrana, więc pole drukuje cały log.
+  // Domyślnie: „cała partia" na czele listy i wybrana — to zakres kopiowania.
   assert.equal(els.logTurnSelect.children[0].value, 'all');
   assert.equal(els.logTurnSelect.children[0].textContent, 'cała partia');
   assert.equal(els.logTurnSelect.value, 'all', 'domyślny wybór to „cała partia"');
-  assert.equal(els.logText.textContent, session.logTextAll(), 'pole drukuje całą partię na bieżąco');
+  assert.equal(selectedLogTurn(els), 'all', 'zakres kopiowania bierze się z selecta');
   // Wszystkie tury są wybieralne (pozycja „cała partia" + każda tura).
   const turns = session.logTurnEntries();
   assert.equal(els.logTurnSelect.children.length, turns.length + 1, 'lista = cała partia + wszystkie tury');
   for (const turn of turns) {
     assert.ok(els.logTurnSelect.children.some((o) => o.value === String(turn.number)), `tura ${turn.number} w liście`);
   }
-  // Wybór tury: pole pokazuje TYLKO tę turę.
+  // Wybór tury: zakres kopiowania to TA tura, a sesja daje jej tekst.
   els.logTurnSelect.value = String(turns[0].number);
   renderLogPanel(els, session, selectedLogTurn(els));
-  assert.equal(els.logText.textContent, session.logTextFor(turns[0].number));
-  assert.equal((els.logText.textContent.match(/\*\*Tura/g) ?? []).length, 1, 'jedna tura = jeden nagłówek');
+  assert.equal(selectedLogTurn(els), turns[0].number, 'wybór gracza jest zakresem kopiowania');
+  assert.equal((session.logTextFor(turns[0].number).match(/\*\*Tura/g) ?? []).length, 1,
+    'jedna tura = jeden nagłówek w tekście do skopiowania');
   // Odbudowa listy nie gubi wyboru gracza (ten sam zestaw tur = ten sam DOM).
   const optionRef = els.logTurnSelect.children[1];
   renderLogPanel(els, session, selectedLogTurn(els));
   assert.equal(els.logTurnSelect.children[1], optionRef, 'lista nie jest odbudowywana bez zmiany zestawu tur');
+});
+
+test('C (korekta właściciela): sekcja „Log partii" to JEDNA lista + select + dwa przyciski', () => {
+  // Zlecenie C: kopiowanie logu/wybranej tury i chronologia. Sekcja nie ma
+  // prawa pokazywać drugiego pola z tekstem logu (to była nadmiarowa
+  // implementacja sesji) ani własnych kolorów wpisów.
+  const html = fs.readFileSync('src/table/index.html', 'utf8');
+  const od = html.indexOf('<summary>Log partii</summary>');
+  assert.ok(od > 0, 'brak sekcji „Log partii" w index.html');
+  const sekcja = html.slice(od, html.indexOf('</details>', od));
+  assert.match(sekcja, /id="log-turn-select"/, 'brak selecta zakresu w sekcji');
+  assert.match(sekcja, /id="log-copy-turn"/, 'brak przycisku „Kopiuj wybraną turę"');
+  assert.match(sekcja, /id="log-copy-all"/, 'brak przycisku „Kopiuj całą partię"');
+  assert.match(sekcja, /id="log"/, 'brak listy logu w sekcji');
+  assert.doesNotMatch(sekcja, /id="log-text"/, 'sekcja ma drugie pole z tekstem logu');
+  assert.doesNotMatch(html, /\.log-text-box\s*\{/, 'został styl dodatkowego pola tekstowego');
+  assert.doesNotMatch(html, /\.log-tap\s*\{/, 'wpisy tapnięć mają własny kolor (a nie mają mieć)');
 });
 
 test('C/3: lista logu renderuje się chronologicznie — najstarsze u góry, nowe na końcu', () => {

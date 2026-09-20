@@ -554,14 +554,8 @@
   .log-step { color: var(--muted-2); }
   .log-system { color: var(--gold); font-weight: 700; }
   .log-rejection { color: var(--red); }
-  /* J (zgłoszenie właściciela 2026-09-20): tapnięcia/produkcja many mają
-     własny, wyciszony kolor w logu — to wpisy debugowe, nie narracja. */
-  .log-tap { color: var(--muted-2); }
   .reasoning-entry { color: var(--text); font-size: 12px; line-height: 1.45; margin-bottom: 6px; padding: 5px 8px; background: var(--bg-panel-2); border-radius: 8px; }
   .turn-history-controls { gap: 12px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
-  /* C (2026-09-20): pole z tekstem logu do skopiowania — ograniczona wysokość,
-     żeby nie spychało listy logu (tekst rośnie z każdym zdarzeniem). */
-  .log-text-box { max-height: 220px; overflow-y: auto; margin-bottom: 8px; }
   .turn-history-toggle { font-size: 13px; color: var(--text); display: inline-flex; align-items: center; gap: 4px; }
   .turn-history-toggle input { accent-color: var(--gold); }
   /* M188/K: wybór dowolnej tury z listy (zamiast 1/2 ostatnich). */
@@ -1202,9 +1196,9 @@
       <summary>Log partii</summary>
       <div class="panel-body">
         <!-- Zgłoszenie C (2026-09-20): te same narzędzia co w „Przebieg tur
-             (dla AI)", ale nad logiem stołu — Tura: select (z pozycją „cała
-             partia" wybraną domyślnie i drukowaną na bieżąco) + kopiowanie
-             wybranego zakresu albo całej partii. -->
+             (dla AI)", ale nad LISTĄ logu (niżej) — Tura: select (z pozycją
+             „cała partia" wybraną domyślnie) wybiera zakres kopiowania;
+             kopiowany jest LOG, a nie zapis dla AI. -->
         <div class="row turn-history-controls">
           <label class="turn-history-toggle" for="log-turn-select">Tura:</label>
           <select id="log-turn-select" class="turn-history-select">
@@ -1213,7 +1207,6 @@
           <button id="log-copy-turn" class="ghost-btn" type="button">Kopiuj wybraną turę</button>
           <button id="log-copy-all" class="ghost-btn" type="button">Kopiuj całą partię</button>
         </div>
-        <pre class="turn-history-box log-text-box" id="log-text"></pre>
         <div class="log-wrap" id="log"></div>
       </div>
     </details>

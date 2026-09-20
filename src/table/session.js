@@ -2570,19 +2570,22 @@ export function createSession(config) {
     log.push({ kind, text, turn: turn.number, playerId: turn.activePlayerId });
   };
   /**
-   * J: tapnięcie/produkcja many trafia do LOGU STOŁU (a przez to także do
+   * J: tapnięcie/produkcja many trafia do LOGU (a przez to także do tekstu
    * „Log partii”, który czyta ten sam strumień). Świadomie NIE do bufora
    * modala „Rozgrywka” (`botMoves`) — decyzja właściciela (2026-08-02): modal
    * nie pokazuje tapowania many, bo zamienia się w klikanie bez treści.
-   * Rodzaj wpisu `tap` daje w logu własny kolor (`log-tap`), a w tekstach
-   * „Log partii” pełne zdanie z kolorem many.
+   *
+   * Wpis jest ZWYKŁYM wpisem logu (rodzaj `event`, jak „Zagrywasz Forest”) —
+   * bez własnego rodzaju, klasy i koloru: log ma wyglądać dokładnie tak, jak
+   * wyglądał (uwaga właściciela 2026-09-20). Jedyna nowość to sama TREŚĆ
+   * zdania z nazwą źródła i symbolami wyprodukowanej many.
    */
   const logManaSource = (e) => {
     const text = manaSourceLogText(e, {
       nameOfObject: (id) => nameOfObject(id),
       who: e.playerId != null ? who(e.playerId) : null,
     });
-    if (text) sessionLog('tap', text);
+    if (text) sessionLog('event', text);
   };
   // M167/E2: odwrócona mapa nazwa→cardId — render logu owija nazwy kart
   // w klikalne znaczniki (pełnoekranowa ilustracja przez delegację w main).

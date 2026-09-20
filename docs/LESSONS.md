@@ -380,7 +380,7 @@ o dwóch nogach (kompozycja + ścieżka produkcyjna przez nią przechodzi).
 
 ## L87 (2026-08-29) — Skutek, którego nie widać, zamienia się w komunikat, że go NIE BYŁO (dwie bramki: zdarzenie i bramka szumu)
 
-**Przypadek:** — transkrypt `worek-mroczny vs theros` (seed 47): „Kulrath Mystic — trigger (rzucenie czaru)" + „trigger bez efektu (nie było czego wykonać…
+**Przypadek:** — transkrypt `worek-mroczny vs theros` (seed 47): „Kulrath Mystic — trigger (rzucenie czaru)" + „trigger bez efektu…
 
 **Reguła:**
 1. Skutek bez zdarzenia = skutek niewidoczny: każdy efekt zapisujący stan
@@ -568,7 +568,7 @@ zmiany w `src/`. Gdy wynik nie drgnął po realnej zmianie, najpierw podejrzewaj
 nieaktualny artefakt (L33 — najpierw podejrzewaj narzędzie).
 ## L71 (2026-08-25) — Zmiana strefy tworzy NOWY obiekt (CR 400.7); „ten sam" id to złudzenie
 
-**Przypadek:** — naprawa wyceny darmowego rzutu wyglądała na działającą (testy zielone), a była martwa: helper szukał opisu czaru po `cmd.cardId` w `view.…
+**Przypadek:** — naprawa wyceny darmowego rzutu wyglądała na działającą (testy zielone), a była martwa: helper szukał czaru po `cmd.cardId`…
 
 **Reguła:** rozróżniaj tożsamość karty od tożsamości obiektu i sprawdzaj, po
 czym indeksowana jest strefa. Gdy lookup zwraca `undefined`, kod nie jest
@@ -726,7 +726,7 @@ istnieje, ma nazwę i komentarz, więc temat uchodzi za zabezpieczony.
 → Pełna procedura: [L13].
 ## L62 (2026-08-25) — Kolejność renderu to część kontraktu: log rysowany od najnowszego łamie liczenie „nowych" po indeksie
 
-**Przypadek:** — kolektor wpisów logu w Żywym Testerze („odpytuj nowe linie `#log` po indeksie" — wg handoffu) znajdował 0 wpisów, choć sesja je generow…
+**Przypadek:** — kolektor wpisów logu w Żywym Testerze („odpytuj nowe linie `#log` po indeksie") znajdował 0 wpisów, choć sesja je generow…
 
 **Reguła:** zanim oprzesz narzędzie na „nowe elementy = ogon listy", sprawdź w
 renderze kierunek rysowania (`reverse()`, `prepend`, `insertBefore`,
@@ -816,7 +816,7 @@ DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
 
 ## L55 (2026-08-22) — Jedno pole na „cechę trwałą" i „efekt do końca tury" to bomba zegarowa; badge liczony z pola technicznego kłamie
 
-**Przypadek:** — **M187/N1** — token Phyrexian Mite („This token can't block") zaczynał legalnie blokować po pierwszym cleanupie: `cantBlock` niosło EFEKT…
+**Przypadek:** — **M187/N1**: token Phyrexian Mite („This token can't block") blokował po pierwszym cleanupie — `cantBlock` niosło EFEKT…
 
 **Reguła:**
 1. Pole opisujące stan trwały i wygasający rozdziel (`cantBlockPrinted` vs
@@ -885,7 +885,7 @@ Fixtury talii bierz z talii JEDNOPLANOWYCH (worki są przejściowe — ADR 0023 
 
 ## L50 (2026-08-18) — Nowy typ efektu w karcie batcha wymaga WYCENY w heuristic-bocie
 
-**Przypadek:** — dwie karty Batch 35 weszły z martwą wyceną: bot aktywował Basilisk Gate ({2},{T}: +X/+X) na stwora PRZECIWNIKA i rzucał Twiddle na górę w…
+**Przypadek:** — dwie karty Batch 35 weszły z martwą wyceną: bot aktywował Basilisk Gate ({2},{T}: +X/+X) na stwora PRZECIWNIKA, a Twiddle…
 
 **Reguła:** przy nowym typie efektu sprawdź wycenę w OBU ścieżkach
 (`cast_spell`, `activate_ability`); sonda: grep typu w
@@ -1072,7 +1072,7 @@ Strażnicy M348: `test/table-tester-runtime-errors.test.js`, żywe A/B.
 
 ## L14 (2026-08-15) — Jedna instrukcja, dwie zasady: sklejone reguły to gotowy bug
 
-**Przypadek:** — M101/B5 (CR 302.6) i B6 (CR 702.19b) to ten sam błąd w dwóch miejscach silnika: **dwie niezależne zasady wyrażone jedną instrukcją** —…
+**Przypadek:** — M101/B5 (CR 302.6) i B6 (CR 702.19b) to ten sam błąd w dwóch miejscach: **dwie niezależne zasady wyrażone jedną instrukcją** —…
 
 **Wzorzec:** reguła B obowiązywała „przy okazji" reguły A. Kod nie był zły, był
 NIEDOSPECYFIKOWANY — w miejscu, gdzie testy przechodziły, bo szczęśliwa
@@ -1184,7 +1184,7 @@ Pełne przykłady per warstwa: archiwum.
 
 ## L22 (2026-08-16) — Akcja, która PRZEWIJA grę, musi kończyć się ponownym renderem
 
-**Przypadek:** — po zaznaczeniu ptaszka „nie przerywaj auto-passu" kolejne tapnięcie gracza kończyło się „Ruch odrzucony: illegal_cast: Zagranie poza main…
+**Przypadek:** — po zaznaczeniu ptaszka „nie przerywaj auto-passu" kolejne tapnięcie gracza dawało „Ruch odrzucony: illegal_cast…
 
 **Reguła:** każda ścieżka UI mogąca zmienić stan gry (`apply`,
 `continueBotPlay`, `recheckAutoPass`, wznowienie zapisu) kończy się tą samą
@@ -1282,7 +1282,7 @@ typów (tu: 44 z `card-data.js`) i odwrócenie domyślności.
 
 ## L29 (2026-08-17) — Fallback `?? slug` to cichy wyciek, nie zabezpieczenie
 
-**Przypadek:** — Trzy z dziesięciu błędów M122 miały ten sam kształt: gracz widział surowy identyfikator (`trigger (enchanted_permanent_tapped)`, `efekt…
+**Przypadek:** — Trzy z dziesięciu błędów M122 miały ten sam kształt: gracz widział surowy identyfikator (`trigger (enchanted_permanent_tapped)`…
 
 **Reguła:** wszędzie, gdzie jest mapa „identyfikator → tekst dla gracza",
 napisz **test-niezmiennik**: każdy klucz występujący w danych ma wpis w mapie.
@@ -1481,7 +1481,7 @@ tylko zapamiętane.
 
 ## L46 (2026-08-18) — Animacja „do końca tury" + trwały stan = cleanup musi resynchronizować
 
-**Przypadek:** — Spacecraft Wedgelight Rammer (próg 9+ charge → stwór) ożywiony animacją Skilled Animator do 5/5, po 9 charge i końcu tury wracał do art…
+**Przypadek:** — Spacecraft Wedgelight Rammer (próg 9+ charge → stwór) ożywiony do 5/5 animacją Skilled Animator wracał do art…
 
 **Reguła:** gdy encja ma efekt chwilowy i trwały warunek, cleanup przywracający
 chwilowy MUSI przeliczyć trwały. Inaczej trwały stan ginie razem z chwilowym,
@@ -2348,7 +2348,10 @@ mówi nic; (2) „dodatkowo” nie znaczy „wszędzie” — wpis idzie do logu
 (czyta go „Log partii”), a granicę (brak wpisu w modalu „Rozgrywka” i w zapisie
 tur dla AI — decyzja właściciela 2026-08-02) pinuj testem; (3) pomocnik istnieje
 tylko w SWOIM closure: `whoN` z deskryptora zdarzeń nie jest widoczny w zasięgu
-sesji — wołaj `who()` z tego samego zakresu.
+sesji — wołaj `who()` z tego samego zakresu; (4) zlecenie „dodaj wpis do logu”
+nie jest zgodą na dodatki obok: wpis dostaje zwykły rodzaj (bez własnego
+koloru), a sekcji nie przybywa drugie pole — właściciel odrzucił oba
+(2026-09-20d).
 
 **Strażnik:** `test/zgloszenie-j-tapniecia-many-w-logu.test.js` — 3 piny
 (reguła; wpis w logu; granice), przed poprawką plik czerwony.

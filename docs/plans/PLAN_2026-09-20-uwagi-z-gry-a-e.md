@@ -65,14 +65,16 @@ zachowanie.
 Zgłoszenia: C1 — przyciski jak w „Przebieg tur (dla AI)", ale działające na
 logu gry (`Tura:` select + „Kopiuj wybraną turę" + „Kopiuj całą partię");
 C2 — lista rozwijana z WSZYSTKIMI turami oraz „cała partia" (domyślnie
-wybrana, drukowana na bieżąco); C3 — chronologia odwrotna: najnowsze na DOLE,
-nowe wiersze dopisywane na końcu.
+wybrana); C3 — chronologia odwrotna: najnowsze na DOLE, nowe wiersze
+dopisywane na końcu.
 
 **Naprawa:** wpisy logu dostają numer tury i aktywnego gracza (sesja), sesja
 wystawia `logEntries()`, `logTurnEntries()`, `logTextAll()`, `logTextFor(n)`;
-panel „Log partii" dostaje select + dwa przyciski + pole tekstowe (`<pre>`)
-z wybranym zakresem („cała partia" domyślnie, odświeżane na bieżąco), a lista
-styli logu renderuje się w kolejności CHRONOLOGICZNEJ (najstarsze u góry).
+sekcja „Log partii" dostaje select zakresu + dwa przyciski kopiowania, a lista
+logu renderuje się w kolejności CHRONOLOGICZNEJ (najstarsze u góry). Sekcja
+zostaje JEDNĄ listą logu — bez dodatkowego pola z tekstem (uwaga właściciela
+2026-09-20d: zlecenie obejmowało kopiowanie i chronologię, nie drugi widok
+logu; nadmiarowe pole zostało usunięte razem z jego stylem).
 Zachowanie formatu: log bez zmian treści (te same zdania), tylko kolejność i
 nowe narzędzia kopiowania; etykiety tur jak w panelu AI
 („Tura N — Czarodziejka/Nieprzyjaciel").
