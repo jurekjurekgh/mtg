@@ -6284,3 +6284,63 @@ bez zmian.
 
 Bramy: `npm test` **5974/5974, 0 fail**, `npm run build` 64 moduły /
 3953,0 kB.
+
+## M394 (2026-09-20) — uwagi z gry A–E: plan karty, landcycling bez celu, „Log partii", pipy zdolności w podziale, garda bota
+
+Pięć zgłoszeń właściciela z partii (2026-09-20), naprawianych paczkami na
+gałęzi PR #130; plan i tabela stanu:
+`docs/plans/PLAN_2026-09-20-uwagi-z-gry-a-e.md`.
+
+**A (`633178f`) — Time to Feed w talii Theros.** Karta wjechała do
+`decks/theros.txt`, bo w danych proweniencji (`tools/collection-art-ids.csv`)
+jej plan był przepisany z NAZWY SETU (THS), a nie z arkusza kolekcji
+(ADR 0029); arkusz mówi „Wiedźmin". Dane wracają do arkusza, karta jedzie do
+talii planu „Wiedźmin" (mono-zielona → strona BG), liczności README
+z pomiaru M203/7. Strażnik: `test/zgloszenie-a-time-to-feed-plan.test.js`.
+
+**B (`a92f982`) — landcycling, gdy w bibliotece nie ma już celu.** Bot
+aktywował Mountaincycling Seismic Monstrosaura bez Gór w bibliotece — karta
+z ręki i mana szły w pustkę. Bot zna teraz WŁASNĄ talię (`ownDeck`; przekazują
+ją sesja i benchmark, brak talii = zachowanie sprzed zgłoszenia) i liczy DOLNĄ
+granicę „kopie w talii − kopie widoczne poza biblioteką" (pole bitwy, ręka,
+grób, stos, wygnanie); 0 → kara `finish(-12)` zamiast premii. Oba warianty
+cyklowania: typecycling (`cycling.subtypes`) i basic landcycling
+(`cycling.allTypes`). Strażnik: `test/zgloszenie-b-landcycling-bez-celu.test.js`
+(4 przypadki, w tym kontrola pozytywna i brak wiedzy o talii).
+
+**C (`998afc8`) — „Log partii": kopiowanie i chronologia.** Panel po stronie
+AI dostał lustrzane narzędzia: select z WSZYSTKIMI turami + „cała partia"
+(domyślnie, drukowana na bieżąco), przyciski „Kopiuj wybraną turę"/„Kopiuj
+całą partię" i pole tekstowe odświeżane przy każdym renderze; lista renderuje
+się CHRONOLOGICZNIE (najnowsze na dole, nowe wiersze na końcu). Zakresy liczy
+jedno źródło w sesji (`logEntries`/`logTurnEntries`/`logTextAll`/`logTextFor`)
+— wpisy logu niosą numer tury i aktywnego gracza. Strażnik:
+`test/zgloszenie-c-log-partii-tury.test.js`.
+
+**D (`b9a22ce`) — bezkolorowe karty z kolorowymi pipami zdolności.**
+`splitColorsOf` czytało dla artefaktu wyłącznie kolory PRODUKOWANEJ many, więc
+Simian Simulacrum (unearth {2}{G}{G}) trafiał jako „wypełniacz" do Dominarii WU.
+Nowy `abilityCostColorsOf` (pipy kosztów zdolności aktywowanych oraz kosztów
+alternatywnych/dodatkowych czaru) decyduje o stronie karty BEZKOLOROWEJ;
+`effects[].colors` świadomie poza zakresem (to kolor TWORZONEGO TOKENU, nie
+karty — pułapka Call the Mountain Chocobo). Pełne wejście pipów do funkcji celu
+podziału zmierzone i odrzucone (przenosiło CAŁY podział Dominarii, 46
+czerwonych testów); maski i nazwy talii bez zmian. Strażnik:
+`test/zgloszenie-d-pipy-zdolnosci-podzial.test.js` (4/4).
+
+**E (`7cdcc3d`) — bot oddawał gardę przy 2 życiach.** Wycena per-stwór
+(wymiana → `power - 1`) była podbijana premią za wyścig (+8, przy życiu ≤ 2
++20), więc atak bez planu na kontratak wychodził na plus. `declare_attackers`
+liczy teraz `throwsGuard` (przed atakiem garda wystarczała do przeżycia, po
+ataku już nie, a atak nie wygrywa teraz), wtedy POMIJA premię za wyścig
+(L3 — inaczej przebija każdą drobną karę) i odejmuje `crackbackPenalty: 12`
+(`heuristic-params.js`); atak letalny na stole zmusza wroga do blokowania,
+a blokery ginące w wymuszonych blokach znikają z kontrataku (`forcedBlockLoss`).
+Zmiana premii dla pinów D/3 (ten sam atak 3/1 vs 3/3 przy 3 życiach)
+odnotowana w commicie. Strażnik: `test/zgloszenie-e-oddana-garda.test.js`
+(6/6; RED 5/1 — czerwone tylko E/1, scenariusz właściciela).
+
+**Bramy:** `npm test` **5997/5997**, `npm run build` 64 moduły / **3970,2 kB**,
+benchmark quick 672 mecze: heuristic 85,9% (przed zmianą 86,0% — szum),
+golden-master `overallHash` 4514c1cf65d99082… **bez zmian** po pkgu E (kara nie
+dotyka próbkowanych decyzji).

@@ -39,22 +39,26 @@ nie mając w talii Mountains. To bezsensowne zmarnowanie many i karty z ręki…
 Przecież grający zna swoją talię i wie, że jeśli ma określoną ilość basic lands
 na stole to więcej w talii nie ma. Dotyczy wszystkich land-cyclingów."
 
-**Pomiar (do zrobienia w paczce):** scena z Seismic Monstrosaur na ręce i
-zerem Gór w bibliotece (wszystkie znane poza biblioteką) → `activate_ability`
-z oferty, wycena dodatnia (gałąź `cycling` bez `drawCards` daje +2) — bot
-wyrzuca kartę i płaci {2} za wyszukanie, które nie może znaleźć niczego
-(CR 701.19b: „fail to find").
+**Pomiar (potwierdzony w paczce):** scena z Seismic Monstrosaur na ręce i zerem
+Gór w bibliotece → bot brał `activate_ability` z oferty, bo gałąź `cycling`
+bez `drawCards` była wyceniana na +2 („wyszukanie ziemi to wartość") — karta
+i mana szły w pustkę dokładnie tak, jak opisał właściciel. Reguła gry stoi po
+jego stronie: gracz zna SWOJĄ talię i wie, ile kopii celu jeszcze zostało.
 
-**Naprawa:** bot dostaje WŁASNĄ talię (`ownDeck` — deklaracja z sesji/
-benchmarku, tak jak `opponentDeck`; gracz zna swoją talię, więc to nie FoW)
-i liczy, ile kart pasujących do kryterium wyszukiwania MOŻE jeszcze być
-w bibliotece: `liczba w talii − kopie widoczne poza biblioteką` (pole bitwy,
-ręka, grób, stos, wygnanie). Gdy wychodzi 0 → aktywacja jest czystą stratą
-(kara, nie premia), niezależnie od typu cyklowania: typecycling
+**Naprawa (paczka B, `a92f982`):** bot dostaje WŁASNĄ talię
+(`createHeuristicBot({ ownDeck })`; sesja przekazuje talię bota, benchmark obie
+talie — brak `ownDeck` = zachowanie sprzed zgłoszenia, kompatybilność
+wsteczna dla testów jednostkowych). Z listy liczone są kopie (`ownCounts`),
+a predykat „czy w bibliotece MOŻE jeszcze być cel" liczy DOLNĄ granicę:
+`kopie w talii − kopie widoczne poza biblioteką` (pole bitwy, ręka, grób, stos,
+wygnanie). Gdy wychodzi 0 → aktywacja jest czystą stratą (kara `finish(-12)`,
+nie premia), niezależnie od wariantu cyklowania: typecycling
 (`cycling.subtypes`, np. Mountaincycling) i basic landcycling
-(`cycling.allTypes`, np. Fiery Fall). Jedno źródło predykatu: „czy w
-bibliotece może jeszcze być cel" (L41/L48) — używane przez wycenę aktywacji
-i przez przyszłe decyzje tego samego typu.
+(`cycling.allTypes`, np. Fiery Fall). Strażnik:
+`test/zgloszenie-b-landcycling-bez-celu.test.js` — brak celu w bibliotece
+(brak aktywacji), kontrola pozytywna (Góra w bibliotece → cykluje), Fiery Fall
+bez landów w bibliotece (brak aktywacji) i brak wiedzy o talii = stare
+zachowanie.
 
 ## C. UI — sekcja „Log partii": kopiowanie i chronologia
 
@@ -86,14 +90,24 @@ bezkolorowej czyta WYŁĄCZNIE kolory produkowanej many
 (`getSourceForObject`). Simian Simulacrum nic nie produkuje → pusta tożsamość
 → „wypełniacz" → algorytm dosypuje go do mniejszej strony (WU).
 
-**Naprawa:** tożsamość kolorowa karty bezkolorowej = suma (a) kolorów
-produkowanej many i (b) pipów kosztów JEJ ZDOLNOŚCI (koszty aktywowane,
-w tym koszty alternatywne/dodatkowe: unearth, escape, flashback, plot,
-bestow, suspend, madness, warp, surge, kicker, morph…). To zarazem reguła
-MtG „color identity" (koszt zdolności liczy się do tożsamości), więc
-decyzja nie jest arbitralna. Churn talii liczony generatorem; jeśli zmiana
-dotknie pary z `SNAPSHOT_CONFIG` — świadoma regeneracja golden-mastera
-z atrybucją (L25).
+**Naprawa (paczka D, `cdd090d`) — zakres zawężony pomiarem:** tożsamość
+kolorowa karty bezkolorowej = kolory produkowanej many ORAZ pipy kosztów JEJ
+ZDOLNOŚCI; dla kart kolorowych bez zmian (chodzi głównie o artefakty — „może
+trafić do każdej talii", więc pytać o zdolność trzeba właśnie tutaj).
+`abilityCostColorsOf` czyta koszty zdolności aktywowanych (`ability.cost.colors`:
+unearth, cycling, equip) i koszty alternatywne/dodatkowe czaru (`escape`,
+`flashback`, `buyback`, `cleave`), a ŚWIADOMIE pomija `effects[].colors` — to
+kolor TWORZONEGO TOKENU, nie karty (pułapka Call the Mountain Chocobo: tworzy
+zielonego ptaka, a sam ma tylko czerwony flashback). To zarazem reguła MtG
+„color identity". Pełne wejście pipów do funkcji celu podziału zostało
+ZMIERZONE i odrzucone: przenosiło CAŁY podział Dominarii (WU|BRG → UB|WRG, 46
+czerwonych testów) — został wariant, w którym pipy decydują o stronie karty
+bezkolorowej, a maski/nazwy talii się nie zmieniają (stąd `dominaria-wu` i
+`dominaria-brg` bez zmian nazw). Churn: dominaria-brg 18 (+Simian — zgłoszenie
+załatwione), dominaria-wu 15, mirrodin-brg/wu po jednej karcie (Trigon of
+Corruption ↔ Ichorclaw Myr, niezależnie od Simiana); liczności w README
+z pomiaru M203/7, golden-master świadomie zregenerowany z atrybucją (L25 —
+pary i seedy bez zmian, więc ten sam zakres próbkowania).
 
 ## E. Bot oddaje gardę przy 2 życiach i przegrywa kontratakiem
 
@@ -102,20 +116,26 @@ Zgłoszenie: „Bot ma 2 życia i jedną kreaturę 2/2 na stole. Ja też mam jed
 bota. To bez sensu działanie bota. Nie powinien się odsłaniać mając tak mało
 życia."
 
-**Pomiar (do zrobienia w paczce):** stan z życia bota 2 przy obu 2/2 —
-`enemyBoardPower(view) >= myLife(view)` włącza gałąź `racing`, a premia
-wyścigu (+8/+20) przebija wszystkie kary za oddanie blokera; atak dostaje
-wynik dodatni.
+**Pomiar (potwierdzony w paczce):** przy moich 2 życiach i po jednym 2/2 na obu
+stronach atak dostawał wynik DODATNI — wycena per-stwór (wymiana →
+`power - 1`) była podbijana premią za wyścig (+8, przy życiu ≤ 2 nawet +20),
+a zegar wygrywał cenę gardy, choć po ataku nie zostawał żaden bloker.
 
-**Naprawa:** nowa kara „oddana garda" (crackback) w wycenie
-`declare_attackers`: jeśli po ataku (atakujący tapnięci) wrogie stwory mogą
-zadać co najmniej tyle obrażeń, ile mam życia, a PRZED atakiem garda
-wystarczała do przeżycia następnej tury (blokery zatrzymywały atak), to
-atak zamienia przeżycie w przegraną — kara liczona względem premii wyścigu
-(L3: kara musi być liczona razem z premią, nie obok niej), z wyjątkiem
-ataku, który wygrywa grę (lethal zostaje +1000). Model gardy: sumaryczna
-moc wroga minus wytrzymałości blokerów zostających w domu (chump/trade),
-deterministycznie i po deskryptorach (ADR 0002).
+**Naprawa (paczka E, `06a83ab`):** kara „oddana garda" (crackback) w wycenie
+`declare_attackers`. Model gardy: `guardToughness` = suma wytrzymałości MOICH
+niezatapniętych, niezadeklarowanych blokerów (`cantBlock`/`detained` poza
+rachunkiem); `enemyCrackbackPower` = moc wrogich stworów mogących zaatakować
+w następnej turze (tapnięte liczą się, bo w turze wroga się odtapiają). Garda
+jest „oddana", gdy atak NIE wygrywa teraz (`winsNow`: `penetratingPower >=
+życie wroga` albo wygrana trucizną — lethal zostaje), kontratak w ogóle grozi
+(`crackbackPower > 0`), a po ataku przeżycie znika (przed atakiem
+`crackbackPower − guardToughness < moje życie`, po ataku już nie). Wtedy
+pomijamy premię za wyścig (L3 — inaczej +8/+20 przebija każdą drobną karę)
+i odejmujemy `P.crackbackPenalty` (= 12). Wyjątek zmierzony w pinie: atak
+LETALNY na stole zmusza wroga do blokowania — blokery, które przy tym giną
+(najtańsze najpierw, wytrzymałość ≤ najmocniejszy atak), znikają z kontrataku
+(`forcedBlockLoss`), żeby strażnik nie karał ataku kończącego grę.
+Deterministycznie i po deskryptorach (ADR 0002).
 
 ## Kolejność paczek i kryteria
 
@@ -132,6 +152,31 @@ Każda paczka: RED→GREEN (stash-proof plików źródłowych), zielone `npm tes
 build, benchmark quick, ewentualny churn talii + README (M203/7), wpis w
 `docs/ENGINE_MILESTONES.md`, `docs/PROJECT_HISTORY.md`, handoff i lekcje
 (zapis tylko dla klas ogólnych — L-kody cytowane w kodzie muszą istnieć).
+
+## Stan realizacji (2026-09-20)
+
+Wszystkie paczki zrealizowane na gałęzi PR #130 — kolejność, dowody i bramy:
+
+| Paczka | Commit | Strażnik (pin) | Bramy / pomiar |
+| --- | --- | --- | --- |
+| A | `633178f` | `test/zgloszenie-a-time-to-feed-plan.test.js` | talie po regeneracji: `theros` 26/9/17, `wiedzmin-bg` 26/9/17 (Forest 4); liczności README z pomiaru M203/7 |
+| B | `a92f982` | `test/zgloszenie-b-landcycling-bez-celu.test.js` (4 przypadki) | `ownDeck` w sesji i benchmarku; brak `ownDeck` = stare zachowanie |
+| C | `998afc8` | `test/zgloszenie-c-log-partii-tury.test.js` | log w kolejności chronologicznej (najnowsze na dole), select z „cała partia" domyślnie + dwa przyciski kopiowania; kolejność pilnuje też `test/m346-tester-kolejnosc-logu.test.js` |
+| D | `cdd090d` | `test/zgloszenie-d-pipy-zdolnosci-podzial.test.js` (4/4) | `npm test` 5991/5991; build 64 moduły / 3966,4 kB; golden `4514c1cf65d99082…` |
+| E | `06a83ab` | `test/zgloszenie-e-oddana-garda.test.js` (6/6; RED 5/1 — czerwone tylko E/1) | `npm test` 5997/5997; build 64 moduły / 3970,2 kB; benchmark quick 672 mecze: heuristic 85,9% (przed zmianą 86,0% — szum, L3) |
+
+Wnioski wykonawcze dla następnej paczki bota:
+
+1. **E a strażnik D/3** (`test/zgloszenie-d-jalowy-atak-w-gang.test.js`): ten sam
+   atak 3/1 za 3/3 przy 3 życiach podpada teraz pod regułę E (wróg może NIE
+   blokować i dobić kontrą), więc fixture mierzy granicę klasyfikacji „jałowego
+   ataku" przy 12 życiach — scenariusz crackbacku ma WŁASNY pin (plik E).
+   Nowe piny walki pisz tak, żeby nie kolidowały z regułą gardy.
+2. **D a generator**: karty są wyłącznie w taliach generowanych (ADR 0023/0024);
+   każdy churn to regeneracja + liczności README (M203/7) + świadoma decyzja
+   o golden-masterze (L25), nigdy ręczna edycja pliku talii.
+3. **B — dolna granica**: przy 0 kopii celu bot nie może się mylić; przy 1+
+   zachowuje się jak dziś (niepewnych kopii nie odejmujemy).
 
 ## Ryzyka rozpoznane z góry
 

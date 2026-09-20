@@ -19,6 +19,45 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-20 — paka uwag z gry A–E (PR #130, gałąź arena/01a0b8fe-mtg)
+
+Zlecenie właściciela (2026-09-20), zaraz po zamknięciu batcha 57: pięć
+zgłoszeń z partii, „do naprawienia jeszcze w tym PR", praca paczkami z commitem
+i pushem po każdej. Plan i tabela stanu:
+[`docs/plans/PLAN_2026-09-20-uwagi-z-gry-a-e.md`](plans/PLAN_2026-09-20-uwagi-z-gry-a-e.md),
+milestone `M394`, lekcja `L155`.
+
+**A** `633178f` — Time to Feed wrócił do planu „Wiedźmin": dane proweniencji
+były przepisane z nazwy setu (ADR 0029), a nie z arkusza kolekcji; talie
+`theros` 26/9/17 i `wiedzmin-bg` 26/9/17 (Forest 4), README z pomiaru M203/7.
+**B** `a92f982` — bot zna WŁASNĄ talię (`ownDeck`) i nie aktywuje landcyclingu,
+gdy w bibliotece nie może już być celu (dolna granica: kopie w talii − kopie
+widoczne poza biblioteką); dotyczy wszystkich land-cyclingów (typecycling
+i basic landcycling). **C** `998afc8` — „Log partii": select wszystkich tur
+z „cała partia" (domyślnie), przyciski kopiowania i chronologia z najnowszymi
+na DOLE; jedno źródło zakresów w sesji. **D** `b9a22ce` — bezkolorowe karty
+z pipami kosztów zdolności idą na stronę, która może je zapłacić (Simian
+Simulacrum → `dominaria-brg`); pełne wejście pipów do funkcji celu podziału
+zmierzone i odrzucone (46 czerwonych testów), golden-master zregenerowany
+świadomie (L25). **E** `7cdcc3d` — wycena `declare_attackers` karze oddanie
+gardy (`crackbackPenalty: 12`), pomija wtedy premię za wyścig i zna wymuszone
+bloki przy ataku letalnym (lekcja L155).
+
+**Bramy:** `npm test` 5997/5997, build 64 moduły / 3970,2 kB, benchmark quick
+672 mecze (heuristic 85,9%, przed zmianą 86,0% — szum), snapshot wycen bota bez
+zmian (`overallHash` 4514c1cf65d99082…). PR #130 czeka na decyzję właściciela.
+
+**Reset workspace w trakcie sesji (pułapka środowiska, §2 ENVIRONMENT):**
+środowisko odtworzyło workspace ze świeżego klona (reflog: `clone: from …`)
+i cofnęło gałąź do `main` — CAŁA niecommitowana praca została w drzewie,
+historia nie. `git ls-remote`/`git fetch` zadziałały ANONIMOWO (repo publiczne,
+mimo wygasłego `GH_TOKEN`), więc `git fetch --depth=1 origin
+arena/01a0b8fe-mtg` odtworzył historię do pkg C (`998afc8`), `git reset --mixed`
+przeniósł wskaźnik bez ruszania plików, a `git status` pokazał dokładnie pkgi
+D + E — odtworzone (nowe SHA: `b9a22ce`/`7cdcc3d`) i wypchnięte. Reguła:
+**przed resetem zawsze sprawdź `git status`; `--mixed` zamiast `--hard`, gdy
+drzewo niesie niecommitowaną pracę.**
+
 ## 2026-09-19b Batch 57 (kolekcja 64–125) — 10 kart właściciela, etapy B0a–B7 (PR #130)
 
 Zlecenie właściciela (2026-09-19): dziesięć kart z jego arkusza kolekcji

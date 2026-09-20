@@ -2001,3 +2001,17 @@ w odpowiedzi (5 — snapshot przy koszcie NIE może zabić żywego odczytu).
 **Druga połowa reguły (automat):** gdy `handFreeCastOffers` jest PUSTE (pusta ręka / brak czaru o mniejszej MV i wspólnym typie), jedynym legalnym wyborem jest rezygnacja — więc `pruneDeadPendingDecisions` domyka decyzję sam, wykonuje `elseEffect` i emituje `hand_free_cast_resolved{declined: true, noCandidates: true}`. Gracz nie dostaje modala z jednym przyciskiem, a token i tak powstaje (zasada właściciela: wybory bez alternatywy są automatyczne).
 
 **Piny:** `test/real-cards-batch57.test.js` — token 2/1 Legendary Monkey Pirate z `keywordGrants: ['haste']`, który realnie atakuje w turze wejścia; brak kandydatów = auto-domknięcie bez komendy w panelu; pusta ręka; rzut zabiera gałąź „If you don't"; panel i log nazywają skutek odmowy. Mutacja (cofnięcie `elseEffect` + auto-domknięcia) → 3 RED.
+
+## L155 (2026-09-20) — przypadek: bot oddawał gardę przy 2 życiach
+
+**Zgłoszenie z partii:** „Bot ma 2 życia i jedną kreaturę 2/2 na stole. Ja też mam jedną 2/2, ale mam 18 życia. Bot atakuje, przepuszczam, dostaję 2, potem dobijam bota. To bez sensu działanie bota. Nie powinien się odsłaniać mając tak mało życia."
+
+**Pomiar:** `declare_attackers` wyceniał atak per-stwór (gałąź wymiany → `power - 1`) i dokładał premię za wyścig, gdy `enemyBoardPower(view) >= myLife(view)` — premia +8 (a przy życiu ≤ 2 nawet +20) przewyższała wszystkie kary za oddanie blokera, więc 2/2 atakujący 2/2 przy moich 2 życiach dostawał wynik dodatni. Kary „co się stanie w następnej turze, gdy atakujący są tapnięci" nie liczył nikt.
+
+**Naprawa:** model gardy po deskryptorach (ADR 0002): `guardToughness(declared)` to suma wytrzymałości moich niezatapniętych, niezadeklarowanych blokerów (`cantBlock`/`detained` poza rachunkiem), a `enemyCrackbackPower(view)` to moc wrogich stworów mogących zaatakować w następnej turze (tapnięte liczą się — w turze wroga się odtapiają). `throwsGuard` = atak NIE wygrywa teraz (`winsNow`: przebicie ≥ życie wroga albo wygrana trucizną), kontratak w ogóle grozi (`crackbackPower > 0`), a przeżycie przed atakiem istniało i po ataku znika (`crackbackPower − guardToughness` przestaje być mniejsze od mojego życia). Wtedy premia za wyścig jest POMIJANA (L3 — kara musi być liczona razem z premią, nie obok niej) i wchodzi `score -= P.crackbackPenalty` (12).
+
+**Wyjątek zmierzony w pinie:** atak LETALNY na stole (suma mocy ≥ życie wroga) zmusza wroga do blokowania — blokery z wytrzymałością ≤ najmocniejszy atak giną, więc ich moc znika z kontrataku (`forcedBlockLoss`, absorbowanie od najtańszego). Bez tego strażnik fałszywie karał atak, który właśnie kończy grę (pin E/2b).
+
+**Kolizja z pinem D/3:** ten sam atak 3/1 za 3/3 przy 3 życiach jest teraz poprawnie karany (wróg może NIE blokować i dobić kontrą), więc `test/zgloszenie-d-jalowy-atak-w-gang.test.js` mierzy granicę klasyfikacji „jałowego ataku" przy 12 życiach — scenariusz crackbacku ma własny pin.
+
+**Piny:** `test/zgloszenie-e-oddana-garda.test.js` — 6 przypadków (scenariusz właściciela; atak letalny zostaje; wymuszony blok oddaje gardę; atakujący z lataniem; wymiana przy pełnym życiu; dwa 2/2 — jeden zostaje w domu). RED: stash `heuristic-bot.js` + `heuristic-params.js` → 5/1.

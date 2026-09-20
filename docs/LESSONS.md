@@ -2307,11 +2307,9 @@ PRZEJĘTEGO; to samo w „dies"/„leaves the battlefield"). Strażnik:
 **Przypadek:** Vandalize {4}{R} przy Górze z Nature's Embrace („{T}: Add two mana of any one color") — oferta obiecywała 5 many, ale płatność do-tapnęła Górę „za 1" i rzut został odrzucony, zostawiając tapnięty ląd i {R} w puli (seed 2039, quick-25).
 
 **Reguła:** ląd z grantem liczy się w ofercie jako `grant` jednostek (producibleMana), więc
-płatność MUSI wyprodukować tyle, ile oferta obiecuje — także wtedy, gdy tapnie go FAZA
-PIPÓW, a plan kolorów nie ma dla niego wiersza (grant „zużyty" finansowaniem źródła
-kosztowego): kolor bierz z `firstUncoveredPipColor`, jak auto-tap sumy. Druga strona tej
-samej klasy (L48): bramka sumy stoi PRZED pierwszą mutacją — po odrzuconej płatności żaden
-ląd nie jest tapnięty, a pula pusta (CR 601.2h).
+płatność MUSI wyprodukować tyle, ile oferta obiecuje — także gdy tapnie go FAZA PIPÓW bez
+wiersza w planie kolorów: kolor bierz z `firstUncoveredPipColor`, jak auto-tap sumy. Druga
+strona klasy (L48): bramka sumy stoi PRZED pierwszą mutacją (CR 601.2h, pula pusta).
 
 **Strażnik:** `test/m374-l48-grant-w-pipach.test.js` (4 piny; mutacje: brak fallbacku koloru
 grantu → piny 1 i 4 RED, brak bramki atomowości → piny 2 i 3 RED).
@@ -2368,3 +2366,12 @@ auto-domknięcie z `noCandidates`; pusta ręka; rzut zabiera gałąź „If you
 don't"; etykiety panelu i logu).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L154)
 
+
+## L155 (2026-09-20) — Premię za zegar licz razem z ceną gardy
+
+**Przypadek:** bot z 2 życia atakował 2/2 w 2/2 (zgłoszenie właściciela).
+**Reguła:** wycenę ataku licz na stanie PO ataku — gdy garda wystarczała do
+przeżycia, a po ataku już nie, premia za wyścig znika i wchodzi jawna kara.
+Wyjątki: atak wygrywający teraz oraz atak letalny (wróg MUSI blokować).
+**Strażnik:** `test/zgloszenie-e-oddana-garda.test.js` — 6/6, RED 5/1.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L155)

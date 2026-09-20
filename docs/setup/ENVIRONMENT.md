@@ -97,6 +97,11 @@ sklejać znaczniki konfliktu.
 - Przed dłuższą operacją (benchmark, pełne testy) upewnij się, że praca jest
   wypchnięta.
 
+- **Odczyt z GitHuba bywa możliwy BEZ ważnego tokenu** (zmierzone 2026-09-20:
+  wygasły `GH_TOKEN` blokował push, a `git ls-remote`/`git fetch` przeszły
+  anonimowo). Po resecie workspace odzyskaj historię fetchem, zanim zaczniesz
+  czekać na odświeżenie połączenia — push nadal wymaga tokenu.
+
 ---
 
 ## 3. Git i GitHub
