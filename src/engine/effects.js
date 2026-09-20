@@ -4721,6 +4721,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
       playerId: ownerId,
       objectId: topId,
       cardId: topCard.cardId,
+      // Zgłoszenie H (właściciel, 2026-09-20): decyzja „co z odsłoniętą kartą?"
+      // musi nazwać ŹRÓDŁO eksploracji (karta na polu bitwy — informacja
+      // publiczna), tak jak pozostałe decyzje resolve_* nazywają źródło
+      // (M162/C, M163/A, M240/K). UI czyta to z widoku decydenta.
+      sourceCardId: sourceObject.cardId ?? null,
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = ownerId;

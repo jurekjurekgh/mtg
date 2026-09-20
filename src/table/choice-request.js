@@ -57,7 +57,7 @@ const CHOICE_TYPE_LABELS = Object.freeze({
  * znany katalogowi i zwraca `null`, gdy to nie karta (np. cel-gracz) — dzięki
  * temu funkcja jest czysta i testowalna bez sesji (wstrzyknięcie, nie import).
  */
-export function previewCardIdOfOption(option, resolveCardId) {
+export function previewCardIdOfOption(option, resolveCardId, view = null) {
   if (!option || typeof option !== 'object' || typeof resolveCardId !== 'function') return null;
   const ordered = [
     // cele (zdolności, czary, decyzje wyboru celu)
@@ -77,6 +77,16 @@ export function previewCardIdOfOption(option, resolveCardId) {
     if (typeof id !== 'string') continue;
     const cardId = resolveCardId(id);
     if (cardId) return cardId;
+  }
+  // H (zgłoszenie właściciela 2026-09-20, Guidestone Compass): są decyzje,
+  // których KOMENDA nie niesie żadnej karty — „Explore: co z odsłoniętą
+  // kartą?” ma dwa warianty (wierzch/grób) bez identyfikatora karty, bo
+  // przedmiot decyzji siedzi w OCZEKUJĄCEJ decyzji. Bez tego gracz nie miał
+  // jak zobaczyć karty, o której wybiera (musiał szukać jej w logu).
+  // `view` jest opcjonalny — bez niego zachowanie jak dotąd.
+  if (view && option.type === 'resolve_explore_choice') {
+    const revealed = view.pendingExplore?.cardId;
+    return typeof revealed === 'string' && revealed ? revealed : null;
   }
   return null;
 }

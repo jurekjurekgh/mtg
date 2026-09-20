@@ -2117,6 +2117,19 @@ function choiceSourceTitle(cmd, session, view) {
     }
     return `${base} — cel triggera`;
   }
+  // H (zgłoszenie właściciela 2026-09-20, Guidestone Compass): modal pytał
+  // „Explore — co z odsłoniętą kartą?” — bez NAZWY karty. Gracz musiał szukać
+  // jej w logu, żeby zdecydować świadomie. Tytuł nazywa ŹRÓDŁO decyzji
+  // (publiczny permanent, jak M162/C i M163/A) i ODSŁONIĘTĄ KARTĘ (jest już
+  // odsłonięta, więc to informacja publiczna). Opcje niosą skutek („zostaw na
+  // wierzchu” / „do grobu”).
+
+  if (cmd?.type === 'resolve_explore_choice' && view?.pendingExplore?.cardId) {
+    const source = view.pendingExplore.sourceCardId
+      ? `${session.nameOf(view.pendingExplore.sourceCardId)} — `
+      : '';
+    return `${source}Explore: ${session.nameOf(view.pendingExplore.cardId)} na wierzchu biblioteki`;
+  }
   if (cmd?.type === 'resolve_modal_choice' && view?.pendingModalTrigger?.cardId) {
     return `${session.nameOf(view.pendingModalTrigger.cardId)} — wybór trybu`;
   }

@@ -1223,7 +1223,10 @@ function bootstrapTable() {
       if (session.cardDetails(id)) return id; // jawny cardId w komendzie
       const cardId = session.state?.objects?.get(id)?.cardId ?? null;
       return cardId && session.cardDetails(cardId) ? cardId : null;
-    });
+    },
+    // H (zgłoszenie właściciela 2026-09-20): decyzje bez karty w komendzie
+    // (Explore) biorą kartę z oczekującej decyzji w widoku.
+    session.view());
   }
 
   function openCardFullscreenByCardId(cardId) {

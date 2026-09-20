@@ -8358,6 +8358,17 @@ export function playerView(state, playerId) {
     pendingHandTopChoice: activeHandTopChoice
       ? { sourceCardId: state.pendingHandTopChoice.sourceCardId ?? null }
       : null,
+    // H (zgłoszenie właściciela 2026-09-20): decyzja Explore pytała „co
+    // z odsłoniętą kartą?" bez NAZWY karty — gracz musiał szukać jej w logu,
+    // żeby zdecydować świadomie. Odsłonięta karta JEST informacją publiczną
+    // (została odsłonięta), ale wystawiamy ją tylko właścicielowi decyzji
+    // (ten sam wzorzec co pendingHandTopChoice), razem ze źródłem eksploracji.
+    pendingExplore: activeExplore
+      ? {
+          sourceCardId: state.pendingExplore.sourceCardId ?? null,
+          cardId: state.pendingExplore.cardId ?? null,
+        }
+      : null,
     // A1 (znalezisko właściciela 2026-09-16, Manor Gate): cel wyboru koloru
     // (purpose: 'mana' lądu / 'protection' aury) + źródło — tytuł grupy w
     // panelu działań i modalu mówi, CO wybór ustala (poprzednio zgadywał
