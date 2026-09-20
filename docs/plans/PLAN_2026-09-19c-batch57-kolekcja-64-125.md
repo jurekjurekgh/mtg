@@ -294,7 +294,7 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
   `SNAPSHOT_CONFIG`). Bramy: `npm test` **5963/5963, 0 fail**; build 64
   moduły / 3927,0 kB. Piny: `test/real-cards-batch57.test.js` 37/37 (8 nowych;
   RED→GREEN na stashu 9 plików: 6 czerwonych).
-- [ ] **B6 (M393) — Baral and Kari Zev** [B6a zrobione, B6b w toku]: **88 Baral and Kari Zev** — licznik
+- [x] **B6 (M393) — Baral and Kari Zev** [B6a ✅ M393a, B6b ✅ M393b]: **88 Baral and Kari Zev** — licznik
   „pierwszy instant/sorcery w turze" per gracz, darmowy rzut z ręki (lesser MV
   + wspólny typ karty, bez kosztów alternatywnych, `{X}` = 0), alternatywa
   „If you don't" → token First Mate Ragavan 2/1 z haste. Testy: pierwszy
@@ -358,6 +358,44 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
   obsłużonych zdarzeń triggerów w `test/batch25-etb-enters-fix.test.js`.
   Bramy: `npm test` **5968/5968, 0 fail**; build 64 moduły / 3942,7 kB.
   Karta zostaje `in-development` — `supported` dopiero w B6b (ADR 0010 §4).
+
+  **Wykonanie B6b (pomiary).** Skutek rezygnacji („If you don't, create First
+  Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains
+  haste until end of turn.") jest CZĘŚCIĄ TEJ SAMEJ decyzji: deskryptor
+  `elseEffect` w danych karty trafia do `pendingHandFreeCast`, a komenda
+  `resolve_hand_free_cast{decline}` wykonuje go ze stubem źródła (LKI, CR
+  603.10 — źródło mogło już opuścić pole bitwy). Dzięki temu odmowa przestaje
+  być pustym ruchem, co jest warunkiem sensownej wyceny bota.
+
+  **Wybór bez alternatywy = automat** (zasada właściciela „zawsze wybory bez
+  alternatywy powinny być automatyczne"): gdy `handFreeCastOffers` jest puste
+  (pusta ręka / brak czaru o mniejszej MV i wspólnym typie), decyzję domyka
+  `pruneDeadPendingDecisions` — bez modala z jednym przyciskiem, z logiem
+  `hand_free_cast_resolved{declined, noCandidates}` i tokenem na stole.
+
+  **Prezentacja i wycena z jednego predykatu** (`elseEffectSummary`
+  w `tokens.js`): widok gracza (`pendingHandFreeCast.alternative`), zdarzenia
+  `hand_free_cast_required`/`_resolved` i bot czytają TEN SAM obiekt —
+  panel nazywa przycisk („Zrezygnuj — utwórz token First Mate Ragavan 2/1
+  (Pośpiech do końca tury)"), log mówi „jeśli nie — token …", a bot wycenia
+  odmowę wartością generycznego `create_token` (12 — ta sama skala co reszta
+  wycen, nie nowa stała), więc z czymś porównuje darmowy czar (baza 45).
+
+  **Haste tokenu jest nadaniem CZASOWYM**: `keywordsUntilEndOfTurn` →
+  `grantKeywordsUntilEndOfTurn` na identach z `token_created` tego samego
+  efektu (nie „ostatni w strefie" — kolejność bywa zajęta przez inne efekty
+  kroku). Token ma wpis katalogowy `token_first_mate_ragavan` (druk ttdc/18,
+  UUID z API — L26), bo strażniki M202/K i M369/I wymagają wpisu i grafiki
+  dla KAŻDEGO tokenu silnika.
+
+  Churn talii: `kaladesh` 26/9/17 → **27/9/18** (Baral and Kari Zev w planie
+  „Kaladesh"), landy 3×Swamp/1×Mountain → 2/2; README z pomiaru M203/7.
+  Golden-master bez zmian (`kaladesh` poza `SNAPSHOT_CONFIG`).
+
+  Bramy: `npm test` **5974/5974, 0 fail**; build 64 moduły / 3953,0 kB;
+  benchmark quick: heuristic **83,3%**, aggro 30,1%, random 3,3%,
+  **0 niedokończonych** (672 mecze). RED→GREEN na stashu czterech plików
+  źródłowych: 3 czerwonych (piny tokenu/auto-rezygnacji) + pin panelu/logu.
 - [ ] **B7 — talie i dokumentacja**: `node tools/generate-plan-decks.mjs`
   (atrybucja churnu per talia), `test/repo-decks.test.js` bez zmian treści
   poza liczbami, `docs/PROJECT_HISTORY.md` + `docs/ENGINE_MILESTONES.md`

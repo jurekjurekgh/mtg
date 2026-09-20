@@ -11256,6 +11256,22 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez fabricate (Glint-Sleeve Artisan)'] },
   }),
 
+  // Token First Mate Ragavan — druk ttdc/18 (Tarkir: Dragonstorm Commander
+  // Tokens; Scryfall 705adcf9-c15b-4f75-afae-939f59aeb308, L26: UUID z API).
+  // Tworzony przez Barala i Kari Zev, gdy gracz NIE skorzysta z darmowego
+  // rzutu („If you don't, create First Mate Ragavan, a legendary 2/1 red
+  // Monkey Pirate creature token. It gains haste until end of turn.").
+  // `set: null` jak inne tokeny silnika — token nie jest taliowalny, więc
+  // status `limited` (ADR 0010 §4), a typing odpowiada deskryptorowi
+  // `create_token` co do litery (strażnik M202/K).
+  defineCard({
+    id: 'token_first_mate_ragavan', name: 'First Mate Ragavan', set: null,
+    types: ['Legendary', 'Creature', 'Token'], subtypes: ['Monkey', 'Pirate'], colors: ['R'],
+    power: 2, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/7/0/705adcf9-c15b-4f75-afae-939f59aeb308.jpg?1783906799',
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Barala i Kari Zev (88)'] },
+  }),
+
   // ---------------------------------------------------------------------------
   // Batch 57 (2026-09-19) — lista właściciela: 64, 66, 70, 77, 80, 82, 85, 88,
   // 90, 125. Dane Oracle + rulingi pobrane ze Scryfalla 2026-09-19, set-aware
@@ -11443,10 +11459,32 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.triggered,
         trigger: { event: 'first_instant_sorcery_cast' },
-        effect: [{ type: 'free_cast_from_hand' }],
+        effect: [{
+          type: 'free_cast_from_hand',
+          // „You may cast … If you DON'T, create First Mate Ragavan, a
+          // legendary 2/1 red Monkey Pirate creature token. It gains haste
+          // until end of turn." — obie gałęzie to JEDNA decyzja (rezygnacja
+          // ma skutek), więc efekt rezygnacji jedzie w deskryptorze.
+          // „gains haste until end of turn" = nadanie CZASOWE
+          // (`keywordsUntilEndOfTurn`), nie wydrukowany keyword (CR 611.2c).
+          elseEffect: {
+            type: 'create_token',
+            cardId: 'token_first_mate_ragavan', name: 'First Mate Ragavan',
+            kind: 'creature', power: 2, toughness: 1, colors: ['R'],
+            // Nadtyp Legendary jest w `types` (tak jak w kartach katalogu —
+            // prawo legend CR 704.5j czyta to pole).
+            types: ['Legendary', 'Creature'], subtypes: ['Monkey', 'Pirate'],
+            keywords: [], keywordsUntilEndOfTurn: ['haste'],
+          },
+        }],
       }),
     ],
-    artId: 88, plan: 'Kaladesh', support: { status: 'in-development', limitations: [] },
+    artId: 88, plan: 'Kaladesh', support: { status: 'supported', limitations: [] },
+    notes: [
+      'ruling TDC 2023-04-14: liczbę liczy CAŁA tura (także czary rzucone przed wejściem Barala), a rzut z triggera ignoruje ograniczenia typu czaru i rozstrzyga się PRZED czarem wyzwalającym',
+      'koszty dodatkowe przy darmowym rzucie są płacone („additional costs are allowed … mandatory"), koszty alternatywne nie są oferowane; X = 0 (CR 107.3b)',
+      'token First Mate Ragavan: legendarny 2/1 Monkey Pirate z haste DO KOŃCA TURY (nadanie czasowe, nie keyword na stałe)',
+    ],
   }),
 
   defineCard({

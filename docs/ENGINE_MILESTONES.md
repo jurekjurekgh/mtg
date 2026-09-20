@@ -6225,3 +6225,62 @@ i w pinie testu.
 
 Bramy: `npm test` **5968/5968, 0 fail**, `npm run build` 64 moduły /
 3942,7 kB.
+
+## M393b (2026-09-19) — Batch 57/B6b: Baral and Kari Zev — ścieżka „If you don't" (token) i wybór bez alternatywy
+
+Domyka kartę 88 (status `supported`, ADR 0010 §4): gałąź odmowy tworzy
+**First Mate Ragavan** — legendarny 2/1 czerwony Monkey Pirate z haste
+DO KOŃCA TURY.
+
+**Skutek rezygnacji jest częścią TEJ SAMEJ decyzji.** Efekt
+`free_cast_from_hand` niesie w danych karty `elseEffect` (deskryptor generyczny,
+ADR 0002), a `pendingHandFreeCast` kolejkuje go razem z decyzją — dlatego
+odmowa nie jest pustym ruchem, a komenda `resolve_hand_free_cast{decline}`
+wykonuje efekt z LKI źródła (stub `{id, controllerId, cardId}` — źródło mogło
+już opuścić pole bitwy, CR 603.10; token kontroluje gracz decyzji).
+
+**Wybór bez alternatywy jest automatyczny** (zasada właściciela): gdy
+`handFreeCastOffers` jest PUSTE (pusta ręka albo brak czaru o mniejszej MV
+i wspólnym typie), jedynym legalnym wyborem jest rezygnacja — więc
+`pruneDeadPendingDecisions` domyka decyzję sam, wykonuje `elseEffect`
+i emituje `hand_free_cast_resolved{declined: true, noCandidates: true}`.
+Gracz nie widzi modala z jednym przyciskiem, a token i tak powstaje.
+
+**Skutek odmowy jedzie JEDNYM predykatem do prezentacji i wyceny**:
+`elseEffectSummary` (tokens.js) redukuje deskryptor do postaci widokowej
+(`{type, name, power, toughness, keywords, keywordsUntilEndOfTurn}`) i ten
+sam obiekt dostaje widok gracza (`view.pendingHandFreeCast.alternative`),
+zdarzenie `hand_free_cast_required`/`hand_free_cast_resolved` i heurystyka.
+Panel nazywa przycisk „Zrezygnuj — utwórz token First Mate Ragavan 2/1
+(Pośpiech do końca tury)", log — „jeśli nie — token …", a bot nie wycenia już
+odmowy jako ruchu jałowego: bierze wartość tokenu z tej samej skali co
+generyczne `create_token` (12), więc nadal woli darmowy czar (45), ale ma
+z czym porównywać (L41/L48 — jedno źródło dla panelu, logu i wyceny).
+
+**Token w katalogu**: `token_first_mate_ragavan` z drukiem ttdc/18
+(Scryfall `705adcf9-…`, UUID z API — L26), `set: null`, status `limited`
+(„token — nie można umieścić w talii"), `imageUri` z `cards.scryfall.io`.
+Strażniki M202/K (wpis + grafika + zgodność z deskryptorem) i M369/I
+(każdy token silnika ma ilustrację) czerwieniły się na brak wpisu — dlatego
+wpis jest w tym samym commicie co mechanika.
+
+**Haste tokenu jest nadaniem CZASOWYM** (`keywordsUntilEndOfTurn` →
+`grantKeywordsUntilEndOfTurn`), nie wydrukowanym keywordem: zdolność znika
+w cleanupie, a token zachowuje resztę cech (CR 611.2c). Identy utworzonych
+tokenów zbieramy z `token_created` w tym samym efekcie, żeby nadać DOKŁADNIE
+im (kolejność strefy bywa zajęta przez inne efekty tego samego kroku).
+
+Piny: `test/real-cards-batch57.test.js` — 5 nowych (rezygnacja tworzy token
+2/1 Legendary Monkey Pirate z `keywordGrants: ['haste']` i realnie atakuje
+w tej samej turze; brak kandydatów = auto-domknięcie z `noCandidates: true`
+i bez komendy w panelu; to samo przy pustej ręce; rzut zabiera gałąź „If you
+don't" — token NIE powstaje; panel i log nazywają skutek odmowy). RED→GREEN
+na stashu czterech plików źródłowych: 3 czerwone.
+
+Churn: `kaladesh` (plan „Kaladesh" — Baral and Kari Zev) — liczności
+26/9/17 → **27/9/18** (README z pomiaru M203/7, nie z ręki), landy
+3×Swamp/1×Mountain → 2/2. Talia poza `SNAPSHOT_CONFIG`, więc golden-master
+bez zmian.
+
+Bramy: `npm test` **5974/5974, 0 fail**, `npm run build` 64 moduły /
+3953,0 kB.

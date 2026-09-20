@@ -1736,12 +1736,23 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // dotyczy wybór (M106/Z2).
       case 'hand_free_cast_required': {
         const typ = (e.cardTypes ?? []).join('/').toLowerCase() || 'instant/sorcery';
-        return `${nameOf(e.sourceCardId)} — ${whoN(e.playerId)} może rzucić czar (${typ}) o MV < ${e.maxManaValue} z ręki bez płacenia kosztu many`;
+        const base = `${nameOf(e.sourceCardId)} — ${whoN(e.playerId)} może rzucić czar (${typ}) o MV < ${e.maxManaValue} z ręki bez płacenia kosztu many`;
+        // B6b: gdy odmowa ma skutek („If you don't, create …"), komunikat
+        // mówi, co gracz dostaje za rezygnację — inaczej log opisuje połowę
+        // decyzji (deskryptor z decyzji, nie nazwa karty w kodzie).
+        if (e.alternative?.type === 'create_token') {
+          return `${base}; jeśli nie — token ${e.alternative.name} ${e.alternative.power}/${e.alternative.toughness}`;
+        }
+        return base;
       }
       case 'hand_free_cast_resolved':
-        return e.declined
-          ? `${whoN(e.playerId)} nie rzuca darmowego czaru z ręki (${nameOf(e.sourceCardId)})`
-          : `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)} z ręki bez płacenia kosztu many (${nameOf(e.sourceCardId)})`;
+        if (!e.declined) return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)} z ręki bez płacenia kosztu many (${nameOf(e.sourceCardId)})`;
+        // B6b: przy braku kandydatów silnik domyka decyzję sam (wybór bez
+        // alternatywy) — gracz nie klikał, więc log musi powiedzieć DLACZEGO
+        // (M106/Z2), a nie udawać jego decyzji.
+        return e.noCandidates
+          ? `${nameOf(e.sourceCardId)} — brak czaru o mniejszej mana value we wspólnym typie, więc ${whoN(e.playerId)} nie rzuca (automatycznie)`
+          : `${whoN(e.playerId)} nie rzuca darmowego czaru z ręki (${nameOf(e.sourceCardId)})`;
       case 'grave_free_cast_resolved':
         return e.declined
           ? `${whoN(e.playerId)} rezygnuje z rzutu z grobu (${nameOf(e.sourceCardId)})`

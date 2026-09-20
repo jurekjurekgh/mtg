@@ -6871,7 +6871,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // czysty zysk (karta + efekt za 0 many) — dlatego baza wyżej niż przy
         // oknie grobu, gdzie trzeba zapłacić {X}. Wycena wariantu ta sama co
         // w rodzinie (cele/tryby/koszt dodatkowy — jedno źródło, L41).
-        if (cmd.decline) return finish(4);
+        // Rezygnacja NIE jest jałowa, gdy zdolność ma gałąź „If you don't,
+        // create …": wtedy bot porównuje rzut z realnym skutkiem odmowy
+        // (widok niesie `alternative` — jedno źródło prawdy o decyzji).
+        if (cmd.decline) return finish(view.pendingHandFreeCast?.alternative ? 12 : 4);
         const handCard = cmd.objectId
           ? (view.zones.hand ?? []).find((o) => o.id === cmd.objectId)
           : null;

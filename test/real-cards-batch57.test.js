@@ -673,10 +673,12 @@ test('B57/77: tapnięcie wygania DOKŁADNIE dwie wierzchnie karty i pozwala zagr
 test('B57/88: trigger odpala się tylko przy PIERWSZYM instant/sorcery w turze', () => {
   const s = game();
   put(s, 'baral', 'baral-and-kari-zev', 'p1', 'battlefield');
-  put(s, 'i1', 'brute-force', 'p1', 'hand');   // instant MV1
-  put(s, 'i2', 'brute-force', 'p1', 'hand');
+  // Pierwszy czar MV2 (instants/sorcery), drugi MV1 — dzięki temu decyzja
+  // ma realny wariant rzutu (MV1 < MV2) i NIE domyka się automatycznie.
+  put(s, 'i1', 'raise-the-alarm', 'p1', 'hand');   // instant MV2
+  put(s, 'i2', 'brute-force', 'p1', 'hand');        // instant MV1
   put(s, 'foe', 'lightwalker', 'p2', 'battlefield');
-  addMana(s, 'p1', 2, { colors: ['R', 'G'] });
+  addMana(s, 'p1', 4, { colors: ['R', 'W', 'G'] });
   assert.ok(commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'i1'), 'oferta rzutu pierwszego instanta');
   run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'i1'));
   passUntil(s, () => s.pendingHandFreeCast != null);
@@ -785,4 +787,114 @@ test('B57/88: rezygnacja domyka decyzję i przywraca priorytet', () => {
     [...s.objects.values()].some((o) => o.cardId === 'brute-force' && o.zone === 'hand'),
     'karta została w ręce',
   );
+});
+
+// ---------------------------------------------------------------------------
+// B6b (M393b) — 88 Baral and Kari Zev: ścieżka „If you don't" → token
+// First Mate Ragavan 2/1 (legendary Monkey Pirate) z haste do końca tury,
+// plus domknięcie automatyki: brak kandydatów = brak modala.
+// ---------------------------------------------------------------------------
+sanity('baral-and-kari-zev', 88, 'TDC', 'Kaladesh');
+
+test('B57/88: rezygnacja tworzy token First Mate Ragavan 2/1 z haste do końca tury', () => {
+  const s = game();
+  put(s, 'baral', 'baral-and-kari-zev', 'p1', 'battlefield');
+  put(s, 'trig', 'raise-the-alarm', 'p1', 'hand');   // instant MV2
+  put(s, 'mniejsze', 'brute-force', 'p1', 'hand');    // instant MV1 → jest kandydat
+  put(s, 'foe', 'lightwalker', 'p2', 'battlefield');
+  addMana(s, 'p1', 2, { colors: ['R', 'W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'trig'));
+  passUntil(s, () => s.pendingHandFreeCast != null);
+  run(s, commands(s).find((c) => c.type === 'resolve_hand_free_cast' && c.decline));
+  const token = find(s, 'token_first_mate_ragavan', 'battlefield');
+  assert.ok(token, 'token powstał z rezygnacji');
+  assert.equal(token.name, 'First Mate Ragavan');
+  assert.equal(token.power, 2);
+  assert.equal(token.toughness, 1);
+  assert.deepEqual(token.colors, ['R']);
+  assert.deepEqual(token.subtypes, ['Monkey', 'Pirate']);
+  assert.ok((token.types ?? []).includes('Legendary'), 'token jest legendarny (prawo legend)');
+  assert.deepEqual(token.keywordGrants, ['haste'], 'haste nadany DO KOŃCA TURY (nie wydrukowany)');
+  assert.equal(token.controllerId, 'p1', 'token kontroluje gracz decyzji');
+  // Haste realnie działa: token może atakować w tej samej turze.
+  s.turn = jumpToStep(s.turn, 'declare_attackers', 'p1');
+  s.turn.activePlayerId = s.turn.priorityPlayerId = 'p1';
+  s.turn.passes = 0;
+  const oferta = commands(s).find((c) => c.type === 'declare_attackers');
+  assert.ok(oferta, 'jest oferta deklaracji atakujących');
+  run(s, { type: 'declare_attackers', playerId: 'p1', attackerIds: [token.id] });
+  assert.equal(s.objects.get(token.id)?.tapped, true, 'token z haste zaatakował w turze wejścia');
+});
+
+test('B57/88: brak kandydatów = wybór bez alternatywy (silnik domyka sam, token powstaje)', () => {
+  const s = game();
+  put(s, 'baral', 'baral-and-kari-zev', 'p1', 'battlefield');
+  put(s, 'trig', 'raise-the-alarm', 'p1', 'hand');    // MV 2 — tylko czar wyzwalający
+  put(s, 'rowne', 'negate', 'p1', 'hand');            // MV 2 — „lesser" wyklucza
+  put(s, 'inny', 'tome-scour', 'p1', 'hand');         // sorcery MV1 — inny typ
+  put(s, 'foe', 'lightwalker', 'p2', 'battlefield');
+  addMana(s, 'p1', 4, { colors: ['R', 'W', 'U', 'B'] });
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'trig'));
+  passUntil(s, () => find(s, 'token_first_mate_ragavan', 'battlefield') != null);
+  assert.equal(s.pendingHandFreeCast, null, 'decyzja domknięta automatycznie');
+  assert.equal(
+    commands(s).some((c) => c.type === 'resolve_hand_free_cast'), false,
+    'nie ma o co pytać — żadnego modala z jednym przyciskiem',
+  );
+  assert.ok(
+    s.events.some((e) => e.type === 'hand_free_cast_resolved' && e.noCandidates === true),
+    'log mówi, dlaczego nastąpiła rezygnacja',
+  );
+});
+
+test('B57/88: brak kandydata przy PUSTEJ ręce — token też powstaje (auto)', () => {
+  const s = game();
+  put(s, 'baral', 'baral-and-kari-zev', 'p1', 'battlefield');
+  put(s, 'trig', 'raise-the-alarm', 'p1', 'hand');
+  put(s, 'foe', 'lightwalker', 'p2', 'battlefield');
+  addMana(s, 'p1', 2, { colors: ['R', 'W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'trig'));
+  passUntil(s, () => find(s, 'token_first_mate_ragavan', 'battlefield') != null);
+  assert.ok(find(s, 'token_first_mate_ragavan', 'battlefield'), 'token powstał');
+});
+
+test('B57/88: darmowy rzut z ręki i token to JEDNA decyzja (rzut nie tworzy tokenu)', () => {
+  const s = game();
+  put(s, 'baral', 'baral-and-kari-zev', 'p1', 'battlefield');
+  put(s, 'trig', 'raise-the-alarm', 'p1', 'hand');
+  put(s, 'mniejsze', 'brute-force', 'p1', 'hand');
+  put(s, 'foe', 'lightwalker', 'p2', 'battlefield');
+  addMana(s, 'p1', 2, { colors: ['R', 'W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'trig'));
+  passUntil(s, () => s.pendingHandFreeCast != null);
+  run(s, commands(s).find((c) => c.type === 'resolve_hand_free_cast' && !c.decline && (c.targets ?? []).includes('foe')));
+  assert.equal(find(s, 'token_first_mate_ragavan', 'battlefield'), undefined, 'rzut zabiera gałąź „If you don\'t"');
+  assert.ok(
+    [...s.objects.values()].some((o) => o.cardId === 'brute-force' && o.zone === 'stack'),
+    'darmowy czar na stosie',
+  );
+});
+
+test('B57/88: panel i log nazywają skutek odmowy (token), nie pustą rezygnację', async () => {
+  const { commandLabel } = await import('../src/table/render.js');
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const s = game();
+  put(s, 'baral', 'baral-and-kari-zev', 'p1', 'battlefield');
+  put(s, 'trig', 'raise-the-alarm', 'p1', 'hand');   // instant MV2
+  put(s, 'mniejsze', 'brute-force', 'p1', 'hand');    // instant MV1 → decyzja zostaje otwarta
+  put(s, 'foe', 'lightwalker', 'p2', 'battlefield');
+  addMana(s, 'p1', 2, { colors: ['R', 'W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'trig'));
+  passUntil(s, () => s.pendingHandFreeCast != null);
+  const view = playerView(s, 'p1');
+  const declineCmd = commands(s).find((c) => c.type === 'resolve_hand_free_cast' && c.decline);
+  const label = String(commandLabel(declineCmd, {}, view)).replace(/<[^>]+>/g, '');
+  assert.match(label, /Zrezygnuj — utwórz token First Mate Ragavan 2\/1/, `przycisk odmowy nazywa nagrodę: ${label}`);
+  assert.match(label, /do końca tury/, `haste jest nadany czasowo: ${label}`);
+  const required = s.events.find((e) => e.type === 'hand_free_cast_required');
+  const text = describeGameEvent(required, {
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId,
+    nameOfObject: () => '?',
+  });
+  assert.match(text, /jeśli nie — token First Mate Ragavan 2\/1/, `log nazywa skutek odmowy: ${text}`);
 });

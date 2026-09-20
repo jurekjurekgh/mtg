@@ -9,7 +9,7 @@ import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
 import { getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
-import { createBattlefieldToken, nextCopyNumber, nextFaceDownCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
+import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, nextFaceDownCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
 
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
@@ -2335,8 +2335,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const tokenController = effect.controllerFromEvent
       ? (context[effect.controllerFromEvent] ?? sourceObject.controllerId)
       : sourceObject.controllerId;
+    const createdTokenIds = [];
     for (let i = 0; i < amount; i += 1) {
-      createBattlefieldToken(state, tokenController, {
+      createdTokenIds.push(createBattlefieldToken(state, tokenController, {
         cardId: effect.cardId,
         name: effect.name,
         kind: effect.kind ?? 'creature',
@@ -2355,7 +2356,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         ...(effect.toxic != null ? { toxic: effect.toxic } : {}),
         // M147 (Static Net — Powerstone): token wchodzi ZATAPNIĘTY.
         tapped: Boolean(effect.tapped),
-      });
+      })?.id);
+    }
+    // „It gains haste until end of turn" (Baral and Kari Zev, ruling TDC
+    // 2023-04-14; CR 611.2c) — nadanie CZASOWE (`keywordGrants`), nie
+    // wydrukowany keyword: w cleanupie znika, a token zachowuje resztę cech.
+    // Deskryptor generyczny (ADR 0002), nie warunek na nazwę karty. Identy
+    // tworzonych tokenów zbieramy z `token_created`, żeby nadać DOKŁADNIE im
+    // (kolejność strefy bywa zajęta przez inne efekty tego samego kroku).
+    for (const keyword of effect.keywordsUntilEndOfTurn ?? []) {
+      for (const created of createdTokenIds) grantKeywordsUntilEndOfTurn(state, created, [keyword]);
     }
     return;
   }
@@ -2676,10 +2686,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       sourceCardId: sourceObject.cardId ?? null,
       cardTypes: castTypes,
       maxManaValue: context.spellManaValue ?? 0,
+      // „If you don't, create First Mate Ragavan …" — efekt rezygnacji jest
+      // CZĘŚCIĄ TEJ SAMEJ decyzji (deskryptor w danych karty). Bez niego
+      // odmowa byłaby pustym ruchem i bot zawsze brałby pierwszą ofertę.
+      elseEffect: effect.elseEffect ?? null,
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = sourceObject.controllerId;
     state.events.push(event('hand_free_cast_required', {
+      // Skutek rezygnacji jedzie z decyzją do widoku i logu (jedno źródło —
+      // `elseEffectSummary`); panel nazywa go w etykiecie przycisku, więc
+      // gracz widzi, CO dostaje, gdy nie rzuci czaru.
+      ...(effect.elseEffect ? { alternative: elseEffectSummary(effect.elseEffect) } : {}),
       playerId: sourceObject.controllerId, sourceCardId: sourceObject.cardId ?? null,
       maxManaValue: context.spellManaValue ?? 0, cardTypes: castTypes,
     }));

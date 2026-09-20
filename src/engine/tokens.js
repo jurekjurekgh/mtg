@@ -38,6 +38,29 @@ export const TREASURE_TOKEN_ABILITY = Object.freeze({
 });
 
 /** Efekt `create_token` dla Skarbu — gotowy do wstawienia w deskryptor karty. */
+/**
+ * Skrót deskryptora skutku REZYGNACJI z decyzji typu „You may … If you
+ * don't, …" dla prezentacji, widoku gracza i wyceny bota. Jedno źródło
+ * prawdy (L41/L48): panel (etykieta przycisku), log sesji i heurystyka
+ * czytają ten sam obiekt zamiast trzech kopii reguły „co się dzieje, gdy
+ * gracz odmówi". Zwraca `null`, gdy rezygnacja nie ma własnego skutku
+ * (wtedy odmowa jest ruchem jałowym — tak ją wycenia bot).
+ */
+export function elseEffectSummary(effect) {
+  if (!effect || typeof effect !== 'object') return null;
+  if (effect.type === 'create_token') {
+    return Object.freeze({
+      type: 'create_token',
+      name: effect.name ?? null,
+      power: effect.power ?? null,
+      toughness: effect.toughness ?? null,
+      keywords: Object.freeze([...(effect.keywords ?? [])]),
+      keywordsUntilEndOfTurn: Object.freeze([...(effect.keywordsUntilEndOfTurn ?? [])]),
+    });
+  }
+  return Object.freeze({ type: effect.type });
+}
+
 export const TREASURE_TOKEN_EFFECT = Object.freeze({
   type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
   colors: [], types: Object.freeze(['Artifact']), subtypes: Object.freeze(['Treasure']),

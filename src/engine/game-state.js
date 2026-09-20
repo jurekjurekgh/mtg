@@ -29,7 +29,7 @@ import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tr
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities } from './attachments.js';
-import { createBattlefieldToken, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
+import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
@@ -1099,6 +1099,32 @@ function pruneDeadPendingDecisions(state) {
     } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
+  }
+  // Batch 57/B6b (Baral and Kari Zev): decyzja BEZ ŻADNEGO wariantu rzutu
+  // (pusta ręka / brak czaru o mniejszej MV i wspólnym typie) nie ma czego
+  // pytać — jedynym legalnym wyborem jest rezygnacja, więc silnik domyka ją
+  // sam („wybory bez alternatywy są automatyczne" — ta sama rodzina co
+  // auto-skip ślepych decyzji). Skutek „If you don't, create …" biegnie
+  // normalnie: to on jest tu jedynym realnym wynikiem.
+  if (state.pendingHandFreeCast
+    && handFreeCastOffers(state, state.pendingHandFreeCast.playerId, state.pendingHandFreeCast).length === 0) {
+    const pending = state.pendingHandFreeCast;
+    state.pendingHandFreeCast = null;
+    if (pending.elseEffect) {
+      applyEffect(state, pending.elseEffect, {
+        id: pending.sourceId, controllerId: pending.playerId,
+        cardId: pending.sourceCardId, zone: 'none', kind: null,
+      }, []);
+    }
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    const e = event('hand_free_cast_resolved', {
+      playerId: pending.playerId, sourceCardId: pending.sourceCardId,
+      ...(pending.elseEffect ? { alternative: elseEffectSummary(pending.elseEffect) } : {}),
+      declined: true, noCandidates: true,
+    });
+    state.events.push(e); emitted.push(e);
   }
   while (state.pendingDeliriumTargets.length > 0
     && !deliriumDecisionPending(state, state.pendingDeliriumTargets[0])) {
@@ -2639,11 +2665,25 @@ export function execute(state, input) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
       }
       state.events.push(event('hand_free_cast_resolved', {
-        playerId: pending.playerId, sourceCardId: pending.sourceCardId, ...patch,
+        playerId: pending.playerId, sourceCardId: pending.sourceCardId,
+        ...(pending.elseEffect ? { alternative: elseEffectSummary(pending.elseEffect) } : {}),
+        ...patch,
       }));
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     };
-    if (cmd.decline || cmd.objectId == null) return finish({ declined: true });
+    if (cmd.decline || cmd.objectId == null) {
+      // „If you don't, create First Mate Ragavan …" — efekt rezygnacji jest
+      // częścią tej samej decyzji (dane karty). Źródło triggera mogło już
+      // opuścić pole bitwy, więc token tworzy KONTROLER decyzji, a stub źródła
+      // niesie LKI (CR 603.10) — jak Skarb Vaana.
+      if (pending.elseEffect) {
+        applyEffect(state, pending.elseEffect, {
+          id: pending.sourceId, controllerId: pending.playerId,
+          cardId: pending.sourceCardId, zone: 'none', kind: null,
+        }, []);
+      }
+      return finish({ declined: true });
+    }
     // L48: wariant komendy musi odpowiadać jednej z ofert (liczonym tym samym
     // predykatem co panel). Dzięki temu walidacja celów/trybów/kosztów
     // dodatkowych jest dokładnie tą, którą gracz widział.
@@ -8286,9 +8326,25 @@ export function playerView(state, playerId) {
     legalCommands.length = 0;
     legalCommands.push(...unique);
   }
+  // Batch 57/B6b (Baral and Kari Zev): widok decyzji darmowego rzutu z ręki
+  // dla JEJ właściciela. `alternative` mówi, że rezygnacja ma własny skutek
+  // („If you don't, create …") — bez tego bot wyceniałby odmowę jako ruch
+  // jałowy i zawsze brałby pierwszą ofertę rzutu, także wtedy, gdy odmowa
+  // daje token. Informacja publiczna: to treść zdolności permanentu na polu.
+  const pendingHandFreeCastView = state.pendingHandFreeCast
+    && state.pendingHandFreeCast.playerId === playerId
+    ? {
+      maxManaValue: state.pendingHandFreeCast.maxManaValue,
+      cardTypes: [...(state.pendingHandFreeCast.cardTypes ?? [])],
+      // Deskryptor skutku odmowy (albo null, gdy odmowa nic nie robi) — z
+      // niego panel nazywa przycisk rezygnacji i wycenia ją bot.
+      alternative: elseEffectSummary(state.pendingHandFreeCast.elseEffect),
+    }
+    : null;
   return Object.freeze({
     playerId, status: state.status, winnerId: state.winnerId, isDraw: Boolean(state.isDraw), players, turn: { ...state.turn },
     zones, legalCommands, pendingScry, pendingSurveil, pendingFertileThicket: pendingFertileThicketView, pendingBackup: pendingBackupView,
+    pendingHandFreeCast: pendingHandFreeCastView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
     pendingOpponentTarget: pendingOpponentTargetView,
     pendingLookTopN: pendingLookTopNView,

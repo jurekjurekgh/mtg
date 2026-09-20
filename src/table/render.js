@@ -1080,7 +1080,14 @@ function describeEffect(e, ctx = {}) {
     take_initiative: () => 'obejmij inicjatywę',
     pay_x_cast_from_graveyard: () => 'możesz zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu za darmo (potem wygnanie)',
     // Batch 57/B6a (Baral and Kari Zev): decyzja darmowego rzutu z ręki.
-    free_cast_from_hand: () => 'możesz rzucić z ręki czar o mniejszym mana value i wspólnym typie bez płacenia kosztu many',
+    // B6b: gdy odmowa MA skutek („If you don't, create …"), opis musi go
+    // wymienić — inaczej opis zdolności kłamie o połowie efektu (L1: etykieta
+    // z pominięciem gałęzi = niepełny Oracle). Deskryptor generyczny, bez
+    // nazwy karty w kodzie (ADR 0002) — nazwa i P/T jadą z danych karty.
+    free_cast_from_hand: () => 'możesz rzucić z ręki czar o mniejszym mana value i wspólnym typie bez płacenia kosztu many'
+      + (e.elseEffect?.type === 'create_token'
+        ? `; jeśli nie — utwórz token ${e.elseEffect.name ?? '?'} ${e.elseEffect.power ?? '?'}/${e.elseEffect.toughness ?? '?'}`
+        : ''),
     draw_cards: () => `dobierz ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     lose_life: () => `utrata ${e.amount ?? 1} życia`,
     pay_mana: () => `zapłać ${e.amount} many`,
@@ -2613,6 +2620,27 @@ export function protectionQualityLabel(quality) {
   return parts.length ? parts.join(' i ') : 'wybranym źródłem';
 }
 
+/**
+ * Etykieta przycisku REZYGNACJI w decyzji darmowego rzutu z ręki
+ * (Baral and Kari Zev, 88). Gdy odmowa ma własny skutek („If you don't,
+ * create …"), przycisk nazywa go — z deskryptora decyzji
+ * (`view.pendingHandFreeCast.alternative`, jedno źródło z efektem), więc
+ * działa dla każdej karty o tym wzorze, a nie tylko dla tej jednej
+ * (ADR 0002: żadnej nazwy karty w kodzie).
+ */
+function declineLabelForHandFreeCast(view) {
+  const alternative = view?.pendingHandFreeCast?.alternative;
+  if (alternative?.type !== 'create_token') return 'Zrezygnuj (nie rzucam darmowego czaru)';
+  const keywords = [
+    ...(alternative.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k),
+    // „It gains haste until end of turn" — nadanie CZASOWE, więc etykieta
+    // mówi to wprost (odmowa daje stwora zdolnego do ataku w tej turze).
+    ...(alternative.keywordsUntilEndOfTurn ?? []).map((k) => `${KEYWORD_LABELS[k] ?? k} do końca tury`),
+  ];
+  const name = `${alternative.name ?? 'token'} ${alternative.power ?? '?'}/${alternative.toughness ?? '?'}`;
+  return `Zrezygnuj — utwórz token ${name}${keywords.length > 0 ? ` (${keywords.join(', ')})` : ''}`;
+}
+
 export function commandLabel(cmd, session, view) {
   // M223 (audyt Batch 50): karty ujawnione decydentowi przez blokującą decyzję
   // (scry / look_top / manifest dread) są w BIBLIOTECE (ukrytej), więc etykieta
@@ -3437,7 +3465,11 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_hand_free_cast': {
       // Batch 57/B6a: N wariantów = N czarów z ręki × zestawy celów/trybów —
       // bez nazwy karty i celu wszystkie wyglądają identycznie (L29).
-      if (cmd.decline || cmd.objectId == null) return 'Zrezygnuj (nie rzucam darmowego czaru)';
+      // B6b: rezygnacja, która MA skutek („If you don't, create …"), musi go
+      // nazwać — inaczej przycisk wygląda jak ruch jałowy i gracz nie wie, że
+      // za odmowę dostaje token (deskryptor z decyzji, nie z nazwy karty).
+      if (cmd.decline || cmd.objectId == null) return declineLabelForHandFreeCast(view);
+
       const hfcTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const hfcCard = obj(cmd.objectId);
       const hfcMode = (cmd.modeIndex != null && hfcCard?.spell?.modes) ? hfcCard.spell.modes[cmd.modeIndex] : null;
