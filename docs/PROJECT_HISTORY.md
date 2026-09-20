@@ -19,6 +19,32 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-20e — „Log partii": lista tylko z rzeczywistymi turami
+
+Właściciel po obejrzeniu korekty: „Skoro przełączanie tury nie zmienia nic
+w logu poniżej to niepotrzebna jest opcja: cała partia. Cały zapis kopiuje się
+guzikiem Kopiuj całą partię, więc nie ma sensu utrzymywać w liście rozwijanej
+opcji «cała partia», niech będą tylko rzeczywiste tury.”
+
+**Zmiana (`b3dd389`):** select wypełnia się wyłącznie turami z sesji
+(`logTurnEntries()`) — statyczna opcja „cała partia" zniknęła z markupu
+i z renderu; `selectedLogTurn` zwraca numer tury albo `null` (koniec zakresu
+`'all'`), „Kopiuj wybraną turę" czyta `logTextFor(n)`, a przy braku tur select
+jest pusty i wyłączony. Domyślnym zakresem kopiowania jest NAJNOWSZA tura;
+świadomy wybór gracza przetrwa pojawienie się nowej tury (`dataset.logPick`
+zapisywany przy zmianie w `main.js`) — inaczej każda nowa tura zrywałaby
+wybór. Parametr `selected` zniknął z `renderLogPanel` (zakres czyta się z DOM),
+a call site w `renderTableView` został uproszczony.
+
+**Strażnicy:** `test/zgloszenie-c-log-partii-tury.test.js` — lista = wszystkie
+tury (zero opcji `all`/„cała partia"), domyślnie najnowsza tura, wybór gracza
+przetrwa nową turę, brak tur = select wyłączony, pin struktury sekcji (brak
+statycznej opcji w markupie). RED przed zmianą: 6/9 (3 czerwone piny).
+
+**Bramy:** `node tools/run-tests.mjs all` **6027/6027** (6026 + 1 nowy pin),
+`npm run build` 59 modułów / **3950,9 kB**. Sonda sesyjna na pełnej partii:
+13 tur → 13 opcji, brak „całej partii", domyślnie tura 13.
+
 ## 2026-09-20d — korekta po uwadze właściciela: jeden log, żadnych dodatków
 
 Właściciel zakwestionował opis i implementację z dwóch paczek naraz:

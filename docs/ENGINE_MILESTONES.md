@@ -6309,8 +6309,11 @@ cyklowania: typecycling (`cycling.subtypes`) i basic landcycling
 (4 przypadki, w tym kontrola pozytywna i brak wiedzy o talii).
 
 **C (`998afc8`) — „Log partii": kopiowanie i chronologia.** Panel po stronie
-AI dostał lustrzane narzędzia: select z WSZYSTKIMI turami + „cała partia"
-(domyślnie), przyciski „Kopiuj wybraną turę"/„Kopiuj całą partię"; lista
+AI dostał lustrzane narzędzia: select z WSZYSTKIMI turami (pierwotnie z pozycją
+„cała partia", usuniętą w `b3dd389` — uwaga właściciela 2026-09-20e: skoro
+przełączanie tury nic nie zmienia w liście logu, a całość kopiuje osobny
+przycisk, lista ma nieść tylko rzeczywiste tury; domyślnym zakresem jest
+najnowsza tura), przyciski „Kopiuj wybraną turę"/„Kopiuj całą partię"; lista
 renderuje się CHRONOLOGICZNIE (najnowsze na dole, nowe wiersze na końcu).
 Zakresy liczy jedno źródło w sesji
 (`logEntries`/`logTurnEntries`/`logTextAll`/`logTextFor`) — wpisy logu niosą

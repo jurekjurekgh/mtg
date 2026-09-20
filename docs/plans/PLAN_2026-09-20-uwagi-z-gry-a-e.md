@@ -64,9 +64,9 @@ zachowanie.
 
 Zgłoszenia: C1 — przyciski jak w „Przebieg tur (dla AI)", ale działające na
 logu gry (`Tura:` select + „Kopiuj wybraną turę" + „Kopiuj całą partię");
-C2 — lista rozwijana z WSZYSTKIMI turami oraz „cała partia" (domyślnie
-wybrana); C3 — chronologia odwrotna: najnowsze na DOLE, nowe wiersze
-dopisywane na końcu.
+C2 — lista rozwijana z WSZYSTKIMI turami (pierwotnie także z pozycją „cała
+partia" — usuniętą później, patrz KOREKTA niżej); C3 — chronologia odwrotna:
+najnowsze na DOLE, nowe wiersze dopisywane na końcu.
 
 **Naprawa:** wpisy logu dostają numer tury i aktywnego gracza (sesja), sesja
 wystawia `logEntries()`, `logTurnEntries()`, `logTextAll()`, `logTextFor(n)`;
@@ -78,6 +78,15 @@ logu; nadmiarowe pole zostało usunięte razem z jego stylem).
 Zachowanie formatu: log bez zmian treści (te same zdania), tylko kolejność i
 nowe narzędzia kopiowania; etykiety tur jak w panelu AI
 („Tura N — Czarodziejka/Nieprzyjaciel").
+
+**KOREKTA (uwaga właściciela 2026-09-20e, `b3dd389`):** pozycja „cała partia"
+zniknęła z listy — „skoro przełączanie tury nie zmienia nic w logu poniżej,
+niepotrzebna jest opcja cała partia. Cały zapis kopiuje się guzikiem «Kopiuj
+całą partię», więc nie ma sensu utrzymywać w liście rozwijanej opcji «cała
+partia», niech będą tylko rzeczywiste tury". Select jest wyłącznie zakresem
+przycisku „Kopiuj wybraną turę": lista = rzeczywiste tury, domyślnie
+NAJNOWSZA (wybór gracza przetrwa nową turę), bez tur — select pusty
+i wyłączony.
 
 ## D. Simian Simulacrum trafia do złej części Dominarii
 
