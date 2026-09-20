@@ -25,6 +25,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const registry = createCardRegistry();
 
@@ -66,8 +67,9 @@ function resolve(s) {
 }
 
 /** Rzuca Annie Flash i dochodzi do rozstrzygnięcia triggera (cel = aura z grobu). */
-function annieReturnsAura(s, { extraCreatures = 0 } = {}) {
+function annieReturnsAura(s, { extraCreatures = 0, extraFoes = 0 } = {}) {
   for (let i = 0; i < extraCreatures; i += 1) put(s, `walker-${i}`, 'lightwalker', 'p1', 'battlefield');
+  for (let i = 0; i < extraFoes; i += 1) put(s, `foe-${i}`, 'lightwalker', 'p2', 'battlefield');
   put(s, 'annie', 'annie-flash-the-veteran');
   put(s, 'gy-membrane', 'containment-membrane', 'p1', 'graveyard'); // „Enchant creature”, MV 3
   addMana(s, 'p1', 6, { colors: ['R', 'G', 'W'] });
@@ -131,4 +133,73 @@ test('audyt PR130/D: nielegalny gospodarz odrzucony, decyzja czeka dalej', () =>
   assert.equal(find(s, 'containment-membrane', 'battlefield'), undefined, 'aura jeszcze nie weszła');
   run(s, oferty.find((c) => c.auraHostId === 'walker-0'));
   assert.equal(find(s, 'containment-membrane', 'battlefield')?.attachedTo, 'walker-0', 'wybór przyjęty');
+});
+
+test('audyt PR130/D: gospodarz nielegalny w chwili wejścia — odrzucony (CR 608.2b/LKI)', () => {
+  // Walidacja przy WYKONANIU, nie tylko przy ofercie: kandydat z listy mógł
+  // przestać być legalnym gospodarzem (LKI — ostatnio znane informacje nie
+  // wystarczą, CR 608.2b). Bez tej bramki aura załączyłaby się do obiektu,
+  // który nie jest już na polu bitwy.
+  const s = game();
+  annieReturnsAura(s, { extraCreatures: 1 }); // Lightwalker (walker-0) + Annie
+  assert.ok(s.pendingAuraHost, 'decyzja otwarta');
+  const host = s.objects.get('walker-0');
+  assert.ok(host, 'kandydat istnieje');
+  s.objects.set('walker-0', Object.freeze({ ...host, zone: 'graveyard' }));
+  s.zones.battlefield = s.zones.battlefield.filter((id) => id !== 'walker-0');
+  s.zones.graveyard = [...s.zones.graveyard, 'walker-0'];
+
+  const r = execute(s, { type: 'resolve_aura_host', playerId: 'p1', auraHostId: 'walker-0' });
+  assert.equal(r.ok, false, 'gospodarz poza polem bitwy nie jest legalny');
+  assert.match(reasonOf(r), /illegal_aura_host/, 'powód nazywa nielegalnego gospodarza');
+  assert.ok(s.pendingAuraHost, 'decyzja czeka dalej — gracz wybiera legalnie');
+  assert.equal(find(s, 'containment-membrane', 'battlefield'), undefined, 'aura nie weszła');
+
+  // Drugi kandydat (Annie) jest legalny — wybór domyka efekt.
+  const annieBf = find(s, 'annie-flash-the-veteran', 'battlefield');
+  run(s, commands(s).find((c) => c.type === 'resolve_aura_host' && c.auraHostId === annieBf.id));
+  assert.equal(find(s, 'containment-membrane', 'battlefield')?.attachedTo, annieBf.id, 'wybór przyjęty');
+});
+
+test('audyt PR130/D: decyzja blokuje grę — przeciwnik czeka, cudzy wybór odrzucony', () => {
+  const s = game();
+  annieReturnsAura(s, { extraCreatures: 1 });
+
+  // Bramka `firstPendingDecision`: dopóki gospodarz nie wybrany, nikt inny nie
+  // ma ruchu (klasa L16/L41 — decyzja blokująca jest częścią stanu gry).
+  assert.deepEqual(playerView(s, 'p2').legalCommands.map((c) => c.type), ['concede'],
+    'p2 nie dostaje komend, dopóki p1 nie wybierze gospodarza');
+  const oferty = commands(s).filter((c) => c.type === 'resolve_aura_host');
+  assert.ok(oferty.length >= 2, 'oferta jest wielowariantowa');
+  assert.equal(playerView(s, 'p2').legalCommands.some((c) => c.type === 'resolve_aura_host'), false,
+    'oferta wyboru gospodarza należy wyłącznie do właściciela decyzji');
+  // M337: akcje opcjonalne (pass) są nielegalne, gdy JAKAKOLWIEK decyzja czeka —
+  // także własna. Bez bramki w `firstPendingDecision` właściciel mógłby
+  // „przeskoczyć” swój wybór passsem i zostawić aurę w zawieszeniu.
+  assert.deepEqual([...new Set(commands(s).map((c) => c.type))].sort(), ['concede', 'resolve_aura_host'],
+    'właściciel decyzji nie dostaje passa ani innych akcji, dopóki nie wybierze');
+
+  const obcy = execute(s, { type: 'resolve_aura_host', playerId: 'p2', auraHostId: oferty[0].auraHostId });
+  assert.equal(obcy.ok, false, 'wybór wysłany przez przeciwnika jest odrzucony');
+  assert.match(reasonOf(obcy), /aura_host_not_your_decision/, 'powód nazywa właściciela decyzji');
+  assert.ok(s.pendingAuraHost, 'decyzja czeka dalej');
+  assert.equal(find(s, 'containment-membrane', 'battlefield'), undefined, 'aura nie weszła');
+});
+
+test('audyt PR130/D: bot wybiera gospodarza po znaku aury (wroga → stwór przeciwnika)', () => {
+  const s = game();
+  annieReturnsAura(s, { extraCreatures: 1, extraFoes: 1 });
+
+  const oferty = commands(s).filter((c) => c.type === 'resolve_aura_host');
+  assert.equal(oferty.length, 3, 'własny Lightwalker, Annie i Lightwalker przeciwnika');
+  assert.ok(oferty.some((c) => c.auraHostId === 'foe-0'), 'stwór przeciwnika jest legalnym gospodarzem (CR 303.4)');
+
+  const bot = createHeuristicBot({ seed: 7 });
+  const cmd = bot.chooseCommand(playerView(s, 'p1'));
+  assert.equal(cmd?.type, 'resolve_aura_host', 'bot domyka otwartą decyzję (commandKind ability)');
+  assert.equal(cmd.auraHostId, 'foe-0',
+    'Containment Membrane (doesntUntap) to aura WROGA — bot celuje w stwora przeciwnika');
+
+  run(s, cmd);
+  assert.equal(find(s, 'containment-membrane', 'battlefield')?.attachedTo, 'foe-0', 'wybór bota wykonany');
 });
