@@ -6412,6 +6412,6 @@ w closures deskryptorów zdarzeń) → `RuntimeError: whoN is not defined`;
 naprawa na `who()` z zasięgu sesji.
 
 Strażnik: `test/zgloszenie-j-tapniecia-many-w-logu.test.js` (3 piny; przed
-poprawką plik czerwony). Bramy: `node tools/run-tests.mjs all` **6025/6025**
+poprawką plik czerwony) + e2e w `test/table-ui.test.js` (talia „g-canonized”: po zapłacie wiersz `log-tap` z „Swamp → B” w logu stołu, ten sam wpis z symbolami („→ {B}”) w polu „Log partii”, zero „na manę” w zapisie tur dla AI; RED przed poprawką — `wierszeTap.length >= 1` pada). Bramy: `node tools/run-tests.mjs all` **6025/6025**
 (6022 + 3), `npm run build` 59 modułów / **3950,9 kB**. Lekcja: **L157** (log
 debugowy bierze zdarzenie o treści, której szuka gracz — i ma granicę).

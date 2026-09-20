@@ -65,6 +65,11 @@ Oba ograniczenia pinuje test 3 strażnika.
 
 - `test/zgloszenie-j-tapniecia-many-w-logu.test.js` — 3 piny; przed poprawką
   plik czerwony (brak eksportu reguły), po: 3/3.
+- e2e w `test/table-ui.test.js` (talia „g-canonized”, ten sam test co pin G):
+  po zapłacie log stołu ma wiersz `log-tap` („Ty tapujesz na manę: Swamp →
+  B” — symbole renderują się jako ikony), pole „Log partii” ma pełny zapis
+  z symbolami, a „Przebieg tur (dla AI)” nie zawiera „na manę”. Przed
+  poprawką pada `wierszeTap.length >= 1` (log bez wiersza „tap”).
 - `node tools/run-tests.mjs all` → **6025/6025** (6022 + 3 nowe).
 - `npm run build` → **59 modułów / 3950,9 kB** (modułów bez zmian; +2,7 kB treści).
 

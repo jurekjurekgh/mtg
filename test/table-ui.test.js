@@ -660,6 +660,25 @@ test('kreator many (zgłoszenie G): {1}{B} przy czterech lądach domyka się w D
   assert.ok(taps <= 2, `kreator zażądał ${taps} tapnięć przy koszcie 2 many (max 2)`);
   assert.equal(dom.get('hand').children.length, rekaPrzed - 1,
     `po zapłacie karta nie zeszła z ręki (${textOf(dom.get('hand')).slice(0, 80)})`);
+
+  // J (zgłoszenie właściciela 2026-09-20): „w sekcji «Log partii» chcę widzieć
+  // dodatkowo każdy permanent tapnięty na manę — co i kiedy”. Pin end-to-end:
+  // po płatności log STOŁU ma wiersz rodzaju `tap` z nazwą źródła i kolorem,
+  // ten sam wiersz widać w polu „Log partii”, a zapis tur dla AI zostaje czysty
+  // (decyzja właściciela 2026-08-02: modal/AI bez tapowania many).
+  // Uwaga: wiersze logu trzymają treść w DZIECIACH (nazwy kart są owijane
+  // w klikalne <span data-card-id>), a symbole many renderują się jako IKONY —
+  // dlatego na stole czytamy „→ B”, a pełny zapis z symbolami („→ {B}”) jest
+  // w polu „Log partii” (czysty tekst danych, ten sam, który idzie do schowka).
+  const wierszeTap = dom.get('log').children.filter((row) => /log-tap/.test(row.className));
+  assert.ok(wierszeTap.length >= 1,
+    `log stołu bez wiersza „tap” po zapłacie: ${textOf(dom.get('log')).slice(-200)}`);
+  assert.match(textOf(dom.get('log')), /Ty tapujesz na manę: Swamp → B/,
+    `log stołu bez wiersza tapnięcia z nazwą źródła i kolorem: ${textOf(dom.get('log')).slice(-200)}`);
+  assert.match(textOf(dom.get('log-text')), /Ty tapujesz na manę: Swamp → \{B\}/,
+    '„Log partii” (pole tekstowe) nie pokazuje tapnięcia na manę');
+  assert.doesNotMatch(textOf(dom.get('turn-history')), /na manę/,
+    'tapnięcia na manę nie należą do zapisu tur dla AI');
 });
 
 test('kreator many (E.3a): Anuluj przerywa płatność — rzut nie odpala, mana zostaje w puli', () => {

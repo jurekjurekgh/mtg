@@ -38,6 +38,10 @@ Granice: bez wpisu w modalu „Rozgrywka” (`botMoves`) i w zapisie tur dla AI
 Po drodze złapana pułapka zasięgu: `whoN` istnieje tylko w closures
 deskryptorów zdarzeń (`RuntimeError` w teście); naprawa na `who()` sesji.
 
+Pin end-to-end (Mini-DOM, talia „g-canonized”): po zapłacie wiersz `log-tap`
+z „Swamp → B” w logu stołu, ten sam wpis z symbolami w polu „Log
+partii”, zero „na manę” w zapisie tur dla AI (RED przed poprawką).
+
 **Bramy:** `node tools/run-tests.mjs all` **6025/6025**, `npm run build`
 59 modułów / **3950,9 kB**. Lekcja **L157** dopisana; budżet lektury startowej
 **99 971 / 100 000** (zapłacona skróceniem opisów przypadków w rejestrze).
