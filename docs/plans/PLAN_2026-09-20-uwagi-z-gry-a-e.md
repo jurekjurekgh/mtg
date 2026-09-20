@@ -90,7 +90,7 @@ bezkolorowej czyta WYŁĄCZNIE kolory produkowanej many
 (`getSourceForObject`). Simian Simulacrum nic nie produkuje → pusta tożsamość
 → „wypełniacz" → algorytm dosypuje go do mniejszej strony (WU).
 
-**Naprawa (paczka D, `cdd090d`) — zakres zawężony pomiarem:** tożsamość
+**Naprawa (paczka D, `b9a22ce`) — zakres zawężony pomiarem:** tożsamość
 kolorowa karty bezkolorowej = kolory produkowanej many ORAZ pipy kosztów JEJ
 ZDOLNOŚCI; dla kart kolorowych bez zmian (chodzi głównie o artefakty — „może
 trafić do każdej talii", więc pytać o zdolność trzeba właśnie tutaj).
@@ -121,7 +121,7 @@ stronach atak dostawał wynik DODATNI — wycena per-stwór (wymiana →
 `power - 1`) była podbijana premią za wyścig (+8, przy życiu ≤ 2 nawet +20),
 a zegar wygrywał cenę gardy, choć po ataku nie zostawał żaden bloker.
 
-**Naprawa (paczka E, `06a83ab`):** kara „oddana garda" (crackback) w wycenie
+**Naprawa (paczka E, `7cdcc3d`):** kara „oddana garda" (crackback) w wycenie
 `declare_attackers`. Model gardy: `guardToughness` = suma wytrzymałości MOICH
 niezatapniętych, niezadeklarowanych blokerów (`cantBlock`/`detained` poza
 rachunkiem); `enemyCrackbackPower` = moc wrogich stworów mogących zaatakować
@@ -162,8 +162,8 @@ Wszystkie paczki zrealizowane na gałęzi PR #130 — kolejność, dowody i bram
 | A | `633178f` | `test/zgloszenie-a-time-to-feed-plan.test.js` | talie po regeneracji: `theros` 26/9/17, `wiedzmin-bg` 26/9/17 (Forest 4); liczności README z pomiaru M203/7 |
 | B | `a92f982` | `test/zgloszenie-b-landcycling-bez-celu.test.js` (4 przypadki) | `ownDeck` w sesji i benchmarku; brak `ownDeck` = stare zachowanie |
 | C | `998afc8` | `test/zgloszenie-c-log-partii-tury.test.js` | log w kolejności chronologicznej (najnowsze na dole), select z „cała partia" domyślnie + dwa przyciski kopiowania; kolejność pilnuje też `test/m346-tester-kolejnosc-logu.test.js` |
-| D | `cdd090d` | `test/zgloszenie-d-pipy-zdolnosci-podzial.test.js` (4/4) | `npm test` 5991/5991; build 64 moduły / 3966,4 kB; golden `4514c1cf65d99082…` |
-| E | `06a83ab` | `test/zgloszenie-e-oddana-garda.test.js` (6/6; RED 5/1 — czerwone tylko E/1) | `npm test` 5997/5997; build 64 moduły / 3970,2 kB; benchmark quick 672 mecze: heuristic 85,9% (przed zmianą 86,0% — szum, L3) |
+| D | `b9a22ce` | `test/zgloszenie-d-pipy-zdolnosci-podzial.test.js` (4/4) | `npm test` 5991/5991; build 64 moduły / 3966,4 kB; golden `4514c1cf65d99082…` |
+| E | `7cdcc3d` | `test/zgloszenie-e-oddana-garda.test.js` (6/6; RED 5/1 — czerwone tylko E/1) | `npm test` 5997/5997; build 64 moduły / 3970,2 kB; benchmark quick 672 mecze: heuristic 85,9% (przed zmianą 86,0% — szum, L3) |
 
 Wnioski wykonawcze dla następnej paczki bota:
 
@@ -199,3 +199,11 @@ Wnioski wykonawcze dla następnej paczki bota:
    (lethal zostaje), ani CELOWYCH ataków samobójczych (all-in przy
    nieuniknionej przegranej) — stąd reguła „kara tylko wtedy, gdy PRZED
    atakiem garda wystarczała na przeżycie".
+
+> **Uwaga o numerach commitów (2026-09-20c):** paczki D i E powstały w tej
+> sesji DWUKROTNIE — środowisko odtworzyło workspace ze świeżego klona i cofnęło
+> gałąź do `main` w trakcie pracy (nota w `docs/setup/ENVIRONMENT.md` §2,
+> `docs/PROJECT_HISTORY.md` sekcja 2026-09-20). Obowiązujące numery to
+> `b9a22ce` (D) i `7cdcc3d` (E); wcześniejsze `cdd090d`/`06a83ab` nie istnieją
+> na GitHubie (sprawdzone `gh api`: HTTP 422) — cytaty w starszych handoffach są
+> historyczne.
