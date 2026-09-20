@@ -30,7 +30,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { extractBotMoves, extractModalChoice, extractTileText, chronologicalLogEntries } from './extract.mjs';
+import { extractBotMoves, extractModalChoice, extractTileText, chronologicalLogEntries, modalIntroText } from './extract.mjs';
 import { runDetectors, formatFindings, harmfulCardNames } from './detectors.mjs';
 import { observeRuntimeErrors } from './runtime-errors.mjs';
 import { PLAY_REGEX, SAFE_REGEX, GREEDY_PRIORITY } from './actions.mjs';
@@ -601,7 +601,8 @@ export async function runTableGame({
   const resolveManaWizard = async () => {
     const wizard = $('#mana-wizard');
     if (!wizard || !visible(wizard)) return false;
-    const intro = text($('#mana-wizard-body')).slice(0, 120);
+    // E4: intro z dzieci blokowych (separator), nie z `textContent` całości.
+    const intro = modalIntroText($('#mana-wizard-body')).slice(0, 160);
     const sources = $$('#mana-wizard .mana-wizard-source');
     if (sources.length === 0) {
       const cancel = $$('#mana-wizard button').find((b) => /Anuluj|✕/.test(text(b)));
@@ -645,7 +646,10 @@ export async function runTableGame({
     if (await resolveManaWizard()) return true;
     const cr = $('#choice-request');
     if (!cr || !visible(cr)) return false;
-    const intro = text($('#choice-request-body'));
+    // E4 (audyt PR #130): `textContent` ciała modalu zlepia intro i etykiety
+  // opcji w ciąg bez granic — transkrypt tracił czytelność tam, gdzie audyt
+  // czyta wybory gracza (L27). `modalIntroText` skleja dzieci separatorem.
+  const intro = modalIntroText($('#choice-request-body'));
     const opts = $$('#choice-request .choice-request-option');
     // Combat wizard: zaznacz pierwszego dowolnego atakującego (albo blokera),
     // potem zatwierdź. Dla bloków zaznaczamy po jednym blokerze na PIERWSZEGO
@@ -927,7 +931,7 @@ export async function runTableGame({
       // sposób, żeby audyt zobaczył jego skutek.
       const upper = Number((intro.match(/zaznacz(?: cele)?\s*\(?\d+\s*[–-]\s*(\d+)/) ?? [])[1] ?? 0);
       const want = Math.min(Math.max(needed, upper, 1), rows.length);
-      logL(`  [multi-target wizard] ${intro.slice(0, 90)} — opcji ${rows.length}, potrzeba ${needed}, celuję w ${want}`);
+      logL(`  [multi-target wizard] ${intro.slice(0, 160)} — opcji ${rows.length}, potrzeba ${needed}, celuję w ${want}`);
       // Zaznaczaj aż uzbierasz `want` ORAZ „Zatwierdź" przestanie być
       // wyłączony (silnik jest jedynym źródłem prawdy o legalności — L48).
       const order = profile === 'random' ? shuffleForPolicy(rows) : rows;
