@@ -1858,6 +1858,12 @@ export function rulesText(info) {
   // goła liczba kłamała, że {1}{W} płaci się dowolną maną).
   const toughnessDamageLine = info.combatDamageByToughness ? 'Obrażenia bojowe według wytrzymałości, nie mocy' : '';
   const surgeLine = info.surge ? `Surge {${equipPips(info.surge.cost, info.surge.colors)}} — jeśli rzuciłeś już inny czar w tej turze` : '';
+  // E4 (audyt PR #130): linia Delve — patrz `delve:` w `cardInfo` i
+  // `renderCardPreview`. Brzmienie z Oracle (CR 702.66a): „Each card you
+  // exile from your graveyard while casting this spell pays for {1}."
+  const delveLine = info.delve
+    ? 'Delve — każda karta wygnana z twojego grobu podczas rzucania tego czaru płaci za {1}'
+    : '';
   const plotLine = info.plot ? `Plot {${equipPips(info.plot.cost, info.plot.colors) || '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equipLine = equip
     ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equipPips(equip.equipFor.equip, equip.equipFor.colors) || '?'}} · ` : ''}{${equipPips(equip.equip, equip.colors) || '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
@@ -1969,7 +1975,7 @@ export function rulesText(info) {
       .map(([name, n]) => `z ${n === 1 ? '1 licznikiem' : `${n} licznikami`} ${counterLabelGen(name)}`);
     return parts.length ? `Wchodzi ${parts.join(', ')}` : '';
   })();
-  return [keywordLine, spellLine, toughnessDamageLine, surgeLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, entersCountersLine, landLine].filter(Boolean).join(' · ');
+  return [keywordLine, spellLine, toughnessDamageLine, surgeLine, delveLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, entersCountersLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -3956,6 +3962,12 @@ export function cardInfo(session, object, combat = null) {
     abilities: faceDown ? [] : (details.abilities || []),
     morph: details.morph || null,
     plot: details.plot || null,
+    // E4 (audyt PR #130, Żywy Tester — oś narracji): Delve jest deskryptorem
+    // top-level karty (`delve: true`, CR 702.66) i TREŚCIĄ dla gracza — bez
+    // tego pola kafel Hooting Mandrills pokazywał tylko typ i Zadeptywanie,
+    // a modal o wygnaniu kart z grobu pojawiał się dopiero przy rzucie
+    // (rodzina M138/#11: każdy deskryptor karty ma opis na kaflu).
+    delve: details.delve || null,
     equipment: faceDown ? null : (details.equipment || object.equipment || null),
     aura: faceDown ? null : (details.aura || object.aura || null),
     // M159/Z4: rozdziały Sagi są treścią kafla (rulesText) — bez tego pola
@@ -4696,6 +4708,12 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
     abilities: details.abilities || [],
     morph: details.morph || null,
     plot: details.plot || null,
+    // E4 (audyt PR #130, Żywy Tester — oś narracji): Delve jest deskryptorem
+    // top-level karty (`delve: true`, CR 702.66) i TREŚCIĄ dla gracza — bez
+    // tego pola kafel Hooting Mandrills pokazywał tylko typ i Zadeptywanie,
+    // a modal o wygnaniu kart z grobu pojawiał się dopiero przy rzucie
+    // (rodzina M138/#11: każdy deskryptor karty ma opis na kaflu).
+    delve: details.delve || null,
     saga: details.saga || null, // M159/Z4: rozdziały Sagi w podglądzie karty
     set: details.set ?? null,
     imageUri: details.imageUri ?? null,
