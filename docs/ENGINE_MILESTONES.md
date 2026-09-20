@@ -6425,3 +6425,79 @@ zapłacie wiersz „Ty tapujesz na manę: Swamp → B” w logu; zero „na man�
 w zapisie tur dla AI; RED przed poprawką — brak wiersza). Bramy: `node tools/run-tests.mjs all` **6025/6025**
 (6022 + 3), `npm run build` 59 modułów / **3950,9 kB**. Lekcja: **L157** (log
 debugowy bierze zdarzenie o treści, której szuka gracz — i ma granicę).
+
+## M397 (2026-09-20) — audyt PR #130: Delve (CR 702.66), licznik tury Barala, gospodarz aury (CR 303.4f) + pętla jakości E4
+
+Sesja „Kontynuujemy projekt." (ADR 0021 — pętla domyślna, bez pytania
+o kolejkę), gałąź `arena/01a0bf64-mtg`, PR #131. Audyt scalonego PR #130
+(diff `8af0c7c..0b49b12`, **134 pliki**: 28 `src/`, 52 testowe — 28 nowych,
+34 dokumenty, 13 talii, 6 narzędzi) — raport
+[`docs/audits/AUDYT_PR130_2026-09-20.md`](AUDYT_PR130_2026-09-20.md).
+Ważność pinów PR #130 zmierzona mutacjami PA–PH: **8/8 wykrytych**; mutacje
+własnych napraw P1–P7 i Q1–Q5: **12/12**. Kontrole ADR: 0002 (0 porównań po
+`cardId`/nazwie w dodanym `src/`), 0005 (0 nowych `Math.random`), 0017,
+0029/0022 — bez zastrzeżeń.
+
+**A (`b1c66e1`)** — Delve na PERMANENCIE: bramka oferty wymagała
+`delveLimit > 0`, więc przy pustym grobie Hooting Mandrills nie miał ŻADNEJ
+oferty rzutu — gracz nie mógł zapłacić pełnego {5}{G}. CR 702.66a: wygnanie
+jest opcjonalne („you **may** exile"). Ścieżka czarów miała to poprawnie: dwie
+bliźniacze bramki się rozjechały (klasa L107). Reguła w JEDNEJ funkcji
+`affordableDelveCounts` (`spells.js`), czytanej przez deklarację i obie bramki;
+przy limicie 0 brak decyzji bez alternatywy (L41/L154).
+
+**B (`b1c66e1`)** — limit wygnania liczony z kosztu WYDRUKOWANEGO zamiast
+części generycznej kosztu CAŁKOWITEGO (CR 702.66a/66b; ruling KTK 2021-03-19).
+Przy reduktorze gracz mógł wygnać więcej, niż wynosił koszt: `manaSpent`/
+`totalMana` stawały się ujemne, `spendMana` rzucała `RangeError` — a ponieważ
+wygnanie szło PRZED płatnością, odrzucona komenda zostawiała karty grobu
+w exile (mutacja stanu komendą nielegalną; klasa L149/L48 — bramka sumy stoi
+PRZED pierwszą mutacją). Naprawa: `delveGenericMana` (`mana-cost.js`) jako
+jedno źródło limitu dla `delveExileLimit`, `castSpell` i `castPermanent`,
+twardy strażnik sumy przed pierwszą mutacją kosztu, bramka `producibleMana`
+w `castSpell` (lustro tej z `castPermanent`), `delveManaAfter` bez dwóch
+gałęzi liczących to samo.
+
+**C (`b1c66e1`)** — `instantSorceryCastThisTurnByPlayer` (Baral and Kari Zev,
+„your first instant or sorcery spell each turn", ruling TDC 2023-04-14) nie był
+zerowany w bloku resetów przy zmianie tury, więc trigger odpalał RAZ NA PARTIĘ
+zamiast raz na turę.
+
+**D (`19f47fa`, piny `69b69e2`)** — `return_permanent_from_graveyard` wybierał
+gospodarza aury automatem (`battlefield.find(isLegalAuraHost)` = pierwszy
+w kolejności strefy), odbierając graczowi wybór z CR 303.4f (ruling OTJ
+2024-04-12, Annie Flash: „chooses what it will enchant" — nie celowanie, ale
+decyzja). Naprawa wzorcem `resolveCraftExileOutcome` (L41): eksportowany
+`returnPermanentFromGraveyardOutcome(state, targetId, effect, auraHostId)`
+z trzema gałęziami (0 legalnych → karta zostaje w grobie, dokładnie 1 →
+domknięcie automatyczne, ≥2 → blokująca decyzja), a nowa decyzja przeszła przez
+siedem warstw: oferta po wariancie na kandydata (L48), bramka `execute`
+(własny decydent, kandydat z listy, gospodarz nadal legalny — CR 608.2b/LKI),
+`firstPendingDecision` (kind `auraHost`), odcisk stanu (`fingerprint.js`,
+L16/B2), widok `pendingAuraHost` (ADR 0017), log + etykieta + grupowanie
+(`session.js`, `render.js`), oba boty (`auraIsHostile` — ta sama reguła
+polaryzacji aury co przy wycenie rzutu; `aggro-bot` lista decyzji prostych).
+
+**E4 — pętla jakości (`2919bf1`, `9de9f7a`)** — osiem partii Żywym Testerem na
+artefakcie `dist/` (tarkir-bg/worek-dziki/kaladesh/worek-basni, seedy 42–45
+i 101–104): 8/8 zakończonych naturalnie, 0 zgłoszeń detektorów, 0 `[STOP]`,
+`== NIEWYCENIONE == brak`. Zero zgłoszeń to pomiar narzędzia (L27), więc
+transkrypty przeczytane ręcznie — dwa znaleziska: (E) Delve był NIEMY na karcie
+(`cardInfo`/`renderCardPreview` nie przenosiły deskryptora, `rulesText` nie miał
+linii — klasa M138/#11), (F) intro modalu w transkrypcie brało `textContent`
+całego ciała i zlewało etykiety opcji w ciąg bez granic — artefakt POMIARU,
+naprawiony w narzędziu (`modalIntroText`, L12).
+
+**Strażnicy:** `test/audyt-pr130-delve-i-licznik-tury.test.js` (8 pinów, RED
+4/4 przed naprawą), `test/audyt-pr130-gospodarz-aury.test.js` (6 pinów, RED 0/3
+przed naprawą; trzy pierwsze wersje pinów przeżywały mutacje Q3–Q5 — domknięte
+bramkami), `test/e4-delve-na-kaflu.test.js` (4), `test/e4-tester-intro-modali.test.js` (3).
+
+**Bramy:** `node tools/run-tests.mjs all` **6048/6048**, `npm run build`
+59 modułów / **3966,4 kB**, `node --test test/bot-benchmark.test.js` **10/10**,
+benchmark `--quick` **672 mecze w 154,8 s, 0 niedokończonych**: heuristic
+**85,9%** (577/672), aggro 26,8%, random 1,5% — bez regresji wobec pomiaru
+sesji PR #130 (85,9%); pełnej macierzy B0 nie uruchamiano (ADR 0018),
+budżet lektury startowej **99 953 / 100 000** (wpis L48 pkt 8 opłacony
+kondensacją wstępu rejestru — próg bez zmian). Lekcja: **L48 pkt 8** (nowy
+`pending*` ma siedem bramek do zmutowania, nie jedną ścieżkę).

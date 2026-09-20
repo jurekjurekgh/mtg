@@ -1198,6 +1198,25 @@ oferty i odrzucenie pierwszego z nich.
    oferował `resolve_undercity_route` i sam go odrzucał. Identycznie
    `exploit` vs cel triggera (pełna macierz stanęła na 58,5%, seed 1003).
 
+5. **Nowa decyzja blokująca przypięta tylko na ścieżce „szczęśliwej”**
+   (audyt PR #130, 2026-09-20 — `resolve_aura_host`, CR 303.4f: gospodarza aury
+   wracającej z grobu wybiera gracz, nie `battlefield.find(...)`). Trzy piny
+   dowodziły, że wybór DZIAŁA (gracz wybiera Annie zamiast pierwszego w
+   kolejności strefy; jedyny gospodarz domyka się sam; kandydat spoza listy
+   odrzucony) — a mutacje BRAMEK przeżyły: Q3 (`cmd.playerId !==
+   pending.playerId` → `aura_host_not_your_decision`), Q4 (gałąź
+   `pendingAuraHost` w `firstPendingDecision`) i Q5 (wycena gospodarza przez
+   `auraIsHostile` w bocie). Nie przypięte było: cudzy decydent, brak passa
+   u właściciela decyzji (M337 — akcje opcjonalne nielegalne, gdy JAKAKOLWIEK
+   decyzja czeka) i znak aury w wycenie. Lista siedmiu bramek (pkt 8 rejestru)
+   wzięła się z tego pomiaru: oferta po wariancie, cudzy decydent, właściciel
+   bez passa, pole w odcisku, etykieta + grupowanie, wycena bota, re-walidacja
+   przy wykonaniu (CR 608.2b/LKI). Trzy z nich zapaliły się SAME, bez szukania:
+   `test/b2-odcisk-straznik-pokrycia.test.js` B2/2 („odcisk nie pokazuje kluczy
+   stanu: pendingAuraHost"), `m163` A3 i `m201` (nowa komenda `resolve_*` bez
+   etykiety i bez klucza grupowania) — sieć strażników klasowych jest warta
+   więcej niż najdłuższa lista kontrolna.
+
 **Sygnał:** po nowym deskryptorze ochrony albo `resolve_*` uruchom
 `node tools/benchmark.mjs --seeds 2` — `illegal_spell` lub „nie znalazł ruchu"
 oznacza niekompletną ofertę.
