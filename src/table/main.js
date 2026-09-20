@@ -22,7 +22,7 @@ import { formatLocalTimestamp } from './clock.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TURN_NAMES, gameOverNotice } from './session.js';
-import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
+import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
@@ -124,6 +124,12 @@ function bootstrapTable() {
     handEnemyLabel: el('hand-enemy-label'),
     actions: el('actions'),
     log: el('log'),
+    // Zgłoszenie C (2026-09-20): narzędzia sekcji „Log partii" (select zakresu
+    // + kopiowanie wybranej tury / całej partii + pole z tekstem logu).
+    logTurnSelect: el('log-turn-select'),
+    logText: el('log-text'),
+    logCopyTurn: el('log-copy-turn'),
+    logCopyAll: el('log-copy-all'),
     turnHistory: el('turn-history'),
     turnHistoryCount: el('turn-history-count'),
     turnHistoryCopy: el('turn-history-copy'),
@@ -195,6 +201,28 @@ function bootstrapTable() {
     const text = typeof session.turnHistoryTextAll === 'function' ? session.turnHistoryTextAll() : '';
     if (!text) return;
     copyTextToClipboard(text, els.turnHistoryCopyAll);
+  });
+
+  // Zgłoszenie C (2026-09-20): sekcja „Log partii" — ten sam wzorzec co
+  // „Przebieg tur (dla AI)", ale źródłem tekstu jest LOG STOŁU (sesja
+  // wystawia logTextFor(n)/logTextAll), a nie zapis dla AI w trzeciej osobie.
+  els.logTurnSelect?.addEventListener('change', () => rerender());
+  els.logCopyTurn?.addEventListener('click', () => {
+    if (!session) return;
+    const scope = selectedLogTurn(els);
+    const text = scope === 'all'
+      ? (typeof session.logTextAll === 'function' ? session.logTextAll() : '')
+      : (typeof session.logTextFor === 'function' ? session.logTextFor(scope) : '');
+    if (!text) return;
+    copyTextToClipboard(text, els.logCopyTurn);
+  });
+
+  // „Kopiuj całą partię" kopiuje CAŁY log niezależnie od wyboru w selekcie.
+  els.logCopyAll?.addEventListener('click', () => {
+    if (!session) return;
+    const text = typeof session.logTextAll === 'function' ? session.logTextAll() : '';
+    if (!text) return;
+    copyTextToClipboard(text, els.logCopyAll);
   });
 
   /** Kopiuje tekst do schowka: Clipboard API, a przy file:// fallback textarea. */

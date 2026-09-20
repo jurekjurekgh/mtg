@@ -65,7 +65,14 @@ test('M348/B: wpis systemowy ma jawne API i nie udaje zdarzenia silnika', () => 
   const count = session.log.length;
   assert.equal(typeof session.logSystem, 'function');
   session.logSystem('Komunikat interfejsu');
-  assert.deepEqual(session.log.at(-1), { kind: 'system', text: 'Komunikat interfejsu' });
+  // C (zgłoszenie 2026-09-20): wpis logu niesie dodatkowo numer tury i
+  // aktywnego gracza (zakresy kopiowania w „Log partii"). Intencja strażnika
+  // bez zmian: jawny kind 'system' i komunikat bez udawania zdarzenia silnika.
+  const last = session.log.at(-1);
+  assert.equal(last.kind, 'system');
+  assert.equal(last.text, 'Komunikat interfejsu');
+  assert.equal(last.turn, session.state.turn.number);
+  assert.equal(last.playerId, session.state.turn.activePlayerId);
   assert.equal(session.log.length, count + 1);
   assert.equal(session.debugFingerprint(), before);
 });

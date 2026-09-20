@@ -4764,6 +4764,18 @@ function clampHoverMode(info, mode) {
 
 export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, onSpeedCardClick = null, onEnergyCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
+  // Zgłoszenie C3 (2026-09-20): log rośnie W DÓŁ (najnowsze na dole), a render
+  // przebudowuje listę od zera — bez zapamiętania suwaka gracz czytający
+  // historię wracałby do najstarszych wpisów po każdym ruchu bota. Zapamiętujemy
+  // pozycję PRZED czyszczeniem (po nim scrollTop/scrollHeight są już zerowe)
+  // i odtwarzamy po wypełnieniu: „przy dole" = dołącz nowe wpisy i zostań na
+  // dole, inaczej zachowaj pozycję czytania.
+  const logScroll = els.log ? {
+    top: els.log.scrollTop ?? 0,
+    height: els.log.scrollHeight ?? 0,
+    client: els.log.clientHeight ?? 0,
+    fresh: els.log.dataset?.logBuilt !== '1',
+  } : null;
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'handEnemy', 'actions', 'log']) clear(els[key]);
 
@@ -5005,8 +5017,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Log -------------------------------------------------------------
   // M157/E (uwaga właściciela): log pokazuje CAŁĄ rozgrywkę — bez okna
   // ostatnich 80 wpisów (≈4 pełne tury), które wyglądało jak cykliczne
-  // czyszczenie sekcji. Najnowsze nadal na górze (reverse).
-  const entries = [...session.log].reverse();
+  // czyszczenie sekcji.
+  // C3 (zgłoszenie 2026-09-20): kolejność CHRONOLOGICZNA — najstarsze u góry,
+  // najnowsze na dole (nowe wiersze dopisywane na końcu), jak w konsoli.
+  const entries = typeof session.logEntries === 'function' ? session.logEntries() : [...session.log];
   for (const entry of entries) {
     const kind = entry.kind === 'event' && /^—.*—$/.test(entry.text) ? 'step' : entry.kind;
     const line = document.createElement('div');
@@ -5018,6 +5032,14 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     appendLogLineWithCardLinks(line, entry.text, session.cardIdByName ?? null);
     els.log.appendChild(line);
   }
+  if (els.log && logScroll) {
+    const nearBottom = logScroll.height - logScroll.client - logScroll.top <= 24;
+    els.log.scrollTop = logScroll.fresh || nearBottom ? els.log.scrollHeight : logScroll.top;
+    if (els.log.dataset) els.log.dataset.logBuilt = '1';
+  }
+
+  // --- Log partii: kopiowanie po turach (zgłoszenie C1/C2) --------------
+  renderLogPanel(els, session, selectedLogTurn(els));
 
   // M198/G (zlecenie właściciela): panel „Rozumowanie bota" usunięty —
   // właściciel z niego nie korzystał. Sesja nadal zbiera ślad decyzji bota
@@ -5403,6 +5425,64 @@ export function renderPlayerMeta(host, view, playerId) {
  * gotowy tekst do skopiowania modelowi AI. Imiona: Czarodziejka / Nieprzyjaciel
  * (decyzja właściciela 2026-08-03). Licznik pokazuje liczbę ukończonych tur.
  */
+/**
+ * Zgłoszenie C (2026-09-20, uwagi z gry): sekcja „Log partii" dostaje te same
+ * narzędzia co „Przebieg tur (dla AI)", ale nad logiem stołu: select
+ * z WSZYSTKIMI turami + pozycja „cała partia" (domyślna, drukowana na
+ * bieżąco) oraz dwa przyciski kopiowania. Zakres `null`/`'all'` = cała partia.
+ */
+export function selectedLogTurn(els) {
+  const raw = els?.logTurnSelect?.value;
+  if (raw == null || raw === '' || raw === 'all') return 'all';
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) ? parsed : 'all';
+}
+
+export function renderLogPanel(els, session, selected = 'all') {
+  if (!els?.logText && !els?.logTurnSelect) return;
+  const turns = typeof session.logTurnEntries === 'function' ? session.logTurnEntries() : [];
+  const wanted = selected === 'all' || turns.some((entry) => entry.number === selected)
+    ? selected
+    : 'all';
+  const select = els.logTurnSelect;
+  if (select) {
+    // Odbudowa listy tylko przy zmianie zestawu tur (wzorzec M188/K) —
+    // inaczej każdy render zamykałby rozwinięty select pod palcem gracza.
+    const signature = `all|${turns.map((entry) => entry.number).join(',')}`;
+    if (select.dataset?.logTurns !== signature) {
+      if (select.dataset) select.dataset.logTurns = signature;
+      clear(select);
+      const all = document.createElement('option');
+      all.value = 'all';
+      all.textContent = 'cała partia';
+      select.appendChild(all);
+      for (const entry of turns) {
+        const option = document.createElement('option');
+        option.value = String(entry.number);
+        option.textContent = entry.label;
+        select.appendChild(option);
+      }
+    }
+    select.disabled = false;
+    select.value = String(wanted);
+  }
+  if (els.logText) {
+    const text = wanted === 'all'
+      ? (typeof session.logTextAll === 'function' ? session.logTextAll() : '')
+      : (typeof session.logTextFor === 'function' ? session.logTextFor(wanted) : '');
+    // Pole tekstowe też rośnie w dół: pokaż najnowsze, ale nie zabieraj
+    // pozycji graczowi, który przewinął wyżej, żeby czytać starsze wpisy.
+    const before = {
+      top: els.logText.scrollTop ?? 0,
+      height: els.logText.scrollHeight ?? 0,
+      client: els.logText.clientHeight ?? 0,
+    };
+    els.logText.textContent = text || 'Log jest pusty — rozegraj kilka ruchów, a pojawi się tutaj.';
+    const nearBottom = before.height - before.client - before.top <= 24;
+    els.logText.scrollTop = nearBottom ? els.logText.scrollHeight : before.top;
+  }
+}
+
 /** Numer tury wybrany w selekcie „Przebieg tur" (null = brak wyboru). */
 export function selectedTurnHistory(els) {
   const raw = els?.turnHistorySelect?.value;

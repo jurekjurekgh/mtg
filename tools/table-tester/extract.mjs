@@ -145,10 +145,13 @@ export function extractTileText(tile) {
 
 
 /**
- * M346/F8: DOM logu ma najnowsze wpisy NA POCZĄTKU (renderTableView).
- * Bierzemy najnowsze N, a do transkryptu oddajemy je chronologicznie.
- * count może być limitem snapshotu albo liczbą wpisów od ostatniego odczytu.
+ * M346/F8 + C3 (zgłoszenie 2026-09-20): DOM logu jest CHRONOLOGICZNY —
+ * `renderTableView` dopisuje nowe wiersze na KOŃCU listy (wcześniej rysował
+ * od najnowszego). Bierzemy więc ostatnie N wpisów, a transkrypt dostaje je
+ * w tej samej kolejności (bez odwracania). count może być limitem snapshotu
+ * albo liczbą wpisów od ostatniego odczytu.
  */
 export function chronologicalLogEntries(entries, count = entries.length) {
-  return entries.slice(0, Math.max(0, count)).reverse();
+  const limit = Math.max(0, count);
+  return entries.slice(Math.max(0, entries.length - limit));
 }

@@ -162,8 +162,13 @@ test('M200/B: sesja eksponuje cardIdByName, a log partii rendery linkowane nazwy
     els[key] = new MiniEl(`#${key}`);
   }
   renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
-  const spans = [...els.log.querySelectorAll('.log-card')];
-  assert.ok(spans.length >= 1, `nazwa karty owinięta w span.log-card: ${els.log.textContent.slice(0, 120)}`);
+  // C3 (zgłoszenie 2026-09-20): log renderuje się CHRONOLOGICZNIE, więc wpis
+  // dorzucony na koniec logu jest OSTATNIM wierszem stołu (wcześniej, przy
+  // odwróconej kolejności, był pierwszy). Intencja strażnika bez zmian:
+  // nazwa karty z wpisu logu jest linkiem niosącym cardId.
+  const row = els.log.children[els.log.children.length - 1];
+  const spans = [...row.querySelectorAll('.log-card')];
+  assert.ok(spans.length >= 1, `nazwa karty owinięta w span.log-card: ${row.textContent.slice(0, 120)}`);
   assert.equal(spans[0].dataset.cardId, 'highland-game', 'span niesie cardId do openCardFullscreenByCardId');
 });
 // ---- C: mulligan — odłożenie N kart na spód zaznaczaniem (nie kombinacje) ---

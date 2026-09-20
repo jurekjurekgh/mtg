@@ -2492,8 +2492,29 @@ export function createSession(config) {
     if (!nameById.has(id)) nameById.set(id, name);
   }
   const colorsById = new Map(registry.all().map((card) => [card.id, card.colors ?? []]));
-  const log = []; // { kind: 'event'|'rejection'|'system', text }
-  const sessionLog = (kind, text) => log.push({ kind, text });
+  const log = []; // { kind: 'event'|'rejection'|'system', text, turn, playerId }
+  /**
+   * Zgłoszenie C (2026-09-20, uwagi z gry): „Log partii" ma dostać narzędzia
+   * kopiowania po turach, więc każdy wpis niesie numer tury i aktywnego
+   * gracza w chwili zdarzenia. `logTurns` trzyma PORZĄDEK pierwszego
+   * wystąpienia tury w logu — z niego powstaje lista rozwijana (ta sama
+   * etykieta co w panelu AI: „Tura N — Czarodziejka/Nieprzyjaciel"), a tura
+   * bieżąca dokłada się w chwili odczytu, żeby select był zawsze kompletny.
+   */
+  const logTurns = [];
+  function rememberLogTurn() {
+    const number = state.turn.number;
+    const activePlayerId = state.turn.activePlayerId;
+    const last = logTurns.at(-1);
+    if (!last || last.number !== number || last.activePlayerId !== activePlayerId) {
+      logTurns.push({ number, activePlayerId });
+    }
+    return { number, activePlayerId };
+  }
+  const sessionLog = (kind, text) => {
+    const turn = rememberLogTurn();
+    log.push({ kind, text, turn: turn.number, playerId: turn.activePlayerId });
+  };
   // M167/E2: odwrócona mapa nazwa→cardId — render logu owija nazwy kart
   // w klikalne znaczniki (pełnoekranowa ilustracja przez delegację w main).
   const cardIdByName = new Map([...nameById.entries()].map(([id, name]) => [name, id]));
@@ -2612,6 +2633,66 @@ export function createSession(config) {
     const records = turnHistory.slice(-Math.max(1, Math.min(2, count)));
     if (records.length === 0) return '';
     return records.map(formatTurnRecord).join('\n\n');
+  }
+
+  /**
+   * Zgłoszenie C (2026-09-20): zakresy LOGU PARTII — lustro API sekcji
+   * „Przebieg tur (dla AI)" (turnHistoryEntries/TextFor/TextAll), żeby panel
+   * „Log partii" dostał dokładnie te same narzędzia, ale nad logiem stołu.
+   * Log stołu nie ma Fog of War (M199 dotyczy wyłącznie zapisu dla AI) —
+   * gracz widzi w nim swoje karty, więc tutaj nic nie ukrywamy.
+   */
+  function logEntries() {
+    return log.map((entry, index) => ({
+      index,
+      kind: entry.kind,
+      text: entry.text,
+      turn: entry.turn ?? null,
+      activePlayerId: entry.playerId ?? null,
+    }));
+  }
+
+  /** Wszystkie tury obecne w logu (dla selecta) — etykiety jak w panelu AI. */
+  function logTurnEntries() {
+    const list = logTurns.slice();
+    const current = { number: state.turn.number, activePlayerId: state.turn.activePlayerId };
+    if (!list.some((record) => record.number === current.number)) list.push(current);
+    return list.map((record) => ({
+      number: record.number,
+      activePlayerId: record.activePlayerId,
+      label: `Tura ${record.number} — ${TURN_NAMES[record.activePlayerId] ?? record.activePlayerId}`,
+    }));
+  }
+
+  /**
+   * Wspólny format tekstu logu (L41/L48 — jedno źródło dla „całej partii"
+   * i dla pojedynczej tury): treść wpisów BEZ zmian (te same zdania co na
+   * stole), z nagłówkiem `**Tura N — kto` przy zmianie tury — jak blok AI,
+   * żeby wklejony tekst był czytelny bez kontekstu.
+   */
+  function logTextOf(entries) {
+    const lines = [];
+    let lastTurn = null;
+    for (const entry of entries) {
+      if (entry.turn != null && entry.turn !== lastTurn) {
+        const who = TURN_NAMES[entry.activePlayerId] ?? entry.activePlayerId ?? '';
+        if (lines.length > 0) lines.push('');
+        lines.push(`**Tura ${entry.turn}${who ? ` — ${who}` : ''}**`);
+        lastTurn = entry.turn;
+      }
+      lines.push(entry.text);
+    }
+    return lines.join('\n');
+  }
+
+  /** Cała partia jako tekst (zakres domyślny) — rośnie z każdym wpisem. */
+  function logTextAll() {
+    return logTextOf(logEntries());
+  }
+
+  /** Tekst jednej tury logu (pusty, gdy tura nie ma wpisów). */
+  function logTextFor(turnNumber) {
+    return logTextOf(logEntries().filter((entry) => entry.turn === turnNumber));
   }
   const captureBotReasoning = () => {
     const last = bot.trace?.().at(-1);
@@ -3437,6 +3518,14 @@ export function createSession(config) {
       return card?.abilities ?? [];
     },
     log,
+    /** Zgłoszenie C: wpisy logu z numerem tury i aktywnym graczem. */
+    logEntries,
+    /** Zgłoszenie C: tury w logu + etykiety dla selecta („Tura N — …"). */
+    logTurnEntries,
+    /** Zgłoszenie C: tekst całej partii z logu (zakres domyślny w panelu). */
+    logTextAll,
+    /** Zgłoszenie C: tekst jednej wybranej tury logu. */
+    logTextFor,
     /** M348/F10: komunikat UI, bez podszywania się pod zdarzenie silnika. */
     logSystem(text) { sessionLog('system', text); },
     reasoning,
