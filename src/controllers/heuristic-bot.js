@@ -2027,6 +2027,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return 4 + Math.min(bodyValue, 8) - Math.max(0, cost - reach);
   };
   const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + combatPower(o), 0);
+  /**
+   * E (zgłoszenie właściciela 2026-09-20): moc, którą wróg może zadać nam
+   * w NASTĘPNEJ turze (crackback) — stwory wroga zdolne do ataku
+   * (`cantAttackStatic` z widoku, M243/E; ADR 0002 — deskryptor, nie nazwa).
+   * Tapnięcie nie dyskwalifikuje: w swojej turze stwór się odkręci.
+   */
+  const enemyCrackbackPower = (view) => enemyCreatures(view)
+    .filter((o) => o.cantAttackStatic !== true)
+    .reduce((sum, o) => sum + combatPower(o), 0);
   // M91 (A2): moc stworów przeciwnika, które JUŻ atakują — miara realnego
   // zagrożenia w tej turze (fog ratuje życie tylko wtedy, gdy coś nadlatuje).
   // M92 (audyt PlayerView): publiczne efekty prewencji/regeneracji z widoku.
@@ -6282,8 +6291,51 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return sum + (hasKeyword(o, 'infect') ? combatPower(o) : 0);
         }, 0);
         const penetratingInfect = Math.max(0, infectTotalPower - blockerAbsorb);
-        if (attackers.length > 0 && enemyPoison < POISON_LOSS_LIMIT
-          && penetratingInfect >= POISON_LOSS_LIMIT - enemyPoison) score += 1000;
+        const winsByPoison = attackers.length > 0 && enemyPoison < POISON_LOSS_LIMIT
+          && penetratingInfect >= POISON_LOSS_LIMIT - enemyPoison;
+        if (winsByPoison) score += 1000;
+        const winsNow = attackers.length > 0
+          && (penetratingPower >= enemyLife || winsByPoison);
+        // E (zgłoszenie właściciela 2026-09-20, „bot atakuje przy 2 życiach
+        // i ginie kontratakiem"): ODDANA GARDA — atak tapnięciem stwora,
+        // który był potrzebny do przeżycia następnej tury. Model gardy (ten
+        // sam co przy blokowaniu): suma wytrzymałości MOICH stworów
+        // zostających w domu (nietapnięte, mogą blokować — deskryptory
+        // cantBlock/detained z widoku) odejmowana od mocy wroga zdolnej
+        // wrócić (`enemyCrackbackPower`). Kara tylko wtedy, gdy PRZED atakiem
+        // garda wystarczała do przeżycia, a po deklaracji już nie — inaczej
+        // nie ma czego oddawać (all-in przy nieuniknionej przegranej zostaje,
+        // a atak wygrywający grę ma +1000 wyżej i nie jest karany).
+        const guardToughness = (declared) => myCreatures(view)
+          .filter((o) => !declared.includes(o.id) && !o.tapped
+            && o.cantBlock !== true && o.detained !== true)
+          .reduce((sum, o) => sum + (o.toughness ?? 0), 0);
+        // Wróg, którego nasz atak BEZ BLOKÓW zabija, MUSI blokować — a blok
+        // zabiera mu blokerów na następną turę. Model deterministyczny: musi
+        // zaabsorbować brakujące obrażenia (totalPower − (życie − 1)),
+        // przyjmujemy najtańszych blokerów (rosnąca wytrzymałość), a ci,
+        // których wytrzymałość nie wytrzymuje mocy najsilniejszego atakującego,
+        // giną i nie wrócą. Bez tej korekty bot uznawałby „wróg na 2 życia
+        // z 2/2 blokerem" za oddanie gardy, choć po wymianie 1:1 nie ma czym
+        // wrócić (anty-over-fix, zgłoszenie E).
+        const unblockedLethal = attackers.length > 0 && totalPower >= enemyLife;
+        const strongestAttackerPower = attackers
+          .reduce((max, id) => Math.max(max, combatPower(objectOnBoard(view, id))), 0);
+        let forcedBlockLoss = 0;
+        if (unblockedLethal) {
+          const absorbNeeded = Math.max(0, totalPower - (enemyLife - 1));
+          let absorbed = 0;
+          for (const blocker of [...blockers].sort((x, y) => (x.toughness ?? 0) - (y.toughness ?? 0))) {
+            if (absorbed >= absorbNeeded) break;
+            absorbed += blocker.toughness ?? 0;
+            if ((blocker.toughness ?? 0) <= strongestAttackerPower) forcedBlockLoss += combatPower(blocker);
+          }
+        }
+        const crackbackPower = Math.max(0, enemyCrackbackPower(view) - forcedBlockLoss);
+        const survivedBefore = crackbackPower - guardToughness([]) < myLife(view);
+        const survivesAfter = crackbackPower - guardToughness(attackers) < myLife(view);
+        const throwsGuard = !winsNow && crackbackPower > 0 && attackers.length > 0
+          && survivedBefore && !survivesAfter;
         // Zegar (B1): gramy o czas, gdy wróg jest blisko śmierci, może nas
         // zabić w następnej turze albo nasza biblioteka się kończy — wtedy
         // atakujemy nawet kosztem wymiany. (strażnik „> 0" odróżnia realną
@@ -6304,10 +6356,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // presja bez obrażeń nie jest presją. Lethal (penetratingPower) jest
         // wyżej i nie przechodzi przez tę gałąź, bo wtedy atak nie jest jałowy.
         const wholeAttackFutile = attackers.length > 0 && futileAttackers === attackers.length;
-        if (racing && attackers.length > 0 && !wholeAttackFutile) {
+        if (racing && attackers.length > 0 && !wholeAttackFutile && !throwsGuard) {
           score += (totalPower >= enemyLife - 5 || enemyPoison + infectTotalPower >= 6) ? 20 : 8;
           if (libraryExists && myLibraryCount(view) <= 2) score += 15;
         }
+        // E: kara za oddaną gardę. Premię wyścigu POMIJAMY (L3 — kara musi
+        // być liczona razem z premią; +8/+20 przebijałoby każdą drobną karę),
+        // a mimo to atak musi wyjść PONIŻEJ passu, bo następna tura bez
+        // blokerów to przegrana, nie wymiana.
+        if (throwsGuard) score -= P.crackbackPenalty;
         // B3 — EV ataku: gdy przeciwnik może mieć removal (instant z damage)
         // i ma otwartą manę, atak wartościowym stworem traci na wartości —
         // kara proporcjonalna do prawdopodobieństwa i wartości stwora.

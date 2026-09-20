@@ -85,7 +85,14 @@ test('D/2 anty-over-fix: ten sam 3/1 atakuje w pustą planszę (realne obrażeni
 test('D/3 anty-over-fix: 3/1 atakuje, gdy WYMIENIA się z blokerem (3/3)', () => {
   // Kara za jałowość nie może zablokować ataku, który realnie coś zabija:
   // 3 mocy >= 3 wytrzymałości blokera = wymiana (obrażenia + usunięcie blokera).
-  const s = gra({ zycieBota: 3, zycieWroga: 7 });
+  //
+  // E (zgłoszenie właściciela 2026-09-20): fixture podnosi życie bota z 3 do
+  // 12, bo przy 3 życiach ten sam atak podpada pod NOWĄ karę za oddaną gardę
+  // (wróg może NIE blokować i zabić w następnej turze niezatapniętym 3/3 —
+  // dokładnie scenariusz E). Ten strażnik mierzy GRANICĘ klasyfikacji
+  // „jałowy atak", więc trzymamy go w reżimie bez kolizji z regułą E;
+  // crackback ma własny pin: test/zgloszenie-e-oddana-garda.test.js.
+  const s = gra({ zycieBota: 12, zycieWroga: 7 });
   dodajKarte(s, 'przodek', 'furious-forebear', 'p1');
   dodajVanilla(s, 'b1', 'p2', { power: 3, toughness: 3 });
   assert.deepEqual(atak(s), ['przodek'], 'wymiana 3/1 za 3/3 to zysk — atak ma zostać');
