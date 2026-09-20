@@ -208,15 +208,21 @@ function bootstrapTable() {
   });
 
   // Zgłoszenie C (2026-09-20): sekcja „Log partii" — ten sam wzorzec co
-  // „Przebieg tur (dla AI)", ale źródłem tekstu jest LOG STOŁU (sesja
-  // wystawia logTextFor(n)/logTextAll), a nie zapis dla AI w trzeciej osobie.
-  els.logTurnSelect?.addEventListener('change', () => rerender());
+  // „Przebieg tur (dla AI)", ale źródłem tekstu jest LOG (sesja wystawia
+  // logTextFor(n)/logTextAll), a nie zapis dla AI w trzeciej osobie.
+  // Lista tur nie ma pozycji „cała partia" (uwaga właściciela 2026-09-20e):
+  // select wybiera TYLKO zakres przycisku „Kopiuj wybraną turę", a cały
+  // zapis kopiuje osobny „Kopiuj całą partię". Wybór gracza zapamiętujemy,
+  // żeby nowa tura nie zrywała mu wyboru (render tylko odbudowuje listę).
+  els.logTurnSelect?.addEventListener('change', () => {
+    if (els.logTurnSelect.dataset) els.logTurnSelect.dataset.logPick = els.logTurnSelect.value;
+    rerender();
+  });
   els.logCopyTurn?.addEventListener('click', () => {
     if (!session) return;
     const scope = selectedLogTurn(els);
-    const text = scope === 'all'
-      ? (typeof session.logTextAll === 'function' ? session.logTextAll() : '')
-      : (typeof session.logTextFor === 'function' ? session.logTextFor(scope) : '');
+    if (scope == null) return;
+    const text = typeof session.logTextFor === 'function' ? session.logTextFor(scope) : '';
     if (!text) return;
     copyTextToClipboard(text, els.logCopyTurn);
   });

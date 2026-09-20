@@ -1,8 +1,9 @@
 // Zgłoszenie C (2026-09-20, uwagi z gry): sekcja „Log partii" ma dostać te
 // same narzędzia co „Przebieg tur (dla AI)", ale nad logiem stołu:
 //   C1 — `Tura:` select + „Kopiuj wybraną turę" + „Kopiuj całą partię";
-//   C2 — lista z WSZYSTKIMI turami i pozycją „cała partia" (domyślna,
-//        drukowana na bieżąco);
+//   C2 — lista z WSZYSTKIMI turami (bez pozycji „cała partia" — uwaga
+//        właściciela 2026-09-20e: przełączanie tury nic nie zmienia w liście
+//        logu, a cały zapis kopiuje osobny przycisk);
 //   C3 — chronologia: najnowsze na DOLE, nowe wiersze dopisywane na końcu.
 // Test pilnuje zakresów sesji (log niesie numer tury i gracza) oraz renderu
 // (kolejność listy, opcje selecta, brak duplikatów po dwóch renderach —
@@ -174,33 +175,50 @@ test('C/2: tekst „cała partia" rośnie na bieżąco (nowe wpisy na końcu)', 
   assert.ok(after.startsWith(before), 'wcześniejsze zdania zostają na początku (dopisywanie na końcu)');
 });
 
-test('C/1+C2: render panelu — select z „cała partia" domyślnie, zakres wg wyboru', () => {
+test('C/1+C2: render panelu — lista TYLKO rzeczywistych tur, zakres wg wyboru', () => {
   const { registry, decks } = buildDecks();
   const session = createSession({ seed: 35, registry, decks });
   playSome(session, 20);
   const els = makeEls();
-  renderLogPanel(els, session, selectedLogTurn(els));
-  // Domyślnie: „cała partia" na czele listy i wybrana — to zakres kopiowania.
-  assert.equal(els.logTurnSelect.children[0].value, 'all');
-  assert.equal(els.logTurnSelect.children[0].textContent, 'cała partia');
-  assert.equal(els.logTurnSelect.value, 'all', 'domyślny wybór to „cała partia"');
-  assert.equal(selectedLogTurn(els), 'all', 'zakres kopiowania bierze się z selecta');
-  // Wszystkie tury są wybieralne (pozycja „cała partia" + każda tura).
+  renderLogPanel(els, session);
   const turns = session.logTurnEntries();
-  assert.equal(els.logTurnSelect.children.length, turns.length + 1, 'lista = cała partia + wszystkie tury');
+  // Lista = tury, i nic więcej: żadnej pozycji „cała partia" (uwaga
+  // właściciela 2026-09-20e — przełączanie tury nie zmienia listy logu,
+  // a cały zapis kopiuje osobny przycisk).
+  assert.equal(els.logTurnSelect.children.length, turns.length, 'lista = wszystkie tury');
+  assert.ok(!els.logTurnSelect.children.some((o) => o.value === 'all'),
+    'w liście została pozycja „cała partia"');
+  assert.ok(!els.logTurnSelect.children.some((o) => /cała partia/.test(o.textContent)),
+    'w liście została pozycja „cała partia"');
   for (const turn of turns) {
     assert.ok(els.logTurnSelect.children.some((o) => o.value === String(turn.number)), `tura ${turn.number} w liście`);
   }
-  // Wybór tury: zakres kopiowania to TA tura, a sesja daje jej tekst.
-  els.logTurnSelect.value = String(turns[0].number);
-  renderLogPanel(els, session, selectedLogTurn(els));
-  assert.equal(selectedLogTurn(els), turns[0].number, 'wybór gracza jest zakresem kopiowania');
-  assert.equal((session.logTextFor(turns[0].number).match(/\*\*Tura/g) ?? []).length, 1,
+  // Domyślny zakres kopiowania = NAJNOWSZA tura (kopiowanie „na bieżąco").
+  const newest = turns[turns.length - 1].number;
+  assert.equal(selectedLogTurn(els), newest, 'domyślnie wybrana ma być najnowsza tura');
+  assert.equal((session.logTextFor(newest).match(/\*\*Tura/g) ?? []).length, 1,
     'jedna tura = jeden nagłówek w tekście do skopiowania');
-  // Odbudowa listy nie gubi wyboru gracza (ten sam zestaw tur = ten sam DOM).
-  const optionRef = els.logTurnSelect.children[1];
-  renderLogPanel(els, session, selectedLogTurn(els));
-  assert.equal(els.logTurnSelect.children[1], optionRef, 'lista nie jest odbudowywana bez zmiany zestawu tur');
+  // Wybór gracza: zakres kopiowania to TA tura…
+  els.logTurnSelect.value = String(turns[0].number);
+  els.logTurnSelect.dataset.logPick = String(turns[0].number);
+  renderLogPanel(els, session);
+  assert.equal(selectedLogTurn(els), turns[0].number, 'wybór gracza jest zakresem kopiowania');
+  // …i nie zrywa go nowa tura w logu (domyślny zakres ≠ wybór gracza).
+  playSome(session, 30);
+  renderLogPanel(els, session);
+  assert.equal(selectedLogTurn(els), turns[0].number,
+    'nowa tura w logu zmiotła wybór gracza');
+  // Odbudowa listy nie gubi wyboru (ten sam zestaw tur = ten sam DOM).
+  const optionRef = els.logTurnSelect.children[0];
+  renderLogPanel(els, session);
+  assert.equal(els.logTurnSelect.children[0], optionRef, 'lista nie jest odbudowywana bez zmiany zestawu tur');
+});
+
+test('C/2 (uwaga właściciela 2026-09-20e): bez sesji select jest pusty i wyłączony', () => {
+  const els = makeEls();
+  renderLogPanel(els, { logTurnEntries: () => [] });
+  assert.equal(selectedLogTurn(els), null, 'brak tur = brak zakresu kopiowania');
+  assert.equal(els.logTurnSelect.disabled, true, 'select bez tur ma być wyłączony');
 });
 
 test('C (korekta właściciela): sekcja „Log partii" to JEDNA lista + select + dwa przyciski', () => {
@@ -218,6 +236,11 @@ test('C (korekta właściciela): sekcja „Log partii" to JEDNA lista + select +
   assert.doesNotMatch(sekcja, /id="log-text"/, 'sekcja ma drugie pole z tekstem logu');
   assert.doesNotMatch(html, /\.log-text-box\s*\{/, 'został styl dodatkowego pola tekstowego');
   assert.doesNotMatch(html, /\.log-tap\s*\{/, 'wpisy tapnięć mają własny kolor (a nie mają mieć)');
+  // Uwaga właściciela (2026-09-20e): w liście rozwijanej TYLKO rzeczywiste
+  // tury — żadnej statycznej opcji „cała partia" (select wypełnia render).
+  const select = sekcja.slice(sekcja.indexOf('id="log-turn-select"'));
+  assert.doesNotMatch(select.slice(0, select.indexOf('</select>')), /<option/,
+    'select ma statyczną opcję („cała partia"?) — ma być wypełniany turami');
 });
 
 test('C/3: lista logu renderuje się chronologicznie — najstarsze u góry, nowe na końcu', () => {

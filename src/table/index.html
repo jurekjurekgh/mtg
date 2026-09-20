@@ -1196,14 +1196,14 @@
       <summary>Log partii</summary>
       <div class="panel-body">
         <!-- Zgłoszenie C (2026-09-20): te same narzędzia co w „Przebieg tur
-             (dla AI)", ale nad LISTĄ logu (niżej) — Tura: select (z pozycją
-             „cała partia" wybraną domyślnie) wybiera zakres kopiowania;
-             kopiowany jest LOG, a nie zapis dla AI. -->
+             (dla AI)", ale nad LISTĄ logu (niżej) — Tura: select wybiera
+             zakres kopiowania; kopiowany jest LOG, a nie zapis dla AI. -->
         <div class="row turn-history-controls">
           <label class="turn-history-toggle" for="log-turn-select">Tura:</label>
-          <select id="log-turn-select" class="turn-history-select">
-            <option value="all">cała partia</option>
-          </select>
+          <!-- Uwaga właściciela (2026-09-20e): lista zawiera TYLKO rzeczywiste
+               tury (żadnej pozycji „cała partia") — wybiera zakres przycisku
+               „Kopiuj wybraną turę", a całość kopiuje sąsiedni przycisk. -->
+          <select id="log-turn-select" class="turn-history-select"></select>
           <button id="log-copy-turn" class="ghost-btn" type="button">Kopiuj wybraną turę</button>
           <button id="log-copy-all" class="ghost-btn" type="button">Kopiuj całą partię</button>
         </div>

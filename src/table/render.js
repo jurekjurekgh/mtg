@@ -5052,7 +5052,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   }
 
   // --- Log partii: kopiowanie po turach (zgłoszenie C1/C2) --------------
-  renderLogPanel(els, session, selectedLogTurn(els));
+  renderLogPanel(els, session);
 
   // M198/G (zlecenie właściciela): panel „Rozumowanie bota" usunięty —
   // właściciel z niego nie korzystał. Sesja nadal zbiera ślad decyzji bota
@@ -5441,34 +5441,45 @@ export function renderPlayerMeta(host, view, playerId) {
 /**
  * Zgłoszenie C (2026-09-20, uwagi z gry): sekcja „Log partii" dostaje te same
  * narzędzia co „Przebieg tur (dla AI)", ale nad logiem stołu: select
- * z WSZYSTKIMI turami + pozycja „cała partia" (domyślna, drukowana na
- * bieżąco) oraz dwa przyciski kopiowania. Zakres `null`/`'all'` = cała partia.
+ * z WSZYSTKIMI turami (bez pozycji „cała partia" — uwaga właściciela
+ * 2026-09-20e: przełączanie tury nic nie zmienia w liście logu, a cały zapis
+ * i tak kopiuje osobny przycisk) oraz dwa przyciski kopiowania.
+ *
+ * Select jest wyłącznie ZAKRESEM KOPIOWANIA („Kopiuj wybraną turę") —
+ * lista logu niżej pokazuje zawsze cały log, chronologicznie.
  */
 export function selectedLogTurn(els) {
   const raw = els?.logTurnSelect?.value;
-  if (raw == null || raw === '' || raw === 'all') return 'all';
+  if (raw == null || raw === '') return null;
   const parsed = Number.parseInt(raw, 10);
-  return Number.isFinite(parsed) ? parsed : 'all';
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
-export function renderLogPanel(els, session, selected = 'all') {
+export function renderLogPanel(els, session) {
   if (!els?.logTurnSelect) return;
   const turns = typeof session.logTurnEntries === 'function' ? session.logTurnEntries() : [];
-  const wanted = selected === 'all' || turns.some((entry) => entry.number === selected)
-    ? selected
-    : 'all';
   const select = els.logTurnSelect;
-  if (select) {
-    // Odbudowa listy tylko przy zmianie zestawu tur (wzorzec M188/K) —
-    // inaczej każdy render zamykałby rozwinięty select pod palcem gracza.
-    const signature = `all|${turns.map((entry) => entry.number).join(',')}`;
-    if (select.dataset?.logTurns !== signature) {
-      if (select.dataset) select.dataset.logTurns = signature;
-      clear(select);
-      const all = document.createElement('option');
-      all.value = 'all';
-      all.textContent = 'cała partia';
-      select.appendChild(all);
+  // Odbudowa listy tylko przy zmianie zestawu tur (wzorzec M188/K) — inaczej
+  // każdy render zamykałby rozwinięty select pod palcem gracza.
+  const signature = turns.map((entry) => entry.number).join(',');
+  if (select.dataset?.logTurns !== signature) {
+    // Domyślnie zakresem jest NAJNOWSZA tura (kopiowanie „na bieżąco"), ale
+    // świadomy wybór gracza jest respektowany, dopóki jego tura istnieje.
+    const picked = Number.parseInt(select.dataset?.logPick ?? '', 10);
+    const newest = turns.length > 0 ? turns[turns.length - 1].number : null;
+    const wanted = turns.some((entry) => entry.number === picked) ? picked : newest;
+    if (select.dataset) {
+      select.dataset.logTurns = signature;
+      if (Number.isFinite(picked) && picked !== wanted) delete select.dataset.logPick;
+    }
+    clear(select);
+    if (turns.length === 0) {
+      // Sesji jeszcze nie ma — select nie ma czego kopiować (nie udajemy tury).
+      const brak = document.createElement('option');
+      brak.value = '';
+      brak.textContent = '— brak tur —';
+      select.appendChild(brak);
+    } else {
       for (const entry of turns) {
         const option = document.createElement('option');
         option.value = String(entry.number);
@@ -5476,9 +5487,9 @@ export function renderLogPanel(els, session, selected = 'all') {
         select.appendChild(option);
       }
     }
-    select.disabled = false;
-    select.value = String(wanted);
+    if (wanted != null) select.value = String(wanted);
   }
+  select.disabled = turns.length === 0;
 }
 
 /** Numer tury wybrany w selekcie „Przebieg tur" (null = brak wyboru). */
