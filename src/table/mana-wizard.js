@@ -600,10 +600,43 @@ export function shouldOpenManaWizard({ sources, poolMana, totalNeeded, requireme
  * `sources`: dostępne (nietapnięte) źródła z manaSourcesOf — opcjonalne; bez
  * niego kreator pokazuje tylko nietapnięte lądy (zachowanie wstecz dla testów).
  */
+/**
+ * Prowadzenie płatności (zgłoszenie G właściciela, 2026-09-20): „kreator many
+ * kazał mi tapnąć 4 lądy do czaru za 2”. Kreator NIE MOŻE prosić o tapnięcie
+ * źródła, które do NICZEGO się nie przyda — a tak było, gdy suma była już
+ * zebrana, a brakowało koloru: lista pokazywała kolejne lądy w kolejności
+ * stołu (Wyspa, Góra, Las, Bagno), więc gracz tapował Las „na zapas”, a płatność
+ * dopinała się dopiero na Bagnie (4 tapnięcia do kosztu {1}{B}).
+ *
+ * Reguła (dwie części, obie testowalne):
+ * 1. KOLEJNOŚĆ: źródła dające brakujący kolor idą PIERWSZE — pierwszy wiersz
+ *    kreatora jest zawsze krokiem, który realnie przybliża płatność (gracz
+ *    tapujący „po kolei z góry” nie marnuje tapnięć).
+ * 2. ZAKRES: gdy suma many jest już zebrana (`totalMet`), a brakuje koloru,
+ *    zostają WYŁĄCZNIE źródła dające brakujący kolor — źródło bez tego koloru
+ *    dodałoby manę, której płatność już nie potrzebuje (marnowanie zasobów).
+ *    Pusta lista jest wtedy prawdą (nic nie pomoże) — kreator mówi to wprost.
+ *
+ * `missingColors` to spłaszczone grupy NIEpokrytych wymagań (grupa hybrydowa
+ * {U/G} daje ['U','G'] — kolor wystarcza którykolwiek).
+ */
+export function guideManaSources(sources, missingColors, totalMet) {
+  const missing = Array.isArray(missingColors) ? missingColors : [];
+  const covers = (src) => (src.colors ?? []).some((c) => missing.includes(c));
+  // Sortowanie jest STABILNE (JS sort), więc w obrębie grupy zostaje porządek
+  // stołu — kreator nie przestawia źródeł bez powodu.
+  const ordered = [...(sources ?? [])].sort((a, b) => Number(covers(b)) - Number(covers(a)));
+  // Brak wymagań kolorów (koszt bezbarwny) → filtr nie ma czego zawężać, a
+  // każdy nietapnięty ląd nadal dolicza manę do sumy.
+  if (!totalMet || missing.length === 0) return ordered;
+  const pomocne = ordered.filter(covers);
+  return pomocne.length > 0 ? pomocne : [];
+}
+
 export function wizardProgress(view, playerId, descriptor, sources, poolUnits = []) {
   const player = (view.players ?? []).find((p) => p.id === playerId);
   const pool = player?.mana ?? 0;
-  const offered = Array.isArray(sources) ? sources : untappedLandSourcesOf(view, playerId);
+  const offeredRaw = Array.isArray(sources) ? sources : untappedLandSourcesOf(view, playerId);
   const remainingTotal = Math.max(0, descriptor.totalNeeded - pool);
   // KOLOROWA PULA (cz. 8): pokrycie kolorow z jednostek many W PULI (poolUnits
   // z expandManaPool(player.manaPool) - main.js czyta z sesji). Pula odzwierciedla
@@ -611,11 +644,17 @@ export function wizardProgress(view, playerId, descriptor, sources, poolUnits = 
   // poprawny BEZ recznego sledzenia co-Gracz-tapnal (usuniety bandaz committed).
   // Castability (untapped) sprawdza engine w hasColor PRZED tapnieciem.
   const covered = coveredRequirementCount(poolUnits.map((colors) => ({ colors })), descriptor.requirements);
+  // A/G (zgłoszenie właściciela): kreator prowadzi płatność — kolejność
+  // „najpierw brakujące kolory" + filtr źródeł, które nic już nie wnoszą.
+  const missingColors = descriptor.requirements.slice(covered).flatMap((colors) => colors ?? []);
+  const offered = guideManaSources(offeredRaw, missingColors, remainingTotal <= 0)
+    .map((src) => ({ ...src, coversMissing: missingColors.some((c) => (src.colors ?? []).includes(c)) }));
   return {
     pool,
     remainingTotal,
     requirements: descriptor.requirements.map((colors, i) => ({ colors, covered: i < covered })),
     coveredCount: covered,
+    missingColors,
     untappedSources: offered,
     done: remainingTotal <= 0 && covered >= descriptor.requirements.length,
   };
@@ -640,6 +679,11 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
   if (pending.length > 0) parts.push(`kolory do pokrycia: ${manaSymbolsHtml(pending.join(', '))}`);
   progress.innerHTML = parts.length > 0 ? parts.join(' · ') : 'Mana zebrana — rzucam…';
   host.appendChild(progress);
+  // G (zgłoszenie właściciela 2026-09-20): źródło DOMYKAJĄCE brakujący kolor
+  // jest wypisane wprost („— pokrywa {B}”), a wiersze z pustą listą źródeł
+  // mówią WPROST, że żadne dostępne źródło nie daje brakującego koloru —
+  // gracz nie tapuje na oślep kolejnych lądów.
+  const missingLabel = (colors) => manaSymbolsHtml((colors ?? []).map((c) => `{${c}}`).join(''));
   const list = document.createElement('div');
   list.className = 'mana-wizard-sources choice-request-options';
   for (const source of model.untappedSources) {
@@ -650,6 +694,7 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
     const cost = source.activationCost
       ? ` — koszt aktywacji ${manaSymbolsHtml(activationCostSymbols(source.activationCost))}`
       : '';
+    const covers = source.coversMissing ? ` — pokrywa ${missingLabel((source.colors ?? []).filter((c) => (model.missingColors ?? []).includes(c)))}` : '';
     // M292: wiersz rysuje TEN SAM komponent co kreatory wyboru i steppery
     // (`src/table/picker.js`, `kind: 'button'`) — wspólne 44 px celu dotyku i
     // wspólna etykieta, zero osobnej funkcji wizualizującej dla tego ekranu.
@@ -658,7 +703,7 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
     renderPickerRow(list, {
       kind: 'button',
       id: source.id,
-      html: `Tapnij: ${escapeHtml(source.name)} (${sourceColorsLabel(source.colors)}${gain})${cost}`,
+      html: `Tapnij: ${escapeHtml(source.name)} (${sourceColorsLabel(source.colors)}${gain})${cost}${covers}`,
       rowClassName: 'action choice-request-option mana-wizard-source',
       onActivate: (sourceId) => onTapSource?.(sourceId),
     });
@@ -666,7 +711,13 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
   if (model.untappedSources.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'zone-empty';
-    empty.textContent = 'Brak nietapniętych źródeł many.';
+    // G: przy niepokrytym kolorze i zebranej sumie pusta lista znaczy
+    // „żadne z dostępnych źródeł nie daje tego koloru” — komunikat musi to
+    // nazwać, żeby gracz wiedział, że ma Anulować, a nie szukać dalej.
+    const brakKoloru = (model.missingColors ?? []).length > 0 && model.remainingTotal <= 0;
+    empty.textContent = brakKoloru
+      ? `Żadne dostępne źródło nie daje ${(model.missingColors ?? []).join(', ')} — Anuluj płatność.`
+      : 'Brak nietapniętych źródeł many.';
     list.appendChild(empty);
   }
   host.appendChild(list);

@@ -225,6 +225,10 @@ globalThis.REPO_DECKS = {
   // talia wskazuje DRUK — sama nazwa jest odtąd niejednoznaczna i parser
   // odrzuca ją jawnym błędem, zamiast cicho brać pierwszy pasujący wpis.
   'many-wizard': '# Talia many-wizard\n\n26x Island\n6x Plains\n8x Curate (BRO)\n',
+  // Zgłoszenie G (właściciel, 2026-09-20): koszt {1}{B} przy CZTERECH
+  // nietapniętych podstawowych lądach (Wyspa, Góra, Las, Bagno) — dokładnie
+  // układ ze zgłoszenia („kreator kazał tapnąć 4 lądy do czaru za 2”).
+  'g-canonized': '# Talia G\n\n4x Island\n4x Mountain\n4x Forest\n4x Swamp\n24x Canonized in Blood (LCI)\n',
 };
 // 15f: przełączniki belki startują z pamięci — harness click-through wpina
 // hi-gfx OFF PRZED bootem (warstwa pauzuje grę czekając na zamknięcie;
@@ -610,6 +614,52 @@ test('kreator many (E.3a): dwukolorowa płatność Curate otwiera wizard, źród
   assert.equal(dom.get('mana-wizard').className, 'modal', 'po zebraniu sumy kreator ma się zamknąć');
   assert.match(textOf(dom.get('stack-zone')), /Curate/, 'Curate po zebraniu many nie trafił na stos');
   assert.doesNotMatch(dom.get('notice').className, /active/);
+});
+
+test('kreator many (zgłoszenie G): {1}{B} przy czterech lądach domyka się w DWÓCH tapnięciach', () => {
+  // Polityka gracza jak w zgłoszeniu: tapujemy PIERWSZY wiersz kreatora
+  // (bez zastanowienia, „po kolei z góry”). Kontrakt: kreator nie może prosić
+  // o tapnięcie źródła, które nic nie wnosi — płatność {1}{B} to 2 tapnięcia,
+  // niezależnie od tego, na której pozycji stoi ląd z brakującym kolorem.
+  dom.get('seed').value = '3';
+  dom.get('deck-human').value = 'g-canonized';
+  dom.get('deck-bot').value = 'g-canonized';
+  dom.get('new-game').click();
+  let taps = 0;
+  let wizardOpened = false;
+  let domknięte = false;
+  let rekaPrzed = null;
+  for (let i = 0; i < 400; i += 1) {
+    if (dom.get('bot-move').className === 'modal active') {
+      dom.get('bot-move-ok').click();
+      continue;
+    }
+    if (dom.get('mana-wizard').className === 'modal active') {
+      // Ręka w chwili otwarcia kreatora: po zapłacie karta schodzi z ręki —
+      // to pinuje, że płatność SKOŃCZYŁA SIĘ RZUTEM (stos w Mini-DOM-ie
+      // potrafi się już rozstrzygnąć, więc „karta na stosie” nie jest
+      // stabilną asercją).
+      if (!wizardOpened) rekaPrzed = dom.get('hand').children.length;
+      wizardOpened = true;
+      const rows = wizardSourceButtons();
+      assert.ok(rows.length > 0, `kreator bez źródeł w kroku ${taps}: ${textOf(dom.get('mana-wizard-body'))}`);
+      rows[0].click();
+      taps += 1;
+      if (dom.get('mana-wizard').className !== 'modal active') { domknięte = true; break; }
+      continue;
+    }
+    const buttons = dom.get('actions').children.filter((c) => (c.listeners.click ?? []).length > 0);
+    const cast = buttons.find((b) => /^Rzuć/.test(b.text) && /Canonized in Blood/.test(b.text));
+    if (cast) { cast.click(); continue; }
+    const button = pickActionButton(dom.get('actions'));
+    if (!button) break;
+    button.click();
+  }
+  assert.ok(wizardOpened, 'kreator many nie otworzył się przy rzucie Canonized in Blood ({1}{B})');
+  assert.ok(domknięte, 'płatność nie domknęła się po tapnięciach');
+  assert.ok(taps <= 2, `kreator zażądał ${taps} tapnięć przy koszcie 2 many (max 2)`);
+  assert.equal(dom.get('hand').children.length, rekaPrzed - 1,
+    `po zapłacie karta nie zeszła z ręki (${textOf(dom.get('hand')).slice(0, 80)})`);
 });
 
 test('kreator many (E.3a): Anuluj przerywa płatność — rzut nie odpala, mana zostaje w puli', () => {

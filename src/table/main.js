@@ -2319,6 +2319,10 @@ function bootstrapTable() {
       costStr: manaWizardDescriptor.costStr,
       remainingTotal: progress.remainingTotal,
       requirements: progress.requirements,
+      // G (zgłoszenie właściciela): brakujące KOLORY jadą do renderu — wiersz
+      // źródła mówi „— pokrywa {B}”, a pusta lista mówi wprost, że żadne
+      // dostępne źródło nie daje tego koloru.
+      missingColors: progress.missingColors,
       untappedSources: progress.untappedSources.map((src) => ({ ...src, name: session.nameOf(src.cardId) })),
     }, {
       // Tapnięcie źródła: ląd → tap_for_mana, zdolność many → activate_ability
