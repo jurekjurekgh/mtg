@@ -6387,3 +6387,31 @@ Strażnik: `test/zgloszenie-i-discover-brak-trafienia.test.js` (RED 0/4).
 59 modułów / **3948,2 kB**, benchmark quick 672 mecze: heuristic 85,9%
 (baseline 86,0% — szum). Lekcja: **L156** (trzy warstwy: prowadzenie płatności,
 dane decyzji z oczekującej decyzji, fakty → tekst → bramka).
+
+## M396 (2026-09-20) — paczka J: tapnięcia na manę w „Logu partii"
+
+**J (zgłoszenie właściciela)** — „w sekcji «Log partii» chcę widzieć dodatkowo
+każdy permanent tapnięty na manę (co i kiedy) — to ułatwi debugowanie błędów”.
+Pomiar: `mana_produced` (`resources.js` — `{ playerId, source: objectId,
+amount, colors }`) niósł komplet danych, ale chodził wyłącznie przez szum
+`TURN_NOISE`/`MAIN_LOG_NOISE` do bufora „Rozgrywki” dla bota; w logu stołu nie
+było po nim śladu (sonda pełnej partii: 10 produkcji many bota, ZERO wpisów
+w `logEntries()`). Opisujemy PRODUKCJĘ many, nie `object_tapped`: tapnięcie nie
+zna ani liczby jednostek, ani kolorów — a bez nich wpis nie mówi, co zapłacono.
+
+Naprawa: czysta, eksportowana `manaSourceLogText(e, { nameOfObject, who })`
+(„Ty tapujesz na manę: Wyspa → {U}”; druga osoba „tapuje”; symbole w liczbie
+`max(amount, colors.length)` — „{C}{C}{C}”; `null` dla zdarzeń bez nazwy
+źródła) + wrapper `logManaSource` wołający `sessionLog('tap', …)` po nagłówku
+fazy w OBU gałęziach `MAIN_LOG_NOISE` (komendy gracza i pętla bota) + CSS
+`.log-tap` (wyciszony kolor — wpis debugowy, nie narracja). Granice pinuje
+strażnik: wpis NIE trafia do modala „Rozgrywka” (`botMoves`) ani do zapisu tur
+dla AI (`turnHistory`) — decyzja właściciela z 2026-08-02 zostaje w mocy.
+Pułapka złapana testem: pierwsza wersja wrappera wołała `whoN` (istnieje tylko
+w closures deskryptorów zdarzeń) → `RuntimeError: whoN is not defined`;
+naprawa na `who()` z zasięgu sesji.
+
+Strażnik: `test/zgloszenie-j-tapniecia-many-w-logu.test.js` (3 piny; przed
+poprawką plik czerwony). Bramy: `node tools/run-tests.mjs all` **6025/6025**
+(6022 + 3), `npm run build` 59 modułów / **3950,9 kB**. Lekcja: **L157** (log
+debugowy bierze zdarzenie o treści, której szuka gracz — i ma granicę).

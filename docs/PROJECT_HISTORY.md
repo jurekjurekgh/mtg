@@ -19,6 +19,31 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-20c — trzecia paczka uwag z gry (J): tapnięcia na manę w „Logu partii"
+
+Właściciel po odświeżeniu tokenu GitHub: „Wypychaj” + nowe zgłoszenie —
+„w sekcji «Log partii» chcę widzieć dodatkowo każdy permanent tapnięty na manę
+(co i kiedy); to ułatwi debugowanie błędów”. Push dokumentacji F–I (`ecb1a8f`,
+po amendzie) i sekcji F–I w opisie PR #130 wykonane.
+
+**J (`7ebe4f5`)** — silnik od dawna niesie `mana_produced` (`{ playerId,
+source: objectId, amount, colors }`), ale zdarzenie chodziło tylko przez szum
+`MAIN_LOG_NOISE` do bufora „Rozgrywki”: w logu stołu nie było po nim śladu
+(sonda pełnej partii: 10 produkcji many bota, 0 wpisów w `logEntries()`).
+Dodane: czysta `manaSourceLogText(…)` („Ty tapujesz na manę: Wyspa → {U}”,
+symbole w liczbie `max(amount, colors.length)`, `null` bez nazwy źródła)
++ `logManaSource` w obu gałęziach szumu + rodzaj wpisu `tap` (CSS `.log-tap`).
+Granice: bez wpisu w modalu „Rozgrywka” (`botMoves`) i w zapisie tur dla AI
+(`turnHistory`) — decyzja właściciela 2026-08-02 o szumie modala w mocy.
+Po drodze złapana pułapka zasięgu: `whoN` istnieje tylko w closures
+deskryptorów zdarzeń (`RuntimeError` w teście); naprawa na `who()` sesji.
+
+**Bramy:** `node tools/run-tests.mjs all` **6025/6025**, `npm run build`
+59 modułów / **3950,9 kB**. Lekcja **L157** dopisana; budżet lektury startowej
+**99 971 / 100 000** (zapłacona skróceniem opisów przypadków w rejestrze).
+Plan: `docs/plans/PLAN_2026-09-20-uwagi-z-gry-j.md`. PR #130 czeka na decyzję
+właściciela.
+
 ## 2026-09-20 — paka uwag z gry A–E (PR #130, gałąź arena/01a0b8fe-mtg)
 
 Zlecenie właściciela (2026-09-20), zaraz po zamknięciu batcha 57: pięć

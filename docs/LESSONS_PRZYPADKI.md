@@ -2042,3 +2042,24 @@ w odpowiedzi (5 — snapshot przy koszcie NIE może zabić żywego odczytu).
 **Piny:** `test/zgloszenie-f-kreator-talii-wylaczony.test.js` (3), `test/zgloszenie-g-kreator-many-brakujacy-kolor.test.js` (4) + end-to-end `test/table-ui.test.js` (talia „g-canonized”: gracz tapuje ZAWSZE pierwszy wiersz kreatora; RED 3 tapnięcia przy koszcie 2), `test/zgloszenie-h-explore-nazwa-karty.test.js` (3), `test/zgloszenie-i-discover-brak-trafienia.test.js` (4). Wszystkie czerwone przed poprawką (0/3, 0/4+RED taps, 0/3, 0/4).
 
 **Wniosek dla procesu:** zgłoszenie „kreator/X kazał zrobić coś sprzecznego z regułą” mierzymy warstwami od silnika w górę (koszt → oferta → deskryptor → postęp → render), a naprawę pinujemy na warstwie, która realnie zawiodła — inaczej „fix w silniku” przechodzi zielono, a gracz dalej tapie cztery lądy.
+
+## L157 (2026-09-20) — przypadek: log tapnięć na manę (paczka J)
+
+**Zgłoszenie z partii** (trzecia paczka uwag tego samego dnia, PR #130):
+„Chciałbym w sekcji «Log partii» widzieć dodatkowo każdy tapnięty na manę permanent. To nam ułatwi debugowanie błędów — będzie widać co i kiedy zostało tapnięte”.
+
+**Pomiar przed naprawą.** Silnik od dawna niesie komplet danych, ale w logu stołu nie było po nich ŚLADU: `object_tapped` mapuje się na `null` w tekstach zdarzeń (log pokazuje tylko ruchy istotne), a `mana_produced` (`resources.js`: `{ playerId, source: objectId, amount, colors, grantMana }`) chodzi wyłącznie przez szum `TURN_NOISE`/`MAIN_LOG_NOISE` do bufora „Rozgrywki” dla bota. Sonda na pełnej partii (talia `ixalan` vs `warhammer-ubr`) potwierdziła: dziesięć produkcji many Nieprzyjaciela, ZERO wpisów w `logEntries()`.
+
+**Decyzja o zdarzeniu.** Opisujemy PRODUKCJĘ many, nie samo tapnięcie: `object_tapped` nie wie ani ile many powstało, ani jakiej — a bez tego wpis nie odpowiada na pytanie „co zapłacił”. `mana_produced` niesie źródło (obiekt na polu bitwy, więc działa też dla stwora-źródła many, artefaktu i Skarbu) oraz kolory. Wpis dotyczy więc dokładnie tego, czego szukał właściciel.
+
+**Naprawa.** (1) Czysta, eksportowana `manaSourceLogText(e, { nameOfObject, who })` — jedno miejsce z regułą tekstu: „Ty tapujesz na manę: Wyspa → {U}” (druga osoba: „tapuje”), symbole w liczbie `max(amount, colors.length)` („{C}{C}{C}” dla trzech bezbarwnych, powtórzenia przy dwóch jednostkach jednego koloru), `null` gdy zdarzenie nie jest produkcją, brak nazwy źródła albo nazwa to `?` (wpis bez wiedzy byłby szumem). (2) Wrapper `logManaSource(e)` w sesji woła `sessionLog('tap', …)` po nagłówku fazy — w OBU gałęziach `MAIN_LOG_NOISE` (strumień auto i pętla bota), jedno źródło reguły dla obu. (3) UI: `.log-tap` w `index.html` (wyciszony kolor — wpis debugowy, nie narracja).
+
+**Granice (świadome).** Wpis NIE wchodzi do modala „Rozgrywka” (`botMoves`) ani do zapisu tur dla AI (`turnHistory`) — decyzja właściciela z 2026-08-02 (modal nie pokazuje tapowania many) zostaje w mocy; miejscem na debug jest „Log partii”, który czyta ten sam strumień. Pin 3 strażnika pilnuje obu granic maszynowo.
+
+**Pułapka zasięgu (RED w trakcie prac).** Pierwsza wersja wrappera wołała `whoN(e.playerId)` — a `whoN` istnieje wyłącznie w closures deskryptorów zdarzeń (`session.js`), nie w closures sesji. Test czerwienił się na `RuntimeError: whoN is not defined` (1/3). Naprawa: `who()` z zasięgu sesji (ta sama mapa `PLAYER_NAMES`, której domyślnie używa `sessionLog`). Wniosek: nazwa pomocnika „obecna w pliku” nie znaczy „widoczna w moim zasięgu” — nowy konsument sprawdza SWÓJ closure.
+
+**Kolejność weryfikacji (RED → GREEN).** Odłożenie `src` (stash) → strażnik czerwony (brak eksportu), po przywróceniu 3/3. Sonda pełnej partii po naprawie: 10 wpisów `kind: 'tap'` w 3 turach, „Nieprzyjaciel tapuje na manę: Mountain #1 → {R}”, `botMoves` i `turnHistory` bez ani jednego „na manę”. Bramy: `node tools/run-tests.mjs all` **6025/6025** (6022 + 3 nowe piny).
+
+**Piny:** `test/zgloszenie-j-tapniecia-many-w-logu.test.js` — 3 przypadki: (1) reguła `manaSourceLogText` (jedna jednostka, druga osoba, trzy bezbarwne, dwie tego samego koloru, `null` dla obcych zdarzeń i bez nazwy); (2) realne `tap_for_mana` na stole dokłada wpis `kind: 'tap'` z nazwą i kolorem, a „Log partii” (`logTextAll`) go pokazuje; (3) wpis NIE trafia do `botMoves` ani `turnHistory`.
+
+**Wniosek dla procesu:** zgłoszenie „chcę dodatkowo widzieć X” to zamówienie na DWIE rzeczy naraz — treść wpisu (dobierz zdarzenie, które niesie pytanie gracza, a nie pierwsze z brzegu o podobnej nazwie) i jego granicę (gdzie wpis ma NIE trafić). Jedno i drugie jest pinowalne, więc obie strony lądują w strażniku.
