@@ -56,10 +56,20 @@ globalThis.document ??= {
 
 const REGISTRY = createCardRegistry();
 
+/**
+ * Talie scenario są SYNTETYCZNE (same podstawowe lądy) i to jest celowe:
+ * scenariusz dokłada wszystkie potrzebne karty ręcznie (`putCard`), a talia
+ * z katalogu wprowadzała zależność od CHURN-u kolekcji — zgłoszenie D
+ * (2026-09-20, Simian Simulacrum przeniesiony między talie Dominarii) zmieniło
+ * rękę bota na tyle, że bot miał odpowiedź na stosie i scena „Shock zabija
+ * 1/1" nie dochodziła do triggera Forebeara. Strażnik pilnuje decyzji
+ * w logu, nie zawartości konkretnej talii (lekcja: harness nie może zależeć
+ * od churnu danych, których nie mierzy).
+ */
 function decks() {
   return new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-wur.txt', 'utf8'), REGISTRY).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria-brg.txt', 'utf8'), REGISTRY).cardIds],
+    [HUMAN_ID, parseDeckText('# A\n20x Forest\n20x Island', REGISTRY).cardIds],
+    [BOT_ID, parseDeckText('# B\n20x Mountain\n20x Swamp', REGISTRY).cardIds],
   ]);
 }
 

@@ -117,8 +117,8 @@ liczone z plików `decks/*.txt`).
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
 |---|---|---|---:|---:|---:|
 | `alara` | Alara | WUBRG | 38 | 13 | 25 |
-| `dominaria-brg` | Dominaria (BRG) | BRG | 26 | 9 | 17 |
-| `dominaria-wu` | Dominaria (WU) | WUB | 24 | 8 | 16 |
+| `dominaria-brg` | Dominaria (BRG) | BRG | 27 | 9 | 18 |
+| `dominaria-wu` | Dominaria (WU) | WUB | 23 | 8 | 15 |
 | `final-fantasy` | Final Fantasy | WUBRG | 26 | 9 | 17 |
 | `forgotten-realms` | Forgotten Realms | WUBRG | 36 | 12 | 24 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 27 | 9 | 18 |

@@ -62,7 +62,16 @@ function sideSuffix(assignedColors, sideCards, colorsOf) {
  *     kolorów; remis → strona A, gdy ma <=2 przypisane kolory (preferuj mniejszą
  *     tożsamość), inaczej B — deterministycznie.
  *  3. Karty bezkolorowe (artefakty, Eldrazi) to „wypełniacz" — dosypywane do
- *     mniejszej strony, żeby zbalansować liczności.
+ *     mniejszej strony, żeby zbalansować liczności. WYJĄTEK (zgłoszenie D
+ *     właściciela, 2026-09-20): karta bezkolorowa, której ZDOLNOŚĆ wymaga
+ *     kolorowych pipów (`paymentColorsOf`, np. Simian Simulacrum z unearth
+ *     {2}{G}{G}), idzie na stronę, która TE PIPY MOŻE ZAPŁACIĆ — karta
+ *     bezkolorowa działa w każdej talii, ale jej zdolność nie; brak takiej
+ *     strony (obie albo żadna) → zwykły balans liczności. Preferencja nie
+ *     zmienia WYBORU podziału (maski): balans w pętli szukającej liczy
+ *     wypełniacz jak dotąd, bo karta bezkolorowa jest grywalna po obu stronach
+ *     (świadomy zakres — pełne wejście pipów w funkcję celu przenosi CAŁY
+ *     podział planu, patrz komentarz w `generate-plan-decks.mjs`).
  *  4. Wynik ważny tylko, gdy OBIE strony mają >= MIN_NONLAND.
  *  5. Funkcja celu: minimalizuj „leak" (karty rozdarte między strony — psują
  *     czystość kolorystyczną) ×10 + |różnica liczności|. Remis → mniejsza maska.
@@ -74,7 +83,7 @@ function sideSuffix(assignedColors, sideCards, colorsOf) {
  * @param {Array} nonlandCards karty nielandowe planu (obiekty z .colors)
  * @returns {null | { a, b, suffixA, suffixB }} części + sufiksy kolorów
  */
-export function splitPlanByColors(nonlandCards, colorsOf = defaultColorsOf) {
+export function splitPlanByColors(nonlandCards, colorsOf = defaultColorsOf, paymentColorsOf = () => []) {
   // „Bezkolorowy wypełniacz" = brak koloru ALBO wszystkie 5 (any-color, np.
   // Rupture Spire) — ląd dający dowolny kolor nie ma preferencji strony, więc
   // balansuje jak artefakt. Karta o 1-4 KONKRETNYCH kolorach ma tożsamość.
@@ -125,21 +134,48 @@ export function splitPlanByColors(nonlandCards, colorsOf = defaultColorsOf) {
 
   if (!best) return null;
 
-  // Rozdziel wypełniacz bezkolorowy zgodnie z policzonymi addA/addB
-  // (deterministycznie: stała kolejność wejściowa).
-  const fillerA = filler.slice(0, best.addA);
-  const fillerB = filler.slice(best.addA, best.addA + best.addB);
-  const a = [...best.coloredA, ...fillerA];
-  const b = [...best.coloredB, ...fillerB];
   const assignedB = COLORS.filter((c) => !new Set(best.assignedA).has(c));
+  const { a, b } = distributeColorless(
+    best.coloredA, best.coloredB, filler, best.assignedA, assignedB, paymentColorsOf,
+  );
   return {
     a,
     b,
     suffixA: sideSuffix(best.assignedA, best.coloredA, colorsOf),
     suffixB: sideSuffix(assignedB, best.coloredB, colorsOf),
     leak: best.leak,
-    imbalance: best.imbalance,
+    // Liczności RZECZYWISTE (po preferencji pipów) — tym różnią się talie;
+    // `leak` zostaje z wyboru podziału (patrz nagłówek).
+    imbalance: Math.abs(a.length - b.length),
   };
+}
+
+/**
+ * Rozdział kart BEZKOLOROWYCH na strony wybranego podziału (L41: jedno źródło
+ * dla wyboru strony i dla liczności raportowanych przez generator).
+ *
+ * 1. Karta z pipami zdolności (`paymentColorsOf`) → strona, która ma WSZYSTKIE
+ *    te kolory (jeśli tylko jedna taka strona; obie/żadna = brak preferencji).
+ * 2. Reszta → mniejsza strona naprzemiennie (deterministycznie, stała
+ *    kolejność wejściowa) — jak przed zgłoszeniem D.
+ */
+function distributeColorless(coloredA, coloredB, filler, assignedA, assignedB, paymentColorsOf) {
+  const a = [...coloredA];
+  const b = [...coloredB];
+  const undecided = [];
+  for (const card of filler) {
+    const pips = paymentColorsOf(card) ?? [];
+    if (pips.length === 0) { undecided.push(card); continue; }
+    const canA = pips.every((color) => assignedA.includes(color));
+    const canB = pips.every((color) => assignedB.includes(color));
+    if (canA && !canB) a.push(card);
+    else if (canB && !canA) b.push(card);
+    else undecided.push(card);
+  }
+  for (const card of undecided) {
+    if (a.length <= b.length) a.push(card); else b.push(card);
+  }
+  return { a, b };
 }
 
 /**

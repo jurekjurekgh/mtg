@@ -36,7 +36,44 @@ function isNonBasic(card) {
  *  3. Źródło bezbarwne ({C}), any-color albo NIE-źródło many → pusta lista →
  *     wypełniacz (balansuje strony, bez tożsamości koloru).
  */
-function splitColorsOf(card) {
+/**
+ * D (zgłoszenie właściciela 2026-09-20, Simian Simulacrum): kolorowa TOŻSAMOŚĆ
+ * karty BEZKOLOROWEJ to suma (a) kolorów produkowanej many (jak dotąd) i
+ * (b) PIPÓW KOSZTÓW JEJ ZDOLNOŚCI — aktywowanych (`ability.cost.colors`, np.
+ * unearth, cycling, equip) oraz alternatywnych/dodatkowych kosztów czaru
+ * (bezpośrednie deskryptory `spell.*` niosące kolory: escape, flashback,
+ * buyback, cleave). Tak liczy tożsamość koloru sama gra (CR 903.4: symbole
+ * many w kosztach zdolności), więc decyzja nie jest arbitralna.
+ *
+ * ŚWIADOMY ZAKRES: NIE czytamy `effects[]` ani `qualifier` — tamte `colors`
+ * opisują np. TOKEN albo wybór w efekcie, nie kartę (Call the Mountain
+ * Chocobo tworzy zielonego ptaka, ale sam jest czerwony). Pipy ukryte głębiej
+ * niż jedno piętro (np. w `additionalCost.*`) też pomijamy — katalog dziś ich
+ * nie ma, a reguła ma zostać czytelna (nowy kształt danych = świadoma decyzja).
+ */
+export function abilityCostColorsOf(card) {
+  const found = new Set();
+  const add = (colors) => {
+    for (const color of Array.isArray(colors) ? colors : []) {
+      if (COLOR_ORDER.includes(color)) found.add(color);
+    }
+  };
+  const objectsIn = (block) => (block && typeof block === 'object' && !Array.isArray(block)
+    ? Object.values(block).filter((value) => value && typeof value === 'object' && !Array.isArray(value))
+    : []);
+  for (const ability of card.abilities ?? []) {
+    add(ability?.cost?.colors);
+    for (const nested of objectsIn(ability?.cost)) add(nested.colors);
+  }
+  const spell = card.spell && typeof card.spell === 'object' ? card.spell : null;
+  for (const descriptor of objectsIn(spell)) add(descriptor.colors);
+  for (const key of ['additionalCost', 'additionalCosts']) {
+    for (const nested of objectsIn(spell?.[key])) add(nested.colors);
+  }
+  return COLOR_ORDER.filter((color) => found.has(color));
+}
+
+export function splitColorsOf(card) {
   const declared = Array.isArray(card.colors) ? card.colors.filter((c) => 'WUBRG'.includes(c)) : [];
   if (declared.length > 0) return declared;
   // Bezkolorowa: sprawdź produkcję many (ląd / artefakt / devoid — bez różnicy).
@@ -47,6 +84,13 @@ function splitColorsOf(card) {
     types: card.types ?? [], subtypes: card.subtypes ?? [],
     abilities: card.abilities ?? [], colors: [],
   }, null);
+  // D (zgłoszenie 2026-09-20): pipy kosztów zdolności (patrz
+  // `abilityCostColorsOf`) NIE wchodzą do tożsamości sterującej WYBOREM
+  // podziału — pełne wejście do funkcji celu przenosi CAŁY podział planu
+  // (Dominaria: WU|BRG → UB|WRG, czyli rename plików i unieważnienie
+  // fixture'ów) zamiast załatwić zgłoszenie „karta bezkolorowa ma trafić tam,
+  // gdzie da się zapłacić za jej zdolność". Pipy sterują stroną karty
+  // bezkolorowej w `distributeColorless` (trzeci argument splitPlanByColors).
   return src?.colors ?? [];
 }
 
@@ -293,7 +337,7 @@ export function buildDecks(registry = createCardRegistry()) {
     if (file.startsWith('worek')) { splitDecks.set(file, entry); continue; }
     const nonBasic = entry.cards.filter(isNonBasic);
     if (!needsSplit(nonBasic.length)) { splitDecks.set(file, entry); continue; }
-    const split = splitPlanByColors(nonBasic, splitColorsOf);
+    const split = splitPlanByColors(nonBasic, splitColorsOf, abilityCostColorsOf);
     if (!split) {
       // Fallback (decyzja właściciela „fill_then_keep"): plan zbyt jednokolorowy,
       // by dać dwie talie >=15 — ZOSTAW jedną talię i ostrzeż. Nie tworzymy
