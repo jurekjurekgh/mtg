@@ -46,44 +46,44 @@ logiki, zgodności z CR (twierdzenia regułowe weryfikowane u źródła — ADR 
 generyczności (ADR 0002 — grep po nazwach/ID kart w nowym kodzie), kompletności
 widoku (ADR 0017), determinizmu (ADR 0005), kontraktów zdarzeń (L112/L153).
 
-- [ ] E2.1 **Delve (CR 702.66)**: `delveExileLimit`/`declareDelveCast`/
+- [x] E2.1 **Delve (CR 702.66)**: `delveExileLimit`/`declareDelveCast`/
       `resolveDelveExile` (`spells.js`), walidacja i kolejność „wygnanie przed
       zapłatą" (`resources.js`), oferta podzbiorów z capem (`game-state.js`),
       wycena bota. Pytania: czy wygnanie jest KOSZTEM (zostaje po kontrze),
       czy oferta = walidacja (L48), czy limit jest generyczny, czy MV i koszt
       pozostają bez zmian (ruling KTK).
-- [ ] E2.2 **L153 (zdarzenia z wnętrza komendy)**: `tapObject(events)` i
+- [x] E2.2 **L153 (zdarzenia z wnętrza komendy)**: `tapObject(events)` i
       `declareAttackers` — czy wszystkie ścieżki tapnięcia (atak, koszt,
       efekt, crew) wracają ze zdarzeniami do skanu triggerów.
-- [ ] E2.3 **Annie Flash (M392)**: ETB „if you cast it" → powrót permanentu
+- [x] E2.3 **Annie Flash (M392)**: ETB „if you cast it" → powrót permanentu
       MV≤3 TAPNIĘTY (`allowLands`), aura wybiera gospodarza PRZED wejściem
       (CR 303.4f) + brak gospodarza → zostaje w grobie ze zdarzeniem,
       tapnięcie wygania DWIE wierzchnie karty z oknem `this_turn`.
-- [ ] E2.4 **Baral and Kari Zev (M393)**: licznik „pierwszy instant/sorcery
+- [x] E2.4 **Baral and Kari Zev (M393)**: licznik „pierwszy instant/sorcery
       w turze", darmowy rzut z ręki bez kosztu many/pipów/phyrexian (koszty
       dodatkowe płacone), ścieżka „If you don't" → `elseEffect` (L154) i token
       First Mate Ragavan 2/1 z haste do końca tury.
-- [ ] E2.5 **Paczka B (landcycling bez celu)**: `ownDeck` w widoku bota —
+- [x] E2.5 **Paczka B (landcycling bez celu)**: `ownDeck` w widoku bota —
       czy dolna granica „kopie w talii − kopie widoczne poza biblioteką" jest
       poprawna i czy FoW nie wycieka (ADR 0003/0017: własna talia jest wiedzą
       legalną, cudza nie).
-- [ ] E2.6 **Paczka E (`crackbackPenalty`/`forcedBlockLoss`)**: czy wycena ataku
+- [x] E2.6 **Paczka E (`crackbackPenalty`/`forcedBlockLoss`)**: czy wycena ataku
       na stanie PO ataku nie łamie wyjątków (atak wygrywający teraz, atak
       letalny) i czy kara przebija premię (L3).
-- [ ] E2.7 **Paczki C/F/G/H/I/J (warstwa stołu)**: chronologia i zakresy logu,
+- [x] E2.7 **Paczki C/F/G/H/I/J (warstwa stołu)**: chronologia i zakresy logu,
       uśpienie kreatora talii (odwracalność, brak martwych importów w bundlu),
       `guideManaSources` (tapnięć ≤ koszt), `pendingExplore.sourceCardId`
       w widoku decydenta, trzy warstwy discover (`revealedCardIds`/
       `bottomCount`/`libraryExhausted`), `manaSourceLogText` i jego granice
       (brak wpisu w „Rozgrywce" i w zapisie tur dla AI).
-- [ ] E2.8 **Narzędzia**: `split-deck-colors.mjs` (`abilityCostColorsOf`),
+- [x] E2.8 **Narzędzia**: `split-deck-colors.mjs` (`abilityCostColorsOf`),
       `generate-plan-decks.mjs`, `collection-art-ids.csv` (proweniencja —
       ADR 0029, strażnik `proweniencja-katalogu.test.js`), `benchmark.mjs`,
       `table-tester/*`.
-- [ ] E2.9 **Dane 10 kart batcha 57** vs snapshoty Scryfall (`docs/cards/*.json`):
+- [x] E2.9 **Dane 10 kart batcha 57** vs snapshoty Scryfall (`docs/cards/*.json`):
       koszt, typy, P/T, Oracle text dosłownie, `limitations` (ADR 0022 — tylko
       trzy dozwolone powody), rulingi w snapshotach (ADR 0028).
-- [ ] E2.10 raport `docs/audits/AUDYT_PR130_2026-09-20.md` z klasyfikacją
+- [x] E2.10 raport `docs/audits/AUDYT_PR130_2026-09-20.md` z klasyfikacją
       znalezisk (krytyczne/średnie/niskie) i decyzją per znalezisko.
 
 Kryterium ukończenia: raport w repo, każde znalezisko nazwane, ze ścieżką
@@ -141,5 +141,36 @@ pin czerwienieje (L13/L34) → `npm test` + `npm run build` → commit → push
 
 ## Podsumowanie wykonania
 
-(uzupełniane na bieżąco kolejnymi commitami; na końcu — wynik bram i lista
-znalezisk z decyzjami)
+### E2 — audyt: wykonany (raport `docs/audits/AUDYT_PR130_2026-09-20.md`, `c3c26b8`)
+
+Przeczytane wszystkie 28 plików `src/` diffu `8af0c7c..0b49b12`, 28 nowych
+testów i 24 zmodyfikowane, 34 dokumenty, 13 talii, 6 narzędzi. Kontrole ADR:
+0002 (0 porównań po `cardId`/nazwie w dodanym kodzie `src/`), 0005 (0 nowych
+`Math.random`), 0017 (`pendingDelveExile`/`pendingCraftExile` w widoku),
+0029/0022 (druki w `docs/cards/`, deck-builder uśpiony). Ważność pinów PR #130
+zmierzona mutacjami PA–PH: **8/8 wykrytych**.
+
+Znaleziska (szczegóły, cytaty CR i rulingów — w raporcie):
+
+| # | Ważność | Plik | Reguła | Decyzja |
+|---|---|---|---|---|
+| A | wysoka | `resources.js` / `spells.js` | CR 702.66a („may exile") | naprawione `b1c66e1` |
+| B | wysoka | `spells.js` / `mana-cost.js` | CR 702.66a/b, ruling KTK 2021-03-19 | naprawione `b1c66e1` |
+| C | średnia | `game-state.js` (reset tur) | ruling TDC 2023-04-14 | naprawione `b1c66e1` |
+| D | wysoka | `effects.js` | CR 303.4f, ruling OTJ 2024-04-12 | naprawione `19f47fa` + piny `69b69e2` |
+
+Otwarte świadomie (niskie, bez reguły CR): 7 pozycji — §6 raportu.
+
+### E3 — naprawy: wykonane, każda z pinem RED→GREEN i mutacją
+
+| Commit | Zakres | Testy | Build |
+|---|---|---|---|
+| `b1c66e1` | A+B+C, 8 pinów (`audyt-pr130-delve-i-licznik-tury`) | 6035/6035 | 59 / 3957,2 kB |
+| `19f47fa` | D, 3 piny (`audyt-pr130-gospodarz-aury`) | 6038/6038 | 59 / 3965,2 kB |
+| `69b69e2` | piny mutacyjne D (Q3/Q4/Q5 przeżywały pierwszą wersję) | 6041/6041 | 59 / 3965,2 kB |
+| `c3c26b8` | raport audytu | — | — |
+
+Mutacje własnych napraw: P1–P7 i Q1–Q5 — **12/12 wykrytych**. Dodatkowo trzy
+istniejące strażniki zapaliły się same na nowym polu stanu (B2/2 odcisku,
+`fingerprint-pending-decisions`, guardy renderu `m163` A3 / `m201`) — dowód,
+że sieć strażników działa (§5 raportu).
