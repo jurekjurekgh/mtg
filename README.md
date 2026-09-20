@@ -131,10 +131,10 @@ liczone z plików `decks/*.txt`).
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 35 | 12 | 23 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 32 | 11 | 21 |
-| `theros` | Theros | WUBRG | 27 | 9 | 18 |
+| `theros` | Theros | WUBRG | 26 | 9 | 17 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 35 | 12 | 23 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
-| `wiedzmin-bg` | Wiedźmin (BG) | BG | 24 | 8 | 16 |
+| `wiedzmin-bg` | Wiedźmin (BG) | BG | 26 | 9 | 17 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
 | `zendikar` | Zendikar | WURG | 32 | 11 | 21 |
 

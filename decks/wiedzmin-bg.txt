@@ -10,6 +10,7 @@
 1x Dread Warlock
 1x Nature's Embrace
 1x Springbloom Druid
+1x Time to Feed
 1x Emerald Oryx
 1x Hunt the Weak
 1x Nightshade Harvester
@@ -17,4 +18,4 @@
 1x Segmented Krotiq
 1x Howl of the Night Pack
 5x Swamp
-3x Forest
+4x Forest

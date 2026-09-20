@@ -9911,7 +9911,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         { type: 'fight', targetIndexA: 1, targetIndexB: 0 },
       ],
     },
-    artId: 561, plan: 'Theros',
+    artId: 561, plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
     notes: ['znacznik zakładany przed fightem, więc stwór zabity w tej walce także daje 3 życia'],
   }),
