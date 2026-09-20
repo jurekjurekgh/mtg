@@ -73,8 +73,10 @@ Oba ograniczenia pinuje test 3 strażnika.
   (symbol many renderuje się jako ikona — tak jak w każdym innym wpisie od
   zgłoszenia E3 z 2026-09-10), a „Przebieg tur (dla AI)” nie zawiera
   „na manę”. Przed poprawką pada szukanie wiersza w logu.
-- `node tools/run-tests.mjs all` → **6025/6025** (6022 + 3 nowe).
-- `npm run build` → **59 modułów / 3950,9 kB** (modułów bez zmian; +2,7 kB treści).
+- `node tools/run-tests.mjs all` → **6025/6025** (6022 + 3 nowe piny); po
+  korekcie z uwagi właściciela (2026-09-20d, jeden log bez dodatków) **6026/6026**.
+- `npm run build` → **59 modułów / 3949,8 kB** (modułów bez zmian; po korekcie
+  z sekcji zniknęło nadmiarowe pole tekstowe i jego styl).
 
 ## Ryzyka i świadome decyzje
 
@@ -89,6 +91,10 @@ Oba ograniczenia pinuje test 3 strażnika.
 3. **Pułapka zasięgu** — pierwsza wersja wrappera wołała `whoN` (istnieje tylko
    w closures deskryptorów zdarzeń), co dało `RuntimeError: whoN is not defined`
    w teście. Poprawka: `who()` z zasięgu sesji. Szczegóły: lekcja **L157**.
+4. **Granica zlecenia (korekta 2026-09-20d)** — pierwsza wersja dołożyła wpisom
+   własny rodzaj i kolor (`.log-tap`). Właściciel to odrzucił: log ma wyglądać
+   tak, jak wyglądał — wpis jest zwykłym zdarzeniem, jedyną nowością jest treść
+   zdania. Ten sam zarzut dotyczył pola `log-text` z paczki C (patrz plan A–E).
 4. **Budżet lektury** — L157 zapłacona skróceniem opisów przypadków w rejestrze
    (narracja w `docs/LESSONS_PRZYPADKI.md`), budżet **99 971 / 100 000**.
 
