@@ -19,6 +19,64 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-19b Batch 57 (kolekcja 64–125) — 10 kart właściciela, etapy B0a–B7 (PR #130)
+
+Zlecenie właściciela (2026-09-19): dziesięć kart z jego arkusza kolekcji
+(artId 64, 66, 70, 77, 80, 82, 85, 88, 90, 125), z poleceniem: rozplanuj,
+ściągnij dane z sieci, podziel na etapy i realizuj z commitem oraz pushem po
+KAŻDYM etapie. Plan: [`docs/plans/PLAN_2026-09-19c-batch57-kolekcja-64-125.md`](plans/PLAN_2026-09-19c-batch57-kolekcja-64-125.md),
+handoff: [2026-09-19b](setup/HANDOFF_2026-09-19b.md).
+
+**Etapy (każdy: zielony `npm test` + `npm run build` przed commitem).**
+B0a `895c49e` (plan), B0b `3929e82` (dane Scryfall + drugi druk Phyrexian
+Ragera), B1 `b0fed28` (M388 — Lightwalker, Tranquil Cove, Ordinary Bear,
+Capture Sphere, Phyrexian Rager APC), B2 `926117f` (M389 — Messenger Falcons),
+B3 `2d9cb81` (M390 — Merciless Repurposing), B4 `7e398f5` (M391 — Hooting
+Mandrills / Delve), B5 `e10f43b` (M392 — Annie Flash), B6 `4569323`
+(rozpoznanie), B6a `07666f2` (M393a) + `bfeeb62` (dokumentacja M393a), B6b
+`6bc8652` (M393b — token First Mate Ragavan), B7 (ten wpis).
+
+**Korekta właściciela (wiążąca, w trakcie B0b):** żaden istniejący druk nie
+jest usuwany ani podmieniany. Kolekcja ma oba wydania Phyrexian Ragera
+(75DMU Dominaria i 85APC Mirrodin), więc katalog ma DWA wpisy —
+`phyrexian-rager` (DMU/75, plan Dominaria, nietknięty) i
+`phyrexian-rager-apc` (APC/85, plan Mirrodin), wzorzec Curate (BRO + STX);
+talia rozróżnia je sufiksem setu („1x Phyrexian Rager (DMU)").
+
+**Mechaniki silnika (M388–M393b).** Warunkowy flying czytany z liczników
+(`{hasCounter: '+1/+1'}`), pipy HYBRYDOWE w rozkładzie landów generatora,
+inkubacja po usunięciu celu, Delve (CR 702.66 — wygnanie z grobu płaci
+generic, MV się nie zmienia), powrót permanentu z grobu z wyborem gospodarza
+aury przed wejściem (CR 303.4f) i okno „play this turn", licznik „pierwszy
+instant/sorcery w turze" + darmowy rzut z ręki (bez kosztu many, pipów
+i phyrexianu; kicker i koszty dodatkowe nadal płacone) oraz ścieżka „If you
+don't" → token First Mate Ragavan z haste nadanym do końca tury. Przy okazji
+domknięto generyczną lukę: zdarzenia wywołane WEWNĄTRZ komendy (tapnięcie
+przez ATAK) nie docierały do skanu triggerów — lekcja **L153**.
+
+**Znalezisko regułowe (zasada właściciela „wybory bez alternatywy są
+automatyczne"):** decyzja darmowego rzutu z ręki bez ANI JEDNEGO kandydata
+domyka się sama (silnik wykonuje gałąź „If you don't" i loguje
+`noCandidates`), a skutek odmowy jedzie z decyzją do widoku, logu i wyceny
+bota — lekcja **L154**.
+
+**Talie (generator, ADR 0023/0024):** churn per etap z atrybucją —
+`dominaria-brg` (B0b), `mirrodin-wu`/`mirrodin-brg`/`srodziemie`/`tarkir-wur`/
+`worek-basni`/`worek-dziki` (B1), `alara` (B2), `mirrodin-brg` (B3),
+`tarkir-bg` (B4), `worek-dziki` (B5), `kaladesh` (B6b: 26/9/17 → **27/9/18**).
+Liczności w README wyłącznie z pomiaru strażnika M203/7. Golden master bez
+zmian składu (`SNAPSHOT_CONFIG` = tarkir-bg vs warhammer-ubr nietknięte przez
+ten batch).
+
+**Pomiar (B7, quick-25 — komenda z E7):** 5 952/5 952 mecze ukończone,
+0 niedokończonych, 0 zacin; heuristic **86,7%** (5162/5952), aggro 24,4%,
+random 2,2%, `heuristic | aggro` 75,6%, `heuristic | random` 97,8%. Bramy:
+`npm test` **5974/5974, 0 fail**, build 64 moduły / 3953,0 kB. Pełne B0
+(10 000 meczów) wyłącznie na wyraźną komendę właściciela (ADR 0018).
+
+**Lekcje:** L153 (zdarzenie z wnętrza komendy musi wrócić z komendą) i L154
+(skutek odmowy jest częścią decyzji; brak wariantów = automat).
+
 ## 2026-09-19 Uwagi z testów: C1/C2 (Merchant's Dockhand), D (Malamet), E (reach) (PR #129, dalszy ciąg)
 
 Zlecenie właściciela (2026-09-18, partia kaladesh): trzy uwagi. Plan:

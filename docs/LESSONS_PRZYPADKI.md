@@ -32,6 +32,13 @@ tapnięcie tapniętego, M106/Z2). Dotychczasowe rozróżnienie brało pod uwagę
 z nich; trzecie („nikt nie pasuje do efektu") było nierozróżnialne od „efekt
 wykonał się bez skutku", bo oba nie produkują zdarzeń.
 
+
+
+**Reguła (szczegóły punktów 3–6, wyniesione z rejestru przy kondensacji 2026-09-19b):**
+3. Efekt, który ma w zbiorze samego siebie, nie zgłasza pustego zbioru. Efekt idempotentny nie zawsze działa na ŹRÓDŁO — aura na GOSPODARZA (`attachedTo`), więc „cel albo źródło" (M189/Z2e) nie wystarcza (Silken Strength, M256/J). Village Bell-Ringer zawsze jest własnym odbiorcą — tam tabela zbiorowa (`STATE_IDEMPOTENT_MASS_EFFECTS`; M106/Z2).
+4. Do każdego wpisu kontrola pozytywna: test, w którym zbiór NIE jest pusty (H1b/H2b/H3b/H4b/H5b/H6b). Bez niej asercja „brak komunikatu" bywa zielona, bo nic się nie dzieje (M255/G2).
+5. Heurystyka NAZWY (`_each_`, `_all_`) wyłącznie w strażniku (skan: typ zbiorowy ma wpis albo wyjątek). Silnik kluczuje po typie.
+6. Komunikat dla gracza to NIE ozdoba: „brak legalnych celów" mówi, co zrobić dalej; „nie było czego wykonać" — tylko że coś nie zadziałało.
 ## L106 (2026-08-31) — przypadek
 
 **Objaw (M269):** po „Creatures you control get +2/+2 until end of turn"
@@ -1972,3 +1979,25 @@ w odpowiedzi (5 — snapshot przy koszcie NIE może zabić żywego odczytu).
 **Naprawa danych + koniec wyjątku:** prawdziwe nowe linie w katalogu i snapshotach; strażnik `test/oracle-bez-literalnego-backslash-n.test.js` pilnuje obu stron (plus zgodność katalog==snapshot dla dotkniętych kart i dla DFC Lodestone Needle) i ma bramkę degeneracji (minimum sprawdzonych rekordów); `skippedEscapedText` w strażniku kosztów musi być 0 — `strandwalker` wrócił do audytu. Świadomie NIE naprawiane (sklasyfikowane): 8 różnic w tekście przypomnienia (CR 207.2 — to nie tekst reguły) i karta przygodowa `gray-slaad`, gdzie katalog celowo składa przednią twarz z linią przygody.
 
 **Mutacje:** M25 (przywrócenie literalnego „\n” w katalogu) → 2 RED, M26 (w 7 snapshotach) → 2 RED.
+
+## L153 (2026-09-19) — przypadek: tapnięcie przez ATAK nie odpalało „becomes tapped"
+
+**Zgłoszenie z etapu B5 (Annie Flash, the Veteran):** „Whenever this creature becomes tapped, exile the top two cards…" nie odpalało, gdy Annie tapowała się ATAKIEM (działało tylko przy tapnięciu zdolnością/efektem).
+
+**Pomiar:** scena `setupCardMatch` + `moveObjectDirectly` — `declare_attackers` tapował atakującego, `object_tapped` był w `state.events`, ale `processTriggers` w `accepted()` widzi wyłącznie zdarzenia zwrócone przez komendę. `combat.declareAttackers` wołał `tapObject(state, id, playerId)` bez kolektora, więc tapnięcie z ataku w skanie nie istniało — trigger był martwy dla całej rodziny „becomes tapped" (Nanoform Sentinel od M360 też).
+
+**Naprawa:** `tapObject(state, objectId, playerId, events = null)` — gdy kolektor podany, zdarzenie ląduje w OBU miejscach (`state.events` i kolektorze); `declareAttackers({ pushToState, events })` przekazuje kolektor z `game-state.js`, a komenda zwraca `[...tapEvents, e]`. Wzorzec jest ten sam co M114 (tap lądu na manę) i M117 (regeneracja): zdarzenie wywołane wewnątrz komendy MUSI wrócić z komendą, inaczej skan triggerów go nie zobaczy.
+
+**Pin:** `test/real-cards-batch57.test.js` (B5) — atak Annie wygania dokładnie dwie wierzchnie karty i pozwala zagrać land dopiero w main; mutacja (cofnięcie kolektora) → 1 RED. Dodatkowo `test/m257r5b-awaken-sleeper.test.js` pilnuje tapnięcia zdolnością.
+
+## L154 (2026-09-19) — przypadek: odmowa bez skutku (Baral and Kari Zev)
+
+**Etapy B6a/B6b (karta 88 TDC):** „Whenever you cast your first instant or sorcery spell each turn, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost. If you don't, create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn."
+
+**Objaw etapu B6a:** decyzja `resolve_hand_free_cast` istniała, ale rezygnacja była pustym ruchem — w wycenie bota `cmd.decline → 4` pkt, więc bot zawsze brał pierwszą ofertę rzutu (nawet gdy w ręce leżał marginalny instant), a przycisk w panelu mówił tylko „Zrezygnuj (nie rzucam darmowego czaru)". Gracz nie miał jak się dowiedzieć, że odmowa daje 2/1 z pośpiechem.
+
+**Naprawa (B6b):** deskryptor `elseEffect` w danych karty jedzie z decyzją (`pendingHandFreeCast`), a `resolve_hand_free_cast{decline}` wykonuje go ze stubem źródła (LKI — źródło mogło już opuścić pole bitwy, CR 603.10). JEDEN predykat `elseEffectSummary` (tokens.js) redukuje deskryptor do postaci widokowej i karmi: widok gracza (`pendingHandFreeCast.alternative`), zdarzenia `hand_free_cast_required`/`_resolved`, etykietę przycisku w `render.js`, komunikat logu w `session.js` i wycenę bota (odmowa = wartość generycznego `create_token`, ta sama skala 12 pkt, więc nadal przegrywa z darmowym czarem za 45, ale ma z czym konkurować).
+
+**Druga połowa reguły (automat):** gdy `handFreeCastOffers` jest PUSTE (pusta ręka / brak czaru o mniejszej MV i wspólnym typie), jedynym legalnym wyborem jest rezygnacja — więc `pruneDeadPendingDecisions` domyka decyzję sam, wykonuje `elseEffect` i emituje `hand_free_cast_resolved{declined: true, noCandidates: true}`. Gracz nie dostaje modala z jednym przyciskiem, a token i tak powstaje (zasada właściciela: wybory bez alternatywy są automatyczne).
+
+**Piny:** `test/real-cards-batch57.test.js` — token 2/1 Legendary Monkey Pirate z `keywordGrants: ['haste']`, który realnie atakuje w turze wejścia; brak kandydatów = auto-domknięcie bez komendy w panelu; pusta ręka; rzut zabiera gałąź „If you don't"; panel i log nazywają skutek odmowy. Mutacja (cofnięcie `elseEffect` + auto-domknięcia) → 3 RED.

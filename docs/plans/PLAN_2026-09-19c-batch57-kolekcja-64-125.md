@@ -396,10 +396,33 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
   benchmark quick: heuristic **83,3%**, aggro 30,1%, random 3,3%,
   **0 niedokończonych** (672 mecze). RED→GREEN na stashu czterech plików
   źródłowych: 3 czerwonych (piny tokenu/auto-rezygnacji) + pin panelu/logu.
-- [ ] **B7 — talie i dokumentacja**: `node tools/generate-plan-decks.mjs`
+- [x] **B7 — talie i dokumentacja**: `node tools/generate-plan-decks.mjs`
   (atrybucja churnu per talia), `test/repo-decks.test.js` bez zmian treści
   poza liczbami, `docs/PROJECT_HISTORY.md` + `docs/ENGINE_MILESTONES.md`
   (M388–M393), finalne `npm test` + `npm run build`, opis w PR #130.
+
+  **Wykonanie B7 (pomiary).** Generator nie ma dryfu po B6b (drugie
+  uruchomienie nie zmienia `decks/`), a liczniki w README są zgodne
+  z zawartością plików (strażnik M203/7 zielony — liczone maszynowo, nie
+  z ręki). Katalog ma wszystkie 11 wpisów batcha w statusie `supported`,
+  a token `token_first_mate_ragavan` ma grafikę Scryfall (strażniki M202/K
+  i M369/I zielone). Bramy finalne: `npm test` **5974/5974, 0 fail**;
+  `npm run build` 64 moduły / 3953,0 kB; regresja bota
+  (`test/bot-benchmark.test.js`) zielona; profil szybki benchmarku — heuristic
+  **83,3%**, aggro 30,1%, random 3,3%, **0 niedokończonych** (672 mecze);
+  quick-25 (25 talii, komenda z E7: `--quick --self --seeds 16 --progress 400`)
+  — **5 952/5 952 mecze ukończone, 0 niedokończonych, 0 zacin**, heuristic
+  **86,7%** (5162/5952; referencje 87,1% i 86,0%), aggro 24,4%, random 2,2%,
+  `heuristic | aggro` 75,6%, `heuristic | random` 97,8%. Szczegóły w handoffie
+  `docs/setup/HANDOFF_2026-09-19b.md`.
+
+  Dokumentacja sesji: `docs/ENGINE_MILESTONES.md` (M388–M393b),
+  `docs/PROJECT_HISTORY.md` (sekcja 2026-09-19b), lekcje **L153** (zdarzenie
+  z wnętrza komendy musi wrócić z komendą) i **L154** (skutek odmowy jest
+  częścią decyzji; brak wariantów = automat) w `docs/LESSONS.md`
+  z narracjami w `docs/LESSONS_PRZYPADKI.md`, handoff
+  `docs/setup/HANDOFF_2026-09-19b.md` oraz opis PR #130 (etapy B1–B6
+  odhaczone, tabela pomiarów).
 
 ## Ryzyka rozpoznane z góry
 

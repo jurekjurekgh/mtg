@@ -97,53 +97,39 @@ póki kryteria się zgadzają; testu szukaj tam, gdzie się rozjeżdżają (zmia
 kontroli, typu, strefy).
 ## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
 
-**Przypadek:** — handoff M267 odnotował, że etykiety `bestow`/`morph` składają koszt po staremu, ale „dziś ich koszty są generyczne, więc to ryzyko, nie b…
-
-
-**Reguła:**
-1. „Dziś to tylko ryzyko" jest HIPOTEZĄ o danych — zamyka się ją skanem
-   katalogu w tej samej sesji, nie wpisem w handoffie.
-2. Pipy kolorów wchodzą W RAMACH kwoty (`{3}{G}` = 4 many), nigdy obok.
-   Jedyne źródło to `costSymbols(amount, colors)`; strażnik regexem szuka
-   sklejek `.colors ?? []).map(...).join('')` w `render.js`.
-3. Rodzinę alt-kosztów enumeruj Z NAZWY (bestow, plot, suspend, madness, warp,
-   surge, kicker, flashback, buyback, escape, cleave, adventure, morph) — skan
-   po jednej mechanice zamyka jeden przypadek.
-4. Morph to WYJĄTEK: `cost` = rzut zakryty ({3}, CR 702.37a), a pipy żyją
-   w `morphCost`/`megamorphCost` (odkrycie) — skaner po `cost` da 6
-   fałszywych trafień; porównuj koszt ODKRYCIA.
-
+**Reguła:** „dziś to tylko ryzyko" jest HIPOTEZĄ o danych — zamyka się ją
+skanem katalogu w tej samej sesji, nie wpisem w handoffie. Pipy kolorów wchodzą
+W RAMACH kwoty (`{3}{G}` = 4 many), nigdy obok; jedyne źródło to
+`costSymbols(amount, colors)`, a strażnik regexem szuka sklejek
+`.colors ?? []).map(...).join('')` w `render.js`. Rodzinę alt-kosztów enumeruj
+Z NAZWY (bestow, plot, suspend, madness, warp, surge, kicker, flashback,
+buyback, escape, cleave, adventure, morph) — skan po jednej mechanice zamyka
+jeden przypadek. Morph to WYJĄTEK: `cost` = rzut zakryty ({3}, CR 702.37a),
+a pipy żyją w `morphCost`/`megamorphCost` (odkrycie) — skaner po `cost` da
+6 fałszywych trafień; porównuj koszt ODKRYCIA.
 **Strażnik:** `test/m268-alt-koszt-pelna-rodzina.test.js` (11 testów: skan
 katalogu po 14 mechanikach, piny bestow/plot/morph/kicker, test ŹRÓDŁA
-płatności, strażnik regexowy przeciw kolejnym sklejkom). Mutacje: `colors`
-z normalizacji bestow → 4 RED; `coloredPipsOf(cardId)` w bestow → 1 RED;
-pipy obok kwoty w morph → 1 RED.
-
+płatności, strażnik regexowy). Mutacje: `colors` z normalizacji bestow →
+4 RED; `coloredPipsOf(cardId)` w bestow → 1 RED; pipy obok kwoty → 1 RED.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L105)
 
 ## L104 (2026-08-31) — Poprawny wynik z niepoprawnego źródła to bug uśpiony: alt-koszt musi nieść WŁASNE pipy, nie pożyczać ich z kosztu bazowego
 
-**Przypadek:** panel pokazywał koszt 4 dla Cleave {3}{U} i Escape {3}{U} — kolory czytane z kosztu bazowego.
-
-**Reguła:**
-1. Alternatywny koszt (cleave, escape, madness, suspend, plot, bestow) to
-   OSOBNA cena — jego pipy należą do jego deskryptora. Czytanie kolorów
-   z kosztu bazowego jest błędem nawet gdy dziś daje dobry wynik: pierwsza
-   karta o innym kolorze alt-kosztu złamie płatność (CR 601.2b). Wzorzec
-   zrobiony dobrze: madness (M161/O2).
-2. „Testy zielone" nie zamyka pytania o ŹRÓDŁO: gdy poprawność wynika ze
-   zbiegu okoliczności w danych, strażnik pinuje źródło, nie tylko wynik.
-3. Dokładając pole do deskryptora, przejdź WSZYSTKIE kopie jawnej listy pól
-   (L101); normalizacja w `registry.js` jest czwartą i najłatwiej o niej
-   zapomnieć. Sygnał: pole widać w `card-data.js`, a `REGISTRY.get(id)` nie.
-4. Strażnik porównuje Oracle z definicją (regex po pipach) dla CAŁEGO
-   katalogu, nie dla zgłoszonej karty.
-
+**Reguła:** alternatywny koszt (cleave, escape, madness, suspend, plot, bestow)
+to OSOBNA cena — jego pipy należą do jego deskryptora, a czytanie kolorów
+z kosztu bazowego jest błędem nawet wtedy, gdy dziś daje dobry wynik (pierwsza
+karta o innym kolorze alt-kosztu łamie płatność, CR 601.2b); wzorzec zrobiony
+dobrze: madness (M161/O2). „Testy zielone" nie zamyka pytania o ŹRÓDŁO: gdy
+poprawność wynika ze zbiegu okoliczności w danych, strażnik pinuje źródło, nie
+wynik. Dokładając pole do deskryptora, przejdź WSZYSTKIE kopie jawnej listy pól
+(L101) — normalizacja w `registry.js` jest czwartą i najłatwiej o niej
+zapomnieć (sygnał: pole widać w `card-data.js`, a `REGISTRY.get(id)` nie).
+Strażnik porównuje Oracle z definicją dla CAŁEGO katalogu, nie dla zgłoszonej
+karty.
 **Strażnik:** `test/m267-alt-koszt-kolory.test.js` (5 testów, w tym skan
-katalogu i test ŹRÓDŁA płatności czytający `spells.js`). Mutacje: usunięcie
-`colors` z normalizacji `registry.js` → testy 1–3; powrót do
-`coloredPipsOf(object.cardId)` w ścieżce cleave/escape → test 5.
-
+katalogu i test ŹRÓDŁA płatności czytający `spells.js`). Mutacje: `colors`
+z normalizacji `registry.js` → testy 1–3; `coloredPipsOf(object.cardId)`
+w cleave/escape → test 5.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L104)
 
 ## L103 (2026-08-31) — Skrót „na 1v1" w modelu karty zmienia REGUŁY: brak słowa „target" w Oracle ⇒ brak `targets`, zakres należy do efektu
@@ -1206,29 +1192,24 @@ oferty panelu.)
 
 ## L21 (2026-08-16) — JAWNA LISTA PÓL gubi dane po cichu — w każdej z czterech warstw
 
-**Przypadek:** dane karty jadą do gry przez kilka miejsc, z których KAŻDE wymienia pola z nazwy (destrukturyzacja configu albo ręcznie budowany obiekt).
-
-**Wpis zbiorczy** dla jednej klasy błędu, która wystąpiła w czterech różnych
-warstwach. Numery L93, L94 i L101 zostają jako kotwice cytowań i odsyłają tutaj.
-
-**Reguła:**
-1. Dodając pole mechaniki do `defineCard`, przejdź **wszystkie cztery
-   warstwy** — nie tylko tę, w której zgłoszono błąd (grep „M146" w `deck.js`).
-   Kierunek docelowy: transportować deskryptory ZBIORCZO (spread listy pól),
-   żeby lista była jedna.
-2. Stan spoza kontraktu fabryki ustawiaj JAWNIE po dodaniu obiektu
-   (`state.objects.set(id, Object.freeze({ ...obj, tapped: true }))`)
-   i sprawdź, czy asercja odróżnia stan POCZĄTKOWY od skutku.
-3. Pin idzie przez **realną ścieżkę** (`setupCardMatch`: registry →
-   createCardDeck → installDeck → obiekt), nigdy przez własny helper.
-4. Strażnik jest KLASOWY: enumeruje `REGISTRY.all()`, buduje obiekt realną
-   drogą i porównuje pola wejścia z polami wyjścia. Pin na jedną kartę zamyka
-   jeden przypadek i usypia klasę.
-5. Test anty-over-fix obowiązkowy (np. kopia PRZODU zachowuje koszt) — sam fix
-   „tył → 0" przeszedłby zielono także z fabryką ignorującą pole.
-6. „Silnik liczy dobrze" nie zamyka zgłoszenia: `legalCommands` czyta
-   z OBIEKTU, `commandLabel` z WIDOKU — to dwa różne źródła.
-
+**Przypadek:** dane karty jadą do gry przez kilka miejsc, z których KAŻDE
+wymienia pola z nazwy (destrukturyzacja configu albo ręcznie budowany obiekt).
+**Wpis zbiorczy** dla klasy, która wystąpiła w czterech warstwach; L93, L94
+i L101 zostają kotwicami cytowań i odsyłają tutaj.
+**Reguła:** (1) Dodając pole mechaniki do `defineCard`, przejdź **wszystkie
+cztery warstwy** (nie tylko tę, w której zgłoszono błąd; grep „M146"
+w `deck.js`) — kierunek docelowy: transportować deskryptory ZBIORCZO (spread
+listy pól), żeby lista była jedna. (2) Stan spoza kontraktu fabryki ustawiaj
+JAWNIE po dodaniu obiektu (`state.objects.set(id, Object.freeze({ ...obj,
+tapped: true }))`) i sprawdź, czy asercja odróżnia stan POCZĄTKOWY od skutku.
+(3) Pin idzie przez **realną ścieżkę** (`setupCardMatch`: registry →
+createCardDeck → installDeck → obiekt), nigdy przez własny helper. (4) Strażnik
+jest KLASOWY: enumeruje `REGISTRY.all()`, buduje obiekt realną drogą i porównuje
+pola wejścia z polami wyjścia. (5) Test anty-over-fix obowiązkowy (np. kopia
+PRZODU zachowuje koszt) — bez niego fix „tył → 0" przechodzi zielono także
+z fabryką ignorującą pole. (6) „Silnik liczy dobrze" nie zamyka zgłoszenia:
+`legalCommands` czyta z OBIEKTU, `commandLabel` z WIDOKU — dwa różne źródła.
+Pełne przykłady per warstwa: archiwum.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L21)
 
 ## L22 (2026-08-16) — Akcja, która PRZEWIJA grę, musi kończyć się ponownym renderem
@@ -1678,29 +1659,19 @@ To nie dwie kopie jednej reguły, lecz **dwa porządki tej samej reguły**.
 → Pełna klasa i reguła: [L48].
 ## L91 (2026-08-29) — „Trigger bez efektu" ma trzy różne przyczyny; liczenie zdarzeń to ich przybliżenie, nie reguła
 
-**Przypadek:** 12 komunikatów „trigger bez efektu" na pięciu kartach (M256, 18 partii Żywym Testerem).
+**Reguła:** powód mieszka w warstwie EFEKTU — tabela `EMPTY_RECEIVER_EFFECTS[type]`
+zwraca POWÓD (nie boolean), a selektor zbioru odbiorców jest JEDEN dla oferty,
+strażnika i samego efektu (L41/L48). Każdy wpis tabeli ma kontrolę POZYTYWNĄ
+(zbiór NIE jest pusty), bo bez niej asercja „brak komunikatu" bywa zielona, gdy
+nic się nie dzieje (M255/G2). Efekt, który ma w zbiorze samego siebie, nie
+zgłasza pustego zbioru — ale idempotentny działa na GOSPODARZA (`attachedTo`),
+nie na źródło; są wyjątki zbiorowe (`STATE_IDEMPOTENT_MASS_EFFECTS`, M106/Z2).
+Heurystyka NAZWY (`_each_`, `_all_`) żyje wyłącznie w strażniku (silnik kluczuje
+po typie), a komunikat dla gracza mówi, co zrobić dalej — nie tylko, że coś nie
+zadziałało. Szczegóły punktów 3–5: archiwum.
+**Strażnik:** `test/m256-zywy-tester-runda2.test.js` (H1–H7, 15 testów).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L91)
 
-**Reguła:**
-1. **Powód mieszka w warstwie efektu.** Selektor zbioru odbiorców jest
-   eksportowany z `effects.js` i używany także PRZEZ SAM EFEKT — jedna
-   definicja zbioru, nie dwie kopie (L41/L48).
-2. **Tabela zwraca POWÓD, nie boolean.** `EMPTY_RECEIVER_EFFECTS[type](…) →
-   'no_targets' | 'empty_library' | null` — kolejna przyczyna to kolejna
-   WARTOŚĆ, nie kolejny `if` po typie efektu (L28/ADR 0002).
-3. **Efekt, który ma w zbiorze samego siebie, nie zgłasza pustego zbioru.**
-   Efekt idempotentny nie zawsze działa na ŹRÓDŁO — aura na GOSPODARZA
-   (`attachedTo`), więc „cel albo źródło" (M189/Z2e) nie wystarcza
-   (Silken Strength, M256/J). Village Bell-Ringer zawsze jest własnym
-   odbiorcą — tam tabela zbiorowa (`STATE_IDEMPOTENT_MASS_EFFECTS`; M106/Z2).
-4. **Do każdego wpisu kontrola pozytywna**: test, w którym zbiór NIE jest
-   pusty (H1b/H2b/H3b/H4b/H5b/H6b). Bez niej asercja „brak komunikatu"
-   bywa zielona, bo nic się nie dzieje (M255/G2).
-5. **Heurystyka NAZWY (`_each_`, `_all_`) wyłącznie w strażniku** (skan:
-   typ zbiorowy ma wpis albo wyjątek). Silnik kluczuje po typie.
-6. Komunikat dla gracza to NIE ozdoba: „brak legalnych celów" mówi, co
-   zrobić dalej; „nie było czego wykonać" — tylko że coś nie zadziałało.
-**Strażnik:** `test/m256-zywy-tester-runda2.test.js` (H1–H7, 15 testów).
 ## L108 (2026-08-31) — Deadlock reguł: szukaj par „musisz X" / „nie możesz X"
 
 **Reguła:** wypisz wszystkie ograniczenia jako WYMOGI („attacks each combat
@@ -1839,22 +1810,18 @@ o skutku jest fałszywie czerwona, a przy blokadzie decyzji drenaż ma prawo sta
 
 ## L117 (2026-09-02) — Remis punktów jest tak samo arbitralny jak brak wyceny; mierz go na śladzie
 
-**Przypadek:** audyt „działań niescoringowanych" bota — grep po źródle zaniżał
-wynik (regiony helperów nachodzą); pomiar na `bot.trace()` z 12 partii: 30,4% decyzji
-z alternatywami to ex aequo, a `play_land` z płaskim 90 wybierał manabazę w kolejności
-`legalCommands`. Pułapka: wspólny sufit klampy zgrywał ląd pokrywający 2 i 3 pipów —
-test „lepszy wygrywa" tego nie widział. Pełna narracja: PRZYPADKI (L117).
-**Reguła:** punkty decyzyjne bota audytuje się na rozegranych partiach, nie na grepie:
-identyczne `score` przy ≥2 opcjach ⇒ wycena nic nie rozstrzygnęła, niezależnie od tego,
-czy w źródle „jest gałąź punktująca". Klasyfikację remisów prowadź po **wejściach**
-wyceny (projekcja danych wystawiona do śladu przez samego bota), nie po tożsamości
-wariantów: zamienne opcje muszą pozostać w remisie, bo sztuczny tie-breaker wygląda w
-metrykach jak działająca wycena i kłamie. Jeśli bramka ma łapać niedoinfekcyjność
-mapowania, mapping musi być monotoniczny w zakresie realnie występującym — klampa
-„na wszelki wypadek" go psuje.
-**Strażnik:** `tools/bot-tie-audit.mjs` (eksport `audytRemisow`, CLI `--gate=<kind>`)
-+ `test/audyt-bot-wybior-landu.test.js`; mutacje: płaska wycena ⇒ RED 1/3/5, kara za
-`entersTapped` usunięta ⇒ RED 3/5, ślad bez karty ⇒ RED 1/2/3/4.
+**Reguła:** punkty decyzyjne bota audytuje się na ROZEGRANYCH partiach, nie na
+grepie po źródle (regiony helperów nachodzą): identyczne `score` przy ≥2 opcjach
+⇒ wycena niczego nie rozstrzygnęła, niezależnie od tego, czy w źródle „jest
+gałąź punktująca". Klasyfikację remisów prowadź po **wejściach** wyceny
+(projekcja danych wystawiona do śladu przez samego bota), nie po tożsamości
+wariantów: opcje zamienne muszą zostać w remisie, bo sztuczny tie-breaker
+wygląda w metrykach jak działająca wycena i kłamie. Bramka mapowania musi być
+monotoniczna w zakresie realnie występującym — klampa „na wszelki wypadek" go
+psuje (płaski `play_land` = 90 wybierał manabazę kolejnością `legalCommands`).
+**Strażnik:** `tools/bot-tie-audit.mjs` (`audytRemisow`, CLI `--gate=<kind>`)
++ `test/audyt-bot-wybior-landu.test.js`; mutacje: płaska wycena ⇒ RED 1/3/5,
+kara za `entersTapped` usunięta ⇒ RED 3/5, ślad bez karty ⇒ RED 1/2/3/4.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L117). → Pokrewne: L1, L5, L48.
 
 ## L118 (2026-09-02) — Zanim wyłączysz klasę przypadków z pomiaru, udowodnij w teście, że jest równoważna
@@ -2019,25 +1986,24 @@ woła `document.createElement` na odinstalowanym oknie.
 ## L127 (2026-09-03) — Zakres rzutu kartą spoza ręki to cecha ŚCIEŻKI, nie karty: jeden predykat z parametrem „co ta ścieżka potrafi rozliczyć”
 
 **Reguła:** każde wykluczenie w predykacie zakresu pytaj „czy TA ścieżka potrafi
-to ROZLICZYĆ”, nie „czy karta to ma” — parametr per ścieżka (`allowTargets`,
-`allowModes`, `allowAdditionalCost`), jeden filtr, oferta i bramka wywołane z
-TYMI SAMYMI argumentami. Tryby/cele liczy generator wspólny z ręką (`legalModeCasts`), nie kopia. Gdy naprawa odbiera stempel albo
-uprawnienie (ruling), sprawdź, czy nowe uprawnienie dotarło do KAŻDEJ gałęzi
-wykonania (`requireSpell`, `castPermanent`, `castModalSpell`, `castXCostSpell`,
-`castFireball`) — gałąź bez uprawnienia to rozjazd oferty i wykonania. Test
-odziedziczony traktuj jak hipotezę: czy setup odtwarza DZISIEJSZY silnik
-(stempel zdjęty ⇒ vacuous aż po fix helpera). Koszt z wyborem kart w trakcie
-(„discard two cards”) zostaje bez oferty (L5) — pominięcie to złamanie reguł.
-Wariant bez wyboru X (X = 0) to pułapka: dopóki okno nie liczy X, wyłączenie
-zostaje — jako wpis w backlogu, nie milczenie.
+to ROZLICZYĆ", nie „czy karta to ma" — parametr per ścieżka (`allowTargets`,
+`allowModes`, `allowAdditionalCost`), JEDEN filtr, oferta i bramka wywołane
+z TYMI SAMYMI argumentami; tryby/cele bierz z generatora wspólnego z ręką
+(`legalModeCasts`), nigdy z kopii. Nowe uprawnienie (ruling) musi dotrzeć do
+KAŻDEJ gałęzi wykonania (`requireSpell`, `castPermanent`, `castModalSpell`,
+`castXCostSpell`, `castFireball`) — gałąź bez uprawnienia to rozjazd oferty
+i wykonania. Test odziedziczony traktuj jak hipotezę (czy setup odtwarza
+DZISIEJSZY silnik — inaczej jest vacuous), koszt z wyborem kart w trakcie
+(„discard two cards") zostaje bez oferty (L5), a wariant „X = 0" bez okna
+liczenia X to pułapka do backlogu, nie milczenie.
+**Strażnik:** `test/audyt-pr93-modalny-rzut-z-okna.test.js`,
+`test/audyt-pr93-modalny-discover.test.js`,
+`test/audyt-pr93-koszt-dodatkowy-z-exile.test.js`,
+`test/audyt-pr93-koszt-x-z-exile.test.js`, odwr
 
-**Strażnik:** `test/audyt-pr93-modalny-rzut-z-okna.test.js` (6 + skan: 12
-czarów modalnych z ofertą), `test/audyt-pr93-modalny-discover.test.js`
-(6 + etykieta trybu), `test/audyt-pr93-koszt-dodatkowy-z-exile.test.js` (7),
-odwrócony `test/audyt-pr92-darmowy-rzut-zakres.test.js`, znalezisko D —
-`test/audyt-pr93-koszt-x-z-exile.test.js` (7: X rzucalne, Discover milczy).
-Dziewięć mutacji — tabela w §7 `docs/audits/AUDYT_PR93_2026-09-03.md`.
-
+ócony
+`test/audyt-pr92-darmowy-rzut-zakres.test.js` — 9 mutacji, tabela w §7
+`docs/audits/AUDYT_PR93_2026-09-03.md`.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L127)
 
 ## L128 (2026-09-03) — Mechanika z dwiema ścieżkami rzutu: reguła ma jedno miejsce prawdy, a skan musi PORÓWNYWAĆ ścieżki, nie tylko liczyć oferty
@@ -2191,27 +2157,21 @@ pilnuje, żeby artefakty testera nie weszły do indeksu przy takim sprzątaniu.
 
 ## L137 (2026-09-07) — etykieta to rodzina: jedno źródło brzmienia, test na PRAWDZIWYM widoku, partia celowana
 
-
 **Reguła:** fakt prezentowany w UI ma JEDNO źródło brzmienia i tylu
-konsumentów, ilu formatuje ten sam tekst — szukaj ich grepem po treści:
-- podnosząc nowe pole do widoku, zrób grep po WSZYSTKICH miejscach, które
-  formatują DANY TEKST (nie po nazwie pola!), i przepnij je na jeden helper —
-  konsumentem jest TEŻ log (`nameOfObject`) i karty (cardInfo), nie tylko kafel,
-- asercję kładź na PRAWDZIWYM `playerView`/`createSession`, a fikcje testowe
-  zaktualizuj do nowego kształtu (inaczej test pinuje nieaktualny stan),
-- dodaj strażnika ŹRÓDŁOWEGO dla rodziny etykiety (L107): skan „żaden
-  konsument nie wyprowadza znacznika z `.cloakReady`" — to on łapie szóste
-  miejsce, zanim ktoś je znajdzie na stole,
-- jeśli mechanika jest rzadka w talii, zrób sondę partią na CHWILOWEJ talii
-  (`docs/setup/TESTER_STOLU.md` → „Partia celowana pod mechanikę"), a plik
-  usuń przed bramką (strażnicy M178 nie znoszą dubli w taliiach).
-- 2026-09-14 (W1): strona PTASZKA jest częścią kontraktu etykiety — `OPTION_IGNORABLE_TYPES` (UI) i `actions.mjs` (tester) muszą iść razem; strażnik `test/choice-ignore.test.js`.
-
-
+konsumentów, ilu formatuje ten sam tekst — podnosząc nowe pole do widoku zrób
+grep po WSZYSTKICH miejscach formatujących DANY TEKST (nie po nazwie pola!)
+i przepnij je na jeden helper; konsumentem jest TEŻ log (`nameOfObject`)
+i karty (`cardInfo`), nie tylko kafel. Asercję kładź na PRAWDZIWYM
+`playerView`/`createSession` (fikcje testowe zaktualizuj do nowego kształtu —
+inaczej test pinuje nieaktualny stan), dodaj strażnika ŹRÓDŁOWEGO rodziny
+(L107: skan „żaden konsument nie wyprowadza znacznika z pola
+znajomości-reguły"), a mechanikę rzadką w talii sprawdź partią na CHWILOWEJ
+talii (`docs/setup/TESTER_STOLU.md`; plik usuń przed bramką — M178 nie znosi
+dubli). Strona PTASZKA (`OPTION_IGNORABLE_TYPES` w UI i `actions.mjs`
+w testerze) jest częścią kontraktu etykiety — idą razem (W1).
 **Strażnik:** `test/m326-cloak-przyczyna.test.js` (7, w tym C2 — skan
-`src/table/*.js` pod `.cloakReady`), `test/m331-log-przyczyna.test.js` (4,
-w tym D — skan `nameOfObject`: zero ręcznego `faceDownName`, oraz B — numeracja
-po jawnej przyczynie dla obu widzów).
+`src/table/*.js`), `test/m331-log-przyczyna.test.js` (4, w tym D — skan
+`nameOfObject`), `test/choice-ignore.test.js`.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L137)
 
 ## L138 (2026-09-07) — zwrot prawdy z efektu = blokada; ścieżka bez decyzji nie może jej zgłaszać
@@ -2377,3 +2337,34 @@ grantu → piny 1 i 4 RED, brak bramki atomowości → piny 2 i 3 RED).
 **Reguła:** (1) Audyt danych to osobna ścieżka: porównuj CAŁE zbiory, nie pliki z ostatniego PR-a. (2) Wyjątek „ta karta wypada ze strażnika, bo dane są zepsute” znosi się naprawą danych i licznikiem pominięć = 0. (3) Strażnik danych pilnuje obu stron i ma bramkę na degenerację (minimum sprawdzonych rekordów).
 **Strażnik:** `test/oracle-bez-literalnego-backslash-n.test.js` (4 piny; M25 → 2 RED, M26 → 2 RED) + `test/ability-cost-pips.test.js` (pominięcia = 0).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L152)
+
+## L153 (2026-09-19) — Zdarzenie wywołane WEWNĄTRZ komendy musi wrócić z komendą
+
+**Reguła:** każda funkcja pomocnicza, która mutuje stan i emituje zdarzenie,
+przyjmuje OPCJONALNY kolektor `events` i dopisuje do niego obok `state.events`
+(wzorzec M114 dla tapu lądu, M117 dla regeneracji, teraz `tapObject`
+i `declareAttackers`). Komenda zwraca PEŁNĄ listę zdarzeń swojej pracy
+(`[...tapEvents, e]`), bo tylko ona wchodzi w skan triggerów — zdarzenie
+zostawione wyłącznie w stanie jest dla triggerów niewidzialne. Pin pisz na
+ścieżce UŻYCIA (atak), nie na samym helperze: helper był zielony, czerwony był
+efekt („whenever this creature becomes tapped" nie odpalał od ATAKU).
+**Strażnik:** `test/real-cards-batch57.test.js` (pin „tapnięcie wygania
+dokładnie DWIE karty"), `test/m257r5b-awaken-sleeper.test.js`.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L153)
+
+## L154 (2026-09-19) — Skutek odmowy jest częścią decyzji, a wybór bez alternatywy domyka silnik
+
+**Reguła:** (1) Gałąź „If you don't …" jedzie w DESKRYPTORZE decyzji
+(`elseEffect`) i wykonuje się przy odmowie — inaczej odmowa jest ruchem
+jałowym, a wycena bota kłamie o połowie Oracle. (2) JEDEN predykat
+(`elseEffectSummary`) karmi widok gracza, log, etykietę przycisku i wycenę —
+przycisk odmowy musi nazywać nagrodę za odmowę („utwórz token …"). (3) Gdy
+zbiór legalnych wariantów jest PUSTY, decyzja nie ma o co pytać: silnik
+domyka ją sam, wykonuje skutek i loguje, DLACZEGO (`noCandidates`), zamiast
+pokazywać modal z jednym przyciskiem.
+**Strażnik:** `test/real-cards-batch57.test.js` — 5 pinów B6b (token 2/1
+Legendary z `keywordGrants: ['haste']` atakujący w tej samej turze;
+auto-domknięcie z `noCandidates`; pusta ręka; rzut zabiera gałąź „If you
+don't"; etykiety panelu i logu).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L154)
+

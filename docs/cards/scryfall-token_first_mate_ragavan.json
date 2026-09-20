@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/705adcf9-c15b-4f75-afae-939f59aeb308",
+  "print": "ttdc",
+  "name": "First Mate Ragavan",
+  "layout": "token",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Token Legendary Creature — Monkey Pirate",
+  "oracle_text": "",
+  "power": "2",
+  "toughness": "1",
+  "colors": ["R"],
+  "set": "ttdc",
+  "set_name": "Tarkir: Dragonstorm Commander Tokens",
+  "collector_number": "18",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/0/705adcf9-c15b-4f75-afae-939f59aeb308.jpg?1783906799"
+  },
+  "pobrano": "2026-09-19",
+  "proweniencja": "2026-09-19 (Batch 57/B6b): UUID 705adcf9-c15b-4f75-afae-939f59aeb308 z api.scryfall.com/cards/<id> zwróconego przez all_parts karty Baral and Kari Zev (tdc/282; L26 — UUID odczytany z API, bez zgadywania). set_name z pola set_name odpowiedzi. Pole rarity pominięto — nie było potrzebne do wpisu katalogowego (token: typ, statystyki, druk). Druk ttdc/18 = token dodawany przez Barala i Kari Zev, gdy gracz nie skorzysta z darmowego rzutu z ręki."
+}
