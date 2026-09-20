@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
@@ -6000,6 +6000,25 @@ function exileAdditionalCostCandidates(state, playerId, object) {
  * powyżej niego widok oferuje warianty pusty/pojedyncze/pełny, a pełna
  * walidacja pozostaje wyłącznie po stronie engine.
  */
+/**
+ * E6 (2026-09-20c): pula kandydatów na blokujących dla widoku BRONIĄCEGO.
+ *
+ * Widok niesie ją osobno od `options` decyzji, bo opcje są ograniczone
+ * `COMBAT_OPTION_CAP` (rozmiar menu), a wizard bloków rysował kandydatów z sumy
+ * ofert — legalne pary wycięte przez cap nie miały wiersza i gracz nie mógł ich
+ * zadeklarować (CR 509.1b). Pole jest wyłącznie tam, gdzie jest decyzja:
+ * krok deklaracji bloków, walka zadeklarowana, stos pusty, gracz broniący,
+ * bloki jeszcze niezadeklarowane (warunki lustrzane wobec `legalCommands`).
+ */
+function buildBlockCandidatesView(state, playerId) {
+  if (state.turn?.step !== 'declare_blockers' || !state.combat) return null;
+  if (state.combat.attackingPlayerId === playerId) return null;
+  if ((state.combat.blockers?.size ?? 0) > 0) return null;
+  if (state.zones.stack.length > 0) return null;
+  const pool = blockCandidatePool(state, playerId);
+  return Object.keys(pool).length > 0 ? pool : null;
+}
+
 export function playerView(state, playerId) {
   if (!state.players.some((p) => p.id === playerId)) throw new Error('Nieznany gracz');
   const zones = {};
@@ -8611,6 +8630,8 @@ export function playerView(state, playerId) {
       allowDecline: Boolean(state.pendingDiscardChoice.allowDecline),
     } : null,
     pendingDamageAssignment: buildDamageAssignmentView(state, playerId),
+    // E6: pełna pula kandydatów na blokerów (niezależna od cap-a menu, CR 509.1b).
+    blockCandidates: buildBlockCandidatesView(state, playerId),
     // M72 (Batch 29): GENERYCZNE rozdzielanie obrażeń niecombat (Fireball).
     // Widok niesie total, źródło i listę celów; UI buduje własny przydział.
     // M69 (Exploit): czyja decyzja, źródło i żywi kandydaci (publiczne pole bitwy).

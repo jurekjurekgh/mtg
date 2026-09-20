@@ -892,3 +892,60 @@ test('renderDamageWizard (W5, oś 2 E6): etykieta celu mówi, że lethal pokrywa
   assert.match(host2.textContent, /śmiertelne 3\)/, 'bez pól W5 etykieta bez dopisku');
   assert.ok(!/od innych w tym kroku/.test(host2.textContent), 'dopisek tylko gdy jest co pokazać');
 });
+
+// E6/5 (2026-09-20c, „czemu świadomie nie naprawiane"): wizard bloków rysował
+// kandydatów z SUMY OFERT, a menu jest ograniczone `COMBAT_OPTION_CAP` — na
+// większej planszy (pomiar: 6×6 → 5 braków, 10×10 → 69) część legalnych par
+// (atakujący, bloker) nie miała wiersza, więc gracz nie mógł zadeklarować
+// legalnego bloku (CR 509.1b). Pula kandydatów przychodzi teraz osobno
+// (`blockCandidates` z widoku), a menu zostaje skrótem.
+test('E6/5: renderCombatWizard (blokujący) — wiersze z puli `blockCandidates`, nie z wyciętego menu', () => {
+  const view = {
+    playerId: 'p2',
+    turn: { number: 9, step: 'declare_blockers' },
+    zones: {
+      battlefield: [
+        { id: 'a1', cardId: 'highland-game' },
+        { id: 'b1', cardId: 'highland-game' },
+        { id: 'b2', cardId: 'goblin-piker' },
+        { id: 'b3', cardId: 'rustwing-falcon' },
+      ],
+      hand: [], stack: [], graveyard: [], library: [],
+    },
+  };
+  const session = {
+    nameOf: (cardId) => ({ 'goblin-piker': 'Goblin Piker', 'highland-game': 'Highland Game', 'rustwing-falcon': 'Rustwing Falcon' }[cardId] ?? cardId),
+    nameOfObject: () => '?',
+  };
+  // Menu ponad cap-em: pod a1 została TYLKO jedna para (resztę wyciął slice).
+  const options = [
+    { type: 'declare_blockers', playerId: 'p2', assignments: {} },
+    { type: 'declare_blockers', playerId: 'p2', assignments: { a1: ['b1'] } },
+  ];
+  const blockCandidates = { a1: ['b1', 'b2', 'b3'] };
+
+  // Kontrola: BEZ puli wizard pokazuje tylko to, co przetrwało cap (stary stan).
+  const samoMenu = new ChoiceMiniEl('div');
+  renderCombatWizard(samoMenu, { kind: 'blockers', view, session, options, onComplete: () => {} });
+  assert.ok(!/Goblin Piker/.test(samoMenu.textContent),
+    `bez puli wiersz b2 nie powinien istnieć (kontrola pinu): ${samoMenu.textContent}`);
+  assert.ok(!/Rustwing Falcon/.test(samoMenu.textContent), 'bez puli wiersz b3 nie powinien istnieć (kontrola pinu)');
+
+  // Z pulą: każdy legalny kandydat ma wiersz, choć menu go nie zawierało.
+  const host = new ChoiceMiniEl('div');
+  const calls = [];
+  renderCombatWizard(host, {
+    kind: 'blockers', view, session, options, blockCandidates,
+    onComplete: (cmd) => calls.push(cmd),
+  });
+  assert.match(host.textContent, /Highland Game/, 'kandydat z menu nadal ma wiersz');
+  assert.match(host.textContent, /Goblin Piker/, 'kandydat tylko z puli ma wiersz');
+  assert.match(host.textContent, /Rustwing Falcon/, 'kandydat tylko z puli ma wiersz (2/2)');
+
+  // Gracz może zadeklarować blok, którego menu w ogóle nie oferowało.
+  setChecked(host, 'Goblin Piker', true);
+  setChecked(host, 'Rustwing Falcon', true);
+  findAll(host, 'button', 'Zatwierdź bloki')[0].click();
+  assert.deepEqual(calls, [{ type: 'declare_blockers', playerId: 'p2', assignments: { a1: ['b2', 'b3'] } }],
+    'wizard buduje komendę z zaznaczeń puli, nie szuka jej w menu');
+});

@@ -1764,3 +1764,57 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   }
   return options.slice(0, cap);
 }
+
+/**
+ * E6 (zgłoszenie właściciela 2026-09-20c: „błędy powinny być natychmiast
+ * naprawiane"): PEŁNA pula kandydatów na blokujących per atakujący.
+ *
+ * Dlaczego osobno od `legalBlockerOptions`: menu przypisań jest ograniczone
+ * `COMBAT_OPTION_CAP` (32) ze względu na ROZMIAR LISTY, a wizard bloków brał
+ * kandydatów z SUMY OFERT — więc na większej planszy (`(atakujący+1)^blokerzy >
+ * cap`) pary wycięte przez `slice(0, cap)` nie miały wiersza i gracz nie mógł
+ * zadeklarować legalnego bloku (CR 509.1b: broniący wybiera dowolny legalny
+ * zestaw bloków). Pomiar 2026-09-20c: 6×6 → 5 utraconych par, 8×8 → 33,
+ * 10×10 → 69.
+ *
+ * Pula NIE enumeruje przypisań (koszt O(atakujący × blokerzy²) w najgorszym
+ * razie, bez wykładnika), więc cap jej nie dotyczy. Legalność bierze się z TEGO
+ * SAMEGO predykatu co walidacja `declareBlockers` i oferta (`blockAssignmentViolation`,
+ * M387/L41/L48) — pula nie może obiecywać ani więcej, ani mniej niż komenda.
+ *
+ * Zwraca: `{ [attackerId]: [blockerId, ...] }` — wpis na KAŻDEGO atakującego
+ * (pusta lista = nikt legalnie nie blokuje). Dla atakującego z menace (albo
+ * blokera z „can't block alone") samotny blok jest nielegalny, więc kandydat
+ * wchodzi do puli, gdy istnieje PARTNER dający legalny zbiór — wizard i tak
+ * waliduje cały zadeklarowany zbiór przed wysłaniem.
+ */
+export function blockCandidatePool(state, playerId) {
+  const attackers = state.combat?.attackers ?? [];
+  const pool = {};
+  if (attackers.length === 0) return pool;
+  const usable = [];
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) continue;
+    if (object.kind !== 'creature' || object.tapped) continue; // CR 509.1b: untapped
+    if (creatureCantBlock(object, state)) continue;
+    if (attachmentRestrictions(state, object).cantBlock) continue;
+    if (blockSlotsFor(state, object) < 1) continue;
+    usable.push(id);
+  }
+  for (const attackerId of attackers) {
+    const attacker = state.objects.get(attackerId);
+    const candidates = [];
+    for (const blockerId of usable) {
+      if (blockAssignmentViolation(state, attacker, [blockerId]) === null) {
+        candidates.push(blockerId);
+        continue;
+      }
+      const hasPartner = usable.some((otherId) => otherId !== blockerId
+        && blockAssignmentViolation(state, attacker, [blockerId, otherId]) === null);
+      if (hasPartner) candidates.push(blockerId);
+    }
+    pool[attackerId] = candidates;
+  }
+  return pool;
+}
