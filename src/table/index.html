@@ -446,7 +446,9 @@
   details.panel > summary .count { margin-left: auto; color: var(--muted); font-size: 12px; font-weight: 700; }
   .panel-body { padding: 0 12px 12px; }
 
-  /* --- Kreator talii (ADR 0012) ------------------------------------ */
+  /* --- Kreator talii (ADR 0012) — sekcja WYŁĄCZONA (zgłoszenie F,
+     2026-09-20; reguły zostają, bo wracają razem z odkomentowanym
+     blokiem panelu niżej) ------------------------------------------- */
   .deck-builder-filters {
     display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
     margin-bottom: 10px;
@@ -1117,7 +1119,15 @@
   </main>
 
   <div class="panels">
-    <details class="panel" id="deck-builder">
+    <!-- Zgłoszenie F (właściciel, 2026-09-20): sekcja „Kreator talii” jest
+         WYŁĄCZONA Z APLIKACJI — właściciel jej nie używa i nie zamierza; nie
+         może się nigdzie pokazywać. Kod modułów (src/table/deck-builder.js,
+         src/cards/deck-builder.js, ADR 0012) zostaje na miejscu — wraca do
+         widoku tylko na wyraźne polecenie właściciela: odkomentuj ten blok
+         i przywróć `mountDeckBuilder` w src/table/main.js. Wewnętrzne
+         komentarze HTML mają myślniki zamienione na encje, żeby nie zamknąć
+         tego komentarza — przy przywracaniu zamień je z powrotem.
+<details class="panel" id="deck-builder">
       <summary>Kreator talii</summary>
       <div class="panel-body">
         <p class="file-row" style="margin:0 0 8px;">
@@ -1157,14 +1167,14 @@
         <div class="deck-builder-toolbar">
           <button id="deck-builder-add-filtered" type="button">Dodaj po 1 (z filtrów)</button>
           <button id="deck-builder-clear" type="button" class="ghost-btn">Wyczyść talię</button>
-          <!-- K1: import pliku talii (lokalnie/Pages) + pomocnik publikacji do decks/. -->
+          &lt;!&#45;&#45; K1: import pliku talii (lokalnie/Pages) + pomocnik publikacji do decks/. &#45;&#45;&gt;
           <button id="deck-builder-import" type="button" class="ghost-btn">Import z pliku…</button>
           <input id="deck-builder-import-file" type="file" accept=".txt,text/plain" style="display:none">
           <button id="deck-builder-publish" type="button" class="ghost-btn">Opublikuj na GitHub</button>
         </div>
-        <!-- K2 (uwaga właściciela): szybkie dodawanie landów podstawowych —
+        &lt;!&#45;&#45; K2 (uwaga właściciela): szybkie dodawanie landów podstawowych —
              box nad listą kart, wzorzec legacy (card_viewer: SZYBKIE DODAWANIE
-             LĄDÓW PODSTAWOWYCH z przyciskami -/+). -->
+             LĄDÓW PODSTAWOWYCH z przyciskami -/+). &#45;&#45;&gt;
         <div id="deck-builder-publish-info" class="deck-builder-publish-info"></div>
         <div id="deck-builder-basic-lands" class="deck-builder-basic-lands"></div>
         <div id="deck-builder-card-list" class="deck-builder-card-list"></div>
@@ -1184,6 +1194,7 @@
         <div id="deck-builder-status" class="deck-builder-status"></div>
       </div>
     </details>
+    -->
     <details class="panel" open>
       <summary>Log partii</summary>
       <div class="panel-body">

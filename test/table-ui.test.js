@@ -263,23 +263,17 @@ test('strona stołu przechodzi self-test i startuje partię na pierwszej decyzji
   assert.ok(!/\bcard-\d|\bhand-\d/.test(handText), 'brak surowych identyfikatorów obiektów');
 });
 
-test('kreator talii pokazuje supported, liczy kopie i egzekwuje min. 15 nielandowych', () => {
+test('kreator talii NIE jest montowany: panel wyłączony w aplikacji (zgłoszenie F)', () => {
+  // Zgłoszenie F (właściciel, 2026-09-20): sekcja „Kreator talii” nie pokazuje
+  // się w aplikacji — markup jest zakomentowany w index.html, a main.js nie
+  // woła `mountDeckBuilder`. Guard struktury (index.html + main.js) pinuje
+  // osobny test `zgloszenie-f-kreator-talii-wylaczony.test.js`; tutaj
+  // sprawdzamy SKUTEK w uruchomionej aplikacji: po boocie stół nie wypełnia
+  // żadnego elementu kreatora talii (nie ma listy kart ani eksportu).
   restart();
-  assert.match(textOf(dom.get('deck-builder-summary')), /0 kart/);
-  assert.match(textOf(dom.get('deck-builder-card-list')), /Highland|Plains|Forest/);
-
-  dom.get('deck-builder-name').value = 'Talia UI';
-  for (const listener of dom.get('deck-builder-name').listeners.input ?? []) listener({});
-  // 1 karta (< 15 nielandowych) → brak eksportu (nowa zasada singleton + min 15).
-  const firstRow = dom.get('deck-builder-card-list').children[0];
-  const controls = firstRow.children[1];
-  controls.children[controls.children.length - 1].click();
-  assert.match(textOf(dom.get('deck-builder-summary')), /1 kart/);
-  assert.equal(dom.get('deck-builder-output').value, '', 'talia < 15 nielandowych nie ma eksportu');
-
-  // „Dodaj po 1 (z filtrów)" → ≥15 nielandowych → eksport dostępny.
-  dom.get('deck-builder-add-filtered').click();
-  assert.match(dom.get('deck-builder-output').value, /^# Talia UI\n\n\d+x /);
+  assert.equal(dom.get('deck-builder-card-list').children.length, 0,
+    'panel kreatora talii nie może być montowany (karta listy bez bootu)');
+  assert.equal(dom.get('deck-builder-output').value, '', 'brak eksportu talii z panelu');
 });
 
 test('gracz klika się przez całą partię do baneru końca gry', () => {

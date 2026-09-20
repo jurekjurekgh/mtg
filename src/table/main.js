@@ -33,7 +33,10 @@ import { createSpellSoundPlayer, playCastSound } from './spell-sounds.js';
 import { createTopbarToggles } from './topbar-toggles.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
-import { mountDeckBuilder } from './deck-builder.js';
+// Zgłoszenie F (właściciel, 2026-09-20): panel „Kreator talii” jest wyłączony
+// w aplikacji — import i montaż zakomentowane (kod modułu w src/table/
+// deck-builder.js zostaje; ADR 0012 bez zmian).
+// import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
 import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf } from './multi-target.js';
@@ -102,7 +105,8 @@ function bootstrapTable() {
   // K1: rejestrujemy talie własne (import z pliku / biblioteka IndexedDB).
   const importedDecks = new Map();
   let windowAllDecks = { ...repoDecks };
-  mountDeckBuilder({ registry, repoDecks, onDeckImported: (name, text) => { importedDecks.set(name, text); rebuildDeckSelects(); } });
+  // Zgłoszenie F: montaż kreatora talii zakomentowany (panel wyłączony).
+  // mountDeckBuilder({ registry, repoDecks, onDeckImported: (name, text) => { importedDecks.set(name, text); rebuildDeckSelects(); } });
 
   const el = (id) => document.getElementById(id);
   const els = {
@@ -349,10 +353,13 @@ function bootstrapTable() {
     windowAllDecks = decks;
     populateDeckSelects([el('deck-human'), el('deck-bot')], decks, { labelOf });
   }
-  mountDeckBuilder({
-    registry, repoDecks,
-    onDeckImported: (name, text) => { importedDecks.set(name, text); rebuildDeckSelects(); },
-  });
+  // Zgłoszenie F (właściciel, 2026-09-20): panel „Kreator talii” nie pokazuje się
+  // w aplikacji — montaż zakomentowany. Biblioteka talii własnych (IndexedDB →
+  // selecty talii) działa dalej niezależnie od panelu.
+  // mountDeckBuilder({
+  //   registry, repoDecks,
+  //   onDeckImported: (name, text) => { importedDecks.set(name, text); rebuildDeckSelects(); },
+  // });
   // Bootstrap: biblioteka IndexedDB (przeżywa reload przeglądarki) — każda
   // zapisana talia od razu dostępna w grze, zanim właściciel ją opublikuje.
   void (async () => {
