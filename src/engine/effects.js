@@ -5062,10 +5062,16 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const filter = Object.freeze({
       typesInclude: Object.freeze([...(effect.typesInclude ?? [])]),
       isCreature: Boolean(effect.isCreature),
+      // F15 (audyt PR #131): zakres prewencji po polsku, gdy deskryptor go
+      // nazywa — bez tego log gracza mówił „chronionym obiektom", nie mówiąc
+      // CZEGO (miękki narracyjnie, ale mylący przy stole); brak opisu
+      // zostawia dotychczasowy fallback sesji.
+      ...(effect.description ? { description: effect.description } : {}),
     });
     state.preventDamageThisTurn = [...(state.preventDamageThisTurn ?? []), filter];
     state.events.push(event('damage_prevention_started', {
       sourceId: sourceObject.id, cardId: sourceObject.cardId, filter,
+      filterDescription: effect.description ?? null,
     }));
     return;
   }

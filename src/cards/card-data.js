@@ -2245,8 +2245,14 @@ export const REAL_CARDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: { event: 'enter_battlefield' },
         // Prewencja do cleanup: wszystkie ARTEFAKTOWE STWORY (obu graczy —
-        // tak mówi karta) nie otrzymują obrażeń do końca tury.
-        effect: [{ type: 'prevent_damage_this_turn', typesInclude: ['Artifact'], isCreature: true }],
+        // tak mówi karta) nie otrzymują obrażeń do końca tury. `description`
+        // to zakres po polsku dla logu (F15 audytu PR #131: bez niego log
+        // mówił „chronionym obiektom", nie nazywając, czego dotyczy prewencja;
+        // wzorzec L156 — narrację buduje deskryptor, nie warstwa renderu).
+        effect: [{
+          type: 'prevent_damage_this_turn', typesInclude: ['Artifact'], isCreature: true,
+          description: 'artefaktowym stworom',
+        }],
       }),
     ],
     artId: 536,

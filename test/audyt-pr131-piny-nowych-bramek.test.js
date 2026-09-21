@@ -677,3 +677,36 @@ test('F14: wizard bloków odrzuca duplikat ponad sloty, a wieloslotowy bloker na
   const r = execute(dwa.state, dwa.calls[0]);
   assert.ok(r.ok, `silnik przyjmuje to przypisanie (${reasonOf(r)})`);
 });
+
+// --- F15 --------------------------------------------------------------------
+// Znalezisko z RĘCZNEJ lektury transkryptów E3 (L27 — zero zgłoszeń detektorów
+// to pomiar narzędzia): log prewencji Ethersworn Shieldmage mówił „obrażenia
+// zadawane chronionym obiektom będą niwelowane", nie nazywając ZAKRESU, choć
+// karta mówi o artefaktowych stworach. Naprawa u źródła (L156): zakres nazywa
+// DESKRYPTOR (`description`), silnik przenosi go do zdarzenia, a sesja używa
+// go zamiast fallbacku. Pin mierzy oba kierunki: opis z deskryptora trafia do
+// logu, a brak opisu nadal daje dotychczasowy fallback (nie „undefined”).
+test('F15: log prewencji nazywa zakres z deskryptora, a bez opisu ma fallback', () => {
+  const s = game();
+  put(s, 'mage', 'ethersworn-shieldmage');
+  addMana(s, 'p1', 3, { colors: ['U', 'W'] });
+  run(s, commands(s).find((c) => c.type === 'cast_permanent' && c.objectId === 'mage'));
+  for (let i = 0; i < 12 && s.zones.stack.length > 0; i += 1) {
+    run(s, commands(s).find((c) => c.type.startsWith('resolve_')) ?? commands(s).find((c) => c.type === 'pass_priority'));
+  }
+  // Descriptor niesie zakres, silnik przenosi go do zdarzenia i do filtra stanu.
+  const zdarzenie = s.events.filter((e) => e.type === 'damage_prevention_started').pop();
+  assert.ok(zdarzenie, 'zdarzenie prewencji w strumieniu');
+  assert.equal(zdarzenie.filterDescription, 'artefaktowym stworom', 'opis zakresu z deskryptora w zdarzeniu');
+  assert.equal(s.preventDamageThisTurn.at(-1)?.description, 'artefaktowym stworom', 'opis w filtrze stanu');
+
+  // Log gracza używa opisu…
+  const tekst = describeGameEvent(zdarzenie, LOG_HELPERS, LOG_NAMES);
+  assert.match(tekst, /artefaktowym stworom/, 'log nazywa zakres prewencji');
+  assert.ok(!/chronionym obiektom/.test(tekst), 'stary fallback nie wraca, gdy opis istnieje');
+
+  // …a bez opisu (karta spoza deskryptora) zostaje dotychczasowy fallback.
+  const bezOpisu = describeGameEvent({ type: 'damage_prevention_started', cardId: 'x', sourceId: 'y', filter: {} }, LOG_HELPERS, LOG_NAMES);
+  assert.match(bezOpisu, /chronionym obiektom/, 'fallback dla prewencji bez opisu');
+  assert.ok(!/undefined|\bnull\b/.test(bezOpisu), 'fallback nie przecieka surowymi wartościami');
+});
