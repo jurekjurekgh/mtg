@@ -147,6 +147,15 @@ export function isLegalAuraHost(attachment, host) {
   if (enchantKind === 'creature_you_control') {
     return host.kind === 'creature' && host.controllerId === attachment.controllerId;
   }
+  // Sesja 2026-09-21 (granica aura–host, znaleziona pomiarem na żywo): „Enchant
+  // player" (Curse of the Pierced Heart) ma gospodarza-GRACZA, a nie permanent.
+  // Bez tej gałęzi predykat wpadał w domyślne „wyłącznie stwory" i aura
+  // wracająca z grobu (Annie Flash, CR 303.4f) ZAŁĄCZAŁA SIĘ DO STWORA —
+  // klątwa leżała na stworze, a jej zdolność czytała `enchantedPlayerId`
+  // (nieustawione), więc nie robiła nic. Żaden permanent nie jest legalnym
+  // gospodarzem takiej aury; ścieżka rzucania (spells.js `resolveAuraSpell`)
+  // ma własną gałąź `enchantPlayer` i nie korzysta z tego predykatu.
+  if (enchantKind === 'player') return false;
   // Zwykła aura / bestow / equipment — wyłącznie stwory.
   return host.kind === 'creature';
 }
