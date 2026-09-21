@@ -1024,7 +1024,7 @@ export function detectBotUntapsMyPermanent(lines, myPermanentNames = new Set(), 
 export function detectFalseNoEffect(lines, { window: windowSize = 1 } = {}) {
   const found = [];
   // Skutek widoczny w logu: zmiana P/T, licznik, keyword, tap/untap.
-  const CHANGE = /zyskuje:|dostaje \+|traci [0-9]|staje się|zostaje odkręcon|zostaje zatapnion|licznik|\b[0-9]+\/[0-9]+\b/i;
+  const CHANGE = /zyskuje:|dostaje \+|traci [0-9]|staje się|zostaje odkręcon|zostaje tapnię|zostaje tapnion|licznik|\b[0-9]+\/[0-9]+\b/i;
   // Wpisy logu bywają sklejone w JEDNEJ linii `LOG:` separatorem ⏎ (ogon logu
   // w snapshocie) albo rozbite na osobne linie `[ROZGRYWKA]`. Rozwijamy oba
   // kształty do płaskiej listy zdarzeń — inaczej detektor widzi „zerowy wynik”

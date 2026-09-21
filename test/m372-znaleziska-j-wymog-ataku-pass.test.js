@@ -63,7 +63,7 @@ test('J1: runda passów nie pomija wymogu ataku — Ramroller atakuje automatycz
   assert.equal(state.turn.step, 'declare_blockers', 'krok przeszedł do blokowania');
   assert.ok(state.combat, 'deklaracja atakujących istnieje (akcja turowa CR 508.1a)');
   assert.deepEqual(state.combat.attackers, ['ram'], 'tylko wymuszony stwór atakuje');
-  assert.equal(state.objects.get('ram').tapped, true, 'atakujący został zatapnięty');
+  assert.equal(state.objects.get('ram').tapped, true, 'atakujący został tapnięty');
   assert.equal(state.objects.get('ram').attackedThisTurn, true, 'flaga ataku na turę');
   assert.equal(state.objects.get('opt').tapped, false, 'opcjonalny stwór nie atakuje');
   const declared = state.events.filter((e) => e.type === 'attackers_declared');
@@ -77,7 +77,7 @@ test('J2: goad (CR 701.38) działa tak samo jak „attacks each combat if able"'
   spasujRunde(state);
 
   assert.deepEqual(state.combat?.attackers ?? [], ['ogar'], 'goadowany atakuje mimo passów');
-  assert.equal(state.objects.get('ogar').tapped, true, 'goadowany zatapnięty');
+  assert.equal(state.objects.get('ogar').tapped, true, 'goadowany tapnięty');
 });
 
 test('J3: bez stworów wymuszonych stara ścieżka passa — pusta walka bez deklaracji', () => {

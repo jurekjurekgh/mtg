@@ -81,6 +81,13 @@ groźniejsza. Poprawne kopie liczą `generic = cost - colors.length`, a te dwie
 doklejały pipy do NIEZMNIEJSZONEJ kwoty, więc cena rosła o liczbę pipów. Sześć
 kopii w jednej warstwie rozjechało się tam, gdzie nikt nie porównał z Oracle.
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/m268-alt-koszt-pelna-rodzina.test.js` (11 testów: skan
+katalogu po 14 mechanikach, piny bestow/plot/morph/kicker, test ŹRÓDŁA
+płatności, strażnik regexowy). Mutacje: `colors` z normalizacji bestow →
+4 RED; `coloredPipsOf(cardId)` w bestow → 1 RED; pipy obok kwoty → 1 RED.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L105)
 ## L104 (2026-08-31) — przypadek
 
 **Objaw (Żywy Tester M267, profile explorer/hoarder, seedy 511/516/523):**
@@ -97,6 +104,13 @@ Sweet Oblivion (koszt 4)", a Oracle mówi „Cleave {3}{U}" i „Escape {3}{U}".
    z kosztu BAZOWEGO karty. Wynik był poprawny, ale przypadkiem: wszystkie
    trzy karty mają w koszcie bazowym ten sam {U} co w alt-koszcie.
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/m267-alt-koszt-kolory.test.js` (5 testów, w tym skan
+katalogu i test ŹRÓDŁA płatności czytający `spells.js`). Mutacje: `colors`
+z normalizacji `registry.js` → testy 1–3; `coloredPipsOf(object.cardId)`
+w cleave/escape → test 5.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L104)
 ## L103 (2026-08-31) — przypadek
 
 **Objaw (zgłoszenie właściciela M266/B):** log pisał „Nieprzyjaciel rzuca
@@ -110,6 +124,12 @@ samą osobę, więc wyglądało na równoważne — nie jest. Czar bez celów
 hexproof (CR 115.6), daje się zepsuć usunięciem celu i pokazuje w UI wybór,
 którego karta nie oferuje.
 
+**Proza z rejestru (kondensacja 2026-09-20e):**
+
+4. Strażnik KLASOWY: skan katalogu sprawdza implikację „brak słowa target
+   w Oracle ⇒ brak `targets`". Pin na jedną kartę uśpiłby klasę — bliźniaki
+   (Dreams of Steel and Oil: poprawne, ma „Target opponent") wyglądają
+   identycznie w kodzie i różnią się TYLKO Oracle.
 ## L102 (2026-08-31) — przypadek
 
 **Objaw (Żywy Tester M265, dwa detektory, dwie partie):**
@@ -200,6 +220,11 @@ nastąpiło między pauzami, lądowało w jednej paczce bez względu na to,
 czy zaczęła się nowa tura. Render rysuje JEDNĄ paczkę na raz, więc
 „naprawa w renderze" nie istnieje — granica musi być widoczna w buforze.
 
+**Proza z rejestru (kondensacja 2026-09-20e):**
+
+5. Test wariantów patrzy na BLOKI, nie na przebieg: co najwyżej jeden
+   nagłówek tury na blok i nagłówek zawsze pierwszą linią, na wielu
+   seedach — RED złapał „Divest zostaje rozstrzygnięty | Tura 3 — Ty".
 ## L97 (2026-08-31) — przypadek
 
 **Objaw (M260, uwagi właściciela z PR #89):** trzy zgłoszenia do Fertile
@@ -220,6 +245,18 @@ na wierzchu) wyciekała przeciwnikowi.
 
 ---
 
+**Proza z rejestru (kondensacja 2026-09-20e):**
+
+**Strażnik (pełna lista):**
+**Strażnik:** `test/m260-uwagi-wlasciciela.test.js` (13 testów: silnik,
+widok FoW, wizard 3-krokowy, etykiety, log, Pyxis CR 406.3, scenariusz
+pustej biblioteki). Czerwienieją po cofnięciu każdej z czterech napraw.
+
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/m260-uwagi-wlasciciela.test.js` (13 testów; po cofnięciu
+każdej z czterech napraw czerwienieje; scenariusz pustej biblioteki).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L97)
 ## L96 (2026-08-30) — przypadek
 
 **Objaw (M259, brązowa odznaka):** 7 błędów vs zasady w katalogu kart
@@ -264,6 +301,11 @@ innego zadania), a każdy kolejny zielony commit z definicji go dezaktualizuje.
 Kolejne etapy miały własne bramki (testy/build), ale żadna bramka nie patrzy
 na README — dokumentacja nie czerwienieje.
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/dokumentacja-budzet-lektury.test.js` pilnuje budżetu
+lektury, NIE zgodności liczb — egzekwowanie reguły 1 pozostaje procesowe
+(domknięcie sesji wg ENVIRONMENT §7).
 ## L88 (2026-08-29) — przypadek
 
 **Objaw:** `node tools/benchmark.mjs --full` kończył się „Kontroler nie znalazł ruchu mimo legalnych komend" — bez meczu,
@@ -311,6 +353,11 @@ rzuty i następna tura.
 ostatni). Bez kolejki pauza zamienia „widzę ostatni" na „widzę pierwszy" —
 drugi błąd tej samej klasy.
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`session.artPausePending` / `continueArtPlay()`
+(`src/table/session.js`), `createArtShowcaseQueue` (`src/table/art-showcase.js`),
+testy C1–C3 w `test/m254-uwagi-wlasciciela.test.js`.
 ## L85 (2026-08-28) — przypadek
 
 **Objaw (Batch 51, Kulrath Mystic — „Whenever you cast a spell with mana value
@@ -524,22 +571,6 @@ REALNIE walczy (`attacking || blocking`).
 wyprowadza je z `state.combat.attackers`. Test ustawiający je wprost przechodzi
 z niewłaściwego powodu.
 
-## L62 (2026-08-25) — przypadek
-
-**Objaw (M205):** kolektor wpisów logu w Żywym Testerze („odpytuj nowe linie
-`#log` po indeksie" — wg handoffu) znajdował 0 wpisów, choć sesja je
-generowała i `session.log` je miał.
-
-**Przyczyna:** `render.js` rysuje log od NAJNOWSZEGO
-(`[...session.log].reverse()`), więc nowe wpisy dokładają się na POCZĄTKU
-listy DOM; pętla `for (i = widzianeDotąd; i < entries.length; i++)` czytała
-najstarsze jako „nowe". Poprawnie: `entries.slice(0, nowe).reverse()`.
-
-**Wariant z tej samej sesji:** `--out katalog/plik.txt` do nieistniejącego
-katalogu wywracał zapis na ENOENT dopiero PO ~40-sekundowym przebiegu — cały
-transkrypt przepadał. Narzędzie waliduje miejsce zapisu ZANIM zacznie mierzyć
-(L33).
-
 ## L60 (2026-08-24) — przypadek
 
 **Objaw (M203, audyt PR #74):** Żywy Tester miał domyślne talie `--human green
@@ -698,29 +729,10 @@ warianty tej samej pomyłki:
 realny błąd (Cellar Door: katalog „mills 1", Oracle „puts the bottom card…").
 **`oracleText` to dane do maszynowej weryfikacji** (L23), nie komentarz.
 
-## L9 (2026-08-14) — przypadek
+**Proza z rejestru (kondensacja 2026-09-20e):**
 
-**Objaw (dwukrotny):** (a) handoff twierdził, że pięć fixów przepadło z
-workspace — bo nie zostały wypchnięte; (b) sandbox odtworzył workspace ze
-świeżego klona w środku pracy i commit wylądował na `main`.
-
-**Przyczyna:** nowa sesja Areny widzi wyłącznie `main` na GitHubie i treść
-pierwszego promptu (ADR 0013). Środowisko może zresetować workspace w trakcie
-sesji (reflog: `clone: from …`).
-
-**Procedury:** [docs/setup/ENVIRONMENT.md](setup/ENVIRONMENT.md) §1–2.
-
-## L10 (2026-08-14) — przypadek
-
-**Objaw:** właściciel zgłosił, że PR od 30 minut nie ma opcji scalania ani
-informacji o CI. Odruch: szukać błędu w workflow albo w ochronie gałęzi.
-
-**Diagnoza (4 zapytania):** (1) `gh pr view --json state,mergeable,
-mergeStateStatus,statusCheckRollup` → `MERGEABLE`, `CLEAN`, check `test` =
-`SUCCESS`; (2) `git ls-remote origin <gałąź>` vs `head_sha` runu CI → ten sam
-commit; (3) `gh api repos/…/rules/branches/main` → reguły, `reviewThreads.
-totalCount = 0`; (4) `githubstatus.com/api/v2/summary.json` → brak incydentów.
-
+5. Testy UI renderują i sprawdzają WYNIK (drzewo elementów, reakcja na
+   zdarzenie), nie obecność napisów w pliku.
 ## L11 (2026-08-14) — przypadek
 
 **Kontekst:** wyzwanie „znajdź 10 błędów" (M95) na engine z 1600 testami.
@@ -887,6 +899,15 @@ stąd tryb ostrzegawczy — wzorzec L38.
 enumeruje katalog). Mutacje: usunięcie pola z `installDeck` → D1–D3; usunięcie
 `warp`/`surge`/`kicker`/`treasureAltCost` z wpisu ręki → test 1 + etykiety.
 
+**Proza z rejestru (kondensacja 2026-09-20e):**
+
+Test anty-over-fix obowiązkowy (np. kopia PRZODU zachowuje koszt) — bez
+niego fix „tył → 0" przechodzi zielono także z fabryką ignorującą pole.
+
+**Przypadek:** dane karty jadą do gry przez kilka miejsc, z których KAŻDE
+wymienia pola z nazwy (destrukturyzacja configu albo ręcznie budowany obiekt).
+**Wpis zbiorczy** (klasa w czterech warstwach; kotwice: L93, L94, L101).
+
 ## L22 (2026-08-16) — przypadek
 
 **Objaw:** po zaznaczeniu ptaszka „nie przerywaj auto-passu" kolejne tapnięcie
@@ -898,16 +919,6 @@ Ruchy bota z tego momentu nie trafiały do modala „Rozgrywka".
 `session.recheckAutoPass()`, które przewija grę (auto-pass, tura bota). Po
 przewinięciu nie było renderu, więc na ekranie został panel z MINIONEGO okna —
 z komendami sprzed przewinięcia.
-
-## L23 (2026-08-16) — przypadek
-
-**Objaw:** w katalogu siedziały trzy błędy kosztów: „{B}{B}" i „{R}" zapisane
-jako sama liczba many (zdolność opłacalna dowolnym kolorem) oraz {2}{U}
-zapisane jako `manaCost: 2` (karta o manę tańsza). Testy kart sprawdzają
-SKUTEK zdolności, nie to, czy dało się ją opłacić złym kolorem.
-
-**Przyczyna:** koszt żyje w dwóch reprezentacjach (`MANA_COSTS[id]` jako string
-Oracle i `manaCost`/`cost.colors` jako dane silnika) bez bramki między nimi.
 
 ## L25 (2026-08-17) — przypadek
 
@@ -940,6 +951,18 @@ CUDZYCH stworów 24 razy w jednej partii.
 **Pułapka techniczna:** `\b` w regexie NIE działa po polskich diakrytykach
 („kartę" → granica przed „kart" daje fałszywe alarmy). Używaj `(?![\p{L}])`
 z flagą `u`.
+
+**Proza z rejestru (kondensacja 2026-09-20e):**
+
+5. Gdy detektor oskarża kod, który po sprawdzeniu jest POPRAWNY, błąd leży
+   w POMIARZE — napraw pomiar, nie dopisuj wyjątku na nazwę karty. Jeden licznik
+   na dwa zjawiska zawsze skłamie, gdy wystąpią razem. Po uciszeniu alarmu
+   udowodnij, że detektor nadal krzyczy na prawdziwym przypadku (L67).
+
+6. Skan transkryptu czytaj PER ETYKIETA: `LOG:` stołu to gra,
+   `RĘKA:`/`POLA:` to tekst karty (fałszywe pozytywy skanów), a fraza
+   z `textContent` bywa artefaktem ekstrakcji (ikony many) — zanim zgłosisz
+   defekt, sprawdź źródło w renderze.
 
 ## L28 (2026-08-17) — przypadek
 
@@ -1245,6 +1268,10 @@ target" zdolności nadanej przez sprzęt (Blazing Torch) — proponowały cudzeg
 stwora z hexproof, którego walidacja odrzucała. Nowa gałąź oferty CELÓW idzie
 przez `legalTargetCandidates`, nawet gdy typ celu „wynika z gałęzi".
 
+**Proza z rejestru (kondensacja 2026-09-20e):**
+
+**Wpis zbiorczy** (4 powtórki; L90 to kotwica): rozjazd oferty i walidacji
+to crash w benchmarku („Bot wybrał nielegalną komendę").
 ## L49 (2026-08-18) — przypadek
 
 **Objaw:** nowa sesja zapytała właściciela „co robimy?" zamiast wykonać ADR
@@ -1302,6 +1329,12 @@ czyli 253 pary × 2 strony × 3 pary botów × 50 seedów = 75 900. Nikt nie
 zauważył, BO NIKT NIE DOGRAŁ MACIERZY DO KOŃCA — martwa liczba w dokumentacji
 nie boli, dopóki nikt jej nie sprawdzi.
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/benchmark-progress-watchdog.test.js` (postęp + zacinki),
+`test/benchmark-budget-probki.test.js` (budżet trzyma rozmiar dla 6/22/45/120
+talii, pokrycie każdej talii, determinizm próbki); raport wypisuje
+`ZACINKI (watchdog N ms)` z adresem każdego przerwanego meczu.
 ## L109 (2026-08-31) — przypadek
 
 W M271 (błędy #11/#12) ręczna kopia kodu przenoszenia miała komentarz:
@@ -1330,6 +1363,12 @@ monotoniczna (1→10, 2→12, 3→14, 4→15, ≥5→16) oraz bramka porównują
 między wariantami ex aequo — bot sam wystawia projekcję do śladu, więc test nie powtarza
 wzoru z produkcji, tylko sprawdza, że ten sam wzór nie gubi informacji.
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`tools/bot-tie-audit.mjs` (`audytRemisow`, CLI `--gate=<kind>`)
++ `test/audyt-bot-wybior-landu.test.js`; mutacje: płaska wycena ⇒ RED 1/3/5,
+kara za `entersTapped` usunięta ⇒ RED 3/5, ślad bez karty ⇒ RED 1/2/3/4.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L117). → Pokrewne: L1, L5, L48.
 ## L118 (2026-09-02) — audyt, który kłamał w obie strony
 
 Pierwszy pomiar remisów bota dał nagłówek „30,4% decyzji bez rozstrzygnięcia".
@@ -1353,6 +1392,17 @@ okazji wyszło, że metryka też wymaga wysycenia: przy ataku śmiertelnym róż
 16 wobec 17 obrażeń nie istnieje dla wyniku partii, więc raportowanie jej jako
 „przeoczenia wyceny" byłoby generowaniem szumu. Reguła jest ogólna: porównuj
 dokładnie tyle, ile może zmienić losy gry, ani bita więcej.
+
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/audyt-bot-walka-remisy.test.js` (dowód no-opa + grzechotka) i
+`tools/bot-tie-audit.mjs` (`tieNoOp`, `tieAkcyjne`, klasyfikacja po projekcji).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L118). → Pokrewne: L18, L5, L117.
+
+**Przypadek:** audyt remisów bota (M285→M286): 208/308 remisów wyglądało na
+no-op (`block[]`/`attack[]` vs `pass_priority`), a reguła „brak projekcji ⇒
+bez danych" wycinała przy okazji findingi realne. Pełna narracja:
+`docs/LESSONS_PRZYPADKI.md` (L118).
 
 ## L119 (2026-09-02) — dwie fałszywe alarmy i jeden prawdziwy, ten sam przyrząd
 
@@ -1385,6 +1435,20 @@ Wniosek, który warto zapamiętać: przyrząd pomiarowy dziedziczy godność tyl
 modelu, który mierzy. Jeśli audyt ma *inną* arytmetykę niż kod, to nie audytuje
 kodu, tylko siebie — i kłamie w obie strony: straszy szumem i przeoczy właściwy
 błąd.
+
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/audyt-bot-cena-stwora.test.js` (pin arytmetyczny
+`Δwyniku = Δkoszt × waga × waga rodziny`, kierunek na parach z katalogu,
+kontra-przykład „większy korpus broni ceny") + grzechotka per kind w
+`test/audyt-bot-walka-remisy.test.js`; pomiar: `tools/bot-tie-audit.mjs`.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L119). → Pokrewne: L117, L118, L5.
+
+**Przypadek:** audyt remisów bota (M286→M287): projekcja „wartość ciała"
+(`power + toughness`) flagowała pary słusznie zamienne, bo wycena waży
+składniki inaczej; równolegle metryka liczona po składnikach znalazła rzecz
+prawdziwą (`cast_permanent` nie znał kosztu many). Pełna narracja:
+`docs/LESSONS_PRZYPADKI.md` (L119).
 
 ## L120 (2026-09-02) — Opcjonalna zależność komponentu to dziura w drucie
 
@@ -1478,6 +1542,13 @@ zero otwarć kreatora wielocelowego. Czyli surowiec się wyczerpał, a nie chę�
 jeszcze przypisania — przepis (12 nazw + proporcja lądów) został w §13.8 raportu,
 żeby nikt nie układał go drugi raz.
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/uwagi-tura8-hover-kart-specjalnych.test.js` (strażnik
+przekazania `hover` w `renderTableView` + strażnik reguł `:hover`) i
+`test/uwagi-tura8-picker-wielocelowy.test.js` (reguły `.picker-*` z progiem dotyku
+44 px, „renderPickerRow wywołany ≥ 3razy", brak osobnego przycisku Podglądu).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L120). → Pokrewne: L16, L21, L118, L119.
 ## L127 (2026-09-03) — przypadek: trzy sztywne wykluczenia po zlaniu filtrów
 
 Przeniesione z `docs/LESSONS.md` przy kondensacji budżetu lektury startowej (2026-09-06) — treść bez zmian, skrócona została tylko samo lekcja.
@@ -1521,8 +1592,24 @@ i no-opem w oknie darmowym. Zamknij tę ścieżkę PARAMETREM (`allowX`) i przyp
 testem, że milczy — domyślna wartość predykatu nie może być jedynym śladem
 decyzji (uwaga właściciela F z M280).
 
+**Proza z rejestru (kondensacja 2026-09-20e):**
 
+Test odziedziczony traktuj jak hipotezę (czy setup odtwarza
+DZISIEJSZY silnik — inaczej jest vacuous), koszt z wyborem kart w trakcie
+(„discard two cards") zostaje bez oferty (L5), a wariant „X = 0" bez okna
+liczenia X to pułapka do backlogu, nie milczenie.
 
+**Proza z rejestru (kondensacja 2026-09-20e):**
+
+**Strażnik (pełna lista):**
+**Strażnik:** `test/audyt-pr93-modalny-rzut-z-okna.test.js`,
+`test/audyt-pr93-modalny-discover.test.js`,
+`test/audyt-pr93-koszt-dodatkowy-z-exile.test.js`,
+`test/audyt-pr93-koszt-x-z-exile.test.js`, odwr
+
+ócony
+`test/audyt-pr92-darmowy-rzut-zakres.test.js` — 9 mutacji, tabela w §7
+`docs/audits/AUDYT_PR93_2026-09-03.md`.
 ## L134 (2026-09-06) — przypadek: karta-sonda w talii właściciela
 
 Sesja wdrażająca kontrzenie zdolności (PR #93, commit `9f1c37c`) potrzebowała
@@ -1544,6 +1631,12 @@ snapshot, przydział `plan` (regeneracja `decks/wiedzmin.txt`: 45 → 44 kart) i
 test `audyt-kontrzenie-zdolnosci.test.js`, który dziś opiera się na karcie
 synteretycznej `SONDA`.
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/proweniencja-katalogu.test.js` (artId ∈ słownika kolekcji,
+nazwa i plan zgodne z wierszem, poza kolekcją tylko tokeny/landy, `decks/*.txt`
+bez kart spoza słownika, `MANA_COSTS` bez sierot). Fałszywka zweryfikowana:
+wstrzyknięcie `Stifle` do katalogu czerwieni testy 1, 3 i 5.
 ## L126 (2026-09-03) — przypadek: zlanie renderLookWizard z kreatorem landa
 
 `renderLookWizard` i kreator „zajrzyj → weź jeden land" miały po osobnym
@@ -1561,6 +1654,12 @@ Mutacje: pula sortera bez warunku na `flow` → RED M112; dopisana druga lista c
 w kreatorze → RED M293/1; przywrócona kopia stopki → RED M293/1; wycięty `min-height`
 rodziny → RED m129; nazwa karty w kodzie rysującym (bez komentarza) → RED M293/11.
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/m293-peek-jeden-wizard-chipy.test.js` (12), `M112` w
+`test/choice-request-ui.test.js`, `test/m129-*` + `test/look-wizard-contrast.test.js` przez
+`test/harness/css-effective.js`.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L126)
 ## L131 (2026-09-05) — przypadek: remisy wyborów resolve_* przy bot-tie-audit
 
 `tools/bot-tie-audit.mjs` pokazał 50+ remisów przy wyborach
@@ -1603,6 +1702,16 @@ samym miejscu: regułę znała JEDNA ścieżka rzutu, druga nie.
   wracała na stół ZA KOSZT WARP (Weftblade Enhancer: 3 many zamiast 6),
   choć warp jest kosztem alternatywnym wyłącznie z ręki.
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/audyt-pr93-plot-pozniejsza-tura.test.js` (6: czar i stwór,
+obie strony granicy, anty-over-fix dla ręki/impulsu/braku stempla) oraz
+`test/audyt-pr93-warp-z-exile.test.js` (6: brak oferty za koszt warp, pobranie
+6 many, odrzucenie `warp_card` z exile, anty-over-fix dla warpu z ręki,
+przebieg integracyjny ze stempel `warpedAtTurn`). 13 mutacji — tabela w §7
+`docs/audits/AUDYT_PR93_2026-09-03.md`; mutacja `>=` zamiast `>` we wspólnym
+predykacie czerwieni testy OBU mechanik naraz (5 RED).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L128)
 ## L129 (2026-09-03) — przypadek: Otwarcie mechaniki w nowym oknie to CAŁY łańcuch wyboru: oferta → walidacja → obiekt stosu → log → etykieta
 
 **Przypadek:** audyt PR #94 (K1). Fix F otworzył w oknie darmowego rzutu
@@ -1618,6 +1727,12 @@ Halo Foragera. Ta sama klasa wyszła też przy etykietach `cast_spell`
 i okna Vaana (K2): warianty różniące się wyłącznie stun celem były
 nierozróżnialne (M91).
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/audyt-pr94-stun-z-grobu.test.js` (7 testów: warianty niosą
+stun cel, każda oferta wykonalna, licznik na WYBRANYM celu, etykiety trzech
+okien nazywają wybór, strażnik klasy po katalogu). 5 mutacji RED.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L129)
 ## L123 (2026-09-02) — przypadek: Semantyka zaimplementowana w jednym torze nie istnieje w drugim
 
 **Przypadek:** M291 (wpis w rejestrze oznaczony jako cofnięte). Karta „up to two target
@@ -1630,6 +1745,15 @@ czaru — nie: aplikuje listę efektów RAZ z pełną tablicą celów, a `pump` 
 pompowałaby pierwszy cel dwa razy, a drugi wcale. Żaden test jej by nie przyłapał,
 bo nie istniała.
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+dziś żaden — rodzina `test/m291-*.test.js` (dwa cele / jeden / zero oraz
+to, że silnik nie zna nazw kart i że `allTargets` nie łączy się z efektem blokującym
+decyzję) istniała i świeciła 14/14 na zielono, lecz właściciel cofnął zgodę na karty
+wielocelowe 2026-09-03 i cała gałąź `0434199` została zrevertowana. Lekcja przeżywa kod właśnie po
+to; jeśli karta wielocelowa wejdzie kiedyś za zgodą właściciela, te cztery asercje są
+pierwszą rzeczą do odtworzenia (treść testu jest w commicie `0434199`).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L123)
 ## L132 (2026-09-06) — przypadek: Wycena oparta o STREFĘ UKRYTĄ jest inertna; audyt czytający to samo źródło tego nie zobaczy
 
 **Przypadek:** PR #100 dodał wyceny `resolve_manifest_dread`,
@@ -1671,6 +1795,12 @@ skrypty sondujące, transkrypty testera) przepadły bez śladu.
 poza `git push` jest ulotne, a `git checkout <sciezka>` przywraca wersję z
 INDEKSU/HEAD niezależnie od tego, co było w pliku.
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+nie da się tego sforsować jednym testem (to procedury pracy);
+ENVIRONMENT §1/§2 opisuje oba zjawiska, a `test/repo-artefakty-audytu.test.js`
+pilnuje, żeby artefakty testera nie weszły do indeksu przy takim sprzątaniu.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L136)
 ## L137 (2026-09-07) — przypadek: etykieta to rodzina: jedno źródło brzmienia, test na PRAWDZIWYM widoku, partia celowana
 
 **Przypadek:** F6 z audytu PR #102 — przeciwnik czytał „(Morph)" o cudzym
@@ -1690,6 +1820,12 @@ co innego, w pięciu kopiach kodu; testy jednostkowe etykiet budowały widoki
 RĘCZNIE (ficzki oddawały stary kształt), a partie na zwykłych taliach nigdy nie
 doczekały się cloaka (1 kopia w jednej talii).
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/m326-cloak-przyczyna.test.js` (7, w tym C2 — skan
+`src/table/*.js`), `test/m331-log-przyczyna.test.js` (4, w tym D — skan
+`nameOfObject`), `test/choice-ignore.test.js`.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L137)
 ## L138 (2026-09-07) — przypadek: efekt zgłosił blokadę, której nie było — partia wisi na `pendingSpell.effects: []`
 
 **Przypadek:** Żywy Tester na talii celowanej pod manifest (20 kart, seed 4001,
@@ -1723,6 +1859,17 @@ czerwona, więc kolejna taka ścieżka nie przejdzie niezauważona.
 czar od wiszącego. Dopisanie w teście B pętli „6 pasów z rzędu przyjętych +
 `status === 'active'` + stos pusty" jest tanie i łapie WSZYSTKIE warianty tej
 klasy (zawieszony stos, zgubiony priorytet, nieskończony krok).
+
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/m335-manifest-bez-wybory.test.js` A–D (D: liczba
+`return true` = liczba postawionych decyzji w gałęzi).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L138)
+
+Zatrzymane rozstrzyganie (`pendingSpell`, także `effects: []`) nie otwiera
+okna na SBA. Decyzja UI to nie oddanie priorytetu — M343, CR 704.4.
+Strażnik: `test/m343-sba-po-rozstrzygnieciu.test.js` (liczniki, życie,
+wytrzymałość i zanik tokenów przed/po końcu czaru).
 
 ## L139 (2026-09-07) — przypadek: cięcie tekstu kotwicą, która była w moim własnym komentarzu
 
@@ -1770,6 +1917,14 @@ suficie `block` w `test/audyt-bot-walka-remisy.test.js` zniknął razem z Revet�
 patrz tabela atrybucji i kolejność wejścia karty w
 `docs/audits/AUDYT_PR92_2026-09-02.md` §15.
 
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/bot-scoring-snapshot.test.js` (fixture, który ta lekcja chroni przed
+przedwczesnym `--write`) oraz tabela atrybucji i kolejność wejścia karty w
+`docs/audits/AUDYT_PR92_2026-09-02.md` §15. Komentarz z tabelką przy suficie `block` w
+`test/audyt-bot-walka-remisy.test.js` (historia sufitu `block` przeniesiona
+do `docs/LESSONS_PRZYPADKI.md` L124).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L124)
 ## L130 (2026-09-03) — przypadek: „trigger bez opisu" i pułapki tamtej sesji
 
 **Przypadek:** dwa zgłoszenia właściciela (uwagi C/D) miały JEDEN root cause: bramki
@@ -1933,6 +2088,23 @@ quick 82,6%→82,9% (555→557/672), aggro bez zmian 30,7%; Żywy Tester
 (1) — nowa ręka 7 kart", odłożenie 1 karty na spód, zatrzymanie nowej ręki,
 partia gra do końca, detektory 0 zgłoszeń. Suity: 5496/5496 fast, 5506/5506 all.
 
+**Proza z rejestru (kondensacja 2026-09-20e):**
+
+**2026-09-14f (dopisek) — mulligan to DECYZJA, nie dana.** Zgłoszenie „talie
+podejrzanie często startują bez lądów": pomiar pokazał talie zgodne z regułą
+1:2 (M132) i uczciwe tasowanie, a root cause w polityce BOTA (heuristic/aggro
+nigdy nie brały mulligana). Polityka: keep ⇔ ≥2 lądy albo cap 2 mulliganów;
+na spód najdroższe czary. Narracja: `docs/LESSONS_PRZYPADKI.md` (L19).
+**Reguła:** zgłoszenie „często startuje bez X" mierz NAJPIERW dane (kompozycja,
+uczciwość losowania), potem DECYZJE konsumenta — symptom może mieszkać
+w polityce kontrolera, nie w talii.
+
+**Objaw:** próbka regresji (1248 meczów) spowolniła ~2×, a modal dla gracza
+rósł w setki opcji — po dodaniu wyceny `cast_escape`. Wcześniej warianty Escape
+(Sweet Oblivion) nie miały wyceny (0) i bot je pomijał, więc nikt nie czuł, że
+`legalEscapeCasts` enumeruje WSZYSTKIE C(n, 4) podzbiory: 10 kart w grobie =
+210 podzbiorów × 2 cele = 420 wariantów na okno.
+
 ## L144 (2026-09-15) — znalezisko A: Cathartic Reunion przy 2 kartach bez modala
 
 **Zgłoszenie:** „Mam dokładnie 2 karty i mam wyrzucić 2 karty — po co modal?"
@@ -1978,6 +2150,8 @@ w odpowiedzi (5 — snapshot przy koszcie NIE może zabić żywego odczytu).
 
 **Naprawa:** `LIBRARY_SEARCH_EFFECTS` (typy z deskryptora: search_library_to_hand / _to_battlefield / _to_battlefield_tapped / search_basic_land_morbid) + `searchLibraryLoss(view, cmd)` liczący karty zabrane z własnej biblioteki przez wariant; wynik wchodzi do tej samej drabiny `libraryLossPenalty` co dobrania — dla aktywacji (payment + tutor, suma dróg) i dla rzutów (repeat + payment + tutor, więc także ETB-tutory permanentów, np. Pilgrim's Eye). Granica marginesu: 21 kart aktywuje, 20 już nie (margines 20 kart). Objaw uboczny: pin `batch54` (lethal Exploding Borders przy 1 karcie w bibliotece) mierzył teraz karę cienkiej biblioteki za własny tutor — scena dostała 20 kart tła, asercja letalu bez zmian.
 
+**Przypadek:** Dawntreader Elk — bot poświęcał stwora po ląd, bo kara cienkiej biblioteki widziała tylko mill/draw, a tutor nie był wyceniany nigdzie.
+
 ## L151 (2026-09-19) — przypadek: potrójny blok legalny w silniku, nieobecny w ofercie
 
 **Punkt otwarty z poprzedniej sesji:** „kierunek odwrotny oferty bloków (`Math.min(slots, 2)`) — pin przy blokerze o >2 slotach”.
@@ -1987,6 +2161,8 @@ w odpowiedzi (5 — snapshot przy koszcie NIE może zabić żywego odczytu).
 **Przyczyna i naprawa:** liczba przebiegów blokera w enumeracji = `Math.min(slots, 2)` (obcięcie „na wygodę”) → `Math.min(slots, attackers.length)` (granica legalności). Przy okazji: enumeracja z powtórzeniami tworzyła to samo przypisanie wieloma ścieżkami (kolejność atakujących) i rosła do 34 opcji przy capie 32 — dodany klucz kanoniczny + `slice(0, cap)`.
 
 **Piny (oba kierunki):** potrójny blok jest w ofercie i przechodzi `declareBlockers`; KAŻDA opcja oferty przechodzi walidację; bloker o 1 slocie bez podwójnego bloku; brak duplikatów i cap. Mutacje M23/M24 → 1 RED każda.
+
+**Przypadek:** bloker o 3 slotach nie dostawał w ofercie potrójnego bloku, choć `declareBlockers` go przyjmuje.
 
 ## L152 (2026-09-19) — przypadek: literalny „\n” w danych proweniencji i wyjątek, który to ukrywał
 
@@ -1998,6 +2174,8 @@ w odpowiedzi (5 — snapshot przy koszcie NIE może zabić żywego odczytu).
 **Naprawa danych + koniec wyjątku:** prawdziwe nowe linie w katalogu i snapshotach; strażnik `test/oracle-bez-literalnego-backslash-n.test.js` pilnuje obu stron (plus zgodność katalog==snapshot dla dotkniętych kart i dla DFC Lodestone Needle) i ma bramkę degeneracji (minimum sprawdzonych rekordów); `skippedEscapedText` w strażniku kosztów musi być 0 — `strandwalker` wrócił do audytu. Świadomie NIE naprawiane (sklasyfikowane): 8 różnic w tekście przypomnienia (CR 207.2 — to nie tekst reguły) i karta przygodowa `gray-slaad`, gdzie katalog celowo składa przednią twarz z linią przygody.
 
 **Mutacje:** M25 (przywrócenie literalnego „\n” w katalogu) → 2 RED, M26 (w 7 snapshotach) → 2 RED.
+
+**Przypadek:** pełny diff katalog↔snapshot wykrył literalne „\n” w `oracleText` 20 wpisów i w 7 plikach `docs/cards/*.json`.
 
 ## L153 (2026-09-19) — przypadek: tapnięcie przez ATAK nie odpalało „becomes tapped"
 
@@ -2034,6 +2212,8 @@ w odpowiedzi (5 — snapshot przy koszcie NIE może zabić żywego odczytu).
 **Kolizja z pinem D/3:** ten sam atak 3/1 za 3/3 przy 3 życiach jest teraz poprawnie karany (wróg może NIE blokować i dobić kontrą), więc `test/zgloszenie-d-jalowy-atak-w-gang.test.js` mierzy granicę klasyfikacji „jałowego ataku" przy 12 życiach — scenariusz crackbacku ma własny pin.
 
 **Piny:** `test/zgloszenie-e-oddana-garda.test.js` — 6 przypadków (scenariusz właściciela; atak letalny zostaje; wymuszony blok oddaje gardę; atakujący z lataniem; wymiana przy pełnym życiu; dwa 2/2 — jeden zostaje w domu). RED: stash `heuristic-bot.js` + `heuristic-params.js` → 5/1.
+
+**Przypadek:** bot z 2 życia atakował 2/2 w 2/2 (zgłoszenie właściciela).
 
 ## L156 (2026-09-20) — przypadek: trzy warstwy zgłoszenia (F–I)
 
@@ -2137,3 +2317,175 @@ ofertami. Menu zostaje skrótem.
 **Reguła pracy:** wpis „nie naprawiamy świadomie" wymaga (a) pomiaru,
 (b) powodu z reguły CR albo kosztu, (c) pinu, który pilnuje, że stan się nie
 pogorszy. Bez tych trzech to jest po prostu nieznaleziony błąd.
+
+**Przypadek:** `legalBlockerOptions` ponad `COMBAT_OPTION_CAP` kończy się
+`slice(0, cap)`, a wizard bloków brał kandydatów z SUMY OFERT — 6×6 traciło
+5 legalnych par (atakujący, bloker), 10×10 — 69 (CR 509.1b).
+
+## L112 (2026-09-01) — przypadek (proza z rejestru, dodana 2026-09-20e)
+
+**Proza z rejestru (kondensacja 2026-09-20e):**
+
+Rygor, bez którego narzędzie szkodzi: trafienie weryfikuj wobec KONSUMENTA (grep
+pola w `session.js`, `triggers.js`) — z 36 kandydatów realne były 2; lista
+wyjątków JAWNA i z POWODEM; analizator jest produktem (fałszywy alarm poprawiaj w
+TEŚCIE, nie w kodzie).
+
+## L121 (2026-09-02) — przypadek (proza z rejestru, dodana 2026-09-20e)
+
+**Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
+
+`test/uwagi-tura9-bot-rowne-ciala-equip.test.js` (T9/5 i T9/6 — obie
+strony, T9/3 — antysymetria na 40 parach, T9/8 — jedno miejsce definicji wagi).
+
+Pytanie kontrolne właściciela pokazało drugą stronę
+tego samego kodu: Wooden Stake leżał na 3/2 z defenderem, obok stał 3/2, który umie
+atakować, a ładunek liczony od samej pompy był na obu identyczny — drabina kazała
+stać i sprzęt zakotwiczał się na stworze, który nigdy nie zaatakuje. Żaden gracz
+tego nie zgłosi: błąd objawia się ciszą (brak poprawki), nie kaszanem.
+
+## L115 (2026-09-02) — przypadek
+
+**Objaw:** tryb grupowania rozpoznawało się w silniku po NAZWIE zdarzenia, a
+`combat_damage_to_you` scalało się po graczu → druga instancja tej samej zdolności
+przepadała (Contested Game Ball ×2, CR 603.3).
+**Przyczyna:** rozjazd z CR 603.2 (zdarzenie scala się w jedno) i CR 603.3 (każda
+instancja wyzwala osobno); decyzja właściciela: „engine jest headless,
+name-agnostic" (ADR 0002).
+
+## L116 (2026-09-02) — przypadek
+
+**Objaw:** test okna Vaana dał `trigger_resolved: no_result` — wyglądał jak błąd
+efektu, a to brak danych w teście.
+
+## L162 (2026-09-21) — przypadek
+
+Kod wyglądał poprawnie (`log-card`, `data-card-id`,
+listener), konsola czysta. Dopiero pomiar SKUTKU na artefakcie (jsdom: czy
+`#card-fullscreen` ma klasę `active` i `img` w środku) dał `pełny ekran=false`:
+`data-card-id` niósł **objectId**, a ścieżka obrazu po objectId dla obiektu
+nieobecnego w widocznych strefach gracza (FoW: cudza ręka = `{id, hidden:true}`)
+kończy MILCZENIEM.
+
+**Reguły:**
+1. Interakcja „nic nie robi, a nie ma wyjątku" to prawie zawsze wczesny
+   `return` na warunku widoczności. Sprawdź, czy identyfikator oddany do DOM
+   (`data-*`) należy do TEJ SAMEJ przestrzeni nazw, którą rozumie opener
+   (objectId kontra cardId) — inaczej klik „działa", a nie ma czego pokazać.
+2. Dowód dla warstwy UI bierz z EFEKTU (element/klasa w DOM), nie z tego, że
+   handler się wykonał: sonda wołająca tylko callback nie odróżnia „otworzyło"
+   od „nic nie zrobiło".
+3. Jeśli etykieta wiersza NAZYWA kartę (pełna nazwa z sesji), wolno jej też
+   pokazać obraz — podgląd idzie wtedy drogą definicji (cardId). FoW zostaje
+   tam, gdzie obiekt jest zakryty i BEZIMIENNY (biblioteka, morf): granicę
+   wyznacza jedno miejsce (`hiddenObjectCardId`) z pinem na oba wyjątki.
+
+## L18 (2026-08-16) — przypadek
+
+**Objaw:** sonda zgłosiła Welder Automaton („{3}{R}: 1 obrażenie każdemu
+przeciwnikowi") jako „jedyna zmiana to zapłacony koszt" — jedyną różnicą był
+spadek życia PRZECIWNIKA, a sonda śledziła wyłącznie życie gracza sondy.
+
+## L2 (2026-08-14) — przypadek
+
+**Objaw:** po naprawie pięciu luk decyzyjnych (M92) pełna macierz (5616
+meczów) dała wynik identyczny co do 0,1 pp.
+**Przyczyna:** karty z daną mechaniką są w jednej–dwóch taliach na kilkanaście;
+poprawka ginie w uśrednieniu.
+
+## L24 (2026-08-16) — przypadek
+
+**Objaw:** czar za 3 many (Hysterical Blindness, −4/−0 stworom przeciwnika)
+rozstrzygał się, a log i panel pokazywały tylko „zostaje rozstrzygnięty". To
+samo: Turn the Tide, Angel of the Dawn, Jyoti. Gracz nie miał JAK się
+dowiedzieć, co zrobiła jego karta.
+**Przyczyna:** efekt zapisywał stan bezpośrednio (`state.untilEndOfTurnBuffs`,
+`modifyStats` wyciszony jako szum) i nie emitował zdarzenia; testy silnika
+sprawdzają SKUTEK w stanie, nie istnienie zdarzenia.
+
+## L39 (2026-08-18) — przypadek
+
+**Objaw:** audyt „czy każda decyzja ma opis w logu" wykazał 177/177 opisanych
+zdarzeń i 50/50 obsłużonych komend `resolve_*` — zero usterek. Pokusa: odhaczyć
+i iść dalej.
+**Przyczyna niepokoju:** kompletności logu nie pilnowało NIC. Zielony stan był
+przypadkowy i już dwa razy (M96, M126) przestawał być zielony w najgorszy
+sposób: surowym slugiem zdarzenia u gracza, bo `describeGameEvent` ma
+`default: return e.type`.
+
+## L4 (2026-08-14) — przypadek
+
+**Objaw:** gracz zostawał na ekranie z jedyną opcją „Poddaj partię"; w logu
+`Ruch odrzucony: not_priority` (M90/B).
+**Przyczyna:** `session.apply()` czyścił bufor modala i kasował pauzę bota
+PRZED `execute()`, „defensywnie" zakładając powodzenie.
+
+## L6 (2026-08-14) — przypadek
+
+**Objaw:** log i modal „Ruch przeciwnika" nie mówiły, który tryb czaru
+modalnego wybrał bot: Ruinous Rampage wyglądał identycznie niezależnie od
+wyboru (M91/D).
+**Przyczyna:** `describeGameEvent` jest czystą funkcją bez dostępu do rejestru
+kart (świadomie — testowalna headless). Zdarzenie niosło `modeIndex`, ale nie
+nazwę trybu.
+
+## L72 (2026-08-25) — przypadek
+
+**Objaw (M212):** zgłoszenie „bot tapuje własnego blokera" dotyczyło
+rebounda; ta sama ślepota siedziała w `resolve_suspend_cast`, a po przeglądzie
+także w `resolve_madness_cast`. Trzy gniazda, jedna przyczyna: silnik
+enumeruje ofertę per zestaw celów, a bot wyceniał wyłącznie TYP efektu, więc
+wszystkie warianty miały identyczny wynik i wygrywał pierwszy z brzegu.
+
+## L74 (2026-08-25) — przypadek
+
+**Objaw (M212):** znaleziska brały się z czytania transkryptu, gdzie osobne
+elementy UI są sklejane separatorem w jedną linię: dwie opcje wyglądają jak
+jedna zlepiona etykieta i odwrotnie. Z 13 partii 11 tropów okazało się
+poprawnym zachowaniem.
+
+## L76 (2026-08-25) — przypadek
+
+**Objaw (M213):** po naprawie sondy partia kontrolna zwróciła NIEZMIENIONĄ
+liczbę zgłoszeń — wyglądało to na „patch nie działa" i o mało nie wywołało
+szukania drugiej przyczyny w kodzie, który był już poprawny.
+**Przyczyna:** `tools/table-tester/run-game.mjs` ładuje zbudowany artefakt
+`dist/mtg-table.html` (ADR 0011), nie moduły z `src/`. Bez `npm run build`
+Tester mierzy poprzednią wersję.
+
+## L79 (2026-08-26) — przypadek
+
+**Objaw (M219, pętla jakości, g9):** aktywacja Unstable Frontier dała DWA
+identyczne wiersze: „Swamp staje się typem Plains do końca tury" ×2.
+**Przyczyna:** rozstrzygnięcie `resolve_land_type_choice` emituje parę —
+`land_type_changed` (mutacja) i `land_type_choice_resolved` (narracja) — a
+`describeGameEvent` renderował OBA (wariant L24/L6; pokrewne L41, ale po
+stronie zdarzeń).
+
+## L83 (2026-08-28) — przypadek
+
+`test/fingerprint-pending-decisions.test.js` liczył pokrycie jako każde
+wystąpienie `pending*` w surowym pliku. Mutacja: `state.pendingZzz` w kodzie
++ wzmianka `pendingZzz` wyłącznie w KOMENTARZU → strażnik zielony. Nowa decyzja
+znów wyciekłaby z odcisku stanu.
+
+## L163 (2026-09-21) — przypadek
+
+**Objaw:** aura „Enchant player" (Curse of the Pierced Heart) wracająca z grobu
+(trigger Annie Flash, CR 303.4f) nie miała żadnego wariantu w decyzji
+`resolve_aura_host` — kontrakt niósł wyłącznie id permanentów, więc dla aury
+„Enchant player" oferta była pusta, a jedynym ówczesnym zachowaniem było
+zostawienie jej w grobie (`aura_returned_without_host`).
+
+**Przyczyna:** dwie warstwy znały wyłącznie obiekty: predykat gospodarza
+(`isLegalAuraHost`, domyślna gałąź „wyłącznie stwory") i kontrakt decyzji
+(`candidateIds`) — a CR mówi „a legal object OR PLAYER". Pomiar na żywo
+(seed 106, talia-sonda z Annie Flash) pokazał przy okazji, że bez gałęzi
+'player' klątwa lądowała NA STWORZE z nieustawionym `enchantedPlayerId`.
+
+**Naprawa:** gracz to osobny predykat i osobny zbiór kandydatów
+(`isLegalAuraPlayerHost`, `legalAuraHosts`), decyzja niesie OBA zbiory
+(`candidateIds` + `candidatePlayerIds`), wejście rozstrzyga kształt po id
+(`attachAuraToPlayer`: `kind: 'enchantment'` + `enchantedPlayerId`, jak
+w `spells.js`), a warstwy widza (etykieta „Ty"/„Nieprzyjaciel", wycena bota,
+projekcja pokrycia, narracja) poznały nową klasę tego samego dnia.

@@ -172,8 +172,8 @@ test('M2/2: KROK 2 — tryb „up to 3” daje picker wielocelowy (nie listę ko
   assert.deepEqual(cmd.targets, [moj, obcy]);
   assert.ok(execute(state, cmd).ok, 'komenda z pickera jest wykonalna');
   resolveStack(state);
-  assert.equal(state.objects.get(moj).tapped, true, 'oba cele zatapnięte');
-  assert.equal(state.objects.get(obcy).tapped, true, 'oba cele zatapnięte (2/2)');
+  assert.equal(state.objects.get(moj).tapped, true, 'oba cele tapnięte');
+  assert.equal(state.objects.get(obcy).tapped, true, 'oba cele tapnięte (2/2)');
 });
 
 test('M2/3: KROK 2 — tryb bez decyzji (Call for Aid) rzuca od razu, bez pustego modala', () => {
@@ -184,8 +184,20 @@ test('M2/3: KROK 2 — tryb bez decyzji (Call for Aid) rzuca od razu, bez pusteg
   const tryb1 = oferty.filter((c) => c.modeIndex === 1);
   assert.equal(tryb1.length, 1, 'tryb bez celów ma dokładnie jeden wariant — nie ma czego wybierać');
   assert.equal(tryb1[0].modeIndex, 1);
-  assert.ok(execute(robbersBoard().state, tryb1[0]).ok !== undefined,
-    'wariant trybu 1 jest komendą silnika (nie konstrukcją kreatora)');
+  // Audyt PR #131 (E2, znalezisko F9): poprzednia asercja `ok !== undefined`
+  // przechodziła TAKŻE dla komendy odrzuconej (`false !== undefined`), więc pin
+  // nie dowodził, że oferta trybu 1 jest komendą PRZYJMOWANĄ przez silnik
+  // (L48: oferta = walidacja) ani że rzut nie otwiera drugiego modala.
+  // Komenda musi być wykonana na TYM SAMYM stanie, z którego pochodzi oferta:
+  // `objectId` jest unikalne per stan, więc egzekucja na świeżym stole kończy
+  // się odrzuceniem „nie ma takiego obiektu" — właśnie to ukrywała poprzednia
+  // asercja (dlatego stała się tak słaba).
+  const wynik = execute(state, tryb1[0]);
+  assert.equal(wynik.ok, true, `wariant trybu 1 przyjmowany przez silnik: ${wynik.reason ?? ''}`);
+  assert.equal(state.zones.stack.length, 1, 'czar z wybranym trybem trafia na stos (bez drugiego modala)');
+  const naStosie = state.objects.get(state.zones.stack[0]);
+  assert.equal(naStosie?.chosenMode, 1, 'tryb wybrany w rzucie, nie w drugiej decyzji modalnej (CR 601.2b)');
+  assert.equal(robbersOffers(state).oferty.length, 0, 'karta nie jest już oferowana z ręki po rzucie');
 });
 
 test('M2/4: oba modale (DOM) — najpierw tryby, potem ptaszki celów + Zatwierdź', () => {
@@ -298,7 +310,7 @@ test('M/4: silnik nadal oferuje OBA tryby i oba są wykonalne (scalanie to preze
   assert.ok(tap, 'oferta trybu 0 z celem');
   assert.ok(execute(s2, tap).ok, 'rzut trybu 0 wykonalny');
   resolveStack(s2);
-  assert.equal(s2.objects.get(moj2).tapped, true, 'cel trybu 0 został zatapnięty');
+  assert.equal(s2.objects.get(moj2).tapped, true, 'cel trybu 0 został tapnięty');
   assert.ok(moj, 'scena ma własnego stwora do tapnięcia');
 });
 

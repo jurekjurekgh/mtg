@@ -560,7 +560,7 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
  * many dla tej płatności.
  *
  * Zgłoszenie: „Kliknąłem że korzystam z tej dobrowolnej opłaty. Mam na stole
- * tylko jeden niezatapowany las, mimo to dostałem mana wizard do zapłacenia G.
+ * tylko jeden nietapowany las, mimo to dostałem mana wizard do zapłacenia G.
  * Mógłby to sam zapłacić bez wizarda skoro nie było innych opcji zapłacenia.”
  *
  * Dotąd decydował wyłącznie `countPaymentVariants`, który liczy RÓŻNE KSZTAŁTY

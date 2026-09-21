@@ -11894,3 +11894,225 @@ Przerwy techniczne: token GitHub wygasał w trakcie sesji trzykrotnie — push
 `d6eb27a`/`1222c46`/`4004f1b` przeszedł po odnowieniu, commit `0da56a9` i
 dokumentacja czekały na kolejne odnowienie (gałąź jest append-only, nic nie
 zginęło; `git push origin arena/01a0bf64-mtg` po ponownym połączeniu).
+
+## 2026-09-20e — sesja „Kontynuujemy projekt." (PR #132): audyt PR #131 — piny F1–F15 + pętla jakości E3 (arena/01a0c0af-mtg)
+
+Wejście: „Kontynuujemy projekt." → ADR 0021 (pętla domyślna, bez pytania
+o kolejkę), ADR 0020 (A: PR przed kodowaniem, B: audyt poprzedniego scalonego
+PR — tym razem #131, C: commit i push po każdym zielonym kroku, D: tylko
+przyrostowo). Handoff 2026-09-20c mówił: po scaleniu #131 zrobić jego audyt
+i wrócić do pętli domyślnej — to była ta sesja.
+
+Zakres #131: Delve (CR 702.66), gospodarz aury z grobu (CR 303.4f), licznik
+„pierwszy instant/sorcery w turze”, pula blokerów ponad capem menu (CR 509.1b),
+usunięcie lustra kaskady panelu. 45 plików zmiany (15 `src/` = +450/−109,
+11 testowych, 16 dokumentów, 2 narzędzia, `README.md`).
+
+Kolejność pracy (każdy element: pin RED → naprawa u źródła → GREEN → mutacja →
+bramy → commit → push):
+
+1. **Piny E2 (`682177e`, `e5c2f90`, `6515fc3`, `4306ac3`, `d50ee1a`, `8bcf669`)** —
+   F1–F13: bramka kosztu Delve i atomowość płatności, kolejność zdarzeń powrotu
+   aury i odrzucenie gospodarza spoza listy, pula blokerów = prawda z komendy
+   przy „can't block alone” (CR 509.1c), wycena Craft w grobie (F7 —
+   `objectOnBoard` na karcie w grobie), ślad bota wariantów bez nazw i projekcji
+   (F8/F8b, ratchet 39/39), ślepy pin modalnego czaru (F9 — `ok !== undefined`
+   dla booleanów przechodzi też dla `false`), niepinowany warunek
+   `stack.length > 0` w ofercie puli (F10), niezmiennik otwartej decyzji aury
+   (F11–F12) i log kandydatów (F13).
+2. **F14 (`f39ca65`)** — wizard bloków rysował wiersze z SUMY OFERT i pozwalał
+   zaznaczyć tego samego blokera pod dwoma atakującymi; silnik odrzucał komendę
+   PO wysłaniu, a legalny wyjątek (Cenn's Tactician, bloker o 2–3 slotach) był
+   nieosiągalny. Naprawa rozdziela menu od puli: widok niesie `blockerSlots`
+   z `buildBlockerView` (sloty z `blockSlotsFor`, tylko blokery z puli), wizard
+   liczy użycia z `blockedBy` i pokazuje `.combat-wizard-error` bez wysyłania
+   komendy. Mutacje N19/N20 czerwienią; E6/6 (guard łańcucha) zaktualizowany
+   do nowego kształtu pola w tym samym commicie.
+3. **Raport E2 (`87e02af`)** — `docs/audits/AUDYT_PR131_2026-09-20.md` (§1 bramy,
+   §2 przegląd 45 plików, §3 matryca M1–M14 + N1–N20 = 31/34 RED, §4 F1–F14,
+   §5 strażnicy samo-zapalone, §6 otwarte L158, §8 werdykt APPROVE
+   z zastrzeżeniami, §9 dodatek commitów). Poprawka cyrylickiej litery
+   w opisie incydentu E5 (U+0441) — strażnik E5 złapał ją w nowym pliku.
+4. **F15 (`3cb383d`)** — pętla jakości E3: 8 partii Żywym Testerem na `dist/`
+   (seedy 71–78) dało 8/8 naturalnych końców, 0 zgłoszeń detektorów,
+   0 niewycenionych ruchów i pokrycie 201 akcji widzianych / 190 klikniętych.
+   Ręczna lektura transkryptów (L27 — zero zgłoszeń to pomiar narzędzia)
+   i skan `scan.mjs` (723 trafienia, po odsianiu szumu tekstu kart zostało
+   jedno realne) dały znalezisko NARRACYJNE: log prewencji Ethersworn
+   Shieldmage mówił „chronionym obiektom” bez zakresu, choć karta mówi
+   o artefaktowych stworach. Naprawa u źródła: deskryptor niesie `description`
+   („artefaktowym stworom”), silnik przenosi je do zdarzenia
+   `damage_prevention_started` (`filterDescription`) i filtra stanu, sesja
+   używa go z fallbackiem. Pin trzech ogniw + mutacje N21–N23 czerwienią.
+5. **Raport §7 (`6a7d9f3`)** — sekcja pętli jakości wypełniona zmierzonymi
+   liczbami, F15 i GRANICAMI pokrycia: decyzja gospodarza aury (CR 303.4f) nie
+   zaszła w 14 partiach (8 + 6 celowanych: worek-dziki z Annie Flash vs theros,
+   worek-basni z Zoraline vs alara, seedy 91–93), choć Annie Flash została
+   zagrana, Capture Sphere bywała na polu, a Clawing Torment w grobie — brak
+   koniunkcji „zwracana aura + ≥2 legalnych gospodarzy”. Warstwę pokrywają piny
+   silnika. Sekcja §1 przeliczona na build po F15 (59 modułów / 3976,2 kB).
+
+Dokumentacja: raport `docs/audits/AUDYT_PR131_2026-09-20.md`, lekcje
+**L159–L161** w `docs/LESSONS.md` (mutacja, która nie zaszła, i mutacja w no-op;
+strażnik źródła a refaktor; narracja zakresu z deskryptora + fallback),
+kondensacja rejestru lekcji (budżet startowy z zapasu 98 B do ~3,3 kB —
+rozbudowane Strażniki lekcji L86–L138 przeniesione do `docs/LESSONS_PRZYPADKI.md`),
+milestone **M399**, handoff `docs/setup/HANDOFF_2026-09-20e.md`, aktualizacja
+„Bieżącego stanu” w `README.md`.
+
+Bramy: `npm test` **6063/6063**; `node tools/run-tests.mjs all` **6073/6073**;
+build **59 modułów / 3976,2 kB**; budżet lektury **98 822/100 000**. Pełnej
+macierzy B0 nie uruchamiano (ADR 0018).
+
+
+## 2026-09-21 — trzy uwagi właściciela z gry (A/B/C): koszt czaru modalnego, klik w nazwę karty, „tapnięcie" (PR #132, arena/01a0c0af-mtg)
+
+Wejście: trzy zgłoszenia właściciela z żywej gry, zgłoszone po sesji 2026-09-20e
+(PR #132 z audytem #131 był otwarty i czekał na decyzję o scaleniu). ADR 0020 A
+(PR przed kodowaniem) był spełniony — praca trafiła jako trzy przyrostowe
+commity do TEGO SAMEGO otwartego PR-a; C: commit i push po każdym zielonym
+kroku; każde zgłoszenie u root cause z pinem RED→GREEN i dowodem mutacyjnym.
+
+Objawy i rozpoznanie (zmierzone, nie „na wiarę"):
+
+1. **A —** „Selesnya Charm w »Twoich działaniach« pokazuje tekstowy koszt
+   `{G}{W}` zamiast kolorowych ikon many". Rozpoznanie: `choiceGroupTitle` ma
+   JEDEN wynik (tekst), a konsumują go dwie warstwy o różnym kanale —
+   panel (`innerHTML`, tam ikony są normą od M104/A2) i nagłówek modala/intro
+   wizarda (`textContent`, M87). Naprawa: jawny parametr `manaHtml`
+   w `choiceGroupTitle`, panel (`choiceGroupLabel`) prosi o wariant z ikonami.
+   Pomiar na artefakcie: panel renderuje blok `ms-group` z `ms ms-g` i `ms ms-w`.
+2. **B —** „Toll of the Invasion: kliknięcie nazw kart nie otwiera obrazów".
+   Rozpoznanie na artefakcie (jsdom, seed 7): modal „Wybierz: Karta do
+   odrzucenia — wskaż kartę:" rysował nazwy z `log-card` + `data-card-id`,
+   ale `data-card-id` niósł **objectId** karty z ODKRYTEJ ręki przeciwnika,
+   a `openCardFullscreen` szuka obiektu w widocznych strefach (FoW: cudza ręka
+   to `{id, hidden:true}`) i kończy MILCZENIEM — stąd „nie działa" bez błędu.
+   Naprawa: `hiddenObjectCardId` w kreatorze wyboru — wiersz z zakrytej strefy
+   dostaje definicję karty, więc podgląd idzie drogą `onOpenCardByCardId`;
+   widoczny obiekt zostaje przy objectId (karuzela strefy), biblioteka nie
+   staje się klikalna (CR 401.2). Po naprawie: klik → pełny ekran + `img`.
+3. **C —** „Piercing Rays: »zatapianie celu« → ma być »tapnięcie«; sprawdzić,
+   czy inne karty nie mają tego samego błędu". Źródło: `ABILITY_EFFECT_LABELS`
+   (session.js) — jedna mapa opisów efektów aktywowanych, czytana przez log
+   stołu. Skan rodziny „zatap-*" w całej warstwie produktu: **86 plików /
+   260 linii** (etykiety efektów, triggerów, celów, warunków na kaflach, nazwy
+   trybów kart — Keep Out, linie logu), plus regex detektora fałszywego
+   „brak skutku" (`zostaje tapnię|zostaje tapnion`; L160). `docs/` zostaje bez
+   zmian: to cytaty historyczne. Zakres potwierdzony sondą silnika: aktywacja
+   forecastu (upkeep, 5 lądów) → log „Aktywujesz zdolność: Piercing Rays —
+   tapnięcie celu → cel: Highland Game".
+
+Commity (każdy: pin RED → naprawa u źródła → GREEN → mutacje → `npm test` →
+build → push):
+
+| Commit | Zakres | Dowód |
+|---|---|---|
+| `b7a2bbe` | A: wariant tytułu z ikonami dla panelu (`manaHtml`) + pin | 3 mutacje RED; `npm test` 6067/6067 |
+| `056a20b` | B: `hiddenObjectCardId` w kreatorze + pin B/1–B/3 | 3 mutacje RED; artefakt: `pełny ekran=true` + `img`; 6070/6070 |
+| `27da2e6` | C: rodzina „tapnięcie" w `src/`, `tools/`, `test/` + pin C/1–C/4 | 4 mutacje RED; 6074/6074 |
+
+Bramy: `npm test` **6074/6074**; `node tools/run-tests.mjs all` **6084/6084**;
+build **59 modułów / 3979,2 kB**; budżet lektury **99 405/100 000** (lekcja
+**L162** opłacona skróceniem własnego tekstu; zapas ~595 tokenów — następna
+sesja zaczyna od kondensacji rejestru, jeśli dokłada lekcję).
+
+Dokumentacja: lekcja **L162** (cichy `return` kontra „klik nie działa"; dowód
+z EFEKTU w DOM), milestone **M400**, handoff
+`docs/setup/HANDOFF_2026-09-21.md`, aktualizacja „Bieżącego stanu" w `README.md`.
+
+Rzeczy świadomie NIEzmienione (do decyzji w kolejnej sesji): nagłówek modala
+czaru modalnego zostaje przy notacji `{G}{W}` (kanał `textContent`; zmiana
+wymagałaby renderowania intro przez `innerHTML` — ryzyko M87/escapowania),
+`docs/**` zachowuje starą terminologię jako zapis historyczny, a w `decks/`
+nie ma talii-sond użytych do reprodukcji (były plikami roboczymi, usunięte
+przed bramą — katalog talii jest właściciela, ADR 0029/0022).
+
+## 2026-09-21b — granica aura–host zmierzona na żywo + audyt dokumentacji startowej (PR #132, gałąź `arena/01a0c0af-mtg`)
+
+Ciąg dalszy sesji 2026-09-21 (po dokumentacji A/B/C, `14c9571`); dwa commity
+zakresu: `40620e5` (granica aura–host) + commit dokumentacyjny (audyt).
+
+**Krok 1 — granica aura–host (CR 303.4f), pozycja z handoffu 2026-09-20e („0/14
+partii").** Talia-sonda (Annie Flash + aury MV≤3 + gospodarze) zmusiła decyzję:
+seed 106 → Annie zwraca z grobu Silken Strength („kandydaci: 6") → wizard
+„Wybierz: Aura z grobu" → Kor Cartographer. Pomiar odsłonił błąd: aura
+„Enchant player" (Curse of the Pierced Heart) wracająca z grobu ZAŁĄCZAŁA SIĘ DO
+STWORA — `isLegalAuraHost` nie miał gałęzi dla deskryptora `enchant: 'player'`
+i wpadał w domyślne „wyłącznie stwory" (dowód sondy: `attachedTo=permanent-1`,
+`enchantedPlayerId=undefined`). Naprawa u źródła: **żaden permanent nie jest
+gospodarzem aury „Enchant player"** — ścieżka rzucania ma własną gałąź w
+`spells.js`, więc predykat może mówić „nie" bez skutków dla czarowania; aura
+z grobu zostaje w grobie z jawnym `aura_returned_without_host`. Pełny
+gospodarz-GRACZ (CR 303.4f „object OR PLAYER") odroczony świadomie. Piny:
+`test/granica-aura-host-2026-09-21.test.js` (G/1 predykat + droga zwrotu,
+G/2 granica 1↔2 gospodarzy; mutacja bez strażnika → RED). Pętla jakości PO
+naprawie: seedy 71–78, 500 kroków — 8/8 naturalnych końców, 0 zgłoszeń
+detektorów, 0 `[STOP]`, „NIEWYCENIONE == brak". `scan.mjs` (druga bramka pętli):
+46 trafień — same teksty kart i etykiety.
+
+**Krok 2 — audyt dokumentacji startowej** (zlecenie właściciela: „duża część
+lekcji i ADR-ów jest merytorycznie nieaktualna"). Raport:
+`docs/audits/AUDYT_DOKUMENTACJI_STARTOWEJ_2026-09-21.md`. Wynik: przesłanka nie
+potwierdziła się w zakładanej skali — **0 z 30 ADR-ów do archiwum** (0006
+sprawdzony punkt po punkcie: 0009 §„Co to zmienia w ADR 0006" zostawia zasadę
+„najpierw audyt, potem decyzje" w mocy i zmienia wyłącznie strategię
+wydzielenia), **0 merytorycznie martwych lekcji**. Realne znaleziska i naprawy:
+4 nieaktualne odsyłacze ADR (0023 `m181-auto-awans.test.js`, 0029 `wiedzmin.txt`
++ noty stanu wdrożenia w 0012/0014), 3 martwe odsyłacze lekcji (L25, L122, L123),
+proza rejestru wyniesiona do archiwum narracji (**30 wpisów / 7 427 B**;
+`docs/LESSONS.md` 137 858 → 130 431 B), nowy strażnik „rejestr bez
+`**Objaw:**`/`**Przyczyna:**`", osierocony `@@BRAMA@@` w tym dzienniku
+uzupełniony (6084/6084). Budżet lektury: **99 406 → 97 007/100 000**.
+Do decyzji właściciela: montaż kreatora talii w artefakcie (ADR 0012 — nota
+stanu), ewentualne twarde cięcie lekcji poza prozę (wymaga zmiany kontraktu
+i strażników).
+
+Bramy po obu krokach: `npm test` **6077/6077**, `node tools/run-tests.mjs
+all` **6087/6087**, build **59 modułów / 3979,8 kB**. Milestone **M401**.
+
+## 2026-09-21c — twardsze cięcie lekcji: 9 wpisów jednorazowych do archiwum (PR #132, gałąź `arena/01a0c0af-mtg`)
+
+Właściciel odwrócił rekomendację z kroku 2 i zlecił twardsze cięcie — merytoryczne,
+nie mechaniczne („lekcje dodawane przy każdej, nawet jednorazowej zmianie; część
+na bank ma nikły sens merytoryczny”). Przegląd wszystkich **162 wpisów** rejestru
+(zakresami do ostatniej linii), kryterium: jednorazowość + reguła odtworzona
+w innym wpisie. Wynik: **9 wpisów → `docs/LESSONS_ARCHIWUM.md`** (L3, L7, L8, L9,
+L10, L23, L35, L62, L122), każdy z powodem, wskazaniem reguły żyjącej dziś, pełną
+treścią i narracją przeniesioną z archiwum przypadków; numery zostają (cytowane
+w kodzie), rejestr ma sekcję-odsyłacz. Dwa szczegóły klasy przeniesione do wpisów
+zbiorczych (L54 pkt 5, L152 pkt 4), usunięte zdublowane linie `→ narracja:`
+(artefakt M275). `docs/LESSONS.md` 130 431 → 125 524 B, `LESSONS_PRZYPADKI.md`
+161 806 → 158 382 B, budżet lektury **97 007 → 95 254/100 000**; testy
+dokumentacji 25/25. Milestone **M402**.
+
+## 2026-09-21d — gospodarz-GRACZ aury (CR 303.4f „object or player") — kandydaci-gracze w decyzji (PR #132, gałąź `arena/01a0c0af-mtg`)
+
+Krok 4 tej samej sesji, wykonany na zlecenie właściciela („plus zrobienie
+Gospodarz-GRACZ aury"). Krok 1 naprawił najgorszy objaw (aura „Enchant player"
+wracająca z grobu przypinała się do stworzenia), ale świadomie odroczył pełne
+zachowanie z CR 303.4f: decyzja `resolve_aura_host` niosła wyłącznie id
+permanentów, więc dla klątwy nie było ŻADNEGO wariantu, a reguła „żaden
+permanent nie jest gospodarzem takiej aury" zostawiała ją w grobie.
+
+Co zmieniono (jedna reguła, wszystkie warstwy naraz — lekcja **L163**):
+`attachments.js` — `isLegalAuraHost` milczy dla `enchant: 'player'`, nowy
+predykat-bliźniak `isLegalAuraPlayerHost` i wspólny zbiór kandydatów
+`legalAuraHosts` (`{objectIds, playerIds}`), nowe `attachAuraToPlayer` nadaje
+kształt identyczny z rzutem z ręki (`kind: 'enchantment'` + `enchantedPlayerId`,
+bez `attachedTo`) i emituje `aura_attached_to_player`; `effects.js` — decyzja
+otwiera się na sumę kandydatów, pojedynczy kandydat (także gracz) domyka wybór
+sam (L41), a wejście rozstrzyga gospodarza po kształcie id; `game-state.js` —
+kontrakt i widok niosą `candidatePlayerIds`, oferta wariant na każdego
+kandydata, re-walidacja przy wykonaniu tymi samymi predykatami co oferta (L48),
+`aura_host_resolved` nazywa rodzaj gospodarza; warstwy widza — etykieta
+„Zaczaruj: Ty/Nieprzyjaciel" (`PLAYER_NAMES`), wycena heurystyka (wroga klątwa
+na przeciwnika, nigdy na siebie), projekcja pokrycia nie klasyfikuje kandydata
+gracza jako „niewyceniony", aggro nie zaczarowuje siebie, narracja liczy oba
+zbiory. Piny przepisane i dopisane: `test/granica-aura-host-2026-09-21.test.js`
+G/1 (predykaty + pełna droga zwrotu + etykieta + zdarzenie) oraz nowe G/3
+(CR 608.2b: obcy kandydat i cudza decyzja odrzucone, wybór siebie legalny)
+i G/4 (oba boty). Bramy: `npm test` **6079/6079**, `node tools/run-tests.mjs all`
+**6089/6089** (~274 s), build **59 modułów / 3987,2 kB**, budżet lektury
+**95 819/100 000**; milestone **M403**, lekcja **L163**.
+

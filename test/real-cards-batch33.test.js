@@ -202,7 +202,7 @@ test('Chill of the Grave: tapuje cel, blokuje jego odkręcenie i dobiera kartę'
   execute(state, cast);
   resolveStack(state);
   const ofiara = state.objects.get('ofiara');
-  assert.equal(ofiara.tapped, true, 'cel zatapniety');
+  assert.equal(ofiara.tapped, true, 'cel tapnięty');
   assert.equal(ofiara.dontUntapNextUntapStep, 'p2', 'nie odkreci sie w nastepnym untapie kontrolera');
   const handAfter = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
   assert.equal(handAfter, handBefore, 'reka: -1 (czar) +1 (dobrana karta)');

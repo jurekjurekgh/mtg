@@ -55,7 +55,7 @@ test('A3/engine: aktywacja {T} po wyborze czarnego daje jednostkę {G}{B} w puli
   const gate = state.zones.battlefield
     .map((id) => state.objects.get(id)).find((o) => o?.cardId === 'manor-gate');
   assert.equal(gate.chosenColor, 'B', 'wybór zapisany na permanencie');
-  // Manor Gate wchodzi zatapnięty — aktywacja {T} wymaga odkręcenia
+  // Manor Gate wchodzi tapnięty — aktywacja {T} wymaga odkręcenia
   // (w realnej grzy jeden upkeep; w teście odkręcamy wprost jak B46/9).
   state.objects.set(gate.id, Object.freeze({ ...gate, tapped: false }));
 

@@ -46,6 +46,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
+import { addMana } from '../src/engine/resources.js';
 import { COMBAT_OPTION_CAP, blockCandidatePool, legalBlockerOptions } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
@@ -223,11 +224,18 @@ test('E6/6: strażnik łańcucha silnik → widok → main.js → wizard (pin na
   const main = readFileSync(new URL('../src/table/main.js', import.meta.url), 'utf8');
   const choice = readFileSync(new URL('../src/table/choice-request.js', import.meta.url), 'utf8');
 
-  // Widok bierze pulę Z SILNIKA (jedno źródło reguł, L41).
-  assert.match(gameState, /blockCandidates: buildBlockCandidatesView\(state, playerId\)/,
+  // Widok bierze pulę Z SILNIKA (jedno źródło reguł, L41). Od F14 (audyt
+  // PR #131) ten sam builder niesie obok puli liczbę slotów blokera — oba
+  // pola powstają w JEDNYM miejscu, żeby bramkowanie (krok/stos/bloki) nie
+  // mogło się rozjechać między nimi.
+  assert.match(gameState, /blockCandidates: blockerView\?\.pool \?\? null/,
     'widok nie niesie `blockCandidates` — wizard nie ma skąd wziąć pełnej puli');
   assert.match(gameState, /blockCandidatePool\(state, playerId\)/,
     'pula w widoku nie jest liczona `blockCandidatePool` (kopia reguł w warstwie widoku?)');
+  assert.match(gameState, /blockerSlots: blockerView\?\.slots \?\? null/,
+    'widok nie niesie `blockerSlots` — wizard nie zna liczby użyć przyjętych przez silnik (F14)');
+  assert.match(gameState, /slots\[blockerId\] = blockSlotsFor\(state, state\.objects\.get\(blockerId\)\)/,
+    'sloty w widoku nie pochodzą z `blockSlotsFor` (kopia reguły w warstwie widoku?)');
 
   // main.js przekazuje pulę z widoku do wizarda walki.
   assert.match(main, /blockCandidates:\s*choiceView\.blockCandidates/,
@@ -242,4 +250,52 @@ test('E6/6: strażnik łańcucha silnik → widok → main.js → wizard (pin na
   // Warstwa UI NIE liczy legalności bloków sama (reguły żyją w silniku).
   assert.ok(!/blockAssignmentViolation/.test(choice),
     'choice-request.js liczy legalność przypisania — to reguła silnika (L41), UI bierze gotową pulę');
+});
+
+test('E6/7: `blockCandidates` znika, gdy stos nie jest pusty (L48 — oferta = walidacja)', () => {
+  // Audyt PR #131 (E2, znalezisko F10): warunek `stack.length > 0` w
+  // `buildBlockCandidatesView` nie był pinowany (mutacja M-D zostawiała cały
+  // plik zielony), a jest OSIĄGALNY: w kroku deklaracji bloków obrońca ma
+  // priorytet i może rzucić instant (CR 509.1/117.1a) — wtedy deklaracja
+  // bloków jest nielegalna (`stack_not_empty`), więc wizard nie może rysować
+  // wierszy z puli. Bez tego warunku UI oferowałoby akcję, którą silnik odrzuca.
+  const { state, attackerIds } = combatScene({ atk: 1, blk: 1 });
+  const shock = REGISTRY.get('shock');
+  assert.ok(shock, 'Shock w rejestrze');
+  addObject(state, {
+    id: 'shock', instanceId: 'i-shock', cardId: 'shock', controllerId: 'p2', ownerId: 'p2',
+    zone: 'hand', ...gameObjectDataOf(shock), types: shock.types ?? [], keywords: shock.keywords ?? [],
+    subtypes: shock.subtypes ?? [], cardName: shock.name,
+  });
+  addMana(state, 'p2', 1, { colors: ['R'] });
+
+  // Przed rzutem: pula jest ofertą (krok deklaracji bloków, stos pusty).
+  assert.ok(playerView(state, 'p2').blockCandidates?.[attackerIds[0]]?.length > 0,
+    'pula kandydatów jest publikowana w oknie deklaracji');
+
+  // Obrońca rzuca instant → stos niepusty: pula (i oferta deklaracji) muszą zniknąć.
+  // Cel: GRACZ (p1), nie stwór — instant nie może zdejmować stworów, bo wtedy
+  // po rozstrzygnięciu pula słusznie się zmieni (zabity atakujący = brak pary),
+  // a test ma mierzyć powrót OFERTY po opróżnieniu stosu, nie skutek obrażeń.
+  const cast = playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'shock' && c.targets?.[0] === 'p1');
+  assert.ok(cast, 'instant jest oferowany w kroku deklaracji bloków (CR 509.1)');
+  assert.ok(execute(state, cast).ok, 'rzut przyjęty');
+  assert.equal(state.zones.stack.length, 1, 'czar na stosie');
+  assert.equal(playerView(state, 'p2').blockCandidates ?? null, null,
+    'przy niepustym stosie pula kandydatów nie jest ofertą (deklaracja odrzucana: stack_not_empty)');
+  assert.equal(playerView(state, 'p2').legalCommands.filter((c) => c.type === 'declare_blockers').length, 0,
+    'deklaracja bloków nie jest oferowana przy niepustym stosie');
+
+  // Po rozstrzygnięciu czaru pula wraca (okno deklaracji nadal otwarte).
+  for (let i = 0; i < 8 && state.zones.stack.length > 0; i += 1) {
+    const view = playerView(state, state.turn.priorityPlayerId);
+    const pick = view.legalCommands.find((c) => c.type.startsWith('resolve_'))
+      ?? view.legalCommands.find((c) => c.type === 'pass_priority');
+    assert.ok(pick, 'jest czym rozstrzygnąć stos');
+    execute(state, pick);
+  }
+  assert.equal(state.zones.stack.length, 0, 'stos rozstrzygnięty');
+  assert.ok(playerView(state, 'p2').blockCandidates?.[attackerIds[0]]?.length > 0,
+    'po rozstrzygnięciu pula znów jest ofertą');
 });

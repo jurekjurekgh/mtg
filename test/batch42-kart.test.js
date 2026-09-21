@@ -426,9 +426,9 @@ test('E3: Merchant\'s Dockhand — tap X artefaktów, top X: jedna do ręki, res
   const x2 = offers.find((c) => c.xValue === 2);
   assert.ok(x2 && (x2.tapArtifactIds ?? []).length === 2, 'X=2 tapuje dwa artefakty');
   assert.ok(execute(state, x2).ok);
-  assert.equal(state.objects.get('bomb1').tapped, true, 'artefakt 1 zatapnięty (koszt)');
-  assert.equal(state.objects.get('bomb2').tapped, true, 'artefakt 2 zatapnięty (koszt)');
-  assert.equal(state.objects.get('dock').tapped, true, 'źródło zatapnięte ({T})');
+  assert.equal(state.objects.get('bomb1').tapped, true, 'artefakt 1 tapnięty (koszt)');
+  assert.equal(state.objects.get('bomb2').tapped, true, 'artefakt 2 tapnięty (koszt)');
+  assert.equal(state.objects.get('dock').tapped, true, 'źródło tapnięte ({T})');
   assert.ok(resolveStack(state), 'zdolność rozstrzyga się ze stosu');
   assert.ok(state.pendingLookTopN, 'decyzja look top X');
   assert.equal(state.pendingLookTopN.objectIds.length, 2, 'patrzymy na X=2 kart');

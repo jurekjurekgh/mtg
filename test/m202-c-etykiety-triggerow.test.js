@@ -1,9 +1,9 @@
 // M202/C — Żywy Tester (ravnica vs innistrad, seed 42, 2026-08-24), oś 2 audytu
 // (czytelność informacji na stole).
 //
-// Kafel Chronic Flooding obiecywał: „Trigger zatapnięcie zaczarowanego
+// Kafel Chronic Flooding obiecywał: „Trigger tapnięcie zaczarowanego
 // permanentu: mieli 3 karty (do grobu)”. Etykiety w `TRIGGER_EVENT_LABELS` są
-// FRAZAMI RZECZOWNIKOWYMI („śmierć stworu”, „atak”, „zatapnięcie …”), a szablon
+// FRAZAMI RZECZOWNIKOWYMI („śmierć stworu”, „atak”, „tapnięcie …”), a szablon
 // brzmiał `Trigger <etykieta>: <skutek>` — czyli zdanie nie po polsku, z
 // zapożyczeniem „Trigger” zamiast opisu.
 //
@@ -105,6 +105,6 @@ test('M202/C (strażnik katalogu): do gracza nie wycieka surowy slug zdarzenia t
 test('M202/C (zgłoszenie): Chronic Flooding opisuje skutek po polsku', () => {
   const text = tileText('chronic-flooding', 'enchantment');
   assert.ok(!text.includes('Trigger '), `surowy wzorzec M80: ${text}`);
-  assert.match(text, /zatapnięcie/i, 'etykieta zdarzenia zostaje (fraza rzeczownikowa)');
+  assert.match(text, /tapnięcie/i, 'etykieta zdarzenia zostaje (fraza rzeczownikowa)');
   assert.match(text, /mieli 3 karty/, 'skutek jest opisany');
 });

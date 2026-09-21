@@ -69,7 +69,7 @@ test('M212/Z5b: warunek end_step nie znika dla kart sprzed Batcha 49', () => {
   // gałęzi nie mogło zgubić minTappedCreaturesControlled.
   const text = tileText('frontline-war-rager');
   assert.match(text, /Na początku kroku końca/, `brak opisu triggera: ${text}`);
-  assert.match(text, /zatapnięte stwory/, `zgubiony stary warunek: ${text}`);
+  assert.match(text, /tapnięte stwory/, `zgubiony stary warunek: ${text}`);
 });
 
 // ---- Z6: CR 601.2c — dwa sloty celu nie mogą wskazać tego samego obiektu ----

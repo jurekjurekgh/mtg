@@ -198,28 +198,28 @@ test('Entrancing Lyre: aktywacja płaci manę, tapuje lirę i stwora oraz blokuj
   assert.deepEqual(state.objects.get('enemy-creature').untapLockedBy, ['lyre']);
 });
 
-test('Entrancing Lyre: zablokowany stwór nie odkręca się, dopóki lira zatapnięta', () => {
+test('Entrancing Lyre: zablokowany stwór nie odkręca się, dopóki lira tapnięta', () => {
   const state = lyreSetup({ mana: 2 });
   execute(state, lyreCommand(playerView(state, 'p1')));
   resolveStack(state); // D: zdolność na stosie → blokada po rozstrzygnięciu
   // Untap step p2 (kontroler stwora): blokada trzyma.
   untapControlled(state, 'p2');
   assert.equal(state.objects.get('enemy-creature').tapped, true, 'stwór odkręcił się mimo blokady');
-  // Untap step p1: „you may choose not to untap" — lira zostaje zatapnięta
+  // Untap step p1: „you may choose not to untap" — lira zostaje tapnięta
   // (deterministycznie zawsze wybieramy „nie odkręcaj" przy aktywnej blokadzie).
   untapControlled(state, 'p1');
-  assert.equal(state.objects.get('lyre').tapped, true, 'lira powinna zostać zatapnięta (active lock)');
+  assert.equal(state.objects.get('lyre').tapped, true, 'lira powinna zostać tapnięta (active lock)');
   // Stwór nadal zablokowany.
   untapControlled(state, 'p2');
   assert.equal(state.objects.get('enemy-creature').tapped, true, 'stwór nadal zablokowany');
 });
 
-test('Entrancing Lyre: brak many, zatapnięta lira albo brak celu = brak oferty', () => {
+test('Entrancing Lyre: brak many, tapnięta lira albo brak celu = brak oferty', () => {
   const noMana = lyreSetup({ mana: 0 });
   assert.equal(lyreCommand(playerView(noMana, 'p1')), undefined, 'oferta bez many');
   const tapped = lyreSetup({ mana: 2 });
   execute(tapped, lyreCommand(playerView(tapped, 'p1')));
-  assert.equal(lyreCommand(playerView(tapped, 'p1')), undefined, 'oferta przy zatapniętej lirze');
+  assert.equal(lyreCommand(playerView(tapped, 'p1')), undefined, 'oferta przy tapniętej lirze');
   const noTarget = lyreSetup({ mana: 2 });
   stateClearCreatures(noTarget);
   assert.equal(lyreCommand(playerView(noTarget, 'p1')), undefined, 'oferta bez celu');

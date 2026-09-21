@@ -1,9 +1,9 @@
 // D1 — znalezisko właściciela 2026-09-12 (Balamb Garden): bot crewował
-// ZATAPOWANY pojazd (Balamb ziemia → tap po manę → transformacja, tył wchodzi
+// TAPOWANY pojazd (Balamb ziemia → tap po manę → transformacja, tył wchodzi
 // tapnięty). Animacja do EOT nic nie daje (nie zaatakuje, nie zablokuje),
 // a koszt crew (tap stwora) przepada — bot widział tylko „3/1 → 5/4".
 //
-// Bliźniak M230 (re-crew): animacja zatapowanego źródła dostaje karę −10
+// Bliźniak M230 (re-crew): animacja tapowanego źródła dostaje karę −10
 // (poniżej passu). Generycznie po stanie (source.tapped z PlayerView,
 // ADR 0017), bez nazw kart (ADR 0002). Bez over-fixa: crew odtapowanego
 // pojazdu wciąż legalny; Saddle na tapniętym wierzchowcu niekarane
@@ -55,7 +55,7 @@ function crewScores(state) {
   return { pass, crew };
 }
 
-test('D1: bot NIE załoguje zatapowanego pojazdu (poniżej passu)', () => {
+test('D1: bot NIE załoguje tapowanego pojazdu (poniżej passu)', () => {
   const { pass, crew } = crewScores(setup(true));
   assert.ok(crew.length > 0, 'oferta crew musi istnieć (są nietapnięte stwory na koszt)');
   for (const s of crew) {

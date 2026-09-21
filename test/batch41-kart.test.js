@@ -81,7 +81,7 @@ test('A2: Stall Out — tap + 3 liczniki stun; stun blokuje odkręcenie (CR 122)
   assert.ok(execute(state, cast).ok);
   assert.ok(resolveStack(state));
   const foe = state.objects.get('foe');
-  assert.equal(foe.tapped, true, 'cel zatapowany');
+  assert.equal(foe.tapped, true, 'cel tapowany');
   assert.equal((foe.counters ?? {}).stun, 3, '3 liczniki stun');
 });
 
@@ -161,7 +161,7 @@ test('B1: Immersturm Skullcairn — {1}{B}{R}{R},{T},sac: 3 dmg w gracza + jego 
   assert.equal(handAfter, 1, 'po odrzuceniu 1 karta w ręce p2');
 });
 
-test('B1b: Immersturm Skullcairn — wchodzi zatapiony i dodaje {B}', () => {
+test('B1b: Immersturm Skullcairn — wchodzi tapnięty i dodaje {B}', () => {
   const def = REGISTRY.get('immersturm-skullcairn');
   assert.equal(def.entersTapped, true, 'enters tapped');
   assert.deepEqual(def.types, ['Land']);

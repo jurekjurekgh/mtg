@@ -1,7 +1,7 @@
 // M202/O — zgłoszenie właściciela (Horizon Spellbomb):
 //
 //   „dobrowolna opłata G przy poświęceniu (daje dobranie karty). Kliknąłem że
-//    korzystam z tej dobrowolnej opłaty. Mam na stole tylko jeden niezatapowany
+//    korzystam z tej dobrowolnej opłaty. Mam na stole tylko jeden nietapowany
 //    las, mimo to dostałem mana wizard do zapłacenia G. Mógłby to sam zapłacić
 //    bez wizarda skoro nie było innych opcji zapłacenia.”
 //

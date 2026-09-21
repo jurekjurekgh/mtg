@@ -658,7 +658,7 @@ export function tapLandForMana(state, playerId, objectId, { grantColor = null } 
 
 /**
  * Nietapnięte lądowe źródła many gracza (obiekty, które tapLandForMana mógłby
- * zatapnąć). Kolejność deterministyczna (ADR 0005): najpierw zwykłe landy,
+ * tapnąć). Kolejność deterministyczna (ADR 0005): najpierw zwykłe landy,
  * potem land creatures (token Forest Dryad) — stwora mogącego atakować i
  * blokować nie marnujemy na produkcję many, póki starczają zwykłe landy.
  * Wewnątrz grup zachowujemy kolejność pola bitwy.
@@ -2173,9 +2173,9 @@ export function playLand(state, playerId, objectId) {
   const newId = `land-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
   // Land z cechą „enters tapped" (Rupture Spire, Prismari Campus) wchodzi
-  // zatapnięty — nie da się nim zatapnięć na manę w turze wejścia.
+  // tapnięty — nie da się nim tapnięć na manę w turze wejścia.
   // Czasowe entersTapped z warunkiem (Raucous Carnival): land wchodzi
-  // zatapnięty, chyba że warunek jest spełniony (wtedy wchodzi untapped).
+  // tapnięty, chyba że warunek jest spełniony (wtedy wchodzi untapped).
   let shouldEnterTapped = moved.entersTapped;
   if (shouldEnterTapped && moved.entersTappedCondition) {
     const cond = moved.entersTappedCondition;
@@ -2229,7 +2229,7 @@ export function playLand(state, playerId, objectId) {
   player.landPlays -= 1;
   // M168/A (uwaga właściciela, Idyllic Grange): entersTapped w zdarzeniu ma
   // być WYNIKIEM (shouldEnterTapped), nie deskryptorem karty — Grange przy
-  // 3+ Plains wchodzi ODKRĘCONY, a log mówił „wchodzi zatapnięty".
+  // 3+ Plains wchodzi ODKRĘCONY, a log mówił „wchodzi tapnięty".
   const e = event('land_played', { playerId, fromId: objectId, object: placed, entersTapped: Boolean(shouldEnterTapped) });
   state.events.push(e);
   return e;

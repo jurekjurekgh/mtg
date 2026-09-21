@@ -178,7 +178,7 @@ test('B49/A7: Koilos Roc — pełna ścieżka ETB tworzy tapnięty Powerstone', 
   const stones = [...state.objects.values()]
     .filter((o) => o.cardId === 'token_powerstone' && o.zone === 'battlefield');
   assert.equal(stones.length, 1, 'dokładnie jeden Powerstone');
-  assert.equal(stones[0].tapped, true, 'token wchodzi zatapnięty');
+  assert.equal(stones[0].tapped, true, 'token wchodzi tapnięty');
 });
 
 test('B49/A8: White Mage\u2019s Staff — job select, +1/+1, Cleric, equip {3}', () => {
@@ -253,7 +253,7 @@ test('B49/B1: Kishla Village — dane karty i zdolności wg Oracle', () => {
   assert.equal(surveil.effect.amount, 2);
 });
 
-test('B49/B2: Kishla Village — bez Island/Swamp wchodzi ZATAPNIĘTA', () => {
+test('B49/B2: Kishla Village — bez Island/Swamp wchodzi TAPNIĘTA', () => {
   const state = game('p1');
   lands(state, 2, 'basic-forest'); // same lasy — warunek niespełniony
   put(state, 'village', 'kishla-village', 'p1', 'hand');

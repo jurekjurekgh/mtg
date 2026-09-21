@@ -1,5 +1,5 @@
 // M117 (audyt PR #56) — polowanie na resztki klasy błędu z lekcji L24:
-// „permanent zostaje zatapniętny, ale nikt nie emituje `object_tapped`”.
+// „permanent zostaje tapnięty, ale nikt nie emituje `object_tapped`”.
 //
 // M114 naprawił tę klasę na ścieżce tapnięcia landa za manę (bez zdarzenia
 // żaden trigger „becomes tapped” — Chronic Flooding — nie mógł zadziałać).
@@ -58,7 +58,7 @@ test('L24/A: regeneracja tapuje permanent i MÓWI o tym zdarzeniem', () => {
   // CR 701.15a: regeneracja to efekt zastępczy, który m.in. TAPUJE permanent.
   // Tapnięcie jest widoczną zmianą stanu, więc musi wygenerować zdarzenie —
   // inaczej trigger „becomes tapped” (Chronic Flooding) go nie zobaczy,
-  // a gracz nie przeczyta w logu, dlaczego jego stwór jest zatapniętny.
+  // a gracz nie przeczyta w logu, dlaczego jego stwór jest tapnięty.
   const state = newState();
   const creature = putBlank(state, 'regen', 'p1', { toughness: 2 });
   assert.equal(creature.tapped ?? false, false);
@@ -110,7 +110,7 @@ test('L24/B: zdarzenie z regeneracji trafia do listy, którą karmione są trigg
 test('L24/C: żadna ścieżka w silniku nie ustawia tapped:true po cichu', () => {
   // Strażnik statyczny: każda linia mutująca `tapped: true` musi mieć
   // w pobliżu emisję `object_tapped` albo jawny komentarz wyjaśniający,
-  // dlaczego zdarzenia nie ma (np. permanent WCHODZI już zatapniętny —
+  // dlaczego zdarzenia nie ma (np. permanent WCHODZI już tapnięty —
   // to nie jest „becomes tapped”, CR 701.21a).
   const files = fs.readdirSync('src/engine').filter((f) => f.endsWith('.js')).map((f) => `src/engine/${f}`);
   const silent = [];
@@ -128,11 +128,11 @@ test('L24/C: żadna ścieżka w silniku nie ustawia tapped:true po cichu', () =>
       if (inStringLiteral) return;
       const window = lines.slice(Math.max(0, index - 8), index + 22).join('\n');
       const emitsEvent = /object_tapped|entersTapped|shouldEnterTapped|enters_tapped/.test(window);
-      // Permanent, który WCHODZI na pole bitwy zatapniętny (CR 701.21a), nie
-      // „staje się” zatapniętny — nie ma tu zdarzenia object_tapped i nie
+      // Permanent, który WCHODZI na pole bitwy tapnięty (CR 701.21a), nie
+      // „staje się” tapnięty — nie ma tu zdarzenia object_tapped i nie
       // powinno być. Rozpoznajemy to po tym, że obiekt właśnie zmienił strefę.
       const entersTapped = /moveObjectDirectly|\.\.\.moved|permanent_entered_battlefield/.test(window);
-      const explained = /L24|wchodzi zatapni|enters tapped|nie jest „becomes tapped/i.test(window);
+      const explained = /L24|wchodzi tapnię|enters tapped|nie jest „becomes tapped/i.test(window);
       if (!emitsEvent && !entersTapped && !explained) silent.push(`${file}:${index + 1} → ${line.trim()}`);
     });
   }

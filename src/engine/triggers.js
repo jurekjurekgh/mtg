@@ -218,7 +218,7 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   }
   // Survival (DSK, Cautious Survivor; CR 603.4 + rulingi 2024-09-20): „At the
   // beginning of your second main phase, IF THIS CREATURE IS TAPPED, you gain
-  // 2 life." — stan ZATAPNIĘCIA źródła. Warunek sprawdzany przy zgłoszeniu
+  // 2 life." — stan TAPNIĘCIA źródła. Warunek sprawdzany przy zgłoszeniu
   // (nietapnięty na starcie fazy = brak triggera; tapnięcie w fazie już nie
   // pomoże) I PONOWNIE przy rozstrzyganiu (odkręcony przed rozstrzygnięciem =
   // nic), a gdy źródło opuściło pole bitwy — z LKI („use its tapped or
@@ -258,7 +258,7 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   }
   // Frontline War-Rager (EOE): „At the beginning of your end step, if you
   // control two or more tapped creatures, put a +1/+1 counter on this
-  // creature." Intervening if — liczba zatapniętych stworów kontrolera źródła.
+  // creature." Intervening if — liczba tapniętych stworów kontrolera źródła.
   if (condition.minTappedCreaturesControlled != null) {
     let tapped = 0;
     for (const object of state.objects.values()) {
@@ -290,7 +290,7 @@ function canPayTrigger(state, controllerId, trigger) {
   if (!player) return false;
   // Opcjonalna płatność many (Panic Spellbomb {R}, Zoraline {W}{B}) liczy
   // manę PRODUKOWALNĄ (pula + nietapnięte źródła) — sama pula pomijała
-  // gracza z nietapniętym landem, choć w MtG można go zatapnąć (bug złotej
+  // gracza z nietapniętym landem, choć w MtG można go tapnąć (bug złotej
   // odznaki; płatność resolve_optional_pay_choice i tak używa spendMana,
   // który auto-tapuje landy — check był niespójny z płatnością).
   // Kolorowe pipy opcjonalnej płatności (Panic Spellbomb — „you may pay {R}"):
@@ -947,7 +947,7 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
     wasKicked: source.wasKicked === true,
     wasCast: source.wasCast === true,
     manaFromTreasureSpent: source.manaFromTreasureSpent ?? 0,
-    // Survival (batch 56, Cautious Survivor): stan zatapnięcia źródła jest
+    // Survival (batch 56, Cautious Survivor): stan tapnięcia źródła jest
     // faktem z chwili odpalenia triggera — re-check intervening-if (CR 603.4)
     // czyta go, gdy źródło zniknęło z pola bitwy (ruling DSK 2024-09-20:
     // „use its tapped or untapped status as it last existed").
@@ -1088,7 +1088,7 @@ export function resolveTriggerEntry(state, entry) {
     wasKicked: lki.wasKicked === true,
     wasCast: lki.wasCast === true,
     manaFromTreasureSpent: lki.manaFromTreasureSpent ?? 0,
-    // Survival (batch 56): LKI niesie stan zatapnięcia — re-check warunku
+    // Survival (batch 56): LKI niesie stan tapnięcia — re-check warunku
     // { sourceTapped } po śmierci/opuszczeniu pola bitwy (CR 603.4/603.10).
     tapped: lki.tapped === true,
     // Audyt PR #96/F3: nośnik cech dla efektów kopiujących (ruling Offspring).

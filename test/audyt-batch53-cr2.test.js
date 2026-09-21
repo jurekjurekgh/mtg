@@ -91,7 +91,7 @@ test('C-R2: Mystic Sanctuary kładzie na wierzch NAJDROŻSZY instant z grobu', (
   addCard(s, 'sanct', 'mystic-sanctuary', 'p1');
   // „enters tapped unless you control three or more other Islands" —
   // trigger warunkuje się na enteredUntapped, więc bez 3 Islandów ląd
-  // wchodzi zatapowany i wyboru w ogóle nie ma.
+  // wchodzi tapowany i wyboru w ogóle nie ma.
   for (let i = 0; i < 3; i += 1) {
     addObject(s, {
       id: `isl${i}`, instanceId: `i-isl${i}`, cardId: `test-isl${i}`, controllerId: 'p1', ownerId: 'p1',

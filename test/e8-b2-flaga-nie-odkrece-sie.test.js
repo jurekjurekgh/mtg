@@ -38,7 +38,7 @@ test('E8/B2: flaga zużyta na untap stepie mimo że cel odkręcony — kolejny u
   untapControlled(state, 'p1');
   assert.equal(state.objects.get('husk').dontUntapNextUntapStep ?? null, null,
     'flaga ZUŻYTA na najbliższym untap stepie kontrolera (była: noszona wiecznie)');
-  // Stwór został zatapnięty normalną grą — kolejny untap MUSI odkręcić.
+  // Stwór został tapnięty normalną grą — kolejny untap MUSI odkręcić.
   replaceObject(state, state.objects.get('husk'), { tapped: true });
   untapControlled(state, 'p1');
   assert.equal(state.objects.get('husk').tapped, false,

@@ -623,7 +623,7 @@ test('T10: Entrancing Lyre — X wybierane przez gracza; X=3 tapuje 2-mocnego st
   assert.ok(r.ok, r.events[0]?.reason);
   assert.equal(state.players.find((p) => p.id === 'p1').mana, 0, 'X=3 zapłacone');
   resolveStack(state); // D: zdolność na stosie, efekt po rozstrzygnięciu
-  assert.equal(state.objects.get('beast').tapped, true, 'stwór zatapnięty');
+  assert.equal(state.objects.get('beast').tapped, true, 'stwór tapnięty');
 });
 
 test('T10: Entrancing Lyre — X mniejsze od mocy celu jest nielegalne', () => {

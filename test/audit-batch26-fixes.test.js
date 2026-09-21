@@ -422,7 +422,7 @@ test('A1: crew Bomat Bazaar Barge działa w turze przeciwnika (instant)', () => 
   resolveStack(state); // D: zdolność na stosie → animacja po rozstrzygnięciu
   const barge = state.objects.get('barge');
   assert.equal(barge.kind, 'creature', 'po crew barge jest stworem');
-  assert.ok(state.objects.get('c1').tapped && state.objects.get('c2').tapped, 'stwory crew zatapnione');
+  assert.ok(state.objects.get('c1').tapped && state.objects.get('c2').tapped, 'stwory crew tapnięte');
 });
 
 test('A2: crew Irontread Crusher działa z priorytetem przy niepustym stosie', () => {
@@ -491,7 +491,7 @@ test('B4: Reassembling Skeleton {1}{B} z grobu — aktywowalne', () => {
   resolveStack(state); // D: zdolność na stosie → powrót na pole bitwy po rozstrzygnięciu
   const skelBf = [...state.objects.values()].find((o) => o.cardId === 'reassembling-skeleton' && o.zone === 'battlefield');
   assert.ok(skelBf, 'szkielet nie wrócił na pole bitwy');
-  assert.equal(skelBf.tapped, true, 'wraca zatapnięty');
+  assert.equal(skelBf.tapped, true, 'wraca tapnięty');
 });
 
 // =============================================================================

@@ -125,7 +125,7 @@ test('main phase: zagranie jest oferowane od razu — płatność sama tapuje la
   const types = view.legalCommands.map((c) => c.type);
   assert.ok(!types.includes('tap_for_mana'), 'tap_for_mana zniknął z oferty (auto-tap przy płatności)');
   assert.ok(types.includes('cast_permanent'), 'zagranie powinno być oferowane mimo pustej puli');
-  // Wykonanie zagrania: engine sam zatapuje land na koszt (zdarzenie
+  // Wykonanie zagrania: engine sam tapuje land na koszt (zdarzenie
   // mana_produced człowieka — jedyny sposób opłacenia kosztu przy pustej
   // puli; sesja po ruchu przewija puste okna, więc sprawdzamy strumień
   // zdarzeń, nie bieżący planszetę).
@@ -133,7 +133,7 @@ test('main phase: zagranie jest oferowane od razu — płatność sama tapuje la
   assert.equal(session.apply(cast).ok, true, 'zagranie z pustą pulą odrzucone');
   assert.ok(
     session.state.events.some((e) => e.type === 'mana_produced' && e.playerId === HUMAN_ID),
-    'płatność automatycznie zatapnęła land (brak mana_produced w strumieniu)',
+    'płatność automatycznie tapnęła land (brak mana_produced w strumieniu)',
   );
 });
 

@@ -78,6 +78,18 @@ export function createAggroBot() {
           const skip = byType(view, 'resolve_exploit_choice').find((cmd) => cmd.skip === true);
           return (skip ?? found);
         }
+        if (type === 'resolve_aura_host') {
+          // Sesja 2026-09-21 (gospodarz-GRACZ, CR 303.4f): „Enchant player"
+          // wracające z grobu ma kandydatów-GRACZY — aggro nigdy nie
+          // zaczarowuje siebie, gdy może przeciwnika (jedyna aura gracza
+          // w katalogu to wroga Curse of the Pierced Heart); przy braku
+          // kandydata-gracza wybór idzie zwykłą ścieżką (pierwszy wariant).
+          const enemy = byType(view, 'resolve_aura_host').find(
+            (cmd) => (view.pendingAuraHost?.candidatePlayerIds ?? []).includes(cmd.auraHostId)
+              && cmd.auraHostId !== view.playerId,
+          );
+          if (enemy) return enemy;
+        }
         if (type === 'activate_ability') {
           // Aggro używa wyłącznie equipu własnego equipmentu — darmowy buff
           // najsilniejszego stwora pasuje do planu „atakuj". Zdolności z ręki

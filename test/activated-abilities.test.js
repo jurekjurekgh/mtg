@@ -73,7 +73,7 @@ test('aktywacja tapa i wzmacnia permanent, po czym znika z legalCommands', () =>
   assert.equal(activationCommand(playerView(state, 'p1'), 'boar'), undefined);
 });
 
-test('zdolność z kosztem tap jest odrzucana, gdy permanent jest już zatapnięty', () => {
+test('zdolność z kosztem tap jest odrzucana, gdy permanent jest już tapnięty', () => {
   const state = board();
   execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'boar', abilityIndex: 0 });
   const again = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'boar', abilityIndex: 0 });

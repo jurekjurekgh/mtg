@@ -351,15 +351,15 @@ function defaultBotFactory(seed, ctx) {
     put_graveyard_card_on_bottom: 'karta z grobu na spód biblioteki',
     put_multicolored_creature_from_hand: 'wprowadzenie wielokolorowego stwora z ręki',
     regenerate: 'regeneracja',
-    return_to_battlefield_tapped: 'powrót karty na pole bitwy (zatapnięta)',
+    return_to_battlefield_tapped: 'powrót karty na pole bitwy (tapnięta)',
     return_to_battlefield_under_control_at_upkeep: 'powrót karty na pole bitwy pod twoją kontrolą (podtrzymanie)',
-    search_library_to_battlefield_tapped: 'szukanie karty — na pole bitwy zatapniętą',
+    search_library_to_battlefield_tapped: 'szukanie karty — na pole bitwy tapniętą',
     search_library_to_hand: 'szukanie karty do ręki',
     set_saddled: 'osiodłanie',
     // Batch 52 (Jolrael): bazowe X/X (X = karty w ręce) twoim stworom.
     set_base_pt_creatures_you_control: 'ustawienie bazowego P/T twoich stworów do końca tury',
     surveil: 'surveil (podgląd wierzchu biblioteki)',
-    tap_permanent: 'zatapianie celu',
+    tap_permanent: 'tapnięcie celu',
     unearth_return: 'powrót karty z grobu na pole bitwy (unearth)',
   });
 
@@ -739,8 +739,8 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // „exile at end of turn", reanimate). Strażnik skanujący wyłącznie
   // card-data.js go nie widział, a w logu gracza świeciło „trigger (delayed)".
   delayed: 'opóźniony trigger',
-  enchanted_permanent_tapped: 'zatapnięcie zaczarowanego permanentu',
-  self_becomes_tapped: 'zatapnięcie tego permanentu',
+  enchanted_permanent_tapped: 'tapnięcie zaczarowanego permanentu',
+  self_becomes_tapped: 'tapnięcie tego permanentu',
   // M166/B (Batch 40, Cacophodon): Enrage.
   dealt_damage: 'otrzymanie obrażeń',
   enchanted_creature_dealt_damage: 'zaczarowany stwór otrzymał obrażenia',
@@ -1094,7 +1094,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         }
         return `${whoN(e.playerId)} dobiera kartę`;
       }
-      case 'land_played': return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${e.entersTapped ? ' (wchodzi zatapnięty)' : ''}`;
+      case 'land_played': return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${e.entersTapped ? ' (wchodzi tapnięty)' : ''}`;
       case 'mana_produced': return `${whoN(e.playerId)} przygotowuje manę (${nameOfObject(e.source)})`;
       case 'permanent_cast': {
         // M100 (BUG A): face-down rzut PRZECIWNIKA jest bezimienny (CR 708.2)
@@ -1140,7 +1140,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           : '';
         // Uwaga B1 właściciela z testów (2026-09-18): gracz musi widzieć, za
         // ile X rzucono czar („mogę to sobie tylko zgadywać po ilości
-        // zatapowanych lądów”). Zdarzenie niesie xValue (castXCostSpell /
+        // tapowanych lądów”). Zdarzenie niesie xValue (castXCostSpell /
         // castFireball) — log, warstwa „Rozgrywka” i modal „Ruch bota” mają
         // to jedno źródło brzmienia (L41). Wzór: ability_activated niżej.
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
@@ -1200,7 +1200,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // odtworzy; L24: skutek bez sensownego opisu jest dla gracza szumem).
         if (e.untapLocked) {
           const src = e.sourceId ? nameOfObject(e.sourceId) : 'źródło';
-          return `${nameOfObject(e.objectId)} nie odkręca się, dopóki ${src} jest na polu bitwy i zatapnięte`;
+          return `${nameOfObject(e.objectId)} nie odkręca się, dopóki ${src} jest na polu bitwy i tapnięte`;
         }
         if (e.skipsNextUntap) return `${nameOfObject(e.objectId)} nie odkręca się w następnym kroku odkręcania`;
         if (e.basePower != null || e.baseToughness != null) {
@@ -1369,7 +1369,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         }
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
-        // Crew (CR 702.122): zatapnione stwory w logu.
+        // Crew (CR 702.122): tapnięte stwory w logu.
         const crewPart = (e.crewCreatureIds ?? []).length
           ? ` — załoga: ${e.crewCreatureIds.map((id) => nameOfObject(id)).join(', ')}`
           : '';
@@ -1413,7 +1413,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           ? manaProducedLabel(e.manaAmount ?? 1, e.manaColors)
           : '';
         const manaPart = manaLabel && desc ? `, ${manaLabel}` : '';
-        // M153/A1: Station — nazwa zatapianego INNEGO stwora (koszt
+        // M153/A1: Station — nazwa tapowanego INNEGO stwora (koszt
         // tapOtherCreature), albo Morph, gdy zakryty (CR 708.2).
         const stationPart = e.stationTappedCreatureId
           ? ` (tapuje: ${nameOfObject(e.stationTappedCreatureId)})`
@@ -1766,7 +1766,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // wracającej z grobu — bez wpisu gracz nie wie, że silnik na niego czeka
       // (M106/Z2), a wynik i tak nazwie `object_moved` + `object_attached`.
       case 'aura_host_choice_required':
-        return `${nameOf(e.sourceCardId)} — ${whoN(e.playerId)} wybiera, co zaczaruje ${nameOf(e.cardId)} (kandydaci: ${(e.candidateIds ?? []).length})`;
+        // Sesja 2026-09-21 (gospodarz-GRACZ): kandydatami są też GRACZE
+        // („Enchant player", CR 303.4f) — liczba w narracji musi pokrywać oba
+        // zbiory, inaczej log mówiłby „kandydaci: 0" przy realnym wyborze.
+        return `${nameOf(e.sourceCardId)} — ${whoN(e.playerId)} wybiera, co zaczaruje ${nameOf(e.cardId)} (kandydaci: ${(e.candidateIds ?? []).length + (e.candidatePlayerIds ?? []).length})`;
       case 'aura_host_resolved': return null;
       case 'hand_free_cast_resolved':
         if (!e.declined) return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)} z ręki bez płacenia kosztu many (${nameOf(e.sourceCardId)})`;
@@ -1886,7 +1889,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         ? `${nameOfObject(e.objectId)} osiąga ${e.chargeCounters} ${polishPlural(e.chargeCounters, 'licznik', 'liczniki', 'liczników')} charge i staje się artefaktowym stworem (Station)`
         : `${nameOfObject(e.objectId)} spada poniżej progu Station i przestaje być stworem`;
       case 'saga_chapter_fired': return `${nameOf(e.cardId)} — rozdział Sagi ${['', 'I', 'II', 'III', 'IV'][e.chapter] ?? e.chapter}`;
-      case 'opponents_lands_tapped': return `Landy przeciwników ${whoN(e.playerId)} zostają zatapnięte (${e.count})`;
+      case 'opponents_lands_tapped': return `Landy przeciwników ${whoN(e.playerId)} zostają tapnięte (${e.count})`;
       case 'delayed_trigger_armed':
         // Zgłoszenie właściciela B1: wpis niesie `description`, gdy opóźniona
         // zdolność nie jest „powrotem w upkeep" (rozdział III Sagi). Bez tego
@@ -2111,6 +2114,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // zdolność (M106/Z2).
       case 'aura_returned_without_host':
         return `${nameOf(e.cardId)} zostaje w grobie — aura bez legalnego gospodarza na polu bitwy`;
+      // Sesja 2026-09-21 (gospodarz-GRACZ, CR 303.4f): aura „Enchant player"
+      // wracająca z grobu zaczarowuje GRACZA — gracz musi zobaczyć kogo
+      // (bez wpisu wyglądałoby to jak zgubiona zdolność, M106/Z2).
+      case 'aura_attached_to_player':
+        return `${nameOf(e.cardId)} zaczarowuje: ${whoN(e.playerId)}`;
       case 'delve_exile_resolved': return null;
       // card_discarded już nazywa każdą kartę. Zakończenie decyzji nie jest
       // kolejnym odrzuceniem ani zawsze pojedynczym kosztem zdolności.
@@ -3338,7 +3346,7 @@ export function createSession(config) {
       // (b) pierwszy untap po stunie = pauza z jawnym wpisem w modalu —
       // object_untapped to normalnie szum (BOT_MOVE_NOISE), więc bez tego
       // bufor pauzy byłby pusty (L24), a kafel zostałby narysowany
-      // zatapowany aż do okna ataku.
+      // tapowany aż do okna ataku.
       if (e.type === 'counter_removed' && e.counter === 'stun') {
         stunLockedObjectIds.add(e.objectId);
         significant = true;

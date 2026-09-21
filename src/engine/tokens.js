@@ -183,7 +183,7 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     // „Nazwa (kopia N)".
     ...(copyNumber ? { copyNumber } : {}),
     // Static Net (BRO): „create a tapped Powerstone token\" — token WCHODZI
-    // na pole bitwy zatapniętny (enters tapped), co nie jest „becomes tapped\"
+    // na pole bitwy tapnięty (enters tapped), co nie jest „becomes tapped\"
     // (CR 701.21a — brak zdarzenia object_tapped jest poprawny). L24/C.
     ...(tapped ? { tapped: true } : {}),
     enteredOnTurn: state.turn.number,

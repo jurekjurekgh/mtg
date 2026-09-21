@@ -82,10 +82,10 @@ test('F3-b: kafel Kappy — „Ninjutsu {1}{G}” + męska gramatyka + linia lic
     saga: def.saga ?? null, entersWithCounters: def.entersWithCounters ?? null,
   });
   assert.ok(
-    text.includes('Ninjutsu {1}{G}: wróć nieblokowanego atakującego, wejdź zatapnięty i atakujący'),
+    text.includes('Ninjutsu {1}{G}: wróć nieblokowanego atakującego, wejdź tapnięty i atakujący'),
     `etykieta ninjutsu bez pipa zielonego / z gramatyką żeńską: ${text}`
   );
-  assert.ok(!text.includes('zatapnięta i atakująca'), `forma żeńska na karcie męskiej: ${text}`);
+  assert.ok(!text.includes('tapnięta i atakująca'), `forma żeńska na karcie męskiej: ${text}`);
   assert.ok(// B7: dopełniacz po „licznikiem" (był mianownik „Dotyk śmierci").
     text.includes('Wchodzi z 1 licznikiem Dotyku śmierci'),
     `brak linii licznika wejścia: ${text}`);

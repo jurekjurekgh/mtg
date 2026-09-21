@@ -50,8 +50,9 @@ z kolekcją przez `artId` (§6).
 
 - **Plik rośnie liniowo z katalogiem** (po 11 batchach ~1100 linii). Łagodzenie:
   definicje grupowane komentarzami wg batchy; jeśli plik stanie się nieczytelny,
-  można wydzielić podmoduły per-batch (np. `src/cards/real-batch12.js`) —
-  ewolucja, nie zmiana decyzji.
+  można wydzielić podmoduły — ewolucja, nie zmiana decyzji. (Stan 2026-09-21:
+  katalog podzielił się wg WARSTW, nie per-batch — `card-data.js` (dane) obok
+  `registry.js`, `materialize.js`, `mana-costs-data.js`.)
 - **Konflikty przy równoległych zmianach** w jednym pliku. Łagodzenie: praca
   sesyjna (1 PR naraz) i małe przyrosty wg `AGENTS.md`.
 - Dodanie karty to **dwa miejsca**: sekcja definicji oraz (jeśli nowa) sekcja

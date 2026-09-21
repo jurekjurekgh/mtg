@@ -1,7 +1,7 @@
 // E6/A1 planu 2026-09-07 (zgłoszenie właściciela, Moonscarred Werewolf
 // „{T}: Add {G}{G}"): bot przemienił wilkołaka w upkeepie GRACZA i natychmiast
 // go tapnął dla many — mana wyparowała na końcu kroku (CR 500.4), a źródło
-// zostało zatapiane i nie zablokowało ataku („ten pierwszy tap był bez sensu").
+// zostało tapowane i nie zablokowało ataku („ten pierwszy tap był bez sensu").
 //
 // Root cause: wycena add_mana (M128 `unlocksSomething`) liczyła kandydatów
 // po generycznym koszcie liczbowym RĘKI bez TIMINGU rzucania: sorcery albo
@@ -45,7 +45,7 @@ const MOJA_GŁÓWNA = { step: 'main', activePlayerId: 'p1' };
 
 test('E6/A1: upkeep przeciwnika + sorcery w ręce — tap many nie wygrywa z passem', () => {
   // Scenariusz właściciela: sorcery/stwora nie da się rzucić w cudzym
-  // upkeepie, mana wyparuje na końcu kroku (CR 500.4) — tap = zatapiane
+  // upkeepie, mana wyparuje na końcu kroku (CR 500.4) — tap = tapowane
   // źródło bez żadnego zysku (nie zablokuje też ataku).
   const chosen = wybór([KARTA('h-sorc', 'sorcery')], OBCE_UPKEEP);
   assert.equal(chosen.type, 'pass_priority',

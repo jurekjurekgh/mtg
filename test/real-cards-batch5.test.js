@@ -171,8 +171,8 @@ test('Holdout Settlement: aktywacja {T}+tap stwora dodaje manę i tapuje oba', (
   const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'hold', abilityIndex: 1 });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   assert.equal(state.players[0].mana, 1, 'mana dodana do puli');
-  assert.equal(state.objects.get('hold').tapped, true, 'land zatapiany jako koszt');
-  assert.equal(state.objects.get('dork').tapped, true, 'stwór zatapiany jako dodatkowy koszt');
+  assert.equal(state.objects.get('hold').tapped, true, 'land tapowany jako koszt');
+  assert.equal(state.objects.get('dork').tapped, true, 'stwór tapowany jako dodatkowy koszt');
 });
 
 test('Holdout Settlement: bez nietapniętego stwora zostaje tylko {T}: Add {C}', () => {
@@ -196,7 +196,7 @@ test('M212/A: Holdout Settlement — {T}: Add {C} nie tapuje stwora (zgłoszenie
   addSimpleCreature(state, 'dork', 'p1', { summoningSickness: false });
   const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'hold', abilityIndex: 0 });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
-  assert.equal(state.objects.get('hold').tapped, true, 'land zatapiany jako koszt');
+  assert.equal(state.objects.get('hold').tapped, true, 'land tapowany jako koszt');
   assert.equal(state.objects.get('dork').tapped, false, 'stwór NIE jest kosztem zdolności {C}');
 });
 

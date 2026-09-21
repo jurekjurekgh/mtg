@@ -1,5 +1,5 @@
 // M168 — uwagi właściciela z testów (2026-08-21):
-// A: Idyllic Grange — log „wchodzi zatapnięty" mimo wejścia ODTAPIONEGO
+// A: Idyllic Grange — log „wchodzi tapnięty" mimo wejścia ODTAPIONEGO
 //    (event niósł deskryptor karty, nie wynik warunku).
 // B: AKTYWNE zmiany na kreaturze jako badge'e (Gray Slaad: menace+deathtouch
 //    przy >=4 kartach stwora w grobie; granty do EOT; utrata keywordów;

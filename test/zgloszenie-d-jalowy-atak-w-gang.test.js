@@ -88,7 +88,7 @@ test('D/3 anty-over-fix: 3/1 atakuje, gdy WYMIENIA się z blokerem (3/3)', () =>
   //
   // E (zgłoszenie właściciela 2026-09-20): fixture podnosi życie bota z 3 do
   // 12, bo przy 3 życiach ten sam atak podpada pod NOWĄ karę za oddaną gardę
-  // (wróg może NIE blokować i zabić w następnej turze niezatapniętym 3/3 —
+  // (wróg może NIE blokować i zabić w następnej turze nietapniętym 3/3 —
   // dokładnie scenariusz E). Ten strażnik mierzy GRANICĘ klasyfikacji
   // „jałowy atak", więc trzymamy go w reżimie bez kolizji z regułą E;
   // crackback ma własny pin: test/zgloszenie-e-oddana-garda.test.js.

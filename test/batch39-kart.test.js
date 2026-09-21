@@ -146,7 +146,7 @@ test('A5: Mesmerist — {U},{T}: gracz-cel mieli 2', () => {
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   const libAfter = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === 'p2').length;
   assert.equal(libAfter, libBefore - 2, 'przeciwnik mieli 2 karty');
-  assert.equal(state.objects.get('merf').tapped, true, 'źródło zatapowane kosztem {T}');
+  assert.equal(state.objects.get('merf').tapped, true, 'źródło tapowane kosztem {T}');
 });
 
 

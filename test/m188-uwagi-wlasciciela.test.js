@@ -213,7 +213,7 @@ test('M188/B3: STRAŻNIK — nameOf zna KAŻDY token tworzony przez karty katalo
 // ---- C: bot nie atakuje 2/2 w nietapnięte 1/5 ----------------------------
 // Zgłoszenie właściciela: „Bot atakuje mnie kreaturą 2/2 mimo, że mam na
 // stole nietapniętą kreaturę 1/5. To bez sensu bo jedynym efektem jest to,
-// że jego kreatura robi się zatapowana."
+// że jego kreatura robi się tapowana."
 // Wycena gałęzi „przeżyje, NIE zabije" dawała −2, ale premia wyścigu
 // (+8/+20) ją przebijała — klasa L3 (kara musi przebić premię) i L54
 // (kara mierzona względem BAZY, nie w oderwaniu).

@@ -63,7 +63,7 @@ test('płatność tapuje dokładnie tyle landów, ile brakuje do kosztu', () => 
 
   assert.equal(result.ok, true, result.events[0]?.reason);
   const tapped = ['l1', 'l2', 'l3'].filter((id) => state.objects.get(id).tapped);
-  assert.deepEqual(tapped, ['l1', 'l2'], 'zatapnione są tylko 2 potrzebne landy (kolejność pola bitwy)');
+  assert.deepEqual(tapped, ['l1', 'l2'], 'tapnięte są tylko 2 potrzebne landy (kolejność pola bitwy)');
   assert.equal(state.players[0].mana, 0);
   const produced = result.events.filter((e) => e.type === 'mana_produced');
   assert.equal(produced.length, 2, 'log pokazuje zebranie many');
@@ -89,7 +89,7 @@ test('koszt ponad pulę + landy: odrzucenie bez częściowej płatności (CR 601
   addCastableCreature(state, 'big', 3);
   assert.equal(producibleMana(state, 'p1'), 2, 'produkowalna mana pokazuje limit');
   // Oferta już nie zawiera rzutu — ale nawet bezpośrednia komenda nie może
-  // zostawić częściowo zatapnianych landów.
+  // zostawić częściowo tapowanych landów.
   assert.equal(playerView(state, 'p1').legalCommands.some((c) => c.type === 'cast_permanent'), false);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'big' });
   resolveStack(state);
@@ -183,7 +183,7 @@ test('zdolność z kosztem many jest oferowana z pustą pulą (auto-tap przy akt
   const activate = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'pinger');
   assert.ok(activate, 'zdolność za 1 manę oferowana przy pustej puli i nietapniętym landzie');
   assert.equal(execute(state, activate).ok, true);
-  assert.equal(state.objects.get('l1').tapped, true, 'aktywacja sama zatapnęła land');
+  assert.equal(state.objects.get('l1').tapped, true, 'aktywacja sama tapnęła land');
 });
 
 test('zdolność z {T} źródła-landu nie płaci sama sobie (CR 601.2h)', () => {
@@ -201,7 +201,7 @@ test('zdolność z {T} źródła-landu nie płaci sama sobie (CR 601.2h)', () =>
     }],
   });
   // Produkowalna 1 < 2 — a nawet hipotetyczne 2 (land+mana) nie starczyłoby,
-  // bo zatapnięcie kosztem wyklucza źródło z własnej płatności.
+  // bo tapnięcie kosztem wyklucza źródło z własnej płatności.
   assert.equal(playerView(state, 'p1').legalCommands.some((c) => c.type === 'activate_ability'), false);
   addMana(state, 'p1', 1); // pula 1 + land 1 = 2 produkowalne, ale koszt z {T} odjmuje źródło
   assert.equal(playerView(state, 'p1').legalCommands.some((c) => c.type === 'activate_ability'), false,

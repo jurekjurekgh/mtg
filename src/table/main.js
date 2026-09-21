@@ -2340,7 +2340,7 @@ function bootstrapTable() {
     }, {
       // Tapnięcie źródła: ląd → tap_for_mana, zdolność many → activate_ability
       // (E.3a cz. A). Po komendzie czytamy znowu pulę/widok (Skarb znika, dork
-      // zatapnięty, pool wzrósł o net zysk).
+      // tapnięty, pool wzrósł o net zysk).
       onTapSource: (objectId) => {
         const src = sources.find((s) => s.id === objectId);
         const command = src?.command ?? { type: 'tap_for_mana', playerId: HUMAN_ID, objectId };

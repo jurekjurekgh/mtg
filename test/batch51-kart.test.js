@@ -472,7 +472,7 @@ test('B51: Savage Surge — dane Oracle, timing instant i cel', () => {
   ]);
 });
 
-test('B51: Savage Surge — +2/+2 i odkręcenie zatapniętego stwora', () => {
+test('B51: Savage Surge — +2/+2 i odkręcenie tapniętego stwora', () => {
   const state = game('p1', 'main');
   addMana(state, 'p1', 5, { colors: ['G'] });
   put(state, 'bear', 'hill-giant', 'p1', 'battlefield', { tapped: true });

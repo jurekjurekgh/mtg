@@ -1,7 +1,7 @@
 // M153 — uwagi właściciela (A1, A2, B):
 //
 // A1 — log aktywacji Station (Warmaker Gunship) ma nazywać TAPNIĘTEGO stwora
-//      („(tapuje: <nazwa>)”), nie sztywny opis „moc zatapniętego stwora”.
+//      („(tapuje: <nazwa>)”), nie sztywny opis „moc tapniętego stwora”.
 // A2 — bot tapuje stwory na charge Station WYŁĄCZNIE we własnej Głównej 2
 //      (po ataku); w Main 1 tapowanie marnuje atak/blok — kara poniżej passu.
 // B  — bot ma blokować, by nie dostawać obrażeń, nawet kosztem utraty stworów;

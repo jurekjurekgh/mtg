@@ -124,7 +124,7 @@ test('C0: dane Skilled AnimatoRA mówią „as long as", nie „until end of tur
 // D — Lodestone Needle / stun: koniec blokady ma być widoczny na stole.
 // Pauza przy zdjęciu licznika stun i przy pierwszym untapie po stunie
 // (inaczej kreatura „nigdy się nie odkręca wizualnie" — atakowała legalnie
-// będąc narysowana zatapowana od Needle aż do okna ataku).
+// będąc narysowana tapowana od Needle aż do okna ataku).
 test('D: pauza i render przy zejściu stunów i pierwszym untapie po stunie', () => {
   const registry = REGISTRY;
   const decks = new Map([
@@ -132,7 +132,7 @@ test('D: pauza i render przy zejściu stunów i pierwszym untapie po stunie', ()
     [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria-brg.txt', 'utf8'), registry).cardIds],
   ]);
   const session = createSession({ seed: 5, registry, decks, pauseOnBotMoves: true });
-  // Stwór BOTA zatapowany z 2 licznikami stun (stan jak po Lodestone Needle).
+  // Stwór BOTA tapowany z 2 licznikami stun (stan jak po Lodestone Needle).
   addObject(session.state, {
     id: 'stunned', instanceId: 'i-stunned', cardId: 'thornhide-wolves',
     controllerId: BOT_ID, ownerId: BOT_ID, zone: 'battlefield', kind: 'creature',

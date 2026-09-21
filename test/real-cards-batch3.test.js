@@ -114,7 +114,7 @@ test('Rupture Spire: wchodzi tapped i nie może dać many w turze wejścia', () 
   assert.equal(spire.tapped, true, 'Spire nie wszedł tapped');
   const tapOffer = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'tap_for_mana' && c.objectId === spire.id);
-  assert.equal(tapOffer, undefined, 'zatapnięty Spire nie może być źródłem many');
+  assert.equal(tapOffer, undefined, 'tapnięty Spire nie może być źródłem many');
 });
 
 test('Rupture Spire: z maną w puli płaci {1} i zostaje (trigger obowiązkowy)', () => {
@@ -146,7 +146,7 @@ test('Rupture Spire: bez many auto-tapuje innego nietapniętego landa i płaci',
   assert.ok(findOnBattlefield(state, 'rupture-spire'), 'Spire nie może zostać poświęcony, gdy da się zapłacić');
 });
 
-test('Rupture Spire: bez many i bez landów do zatapnięcia jest poświęcany', () => {
+test('Rupture Spire: bez many i bez landów do tapnięcia jest poświęcany', () => {
   const state = mainPhase(game());
   addRealCard(state, 'spire', 'rupture-spire', 'p1', 'hand');
   const result = execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' });
@@ -157,7 +157,7 @@ test('Rupture Spire: bez many i bez landów do zatapnięcia jest poświęcany', 
   assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'rupture-spire'), 'Spire nie trafił do grobu');
 });
 
-test('Rupture Spire: nie może zatapnięć samego siebie do własnej płatności (wchodzi tapped)', () => {
+test('Rupture Spire: nie może tapnięć samego siebie do własnej płatności (wchodzi tapped)', () => {
   const state = mainPhase(game());
   // Jedyny land na stole to wchodzący Spire — auto-tap szuka INNEGO landa.
   addRealCard(state, 'spire', 'rupture-spire', 'p1', 'hand');
@@ -561,7 +561,7 @@ function campusReady({ mana = 4 } = {}) {
 test('Prismari Campus: scry blokuje grę do decyzji; oferta wymaga many i odkręcenia', () => {
   const tapped = campusReady({ mana: 4 });
   statePrimeStateTapped(tapped);
-  assert.equal(scryCommand(playerView(tapped, 'p1')), undefined, 'zatapnięty Campus nie oferuje scry');
+  assert.equal(scryCommand(playerView(tapped, 'p1')), undefined, 'tapnięty Campus nie oferuje scry');
   const noMana = campusReady({ mana: 3 });
   assert.equal(scryCommand(playerView(noMana, 'p1')), undefined, 'bez 4 many brak oferty scry');
   const ready = campusReady({ mana: 4 });
@@ -581,7 +581,7 @@ test('Prismari Campus: aktywacja kosztuje 4 many + tap i otwiera decyzję scry',
   const result = execute(state, scryCommand(playerView(state, 'p1')));
   assert.equal(result.ok, true, result.events[0]?.reason);
   assert.equal(state.players[0].mana, 1, 'scry nie kosztował 4 many');
-  assert.equal(state.objects.get('campus').tapped, true, 'Campus nie zatapnięty');
+  assert.equal(state.objects.get('campus').tapped, true, 'Campus nie tapnięty');
   resolveStack(state); // D: zdolność na stosie, scry po rozstrzygnięciu
   // `restorePriorityTo` zapamiętuje, komu oddać priorytet po decyzji: scry
   // może odpalić się z triggera w turze przeciwnika (Nefarious Imp, M17).

@@ -116,7 +116,7 @@ test('M138/Z4: blokady odkręcania też emitują zdarzenie', () => {
       id: 'victim', instanceId: 'i-victim', cardId: 'x-victim', controllerId: 'p2', ownerId: 'p2', zone: 'battlefield',
       kind: 'creature', power: 2, toughness: 2, types: ['Creature'], subtypes: [], keywords: [], abilities: [], colors: [], manaCost: 1,
     });
-    // Długość trwania Liry wymaga zatapniętego źródła (CR611.2b).
+    // Długość trwania Liry wymaga tapniętego źródła (CR611.2b).
     state.objects.set('src', Object.freeze({ ...state.objects.get('src'), tapped: true }));
     state.events.length = 0;
     applyEffect(state, { type }, state.objects.get('src'), ['victim']);

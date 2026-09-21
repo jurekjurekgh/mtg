@@ -14,7 +14,7 @@ import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, nextFaceDown
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
-import { attachAuraToCreature, attachEquipmentToCreature, detachAttachmentsFromHost, isLegalAuraHost } from './attachments.js';
+import { attachAuraToCreature, attachAuraToPlayer, attachEquipmentToCreature, detachAttachmentsFromHost, isLegalAuraHost, legalAuraHosts } from './attachments.js';
 
 /**
  * Loch „Undercity" (komponent inicjatywy, CR 725; karta „Undercity //
@@ -1178,7 +1178,13 @@ export function returnPermanentFromGraveyardOutcome(state, targetId, effect, aur
   applyEnterCounters(state, newId);
   // Załączenie aury PO wejściu na pole bitwy (kolejność: obiekt musi już
   // istnieć w strefie, żeby `attachAuraToCreature` przeszła walidację).
-  if (auraHostId != null) attachAuraToCreature(state, newId, auraHostId);
+  // Gospodarzem może być permanent ALBO gracz (CR 303.4f „object or player" —
+  // klątwa „Enchant player" wracająca z grobu) — rozstrzyga to jedno miejsce,
+  // po kształcie id (L41).
+  if (auraHostId != null) {
+    if (state.players.some((player) => player.id === auraHostId)) attachAuraToPlayer(state, newId, auraHostId);
+    else attachAuraToCreature(state, newId, auraHostId);
+  }
   if (effect?.finalityCounter) addCounter(state, newId, 'finality', 1);
   // Batch 24 (Unbreakable Bond): „return ... with a lifelink counter on it" —
   // wejście z licznikami (CR 122.1b — licznik lifelink nadaje keyword).
@@ -2391,7 +2397,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         cantBlock: Boolean(effect.cantBlock),
         // Batch 45 (Crawling Chorus — token Mite z toxic 1, CR 702.180).
         ...(effect.toxic != null ? { toxic: effect.toxic } : {}),
-        // M147 (Static Net — Powerstone): token wchodzi ZATAPNIĘTY.
+        // M147 (Static Net — Powerstone): token wchodzi TAPNIĘTY.
         tapped: Boolean(effect.tapped),
       })?.id);
     }
@@ -3006,7 +3012,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'return_to_battlefield_tapped') {
-    // Powrót obiektu z grobu na pole bitwy ZATAPNIĘTEGO pod kontrolą właściciela
+    // Powrót obiektu z grobu na pole bitwy TAPNIĘTEGO pod kontrolą właściciela
     // (Fake Your Own Death). Cel domyślny: samo źródło (trigger „when this
     // creature dies" — obiekt jest już w grobie po zmianie strefy).
     const targetId = targets[0] ?? sourceObject.id;
@@ -3238,7 +3244,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // Batch 56 (Containment Protocol): „When this Aura enters, tap enchanted
   // creature." — LUSTRO untap_enchanted_permanent (poniżej): tapuje GOSPODARZA
   // aury. Wspólny helper `tapObject` (nada zdarzenie object_tapped i respektuje
-  // już-zatapnięty obiekt).
+  // już-tapnięty obiekt).
   if (effect.type === 'tap_enchanted_permanent') {
     const enchantedId = sourceObject.attachedTo;
     if (!enchantedId) return;
@@ -3338,8 +3344,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // sama funkcja co SBA i rzut aury (`isLegalAuraHost` — L41).
     let auraHostId = null;
     if ((object.subtypes ?? []).includes('Aura')) {
-      const hosts = state.zones.battlefield.filter((hostId) => isLegalAuraHost(object, state.objects.get(hostId)));
-      if (hosts.length === 0) {
+      // Kandydaci na gospodarza: permanenty ORAZ gracze (CR 303.4f „object or
+      // player") — jedno źródło prawdy (`attachments.legalAuraHosts`), to samo
+      // dla ścieżki automatycznej, decyzji gracza i re-walidacji przy wykonaniu.
+      const hosts = legalAuraHosts(state, object);
+      const total = hosts.objectIds.length + hosts.playerIds.length;
+      if (total === 0) {
         state.events.push(event('aura_returned_without_host', {
           objectId: targetId, cardId: object.cardId, playerId: object.controllerId ?? null,
         }));
@@ -3350,25 +3360,31 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // `find(...)` brał pierwszego z brzegu (kolejność strefy), odbierając
       // wybór. Przy JEDNYM kandydacie wybór domyka się sam (wybór bez
       // alternatywy nie jest decyzją — wzorzec craft exile, L41).
-      if (hosts.length > 1) {
+      if (total > 1) {
         const decydent = object.controllerId ?? object.ownerId ?? null;
         state.pendingAuraHost = {
           playerId: decydent,
           targetId,
           cardId: object.cardId ?? null,
           sourceCardId: sourceObject?.cardId ?? null,
-          candidateIds: [...hosts],
+          candidateIds: [...hosts.objectIds],
+          // Sesja 2026-09-21 (gospodarz-GRACZ, CR 303.4f): klątwa „Enchant
+          // player" nie ma kandydatów-permanentów, a mimo to wybór jest realny
+          // (Ty / Nieprzyjaciel) — kontrakt decyzji niesie jednego i drugiego
+          // kandydata, a wycena i etykieta czytają OBA pola (L48 pkt 3).
+          candidatePlayerIds: [...hosts.playerIds],
           effect,
           restorePriorityTo: state.turn.priorityPlayerId,
         };
         if (decydent != null) state.turn.priorityPlayerId = decydent;
         state.events.push(event('aura_host_choice_required', {
           playerId: decydent, cardId: object.cardId ?? null, objectId: targetId,
-          sourceCardId: sourceObject?.cardId ?? null, candidateIds: [...hosts],
+          sourceCardId: sourceObject?.cardId ?? null,
+          candidateIds: [...hosts.objectIds], candidatePlayerIds: [...hosts.playerIds],
         }));
         return;
       }
-      auraHostId = hosts[0];
+      auraHostId = hosts.objectIds[0] ?? hosts.playerIds[0];
     }
     returnPermanentFromGraveyardOutcome(state, targetId, effect, auraHostId);
     return;
@@ -5062,10 +5078,16 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const filter = Object.freeze({
       typesInclude: Object.freeze([...(effect.typesInclude ?? [])]),
       isCreature: Boolean(effect.isCreature),
+      // F15 (audyt PR #131): zakres prewencji po polsku, gdy deskryptor go
+      // nazywa — bez tego log gracza mówił „chronionym obiektom", nie mówiąc
+      // CZEGO (miękki narracyjnie, ale mylący przy stole); brak opisu
+      // zostawia dotychczasowy fallback sesji.
+      ...(effect.description ? { description: effect.description } : {}),
     });
     state.preventDamageThisTurn = [...(state.preventDamageThisTurn ?? []), filter];
     state.events.push(event('damage_prevention_started', {
       sourceId: sourceObject.id, cardId: sourceObject.cardId, filter,
+      filterDescription: effect.description ?? null,
     }));
     return;
   }
@@ -5215,7 +5237,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
   if (effect.type === 'tap_all_lands_opponents_control') {
     // „Tap all lands your opponents control” (Saga III Shivy — Cold Snap):
     // każdy land (kind land albo typ Land, także land creature) kontrolowany
-    // przez każdego przeciwnika kontrolera źródła zostaje zatapnięty.
+    // przez każdego przeciwnika kontrolera źródła zostaje tapnięty.
     const controllerId = sourceObject.controllerId;
     let tappedCount = 0;
     for (const objectId of [...state.zones.battlefield]) {
@@ -5233,7 +5255,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
   if (effect.type === 'station_counters') {
     // Station (Wedgelight Rammer, Warmaker Gunship): „Tap another creature you
     // control: Put charge counters equal to its power on this Spacecraft.”
-    // Zatapnięty w koszcie stwór przychodzi jako targets[0] (abilities.js
+    // Tapnięty w koszcie stwór przychodzi jako targets[0] (abilities.js
     // tapOtherCreature). M360/B4 (EOE Release Notes, mtg.wiki/Station
     // 2026-09-16): „If that creature isn't on the battlefield at that time,
     // use its power as it last existed on the battlefield." Stwór NIE jest

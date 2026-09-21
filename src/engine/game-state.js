@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
@@ -28,7 +28,7 @@ import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
-import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost } from './attachments.js';
+import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
@@ -4828,12 +4828,20 @@ export function execute(state, input) {
     const pending = state.pendingAuraHost;
     if (cmd.type !== 'resolve_aura_host') return reject('aura_host_unresolved');
     if (cmd.playerId !== pending.playerId) return reject('aura_host_not_your_decision');
-    if (!pending.candidateIds.includes(cmd.auraHostId)) return reject('illegal_aura_host');
+    // Kandydat jest permanentem ALBO graczem (CR 303.4f „object or player") —
+    // jeden kształt komendy, rozstrzyga przynależność do listy kandydatów.
+    const hostIsPlayer = (pending.candidatePlayerIds ?? []).includes(cmd.auraHostId);
+    if (!hostIsPlayer && !pending.candidateIds.includes(cmd.auraHostId)) return reject('illegal_aura_host');
     const aura = state.objects.get(pending.targetId);
-    const host = state.objects.get(cmd.auraHostId);
-    // Gospodarz musi być legalny W CHWILI wejścia (mógł zyskać hexproof albo
-    // opuścić pole bitwy w oknie priorytetu — CR 608.2b/LKI).
-    if (!aura || aura.zone !== 'graveyard' || !host || !isLegalAuraHost(aura, host)) {
+    const host = hostIsPlayer ? null : state.objects.get(cmd.auraHostId);
+    // Gospodarz musi być legalny W CHWILI wejścia (permanent mógł zyskać
+    // hexproof albo opuścić pole bitwy, gracz wypadł z partii — CR 608.2b/LKI).
+    // Re-walidacja idzie TYMI SAMYMI predykatami, które zbudowały listę
+    // kandydatów (L41/L48: oferta = walidacja).
+    if (!aura || aura.zone !== 'graveyard') return reject('illegal_aura_host');
+    if (hostIsPlayer
+      ? !isLegalAuraPlayerHost(state, aura, cmd.auraHostId)
+      : (!host || !isLegalAuraHost(aura, host))) {
       return reject('illegal_aura_host');
     }
     const before = state.events.length;
@@ -4846,7 +4854,8 @@ export function execute(state, input) {
     returnPermanentFromGraveyardOutcome(state, pending.targetId, pending.effect, cmd.auraHostId);
     state.events.push(event('aura_host_resolved', {
       playerId: cmd.playerId, cardId: pending.cardId, objectId: pending.targetId,
-      auraHostId: cmd.auraHostId, sourceCardId: pending.sourceCardId ?? null,
+      auraHostId: cmd.auraHostId, auraHostIsPlayer: hostIsPlayer,
+      sourceCardId: pending.sourceCardId ?? null,
     }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
@@ -6010,13 +6019,26 @@ function exileAdditionalCostCandidates(state, playerId, object) {
  * krok deklaracji bloków, walka zadeklarowana, stos pusty, gracz broniący,
  * bloki jeszcze niezadeklarowane (warunki lustrzane wobec `legalCommands`).
  */
-function buildBlockCandidatesView(state, playerId) {
+function buildBlockerView(state, playerId) {
   if (state.turn?.step !== 'declare_blockers' || !state.combat) return null;
   if (state.combat.attackingPlayerId === playerId) return null;
   if ((state.combat.blockers?.size ?? 0) > 0) return null;
   if (state.zones.stack.length > 0) return null;
   const pool = blockCandidatePool(state, playerId);
-  return Object.keys(pool).length > 0 ? pool : null;
+  if (Object.keys(pool).length === 0) return null;
+  // F14 (audyt PR #131, L48): ile razy wolno użyć blokera — silnik odrzuca
+  // użycie ponad `blockSlotsFor` („can block an additional creature",
+  // Cenn's Tactician), a wizard rysuje wiersze z PULI, więc bez tej liczby
+  // nie odróżni legalnego podwójnego bloku od nielegalnego duplikatu i musi
+  // czekać na odrzucenie komendy PO wysłaniu. Liczymy tylko dla blokerów
+  // z puli (tania bramka: pole istnieje wyłącznie tam, gdzie jest decyzja).
+  const slots = {};
+  for (const blockerIds of Object.values(pool)) {
+    for (const blockerId of blockerIds) {
+      if (slots[blockerId] == null) slots[blockerId] = blockSlotsFor(state, state.objects.get(blockerId));
+    }
+  }
+  return { pool, slots };
 }
 
 export function playerView(state, playerId) {
@@ -6681,6 +6703,7 @@ export function playerView(state, playerId) {
   const activeCraftExile = state.pendingCraftExile && state.pendingCraftExile.playerId === playerId;
 
   const activeAuraHost = state.pendingAuraHost && state.pendingAuraHost.playerId === playerId;
+  const blockerView = buildBlockerView(state, playerId);
 
   const activeHandCreature = state.pendingHandCreature && state.pendingHandCreature.playerId === playerId;
 
@@ -7366,7 +7389,10 @@ export function playerView(state, playerId) {
     // Audyt PR #130 (D): wariant na każdego legalnego gospodarza aury — gracz
     // wybiera, kogo zaczarować (CR 303.4f). Panel rysuje je zwykłą listą opcji
     // (nazwa gospodarza w etykiecie), więc nie potrzeba osobnego kreatora.
-    for (const auraHostId of state.pendingAuraHost.candidateIds) {
+    // Sesja 2026-09-21 (gospodarz-GRACZ): kandydatami bywają też GRACZE
+    // („Enchant player" wracające z grobu) — oferta musi nieść OBA zbiory,
+    // inaczej klątka nie ma żadnego wariantu (L48: oferta = walidacja).
+    for (const auraHostId of [...state.pendingAuraHost.candidateIds, ...(state.pendingAuraHost.candidatePlayerIds ?? [])]) {
       legalCommands.push(command('resolve_aura_host', playerId, { auraHostId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeHandCreature) {
@@ -8492,6 +8518,9 @@ export function playerView(state, playerId) {
           sourceCardId: state.pendingAuraHost.sourceCardId ?? null,
           auraCardId: state.pendingAuraHost.cardId ?? null,
           candidateIds: [...state.pendingAuraHost.candidateIds],
+          // Kandydaci-gracze („Enchant player"): etykieta oferty nazywa ich
+          // po imieniu („Ty"/„Nieprzyjaciel"), więc widok musi je nieść.
+          candidatePlayerIds: [...(state.pendingAuraHost.candidatePlayerIds ?? [])],
         }
       : null,
     // M240/B (zgłoszenie): jak M162/C — tytuł modala ETB-look nazywa kartę
@@ -8631,7 +8660,10 @@ export function playerView(state, playerId) {
     } : null,
     pendingDamageAssignment: buildDamageAssignmentView(state, playerId),
     // E6: pełna pula kandydatów na blokerów (niezależna od cap-a menu, CR 509.1b).
-    blockCandidates: buildBlockCandidatesView(state, playerId),
+    blockCandidates: blockerView?.pool ?? null,
+    // F14: liczba użyć, jaką silnik przyjmie od jednego blokera (L48 — wizard
+    // musi znać tę samą regułę, żeby nie wysyłać komendy do odrzucenia).
+    blockerSlots: blockerView?.slots ?? null,
     // M72 (Batch 29): GENERYCZNE rozdzielanie obrażeń niecombat (Fireball).
     // Widok niesie total, źródło i listę celów; UI buduje własny przydział.
     // M69 (Exploit): czyja decyzja, źródło i żywi kandydaci (publiczne pole bitwy).

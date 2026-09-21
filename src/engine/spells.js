@@ -1632,7 +1632,7 @@ function resolveActivatedAbilityEntry(state, entry) {
     ?? (liveSource?.abilityResolvedThisTurn ?? 0) + 1);
   for (const effect of effectList) {
     // Audyt PR #41 (B7.2, CR 702.48a + 602.2a): ninjutsu rozstrzyga się ze
-    // stosu — karta wchodzi na pole bitwy zatapnięta i atakująca; celem
+    // stosu — karta wchodzi na pole bitwy tapnięta i atakująca; celem
     // (payload.targets[0]) jest atakujący zwrócony do ręki (koszt).
     if (effect?.type === '__ninjutsu_enter__') {
       const cardInHand = state.objects.get(payload.sourceId);
@@ -1642,7 +1642,7 @@ function resolveActivatedAbilityEntry(state, entry) {
         const permanent = Object.freeze({ ...moved, tapped: true, summoningSickness: true });
         state.objects.set(bfId, permanent);
         // M360/B5: ninjutsu z end_of_combat — walka sprzątnięta, ninja wchodzi
-        // zatapnięty bez dopisu do atakujących (CR 511.3 i tak zdejmuje z walki).
+        // tapnięty bez dopisu do atakujących (CR 511.3 i tak zdejmuje z walki).
         state.combat?.attackers.push(bfId);
         if (permanent.entersWithCounters) {
           for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {

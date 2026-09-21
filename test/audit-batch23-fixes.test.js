@@ -190,7 +190,7 @@ test('Deepwood Denizen: redukcja kosztu za liczniki (podłoga = pip koloru)', ()
   const before = state.players[0].mana;
   activateAbility(state, 'p1', 'deep', offers[0].abilityIndex, undefined);
   assert.equal(before - state.players[0].mana, 6, 'zapłacono {5}{G}');
-  assert.equal(state.objects.get('deep').tapped, true, 'źródło zatapnięte');
+  assert.equal(state.objects.get('deep').tapped, true, 'źródło tapnięte');
   // 5 liczników (4 na Deepwood + 1 na innym stworze): redukcja 5, podłoga {G}
   const st2 = newState();
   giveMana(st2, 'p1', 10, { G: 2 });
