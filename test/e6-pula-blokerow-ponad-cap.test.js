@@ -224,11 +224,18 @@ test('E6/6: strażnik łańcucha silnik → widok → main.js → wizard (pin na
   const main = readFileSync(new URL('../src/table/main.js', import.meta.url), 'utf8');
   const choice = readFileSync(new URL('../src/table/choice-request.js', import.meta.url), 'utf8');
 
-  // Widok bierze pulę Z SILNIKA (jedno źródło reguł, L41).
-  assert.match(gameState, /blockCandidates: buildBlockCandidatesView\(state, playerId\)/,
+  // Widok bierze pulę Z SILNIKA (jedno źródło reguł, L41). Od F14 (audyt
+  // PR #131) ten sam builder niesie obok puli liczbę slotów blokera — oba
+  // pola powstają w JEDNYM miejscu, żeby bramkowanie (krok/stos/bloki) nie
+  // mogło się rozjechać między nimi.
+  assert.match(gameState, /blockCandidates: blockerView\?\.pool \?\? null/,
     'widok nie niesie `blockCandidates` — wizard nie ma skąd wziąć pełnej puli');
   assert.match(gameState, /blockCandidatePool\(state, playerId\)/,
     'pula w widoku nie jest liczona `blockCandidatePool` (kopia reguł w warstwie widoku?)');
+  assert.match(gameState, /blockerSlots: blockerView\?\.slots \?\? null/,
+    'widok nie niesie `blockerSlots` — wizard nie zna liczby użyć przyjętych przez silnik (F14)');
+  assert.match(gameState, /slots\[blockerId\] = blockSlotsFor\(state, state\.objects\.get\(blockerId\)\)/,
+    'sloty w widoku nie pochodzą z `blockSlotsFor` (kopia reguły w warstwie widoku?)');
 
   // main.js przekazuje pulę z widoku do wizarda walki.
   assert.match(main, /blockCandidates:\s*choiceView\.blockCandidates/,

@@ -868,6 +868,26 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
       }
       onComplete?.(pendingCombatCommand());
     } else {
+      // F14 (audyt PR #131, L48 — oferta = walidacja): silnik odrzuca użycie
+      // tego samego blokera więcej razy, niż wynosi `blockSlotsFor` (CR 509.1b;
+      // wyjątek „can block an additional creature” — Cenn's Tactician). Wizard
+      // rysuje wiersze z PULI (E6), więc ten sam bloker ma wiersz pod KAŻDYM
+      // atakującym: bez tej bramki gracz zaznaczał go dwa razy i dowiadywał się
+      // o błędzie dopiero z odrzuconej komendy („Bloker jest użyty więcej niż
+      // raz”). Liczba slotów jest w widoku, bo zależy od statyk i liczników
+      // kontrolera — wizard sam jej nie policzy.
+      const uses = new Map();
+      for (const ids of blockedBy.values()) for (const id of ids) uses.set(id, (uses.get(id) ?? 0) + 1);
+      for (const [blockerId, count] of uses) {
+        const slots = view.blockerSlots?.[blockerId] ?? 1;
+        if (count > slots) {
+          const label = slots === 1 ? 'jednego atakującego' : `${slots} atakujących`;
+          const hint = choiceNode(host, 'div', 'zone-empty',
+            `${objectName(view, session, blockerId)} może blokować tylko ${label} — odznacz go w jednej z sekcji.`);
+          hint.className = 'zone-empty combat-wizard-error';
+          return;
+        }
+      }
       // Walidacja w wizardzie: menace 0 albo >= 2; cantBlockAlone z partnerem.
       const assignments = {};
       for (const [attackerId, blockerIds] of blockedBy) {

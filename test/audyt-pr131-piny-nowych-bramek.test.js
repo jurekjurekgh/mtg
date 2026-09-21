@@ -40,6 +40,43 @@ import { addMana } from '../src/engine/resources.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { createAggroBot } from '../src/controllers/aggro-bot.js';
 import { describeGameEvent } from '../src/table/session.js';
+import { renderCombatWizard } from '../src/table/choice-request.js';
+import { addCounter } from '../src/engine/counters.js';
+
+// MiniDOM harness (wzorzec `test/choice-request-ui.test.js`, L17): `dataset`
+// jak w przeglądarce, `replaceChildren` dla przebudowy wierszy, `emit` dla
+// sterowania zdarzeniami — wizard walki nie potrzebuje niczego więcej.
+class MiniEl {
+  constructor(tag) {
+    this.tagName = tag; this.children = []; this.listeners = {}; this.className = '';
+    this.text = ''; this.html = ''; this.type = ''; this.checked = false;
+    this.disabled = false; this.dataset = {};
+  }
+  set textContent(value) { this.text = String(value); this.html = ''; this.children = []; }
+  get textContent() { return this.text + this.children.map((c) => c.textContent).join(''); }
+  set innerHTML(value) { this.html = String(value); this.text = String(value).replace(/<[^>]*>/g, ''); this.children = []; }
+  get innerHTML() { return (this.html ? this.html : this.text) + this.children.map((c) => c.innerHTML).join(''); }
+  appendChild(child) { this.children.push(child); return child; }
+  replaceChildren(...nodes) { this.children = nodes.flat(); }
+  addEventListener(type, listener) { (this.listeners[type] ??= []).push(listener); }
+  click() { for (const listener of this.listeners.click ?? []) listener({}); }
+  emit(type, value) { for (const listener of this.listeners[type] ?? []) listener(value ?? {}); }
+}
+globalThis.document = { createElement: (tag) => new MiniEl(tag) };
+
+function findAll(host, tag, prefix) {
+  const out = [];
+  const walk = (el) => {
+    if (el.tagName === tag && (!prefix || el.textContent.startsWith(prefix))) out.push(el);
+    for (const child of el.children ?? []) walk(child);
+  };
+  walk(host);
+  return out;
+}
+
+// Nazwy kart w wizardzie: `objectName(view, session, id)` czyta kartę przez
+// `session.nameOf` — etykiety sekcji powstają z nazw obiektów pola bitwy.
+const SESSION = { nameOf: (cardId) => registry.get(cardId)?.name ?? cardId, nameOfObject: () => '?' };
 import { readFileSync } from 'node:fs';
 
 const registry = createCardRegistry();
@@ -539,4 +576,104 @@ test('F13: log decyzji aury nazywa źródło, wybór i liczbę kandydatów, a wy
   assert.equal(e('aura_host_resolved', {
     playerId: 'p1', cardId: 'containment-membrane', auraHostId: 'a', sourceCardId: 'annie-flash-the-veteran',
   }), null, 'rozstrzygnięcie nie dodaje dublującego wpisu');
+});
+
+// --- F14 --------------------------------------------------------------------
+// Znalezisko audytu (klasa L48 na powierzchni zmienionej przez #131): wizard
+// bloków rysuje wiersze z PULI (E6), więc ten sam bloker ma wiersz pod KAŻDYM
+// atakującym — a silnik odrzuca użycie ponad `blockSlotsFor` (CR 509.1b;
+// wyjątek: „can block an additional creature", Cenn's Tactician). Gracz
+// zaznaczał blokera dwa razy i dowiadywał się o błędzie dopiero z odrzuconej
+// komendy („Bloker jest użyty więcej niż raz") — oferta ≠ walidacja.
+//
+// Naprawa: widok niesie `blockerSlots` (ta sama bramka co pula, liczby z
+// `blockSlotsFor`), a wizard odmawia PRZED wysłaniem. Pin mierzy OBA kierunki:
+//   • duplikat ponad sloty → brak komendy + podpowiedź (kontrola negatywna),
+//   • bloker o 2 slotach (licznik + Cenn's Tactician) → komenda przechodzi
+//     (anty-over-fix: nie wolno zabronić legalnego podwójnego bloku).
+test('F14: wizard bloków odrzuca duplikat ponad sloty, a wieloslotowy bloker nadal przechodzi (CR 509.1b)', () => {
+  const scenariusz = ({ taktyk = false } = {}) => {
+    const state = createGameState({ seed: 509, players: [{ id: 'p1' }, { id: 'p2' }] });
+    // Różne NAZWY atakujących (etykieta sekcji = nazwa atakującego), obaj
+    // BEZ latania — bloker to zwykły 2/1 bez reach (Rustwing Falcon nie
+    // wchodzi w grę: `reach` nie pomoże, bo blocker nie ma tej zdolności).
+    putCreature(state, 'a1', 'goblin-piker', 'p1');
+    putCreature(state, 'a2', 'lightwalker', 'p1');
+    putCreature(state, 'b1', 'highland-game', 'p2');
+    if (taktyk) {
+      // Bloker o 2 slotach: statyka „can block an additional creature" +
+      // licznik +1/+1 (`grantsExtraBlockWithCounter`, wzorzec block-slots-trojka).
+      putCreature(state, 'tac', 'cenns-tactician', 'p2');
+      addCounter(state, 'b1', '+1/+1', 1);
+    }
+    state.turn.phase = 'combat';
+    state.turn.step = 'declare_blockers';
+    // Priorytet ma OBRONCA (CR 509.1) — komenda deklaracji bloków należy do p2.
+    state.turn.activePlayerId = 'p1';
+    state.turn.priorityPlayerId = 'p2';
+    state.combat = { attackingPlayerId: 'p1', defendingPlayerId: 'p2', attackers: ['a1', 'a2'], blockers: new Map() };
+    return state;
+  };
+  const pokaz = (state) => {
+    const view = playerView(state, 'p2');
+    const options = view.legalCommands.filter((c) => c.type === 'declare_blockers');
+    const host = new MiniEl('div');
+    const calls = [];
+    renderCombatWizard(host, {
+      kind: 'blockers', view, session: SESSION, options,
+      blockCandidates: view.blockCandidates ?? null,
+      blockerSlots: view.blockerSlots ?? null,
+      onComplete: (cmd) => calls.push(cmd),
+    });
+    return { state, view, host, calls };
+  };
+  // M288/A: wiersze pickera są rodzeństwem nagłówków sekcji w jednej liście
+  // (`combat-wizard-list`), nie dziećmi sekcji — przypisujemy wiersz do
+  // OSTATNIEGO nagłówka, który go poprzedza (kolejność renderu: nagłówek →
+  // wiersze tego atakującego → nagłówek następnego).
+  const rowOf = (host, attackerLabel, blockerLabel) => {
+    const list = findAll(host, 'div')
+      .find((d) => String(d.className).includes('combat-wizard-list'));
+    assert.ok(list, `brak listy wizarda w: ${host.textContent}`);
+    let aktualny = null;
+    let trafienie = null;
+    for (const child of list.children ?? []) {
+      if (String(child.className).includes('combat-wizard-attacker')) {
+        aktualny = child.textContent.startsWith(attackerLabel) ? attackerLabel : null;
+        continue;
+      }
+      if (child.tagName === 'label' && aktualny === attackerLabel
+          && child.textContent.includes(blockerLabel) && trafienie == null) {
+        trafienie = child;
+      }
+    }
+    assert.ok(trafienie, `brak wiersza „${blockerLabel}" w sekcji „${attackerLabel}"`);
+    return trafienie;
+  };
+  const zaznacz = (host, attackerLabel, blockerLabel) => {
+    const input = findAll(rowOf(host, attackerLabel, blockerLabel), 'input')[0];
+    input.checked = true;
+    input.emit('change', { target: input });
+  };
+
+  // (1) Bloker o 1 slocie: ten sam bloker pod DWOMA atakującymi = nielegalne.
+  const jeden = pokaz(scenariusz());
+  assert.equal(jeden.view.blockerSlots?.b1, 1, 'widok niesie liczbę slotów blokera (1)');
+  zaznacz(jeden.host, 'Goblin Piker', 'Highland Game');
+  zaznacz(jeden.host, 'Lightwalker', 'Highland Game');
+  findAll(jeden.host, 'button', 'Zatwierdź bloki')[0].click();
+  assert.deepEqual(jeden.calls, [], 'duplikat ponad sloty NIE jest wysyłany do silnika');
+  assert.match(jeden.host.textContent, /może blokować tylko jednego atakującego/,
+    'gracz dostaje powód od razu w wizardzie, nie z odrzuconej komendy');
+
+  // (2) Bloker o 2 slotach: ten sam podwójny blok jest LEGALNY (CR 509.1b).
+  const dwa = pokaz(scenariusz({ taktyk: true }));
+  assert.equal(dwa.view.blockerSlots?.b1, 2, 'licznik + statyka dają drugi slot (blockSlotsFor)');
+  zaznacz(dwa.host, 'Goblin Piker', 'Highland Game');
+  zaznacz(dwa.host, 'Lightwalker', 'Highland Game');
+  findAll(dwa.host, 'button', 'Zatwierdź bloki')[0].click();
+  assert.equal(dwa.calls.length, 1, 'wieloslotowy bloker przechodzi (anty-over-fix)');
+  assert.deepEqual(dwa.calls[0].assignments, { a1: ['b1'], a2: ['b1'] }, 'komenda niesie oba przypisania');
+  const r = execute(dwa.state, dwa.calls[0]);
+  assert.ok(r.ok, `silnik przyjmuje to przypisanie (${reasonOf(r)})`);
 });

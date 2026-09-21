@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
@@ -6010,13 +6010,26 @@ function exileAdditionalCostCandidates(state, playerId, object) {
  * krok deklaracji bloków, walka zadeklarowana, stos pusty, gracz broniący,
  * bloki jeszcze niezadeklarowane (warunki lustrzane wobec `legalCommands`).
  */
-function buildBlockCandidatesView(state, playerId) {
+function buildBlockerView(state, playerId) {
   if (state.turn?.step !== 'declare_blockers' || !state.combat) return null;
   if (state.combat.attackingPlayerId === playerId) return null;
   if ((state.combat.blockers?.size ?? 0) > 0) return null;
   if (state.zones.stack.length > 0) return null;
   const pool = blockCandidatePool(state, playerId);
-  return Object.keys(pool).length > 0 ? pool : null;
+  if (Object.keys(pool).length === 0) return null;
+  // F14 (audyt PR #131, L48): ile razy wolno użyć blokera — silnik odrzuca
+  // użycie ponad `blockSlotsFor` („can block an additional creature",
+  // Cenn's Tactician), a wizard rysuje wiersze z PULI, więc bez tej liczby
+  // nie odróżni legalnego podwójnego bloku od nielegalnego duplikatu i musi
+  // czekać na odrzucenie komendy PO wysłaniu. Liczymy tylko dla blokerów
+  // z puli (tania bramka: pole istnieje wyłącznie tam, gdzie jest decyzja).
+  const slots = {};
+  for (const blockerIds of Object.values(pool)) {
+    for (const blockerId of blockerIds) {
+      if (slots[blockerId] == null) slots[blockerId] = blockSlotsFor(state, state.objects.get(blockerId));
+    }
+  }
+  return { pool, slots };
 }
 
 export function playerView(state, playerId) {
@@ -6681,6 +6694,7 @@ export function playerView(state, playerId) {
   const activeCraftExile = state.pendingCraftExile && state.pendingCraftExile.playerId === playerId;
 
   const activeAuraHost = state.pendingAuraHost && state.pendingAuraHost.playerId === playerId;
+  const blockerView = buildBlockerView(state, playerId);
 
   const activeHandCreature = state.pendingHandCreature && state.pendingHandCreature.playerId === playerId;
 
@@ -8631,7 +8645,10 @@ export function playerView(state, playerId) {
     } : null,
     pendingDamageAssignment: buildDamageAssignmentView(state, playerId),
     // E6: pełna pula kandydatów na blokerów (niezależna od cap-a menu, CR 509.1b).
-    blockCandidates: buildBlockCandidatesView(state, playerId),
+    blockCandidates: blockerView?.pool ?? null,
+    // F14: liczba użyć, jaką silnik przyjmie od jednego blokera (L48 — wizard
+    // musi znać tę samą regułę, żeby nie wysyłać komendy do odrzucenia).
+    blockerSlots: blockerView?.slots ?? null,
     // M72 (Batch 29): GENERYCZNE rozdzielanie obrażeń niecombat (Fireball).
     // Widok niesie total, źródło i listę celów; UI buduje własny przydział.
     // M69 (Exploit): czyja decyzja, źródło i żywi kandydaci (publiczne pole bitwy).
