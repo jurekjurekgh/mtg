@@ -38,6 +38,8 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
+import { createAggroBot } from '../src/controllers/aggro-bot.js';
+import { describeGameEvent } from '../src/table/session.js';
 import { readFileSync } from 'node:fs';
 
 const registry = createCardRegistry();
@@ -73,6 +75,8 @@ function putCreature(state, id, cardId, controllerId, patch = {}) {
   return id;
 }
 
+const LOG_HELPERS = { nameOf: (id) => ({ 'annie-flash-the-veteran': 'Annie Flash, the Veteran', 'containment-membrane': 'Containment Membrane' }[id] ?? 'Karta'), nameOfObject: () => 'Obiekt' };
+const LOG_NAMES = { p1: 'Ty', p2: 'Nieprzyjaciel' };
 const commands = (s, p = s.turn.priorityPlayerId) => playerView(s, p).legalCommands;
 const find = (s, cardId, zone = 'battlefield') => [...s.objects.values()].find((o) => o.cardId === cardId && o.zone === zone);
 const reasonOf = (r) => r?.events?.find((e) => e.type === 'command_rejected')?.reason ?? '';
@@ -486,4 +490,53 @@ test('F11: otwarta decyzja gospodarza aury wstrzymuje priorytet i ofertę (CR 30
   assert.ok(s.pendingAuraHost == null, 'decyzja domknięta');
   assert.ok(commands(s, decydent).some((c) => c.type === 'pass_priority'),
     'po decyzji priorytet wraca do zwykłej oferty (gracz nie zostaje zablokowany)');
+});
+
+// --- F12 --------------------------------------------------------------------
+// Znalezisko audytu (klasa jak F11): wpis `resolve_aura_host` w tablicy `simple`
+// aggro-bota NIE jest mierzalny osobno — mutacja go usuwająca zostawia wszystkie
+// testy zielone, bo tę samą decyzję łapie ogólny fallback `anyResolve`
+// (`view.legalCommands.find((c) => c.type.startsWith('resolve_'))`). Obie drogi
+// są wobec siebie redundantne, więc pin mierzy NIEZMIENNIK, który dopiero razem
+// gwarantują: bot referencyjny benchmarku MUSI umieć rozstrzygnąć każdą decyzję
+// blokującą, bo odrzucona komenda w pętli meczu = zatrzymanie partii.
+// Dowód wrażliwości: mutacja usuwająca OBIE drogi (F12/N5b) czerwieni ten test.
+test('F12: aggro-bot rozstrzyga decyzję gospodarza aury, nie utyka na niej (CR 303.4f)', () => {
+  const s = game();
+  annieReturnsAura(s, { extraCreatures: 1 });
+  const aggro = createAggroBot();
+  const view = playerView(s, 'p1');
+  const cmd = aggro.chooseCommand(view);
+  assert.ok(cmd, 'bot znalazł ruch, choć jedyną ofertą jest decyzja');
+  assert.equal(cmd.type, 'resolve_aura_host', `bot odpowiada na decyzję (wybrał: ${cmd.type})`);
+  const r = execute(s, cmd);
+  assert.ok(r.ok, `komenda bota przyjęta (${reasonOf(r)})`);
+  assert.ok(s.pendingAuraHost == null, 'decyzja domknięta — partia toczy się dalej');
+  assert.ok(find(s, 'containment-membrane', 'battlefield')?.attachedTo, 'aura weszła na gospodarza');
+});
+
+// --- F13 --------------------------------------------------------------------
+// Znalezisko audytu: WARSTWA LOGU decyzji aury nie była mierzona ani jednym
+// testem (mutacja N10 — `aura_host_resolved` zwracające tekst zamiast `null`
+// zostawiała wszystkie pliki #131 zielone). Kontrakt jest graczowy, nie
+// kosmetyczny (klasa M106/Z2): gracz musi wiedzieć, że silnik na niego czeka
+// i CO wybiera; po rozstrzygnięciu decyzji nie może zostać drugi wpis
+// powtarzający wynik, który `object_moved`/`object_attached` już nazwały
+// (inaczej log pokazuje decyzję dwa razy — raz jako otwartą, raz jako wynik).
+test('F13: log decyzji aury nazywa źródło, wybór i liczbę kandydatów, a wynik nie dubluje wpisu', () => {
+  const e = (type, extra = {}) => describeGameEvent({ type, ...extra }, LOG_HELPERS, LOG_NAMES);
+  const wybor = e('aura_host_choice_required', {
+    playerId: 'p1', sourceCardId: 'annie-flash-the-veteran', cardId: 'containment-membrane',
+    candidateIds: ['a', 'b'],
+  });
+  assert.match(wybor, /Annie Flash, the Veteran/, 'wpis nazywa kartę źródła (skąd decyzja)');
+  assert.match(wybor, /wybierasz/, 'wpis mówi, kto decyduje (druga osoba: „wybierasz”)');
+  assert.match(wybor, /Containment Membrane/, 'wpis nazywa aurę, która wchodzi');
+  assert.match(wybor, /kandydaci: 2/, 'wpis mówi, ile jest legalnych gospodarzy');
+
+  // Wynik decyzji nie ma własnego wpisu: nazywają go `object_moved`
+  // i `object_attached` (podwójny wpis = „decyzja wciąż otwarta” dla gracza).
+  assert.equal(e('aura_host_resolved', {
+    playerId: 'p1', cardId: 'containment-membrane', auraHostId: 'a', sourceCardId: 'annie-flash-the-veteran',
+  }), null, 'rozstrzygnięcie nie dodaje dublującego wpisu');
 });
