@@ -64,14 +64,14 @@ test RED → naprawa u root cause → GREEN → mutacja → bramy → commit →
 
 ### E3 — niedokończone plany + pętla jakości (ADR 0021 pkt 3–4)
 
-- [ ] kontrola kryteriów najnowszych planów (`PLAN_2026-09-20e-*` i nowszych)
+- [x] kontrola kryteriów najnowszych planów (`PLAN_2026-09-20e-*` i nowszych)
       — podjęcie w miejscu urwania, jeśli coś zostało;
-- [ ] Żywy Tester na aktualnym `dist/` (≥8 partii, różne talie/seedy —
+- [x] Żywy Tester na aktualnym `dist/` (≥8 partii, różne talie/seedy —
       handoff 2026-09-21 wskazuje, że pełnej pętli nie powtarzano), ręczna
       lektura transkryptów (L27), każde znalezisko → naprawa u root cause
       + nowy detektor/pin;
-- [ ] polowanie na niezgodności z CR INNYMI ścieżkami niż PR #132 (odznaka);
-- [ ] **bez** nowego batcha kart (ADR 0029) — katalog rośnie tylko
+- [x] polowanie na niezgodności z CR INNYMI ścieżkami niż PR #132 (odznaka);
+- [x] **bez** nowego batcha kart (ADR 0029) — katalog rośnie tylko
       z list właściciela.
 
 ### E4 — domknięcie
