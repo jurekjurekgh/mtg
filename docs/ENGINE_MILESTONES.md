@@ -6802,3 +6802,52 @@ zalegalizowany `attachAuraToPlayer`; bounce klątwy z gracza działa. Bez nowej
 lekcji (klasa = L5/L107; budżet lektury bez zmian). Bramy: `node
 tools/run-tests.mjs all` **6093/6093** (~276 s), build **59 modułów /
 3988,2 kB**, bot-benchmark **10/10**, budżet lektury **95 819/100 000**.
+
+## M405 (2026-09-21c, PR #133) — uwagi z gry właściciela A/B/C: Twiddle penalizowany, „Mana Wizard” konwerterów many, Vandalize „choose one or both”
+
+Trzy uwagi z żywej gry (2026-09-21), każda u root cause z pinami i dowodem
+mutacyjnym:
+
+- **A. Twiddle** (`7300c6b`): rzut „tapnąć ląd wroga w Głównej 1” (odkręca
+  się w untapie właściciela — czar bez wartości) to klasa **nigdy-wartościowa**
+  na obiegu czaru: `tapTimingBonus` daje ocenę ≤ −10 na MÓJ obieg dla celu
+  spoza walki/blokowania, a `tapTargetValue` wcześnie zwraca taką ocenę
+  (im szybciej kara, tym mniej ruchów o tę lepszą). Okna wartości zachowane
+  (anty-over-fix T/2/T/3: początek walki na blokerze wroga +20, denial many
+  w upkeep wroga +14, odkręcenie własnego po ataku — M146). Klasa po
+  deskryptorze rodzaju celu (`kind` stwór/ląd — ADR 0002), nie po nazwie
+  karty (T/4). Mutacje M-T1/M-T2 czerwienią T/1(+1b)/T/2/T/3. Pin
+  `test/uwaga-z-gry-twiddle-2026-09-21.test.js` T/1–T/4.
+- **B. Jeskai Devotee** (`2b2a8a8`): „Mana Wizard” nie widział konwerterów
+  many, bo `getSourceForObject` z `mana-sources.js` wymagał `data.spell
+  .abilities`, a zdolność many Devotee to `kind: 'mana'` w `data.abilities`.
+  Naprawa u źródła: `manaAbilityProductionOf(gameObject, ability)` (paritet
+  z M67 — ścieżka wykonania przypięta `test/jeskai-devotee-once-per-turn
+  .test.js`) czyta produkcję ze zdolności `kind: 'mana'` z `abilities`
+  obiektu; `abilityInfo` w `main.js` bierze produkcję przez helper.
+  Kosztowe konwertery liczą się jako źródła (M195/A: Mox Amber opłacalne —
+  regułę broni test rodzinny). Piny D/1–D/4 (plan `manaSourcesOf` dla {W}
+  na stole z Devotee — obie drogi, D/2 anty-over-fix Pardic Wanderera,
+  D/4 przez `buildActionEntries`), mutacje M-B1/M-B2 czerwienią D/1+D/2/D/4.
+  Pin `test/uwaga-z-gry-jeskai-devotee-mana-wizard-2026-09-21.test.js`.
+- **C. Vandalize „Choose one or both”** (`8c184e7`): modal z niezależnymi
+  pickerami **0–1 artefaktu ze wszystkich × 0–1 lądu ze wszystkich** (co
+  najmniej jedno — „choose one or both”), zamiast trzech gotowców z celami
+  wpiętymi „pierwsze z brzegu”. `chooseOneOrBothPlanOf` (multi-target.js)
+  czyta kształt rodziny komend: tryb ZŁOŻONY („oba”) dostarcza gniazda
+  wyboru, tryby 1-celowe wiążą dokładnie jedno gniazdo po zawartości —
+  ląd-artefakt typu Great Furnace kandyduje w OBU gniazdach (rozróżniany
+  trybem, nie rozłącznością). `commandForChooseOneOrBoth` = mapa
+  WYBÓR→KOMENDA na `legalCommands` (L48); gałąź kaskady w `main.js` PRZED
+  `castModePlanOf` (M300/1), etykiety gniazd z nazw trybów modelu karty;
+  pusty wybór gasi „Zatwierdź”. Model 3-mody katalogu bez zmian (piny
+  `audit-batch23-fixes`). Mutacje M-C1 (plan zawsze null) i M-C2 (komenda
+  „pierwsza z brzegu”) czerwienią V/1+V/2. Pin
+  `test/uwaga-z-gry-vandalize-2026-09-21.test.js` V/1–V/4.
+
+Bez nowych lekcji (klasy L20/L37/L150/L160 + M300/1 + L48) i bez nowych
+kart (ADR 0029). Bramy: `node tools/run-tests.mjs all` **6106/6106**
+(~385 s), build **59 modułów / 3997,8 kB**, `node tools/benchmark.mjs
+--quick` **672 mecze, 0 niedokończonych** (heuristic **85,9%** — odniesienie
+bez zmian), budżet lektury **95 819/100 000**. Pełnego B0 nie uruchamiano
+(ADR 0018).

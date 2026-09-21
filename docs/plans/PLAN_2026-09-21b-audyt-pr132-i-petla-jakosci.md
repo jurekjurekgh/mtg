@@ -125,3 +125,56 @@ zalegalizowany `attachAuraToPlayer`). Bramy: `node tools/run-tests.mjs all`
 **95 819/100 000**. Bez nowej lekcji (klasa L5/L107) i bez nowych kart (ADR 0029).
 Dokumentacja: raport `docs/audits/AUDYT_PR132_2026-09-21.md`, milestone M404,
 `PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-09-21b.md`, README.
+
+## Dodatek 2 (uwagi z gry, 2026-09-21): A — Twiddle, B — Jeskai Devotee
+
+Właściciel z żywej gry (potwierdzone w czacie):
+
+**A. Twiddle.** Karta ma dwa użycia: (a) combat trick — tapnięcie potencjalnych
+blokerów przeciwnika na początku fazy walki; (b) odkręcenie własnej kreatury
+po ataku, żeby mogła blokować (wycenione — M146). Bot rzucił ją w Głównej 1 na
+ląd przeciwnika, który odkręcił się w untapie właściciela — „kompletne
+marnotrastwo”. Żądanie: **surowo scoringowo penalizowane**.
+
+- [x] A1. Pin RED→GREEN `test/uwaga-z-gry-twiddle-2026-09-21.test.js` T/1–T/4
+      (T/1 ląd wroga = NIGDY + ślad mierzy ocenę, T/1b ląd własny, T/2 okna
+      walki +20, T/3 denial +14, T/4 klasa po `kind` — ADR 0002) — `7300c6b`;
+- [x] A2. Naprawa u źródła (`tapTimingBonus` ≤ −10 na mój obieg dla celu
+      spoza walki/blokowania; `tapTimingValue` wcześnie zwraca) + mutacje
+      M-T1/M-T2 czerwienią T/1(+1b)/T/2/T/3.
+
+**B. Jeskai Devotee.** Na stole: Devotee (przekształca jedną dowolną manę na
+U/R/W), 1 Plains + 4 Mountains. Rzut za {W} powinien OTWORZYĆ „Mana Wizard”
+z wyborem: tapnąć Plains ALBO przekształcić czerwoną manę Devotee na białą.
+Silnik sam tapuje Plains — brak wyboru. Do naprawy.
+
+- [x] B1. Rozpoznanie: `getSourceForObject` (mana-sources.js) czytał tylko
+      `data.spell.abilities`, a zdolność many Devotee to `kind: 'mana'` w
+      `data.abilities` — konwerter nie był źródłem dla wizarda płatności;
+- [x] B2. Piny D/1–D/4 (`test/uwaga-z-gry-jeskai-devotee-mana-wizard-
+      2026-09-21.test.js`) + naprawa `manaAbilityProductionOf` (paritet M67)
+      i `abilityInfo`; anty-over-fix D/2 (Pardic Wanderer, M195/A); mutacje
+      M-B1/M-B2 czerwienią D/1+D/2 / D/4 — `2b2a8a8`.
+
+**C. Vandalize „Choose one or both” (dopisane po zgłoszeniu właściciela,
+„POWAŻNE”).** Zgłoszenie: „Zamiast multi-target modal z możliwością wybrania
+0-1 artefaktu ze wszystkich możliwych oraz 0-1 lądu ze wszystkich możliwych
+dostałem jakiś bezsensowny modal wyboru z trzema opcjami — a. jednym losowym
+artefaktem, b. jednym losowym lądem albo c=a+b. Wybrał sobie pierwszy z
+brzegu.” Klasa: modal wyboru ma pokazywać WSZYSTKICH kandydatów w pickerach
+0–1, a cel wiązać wyborem gracza — nigdy „pierwszy z brzegu”.
+
+- [x] C1. Rozpoznanie: `castModePlanOf` = 3 wiersze trybów z celami
+      repów; `multiTargetPlanOf` = worek bez gniazd (`targetSlotsOf`
+      umiera na zmiennych arnościach trybów) — `test/uwaga-z-gry-
+      vandalize-2026-09-21.test.js` V/1–V/4 — `8c184e7`;
+- [x] C2. Naprawa: `chooseOneOrBothPlanOf` (gniazda z trybu „oba”, tryby
+      1-celowe wiążą gniazdo po zawartości — Great Furnace w obu) +
+      `commandForChooseOneOrBoth` (mapa WYBÓR→KOMENDA, L48) + gałąź kaskady
+      PRZED `castModePlanOf` (M300/1); mutacje M-C1/M-C2 czerwienią V/1+V/2;
+- [x] C3. Model 3-mody katalogu bez zmian (piny `audit-batch23-fixes`).
+
+Wspólne (wykonane): bramy `run-tests all` **6106/6106**, build **59 modułów /
+3997,8 kB**, `tools/benchmark.mjs --quick` 672 mecze / heuristic 85,9%;
+docs: milestone **M405**, `PROJECT_HISTORY` (sekcja 2026-09-21c), README
+(„Bieżący stan”), korpus PR #133; blok przekazania w podsumowaniu.

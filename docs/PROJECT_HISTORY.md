@@ -12161,3 +12161,66 @@ Bramy końcowe: `node tools/run-tests.mjs all` **6093/6093** (~276 s); build
 budżet lektury **95 819/100 000**. Pełnego B0 nie uruchamiano (ADR 0018).
 Dokumentacja: raport audytu, milestone **M404**, handoff
 `docs/setup/HANDOFF_2026-09-21b.md`, aktualizacja „Bieżącego stanu” README.
+
+## 2026-09-21c — uwagi z gry właściciela: A (Twiddle penalizowany), B (Jeskai Devotee — Mana Wizard), C (Vandalize „choose one or both”) (PR #133)
+
+Wejście: „Uwagi z gry z ostatniej partii” — trzy zgłoszenia z żywych gier,
+każde domknięte u root cause z pinem RED→GREEN (L13) i dowodem mutacyjnym,
+wszystkie na gałęzi `arena/01a0c390-mtg`.
+
+**A. Twiddle (`7300c6b`).** Właściciel: „To powinno być surowo scoringowo
+penalizowane”. Bot rzucał Twiddle w Głównej 1 na ląd przeciwnika, który
+odkręca się w untapie właściciela — czar o zerowej wartości. Naprawa w
+`heuristic-bot.js`: `tapTimingBonus` przy MÓJMU obiegu daje ocenę −20
+(cel napędza blokowanie/push na moją turę) albo −10 (cel niewykorzystywany
+— przeciwnik), a `tapTargetValue` wcześnie zwraca taką ujemną ocenę.
+Wartościowe okna bez zmian (T/2 początek walki na blokerze wroga +20,
+T/3 denial many w upkeep wroga +14, T/4 klasa po rodzaju celu — `kind`).
+Rodzina `test/uwaga-z-gry-twiddle-2026-09-21.test.js` T/1–T/4 + M146
+(untap-to-block) + `test/timing-przeszkod-rozkazu-natarcia.test.js` 8/8;
+mutacje M-T1 (−20 zamiast −10 w gałęzi canWait) i M-T2 (kasowanie warunku)
+czerwienią T/1/T/1b/T/2/T/3.
+
+**B. Jeskai Devotee (`2b2a8a8`).** Właściciel: „Powinien się otworzyć Mana
+Wizard w którym wybieram czy wolę tapnąć Plains czy przekształcić manę Jeskai
+Devotee… silnik automatycznie tapuje Plains. To trzeba naprawić”. Przyczyna:
+`getSourceForObject` w `mana-sources.js` czytał zdolności tylko z
+`data.spell.abilities`, a aktywowana zdolność many Devotee jest `kind: 'mana'`
+w `data.abilities` (razem z triggered pump — stąd Devotee nie kwalifikował
+się do żadnego przypadku funkcji). Naprawa: `manaAbilityProductionOf
+(gameObject, ability)` (paritet z M67) + `abilityInfo` w `main.js` przez ten
+helper; kosztowe konwertery to źródła (M195/A). Piny D/1–D/4
+(`test/uwaga-z-gry-jeskai-devotee-mana-wizard-2026-09-21.test.js`), mutacje
+M-B1 (wraca stary `getSourceForObject`) i M-B2 (komentarz wywołania w
+`main.js`) czerwienią D/1+D/2 i D/4. Regresja rodziny Devotee/Mox 86/86.
+
+**C. Vandalize (`8c184e7`).** Właściciel: „Zamiast multi-target modal
+z możliwością wybrania 0-1 artefaktu ze wszystkich możliwych oraz 0-1 lądu
+ze wszystkich możliwych („Choose one or both • Destroy target artifact.
+• Destroy target land.”) dostałem jakiś bezsensowny modal wyboru z trzema
+opcjami — a. jednym losowym artefaktem, b. jednym losowym lądem albo c=a+b.
+Wybrał sobie pierwszy z brzegu.” Model katalogu spłaszcza „one or both” do
+trzech trybów (`card-data.js:3736-3755` — silnik bez zmian, piny
+`audit-batch23-fixes`), a `castModePlanOf` pokazywał tryby z celami
+reprezentantów w etykietach. Naprawa w warstwie wyboru (`multi-target.js`):
+`chooseOneOrBothPlanOf` czyta kształt rodziny komend (tryb „oba” = gniazda
+wyboru z kandydatów pozycji; tryby „tylko artefakt”/„tylko ląd” wiążą
+dokładnie jedno gniazdo po zawartości — ląd-artefakt typu Great Furnace
+kandyduje w obu gniazdach i jest rozróżniany trybem), `commandForChooseOneOrBoth`
+= mapa WYBÓR→KOMENDA na `legalCommands` (L48 — wybór gracza, nie „pierwszy
+z brzegu”); gałąź kaskady w `main.js` PRZED `castModePlanOf` (M300/1),
+etykiety gniazd z nazw trybów modelu, wybór pusty blokuje „Zatwierdź”.
+Piny `test/uwaga-z-gry-vandalize-2026-09-21.test.js` V/1–V/4 (V/1 plan
++ mapa z Great Furnace w obu gniazdach + wykonalność „oba”; V/2 DOM:5
+wierszy kandidatek, wybór gracza art2+lad1 → komenda [art2,lad1]; V/3
+anty-over-fix — Twiddle/„up to N” bez gniazd; V/4 strażnik kolejności
+kaskady). Mutacje M-C1 (plan zawsze null) i M-C2 (komenda „pierwsza z brzegu”)
+czerwienią V/1+V/2. Regresja rodziny kreatorów 136/136.
+
+Bez nowych lekcji i bez nowych kart (ADR 0029). Bramy końcowe:
+`node tools/run-tests.mjs all` **6106/6106** (~385 s); build **59 modułów /
+3997,8 kB**; `node tools/benchmark.mjs --quick` **672 mecze, 0
+niedokończonych** (heuristic **85,9%**); budżet lektury **95 819/100 000**.
+Pełnego B0 nie uruchamiano (ADR 0018). Dokumentacja: milestone **M405**,
+`docs/plans/PLAN_2026-09-21b-audyt-pr132-i-petla-jakosci.md` (Dodatek 2),
+README.
