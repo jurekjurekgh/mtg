@@ -6643,3 +6643,52 @@ przeniesione do `docs/LESSONS_PRZYPADKI.md`), handoff `2026-09-20e`.
 **Bramy:** `npm test` **6063/6063**, `node tools/run-tests.mjs all`
 **6073/6073**; build 59 modułów / 3976,2 kB; budżet lektury **98 822/100 000**.
 Pełnej macierzy B0 nie uruchamiano (ADR 0018).
+
+
+## M400 (2026-09-21) — trzy uwagi właściciela z gry (A/B/C): koszt czaru modalnego, klik w nazwę karty, „tapnięcie" (PR #132)
+
+Sesja `arena/01a0c0af-mtg` (PR #132, ten sam PR co audyt PR #131). Wejście: trzy
+zgłoszenia właściciela z żywej gry. Każde naprawione u root cause, osobnym
+commitem z pinem RED→GREEN i dowodem mutacyjnym (ADR 0020 C / 0021), z pomiarem
+na prawdziwym artefakcie (`dist/` + jsdom w `tools/table-tester`).
+
+**A — koszt czaru modalnego w panelu.** „Twoje działania" pokazywało
+„Rzuć: Selesnya Charm (koszt {G}{W})" — surowy tekst zamiast ikon many.
+Przyczyna: `choiceGroupTitle` ma JEDEN wynik, a konsumują go warstwy o różnym
+kanale zapisu (panel = `innerHTML`; nagłówek modala i intro wizarda =
+`textContent`, M87). Naprawa: parametr `manaHtml` (domyślnie false); panel
+(`choiceGroupLabel`) prosi o wariant z `manaCostHtml`. Nagłówek modala zostaje
+przy `{…}` — świadoma różnica kanału (tekst nagłówka ma być czytelny bez ikon).
+Pomiar na artefakcie (talia z Selesnya Charm, seed 11): panel renderuje
+`<span class="ms-group"><span class="ms ms-g">G</span><span class="ms ms-w">W</span></span>`.
+Pin: `test/uwagi-2026-09-21-a-koszt-ikony-w-panelu.test.js` (4 testy: para
+panel/nagłówek, strażnik katalogu czarów modalnych, strażnik miejsca użycia);
+mutacje: usunięcie `{ manaHtml: true }` → 3/4 RED, zignorowanie flagi → 2/4 RED.
+
+**B — klik w nazwę karty w modalu wyboru.** Toll of the Invasion: nazwy kart
+z ODKRYTEJ ręki przeciwnika nie otwierały obrazu (`pełny ekran=false`, brak
+wyjątku w konsoli). Przyczyna: wiersz niósł objectId, a `openCardFullscreen`
+kończy cicho, gdy obiektu nie ma w widocznych strefach gracza (FoW: cudza ręka
+to `{id, hidden:true}`). Naprawa: `hiddenObjectCardId` w kreatorze — wiersz
+z zakrytej strefy dostaje definicję karty i podgląd idzie drogą
+`onOpenCardByCardId`; widoczny obiekt zostaje przy objectId (karuzela strefy),
+obiekt biblioteki nie staje się klikalny (CR 401.2). Pomiar na artefakcie
+(seed 7): `data-card-id` = definicje kart, klik w nazwę → `pełny ekran=true`
+z `img` Scryfalla. Pin: B/1–B/3; mutacje (bez fallbacku, bez wyjątku biblioteki,
+bez sprawdzenia widoczności) czerwienią. Lekcja **L162**.
+
+**C — „tapnięcie", nie „zatapianie".** Piercing Rays: opis w „Rozgrywce" mówił
+„zatapianie celu". Źródło: `ABILITY_EFFECT_LABELS.tap_permanent` (session.js).
+Skan całej warstwy produktu: **86 plików / 260 linii** (etykiety efektów,
+triggerów, celów i warunków na kaflach, nazwy trybów kart, linie logu) plus
+regex detektora fałszywego „brak skutku" (`zostaje tapnię|zostaje tapnion`,
+L160 — regex i brzmienie logu idą razem). `docs/` świadomie nietknięte: cytaty
+historyczne (lekcje, audyty, handoffy) zostają, produkt mówi nową terminologią.
+Log po naprawie: „Aktywujesz zdolność: Piercing Rays — tapnięcie celu → cel:
+Highland Game". Pin: C/1–C/4 (zachowanie na ścieżce gracza + strażnik klasy
+`src/**` i `tools/**`); 4 mutacje RED.
+
+**Bramy:** `npm test` **6074/6074**; `node tools/run-tests.mjs all` **6084/6084**;
+build **59 modułów / 3979,2 kB**; budżet lektury **99 405/100 000** (zapas
+~595 tokenów — następna sesja zaczyna od kondensacji rejestru, jeśli dokłada
+lekcję). Pełnej macierzy B0 nie uruchamiano (ADR 0018).

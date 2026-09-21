@@ -2313,3 +2313,30 @@ lektura transkryptu E3 (alara-76, krok z Shieldmage).
 
 **Strażnik:** `test/audyt-pr131-piny-nowych-bramek.test.js` F15
 (mutacje N21–N23 czerwienią).
+
+## L162 (2026-09-21) — „Klik nie działa i nie ma błędu" to zwykle cichy `return`; dowód bierz z EFEKTU w DOM
+
+**Przypadek (uwaga B właściciela, Toll of the Invasion):** „klikanie nazw kart
+nie otwiera obrazka". Kod wyglądał poprawnie (`log-card`, `data-card-id`,
+listener), konsola czysta. Dopiero pomiar SKUTKU na artefakcie (jsdom: czy
+`#card-fullscreen` ma klasę `active` i `img` w środku) dał `pełny ekran=false`:
+`data-card-id` niósł **objectId**, a ścieżka obrazu po objectId dla obiektu
+nieobecnego w widocznych strefach gracza (FoW: cudza ręka = `{id, hidden:true}`)
+kończy MILCZENIEM.
+
+**Reguły:**
+1. Interakcja „nic nie robi, a nie ma wyjątku" to prawie zawsze wczesny
+   `return` na warunku widoczności. Sprawdź, czy identyfikator oddany do DOM
+   (`data-*`) należy do TEJ SAMEJ przestrzeni nazw, którą rozumie opener
+   (objectId kontra cardId) — inaczej klik „działa", a nie ma czego pokazać.
+2. Dowód dla warstwy UI bierz z EFEKTU (element/klasa w DOM), nie z tego, że
+   handler się wykonał: sonda wołająca tylko callback nie odróżnia „otworzyło"
+   od „nic nie zrobiło".
+3. Jeśli etykieta wiersza NAZYWA kartę (pełna nazwa z sesji), wolno jej też
+   pokazać obraz — podgląd idzie wtedy drogą definicji (cardId). FoW zostaje
+   tam, gdzie obiekt jest zakryty i BEZIMIENNY (biblioteka, morf): granicę
+   wyznacza jedno miejsce (`hiddenObjectCardId`) z pinem na oba wyjątki.
+
+**Strażnik:** `test/uwagi-2026-09-21-b-klik-w-nazwe-otwiera-obraz.test.js`
+B/1–B/3; mutacje (bez fallbacku, bez wyjątku biblioteki, bez sprawdzenia
+widoczności) czerwienią.

@@ -11963,3 +11963,67 @@ milestone **M399**, handoff `docs/setup/HANDOFF_2026-09-20e.md`, aktualizacja
 Bramy: `npm test` **6063/6063**; `node tools/run-tests.mjs all` **6073/6073**;
 build **59 modułów / 3976,2 kB**; budżet lektury **98 822/100 000**. Pełnej
 macierzy B0 nie uruchamiano (ADR 0018).
+
+
+## 2026-09-21 — trzy uwagi właściciela z gry (A/B/C): koszt czaru modalnego, klik w nazwę karty, „tapnięcie" (PR #132, arena/01a0c0af-mtg)
+
+Wejście: trzy zgłoszenia właściciela z żywej gry, zgłoszone po sesji 2026-09-20e
+(PR #132 z audytem #131 był otwarty i czekał na decyzję o scaleniu). ADR 0020 A
+(PR przed kodowaniem) był spełniony — praca trafiła jako trzy przyrostowe
+commity do TEGO SAMEGO otwartego PR-a; C: commit i push po każdym zielonym
+kroku; każde zgłoszenie u root cause z pinem RED→GREEN i dowodem mutacyjnym.
+
+Objawy i rozpoznanie (zmierzone, nie „na wiarę"):
+
+1. **A —** „Selesnya Charm w »Twoich działaniach« pokazuje tekstowy koszt
+   `{G}{W}` zamiast kolorowych ikon many". Rozpoznanie: `choiceGroupTitle` ma
+   JEDEN wynik (tekst), a konsumują go dwie warstwy o różnym kanale —
+   panel (`innerHTML`, tam ikony są normą od M104/A2) i nagłówek modala/intro
+   wizarda (`textContent`, M87). Naprawa: jawny parametr `manaHtml`
+   w `choiceGroupTitle`, panel (`choiceGroupLabel`) prosi o wariant z ikonami.
+   Pomiar na artefakcie: panel renderuje blok `ms-group` z `ms ms-g` i `ms ms-w`.
+2. **B —** „Toll of the Invasion: kliknięcie nazw kart nie otwiera obrazów".
+   Rozpoznanie na artefakcie (jsdom, seed 7): modal „Wybierz: Karta do
+   odrzucenia — wskaż kartę:" rysował nazwy z `log-card` + `data-card-id`,
+   ale `data-card-id` niósł **objectId** karty z ODKRYTEJ ręki przeciwnika,
+   a `openCardFullscreen` szuka obiektu w widocznych strefach (FoW: cudza ręka
+   to `{id, hidden:true}`) i kończy MILCZENIEM — stąd „nie działa" bez błędu.
+   Naprawa: `hiddenObjectCardId` w kreatorze wyboru — wiersz z zakrytej strefy
+   dostaje definicję karty, więc podgląd idzie drogą `onOpenCardByCardId`;
+   widoczny obiekt zostaje przy objectId (karuzela strefy), biblioteka nie
+   staje się klikalna (CR 401.2). Po naprawie: klik → pełny ekran + `img`.
+3. **C —** „Piercing Rays: »zatapianie celu« → ma być »tapnięcie«; sprawdzić,
+   czy inne karty nie mają tego samego błędu". Źródło: `ABILITY_EFFECT_LABELS`
+   (session.js) — jedna mapa opisów efektów aktywowanych, czytana przez log
+   stołu. Skan rodziny „zatap-*" w całej warstwie produktu: **86 plików /
+   260 linii** (etykiety efektów, triggerów, celów, warunków na kaflach, nazwy
+   trybów kart — Keep Out, linie logu), plus regex detektora fałszywego
+   „brak skutku" (`zostaje tapnię|zostaje tapnion`; L160). `docs/` zostaje bez
+   zmian: to cytaty historyczne. Zakres potwierdzony sondą silnika: aktywacja
+   forecastu (upkeep, 5 lądów) → log „Aktywujesz zdolność: Piercing Rays —
+   tapnięcie celu → cel: Highland Game".
+
+Commity (każdy: pin RED → naprawa u źródła → GREEN → mutacje → `npm test` →
+build → push):
+
+| Commit | Zakres | Dowód |
+|---|---|---|
+| `b7a2bbe` | A: wariant tytułu z ikonami dla panelu (`manaHtml`) + pin | 3 mutacje RED; `npm test` 6067/6067 |
+| `056a20b` | B: `hiddenObjectCardId` w kreatorze + pin B/1–B/3 | 3 mutacje RED; artefakt: `pełny ekran=true` + `img`; 6070/6070 |
+| `27da2e6` | C: rodzina „tapnięcie" w `src/`, `tools/`, `test/` + pin C/1–C/4 | 4 mutacje RED; 6074/6074 |
+
+Bramy: `npm test` **6074/6074**; `node tools/run-tests.mjs all` **@@BRAMA@@**;
+build **59 modułów / 3979,2 kB**; budżet lektury **99 405/100 000** (lekcja
+**L162** opłacona skróceniem własnego tekstu; zapas ~595 tokenów — następna
+sesja zaczyna od kondensacji rejestru, jeśli dokłada lekcję).
+
+Dokumentacja: lekcja **L162** (cichy `return` kontra „klik nie działa"; dowód
+z EFEKTU w DOM), milestone **M400**, handoff
+`docs/setup/HANDOFF_2026-09-21.md`, aktualizacja „Bieżącego stanu" w `README.md`.
+
+Rzeczy świadomie NIEzmienione (do decyzji w kolejnej sesji): nagłówek modala
+czaru modalnego zostaje przy notacji `{G}{W}` (kanał `textContent`; zmiana
+wymagałaby renderowania intro przez `innerHTML` — ryzyko M87/escapowania),
+`docs/**` zachowuje starą terminologię jako zapis historyczny, a w `decks/`
+nie ma talii-sond użytych do reprodukcji (były plikami roboczymi, usunięte
+przed bramą — katalog talii jest właściciela, ADR 0029/0022).
