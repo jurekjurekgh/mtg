@@ -76,11 +76,11 @@ test RED → naprawa u root cause → GREEN → mutacja → bramy → commit →
 
 ### E4 — domknięcie
 
-- [ ] bramy końcowe: `node tools/run-tests.mjs all`, `npm run build`,
+- [x] bramy końcowe: `node tools/run-tests.mjs all`, `npm run build`,
       `node --test test/bot-benchmark.test.js`;
-- [ ] aktualizacja planu (odhaczenie + podsumowanie), `PROJECT_HISTORY.md`,
+- [x] aktualizacja planu (odhaczenie + podsumowanie), `PROJECT_HISTORY.md`,
       `docs/setup/HANDOFF_2026-09-21b.md`, ewentualne lekcje (budżet!);
-- [ ] opis PR zaktualizowany kumulatywnie; blok przekazania w czacie.
+- [x] opis PR zaktualizowany kumulatywnie; blok przekazania w czacie.
 
 ## Ryzyka / pułapki
 
@@ -111,3 +111,17 @@ test RED → naprawa u root cause → GREEN → mutacja → bramy → commit →
    + min. jedna nowa ścieżka polowania na CR).
 5. Dokumentacja domknięta: plan odhaczony, PROJECT_HISTORY, handoff,
    opis PR kumulatywny, blok przekazania w czacie.
+
+## Podsumowanie (2026-09-21b)
+
+Wszystkie etapy zamknięte. Audyt 114 plików PR #132: werdykt APPROVE, 0 defektów
+w PR, 4 notki nie-defektowe (Z-1…Z-4, każda z uzasadnieniem braku zmiany), pokrycie
+maszynowe 114/114, mutacje 5/5 (M1–M4 + M-H). Pętla jakości: 8/8 partii Żywym
+Testerem bez zgłoszeń + ręczna lektura transkryptów; łowy CR (704.5m, ścieżka SBA
+poza tematami PR) wykryły i naprawiły **H-1** (trzeci przypadek reguły — pin
+`granica-7045m-aura-sba` H/1–H/4, RED→GREEN, mutacja M-H; fixture B43/11
+zalegalizowany `attachAuraToPlayer`). Bramy: `node tools/run-tests.mjs all`
+**6093/6093**, build **59/3988,2 kB**, bot-benchmark **10/10**, budżet lektury
+**95 819/100 000**. Bez nowej lekcji (klasa L5/L107) i bez nowych kart (ADR 0029).
+Dokumentacja: raport `docs/audits/AUDYT_PR132_2026-09-21.md`, milestone M404,
+`PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-09-21b.md`, README.

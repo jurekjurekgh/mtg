@@ -12116,3 +12116,48 @@ i G/4 (oba boty). Bramy: `npm test` **6079/6079**, `node tools/run-tests.mjs all
 **6089/6089** (~274 s), build **59 modułów / 3987,2 kB**, budżet lektury
 **95 819/100 000**; milestone **M403**, lekcja **L163**.
 
+## 2026-09-21b — audyt scalonego PR #132 (T1–T5, 114 plików) + pętla jakości: H-1 w CR 704.5m (PR #133, arena/01a0c390-mtg)
+
+Wejście: „Kontynuujemy projekt.” → ADR 0021 (pętla domyślna), ADR 0020
+(A: PR #133 otwarty PRZED kodowaniem z planem, B: audyt scalonego PR #132,
+C: commity po zielonych krokach, D: tylko przyrostowo). Zakres audytu:
+`614613e..351126a` = 114 plików, +4 379/−733, pięć tematów (gospodarz aury,
+piny F1–F15, uwagi A/B/C, dokumentacja startowa + cięcia lekcji, milestones).
+
+Kolejność pracy: lektura obowiązkowa + rozpoznanie (bramy bazy 6079/6079,
+59/3987,2 kB) → audyt pełnego diffu tematami (T1 siedem warstw decyzji aury
++ pin G/1–G/4; T2 piny F1–F15 mierzące niezmienniki + F9 ślepy pin modalnego
++ E6/7 `stack_not_empty`; T3 A/1–A/4, B/1–B/3 z kontrolą FoW CR 401.2,
+C/1–C/4 rename'ów; T4 LESSONS: rejestr/narracje/archiwum z mapą zastępstw —
+numery L zachowane 1:1 (158 → 154 + 9 w archiwum + 5 nowych), audyt
+dokumentacji startowej: 29/30 ADR żywych, 0008 w archiwum od 2026-09-01,
+4 odsyłacze naprawione, rozjazd 0012 nazwany; T5 append-only historii +
+M399–M403) → cytaty CR (303.4f/704.5m/608.2b/401.2) → skan ADR 0002 (czysty)
+→ mutacje M1–M4 (5/5 z M-H) → raport `docs/audits/AUDYT_PR132_2026-09-21.md`
+(pokrycie maszynowe 114/114, werdykt APPROVE + 4 notki Z-1…Z-4 „brak zmiany”).
+
+Pętla jakości E3: Żywy Tester na `dist/` — 8 partii × 500 kroków (seedy
+101–108, profile greedy/random/defensive/explorer/impatient/hoarder, pary
+tali: próbka benchmarku ×4 + ixalan/mirrodin-wu, wiedzmin-bg/srodziemie,
+final-fantasy/warhammer-ubr, forgotten-realms/zendikar): 8/8 naturalnych
+końców, 0 `[STOP]`, 0 zgłoszeń detektorów, `NIEWYCENIONE == brak`, pokrycie
+UI 171 widzianych / 158 klikniętych akcji. Ręczna lektura transkryptów (L27):
+komunikaty „trigger bez efektu” nazwane („brak legalnych celów”/„nie było
+czego wykonać”), 0 artefaktów `undefined`/`NaN`/surowych symboli. Łowy CR
+poza ścieżkami PR #132 (kompletność CR 704.5m w SBA): sonda trzech
+przypadków reguły wykryła **H-1** — nieprzypięta czysta aura nie trafiała do
+grobu (pętla `removeIllegalAttachments` przeskakiwała `attachedTo == null`;
+pierwszy odczyt sondy zdegenerowany — `addObject` zrzuca `attachedTo`, L21).
+Naprawa u źródła + pin `granica-7045m-aura-sba` H/1–H/4 (H/3 RED→GREEN,
+H/4 anty-over-fix dla klątwy na graczu z M403) + mutacja M-H + legalizacja
+fixture B43/11 (klątwa „Enchant player” leżała luzem — stan nielegalny wg
+CR 704.5m — zalegalizowana `attachAuraToPlayer`; bounce z gracza działa).
+Pierwsza wersja guardu łapała zwykłe permanenty (`!bestow && !equipment`) —
+poprawiona do `object.aura != null && object.bestow == null && object.enchantedPlayerId == null`
+(klasa L5). Bez nowej lekcji (klasa L5/L107, budżet bez zmian).
+
+Bramy końcowe: `node tools/run-tests.mjs all` **6093/6093** (~276 s); build
+**59 modułów / 3988,2 kB**; `node --test test/bot-benchmark.test.js` **10/10**;
+budżet lektury **95 819/100 000**. Pełnego B0 nie uruchamiano (ADR 0018).
+Dokumentacja: raport audytu, milestone **M404**, handoff
+`docs/setup/HANDOFF_2026-09-21b.md`, aktualizacja „Bieżącego stanu” README.

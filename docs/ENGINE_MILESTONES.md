@@ -6766,3 +6766,39 @@ jako „niewyceniony", aggro też nie zaczarowuje siebie. Pin:
 zwrotu, etykieta, CR 608.2b, oba boty). Lekcja **L163**; bramy: `npm test`
 **6079/6079**, `node tools/run-tests.mjs all` **6089/6089** (~274 s), build
 **59 modułów / 3987,2 kB**, budżet lektury **95 819/100 000**.
+
+## M404 — 2026-09-21b: audyt scalonego PR #132 (114 plików) + znalezisko H-1 w CR 704.5m (PR #133)
+
+Sesja „Kontynuujemy projekt.” → pętla domyślna (ADR 0021) z audytem poprzedniego
+scalonego PR (ADR 0020 B). Przedmiot: diff `614613e..351126a` = 114 plików
+(+4 379/−733), pięć tematów (T1 gospodarz aury, T2 piny F1–F15, T3 uwagi A/B/C,
+T4 audyt dokumentacji startowej + cięcia lekcji, T5 milestones/historia/handoffy).
+Metoda: pełna lektura diffu, cytaty CR ze źródeł (ADR 0030: 303.4f, 704.5m,
+608.2b, 401.2), skan ADR 0002 po dodanych liniach `src/` (czysto — jedyne
+porównania stringów to typy komend i `zone === 'library'`), weryfikacja
+mutacyjna 5/5 (M1 predykat hosta-gracza, M2 sloty blokera, M3 cichy `return`
+podglądu, M4 ikony many, M-H gałąź 704.5m). Werdykt: **APPROVE** — 0 defektów
+w samym PR #132, 4 notki nie-defektowe (reprezentacja `attachedTo: null`,
+`object_moved` jako sygnał ETB, konwencja „CR 608.2b” w nazwach pinów,
+strażnik źródła E6/6 wg L160).
+
+Pętla jakości: 8 partii Żywym Testerem na `dist/` (seedy 101–108, wszystkie
+6 profili, 8 par talii) — 8/8 naturalnych końców, 0 zgłoszeń detektorów,
+0 niewycenionych; ręczna lektura transkryptów (L27) bez znalezisk. Łowy CR
+nową ścieżką (kompletność CR 704.5m w SBA — `state-based.js` +
+`removeIllegalAttachments`, poza tematami PR #132) dały **znalezisko H-1**:
+trzeci przypadek reguły („or is not attached to an object or player”) był
+pomijany — nieprzypięta czysta aura zostawała na polu bitwy w nieskończoność
+(sonda `scratch/probe-7045m.mjs`, wcześniej pomiar zdegenerowany przez L21 —
+`addObject` zrzuca `attachedTo`). Naprawa u źródła: gałąź trzeciego przypadku
+woła ten sam choke point ruchu (`detachOrphanedAttachment`, M271) wyłącznie
+dla czystych aur (`object.aura`, bez `bestow`, bez `enchantedPlayerId` —
+pierwsza wersja guardu łapała zwykłe permanenty; klasa L5). Pin
+`test/granica-7045m-aura-sba-2026-09-21.test.js` H/1–H/4 (RED→GREEN dla H/3,
+anty-over-fix H/4 dla aury na gracza), mutacja M-H czerwieni H/3. Skutek
+uboczny: fixture B43/11 (Sea God's Scorn) trzymał klątwę „Enchant player”
+LUZEM (stan nielegalny wg CR 704.5m, tolerowany tylko dzięki luce) —
+zalegalizowany `attachAuraToPlayer`; bounce klątwy z gracza działa. Bez nowej
+lekcji (klasa = L5/L107; budżet lektury bez zmian). Bramy: `node
+tools/run-tests.mjs all` **6093/6093** (~276 s), build **59 modułów /
+3988,2 kB**, bot-benchmark **10/10**, budżet lektury **95 819/100 000**.
