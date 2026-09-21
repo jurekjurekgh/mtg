@@ -49,18 +49,18 @@ Przegląd każdego zmienionego pliku `src/` pod kątem logiki, zgodności z CR
 kontraktów zdarzeń (L112/L153) i testów RED→GREEN (L13). Każde znalezisko:
 test RED → naprawa u root cause → GREEN → mutacja → bramy → commit → push.
 
-- [ ] E2.1 T1: ścieżka gospodarza-GRACZA — predykaty bliźniacze,
+- [x] E2.1 T1: ścieżka gospodarza-GRACZA — predykaty bliźniacze,
       `legalAuraHosts` jako JEDNO źródło kandydatów, kształt obiektu po obu
       drogach wejścia, re-walidacja przy wykonaniu, wycena obu botów,
       etykiety i narracja (L163 — sześć warstw jednego dnia).
-- [ ] E2.2 T2: piny F1–F15 mierzą niezmienniki; silnik pod pinami bez
+- [x] E2.2 T2: piny F1–F15 mierzą niezmienniki; silnik pod pinami bez
       przypadków specjalnych po nazwie/ID karty (ADR 0002).
-- [ ] E2.3 T3: A/B/C — ikony many bez wycieku do kanałów tekstowych,
+- [x] E2.3 T3: A/B/C — ikony many bez wycieku do kanałów tekstowych,
       podgląd karty z cudzej odkrytej ręki wg CR 401.2 (biblioteka zawsze
       zakazana), renamy C bez zmiany reguł (porównanie semantyczne diffu).
-- [ ] E2.4 T4/T5: twierdzenia dokumentacji sprawdzone grepem, numery
+- [x] E2.4 T4/T5: twierdzenia dokumentacji sprawdzone grepem, numery
       lekcji nienaruszone, budżet lektury pod progiem.
-- [ ] E2.5 raport `docs/audits/AUDYT_PR132_2026-09-21.md` + wpis w opisie PR.
+- [x] E2.5 raport `docs/audits/AUDYT_PR132_2026-09-21.md` + wpis w opisie PR.
 
 ### E3 — niedokończone plany + pętla jakości (ADR 0021 pkt 3–4)
 
