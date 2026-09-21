@@ -1789,6 +1789,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // Moja tura: tapnięcie przetrwa tylko do JEGO untap stepu. Wartość ma
       // jedynie zdjęcie blokera przed moim atakiem — i tylko dopóki blok jest
       // jeszcze możliwy (po deklaracji blokujących jest już za późno).
+      // M405 (uwaga z gry — Twiddle, klasa L143): okno blokerskie wymaga
+      // DWÓCH rzeczy. (1) Cel musi być STWOREM — ląd/artefakt nie blokuje,
+      // więc tapnięcie go w mojej turie wyparuje przy jego untapie, zanim
+      // zdąży wydać manę: czyste marnotrastwo karty i many (właściciel: „To
+      // powinno być surowo scoringowo penalizowane”). (2) Ja muszę mieć realny
+      // potencjał ataku (M350/B) — bez niego nawet zdjęcie stwora nie kupuje
+      // nic. Kara jest surowa także dla sorcery-speed (canWait=false):
+      // trzymanie karty z ręki bije zagranie, które nic nie zmienia.
+      const combatant = target.kind === 'creature' || (target.types ?? []).includes('Creature');
+      const pushPotential = (view.zones?.battlefield ?? []).some((o) => o.controllerId === view.playerId
+        && (o.kind === 'creature' || (o.types ?? []).includes('Creature'))
+        && canAttackNowGlobal(o) && !(o.keywords ?? []).includes('defender') && (o.power ?? 0) > 0);
+      if (!combatant || !pushPotential) return canWait ? -20 : -10;
       if (['beginning_of_combat', 'declare_attackers'].includes(step)) return 6;
       // M202/F (uwaga właściciela, Twiddle): `step === 'main'` obejmuje ZARÓWNO
       // fazę PRZED walką, jak i PO walce — TURN_STEPS ma dwa kroki o nazwie
@@ -1837,6 +1850,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
     const base = isLand ? 0 : 8 + 2 * (target.power ?? 0);
     const timing = tapTimingBonus(view, target, { canWait });
+    // M405 (uwaga z gry — Twiddle): pasmo „marnotrastwa” (timing ≤ −10 — brak
+    // okna blokerskiego i brak potencjału ataku, patrz tapTimingBonus)
+    // zastępuje CAŁĄ wycenę. Baza 8+2·power opisuje wartość zdjęcia stwora
+    // tylko w oknie, w którym cel faktycznie znika z walki; bez okna efekt
+    // wyparuje przy jego untapie, więc doklejenie bazy rozcieńczałoby surową
+    // karę właściciela (L160: pomiar ma liczyć surowość, nie sumę dnia).
+    if (!locking && timing <= -10) return timing;
     // Efekt trzymający cel (Entrancing Lyre / Spectral Prison) działa przez
     // kolejne untapy, więc nie karzemy go za „złe” okno — ale premia za okno
     // optymalne wciąż mu się należy.
