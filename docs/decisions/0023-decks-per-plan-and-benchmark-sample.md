@@ -28,7 +28,7 @@ wpisów historii hunterów).
    proporcjonalnie do pipów kosztów many (każdy używany kolor ≥1).
 4. **Worki są przejściowe:** gdy plan uzbiera 15+ kart, generator przy
    najbliższym uruchomieniu AUTOMATYCZNIE przenosi go do własnej talii (strażnik
-   `test/m181-auto-awans` + „pliki = generator" w repo-decks wymuszają
+   `test/m181-auto-awans.test.js` + „pliki = generator" w repo-decks wymuszają
    regenerację). Jeśli worek spadłby po awansie poniżej 15 nielandów — generator
    zatrzymuje się czytelnym błędem: przetasowanie planów między workami to
    świadoma decyzja w mapie, nie automat.

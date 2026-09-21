@@ -12012,7 +12012,7 @@ build → push):
 | `056a20b` | B: `hiddenObjectCardId` w kreatorze + pin B/1–B/3 | 3 mutacje RED; artefakt: `pełny ekran=true` + `img`; 6070/6070 |
 | `27da2e6` | C: rodzina „tapnięcie" w `src/`, `tools/`, `test/` + pin C/1–C/4 | 4 mutacje RED; 6074/6074 |
 
-Bramy: `npm test` **6074/6074**; `node tools/run-tests.mjs all` **@@BRAMA@@**;
+Bramy: `npm test` **6074/6074**; `node tools/run-tests.mjs all` **6084/6084**;
 build **59 modułów / 3979,2 kB**; budżet lektury **99 405/100 000** (lekcja
 **L162** opłacona skróceniem własnego tekstu; zapas ~595 tokenów — następna
 sesja zaczyna od kondensacji rejestru, jeśli dokłada lekcję).
@@ -12027,3 +12027,46 @@ wymagałaby renderowania intro przez `innerHTML` — ryzyko M87/escapowania),
 `docs/**` zachowuje starą terminologię jako zapis historyczny, a w `decks/`
 nie ma talii-sond użytych do reprodukcji (były plikami roboczymi, usunięte
 przed bramą — katalog talii jest właściciela, ADR 0029/0022).
+
+## 2026-09-21b — granica aura–host zmierzona na żywo + audyt dokumentacji startowej (PR #132, gałąź `arena/01a0c0af-mtg`)
+
+Ciąg dalszy sesji 2026-09-21 (po dokumentacji A/B/C, `14c9571`); dwa commity
+zakresu: `40620e5` (granica aura–host) + commit dokumentacyjny (audyt).
+
+**Krok 1 — granica aura–host (CR 303.4f), pozycja z handoffu 2026-09-20e („0/14
+partii").** Talia-sonda (Annie Flash + aury MV≤3 + gospodarze) zmusiła decyzję:
+seed 106 → Annie zwraca z grobu Silken Strength („kandydaci: 6") → wizard
+„Wybierz: Aura z grobu" → Kor Cartographer. Pomiar odsłonił błąd: aura
+„Enchant player" (Curse of the Pierced Heart) wracająca z grobu ZAŁĄCZAŁA SIĘ DO
+STWORA — `isLegalAuraHost` nie miał gałęzi dla deskryptora `enchant: 'player'`
+i wpadał w domyślne „wyłącznie stwory" (dowód sondy: `attachedTo=permanent-1`,
+`enchantedPlayerId=undefined`). Naprawa u źródła: **żaden permanent nie jest
+gospodarzem aury „Enchant player"** — ścieżka rzucania ma własną gałąź w
+`spells.js`, więc predykat może mówić „nie" bez skutków dla czarowania; aura
+z grobu zostaje w grobie z jawnym `aura_returned_without_host`. Pełny
+gospodarz-GRACZ (CR 303.4f „object OR PLAYER") odroczony świadomie. Piny:
+`test/granica-aura-host-2026-09-21.test.js` (G/1 predykat + droga zwrotu,
+G/2 granica 1↔2 gospodarzy; mutacja bez strażnika → RED). Pętla jakości PO
+naprawie: seedy 71–78, 500 kroków — 8/8 naturalnych końców, 0 zgłoszeń
+detektorów, 0 `[STOP]`, „NIEWYCENIONE == brak". `scan.mjs` (druga bramka pętli):
+46 trafień — same teksty kart i etykiety.
+
+**Krok 2 — audyt dokumentacji startowej** (zlecenie właściciela: „duża część
+lekcji i ADR-ów jest merytorycznie nieaktualna"). Raport:
+`docs/audits/AUDYT_DOKUMENTACJI_STARTOWEJ_2026-09-21.md`. Wynik: przesłanka nie
+potwierdziła się w zakładanej skali — **0 z 30 ADR-ów do archiwum** (0006
+sprawdzony punkt po punkcie: 0009 §„Co to zmienia w ADR 0006" zostawia zasadę
+„najpierw audyt, potem decyzje" w mocy i zmienia wyłącznie strategię
+wydzielenia), **0 merytorycznie martwych lekcji**. Realne znaleziska i naprawy:
+4 nieaktualne odsyłacze ADR (0023 `m181-auto-awans.test.js`, 0029 `wiedzmin.txt`
++ noty stanu wdrożenia w 0012/0014), 3 martwe odsyłacze lekcji (L25, L122, L123),
+proza rejestru wyniesiona do archiwum narracji (**30 wpisów / 7 427 B**;
+`docs/LESSONS.md` 137 858 → 130 431 B), nowy strażnik „rejestr bez
+`**Objaw:**`/`**Przyczyna:**`", osierocony `@@BRAMA@@` w tym dzienniku
+uzupełniony (6084/6084). Budżet lektury: **99 406 → 97 007/100 000**.
+Do decyzji właściciela: montaż kreatora talii w artefakcie (ADR 0012 — nota
+stanu), ewentualne twarde cięcie lekcji poza prozę (wymaga zmiany kontraktu
+i strażników).
+
+Bramy po obu krokach: `npm test` **6077/6077**, `node tools/run-tests.mjs
+all` **6087/6087**, build **59 modułów / 3979,8 kB**. Milestone **M401**.

@@ -1,6 +1,11 @@
 # ADR 0012: Kreator talii i wspólny tekstowy format talii
 
 - **Status:** Zaakceptowana
+- **Stan wdrożenia (2026-09-21):** panel `#deck-builder` **nie jest montowany**
+  w artefakcie — import i oba montaże `mountDeckBuilder` w `src/table/main.js`
+  są zakomentowane (PR #130/F), a decyzja i moduły pozostają bez zmian;
+  przywrócenie to odkomentowanie. Format talii (`src/cards/deck-text.js`)
+  i jego walidacja żyją niezależnie od panelu (ADR 0023/0024).
 - **Data:** 2026-07-31
 - **Decydenci:** właściciel projektu
 

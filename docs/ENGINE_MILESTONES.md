@@ -6692,3 +6692,37 @@ Highland Game". Pin: C/1–C/4 (zachowanie na ścieżce gracza + strażnik klasy
 build **59 modułów / 3979,2 kB**; budżet lektury **99 405/100 000** (zapas
 ~595 tokenów — następna sesja zaczyna od kondensacji rejestru, jeśli dokłada
 lekcję). Pełnej macierzy B0 nie uruchamiano (ADR 0018).
+
+## M401 — 2026-09-21: granica aura–host zmierzona na żywo (naprawa „Enchant player") + audyt dokumentacji startowej
+
+**Krok 1 — CR 303.4f na żywo.** Pozycja z handoffu 2026-09-20e („0/14 partii")
+domknięta talią-sondą: seed 106 → Annie Flash zwraca z grobu Silken Strength
+(„kandydaci: 6") → wizard „Wybierz: Aura z grobu" → Kor Cartographer (pomiar
+`tools/table-tester` na artefakcie). Ten sam pomiar odsłonił błąd: aura
+„Enchant player" (Curse of the Pierced Heart) wracająca z grobu ZAŁĄCZAŁA SIĘ DO
+STWORA — `isLegalAuraHost` nie znał deskryptora `enchant: 'player'` i wpadał
+w domyślne „wyłącznie stwory" (`enchantedPlayerId=undefined`). Naprawa u źródła:
+żaden permanent nie jest gospodarzem takiej aury (ścieżka rzucania ma własną
+gałąź w `spells.js`), więc aura zostaje w grobie z `aura_returned_without_host`.
+Gospodarz-GRACZ („object or player") odroczony świadomie: kontrakt decyzji
+niesie dziś tylko id permanentów, a etykiety („Ty/Nieprzyjaciel"), wycena bota
+i pin wymagają osobnej decyzji. Piny `test/granica-aura-host-2026-09-21.test.js`
+(G/1 predykat + droga zwrotu; G/2 granica 1↔2 gospodarzy; mutacja → RED).
+Pętla jakości PO naprawie: seedy 71–78 (500 kroków) — 8/8 naturalnych końców,
+0 zgłoszeń detektorów, „NIEWYCENIONE == brak"; skan `scan.mjs`: 46 trafień, same
+teksty kart i etykiety, 0 wzmianek aura-host.
+
+**Krok 2 — audyt dokumentacji startowej** (zlecenie właściciela). Raport:
+`docs/audits/AUDYT_DOKUMENTACJI_STARTOWEJ_2026-09-21.md`. Przesłanka „duża część
+lekcji i ADR-ów jest merytorycznie nieaktualna" nie potwierdziła się: **0 z 30
+ADR-ów do archiwum** (0006 sprawdzony wobec 0009: zasada „najpierw audyt, potem
+decyzje" pozostaje w mocy — zmieniona jest wyłącznie strategia wydzielenia),
+**0 merytorycznie martwych lekcji**; naprawione: 4 nieaktualne odsyłacze ADR
+(0023, 0029 + noty stanu 0012/0014) i 3 martwe odsyłacze lekcji (L25, L122,
+L123); proza rejestru wyniesiona do archiwum narracji (**30 wpisów / 7 427 B**);
+nowy strażnik: rejestr nie może nieść bloków `**Objaw:**`/`**Przyczyna:**`;
+budżet lektury **99 406 → 97 007/100 000**. Do decyzji właściciela zostaje
+wyłącznie montaż kreatora talii w artefakcie (ADR 0012 ma notę stanu).
+
+**Bramy:** `npm test` **6077/6077**; `node tools/run-tests.mjs all`
+**6087/6087**; build **59 modułów / 3979,8 kB**.

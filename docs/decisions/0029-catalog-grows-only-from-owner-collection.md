@@ -10,7 +10,9 @@ Sesja wdrażająca kontrzenie zdolności (PR #93) potrzebowała nośnika mechani
 `counter_ability`, którego nie było w katalogu, więc dopisała realną kartę
 `Stifle` (CNS) razem ze snapshotem Scryfall i wpisem w `MANA_COSTS`. Wszystkie
 bramki były zielone, bo karta była poprawna — a rejestr talii (ADR 0023) jest
-WYPROWADZONY z pola `plan`, więc `1x Stifle` wszedł do `decks/wiedzmin.txt`,
+WYPROWADZONY z pola `plan`, więc `1x Stifle` wszedł do `decks/wiedzmin.txt`
+(dziś `decks/wiedzmin-bg.txt` + `decks/wiedzmin-wur.txt` — podział kolorów
+wg ADR 0024),
 czyli do talii, którą właściciel czyta jako „moją kolekcję". Alarm
 właściciela nie dotyczył błędu w karcie, tylko faktu, że to agent zdecydował,
 co gra w jego talii.

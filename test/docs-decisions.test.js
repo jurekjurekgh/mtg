@@ -382,3 +382,23 @@ test('LESSONS: kotwica zachowuje własny KONKRET, nie jest samym odsyłaczem', (
     );
   }
 });
+
+test('LESSONS: rejestr nie niesie prozy („Objaw"/„Przyczyna") — proza mieszka w archiwum', () => {
+  // Kontrakt z nagłówka rejestru i z AGENTS.md §0: wpis niesie FAKTY
+  // (przypadek w jednym zdaniu, reguła, strażnik), a prozę — objaw, przyczynę,
+  // tabele wariantów, dowody mutacyjne — przenosi się do
+  // `docs/LESSONS_PRZYPADKI.md` pod tym samym numerem. Bez tego strażnika
+  // rejestr znów puchnie prozą i zjada budżet lektury startowej (L66).
+  const lessons = fs.readFileSync('docs/LESSONS.md', 'utf8');
+  const od = lessons.indexOf('\n## L1 (');
+  assert.ok(od > 0, 'rejestr musi mieć wpisy (nagłówek + ## L1)');
+  const wpisy = lessons.slice(od);
+  for (const marker of ['**Objaw:**', '**Przyczyna:**']) {
+    assert.ok(!wpisy.includes(marker),
+      `${marker} wróciło do wpisu rejestru — proza należy do `
+      + 'docs/LESSONS_PRZYPADKI.md (odsyłacz „→ narracja: … (LN)" zostaje w wpisie)');
+  }
+  const naglowek = lessons.slice(0, od);
+  assert.match(naglowek, /Pól \*\*Objaw\*\*\/\*\*Przyczyna\*\* nie ma/,
+    'nagłówek rejestru musi opisywać kontrakt: bez Objawu/Przyczyny w rejestrze');
+});

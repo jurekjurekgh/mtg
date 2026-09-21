@@ -41,7 +41,9 @@ właściciela. Prompt „kontynuujemy” / „pytaj, jeśli nie wiesz” nie zaw
 tego bloku.
 
 **Czego NIE czytasz na start:** `docs/PROJECT_HISTORY.md` (dziennik sesji,
-~5900 linii), `docs/plans/*`, `docs/audits/*`, starsze handoffy. To archiwum
+~5900 linii), `docs/LESSONS_PRZYPADKI.md` (archiwum narracji lekcji — proza,
+objawy, tabele wariantów; sięgasz po numer `LN`), `docs/plans/*`,
+`docs/audits/*`, starsze handoffy. To archiwum
 przebiegu prac, nie zasady — sięgasz tam **punktowo i grepem**, gdy potrzebny
 jest kontekst konkretnej historycznej decyzji. Zasady, których musisz
 przestrzegać, mieszkają wyłącznie w pozycjach 1–4.
