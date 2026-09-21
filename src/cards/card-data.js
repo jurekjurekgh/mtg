@@ -9956,8 +9956,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     spell: {
       timing: 'sorcery',
       targets: [
-        { type: 'nonblack_creature' },
-        { type: 'nonblack_creature' },
+        // CR 601.2c: „two target nonblack creatures” to JEDNO wystąpienie
+        // słowa „target” z liczbą 2 — oba sloty dzielą `targetWord: 0`,
+        // więc wymagają DWÓCH RÓŻNYCH stworów (M212/Z6).
+        { type: 'nonblack_creature', targetWord: 0 },
+        { type: 'nonblack_creature', targetWord: 0 },
       ],
       effects: [
         { type: 'destroy_pair_if_same_colors', targetIndexA: 0, targetIndexB: 1 },

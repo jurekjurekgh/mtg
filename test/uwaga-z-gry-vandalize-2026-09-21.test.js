@@ -144,9 +144,12 @@ test('V/2 modal DOM: WSZYSCY kandydaci w gniazdach 0–1, wybór gracza wiąże 
   const toggles = walkDom(host).filter((el) => String(el.className).includes('multi-target-toggle'));
   assert.equal(toggles.length, 5,
     `wiersz na KAŻDEGO kandydata w KAŻDYM gnieździe (art1, art2 | lad1, lad2, art1-ląd): ${toggles.length}`);
-  // Gracz wybiera art2 (gniazdo 1) i lad1 (gniazdo 2) — NIE „pierwszy z brzegu”
-  toggles[1].checked = true; toggles[1].emit('change');
-  toggles[2].checked = true; toggles[2].emit('change');
+  // Gracz wybiera art2 (gniazdo 1) i lad1 (gniazdo 2) — NIE „pierwszy z brzegu”.
+  // Kolejność wierszy = plan.slots (źródło prawdy renderera), więc indeksy
+  // liczymy z identyfikatorów obiektów — odporne na kolejność enumeracji.
+  const rowOrder = [...plan.slots[0], ...plan.slots[1]];
+  toggles[rowOrder.indexOf(art2)].checked = true; toggles[rowOrder.indexOf(art2)].emit('change');
+  toggles[rowOrder.indexOf(lad1)].checked = true; toggles[rowOrder.indexOf(lad1)].emit('change');
   const confirm = walkDom(host).find((el) => /Zatwierdź/.test(el.textContent) && el.tagName === 'BUTTON');
   assert.ok(confirm, 'jest Zatwierdź');
   assert.equal(confirm.disabled, false, 'wybór kompletny (oba gniazda) odblokowuje Zatwierdź');
@@ -201,6 +204,69 @@ test('V/4 strażnik kaskady (L83): gałąź gniazd w main.js PRZED castModePlanO
   const reqStripped = req.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
   assert.ok(/plan\.chooseOneOrBothMode\s*\?\s*commandForChooseOneOrBoth/.test(reqStripped),
     'currentCommand w wizardze woła matcher gniazd dla chooseOneOrBothMode');
+});
+
+test('V/5 CR 601.2c: ten sam ląd-artefakt w OBU gniazdach to legalny wybór (dwa słowa „target”)', () => {
+  // CR 601.2c (dosłownie): „A spell that says „Destroy target artifact and
+  // target land," however, can target the same artifact land twice because
+  // it uses the word „target" in multiple places.” Tryb „Zniszcz oba” to dwa
+  // wystąpienia słowa „target” (po jednym z każdego bulleta — CR 700.2.3),
+  // więc Great Furnace może wypełnić OBA gniazda naraz.
+  const { state, oferty, art1, art2, lad2 } = board();
+  const plan = chooseOneOrBothPlanOf(oferty);
+  assert.ok(plan, 'plan gniazd istnieje');
+  const para = oferty.find((c) => c.modeIndex === 2
+    && c.targets.length === 2 && c.targets[0] === art1 && c.targets[1] === art1);
+  assert.ok(para,
+    `silnik oferuje [Great Furnace, Great Furnace] dla trybu „oba”: ${JSON.stringify(oferty.filter((c) => c.modeIndex === 2).map((c) => c.targets))}`);
+  const wybor = commandForChooseOneOrBoth(plan, [art1, art1]);
+  assert.equal(wybor?.modeIndex, 2, 'wybor obu gniazd tym samym obiektem = tryb „Zniszcz oba”');
+  assert.deepEqual(wybor?.targets, [art1, art1], 'komenda niesie oba wystapienia wybranego obiektu');
+  assert.ok(execute(state, wybor).ok, 'komenda wykonalna (L48: oferta = walidacja)');
+  resolveStack(state);
+  assert.notEqual(state.objects.get(art1)?.zone, 'battlefield', 'ląd-artefakt zniszczony (raz — drugie zniszczenie to no-op)');
+  assert.equal(state.objects.get(art2)?.zone, 'battlefield', 'pozostale artefakty nietkniete');
+  assert.equal(state.objects.get(lad2)?.zone, 'battlefield', 'pozostale lądy nietkniete');
+});
+
+test('V/5b anty-over-fix (M212/Z6): jedno słowo „target” z liczbą 2 dalej wymaga DWÓCH różnych obiektów', () => {
+  // Dead Ringers — „Destroy two target nonblack creatures” (targetWord: 0
+  // na obu slotach) — ten sam stwór NIE może wypełnić obu slotów (CR
+  // 601.2c: „The same target can't be chosen multiple times for any one
+  // instance of the word „target””). Reguła musi rozróżniać WYSTĄPIENIA
+  // słowa, nie „sloty w ogóle”. Środowisko jak w M212/Z6 (helpery `put`
+  // z pełnym spreadem `gameObjectDataOf` — materiały minimalne nie
+  // przepuszczają ścieżki kosztu Dead Ringers).
+  const state = createGameState({ seed: 212, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const putFull = (id, cardId, controllerId, zone = 'battlefield') => {
+    const def = REGISTRY.get(cardId);
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId, controllerId, ownerId: controllerId, zone,
+      ...gameObjectDataOf(def), types: def.types ?? [], keywords: def.keywords ?? [],
+      subtypes: def.subtypes ?? [], spell: def.spell,
+    });
+  };
+  putFull('g1', 'razorfoot-griffin', 'p2');
+  putFull('spell', 'dead-ringers', 'p1', 'hand');
+  for (let i = 0; i < 5; i += 1) {
+    addObject(state, {
+      id: `sw${i}`, instanceId: `i-sw${i}`, cardId: 'basic-swamp', controllerId: 'p1',
+      ownerId: 'p1', zone: 'battlefield', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Swamp'],
+    });
+  }
+  const oferty1 = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'spell');
+  assert.equal(oferty1.length, 0,
+    `„two target nonblack creatures” wymaga DWÓCH różnych — przy jednym kandydencie brak ofert: ${JSON.stringify(oferty1.map((c) => c.targets))}`);
+  putFull('g2', 'razorfoot-griffin', 'p2');
+  const oferty2 = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'spell');
+  assert.equal(oferty2.length, 2, `dwie uporządkowane pary różnych stworów: ${JSON.stringify(oferty2.map((c) => c.targets))}`);
+  assert.ok(oferty2.every((c) => c.targets[0] !== c.targets[1]),
+    'zadna para nie powtarza obiektu wewnątrz jednego słowa „target”');
+  assert.ok(oferty2.some((c) => c.targets.includes('g1') && c.targets.includes('g2')),
+    'para (g1, g2) musi zostać w ofercie');
 });
 
 /** Mini-DOM jak w testach kreatora (M2/4) — tylko to, czego używa picker. */

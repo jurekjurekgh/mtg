@@ -6845,9 +6845,24 @@ mutacyjnym:
   „pierwsza z brzegu”) czerwienią V/1+V/2. Pin
   `test/uwaga-z-gry-vandalize-2026-09-21.test.js` V/1–V/4.
 
+Uzupełnienie C (ta sama sesja, pytanie właściciela „zgodnie z CR?”):
+**CR 601.2c rozróżnia WYSTĄPIENIA słowa „target”** — „ten sam obiekt wolno
+wskazać raz na każde wystąpienie; w obrębie jednego wystąpienia sloty muszą
+być różne”. Reguła w `cartesian` (spells.js) i `cartesianTargetPools`
+(game-state.js) była koszykowa („sloty w ogóle różne” — M212/Z6 dla Dead
+Ringers) i dusiła legalny wybór z przykładu CR: „Destroy target artifact and
+target land… can target the same artifact land twice”. Naprawa: `targetWord`
+w specu celu = numer wystąpienia (Dead Ringers: oba sloty `targetWord: 0`
+— „two target nonblack creatures” to jedno słowo), domyślnie slot = osobne
+wystąpienie. V/5 (Vandalize „oba” na Great Furnace oba gniazda → komenda
+`[art1, art1]`, niszczy raz) + V/5b (Dead Ringers: 0 ofert przy jednym
+stworze, 2 pary przy dwóch) + M212/Z6 nietknięte; mutacje M-D1/M-D2
+czerwienią V/5 / V/5b+M212/Z6; guard M138/Z5 pomija `targetWord` (znacznik
+reguły castingu, nie parametr opisu etykiety).
+
 Bez nowych lekcji (klasy L20/L37/L150/L160 + M300/1 + L48) i bez nowych
-kart (ADR 0029). Bramy: `node tools/run-tests.mjs all` **6106/6106**
-(~385 s), build **59 modułów / 3997,8 kB**, `node tools/benchmark.mjs
+kart (ADR 0029). Bramy: `node tools/run-tests.mjs all` **6108/6108**
+(~370 s), build **59 modułów / 3999,6 kB**, `node tools/benchmark.mjs
 --quick` **672 mecze, 0 niedokończonych** (heuristic **85,9%** — odniesienie
 bez zmian), budżet lektury **95 819/100 000**. Pełnego B0 nie uruchamiano
 (ADR 0018).

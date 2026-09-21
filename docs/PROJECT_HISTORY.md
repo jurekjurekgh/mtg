@@ -12217,9 +12217,18 @@ anty-over-fix — Twiddle/„up to N” bez gniazd; V/4 strażnik kolejności
 kaskady). Mutacje M-C1 (plan zawsze null) i M-C2 (komenda „pierwsza z brzegu”)
 czerwienią V/1+V/2. Regresja rodziny kreatorów 136/136.
 
+**Dodatek C (ta sama sesja, pytanie „zgodnie z CR?”)**: CR 601.2c pozwala
+wskazać ten sam obiekt raz na KAŻDE wystąpienie słowa „target” (przykład
+reguły to w brzmieniu Vandalize: „Destroy target artifact and target land…
+can target the same artifact land twice”). Koszykowy filtr `cartesian`
+(M212/Z6 — Dead Ringers) wymuszał różne obiekty między WSZYSTKIMI slotami
+i gasił tę legalną parę; reguła przepisana na wystąpienia słowa (`targetWord`
+w specu; Dead Ringers = `targetWord: 0` na obu slotach). Piny V/5–V/5b,
+mutacje M-D1/M-D2, M212/Z6 nietknięte, guard M138/Z5 pomija `targetWord`.
+
 Bez nowych lekcji i bez nowych kart (ADR 0029). Bramy końcowe:
-`node tools/run-tests.mjs all` **6106/6106** (~385 s); build **59 modułów /
-3997,8 kB**; `node tools/benchmark.mjs --quick` **672 mecze, 0
+`node tools/run-tests.mjs all` **6108/6108** (~370 s); build **59 modułów /
+3999,6 kB**; `node tools/benchmark.mjs --quick` **672 mecze, 0
 niedokończonych** (heuristic **85,9%**); budżet lektury **95 819/100 000**.
 Pełnego B0 nie uruchamiano (ADR 0018). Dokumentacja: milestone **M405**,
 `docs/plans/PLAN_2026-09-21b-audyt-pr132-i-petla-jakosci.md` (Dodatek 2),

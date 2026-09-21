@@ -734,15 +734,28 @@ function untapStepTurnBasedAction(state, { pushToState = true } = {}) {
  * wyłącznie ten zbiór, execute waliduje identycznie — komenda zawsze spójna.
  */
 /**
- * Iloczyn kartezjański pul celów (oferta Epic Experiment — per legalny cel).
+ * Iloczyn kartezjański pul celów (oferta Epic Experiment — per legalny cel;
+ * ścieżka okien dla czarów bez `modes`).
+ *
+ * CR 601.2c (jak `cartesian` w spells.js): ten sam obiekt wolno wskazać
+ * raz na KŻADE wystąpienie słowa „target" — w obrębie jednego wystąpienia
+ * sloty muszą wskazywać różne obiekty. `words` niesie numery wystąpień
+ * (domyślnie: slot = wystąpienie). `null` powtarzać wolno („up to one”).
  */
-function cartesianTargetPools(pools) {
+function cartesianTargetPools(pools, words = null) {
   if (pools.length === 0) return [[]];
+  const tags = words ?? pools.map((_, i) => i);
   const [first, ...rest] = pools;
-  const tails = cartesianTargetPools(rest);
+  const tails = cartesianTargetPools(rest, tags.slice(1));
   const out = [];
   for (const head of first) {
-    for (const tail of tails) out.push([head, ...tail]);
+    for (const tail of tails) {
+      const clash = head !== null && head !== undefined && tail.some(
+        (t, j) => t === head && tags[0] === tags[j + 1],
+      );
+      if (clash) continue;
+      out.push([head, ...tail]);
+    }
   }
   return out;
 }
@@ -904,7 +917,8 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
   if (spec.length === 0) return withCosts([{ cardId: obj.id, targets: [] }]);
   const pools = spec.map((entry) => legalTargetCandidates(state, playerId, entry));
   if (pools.some((pool) => pool.length === 0)) return [];
-  return withCosts(cartesianTargetPools(pools).map((combo) => ({ cardId: obj.id, targets: combo })));
+  return withCosts(cartesianTargetPools(pools, spec.map((sp, wi) => sp?.targetWord ?? wi))
+    .map((combo) => ({ cardId: obj.id, targets: combo })));
 }
 
 /**
