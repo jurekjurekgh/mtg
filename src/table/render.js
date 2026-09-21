@@ -2414,7 +2414,17 @@ function abilityXDescription(session, object, command) {
   return X_ABILITY_DESCRIPTIONS[effect?.type] ?? 'zdolność z wyborem X';
 }
 
-export function choiceGroupTitle(request, session, view) {
+/**
+ * Tytuł grupy wyboru. `manaHtml` (A, zgłoszenie właściciela 2026-09-21,
+ * Selesnya Charm): tytuł jest konsumowany przez DWIE warstwy o różnym kanale —
+ * panel „Twoje działania" wstawia go `innerHTML`-em (ikony many są tam normą,
+ * jak w etykietach pojedynczych wariantów), a nagłówek modala i intro wizarda
+ * przez `textContent` (M87: brak HTML-a — inaczej gracz czyta surowy markup).
+ * Dlatego wariant z ikonami jest OSOBNYM wywołaniem tej samej funkcji, a nie
+ * zmianą jej wyniku: tekst tytułu zostaje bez zmian (`{G}{W}`), a różni się
+ * wyłącznie sposób zapisu kosztu w warstwie, która umie renderować HTML.
+ */
+export function choiceGroupTitle(request, session, view, { manaHtml = false } = {}) {
   const options = request?.options ?? [];
   const discard = view?.pendingDiscardChoice;
   if (options[0]?.type === 'resolve_discard_choice' && discard?.count > 1 && !discard.allowDecline) {
@@ -2437,9 +2447,12 @@ export function choiceGroupTitle(request, session, view) {
     if (groupObject && (groupObject.spell?.modes ?? []).length > 1 && groupModes.size > 0) {
       // Koszt w tytule (zgłoszenie M, krok 1: „Rzuć: <karta> (koszt)"). Notacja
       // `{3}{W}` jak w logu i regułach — tytuł idzie też do textContent
-      // nagłówka modala (M87), więc nie może nieść HTML-a ikon.
+      // nagłówka modala (M87), więc nie może nieść HTML-a ikon. Wyjątkiem jest
+      // panel akcji (`manaHtml: true`): tam etykieta leci przez innerHTML i
+      // koszt ma być ikonami many (A, zgłoszenie właściciela 2026-09-21).
       const rawCost = MANA_COSTS[groupObject.cardId];
-      return `Rzuć: ${session.nameOf(groupObject.cardId)}${rawCost ? ` (koszt ${rawCost})` : ''}`;
+      const cost = rawCost ? (manaHtml ? manaCostHtml(rawCost) : rawCost) : null;
+      return `Rzuć: ${session.nameOf(groupObject.cardId)}${cost ? ` (koszt ${cost})` : ''}`;
     }
   }
   const titled = choiceSourceTitle(options[0], session, view);
@@ -2489,7 +2502,11 @@ export function choiceGroupLabel(request, session, view) {
   // = podzbiory celów × wartości X), przestarzała od czasu kreatorów i
   // wyborów modalnych — wpis panelu nazywa CZYNNOŚĆ (tytuł grupy), a realny
   // wybór (ile celów, jaki X, ile mocy) dokonuje się wewnątrz kreatora.
-  return choiceGroupTitle(request, session, view);
+  // A (zgłoszenie właściciela 2026-09-21): ten wariant trafia wyłącznie do
+  // `innerHTML` panelu akcji (render.js i main.js), więc koszt rzutu ma w nim
+  // ikony many — inaczej czar modalny wyglądał inaczej niż każdy inny
+  // („(koszt {G}{W})" zamiast kolorowych pipów).
+  return choiceGroupTitle(request, session, view, { manaHtml: true });
 }
 
 /**
