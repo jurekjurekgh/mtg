@@ -39,7 +39,7 @@ import { detectImageMode } from './card-images.js';
 // import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
-import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf } from './multi-target.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
 
@@ -488,6 +488,35 @@ function bootstrapTable() {
     //            rekurencja z pod-zadaniem złożonym z wariantów wybranego trybu,
     //            więc cele zbiera ten sam kreator, co dla zwykłego czaru.
     // Wcześniej panel enumerował iloczyn „tryb × cele" (Robbers: 5 wierszy).
+    // M405/C (uwaga z gry — Vandalize): „Choose one or both • Destroy target
+    // artifact. • Destroy target land.” — kreator GNIĄZD wyboru: sekcja na
+    // tryb-składnik (0–1 kandydata z WSZYSTKICH), tryb „oba” dostarcza
+    // kandydatów gniazd, a tryb rzutu wynika z wyboru. Właściciel: „wybrania
+    // 0-1 artefaktu ze wszystkich możliwych oraz 0-1 lądu ze wszystkich
+    // możliwych” zamiast trzech gotowców z celami „pierwsze z brzegu”.
+    // PRZED castModePlanOf — plan bardziej wyspecjalizowany (kontrakt kaskady
+    // M300/1: od najwęższego do ogólnego).
+    const oneOrBothPlan = chooseOneOrBothPlanOf(request.options ?? []);
+    if (oneOrBothPlan) {
+      const oneOrBothLabels = (oneOrBothPlan.slotModes ?? []).map((modeIndex) => {
+        const src = session.state?.objects?.get(oneOrBothPlan.objectId);
+        return src?.spell?.modes?.[modeIndex]?.name ?? `cel ${modeIndex + 1}`;
+      });
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: oneOrBothPlan,
+        commands: request.options,
+        slotLabels: oneOrBothLabels,
+        intro: `${choiceGroupTitle(request, session, choiceView)} — wskaż 0–1 cel na każdą pozycję (co najmniej jeden):`,
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     const castModePlan = castModePlanOf(request.options ?? []);
     if (castModePlan) {
       const modeOptions = request.options ?? [];

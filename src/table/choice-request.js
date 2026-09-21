@@ -2,7 +2,7 @@ import { choiceResponse } from '../protocol/types.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
-import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection } from './multi-target.js';
+import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForProliferateSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -1190,7 +1190,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
           ? commandForCastWindowSelection(commands, [...chosen][0] ?? null)
           : sacMode
         ? commandForSacrificeSelection(commands, { targets: [...chosen], sacrifice: sacrificeChoice })
-        : slots
+        : plan.chooseOneOrBothMode
+          ? commandForChooseOneOrBoth(plan, slotChoice)
+          : slots
           ? commandForSlots()
           : plan.targetIdsMode
             ? commandForProliferateSelection(commands, [...chosen])

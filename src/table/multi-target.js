@@ -601,6 +601,115 @@ export function commandForButtonsSelection(commands, rowId) {
  * (cele wybiera krok 2). Sam plan nie buduje komend (L48) — `reps` to
  * komendy z ofert silnika.
  */
+/**
+ * M405/C (uwaga z gry — Vandalize): „Choose one or both — Destroy target
+ * artifact. Destroy target land.” Model katalogu spłaszcza „one or both”
+ * do trzech trybów (artifact / land / both — komentarz przy karcie), więc
+ * surowa lista wariantów to trzy WIELOSKŁADNIKOWE opcje z celami wpiętymi
+ * „pierwsze z brzegu”. Właściciel: „Zamiast multi-target modal z możliwością
+ * wybrania 0-1 artefaktu ze wszystkich możliwych oraz 0-1 lądu ze wszystkich
+ * możliwych dostałem jakiś bezsensowny modal wyboru z trzema opcjami”.
+ *
+ * Plan czyta kształt RODZINY KOMEND (ADR 0002 — zero nazw kart):
+ *  - dokładnie jeden tryb ZŁOŻONY (arność ≥ 2) dostarcza GNIAZDA wyboru
+ *    (kandydaci pozycji z jego wariantów),
+ *  - każdy tryb prostszy (arność 1, jednolita w rodzinie) ma kandydatów
+ *    zawartych w DOKŁADNIE jednym gnieździe — to tryb „tylko to gniazdo”
+ *    (znika, gdy gracz zostawi gniazdo puste),
+ *  - każde gniazdo ma swój tryb; wybór = komenda z legalCommands (L48).
+ *
+ * Gniazda są OPCJONALNE (0–1), wymagane co najmniej jedno — „choose one or
+ * both”. Kandydat może należeć do kilku gniazd (ląd-artefakt typu Great
+ * Furnace: „zniszcz artefakt” i „zniszcz ląd” to RÓŻNE tryby na tym samym
+ * obiekcie) — stąd dopasowanie po zawartości, nie po rozłączności (M207).
+ */
+export function chooseOneOrBothPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2) return null;
+  if (!options.every((cmd) => cmd?.type === 'cast_spell' && cmd.modeIndex != null
+    && Array.isArray(cmd.targets) && cmd.targets.length > 0)) return null;
+  const objectId = options[0].objectId;
+  if (!options.every((cmd) => cmd.objectId === objectId)) return null;
+  const byMode = new Map();
+  for (const cmd of options) {
+    const list = byMode.get(cmd.modeIndex) ?? [];
+    list.push(cmd);
+    byMode.set(cmd.modeIndex, list);
+  }
+  if (byMode.size < 2) return null;
+  const arityOf = new Map();
+  for (const [mode, list] of byMode) {
+    const arities = new Set(list.map((c) => c.targets.length));
+    if (arities.size !== 1) return null; // tryb o mieszanej arności = nie ten kształt
+    arityOf.set(mode, [...arities][0]);
+  }
+  const maxArity = Math.max(...arityOf.values());
+  if (maxArity < 2) return null;
+  const comboModes = [...byMode.keys()].filter((m) => arityOf.get(m) === maxArity);
+  if (comboModes.length !== 1) return null;
+  const comboMode = comboModes[0];
+  const slots = [];
+  for (let i = 0; i < maxArity; i += 1) {
+    const ids = [];
+    for (const cmd of byMode.get(comboMode)) {
+      const id = cmd.targets[i];
+      if (id != null && !ids.includes(id)) ids.push(id);
+    }
+    if (ids.length === 0) return null;
+    slots.push(ids);
+  }
+  // tryby 1-celowe wiążą dokładnie jedno gniazdo (kandydaci ⊆ gniazda)
+  const slotModes = new Array(maxArity).fill(null);
+  const modeSlot = new Map([[comboMode, slots.map((_, i) => i)]]);
+  for (const [mode, list] of byMode) {
+    if (mode === comboMode) continue;
+    if (arityOf.get(mode) !== 1) return null;
+    const cands = [...new Set(list.flatMap((c) => c.targets))];
+    const fits = [];
+    slots.forEach((ids, i) => {
+      if (cands.every((id) => ids.includes(id))) fits.push(i);
+    });
+    if (fits.length !== 1) return null;
+    if (slotModes[fits[0]] != null) return null;
+    slotModes[fits[0]] = mode;
+    modeSlot.set(mode, [fits[0]]);
+  }
+  if (slotModes.some((m) => m == null)) return null;
+  // mapa WYBÓR→KOMENDA (klucz `a|b`, '' = gniazdo puste)
+  const bySelection = new Map();
+  for (const cmd of options) {
+    const picks = new Array(maxArity).fill('');
+    const binding = modeSlot.get(cmd.modeIndex);
+    cmd.targets.forEach((id, j) => { picks[binding[j]] = String(id); });
+    bySelection.set(picks.join('|'), cmd);
+  }
+  const targets = [];
+  for (const ids of slots) for (const id of ids) if (!targets.includes(id)) targets.push(id);
+  return {
+    chooseOneOrBothMode: true,
+    type: 'cast_spell',
+    objectId,
+    modeIndex: null,
+    slots,
+    slotOptional: slots.map(() => true),
+    slotModes,
+    targets,
+    minTargets: 0,
+    maxTargets: maxArity,
+    hasX: false,
+    itemLabel: 'cele',
+    bySelection,
+  };
+}
+
+/** Dobór komendy dla wyboru gniazd (null = brak wariantu, „Zatwierdź” gaśnie). */
+export function commandForChooseOneOrBoth(plan, slotChoice) {
+  if (!plan?.chooseOneOrBothMode) return null;
+  const key = (slotChoice ?? plan.slots.map(() => null))
+    .map((id) => (id == null ? '' : String(id))).join('|');
+  return plan.bySelection.get(key) ?? null;
+}
+
 export function castModePlanOf(commands) {
   const options = commands ?? [];
   if (options.length < 2) return null;
