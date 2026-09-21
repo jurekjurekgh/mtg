@@ -1211,6 +1211,34 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       ? id === sacrificeChoice
       : slotChoice[slot] === id);
 
+  /**
+   * B (zgłoszenie właściciela z żywej gry, 2026-09-21, Toll of the Invasion):
+   * „kliknięcie NAZW kart powinno otwierać obrazki tych kart — nie działa".
+   *
+   * Wiersz decyzji nazywa kartę, której NIE MA w widocznych strefach gracza:
+   * karta z ODKRYTEJ ręki przeciwnika to w widoku wpis `{id, hidden: true}`
+   * (FoW — playerView zakrywa cudzą rękę). Takie wiersze niosą objectId, a
+   * ścieżka podglądu po objectId (`openCardFullscreen`) wymaga obiektu
+   * z widocznej strefy — nie znajduje go i MILCZY, więc klik nic nie robi.
+   *
+   * Skoro etykieta wiersza JUŻ pokazuje nazwę karty (`objectName` czyta ją
+   * z sesji — tak samo jak nazwy w logu), obraz otwieramy po `cardId`
+   * z pełnego stanu sesji, tą samą drogą co linki kart w logu
+   * (`onOpenCardByCardId`). Zwracamy null, gdy obiekt JEST widoczny (wtedy
+   * zostaje ścieżka objectId — karuzela strefy „2 / 7" działa jak dotąd)
+   * albo gdy karta leży w BIBLIOTECE: zakryty wierzch biblioteki nie może
+   * stać się klikalny (FoW; CR 401.2 — kolejność i tożsamość kart są ukryte).
+   */
+  const hiddenObjectCardId = (id) => {
+    if (typeof id !== 'string' || id.length === 0) return null;
+    const visible = Object.values(view?.zones ?? {})
+      .some((lista) => (lista ?? []).some((o) => o?.id === id && !o.hidden));
+    if (visible) return null;
+    const object = session?.state?.objects?.get?.(id) ?? null;
+    if (!object || object.zone === 'library') return null;
+    return object.cardId ?? null;
+  };
+
   const syncRows = () => {
     for (const row of rows) row.handle.setChecked(pickOf(row));
   };
@@ -1223,6 +1251,11 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     const kind = forceKind ?? ((typeof slot === 'number' || slot === 'sac' || exclusive) ? 'radio' : 'checkbox');
     const group = groupOverride !== undefined ? groupOverride
       : (typeof slot === 'number' ? `multi-target-slot-${slot}` : (slot === 'sac' ? 'multi-target-sac' : (exclusive ? 'multi-target-single' : null)));
+    // B (2026-09-21): wiersz z jawnym cardId (okna rzutu, tryb przyciskowy) ma
+    // go od wywołującego; wiersz-obiekt z zakrytej strefy dostaje kartę
+    // z `hiddenObjectCardId` — inaczej klik w nazwę milczał (szczegóły przy
+    // definicji helpera). Widoczny obiekt zostaje przy objectId (karuzela).
+    const previewCardId = cardId ?? hiddenObjectCardId(id);
     const handle = renderPickerRow(list, {
       id,
       // M312 (zgłoszenie właściciela, Village Rites): etykieta od wywołującego
@@ -1266,10 +1299,12 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       // cardId (karty rzutu, enumy z kartami) mają klikalną nazwę otwierającą
       // pełny ekran; nazwy kart z obiektów używają objectId → pełny ekran przez
       // `openCardFullscreen` (który tłumaczy objectId na cardId wewnętrznie).
-      onOpenCard: cardId != null
+      // B (2026-09-21): obiektu z zakrytej strefy nie otworzy ścieżka objectId
+      // — `hiddenObjectCardId` daje wtedy kartę do podglądu po cardId.
+      onOpenCard: previewCardId != null
         ? (cid) => onOpenCardByCardId?.(cid)
         : ((isPlayer(id) || id === NONE_PICK || labelOverride != null) ? null : onOpenCard),
-      openCardId: cardId ?? null,
+      openCardId: previewCardId ?? null,
     });
     rows.push({ id, slot, handle });
   };
