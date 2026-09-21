@@ -69,16 +69,6 @@ export function createAggroBot() {
           const casts = byType(view, 'resolve_rebound_cast').filter((cmd) => cmd.cast);
           return (casts[0] ?? found);
         }
-        if (type === 'resolve_aura_host') {
-          // Sesja 2026-09-21 (gospodarz-GRACZ, CR 303.4f): „Enchant player"
-          // wracające z grobu ma kandydatów-GRACZY. Pierwszy wariant z listy
-          // mógłby zaczarować SAMEGO aggro (kolejność kandydatów = kolejność
-          // graczy), a jedyna taka aura w katalogu to wroga klątwa (Curse of
-          // the Pierced Heart) — wybieramy gospodarza spoza siebie, gdy jest.
-          const hostIsPlayer = (id) => (view.pendingAuraHost?.candidatePlayerIds ?? []).includes(id);
-          const obcy = byType(view, 'resolve_aura_host').find((cmd) => hostIsPlayer(cmd.auraHostId) && cmd.auraHostId !== view.playerId);
-          if (obcy) return obcy;
-        }
         if (type === 'resolve_exploit_choice') {
           // M361/B1 (strażnik benchmarku): źródło exploita jest legalnym
           // kandydatem (VOW Release Notes), ale aggro nie poświęca samego
