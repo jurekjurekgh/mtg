@@ -45,8 +45,8 @@ zgodności twierdzeń ze stanem kodu (L56 — zdanie o danych sprawdzam grepem).
 
 ### E1 — PR na starcie (ADR 0020 A)
 
-- [ ] ten plik jako osobny commit + push gałęzi `arena/01a0c0af-mtg`;
-- [ ] otwarcie PR do `main` PRZED kodowaniem.
+- [x] ten plik jako osobny commit + push gałęzi `arena/01a0c0af-mtg` (`966e820`);
+- [x] otwarcie PR do `main` PRZED kodowaniem (PR #132).
 
 ### E2 — audyt silnika PR #131 (ADR 0020 B / 0016 / 0030)
 
@@ -56,35 +56,35 @@ przypadków po nazwie/ID karty), kompletności widoku (ADR 0017), determinizmu
 (ADR 0005) i kontraktów zdarzeń (L112/L153). Każde znalezisko: test RED →
 naprawa u root cause → GREEN → mutacja (L13) → bramy → commit → push.
 
-- [ ] E2.1 T1: `delveGenericMana` (jedno źródło limitu), `affordableDelveCounts`
+- [x] E2.1 T1: `delveGenericMana` (jedno źródło limitu), `affordableDelveCounts`
       (bramka czarów i permanentów), strażnik sumy przed pierwszą mutacją,
       `producibleMana` w `castSpell`, reset licznika instancji/sorcery.
-- [ ] E2.2 T2: ścieżka `pendingAuraHost`/`resolve_aura_host` — siedem warstw
+- [x] E2.2 T2: ścieżka `pendingAuraHost`/`resolve_aura_host` — siedem warstw
       L48 pkt 8; kolejność zdarzeń powrotu (wjazd aury do strefy, wybór
       gospodarza PRZED wejściem, brak gospodarza → karta zostaje w grobie).
-- [ ] E2.3 T3/T5: `cardInfo`/`renderCardPreview`/`rulesText` dla Delve,
+- [x] E2.3 T3/T5: `cardInfo`/`renderCardPreview`/`rulesText` dla Delve,
       `modalIntroText` w narzędziu, skan znaków niełacińskich.
-- [ ] E2.4 T4: `blockCandidatePool` vs `legalBlockerOptions` (cap), pole
+- [x] E2.4 T4: `blockCandidatePool` vs `legalBlockerOptions` (cap), pole
       `blockCandidates` w widoku, wiersze wizarda; brak `modeFollowUpPlanOf`
       i piny na funkcjach produkcji.
-- [ ] E2.5 raport `docs/audits/AUDYT_PR131_2026-09-20.md` + wpis w opisie PR.
+- [x] E2.5 raport `docs/audits/AUDYT_PR131_2026-09-20.md` (`87e02af`, §7 w `6a7d9f3`) + wpis w opisie PR.
 
 ### E3 — pętla jakości (ADR 0021 pkt 4a)
 
-- [ ] `npm run build`, `npm i` w `tools/table-tester`, partie Żywym Testerem
+- [x] `npm run build`, `npm i` w `tools/table-tester`, partie Żywym Testerem
       na `dist/` (co najmniej 8, różne talie/seedy) — L76;
-- [ ] ręczna lektura transkryptów (L27 — zero zgłoszeń to pomiar narzędzia),
+- [x] ręczna lektura transkryptów (L27 — zero zgłoszeń to pomiar narzędzia),
       każde znalezisko: naprawa u root cause + nowy detektor/pin.
 
 ### E4 — domknięcie
 
-- [ ] bramy: `node tools/run-tests.mjs all`, `npm run build`,
+- [x] bramy: `node tools/run-tests.mjs all`, `npm run build`,
       `node --test test/bot-benchmark.test.js`, `node tools/benchmark.mjs --quick`
       (bez pełnej macierzy — ADR 0018);
-- [ ] `docs/LESSONS.md` (nowe lekcje + rozliczenie budżetu lektury),
+- [x] `docs/LESSONS.md` (L159–L161 + rozliczenie budżetu lektury — kondensacja),
       `docs/ENGINE_MILESTONES.md`, `docs/PROJECT_HISTORY.md`,
       `docs/setup/HANDOFF_2026-09-20e.md`, README (liczby mierzone — L92);
-- [ ] opis PR zaktualizowany kumulatywnie; blok przekazania w czacie.
+- [x] opis PR zaktualizowany kumulatywnie; blok przekazania w czacie.
 
 ## Ryzyka i pułapki (z rejestru lekcji)
 
@@ -102,3 +102,15 @@ naprawa u root cause → GREEN → mutacja (L13) → bramy → commit → push.
   w pliku testu.
 - **Token GitHub** wygasał w poprzedniej sesji — push po każdym zielonym
   kroku, bez force pusha (ADR 0020 D).
+
+## Podsumowanie wykonania (2026-09-20e)
+
+Wszystkie etapy domknięte. Znaleziska: **F1–F15** (piny i naprawy wyżej),
+matryca mutacyjna **31/34 RED** + N19–N23; trzy zielone mutacje mają zmierzony
+powód (§6 raportu). Bramy końcowe: `npm test` **6063/6063**,
+`node tools/run-tests.mjs all` **6073/6073**, `node --test
+test/bot-benchmark.test.js` **10/10**, `node tools/benchmark.mjs --quick`
+**672 mecze / 142,3 s, 0 niedokończonych** / heuristic **85,9%** (577/672), build **59 modułów /
+3976,2 kB**, budżet lektury **98 822/100 000**. Granica pokrycia E3 (decyzja
+gospodarza aury, CR 303.4f): 0 wystąpień w 14 partiach — opisana w §7 raportu
+i w handoffie. Komity: `966e820` → `6a7d9f3` (+ końcówka E4).

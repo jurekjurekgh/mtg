@@ -6590,3 +6590,56 @@ L158 opłacony kondensacją wstępu rejestru, pięciu linii „wpis zbiorczy" i 
 uruchamiano (ADR 0018). Lekcja: **L158** (menu opcji to nie pula możliwości
 gracza; pomiar bez strażnika klasy gnije; lustro cudzej kaskady pinowane testami
 kłamie).
+
+## M399 (2026-09-20e) — audyt PR #131: piny F1–F15 + pętla jakości E3 (PR #132)
+
+Sesja `arena/01a0c0af-mtg`, PR #132 — audyt poprzedniego scalonego PR (ADR 0020 B)
+plus pętla domyślna (ADR 0021 pkt 4a). Zakres #131: Delve (CR 702.66), gospodarz
+aury z grobu (CR 303.4f), licznik „pierwszy instant/sorcery w turze”, pula
+blokerów ponad capem menu (CR 509.1b), usunięcie lustra kaskady panelu —
+15 plików `src/` (+450/−109), 11 testowych, 16 dokumentów, 2 narzędzia.
+
+**E2 — audyt 45 plików zmiany.** Przegląd każdego pliku `src/` z twierdzeniami
+regułowymi sprawdzanymi wobec CR i rulingów (KTK 2021-03-19 dla Delve, TDC
+2023-04-14 dla licznika, OTJ 2024-04-12 dla gospodarza aury), 37 mutacji
+w trzech harnessach. Piętnaście znalezisk F1–F15: **F7** (wycena Craft
+w grobie czytała `objectOnBoard`), **F8/F8b** (ślad bota bez nazw i projekcji),
+**F9** (pin modalnego czaru ślepy na `false` — `ok !== undefined`), **F10**
+(niepinowany warunek `stack.length > 0` w ofercie puli), **F11–F13** (piny
+niezmiennika otwartej decyzji aury i logu kandydatów), **F14** (wizard bloków
+pozwalał zaznaczyć tego samego blokera pod dwoma atakującymi — silnik odrzucał
+komendę po wysłaniu; legalny wyjątek: Cenn's Tactician z 2–3 slotami) — widok
+niesie teraz `blockerSlots` z `buildBlockerView`, a wizard liczy użycia
+z `blockedBy`. Matryca mutacyjna 31/34 RED; trzy zielone mają zmierzony powód
+(M11/M12 — bramki osłonowe, N18 — no-op przy domyślnej wadze `ability: 1`).
+
+**E3 — pętla jakości.** Artefakt przebudowany (`dist/mtg-table.html`, 59 modułów /
+3976,2 kB), 8 partii Żywym Testerem (seedy 71–78; talie z Delve, Annie Flash,
+Zoraline, pulą blokerów): 8/8 naturalnych końców, 0 zgłoszeń detektorów,
+0 niewycenionych ruchów, pokrycie 201 akcji widzianych / 190 klikniętych,
+17 modali. Delve widoczny na żywo (Hooting Mandrills, tura 10, dominaria-brg-75).
+Ręczna lektura transkryptów (L27) plus skan `scan.mjs` (723 trafienia, po
+odsianiu szumu tekstu kart zostało 1 realne) dała **F15**: log prewencji
+Ethersworn Shieldmage mówił „chronionym obiektom” bez ZAKRESU — naprawa
+u źródła: deskryptor niesie `description` („artefaktowym stworom”), silnik
+przenosi je do zdarzenia `damage_prevention_started` (`filterDescription`)
+i filtra stanu, sesja używa go z fallbackiem; pin trzech ogniw, mutacje
+N21–N23 czerwienią (`3cb383d`).
+
+**Granica pokrycia (zmierzona).** Decyzja gospodarza aury (CR 303.4f) nie
+wystąpiła w 14 partiach (8 + 6 celowanych na worek-dziki/worek-basni
+z Annie Flash i Zoraline, seedy 91–93) — Annie Flash została zagrana, Capture
+Sphere bywała na polu, Clawing Torment w grobie, ale koniunkcja „zwracana aura
++ ≥2 legalnych gospodarzy” nie zaszła. Warstwę pokrywają piny silnika
+(`audyt-pr130-gospodarz-aury` + F2/F3/F11/F12/F13).
+
+**E4 — domknięcie.** Raport `docs/audits/AUDYT_PR131_2026-09-20.md` (§1–§9;
+§7 = pętla jakości, §8 werdykt APPROVE z zastrzeżeniami), lekcje **L159–L161**
+(mutacja, która nie zaszła, i mutacja w no-op; strażnik źródła a refaktor;
+narracja zakresu z deskryptora + fallback), kondensacja rejestru lekcji
+(budżet startowy z zapasu 98 B do ~3,3 kB — Strażniki rozbudowanych lekcji
+przeniesione do `docs/LESSONS_PRZYPADKI.md`), handoff `2026-09-20e`.
+
+**Bramy:** `npm test` **6063/6063**, `node tools/run-tests.mjs all`
+**6073/6073**; build 59 modułów / 3976,2 kB; budżet lektury **98 822/100 000**.
+Pełnej macierzy B0 nie uruchamiano (ADR 0018).

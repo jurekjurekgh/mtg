@@ -11894,3 +11894,72 @@ Przerwy techniczne: token GitHub wygasał w trakcie sesji trzykrotnie — push
 `d6eb27a`/`1222c46`/`4004f1b` przeszedł po odnowieniu, commit `0da56a9` i
 dokumentacja czekały na kolejne odnowienie (gałąź jest append-only, nic nie
 zginęło; `git push origin arena/01a0bf64-mtg` po ponownym połączeniu).
+
+## 2026-09-20e — sesja „Kontynuujemy projekt." (PR #132): audyt PR #131 — piny F1–F15 + pętla jakości E3 (arena/01a0c0af-mtg)
+
+Wejście: „Kontynuujemy projekt." → ADR 0021 (pętla domyślna, bez pytania
+o kolejkę), ADR 0020 (A: PR przed kodowaniem, B: audyt poprzedniego scalonego
+PR — tym razem #131, C: commit i push po każdym zielonym kroku, D: tylko
+przyrostowo). Handoff 2026-09-20c mówił: po scaleniu #131 zrobić jego audyt
+i wrócić do pętli domyślnej — to była ta sesja.
+
+Zakres #131: Delve (CR 702.66), gospodarz aury z grobu (CR 303.4f), licznik
+„pierwszy instant/sorcery w turze”, pula blokerów ponad capem menu (CR 509.1b),
+usunięcie lustra kaskady panelu. 45 plików zmiany (15 `src/` = +450/−109,
+11 testowych, 16 dokumentów, 2 narzędzia, `README.md`).
+
+Kolejność pracy (każdy element: pin RED → naprawa u źródła → GREEN → mutacja →
+bramy → commit → push):
+
+1. **Piny E2 (`682177e`, `e5c2f90`, `6515fc3`, `4306ac3`, `d50ee1a`, `8bcf669`)** —
+   F1–F13: bramka kosztu Delve i atomowość płatności, kolejność zdarzeń powrotu
+   aury i odrzucenie gospodarza spoza listy, pula blokerów = prawda z komendy
+   przy „can't block alone” (CR 509.1c), wycena Craft w grobie (F7 —
+   `objectOnBoard` na karcie w grobie), ślad bota wariantów bez nazw i projekcji
+   (F8/F8b, ratchet 39/39), ślepy pin modalnego czaru (F9 — `ok !== undefined`
+   dla booleanów przechodzi też dla `false`), niepinowany warunek
+   `stack.length > 0` w ofercie puli (F10), niezmiennik otwartej decyzji aury
+   (F11–F12) i log kandydatów (F13).
+2. **F14 (`f39ca65`)** — wizard bloków rysował wiersze z SUMY OFERT i pozwalał
+   zaznaczyć tego samego blokera pod dwoma atakującymi; silnik odrzucał komendę
+   PO wysłaniu, a legalny wyjątek (Cenn's Tactician, bloker o 2–3 slotach) był
+   nieosiągalny. Naprawa rozdziela menu od puli: widok niesie `blockerSlots`
+   z `buildBlockerView` (sloty z `blockSlotsFor`, tylko blokery z puli), wizard
+   liczy użycia z `blockedBy` i pokazuje `.combat-wizard-error` bez wysyłania
+   komendy. Mutacje N19/N20 czerwienią; E6/6 (guard łańcucha) zaktualizowany
+   do nowego kształtu pola w tym samym commicie.
+3. **Raport E2 (`87e02af`)** — `docs/audits/AUDYT_PR131_2026-09-20.md` (§1 bramy,
+   §2 przegląd 45 plików, §3 matryca M1–M14 + N1–N20 = 31/34 RED, §4 F1–F14,
+   §5 strażnicy samo-zapalone, §6 otwarte L158, §8 werdykt APPROVE
+   z zastrzeżeniami, §9 dodatek commitów). Poprawka cyrylickiej litery
+   w opisie incydentu E5 (U+0441) — strażnik E5 złapał ją w nowym pliku.
+4. **F15 (`3cb383d`)** — pętla jakości E3: 8 partii Żywym Testerem na `dist/`
+   (seedy 71–78) dało 8/8 naturalnych końców, 0 zgłoszeń detektorów,
+   0 niewycenionych ruchów i pokrycie 201 akcji widzianych / 190 klikniętych.
+   Ręczna lektura transkryptów (L27 — zero zgłoszeń to pomiar narzędzia)
+   i skan `scan.mjs` (723 trafienia, po odsianiu szumu tekstu kart zostało
+   jedno realne) dały znalezisko NARRACYJNE: log prewencji Ethersworn
+   Shieldmage mówił „chronionym obiektom” bez zakresu, choć karta mówi
+   o artefaktowych stworach. Naprawa u źródła: deskryptor niesie `description`
+   („artefaktowym stworom”), silnik przenosi je do zdarzenia
+   `damage_prevention_started` (`filterDescription`) i filtra stanu, sesja
+   używa go z fallbackiem. Pin trzech ogniw + mutacje N21–N23 czerwienią.
+5. **Raport §7 (`6a7d9f3`)** — sekcja pętli jakości wypełniona zmierzonymi
+   liczbami, F15 i GRANICAMI pokrycia: decyzja gospodarza aury (CR 303.4f) nie
+   zaszła w 14 partiach (8 + 6 celowanych: worek-dziki z Annie Flash vs theros,
+   worek-basni z Zoraline vs alara, seedy 91–93), choć Annie Flash została
+   zagrana, Capture Sphere bywała na polu, a Clawing Torment w grobie — brak
+   koniunkcji „zwracana aura + ≥2 legalnych gospodarzy”. Warstwę pokrywają piny
+   silnika. Sekcja §1 przeliczona na build po F15 (59 modułów / 3976,2 kB).
+
+Dokumentacja: raport `docs/audits/AUDYT_PR131_2026-09-20.md`, lekcje
+**L159–L161** w `docs/LESSONS.md` (mutacja, która nie zaszła, i mutacja w no-op;
+strażnik źródła a refaktor; narracja zakresu z deskryptora + fallback),
+kondensacja rejestru lekcji (budżet startowy z zapasu 98 B do ~3,3 kB —
+rozbudowane Strażniki lekcji L86–L138 przeniesione do `docs/LESSONS_PRZYPADKI.md`),
+milestone **M399**, handoff `docs/setup/HANDOFF_2026-09-20e.md`, aktualizacja
+„Bieżącego stanu” w `README.md`.
+
+Bramy: `npm test` **6063/6063**; `node tools/run-tests.mjs all` **6073/6073**;
+build **59 modułów / 3976,2 kB**; budżet lektury **98 822/100 000**. Pełnej
+macierzy B0 nie uruchamiano (ADR 0018).
