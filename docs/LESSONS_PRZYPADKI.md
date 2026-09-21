@@ -571,22 +571,6 @@ REALNIE walczy (`attacking || blocking`).
 wyprowadza je z `state.combat.attackers`. Test ustawiający je wprost przechodzi
 z niewłaściwego powodu.
 
-## L62 (2026-08-25) — przypadek
-
-**Objaw (M205):** kolektor wpisów logu w Żywym Testerze („odpytuj nowe linie
-`#log` po indeksie" — wg handoffu) znajdował 0 wpisów, choć sesja je
-generowała i `session.log` je miał.
-
-**Przyczyna:** `render.js` rysuje log od NAJNOWSZEGO
-(`[...session.log].reverse()`), więc nowe wpisy dokładają się na POCZĄTKU
-listy DOM; pętla `for (i = widzianeDotąd; i < entries.length; i++)` czytała
-najstarsze jako „nowe". Poprawnie: `entries.slice(0, nowe).reverse()`.
-
-**Wariant z tej samej sesji:** `--out katalog/plik.txt` do nieistniejącego
-katalogu wywracał zapis na ENOENT dopiero PO ~40-sekundowym przebiegu — cały
-transkrypt przepadał. Narzędzie waliduje miejsce zapisu ZANIM zacznie mierzyć
-(L33).
-
 ## L60 (2026-08-24) — przypadek
 
 **Objaw (M203, audyt PR #74):** Żywy Tester miał domyślne talie `--human green
@@ -749,29 +733,6 @@ realny błąd (Cellar Door: katalog „mills 1", Oracle „puts the bottom card�
 
 5. Testy UI renderują i sprawdzają WYNIK (drzewo elementów, reakcja na
    zdarzenie), nie obecność napisów w pliku.
-## L9 (2026-08-14) — przypadek
-
-**Objaw (dwukrotny):** (a) handoff twierdził, że pięć fixów przepadło z
-workspace — bo nie zostały wypchnięte; (b) sandbox odtworzył workspace ze
-świeżego klona w środku pracy i commit wylądował na `main`.
-
-**Przyczyna:** nowa sesja Areny widzi wyłącznie `main` na GitHubie i treść
-pierwszego promptu (ADR 0013). Środowisko może zresetować workspace w trakcie
-sesji (reflog: `clone: from …`).
-
-**Procedury:** [docs/setup/ENVIRONMENT.md](setup/ENVIRONMENT.md) §1–2.
-
-## L10 (2026-08-14) — przypadek
-
-**Objaw:** właściciel zgłosił, że PR od 30 minut nie ma opcji scalania ani
-informacji o CI. Odruch: szukać błędu w workflow albo w ochronie gałęzi.
-
-**Diagnoza (4 zapytania):** (1) `gh pr view --json state,mergeable,
-mergeStateStatus,statusCheckRollup` → `MERGEABLE`, `CLEAN`, check `test` =
-`SUCCESS`; (2) `git ls-remote origin <gałąź>` vs `head_sha` runu CI → ten sam
-commit; (3) `gh api repos/…/rules/branches/main` → reguły, `reviewThreads.
-totalCount = 0`; (4) `githubstatus.com/api/v2/summary.json` → brak incydentów.
-
 ## L11 (2026-08-14) — przypadek
 
 **Kontekst:** wyzwanie „znajdź 10 błędów" (M95) na engine z 1600 testami.
@@ -958,16 +919,6 @@ Ruchy bota z tego momentu nie trafiały do modala „Rozgrywka".
 `session.recheckAutoPass()`, które przewija grę (auto-pass, tura bota). Po
 przewinięciu nie było renderu, więc na ekranie został panel z MINIONEGO okna —
 z komendami sprzed przewinięcia.
-
-## L23 (2026-08-16) — przypadek
-
-**Objaw:** w katalogu siedziały trzy błędy kosztów: „{B}{B}" i „{R}" zapisane
-jako sama liczba many (zdolność opłacalna dowolnym kolorem) oraz {2}{U}
-zapisane jako `manaCost: 2` (karta o manę tańsza). Testy kart sprawdzają
-SKUTEK zdolności, nie to, czy dało się ją opłacić złym kolorem.
-
-**Przyczyna:** koszt żyje w dwóch reprezentacjach (`MANA_COSTS[id]` jako string
-Oracle i `manaCost`/`cost.colors` jako dane silnika) bez bramki między nimi.
 
 ## L25 (2026-08-17) — przypadek
 
@@ -2407,13 +2358,6 @@ name-agnostic" (ADR 0002).
 **Objaw:** test okna Vaana dał `trigger_resolved: no_result` — wyglądał jak błąd
 efektu, a to brak danych w teście.
 
-## L122 (2026-09-02) — przypadek
-
-Zanim zdążyłem
-wymyśleć obejście, dwa strażniki powiedziały „nie": M132/B (3,00 nielandowych na ląd
-przy progu 2,00) i M178/ADR 0023 (każda wspierana karta w DOKŁADNIE jednej talii —
-11 z 12 moich kart już gdzieś leżało).
-
 ## L162 (2026-09-21) — przypadek
 
 Kod wyglądał poprawnie (`log-card`, `data-card-id`,
@@ -2459,13 +2403,6 @@ dowiedzieć, co zrobiła jego karta.
 `modifyStats` wyciszony jako szum) i nie emitował zdarzenia; testy silnika
 sprawdzają SKUTEK w stanie, nie istnienie zdarzenia.
 
-## L3 (2026-08-14) — przypadek
-
-**Objaw:** kara −70 za jałowe zagranie (destroy w cel z tarczą regeneracji) nie
-zmieniła zachowania bota.
-**Przyczyna:** scoring sumuje składniki: zaraz po karze ta sama gałąź dodawała
-premię za „usunięcie permanentu przeciwnika", która ją przebijała.
-
 ## L39 (2026-08-18) — przypadek
 
 **Objaw:** audyt „czy każda decyzja ma opis w logu" wykazał 177/177 opisanych
@@ -2491,13 +2428,6 @@ wyboru (M91/D).
 **Przyczyna:** `describeGameEvent` jest czystą funkcją bez dostępu do rejestru
 kart (świadomie — testowalna headless). Zdarzenie niosło `modeIndex`, ale nie
 nazwę trybu.
-
-## L7 (2026-08-14) — przypadek
-
-**Objaw:** handoff stwierdzał, że pięć fixów przepadło z working tree poprzedniej
-sesji; audyt `main` wykazał, że cztery są w repo wraz z testami (M90).
-**Przyczyna:** opis zadania powstał z pamięci o przebiegu sesji, nie z pomiaru
-stanu repozytorium.
 
 ## L72 (2026-08-25) — przypadek
 
@@ -2531,11 +2461,6 @@ identyczne wiersze: „Swamp staje się typem Plains do końca tury" ×2.
 `land_type_changed` (mutacja) i `land_type_choice_resolved` (narracja) — a
 `describeGameEvent` renderował OBA (wariant L24/L6; pokrewne L41, ale po
 stronie zdarzeń).
-
-## L8 (2026-08-14) — przypadek
-
-**Objaw:** przy usuwaniu tymczasowego `console.error` przez `git checkout`
-zniknął też fix wprowadzony w tym samym pliku (M90).
 
 ## L83 (2026-08-28) — przypadek
 

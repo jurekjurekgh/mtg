@@ -12070,3 +12070,19 @@ i strażników).
 
 Bramy po obu krokach: `npm test` **6077/6077**, `node tools/run-tests.mjs
 all` **6087/6087**, build **59 modułów / 3979,8 kB**. Milestone **M401**.
+
+## 2026-09-21c — twardsze cięcie lekcji: 9 wpisów jednorazowych do archiwum (PR #132, gałąź `arena/01a0c0af-mtg`)
+
+Właściciel odwrócił rekomendację z kroku 2 i zlecił twardsze cięcie — merytoryczne,
+nie mechaniczne („lekcje dodawane przy każdej, nawet jednorazowej zmianie; część
+na bank ma nikły sens merytoryczny”). Przegląd wszystkich **162 wpisów** rejestru
+(zakresami do ostatniej linii), kryterium: jednorazowość + reguła odtworzona
+w innym wpisie. Wynik: **9 wpisów → `docs/LESSONS_ARCHIWUM.md`** (L3, L7, L8, L9,
+L10, L23, L35, L62, L122), każdy z powodem, wskazaniem reguły żyjącej dziś, pełną
+treścią i narracją przeniesioną z archiwum przypadków; numery zostają (cytowane
+w kodzie), rejestr ma sekcję-odsyłacz. Dwa szczegóły klasy przeniesione do wpisów
+zbiorczych (L54 pkt 5, L152 pkt 4), usunięte zdublowane linie `→ narracja:`
+(artefakt M275). `docs/LESSONS.md` 130 431 → 125 524 B, `LESSONS_PRZYPADKI.md`
+161 806 → 158 382 B, budżet lektury **97 007 → 95 254/100 000**; testy
+dokumentacji 25/25. Milestone **M402**.
+

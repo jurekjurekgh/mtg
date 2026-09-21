@@ -6,7 +6,9 @@ Mapa dokumentów: `AGENTS.md` §„Gdzie zapisać regułę"; tu uzupełnienie �
 grepem. Rejestr niesie REGUŁĘ i STRAŻNIKA. Lekcja idzie tu, gdy jest powtarzalna
 i nie jest decyzją architektoniczną (te → ADR); wymusza zmianę sposobu pracy →
 `AGENTS.md`; ustala granicę komponentów → ADR + odsyłacz. Lekcji nie kasujemy:
-nieaktualną oznaczamy z odsyłaczem do nowszej.
+nieaktualną oznaczamy z odsyłaczem do nowszej. Wpisy JEDNORAZOWE, których reguła żyje w innym wpisie,
+przenosimy w całości do `docs/LESSONS_ARCHIWUM.md` (numer zostaje — jest
+cytowany w kodzie i testach).
 
 **Wzorzec wpisu (obowiązkowy, bez ozdobników):** `## LN (YYYY-MM-DD) — reguła
 w jednym zdaniu` / **Przypadek:** JEDNO zdanie z konkretami (karta, test, numer
@@ -40,6 +42,13 @@ odsyłacz). Numery są cytowane w kodzie ~1150 razy, więc **żaden nie znika**.
 **Zasada scalania:** wpisy łączymy, gdy opisują JEDNĄ klasę — nigdy dlatego, że
 są stare. Lekcji nie kasujemy ani nie skracamy o fakty (karta, test, CR);
 usuwamy tylko powtórzoną regułę, wstawiając odsyłacz.
+
+## Wpisy przeniesione do archiwum (poza lekturą startową)
+
+Wpisy jednorazowe, których reguła żyje w innym wpisie rejestru (albo
+w `AGENTS.md`/`ENVIRONMENT.md`): **L3, L7, L8, L9, L10, L23, L35, L62, L122**.
+Pełna treść, powód przeniesienia i narracja: `docs/LESSONS_ARCHIWUM.md`.
+Numery zostają — są cytowane w kodzie i testach.
 
 ---
 
@@ -716,17 +725,6 @@ mierzył `flush()`, nie naprawę). To L1 w najgroźniejszym wariancie: test
 istnieje, ma nazwę i komentarz, więc temat uchodzi za zabezpieczony.
 
 
-## L62 (2026-08-25) — Kolejność renderu to część kontraktu: log rysowany od najnowszego łamie liczenie „nowych" po indeksie
-
-**Przypadek:** — kolektor wpisów logu w Żywym Testerze („odpytuj nowe linie `#log` po indeksie") znajdował 0 wpisów, choć sesja je generow…
-
-**Reguła:** zanim oprzesz narzędzie na „nowe elementy = ogon listy", sprawdź w
-renderze kierunek rysowania (`reverse()`, `prepend`, `insertBefore`,
-`column-reverse`). Kolejność renderu to kontrakt UI jak nazwy klas.
-
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L62)
-
-
 ## L60 (2026-08-24) — Narzędzie audytu, które milcząco przyjmuje złą konfigurację, produkuje audyty o czymś innym
 
 **Przypadek:** Żywy Tester miał domyślne talie `--human green --bot red`; takich talii nie ma od M178 (ADR 0023).
@@ -851,6 +849,9 @@ DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
 4. Klamry celowania są SYMETRYCZNE i centralne: wrogi efekt we własny cel
    (`selfHarmPenalty`) oraz przyjazny we wroga (`friendlyMisaimPenalty`) — w
    call-site'ach gałęzi, nie w każdej gałązce osobno.
+5. Przy zagraniu JAŁOWYM (efekt z definicji nie zadziała) kara musi POMINĄĆ
+   premię (`continue`) — inaczej premia ją zjada; po zmianie wag dowiedź
+   testem, że decyzja naprawdę się zmieniła (wariant klasy z archiwum: L3).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L54)
 
 
@@ -923,15 +924,6 @@ maskowanie objawu.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L2)
 
 
-## L3 (2026-08-14) — Kara w heurystyce musi przebić premię, inaczej jest martwa
-
-**Reguła:** przy zagraniu JAŁOWYM (efekt z definicji nie zadziała) nie wystarczy
-dodać karę — trzeba POMINĄĆ PREMIĘ (`continue`). Po zmianie wag sprawdź testem,
-że decyzja się zmieniła; samo naliczenie kary niczego nie dowodzi.
-
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L3)
-
-
 ## L4 (2026-08-14) — Odrzucona komenda nie może zmieniać stanu sesji
 
 **Reguła:** stan UI/sesji mutujesz dopiero PO potwierdzeniu, że komenda została
@@ -975,56 +967,6 @@ zbudowania komunikatu. Jeśli wymagałaby rejestru albo stanu — dołóż dane 
 zdarzenia.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L6)
-
-
-## L7 (2026-08-14) — Weryfikuj stan repozytorium, nie treść zlecenia
-
-**Reguła:** repo, testy i dokumentacja są źródłem prawdy (AGENTS.md). Sesję
-zaczynaj od pomiaru (`npm test`, `npm run build`, `git log`), nie od przyjęcia
-zlecenia na wiarę. Rozbieżność zgłoś jawnie.
-
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L7)
-
-
-## L8 (2026-08-14) — `git checkout <plik>` cofa także własne, niezacommitowane zmiany
-
-**Reguła:** przed instrumentowaniem kodu ZACOMMITUJ fix albo przywracaj zmiany
-punktowo (edycja odwrotna). Po każdym `git checkout` sprawdź `git diff`/testem,
-że zamierzona zmiana istnieje.
-**Więcej pułapek:** [docs/setup/ENVIRONMENT.md](setup/ENVIRONMENT.md).
-
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L8)
-
-
-## L9 (2026-08-14) — Praca istnieje dopiero po `git push`
-
-**Przypadek:** (a) handoff twierdził, że pięć fixów przepadło — bo nie były wypchnięte; (b) sandbox odtworzył workspace w środku pracy i commit wylądował na `main`.
-
-**Reguła:**
-- Commituj i pushuj po każdym samodzielnie zielonym kroku, nie zbieraj
-  commitów „na koniec".
-- Po commicie sprawdź `git log --oneline -1` (czy HEAD tam, gdzie trzeba).
-- Po resecie workspace: `git fetch origin <gałąź>` + `git reset --hard
-  FETCH_HEAD`; commit omyłkowo na `main` przenieś `cherry-pickiem` (najpierw
-  `git branch backup-… <sha>`).
-- Co ma przetrwać sesję, musi być W REPOZYTORIUM: ustalenie z czatu bez pliku
-  nie istnieje.
-
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L9)
-
-
-## L10 (2026-08-14) — Zanim zaczniesz szukać winy w konfiguracji, sprawdź dane
-
-**Przypadek:** — właściciel zgłosił, że PR od 30 minut nie ma opcji scalania ani informacji o CI.
-
-**Wniosek:** stan po stronie GitHuba był poprawny — objaw dotyczył warstwy
-prezentacji u zgłaszającego (cache przeglądarki).
-
-**Reguła:** przy „coś nie działa w UI GitHuba" zbierz TWARDE DANE Z API przed
-zmianą konfiguracji. Zmiana ustawień pod objaw widoczny w jednej przeglądarce
-potrafi zepsuć działający setup.
-
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L10)
 
 
 ## L11 (2026-08-14) — Jak skutecznie polować na błędy vs Comprehensive Rules
@@ -1180,8 +1122,6 @@ pola wejścia z polami wyjścia. (6) „Silnik liczy dobrze" nie zamyka zgłosze
 Pełne przykłady per warstwa: archiwum.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L21)
 
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L21)
-
 
 ## L22 (2026-08-16) — Akcja, która PRZEWIJA grę, musi kończyć się ponownym renderem
 
@@ -1195,18 +1135,6 @@ po akcji „nic nie robiącej" w grze (przełącznik, ptaszek, zamknięcie modal
 szukaj brakującego renderu, zanim podejrzewasz reguły.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L22)
-
-
-## L23 (2026-08-16) — Koszt karty to DANE: pipy kolorowe i mana value weryfikujesz maszynowo
-
-**Przypadek:** w katalogu siedziały trzy błędy kosztów: „{B}{B}" i „{R}" jako sama liczba many, a {2}{U} jako `manaCost: 2` (karta o manę tańsza).
-
-**Reguła:** dane w dwóch reprezentacjach dostają strażnika porównującego je
-maszynowo (`manaCost` = mana value stringa kosztu dla KAŻDEJ karty; osobny skan
-porównuje pipy linii „{koszt}: efekt" z `cost.colors`). Skanery, które trafiły,
-zostaw w pakiecie jako test-strażnik.
-
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L23)
 
 
 ## L24 (2026-08-16) — „Cichy skutek" to błąd informacyjny: efekt bez zdarzenia nie istnieje dla gracza
@@ -1360,22 +1288,6 @@ a diagnostyka drukuje pełną decyzję. Zanim uznasz test regresyjny za dobry,
 zobacz go CZERWONYM przeciw wersji sprzed naprawy (`git stash`/`git show`).
 Test, którego nigdy nie widziałeś czerwonego, jest opisem bieżącego zachowania
 (rozszerzenie L27 na własne narzędzia).
-
-
-## L35 (2026-08-17) — Nowy widget dziedziczy dług dotykowy, jeśli rodzina nie ma reguły
-
-Uwaga C właściciela („ptaszki w wyborze atakujących za małe na telefonie") nie
-była regresją: te pola NIGDY nie miały CSS. Klasy `.combat-wizard-*` istniały w
-JS od M66, ale w `index.html` nie było dla nich reguły — przeglądarka
-renderowała checkbox ~13-16 px. Identyczny problem rozwiązano w M91 dla
-ptaszka wyciszenia (`.action-ignore`), ale poprawka nie objęła drugiego miejsca,
-bo nikt nie zapytał „gdzie jeszcze mamy pola wyboru".
-**Reguła:** przy poprawce ergonomii dotyku pytaj o RODZINĘ kontrolek (wszystkie
-checkboxy / steppery), nie o zgłoszony widget. Jedno zapytanie o
-`type = 'checkbox'` i `ghost-btn` wskazało trzy miejsca (atakujący, blokujący,
-steppery przydziału obrażeń) — dwa jeszcze niezgłoszone.
-**Strażnik:** próg liczbowy (44 px wg Apple HIG) czytający źródło CSS — styl nie
-ma reprezentacji w testach DOM-owych.
 
 
 ## L36 (2026-08-17) — Próg regresji na małej próbce mierzy szum, nie jakość
@@ -1873,23 +1785,6 @@ a nie obietnicą.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L121)
 
 
-## L122 (2026-09-02) — Materiał do audytu przepuść przez niezmienniki repo w tej samej minucie
-
-**Przypadek:** żeby podnieść pokrycie kreatora celów w Żywym Testerze, ułożyłem
-talię `decks/wielocelowa.txt` (12 kart pickerowych + 12 ciał; talia-sonda usunięta po audycie — trafiała do licznika repo-decks).
-
-**Reguła:** niezmiennik, który mówi „brak materiału", jest rozstrzygnięciem projektu,
-nie błędem formatowym do obejścia. Czytaj komunikat strażnika do końca: tu pierwszy
-był formatowy (lądy), a drugi zasadniczy — i to on pokazał, że realnym problemem jest
-surowiec (7 na 443 kart z >1 celem), nie brak chęci. Trzecia droga (przenieść karty
-między taliami) była gorsza niż brak talii, bo talie karmią benchmark i audyt remisów.
-
-**Strażnik:** `test/repo-decks.test.js` + `test/m132-proporcje-landow.test.js`;
-wniosek zapisany w `docs/backlog.md` §1 i §4.
-
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L122)
-
-
 ## L123 (2026-09-02) — Semantyka zaimplementowana w jednym torze nie istnieje w drugim
 
 **Reguła:** przy każdej wielocelowości audytuj WSZYSTKIE tory, którymi efekt może
@@ -2267,8 +2162,6 @@ grantu → piny 1 i 4 RED, brak bramki atomowości → piny 2 i 3 RED).
 **Strażnik:** `test/dawntreader-elk-tutor-cienka-biblioteka.test.js` (5 pinów; M21 → 3 RED, M22 → 1 RED).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L150)
 
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L150)
-
 
 ## L151 (2026-09-19) — Enumeracja oferty musi pokryć granicę legalności; cap tnie OPCJE, nie użycia
 
@@ -2276,15 +2169,13 @@ grantu → piny 1 i 4 RED, brak bramki atomowości → piny 2 i 3 RED).
 **Strażnik:** `test/block-slots-trojka-oferta.test.js` (4 piny; M23 → 1 RED, M24 → 1 RED).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L151)
 
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L151)
-
 
 ## L152 (2026-09-19) — Dane proweniencji też mają strażnika; „pomiń, bo dane zepsute” to dług
 
-**Reguła:** (1) Audyt danych to osobna ścieżka: porównuj CAŁE zbiory, nie pliki z ostatniego PR-a. (2) Wyjątek „ta karta wypada ze strażnika, bo dane są zepsute” znosi się naprawą danych i licznikiem pominięć = 0. (3) Strażnik danych pilnuje obu stron i ma bramkę na degenerację (minimum sprawdzonych rekordów).
+**Reguła:** (1) Audyt danych to osobna ścieżka: porównuj CAŁE zbiory, nie pliki z ostatniego PR-a. (2) Wyjątek „ta karta wypada ze strażnika, bo dane są zepsute” znosi się naprawą danych i licznikiem pominięć = 0. (3) Strażnik danych pilnuje obu stron i ma bramkę na degenerację (minimum sprawdzonych rekordów). (4) Dwie reprezentacje tej samej danej porównuj maszynowo jednym
+strażnikiem (wzorzec: `manaCost` = mana value stringa kosztu, osobny skan pipów vs
+`cost.colors` — klasa z archiwum: L23).
 **Strażnik:** `test/oracle-bez-literalnego-backslash-n.test.js` (4 piny; M25 → 2 RED, M26 → 2 RED) + `test/ability-cost-pips.test.js` (pominięcia = 0).
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L152)
-
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L152)
 
 
@@ -2326,8 +2217,6 @@ don't"; etykiety panelu i logu).
 przeżycia, a po ataku już nie, premia za wyścig znika i wchodzi jawna kara.
 Wyjątki: atak wygrywający teraz oraz atak letalny (wróg MUSI blokować).
 **Strażnik:** `test/zgloszenie-e-oddana-garda.test.js` — 6/6, RED 5/1.
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L155)
-
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L155)
 
 
@@ -2382,8 +2271,6 @@ kaskady pinowane testami kłamie (`modeFollowUpPlanOf`: inna kolejność niż
 produkcja po M300/1) — pinuj funkcje, które woła gracz.
 **Strażnik:** `test/e6-pula-blokerow-ponad-cap.test.js` (+E6/5),
 `test/e5-znaki-nielacinskie-w-zrodlach.test.js`, D/5.
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L158)
-
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L158)
 
 

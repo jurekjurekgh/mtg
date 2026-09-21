@@ -6726,3 +6726,21 @@ wyłącznie montaż kreatora talii w artefakcie (ADR 0012 ma notę stanu).
 
 **Bramy:** `npm test` **6077/6077**; `node tools/run-tests.mjs all`
 **6087/6087**; build **59 modułów / 3979,8 kB**.
+
+## M402 — 2026-09-21: twardsze cięcie lekcji — 9 wpisów jednorazowych do archiwum (PR #132)
+
+Zlecenie właściciela: przeczytać wszystkie wpisy i przenieść do archiwum te
+jednorazowe, które nie niosą wiedzy na przyszłość (merytorycznie, nie
+mechanicznie). Przegląd objął **162 wpisy**; kryterium: incydent jednorazowy,
+którego reguła żyje już w innym wpisie rejestru albo w `AGENTS.md`/
+`ENVIRONMENT.md`. Do nowego `docs/LESSONS_ARCHIWUM.md` (poza lekturą startową)
+weszło **9 wpisów**: L3 (klasa L54), L7 (AGENTS/ENVIRONMENT), L8 i L9 (L136),
+L10 (jednorazowy support), L23 (klasa L56/L152), L35 (jednorazowa ergonomia),
+L62 (zastąpiony przez L133), L122 (jednorazowy materiał audytu). Każdy wpis ma
+w archiwum powód, wskazanie reguły-żyjącej-dziś i pełną narrację — nic nie jest
+kasowane, numery zostają (są cytowane w kodzie). Dwa szczegóły klasy przeniesione
+do wpisów-zbiorczych: `continue` przy zagraniu jałowym → L54 pkt 5; porównanie
+dwóch reprezentacji tej samej danej → L152 pkt (4). Rejestr: 130 431 → 125 524 B,
+budżet lektury **97 007 → 95 254/100 000**. Bramy bez zmian: `npm test`
+**6077/6077**, `node tools/run-tests.mjs all` **6087/6087**, docs-test **25/25**.
+

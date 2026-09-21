@@ -143,3 +143,18 @@ z nich nadal chroni przed powtarzalnym błędem, często ma pin w kodzie.
 - [Lessons](../../LESSONS.md) · [narracja](../../LESSONS_PRZYPADKI.md) ·
   [rejestr ADR](../decisions/README.md) · [budżet lektury](../setup/ENVIRONMENT.md)
 - Milestone sesji: M401 (`docs/ENGINE_MILESTONES.md`)
+
+## Dopisanie (2026-09-21, po decyzji właściciela) — twardsze cięcie lekcji wykonane
+
+Raport zamykał lekcje wnioskiem „0 merytorycznie martwych”. Właściciel zdecydował
+jednak o **twardszym cięciu**: wpisy jednorazowe, których reguła żyje już
+w innym wpisie, nie muszą zajmować miejsca w obowiązkowej lekturze. Przegląd
+wszystkich 162 wpisów dał **9 takich wpisów → `docs/LESSONS_ARCHIWUM.md`**
+(L3, L7, L8, L9, L10, L23, L35, L62, L122 — powód i reguła-żywa-dziś przy każdym),
+rejestr **130 431 → 125 524 B**, budżet **97 007 → 95 254/100 000**.
+Wniosek raportu zostaje w mocy, bo oba kryteria są różne: „martwa merytorycznie”
+(raport: 0) vs „jednorazowa, reguła mieszka gdzie indziej” (cięcie: 9).
+Rekomendacja na przyszłość bez zmian: rejestr rośnie w tempie ~1 wpis/sesję,
+a mechanizmem kontroli pozostaje kondensacja prozy do `LESSONS_PRZYPADKI`
+(L86–L138), nie archiwizacja reguł żywych.
+
