@@ -108,6 +108,36 @@ export function manaAbilityColors(gameObject) {
 }
 
 /**
+ * M405/B (uwaga z gry — Jeskai Devotee): produkcja many KONKRETNEJ zdolności
+ * z DESKRYPTORA `add_mana` (effect.colors / effect.amount — suma jak silnik
+ * przy rozstrzyganiu, M67 i abilities.js collectManaAmount).
+ *
+ * To inny kontekst niż `manaAbilityColors`/`manaAbilityAmount` wyżej — tam
+ * chodzi o produkcję „za samo {T}” całego obiektu i zdolności z KOSZTEM many
+ * są celowo pomijane (M193/A: Heap Gate nie podnosi kolorów dostępnych
+ * „od ręki”). Konwertery walut („{1}: Add {U}, {R}, or {W}”) żyją TYLKO tu:
+ * kreator many musi widzieć ich produkcję, inaczej źródło wypada z solwera
+ * wariantów płatności i gracz traci wybór (auto-tap pierwszego lepszego
+ * źródła). Brak kolorów w deskryptorze = fallback produkcji obiektu
+ * (mapa/podtypy — jak w efektach M67: effect.colors ?? src.colors).
+ * Kolor wybrany przy wejściu (A3, Manor Gate) dokłada się tak samo jak
+ * w getSourceForObject — jedna reguła unii (L28).
+ */
+export function manaAbilityProductionOf(gameObject, ability) {
+  const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+  const addEffects = (effects ?? []).filter((e) => e?.type === 'add_mana');
+  if (addEffects.length === 0) return null;
+  const descColors = [...new Set(addEffects.flatMap((e) => e.colors ?? []))];
+  const src = getSourceForObject(gameObject);
+  const base = descColors.length > 0 ? descColors : (src?.colors ?? []);
+  const colors = gameObject?.chosenColor && !base.includes(gameObject.chosenColor)
+    ? [...base, gameObject.chosenColor]
+    : base;
+  const amount = addEffects.reduce((acc, e) => acc + (e.amount ?? 1), 0);
+  return { colors, amount };
+}
+
+/**
  * M193/A: ILE many produkuje zdolnosc o koszcie samego {T} (Moonscarred
  * Werewolf: „{T}: Add {G}{G}" → 2). Czytane z tego samego deskryptora co
  * kolory, zeby ilosc i kolor nie mogly sie rozjechac.

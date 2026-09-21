@@ -27,7 +27,7 @@ import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
 import { expandManaPool } from '../engine/resources.js';
-import { getSourceForObject } from '../engine/mana-sources.js';
+import { getSourceForObject, manaAbilityProductionOf } from '../engine/mana-sources.js';
 import { parseManaCost, reduceAlternativeCost } from '../engine/mana-cost.js';
 import { createSpellSoundPlayer, playCastSound } from './spell-sounds.js';
 import { createTopbarToggles } from './topbar-toggles.js';
@@ -2121,14 +2121,21 @@ function bootstrapTable() {
       const ability = obj.abilities?.[abilityIndex];
       const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
       if (!effects.some((e) => e?.type === 'add_mana')) return null;
+      // M405/B (uwaga z gry — Jeskai Devotee): produkcję TEJ zdolności czytamy
+      // z deskryptora add_mana (effect.colors/amount — jak silnik przy
+      // rozstrzyganiu, M67), a nie z getSourceForObject = produkcja „za samo
+      // {T}”, która celowo pomija zdolności z kosztem many (M193/A). Konwerter
+      // walut {1}: Add {U},{R},{W} wypadał z solwera wariantów (amount 0) i
+      // kreator many nie miał wyboru — auto-tap pierwszego lepszego źródła.
+      const production = manaAbilityProductionOf(obj, ability);
       const src = getSourceForObject(obj);
       // D (Powerstone): deskryptor many niesie ograniczenie spendOnly
       // (CR 106.3, token_powerstone — „only to cast artifact spells”).
       const spendOnly = effects.find((e) => e?.type === 'add_mana')?.spendOnly ?? null;
       return {
         cardId: obj.cardId,
-        colors: src?.colors ?? [],
-        amount: src?.amount ?? 0,
+        colors: production?.colors ?? src?.colors ?? [],
+        amount: production?.amount ?? src?.amount ?? 0,
         manaCost: ability?.cost?.mana ?? 0,
         // M311: kolory kosztu aktywacji — kreator NIE netuje kosztu z
         // produkcją (różne waluty i różne momenty, CR 601.2h), więc pip
