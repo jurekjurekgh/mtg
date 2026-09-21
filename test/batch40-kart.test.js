@@ -42,7 +42,7 @@ test('A1: Blade-Blizzard Kitsune — dane + ninjutsu {3}{W} + double strike', ()
   assert.deepEqual(ninjutsu?.cost, { mana: 4, colors: ['W'] });
 
   // Przepływ ninjutsu (wzorzec B7.2): nieblokowany atakujący → oferta → wejście
-  // zatapione i atakujące.
+  // tapnięte i atakujące.
   const state = game('p1');
   state.turn = jumpToStep(state.turn, 'combat_damage', 'p1');
   state.combat = { attackingPlayerId: 'p1', defendingPlayerId: 'p2', attackers: ['rat'], blockers: new Map(), declared: true };
@@ -57,7 +57,7 @@ test('A1: Blade-Blizzard Kitsune — dane + ninjutsu {3}{W} + double strike', ()
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   const fox = [...state.objects.values()].find((o) => o.cardId === 'blade-blizzard-kitsune' && o.zone === 'battlefield');
   assert.ok(fox, 'Kitsune na polu bitwy po ninjutsu');
-  assert.equal(fox.tapped, true, 'weszła zatapiona');
+  assert.equal(fox.tapped, true, 'weszła tapnięta');
   assert.ok(state.combat.attackers.includes(fox.id), 'atakująca');
 });
 
@@ -426,7 +426,7 @@ test("E1: {W},{T}: licznik +1/+1 na celu Soldierze", () => {
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   assert.equal((state.objects.get('guard').counters ?? {})['+1/+1'], 1, 'licznik na Soldierzie');
-  assert.equal(state.objects.get('tact').tapped, true, 'Tactician zatapowany (koszt {T})');
+  assert.equal(state.objects.get('tact').tapped, true, 'Tactician tapowany (koszt {T})');
 });
 
 test("E2: stwór z +1/+1 blokuje DODATKOWEGO stwora (statyka Tacticiana)", () => {

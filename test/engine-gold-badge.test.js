@@ -227,7 +227,7 @@ test('B4: opcjonalna płatność triggera liczy manę PRODUKOWALNĄ (Panic Spell
   passRounds(state, 3);
   const hand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
   assert.equal(hand, 1, 'dobrano kartę po zapłacie z tapniętej góry');
-  assert.equal(state.objects.get('mtn').tapped, true, 'góra zatapnięta (koszt)');
+  assert.equal(state.objects.get('mtn').tapped, true, 'góra tapnięta (koszt)');
 });
 
 // ---------------------------------------------------------------- 5. CR 104.3c

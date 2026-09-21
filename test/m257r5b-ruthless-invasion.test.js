@@ -1,7 +1,7 @@
 // M257 r5b/D (uwaga z testów, właściciel): Ruthless Invasion {3}{R/P}.
 //
 // „Można go zapłacić życiem zamiast R. Bot robi dwa błędy na raz:
-//  D1. Ma czerwoną manę (akurat zatapniętą, ale w przyszłej turze będzie
+//  D1. Ma czerwoną manę (akurat tapniętą, ale w przyszłej turze będzie
 //      ją miał odtapowaną) i koniecznie chce rzucić ten czar więc płaci
 //      życiem. Ja bym w ogóle nie pozwolił mi płacić życiem, chyba, że
 //      naprawdę policzy, że jego atak zabije przeciwnika w tej turze

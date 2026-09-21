@@ -84,7 +84,7 @@ test('M360/B5a: ninjutsu po obrażeniach (end_of_combat) — ninja wchodzi, atak
   const ninja = state.zones.battlefield.map((id) => state.objects.get(id))
     .find((o) => o?.cardId === 'kappa-tech-wrecker');
   assert.ok(ninja, 'ninja na polu bitwy');
-  assert.equal(ninja.tapped, true, 'ninja wchodzi zatapnięty');
+  assert.equal(ninja.tapped, true, 'ninja wchodzi tapnięty');
   assert.equal(ninja.counters?.deathtouch, 1, 'ETB: licznik deathtouch');
 });
 

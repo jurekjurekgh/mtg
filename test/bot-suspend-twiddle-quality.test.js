@@ -82,7 +82,7 @@ test('Twiddle Odkręcenie: bot nie odkręca permanentu przeciwnika', () => {
   assert.equal(targetId, 'wlasny', 'bot odkręca własnego stwora');
 });
 
-test('Twiddle Odkręcenie na własnym zatapniętym stworze ma wartość dla bota', () => {
+test('Twiddle Odkręcenie na własnym tapniętym stworze ma wartość dla bota', () => {
   const state = botState();
   putCard(state, { id: 'tw', cardId: 'twiddle', controllerId: 'p2', zone: 'hand' });
   putBlank(state, 'wlasny', 'p2', { power: 4, toughness: 4 });
@@ -90,7 +90,7 @@ test('Twiddle Odkręcenie na własnym zatapniętym stworze ma wartość dla bota
   addMana(state, 'p2', 1, { colors: ['U'] });
   const choice = createHeuristicBot({ seed: 3 }).chooseCommand(playerView(state, 'p2'), {});
   assert.ok(choice.type === 'cast_spell' && choice.objectId === 'tw', `bot rzuca Twiddle: ${JSON.stringify(choice)}`);
-  assert.equal(choice.targets?.[0], 'wlasny', 'cel = własny zatapnięty stwór');
+  assert.equal(choice.targets?.[0], 'wlasny', 'cel = własny tapnięty stwór');
 });
 
 // --- M146 (uwagi z testów właściciela): Jwari Shapeshifter, Turn the Tide,

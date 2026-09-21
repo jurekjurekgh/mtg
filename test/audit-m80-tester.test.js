@@ -77,7 +77,7 @@ test('M80: czytelne opisy triggerów na kaflach (zamiast „Trigger <event>\")',
   const cases = [
     ['skyclave-geopede', /Landfall — gdy land wchodzi pod twoją kontrolą:/],
     ['nightshade-harvester', /Gdy land wchodzi pod kontrolą przeciwnika:/],
-    ['frontline-war-rager', /Na początku kroku końca \(gdy kontrolujesz 2\+ zatapnięte stwory\):/],
+    ['frontline-war-rager', /Na początku kroku końca \(gdy kontrolujesz 2\+ tapnięte stwory\):/],
     ['silumgar-butcher', /Gdy ten stwór exploituje:/],
     ['spectral-prison', /Gdy zaczarowany stwór staje się celem czaru:/],
     ['illvoi-operative', /Gdy rzucisz drugi czar w turze:/],

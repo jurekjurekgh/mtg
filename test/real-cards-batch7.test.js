@@ -16,7 +16,7 @@ import { parseDeckText } from '../src/cards/deck-text.js';
 /**
  * Siódmy batch realnych kart (ADR 0010):
  * - Fake Your Own Death (OTJ) — instant: +2/+0 i NADANY trigger „dies”
- *   (powrót zatapniętego stwora + token Treasure z {T},Sac: add mana);
+ *   (powrót tapniętego stwora + token Treasure z {T},Sac: add mana);
  * - Puppeteer Clique (SHM) — flying, ETB reanimuje stwora z grobu
  *   przeciwnika pod swoją kontrolę z haste i wygnaniem w następnym end
  *   stepie, plus persist (powrót z licznikiem -1/-1);
@@ -140,7 +140,7 @@ test('Fake Your Own Death: materializacja — instant {1}{B} z pumpem i grantem 
   assert.equal(grant.abilities[0].trigger.event, 'dies');
 });
 
-test('Fake Your Own Death: +2/+0 i nadany trigger dies zwraca stwora zatapniętego z Treasure', () => {
+test('Fake Your Own Death: +2/+0 i nadany trigger dies zwraca stwora tapniętego z Treasure', () => {
   const state = mainPhase(game());
   const creature = addSimpleCreature(state, 'c1', 'p1', { power: 2, toughness: 2 });
   addRealCard(state, 'fake', 'fake-your-own-death', 'p1', 'hand');
@@ -153,7 +153,7 @@ test('Fake Your Own Death: +2/+0 i nadany trigger dies zwraca stwora zatapnięte
   assert.equal(effectiveToughness(pumped, state), 2);
   assert.equal(pumped.abilityGrants.length, 1, 'stwór ma nadany trigger dies');
 
-  // Zabicie stwora: SBA → trigger dies (nadany) → powrót zatapniętego + Treasure.
+  // Zabicie stwora: SBA → trigger dies (nadany) → powrót tapniętego + Treasure.
   const before = state.zones.battlefield.length;
   const result = execute(state, {
     type: 'cast_spell', playerId: 'p1', objectId: 'shock', targets: [creature.id],
@@ -171,7 +171,7 @@ test('Fake Your Own Death: +2/+0 i nadany trigger dies zwraca stwora zatapnięte
     .map((id) => state.objects.get(id))
     .find((o) => o.cardId === 'highland-game');
   assert.ok(returned, 'stwór wrócił na pole bitwy');
-  assert.equal(returned.tapped, true, 'wraca ZATAPNIĘTY');
+  assert.equal(returned.tapped, true, 'wraca TAPNIĘTY');
   assert.equal(returned.abilityGrants.length, 0, 'nadany trigger nie przechodzi przez zmianę strefy (CR 400.7)');
   const treasure = state.zones.battlefield
     .map((id) => state.objects.get(id))
@@ -403,7 +403,7 @@ test('Unstable Frontier NIELEGALNE: cudzy land i stwór nie są celem, tapnięta
   const own = addLand(state, 'l1', 'p1', { subtypes: ['Swamp'] }).id;
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'uf', abilityIndex: 0, targets: [own] }).ok);
   const again = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'uf', abilityIndex: 0, targets: [own] });
-  assert.equal(again.ok, false, 'zatapnięty Frontier nie może aktywować zdolności {T}');
+  assert.equal(again.ok, false, 'tapnięty Frontier nie może aktywować zdolności {T}');
 });
 
 // --- Apprentice Wizard ------------------------------------------------------
@@ -439,7 +439,7 @@ test('Apprentice Wizard NIELEGALNE: bez many i z chorobą przywołania (tap)', (
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'aw', abilityIndex: 0 }).ok);
   addMana(state, 'p1', 1);
   const tapped = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'aw', abilityIndex: 0 });
-  assert.equal(tapped.ok, false, 'zatapniętego nie da się tapnąć drugi raz');
+  assert.equal(tapped.ok, false, 'tapniętego nie da się tapnąć drugi raz');
 });
 
 // --- Delta Bloodflies -------------------------------------------------------

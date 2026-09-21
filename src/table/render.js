@@ -173,7 +173,7 @@ const TARGET_TYPE_LABELS = Object.freeze({
   artifact_or_creature_or_land: 'artefakt, stwór lub ląd',
   // Batch 56 (Volcanic Submersion): „Destroy target artifact or land".
   artifact_or_land: 'artefakt lub ląd',
-  tapped_creature: 'zatapnięty stwór',
+  tapped_creature: 'tapnięty stwór',
   untapped_creature: 'odkręcony stwór',
   artifact_you_control: 'twój artefakt', land: 'ląd', land_you_control: 'twój ląd',
   enchantment: 'zaklęcie', nonland_permanent: 'permanent niebędący lądem',
@@ -1071,15 +1071,15 @@ function describeEffect(e, ctx = {}) {
     exile_permanent: () => 'wygnij artefakt/zaklęcie',
     // F-A2/1 (audyt PR #107): B54 zjednoczyło stronę untap („odkręć”), ale tu
     // drukowało surowe „tap” — ta sama ścieżka publiczna (tekst karty).
-    tap_permanent: () => 'zatapnij',
+    tap_permanent: () => 'tapnij',
     // Batch 56 (Containment Protocol) — ETB aury tapujący gospodarza.
-    tap_enchanted_permanent: () => 'zatapnij zaczarowany permanent',
+    tap_enchanted_permanent: () => 'tapnij zaczarowany permanent',
     // B5 (audyt stołu 2026-09-09, G2/Membrane): typ konstruowany w runtime
     // przez castAuraSpell (resources.js) — poza rejestrem DB, więc strażnik
     // M122 go nie widział i kafel drukował „efekt (attach_aura)".
     attach_aura: () => 'zaczaruj',
     attach_aura_player: () => 'zaczaruj gracza',
-    lock_untap: () => 'blokada odkręcania (póki źródło zatapnięte)',
+    lock_untap: () => 'blokada odkręcania (póki źródło tapnięte)',
     dont_untap_next_untap_step: () => 'nie odkręca się w następnym kroku odkręcania',
     surveil: () => `surveil ${e.amount ?? 1}`,
     clash: () => 'clash',
@@ -1326,7 +1326,7 @@ function describeEffect(e, ctx = {}) {
     return_banished_to_hand: () => 'zwróć wygnane na rękę',
     return_creature_card_to_hand: () => 'stwór z grobu na rękę',
     return_exiled_to_battlefield: () => 'wygnane wraca na pole bitwy',
-    return_to_battlefield_tapped: () => 'wróć na pole bitwy zatapnięte',
+    return_to_battlefield_tapped: () => 'wróć na pole bitwy tapnięte',
     return_to_battlefield_under_control_at_upkeep: () => 'wróć na pole bitwy na początku podtrzymania',
     return_with_counter: () => 'wróć na pole bitwy z licznikiem',
     reveal_hand_choose_exile: () => 'odsłoń rękę, wybierz do wygnania',
@@ -1338,15 +1338,15 @@ function describeEffect(e, ctx = {}) {
     search_library_to_battlefield: () => {
       const basicLand = e.qualifier?.types?.includes('Basic') && e.qualifier?.types?.includes('Land');
       const subtypes = (e.qualifier?.subtypes ?? []).join('/');
-      return `szukaj w bibliotece karty${basicLand ? ' podstawowego lądu' : ''}${subtypes ? ` typu ${subtypes}` : ''} na pole bitwy${e.entersTapped ? ' (zatapniętej)' : ''}, potem potasuj`;
+      return `szukaj w bibliotece karty${basicLand ? ' podstawowego lądu' : ''}${subtypes ? ` typu ${subtypes}` : ''} na pole bitwy${e.entersTapped ? ' (tapniętej)' : ''}, potem potasuj`;
     },
     search_library_to_hand: () => 'szukaj w bibliotece do ręki',
     springbloom_sacrifice_search: () => 'poświęć ląd, szukaj 2 basic landów',
     start_engines: () => 'start your engines!',
     station_counters: () => `połóż liczniki charge (station)`,
     // F-A2/1 (audyt PR #107): surowe „tap” po B54 — patrz `tap_permanent`.
-    tap_all_lands_opponents_control: () => 'zatapnij wszystkie lądy przeciwnika',
-    tap_permanents: () => 'zatapnij permanenty',
+    tap_all_lands_opponents_control: () => 'tapnij wszystkie lądy przeciwnika',
+    tap_permanents: () => 'tapnij permanenty',
     transfer_counters_on_dies: () => 'przenieś liczniki',
     turn_face_up: () => 'obróć twarzą do góry',
     unearth_return: () => 'unearth (z grobu z haste, exile na końcu tury)',
@@ -1368,7 +1368,7 @@ function describeEffect(e, ctx = {}) {
     incubate: () => `inkubuj ${e.amount ?? 1}`,
     return_card_from_graveyard_to_hand: () => 'wróć kartę z grobu na rękę',
     reveal_hand_choose_discard: () => 'odsłoń rękę i odrzuć wybraną kartę',
-    search_library_to_battlefield_tapped: () => 'szukaj w bibliotece landa na pole bitwy (zatapniętego)',
+    search_library_to_battlefield_tapped: () => 'szukaj w bibliotece landa na pole bitwy (tapniętego)',
     // Batch 52 (Vaan, Jolrael).
     exile_top_of_player_library_and_may_cast: () => 'wygnij wierzch biblioteki poszkodowanego — możesz rzucić tę kartę (inaczej Skarb)',
     add_counter_to_creatures_you_control: () => `połóż licznik ${e.counter ?? '+1/+1'} na twoich stworach${(e.subtypes ?? []).length ? ` (${e.subtypes.join(', ')})` : ''}`,
@@ -1580,7 +1580,7 @@ function triggerConditionClause(trigger) {
   const cond = trigger?.condition ?? {};
   const czlony = [];
   if (cond.distinctCreaturePowersAtLeast != null) czlony.push(`kontrolujesz stwory o co najmniej ${cond.distinctCreaturePowersAtLeast} różnych wartościach siły (coven)`);
-  if (cond.minTappedCreaturesControlled) czlony.push(`kontrolujesz ${cond.minTappedCreaturesControlled}+ zatapnięte stwory`);
+  if (cond.minTappedCreaturesControlled) czlony.push(`kontrolujesz ${cond.minTappedCreaturesControlled}+ tapnięte stwory`);
   if (cond.subtypeCardInYourGraveyard) czlony.push(`w twoim grobie jest karta ${cond.subtypeCardInYourGraveyard}`);
   if (cond.selfHasCounter) czlony.push(`ma licznik ${counterLabelGen(cond.selfHasCounter)}`);
   if (cond.didntAttackThisTurn) czlony.push('nie atakował w tej turze');
@@ -1593,7 +1593,7 @@ function triggerConditionClause(trigger) {
   if (cond.notBlocking) czlony.push('nie blokował');
   if (cond.saddled) czlony.push('jest osiodłany');
   // Batch 56 (Cautious Survivor): Survival — intervening-if na stanie
-  // zatapnięcia źródła (CR 603.4; sprawdzany przy zgłoszeniu I rozstrzyganiu).
+  // tapnięcia źródła (CR 603.4; sprawdzany przy zgłoszeniu I rozstrzyganiu).
   if (cond.sourceTapped) czlony.push('jest tapnięty');
   if (cond.minTotalPowerYouControl) czlony.push(`łączna siła kontrolowanych stworów ≥ ${cond.minTotalPowerYouControl}`);
   if (cond.spellManaValueAtLeast != null) czlony.push(`rzucany czar ma koszt ≥ ${cond.spellManaValueAtLeast}`);
@@ -1717,14 +1717,14 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   }
   // M223 (audyt Batch 50, Nanoform Sentinel): „Whenever this creature becomes
   // tapped, untap another target permanent." Opis musi nazwać CEL — inaczej
-  // kafel mówił „Zatapnięcie tego permanentu: odkręć" (bez „docelowy"), więc
+  // kafel mówił „Tapnięcie tego permanentu: odkręć" (bez „docelowy"), więc
   // gracz nie wiedział, że odkręca INNY permanent (oś 2 audytu).
   if (trigger.event === 'self_becomes_tapped') {
     const rew = trigger.requiresTarget && effects.some((e) => e.type === 'untap_permanent')
       ? effects.map((e) => (e.type === 'untap_permanent' ? 'odkręć docelowy inny permanent' : describeEffect(e))).join(' i ')
       : parts;
     const once = trigger.oncePerTurn ? ' (raz na turę)' : '';
-    return `Gdy ten permanent zostaje zatapnięty${once}: ${rew}.`;
+    return `Gdy ten permanent zostaje tapnięty${once}: ${rew}.`;
   }
   if (trigger.event === 'exploits') return `Gdy ten stwór exploituje: ${parts}.`;
   if (trigger.event === 'equipped_creature_attacks') return `Gdy wyposażony stwór atakuje: ${parts}.`;
@@ -1787,9 +1787,9 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   // niebędącego stworem"). Fallback na surową nazwę, gdy brak tłumaczenia.
   const eventLabel = TRIGGER_EVENT_LABELS[trigger.event] ?? trigger.event;
   // M202/C (Żywy Tester, Chronic Flooding): etykiety w TRIGGER_EVENT_LABELS są
-  // FRAZAMI RZECZOWNIKOWYMI („śmierć stworu”, „zatapnięcie zaczarowanego
+  // FRAZAMI RZECZOWNIKOWYMI („śmierć stworu”, „tapnięcie zaczarowanego
   // permanentu”), więc szablon „Trigger <etykieta>: <skutek>” dawał zdanie
-  // niepo polsku („Trigger zatapnięcie zaczarowanego permanentu: mieli 3
+  // niepo polsku („Trigger tapnięcie zaczarowanego permanentu: mieli 3
   // karty”). M80 usunął ten wzorzec dla siedmiu kart z ręcznej listy — reszta
   // katalogu zostawała z tym samym błędem (klasa L26: strażnik z ręczną listą).
   // Zamiast doklejać zdania per karta: fraza rzeczownikowa + dwukropek, bez
@@ -1825,14 +1825,14 @@ export function rulesText(info) {
         // M257 r4 (Żywy Tester g2004, Kappa Tech-Wrecker): (1) goły
         // `cost.mana` gubił pipy kolorów („Ninjutsu {2}" zamiast {1}{G} —
         // notacja jak MANA_COSTS: generyczny w klamkach + pipy, M138/Z10);
-        // (2) gramatyka: „zatapnięta/atakująca" (formy żeńskie) na karcie
+        // (2) gramatyka: „tapnięta/atakująca" (formy żeńskie) na karcie
         // rodzaju męskiego.
         const njColors = a.cost?.colors ?? [];
         const njGeneric = Math.max(0, (a.cost?.mana ?? 0) - njColors.length);
         const njCostStr = njGeneric > 0 || njColors.length === 0
           ? `{${njGeneric}}${njColors.map((c) => `{${c}}`).join('')}`
           : njColors.map((c) => `{${c}}`).join('');
-        return `Ninjutsu ${njCostStr || '{?}'}: wróć nieblokowanego atakującego, wejdź zatapnięty i atakujący`;
+        return `Ninjutsu ${njCostStr || '{?}'}: wróć nieblokowanego atakującego, wejdź tapnięty i atakujący`;
       }
       if (a.keyword === 'megamorph') return `Megamorph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry i połóż +1/+1`;
       if (a.keyword === 'morph') return `Morph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry`;
@@ -2548,7 +2548,7 @@ export function labelChoiceOptions(options, session, view) {
  *
  * Żywy Tester (M126) pokazał to na Guidestone Compass, a audyt rozszerzył
  * na całą rodzinę: Seer's Lantern, Prismari Campus, Cellar Door. Nie
- * blokujemy zagrania (bywa świadome — np. żeby zatapnąć własny permanent),
+ * blokujemy zagrania (bywa świadome — np. żeby tapnąć własny permanent),
  * ale mówimy wprost, że nie będzie skutku — ten sam wzorzec co ostrzeżenie
  * „czar fizzluje" przy Bone Splinters (M102/U8).
  */

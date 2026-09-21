@@ -554,9 +554,9 @@ test("Silvanus's Invoker: {8} odkręca land i animuje go w 8/8 trample/haste (wc
   const state = game();
   mainPhase(state);
   addRealCard(state, 'si', 'silvanuss-invoker', 'p1', 'battlefield');
-  addBasicLand(state, 'forest', 'p1', 'Forest', 'G', true); // zatapnięty land
+  addBasicLand(state, 'forest', 'p1', 'Forest', 'G', true); // tapnięty land
   addMana(state, 'p1', 8);
-  assert.ok(state.objects.get('forest').tapped, 'Land początkowo zatapnięty');
+  assert.ok(state.objects.get('forest').tapped, 'Land początkowo tapnięty');
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'si', abilityIndex: 0, targets: ['forest'] }).ok);
   resolveStack(state); // D: zdolność na stosie → animacja po rozstrzygnięciu
   const forest = state.objects.get('forest');
@@ -591,7 +591,7 @@ test("Silvanus's Invoker: zdolność niedostępna bez 8 many", () => {
   const state = game();
   mainPhase(state);
   addRealCard(state, 'si', 'silvanuss-invoker', 'p1', 'battlefield');
-  addBasicLand(state, 'forest', 'p1', 'Forest', 'G', true); // zatapnięty → nie dodaje produkowalnej many
+  addBasicLand(state, 'forest', 'p1', 'Forest', 'G', true); // tapnięty → nie dodaje produkowalnej many
   addMana(state, 'p1', 7);
   assert.ok(!hasCommand(playerView(state, 'p1'), 'activate_ability', (c) => c.objectId === 'si'));
 });

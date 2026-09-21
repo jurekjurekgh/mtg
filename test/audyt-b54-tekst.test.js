@@ -57,9 +57,9 @@ test('F1: log regeneracji — „odkręcony, bez obrażeń”', () => {
 });
 
 // --- F2: tryby Keep Out po polsku ---
-test('F2: Keep Out — „zatapniętemu stworowi” i „Zniszcz zaklęcie”', () => {
+test('F2: Keep Out — „tapniętemu stworowi” i „Zniszcz zaklęcie”', () => {
   const modes = REGISTRY.get('keep-out').spell.modes;
-  assert.equal(modes[0].name, 'Zadaj 4 obrażenia zatapniętemu stworowi');
+  assert.equal(modes[0].name, 'Zadaj 4 obrażenia tapniętemu stworowi');
   assert.equal(modes[1].name, 'Zniszcz zaklęcie');
 });
 
@@ -115,20 +115,20 @@ test('F8: log zniszczenia do wygnania — „(licznik ostateczności)”', () =>
 // (w JS ń nie jest \w), więc sprawdzamy sąsiedztwo polskich liter. ---
 const RAW_TAP = /(^|[^a-zA-Zą-ż])tap([^a-zA-Zą-ż]|$)/i;
 
-test('F9: Twiddle — „zatapnij” po stronie tap, bez surowego „tap”', () => {
+test('F9: Twiddle — „tapnij” po stronie tap, bez surowego „tap”', () => {
   const text = defText('twiddle');
-  assert.ok(text.includes('zatapnij'), `twiddle: ${text}`);
+  assert.ok(text.includes('tapnij'), `twiddle: ${text}`);
   assert.ok(!RAW_TAP.test(text), `surowy tap: ${text}`);
 });
 
-test('F9: Shiva — „zatapnij wszystkie lądy przeciwnika”', () => {
+test('F9: Shiva — „tapnij wszystkie lądy przeciwnika”', () => {
   const text = defText('shiva-warden-of-ice');
-  assert.ok(text.includes('zatapnij wszystkie lądy przeciwnika'), `shiva: ${text}`);
+  assert.ok(text.includes('tapnij wszystkie lądy przeciwnika'), `shiva: ${text}`);
   assert.ok(!RAW_TAP.test(text), `surowy tap: ${text}`);
 });
 
-test('F9: Aerith — „zatapnij permanenty” (adventure/mission)', () => {
+test('F9: Aerith — „tapnij permanenty” (adventure/mission)', () => {
   const text = defText('aerith-rescue-mission');
-  assert.ok(text.includes('zatapnij permanenty'), `aerith: ${text}`);
+  assert.ok(text.includes('tapnij permanenty'), `aerith: ${text}`);
   assert.ok(!RAW_TAP.test(text), `surowy tap: ${text}`);
 });

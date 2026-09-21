@@ -535,8 +535,8 @@ test('Blazing Torch: zdolność nosiciela — {T}, poświęć pochodnię: 2 obra
   resolveStack(state);
   // pochodnia poświęcona (koszt sacrificeSelf)
   assert.ok(!state.objects.get('torch') || state.objects.get('torch').zone !== 'battlefield', 'pochodnia poświęcona');
-  // nosiciel zatapnięty ({T} w koszcie — tapHost)
-  assert.equal(state.objects.get('host').tapped, true, 'nosiciel zatapnięty');
+  // nosiciel tapnięty ({T} w koszcie — tapHost)
+  assert.equal(state.objects.get('host').tapped, true, 'nosiciel tapnięty');
   // 2 obrażenia na graczu-celu
   assert.equal(state.players.find((p) => p.id === 'p2').life, p2Life - 2);
 });
@@ -594,7 +594,7 @@ test('Basilisk Gate: {2},{T}: +X/+X, X = liczba bram — 1 brama daje +1/+1', ()
   resolveStack(state);
   assert.equal(effectivePower(state.objects.get('cel'), state), 3, '+1/+1 przy 1 bramie');
   assert.equal(effectiveToughness(state.objects.get('cel'), state), 3);
-  assert.equal(state.objects.get('gate').tapped, true, 'brama zatapnięta');
+  assert.equal(state.objects.get('gate').tapped, true, 'brama tapnięta');
 });
 
 test('Basilisk Gate: X rośnie z liczbą bram — 2 bramy dają +2/+2', () => {

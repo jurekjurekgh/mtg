@@ -92,11 +92,11 @@ test('H2/1: rzut zaplotowanej karty nie otwiera kreatora płatności (scena wła
   // Etykieta (P6) mówi to samo co bramka płatności.
   const label = commandLabel(cmd, SESSION, view).replace(/<[^>]*>/g, '');
   assert.match(label, /bez kosztu many/, `etykieta oferty: „${label}”`);
-  // I sam rzut jest darmowy: żadne lądy nie zostają zatapnięte.
+  // I sam rzut jest darmowy: żadne lądy nie zostają tapnięte.
   assert.ok(execute(state, cmd).ok, 'rzut wykonalny bez dodawania many');
   assert.ok(state.zones.stack.length > 0, 'karta na stosie');
   const ladowe = [...state.objects.values()].filter((o) => o.zone === 'battlefield' && o.cardId === 'basic-plains');
-  assert.equal(ladowe.filter((l) => l.tapped).length, 0, '0 zatapniętych lądów — gracz nic nie płaci');
+  assert.equal(ladowe.filter((l) => l.tapped).length, 0, '0 tapniętych lądów — gracz nic nie płaci');
   assert.equal(state.players.find((p) => p.id === 'p1').mana, 0, 'pula many nietknięta');
 });
 

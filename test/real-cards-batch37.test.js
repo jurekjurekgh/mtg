@@ -181,7 +181,7 @@ test('Village Bell-Ringer: ETB odkręca WSZYSTKIE twoje stwory', () => {
   const state = newState();
   const a = putCard(state, 'a', 'highland-game', 'p1', 'battlefield');
   const b = putCard(state, 'b', 'highland-game', 'p1', 'battlefield');
-  // Przeciwnik ma też zatapniętego stwora — nie może zostać odkręcony.
+  // Przeciwnik ma też tapniętego stwora — nie może zostać odkręcony.
   const foe = putCard(state, 'foe', 'highland-game', 'p2', 'battlefield');
   for (const o of [a, b, foe]) {
     state.objects.set(o.id, Object.freeze({ ...state.objects.get(o.id), tapped: true }));
@@ -193,7 +193,7 @@ test('Village Bell-Ringer: ETB odkręca WSZYSTKIE twoje stwory', () => {
   resolveStack(state); // rozstrzygnij permanent + ETB trigger
   assert.equal(state.objects.get('a').tapped, false, 'twój stwór A odkręcony');
   assert.equal(state.objects.get('b').tapped, false, 'twój stwór B odkręcony');
-  assert.equal(state.objects.get('foe').tapped, true, 'stwór przeciwnika zostaje zatapnięty');
+  assert.equal(state.objects.get('foe').tapped, true, 'stwór przeciwnika zostaje tapnięty');
 });
 
 // --- Urza's Mine (2XM) Land: {T}: Add {C}; tron {C}{C} z PP+Tower ----------
@@ -325,7 +325,7 @@ test("Ojutai's Breath: rzucony z ręki idzie po rozstrzygnięciu do exile (rebou
     .find((c) => c.type === 'cast_spell' && c.objectId === 'breath'));
   resolveStack(state);
   // Czar rozstrzygnięty → tap i brak odkręcenia celu.
-  assert.equal(state.objects.get('target').tapped, true, 'cel zatapnięty');
+  assert.equal(state.objects.get('target').tapped, true, 'cel tapnięty');
   // Rebound: karta w exile z reboundReady (nie w grobie).
   const exiled = [...state.objects.values()].find((o) => o.cardId === 'ojutais-breath' && o.zone === 'exile');
   assert.ok(exiled, 'Ojutai\'s Breath w exile po rozstrzygnięciu');
@@ -542,7 +542,7 @@ test('Strandwalker: Germ 0/0 żyje dzięki +2/+4 (2/4) i ma reach', () => {
   assert.ok(walk.equipment.keywords.includes('reach'));
 });
 
-test('Static Net: ETB zysk 2 życia i token Powerstone (zatapnięty)', () => {
+test('Static Net: ETB zysk 2 życia i token Powerstone (tapnięty)', () => {
   const state = newState();
   putCard(state, 'net', 'static-net', 'p1', 'hand');
   putCard(state, 'foe', 'highland-game', 'p2', 'battlefield');
@@ -566,6 +566,6 @@ test('Static Net: ETB zysk 2 życia i token Powerstone (zatapnięty)', () => {
   assert.equal(lifeAfter, lifeBefore + 2, 'zysk 2 życia');
   const ps = [...state.objects.values()].find((o) => o.cardId === 'token_powerstone');
   assert.ok(ps, 'Powerstone token utworzony');
-  assert.equal(ps.tapped, true, 'Powerstone zatapnięty');
+  assert.equal(ps.tapped, true, 'Powerstone tapnięty');
   assert.ok((ps.types ?? []).includes('Artifact'), 'Powerstone to artefakt');
 });

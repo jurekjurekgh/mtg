@@ -942,7 +942,7 @@ test('Robbers: „up to three" pozwala rzucić tryb bez żadnego celu', () => {
   const res = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'robbers', targets: [], modeIndex: 0 });
   assert.ok(res.ok, 'zero celów jest legalne (up to)');
   passBoth(state);
-  assert.equal(state.objects.get('foe').tapped, false, 'nic nie zatapowane');
+  assert.equal(state.objects.get('foe').tapped, false, 'nic nie tapowane');
 });
 
 test('Robbers: tryb tokenów tworzy trzech 1/1 białych Soldierów pod kontrolą rzucającego', () => {

@@ -144,8 +144,8 @@ export function regeneratePermanent(state, object, collected = null) {
   // regeneracja TAPUJE permanent (CR 701.15a), a tapnięcie jest zdarzeniem
   // widocznym dla reguł — bez `object_tapped` żaden trigger „becomes tapped”
   // (Chronic Flooding) by go nie zobaczył, a gracz nie przeczytałby w logu,
-  // dlaczego jego stwór stoi zatapniętny. Zdarzenie tylko przy REALNEJ zmianie:
-  // permanent już zatapniętny nie „staje się” zatapniętny drugi raz.
+  // dlaczego jego stwór stoi tapnięty. Zdarzenie tylko przy REALNEJ zmianie:
+  // permanent już tapnięty nie „staje się” tapnięty drugi raz.
   if (!wasTapped) {
     const tappedEvent = event('object_tapped', {
       objectId: object.id, playerId: object.controllerId, viaRegeneration: true,

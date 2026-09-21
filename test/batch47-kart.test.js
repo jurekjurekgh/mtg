@@ -165,7 +165,7 @@ test('B47/B3: Supernatural Stamina daje +2/+0 i powrót po śmierci', () => {
     'sam powrót — bez Skarbu (to Fake Your Own Death, inna karta)');
 });
 
-test('B47/B4: Supernatural Stamina — pełna ścieżka: stwór ginie i wraca zatapniony', async () => {
+test('B47/B4: Supernatural Stamina — pełna ścieżka: stwór ginie i wraca tapnięty', async () => {
   const { createGameState, addObject, execute, playerView } = await import('../src/engine/game-state.js');
   const { gameObjectDataOf } = await import('../src/cards/materialize.js');
   const { jumpToStep } = await import('../src/engine/turn.js');

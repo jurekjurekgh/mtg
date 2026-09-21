@@ -232,7 +232,7 @@ test('M195/B: kara nie dotyczy zdolności BEZ kosztu tapnięcia (anty-over-fix)'
 
 // ---- A: wizard many takze przy decyzjach platniczych ---------------------
 // Zgloszenie: „Rupture Spire. ETB — poswiec albo zaplac 1 dowolnej many.
-// Wybralem zaplate, engine nie pokazal wizarda tylko sam zatapowal pierwszy
+// Wybralem zaplate, engine nie pokazal wizarda tylko sam tapował pierwszy
 // lepszy lad. ZAWSZE kiedy platnosc many jest niejednoznaczna (wiecej niz
 // 1 kombinacja rodzajow zrodel) powinien byc wizard."
 

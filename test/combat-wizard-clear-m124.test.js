@@ -31,7 +31,7 @@ test('M124/B: trigger z zapłatą pokazuje polską etykietę, nie slug', () => {
     objectId: 'o1', paid: 2,
   });
   assert.doesNotMatch(text, /enchanted_permanent_tapped/, 'surowy slug wyciekł do gracza');
-  assert.match(text, /zatapnięcie zaczarowanego permanentu/);
+  assert.match(text, /tapnięcie zaczarowanego permanentu/);
 });
 
 test('M124/B: trigger z poświęceniem pokazuje polską etykietę, nie slug', () => {
@@ -40,7 +40,7 @@ test('M124/B: trigger z poświęceniem pokazuje polską etykietę, nie slug', ()
     cardId: 'chronic-flooding', sacrificed: true,
   });
   assert.doesNotMatch(text, /enchanted_permanent_tapped/);
-  assert.match(text, /zatapnięcie zaczarowanego permanentu/);
+  assert.match(text, /tapnięcie zaczarowanego permanentu/);
 });
 
 test('M124/B: zwykły trigger (ścieżka domyślna) nadal mapuje slug', () => {
@@ -49,7 +49,7 @@ test('M124/B: zwykły trigger (ścieżka domyślna) nadal mapuje slug', () => {
     cardId: 'chronic-flooding',
   });
   assert.doesNotMatch(text, /enchanted_permanent_tapped/);
-  assert.match(text, /zatapnięcie zaczarowanego permanentu/);
+  assert.match(text, /tapnięcie zaczarowanego permanentu/);
 });
 
 test('M124/B: ŻADNA ścieżka ability_triggered nie wstawia surowego e.trigger', () => {
@@ -65,7 +65,7 @@ test('M124/B: ŻADNA ścieżka ability_triggered nie wstawia surowego e.trigger'
 
 test('M124/B: etykieta pochodzi ze wspólnego słownika', () => {
   assert.equal(TRIGGER_EVENT_LABELS.enchanted_permanent_tapped,
-    'zatapnięcie zaczarowanego permanentu');
+    'tapnięcie zaczarowanego permanentu');
 });
 
 // --- A: „Bez bloków" / „Bez ataku" deklarują, a nie tylko czyszczą ---------

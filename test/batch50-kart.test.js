@@ -74,7 +74,7 @@ test('B50: Dimir Guildgate — {T}: dodaj {U} lub {B} (dwie opcje koloru)', () =
   assert.ok(keys.some((k) => k.includes('U') || k.includes('B')), `mana w kolorze U/B, pool: ${JSON.stringify(pool)}`);
 });
 
-test('B50: Dimir Guildgate — wchodzi zatapnięty (entersTapped)', () => {
+test('B50: Dimir Guildgate — wchodzi tapnięty (entersTapped)', () => {
   const state = game('p1', 'main');
   put(state, 'gate', 'dimir-guildgate', 'p1', 'hand');
   const view = playerView(state, 'p1');
@@ -84,7 +84,7 @@ test('B50: Dimir Guildgate — wchodzi zatapnięty (entersTapped)', () => {
   assert.ok(r.ok, `zagranie lądu odrzucone: ${r.events?.[0]?.reason}`);
   const onBoard = [...state.objects.values()].find((o) => o.cardId === 'dimir-guildgate' && o.zone === 'battlefield');
   assert.ok(onBoard, 'ląd na polu bitwy');
-  assert.equal(onBoard.tapped, true, 'ląd wchodzi zatapniety');
+  assert.equal(onBoard.tapped, true, 'ląd wchodzi tapnięty');
 });
 
 // ---- Vow of Flight ----------------------------------------------------------
@@ -138,11 +138,11 @@ test('B50: Nanoform Sentinel — dane Oracle i trigger self_becomes_tapped (once
 });
 
 test('B50: Nanoform Sentinel — opis kafla nazywa CEL („odkręć docelowy inny permanent")', () => {
-  // M223 (audyt Batch 50): kafel mówił „Zatapnięcie tego permanentu: odkręć"
+  // M223 (audyt Batch 50): kafel mówił „Tapnięcie tego permanentu: odkręć"
   // — bez „docelowy", więc gracz nie wiedział, że odkręca INNY permanent.
   const def = REGISTRY.get('nanoform-sentinel');
   const text = rulesText({ abilities: def.abilities, faceDown: false });
-  assert.match(text, /zostaje zatapnięty/, `opis triggera: ${text}`);
+  assert.match(text, /zostaje tapnięty/, `opis triggera: ${text}`);
   assert.match(text, /docelowy inny permanent/, `opis musi nazwać cel: ${text}`);
   assert.match(text, /raz na turę/, `opis musi wspomnieć limit: ${text}`);
 });

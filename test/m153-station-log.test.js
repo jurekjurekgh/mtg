@@ -1,5 +1,5 @@
 // M153/A1 — log aktywacji Station (Warmaker Gunship) ma nazywać TAPNIĘTEGO
-// stwora („(tapuje: <nazwa>)”), nie sztywny opis „moc zatapniętego stwora”.
+// stwora („(tapuje: <nazwa>)”), nie sztywny opis „moc tapniętego stwora”.
 // Zdarzenie ability_activated niesie stationTappedCreatureId.
 
 import test from 'node:test';
@@ -38,7 +38,7 @@ function put(state, id, cardId, ctrl, zone = 'battlefield', extra = {}) {
 }
 
 // --- A1: log Station nazywa tapniętego stwora ------------------------------
-test('A1: log aktywacji Station nazywa tapniętego stwora (nie „moc zatapniętego stwora")', () => {
+test('A1: log aktywacji Station nazywa tapniętego stwora (nie „moc tapniętego stwora")', () => {
   const state = newState();
   put(state, 'ship', 'warmaker-gunship', 'p1');
   put(state, 'sold', 'token_soldier', 'p1', 'battlefield', { kind: 'creature', power: 2, toughness: 2 });
@@ -57,5 +57,5 @@ test('A1: log aktywacji Station nazywa tapniętego stwora (nie „moc zatapnięt
   };
   const text = describeGameEvent(ev, helpers);
   assert.match(text, /\(tapuje: Soldier\)/, `log powinien nazwać stwora: ${text}`);
-  assert.doesNotMatch(text, /moc zatapniętego stwora/);
+  assert.doesNotMatch(text, /moc tapniętego stwora/);
 });

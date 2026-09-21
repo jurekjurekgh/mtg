@@ -753,7 +753,7 @@ export function legalActivatedAbilities(state, playerId) {
         continue;
       }
       // Koszt „Tap ANOTHER creature you control" (Station, Wedgelight
-      // Rammer): jak wyżej, ale zatapniany stwór NIE może być źródłem —
+      // Rammer): jak wyżej, ale tapowany stwór NIE może być źródłem —
       // odróżnia go „another\" w tekście karty (CR 601.2h).
       if (ability.cost?.tapOtherCreature) {
         const candidates = state.zones.battlefield.filter((objectId) => {
@@ -1277,7 +1277,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   }
   // Koszty płacimy atomowo (CR 601.2h): najpierw sprawdzamy wykonalność
   // WSZYSTKICH części, dopiero potem mutujemy stan. Bez tego nieudana
-  // aktywacja (np. brak many na {U}) zostawiała permanent zatapniony.
+  // aktywacja (np. brak many na {U}) zostawiała permanent tapnięty.
   const effManaPreview = effectiveAbilityManaCost(state, playerId, ability, object);
   const manaCostPreview = cost.manaX ? (xValue ?? 0) : effManaPreview;
   const player = state.players.find((entry) => entry.id === playerId);
@@ -1293,11 +1293,11 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   }
   if (cost.tap && object.tapped) throw new Error('Obiekt jest już tapped');
   // Koszt energii (CR 122.1): sprawdzany PRZED mutacją jak pozostałe części
-  // kosztu — odmowa nie może zabrać energii ani zatapnąć źródła.
+  // kosztu — odmowa nie może zabrać energii ani tapnąć źródła.
   if ((cost.energy ?? 0) > (player?.energy ?? 0)) throw new Error('Niewystarczająca energia');
   // Atomowa weryfikacja dodatkowych kosztów (CR 601.2h): discard a card +
   // remove a counter — sprawdzane PRZED mutacją, żeby nieudana aktywacja nie
-  // zostawiła źródła zatapniętego/bez licznika. Koszty tap-other/crew są
+  // zostawiła źródła tapniętego/bez licznika. Koszty tap-other/crew są
   // walidowane i wykonywane w performActivation (wspólna ścieżka aktywacji).
   if (cost.discardCard) {
     const hasHandCard = state.zones.hand.some((handId) => state.objects.get(handId)?.controllerId === playerId);
@@ -1443,7 +1443,7 @@ export function performActivation(state, ctx) {
     }
   }
   // Sprawdzamy dodatkowy koszt przed jakąkolwiek mutacją (CR 601.2h):
-  // nieudana aktywacja nie może zostawić źródła zatapniętego.
+  // nieudana aktywacja nie może zostawić źródła tapniętego.
   const creatureToTap = cost.tapCreature
     ? (ctx.tapCreatureId ?? state.zones.battlefield.find((objectId) => {
       const candidate = state.objects.get(objectId);
@@ -1455,7 +1455,7 @@ export function performActivation(state, ctx) {
     const chosen = state.objects.get(ctx.tapCreatureId);
     if (!chosen || chosen.controllerId !== playerId || chosen.kind !== 'creature' || chosen.tapped) throw new Error('Nielegalny stwór do tapnięcia (koszt)');
   }
-  // Koszt „Tap ANOTHER creature you control" (Station): zatapniany stwór nie
+  // Koszt „Tap ANOTHER creature you control" (Station): tapowany stwór nie
   // może być źródłem; jego id trafia do efektu station_counters jako cel.
   const otherCreatureToTap = cost.tapOtherCreature
     ? (ctx.tapOtherCreatureId ?? state.zones.battlefield.find((candidateId) => {
@@ -1694,7 +1694,7 @@ export function performActivation(state, ctx) {
   // resolve_discard_choice (Temat 4) — tutaj nie ma już nic do odrzucenia.
   // Po poświęceniu źródła (koszt) efekt nie może wskazywać nieistniejącego już
   // obiektu — dla add_mana i tak liczy się wyłącznie kontroler. Koszt
-  // „tap another creature" (Station) podaje zatapniętego stwora jako cel
+  // „tap another creature" (Station) podaje tapniętego stwora jako cel
   // efektu (station_counters czyta jego moc).
   // Regeneracja (CR 701.12): zdolność „regenerate" po opłaceniu kosztu
   // zakłada tarczę na źródle („the next time it would be destroyed this turn").
@@ -1728,7 +1728,7 @@ export function performActivation(state, ctx) {
       // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
       xValue: (cost.manaX || cost.tapXArtifacts) ? (xValue ?? 0) : undefined,
       crewCreatureIds: crewCreaturesToTap ?? undefined,
-      // M153/A1: Station — id zatapianego INNEGO stwora (koszt tapOtherCreature),
+      // M153/A1: Station — id tapowanego INNEGO stwora (koszt tapOtherCreature),
       // żeby log podał jego nazwę.
       stationTappedCreatureId: otherCreatureToTap ?? undefined,
     });
@@ -1757,9 +1757,9 @@ export function performActivation(state, ctx) {
     // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
       // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
       xValue: (cost.manaX || cost.tapXArtifacts) ? (xValue ?? 0) : undefined,
-    // Crew (CR 702.122): zatapnięte stwory widoczne w logu.
+    // Crew (CR 702.122): tapnięte stwory widoczne w logu.
     ...(crewCreaturesToTap ? { crewCreatureIds: [...crewCreaturesToTap] } : {}),
-    // M153/A1: Station — id zatapianego INNEGO stwora w logu.
+    // M153/A1: Station — id tapowanego INNEGO stwora w logu.
     ...(otherCreatureToTap ? { stationTappedCreatureId: otherCreatureToTap } : {}),
   });
   state.events.push(activated);
@@ -1835,7 +1835,7 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
     onStack: true,
     ...(crewCreatureIds ? { crewCreatureIds: [...crewCreatureIds] } : {}),
     // M153/A1: Station tapuje INNEGO stwora (koszt tapOtherCreature) — jego id
-    // musi trafić do logu, żeby gracz wiedział, kogo bot zatapiał. Ten sam
+    // musi trafić do logu, żeby gracz wiedział, kogo bot tapował. Ten sam
     // wzorzec co crewCreatureIds.
     ...(stationTappedCreatureId ? { stationTappedCreatureId } : {}),
     ...eventExtra,
@@ -2113,7 +2113,7 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
 
 /**
  * Ninjutsu: wróć nieblokowanego atakującego do ręki właściciela, a kartę
- * z ręki połóż na battlefield zatapniętą i atakującą (CR 702.48 w minimalnym
+ * z ręki połóż na battlefield tapniętą i atakującą (CR 702.48 w minimalnym
  * wymiarze: okno aktywacji to krok combat_damage przed rozstrzygnięciem).
  */
 function activateNinjutsu(state, playerId, cardObject, abilityIndex, ability, attackerId) {
@@ -2150,7 +2150,7 @@ function activateNinjutsu(state, playerId, cardObject, abilityIndex, ability, at
   const handId = `hand-${state.objectSequence++}`;
   moveObjectDirectly(state, attackerId, 'hand', handId);
   // Audyt PR #41 (B7.2, CR 702.48a + 602.2a): ninjutsu to aktywowana zdolność
-  // NA STOSIE — karta wchodzi na pole bitwy zatapnięta i atakująca przy
+  // NA STOSIE — karta wchodzi na pole bitwy tapnięta i atakująca przy
   // rozstrzyganiu (po pełnej rundzie passów; przeciwnik może odpowiedzieć
   // instanitem, np. zniszczyć kartę z ręki nie zdąży — ale może kontrować).
   const ninjutsuAbility = Object.freeze({

@@ -237,7 +237,7 @@ test('Angelic Benediction: atakujący samotnie dostaje +1/+1 (exalted)', () => {
 
 // --- 6. Frontline War-Rager: end step + tapped creatures ---------------------
 
-test('Frontline War-Rager: end step z 2+ zatapniętymi stworami -> +1/+1 counter', () => {
+test('Frontline War-Rager: end step z 2+ tapniętymi stworami -> +1/+1 counter', () => {
   const state = mainPhase(game());
   addRealCard(state, 'fw', 'frontline-war-rager', 'p1', 'battlefield');
   addRealCard(state, 'a', 'highland-game', 'p1', 'battlefield');
@@ -250,7 +250,7 @@ test('Frontline War-Rager: end step z 2+ zatapniętymi stworami -> +1/+1 counter
   processTriggers(state, [{ type: 'step_advanced', step: 'end', phase: 'ending' }]);
   resolveStack(state);
   const after = eff(state, 'fw').t;
-  assert.equal(after, before + 1, '2 zatapnięte stwory -> +1/+1 (intervening if)');
+  assert.equal(after, before + 1, '2 tapnięte stwory -> +1/+1 (intervening if)');
 });
 
 // --- 7. Lash of the Balrog: sacrifice OR pay {4} -----------------------------
@@ -681,7 +681,7 @@ test('Audyt B7.1: Entrancing Lyre — cel urósł ponad X w oknie odpowiedzi -> 
   // (brak instanta w ręce p2 — pomijamy; zamiast tego symulujemy wzrost mocy)
   setField(state, 'victim', { power: 3 });
   assert.ok(resolveStack(state), 'stos rozstrzygnięty');
-  assert.equal(state.objects.get('victim').tapped, false, 'cel NIE zatapnięty (nielegalny przy rozstrzyganiu)');
+  assert.equal(state.objects.get('victim').tapped, false, 'cel NIE tapnięty (nielegalny przy rozstrzyganiu)');
   assert.deepEqual(state.objects.get('victim').untapLockedBy ?? [], [], 'brak blokady odkręcania');
   // Zdolność rozstrzygnięta (wpis zniknął ze stosu).
   assert.equal(state.zones.stack.length, 0, 'stos pusty');
@@ -694,7 +694,7 @@ test('Audyt B7.1b: Entrancing Lyre — legalny cel nadal działa po rozstrzygni�
   addMana(state, 'p1', 2, { colors: ['U'] });
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'lyre', abilityIndex: 0, xValue: 2, targets: ['victim'] }).ok);
   assert.ok(resolveStack(state), 'stos rozstrzygnięty');
-  assert.equal(state.objects.get('victim').tapped, true, 'cel zatapnięty');
+  assert.equal(state.objects.get('victim').tapped, true, 'cel tapnięty');
   assert.deepEqual(state.objects.get('victim').untapLockedBy, ['lyre'], 'blokada odkręcania');
 });
 
@@ -759,10 +759,10 @@ test('Audyt B7.2: ninjutsu idzie na stos — kontrczar w oknie odpowiedzi nie wp
   // pasuje → p2 ma priorytet (może rzucić instanta).
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, 'pass p1');
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok, 'pass p2');
-  // Po rozstrzygnięciu Kappa wchodzi zatapnięta i atakująca.
+  // Po rozstrzygnięciu Kappa wchodzi tapnięta i atakująca.
   const kappa = [...state.objects.values()].find((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'battlefield');
   assert.ok(kappa, 'Kappa weszła po rozstrzygnięciu');
-  assert.equal(kappa.tapped, true, 'zatapnięta');
+  assert.equal(kappa.tapped, true, 'tapnięta');
   assert.ok(state.combat.attackers.includes(kappa.id), 'atakująca');
 });
 

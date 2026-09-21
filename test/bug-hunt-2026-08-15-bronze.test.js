@@ -158,12 +158,12 @@ test('B3: krok odkręcania honoruje licznik stun (CR 122.1b)', () => {
   }));
   untapControlled(state, 'p1');
   const after = state.objects.get('stunned');
-  assert.equal(after.tapped, true, 'permanent zostaje zatapniety (stun zamiast odkręcenia)');
+  assert.equal(after.tapped, true, 'permanent zostaje tapnięty (stun zamiast odkręcenia)');
   assert.equal((after.counters ?? {}).stun, 1, 'jeden licznik stun zdjęty');
   // Drugi untap step: zdejmuje ostatni licznik, wciąż bez odkręcenia.
   untapControlled(state, 'p1');
   const second = state.objects.get('stunned');
-  assert.equal(second.tapped, true, 'nadal zatapniety przy ostatnim liczniku');
+  assert.equal(second.tapped, true, 'nadal tapnięty przy ostatnim liczniku');
   assert.equal((second.counters ?? {}).stun ?? 0, 0, 'liczniki stun wyczerpane');
   // Trzeci untap step: brak liczników → normalne odkręcenie.
   untapControlled(state, 'p1');

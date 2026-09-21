@@ -6,7 +6,7 @@
 // (przed decyzją o ataku) to marnowanie many. Reguła po STANIE: kupuj vigilance
 // dopiero w kroku deklaracji atakujących (gdy decyzja o ataku zapada razem z
 // grantem) albo w odpowiedzi na bloki. Nie kupuj w main1, w turze przeciwnika,
-// na zatapniętym stwoże.
+// na tapniętym stwoże.
 //
 // Reguła po STANIE (moja tura + krok deklaracji atakujących + stwór gotowy),
 // nie po nazwie kroku/karty (L42/L64, ADR 0002). Wspólny helper
@@ -81,8 +81,8 @@ test('M221/D: NIE kupuje vigilance w turze przeciwnika', () => {
   for (const s of vig) assert.ok(s < pass, `tura przeciwnika: vigilance < pass (${pass}), było ${s}`);
 });
 
-test('M221/D: NIE kupuje vigilance na ZATAPNIĘTEJ kreaturze (nawet w declare_attackers)', () => {
+test('M221/D: NIE kupuje vigilance na TAPNIĘTEJ kreaturze (nawet w declare_attackers)', () => {
   const { pass, vig } = vigScores(setup({ step: 'declare_attackers', active: 'p1', tapped: true }));
   assert.ok(vig.length > 0, 'zdolność musi być w ofercie');
-  for (const s of vig) assert.ok(s < pass, `zatapniętej vigilance nic nie daje: < pass (${pass}), było ${s}`);
+  for (const s of vig) assert.ok(s < pass, `tapniętej vigilance nic nie daje: < pass (${pass}), było ${s}`);
 });

@@ -23,7 +23,7 @@ import { normalizeHeuristicParams } from './heuristic-params.js';
  * B1 (2026-08-02) dodał względem pierwotnej heurystyki:
  * - świadomość kroków: w własnym untap/upkeep/draw/end/cleanup nie tapuje się
  *   many ani nie aktywuje zdolności kosztem tapu (mana wyparuje na końcu
- *   kroku, stwór zostaje zatapiany całą turę) — likwiduje patologię
+ *   kroku, stwór zostaje tapowany całą turę) — likwiduje patologię
  *   „wypalania własnej biblioteki\" przez stanie w miejscu;
  * - zegar (tury do zabicia / do śmierci): bonusy za bliskość lethal,
  *   groźbę śmierci w następnej turze (wyścig) i pustą bibliotekę (deck-out);
@@ -443,10 +443,10 @@ function canAttackNowGlobal(obj) {
   return Boolean(obj) && !obj.tapped && !obj.summoningSickness;
 }
 function isSavageOffenseWindow(view, target) {
-  // Offense przed deklaracją atakujących (beginning_of_combat) — atakier może być ZATAPNIĘTY (wtedy untap go odkręca),
+  // Offense przed deklaracją atakujących (beginning_of_combat) — atakier może być TAPNIĘTY (wtedy untap go odkręca),
   // więc nie wymagamy !tapped, tylko zdolność do ataku po odkręceniu (haste/brak choroby + moc).
   const canAttackIfUntapped = Boolean(target) && !target.summoningSickness && (target.power ?? 0) > 0;
-  // Jeśli ma haste lub brak choroby, może atakować po odkręceniu; zatapnięty też spełnia okno.
+  // Jeśli ma haste lub brak choroby, może atakować po odkręceniu; tapnięty też spełnia okno.
   return view.turn.activePlayerId === view.playerId
     && view.turn.step === 'beginning_of_combat'
     && canAttackIfUntapped;
@@ -1226,7 +1226,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
   const myTurn = (view) => view.turn.activePlayerId === view.playerId;
   // Kroki własnej tury, w których tapowanie (many albo stworów) nie ma sensu:
-  // mana wyparuje na końcu kroku, a stwór zostaje zatapiany całą turę.
+  // mana wyparuje na końcu kroku, a stwór zostaje tapowany całą turę.
   const wastefulStep = (view) => myTurn(view) && ['untap', 'upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step);
   const myLibraryCount = (view) => view.zones.library.filter((o) => o.controllerId === view.playerId).length;
   /**
@@ -1386,7 +1386,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
   /**
    * B/1 — ile kart straci WŁASNA biblioteka, gdy ten permanent zostanie
-   * zatapowany. Dwa źródła, oba czytane z danych karty po typie triggera
+   * tapowany. Dwa źródła, oba czytane z danych karty po typie triggera
    * (tak samo odpala je silnik w `object_tapped`, triggers.js):
    *   1. trigger na SAMYM permanencie — `self_becomes_tapped`,
    *   2. załączniki (aury/sprzęty) — `enchanted_permanent_tapped`, np. Chronic
@@ -1818,7 +1818,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   /**
    * M139: pełna wycena „tapnij wrogi permanent”, wspólna dla czarów i zdolności
    * (L41 — dwie kopie tej samej logiki rozjeżdżają się cicho).
-   * `locking` = efekt trzyma cel zatapniętego dłużej niż jeden untap
+   * `locking` = efekt trzyma cel tapniętego dłużej niż jeden untap
    * (lock_untap / dont_untap_next_untap_step), więc kara za złe okno znika:
    * blokada przetrwa jego untap step.
    */
@@ -3036,7 +3036,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // który w tym silniku po prostu działa.
           value += 2 + (recipient.toughness ?? 0);
         } else {
-          // Każda inna sytuacja (main1, tura przeciwnika, stwór zatapnięty)
+          // Każda inna sytuacja (main1, tura przeciwnika, stwór tapnięty)
           // — marnowanie many. Wcześniej gałąź precombat_main dawała +value
           // nawet BEZ zamiaru ataku → bug B: kupione w main1, po czym brak ataku.
           // Świadomie karany jest też krok `beginning_of_combat`: w papierze
@@ -3306,7 +3306,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'play_land': return finish(90 + landPlayDelta(view, cmd.objectId));
       case 'tap_for_mana': {
         // Własne kroki początkowe/końcowe: mana wyparuje na końcu kroku,
-        // a land zostaje zatapiany całą turę — gorzej niż pass.
+        // a land zostaje tapowany całą turę — gorzej niż pass.
         if (wastefulStep(view)) return finish(-15);
         // Tap ma sens tylko przy czymś do zagrania w ręce; inaczej zostaw priorytet.
         const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
@@ -3945,7 +3945,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             'creatures_cant_block_this_turn',
             'buff_opponents_creatures', 'buff_creatures_you_control'].includes(e.type));
         // Start PONIŻEJ passu (0): czysto-utylitarny czar z bezcelowym celem
-        // (tap własnego landa, tap już zatapniętego, odkręcenie wroga) ma
+        // (tap własnego landa, tap już tapniętego, odkręcenie wroga) ma
         // przegrać z passem — przy starcie od 0 remis szedł w rzut (sort
         // stabilny, czary przed passem w legalCommands).
         if (isUtilityOnly) score = -1;
@@ -4410,7 +4410,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // A (Savage Surge) — untap w savageLike jest już wyceniony w bloku pump (kombinacja +2/+2 + untap); nie liczymy podwójnie.
           // M146 (Twiddle — tryb Odkręcenie): `untap_permanent` odkręca CEL.
-          // Wartość ma wyłącznie odkręcenie WŁASNEGO zatapniętego stwora
+          // Wartość ma wyłącznie odkręcenie WŁASNEGO tapniętego stwora
           // (bloker/atakujący wraca do gry). Odkręcenie permanentu PRZECIWNIKA
           // to pomoc wrogowi (oddajemy mu manę/bloker) — kara. Zanim wycena
           // istniała, bot rzucał Twiddle-Odkręcenie na górę przeciwnika
@@ -4901,7 +4901,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // przeciwnik dostaje realny zasób (tu: token Food). Warianty różnią
         // się wyceną efektów warunkowych (`condition.wasGifted` wyżej), więc
         // tu płacimy wyłącznie cenę daru: pół karty (Food wymaga jeszcze
-        // {2} i zatapnięcia, więc nie jest pełną kartą). Bez tej kary model
+        // {2} i tapnięcia, więc nie jest pełną kartą). Bez tej kary model
         // bota widziałby sam zysk z „if the gift was promised” i obiecywał
         // dar zawsze — także wtedy, gdy indestructible nic nie zmienia.
         if (cmd.gifted === true) score -= P.drawCardValue * 0.5;
@@ -4982,11 +4982,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             return finish(-10);
           }
           // D1 (znalezisko właściciela 2026-09-12, Balamb Garden): crew
-          // animuje pojazd do EOT — ale animacja ZATAPOWANEGO pojazdu nie
+          // animuje pojazd do EOT — ale animacja TAPOWANEGO pojazdu nie
           // daje nic (nie zaatakuje, nie zablokuje), a koszt (tap stwora)
           // przepada; bot i tak crewował, bo widział tylko „3/1 → 5/4".
           // Kara jak M230. Zakres TYLKO animate_permanent_until_end_of_turn:
-          // Saddle na zatapowanym wierzchowcu NIE jest karane — „becomes
+          // Saddle na tapowanym wierzchowcu NIE jest karane — „becomes
           // saddled" to wyzwalacz, który może odpalić wartościowy trigger
           // (set_saddled ma osobny typ efektu, więc ten warunek go nie łapie).
           if (abilityEffectTypes.includes('animate_permanent_until_end_of_turn') && source?.tapped === true) {
@@ -4994,11 +4994,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
         }
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
-        // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).
+        // stwora tapowanego całą turę (bot stał w miejscu i deck-outował).
         if (wastefulStep(view)) return finish(taps || tapsCreature ? -30 : -5);
         // M167/D (Apprentice Wizard): zdolność produkująca MANĘ bez niczego
         // zagrawalnego w ręce to marnotrawstwo — mana wyparuje, a artefakt/
-        // stwór zostaje zatapowany (ta sama reguła co tap_for_mana, M127).
+        // stwór zostaje tapowany (ta sama reguła co tap_for_mana, M127).
         // Z10 (Batch 38): Pristine Talisman „{T}: add {C}, gain 1 life" —
         // rider ŻYCIA ma wartość sam w sobie; kara tylko gdy mana jest
         // JEDYNYM efektem zdolności.
@@ -5183,11 +5183,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const recipient = target ?? (enchantedId ? objectOnBoard(view, enchantedId) : null)
               ?? (attackingRecipientId ? objectOnBoard(view, attackingRecipientId) : null) ?? source;
             // Savage Surge: ODKRĘCENIE celu obok pumpu („Untap that creature")
-            // — premia tylko, gdy cel naprawdę jest zatapnięty (odkręcenie
+            // — premia tylko, gdy cel naprawdę jest tapnięty (odkręcenie
             // nietapniętego stwora nic nie kupuje).
             const untapsTarget = effects.some((e) => e?.type === 'untap_permanent');
             let value = pGain + (tGain > 0 ? 1 : 0);
-            // Savage Surge: „Untap that creature" — odkręcenie ZATAPNIĘTEGO
+            // Savage Surge: „Untap that creature" — odkręcenie TAPNIĘTEGO
             // stwora to realna wartość (odzyskany bloker), odkręcenie
             // nie-tapniętego nie kupuje nic (reguła po treści efektu, ADR 0002).
             if (untapsTarget && recipient?.tapped) value += 4;
@@ -5262,10 +5262,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (!inCombat && !myTurn(view)) value -= 26;
             if (recipient && recipient.controllerId === view.playerId) {
               // Combat trick tylko przy OBRONIE (declare_blockers w turze
-              // przeciwnika): tam zatapiany bloker wciąż blokuje. W NASZYM
+              // przeciwnika): tam tapowany bloker wciąż blokuje. W NASZYM
               // combacie pump kosztem tapu przed deklaracją odbiera atak —
               // patologia B1: bot pumpował w beginning_of_combat i stał
-              // z zatapianymi stworem, przegrywając deck-outem.
+              // z tapowanymi stworem, przegrywając deck-outem.
               if (view.turn.step === 'declare_blockers' && !myTurn(view)) value += 2 * pGain;
               // Pump kosztem tapu na stworze gotowym do ataku (main/combat
               // własnej tury) kosztuje utratę tego ataku — zwykle się nie opłaca.
@@ -5283,7 +5283,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // Reguła generyczna (ADR 0002 — bez nazw kart): pump na SIEBIE
               // kosztem tapu ma wartość tylko wtedy, gdy to źródło realnie
               // bierze udział w walce (atakuje albo blokuje). Inaczej +X/+X
-              // wygaśnie w cleanup, a stwór zostanie zatapiany.
+              // wygaśnie w cleanup, a stwór zostanie tapowany.
               const selfPump = source && recipient && source.id === recipient.id;
               const fightsNow = combatTrickWindow(view, recipient);
               if (selfPump && taps && !fightsNow) value -= 30;
@@ -5352,7 +5352,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (foeLibrary > myLibraryCount(view)) score -= 60;
           }
           // M146 (Twiddle — tryb Odkręcenie jako zdolność): jak przy czarach —
-          // odkręcenie WŁASNEGO zatapniętego stwora ma wartość, cudzego to kara.
+          // odkręcenie WŁASNEGO tapniętego stwora ma wartość, cudzego to kara.
           if (effect.type === 'untap_permanent') {
             const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target;
             if (victim) {
@@ -5581,7 +5581,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M153/A2 (uwaga właściciela): bot tapował WSZYSTKIE stwory ASAP,
             // żeby osiągnąć próg charge, i potem nie miał kim atakować ani
             // blokować. Station tapuje INNEGO stwora (tapOtherCreature), który
-            // zostaje zatapiany do następnego untapu — to marnotrawstwo poza
+            // zostaje tapowany do następnego untapu — to marnotrawstwo poza
             // własną Główną 2. Strategia: budujemy charge WYŁĄCZNIE po własnym
             // ataku (postcombat_main). Poza tym oknem kara schodzi poniżej passu.
             const stationWindow = myTurn(view) && view.turn.phase === 'postcombat_main';
@@ -6482,7 +6482,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (attackerDies) score += attackerPower * 2 + attackerToughness;
           // Koszt: utracone blokery.
           score -= blockerValueLost;
-          // Koszt zaangażowania blokera (zatapiany; nie pomoże innemu atakowi).
+          // Koszt zaangażowania blokera (tapowany; nie pomoże innemu atakowi).
           score -= blockersUsed;
           // B3 — combat trick: gdy nasz blok ZABIJA atakującego, a przeciwnik
           // może mieć pump-instant i otwartą manę, blok jest ryzykowny (pump

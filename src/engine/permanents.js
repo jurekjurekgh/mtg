@@ -82,7 +82,7 @@ export function isUntapStepLocked(state, object) {
     if (!source || source.zone !== 'battlefield') return false;
     const version = object.untapLockVersions?.[sourceId];
     if (version != null && version !== (source.untapVersion ?? 0)) return false;
-    // Lira: blokada działa, gdy źródło jest zatapnięte.
+    // Lira: blokada działa, gdy źródło jest tapnięte.
     if (source.tapped) return true;
     // Aura lock (Spectral Prison): blokada działa zawsze, gdy źródło jest
     // załączoną aurą na polu bitwy (nie wymaga tapped).
@@ -175,7 +175,7 @@ export function untapControlled(state, playerId) {
       // stepu przestaje być „chory" — nawet jeśli zaraz poniżej blokada
       // odkręcania (stun, untap-lock, „doesn't untap next untap step") każe
       // nam pominąć samo odkręcenie. Wcześniej flagę kasowała dopiero gałąź
-      // realnego odkręcenia, więc zatapniętny stwór pod blokadą zostawał chory
+      // realnego odkręcenia, więc tapnięty stwór pod blokadą zostawał chory
       // w nieskończoność i nigdy nie mógł atakować ani użyć zdolności {T}.
       const cured = clearSummoningSickness(state, object);
       // E8/B2 (wyzwanie wyłapywacza błędów, CR „doesn't untap during its

@@ -209,7 +209,7 @@ test("Ghoulcaller's Bell: aktywacja mieli PO JEDNEJ karcie obu graczy", () => {
   const p2Grave = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === 'p2');
   assert.equal(p1Grave.length, 1, 'p1 mieli 1 kartę');
   assert.equal(p2Grave.length, 1, 'p2 mieli 1 kartę');
-  assert.equal(state.objects.get('bell').tapped, true, 'dzwonek zatapnięty');
+  assert.equal(state.objects.get('bell').tapped, true, 'dzwonek tapnięty');
 });
 
 // --- Emerald Oryx {3}{G} 2/3: forestwalk -----------------------------------
@@ -426,7 +426,7 @@ test('Piercing Rays: dane zgodne z Oracle (exile tapped + forecast)', () => {
   assert.deepEqual(forecast.effect, { type: 'tap_permanent' });
 });
 
-test('Piercing Rays: wygnanie tylko ZATAPNIĘTEGO stwora', () => {
+test('Piercing Rays: wygnanie tylko TAPNIĘTEGO stwora', () => {
   const state = newState();
   putBlank(state, 'tapniety', 'p2', { power: 2, toughness: 2 });
   state.objects.set('tapniety', Object.freeze({ ...state.objects.get('tapniety'), tapped: true }));
@@ -436,7 +436,7 @@ test('Piercing Rays: wygnanie tylko ZATAPNIĘTEGO stwora', () => {
   const casts = playerView(state, 'p1').legalCommands
     .filter((c) => c.type === 'cast_spell' && c.objectId === 'pr');
   const targets = new Set(casts.flatMap((c) => c.targets ?? []));
-  assert.ok(targets.has('tapniety'), 'zatapnięty jest celem');
+  assert.ok(targets.has('tapniety'), 'tapnięty jest celem');
   assert.ok(!targets.has('odkryty'), 'odkryty NIE jest celem');
 });
 
@@ -452,7 +452,7 @@ test('Piercing Rays: forecast w upkeepie — tapuje odkręconego stwora', () => 
   assert.ok(act, 'forecast w upkeepie w ofercie');
   execute(state, act);
   resolveStack(state);
-  assert.equal(state.objects.get('cel').tapped, true, 'cel zatapnięty');
+  assert.equal(state.objects.get('cel').tapped, true, 'cel tapnięty');
   assert.equal(state.objects.get('pr').zone, 'hand', 'karta ZOSTAJE w ręce (ujawniona)');
 });
 

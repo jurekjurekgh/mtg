@@ -145,7 +145,7 @@ test('M206/A4: aura karząca kontrolera gospodarza idzie na land WROGA, nie na w
   // Transkrypt (dominaria vs ravnica, seed 19, profil random):
   //   • Nieprzyjaciel rzuca Chronic Flooding → cel: Island
   //   • Chronic Flooding zaczarowuje Island        <- WŁASNY
-  //   • Chronic Flooding — trigger (zatapnięcie zaczarowanego permanentu)
+  //   • Chronic Flooding — trigger (tapnięcie zaczarowanego permanentu)
   //   • Nieprzyjaciel mieli Forced Landing do grobu
   // …i tak pięć razy w jednej partii. Bot płacił {1}{U} za to, żeby mielić
   // SIEBIE po 3 karty przy każdym tapnięciu własnego landu.

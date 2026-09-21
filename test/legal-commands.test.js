@@ -81,10 +81,10 @@ test('main phase oferuje legalny land drop i zagranie stwora od razu (auto-tap l
   assert.ok(view.legalCommands.some((c) => c.type === 'cast_permanent'));
   // Czar instant z jawnym celem: wariant objectId × stwór na battlefield.
   assert.ok(view.legalCommands.some((c) => c.type === 'cast_spell' && c.objectId === 's-hand' && c.targets?.[0] === 'c-enemy'));
-  // Wykonanie zagrania z pustą puli: engine sam zatapuje land na koszt.
+  // Wykonanie zagrania z pustą puli: engine sam tapuje land na koszt.
   const cast = execute(state, view.legalCommands.find((c) => c.type === 'cast_permanent'));
   assert.equal(cast.ok, true, cast.events[0]?.reason);
-  assert.equal(state.objects.get('l-field').tapped, true, 'płatność automatycznie zatapnęła land');
+  assert.equal(state.objects.get('l-field').tapped, true, 'płatność automatycznie tapnęła land');
   assert.equal(state.players[0].mana, 0);
   assertOfferedCommandsAccepted(state, 'p1', 'main p1');
   assertOfferedCommandsAccepted(state, 'p2', 'main p2');

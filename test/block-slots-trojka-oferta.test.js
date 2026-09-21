@@ -41,7 +41,7 @@ function put(state, id, cardId, controllerId, zone = 'battlefield', patch = {}) 
 /**
  * Scena: p2 atakuje trzema Goblin Pikerami; p1 ma blokera o `slots` slotach.
  * Highland Game (reach: drzewo) + Cenn's Tactician (statyka: stwór
- * z licznikiem +1/+1 blokuje dodatkowego stwora) — obaj taktycy ZATAPNIĘCI,
+ * z licznikiem +1/+1 blokuje dodatkowego stwora) — obaj taktycy TAPNIĘCI,
  * więc jedynym blokerem w ofercie jest bloker z licznikiem.
  */
 function scena({ atakujacych = 3, licznik = true, taktycy = 2 } = {}) {
@@ -53,7 +53,7 @@ function scena({ atakujacych = 3, licznik = true, taktycy = 2 } = {}) {
   }
   put(state, 'b1', 'highland-game', 'p1');
   for (let i = 0; i < taktycy; i += 1) {
-    // `tapped` jest poza kontraktem `addObject` (L21) — zatapiamy przez
+    // `tapped` jest poza kontraktem `addObject` (L21) — tapujemy przez
     // `replaceObject`, żeby taktycy nie byli kandydatami do blokowania.
     put(state, `tac${i + 1}`, 'cenns-tactician', 'p1');
     replaceObject(state, state.objects.get(`tac${i + 1}`), { tapped: true });

@@ -159,7 +159,7 @@ export function defineCard(data) {
     }) : null,
     // Karty dwustronne (transform): id drugiej strony (np. 'krallenhorde-wantons').
     transformTo: data.transformTo ?? null,
-    // Landy i inne permanenty wchodzące zatapnięte (Rupture Spire, Prismari Campus).
+    // Landy i inne permanenty wchodzące tapnięte (Rupture Spire, Prismari Campus).
     entersTapped: Boolean(data.entersTapped),
     entersTappedCondition: data.entersTappedCondition ? Object.freeze({ ...data.entersTappedCondition }) : null,
     // Bestow (CR 702.103): alternatywny koszt rzucenia karty jako czaru aury.

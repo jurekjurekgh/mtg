@@ -78,7 +78,7 @@ test('pełna tura przechodzi wszystkie kroki przez legalCommands', () => {
   const cast = doFor(state, 'p1', 'cast_permanent');
   const cubId = cast.events[0].object.id;
   assert.equal(state.players[0].mana, 0);
-  assert.equal(state.objects.get(landId).tapped, true, 'płatność automatycznie zatapuje land');
+  assert.equal(state.objects.get(landId).tapped, true, 'płatność automatycznie tapuje land');
   assert.ok(cast.events.some((e) => e.type === 'mana_produced'), 'log pokazuje zebranie many (auto-tap)');
   assert.equal(state.objects.get(cubId).summoningSickness, true);
 

@@ -328,10 +328,10 @@ test('Wedgelight Rammer: Station tapuje INNEGO stwora i kładzie charge = jego m
   // abilityIndex 1 = station (0 = ETB trigger).
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'rammer', abilityIndex: 1 });
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
-  assert.ok(state.objects.get('cre').tapped, 'Inny stwór zatapnięty w koszcie');
+  assert.ok(state.objects.get('cre').tapped, 'Inny stwór tapnięty w koszcie');
   // D (2026-08-11): zdolność aktywowana idzie na stos — efekt po rozstrzygnięciu.
   resolveStack(state);
-  assert.equal(state.objects.get('rammer').counters.charge, 4, 'Charge = moc zatapniętego stwora');
+  assert.equal(state.objects.get('rammer').counters.charge, 4, 'Charge = moc tapniętego stwora');
   assert.equal(state.objects.get('rammer').kind, 'artifact', 'Nadal poniżej progu 9');
 });
 
@@ -534,8 +534,8 @@ test('Shiva: rozdział III tapuje landy przeciwnika i zwraca Jill (bez poświęc
   const jillId = findId(state, 'jill-shivas-dominant');
   assert.ok(jillId, 'Po rozdziale III Shiva wraca jako Jill (strona przednia)');
   assert.equal(countByCardId(state, 'shiva-warden-of-ice', 'graveyard'), 0, 'Saga NIE jest poświęcana — sama się przemieniła (CR 714.4 nie ma czego zjeść)');
-  assert.ok(state.objects.get('foe-land-1').tapped, 'Landy przeciwnika zatapnięte (Cold Snap)');
-  assert.ok(state.objects.get('foe-land-2').tapped, 'Landy przeciwnika zatapnięte (Cold Snap)');
+  assert.ok(state.objects.get('foe-land-1').tapped, 'Landy przeciwnika tapnięte (Cold Snap)');
+  assert.ok(state.objects.get('foe-land-2').tapped, 'Landy przeciwnika tapnięte (Cold Snap)');
   assert.ok(eventsOfType(state, 'saga_chapter_fired').some((e) => e.chapter === 3));
   // Jill powracająca odpala swój ETB („up to one other nonland permanent\") —
   // stwór przeciwnika wrócił na rękę jako NOWY obiekt (CR 400.7).
@@ -799,7 +799,7 @@ test('Greatsword of Tyr: atak nosiciela → licznik +1/+1 na nim i tap stwora ob
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'guard' }).ok);
   passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.equal(state.objects.get('knight').counters['+1/+1'], 1, 'Nosiciel dostał licznik +1/+1');
-  assert.ok(state.objects.get('guard').tapped, 'Najsilniejszy stwór obrońcy zatapnięty');
+  assert.ok(state.objects.get('guard').tapped, 'Najsilniejszy stwór obrońcy tapnięty');
   assert.ok(!state.objects.get('small').tapped, 'Słabszy stwór obrońcy nietapnięty');
 });
 

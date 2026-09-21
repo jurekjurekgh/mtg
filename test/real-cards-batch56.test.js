@@ -408,7 +408,7 @@ test('B56/B4: 58 Mobile Garrison — trigger ataku odkręca inny WŁASNY artefak
   assert.equal(effectivePower(gar, s), 3);
   assert.equal(effectiveToughness(gar, s), 4);
   assert.equal(state_object(s, 'pilot').tapped, true, 'crew tapnęło stwora');
-  tapObject(s, 'kilof', 'p1'); // cel triggera: zatapnięty własny artefakt
+  tapObject(s, 'kilof', 'p1'); // cel triggera: tapnięty własny artefakt
   attack(s, ['gar']);
   const offers = commands(s).filter((c) => c.type === 'resolve_trigger_target');
   assert.deepEqual(offers.map((c) => c.targetId).sort(), ['kilof', 'pilot'],
@@ -416,7 +416,7 @@ test('B56/B4: 58 Mobile Garrison — trigger ataku odkręca inny WŁASNY artefak
   run(s, offers.find((c) => c.targetId === 'kilof'));
   resolve(s);
   assert.equal(state_object(s, 'kilof').tapped, false, 'trigger odkręcił wskazany artefakt');
-  assert.equal(state_object(s, 'gar').tapped, true, 'sam pojazd („another") został zatapnięty atakiem');
+  assert.equal(state_object(s, 'gar').tapped, true, 'sam pojazd („another") został tapnięty atakiem');
   assert.ok(s.events.some((e) => e.type === 'object_untapped' && e.objectId === 'kilof'));
 });
 

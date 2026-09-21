@@ -172,8 +172,8 @@ test('M2/2: KROK 2 — tryb „up to 3” daje picker wielocelowy (nie listę ko
   assert.deepEqual(cmd.targets, [moj, obcy]);
   assert.ok(execute(state, cmd).ok, 'komenda z pickera jest wykonalna');
   resolveStack(state);
-  assert.equal(state.objects.get(moj).tapped, true, 'oba cele zatapnięte');
-  assert.equal(state.objects.get(obcy).tapped, true, 'oba cele zatapnięte (2/2)');
+  assert.equal(state.objects.get(moj).tapped, true, 'oba cele tapnięte');
+  assert.equal(state.objects.get(obcy).tapped, true, 'oba cele tapnięte (2/2)');
 });
 
 test('M2/3: KROK 2 — tryb bez decyzji (Call for Aid) rzuca od razu, bez pustego modala', () => {
@@ -310,7 +310,7 @@ test('M/4: silnik nadal oferuje OBA tryby i oba są wykonalne (scalanie to preze
   assert.ok(tap, 'oferta trybu 0 z celem');
   assert.ok(execute(s2, tap).ok, 'rzut trybu 0 wykonalny');
   resolveStack(s2);
-  assert.equal(s2.objects.get(moj2).tapped, true, 'cel trybu 0 został zatapnięty');
+  assert.equal(s2.objects.get(moj2).tapped, true, 'cel trybu 0 został tapnięty');
   assert.ok(moj, 'scena ma własnego stwora do tapnięcia');
 });
 

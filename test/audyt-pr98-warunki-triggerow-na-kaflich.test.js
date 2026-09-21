@@ -106,12 +106,12 @@ test('PR98 anty-over-fix: ETB damage bez sufiksu typu (mylące przy drugim skutk
 test('PR98 anty-over-fix: ETB bez warunku i bez celu — brak sztucznej klauzuli', () => {
   const registry = createCardRegistry();
   const text = bfTileText(registry, 'kor-cartographer');
-  assert.match(text, /Gdy wejdzie na pole bitwy: szukaj w bibliotece karty typu Plains na pole bitwy \(zatapniętej\), potem potasuj\./, text.slice(0, 250));
+  assert.match(text, /Gdy wejdzie na pole bitwy: szukaj w bibliotece karty typu Plains na pole bitwy \(tapniętej\), potem potasuj\./, text.slice(0, 250));
   assert.ok(!text.includes('(gdy'), `nieoczekiwany nawias warunku: ${text.slice(0, 250)}`);
 });
 
 test('PR98: end_step dalej renderuje klauzulę (refaktor na wspólny helper)', () => {
   const registry = createCardRegistry();
   const text = bfTileText(registry, 'frontline-war-rager');
-  assert.match(text, /Na początku kroku końca \(gdy kontrolujesz 2\+ zatapnięte stwory\):/, text.slice(0, 250));
+  assert.match(text, /Na początku kroku końca \(gdy kontrolujesz 2\+ tapnięte stwory\):/, text.slice(0, 250));
 });

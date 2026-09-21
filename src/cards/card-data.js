@@ -471,7 +471,7 @@ export const REAL_CARDS = Object.freeze([
       effects: [
         { type: 'pump', power: 2, toughness: 0 },
         // Nadanie zdolności „do końca tury\": trigger dies, który zwraca
-        // stwora zatapniętego i tworzy token Treasure. Deskryptor jest
+        // stwora tapniętego i tworzy token Treasure. Deskryptor jest
         // generyczny (grant_abilities + return_to_battlefield_tapped).
         {
           type: 'grant_abilities',
@@ -3494,7 +3494,7 @@ export const REAL_CARDS = Object.freeze([
   }),
 
   // 5. Irontread Crusher (AER) — Vehicle, Crew 3 (6/6 artefaktowy stwór do
-  //    końca tury po zatapnięciu stworów o łącznej mocy >= 3).
+  //    końca tury po tapnięciu stworów o łącznej mocy >= 3).
   defineCard({
     id: 'irontread-crusher', name: 'Irontread Crusher', set: 'AER',
     types: ['Artifact'], subtypes: ['Vehicle'], colors: [],
@@ -7783,7 +7783,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
 // ---- Batch 41 — transza B: discard/amass ----
 
-  // 4. Immersturm Skullcairn (KHM) — Land: wchodzi zatapiony; {T}: {B};
+  // 4. Immersturm Skullcairn (KHM) — Land: wchodzi tapnięty; {T}: {B};
   //    {1}{B}{R}{R},{T},sac (sorcery): 3 obrażenia w GRACZA + ten gracz
   //    odrzuca kartę (discard_cards applyTo target — wzorzec Mindstab).
   defineCard({
@@ -9232,7 +9232,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   // 4. Supernatural Stamina (2XM) — +2/+0 i nadany trigger „dies → wróć
-  //    zatapniony". Wzorzec Fake Your Own Death, ale BEZ tokenu Skarbu.
+  //    tapnięty". Wzorzec Fake Your Own Death, ale BEZ tokenu Skarbu.
   defineCard({
     id: 'supernatural-stamina', name: 'Supernatural Stamina', set: '2XM',
     types: ['Instant'], colors: ['B'], manaCost: 1,
@@ -9836,7 +9836,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 563, plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
-    notes: ['token Powerstone wchodzi ZATAPNIĘTY (tapped: true) — jak w druku BRO'],
+    notes: ['token Powerstone wchodzi TAPNIĘTY (tapped: true) — jak w druku BRO'],
   }),
 
   // 6. Kishla Village (TDM) Land — ETB tapped, chyba że kontrolujesz Island
@@ -10504,7 +10504,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     spell: {
       timing: 'instant',
       modes: [
-        { name: 'Zadaj 4 obrażenia zatapniętemu stworowi', targets: [{ type: 'tapped_creature' }], effects: [{ type: 'damage', amount: 4 }] },
+        { name: 'Zadaj 4 obrażenia tapniętemu stworowi', targets: [{ type: 'tapped_creature' }], effects: [{ type: 'damage', amount: 4 }] },
         { name: 'Zniszcz zaklęcie', targets: [{ type: 'enchantment' }], effects: [{ type: 'destroy_permanent' }] },
       ],
     },
@@ -10821,7 +10821,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        // {5}{G}, {T} — koszt many z zielonym pipem (CR 118.2) i zatapnięcie.
+        // {5}{G}, {T} — koszt many z zielonym pipem (CR 118.2) i tapnięcie.
         cost: { mana: 6, colors: ['G'], tap: true },
         // „Look at the top four cards… You may reveal a creature card from
         // among them and put it into your hand. Put the rest on the bottom of

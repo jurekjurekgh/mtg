@@ -2391,7 +2391,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         cantBlock: Boolean(effect.cantBlock),
         // Batch 45 (Crawling Chorus — token Mite z toxic 1, CR 702.180).
         ...(effect.toxic != null ? { toxic: effect.toxic } : {}),
-        // M147 (Static Net — Powerstone): token wchodzi ZATAPNIĘTY.
+        // M147 (Static Net — Powerstone): token wchodzi TAPNIĘTY.
         tapped: Boolean(effect.tapped),
       })?.id);
     }
@@ -3006,7 +3006,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'return_to_battlefield_tapped') {
-    // Powrót obiektu z grobu na pole bitwy ZATAPNIĘTEGO pod kontrolą właściciela
+    // Powrót obiektu z grobu na pole bitwy TAPNIĘTEGO pod kontrolą właściciela
     // (Fake Your Own Death). Cel domyślny: samo źródło (trigger „when this
     // creature dies" — obiekt jest już w grobie po zmianie strefy).
     const targetId = targets[0] ?? sourceObject.id;
@@ -3238,7 +3238,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // Batch 56 (Containment Protocol): „When this Aura enters, tap enchanted
   // creature." — LUSTRO untap_enchanted_permanent (poniżej): tapuje GOSPODARZA
   // aury. Wspólny helper `tapObject` (nada zdarzenie object_tapped i respektuje
-  // już-zatapnięty obiekt).
+  // już-tapnięty obiekt).
   if (effect.type === 'tap_enchanted_permanent') {
     const enchantedId = sourceObject.attachedTo;
     if (!enchantedId) return;
@@ -5221,7 +5221,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
   if (effect.type === 'tap_all_lands_opponents_control') {
     // „Tap all lands your opponents control” (Saga III Shivy — Cold Snap):
     // każdy land (kind land albo typ Land, także land creature) kontrolowany
-    // przez każdego przeciwnika kontrolera źródła zostaje zatapnięty.
+    // przez każdego przeciwnika kontrolera źródła zostaje tapnięty.
     const controllerId = sourceObject.controllerId;
     let tappedCount = 0;
     for (const objectId of [...state.zones.battlefield]) {
@@ -5239,7 +5239,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
   if (effect.type === 'station_counters') {
     // Station (Wedgelight Rammer, Warmaker Gunship): „Tap another creature you
     // control: Put charge counters equal to its power on this Spacecraft.”
-    // Zatapnięty w koszcie stwór przychodzi jako targets[0] (abilities.js
+    // Tapnięty w koszcie stwór przychodzi jako targets[0] (abilities.js
     // tapOtherCreature). M360/B4 (EOE Release Notes, mtg.wiki/Station
     // 2026-09-16): „If that creature isn't on the battlefield at that time,
     // use its power as it last existed on the battlefield." Stwór NIE jest

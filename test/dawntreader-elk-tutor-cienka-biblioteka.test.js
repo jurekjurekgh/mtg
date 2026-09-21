@@ -6,7 +6,7 @@
 // (mielące TAPNIĘCIA płatności) i `LIBRARY_DRAIN_EFFECTS` (mill/draw).
 // TUTOR — „search your library for a card…” — zabiera kartę z biblioteki
 // bezpowrotnie, ale nie był nigdzie wyceniany: aktywacja Elk ({G}, poświęć:
-// ląd wchodzi zatapnięty) miała wycenę samego efektu (~2 pkt) i wygrywała
+// ląd wchodzi tapnięty) miała wycenę samego efektu (~2 pkt) i wygrywała
 // z passem nawet przy 4 kartach w bibliotece.
 //
 // Naprawa (rodzina domknięta, L41/L102): `searchLibraryLoss` liczy karty
@@ -71,7 +71,7 @@ test('C/2 (anty-over-fix): zdrowa biblioteka — bot nadal używa Elka do rampy'
   const state = scenaElk(25);
   const cmd = decyzja(state);
   assert.ok(aktywuje(cmd, 'elk'),
-    `przy 25 kartach aktywacja jest wartościowa (ląd wchodzi zatapnięty): ${JSON.stringify(cmd)}`);
+    `przy 25 kartach aktywacja jest wartościowa (ląd wchodzi tapnięty): ${JSON.stringify(cmd)}`);
 });
 
 test('C/3: granica marginesu — 21 kart (zapas 20) jeszcze aktywuje, 20 już nie', () => {

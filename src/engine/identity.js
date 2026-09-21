@@ -133,7 +133,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Cecha z definicji (np. Rupture Spire): permanent wchodzi na pole bitwy tapped.
     entersTapped: Boolean(entersTapped),
     // Czasowe entersTapped z warunkiem (Raucous Carnival): land wchodzi
-    // zatapnięty, chyba że warunek jest spełniony (wtedy wchodzi untapped).
+    // tapnięty, chyba że warunek jest spełniony (wtedy wchodzi untapped).
     entersTappedCondition: entersTappedCondition ? Object.freeze({ ...entersTappedCondition }) : null,
     // Aura „Enchant player" (Curse of the Pierced Heart): zaczarowuje gracza,
     // nie stwora — docelowego gracza wybiera się przy rzucaniu.

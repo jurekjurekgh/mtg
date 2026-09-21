@@ -322,7 +322,7 @@ test('Irontread Crusher: crew 3 → artefaktowy stwór 6/6 do końca tury', () =
     abilityIndex: obj.abilities.indexOf(crewAbility), crewCreatureIds: ['c1', 'c2'],
   });
   assert.ok(r.ok, r.events[0]?.reason);
-  assert.ok(state.objects.get('c1').tapped && state.objects.get('c2').tapped, 'załoga zatapnięta');
+  assert.ok(state.objects.get('c1').tapped && state.objects.get('c2').tapped, 'załoga tapnięta');
   resolveStack(state); // D: zdolność na stosie → animacja po rozstrzygnięciu
   const vehicle = state.objects.get('crusher');
   assert.equal(vehicle.kind, 'creature', 'pojazd jest stworzeniem');

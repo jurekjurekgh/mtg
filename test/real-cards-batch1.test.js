@@ -173,7 +173,7 @@ function ninjutsuSetup() {
   return state;
 }
 
-test('Kappa Tech-Wrecker: ninjutsu zwraca atakującego i wchodzi zatapnięta i atakująca', () => {
+test('Kappa Tech-Wrecker: ninjutsu zwraca atakującego i wchodzi tapnięta i atakująca', () => {
   const state = ninjutsuSetup();
   const view = playerView(state, 'p1');
   const cmd = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'kappa' && c.attackerId === 'attacker');
@@ -186,7 +186,7 @@ test('Kappa Tech-Wrecker: ninjutsu zwraca atakującego i wchodzi zatapnięta i a
   assert.equal(state.combat.attackers.includes('attacker'), false);
   // B7.2: ninjutsu na stosie — Kappa wchodzi po rozstrzygnięciu.
   assert.ok(resolveStack(state), 'stos po ninjutsu');
-  // Kappa jest na polu bitwy: zatapnięta, atakująca, z licznikiem deathtouch.
+  // Kappa jest na polu bitwy: tapnięta, atakująca, z licznikiem deathtouch.
   const kappa = [...state.objects.values()].find((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'battlefield');
   assert.ok(kappa, 'Kappa nie weszła na pole bitwy');
   assert.equal(kappa.tapped, true);

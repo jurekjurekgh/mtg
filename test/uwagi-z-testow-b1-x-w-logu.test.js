@@ -1,6 +1,6 @@
 // Uwaga B1 właściciela z testów (2026-09-18): „W Rozgrywce ani w logu nie ma
 // informacji za ile X bot zagrał Epic Experiment (mogę to sobie tylko
-// zgadywać po ilości zatapowanych lądów) — ta informacja powinna znaleźć się
+// zgadywać po ilości tapowanych lądów) — ta informacja powinna znaleźć się
 // w layerze Rozgrywka i w logu.”
 //
 // Root cause: zdarzenie `spell_cast` z castXCostSpell/castFireball NIESIE

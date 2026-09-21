@@ -15,13 +15,13 @@ import { beginTurn } from '../src/engine/resources.js';
  * Choroba przywołania zależy WYŁĄCZNIE od ciągłości kontroli — nie od tego,
  * czy stwór faktycznie się odkręcił. Silnik kasował flagę tylko w gałęzi
  * realnego odkręcenia (untapControlled), więc każdy stwór, który przeszedł
- * przez untap step ZATAPNIĘTY i z blokadą odkręcania (licznik stun CR 122.1b,
+ * przez untap step TAPNIĘTY i z blokadą odkręcania (licznik stun CR 122.1b,
  * untap-lock Entrancing Lyre, „doesn't untap next untap step"), zostawał
  * chory na przywołanie w nieskończoność — nie mógł atakować ani używać {T}
  * także wiele tur później, długo po wygaśnięciu blokady.
  */
 
-/** Stwór na polu bitwy p1, opcjonalnie zatapniętny i/lub chory. */
+/** Stwór na polu bitwy p1, opcjonalnie tapnięty i/lub chory. */
 function addBear(state, { id = 'bear', tapped = false, summoningSickness = false } = {}) {
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: 'x-bear', controllerId: 'p1', ownerId: 'p1',
@@ -44,7 +44,7 @@ test('licznik stun zjada odkręcenie, ale choroba przywołania i tak znika (CR 3
   beginTurn(state, 'p1');
 
   const bear = state.objects.get('bear');
-  // CR 122.1b: licznik stun zjada to odkręcenie — stwór zostaje zatapniętny.
+  // CR 122.1b: licznik stun zjada to odkręcenie — stwór zostaje tapnięty.
   assert.equal(bear.tapped, true, 'stun zjada odkręcenie');
   assert.equal(bear.counters?.stun ?? 0, 0, 'licznik stun zdjęty');
   // CR 302.6: kontrola trwa od początku tury, więc choroba przywołania mija
@@ -57,7 +57,7 @@ test('stwór pod blokadą odkręcania może atakować po jej wygaśnięciu (CR 3
   addBear(state, { tapped: true, summoningSickness: true });
   addCounter(state, 'bear', 'stun', 1);
 
-  // Tura kontrolera: stun zjada odkręcenie, stwór zostaje zatapniętny.
+  // Tura kontrolera: stun zjada odkręcenie, stwór zostaje tapnięty.
   state.turn = { ...state.turn, number: 5, activePlayerId: 'p1' };
   beginTurn(state, 'p1');
   assert.equal(state.objects.get('bear').tapped, true);
@@ -80,7 +80,7 @@ test('stwór zablokowany untap-lockiem traci chorobę przywołania (CR 302.6)', 
     id: 'lyre', instanceId: 'i-lyre', cardId: 'x-lyre', controllerId: 'p2', ownerId: 'p2',
     zone: 'battlefield', kind: 'artifact', types: ['Artifact'],
   });
-  // Blokada Liry działa, gdy źródło jest ZATAPNIĘTE (addObject nie przyjmuje
+  // Blokada Liry działa, gdy źródło jest TAPNIĘTE (addObject nie przyjmuje
   // pola `tapped` — tylko `entersTapped` — więc ustawiamy je wprost).
   state.objects.set('lyre', Object.freeze({ ...state.objects.get('lyre'), tapped: true }));
   state.objects.set('bear', Object.freeze({ ...state.objects.get('bear'), untapLockedBy: ['lyre'] }));
@@ -89,7 +89,7 @@ test('stwór zablokowany untap-lockiem traci chorobę przywołania (CR 302.6)', 
   beginTurn(state, 'p1');
 
   const bear = state.objects.get('bear');
-  assert.equal(bear.tapped, true, 'untap-lock trzyma permanent zatapniętym');
+  assert.equal(bear.tapped, true, 'untap-lock trzyma permanent tapniętym');
   assert.equal(bear.summoningSickness, false, 'ale choroba przywołania mija (CR 302.6)');
 });
 
