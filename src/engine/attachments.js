@@ -109,10 +109,21 @@ export function isAttachedEquipment(object) {
  * i SBA „aura bez legalnego zaczarowanego obiektu" (removeIllegalAttachments)
  * — bez tego Feedback dałoby się oferować, ale nie rzucić (SBA niszczyłby aurę).
  */
+// Jedno miejsce czytania deskryptora załącznika (aura → bestow → equipment):
+// predykaty gospodarza i walidacja SBA muszą czytać TEN SAM deskryptor,
+// inaczej „ownControlOnly" zniknie w jednej ścieżce (M210/3).
+export function auraDescriptor(attachment) {
+  return attachment?.aura ?? attachment?.bestow ?? attachment?.equipment ?? null;
+}
+
+export function auraEnchantKind(attachment) {
+  const descriptor = auraDescriptor(attachment);
+  return descriptor?.enchant ?? descriptor?.enchantType ?? 'creature';
+}
+
 export function isLegalAuraHost(attachment, host) {
   if (!host || host.zone !== 'battlefield') return false;
-  const descriptor = attachment?.aura ?? attachment?.bestow ?? attachment?.equipment ?? null;
-  const enchantKind = descriptor?.enchant ?? descriptor?.enchantType ?? 'creature';
+  const enchantKind = auraEnchantKind(attachment);
   if (enchantKind === 'enchantment') {
     return host.kind === 'enchantment' || (host.types ?? []).includes('Enchantment');
   }
@@ -124,7 +135,7 @@ export function isLegalAuraHost(attachment, host) {
     // `ownControlOnly` — dokładnie ten sam, którego używa walidacja rzucania
     // w resources.js. Wcześniej czytała go TYLKO tamta ścieżka, więc SBA
     // (CR 704.5n) nie zrzucała aury po zmianie kontroli gospodarza.
-    if (descriptor?.ownControlOnly === false) return true;
+    if (auraDescriptor(attachment)?.ownControlOnly === false) return true;
     return host.controllerId === attachment.controllerId;
   }
   // Chronic Flooding (RTR): „Enchant land" — gospodarzem jest LAND.
@@ -149,15 +160,43 @@ export function isLegalAuraHost(attachment, host) {
   }
   // Sesja 2026-09-21 (granica aura–host, znaleziona pomiarem na żywo): „Enchant
   // player" (Curse of the Pierced Heart) ma gospodarza-GRACZA, a nie permanent.
-  // Bez tej gałęzi predykat wpadał w domyślne „wyłącznie stwory" i aura
-  // wracająca z grobu (Annie Flash, CR 303.4f) ZAŁĄCZAŁA SIĘ DO STWORA —
-  // klątwa leżała na stworze, a jej zdolność czytała `enchantedPlayerId`
-  // (nieustawione), więc nie robiła nic. Żaden permanent nie jest legalnym
-  // gospodarzem takiej aury; ścieżka rzucania (spells.js `resolveAuraSpell`)
-  // ma własną gałąź `enchantPlayer` i nie korzysta z tego predykatu.
+  // Bez rozróżnienia tego deskryptora predykat wpadał w domyślne „wyłącznie
+  // stwory" i aura wracająca z grobu (Annie Flash, CR 303.4f) ZAŁĄCZAŁA SIĘ DO
+  // STWORA — klątwa leżała na stworze, a jej zdolność czytała
+  // `enchantedPlayerId` (nieustawione), więc nie robiła nic. Gracz nie jest
+  // permanentem, więc ten predykat milczy — gospodarza-GRACZA rozstrzyga
+  // bliźniaczy `isLegalAuraPlayerHost`, a WSPÓLNY zbiór kandydatów daje
+  // `legalAuraHosts` (L41: jedna reguła, jedno miejsce).
   if (enchantKind === 'player') return false;
   // Zwykła aura / bestow / equipment — wyłącznie stwory.
   return host.kind === 'creature';
+}
+
+/**
+ * Legalny gospodarz-GRACZ dla aury „Enchant player" (CR 303.4f: „object OR
+ * player"). Gra jest dwuosobowa, więc kandydatami są wszyscy gracze w partii
+ * (klątwa może zaczarować także kontrolera — Oracle nie zawęża celu).
+ * Predykat jest bliźniakiem `isLegalAuraHost` i razem z nim tworzy JEDEN zbiór
+ * legalnych gospodarzy (ścieżka zwrotu z grobu + walidacja wyboru gracza).
+ */
+export function isLegalAuraPlayerHost(state, attachment, playerId) {
+  if (auraEnchantKind(attachment) !== 'player') return false;
+  return (state?.players ?? []).some((player) => player.id === playerId);
+}
+
+/**
+ * Wszyscy legalni gospodarze aury — permanenty ORAZ gracze (CR 303.4f).
+ * Jedno źródło dla ścieżki zwrotu z grobu (effects.js), walidacji wyboru
+ * (game-state.js `resolve_aura_host`) i oferty (legalCommands): kandydat
+ * „jest / nie jest legalny" nie ma dwóch odpowiedzi zależnie od warstwy (L48).
+ */
+export function legalAuraHosts(state, attachment) {
+  const objectIds = state.zones.battlefield
+    .filter((hostId) => isLegalAuraHost(attachment, state.objects.get(hostId)));
+  const playerIds = (state.players ?? [])
+    .map((player) => player.id)
+    .filter((playerId) => isLegalAuraPlayerHost(state, attachment, playerId));
+  return { objectIds, playerIds };
 }
 
 /** Zaczarowany/wyposażony stwór (gospodarz załącznika) albo null. */
@@ -197,6 +236,37 @@ export function attachAuraToCreature(state, auraId, hostId) {
     summoningSickness: true, // po odłączeniu (bestow) jako stwór obowiązuje choroba atakowa
   });
   emitAttached(state, updated, hostId, updated.bestow ? 'bestow' : 'aura');
+  return updated;
+}
+
+/**
+ * Zaczarowuje GRACZA aurą „Enchant player" (CR 303.4f: „object or player") —
+ * ścieżka wejścia NIE-czarowaniem: powrót z grobu (Annie Flash) wybiera
+ * gospodarza przed wejściem. Gracz nie jest obiektem, więc aura nie dostaje
+ * `attachedTo` (i nie obowiązuje jej SBA „aura bez gospodarza", CR 704.5m —
+ * gracz nie opuszcza pola bitwy); kształt obiektu jest DOKŁADNIE ten sam, co
+ * przy rzucie (spells.js `resolveAuraSpell`: `kind: 'enchantment'` +
+ * `enchantedPlayerId`) — inaczej ta sama karta zachowywałaby się inaczej
+ * zależnie od drogi wejścia (L41/L128).
+ */
+export function attachAuraToPlayer(state, auraId, playerId) {
+  const aura = state.objects.get(auraId);
+  if (!aura || aura.zone !== 'battlefield' || (!aura.bestow && !aura.aura)) {
+    throw new Error('Zaczarować gracza można tylko aurą na polu bitwy');
+  }
+  if (!isLegalAuraPlayerHost(state, aura, playerId)) {
+    throw new Error(`Aura nie ma legalnego gospodarza-gracza (${auraEnchantKind(aura)})`);
+  }
+  const updated = patchAttachmentObject(state, aura, {
+    kind: 'enchantment',
+    enchantPlayer: true,
+    enchantedPlayerId: playerId,
+    attachedTo: null,
+  });
+  state.events.push(event('aura_attached_to_player', {
+    objectId: updated.id, cardId: updated.cardId, playerId,
+    controllerId: updated.controllerId,
+  }));
   return updated;
 }
 

@@ -3398,7 +3398,11 @@ export function commandLabel(cmd, session, view) {
       // Audyt PR #130 (znalezisko D, CR 303.4f): aura wracająca z grobu wybiera
       // zaczarowany obiekt przy wejściu — etykieta nazywa GOSPODARZA (nazwa
       // aury jedzie w tytule grupy z `pendingAuraHost`, ADR 0017).
-      return `Zaczaruj: ${nameOfObjectId(cmd.auraHostId)}`;
+      // Sesja 2026-09-21 (gospodarz-GRACZ): gospodarzem bywa też GRACZ —
+      // wtedy etykieta mówi „Ty"/„Nieprzyjaciel" zamiast szukać obiektu
+      // (gracz nie ma nazwy karty, L41: jedna etykieta dla obu rodzajów).
+      const hostIsPlayer = (view.pendingAuraHost?.candidatePlayerIds ?? []).includes(cmd.auraHostId);
+      return `Zaczaruj: ${hostIsPlayer ? playerNameOf(cmd.auraHostId) : nameOfObjectId(cmd.auraHostId)}`;
     }
     case 'resolve_hand_creature': {
       // Dragon Arch: połóż wielokolorowego stwora z ręki (albo nic — you may).

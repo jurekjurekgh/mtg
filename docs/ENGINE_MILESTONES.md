@@ -6744,3 +6744,25 @@ dwóch reprezentacji tej samej danej → L152 pkt (4). Rejestr: 130 431 → 125 
 budżet lektury **97 007 → 95 254/100 000**. Bramy bez zmian: `npm test`
 **6077/6077**, `node tools/run-tests.mjs all` **6087/6087**, docs-test **25/25**.
 
+
+## M403 — 2026-09-21: gospodarz-GRACZ aury (CR 303.4f „object or player") — kandydaci-gracze w decyzji (PR #132)
+
+Zlecenie właściciela: domknąć odroczoną pozycję z kroku 1 — aura „Enchant
+player" (Curse of the Pierced Heart) wracająca z grobu ma zaczarować GRACZA.
+Kontrakt decyzji `resolve_aura_host` niósł wyłącznie id permanentów, więc dla
+takiej aury oferta była pusta, a reguła z kroku 1 („żaden permanent nie jest
+gospodarzem takiej aury") zostawiała ją w grobie. Rozwiązanie: `attachments.js`
+rozdziela predykaty (`isLegalAuraHost` milczy dla `enchant: 'player'`, nowy
+bliźniak `isLegalAuraPlayerHost`) i daje WSPÓLNY zbiór kandydatów
+`legalAuraHosts`; `attachAuraToPlayer` nadaje kształt identyczny z rzutem
+(`kind: 'enchantment'` + `enchantedPlayerId`, bez `attachedTo`) i emituje
+`aura_attached_to_player` (typ + opis logu — strażnik M134); decyzja, widok
+i oferta niosą oba zbiory (`candidatePlayerIds` obok `candidateIds`),
+re-walidacja przy wykonaniu idzie tymi samymi predykatami co oferta (L48);
+etykieta mówi „Zaczaruj: Ty/Nieprzyjaciel", heurystyk wycenia kandydata-gracza
+(wroga klątwa na przeciwnika, nigdy na siebie), projekcja pokrycia nie liczy go
+jako „niewyceniony", aggro też nie zaczarowuje siebie. Pin:
+`test/granica-aura-host-2026-09-21.test.js` G/1–G/4 (predykaty, pełna droga
+zwrotu, etykieta, CR 608.2b, oba boty). Lekcja **L163**; bramy: `npm test`
+**6079/6079**, `node tools/run-tests.mjs all` **6089/6089** (~274 s), build
+**59 modułów / 3987,2 kB**, budżet lektury **95 819/100 000**.

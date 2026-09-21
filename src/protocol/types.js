@@ -44,6 +44,11 @@ export const EVENT_TYPES = Object.freeze(['game_created', 'object_moved', 'card_
     // Batch 57/B5 (Annie Flash, ruling OTJ 2024-04-12): aura wracająca z grobu
     // bez żadnego legalnego gospodarza ZOSTAJE w grobie (CR 303.4f/704.5m).
     'aura_returned_without_host', 'replacement_choice_required', 'replacement_choice_resolved',
+    // Sesja 2026-09-21 (gospodarz-GRACZ, CR 303.4f „object or player"): aura
+    // „Enchant player" (Curse of the Pierced Heart) wracająca z grobu
+    // zaczarowuje GRACZA — zdarzenie nazywa go w logu (M134: każdy emitowany
+    // typ ma opis w `describeGameEvent`).
+    'aura_attached_to_player',
     'fertile_thicket_reveal_started', 'fertile_thicket_resolved',
     'springbloom_choice_required', 'springbloom_resolved', 'springbloom_skipped',
     'color_choice_required', 'color_choice_resolved',

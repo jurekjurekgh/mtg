@@ -12086,3 +12086,33 @@ zbiorczych (L54 pkt 5, L152 pkt 4), usunięte zdublowane linie `→ narracja:`
 161 806 → 158 382 B, budżet lektury **97 007 → 95 254/100 000**; testy
 dokumentacji 25/25. Milestone **M402**.
 
+## 2026-09-21d — gospodarz-GRACZ aury (CR 303.4f „object or player") — kandydaci-gracze w decyzji (PR #132, gałąź `arena/01a0c0af-mtg`)
+
+Krok 4 tej samej sesji, wykonany na zlecenie właściciela („plus zrobienie
+Gospodarz-GRACZ aury"). Krok 1 naprawił najgorszy objaw (aura „Enchant player"
+wracająca z grobu przypinała się do stworzenia), ale świadomie odroczył pełne
+zachowanie z CR 303.4f: decyzja `resolve_aura_host` niosła wyłącznie id
+permanentów, więc dla klątwy nie było ŻADNEGO wariantu, a reguła „żaden
+permanent nie jest gospodarzem takiej aury" zostawiała ją w grobie.
+
+Co zmieniono (jedna reguła, wszystkie warstwy naraz — lekcja **L163**):
+`attachments.js` — `isLegalAuraHost` milczy dla `enchant: 'player'`, nowy
+predykat-bliźniak `isLegalAuraPlayerHost` i wspólny zbiór kandydatów
+`legalAuraHosts` (`{objectIds, playerIds}`), nowe `attachAuraToPlayer` nadaje
+kształt identyczny z rzutem z ręki (`kind: 'enchantment'` + `enchantedPlayerId`,
+bez `attachedTo`) i emituje `aura_attached_to_player`; `effects.js` — decyzja
+otwiera się na sumę kandydatów, pojedynczy kandydat (także gracz) domyka wybór
+sam (L41), a wejście rozstrzyga gospodarza po kształcie id; `game-state.js` —
+kontrakt i widok niosą `candidatePlayerIds`, oferta wariant na każdego
+kandydata, re-walidacja przy wykonaniu tymi samymi predykatami co oferta (L48),
+`aura_host_resolved` nazywa rodzaj gospodarza; warstwy widza — etykieta
+„Zaczaruj: Ty/Nieprzyjaciel" (`PLAYER_NAMES`), wycena heurystyka (wroga klątwa
+na przeciwnika, nigdy na siebie), projekcja pokrycia nie klasyfikuje kandydata
+gracza jako „niewyceniony", aggro nie zaczarowuje siebie, narracja liczy oba
+zbiory. Piny przepisane i dopisane: `test/granica-aura-host-2026-09-21.test.js`
+G/1 (predykaty + pełna droga zwrotu + etykieta + zdarzenie) oraz nowe G/3
+(CR 608.2b: obcy kandydat i cudza decyzja odrzucone, wybór siebie legalny)
+i G/4 (oba boty). Bramy: `npm test` **6079/6079**, `node tools/run-tests.mjs all`
+**6089/6089** (~274 s), build **59 modułów / 3987,2 kB**, budżet lektury
+**95 819/100 000**; milestone **M403**, lekcja **L163**.
+

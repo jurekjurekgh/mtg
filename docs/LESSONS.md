@@ -2352,3 +2352,29 @@ B/1–B/3; mutacje (bez fallbacku, bez wyjątku biblioteki, bez sprawdzenia
 widoczności) czerwienią.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L162)
+
+## L163 (2026-09-21) — Rozszerzenie kontraktu decyzji o NOWĄ KLASĘ kandydata uczy wszystkie warstwy naraz (oferta, widok, etykieta, wycena, projekcja, narracja)
+
+**Przypadek (zlecenie właściciela, gospodarz-GRACZ aury):** CR 303.4f mówi
+„a legal object OR PLAYER", a `pendingAuraHost` niósł wyłącznie id permanentów
+— `curse-of-the-pierced-heart` (Enchant player) wracająca z grobu nie miała
+żadnego wariantu, więc oferta była pusta.
+
+**Reguła:**
+1. Nowa klasa kandydata to NIE łatka w jednym pliku: kontrakt decyzji
+   (`candidateIds` OBOK `candidatePlayerIds`), oferta `legalCommands`, widok
+   decydenta, etykieta (`PLAYER_NAMES`: „Ty"/„Nieprzyjaciel"), wycena bota
+   z projekcją pokrycia i narracja zdarzenia muszą poznać ją tego samego dnia —
+   inaczej wariant jest cicho „niewyceniony" (L40) albo wypada z oferty (L48).
+2. Kształt obiektu po wejściu bez czarowania jest IDENTYCZNY z kształtem po
+   rzucie (`kind: 'enchantment'` + `enchantedPlayerId`, bez `attachedTo`) —
+   inaczej ta sama karta zachowuje się inaczej zależnie od drogi wejścia.
+3. Gracz nie jest permanentem: predykaty gospodarza to bliźniaki
+   (`isLegalAuraHost` milczy dla 'player', `isLegalAuraPlayerHost` rozstrzyga),
+   a wspólny zbiór kandydatów ma JEDNO źródło (`legalAuraHosts`).
+
+**Strażnik:** `test/granica-aura-host-2026-09-21.test.js` G/1–G/4 (predykaty,
+pełna droga zwrotu z grobu, etykieta, walidacja CR 608.2b, oba boty); mutacja
+bez gałęzi gracza w `legalAuraHosts` czerwieni G/1.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L163)

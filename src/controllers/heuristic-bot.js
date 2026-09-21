@@ -7003,10 +7003,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // kart, ADR 0002): wroga aura (Nightsnare, Chronic Flooding) idzie na
         // stwora WROGA i tym wyżej, im więcej ten stwór znaczy; przyjazna —
         // na własnego (buff warto nosić na stworze, który z niego korzysta).
-        const host = objectOnBoard(view, cmd.auraHostId);
-        if (!host) return finish(-5);
         const auraCard = view.pendingAuraHost?.cardId ? cardDef(view.pendingAuraHost.cardId) : undefined;
         const hostile = auraIsHostile(auraCard?.aura, auraCard);
+        // Sesja 2026-09-21 (gospodarz-GRACZ, CR 303.4f): kandydatem bywa GRACZ
+        // („Enchant player" wracające z grobu). Gracz nie ma `combatPower`, ale
+        // polaryzacja jest TA SAMA co dla stworów: wroga klątwa na
+        // przeciwnika, nigdy na siebie (L41 — jedna reguła dla obu rodzajów
+        // gospodarza; brak wartości bojowej nie może oznaczać „niewycenione").
+        const host = objectOnBoard(view, cmd.auraHostId);
+        if (!host) {
+          const isPlayerCandidate = (view.pendingAuraHost?.candidatePlayerIds ?? []).includes(cmd.auraHostId);
+          if (!isPlayerCandidate) return finish(-5);
+          const mine = cmd.auraHostId === view.playerId;
+          if (hostile) return finish(mine ? -P.auraHostileOwnPenalty : P.auraHostileEnemyBase);
+          return finish(mine ? P.auraBase : -P.auraHostileEnemyBase);
+        }
         const mine = host.controllerId === view.playerId;
         const worth = combatPower(host);
         if (hostile) return finish(mine ? -P.auraHostileOwnPenalty - worth : P.auraHostileEnemyBase + worth);
@@ -7790,9 +7801,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // pola i te same generatory, co w `scoreCommand`/`scoreCommandValue`.
     if (cmd?.type === 'resolve_aura_host') {
       const host = objectOnBoard(view, cmd.auraHostId);
-      return host
-        ? { mine: host.controllerId === view.playerId ? 1 : 0, value: combatPower(host) }
-        : { host: 0 };
+      if (host) return { mine: host.controllerId === view.playerId ? 1 : 0, value: combatPower(host) };
+      // Kandydat-GRACZ („Enchant player", CR 303.4f): gracz nie ma wartości
+      // bojowej, ale polaryzacja jest mierzalna (mój/nie mój) — inaczej
+      // pokrycie liczyłoby ten wariant jako „niewyceniony" (L40/L28).
+      const isPlayerCandidate = (view.pendingAuraHost?.candidatePlayerIds ?? []).includes(cmd.auraHostId);
+      if (!isPlayerCandidate) return { host: 0 };
+      return { mine: cmd.auraHostId === view.playerId ? 1 : 0, value: 0 };
     }
     if (cmd?.type === 'resolve_craft_exile') {
       // Ta sama ścieżka wyszukiwania co wycena (F7) — kandydat z grobu.

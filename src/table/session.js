@@ -1766,7 +1766,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // wracającej z grobu — bez wpisu gracz nie wie, że silnik na niego czeka
       // (M106/Z2), a wynik i tak nazwie `object_moved` + `object_attached`.
       case 'aura_host_choice_required':
-        return `${nameOf(e.sourceCardId)} — ${whoN(e.playerId)} wybiera, co zaczaruje ${nameOf(e.cardId)} (kandydaci: ${(e.candidateIds ?? []).length})`;
+        // Sesja 2026-09-21 (gospodarz-GRACZ): kandydatami są też GRACZE
+        // („Enchant player", CR 303.4f) — liczba w narracji musi pokrywać oba
+        // zbiory, inaczej log mówiłby „kandydaci: 0" przy realnym wyborze.
+        return `${nameOf(e.sourceCardId)} — ${whoN(e.playerId)} wybiera, co zaczaruje ${nameOf(e.cardId)} (kandydaci: ${(e.candidateIds ?? []).length + (e.candidatePlayerIds ?? []).length})`;
       case 'aura_host_resolved': return null;
       case 'hand_free_cast_resolved':
         if (!e.declined) return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)} z ręki bez płacenia kosztu many (${nameOf(e.sourceCardId)})`;
@@ -2111,6 +2114,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // zdolność (M106/Z2).
       case 'aura_returned_without_host':
         return `${nameOf(e.cardId)} zostaje w grobie — aura bez legalnego gospodarza na polu bitwy`;
+      // Sesja 2026-09-21 (gospodarz-GRACZ, CR 303.4f): aura „Enchant player"
+      // wracająca z grobu zaczarowuje GRACZA — gracz musi zobaczyć kogo
+      // (bez wpisu wyglądałoby to jak zgubiona zdolność, M106/Z2).
+      case 'aura_attached_to_player':
+        return `${nameOf(e.cardId)} zaczarowuje: ${whoN(e.playerId)}`;
       case 'delve_exile_resolved': return null;
       // card_discarded już nazywa każdą kartę. Zakończenie decyzji nie jest
       // kolejnym odrzuceniem ani zawsze pojedynczym kosztem zdolności.

@@ -2468,3 +2468,24 @@ stronie zdarzeń).
 wystąpienie `pending*` w surowym pliku. Mutacja: `state.pendingZzz` w kodzie
 + wzmianka `pendingZzz` wyłącznie w KOMENTARZU → strażnik zielony. Nowa decyzja
 znów wyciekłaby z odcisku stanu.
+
+## L163 (2026-09-21) — przypadek
+
+**Objaw:** aura „Enchant player" (Curse of the Pierced Heart) wracająca z grobu
+(trigger Annie Flash, CR 303.4f) nie miała żadnego wariantu w decyzji
+`resolve_aura_host` — kontrakt niósł wyłącznie id permanentów, więc dla aury
+„Enchant player" oferta była pusta, a jedynym ówczesnym zachowaniem było
+zostawienie jej w grobie (`aura_returned_without_host`).
+
+**Przyczyna:** dwie warstwy znały wyłącznie obiekty: predykat gospodarza
+(`isLegalAuraHost`, domyślna gałąź „wyłącznie stwory") i kontrakt decyzji
+(`candidateIds`) — a CR mówi „a legal object OR PLAYER". Pomiar na żywo
+(seed 106, talia-sonda z Annie Flash) pokazał przy okazji, że bez gałęzi
+'player' klątwa lądowała NA STWORZE z nieustawionym `enchantedPlayerId`.
+
+**Naprawa:** gracz to osobny predykat i osobny zbiór kandydatów
+(`isLegalAuraPlayerHost`, `legalAuraHosts`), decyzja niesie OBA zbiory
+(`candidateIds` + `candidatePlayerIds`), wejście rozstrzyga kształt po id
+(`attachAuraToPlayer`: `kind: 'enchantment'` + `enchantedPlayerId`, jak
+w `spells.js`), a warstwy widza (etykieta „Ty"/„Nieprzyjaciel", wycena bota,
+projekcja pokrycia, narracja) poznały nową klasę tego samego dnia.

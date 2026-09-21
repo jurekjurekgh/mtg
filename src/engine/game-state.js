@@ -28,7 +28,7 @@ import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
-import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost } from './attachments.js';
+import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
 import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
@@ -4828,12 +4828,20 @@ export function execute(state, input) {
     const pending = state.pendingAuraHost;
     if (cmd.type !== 'resolve_aura_host') return reject('aura_host_unresolved');
     if (cmd.playerId !== pending.playerId) return reject('aura_host_not_your_decision');
-    if (!pending.candidateIds.includes(cmd.auraHostId)) return reject('illegal_aura_host');
+    // Kandydat jest permanentem ALBO graczem (CR 303.4f „object or player") —
+    // jeden kształt komendy, rozstrzyga przynależność do listy kandydatów.
+    const hostIsPlayer = (pending.candidatePlayerIds ?? []).includes(cmd.auraHostId);
+    if (!hostIsPlayer && !pending.candidateIds.includes(cmd.auraHostId)) return reject('illegal_aura_host');
     const aura = state.objects.get(pending.targetId);
-    const host = state.objects.get(cmd.auraHostId);
-    // Gospodarz musi być legalny W CHWILI wejścia (mógł zyskać hexproof albo
-    // opuścić pole bitwy w oknie priorytetu — CR 608.2b/LKI).
-    if (!aura || aura.zone !== 'graveyard' || !host || !isLegalAuraHost(aura, host)) {
+    const host = hostIsPlayer ? null : state.objects.get(cmd.auraHostId);
+    // Gospodarz musi być legalny W CHWILI wejścia (permanent mógł zyskać
+    // hexproof albo opuścić pole bitwy, gracz wypadł z partii — CR 608.2b/LKI).
+    // Re-walidacja idzie TYMI SAMYMI predykatami, które zbudowały listę
+    // kandydatów (L41/L48: oferta = walidacja).
+    if (!aura || aura.zone !== 'graveyard') return reject('illegal_aura_host');
+    if (hostIsPlayer
+      ? !isLegalAuraPlayerHost(state, aura, cmd.auraHostId)
+      : (!host || !isLegalAuraHost(aura, host))) {
       return reject('illegal_aura_host');
     }
     const before = state.events.length;
@@ -4846,7 +4854,8 @@ export function execute(state, input) {
     returnPermanentFromGraveyardOutcome(state, pending.targetId, pending.effect, cmd.auraHostId);
     state.events.push(event('aura_host_resolved', {
       playerId: cmd.playerId, cardId: pending.cardId, objectId: pending.targetId,
-      auraHostId: cmd.auraHostId, sourceCardId: pending.sourceCardId ?? null,
+      auraHostId: cmd.auraHostId, auraHostIsPlayer: hostIsPlayer,
+      sourceCardId: pending.sourceCardId ?? null,
     }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
@@ -7380,7 +7389,10 @@ export function playerView(state, playerId) {
     // Audyt PR #130 (D): wariant na każdego legalnego gospodarza aury — gracz
     // wybiera, kogo zaczarować (CR 303.4f). Panel rysuje je zwykłą listą opcji
     // (nazwa gospodarza w etykiecie), więc nie potrzeba osobnego kreatora.
-    for (const auraHostId of state.pendingAuraHost.candidateIds) {
+    // Sesja 2026-09-21 (gospodarz-GRACZ): kandydatami bywają też GRACZE
+    // („Enchant player" wracające z grobu) — oferta musi nieść OBA zbiory,
+    // inaczej klątka nie ma żadnego wariantu (L48: oferta = walidacja).
+    for (const auraHostId of [...state.pendingAuraHost.candidateIds, ...(state.pendingAuraHost.candidatePlayerIds ?? [])]) {
       legalCommands.push(command('resolve_aura_host', playerId, { auraHostId }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeHandCreature) {
@@ -8506,6 +8518,9 @@ export function playerView(state, playerId) {
           sourceCardId: state.pendingAuraHost.sourceCardId ?? null,
           auraCardId: state.pendingAuraHost.cardId ?? null,
           candidateIds: [...state.pendingAuraHost.candidateIds],
+          // Kandydaci-gracze („Enchant player"): etykieta oferty nazywa ich
+          // po imieniu („Ty"/„Nieprzyjaciel"), więc widok musi je nieść.
+          candidatePlayerIds: [...(state.pendingAuraHost.candidatePlayerIds ?? [])],
         }
       : null,
     // M240/B (zgłoszenie): jak M162/C — tytuł modala ETB-look nazywa kartę

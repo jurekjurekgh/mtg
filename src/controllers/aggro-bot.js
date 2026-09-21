@@ -69,6 +69,16 @@ export function createAggroBot() {
           const casts = byType(view, 'resolve_rebound_cast').filter((cmd) => cmd.cast);
           return (casts[0] ?? found);
         }
+        if (type === 'resolve_aura_host') {
+          // Sesja 2026-09-21 (gospodarz-GRACZ, CR 303.4f): „Enchant player"
+          // wracające z grobu ma kandydatów-GRACZY. Pierwszy wariant z listy
+          // mógłby zaczarować SAMEGO aggro (kolejność kandydatów = kolejność
+          // graczy), a jedyna taka aura w katalogu to wroga klątwa (Curse of
+          // the Pierced Heart) — wybieramy gospodarza spoza siebie, gdy jest.
+          const hostIsPlayer = (id) => (view.pendingAuraHost?.candidatePlayerIds ?? []).includes(id);
+          const obcy = byType(view, 'resolve_aura_host').find((cmd) => hostIsPlayer(cmd.auraHostId) && cmd.auraHostId !== view.playerId);
+          if (obcy) return obcy;
+        }
         if (type === 'resolve_exploit_choice') {
           // M361/B1 (strażnik benchmarku): źródło exploita jest legalnym
           // kandydatem (VOW Release Notes), ale aggro nie poświęca samego
@@ -77,6 +87,18 @@ export function createAggroBot() {
           if (others.length > 0) return others[0];
           const skip = byType(view, 'resolve_exploit_choice').find((cmd) => cmd.skip === true);
           return (skip ?? found);
+        }
+        if (type === 'resolve_aura_host') {
+          // Sesja 2026-09-21 (gospodarz-GRACZ, CR 303.4f): „Enchant player"
+          // wracające z grobu ma kandydatów-GRACZY — aggro nigdy nie
+          // zaczarowuje siebie, gdy może przeciwnika (jedyna aura gracza
+          // w katalogu to wroga Curse of the Pierced Heart); przy braku
+          // kandydata-gracza wybór idzie zwykłą ścieżką (pierwszy wariant).
+          const enemy = byType(view, 'resolve_aura_host').find(
+            (cmd) => (view.pendingAuraHost?.candidatePlayerIds ?? []).includes(cmd.auraHostId)
+              && cmd.auraHostId !== view.playerId,
+          );
+          if (enemy) return enemy;
         }
         if (type === 'activate_ability') {
           // Aggro używa wyłącznie equipu własnego equipmentu — darmowy buff

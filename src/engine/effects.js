@@ -14,7 +14,7 @@ import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, nextFaceDown
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
-import { attachAuraToCreature, attachEquipmentToCreature, detachAttachmentsFromHost, isLegalAuraHost } from './attachments.js';
+import { attachAuraToCreature, attachAuraToPlayer, attachEquipmentToCreature, detachAttachmentsFromHost, isLegalAuraHost, legalAuraHosts } from './attachments.js';
 
 /**
  * Loch „Undercity" (komponent inicjatywy, CR 725; karta „Undercity //
@@ -1178,7 +1178,13 @@ export function returnPermanentFromGraveyardOutcome(state, targetId, effect, aur
   applyEnterCounters(state, newId);
   // Załączenie aury PO wejściu na pole bitwy (kolejność: obiekt musi już
   // istnieć w strefie, żeby `attachAuraToCreature` przeszła walidację).
-  if (auraHostId != null) attachAuraToCreature(state, newId, auraHostId);
+  // Gospodarzem może być permanent ALBO gracz (CR 303.4f „object or player" —
+  // klątwa „Enchant player" wracająca z grobu) — rozstrzyga to jedno miejsce,
+  // po kształcie id (L41).
+  if (auraHostId != null) {
+    if (state.players.some((player) => player.id === auraHostId)) attachAuraToPlayer(state, newId, auraHostId);
+    else attachAuraToCreature(state, newId, auraHostId);
+  }
   if (effect?.finalityCounter) addCounter(state, newId, 'finality', 1);
   // Batch 24 (Unbreakable Bond): „return ... with a lifelink counter on it" —
   // wejście z licznikami (CR 122.1b — licznik lifelink nadaje keyword).
@@ -3338,8 +3344,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // sama funkcja co SBA i rzut aury (`isLegalAuraHost` — L41).
     let auraHostId = null;
     if ((object.subtypes ?? []).includes('Aura')) {
-      const hosts = state.zones.battlefield.filter((hostId) => isLegalAuraHost(object, state.objects.get(hostId)));
-      if (hosts.length === 0) {
+      // Kandydaci na gospodarza: permanenty ORAZ gracze (CR 303.4f „object or
+      // player") — jedno źródło prawdy (`attachments.legalAuraHosts`), to samo
+      // dla ścieżki automatycznej, decyzji gracza i re-walidacji przy wykonaniu.
+      const hosts = legalAuraHosts(state, object);
+      const total = hosts.objectIds.length + hosts.playerIds.length;
+      if (total === 0) {
         state.events.push(event('aura_returned_without_host', {
           objectId: targetId, cardId: object.cardId, playerId: object.controllerId ?? null,
         }));
@@ -3350,25 +3360,31 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // `find(...)` brał pierwszego z brzegu (kolejność strefy), odbierając
       // wybór. Przy JEDNYM kandydacie wybór domyka się sam (wybór bez
       // alternatywy nie jest decyzją — wzorzec craft exile, L41).
-      if (hosts.length > 1) {
+      if (total > 1) {
         const decydent = object.controllerId ?? object.ownerId ?? null;
         state.pendingAuraHost = {
           playerId: decydent,
           targetId,
           cardId: object.cardId ?? null,
           sourceCardId: sourceObject?.cardId ?? null,
-          candidateIds: [...hosts],
+          candidateIds: [...hosts.objectIds],
+          // Sesja 2026-09-21 (gospodarz-GRACZ, CR 303.4f): klątwa „Enchant
+          // player" nie ma kandydatów-permanentów, a mimo to wybór jest realny
+          // (Ty / Nieprzyjaciel) — kontrakt decyzji niesie jednego i drugiego
+          // kandydata, a wycena i etykieta czytają OBA pola (L48 pkt 3).
+          candidatePlayerIds: [...hosts.playerIds],
           effect,
           restorePriorityTo: state.turn.priorityPlayerId,
         };
         if (decydent != null) state.turn.priorityPlayerId = decydent;
         state.events.push(event('aura_host_choice_required', {
           playerId: decydent, cardId: object.cardId ?? null, objectId: targetId,
-          sourceCardId: sourceObject?.cardId ?? null, candidateIds: [...hosts],
+          sourceCardId: sourceObject?.cardId ?? null,
+          candidateIds: [...hosts.objectIds], candidatePlayerIds: [...hosts.playerIds],
         }));
         return;
       }
-      auraHostId = hosts[0];
+      auraHostId = hosts.objectIds[0] ?? hosts.playerIds[0];
     }
     returnPermanentFromGraveyardOutcome(state, targetId, effect, auraHostId);
     return;
