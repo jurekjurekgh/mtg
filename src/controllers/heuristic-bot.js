@@ -1869,7 +1869,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * ADR 0002 — klasa, nie nazwa karty: Shiva I/II, Enter the Enigma, Coralhelm
    * Guide). Właściciel: „Bot wybiera kreaturę, która ma najmniejszy power
    * (bez sensu), a poza tym w ogóle nie może atakować bo jest na stałe
-   * zatapowana moją aurą (super bez sensu). A mógł wybrać np. siebie — 4/3,
+   * na stalo tapnieta moja aura (super bez sensu). A mogl wybrac np. siebie — 4/3,
    * wtedy wjechałby we mnie i zadał obrażenia.”
    *
    * CAŁA wartość daru siedzi w ATAKU tej tury („this turn"):
@@ -6815,7 +6815,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // this turn" wycenia DEDYKOWANA polityka ataku (cmd.evasionGrant — jak
         // cmd.debuff/cmd.pump), nie ogólna gałąź friendly: ta umiała tylko
         // rozmiar celu, więc pod blokadą odkręcania wygrywał trup
-        // („na stałe zatapowana moją aurą (super bez sensu)").
+        // („na stalo tapnieta moja aura” — reżim C: tapnięcie, nie zatapianie).
         if (cmd.evasionGrant) {
           if (Array.isArray(cmd.targetIds)) {
             let esum = 0;
