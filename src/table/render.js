@@ -395,6 +395,17 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'cast_escape') {
     return `escape:${command.objectId}`;
   }
+  // M (zgłoszenie z testów 2026-09-22, Dream Twist): „Flashback. Zamiast modala
+  // z opcjami targetowania, opcje target player pokazują się w Twoje działania.”
+  // Ta sama reguła co dla rzutu z ręki (K/M z 2026-09-19b) i dla escape powyżej:
+  // wybór CELU jest decyzją W TRAKCIE rzucania (CR 601.2c), więc panel dostaje
+  // JEDNĄ ofertę „Rzuć za flashback: <karta>”, a cele rozstrzyga modal.
+  // Flashback (CR 702.33a) to alternatywny KOSZT tego samego rzutu, nie osobna
+  // akcja — brak tej gałęzi był rozjazdem bliźniaczych ścieżek (L41): rzut
+  // z ręki grupował cele, rzut z grobu nie.
+  if (command.type === 'cast_flashback' && command.targets?.length) {
+    return `flashback:${command.objectId}`;
+  }
   if (command.type === 'resolve_escape_exile') return 'resolve_escape_exile';
   // Batch 57/B4: koszt Delve to JEDNA decyzja (wizard multiselect) — jak escape.
   if (command.type === 'resolve_delve_exile') return 'resolve_delve_exile';
@@ -2453,6 +2464,21 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
       const rawCost = MANA_COSTS[groupObject.cardId];
       const cost = rawCost ? (manaHtml ? manaCostHtml(rawCost) : rawCost) : null;
       return `Rzuć: ${session.nameOf(groupObject.cardId)}${cost ? ` (koszt ${cost})` : ''}`;
+    }
+  }
+  // M (zgłoszenie z testów 2026-09-22, Dream Twist): grupa rzutu za FLASHBACK
+  // dostaje tytuł nazywający kartę i koszt alternatywny (CR 702.33a) — jak
+  // „Rzuć: <karta>” dla rzutu z ręki. Bez tego modal celów szedł w generyczne
+  // „Wybierz: Wariant”, bo cast_flashback nie ma wpisu w deskryptorach grup.
+  if (options.length > 0
+    && options.every((o) => o?.type === 'cast_flashback' && o.objectId === options[0].objectId)) {
+    const fbObject = findViewObject(options[0].objectId, view);
+    if (fbObject?.cardId) {
+      const fbCost = session.cardDetails?.(fbObject.cardId)?.spell?.flashback?.cost;
+      const fbShown = fbCost != null
+        ? (manaHtml ? manaCostHtml(`{${fbCost}}`) : `{${fbCost}}`)
+        : null;
+      return `Flashback: ${session.nameOf(fbObject.cardId)}${fbShown ? ` (koszt ${fbShown})` : ''}`;
     }
   }
   const titled = choiceSourceTitle(options[0], session, view);

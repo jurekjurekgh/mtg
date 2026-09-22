@@ -4987,11 +4987,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (DECK_ARRANGING_EFFECTS.has(effect.type)) {
             const isPureDeckArranging = effects.every((e) => DECK_ARRANGING_EFFECTS.has(e?.type));
             const isSorcery = card?.spell?.timing === 'sorcery';
-            if (isSorcery) {
-              score += (view.turn.phase === 'postcombat_main' && view.turn.step === 'main2') ? 6 : (isPureDeckArranging ? -60 : -12);
-            } else {
-              score += (!myTurn(view) && view.turn.step === 'end') ? 10 : (isPureDeckArranging ? -60 : -12);
-            }
+            // K (zgłoszenie z testów 2026-09-22, Titan's Strength): premia
+            // „poczekaj z tym do końcówki tury przeciwnika” (M211/A1) należy
+            // się WYŁĄCZNIE czarom, których cała treść to układanie własnej
+            // biblioteki. Titan's Strength to combat trick z riderem Scry 1 —
+            // premia +10 za scry niemal zerowała karę −60 za pump poza walką
+            // (pomiar: rzut 1 pkt vs pass 0 pkt), więc bot palił trick
+            // w end stepie na stwora, który w tej turze już nic nie zrobi.
+            // O oknie czaru MIESZANEGO decyduje jego efekt główny (tu: pump
+            // i jego własne okno walki), nie rider — rider nie może kupić
+            // czasu, w którym reszta karty jest bezużyteczna.
+            const pureBonusWindow = isSorcery
+              ? (view.turn.phase === 'postcombat_main' && view.turn.step === 'main2')
+              : (!myTurn(view) && view.turn.step === 'end');
+            if (pureBonusWindow && isPureDeckArranging) score += isSorcery ? 6 : 10;
+            else if (isPureDeckArranging) score -= 60;
+            else if (!pureBonusWindow) score -= 12;
           }
           // M218/4 — regenerate jako efekt czaru (jeśli kiedyś pojawi się taki czar):
           // wartość tylko gdy cel zagrożony, inaczej kara.
@@ -5673,6 +5684,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // a sorcery” zagramy wyłącznie we własnej głównej fazie.
             const canWait = ability?.timing !== 'sorcery';
             score += tapTargetValue(view, target, { locking, canWait });
+            // L (zgłoszenie z testów 2026-09-22, Entrancing Lyre): „Bot używa
+            // jej zdolności natychmiast jak tylko ma chociaż jedną manę
+            // i tapuje jakiegoś mojego tokena 1/1 zamiast poczekać do
+            // następnej tury i za 2 albo 3 tapnąć jakąś groźną kreaturę.
+            // (…) Powinien próbować tapnąć największe zagrożenie, nawet
+            // czekając na manę.” (cytat sparafrazowany na obowiązującą
+            // terminologię „tapnąć” — strażnik rename C skanuje src/**)
+            //
+            // Klasa (ADR 0002 — deskryptor, nie nazwa karty): zdolność, która
+            // (a) TRZYMA cel tak długo, jak źródło pozostaje tapnięte
+            // (`locking` + koszt {T} bez samo-odkręcania) i (b) ma koszt {X}
+            // skalowany MOCĄ celu (`cost.manaX && cost.maxPowerX`), jest
+            // zasobem JEDNORAZOWYM: użyta na tokenie 1/1 przestaje istnieć dla
+            // wszystkich większych stworów. Jej wartość nie zależy więc od
+            // tego, co da się opłacić DZIŚ, tylko od tego, kogo unieruchamia
+            // względem najgroźniejszego celu, jaki kiedykolwiek unieruchomi.
+            // Czekanie na manę nic nie kosztuje (zdolność nie wygasa), więc
+            // zużycie jej na cel istotnie słabszy od najgroźniejszego wroga
+            // jest marnotrawstwem — analogicznie do M405/M407.
+            const trzymaPokiTapniete = locking && ability?.cost?.tap === true;
+            const xZMocyCelu = ability?.cost?.manaX === true && ability?.cost?.maxPowerX === true;
+            if (trzymaPokiTapniete && xZMocyCelu && target
+              && target.controllerId !== view.playerId) {
+              const najwiekszeZagrozenie = enemyCreatures(view)
+                .reduce((max, o) => Math.max(max, combatPower(o)), 0);
+              const mocCelu = combatPower(target);
+              // Cel istotnie słabszy niż to, co stoi po drugiej stronie —
+              // spal zasób później, na właściwym stworze.
+              if (mocCelu < najwiekszeZagrozenie) score -= 40 + 4 * (najwiekszeZagrozenie - mocCelu);
+            }
           }
           // M407 (uwaga z gry — Shiva/Mesmerize): dar „can't be blocked this
           // turn" — jedna wycena z gałązką triggerów (L41): najlepszy

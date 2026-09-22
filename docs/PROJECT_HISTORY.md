@@ -12332,3 +12332,16 @@ Wszystkie cztery naprawione u root cause, klasami (ADR 0002), z pinem
 `test/uwagi-z-gry-2026-09-22-ghij.test.js` (12/12) i matrycą mutacji. Benchmark bota
 poprawił się 85,7% → 86,6%. Szczegóły: **M410** w `docs/ENGINE_MILESTONES.md`.
 
+### 2026-09-22 (K/L/M) — okno combat tricka, jednorazowy zasób, modal flashbacku
+
+**K**: Titan's Strength rzucane w end stepie przeciwnika — premia „scry na koniec
+tury” doklejana czarowi MIESZANEMU zjadała karę za pump poza walką (pomiar: 1 vs 0
+dla passu). Premia zawężona do czarów czysto układających bibliotekę. **L**:
+Entrancing Lyre unieruchamiała token 1/1 przy pierwszej manie — wycena nie znała
+kosztu alternatywnego zasobu, który trzyma cel tylko dopóki źródło jest tapnięte;
+teraz bot czeka na manę i bierze największe zagrożenie. **M**: cele rzutu za
+flashback sypały się do „Twoich działań”, bo grupowanie celów miał `cast_spell`
+i `cast_escape`, ale nie `cast_flashback` (L41).
+
+Pin `test/uwagi-z-gry-2026-09-22-klm.test.js` (7/7) + matryca mutacji. Benchmark bez
+regresji (86,6%). Szczegóły: **M411** w `docs/ENGINE_MILESTONES.md`.

@@ -7127,3 +7127,45 @@ zablokować najmniejszym”).
 Bramy: `run-tests all` **6155/6155**, build **59 modułów / 4034,0 kB**,
 `benchmark --quick` heuristic **86,6%** (582/672; baseline 85,7% — poprawa
 o 6 meczów). Bez nowych kart (ADR 0029).
+
+## M411 — uwagi z gry 2026-09-22 (K/L/M): okno combat tricka, jednorazowy zasób blokujący, modal celów flashbacku
+
+**K — combat trick z riderem „Scry 1” nie może być palony poza walką.** Zgłoszenie
+(Titan's Strength): „To combat trick. Bot rzuca ją w kompletnie bezsensownym
+momencie — na koniec mojej tury.” Pomiar śladem bota: rzut w end stepie 1 pkt,
+pass 0 pkt. Kara −60 za pump poza oknem walki DZIAŁAŁA — zerowała ją premia +10
+„odłóż układanie biblioteki na koniec tury przeciwnika” (M211/A1), doklejana
+każdemu czarowi zawierającemu `scry`. Naprawa klasą: premia okna należy się
+wyłącznie czarom, których CAŁA treść to układanie własnej biblioteki
+(`isPureDeckArranging`); o oknie czaru MIESZANEGO decyduje jego efekt główny,
+bo rider nie może kupić czasu, w którym reszta karty jest bezużyteczna. Po
+naprawie: end step −9 (pass wygrywa), a po deklaracji blokerów rzut na własnego
+atakującego +58.
+
+**L — zdolność blokująca z {X} od mocy celu to zasób JEDNORAZOWY.** Zgłoszenie
+(Entrancing Lyre): „Bot używa jej zdolności natychmiast jak tylko ma chociaż
+jedną manę i tapuje jakiegoś mojego tokena 1/1 zamiast poczekać (…). Powinien
+próbować unieruchomić największe zagrożenie, nawet czekając na manę.” Pomiar:
+token 1/1 w upkeepie = 53,5 pkt. `tapTargetValue` znał OKNO i moc celu, ale nie
+koszt alternatywny. Deskryptor klasy (ADR 0002): zdolność, która trzyma cel tak
+długo, jak źródło pozostaje tapnięte (`locking` + koszt `{T}`) i ma `{X}`
+skalowane mocą celu (`cost.manaX && cost.maxPowerX`), użyta na słabym stworze
+przestaje istnieć dla wszystkich mocniejszych. Czekanie na manę nic nie kosztuje,
+więc cel istotnie słabszy od najgroźniejszego wroga jest karany proporcjonalnie
+do różnicy mocy. Po naprawie: 1 mana → pass (token −2,5); 6 many → cel 5/5 (+69).
+
+**M — cele rzutu za flashback należą do modala, nie do panelu.** Zgłoszenie
+(Dream Twist): „Flashback. Zamiast modala z opcjami targetowania, opcje target
+player pokazują się w Twoje działania.” `choiceRequestGroupKey` grupowało cele
+dla `cast_spell` i `cast_escape`, ale nie dla `cast_flashback` — rozjazd
+bliźniaczych ścieżek (L41): rzut z ręki grupował, rzut z grobu nie. Flashback to
+alternatywny KOSZT tego samego rzutu (CR 702.33a), a wybór celu jest decyzją
+w trakcie rzucania (CR 601.2c), więc panel dostaje JEDNĄ ofertę, a cele
+rozstrzyga modal; grupa ma własny tytuł „Flashback: <karta> (koszt …)”.
+
+Pin: `test/uwagi-z-gry-2026-09-22-klm.test.js` (7/7), matryca mutacji M-K, M-L,
+M-M — każda odwrócona poprawka czerwieni pin.
+
+Bramy: `run-tests all` **6162/6162**, build **59 modułów / 4038,3 kB**,
+`benchmark --quick` heuristic **86,6%** (582/672, bez regresji). Bez nowych kart
+(ADR 0029).
