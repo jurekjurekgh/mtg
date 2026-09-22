@@ -12280,3 +12280,23 @@ Piny F/0–F/7 + mutacje M-F1…M-F4; rewizje 5 pinów pola stanu. Bramy:
 `run-tests all` **6121/6121**, build **59 / 4009,2 kB**, benchmark
 **85,9%** (577/672). Usterka narzędziowa w sesji: token GH_TOKEN wygasł
 w trakcie pracy (kolejka push — precedens ccfbb43).
+
+## 2026-09-22 (uwagi z gry C/D/E) — M408
+
+Właściciel z jednej partii: (C) Sequestered Stash — „bot ma 11 kart, a mimo to
+mielił 5 kart do grobu, żeby jedną kartę położyć na szczycie biblioteki”;
+(D) Cathartic Reunion — „odrzuca rewelacyjne kreatury, na które ma manę…
+powinien odrzucać tylko takie, których nie może rzucić z braku many danego
+koloru”; (E) Bomat Bazaar Barge — „bezsensownie tapuje sobie stwory, żeby
+zasilić ten vehicle, bo czym nic z nim nie robi i kończy turę… NIGDY WIĘCEJ!”.
+
+Wspólny mianownik: koszt płacony bez adresata. Trzy klasy domknięte
+deskryptorami (ADR 0002): bramka trzech warunków właściciela dla zdolności
+„poświęć ląd + zmiel własną bibliotekę” (biblioteka 30+, lądy > 8, artefakt
+8+ many w znanej talii); polityka kosztu-discard („najpierw niegrywalne
+kolorem, potem najsłabsze”); okna załogi pojazdu (wyłącznie przed deklaracją
+atakujących we własnej turze przy realnym zamiarze ataku albo przed blokami
+w turze przeciwnika). Piny C/0–C/3, D/0–D/1, E/0–E/5 + rewizje trzech pinów
+okna crew; golden-master zregenerowany świadomie. Bramy: **6134/6134**,
+build **59 / 4018,8 kB**, benchmark **85,7%** (576/672).
+

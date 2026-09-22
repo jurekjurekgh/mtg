@@ -6968,3 +6968,51 @@ flaga) → B2+F/6. Rewizje pinów stanu (m172/B2, real-cards-batch16/20/22,
 bug-hunt M104) — pole → termin daru. Bramy: `run-tests all` **6121/6121**,
 build **59 modułów / 4009,2 kB**, benchmark --quick **85,9%** (577/672),
 rodzina 225/225. Bez nowych kart (ADR 0029).
+
+## M408 — uwagi z gry 2026-09-22 (C/D/E): koszt musi mieć adresata (2026-09-22)
+
+Trzy zgłoszenia właściciela z jednej partii, wszystkie o tej samej wadzie
+wyceny: bot płacił REALNY koszt (karty z biblioteki, karty z ręki, tapnięcie
+stworów) za efekt, którego w danym oknie nie potrafił spieniężyć. Naprawy
+klasami po deskryptorach (ADR 0002), stan wyłącznie z PlayerView (ADR 0017).
+
+**C — Sequestered Stash** („{4}, {T}, Sacrifice this land: Mill five cards.
+Then you may put an artifact card from your graveyard on top of your
+library.”): bot przy 11 kartach biblioteki mielił pięć, żeby odzyskać jedną.
+Warunki właściciela wchodzą jako bramka łącznikiem „i” dla KLASY zdolności
+(koszt `sacrificeSelf` na lądzie + mill własnej biblioteki): biblioteka ≥ 30,
+lądów na stole > 8, w talii artefakt za 8+ many. Brak któregokolwiek = −60
+(poniżej passu; kara przebija premię odzysku — L3). „Artefakt w talii”
+liczony z listy WŁASNEJ talii (`ownCounts` — gracz zna swój decklist,
+precedens zgłoszenia B 2026-09-20) minus jawne kopie poza biblioteką;
+biblioteka pozostaje ukryta (FoW).
+
+**D — Cathartic Reunion** (koszt dodatkowy „discard two cards”): wycena
+`resolve_discard_choice` dla `purpose: 'cost'` znała tylko koszt many, więc
+bot oddawał „rewelacyjne kreatury”. Nowa preferencja (`discardCostPreference`):
+najpierw karty, których i tak NIE rzuci z braku koloru (`colorCastable` —
+kolory źródeł przez `getSourceForObject`, zapotrzebowanie przez
+`coloredPipsOf`, te same rozwiązania co `landAnaliza`), a wśród grywalnych —
+najsłabsze (`handCardKeepValue`: ciało + keywordy + zdolności z rejestru).
+Projekcja remisów niesie te same dane (L41).
+
+**E — Bomat Bazaar Barge i pojazdy** („bot tapuje stwory, nic z pojazdem nie
+robi i kończy turę… NIGDY WIĘCEJ!”): dotąd (F1) crew był premiowany
+w `precombat_main` — dokładnie tam, gdzie animacja do końca tury wygasa bez
+ataku, a tap załogi zabiera blokerów. `crewValue` daje dodatnią wycenę
+wyłącznie w dwóch oknach: (a) moja tura, faza walki przed deklaracją
+atakujących, pojazd gotowy i bot REALNIE chce nim atakować
+(`attackIntendsAnimated` — ta sama polityka `declare_attackers` na widoku
+z pojazdem dołożonym jako stwór, L41/L48); (b) tura przeciwnika, krok
+`declare_attackers`, gdy jest atakujący, którego pojazd może zablokować.
+Każde inne okno = −12 (skala M230/D1).
+
+Piny `test/uwagi-z-gry-2026-09-22-cde.test.js` C/0–C/3, D/0–D/1, E/0–E/5.
+Rewizje pinów okna crew: `test/f1-f5-zywy-tester.test.js` (F1/1 przeniesiony
+do `beginning_of_combat` + nowy F1/1b „w main1 nie crewuje”),
+`test/d1-bot-crew-tapped-noop.test.js`, `test/m230-bot-recrew-noop.test.js`.
+Golden-master bota zregenerowany świadomie (zmiana wycen).
+Bramy: `run-tests all` **6134/6134**, build **59 modułów / 4018,8 kB**,
+benchmark --quick heuristic **85,7%** (576/672; baseline 85,9% — jeden mecz
+różnicy, w szumie). Bez nowych kart (ADR 0029).
+

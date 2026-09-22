@@ -3215,6 +3215,152 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * dałoby nieskończoną rekurencję.
    */
   let attackIntentEval = false;
+  /**
+   * M408 (zgłoszenie z gry E, 2026-09-22 — Bomat Bazaar Barge): „Bot
+   * bezsensownie tapuje sobie stwory, żeby zasilić ten vehicle, bo czym nic
+   * z nim nie robi i kończy turę. Kompletne marnotrawstwo. Bot powinien to
+   * zrobić tylko i wyłącznie w fazie swojej walki przed deklaracją
+   * atakujących, o ile chce tym vehicle zaatakować, albo w turze gracza,
+   * w fazie ataku przed deklaracją blokerów, o ile chce tym vehicle blokować.
+   * NIGDY WIĘCEJ!".
+   *
+   * Dotąd (F1) crew był premiowany w `precombat_main` — czyli DOKŁADNIE
+   * w oknie, w którym animacja do końca tury najczęściej marnuje się bez
+   * ataku (log właściciela: crew w głównej → „Brak ataku" → koniec tury),
+   * a tap załogi zabiera blokerów na całą rundę.
+   *
+   * Reguła (klasa, nie karta — ADR 0002; stan wyłącznie z PlayerView,
+   * ADR 0017): dodatnia wycena TYLKO w dwóch oknach:
+   *  (a) moja tura, faza `combat` przed deklaracją atakujących
+   *      (`beginning_of_combat` / `declare_attackers`), gdy pojazd może
+   *      zaatakować i bot REALNIE chce nim atakować (własna polityka ataku —
+   *      `attackIntendsAnimated`, L41/L48);
+   *  (b) tura przeciwnika, krok `declare_attackers` (przed blokami), gdy
+   *      przeciwnik ma atakujących, których pojazd może zablokować.
+   * Każde inne okno (main1/main2, upkeep, end, po deklaracjach) = kara
+   * poniżej passu — jak M230/D1.
+   */
+  function crewValue(view, cmd, effect, source) {
+    const body = source;
+    const crewCost = (cmd.crewCreatureIds ?? []).reduce((suma, cid) => {
+      const member = objectOnBoard(view, cid);
+      return suma + (member && !member.summoningSickness ? (member.power ?? 0) : 0);
+    }, 0);
+    const moc = effect.power ?? body?.power ?? 0;
+    const gotowy = Boolean(body) && !body.tapped && !body.animatedUntilEOT;
+    // (a) MOJE okno ataku: faza walki przed deklaracją atakujących.
+    const przedDeklaracjaAtaku = myTurn(view) && view.turn.phase === 'combat'
+      && ['beginning_of_combat', 'declare_attackers'].includes(view.turn.step);
+    if (przedDeklaracjaAtaku) {
+      if (!gotowy || body.summoningSickness) return -12;
+      // Czy bot chce tym pojazdem atakować: pojazd nie jest jeszcze stworem,
+      // więc pytamy własną politykę ataku o ANIMOWANY wariant (ten sam
+      // `scoreCommand(declare_attackers)`, L41).
+      if (!attackIntendsAnimated(view, body.id, moc)) return -12;
+      let zysk = moc * 2;
+      if (hasKeyword(body, 'flying')
+        && untappedEnemyBlockers(view).every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) zysk += 8;
+      return zysk - crewCost;
+    }
+    // (b) OKNO OBRONY: tura przeciwnika, deklaracja atakujących już jest,
+    // bloki jeszcze nie — pojazd ma kogo zablokować.
+    const combat = view.combat ?? null;
+    const wrogiAtak = Boolean(combat) && combat.attackingPlayerId !== view.playerId
+      && (combat.attackers ?? []).length > 0;
+    const oknoBlokow = !myTurn(view) && view.turn.step === 'declare_attackers' && wrogiAtak;
+    if (oknoBlokow) {
+      if (!gotowy) return -12;
+      const blokowalni = (combat.attackers ?? [])
+        .map((aid) => objectOnBoard(view, aid))
+        .filter((a) => a && attackerCanBeBlocked(a, [{
+          ...body, keywords: body.keywords ?? [], kind: 'creature',
+        }]));
+      if (blokowalni.length === 0) return -12;
+      const najwiekszaMoc = blokowalni.reduce((max, a) => Math.max(max, a.power ?? 0), 0);
+      return 8 + Math.min(najwiekszaMoc, effect.toughness ?? body.toughness ?? 0) - crewCost;
+    }
+    // Każde inne okno (główna faza, upkeep, po deklaracjach, end step):
+    // animacja wygaśnie bez ataku i bez bloku, a tap załogi przepada.
+    return -12;
+  }
+
+  /**
+   * Czy bot zaatakowałby pojazdem, gdyby był już animowany. Pojazd nie jest
+   * stworem w chwili decyzji o crew, więc `attackIntendsCreature` (skan
+   * własnych stworów) go nie widzi. Pytamy tę samą politykę ataku o widok
+   * z DOŁOŻONYM stworem-pojazdem (bez mutacji stanu gry — kopia widoku).
+   */
+  function attackIntendsAnimated(view, vehicleId, moc) {
+    if (attackIntentEval) return false;
+    const body = objectOnBoard(view, vehicleId);
+    if (!body) return false;
+    const jakoStwor = {
+      ...body,
+      kind: 'creature',
+      types: [...new Set([...(body.types ?? []), 'Creature'])],
+      power: moc || (body.power ?? 0),
+      summoningSickness: false,
+    };
+    const widok = {
+      ...view,
+      zones: {
+        ...view.zones,
+        battlefield: (view.zones.battlefield ?? []).map((o) => (o.id === vehicleId ? jakoStwor : o)),
+      },
+    };
+    return attackIntendsCreature(widok, vehicleId);
+  }
+
+  /**
+   * M408/D (Cathartic Reunion): czy kartę z ręki DA SIĘ w ogóle rzucić
+   * kolorami, które mam na stole. Te same dane co `landAnaliza`: kolory
+   * źródeł przez `getSourceForObject` (jak w silniku), zapotrzebowanie przez
+   * `coloredPipsOf` (tabela kosztów) — jedno źródło prawdy (L28/L41).
+   * Lądy i karty bez pipów kolorowych są zawsze „kolorowo rzucalne".
+   */
+  function colorCastable(view, karta) {
+    if (!karta?.cardId) return true;
+    if (karta.kind === 'land' || (cardDef(karta.cardId)?.types ?? []).includes('Land')) return true;
+    const dostepne = new Set();
+    for (const o of view.zones.battlefield ?? []) {
+      if (o?.controllerId !== view.playerId) continue;
+      for (const kolor of getSourceForObject(o, null)?.colors ?? []) dostepne.add(kolor);
+    }
+    for (const jednostka of coloredPipsOf(karta.cardId)) {
+      if (!jednostka.some((k) => dostepne.has(k))) return false;
+    }
+    return true;
+  }
+
+  /**
+   * M408/D: ile warta jest karta, którą mam ODDAĆ jako koszt. Stwory wyceniamy
+   * ciałem (moc ×2 + wytrzymałość) plus keywordy i zdolności z rejestru — tak
+   * jak ofiary poświęcenia (`resolve_exploit_choice`), żeby „rewelacyjna
+   * kreatura" nie kosztowała tyle co 2-manowy chwast.
+   */
+  function handCardKeepValue(view, karta) {
+    const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
+    const power = karta?.power ?? def?.power ?? 0;
+    const toughness = karta?.toughness ?? def?.toughness ?? 0;
+    const stwor = (def?.types ?? karta?.types ?? []).includes('Creature');
+    const cialo = stwor ? power * 2 + toughness : (karta?.manaCost ?? def?.manaCost ?? 0) * 2;
+    return cialo + 2 * (def?.keywords ?? []).length + (def?.abilities ?? []).length;
+  }
+
+  /**
+   * M408/D: preferencja przy koszcie „odrzuć N kart". Dodatnia = chętnie
+   * oddaję. Reguła właściciela: NAJPIERW karty, których i tak nie rzucę
+   * z braku koloru; karty grywalne oddajemy tym niechętniej, im lepsze.
+   * Klasa, nie karta (ADR 0002): dotyczy każdego kosztu-discard.
+   */
+  function discardCostPreference(view, karta) {
+    if (!karta) return 0;
+    const bezKoloru = !colorCastable(view, karta);
+    const wartosc = handCardKeepValue(view, karta);
+    if (bezKoloru) return 25 - Math.min(10, wartosc) / 2;
+    return -Math.min(30, wartosc);
+  }
+
   function attackIntendsCreature(view, objectId) {
     if (!objectId || attackIntentEval) return false;
     const legal = myCreatures(view)
@@ -5197,22 +5343,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // (ADR 0002/0017): zysk = nowy atakujący (moc ×2 jak ninjutsu +
           // evasion), koszt = moc załogi, która w tej turze nie zaatakuje.
           if (effect.type === 'animate_permanent_until_end_of_turn' && ability?.cost?.crewPower != null) {
-            const body = source;
-            const canAttackNow = body && !body.tapped && !body.summoningSickness && !body.animatedUntilEOT;
-            if (myTurn(view) && view.turn.phase === 'precombat_main' && canAttackNow) {
-              score += (effect.power ?? body.power ?? 0) * 2;
-              if (hasKeyword(body, 'flying') && untappedEnemyBlockers(view).every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += 8;
-              for (const cid of cmd.crewCreatureIds ?? []) {
-                const member = objectOnBoard(view, cid);
-                if (member && !member.summoningSickness) score -= (member.power ?? 0);
-              }
-            } else if (myTurn(view)) {
-              // Własna tura poza oknem ataku (postcombat, chory/tapnięty/
-              // animowany pojazd): animacja do EOT wygaśnie bez ataku, a tap
-              // załogi traci blok — kara w skali M230/D1. Cudza tura bez
-              // zmiany (baza 2): surprise-block poza zakresem F1.
-              score -= 6;
-            }
+            score += crewValue(view, cmd, effect, source);
           }
           // M96 (audyt Żywym Testerem): `pump_enchanted_creature`
           // (firebreathing — Shiv's Embrace) NIE wpadało do tej gałęzi, więc
@@ -5726,6 +5857,54 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const artifactsInGrave = (view.zones.graveyard ?? []).filter((o) => o.controllerId === view.playerId
               && (o.types ?? []).includes('Artifact')).length;
             score += artifactsInGrave > 0 ? 10 + artifactsInGrave * 3 : -8;
+            // M408 (zgłoszenie z gry C, 2026-09-22 — Sequestered Stash):
+            // „Bot ma 11 kart, a mimo to mielił 5 kart do grobu, żeby jedną
+            // kartę położyć na szczycie biblioteki. Ta zdolność powinna być
+            // wykorzystywana tylko jeśli bot ma bardzo dużo kart w bibliotece
+            // (30+), ma powyżej 8 lądów na stole (bo musi poświęcić
+            // Sequestered Stash), a w talii ma jakieś artefakty za 8+ many.”
+            //
+            // Warunki właściciela są łącznikiem „i” — niespełnienie
+            // KTÓREGOKOLWIEK gasi zdolność (kara musi przebić premię powyżej,
+            // inaczej jest martwa — klasa L3). Klasa, nie karta (ADR 0002):
+            // reguła odpala się dla każdej zdolności, której koszt poświęca
+            // WŁASNE źródło (`sacrificeSelf` na lądzie) i która MIELI własną
+            // bibliotekę, żeby odzyskać kartę z grobu. Wszystkie trzy fakty
+            // są jawne: liczba kart biblioteki (CR 402.1), lądy na stole,
+            // a „drogi artefakt w talii” liczymy z listy talii, którą bot zna
+            // (ta sama wiedza co `landAnaliza`/mountaincycling — gracz zna
+            // własną talię), bez zaglądania w KOLEJNOŚĆ biblioteki (FoW).
+            const mielenie = effects.some((e) => e?.type === 'mill_cards' || e?.type === 'mill_from_bottom');
+            const kosztLadu = ability?.cost?.sacrificeSelf === true
+              && (source?.kind === 'land' || (source?.types ?? []).includes('Land'));
+            if (mielenie && kosztLadu) {
+              const biblioteka = myLibraryCount(view);
+              const lady = (view.zones.battlefield ?? []).filter((o) => o?.controllerId === view.playerId
+                && (o.kind === 'land' || (o.types ?? []).includes('Land'))).length;
+              // Biblioteka jest UKRYTA w widoku (wpisy bez cardId — FoW), więc
+              // „artefakt za 8+ many w talii" czytamy z listy WŁASNEJ talii
+              // (`ownCounts`, ta sama wiedza co przy typecyclingu, zgłoszenie
+              // B 2026-09-20) minus jawne kopie poza biblioteką. Bez znanej
+              // talii ten warunek jest niewiadomy — wtedy go nie egzekwujemy
+              // (kara zostaje na dwóch policzalnych warunkach).
+              const drogiArtefakt = (def) => def != null
+                && (def.types ?? []).includes('Artifact') && (def.manaCost ?? 0) >= 8;
+              let drogichWTalii = 0;
+              if (knownOwnDeck) {
+                for (const [cardId, kopie] of ownCounts) {
+                  if (drogiArtefakt(cardDef(cardId))) drogichWTalii += kopie;
+                }
+                for (const strefa of ['battlefield', 'hand', 'graveyard', 'exile', 'stack']) {
+                  for (const o of view.zones?.[strefa] ?? []) {
+                    if (!o?.cardId || o.hidden) continue;
+                    if (o.controllerId !== view.playerId) continue;
+                    if (drogiArtefakt(cardDef(o.cardId))) drogichWTalii -= 1;
+                  }
+                }
+              }
+              const brakDrogiego = knownOwnDeck && drogichWTalii <= 0;
+              if (biblioteka < 30 || lady <= 8 || brakDrogiego) score -= 60;
+            }
           }
           // M236/6 (audyt Żywym Testerem, Barkform Harvester): „{2}: włóż kartę
           // z grobu na SPÓD biblioteki". Zakopanie własnej karty na spód to
@@ -7190,8 +7369,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const karta = decisionCandidateCard(view, cmd.cardId);
         const mine = karta?.controllerId === view.playerId;
         const value = karta?.manaCost ?? 0;
-        // Moja ręka (koszt): im tańsza karta, tym lepiej ją oddać.
-        if (mine) return finish(20 - Math.min(10, value));
+        // Moja ręka (koszt): M408 (zgłoszenie z gry D, 2026-09-22 — Cathartic
+        // Reunion): „Na jakiej zasadzie bot odrzuca karty…? Odrzuca rewelacyjne
+        // kreatury, na które ma manę i nie musi tego robić. Powinien odrzucać
+        // tylko takie karty, których nie może rzucić z powodu braku many
+        // danego koloru." Sam koszt many nie odróżniał 1-manowego chwastu od
+        // 2-manowej bomby, więc wybór był de facto losowy.
+        if (mine) return finish(20 + discardCostPreference(view, karta));
         // Ręka przeciwnika: wybranie drogiej karty ma wartość, ale dwie karty
         // odrzucone bez wyboru są warte więcej — stąd poniżej progu rezygnacji.
         return finish(10 + 3 * value);
@@ -7784,7 +7968,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd?.type === 'resolve_discard_choice') {
       if (cmd.cardId == null) return { skip: 1 };
       const card = decisionCandidateCard(view, cmd.cardId);
-      return { mine: card?.controllerId === view.playerId ? 1 : 0, cost: card?.manaCost ?? 0 };
+      return {
+        mine: card?.controllerId === view.playerId ? 1 : 0,
+        cost: card?.manaCost ?? 0,
+        // M408/D: te same dane, które wchodzą do wyceny kosztu-discard.
+        bezKoloru: card?.controllerId === view.playerId && !colorCastable(view, card) ? 1 : 0,
+        wartosc: card?.controllerId === view.playerId ? handCardKeepValue(view, card) : 0,
+      };
     }
     if (cmd?.type === 'resolve_search_choice') {
       if (cmd.found == null) return { skip: 1 };

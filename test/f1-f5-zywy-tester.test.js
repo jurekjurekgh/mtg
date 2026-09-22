@@ -104,8 +104,17 @@ function crewState() {
   return s;
 }
 
-test('F1/1: bot WYBIERA crew w precombat main (Barge + 3× 2/2, pusta ręka)', () => {
+// M408 (rewizja pinu, zgłoszenie z gry E 2026-09-22): właściciel zakazał
+// załogowania w fazie głównej („bot tapuje stwory, nic z pojazdem nie robi
+// i kończy turę… NIGDY WIĘCEJ!"). Dodatnia wycena crew żyje odtąd wyłącznie
+// w oknie walki PRZED deklaracją atakujących (moja tura) albo przed blokami
+// (tura przeciwnika). Teza F1 — „bot w ogóle potrafi załogować, gdy to ma
+// sens" — zostaje, tylko w poprawnym oknie.
+test('F1/1: bot WYBIERA crew w oknie walki przed deklaracją atakujących (Barge + 3× 2/2, pusta ręka)', () => {
   const s = crewState();
+  s.turn = jumpToStep(s.turn, 'beginning_of_combat', 'p1');
+  s.turn.activePlayerId = 'p1';
+  s.turn.priorityPlayerId = 'p1';
   const bot = createHeuristicBot({ seed: 7 });
   const cmd = bot.chooseCommand(playerView(s, 'p1'), {});
   assert.equal(cmd?.type, 'activate_ability', `bot ma załogować, wybrał: ${cmd?.type}`);
@@ -114,6 +123,11 @@ test('F1/1: bot WYBIERA crew w precombat main (Barge + 3× 2/2, pusta ręka)', (
   const crew = trace.options.filter((o) => o.cmd.startsWith('activate_ability(barge')).map((o) => o.score);
   assert.ok(crew.length > 0, 'oferta crew istnieje w śladzie');
   assert.ok(Math.max(...crew) >= 8, `crew 5/5 (baza 2 + moc 5×2 − załoga 2×2) musi bić gołą bazę 2, jest: ${JSON.stringify(crew)}`);
+});
+
+test('F1/1b: M408 — w precombat main bot NIE crewuje (marnotrawstwo: tap załogi bez ataku)', () => {
+  const cmd = botChoice(crewState());
+  assert.notEqual(cmd?.objectId, 'barge', `crew w main1 zakazany, bot wybrał: ${cmd?.type} ${cmd?.objectId ?? ''}`);
 });
 
 test('F1/2: postcombat main2 — bot NIE crewuje (animacja wygasłaby w EOT, tap traci blok)', () => {
