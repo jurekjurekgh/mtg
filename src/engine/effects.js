@@ -4312,7 +4312,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
-    state.objects.set(targetId, Object.freeze({ ...object, cantBeBlocked: true }));
+    // M407 (uwaga z gry — Shiva/Mesmerize, Oracle: „can't be blocked THIS
+    // TURN"): flaga na obiekcie bez terminu = wieczny dar (odchyłka od Oracle
+    // — ten sam audyt co przy cantBlockRestrictions: „jednorazowa flaga na
+    // obiekcie” vs wygaśnięcie z numerem tury, CR 514.2). Termin = numer
+    // bieżącej tury + 1; odczyt read-time (wzorzec hexproofUntilTurn).
+    state.objects.set(targetId, Object.freeze({ ...object, cantBeBlockedUntilTurn: state.turn.number + 1 }));
     state.events.push(event('cant_be_blocked_granted', { objectId: targetId, cardId: object.cardId }));
     return;
   }

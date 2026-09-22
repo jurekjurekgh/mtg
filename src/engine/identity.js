@@ -285,7 +285,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Hexproof „do twojej następnej tury" (loch Undercity — Throne of the
     // Dead Three): numer tury, po którym zdolność wygasa (null = brak).
     // Przetrwało cleanup, bo to nie grant „do końca tury".
-    hexproofUntilTurn: null,
+    hexproofUntilTurn: null, cantBeBlockedUntilTurn: null,
     // LKI (CR 603.10): wypełniane dopiero przy zmianie strefy (objects.js).
     formerCounters: Object.freeze({}), formerZone: null, formerAbilityGrants: Object.freeze([]),
     // CR 111 / CR 111.7: JAWNY znacznik tokenu. Wcześniej token rozpoznawano

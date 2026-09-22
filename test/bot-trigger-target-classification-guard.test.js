@@ -73,6 +73,20 @@ test('każda zdolność triggerowa z celem ma świadomą klasyfikację', () => {
       const rest = effs.map((e) => e?.type).filter(Boolean).filter((type) => !REVIEWED_NEUTRAL.has(type));
       for (const type of rest) unclassified.push(`${card.id}: ${type}`);
     }
+    // M407 (uwaga z gry — Shiva/Mesmerize): rozdziały SAG z celem to TEŻ
+    // triggery celowane (resolve_trigger_target, Temat 2) — dotąd skan
+    // obejmował wyłącznie `abilities`, więc Mesmerize (cant_be_blocked) żył
+    // bez klasyfikacji i bot trafił gałąź wrogą (−20−wartość = najsłabszy
+    // cel). Skan domknięty: teraz też saga.chapters[][] z requiresTarget.
+    for (const chapter of card.saga?.chapters ?? []) {
+      const effs = (Array.isArray(chapter) ? chapter : [chapter]).flat().filter(Boolean);
+      if (!effs.some((e) => e?.requiresTarget)) continue;
+      if (effs.length === 0) continue;
+      if (triggerTargetEffectFriendly({ effect: effs })) continue;
+      if (effs.some(triggerEffectIsHostile)) continue;
+      const rest = effs.map((e) => e?.type).filter(Boolean).filter((type) => !REVIEWED_NEUTRAL.has(type));
+      for (const type of rest) unclassified.push(`${card.id}: saga ${type}`);
+    }
   }
   assert.deepEqual(unclassified, [],
     `typy efektów w triggerach z celem bez klasyfikacji:\n  ${unclassified.join('\n  ')}\n`
@@ -96,6 +110,12 @@ test('REVIEWED_NEUTRAL pokrywa wyłącznie typy realnie występujące w katalogu
     for (const ability of card.abilities ?? []) {
       if (ability?.type !== 'triggered' || !ability.trigger?.requiresTarget) continue;
       const effs = Array.isArray(ability.effect) ? ability.effect : (ability.effect ? [ability.effect] : []);
+      for (const e of effs) if (e?.type) used.add(e.type);
+    }
+    // M407: jak wyżej — rozdziały Sag z celem też liczą się do użytych typów.
+    for (const chapter of card.saga?.chapters ?? []) {
+      const effs = (Array.isArray(chapter) ? chapter : [chapter]).flat().filter(Boolean);
+      if (!effs.some((e) => e?.requiresTarget)) continue;
       for (const e of effs) if (e?.type) used.add(e.type);
     }
   }

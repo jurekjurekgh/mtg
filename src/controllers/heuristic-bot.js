@@ -1862,6 +1862,47 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // optymalne wciąż mu się należy.
     return base + (locking ? Math.max(0, timing) + 4 : timing);
   };
+
+  /**
+   * M407 (uwaga z gry — Shiva/Mesmerize, 2026-09-22): wycena celu daru
+   * „Target creature can't be blocked this turn" (deskryptor `cant_be_blocked`,
+   * ADR 0002 — klasa, nie nazwa karty: Shiva I/II, Enter the Enigma, Coralhelm
+   * Guide). Właściciel: „Bot wybiera kreaturę, która ma najmniejszy power
+   * (bez sensu), a poza tym w ogóle nie może atakować bo jest na stałe
+   * zatapowana moją aurą (super bez sensu). A mógł wybrać np. siebie — 4/3,
+   * wtedy wjechałby we mnie i zadał obrażenia.”
+   *
+   * CAŁA wartość daru siedzi w ATAKU tej tury („this turn"):
+   *   • cel, który w tej turze nie zaatakuje (tapnięty — w tym na stałe
+   *     pod blokadą odkręcania — choroba bez haste, cantAttackStatic:
+   *     defender/detain/aura „can't attack") to DAR-PUSTKA — surowo poniżej
+   *     każdego zdolnego do ataku (klasa marnotrastwa M405); między samymi
+   *     martwymi ε·power (wymuszony wybór = najmniejsze zło),
+   *   • cel wrogi = strzał w stopę (jego ataki wchodzą nieblokowane) —
+   *     nigdy dobrowolnie (symetria friendlyMisaimPenalty, M179/E),
+   *   • okno: moja tura PRZED walką (precombat_main / beginning_of_combat /
+   *     declare_attackers) albo atak już trwa; po własnych walkach i w turze
+   *     przeciwnika dar wygaśnie, zanim cokolwiek kupi (jak M202/L),
+   *   • między żywymi wygrywa NAJWIĘKSZY atakujący (2·power — właściciel
+   *     wskazał siebie 4/3 zamiast najsłabszego).
+   */
+  const cantBeBlockedTargetValue = (view, target) => {
+    if (!target) return 0;
+    const power = (target.power ?? 0) + (target.grantedPower ?? 0);
+    if (target.controllerId !== view.playerId) return -40 - power;
+    const attackingNow = (view.combat?.attackers ?? []).includes(target.id);
+    const canAttack = attackingNow
+      || (!target.tapped && (!target.summoningSickness || hasKeyword(target, 'haste'))
+        && target.cantAttackStatic !== true);
+    if (!canAttack) return -45 + power;
+    const step = view.turn.step;
+    const windowOpen = attackingNow || (myTurn(view)
+      && (view.turn.phase === 'precombat_main'
+        || ['beginning_of_combat', 'declare_attackers'].includes(step)));
+    if (!windowOpen) return -8 + power;
+    return 30 + 2 * power + (attackingNow ? 25 : 0)
+      + (['beginning_of_combat', 'declare_attackers'].includes(step) ? 6 : 3);
+  };
   // Wspólna wycena tej samej instrukcji na czarze i aktywacji (Batch 54).
   // Dotychczasowe wartości M155, bez strojenia parametrów.
   const opponentLifeEffectValue = (view, effect) => {
@@ -5326,6 +5367,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const canWait = ability?.timing !== 'sorcery';
             score += tapTargetValue(view, target, { locking, canWait });
           }
+          // M407 (uwaga z gry — Shiva/Mesmerize): dar „can't be blocked this
+          // turn" — jedna wycena z gałązką triggerów (L41): najlepszy
+          // atakujący, martwy atak = nigdy (cantBeBlockedTargetValue).
+          if (effect.type === 'cant_be_blocked') {
+            score += cantBeBlockedTargetValue(view, target);
+          }
           // M202/L (uwaga właściciela, Wishful Merfolk): „{1}{U}: This creature
           // loses defender and becomes a Human until end of turn” ma wartość
           // WYŁĄCZNIE we własnej turze PRZED walką i tylko gdy stwór jest
@@ -6764,6 +6811,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(30 + (target.power ?? 0) * 2 + (target.toughness ?? 0));
       }
       case 'resolve_trigger_target': {
+        // M407 (uwaga z gry — Shiva/Mesmerize): dar ewazji „can't be blocked
+        // this turn" wycenia DEDYKOWANA polityka ataku (cmd.evasionGrant — jak
+        // cmd.debuff/cmd.pump), nie ogólna gałąź friendly: ta umiała tylko
+        // rozmiar celu, więc pod blokadą odkręcania wygrywał trup
+        // („na stałe zatapowana moją aurą (super bez sensu)").
+        if (cmd.evasionGrant) {
+          if (Array.isArray(cmd.targetIds)) {
+            let esum = 0;
+            for (const id of cmd.targetIds) esum += cantBeBlockedTargetValue(view, objectOnBoard(view, id));
+            return finish(esum);
+          }
+          return finish(cantBeBlockedTargetValue(view, objectOnBoard(view, cmd.targetId)));
+        }
         // Temat 2 — cel triggera. Domyślnie (Forge Devil, Jill, Reclusive
         // Artificer): obrażenia / usunięcie na własnym stworze to błąd, na
         // przeciwniku premiujemy siłę. „Brak celu" (allowNone) = 0.

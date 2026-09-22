@@ -202,7 +202,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // tapniętego stwora dawała tapnięty permanent.
     tapped: toZone === 'battlefield' && Boolean(object.entersTapped) && !object.entersTappedCondition && !object.faceDown,
     counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
-    goaded: false, goadedUntilTurn: null, hexproofUntilTurn: null,
+    goaded: false, goadedUntilTurn: null, hexproofUntilTurn: null, cantBeBlockedUntilTurn: null,
     // CR 400.7: flagi opisujące HISTORIĘ permanentu w tej turze też nie
     // przechodzą na nowy obiekt. Bez tego:
     //  - `damagedThisTurn` czyniło świeży obiekt legalnym celem dla „target

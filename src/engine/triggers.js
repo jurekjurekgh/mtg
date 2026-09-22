@@ -767,6 +767,11 @@ function queueSagaChapter(state, sagaObject, chapterNumber, events) {
     sagaChapter: chapterNumber,
     chapterName: sagaObject.saga?.chapterNames?.[chapterNumber - 1] ?? null,
     chapterEffectType: effects[targetEffectIndex].type ?? null,
+    // M407: pełne efekty rozdziału dla warstwy INTENCJI (friendly/debuff/
+    // pump/evasionGrant) — ability.effect jest puste (M172/B), więc bez tego
+    // sygnały widziały pustą listę i każdy rozdział Sag z celem wracał do
+    // klasy „najmniejszy power" (uwaga z gry — Shiva/Mesmerize).
+    chapterEffects: [...effects],
   }, targetSpec);
 }
 

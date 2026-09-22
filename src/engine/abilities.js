@@ -363,7 +363,9 @@ function effectIsNoOpOnTarget(state, effect, target, source = null) {
     case 'cant_block':
       return Boolean(target?.cantBlock);
     case 'cant_be_blocked':
-      return Boolean(target?.cantBeBlocked);
+      // M407: dar „this turn" — drugie nadanie w TEJ samej turze to no-op,
+      // w kolejnej turze dar już wygasł i nadanie znów coś robi.
+      return Boolean(target?.cantBeBlockedUntilTurn != null && state.turn.number < target.cantBeBlockedUntilTurn);
     // Liczniki KUMULUJĄ się (także stun — CR 122.1b), więc no-opem jest
     // wyłącznie zerowa (albo ujemna) liczba liczników.
     case 'add_counter':

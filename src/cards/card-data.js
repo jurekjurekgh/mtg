@@ -2210,12 +2210,15 @@ export const REAL_CARDS = Object.freeze([
       chapterNames: ['Mesmerize', 'Mesmerize', 'Cold Snap'],
       chapters: [
                 // I, II — Mesmerize: "Target creature can't be blocked this turn."
-        // Temat 2 dla Sag: cel wybiera KONTROLER Sagi (resolve_trigger_target)
-        // — nie dawny deterministyczny "najsilniejszy własny stwór". Domyślna
-        // kolejność kandydatów (pole bitwy) oznacza, że boty (pierwsza oferta)
-        // zachowują dotychczasowe zachowanie: najsilniejszy własny stwór.
-        [{ type: 'cant_be_blocked', requiresTarget: { type: 'creature_you_control' } }],
-        [{ type: 'cant_be_blocked', requiresTarget: { type: 'creature_you_control' } }],
+        // Temat 2 dla Sag: cel wybiera KONTROLER Sagi (resolve_trigger_target).
+        // M407 (uwaga z gry 2026-09-22): Oracle mówi "Target creature" —
+        // DOSŁOWNIE każdy stwór (Scryfall FIN #58; ten sam tekst co oracleText
+        // niżej). Dawny spec `creature_you_control` był odchyłką od Oracle
+        // (i wewnętrznie sprzeczny z własnym oracleText). Wybór strony robi
+        // wycena bota (cantBeBlockedTargetValue): własny atakujący = zysk,
+        // stwór wroga = strzał w stopę — nigdy dobrowolnie.
+        [{ type: 'cant_be_blocked', requiresTarget: { type: 'creature' } }],
+        [{ type: 'cant_be_blocked', requiresTarget: { type: 'creature' } }],
         // III — Cold Snap: tap wszystkich landów przeciwników + exile+return
         // stroną przednią (Saga znika przed warunkiem poświęcenia CR 714.4).
         // Efekty bezcelowe — idą od razu na stos, bez requiresTarget.

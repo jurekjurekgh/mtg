@@ -99,6 +99,18 @@ export function triggerTargetDebuffOf(ability) {
  * combatu, PRZED deklaracją ataku). Pump samej toughness (+0/+Y) celowo
  * poza sygnałem: chory stwór nadal blokuje, więc buff ma sens.
  */
+/**
+ * M407 (uwaga z gry — Shiva/Mesmerize): sygnał daru ewazji „can't be blocked
+ * this turn" (deskryptor `cant_be_blocked`, ADR 0002). Komenda niesie go jak
+ * `debuff`/`pump`, żeby bot wyceniał cel dedykowaną polityką ataku
+ * (`cantBeBlockedTargetValue`): dar ma wartość wyłącznie na stworze, który
+ * w tej turze ZAATAKUJE, i to największym (właściciel: „mógł wybrać np.
+ * siebie — 4/3, wtedy wjechałby we mnie i zadał obrażenia”).
+ */
+export function triggerTargetEvasionGrantOf(ability) {
+  const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+  return effs.some((e) => e?.type === 'cant_be_blocked');
+}
 export function triggerTargetPowerPumpOf(ability) {
   const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
   for (const e of effs) {
@@ -139,6 +151,12 @@ export function triggerTargetEffectFriendly(ability) {
     || (e?.type === 'buff_creature_until_end_of_turn'
       && (e.power ?? 0) >= 0 && (e.toughness ?? 0) >= 0
       && (e.power ?? 0) + (e.toughness ?? 0) > 0)
+    // M407 (uwaga z gry — Shiva/Mesmerize): „Target creature can't be blocked
+    // this turn" (deskryptor cant_be_blocked) to DAR przyjazny dla obdarowanego
+    // — jak grant_keywords (M156/F1). Bez tej gałęzi friendly=false stawiało
+    // wycenę na gałęzi WROGIEJ (−20−wartość), więc bot wybierał NAJSŁABSZEGO
+    // własnego stwora (właściciel: „kreaturę, która ma najmniejszy power”).
+    || e?.type === 'cant_be_blocked'
     // C-R2 (audyt Batch53, 2026-09-05): zwrot WŁASNEJ karty z grobu — do ręki
     // (Ironclad Slayer, Circle Druid) albo na wierzch biblioteki (Mystic
     // Sanctuary) — to korzyść kontrolera, a spec „controlledBy: controller"
