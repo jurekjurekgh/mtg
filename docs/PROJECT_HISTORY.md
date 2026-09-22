@@ -12258,3 +12258,25 @@ listą — nowy wymaga klasyfikacji i pinów. Piny CM/1–CM/4 (DOM: 8 wierszy,
 nic wstępnie zaznaczonego), V/3 zrewidowane, mutacje M-E1/M-E2, regresja
 rodziny kreatorów 223/223 (M2 nietknięte). Bramy: `run-tests all`
 **6113/6113**, build **59 modułów / 4002,0 kB**. Milestone **M406**.
+
+## 2026-09-22 (uwagi z gry B) — Shiva/Mesmerize: scoring daru „can't be blocked this turn” (PR #133, M407)
+
+Właściciel (Shiva, Warden of Ice, rozdziały I–II Mesmerize): bot celował
+kreaturą „która ma najmniejszy power (bez sensu)”, dodatkowo „na stałe
+tapniętą aurą” (dar-pustka), zamiast siebie (4/3 — „wjechałby we mnie i
+zadał obrażenia”). „Scoring do poprawy.”
+
+Klasa zamknięta (deskryptor `cant_be_blocked`, ADR 0002): (1) klasyfikacja
+intencji — `cant_be_blocked` = PRZYJAZNY + sygnał `evasionGrant`; adapter
+intencji rozdziałów Sag (`ability.effect: []` = kanał klasy „najmniejszy
+power” dla KAŻDEGO rozdziału z celem — domknięty); (2) `cantBeBlockedTargetValue`
+— martwy atak (tapnięty/choroba/cantAttackStatic) nigdy, wśród żywych
+największy atakujący, okno „this turn”, dar dla wroga ujemny; (3) wygaszanie
+`cantBeBlockedUntilTurn` (numer tury + 1, CR 514.2 — dawna wieczna flaga
+sprzeczna z „this turn” z Oracle); (4) pula Oracle „Target creature”
+(Scryfall FIN #58 — dawny `creature_you_control` sprzeczny z oracleText
+wpisu). Strażnik klasyfikacji celów triggerów skanuje odtąd rozdziały Sag.
+Piny F/0–F/7 + mutacje M-F1…M-F4; rewizje 5 pinów pola stanu. Bramy:
+`run-tests all` **6121/6121**, build **59 / 4009,2 kB**, benchmark
+**85,9%** (577/672). Usterka narzędziowa w sesji: token GH_TOKEN wygasł
+w trakcie pracy (kolejka push — precedens ccfbb43).

@@ -6907,3 +6907,64 @@ czerwieni CM/1+1b+3; M-E2 (etykiety z powrotem z repów) czerwieni CM/4.
 Bramy: `node tools/run-tests.mjs all` **6113/6113** (~377 s), build
 **59 modułów / 4002,0 kB**; regresja rodziny kreatorów 223/223. Bez nowych
 lekcji i bez nowych kart (ADR 0029).
+
+## M407 (2026-09-22, PR #133) — uwaga z gry B: dar „can't be blocked this turn” celuje atakiem, nie najmniejszym powerem (klasa cant_be_blocked zamknięta)
+
+Zgłoszenie właściciela (Shiva, Warden of Ice — Saga, rozdziały I–II
+„Mesmerize — Target creature can't be blocked this turn.”): „Bot wybiera
+kreaturę, która ma najmniejszy power (bez sensu), a poza tym w ogóle nie
+może atakować bo jest na stałe tapnięta moją aurą (super bez sensu). A mógł
+wybrać np. siebie — 4/3, wtedy wjechałby we mnie i zadał obrażenia. A tak
+zmarnował tą zdolność. Scoring do poprawy.”
+
+Root cause (KLASA, nie karta) — trzy warstwy:
+
+- **klasyfikacja intencji**: `triggerTargetEffectFriendly` nie znał
+  `cant_be_blocked`, a rozdziały Sag mają `ability.effect: []` (M172/B —
+  efekty wykonuje `fireSagaChapter`) → `cmd.friendly=false` → gałąź WROGA
+  dla własnych celów (`finish(-20 - value)`) faworyzowała NAJMNIEJSZĄ
+  wartość — dokładnie opisany „najmniejszy power”;
+- **brak bramki ataku**: ogólna gałąź przyjazna znała tylko rozmiar celu
+  (attackBonus wyłącznie dla `cmd.pump`) — trup pod stałą blokadą
+  odkręcania przechodził jak każdy inny cel;
+- **wieczna flaga**: efekt zostawiał `cantBeBlocked: true` NA ZAWSZE
+  („this turn” z Oracle — odchyłka od wygaśnięcia z numerem tury, CR 514.2;
+  ten sam audyt, który wcześniej skrytykował „jednorazową flagę na obiekcie”
+  przy cantBlockRestrictions).
+
+Naprawa (klasa po deskryptorze `cant_be_blocked`, ADR 0002 — trzy karty:
+Shiva I/II, Enter the Enigma, Coralhelm Guide):
+
+- `triggerTargetEffectFriendly`: `cant_be_blocked` = PRZYJAZNY (jak grant
+  keywords, M156/F1) + `triggerTargetEvasionGrantOf` (sygnał daru ewazji);
+- adapter intencji rozdziałów Sag w jednym miejscu budowy komend
+  (`extra.chapterEffects` — normalizacja tablica LUB pojedynczy efekt-obiekt,
+  bez czego regresja golden-master: Battle-Rattle Shaman, Lotusguard,
+  Ironclad Slayer); komenda `resolve_trigger_target` niesie `evasionGrant`;
+- `cantBeBlockedTargetValue` (strefa `tapTargetValue`): martwy atak
+  (tapnięty — w tym na stałe pod blokadą odkręcania — choroba bez haste,
+  cantAttackStatic) = dar-pustka ≤ −20 (nigdy); wśród żywych NAJWIĘKSZY
+  atakujący (2·power); okno „this turn” (przed walką własnej tury); dar
+  dla wroga = strzał w stopę (−40−power). Hacze: gałąź evasionGrant
+  `resolve_trigger_target` + pętla wyceny efektów cast/activate (L41);
+- wygaszanie: `cantBeBlockedUntilTurn = state.turn.number + 1`, odczyt
+  read-time (wzorzec `hexproofUntilTurn`; combat.js, widok, no-op check
+  abilities.js, fingerprint) — badge widoku `cantBeBlocked` bez zmian
+  (kontrakt ADR 0017);
+- **pula Oracle**: Shiva „Target creature” = DOSŁOWNIE każdy stwór
+  (Scryfall FIN #58 — ten sam tekst co oracleText wpisu; dawny spec
+  `creature_you_control` był sprzeczny z oboma) — kandydaci obejmują stwory
+  wroga, wycena ich nigdy nie wybiera;
+- **strażnik domknięty**: `bot-trigger-target-classification-guard` skanuje
+  odtąd ROZDZIAŁY SAG z celem (dotąd poza skanem — Mesmerize żył bez
+  klasyfikacji = otwarty kanał klasy L50 dla każdego nowego rozdziału).
+
+Piny `test/uwaga-z-gry-shiva-mesmerize-2026-09-22.test.js` F/0–F/7
+(klasyfikacja; scenariusz właściciela — wybór = Shiva, martwy ≤ −20;
+martwy-duży vs żywy-mały; choroba+haste; okno czasowe; inwentarz klas;
+wygaszanie; pula Oracle). Mutacje: M-F1 (klasyfikacja) → F/0; M-F2
+(adapter Sag) → F/1+3+4+7; M-F3 (bramka ataku) → F/1+2+3; M-F4 (wieczna
+flaga) → B2+F/6. Rewizje pinów stanu (m172/B2, real-cards-batch16/20/22,
+bug-hunt M104) — pole → termin daru. Bramy: `run-tests all` **6121/6121**,
+build **59 modułów / 4009,2 kB**, benchmark --quick **85,9%** (577/672),
+rodzina 225/225. Bez nowych kart (ADR 0029).

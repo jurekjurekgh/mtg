@@ -193,6 +193,25 @@ i popraw je, żeby NIE WYBIERAŁY UPROSZCZONEGO PIERWSZEGO TARGETU!!!!”.
       V/3 zrewidowane, mutacje M-E1/M-E2; regresja rodziny 223/223; bramy
       6113/6113, build 59/4002,0 kB — milestone **M406**.
 
+## Dodatek 4 (uwaga z gry B, 2026-09-22): Shiva/Mesmerize — klasa daru „can't be blocked this turn”
+
+Zgłoszenie: bot wybiera kreaturę „o najmniejszym power” i „na stałe
+tapniętą aurą”, zamiast siebie (4/3) — „Scoring do poprawy.”
+
+- [x] F1. Root cause: `cant_be_blocked` bez klasyfikacji intencji (a Sag
+      mają `ability.effect: []`) → `cmd.friendly=false` → gałąź wroga
+      (−20−wartość = najmniejszy power); brak bramki ataku; wieczna flaga
+      „this turn”.
+- [x] F2. Naprawa klasy: klasyfikacja przyjazna + `evasionGrant` +
+      adapter rozdziałów Sag (`extra.chapterEffects`) +
+      `cantBeBlockedTargetValue` (martwy atak nigdy / największy żywy /
+      okno / dar wrogi ujemny) + wygaszanie `cantBeBlockedUntilTurn`
+      (CR 514.2) + pula Oracle „Target creature” (Scryfall FIN #58) +
+      strażnik klasyfikacji skanuje rozdziały Sag.
+- [x] F3. Piny F/0–F/7 + mutacje M-F1…M-F4; rewizje 5 pinów pola stanu
+      (m172/B2, batch16/20/22, bug-hunt M104); bramy 6121/6121, build
+      59/4009,2 kB, benchmark 85,9% — milestone **M407**.
+
 Wspólne (wykonane): bramy `run-tests all` **6106/6106**, build **59 modułów /
 3997,8 kB**, `tools/benchmark.mjs --quick` 672 mecze / heuristic 85,9%;
 docs: milestone **M405**, `PROJECT_HISTORY` (sekcja 2026-09-21c), README
