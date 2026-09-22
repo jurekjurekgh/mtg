@@ -1877,7 +1877,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *     pod blokadą odkręcania — choroba bez haste, cantAttackStatic:
    *     defender/detain/aura „can't attack") to DAR-PUSTKA — surowo poniżej
    *     każdego zdolnego do ataku (klasa marnotrastwa M405); między samymi
-   *     martwymi ε·power (wymuszony wybór = najmniejsze zło),
+   *     martwymi drobnym dodatkiem od powera (wymuszony wybór = najmniejsze zlo),
    *   • cel wrogi = strzał w stopę (jego ataki wchodzą nieblokowane) —
    *     nigdy dobrowolnie (symetria friendlyMisaimPenalty, M179/E),
    *   • okno: moja tura PRZED walką (precombat_main / beginning_of_combat /

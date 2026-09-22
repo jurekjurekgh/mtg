@@ -154,7 +154,10 @@ test('Enter the Enigma: cant_be_blocked + draw 1', () => {
   resolveStack(state);
   const handAfter = state.zones.hand.length;
   assert.equal(handAfter, handBefore, 'hand wraca do baseline (enigma→grobu, draw +1)');
-  // cr ma cantBeBlocked ustawiony
+  // cr ma termin daru „this turn" (M407: cantBeBlockedUntilTurn)
   const cr = state.objects.get('cr');
-  assert.equal(cr.cantBeBlocked, true, 'cr.cantBeBlocked = true');
+  // M407 (rewizja pinu): dar „this turn" trzyma TERMIN (cantBeBlockedUntilTurn,
+  // CR 514.2) zamiast wiecznej flagi cantBeBlocked.
+  assert.equal(cr.cantBeBlockedUntilTurn, state.turn.number + 1,
+    'cr.cantBeBlockedUntilTurn = numer tury + 1');
 });

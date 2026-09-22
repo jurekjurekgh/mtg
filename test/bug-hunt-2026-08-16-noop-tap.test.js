@@ -59,7 +59,8 @@ function addLand(state, id, controllerId, { tapped = false } = {}) {
 }
 
 function addCreature(state, id, controllerId, extra = {}) {
-  // Pola spoza kontraktu `addObject` (tapped, cantBlock, cantBeBlocked) to
+  // Pola spoza kontraktu `addObject` (tapped, cantBlock, termin daru
+  // cantBeBlocked — M407: cantBeBlockedUntilTurn) to
   // stan, który normalnie nadają efekty — w teście ustawiamy je po dodaniu.
   const { tapped = false, cantBlock = false, cantBeBlocked = false, ...creation } = extra;
   addObject(state, {
@@ -73,7 +74,10 @@ function addCreature(state, id, controllerId, extra = {}) {
       ...state.objects.get(id),
       ...(tapped ? { tapped: true } : {}),
       ...(cantBlock ? { cantBlock: true } : {}),
-      ...(cantBeBlocked ? { cantBeBlocked: true } : {}),
+      // M407 (rewizja pinu): dar „this turn" trzyma TERMIN
+      // (cantBeBlockedUntilTurn = numer tury + 1, CR 514.2) — no-op check
+      // czyta termin; dawna wieczna flaga cantBeBlocked wygasła z modelem.
+      ...(cantBeBlocked ? { cantBeBlockedUntilTurn: state.turn.number + 1 } : {}),
     }));
   }
   return state.objects.get(id);

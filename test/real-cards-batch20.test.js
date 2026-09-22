@@ -187,7 +187,10 @@ test('Coralhelm Guide: aktywowana {4}{U} nadaje cantBeBlocked celowi', () => {
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'guide', abilityIndex: 0, targets: ['attk'] });
   assert.ok(r.ok, r.events[0]?.reason);
   resolveStack(state); // D: zdolność na stosie → cantBeBlocked po rozstrzygnięciu
-  assert.equal(state.objects.get('attk').cantBeBlocked, true, 'cel ma cantBeBlocked');
+  // M407 (rewizja pinu): dar „this turn" trzyma TERMIN (cantBeBlockedUntilTurn,
+  // CR 514.2) zamiast wiecznej flagi; badge widoku (kontrakt) bez zmian.
+  assert.equal(state.objects.get('attk').cantBeBlockedUntilTurn, state.turn.number + 1,
+    'cel ma termin daru „this turn”');
 });
 
 // --- Gorehorn Minotaurs (MM2) — Bloodthirst 2 ------------------------------
