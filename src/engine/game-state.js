@@ -7186,8 +7186,14 @@ export function playerView(state, playerId) {
     // sygnały intencji czytały PUSTĄ listę i zwracały false — klasa
     // „najmniejszy power" (−20−wartość) miała otwarty kanał w KAŻDYM
     // rozdziale Sag z celem. Efekty rozdziału niesie extra.chapterEffects.
-    const intentAbility = (Array.isArray(triggerTargetHead.ability?.effect)
-      && triggerTargetHead.ability.effect.length > 0)
+    // Normalizacja jak w helperach intencji (pojedynczy efekt-obiekt też się
+    // liczy — Battle-Rattle Shaman `effect: {pump}`, Lotusguard, Ironclad
+    // Slayer; warunek sam na Array.isArray przepuszczał je przez adapter
+    // jako puste i wracał do klasy „najmniejszy power").
+    const abilityEffs = Array.isArray(triggerTargetHead.ability?.effect)
+      ? triggerTargetHead.ability.effect
+      : (triggerTargetHead.ability?.effect ? [triggerTargetHead.ability.effect] : []);
+    const intentAbility = abilityEffs.length > 0
       ? triggerTargetHead.ability
       : { effect: triggerTargetHead.extra?.chapterEffects ?? [] };
     // M150/A: flaga `friendly` (pump/licznik na własnym) niesiona w komendzie,
