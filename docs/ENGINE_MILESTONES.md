@@ -7016,3 +7016,50 @@ Bramy: `run-tests all` **6134/6134**, build **59 modułów / 4018,8 kB**,
 benchmark --quick heuristic **85,7%** (576/672; baseline 85,9% — jeden mecz
 różnicy, w szumie). Bez nowych kart (ADR 0029).
 
+## M409 — uwaga z gry F (2026-09-22): Pristine Talisman nie działał (2026-09-22)
+
+Właściciel: „Ten artefakt produkuje manę, ale także dodaje 1 life. Nie powinien
+być traktowany jak zwykły permanent do produkcji many, czyli cały czas
+wyciszony.” — a po sprawdzeniu: „w ogóle nie działa, nie tylko jest wyciszony,
+ale w ogóle nie można nim płacić ani tapować. Moja tura, Główna 1, artefakt za
+5 many colorless, 4 lądy i nietapnięty Pristine Talisman. Nie mam oferty rzutu
+tego artefaktu. Nie mam też oferty tapnięcia Talismana choćby po to, żeby
+zyskać życie.”
+
+Jedna karta, DWIE niezależne warstwy błędu:
+
+1. **Źródło many wypadało z ekonomii** — `untappedFreeManaSources` wymagało
+   DOKŁADNIE jednego efektu (`effects.length !== 1`), więc zdolność
+   „{T}: Add {C}. You gain 1 life.” nie liczyła się do `producibleMana` ani nie
+   była auto-tapowana. Silnik widział 4 many zamiast 5 i nie oferował rzutu za
+   {5} (klasa L48 — oferta i płatność ślepe na to samo źródło). Dawny komentarz
+   uzasadniał to „decyzją strategiczną gracza”, ale rider KORZYSTNY dla
+   kontrolera nie niesie żadnej decyzji: koszt to nadal samo {T}, a tapnięcie
+   daje manę I życie.
+2. **Wyciszanie szło złym predykatem** — panel „Twoje działania” i auto-pass
+   pytały `isActivatedManaAbility` (CR 605.1a: „czy omija stos”; rider życia
+   tego nie zmienia — M154). To inne pytanie niż „czy gracz ma tu decyzję”.
+
+Naprawa klasami (ADR 0002 — deskryptor, nie nazwa karty):
+- `BENEFICIAL_MANA_RIDERS` (resources.js, zamknięta lista: `gain_life`) —
+  źródło `add_mana` + korzystny rider wchodzi do many i auto-tapu, a
+  `tapFreeManaSource` WYKONUJE rider, więc auto-płatność daje dokładnie to samo
+  co ręczna aktywacja (L48 w obie strony). Ridery szkodliwe albo niosące WYBÓR
+  (mill, poświęcenie, scry) pozostają poza auto-tapem; źródła kosztowe
+  (Apprentice Wizard) bez zmian — osobna ścieżka `untappedCostedManaSources`.
+- `isSilentManaAbility` (mana-sources.js) — wyciszamy wyłącznie zdolności,
+  których JEDYNYM efektem jest `add_mana`; `isPureManaAbilityCommand` (panel +
+  auto-pass, jedno źródło prawdy L41) czyta odtąd ten predykat.
+
+Piny `test/uwaga-z-gry-2026-09-22-f-pristine-talisman.test.js` F/0–F/5 (mana
+4+1=5; oferta rzutu za {5}; płatność tapuje i daje życie; brak oferty bez
+Talismana — anty-over-fix; oferta aktywacji po samo życie; wyciszanie Talisman
+vs Seer's Lantern). Mutacje: M-F1 (cofnięte dopuszczenie riderów) → F/0+F/1+F/2;
+M-F2 (rider niewykonywany przy auto-tapie) → F/2; M-F3 (wyciszanie po
+CR 605.1a) → F/5. Rewizja pinu `test/m179-inwentaryzacja.test.js` D2 — utrwalał
+zgłoszony błąd (Talisman wykluczony razem z Apprentice Wizardem); Wizard
+pozostaje wykluczony.
+
+Bramy: `run-tests all` **6140/6140**, build **59 modułów / 4021,7 kB**,
+`benchmark --quick` heuristic **85,7%** (576/672). Bez nowych kart (ADR 0029).
+

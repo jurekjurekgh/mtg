@@ -726,15 +726,26 @@ export function untappedLandManaSources(state, playerId) {
  */
 /**
  * M179/D (zlecenie właściciela): nielandowe źródła CZYSTEJ many — permanent
- * z aktywowaną zdolnością o koszcie SAMEGO {T} i efekcie SAMEGO add_mana
+ * z aktywowaną zdolnością o koszcie SAMEGO {T} i efekcie add_mana
  * (Scorned Villager, Seer's Lantern). Liczą się do producibleMana i są
  * auto-tapowane w płatności (L48: oferta = płatność). Świadomie POZA:
- * źródła z kosztem many (Apprentice Wizard, Jeskai Devotee), z kosztem
- * dodatkowym (Dragonbrood's Relic — tapCreature) i ze skutkami ubocznymi
- * (Pristine Talisman — życie): ich użycie to decyzja strategiczna gracza
- * (ręczna aktywacja jak dotąd). Stwór z chorobą przywołania nie użyje
- * {T} (CR 302.6).
+ * źródła z kosztem many (Apprentice Wizard, Jeskai Devotee) i z kosztem
+ * dodatkowym (Dragonbrood's Relic — tapCreature). Stwór z chorobą
+ * przywołania nie użyje {T} (CR 302.6).
+ *
+ * F (zgłoszenie z gry 2026-09-22 — Pristine Talisman „{T}: Add {C}. You gain
+ * 1 life.”): „nie tylko jest wyciszony, ale w ogóle nie można nim płacić ani
+ * tapować… Mam 4 lądy i nietapnięty Pristine Talisman, artefakt za 5 — nie
+ * mam oferty rzutu”. Wykluczenie źródeł z RIDEREM (dawne `effects.length !== 1`)
+ * było zbyt szerokie: rider KORZYSTNY dla kontrolera (zysk życia) nie czyni
+ * z produkcji decyzji strategicznej — nie ma czego rozważać, bo tapnięcie
+ * daje manę I życie. Dopuszczamy więc zdolności `add_mana` + korzystny rider
+ * z zamkniętej listy (`BENEFICIAL_MANA_RIDERS`, deskryptor — ADR 0002);
+ * rider wykonuje `tapFreeManaSource` przy auto-tapie, więc oferta i płatność
+ * dają dokładnie to samo co ręczna aktywacja (L48). Riderów szkodliwych albo
+ * niosących WYBÓR (mill, poświęcenie, scry) nadal nie auto-tapujemy.
  */
+export const BENEFICIAL_MANA_RIDERS = Object.freeze(['gain_life']);
 export function untappedFreeManaSources(state, playerId, excludeSourceId = null, purpose = {}) {
   const excludedFree = excludeSourceId == null
     ? null
@@ -752,7 +763,11 @@ export function untappedFreeManaSources(state, playerId, excludeSourceId = null,
       const costKeys = Object.keys(cost).filter((key) => cost[key]);
       if (!(cost.tap === true && costKeys.length === 1)) continue;
       const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-      if (effects.length !== 1 || effects[0]?.type !== 'add_mana') continue;
+      const addEffect = effects.find((e) => e?.type === 'add_mana');
+      // F (2026-09-22): produkcja + wyłącznie KORZYSTNE ridery (patrz wyżej).
+      if (!addEffect || !effects.every((e) => e?.type === 'add_mana'
+        || BENEFICIAL_MANA_RIDERS.includes(e?.type))) continue;
+      const riders = effects.filter((e) => BENEFICIAL_MANA_RIDERS.includes(e?.type));
       const isCreature = object.kind === 'creature' || (object.types ?? []).includes('Creature');
       if (isCreature && object.summoningSickness && !effectiveKeywords(object, state).includes('haste')) continue;
       const src = getSourceForObject(object);
@@ -760,10 +775,16 @@ export function untappedFreeManaSources(state, playerId, excludeSourceId = null,
       // can't be spent to cast a nonartifact spell") liczy się WYŁĄCZNIE, gdy
       // płatność ma dozwolony cel. Deskryptor `spendOnly` zamiast warunku po
       // nazwie karty (ADR 0002); brak deskryptora = mana bez ograniczeń.
-      const spendOnly = effects[0].spendOnly ?? null;
+      const spendOnly = addEffect.spendOnly ?? null;
       if (spendOnly === 'artifact' && restrictedManaBlocked(purpose)) break;
       if (spendOnly != null && spendOnly !== 'artifact') break; // nieznane ograniczenie = nie oferujemy
-      out.push({ object, amount: effects[0].amount ?? 1, colors: effects[0].colors ?? src?.colors ?? [], spendOnly });
+      out.push({
+        object, amount: addEffect.amount ?? 1,
+        colors: addEffect.colors ?? src?.colors ?? [], spendOnly,
+        // F: ridery wykonywane przy auto-tapie (tapFreeManaSource) — bez nich
+        // auto-płatność dałaby MNIEJ niż ręczna aktywacja tej samej zdolności.
+        riders,
+      });
       break;
     }
   }
@@ -1051,6 +1072,14 @@ export function tapFreeManaSource(state, playerId, entry) {
   const mana = addMana(state, playerId, entry.amount, { colors: entry.colors, spendOnly: entry.spendOnly ?? null });
   const produced = event('mana_produced', { playerId, source: object.id, amount: entry.amount, colors: [...entry.colors] });
   state.events.push(produced);
+  // F (2026-09-22, Pristine Talisman): korzystny rider zdolności many wykonuje
+  // się TAK SAMO przy auto-tapie jak przy ręcznej aktywacji (L48: oferta =
+  // płatność). Zdolności many omijają stos (CR 605.1a), więc rider stosuje się
+  // natychmiast, bez wpisu na stos.
+  for (const rider of entry.riders ?? []) {
+    if (rider?.type !== 'gain_life') continue;
+    changeLife(state, playerId, rider.amount ?? 1);
+  }
   return [tappedEvent, mana, produced];
 }
 

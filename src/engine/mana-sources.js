@@ -377,6 +377,27 @@ export function isActivatedManaAbility(ability) {
 }
 
 /**
+ * F (zgłoszenie z gry 2026-09-22 — Pristine Talisman): „Ten artefakt produkuje
+ * manę, ale także dodaje 1 life. Nie powinien być traktowany jak zwykły
+ * permanent do produkcji many, czyli cały czas wyciszony. Tylko takie które
+ * nie robią nic innego tylko produkują manę za tapnięcie powinny być
+ * wyciszone w auto-pasie.”
+ *
+ * `isActivatedManaAbility` (CR 605.1a) odpowiada na inne pytanie — „czy to
+ * zdolność many”, czyli czy OMIJA STOS — i rider zysku życia tego nie zmienia
+ * (M154). Wyciszanie w panelu i w auto-pasie to jednak pytanie o DECYZJĘ
+ * GRACZA: zdolność z dodatkowym skutkiem (życie, scry, licznik) bywa warta
+ * aktywacji sama w sobie, więc nie wolno jej chować. Stąd osobny, WĘŻSZY
+ * predykat: wyciszamy wyłącznie zdolności, których jedynym efektem jest
+ * `add_mana`. Reguła po deskryptorze (ADR 0002), nie po nazwie karty.
+ */
+export function isSilentManaAbility(ability) {
+  if (!isActivatedManaAbility(ability)) return false;
+  const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+  return effects.every((e) => e?.type === 'add_mana');
+}
+
+/**
  * J (zgłoszenie właściciela 2026-09-19b): pola komendy, które czynią z
  * aktywacji zdolności many REALNĄ decyzję (cel, X, koszt wskazujący permanent).
  * Wariant z którymkolwiek z nich nie jest „czystą" zdolnością many — zostaje
@@ -411,5 +432,8 @@ export function isPureManaAbilityCommand(command, object, fallbackAbilities = nu
   const ability = object?.abilities?.[command.abilityIndex]
     ?? fallbackAbilities?.[command.abilityIndex]
     ?? null;
-  return Boolean(ability && isActivatedManaAbility(ability));
+  // F (2026-09-22): wyciszamy wyłącznie zdolności BEZ skutku ubocznego —
+  // patrz `isSilentManaAbility` (Pristine Talisman „{T}: Add {C}. You gain
+  // 1 life.” zostaje w panelu i przerywa auto-pass).
+  return Boolean(ability && isSilentManaAbility(ability));
 }

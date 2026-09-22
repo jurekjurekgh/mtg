@@ -12300,3 +12300,18 @@ w turze przeciwnika). Piny C/0–C/3, D/0–D/1, E/0–E/5 + rewizje trzech pin�
 okna crew; golden-master zregenerowany świadomie. Bramy: **6134/6134**,
 build **59 / 4018,8 kB**, benchmark **85,7%** (576/672).
 
+## 2026-09-22 (uwaga z gry F) — M409
+
+Pristine Talisman („{T}: Add {C}. You gain 1 life.”) nie działał: nie liczył
+się do dostępnej many (brak oferty rzutu artefaktu za {5} przy 4 lądach
+i nietapniętym Talismanie), nie był auto-tapowany, a w panelu był wyciszany
+jak zwykłe źródło many. Dwie warstwy jednej klasy: `untappedFreeManaSources`
+odrzucało zdolności z riderem (`effects.length !== 1`), a wyciszanie panelu
+i auto-passu szło przez `isActivatedManaAbility` (CR 605.1a — pytanie o stos,
+nie o decyzję gracza). Naprawa: `BENEFICIAL_MANA_RIDERS` (rider korzystny nie
+wyklucza auto-tapu; `tapFreeManaSource` go wykonuje — oferta = płatność)
+i osobny, węższy predykat `isSilentManaAbility` (wyciszamy tylko czyste
+„{T}: Add …”). Piny F/0–F/5 + mutacje M-F1…M-F3; rewizja pinu M179/D2, który
+utrwalał zgłoszony błąd. Bramy: **6140/6140**, build **59 / 4021,7 kB**,
+benchmark **85,7%** (576/672).
+
