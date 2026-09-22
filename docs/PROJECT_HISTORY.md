@@ -12355,3 +12355,32 @@ Humana traktował jak strzał w stopę — wycena była odwrócona na obu gałę
 (`conditionalPump`) w ogóle nie wchodził do wyceny. Oba naprawione klasowo —
 o obliczu aury decyduje konkretny gospodarz (CR 613.1d). Po naprawie: własny Human
 +71,1, wrogi Human −45. Szczegóły: **M412**.
+
+## M413 — O: tap/lockdown celuje w największe zagrożenie (Chill of the Grave)
+
+Uwaga właściciela z gry (2026-09-22): „Tap target creature. It doesn't untap
+during its controller's next untap step.” — mając do wyboru kreaturę 3/3
+(1/1 z aurą +2/+2) i gołą 1/1, bot tapował 1/1.
+
+Root cause zmierzony sondą na składowych wyceny: taki czar to JEDEN skutek
+rozpisany na DWA deskryptory (`tap_permanent` + `dont_untap_next_untap_step`),
+a `tapTargetValue` liczyło każdy z osobna. Stąd (a) dla celu ODKRĘCONEGO
+wartość ciała wchodziła dwukrotnie, a dla już tapniętego raz — drobny,
+odkręcony 1/1 bił groźną, tapniętą kreaturę; (b) składowa „tap” na celu
+tapniętym zwracała −12 i ta kara przeważała sumę, choć blokada odkręcania jest
+wtedy warta najwięcej: stwór nie odkręci się i wypada z następnej tury
+(CR 302.6, 701.20a).
+
+Naprawa klasowa (ADR 0002, po deskryptorach): całość wycenia gałąź `locking`,
+składowa „tap” przy niej milczy (0). Reguła M139 („przy TYM SAMYM stworze
+wersja odkręcona jest odrobinę lepsza”) zachowana jako drobny upust −2, mniejszy
+niż różnica wartości ciał, więc nie przewraca rankingu celów.
+
+Lekcja ogólna: gdy jedna karta niesie kilka osobno punktowanych efektów na ten
+sam cel, składowa będąca w danym stanie no-opem musi wnosić 0, a nie karę —
+inaczej przegłosowuje składową, która czyni zagranie dobrym.
+
+Bramki: testy 6170/6170, build 59 modułów / 4045,0 kB, benchmark heuristic 86,6%.
+Pin: `test/uwaga-z-gry-2026-09-22-o-chill-of-the-grave.test.js` (4 testy,
+matryca mutacji: usunięcie wyciszenia składowej „tap” i przywrócenie kary −12
+przy blokadzie — oba czerwienią pin).

@@ -1935,6 +1935,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * różnica między oknami była odczuwalna, ale nie przebijała kar za
    * tapowanie WŁASNYCH permanentów (HOSTILE_PERMANENT_EFFECTS: 45–55).
    */
+  /**
+   * O (2026-09-22): efekty TRZYMAJĄCE permanent tapniętym przez najbliższy
+   * untap step (CR 701.20a). Jedno źródło prawdy dla obu ścieżek wyceny
+   * (czar i zdolność) — L41.
+   */
+  const LOCK_UNTAP_EFFECTS = new Set(['lock_untap', 'dont_untap_next_untap_step']);
+
   const tapTimingBonus = (view, target, { canWait = true } = {}) => {
     if (!target || target.controllerId === view.playerId) return 0;
     const step = view.turn.step;
@@ -1974,6 +1981,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return canWait ? -4 : 0;
     }
     // Tura przeciwnika PO jego untap: stwór traci atak TERAZ i blok U MNIE.
+    // O (2026-09-22): cel JUŻ TAPNIĘTY nie traci „ataku teraz” (i tak nie
+    // atakuje), ale przy blokadzie odkręcania traci CAŁĄ następną turę —
+    // premia okna należy mu się tak samo, inaczej groźny, tapnięty stwór
+    // wypadał w rankingu poniżej nietapniętego drobiazgu (zgłoszenie O).
     if (['upkeep', 'draw'].includes(step)) return 14;
     // M202/F: jak wyżej — tylko faza PRZED walką (po walce już zaatakował).
     if (view.turn.phase === 'precombat_main' && step === 'main1' && attackers.length === 0) return 12;
@@ -1990,10 +2001,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * (lock_untap / dont_untap_next_untap_step), więc kara za złe okno znika:
    * blokada przetrwa jego untap step.
    */
-  const tapTargetValue = (view, target, { locking = false, canWait = true } = {}) => {
+  const tapTargetValue = (view, target, { locking = false, canWait = true, tapAccompaniesLock = false } = {}) => {
     if (!target || target.controllerId === view.playerId) return 0;
     // Tapnięcie już tapniętego permanentu nic nie zmienia — poza efektem
     // blokującym odkręcanie, który dopiero wtedy pokazuje swoją wartość.
+    //
+    // O (zgłoszenie z testów 2026-09-22, Chill of the Grave — „Tap target
+    // creature. It doesn't untap during its controller's next untap step.”):
+    // „Bot może rzucić ją na moją kreaturę 3/3 (1/1 z aurą +2/+2) albo na
+    // kreaturę 1/1. Oczywiście rzuca na kreaturę 1/1.”
+    //
+    // Taki czar niesie DWA efekty liczone osobno (`tap_permanent` +
+    // `dont_untap_next_untap_step`). Gdy groźny cel był JUŻ TAPNIĘTY, składowa
+    // „tap” zwracała −12 („nic nie zmienia”) i to ona przeważała sumę, mimo że
+    // druga składowa — blokada odkręcania — jest wtedy warta NAJWIĘCEJ: stwór
+    // nie odkręci się i nie zaatakuje w następnej turze (CR 302.6, 701.20a).
+    // `noopWhenTapped` mówi więc „ta składowa nic nie wnosi” (0), a nie „to
+    // złe zagranie” (−12): karać wolno tylko czar, który POZA tapnięciem nie
+    // robi nic (wtedy `locking` jest false i kara zostaje).
+    // Czar „tapnij ORAZ nie odkręcaj” (Chill of the Grave) to JEDEN skutek
+    // rozpisany na dwa deskryptory. Liczenie obu składowych osobno podwajało
+    // wartość ciała dla celu ODKRĘCONEGO (base+timing dwa razy), a dla celu
+    // już tapniętego liczyło ją RAZ — dlatego drobny, odkręcony 1/1 wygrywał
+    // z groźną, tapniętą kreaturą. Całość wycenia gałąź `locking`; składowa
+    // „tap” jest wtedy milcząca (0).
+    if (tapAccompaniesLock && !locking) return 0;
+    // Tapnięcie już tapniętego permanentu (bez blokady) nic nie zmienia.
     if (target.tapped && !locking) return -12;
     // M202/F (uwaga właściciela, Twiddle): tapnięcie LANDU nie jest „zdjęciem
     // stworu z gry” — land nie atakuje i nie blokuje, a jego tapnięcie odbiera
@@ -2003,7 +2036,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // kartę”). Wartość landu wyznacza SAMO okno (tapTimingBonus): upkeep
     // przeciwnika +14, main przed deklaracją +12, main2/end we własnej turze -4.
     const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
-    const base = isLand ? 0 : 8 + 2 * (target.power ?? 0);
+    // O (2026-09-22): moc EFEKTYWNA (combatPower — z aurami/licznikami), nie
+    // surowe `power` wydruku: „3/3 (1/1 z aurą +2/+2)” ma być widziana jako 3/3.
+    const base = isLand ? 0 : 8 + 2 * combatPower(target);
     const timing = tapTimingBonus(view, target, { canWait });
     // M405 (uwaga z gry — Twiddle): pasmo „marnotrastwa” (timing ≤ −10 — brak
     // okna blokerskiego i brak potencjału ataku, patrz tapTimingBonus)
@@ -2015,7 +2050,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Efekt trzymający cel (Entrancing Lyre / Spectral Prison) działa przez
     // kolejne untapy, więc nie karzemy go za „złe” okno — ale premia za okno
     // optymalne wciąż mu się należy.
-    return base + (locking ? Math.max(0, timing) + 4 : timing);
+    //
+    // O (2026-09-22): cel JUŻ TAPNIĘTY dostaje DROBNY upust (M139 — przy tym
+    // samym stworze wersja odkręcona jest minimalnie lepsza, bo blokada
+    // zabiera mu i atak teraz, i całą następną turę). Upust jest jednak
+    // MNIEJSZY niż różnica wartości ciał, więc nie przewraca rankingu celów:
+    // groźna, tapnięta kreatura pozostaje lepszym celem niż drobiazg stojący
+    // odkręcony (sedno zgłoszenia O).
+    const alreadyTappedDiscount = locking && target.tapped ? 2 : 0;
+    //
+    // O (2026-09-22, Chill of the Grave): cel JUŻ TAPNIĘTY dostaje tę samą
+    // formułę co nietapnięty. „Nie odkręci się w następnym untap stepie”
+    // (CR 302.6, 701.20a) znaczy dla obu dokładnie to samo — stwór wypada
+    // z następnej tury — a cel tapnięty jest dodatkowo już teraz nieczynny.
+    // O wyborze decyduje więc SIŁA celu (baza `8 + 2·power` z mocy
+    // EFEKTYWNEJ, czyli z aurami: 1/1 z +2/+2 liczy się jak 3/3), a nie to,
+    // czy akurat stoi odkręcony.
+    return base + (locking ? Math.max(0, timing) + 4 - alreadyTappedDiscount : timing);
   };
 
   /**
@@ -4843,7 +4894,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const victims = effect.type === 'tap_permanents'
               ? (cmd.targets ?? []).map((id) => objectOnBoard(view, id)).filter(Boolean)
               : [objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target].filter(Boolean);
-            for (const victim of victims) score += tapTargetValue(view, victim, { locking, canWait });
+            // O (2026-09-22): czy TEN SAM czar niesie też blokadę odkręcania —
+            // wtedy „tap” na już tapniętym celu jest no-opem (0), nie błędem.
+            const tapAccompaniesLock = (effects ?? [])
+              .some((e) => LOCK_UNTAP_EFFECTS.has(e?.type));
+            for (const victim of victims) {
+              score += tapTargetValue(view, victim, { locking, canWait, tapAccompaniesLock });
+            }
           }
           // A (Savage Surge) — untap w savageLike jest już wyceniony w bloku pump (kombinacja +2/+2 + untap); nie liczymy podwójnie.
           // M146 (Twiddle — tryb Odkręcenie): `untap_permanent` odkręca CEL.
@@ -5737,7 +5794,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // tylko zdolność o szybkości instanta. Zdolność „activate only as
             // a sorcery” zagramy wyłącznie we własnej głównej fazie.
             const canWait = ability?.timing !== 'sorcery';
-            score += tapTargetValue(view, target, { locking, canWait });
+            // O (2026-09-22): ta sama reguła co dla czarów (L41).
+            const tapAccompaniesLock = (effects ?? [])
+              .some((e) => LOCK_UNTAP_EFFECTS.has(e?.type));
+            score += tapTargetValue(view, target, { locking, canWait, tapAccompaniesLock });
             // L (zgłoszenie z testów 2026-09-22, Entrancing Lyre): „Bot używa
             // jej zdolności natychmiast jak tylko ma chociaż jedną manę
             // i tapuje jakiegoś mojego tokena 1/1 zamiast poczekać do
