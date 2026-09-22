@@ -7112,6 +7112,18 @@ a `lethalThreat` przy blokowaniu uwzględnia atak infect.
 Pin: `test/uwagi-z-gry-2026-09-22-ghij.test.js` (12/12), matryca mutacji M-G,
 M-H, M-I1, M-I2, M-J — każda odwrócona poprawka czerwieni pin.
 
-Bramy: `run-tests all` **6152/6152**, build **59 modułów / 4032,0 kB**,
+**Doprecyzowanie właściciela (ta sama sesja) — weto zamiast kary.** „Nie chodzi
+o to, żeby był twardy zakaz wieloblokowania first strikera tylko zakaz blokowania
+jeśli drugi blokujący NIC nie wnosi bo ani nie zabija atakującego ani nie jest
+potrzebny (bo atakujący nie ma trample).” Kryterium jest odtąd MARGINALNE, nie
+progowe: bloker jest zbędny, gdy po JEGO usunięciu wynik wymiany się nie zmienia
+(wydzielony `blockKillsAttacker` przelicza zestaw bez niego) i zostaje ktoś, kto
+przyjmie obrażenia. Dwa 1/1 potrzebne RAZEM do zabicia 2/2 są więc oba potrzebne,
+a pod trample nikt nie jest zbędny. Wariant zawierający takiego blokera jest
+ODRZUCANY (`finish(NEVER)`), nie karany punktami — kara jest przebijalna premią
+(L3). Gdy zbędny jest ktokolwiek, odrzucany jest NAJDROŻSZY z ciał („wystarczyło
+zablokować najmniejszym”).
+
+Bramy: `run-tests all` **6155/6155**, build **59 modułów / 4034,0 kB**,
 `benchmark --quick` heuristic **86,6%** (582/672; baseline 85,7% — poprawa
 o 6 meczów). Bez nowych kart (ADR 0029).

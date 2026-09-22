@@ -163,6 +163,41 @@ function diesToDeathtouchBlocker(attacker, blockers) {
  * w gracza, CR 702.19b), więc dokładanie ciał wciąż ma sens — świadomy wyjątek
  * dokładnie taki, jaki wskazał właściciel („jeśli nie ma trample”).
  */
+/**
+ * Czy dany ZESTAW blokerów zabija atakującego, z uwzględnieniem kolejności
+ * obrażeń (CR 510.4): liczy się moc wyłącznie tych blokerów, którzy dożyją
+ * swojego kroku obrażeń (CR 702.7b), plus deathtouch (CR 702.2b).
+ * Wydzielone z `blockExchangeOf`, bo test „czy ten bloker cokolwiek wnosi”
+ * musi przeliczyć wynik BEZ niego (L41 — jedno źródło reguły).
+ */
+function blockKillsAttacker(attacker, blockers) {
+  const kw = attacker?.keywords ?? [];
+  if (kw.includes('indestructible')) return false;
+  const attackerPower = combatPower(attacker);
+  const attackerToughness = (attacker?.toughness ?? 0) - (attacker?.damage ?? 0);
+  const attackerFirst = kw.includes('first_strike') || kw.includes('double_strike');
+  const attackerDeathtouch = kw.includes('deathtouch');
+  const list = (blockers ?? []).filter(Boolean);
+  const effToughness = (b) => (b.toughness ?? 0) - (b.damage ?? 0);
+  const strikesFirst = (b) => {
+    const bkw = b.keywords ?? [];
+    return bkw.includes('first_strike') || bkw.includes('double_strike');
+  };
+  const killed = new Set();
+  let budget = attackerPower;
+  for (const b of [...list].sort((x, y) => effToughness(x) - effToughness(y))) {
+    if ((b.keywords ?? []).includes('indestructible')) continue;
+    const need = attackerDeathtouch ? Math.min(1, effToughness(b)) : effToughness(b);
+    if (need <= 0) continue;
+    if (budget >= need) { budget -= need; killed.add(b.id); }
+  }
+  const dealsDamage = (b) => !attackerFirst || strikesFirst(b) || !killed.has(b.id);
+  if (list.some((b) => (b.keywords ?? []).includes('deathtouch')
+    && combatPower(b) > 0 && dealsDamage(b))) return true;
+  const effectivePower = list.reduce((sum, b) => sum + (dealsDamage(b) ? combatPower(b) : 0), 0);
+  return effectivePower >= attackerToughness;
+}
+
 export function blockExchangeOf(attacker, blockers) {
   const attackerKw = attacker?.keywords ?? [];
   const attackerPower = combatPower(attacker);
@@ -224,43 +259,37 @@ export function blockExchangeOf(attacker, blockers) {
     blockerValueLost += (b.power ?? 0) + (b.toughness ?? 0);
   }
 
-  // Ilu blokerów jest ZBĘDNYCH: przy atakującym bez trample obrażenia i tak
-  // są w pełni zablokowane pierwszym ciałem, więc nadwyżkowy bloker kupuje
-  // coś tylko wtedy, gdy dokłada się do zabicia atakującego.
-  let wastedBlockers = 0;
+  // Ilu blokerów NIC NIE WNOSI (doprecyzowanie właściciela 2026-09-22):
+  // to nie jest „zakaz wieloblokowania first strikera”, tylko zakaz dokładania
+  // blokera, który ANI nie pomaga zabić atakującego, ANI nie jest potrzebny do
+  // wchłonięcia obrażeń (atakujący bez trample jest już w pełni zablokowany —
+  // CR 509.1h, obrażenia nie idą w gracza). Taki bloker może tylko zginąć.
+  //
+  // Test MARGINALNY, nie „ilu ich jest ponad potrzebę”: bloker jest zbędny,
+  // gdy po JEGO usunięciu wynik wymiany się nie zmienia (atakujący nadal ginie
+  // albo nadal nie ginie) i zostaje ktoś, kto przyjmie obrażenia. Dzięki temu
+  // dwa 1/1 potrzebne RAZEM do zabicia 2/2 są oba „potrzebne” (usunięcie
+  // któregokolwiek psuje zabicie), a drugi 1/1 pod 2/1 first strike — nie.
+  const uselessBlockerIds = [];
   if (!attackerTrample && list.length > 1) {
-    // Minimalny podzbiór, który daje TEN SAM skutek (zabicie albo samo
-    // wchłonięcie): bierzemy najtańszych blokerów (najniższa wartość ciała),
-    // bo dokładnie to zalecił właściciel („wystarczyło zablokować najmniejszym”).
-    const byValue = [...list].sort((x, y) =>
-      ((x.power ?? 0) + (x.toughness ?? 0)) - ((y.power ?? 0) + (y.toughness ?? 0)));
-    let needed = 1;
-    if (attackerDies) {
-      // ilu najmocniejszych (liczonych po EFEKTYWNEJ mocy) trzeba, by zabić
-      const byPower = [...list]
-        .filter((b) => dealsDamage(b))
-        .sort((x, y) => combatPower(y) - combatPower(x));
-      let sum = 0;
-      needed = 0;
-      for (const b of byPower) {
-        if (sum >= attackerToughness) break;
-        if ((b.keywords ?? []).includes('deathtouch') && combatPower(b) > 0) { needed = 1; sum = attackerToughness; break; }
-        sum += combatPower(b);
-        needed += 1;
+    // Kolejność sprawdzania od najcenniejszego ciała: jeśli zbędny jest
+    // ktokolwiek, chcemy odrzucić NAJDROŻSZEGO (właściciel: „wystarczyło
+    // zablokować najmniejszym stworem”).
+    const byValueDesc = [...list].sort((x, y) =>
+      ((y.power ?? 0) + (y.toughness ?? 0)) - ((x.power ?? 0) + (x.toughness ?? 0)));
+    let pozostali = [...list];
+    for (const kandydat of byValueDesc) {
+      if (pozostali.length <= 1) break; // ktoś musi przyjąć obrażenia
+      const bez = pozostali.filter((b) => b.id !== kandydat.id);
+      if (blockKillsAttacker(attacker, bez) === attackerDies) {
+        uselessBlockerIds.push(kandydat.id);
+        pozostali = bez;
       }
-      needed = Math.max(1, needed);
     }
-    wastedBlockers = Math.max(0, list.length - needed);
-    // Bloker nadwyżkowy, który i tak NIE ginie (za duży, żeby go zabić), jest
-    // tylko lekkim marnotrawstwem (tapnięte ciało) — liczymy wyłącznie tych,
-    // którzy realnie mogą zginąć za nic.
-    const nadwyzkoweGinace = byValue
-      .slice(needed)
-      .filter((b) => realnieGinie.has(b.id)).length;
-    wastedBlockers = Math.max(nadwyzkoweGinace, Math.min(wastedBlockers, nadwyzkoweGinace || wastedBlockers));
   }
+  const wastedBlockers = uselessBlockerIds.length;
 
-  return { attackerDies, blockerValueLost, wastedBlockers };
+  return { attackerDies, blockerValueLost, wastedBlockers, uselessBlockerIds };
 }
 
 /** Atakujący zadaje obrażenia PRZED blokerem (first/double strike, CR 702.7). */
@@ -6888,12 +6917,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           score -= blockerValueLost;
           // Koszt zaangażowania blokera (tapowany; nie pomoże innemu atakowi).
           score -= blockersUsed;
-          // I: bloker DOŁOŻONY ponad to, co potrzebne, jest czystą stratą —
-          // przy atakującym z first strike bez trample drugi i każdy kolejny
-          // bloker nie zmienia ani obrażeń w nas (0 — atak jest zablokowany),
-          // ani wyniku wymiany, a może zginąć. Kara liczona z modelu
-          // (`wastedBlockers`), nie z heurystyki „ilu ich jest”.
-          score -= 6 * exchange.wastedBlockers;
+          // I (doprecyzowanie właściciela 2026-09-22): to NIE jest zakaz
+          // wieloblokowania first strikera — to zakaz dokładania blokera,
+          // który NIC NIE WNOSI: ani nie pomaga zabić atakującego, ani nie
+          // jest potrzebny do wchłonięcia obrażeń (atakujący bez trample jest
+          // już w pełni zablokowany, CR 509.1h). Taki bloker może wyłącznie
+          // zginąć, więc wariant jest BEZ SENSU — odrzucamy go, zamiast
+          // wyceniać karą, którą inne premie mogłyby przebić (L3: kara musi
+          // być liczona względem premii, inaczej jest martwa).
+          // Wielobloki, w których każde ciało coś wnosi (dwa 1/1 zabijające
+          // 2/2, dokładanie ciał pod trample), przechodzą bez przeszkód.
+          if (exchange.wastedBlockers > 0) return finish(NEVER);
           // B3 — combat trick: gdy nasz blok ZABIJA atakującego, a przeciwnik
           // może mieć pump-instant i otwartą manę, blok jest ryzykowny (pump
           // ratuje atakującego i zabija nasz bloker). Pod presją śmiertelną

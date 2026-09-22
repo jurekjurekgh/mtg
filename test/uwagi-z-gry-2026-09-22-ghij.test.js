@@ -130,6 +130,32 @@ test('I: bloker z first strike po naszej stronie zabija atakującego BEZ strat',
   assert.equal(r.blockerValueLost, 0, 'atakujący padł, zanim zadał obrażenia (CR 702.7b)');
 });
 
+test('I: zbędny jest bloker, po którego usunięciu wynik się NIE zmienia (test marginalny)', () => {
+  // Doprecyzowanie właściciela: „zakaz blokowania jeśli drugi blokujący NIC nie
+  // wnosi bo ani nie zabija atakującego ani nie jest potrzebny (bo atakujący
+  // nie ma trample)”. Kryterium jest MARGINALNE, nie „ilu ich jest ponad miarę”.
+  // Dwa 1/1 potrzebne RAZEM, żeby zabić 2/2 — żaden nie jest zbędny.
+  const razem = blockExchangeOf(creature('a', 2, 2), [creature('b1', 1, 1), creature('b2', 1, 1)]);
+  assert.equal(razem.attackerDies, true);
+  assert.equal(razem.wastedBlockers, 0, 'usunięcie któregokolwiek psuje zabicie — obaj są potrzebni');
+});
+
+test('I: gdy ktoś jest zbędny, zbędny jest NAJDROŻSZY (blokuj najmniejszym)', () => {
+  // „wyznacza na wymianę dużego stwora zamiast 1/1… Wystarczyło, żeby
+  // zablokował najmniejszym swoim stworem.”
+  const r = blockExchangeOf(creature('a', 2, 1, ['first_strike']),
+    [creature('maly', 1, 1), creature('duzy', 5, 5)]);
+  assert.equal(r.attackerDies, true, '5/5 przeżywa 2 obrażenia i zabija atakującego');
+  assert.deepEqual(r.uselessBlockerIds, ['maly'],
+    'skoro 5/5 sam załatwia sprawę, 1/1 dokładany jest tylko po to, żeby zginąć');
+});
+
+test('I: wariant z blokerem, który nic nie wnosi, jest ODRZUCANY, nie tylko karany', () => {
+  const src = readFileSync(new URL('../src/controllers/heuristic-bot.js', import.meta.url), 'utf8');
+  assert.ok(/if \(exchange\.wastedBlockers > 0\) return finish\(NEVER\);/.test(src),
+    'bloker bez wkładu = wariant bez sensu; ma być weto, nie kara do przebicia premią');
+});
+
 // ─── J ───────────────────────────────────────────────────────────────────────
 
 test('J: trucizna jest drugim zegarem przegranej w ocenie obrony', () => {
