@@ -644,7 +644,58 @@ export function chooseOneOrBothPlanOf(commands) {
     arityOf.set(mode, [...arities][0]);
   }
   const maxArity = Math.max(...arityOf.values());
-  if (maxArity < 2) return null;
+  if (maxArity < 2) {
+    // Kształt B (uwaga z gry 2026-09-22 — Twiddle): same tryby 1-CELOWE
+    // („tapnięcie albo odkręcenie celu”, „kontra albo zwrot”, …). Właściciel:
+    // „zamiast modala wyboru wszystkich możliwych celów do tapnięcia
+    // i odtapowania dostaję jakieś losowe (pewnie pierwsze możliwe) targety —
+    // jeden do tapa, jeden do untapa”. Gniazdo = KAŻDY tryb (kandydaci tego
+    // trybu w wierszach 0–1); wypełnienie jednego gniazda = ten tryb z tym
+    // celem, więcej gniazd = brak komendy (czar jest „choose one”), zero = brak.
+    if (maxArity !== 1) return null; // tryby 0-celowe/mieszane → castMode (krok 1–2)
+    if (![...arityOf.values()].every((a) => a === 1)) return null;
+    const modeList = [...byMode.keys()].sort((a, b) => a - b);
+    if (modeList.length < 2) return null;
+    const slots = [];
+    const slotModes = [];
+    const modeSlot = new Map();
+    for (const [i, mode] of modeList.entries()) {
+      const ids = [];
+      for (const cmd of byMode.get(mode)) {
+        const id = cmd.targets[0];
+        if (id != null && !ids.includes(id)) ids.push(id);
+      }
+      if (ids.length === 0) return null;
+      slots.push(ids);
+      slotModes.push(mode);
+      modeSlot.set(mode, [i]);
+    }
+    const bySelection = new Map();
+    for (const cmd of options) {
+      const picks = new Array(modeList.length).fill('');
+      picks[modeSlot.get(cmd.modeIndex)[0]] = String(cmd.targets[0]);
+      bySelection.set(picks.join('|'), cmd);
+    }
+    const targets = [];
+    for (const ids of slots) for (const id of ids) if (!targets.includes(id)) targets.push(id);
+    return {
+      chooseOneOrBothMode: true,
+      oneOfModesShape: true,
+      type: 'cast_spell',
+      objectId,
+      modeIndex: null,
+      slots,
+      slotOptional: slots.map(() => true),
+      slotModes,
+      targets,
+      minTargets: 0,
+      maxTargets: slots.length,
+      hasX: false,
+      itemLabel: 'cele',
+      selectionHint: 'wskaż cel DOKŁADNIE jednej pozycji (0–1)',
+      bySelection,
+    };
+  }
   const comboModes = [...byMode.keys()].filter((m) => arityOf.get(m) === maxArity);
   if (comboModes.length !== 1) return null;
   const comboMode = comboModes[0];
@@ -698,6 +749,7 @@ export function chooseOneOrBothPlanOf(commands) {
     maxTargets: maxArity,
     hasX: false,
     itemLabel: 'cele',
+    selectionHint: 'wskaż 0–1 cel na każdą pozycję (co najmniej jedną)',
     bySelection,
   };
 }

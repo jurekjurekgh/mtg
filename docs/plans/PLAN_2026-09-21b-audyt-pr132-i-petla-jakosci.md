@@ -174,6 +174,25 @@ brzegu.” Klasa: modal wyboru ma pokazywać WSZYSTKICH kandydatów w pickerach
       PRZED `castModePlanOf` (M300/1); mutacje M-C1/M-C2 czerwienią V/1+V/2;
 - [x] C3. Model 3-mody katalogu bez zmian (piny `audit-batch23-fixes`).
 
+## Dodatek 3 (uwaga z gry, 2026-09-22): wszystkie czary modalne — klasa „pierwszy z brzegu” zamknięta
+
+Zgłoszenie (Twiddle): modal „Rzuć: Twiddle” pokazywał wiersze trybów
+z wpiętymi pierwszymi celami („jeden do tapa, jeden do untapa”) zamiast
+pickerów wszystkich możliwych celów; „Przejrzyj wszystkie czary modalne
+i popraw je, żeby NIE WYBIERAŁY UPROSZCZONEGO PIERWSZEGO TARGETU!!!!”.
+
+- [x] E1. Rozpoznanie: inwentarz 11 czarów modalnych = klasy A (vandalize),
+      B (twiddle/steel-sabotage/agate-assault/keep-out — same tryby
+      1-celowe), C (mieszane/0-celowe/varTV — 6 kart); sonda probe-twiddle
+      = 10 ofert, reps z dragonbroods-2 w obu wierszach;
+- [x] E2. Kształt B planu gniazd (jeden modal, picker 0–1 na tryb, mapa
+      WYBÓR→KOMENDA, „choose one” = dokładnie jedno gniazdo) + etykiety
+      kroku 1 = nazwy trybów z modelu (bez `labelChoiceOptions(reps)`) +
+      strażnik inwentarza CM/2 (klasy A/B/C jawne);
+- [x] E3. Piny CM/1–CM/4 (`test/uwaga-z-gry-czary-modalne-2026-09-22.test.js`),
+      V/3 zrewidowane, mutacje M-E1/M-E2; regresja rodziny 223/223; bramy
+      6113/6113, build 59/4002,0 kB — milestone **M406**.
+
 Wspólne (wykonane): bramy `run-tests all` **6106/6106**, build **59 modułów /
 3997,8 kB**, `tools/benchmark.mjs --quick` 672 mecze / heuristic 85,9%;
 docs: milestone **M405**, `PROJECT_HISTORY` (sekcja 2026-09-21c), README

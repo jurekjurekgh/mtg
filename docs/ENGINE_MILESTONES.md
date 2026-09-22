@@ -6866,3 +6866,44 @@ kart (ADR 0029). Bramy: `node tools/run-tests.mjs all` **6108/6108**
 --quick` **672 mecze, 0 niedokończonych** (heuristic **85,9%** — odniesienie
 bez zmian), budżet lektury **95 819/100 000**. Pełnego B0 nie uruchamiano
 (ADR 0018).
+
+## M406 (2026-09-22, PR #133) — uwaga z gry: WSZYSTKIE czary modalne bez „pierwszego z brzegu” targetu (klasa zamknięta)
+
+Zgłoszenie właściciela (Twiddle): „zamiast modala wyboru wszystkich
+możliwych celów do tapnięcia i odtapowania dostaję jakieś losowe (pewnie
+pierwsze możliwe) targety — jeden do tapa, jeden do untapa. ILE RAZY BĘDĘ
+POPRAWIAĆ TEN BŁĄD???? Przejrzyj wszystkie czary modalne i popraw je, żeby
+NIE WYBIERAŁY UPROSZCZONEGO PIERWSZEGO TARGETU!!!! Przed chwilą poprawiałeś
+Vandalize z identycznym błędem.” Pomiar (sonda probe-twiddle): rodzina
+Twiddle = 10 ofert (2 tryby × 5 celów), `chooseOneOrBothPlanOf` = null
+(wymagał trybu złożonego) → `castModePlanOf` pokazywał reprezentanty obu
+trybów z wpiętymi celami (oba = dragonbroods-2). Naprawa KLASY, nie karty:
+
+- **kształt B planu gniazd** (`chooseOneOrBothPlanOf`): same tryby
+  1-celowe (Twiddle „tapnięcie albo odkręcenie”, Steel Sabotage „kontra
+  albo zwrot”, Agate Assault, Keep Out) = JEDEN modal z pickerem 0–1 na
+  KAŻDY tryb (sekcja = tryb, wiersz = każdy kandydat); mapa WYBÓR→KOMENDA
+  jak w Vandalize, a „choose one” = dokładnie jedno gniazdo (dwa
+  wypełnione gaszą „Zatwierdź”). Etykiety gniazd = nazwy trybów
+  („Tapnięcie”/„Odkręcenie”).
+- **krok 1 `castModePlanOf` bez celów**: etykieta wiersza = NAZWA TRYBU
+  z modelu (`spell.modes[…].name`) — koniec z `labelChoiceOptions(reps)`,
+  które wpijało cel „pierwszy z brzegu” w wiersz. Kształty mieszane/0-celowe/
+  varTV (Robbers, Selesnya Charm, Fortify…) zostają przy dwustopniowym M2
+  (krok 2 = picker po pełnej liście — akceptowany kształt od zgłoszenia
+  Robbers).
+- **strażnik inwentarza CM/2**: każdy modalny czar w katalogu musi należeć
+  do klasy A (tryb złożony — Vandalize), B (same tryby 1-celowe — cztery
+  karty) albo C (mieszane/0-celowe/varTV — sześć kart); nowy czar modalny
+  = świadoma klasyfikacja + piny.
+
+Piny `test/uwaga-z-gry-czary-modalne-2026-09-22.test.js` CM/1–CM/4
+(Twiddle pickerowy modal + DOM: 8 wierszy, NIC wstępnie zaznaczonego,
+wybór gracza wiąże WYBRANY cel; inwentarz A/B/C; anty-over-fix
+varTV/0-celowe/mieszane/krzyżowy; źródło etykiet). V/3 zrewidowane
+(Twiddle-kształt = gniazda; varTV bez zmian). Mutacje M-E1 (gałąź B → null)
+czerwieni CM/1+1b+3; M-E2 (etykiety z powrotem z repów) czerwieni CM/4.
+
+Bramy: `node tools/run-tests.mjs all` **6113/6113** (~377 s), build
+**59 modułów / 4002,0 kB**; regresja rodziny kreatorów 223/223. Bez nowych
+lekcji i bez nowych kart (ADR 0029).

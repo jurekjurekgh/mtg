@@ -12233,3 +12233,28 @@ niedokończonych** (heuristic **85,9%**); budżet lektury **95 819/100 000**.
 Pełnego B0 nie uruchamiano (ADR 0018). Dokumentacja: milestone **M405**,
 `docs/plans/PLAN_2026-09-21b-audyt-pr132-i-petla-jakosci.md` (Dodatek 2),
 README.
+
+## 2026-09-22 — uwaga z gry: WSZYSTKIE czary modalne — żadnych opcji z wpiętym „pierwszym z brzegu” targetem (PR #133)
+
+Właściciel (Twiddle): „zamiast modala wyboru wszystkich możliwych celów do
+tapnięcia i odtapowania dostaję jakieś losowe (pewnie pierwsze możliwe)
+targety — jeden do tapa, jeden do untapa. ILE RAZY BĘDĘ POPRAWIAĆ TEN
+BŁĄD???? Przejrzyj wszystkie czary modalne i popraw je, żeby NIE WYBIERAŁY
+UPROSZCZONEGO PIERWSZEGO TARGETU!!!! Przed chwilą poprawiałeś Vandalize
+z identycznym błędem.”
+
+Klasa (nie karta): Vandalize zamknął jeden kształt („choose one or both”),
+a awaryjna gałąź `castModePlanOf` dalej pokazywała reprezentanty trybów
+z wpiętymi celami. Pomiar (probe-twiddle): oba wiersze Twiddle niosły
+dragonbroods-2 („pierwszy z brzegu”), `chooseOneOrBothPlanOf` = null dla
+kształtu 1-celowego. Naprawa: (1) kształt B planu gniazd — same tryby
+1-celowe (Twiddle/Steel Sabotage/Agate Assault/Keep Out) = jeden modal
+z pickerem 0–1 na każdy tryb („choose one” = dokładnie jedno gniazdo;
+mapa WYBÓR→KOMENDA, L48); (2) krok 1 `castModePlanOf` niesie wyłącznie
+NAZWY TRYBÓW z modelu (`spell.modes[…].name`) — cele wybiera krok 2 po
+pełnej liście (kształty mieszane/varTV — Robbers/Selesnya Charm/Fortify);
+(3) strażnik inwentarza CM/2: każdy czar modalny = klasa A/B/C z jawną
+listą — nowy wymaga klasyfikacji i pinów. Piny CM/1–CM/4 (DOM: 8 wierszy,
+nic wstępnie zaznaczonego), V/3 zrewidowane, mutacje M-E1/M-E2, regresja
+rodziny kreatorów 223/223 (M2 nietknięte). Bramy: `run-tests all`
+**6113/6113**, build **59 modułów / 4002,0 kB**. Milestone **M406**.

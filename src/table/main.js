@@ -508,7 +508,7 @@ function bootstrapTable() {
         plan: oneOrBothPlan,
         commands: request.options,
         slotLabels: oneOrBothLabels,
-        intro: `${choiceGroupTitle(request, session, choiceView)} — wskaż 0–1 cel na każdą pozycję (co najmniej jeden):`,
+        intro: `${choiceGroupTitle(request, session, choiceView)} — ${oneOrBothPlan.selectionHint ?? 'wskaż 0–1 cel na każdą pozycję (co najmniej jedną)'}:`,
         onOpenCard: openCardFullscreen,
         onOpenCardByCardId: openCardFullscreenByCardId,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
@@ -520,8 +520,15 @@ function bootstrapTable() {
     const castModePlan = castModePlanOf(request.options ?? []);
     if (castModePlan) {
       const modeOptions = request.options ?? [];
-      const repLabels = labelChoiceOptions(castModePlan.reps, session, choiceView);
-      castModePlan.rows = castModePlan.rows.map((row, i) => ({ ...row, label: repLabels[i] }));
+      // M406 (uwaga z gry 2026-09-22): wiersz kroku 1 NIGDY nie niesie
+      // wpiętego celu „pierwszy z brzegu” („jeden do tapa, jeden do untapa”
+      // z etykiet reprezentantów) — etykieta = NAZWA TRYBU z modelu, cele
+      // wybiera krok 2 (picker po pełnej liście kandydatów).
+      const modeNameList = session.state?.objects?.get(castModePlan.objectId)?.spell?.modes ?? [];
+      castModePlan.rows = castModePlan.rows.map((row, i) => ({
+        ...row,
+        label: modeNameList[castModePlan.modes[i]]?.name ?? `tryb ${castModePlan.modes[i] + 1}`,
+      }));
       renderMultiTargetWizard(els.choiceRequestBody, {
         view: choiceView,
         session,

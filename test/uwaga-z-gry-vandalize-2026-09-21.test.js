@@ -177,8 +177,17 @@ test('V/3 anty-over-fix: rodziny trybów celowanych i „up to N” NIE wpadają
     { type: 'cast_spell', objectId: 'tw', modeIndex: 1, targets: ['a'] },
     { type: 'cast_spell', objectId: 'tw', modeIndex: 1, targets: ['b'] },
   ];
-  assert.equal(chooseOneOrBothPlanOf(twiddleFamily), null, 'Twiddle bez gniazd — kaskada M2 bez zmian');
-  assert.ok(castModePlanOf(twiddleFamily), 'Twiddle dalej ma plan trybów (krok 1–2)');
+  // M406 (uwaga z gry 2026-09-22 — właściciel): Twiddle „tapnięcie albo
+  // odkręcenie celu” dostaje gniazda per tryb (kształt B) w JEDNYM modalu —
+  // kaskada castMode z wierszami „jeden do tapa, jeden do untapa” była
+  // zgłoszonym błędem klasy.
+  const twiddlePlan = chooseOneOrBothPlanOf(twiddleFamily);
+  assert.ok(twiddlePlan, 'Twiddle-kształt (same tryby 1-celowe) ma plan gniazd per tryb');
+  assert.deepEqual(twiddlePlan.slotModes, [0, 1], 'gniazdo na każdy tryb');
+  assert.equal(commandForChooseOneOrBoth(twiddlePlan, ['a', null])?.modeIndex, 0, 'wypełnione gniazdo 0 = tryb 0');
+  assert.equal(commandForChooseOneOrBoth(twiddlePlan, [null, 'b'])?.modeIndex, 1, 'wypełnione gniazdo 1 = tryb 1');
+  assert.equal(commandForChooseOneOrBoth(twiddlePlan, ['a', 'b']), null, 'oba gniazda = brak komendy („choose one”)');
+  assert.ok(castModePlanOf(twiddleFamily), 'awaryjny plan trybów zostaje dla kształtów mieszanych');
   // Robbers („up to 3” — mieszane długości w trybie) — null (jak dotąd).
   const robbersLike = [
     { type: 'cast_spell', objectId: 'rb', modeIndex: 0, targets: ['c1'] },
