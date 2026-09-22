@@ -6815,7 +6815,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // this turn" wycenia DEDYKOWANA polityka ataku (cmd.evasionGrant — jak
         // cmd.debuff/cmd.pump), nie ogólna gałąź friendly: ta umiała tylko
         // rozmiar celu, więc pod blokadą odkręcania wygrywał trup
-        // („na stalo tapnieta moja aura” — reżim C: tapnięcie, nie zatapianie).
+        // („na stalo tapnieta moja aura” — reżim C: forma tapnięcia).
         if (cmd.evasionGrant) {
           if (Array.isArray(cmd.targetIds)) {
             let esum = 0;
