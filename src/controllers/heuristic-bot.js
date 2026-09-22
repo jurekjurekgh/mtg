@@ -2852,13 +2852,48 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   /**
+   * N (zgłoszenie z testów 2026-09-22, aura warunkowa „+2/+2 dopóki <podtyp>,
+   * w przeciwnym razie nie może atakować ani blokować”): czy warunek
+   * UNIERUCHOMIENIA zajdzie na TYM gospodarzu?
+   *
+   * Aura warunkowa ma dwa rozłączne oblicza i o tym, które zadziała, decyduje
+   * konkretny gospodarz (CR 613.1d — warunki czytane read-time), a nie sama
+   * karta: na gospodarzu spełniającym warunek buffa jest czystym PREZENTEM,
+   * na każdym innym pacyfizmem. Bramka jest deskryptorem w danych karty
+   * (`hostLacksSubtype` / `hostHasSubtype`) — podtyp przychodzi z danych,
+   * kod nie zna żadnej konkretnej nazwy (ADR 0002).
+   *
+   * Zwraca `null`, gdy bramki nie ma (aura bezwarunkowa — zachowanie sprzed
+   * zgłoszenia), `true`/`false`, gdy warunek da się rozstrzygnąć dla celu.
+   */
+  function hostileConditionHolds(gate, host) {
+    if (!gate || gate === true || !host) return null;
+    const subtypes = host.subtypes ?? [];
+    if (typeof gate.hostLacksSubtype === 'string') return !subtypes.includes(gate.hostLacksSubtype);
+    if (typeof gate.hostHasSubtype === 'string') return subtypes.includes(gate.hostHasSubtype);
+    return null;
+  }
+
+  /**
    * Czy AURA/załącznik jest wrogą kotwicą (unieruchamia, blokuje atak)?
    * Taka aura na WŁASNYM stworze to strzał we własną stopę — a wycena
    * `cast_permanent` premiowała ją jak buff (+66), bo patrzyła tylko na to,
    * czy gospodarz jest nasz.
+   *
+   * N (2026-09-22): przy aurze WARUNKOWEJ wrogość liczy się względem
+   * `host` (gospodarza), bo ta sama karta bywa prezentem albo kajdanami.
    */
-  function auraIsHostile(descriptor, def) {
+  function auraIsHostile(descriptor, def, host = null) {
     if (descriptor) {
+      const cantAttackHolds = hostileConditionHolds(descriptor.cantAttack, host);
+      const cantBlockHolds = hostileConditionHolds(descriptor.cantBlock, host);
+      // Warunek rozstrzygnięty dla TEGO gospodarza — ufamy jemu, nie karcie.
+      if (cantAttackHolds === true || cantBlockHolds === true) return true;
+      if (cantAttackHolds === false || cantBlockHolds === false) {
+        // Unieruchomienie NIE zajdzie na tym gospodarzu: aura działa swoją
+        // drugą, korzystną stroną — nie jest kotwicą.
+        return false;
+      }
       if (descriptor.cantAttack || descriptor.cantBlock) return true;
       if (descriptor.locksUntap || descriptor.doesntUntap) return true;
       const pump = descriptor.pump;
@@ -3999,7 +4034,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // na własnym stworze to strzał we własną stopę, a wycena
           // premiowała ją jak każdą aurę, bo patrzyła tylko na to, czy
           // gospodarz jest nasz.
-          if (auraIsHostile(descriptor, card ? cardDef(card.cardId) : undefined)) {
+          // N (2026-09-22): wrogość liczona względem TEGO gospodarza —
+          // aura warunkowa bywa kajdanami albo prezentem, zależnie od celu.
+          if (auraIsHostile(descriptor, card ? cardDef(card.cardId) : undefined, target)) {
             if (!target) return finish(-P.auraNoTargetPenalty);
             const worth = (target.power ?? 0) + (target.toughness ?? 0);
             // M200/H (uwaga właściciela, Grounded): aura, KTÓRA ODBIERA
@@ -4036,7 +4073,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // + jego grob i wygnanie (strefy jawne, CR 400.2) — czyli to, co
           // przeciwnik JUZ pokazal. Reka i biblioteka pozostaja ukryte.
           const protectionQuality = descriptor?.protection ?? null;
-          const pumpDesc = descriptor?.pump ?? { power: 0, toughness: 0 };
+          // N (2026-09-22, aura warunkowa): pump bywa WARUNKOWY
+          // (`conditionalPump: [{ condition: { hostHasSubtype }, pump }]`) —
+          // silnik to stosuje (permanents.js), ale wycena czytała wyłącznie
+          // `descriptor.pump`, więc buff „+2/+2 dopóki Human” był dla bota
+          // zerem i własny Human wyglądał jak gorszy cel niż cudzy. Warunki
+          // czytamy read-time dla KONKRETNEGO gospodarza (CR 613.1d).
+          const conditionalPumpFor = (host) => (descriptor?.conditionalPump ?? [])
+            .filter((cp) => hostileConditionHolds(cp?.condition, host) !== false)
+            .reduce((sum, cp) => ({
+              power: sum.power + (cp?.pump?.power ?? 0),
+              toughness: sum.toughness + (cp?.pump?.toughness ?? 0),
+            }), { power: 0, toughness: 0 });
+          const basePumpDesc = descriptor?.pump ?? { power: 0, toughness: 0 };
+          const condPump = conditionalPumpFor(target);
+          const pumpDesc = {
+            power: (basePumpDesc.power ?? 0) + condPump.power,
+            toughness: (basePumpDesc.toughness ?? 0) + condPump.toughness,
+          };
           const isPureProtection = protectionQuality
             && !descriptor?.chooseColor
             && (pumpDesc.power ?? 0) === 0 && (pumpDesc.toughness ?? 0) === 0

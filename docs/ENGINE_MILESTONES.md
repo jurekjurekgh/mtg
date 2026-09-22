@@ -7169,3 +7169,45 @@ M-M — każda odwrócona poprawka czerwieni pin.
 Bramy: `run-tests all` **6162/6162**, build **59 modułów / 4038,3 kB**,
 `benchmark --quick` heuristic **86,6%** (582/672, bez regresji). Bez nowych kart
 (ADR 0029).
+
+## M412 — uwaga z gry 2026-09-22 (N): aura WARUNKOWA wyceniana względem gospodarza
+
+Zgłoszenie (Bonds of Faith — „Enchanted creature gets +2/+2 as long as it's
+a Human. Otherwise, it can't attack or block.”): „Bot rzuca ten czar na moją
+kreaturę, typu human. Dostaję +2/+2. Świetny scoring! Może niech od razu klika
+w »poddaję się«. Masakra.”
+
+Pomiar śladem bota (3 lądy, aura w ręce, po obu stronach Human i nie-Human)
+pokazał wycenę **dokładnie odwróconą** na obu warunkowych gałęziach karty:
+
+| cel | co karta robi | przed | po |
+|---|---|---|---|
+| wrogi Human | +2/+2 — PREZENT | **+67,5** | **−45** |
+| wrogi nie-Human | pacyfizm | +69,3 | +69,3 |
+| własny Human | +2/+2 — buff | **−67,5** | **+71,1** |
+
+Dwie przyczyny, obie klasowe (ADR 0002):
+
+1. **Wrogość aury liczona z karty, nie z gospodarza.** `auraIsHostile` zwracała
+   `true`, gdy deskryptor NIÓSŁ `cantAttack`/`cantBlock`, nie patrząc na bramkę
+   warunku. Aura warunkowa ma dwa rozłączne oblicza i o tym, które zadziała,
+   decyduje konkretny gospodarz (CR 613.1d — warunki czytane read-time). Nowy
+   `hostileConditionHolds(gate, host)` rozstrzyga bramkę
+   (`hostLacksSubtype` / `hostHasSubtype`) dla CELU; `auraIsHostile` przyjmuje
+   odtąd gospodarza. Aury bez bramki zachowują się jak dotąd (M121).
+2. **Warunkowy pump niewidoczny dla wyceny.** Buff siedzi w `conditionalPump`
+   (silnik go stosuje — `permanents.js`), a wycena czytała wyłącznie
+   `descriptor.pump`, więc „+2/+2 dopóki <podtyp>” było dla bota zerem i własny
+   gospodarz wypadał gorzej niż cudzy. Pump warunkowy jest teraz sumowany dla
+   celu, który spełnia warunek.
+
+Podtyp pochodzi wyłącznie z danych karty — kod nie zna żadnej nazwy ani podtypu
+(strażnik M212 pilnuje tego i złapał pierwszą wersję komentarza).
+
+Pin: `test/uwaga-z-gry-2026-09-22-n-bonds-of-faith.test.js` (4/4), mutacje
+M-N1' (ślepa bramka warunku), M-N2 (gospodarz nieprzekazany), M-N3' (warunkowy
+pump niewidoczny) — każda czerwieni pin.
+
+Bramy: `run-tests all` **6166/6166**, build **59 modułów / 4041,4 kB**,
+`benchmark --quick` heuristic **86,6%** (582/672, bez regresji). Bez nowych kart
+(ADR 0029).

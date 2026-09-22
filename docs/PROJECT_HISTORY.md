@@ -12345,3 +12345,13 @@ i `cast_escape`, ale nie `cast_flashback` (L41).
 
 Pin `test/uwagi-z-gry-2026-09-22-klm.test.js` (7/7) + matryca mutacji. Benchmark bez
 regresji (86,6%). Szczegóły: **M411** w `docs/ENGINE_MILESTONES.md`.
+
+### 2026-09-22 (N) — aura warunkowa: wycena względem gospodarza
+
+Bot rzucał Bonds of Faith na Humana PRZECIWNIKA, darując mu +2/+2, a własnego
+Humana traktował jak strzał w stopę — wycena była odwrócona na obu gałęziach karty
+(zmierzone: +67,5 dla wroga, −67,5 dla siebie). Powody: `auraIsHostile` czytała
+`cantAttack`/`cantBlock` z karty, ignorując bramkę warunku, a warunkowy pump
+(`conditionalPump`) w ogóle nie wchodził do wyceny. Oba naprawione klasowo —
+o obliczu aury decyduje konkretny gospodarz (CR 613.1d). Po naprawie: własny Human
++71,1, wrogi Human −45. Szczegóły: **M412**.
