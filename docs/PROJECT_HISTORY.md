@@ -12315,3 +12315,20 @@ i osobny, węższy predykat `isSilentManaAbility` (wyciszamy tylko czyste
 utrwalał zgłoszony błąd. Bramy: **6140/6140**, build **59 / 4021,7 kB**,
 benchmark **85,7%** (576/672).
 
+### 2026-09-22 (G/H/I/J) — cztery uwagi z gry: koszt triggera, jawny kicker, first strike, trucizna
+
+Właściciel zgłosił cztery rzeczy z jednej partii. **G**: Panic Spellbomb (bezbarwny
+artefakt z pipem {R} w opcjonalnej płatności triggera) trafiał do talii WU, gdzie
+jego zdolności nie da się opłacić — generator talii nie czytał `trigger.payColors`.
+**H**: Kor Sanctifiers wchodził kicked, ale ani log, ani „Rozgrywka” o tym nie
+mówiły — flaga `kicked` istniała tylko dla triggerów. **I**: bot nie umiał blokować
+first strikerów — wieloblok bez lethala i bez trample to czysta strata, a na wymianę
+wyznaczał dużego stwora zamiast najmniejszego; wycena bloku porównywała gołe sumy
+mocy, więc kolejność obrażeń (CR 510.4) dla bota nie istniała. **J**: bot przy
+6 licznikach trucizny i 20 życiach atakował wszystkim i ginął od 5/5 z infect —
+ocena obrony znała tylko zegar życia.
+
+Wszystkie cztery naprawione u root cause, klasami (ADR 0002), z pinem
+`test/uwagi-z-gry-2026-09-22-ghij.test.js` (12/12) i matrycą mutacji. Benchmark bota
+poprawił się 85,7% → 86,6%. Szczegóły: **M410** w `docs/ENGINE_MILESTONES.md`.
+

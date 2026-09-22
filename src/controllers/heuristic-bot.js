@@ -137,6 +137,132 @@ function diesToDeathtouchBlocker(attacker, blockers) {
   });
 }
 
+/**
+ * I (zgłoszenie z testów 2026-09-22, Porcelain Legionnaire — dotyczy KLASY
+ * first strike): „Bot nie umie blokować ataków kreatur z first strike. Blokuje
+ * wieloma kreaturami, które giną, bo rozdzielam tak obrażenia, żeby zabić jak
+ * najwięcej, a sam nic nie tracę, bo ich atak nie wchodzi we mnie. Jeśli
+ * kreatura z first strike nie ma trample, to blokowanie więcej niż jedną
+ * kreaturą w momencie braku lethala nie ma sensu. Innym razem bot wyraźnie
+ * myśli, że zabije moją kreaturę, bo wyznacza na wymianę dużego stwora zamiast
+ * 1/1… Wystarczyło, żeby zablokował najmniejszym swoim stworem.”
+ *
+ * Model wymiany blokowej z KOLEJNOŚCIĄ obrażeń (CR 510.4: krok first strike
+ * poprzedza krok zwykły; CR 702.7b — stwór zabity w pierwszym kroku nie zadaje
+ * obrażeń w drugim). Dotąd wycena porównywała gołe sumy mocy, więc first strike
+ * atakującego był dla bota niewidzialny — stąd oba objawy ze zgłoszenia.
+ *
+ * Zwraca (bez punktów — punkty nadaje `declare_blockers`, L28/L41):
+ *  • `attackerDies` — czy atakujący naprawdę ginie (deathtouch albo suma mocy
+ *    blokerów, KTÓRZY PRZEŻYJĄ do swojego kroku obrażeń, ≥ jego wytrzymałość);
+ *  • `blockerValueLost` — wartość blokerów, które realnie giną;
+ *  • `wastedBlockers` — ilu blokerów NIE zmienia wyniku (ani nie dokłada się do
+ *    zabicia, ani nie musi wchłonąć obrażeń), a może zginąć.
+ *
+ * Atakujący z TRAMPLE nie ma „zbędnych” blokerów (nadwyżka obrażeń przechodzi
+ * w gracza, CR 702.19b), więc dokładanie ciał wciąż ma sens — świadomy wyjątek
+ * dokładnie taki, jaki wskazał właściciel („jeśli nie ma trample”).
+ */
+export function blockExchangeOf(attacker, blockers) {
+  const attackerKw = attacker?.keywords ?? [];
+  const attackerPower = combatPower(attacker);
+  const attackerToughness = (attacker?.toughness ?? 0) - (attacker?.damage ?? 0);
+  const attackerFirst = attackerKw.includes('first_strike') || attackerKw.includes('double_strike');
+  const attackerDeathtouch = attackerKw.includes('deathtouch');
+  const attackerTrample = attackerKw.includes('trample');
+  const list = (blockers ?? []).filter(Boolean);
+
+  const effToughness = (b) => (b.toughness ?? 0) - (b.damage ?? 0);
+  const strikesFirst = (b) => {
+    const kw = b.keywords ?? [];
+    return kw.includes('first_strike') || kw.includes('double_strike');
+  };
+  // Obrażenia atakującego rozdziela ATAKUJĄCY (CR 510.1c) — zakładamy grę
+  // obrońcy przeciw nam: zabija tylu blokerów, ilu może (dokładnie to opisał
+  // właściciel: „rozdzielam tak obrażenia, żeby zabić jak najwięcej”).
+  // Kolejność: najtańsi w obrażeniach najpierw (rosnąca wytrzymałość).
+  const killOrder = [...list].sort((x, y) => effToughness(x) - effToughness(y));
+  const killedByAttacker = new Set();
+  let budget = attackerPower;
+  for (const b of killOrder) {
+    if ((b.keywords ?? []).includes('indestructible')) continue;
+    const need = attackerDeathtouch ? Math.min(1, effToughness(b)) : effToughness(b);
+    if (need <= 0) continue;
+    if (budget >= need) {
+      budget -= need;
+      killedByAttacker.add(b.id);
+    }
+  }
+
+  // Krok 1 (first strike): kto zdąży zadać obrażenia, zanim padnie.
+  // Bloker bez first strike, zabity przez atakującego z first strike, NIE
+  // zadaje obrażeń (CR 702.7b) — to jest sedno zgłoszenia.
+  const dealsDamage = (b) => {
+    if (!attackerFirst) return true;          // równoczesny krok — zawsze zadaje
+    if (strikesFirst(b)) return true;          // sam bije w pierwszym kroku
+    return !killedByAttacker.has(b.id);        // przeżył pierwszy krok
+  };
+  const effectivePower = list.reduce((sum, b) => sum + (dealsDamage(b) ? combatPower(b) : 0), 0);
+  const deathtouchKill = list.some((b) => (b.keywords ?? []).includes('deathtouch')
+    && combatPower(b) > 0 && dealsDamage(b))
+    && !attackerKw.includes('indestructible');
+  const attackerDies = deathtouchKill
+    || (!attackerKw.includes('indestructible') && effectivePower >= attackerToughness);
+
+  // Blokerzy giną, jeśli dostali śmiertelne obrażenia — chyba że ZABILI
+  // atakującego w kroku first strike, zanim zdążył cokolwiek zadać
+  // (CR 702.7b, lustro sytuacji wyżej).
+  const attackerKilledFirst = attackerDies && !attackerFirst
+    && list.some((b) => strikesFirst(b) && dealsDamage(b))
+    && list.filter((b) => strikesFirst(b)).reduce((sum, b) => sum + combatPower(b), 0) >= attackerToughness;
+  let blockerValueLost = 0;
+  const realnieGinie = new Set();
+  for (const b of list) {
+    if (!killedByAttacker.has(b.id)) continue;
+    if (attackerKilledFirst) continue; // atakujący padł, zanim zadał obrażenia
+    realnieGinie.add(b.id);
+    blockerValueLost += (b.power ?? 0) + (b.toughness ?? 0);
+  }
+
+  // Ilu blokerów jest ZBĘDNYCH: przy atakującym bez trample obrażenia i tak
+  // są w pełni zablokowane pierwszym ciałem, więc nadwyżkowy bloker kupuje
+  // coś tylko wtedy, gdy dokłada się do zabicia atakującego.
+  let wastedBlockers = 0;
+  if (!attackerTrample && list.length > 1) {
+    // Minimalny podzbiór, który daje TEN SAM skutek (zabicie albo samo
+    // wchłonięcie): bierzemy najtańszych blokerów (najniższa wartość ciała),
+    // bo dokładnie to zalecił właściciel („wystarczyło zablokować najmniejszym”).
+    const byValue = [...list].sort((x, y) =>
+      ((x.power ?? 0) + (x.toughness ?? 0)) - ((y.power ?? 0) + (y.toughness ?? 0)));
+    let needed = 1;
+    if (attackerDies) {
+      // ilu najmocniejszych (liczonych po EFEKTYWNEJ mocy) trzeba, by zabić
+      const byPower = [...list]
+        .filter((b) => dealsDamage(b))
+        .sort((x, y) => combatPower(y) - combatPower(x));
+      let sum = 0;
+      needed = 0;
+      for (const b of byPower) {
+        if (sum >= attackerToughness) break;
+        if ((b.keywords ?? []).includes('deathtouch') && combatPower(b) > 0) { needed = 1; sum = attackerToughness; break; }
+        sum += combatPower(b);
+        needed += 1;
+      }
+      needed = Math.max(1, needed);
+    }
+    wastedBlockers = Math.max(0, list.length - needed);
+    // Bloker nadwyżkowy, który i tak NIE ginie (za duży, żeby go zabić), jest
+    // tylko lekkim marnotrawstwem (tapnięte ciało) — liczymy wyłącznie tych,
+    // którzy realnie mogą zginąć za nic.
+    const nadwyzkoweGinace = byValue
+      .slice(needed)
+      .filter((b) => realnieGinie.has(b.id)).length;
+    wastedBlockers = Math.max(nadwyzkoweGinace, Math.min(wastedBlockers, nadwyzkoweGinace || wastedBlockers));
+  }
+
+  return { attackerDies, blockerValueLost, wastedBlockers };
+}
+
 /** Atakujący zadaje obrażenia PRZED blokerem (first/double strike, CR 702.7). */
 function attackerStrikesFirst(attacker, blockers) {
   const kw = attacker?.keywords ?? [];
@@ -2096,6 +2222,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   const enemyCrackbackPower = (view) => enemyCreatures(view)
     .filter((o) => o.cantAttackStatic !== true)
+    .reduce((sum, o) => sum + combatPower(o), 0);
+  /**
+   * J (zgłoszenie z testów 2026-09-22): „Mam na stole kreaturę 5/5 z Infect.
+   * Bot ma 6 znaczników trucizny i 20 życia. Mimo że zaraz zginie od trucizny,
+   * atakuje mnie wszystkimi kreaturami i zostaje odkryty na mój wjazd
+   * z Infect. Ginie od 11 poison counterów. Widocznie patrzy tylko na życie,
+   * a w ogóle nie ocenia ryzyka trucizny.”
+   *
+   * Bot ma DWA zegary śmierci (CR 104.3b życie, CR 104.3c/704.5c dziesięć
+   * liczników trucizny), ale cała ocena obrony liczyła tylko obrażenia
+   * w życie. Stwór z infect nie zadaje graczowi obrażeń — daje liczniki
+   * (CR 702.90b) — więc jego moc NIE zwiększała `enemyCrackbackPower`… a
+   * raczej zwiększała ją w złej walucie: 5 mocy infect przy 20 życiach wygląda
+   * niegroźnie, choć przy 6 licznikach zabija.
+   *
+   * Te dwie funkcje liczą ryzyko w walucie TRUCIZNY, symetrycznie do modelu
+   * życia (garda = suma wytrzymałości obrońców zostających w domu).
+   */
+  const myPoison = (view) => view.players.find((p) => p.id === view.playerId)?.poison ?? 0;
+  const enemyInfectCrackbackPower = (view) => enemyCreatures(view)
+    .filter((o) => o.cantAttackStatic !== true && hasKeyword(o, 'infect'))
     .reduce((sum, o) => sum + combatPower(o), 0);
   // M91 (A2): moc stworów przeciwnika, które JUŻ atakują — miara realnego
   // zagrożenia w tej turze (fog ratuje życie tylko wtedy, gdy coś nadlatuje).
@@ -6578,9 +6725,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
         }
         const crackbackPower = Math.max(0, enemyCrackbackPower(view) - forcedBlockLoss);
-        const survivedBefore = crackbackPower - guardToughness([]) < myLife(view);
-        const survivesAfter = crackbackPower - guardToughness(attackers) < myLife(view);
-        const throwsGuard = !winsNow && crackbackPower > 0 && attackers.length > 0
+        // J (2026-09-22): drugi zegar — TRUCIZNA. Kontratak stworem z infect
+        // nie zdejmuje życia, tylko dokłada liczniki (CR 702.90b), a przegraną
+        // orzeka SBA przy dziesięciu (CR 704.5c). Ten sam model gardy, inna
+        // waluta: brakujące liczniki zamiast życia.
+        const infectCrackback = Math.max(0, enemyInfectCrackbackPower(view) - forcedBlockLoss);
+        const poisonHeadroom = POISON_LOSS_LIMIT - myPoison(view);
+        const survivedBefore = crackbackPower - guardToughness([]) < myLife(view)
+          && infectCrackback - guardToughness([]) < poisonHeadroom;
+        const survivesAfter = crackbackPower - guardToughness(attackers) < myLife(view)
+          && infectCrackback - guardToughness(attackers) < poisonHeadroom;
+        const throwsGuard = !winsNow && (crackbackPower > 0 || infectCrackback > 0)
+          && attackers.length > 0
           && survivedBefore && !survivesAfter;
         // Zegar (B1): gramy o czas, gdy wróg jest blisko śmierci, może nas
         // zabić w następnej turze albo nasza biblioteka się kończy — wtedy
@@ -6681,7 +6837,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // presją śmiertelną dotyczy wyłącznie wariantu pustego; warianty
         // blokujące oceniamy bez tej kary.
         const threat = enemyAttackPower(view);
-        const lethalThreat = threat >= myLife(view);
+        // J (2026-09-22): śmiertelne jest też to, co dobija TRUCIZNĄ — atak
+        // 5/5 infect przy 6 licznikach zabija mimo 20 życia (CR 702.90b,
+        // 704.5c). Bez tego bot nie widział przymusu bloku i przepuszczał
+        // zabójczy atak, bo „życia mam dużo”.
+        const infectThreat = (view.combat?.attackers ?? [])
+          .map((id) => objectOnBoard(view, id))
+          .filter((o) => o && hasKeyword(o, 'infect'))
+          .reduce((sum, o) => sum + combatPower(o), 0);
+        const lethalThreat = threat >= myLife(view)
+          || infectThreat >= POISON_LOSS_LIMIT - myPoison(view);
         // M146 (znalezisko właściciela): atakujący z combat.attackers to realne
         // zagrożenie tej walki (enemyAttackPower liczy wszystkie wrogie stwory);
         // blok, który POZOSTAWIA nas przy życiu po śmiertelnym ataku, jest
@@ -6701,35 +6866,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // zagrożenie, a karzemy tylko realną stratę blokerów.
           const attackerPower = combatPower(attackerObj);
           const attackerToughness = (attackerObj.toughness ?? 0) - (attackerObj.damage ?? 0);
-          let totalBlockerPower = 0;
-          let blockerValueLost = 0;
-          let blockersUsed = 0;
           const blockerObjs = [];
           for (const blockerId of blockerIds) {
             const blocker = objectOnBoard(view, blockerId);
-            if (!blocker) continue;
-            blockerObjs.push(blocker);
-            blockersUsed += 1;
-            totalBlockerPower += combatPower(blocker);
-            const blockerDies = attackerPower >= (blocker.toughness ?? 0) - (blocker.damage ?? 0);
-            if (blockerDies) blockerValueLost += (blocker.power ?? 0) + (blocker.toughness ?? 0);
+            if (blocker) blockerObjs.push(blocker);
           }
+          const blockersUsed = blockerObjs.length;
+          // I (zgłoszenie z testów 2026-09-22, Porcelain Legionnaire): wymianę
+          // liczy model znający KOLEJNOŚĆ obrażeń (CR 510.4) — patrz
+          // `blockExchangeOf`. Dotąd wycena porównywała gołe sumy mocy, więc
+          // first strike atakującego nie istniał: bot dokładał blokerów do
+          // „multi-block kill”, który nigdy nie następował, i ginęły wszystkie.
+          const exchange = blockExchangeOf(attackerObj, blockerObjs);
+          const attackerDies = exchange.attackerDies;
+          const blockerValueLost = exchange.blockerValueLost;
           // Zablokowane obrażenia = uratowane życie.
           score += attackerPower;
           stoppedDamage += attackerPower;
-          // M153/B + F-B (finding właściciela): atakujący ginie, gdy łączna moc
-          // blokerów >= jego wytrzymałość (multi-block kill, CR 510.1) ALBO gdy
-          // któryś z żywych blokerów ma deathtouch i moc > 0 — jedno obrażenie
-          // jest śmiertelne (CR 702.2b), więc pojedynczy 1/2 deathtouch zabija
-          // 4/4. Dotąd `attackerDies` liczyło tylko surową sumę mocy i bot
-          // dokładał zbędnych blokerów, choć deathtouch i tak rozstrzygał.
-          const attackerDies = diesToDeathtouchBlocker(attackerObj, blockerObjs)
-            || totalBlockerPower >= attackerToughness;
           if (attackerDies) score += attackerPower * 2 + attackerToughness;
           // Koszt: utracone blokery.
           score -= blockerValueLost;
           // Koszt zaangażowania blokera (tapowany; nie pomoże innemu atakowi).
           score -= blockersUsed;
+          // I: bloker DOŁOŻONY ponad to, co potrzebne, jest czystą stratą —
+          // przy atakującym z first strike bez trample drugi i każdy kolejny
+          // bloker nie zmienia ani obrażeń w nas (0 — atak jest zablokowany),
+          // ani wyniku wymiany, a może zginąć. Kara liczona z modelu
+          // (`wastedBlockers`), nie z heurystyki „ilu ich jest”.
+          score -= 6 * exchange.wastedBlockers;
           // B3 — combat trick: gdy nasz blok ZABIJA atakującego, a przeciwnik
           // może mieć pump-instant i otwartą manę, blok jest ryzykowny (pump
           // ratuje atakującego i zabija nasz bloker). Pod presją śmiertelną

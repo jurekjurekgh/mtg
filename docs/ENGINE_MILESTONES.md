@@ -7063,3 +7063,55 @@ pozostaje wykluczony.
 Bramy: `run-tests all` **6140/6140**, build **59 modułów / 4021,7 kB**,
 `benchmark --quick` heuristic **85,7%** (576/672). Bez nowych kart (ADR 0029).
 
+## M410 — cztery uwagi z gry 2026-09-22 (G/H/I/J): pip w koszcie triggera, jawny kicker, blokowanie first strike, trucizna jako drugi zegar
+
+**G — Panic Spellbomb do talii, która UMIE opłacić jej pip.** Zgłoszenie: „Kolejna
+karta, która jest bezbarwna, ale ma specjalną zdolność opłacaną czerwoną maną.
+Powinna być rozdawana do talii, które mają czerwony, a nie do WU.” Pip {R} tej
+karty siedzi w `trigger.payColors` (opcjonalna płatność triggera „dies”), a
+`abilityCostColorsOf` w `tools/generate-plan-decks.mjs` czytał wyłącznie
+`ability.cost.*` i `spell.*` — pip był niewidoczny dla podziału talii, więc karta
+lądowała w `mirrodin-wu`, gdzie jej zdolności NIE DA SIĘ użyć. Klasa (ADR 0002):
+każdy kolorowy pip w koszcie DO ZAPŁACENIA należy do tożsamości kolorystycznej
+karty (CR 903.4), niezależnie od tego, czy to koszt aktywacji, czy opcjonalna
+płatność triggera. Efekt regeneracji: Panic Spellbomb i Horizon Spellbomb
+przeszły `mirrodin-wu` → `mirrodin-brg` (README zaktualizowany).
+
+**H — opłacony kicker widoczny dla gracza.** Zgłoszenie (Kor Sanctifiers):
+„Wchodzi Kicked. Nie ma informacji o tym, że zapłacono Kick ani w Rozgrywka, ani
+w logu.” Zdarzenia rzutu niosły `kicked` wyłącznie dla TRIGGERÓW („if it was
+kicked”, CR 702.33a), a warstwa opisu ich nie czytała. Nowy, czysty
+`paidExtraCostSuffix(e)` w `src/table/session.js` dokleja „— kicker opłacony”
+(i offspring — ta sama klasa dodatkowego kosztu) w OBU gałęziach rzutu
+(`permanent_cast`, `spell_cast`); ponieważ log i „Rozgrywka” idą przez jedno
+`describeEvent`, jedna poprawka zamyka oba miejsca (L41).
+
+**I — przepisane blokowanie stworów z first strike.** Zgłoszenie: „Bot nie umie
+blokować ataków kreatur z first strike. Blokuje wieloma kreaturami, które giną…
+Jeśli kreatura z first strike nie ma trample, to blokowanie więcej niż jedną
+kreaturą w momencie braku lethala nie ma sensu. (…) wyznacza na wymianę dużego
+stwora zamiast 1/1.” Wycena `declare_blockers` porównywała gołe SUMY MOCY, więc
+first strike atakującego nie istniał w modelu: bot dokładał blokerów do
+„multi-block kill”, który nigdy nie następował. Nowy `blockExchangeOf(attacker,
+blockers)` liczy wymianę z KOLEJNOŚCIĄ obrażeń (CR 510.4; CR 702.7b — stwór
+zabity w pierwszym kroku nie zadaje obrażeń w drugim): moc liczy się tylko
+blokerom, którzy dożyją swojego kroku, a `wastedBlockers` (blokerzy ginący, nie
+zmieniając wyniku) są karani. Trample to świadomy wyjątek — nadwyżka obrażeń
+przechodzi w gracza (CR 702.19b), więc dokładanie ciał wciąż ma sens.
+
+**J — trucizna jako drugi zegar przegranej w OBRONIE.** Zgłoszenie: „Mam na stole
+kreaturę 5/5 z Infect. Bot ma 6 znaczników trucizny i 20 życia. Mimo że zaraz
+zginie od trucizny, atakuje mnie wszystkimi kreaturami (…). Ginie od 11 poison
+counterów.” Model gardy i `lethalThreat` liczyły wyłącznie obrażenia w życie —
+po stronie ATAKU zegar trucizny istniał (C-R5), po stronie OBRONY nie. Stwór
+z infect nie zadaje graczowi obrażeń, tylko liczniki (CR 702.90b), a przegraną
+orzeka SBA przy dziesięciu (CR 104.3c / 704.5c). Garda liczona jest odtąd
+symetrycznie w obu walutach (`enemyInfectCrackbackPower`, `poisonHeadroom`),
+a `lethalThreat` przy blokowaniu uwzględnia atak infect.
+
+Pin: `test/uwagi-z-gry-2026-09-22-ghij.test.js` (12/12), matryca mutacji M-G,
+M-H, M-I1, M-I2, M-J — każda odwrócona poprawka czerwieni pin.
+
+Bramy: `run-tests all` **6152/6152**, build **59 modułów / 4032,0 kB**,
+`benchmark --quick` heuristic **86,6%** (582/672; baseline 85,7% — poprawa
+o 6 meczów). Bez nowych kart (ADR 0029).

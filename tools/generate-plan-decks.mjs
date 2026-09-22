@@ -50,6 +50,15 @@ function isNonBasic(card) {
  * Chocobo tworzy zielonego ptaka, ale sam jest czerwony). Pipy ukryte głębiej
  * niż jedno piętro (np. w `additionalCost.*`) też pomijamy — katalog dziś ich
  * nie ma, a reguła ma zostać czytelna (nowy kształt danych = świadoma decyzja).
+ *
+ * G (zgłoszenie z testów 2026-09-22, Panic Spellbomb): „Artefakt bezbarwny
+ * z możliwością specjalnej zdolności płaconej czerwoną maną. Powinien trafić
+ * do talii z R, a nie WU.” Karta trzymała pip {R} w `trigger.payColors`
+ * („When this artifact is put into a graveyard…, you may pay {R}”), a skan
+ * czytał wyłącznie `ability.cost` — pip był niewidzialny i Spellbomb wylądował
+ * w mirrodin-wu, gdzie jego triggera NIE DA SIĘ opłacić. Płatność opcjonalna
+ * w wyzwalaczu to nadal koszt many w kosztach zdolności karty (CR 903.4), więc
+ * `trigger.payColors` wchodzi do tożsamości tak samo jak `cost.colors`.
  */
 export function abilityCostColorsOf(card) {
   const found = new Set();
@@ -64,6 +73,9 @@ export function abilityCostColorsOf(card) {
   for (const ability of card.abilities ?? []) {
     add(ability?.cost?.colors);
     for (const nested of objectsIn(ability?.cost)) add(nested.colors);
+    // G (2026-09-22): opcjonalna płatność wyzwalacza („you may pay {R}”) —
+    // ten sam rodzaj faktu co koszt aktywacji, tylko inne pole deskryptora.
+    add(ability?.trigger?.payColors);
   }
   const spell = card.spell && typeof card.spell === 'object' ? card.spell : null;
   for (const descriptor of objectsIn(spell)) add(descriptor.colors);

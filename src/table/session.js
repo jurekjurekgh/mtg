@@ -209,6 +209,27 @@ export const TURN_NAMES = { [HUMAN_ID]: 'Czarodziejka', [BOT_ID]: 'Nieprzyjaciel
  * o decyzji przeciwnika). Stała przeniesiona na poziom modułu w M255/A, żeby
  * regułę „szum czy skutek" dało się przetestować bez sesji (ADR 0011).
  */
+/**
+ * H (zgłoszenie z testów 2026-09-22, Kor Sanctifiers „Kicker {W}”): fakt
+ * opłacenia DODATKOWEGO kosztu rzutu jako dopisek do opisu zdarzenia.
+ *
+ * „Wchodzi Kicked. Nie ma informacji o tym, że zapłacono Kick ani w Rozgrywka,
+ * ani w logu.” — zdarzenia rzutu (`permanent_cast` / `spell_cast`) niosły
+ * flagi `kicked`/`offspring` wyłącznie dla TRIGGERÓW („if it was kicked”,
+ * CR 702.33a), a warstwa opisu ich nie czytała. Dla gracza to informacja
+ * o skutku karty (kicked Kor Sanctifiers NISZCZY permanent), nie ozdobnik.
+ *
+ * Czysta funkcja (ADR 0011 — jak `hasMeaningfulDecisionOf`/BOT_MOVE_NOISE),
+ * żeby dało się ją sprawdzić testem bez budowania sesji; jedno brzmienie dla
+ * logu, warstwy „Rozgrywka” i modala „Ruch bota” (L41).
+ */
+export function paidExtraCostSuffix(e) {
+  const parts = [];
+  if (e?.kicked) parts.push('kicker opłacony');
+  if (e?.offspring) parts.push('offspring opłacony');
+  return parts.length > 0 ? ` — ${parts.join(', ')}` : '';
+}
+
 const BOT_MOVE_NOISE = new Set([
   'priority_passed', 'mana_changed', 'mana_produced', 'step_advanced',
   'turn_started', 'object_tapped', 'object_untapped', 'damage_marked',
@@ -1110,7 +1131,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const phyrexian = e.phyrexianSymbols
           ? ` — phyrexian: ${paidWithLife > 0 ? `${paidWithLife}× po 2 życia` : 'za manę'}`
           : '';
-        return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${phyrexian}`;
+        // H (zgłoszenie z testów 2026-09-22, Kor Sanctifiers): „Wchodzi Kicked.
+        // Nie ma informacji o tym, że zapłacono Kick ani w Rozgrywka, ani
+        // w logu.” Zdarzenie NIOSŁO `kicked` (dla triggerów „if it was
+        // kicked"), ale opis go nie czytał — fakt opłacenia dodatkowego kosztu
+        // znikał z relacji, choć zmienia skutek karty (ETB niszczy permanent).
+        // Ta sama fraza w obu gałęziach rzutu (L41: jedno brzmienie).
+        const extraCost = paidExtraCostSuffix(e);
+        return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${extraCost}${phyrexian}`;
       }
       case 'spell_cast': {
         // M73d (C): cel-gracz (Inspiration/Sweet Oblivion) — imię zamiast „?"
@@ -1144,7 +1172,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // castFireball) — log, warstwa „Rozgrywka” i modal „Ruch bota” mają
         // to jedno źródło brzmienia (L41). Wzór: ability_activated niżej.
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
-        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${phyrexian}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
+        // H (2026-09-22): kicker/offspring także na ścieżce czarów (L41 —
+        // jedno brzmienie co `permanent_cast`).
+        const extraCost = paidExtraCostSuffix(e);
+        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${extraCost}${phyrexian}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {
         // M102/U6 (CR 708.2): zakryty permanent PRZECIWNIKA zostaje bezimienny
