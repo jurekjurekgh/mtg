@@ -87,11 +87,63 @@ export function getManaSourceInfo(cardId) {
  * ktorego nie da sie oplacic (odwrotny bug tej samej klasy, L48).
  */
 /**
+ * Kolory many, które OBIEKT mógłby wyprodukować, IGNORUJĄC koszty aktywacji —
+ * dosłownie CR 106.7: „The type of mana a permanent could produce at any time
+ * includes any type of mana that an ability of that permanent would produce if
+ * the ability were to resolve at that time, taking into account any applicable
+ * replacement effects in any possible order. Ignore whether any costs of the
+ * ability could or could not be paid."
+ *
+ * Źródła kolorów (audyt PR #134, F-2 — dawniej tylko punkt 1, więc „could
+ * produce" gubiło resztę produkcji obiektu):
+ *  1. deskryptory `add_mana` WSZYSTKICH zdolności aktywowanych (bez filtra
+ *     kosztów — Heap Gate {1},{T}: any color liczy się w pełni), w tym
+ *     zagnieżdżone `colorsFrom` z wykluczeniem samego obiektu;
+ *  2. kolor WYBRANY przy wejściu (`chosenColor` — Manor Gate: „{T}: Add {G}
+ *     or one mana of the chosen color");
+ *  3. wewnętrzna zdolność many z podstawowego podtypu lądu (CR 305.6 —
+ *     podtyp EFEKTYWNY, więc nadanie typu też się liczy);
+ *  4. produkcja implikowana (karta bez deskryptora many w danych — mapa
+ *     źródeł, np. „{T}: Add {R}" jako cały tekst karty).
+ *
+ * `effectiveAbilities`/`effectiveSubtypes`: nadania zdolności i zmian typu
+ * honorujemy jak każdy inny odczyt na polu bitwy.
+ */
+function manaColorsIgnoringCosts(gameObject, state = null) {
+  const colors = [];
+  const push = (color) => { if (color && !colors.includes(color)) colors.push(color); };
+  let hasManaAbility = false;
+  for (const ability of effectiveAbilities(gameObject)) {
+    if (ability?.type !== 'activated') continue;
+    const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    for (const effect of effects) {
+      if (effect?.type !== 'add_mana') continue;
+      hasManaAbility = true;
+      const producible = effect.colorsFrom
+        ? colorsProducibleBySubtype(state, gameObject.controllerId, effect.colorsFrom.controlledSubtype,
+          { excludeId: gameObject.id })
+        : (effect.colors ?? []);
+      for (const color of producible) push(color);
+    }
+  }
+  if (hasManaAbility && gameObject.chosenColor) push(gameObject.chosenColor);
+  const isLand = gameObject.kind === 'land' || (gameObject.types ?? []).includes('Land');
+  if (isLand) {
+    for (const subtype of effectiveSubtypes(gameObject)) push(BASIC_SUBTYPE_COLORS[subtype]);
+  }
+  // Punkt 4 tylko dla obiektów BEZ deskryptora many — inaczej `getSourceForObject`
+  // wszedłby z powrotem w `colorsProducibleBySubtype` (rekurencja).
+  if (!hasManaAbility) {
+    for (const color of getSourceForObject(gameObject, state)?.colors ?? []) push(color);
+  }
+  return colors;
+}
+
+/**
  * Batch 58/B7 (Gond Gate: „{T}: Add one mana of any color that a Gate you
  * control could produce"): kolory produkowalne przez KONTROLOWANE permanenty
- * o danym podtypie — unia kolorów z deskryptorów `add_mana` ich zdolności
- * (koszt bez znaczenia: Oracle mówi „could produce", a nie „za samo {T}" —
- * CR 106.1; Heap Gate ze swoim {1},{T}: any color liczy się więc w pełni).
+ * o danym podtypie — unia tego, co każdy z nich „could produce" (CR 106.7,
+ * koszt bez znaczenia; pełny odczyt w `manaColorsIgnoringCosts` wyżej).
  *
  * `excludeId` wyklucza samo źródło (Gond Gate nie liczy własnego {C}).
  * Jedno miejsce prawdy (L41) dla: kreatora many/auto-tapu
@@ -106,15 +158,8 @@ export function colorsProducibleBySubtype(state, playerId, subtype, { excludeId 
     if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) continue;
     if (excludeId != null && object.id === excludeId) continue;
     if (!effectiveSubtypes(object).includes(subtype)) continue;
-    // `effectiveAbilities`: podtypy i zdolności honorują nadania/zmiany typu
-    // (typeGrant/abilityGrants) — jak każdy inny odczyt na polu bitwy.
-    for (const ability of effectiveAbilities(object)) {
-      if (ability?.type !== 'activated') continue;
-      const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-      for (const effect of effects) {
-        if (effect?.type !== 'add_mana') continue;
-        for (const color of effect.colors ?? []) if (!colors.includes(color)) colors.push(color);
-      }
+    for (const color of manaColorsIgnoringCosts(object, state)) {
+      if (!colors.includes(color)) colors.push(color);
     }
   }
   return colors;

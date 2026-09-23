@@ -3371,13 +3371,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       ? colorsProducibleBySubtype(state, sourceObject.controllerId, effect.colorsFrom.controlledSubtype,
         { excludeId: sourceObject.id })
       : null;
-    // Agregat obiektu (`src.colors`) jest fallbackiem tylko dla zdolności,
-    // która nie mówi nic o kolorach — gdy w kontekście JEST deskryptor tej
-    // zdolności, a efekt nie ma ani `colors`, ani `colorsFrom`, produkcja jest
-    // BEZBARWNA (Gond Gate: „{T}: Add {C}" ≠ unia kolorów Bram).
+    // Agregat obiektu (`src.colors`) jest fallbackiem TYLKO dla ścieżek bez
+    // deskryptora zdolności w kontekście — gdy kontekst NIESIE aktywowaną
+    // zdolność, a jej efekt nie ma ani `colors`, ani `colorsFrom`, produkcja
+    // jest BEZBARWNA (Gond Gate: „{T}: Add {C}" ≠ unia kolorów Bram; CR
+    // 106.1b/106.3). Agregat to unia kolorów WSZYSTKICH zdolności `{T}`-only
+    // obiektu (`manaAbilityColors`), więc powtórny fallback tutaj przywracał
+    // kolory drugiej zdolności do pierwszej — audyt PR #134, F-1.
     const abilityColors = effect.colors ?? fromGroup
       ?? (context?.ability == null ? src?.colors : null);
-    const descriptorColors = abilityColors ?? src?.colors ?? [];
+    const descriptorColors = abilityColors ?? [];
     // A3 (znalezisko właściciela 2026-09-16, Manor Gate): „{T}: Add {G} or one
     // mana of the chosen color" — deskryptor many ('G') złącza się z kolorem
     // wybranym przy wejściu (chosenColor na OBIEKCIE — ustawianym przez
