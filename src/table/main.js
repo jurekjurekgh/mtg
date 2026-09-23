@@ -23,7 +23,7 @@ import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TURN_NAMES, gameOverNotice } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
-import { installSwipeGesture, installTapGesture } from './gestures.js';
+import { installPressActivation, installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
 import { expandManaPool } from '../engine/resources.js';
@@ -1544,7 +1544,7 @@ function bootstrapTable() {
         const btn = document.createElement('button');
         btn.className = 'action choice-request-trigger';
         btn.innerHTML = `<span class="action-label">${commandLabel(cmd, session, view)}</span>`;
-        btn.addEventListener('click', () => {
+        installPressActivation(btn, () => {
           hideModal('context-menu');
           openChoiceRequest(entry.request);
         });
@@ -1565,7 +1565,7 @@ function bootstrapTable() {
         // z pierwszym wariantem zamienione na opis CO wybieramy; 2026-08-10).
         const request = { id: `ctx-${Date.now()}-${key}`, type: cmds[0].targets?.length ? 'target' : 'command', options: cmds };
         btn.innerHTML = `<span class="action-label">${choiceGroupLabel(request, session, view)}</span>`;
-        btn.addEventListener('click', () => {
+        installPressActivation(btn, () => {
           hideModal('context-menu');
           openChoiceRequest(request);
         });
@@ -1577,7 +1577,7 @@ function bootstrapTable() {
         if (cmd.type === 'pass_priority') button.className += ' primary';
         if (cmd.type === 'concede') button.className += ' danger';
         button.innerHTML = `<span class="action-label">${commandLabel(cmd, session, view)}</span>`;
-        button.addEventListener('click', () => {
+        installPressActivation(button, () => {
           hideModal('context-menu');
           play(cmd);
         });

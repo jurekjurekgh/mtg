@@ -125,6 +125,25 @@ partii) — razem 15 pozycji; plik planu zostaje pod nazwą historyczną.
   tą samą drogą.
 - **K**: aktywacja przycisków akcji odporna na przebudowę layoutu między
   press-down a release (pointer capture + próg ruchu; stała szerokość kolumny).
+  **Zmierzone 2026-09-23f**: dwie przyczyny w jednym objawie. (1) Styl:
+  `button:active` przesuwał przycisk (`transform: translateY(1px)`), a transform
+  wchodzi do obszaru przewijania — w `.actions-wrap` (max-height 280 px)
+  pojawiał się pasek, kolumna opisu zwężała się o jego grubość, długie etykiety
+  („Wybierz: Deklaracja blokujących…”) łamały się inaczej i przycisk uciekał
+  spod kursora. Naprawa: feedback wciśnięcia bez geometrii
+  (`filter: brightness(...)` — także `.picker-row:active`, L41),
+  `scrollbar-gutter: stable` w kontenerach z celami tapnięcia
+  (`.actions-wrap`, `.modal-body`, `.drawer-body`), stała elastyczna kolumna
+  opisu (`.action-label { flex: 1 1 auto; min-width: 0 }`), `touch-action:
+  manipulation` na przyciskach. (2) Natywny `click` wymaga press i release
+  w TYM SAMYM węźle — po przebudowie nie powstawał wcale. Naprawa:
+  `installPressActivation` (gestures.js): press przechwytuje wskaźnik
+  (`setPointerCapture`), release wraca do wciśniętej opcji i aktywuje ją, gdy
+  ruch ≤ 12 px; scroll (`pointercancel`/próg) nie aktywuje; klawiatura
+  (`click` z `detail === 0`) bez zmian; podwójna aktywacja wykluczona.
+  Wpięte w panel akcji (`render.js`) i menu kontekstowe (`main.js`).
+  Test: `uwaga-z-gry-2026-09-23-k-klik-opcji-bez-reflow.test.js` (K/1–K/12:
+  kontrakt CSS czytany ze źródła + zachowanie aktywacji na stubie elementu).
 - **L**: `details` sekcji „Przebieg tur (dla AI)” domyślnie `open`.
 
 ### E5 — domknięcie

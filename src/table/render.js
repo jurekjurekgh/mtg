@@ -17,7 +17,7 @@ import {
 import { costSymbols, escapeHtml, manaCostHtml, manaSymbolsHtml, xCostSymbols } from './mana-icons.js';
 import { COUNTER_LABELS, counterLabelGen } from './counter-labels.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { installTapGesture } from './gestures.js';
+import { installPressActivation, installTapGesture } from './gestures.js';
 import { renderPickerRow } from './picker.js';
 
 /**
@@ -5194,16 +5194,19 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       // Pełna etykieta grupy (opis CO wybieramy + odmieniona liczba opcji) —
       // prefiks „Wybierz:" ustala choiceGroupLabel (uwaga A, 2026-08-10).
       button.innerHTML = `<span class="action-label">${choiceGroupLabel(entry.request, session, view)}</span>`;
-      button.addEventListener('click', () => onChoiceRequest(entry.request));
+      // K (uwaga właściciela 2026-09-23): aktywacja przez wciśnięcie z
+      // przechwyceniem wskaźnika — click gubił się, gdy lista przebudowała
+      // layout między press-down a release (szczegóły: gestures.js).
+      installPressActivation(button, () => onChoiceRequest(entry.request));
     } else {
       // Etykieta wyłącznie tekstem (prefiksy są kontraktem testu); ikona przez CSS.
       // action-label: jeden inline-blok w flexie — bez „kolumn" (uwaga D).
       // M102/U4: entry.label niesie licznik egzemplarzy („… (1 z 4)").
       button.innerHTML = `<span class="action-label">${entry.label ?? commandLabel(cmd, session, view)}</span>`;
       if (cmd.type === 'concede') {
-        button.addEventListener('click', () => { if (window.confirm('Na pewno poddać partię?')) play(cmd); });
+        installPressActivation(button, () => { if (window.confirm('Na pewno poddać partię?')) play(cmd); });
       } else {
-        button.addEventListener('click', () => play(cmd));
+        installPressActivation(button, () => play(cmd));
       }
     }
     // Feature 2026-08-11: ptaszek wyciszenia dla opcji rzutów/zdolności —
