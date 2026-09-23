@@ -7419,3 +7419,55 @@ wskaźnika).
 Bramy: `npm test` **6290/6290** (0 fail), pełna brama
 `node tools/run-tests.mjs all` **6300/6300** (0 fail, ~388 s), build
 **59 modułów / 4119,4 kB**. Handoff: `docs/setup/HANDOFF_2026-09-23c.md`.
+
+
+## M422 — follow-upy po uwagach z gry: F1 v2 (cloak) i audyt H (koszt w ofertach) (sesja 2026-09-23d, PR #134)
+
+Zlecenie właściciela po raporcie z sesji 2026-09-23c: (1) bot grający Veiled
+Ascension ma ZAWSZE wybierać „may” (cloak w upkeepie), chyba że biblioteka jest
+blisko wyczerpania (< 10 kart); (2) sprawdzić inne czary / instanty / sorcery /
+aury / zdolności / wybory pod kątem pokazywania kosztu i zaraportować, ile
+poprawiono i czy idzie to jedną wspólną funkcją ofert (odpowiedź dopuszczalna —
+ale musi być udowodniona). Plan: `docs/plans/PLAN_2026-09-23d-f1v2-cloak-i-audyt-h.md`.
+
+**F1 v2 (`eada4cb`)** — `resolve_optional_trigger_choice` brało fallback
+`fire ? 50 : 0`, a `cloak` nie jest w `LIBRARY_DRAIN_EFFECTS`, więc strażnik kar
+bibliotecznych go nie widział: bot zakrywał kartę z biblioteki nawet przy 1–5
+kartach (droga do deck-outu, CR 121.4) i marnował wartość cloaka (2/2 z wardem,
+wracalny twarzą do góry, CR 701.56). Teraz: zbiór typów efektów zakrywających
+kartę z biblioteki (`cloak`/`manifest`) + wspólny czytnik
+`pendingOptionalEffects(view)` (ten sam w strażniku i w wycenie, L41), bazowe
+„fire” = 50, a pod progiem `cloakLibraryFloor` (10) kara
+`cloakThinLibraryPenalty` (60) schodzi pod „pass”. Test 6/6: granica 10/9,
+nadpisanie progu parametrem, brak regresji drenażu (Murder of Crows),
+anty-over-fix (Grazing Gladehart przy bibliotece 1 karty).
+
+**Audyt H (`62ea637`)** — zmierzone dowody na „jedną wspólną funkcję ofert”:
+- 89 z 90 typów komend ma własną gałąź etykiety w `commandLabel`; jedyny wyjątek
+  (`move_object`) to komenda protokołu/replayów — nic w `src/` jej nie produkuje,
+  więc nie powstaje jako oferta;
+- koszt liczą cztery wspólne funkcje po JEDNEJ definicji: `cardCostHtml`,
+  `abilityCostHtmlOf`, `abilityCostSuffix` oraz renderer ikon `manaCostHtml`;
+  używają ich i etykiety pojedynczych ofert, i tytuły grup decyzji
+  (`choiceSourceTitle`/`choiceGroupTitle`/`choiceGroupLabel`);
+- oferta z nieopłacalnym kosztem nie powstaje wcale — jeden predykat
+  `canPayColoredCost` (59 wywołań: abilities 27, spells 15, game-state 11,
+  resources 4, triggers 2); zmierzone: Shock bez many i Forecast {2}{W} przy
+  jednej Plains nie są ofertami, z maną są — z kosztem w etykiecie;
+- warstwę kosztów w ofertach pinuje 54 pliki testów (`commandLabel`/
+  `choiceGroup*`/`buildActionEntries` × koszt).
+
+**Znalezisko audytu (naprawione)** — F3 z sesji 2026-09-23c dodał koszt do
+etykiety obrotu twarzą do góry, ale etykieta czytała pole z OBJEKTU WIDOKU,
+a `playerView` nie projektuje `cloakTurnUpCost`/`manifestTurnUpCost` (koszt
+i prawo obrotu zna tylko właściciel zakrytej karty — FoW). Test F3 przechodził,
+bo podawał koszt w ręcznie zbudowanym widoku (klasa L1/ADR 0017), a w prawdziwej
+partii oferta cloakiem dalej milczała, manifest nie miał kosztu nigdy. Naprawa:
+helper `uncoverCostOf` — odczyt ze STANU, ten sam co kreator płatności (M327),
+dla obu etykiet (L41). Piny: `test/audyt-h-koszt-w-ofertach-pelny.test.js` 8/8
+(pokrycie typów, jedna funkcja, bramka opłacalności, koszt obrotu z prawdziwego
+widoku — RED przed fixem: 2 fail, darmowe akcje bez kosztu, FoW przeciwnika).
+
+Bramy: `npm test` **6304/6304** (0 fail, ~242 s), pełna brama
+`node tools/run-tests.mjs all` **6314/6314** (0 fail, ~416 s), build
+**59 modułów / 4124,0 kB**. Handoff: `docs/setup/HANDOFF_2026-09-23d.md`.

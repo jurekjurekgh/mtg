@@ -12625,3 +12625,37 @@ odmowy (A1/O2/F1-Murder/m167 → `cmd.type === 'pass_priority'`), `choice-reques
 
 Bramy: `npm test` **6290/6290** (0 fail), pełna brama
 `node tools/run-tests.mjs all` **6300/6300** (0 fail, ~388 s), build **59 modułów / 4119,4 kB**.
+
+
+## M422 — follow-upy po uwagach z gry: F1 v2 (cloak) i audyt H (koszt w ofertach)
+
+Zlecenie właściciela po raporcie z sesji 2026-09-23c (dwa punkty): bot ma
+ZAWSZE wybierać „may” przy cloaku (chyba że biblioteka < 10 kart) oraz
+sprawdzenie całej warstwy ofert pod kątem pokazywania kosztu — z liczbami
+i dowodem, że idzie to jedną wspólną funkcją. Plan:
+`docs/plans/PLAN_2026-09-23d-f1v2-cloak-i-audyt-h.md`.
+
+- **F1 v2** — `resolve_optional_trigger_choice` nie widziało cloaków (`cloak`
+  poza `LIBRARY_DRAIN_EFFECTS`), więc bot zakrywał kartę z biblioteki nawet przy
+  1–5 kartach. Nowy zbiór typów efektów zakrywających kartę z biblioteki
+  (`cloak`/`manifest`) + wspólny czytnik `pendingOptionalEffects(view)` (L41);
+  bazowe „fire” 50, a pod progiem `cloakLibraryFloor` (10) kara
+  `cloakThinLibraryPenalty` (60) schodzi pod „pass”. Test
+  `uwaga-z-gry-2026-09-23d-veiled-ascension-cloak-may` 6/6. Commit `eada4cb`.
+- **Audyt H** — pokrycie: 89/90 typów komend ma gałąź etykiety (jedyny wyjątek
+  to komenda protokołu `move_object`, której nic nie produkuje jako oferty);
+  koszt liczą cztery wspólne funkcje po jednej definicji (`cardCostHtml`,
+  `abilityCostHtmlOf`, `abilityCostSuffix`, renderer `manaCostHtml`), wspólne
+  dla etykiet i tytułów grup; oferta z nieopłacalnym kosztem nie powstaje
+  (jeden predykat `canPayColoredCost`, 59 wywołań); warstwę kosztów pinuje
+  54 pliki testów.
+- **Znalezisko i fix** — F3 (2026-09-23c) czytał koszt obrotu twarzą do góry
+  z widoku, który tego pola nie niesie (FoW) ⇒ w prawdziwej partii oferta
+  `turn_cloak_face_up` milczała o koszcie, a `turn_manifest_face_up` nigdy go
+  nie miała. Odczyt przeniesiony na pełny STAN (helper `uncoverCostOf`, ten sam
+  co kreator płatności M327) dla obu etykiet. Piny
+  `audyt-h-koszt-w-ofertach-pelny` 8/8. Commit `62ea637`.
+
+Bramy: `npm test` **6304/6304** (0 fail, ~242 s), pełna brama
+`node tools/run-tests.mjs all` **6314/6314** (0 fail, ~416 s), build
+**59 modułów / 4124,0 kB**.

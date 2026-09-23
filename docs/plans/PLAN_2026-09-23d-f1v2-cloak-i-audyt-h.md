@@ -120,6 +120,12 @@ ten sam co kreator płatności (M327, `main.js`) — w jednym helperze
 Pomiary (`npm test`), wpis M-serii, README/handoff, odhaczenie etapów w tym
 planie, aktualizacja PR #134 (bez merge — ADR 0020).
 
+**Wykonane (2026-09-23d)**: `npm test` **6304/6304** (0 fail, ~242 s), pełna
+brama `node tools/run-tests.mjs all` **6314/6314** (0 fail, ~416 s), build
+**59 modułów / 4124,0 kB**; wpis **M422** w `docs/PROJECT_HISTORY.md`
+i `docs/ENGINE_MILESTONES.md`; handoff `docs/setup/HANDOFF_2026-09-23d.md`;
+README „Bieżący stan”; PR #134 opisany na nowo (ten sam branch — ADR 0020).
+
 ## Zasady wykonania
 
 - Test RED przed fixem; poprawka u źródła (L41), nie w objawie.
