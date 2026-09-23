@@ -12412,3 +12412,29 @@ więc tryb bogatszy remisuje z uboższym i przegrywa rozstrzygnięcie remisu.
 Bramki: testy 6173/6173, build 59 modułów / 4046,4 kB, benchmark heuristic 86,6%.
 Pin: `test/uwaga-z-gry-2026-09-23-p-vandalize.test.js` (3 testy; mutacja
 przywracająca czytanie samego `targetIndex` czerwieni wszystkie trzy).
+
+## M415 — Q: stała kolejność opcji w panelu „Twoje działania”
+
+Uwaga właściciela 2026-09-23: „Teraz to się różnie układa i przycisk »Dalej
+(Pass)« raz jest niżej, raz jest wyżej i czasem mam problem z trafieniem
+w niego.” Zamówiony układ: (a) pass ZAWSZE pierwszy, (b) „✕ Poddaj partię”
+usunięte, (c) przyciski systemowe walki zaraz pod passem, (d) reszta niżej.
+
+To ŚWIADOMA REWIZJA reguły M257 r3, w której ten sam właściciel prosił
+o pass i poddanie NA DOLE. Piny M257B zaktualizowano, nie skasowano — ich sens
+(„pozycja jest strukturalna, nie z tabeli ACTION_RANK, więc nowa nierankowana
+komenda nie wypchnie passa z jego miejsca”) obowiązuje dalej, zmienił się tylko
+kierunek: `pass_priority` = −1000, komendy systemowe walki = −900…−897.
+
+Przyczyna „raz wyżej, raz niżej”: pozycja passa była KOŃCEM listy, więc zależała
+od tego, ile akcji akurat jest dostępnych; dodatkowo decyzje `resolve_*`
+(mulligan −3, scry −1) stały nad nim, a komendy walki pod nim.
+
+(b) `concede` znika wyłącznie z PANELU (filtr w `renderTableView`) — komenda
+pozostaje legalna w silniku, bo używają jej bot, benchmark i protokół. Test UI
+`M73c/5`, który kończył partię klikając ten przycisk, kończy ją teraz komendą
+przez mostek testera (`window.__mtgDebug.concede`, tylko przy `?tester=1`).
+
+Bramki: testy 6180/6180, build 59 modułów / 4048,4 kB.
+Pin: `test/uwaga-z-gry-2026-09-23-q-kolejnosc-dzialan.test.js` (7 testów;
+mutacje osobno czerwienią (a), (c) i (b)).

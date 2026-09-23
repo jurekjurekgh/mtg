@@ -329,6 +329,16 @@ function bootstrapTable() {
       // (typ → liczba trafień gałęzi default scoreCommand). Tylko odczyt;
       // detektor detectUnvaluedBotChoices pilnuje nowego typu komendy bez case.
       botUnvalued: () => (session ? session.botUnvaluedDecisions() : null),
+      // Uwaga właściciela 2026-09-23 pkt (b): przycisk „Poddaj partię” zniknął
+      // z panelu, ale KOMENDA `concede` zostaje legalna w silniku. Testy UI,
+      // które potrzebują zakończonej partii (wskaźnik zwycięzcy), wywołują ją
+      // tędy — zamiast klikać nieistniejący już przycisk.
+      concede: () => {
+        if (!session) return { ok: false, reason: 'no_session' };
+        const result = session.apply({ type: 'concede', playerId: HUMAN_ID });
+        rerender();
+        return result;
+      },
     };
   }
   // Feature 2026-08-11: wyciszone opcje akcji (ptaszek „nie przerywaj

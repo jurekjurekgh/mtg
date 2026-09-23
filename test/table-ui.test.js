@@ -129,7 +129,10 @@ function installMiniDom() {
     createTextNode: (text) => ({ isText: true, text: String(text), get textContent() { return this.text; } }),
     addEventListener(type, fn) { (documentListeners[type] ??= []).push(fn); },
   };
-  globalThis.window = { confirm: () => false };
+  // `?tester=1` włącza mostek `window.__mtgDebug` (main.js) — testy UI kończą
+  // nim partię, odkąd przycisk „Poddaj partię” zniknął z panelu (uwaga
+  // właściciela 2026-09-23 pkt b). W normalnej grze mostek pozostaje wyłączony.
+  globalThis.window = { confirm: () => false, location: { href: 'http://localhost/?tester=1' } };
   // Zgłoszenie 2026-08-07 (A): autosave partii w localStorage — mock pamięci,
   // żeby ścieżki autosave/wznawiania były testowalne headless.
   const mem = new Map();
@@ -1154,17 +1157,12 @@ test('M73c/5: po zakończeniu partii wskaźnik pokazuje zwycięzcę', () => {
       if (!btn) break;
       btn.click();
     }
-    let concede = null;
-    for (let i = 0; i < 20 && !concede; i += 1) {
-      concede = dom.get('actions').children.find((b) => (b.text ?? '').includes('Poddaj'));
-      if (!concede) {
-        const btn = pickActionButton(dom.get('actions'));
-        if (!btn) break;
-        btn.click();
-      }
-    }
-    assert.ok(concede, 'przycisk Poddaj partię');
-    concede.click();
+    // Uwaga właściciela 2026-09-23 pkt (b): przycisk „Poddaj partię” został
+    // USUNIĘTY z panelu („nie korzystam z niego i nie zamierzam”). Test pilnuje
+    // wskaźnika zwycięzcy, nie tego przycisku, więc partię kończymy komendą
+    // przez protokół (window.__mtgDebug.concede) — ta pozostaje legalna.
+    const wynik = globalThis.window.__mtgDebug.concede();
+    assert.ok(wynik?.ok, `poddanie przez protokół: ${JSON.stringify(wynik)}`);
     const ind = textOf(dom.get('turn-indicator'));
     assert.match(ind, /Koniec partii — wygrywa/, `wskaźnik pokazuje zwycięzcę: ${ind}`);
     assert.match(ind, /Bot|Gracz/, `wskaźnik wskazuje gracza (M172/A): ${ind}`);

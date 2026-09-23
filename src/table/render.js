@@ -336,13 +336,39 @@ const ACTION_RANK = Object.freeze({
 });
 
 /**
- * M257 r3 (uwaga B właściciela): pozycja akcji w menu „Twoje działania".
- * PASS i PODDAJĄCE SIĘ PARTII są ostatnie Z ZASADY (strukturalnie), a nie z
- * ranku — nowa/nierankowana komenda (fallback 99) nigdy nie może wypaść
- * poniżej „Poddaj partię". Test: test/m257-uwagi-runda3.test.js.
+ * Komendy „systemowe” walki — deklaracje i rozdział obrażeń. Stoją zaraz pod
+ * passem (uwaga właściciela 2026-09-23 pkt c), bo to decyzje wymuszone przez
+ * fazę, a nie swobodne zagrania: gracz szuka ich w stałym miejscu.
+ */
+const SYSTEM_COMBAT_ORDER = Object.freeze({
+  declare_attackers: 0,
+  declare_blockers: 1,
+  resolve_damage_assignment: 2,
+  resolve_combat: 3,
+});
+
+/**
+ * Pozycja akcji w menu „Twoje działania".
+ *
+ * Uwaga właściciela 2026-09-23 (rewizja M257 r3 — właściciel ODWRÓCIŁ swoją
+ * wcześniejszą regułę „pass na dole"): „przycisk »Dalej (Pass)« raz jest niżej,
+ * raz wyżej i czasem mam problem z trafieniem w niego”. Kolejność jest teraz
+ * STAŁA, niezależna od tego, jakie akcje akurat są dostępne:
+ *   (a) `pass_priority` — ZAWSZE pierwszy,
+ *   (c) komendy systemowe walki (Wybierz atakujących / blokujących, Rozdziel
+ *       obrażenia) — zaraz pod passem,
+ *   (d) cała reszta — niżej, we wcześniejszym porządku ACTION_RANK.
+ * `concede` nie występuje już w menu (pkt b — usunięty z panelu).
+ *
+ * Ranki (a)/(c) są strukturalne, nie tabelaryczne: nowa, nierankowana komenda
+ * (fallback 99) nigdy nie wepchnie się nad pass ani między przyciski systemowe.
+ * Test: test/m257-uwagi-runda3.test.js, test/uwaga-z-gry-2026-09-23-q-kolejnosc-dzialan.test.js.
  */
 export function actionMenuRank(type) {
-  if (type === 'pass_priority') return 1000;
+  if (type === 'pass_priority') return -1000;
+  if (type in SYSTEM_COMBAT_ORDER) return -900 + SYSTEM_COMBAT_ORDER[type];
+  // Poddanie nie jest już ofertą panelu; gdyby jakaś ścieżka je podała, ląduje
+  // na samym dole zamiast mieszać się z zagraniami.
   if (type === 'concede') return 1001;
   return ACTION_RANK[type] ?? 99;
 }
@@ -5000,7 +5026,12 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // dole, „Przygoda" i inne efekty tam, gdzie inne czary.
   // M369/G: zdolności many wypadają z panelu — tak jak lądy podstawowe
   // (patrz `isManaAbilityCommand`); zostają w kreatorze many i w płatności.
+  // Uwaga właściciela 2026-09-23 pkt (b): „Poddaj partię — USUWAMY, nie
+  // korzystam z niego i nie zamierzam korzystać; jak chcę przerwać, to wychodzę
+  // ze strony”. Komenda `concede` zostaje legalna w silniku (bot/benchmark/
+  // protokół jej używają) — znika wyłącznie z PANELU gracza.
   const commands = view.legalCommands.slice()
+    .filter((cmd) => cmd.type !== 'concede')
     .filter((cmd) => !isManaAbilityCommand(cmd, session))
     .sort((a, b) => actionMenuRank(a.type) - actionMenuRank(b.type));
   // M102/U5 (zgłoszenie właściciela 2026-08-16): nagłówek „Twoje działania"
