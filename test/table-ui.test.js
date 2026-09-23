@@ -546,7 +546,9 @@ test('uwagi A+D (2026-08-10): etykiety akcji w jednym span.action-label, grupa a
     const auraBtn = buttons.find((b) => b.textContent.includes('Aura: Benevolent Blessing'));
     assert.ok(auraBtn, `brak grupy „Aura: Benevolent Blessing": ${els.actions.textContent}`);
     // C2 (2026-09-10): bez licznika „(N opcji)" — sam tytuł grupy.
-    assert.match(auraBtn.textContent, /Aura: Benevolent Blessing$/);
+    // H (uwaga właściciela 2026-09-23c): tytuł niesie KOSZT karty (oferta bez
+    // ceny wyglądała jak darmowa) — licznik „(N opcji)" nadal zakazany.
+    assert.match(auraBtn.textContent, /Aura: Benevolent Blessing \(koszt/);
     assert.doesNotMatch(auraBtn.textContent, /\(\d+ opcj/);
   } finally {
     mock.timers.reset();
