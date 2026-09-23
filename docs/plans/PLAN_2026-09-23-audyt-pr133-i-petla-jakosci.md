@@ -41,15 +41,22 @@ a pin `test/m380-restrykcje-bloku-jedno-zrodlo.test.js` podaje w scenariuszu
 - [~] **A6. Raport** `docs/audits/AUDYT_PR133_2026-09-23.md` + wpis w opisie PR
       sesji; naprawy znalezisk F-n OSOBNYMI commitami (ADR 0020 C).
 
-### Stan audytu (2026-09-23)
+### Stan audytu (2026-09-23) — ETAP A ZAMKNIĘTY
 
-Raport: `docs/audits/AUDYT_PR133_2026-09-23.md` — werdykt **APPROVE**.
-Znaleziska naprawiane osobnymi commitami: **F-1** (martwe odwołania do starej flagi
-w `permanents.js`), **F-2** (scenariusz `m380` na starej fladze + brak pinu absolutnego
-restrykcji bloku), **F-3** (pin `fingerprint` na starej fladze), **F-4** (podwójne
-liczenie `power + grantedPower` w `cantBeBlockedTargetValue` z M407). Notki do pętli:
-**Z-1** (ta sama klasa podwójnego liczenia w trzech miejscach sprzed PR), **Z-2**
-(niemierzona klauzula `bestow == null` w guardzie CR 704.5m).
+Raport: `docs/audits/AUDYT_PR133_2026-09-23.md` — werdykt **APPROVE** (bramy PR
+odtworzone: `run-tests all` 6180/6180, build 59 / 4048,4 kB). Znaleziska
+naprawione osobnymi, zielonymi commitami:
+
+- **F-1** + **F-3** — `a0b5f68` (cleanup bez emerytowanej flagi; pin `fingerprint`
+  na `cantBeBlockedUntilTurn`),
+- **F-2** — `f2bc1ae` (scenariusz `m380` na nowym polu + pin absolutny **M380/E**;
+  mutacja czytnika w `combat.js` czerwieni pin),
+- **F-4** — `a6ab5f9` (`cantBeBlockedTargetValue` liczy moc efektywną; pin **F/8**
+  w pliku M407 — RED przy sumie `power + grantedPower`, GREEN po naprawie).
+
+Bramy po naprawach: `npm test` **6172/6172**, build **59 / 4048,9 kB**.
+Notki do pętli (etap B): **Z-1** (podwójne liczenie bonusów w trzech miejscach
+sprzed PR), **Z-2** (klauzula `bestow == null` bez pinu).
 
 ## 2. Etapy pętli jakości (ADR 0021, po audycie)
 

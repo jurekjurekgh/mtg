@@ -12438,3 +12438,25 @@ przez mostek testera (`window.__mtgDebug.concede`, tylko przy `?tester=1`).
 Bramki: testy 6180/6180, build 59 modułów / 4048,4 kB.
 Pin: `test/uwaga-z-gry-2026-09-23-q-kolejnosc-dzialan.test.js` (7 testów;
 mutacje osobno czerwienią (a), (c) i (b)).
+
+## M416 — audyt scalonego PR #133 + naprawy F-1..F-4 (sesja 2026-09-23, PR #134)
+
+Audyt PR #133 (58 plików, +5279/−232, rodzina M404–M415) na gałęzi
+`arena/01a0ceb4-mtg`: bramy odtworzone (`run-tests all` 6180/6180, build
+59 / 4048,4 kB), werdykt **APPROVE** (raport `docs/audits/AUDYT_PR133_2026-09-23.md`).
+Cztery znaleziska naprawione osobnymi commitami: **F-1** (`a0b5f68`) — cleanup
+w `permanents.js` przestał czytać/zapisywać emerytowaną flagę `cantBeBlocked`
+(dar M407 trzyma termin w `cantBeBlockedUntilTurn`, wygasanie read-time);
+**F-2** (`f2bc1ae`) — scenariusz „unblockable” w `test/m380` przeszedł na nowe
+pole + nowy pin absolutny M380/E (oferta=false, walidacja odrzuca; po zmianie
+tury znów legalne) — mutacja czytnika w `combat.js` czerwieni pin, wcześniej
+przechodziła przez całą macierz; **F-3** (`a0b5f68`) — pin `fingerprint` na
+`cantBeBlockedUntilTurn`; **F-4** (`a6ab5f9`) — `cantBeBlockedTargetValue` liczy
+moc EFEKTYWNĄ (`combatPower`), nie `power + grantedPower` (widok niesie już moc
+efektywną, a `grantedPower` to ten sam dodatek dla badge'u — suma podwajała
+aury), pin **F/8** w pliku M407 (5/5 bije 2/3 z aurą +2/+2). Notki do pętli
+jakości: **Z-1** — ta sama klasa `power + grantedPower` w trzech miejscach
+sprzed PR; **Z-2** — klauzula `bestow == null` w guardzie CR 704.5m bez pinu.
+Bramy po naprawach: `npm test` 6172/6172, build 59 / 4048,9 kB. Plan:
+`docs/plans/PLAN_2026-09-23-audyt-pr133-i-petla-jakosci.md`, handoff:
+[HANDOFF_2026-09-23](docs/setup/HANDOFF_2026-09-23.md).

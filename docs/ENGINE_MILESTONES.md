@@ -7211,3 +7211,36 @@ pump niewidoczny) — każda czerwieni pin.
 Bramy: `run-tests all` **6166/6166**, build **59 modułów / 4041,4 kB**,
 `benchmark --quick` heuristic **86,6%** (582/672, bez regresji). Bez nowych kart
 (ADR 0029).
+
+---
+
+## M416 — audyt scalonego PR #133 + naprawy F-1..F-4 (2026-09-23)
+
+Audyt PR #133 (58 plików, +5 279/−232, rodzina M404–M415) — werdykt **APPROVE**
+(`docs/audits/AUDYT_PR133_2026-09-23.md`): bramy PR odtworzone (`run-tests all`
+6180/6180, build 59 / 4048,4 kB), brak defektów blokujących; cztery znaleziska
+naprawione osobnymi, zielonymi commitami:
+
+- **F-1** (`a0b5f68`) — `permanents.js`: cleanup przestał czytać/zapisywać
+  emerytowaną flagę `cantBeBlocked` (M407 trzyma termin w `cantBeBlockedUntilTurn`,
+  wygasanie read-time — wzorzec `hexproofUntilTurn`).
+- **F-2** (`f2bc1ae`) — scenariusz „unblockable” w `test/m380-restrykcje-bloku-jedno-zrodlo`
+  przeszedł na NOWE pole + pin absolutny **M380/E** (oferta=false, walidacja
+  odrzuca; po zmianie numeru tury znów legalne). Mutacja czytnika w `combat.js`
+  czerwieni pin; przed naprawą przechodziła przez całą macierz D (ta tylko
+  porównywała ofertę z walidacją, więc pusta flaga jej nie ruszała).
+- **F-3** (`a0b5f68`) — pin `fingerprint` na `cantBeBlockedUntilTurn`.
+- **F-4** (`a6ab5f9`) — `cantBeBlockedTargetValue` liczy moc EFEKTYWNĄ
+  (`combatPower`), nie `power + grantedPower`: widok niesie już `power`
+  efektywne (`effectivePower`), a `grantedPower` to ten sam dodatek dla badge'u —
+  suma podwajała bonus aury (2/3 z +2/+2 wyceniane jak 6/5). Pin **F/8**
+  (`uwaga-z-gry-shiva-mesmerize`): 5/5 bije 2/3 z aurą +2/+2 — RED przy sumie,
+  GREEN po naprawie.
+
+Notki do pętli jakości: **Z-1** — ta sama klasa `power + grantedPower` w trzech
+miejscach sprzed PR (`attackerCanBeBlocked` — próg mocy blokera, `equipValuation`
+i wycena equipu w `cast_permanent`); **Z-2** — klauzula `bestow == null`
+w guardzie trzeciego przypadku CR 704.5m bez pinu (mutacja jej usunięcia nie
+czerwieni pinu bestow). Bramy po naprawach: szybki rdzeń **6172/6172**, build
+**59 modułów / 4048,9 kB**; pełna brama — `docs/PROJECT_HISTORY.md` M416.
+Bez nowych kart (ADR 0029).
