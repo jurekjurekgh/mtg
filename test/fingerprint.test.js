@@ -65,7 +65,7 @@ test('M103/A1: fingerprint obejmuje inne wstrzymujące decyzje (pendingSearchCho
 //       czyli weryfikacja replayów ich nie odróżniała.
 // =============================================================================
 
-test('M122: fingerprint odnotowuje cantBeBlocked (efekt do końca tury)', () => {
+test('M122: fingerprint odnotowuje cantBeBlockedUntilTurn (dar „this turn", M407)', () => {
   const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
   addObject(state, {
     id: 'atk', instanceId: 'i-atk', cardId: 'maritime-guard', controllerId: 'p1',
@@ -73,8 +73,10 @@ test('M122: fingerprint odnotowuje cantBeBlocked (efekt do końca tury)', () => 
     abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['U'],
   });
   const before = stateFingerprint(state);
-  state.objects.set('atk', Object.freeze({ ...state.objects.get('atk'), cantBeBlocked: true }));
-  assert.notEqual(stateFingerprint(state), before, 'cantBeBlocked musi być częścią odcisku stanu');
+  // M407: dar „can't be blocked THIS TURN" trzyma TERMIN tury, nie wieczną
+  // flagę — odcisk musi odnotować właśnie to pole (audyt PR #133, F-3).
+  state.objects.set('atk', Object.freeze({ ...state.objects.get('atk'), cantBeBlockedUntilTurn: state.turn.number + 1 }));
+  assert.notEqual(stateFingerprint(state), before, 'cantBeBlockedUntilTurn musi być częścią odcisku stanu');
 });
 
 test('M122: fingerprint odnotowuje cantBlock (efekt do końca tury)', () => {

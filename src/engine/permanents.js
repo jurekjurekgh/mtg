@@ -1290,8 +1290,10 @@ export function clearStatModifiers(state) {
       || current.typeGrant != null
       // Wydrukowane „can't block\" (token) nie jest brudem do sprzątnięcia —
       // bez tego wyłączenia cleanup przepisywałby token w każdej turze.
-      || (current.cantBlock === true && current.cantBlockPrinted !== true)
-      || current.cantBeBlocked === true;
+      // Granty z TERMINEM tury (`cantBeBlockedUntilTurn` — M407,
+      // `hexproofUntilTurn`) celowo poza tą bramką: wygasają read-time
+      // (`state.turn.number < termin`), więc obiekt nie jest „brudny”.
+      || (current.cantBlock === true && current.cantBlockPrinted !== true);
     if (dirty) {
       replaceObject(state, current, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [],
@@ -1301,7 +1303,7 @@ export function clearStatModifiers(state) {
         // Phyrexian Mite, Goblin Construct) jest trwała: znacznik
         // `cantBlockPrinted` przeżywa cleanup, a `cantBlock` pozostaje z nim
         // zgodne, żeby każdy odczyt (widok, boty, walka) widział ten sam stan.
-        cantBlock: Boolean(current.cantBlockPrinted), cantBeBlocked: false,
+        cantBlock: Boolean(current.cantBlockPrinted),
         saddled: false, tempBasePT: null, damagedThisTurn: false, abilityResolvedThisTurn: 0,
       });
     }
