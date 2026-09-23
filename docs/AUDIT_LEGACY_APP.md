@@ -5,6 +5,11 @@
 - **Status danych:** wersja z wyciętymi sekretami — 8 stałych ma wartość `"classified"`
 - **Cel:** ustalić fakty przed budową engine i standalone Wirtualnego Stołu (ADR 0006)
 
+> **Uwaga (2026-09-23, M418):** audytowany plik został **usunięty z repozytorium**
+> decyzją właściciela (kopię trzyma lokalnie). Ten dokument zostaje jako zapis
+> rozpoznania — odwołania do numerów linii i sekcji opisują stan pliku z dnia
+> audytu, nie stan repozytorium.
+
 Ten dokument jest **zamrożonym opisem stanu zastanego**. Nie opisuje docelowej architektury
 (zob. [ARCHITECTURE.md](ARCHITECTURE.md)) ani bieżącego postępu (zob. [PROJECT_STATE.md](PROJECT_STATE.md)).
 

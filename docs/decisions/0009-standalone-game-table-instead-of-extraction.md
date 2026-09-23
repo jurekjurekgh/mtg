@@ -46,6 +46,11 @@ właściciela i nie jest tu utrzymywana).
    referencyjnym do końca Etapu 5 — nie rozwijany, nie naprawiany, nie wchodzi
    do builda; po Etapie 5 usunięty osobnym PR-em.
 
+   > **Wykonane wcześniej (2026-09-23, M418):** właściciel zdecydował o usunięciu
+   > pliku przed Etapem 5 („i tak nikt z niego nie korzysta, kopię mam lokalnie”).
+   > Plik zniknął z repozytorium; zapis audytu zostaje w
+   > [AUDIT_LEGACY_APP.md](../AUDIT_LEGACY_APP.md).
+
 ## Co to zmienia w ADR 0006
 
 ADR 0006 pozostaje w mocy co do zasady „najpierw audyt, potem decyzje". Zmienia

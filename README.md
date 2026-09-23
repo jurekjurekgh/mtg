@@ -210,11 +210,14 @@ Kolejne kroki:
 
 Szczegóły kolejki i blokery: [docs/ROADMAP.md](docs/ROADMAP.md), najnowszy handoff sesji.
 
-## Uwaga o pliku `card_viewer_12_10_for_Github.html`
+## Legacy `card_viewer_12_10_for_Github.html` — usunięty (2026-09-23, M418)
 
-To **zamrożony snapshot referencyjny** istniejącej aplikacji właściciela, z wyciętymi sekretami.
-Służy wyłącznie jako materiał audytowy. Nie jest rozwijany, nie jest naprawiany i zostanie
-usunięty po Etapie 5 ([ADR 0009](docs/decisions/0009-standalone-game-table-instead-of-extraction.md)).
+Zamrożony snapshot aplikacji właściciela służył wyłącznie jako materiał audytowy
+([ADR 0009](docs/decisions/0009-standalone-game-table-instead-of-extraction.md))
+i **został usunięty z repozytorium** decyzją właściciela (kopię ma u siebie).
+Zapis rozpoznania zostaje w [docs/AUDIT_LEGACY_APP.md](docs/AUDIT_LEGACY_APP.md) —
+fakty o starej aplikacji (liczby linii, pułapki, przepływy) nadal cytowane w lekcjach
+i ADR-ach, ale sam plik nie jest już częścią repozytorium ani żadnego testu.
 
 ## Ważna uwaga o nazwie i materiałach
 

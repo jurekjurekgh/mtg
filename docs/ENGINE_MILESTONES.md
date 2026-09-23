@@ -7270,3 +7270,19 @@ Sprawdzone przy okazji (audyt katalogu, 2026-09-23): katalog **543 wpisy =
 dwustronnych**; statusów `in-development`/`unsupported` **nie ma ani jednego**
 (ADR 0022 spełniony dla całości), a każdy token jest używany przez co najmniej
 jedną kartę/mechanikę. Bramy: `npm test` 6173/6173, build 59 / 4048,9 kB.
+
+---
+
+## M418 — legacy viewer usunięty z repozytorium (2026-09-23)
+
+Decyzja właściciela: „Legacy viewer możesz skasować bo i tak nikt z niego nie
+korzysta, a lokalnie mam kopię na desktopie”. Usunięty
+`card_viewer_12_10_for_Github.html` (478 KB, 9 257 linii) — zamrożony snapshot
+starej aplikacji, trzymany od M3 wyłącznie jako materiał audytowy (ADR 0009 §6).
+
+Sprawdzone przed usunięciem: **żaden** test, narzędzie ani workflow nie odwołuje
+się do pliku (grep po `test/`, `tools/`, `.github/`); odwołania w `src/` to
+komentarze opisujące WZORZEC (tory obrazów, szybkie dodawanie w kreatorze), nie
+zależność. Zapis rozpoznania zostaje w `docs/AUDIT_LEGACY_APP.md` (z notą
+o usunięciu), a pozycja roadmapy „usunięcie snapshotu” jest odhaczona.
+Bramy: `npm test` zielone, build bez zmian.

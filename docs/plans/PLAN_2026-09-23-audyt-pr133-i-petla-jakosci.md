@@ -72,6 +72,14 @@ nowy strażnik klasy `KODY_SPOZA_KOLEKCJI` (mutacja czerwieni). Bramy zielone.
 265OGW Boulder Salvo, 318CLB Gond Gate, 377AVR Scroll of Avacyn,
 447DSK Resurrected Cultist, 464AVR Polluted Dead, 530ZEN Grazing Gladehart.
 
+### Etap D — usunięcie legacy viewera (M418, 2026-09-23)
+
+Zgoda właściciela: „Legacy viewer możesz skasować bo i tak nikt z niego nie
+korzysta, a lokalnie mam kopię na desktopie”. Usunięty
+`card_viewer_12_10_for_Github.html` + README/ROADMAP/ADR 0009/audyt legacy
+zaktualizowane (nota o usunięciu, pozycja roadmapy odhaczona). Sprawdzone:
+zero zależności w `test/`, `tools/`, `.github/`.
+
 ## 2. Etapy pętli jakości (ADR 0021, po audycie)
 
 - [ ] **B1. Żywy Tester** (`npm run build` + `tools/table-tester`): partia

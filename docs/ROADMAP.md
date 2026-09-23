@@ -350,7 +350,9 @@ jest już osiągnięta w Etapie 5.
 - [x] Kreator talii w interfejsie — M20: talia jest nadal tekstem do skopiowania
       lub pobrania; brak `localStorage` pozostaje świadomym kosztem ADR 0011/0012.
 - [ ] Decyzja o backendzie i docelowym poziomie ochrony FoW — osobny ADR.
-- [ ] Usunięcie snapshotu `card_viewer_12_10_for_Github.html` z repozytorium.
+- [x] Usunięcie snapshotu `card_viewer_12_10_for_Github.html` z repozytorium
+      — **M418 (2026-09-23)**: plik usunięty decyzją właściciela (kopię trzyma
+      lokalnie); rozpoznanie zostaje w `docs/AUDIT_LEGACY_APP.md`.
 
 ## Etap ciągły — kolejne karty
 

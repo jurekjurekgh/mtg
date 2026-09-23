@@ -12472,3 +12472,12 @@ kolekcji `tools/collection-art-ids.csv` trzymał jeszcze 71 wierszy STO
 STO czerwieni go. Pomiar towarzyszący: katalog 543 wpisów = 492 `supported`
 + 43 tokeny + 8 tylnych stron DFC, zero `in-development`/`unsupported`. Bramy:
 `npm test` 6173/6173, build 59 / 4048,9 kB.
+
+## M418 — legacy `card_viewer` usunięty z repozytorium (sesja 2026-09-23, PR #134)
+
+Zgoda właściciela w czacie („możesz skasować, kopię mam lokalnie”). Plik
+`card_viewer_12_10_for_Github.html` (478 KB) usunięty wraz z aktualizacją:
+README (sekcja o pliku przepisana na zapis historyczny), `docs/ROADMAP.md`
+(pozycja odhaczona), ADR 0009 §6 (nota o wykonaniu przed Etapem 5) i
+`docs/AUDIT_LEGACY_APP.md` (nota o usunięciu pliku). Żaden test ani workflow
+nie zależały od pliku — sprawdzone grepem przed usunięciem.
