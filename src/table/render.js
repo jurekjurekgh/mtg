@@ -6,6 +6,7 @@ import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { castsWithoutPayingMana, hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
 import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
+import { coloredPipsOf } from '../engine/mana-cost.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
@@ -621,13 +622,27 @@ export function groupCombatDecisions(commands, view) {
   }
   if (attackers.length > 0) {
     const request = choiceRequest({ id: `choice-${stamp}-attackers`, type: 'declare_attackers', options: attackers });
-    out.unshift({ request, first: attackers[0] });
+    out.push({ request, first: attackers[0] });
   }
   if (blockers.length > 0) {
     const request = choiceRequest({ id: `choice-${stamp}-blockers`, type: 'declare_blockers', options: blockers });
     out.push({ request, first: blockers[0] });
   }
-  return out;
+  // Uwaga właściciela 2026-09-23 (E): deklaracje walki mają stać POD
+  // „Dalej (Pass)”, a nie nad nim (atakujący był `unshift` na samą górę,
+  // blokujący `push` na sam dół — oba poza porządkiem `actionMenuRank`).
+  // Sortujemy CAŁĄ listę wpisów tym samym porządkiem co panel (stabilnie: równe
+  // rangi zachowują kolejność wejściową), więc miejsce deklaracji jest
+  // strukturalne i niezależne od tego, co akurat jest dostępne.
+  const rankOfEntry = (entry) => {
+    const type = entry.request?.type ?? entry.command?.type ?? '';
+    if (type === 'damage_assignment') return actionMenuRank('resolve_damage_assignment');
+    return actionMenuRank(type);
+  };
+  return out
+    .map((entry, index) => ({ entry, index }))
+    .sort((a, b) => (rankOfEntry(a.entry) - rankOfEntry(b.entry)) || (a.index - b.index))
+    .map(({ entry }) => entry);
 }
 
 /**
@@ -3559,7 +3574,18 @@ export function commandLabel(cmd, session, view) {
       // M315 (Veiled Ascension): cloak — specjalna akcja (bez stosu), koszt
       // many karty. Etykieta nazywa mechanikę i kartę (koszt = koszt karty,
       // którą kontroler zna — CR 708.2d).
-      return `Obróć twarzą do góry (Cloak): ${nameOfObjectId(cmd.objectId)}`;
+      // F3 (uwaga właściciela 2026-09-23c): etykieta musi nieść TAKŻE KOSZT
+      // odkrycia — sam wpis „Obróć twarzą do góry (Cloak): X” nie mówił, ile
+      // many to kosztuje (koszt = mana value karty, CR 708.2d; silnik czyta
+      // go z `cloakTurnUpCost`/`cloak.colors`, walidacja w game-state.js).
+      const cloakObj = obj(cmd.objectId);
+      const cloakCost = cloakObj?.cloakTurnUpCost;
+      if (cloakCost == null) return `Obróć twarzą do góry (Cloak): ${nameOfObjectId(cmd.objectId)}`;
+      // Pipy koloru z KARTY pod spodem (koszt odkrycia = mana value + kolorowe
+      // pipy wydruku) — ta sama arytmetyka co `coloredPipsOf` w silniku.
+      const cloakColors = cloakObj?.cardId ? coloredPipsOf(cloakObj.cardId) : [];
+      const cloakHtml = manaCostHtml(costSymbols(cloakCost, cloakColors));
+      return `Obróć twarzą do góry (Cloak): ${nameOfObjectId(cmd.objectId)} (koszt ${cloakHtml})`;
     }
     case 'resolve_hand_top_choice': {
       // M162/C (uwaga właściciela): Chittering Rats u bota otwierał modal

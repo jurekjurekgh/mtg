@@ -520,6 +520,13 @@ export function removeIllegalAttachments(state) {
   const events = [];
   for (const object of [...state.objects.values()]) {
     if (object.zone !== 'battlefield') continue;
+    // F2 (uwaga właściciela 2026-09-23c, Veiled Ascension): permanent
+    // ZAKRYTY (morph/cloak) to bezimienny 2/2 stwór BEZ typów i podtypów
+    // (CR 708.2) — dopóki leży twarzą w dół, NIE jest aurą, więc reguła
+    // „aura bez legalnego zaczarowanego obiektu” (CR 704.5m) go nie dotyczy.
+    // Bez tego warunku zakryta Aura (np. Guildscorn Ward po cloaku) szła do
+    // grobu natychmiast po wejściu, mimo że na stole jest legalnym 2/2.
+    if (object.faceDown) continue;
     if (object.attachedTo == null) {
       // CR 704.5m — trzeci przypadek reguły (łowów E3, 2026-09-21): „or is
       // not attached to an object or player”. Czysta aura bez zaczarowanego
