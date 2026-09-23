@@ -88,7 +88,10 @@ test('M102/U4: pozostałe akcje przechodzą nietknięte', () => {
   const entries = buildActionEntries(commands, session, view);
   assert.equal(entries.length, 3, JSON.stringify(labelsOf(entries)));
   const types = entries.map((e) => (e.command ?? e.first)?.type);
-  assert.deepEqual(types, ['play_land', 'pass_priority', 'concede']);
+  // Uwaga właściciela 2026-09-23 (E, sesja „c"): `groupCombatDecisions` sortuje
+  // teraz CAŁĄ listę porządkiem panelu (`actionMenuRank`) — pass jest ZAWSZE
+  // pierwszy (rank −1000), więc grupowanie duplikatów nie może tego przestawić.
+  assert.deepEqual(types, ['pass_priority', 'play_land', 'concede']);
 });
 
 // M149/C (uwaga właściciela): wybór celu Cuombajj Witches (resolve_opponent_target)
