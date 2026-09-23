@@ -519,7 +519,23 @@ export function isTargetingBlockedByProtection(state, target, source, { sourceCo
 export function removeIllegalAttachments(state) {
   const events = [];
   for (const object of [...state.objects.values()]) {
-    if (object.zone !== 'battlefield' || object.attachedTo == null) continue;
+    if (object.zone !== 'battlefield') continue;
+    if (object.attachedTo == null) {
+      // CR 704.5m — trzeci przypadek reguły (łowów E3, 2026-09-21): „or is
+      // not attached to an object or player”. Czysta aura bez zaczarowanego
+      // obiektu idzie do grobu WŁAŚCICIELA przez ten sam choke point ruchu,
+      // co zrzucanie z hosta (`detachOrphanedAttachment`, M271). Dwa kształty
+      // są LEGALNE i zostają na polu bitwy: bestow bez hosta znów jest
+      // stworem (CR 702.103b), equipment bez hosta jest normalnym artefaktem
+      // (CR 704.5n), a aura na GRACZA niesie `enchantedPlayerId`
+      // (reprezentacja `attachAuraToPlayer` — przypięta DO GRACZA, pin H/4).
+      // Guard = WYŁĄCZNIE czysta aura (deskryptor `aura`, bez `bestow`):
+      // zwykłe permanenty i nieprzyłączone equipmenty są legalne bez hosta.
+      if (object.aura != null && object.bestow == null && object.enchantedPlayerId == null) {
+        detachOrphanedAttachment(state, object, null, events);
+      }
+      continue;
+    }
     const host = state.objects.get(object.attachedTo);
     const hostLegal = isLegalAuraHost(object, host);
     if (!hostLegal) {

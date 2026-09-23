@@ -67,10 +67,10 @@ import {
   triggerTargetDebuffOf,
   triggerTargetPowerPumpOf,
   triggerTargetRemovesTargetOf,
-  triggerTargetEffectFriendly,
+  triggerTargetEffectFriendly, triggerTargetEvasionGrantOf,
 } from './effect-intent.js';
 
-export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetPowerPumpOf, triggerTargetRemovesTargetOf, triggerTargetEffectFriendly };
+export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetPowerPumpOf, triggerTargetRemovesTargetOf, triggerTargetEffectFriendly, triggerTargetEvasionGrantOf };
 
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
@@ -734,15 +734,28 @@ function untapStepTurnBasedAction(state, { pushToState = true } = {}) {
  * wyłącznie ten zbiór, execute waliduje identycznie — komenda zawsze spójna.
  */
 /**
- * Iloczyn kartezjański pul celów (oferta Epic Experiment — per legalny cel).
+ * Iloczyn kartezjański pul celów (oferta Epic Experiment — per legalny cel;
+ * ścieżka okien dla czarów bez `modes`).
+ *
+ * CR 601.2c (jak `cartesian` w spells.js): ten sam obiekt wolno wskazać
+ * raz na KŻADE wystąpienie słowa „target" — w obrębie jednego wystąpienia
+ * sloty muszą wskazywać różne obiekty. `words` niesie numery wystąpień
+ * (domyślnie: slot = wystąpienie). `null` powtarzać wolno („up to one”).
  */
-function cartesianTargetPools(pools) {
+function cartesianTargetPools(pools, words = null) {
   if (pools.length === 0) return [[]];
+  const tags = words ?? pools.map((_, i) => i);
   const [first, ...rest] = pools;
-  const tails = cartesianTargetPools(rest);
+  const tails = cartesianTargetPools(rest, tags.slice(1));
   const out = [];
   for (const head of first) {
-    for (const tail of tails) out.push([head, ...tail]);
+    for (const tail of tails) {
+      const clash = head !== null && head !== undefined && tail.some(
+        (t, j) => t === head && tags[0] === tags[j + 1],
+      );
+      if (clash) continue;
+      out.push([head, ...tail]);
+    }
   }
   return out;
 }
@@ -904,7 +917,8 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
   if (spec.length === 0) return withCosts([{ cardId: obj.id, targets: [] }]);
   const pools = spec.map((entry) => legalTargetCandidates(state, playerId, entry));
   if (pools.some((pool) => pool.length === 0)) return [];
-  return withCosts(cartesianTargetPools(pools).map((combo) => ({ cardId: obj.id, targets: combo })));
+  return withCosts(cartesianTargetPools(pools, spec.map((sp, wi) => sp?.targetWord ?? wi))
+    .map((combo) => ({ cardId: obj.id, targets: combo })));
 }
 
 /**
@@ -6242,7 +6256,9 @@ export function playerView(state, playerId) {
         if (object.kind === 'creature' && staticAttackPrevented(state, object, object.controllerId)) {
           entry.cantAttackStatic = true;
         }
-        if (object.cantBeBlocked === true) entry.cantBeBlocked = true;
+        // M407: dar „this turn" (cantBeBlockedUntilTurn, CR 514.2) — badge
+        // widoku liczony read-time z numerem tury; kontrakt widoku bez zmian.
+        if (object.cantBeBlockedUntilTurn != null && state.turn.number < object.cantBeBlockedUntilTurn) entry.cantBeBlocked = true;
         // C (zgłoszenie właściciela 2026-09-19b, Thieves' Tools): ewazja
         // z ZAŁĄCZNIKA („Equipped creature can't be blocked as long as its
         // power is 3 or less”) to ten sam fakt publiczny co `cantBeBlocked`
@@ -7165,18 +7181,36 @@ export function playerView(state, playerId) {
     // ofertę); „up to one"/„you may" (allowNone) dostaje opcję „brak celu"
     // NA KOŃCU listy (unshift przed kandydatami).
     const legal = legalTriggerTargetCandidates(state, triggerTargetHead);
+    // M407 (adapter intencji — L28, jedno miejsce): rozdział Sagi ma
+    // ability.effect: [] (M172/B — efekty wykonuje fireSagaChapter), więc
+    // sygnały intencji czytały PUSTĄ listę i zwracały false — klasa
+    // „najmniejszy power" (−20−wartość) miała otwarty kanał w KAŻDYM
+    // rozdziale Sag z celem. Efekty rozdziału niesie extra.chapterEffects.
+    // Normalizacja jak w helperach intencji (pojedynczy efekt-obiekt też się
+    // liczy — Battle-Rattle Shaman `effect: {pump}`, Lotusguard, Ironclad
+    // Slayer; warunek sam na Array.isArray przepuszczał je przez adapter
+    // jako puste i wracał do klasy „najmniejszy power").
+    const abilityEffs = Array.isArray(triggerTargetHead.ability?.effect)
+      ? triggerTargetHead.ability.effect
+      : (triggerTargetHead.ability?.effect ? [triggerTargetHead.ability.effect] : []);
+    const intentAbility = abilityEffs.length > 0
+      ? triggerTargetHead.ability
+      : { effect: triggerTargetHead.extra?.chapterEffects ?? [] };
     // M150/A: flaga `friendly` (pump/licznik na własnym) niesiona w komendzie,
     // żeby bot NIE celował przyjaznego pumpu w WROGIEGO stwora.
-    const triggerFriendly = triggerTargetEffectFriendly(triggerTargetHead.ability);
+    const triggerFriendly = triggerTargetEffectFriendly(intentAbility);
     // B (znalezisko testera): debuff P/T w komendzie (jak friendly z M150) —
     // bot premiuje zabójstwo, nie największy cel.
-    const triggerDebuff = triggerTargetDebuffOf(triggerTargetHead.ability);
+    const triggerDebuff = triggerTargetDebuffOf(intentAbility);
     // B (Battle-Rattle Shaman): pump siły w komendzie (jak debuff) —
     // bot celuje stwora zdolnego do ataku, nie największego chorego.
-    const triggerPump = triggerTargetPowerPumpOf(triggerTargetHead.ability);
+    const triggerPump = triggerTargetPowerPumpOf(intentAbility);
     // C (Academy Journeymage): flaga usunięcia celu (jak friendly —
     // zawsze bool): bot liczy zrywanie aur przyklejonych do celu.
-    const triggerRemovesTarget = triggerTargetRemovesTargetOf(triggerTargetHead.ability);
+    const triggerRemovesTarget = triggerTargetRemovesTargetOf(intentAbility);
+    // M407 (uwaga z gry — Shiva/Mesmerize): sygnał daru ewazji (jak pump) —
+    // bot wycenia cel zdolnością ataku, nie rozmiarem.
+    const triggerEvasionGrant = triggerTargetEvasionGrantOf(intentAbility);
     // M157/F4(a): wielocelowy trigger (count > 1, „each of up to N") —
     // warianty = podzbiory celów o rozmiarze 1..count (bez powtórzeń,
     // porządek deterministyczny) + zero celów przy upTo. CAP 32 wariantów
@@ -7204,7 +7238,7 @@ export function playerView(state, playerId) {
       // pierwszy wariant pełnego rozmiaru (deterministycznie: najwcześniejsze
       // kandydaty), a wariant pusty („up to") idzie na koniec.
       for (const targetIds of variants) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
       }
     } else {
       // M203/2 (konwencja „prezentacja = enumeracja"): kandydaci w kolejności
@@ -7212,10 +7246,10 @@ export function playerView(state, playerId) {
       // pierwszą ofertę), a odmowa („up to one"/„you may") jest OSTATNIA —
       // dawniej wymuszało to odwrócenie przez unshift.
       for (const targetId of legal) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
       }
       if (triggerTargetHead.allowNone) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMoonlitChoice) {

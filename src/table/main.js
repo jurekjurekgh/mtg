@@ -27,7 +27,7 @@ import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
 import { expandManaPool } from '../engine/resources.js';
-import { getSourceForObject } from '../engine/mana-sources.js';
+import { getSourceForObject, manaAbilityProductionOf } from '../engine/mana-sources.js';
 import { parseManaCost, reduceAlternativeCost } from '../engine/mana-cost.js';
 import { createSpellSoundPlayer, playCastSound } from './spell-sounds.js';
 import { createTopbarToggles } from './topbar-toggles.js';
@@ -39,7 +39,7 @@ import { detectImageMode } from './card-images.js';
 // import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
-import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf } from './multi-target.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
 
@@ -329,6 +329,16 @@ function bootstrapTable() {
       // (typ → liczba trafień gałęzi default scoreCommand). Tylko odczyt;
       // detektor detectUnvaluedBotChoices pilnuje nowego typu komendy bez case.
       botUnvalued: () => (session ? session.botUnvaluedDecisions() : null),
+      // Uwaga właściciela 2026-09-23 pkt (b): przycisk „Poddaj partię” zniknął
+      // z panelu, ale KOMENDA `concede` zostaje legalna w silniku. Testy UI,
+      // które potrzebują zakończonej partii (wskaźnik zwycięzcy), wywołują ją
+      // tędy — zamiast klikać nieistniejący już przycisk.
+      concede: () => {
+        if (!session) return { ok: false, reason: 'no_session' };
+        const result = session.apply({ type: 'concede', playerId: HUMAN_ID });
+        rerender();
+        return result;
+      },
     };
   }
   // Feature 2026-08-11: wyciszone opcje akcji (ptaszek „nie przerywaj
@@ -488,11 +498,47 @@ function bootstrapTable() {
     //            rekurencja z pod-zadaniem złożonym z wariantów wybranego trybu,
     //            więc cele zbiera ten sam kreator, co dla zwykłego czaru.
     // Wcześniej panel enumerował iloczyn „tryb × cele" (Robbers: 5 wierszy).
+    // M405/C (uwaga z gry — Vandalize): „Choose one or both • Destroy target
+    // artifact. • Destroy target land.” — kreator GNIĄZD wyboru: sekcja na
+    // tryb-składnik (0–1 kandydata z WSZYSTKICH), tryb „oba” dostarcza
+    // kandydatów gniazd, a tryb rzutu wynika z wyboru. Właściciel: „wybrania
+    // 0-1 artefaktu ze wszystkich możliwych oraz 0-1 lądu ze wszystkich
+    // możliwych” zamiast trzech gotowców z celami „pierwsze z brzegu”.
+    // PRZED castModePlanOf — plan bardziej wyspecjalizowany (kontrakt kaskady
+    // M300/1: od najwęższego do ogólnego).
+    const oneOrBothPlan = chooseOneOrBothPlanOf(request.options ?? []);
+    if (oneOrBothPlan) {
+      const oneOrBothLabels = (oneOrBothPlan.slotModes ?? []).map((modeIndex) => {
+        const src = session.state?.objects?.get(oneOrBothPlan.objectId);
+        return src?.spell?.modes?.[modeIndex]?.name ?? `cel ${modeIndex + 1}`;
+      });
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: oneOrBothPlan,
+        commands: request.options,
+        slotLabels: oneOrBothLabels,
+        intro: `${choiceGroupTitle(request, session, choiceView)} — ${oneOrBothPlan.selectionHint ?? 'wskaż 0–1 cel na każdą pozycję (co najmniej jedną)'}:`,
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     const castModePlan = castModePlanOf(request.options ?? []);
     if (castModePlan) {
       const modeOptions = request.options ?? [];
-      const repLabels = labelChoiceOptions(castModePlan.reps, session, choiceView);
-      castModePlan.rows = castModePlan.rows.map((row, i) => ({ ...row, label: repLabels[i] }));
+      // M406 (uwaga z gry 2026-09-22): wiersz kroku 1 NIGDY nie niesie
+      // wpiętego celu „pierwszy z brzegu” („jeden do tapa, jeden do untapa”
+      // z etykiet reprezentantów) — etykieta = NAZWA TRYBU z modelu, cele
+      // wybiera krok 2 (picker po pełnej liście kandydatów).
+      const modeNameList = session.state?.objects?.get(castModePlan.objectId)?.spell?.modes ?? [];
+      castModePlan.rows = castModePlan.rows.map((row, i) => ({
+        ...row,
+        label: modeNameList[castModePlan.modes[i]]?.name ?? `tryb ${castModePlan.modes[i] + 1}`,
+      }));
       renderMultiTargetWizard(els.choiceRequestBody, {
         view: choiceView,
         session,
@@ -2121,14 +2167,21 @@ function bootstrapTable() {
       const ability = obj.abilities?.[abilityIndex];
       const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
       if (!effects.some((e) => e?.type === 'add_mana')) return null;
+      // M405/B (uwaga z gry — Jeskai Devotee): produkcję TEJ zdolności czytamy
+      // z deskryptora add_mana (effect.colors/amount — jak silnik przy
+      // rozstrzyganiu, M67), a nie z getSourceForObject = produkcja „za samo
+      // {T}”, która celowo pomija zdolności z kosztem many (M193/A). Konwerter
+      // walut {1}: Add {U},{R},{W} wypadał z solwera wariantów (amount 0) i
+      // kreator many nie miał wyboru — auto-tap pierwszego lepszego źródła.
+      const production = manaAbilityProductionOf(obj, ability);
       const src = getSourceForObject(obj);
       // D (Powerstone): deskryptor many niesie ograniczenie spendOnly
       // (CR 106.3, token_powerstone — „only to cast artifact spells”).
       const spendOnly = effects.find((e) => e?.type === 'add_mana')?.spendOnly ?? null;
       return {
         cardId: obj.cardId,
-        colors: src?.colors ?? [],
-        amount: src?.amount ?? 0,
+        colors: production?.colors ?? src?.colors ?? [],
+        amount: production?.amount ?? src?.amount ?? 0,
         manaCost: ability?.cost?.mana ?? 0,
         // M311: kolory kosztu aktywacji — kreator NIE netuje kosztu z
         // produkcją (różne waluty i różne momenty, CR 601.2h), więc pip

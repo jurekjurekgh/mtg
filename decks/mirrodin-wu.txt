@@ -1,8 +1,6 @@
 # Mirrodin (WU)
 
 1x Crawling Chorus
-1x Horizon Spellbomb
-1x Panic Spellbomb
 1x Steel Sabotage
 1x Divine Offering
 1x Ichorclaw Myr
@@ -20,4 +18,4 @@
 1x Steelfin Whale
 1x True Conviction
 4x Plains
-6x Island
+5x Island

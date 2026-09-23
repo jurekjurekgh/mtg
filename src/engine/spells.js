@@ -1496,26 +1496,37 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
 /**
  * Iloczyn kartezjański list kandydatów (warianty celów czaru).
  *
- * M212/Z6 (audyt Żywym Testerem, CR 601.2c): TEN SAM obiekt nie może zostać
- * wskazany w dwóch slotach celu tego samego czaru („two target nonblack
- * creatures" wymaga DWÓCH różnych stworów). Dead Ringers jest pierwszą kartą
- * w katalogu z dwoma slotami tego samego typu, więc dotąd kolizja była
- * nieosiągalna i filtr nie istniał — gra oferowała „cel: Ainok Artillerist,
- * Ainok Artillerist" przy jednym stworze na stole i niszczyła go pojedynczo.
+ * Reguła rozróżniania celów jest WIERNIE CR 601.2c i zależy od WYSTĄPIEŃ
+ * słowa „target" (nie od liczby slotów):
  *
- * Filtr siedzi TUTAJ (a nie w opisie karty), bo dotyczy każdego czaru
- * wielocelowego — sześć miejsc budujących oferty korzysta z tej funkcji.
- * `null` (slot „up to one" / odmowa celu) powtarzać wolno — to brak celu,
- * nie obiekt.
+ *   „The same target can't be chosen multiple times for any one instance of
+ *   the word „target" on the spell. However, if the spell uses the word
+ *   „target" in multiple places, the same object, player, or zone can be
+ *   chosen once for each instance of the word "target" (as long as it fits
+ *   the targeting criteria). […] A spell that says „Destroy target artifact
+ *   and target land," however, can target the same artifact land twice
+ *   because it uses the word "target" in multiple places."
+ *
+ * `words` niesie numer wystąpienia słowa dla każdego slotu (domyślnie: jeden
+ * slot = jedno wystąpienie). Ten sam obiekt powtarzać wolno TYLKO między
+ * różnymi wystąpieniami; w obrębie jednego wystąpienia sloty muszą wskazywać
+ * różne obiekty (M212/Z6: „two target nonblack creatures" = jedno słowo
+ * z liczbą 2 — Dead Ringers ma oba sloty oznaczone `targetWord: 0`).
+ * `null` (slot „up to one" / odmowa celu) powtarzać wolno zawsze — to brak
+ * celu, nie obiekt.
  */
-function cartesian(pools) {
+function cartesian(pools, words = null) {
   if (pools.length === 0) return [[]];
+  const tags = words ?? pools.map((_, i) => i);
   const [first, ...rest] = pools;
-  const tails = cartesian(rest);
+  const tails = cartesian(rest, tags.slice(1));
   const out = [];
   for (const head of first) {
     for (const tail of tails) {
-      if (head !== null && head !== undefined && tail.includes(head)) continue;
+      const clash = head !== null && head !== undefined && tail.some(
+        (t, j) => t === head && tags[0] === tags[j + 1],
+      );
+      if (clash) continue;
       out.push([head, ...tail]);
     }
   }
@@ -2750,7 +2761,7 @@ export function legalSpellCasts(state, playerId) {
       return spec?.optional ? [...pool, null] : pool;
     });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
-    for (const combo of cartesian(candidatePools)) {
+    for (const combo of cartesian(candidatePools, targetSpec.map((sp, wi) => sp?.targetWord ?? wi))) {
       for (const sacId of sacrificePool) {
         const cast = { objectId: id, targets: combo };
         if (sacId !== null) cast.sacrificeTargetId = sacId;
@@ -2811,7 +2822,7 @@ export function legalCleaveCasts(state, playerId) {
       return spec?.optional ? [...pool, null] : pool;
     });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
-    for (const combo of cartesian(candidatePools)) {
+    for (const combo of cartesian(candidatePools, targetSpec.map((sp, wi) => sp?.targetWord ?? wi))) {
       casts.push({ objectId: id, targets: combo });
     }
   }
@@ -2842,7 +2853,8 @@ export function legalXCostCasts(state, playerId, objectId, object, manaAvailable
   const targetSpec = object.spell.targets ?? [];
   let pools = [[]];
   if (targetSpec.length > 0) {
-    pools = cartesian(targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object)));
+    pools = cartesian(targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object)),
+      targetSpec.map((sp, wi) => sp?.targetWord ?? wi));
   }
   if (pools.length === 0) pools = [[]];
   const basePips = coloredPipsOf(object.cardId);
@@ -2979,7 +2991,7 @@ export function legalModeCasts(state, playerId, objectId, modeIndex, mode, cap =
   const source = state.objects.get(objectId);
   const pools = spec.map((s) => legalTargetCandidates(state, playerId, s, source));
   if (pools.some((p) => p.length === 0)) return casts;
-  for (const combo of cartesian(pools)) casts.push({ objectId, targets: combo, modeIndex });
+  for (const combo of cartesian(pools, spec.map((sp, wi) => sp?.targetWord ?? wi))) casts.push({ objectId, targets: combo, modeIndex });
   return casts;
 }
 
@@ -3292,7 +3304,7 @@ export function legalEscapeCasts(state, playerId) {
       return spec?.optional ? [...pool, null] : pool;
     });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
-    for (const combo of cartesian(candidatePools)) {
+    for (const combo of cartesian(candidatePools, targetSpec.map((sp, wi) => sp?.targetWord ?? wi))) {
       casts.push({ objectId: id, targets: combo });
     }
     // M241 (zgłoszenie J/K/L): komenda rzutu NIE niesie już podzbioru
@@ -3453,7 +3465,7 @@ export function legalFlashbackCasts(state, playerId) {
       return spec?.optional ? [...pool, null] : pool;
     });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
-    for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo });
+    for (const combo of cartesian(candidatePools, targetSpec.map((sp, wi) => sp?.targetWord ?? wi))) casts.push({ objectId: id, targets: combo });
   }
   return casts;
 }
@@ -3535,7 +3547,7 @@ export function legalAdventureCasts(state, playerId) {
       return spec?.optional ? [...pool, null] : pool;
     });
     if (candidatePools.some((pool) => pool.length === 0)) continue;
-    for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo });
+    for (const combo of cartesian(candidatePools, targetSpec.map((sp, wi) => sp?.targetWord ?? wi))) casts.push({ objectId: id, targets: combo });
   }
   return casts;
 }

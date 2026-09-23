@@ -1544,7 +1544,9 @@ function blockRestrictionError(state, attacker, blocker) {
   if (landwalkSub && controlsLandWithSubtype(state, blocker.controllerId, landwalkSub)) {
     return `Stwora z landwalkiem (${landwalkSub}) nie może blokować obrońca z takim lądem`;
   }
-  if (attacker.cantBeBlocked) return 'Stwora z cantBeBlocked nie można blokować';
+  if (attacker.cantBeBlockedUntilTurn != null && state.turn.number < attacker.cantBeBlockedUntilTurn) {
+    return 'Stwora z cantBeBlocked nie można blokować';
+  }
   if (cantBeBlockedFromEquipment(state, attacker)) return 'Nosiciel equipmentu z progiem mocy nie może być blokowany';
   // Intimidate (CR 702.13, M174/D — Predator's Gambit): atakujący może być
   // blokowany wyłącznie przez ARTEFAKTOWE stwory i/lub stwory dzielące

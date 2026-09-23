@@ -196,7 +196,10 @@ test('M138/Z5: sparametryzowane typy celu mają obsługę parametru w opisie', (
   const parametrised = new Map();
   const walk = (spec, cardName) => {
     if (!spec?.type) return;
-    const extra = Object.keys(spec).filter((k) => k !== 'type');
+    // `targetWord` (CR 601.2c, Vandalize/Dead Ringers) to znacznik WYSTĄPIENIA
+    // słowa „target” — zmienia regułę rozróżniania celów przy castingu, NIE
+    // opis kandydata. Ten pin pilnuje parametrów widocznych w ETYKIECIE.
+    const extra = Object.keys(spec).filter((k) => k !== 'type' && k !== 'targetWord');
     if (extra.length) parametrised.set(spec.type, cardName);
   };
   for (const card of ALL_CARDS) {

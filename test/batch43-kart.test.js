@@ -3,6 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
+import { attachAuraToPlayer } from '../src/engine/attachments.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
@@ -261,6 +262,10 @@ test("B43/11: Sea God's Scorn — do trzech celów: stwory i/lub enchantmenty wr
   putCard(state, 'scorn', 'sea-gods-scorn', 'p1', 'hand');
   putCard(state, 'their-creature', 'highland-game', 'p2');
   putCard(state, 'their-ench', 'curse-of-the-pierced-heart', 'p2', 'battlefield', { kind: 'enchantment' });
+  // Fixture legalny wg CR 704.5m (H/3 audytu 2026-09-21): klątwa „Enchant
+  // player” na polu bitwy jest PRZYPINIA do gracza (reprezentacja
+  // `attachAuraToPlayer`), a nie leży luzem — luźny kształt sprząta SBA.
+  attachAuraToPlayer(state, 'their-ench', 'p2');
   putCard(state, 'my-creature', 'alaborn-trooper', 'p1');
   addMana(state, 'p1', 6, { colors: ['U', 'U'] });
   const casts = playerView(state, 'p1').legalCommands

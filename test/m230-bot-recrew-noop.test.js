@@ -23,7 +23,13 @@ const REGISTRY = createCardRegistry();
 
 function setup(animated) {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
-  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  // M408 (rewizja pinu, zgłoszenie z gry E 2026-09-22): crew ma dodatnią
+  // wycenę WYŁĄCZNIE w oknie walki przed deklaracją atakujących (moja tura)
+  // albo przed blokami (tura przeciwnika) — w fazie głównej jest już karany
+  // jako marnotrawstwo. Scenariusz pinu przenosi się więc do
+  // `beginning_of_combat`; badana reguła (tapnięty / już animowany pojazd)
+  // pozostaje ta sama.
+  state.turn = jumpToStep(state.turn, 'beginning_of_combat', 'p1');
   state.turn.activePlayerId = 'p1';
   const barge = gameObjectDataOf(REGISTRY.get('bomat-bazaar-barge'));
   // Pojazd: animowany albo nie. Animowany nosi originalBeforeAnimation (jak

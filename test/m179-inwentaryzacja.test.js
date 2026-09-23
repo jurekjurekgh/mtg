@@ -53,11 +53,23 @@ test('D2: stwór z chorobą przywołania NIE liczy się (CR 302.6); źródła z 
   // addObject nie przenosi summoningSickness z patcha (L21) — ustaw wprost.
   state.objects.set('villager', Object.freeze({ ...state.objects.get('villager'), summoningSickness: true }));
   assert.equal(producibleMana(state, 'p1'), 0, 'choroba przywołania blokuje {T}');
-  // Apprentice Wizard (koszt {1}{U}) i Pristine Talisman (skutek uboczny —
-  // życie) NIE wchodzą do auto-many (świadoma decyzja gracza).
+  // Apprentice Wizard (koszt {1}{U}) NIE wchodzi do auto-many — jego użycie
+  // wymaga opłacenia kosztu, więc zostaje decyzją gracza (źródła kosztowe
+  // liczy osobna ścieżka `untappedCostedManaSources`).
   putCard(state, 'wizard', 'apprentice-wizard', 'p1', 'battlefield', { summoningSickness: false });
+  assert.equal(untappedFreeManaSources(state, 'p1').length, 0, 'wizard poza czystą maną');
+  // M409 (REWIZJA PINU, zgłoszenie z gry F 2026-09-22): Pristine Talisman
+  // („{T}: Add {C}. You gain 1 life.”) był tu wykluczony razem z Wizardem —
+  // i to był BŁĄD, który właściciel zgłosił z gry: „w ogóle nie można nim
+  // płacić… mam 4 lądy i nietapnięty Talisman, artefakt za 5, nie mam oferty
+  // rzutu”. Rider KORZYSTNY (zysk życia) nie czyni z produkcji decyzji
+  // strategicznej — nie ma czego rozważać, bo tapnięcie daje manę I życie
+  // (koszt pozostaje samo {T}). Źródło liczy się więc do many, a rider
+  // wykonuje się także przy auto-tapie (pin F/0–F/2 w
+  // `test/uwaga-z-gry-2026-09-22-f-pristine-talisman.test.js`).
   putCard(state, 'talisman', 'pristine-talisman', 'p1');
-  assert.equal(untappedFreeManaSources(state, 'p1').length, 0, 'wizard/talisman poza czystą maną');
+  assert.deepEqual(untappedFreeManaSources(state, 'p1').map((e) => e.object.id), ['talisman'],
+    'Talisman JEST źródłem many (rider zysku życia nie wyklucza auto-tapu)');
 });
 
 test('D3: oferta rzutu widzi manę z Lantern/Villager i płatność je auto-tapuje (L48)', () => {

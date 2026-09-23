@@ -18,6 +18,8 @@
 //    cast_adventure/cast_adventure_creature (ani cast_escape/cast_flashback
 //    /turn_manifest_face_up) → 99 > pass(8)/concede(9). Fix: wszystkie
 //    rzuty w ranku 5 (razem z czarami) + pass i poddanie Z ZASADY
+//    [REWIZJA 2026-09-23 / uwaga Q: pass jest teraz PIERWSZY, a „Poddaj partię”
+//    zniknęło z panelu. Poniższy opis pokazuje pierwotną intencję M257 r3.]
 //    ostatnie (actionMenuRank 1000/1001), więc żadna nowa komenda
 //    (fallback 99) nie wypadnie poniżej „Poddaj partię”.
 //
@@ -201,23 +203,24 @@ test('M257B1: ranki rzutów — adventure/escape/flashback/manifest w ranku 5 (z
   assert.equal(actionMenuRank('cast_spell'), 5, 'spójność: cast_spell = 5');
 });
 
-test('M257B2: pass i poddanie partii Z ZASADY ostatnie (nie z ranku 8/9)', () => {
-  // Fallback dla nierankowanych typów to 99 — dawniej przez to Przygoda
-  // (99) wypadała PO pass(8)/concede(9). Teraz pass=1000, concede=1001:
-  // każda komenda (nawet nowa, nierankowana) jest przed nimi.
-  assert.ok(actionMenuRank('pass_priority') > actionMenuRank('cast_adventure'), 'pass po przygodzie');
-  assert.ok(actionMenuRank('pass_priority') > 99, 'pass po fallbackzie 99 (nowe komendy)');
-  assert.ok(actionMenuRank('concede') > actionMenuRank('pass_priority'), 'poddanie jako ostatnie');
-  assert.ok(actionMenuRank('unknown_future_type') < actionMenuRank('pass_priority'),
-    'nierankowana przyszła komenda przed pass (reguła właściciela)');
+test('M257B2: pozycja passa jest STRUKTURALNA, nie z tabeli ACTION_RANK', () => {
+  // REWIZJA 2026-09-23 (uwaga Q właściciela): kierunek ODWRÓCONY — właściciel
+  // poprosił o „Dalej (Pass)” ZAWSZE na górze („raz jest niżej, raz wyżej
+  // i czasem mam problem z trafieniem w niego”). Sens pinu zostaje ten sam:
+  // pozycja passa nie może wynikać z tabeli ranków, bo wtedy nowa,
+  // nierankowana komenda (fallback 99) wypycha go z jego miejsca.
+  assert.ok(actionMenuRank('pass_priority') < actionMenuRank('cast_adventure'), 'pass nad przygodą');
+  assert.ok(actionMenuRank('pass_priority') < 99, 'pass nad fallbackiem 99 (nowe komendy)');
+  assert.ok(actionMenuRank('unknown_future_type') > actionMenuRank('pass_priority'),
+    'nierankowana przyszła komenda POD passem (reguła właściciela Q)');
 });
 
-test('M257B3: sort panelu — Przygoda z czarami, pass przed poddaniem na dole', () => {
+test('M257B3: sort panelu — pass na górze, Przygoda nadal w grupie czarów', () => {
   // Ten sam porządkownik co renderTableView (render.js) — pinuje zachowanie
-  // menu, nie tylko mapę ranków.
+  // menu, nie tylko mapę ranków. REWIZJA 2026-09-23 (Q): pass na GÓRZE;
+  // `concede` nie jest już ofertą panelu (filtrowane w renderTableView).
   const commands = [
     { type: 'pass_priority' },
-    { type: 'concede' },
     { type: 'cast_adventure', objectId: 'slaad' },
     { type: 'cast_spell', objectId: 'bolt' },
     { type: 'activate_ability', objectId: 'sword' },
@@ -226,10 +229,9 @@ test('M257B3: sort panelu — Przygoda z czarami, pass przed poddaniem na dole',
   ];
   const sorted = commands.slice().sort((a, b) => actionMenuRank(a.type) - actionMenuRank(b.type));
   const pos = (type) => sorted.findIndex((c) => c.type === type);
-  assert.ok(pos('cast_adventure') < pos('pass_priority'), 'Przygoda NAD pass (uwaga B)');
-  assert.ok(Math.abs(pos('cast_adventure') - pos('cast_spell')) <= 1, 'Przygoda w grupie czarów');
-  assert.equal(pos('pass_priority'), sorted.length - 2, 'pass przedostatnie');
-  assert.equal(pos('concede'), sorted.length - 1, 'poddanie partii jako ostatnie');
+  assert.equal(pos('pass_priority'), 0, 'pass jako pierwszy (uwaga Q)');
+  assert.ok(Math.abs(pos('cast_adventure') - pos('cast_spell')) <= 1,
+    'Przygoda nadal w grupie czarów (sens uwagi B zachowany)');
 });
 
 // ---------------------------------------------------------------------------

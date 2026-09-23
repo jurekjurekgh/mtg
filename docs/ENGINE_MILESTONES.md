@@ -6766,3 +6766,448 @@ jako „niewyceniony", aggro też nie zaczarowuje siebie. Pin:
 zwrotu, etykieta, CR 608.2b, oba boty). Lekcja **L163**; bramy: `npm test`
 **6079/6079**, `node tools/run-tests.mjs all` **6089/6089** (~274 s), build
 **59 modułów / 3987,2 kB**, budżet lektury **95 819/100 000**.
+
+## M404 — 2026-09-21b: audyt scalonego PR #132 (114 plików) + znalezisko H-1 w CR 704.5m (PR #133)
+
+Sesja „Kontynuujemy projekt.” → pętla domyślna (ADR 0021) z audytem poprzedniego
+scalonego PR (ADR 0020 B). Przedmiot: diff `614613e..351126a` = 114 plików
+(+4 379/−733), pięć tematów (T1 gospodarz aury, T2 piny F1–F15, T3 uwagi A/B/C,
+T4 audyt dokumentacji startowej + cięcia lekcji, T5 milestones/historia/handoffy).
+Metoda: pełna lektura diffu, cytaty CR ze źródeł (ADR 0030: 303.4f, 704.5m,
+608.2b, 401.2), skan ADR 0002 po dodanych liniach `src/` (czysto — jedyne
+porównania stringów to typy komend i `zone === 'library'`), weryfikacja
+mutacyjna 5/5 (M1 predykat hosta-gracza, M2 sloty blokera, M3 cichy `return`
+podglądu, M4 ikony many, M-H gałąź 704.5m). Werdykt: **APPROVE** — 0 defektów
+w samym PR #132, 4 notki nie-defektowe (reprezentacja `attachedTo: null`,
+`object_moved` jako sygnał ETB, konwencja „CR 608.2b” w nazwach pinów,
+strażnik źródła E6/6 wg L160).
+
+Pętla jakości: 8 partii Żywym Testerem na `dist/` (seedy 101–108, wszystkie
+6 profili, 8 par talii) — 8/8 naturalnych końców, 0 zgłoszeń detektorów,
+0 niewycenionych; ręczna lektura transkryptów (L27) bez znalezisk. Łowy CR
+nową ścieżką (kompletność CR 704.5m w SBA — `state-based.js` +
+`removeIllegalAttachments`, poza tematami PR #132) dały **znalezisko H-1**:
+trzeci przypadek reguły („or is not attached to an object or player”) był
+pomijany — nieprzypięta czysta aura zostawała na polu bitwy w nieskończoność
+(sonda `scratch/probe-7045m.mjs`, wcześniej pomiar zdegenerowany przez L21 —
+`addObject` zrzuca `attachedTo`). Naprawa u źródła: gałąź trzeciego przypadku
+woła ten sam choke point ruchu (`detachOrphanedAttachment`, M271) wyłącznie
+dla czystych aur (`object.aura`, bez `bestow`, bez `enchantedPlayerId` —
+pierwsza wersja guardu łapała zwykłe permanenty; klasa L5). Pin
+`test/granica-7045m-aura-sba-2026-09-21.test.js` H/1–H/4 (RED→GREEN dla H/3,
+anty-over-fix H/4 dla aury na gracza), mutacja M-H czerwieni H/3. Skutek
+uboczny: fixture B43/11 (Sea God's Scorn) trzymał klątwę „Enchant player”
+LUZEM (stan nielegalny wg CR 704.5m, tolerowany tylko dzięki luce) —
+zalegalizowany `attachAuraToPlayer`; bounce klątwy z gracza działa. Bez nowej
+lekcji (klasa = L5/L107; budżet lektury bez zmian). Bramy: `node
+tools/run-tests.mjs all` **6093/6093** (~276 s), build **59 modułów /
+3988,2 kB**, bot-benchmark **10/10**, budżet lektury **95 819/100 000**.
+
+## M405 (2026-09-21c, PR #133) — uwagi z gry właściciela A/B/C: Twiddle penalizowany, „Mana Wizard” konwerterów many, Vandalize „choose one or both”
+
+Trzy uwagi z żywej gry (2026-09-21), każda u root cause z pinami i dowodem
+mutacyjnym:
+
+- **A. Twiddle** (`7300c6b`): rzut „tapnąć ląd wroga w Głównej 1” (odkręca
+  się w untapie właściciela — czar bez wartości) to klasa **nigdy-wartościowa**
+  na obiegu czaru: `tapTimingBonus` daje ocenę ≤ −10 na MÓJ obieg dla celu
+  spoza walki/blokowania, a `tapTargetValue` wcześnie zwraca taką ocenę
+  (im szybciej kara, tym mniej ruchów o tę lepszą). Okna wartości zachowane
+  (anty-over-fix T/2/T/3: początek walki na blokerze wroga +20, denial many
+  w upkeep wroga +14, odkręcenie własnego po ataku — M146). Klasa po
+  deskryptorze rodzaju celu (`kind` stwór/ląd — ADR 0002), nie po nazwie
+  karty (T/4). Mutacje M-T1/M-T2 czerwienią T/1(+1b)/T/2/T/3. Pin
+  `test/uwaga-z-gry-twiddle-2026-09-21.test.js` T/1–T/4.
+- **B. Jeskai Devotee** (`2b2a8a8`): „Mana Wizard” nie widział konwerterów
+  many, bo `getSourceForObject` z `mana-sources.js` wymagał `data.spell
+  .abilities`, a zdolność many Devotee to `kind: 'mana'` w `data.abilities`.
+  Naprawa u źródła: `manaAbilityProductionOf(gameObject, ability)` (paritet
+  z M67 — ścieżka wykonania przypięta `test/jeskai-devotee-once-per-turn
+  .test.js`) czyta produkcję ze zdolności `kind: 'mana'` z `abilities`
+  obiektu; `abilityInfo` w `main.js` bierze produkcję przez helper.
+  Kosztowe konwertery liczą się jako źródła (M195/A: Mox Amber opłacalne —
+  regułę broni test rodzinny). Piny D/1–D/4 (plan `manaSourcesOf` dla {W}
+  na stole z Devotee — obie drogi, D/2 anty-over-fix Pardic Wanderera,
+  D/4 przez `buildActionEntries`), mutacje M-B1/M-B2 czerwienią D/1+D/2/D/4.
+  Pin `test/uwaga-z-gry-jeskai-devotee-mana-wizard-2026-09-21.test.js`.
+- **C. Vandalize „Choose one or both”** (`8c184e7`): modal z niezależnymi
+  pickerami **0–1 artefaktu ze wszystkich × 0–1 lądu ze wszystkich** (co
+  najmniej jedno — „choose one or both”), zamiast trzech gotowców z celami
+  wpiętymi „pierwsze z brzegu”. `chooseOneOrBothPlanOf` (multi-target.js)
+  czyta kształt rodziny komend: tryb ZŁOŻONY („oba”) dostarcza gniazda
+  wyboru, tryby 1-celowe wiążą dokładnie jedno gniazdo po zawartości —
+  ląd-artefakt typu Great Furnace kandyduje w OBU gniazdach (rozróżniany
+  trybem, nie rozłącznością). `commandForChooseOneOrBoth` = mapa
+  WYBÓR→KOMENDA na `legalCommands` (L48); gałąź kaskady w `main.js` PRZED
+  `castModePlanOf` (M300/1), etykiety gniazd z nazw trybów modelu karty;
+  pusty wybór gasi „Zatwierdź”. Model 3-mody katalogu bez zmian (piny
+  `audit-batch23-fixes`). Mutacje M-C1 (plan zawsze null) i M-C2 (komenda
+  „pierwsza z brzegu”) czerwienią V/1+V/2. Pin
+  `test/uwaga-z-gry-vandalize-2026-09-21.test.js` V/1–V/4.
+
+Uzupełnienie C (ta sama sesja, pytanie właściciela „zgodnie z CR?”):
+**CR 601.2c rozróżnia WYSTĄPIENIA słowa „target”** — „ten sam obiekt wolno
+wskazać raz na każde wystąpienie; w obrębie jednego wystąpienia sloty muszą
+być różne”. Reguła w `cartesian` (spells.js) i `cartesianTargetPools`
+(game-state.js) była koszykowa („sloty w ogóle różne” — M212/Z6 dla Dead
+Ringers) i dusiła legalny wybór z przykładu CR: „Destroy target artifact and
+target land… can target the same artifact land twice”. Naprawa: `targetWord`
+w specu celu = numer wystąpienia (Dead Ringers: oba sloty `targetWord: 0`
+— „two target nonblack creatures” to jedno słowo), domyślnie slot = osobne
+wystąpienie. V/5 (Vandalize „oba” na Great Furnace oba gniazda → komenda
+`[art1, art1]`, niszczy raz) + V/5b (Dead Ringers: 0 ofert przy jednym
+stworze, 2 pary przy dwóch) + M212/Z6 nietknięte; mutacje M-D1/M-D2
+czerwienią V/5 / V/5b+M212/Z6; guard M138/Z5 pomija `targetWord` (znacznik
+reguły castingu, nie parametr opisu etykiety).
+
+Bez nowych lekcji (klasy L20/L37/L150/L160 + M300/1 + L48) i bez nowych
+kart (ADR 0029). Bramy: `node tools/run-tests.mjs all` **6108/6108**
+(~370 s), build **59 modułów / 3999,6 kB**, `node tools/benchmark.mjs
+--quick` **672 mecze, 0 niedokończonych** (heuristic **85,9%** — odniesienie
+bez zmian), budżet lektury **95 819/100 000**. Pełnego B0 nie uruchamiano
+(ADR 0018).
+
+## M406 (2026-09-22, PR #133) — uwaga z gry: WSZYSTKIE czary modalne bez „pierwszego z brzegu” targetu (klasa zamknięta)
+
+Zgłoszenie właściciela (Twiddle): „zamiast modala wyboru wszystkich
+możliwych celów do tapnięcia i odtapowania dostaję jakieś losowe (pewnie
+pierwsze możliwe) targety — jeden do tapa, jeden do untapa. ILE RAZY BĘDĘ
+POPRAWIAĆ TEN BŁĄD???? Przejrzyj wszystkie czary modalne i popraw je, żeby
+NIE WYBIERAŁY UPROSZCZONEGO PIERWSZEGO TARGETU!!!! Przed chwilą poprawiałeś
+Vandalize z identycznym błędem.” Pomiar (sonda probe-twiddle): rodzina
+Twiddle = 10 ofert (2 tryby × 5 celów), `chooseOneOrBothPlanOf` = null
+(wymagał trybu złożonego) → `castModePlanOf` pokazywał reprezentanty obu
+trybów z wpiętymi celami (oba = dragonbroods-2). Naprawa KLASY, nie karty:
+
+- **kształt B planu gniazd** (`chooseOneOrBothPlanOf`): same tryby
+  1-celowe (Twiddle „tapnięcie albo odkręcenie”, Steel Sabotage „kontra
+  albo zwrot”, Agate Assault, Keep Out) = JEDEN modal z pickerem 0–1 na
+  KAŻDY tryb (sekcja = tryb, wiersz = każdy kandydat); mapa WYBÓR→KOMENDA
+  jak w Vandalize, a „choose one” = dokładnie jedno gniazdo (dwa
+  wypełnione gaszą „Zatwierdź”). Etykiety gniazd = nazwy trybów
+  („Tapnięcie”/„Odkręcenie”).
+- **krok 1 `castModePlanOf` bez celów**: etykieta wiersza = NAZWA TRYBU
+  z modelu (`spell.modes[…].name`) — koniec z `labelChoiceOptions(reps)`,
+  które wpijało cel „pierwszy z brzegu” w wiersz. Kształty mieszane/0-celowe/
+  varTV (Robbers, Selesnya Charm, Fortify…) zostają przy dwustopniowym M2
+  (krok 2 = picker po pełnej liście — akceptowany kształt od zgłoszenia
+  Robbers).
+- **strażnik inwentarza CM/2**: każdy modalny czar w katalogu musi należeć
+  do klasy A (tryb złożony — Vandalize), B (same tryby 1-celowe — cztery
+  karty) albo C (mieszane/0-celowe/varTV — sześć kart); nowy czar modalny
+  = świadoma klasyfikacja + piny.
+
+Piny `test/uwaga-z-gry-czary-modalne-2026-09-22.test.js` CM/1–CM/4
+(Twiddle pickerowy modal + DOM: 8 wierszy, NIC wstępnie zaznaczonego,
+wybór gracza wiąże WYBRANY cel; inwentarz A/B/C; anty-over-fix
+varTV/0-celowe/mieszane/krzyżowy; źródło etykiet). V/3 zrewidowane
+(Twiddle-kształt = gniazda; varTV bez zmian). Mutacje M-E1 (gałąź B → null)
+czerwieni CM/1+1b+3; M-E2 (etykiety z powrotem z repów) czerwieni CM/4.
+
+Bramy: `node tools/run-tests.mjs all` **6113/6113** (~377 s), build
+**59 modułów / 4002,0 kB**; regresja rodziny kreatorów 223/223. Bez nowych
+lekcji i bez nowych kart (ADR 0029).
+
+## M407 (2026-09-22, PR #133) — uwaga z gry B: dar „can't be blocked this turn” celuje atakiem, nie najmniejszym powerem (klasa cant_be_blocked zamknięta)
+
+Zgłoszenie właściciela (Shiva, Warden of Ice — Saga, rozdziały I–II
+„Mesmerize — Target creature can't be blocked this turn.”): „Bot wybiera
+kreaturę, która ma najmniejszy power (bez sensu), a poza tym w ogóle nie
+może atakować bo jest na stałe tapnięta moją aurą (super bez sensu). A mógł
+wybrać np. siebie — 4/3, wtedy wjechałby we mnie i zadał obrażenia. A tak
+zmarnował tą zdolność. Scoring do poprawy.”
+
+Root cause (KLASA, nie karta) — trzy warstwy:
+
+- **klasyfikacja intencji**: `triggerTargetEffectFriendly` nie znał
+  `cant_be_blocked`, a rozdziały Sag mają `ability.effect: []` (M172/B —
+  efekty wykonuje `fireSagaChapter`) → `cmd.friendly=false` → gałąź WROGA
+  dla własnych celów (`finish(-20 - value)`) faworyzowała NAJMNIEJSZĄ
+  wartość — dokładnie opisany „najmniejszy power”;
+- **brak bramki ataku**: ogólna gałąź przyjazna znała tylko rozmiar celu
+  (attackBonus wyłącznie dla `cmd.pump`) — trup pod stałą blokadą
+  odkręcania przechodził jak każdy inny cel;
+- **wieczna flaga**: efekt zostawiał `cantBeBlocked: true` NA ZAWSZE
+  („this turn” z Oracle — odchyłka od wygaśnięcia z numerem tury, CR 514.2;
+  ten sam audyt, który wcześniej skrytykował „jednorazową flagę na obiekcie”
+  przy cantBlockRestrictions).
+
+Naprawa (klasa po deskryptorze `cant_be_blocked`, ADR 0002 — trzy karty:
+Shiva I/II, Enter the Enigma, Coralhelm Guide):
+
+- `triggerTargetEffectFriendly`: `cant_be_blocked` = PRZYJAZNY (jak grant
+  keywords, M156/F1) + `triggerTargetEvasionGrantOf` (sygnał daru ewazji);
+- adapter intencji rozdziałów Sag w jednym miejscu budowy komend
+  (`extra.chapterEffects` — normalizacja tablica LUB pojedynczy efekt-obiekt,
+  bez czego regresja golden-master: Battle-Rattle Shaman, Lotusguard,
+  Ironclad Slayer); komenda `resolve_trigger_target` niesie `evasionGrant`;
+- `cantBeBlockedTargetValue` (strefa `tapTargetValue`): martwy atak
+  (tapnięty — w tym na stałe pod blokadą odkręcania — choroba bez haste,
+  cantAttackStatic) = dar-pustka ≤ −20 (nigdy); wśród żywych NAJWIĘKSZY
+  atakujący (2·power); okno „this turn” (przed walką własnej tury); dar
+  dla wroga = strzał w stopę (−40−power). Hacze: gałąź evasionGrant
+  `resolve_trigger_target` + pętla wyceny efektów cast/activate (L41);
+- wygaszanie: `cantBeBlockedUntilTurn = state.turn.number + 1`, odczyt
+  read-time (wzorzec `hexproofUntilTurn`; combat.js, widok, no-op check
+  abilities.js, fingerprint) — badge widoku `cantBeBlocked` bez zmian
+  (kontrakt ADR 0017);
+- **pula Oracle**: Shiva „Target creature” = DOSŁOWNIE każdy stwór
+  (Scryfall FIN #58 — ten sam tekst co oracleText wpisu; dawny spec
+  `creature_you_control` był sprzeczny z oboma) — kandydaci obejmują stwory
+  wroga, wycena ich nigdy nie wybiera;
+- **strażnik domknięty**: `bot-trigger-target-classification-guard` skanuje
+  odtąd ROZDZIAŁY SAG z celem (dotąd poza skanem — Mesmerize żył bez
+  klasyfikacji = otwarty kanał klasy L50 dla każdego nowego rozdziału).
+
+Piny `test/uwaga-z-gry-shiva-mesmerize-2026-09-22.test.js` F/0–F/7
+(klasyfikacja; scenariusz właściciela — wybór = Shiva, martwy ≤ −20;
+martwy-duży vs żywy-mały; choroba+haste; okno czasowe; inwentarz klas;
+wygaszanie; pula Oracle). Mutacje: M-F1 (klasyfikacja) → F/0; M-F2
+(adapter Sag) → F/1+3+4+7; M-F3 (bramka ataku) → F/1+2+3; M-F4 (wieczna
+flaga) → B2+F/6. Rewizje pinów stanu (m172/B2, real-cards-batch16/20/22,
+bug-hunt M104) — pole → termin daru. Bramy: `run-tests all` **6121/6121**,
+build **59 modułów / 4009,2 kB**, benchmark --quick **85,9%** (577/672),
+rodzina 225/225. Bez nowych kart (ADR 0029).
+
+## M408 — uwagi z gry 2026-09-22 (C/D/E): koszt musi mieć adresata (2026-09-22)
+
+Trzy zgłoszenia właściciela z jednej partii, wszystkie o tej samej wadzie
+wyceny: bot płacił REALNY koszt (karty z biblioteki, karty z ręki, tapnięcie
+stworów) za efekt, którego w danym oknie nie potrafił spieniężyć. Naprawy
+klasami po deskryptorach (ADR 0002), stan wyłącznie z PlayerView (ADR 0017).
+
+**C — Sequestered Stash** („{4}, {T}, Sacrifice this land: Mill five cards.
+Then you may put an artifact card from your graveyard on top of your
+library.”): bot przy 11 kartach biblioteki mielił pięć, żeby odzyskać jedną.
+Warunki właściciela wchodzą jako bramka łącznikiem „i” dla KLASY zdolności
+(koszt `sacrificeSelf` na lądzie + mill własnej biblioteki): biblioteka ≥ 30,
+lądów na stole > 8, w talii artefakt za 8+ many. Brak któregokolwiek = −60
+(poniżej passu; kara przebija premię odzysku — L3). „Artefakt w talii”
+liczony z listy WŁASNEJ talii (`ownCounts` — gracz zna swój decklist,
+precedens zgłoszenia B 2026-09-20) minus jawne kopie poza biblioteką;
+biblioteka pozostaje ukryta (FoW).
+
+**D — Cathartic Reunion** (koszt dodatkowy „discard two cards”): wycena
+`resolve_discard_choice` dla `purpose: 'cost'` znała tylko koszt many, więc
+bot oddawał „rewelacyjne kreatury”. Nowa preferencja (`discardCostPreference`):
+najpierw karty, których i tak NIE rzuci z braku koloru (`colorCastable` —
+kolory źródeł przez `getSourceForObject`, zapotrzebowanie przez
+`coloredPipsOf`, te same rozwiązania co `landAnaliza`), a wśród grywalnych —
+najsłabsze (`handCardKeepValue`: ciało + keywordy + zdolności z rejestru).
+Projekcja remisów niesie te same dane (L41).
+
+**E — Bomat Bazaar Barge i pojazdy** („bot tapuje stwory, nic z pojazdem nie
+robi i kończy turę… NIGDY WIĘCEJ!”): dotąd (F1) crew był premiowany
+w `precombat_main` — dokładnie tam, gdzie animacja do końca tury wygasa bez
+ataku, a tap załogi zabiera blokerów. `crewValue` daje dodatnią wycenę
+wyłącznie w dwóch oknach: (a) moja tura, faza walki przed deklaracją
+atakujących, pojazd gotowy i bot REALNIE chce nim atakować
+(`attackIntendsAnimated` — ta sama polityka `declare_attackers` na widoku
+z pojazdem dołożonym jako stwór, L41/L48); (b) tura przeciwnika, krok
+`declare_attackers`, gdy jest atakujący, którego pojazd może zablokować.
+Każde inne okno = −12 (skala M230/D1).
+
+Piny `test/uwagi-z-gry-2026-09-22-cde.test.js` C/0–C/3, D/0–D/1, E/0–E/5.
+Rewizje pinów okna crew: `test/f1-f5-zywy-tester.test.js` (F1/1 przeniesiony
+do `beginning_of_combat` + nowy F1/1b „w main1 nie crewuje”),
+`test/d1-bot-crew-tapped-noop.test.js`, `test/m230-bot-recrew-noop.test.js`.
+Golden-master bota zregenerowany świadomie (zmiana wycen).
+Bramy: `run-tests all` **6134/6134**, build **59 modułów / 4018,8 kB**,
+benchmark --quick heuristic **85,7%** (576/672; baseline 85,9% — jeden mecz
+różnicy, w szumie). Bez nowych kart (ADR 0029).
+
+## M409 — uwaga z gry F (2026-09-22): Pristine Talisman nie działał (2026-09-22)
+
+Właściciel: „Ten artefakt produkuje manę, ale także dodaje 1 life. Nie powinien
+być traktowany jak zwykły permanent do produkcji many, czyli cały czas
+wyciszony.” — a po sprawdzeniu: „w ogóle nie działa, nie tylko jest wyciszony,
+ale w ogóle nie można nim płacić ani tapować. Moja tura, Główna 1, artefakt za
+5 many colorless, 4 lądy i nietapnięty Pristine Talisman. Nie mam oferty rzutu
+tego artefaktu. Nie mam też oferty tapnięcia Talismana choćby po to, żeby
+zyskać życie.”
+
+Jedna karta, DWIE niezależne warstwy błędu:
+
+1. **Źródło many wypadało z ekonomii** — `untappedFreeManaSources` wymagało
+   DOKŁADNIE jednego efektu (`effects.length !== 1`), więc zdolność
+   „{T}: Add {C}. You gain 1 life.” nie liczyła się do `producibleMana` ani nie
+   była auto-tapowana. Silnik widział 4 many zamiast 5 i nie oferował rzutu za
+   {5} (klasa L48 — oferta i płatność ślepe na to samo źródło). Dawny komentarz
+   uzasadniał to „decyzją strategiczną gracza”, ale rider KORZYSTNY dla
+   kontrolera nie niesie żadnej decyzji: koszt to nadal samo {T}, a tapnięcie
+   daje manę I życie.
+2. **Wyciszanie szło złym predykatem** — panel „Twoje działania” i auto-pass
+   pytały `isActivatedManaAbility` (CR 605.1a: „czy omija stos”; rider życia
+   tego nie zmienia — M154). To inne pytanie niż „czy gracz ma tu decyzję”.
+
+Naprawa klasami (ADR 0002 — deskryptor, nie nazwa karty):
+- `BENEFICIAL_MANA_RIDERS` (resources.js, zamknięta lista: `gain_life`) —
+  źródło `add_mana` + korzystny rider wchodzi do many i auto-tapu, a
+  `tapFreeManaSource` WYKONUJE rider, więc auto-płatność daje dokładnie to samo
+  co ręczna aktywacja (L48 w obie strony). Ridery szkodliwe albo niosące WYBÓR
+  (mill, poświęcenie, scry) pozostają poza auto-tapem; źródła kosztowe
+  (Apprentice Wizard) bez zmian — osobna ścieżka `untappedCostedManaSources`.
+- `isSilentManaAbility` (mana-sources.js) — wyciszamy wyłącznie zdolności,
+  których JEDYNYM efektem jest `add_mana`; `isPureManaAbilityCommand` (panel +
+  auto-pass, jedno źródło prawdy L41) czyta odtąd ten predykat.
+
+Piny `test/uwaga-z-gry-2026-09-22-f-pristine-talisman.test.js` F/0–F/5 (mana
+4+1=5; oferta rzutu za {5}; płatność tapuje i daje życie; brak oferty bez
+Talismana — anty-over-fix; oferta aktywacji po samo życie; wyciszanie Talisman
+vs Seer's Lantern). Mutacje: M-F1 (cofnięte dopuszczenie riderów) → F/0+F/1+F/2;
+M-F2 (rider niewykonywany przy auto-tapie) → F/2; M-F3 (wyciszanie po
+CR 605.1a) → F/5. Rewizja pinu `test/m179-inwentaryzacja.test.js` D2 — utrwalał
+zgłoszony błąd (Talisman wykluczony razem z Apprentice Wizardem); Wizard
+pozostaje wykluczony.
+
+Bramy: `run-tests all` **6140/6140**, build **59 modułów / 4021,7 kB**,
+`benchmark --quick` heuristic **85,7%** (576/672). Bez nowych kart (ADR 0029).
+
+## M410 — cztery uwagi z gry 2026-09-22 (G/H/I/J): pip w koszcie triggera, jawny kicker, blokowanie first strike, trucizna jako drugi zegar
+
+**G — Panic Spellbomb do talii, która UMIE opłacić jej pip.** Zgłoszenie: „Kolejna
+karta, która jest bezbarwna, ale ma specjalną zdolność opłacaną czerwoną maną.
+Powinna być rozdawana do talii, które mają czerwony, a nie do WU.” Pip {R} tej
+karty siedzi w `trigger.payColors` (opcjonalna płatność triggera „dies”), a
+`abilityCostColorsOf` w `tools/generate-plan-decks.mjs` czytał wyłącznie
+`ability.cost.*` i `spell.*` — pip był niewidoczny dla podziału talii, więc karta
+lądowała w `mirrodin-wu`, gdzie jej zdolności NIE DA SIĘ użyć. Klasa (ADR 0002):
+każdy kolorowy pip w koszcie DO ZAPŁACENIA należy do tożsamości kolorystycznej
+karty (CR 903.4), niezależnie od tego, czy to koszt aktywacji, czy opcjonalna
+płatność triggera. Efekt regeneracji: Panic Spellbomb i Horizon Spellbomb
+przeszły `mirrodin-wu` → `mirrodin-brg` (README zaktualizowany).
+
+**H — opłacony kicker widoczny dla gracza.** Zgłoszenie (Kor Sanctifiers):
+„Wchodzi Kicked. Nie ma informacji o tym, że zapłacono Kick ani w Rozgrywka, ani
+w logu.” Zdarzenia rzutu niosły `kicked` wyłącznie dla TRIGGERÓW („if it was
+kicked”, CR 702.33a), a warstwa opisu ich nie czytała. Nowy, czysty
+`paidExtraCostSuffix(e)` w `src/table/session.js` dokleja „— kicker opłacony”
+(i offspring — ta sama klasa dodatkowego kosztu) w OBU gałęziach rzutu
+(`permanent_cast`, `spell_cast`); ponieważ log i „Rozgrywka” idą przez jedno
+`describeEvent`, jedna poprawka zamyka oba miejsca (L41).
+
+**I — przepisane blokowanie stworów z first strike.** Zgłoszenie: „Bot nie umie
+blokować ataków kreatur z first strike. Blokuje wieloma kreaturami, które giną…
+Jeśli kreatura z first strike nie ma trample, to blokowanie więcej niż jedną
+kreaturą w momencie braku lethala nie ma sensu. (…) wyznacza na wymianę dużego
+stwora zamiast 1/1.” Wycena `declare_blockers` porównywała gołe SUMY MOCY, więc
+first strike atakującego nie istniał w modelu: bot dokładał blokerów do
+„multi-block kill”, który nigdy nie następował. Nowy `blockExchangeOf(attacker,
+blockers)` liczy wymianę z KOLEJNOŚCIĄ obrażeń (CR 510.4; CR 702.7b — stwór
+zabity w pierwszym kroku nie zadaje obrażeń w drugim): moc liczy się tylko
+blokerom, którzy dożyją swojego kroku, a `wastedBlockers` (blokerzy ginący, nie
+zmieniając wyniku) są karani. Trample to świadomy wyjątek — nadwyżka obrażeń
+przechodzi w gracza (CR 702.19b), więc dokładanie ciał wciąż ma sens.
+
+**J — trucizna jako drugi zegar przegranej w OBRONIE.** Zgłoszenie: „Mam na stole
+kreaturę 5/5 z Infect. Bot ma 6 znaczników trucizny i 20 życia. Mimo że zaraz
+zginie od trucizny, atakuje mnie wszystkimi kreaturami (…). Ginie od 11 poison
+counterów.” Model gardy i `lethalThreat` liczyły wyłącznie obrażenia w życie —
+po stronie ATAKU zegar trucizny istniał (C-R5), po stronie OBRONY nie. Stwór
+z infect nie zadaje graczowi obrażeń, tylko liczniki (CR 702.90b), a przegraną
+orzeka SBA przy dziesięciu (CR 104.3c / 704.5c). Garda liczona jest odtąd
+symetrycznie w obu walutach (`enemyInfectCrackbackPower`, `poisonHeadroom`),
+a `lethalThreat` przy blokowaniu uwzględnia atak infect.
+
+Pin: `test/uwagi-z-gry-2026-09-22-ghij.test.js` (12/12), matryca mutacji M-G,
+M-H, M-I1, M-I2, M-J — każda odwrócona poprawka czerwieni pin.
+
+**Doprecyzowanie właściciela (ta sama sesja) — weto zamiast kary.** „Nie chodzi
+o to, żeby był twardy zakaz wieloblokowania first strikera tylko zakaz blokowania
+jeśli drugi blokujący NIC nie wnosi bo ani nie zabija atakującego ani nie jest
+potrzebny (bo atakujący nie ma trample).” Kryterium jest odtąd MARGINALNE, nie
+progowe: bloker jest zbędny, gdy po JEGO usunięciu wynik wymiany się nie zmienia
+(wydzielony `blockKillsAttacker` przelicza zestaw bez niego) i zostaje ktoś, kto
+przyjmie obrażenia. Dwa 1/1 potrzebne RAZEM do zabicia 2/2 są więc oba potrzebne,
+a pod trample nikt nie jest zbędny. Wariant zawierający takiego blokera jest
+ODRZUCANY (`finish(NEVER)`), nie karany punktami — kara jest przebijalna premią
+(L3). Gdy zbędny jest ktokolwiek, odrzucany jest NAJDROŻSZY z ciał („wystarczyło
+zablokować najmniejszym”).
+
+Bramy: `run-tests all` **6155/6155**, build **59 modułów / 4034,0 kB**,
+`benchmark --quick` heuristic **86,6%** (582/672; baseline 85,7% — poprawa
+o 6 meczów). Bez nowych kart (ADR 0029).
+
+## M411 — uwagi z gry 2026-09-22 (K/L/M): okno combat tricka, jednorazowy zasób blokujący, modal celów flashbacku
+
+**K — combat trick z riderem „Scry 1” nie może być palony poza walką.** Zgłoszenie
+(Titan's Strength): „To combat trick. Bot rzuca ją w kompletnie bezsensownym
+momencie — na koniec mojej tury.” Pomiar śladem bota: rzut w end stepie 1 pkt,
+pass 0 pkt. Kara −60 za pump poza oknem walki DZIAŁAŁA — zerowała ją premia +10
+„odłóż układanie biblioteki na koniec tury przeciwnika” (M211/A1), doklejana
+każdemu czarowi zawierającemu `scry`. Naprawa klasą: premia okna należy się
+wyłącznie czarom, których CAŁA treść to układanie własnej biblioteki
+(`isPureDeckArranging`); o oknie czaru MIESZANEGO decyduje jego efekt główny,
+bo rider nie może kupić czasu, w którym reszta karty jest bezużyteczna. Po
+naprawie: end step −9 (pass wygrywa), a po deklaracji blokerów rzut na własnego
+atakującego +58.
+
+**L — zdolność blokująca z {X} od mocy celu to zasób JEDNORAZOWY.** Zgłoszenie
+(Entrancing Lyre): „Bot używa jej zdolności natychmiast jak tylko ma chociaż
+jedną manę i tapuje jakiegoś mojego tokena 1/1 zamiast poczekać (…). Powinien
+próbować unieruchomić największe zagrożenie, nawet czekając na manę.” Pomiar:
+token 1/1 w upkeepie = 53,5 pkt. `tapTargetValue` znał OKNO i moc celu, ale nie
+koszt alternatywny. Deskryptor klasy (ADR 0002): zdolność, która trzyma cel tak
+długo, jak źródło pozostaje tapnięte (`locking` + koszt `{T}`) i ma `{X}`
+skalowane mocą celu (`cost.manaX && cost.maxPowerX`), użyta na słabym stworze
+przestaje istnieć dla wszystkich mocniejszych. Czekanie na manę nic nie kosztuje,
+więc cel istotnie słabszy od najgroźniejszego wroga jest karany proporcjonalnie
+do różnicy mocy. Po naprawie: 1 mana → pass (token −2,5); 6 many → cel 5/5 (+69).
+
+**M — cele rzutu za flashback należą do modala, nie do panelu.** Zgłoszenie
+(Dream Twist): „Flashback. Zamiast modala z opcjami targetowania, opcje target
+player pokazują się w Twoje działania.” `choiceRequestGroupKey` grupowało cele
+dla `cast_spell` i `cast_escape`, ale nie dla `cast_flashback` — rozjazd
+bliźniaczych ścieżek (L41): rzut z ręki grupował, rzut z grobu nie. Flashback to
+alternatywny KOSZT tego samego rzutu (CR 702.33a), a wybór celu jest decyzją
+w trakcie rzucania (CR 601.2c), więc panel dostaje JEDNĄ ofertę, a cele
+rozstrzyga modal; grupa ma własny tytuł „Flashback: <karta> (koszt …)”.
+
+Pin: `test/uwagi-z-gry-2026-09-22-klm.test.js` (7/7), matryca mutacji M-K, M-L,
+M-M — każda odwrócona poprawka czerwieni pin.
+
+Bramy: `run-tests all` **6162/6162**, build **59 modułów / 4038,3 kB**,
+`benchmark --quick` heuristic **86,6%** (582/672, bez regresji). Bez nowych kart
+(ADR 0029).
+
+## M412 — uwaga z gry 2026-09-22 (N): aura WARUNKOWA wyceniana względem gospodarza
+
+Zgłoszenie (Bonds of Faith — „Enchanted creature gets +2/+2 as long as it's
+a Human. Otherwise, it can't attack or block.”): „Bot rzuca ten czar na moją
+kreaturę, typu human. Dostaję +2/+2. Świetny scoring! Może niech od razu klika
+w »poddaję się«. Masakra.”
+
+Pomiar śladem bota (3 lądy, aura w ręce, po obu stronach Human i nie-Human)
+pokazał wycenę **dokładnie odwróconą** na obu warunkowych gałęziach karty:
+
+| cel | co karta robi | przed | po |
+|---|---|---|---|
+| wrogi Human | +2/+2 — PREZENT | **+67,5** | **−45** |
+| wrogi nie-Human | pacyfizm | +69,3 | +69,3 |
+| własny Human | +2/+2 — buff | **−67,5** | **+71,1** |
+
+Dwie przyczyny, obie klasowe (ADR 0002):
+
+1. **Wrogość aury liczona z karty, nie z gospodarza.** `auraIsHostile` zwracała
+   `true`, gdy deskryptor NIÓSŁ `cantAttack`/`cantBlock`, nie patrząc na bramkę
+   warunku. Aura warunkowa ma dwa rozłączne oblicza i o tym, które zadziała,
+   decyduje konkretny gospodarz (CR 613.1d — warunki czytane read-time). Nowy
+   `hostileConditionHolds(gate, host)` rozstrzyga bramkę
+   (`hostLacksSubtype` / `hostHasSubtype`) dla CELU; `auraIsHostile` przyjmuje
+   odtąd gospodarza. Aury bez bramki zachowują się jak dotąd (M121).
+2. **Warunkowy pump niewidoczny dla wyceny.** Buff siedzi w `conditionalPump`
+   (silnik go stosuje — `permanents.js`), a wycena czytała wyłącznie
+   `descriptor.pump`, więc „+2/+2 dopóki <podtyp>” było dla bota zerem i własny
+   gospodarz wypadał gorzej niż cudzy. Pump warunkowy jest teraz sumowany dla
+   celu, który spełnia warunek.
+
+Podtyp pochodzi wyłącznie z danych karty — kod nie zna żadnej nazwy ani podtypu
+(strażnik M212 pilnuje tego i złapał pierwszą wersję komentarza).
+
+Pin: `test/uwaga-z-gry-2026-09-22-n-bonds-of-faith.test.js` (4/4), mutacje
+M-N1' (ślepa bramka warunku), M-N2 (gospodarz nieprzekazany), M-N3' (warunkowy
+pump niewidoczny) — każda czerwieni pin.
+
+Bramy: `run-tests all` **6166/6166**, build **59 modułów / 4041,4 kB**,
+`benchmark --quick` heuristic **86,6%** (582/672, bez regresji). Bez nowych kart
+(ADR 0029).

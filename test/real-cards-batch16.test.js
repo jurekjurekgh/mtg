@@ -463,7 +463,12 @@ test('Jill: {3}{U}{U},{T} wygania i zwraca przemienioną jako Shiva z rozdziałe
   assert.equal(shiva.counters.lore, 1, 'Wejście Sagi kładzie licznik lore (CR 714.3a)');
   // Rozdział I (Mesmerize): Shiva wybrana jako cel — nie może BYĆ BLOKOWANA
   // w tej turze (cantBeBlocked), nie „nie może blokować" (cantBlock).
-  assert.ok(shiva.cantBeBlocked === true, 'Mesmerize: wybrany cel oznaczony cantBeBlocked');
+  // M407 (rewizja pinu): stan niesie TERMIN daru „this turn"
+  // (cantBeBlockedUntilTurn = numer tury + 1, CR 514.2) zamiast wiecznej
+  // flagi; badge widoku (kontrakt) bez zmian. Uzasadnienie: Oracle
+  // „can't be blocked THIS TURN" (Scryfall FIN #58).
+  assert.ok(shiva.cantBeBlockedUntilTurn === state.turn.number + 1,
+    'Mesmerize: wybrany cel z terminem daru „this turn”');
   assert.ok(!shiva.cantBlock, 'Mesmerize nie nadaje cantBlock');
   assert.ok(eventsOfType(state, 'saga_chapter_fired').some((e) => e.chapter === 1));
   // Jill nie leży w grozie ani exile — karta przemieniła się (nowy obiekt).

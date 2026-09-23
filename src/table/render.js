@@ -336,13 +336,39 @@ const ACTION_RANK = Object.freeze({
 });
 
 /**
- * M257 r3 (uwaga B właściciela): pozycja akcji w menu „Twoje działania".
- * PASS i PODDAJĄCE SIĘ PARTII są ostatnie Z ZASADY (strukturalnie), a nie z
- * ranku — nowa/nierankowana komenda (fallback 99) nigdy nie może wypaść
- * poniżej „Poddaj partię". Test: test/m257-uwagi-runda3.test.js.
+ * Komendy „systemowe” walki — deklaracje i rozdział obrażeń. Stoją zaraz pod
+ * passem (uwaga właściciela 2026-09-23 pkt c), bo to decyzje wymuszone przez
+ * fazę, a nie swobodne zagrania: gracz szuka ich w stałym miejscu.
+ */
+const SYSTEM_COMBAT_ORDER = Object.freeze({
+  declare_attackers: 0,
+  declare_blockers: 1,
+  resolve_damage_assignment: 2,
+  resolve_combat: 3,
+});
+
+/**
+ * Pozycja akcji w menu „Twoje działania".
+ *
+ * Uwaga właściciela 2026-09-23 (rewizja M257 r3 — właściciel ODWRÓCIŁ swoją
+ * wcześniejszą regułę „pass na dole"): „przycisk »Dalej (Pass)« raz jest niżej,
+ * raz wyżej i czasem mam problem z trafieniem w niego”. Kolejność jest teraz
+ * STAŁA, niezależna od tego, jakie akcje akurat są dostępne:
+ *   (a) `pass_priority` — ZAWSZE pierwszy,
+ *   (c) komendy systemowe walki (Wybierz atakujących / blokujących, Rozdziel
+ *       obrażenia) — zaraz pod passem,
+ *   (d) cała reszta — niżej, we wcześniejszym porządku ACTION_RANK.
+ * `concede` nie występuje już w menu (pkt b — usunięty z panelu).
+ *
+ * Ranki (a)/(c) są strukturalne, nie tabelaryczne: nowa, nierankowana komenda
+ * (fallback 99) nigdy nie wepchnie się nad pass ani między przyciski systemowe.
+ * Test: test/m257-uwagi-runda3.test.js, test/uwaga-z-gry-2026-09-23-q-kolejnosc-dzialan.test.js.
  */
 export function actionMenuRank(type) {
-  if (type === 'pass_priority') return 1000;
+  if (type === 'pass_priority') return -1000;
+  if (type in SYSTEM_COMBAT_ORDER) return -900 + SYSTEM_COMBAT_ORDER[type];
+  // Poddanie nie jest już ofertą panelu; gdyby jakaś ścieżka je podała, ląduje
+  // na samym dole zamiast mieszać się z zagraniami.
   if (type === 'concede') return 1001;
   return ACTION_RANK[type] ?? 99;
 }
@@ -394,6 +420,17 @@ export function choiceRequestGroupKey(command) {
   // zniknęła całkowicie.
   if (command.type === 'cast_escape') {
     return `escape:${command.objectId}`;
+  }
+  // M (zgłoszenie z testów 2026-09-22, Dream Twist): „Flashback. Zamiast modala
+  // z opcjami targetowania, opcje target player pokazują się w Twoje działania.”
+  // Ta sama reguła co dla rzutu z ręki (K/M z 2026-09-19b) i dla escape powyżej:
+  // wybór CELU jest decyzją W TRAKCIE rzucania (CR 601.2c), więc panel dostaje
+  // JEDNĄ ofertę „Rzuć za flashback: <karta>”, a cele rozstrzyga modal.
+  // Flashback (CR 702.33a) to alternatywny KOSZT tego samego rzutu, nie osobna
+  // akcja — brak tej gałęzi był rozjazdem bliźniaczych ścieżek (L41): rzut
+  // z ręki grupował cele, rzut z grobu nie.
+  if (command.type === 'cast_flashback' && command.targets?.length) {
+    return `flashback:${command.objectId}`;
   }
   if (command.type === 'resolve_escape_exile') return 'resolve_escape_exile';
   // Batch 57/B4: koszt Delve to JEDNA decyzja (wizard multiselect) — jak escape.
@@ -2453,6 +2490,21 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
       const rawCost = MANA_COSTS[groupObject.cardId];
       const cost = rawCost ? (manaHtml ? manaCostHtml(rawCost) : rawCost) : null;
       return `Rzuć: ${session.nameOf(groupObject.cardId)}${cost ? ` (koszt ${cost})` : ''}`;
+    }
+  }
+  // M (zgłoszenie z testów 2026-09-22, Dream Twist): grupa rzutu za FLASHBACK
+  // dostaje tytuł nazywający kartę i koszt alternatywny (CR 702.33a) — jak
+  // „Rzuć: <karta>” dla rzutu z ręki. Bez tego modal celów szedł w generyczne
+  // „Wybierz: Wariant”, bo cast_flashback nie ma wpisu w deskryptorach grup.
+  if (options.length > 0
+    && options.every((o) => o?.type === 'cast_flashback' && o.objectId === options[0].objectId)) {
+    const fbObject = findViewObject(options[0].objectId, view);
+    if (fbObject?.cardId) {
+      const fbCost = session.cardDetails?.(fbObject.cardId)?.spell?.flashback?.cost;
+      const fbShown = fbCost != null
+        ? (manaHtml ? manaCostHtml(`{${fbCost}}`) : `{${fbCost}}`)
+        : null;
+      return `Flashback: ${session.nameOf(fbObject.cardId)}${fbShown ? ` (koszt ${fbShown})` : ''}`;
     }
   }
   const titled = choiceSourceTitle(options[0], session, view);
@@ -4974,7 +5026,12 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // dole, „Przygoda" i inne efekty tam, gdzie inne czary.
   // M369/G: zdolności many wypadają z panelu — tak jak lądy podstawowe
   // (patrz `isManaAbilityCommand`); zostają w kreatorze many i w płatności.
+  // Uwaga właściciela 2026-09-23 pkt (b): „Poddaj partię — USUWAMY, nie
+  // korzystam z niego i nie zamierzam korzystać; jak chcę przerwać, to wychodzę
+  // ze strony”. Komenda `concede` zostaje legalna w silniku (bot/benchmark/
+  // protokół jej używają) — znika wyłącznie z PANELU gracza.
   const commands = view.legalCommands.slice()
+    .filter((cmd) => cmd.type !== 'concede')
     .filter((cmd) => !isManaAbilityCommand(cmd, session))
     .sort((a, b) => actionMenuRank(a.type) - actionMenuRank(b.type));
   // M102/U5 (zgłoszenie właściciela 2026-08-16): nagłówek „Twoje działania"

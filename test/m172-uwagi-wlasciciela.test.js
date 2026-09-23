@@ -151,7 +151,13 @@ test('B2: cel Mesmerize ma w WIDOKU cantBeBlocked (badge „nie do zablokowania"
   for (let i = 0; i < 12 && state.zones.stack.length > 0; i += 1) {
     assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
   }
-  assert.equal(state.objects.get('ally').cantBeBlocked, true, 'stan: cel nie może być blokowany');
+  // M407 (rewizja pinu): stan niesie TERMIN daru „this turn"
+  // (cantBeBlockedUntilTurn = numer tury + 1, CR 514.2) zamiast wiecznej
+  // flagi — kontrakt WIDOKU (niżej) bez zmian. Uzasadnienie: Oracle
+  // „can't be blocked THIS TURN" (Scryfall FIN #58); dawna flaga bez
+  // terminu nigdy nie wygasała.
+  assert.equal(state.objects.get('ally').cantBeBlockedUntilTurn, state.turn.number + 1,
+    'stan: dar „this turn" z terminem wygaśnięcia');
   const entry = playerView(state, 'p2').zones.battlefield.find((o) => o.id === 'ally');
   assert.equal(entry?.cantBeBlocked, true,
     'WIDOK niesie cantBeBlocked (klasa L1/ADR 0017 — render liczy badge z widoku, nie ze stanu)');
