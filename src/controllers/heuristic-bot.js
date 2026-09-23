@@ -8648,6 +8648,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd.type === 'resolve_optional_trigger_choice') {
       return `resolve_optional_trigger_choice(${cmd.fire ? 'fire' : 'skip'})`;
     }
+    // F1 (uwaga właściciela 2026-09-23c, Veiled Ascension): odmowa „you may"
+    // jest w nowym kontrakcie zwykłym `pass_priority` (oferta = fire + pass).
+    // Kontrakt śladu (M131/L34) wymaga, żeby warianty „fire"/„skip" były
+    // rozróżnialne i parowalne w audycie remisów — etykieta mówi więc, CZYM
+    // ten pass jest w tej decyzji (dotyczy tylko decydenta tego triggera).
+    if (cmd.type === 'pass_priority' && view?.pendingOptionalTrigger) {
+      return 'resolve_optional_trigger_choice(skip)';
+    }
     if (cmd.type === 'resolve_look_top_choice' || cmd.type === 'resolve_satyr_look_choice'
         || cmd.type === 'resolve_graveyard_top_choice' || cmd.type === 'resolve_delirium_target'
         || cmd.type === 'resolve_mentor_target' || cmd.type === 'resolve_room_target') {

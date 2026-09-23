@@ -87,7 +87,12 @@ test('AUDYT-PR120/A1: cienka biblioteka (4 karty) — bot odmawia may-fire Murde
     'oba warianty w śladzie z etykietą wariantu (klasa M131)');
   assert.ok(opts[FIRE] < opts[SKIP],
     `fire=${opts[FIRE]} musi być poniżej skip=${opts[SKIP]} (drenaż cienkiej biblioteki)`);
-  assert.equal(cmd.fire, false, 'wybór bota = odmowa (zapas 3 < margines 20)');
+  // F1 (uwaga właściciela 2026-09-23c): odmowa „you may" to w nowym kontrakcie
+  // zwykły `pass_priority` (oferta = fire + „Dalej (Pass)"), a nie stary kształt
+  // `resolve_optional_trigger_choice {fire:false}` (silnik nadal go przyjmuje dla
+  // zgodności replayów). Wybór bota ma iść ścieżką oferty z `legalCommands`.
+  assert.equal(cmd.type, 'pass_priority', 'wybór bota = odmowa (zapas 3 < margines 20)');
+  assert.notEqual(cmd.fire, true, 'odmowa nie odpala triggera');
 });
 
 test('AUDYT-PR120/A1b: zdrowa biblioteka (40 kart) — bot nadal odpala (anty-over-fix)', () => {
@@ -134,7 +139,9 @@ test('O2 (audyt PR #121, domknięcie): drenaż poza pierwszą pozycją tablicy t
   assert.ok(FIRE in opts && SKIP in opts, 'oba warianty w śladzie');
   assert.ok(opts[FIRE] < opts[SKIP],
     `fire z draw_then_discard na [1] musi być poniżej skip (fire=${opts[FIRE]}, skip=${opts[SKIP]})`);
-  assert.equal(cmd.fire, false, 'cienka biblioteka (4) → bot odmawia may-fire');
+  // F1 (uwaga właściciela 2026-09-23c): odmowa = `pass_priority` (oferta = fire
+  // + „Dalej (Pass)"); stary kształt `{fire:false}` przyjmowany tylko legacy.
+  assert.equal(cmd.type, 'pass_priority', 'cienka biblioteka (4) → bot odmawia may-fire');
 });
 
 test('O2 (anty-over-fix): zdrowa biblioteka — may-fire z tablicowym efektem nadal opłacalny', () => {
