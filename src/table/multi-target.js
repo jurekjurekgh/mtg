@@ -312,9 +312,15 @@ export function proliferatePlanOf(commands) {
  * Komenda odpowiadająca zaznaczonym obiektom proliferate albo null — szukana
  * wśród wariantów legalnych silnika (porządek kliknięć nieistotny, pusty
  * wybór = komenda bez targetIds).
+ *
+ * Zawężenie po typie jest OBOWIĄZKOWE (audyt PR #134, F-4): wspólny
+ * `commandForTargetIdsSelection` traktuje „brak pola `targetIds`” jako zbiór
+ * pusty, więc bez niego pusty wybór zwracałby PIERWSZĄ komendę oferty bez
+ * `targetIds` — w realnej decyzji to `concede`/`pass_priority`, gdyby tylko
+ * wyprzedziły wariant `resolve_proliferate` (dziś chroni sama kolejność).
  */
 export function commandForProliferateSelection(commands, targetIds) {
-  return commandForTargetIdsSelection(commands, targetIds);
+  return commandForTargetIdsSelection(commands, targetIds, { type: 'resolve_proliferate' });
 }
 
 /**
