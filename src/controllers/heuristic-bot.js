@@ -4631,31 +4631,51 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             'bounce_to_library_bottom',
           ]);
           if (REMOVAL_EFFECTS.has(effect.type) && target) {
-            // M92: „destroy" w cel z aktywną tarczą regeneracji tylko ją
-            // zużyje — permanent zostaje na stole, a my tracimy kartę.
-            if (effect.type === 'destroy_permanent' && willRegenerate(view, target.id)) {
-              // Zagranie jałowe: tarcza regeneracji zostanie zużyta, permanent
-              // zostaje na stole, a my tracimy kartę. Nie tylko karzemy, ale
-              // POMIJAMY premię za „usunięcie permanentu wroga" — inaczej
-              // premia przebijała karę i bot i tak rzucał czar.
-              score -= 70;
-              continue;
-            }
-            if (target.controllerId === view.playerId) {
-              // Niszczenie własnego permanentu bez powodu to czysta strata
-              // (karta + zasób ze stołu); kara musi przebić bazowe 50 pkt,
-              // żeby „bo nie ma innego celu" nie wygrywało z passem.
-              score -= 90;
-            } else if (pureLandTarget(target) && !removalAtLandByDesign(effect.targetIndex ?? 0)) {
-              // M247: bez premii removalu i z karą przebijającą bazę czaru —
-              // pass musi wygrać z „rzucam, bo jest dowolny cel".
-              score -= P.removalPureLandPenalty;
-            } else {
-              const worth = (target.power ?? 0) + (target.toughness ?? 0);
-              score += P.removalEnemyBase + P.removalWorthWeight * worth;
-              // M234 — efektywność removalu: TMC (proxy zdolności) + cele „nie
-              // do przejścia" w walce (deathtouch, protekcja od mojego koloru).
-              score += enemyRemovalTargetBonus(view, target);
+            // P (uwaga właściciela 2026-09-23, Vandalize — „Choose one or both
+            // — • Destroy target artifact. • Destroy target land.”): tryb „oba”
+            // niesie JEDEN efekt removalu działający na KILKA celów naraz
+            // (`targetIndices: [0, 1]` — silnik niszczy oba, effects.js:3674).
+            // Wycena czytała wyłącznie `effect.targetIndex ?? 0`, więc liczyła
+            // sam artefakt, a zniszczenie lądu wnosiło 0 — tryb „oba” wychodził
+            // remisem z trybem „tylko artefakt” i bot brał ten uboższy. Co
+            // gorsza, dowolny drugi cel (także MÓJ własny ląd) wypadał tak samo,
+            // bo w ogóle nie wchodził do oceny. Punktujemy więc KAŻDY cel,
+            // którego efekt dotyka (ADR 0002 — po deskryptorze `targetIndices`,
+            // nie po nazwie karty).
+            const victimIdx = Array.isArray(effect.targetIndices) && effect.targetIndices.length > 0
+              ? effect.targetIndices
+              : [effect.targetIndex ?? 0];
+            for (const idx of victimIdx) {
+              // Zachowanie dla efektów jednocelowych bez zmian: `target`
+              // (cmd.targets[0]) pozostaje fallbackiem.
+              const victim = objectOnBoard(view, cmd.targets?.[idx]) ?? (idx === (effect.targetIndex ?? 0) ? target : null);
+              if (!victim) continue;
+              // M92: „destroy" w cel z aktywną tarczą regeneracji tylko ją
+              // zużyje — permanent zostaje na stole, a my tracimy kartę.
+              if (effect.type === 'destroy_permanent' && willRegenerate(view, victim.id)) {
+                // Zagranie jałowe: tarcza regeneracji zostanie zużyta, permanent
+                // zostaje na stole, a my tracimy kartę. Nie tylko karzemy, ale
+                // POMIJAMY premię za „usunięcie permanentu wroga" — inaczej
+                // premia przebijała karę i bot i tak rzucał czar.
+                score -= 70;
+                continue;
+              }
+              if (victim.controllerId === view.playerId) {
+                // Niszczenie własnego permanentu bez powodu to czysta strata
+                // (karta + zasób ze stołu); kara musi przebić bazowe 50 pkt,
+                // żeby „bo nie ma innego celu" nie wygrywało z passem.
+                score -= 90;
+              } else if (pureLandTarget(victim) && !removalAtLandByDesign(idx)) {
+                // M247: bez premii removalu i z karą przebijającą bazę czaru —
+                // pass musi wygrać z „rzucam, bo jest dowolny cel".
+                score -= P.removalPureLandPenalty;
+              } else {
+                const worth = (victim.power ?? 0) + (victim.toughness ?? 0);
+                score += P.removalEnemyBase + P.removalWorthWeight * worth;
+                // M234 — efektywność removalu: TMC (proxy zdolności) + cele „nie
+                // do przejścia" w walce (deathtouch, protekcja od mojego koloru).
+                score += enemyRemovalTargetBonus(view, victim);
+              }
             }
           }
           // M91 (uwaga A2): globalna prewencja obrażeń bojowych („fog" —

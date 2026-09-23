@@ -12384,3 +12384,31 @@ Bramki: testy 6170/6170, build 59 modułów / 4045,0 kB, benchmark heuristic 86,
 Pin: `test/uwaga-z-gry-2026-09-22-o-chill-of-the-grave.test.js` (4 testy,
 matryca mutacji: usunięcie wyciszenia składowej „tap” i przywrócenie kary −12
 przy blokadzie — oba czerwienią pin).
+
+## M414 — P: tryby „choose one or both” wyceniają WSZYSTKIE swoje cele (Vandalize)
+
+Uwaga właściciela z gry (2026-09-23): „Choose one or both — • Destroy target
+artifact. • Destroy target land.” — „Niszczy mi artefakt, ale nie niszczy lądu.
+Optymalne wykorzystanie to zniszczenie artefaktu ORAZ zniszczenie lądu.”
+
+Root cause: tryb „oba” niesie JEDEN efekt removalu działający na kilka celów
+naraz (`targetIndices: [0, 1]`). Silnik to rozumie i niszczy oba
+(`src/engine/effects.js`), ale wycena bota czytała wyłącznie
+`effect.targetIndex ?? 0` — punktowała sam artefakt, a zniszczenie lądu wnosiło
+0. Tryb „oba” wychodził więc remisem z trybem „tylko artefakt” (78 vs 78) i bot
+brał uboższy. Ta sama luka miała drugi, cichszy skutek: dowolny drugi cel — także
+MÓJ WŁASNY ląd — nie wchodził do oceny i punktował identycznie.
+
+Naprawa klasowa (ADR 0002, po deskryptorze `targetIndices`, nie po nazwie karty):
+blok removalu iteruje po WSZYSTKICH celach efektu, każdy z pełną logiką (własny
+permanent −90, goły ląd poza zamysłem karty −kara, wrogi permanent +wartość).
+Po naprawie: „artefakt + ląd” 100, sam artefakt 78, „artefakt + mój ląd” −12.
+
+Lekcja ogólna: jeśli silnik potrafi rozłożyć efekt na wiele celów, wycena musi
+czytać ten sam kontrakt. Pole liczbowe (`targetIndex`) i tablicowe
+(`targetIndices`) rozjeżdżają się cicho — nieoceniony cel nie kosztuje nic,
+więc tryb bogatszy remisuje z uboższym i przegrywa rozstrzygnięcie remisu.
+
+Bramki: testy 6173/6173, build 59 modułów / 4046,4 kB, benchmark heuristic 86,6%.
+Pin: `test/uwaga-z-gry-2026-09-23-p-vandalize.test.js` (3 testy; mutacja
+przywracająca czytanie samego `targetIndex` czerwieni wszystkie trzy).
