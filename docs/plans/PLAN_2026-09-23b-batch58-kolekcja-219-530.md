@@ -132,11 +132,11 @@ Zasady wspólne (bez powtarzania w każdym punkcie):
 - Po KAŻDYM etapie: `git log --oneline -1` + `git status`, `npm test`,
   `npm run build`, commit, push.
 
-### B0a — plan (ten dokument)
+### B0a — plan (ten dokument) — ✅ wykonany (`d2743f0`)
 
 Commit planu przed pierwszym kodem.
 
-### B0b — dane źródłowe (7 snapshotów + rulingi)
+### B0b — dane źródłowe (7 snapshotów + rulingi) — ✅ wykonany (`6acec6f`)
 
 `docs/cards/scryfall-{prishes-wanderings,boulder-salvo,gond-gate,scroll-of-avacyn,
 resurrected-cultist,polluted-dead,grazing-gladehart}.json` — komplet pól
@@ -158,43 +158,43 @@ commicie co definicja karty** (B1–B7), a pliki czekające leżą POZA
 repozytorium (katalog roboczy `/home/user/batch58-snapshots/`, poza drzewem
 git). Każdy commit etapu pozostaje zielony, a `docs/cards` nie zna sierot.
 
-### B1 — Boulder Salvo (265, Zendikar)
+### B1 — Boulder Salvo (265, Zendikar) — ✅ wykonany (`a36d648`)
 
 Definicja karty (surge `{1}{R}` + `damage` 4 w cel-stwora) + `MANA_COSTS` +
 testy (surge opłacony/nieopłacony, brak innego czaru w turze = pełny koszt,
 cel nielegalny odrzucony) + talia generatorem + pin `withArt` 495 → 496.
 
-### B2 — Grazing Gladehart (530, Zendikar)
+### B2 — Grazing Gladehart (530, Zendikar) — ✅ wykonany (`054753c`)
 
 Landfall z „możesz” (`mayFire`) + testy (ląd wchodzi → decyzja; „nie” nic nie
 robi; trigger NIE odpala, gdy permanent staje się lądem) + talia + pin.
 
-### B3 — Polluted Dead (464, Wiedźmin)
+### B3 — Polluted Dead (464, Wiedźmin) — ✅ wykonany (`13cba9f`)
 
 Trigger `dies` z celem `land` (jeśli tor triggerów nie zna typu `land` — dodać
 generycznie, jedna implementacja z `isLand`) + testy (śmierć → zniszczony ląd;
 brak legalnego celu → trigger schodzi bez efektu) + talia + pin.
 
-### B4 — Scroll of Avacyn (377, Innistrad)
+### B4 — Scroll of Avacyn (377, Innistrad) — ✅ wykonany (`6b1e331`)
 
 Warunek `controlsCreatureSubtype` w efekcie `conditional` + zdolność
 aktywowana (`{1}` + `sacrificeSelf`) + testy (z Aniołem: dobranie + 5 życia;
 bez Anioła: tylko dobranie; brak many = odrzucone) + talia + pin.
 
-### B5 — Resurrected Cultist (447, Warhammer Fantasy)
+### B5 — Resurrected Cultist (447, Warhammer Fantasy) — ✅ wykonany (`74f2025`)
 
 Bramka aktywacji `delirium` + efekt powrotu siebie z grobu z licznikiem
 finality (i wygnanie przy śmierci — CR 122.1e) + testy (3 typy kart w grobie =
 zdolność niedostępna; 4 typy = powrót 4/1 z finality; śmierć z finality →
 exile; aktywacja nie jak sorcery = odrzucona) + talia + pin.
 
-### B6 — Prishe's Wanderings (219, Final Fantasy)
+### B6 — Prishe's Wanderings (219, Final Fantasy) — ✅ wykonany (`c52788c`)
 
 `anyOf` w kwalifikatorze szukania + cel refleksyjny po przeszukaniu + testy
 (basic land znaleziony i wchodzi tapnięty; Town znaleziony; fail to find nadal
 daje trigger; brak stwora = brak celu; nielegalny cel odrzucony) + talia + pin.
 
-### B7 — Gond Gate (318, Forgotten Realms)
+### B7 — Gond Gate (318, Forgotten Realms) — ✅ wykonany (`507def6`)
 
 Statyk „Gates enter untapped” (wspólny predykat we wszystkich ścieżkach
 wejścia) + mana „dowolnego koloru, jaki może dać kontrolowana Brama” + testy
@@ -207,3 +207,24 @@ bez Bram kolorowych — brak produkcji) + talia + pin.
 Piny zbiorcze (arkusz/katalog/talie), pomiar pełnej bramy, wpis M-serii
 w `docs/ENGINE_MILESTONES.md` i `docs/PROJECT_HISTORY.md`, README
 („Bieżący stan”), handoff, aktualizacja tego planu (odhaczenia + liczby).
+
+**Stan wyjścia ZMIERZONY po batchu** (2026-09-23, `npm test` + `npm run build`
++ pełna brama, na commicie B7 `507def6`):
+
+| Miara | Wartość |
+|---|---|
+| `npm test` | 6215/6215 |
+| pełna brama `node tools/run-tests.mjs all` | 6225/6225 |
+| `npm run build` | 59 modułów / 4087,3 kB |
+| katalog | 550 wpisów = 499 `supported` + 43 `token` + 8 `back` |
+| karty z `artId` | 502 (pin `test/art-ids-tool.test.js`) |
+| arkusz kolekcji | 502 wiersze / 499 nazw (`tools/collection-art-ids.csv`) |
+
+Po tym batchu **każda pozycja arkusza właściciela ma odpowiednik w katalogu**
+(543 → 550 wpisów; siedem brakujących kart z tabeli na górze planu weszło
+w etapach B1–B7). Kolejny batch startuje z nowej listy właściciela (ADR 0029).
+
+Commity etapów (wszystkie wypchnięte na `arena/01a0ceb4-mtg`):
+`d2743f0` (B0a) → `6acec6f` (B0b) → `a36d648` (B1) → `054753c` (B2) →
+`13cba9f` (B3) → `6b1e331` (B4) → `74f2025` (B5) → `c52788c` (B6) →
+`507def6` (B7). Handoff: `docs/setup/HANDOFF_2026-09-23b.md`.

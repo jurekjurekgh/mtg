@@ -7316,3 +7316,68 @@ Bramy po zmianie: `npm test` **6179/6179**, pełna brama
 `node tools/run-tests.mjs all` **6189/6189** (0 fail, ~365 s), build
 **59 modułów / 4049,7 kB**. Objętość artefaktu rośnie o 0,8 kB, bo doszła
 definicja tokenów w nowym słowniku statusów.
+
+## M420 — batch 58: siedem ostatnich kart arkusza właściciela (sesja 2026-09-23, PR #134)
+
+Zlecenie właściciela: „Ok, to zabieraj się za ten batch” + lista siedmiu pozycji
+arkusza (219FIN Prishe's Wanderings, 265OGW Boulder Salvo, 318CLB Gond Gate,
+377AVR Scroll of Avacyn, 447DSK Resurrected Cultist, 464AVR Polluted Dead,
+530ZEN Grazing Gladehart). Plan: `docs/plans/PLAN_2026-09-23b-batch58-kolekcja-219-530.md`;
+etapy B1–B7 to siedem osobnych, zielonych commitów (karta po karcie, każda
+z definicją, `MANA_COSTS`/deskryptorami, testami scenariusza legalnego
+i nielegalnego, regeneracją talii generatorem i pinem), etap B8 domyka
+dokumentację i pomiar.
+
+Katalog: **550 wpisów = 499 `supported` + 43 `token` + 8 `back`**, karty z `artId`
+495 → **502** (pin `test/art-ids-tool.test.js`), arkusz kolekcji 502 wiersze /
+499 nazw bez zmian — **każda pozycja arkusza właściciela ma odpowiednik
+w katalogu** (pomiar po tym batchu).
+
+Nowe mechaniki silnika (każda generyczna, zero warunków po nazwie karty —
+ADR 0002):
+
+- **B1 — surge na ścieżce CZARÓW** (dotąd tylko permanent): `CAST_SPELL_OPTIONS`
+  + walidacja (inny czar w turze), koszt alternatywny z deskryptora `surge`
+  (`reduceAlternativeCost`), flaga `surgeCast` na stosie i w zdarzeniu
+  `spell_cast` (CR 702.111); deski UI (render/main/mana-wizard/session) liczą
+  i nazywają koszt surge.
+- **B2 — landfall „możesz”**: reużyty `mayFire` na triggerze
+  `land_entered_under_your_control` (ląd wchodzi z dowolnego powodu, wejście
+  permanentu jako ląd triggera nie odpala — CR 603.6a).
+- **B3 — trigger śmierci celujący w LĄD**: tor triggerów zna cel typu `land`
+  (jedna implementacja z `isLand`).
+- **B4 — warunek „kontrolujesz stwora o podtypie”**: pozytywny bliźniak
+  `controlsNoCreatureSubtype` w efekcie `conditional`, czytany
+  w chwili rozstrzygnięcia (ruling AVR 2012-05-01).
+- **B5 — bramka `delirium` + `return_source_from_graveyard`**: aktywacja z grobu
+  wymaga 4+ typów kart w grobie (`graveyardCardTypeCount`, to samo źródło
+  w ofercie i walidacji — L48), powrót SIEBIE z licznikiem finality i wygnaniem
+  przy śmierci (CR 122.1e) — obok istniejącego powrotu cudzej karty.
+- **B6 — kwalifikator szukania z ALTERNATYWĄ (`anyOf`) + cel refleksyjny**:
+  `librarySearchMatches` składa kryterium z AND i `anyOf` (basic land ∨ Town),
+  po rozstrzygnięciu decyzji szukania (także przy „nie ma czego znaleźć”)
+  kolejkowany jest trigger refleksyjny z celem `creature_you_control`
+  (ruling FIN 2025-06-06; trigger wchodzi na stos ponad czarem, który się już
+  rozstrzygnął).
+- **B7 — statyk „wpisy wchodzą odkręcone” + mana „kolorów, jakie może dać
+  kontrolowana Brama”**: `entersUntapped: { subtype }` jako dane karty,
+  wspólny predykat `entersUntappedOverride` (CR 614.1d — efekt zastępczy
+  wejścia) czytany we wszystkich ścieżkach wejścia (ruch, land drop, szukanie,
+  reanimacja) i wyłącznie dla permanentów kontrolera statyka; deskryptor
+  `colorsFrom: { controlledSubtype }` liczony w chwili aktywacji w JEDNYM
+  miejscu (`colorsProducibleBySubtype`) używanym przez rozstrzygnięcie efektu,
+  auto-tap/kreator many i bramkę dostępności zdolności. Strażnik M193
+  przebudowany świadomie: linia Oracle „…could produce” jest warunkowa
+  (kolory zależą od pola bitwy), więc bezstanowa sonda jej nie porównuje, ale
+  wymaga deskryptora `colorsFrom` w danych karty.
+
+Talie zregenerowane wyłącznie generatorem (ADR 0023/0024): final-fantasy
+(`27/9/18`), zendikar (`35/12/23`), forgotten-realms (`38/13/25`), wiedzmin-bg
+(`27/9/18`), innistrad-brg (`29/10/19`), warhammer-ubr (`36/12/24`) — bez
+zmian wag/progów, golden-master i seedy F3 bez reseedu (żadna para fixture
+nie zawiera zmienionej talii; jeden seed E4 przelosowany po zmianie składu
+forgotten-realms — hunter, konwencja L25).
+
+Bramy po B7: `npm test` **6215/6215** (0 fail), pełna brama
+`node tools/run-tests.mjs all` **6225/6225** (0 fail, ~384 s), build
+**59 modułów / 4087,3 kB**. Handoff: `docs/setup/HANDOFF_2026-09-23b.md`.
