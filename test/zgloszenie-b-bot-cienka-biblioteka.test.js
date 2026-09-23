@@ -183,14 +183,18 @@ function scenariuszPlatnosci(lib, { zalany, czyste }) {
 
 test('B/3: bot nie rzuca czaru, którego płatność musi tapnąć zalany ląd (9 kart w bibliotece)', () => {
   const cienka = decyzja(scenariuszPlatnosci(9, { zalany: true, czyste: 1 }));
-  const zdrowa = decyzja(scenariuszPlatnosci(25, { zalany: true, czyste: 1 }));
+  // I (uwaga właściciela 2026-09-23c, Chronic Flooding): mielące TAPNIĘCIE ma
+  // własne pokrętło `libraryTapSafeMargin` = 30 („nie tapować przy bibliotece
+  // < ~30 kart") — dlatego kontrola „zdrowej biblioteki" używa 40 kart, a nie
+  // dawnych 25 (przy 25 zapas po mieleniu to 22 < 30 → kara słusznie wraca).
+  const zdrowa = decyzja(scenariuszPlatnosci(40, { zalany: true, czyste: 1 }));
   const sCienka = score(cienka.options, 'cast_permanent(h1');
   const sZdrowa = score(zdrowa.options, 'cast_permanent(h1');
 
   assert.ok(sCienka < 0, `mana nie jest warta deck-outu: ${sCienka}`);
   assert.equal(cienka.chosen.type, 'pass_priority',
     `bot ma passować zamiast mleć się przez auto-tap: ${JSON.stringify(cienka.chosen)}`);
-  assert.ok(sZdrowa > 0, `przy 25 kartach ten sam rzut jest opłacalny: ${sZdrowa}`);
+  assert.ok(sZdrowa > 0, `przy 40 kartach ten sam rzut jest opłacalny: ${sZdrowa}`);
   assert.equal(zdrowa.chosen.type, 'cast_permanent');
 });
 
@@ -274,5 +278,9 @@ test('B/5 (parametry): progi bezpieczeństwa biblioteki są pokrętłami właśc
   assert.equal(DEFAULT_HEURISTIC_PARAMS.libraryThinPenalty, 60);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.libraryThinPerCardPenalty, 6);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.librarySafeMargin, 20, 'właściciel: ~<20 kart = cienka biblioteka');
+  // I (uwaga właściciela 2026-09-23c, Chronic Flooding): mielące tapnięcie ma
+  // osobny, większy zapas — każde tapnięcie miele 3 karty (ryzyko powtarzalne).
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.libraryTapSafeMargin, 30,
+    'właściciel: nie tapować mielącego źródła przy bibliotece < ~30 kart');
   assert.equal(DEFAULT_HEURISTIC_PARAMS.repeatLibraryDrainTurns, 3);
 });

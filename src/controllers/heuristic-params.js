@@ -134,6 +134,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'libraryThinPenalty',          // kara bazowa, gdy po stracie zapas < librarySafeMargin
   'libraryThinPerCardPenalty',   // dopłata za każdą kartę brakującą do bezpiecznego zapasu
   'librarySafeMargin',           // minimalny zapas kart po stracie (właściciel: ~20)
+  // I (uwaga właściciela 2026-09-23c, Chronic Flooding): zapas wymagany, gdy
+  // płatność/tapnięcie sięga po źródło, którego tapnięcie miele bibliotekę
+  // („nie tapować przy bibliotece < ~30 kart", mill 3). Osobne pokrętło, bo
+  // to ryzyko POWTARZALNE (każde tapnięcie), a nie jednorazowy dobór z karty.
+  'libraryTapSafeMargin',        // minimalny zapas kart po mielącym tapnięciu (właściciel: ~30)
   'repeatLibraryDrainTurns',     // horyzont: ile odpaleń powtarzalnego triggera zakładamy
 ]);
 
@@ -213,6 +218,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   libraryThinPenalty: 60,
   libraryThinPerCardPenalty: 6,
   librarySafeMargin: 20,
+  libraryTapSafeMargin: 30,
   repeatLibraryDrainTurns: 3,
 });
 

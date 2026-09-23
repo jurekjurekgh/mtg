@@ -4,6 +4,7 @@ import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
 import { coloredPipsOf } from '../engine/mana-cost.js';
 import { POISON_LOSS_LIMIT } from '../engine/state-based.js';
+import { expandManaPool } from '../engine/resources.js';
 import { COMMAND_TYPES } from '../protocol/types.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { probAtLeastOne } from '../engine/hypergeom.js';
@@ -1482,7 +1483,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * informacją publiczną (ADR 0017), kwota straty pochodzi z DANYCH karty
    * (ADR 0002) — zero nazw kart. Zwraca wartość DODATNĄ (do odjęcia).
    */
-  const libraryLossPenalty = (view, amount = 0) => {
+  const libraryLossPenaltyWithMargin = (view, amount = 0, margin = P.librarySafeMargin) => {
     if (!(amount > 0)) return 0;
     // 2026-09-15 fix E2/K2/CR1: domyślny stan testowy bez biblioteki (myLibraryCount 0)
     // to nie jest realna gra z cienką biblioteką — wiele testów (Rager K2, CR1 3 karty)
@@ -1492,11 +1493,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (myLibraryCount(view) === 0) return 0;
     const zapas = myLibraryCount(view) - amount;
     if (zapas <= 0) return P.libraryDeckOutPenalty + P.drawCardValue * amount;
-    if (zapas < P.librarySafeMargin) {
-      return P.libraryThinPenalty + (P.librarySafeMargin - zapas) * P.libraryThinPerCardPenalty;
+    if (zapas < margin) {
+      return P.libraryThinPenalty + (margin - zapas) * P.libraryThinPerCardPenalty;
     }
     return 0;
   };
+  const libraryLossPenalty = (view, amount = 0) => libraryLossPenaltyWithMargin(view, amount, P.librarySafeMargin);
+  /**
+   * I (uwaga właściciela 2026-09-23c, Chronic Flooding): mielące TAPNIĘCIE ma
+   * WIĘKSZY wymagany zapas niż jednorazowy dobór z karty — to ryzyko
+   * POWTARZALNE (każde tapnięcie miele 3 karty), a właściciel: „nie tapować
+   * przy bibliotece < ~30 kart". Ten sam kształt drabiny, inne pokrętło
+   * (`libraryTapSafeMargin`) — bez zmiany progów dla doborów/millów z czarów.
+   */
+  const tapMillPenalty = (view, amount = 0) => libraryLossPenaltyWithMargin(view, amount, P.libraryTapSafeMargin);
   // E2/K2/CR1 — jednorazowy drenaż ETB (enter_battlefield/dies, np. Rager draw1,
   // Skaab mill4): kara TYLKO przy deck-oucie (zapas <0), nie przy cienkiej
   // bibliotece <20. Przy pustej bibliotece (0) zwalniamy — to testowy stan bez
@@ -1614,16 +1624,35 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const paymentLibraryLoss = (view, cmd) => {
     const koszt = reservedManaOf(view, cmd);
     if (!(koszt > 0)) return 0;
-    const pula = view.players.find((p) => p.id === view.playerId)?.mana ?? 0;
+    const gracz = view.players.find((p) => p.id === view.playerId);
+    const pula = gracz?.mana ?? 0;
     let czyste = 0;
     const mielace = [];
+    const czysteKolory = new Set();
     for (const o of view.zones.battlefield ?? []) {
       if (o.controllerId !== view.playerId || o.tapped) continue;
       const strata = tapLibraryLoss(view, o.id);
-      if (strata > 0) mielace.push(strata);
-      else if (o.kind === 'land' || (o.types ?? []).includes('Land')) czyste += 1;
+      if (strata > 0) { mielace.push(strata); continue; }
+      if (o.kind === 'land' || (o.types ?? []).includes('Land')) czyste += 1;
+      // I: kolory CZYSTYCH źródeł — rozstrzygają, czy pip da się zapłacić bez
+      // sięgania po mielące źródło (te same dane co silnik, L28).
+      for (const kolor of getSourceForObject(o, null)?.colors ?? []) czysteKolory.add(kolor);
     }
-    const brak = Math.max(0, koszt - pula - czyste);
+    // I (uwaga właściciela 2026-09-23c, Chronic Flooding): model ilościowy
+    // (koszt − pula − czyste) nie widział PIPÓW. Bot rzucał czar {U}, gdy
+    // jedynym niebieskim źródłem był zalany ląd: auto-tap (słusznie — inaczej
+    // czaru nie da się złożyć) sięgał po niego i mielił bibliotekę przy 5
+    // kartach, a kara wynosiła 0. Pipy niepokryte przez czyste źródła ani
+    // kolorową pulę wchodzą teraz do `brak` (pula bezbarwna nie płaci pipa).
+    const jednostki = expandManaPool(gracz?.manaPool ?? {}).filter((u) => u.length > 0);
+    let niepokryte = 0;
+    for (const pip of reservedPipsOf(view, cmd)) {
+      if (pip.some((k) => czysteKolory.has(k))) continue;
+      const idx = jednostki.findIndex((u) => u.some((k) => pip.includes(k)));
+      if (idx >= 0) { jednostki.splice(idx, 1); continue; }
+      niepokryte += 1;
+    }
+    const brak = Math.max(0, koszt - pula - czyste, niepokryte);
     if (brak <= 0 || mielace.length === 0) return 0;
     return mielace.slice(0, Math.min(mielace.length, Math.ceil(brak)))
       .reduce((suma, x) => suma + x, 0);
@@ -1673,7 +1702,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * takiego, nie gałęzi, którą wycena poszła.
    */
   const libraryDrainTax = (view, cmd) => {
-    if (cmd?.type === 'tap_for_mana') return libraryLossPenalty(view, tapLibraryLoss(view, cmd.objectId));
+    if (cmd?.type === 'tap_for_mana') return tapMillPenalty(view, tapLibraryLoss(view, cmd.objectId));
     // Aktywacja za manę: ten sam auto-tap (zdolność bywa warta mniej niż karty
     // z biblioteki). Tapnięcie ŹRÓDŁA jako koszt pomijamy — w katalogu jedyny
     // trigger millu na tapnięcie siedzi na aurze „Enchant land", więc źródło
@@ -1683,7 +1712,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // tapnięcia płatności ORAZ karty zabrane tutorem z efektu (dotąd tylko
       // pierwsza była widziana, więc „poświęć stwora po ląd" przy 4 kartach
       // w bibliotece wygrywało z passem).
-      return libraryLossPenalty(view, paymentLibraryLoss(view, cmd) + searchLibraryLoss(view, cmd));
+      // I: składnik PŁATNOŚCI (mielące tapnięcia) ma własny zapas
+      // (`tapMillPenalty`); drenaż tutora zostaje na progu ogólnym.
+      return tapMillPenalty(view, paymentLibraryLoss(view, cmd))
+        + libraryLossPenalty(view, searchLibraryLoss(view, cmd));
     }
     // D3 (znalezisko właściciela 2026-09-12, Balamb Garden): atak stworem
     // z triggerem „attacks → dobierz/zmiel" zjada WŁASNĄ bibliotekę przy
@@ -1745,7 +1777,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // OneShot ETB (Rager 1, Skaab 4): tylko deck-out, nie thin.
     // C (domknięcie rodziny, L41/L102): tutor z czaru (Caravan Vigil i
     // pokrewne) uszczupla bibliotekę tak samo jak wariant aktywowany.
-    return libraryLossPenalty(view, repeat + payment + searchLibraryLoss(view, cmd)) + oneShotDeckOutPenalty(view, oneShot);
+    // I: jak wyżej — mieląca PŁATNOŚĆ na progu tapnięcia, reszta na ogólnym.
+    return tapMillPenalty(view, payment)
+      + libraryLossPenalty(view, repeat + searchLibraryLoss(view, cmd))
+      + oneShotDeckOutPenalty(view, oneShot);
   };
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 
@@ -3157,6 +3192,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd.surgeCast) return card?.surge?.cost ?? cardDef(card?.cardId)?.surge?.cost ?? 0;
     const base = card?.manaCost ?? (card?.cardId ? (cardDef(card.cardId)?.manaCost ?? 0) : 0);
     return base + (cmd.xValue ?? 0);
+  }
+
+  /**
+   * I (uwaga właściciela 2026-09-23c, Chronic Flooding): wymagane PIPY kolorowe
+   * wariantu — ten sam kształt komend co `reservedManaOf` (L41: bliźniacze
+   * rodziny nie mogą się rozjeżdżać). Jednostka = lista alternatyw koloru
+   * (hybryd), dokładnie jak `coloredPipsOf` i jak liczy silnik.
+   * Okna darmowego rzutu nie płacą kosztu karty (jak w `reservedManaOf`) —
+   * `resolve_exile_cast` (Vaana) płaci pełny koszt, więc zostaje niżej.
+   */
+  function reservedPipsOf(view, cmd) {
+    if (cmd?.type === 'resolve_madness_cast' || cmd?.type === 'resolve_suspend_cast'
+      || cmd?.type === 'resolve_rebound_cast' || cmd?.type === 'resolve_grave_free_cast') return [];
+    if (cmd?.type === 'activate_ability') {
+      const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
+      const abilityObject = source ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+      const def = abilityObject ? cardDef(abilityObject.cardId) : undefined;
+      const ability = cmd.grantedFromEquipment
+        ? (def?.equipment?.grantedAbilities ?? [])[cmd.abilityIndex ?? 0]
+        : ((abilityObject?.activatableAbilities ?? def?.abilities ?? [])[cmd.abilityIndex ?? 0]);
+      return (ability?.cost?.colors ?? []).map((kolor) => [kolor]);
+    }
+    const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    if (!card?.cardId) return [];
+    return [...coloredPipsOf(card.cardId)];
   }
 
   /**

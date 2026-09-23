@@ -43,6 +43,13 @@ partii) — razem 15 pozycji; plik planu zostaje pod nazwą historyczną.
   (deskryptor triggera `enchanted_permanent_tapped` + `mill_cards`) wchodzi do
   kosztu tapnięcia; przy bibliotece ≤ 30 kart kara przewyższa korzyść.
   Jedno miejsce prawdy dla „kosztu tapnięcia lądu”.
+  **Zmierzone 2026-09-23c**: `paymentLibraryLoss` liczył tylko ILOŚĆ many —
+  bot rzucał czar z pipem {U}, którego jedynym źródłem był zalany ląd
+  (auto-tap sięgał po niego i mielił 5 → 2 karty, kara 0). Naprawa: pipsy
+  (`reservedPipsOf`, bliźniak `reservedManaOf`) + pokrycie kolorów czystymi
+  źródłami i kolorową pulą + nowe pokrętło `libraryTapSafeMargin` (30) dla
+  mielących tapnięć/płatności (dobory z czarów zostają na `librarySafeMargin`
+  = 20). Pin anty-over-fix B/3 przeniesiony na 40 kart.
 - **M** (dopisane 2026-09-23, po A–L): cel-LĄD triggera `resolve_trigger_target`
   (Acidic Slime: artefakt/enchantment/ląd) dostaje w wycenie sygnały
   deskryptorowe: (1) ląd, którego przeciwnik ma **jedną kopię** (kopia = ten sam
