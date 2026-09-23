@@ -191,7 +191,10 @@ test('M380/D: strażnik klasy — macierz atakujący×bloker: „w ofercie" ⇔ 
   for (const [index, scenario] of scenarios.entries()) {
     const state = combatState();
     for (const [id, cardId, patch] of scenario.attackers) {
-      putCreature(state, id, cardId, 'p1', patch === 'cantBeBlocked' ? { cantBeBlocked: true } : {});
+      // Audyt PR #133/F-2: dar M407 ma TERMIN tury — stara flaga `cantBeBlocked`
+      // nie jest już czytana przez silnik, więc scenariusz był pusty.
+      putCreature(state, id, cardId, 'p1', patch === 'cantBeBlocked'
+        ? { cantBeBlockedUntilTurn: state.turn.number + 1 } : {});
     }
     for (const [id, cardId, patch] of scenario.blockers) {
       const extra = patch === 'power3' ? { power: 3, toughness: 3 }
@@ -215,4 +218,20 @@ test('M380/D: strażnik klasy — macierz atakujący×bloker: „w ofercie" ⇔ 
   }
   assert.ok(checked >= 10, `macierz sprawdziła ${checked} par`);
   assert.deepEqual(mismatches, [], `rozjazd oferta↔walidacja:\n${mismatches.join('\n')}`);
+});
+
+test('M380/E (audyt PR #133, F-2): dar M407 „can\'t be blocked this turn" zamyka parę w ofercie I walidacji, po zmianie tury wygasa', () => {
+  const state = combatState();
+  // Dar z terminem bieżącej tury (M407: `cantBeBlockedUntilTurn`, CR 514.2).
+  putCreature(state, 'ghost', 'highland-game', 'p1', { cantBeBlockedUntilTurn: state.turn.number + 1 });
+  putCreature(state, 'blocker', 'highland-game', 'p2');
+  enterBlockStep(state, ['ghost']);
+  assert.equal(pairOffered(state, 'ghost', 'blocker'), false, 'para z darem nie jest oferowana');
+  const verdict = pairVerdict(state, 'ghost', 'blocker');
+  assert.equal(verdict.ok, false, 'walidacja odrzuca parę z darem (CR 509.1b)');
+  assert.match(String(verdict.reason), /illegal_blockers/, 'odrzucenie po stronie walidacji bloków');
+  // Wygaśnięcie read-time: nowa tura znów pozwala blokować (dar „this turn").
+  state.turn.number += 1;
+  assert.equal(pairOffered(state, 'ghost', 'blocker'), true, 'po zmianie tury oferta wróciła');
+  assert.equal(pairVerdict(state, 'ghost', 'blocker').ok, true, 'po zmianie tury blok jest przyjmowany');
 });
