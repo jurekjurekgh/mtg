@@ -35,6 +35,9 @@
 //          widoku znika, dar można nadać ponownie;
 //   F/7  — pula Oracle „Target creature”: kandydaci obejmują stwory wroga,
 //          bot nigdy ich nie wybiera (dar dla wroga = strzał w stopę).
+//   F/8  — audyt PR #133 (F-4): bonus aury nie liczy się podwójnie —
+//          widok niesie moc EFEKTYWNĄ i `grantedPower` (badge), a wycena daru
+//          czytała ich SUMĘ, zawyżając cele z aurą.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { addObject, createGameState, execute, playerView, triggerTargetEffectFriendly, triggerTargetEvasionGrantOf } from '../src/engine/game-state.js';
@@ -43,6 +46,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { processTriggers } from '../src/engine/triggers.js';
+import { attachAuraToCreature } from '../src/engine/attachments.js';
 
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
@@ -67,6 +71,21 @@ function putCard(state, { id, cardId, controllerId, zone, name }) {
     manaCost: data.manaCost, spell: data.spell, abilities: data.abilities ?? [],
     keywords: card.keywords ?? [], subtypes: card.subtypes ?? [], types: card.types ?? [],
     colors: data.colors ?? [], cardName: name ?? card.name, name: name ?? card.name,
+  });
+  return state.objects.get(id);
+}
+
+/**
+ * L21: kształt aury (deskryptor `aura`) musi wejść na obiekt REALNĄ drogą
+ * (`gameObjectDataOf`), inaczej `attachAuraToCreature` odrzuca załączenie.
+ */
+function putFull(state, { id, cardId, controllerId }) {
+  const card = REGISTRY.get(cardId);
+  assert.ok(card, `karta ${cardId} w rejestrze`);
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId, controllerId, ownerId: controllerId, zone: 'battlefield',
+    ...gameObjectDataOf(card), types: card.types ?? [], subtypes: card.subtypes ?? [],
+    keywords: card.keywords ?? [], cardName: card.name, name: card.name,
   });
   return state.objects.get(id);
 }
@@ -298,4 +317,26 @@ test('F/7 pula Oracle „Target creature” (Scryfall FIN #58): kandydaci obejmu
   assert.equal(choice.targetId, 'shiva', `wlasny 4/5 wygrywa: ${JSON.stringify(choice)}`);
   assert.ok((scores.get('wrog') ?? 0) < (scores.get('moj') ?? 0),
     `dar dla wroga = strzał w stope (nigdy ponad wlasnym): ${JSON.stringify([...scores])}`);
+});
+
+test('F/8 (audyt PR #133, F-4): bonus aury nie liczy się podwójnie — 5/5 bije 2/3 z +2/+2', () => {
+  // Widok PlayerView niesie moc EFEKTYWNĄ (2/3 + aura +2/+2 = 4/5) ORAZ
+  // `grantedPower: 2` dla badge'u. Wycena daru M407 czytała `power + grantedPower`
+  // (suma = 6), więc aura na słabszym stworze przebijała większy realny atak.
+  const state = game({ active: 'p2' });
+  const shiva = addShiva(state, 'shiva', 'p2');
+  putFull(state, { id: 'human', cardId: 'midnight-guard', controllerId: 'p2' });
+  putFull(state, { id: 'bof', cardId: 'bonds-of-faith', controllerId: 'p2' });
+  attachAuraToCreature(state, 'bof', 'human');
+  addCreature(state, 'duzy', 'p2', 5, 5);
+  queueMesmerize(state, shiva);
+  const view = playerView(state, 'p2');
+  const entry = view.zones.battlefield.find((o) => o.id === 'human');
+  assert.equal(entry.power, 4, 'widok: moc efektywna z aurą (2/3 -> 4/5)');
+  assert.equal(entry.grantedPower, 2, 'widok: bonus badge = ten sam dodatek (nie do sumowania z power)');
+  const bot = createHeuristicBot({ seed: 5 });
+  const { choice, scores } = pickTrigger(bot, state, 'p2');
+  assert.equal(choice.targetId, 'duzy', `większy realny atak wygrywa: ${JSON.stringify(choice)}`);
+  assert.ok((scores.get('duzy') ?? 0) > (scores.get('human') ?? 0),
+    `bez podwójnego liczenia bonusu: duzy=${scores.get('duzy')} human=${scores.get('human')}`);
 });

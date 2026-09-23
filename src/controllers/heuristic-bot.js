@@ -2094,7 +2094,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   const cantBeBlockedTargetValue = (view, target) => {
     if (!target) return 0;
-    const power = (target.power ?? 0) + (target.grantedPower ?? 0);
+    // Audyt PR #133 (F-4): wpis PlayerView niesie moc EFEKTYWNĄ — `power`
+    // zawiera już bonusy ciągłe (`effectivePower`: aury, statyki, anthemy),
+    // a `grantedPower` to TEN SAM dodatek dla badge'u. Suma podwajała bonus
+    // (2/3 z aurą +2/+2 wyceniane jak 6/5), więc aura na słabszym stworze
+    // przebijała większy realny atak. Moc efektywna, spójnie z M412.
+    const power = combatPower(target);
     if (target.controllerId !== view.playerId) return -40 - power;
     const attackingNow = (view.combat?.attackers ?? []).includes(target.id);
     const canAttack = attackingNow
