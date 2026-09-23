@@ -12556,3 +12556,72 @@ forgotten-realms — hunter, konwencja L25).
 Bramy po B7: `npm test` **6215/6215** (0 fail), pełna brama
 `node tools/run-tests.mjs all` **6225/6225** (0 fail, ~384 s), build
 **59 modułów / 4087,3 kB**. Handoff: `docs/setup/HANDOFF_2026-09-23b.md`.
+
+## M421 — uwagi z gry: 15 pozycji A–M (sesja 2026-09-23c, PR #134)
+
+Zlecenie właściciela: „14 uwag z jednej gry. Najwięcej do tej pory” — pozycje
+A–L z jednej partii plus osobna uwaga M (Acidic Slime) w trakcie sesji. Plan:
+`docs/plans/PLAN_2026-09-23c-uwagi-z-gry-14-pozycji.md` (nazwa historyczna;
+pozycji 15), etapy E1–E5, każda pozycja osobnym, zielonym commitem.
+
+**E1 — bot (A, D, I, M):**
+
+- **A — Morbid czeka na Główną 2**: gałąź stwora `cast_permanent` nie patrzyła
+  na deskryptor `entersWithCountersIf: { morbid: true }` (CR 614.1c), więc bot
+  rzucał Somberwalda w Głównej 1, gdzie liczniki prawie nigdy nie wchodzą.
+  Nowe pokrętła `morbidMain1Penalty` (90 — przebija bazę stwora 70, więc rzut
+  schodzi pod pass) i `morbidMain2Bonus` (8); wyjątek `flash` znosi karę tylko,
+  gdy bot REALNIE zamierza atakować (`intendsToAttackThisTurn` — ta sama
+  polityka ataku co w kroku deklaracji, zero nowego modelu). Commit `b926929`.
+- **D — Cemetery Recruitment**: wycena `return_card_from_graveyard_to_hand`
+  liczyła tylko ciało, więc warianty o równych P/T remisowały i wygrywał
+  pierwszy z brzegu (zwykle najtańszy). Składnik many: `min(mana value
+  odzyskanej karty, potencjał)` × `graveReturnManaWeight` (4); potencjał =
+  pula + WSZYSTKIE własne źródła na polu (`getSourceForObject`, tapnięcia
+  ignorowane — „także z tapniętych lądów”) minus mana zarezerwowana na
+  rzucany właśnie czar. Commit `654c562`.
+- **I — Chronic Flooding**: `paymentLibraryLoss` liczył tylko ILOŚĆ many, więc
+  auto-tap sięgał po zalany ląd bez kary (zmierzone: rzut z pipem {U} mielił
+  bibliotekę 5 → 2 karty). Naprawa: `reservedPipsOf` (bliźniak
+  `reservedManaOf`) + pokrycie pipów kolorami czystych źródeł i kolorowej puli
+  (`expandManaPool`) + nowe pokrętło `libraryTapSafeMargin` (30) dla mielących
+  TAPNIĘĆ/płatności (dobory i mille z czarów zostają na `librarySafeMargin`
+  = 20). Piny B/3 (zdrowa biblioteka 25 → 40 kart) i B/5. Commit `364c423`.
+- **M — Acidic Slime**: cel-ląd triggera `resolve_trigger_target` dostaje
+  sygnały deskryptorowe: premia 18 za odcięcie koloru (żaden POZOSTAŁY ląd
+  wroga nie produkuje żadnego z kolorów celu), 10 za unikat `cardId`, kara 8 za
+  każdą dodatkową kopię; ląd bez produkcji (`{C}`) bez sygnału (antidotum na
+  pin C53/C). Commit `4a02699`.
+
+**E2 — panel i modale (B1, C, F1, F3, H, J):** B1 — „detain up to two” jako
+multiselect z „Zatwierdź wybór” (`upToTargetsPlanOf`), koniec enumeracji
+kombinacji (`5a55504`); C+H — koszt w tytułach grup ofert, Forecast po imieniu
+i koszcie zdolności (`7eb1633`); F1 — decyzja „you may” bez modala (klik =
+wykonaj, „Dalej (Pass)” = odmowa), domknięta etykietą wariantu odmowy w śladzie
+(`b9d0245`, `9ac5c34`); F3 — etykiety Cloak/odkrywania niosą koszt rzucenia
+(`fdfd73f`); J — Epic Experiment to JEDNA oferta „(koszt XUR)” + modal X +/-
++ kreator many dla X (`xOnly`, `1f3376f`).
+
+**E3 — silnik i odznaki (B2, F2, G):** badge `detain` przez cały czas trwania
+efektu (`516d72e`); zakryta karta nie ma typów (CR 708.2), więc Aura zakryta
+zostaje na stole jako 2/2 (`fdfd73f`); Mana Wizard grupuje pokrycie pipów
+i ukrywa źródła bez potrzebnego koloru od razu, gdy zostają tylko kolorowe pipy
+(`38e1249`).
+
+**E4 — układ stołu (E, K, L):** deklaracje atakujących/blokujących tuż POD
+„Dalej (Pass)” (`groupCombatDecisions`, `fdfd73f`); „Przebieg tur (dla AI)”
+domyślnie rozwinięty (`fdfd73f`); K — klik w długą opcję nie gubi się przy
+reflow: feedback wciśnięcia bez geometrii (`filter: brightness`), `scrollbar-
+gutter: stable` w kontenerach z celami tapnięcia, stała kolumna opisu
+(`.action-label`), `touch-action: manipulation`, a aktywacja przechwytuje
+wskaźnik (`installPressActivation`: release wraca do wciśniętej opcji, próg
+ruchu 12 px dla scrolla, klawiatura i brak podwójnej aktywacji bez zmian)
+(`c20bf92`).
+
+Plan sesji: `08fc24b`. Piny zaktualizowane poza nowymi plikami: B/3, B/5,
+`batch52-bot-wycena` (bez zmian — scenariusze bez pól many), piny kontraktu
+odmowy (A1/O2/F1-Murder/m167 → `cmd.type === 'pass_priority'`), `choice-request-ui`,
+`table-ui`, `batch53-bot` (C53/C), testy czytające `index.html`.
+
+Bramy: `npm test` **6290/6290** (0 fail), pełna brama
+`node tools/run-tests.mjs all` **6300/6300** (0 fail, ~388 s), build **59 modułów / 4119,4 kB**.

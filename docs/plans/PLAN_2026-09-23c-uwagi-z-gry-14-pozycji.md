@@ -151,6 +151,15 @@ partii) — razem 15 pozycji; plik planu zostaje pod nazwą historyczną.
 Pomiary (szybki rdzeń + pełna brama + build), wpis M-serii, README/handoff,
 odhaczenia w tym planie, aktualizacja PR.
 
+**Wykonane (2026-09-23c)**: wszystkie 15 pozycji A–M domknięte osobnymi
+commitami (`fdfd73f`, `38e1249`, `b9d0245`, `7eb1633`, `1f3376f`, `5a55504`,
+`9ac5c34`, `4a02699`, `364c423`, `654c562`, `b926929`, `c20bf92` + piny
+`516d72e`, `e337884`); `npm test` **6290/6290**, pełna brama
+`node tools/run-tests.mjs all` **6300/6300** (0 fail), build
+**59 modułów / 4119,4 kB**. Wpis **M421** w `docs/ENGINE_MILESTONES.md`
+i `docs/PROJECT_HISTORY.md`, handoff `docs/setup/HANDOFF_2026-09-23c.md`,
+PR #134 zaktualizowany (bez merge — ADR 0020).
+
 ## Zasady wykonania
 
 - Każda pozycja z testem RED→GREEN; dla pozycji UI test warstwy stołu

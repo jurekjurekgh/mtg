@@ -7381,3 +7381,41 @@ forgotten-realms — hunter, konwencja L25).
 Bramy po B7: `npm test` **6215/6215** (0 fail), pełna brama
 `node tools/run-tests.mjs all` **6225/6225** (0 fail, ~384 s), build
 **59 modułów / 4087,3 kB**. Handoff: `docs/setup/HANDOFF_2026-09-23b.md`.
+
+## M421 — uwagi z gry: 15 pozycji A–M (sesja 2026-09-23c, PR #134)
+
+Zlecenie właściciela: „14 uwag z jednej gry. Najwięcej do tej pory” + osobna
+uwaga M. Plan: `docs/plans/PLAN_2026-09-23c-uwagi-z-gry-14-pozycji.md`
+(nazwa historyczna — pozycji 15), etapy E1–E5, każda pozycja osobnym commitem.
+
+**Bot (E1)**: A — karta z `entersWithCountersIf: { morbid: true }` czeka na
+Główną 2 (`morbidMain1Penalty` 90 poniżej passu, `morbidMain2Bonus` 8), wyjątek
+`flash` tylko przy realnym zamiarze ataku (`intendsToAttackThisTurn` — ta sama
+polityka ataku co deklaracja); D — `return_card_from_graveyard_to_hand` wart
+tyle, ile bot ma na niego many (`graveReturnManaWeight` 4 × `min(mana value,
+potencjał)`, potencjał = pula + wszystkie własne źródła niezależnie od
+tapnięcia, minus rezerwacja rzucanego czaru); I — pip-aware
+`paymentLibraryLoss` (`reservedPipsOf` + pokrycie czystymi źródłami i kolorową
+pulą) i próg `libraryTapSafeMargin` 30 dla mielących tapnięć/płatności;
+M — cel-ląd `resolve_trigger_target` premiuje unikat koloru wroga (odcięcie
+koloru 18, singleton 10, kara 8/kopię, ląd bez produkcji 0).
+
+**Panel i modale (E2)**: B1 — „up to two” jako multiselect (`upToTargetsPlanOf`)
+zamiast enumeracji kombinacji; C+H — tytuły grup ofert niosą koszt (Forecast po
+imieniu i koszcie zdolności); F1 — „you may” bez modala (klik = wykonaj, „Dalej
+(Pass)” = odmowa) + etykieta wariantu odmowy w śladzie; F3 — Cloak/odkrywanie
+z kosztem; J — Epic Experiment jako JEDNA oferta z X + modal X +/− + kreator
+many (`xOnly`).
+
+**Silnik i stół (E3/E4)**: B2 — badge `detain` przez czas trwania efektu;
+F2 — zakryta Aura zostaje na stole jako 2/2 (CR 708.2); G — Mana Wizard
+pokrywa pipy per grupa i filtruje źródła bez potrzebnego koloru; E — deklaracje
+atakujących/blokujących pod „Dalej (Pass)”; L — „Przebieg tur (dla AI)”
+domyślnie rozwinięty; K — klik w długą opcję nie gubi się przy reflow
+(bez geometrii w `:active`, `scrollbar-gutter: stable`, stała kolumna opisu,
+`touch-action: manipulation` + `installPressActivation` z przechwyceniem
+wskaźnika).
+
+Bramy: `npm test` **6290/6290** (0 fail), pełna brama
+`node tools/run-tests.mjs all` **6300/6300** (0 fail, ~388 s), build
+**59 modułów / 4119,4 kB**. Handoff: `docs/setup/HANDOFF_2026-09-23c.md`.
