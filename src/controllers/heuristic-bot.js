@@ -1527,6 +1527,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // Skaab mill 4): draw_then_discard to też dobranie (net 1 z biblioteki),
   // mill_from_bottom to też mielenie (to samo co mill_cards — ADR 0002).
   const LIBRARY_DRAIN_EFFECTS = new Set(['mill_cards', 'draw_cards', 'draw_then_discard', 'mill_from_bottom']);
+  // F1 v2 (uwaga właściciela 2026-09-23d, Veiled Ascension): efekty, które
+  // przenoszą kartę z biblioteki na pole bitwy TWARZĄ W DÓŁ (cloak — CR 701.56a,
+  // manifest — CR 701.40a). Dla własnej biblioteki to NIE to samo co mill czy
+  // dobranie: karta nie ginie, tylko staje się permanentem 2/2 z wardem
+  // (i da się ją później obrócić twarzą do góry), więc „you may” jest opłacalne
+  // ZAWSZE — karę nakłada dopiero próg `cloakLibraryFloor` w wycenie decyzji.
+  // Typy efektów, nie nazwy kart (ADR 0002).
+  const FACE_DOWN_LIBRARY_EFFECT_TYPES = new Set(['cloak', 'manifest']);
+  /**
+   * Efekty bieżącej decyzji „you may” z widoku decydenta. Widok projektuje ją
+   * jako `{ sourceCardId, effect, effects }` (game-state.js — brak `ability`,
+   * klasa L1/L48); czytamy PEŁNĄ tablicę `effects` z fallbackiem `effect`
+   * (konwencja F1/O2). JEDNO źródło kształtu: strażnik kar bibliotecznych
+   * (`libraryDrainTax`) i nowa wycena cloaków (L41).
+   */
+  const pendingOptionalEffects = (view) => {
+    const pending = view?.pendingOptionalTrigger;
+    if (!pending) return [];
+    return pending.effects ?? (pending.effect ? [pending.effect] : []);
+  };
+  /** Ile efektów decyzji zakrywa kartę z MOJEJ biblioteki (cloak/manifest). */
+  const faceDownLibraryEffects = (view) => pendingOptionalEffects(view)
+    .filter((eff) => FACE_DOWN_LIBRARY_EFFECT_TYPES.has(eff?.type)).length;
   // C (zgłoszenie właściciela 2026-09-19, Dawntreader Elk): TUTOR — efekt
   // „search your library for a card…" — też uszczupla WŁASNĄ bibliotekę
   // (karta opuszcza bibliotekę bezpowrotnie), dokładnie tak samo jak dobranie
@@ -1751,14 +1774,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // dokładamy drugiej kary, żeby nie podwajać. Zostawiamy dedykowanej
       // gałęzi w scoreCommand.
       if (Number.isInteger(cmd.selfMill)) return 0;
-      const pending = view.pendingOptionalTrigger;
       // F1 (audyt PR #120): widok projektuje tę decyzję jako { sourceCardId,
       // effect } (game-state.js ~7871) — pole `ability` NIE istnieje w widoku,
       // więc czytanie go po cichu wyłączało karę cienkiej biblioteki (L1/L48).
       // O2 (audyt PR #121, domknięcie): czytamy PEŁNĄ tablicę `effects`
       // (drenaż poza pierwszą pozycją też karany); `effect` zostaje jako
       // fallback dla starszych rzutów widoku.
-      const effects = pending?.effects ?? (pending?.effect ? [pending.effect] : []);
+      // F1 v2: ten sam czytnik co nowa wycena cloaków (`faceDownLibraryEffects`)
+      // — jedno źródło kształtu decyzji (L41).
+      const effects = pendingOptionalEffects(view);
       let drain = 0;
       for (const eff of effects) {
         if (!eff?.type || !LIBRARY_DRAIN_EFFECTS.has(eff.type)) continue;
@@ -7709,6 +7733,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const foeLib = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
           if (myLib - cmd.selfMill <= 0) return finish(-60); // ostatnie karty — nigdy
           return finish(myLib > foeLib ? 45 : -35);
+        }
+        // F1 v2 (uwaga właściciela 2026-09-23d, Veiled Ascension): cloak
+        // w upkeepie to „you may” ZAWSZE — efekt zakrywa kartę z biblioteki,
+        // ale jej nie marnuje (2/2 z wardem, CR 701.56a; odkrycie wraca do
+        // karty, CR 701.56b), więc bazowa wartość „fire” (50) zostaje.
+        // Wyjątek: własna biblioteka pod progiem `cloakLibraryFloor` — każde
+        // zakrycie przybliża deck-out (CR 121.4), a przegrana na pustej
+        // bibliotece jest nieodwracalna; kara schodzi pod 0, czyli pod „pass”.
+        // Wycena po TYPIE efektu i po progach z parametrów (ADR 0002, L41).
+        if (cmd.fire && faceDownLibraryEffects(view) > 0) {
+          return finish(myLibraryCount(view) < P.cloakLibraryFloor ? -P.cloakThinLibraryPenalty : 50);
         }
         // „You may" bez celu (Angel's Feather — +1 życie): „tak" jak dotąd.
         return finish(cmd.fire ? 50 : 0);
