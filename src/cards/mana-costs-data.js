@@ -500,4 +500,5 @@ export const MANA_COSTS = {
   // Koszt DRUKU to {2}{B} (mv 3 = `manaCost`); zdolność Delirium kosztuje
   // {2}{B}{B} i żyje w deskryptorze zdolności, nie w MANA_COSTS (strażnik B3).
   "resurrected-cultist": "{2}{B}",
+  "prishes-wanderings": "{2}{G}",
 };

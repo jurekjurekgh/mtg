@@ -730,6 +730,9 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   reflexive_sacrifice: 'refleks po poświęceniu („when you do")',
   // M361/B2 (Talion's Messenger): reflexive „when you discard this way".
   reflexive_discard: 'refleks po odrzucie („when you discard this way")',
+  // Batch 58/B6 (Prishe's Wanderings): reflexive „when you search your library
+  // this way" — zdolność na stosie po przeszukaniu (ruling FIN 2025-06-06).
+  reflexive_search: 'refleks po przeszukaniu biblioteki („when you search this way")',
   // PR #98 (Żywy Tester, innistrad-brg×worek-dziki seed 11): pseudo-zdolność
   // storm rodzi się w spells.js (spells.js:702), poza zasięgiem strażnika
   // M122 — w modalu wyciekał surowy slug „trigger (storm)".
@@ -1085,6 +1088,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${nameOfObject(e.sourceId)} — refleks po poświęceniu ${nameOfObject(e.sacrificedId)}`;
       case 'reflexive_discard':
         return `${nameOfObject(e.sourceId)} — refleks po odrzucie („when you discard this way")`;
+      case 'reflexive_search':
+        return `${nameOfObject(e.sourceId)} — refleks po przeszukaniu biblioteki („when you search your library this way")`;
       case 'food_choice_required': return `${whoN(e.playerId)} rozstrzyga: poświęcić Food na +3 życia?`;
       case 'food_choice_resolved': return e.auto
         ? null

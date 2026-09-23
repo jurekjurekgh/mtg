@@ -11644,7 +11644,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // 5. Resurrected Cultist (DSK) {2}{B} Creature — Human Cleric 4/1.
   // Delirium (CR 207.2c) to WARUNEK AKTYWACJI tej samej klasy co max speed:
   // bramkuje zdolność z grobu, więc spójnie z ofertą i walidacją
-  // (`abilities.js abilityConditionHolds`). Rulingi DSK 2024-09-20 opisują
+  // (`abilities.js abilityConditionFailure`). Rulingi DSK 2024-09-20 opisują
   // licznik finality, którym wraca karta: działa na dowolnym permanencie
   // (nie tylko stworze), nie jest licznikiem słowa kluczowego, a wielokrotne
   // egzemplarze są redundantne — dlatego na typ licznika wystarcza jeden
@@ -11668,7 +11668,41 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 447, plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
-    notes: ['delirium bramkuje aktywację z grobu (oferta + walidacja wspólnym `abilityConditionHolds`); finality: śmierć → wygnanie zamiast grobu (`deathZoneFor`), rulingi DSK 2024-09-20'],
+    notes: ['delirium bramkuje aktywację z grobu (oferta + walidacja wspólną bramką `abilityConditionFailure`); finality: śmierć → wygnanie zamiast grobu (`deathZoneFor`), rulingi DSK 2024-09-20'],
+  }),
+
+  // 6. Prishe's Wanderings (FIN) {2}{G} Instant — „Search your library for a
+  // basic land card or Town card, put it onto the battlefield tapped, then
+  // shuffle. When you search your library this way, put a +1/+1 counter on
+  // target creature you control." Ruling FIN 2025-06-06: celu NIE wybiera się
+  // przy rzucie czaru — druga, „refleksyjna" zdolność wchodzi na stos PO
+  // przeszukaniu (wzorzec reflexive_discard/reflexive_sacrifice; tu zdarzenie
+  // `reflexive_search` emituje rozstrzygnięcie szukania — także fail to find).
+  defineCard({
+    id: 'prishes-wanderings', name: "Prishe's Wanderings", set: 'FIN',
+    types: ['Instant'], colors: ['G'], manaCost: 3,
+    oracleText: 'Search your library for a basic land card or Town card, put it onto the battlefield tapped, then shuffle. When you search your library this way, put a +1/+1 counter on target creature you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/6/d6e1dee0-e2cd-4899-a3ea-7d0df717c9ab.jpg?1783906584',
+    spell: {
+      timing: 'instant',
+      targets: [],
+      effects: [{
+        type: 'search_library_to_battlefield',
+        entersTapped: true,
+        qualifier: { anyOf: [{ types: ['Basic', 'Land'] }, { subtypes: ['Town'] }] },
+        reflexiveEvent: 'reflexive_search',
+      }],
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'reflexive_search', requiresTarget: { type: 'creature_you_control' } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    artId: 219, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['refleks „when you search your library this way" (ruling FIN 2025-06-06): cel wybierany przy wejściu zdolności na stos, po przeszukaniu; kwalifikator anyOf = basic land ALBO Town; fail to find nadal odpala refleks'],
   }),
 ]);
 

@@ -273,6 +273,9 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'reflexive_sacrifice',
   // M361/B2 (Talion's Messenger): reflexive „when you discard this way".
   'reflexive_discard',
+  // Batch 58/B6 (Prishe's Wanderings): reflexive „when you search your library
+  // this way" — zdarzenie emitowane po przeszukaniu (ruling FIN 2025-06-06).
+  'reflexive_search',
   'card_put_into_graveyard_from_nonbattlefield', 'combat_damage_to_player',
   'dies', 'enchanted_creature_damage_to_opponent', 'end_step', 'enter_battlefield', 'equipped_creature_attacks',
   'equipped_creature_blocks_or_blocked_by', 'combat_damage_to_you',

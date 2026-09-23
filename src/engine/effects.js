@@ -661,6 +661,13 @@ export function revealTopGainLife(state, playerId, sourceCardId = null) {
 /** Czy karta z biblioteki pasuje do kwalifikatora szukania (types/subtypes/kind/minMV). */
 export function librarySearchMatches(object, qualifier, ownerId) {
   if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
+  // Batch 58/B6 (Prishe's Wanderings): „a basic land card or Town card" —
+  // ALTERNATYWY kwalifikatora. Karta pasuje, gdy spełnia KTÓRĄKOLWIEK
+  // z gałęzi (każda gałąź to pełny kwalifikator tej samej postaci, a ALBO
+  // łączy się z pozostałymi polami jak dotąd — AND). Jedno miejsce prawdy dla
+  // kandydatów (`queueSearchChoice`) i re-walidacji wyboru (resolve_search_choice).
+  if ((qualifier.anyOf ?? []).length > 0
+    && !qualifier.anyOf.some((branch) => librarySearchMatches(object, branch, ownerId))) return false;
   const typeMatch = (qualifier.types ?? []).length === 0
     || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
   // M385: podtypy kwalifikatora czytamy z linii typów; changeling rozszerza
@@ -764,7 +771,29 @@ export function discardCardsForced(state, { playerId, cardIds, purpose, sourceCa
   return state.events.slice(before);
 }
 
-export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null, mandatory = false }) {
+/**
+ * Batch 58/B6 (Prishe's Wanderings; ruling FIN 2025-06-06): zdarzenie
+ * „reflexive" po PRZESZUKANIU biblioteki — jedno miejsce emisji dla obu
+ * ścieżek szukania (inline bez kandydatów ORAZ decyzja resolve_search_choice),
+ * żeby liczba zdarzeń nie zależała od tego, czy gracz miał co wybrać (L41).
+ * `reflexiveAbility` to snapshot zdolności z chwili rozstrzygnięcia (LKI,
+ * CR 603.10) — `processTriggers` odpala ją potem jak każdy refleks
+ * (wzorzec `reflexive_discard`/`reflexive_sacrifice`).
+ */
+export function emitReflexiveSearch(state, pending, { found }) {
+  if (!pending?.reflexiveEvent) return null;
+  const ev = event(pending.reflexiveEvent, {
+    playerId: pending.playerId,
+    sourceId: pending.reflexiveSourceId ?? null,
+    cardId: pending.sourceCardId ?? null,
+    reflexiveAbility: pending.reflexiveAbility ?? null,
+    found: Boolean(found),
+  });
+  state.events.push(ev);
+  return ev;
+}
+
+export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null, mandatory = false, reflexiveEvent = null, reflexiveAbility = null }) {
   const ownerId = sourceObject.controllerId;
   const matches = (object) => librarySearchMatches(object, qualifier, ownerId);
   const candidateIds = state.zones.library.filter((id) => matches(state.objects.get(id)));
@@ -782,6 +811,12 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
     state.events.push(event('library_searched', {
       playerId: ownerId, foundCardId: null, destination, shuffled: true, qualifier,
     }));
+    // Batch 58/B6: przeszukanie BEZ kandydatów to wciąż przeszukanie —
+    // refleks odpala (zdolność wchodzi na stos już po rozstrzygnięciu czaru).
+    emitReflexiveSearch(state, {
+      playerId: ownerId, reflexiveSourceId: sourceObject.id,
+      sourceCardId: sourceObject.cardId ?? null, reflexiveEvent, reflexiveAbility,
+    }, { found: false });
     return;
   }
   state.pendingSearchChoice = {
@@ -806,6 +841,11 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
     // M177/C (Final Parting, CR 701.19c): szukanie BEZ kryterium jakości
     // nie może „fail to find” — przy kandydatach decline nie jest oferowany.
     mandatory: Boolean(mandatory),
+    // Batch 58/B6: linka refleksyjna przeżywa odroczenie decyzji — zdarzenie
+    // emituje dopiero rozstrzygnięcie szukania (resolve_search_choice).
+    reflexiveEvent,
+    reflexiveAbility: reflexiveAbility ? Object.freeze({ ...reflexiveAbility }) : null,
+    reflexiveSourceId: sourceObject.id,
   };
   state.turn.priorityPlayerId = ownerId;
   state.events.push(event('search_choice_required', {
@@ -2665,10 +2705,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Temat 6 — CR 701.19b). Którą kartę wziąć (i czy w ogóle szukać) wybiera
     // GRACZ: blokująca decyzja resolve_search_choice; sam ruch + tasowanie
     // wykonuje komenda.
+    // Batch 58/B6 (Prishe's Wanderings): efekt może nieść linkę refleksyjną
+    // („When you search your library this way, ...") — zdolność bierzemy ze
+    // ŹRÓDŁA (czar na stosie ma pełną listę zdolności karty; wzorzec
+    // `reflexive_discard`/`reflexive_sacrifice`).
+    const reflexiveEvent = effect.reflexiveEvent ?? null;
+    const reflexiveAbility = reflexiveEvent
+      ? ((sourceObject?.abilities ?? []).find((a) => a?.trigger?.event === reflexiveEvent) ?? null)
+      : null;
     return queueSearchChoice(state, sourceObject, {
       qualifier: effect.qualifier ?? {},
       destination: 'battlefield',
       entersTapped: Boolean(effect.entersTapped),
+      reflexiveEvent,
+      reflexiveAbility,
     });
   }
   if (effect.type === 'search_basic_land_morbid') {

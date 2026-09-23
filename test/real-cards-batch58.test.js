@@ -505,3 +505,148 @@ test('B58/B5: Resurrected Cultist — na polu bitwy zdolność z grobu nie dzia�
   const forced = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'on-bf', abilityIndex: 0 });
   assert.equal(forced.ok, false, 'aktywacja z pola bitwy odrzucona');
 });
+
+// ---- B6: Prishe's Wanderings (219 FIN, plan Final Fantasy) ------------------
+
+function castPrishe(state) {
+  const cmd = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'prishes');
+  assert.ok(cmd, 'rzut Prishe\u2019s Wanderings oferowany');
+  run(state, cmd);
+  // Czar rozstrzyga się po rundzie passów — dopiero wtedy czeka decyzja
+  // szukania (blokująca, więc passy się kończą).
+  for (let i = 0; i < 10 && !commands(state).some((c) => c.type === 'resolve_search_choice'); i += 1) {
+    const pass = commands(state).find((c) => c.type === 'pass_priority');
+    assert.ok(pass, 'priorytet do oddania');
+    run(state, pass);
+  }
+  assert.ok(commands(state).some((c) => c.type === 'resolve_search_choice'), 'decyzja szukania czeka po czarze');
+}
+
+test('B58/B6: Prishe\u2019s Wanderings — dane Oracle + anyOf i zdolność refleksyjna', () => {
+  const def = registry.get('prishes-wanderings');
+  assert.deepEqual(def.types, ['Instant']);
+  assert.deepEqual(def.colors, ['G']);
+  assert.equal(def.manaCost, 3);
+  assert.equal(def.set, 'FIN');
+  assert.equal(def.plan, 'Final Fantasy');
+  assert.equal(def.artId, 219);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('d6e1dee0'), 'imageUri z druku fin/193');
+  assert.equal(MANA_COSTS['prishes-wanderings'], '{2}{G}');
+  const effect = def.spell.effects[0];
+  assert.equal(effect.type, 'search_library_to_battlefield');
+  assert.equal(effect.entersTapped, true, 'znaleziony ląd wchodzi TAPNIĘTY');
+  assert.equal(effect.reflexiveEvent, 'reflexive_search');
+  assert.deepEqual(effect.qualifier.anyOf, [
+    { types: ['Basic', 'Land'] },
+    { subtypes: ['Town'] },
+  ], '„a basic land card or Town card" = alternatywy kwalifikatora');
+  const reflexive = def.abilities.find((a) => a.trigger?.event === 'reflexive_search');
+  assert.ok(reflexive, 'zdolność refleksyjna na karcie (ruling FIN 2025-06-06)');
+  assert.deepEqual(reflexive.trigger.requiresTarget, { type: 'creature_you_control' });
+  assert.equal(reflexive.effect.type, 'add_counter');
+  assert.equal(reflexive.effect.counter, '+1/+1');
+  assert.equal(reflexive.effect.amount, 1);
+});
+
+test('B58/B6: Prishe\u2019s Wanderings — basic land enters tapped, refleks daje +1/+1', () => {
+  const state = game();
+  put(state, 'prishes', 'prishes-wanderings', 'p1');
+  put(state, 'mine', 'razorfoot-griffin', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'mine2', 'razorfoot-griffin', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'foe', 'razorfoot-griffin', 'p2', 'battlefield');
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  castPrishe(state);
+  const choice = commands(state).find((c) => c.type === 'resolve_search_choice' && c.found === 'lib-p1-0');
+  assert.ok(choice, 'podstawowy ląd z biblioteki jest oferowany w wyborze');
+  run(state, choice);
+  const land = find(state, 'basic-swamp', 'battlefield');
+  assert.ok(land, 'znaleziony ląd na polu bitwy');
+  assert.equal(land.tapped, true, 'wchodzi tapnięty');
+  assert.equal(land.controllerId, 'p1');
+  // M242: przy DOKŁADNIE jednym legalnym kandydacie wybór jest automatyczny —
+  // decyzja pojawia się przy realnym wyborze (dwa własne stwory).
+  const targets = commands(state).filter((c) => c.type === 'resolve_trigger_target');
+  const ids = targets.map((c) => c.targetId);
+  assert.ok(ids.includes('mine') && ids.includes('mine2'),
+    `twoje stwory są legalnymi celami refleksu: ${JSON.stringify(ids)}`);
+  assert.ok(!ids.includes('foe'), 'stwór przeciwnika NIE jest legalnym celem („creature you control")');
+  run(state, targets.find((c) => c.targetId === 'mine'));
+  resolve(state);
+  assert.equal(state.objects.get('mine').counters['+1/+1'], 1, '+1/+1 na wybranym stworze');
+  assert.equal(state.objects.get('mine2').counters['+1/+1'], undefined, 'nie na drugim stworze');
+});
+
+test('B58/B6: Prishe\u2019s Wanderings — Town card też jest znajdowany (anyOf)', () => {
+  const state = game();
+  put(state, 'prishes', 'prishes-wanderings', 'p1');
+  put(state, 'town', 'balamb-garden-seed-academy', 'p1', 'library');
+  put(state, 'mine', 'razorfoot-griffin', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'mine2', 'razorfoot-griffin', 'p1', 'battlefield', { summoningSickness: false });
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  const beforeNonland = [...state.objects.values()].filter((o) => o.zone === 'battlefield' && o.kind !== 'land').length;
+  castPrishe(state);
+  const choice = commands(state).find((c) => c.type === 'resolve_search_choice' && c.found === 'town');
+  assert.ok(choice, 'Town jest kandydatem kwalifikatora anyOf');
+  run(state, choice);
+  const town = find(state, 'balamb-garden-seed-academy', 'battlefield');
+  assert.ok(town, 'Town wchodzi na pole bitwy');
+  assert.equal(town.tapped, true, 'wchodzi tapnięty');
+  assert.equal(town.counters['+1/+1'], undefined, 'licznik idzie na stwora, nie na ląd');
+  const targets = commands(state).filter((c) => c.type === 'resolve_trigger_target');
+  run(state, targets.find((c) => c.targetId === 'mine'));
+  resolve(state);
+  assert.equal(state.objects.get('mine').counters['+1/+1'], 1, 'refleks działał też przy Town');
+  assert.equal([...state.objects.values()].filter((o) => o.zone === 'battlefield' && o.kind !== 'land').length,
+    beforeNonland, 'liczba permanentów nielandowych bez zmian');
+});
+
+test('B58/B6: Prishe\u2019s Wanderings — fail to find nadal odpala refleks', () => {
+  const state = game();
+  put(state, 'prishes', 'prishes-wanderings', 'p1');
+  put(state, 'mine', 'razorfoot-griffin', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'mine2', 'razorfoot-griffin', 'p1', 'battlefield', { summoningSickness: false });
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  castPrishe(state);
+  const decline = commands(state).find((c) => c.type === 'resolve_search_choice' && c.found === null);
+  assert.ok(decline, 'rezygnacja („fail to find") jest oferowana przy kryterium jakości');
+  run(state, decline);
+  assert.ok(!find(state, 'basic-swamp', 'battlefield'), 'nic nie weszło na pole bitwy');
+  const targets = commands(state).filter((c) => c.type === 'resolve_trigger_target');
+  assert.ok(targets.length > 0, 'przeszukanie biblioteki odpala refleks także bez trafienia');
+  run(state, targets.find((c) => c.targetId === 'mine'));
+  resolve(state);
+  assert.equal(state.objects.get('mine').counters['+1/+1'], 1, '+1/+1 mimo fail to find');
+  assert.ok(state.events.some((e) => e.type === 'library_searched'), 'biblioteka przeszukana i przetasowana');
+});
+
+test('B58/B6: Prishe\u2019s Wanderings — brak stwora: refleks bez celu, gra nie wisi', () => {
+  const state = game();
+  put(state, 'prishes', 'prishes-wanderings', 'p1');
+  put(state, 'foe', 'razorfoot-griffin', 'p2', 'battlefield');
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  castPrishe(state);
+  run(state, commands(state).find((c) => c.type === 'resolve_search_choice' && c.found === null));
+  assert.ok(!commands(state).some((c) => c.type === 'resolve_trigger_target'),
+    'bez własnego stwora trigger nie kolejkuje decyzji celu');
+  resolve(state);
+  assert.equal(state.zones.stack.length, 0, 'stos pusty — gra nie wisi');
+  assert.equal(state.objects.get('foe').counters['+1/+1'], undefined, 'cudzy stwór bez licznika');
+});
+
+test('B58/B6: Prishe\u2019s Wanderings — rzut bez many i nielegalny wybór odrzucone', () => {
+  const state = game();
+  put(state, 'prishes', 'prishes-wanderings', 'p1');
+  put(state, 'griffin', 'razorfoot-griffin', 'p1', 'library');
+  assert.ok(!commands(state).some((c) => c.type === 'cast_spell' && c.objectId === 'prishes'),
+    'bez many {2}{G} rzut nie jest oferowany');
+  assert.equal(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'prishes' }).ok, false,
+    'ręczna komenda rzutu odrzucona');
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  castPrishe(state);
+  const illegal = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'griffin', destination: 'battlefield' });
+  assert.equal(illegal.ok, false, 'stwór spoza kwalifikatora odrzucony (anyOf nie przepuszcza dowolnej karty)');
+  const legal = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: null });
+  assert.ok(legal.ok, 'po odrzuceniu decyzja nadal czeka i da się ją rozstrzygnąć');
+});

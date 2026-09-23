@@ -26,11 +26,11 @@ import { legalActivatedAbilities, legalManaAbilities, activateAbility, performAc
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
-import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
+import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers, triggerSourceZoneResolvable } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
-import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome } from './effects.js';
+import { queueSearchChoice, emitReflexiveSearch, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
@@ -3483,6 +3483,10 @@ export function execute(state, input) {
         entersTapped: Boolean(pending.chain.entersTapped),
         mandatory: Boolean(pending.chain.mandatory),
         chain: pending.chain.remaining > 1 ? { ...pending.chain, remaining: pending.chain.remaining - 1 } : null,
+        // Batch 58/B6: linka refleksyjna jedzie z łańcuchem decyzji — emisja
+        // dopiero po OSTATNIM przeszukaniu (jedno zdarzenie na efekt).
+        reflexiveEvent: pending.reflexiveEvent ?? null,
+        reflexiveAbility: pending.reflexiveAbility ?? null,
       });
       if (queued) {
         // Nowa decyzja przejęła priorytet (queueSearchChoice) — nie
@@ -3500,6 +3504,13 @@ export function execute(state, input) {
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
+    // Batch 58/B6 (Prishe's Wanderings; ruling FIN 2025-06-06): refleks
+    // „when you search your library this way" — zdarzenie emitowane PO
+    // domknięciu czaru (spell jest już w grobie, więc trigger kolejkuje się na
+    // stosie w `processTriggers` na końcu komendy i NIE rozstrzygnie się przed
+    // czarem) i TAKŻE przy fail to find (przeszukanie już się odbyło).
+    const reflexive = emitReflexiveSearch(state, pending, { found: foundCardId != null });
+    if (reflexive) resolvedEvents.push(reflexive);
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
   // Oczekująca decyzja „zapłać albo poświęć" (Rupture Spire, Temat 7).
@@ -4051,11 +4062,11 @@ export function execute(state, input) {
       state.pendingTriggerTargets.shift();
       // M166/B: źródło umarłe (Enrage) — LKI z pendingu (CR 603.10).
       const srcM = state.objects.get(pending.sourceId) ?? pending.sourceLki ?? null;
+      // L41: jedna reguła stref dla auto (queueTargetDecision) i ręcznej
+      // wielocelowej — pole bitwy, LKI w grobie/wygnaniu albo DOWOLNA strefa
+      // dla refleksów „When you do / this way" (Audyt Batch53/A1, Batch 58/B6).
       const srcLegalM = Boolean(srcM
-        && (['battlefield', 'graveyard', 'exile'].includes(srcM.zone)
-          // Audyt Batch53/A1: refleks „When you do" niezależny od strefy
-          // źródła (dziecko rozstrzygniętej zdolności, ruling LCI).
-          || pending.ability?.trigger?.event === 'reflexive_sacrifice')
+        && triggerSourceZoneResolvable(srcM, pending.ability?.trigger?.event)
         && triggerConditionHolds(state, pending.ability, srcM, pending.extra ?? {}));
       if (srcLegalM && chosenList.length > 0) {
         const stackEntryM = queueTriggerToStack(state, pending.ability, srcM,
@@ -4115,11 +4126,11 @@ export function execute(state, input) {
     state.pendingTriggerTargets.shift();
     // M166/B: źródło umarłe (Enrage) — LKI z pendingu (CR 603.10).
     const source = state.objects.get(pending.sourceId) ?? pending.sourceLki ?? null;
+    // L41: jedna reguła stref dla ścieżki auto (queueTargetDecision) i ręcznej
+    // (M166/B LKI; Audyt Batch53/A1 i Batch 58/B6 refleksy „When you do /
+    // this way" z dowolnej strefy źródła).
     const sourceLegal = Boolean(source
-      && (['battlefield', 'graveyard', 'exile'].includes(source.zone)
-        // Audyt Batch53/A1: refleks „When you do" niezależny od strefy
-        // źródła (dziecko rozstrzygniętej zdolności, ruling LCI).
-        || pending.ability?.trigger?.event === 'reflexive_sacrifice')
+      && triggerSourceZoneResolvable(source, pending.ability?.trigger?.event)
       && triggerConditionHolds(state, pending.ability, source, pending.extra ?? {}));
     // Trigger odpala się przy legalnym źródle. Odmowa celu (chosen === null):
     // - „you may ... When you do, ..." (requiresTarget.optional — Kappa,
