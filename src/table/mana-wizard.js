@@ -424,12 +424,19 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
 }
 
 /**
- * Czy zbiór źródeł pokrywa wymagania kolorów — każde wymaganie dopasowane do
+ * KTÓRE grupy wymagań pokrywa zbiór źródeł — każde wymaganie dopasowane do
  * innego źródła (maksymalne dopasowanie, deterministyczne: wymagania od
- * najbardziej restrykcyjnych). Zwraca liczbę POKRYTYCH wymagań.
+ * najbardziej restrykcyjnych, pierwsze maksymalne dopasowanie wygrywa —
+ * ADR 0005). Zwraca ZBIÓR INDEKSÓW pokrytych grup.
+ *
+ * Liczba pokrytych grup mówi ILE, ale nie KTÓRE — a prowadzenie płatności
+ * potrzebuje tej drugiej informacji (uwaga G z gry, 2026-09-23c: pula {U}{B}
+ * przy koszcie {1}{B}{G} → kreator liczył `requirements.slice(covered)` i
+ * żądał koloru, który już miał w puli, chowając źródła koloru realnie
+ * brakującego; lista robiła się pusta „mimo 4 many").
  */
-export function coveredRequirementCount(sources, requirements) {
-  if (requirements.length === 0) return 0;
+export function coveredRequirementIndexes(sources, requirements) {
+  if (requirements.length === 0) return new Set();
   // Wymagania od najbardziej restrykcyjnych (mniej opcji najpierw) — kolejność
   // deterministyczna (ADR 0005), a wynik (maks. dopasowanie) nie zależy od niej.
   const order = requirements
@@ -438,18 +445,30 @@ export function coveredRequirementCount(sources, requirements) {
   const covers = order.map(({ colors }) =>
     sources.map((src, i) => (colors.some((c) => src.colors.includes(c)) ? i : -1)).filter((i) => i >= 0));
   const used = new Array(sources.length).fill(false);
+  let best = new Set();
+  const chosen = new Set();
   const walk = (pos) => {
-    if (pos >= order.length) return 0;
-    let best = walk(pos + 1); // pomiń wymaganie
+    if (pos >= order.length) {
+      if (chosen.size > best.size) best = new Set(chosen);
+      return;
+    }
+    walk(pos + 1); // pomiń wymaganie
     for (const i of covers[pos]) {
       if (used[i]) continue;
       used[i] = true;
-      best = Math.max(best, 1 + walk(pos + 1));
+      chosen.add(order[pos].index);
+      walk(pos + 1);
+      chosen.delete(order[pos].index);
       used[i] = false;
     }
-    return best;
   };
-  return walk(0);
+  walk(0);
+  return best;
+}
+
+/** Liczba pokrytych grup wymagań (delegat do `coveredRequirementIndexes`). */
+export function coveredRequirementCount(sources, requirements) {
+  return coveredRequirementIndexes(sources, requirements).size;
 }
 
 /**
@@ -615,15 +634,21 @@ export function shouldOpenManaWizard({ sources, poolMana, totalNeeded, requireme
  * 1. KOLEJNOŚĆ: źródła dające brakujący kolor idą PIERWSZE — pierwszy wiersz
  *    kreatora jest zawsze krokiem, który realnie przybliża płatność (gracz
  *    tapujący „po kolei z góry” nie marnuje tapnięć).
- * 2. ZAKRES: gdy suma many jest już zebrana (`totalMet`), a brakuje koloru,
- *    zostają WYŁĄCZNIE źródła dające brakujący kolor — źródło bez tego koloru
- *    dodałoby manę, której płatność już nie potrzebuje (marnowanie zasobów).
- *    Pusta lista jest wtedy prawdą (nic nie pomoże) — kreator mówi to wprost.
+ * 2. ZAKRES: gdy pula pokrywa już CZĘŚĆ BEZBARWNĄ kosztu (`genericMet`), a
+ *    brakuje koloru, zostają WYŁĄCZNIE źródła dające brakujący kolor — źródło
+ *    bez tego koloru dodałoby manę, której płatność już nie potrzebuje
+ *    (marnowanie zasobów). Pusta lista jest wtedy prawdą (nic nie pomoże) —
+ *    kreator mówi to wprost.
+ *
+ *    Uwaga z gry (2026-09-23c): filtr czekał na CAŁĄ sumę (`pool ≥ totalNeeded`),
+ *    więc przy koszcie {1}{B}{G} po tapnięciu źródła {U}{B} kreator dalej
+ *    proponował lądy bez {G} — gracz tapował je na darmo, a płatność „nie
+ *    domykała się". Zostają tylko kolorowe pipy ⇒ filtr włącza się od razu.
  *
  * `missingColors` to spłaszczone grupy NIEpokrytych wymagań (grupa hybrydowa
  * {U/G} daje ['U','G'] — kolor wystarcza którykolwiek).
  */
-export function guideManaSources(sources, missingColors, totalMet) {
+export function guideManaSources(sources, missingColors, genericMet) {
   const missing = Array.isArray(missingColors) ? missingColors : [];
   const covers = (src) => (src.colors ?? []).some((c) => missing.includes(c));
   // Sortowanie jest STABILNE (JS sort), więc w obrębie grupy zostaje porządek
@@ -631,7 +656,7 @@ export function guideManaSources(sources, missingColors, totalMet) {
   const ordered = [...(sources ?? [])].sort((a, b) => Number(covers(b)) - Number(covers(a)));
   // Brak wymagań kolorów (koszt bezbarwny) → filtr nie ma czego zawężać, a
   // każdy nietapnięty ląd nadal dolicza manę do sumy.
-  if (!totalMet || missing.length === 0) return ordered;
+  if (!genericMet || missing.length === 0) return ordered;
   const pomocne = ordered.filter(covers);
   return pomocne.length > 0 ? pomocne : [];
 }
@@ -646,18 +671,30 @@ export function wizardProgress(view, playerId, descriptor, sources, poolUnits = 
   // KOLORY tapnietych zrodel (MtG: tapniecie Wyspy dodaje {U}), wiec check jest
   // poprawny BEZ recznego sledzenia co-Gracz-tapnal (usuniety bandaz committed).
   // Castability (untapped) sprawdza engine w hasColor PRZED tapnieciem.
-  const covered = coveredRequirementCount(poolUnits.map((colors) => ({ colors })), descriptor.requirements);
+  const coveredIndexes = coveredRequirementIndexes(poolUnits.map((colors) => ({ colors })), descriptor.requirements);
+  const covered = coveredIndexes.size;
   // A/G (zgłoszenie właściciela): kreator prowadzi płatność — kolejność
   // „najpierw brakujące kolory" + filtr źródeł, które nic już nie wnoszą.
-  const missingColors = descriptor.requirements.slice(covered).flatMap((colors) => colors ?? []);
-  const offered = guideManaSources(offeredRaw, missingColors, remainingTotal <= 0)
+  // Brakujące KOLORY czytamy z indeksów pokrytych grup (nie z `slice(covered)`
+  // — patrz `coveredRequirementIndexes`).
+  const missingColors = descriptor.requirements
+    .filter((_, index) => !coveredIndexes.has(index))
+    .flatMap((colors) => colors ?? []);
+  // Część BEZBARWNA kosztu = suma − liczba grup pipów (każdy pip zużywa jedną
+  // manę). Gdy pula ją pokrywa, zostają tylko kolorowe pipy → filtr zakresu
+  // włącza się od razu (uwaga G z gry, 2026-09-23c).
+  const genericNeeded = Math.max(0, descriptor.totalNeeded - descriptor.requirements.length);
+  const offered = guideManaSources(offeredRaw, missingColors, pool >= genericNeeded)
     .map((src) => ({ ...src, coversMissing: missingColors.some((c) => (src.colors ?? []).includes(c)) }));
   return {
     pool,
     remainingTotal,
-    requirements: descriptor.requirements.map((colors, i) => ({ colors, covered: i < covered })),
+    requirements: descriptor.requirements.map((colors, index) => ({ colors, covered: coveredIndexes.has(index) })),
     coveredCount: covered,
     missingColors,
+    // Ile nietapniętych źródeł było PRZED filtrem — komunikat pustej listy
+    // odróżnia „nie ma czym tapnąć" od „nic nie daje brakującego koloru".
+    availableCount: offeredRaw.length,
     untappedSources: offered,
     done: remainingTotal <= 0 && covered >= descriptor.requirements.length,
   };
@@ -714,10 +751,13 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
   if (model.untappedSources.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'zone-empty';
-    // G: przy niepokrytym kolorze i zebranej sumie pusta lista znaczy
-    // „żadne z dostępnych źródeł nie daje tego koloru” — komunikat musi to
-    // nazwać, żeby gracz wiedział, że ma Anulować, a nie szukać dalej.
-    const brakKoloru = (model.missingColors ?? []).length > 0 && model.remainingTotal <= 0;
+    // G: przy niepokrytym kolorze pusta lista znaczy „żadne z dostępnych
+    // źródeł nie daje tego koloru” — komunikat musi to nazwać, żeby gracz
+    // wiedział, że ma Anulować, a nie szukać dalej. Warunek nie wymaga już
+    // zebranej sumy: filtr zakresu włącza się, gdy zostają same kolorowe pipy
+    // (`availableCount` odróżnia to od braku nietapniętych źródeł w ogóle).
+    const brakKoloru = (model.missingColors ?? []).length > 0
+      && (model.availableCount ?? model.untappedSources.length) > 0;
     empty.textContent = brakKoloru
       ? `Żadne dostępne źródło nie daje ${(model.missingColors ?? []).join(', ')} — Anuluj płatność.`
       : 'Brak nietapniętych źródeł many.';

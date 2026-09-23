@@ -2392,6 +2392,10 @@ function bootstrapTable() {
       // źródła mówi „— pokrywa {B}”, a pusta lista mówi wprost, że żadne
       // dostępne źródło nie daje tego koloru.
       missingColors: progress.missingColors,
+      // G (uwaga z gry 2026-09-23c): liczba nietapniętych źródeł PRZED
+      // filtrem — komunikat pustej listy odróżnia „nic nie daje brakującego
+      // koloru" od „nie ma czym tapnąć".
+      availableCount: progress.availableCount,
       untappedSources: progress.untappedSources.map((src) => ({ ...src, name: session.nameOf(src.cardId) })),
     }, {
       // Tapnięcie źródła: ląd → tap_for_mana, zdolność many → activate_ability
