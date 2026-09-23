@@ -38,6 +38,15 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // (crackback). Kara (nie premia), bo tylko ona niweluje dodatnią wycenę
   // ataku; premia wyścigu jest przy takim ataku POMIJANA (L3).
   'crackbackPenalty',
+  // A (uwaga właściciela 2026-09-23c, Somberwald Spider): karta z deskryptorem
+  // `entersWithCountersIf: { morbid: true }` liczy liczniki W CHWILI WEJŚCIA
+  // (CR 614.1c) — we własnej Głównej 1 zwykle jeszcze nic nie umarło, więc
+  // rzut czeka na Główną 2 (po walce). Kara domyślnie przebija bazę stwora
+  // (70), więc rzut schodzi pod pass; wyjątek `flash` + realny zamiar ataku
+  // w tej turze zdejmuje karę (bot chce ciało przed deklaracją). Pokrętła
+  // strategii, nie reguły gry.
+  'morbidMain1Penalty',      // kara za rzut Morbida w Głównej 1 (domyślnie 90)
+  'morbidMain2Bonus',        // premia za rzut Morbida po walce (domyślnie 8)
   // Rodzina „removal, obrażenia i przewaga kartowa" (B6 T1) — wycena efektów
   // czarów najczęstszych w cast_spell. Same PREMIE za trafienie CELU WROGA
   // (kary za zły cel/własny permanent zostają twardymi stałymi). Deskryptory
@@ -158,6 +167,8 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // mniejszą manę" (remis w audycie: 4 na 12 partii), ale nie waży tyle co
   // sama siła (2/pt), więc większy stwór za większą manę nadal wygrywa.
   creatureManaCostWeight: 1,
+  morbidMain1Penalty: 90,
+  morbidMain2Bonus: 8,
   spellBase: 50,
   attackThroughBonus: 3,
   attackOpenBoardBonus: 8,

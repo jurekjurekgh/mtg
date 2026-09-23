@@ -3744,6 +3744,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
   }
 
+  /**
+   * A (uwaga właściciela 2026-09-23c, Somberwald Spider): czy bot REALNIE
+   * zamierza atakować w tej turze. Pytamy TĘ SAMĄ politykę ataku, którą bot
+   * stosuje w kroku deklaracji (`attackIntendsCreature` — „istnieje opłacalny
+   * zestaw atakujących”, L41/L48), o każdy własny stwór zdolny zaatakować.
+   * Używane wyłącznie przez wyjątek flash dla kart z Morbidem.
+   */
+  function intendsToAttackThisTurn(view) {
+    if (!myTurn(view)) return false;
+    return myCreatures(view)
+      .filter((o) => canAttackNow(o) && (o.power ?? 0) > 0)
+      .some((o) => attackIntendsCreature(view, o.id));
+  }
+
   function scoreCommand(view, cmd) {
     // M320/NA2: ward (CR 702.21) — dopłata za celowanie we wrogi permanent
     // z ward. Odejmowana od WYNIKU każdego wariantu (finish), więc warianty
@@ -4413,6 +4427,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (cmd.offspring === true) {
           const oo = def?.offspring ?? {};
           score -= P.creatureManaCostWeight * ((oo.cost ?? 0) + (oo.colors?.length ?? 0));
+        }
+        // A (uwaga właściciela 2026-09-23c, Somberwald Spider i inne Morbid):
+        // karta z `entersWithCountersIf: { morbid: true }` (CR 614.1c) liczy
+        // liczniki W CHWILI WEJŚCIA — we własnej Głównej 1 zwykle jeszcze nic
+        // nie umarło, więc bot płacił kartę i manę za 2/4 bez liczników.
+        // Reguła: rzut czeka na Główną 2 (po walce śmierć atakującego/blokera
+        // zdąży zajść), z wyjątkiem karty z `flash`, gdy bot REALNIE zamierza
+        // atakować w tej turze — wtedy chce mieć ciało przed deklaracją
+        // (intencja z polityki ataku, `intendsToAttackThisTurn`; L41/L48).
+        // Tura przeciwnika bez zmian (uwaga mówi o WŁASNEJ Głównej 2).
+        if (def?.entersWithCountersIf?.morbid === true) {
+          const poWalce = view.turn.phase === 'postcombat_main' && view.turn.step === 'main2';
+          if (!myTurn(view)) {
+            // okno przeciwnika — reguła nie dotyczy
+          } else if (poWalce) {
+            score += P.morbidMain2Bonus;
+          } else {
+            const maFlash = (def?.keywords ?? []).includes('flash') || Boolean(def?.flash);
+            if (!(maFlash && intendsToAttackThisTurn(view))) score -= P.morbidMain1Penalty;
+          }
         }
         // Grzechotka remisów (audyt-bot-walka-remisy, tura 6): przy EX AEQUO
         // rzutów różnica gęstości wartości („waluta" z tieProjection:

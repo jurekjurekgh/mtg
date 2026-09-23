@@ -36,6 +36,21 @@ partii) — razem 15 pozycji; plik planu zostaje pod nazwą historyczną.
   preferencję okna **main2** własnej tury (po walce może być martwy stwór);
   wyjątek: `flash` → main1 dopuszczalny (bot może chcieć atakować).
   Reguła po deskryptorze danych, nie po nazwie karty.
+  **Zmierzone 2026-09-23e**: wycena `cast_permanent` (gałąź stwora) nie
+  patrzyła na deskryptor wcale — bot rzucał Somberwalda w Głównej 1 za pełną
+  cenę, a liczniki Morbida przepadały (przed walką prawie nigdy nie ma
+  martwego stwora). Reguła: Główna 2 (postcombat) → `morbidMain2Bonus` (8);
+  Główna 1 (precombat) → `morbidMain1Penalty` (90 — przebija bazę stwora 70,
+  więc rzut schodzi pod pass); wyjątek `flash` zdejmuje karę TYLKO, gdy bot
+  realnie zamierza atakować w tej turze — intencję rozstrzyga ta sama polityka
+  ataku co w kroku deklaracji (`intendsToAttackThisTurn` →
+  `attackIntendsCreature`), zero nowego modelu. Tura przeciwnika bez zmian
+  (uwaga mówi o WŁASNEJ Głównej 2). Test:
+  `uwaga-z-gry-2026-09-23-a-morbid-main2.test.js` (A/1 main1 = czeka,
+  A/2 main2 = rzuca, A/3 flash + zamiar ataku = main1 dopuszczalna,
+  A/4 flash bez ataku = czeka, A/5 kontrola: zwykły stwór w main1 bez zmian;
+  wyjątek przypięty kartą lokalną `syn-flash-morbid`, bo katalog nie ma
+  karty z flash + Morbidem).
 - **D**: `return_card_from_graveyard_to_hand` — wartość celu rośnie z mana value
   odzyskanej karty, ograniczona dostępną maną (także z tapniętych lądów).
   Przed fixem wartość celu zależała tylko od ciała, więc klasa celów
