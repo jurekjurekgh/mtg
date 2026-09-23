@@ -39,7 +39,7 @@ import { detectImageMode } from './card-images.js';
 // import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
-import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf } from './multi-target.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
 
@@ -479,6 +479,31 @@ function bootstrapTable() {
         plan: proliferatePlan,
         commands: request.options,
         sourceName: pendingProliferate?.sourceCardId ? session.nameOf(pendingProliferate.sourceCardId) : null,
+        onOpenCard: openCardFullscreen,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // B1 (uwaga właściciela 2026-09-23c, Azorius Justiciar): trigger z „up to
+    // two target …" enumeruje PODZBIORY celów (11 komend przy 4 kandydatach) —
+    // panel dostaje z tego jeden wizard z ptaszkami i walidacją liczby
+    // („dowolna liczba legalnych celów", „Zatwierdź wybór"). Właściciel o
+    // enumeracji kombinacji: „TO JEST ZABRONIONE!". Ten sam kreator co
+    // proliferate (M298/A); zatwierdzenie oddaje komendę z legalCommands.
+    const upToPlan = upToTargetsPlanOf(request.options ?? []);
+    if (upToPlan) {
+      // Nazwa źródła z decyzji triggera (widok niesie kartę źródła), jak przy
+      // wizardzie podziału obrażeń — komendy nie znają `sourceId`.
+      const upToSource = choiceView.pendingTriggerTarget?.cardId
+        ? session.nameOf(choiceView.pendingTriggerTarget.cardId) : null;
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: upToPlan,
+        commands: request.options,
+        sourceName: upToSource,
         onOpenCard: openCardFullscreen,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
         onCancel: () => hideModal('choice-request'),
