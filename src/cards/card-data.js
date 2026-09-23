@@ -11615,6 +11615,31 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['trigger śmierci z celem-lądem: cel dowolny (własny też), brak legalnego celu = trigger bez efektu (zdarzenie trigger_resolved/no_targets)'],
   }),
+
+  // Scroll of Avacyn (AVR) {1} Artifact — „{1}, Sacrifice this artifact: Draw a
+  // card. If you control an Angel, you gain 5 life." Warunek czytany przy
+  // rozstrzygnięciu zdolności (ruling AVR 2012-05-01). Nowa reguła generyczna:
+  // DODATNI warunek efektu po podtypie stwora (`controlsCreatureSubtype`) —
+  // dotąd istniał tylko zaprzeczony (`controlsNoCreatureSubtype`, M166/C).
+  defineCard({
+    id: 'scroll-of-avacyn', name: 'Scroll of Avacyn', set: 'AVR',
+    types: ['Artifact'], colors: [], manaCost: 1,
+    oracleText: '{1}, Sacrifice this artifact: Draw a card. If you control an Angel, you gain 5 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/7/871e6e2a-7e45-446b-b964-94377eb6ca92.jpg?1783940650',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, sacrificeSelf: true },
+        effect: [
+          { type: 'draw_cards', amount: 1 },
+          { type: 'conditional', condition: 'controlsCreatureSubtype', subtype: 'Angel', then: { type: 'gain_life', amount: 5 } },
+        ],
+      }),
+    ],
+    artId: 377, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+    notes: ['warunek „if you control an Angel" czytany przy rozstrzygnięciu; bez Anioła brak gałęzi else — nie ma podstawy (ruling AVR 2012-05-01)'],
+  }),
 ]);
 
 /**

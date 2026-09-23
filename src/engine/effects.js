@@ -3112,6 +3112,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         && object.kind === 'creature'
         && hasCreatureType(object, sub, state));
     }
+    // Batch 58/B4 (Scroll of Avacyn): „If you control an Angel, you gain 5
+    // life." — DODATNI warunek po podtypie STWORA, sprawdzany przy
+    // rozstrzygnięciu (ruling AVR 2012-05-01: „Whether you control an Angel is
+    // checked when the ability resolves"). Generyczny i bez nazw kart
+    // (ADR 0002); `hasCreatureType` obejmuje changelingi i efekty zmiany typu.
+    if (effect.condition === 'controlsCreatureSubtype') {
+      const sub = effect.subtype;
+      holds = sub != null && [...state.objects.values()].some((object) => object.zone === 'battlefield'
+        && object.controllerId === controllerId
+        && object.kind === 'creature'
+        && hasCreatureType(object, sub, state));
+    }
     if (effect.condition === 'controlsPlaneswalkerWithSubtype') {
       const sub = effect.subtype;
       holds = sub != null && [...state.objects.values()].some((object) => object.zone === 'battlefield'

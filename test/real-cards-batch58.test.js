@@ -311,3 +311,86 @@ test('B58/B3: Polluted Dead — brak legalnego celu = trigger bez efektu (bez za
     'brak celu jest JAWNY w zdarzeniach (M106/Z2), nie cichy');
   assert.equal(state.zones.stack.length, 0, 'stos pusty — gra nie wisi');
 });
+
+// ---- B4: Scroll of Avacyn (377 AVR, plan Innistrad) -------------------------
+
+test('B58/B4: Scroll of Avacyn — dane Oracle + warunek „if you control an Angel"', () => {
+  const def = registry.get('scroll-of-avacyn');
+  assert.deepEqual(def.types, ['Artifact']);
+  assert.deepEqual(def.colors, []);
+  assert.equal(def.manaCost, 1);
+  assert.equal(def.set, 'AVR');
+  assert.equal(def.plan, 'Innistrad');
+  assert.equal(def.artId, 377);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('871e6e2a'), 'imageUri z druku avr/220');
+  assert.equal(MANA_COSTS['scroll-of-avacyn'], '{1}');
+  const ability = def.abilities[0];
+  assert.deepEqual(ability.cost, { mana: 1, sacrificeSelf: true });
+  const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+  assert.equal(effects[0].type, 'draw_cards');
+  const conditional = effects.find((e) => e.type === 'conditional');
+  assert.ok(conditional, 'warunek efektu obecny');
+  assert.equal(conditional.condition, 'controlsCreatureSubtype');
+  assert.equal(conditional.subtype, 'Angel');
+  assert.equal(conditional.then.type, 'gain_life');
+  assert.equal(conditional.then.amount, 5);
+});
+
+test('B58/B4: Scroll of Avacyn — z Aniołem dobiera kartę i daje 5 życia', () => {
+  const state = game();
+  put(state, 'scroll', 'scroll-of-avacyn', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'angel', 'angel-of-the-dawn', 'p1', 'battlefield', { summoningSickness: false });
+  addMana(state, 'p1', 1, { colors: [] });
+  const beforeHand = state.zones.hand.length;
+  const beforeLife = player(state, 'p1').life;
+  run(state, commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'scroll'));
+  resolve(state);
+  assert.equal(state.zones.hand.length, beforeHand + 1, 'dobranie karty');
+  assert.equal(player(state, 'p1').life, beforeLife + 5, 'kontrola Anioła → +5 życia');
+  assert.ok(find(state, 'scroll-of-avacyn', 'graveyard'), 'artefakt poświęcony (koszt)');
+});
+
+test('B58/B4: Scroll of Avacyn — bez Anioła tylko dobranie (bez życia)', () => {
+  const state = game();
+  put(state, 'scroll', 'scroll-of-avacyn', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'bear', 'razorfoot-griffin', 'p1', 'battlefield', { summoningSickness: false });
+  addMana(state, 'p1', 1, { colors: [] });
+  const beforeHand = state.zones.hand.length;
+  const beforeLife = player(state, 'p1').life;
+  run(state, commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'scroll'));
+  resolve(state);
+  assert.equal(state.zones.hand.length, beforeHand + 1, 'dobranie karty');
+  assert.equal(player(state, 'p1').life, beforeLife, 'bez Anioła brak 5 życia');
+});
+
+test('B58/B4: Scroll of Avacyn — warunek czytany przy ROZSTRZYGNIĘCIU (ruling 2012-05-01)', () => {
+  const state = game();
+  put(state, 'scroll', 'scroll-of-avacyn', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'angel', 'angel-of-the-dawn', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'expunge', 'expunge', 'p1');
+  addMana(state, 'p1', 10, { colors: ['B', 'U', 'W'] });
+  const beforeLife = player(state, 'p1').life;
+  const beforeHand = state.zones.hand.length;
+  run(state, commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'scroll'));
+  // W odpowiedzi zabijamy Anioła — warunek sprawdzany PRZY ROZSTRZYGNIĘCIU,
+  // więc 5 życia nie może wejść, a dobranie (efekt bezwarunkowy) tak.
+  const kill = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'expunge', targets: ['angel'] });
+  assert.ok(kill.ok, `Expunge w odpowiedzi: ${JSON.stringify(kill.events?.[0]?.reason)}`);
+  resolve(state);
+  assert.ok(find(state, 'angel-of-the-dawn', 'graveyard'), 'Anioł zabity w odpowiedzi');
+  // Bilans ręki: −1 (Expunge rzucony) +1 (dobranie) = bez zmian.
+  assert.equal(state.zones.hand.length, beforeHand, 'bilans ręki: rzucony Expunge i dobrana karta');
+  assert.equal(player(state, 'p1').life, beforeLife, 'brak Anioła przy rozstrzygnięciu → bez 5 życia');
+});
+
+test('B58/B4: Scroll of Avacyn — bez many zdolność niedostępna', () => {
+  const state = game();
+  put(state, 'scroll', 'scroll-of-avacyn', 'p1', 'battlefield', { summoningSickness: false });
+  assert.ok(!commands(state).some((c) => c.type === 'activate_ability' && c.objectId === 'scroll'),
+    'brak many {1} → brak oferty aktywacji');
+  assert.equal(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'scroll', abilityIndex: 0 }).ok, false,
+    'ręczna komenda też odrzucona');
+  assert.ok(find(state, 'scroll-of-avacyn', 'battlefield'), 'odrzucona aktywacja nie poświęca artefaktu');
+});

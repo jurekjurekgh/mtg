@@ -496,4 +496,5 @@ export const MANA_COSTS = {
   "boulder-salvo": "{4}{R}",
   "grazing-gladehart": "{2}{G}",
   "polluted-dead": "{4}{B}",
+  "scroll-of-avacyn": "{1}",
 };

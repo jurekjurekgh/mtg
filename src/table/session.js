@@ -338,6 +338,11 @@ function defaultBotFactory(seed, ctx) {
     your_creatures_gain_keywords_until_end_of_turn: 'nadanie słów kluczowych twoim stworom do końca tury',
     each_player_exiles_top_face_down: 'wygnanie wierzchu biblioteki każdego gracza (zakryte)',
     turn_up_exiled_and_put_permanents: 'odkrycie wygnanych kart i wprowadzenie permanentów na pole bitwy',
+    // Batch 58/B4 (Scroll of Avacyn): „if you control an Angel, you gain
+    // 5 life" — log zna TYPY efektów i aktywacji (bez deskryptorów), więc
+    // etykieta nazywa warunkowy charakter skutku; strażnik M255/C1 pilnuje,
+    // żeby kolejny typ efektu nie wszedł bez opisu (klasa L84).
+    conditional: 'efekt warunkowy (zależny od stanu gry)',
     lose_life: 'cel traci życie',
     mill_cards: 'mielenie kart do grobu',
     prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',

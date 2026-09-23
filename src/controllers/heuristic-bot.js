@@ -805,6 +805,12 @@ export const STACKING_ACTIVATED_EFFECTS = new Set([
   'put_graveyard_card_on_bottom', 'return_to_battlefield_tapped',
   'return_to_battlefield_under_control_at_upkeep', 'unearth_return',
   'attach_equipment_to_source', 'craft_transform', 'gain_life',
+  // Batch 58/B4 (Scroll of Avacyn): `conditional` to OPAKOWANIE efektów, więc
+  // o kumulacji decydują gałęzie — w katalogu są to dobranie kart i zysk
+  // życia, czyli skutki KUMULUJĄCE. Klasyfikacja zachowawcza (M179/B1):
+  // ponowna aktywacja dodałaby kolejne skutki, więc bot nie może jej traktować
+  // jak idempotentnej do końca tury.
+  'conditional',
 ]);
 
 /**

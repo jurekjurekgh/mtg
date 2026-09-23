@@ -35,12 +35,13 @@ test('M228 (ADR 0024): Innistrad po podziale kolorystycznym — dwie talie ≥15
   // Batch 56 doszło Bonds of Faith) przekroczyło próg 30 i zostało
   // PODZIELONE na innistrad-wu i innistrad-brg (ADR 0024). Każda połowa:
   // landy = ceil(nielandów/2). Suma nielandów = 37 (żadna karta nie zginęła).
+  // Batch 58/B4: +Scroll of Avacyn → 38 (generator, ADR 0023/0024).
   const registry = createCardRegistry();
   const wu = summarizeDeck(parseDeckText(fs.readFileSync('decks/innistrad-wu.txt', 'utf8'), registry).cardIds, registry);
   const brg = summarizeDeck(parseDeckText(fs.readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds, registry);
   assert.ok(wu.spells >= 15, `innistrad-wu ma ${wu.spells} nielandów (>=15)`);
   assert.ok(brg.spells >= 15, `innistrad-brg ma ${brg.spells} nielandów (>=15)`);
-  assert.equal(wu.spells + brg.spells, 37, 'suma nielandów obu połówek = 37');
+  assert.equal(wu.spells + brg.spells, 38, 'suma nielandów obu połówek = 38 (po Batchu 58/B4)');
   assert.equal(wu.lands, Math.ceil(wu.spells / 2), 'wu: landy = ceil(nielandów/2)');
   assert.equal(brg.lands, Math.ceil(brg.spells / 2), 'brg: landy = ceil(nielandów/2)');
 });
