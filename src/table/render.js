@@ -2186,6 +2186,25 @@ function findViewObject(objectId, view) {
 }
 
 /**
+ * Koszt ODSŁONIĘCIA zakrytego permanentu (CR 701.56b cloak, CR 701.40b
+ * manifest) — kwota należy do PEŁNEGO STANU, nie do widoku: prawa i koszt
+ * obrotu są informacją właściciela zakrytej karty (FoW, CR 708.2a; widok
+ * projektuje tylko `cloakReady` kontrolerowi). Stąd odczyt lustrzany do
+ * kreatora płatności (M327, `main.js`) — jedno miejsce wyliczenia dla etykiet
+ * `turn_cloak_face_up`/`turn_manifest_face_up` (L41). Fallback na obiekt
+ * widoku zostaje dla stubów testowych i starszych rzutów widoku.
+ *
+ * H (audyt 2026-09-23d): bez tego etykieta oferty obrotu milczała o koszcie
+ * w PRZEBIEGU PRODUKCYJNYM (F3 fix czytał wyłącznie widok, który tego pola
+ * nie niesie — klasa L1/ADR 0017, ta sama, którą naprawiał F3).
+ */
+function uncoverCostOf(session, view, objectId, field) {
+  const stateObject = session?.state?.objects?.get?.(objectId) ?? null;
+  const viewObject = findViewObject(objectId, view);
+  return stateObject?.[field] ?? viewObject?.[field] ?? null;
+}
+
+/**
  * Koszt KARTY w HTML z ikonami many (H, uwaga właściciela 2026-09-23c).
  * Wydzielone z `commandLabel` do zasięgu modułu, żeby tytuły GRUP decyzji
  * (np. „Cel czaru: <karta>") niosły ten sam koszt co pojedyncze oferty —
@@ -3646,8 +3665,17 @@ export function commandLabel(cmd, session, view) {
       return `Zmanifestuj: ${nameOfObjectId(cmd.cardId)}`;
     }
     case 'turn_manifest_face_up': {
-      // Manifest — obróć twarzą do góry za koszt many.
-      return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)}`;
+      // Manifest — obróć twarzą do góry za koszt many (CR 701.40b: „paying its
+      // mana cost", tylko gdy pod spodem jest karta stworu).
+      // H (audyt 2026-09-23d, ta sama klasa co F3 przy cloaku): oferta nie
+      // jest darmowa, więc MUSI nieść koszt — inaczej wygląda jak akcja bez
+      // ceny. Kwota i pipy: jak przy cloaku (jedno źródło, L41).
+      const manifestCost = uncoverCostOf(session, view, cmd.objectId, 'manifestTurnUpCost');
+      if (manifestCost == null) return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)}`;
+      const manifestObj = obj(cmd.objectId);
+      const manifestColors = manifestObj?.cardId ? coloredPipsOf(manifestObj.cardId) : [];
+      const manifestHtml = manaCostHtml(costSymbols(manifestCost, manifestColors));
+      return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (koszt ${manifestHtml})`;
     }
     case 'turn_cloak_face_up': {
       // M315 (Veiled Ascension): cloak — specjalna akcja (bez stosu), koszt
@@ -3658,7 +3686,9 @@ export function commandLabel(cmd, session, view) {
       // many to kosztuje (koszt = mana value karty, CR 708.2d; silnik czyta
       // go z `cloakTurnUpCost`/`cloak.colors`, walidacja w game-state.js).
       const cloakObj = obj(cmd.objectId);
-      const cloakCost = cloakObj?.cloakTurnUpCost;
+      // H (audyt 2026-09-23d): koszt czytamy ze STANU (widok go nie niesie —
+      // FoW), więc etykieta pokazuje cenę także w przebiegu produkcyjnym.
+      const cloakCost = uncoverCostOf(session, view, cmd.objectId, 'cloakTurnUpCost');
       if (cloakCost == null) return `Obróć twarzą do góry (Cloak): ${nameOfObjectId(cmd.objectId)}`;
       // Pipy koloru z KARTY pod spodem (koszt odkrycia = mana value + kolorowe
       // pipy wydruku) — ta sama arytmetyka co `coloredPipsOf` w silniku.

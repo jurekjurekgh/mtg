@@ -82,15 +82,38 @@ karty kompletne w katalogu (ADR 0022/M419).
 
 ### E2 — H: odpowiedź liczbowa + pin inwariantu
 
-- Test `test/audyt-h-koszt-w-ofertach-pelny.test.js`: dla każdej etykiety
-  z `commandLabel` i każdej komendy z `COMMAND_TYPES` pin, że oferta bez
-  kosztu w etykiecie należy do listy darmowych (jawna lista typów darmowych,
-  pilnowana na wyczerpanie: nowy typ komendy ⇒ test czerwony), plus pin, że
-  ścieżka kosztu w tytułach grup to te same formatery co w etykietach ofert.
-- Zmierzone liczby i wnioski → raport dla właściciela (liczba naprawionych
-  ścieżek: C+H `7eb1633` — tytuły grup; F3 `fdfd73f` — `turn_cloak_face_up`;
-  J `1f3376f` — X w ofercie; wcześniejsze audyty PR #120/#121 — wycena
-  „may fire” i `draw_then_discard`).
+Zmierzone (2026-09-23d, na tym commicie):
+
+| Miara | Wartość |
+|---|---|
+| typy komend (`COMMAND_TYPES`) | 90 (7 × `cast_*`, 69 × `resolve_*`, 2 × `turn_*_face_up`, 12 pozostałych) |
+| typy z własną gałęzią etykiety w `commandLabel` | **89 / 90** |
+| typ bez gałęzi | `move_object` — komenda protokołu/replayów, nigdy nie powstaje jako oferta (`legalCommands`) |
+| funkcje etykiet ofert | 4: `commandLabel` (pojedyncza oferta) + `choiceSourceTitle` / `choiceGroupTitle` / `choiceGroupLabel` (tytuły i wpisy grup) |
+| wspólne formatery kosztu | `cardCostHtml`, `abilityCostHtmlOf`, `abilityCostSuffix` — po **jednej** definicji; plus jeden renderer ikon `manaCostHtml` (`mana-icons.js`, importowany) |
+| bramka opłacalności w silniku | `canPayColoredCost` — **59** wywołań (abilities 27, spells 15, game-state 11, resources 4, triggers 2) |
+| testy pinujące warstwę etykiet/kosztów | **54** pliki (`grep commandLabel|choiceGroup*|buildActionEntries` × `koszt`) |
+
+Zmierzone zachowania (pin H/3, H/4): rzut za {R} bez many → BRAK oferty;
+z jednym Mountain → oferta z „(koszt {R})”; zdolność Forecast {2}{W} przy
+jednej Plains → BRAK oferty, przy trzech → oferta z „(koszt {2}{W})”.
+
+**Znalezisko audytu (naprawione w tym etapie)**: F3 z sesji 2026-09-23c
+(„etykieta obrotu twarzą do góry niesie koszt”) czytał koszt z OBJEKTU WIDOKU,
+a `playerView` nie projektuje `cloakTurnUpCost`/`manifestTurnUpCost`
+(informacja właściciela zakrytej karty — FoW). Test F3 przechodził, bo podawał
+koszt w ręcznie zbudowanym widoku; w prawdziwej partii oferta dalej milczała
+(`Obróć twarzą do góry (Cloak): Goblin Piker (Cloak 1)`), a
+`turn_manifest_face_up` nie miała kosztu nigdy. Naprawa: odczyt ze STANU —
+ten sam co kreator płatności (M327, `main.js`) — w jednym helperze
+`uncoverCostOf` dla obu etykiet (L41).
+
+- Test `test/audyt-h-koszt-w-ofertach-pelny.test.js` (8/8): H/1 pokrycie typów
+  (nowy typ komendy bez etykiety ⇒ czerwony), H/2 jedna funkcja (liczby
+  definicji + referencje w obu warstwach), H/3/H/3b bramka opłacalności,
+  H/4/H/4b koszt obrotu **z prawdziwego widoku** (RED przed fixem: 2 fail),
+  H/4c darmowe akcje bez kosztu, H/5 FoW (widok przeciwnika nie niesie kosztu
+  ani prawa obrotu).
 
 ### E3 — domknięcie
 
