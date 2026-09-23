@@ -1,12 +1,12 @@
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { hasCreatureType, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, untapObject, tapObject } from './permanents.js';
+import { hasCreatureType, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, untapObject, tapObject, entersUntappedOverride } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
-import { getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
+import { getSourceForObject, isActivatedManaAbility, colorsProducibleBySubtype } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, nextFaceDownCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -1206,10 +1206,14 @@ export function returnPermanentFromGraveyardOutcome(state, targetId, effect, aur
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
   // Ruling Annie Flash (OTJ 2024-04-12): wraca TAPNIĘTA (deskryptor
-  // `entersTapped` — ADR 0002).
+  // `entersTapped` — ADR 0002). Batch 58/B7 (Gond Gate): statyk kontrolera
+  // znosi tapnięcie (CR 614.1d) — ta sama reguła co w `playLand`
+  // i `moveObjectDirectly` (`entersUntappedOverride`).
+  const enterTapped = Boolean(effect?.entersTapped)
+    && !entersUntappedOverride(state, moved, { enteringId: newId });
   const permanent = Object.freeze({
     ...moved, summoningSickness: true,
-    ...(effect?.entersTapped ? { tapped: true } : {}),
+    ...(enterTapped ? { tapped: true } : {}),
   });
   state.objects.set(newId, permanent);
   // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
@@ -3351,14 +3355,29 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'add_mana') {
+    // Batch 58/B7 (Gond Gate): „{T}: Add one mana of any color that a Gate you
+    // control could produce" — kolory z DANYCH kontrolowanych permanentów
+    // (jedna reguła: `colorsProducibleBySubtype`, ta sama co w auto-tapie
+    // i bramce oferty). Brak kolorów = nie ma czego wybrać (bramka i tak
+    // nie dopuści aktywacji), więc pula dostaje manę bezbarwną.
     // Kolorowa pula (cz. 7): mana ze zdolności ma KOLOR źródła (Skarb/dowolny
     // land → dowolny, Apprentice Wizard → bezbarwna). fromTreasure oznacza manę
     // ze Skarba (identyfikowalną — Marut pyta, ile ze Skarba wydano na rzut).
-    const src = getSourceForObject(sourceObject);
+    const src = getSourceForObject(sourceObject, state);
     // M67 (Jeskai Devotee): efekt może podać kolory wprost ({1}: Add {U}, {R},
     // or {W}) — jednostka many ['U','R','W'] opłaca każdy z tych pipów (MtG:
     // gracz wybiera kolor przy produkcji; pula trzyma ją jako wielokolorową).
-    const descriptorColors = effect.colors ?? src?.colors ?? [];
+    const fromGroup = effect.colorsFrom
+      ? colorsProducibleBySubtype(state, sourceObject.controllerId, effect.colorsFrom.controlledSubtype,
+        { excludeId: sourceObject.id })
+      : null;
+    // Agregat obiektu (`src.colors`) jest fallbackiem tylko dla zdolności,
+    // która nie mówi nic o kolorach — gdy w kontekście JEST deskryptor tej
+    // zdolności, a efekt nie ma ani `colors`, ani `colorsFrom`, produkcja jest
+    // BEZBARWNA (Gond Gate: „{T}: Add {C}" ≠ unia kolorów Bram).
+    const abilityColors = effect.colors ?? fromGroup
+      ?? (context?.ability == null ? src?.colors : null);
+    const descriptorColors = abilityColors ?? src?.colors ?? [];
     // A3 (znalezisko właściciela 2026-09-16, Manor Gate): „{T}: Add {G} or one
     // mana of the chosen color" — deskryptor many ('G') złącza się z kolorem
     // wybranym przy wejściu (chosenColor na OBIEKCIE — ustawianym przez

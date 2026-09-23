@@ -731,6 +731,34 @@ export function effectiveToughness(object, state = null) {
  * (abilityGrants — np. Fake Your Own Death nadaje stworowi trigger dies).
  * Triggery i legalne aktywacje czytają zawsze tę listę, nie object.abilities.
  */
+/**
+ * Batch 58/B7 (Gond Gate; Oracle „Gates you control enter untapped"): czy
+ * wchodzący permanent ma wchodzić ODKRĘCONY mimo własnego „enters tapped".
+ * Reguła czytana z DESKRYPTORA zdolności statycznej kontrolera pola bitwy
+ * (`entersUntapped: { subtype }`, ADR 0002) — nie z nazwy karty, więc każdy
+ * przyszły statyk tego kształtu („Gates/… you control enter untapped") działa
+ * bez zmian w rdzeniu. To efekt ZASTĘPCZY wejścia (CR 614.1d): dotyczy
+ * wszystkich ścieżek kładzenia permanentu (land drop, efekt, reanimacja).
+ *
+ * `enteringId` wyklucza sam wchodzący obiekt z grona źródeł (statyk na
+ * wchodzącej Bramie nie „widzi" jeszcze siebie na polu bitwy).
+ */
+export function entersUntappedOverride(state, object, { enteringId = null } = {}) {
+  if (!state || !object) return false;
+  for (const id of state.zones.battlefield) {
+    if (enteringId != null && id === enteringId) continue;
+    const source = state.objects.get(id);
+    if (!source || source.zone !== 'battlefield' || source.controllerId !== object.controllerId) continue;
+    for (const ability of effectiveAbilities(source)) {
+      if (ability?.type !== 'static' || !ability.entersUntapped) continue;
+      const subtype = ability.entersUntapped.subtype;
+      if (!subtype) continue;
+      if (effectiveSubtypes(object).includes(subtype)) return true;
+    }
+  }
+  return false;
+}
+
 export function effectiveAbilities(object) {
   const grants = object?.abilityGrants ?? [];
   if (grants.length === 0) return object?.abilities ?? [];

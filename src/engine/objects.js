@@ -4,6 +4,7 @@ import { assertStateInvariants } from './invariants.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { syncStationKind } from './counters.js';
 import { registerMover } from './mover.js';
+import { entersUntappedOverride } from './permanents.js';
 
 /**
  * Rejestr LKI nazw (CR 603.10): identyfikator → ostatnia znana tożsamość
@@ -200,7 +201,11 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // Warunkowe landy nadal rozstrzyga playLand po przeniesieniu.
     // Bez tego stwór odbity na rękę wracał na stół tapnięty, a reanimacja
     // tapniętego stwora dawała tapnięty permanent.
-    tapped: toZone === 'battlefield' && Boolean(object.entersTapped) && !object.entersTappedCondition && !object.faceDown,
+    // Batch 58/B7 (Gond Gate): statyk kontrolera „permanenty o podtypie X
+    // wchodzą odkręcone" znosi „enters tapped" tej karty (efekt zastępczy
+    // wejścia, CR 614.1d) — jeden predykat dla wszystkich ścieżek ruchu.
+    tapped: toZone === 'battlefield' && Boolean(object.entersTapped) && !object.entersTappedCondition && !object.faceDown
+      && !entersUntappedOverride(state, object, { enteringId: newObjectId }),
     counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
     goaded: false, goadedUntilTurn: null, hexproofUntilTurn: null, cantBeBlockedUntilTurn: null,
     // CR 400.7: flagi opisujące HISTORIĘ permanentu w tej turze też nie

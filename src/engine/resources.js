@@ -7,6 +7,7 @@ import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount, delveGenericMana } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, manaUnitKey, treasureManaAbilityOf, ANY_COLOR_MANA } from './mana-sources.js';
+import { effectiveSubtypes, entersUntappedOverride } from './permanents.js';
 import { canPlayByImpulseFromExile, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
@@ -300,7 +301,7 @@ function freshManaSum(state, playerId, purpose = {}) {
 function freshManaUnits(state, playerId) {
   const units = [];
   for (const land of untappedLandManaSources(state, playerId)) {
-    units.push(grantManaOnLand(state, land.id) > 0 ? [] : (getSourceForObject(land)?.colors ?? []));
+    units.push(grantManaOnLand(state, land.id) > 0 ? [] : (getSourceForObject(land, state)?.colors ?? []));
   }
   for (const entry of untappedFreeManaSources(state, playerId)) units.push([...entry.colors]);
   return units;
@@ -359,8 +360,8 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       const ga = grantColorById.has(a.id) ? 0 : 1;
       const gb = grantColorById.has(b.id) ? 0 : 1;
       if (ga !== gb) return ga - gb;
-      const ca = getSourceForObject(a)?.colors ?? [];
-      const cb = getSourceForObject(b)?.colors ?? [];
+      const ca = getSourceForObject(a, state)?.colors ?? [];
+      const cb = getSourceForObject(b, state)?.colors ?? [];
       const am = ca.some((c) => reqColors.has(c)) ? 0 : 1;
       const bm = cb.some((c) => reqColors.has(c)) ? 0 : 1;
       if (am !== bm) return am - bm;
@@ -377,7 +378,7 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       // w auto-tapie sumy i w bloku seeda 2027); ląd z grantem, którego
       // płatność i tak dotyka, MUSI wyprodukować CAŁY grant, bo
       // `producibleMana` liczy ten ląd jako `grant` jednostek (L48).
-      const srcColors = getSourceForObject(source)?.colors ?? [];
+      const srcColors = getSourceForObject(source, state)?.colors ?? [];
       const plannedGrant = grantColorById.get(source.id) ?? null;
       const sourceGrant = grantManaOnLand(state, source.id);
       const grantColor = plannedGrant ?? (sourceGrant > 0
@@ -457,8 +458,8 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
     const reqColors = new Set(requirements.flat());
     const sources = untappedLandManaSources(state, playerId).slice();
     sources.sort((a, b) => {
-      const ca = getSourceForObject(a)?.colors ?? [];
-      const cb = getSourceForObject(b)?.colors ?? [];
+      const ca = getSourceForObject(a, state)?.colors ?? [];
+      const cb = getSourceForObject(b, state)?.colors ?? [];
       const am = ca.some((c) => reqColors.has(c)) ? 0 : 1;
       const bm = cb.some((c) => reqColors.has(c)) ? 0 : 1;
       if (am !== bm) return am - bm;
@@ -486,7 +487,7 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       if (((player.mana ?? 0) - restrictedInPool) >= amount) break;
       const grant = grantManaOnLand(state, source.id);
       const need = [...reqColors].find((c) => ['W', 'U', 'B', 'R', 'G'].includes(c));
-      const srcColors = getSourceForObject(source)?.colors ?? [];
+      const srcColors = getSourceForObject(source, state)?.colors ?? [];
       const grantColor = grant > 0 ? (need ?? srcColors[0] ?? 'G') : null;
       tapLandForMana(state, playerId, source.id, { grantColor });
     }
@@ -538,7 +539,7 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
     const reqColors = new Set(requirements.flat());
     for (const land of untappedLandManaSources(state, playerId)) {
       if (matchColorRequirements(payableUnits(), requirements)) break;
-      const srcColors = getSourceForObject(land)?.colors ?? [];
+      const srcColors = getSourceForObject(land, state)?.colors ?? [];
       const grant = grantManaOnLand(state, land.id);
       if (grant <= 0 && !srcColors.some((c) => reqColors.has(c))) continue;
       const need = grant > 0 ? firstUncoveredPipColor(expandManaPool(player.manaPool), requirements) : null;
@@ -645,7 +646,7 @@ export function tapLandForMana(state, playerId, objectId, { grantColor = null } 
   state.events.push(tappedEvent);
   const grant = grantManaOnLand(state, objectId);
   const useGrant = grant > 0 && grantColor && ['W', 'U', 'B', 'R', 'G'].includes(grantColor);
-  const src = getSourceForObject(object);
+  const src = getSourceForObject(object, state);
   const amount = useGrant ? grant : 1;
   const colors = useGrant ? [grantColor] : (src?.colors ?? []);
   const mana = addMana(state, playerId, amount, { colors });
@@ -770,7 +771,7 @@ export function untappedFreeManaSources(state, playerId, excludeSourceId = null,
       const riders = effects.filter((e) => BENEFICIAL_MANA_RIDERS.includes(e?.type));
       const isCreature = object.kind === 'creature' || (object.types ?? []).includes('Creature');
       if (isCreature && object.summoningSickness && !effectiveKeywords(object, state).includes('haste')) continue;
-      const src = getSourceForObject(object);
+      const src = getSourceForObject(object, state);
       // M201 (znalezisko #3): mana OGRANICZONA (druk Powerstone: „This mana
       // can't be spent to cast a nonartifact spell") liczy się WYŁĄCZNIE, gdy
       // płatność ma dozwolony cel. Deskryptor `spendOnly` zamiast warunku po
@@ -846,7 +847,7 @@ export function untappedCostedManaSources(state, playerId, excludeSourceId = nul
       const spendOnly = effects[0].spendOnly ?? null;
       if (spendOnly === 'artifact' && restrictedManaBlocked(purpose)) break;
       if (spendOnly != null && spendOnly !== 'artifact') break;
-      const src = getSourceForObject(object);
+      const src = getSourceForObject(object, state);
       const costPips = [...(cost.colors ?? [])];
       // `mana` niesie CAŁĄ cenę (włącznie z pipami — Apprentice to {mana:1,
       // colors:[U]}), więc generic to nadwyżka ponad pipy.
@@ -908,7 +909,7 @@ export function fundableCostedPlan(state, playerId, reqsOrNull, excludeSourceId 
   const lands = [];
   for (const land of untappedLandManaSources(state, playerId)) {
     if (excluded != null && excluded.has(land.id)) continue;
-    lands.push({ id: land.id, colors: getSourceForObject(land)?.colors ?? [], grant: grantManaOnLand(state, land.id) });
+    lands.push({ id: land.id, colors: getSourceForObject(land, state)?.colors ?? [], grant: grantManaOnLand(state, land.id) });
   }
   const free = untappedFreeManaSources(state, playerId, excludeSourceId)
     .map((entry) => ({ ref: entry, amount: entry.amount, colors: [...entry.colors] }));
@@ -1116,7 +1117,7 @@ export function tapCostedManaSource(state, playerId, entry, { preserveColors = [
     // Ten sam wybór co bramka (firstUncoveredPipColor): identyczny wynik.
     for (const land of untappedLandManaSources(state, playerId)) {
       if (matchColorRequirements(poolUnits(), pipReqs)) break;
-      const srcColors = getSourceForObject(land)?.colors ?? [];
+      const srcColors = getSourceForObject(land, state)?.colors ?? [];
       const grant = grantManaOnLand(state, land.id);
       if (!srcColors.some((c) => pipColors.has(c)) && grant <= 0) continue;
       const need = grant > 0 ? firstUncoveredPipColor(poolUnits(), pipReqs) : null;
@@ -1148,7 +1149,7 @@ export function tapCostedManaSource(state, playerId, entry, { preserveColors = [
       if (poolPaysFreely) break;
       if (newlyTapped >= entry.costGeneric && (player.mana ?? 0) >= costTotal) break;
       const grant = grantManaOnLand(state, land.id);
-      const srcColors = getSourceForObject(land)?.colors ?? [];
+      const srcColors = getSourceForObject(land, state)?.colors ?? [];
       tapLandForMana(state, playerId, land.id, { grantColor: grant > 0 ? (srcColors[0] ?? 'G') : null });
       newlyTapped += grant > 0 ? grant : 1;
     }
@@ -1270,7 +1271,7 @@ export function planGrantManaColors(state, playerId, requirements, excludeSource
     const grant = grantManaOnLand(state, obj.id);
     if (grant > 0) grantLands.push({ id: obj.id, grant });
     else {
-      const src = getSourceForObject(obj);
+      const src = getSourceForObject(obj, state);
       units.push(src?.colors ?? []);
     }
   }
@@ -2256,6 +2257,11 @@ export function playLand(state, playerId, objectId) {
       if (plains >= cond.minOtherPlains) shouldEnterTapped = false;
     }
   }
+  // Batch 58/B7 (Gond Gate): „Gates you control enter untapped" — statyk
+  // kontrolera znosi „enters tapped" wchodzącej karty (CR 614.1d). Wchodzący
+  // land jest już na polu bitwy (`moveObjectDirectly`), ale przy warunkach
+  // „other X" liczy go dopiero statyk — dlatego pytamy z `enteringId`.
+  if (shouldEnterTapped && entersUntappedOverride(state, moved, { enteringId: newId })) shouldEnterTapped = false;
   const placed = shouldEnterTapped ? Object.freeze({ ...moved, tapped: true }) : moved;
   state.objects.set(newId, placed);
   player.landPlays -= 1;

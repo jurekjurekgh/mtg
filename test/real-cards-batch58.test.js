@@ -17,6 +17,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { getSourceForObject } from '../src/engine/mana-sources.js';
 import { paymentDescriptorOf } from '../src/table/mana-wizard.js';
 import { commandLabel } from '../src/table/render.js';
 
@@ -649,4 +650,119 @@ test('B58/B6: Prishe\u2019s Wanderings — rzut bez many i nielegalny wybór odr
   assert.equal(illegal.ok, false, 'stwór spoza kwalifikatora odrzucony (anyOf nie przepuszcza dowolnej karty)');
   const legal = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: null });
   assert.ok(legal.ok, 'po odrzuceniu decyzja nadal czeka i da się ją rozstrzygnąć');
+});
+
+// ---- B7: Gond Gate (318 CLB, plan Forgotten Realms) ------------------------
+
+/** Kolory ostatniego zdarzenia `mana_changed` (produkcja many) albo null. */
+const lastManaColors = (s) => [...s.events].reverse().find((e) => e.type === 'mana_changed')?.colors ?? null;
+
+test('B58/B7: Gond Gate — dane Oracle: statyk bram + dwie zdolności many', () => {
+  const def = registry.get('gond-gate');
+  assert.deepEqual(def.types, ['Land']);
+  assert.deepEqual(def.subtypes, ['Gate']);
+  assert.deepEqual(def.colors, []);
+  assert.equal(def.set, 'CLB');
+  assert.equal(def.plan, 'Forgotten Realms');
+  assert.equal(def.artId, 318);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('746672d9'), 'imageUri z druku clb/353');
+  const statyk = def.abilities.find((a) => a.type === 'static');
+  assert.ok(statyk, 'statyk „Gates you control enter untapped"');
+  assert.deepEqual(statyk.entersUntapped, { subtype: 'Gate' }, 'statyk w DANYCH karty (ADR 0002)');
+  const mana = def.abilities.filter((a) => a.type === 'activated');
+  assert.equal(mana.length, 2, 'dwie zdolności many: {C} oraz „any color … could produce"');
+  assert.deepEqual(mana[0].cost, { tap: true });
+  assert.equal(mana[0].effect.type, 'add_mana');
+  assert.equal(mana[0].effect.colors, undefined, 'brak kolorów = {C} (bezbarwna)');
+  assert.deepEqual(mana[1].cost, { tap: true });
+  assert.equal(mana[1].effect.type, 'add_mana');
+  assert.deepEqual(mana[1].effect.colorsFrom, { controlledSubtype: 'Gate' },
+    'kolory produkcji czytane z kontrolowanych Bram („could produce")');
+  // Jedno źródło prawdy: oferta i walidacja czytają TEN SAM deskryptor efektu
+  // (`abilityConditionFailure` w abilities.js) — bez kopii w `condition`.
+  assert.equal(mana[1].condition ?? null, null, 'warunek liczony z `effect.colorsFrom`');
+});
+
+test('B58/B7: Gond Gate — Brama z ręki wchodzi ODKRĘCONA, bez Gond Gate tapnięta', () => {
+  const state = game();
+  put(state, 'gond', 'gond-gate', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'drop', 'dimir-guildgate', 'p1');
+  run(state, commands(state).find((c) => c.type === 'play_land' && c.objectId === 'drop'));
+  const gate = find(state, 'dimir-guildgate', 'battlefield');
+  assert.ok(gate, 'Brama weszła na pole bitwy');
+  assert.equal(gate.tapped, false, 'statyk „Gates you control enter untapped" (Guildgate ma enters tapped)');
+
+  const control = game();
+  put(control, 'drop', 'dimir-guildgate', 'p1');
+  run(control, commands(control).find((c) => c.type === 'play_land' && c.objectId === 'drop'));
+  assert.equal(find(control, 'dimir-guildgate', 'battlefield').tapped, true,
+    'bez Gond Gate ta sama Brama wchodzi tapnięta (kontrola negatywna)');
+});
+
+test('B58/B7: Gond Gate — statyk działa tylko na TWOJE Bramy', () => {
+  const enemy = game();
+  put(enemy, 'gond', 'gond-gate', 'p1', 'battlefield', { summoningSickness: false });
+  put(enemy, 'drop', 'dimir-guildgate', 'p2');
+  enemy.turn = jumpToStep(enemy.turn, 'main', 'p2');
+  enemy.turn.activePlayerId = enemy.turn.priorityPlayerId = 'p2';
+  run(enemy, commands(enemy).find((c) => c.type === 'play_land' && c.objectId === 'drop'));
+  assert.equal(find(enemy, 'dimir-guildgate', 'battlefield').tapped, true,
+    'Brama przeciwnika wchodzi tapnięta (statyk dotyczy Bram KONTROLUJĄCEGO)');
+});
+
+test('B58/B7: Gond Gate — {T}: Add {C} to mana bezbarwna', () => {
+  const state = game();
+  put(state, 'gond', 'gond-gate', 'p1', 'battlefield', { summoningSickness: false });
+  // Indeksy zdolności liczą CAŁĄ listę karty (0 = statyk, 1 = {C}, 2 = kolory Bram).
+  const offer = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'gond' && c.abilityIndex === 1);
+  assert.ok(offer, 'oferta {T}: Add {C}');
+  run(state, offer);
+  assert.deepEqual(lastManaColors(state), [], '„Add {C}" = mana bezbarwna');
+  assert.deepEqual(player(state, 'p1').manaPool, { '': 1 }, 'jedna jednostka bezbarwna w puli');
+});
+
+test('B58/B7: Gond Gate — druga zdolność daje kolor Bramy-sąsiada', () => {
+  const state = game();
+  put(state, 'gond', 'gond-gate', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'guild', 'dimir-guildgate', 'p1', 'battlefield', { summoningSickness: false, tapped: true });
+  const offer = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'gond' && c.abilityIndex === 2);
+  assert.ok(offer, 'oferta „one mana of any color that a Gate you control could produce"');
+  run(state, offer);
+  assert.deepEqual(lastManaColors(state), ['U', 'B'], 'kolory z Dimir Guildgate ({U} albo {B})');
+  assert.deepEqual(player(state, 'p1').manaPool, { UB: 1 }, 'jednostka niebiesko-czarna w puli');
+  // Ta sama unia w ścieżce auto-tapu (getSourceForObject czyta deskryptor):
+  const src = getSourceForObject(state.objects.get('gond'), state);
+  assert.deepEqual(src.colors, ['U', 'B'], 'auto-tap widzi kolory Bram-sąsiadów');
+});
+
+test('B58/B7: Gond Gate — Brama „any color" (Heap Gate) daje dowolny kolor', () => {
+  const state = game();
+  put(state, 'gond', 'gond-gate', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'heap', 'heap-gate', 'p1', 'battlefield', { summoningSickness: false, tapped: true });
+  const offer = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'gond' && c.abilityIndex === 2);
+  assert.ok(offer, 'Heap Gate może dać dowolny kolor — zdolność dostępna');
+  run(state, offer);
+  assert.deepEqual(player(state, 'p1').manaPool, { WUBRG: 1 }, 'dowolny kolor = jednostka WUBRG');
+});
+
+test('B58/B7: Gond Gate — bez kolorowej Bramy druga zdolność niedostępna', () => {
+  const state = game();
+  put(state, 'gond', 'gond-gate', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'basilisk', 'basilisk-gate', 'p1', 'battlefield', { summoningSickness: false });
+  assert.ok(!commands(state).some((c) => c.type === 'activate_ability' && c.objectId === 'gond' && c.abilityIndex === 2),
+    'Basilisk Gate produkuje tylko {C} — nie ma koloru do wyprodukowania');
+  assert.ok(commands(state).some((c) => c.type === 'activate_ability' && c.objectId === 'gond' && c.abilityIndex === 1),
+    '„{T}: Add {C}" pozostaje dostępne');
+  const forced = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'gond', abilityIndex: 2 });
+  assert.equal(forced.ok, false, 'ręczna aktywacja odrzucona (walidacja tą samą bramką co oferta)');
+  assert.equal(state.objects.get('gond').tapped, false, 'odrzucona aktywacja nie tapnęła źródła');
+
+  // Cudza Brama nie liczy się („a Gate YOU control").
+  const enemy = game();
+  put(enemy, 'gond', 'gond-gate', 'p1', 'battlefield', { summoningSickness: false });
+  put(enemy, 'guild', 'dimir-guildgate', 'p2', 'battlefield', { summoningSickness: false, tapped: true });
+  assert.ok(!commands(enemy).some((c) => c.type === 'activate_ability' && c.objectId === 'gond' && c.abilityIndex === 2),
+    'Brama przeciwnika nie daje kolorów');
 });

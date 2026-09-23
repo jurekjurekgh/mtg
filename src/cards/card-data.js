@@ -11704,6 +11704,38 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['refleks „when you search your library this way" (ruling FIN 2025-06-06): cel wybierany przy wejściu zdolności na stos, po przeszukaniu; kwalifikator anyOf = basic land ALBO Town; fail to find nadal odpala refleks'],
   }),
+
+  // 7. Gond Gate (CLB) Land — Gate: „Gates you control enter untapped.";
+  // {T}: Add {C}; {T}: Add one mana of any color that a Gate you control
+  // could produce. Nowy statyk `entersUntapped: { subtype }` (efekt zastępczy
+  // wejścia, CR 614.1d — działa na land drop, efekty i reanimację) oraz nowy
+  // deskryptor kolorów `colorsFrom` (kolory produkowalne przez kontrolowane
+  // permanenty podtypu; CR 106.1 — „could produce", nie „za samo {T}").
+  defineCard({
+    id: 'gond-gate', name: 'Gond Gate', set: 'CLB',
+    types: ['Land'], subtypes: ['Gate'], colors: [],
+    oracleText: 'Gates you control enter untapped.\n{T}: Add {C}.\n{T}: Add one mana of any color that a Gate you control could produce.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/4/746672d9-7c6b-415e-9f34-3cc3ac557008.jpg?1783922658',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        entersUntapped: { subtype: 'Gate' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colorsFrom: { controlledSubtype: 'Gate' } },
+      }),
+    ],
+    artId: 318, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„Gates you control enter untapped" = statyk kontrolera (także dla Bram, które same wchodzą tapnięte — Dimir Guildgate, Manor Gate); druga zdolność daje unię kolorów produkowalnych przez kontrolowane Bramy (Basilisk Gate sam daje tylko {C}, więc jest niedostępna)'],
+  }),
 ]);
 
 /**
