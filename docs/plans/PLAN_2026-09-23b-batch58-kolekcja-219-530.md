@@ -144,6 +144,20 @@ z JEDNEGO pobrania (source, print, set, set_name, collector_number,
 image_uris), `pobrano: 2026-09-23`, rulingi z listy Scryfall. Bez definicji
 kart (te wchodzą po jednej, gotowe, w etapach B1–B7).
 
+**KOREKTA (zmierzona w B1, 2026-09-23):** snapshot NIE może wejść do
+`docs/cards/` przed swoją kartą. Dwa strażniki klasowe czytają CAŁY katalog
+plików `docs/cards/scryfall-*.json`:
+`test/druki-druga-strona-i-uuid-obrazu.test.js` D/14 i
+`test/obiekty-wsparcia-poza-rejestrem.test.js` OW/6 — każda nazwa pliku musi
+być id karty z rejestru (albo obiektu wsparcia `undercity`), więc 6 snapshotów
+bez kart otwierało 2 czerwone testy w `npm test` do końca batcha. Wariant
+historyczny (Batch 55/57: karta wchodzi w B0b ze statusem `in-development`)
+jest DZIŚ niemożliwy — M419/B dopuszcza w katalogu wyłącznie
+`supported`/`token`/`back`. Dlatego obowiązuje: **snapshot wchodzi w tym samym
+commicie co definicja karty** (B1–B7), a pliki czekające leżą POZA
+repozytorium (katalog roboczy `/home/user/batch58-snapshots/`, poza drzewem
+git). Każdy commit etapu pozostaje zielony, a `docs/cards` nie zna sierot.
+
 ### B1 — Boulder Salvo (265, Zendikar)
 
 Definicja karty (surge `{1}{R}` + `damage` 4 w cel-stwora) + `MANA_COSTS` +

@@ -492,4 +492,6 @@ export const MANA_COSTS = {
   "baral-and-kari-zev": "{1}{U}{R}",
   "tranquil-cove": "",
   "ordinary-bear": "{3}{G}",
+  // Batch 58 (2026-09-23): karty właściciela 219/265/318/377/447/464/530.
+  "boulder-salvo": "{4}{R}",
 };

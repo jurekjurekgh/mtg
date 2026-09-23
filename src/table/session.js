@@ -230,6 +230,16 @@ export function paidExtraCostSuffix(e) {
   return parts.length > 0 ? ` — ${parts.join(', ')}` : '';
 }
 
+/**
+ * CR 702.111 (Surge, Batch 58/B1): fakt rzutu za KOSZT ALTERNATYWNY jako
+ * dopisek do opisu zdarzenia — jedno brzmienie dla obu gałęzi rzutu
+ * (`permanent_cast`, `spell_cast`) i dla aury (`aura_spell_cast` już je ma),
+ * lustrzane do `paidExtraCostSuffix` (L41). Czysta funkcja (ADR 0011).
+ */
+export function alternativeCostSuffix(e) {
+  return e?.surgeCast ? ' za koszt surge' : '';
+}
+
 const BOT_MOVE_NOISE = new Set([
   'priority_passed', 'mana_changed', 'mana_produced', 'step_advanced',
   'turn_started', 'object_tapped', 'object_untapped', 'damage_marked',
@@ -1137,7 +1147,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // kicked"), ale opis go nie czytał — fakt opłacenia dodatkowego kosztu
         // znikał z relacji, choć zmienia skutek karty (ETB niszczy permanent).
         // Ta sama fraza w obu gałęziach rzutu (L41: jedno brzmienie).
-        const extraCost = paidExtraCostSuffix(e);
+        const extraCost = paidExtraCostSuffix(e) + alternativeCostSuffix(e);
         return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${extraCost}${phyrexian}`;
       }
       case 'spell_cast': {
@@ -1174,7 +1184,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
         // H (2026-09-22): kicker/offspring także na ścieżce czarów (L41 —
         // jedno brzmienie co `permanent_cast`).
-        const extraCost = paidExtraCostSuffix(e);
+        const extraCost = paidExtraCostSuffix(e) + alternativeCostSuffix(e);
         return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${extraCost}${phyrexian}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {

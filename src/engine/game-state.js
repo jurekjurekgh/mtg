@@ -5700,6 +5700,9 @@ export function execute(state, input) {
       const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, {
         buyback: cmd.buyback, payAltCost: cmd.payAltCost, xValue: cmd.xValue,
         phyrexianPayWithLife: cmd.phyrexianPayWithLife, kicked: Boolean(cmd.kicked),
+        // CR 702.111 (Surge, Batch 58/B1): koszt alternatywny niesie komenda
+        // (jak kicked/gifted) — walidacja i płatność w `castSpell`.
+        surgeCast: Boolean(cmd.surgeCast),
         // CR 702.174 (Gift): obietnica daru to dodatkowy koszt rzutu; odbiorcę
         // wskazuje się razem z kosztem (wariant komendy niesie jego id).
         gifted: Boolean(cmd.gifted), giftRecipientId: cmd.giftRecipientId ?? null,

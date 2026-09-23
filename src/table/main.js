@@ -2273,7 +2273,10 @@ function bootstrapTable() {
       const nonGeneric = parsed.colored.length + parsed.hybrid.length + parsed.phyrexian.length;
       opts.effectiveGeneric = Math.max(0, effectiveSpellManaCost(session.state, stateObject) - nonGeneric);
     }
-    if (cmd.type === 'cast_permanent' && (cmd.surgeCast || cmd.bestow)) {
+    // Koszt alternatywny zna OBA kształty rzutu: permanent (bestow/surge) oraz
+    // instant/sorcery (surge, Batch 58/B1) — bez tego kreator liczyłby koszt
+    // bazowy karty i zapłaciłby więcej, niż obiecuje etykieta (L48/L93).
+    if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell') && (cmd.surgeCast || cmd.bestow)) {
       const alternative = cmd.surgeCast ? stateObject?.surge : stateObject?.bestow;
       if (alternative) opts.alternativeCost = reduceAlternativeCost(
         session.state, stateObject, alternative.cost, alternative.colors ?? []);

@@ -1804,6 +1804,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // Offspring — jak kicker: fakt opłacenia dodatkowego kosztu (log i ewent.
     // triggery „you cast a spell with offspring").
     offspring: Boolean(offspringPaid),
+    // Surge/Cleave (CR 702.111, Batch 58/B1): fakt rzutu za KOSZT ALTERNATYWNY
+    // (nie dodatkowy) — jawny w logu tak samo, jak `spell_cast.surgeCast`.
+    surgeCast: Boolean(surgeCast),
     // Mana wydana na ten rzut (bez części opłaconej życiem — to nie mana) —
     // progi triggerów „if N or more mana was spent" (Tellah, Great Sage).
     manaSpent,

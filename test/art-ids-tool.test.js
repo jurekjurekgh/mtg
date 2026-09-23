@@ -156,7 +156,9 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 57 (B0b, dane wszystkich 10 kart od razu): +10 NOWYCH numerów —
   // 9 nowych kart i 10. pozycja to DRUGI druk Phyrexian Ragera (APC/85;
   // pierwszy druk DMU/75 zostaje jako osobny wpis, wzorzec Curate): 485 → 495.
-  assert.equal(withArt.length, 495, 'wszystkie realne karty mają artId (Batche 1–57)');
+  // Batch 58 (etapy B1–B7, karty po jednej): katalog rośnie 543 → 550, a wpisy
+  // z artId 495 → 502 (wiersze arkusza dla tych kart JUŻ były w słowniku).
+  assert.equal(withArt.length, 496, 'wszystkie realne karty mają artId (Batche 1–58, etap B1)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

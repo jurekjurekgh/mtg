@@ -11537,6 +11537,38 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['vanilla 4/5 za {3}{G} — brak tekstu Oracle, brak zdolności (sanity: karta bez wpisów w abilities)'],
   }),
 
+  // =========================================================================
+  // Batch 58 (2026-09-23) — lista właściciela: 219 FIN, 265 OGW, 318 CLB,
+  // 377 AVR, 447 DSK, 464 AVR, 530 ZEN. Dane Oracle + rulingi pobrane ze
+  // Scryfalla 2026-09-23, set-aware (docs/cards/scryfall-*.json, ADR 0010
+  // §2a). Plan: docs/plans/PLAN_2026-09-23b-batch58-kolekcja-219-530.md.
+  //
+  // Karty wchodzą do katalogu TYLKO w 100% gotowe i po jednej, w swoim etapie
+  // (ADR 0022 + M419: status `supported` od pierwszego commita; w katalogu
+  // nie ma `in-development`). Etapy: B1 Boulder Salvo, B2 Grazing Gladehart,
+  // B3 Polluted Dead, B4 Scroll of Avacyn, B5 Resurrected Cultist,
+  // B6 Prishe's Wanderings, B7 Gond Gate.
+  // =========================================================================
+  // Boulder Salvo (OGW) {4}{R} Sorcery — surge {1}{R} + 4 obrażenia w stwora.
+  // Surge na INSTANT/SORCERY to nowa ścieżka (dotąd tylko permanent — Jwar
+  // Isle Avenger, Batch 50): koszt alternatywny z własną kwotą i pipami,
+  // oferowany po rzucie innego czaru w tej turze (CR 702.111). Ruling OGW
+  // 2016-01-22: surge nie zmienia kosztu many ani mana value karty.
+  defineCard({
+    id: 'boulder-salvo', name: 'Boulder Salvo', set: 'OGW',
+    types: ['Sorcery'], colors: ['R'], manaCost: 5,
+    surge: { cost: 3, colors: ['R'] },
+    oracleText: 'Surge {1}{R} (You may cast this spell for its surge cost if you or a teammate has cast another spell this turn.)\nBoulder Salvo deals 4 damage to target creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/e/4e269989-bb22-4da4-a374-434a572e8e8f.jpg?1783937908',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'damage', amount: 4 }],
+    },
+    artId: 265, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+    notes: ['surge {1}{R}: alternatywny koszt rzutu, gdy rzuciłeś inny czar w tej turze (w 1v1 „teammate” nie występuje); surge nie zmienia mana value karty (ruling OGW 2016-01-22)'],
+  }),
 ]);
 
 /**

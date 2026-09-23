@@ -530,6 +530,11 @@ export const CAST_SPELL_OPTIONS = Object.freeze([
   // `cast_spell`/`cast_permanent` tej opcji nie przekazuje (jak
   // `abilityWindowCast`) — inaczej każdy mógłby rzucić darmowo.
   'handFreeCast',
+  // CR 702.111 (Surge, Batch 58/B1 — pierwszy INSTANT/SORCERY z surgiem):
+  // alternatywny koszt rzutu, gdy rzuciłeś inny czar w tej turze. Ta sama
+  // nazwa pola co na ścieżce permanentów (`cast_permanent.surgeCast`), więc
+  // komenda, etykieta i kreator płatności używają jednego słowa.
+  'surgeCast',
 ]);
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
@@ -542,9 +547,24 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const {
     buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0,
     abilityWindowCast = false, kicked = false, gifted = false, giftRecipientId = null,
-    delveExileIds = null, handFreeCast = false,
+    delveExileIds = null, handFreeCast = false, surgeCast = false,
   } = options;
   const preObject = state.objects.get(objectId);
+  // Surge (CR 702.111, Batch 58/B1): koszt alternatywny rozlicza tylko TA
+  // funkcja — tryby „choose one", koszt X i Fireball mają własne ścieżki
+  // płatności, więc wariant surge dostaje jawny błąd zamiast cichego
+  // zignorowania kosztu (L5; lustro bramki kickera niżej).
+  if (surgeCast && ((preObject?.spell?.modes && modeIndex != null)
+    || preObject?.spell?.xCost || preObject?.spell?.fireball)) {
+    throw new Error('Surge nie łączy się z rzutem modalnym, z kosztem X ani z Fireballem');
+  }
+  // Delve (CR 702.66) to pokrycie części generycznej kosztu WYDRUKU — przy
+  // koszcie alternatywnym limit liczyłby się z niewłaściwej liczby, więc
+  // łączenie wariantów jest jawnie odrzucane, dopóki katalog nie ma karty z
+  // oboma (żadna nie ma; L5 — jawny brak obsługi zamiast złej płatności).
+  if (surgeCast && delveExileIds != null) {
+    throw new Error('Koszt surge wyklucza delve');
+  }
   // Kicker (CR 702.33) na instantach i sorcerych rozlicza TA funkcja. Ścieżki
   // z własną walidacją kosztu (tryby „choose one\", koszt X, Fireball) idą do
   // osobnych funkcji, które kickera nie znają — JAWNY błąd zamiast cichego
@@ -594,6 +614,17 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Uprawnienie jest ważne wyłącznie dla karty w RĘCE (strefa sprawdzana tu,
   // bo tylko ta ścieżka woła `handFreeCast`).
   if (handFreeCast && object.zone !== 'hand') throw new Error('Darmowy rzut bez kosztu many dotyczy karty z ręki');
+  // Surge (CR 702.111, Batch 58/B1): koszt alternatywny — wymaga innego czaru
+  // rzuconego w tej turze (licznik czytany PRZED tym rzutem, jak na ścieżce
+  // permanentów) i wyklucza pozostałe warianty kosztu (CR 601.2b: jeden
+  // koszt alternatywny na rzut).
+  const surge = surgeCast ? (object.surge ?? null) : null;
+  if (surgeCast && !surge) throw new Error('Ta karta nie ma mechaniki surge');
+  if (surgeCast && (state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) < 1) {
+    throw new Error('Surge: wymaga rzucenia innego czaru w tej turze');
+  }
+  if (surgeCast && kicked) throw new Error('Koszt surge wyklucza kicker');
+  if (surgeCast && phyrexianPayWithLife > 0) throw new Error('Koszt surge wyklucza płatność phyrexian');
   // Dodatkowy koszt „sacrifice a creature" (Village Rites): walidacja celu-
   // poświęcenia PRZED jakąkolwiek mutacją (CR 601.2h) — nieudany rzut nie może
   // utracić many ani zostawić karty na stosie.
@@ -640,10 +671,24 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // czar z pitem phyrexian — dotąd ścieżka czarów znała tylko pipy kolorowe
   // (koszt liczony bez pipa = karta o manę tańsza; płatność życiem
   // niedostępna — klasa L23 + CR 118.9).
-  const phyrexianSymbols = manaCostWaived ? 0 : (object.phyrexianManaCost ?? 0);
+  // Koszt surge jest CAŁKIEM osobny (własna kwota i własne pipy) — symbole
+  // phyrexian wydruku nie wchodzą do rachunku, a bramka kolorów pyta o pipy
+  // KOSZTU SURGE (lustro `castPermanent`: altCostColors).
+  const phyrexianSymbols = (manaCostWaived || surge) ? 0 : (object.phyrexianManaCost ?? 0);
   const lifePaid = phyrexianSymbols > 0 ? (phyrexianPayWithLife ?? 0) : 0;
   if (lifePaid < 0 || lifePaid > phyrexianSymbols) throw new Error('Nieprawidłowa liczba symboli phyrexian płaconych życiem');
-  if (!manaCostWaived && !hasColorForObject(state, playerId, object, lifePaid)) throw new Error('Brak kolorowego źródła many');
+  // Pipy aktywnego kosztu: koszt alternatywny surge pyta o SWOJE kolory,
+  // zwykły rzut o pipy karty (jedno źródło dla bramki kolorów, kickera
+  // i `spendMana` — L48: oferta = walidacja = płatność).
+  const basePips = manaCostWaived ? []
+    : surge ? (surge.colors ?? []).map((color) => [color])
+      : coloredPipsOf(object.cardId, lifePaid);
+  if (!manaCostWaived) {
+    const colorGateOk = surge
+      ? (basePips.length === 0 || canPayColoredCost(state, playerId, basePips))
+      : hasColorForObject(state, playerId, object, lifePaid);
+    if (!colorGateOk) throw new Error('Brak kolorowego źródła many');
+  }
   // Kicker (CR 702.33) na czarach — ta sama zasada co na ścieżce permanentów
   // (`castPermanent` w resources.js): „You may pay an additional [cost] as you
   // cast this spell." — koszt dodatkowy dokłada się do sumy, JEGO pipy kolorów
@@ -657,15 +702,20 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const kicker = kicked ? (object.kicker ?? null) : null;
   const kickerPips = (kicker?.colors ?? []).map((color) => [color]);
   if (kickerPips.length > 0
-    && !canPayColoredCost(state, playerId, [
-      ...(manaCostWaived ? [] : coloredPipsOf(object.cardId, lifePaid)), ...kickerPips,
-    ])) {
+    && !canPayColoredCost(state, playerId, [...basePips, ...kickerPips])) {
     throw new Error('Brak kolorowego źródła many na kickera');
   }
   // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal) oraz modyfikatory
   // z permanentów (Etherium Sculptor): płacimy efektywny koszt wyliczony
   // w chwili rzutu (warunki i modyfikatory oceniane na bieżącej planszy).
-  const baseMana = manaCostWaived ? 0 : effectiveSpellManaCost(state, object);
+  // Surge (CR 702.111): kwota kosztu ALTERNATYWNEGO redukowana jak każdy inny
+  // alt-koszt (`reduceAlternativeCost` — ta sama reguła co cleave/escape/
+  // flashback/bestow: obniżki działają na generyczną część AKTYWNEGO kosztu,
+  // nie na wydruk karty). Limit delve (CR 702.66) liczy się z kosztu
+  // wydruku, dlatego łączenie surge+delve jest odrzucane wyżej.
+  const baseMana = manaCostWaived ? 0
+    : surge ? reduceAlternativeCost(state, object, surge.cost ?? object.manaCost ?? 0, surge.colors ?? [])
+      : effectiveSpellManaCost(state, object);
   const altManaExtra = (sacrificeCost && payAltCost) ? (orPayMana ?? 0) : 0;
   // Pip phyrexian płacony maną to pełna jednostka many (CR 118.9); pipy
   // opłacone życiem nie biorą udziału w koszcie many. M259/B3: baseMana
@@ -708,9 +758,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     if (!Number.isInteger(manaSpent) || manaSpent < 0) {
       throw new Error('Delve: wygnanie przewyższa część generyczną kosztu całkowitego');
     }
-    const delveRequirements = [
-      ...(manaCostWaived ? [] : coloredPipsOf(object.cardId, lifePaid)), ...kickerPips,
-    ];
+    const delveRequirements = [...basePips, ...kickerPips];
     if (producibleMana(state, playerId, null, spellManaPurpose(object), delveRequirements) < manaSpent) {
       throw new Error('Niewystarczająca mana na rzut z Delve');
     }
@@ -722,9 +770,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
       fromId: exId, object: moved, fromZone: 'graveyard', toZone: 'exile', delve: true,
     }));
   }
-  spendMana(state, playerId, manaSpent, [
-    ...(manaCostWaived ? [] : coloredPipsOf(object.cardId, lifePaid)), ...kickerPips,
-  ], spellManaPurpose(object));
+  spendMana(state, playerId, manaSpent, [...basePips, ...kickerPips], spellManaPurpose(object));
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
@@ -763,6 +809,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // CR 702.33a: „was kicked" to własność CZARU na stosie — trigger wchodzący
     // po rozstrzygnięciu czyta ją z obiektu, nie ze zdarzenia rzutu.
     wasKicked: Boolean(kicker),
+    // CR 702.111a: koszt surge to fakt CZARU na stosie (jak „was kicked") —
+    // publiczny dla logu i dla triggerów czytających wybrany koszt.
+    surgeCast: Boolean(surge),
     // CR 702.174a-b: obietnica daru (i jego odbiorca) jest własnością CZARU na
     // stosie — dar wydajemy przy rozstrzygnięciu (instanty/sorcery), a nie
     // w chwili rzucania, więc czar skontrowany nie daje niczego.
@@ -824,6 +873,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // kicked spell" — triggers.js czyta `ev.kicked`; lustrzane pole
     // `permanent_cast` w resources.js).
     kicked: Boolean(kicker),
+    // Surge (CR 702.111, Batch 58/B1) — jawny w logu i na obiekcie stosu
+    // (lustrzane pole `permanent_cast` w resources.js).
+    surgeCast: Boolean(surge),
     // Fakt obietnicy daru i jej odbiorca (jawny w logu; własność czaru na
     // stosie — CR 702.174a).
     gifted: Boolean(giftRecipient),
@@ -2598,7 +2650,22 @@ export function legalSpellCasts(state, playerId) {
       }
       return out;
     })();
-    if (spellPhyrexianVariants.length === 0) continue;
+    // Surge (CR 702.111, Batch 58/B1 — pierwszy instant/sorcery z surgiem):
+    // koszt alternatywny ma WŁASNĄ kwotę i WŁASNE pipy, więc jest liczony
+    // niezależnie od wariantów kosztu bazowego (przy 3 manie Boulder Salvo nie
+    // ma wariantu bazowego, a surge ma być oferowany). Gate licznika czyta to
+    // samo `spellsCastThisTurnByPlayer > 0` co `castPermanent` i walidacja
+    // (L48: oferta = płatność). Wariantu nie ma przy darmowym rzucie
+    // (plot/suspend/impuls) — tam koszt many jest zniesiony, a nie zastępowany.
+    const surgeOffer = (() => {
+      if (!object.surge || object.plotted || object.suspendReady || isFreeImpulseCast(object)) return false;
+      if ((state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) < 1) return false;
+      const requirements = (object.surge.colors ?? []).map((color) => [color]);
+      const cost = reduceAlternativeCost(state, object, object.surge.cost ?? object.manaCost ?? 0, object.surge.colors ?? []);
+      if (cost > manaAvailable(object, requirements)) return false;
+      return requirements.length === 0 || canPayColoredCost(state, playerId, requirements);
+    })();
+    if (spellPhyrexianVariants.length === 0 && !surgeOffer) continue;
     // Kicker (CR 702.33, audyt PR #93): wariant z dodatkowym kosztem —
     // dokładany PO zwykłych wariantach, żeby pierwsza pozycja panelu została
     // najtańszym naturalnym rzutem (proste boty i tester stołu biorą pierwszą;
@@ -2641,9 +2708,15 @@ export function legalSpellCasts(state, playerId) {
       // Kolejność panelu (M203/2): przy konwencji „prezentacja = enumeracja"
       // wariant manowy (k=null) jest PIERWSZY wprost z tablicy wariantów —
       // dawniej wymagało to odwrócenia, bo playerView wstawiał przez unshift.
+      // Surge (CR 702.111) jest kosztem TAŃSZYM od wydrukowanego, więc idzie
+      // PRZED wariantem bazowym — jak na ścieżce permanentów (`cast_permanent`
+      // oferuje surge przed zwykłym rzutem). Koszt surge wyklucza kickera
+      // (CR 601.2b), więc wariantu z dopłatą przy surgu nie ma.
+      if (surgeOffer) casts.push({ ...cast, surgeCast: true });
       for (const k of spellPhyrexianVariants) {
         casts.push(k == null ? cast : { ...cast, phyrexianPayWithLife: k });
       }
+      if (surgeOffer) return;
       pushKickerSpellCasts(cast);
       pushGiftSpellCasts(cast);
     };

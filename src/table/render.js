@@ -2993,6 +2993,16 @@ export function commandLabel(cmd, session, view) {
       const mode = (cmd.modeIndex != null && cardForMode?.spell?.modes)
         ? cardForMode.spell.modes[cmd.modeIndex] : null;
       const modeName = mode?.name ? ` — ${mode.name}` : '';
+      // M223/M265 (Batch 58/B1, Boulder Salvo): surge na INSTANCIE/SORCERY to
+      // alternatywny, TAŃSZY koszt — bez własnej etykiety wariant wygląda jak
+      // zwykły rzut i pokazuje wydruk karty („(koszt 4R)” przy zapłacie 3).
+      // Jedno brzmienie z gałęzią `cast_permanent` („Rzuć za surge: …").
+      if (cmd.surgeCast) {
+        const surgeDef = cardForMode?.surge;
+        const surgeCost = surgeDef ? manaCostHtml(costSymbols(surgeDef.cost, surgeDef.colors)) : '?';
+        return `Rzuć za surge: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${surgeCost})`
+          + (targets ? ` → cel: ${targets}` : '');
+      }
       // Czary z X (Fireball, Consume Spirit, Epic Experiment): podaj wartość X,
       // żeby gracz wiedział, ile manuje decyduje (audyt M83 — „(koszt XR)").
       const xPart = cmd.xValue != null ? `, X=${cmd.xValue}` : '';

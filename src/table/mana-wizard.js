@@ -362,7 +362,10 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     const requirements = baseColorRequirements(parsed);
     return buildDescriptor(object, totalNeeded, requirements, `Escape (${totalNeeded})`, totalNeeded - requirements.length);
   }
-  if (cmd.type === 'cast_permanent' && (cmd.surgeCast || cmd.bestow)) {
+  // Bestow istnieje tylko na ścieżce permanentów; surge (CR 702.111) także na
+  // instantach/sorcerych — oba kształty rzutu muszą mieć własny koszt
+  // w deskryptorze (Batch 58/B1: Boulder Salvo {1}{R}, nie {4}{R}).
+  if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell') && (cmd.surgeCast || cmd.bestow)) {
     const alternative = cmd.surgeCast ? object.surge : object.bestow;
     if (!alternative || !Number.isInteger(alternative.cost)) return null;
     const requirements = (alternative.colors ?? []).map(c => [c]);
