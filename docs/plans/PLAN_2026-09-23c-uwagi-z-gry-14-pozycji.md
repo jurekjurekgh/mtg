@@ -38,7 +38,21 @@ partii) — razem 15 pozycji; plik planu zostaje pod nazwą historyczną.
   Reguła po deskryptorze danych, nie po nazwie karty.
 - **D**: `return_card_from_graveyard_to_hand` — wartość celu rośnie z mana value
   odzyskanej karty, ograniczona dostępną maną (także z tapniętych lądów).
-  Dziś klasa celów z grobu ma odwróconą wartość („najtańszy”).
+  Przed fixem wartość celu zależała tylko od ciała, więc klasa celów
+  z grobu miała praktycznie odwróconą wartość („najtańszy”).
+  **Zmierzone 2026-09-23d**: scoring (Batch 52) liczył wyłącznie
+  `drawCardValue + ciało` (`power*2 + toughness`), więc warianty o RÓWNYM
+  ciele remisowały i wygrywał pierwszy z brzegu — zwykle najtańszy
+  (dokładnie objaw zgłoszenia: 5/5 za 7 vs 5/5 za 4). Składnik many:
+  `min(manaValue odzyskanej karty, potencjał)` × nowe pokrętło
+  `graveReturnManaWeight` (4). Potencjał = `ownPotentialMana` (pula + WSZYSTKIE
+  własne źródła na polu przez `getSourceForObject`, tapnięcia ignorowane —
+  „także z tapniętych lądów”) minus `reservedManaOf` rzucanego właśnie czaru
+  („na jakiego MA manę”; potencjał jest czapką, nie obietnicą). Bez lądów
+  potencjał 0 → wycena wraca do samego ciała, więc pin Batch 52 (bez pól
+  many) zostaje zielony. Test: `uwaga-z-gry-2026-09-23-z-cemetery-recruitment-najdrozszy.test.js`
+  (D/1–D/5: cap przy 3 lądach, tapnięcia bez wpływu, anty-over-fix Zombie,
+  pokrętło przepływa). Bateria botów 83 pliki / 435 testów zielona.
 - **I**: tapnięcie lądu zaczarowanego przez efekt „gdy się tapnie → miel”
   (deskryptor triggera `enchanted_permanent_tapped` + `mill_cards`) wchodzi do
   kosztu tapnięcia; przy bibliotece ≤ 30 kart kara przewyższa korzyść.

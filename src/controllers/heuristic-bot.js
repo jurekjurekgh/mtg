@@ -3136,6 +3136,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return (foe?.mana ?? 0) + untapped;
   }
 
+  /**
+   * D (uwaga właściciela 2026-09-23c, Cemetery Recruitment): POTENCJAŁ many
+   * bota — pula + wszystkie własne źródła na polu bitwy liczone NIEZALEŻNIE
+   * od tapnięcia („także z tapniętych lądów").
+   * Różnica wobec `ownOpenMana` jest celowa: tam chodzi o to, co da się
+   * zapłacić TERAZ (tapnięte źródło nic nie da), tutaj o to, na co bota
+   * STAĆ w przyszłej turze — karta wracająca do ręki czeka na rzucenie,
+   * a tapnięcia (atak, blok, poprzednie czary) mijają. Deskryptorowo:
+   * każde źródło z `getSourceForObject` (nie lista lądów — ADR 0002).
+   */
+  function ownPotentialMana(view) {
+    const self = view.players.find((p) => p.id === view.playerId);
+    let suma = self?.mana ?? 0;
+    for (const o of view.zones.battlefield ?? []) {
+      if (o?.controllerId !== view.playerId) continue;
+      const zrodlo = getSourceForObject(o, null);
+      if (!zrodlo) continue;
+      suma += Number.isFinite(zrodlo.amount) ? zrodlo.amount : 1;
+    }
+    return suma;
+  }
+
   /** M320/NA2: otwarta mana BOTA — pula + nietapnięte własne landy (lustrzane). */
   function ownOpenMana(view) {
     const self = view.players.find((p) => p.id === view.playerId);
@@ -5266,6 +5288,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
                 + (gyCard.toughness ?? gyDef?.toughness ?? 0);
               score += P.drawCardValue + gyValue;
+              // D (uwaga właściciela 2026-09-23c): karta wraca do RĘKI, więc
+              // bot musi ją jeszcze RZUCIĆ — warianty o równym ciele remisowały
+              // i wygrywał pierwszy z brzegu (zwykle najtańszy, dokładnie objaw
+              // zgłoszenia). Wartość rośnie z mana value, ale PRZYCIĘTA do
+              // potencjału many bota (źródła na stole niezależnie od tapnięcia
+              // + pula), pomniejszonego o manę zarezerwowaną na rzucany właśnie
+              // czar — reguła: „na jakiego MA manę". Waga 0 = wycena po samym
+              // ciele (pokrętło właściciela, test D/5).
+              const manaValue = gyCard.manaCost ?? gyDef?.manaCost ?? 0;
+              const potential = Math.max(0, ownPotentialMana(view) - reservedManaOf(view, cmd));
+              score += P.graveReturnManaWeight * Math.min(manaValue, potential);
               const gySubtypes = gyCard.subtypes ?? gyDef?.subtypes ?? [];
               if ((effect.drawIfSubtypes ?? []).some((s) => gySubtypes.includes(s))) {
                 score += P.drawCardValue; // Zombie → dobranie

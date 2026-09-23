@@ -53,6 +53,14 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // MARTWYMI pokrętłami (tuner zmieniał je bez jakiegokolwiek wpływu). Gromadzenie
   // martwych parametrów zatruwa tablicę tune-card.mjs — wycinane u korzenia.
   'drawCardValue',           // wartość jednej dobranej karty (dawniej *6)
+  // D (uwaga właściciela 2026-09-23c, Cemetery Recruitment): karta wracająca
+  // z grobu do RĘKI jest warta nie tylko swoje ciało — bot musi ją jeszcze
+  // RZUCIĆ, więc wartość rośnie z jej mana value, ale tylko do granicy
+  // potencjału many bota (źródła na polu bitwy liczone NIEZALEŻNIE od
+  // tapnięcia + pula). Osobne pokrętło strategii (jak creatureManaCostWeight),
+  // nie reguła gry; 0 = powrót do wyceny po samym ciele (L50: koniec remisów
+  // równocielesnych wariantów).
+  'graveReturnManaWeight',   // punkty za każdy achievable punkt mana value odzyskanej karty
   // Rodzina „efektywność removalu" (B6 T1 — M234, zlecenie właściciela). Bot ma
   // maksymalizować wartość zdejmowanego stwora: preferować DROŻSZE cele (TMC to
   // publiczny proxy „ma unikalne zdolności" — PlayerView NIE niesie `abilities`,
@@ -160,6 +168,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   bounceEnemyBase: 25,
   bounceEnemyPowerWeight: 2,
   drawCardValue: 6,
+  graveReturnManaWeight: 4,
   // M234 — WŁĄCZONE wprost jako część zlecenia właściciela (efektywność
   // removalu). Wartości dobrane pomiarem (ordering + mirror-eval + divergence):
   //  - TMC*2: 6-drop dostaje +12, 1-drop +2 → wyraźna preferencja drogich celów
