@@ -12457,6 +12457,6 @@ efektywną, a `grantedPower` to ten sam dodatek dla badge'u — suma podwajała
 aury), pin **F/8** w pliku M407 (5/5 bije 2/3 z aurą +2/+2). Notki do pętli
 jakości: **Z-1** — ta sama klasa `power + grantedPower` w trzech miejscach
 sprzed PR; **Z-2** — klauzula `bestow == null` w guardzie CR 704.5m bez pinu.
-Bramy po naprawach: `npm test` 6172/6172, build 59 / 4048,9 kB. Plan:
+Bramy po naprawach: `npm test` 6172/6172, `run-tests all` **6182/6182** (0 fail, ~372 s; +2 nowe piny wobec bazy 6180: M380/E i F/8), build 59 / 4048,9 kB. Plan:
 `docs/plans/PLAN_2026-09-23-audyt-pr133-i-petla-jakosci.md`, handoff:
 [HANDOFF_2026-09-23](docs/setup/HANDOFF_2026-09-23.md).

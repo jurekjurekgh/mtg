@@ -7242,5 +7242,5 @@ miejscach sprzed PR (`attackerCanBeBlocked` — próg mocy blokera, `equipValuat
 i wycena equipu w `cast_permanent`); **Z-2** — klauzula `bestow == null`
 w guardzie trzeciego przypadku CR 704.5m bez pinu (mutacja jej usunięcia nie
 czerwieni pinu bestow). Bramy po naprawach: szybki rdzeń **6172/6172**, build
-**59 modułów / 4048,9 kB**; pełna brama — `docs/PROJECT_HISTORY.md` M416.
+**59 modułów / 4048,9 kB**; pełna brama `run-tests all` **6182/6182** (0 fail, ~372 s).
 Bez nowych kart (ADR 0029).

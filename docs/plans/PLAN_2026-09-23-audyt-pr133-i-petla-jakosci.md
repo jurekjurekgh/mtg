@@ -54,7 +54,7 @@ naprawione osobnymi, zielonymi commitami:
 - **F-4** — `a6ab5f9` (`cantBeBlockedTargetValue` liczy moc efektywną; pin **F/8**
   w pliku M407 — RED przy sumie `power + grantedPower`, GREEN po naprawie).
 
-Bramy po naprawach: `npm test` **6172/6172**, build **59 / 4048,9 kB**.
+Bramy po naprawach: `run-tests all` **6182/6182** (0 fail, ~372 s), `npm test` **6172/6172**, build **59 / 4048,9 kB**.
 Notki do pętli (etap B): **Z-1** (podwójne liczenie bonusów w trzech miejscach
 sprzed PR), **Z-2** (klauzula `bestow == null` bez pinu).
 
