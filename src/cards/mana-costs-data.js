@@ -497,4 +497,7 @@ export const MANA_COSTS = {
   "grazing-gladehart": "{2}{G}",
   "polluted-dead": "{4}{B}",
   "scroll-of-avacyn": "{1}",
+  // Koszt DRUKU to {2}{B} (mv 3 = `manaCost`); zdolność Delirium kosztuje
+  // {2}{B}{B} i żyje w deskryptorze zdolności, nie w MANA_COSTS (strażnik B3).
+  "resurrected-cultist": "{2}{B}",
 };

@@ -6133,6 +6133,28 @@ function markTemporaryExile(state, exileId, sourceObject) {
     });
     return;
   }
+  // Batch 58/B5 (Resurrected Cultist): powrót SOBIE z grobu na pole bitwy —
+  // bez celu i bez haste (unearth_return ma własną, szytą na unearth ścieżkę);
+  // licznik finality dokłada `effect.finalityCounter`, a wygnanie przy śmierci
+  // robi wspólny `deathZoneFor` (CR 122.1e).
+  if (effect.type === 'return_source_from_graveyard') {
+    const sourceObj = state.objects.get(sourceObject.id);
+    if (!sourceObj || sourceObj.zone !== 'graveyard') return;
+    const ownerId = sourceObj.ownerId ?? sourceObj.controllerId;
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, sourceObject.id, 'battlefield', newId);
+    const permanent = Object.freeze({
+      ...moved, controllerId: ownerId, summoningSickness: true,
+    });
+    state.objects.set(newId, permanent);
+    // M273 (błąd #24): liczniki wejścia — ta sama reguła co przy rzucie.
+    applyEnterCounters(state, newId);
+    if (effect.finalityCounter) addCounter(state, newId, 'finality', 1);
+    state.events.push(event('object_moved', {
+      fromId: sourceObject.id, object: permanent, fromZone: 'graveyard', toZone: 'battlefield',
+    }));
+    return;
+  }
   // M109 (Nightsnare): „Target opponent reveals their hand. You may choose
   // a nonland card from it. If you do, that player discards that card.
   // If you don't, that player discards two cards." Reveal + decyzja

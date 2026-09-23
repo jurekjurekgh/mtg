@@ -804,6 +804,8 @@ export const STACKING_ACTIVATED_EFFECTS = new Set([
   'search_library_to_battlefield', 'search_library_to_battlefield_tapped',
   'put_graveyard_card_on_bottom', 'return_to_battlefield_tapped',
   'return_to_battlefield_under_control_at_upkeep', 'unearth_return',
+  // Batch 58/B5 (Resurrected Cultist): powrót z grobu — jak unearth.
+  'return_source_from_graveyard',
   'attach_equipment_to_source', 'craft_transform', 'gain_life',
   // Batch 58/B4 (Scroll of Avacyn): `conditional` to OPAKOWANIE efektów, więc
   // o kumulacji decydują gałęzie — w katalogu są to dobranie kart i zysk

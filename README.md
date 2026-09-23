@@ -132,7 +132,7 @@ liczone z plików `decks/*.txt`).
 | `tarkir-bg` | Tarkir (BG) | UBG | 35 | 12 | 23 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 32 | 11 | 21 |
 | `theros` | Theros | WUBRG | 26 | 9 | 17 |
-| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 35 | 12 | 23 |
+| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 36 | 12 | 24 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
 | `wiedzmin-bg` | Wiedźmin (BG) | BG | 27 | 9 | 18 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |

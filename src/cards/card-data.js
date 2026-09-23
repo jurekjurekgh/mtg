@@ -11640,6 +11640,36 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['warunek „if you control an Angel" czytany przy rozstrzygnięciu; bez Anioła brak gałęzi else — nie ma podstawy (ruling AVR 2012-05-01)'],
   }),
+
+  // 5. Resurrected Cultist (DSK) {2}{B} Creature — Human Cleric 4/1.
+  // Delirium (CR 207.2c) to WARUNEK AKTYWACJI tej samej klasy co max speed:
+  // bramkuje zdolność z grobu, więc spójnie z ofertą i walidacją
+  // (`abilities.js abilityConditionHolds`). Rulingi DSK 2024-09-20 opisują
+  // licznik finality, którym wraca karta: działa na dowolnym permanencie
+  // (nie tylko stworze), nie jest licznikiem słowa kluczowego, a wielokrotne
+  // egzemplarze są redundantne — dlatego na typ licznika wystarcza jeden
+  // `addCounter('finality')`, a wygnanie przy śmierci robi wspólny
+  // `deathZoneFor` (CR 122.1e; w Batchu 58/B5 = jedyne miejsce decyzji).
+  defineCard({
+    id: 'resurrected-cultist', name: 'Resurrected Cultist', set: 'DSK',
+    types: ['Creature'], subtypes: ['Human', 'Cleric'], colors: ['B'],
+    power: 4, toughness: 1, manaCost: 3,
+    oracleText: 'Delirium — {2}{B}{B}: Return this card from your graveyard to the battlefield with a finality counter on it. Activate only if there are four or more card types among cards in your graveyard and only as a sorcery. (If a creature with a finality counter on it would die, exile it instead.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/4/e41bd259-e81f-432a-bebf-4c6534f23db7.jpg?1783909475',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        fromGraveyard: true,
+        cost: { mana: 4, colors: ['B', 'B'] },
+        condition: { delirium: true },
+        effect: { type: 'return_source_from_graveyard', finalityCounter: true },
+      }),
+    ],
+    artId: 447, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['delirium bramkuje aktywację z grobu (oferta + walidacja wspólnym `abilityConditionHolds`); finality: śmierć → wygnanie zamiast grobu (`deathZoneFor`), rulingi DSK 2024-09-20'],
+  }),
 ]);
 
 /**

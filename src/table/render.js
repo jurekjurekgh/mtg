@@ -1387,6 +1387,8 @@ function describeEffect(e, ctx = {}) {
     transfer_counters_on_dies: () => 'przenieś liczniki',
     turn_face_up: () => 'obróć twarzą do góry',
     unearth_return: () => 'unearth (z grobu z haste, exile na końcu tury)',
+    // Batch 58/B5 (Resurrected Cultist): powrót z grobu z licznikiem finality.
+    return_source_from_graveyard: () => 'wróć z grobu z licznikiem finality (śmierć → wygnanie)',
     untap_permanent: () => 'odkręć',
     untap_enchanted_permanent: () => 'odkręć zaczarowany permanent',
     untap_all_creatures_you_control: () => 'odkręć wszystkie twoje stwory',

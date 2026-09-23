@@ -394,3 +394,114 @@ test('B58/B4: Scroll of Avacyn — bez many zdolność niedostępna', () => {
     'ręczna komenda też odrzucona');
   assert.ok(find(state, 'scroll-of-avacyn', 'battlefield'), 'odrzucona aktywacja nie poświęca artefaktu');
 });
+
+// ---- B5: Resurrected Cultist (447 DSK, plan Warhammer Fantasy) --------------
+
+// Grób pod delirium: sam Kultysta jest kartą-stworem, więc Instant + Sorcery +
+// Land dają razem z nim CZTERY typy kart (CR 207.2c). Bez lądu są trzy typy —
+// próg niespełniony.
+function deliriumGrave(state, { land = true } = {}) {
+  put(state, 'cultist', 'resurrected-cultist', 'p1', 'graveyard');
+  put(state, 'grave-instant', 'fiery-fall', 'p1', 'graveyard');
+  put(state, 'grave-sorcery', 'boulder-salvo', 'p1', 'graveyard');
+  if (land) put(state, 'grave-land', 'basic-swamp', 'p1', 'graveyard');
+}
+
+const cultistOffer = (s) => commands(s).find((c) => c.type === 'activate_ability' && c.objectId === 'cultist');
+
+test('B58/B5: Resurrected Cultist — dane Oracle + zdolność z grobu z bramką delirium', () => {
+  const def = registry.get('resurrected-cultist');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Human', 'Cleric']);
+  assert.deepEqual(def.colors, ['B']);
+  assert.equal(def.power, 4);
+  assert.equal(def.toughness, 1);
+  assert.equal(def.manaCost, 3);
+  assert.equal(def.set, 'DSK');
+  assert.equal(def.plan, 'Warhammer Fantasy');
+  assert.equal(def.artId, 447);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('e41bd259'), 'imageUri z druku dsk/115');
+  // MANA_COSTS niesie koszt DRUKU karty ({2}{B} = mv 3); koszt zdolności
+  // Delirium ({2}{B}{B}) żyje w deskryptorze zdolności.
+  assert.equal(MANA_COSTS['resurrected-cultist'], '{2}{B}');
+  const ability = def.abilities[0];
+  assert.equal(ability.type, 'activated');
+  assert.equal(ability.fromGraveyard, true);
+  assert.equal(ability.timing, 'sorcery');
+  assert.deepEqual(ability.condition, { delirium: true });
+  assert.deepEqual(ability.cost, { mana: 4, colors: ['B', 'B'] });
+  const effect = Array.isArray(ability.effect) ? ability.effect[0] : ability.effect;
+  assert.equal(effect.type, 'return_source_from_graveyard');
+  assert.equal(effect.finalityCounter, true);
+});
+
+test('B58/B5: Resurrected Cultist — 4 typy kart w grobie: powrót 4/1 z licznikiem finality', () => {
+  const state = game();
+  deliriumGrave(state);
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  const offer = cultistOffer(state);
+  assert.ok(offer, 'delirium spełnione → oferta aktywacji z grobu');
+  run(state, offer);
+  resolve(state);
+  const back = find(state, 'resurrected-cultist', 'battlefield');
+  assert.ok(back, 'karta wróciła na pole bitwy');
+  assert.equal(back.counters.finality, 1, 'licznik finality na wracającym permanencie');
+  assert.equal(back.summoningSickness, true, 'choroba przywołania (CR 302.6)');
+  assert.equal(back.controllerId, 'p1', 'permanent wraca pod kontrolę właściciela');
+  assert.equal(player(state, 'p1').mana, 0, 'koszt {2}{B}{B} zapłacony');
+  assert.ok(!find(state, 'resurrected-cultist', 'graveyard'), 'karta opuściła grób');
+});
+
+test('B58/B5: Resurrected Cultist — 3 typy kart w grobie: zdolność niedostępna', () => {
+  const state = game();
+  deliriumGrave(state, { land: false }); // Creature + Instant + Sorcery = 3 typy
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  assert.ok(!cultistOffer(state), 'delirium niespełnione → brak oferty');
+  const forced = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'cultist', abilityIndex: 0 });
+  assert.equal(forced.ok, false, 'ręczna komenda też odrzucona');
+  assert.equal(player(state, 'p1').mana, 4, 'odrzucona aktywacja nie pobiera many');
+  assert.ok(find(state, 'resurrected-cultist', 'graveyard'), 'karta zostaje w grobie');
+});
+
+test('B58/B5: Resurrected Cultist — aktywacja tylko jak sorcery (nie w walce)', () => {
+  const state = game();
+  deliriumGrave(state);
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  state.turn = jumpToStep(state.turn, 'combat_damage', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  assert.ok(!cultistOffer(state), 'poza fazą główną brak oferty (activate only as a sorcery)');
+  const forced = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'cultist', abilityIndex: 0 });
+  assert.equal(forced.ok, false, 'poza fazą główną aktywacja odrzucona');
+  assert.ok(find(state, 'resurrected-cultist', 'graveyard'), 'karta zostaje w grobie');
+});
+
+test('B58/B5: Resurrected Cultist — śmierć z licznikiem finality wygania (CR 122.1e)', () => {
+  const state = game();
+  deliriumGrave(state);
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  run(state, cultistOffer(state));
+  resolve(state);
+  const back = find(state, 'resurrected-cultist', 'battlefield');
+  assert.ok(back, 'Kultysta na polu bitwy przed zabiciem');
+  put(state, 'burn', 'fiery-fall', 'p1');
+  addMana(state, 'p1', 6, { colors: ['R'] });
+  const cast = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'burn', targets: [back.id] });
+  assert.ok(cast.ok, JSON.stringify(cast.events?.[0]?.reason));
+  resolve(state);
+  assert.ok(!find(state, 'resurrected-cultist', 'graveyard'), 'finality NIE wraca do grobu');
+  assert.ok(find(state, 'resurrected-cultist', 'exile'), 'śmierć z finality → wygnanie');
+});
+
+test('B58/B5: Resurrected Cultist — na polu bitwy zdolność z grobu nie działa', () => {
+  const state = game();
+  deliriumGrave(state);
+  put(state, 'on-bf', 'resurrected-cultist', 'p1', 'battlefield', { summoningSickness: false });
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  assert.ok(!commands(state).some((c) => c.type === 'activate_ability' && c.objectId === 'on-bf'),
+    'zdolność „z grobu" wymaga źródła w grobie (CR 113.6)');
+  const forced = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'on-bf', abilityIndex: 0 });
+  assert.equal(forced.ok, false, 'aktywacja z pola bitwy odrzucona');
+});

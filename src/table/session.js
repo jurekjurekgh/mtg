@@ -397,6 +397,9 @@ function defaultBotFactory(seed, ctx) {
     surveil: 'surveil (podgląd wierzchu biblioteki)',
     tap_permanent: 'tapnięcie celu',
     unearth_return: 'powrót karty z grobu na pole bitwy (unearth)',
+    // Batch 58/B5 (Resurrected Cultist): powrót SOBIE z grobu z licznikiem
+    // finality — inny kształt niż unearth (bez haste, wygnanie przy śmierci).
+    return_source_from_graveyard: 'powrót tej karty z grobu na pole bitwy (licznik finality)',
   });
 
 /**

@@ -1,4 +1,5 @@
 import { isActivatedManaAbility } from './mana-sources.js';
+import { graveyardCardTypeCount } from './triggers.js';
 import { event } from '../protocol/types.js';
 import { activatableAbilities, deathZoneFor, hasCreatureType, effectiveKeywords, effectivePower, effectiveToughness, tapObject } from './permanents.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
@@ -81,6 +82,23 @@ function collectGrantKeywords(effects) {
 function maxSpeedHolds(state, playerId, ability) {
   if (ability?.condition?.maxSpeed !== true) return true;
   return playerSpeed(state, playerId) >= 4;
+}
+
+/**
+ * Bramki warunków zdolności AKTYWOWANEJ — jedno miejsce dla oferty i walidacji
+ * (L41/L48/L90): `maxSpeed` (speed 4, DFT) oraz `delirium` (Batch 58/B5,
+ * Resurrected Cultist: cztery typy kart w grobie, CR 207.2c), liczone
+ * wspólnym `graveyardCardTypeCount` — tym samym, którego używają triggery.
+ * Zwraca null, gdy zdolność przechodzi, inaczej POWÓD blokady — oferta
+ * odsiewa po `!== null`, walidacja rzuca tym samym komunikatem (jedno źródło
+ * i jedna treść błędu; zdolność bez tych pól nie jest blokowana).
+ */
+function abilityConditionFailure(state, playerId, ability) {
+  if (!maxSpeedHolds(state, playerId, ability)) return 'Zdolność wymaga max speed (4)';
+  if (ability?.condition?.delirium === true && graveyardCardTypeCount(state, playerId) < 4) {
+    return 'Delirium wymaga czterech typów kart w grobie';
+  }
+  return null;
 }
 
 /**
@@ -1140,7 +1158,7 @@ export function legalActivatedAbilities(state, playerId) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated || !ability.fromGraveyard) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
-      if (!maxSpeedHolds(state, playerId, ability)) continue;
+      if (abilityConditionFailure(state, playerId, ability) !== null) continue;
       if ((ability.cost?.mana ?? 0) > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
@@ -1243,10 +1261,12 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   if (ability.keyword === 'equip') {
     return activateEquip(state, playerId, object, abilityIndex, targets);
   }
-  // Max speed (DFT, Glitch Ghost Surveyor): zdolność z grobu aktywna dopiero
-  // przy speed 4 — spójnie z ofertą (legalActivatedAbilities).
-  if (!maxSpeedHolds(state, playerId, ability)) {
-    throw new Error('Zdolność wymaga max speed (4)');
+  // Bramki warunków (Batch 58/B5 `abilityConditionFailure`): max speed (DFT,
+  // Glitch Ghost Surveyor) i delirium (Resurrected Cultist) — ten sam predykat
+  // i ta sama treść błędu co w ofercie (legalActivatedAbilities, L41/L48).
+  {
+    const conditionFailure = abilityConditionFailure(state, playerId, ability);
+    if (conditionFailure !== null) throw new Error(conditionFailure);
   }
 
   // Zdolność „z grobu" (Goldmeadow Nomad) wymaga, by źródło było W GROBIE —
