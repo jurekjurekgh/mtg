@@ -80,8 +80,11 @@ test('F1 (kontrakt widoku): decyzja „you may" = { sourceCardId, effect }, bez 
 
 test('F1: Murder of Crows — przy 4 kartach zapas 3 < 20 bot NIE pali „may draw"', () => {
   const { chosen } = decyzjaBota(gra(4));
-  assert.equal(chosen.type, 'resolve_optional_trigger_choice');
-  assert.equal(chosen.fire, false, `przy cienkiej bibliotece fire musi przegrać z passem (wybrano: ${JSON.stringify(chosen)})`);
+  // F1 (uwaga właściciela 2026-09-23c): odmowa „you may" = `pass_priority`
+  // (oferta to fire + „Dalej (Pass)"); silnik nadal przyjmuje `{fire:false}`,
+  // ale bot wybiera wariant z `legalCommands`.
+  assert.equal(chosen.type, 'pass_priority');
+  assert.notEqual(chosen.fire, true, `przy cienkiej bibliotece fire musi przegrać z passem (wybrano: ${JSON.stringify(chosen)})`);
 });
 
 test('F1 (anty-over-fix): przy 25 kartach bot pali triggera (baza 50 wygrywa)', () => {

@@ -95,7 +95,7 @@ test('B43/3: Tireless Hauler — daybound/nightbound: transform przy zapadnięci
   assert.deepEqual(back.keywords, ['vigilance', 'nightbound']);
   assert.equal(front.transformTo, 'dire-strain-brawler');
   assert.equal(back.transformTo, 'tireless-hauler');
-  assert.equal(back.support.status, 'limited', 'tylna strona nie jest taliowalna');
+  assert.equal(back.support.status, 'back', 'tylna strona nie jest taliowalna');
   // Wejście na pole bitwy w NOCY: daybound wchodzi od razu nightbound stroną
   // (CR 708.9 — „Permanents enter the battlefield nightbound").
   const state = game('p1');
@@ -313,7 +313,7 @@ test('B43/12: Balamb Garden, SeeD Academy — transform za {5}{G}{U}; redukcja z
 
 test('B43/13: Balamb Garden, Airborne — Crew 1 animuje; trigger ataku dobiera kartę', () => {
   const back = REGISTRY.get('balamb-garden-airborne');
-  assert.equal(back.support.status, 'limited', 'tylna strona nie jest taliowalna');
+  assert.equal(back.support.status, 'back', 'tylna strona nie jest taliowalna');
   assert.deepEqual(back.keywords, ['flying']);
   assert.equal(back.abilities[0].trigger.event, 'attacks', 'trigger ataku');
   assert.equal(back.abilities[1].cost.crewPower, 1, 'Crew 1');

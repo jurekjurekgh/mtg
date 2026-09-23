@@ -160,6 +160,10 @@ export function gameObjectDataOf(card) {
     // gałąź instanta/sorcery też musi nieść deskryptor (gotowość na przyszłe
     // karty; dziś jedyną kartą z delve jest stwór).
     if (card.delve) data.delve = true;
+    // Batch 58/B1 (Boulder Salvo): surge na INSTANCIE/SORCERY — gałąź spell
+    // kopiuje pola ręcznie (klasa Z5/L21), więc bez tego wpisu oferta kosztu
+    // alternatywnego i walidacja komendy nie miałyby czego czytać.
+    if (card.surge) data.surge = card.surge;
     // M355 (Crumb and Get It): Gift to mechanika INSTANTA/SORCERY — bez tego
     // wpisu `object.gift` jest null i wariant rzutu z obietnicą nie istnieje
     // (oferta i walidacja czytają to samo pole; L48).

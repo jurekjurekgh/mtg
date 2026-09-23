@@ -144,7 +144,8 @@ krok po kroku do identycznego stanu końcowego.
 - [ ] Rzucanie prostego czaru, stos i priority pass.
 - [x] Permanent na battlefield, tap/untap, summoning sickness.
 - [x] Podstawowe statystyki stworzeń i obrażenia.
-- [x] Format definicji karty i registry statusu wsparcia (`unsupported`/`in-development`/`supported`/`limited`).
+- [x] Format definicji karty i registry statusu wpisu (`supported` = karta taliowalna,
+      `token`, `back`; rezerwowe `unsupported`/`in-development`) — M419 2026-09-23.
 - [x] Format talii jako pliku tekstowego w repozytorium + parser i test odrzucający talię z kartami
       spoza statusu `supported` ([ADR 0012](decisions/0012-deck-builder-and-text-deck-format.md)).
 - [x] Syntetyczny katalog testowy z materializacją obiektów gry i taliami w `decks/`.
@@ -350,7 +351,9 @@ jest już osiągnięta w Etapie 5.
 - [x] Kreator talii w interfejsie — M20: talia jest nadal tekstem do skopiowania
       lub pobrania; brak `localStorage` pozostaje świadomym kosztem ADR 0011/0012.
 - [ ] Decyzja o backendzie i docelowym poziomie ochrony FoW — osobny ADR.
-- [ ] Usunięcie snapshotu `card_viewer_12_10_for_Github.html` z repozytorium.
+- [x] Usunięcie snapshotu `card_viewer_12_10_for_Github.html` z repozytorium
+      — **M418 (2026-09-23)**: plik usunięty decyzją właściciela (kopię trzyma
+      lokalnie); rozpoznanie zostaje w `docs/AUDIT_LEGACY_APP.md`.
 
 ## Etap ciągły — kolejne karty
 

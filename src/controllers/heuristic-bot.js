@@ -4,6 +4,7 @@ import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
 import { coloredPipsOf } from '../engine/mana-cost.js';
 import { POISON_LOSS_LIMIT } from '../engine/state-based.js';
+import { expandManaPool } from '../engine/resources.js';
 import { COMMAND_TYPES } from '../protocol/types.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { probAtLeastOne } from '../engine/hypergeom.js';
@@ -804,7 +805,15 @@ export const STACKING_ACTIVATED_EFFECTS = new Set([
   'search_library_to_battlefield', 'search_library_to_battlefield_tapped',
   'put_graveyard_card_on_bottom', 'return_to_battlefield_tapped',
   'return_to_battlefield_under_control_at_upkeep', 'unearth_return',
+  // Batch 58/B5 (Resurrected Cultist): powrót z grobu — jak unearth.
+  'return_source_from_graveyard',
   'attach_equipment_to_source', 'craft_transform', 'gain_life',
+  // Batch 58/B4 (Scroll of Avacyn): `conditional` to OPAKOWANIE efektów, więc
+  // o kumulacji decydują gałęzie — w katalogu są to dobranie kart i zysk
+  // życia, czyli skutki KUMULUJĄCE. Klasyfikacja zachowawcza (M179/B1):
+  // ponowna aktywacja dodałaby kolejne skutki, więc bot nie może jej traktować
+  // jak idempotentnej do końca tury.
+  'conditional',
 ]);
 
 /**
@@ -1474,7 +1483,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * informacją publiczną (ADR 0017), kwota straty pochodzi z DANYCH karty
    * (ADR 0002) — zero nazw kart. Zwraca wartość DODATNĄ (do odjęcia).
    */
-  const libraryLossPenalty = (view, amount = 0) => {
+  const libraryLossPenaltyWithMargin = (view, amount = 0, margin = P.librarySafeMargin) => {
     if (!(amount > 0)) return 0;
     // 2026-09-15 fix E2/K2/CR1: domyślny stan testowy bez biblioteki (myLibraryCount 0)
     // to nie jest realna gra z cienką biblioteką — wiele testów (Rager K2, CR1 3 karty)
@@ -1484,11 +1493,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (myLibraryCount(view) === 0) return 0;
     const zapas = myLibraryCount(view) - amount;
     if (zapas <= 0) return P.libraryDeckOutPenalty + P.drawCardValue * amount;
-    if (zapas < P.librarySafeMargin) {
-      return P.libraryThinPenalty + (P.librarySafeMargin - zapas) * P.libraryThinPerCardPenalty;
+    if (zapas < margin) {
+      return P.libraryThinPenalty + (margin - zapas) * P.libraryThinPerCardPenalty;
     }
     return 0;
   };
+  const libraryLossPenalty = (view, amount = 0) => libraryLossPenaltyWithMargin(view, amount, P.librarySafeMargin);
+  /**
+   * I (uwaga właściciela 2026-09-23c, Chronic Flooding): mielące TAPNIĘCIE ma
+   * WIĘKSZY wymagany zapas niż jednorazowy dobór z karty — to ryzyko
+   * POWTARZALNE (każde tapnięcie miele 3 karty), a właściciel: „nie tapować
+   * przy bibliotece < ~30 kart". Ten sam kształt drabiny, inne pokrętło
+   * (`libraryTapSafeMargin`) — bez zmiany progów dla doborów/millów z czarów.
+   */
+  const tapMillPenalty = (view, amount = 0) => libraryLossPenaltyWithMargin(view, amount, P.libraryTapSafeMargin);
   // E2/K2/CR1 — jednorazowy drenaż ETB (enter_battlefield/dies, np. Rager draw1,
   // Skaab mill4): kara TYLKO przy deck-oucie (zapas <0), nie przy cienkiej
   // bibliotece <20. Przy pustej bibliotece (0) zwalniamy — to testowy stan bez
@@ -1509,6 +1527,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // Skaab mill 4): draw_then_discard to też dobranie (net 1 z biblioteki),
   // mill_from_bottom to też mielenie (to samo co mill_cards — ADR 0002).
   const LIBRARY_DRAIN_EFFECTS = new Set(['mill_cards', 'draw_cards', 'draw_then_discard', 'mill_from_bottom']);
+  // F1 v2 (uwaga właściciela 2026-09-23d, Veiled Ascension): efekty, które
+  // przenoszą kartę z biblioteki na pole bitwy TWARZĄ W DÓŁ (cloak — CR 701.56a,
+  // manifest — CR 701.40a). Dla własnej biblioteki to NIE to samo co mill czy
+  // dobranie: karta nie ginie, tylko staje się permanentem 2/2 z wardem
+  // (i da się ją później obrócić twarzą do góry), więc „you may” jest opłacalne
+  // ZAWSZE — karę nakłada dopiero próg `cloakLibraryFloor` w wycenie decyzji.
+  // Typy efektów, nie nazwy kart (ADR 0002).
+  const FACE_DOWN_LIBRARY_EFFECT_TYPES = new Set(['cloak', 'manifest']);
+  /**
+   * Efekty bieżącej decyzji „you may” z widoku decydenta. Widok projektuje ją
+   * jako `{ sourceCardId, effect, effects }` (game-state.js — brak `ability`,
+   * klasa L1/L48); czytamy PEŁNĄ tablicę `effects` z fallbackiem `effect`
+   * (konwencja F1/O2). JEDNO źródło kształtu: strażnik kar bibliotecznych
+   * (`libraryDrainTax`) i nowa wycena cloaków (L41).
+   */
+  const pendingOptionalEffects = (view) => {
+    const pending = view?.pendingOptionalTrigger;
+    if (!pending) return [];
+    return pending.effects ?? (pending.effect ? [pending.effect] : []);
+  };
+  /** Ile efektów decyzji zakrywa kartę z MOJEJ biblioteki (cloak/manifest). */
+  const faceDownLibraryEffects = (view) => pendingOptionalEffects(view)
+    .filter((eff) => FACE_DOWN_LIBRARY_EFFECT_TYPES.has(eff?.type)).length;
   // C (zgłoszenie właściciela 2026-09-19, Dawntreader Elk): TUTOR — efekt
   // „search your library for a card…" — też uszczupla WŁASNĄ bibliotekę
   // (karta opuszcza bibliotekę bezpowrotnie), dokładnie tak samo jak dobranie
@@ -1606,16 +1647,35 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const paymentLibraryLoss = (view, cmd) => {
     const koszt = reservedManaOf(view, cmd);
     if (!(koszt > 0)) return 0;
-    const pula = view.players.find((p) => p.id === view.playerId)?.mana ?? 0;
+    const gracz = view.players.find((p) => p.id === view.playerId);
+    const pula = gracz?.mana ?? 0;
     let czyste = 0;
     const mielace = [];
+    const czysteKolory = new Set();
     for (const o of view.zones.battlefield ?? []) {
       if (o.controllerId !== view.playerId || o.tapped) continue;
       const strata = tapLibraryLoss(view, o.id);
-      if (strata > 0) mielace.push(strata);
-      else if (o.kind === 'land' || (o.types ?? []).includes('Land')) czyste += 1;
+      if (strata > 0) { mielace.push(strata); continue; }
+      if (o.kind === 'land' || (o.types ?? []).includes('Land')) czyste += 1;
+      // I: kolory CZYSTYCH źródeł — rozstrzygają, czy pip da się zapłacić bez
+      // sięgania po mielące źródło (te same dane co silnik, L28).
+      for (const kolor of getSourceForObject(o, null)?.colors ?? []) czysteKolory.add(kolor);
     }
-    const brak = Math.max(0, koszt - pula - czyste);
+    // I (uwaga właściciela 2026-09-23c, Chronic Flooding): model ilościowy
+    // (koszt − pula − czyste) nie widział PIPÓW. Bot rzucał czar {U}, gdy
+    // jedynym niebieskim źródłem był zalany ląd: auto-tap (słusznie — inaczej
+    // czaru nie da się złożyć) sięgał po niego i mielił bibliotekę przy 5
+    // kartach, a kara wynosiła 0. Pipy niepokryte przez czyste źródła ani
+    // kolorową pulę wchodzą teraz do `brak` (pula bezbarwna nie płaci pipa).
+    const jednostki = expandManaPool(gracz?.manaPool ?? {}).filter((u) => u.length > 0);
+    let niepokryte = 0;
+    for (const pip of reservedPipsOf(view, cmd)) {
+      if (pip.some((k) => czysteKolory.has(k))) continue;
+      const idx = jednostki.findIndex((u) => u.some((k) => pip.includes(k)));
+      if (idx >= 0) { jednostki.splice(idx, 1); continue; }
+      niepokryte += 1;
+    }
+    const brak = Math.max(0, koszt - pula - czyste, niepokryte);
     if (brak <= 0 || mielace.length === 0) return 0;
     return mielace.slice(0, Math.min(mielace.length, Math.ceil(brak)))
       .reduce((suma, x) => suma + x, 0);
@@ -1665,7 +1725,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * takiego, nie gałęzi, którą wycena poszła.
    */
   const libraryDrainTax = (view, cmd) => {
-    if (cmd?.type === 'tap_for_mana') return libraryLossPenalty(view, tapLibraryLoss(view, cmd.objectId));
+    if (cmd?.type === 'tap_for_mana') return tapMillPenalty(view, tapLibraryLoss(view, cmd.objectId));
     // Aktywacja za manę: ten sam auto-tap (zdolność bywa warta mniej niż karty
     // z biblioteki). Tapnięcie ŹRÓDŁA jako koszt pomijamy — w katalogu jedyny
     // trigger millu na tapnięcie siedzi na aurze „Enchant land", więc źródło
@@ -1675,7 +1735,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // tapnięcia płatności ORAZ karty zabrane tutorem z efektu (dotąd tylko
       // pierwsza była widziana, więc „poświęć stwora po ląd" przy 4 kartach
       // w bibliotece wygrywało z passem).
-      return libraryLossPenalty(view, paymentLibraryLoss(view, cmd) + searchLibraryLoss(view, cmd));
+      // I: składnik PŁATNOŚCI (mielące tapnięcia) ma własny zapas
+      // (`tapMillPenalty`); drenaż tutora zostaje na progu ogólnym.
+      return tapMillPenalty(view, paymentLibraryLoss(view, cmd))
+        + libraryLossPenalty(view, searchLibraryLoss(view, cmd));
     }
     // D3 (znalezisko właściciela 2026-09-12, Balamb Garden): atak stworem
     // z triggerem „attacks → dobierz/zmiel" zjada WŁASNĄ bibliotekę przy
@@ -1711,14 +1774,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // dokładamy drugiej kary, żeby nie podwajać. Zostawiamy dedykowanej
       // gałęzi w scoreCommand.
       if (Number.isInteger(cmd.selfMill)) return 0;
-      const pending = view.pendingOptionalTrigger;
       // F1 (audyt PR #120): widok projektuje tę decyzję jako { sourceCardId,
       // effect } (game-state.js ~7871) — pole `ability` NIE istnieje w widoku,
       // więc czytanie go po cichu wyłączało karę cienkiej biblioteki (L1/L48).
       // O2 (audyt PR #121, domknięcie): czytamy PEŁNĄ tablicę `effects`
       // (drenaż poza pierwszą pozycją też karany); `effect` zostaje jako
       // fallback dla starszych rzutów widoku.
-      const effects = pending?.effects ?? (pending?.effect ? [pending.effect] : []);
+      // F1 v2: ten sam czytnik co nowa wycena cloaków (`faceDownLibraryEffects`)
+      // — jedno źródło kształtu decyzji (L41).
+      const effects = pendingOptionalEffects(view);
       let drain = 0;
       for (const eff of effects) {
         if (!eff?.type || !LIBRARY_DRAIN_EFFECTS.has(eff.type)) continue;
@@ -1737,7 +1801,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // OneShot ETB (Rager 1, Skaab 4): tylko deck-out, nie thin.
     // C (domknięcie rodziny, L41/L102): tutor z czaru (Caravan Vigil i
     // pokrewne) uszczupla bibliotekę tak samo jak wariant aktywowany.
-    return libraryLossPenalty(view, repeat + payment + searchLibraryLoss(view, cmd)) + oneShotDeckOutPenalty(view, oneShot);
+    // I: jak wyżej — mieląca PŁATNOŚĆ na progu tapnięcia, reszta na ogólnym.
+    return tapMillPenalty(view, payment)
+      + libraryLossPenalty(view, repeat + searchLibraryLoss(view, cmd))
+      + oneShotDeckOutPenalty(view, oneShot);
   };
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 
@@ -2094,7 +2161,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   const cantBeBlockedTargetValue = (view, target) => {
     if (!target) return 0;
-    const power = (target.power ?? 0) + (target.grantedPower ?? 0);
+    // Audyt PR #133 (F-4): wpis PlayerView niesie moc EFEKTYWNĄ — `power`
+    // zawiera już bonusy ciągłe (`effectivePower`: aury, statyki, anthemy),
+    // a `grantedPower` to TEN SAM dodatek dla badge'u. Suma podwajała bonus
+    // (2/3 z aurą +2/+2 wyceniane jak 6/5), więc aura na słabszym stworze
+    // przebijała większy realny atak. Moc efektywna, spójnie z M412.
+    const power = combatPower(target);
     if (target.controllerId !== view.playerId) return -40 - power;
     const attackingNow = (view.combat?.attackers ?? []).includes(target.id);
     const canAttack = attackingNow
@@ -3088,6 +3160,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return (foe?.mana ?? 0) + untapped;
   }
 
+  /**
+   * D (uwaga właściciela 2026-09-23c, Cemetery Recruitment): POTENCJAŁ many
+   * bota — pula + wszystkie własne źródła na polu bitwy liczone NIEZALEŻNIE
+   * od tapnięcia („także z tapniętych lądów").
+   * Różnica wobec `ownOpenMana` jest celowa: tam chodzi o to, co da się
+   * zapłacić TERAZ (tapnięte źródło nic nie da), tutaj o to, na co bota
+   * STAĆ w przyszłej turze — karta wracająca do ręki czeka na rzucenie,
+   * a tapnięcia (atak, blok, poprzednie czary) mijają. Deskryptorowo:
+   * każde źródło z `getSourceForObject` (nie lista lądów — ADR 0002).
+   */
+  function ownPotentialMana(view) {
+    const self = view.players.find((p) => p.id === view.playerId);
+    let suma = self?.mana ?? 0;
+    for (const o of view.zones.battlefield ?? []) {
+      if (o?.controllerId !== view.playerId) continue;
+      const zrodlo = getSourceForObject(o, null);
+      if (!zrodlo) continue;
+      suma += Number.isFinite(zrodlo.amount) ? zrodlo.amount : 1;
+    }
+    return suma;
+  }
+
   /** M320/NA2: otwarta mana BOTA — pula + nietapnięte własne landy (lustrzane). */
   function ownOpenMana(view) {
     const self = view.players.find((p) => p.id === view.playerId);
@@ -3144,6 +3238,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd.surgeCast) return card?.surge?.cost ?? cardDef(card?.cardId)?.surge?.cost ?? 0;
     const base = card?.manaCost ?? (card?.cardId ? (cardDef(card.cardId)?.manaCost ?? 0) : 0);
     return base + (cmd.xValue ?? 0);
+  }
+
+  /**
+   * I (uwaga właściciela 2026-09-23c, Chronic Flooding): wymagane PIPY kolorowe
+   * wariantu — ten sam kształt komend co `reservedManaOf` (L41: bliźniacze
+   * rodziny nie mogą się rozjeżdżać). Jednostka = lista alternatyw koloru
+   * (hybryd), dokładnie jak `coloredPipsOf` i jak liczy silnik.
+   * Okna darmowego rzutu nie płacą kosztu karty (jak w `reservedManaOf`) —
+   * `resolve_exile_cast` (Vaana) płaci pełny koszt, więc zostaje niżej.
+   */
+  function reservedPipsOf(view, cmd) {
+    if (cmd?.type === 'resolve_madness_cast' || cmd?.type === 'resolve_suspend_cast'
+      || cmd?.type === 'resolve_rebound_cast' || cmd?.type === 'resolve_grave_free_cast') return [];
+    if (cmd?.type === 'activate_ability') {
+      const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
+      const abilityObject = source ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+      const def = abilityObject ? cardDef(abilityObject.cardId) : undefined;
+      const ability = cmd.grantedFromEquipment
+        ? (def?.equipment?.grantedAbilities ?? [])[cmd.abilityIndex ?? 0]
+        : ((abilityObject?.activatableAbilities ?? def?.abilities ?? [])[cmd.abilityIndex ?? 0]);
+      return (ability?.cost?.colors ?? []).map((kolor) => [kolor]);
+    }
+    const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    if (!card?.cardId) return [];
+    return [...coloredPipsOf(card.cardId)];
   }
 
   /**
@@ -3647,6 +3766,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     } finally {
       attackIntentEval = false;
     }
+  }
+
+  /**
+   * A (uwaga właściciela 2026-09-23c, Somberwald Spider): czy bot REALNIE
+   * zamierza atakować w tej turze. Pytamy TĘ SAMĄ politykę ataku, którą bot
+   * stosuje w kroku deklaracji (`attackIntendsCreature` — „istnieje opłacalny
+   * zestaw atakujących”, L41/L48), o każdy własny stwór zdolny zaatakować.
+   * Używane wyłącznie przez wyjątek flash dla kart z Morbidem.
+   */
+  function intendsToAttackThisTurn(view) {
+    if (!myTurn(view)) return false;
+    return myCreatures(view)
+      .filter((o) => canAttackNow(o) && (o.power ?? 0) > 0)
+      .some((o) => attackIntendsCreature(view, o.id));
   }
 
   function scoreCommand(view, cmd) {
@@ -4318,6 +4451,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (cmd.offspring === true) {
           const oo = def?.offspring ?? {};
           score -= P.creatureManaCostWeight * ((oo.cost ?? 0) + (oo.colors?.length ?? 0));
+        }
+        // A (uwaga właściciela 2026-09-23c, Somberwald Spider i inne Morbid):
+        // karta z `entersWithCountersIf: { morbid: true }` (CR 614.1c) liczy
+        // liczniki W CHWILI WEJŚCIA — we własnej Głównej 1 zwykle jeszcze nic
+        // nie umarło, więc bot płacił kartę i manę za 2/4 bez liczników.
+        // Reguła: rzut czeka na Główną 2 (po walce śmierć atakującego/blokera
+        // zdąży zajść), z wyjątkiem karty z `flash`, gdy bot REALNIE zamierza
+        // atakować w tej turze — wtedy chce mieć ciało przed deklaracją
+        // (intencja z polityki ataku, `intendsToAttackThisTurn`; L41/L48).
+        // Tura przeciwnika bez zmian (uwaga mówi o WŁASNEJ Głównej 2).
+        if (def?.entersWithCountersIf?.morbid === true) {
+          const poWalce = view.turn.phase === 'postcombat_main' && view.turn.step === 'main2';
+          if (!myTurn(view)) {
+            // okno przeciwnika — reguła nie dotyczy
+          } else if (poWalce) {
+            score += P.morbidMain2Bonus;
+          } else {
+            const maFlash = (def?.keywords ?? []).includes('flash') || Boolean(def?.flash);
+            if (!(maFlash && intendsToAttackThisTurn(view))) score -= P.morbidMain1Penalty;
+          }
         }
         // Grzechotka remisów (audyt-bot-walka-remisy, tura 6): przy EX AEQUO
         // rzutów różnica gęstości wartości („waluta" z tieProjection:
@@ -5193,6 +5346,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
                 + (gyCard.toughness ?? gyDef?.toughness ?? 0);
               score += P.drawCardValue + gyValue;
+              // D (uwaga właściciela 2026-09-23c): karta wraca do RĘKI, więc
+              // bot musi ją jeszcze RZUCIĆ — warianty o równym ciele remisowały
+              // i wygrywał pierwszy z brzegu (zwykle najtańszy, dokładnie objaw
+              // zgłoszenia). Wartość rośnie z mana value, ale PRZYCIĘTA do
+              // potencjału many bota (źródła na stole niezależnie od tapnięcia
+              // + pula), pomniejszonego o manę zarezerwowaną na rzucany właśnie
+              // czar — reguła: „na jakiego MA manę". Waga 0 = wycena po samym
+              // ciele (pokrętło właściciela, test D/5).
+              const manaValue = gyCard.manaCost ?? gyDef?.manaCost ?? 0;
+              const potential = Math.max(0, ownPotentialMana(view) - reservedManaOf(view, cmd));
+              score += P.graveReturnManaWeight * Math.min(manaValue, potential);
               const gySubtypes = gyCard.subtypes ?? gyDef?.subtypes ?? [];
               if ((effect.drawIfSubtypes ?? []).some((s) => gySubtypes.includes(s))) {
                 score += P.drawCardValue; // Zombie → dobranie
@@ -7409,6 +7573,40 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return attachedAurasOf(view, t)
             .reduce((sum, o) => sum + (o.controllerId === view.playerId ? -30 : 30), 0);
         };
+        // M (uwaga właściciela 2026-09-23c, Acidic Slime): cel-LĄD nie może być
+        // remisem z innymi lądami — silnik enumeruje kandydatów w kolejności
+        // stołu, więc wygrywał „pierwszy z brzegu" (właściciel: „chyba losowy
+        // albo pierwszy z brzegu, którego mam kilka sztuk"). Preferencja
+        // właściciela: „o ile to możliwe taki, którego mam 1 sztukę, żeby
+        // zablokować mi rzucanie czarów tego koloru". Sygnały deskryptorowe
+        // (typy + kolory ze źródeł many — ADR 0002/0017), liczone wśród JEGO
+        // lądów: kopia po `cardId` (dwie Góry to dwie kopie tego samego źródła),
+        // a „odcina kolor" = żaden inny jego ląd nie produkuje tego koloru.
+        // Uwaga na spójność premii: „odcięcie" liczy POZOSTAŁE lądy, więc
+        // duplikat własnego koloru z definicji nie odcina (zostaje kopia) —
+        // ląd w wielu kopiach zbiera więc tylko karę i schodzi poniżej
+        // baseline'u 30, dzięki czemu nie wyprzedza artefaktów/enchantmentów
+        // (pin C53/C), gdy unikatowego lądu na stole nie ma.
+        const landDenialDelta = (t) => {
+          if (!t || t.controllerId === view.playerId) return 0;
+          const isLand = (o) => o && (o.kind === 'land' || (o.types ?? []).includes('Land'));
+          if (!isLand(t)) return 0;
+          const jegoLady = (view.zones.battlefield ?? [])
+            .filter((o) => o.controllerId === t.controllerId && isLand(o));
+          const kopie = jegoLady.filter((o) => o.cardId === t.cardId).length;
+          const kolory = (o) => getSourceForObject(o, null)?.colors ?? [];
+          const pozostale = new Set();
+          for (const o of jegoLady) {
+            if (o.id === t.id) continue;
+            for (const c of kolory(o)) pozostale.add(c);
+          }
+          const produkuje = kolory(t);
+          // Ląd bez kolorów (zakład produkujący {C}, land-widmo w testach) nie
+          // odcina niczego — zero sygnału, żeby nie wypychał artefaktów.
+          if (produkuje.length === 0) return 0;
+          const odcina = produkuje.some((c) => !pozostale.has(c));
+          return (odcina ? 18 : 0) + (kopie === 1 ? 10 : 0) - 8 * Math.max(0, kopie - 1);
+        };
         if (Array.isArray(cmd.targetIds)) {
           let score = 0;
           for (const id of cmd.targetIds) {
@@ -7452,7 +7650,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const aura2 = auraStripDelta(t2);
             score += (cmd.friendly
               ? (t2.controllerId === view.playerId ? 30 + v2 + attackBonus2 : -20 - v2)
-              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 + aura2 : -20 - v2 + aura2) : (kill2 ? 30 + v2 + 60 + aura2 : 30 + v2 + aura2)));
+              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 + aura2 : -20 - v2 + aura2) : (kill2 ? 30 + v2 + 60 + aura2 : 30 + v2 + aura2 + landDenialDelta(t2))));
           }
           // F-D (Inferno Titan, plan 2026-09-09): trigger wielocelowy z efektem
           // `damage_divided` dzieli STAŁĄ sumę (`divisionTotal`) na wybrane cele,
@@ -7524,7 +7722,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // C: jak w gałęzi wielocelowej (L41) — zrywanie aur przy usuwaniu.
         const aura = auraStripDelta(target);
         if (target.controllerId === view.playerId) return finish(kill ? -60 - value + aura : -20 - value + aura);
-        return finish(kill ? 30 + value + 60 + aura : 30 + value + aura);
+        return finish(kill ? 30 + value + 60 + aura : 30 + value + aura + landDenialDelta(target));
       }
       case 'resolve_optional_trigger_choice': {
         // M167/B (Circle of the Land Druid): opcjonalny SELF-MILL tylko przy
@@ -7535,6 +7733,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const foeLib = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
           if (myLib - cmd.selfMill <= 0) return finish(-60); // ostatnie karty — nigdy
           return finish(myLib > foeLib ? 45 : -35);
+        }
+        // F1 v2 (uwaga właściciela 2026-09-23d, Veiled Ascension): cloak
+        // w upkeepie to „you may” ZAWSZE — efekt zakrywa kartę z biblioteki,
+        // ale jej nie marnuje (2/2 z wardem, CR 701.56a; odkrycie wraca do
+        // karty, CR 701.56b), więc bazowa wartość „fire” (50) zostaje.
+        // Wyjątek: własna biblioteka pod progiem `cloakLibraryFloor` — każde
+        // zakrycie przybliża deck-out (CR 121.4), a przegrana na pustej
+        // bibliotece jest nieodwracalna; kara schodzi pod 0, czyli pod „pass”.
+        // Wycena po TYPIE efektu i po progach z parametrów (ADR 0002, L41).
+        if (cmd.fire && faceDownLibraryEffects(view) > 0) {
+          return finish(myLibraryCount(view) < P.cloakLibraryFloor ? -P.cloakThinLibraryPenalty : 50);
         }
         // „You may" bez celu (Angel's Feather — +1 życie): „tak" jak dotąd.
         return finish(cmd.fire ? 50 : 0);
@@ -8634,6 +8843,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // wyceny i audyt remisów nie miały czego parować. Etykieta nazywa WARIANT.
     if (cmd.type === 'resolve_optional_trigger_choice') {
       return `resolve_optional_trigger_choice(${cmd.fire ? 'fire' : 'skip'})`;
+    }
+    // F1 (uwaga właściciela 2026-09-23c, Veiled Ascension): odmowa „you may"
+    // jest w nowym kontrakcie zwykłym `pass_priority` (oferta = fire + pass).
+    // Kontrakt śladu (M131/L34) wymaga, żeby warianty „fire"/„skip" były
+    // rozróżnialne i parowalne w audycie remisów — etykieta mówi więc, CZYM
+    // ten pass jest w tej decyzji (dotyczy tylko decydenta tego triggera).
+    if (cmd.type === 'pass_priority' && view?.pendingOptionalTrigger) {
+      return 'resolve_optional_trigger_choice(skip)';
     }
     if (cmd.type === 'resolve_look_top_choice' || cmd.type === 'resolve_satyr_look_choice'
         || cmd.type === 'resolve_graveyard_top_choice' || cmd.type === 'resolve_delirium_target'

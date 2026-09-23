@@ -157,7 +157,10 @@ test('Z5b (strażnik łańcucha pól): żaden deskryptor mechaniki nie ginie w m
     'equipment', 'aura', 'station', 'morph', 'entersWithCounters', 'rebound',
     // M200/N2: gałąź spell gubiła pole — karta-czar z pitem phyrexian
     // (Ruthless Invasion) nie miała wariantów płatności życiem.
-    'phyrexianManaCost'];
+    'phyrexianManaCost',
+    // Batch 58/B1: ta sama klasa — surge na instant/sorcery (Boulder Salvo)
+    // ginął w gałęzi spell, więc oferta kosztu alternatywnego była martwa.
+    'surge'];
   for (const def of REGISTRY.all()) {
     const data = gameObjectDataOf(def);
     for (const field of MECHANIC_FIELDS) {

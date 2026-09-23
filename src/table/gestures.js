@@ -191,3 +191,56 @@ export function installSwipeGesture(element, { onSwipeLeft = null, onSwipeRight 
     get tracking() { return tracking; },
   };
 }
+
+/**
+ * K (uwaga właściciela 2026-09-23): aktywacja OPCJI AKCJI odporna na
+ * przebudowę layoutu między press-down a release.
+ *
+ * Zgłoszenie: „klik w »Wybierz: deklaracja blokujących« czasem nie działa —
+ * press-down przebudowuje layout i release mija przycisk”. Przy natywnym
+ * `click` aktywacja wymaga, by press i release trafiły w TEN SAM węzeł: gdy
+ * w trakcie wciśnięcia lista akcji zmieni układ (pasek przewijania zwęża
+ * kolumnę opisu, długa etykieta łamie się inaczej, węzeł jest odbudowany przy
+ * rerenderze), release ląduje gdzie indziej i `click` nie powstaje WCALE.
+ *
+ * Kontrakt: wciśnięcie PRZECHWYTUJE wskaźnik na elemencie opcji
+ * (`setPointerCapture`), więc release zawsze wraca do opcji, która była
+ * wciśnięta; aktywacja następuje, gdy palec/kursor nie odjechał dalej niż
+ * `slopPx` (gest przewijania rodzi `pointercancel` albo przekracza próg, więc
+ * nie aktywuje). Klawiatura (Enter/Spacja) idzie ścieżką `click` z
+ * `detail === 0` — działa jak dotąd.
+ */
+export const PRESS_SLOP_PX = 12;
+
+export function installPressActivation(element, activate, { slopPx = PRESS_SLOP_PX } = {}) {
+  if (!element || typeof activate !== 'function') return null;
+  let start = null;
+  let handled = false;
+  element.addEventListener('pointerdown', (event) => {
+    if ((event?.button ?? 0) > 0) return; // prawy/środkowy przycisk myszy
+    handled = false;
+    start = { x: event?.clientX ?? 0, y: event?.clientY ?? 0 };
+    // Bez tego release po przebudowie layoutu trafia w INNY węzeł i click nie
+    // powstaje. Capture może rzucić (wskaźnik już nieaktywny) — wtedy zostaje
+    // ścieżka natywnego clicka niżej.
+    if (typeof element.setPointerCapture === 'function' && event?.pointerId != null) {
+      try { element.setPointerCapture(event.pointerId); } catch { /* bez capture */ }
+    }
+  });
+  element.addEventListener('pointercancel', () => { start = null; });
+  element.addEventListener('pointerup', (event) => {
+    if (!start) return;
+    const { x, y } = start;
+    start = null;
+    const ruch = Math.hypot((event?.clientX ?? 0) - x, (event?.clientY ?? 0) - y);
+    if (ruch > slopPx) return; // przesunięcie = gest (scroll/swipe), nie klik
+    handled = true;
+    activate();
+  });
+  element.addEventListener('click', (event) => {
+    if (event?.detail === 0) { handled = false; activate(); return; } // klawiatura
+    if (handled) { handled = false; return; } // pointerup już aktywował
+    activate();
+  });
+  return { release() { start = null; } };
+}

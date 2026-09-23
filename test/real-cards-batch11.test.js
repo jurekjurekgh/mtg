@@ -198,11 +198,11 @@ test('Batch 11: sześć kart ma właściwe dane i status supported', () => {
   assert.equal(REGISTRY.get('porcelain-legionnaire').phyrexianManaCost, 1);
   assert.equal(REGISTRY.get('underdark-explorer').keywords.includes('menace'), true);
   assert.equal(REGISTRY.get('porcelain-legionnaire').keywords.includes('first_strike'), true);
-  assert.equal(REGISTRY.get('token_vampire_demon').support.status, 'limited');
+  assert.equal(REGISTRY.get('token_vampire_demon').support.status, 'token');
   assert.deepEqual(REGISTRY.get('token_vampire_demon').colors, ['W', 'B']);
   assert.deepEqual(REGISTRY.get('token_vampire_demon').keywords, ['flying']);
   // Token lochu (Catacombs) i karta specjalna Undercity.
-  assert.equal(REGISTRY.get('token_skeleton').support.status, 'limited');
+  assert.equal(REGISTRY.get('token_skeleton').support.status, 'token');
   assert.equal(UNDERCITY_DUNGEON.name, 'The Undercity');
   assert.ok(UNDERCITY_DUNGEON.imageUri.includes('tclb/20'), 'druk lochu ze Scryfalla jak w legacy (990006)');
   assert.equal(UNDERCITY_ROOMS.length, 9);

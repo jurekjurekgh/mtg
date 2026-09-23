@@ -146,8 +146,21 @@
     font-size: 14px; padding: 8px 14px; border-radius: 8px; cursor: pointer;
     border: 1px solid var(--gold); background: #ca8a0422; color: var(--gold);
     font-weight: 700; min-height: 40px;
+    /* K (uwaga właściciela 2026-09-23): bez opóźnienia podwójnego tapu na
+       dotyku — tapnięcie opcji akcji nie może „wypadać" z okna gestu. */
+    touch-action: manipulation;
   }
-  button:active { transform: translateY(1px); }
+  /* K (uwaga właściciela 2026-09-23, „klik w długą opcję gubi się przy
+     reflow"): feedback wciśnięcia NIE MOŻE zmieniać geometrii elementu.
+     `transform: translateY(1px)` przesuwał przycisk w chwili press-downu:
+     (a) przy krawędzi przycisku release wypadał już poza niego (klik nie
+     powstawał), (b) transform wchodzi do OBSZARU PRZEWIJANIA, więc w
+     `.actions-wrap` (max-height + overflow-y) pojawiał się pasek
+     przewijania, kolumna opisu zwężała się o jego grubość, długie etykiety
+     („Wybierz: Deklaracja blokujących…") łamały się inaczej i przycisk
+     uciekał spod kursora — dokładnie „press-down przebudowuje layout,
+     release mija przycisk". Feedback przez jasność: zero ruchu, zero reflow. */
+  button:active { filter: brightness(.94); }
   button:disabled { opacity: .4; cursor: default; }
   .ghost-btn {
     border-color: var(--border); background: #fff; color: var(--text);
@@ -513,7 +526,11 @@
   }
 
   /* --- Akcje ------------------------------------------------------- */
-  .actions-wrap { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+  /* K (uwaga właściciela 2026-09-23): `scrollbar-gutter: stable` rezerwuje
+     miejsce na pasek przewijania NA STAŁE — jego pojawienie się (długa lista
+     opcji, dojście do max-height) nie zwęża kolumny opisu, więc etykiety nie
+     łamią się w trakcie interakcji, a przycisk nie ucieka spod kursora. */
+  .actions-wrap { max-height: 280px; overflow-y: auto; scrollbar-gutter: stable; display: flex; flex-direction: column; gap: 5px; }
   .action {
     display: flex; width: 100%; text-align: left; margin: 0; font-weight: 700; font-size: 13.5px;
     border-color: var(--border-2); background: #fff; color: var(--text); border-radius: 8px;
@@ -528,7 +545,11 @@
      ::before + span), a tekst z ikonami many (.ms-group) łamie się jak
      zwykły akapit. Bez tego każdy węzeł tekstowy i grupa ikon były OSOBNYM
      flex-itemem i zawinięcie tworzyło 3 „kolumny" (tekst / ikony / reszta). */
-  .action-label { display: inline; min-width: 0; }
+  /* K: kolumna opisu zajmuje STAŁĄ resztę szerokości wiersza (flex: 1 1 auto)
+     — długość etykiety nie przestawia układu sąsiadów ani nie zmienia szerokości
+     samego wiersza w trakcie interakcji (bez tego elastyczny wiersz „oddychał"
+     przy zmianie treści etykiety). Konsumuje też wolne miejsce po diamentie. */
+  .action-label { display: inline; flex: 1 1 auto; min-width: 0; }
   /* Feature 2026-08-11: ptaszek wyciszenia opcji (nie przerywaj auto-passu).
      Uwaga B (2026-08-11): pole aktywne powiększone — <label> z paddingiem
      daje 1-2 spacje wokół pola, żeby klik obok ptaszka nie rzucił instanta. */
@@ -701,7 +722,9 @@
     padding: 12px 14px; border-bottom: 1px solid var(--border);
   }
   .drawer-head h3 { margin: 0; font-size: 14px; color: var(--gold); text-transform: uppercase; letter-spacing: .5px; }
-  .drawer-body { overflow-y: auto; padding: 12px 14px; flex: 1; }
+  /* K: jak `.actions-wrap` — pasek przewijania nie może zwężać kolumny opisu
+     w trakcie interakcji (wiersze wyboru są tu celem tapnięcia). */
+  .drawer-body { overflow-y: auto; scrollbar-gutter: stable; padding: 12px 14px; flex: 1; }
   .drawer .actions-wrap { max-height: none; }
   @media (max-width: 720px) {
     .drawer {
@@ -736,7 +759,9 @@
     padding: 12px 16px; border-bottom: 1px solid var(--border);
   }
   .modal-head h3 { margin: 0; font-size: 15px; color: var(--gold); }
-  .modal-body { overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+  /* K: rezerwa na pasek przewijania — długa lista opcji nie zwęża
+     wierszy w trakcie wciskania (release nie wypada poza przycisk). */
+  .modal-body { overflow-y: auto; scrollbar-gutter: stable; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
   .modal-close { min-height: 34px; padding: 4px 12px; font-size: 16px; line-height: 1; }
 
 
@@ -923,7 +948,11 @@
     -webkit-tap-highlight-color: rgba(202,138,4,.18);
   }
   .picker-row:has(.picker-toggle:checked) { border-color: var(--gold); background: #ca8a040f; }
-  .picker-row:active { transform: translateY(1px); }
+  /* K (uwaga właściciela 2026-09-23, ta sama rodzina co `button:active` — L41):
+     wiersz wyboru nie może zmieniać geometrii przy wciśnięciu. Transform
+     przesuwał wiersz pod palcem i wchodził do obszaru przewijania listy, przez
+     co release mógł wypaść poza wiersz (klik przepadał). Feedback = jasność. */
+  .picker-row:active { filter: brightness(.97); }
   .picker-toggle {
     width: 24px; height: 24px; flex-shrink: 0; margin: 0;
     accent-color: var(--gold, #e6c36a); cursor: pointer;
@@ -1210,7 +1239,7 @@
         <div class="log-wrap" id="log"></div>
       </div>
     </details>
-    <details class="panel">
+    <details class="panel" open>
       <summary>Przebieg tur (dla AI) <span class="count" id="turn-history-count"></span></summary>
       <div class="panel-body">
         <p class="file-row" style="margin:0 0 8px;">

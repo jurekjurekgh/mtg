@@ -12,7 +12,7 @@ import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 
 const REGISTRY = createCardRegistry();
 
-/** Wszystkie karty z rejestru: realne (supported+limited) + wirtualne landy. */
+/** Wszystkie karty z rejestru: realne (supported + token/back) + wirtualne landy. */
 const allCards = REGISTRY.all();
 const supported = REGISTRY.supported();
 

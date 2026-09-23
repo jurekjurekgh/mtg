@@ -6,6 +6,7 @@ import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { castsWithoutPayingMana, hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
 import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
+import { coloredPipsOf } from '../engine/mana-cost.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
   PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
@@ -13,10 +14,10 @@ import {
   manaEffectLabel,
   manaProducedLabel,
 } from './session.js';
-import { costSymbols, escapeHtml, manaCostHtml, manaSymbolsHtml } from './mana-icons.js';
+import { costSymbols, escapeHtml, manaCostHtml, manaSymbolsHtml, xCostSymbols } from './mana-icons.js';
 import { COUNTER_LABELS, counterLabelGen } from './counter-labels.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { installTapGesture } from './gestures.js';
+import { installPressActivation, installTapGesture } from './gestures.js';
 import { renderPickerRow } from './picker.js';
 
 /**
@@ -410,6 +411,17 @@ export function choiceRequestGroupKey(command) {
     // (ten sam powód co wyżej; ADR 0002: po kształcie komendy, nie po karcie).
     return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}`;
   }
+  // J (uwaga właściciela 2026-09-23c, Epic Experiment): czar z {X} bez celów
+  // i bez trybów — silnik enumeruje wariant X = 0…N, a panel pokazywał N
+  // przycisków „Rzuć: <karta> (koszt …, X=n)”. Wybór X jest decyzją W TRAKCIE
+  // rzucania (CR 601.2b, jak tryb i dar), więc panel dostaje JEDNĄ ofertę,
+  // a X wybiera modal ze stepperem. Czar z celami I {X} (Fireball) łapie już
+  // gałąź `spell:<objectId>` wyżej — tam X jest częścią kreatora celów.
+  if ((command.type === 'cast_spell' || command.type === 'cast_permanent')
+    && command.xValue != null && !command.targets?.length && command.modeIndex == null
+    && command.sacrificeTargetId == null && command.exileTargetId == null) {
+    return `spell-x-value:${command.objectId}`;
+  }
   if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {
     return `permanent:${command.objectId}:${Boolean(command.bestow)}${command.surgeCast ? ':surge' : ''}`;
@@ -621,13 +633,27 @@ export function groupCombatDecisions(commands, view) {
   }
   if (attackers.length > 0) {
     const request = choiceRequest({ id: `choice-${stamp}-attackers`, type: 'declare_attackers', options: attackers });
-    out.unshift({ request, first: attackers[0] });
+    out.push({ request, first: attackers[0] });
   }
   if (blockers.length > 0) {
     const request = choiceRequest({ id: `choice-${stamp}-blockers`, type: 'declare_blockers', options: blockers });
     out.push({ request, first: blockers[0] });
   }
-  return out;
+  // Uwaga właściciela 2026-09-23 (E): deklaracje walki mają stać POD
+  // „Dalej (Pass)”, a nie nad nim (atakujący był `unshift` na samą górę,
+  // blokujący `push` na sam dół — oba poza porządkiem `actionMenuRank`).
+  // Sortujemy CAŁĄ listę wpisów tym samym porządkiem co panel (stabilnie: równe
+  // rangi zachowują kolejność wejściową), więc miejsce deklaracji jest
+  // strukturalne i niezależne od tego, co akurat jest dostępne.
+  const rankOfEntry = (entry) => {
+    const type = entry.request?.type ?? entry.command?.type ?? '';
+    if (type === 'damage_assignment') return actionMenuRank('resolve_damage_assignment');
+    return actionMenuRank(type);
+  };
+  return out
+    .map((entry, index) => ({ entry, index }))
+    .sort((a, b) => (rankOfEntry(a.entry) - rankOfEntry(b.entry)) || (a.index - b.index))
+    .map(({ entry }) => entry);
 }
 
 /**
@@ -640,6 +666,11 @@ function isDeclineOption(command) {
   if (!command) return false;
   if (command.found === null) return true;      // szukanie w bibliotece
   if (command.skip === true) return true;       // Springbloom i pokrewne
+  // F1 (uwaga właściciela 2026-09-23c): „you may" — odmowa to zwykły pass
+  // w nowym kształcie oferty, ale stary wariant `fire: false` (replaye,
+  // starsze ścieżki silnika) też jest rezygnacją: grupa ma się rozpaść na DWA
+  // przyciski, a nie otwierać modal z potwierdzeniem decyzji.
+  if (command.fire === false) return true;
   return false;
 }
 
@@ -1387,6 +1418,8 @@ function describeEffect(e, ctx = {}) {
     transfer_counters_on_dies: () => 'przenieś liczniki',
     turn_face_up: () => 'obróć twarzą do góry',
     unearth_return: () => 'unearth (z grobu z haste, exile na końcu tury)',
+    // Batch 58/B5 (Resurrected Cultist): powrót z grobu z licznikiem finality.
+    return_source_from_graveyard: () => 'wróć z grobu z licznikiem finality (śmierć → wygnanie)',
     untap_permanent: () => 'odkręć',
     untap_enchanted_permanent: () => 'odkręć zaczarowany permanent',
     untap_all_creatures_you_control: () => 'odkręć wszystkie twoje stwory',
@@ -2152,6 +2185,67 @@ function findViewObject(objectId, view) {
   return null;
 }
 
+/**
+ * Koszt ODSŁONIĘCIA zakrytego permanentu (CR 701.56b cloak, CR 701.40b
+ * manifest) — kwota należy do PEŁNEGO STANU, nie do widoku: prawa i koszt
+ * obrotu są informacją właściciela zakrytej karty (FoW, CR 708.2a; widok
+ * projektuje tylko `cloakReady` kontrolerowi). Stąd odczyt lustrzany do
+ * kreatora płatności (M327, `main.js`) — jedno miejsce wyliczenia dla etykiet
+ * `turn_cloak_face_up`/`turn_manifest_face_up` (L41). Fallback na obiekt
+ * widoku zostaje dla stubów testowych i starszych rzutów widoku.
+ *
+ * H (audyt 2026-09-23d): bez tego etykieta oferty obrotu milczała o koszcie
+ * w PRZEBIEGU PRODUKCYJNYM (F3 fix czytał wyłącznie widok, który tego pola
+ * nie niesie — klasa L1/ADR 0017, ta sama, którą naprawiał F3).
+ */
+function uncoverCostOf(session, view, objectId, field) {
+  const stateObject = session?.state?.objects?.get?.(objectId) ?? null;
+  const viewObject = findViewObject(objectId, view);
+  return stateObject?.[field] ?? viewObject?.[field] ?? null;
+}
+
+/**
+ * Koszt KARTY w HTML z ikonami many (H, uwaga właściciela 2026-09-23c).
+ * Wydzielone z `commandLabel` do zasięgu modułu, żeby tytuły GRUP decyzji
+ * (np. „Cel czaru: <karta>") niosły ten sam koszt co pojedyncze oferty —
+ * jedno źródło formatu kosztu (L41); wcześniej druga kopia bez ikon.
+ */
+function cardCostHtml(card) {
+  const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
+  return raw ? manaCostHtml(raw) : (card?.manaCost != null ? escapeHtml(String(card.manaCost)) : '?');
+}
+
+/**
+ * Koszt zdolności aktywowanej → ikony: {X}/{N} + pipy kolorów + {T} + koszty
+ * pozamanowe z jednej listy (`NON_MANA_COST_LABELS`, wspólnej z `costTextOf`).
+ * Wyniesione z `commandLabel` (H): ta sama etykieta kosztu obsługuje teraz
+ * także tytuły grup zdolności („Piercing Rays: Forecast (koszt {2}{W})").
+ */
+function abilityCostHtmlOf(ability) {
+  const cost = ability?.cost ?? {};
+  const mana = [];
+  if (cost.manaX) mana.push('{X}');
+  const colors = cost.colors ?? [];
+  const generic = Math.max(0, (cost.mana ?? 0) - colors.length);
+  if (generic > 0) mana.push(`{${generic}}`);
+  for (const c of colors) mana.push(`{${c}}`);
+  const parts = [];
+  if (mana.length) parts.push(manaCostHtml(mana.join('')));
+  if (cost.tap) parts.push(manaCostHtml('{T}'));
+  for (const [field, label] of NON_MANA_COST_LABELS) {
+    if (cost[field]) parts.push(typeof label === 'function' ? label(cost[field]) : label);
+  }
+  return parts.join(', ');
+}
+
+/** „ (koszt …)" zdolności komendy `activate_ability` — puste, gdy brak kosztu. */
+function abilityCostSuffix(session, cmd) {
+  const ability = session.state?.objects?.get(cmd.objectId)?.abilities?.[cmd.abilityIndex];
+  if (!ability) return '';
+  const cost = abilityCostHtmlOf(ability);
+  return cost ? ` (koszt ${cost})` : '';
+}
+
 function choiceSourceTitle(cmd, session, view) {
   // Uwaga C właściciela (2026-08-10): modal wyboru ma nazywać kartę, która
   // go wywołała. Komendy resolve_* nie niosą objectId — źródło czytamy
@@ -2338,9 +2432,14 @@ function choiceSourceTitle(cmd, session, view) {
     return `${name} — zapłata: mana czy życie?`;
   }
   if (cmd.type === 'cast_permanent' && cmd.targets?.length) {
+    // H (uwaga właściciela 2026-09-23c): tytuł grupy celów permanentu (Aura,
+    // Cel dla, Bestow) też musi nieść koszt — „Aura: Benevolent Blessing"
+    // bez ceny wyglądała jak oferta darmowa. Bestow ma WŁASNY koszt
+    // alternatywny (ta sama arytmetyka co etykieta oferty, L41).
+    const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
     if (cmd.bestow) return `Bestow: ${name}`;
-    if (object.aura) return `Aura: ${name}`;
-    return `Cel dla: ${name}`;
+    if (object.aura) return `Aura: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object)})` : ''}`;
+    return `Cel dla: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object)})` : ''}`;
   }
   // C (uwaga właściciela, Makeshift Mauler / Fear of Abduction): tytuł musi
   // pokrywać warunek KLUCZA grupy (klasa L102/1) — warianty kosztu „wygnaj
@@ -2370,14 +2469,23 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd.type === 'cast_spell' && (cmd.targets?.length || cmd.modeIndex != null)) {
     const mode = (cmd.modeIndex != null && object.spell?.modes)
       ? object.spell.modes[cmd.modeIndex] : null;
+    // H (uwaga właściciela 2026-09-23c): tytuł grupy celów czaru MUSI nieść
+    // koszt — „Cel czaru: <karta>" bez ceny wyglądało jak oferta darmowa.
+    // Koszt doklejamy tylko wtedy, gdy jest znany (MANA_COSTS/karta) — stuby
+    // testowe bez kosztu zachowują dotychczasowe brzmienie.
+    const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
+    const withCost = kosztZnany ? ` (koszt ${cardCostHtml(object)})` : '';
     // Bez celów w tej ofercie tytuł nie może obiecywać wyboru celu —
     // decyzją jest sam TRYB czaru.
     if (!cmd.targets?.length) {
-      return mode?.name ? `${name} — tryb: ${mode.name}` : `Tryb czaru: ${name}`;
+      return mode?.name ? `${name} — tryb: ${mode.name}${withCost}` : `Tryb czaru: ${name}${withCost}`;
     }
-    return mode?.name ? `Cel czaru: ${name} — ${mode.name}` : `Cel czaru: ${name}`;
+    return mode?.name ? `Cel czaru: ${name} — ${mode.name}${withCost}` : `Cel czaru: ${name}${withCost}`;
   }
-  if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `Cel czaru (Cleave): ${name}`;
+  if (cmd.type === 'cast_cleave' && cmd.targets?.length) {
+    const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
+    return `Cel czaru (Cleave): ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object)})` : ''}`;
+  }
   // M240/K (zgłoszenie): rzut przez Escape — tytuł musi nazywać CZAR,
   // bo przy dwóch kartach z Escape w grobie oba wiersze „Ucieczka —
   // karty do wygnania (N opcji)” były nierozróżnialne. Deskryptor
@@ -2395,12 +2503,20 @@ function choiceSourceTitle(cmd, session, view) {
   // Tytuł nazywa kartę i czynność deskryptorem efektu z DANYCH karty
   // (ADR 0002), a konkretne X niosą etykiety opcji grupy.
   if (cmd.type === 'activate_ability' && cmd.xValue != null) {
-    return `${name} — ${abilityXDescription(session, object, cmd)}`;
+    return `${name} — ${abilityXDescription(session, object, cmd)}${abilityCostSuffix(session, cmd)}`;
   }
   if (cmd.type === 'activate_ability' && cmd.targets?.length) {
     const ability = session.state?.objects?.get(cmd.objectId)?.abilities?.[cmd.abilityIndex];
     if (ability?.keyword === 'equip') return `Wyposaż: ${name}`;
-    return `Cel zdolności: ${name}`;
+    // C (uwaga właściciela 2026-09-23c, Piercing Rays): oferta zdolności
+    // z CELEM nazywała się „Cel zdolności: <karta>" — bez mechaniki i bez
+    // KOSZTU, więc w upkeepie nie było widać, że to Forecast i ile kosztuje.
+    // Tytuł nazywa mechanikę (nazwany keyword z deskryptora, ADR 0002) i
+    // koszt, a po kliknięciu otwiera modal celu (bez zmian).
+    const abilityName = ability?.forecast ? 'Forecast'
+      : (ability?.keyword ? (KEYWORD_LABELS[ability.keyword] ?? ability.keyword) : null);
+    const core = abilityName ? `${name}: ${abilityName}` : `Cel zdolności: ${name}`;
+    return `${core}${abilityCostSuffix(session, cmd)}`;
   }
   // M103/C2 (zgłoszenie właściciela): warianty station/crew/tap-innego-stwora
   // grupują się po obiekcie — bez tej gałęzi tytuł spadał do generycznego
@@ -2408,7 +2524,9 @@ function choiceSourceTitle(cmd, session, view) {
   if (cmd.type === 'activate_ability'
     && (cmd.tapOtherCreatureId != null || cmd.tapCreatureId != null || cmd.crewCreatureIds?.length
       || cmd.sacrificeLandId != null || cmd.sacrificeCreatureId != null)) {
-    return `Aktywuj: ${name}`;
+    // H: grupa wariantów tap/crew/sacrifice też niesie koszt zdolności
+    // (dotąd „Aktywuj: <karta>" — jakby aktywacja była darmowa).
+    return `Aktywuj: ${name}${abilityCostSuffix(session, cmd)}`;
   }
   return null;
 }
@@ -2490,6 +2608,20 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
       const rawCost = MANA_COSTS[groupObject.cardId];
       const cost = rawCost ? (manaHtml ? manaCostHtml(rawCost) : rawCost) : null;
       return `Rzuć: ${session.nameOf(groupObject.cardId)}${cost ? ` (koszt ${cost})` : ''}`;
+    }
+  }
+  // J (uwaga właściciela 2026-09-23c, Epic Experiment): grupa wariantów {X}
+  // jednego czaru to JEDEN rzut — tytuł nazywa czynność i koszt z symbolem X
+  // („Rzuć: Epic Experiment (koszt XUR)"), zamiast nazwy wariantu X=0.
+  if (options.length > 0
+    && options.every((o) => (o?.type === 'cast_spell' || o?.type === 'cast_permanent')
+      && o.xValue != null && o.objectId === options[0].objectId)
+    && new Set(options.map((o) => o.xValue)).size > 1) {
+    const xObject = findViewObject(options[0].objectId, view);
+    if (xObject?.cardId) {
+      const rawX = xCostSymbols(MANA_COSTS[xObject.cardId]);
+      const xCost = rawX ? (manaHtml ? manaCostHtml(rawX) : rawX) : null;
+      return `Rzuć: ${session.nameOf(xObject.cardId)}${xCost ? ` (koszt ${xCost})` : ''}`;
     }
   }
   // M (zgłoszenie z testów 2026-09-22, Dream Twist): grupa rzutu za FLASHBACK
@@ -2812,10 +2944,9 @@ export function commandLabel(cmd, session, view) {
     return escapeHtml(`${base}${copyOrdinal}`);
   };
   // Koszt many karty → HTML z ikonami (MANA_COSTS: string typu „{2}{U}").
-  const costOfCard = (card) => {
-    const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
-    return raw ? manaCostHtml(raw) : (card?.manaCost != null ? escapeHtml(String(card.manaCost)) : '?');
-  };
+  // Implementacja w zasięgu modułu (`cardCostHtml`) — patrz H: tytuły grup
+  // używają tej samej funkcji co etykiety pojedynczych ofert.
+  const costOfCard = cardCostHtml;
   // H (zgłoszenie właściciela, Sheriff of Safe Passage) + ta sama klasa dla
   // impulsu: rzut karty CZEKAJĄCEJ w wygnaniu (plot CR 702.170d, impuls
   // CR 701.51b) nie jest zwykłym rzutem z ręki — kosztu many nie ma, a okno
@@ -2840,35 +2971,9 @@ export function commandLabel(cmd, session, view) {
     return null;
   };
   // Koszt zdolności aktywowanej → ikony: {T} + {X}/{N} + pipy kolorów.
-  const abilityCostHtml = (ability) => {
-    const cost = ability?.cost ?? {};
-    // M119/Z4 (audyt żywym testerem): kolejność jak w Oracle — najpierw mana,
-    // na końcu symbol tapnięcia („{2}, {T}: Scry 1”). Wcześniej {T} szło na
-    // początek i sklejało się z liczbą: Seer's Lantern pokazywał „(koszt T2)”,
-    // co czyta się jak jeden symbol, a nie „dwie many i tapnięcie”. Symbol
-    // tapnięcia dostaje własny człon listy, żeby nie zlewał się z maną.
-    const mana = [];
-    if (cost.manaX) mana.push('{X}');
-    const colors = cost.colors ?? [];
-    const generic = Math.max(0, (cost.mana ?? 0) - colors.length);
-    if (generic > 0) mana.push(`{${generic}}`);
-    for (const c of colors) mana.push(`{${c}}`);
-    // Diament (2026-08-11): koszty pozamany — „odrzuć N" i „poświęć"
-    // (Plague Reaver) — koniec pustego „(koszt )".
-    const parts = [];
-    if (mana.length) parts.push(manaCostHtml(mana.join('')));
-    if (cost.tap) parts.push(manaCostHtml('{T}'));
-    // M138/Z2 (audyt Żywym Testerem): koszty pozamanowe z JEDNEJ listy
-    // (NON_MANA_COST_LABELS) — wspólnej z `costTextOf` na kaflu karty. Dotąd
-    // oba miejsca miały własne wyliczanki i rozjechały się: mapa znała
-    // `discardCards` (liczbę), a Goblin Picker używa `discardCard` (boolean),
-    // więc „odrzuć kartę” nie pojawiało się nigdzie. Obejmuje też
-    // M101/B7 (crew/saddle — koszt to łączna MOC tapowanych stworów).
-    for (const [field, label] of NON_MANA_COST_LABELS) {
-      if (cost[field]) parts.push(typeof label === 'function' ? label(cost[field]) : label);
-    }
-    return parts.join(', ');
-  };
+  // Implementacja w zasięgu modułu (`abilityCostHtmlOf`) — patrz H: tytuły
+  // grup zdolności niosą ten sam koszt co etykiety ofert.
+  const abilityCostHtml = abilityCostHtmlOf;
   switch (cmd.type) {
     case 'resolve_index_choice': return 'Przestaw karty na wierzchu biblioteki';
     // M251 (audyt Żywym Testerem): ta sama etykieta co przycisk domyślny
@@ -2993,6 +3098,16 @@ export function commandLabel(cmd, session, view) {
       const mode = (cmd.modeIndex != null && cardForMode?.spell?.modes)
         ? cardForMode.spell.modes[cmd.modeIndex] : null;
       const modeName = mode?.name ? ` — ${mode.name}` : '';
+      // M223/M265 (Batch 58/B1, Boulder Salvo): surge na INSTANCIE/SORCERY to
+      // alternatywny, TAŃSZY koszt — bez własnej etykiety wariant wygląda jak
+      // zwykły rzut i pokazuje wydruk karty („(koszt 4R)” przy zapłacie 3).
+      // Jedno brzmienie z gałęzią `cast_permanent` („Rzuć za surge: …").
+      if (cmd.surgeCast) {
+        const surgeDef = cardForMode?.surge;
+        const surgeCost = surgeDef ? manaCostHtml(costSymbols(surgeDef.cost, surgeDef.colors)) : '?';
+        return `Rzuć za surge: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${surgeCost})`
+          + (targets ? ` → cel: ${targets}` : '');
+      }
       // Czary z X (Fireball, Consume Spirit, Epic Experiment): podaj wartość X,
       // żeby gracz wiedział, ile manuje decyduje (audyt M83 — „(koszt XR)").
       const xPart = cmd.xValue != null ? `, X=${cmd.xValue}` : '';
@@ -3350,7 +3465,17 @@ export function commandLabel(cmd, session, view) {
       return cmd.draw ? 'Dobierz kartę (you may)' : 'Nie dobieraj';
     }
     case 'resolve_optional_trigger_choice': {
-      // M163/A: tak/nie dobrowolnego efektu — j.w.
+      // F1 (uwaga właściciela 2026-09-23c): decyzja „you may" NIE tworzy już
+      // modala — oferta wykonania stoi w panelu jako ZWYKŁA akcja, a odmową
+      // jest „Dalej (Pass)". Etykieta akcji musi więc nazywać kartę i efekt:
+      // bierzemy TEN SAM tytuł, co dotąd w modalu (M221/B) — jedno źródło
+      // opisu decyzji (L41), więc panel i modal nie mogą się rozjechać.
+      if (cmd.fire) {
+        const named = choiceSourceTitle(cmd, session, view);
+        if (named) return named;
+      }
+      // M163/A: tak/nie dobrowolnego efektu — j.w. (fallback dla widoku bez
+      // `pendingOptionalTrigger`, np. starych replayów).
       return cmd.fire ? 'Uruchom efekt dobrowolny (you may)' : 'Zrezygnuj z efektu';
     }
     case 'resolve_endure_choice': {
@@ -3540,14 +3665,36 @@ export function commandLabel(cmd, session, view) {
       return `Zmanifestuj: ${nameOfObjectId(cmd.cardId)}`;
     }
     case 'turn_manifest_face_up': {
-      // Manifest — obróć twarzą do góry za koszt many.
-      return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)}`;
+      // Manifest — obróć twarzą do góry za koszt many (CR 701.40b: „paying its
+      // mana cost", tylko gdy pod spodem jest karta stworu).
+      // H (audyt 2026-09-23d, ta sama klasa co F3 przy cloaku): oferta nie
+      // jest darmowa, więc MUSI nieść koszt — inaczej wygląda jak akcja bez
+      // ceny. Kwota i pipy: jak przy cloaku (jedno źródło, L41).
+      const manifestCost = uncoverCostOf(session, view, cmd.objectId, 'manifestTurnUpCost');
+      if (manifestCost == null) return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)}`;
+      const manifestObj = obj(cmd.objectId);
+      const manifestColors = manifestObj?.cardId ? coloredPipsOf(manifestObj.cardId) : [];
+      const manifestHtml = manaCostHtml(costSymbols(manifestCost, manifestColors));
+      return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (koszt ${manifestHtml})`;
     }
     case 'turn_cloak_face_up': {
       // M315 (Veiled Ascension): cloak — specjalna akcja (bez stosu), koszt
       // many karty. Etykieta nazywa mechanikę i kartę (koszt = koszt karty,
       // którą kontroler zna — CR 708.2d).
-      return `Obróć twarzą do góry (Cloak): ${nameOfObjectId(cmd.objectId)}`;
+      // F3 (uwaga właściciela 2026-09-23c): etykieta musi nieść TAKŻE KOSZT
+      // odkrycia — sam wpis „Obróć twarzą do góry (Cloak): X” nie mówił, ile
+      // many to kosztuje (koszt = mana value karty, CR 708.2d; silnik czyta
+      // go z `cloakTurnUpCost`/`cloak.colors`, walidacja w game-state.js).
+      const cloakObj = obj(cmd.objectId);
+      // H (audyt 2026-09-23d): koszt czytamy ze STANU (widok go nie niesie —
+      // FoW), więc etykieta pokazuje cenę także w przebiegu produkcyjnym.
+      const cloakCost = uncoverCostOf(session, view, cmd.objectId, 'cloakTurnUpCost');
+      if (cloakCost == null) return `Obróć twarzą do góry (Cloak): ${nameOfObjectId(cmd.objectId)}`;
+      // Pipy koloru z KARTY pod spodem (koszt odkrycia = mana value + kolorowe
+      // pipy wydruku) — ta sama arytmetyka co `coloredPipsOf` w silniku.
+      const cloakColors = cloakObj?.cardId ? coloredPipsOf(cloakObj.cardId) : [];
+      const cloakHtml = manaCostHtml(costSymbols(cloakCost, cloakColors));
+      return `Obróć twarzą do góry (Cloak): ${nameOfObjectId(cmd.objectId)} (koszt ${cloakHtml})`;
     }
     case 'resolve_hand_top_choice': {
       // M162/C (uwaga właściciela): Chittering Rats u bota otwierał modal
@@ -5077,16 +5224,19 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       // Pełna etykieta grupy (opis CO wybieramy + odmieniona liczba opcji) —
       // prefiks „Wybierz:" ustala choiceGroupLabel (uwaga A, 2026-08-10).
       button.innerHTML = `<span class="action-label">${choiceGroupLabel(entry.request, session, view)}</span>`;
-      button.addEventListener('click', () => onChoiceRequest(entry.request));
+      // K (uwaga właściciela 2026-09-23): aktywacja przez wciśnięcie z
+      // przechwyceniem wskaźnika — click gubił się, gdy lista przebudowała
+      // layout między press-down a release (szczegóły: gestures.js).
+      installPressActivation(button, () => onChoiceRequest(entry.request));
     } else {
       // Etykieta wyłącznie tekstem (prefiksy są kontraktem testu); ikona przez CSS.
       // action-label: jeden inline-blok w flexie — bez „kolumn" (uwaga D).
       // M102/U4: entry.label niesie licznik egzemplarzy („… (1 z 4)").
       button.innerHTML = `<span class="action-label">${entry.label ?? commandLabel(cmd, session, view)}</span>`;
       if (cmd.type === 'concede') {
-        button.addEventListener('click', () => { if (window.confirm('Na pewno poddać partię?')) play(cmd); });
+        installPressActivation(button, () => { if (window.confirm('Na pewno poddać partię?')) play(cmd); });
       } else {
-        button.addEventListener('click', () => play(cmd));
+        installPressActivation(button, () => play(cmd));
       }
     }
     // Feature 2026-08-11: ptaszek wyciszenia dla opcji rzutów/zdolności —

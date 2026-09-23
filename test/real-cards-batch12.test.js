@@ -149,7 +149,7 @@ test('Batch 12: pięć kart ma właściwe dane i status supported', () => {
   assert.equal(REGISTRY.get('undead-servant').set, 'ORI');
   assert.deepEqual(REGISTRY.get('barkform-harvester').types, ['Artifact', 'Creature']);
   // Token Zombie Undead Servanta — nie taliowalny.
-  assert.equal(REGISTRY.get('token_zombie').support.status, 'limited');
+  assert.equal(REGISTRY.get('token_zombie').support.status, 'token');
   assert.deepEqual(REGISTRY.get('token_zombie').colors, ['B']);
   assert.equal(REGISTRY.get('token_zombie').power, 2);
   assert.equal(REGISTRY.get('token_zombie').toughness, 2);

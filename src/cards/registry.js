@@ -1,8 +1,20 @@
+// Słownik statusów wpisu w katalogu. Od 2026-09-23 (M419) status mówi WPROST,
+// czym wpis jest (decyzja właściciela: token ma być tokenem, a tylna strona
+// karty dwustronnej — tyłem; jedna wspólna etykieta „nie do talii” zniknęła,
+// bo brzmiała jak „karta niedokończona”).
+//   - `supported`     — pełna karta (100% Oracle), taliowalna;
+//   - `token`         — token tworzony przez karty/mechaniki, nie do talii;
+//   - `back`          — tylna strona karty dwustronnej; w talii istnieje
+//                       wyłącznie przód (CR 711.4), do gry wchodzi transformem;
+//   - `unsupported`   — karta bez pełnego Oracle; w katalogu jej NIE MA
+//   - `in-development`  (ADR 0022: karta albo jest w 100%, albo jej nie ma).
+// Bramką taliowalności pozostaje `status === 'supported'`.
 export const SUPPORT_STATUS = Object.freeze([
   'unsupported',
   'in-development',
   'supported',
-  'limited',
+  'token',
+  'back',
 ]);
 
 /**

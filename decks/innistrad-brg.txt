@@ -5,6 +5,7 @@
 1x Forge Devil
 1x Ghoulcaller's Bell
 1x Predator's Gambit
+1x Scroll of Avacyn
 1x Snarling Wolf
 1x Cemetery Recruitment
 1x Curse of the Pierced Heart
@@ -18,6 +19,6 @@
 1x Tireless Hauler
 1x Wolfkin Bond
 1x Grave Exchange
-3x Swamp
+4x Swamp
 1x Mountain
 5x Forest

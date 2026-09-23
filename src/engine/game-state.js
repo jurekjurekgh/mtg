@@ -23,14 +23,14 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
-import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities } from './permanents.js';
+import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersUntappedOverride } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
-import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers } from './triggers.js';
+import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers, triggerSourceZoneResolvable } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
-import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome } from './effects.js';
+import { queueSearchChoice, emitReflexiveSearch, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
@@ -3422,10 +3422,14 @@ export function execute(state, input) {
       // z biblioteki podlega chorobie przywołania — jak w każdej innej
       // ścieżce wejścia (F1/reanimate/throne/pyxis). Dziś idą tędy tylko
       // lądy (katalog), ale ścieżka jest generyczna.
+      // Batch 58/B7 (Gond Gate): statyk kontrolera „Gates you control enter
+      // untapped" znosi tapnięcie także przy wejściu z biblioteki (CR 614.1d).
+      const overridden = destZone === 'battlefield'
+        && entersUntappedOverride(state, moved, { enteringId: newId });
       const placed = destZone === 'battlefield'
         ? Object.freeze({
             ...moved,
-            tapped: Boolean(pending.entersTapped || moved.entersTapped),
+            tapped: !overridden && Boolean(pending.entersTapped || moved.entersTapped),
             summoningSickness: moved.kind === 'creature' || (moved.types ?? []).includes('Creature'),
           })
         : moved;
@@ -3483,6 +3487,10 @@ export function execute(state, input) {
         entersTapped: Boolean(pending.chain.entersTapped),
         mandatory: Boolean(pending.chain.mandatory),
         chain: pending.chain.remaining > 1 ? { ...pending.chain, remaining: pending.chain.remaining - 1 } : null,
+        // Batch 58/B6: linka refleksyjna jedzie z łańcuchem decyzji — emisja
+        // dopiero po OSTATNIM przeszukaniu (jedno zdarzenie na efekt).
+        reflexiveEvent: pending.reflexiveEvent ?? null,
+        reflexiveAbility: pending.reflexiveAbility ?? null,
       });
       if (queued) {
         // Nowa decyzja przejęła priorytet (queueSearchChoice) — nie
@@ -3500,6 +3508,13 @@ export function execute(state, input) {
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
+    // Batch 58/B6 (Prishe's Wanderings; ruling FIN 2025-06-06): refleks
+    // „when you search your library this way" — zdarzenie emitowane PO
+    // domknięciu czaru (spell jest już w grobie, więc trigger kolejkuje się na
+    // stosie w `processTriggers` na końcu komendy i NIE rozstrzygnie się przed
+    // czarem) i TAKŻE przy fail to find (przeszukanie już się odbyło).
+    const reflexive = emitReflexiveSearch(state, pending, { found: foundCardId != null });
+    if (reflexive) resolvedEvents.push(reflexive);
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
   // Oczekująca decyzja „zapłać albo poświęć" (Rupture Spire, Temat 7).
@@ -3812,10 +3827,19 @@ export function execute(state, input) {
   }
 
   if (state.pendingOptionalTrigger) {
-    if (cmd.type !== 'resolve_optional_trigger_choice') return reject('optional_trigger_unresolved');
+    // F1: „Dalej (Pass)" = odmowa (uwaga właściciela 2026-09-23c). Stary
+    // kształt `resolve_optional_trigger_choice {fire: false}` zostaje przyjęty
+    // dla zgodności replayów i starszych testów.
+    if (cmd.type !== 'resolve_optional_trigger_choice' && cmd.type !== 'pass_priority') {
+      return reject('optional_trigger_unresolved');
+    }
     if (cmd.playerId !== state.pendingOptionalTrigger.playerId) return reject('optional_trigger_not_your_decision');
     const pending = state.pendingOptionalTrigger;
     const before = state.events.length;
+    // Pass rozstrzygający decyzję NIE jest passem rundy priorytetu (nie liczy
+    // się do domknięcia kroku) — licznik wraca do zera, jak przy każdej
+    // rozstrzygniętej decyzji (por. reset przy komendach innych niż pass).
+    if (cmd.type === 'pass_priority') state.turn.passes = 0;
     state.pendingOptionalTrigger = null;
     if (cmd.fire) {
       const source = state.objects.get(pending.sourceId);
@@ -4051,11 +4075,11 @@ export function execute(state, input) {
       state.pendingTriggerTargets.shift();
       // M166/B: źródło umarłe (Enrage) — LKI z pendingu (CR 603.10).
       const srcM = state.objects.get(pending.sourceId) ?? pending.sourceLki ?? null;
+      // L41: jedna reguła stref dla auto (queueTargetDecision) i ręcznej
+      // wielocelowej — pole bitwy, LKI w grobie/wygnaniu albo DOWOLNA strefa
+      // dla refleksów „When you do / this way" (Audyt Batch53/A1, Batch 58/B6).
       const srcLegalM = Boolean(srcM
-        && (['battlefield', 'graveyard', 'exile'].includes(srcM.zone)
-          // Audyt Batch53/A1: refleks „When you do" niezależny od strefy
-          // źródła (dziecko rozstrzygniętej zdolności, ruling LCI).
-          || pending.ability?.trigger?.event === 'reflexive_sacrifice')
+        && triggerSourceZoneResolvable(srcM, pending.ability?.trigger?.event)
         && triggerConditionHolds(state, pending.ability, srcM, pending.extra ?? {}));
       if (srcLegalM && chosenList.length > 0) {
         const stackEntryM = queueTriggerToStack(state, pending.ability, srcM,
@@ -4115,11 +4139,11 @@ export function execute(state, input) {
     state.pendingTriggerTargets.shift();
     // M166/B: źródło umarłe (Enrage) — LKI z pendingu (CR 603.10).
     const source = state.objects.get(pending.sourceId) ?? pending.sourceLki ?? null;
+    // L41: jedna reguła stref dla ścieżki auto (queueTargetDecision) i ręcznej
+    // (M166/B LKI; Audyt Batch53/A1 i Batch 58/B6 refleksy „When you do /
+    // this way" z dowolnej strefy źródła).
     const sourceLegal = Boolean(source
-      && (['battlefield', 'graveyard', 'exile'].includes(source.zone)
-        // Audyt Batch53/A1: refleks „When you do" niezależny od strefy
-        // źródła (dziecko rozstrzygniętej zdolności, ruling LCI).
-        || pending.ability?.trigger?.event === 'reflexive_sacrifice')
+      && triggerSourceZoneResolvable(source, pending.ability?.trigger?.event)
       && triggerConditionHolds(state, pending.ability, source, pending.extra ?? {}));
     // Trigger odpala się przy legalnym źródle. Odmowa celu (chosen === null):
     // - „you may ... When you do, ..." (requiresTarget.optional — Kappa,
@@ -5700,6 +5724,9 @@ export function execute(state, input) {
       const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, {
         buyback: cmd.buyback, payAltCost: cmd.payAltCost, xValue: cmd.xValue,
         phyrexianPayWithLife: cmd.phyrexianPayWithLife, kicked: Boolean(cmd.kicked),
+        // CR 702.111 (Surge, Batch 58/B1): koszt alternatywny niesie komenda
+        // (jak kicked/gifted) — walidacja i płatność w `castSpell`.
+        surgeCast: Boolean(cmd.surgeCast),
         // CR 702.174 (Gift): obietnica daru to dodatkowy koszt rzutu; odbiorcę
         // wskazuje się razem z kosztem (wariant komendy niesie jego id).
         gifted: Boolean(cmd.gifted), giftRecipientId: cmd.giftRecipientId ?? null,
@@ -7134,7 +7161,12 @@ export function playerView(state, playerId) {
       fire: true,
       ...(selfMillEffect ? { selfMill: selfMillEffect.amount ?? 0 } : {}),
     }));
-    legalCommands.push(command('resolve_optional_trigger_choice', playerId, { fire: false }));
+    // F1 (uwaga właściciela 2026-09-23c): ODMOWA to zwykły pass — panel rysuje
+    // „Dalej (Pass)" (pierwszy przycisk, reguła E), a `execute` przyjmuje go
+    // jako rozstrzygnięcie decyzji z `fired: false`. Sama oferta WYKONANIA
+    // zostaje PIERWSZA w `legalCommands` (boty i replaye: „pierwsza oferta =
+    // dotychczasowe zachowanie").
+    legalCommands.push(command('pass_priority', playerId));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeEnterAsCopy) {
     // Enter as copy: najsilniejszy Ally pierwszy (boty / istniejący test),
     // potem słabsze, na końcu odmowa (0/0).

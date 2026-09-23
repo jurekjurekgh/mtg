@@ -321,7 +321,11 @@ test('F3: zmiana strefy permanentu CZŁOWIEKA w turze bota dociera w modalu prze
   // Hooting Mandrills + Forest (12. land), więc scenariusz przy seedzie 11
   // nie odtwarza już śladu, który ta straż pilnuje. Hunter 2..40 (poza 11/13)
   // → 12 daje ten sam przebieg co przed regenem (pary 1 i 3 zostają).
-  for (const seed of [1, 3, 12]) {
+  // Batch 58/B5: talia bota (warhammer-ubr) dostała Resurrected Cultist
+  // (generator ADR 0023), więc i ta trójka się przelosowała — hunter 1..40
+  // wskazał pełne pary zdarzeń na 2 (3 sledzone/3 opisane) i 6 (3/3), a 5
+  // (1/1) dokłada trzecią partię; suma progów straży: 7/7.
+  for (const seed of [2, 5, 6]) {
     const session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
     const nazwa = (object) => (object
       ? (registry.get(object.cardId)?.name ?? object.name ?? object.cardId) : null);

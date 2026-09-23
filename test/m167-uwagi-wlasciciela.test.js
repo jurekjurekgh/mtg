@@ -117,7 +117,9 @@ test('B1: opcjonalny self-mill (Circle of the Land Druid) — tylko przy przewad
   const losing = setup(8, 20);
   const cmdLosing = playerView(losing, 'p1').legalCommands.find((c) => c.type === 'resolve_optional_trigger_choice' && c.fire);
   assert.equal(cmdLosing.selfMill, 4, 'oferta niesie adnotację selfMill=4');
-  assert.equal(createHeuristicBot({ seed: 1 }).chooseCommand(playerView(losing, 'p1')).fire, false,
+  // F1 (uwaga właściciela 2026-09-23c): odmowa „you may" to `pass_priority`
+  // (oferta = fire + „Dalej (Pass)"); stary `{fire:false}` tylko legacy.
+  assert.equal(createHeuristicBot({ seed: 1 }).chooseCommand(playerView(losing, 'p1')).type, 'pass_priority',
     'przy 8 vs 20 kart bot NIE młynuje siebie');
   const winning = setup(30, 6);
   assert.equal(createHeuristicBot({ seed: 1 }).chooseCommand(playerView(winning, 'p1')).fire, true,

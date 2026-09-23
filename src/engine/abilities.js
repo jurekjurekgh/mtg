@@ -1,4 +1,5 @@
-import { isActivatedManaAbility } from './mana-sources.js';
+import { isActivatedManaAbility, colorsProducibleBySubtype } from './mana-sources.js';
+import { graveyardCardTypeCount } from './triggers.js';
 import { event } from '../protocol/types.js';
 import { activatableAbilities, deathZoneFor, hasCreatureType, effectiveKeywords, effectivePower, effectiveToughness, tapObject } from './permanents.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
@@ -84,6 +85,42 @@ function maxSpeedHolds(state, playerId, ability) {
 }
 
 /**
+ * Bramki warunków zdolności AKTYWOWANEJ — jedno miejsce dla oferty i walidacji
+ * (L41/L48/L90): `maxSpeed` (speed 4, DFT) oraz `delirium` (Batch 58/B5,
+ * Resurrected Cultist: cztery typy kart w grobie, CR 207.2c), liczone
+ * wspólnym `graveyardCardTypeCount` — tym samym, którego używają triggery.
+ * Zwraca null, gdy zdolność przechodzi, inaczej POWÓD blokady — oferta
+ * odsiewa po `!== null`, walidacja rzuca tym samym komunikatem (jedno źródło
+ * i jedna treść błędu; zdolność bez tych pól nie jest blokowana).
+ */
+function abilityConditionFailure(state, playerId, ability, sourceObject = null) {
+  if (!maxSpeedHolds(state, playerId, ability)) return 'Zdolność wymaga max speed (4)';
+  if (ability?.condition?.delirium === true && graveyardCardTypeCount(state, playerId) < 4) {
+    return 'Delirium wymaga czterech typów kart w grobie';
+  }
+  // Batch 58/B7 (Gond Gate): zdolność produkująca „any color that a <podtyp>
+  // you control could produce" nie istnieje, gdy żaden kontrolowany permanent
+  // tego podtypu nie produkuje koloru (CR 605: nie ma czego wybrać). Warunek
+  // czytany z DANYCH efektu (`colorsFrom`) — oferta i walidacja tą samą
+  // bramką (L48), a źródło wyklucza samo siebie (Gond Gate ≠ własne {C}).
+  const goal = collectColorsFromGoal(ability);
+  if (goal) {
+    const available = colorsProducibleBySubtype(state, playerId, goal.controlledSubtype,
+      { excludeId: sourceObject?.id ?? null });
+    if (available.length === 0) {
+      return `Zdolność wymaga permanentu (${goal.controlledSubtype}) produkującego kolor many`;
+    }
+  }
+  return null;
+}
+
+/** Specyfikacje `colorsFrom` efektów zdolności (B7: „kolory z grupy"). */
+function collectColorsFromGoal(ability) {
+  const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+  return effects.find((e) => e?.type === 'add_mana' && e?.colorsFrom)?.colorsFrom ?? null;
+}
+
+/**
  * Efektywny koszt many zdolności aktywowanej z redukcją (Deepwood Denizen:
  * "This ability costs {1} less to activate for each +1/+1 counter on
  * creatures you control"). Redukcja dotyczy części generycznej, nie
@@ -122,7 +159,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null, entersUntapped = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -148,6 +185,10 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // Zdolność statyczna (CR 604): warunek + buff, przeliczane przy każdym
     // odczycie statystyk (permanents.staticBonuses) — nie „do końca tury".
     condition: condition ? Object.freeze({ ...condition }) : null,
+    // Batch 58/B7 (Gond Gate): statyk „permanenty o podtypie X wchodzą
+    // odkręcone" jako DANE karty (ADR 0002) — czytany przez
+    // `permanents.entersUntappedOverride` we wszystkich ścieżkach wejścia.
+    entersUntapped: entersUntapped ? Object.freeze({ ...entersUntapped }) : null,
     pump: pump ? Object.freeze({ ...pump }) : null,
     keywords: keywords ? Object.freeze([...keywords]) : null,
     // „Activate only once each turn\" (Snarling Wolf): limit aktywacji tej
@@ -531,6 +572,11 @@ export function legalActivatedAbilities(state, playerId) {
       // Detain (CR 701.29, M177/E): zdolności aktywowane zatrzymanego
       // permanentu nie mogą być aktywowane (oferta i walidacja — L48).
       if (object.detained) continue;
+      // Bramki warunków zdolności (Batch 58/B5 max speed + delirium, B7
+      // „kolory z grupy"): dotąd sprawdzane tylko w ofercie z GROBU — teraz
+      // wspólne dla każdej oferty z pola bitwy, tą samą funkcją co walidacja
+      // (L48: oferta = aktywacja; np. Gond Gate bez kolorowej Bramy).
+      if (abilityConditionFailure(state, playerId, ability, object) !== null) continue;
       // Mana dostępna na TĘ aktywację: koszt {T} wyklucza samo źródło z
       // auto-tapu (CR 601.2h — stała musi być odkręcona w chwili płatności,
       // więc land-źródło z kosztem {T} nie może dać many na własną aktywację,
@@ -1140,7 +1186,7 @@ export function legalActivatedAbilities(state, playerId) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated || !ability.fromGraveyard) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
-      if (!maxSpeedHolds(state, playerId, ability)) continue;
+      if (abilityConditionFailure(state, playerId, ability, object) !== null) continue;
       if ((ability.cost?.mana ?? 0) > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
@@ -1243,10 +1289,13 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   if (ability.keyword === 'equip') {
     return activateEquip(state, playerId, object, abilityIndex, targets);
   }
-  // Max speed (DFT, Glitch Ghost Surveyor): zdolność z grobu aktywna dopiero
-  // przy speed 4 — spójnie z ofertą (legalActivatedAbilities).
-  if (!maxSpeedHolds(state, playerId, ability)) {
-    throw new Error('Zdolność wymaga max speed (4)');
+  // Bramki warunków (Batch 58/B5 `abilityConditionFailure`): max speed (DFT,
+  // Glitch Ghost Surveyor), delirium (Resurrected Cultist) i produkcja
+  // „kolory z grupy" (Batch 58/B7, Gond Gate) — ten sam predykat i ta sama
+  // treść błędu co w ofercie (legalActivatedAbilities, L41/L48).
+  {
+    const conditionFailure = abilityConditionFailure(state, playerId, ability, object);
+    if (conditionFailure !== null) throw new Error(conditionFailure);
   }
 
   // Zdolność „z grobu" (Goldmeadow Nomad) wymaga, by źródło było W GROBIE —
@@ -1735,7 +1784,10 @@ export function performActivation(state, ctx) {
       stationTappedCreatureId: otherCreatureToTap ?? undefined,
     });
   }
-  for (const effect of effectList) applyEffect(state, effect, effectSource, effectTargets);
+  // Kontekst niesie SAMĄ zdolność (B7, Gond Gate): rozstrzygnięcie efektu musi
+  // wiedzieć, KTÓRA zdolność produkuje manę — bez tego zdolność „Add {C}"
+  // dostawała agregat kolorów obiektu (unia zdolności z `colorsFrom`).
+  for (const effect of effectList) applyEffect(state, effect, effectSource, effectTargets, { ability });
   // cardId jedzie w evencie, bo źródło mogło zniknąć w trakcie kosztu
   // (Sacrifice this — Panic Spellbomb: obiekt grobu ma nowe id, a log/UI
   // ma nadal podać nazwę karty). effectTypes = krótki opis „co robi

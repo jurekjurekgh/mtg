@@ -110,8 +110,16 @@ test('kreator many: effectiveGeneric skraca płatność obniżoną z pełnego st
 });
 
 test('kreator many: deskryptor pomija komendy bez wyboru kolorów źródeł', () => {
+  // J (uwaga właściciela 2026-09-23c, Epic Experiment): czar z {X} NIE jest już
+  // „poza kreatorem" — X wybiera modal (stepper), a wybrany wariant ma normalny
+  // deskryptor płatności (koszt = generic + X + pipy). Pin starego kontraktu
+  // zaktualizowany razem z zachowaniem; reszta przypadków bez zmian.
   const view = fakeView({ hand: [{ id: 'h1', cardId: 'curate', controllerId: 'p1' }] });
-  assert.equal(paymentDescriptorOf({ type: 'cast_spell', objectId: 'h1', xValue: 3 }, view), null, '{X} poza kreatorem');
+  const xCast = paymentDescriptorOf({ type: 'cast_spell', objectId: 'h1', xValue: 3 }, view);
+  assert.ok(xCast, 'rzut z X ma deskryptor płatności');
+  // X dolicza się do wydruku ({1}{U} z X=3 → {4}{U} = 5 many) — jak w CR 601.2b.
+  assert.equal(xCast.totalNeeded, 5, '{1}{U} + X=3 = 5 many');
+  assert.deepEqual(xCast.requirements, [['U']], 'pipy kolorów z wydruku');
   assert.equal(paymentDescriptorOf({ type: 'cast_spell', objectId: 'h1', faceDown: true }, view), null, 'morph poza kreatorem');
   assert.equal(paymentDescriptorOf({ type: 'play_land', objectId: 'h1' }, view), null, 'ląd to nie rzut');
   assert.equal(paymentDescriptorOf({ type: 'cast_spell', objectId: 'nie-ma' }, view), null, 'obcy obiekt');

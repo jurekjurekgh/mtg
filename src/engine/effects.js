@@ -1,12 +1,12 @@
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { hasCreatureType, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, untapObject, tapObject } from './permanents.js';
+import { hasCreatureType, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, untapObject, tapObject, entersUntappedOverride } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
-import { getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
+import { getSourceForObject, isActivatedManaAbility, colorsProducibleBySubtype } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, nextFaceDownCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -661,6 +661,13 @@ export function revealTopGainLife(state, playerId, sourceCardId = null) {
 /** Czy karta z biblioteki pasuje do kwalifikatora szukania (types/subtypes/kind/minMV). */
 export function librarySearchMatches(object, qualifier, ownerId) {
   if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
+  // Batch 58/B6 (Prishe's Wanderings): „a basic land card or Town card" —
+  // ALTERNATYWY kwalifikatora. Karta pasuje, gdy spełnia KTÓRĄKOLWIEK
+  // z gałęzi (każda gałąź to pełny kwalifikator tej samej postaci, a ALBO
+  // łączy się z pozostałymi polami jak dotąd — AND). Jedno miejsce prawdy dla
+  // kandydatów (`queueSearchChoice`) i re-walidacji wyboru (resolve_search_choice).
+  if ((qualifier.anyOf ?? []).length > 0
+    && !qualifier.anyOf.some((branch) => librarySearchMatches(object, branch, ownerId))) return false;
   const typeMatch = (qualifier.types ?? []).length === 0
     || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
   // M385: podtypy kwalifikatora czytamy z linii typów; changeling rozszerza
@@ -764,7 +771,29 @@ export function discardCardsForced(state, { playerId, cardIds, purpose, sourceCa
   return state.events.slice(before);
 }
 
-export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null, mandatory = false }) {
+/**
+ * Batch 58/B6 (Prishe's Wanderings; ruling FIN 2025-06-06): zdarzenie
+ * „reflexive" po PRZESZUKANIU biblioteki — jedno miejsce emisji dla obu
+ * ścieżek szukania (inline bez kandydatów ORAZ decyzja resolve_search_choice),
+ * żeby liczba zdarzeń nie zależała od tego, czy gracz miał co wybrać (L41).
+ * `reflexiveAbility` to snapshot zdolności z chwili rozstrzygnięcia (LKI,
+ * CR 603.10) — `processTriggers` odpala ją potem jak każdy refleks
+ * (wzorzec `reflexive_discard`/`reflexive_sacrifice`).
+ */
+export function emitReflexiveSearch(state, pending, { found }) {
+  if (!pending?.reflexiveEvent) return null;
+  const ev = event(pending.reflexiveEvent, {
+    playerId: pending.playerId,
+    sourceId: pending.reflexiveSourceId ?? null,
+    cardId: pending.sourceCardId ?? null,
+    reflexiveAbility: pending.reflexiveAbility ?? null,
+    found: Boolean(found),
+  });
+  state.events.push(ev);
+  return ev;
+}
+
+export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null, mandatory = false, reflexiveEvent = null, reflexiveAbility = null }) {
   const ownerId = sourceObject.controllerId;
   const matches = (object) => librarySearchMatches(object, qualifier, ownerId);
   const candidateIds = state.zones.library.filter((id) => matches(state.objects.get(id)));
@@ -782,6 +811,12 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
     state.events.push(event('library_searched', {
       playerId: ownerId, foundCardId: null, destination, shuffled: true, qualifier,
     }));
+    // Batch 58/B6: przeszukanie BEZ kandydatów to wciąż przeszukanie —
+    // refleks odpala (zdolność wchodzi na stos już po rozstrzygnięciu czaru).
+    emitReflexiveSearch(state, {
+      playerId: ownerId, reflexiveSourceId: sourceObject.id,
+      sourceCardId: sourceObject.cardId ?? null, reflexiveEvent, reflexiveAbility,
+    }, { found: false });
     return;
   }
   state.pendingSearchChoice = {
@@ -806,6 +841,11 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
     // M177/C (Final Parting, CR 701.19c): szukanie BEZ kryterium jakości
     // nie może „fail to find” — przy kandydatach decline nie jest oferowany.
     mandatory: Boolean(mandatory),
+    // Batch 58/B6: linka refleksyjna przeżywa odroczenie decyzji — zdarzenie
+    // emituje dopiero rozstrzygnięcie szukania (resolve_search_choice).
+    reflexiveEvent,
+    reflexiveAbility: reflexiveAbility ? Object.freeze({ ...reflexiveAbility }) : null,
+    reflexiveSourceId: sourceObject.id,
   };
   state.turn.priorityPlayerId = ownerId;
   state.events.push(event('search_choice_required', {
@@ -1166,10 +1206,14 @@ export function returnPermanentFromGraveyardOutcome(state, targetId, effect, aur
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
   // Ruling Annie Flash (OTJ 2024-04-12): wraca TAPNIĘTA (deskryptor
-  // `entersTapped` — ADR 0002).
+  // `entersTapped` — ADR 0002). Batch 58/B7 (Gond Gate): statyk kontrolera
+  // znosi tapnięcie (CR 614.1d) — ta sama reguła co w `playLand`
+  // i `moveObjectDirectly` (`entersUntappedOverride`).
+  const enterTapped = Boolean(effect?.entersTapped)
+    && !entersUntappedOverride(state, moved, { enteringId: newId });
   const permanent = Object.freeze({
     ...moved, summoningSickness: true,
-    ...(effect?.entersTapped ? { tapped: true } : {}),
+    ...(enterTapped ? { tapped: true } : {}),
   });
   state.objects.set(newId, permanent);
   // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
@@ -2665,10 +2709,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Temat 6 — CR 701.19b). Którą kartę wziąć (i czy w ogóle szukać) wybiera
     // GRACZ: blokująca decyzja resolve_search_choice; sam ruch + tasowanie
     // wykonuje komenda.
+    // Batch 58/B6 (Prishe's Wanderings): efekt może nieść linkę refleksyjną
+    // („When you search your library this way, ...") — zdolność bierzemy ze
+    // ŹRÓDŁA (czar na stosie ma pełną listę zdolności karty; wzorzec
+    // `reflexive_discard`/`reflexive_sacrifice`).
+    const reflexiveEvent = effect.reflexiveEvent ?? null;
+    const reflexiveAbility = reflexiveEvent
+      ? ((sourceObject?.abilities ?? []).find((a) => a?.trigger?.event === reflexiveEvent) ?? null)
+      : null;
     return queueSearchChoice(state, sourceObject, {
       qualifier: effect.qualifier ?? {},
       destination: 'battlefield',
       entersTapped: Boolean(effect.entersTapped),
+      reflexiveEvent,
+      reflexiveAbility,
     });
   }
   if (effect.type === 'search_basic_land_morbid') {
@@ -3112,6 +3166,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         && object.kind === 'creature'
         && hasCreatureType(object, sub, state));
     }
+    // Batch 58/B4 (Scroll of Avacyn): „If you control an Angel, you gain 5
+    // life." — DODATNI warunek po podtypie STWORA, sprawdzany przy
+    // rozstrzygnięciu (ruling AVR 2012-05-01: „Whether you control an Angel is
+    // checked when the ability resolves"). Generyczny i bez nazw kart
+    // (ADR 0002); `hasCreatureType` obejmuje changelingi i efekty zmiany typu.
+    if (effect.condition === 'controlsCreatureSubtype') {
+      const sub = effect.subtype;
+      holds = sub != null && [...state.objects.values()].some((object) => object.zone === 'battlefield'
+        && object.controllerId === controllerId
+        && object.kind === 'creature'
+        && hasCreatureType(object, sub, state));
+    }
     if (effect.condition === 'controlsPlaneswalkerWithSubtype') {
       const sub = effect.subtype;
       holds = sub != null && [...state.objects.values()].some((object) => object.zone === 'battlefield'
@@ -3289,14 +3355,29 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'add_mana') {
+    // Batch 58/B7 (Gond Gate): „{T}: Add one mana of any color that a Gate you
+    // control could produce" — kolory z DANYCH kontrolowanych permanentów
+    // (jedna reguła: `colorsProducibleBySubtype`, ta sama co w auto-tapie
+    // i bramce oferty). Brak kolorów = nie ma czego wybrać (bramka i tak
+    // nie dopuści aktywacji), więc pula dostaje manę bezbarwną.
     // Kolorowa pula (cz. 7): mana ze zdolności ma KOLOR źródła (Skarb/dowolny
     // land → dowolny, Apprentice Wizard → bezbarwna). fromTreasure oznacza manę
     // ze Skarba (identyfikowalną — Marut pyta, ile ze Skarba wydano na rzut).
-    const src = getSourceForObject(sourceObject);
+    const src = getSourceForObject(sourceObject, state);
     // M67 (Jeskai Devotee): efekt może podać kolory wprost ({1}: Add {U}, {R},
     // or {W}) — jednostka many ['U','R','W'] opłaca każdy z tych pipów (MtG:
     // gracz wybiera kolor przy produkcji; pula trzyma ją jako wielokolorową).
-    const descriptorColors = effect.colors ?? src?.colors ?? [];
+    const fromGroup = effect.colorsFrom
+      ? colorsProducibleBySubtype(state, sourceObject.controllerId, effect.colorsFrom.controlledSubtype,
+        { excludeId: sourceObject.id })
+      : null;
+    // Agregat obiektu (`src.colors`) jest fallbackiem tylko dla zdolności,
+    // która nie mówi nic o kolorach — gdy w kontekście JEST deskryptor tej
+    // zdolności, a efekt nie ma ani `colors`, ani `colorsFrom`, produkcja jest
+    // BEZBARWNA (Gond Gate: „{T}: Add {C}" ≠ unia kolorów Bram).
+    const abilityColors = effect.colors ?? fromGroup
+      ?? (context?.ability == null ? src?.colors : null);
+    const descriptorColors = abilityColors ?? src?.colors ?? [];
     // A3 (znalezisko właściciela 2026-09-16, Manor Gate): „{T}: Add {G} or one
     // mana of the chosen color" — deskryptor many ('G') złącza się z kolorem
     // wybranym przy wejściu (chosenColor na OBIEKCIE — ustawianym przez
@@ -6119,6 +6200,28 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // M262: wygnanie z mechaniki unearth — badge mechaniki, nie karty.
       exiledBy: 'unearth',
     });
+    return;
+  }
+  // Batch 58/B5 (Resurrected Cultist): powrót SOBIE z grobu na pole bitwy —
+  // bez celu i bez haste (unearth_return ma własną, szytą na unearth ścieżkę);
+  // licznik finality dokłada `effect.finalityCounter`, a wygnanie przy śmierci
+  // robi wspólny `deathZoneFor` (CR 122.1e).
+  if (effect.type === 'return_source_from_graveyard') {
+    const sourceObj = state.objects.get(sourceObject.id);
+    if (!sourceObj || sourceObj.zone !== 'graveyard') return;
+    const ownerId = sourceObj.ownerId ?? sourceObj.controllerId;
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, sourceObject.id, 'battlefield', newId);
+    const permanent = Object.freeze({
+      ...moved, controllerId: ownerId, summoningSickness: true,
+    });
+    state.objects.set(newId, permanent);
+    // M273 (błąd #24): liczniki wejścia — ta sama reguła co przy rzucie.
+    applyEnterCounters(state, newId);
+    if (effect.finalityCounter) addCounter(state, newId, 'finality', 1);
+    state.events.push(event('object_moved', {
+      fromId: sourceObject.id, object: permanent, fromZone: 'graveyard', toZone: 'battlefield',
+    }));
     return;
   }
   // M109 (Nightsnare): „Target opponent reveals their hand. You may choose

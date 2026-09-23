@@ -77,6 +77,10 @@ export function multiTargetPlanOf(commands) {
     minTargets: Math.min(...sizes),
     maxTargets: Math.max(...sizes),
     hasX,
+    // J (uwaga właściciela 2026-09-23c, Epic Experiment): grupa, w której
+    // JEDYNĄ decyzją jest X (brak celów) — kreator pokazuje sam stepper,
+    // a nie „zaznacz cele (0) oraz wartość X".
+    xOnly: hasX && targets.length === 0,
     xMin: hasX ? xValues[0] : null,
     xMax: hasX ? xValues[xValues.length - 1] : null,
     // M207: rozbicie na POZYCJE CELU (patrz `targetSlotsOf`) albo null, gdy
@@ -310,10 +314,65 @@ export function proliferatePlanOf(commands) {
  * wybór = komenda bez targetIds).
  */
 export function commandForProliferateSelection(commands, targetIds) {
+  return commandForTargetIdsSelection(commands, targetIds);
+}
+
+/**
+ * Komenda wybierająca DOKŁADNIE zbiór `targetIds` spośród legalnych wariantów
+ * silnika. Wspólna dla rodzin, które niosą wybór zbiorem, nie pojedynczym
+ * polem (proliferate, wielocelowy trigger) — jedno źródło dopasowania (L41),
+ * więc nowa rodzina nie potrzebuje własnej kopii.
+ */
+export function commandForTargetIdsSelection(commands, targetIds, { type = null } = {}) {
   const key = targetKey(targetIds ?? []);
-  return (commands ?? []).find((cmd) =>
-    cmd?.type === 'resolve_proliferate'
-    && targetKey(cmd.targetIds ?? []) === key) ?? null;
+  return (commands ?? []).find((cmd) => {
+    if (!cmd) return false;
+    if (type != null && cmd.type !== type) return false;
+    if (cmd.targetIds != null && !Array.isArray(cmd.targetIds)) return false;
+    // Brak pola = zbiór pusty (tak silnik koduje wariant „nic nie wybieram").
+    return targetKey(cmd.targetIds ?? []) === key;
+  }) ?? null;
+}
+
+/**
+ * B1 (uwaga właściciela 2026-09-23c, Azorius Justiciar): trigger z „up to
+ * two target …" (= `requiresTarget.count > 1`) enumeruje PODZBIORY celów jako
+ * osobne komendy — 4 kandydaci dają 11 wariantów (2-elementowe, 1-elementowe
+ * i pusty przy „up to"), a panel pokazywał z tego ścianę przycisków.
+ * Właściciel: „TO JEST ZABRONIONE! ma być zaznaczanie dowolnej liczby legalnych
+ * celów + Zatwierdź wybór z walidacją up to two".
+ *
+ * Plan oddaje ten sam kreator co proliferate (M298/A): lista kandydatów
+ * z ptaszkami, walidacja liczby, zatwierdzenie wraca do komendy z
+ * legalCommands (L48) — nic nie jest budowane „z palca", a pusty wybór jest
+ * legalny tylko wtedy, gdy silnik oferuje wariant pusty (upTo).
+ */
+export function upToTargetsPlanOf(commands) {
+  const options = commands ?? [];
+  const list = options.filter((cmd) => Array.isArray(cmd?.targetIds));
+  if (list.length !== options.length || list.length < 2) return null;
+  const sizes = list.map((cmd) => cmd.targetIds.length);
+  const minTargets = Math.min(...sizes);
+  const maxTargets = Math.max(...sizes);
+  // Max 1 to zwykły wybór pojedynczego celu (inny kształt komendy) — nie ten plan.
+  if (maxTargets <= 1) return null;
+  const targets = [];
+  for (const cmd of list) {
+    for (const id of cmd.targetIds) if (!targets.includes(id)) targets.push(id);
+  }
+  if (targets.length <= maxTargets) return null; // wszyscy kandydaci naraz = brak wyboru
+  return {
+    type: list[0].type,
+    targets,
+    minTargets,
+    maxTargets,
+    hasX: false,
+    // Warianty niosą `targetIds` zamiast `targets` — przełącza dopasowanie
+    // komendy (commandForTargetIdsSelection) w renderMultiTargetWizard.
+    targetIdsMode: true,
+    itemLabel: 'cele',
+    playerId: list[0].playerId ?? null,
+  };
 }
 
 /**

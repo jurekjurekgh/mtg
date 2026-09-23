@@ -7211,3 +7211,263 @@ pump niewidoczny) — każda czerwieni pin.
 Bramy: `run-tests all` **6166/6166**, build **59 modułów / 4041,4 kB**,
 `benchmark --quick` heuristic **86,6%** (582/672, bez regresji). Bez nowych kart
 (ADR 0029).
+
+---
+
+## M416 — audyt scalonego PR #133 + naprawy F-1..F-4 (2026-09-23)
+
+Audyt PR #133 (58 plików, +5 279/−232, rodzina M404–M415) — werdykt **APPROVE**
+(`docs/audits/AUDYT_PR133_2026-09-23.md`): bramy PR odtworzone (`run-tests all`
+6180/6180, build 59 / 4048,4 kB), brak defektów blokujących; cztery znaleziska
+naprawione osobnymi, zielonymi commitami:
+
+- **F-1** (`a0b5f68`) — `permanents.js`: cleanup przestał czytać/zapisywać
+  emerytowaną flagę `cantBeBlocked` (M407 trzyma termin w `cantBeBlockedUntilTurn`,
+  wygasanie read-time — wzorzec `hexproofUntilTurn`).
+- **F-2** (`f2bc1ae`) — scenariusz „unblockable” w `test/m380-restrykcje-bloku-jedno-zrodlo`
+  przeszedł na NOWE pole + pin absolutny **M380/E** (oferta=false, walidacja
+  odrzuca; po zmianie numeru tury znów legalne). Mutacja czytnika w `combat.js`
+  czerwieni pin; przed naprawą przechodziła przez całą macierz D (ta tylko
+  porównywała ofertę z walidacją, więc pusta flaga jej nie ruszała).
+- **F-3** (`a0b5f68`) — pin `fingerprint` na `cantBeBlockedUntilTurn`.
+- **F-4** (`a6ab5f9`) — `cantBeBlockedTargetValue` liczy moc EFEKTYWNĄ
+  (`combatPower`), nie `power + grantedPower`: widok niesie już `power`
+  efektywne (`effectivePower`), a `grantedPower` to ten sam dodatek dla badge'u —
+  suma podwajała bonus aury (2/3 z +2/+2 wyceniane jak 6/5). Pin **F/8**
+  (`uwaga-z-gry-shiva-mesmerize`): 5/5 bije 2/3 z aurą +2/+2 — RED przy sumie,
+  GREEN po naprawie.
+
+Notki do pętli jakości: **Z-1** — ta sama klasa `power + grantedPower` w trzech
+miejscach sprzed PR (`attackerCanBeBlocked` — próg mocy blokera, `equipValuation`
+i wycena equipu w `cast_permanent`); **Z-2** — klauzula `bestow == null`
+w guardzie trzeciego przypadku CR 704.5m bez pinu (mutacja jej usunięcia nie
+czerwieni pinu bestow). Bramy po naprawach: szybki rdzeń **6172/6172**, build
+**59 modułów / 4048,9 kB**; pełna brama `run-tests all` **6182/6182** (0 fail, ~372 s).
+Bez nowych kart (ADR 0029).
+
+---
+
+## M417 — porządki w danych kolekcji: wiersze STO usunięte (2026-09-23)
+
+Decyzja właściciela (2026-09-23): „Karty STO miały być całkowicie usunięte
+z katalogu i z danych”. Pomiar przed zmianą: w katalogu **0** kart ze setem STO
+(sprawdzone rejestrem — `createCardRegistry()`), ale słownik kolekcji
+`tools/collection-art-ids.csv` miał jeszcze **71 wierszy** z kodem `STO`
+(karty-inspiracje „Stories” z arkusza właściciela, obecne tam od pierwszego
+importu artId w M13; Scryfall nie zna setu `sto` — 404).
+
+Zmiana: usunięte wszystkie 71 wierszy (573 → **502** wiersze, 570 → **499**
+unikalnych nazw). Dowód braku zależności: żaden artId z usuniętych wierszy nie
+był użyty w katalogu (`artId` → rejestr: 78 brakujących = 71 STO + 7 realnych
+kart), a żaden plan z arkusza nie zniknął (20 planów STO ma wiersze także
+poza STO). Piny liczności zaktualizowane w `test/art-ids-tool.test.js`
+(502 wiersze, 499 nazw) + **nowy strażnik klasy**: żaden wiersz słownika nie
+nosi kodu spoza MTG (`KODY_SPOZA_KOLEKCJI = ['STO','FUS','LOR']`) — mutacja
+(dopisanie jednego wiersza STO) czerwieni go.
+
+Sprawdzone przy okazji (audyt katalogu, 2026-09-23): katalog **543 wpisy =
+492 `supported` (wszystkie z artId i planem) + 43 tokeny + 8 tylnych stron kart
+dwustronnych**; statusów `in-development`/`unsupported` **nie ma ani jednego**
+(ADR 0022 spełniony dla całości), a każdy token jest używany przez co najmniej
+jedną kartę/mechanikę. Bramy: `npm test` 6173/6173, build 59 / 4048,9 kB.
+
+---
+
+## M418 — legacy viewer usunięty z repozytorium (2026-09-23)
+
+Decyzja właściciela: „Legacy viewer możesz skasować bo i tak nikt z niego nie
+korzysta, a lokalnie mam kopię na desktopie”. Usunięty
+`card_viewer_12_10_for_Github.html` (478 KB, 9 257 linii) — zamrożony snapshot
+starej aplikacji, trzymany od M3 wyłącznie jako materiał audytowy (ADR 0009 §6).
+
+Sprawdzone przed usunięciem: **żaden** test, narzędzie ani workflow nie odwołuje
+się do pliku (grep po `test/`, `tools/`, `.github/`); odwołania w `src/` to
+komentarze opisujące WZORZEC (tory obrazów, szybkie dodawanie w kreatorze), nie
+zależność. Zapis rozpoznania zostaje w `docs/AUDIT_LEGACY_APP.md` (z notą
+o usunięciu), a pozycja roadmapy „usunięcie snapshotu” jest odhaczona.
+Bramy po zmianie: `npm test` **6173/6173**, build **59 modułów / 4048,9 kB**.
+
+---
+
+## M419 — statusy wpisów: koniec z „limited” (2026-09-23)
+
+Zgłoszenie właściciela: „Żadna karta nie powinna być limited”; po obejrzeniu
+listy 51 wpisów decyzja o kształcie: „a nie może być zamiast special po prostu
+token albo back, żeby było jednoznacznie?”.
+
+Zmiana: ze słownika zniknęła wartość `limited`, a wpisy mówią wprost, czym są —
+**43 tokeny mają status `token`, 8 tylnych stron kart dwustronnych `back`**
+(`supported` zostaje dla pełnych kart taliowalnych, `unsupported`/
+`in-development` są rezerwowe i w katalogu ich nie ma). Wartości nie da się już
+wpisać w `defineCard` (walidacja `SUPPORT_STATUS`), więc etykieta nie wróci
+cicho. Zmiana jest bezskutkowa dla gry: bramką taliowalności pozostaje
+`status === 'supported'` (deck-text, kreator, generator talii).
+
+Strażnik klasy: `test/statusy-wpisow-katalogu.test.js` (6 sprawdzeń) —
+(A) słownik bez `limited`/`special`, (B) każdy wpis ma status
+supported/token/back i policzone są wszystkie (492/43/8), (C) `token` wyłącznie
+dla `token_*` (bez artId/planu), `back` wyłącznie dla celu `transformTo` karty
+`supported`, (D) pozycja z arkusza (artId+plan) nie jest tokenem, (E) token
+i tył odrzuca walidacja talii, (F) słowo „limited” nie występuje w źródłach
+katalogu. Zaktualizowane piny w 18 plikach testów. Dokumentacja żywa (README,
+ROADMAP, PRODUCT) mówi nowym słownikiem; wpisy historyczne zostają jak były.
+
+Bramy po zmianie: `npm test` **6179/6179**, pełna brama
+`node tools/run-tests.mjs all` **6189/6189** (0 fail, ~365 s), build
+**59 modułów / 4049,7 kB**. Objętość artefaktu rośnie o 0,8 kB, bo doszła
+definicja tokenów w nowym słowniku statusów.
+
+## M420 — batch 58: siedem ostatnich kart arkusza właściciela (sesja 2026-09-23, PR #134)
+
+Zlecenie właściciela: „Ok, to zabieraj się za ten batch” + lista siedmiu pozycji
+arkusza (219FIN Prishe's Wanderings, 265OGW Boulder Salvo, 318CLB Gond Gate,
+377AVR Scroll of Avacyn, 447DSK Resurrected Cultist, 464AVR Polluted Dead,
+530ZEN Grazing Gladehart). Plan: `docs/plans/PLAN_2026-09-23b-batch58-kolekcja-219-530.md`;
+etapy B1–B7 to siedem osobnych, zielonych commitów (karta po karcie, każda
+z definicją, `MANA_COSTS`/deskryptorami, testami scenariusza legalnego
+i nielegalnego, regeneracją talii generatorem i pinem), etap B8 domyka
+dokumentację i pomiar.
+
+Katalog: **550 wpisów = 499 `supported` + 43 `token` + 8 `back`**, karty z `artId`
+495 → **502** (pin `test/art-ids-tool.test.js`), arkusz kolekcji 502 wiersze /
+499 nazw bez zmian — **każda pozycja arkusza właściciela ma odpowiednik
+w katalogu** (pomiar po tym batchu).
+
+Nowe mechaniki silnika (każda generyczna, zero warunków po nazwie karty —
+ADR 0002):
+
+- **B1 — surge na ścieżce CZARÓW** (dotąd tylko permanent): `CAST_SPELL_OPTIONS`
+  + walidacja (inny czar w turze), koszt alternatywny z deskryptora `surge`
+  (`reduceAlternativeCost`), flaga `surgeCast` na stosie i w zdarzeniu
+  `spell_cast` (CR 702.111); deski UI (render/main/mana-wizard/session) liczą
+  i nazywają koszt surge.
+- **B2 — landfall „możesz”**: reużyty `mayFire` na triggerze
+  `land_entered_under_your_control` (ląd wchodzi z dowolnego powodu, wejście
+  permanentu jako ląd triggera nie odpala — CR 603.6a).
+- **B3 — trigger śmierci celujący w LĄD**: tor triggerów zna cel typu `land`
+  (jedna implementacja z `isLand`).
+- **B4 — warunek „kontrolujesz stwora o podtypie”**: pozytywny bliźniak
+  `controlsNoCreatureSubtype` w efekcie `conditional`, czytany
+  w chwili rozstrzygnięcia (ruling AVR 2012-05-01).
+- **B5 — bramka `delirium` + `return_source_from_graveyard`**: aktywacja z grobu
+  wymaga 4+ typów kart w grobie (`graveyardCardTypeCount`, to samo źródło
+  w ofercie i walidacji — L48), powrót SIEBIE z licznikiem finality i wygnaniem
+  przy śmierci (CR 122.1e) — obok istniejącego powrotu cudzej karty.
+- **B6 — kwalifikator szukania z ALTERNATYWĄ (`anyOf`) + cel refleksyjny**:
+  `librarySearchMatches` składa kryterium z AND i `anyOf` (basic land ∨ Town),
+  po rozstrzygnięciu decyzji szukania (także przy „nie ma czego znaleźć”)
+  kolejkowany jest trigger refleksyjny z celem `creature_you_control`
+  (ruling FIN 2025-06-06; trigger wchodzi na stos ponad czarem, który się już
+  rozstrzygnął).
+- **B7 — statyk „wpisy wchodzą odkręcone” + mana „kolorów, jakie może dać
+  kontrolowana Brama”**: `entersUntapped: { subtype }` jako dane karty,
+  wspólny predykat `entersUntappedOverride` (CR 614.1d — efekt zastępczy
+  wejścia) czytany we wszystkich ścieżkach wejścia (ruch, land drop, szukanie,
+  reanimacja) i wyłącznie dla permanentów kontrolera statyka; deskryptor
+  `colorsFrom: { controlledSubtype }` liczony w chwili aktywacji w JEDNYM
+  miejscu (`colorsProducibleBySubtype`) używanym przez rozstrzygnięcie efektu,
+  auto-tap/kreator many i bramkę dostępności zdolności. Strażnik M193
+  przebudowany świadomie: linia Oracle „…could produce” jest warunkowa
+  (kolory zależą od pola bitwy), więc bezstanowa sonda jej nie porównuje, ale
+  wymaga deskryptora `colorsFrom` w danych karty.
+
+Talie zregenerowane wyłącznie generatorem (ADR 0023/0024): final-fantasy
+(`27/9/18`), zendikar (`35/12/23`), forgotten-realms (`38/13/25`), wiedzmin-bg
+(`27/9/18`), innistrad-brg (`29/10/19`), warhammer-ubr (`36/12/24`) — bez
+zmian wag/progów, golden-master i seedy F3 bez reseedu (żadna para fixture
+nie zawiera zmienionej talii; jeden seed E4 przelosowany po zmianie składu
+forgotten-realms — hunter, konwencja L25).
+
+Bramy po B7: `npm test` **6215/6215** (0 fail), pełna brama
+`node tools/run-tests.mjs all` **6225/6225** (0 fail, ~384 s), build
+**59 modułów / 4087,3 kB**. Handoff: `docs/setup/HANDOFF_2026-09-23b.md`.
+
+## M421 — uwagi z gry: 15 pozycji A–M (sesja 2026-09-23c, PR #134)
+
+Zlecenie właściciela: „14 uwag z jednej gry. Najwięcej do tej pory” + osobna
+uwaga M. Plan: `docs/plans/PLAN_2026-09-23c-uwagi-z-gry-14-pozycji.md`
+(nazwa historyczna — pozycji 15), etapy E1–E5, każda pozycja osobnym commitem.
+
+**Bot (E1)**: A — karta z `entersWithCountersIf: { morbid: true }` czeka na
+Główną 2 (`morbidMain1Penalty` 90 poniżej passu, `morbidMain2Bonus` 8), wyjątek
+`flash` tylko przy realnym zamiarze ataku (`intendsToAttackThisTurn` — ta sama
+polityka ataku co deklaracja); D — `return_card_from_graveyard_to_hand` wart
+tyle, ile bot ma na niego many (`graveReturnManaWeight` 4 × `min(mana value,
+potencjał)`, potencjał = pula + wszystkie własne źródła niezależnie od
+tapnięcia, minus rezerwacja rzucanego czaru); I — pip-aware
+`paymentLibraryLoss` (`reservedPipsOf` + pokrycie czystymi źródłami i kolorową
+pulą) i próg `libraryTapSafeMargin` 30 dla mielących tapnięć/płatności;
+M — cel-ląd `resolve_trigger_target` premiuje unikat koloru wroga (odcięcie
+koloru 18, singleton 10, kara 8/kopię, ląd bez produkcji 0).
+
+**Panel i modale (E2)**: B1 — „up to two” jako multiselect (`upToTargetsPlanOf`)
+zamiast enumeracji kombinacji; C+H — tytuły grup ofert niosą koszt (Forecast po
+imieniu i koszcie zdolności); F1 — „you may” bez modala (klik = wykonaj, „Dalej
+(Pass)” = odmowa) + etykieta wariantu odmowy w śladzie; F3 — Cloak/odkrywanie
+z kosztem; J — Epic Experiment jako JEDNA oferta z X + modal X +/− + kreator
+many (`xOnly`).
+
+**Silnik i stół (E3/E4)**: B2 — badge `detain` przez czas trwania efektu;
+F2 — zakryta Aura zostaje na stole jako 2/2 (CR 708.2); G — Mana Wizard
+pokrywa pipy per grupa i filtruje źródła bez potrzebnego koloru; E — deklaracje
+atakujących/blokujących pod „Dalej (Pass)”; L — „Przebieg tur (dla AI)”
+domyślnie rozwinięty; K — klik w długą opcję nie gubi się przy reflow
+(bez geometrii w `:active`, `scrollbar-gutter: stable`, stała kolumna opisu,
+`touch-action: manipulation` + `installPressActivation` z przechwyceniem
+wskaźnika).
+
+Bramy: `npm test` **6290/6290** (0 fail), pełna brama
+`node tools/run-tests.mjs all` **6300/6300** (0 fail, ~388 s), build
+**59 modułów / 4119,4 kB**. Handoff: `docs/setup/HANDOFF_2026-09-23c.md`.
+
+
+## M422 — follow-upy po uwagach z gry: F1 v2 (cloak) i audyt H (koszt w ofertach) (sesja 2026-09-23d, PR #134)
+
+Zlecenie właściciela po raporcie z sesji 2026-09-23c: (1) bot grający Veiled
+Ascension ma ZAWSZE wybierać „may” (cloak w upkeepie), chyba że biblioteka jest
+blisko wyczerpania (< 10 kart); (2) sprawdzić inne czary / instanty / sorcery /
+aury / zdolności / wybory pod kątem pokazywania kosztu i zaraportować, ile
+poprawiono i czy idzie to jedną wspólną funkcją ofert (odpowiedź dopuszczalna —
+ale musi być udowodniona). Plan: `docs/plans/PLAN_2026-09-23d-f1v2-cloak-i-audyt-h.md`.
+
+**F1 v2 (`eada4cb`)** — `resolve_optional_trigger_choice` brało fallback
+`fire ? 50 : 0`, a `cloak` nie jest w `LIBRARY_DRAIN_EFFECTS`, więc strażnik kar
+bibliotecznych go nie widział: bot zakrywał kartę z biblioteki nawet przy 1–5
+kartach (droga do deck-outu, CR 121.4) i marnował wartość cloaka (2/2 z wardem,
+wracalny twarzą do góry, CR 701.56). Teraz: zbiór typów efektów zakrywających
+kartę z biblioteki (`cloak`/`manifest`) + wspólny czytnik
+`pendingOptionalEffects(view)` (ten sam w strażniku i w wycenie, L41), bazowe
+„fire” = 50, a pod progiem `cloakLibraryFloor` (10) kara
+`cloakThinLibraryPenalty` (60) schodzi pod „pass”. Test 6/6: granica 10/9,
+nadpisanie progu parametrem, brak regresji drenażu (Murder of Crows),
+anty-over-fix (Grazing Gladehart przy bibliotece 1 karty).
+
+**Audyt H (`62ea637`)** — zmierzone dowody na „jedną wspólną funkcję ofert”:
+- 89 z 90 typów komend ma własną gałąź etykiety w `commandLabel`; jedyny wyjątek
+  (`move_object`) to komenda protokołu/replayów — nic w `src/` jej nie produkuje,
+  więc nie powstaje jako oferta;
+- koszt liczą cztery wspólne funkcje po JEDNEJ definicji: `cardCostHtml`,
+  `abilityCostHtmlOf`, `abilityCostSuffix` oraz renderer ikon `manaCostHtml`;
+  używają ich i etykiety pojedynczych ofert, i tytuły grup decyzji
+  (`choiceSourceTitle`/`choiceGroupTitle`/`choiceGroupLabel`);
+- oferta z nieopłacalnym kosztem nie powstaje wcale — jeden predykat
+  `canPayColoredCost` (59 wywołań: abilities 27, spells 15, game-state 11,
+  resources 4, triggers 2); zmierzone: Shock bez many i Forecast {2}{W} przy
+  jednej Plains nie są ofertami, z maną są — z kosztem w etykiecie;
+- warstwę kosztów w ofertach pinuje 54 pliki testów (`commandLabel`/
+  `choiceGroup*`/`buildActionEntries` × koszt).
+
+**Znalezisko audytu (naprawione)** — F3 z sesji 2026-09-23c dodał koszt do
+etykiety obrotu twarzą do góry, ale etykieta czytała pole z OBJEKTU WIDOKU,
+a `playerView` nie projektuje `cloakTurnUpCost`/`manifestTurnUpCost` (koszt
+i prawo obrotu zna tylko właściciel zakrytej karty — FoW). Test F3 przechodził,
+bo podawał koszt w ręcznie zbudowanym widoku (klasa L1/ADR 0017), a w prawdziwej
+partii oferta cloakiem dalej milczała, manifest nie miał kosztu nigdy. Naprawa:
+helper `uncoverCostOf` — odczyt ze STANU, ten sam co kreator płatności (M327),
+dla obu etykiet (L41). Piny: `test/audyt-h-koszt-w-ofertach-pelny.test.js` 8/8
+(pokrycie typów, jedna funkcja, bramka opłacalności, koszt obrotu z prawdziwego
+widoku — RED przed fixem: 2 fail, darmowe akcje bez kosztu, FoW przeciwnika).
+
+Bramy: `npm test` **6304/6304** (0 fail, ~242 s), pełna brama
+`node tools/run-tests.mjs all` **6314/6314** (0 fail, ~416 s), build
+**59 modułów / 4124,0 kB**. Handoff: `docs/setup/HANDOFF_2026-09-23d.md`.

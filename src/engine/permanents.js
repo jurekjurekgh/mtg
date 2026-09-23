@@ -727,6 +727,34 @@ export function effectiveToughness(object, state = null) {
 }
 
 /**
+ * Batch 58/B7 (Gond Gate; Oracle „Gates you control enter untapped"): czy
+ * wchodzący permanent ma wchodzić ODKRĘCONY mimo własnego „enters tapped".
+ * Reguła czytana z DESKRYPTORA zdolności statycznej kontrolera pola bitwy
+ * (`entersUntapped: { subtype }`, ADR 0002) — nie z nazwy karty, więc każdy
+ * przyszły statyk tego kształtu („Gates/… you control enter untapped") działa
+ * bez zmian w rdzeniu. To efekt ZASTĘPCZY wejścia (CR 614.1d): dotyczy
+ * wszystkich ścieżek kładzenia permanentu (land drop, efekt, reanimacja).
+ *
+ * `enteringId` wyklucza sam wchodzący obiekt z grona źródeł (statyk na
+ * wchodzącej Bramie nie „widzi" jeszcze siebie na polu bitwy).
+ */
+export function entersUntappedOverride(state, object, { enteringId = null } = {}) {
+  if (!state || !object) return false;
+  for (const id of state.zones.battlefield) {
+    if (enteringId != null && id === enteringId) continue;
+    const source = state.objects.get(id);
+    if (!source || source.zone !== 'battlefield' || source.controllerId !== object.controllerId) continue;
+    for (const ability of effectiveAbilities(source)) {
+      if (ability?.type !== 'static' || !ability.entersUntapped) continue;
+      const subtype = ability.entersUntapped.subtype;
+      if (!subtype) continue;
+      if (effectiveSubtypes(object).includes(subtype)) return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Efektywne zdolności obiektu = własne + nadane „do końca tury"
  * (abilityGrants — np. Fake Your Own Death nadaje stworowi trigger dies).
  * Triggery i legalne aktywacje czytają zawsze tę listę, nie object.abilities.
@@ -1290,8 +1318,10 @@ export function clearStatModifiers(state) {
       || current.typeGrant != null
       // Wydrukowane „can't block\" (token) nie jest brudem do sprzątnięcia —
       // bez tego wyłączenia cleanup przepisywałby token w każdej turze.
-      || (current.cantBlock === true && current.cantBlockPrinted !== true)
-      || current.cantBeBlocked === true;
+      // Granty z TERMINEM tury (`cantBeBlockedUntilTurn` — M407,
+      // `hexproofUntilTurn`) celowo poza tą bramką: wygasają read-time
+      // (`state.turn.number < termin`), więc obiekt nie jest „brudny”.
+      || (current.cantBlock === true && current.cantBlockPrinted !== true);
     if (dirty) {
       replaceObject(state, current, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [],
@@ -1301,7 +1331,7 @@ export function clearStatModifiers(state) {
         // Phyrexian Mite, Goblin Construct) jest trwała: znacznik
         // `cantBlockPrinted` przeżywa cleanup, a `cantBlock` pozostaje z nim
         // zgodne, żeby każdy odczyt (widok, boty, walka) widział ten sam stan.
-        cantBlock: Boolean(current.cantBlockPrinted), cantBeBlocked: false,
+        cantBlock: Boolean(current.cantBlockPrinted),
         saddled: false, tempBasePT: null, damagedThisTurn: false, abilityResolvedThisTurn: 0,
       });
     }

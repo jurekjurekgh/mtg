@@ -1,0 +1,53 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Resurrected%20Cultist&set=dsk",
+  "print": "dsk",
+  "name": "Resurrected Cultist",
+  "mana_cost": "{2}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Human Cleric",
+  "oracle_text": "Delirium — {2}{B}{B}: Return this card from your graveyard to the battlefield with a finality counter on it. Activate only if there are four or more card types among cards in your graveyard and only as a sorcery. (If a creature with a finality counter on it would die, exile it instead.)",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Delirium"
+  ],
+  "power": "4",
+  "toughness": "1",
+  "set": "dsk",
+  "set_name": "Duskmourn: House of Horror",
+  "collector_number": "115",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/4/e41bd259-e81f-432a-bebf-4c6534f23db7.jpg?1783909475",
+    "normal": "https://cards.scryfall.io/normal/front/e/4/e41bd259-e81f-432a-bebf-4c6534f23db7.jpg?1783909475"
+  },
+  "pobrano": "2026-09-23",
+  "rulings": [
+    {
+      "date": "2024-09-20",
+      "source": "wotc",
+      "comment": "Finality counters work on any permanent, not only creatures. If a permanent with a finality counter on it would be put into a graveyard from the battlefield, exile it instead."
+    },
+    {
+      "date": "2024-09-20",
+      "source": "wotc",
+      "comment": "Finality counters don’t stop permanents from going to zones other than the graveyard from the battlefield. For example, if a permanent with a finality counter on it would be put into its owner’s hand from the battlefield, it does so normally."
+    },
+    {
+      "date": "2024-09-20",
+      "source": "wotc",
+      "comment": "Finality counters aren’t keyword counters, and a finality counter doesn’t give any abilities to the permanent it’s on. If that permanent loses its abilities and then would go to a graveyard, it will still be exiled instead."
+    },
+    {
+      "date": "2024-09-20",
+      "source": "wotc",
+      "comment": "Multiple finality counters on a single permanent are redundant."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/dsk/115/rulings",
+  "rulingsPobrano": "2026-09-23"
+}

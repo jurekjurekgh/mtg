@@ -195,9 +195,9 @@ test('Batch 17: wszystkie 10 kart supported z artId, planem i obrazem', () => {
   assert.equal(REGISTRY.get('garruks-companion').keywords.join(), 'trample');
 });
 
-test('Batch 17: tokeny (insect/soldier/dinosaur) są limited', () => {
+test('Batch 17: tokeny (insect/soldier/dinosaur) mają status token', () => {
   for (const id of ['token_insect', 'token_soldier', 'token_dinosaur']) {
-    assert.equal(REGISTRY.get(id).support.status, 'limited', `${id} nie limited`);
+    assert.equal(REGISTRY.get(id).support.status, 'token', `${id} to nie token`);
   }
 });
 

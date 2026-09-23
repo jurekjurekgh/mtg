@@ -1,4 +1,4 @@
-import { effectiveSubtypes } from './permanents.js';
+import { effectiveAbilities, effectiveSubtypes } from './permanents.js';
 
 /**
  * Mapowanie źródeł many -> jakie kolory mogą wyprodukować.
@@ -86,7 +86,41 @@ export function getManaSourceInfo(cardId) {
  * podnosic kolorow dostepnych „od reki" — inaczej silnik zaoferowalby czar,
  * ktorego nie da sie oplacic (odwrotny bug tej samej klasy, L48).
  */
-export function manaAbilityColors(gameObject) {
+/**
+ * Batch 58/B7 (Gond Gate: „{T}: Add one mana of any color that a Gate you
+ * control could produce"): kolory produkowalne przez KONTROLOWANE permanenty
+ * o danym podtypie — unia kolorów z deskryptorów `add_mana` ich zdolności
+ * (koszt bez znaczenia: Oracle mówi „could produce", a nie „za samo {T}" —
+ * CR 106.1; Heap Gate ze swoim {1},{T}: any color liczy się więc w pełni).
+ *
+ * `excludeId` wyklucza samo źródło (Gond Gate nie liczy własnego {C}).
+ * Jedno miejsce prawdy (L41) dla: kreatora many/auto-tapu
+ * (`getSourceForObject`), rozstrzygnięcia efektu (effects.js) i bramki
+ * dostępności zdolności (abilities.js `abilityConditionFailure`).
+ */
+export function colorsProducibleBySubtype(state, playerId, subtype, { excludeId = null } = {}) {
+  const colors = [];
+  if (!state || !subtype || !playerId) return colors;
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) continue;
+    if (excludeId != null && object.id === excludeId) continue;
+    if (!effectiveSubtypes(object).includes(subtype)) continue;
+    // `effectiveAbilities`: podtypy i zdolności honorują nadania/zmiany typu
+    // (typeGrant/abilityGrants) — jak każdy inny odczyt na polu bitwy.
+    for (const ability of effectiveAbilities(object)) {
+      if (ability?.type !== 'activated') continue;
+      const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      for (const effect of effects) {
+        if (effect?.type !== 'add_mana') continue;
+        for (const color of effect.colors ?? []) if (!colors.includes(color)) colors.push(color);
+      }
+    }
+  }
+  return colors;
+}
+
+export function manaAbilityColors(gameObject, state = null) {
   const colors = [];
   let found = false;
   for (const ability of gameObject?.abilities ?? []) {
@@ -101,7 +135,13 @@ export function manaAbilityColors(gameObject) {
     for (const effect of effects) {
       if (effect?.type !== 'add_mana') continue;
       found = true;
-      for (const color of effect.colors ?? []) if (!colors.includes(color)) colors.push(color);
+      // B7 (Gond Gate): „any color that a <podtyp> you control could produce" —
+      // kolory z danych grupy permanentów, nie z nazwy karty (ADR 0002).
+      const producible = effect.colorsFrom
+        ? colorsProducibleBySubtype(state, gameObject.controllerId, effect.colorsFrom.controlledSubtype,
+          { excludeId: gameObject.id })
+        : (effect.colors ?? []);
+      for (const color of producible) if (!colors.includes(color)) colors.push(color);
     }
   }
   return found ? colors : null;
@@ -123,12 +163,16 @@ export function manaAbilityColors(gameObject) {
  * Kolor wybrany przy wejściu (A3, Manor Gate) dokłada się tak samo jak
  * w getSourceForObject — jedna reguła unii (L28).
  */
-export function manaAbilityProductionOf(gameObject, ability) {
+export function manaAbilityProductionOf(gameObject, ability, state = null) {
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
   const addEffects = (effects ?? []).filter((e) => e?.type === 'add_mana');
   if (addEffects.length === 0) return null;
-  const descColors = [...new Set(addEffects.flatMap((e) => e.colors ?? []))];
-  const src = getSourceForObject(gameObject);
+  // B7 (Gond Gate): ta sama unia grupowa co w `manaAbilityColors`/auto-tapie.
+  const descColors = [...new Set(addEffects.flatMap((e) => (e.colorsFrom
+    ? colorsProducibleBySubtype(state, gameObject?.controllerId, e.colorsFrom.controlledSubtype,
+      { excludeId: gameObject?.id ?? null })
+    : (e.colors ?? []))))];
+  const src = getSourceForObject(gameObject, state);
   const base = descColors.length > 0 ? descColors : (src?.colors ?? []);
   const colors = gameObject?.chosenColor && !base.includes(gameObject.chosenColor)
     ? [...base, gameObject.chosenColor]
@@ -243,7 +287,7 @@ export function getSourceForObject(gameObject, state = null) {
   // Mapa zostaje dla kart BEZ zdolnosci many w danych (produkcja implikowana:
   // basicki, Great Furnace „{T}: Add {R}" jako caly tekst karty) oraz dla
   // przypadkow, ktorych deskryptor nie wyraza (tron Urzy, Holdout Settlement).
-  const abilityColors = manaAbilityColors(gameObject);
+  const abilityColors = manaAbilityColors(gameObject, state);
   if (abilityColors) {
     const amount = manaAbilityAmount(gameObject) ?? 1;
     // Kolor wybrany przy wejsciu (Manor Gate: „or one mana of the chosen

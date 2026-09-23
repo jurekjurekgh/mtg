@@ -10,7 +10,8 @@ import { ABILITY_TYPE, createAbility } from '../engine/abilities.js';
  * SYNTH), które zasilają pełny przepływ danych: registry → walidacja talii →
  * materializacja obiektów gry → symulacja partii.
  *
- * Katalog obejmuje też statusy in-development/limited/unsupported, żeby
+ * Katalog obejmuje też statusy token/back (wpisy spoza talii) oraz — na
+ * wypadek przyszłych prac — in-development/unsupported, żeby
  * testy negatywne miały stałe punkty odniesienia.
  */
 
@@ -98,7 +99,7 @@ export const REAL_CARDS = Object.freeze([
   // Drugi batch realnych kart (2026-08-01): Grizzled Outcasts (ISD),
   // Entrancing Lyre (THB), Zoraline, Cosmos Caller (BLB).
   // Strona przednia wilkołaka (transform DFC); tył to osobna definicja
-  // 'krallenhorde-wantons' (limited — nie taliowalna, jak token).
+  // 'krallenhorde-wantons' (status `back` — nie taliowalna, jak token).
   defineCard({
     id: 'grizzled-outcasts', name: 'Grizzled Outcasts', set: 'ISD',
     types: ['Creature'], subtypes: ['Human', 'Werewolf'], colors: ['G'],
@@ -135,7 +136,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 486,
     plan: 'Innistrad',
-    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
+    support: { status: 'back', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
   defineCard({
     id: 'entrancing-lyre', name: 'Entrancing Lyre', set: 'THB',
@@ -449,13 +450,13 @@ export const REAL_CARDS = Object.freeze([
   }),
   // Token Jyoti (M3C): 1/1 zielony Forest Dryad — land creature (typ Land
   // + rodzaj creature): walczy jak stwór i tapuje się na manę jak land.
-  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  // Definicja tokena — nie taliowalna (status `token`), jak token_goblin.
   defineCard({
     id: 'token_forest_dryad', name: 'Forest Dryad', set: null,
     types: ['Land', 'Creature', 'Token'], subtypes: ['Forest', 'Dryad'], colors: ['G'],
     power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/1/0/107be8ee-ee22-4d37-94f1-2a5b438fbe05.jpg?1783911122',  // tm3c
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Siódmy batch realnych kart (2026-08-02): Fake Your Own Death (OTJ),
   // Puppeteer Clique (SHM), Unstable Frontier (CON), Apprentice Wizard (2XM),
@@ -727,7 +728,7 @@ export const REAL_CARDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Knight'], colors: ['W'],
     keywords: ['vigilance'], power: 2, toughness: 2, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/b/f/bf9acfe1-de7a-48fe-aed3-28a72db6d1c0.jpg?1783940863',  // l12
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Selesnya Charm'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Selesnya Charm'] },
   }),
   // M202/K (zgłoszenie właściciela): token Phyrexian Mite renderował się jako
   // syntetyczna zaślepka, bo NIE MIAŁ WPISU w katalogu — a to z wpisu kafel
@@ -743,7 +744,7 @@ export const REAL_CARDS = Object.freeze([
     keywords: ['toxic'], toxic: 1, power: 1, toughness: 1, manaCost: 0,
     oracleText: 'Toxic 1 (Players dealt combat damage by this creature also get a poison counter.)\nThis creature can\'t block.',
     imageUri: 'https://cards.scryfall.io/large/front/9/6/96ec91a9-659a-455f-98e0-cd30b6c6c2a4.jpg?1783918166',  // tone
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Crawling Chorus'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Crawling Chorus'] },
   }),
   // M202/K cd. (ta sama przyczyna co Phyrexian Mite): tokeny tworzone przez
   // Mysidian Elder, Chatter of the Squirrel i Call the Mountain Chocobo nie
@@ -767,21 +768,21 @@ export const REAL_CARDS = Object.freeze([
         effect: { type: 'damage_each_opponent', amount: 1 },
       }),
     ],
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Mysidian Elder'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Mysidian Elder'] },
   }),
   defineCard({
     id: 'token_squirrel', name: 'Squirrel', set: null,
     types: ['Creature', 'Token'], subtypes: ['Squirrel'], colors: ['G'],
     power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/5/a/5a6ec62e-0e9b-4312-bfe8-cc85d76fd9e0.jpg?1783909765',  // tblb
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Chatter of the Squirrel'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Chatter of the Squirrel'] },
   }),
   defineCard({
     id: 'token_cat', name: 'Cat', set: null,
     types: ['Creature', 'Token'], subtypes: ['Cat'], colors: ['G'],
     power: 2, toughness: 2, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/b/d/bdc3ab55-8b33-4604-ad78-26edbb23d218.jpg?1783912616',  // tmkc (Jolrael, Mwonvuli Recluse)
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Jolrael, Mwonvuli Recluse'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Jolrael, Mwonvuli Recluse'] },
   }),
   defineCard({
     id: 'token_bird_chocobo', name: 'Bird', set: null,
@@ -799,7 +800,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [{ type: 'pump', power: 1, toughness: 0 }],
       }),
     ],
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Call the Mountain Chocobo'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Call the Mountain Chocobo'] },
   }),
   // Batch 53 (Ghirapur Gearcrafter): drukowany token 1/1 Thopter z lataniem.
   // Wpis jest danymi prezentacji (grafika Scryfall); reguła pozostaje inline
@@ -810,7 +811,7 @@ export const REAL_CARDS = Object.freeze([
     keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
     oracleText: 'Flying',
     imageUri: 'https://cards.scryfall.io/large/front/b/9/b9d38c75-c69f-45cd-a745-03ac7513491b.jpg?1783903566',  // tsoc
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Ghirapur Gearcrafter'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Ghirapur Gearcrafter'] },
   }),
   defineCard({
     id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
@@ -865,7 +866,7 @@ export const REAL_CARDS = Object.freeze([
   }),
   // Token Fake Your Own Death (OTJ): Treasure — artefakt bez statystyk ze
   // zdolnością „{T}, Sacrifice this token: Add one mana of any color\".
-  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  // Definicja tokena — nie taliowalna (status `token`), jak token_goblin.
   defineCard({
     id: 'token_treasure', name: 'Treasure', set: null,
     types: ['Artifact', 'Token'], subtypes: ['Treasure'], colors: [],
@@ -887,7 +888,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     imageUri: 'https://cards.scryfall.io/large/front/7/e/7ec6f053-96f7-4e57-b2eb-4e7699a40a4f.jpg?1783911520',  // totj
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Ósmy batch realnych kart (2026-08-02): Phyrexian Rager (DMU), Nefarious
   // Imp (CLB), Gather the Townsfolk (DDQ), Evangel of Synthesis (BRO),
@@ -997,13 +998,13 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
   // Token Gather the Townsfolk (DDQ): 1/1 biały Human.
-  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  // Definicja tokena — nie taliowalna (status `token`), jak token_goblin.
   defineCard({
     id: 'token_human', name: 'Human', set: null,
     types: ['Creature', 'Token'], subtypes: ['Human'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/1/5/15a620da-5056-4582-8da5-2c955c3f4c0d.jpg?1783937829',  // ddq
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Token Food (ELD): artefakt ze zdolnością „{2}, {T}, Sacrifice this
   // artifact: You gain 3 life\". Tworzony przez karty generujące Food.
@@ -1019,7 +1020,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     imageUri: 'https://cards.scryfall.io/large/front/b/f/bf36408d-ed85-497f-8e68-d3a922c388a0.jpg?1783932477',  // teld
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Dziewiąty batch realnych kart (2026-08-03): Kor Cartographer (CMR),
   // Scorpion Sentinel (FIN), Dunland Crebain (LTR), Dragonbroods' Relic (TDM),
@@ -1130,13 +1131,13 @@ export const REAL_CARDS = Object.freeze([
     plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
   }),
-  // Tokeny Batch 9 — limited, nie są legalne w talii.
+  // Tokeny Batch 9 — status `token`, nie są legalne w talii.
   defineCard({
     id: 'token_orc_army', name: 'Orc Army', set: null,
     types: ['Creature', 'Token'], subtypes: ['Orc', 'Army'], colors: ['B'],
     power: 0, toughness: 0, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/2/f/2f8b43e8-dd89-452e-b572-8559e19fdea2.jpg?1783916049',  // tltr
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; statystyki rosną przez amass'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; statystyki rosną przez amass'] },
   }),
   defineCard({
     id: 'token_reliquary_dragon', name: 'Reliquary Dragon', set: null,
@@ -1144,14 +1145,14 @@ export const REAL_CARDS = Object.freeze([
     keywords: ['flying', 'lifelink'], power: 4, toughness: 4, manaCost: 0,
     abilities: [BATCH9_RELIQUARY_DRAGON_ETB],
     imageUri: 'https://cards.scryfall.io/large/front/4/4/44465924-8cc2-49a4-bc07-8dbae7570af6.jpg?1783906782',  // ttdm
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Dragonbroods\' Relic'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Dragonbroods\' Relic'] },
   }),
   defineCard({
     id: 'token_elemental', name: 'Elemental', set: null,
     types: ['Creature', 'Token'], subtypes: ['Elemental'], colors: ['G'],
     power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/0/0/008695e6-6d6f-4c16-bf05-377e8cc5f5ff.jpg?1783911524',  // totj
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; P/T ustala efekt Tumbleweed Rising'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; P/T ustala efekt Tumbleweed Rising'] },
   }),
   // Dziesiąty batch realnych kart (2026-08-03): Goblin Piker (M11), Angel of
   // the Dawn (M19), Armored Skaab (ISD), Tumbleweed Rising (OTJ), Dawntreader
@@ -1359,22 +1360,22 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
   // Token Canonized in Blood (LCI): 4/3 czarno-biały Vampire Demon z flying.
-  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  // Definicja tokena — nie taliowalna (status `token`), jak token_goblin.
   defineCard({
     id: 'token_vampire_demon', name: 'Vampire Demon', set: null,
     types: ['Creature', 'Token'], subtypes: ['Vampire', 'Demon'], colors: ['W', 'B'],
     keywords: ['flying'], power: 4, toughness: 3, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/3/0/3005eb0a-5c96-4a07-a6b9-a907d1095cdf.jpg?1783913605',  // tlci
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Canonized in Blood'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Canonized in Blood'] },
   }),
   // Token lochu Undercity (Catacombs): 4/1 czarny Skeleton z menace.
-  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  // Definicja tokena — nie taliowalna (status `token`), jak token_goblin.
   defineCard({
     id: 'token_skeleton', name: 'Skeleton', set: null,
     types: ['Creature', 'Token'], subtypes: ['Skeleton'], colors: ['B'],
     keywords: ['menace'], power: 4, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/c/f/cf4c245f-af2f-46a7-81f3-670a04940901.jpg?1783922321',  // tclb
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez pokój Catacombs lochu Undercity'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez pokój Catacombs lochu Undercity'] },
   }),
   // Dwunasty batch realnych kart (2026-08-03): Grave Exchange (AVR),
   // Hysterical Blindness (ISD), Barkform Harvester (BLB), Undead Servant
@@ -1481,13 +1482,13 @@ export const REAL_CARDS = Object.freeze([
     notes: ['scry 1 to blokująca decyzja'],
   }),
   // Token Undead Servant (ORI/M20): 2/2 czarny Zombie. Definicja tokena —
-  // nie taliowalna (limited), jak token_goblin.
+  // nie taliowalna (status `token`), jak token_goblin.
   defineCard({
     id: 'token_zombie', name: 'Zombie', set: null,
     types: ['Creature', 'Token'], subtypes: ['Zombie'], colors: ['B'],
     power: 2, toughness: 2, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/7/c/7c60e495-8fb7-43bb-b11d-52882c0246bc.jpg?1783937829',  // ddq
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Undead Servant'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Undead Servant'] },
   }),
   // Trzynasty batch realnych kart (2026-08-03): Scorned Villager (DKA),
   // Curse of the Pierced Heart (ISD), Emissary Escort (EOE), Snarling Wolf
@@ -1542,7 +1543,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 485,
     plan: 'Innistrad',
-    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
+    support: { status: 'back', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
   defineCard({
     id: 'curse-of-the-pierced-heart', name: 'Curse of the Pierced Heart', set: 'ISD',
@@ -1825,7 +1826,7 @@ export const REAL_CARDS = Object.freeze([
   // Guidestone Compass — back face of Lodestone Needle. Tyły kart
   // dwustronnych NIE są osobnymi pozycjami do talii (poza polem bitwy karta
   // istnieje tylko stroną frontową, CR 711.4) — bug ze stołu 2026-08-05:
-  // backside na ręku nie da się rzucić. Jak przy Shiva/tokenach: limited
+  // backside na ręku nie da się rzucić. Jak przy Shiva/tokenach: `back`
   // (walidacja talii i kreator odrzucają ten wpis).
   defineCard({
     id: 'guidestone-compass', name: 'Guidestone Compass', set: 'LCI',
@@ -1843,7 +1844,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 484,
     plan: 'Ixalan',
-    support: { status: 'limited', limitations: ['Tył karty dwustronnej (Lodestone Needle) — nie do talii ani kreatora; do gry trafia wyłącznie przez transform frontu'] },
+    support: { status: 'back', limitations: ['Tył karty dwustronnej (Lodestone Needle) — nie do talii ani kreatora; do gry trafia wyłącznie przez transform frontu'] },
     notes: ['Explore: reveal top, if land → hand, else +1/+1 counter + choose back/graveyard; blokująca decyzja resolve_explore_choice'],
   }),
 
@@ -2166,7 +2167,7 @@ export const REAL_CARDS = Object.freeze([
   }),
 
   // 3. Jill, Shiva's Dominant // Shiva, Warden of Ice (FIN) — transform DFC;
-  // strona tylna to osobna definicja 'shiva-warden-of-ice' (limited, jak
+  // strona tylna to osobna definicja 'shiva-warden-of-ice' (`back`, jak
   // krallenhorde-wantons).
   defineCard({
     id: 'jill-shivas-dominant', name: "Jill, Shiva's Dominant", set: 'FIN',
@@ -2229,7 +2230,7 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/back/1/f/1f163763-4802-4a96-a5bc-f3c381db7b5c.jpg?1783906640',
     artId: 527,
     plan: 'Final Fantasy',
-    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
+    support: { status: 'back', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
 
   // 4. Ethersworn Shieldmage (ARB) — artifact creature z flash + prewencją
@@ -2436,23 +2437,23 @@ export const REAL_CARDS = Object.freeze([
   }),
 
   // Token Wedgelight Rammer (EOE): 2/2 bezbarwny Robot — artefaktowy stwór.
-  // Definicja tokena — nie taliowalna (limited), jak token_wolf.
+  // Definicja tokena — nie taliowalna (status `token`), jak token_wolf.
   defineCard({
     id: 'token_robot', name: 'Robot', set: null,
     types: ['Artifact', 'Creature', 'Token'], subtypes: ['Robot'], colors: [],
     power: 2, toughness: 2, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/c/4/c46f9a07-005c-44b7-8057-b2f00b274dd6.jpg?1783905782',  // teoe
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Wedgelight Rammer'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Wedgelight Rammer'] },
   }),
 
   // Token Howl of the Night Pack (M10): 2/2 zielony Wolf.
-  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  // Definicja tokena — nie taliowalna (status `token`), jak token_goblin.
   defineCard({
     id: 'token_wolf', name: 'Wolf', set: null,
     types: ['Creature', 'Token'], subtypes: ['Wolf'], colors: ['G'],
     power: 2, toughness: 2, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/0/f/0f63920d-18a0-4267-bb4e-a972ba86067d.jpg?1783942345',  // tm10
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Howl of the Night Pack'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Howl of the Night Pack'] },
   }),
   // Token Aerith Rescue Mission (FIN): 1/1 bezbarwny Hero.
   defineCard({
@@ -2460,7 +2461,7 @@ export const REAL_CARDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Hero'], colors: [],
     power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/d/0/d0657ce1-bf75-4007-ac1b-0623eb263357.jpg?1783906138',  // tfin
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Aerith Rescue Mission'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Aerith Rescue Mission'] },
   }),
 
   // =========================================================================
@@ -2701,13 +2702,13 @@ export const REAL_CARDS = Object.freeze([
   }),
 
   // Token Carrion Call (SOM): 1/1 zielony Phyrexian Insect z infect.
-  // Definicja tokena — nie taliowalna (limited), jak token_wolf.
+  // Definicja tokena — nie taliowalna (status `token`), jak token_wolf.
   defineCard({
     id: 'token_insect', name: 'Phyrexian Insect', set: null,
     types: ['Creature', 'Token'], subtypes: ['Phyrexian', 'Insect'], colors: ['G'],
     keywords: ['infect'], power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/5/a/5a90e8ab-5a76-4834-9cd6-186af939ea41.jpg?1783918174',  // tonc
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Carrion Call'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Carrion Call'] },
   }),
   // Token Captain's Call (CMR): 1/1 biały Soldier.
   defineCard({
@@ -2715,7 +2716,7 @@ export const REAL_CARDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Soldier'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/4/3/430ed737-b918-4485-a623-e781c0beb67b.jpg?1783928591',  // tcmr
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Captain\'s Call'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Captain\'s Call'] },
   }),
   // Token Crested Herdcaller (RIX): 3/3 zielony Dinosaur z trample.
   defineCard({
@@ -2723,7 +2724,7 @@ export const REAL_CARDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Dinosaur'], colors: ['G'],
     keywords: ['trample'], power: 3, toughness: 3, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/b/1/b1ade1a5-74bf-41cd-b3b4-3bf33cf6d016.jpg?1783931642',  // tgn2
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Crested Herdcaller'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Crested Herdcaller'] },
   }),
 
   // =========================================================================
@@ -2972,7 +2973,7 @@ export const REAL_CARDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Spirit'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/f/2/f22410b3-5c0b-4282-9b0b-5ba61229b6e7.jpg?1783906786',  // ttdm
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez endure (Kin-Tree Nurturer)'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez endure (Kin-Tree Nurturer)'] },
   }),
   // Token Trostani Discordant (CLU): 1/1 biały Soldier z lifelink.
   defineCard({
@@ -2980,7 +2981,7 @@ export const REAL_CARDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Soldier'], colors: ['W'],
     keywords: ['lifelink'], power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/1/7/1774c68a-3d76-4fe1-b741-e6acf6b9214c.jpg?1783916674',  // tmom
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Trostani Discordant'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Trostani Discordant'] },
   }),
 
   // ------------------------- Batch 19 (2026-08-06, lista właściciela) -----
@@ -3354,7 +3355,7 @@ export const REAL_CARDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Kithkin'], colors: ['G', 'W'],
     power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/2/e/2ed11e1b-2289-48d2-8d96-ee7e590ecfd4.jpg?1783904325',  // tecl
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Goldmeadow Nomad'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Goldmeadow Nomad'] },
   }),
 
   // 9. Fear of Abduction (DSK) — exile own creature cost + ETB exile opp + LTB return
@@ -3402,7 +3403,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_clone', name: 'Clone', set: null,
     types: ['Token'], colors: [],
     imageUri: 'https://cards.scryfall.io/large/front/b/2/b2a03ba1-2182-4074-99f5-f3952c1d37ec.jpg?1783902815',  // tmsc
-    support: { status: 'limited', limitations: [] },
+    support: { status: 'token', limitations: [] },
     notes: ['token-klon — tworzony przez Moonlit Meditation; P/T/typy zależą od zaczarowanego permanentu'],
   }),
 
@@ -3643,7 +3644,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     imageUri: 'https://cards.scryfall.io/large/front/f/2/f26e1f55-284c-4540-bf5c-ebc7ab9687ab.jpg?1783911122',  // tm3c
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Disa the Restless'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Disa the Restless'] },
   }),
 
   // =========================================================================
@@ -4237,7 +4238,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'add_mana', amount: 1 },
       }),
     ],
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Scion Summoner'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Scion Summoner'] },
   }),
 
   // =========================================================================
@@ -4291,7 +4292,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Rat'], colors: ['B'],
     power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/3/1/3132c128-e0bd-4524-9526-914b3c7181fc.jpg?1783946562',
-    support: { status: 'limited', limitations: [] },
+    support: { status: 'token', limitations: [] },
     notes: ['token'],
   }),
 
@@ -4687,7 +4688,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: 180, plan: 'Innistrad',
-    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
+    support: { status: 'back', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
 
   // 2. Battle-Rattle Shaman (M21) — {3}{R} 2/2 Goblin Shaman
@@ -5029,7 +5030,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/b/7/b7b55dcf-ae63-4b84-8d39-80b5a6de3c1a.jpg?1783942409', // M157/B: token ze Scryfall
     types: ['Creature', 'Token'], subtypes: ['Bird', 'Soldier'], colors: ['W'],
     keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Flurry of Wings'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Flurry of Wings'] },
   }),
   defineCard({
     id: 'token_goblin_construct', name: 'Goblin Construct', set: null,
@@ -5044,7 +5045,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'damage_to_controller', amount: 1 },
       }),
     ],
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Relic Robber'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Relic Robber'] },
   }),
 
   // =========================================================================
@@ -5878,7 +5879,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: 505, plan: 'Wiedźmin',
-    support: { status: 'limited', limitations: ['tylna strona daybound/nightbound — nie można umieścić w talii'] },
+    support: { status: 'back', limitations: ['tylna strona daybound/nightbound — nie można umieścić w talii'] },
   }),
 
   // =========================================================================
@@ -6120,7 +6121,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/6/f/6f5a5786-e2be-4bb0-b971-81d1d5cc8f52.jpg?1783903574', // M157/B: token ze Scryfall
     types: ['Creature', 'Token'], subtypes: ['Spirit'], colors: ['W'],
     keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
   }),
 
   defineCard({
@@ -6293,7 +6294,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     transformTo: 'token_phyrexian',
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
   }),
 
   // Token Phyrexian — tylna strona Incubatora: 0/0 artefaktowy stwór
@@ -6303,7 +6304,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/back/c/5/c5229eb0-9356-43a6-9b1b-6366f3c1e405.jpg?1783905793', // M157/B: token ze Scryfall
     types: ['Artifact', 'Creature', 'Token'], subtypes: ['Phyrexian'], colors: [],
     power: 0, toughness: 0, manaCost: 0,
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
   }),
 
   // Token Clue (Investigate — Floodhound): {2}, Sacrifice: draw a card.
@@ -6319,7 +6320,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     imageUri: 'https://cards.scryfall.io/large/front/e/b/eb129b0d-1349-4e88-a6a7-b7968b26ee7e.jpg?1783926587',
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
   }),
 
   // =========================================================================
@@ -6961,7 +6962,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'add_mana', amount: 1, colors: [], spendOnly: 'artifact' },
       }),
     ],
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Static Net'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Static Net'] },
     notes: ['{T}: Add {C}; restrykcja „only to cast artifact spells\" (M214 — restrictedPool)'],
   }),
 
@@ -7017,7 +7018,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/6/5/65c65445-1016-4fd3-963e-1c9eb252d4a6.jpg?1783903574', // M157/B: token ze Scryfall
     types: ['Creature', 'Token'], subtypes: ['Phyrexian', 'Germ'], colors: ['B'],
     power: 0, toughness: 0, manaCost: 0,
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Strandwalker (living weapon)'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Strandwalker (living weapon)'] },
   }),
 
   // 7. Urza's Mine (2XM) Land — Urza's Mine: {T}: Add {C}; tron (CR 702.??):
@@ -7848,7 +7849,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Zombie', 'Army'], colors: ['B'],
     power: 0, toughness: 0, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/1/2/12742d1f-eb2e-4262-88e2-403c9ae6c431.jpg?1783933351',  // twar
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; statystyki rosną przez amass'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; statystyki rosną przez amass'] },
   }),
 
 // ---- Batch 41 — transza C: pierwszy CZAR z madness ----
@@ -8246,7 +8247,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/back/3/e/3e96f9a6-c215-42b1-aa02-8e6143fe5bd7.jpg?1783925578',
     transformTo: 'tireless-hauler',
     artId: 118, plan: 'Innistrad',
-    support: { status: 'limited', limitations: ['tylna strona daybound/nightbound — nie można umieścić w talii'] },
+    support: { status: 'back', limitations: ['tylna strona daybound/nightbound — nie można umieścić w talii'] },
   }),
 
   // 4. Dispeller's Capsule (ALA) — artefakt {W}; „{2}{W}, {T}, Sacrifice:
@@ -8426,7 +8427,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: 153, plan: 'Final Fantasy',
-    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
+    support: { status: 'back', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
 
   // =========================================================================
@@ -10983,7 +10984,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     power: 1, toughness: 1, manaCost: 0,
     oracleText: "Hexproof (This creature can't be the target of spells or abilities your opponents control.)",
     imageUri: 'https://cards.scryfall.io/large/front/f/5/f5d353ad-7160-41fa-809c-d76b36478a2a.jpg?1783913608',  // tlci
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Jungleborn Pioneer'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Jungleborn Pioneer'] },
   }),
   defineCard({
     id: 'tah-crop-skirmisher', name: 'Tah-Crop Skirmisher', set: 'AKH',
@@ -11252,7 +11253,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Goblin'], colors: ['R'],
     power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/b/2/b21498f5-9098-4e50-b1d3-bd64cba1372a.jpg?1783938294',
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Dragon Fodder'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Dragon Fodder'] },
   }),
 
   // Token 1/1 bezbarwny Artefakt-Stwór Servo — druk tkld/4 (Kaladesh Tokens;
@@ -11265,7 +11266,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Artifact', 'Creature', 'Token'], subtypes: ['Servo'], colors: [],
     power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/6/0/60842b1a-6ae7-4b3b-a23f-0d94a3d89884.jpg?1783937239',
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez fabricate (Glint-Sleeve Artisan)'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez fabricate (Glint-Sleeve Artisan)'] },
   }),
 
   // Token First Mate Ragavan — druk ttdc/18 (Tarkir: Dragonstorm Commander
@@ -11274,14 +11275,14 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // rzutu („If you don't, create First Mate Ragavan, a legendary 2/1 red
   // Monkey Pirate creature token. It gains haste until end of turn.").
   // `set: null` jak inne tokeny silnika — token nie jest taliowalny, więc
-  // status `limited` (ADR 0010 §4), a typing odpowiada deskryptorowi
+  // status `back`/`token` (ADR 0010 §4), a typing odpowiada deskryptorowi
   // `create_token` co do litery (strażnik M202/K).
   defineCard({
     id: 'token_first_mate_ragavan', name: 'First Mate Ragavan', set: null,
     types: ['Legendary', 'Creature', 'Token'], subtypes: ['Monkey', 'Pirate'], colors: ['R'],
     power: 2, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/7/0/705adcf9-c15b-4f75-afae-939f59aeb308.jpg?1783906799',
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Barala i Kari Zev (88)'] },
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Barala i Kari Zev (88)'] },
   }),
 
   // ---------------------------------------------------------------------------
@@ -11536,6 +11537,205 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['vanilla 4/5 za {3}{G} — brak tekstu Oracle, brak zdolności (sanity: karta bez wpisów w abilities)'],
   }),
 
+  // =========================================================================
+  // Batch 58 (2026-09-23) — lista właściciela: 219 FIN, 265 OGW, 318 CLB,
+  // 377 AVR, 447 DSK, 464 AVR, 530 ZEN. Dane Oracle + rulingi pobrane ze
+  // Scryfalla 2026-09-23, set-aware (docs/cards/scryfall-*.json, ADR 0010
+  // §2a). Plan: docs/plans/PLAN_2026-09-23b-batch58-kolekcja-219-530.md.
+  //
+  // Karty wchodzą do katalogu TYLKO w 100% gotowe i po jednej, w swoim etapie
+  // (ADR 0022 + M419: status `supported` od pierwszego commita; w katalogu
+  // nie ma `in-development`). Etapy: B1 Boulder Salvo, B2 Grazing Gladehart,
+  // B3 Polluted Dead, B4 Scroll of Avacyn, B5 Resurrected Cultist,
+  // B6 Prishe's Wanderings, B7 Gond Gate.
+  // =========================================================================
+  // Boulder Salvo (OGW) {4}{R} Sorcery — surge {1}{R} + 4 obrażenia w stwora.
+  // Surge na INSTANT/SORCERY to nowa ścieżka (dotąd tylko permanent — Jwar
+  // Isle Avenger, Batch 50): koszt alternatywny z własną kwotą i pipami,
+  // oferowany po rzucie innego czaru w tej turze (CR 702.111). Ruling OGW
+  // 2016-01-22: surge nie zmienia kosztu many ani mana value karty.
+  defineCard({
+    id: 'boulder-salvo', name: 'Boulder Salvo', set: 'OGW',
+    types: ['Sorcery'], colors: ['R'], manaCost: 5,
+    surge: { cost: 3, colors: ['R'] },
+    oracleText: 'Surge {1}{R} (You may cast this spell for its surge cost if you or a teammate has cast another spell this turn.)\nBoulder Salvo deals 4 damage to target creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/e/4e269989-bb22-4da4-a374-434a572e8e8f.jpg?1783937908',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'damage', amount: 4 }],
+    },
+    artId: 265, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+    notes: ['surge {1}{R}: alternatywny koszt rzutu, gdy rzuciłeś inny czar w tej turze (w 1v1 „teammate” nie występuje); surge nie zmienia mana value karty (ruling OGW 2016-01-22)'],
+  }),
+
+  // Grazing Gladehart (ZEN) {2}{G} 2/2 Antelope — landfall: „you may gain 2
+  // life". Mechanika istniała (trigger `land_entered_under_your_control` +
+  // `mayFire`), więc karta wnosi dane + testy. Ruling ZNR 2024-11-08: landfall
+  // odpala dla KAŻDEGO powodu wejścia landa pod twoją kontrolą (także efektu),
+  // ale nie wtedy, gdy permanent będący już na polu bitwy staje się landem.
+  defineCard({
+    id: 'grazing-gladehart', name: 'Grazing Gladehart', set: 'ZEN',
+    types: ['Creature'], subtypes: ['Antelope'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'Landfall — Whenever a land you control enters, you may gain 2 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/7/078b5290-a613-496f-bd23-8fd109549f31.jpg?1783942136',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'land_entered_under_your_control', mayFire: true },
+        effect: { type: 'gain_life', amount: 2 },
+      }),
+    ],
+    artId: 530, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+    notes: ['landfall „you may": odmowa nie daje nic; cudzy land nie odpala („a land YOU control")'],
+  }),
+
+  // Polluted Dead (AVR) {4}{B} 3/3 Zombie — „When this creature dies, destroy
+  // target land." Trigger śmierci z obowiązkowym celem-lądem (dowolny, także
+  // własny — Oracle nie ogranicza kontrolera); bez legalnego celu trigger nie
+  // odpala i jest to jawne w zdarzeniach (M106/Z2). Nowa ścieżka generyczna:
+  // typ celu `land` na torze TRIGGERÓW (dotąd znali go tylko czar/zdolność).
+  defineCard({
+    id: 'polluted-dead', name: 'Polluted Dead', set: 'AVR',
+    types: ['Creature'], subtypes: ['Zombie'], colors: ['B'],
+    power: 3, toughness: 3, manaCost: 5,
+    oracleText: 'When this creature dies, destroy target land.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/3/036c1954-37d3-4787-8df8-f2d0dd39058a.jpg?1783940692',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies', requiresTarget: { type: 'land' } },
+        effect: { type: 'destroy_permanent' },
+      }),
+    ],
+    artId: 464, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['trigger śmierci z celem-lądem: cel dowolny (własny też), brak legalnego celu = trigger bez efektu (zdarzenie trigger_resolved/no_targets)'],
+  }),
+
+  // Scroll of Avacyn (AVR) {1} Artifact — „{1}, Sacrifice this artifact: Draw a
+  // card. If you control an Angel, you gain 5 life." Warunek czytany przy
+  // rozstrzygnięciu zdolności (ruling AVR 2012-05-01). Nowa reguła generyczna:
+  // DODATNI warunek efektu po podtypie stwora (`controlsCreatureSubtype`) —
+  // dotąd istniał tylko zaprzeczony (`controlsNoCreatureSubtype`, M166/C).
+  defineCard({
+    id: 'scroll-of-avacyn', name: 'Scroll of Avacyn', set: 'AVR',
+    types: ['Artifact'], colors: [], manaCost: 1,
+    oracleText: '{1}, Sacrifice this artifact: Draw a card. If you control an Angel, you gain 5 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/7/871e6e2a-7e45-446b-b964-94377eb6ca92.jpg?1783940650',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, sacrificeSelf: true },
+        effect: [
+          { type: 'draw_cards', amount: 1 },
+          { type: 'conditional', condition: 'controlsCreatureSubtype', subtype: 'Angel', then: { type: 'gain_life', amount: 5 } },
+        ],
+      }),
+    ],
+    artId: 377, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+    notes: ['warunek „if you control an Angel" czytany przy rozstrzygnięciu; bez Anioła brak gałęzi else — nie ma podstawy (ruling AVR 2012-05-01)'],
+  }),
+
+  // 5. Resurrected Cultist (DSK) {2}{B} Creature — Human Cleric 4/1.
+  // Delirium (CR 207.2c) to WARUNEK AKTYWACJI tej samej klasy co max speed:
+  // bramkuje zdolność z grobu, więc spójnie z ofertą i walidacją
+  // (`abilities.js abilityConditionFailure`). Rulingi DSK 2024-09-20 opisują
+  // licznik finality, którym wraca karta: działa na dowolnym permanencie
+  // (nie tylko stworze), nie jest licznikiem słowa kluczowego, a wielokrotne
+  // egzemplarze są redundantne — dlatego na typ licznika wystarcza jeden
+  // `addCounter('finality')`, a wygnanie przy śmierci robi wspólny
+  // `deathZoneFor` (CR 122.1e; w Batchu 58/B5 = jedyne miejsce decyzji).
+  defineCard({
+    id: 'resurrected-cultist', name: 'Resurrected Cultist', set: 'DSK',
+    types: ['Creature'], subtypes: ['Human', 'Cleric'], colors: ['B'],
+    power: 4, toughness: 1, manaCost: 3,
+    oracleText: 'Delirium — {2}{B}{B}: Return this card from your graveyard to the battlefield with a finality counter on it. Activate only if there are four or more card types among cards in your graveyard and only as a sorcery. (If a creature with a finality counter on it would die, exile it instead.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/4/e41bd259-e81f-432a-bebf-4c6534f23db7.jpg?1783909475',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        fromGraveyard: true,
+        cost: { mana: 4, colors: ['B', 'B'] },
+        condition: { delirium: true },
+        effect: { type: 'return_source_from_graveyard', finalityCounter: true },
+      }),
+    ],
+    artId: 447, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['delirium bramkuje aktywację z grobu (oferta + walidacja wspólną bramką `abilityConditionFailure`); finality: śmierć → wygnanie zamiast grobu (`deathZoneFor`), rulingi DSK 2024-09-20'],
+  }),
+
+  // 6. Prishe's Wanderings (FIN) {2}{G} Instant — „Search your library for a
+  // basic land card or Town card, put it onto the battlefield tapped, then
+  // shuffle. When you search your library this way, put a +1/+1 counter on
+  // target creature you control." Ruling FIN 2025-06-06: celu NIE wybiera się
+  // przy rzucie czaru — druga, „refleksyjna" zdolność wchodzi na stos PO
+  // przeszukaniu (wzorzec reflexive_discard/reflexive_sacrifice; tu zdarzenie
+  // `reflexive_search` emituje rozstrzygnięcie szukania — także fail to find).
+  defineCard({
+    id: 'prishes-wanderings', name: "Prishe's Wanderings", set: 'FIN',
+    types: ['Instant'], colors: ['G'], manaCost: 3,
+    oracleText: 'Search your library for a basic land card or Town card, put it onto the battlefield tapped, then shuffle. When you search your library this way, put a +1/+1 counter on target creature you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/6/d6e1dee0-e2cd-4899-a3ea-7d0df717c9ab.jpg?1783906584',
+    spell: {
+      timing: 'instant',
+      targets: [],
+      effects: [{
+        type: 'search_library_to_battlefield',
+        entersTapped: true,
+        qualifier: { anyOf: [{ types: ['Basic', 'Land'] }, { subtypes: ['Town'] }] },
+        reflexiveEvent: 'reflexive_search',
+      }],
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'reflexive_search', requiresTarget: { type: 'creature_you_control' } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    artId: 219, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['refleks „when you search your library this way" (ruling FIN 2025-06-06): cel wybierany przy wejściu zdolności na stos, po przeszukaniu; kwalifikator anyOf = basic land ALBO Town; fail to find nadal odpala refleks'],
+  }),
+
+  // 7. Gond Gate (CLB) Land — Gate: „Gates you control enter untapped.";
+  // {T}: Add {C}; {T}: Add one mana of any color that a Gate you control
+  // could produce. Nowy statyk `entersUntapped: { subtype }` (efekt zastępczy
+  // wejścia, CR 614.1d — działa na land drop, efekty i reanimację) oraz nowy
+  // deskryptor kolorów `colorsFrom` (kolory produkowalne przez kontrolowane
+  // permanenty podtypu; CR 106.1 — „could produce", nie „za samo {T}").
+  defineCard({
+    id: 'gond-gate', name: 'Gond Gate', set: 'CLB',
+    types: ['Land'], subtypes: ['Gate'], colors: [],
+    oracleText: 'Gates you control enter untapped.\n{T}: Add {C}.\n{T}: Add one mana of any color that a Gate you control could produce.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/4/746672d9-7c6b-415e-9f34-3cc3ac557008.jpg?1783922658',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        entersUntapped: { subtype: 'Gate' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colorsFrom: { controlledSubtype: 'Gate' } },
+      }),
+    ],
+    artId: 318, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„Gates you control enter untapped" = statyk kontrolera (także dla Bram, które same wchodzą tapnięte — Dimir Guildgate, Manor Gate); druga zdolność daje unię kolorów produkowalnych przez kontrolowane Bramy (Basilisk Gate sam daje tylko {C}, więc jest niedostępna)'],
+  }),
 ]);
 
 /**

@@ -230,6 +230,16 @@ export function paidExtraCostSuffix(e) {
   return parts.length > 0 ? ` — ${parts.join(', ')}` : '';
 }
 
+/**
+ * CR 702.111 (Surge, Batch 58/B1): fakt rzutu za KOSZT ALTERNATYWNY jako
+ * dopisek do opisu zdarzenia — jedno brzmienie dla obu gałęzi rzutu
+ * (`permanent_cast`, `spell_cast`) i dla aury (`aura_spell_cast` już je ma),
+ * lustrzane do `paidExtraCostSuffix` (L41). Czysta funkcja (ADR 0011).
+ */
+export function alternativeCostSuffix(e) {
+  return e?.surgeCast ? ' za koszt surge' : '';
+}
+
 const BOT_MOVE_NOISE = new Set([
   'priority_passed', 'mana_changed', 'mana_produced', 'step_advanced',
   'turn_started', 'object_tapped', 'object_untapped', 'damage_marked',
@@ -328,6 +338,11 @@ function defaultBotFactory(seed, ctx) {
     your_creatures_gain_keywords_until_end_of_turn: 'nadanie słów kluczowych twoim stworom do końca tury',
     each_player_exiles_top_face_down: 'wygnanie wierzchu biblioteki każdego gracza (zakryte)',
     turn_up_exiled_and_put_permanents: 'odkrycie wygnanych kart i wprowadzenie permanentów na pole bitwy',
+    // Batch 58/B4 (Scroll of Avacyn): „if you control an Angel, you gain
+    // 5 life" — log zna TYPY efektów i aktywacji (bez deskryptorów), więc
+    // etykieta nazywa warunkowy charakter skutku; strażnik M255/C1 pilnuje,
+    // żeby kolejny typ efektu nie wszedł bez opisu (klasa L84).
+    conditional: 'efekt warunkowy (zależny od stanu gry)',
     lose_life: 'cel traci życie',
     mill_cards: 'mielenie kart do grobu',
     prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',
@@ -382,6 +397,9 @@ function defaultBotFactory(seed, ctx) {
     surveil: 'surveil (podgląd wierzchu biblioteki)',
     tap_permanent: 'tapnięcie celu',
     unearth_return: 'powrót karty z grobu na pole bitwy (unearth)',
+    // Batch 58/B5 (Resurrected Cultist): powrót SOBIE z grobu z licznikiem
+    // finality — inny kształt niż unearth (bez haste, wygnanie przy śmierci).
+    return_source_from_graveyard: 'powrót tej karty z grobu na pole bitwy (licznik finality)',
   });
 
 /**
@@ -712,6 +730,9 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   reflexive_sacrifice: 'refleks po poświęceniu („when you do")',
   // M361/B2 (Talion's Messenger): reflexive „when you discard this way".
   reflexive_discard: 'refleks po odrzucie („when you discard this way")',
+  // Batch 58/B6 (Prishe's Wanderings): reflexive „when you search your library
+  // this way" — zdolność na stosie po przeszukaniu (ruling FIN 2025-06-06).
+  reflexive_search: 'refleks po przeszukaniu biblioteki („when you search this way")',
   // PR #98 (Żywy Tester, innistrad-brg×worek-dziki seed 11): pseudo-zdolność
   // storm rodzi się w spells.js (spells.js:702), poza zasięgiem strażnika
   // M122 — w modalu wyciekał surowy slug „trigger (storm)".
@@ -1067,6 +1088,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${nameOfObject(e.sourceId)} — refleks po poświęceniu ${nameOfObject(e.sacrificedId)}`;
       case 'reflexive_discard':
         return `${nameOfObject(e.sourceId)} — refleks po odrzucie („when you discard this way")`;
+      case 'reflexive_search':
+        return `${nameOfObject(e.sourceId)} — refleks po przeszukaniu biblioteki („when you search your library this way")`;
       case 'food_choice_required': return `${whoN(e.playerId)} rozstrzyga: poświęcić Food na +3 życia?`;
       case 'food_choice_resolved': return e.auto
         ? null
@@ -1137,7 +1160,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // kicked"), ale opis go nie czytał — fakt opłacenia dodatkowego kosztu
         // znikał z relacji, choć zmienia skutek karty (ETB niszczy permanent).
         // Ta sama fraza w obu gałęziach rzutu (L41: jedno brzmienie).
-        const extraCost = paidExtraCostSuffix(e);
+        const extraCost = paidExtraCostSuffix(e) + alternativeCostSuffix(e);
         return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${extraCost}${phyrexian}`;
       }
       case 'spell_cast': {
@@ -1174,7 +1197,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
         // H (2026-09-22): kicker/offspring także na ścieżce czarów (L41 —
         // jedno brzmienie co `permanent_cast`).
-        const extraCost = paidExtraCostSuffix(e);
+        const extraCost = paidExtraCostSuffix(e) + alternativeCostSuffix(e);
         return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${extraCost}${phyrexian}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {

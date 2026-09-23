@@ -399,7 +399,7 @@ test('Zoraline: finality — wskrzeszony stwór po śmierci idzie do exile, nie 
 test('realne karty Batchu 2 mają dane Oracle i status supported', () => {
   assert.equal(REGISTRY.get('grizzled-outcasts').set, 'ISD');
   assert.equal(REGISTRY.get('grizzled-outcasts').transformTo, 'krallenhorde-wantons');
-  assert.equal(REGISTRY.get('krallenhorde-wantons').support.status, 'limited');
+  assert.equal(REGISTRY.get('krallenhorde-wantons').support.status, 'back');
   assert.equal(REGISTRY.get('entrancing-lyre').set, 'THB');
   assert.equal(REGISTRY.get('zoraline').set, 'BLB');
   assert.equal(REGISTRY.get('zoraline').support.status, 'supported');

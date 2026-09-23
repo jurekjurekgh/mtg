@@ -38,6 +38,15 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // (crackback). Kara (nie premia), bo tylko ona niweluje dodatnią wycenę
   // ataku; premia wyścigu jest przy takim ataku POMIJANA (L3).
   'crackbackPenalty',
+  // A (uwaga właściciela 2026-09-23c, Somberwald Spider): karta z deskryptorem
+  // `entersWithCountersIf: { morbid: true }` liczy liczniki W CHWILI WEJŚCIA
+  // (CR 614.1c) — we własnej Głównej 1 zwykle jeszcze nic nie umarło, więc
+  // rzut czeka na Główną 2 (po walce). Kara domyślnie przebija bazę stwora
+  // (70), więc rzut schodzi pod pass; wyjątek `flash` + realny zamiar ataku
+  // w tej turze zdejmuje karę (bot chce ciało przed deklaracją). Pokrętła
+  // strategii, nie reguły gry.
+  'morbidMain1Penalty',      // kara za rzut Morbida w Głównej 1 (domyślnie 90)
+  'morbidMain2Bonus',        // premia za rzut Morbida po walce (domyślnie 8)
   // Rodzina „removal, obrażenia i przewaga kartowa" (B6 T1) — wycena efektów
   // czarów najczęstszych w cast_spell. Same PREMIE za trafienie CELU WROGA
   // (kary za zły cel/własny permanent zostają twardymi stałymi). Deskryptory
@@ -53,6 +62,14 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // MARTWYMI pokrętłami (tuner zmieniał je bez jakiegokolwiek wpływu). Gromadzenie
   // martwych parametrów zatruwa tablicę tune-card.mjs — wycinane u korzenia.
   'drawCardValue',           // wartość jednej dobranej karty (dawniej *6)
+  // D (uwaga właściciela 2026-09-23c, Cemetery Recruitment): karta wracająca
+  // z grobu do RĘKI jest warta nie tylko swoje ciało — bot musi ją jeszcze
+  // RZUCIĆ, więc wartość rośnie z jej mana value, ale tylko do granicy
+  // potencjału many bota (źródła na polu bitwy liczone NIEZALEŻNIE od
+  // tapnięcia + pula). Osobne pokrętło strategii (jak creatureManaCostWeight),
+  // nie reguła gry; 0 = powrót do wyceny po samym ciele (L50: koniec remisów
+  // równocielesnych wariantów).
+  'graveReturnManaWeight',   // punkty za każdy achievable punkt mana value odzyskanej karty
   // Rodzina „efektywność removalu" (B6 T1 — M234, zlecenie właściciela). Bot ma
   // maksymalizować wartość zdejmowanego stwora: preferować DROŻSZE cele (TMC to
   // publiczny proxy „ma unikalne zdolności" — PlayerView NIE niesie `abilities`,
@@ -134,7 +151,19 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'libraryThinPenalty',          // kara bazowa, gdy po stracie zapas < librarySafeMargin
   'libraryThinPerCardPenalty',   // dopłata za każdą kartę brakującą do bezpiecznego zapasu
   'librarySafeMargin',           // minimalny zapas kart po stracie (właściciel: ~20)
+  // I (uwaga właściciela 2026-09-23c, Chronic Flooding): zapas wymagany, gdy
+  // płatność/tapnięcie sięga po źródło, którego tapnięcie miele bibliotekę
+  // („nie tapować przy bibliotece < ~30 kart", mill 3). Osobne pokrętło, bo
+  // to ryzyko POWTARZALNE (każde tapnięcie), a nie jednorazowy dobór z karty.
+  'libraryTapSafeMargin',        // minimalny zapas kart po mielącym tapnięciu (właściciel: ~30)
   'repeatLibraryDrainTurns',     // horyzont: ile odpaleń powtarzalnego triggera zakładamy
+  // F1 v2 (uwaga właściciela 2026-09-23d, Veiled Ascension): efekt zakrywający
+  // kartę z biblioteki (cloak — CR 701.56a) ZAMIENIA ją na permanenta 2/2
+  // z wardem, a nie marnuje jak mill czy dobranie — więc „you may” jest
+  // opłacalne ZAWSZE; karę nakładamy dopiero, gdy własna biblioteka spadnie
+  // pod próg (jedyna realna strata to deck-out, CR 121.4).
+  'cloakLibraryFloor',           // biblioteka < próg ⇒ „pass” (właściciel: 10)
+  'cloakThinLibraryPenalty',     // kara za cloak przy cienkiej bibliotece (> 50 ⇒ schodzi pod „pass”)
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -145,6 +174,8 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // mniejszą manę" (remis w audycie: 4 na 12 partii), ale nie waży tyle co
   // sama siła (2/pt), więc większy stwór za większą manę nadal wygrywa.
   creatureManaCostWeight: 1,
+  morbidMain1Penalty: 90,
+  morbidMain2Bonus: 8,
   spellBase: 50,
   attackThroughBonus: 3,
   attackOpenBoardBonus: 8,
@@ -155,6 +186,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   bounceEnemyBase: 25,
   bounceEnemyPowerWeight: 2,
   drawCardValue: 6,
+  graveReturnManaWeight: 4,
   // M234 — WŁĄCZONE wprost jako część zlecenia właściciela (efektywność
   // removalu). Wartości dobrane pomiarem (ordering + mirror-eval + divergence):
   //  - TMC*2: 6-drop dostaje +12, 1-drop +2 → wyraźna preferencja drogich celów
@@ -213,7 +245,10 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   libraryThinPenalty: 60,
   libraryThinPerCardPenalty: 6,
   librarySafeMargin: 20,
+  libraryTapSafeMargin: 30,
   repeatLibraryDrainTurns: 3,
+  cloakLibraryFloor: 10,
+  cloakThinLibraryPenalty: 60,
 });
 
 /**

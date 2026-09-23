@@ -137,6 +137,7 @@ test('M193/A: STRAŻNIK — kolory z Oracle „Add …" zgadzają się z silniki
     const withoutReminder = text.replace(/\([^)]*\)/g, '');
     const out = new Set();
     let found = false;
+    let conditional = false;
     for (const line of withoutReminder.split('\n')) {
       const m = line.match(/^(.*?):\s*Add\s+([^.]*)/);
       if (!m) continue;
@@ -144,23 +145,40 @@ test('M193/A: STRAŻNIK — kolory z Oracle „Add …" zgadzają się z silniki
       // koszt musi byc SAMYM {T} — kazdy inny skladnik czyni produkcje platna
       if (cost.replace(/\s/g, '') !== '{T}') continue;
       found = true;
+      // Produkcja WARUNKOWA (Batch 58/B7, Gond Gate: „Add one mana of any color
+      // that a Gate you control could produce"): kolor zalezy od POLA BITWY,
+      // wiec bezstanowa sonda nie ma czego porownac — Oracle nie obiecuje tu
+      // zadnego konkretnego koloru „od reki". Wymagamy wtedy DESKRYPTORA
+      // `colorsFrom` w danych karty (mowi, skad wziac kolory); zachowanie
+      // warunkowych zrodel pilnuja testy karty (batch58/B7), nie ten skan.
+      if (/could produce/i.test(produced)) { conditional = true; continue; }
       if (/one mana of any color/i.test(produced)) { ANY.forEach((c) => out.add(c)); continue; }
       // „or one mana of the chosen color" (Manor Gate) — kolor znany dopiero
       // na obiekcie gry (chosenColor), wiec tu go nie wymagamy.
       for (const sym of produced.matchAll(/\{([WUBRGC])\}/g)) if (sym[1] !== 'C') out.add(sym[1]);
     }
-    return found ? [...out] : null;
+    return found ? { colors: [...out], conditional } : null;
   };
   const rozjazdy = [];
+  const maColorsFrom = (card) => (card.abilities ?? []).some((ability) => {
+    const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+    return effects.some((e) => e?.type === 'add_mana' && e?.colorsFrom);
+  });
   for (const card of REGISTRY.all()) {
     const oracle = oracleFreeManaColors(card.oracleText);
-    if (!oracle || oracle.length === 0) continue;
+    if (!oracle) continue;
+    // „…could produce" bez `colorsFrom` w danych = karta obiecuje kolory,
+    // ktorych silnik nie ma skad wziac (ta sama klasa bledu, inny ksztalt).
+    if (oracle.conditional && !maColorsFrom(card)) {
+      rozjazdy.push(`${card.name}: Oracle „…could produce" bez deskryptora colorsFrom w danych karty`);
+    }
+    if (oracle.colors.length === 0) continue;
     const object = {
       id: 'probe', cardId: card.id, controllerId: 'p1', zone: 'battlefield',
       ...gameObjectDataOf(card), types: card.types ?? [], subtypes: card.subtypes ?? [],
     };
-    const engine = getSourceForObject(object)?.colors ?? [];
-    const brakuje = oracle.filter((c) => !engine.includes(c));
+    const engine = getSourceForObject(object)?.colors ?? [];  // sonda BEZ stanu: tylko produkcja bezwarunkowa
+    const brakuje = oracle.colors.filter((c) => !engine.includes(c));
     if (brakuje.length) rozjazdy.push(`${card.name}: Oracle obiecuje {${brakuje.join('}{')}}, silnik zna [${engine.join('') || 'brak'}]`);
   }
   assert.deepEqual(rozjazdy, [],

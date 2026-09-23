@@ -99,6 +99,23 @@ export function manaCostHtml(costStr) {
  * źródła; trzecia kopia (madness) powtórzyłaby klasę, więc źródłem jest ta
  * funkcja. Zwraca sam tekst symboli — HTML robi z niego `manaCostHtml`.
  */
+/**
+ * Koszt wydruku z symbolem {X} w miejscu części bezbarwnej — J (uwaga
+ * właściciela 2026-09-23c, Epic Experiment): oferta i etykieta płatności
+ * czaru z X muszą pokazać CENĘ („koszt XUR"), nie liczbę pierwszego wariantu
+ * ani liczbę generyczną karty. Liczby generyczne zwijają się w jedno {X}
+ * (koszt zmienny i tak steruje całą częścią bezbarwną), a istniejące symbole
+ * {X}/{Y}/{Z} są pochłaniane — karta zapisana jako „{X}{U}{R}" i jako
+ * „{2}{U}{R}" dają tę samą etykietę (L41: jedno źródło formatu).
+ */
+export function xCostSymbols(rawCost) {
+  if (typeof rawCost !== 'string') return null;
+  const symbols = rawCost.match(/\{[^}]+\}/g) ?? [];
+  const colors = symbols.filter((sym) => !/^\{[XYZ]\}$/.test(sym)
+    && !Number.isInteger(Number(sym.slice(1, -1))));
+  return `{X}${colors.join('')}`;
+}
+
 export function costSymbols(amount, colors) {
   const pips = Array.isArray(colors) ? colors : [];
   const total = Number(amount) || 0;

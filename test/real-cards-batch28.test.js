@@ -138,7 +138,7 @@ test('Batch 28: pliki Scryfall istnieją i mają prawidłowe pola', () => {
   }
 });
 
-test('Batch 28: 9 kart supported z artId; Moonscarred zostaje limited (tył DFC)', () => {
+test('Batch 28: 9 kart supported z artId; Moonscarred zostaje jako tył DFC (status back)', () => {
   const ids = [
     'silumgar-butcher', 'relic-robber', 'flurry-of-wings', 'expose-to-daylight',
     'etherium-abomination', 'awaken-the-bear', 'security-rhox', 'dreams-of-steel-and-oil',
@@ -151,7 +151,7 @@ test('Batch 28: 9 kart supported z artId; Moonscarred zostaje limited (tył DFC)
     assert.ok(card.artId, `${id}: brak artId`);
   }
   const mw = REGISTRY.get('moonscarred-werewolf');
-  assert.equal(mw.support.status, 'limited', 'Moonscarred zostaje tyłem DFC (limited)');
+  assert.equal(mw.support.status, 'back', 'Moonscarred zostaje tyłem DFC (status back)');
 });
 
 // --- Silumgar Butcher (exploit) ----------------------------------------------

@@ -492,4 +492,13 @@ export const MANA_COSTS = {
   "baral-and-kari-zev": "{1}{U}{R}",
   "tranquil-cove": "",
   "ordinary-bear": "{3}{G}",
+  // Batch 58 (2026-09-23): karty właściciela 219/265/318/377/447/464/530.
+  "boulder-salvo": "{4}{R}",
+  "grazing-gladehart": "{2}{G}",
+  "polluted-dead": "{4}{B}",
+  "scroll-of-avacyn": "{1}",
+  // Koszt DRUKU to {2}{B} (mv 3 = `manaCost`); zdolność Delirium kosztuje
+  // {2}{B}{B} i żyje w deskryptorze zdolności, nie w MANA_COSTS (strażnik B3).
+  "resurrected-cultist": "{2}{B}",
+  "prishes-wanderings": "{2}{G}",
 };

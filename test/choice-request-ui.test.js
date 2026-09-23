@@ -126,8 +126,10 @@ test('etykieta grupy: aura — „Aura: Benevolent Blessing" bez „Wybierz:" (u
       battlefield: [], stack: [], graveyard: [], library: [],
     },
   };
+  // H (uwaga właściciela 2026-09-23c): tytuł grupy niesie też KOSZT karty —
+  // „Aura: <karta>" bez ceny wyglądała w panelu jak oferta darmowa.
   assert.equal(choiceGroupLabel(requestOf('target', [mk('a'), mk('b'), mk('c')]), LABEL_SESSION, view),
-    'Aura: Benevolent Blessing');
+    'Aura: Benevolent Blessing (koszt <span class="ms-group"><span class="ms ms-c">1</span><span class="ms ms-w">W</span></span>)');
 });
 
 test('etykieta grupy: czar z celami — „Cel czaru: <nazwa>" (C2 bez licznika)', () => {

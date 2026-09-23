@@ -653,6 +653,18 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return !isLand;
     });
   }
+  // Batch 58/B3 (Polluted Dead): „destroy target land" — DOWOLNY land na polu
+  // bitwy, bez ograniczenia kontrolera (Oracle nie mówi „you don't control").
+  // Lustro czarowej ścieżki celu (`legalTargetCandidates`/`validateTargets`
+  // w spells.js obsługują `{ type: 'land' }` od Batcha 22 — Vandalize), żeby
+  // oferta, walidacja decyzji i zdolność na stosie czytały jedną regułę (L48).
+  if (spec.type === 'land') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield' && isLand(object)
+        && (!hexproofBlocked(object) && !protectedBlocked(object));
+    });
+  }
   // Batch 22: Wormfang Newt — land you control (T2: cel wybiera
   // kontroler, exclude źródła). Lustro legalTargetCandidates ze
   // spells.js (które obsługuje ten sam specyfikacja w czarach).
@@ -1607,8 +1619,10 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
     // LKI jak w ścieżce resolve (M166/B): źródło mogło umrzeć z SBA tej samej
     // komendy, co odpaliło trigger (Enrage) — bierzemy ostatni znany stan.
     const src = state.objects.get(source.id) ?? source;
+    // Batch 58/B6: wspólny predykat stref (refleks po przeszukaniu ma źródło
+    // w grobie — czar rozstrzygnięty; L41) zamiast lokalnej listy stref.
     const srcLegal = Boolean(src
-      && ['battlefield', 'graveyard', 'exile'].includes(src.zone)
+      && triggerSourceZoneResolvable(src, ability?.trigger?.event)
       && triggerConditionHolds(state, ability, src, extra ?? {}));
     if (srcLegal) {
       queueTriggerToStack(state, ability, src, [candidates[0]], events, extra ?? {});
@@ -1629,7 +1643,13 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
     // M166/B (Enrage, CR 603.10): źródło może już nie żyć pod swoim id
     // (zginęło w SBA tej samej komendy, co odpaliło trigger). LKI pozwala
     // dokończyć decyzję celu i rozstrzygnąć trigger z umarłego źródła.
-    sourceLki: state.objects.has(source.id) ? null : Object.freeze({ ...source }),
+    // Batch 58/B6 (Prishe's Wanderings, CR 603.10): źródłem triggera może być
+    // CZAR na stosie — rozstrzyga się (i znika z `state.objects` pod swoim id)
+    // ZANIM gracz wybierze cel refleksu „when you search your library this
+    // way". Dla źródła na stosie migawkę robimy od razu; w pozostałych
+    // przypadkach żywy obiekt zostaje wiążący (LKI tylko, gdy już go nie ma).
+    sourceLki: (state.objects.has(source.id) && source.zone !== 'stack')
+      ? null : Object.freeze({ ...source }),
     ability: Object.freeze({ ...ability }),
     candidates: [...candidates],
     allowNone: Boolean(allowNone),
@@ -1677,7 +1697,25 @@ function triggerSourceZoneLegal(source, triggerEvent) {
   // źródło jest w grobie/exile (Selhoff, Servant of the Scale).
   // Refleks „When you do" (Audyt Batch53/A1): dziecko rozstrzygniętej już
   // zdolności — niezależne od strefy źródła (ruling LCI 2023-11-10).
-  return ['dies', 'any_creature_dies', 'leaves_battlefield', 'reflexive_sacrifice', 'reflexive_discard'].includes(triggerEvent);
+  // Batch 58/B6: refleks po przeszukaniu biblioteki (Prishe's Wanderings) —
+  // źródłem jest CZAR, który w chwili rozstrzygnięcia triggera jest już
+  // w grobie (ruling FIN 2025-06-06), więc strefa 'none' jest legalna.
+  return ['dies', 'any_creature_dies', 'leaves_battlefield', 'reflexive_sacrifice',
+    'reflexive_discard', 'reflexive_search'].includes(triggerEvent);
+}
+
+/**
+ * Strefa źródła dla DOMKNIĘCIA decyzji celu (L41 — jedno miejsce prawdy):
+ * legalna strefa triggera (`triggerSourceZoneLegal`: pole bitwy oraz refleksy
+ * „when you do / this way" z DOWOLNEJ strefy) albo LKI w grobie/wygnaniu
+ * (śmierć/odejście źródła, CR 603.10). Używają tego ścieżka AUTO
+ * (`queueTargetDecision`) i ręczna wielocelowa (game-state) — wcześniej każda
+ * miała własną, ręcznie wypisaną listę stref.
+ */
+export function triggerSourceZoneResolvable(source, triggerEvent) {
+  if (!source) return false;
+  if (triggerSourceZoneLegal(source, triggerEvent)) return true;
+  return source.zone === 'graveyard' || source.zone === 'exile';
 }
 
 export function triggerTargetDecisionPending(state, pending) {
@@ -2456,6 +2494,29 @@ function processTriggersScan(state, recentEvents) {
     // way. You choose a target for that ability as it goes on the stack. Each
     // player may respond to this triggered ability as normal." — handler jak
     // reflexive_sacrifice (zdolność niesie zdarzenie; LKI, CR 603.10).
+    // Batch 58/B6 (Prishe's Wanderings; ruling FIN 2025-06-06): refleks „when
+    // you search your library this way" — jak reflexive_discard (zdolność
+    // niesie zdarzenie z chwili rozstrzygnięcia; źródłem jest czar, który może
+    // już leżeć w grobie — LKI, CR 603.10).
+    if (ev.type === 'reflexive_search') {
+      if (ev.reflexiveAbility) {
+        const live = state.objects.get(ev.sourceId);
+        const source = (live && live.zone === 'battlefield') ? live : Object.freeze({
+          id: ev.sourceId, controllerId: ev.playerId ?? live?.controllerId ?? null,
+          cardId: ev.cardId ?? null, zone: 'none',
+        });
+        tryFire(state, ev.reflexiveAbility, source, [], events, { searchedFound: ev.found === true });
+      } else {
+        const source = state.objects.get(ev.sourceId);
+        if (source && source.zone === 'battlefield') {
+          for (const ability of effectiveAbilities(source)) {
+            if (ability?.trigger?.event === 'reflexive_search') {
+              tryFire(state, ability, source, [], events, { searchedFound: ev.found === true });
+            }
+          }
+        }
+      }
+    }
     if (ev.type === 'reflexive_discard') {
       if (ev.reflexiveAbility) {
         const live = state.objects.get(ev.sourceId);

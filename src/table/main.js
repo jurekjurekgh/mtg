@@ -23,7 +23,7 @@ import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TURN_NAMES, gameOverNotice } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
-import { installSwipeGesture, installTapGesture } from './gestures.js';
+import { installPressActivation, installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
 import { expandManaPool } from '../engine/resources.js';
@@ -39,7 +39,7 @@ import { detectImageMode } from './card-images.js';
 // import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
-import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf } from './multi-target.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
 
@@ -479,6 +479,31 @@ function bootstrapTable() {
         plan: proliferatePlan,
         commands: request.options,
         sourceName: pendingProliferate?.sourceCardId ? session.nameOf(pendingProliferate.sourceCardId) : null,
+        onOpenCard: openCardFullscreen,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // B1 (uwaga właściciela 2026-09-23c, Azorius Justiciar): trigger z „up to
+    // two target …" enumeruje PODZBIORY celów (11 komend przy 4 kandydatach) —
+    // panel dostaje z tego jeden wizard z ptaszkami i walidacją liczby
+    // („dowolna liczba legalnych celów", „Zatwierdź wybór"). Właściciel o
+    // enumeracji kombinacji: „TO JEST ZABRONIONE!". Ten sam kreator co
+    // proliferate (M298/A); zatwierdzenie oddaje komendę z legalCommands.
+    const upToPlan = upToTargetsPlanOf(request.options ?? []);
+    if (upToPlan) {
+      // Nazwa źródła z decyzji triggera (widok niesie kartę źródła), jak przy
+      // wizardzie podziału obrażeń — komendy nie znają `sourceId`.
+      const upToSource = choiceView.pendingTriggerTarget?.cardId
+        ? session.nameOf(choiceView.pendingTriggerTarget.cardId) : null;
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: upToPlan,
+        commands: request.options,
+        sourceName: upToSource,
         onOpenCard: openCardFullscreen,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
         onCancel: () => hideModal('choice-request'),
@@ -1519,7 +1544,7 @@ function bootstrapTable() {
         const btn = document.createElement('button');
         btn.className = 'action choice-request-trigger';
         btn.innerHTML = `<span class="action-label">${commandLabel(cmd, session, view)}</span>`;
-        btn.addEventListener('click', () => {
+        installPressActivation(btn, () => {
           hideModal('context-menu');
           openChoiceRequest(entry.request);
         });
@@ -1540,7 +1565,7 @@ function bootstrapTable() {
         // z pierwszym wariantem zamienione na opis CO wybieramy; 2026-08-10).
         const request = { id: `ctx-${Date.now()}-${key}`, type: cmds[0].targets?.length ? 'target' : 'command', options: cmds };
         btn.innerHTML = `<span class="action-label">${choiceGroupLabel(request, session, view)}</span>`;
-        btn.addEventListener('click', () => {
+        installPressActivation(btn, () => {
           hideModal('context-menu');
           openChoiceRequest(request);
         });
@@ -1552,7 +1577,7 @@ function bootstrapTable() {
         if (cmd.type === 'pass_priority') button.className += ' primary';
         if (cmd.type === 'concede') button.className += ' danger';
         button.innerHTML = `<span class="action-label">${commandLabel(cmd, session, view)}</span>`;
-        button.addEventListener('click', () => {
+        installPressActivation(button, () => {
           hideModal('context-menu');
           play(cmd);
         });
@@ -2273,7 +2298,10 @@ function bootstrapTable() {
       const nonGeneric = parsed.colored.length + parsed.hybrid.length + parsed.phyrexian.length;
       opts.effectiveGeneric = Math.max(0, effectiveSpellManaCost(session.state, stateObject) - nonGeneric);
     }
-    if (cmd.type === 'cast_permanent' && (cmd.surgeCast || cmd.bestow)) {
+    // Koszt alternatywny zna OBA kształty rzutu: permanent (bestow/surge) oraz
+    // instant/sorcery (surge, Batch 58/B1) — bez tego kreator liczyłby koszt
+    // bazowy karty i zapłaciłby więcej, niż obiecuje etykieta (L48/L93).
+    if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell') && (cmd.surgeCast || cmd.bestow)) {
       const alternative = cmd.surgeCast ? stateObject?.surge : stateObject?.bestow;
       if (alternative) opts.alternativeCost = reduceAlternativeCost(
         session.state, stateObject, alternative.cost, alternative.colors ?? []);
@@ -2389,6 +2417,10 @@ function bootstrapTable() {
       // źródła mówi „— pokrywa {B}”, a pusta lista mówi wprost, że żadne
       // dostępne źródło nie daje tego koloru.
       missingColors: progress.missingColors,
+      // G (uwaga z gry 2026-09-23c): liczba nietapniętych źródeł PRZED
+      // filtrem — komunikat pustej listy odróżnia „nic nie daje brakującego
+      // koloru" od „nie ma czym tapnąć".
+      availableCount: progress.availableCount,
       untappedSources: progress.untappedSources.map((src) => ({ ...src, name: session.nameOf(src.cardId) })),
     }, {
       // Tapnięcie źródła: ląd → tap_for_mana, zdolność many → activate_ability
