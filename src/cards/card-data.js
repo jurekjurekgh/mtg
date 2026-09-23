@@ -11569,6 +11569,29 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['surge {1}{R}: alternatywny koszt rzutu, gdy rzuciłeś inny czar w tej turze (w 1v1 „teammate” nie występuje); surge nie zmienia mana value karty (ruling OGW 2016-01-22)'],
   }),
+
+  // Grazing Gladehart (ZEN) {2}{G} 2/2 Antelope — landfall: „you may gain 2
+  // life". Mechanika istniała (trigger `land_entered_under_your_control` +
+  // `mayFire`), więc karta wnosi dane + testy. Ruling ZNR 2024-11-08: landfall
+  // odpala dla KAŻDEGO powodu wejścia landa pod twoją kontrolą (także efektu),
+  // ale nie wtedy, gdy permanent będący już na polu bitwy staje się landem.
+  defineCard({
+    id: 'grazing-gladehart', name: 'Grazing Gladehart', set: 'ZEN',
+    types: ['Creature'], subtypes: ['Antelope'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'Landfall — Whenever a land you control enters, you may gain 2 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/7/078b5290-a613-496f-bd23-8fd109549f31.jpg?1783942136',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'land_entered_under_your_control', mayFire: true },
+        effect: { type: 'gain_life', amount: 2 },
+      }),
+    ],
+    artId: 530, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+    notes: ['landfall „you may": odmowa nie daje nic; cudzy land nie odpala („a land YOU control")'],
+  }),
 ]);
 
 /**

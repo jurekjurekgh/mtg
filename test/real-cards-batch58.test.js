@@ -157,3 +157,90 @@ test('B58/B1: Boulder Salvo — etykieta surge i kreator płatności znają {1}{
   assert.equal(descriptor.totalNeeded, 3, 'surge {1}{R} = 3 many');
   assert.deepEqual(descriptor.requirements, [['R']], 'pip surge to {R}');
 });
+
+// ---- B2: Grazing Gladehart (530 ZEN, plan Zendikar) -------------------------
+
+test('B58/B2: Grazing Gladehart — dane Oracle + trigger landfall „you may"', () => {
+  const def = registry.get('grazing-gladehart');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Antelope']);
+  assert.deepEqual(def.colors, ['G']);
+  assert.equal(def.power, 2);
+  assert.equal(def.toughness, 2);
+  assert.equal(def.manaCost, 3);
+  assert.equal(def.set, 'ZEN');
+  assert.equal(def.plan, 'Zendikar');
+  assert.equal(def.artId, 530);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('078b5290'), 'imageUri z druku zen/163');
+  assert.equal(MANA_COSTS['grazing-gladehart'], '{2}{G}');
+  const trigger = def.abilities.find((a) => a.trigger?.event === 'land_entered_under_your_control');
+  assert.ok(trigger, 'trigger landfall obecny');
+  assert.equal(trigger.trigger.mayFire, true, '„you may gain 2 life" = trigger opcjonalny');
+  const effect = Array.isArray(trigger.effect) ? trigger.effect[0] : trigger.effect;
+  assert.deepEqual({ type: effect.type, amount: effect.amount }, { type: 'gain_life', amount: 2 });
+});
+
+test('B58/B2: Grazing Gladehart — land z ręki daje decyzję, „tak" = 2 życia', () => {
+  const state = game();
+  put(state, 'hart', 'grazing-gladehart', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'drop', 'basic-forest', 'p1');
+  const before = player(state, 'p1').life;
+  run(state, commands(state).find((c) => c.type === 'play_land' && c.objectId === 'drop'));
+  const fire = commands(state).find((c) => c.type === 'resolve_optional_trigger_choice' && c.fire === true);
+  assert.ok(fire, 'landfall odpala decyzję „możesz" (ruling: dowolny powód wejścia)');
+  run(state, fire);
+  resolve(state);
+  assert.equal(player(state, 'p1').life, before + 2, '„tak" daje 2 życia');
+});
+
+test('B58/B2: Grazing Gladehart — „nie" nic nie robi, a land przeciwnika nie odpala', () => {
+  const state = game();
+  put(state, 'hart', 'grazing-gladehart', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'drop', 'basic-forest', 'p1');
+  const before = player(state, 'p1').life;
+  run(state, commands(state).find((c) => c.type === 'play_land' && c.objectId === 'drop'));
+  const skip = commands(state).find((c) => c.type === 'resolve_optional_trigger_choice' && c.fire === false);
+  assert.ok(skip, 'odmowa też jest ofertą');
+  run(state, skip);
+  assert.equal(player(state, 'p1').life, before, '„nie" nie daje życia');
+
+  // Tura przeciwnika: „land YOU control" — cudzy land nie odpala.
+  const enemy = game();
+  put(enemy, 'hart', 'grazing-gladehart', 'p1', 'battlefield', { summoningSickness: false });
+  put(enemy, 'enemy-land', 'basic-swamp', 'p2');
+  enemy.turn = jumpToStep(enemy.turn, 'main', 'p2');
+  enemy.turn.activePlayerId = enemy.turn.priorityPlayerId = 'p2';
+  const enemyBefore = player(enemy, 'p1').life;
+  run(enemy, commands(enemy).find((c) => c.type === 'play_land' && c.objectId === 'enemy-land'));
+  assert.ok(!commands(enemy).some((c) => c.type === 'resolve_optional_trigger_choice'),
+    'land przeciwnika nie odpala landfallu („a land YOU control enters")');
+  assert.equal(player(enemy, 'p1').life, enemyBefore, 'bez zmiany życia');
+});
+
+test('B58/B2: Grazing Gladehart — land z EFEKTU (nie zagrany) też odpala landfall', () => {
+  // Ruling ZNR 2024-11-08: landfall „triggers whenever a spell or ability puts
+  // a land onto the battlefield under your control" — nie tylko play_land.
+  const state = game();
+  put(state, 'hart', 'grazing-gladehart', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'elk', 'dawntreader-elk', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'lib-forest', 'basic-forest', 'p1', 'library');
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  const before = player(state, 'p1').life;
+  run(state, commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'elk'));
+  // Zdolność wisi na stosie — passy aż do blokującej decyzji search.
+  for (let i = 0; i < 12 && !state.pendingSearchChoice; i += 1) {
+    const pass = commands(state).find((c) => c.type === 'pass_priority');
+    assert.ok(pass, 'priorytet do oddania');
+    run(state, pass);
+  }
+  const search = commands(state).find((c) => c.type === 'resolve_search_choice' && c.found === 'lib-forest');
+  assert.ok(search, 'search podstawowego landa do pola bitwy');
+  run(state, search);
+  const fire = commands(state).find((c) => c.type === 'resolve_optional_trigger_choice' && c.fire === true);
+  assert.ok(fire, 'land z efektu odpala landfall');
+  run(state, fire);
+  resolve(state);
+  assert.equal(player(state, 'p1').life, before + 2, 'landfall z efektu daje 2 życia');
+});
