@@ -7422,6 +7422,40 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return attachedAurasOf(view, t)
             .reduce((sum, o) => sum + (o.controllerId === view.playerId ? -30 : 30), 0);
         };
+        // M (uwaga właściciela 2026-09-23c, Acidic Slime): cel-LĄD nie może być
+        // remisem z innymi lądami — silnik enumeruje kandydatów w kolejności
+        // stołu, więc wygrywał „pierwszy z brzegu" (właściciel: „chyba losowy
+        // albo pierwszy z brzegu, którego mam kilka sztuk"). Preferencja
+        // właściciela: „o ile to możliwe taki, którego mam 1 sztukę, żeby
+        // zablokować mi rzucanie czarów tego koloru". Sygnały deskryptorowe
+        // (typy + kolory ze źródeł many — ADR 0002/0017), liczone wśród JEGO
+        // lądów: kopia po `cardId` (dwie Góry to dwie kopie tego samego źródła),
+        // a „odcina kolor" = żaden inny jego ląd nie produkuje tego koloru.
+        // Uwaga na spójność premii: „odcięcie" liczy POZOSTAŁE lądy, więc
+        // duplikat własnego koloru z definicji nie odcina (zostaje kopia) —
+        // ląd w wielu kopiach zbiera więc tylko karę i schodzi poniżej
+        // baseline'u 30, dzięki czemu nie wyprzedza artefaktów/enchantmentów
+        // (pin C53/C), gdy unikatowego lądu na stole nie ma.
+        const landDenialDelta = (t) => {
+          if (!t || t.controllerId === view.playerId) return 0;
+          const isLand = (o) => o && (o.kind === 'land' || (o.types ?? []).includes('Land'));
+          if (!isLand(t)) return 0;
+          const jegoLady = (view.zones.battlefield ?? [])
+            .filter((o) => o.controllerId === t.controllerId && isLand(o));
+          const kopie = jegoLady.filter((o) => o.cardId === t.cardId).length;
+          const kolory = (o) => getSourceForObject(o, null)?.colors ?? [];
+          const pozostale = new Set();
+          for (const o of jegoLady) {
+            if (o.id === t.id) continue;
+            for (const c of kolory(o)) pozostale.add(c);
+          }
+          const produkuje = kolory(t);
+          // Ląd bez kolorów (zakład produkujący {C}, land-widmo w testach) nie
+          // odcina niczego — zero sygnału, żeby nie wypychał artefaktów.
+          if (produkuje.length === 0) return 0;
+          const odcina = produkuje.some((c) => !pozostale.has(c));
+          return (odcina ? 18 : 0) + (kopie === 1 ? 10 : 0) - 8 * Math.max(0, kopie - 1);
+        };
         if (Array.isArray(cmd.targetIds)) {
           let score = 0;
           for (const id of cmd.targetIds) {
@@ -7465,7 +7499,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const aura2 = auraStripDelta(t2);
             score += (cmd.friendly
               ? (t2.controllerId === view.playerId ? 30 + v2 + attackBonus2 : -20 - v2)
-              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 + aura2 : -20 - v2 + aura2) : (kill2 ? 30 + v2 + 60 + aura2 : 30 + v2 + aura2)));
+              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 + aura2 : -20 - v2 + aura2) : (kill2 ? 30 + v2 + 60 + aura2 : 30 + v2 + aura2 + landDenialDelta(t2))));
           }
           // F-D (Inferno Titan, plan 2026-09-09): trigger wielocelowy z efektem
           // `damage_divided` dzieli STAŁĄ sumę (`divisionTotal`) na wybrane cele,
@@ -7537,7 +7571,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // C: jak w gałęzi wielocelowej (L41) — zrywanie aur przy usuwaniu.
         const aura = auraStripDelta(target);
         if (target.controllerId === view.playerId) return finish(kill ? -60 - value + aura : -20 - value + aura);
-        return finish(kill ? 30 + value + 60 + aura : 30 + value + aura);
+        return finish(kill ? 30 + value + 60 + aura : 30 + value + aura + landDenialDelta(target));
       }
       case 'resolve_optional_trigger_choice': {
         // M167/B (Circle of the Land Druid): opcjonalny SELF-MILL tylko przy

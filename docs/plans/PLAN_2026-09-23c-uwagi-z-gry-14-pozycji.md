@@ -23,6 +23,10 @@ i push po każdym etapie, zero warunków po nazwie karty (ADR 0002).
 | J | Epic Experiment — 5 wpisów dla X=0..3; ma być JEDEN wpis „(koszt XUR)”, potem modal X, potem Mana Wizard | plan ofert + kreator X | E2 |
 | K | Klik w „Wybierz: deklaracja blokujących” czasem nie działa (press-down przebudowuje layout i release mija przycisk) | aktywacja przycisków akcji (`render.js`/`main.js`, CSS) | E4 |
 | L | „Przebieg tur dla AI” ma być domyślnie rozwinięty jak log | `src/table/index.html` | E4 |
+| M | Acidic Slime — wśród lądów przeciwnika bot ma brać, o ile to możliwe, ląd, którego ten ma TYLKO 1 kopię (blokada koloru), a nie ląd z kilkoma kopiami | scoring celu triggera (`heuristic-bot.js`) | E1 |
+
+Uwaga M dołączyła po wysłaniu A–L (druga wiadomość właściciela z tej samej
+partii) — razem 15 pozycji; plik planu zostaje pod nazwą historyczną.
 
 ## Etapy
 
@@ -39,6 +43,16 @@ i push po każdym etapie, zero warunków po nazwie karty (ADR 0002).
   (deskryptor triggera `enchanted_permanent_tapped` + `mill_cards`) wchodzi do
   kosztu tapnięcia; przy bibliotece ≤ 30 kart kara przewyższa korzyść.
   Jedno miejsce prawdy dla „kosztu tapnięcia lądu”.
+- **M** (dopisane 2026-09-23, po A–L): cel-LĄD triggera `resolve_trigger_target`
+  (Acidic Slime: artefakt/enchantment/ląd) dostaje w wycenie sygnały
+  deskryptorowe: (1) ląd, którego przeciwnik ma **jedną kopię** (kopia = ten sam
+  `cardId` wśród jego lądów) — premia 10; (2) ląd odcinający kolor (żaden inny
+  jego ląd nie produkuje żadnego z jego kolorów — `getSourceForObject`) — premia
+  18; kara 8 za każdą dodatkową kopię. Duplikat z definicji nie „odcina” (analiza
+  liczy POZOSTAŁE lądy), więc lądy z wieloma kopiami trafiają poniżej baseline'u
+  30 i nie wygrywają z artefaktami. Kolor-producent 0 (zakład `{C}`) nie daje
+  żadnego sygnału. Dwie różne karty-uniczaty mogą remisować (kolejność silnika
+  rozstrzyga) — to akceptowalne, dopóki unikat bije duplikat.
 
 ### E2 — panel i modale: upTo, „you may”, X, koszty (B1, C, F1, F3, H, J)
 
