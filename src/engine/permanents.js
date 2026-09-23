@@ -727,11 +727,6 @@ export function effectiveToughness(object, state = null) {
 }
 
 /**
- * Efektywne zdolności obiektu = własne + nadane „do końca tury"
- * (abilityGrants — np. Fake Your Own Death nadaje stworowi trigger dies).
- * Triggery i legalne aktywacje czytają zawsze tę listę, nie object.abilities.
- */
-/**
  * Batch 58/B7 (Gond Gate; Oracle „Gates you control enter untapped"): czy
  * wchodzący permanent ma wchodzić ODKRĘCONY mimo własnego „enters tapped".
  * Reguła czytana z DESKRYPTORA zdolności statycznej kontrolera pola bitwy
@@ -759,6 +754,11 @@ export function entersUntappedOverride(state, object, { enteringId = null } = {}
   return false;
 }
 
+/**
+ * Efektywne zdolności obiektu = własne + nadane „do końca tury"
+ * (abilityGrants — np. Fake Your Own Death nadaje stworowi trigger dies).
+ * Triggery i legalne aktywacje czytają zawsze tę listę, nie object.abilities.
+ */
 export function effectiveAbilities(object) {
   const grants = object?.abilityGrants ?? [];
   if (grants.length === 0) return object?.abilities ?? [];
