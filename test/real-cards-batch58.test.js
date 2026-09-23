@@ -202,8 +202,10 @@ test('B58/B2: Grazing Gladehart — „nie" nic nie robi, a land przeciwnika nie
   put(state, 'drop', 'basic-forest', 'p1');
   const before = player(state, 'p1').life;
   run(state, commands(state).find((c) => c.type === 'play_land' && c.objectId === 'drop'));
-  const skip = commands(state).find((c) => c.type === 'resolve_optional_trigger_choice' && c.fire === false);
-  assert.ok(skip, 'odmowa też jest ofertą');
+  // F1 (uwaga z gry 2026-09-23c): odmowa decyzji „you may" to zwykły pass
+  // (przycisk „Dalej (Pass)"), a nie osobny wariant resolve_optional_trigger_choice.
+  const skip = commands(state).find((c) => c.type === 'pass_priority');
+  assert.ok(skip, 'odmowa też jest ofertą (pass)');
   run(state, skip);
   assert.equal(player(state, 'p1').life, before, '„nie" nie daje życia');
 

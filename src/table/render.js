@@ -655,6 +655,11 @@ function isDeclineOption(command) {
   if (!command) return false;
   if (command.found === null) return true;      // szukanie w bibliotece
   if (command.skip === true) return true;       // Springbloom i pokrewne
+  // F1 (uwaga właściciela 2026-09-23c): „you may" — odmowa to zwykły pass
+  // w nowym kształcie oferty, ale stary wariant `fire: false` (replaye,
+  // starsze ścieżki silnika) też jest rezygnacją: grupa ma się rozpaść na DWA
+  // przyciski, a nie otwierać modal z potwierdzeniem decyzji.
+  if (command.fire === false) return true;
   return false;
 }
 
@@ -3377,7 +3382,17 @@ export function commandLabel(cmd, session, view) {
       return cmd.draw ? 'Dobierz kartę (you may)' : 'Nie dobieraj';
     }
     case 'resolve_optional_trigger_choice': {
-      // M163/A: tak/nie dobrowolnego efektu — j.w.
+      // F1 (uwaga właściciela 2026-09-23c): decyzja „you may" NIE tworzy już
+      // modala — oferta wykonania stoi w panelu jako ZWYKŁA akcja, a odmową
+      // jest „Dalej (Pass)". Etykieta akcji musi więc nazywać kartę i efekt:
+      // bierzemy TEN SAM tytuł, co dotąd w modalu (M221/B) — jedno źródło
+      // opisu decyzji (L41), więc panel i modal nie mogą się rozjechać.
+      if (cmd.fire) {
+        const named = choiceSourceTitle(cmd, session, view);
+        if (named) return named;
+      }
+      // M163/A: tak/nie dobrowolnego efektu — j.w. (fallback dla widoku bez
+      // `pendingOptionalTrigger`, np. starych replayów).
       return cmd.fire ? 'Uruchom efekt dobrowolny (you may)' : 'Zrezygnuj z efektu';
     }
     case 'resolve_endure_choice': {

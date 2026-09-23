@@ -44,7 +44,8 @@ function resolveStack(state) {
     || state.pendingSearchChoice || state.pendingOptionalTrigger) && guard++ < 300) {
     const view = playerView(state, state.turn.priorityPlayerId);
     const pick = view.legalCommands.find((c) => c.type === 'resolve_search_choice' && c.found)
-      ?? view.legalCommands.find((c) => c.type === 'resolve_optional_trigger_choice' && c.fire === false)
+      // F1 (2026-09-23c): odmowa decyzji „you may" to zwykły pass — „Dalej (Pass)".
+      ?? view.legalCommands.find((c) => c.type === 'pass_priority')
       ?? view.legalCommands.find((c) => c.type.startsWith('resolve_'))
       ?? view.legalCommands.find((c) => c.type === 'pass_priority');
     if (!pick || !execute(state, pick).ok) return false;
@@ -113,8 +114,8 @@ test('BUG3: Soulbright 3. resolve — można odmówić 8 many', () => {
       execute(state, pass);
     }
   }
-  const no = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_optional_trigger_choice' && c.fire === false);
-  assert.ok(no, 'można odmówić');
+  const no = playerView(state, 'p1').legalCommands.find((c) => c.type === 'pass_priority');
+  assert.ok(no, 'można odmówić (F1: odmowa = zwykły pass)');
   const before = state.players[0].mana ?? 0;
   assert.ok(execute(state, no).ok);
   assert.equal(state.players[0].mana ?? 0, before, 'odmowa = brak 8 many');

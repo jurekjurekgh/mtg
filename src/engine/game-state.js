@@ -3827,10 +3827,19 @@ export function execute(state, input) {
   }
 
   if (state.pendingOptionalTrigger) {
-    if (cmd.type !== 'resolve_optional_trigger_choice') return reject('optional_trigger_unresolved');
+    // F1: „Dalej (Pass)" = odmowa (uwaga właściciela 2026-09-23c). Stary
+    // kształt `resolve_optional_trigger_choice {fire: false}` zostaje przyjęty
+    // dla zgodności replayów i starszych testów.
+    if (cmd.type !== 'resolve_optional_trigger_choice' && cmd.type !== 'pass_priority') {
+      return reject('optional_trigger_unresolved');
+    }
     if (cmd.playerId !== state.pendingOptionalTrigger.playerId) return reject('optional_trigger_not_your_decision');
     const pending = state.pendingOptionalTrigger;
     const before = state.events.length;
+    // Pass rozstrzygający decyzję NIE jest passem rundy priorytetu (nie liczy
+    // się do domknięcia kroku) — licznik wraca do zera, jak przy każdej
+    // rozstrzygniętej decyzji (por. reset przy komendach innych niż pass).
+    if (cmd.type === 'pass_priority') state.turn.passes = 0;
     state.pendingOptionalTrigger = null;
     if (cmd.fire) {
       const source = state.objects.get(pending.sourceId);
@@ -7152,7 +7161,12 @@ export function playerView(state, playerId) {
       fire: true,
       ...(selfMillEffect ? { selfMill: selfMillEffect.amount ?? 0 } : {}),
     }));
-    legalCommands.push(command('resolve_optional_trigger_choice', playerId, { fire: false }));
+    // F1 (uwaga właściciela 2026-09-23c): ODMOWA to zwykły pass — panel rysuje
+    // „Dalej (Pass)" (pierwszy przycisk, reguła E), a `execute` przyjmuje go
+    // jako rozstrzygnięcie decyzji z `fired: false`. Sama oferta WYKONANIA
+    // zostaje PIERWSZA w `legalCommands` (boty i replaye: „pierwsza oferta =
+    // dotychczasowe zachowanie").
+    legalCommands.push(command('pass_priority', playerId));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeEnterAsCopy) {
     // Enter as copy: najsilniejszy Ally pierwszy (boty / istniejący test),
     // potem słabsze, na końcu odmowa (0/0).
