@@ -11592,6 +11592,29 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['landfall „you may": odmowa nie daje nic; cudzy land nie odpala („a land YOU control")'],
   }),
+
+  // Polluted Dead (AVR) {4}{B} 3/3 Zombie — „When this creature dies, destroy
+  // target land." Trigger śmierci z obowiązkowym celem-lądem (dowolny, także
+  // własny — Oracle nie ogranicza kontrolera); bez legalnego celu trigger nie
+  // odpala i jest to jawne w zdarzeniach (M106/Z2). Nowa ścieżka generyczna:
+  // typ celu `land` na torze TRIGGERÓW (dotąd znali go tylko czar/zdolność).
+  defineCard({
+    id: 'polluted-dead', name: 'Polluted Dead', set: 'AVR',
+    types: ['Creature'], subtypes: ['Zombie'], colors: ['B'],
+    power: 3, toughness: 3, manaCost: 5,
+    oracleText: 'When this creature dies, destroy target land.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/3/036c1954-37d3-4787-8df8-f2d0dd39058a.jpg?1783940692',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies', requiresTarget: { type: 'land' } },
+        effect: { type: 'destroy_permanent' },
+      }),
+    ],
+    artId: 464, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['trigger śmierci z celem-lądem: cel dowolny (własny też), brak legalnego celu = trigger bez efektu (zdarzenie trigger_resolved/no_targets)'],
+  }),
 ]);
 
 /**

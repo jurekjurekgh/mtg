@@ -134,7 +134,7 @@ liczone z plików `decks/*.txt`).
 | `theros` | Theros | WUBRG | 26 | 9 | 17 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 35 | 12 | 23 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
-| `wiedzmin-bg` | Wiedźmin (BG) | BG | 26 | 9 | 17 |
+| `wiedzmin-bg` | Wiedźmin (BG) | BG | 27 | 9 | 18 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
 | `zendikar` | Zendikar | WURG | 35 | 12 | 23 |
 

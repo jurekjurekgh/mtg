@@ -653,6 +653,18 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return !isLand;
     });
   }
+  // Batch 58/B3 (Polluted Dead): „destroy target land" — DOWOLNY land na polu
+  // bitwy, bez ograniczenia kontrolera (Oracle nie mówi „you don't control").
+  // Lustro czarowej ścieżki celu (`legalTargetCandidates`/`validateTargets`
+  // w spells.js obsługują `{ type: 'land' }` od Batcha 22 — Vandalize), żeby
+  // oferta, walidacja decyzji i zdolność na stosie czytały jedną regułę (L48).
+  if (spec.type === 'land') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield' && isLand(object)
+        && (!hexproofBlocked(object) && !protectedBlocked(object));
+    });
+  }
   // Batch 22: Wormfang Newt — land you control (T2: cel wybiera
   // kontroler, exclude źródła). Lustro legalTargetCandidates ze
   // spells.js (które obsługuje ten sam specyfikacja w czarach).

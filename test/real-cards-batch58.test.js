@@ -244,3 +244,70 @@ test('B58/B2: Grazing Gladehart — land z EFEKTU (nie zagrany) też odpala land
   resolve(state);
   assert.equal(player(state, 'p1').life, before + 2, 'landfall z efektu daje 2 życia');
 });
+
+// ---- B3: Polluted Dead (464 AVR, plan Wiedźmin) -----------------------------
+
+function passUntil(s, pred, limit = 30) {
+  for (let i = 0; i < limit && !pred(s); i += 1) {
+    const cmd = commands(s).find((c) => c.type === 'pass_priority');
+    assert.ok(cmd, 'priorytet do oddania');
+    run(s, cmd);
+  }
+  assert.ok(pred(s), 'warunek osiągnięty (passy)');
+}
+
+test('B58/B3: Polluted Dead — dane Oracle + trigger śmierci z celem-lądem', () => {
+  const def = registry.get('polluted-dead');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Zombie']);
+  assert.deepEqual(def.colors, ['B']);
+  assert.equal(def.power, 3);
+  assert.equal(def.toughness, 3);
+  assert.equal(def.manaCost, 5);
+  assert.equal(def.set, 'AVR');
+  assert.equal(def.plan, 'Wiedźmin');
+  assert.equal(def.artId, 464);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('036c1954'), 'imageUri z druku avr/116');
+  assert.equal(MANA_COSTS['polluted-dead'], '{4}{B}');
+  const trigger = def.abilities.find((a) => a.trigger?.event === 'dies');
+  assert.ok(trigger, 'trigger śmierci obecny');
+  assert.deepEqual(trigger.trigger.requiresTarget, { type: 'land' });
+  const effect = Array.isArray(trigger.effect) ? trigger.effect[0] : trigger.effect;
+  assert.equal(effect.type, 'destroy_permanent');
+});
+
+test('B58/B3: Polluted Dead — śmierć niszczy wskazany ląd (cel dowolny)', () => {
+  const state = game();
+  put(state, 'dead', 'polluted-dead', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'mine', 'basic-forest', 'p1', 'battlefield');
+  put(state, 'foe-land', 'basic-swamp', 'p2', 'battlefield');
+  put(state, 'burn', 'fiery-fall', 'p1');
+  addMana(state, 'p1', 6, { colors: ['R'] });
+  run(state, commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'burn'));
+  // Czar zabija 3/3 → trigger śmierci czeka na wybór celu (CR 603.3d).
+  passUntil(state, (s) => commands(s).some((c) => c.type === 'resolve_trigger_target'));
+  const choices = commands(state).filter((c) => c.type === 'resolve_trigger_target');
+  const ids = choices.map((c) => c.targetId).filter(Boolean);
+  assert.ok(ids.includes('foe-land'), `cudzy ląd jest legalnym celem: ${JSON.stringify(ids)}`);
+  assert.ok(ids.includes('mine'), '„target land" nie ogranicza kontrolera — własny ląd też');
+  run(state, choices.find((c) => c.targetId === 'foe-land'));
+  resolve(state);
+  assert.ok(find(state, 'basic-swamp', 'graveyard'), 'wskazany ląd zniszczony (grób)');
+  assert.ok(find(state, 'basic-forest', 'battlefield'), 'niewybrany ląd zostaje na polu bitwy');
+});
+
+test('B58/B3: Polluted Dead — brak legalnego celu = trigger bez efektu (bez zawieszenia)', () => {
+  const state = game(); // brak jakiegokolwiek lądu na polu bitwy
+  put(state, 'dead', 'polluted-dead', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'burn', 'fiery-fall', 'p1');
+  addMana(state, 'p1', 6, { colors: ['R'] });
+  run(state, commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'burn'));
+  resolve(state);
+  assert.ok(!commands(state).some((c) => c.type === 'resolve_trigger_target'),
+    'bez lądu nie ma decyzji celu (trigger schodzi bez efektu)');
+  assert.ok(state.events.some((e) => e.type === 'trigger_resolved' && e.reason === 'no_targets'),
+    'brak celu jest JAWNY w zdarzeniach (M106/Z2), nie cichy');
+  assert.equal(state.zones.stack.length, 0, 'stos pusty — gra nie wisi');
+});
