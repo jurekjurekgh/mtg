@@ -21,25 +21,35 @@ a pin `test/m380-restrykcje-bloku-jedno-zrodlo.test.js` podaje w scenariuszu
 
 ## 1. Etapy audytu PR #133 (kolejność i kryteria ukończenia)
 
-- [ ] **A1. Engine — przegląd każdej zmienionej ścieżki** (`src/engine/*`,
+- [x] **A1. Engine — przegląd każdej zmienionej ścieżki** (`src/engine/*`,
       `src/table/*`): reguły, stan, FoW, determinizm; zgodność z CR (cytaty
       źródłowe, ADR 0030) i ADR 0002 (zero gałęzi po nazwie/ID karty).
       Kryterium: każdy plik z diffu ma werdykt (OK / znalezisko F-n / notka Z-n).
-- [ ] **A2. Rename `cantBeBlocked` → `cantBeBlockedUntilTurn` (M407)** — czy
+- [x] **A2. Rename `cantBeBlocked` → `cantBeBlockedUntilTurn` (M407)** — czy
       wszystkie czytniki/zapisy i fixture'y testowe mówią nowym językiem;
       kryterium: mutacja strażnika bloku czerwieni co najmniej jeden test
       (obecnie: brak — do naprawy pinem), `permanents.js` bez martwego pola.
-- [ ] **A3. Bot (heuristic) — 799 linii diffu**: nowe wyceny (`blockExchangeOf`
+- [x] **A3. Bot (heuristic) — 799 linii diffu**: nowe wyceny (`blockExchangeOf`
       CR 510.4/702.7b, `cantBeBlockedTargetValue`, `crewValue`, trucizna jako
       drugi zegar, `tapTimingBonus`/lock-untap, pip w triggerze) — zgodność
       z CR, brak wyceny „przebijalnej" karą jak w L3, WHITELISTY ze strażnikiem.
-- [ ] **A4. Karty w batchu M407/M412** — zgodność definicji z Oracle/Snapshot
+- [x] **A4. Karty w batchu M407/M412** — zgodność definicji z Oracle/Snapshot
       Scryfall (Shiva FIN #58: „Target creature", nie `creature_you_control`;
       Dead Ringers `targetWord: 0`; kalibracja talii G).
-- [ ] **A5. Testy** — czy nowe pliki pinów mierzą to, co deklarują (RED→GREEN,
+- [x] **A5. Testy** — czy nowe pliki pinów mierzą to, co deklarują (RED→GREEN,
       L13/L159): mutacje per gałąź dla nowych bramek; brak pinów martwych.
-- [ ] **A6. Raport** `docs/audits/AUDYT_PR133_2026-09-23.md` + wpis w opisie PR
+- [~] **A6. Raport** `docs/audits/AUDYT_PR133_2026-09-23.md` + wpis w opisie PR
       sesji; naprawy znalezisk F-n OSOBNYMI commitami (ADR 0020 C).
+
+### Stan audytu (2026-09-23)
+
+Raport: `docs/audits/AUDYT_PR133_2026-09-23.md` — werdykt **APPROVE**.
+Znaleziska naprawiane osobnymi commitami: **F-1** (martwe odwołania do starej flagi
+w `permanents.js`), **F-2** (scenariusz `m380` na starej fladze + brak pinu absolutnego
+restrykcji bloku), **F-3** (pin `fingerprint` na starej fladze), **F-4** (podwójne
+liczenie `power + grantedPower` w `cantBeBlockedTargetValue` z M407). Notki do pętli:
+**Z-1** (ta sama klasa podwójnego liczenia w trzech miejscach sprzed PR), **Z-2**
+(niemierzona klauzula `bestow == null` w guardzie CR 704.5m).
 
 ## 2. Etapy pętli jakości (ADR 0021, po audycie)
 
