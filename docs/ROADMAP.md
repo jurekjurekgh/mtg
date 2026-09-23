@@ -144,7 +144,8 @@ krok po kroku do identycznego stanu końcowego.
 - [ ] Rzucanie prostego czaru, stos i priority pass.
 - [x] Permanent na battlefield, tap/untap, summoning sickness.
 - [x] Podstawowe statystyki stworzeń i obrażenia.
-- [x] Format definicji karty i registry statusu wsparcia (`unsupported`/`in-development`/`supported`/`limited`).
+- [x] Format definicji karty i registry statusu wpisu (`supported` = karta taliowalna,
+      `token`, `back`; rezerwowe `unsupported`/`in-development`) — M419 2026-09-23.
 - [x] Format talii jako pliku tekstowego w repozytorium + parser i test odrzucający talię z kartami
       spoza statusu `supported` ([ADR 0012](decisions/0012-deck-builder-and-text-deck-format.md)).
 - [x] Syntetyczny katalog testowy z materializacją obiektów gry i taliami w `decks/`.

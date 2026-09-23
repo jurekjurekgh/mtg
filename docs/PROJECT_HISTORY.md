@@ -12481,3 +12481,13 @@ README (sekcja o pliku przepisana na zapis historyczny), `docs/ROADMAP.md`
 (pozycja odhaczona), ADR 0009 §6 (nota o wykonaniu przed Etapem 5) i
 `docs/AUDIT_LEGACY_APP.md` (nota o usunięciu pliku). Żaden test ani workflow
 nie zależały od pliku — sprawdzone grepem przed usunięciem.
+
+## M419 — koniec statusu „limited”: token i back (sesja 2026-09-23, PR #134)
+
+Właściciel: „Żadna karta nie powinna być limited” → po pokazaniu wszystkich 51
+wpisów (43 tokeny + 8 tylnych stron DFC) wybór słownika: „a nie może być zamiast
+special po prostu token albo back, żeby było jednoznacznie?”. Wykonane: `token`
+dla tokenów, `back` dla tylnych stron DFC, usunięcie `limited` ze słownika
+i danych; nowy strażnik `test/statusy-wpisow-katalogu.test.js` (A–F, m.in. piny
+492/43/8, zakaz `limited` w źródłach, zakaz wciągania tokenu/tyłu do talii);
+piny w 18 plikach testów zaktualizowane. Zero zmian zachowania gry.

@@ -584,7 +584,7 @@ test('B56/B6: 63 Dragon Fodder — dwa OSOBNE tokeny 1/1 czerwone Gobliny', () =
   assert.match(def.imageUri, /^https:\/\/cards\.scryfall\.io\//, 'grafika ze Scryfalla');
   assert.deepEqual(def.types, ['Creature', 'Token']);
   assert.deepEqual(def.colors, ['R']);
-  assert.equal(def.support.status, 'limited', 'token — nie taliowalny');
+  assert.equal(def.support.status, 'token', 'token — nie taliowalny');
 });
 
 test('B56/B6: 63 Dragon Fodder — bez manny brak oferty (scenariusz nielegalny)', () => {

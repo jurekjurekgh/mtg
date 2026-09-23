@@ -198,8 +198,8 @@ Zbudowany plik otwiera się dwuklikiem — także na iPadzie i iPhonie, bez serw
 
 ## Najbliższy etap
 
-Etapy 1–5 zamknięte, Etap 2/3 przekroczony (472 wspierane karty realne + 8 tylnych stron
-kart dwustronnych, poza taliami (`limited`) + 40 tokenów >> docelowe ~20), Etap 4 bota
+Etapy 1–5 zamknięte, Etap 2/3 przekroczony (492 wspierane karty realne + 8 tylnych stron
+kart dwustronnych, poza taliami (status `back`) + 43 tokeny (status `token`) >> docelowe ~20), Etap 4 bota
 zamknięty (heurystyka + modelowanie, harness B0, tune-bot), Etap 5 stołu zamknięty
 (gra człowiek–bot na iPadzie przez Pages / file://).
 

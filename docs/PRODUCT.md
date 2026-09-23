@@ -53,12 +53,14 @@ Dopóki jawnie nie zmienimy decyzji, projekt **nie zakłada**:
 
 ### 1. Jawny zakres wsparcia
 
-Każda karta ma status, np.:
+Każdy wpis katalogu ma status mówiący wprost, czym jest:
 
-- `unsupported` — nie może wejść do legalnej talii;
-- `in-development` — dostępna tylko w testach/development;
-- `supported` — obsługiwana w zadeklarowanym zakresie;
-- `limited` — działa z jawną listą ograniczeń.
+- `supported` — pełna karta (100% Oracle), taliowalna;
+- `token` — token tworzony przez karty/mechaniki; nie wchodzi do talii;
+- `back` — tylna strona karty dwustronnej; w talii istnieje wyłącznie przód
+  (CR 711.4), do gry wchodzi transformem;
+- `unsupported` / `in-development` — karta bez pełnego Oracle; w katalogu jej
+  nie ma (ADR 0022: karta albo jest w 100%, albo jej nie ma).
 
 System nie może udawać, że rozumie kartę, której nie zaimplementowano.
 

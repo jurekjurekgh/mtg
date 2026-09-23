@@ -134,11 +134,11 @@ test('Batch 13: pięć kart ma właściwe dane i status supported', () => {
     assert.ok(card.imageUri, `${id} ma imageUri`);
     assert.ok(card.artId != null, `${id} ma artId ze słownika kolekcji`);
   }
-  // Scorned Villager: transform DFC; tył (Moonscarred Werewolf) limited.
+  // Scorned Villager: transform DFC; tył (Moonscarred Werewolf) ma status `back`.
   assert.deepEqual(REGISTRY.get('scorned-villager').transformTo, 'moonscarred-werewolf');
   assert.equal(REGISTRY.get('scorned-villager').keywords.includes('transform'), true);
   const back = REGISTRY.get('moonscarred-werewolf');
-  assert.equal(back.support.status, 'limited');
+  assert.equal(back.support.status, 'back');
   assert.equal(back.artId, 485, 'tył ma własny artId ze słownika');
   // Curse: aura Enchant player; Negate: instant; Emissary: artifact creature.
   assert.equal(REGISTRY.get('curse-of-the-pierced-heart').aura.enchant, 'player');

@@ -134,7 +134,7 @@ test('Batch 27: wszystkie karty mają status supported i artId', () => {
     assert.ok(card.artId, `${id}: brak artId`);
     assert.ok(card.imageUri, `${id}: brak imageUri`);
   }
-  assert.equal(REGISTRY.get('homicidal-brute').support.status, 'limited', 'tył DFC limited');
+  assert.equal(REGISTRY.get('homicidal-brute').support.status, 'back', 'tył DFC ma status back');
 });
 
 // --- Civilized Scholar // Homicidal Brute ------------------------------------

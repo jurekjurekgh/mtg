@@ -245,10 +245,10 @@ test('Batch 16: wszystkie karty mają dane, artId i status supported', () => {
   assert.ok(REGISTRY.get('jill-shivas-dominant').oracleText.includes('{3}{U}{U}'));
 });
 
-test('Batch 16: Shiva (tył DFC) i token Robot są limited (nie taliowalne)', () => {
-  assert.equal(REGISTRY.get('shiva-warden-of-ice').support.status, 'limited');
+test('Batch 16: Shiva (tył DFC) ma status back, token Robot — token', () => {
+  assert.equal(REGISTRY.get('shiva-warden-of-ice').support.status, 'back');
   assert.equal(REGISTRY.get('shiva-warden-of-ice').artId, 527);
-  assert.equal(REGISTRY.get('token_robot').support.status, 'limited');
+  assert.equal(REGISTRY.get('token_robot').support.status, 'token');
 });
 
 test('Batch 16: talie dominaria i warhammer przechodzą walidację singleton (M178)', async () => {

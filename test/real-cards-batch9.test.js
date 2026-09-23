@@ -127,8 +127,8 @@ test('Batch 9: pięć kart ma właściwe dane, mechaniki i status supported', ()
     assert.ok(card.oracleText, `${id} ma Oracle text`);
     assert.ok(card.imageUri, `${id} ma imageUri`);
   }
-  assert.ok(REGISTRY.get('token_orc_army').support.status === 'limited');
-  assert.ok(REGISTRY.get('token_reliquary_dragon').support.status === 'limited');
+  assert.ok(REGISTRY.get('token_orc_army').support.status === 'token');
+  assert.ok(REGISTRY.get('token_reliquary_dragon').support.status === 'token');
 });
 
 // --- Kor Cartographer -------------------------------------------------------

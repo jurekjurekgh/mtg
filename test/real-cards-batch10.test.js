@@ -151,7 +151,7 @@ test('Batch 10: pięć kart ma właściwe dane i status supported', () => {
     assert.ok(card.imageUri, `${id} ma imageUri`);
   }
   assert.equal(REGISTRY.get('tumbleweed-rising').plot.cost, 3);
-  assert.equal(REGISTRY.get('token_elemental').support.status, 'limited');
+  assert.equal(REGISTRY.get('token_elemental').support.status, 'token');
 });
 
 test('Goblin Piker: materializacja vanilla 2/1 nie ma ukrytej zdolności', () => {

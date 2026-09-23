@@ -61,7 +61,7 @@ test('I: token Servo ma wpis katalogowy z drukiem Kaladesh Tokens', () => {
   assert.equal(servo.toughness, 1);
   assert.match(String(servo.imageUri), /60842b1a-6ae7-4b3b-a23f-0d94a3d89884/,
     'druk tkld/4 z API Scryfalla (nie zgadywany UUID)');
-  assert.equal(servo.support.status, 'limited', 'token nie jest taliowalny');
+  assert.equal(servo.support.status, 'token', 'token nie jest taliowalny');
 });
 
 test('I: każdy token tworzony przez silnik ma ilustrację', () => {

@@ -153,11 +153,11 @@ test('Batch 14: wszystkie karty mają artId i status supported', () => {
     assert.ok(def.imageUri, `${id}: brak imageUri`);
   }
   // Guidestone Compass — tył karty dwustronnej: w grę trafia wyłącznie przez
-  // transform frontu (limited). Korekta 2026-08-05: wcześniej błędnie
+  // transform frontu (`back`). Korekta 2026-08-05: wcześniej błędnie
   // supported, przez co wchodził do talii jako nierzucalna backside-karta.
   const compass = REGISTRY.get('guidestone-compass');
   assert.ok(compass);
-  assert.equal(compass.support.status, 'limited', 'tył DFC nie jest taliowalny');
+  assert.equal(compass.support.status, 'back', 'tył DFC nie jest taliowalny');
   assert.ok(compass.artId && compass.imageUri, 'artId i imageUri pozostają');
 });
 

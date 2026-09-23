@@ -67,10 +67,10 @@ export function parseDeckText(text, registry) {
     if (amount < 1) throw new Error(`Liczba kopii musi być dodatnia: ${line}`);
     // Karty dwustronne (DFC): zapis talii może wskazywać dowolną stronę —
     // fizyczna karta w bibliotece/ręce istnieje wyłącznie przodem (CR 711.4).
-    // Nazwa TYŁU (status limited) zamienia się na stronę frontową, żeby
+    // Nazwa TYŁU (status `back`) zamienia się na stronę frontową, żeby
     // karta trafiała do ręki grywalna (bug ze stołu 2026-08-05: „Guidestone
     // Compass" na ręku nie dał się rzucić). Tokeny nadal odrzuca walidacja.
-    if (card.support?.status === 'limited') {
+    if (card.support?.status === 'back') {
       const front = transformFrontOf(registry, card.id);
       if (front) card = front;
     }
@@ -81,10 +81,10 @@ export function parseDeckText(text, registry) {
 }
 
 /**
- * Strona frontowa pary transform dla karty `backId` o statusie limited —
+ * Strona frontowa pary transform dla karty `backId` o statusie `back` —
  * wskazana wprost (`X.transformTo === backId`) albo przez cykl A↔B
  * (wilkołaki: obie strony mają `transformTo`; frontem jest strona supported).
- * Zwraca null, gdy karta limited nie jest tyłem transform (np. token).
+ * Zwraca null, gdy wpis nie jest tyłem transform (np. token).
  */
 function transformFrontOf(registry, backId) {
   const direct = registry.all().find(

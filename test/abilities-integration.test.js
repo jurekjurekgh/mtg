@@ -7,7 +7,7 @@ test('karta może zawierać abilities', () => {
   const card = defineCard({
     id: 'test-ability', name: 'Test Ability', set: 'TEST', types: ['Creature'], colors: ['B'],
     abilities: [createAbility({ type: ABILITY_TYPE.activated, cost: { tap: true }, effect: { draw: 1 } })],
-    support: { status: 'limited' },
+    support: { status: 'supported' },
   });
   assert.equal(card.abilities.length, 1);
   assert.equal(card.abilities[0].type, ABILITY_TYPE.activated);

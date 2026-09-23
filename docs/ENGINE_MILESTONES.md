@@ -7286,3 +7286,30 @@ komentarze opisujące WZORZEC (tory obrazów, szybkie dodawanie w kreatorze), ni
 zależność. Zapis rozpoznania zostaje w `docs/AUDIT_LEGACY_APP.md` (z notą
 o usunięciu), a pozycja roadmapy „usunięcie snapshotu” jest odhaczona.
 Bramy: `npm test` zielone, build bez zmian.
+
+---
+
+## M419 — statusy wpisów: koniec z „limited” (2026-09-23)
+
+Zgłoszenie właściciela: „Żadna karta nie powinna być limited”; po obejrzeniu
+listy 51 wpisów decyzja o kształcie: „a nie może być zamiast special po prostu
+token albo back, żeby było jednoznacznie?”.
+
+Zmiana: ze słownika zniknęła wartość `limited`, a wpisy mówią wprost, czym są —
+**43 tokeny mają status `token`, 8 tylnych stron kart dwustronnych `back`**
+(`supported` zostaje dla pełnych kart taliowalnych, `unsupported`/
+`in-development` są rezerwowe i w katalogu ich nie ma). Wartości nie da się już
+wpisać w `defineCard` (walidacja `SUPPORT_STATUS`), więc etykieta nie wróci
+cicho. Zmiana jest bezskutkowa dla gry: bramką taliowalności pozostaje
+`status === 'supported'` (deck-text, kreator, generator talii).
+
+Strażnik klasy: `test/statusy-wpisow-katalogu.test.js` (6 sprawdzeń) —
+(A) słownik bez `limited`/`special`, (B) każdy wpis ma status
+supported/token/back i policzone są wszystkie (492/43/8), (C) `token` wyłącznie
+dla `token_*` (bez artId/planu), `back` wyłącznie dla celu `transformTo` karty
+`supported`, (D) pozycja z arkusza (artId+plan) nie jest tokenem, (E) token
+i tył odrzuca walidacja talii, (F) słowo „limited” nie występuje w źródłach
+katalogu. Zaktualizowane piny w 18 plikach testów. Dokumentacja żywa (README,
+ROADMAP, PRODUCT) mówi nowym słownikiem; wpisy historyczne zostają jak były.
+
+Bramy: `npm test` zielone, build bez zmian.

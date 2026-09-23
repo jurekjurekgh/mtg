@@ -80,6 +80,15 @@ korzysta, a lokalnie mam kopię na desktopie”. Usunięty
 zaktualizowane (nota o usunięciu, pozycja roadmapy odhaczona). Sprawdzone:
 zero zależności w `test/`, `tools/`, `.github/`.
 
+### Etap E — statusy wpisów: limited → token/back (M419, 2026-09-23)
+
+Właściciel: „Żadna karta nie powinna być limited” + „a nie może być zamiast
+special po prostu token albo back, żeby było jednoznacznie?”. Wykonane:
+`SUPPORT_STATUS` = supported/token/back (+ rezerwowe unsupported/in-development),
+43 tokeny → `token`, 8 tylnych stron DFC → `back`, `deck-text` bramkuje tył po
+`back`, piny w 18 testach, nowy strażnik `test/statusy-wpisow-katalogu.test.js`
+(A–F), dokumentacja żywa (README/ROADMAP/PRODUCT) przepisana. Bramy zielone.
+
 ## 2. Etapy pętli jakości (ADR 0021, po audycie)
 
 - [ ] **B1. Żywy Tester** (`npm run build` + `tools/table-tester`): partia

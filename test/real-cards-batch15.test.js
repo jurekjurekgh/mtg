@@ -183,9 +183,9 @@ test('Batch 15: talia warhammer-ubr.txt przechodzi walidację (M178: talie per p
   assert.ok(result.valid, `Talia nieprawidłowa: ${(result.errors || []).join(', ')}`);
 });
 
-test('Batch 15: tokeny Wolf i Hero są limited (nie taliowalne)', () => {
-  assert.equal(REGISTRY.get('token_wolf').support.status, 'limited');
-  assert.equal(REGISTRY.get('token_hero').support.status, 'limited');
+test('Batch 15: tokeny Wolf i Hero mają status token (nie taliowalne)', () => {
+  assert.equal(REGISTRY.get('token_wolf').support.status, 'token');
+  assert.equal(REGISTRY.get('token_hero').support.status, 'token');
 });
 
 // =============================================================================

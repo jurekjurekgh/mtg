@@ -10,8 +10,8 @@ test('katalog zawiera realne karty i wirtualne landy podstawowe', () => {
   assert.ok(registry.supported().length >= 70, 'sporo realnych kart supported');
   assert.ok(registry.has('highland-game'));
   assert.ok(registry.has('basic-forest'));
-  // Tokeny są limited (nie w kreatorze, nie supported).
-  assert.equal(registry.get('token_wolf').support.status, 'limited');
+  // Tokeny mają status `token` (nie w kreatorze, nie supported).
+  assert.equal(registry.get('token_wolf').support.status, 'token');
 });
 
 test('katalog filtruje supported po planie, secie i nazwie', () => {
@@ -24,7 +24,7 @@ test('katalog filtruje supported po planie, secie i nazwie', () => {
   assert.ok(ktks.includes('highland-game'));
   // Filtr po nazwie.
   assert.deepEqual(querySupportedCards(registry, { name: 'highland game' }).map((card) => card.id), ['highland-game']);
-  // Token (limited) nie jest proponowany kreatorowi.
+  // Token (status `token`) nie jest proponowany kreatorowi.
   assert.ok(!querySupportedCards(registry).some((card) => card.id === 'token_wolf'));
 });
 
@@ -54,12 +54,12 @@ test('materializacja przenosi statystyki permanentów z definicji do obiektu gry
 
 test('talia kart odrzuca karty bez statusu supported', () => {
   const registry = createCardRegistry();
-  // Token (limited) nie jest taliowalny.
+  // Token (status `token`) nie jest taliowalny.
   assert.throws(() => createCardDeck({ cardIds: ['token_wolf'], ownerId: 'p1', registry }), /nieobsługiwane/);
-  // Tyły kart dwustronnych są limited — w talii i kreatorze nie istnieją
+  // Tyły kart dwustronnych mają status `back` — w talii i kreatorze nie istnieją
   // (CR 711.3/711.4: poza polem bitwy karta istnieje wyłącznie przodem).
   for (const backId of ['guidestone-compass', 'shiva-warden-of-ice', 'krallenhorde-wantons', 'moonscarred-werewolf']) {
-    assert.equal(registry.get(backId).support.status, 'limited', `tył DFC ${backId} limited`);
+    assert.equal(registry.get(backId).support.status, 'back', `tył DFC ${backId} ma status back`);
     assert.throws(() => createCardDeck({ cardIds: [backId], ownerId: 'p1', registry }), /nieobsługiwane/);
   }
 });
@@ -121,7 +121,7 @@ test('imageUri każdej karty zgadza się z plikiem Scryfall (UUID ilustracji)', 
   }
   const bad = [];
   for (const card of registry.all()) {
-    if (!card.imageUri || card.support?.status === 'limited') continue;
+    if (!card.imageUri || ['token', 'back'].includes(card.support?.status)) continue;
     const expected = json.get(card.id);
     if (!expected) continue; // brak pliku Scryfall — nie sprawdzamy
     const got = uuidFrom(card.imageUri);

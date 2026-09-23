@@ -32,7 +32,7 @@ import { moveObjectDirectly } from '../src/engine/objects.js';
 const REGISTRY = createCardRegistry();
 
 /** Dane obiektu gry z rejestru (Ballista Wielder to tylna strona DFC —
- *  `limited`, więc nie przechodzi przez walidację talii). */
+ *  status `back`, więc nie przechodzi przez walidację talii). */
 function deckData(cardId) {
   const card = REGISTRY.get(cardId);
   assert.ok(card, `karta ${cardId} w rejestrze`);
