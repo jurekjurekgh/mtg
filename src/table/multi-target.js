@@ -77,6 +77,10 @@ export function multiTargetPlanOf(commands) {
     minTargets: Math.min(...sizes),
     maxTargets: Math.max(...sizes),
     hasX,
+    // J (uwaga właściciela 2026-09-23c, Epic Experiment): grupa, w której
+    // JEDYNĄ decyzją jest X (brak celów) — kreator pokazuje sam stepper,
+    // a nie „zaznacz cele (0) oraz wartość X".
+    xOnly: hasX && targets.length === 0,
     xMin: hasX ? xValues[0] : null,
     xMax: hasX ? xValues[xValues.length - 1] : null,
     // M207: rozbicie na POZYCJE CELU (patrz `targetSlotsOf`) albo null, gdy

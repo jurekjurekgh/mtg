@@ -1,6 +1,6 @@
 import { getSourceForObject } from '../engine/mana-sources.js';
 import { castsWithoutPayingMana } from '../engine/impulse-window.js';
-import { escapeHtml, manaSymbolsHtml } from './mana-icons.js';
+import { escapeHtml, manaSymbolsHtml, xCostSymbols } from './mana-icons.js';
 import { parseManaCost, totalManaNeeded } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { renderPickerRow } from './picker.js';
@@ -407,6 +407,21 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
       : parsed.generic;
     const totalNeeded = generic + requirements.length + kicker.cost - (kicker.colors?.length ?? 0);
     return buildDescriptor(object, totalNeeded, requirements, `${costStr} + kicker (${kicker.cost})`, totalNeeded - requirements.length);
+  }
+
+  // J (uwaga właściciela 2026-09-23c, Epic Experiment): czar z {X} MA kreatora
+  // płatności — X wybiera modal (stepper), a koszt zależy od wybranej wartości.
+  // Wcześniej `xValue != null` zamykało kreator („koszt zmienny"), więc płatność
+  // szła auto-tapem bez wyboru źródeł. Część bezbarwna = generic + X (pipy
+  // z wydruku bez zmian), a etykieta pokazuje X w miejscu liczby — jedno źródło
+  // z tytułem oferty (L41).
+  if ((cmd.type === 'cast_spell' || cmd.type === 'cast_permanent')
+    && cmd.xValue != null && !cmd.kicked) {
+    const requirements = baseColorRequirements(parsed);
+    const xGeneric = parsed.generic + cmd.xValue;
+    const totalNeeded = xGeneric + requirements.length;
+    return buildDescriptor(object, totalNeeded, requirements,
+      `${xCostSymbols(costStr)} (X=${cmd.xValue})`, xGeneric);
   }
 
   // --- Zwykły rzut: cast_spell / cast_permanent (phyrexian + obniżki) ---

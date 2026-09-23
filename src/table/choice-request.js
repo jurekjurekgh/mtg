@@ -1098,6 +1098,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // z licznikiem: legalne jest DOKŁADNIE X zaznaczeń (X=0 = pusty wybór).
   const tapXMode = Boolean(plan.tapXMode);
   const xLabel = plan.hasX ? ` oraz wartość X (${plan.xMin}–${plan.xMax})` : '';
+  // J (uwaga właściciela 2026-09-23c, Epic Experiment): gdy JEDYNĄ decyzją
+  // jest X (brak celów), kreator mówi o X — bez „zaznacz cele (0)".
+  const xOnly = Boolean(plan.xOnly);
   const range = plan.minTargets === plan.maxTargets
     ? `${plan.maxTargets}`
     : `${plan.minTargets}–${plan.maxTargets}`;
@@ -1112,7 +1115,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // „Poświęcenie (koszt)"), nie pozycji celu.
   const slotLabels = slots || sacMode ? (slotLabels_ ?? []) : [];
   choiceNode(host, 'div', 'choice-request-intro',
-    intro ?? (slots
+    intro ?? (xOnly
+      ? `${sourceName ? `${sourceName} — ` : ''}wybierz X (${plan.xMin}–${plan.xMax}):\n`
+      : slots
       ? `${sourceName ? `${sourceName} — ` : ''}wskaż po jednym celu dla każdej pozycji:\n`
       : sacMode
         ? `${sourceName ? `${sourceName} — ` : ''}wskaż cel czaru oraz stwora do poświęcenia (koszt):\n`
@@ -1371,6 +1376,12 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       if (cmd) setStatus(`Moc załogi: ${have} / ≥ ${need} — gotowe`, false);
       else if (chosen.size === 0) setStatus(`Wybierz załogę o łącznej mocy ≥ ${need}`, true);
       else setStatus(`Moc załogi: ${have} / ≥ ${need} — brakuje ${need - have}`, true);
+    } else if (xOnly) {
+      // J: sam X — status nazywa wybraną wartość i (gdy silnik ją niesie)
+      // łączny koszt wariantu, żeby gracz wiedział, ile zapłaci, zanim
+      // otworzy się kreator many.
+      const costPart = Number.isInteger(cmd?.cost) ? ` · koszt: ${cmd.cost} many` : '';
+      setStatus(`X = ${xValue}${costPart}`, !cmd);
     } else if (cmd) {
       // C1 (zgłoszenie właściciela 2026-09-10): łączny koszt wariantu
       // (`cmd.cost` z silnika — np. Fireball: X + {R} + {1}/cel ponad

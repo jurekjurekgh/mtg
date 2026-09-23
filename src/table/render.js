@@ -14,7 +14,7 @@ import {
   manaEffectLabel,
   manaProducedLabel,
 } from './session.js';
-import { costSymbols, escapeHtml, manaCostHtml, manaSymbolsHtml } from './mana-icons.js';
+import { costSymbols, escapeHtml, manaCostHtml, manaSymbolsHtml, xCostSymbols } from './mana-icons.js';
 import { COUNTER_LABELS, counterLabelGen } from './counter-labels.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
@@ -410,6 +410,17 @@ export function choiceRequestGroupKey(command) {
     // K: dar jest wariantem tego samego rzutu — nie osobnym wpisem panelu
     // (ten sam powód co wyżej; ADR 0002: po kształcie komendy, nie po karcie).
     return `spell-x:${command.objectId}${command.kicked ? ':kicker' : ''}`;
+  }
+  // J (uwaga właściciela 2026-09-23c, Epic Experiment): czar z {X} bez celów
+  // i bez trybów — silnik enumeruje wariant X = 0…N, a panel pokazywał N
+  // przycisków „Rzuć: <karta> (koszt …, X=n)”. Wybór X jest decyzją W TRAKCIE
+  // rzucania (CR 601.2b, jak tryb i dar), więc panel dostaje JEDNĄ ofertę,
+  // a X wybiera modal ze stepperem. Czar z celami I {X} (Fireball) łapie już
+  // gałąź `spell:<objectId>` wyżej — tam X jest częścią kreatora celów.
+  if ((command.type === 'cast_spell' || command.type === 'cast_permanent')
+    && command.xValue != null && !command.targets?.length && command.modeIndex == null
+    && command.sacrificeTargetId == null && command.exileTargetId == null) {
+    return `spell-x-value:${command.objectId}`;
   }
   if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {
@@ -2578,6 +2589,20 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
       const rawCost = MANA_COSTS[groupObject.cardId];
       const cost = rawCost ? (manaHtml ? manaCostHtml(rawCost) : rawCost) : null;
       return `Rzuć: ${session.nameOf(groupObject.cardId)}${cost ? ` (koszt ${cost})` : ''}`;
+    }
+  }
+  // J (uwaga właściciela 2026-09-23c, Epic Experiment): grupa wariantów {X}
+  // jednego czaru to JEDEN rzut — tytuł nazywa czynność i koszt z symbolem X
+  // („Rzuć: Epic Experiment (koszt XUR)"), zamiast nazwy wariantu X=0.
+  if (options.length > 0
+    && options.every((o) => (o?.type === 'cast_spell' || o?.type === 'cast_permanent')
+      && o.xValue != null && o.objectId === options[0].objectId)
+    && new Set(options.map((o) => o.xValue)).size > 1) {
+    const xObject = findViewObject(options[0].objectId, view);
+    if (xObject?.cardId) {
+      const rawX = xCostSymbols(MANA_COSTS[xObject.cardId]);
+      const xCost = rawX ? (manaHtml ? manaCostHtml(rawX) : rawX) : null;
+      return `Rzuć: ${session.nameOf(xObject.cardId)}${xCost ? ` (koszt ${xCost})` : ''}`;
     }
   }
   // M (zgłoszenie z testów 2026-09-22, Dream Twist): grupa rzutu za FLASHBACK
