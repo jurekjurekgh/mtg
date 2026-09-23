@@ -7244,3 +7244,29 @@ w guardzie trzeciego przypadku CR 704.5m bez pinu (mutacja jej usunięcia nie
 czerwieni pinu bestow). Bramy po naprawach: szybki rdzeń **6172/6172**, build
 **59 modułów / 4048,9 kB**; pełna brama `run-tests all` **6182/6182** (0 fail, ~372 s).
 Bez nowych kart (ADR 0029).
+
+---
+
+## M417 — porządki w danych kolekcji: wiersze STO usunięte (2026-09-23)
+
+Decyzja właściciela (2026-09-23): „Karty STO miały być całkowicie usunięte
+z katalogu i z danych”. Pomiar przed zmianą: w katalogu **0** kart ze setem STO
+(sprawdzone rejestrem — `createCardRegistry()`), ale słownik kolekcji
+`tools/collection-art-ids.csv` miał jeszcze **71 wierszy** z kodem `STO`
+(karty-inspiracje „Stories” z arkusza właściciela, obecne tam od pierwszego
+importu artId w M13; Scryfall nie zna setu `sto` — 404).
+
+Zmiana: usunięte wszystkie 71 wierszy (573 → **502** wiersze, 570 → **499**
+unikalnych nazw). Dowód braku zależności: żaden artId z usuniętych wierszy nie
+był użyty w katalogu (`artId` → rejestr: 78 brakujących = 71 STO + 7 realnych
+kart), a żaden plan z arkusza nie zniknął (20 planów STO ma wiersze także
+poza STO). Piny liczności zaktualizowane w `test/art-ids-tool.test.js`
+(502 wiersze, 499 nazw) + **nowy strażnik klasy**: żaden wiersz słownika nie
+nosi kodu spoza MTG (`KODY_SPOZA_KOLEKCJI = ['STO','FUS','LOR']`) — mutacja
+(dopisanie jednego wiersza STO) czerwieni go.
+
+Sprawdzone przy okazji (audyt katalogu, 2026-09-23): katalog **543 wpisy =
+492 `supported` (wszystkie z artId i planem) + 43 tokeny + 8 tylnych stron kart
+dwustronnych**; statusów `in-development`/`unsupported` **nie ma ani jednego**
+(ADR 0022 spełniony dla całości), a każdy token jest używany przez co najmniej
+jedną kartę/mechanikę. Bramy: `npm test` 6173/6173, build 59 / 4048,9 kB.

@@ -82,7 +82,10 @@ test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z duble
   // Batch 57 (zlecenie właściciela 2026-09-19, karty 64–125): +10 pozycji
   // (64, 66, 70, 77, 80, 82, 85, 88, 90, 125) → 573. Wpis 85APC to druk
   // właściciela Phyrexian Ragera; wiersz 75DMU zostaje jako inny druk kolekcji.
-  assert.equal(data.length, 573, 'pełna lista kolekcji (573 unikalne pozycje; FUS usunięte 2026-09-14, batch 56 +10, batch 57 +10)');
+  // 2026-09-23: usunięte 71 wierszy kodu STO (karty spoza kolekcji MTG —
+  // decyzja właściciela: STO nie istnieje ani w katalogu, ani w danych).
+  // 502 = 573 − 71 (FUS usunięte 2026-09-14, batch 56 +10, batch 57 +10).
+  assert.equal(data.length, 502, 'pełna lista kolekcji (502 pozycje kolekcji MTG; wiersze STO usunięte 2026-09-23)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -109,11 +112,31 @@ test('dopasowanie rozstrzyga duplikaty po secie karty, inaczej pierwszym wpisem'
   assert.deepEqual(u.get('test card'), [{ artId: 5, set: '2XM' }]);
 });
 
+/** Kody, które NIE są setami Magic: STO = karty-inspiracje z arkusza
+ * właściciela („Stories"), FUS = wpisy usunięte 2026-09-14, LOR = wirtualne
+ * karty Lore z zamrożonego widoku legacy. Decyzja właściciela 2026-09-23:
+ * katalog i DANE kolekcji nie zawierają żadnego z nich. Guard jest listą
+ * nazwaną z uzasadnieniem (nie regexem „dziwnych liter"), żeby kolejny taki
+ * kod nie wrócił cicho do słownika. */
+const KODY_SPOZA_KOLEKCJI = ['STO', 'FUS', 'LOR'];
+
+test('słownik kolekcji nie zawiera kodów spoza MTG (STO/FUS/LOR)', () => {
+  const wiersze = parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8'));
+  const znalezione = wiersze
+    .map((row) => String(row[0] ?? '').trim())
+    .filter((art) => KODY_SPOZA_KOLEKCJI.some((kod) => new RegExp(`^\\d+${kod}$`).test(art)));
+  assert.deepEqual(znalezione, [],
+    `arkusz kolekcji zawiera kody spoza MTG: ${znalezione.join(', ')}`);
+});
+
 test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', () => {
   const dict = artIdsFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
-  // Pełna lista kolekcji z arkusza (556 kart; duplikaty nazw to różne druki —
-  // to różne druki, np. Curate 65STX/302BRO — pierwsze wystąpienie wygrywa).
-  assert.ok(dict.size >= 500, 'słownik zawiera pełną listę kolekcji');
+  // Pełna lista kolekcji z arkusza: 499 unikalnych nazw wśród 502 wierszy
+  // (duplikaty nazw to RÓŻNE druki — np. Curate 65STX/302BRO, Phyrexian
+  // Rager 75DMU/85APC, Negate 76M15/… — pierwsze wystąpienie wygrywa).
+  // 2026-09-23: usunięte 71 wierszy STO (kody spoza kolekcji MTG) — liczba
+  // zeszła z 570 nazw do 499; pin trzyma liczbę, żeby cięcie/wzrost był widoczny.
+  assert.equal(dict.size, 499, 'słownik zawiera pełną listę kolekcji (499 unikalnych nazw)');
 
   // Każda karta z artId w katalogu ma zgodny wpis w słowniku — gdy nowy batch
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.

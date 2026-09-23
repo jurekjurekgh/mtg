@@ -12460,3 +12460,15 @@ sprzed PR; **Z-2** — klauzula `bestow == null` w guardzie CR 704.5m bez pinu.
 Bramy po naprawach: `npm test` 6172/6172, `run-tests all` **6182/6182** (0 fail, ~372 s; +2 nowe piny wobec bazy 6180: M380/E i F/8), build 59 / 4048,9 kB. Plan:
 `docs/plans/PLAN_2026-09-23-audyt-pr133-i-petla-jakosci.md`, handoff:
 [HANDOFF_2026-09-23](docs/setup/HANDOFF_2026-09-23.md).
+
+## M417 — wiersze STO usunięte z danych kolekcji (sesja 2026-09-23, PR #134)
+
+Zlecenie właściciela: „Karty STO miały być całkowicie usunięte z katalogu
+i z danych”. Katalog był czysty od dawna (0 kart `set: 'STO'`), ale słownik
+kolekcji `tools/collection-art-ids.csv` trzymał jeszcze 71 wierszy STO
+(„Stories” z arkusza, obecne od M13). Usunięte: 573 → 502 wiersze
+(570 → 499 nazw). Piny: `test/art-ids-tool.test.js` (502/499) + nowy strażnik
+„słownik bez kodów spoza MTG (STO/FUS/LOR)” — mutacja z dopisanym wierszem
+STO czerwieni go. Pomiar towarzyszący: katalog 543 wpisów = 492 `supported`
++ 43 tokeny + 8 tylnych stron DFC, zero `in-development`/`unsupported`. Bramy:
+`npm test` 6173/6173, build 59 / 4048,9 kB.

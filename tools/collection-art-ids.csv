@@ -193,39 +193,25 @@ Ilustracja,Nazwa Karty,Plan
 234CLB,Gray Slaad,Forgotten Realms
 235RTR,Trestle Troll,Ravnica
 236BLB,Agate Assault,Bloomburrow
-237STO,Angel Blood,Innistrad
 238ORI,Ramroller,Warhammer Fantasy
-239STO,Skaberen,Innistrad
 240TDM,Descendant of Storms,Tarkir
-241STO,Glistening Oil,Mirrodin
 242ALA,Knight of the Skyward Eye,Alara
 243DD2,Willbender,Dominaria
-244STO,Curse of the Werewolf,Innistrad
 245M10,Dread Warlock,Wiedźmin
 246CMR,Cuombajj Witches,Wiedźmin
-247STO,The Core of Mirrodin,Mirrodin
 248M19,Reassembling Skeleton,Warhammer Fantasy
 249_5ED,Feedback,Warhammer Fantasy
-250STO,Baldurian Patriar,Forgotten Realms
 251CLB,Stirring Bard,Forgotten Realms
 252CMR,Captain's Call,Śródziemie
 253AFR,Inspiring Bard,Forgotten Realms
-254STO,Calamity Beast,Bloomburrow
-255STO,Great Book of Grudges,Warhammer Fantasy
 256ISD,Frightful Delusion,Innistrad
 257LTR,Lash of the Balrog,Śródziemie
 258_7ED,Hill Giant,Warhammer Fantasy
-259STO,The Stormnexus Ritual,Tarkir
-260STO,Tolarian Academy,Dominaria
-261STO,"Krell, Lord of Undeath",Warhammer Fantasy
 262ALA,Angel's Herald,Alara
-263STO,Drakwald Gibbering,Warhammer Fantasy
 264GPT,Ghost Warden,Ravnica
 265OGW,Boulder Salvo,Zendikar
-266STO,Viscus Vitae,Innistrad
 267LCI,Hunter's Blowgun,Ixalan
 268_2XM,Might of the Masses,Zendikar
-269STO,Sea Witch,Wiedźmin
 270ZNR,Roiling Regrowth,Zendikar
 271RNA,Expose to Daylight,Ravnica
 272THS,Feral Invocation,Theros
@@ -278,64 +264,35 @@ Ilustracja,Nazwa Karty,Plan
 320CON,Infectious Horror,Alara
 321DTK,Ainok Artillerist,Tarkir
 322M15,Satyr Wayfinder,Theros
-323STO,Innistrad's Silver Moon,Innistrad
-324STO,Carmot,Alara
-325STO,Fabric of All Being,The Edge
 326MH2,Bone Shredder,Mirrodin
-327STO,Summer Nexus,Theros
-328STO,The Roil of Zendikar,Zendikar
-329STO,College of Whispers,Forgotten Realms
 330KHM,Invasion of the Giants,Kaldheim
 331CLU,Trostani Discordant,Ravnica
-332STO,Mycosynth Gardens,Mirrodin
-333STO,Dragon Tempests,Tarkir
-334STO,Mat'Selesnya,Ravnica
 335DDQ,Gather the Townsfolk,Innistrad
-336STO,Doomskar,Kaldheim
 337M20,Glaring Aegis,Theros
-338STO,The Lifestream,Final Fantasy
 339CLB,Patron of the Arts,Forgotten Realms
-340STO,"Gond, the Wonderbringer",Forgotten Realms
-341STO,The Standing Militia of Gavony,Innistrad
 342ARB,Gorger Wurm,Alara
 343SHM,Puppeteer Clique,Lorwyn
 344EOE,Pain for All,The Edge
 345NPH,Porcelain Legionnaire,Mirrodin
 346ONE,Necrosquito,Mirrodin
 347NPH,Pristine Talisman,Mirrodin
-348STO,Geralf's Laboratory at Trostad,Innistrad
 349MH1,Enduring Sliver,Dominaria
-350STO,The Five Suns of Mirrodin,Mirrodin
-351STO,The Great Aurora,Lorwyn
 352BRO,Evangel of Synthesis,Dominaria
-353STO,The Seedcore,Mirrodin
 354CON,Wretched Banquet,Alara
 355_2XM,Cathartic Reunion,Kaladesh
-356STO,"The Changeling, Herald of Tzeentch",Warhammer Fantasy
-357STO,The Ancestor,Dominaria
 358EOE,Frontline War-Rager,The Edge
-359STO,Gonti's Night Market,Kaladesh
 360_8ED,Inspiration,Wiedźmin
-361STO,Time Rifts of Dominaria,Dominaria
 362BRO,Simian Simulacrum,Dominaria
-363STO,The Conflux,Alara
-364STO,The Rathi Overlay,Dominaria
-365STO,The Compleation Rite,Dominaria
 366ECL,Assert Perfection,Lorwyn
 367M21,Battle-Rattle Shaman,Zendikar
-368STO,Moonglove Winnower,Lorwyn
-369STO,The Conflux War,Alara
 370MRD,Consume Spirit,Mirrodin
-371STO,The Mirari,Dominaria
 372TDM,Dragonbroods' Relic,Tarkir
 373DSK,Fear of Abduction,Duskmourn
 374BLB,Thistledown Players,Bloomburrow
 375M10,Deadly Recluse,Śródziemie
 376VOW,Doomed Dissenter,Innistrad
 377AVR,Scroll of Avacyn,Innistrad
-378STO,The Cult of Gix,Dominaria
 379SNC,Swooping Protector,New Capenna
-380STO,Blessed Sleep,Innistrad
 381ISD,Caravan Vigil,Innistrad
 382LCI,Geological Appraiser,Ixalan
 383_2XM,Supernatural Stamina,Amonkhet
@@ -345,45 +302,17 @@ Ilustracja,Nazwa Karty,Plan
 387BFZ,Molten Nursery,Zendikar
 388DMU,Goblin Picker,Dominaria
 389KTK,Bring Low,Tarkir
-390STO,The Code of the Harpers,Forgotten Realms
-391STO,Spawn of Ungoliant,Śródziemie
-392STO,The Black Lacuna,Mirrodin
 393DKA,Forge Devil,Innistrad
-394STO,Spirit Dragons of Tarkir,Tarkir
 395MH1,Unearth,Warhammer Fantasy
 396CMR,Vow of Wildness,Tarkir
-398STO,"Ureni, the Song Unending",Tarkir
 399VOW,Chill of the Grave,Innistrad
-400STO,The Vaults of Candlekeep,Forgotten Realms
 401THS,Rage of Purphoros,Theros
-402STO,The Guildpact,Ravnica
 403NPH,Dementia Bat,Mirrodin
-404STO,The Spirit Oaths of Tarkir,Tarkir
-405STO,The Kav Exodus,The Edge
-406STO,The Omenpaths of Thunder Junction,Thunder Junction
-407STO,The Gold Mask of the Returned,Theros
-408STO,The Vox Quietus,Innistrad
-409STO,The Church of Avacyn,Innistrad
-410STO,Halifirien,Śródziemie
-411STO,The Prophecy of Ithlinne,Wiedźmin
-412STO,Vargheist,Warhammer Fantasy
-413STO,The Kami War,Kamigawa
-414STO,The Worlds Edge Mountains,Warhammer Fantasy
-415STO,The Heart's Shadow,Innistrad
-416STO,Helvault,Innistrad
-417STO,The Blessed Silver,Innistrad
-418STO,The Parliament of Peers,Forgotten Realms
 419DSK,Fear of Burning Alive,Duskmourn
 420ISD,Cellar Door,Warhammer Fantasy
 421BRO,Dreams of Steel and Oil,Dominaria
 422CMR,Benevolent Blessing,Śródziemie
-423STO,Nan Dungortheb,Śródziemie
-424STO,Liber Mortis,Warhammer Fantasy
-425STO,The Oath of Cirion and Eorl,Śródziemie
-426STO,Dammaz Kron,Warhammer Fantasy
-427STO,The Warpstone Meteor Showers of Morrslieb,Warhammer Fantasy
 428ISD,Curiosity,Wiedźmin
-429STO,Trostad,Innistrad
 430CMR,Nightshade Harvester,Wiedźmin
 431TDM,Delta Bloodflies,Tarkir
 432ELD,Wishful Merfolk,Wiedźmin

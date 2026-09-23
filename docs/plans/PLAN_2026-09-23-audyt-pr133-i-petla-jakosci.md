@@ -58,6 +58,20 @@ Bramy po naprawach: `run-tests all` **6182/6182** (0 fail, ~372 s), `npm test` *
 Notki do pętli (etap B): **Z-1** (podwójne liczenie bonusów w trzech miejscach
 sprzed PR), **Z-2** (klauzula `bestow == null` bez pinu).
 
+### Etap C — porządki w danych kolekcji (M417, 2026-09-23)
+
+Zlecenie właściciela w trakcie sesji: karty `STO` miały być usunięte
+z katalogu i z danych; katalog ma nie mieć żadnych kart niedokończonych.
+Pomiar: katalog czysty (543 wpisy = 492 `supported` + 43 tokeny + 8 tylnych
+stron DFC; zero `in-development`/`unsupported`), ale słownik kolekcji miał
+71 wierszy `STO`. Wykonane: usunięcie 71 wierszy (573 → 502), piny 502/499,
+nowy strażnik klasy `KODY_SPOZA_KOLEKCJI` (mutacja czerwieni). Bramy zielone.
+
+**Jedyna lista niezrobionych kart** (pomiar 2026-09-23, do decyzji właściciela
+— 7 pozycji z arkusza bez odpowiednika w katalogu): 219FIN Prishe's Wanderings,
+265OGW Boulder Salvo, 318CLB Gond Gate, 377AVR Scroll of Avacyn,
+447DSK Resurrected Cultist, 464AVR Polluted Dead, 530ZEN Grazing Gladehart.
+
 ## 2. Etapy pętli jakości (ADR 0021, po audycie)
 
 - [ ] **B1. Żywy Tester** (`npm run build` + `tools/table-tester`): partia
