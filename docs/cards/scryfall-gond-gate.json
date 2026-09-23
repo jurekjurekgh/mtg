@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Gond%20Gate&set=clb",
+  "print": "clb",
+  "name": "Gond Gate",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land — Gate",
+  "oracle_text": "Gates you control enter untapped.\n{T}: Add {C}.\n{T}: Add one mana of any color that a Gate you control could produce.",
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "353",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/4/746672d9-7c6b-415e-9f34-3cc3ac557008.jpg?1783922658",
+    "normal": "https://cards.scryfall.io/normal/front/7/4/746672d9-7c6b-415e-9f34-3cc3ac557008.jpg?1783922658"
+  },
+  "pobrano": "2026-09-23",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/clb/353/rulings",
+  "rulingsPobrano": "2026-09-23"
+}

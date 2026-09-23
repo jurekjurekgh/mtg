@@ -1,0 +1,51 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Boulder%20Salvo&set=ogw",
+  "print": "ogw",
+  "name": "Boulder Salvo",
+  "mana_cost": "{4}{R}",
+  "cmc": 5,
+  "type_line": "Sorcery",
+  "oracle_text": "Surge {1}{R} (You may cast this spell for its surge cost if you or a teammate has cast another spell this turn.)\nBoulder Salvo deals 4 damage to target creature.",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Surge"
+  ],
+  "set": "ogw",
+  "set_name": "Oath of the Gatewatch",
+  "collector_number": "102",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/e/4e269989-bb22-4da4-a374-434a572e8e8f.jpg?1783937908",
+    "normal": "https://cards.scryfall.io/normal/front/4/e/4e269989-bb22-4da4-a374-434a572e8e8f.jpg?1783937908"
+  },
+  "pobrano": "2026-09-23",
+  "rulings": [
+    {
+      "date": "2016-01-22",
+      "source": "wotc",
+      "comment": "For some cards, surge represents only an alternative cost, a discount that applies if you or a teammate has cast another spell this turn. Other cards, like Reckless Bushwhacker, have additional abilities or effects if you paid the surge cost to cast the spell."
+    },
+    {
+      "date": "2016-01-22",
+      "source": "wotc",
+      "comment": "The other spell that you or a teammate cast can be one that’s resolved, one that was countered, or (for instants with surge) one that’s still on the stack."
+    },
+    {
+      "date": "2016-01-22",
+      "source": "wotc",
+      "comment": "If an instant or sorcery spell cast for its surge cost is copied, the copy is also considered to have had its surge cost paid."
+    },
+    {
+      "date": "2016-01-22",
+      "source": "wotc",
+      "comment": "Casting a spell for its surge cost doesn’t change its mana cost or its mana value."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/ogw/102/rulings",
+  "rulingsPobrano": "2026-09-23"
+}
