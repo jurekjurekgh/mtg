@@ -7285,7 +7285,7 @@ się do pliku (grep po `test/`, `tools/`, `.github/`); odwołania w `src/` to
 komentarze opisujące WZORZEC (tory obrazów, szybkie dodawanie w kreatorze), nie
 zależność. Zapis rozpoznania zostaje w `docs/AUDIT_LEGACY_APP.md` (z notą
 o usunięciu), a pozycja roadmapy „usunięcie snapshotu” jest odhaczona.
-Bramy: `npm test` zielone, build bez zmian.
+Bramy po zmianie: `npm test` **6173/6173**, build **59 modułów / 4048,9 kB**.
 
 ---
 
@@ -7312,4 +7312,7 @@ i tył odrzuca walidacja talii, (F) słowo „limited” nie występuje w źród
 katalogu. Zaktualizowane piny w 18 plikach testów. Dokumentacja żywa (README,
 ROADMAP, PRODUCT) mówi nowym słownikiem; wpisy historyczne zostają jak były.
 
-Bramy: `npm test` zielone, build bez zmian.
+Bramy po zmianie: `npm test` **6179/6179**, pełna brama
+`node tools/run-tests.mjs all` **6189/6189** (0 fail, ~365 s), build
+**59 modułów / 4049,7 kB**. Objętość artefaktu rośnie o 0,8 kB, bo doszła
+definicja tokenów w nowym słowniku statusów.
