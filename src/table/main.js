@@ -1514,7 +1514,7 @@ function bootstrapTable() {
 
     // Grupowanie wariantów (cel, X, phyrexian) tak samo jak w panelu akcji,
     // żeby nie było niespójności „Twoje działania vs klik na kartę" (bug D).
-    // Klucz grupowania – uproszczony odpowiednik choiceRequestGroupKey z render.js
+    // Klucz grupowania (UI) – deleguje do choiceRequestGroupKey z render.js, reszta lokalnie
     const groupKey = (cmd) => {
       // Batch 54: wspólny klucz rozdziela także CELOWANY czar z kickerem.
       if (cmd.type === 'cast_spell') return choiceRequestGroupKey(cmd) ?? `spell:${cmd.objectId}:${Boolean(cmd.kicked)}${cmd.gifted ? `:gift:${cmd.giftRecipientId ?? '?'}` : ''}`;

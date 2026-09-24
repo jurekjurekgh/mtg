@@ -4,7 +4,7 @@ import { nextTimestamp } from './timestamps.js';
 import { effectivePower, effectiveToughness } from './permanents.js';
 
 /**
- * Tokeny: uproszczone stałe obiekty gry, tworzone z reguły (np. efekt czaru).
+ * Tokeny (CR 111.1): obiekty gry bez karty, tworzone efektem (np. czaru).
  * Moduł celowo nie importuje game-state.js (unika cykli w sklejaniu artefaktu);
  * tworzy obiekt bezpośrednio przez createGameObject i jawne strefy.
  */

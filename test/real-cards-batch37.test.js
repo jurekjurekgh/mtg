@@ -350,6 +350,12 @@ test("Ojutai's Breath: na początku NEXT upkeepu kontrolera otwiera rzut za darm
   state.turn.number += 1;
   const marker = state.events.length;
   processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', phase: 'beginning', activePlayerId: 'p1' }]);
+  // Etap F (CR 603.7 + 603.5): opóźniona zdolność rebound na stosie —
+  // decyzja dopiero przy rozstrzyganiu.
+  assert.equal(state.pendingReboundCast, null, 'brak decyzji w chwili wyzwolenia');
+  assert.equal(state.zones.stack.length, 1, 'zdolność rebound na stosie');
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   // Rebound otworzył jednorazową decyzję.
   assert.ok(state.pendingReboundCast, 'rebound_ready_required — decyzja otwarta');
   assert.equal(state.pendingReboundCast.objectId, exiled.id);
@@ -377,6 +383,8 @@ test("Ojutai's Breath: rzut z odbiciem — czar wraca na stos za darmo", () => {
   state.turn.priorityPlayerId = 'p1';
   state.turn.number += 1;
   processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', phase: 'beginning', activePlayerId: 'p1' }]);
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // Etap F: zdolność rebound ze stosu
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok(state.pendingReboundCast, 'decyzja otwarta');
   const castOffer = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'resolve_rebound_cast' && c.cast === true);

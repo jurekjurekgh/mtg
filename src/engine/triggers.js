@@ -1357,6 +1357,102 @@ export function resolveTriggerEntry(state, entry) {
     }));
     return state.events.slice(before);
   }
+  // Etap F (CR 603.3 + 702.62a, druga zdolność suspend): „At the beginning
+  // of your upkeep, if this card is suspended, remove a time counter from
+  // it." — zdolność wyzwalana na STOSIE; intervening-if („if this card is
+  // suspended", CR 603.4) sprawdzany ponownie teraz. Zdjęcie OSTATNIEGO
+  // licznika wyzwala trzecią zdolność (suspend_ready) — też na stos.
+  if (extra.suspendTickObjectId) {
+    const tickId = extra.suspendTickObjectId;
+    const card = state.objects.get(tickId);
+    const stillSuspended = Boolean(card && card.zone === 'exile' && card.suspended && (card.timeCounters ?? 0) > 0);
+    if (stillSuspended) {
+      const remaining = card.timeCounters - 1;
+      state.objects.set(tickId, Object.freeze({ ...card, timeCounters: remaining }));
+      state.events.push(event('time_counter_removed', {
+        playerId: entry.controllerId, objectId: tickId, cardId: card.cardId,
+        remaining, ready: remaining === 0,
+      }));
+      if (remaining === 0) {
+        queueTriggerToStack(state, {
+          type: 'triggered',
+          trigger: { event: 'suspend_ready' },
+          effect: [],
+        }, state.objects.get(tickId), [], [], { suspendObjectId: tickId });
+      }
+    }
+    state.events.push(event('trigger_resolved', {
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
+      suspendTick: true, ...(stillSuspended ? {} : { noEffect: true }),
+    }));
+    return state.events.slice(before);
+  }
+  // Etap F (CR 603.3 + 603.7 + 702.88a): rebound — „At the beginning of your
+  // next upkeep, you may cast this card from exile without paying its mana
+  // cost." to OPÓŹNIONA zdolność wyzwalana: idzie na stos, a „may" (rzut albo
+  // odmowa) pada przy rozstrzyganiu (CR 603.5). Karta, która opuściła exile
+  // w odpowiedzi, nie daje już nic (CR 400.7).
+  if (extra.reboundObjectId) {
+    const card = state.objects.get(extra.reboundObjectId);
+    const ready = Boolean(card && card.zone === 'exile' && card.reboundReady);
+    if (ready) {
+      state.pendingReboundCast = {
+        playerId: entry.controllerId,
+        objectId: extra.reboundObjectId,
+        cardId: card.cardId,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = entry.controllerId;
+      state.events.push(event('rebound_ready_required', {
+        playerId: entry.controllerId, objectId: extra.reboundObjectId, cardId: card.cardId,
+      }));
+    }
+    state.events.push(event('trigger_resolved', {
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
+      rebound: true, ...(ready ? {} : { noEffect: true }),
+    }));
+    return state.events.slice(before);
+  }
+  // Etap F (CR 603.3 + 603.5 + 702.110a): exploit — „When this creature
+  // enters, you may sacrifice a creature." Zdolność na stosie; wybór ofiary
+  // (albo odmowa) pada przy rozstrzyganiu, spośród stworów kontrolera
+  // obecnych TERAZ (VOW Release Notes: także sam exploiter, o ile jest).
+  if (extra.exploitChoice) {
+    const candidateIds = state.zones.battlefield.filter((objectId) => {
+      const candidate = state.objects.get(objectId);
+      return candidate?.zone === 'battlefield' && candidate.kind === 'creature'
+        && candidate.controllerId === entry.controllerId;
+    });
+    if (candidateIds.length > 0) {
+      state.pendingExploits.push({
+        playerId: entry.controllerId,
+        sourceId: payload.sourceId,
+        candidateIds,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      });
+      state.turn.priorityPlayerId = entry.controllerId;
+      state.events.push(event('exploit_choice_required', {
+        playerId: entry.controllerId, sourceId: payload.sourceId,
+        cardId: entry.cardId, candidateIds: [...candidateIds],
+      }));
+    }
+    state.events.push(event('trigger_resolved', {
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
+      exploit: true, ...(candidateIds.length > 0 ? {} : { noEffect: true, reason: 'no_targets' }),
+    }));
+    return state.events.slice(before);
+  }
+  // Etap F (CR 603.3 + 701.63): „When this creature enters, it endures N" —
+  // zdolność na stosie; wybór (N liczników +1/+1 albo token Spirit N/N) pada
+  // przy rozstrzyganiu. Gdy źródła nie ma już na polu bitwy, legalny jest
+  // tylko token (CR 701.63b; bramka w resolve_endure_choice).
+  if (extra.endureAmount != null) {
+    applyEffect(state, { type: 'endure_x', amount: extra.endureAmount }, source, []);
+    state.events.push(event('trigger_resolved', {
+      objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId, endure: true,
+    }));
+    return state.events.slice(before);
+  }
   // Suspend (CR 702.62a, trzecia zdolność): „When the last time counter is
   // removed, if this card is exiled, you may cast it without paying its mana
   // cost." Przy rozstrzyganiu otwieramy JEDNORAZOWĄ decyzję gracza
@@ -3004,43 +3100,29 @@ function processTriggersScan(state, recentEvents) {
         // nastąpiło niezależnie od dostępności kandydatów, więc triggery
         // wejścia (własne i innych permanentów) muszą odpalić — a rezygnacja
         // to jawny skip decyzji, nie brak triggera.
+        // Etap F (CR 603.3 + 603.5): zdolność idzie na STOS, a wybór ofiary
+        // pada przy rozstrzyganiu (resolveTriggerEntry, extra.exploitChoice) —
+        // przeciwnik ma okno odpowiedzi (np. zabicie exploitera, CR 603.10).
         if (exploitCandidates.length > 0) {
-          state.pendingExploits.push({
-            playerId: entered.controllerId,
-            sourceId: entered.id,
-            candidateIds: exploitCandidates,
-            restorePriorityTo: state.turn.priorityPlayerId,
-          });
-          state.turn.priorityPlayerId = entered.controllerId;
-          const required = event('exploit_choice_required', {
-            playerId: entered.controllerId, sourceId: entered.id,
-            cardId: entered.cardId, candidateIds: [...exploitCandidates],
-          });
-          state.events.push(required); events.push(required);
+          queueTriggerToStack(state, {
+            type: 'triggered', keyword: 'exploit',
+            trigger: { event: 'enter_battlefield', exploit: true },
+            effect: [],
+          }, entered, [], events, { exploitChoice: true });
         }
       }
       // Endure (TDM, Kin-Tree Nurturer): „When this creature enters, it
       // endures N" — wybór gracza: N liczników +1/+1 na źródle ALBO token
       // Spirit N/N biały (resolve_endure_choice). Decyzję kolejkujemy zawsze
       // (niezależnie od planszy — obie opcje działają na pustym stole).
+      // Etap F (CR 603.3): zdolność idzie na STOS, wybór pada przy
+      // rozstrzyganiu (resolveTriggerEntry, extra.endureAmount).
       if (entered.kind === 'creature' && entered.endure != null) {
-        state.pendingEndures.push({
-          playerId: entered.controllerId,
-          sourceId: entered.id,
-          counters: entered.endure,
-          restorePriorityTo: state.turn.priorityPlayerId,
-        });
-        state.turn.priorityPlayerId = entered.controllerId;
-        const required = event('endure_choice_required', {
-          playerId: entered.controllerId, sourceId: entered.id,
-          cardId: entered.cardId, counters: entered.endure,
-        });
-        state.events.push(required); events.push(required);
-        const fired = event('ability_triggered', {
-          objectId: entered.id, cardId: entered.cardId,
-          trigger: 'enter_battlefield', endure: true,
-        });
-        state.events.push(fired); events.push(fired);
+        queueTriggerToStack(state, {
+          type: 'triggered', keyword: 'endure',
+          trigger: { event: 'enter_battlefield', endure: true },
+          effect: [],
+        }, entered, [], events, { endureAmount: entered.endure });
       }
       // Saga (CR 714.3a/2a, Shiva Warden of Ice): „As this Saga enters\" —
       // kontroler kładzie licznik lore, co odpala rozdział I. Dotyczy każdej
@@ -3616,50 +3698,36 @@ function processTriggersScan(state, recentEvents) {
       for (const id of [...state.zones.exile]) {
         const card = state.objects.get(id);
         if (!card || !card.suspended || card.controllerId !== state.turn.activePlayerId) continue;
-        const remaining = (card.timeCounters ?? 0) - 1;
-        if (remaining > 0) {
-          state.objects.set(id, Object.freeze({ ...card, timeCounters: remaining }));
-          state.events.push(event('time_counter_removed', {
-            playerId: state.turn.activePlayerId, objectId: id, cardId: card.cardId,
-            remaining, ready: false,
-          }));
-        } else {
-          state.objects.set(id, Object.freeze({ ...card, timeCounters: 0 }));
-          state.events.push(event('time_counter_removed', {
-            playerId: state.turn.activePlayerId, objectId: id, cardId: card.cardId,
-            remaining: 0, ready: true,
-          }));
-          // Zdolność wyzwalana na stos (CR 603.3) — rozstrzygnie się po rundzie
-          // passów; source = zawieszona karta (LKI, jeśli zniknie).
-          queueTriggerToStack(state, {
-            type: 'triggered',
-            trigger: { event: 'suspend_ready' },
-            effect: [],
-          }, card, [], events, { suspendObjectId: id });
-        }
+        if ((card.timeCounters ?? 0) <= 0) continue;
+        // Etap F (CR 603.3): „remove a time counter" to zdolność wyzwalana —
+        // na STOS; licznik zdejmuje rozstrzygnięcie (extra.suspendTickObjectId),
+        // a ostatni zdjęty wyzwala suspend_ready (też na stos).
+        queueTriggerToStack(state, {
+          type: 'triggered', keyword: 'suspend',
+          trigger: { event: 'suspend_upkeep' },
+          effect: [],
+        }, card, [], events, { suspendTickObjectId: id });
       }
       // Rebound (CR 702.88, Ojutai's Breath): „At the beginning of your next
       // upkeep, you may cast this card from exile without paying its mana
       // cost.\" — na początku upkeepu AKTYWNEGO gracza sprawdzamy, czy w exile
       // leży karta z `reboundReady` (zaznaczona przy rozstrzygnięciu czaru
-      // rzuconego z ręki z deskryptorem `rebound`). Jeśli tak, otwieramy
-      // JEDNORAZOWĄ decyzję (pendingReboundCast): rzuć za darmo albo zostaw
-      // w exile na stałe (karta traci gotowość — rebound nie powtarza się).
+      // rzuconego z ręki z deskryptorem `rebound`). Jeśli tak, opóźniona
+      // zdolność idzie na stos, a jej rozstrzygnięcie otwiera JEDNORAZOWĄ
+      // decyzję (pendingReboundCast): rzuć za darmo albo zostaw w exile na
+      // stałe (karta traci gotowość — rebound nie powtarza się).
       for (const id of [...state.zones.exile]) {
         const card = state.objects.get(id);
         if (!card || !card.reboundReady || card.controllerId !== state.turn.activePlayerId) continue;
         if (card.kind !== 'spell') continue;
-        if (state.pendingReboundCast) continue;
-        state.pendingReboundCast = {
-          playerId: state.turn.activePlayerId,
-          objectId: id,
-          cardId: card.cardId,
-          restorePriorityTo: state.turn.priorityPlayerId,
-        };
-        state.turn.priorityPlayerId = state.turn.activePlayerId;
-        state.events.push(event('rebound_ready_required', {
-          playerId: state.turn.activePlayerId, objectId: id, cardId: card.cardId,
-        }));
+        // Etap F (CR 603.7 + 603.5): opóźniona zdolność na STOS (każda karta
+        // osobno — dawniej druga karta z rebound czekała, bo decyzja była
+        // natychmiastowa i jedna naraz); „may" przy rozstrzyganiu.
+        queueTriggerToStack(state, {
+          type: 'triggered', keyword: 'rebound',
+          trigger: { event: 'rebound_upkeep' },
+          effect: [],
+        }, card, [], events, { reboundObjectId: id });
       }
     }
     // CR 714.2b: licznik lore dołożony DOWOLNĄ drogą (proliferate — CR 701.27,

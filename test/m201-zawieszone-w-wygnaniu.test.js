@@ -52,6 +52,13 @@ test('M201/A1: zdjęcie licznika czasu jest w strumieniu zdarzeń komendy', () =
     streamed.push(...res.events);
   }
   assert.equal(state.turn.step, 'upkeep', 'scenariusz: weszliśmy w upkeep');
+  // Etap F (CR 603.3): „remove a time counter" to zdolność wyzwalana — na
+  // stosie; licznik zdejmuje jej rozstrzygnięcie (runda passów w upkeepie).
+  assert.equal(streamed.filter((e) => e.type === 'time_counter_removed').length, 0, 'nie przed rozstrzygnięciem');
+  assert.equal(state.zones.stack.length, 1, 'zdolność suspend na stosie');
+  for (let i = 0; i < 2 && state.zones.stack.length > 0; i += 1) {
+    streamed.push(...execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).events);
+  }
   const removed = streamed.filter((e) => e.type === 'time_counter_removed');
   assert.equal(removed.length, 1, 'komenda musi ODDAĆ zdarzenie zdjęcia licznika (log czyta ten strumień)');
   assert.equal(removed[0].remaining, 3);

@@ -27,9 +27,11 @@ const BATCH9_RELIQUARY_DRAGON_ETB = createAbility({
  * Pierwszy batch realnych kart (ADR 0010, decyzja właściciela 2026-08-01):
  * Highland Game (KTK), Kappa Tech-Wrecker (NEO), Segmented Krotiq (DTK).
  * Dane pobrane ze Scryfall przed kodowaniem (odfiltrowane JSON-y w docs/cards/),
- * a Oracle text zapisany dosłownie poniżej. Koszt many jest uproszczony do
- * liczby całkowitej (pula many jest bezbarwna) — {1}{G} = 2, {5}{G} = 6.
- * Świadome ograniczenia wsparcia każdej karty są opisane w ENGINE_MILESTONES.md.
+ * a Oracle text zapisany dosłownie poniżej. `manaCost` to wartość many
+ * (CR 202.3) — {1}{G} = 2, {5}{G} = 6; PEŁNY koszt z pipami kolorów żyje
+ * w src/cards/mana-costs-data.js (MANA_COSTS, parser mana-cost.js), a pula
+ * many jest kolorowa (resources.js). Ograniczeń gry nie ma (ADR 0022:
+ * pełny Oracle albo `unsupported`).
  */
 export const REAL_CARDS = Object.freeze([
   defineCard({
@@ -3749,7 +3751,8 @@ export const REAL_CARDS = Object.freeze([
   // =========================================================================
 
   // 1. Vandalize (DTK) {4}{R} Sorcery — Choose one or both — Destroy artifact, Destroy land.
-  // Uproszczenie Oracle "one or both" do 3 trybów (artifact / land / both) — 100% pokrycia wyborów.
+  // „Choose one or both" (CR 700.2d) zapisane jako 3 tryby (artifact / land /
+  // both) — to DOKŁADNIE zbiór legalnych wyborów, nie uproszczenie.
   defineCard({
     id: 'vandalize', name: 'Vandalize', set: 'DTK',
     types: ['Sorcery'], colors: ['R'], manaCost: 5,
@@ -6579,8 +6582,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       effects: [{ type: 'discard_cards', amount: 3, applyTo: 'target' }],
     },
     // Suspend (CR 702.62): koszt zawieszenia + liczba liczników czasu.
-    // Uproszczenie: po zdjęciu ostatniego licznika karta zostaje w exile jako
-    // gotowa do rzutu bez kosztu (nie wygasa po jednym oknie priorytetu).
+    // Zdjęcie licznika w upkeepie i „when the last is removed" to zdolności
+    // wyzwalane NA STOSIE (triggers.js, Etap F); rozstrzygnięcie ostatniej
+    // otwiera jednorazową decyzję: rzuć za darmo albo zostaw w exile.
     suspend: { cost: 1, colors: ['B'], timeCounters: 4 },
     artId: 7, plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },

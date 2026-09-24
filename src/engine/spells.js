@@ -37,8 +37,8 @@ function hasColorForObject(state, playerId, object, phyrexianPay = 0) {
 /**
  * Czary (instants/sorceries) przechodzą przez stos: rzucenie kładzie obiekt
  * na stos, a rozstrzygnięcie następuje po rundzie passów (LIFO). To jest
- * centralna pętla MtG — w przeciwieństwie do uproszczonej ścieżki permanentów
- * (cast_permanent), która na razie nie korzysta ze stosu.
+ * centralna pętla MtG; czary permanentów (cast_permanent) idą przez ten sam
+ * stos od T1.
  *
  * Deskryptor czaru na obiekcie (`object.spell`):
  * { timing: 'instant'|'sorcery', targets: [{ type: 'creature' }],
@@ -1595,9 +1595,11 @@ function cartesian(pools, words = null) {
 }
 
 /**
- * Ponowna walidacja celów w momencie rozstrzygania (CR 608.2b w uproszczeniu):
- * cele, które przestały być legalne, są pomijane; czar bez żadnego
- * legalnego celu rozstrzyga się bez efektów („fizzle").
+ * Ponowna walidacja celów w momencie rozstrzygania (CR 608.2b): cele, które
+ * przestały być legalne, są pomijane (efekt ich nie dotyka); czar bez
+ * żadnego legalnego celu NIE rozstrzyga się („fizzle") — schodzi ze stosu
+ * bez efektów, a skutki „as it resolves" (buyback, rebound, przygoda) nie
+ * zachodzą.
  */
 function collectLegalTargets(state, targetSpec, chosen, casterId, sourceColors = null, sourceObject = null) {
   // Tablica indeksowana JAK targetSpec: na miejscu celu, który przestał być
@@ -1994,8 +1996,9 @@ export function resolveTopOfStack(state) {
       ? (object.chosenTargets ?? []).length > 0
       : modeTargets.length > 0;
     if (hadTargets && liveChosen.length === 0) {
-      // M271 (błąd #14): także fizzle respektuje `exileInsteadOfGraveyard`.
-      const zoneFizzle = spellExitZone(object);
+      // M271 (błąd #14): także fizzle respektuje `exileInsteadOfGraveyard`;
+      // flashback wygania przy KAŻDYM zejściu ze stosu (CR 702.34a).
+      const zoneFizzle = spellExitZone(object, { flashedBack: Boolean(object.flashedBack) });
       const graveFizzle = `${zoneFizzle}-${state.objectSequence++}`;
       moveObjectDirectly(state, stackId, zoneFizzle, graveFizzle);
       state.events.push(event('spell_resolved', {
@@ -2014,7 +2017,12 @@ export function resolveTopOfStack(state) {
     }
     if (holdReplacementResolution(state,object,{modal:true,modeIndex:object.chosenMode,modeName:mode.name})) return state.events.slice(before);
     // M271 (błąd #14): strefę zejścia liczy WSPÓLNY helper, nie sztywny grób.
-    const zoneModal = spellExitZone(object);
+    // KARTY SPOZA KATALOGU (Etap F): żaden czar modalny w katalogu nie ma
+    // buyback, rebound ani przygody — gdy się pojawi, ta ścieżka musi
+    // przejąć obsługę z gałęzi niemodalnej niżej (powrót do ręki / wygnanie
+    // z reboundReady / wygnanie „on an adventure", tylko przy faktycznym
+    // rozstrzygnięciu). Flashback działa już tutaj (CR 702.34a).
+    const zoneModal = spellExitZone(object, { flashedBack: Boolean(object.flashedBack) });
     const graveId = `${zoneModal}-${state.objectSequence++}`;
     moveObjectDirectly(state, stackId, zoneModal, graveId);
     state.events.push(event('spell_resolved', {
@@ -2049,7 +2057,10 @@ export function resolveTopOfStack(state) {
   }
   // Buyback (CR 702.27): jeśli czar miał zapłacony buyback, wraca do ręki
   // właściciela zamiast do grobu (analogicznie do clash — pendingSpellReturnToHand).
-  if (object.wasBuyback) {
+  // Etap F (CR 702.27a „put this card into your hand AS IT RESOLVES" + CR
+  // 608.2b): czar bez żadnego legalnego celu NIE rozstrzyga się — idzie do
+  // grobu (dawniej buyback zwracał go do ręki także po fizzlu).
+  if (object.wasBuyback && !fizzled) {
     state.pendingSpellReturnToHand = true;
   }
   const returnToHand = state.pendingSpellReturnToHand;
@@ -2079,12 +2090,16 @@ export function resolveTopOfStack(state) {
     }));
     return state.events.slice(before);
   }
-  const adventure = Boolean(object.adventure);
+  // Etap F (CR 608.2b): fizzle to NIE rozstrzygnięcie — przygoda (CR 715.3d:
+  // „as it resolves") i rebound (CR 702.88a: „exile it as it resolves") nie
+  // wygnają czaru, który się nie rozstrzygnął; idzie do grobu. Flashback
+  // (CR 702.34a: „any time it would leave the stack") wygania zawsze.
+  const adventure = Boolean(object.adventure) && !fizzled;
   const flashedBack = Boolean(object.flashedBack);
   // Rebound (CR 702.88, Ojutai's Breath): czar rzucony z ręki z deskryptorem
   // `rebound` idzie po rozstrzygnięciu do EXILE zamiast do grobu, a na początku
   // następnego upkeepu kontrolera otwiera jednorazową decyzję rzutu bez kosztu.
-  const reboundCast = Boolean(object.reboundCast && !object.isSpellCopy);
+  const reboundCast = Boolean(object.reboundCast && !object.isSpellCopy) && !fizzled;
   // M174/E (Halo Forager): exileInsteadOfGraveyard — „If that spell would
   // be put into a graveyard, exile it instead" (dotyczy też fizzle niżej).
   const zoneAfterResolve = spellExitZone(object, { adventure, flashedBack, reboundCast });
@@ -2147,8 +2162,11 @@ function resolveFireball(state, stackId, object, before) {
       if (per > 0) dealNonCombatDamage(state, source, tId, per);
     }
   }
-  const graveId = `grave-${state.objectSequence++}`;
-  moveObjectDirectly(state, stackId, 'graveyard', graveId);
+  // Etap F: strefę zejścia liczy wspólny helper (flashback CR 702.34a,
+  // „exile instead" — Halo Forager), nie sztywny grób.
+  const zoneAfterX = spellExitZone(object, { flashedBack: Boolean(object.flashedBack) });
+  const graveId = `${zoneAfterX}-${state.objectSequence++}`;
+  moveObjectDirectly(state, stackId, zoneAfterX, graveId);
   state.events.push(event('spell_resolved', {
     fromId: stackId, toId: graveId, cardId: object.cardId,
     controllerId: object.controllerId, fizzled,
@@ -2175,6 +2193,11 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
       return state.events.slice(before);
     }
   }
+  // Etap F: dokończenie wstrzymanego czaru to TO SAMO rozstrzygnięcie, co
+  // w resolveTopOfStack — skutki „as it resolves" (buyback CR 702.27a,
+  // przygoda CR 715.3d, rebound CR 702.88a) muszą zajść także tutaj
+  // (dawniej czar z decyzją w środku efektów je tracił).
+  if (object.wasBuyback) state.pendingSpellReturnToHand = true;
   const returnToHand = state.pendingSpellReturnToHand;
   state.pendingSpellReturnToHand = false;
   if (returnToHand) {
@@ -2197,10 +2220,19 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
     return state.events.slice(before);
   }
   const flashedBack = Boolean(object.flashedBack);
-  const zoneAfter = spellExitZone(object, { flashedBack });
+  const adventure = Boolean(object.adventure);
+  const reboundCast = Boolean(object.reboundCast && !object.isSpellCopy);
+  const zoneAfter = spellExitZone(object, { adventure, flashedBack, reboundCast });
   const afterId = `${zoneAfter}-${state.objectSequence++}`;
-  moveObjectDirectly(state, stackId, zoneAfter, afterId);
-  const resolved = event('spell_resolved', { fromId: stackId, toId: afterId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, flashedBack });
+  const movedAfter = moveObjectDirectly(state, stackId, zoneAfter, afterId);
+  if (reboundCast) {
+    state.objects.set(afterId, Object.freeze({ ...state.objects.get(afterId), reboundReady: true }));
+  }
+  const resolved = event('spell_resolved', {
+    fromId: stackId, toId: afterId, cardId: object.cardId, controllerId: object.controllerId,
+    fizzled: false, flashedBack, adventure, rebound: reboundCast,
+    ...(adventure ? { object: movedAfter } : {}),
+  });
   state.events.push(resolved);
   return state.events.slice(before);
 }
@@ -2240,8 +2272,10 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
   if (!legalNow && !object.bestow) {
     // Czysta aura przy nielegalnym celu NIE wchodzi na pole bitwy — trafia
     // wprost do grobu (jak czar „fizzle", CR 608.2b + 704.5m).
-    const graveId = `grave-${state.objectSequence++}`;
-    moveObjectDirectly(state, stackId, 'graveyard', graveId);
+    // Strefa przez wspólny helper (zastąpienia „exile instead").
+    const zoneAuraFizzle = spellExitZone(object, { flashedBack: Boolean(object.flashedBack) });
+    const graveId = `${zoneAuraFizzle}-${state.objectSequence++}`;
+    moveObjectDirectly(state, stackId, zoneAuraFizzle, graveId);
     state.events.push(event('spell_resolved', {
       fromId: stackId, toId: graveId, cardId: object.cardId,
       controllerId: object.controllerId, fizzled: true,

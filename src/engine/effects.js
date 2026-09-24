@@ -2702,11 +2702,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // GRACZA-CEL (targets[0]), gdy wskaźnik celu jest graczem.
     //
     // Ochrona scry/surveil: karty przeglądane przez oczekujący scry/surveil
-    // gracza-celu NIE są młynowane. Silnik rozstrzyga triggery natychmiast (bez
-    // stosu), więc mill odpalony np. śmiercią stwora z czaru „obrażenia + scry"
-    // (Selhoff Occultist) mógłby usunąć kartę, którą gracz właśnie scryuje —
-    // invariant pendingScry (karty muszą być w bibliotece) złamałby się. Pomijamy
-    // te karty, a mill bierze kolejną (decyzja scry „wstrzymuje" swe karty).
+    // gracza-celu NIE są młynowane. Obrona w głąb: triggery idą na stos
+    // (CR 603.3), ale gdyby mill zaszedł w trakcie otwartego scry (np. efekt
+    // tego samego rozstrzygnięcia), usunąłby kartę, którą gracz właśnie
+    // scryuje — invariant pendingScry (karty muszą być w bibliotece) złamałby
+    // się. Pomijamy te karty, a mill bierze kolejną.
     const amount = effect.amount ?? 0;
     if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mill wymaga nieujemnej liczby kart');
     // Chronic Flooding: „ITS CONTROLLER mills three cards" — mieli kontroler
@@ -4138,8 +4138,6 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // (targets[0]) to czar na stosie; efekt kolejkuje DECYZJĘ nowego celu
     // (pendingRedirectChoice) — kandydaci liczeni dynamicznie w bramce
     // execute (legalTargetCandidates specyfikacji czaru, minus obecny cel).
-    // Ograniczenie: engine nie ma zdolności na stosie (rozstrzyga je
-    // natychmiast), więc redirect dotyczy wyłącznie czarów — udokumentowane.
     const stackId = targets[0];
     const spell = state.objects.get(stackId);
     if (!spell || spell.zone !== 'stack') return;
@@ -5933,7 +5931,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
         });
         continue;
       }
-      // Dla 1v1 tylko jeden przeciwnik — queue pierwsza decyzja, reszta via kolejka? Dla uproszczenia 1v1: jedna decyzja
+      // Gra jest 1v1 (jeden przeciwnik → jedna decyzja). TRYB SPOZA ZAKRESU:
+      // przy >2 graczach trzeba by kolejkować decyzje kolejnych przeciwników
+      // (CR 101.4 — kolejność APNAP), zamiast kończyć na pierwszej.
       state.pendingDiscardChoice = {
         playerId: opp.id,
         count: Math.min(effect.amount ?? 1, handIds.length),

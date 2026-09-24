@@ -15,7 +15,7 @@ import { nextTimestamp } from './timestamps.js';
  *   zmienia jego kind; może wisieć na polu bitwy odłączony.
  * - Zaczarowany/wyposażony stwór dostaje buff z deskryptora źródła
  *   (bestow/aura/equipment: pump + keywordy) — patrz attachmentGrant i
- *   permanents.effective*; buff liczony uproszczoną warstwą CR 613.
+ *   permanents.effective*; buff liczony warstwami CR 613 (7c, timestampy).
  * - Utrata gospodarza (zginał, wygnany, odszedł):
  *   bestow    → odłącza się i zostaje na polu bitwy jako stwór (CR 702.103f);
  *   equipment → odłącza się i zostaje na polu bitwy (CR 704.5n);

@@ -772,6 +772,9 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // Etap F (CR 702.30a + 603.5): zdolność echa to trigger na stosie
   // (pseudo-zdolność silnika — triggers.js, `event: 'echo'`).
   echo: 'echo — początek twojego podtrzymania',
+  // Etap F (CR 603.3): pseudo-zdolności silnika na stosie (triggers.js).
+  suspend_upkeep: 'suspend — zdjęcie licznika czasu w podtrzymaniu',
+  rebound_upkeep: 'rebound — początek twojego podtrzymania',
   when_you_cast_spell: 'rzucenie czaru',
   you_cast_noncreature_spell: 'rzucenie czaru niebędącego stworem',
   you_cast_second_spell_each_turn: 'drugi czar w turze',

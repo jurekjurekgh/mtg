@@ -5263,7 +5263,7 @@ export function execute(state, input) {
     const events = [event('priority_passed', { playerId: cmd.playerId, nextPlayerId: next })];
     if (state.turn.passes >= state.players.length) {
       // Pełna runda passów: najpierw rozstrzygaj wierzchni czar stosu (LIFO),
-      // dopiero przy pustym stosie przechodź dalej (CR 117.4 w uproszczeniu).
+      // dopiero przy pustym stosie przechodź dalej (CR 117.4).
       if (state.zones.stack.length > 0) {
         // CR 117.3b: po rozstrzygnięciu czaru priorytet należy do AKTYWNEGO
         // gracza. Ustawiamy go PRZED rozstrzygnięciem — triggery ETB czarów

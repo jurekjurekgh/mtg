@@ -2,7 +2,7 @@ import { effectiveAbilities, effectiveSubtypes } from './permanents.js';
 
 /**
  * Mapowanie źródeł many -> jakie kolory mogą wyprodukować.
- * Na podstawie Oracle text kart (uproszczone, ale dokładniejsze niż „non-basic = any”).
+ * Na podstawie Oracle text kart — wyłącznie źródła BEZ deskryptora (patrz niżej).
  *
  * Każdy wpis: cardId -> { colors: ['W','U',...], amount: number }
  * - colors puste = tylko bezbarwna (C)
@@ -33,7 +33,7 @@ const MANA_SOURCE_MAP = Object.freeze({
   'raucous-carnival': { colors: ['R', 'W'], amount: 1 },
   'great-furnace': { colors: ['R'], amount: 1 },
   'basilisk-gate': { colors: [], amount: 1 }, // {T}: Add {C}
-  // Urza's Mine — tron (CR 702.??): {T}: Add {C}; jeśli kontrolujesz też
+  // Urza's Mine — tron (tekst karty, bez osobnej reguły CR): {T}: Add {C}; jeśli kontrolujesz też
   // Urza's Power-Plant i Urza's Tower → zamiast tego Add {C}{C}.
   // Intencja: oba pozostałe landy z linii Urzy pojawią się w przyszłości
   // (decyzja właściciela). Mapa nie zawiera dosłownego porównania cardId —

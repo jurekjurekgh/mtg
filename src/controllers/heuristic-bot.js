@@ -649,7 +649,8 @@ function isSavageDefenseWindow(view, target) {
   if (target.tapped || target.cantBlock) return false;
   // Czy może zablokować którekolwiek atakujące (przybliżenie CR 509: evasion flying/reach/potrzebne bez menace)
   const battlefield = view.zones.battlefield ?? [];
-  // Dla uproszczenia: jeśli cel ma reach/flying albo atakujący nie ma flying — może blokować.
+  // HEURYSTYKA BOTA (nie reguła gry — legalność bloku waliduje combat.js):
+  // jeśli cel ma reach/flying albo atakujący nie ma flying — może blokować.
   // Pełna walidacja wymagałaby combat.js, zachowujemy konserwatywnie: sprawdzamy czy co najmniej jeden atakujący jest blokowalny.
   const hasFlying = (o) => (o.keywords ?? []).includes('flying');
   const hasReach = (o) => (o.keywords ?? []).includes('reach');
