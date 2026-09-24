@@ -12867,3 +12867,60 @@ logu i opisy kafli.
 
 Bramy: `npm test` **6511/6511** (0 fail), build **60 modułów / 4239,9 kB**;
 pełna brama `npm run test:all` i handoff `docs/setup/HANDOFF_2026-09-24c.md`.
+
+## M428 — Żywy Tester na kartach batcha 59: raport talii + klasa „kwota alt-kosztu" (sesja 2026-09-24d, PR #136)
+
+Zlecenie właściciela po domknięciu batcha 59: (a) raport, do których talii
+trafiły karty batcha i czy nastąpiły przetasowania; (b) audyt Żywym Testerem
+celujący w karty batcha — zgodność z CR i taktyka bota.
+
+**Ad (a) — same DOŁOŻENIA, bez przenosin:** `git diff f9bc44b..c805674 --
+decks/ README.md` to 8 plików. Siedem talii dostało karty batcha, w każdej
+wyrównano landy (bez usunięć nie-basiców i bez przenosin między taliami):
+dominaria-wu +Charismatic Vanguard (Plains 4→5, Island 3→2), forgotten-realms
++Waveskimmer Aven (Plains 2→3, Mountain 3→2), ixalan +Sun-Collared Raptor
+(23→24), wiedzmin-bg +Scavenging Harpy (Swamp 5→6), worek-basni +Join the
+Dance, +Memory's Journey, +Kumano's Blessing, +Bird Admirer (Island 1→2,
+Forest 4→5; 38→44), worek-dziki +Savage Hunger (Mountain 2→3; 30→32),
+worek-mroczny +Slithering Cryptid (Island 1→2; 27→29). Rejestr commitów:
+44dc8eb i e135540 nie ruszyły plików talii (regen zbiorczy dopiero w 88e46ee,
+6 plików), 2987d3b → wiedzmin-bg, ba5932c/adcb2e5/1265cf5 → worek-basni.
+
+**Ad (b) — dwie partie rozpoznawcze najpierw na taliach standardowych**
+(8 partii A–H, po jednej na talię z kartami batcha, 8× naturalny koniec, 8×
+„DETEKTORY: brak zgłoszeń", 8× „NIEWYCENIONE: brak"), ale ekspozycja kart
+batcha wyszła mała (karty 1-of w taliach singletonowych): Sun-Collared Raptor
+87 wystąpień, Charismatic Vanguard 34, Join the Dance 6+3, Scavenging Harpy 1,
+reszta 0. Dlatego audyt celowany zrobiono na tymczasowej talii
+`decks/audyt-batch59.txt` (2× każda z 10 kart + 4× każdy basic, ~50 % landów):
+**8 partii P1–P6 (bot gra talią audytową) i Q1–Q2 (gracz)** po 700 kroków —
+8× naturalny koniec, 8× zero zgłoszeń detektorów. Talia usunięta przed
+commitem (łamie cztery strażniki talii), `dist/` przebudowany.
+
+**Zgodność z CR — bez zastrzeżeń w mechanikach:** Bird Admirer // Wing Shredder
+(702.145: dzień przy wejściu pierwszego permanentu pary, w nocy obrót
+w Wing Shreddera, 4/5 z aurą w ataku), Charismatic Vanguard (611.2c — „4
+stwory" w chwili rozstrzygnięcia), Scavenging Harpy (603.3d bez celu oraz
+wygnanie karty z grobu przeciwnika), Waveskimmer Aven (egzaltacja przy samotnym
+ataku), Slithering Cryptid (token Mutagen + zdolność tylko jak sorcery),
+Sun-Collared Raptor ({2}{R}, trample, przydział obrażeń), Savage Hunger
+(+1/+0, trample, cycling {2} z ręki), Memory's Journey (tasowanie, cele
+zależne), Kumano's Blessing (błysk, efekt zastępczy — ten jeden raz nie zszedł
+„na żywo", pokrycie w testach).
+
+**Znaleziska (F1–F3, jedna klasa — kwota kosztu alternatywnego):**
+F1 Join the Dance: `flashback.cost = 4` przy druku `{3}{G}{W}` = 5 many
+(dowód: transkrypt P1 — cztery tapnięcia przy rzucie z grobu); F2 etykieta
+flashbacku pokazywała KWOTĘ jako cenę generyczną („Flashback: Memory's Journey
+(koszt 1)" dla {G}, „Join the Dance (koszt 4)" dla {3}{G}{W}); F3 Boulder
+Salvo (batch 58): `surge.cost = 3` przy druku `{1}{R}` = 2 many — to samo
+znalezisko z tego samego skanu. Przyczyna wspólna: `cost` deskryptora czytano
+jako część generyczną, choć to SUMA symboli (`costSymbols` sam odejmuje pipy),
+a strażnik M268 porównywał z Oracle tylko PIPY — kwota mogła się rozjechać
+niezauważona. Naprawy w commitach `990b5f0` (dane + skan symboli + korekta
+twierdzeń w testach batchy 58/59) i `aff9597` (etykiety przez `costSymbols`)
++ lekcja L168.
+
+**Bramy:** `npm test` **6519/6519** (0 fail; 6511 → +8 testów M428), build
+**60 modułów / 4241,6 kB**; plan `docs/plans/PLAN_2026-09-24d-zywy-tester-
+batch59.md`, handoff `docs/setup/HANDOFF_2026-09-24d.md`.

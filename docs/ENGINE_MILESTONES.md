@@ -7671,3 +7671,34 @@ atrapę bez drugiej strony (L21).
 
 Bramy: `npm test` **6511/6511** (0 fail), build **60 modułów / 4239,9 kB**;
 handoff: `docs/setup/HANDOFF_2026-09-24c.md`.
+
+## M428 — kwota kosztu alternatywnego: skan symboli + etykiety flashbacku (sesja 2026-09-24d, PR #136)
+
+Audyt Żywym Testerem celowany w karty batcha 59 (8 partii na tymczasowej talii
+`decks/audyt-batch59.txt`) nie znalazł nic w mechanikach, ale odsłonił jedną
+klasę błędu w DANYCH i jedną w WARSTWIE ETYKIET — obie wokół kosztów
+alternatywnych.
+
+- **Kwota alt-kosztu = suma symboli.** `costSymbols(amount, colors)` liczy
+  `generic = amount − pipy`, więc `cost` deskryptora to SUMA (`bestow {3}{G}` =
+  4, `escape {3}{U}` = 4, `flashback {1}{U}` = 2). Dwie karty miały kwotę o {1}
+  rozjechaną z Oracle obok: `join-the-dance` `flashback.cost` 4 → **5**
+  (silnik brał o {1} mniej, oferta szła już przy 4 manie) i `boulder-salvo`
+  `surge.cost` 3 → **2** (`Surge {1}{R}` — karta brała o {1} więcej; karta
+  z batcha 58, czyli klasa nie zna granic batcha).
+- **Skan Oracle↔definicja po CAŁYM napisie**, nie tylko po pipach (to robił
+  M268): strażnik `test/audyt-m428-kwota-alt-kosztu.test.js` buduje napis
+  kosztu z definicji i porównuje go znak po znaku z Oracle przy słowie-kluczu.
+  Wyjątki nazwane wprost (+ asercja, która je wypisuje): `cleave` trzyma kwotę
+  w `manaCost`, `adventure` nie ma kosztu przy słowie-kluczu (druga część
+  karty to osobny czar), `kicker` z wieloma kosztami wypada jako nieparowalny.
+- **Etykieta flashbacku przez `costSymbols`** (oba miejsca: tytuł grupy
+  `choiceGroupTitle` i `commandLabel` `cast_flashback`). Wcześniej ręczna
+  sklejka `{${cost}}` pokazywała KWOTĘ jako cenę generyczną: transkrypty
+  audytu mają „Flashback: Memory's Journey (koszt 1)" dla {G} i „Flashback:
+  Join the Dance (koszt 4)" dla {3}{G}{W}. To była ostatnia ręczna składanka
+  kosztu w rodzinie (M151 suspend, M267/C escape, M268 warp/plot/bestow/morph).
+  Poprawiony też komentarz „escape.cost = {generic}" w `render.js` — to on
+  utrwalał błędne czytanie pola.
+
+Lekcja: **L168**. Bramy: `npm test` 6519/6519, build 60 modułów / 4241,6 kB.

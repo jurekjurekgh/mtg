@@ -2488,3 +2488,33 @@ zdejmował animację, która miała trwać. Przy naprawie druga łatka
 (4 testy, mutacja M28: 3/4 czerwone).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L167)
+
+## L168 (2026-09-24) — „Kwota" kosztu alternatywnego to SUMA symboli, nie część generyczna
+
+**Przypadek (M428, znaleziska F1/F3 z audytu żywym testerem):** `cost` w
+deskryptorach alt-kosztów czytano jako część GENERYCZNĄ, a
+`costSymbols(amount, colors)` liczy `generic = amount − pipy`. Dwie karty miały
+kwotę o {1} rozjechaną z Oracle obok: Join the Dance „Flashback {3}{G}{W}" →
+`cost: 4` (silnik brał o {1} mniej, oferta szła już przy 4 manie), Boulder
+Salvo „Surge {1}{R}" → `cost: 3` (brał o {1} więcej). Strażnik M268 porównywał
+z Oracle tylko PIPY, więc kwota mogła się rozjechać niezauważona, a testy
+batchy powtarzały błąd w tytule („{3}{G}{W} = 4 many").
+
+**Reguła:**
+1. `cost`/`manaCost` deskryptora = SUMA symboli (dowód: bestow {3}{G} = 4,
+   escape {3}{U} = 4, flashback {1}{U} = 2); napis buduje `costSymbols(amount,
+   colors)` — komentarz „cost = {generic}" w `render.js` był źródłem pomyłki.
+2. Skan Oracle↔definicja porównuje CAŁY napis, nie tylko pipy; wyjątki (cleave
+   trzyma kwotę w `manaCost`, adventure nie ma kosztu przy słowie-kluczu)
+   wymienia się WPROST, a karta nieparowalna nie może przejść po cichu.
+3. Etykieta kosztu alternatywnego ma JEDNO źródło składanki (`costSymbols`);
+   gołe `{N}` z `cost` obiecuje cenę generyczną, której nie da się zapłacić
+   kolorowym pipem (M151 suspend, M267/C escape, M428 flashback).
+4. Test, którego TYTUŁ powtarza arytmetykę kosztu, bywa konserwatorem błędu:
+   popraw kwotę w danych, potem w tytule testu.
+
+**Strażnik:** `test/audyt-m428-kwota-alt-kosztu.test.js` (8 testów: skan
+symboli całej rodziny alt-kosztów, lista pominiętych kart, dowód RED na obu
+znaleziskach, piny etykiet) + piny w `test/real-cards-batch{58,59}.test.js`.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L168)

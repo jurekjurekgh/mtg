@@ -2602,3 +2602,40 @@ trwania i znacznikiem), warstwa liczona z wpisów, obiekty bez listy idą
 łatka `replaceObject` dostawała obiekt sprzed pierwszej i rozkładała go
 w całości. D3 potwierdził ścieżkę w partiach (crew + Animator na Barge
 i Crusherze bez zgłoszeń).
+
+## L168 (2026-09-24) — przypadek
+
+Audyt celowany Żywym Testerem na kartach batcha 59 (8 partii na tymczasowej
+talii `decks/audyt-batch59.txt`, transkrypty `/tmp/zb-{P1..P6,Q1,Q2}.txt`) nie
+znalazł nic w samych mechanikach, ale w transkrypcie P1 stanęło zdanie
+„Nieprzyjaciel rzuca Join the Dance / tapuje Forest → G, Plains #1 → W,
+Plains #2 → W, Swamp #1 → B": cztery many za czar z grobu, którego druk mówi
+`Flashback {3}{G}{W}` — pięć. Sprawdzenie danych potwierdziło
+`flashback: { cost: 4, colors: ['G','W'] }`, a test B59/G1.4 sam twierdził
+„koszt flashbacku {3}{G}{W} = 4 many": warstwa danych i warstwa testów
+powtarzały ten sam błąd arytmetyczny, więc żadna nie mogła zapalić światła.
+
+Ten sam przebieg pokazał drugą rzecz: etykiety flashbacku w `render.js`
+budowały napis ręcznie (`manaHtml ? manaCostHtml(\`{${fbCost}}\`) :
+\`{${fbCost}}\``), czyli pokazywały KWOTĘ jako cenę generyczną. Transkrypty
+mają dowody obu przypadków: `>> Flashback: Memory's Journey (koszt 1)` dla
+kosztu {G} oraz `>> Flashback: Join the Dance (koszt 4)` dla {3}{G}{W}.
+Reszta rodziny (escape M267/C, warp i plot M268, suspend M151) szła już przez
+`costSymbols`, więc była to ostatnia ręczna sklejka — a komentarz „escape.cost
+= {generic}" w tej samej funkcji tłumaczył, skąd bierze się pomyłka: `cost`
+to SUMA symboli (bestow {3}{G} = 4, escape {3}{U} = 4, flashback {1}{U} = 2),
+a `costSymbols` sam odejmuje pipy.
+
+Skan Oracle↔definicja po KWOCIE (nie tylko po pipach, jak strażnik M268)
+wskazał trzy trafienia: dwa prawdziwe (join-the-dance, boulder-salvo — surge
+{1}{R} zamiast {2}{R}, karta z batcha 58, czyli klasa nie zna granic batcha)
+i jedno narzędziowe (`lunar-rejection`: cleave trzyma kwotę w `manaCost`).
+Trzy karty wypadły ze skanu z powodu, który trzeba było nazwać: dwie przygody
+(Scryfall nie pisze kosztu przy słowie „Adventure" — druga część karty jest
+osobnym czarem) i `mindstab` z „Suspend 4—{B}" (między słowem a kosztem stoi
+licznik czasu — po naprawie regexu paruje się poprawnie). Wyjątki trafiły do
+`ORACLE_SKIP` z powodem i do asercji, która wypisuje pominięte karty wprost,
+żeby nowa karta nie przeszła po cichu. Naprawa danych poszła razem z korektą
+testów batchy 58/59 (tytuły twierdzące błędną arytmetykę) i ze strażnikiem
+`test/audyt-m428-kwota-alt-kosztu.test.js`, który ma wbudowany dowód RED na
+obu znalezionych rozjazdach.

@@ -38,19 +38,19 @@ błąd.
 
 ## Etapy (kolejność commitów)
 
-- [ ] **A0** — ten plan (commit przed kodowaniem, ADR 0020).
-- [ ] **A1 (dane + detektor):** `join-the-dance` flashback 4 → **5**,
+- [x] **A0** — ten plan (commit przed kodowaniem, ADR 0020).
+- [x] **A1 (dane + detektor):** `join-the-dance` flashback 4 → **5**,
       `boulder-salvo` surge 3 → **2**; skan Oracle↔definicja **całej rodziny
       alt-kosztów po SYMBOLACH** (nie tylko pipach, jak M268) — nowy
       `test/audyt-m428-kwota-alt-kosztu.test.js`; korekta twierdzeń w
       `test/real-cards-batch{58,59}.test.js`, które konserwowały błąd.
-- [ ] **A2 (etykiety):** `render.js` — oba miejsca etykiety flashbacku przez
+- [x] **A2 (etykiety):** `render.js` — oba miejsca etykiety flashbacku przez
       `costSymbols(cost, colors)` + usunięcie komentarza „escape.cost =
       {generic}"; piny etykiet w A1-owskim pliku testowym.
-- [ ] **A3 (dokumentacja):** M428 w `docs/PROJECT_HISTORY.md` i
+- [x] **A3 (dokumentacja):** M428 w `docs/PROJECT_HISTORY.md` i
       `docs/ENGINE_MILESTONES.md`, lekcja **L168** + narracja w
       `docs/LESSONS_PRZYPADKI.md`, domknięcie tego planu, handoff sesji.
-- [ ] **A4 (sprzątanie):** usunięcie tymczasowej `decks/audyt-batch59.txt`
+- [x] **A4 (sprzątanie):** usunięcie tymczasowej `decks/audyt-batch59.txt`
       (łamie strażniki talii) i przebudowa `dist/`; raport dla właściciela
       (tabela talii + tabela znalezisk).
 
@@ -64,3 +64,21 @@ błąd.
   mają gołego `{N}` (piny jak M268/label).
 - Ryzyko: skan symboli ma jeden celowy wyjątek — `cleave` trzyma kwotę
   w `manaCost` (nie `cost`), a `morph` w ogóle pomijamy (dwa koszty, L104/1).
+
+## Podsumowanie wykonania
+
+- **Commity:** `436b4ad` (A0 plan), `990b5f0` (A1 dane + skan symboli + piny
+  batchy 58/59), `aff9597` (A2 etykiety flashbacku + piny etykiet), A3 (ten
+  wpis + M428 + L168 + handoff 24d).
+- **Znaleziska:** F1 `join-the-dance` flashback 4 → **5**; F2 etykieta
+  flashbacku bez pipów (oba miejsca `render.js`); F3 `boulder-salvo` surge
+  3 → **2** (ta sama klasa, karta z batcha 58).
+- **Detektor:** `test/audyt-m428-kwota-alt-kosztu.test.js` — 8 testów: skan
+  Oracle↔definicja po CAŁYM napisie dla rodziny alt-kosztów, jawna lista
+  pominiętych kart (adventure), dowód RED na obu znaleziskach, piny etykiet
+  (grupa + komenda).
+- **Sprzątanie:** `decks/audyt-batch59.txt` usunięta (strażniki talii znów
+  zielone), `dist/` przebudowany.
+- **Bramy:** `npm test` 6519/6519 (0 fail), build 60 modułów / 4241,6 kB.
+- **Raport dla właściciela:** tabela talii + tabela znalezisk w tym pliku oraz
+  w czacie (sesja 24d); opis PR #136 uzupełniony kumulatywnie.
