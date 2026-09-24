@@ -112,9 +112,18 @@ export function spellExitZone(object, { adventure = false, flashedBack = false, 
 
 /**
  * Batch 59 (Scavenging Harpy): predykat celu „card from an opponent's
- * graveyard" — dowolna KARTA (nie token: obiekty kart mają `name: null`,
- * tokeny noszą nazwę — wzorzec Puppeteer Clique, CR 108.2b) w grobie gracza
- * innego niż wskazany kontroler.
+ * graveyard" — dowolna KARTA w grobie gracza innego niż wskazany kontroler.
+ *
+ * „Karta" = obiekt bez jawnej flagi `isToken`. CR 108.2b (dosłownie, CR
+ * 2026-09-25): „Tokens aren't considered cards—even a card-sized game
+ * supplement that represents a token isn't considered a card for rules
+ * purposes." — z bycia kartą wykluczone są WYŁĄCZNIE tokeny. Audyt PR #136
+ * (F-2): wcześniej odsiewał tu test `object.name == null` („karty nie mają
+ * nazwy"), ale `name` nosi też kopia permanentu z `enterAsCopy` (nazwa
+ * kopiowalna, CR 707.2 — `game-state.js:3899`), a pole nie jest kasowane przy
+ * zmianie strefy (`objects.js:203`), więc poległa kopia przestawała być celem,
+ * choć jest zwykłą kartą właściciela. Czytamy jawną flagę (L43), nie domysł po
+ * innym polu.
  *
  * JEDNO źródło reguły dla OFERTY i WALIDACJI (L41/M82: oferta nie może
  * proponować celu, który walidacja odrzuca) — czytają je `spells.js`
@@ -126,7 +135,7 @@ export function spellExitZone(object, { adventure = false, flashedBack = false, 
 export function isCardInOpponentGraveyard(object, controllerId) {
   return Boolean(object)
     && object.zone === 'graveyard'
-    && object.name == null
+    && !object.isToken
     && object.controllerId !== controllerId;
 }
 
