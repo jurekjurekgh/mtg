@@ -510,4 +510,7 @@ export const MANA_COSTS = {
   "slithering-cryptid": "{2}{G/U}",
   "waveskimmer-aven": "{2}{G}{W}{U}",
   "scavenging-harpy": "{2}{B}",
+  // Memory's Journey (ISD): koszt druku {1}{U}; flashback {G} to koszt
+  // alternatywny i żyje w deskryptorze `spell.flashback`.
+  "memory-s-journey": "{1}{U}",
 };

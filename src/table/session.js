@@ -923,6 +923,8 @@ const DRUGA_OSOBA = Object.freeze({
   obiecuje: 'obiecujesz',
   rozdziela: 'rozdzielasz', rozstrzyga: 'rozstrzygasz', rzuca: 'rzucasz',
   szuka: 'szukasz', tworzy: 'tworzysz', układa: 'układasz', używa: 'używasz',
+  // Batch 59 (Memory's Journey): „ty tasuje bibliotekę" → „tasujesz".
+  tasuje: 'tasujesz',
   wskazuje: 'wskazujesz', wybiera: 'wybierasz', wygrywa: 'wygrywasz',
   wykonuje: 'wykonujesz', wygania: 'wyganiasz', przestawia: 'przestawiasz',
   ustala: 'ustalasz',
@@ -1622,6 +1624,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'rebound_ready_required': return `${whoN(e.playerId)}: ${nameOf(e.cardId)} odbija się — możesz rzucić ją bez kosztu many albo zostawić w wygnaniu`;
       case 'rebound_declined': return `${whoN(e.playerId)} zostawia ${nameOf(e.cardId)} w wygnaniu (koniec odbicia)`;
       case 'card_revealed': return `${whoN(e.playerId)} odsłania ${nameOf(e.cardId)}`;
+      // Batch 59 (Memory's Journey): tasowanie biblioteki bez przeszukania.
+      case 'library_shuffled': return `${whoN(e.playerId)} tasuje bibliotekę`;
       case 'library_searched': return e.foundCardId
         ? `${whoN(e.playerId)} przeszukuje bibliotekę i tasuje`
         : `${whoN(e.playerId)} przeszukuje bibliotekę (bez trafienia) i tasuje`;

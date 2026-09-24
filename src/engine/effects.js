@@ -4100,6 +4100,40 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }));
     return;
   }
+  if (effect.type === 'shuffle_graveyard_cards_into_library') {
+    // Batch 59 (Memory's Journey): „Target player shuffles up to three target
+    // cards from their graveyard into their library."
+    // Ruling WotC 2011-09-22 (ADR 0028) rozstrzyga DWA przypadki brzegowe:
+    //  - nielegalny cel-GRACZ → czar nie robi NIC (nawet jeśli karty są nadal
+    //    legalne — czar nie może kazać nielegalnemu celowi tasować);
+    //  - brak wskazanych kart (albo wszystkie przestały być legalne) → gracz
+    //    i tak tasuje swoją bibliotekę.
+    const playerIndex = effect.playerTargetIndex ?? 0;
+    const playerId = targets[playerIndex];
+    if (playerId == null || !state.players.some((player) => player.id === playerId)) return;
+    // Pozycje kart: wszystkie celowane poza pozycją gracza (kolejność slotów
+    // zależy od deskryptora, więc pytamy o jawną listę, a nie o „resztę").
+    const cardIndexes = effect.cardTargetIndexes
+      ?? targets.map((_, index) => index).filter((index) => index !== playerIndex);
+    for (const index of cardIndexes) {
+      const cardId = targets[index];
+      if (cardId == null) continue;
+      const object = state.objects.get(cardId);
+      // CR 608.2b: karta, która opuściła grób (albo przestała być kartą tego
+      // gracza) przed rozstrzygnięciem, nie jest tasowana do biblioteki.
+      if (!object || object.zone !== 'graveyard' || object.controllerId !== playerId) continue;
+      const libId = `library-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, cardId, 'library', libId);
+      state.events.push(event('object_moved', {
+        fromId: cardId, object: moved, fromZone: 'graveyard', toZone: 'library', shuffledIn: true,
+      }));
+    }
+    // Tasowanie należy do CELU („their library") — dokładnie jego karty
+    // mieszamy w bibliotece; seed z numeru obiektu (deterministyczny, ADR 0005).
+    shuffleOwnLibrary(state, playerId);
+    state.events.push(event('library_shuffled', { playerId, sourceCardId: sourceObject?.cardId ?? null }));
+    return;
+  }
   if (effect.type === 'put_graveyard_card_on_top') {
     // Batch 24 (Mystic Sanctuary): „put target instant or sorcery card from
     // your graveyard on top of your library". Na wierzch = przed pierwszą

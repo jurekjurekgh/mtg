@@ -5405,6 +5405,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             else if (isPureDeckArranging) score -= 60;
             else if (!pureBonusWindow) score -= 12;
           }
+          // Batch 59 (Memory's Journey): „Target player shuffles up to three
+          // target cards from their graveyard into their library". Efekt jest
+          // PRZYJAZNY wobec właściciela kart (wracają do JEGO biblioteki), więc
+          // cel-własna strona to odzyskanie zasobów (lekki plus, rośnie z liczbą
+          // wybranych kart), a cel-przeciwnik oddaje mu karty z grobu z powrotem
+          // (generycznie po kontrolerze celu — ADR 0002, jak `prevent_next_damage`
+          // niżej: kara przechodzi bazę 50, żeby bot nie pomagał przeciwnikowi).
+          if (effect.type === 'shuffle_graveyard_cards_into_library') {
+            const playerSlot = cmd.targets?.[effect.playerTargetIndex ?? 0] ?? null;
+            if (playerSlot != null && playerSlot === view.playerId) {
+              const cards = (effect.cardTargetIndexes ?? []).filter((i) => cmd.targets?.[i] != null).length;
+              score += 4 + cards * 2;
+            } else if (playerSlot != null) {
+              score -= 60;
+            }
+          }
           // M218/4 — regenerate jako efekt czaru (jeśli kiedyś pojawi się taki czar):
           // wartość tylko gdy cel zagrożony, inaczej kara.
           if (effect.type === 'regenerate') {

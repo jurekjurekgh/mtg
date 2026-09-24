@@ -21,7 +21,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
-import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets } from './spells.js';
+import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -739,33 +739,6 @@ function untapStepTurnBasedAction(state, { pushToState = true } = {}) {
  * wyłącznie ten zbiór, execute waliduje identycznie — komenda zawsze spójna.
  */
 /**
- * Iloczyn kartezjański pul celów (oferta Epic Experiment — per legalny cel;
- * ścieżka okien dla czarów bez `modes`).
- *
- * CR 601.2c (jak `cartesian` w spells.js): ten sam obiekt wolno wskazać
- * raz na KŻADE wystąpienie słowa „target" — w obrębie jednego wystąpienia
- * sloty muszą wskazywać różne obiekty. `words` niesie numery wystąpień
- * (domyślnie: slot = wystąpienie). `null` powtarzać wolno („up to one”).
- */
-function cartesianTargetPools(pools, words = null) {
-  if (pools.length === 0) return [[]];
-  const tags = words ?? pools.map((_, i) => i);
-  const [first, ...rest] = pools;
-  const tails = cartesianTargetPools(rest, tags.slice(1));
-  const out = [];
-  for (const head of first) {
-    for (const tail of tails) {
-      const clash = head !== null && head !== undefined && tail.some(
-        (t, j) => t === head && tags[0] === tags[j + 1],
-      );
-      if (clash) continue;
-      out.push([head, ...tail]);
-    }
-  }
-  return out;
-}
-
-/**
  * Oferty free-castu Epic Experiment dla wygnanej karty: per legalny zestaw
  * celów (i per tryb modalny). Pusta lista = karta wymaga celów, których
  * teraz nie ma — nie oferujemy rzutu (CR 601.2c / 608.2b).
@@ -1075,9 +1048,10 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
   if (free && spell.xCost && !spell.modes) {
     const xSpec = spell.targets ?? [];
     if (xSpec.length === 0) return withCosts([{ cardId: obj.id, targets: [], xValue: 0 }]);
-    const xPools = xSpec.map((entry) => legalTargetCandidates(state, playerId, entry));
-    if (xPools.some((pool) => pool.length === 0)) return [];
-    return withCosts(cartesianTargetPools(xPools, xSpec.map((sp, wi) => sp?.targetWord ?? wi))
+    // Wspólny enumerator celów (`spells.js`) — jedna reguła dla wszystkich
+    // ścieżek: pozycje opcjonalne, wspólne wystąpienia słowa „target" i
+    // zależności pozycji (L48: oferta = walidacja).
+    return withCosts(legalTargetCombos(state, playerId, xSpec, obj)
       .map((combo) => ({ cardId: obj.id, targets: combo, xValue: 0 })));
   }
   if (spell.xCost) {
@@ -1114,9 +1088,7 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
   }
   const spec = spell.targets ?? [];
   if (spec.length === 0) return withCosts([{ cardId: obj.id, targets: [] }]);
-  const pools = spec.map((entry) => legalTargetCandidates(state, playerId, entry));
-  if (pools.some((pool) => pool.length === 0)) return [];
-  return withCosts(cartesianTargetPools(pools, spec.map((sp, wi) => sp?.targetWord ?? wi))
+  return withCosts(legalTargetCombos(state, playerId, spec, obj)
     .map((combo) => ({ cardId: obj.id, targets: combo })));
 }
 

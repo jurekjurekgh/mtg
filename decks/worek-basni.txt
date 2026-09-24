@@ -11,6 +11,7 @@
 1x Insatiable Appetite
 1x Join the Dance
 1x Kappa Tech-Wrecker
+1x Memory's Journey
 1x Steelclaw Lance
 1x Agate Assault
 1x Barkform Harvester
@@ -28,6 +29,6 @@
 1x Greater Tanuki
 2x Plains
 2x Island
-3x Swamp
+4x Swamp
 2x Mountain
 4x Forest

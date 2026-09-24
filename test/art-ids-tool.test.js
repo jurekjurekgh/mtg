@@ -165,7 +165,7 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // z artId 495 → 502 (wiersze arkusza dla tych kart JUŻ były w słowniku).
   // Batch 59 (G1.1–G1.7): +7 kart z artId → 509. Do końca batcha dojdą jeszcze
   // 131 ISD, 135 BOK i para 126 MID/127 MID (przód + tył) → 513.
-  assert.equal(withArt.length, 509, 'wszystkie realne karty mają artId (Batche 1–58 + Batch 59 G1.7)');
+  assert.equal(withArt.length, 510, 'wszystkie realne karty mają artId (Batche 1–58 + Batch 59 G1.7–G1.8)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

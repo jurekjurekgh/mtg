@@ -501,3 +501,173 @@ test('B59/G1.7: Scavenging Harpy — cel nielegalny przy rozstrzygnięciu = brak
   assert.equal(wygnane.length, 1, 'efekt nie kładzie drugiej kopii — brak celu = brak efektu (CR 608.2b)');
   assert.ok(state.objects.get('g-shock'), 'inna karta w grobie zostaje nietknięta');
 });
+
+// ---- G1.8: Memory's Journey (131 ISD, plan Kamigawa) -----------------------
+// „Target player shuffles up to three target cards from their graveyard into
+// their library" + flashback {G}. Pierwsza karta z ZALEŻNĄ pozycją celu
+// (karty pochodzą z grobu gracza wskazanego w pozycji 0) i pierwsza łącząca
+// pozycje OPCJONALNE z rzutem z grobu (flashback). Rulingi ISD 2011-09-22
+// (ADR 0028) pinują: obowiązkowy cel-gracz, tasowanie bez wskazanych kart,
+// zakaz celowania w samą siebie przy flashbacku.
+
+test('B59/G1.8: Memory\'s Journey — dane Oracle, koszt i druk', () => {
+  const def = registry.get('memory-s-journey');
+  assert.deepEqual(def.types, ['Instant']);
+  assert.deepEqual(def.colors, ['U']);
+  assert.equal(def.manaCost, 2);
+  assert.equal(def.set, 'ISD');
+  assert.equal(def.plan, 'Kamigawa');
+  assert.equal(def.artId, 131);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('265aaa73'), 'imageUri z druku ISD (isd/66)');
+  assert.equal(MANA_COSTS['memory-s-journey'], '{1}{U}');
+  assert.deepEqual(def.spell.flashback, { cost: 1, colors: ['G'] });
+  assert.equal(def.spell.targets[0].type, 'player', 'cel-gracz jest OBOWIĄZKOWY');
+  assert.deepEqual(def.spell.targets.slice(1).map((t) => t.type),
+    ['card_in_graveyard', 'card_in_graveyard', 'card_in_graveyard']);
+  assert.deepEqual(def.spell.targets.slice(1).map((t) => t.graveyardOfSlot), [0, 0, 0],
+    'pula kart pochodzi z grobu gracza wskazanego w pozycji 0');
+  assert.deepEqual(def.spell.targets.slice(1).map((t) => t.optional), [true, true, true]);
+  assert.deepEqual([...new Set(def.spell.targets.slice(1).map((t) => t.targetWord))], ['cards'],
+    'trzy sloty to JEDNO wystąpienie słowa „target" (CR 601.2c)');
+  assert.deepEqual(def.spell.effects, [{
+    type: 'shuffle_graveyard_cards_into_library', playerTargetIndex: 0, cardTargetIndexes: [1, 2, 3],
+  }]);
+});
+
+test('B59/G1.8: karty celują grób WSKAZANEGO gracza — pozycja zależna', () => {
+  const state = game();
+  put(state, 'mj', 'memory-s-journey', 'p1');
+  put(state, 'm1', 'savage-hunger', 'p1', 'graveyard');
+  put(state, 'm2', 'shock', 'p1', 'graveyard');
+  put(state, 'o1', 'razorfoot-griffin', 'p2', 'graveyard');
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  const offers = commands(state).filter((c) => c.type === 'cast_spell' && c.objectId === 'mj');
+  assert.ok(offers.some((c) => c.targets[0] === 'p1'), 'można wskazać SIEBIE („target player")');
+  assert.ok(offers.some((c) => c.targets[0] === 'p2'), 'można wskazać przeciwnika');
+  for (const cmd of offers) {
+    for (const slot of cmd.targets.slice(1)) {
+      if (slot == null) continue;
+      assert.equal(state.objects.get(slot).controllerId, cmd.targets[0],
+        `oferta nie może mieszać grobów: ${JSON.stringify(cmd.targets)}`);
+    }
+  }
+  // Kolejność celów w obrębie jednego wystąpienia słowa „target" nie tworzy
+  // duplikatów: {m1, m2} występuje raz (bez luk i bez permutacji).
+  const withBothMine = offers.filter((c) => c.targets[0] === 'p1'
+    && c.targets.slice(1).filter((t) => t != null).length === 2);
+  assert.equal(withBothMine.length, 2, 'dwie pary (kolejność slotów), nie 4 permutacje');
+  for (const cmd of withBothMine) {
+    const cards = cmd.targets.slice(1).filter((t) => t != null);
+    assert.deepEqual([...cards].sort(), ['m1', 'm2']);
+    assert.equal(cmd.targets[3], null, 'puste pozycje są tylko na KOŃCU wystąpienia');
+  }
+});
+
+test('B59/G1.8: rozstrzygnięcie wtasowuje wskazane karty do biblioteki celu', () => {
+  const state = game();
+  put(state, 'mj', 'memory-s-journey', 'p1');
+  put(state, 'm1', 'savage-hunger', 'p1', 'graveyard');
+  put(state, 'm2', 'shock', 'p1', 'graveyard');
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  run(state, commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'mj'
+    && c.targets[0] === 'p1' && c.targets[1] === 'm1' && c.targets[2] === 'm2'));
+  resolve(state);
+  assert.ok(find(state, 'savage-hunger', 'library'), 'pierwsza karta w bibliotece');
+  assert.ok(find(state, 'shock', 'library'), 'druga karta w bibliotece');
+  assert.equal([...state.objects.values()]
+    .filter((o) => ['savage-hunger', 'shock'].includes(o.cardId) && o.zone === 'graveyard').length, 0,
+    'celowane karty opuściły grób (w grobie zostaje sam czar)');
+  const shuffled = state.events.filter((e) => e.type === 'library_shuffled');
+  assert.equal(shuffled.length, 1, 'tasowanie jest osobnym zdarzeniem logu (M134)');
+  assert.equal(shuffled[0].playerId, 'p1', 'tasuje BIBLIOTEKĘ CELU („their library")');
+  assert.ok(find(state, 'memory-s-journey', 'graveyard'), 'czar bez flashbacku idzie do grobu');
+});
+
+test('B59/G1.8: bez wskazanych kart gracz-cel i tak tasuje (ruling ISD 2011-09-22)', () => {
+  const state = game();
+  put(state, 'mj', 'memory-s-journey', 'p1');
+  put(state, 'o1', 'razorfoot-griffin', 'p2', 'graveyard');
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  const offer = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'mj'
+    && c.targets[0] === 'p2' && c.targets.slice(1).every((t) => t == null));
+  assert.ok(offer, 'wariant „sam gracz" („up to three" = także zero) jest w ofercie');
+  run(state, offer);
+  resolve(state);
+  assert.ok(find(state, 'razorfoot-griffin', 'graveyard'), 'niewskazana karta zostaje w grobie');
+  const shuffled = state.events.filter((e) => e.type === 'library_shuffled');
+  assert.equal(shuffled.length, 1);
+  assert.equal(shuffled[0].playerId, 'p2', 'tasuje gracz-cel, nie rzucający');
+});
+
+test('B59/G1.8: karta z CUDZEGO grobu przy innym graczu-celu jest nielegalna (L48/M82)', () => {
+  const state = game();
+  put(state, 'mj', 'memory-s-journey', 'p1');
+  put(state, 'm1', 'savage-hunger', 'p1', 'graveyard');
+  put(state, 'o1', 'razorfoot-griffin', 'p2', 'graveyard');
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  const bad = execute(state, {
+    type: 'cast_spell', playerId: 'p1', objectId: 'mj', targets: ['p1', 'o1', null, null],
+  });
+  assert.equal(bad.ok, false, 'komenda spoza oferty odrzucona (walidacja = oferta)');
+  const good = execute(state, {
+    type: 'cast_spell', playerId: 'p1', objectId: 'mj', targets: ['p1', 'm1', null, null],
+  });
+  assert.equal(good.ok, true, 'karta z grobu wskazanego gracza przechodzi');
+});
+
+test('B59/G1.8: karta, która opuściła grób przed rozstrzygnięciem, nie wraca (CR 608.2b)', () => {
+  const state = game();
+  put(state, 'mj', 'memory-s-journey', 'p1');
+  put(state, 'm1', 'savage-hunger', 'p1', 'graveyard');
+  put(state, 'm2', 'shock', 'p1', 'graveyard');
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  run(state, commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'mj'
+    && c.targets[0] === 'p1' && c.targets[1] === 'm1' && c.targets[2] === 'm2'));
+  // Inny efekt wygania jedną z celowanych kart, ZANIM czar się rozstrzygnie.
+  assert.ok(moveObjectDirectly(state, 'm2', 'exile', 'exile-b59-mj'), 'karta opuściła grób');
+  resolve(state);
+  assert.ok(find(state, 'savage-hunger', 'library'), 'legalna karta wraca do biblioteki');
+  assert.equal([...state.objects.values()].filter((o) => o.cardId === 'shock' && o.zone === 'library').length, 0,
+    'wygnana karta NIE trafia do biblioteki');
+  assert.equal(state.events.filter((e) => e.type === 'library_shuffled').length, 1,
+    'mimo nielegalnej pozycji gracz-cel tasuje (ruling 2011-09-22)');
+});
+
+test('B59/G1.8: flashback {G} — karta nie może obrać SIEBIE i idzie na wygnanie', () => {
+  const state = game();
+  put(state, 'mj', 'memory-s-journey', 'p1', 'graveyard');
+  put(state, 'o1', 'razorfoot-griffin', 'p2', 'graveyard');
+  put(state, 'o2', 'shock', 'p2', 'graveyard');
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  const offers = commands(state).filter((c) => c.type === 'cast_flashback' && c.objectId === 'mj');
+  assert.ok(offers.length > 0, 'flashback oferowany z grobu za {G}');
+  assert.ok(offers.every((c) => c.targets.slice(1).every((t) => t !== 'mj')),
+    'rzucana karta leży na stosie, gdy wybierasz cele — nie może obrać siebie (ruling 2011-09-22)');
+  const forced = execute(state, {
+    type: 'cast_flashback', playerId: 'p1', objectId: 'mj', targets: ['p1', 'mj', null, null],
+  });
+  assert.equal(forced.ok, false, 'walidacja odrzuca celowanie w samą siebie');
+  run(state, offers.find((c) => c.targets[0] === 'p2' && c.targets[1] === 'o1' && c.targets[2] == null));
+  resolve(state);
+  assert.ok(find(state, 'memory-s-journey', 'exile'),
+    'czar rzucony z flashbackiem idzie na WYGNANIE (CR 702.34a)');
+  assert.ok(find(state, 'razorfoot-griffin', 'library'), 'efekt zadziałał także z flashbacku');
+  assert.ok(find(state, 'shock', 'graveyard'), 'niewskazana karta drugiego gracza zostaje');
+});
+
+test('B59/G1.8: przy dużym grobie oferta jest przycięta, ale trzyma skrajne wybory', () => {
+  const state = game();
+  put(state, 'mj', 'memory-s-journey', 'p1');
+  const grave = ['savage-hunger', 'shock', 'razorfoot-griffin', 'basic-swamp', 'basic-island', 'basic-mountain'];
+  grave.forEach((cardId, i) => put(state, `g${i}`, cardId, 'p2', 'graveyard'));
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  const offers = commands(state).filter((c) => c.type === 'cast_spell' && c.objectId === 'mj'
+    && c.targets[0] === 'p2');
+  assert.ok(offers.length <= 32, `oferta przycięta do limitu panelu (jest ${offers.length})`);
+  assert.ok(offers.some((c) => c.targets.slice(1).every((t) => t == null)), 'wariant „zero kart" zostaje');
+  assert.ok(offers.some((c) => c.targets.slice(1).filter((t) => t != null).length === 3),
+    'wariant „trzy karty" (maksimum) zostaje');
+  assert.ok(!offers.some((c) => c.targets.slice(1).filter((t) => t != null).length > 3), 'nigdy więcej niż trzy');
+});

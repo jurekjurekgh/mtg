@@ -4150,6 +4150,42 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['cel OBOWIĄZKOWY: gdy w grobach przeciwników nie ma żadnej KARTY, trigger schodzi bez efektu (CR 603.3d, komunikat M106/Z2); karta z WŁASNEGO grobu nie jest legalnym celem'],
   }),
+
+  // Memory's Journey (ISD, Batch 59/G1.8): {1}{U} Instant + flashback {G}.
+  // PIERWSZA karta z ZALEŻNĄ pozycją celu: „target cards from THEIR graveyard"
+  // — karty pochodzą z grobu gracza wskazanego w pozycji 0 (generyczny
+  // deskryptor `graveyardOfSlot`, ADR 0002), więc pula pozycji 1–3 liczy się
+  // dopiero po wybraniu celu-gracza. Trzy sloty z tym samym `targetWord` to
+  // JEDNO wystąpienie słowa „target" („up to three"), więc oferta enumeruje
+  // podzbiory bez powtórzeń i bez luk (CR 601.2c).
+  defineCard({
+    id: 'memory-s-journey', name: "Memory's Journey", set: 'ISD',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: "Target player shuffles up to three target cards from their graveyard into their library.\nFlashback {G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    imageUri: 'https://cards.scryfall.io/large/front/2/6/265aaa73-1a1e-4282-a860-f7c422f21db3.jpg?1783940971',
+    spell: {
+      timing: 'instant',
+      targets: [
+        { type: 'player' },
+        { type: 'card_in_graveyard', graveyardOfSlot: 0, optional: true, targetWord: 'cards' },
+        { type: 'card_in_graveyard', graveyardOfSlot: 0, optional: true, targetWord: 'cards' },
+        { type: 'card_in_graveyard', graveyardOfSlot: 0, optional: true, targetWord: 'cards' },
+      ],
+      effects: [{
+        type: 'shuffle_graveyard_cards_into_library',
+        playerTargetIndex: 0, cardTargetIndexes: [1, 2, 3],
+      }],
+      flashback: { cost: 1, colors: ['G'] },
+    },
+    artId: 131, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'gracz-cel OBOWIĄZKOWY, karty OPCJONALNE (ruling ISD 2011-09-22): bez wskazanych kart gracz i tak tasuje bibliotekę',
+      'nielegalny cel-gracz przy rozstrzygnięciu → czar nie robi NIC, nawet gdy karty są nadal legalne (ruling ISD 2011-09-22)',
+      'karta z flashbackiem nie może obrać SIEBIE (rzucana leży na stosie, nie w grobie) — ruling ISD 2011-09-22',
+      'flashback {G}: rzut z grobu za koszt alternatywny, po opuszczeniu stosu karta na wygnanie (CR 702.34a)',
+    ],
+  }),
 ]);
 
 

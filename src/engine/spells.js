@@ -143,13 +143,34 @@ export function isNoncreatureSpellOnStack(object) {
   if (object.kind === 'creature' && object.spell?.aura !== true) return false;
   return true;
 }
-export function validateTargets(state, targetSpec, chosen, casterId, sourceColors = null, sourceObject = null) {
+export function validateTargets(state, targetSpec, chosen, casterId, sourceColors = null, sourceObject = null,
+  referenceChosen = chosen) {
   return chosen.map((targetId, index) => {
     const spec = targetSpec[index];
     // Batch 45 (Assert Perfection, CR 601.2c): „up to one target" — pozycja
     // opcjonalna może zostać świadomie pusta (null) i to nie jest błąd.
     if (targetId == null && spec?.optional) return null;
     const object = state.objects.get(targetId);
+
+    // Batch 59 (Memory's Journey): pozycja ZALEŻNA od innej pozycji wyboru
+    // („target cards from THEIR graveyard") — ten sam predykat co w ofercie
+    // (L48/M82), bo inaczej proponowalibyśmy cel, który rzut odrzuci.
+    // `referenceChosen` to PEŁNY wektor celów: `collectLegalTargets` waliduje
+    // pojedyncze pozycje osobno i musi widzieć gracza wybranego w innej.
+    // Czar nie może obrać sam siebie — ten sam predykat co w ofercie
+    // (`legalTargetCandidates`); bez tego komenda spoza oferty przeszłaby
+    // walidację i karta wtasowałaby się własnym efektem (L48/M82).
+    if (sourceObject && sourceObject.zone !== 'battlefield'
+      && targetId != null && targetId === sourceObject.id) {
+      throw new Error(`Nielegalny cel: ${targetId} (czar nie może obrać sam siebie)`);
+    }
+    if (spec?.graveyardOfSlot != null) {
+      const ownerId = referenceChosen?.[spec.graveyardOfSlot] ?? null;
+      const inGraveyard = object && object.zone === 'graveyard' && object.controllerId === ownerId;
+      if (ownerId == null || !inGraveyard) {
+        throw new Error(`Nielegalny cel: ${targetId} (nie leży w grobie wskazanego gracza)`);
+      }
+    }
     // Hexproof (CR 702.11): cel-permanent przeciwnika z hexproof jest nielegalny
     // dla WSZYSTKICH typów celów obiektowych (stwór, artefakt, aura, land...).
     // Cel-gracz (kind 'player') nie jest permanentem — hexproof go nie chroni.
@@ -341,7 +362,15 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // Cel „card from your graveyard" (Barkform Harvester) — dowolna karta
     // w grobie kontrolera źródła.
     if (spec?.type === 'card_in_graveyard') {
-      if (object && object.zone === 'graveyard' && object.controllerId === casterId) return object;
+      // `graveyardOwnerId` (Batch 59, Memory's Journey): pozycja zależna pyta
+      // o grób GRACZA wskazanego w innej pozycji — gracz-cel może być inny niż
+      // rzucający („target player … from their graveyard"), więc porównujemy
+      // z rozstrzygniętym właścicielem grobu, a nie z casterId. Zgodnie
+      // z ofertą (`targetCandidatesBySpec`, L48/M82).
+      const ownerId = spec.graveyardOwnerId
+        ?? (spec.graveyardOfSlot != null ? referenceChosen?.[spec.graveyardOfSlot] : null)
+        ?? casterId;
+      if (object && object.zone === 'graveyard' && object.controllerId === ownerId) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „card from an opponent's graveyard" (Scavenging Harpy, Batch 59):
@@ -1246,10 +1275,37 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
  * oferta musi odrzucać te same cele co validateTargets, inaczej UI proponuje
  * ruch, który engine odrzuci (pułapka M82).
  */
-export function legalTargetCandidates(state, playerId, spec, sourceObject = null, targetOrderPreference = null) {
-  const candidates = targetCandidatesBySpec(state, playerId, spec, targetOrderPreference);
+/**
+ * Batch 59 (Memory's Journey): deskryptor celu może ZALEŻEĆ od innej pozycji
+ * wyboru — `graveyardOfSlot: N` znaczy „karty z grobu gracza wskazanego
+ * w pozycji N" (Oracle: „target cards from THEIR graveyard"). Zależność jest
+ * generyczna (ADR 0002): działa dla dowolnego typu celu czytającego grob
+ * (`graveyardOwnerId`), a nie dla konkretnej karty. Bez ustalonego gracza
+ * (pusta pozycja albo cel spoza gry) pula jest PUSTA — nie ma legalnych
+ * kandydatów, więc czar z obowiązkową pozycją nie pojawi się w ofercie.
+ */
+function resolveSlotDependency(state, spec, chosenPrefix) {
+  if (spec?.graveyardOfSlot == null) return spec;
+  const ownerId = chosenPrefix?.[spec.graveyardOfSlot] ?? null;
+  if (ownerId == null || !state.players.some((player) => player.id === ownerId)) return null;
+  return { ...spec, graveyardOwnerId: ownerId };
+}
+
+export function legalTargetCandidates(state, playerId, spec, sourceObject = null,
+  targetOrderPreference = null, chosenPrefix = null) {
+  const resolved = resolveSlotDependency(state, spec, chosenPrefix);
+  if (resolved === null) return [];
+  const candidates = targetCandidatesBySpec(state, playerId, resolved, targetOrderPreference);
   if (!sourceObject) return candidates;
   return candidates.filter((targetId) => {
+    // CZAR NIE MOŻE OBRAĆ SAM SIEBIE (ruling ISD 2011-09-22 dla Memory's
+    // Journey: „If you cast Memory's Journey with flashback, it won't be in
+    // the graveyard when you choose targets. It can't target itself.").
+    // Rzucana karta trafia na stos, ZANIM wybierzesz cele (CR 601.2a), więc
+    // nie jest już kandydatem ze strefy, z której rzucasz (grób/ręka/wygnanie).
+    // Ograniczenie dotyczy źródeł NIE-permanentów — zdolność permanentu może
+    // obrać własne źródło (CR 115.1), więc pole bitwy wyłączamy.
+    if (sourceObject.zone !== 'battlefield' && targetId === sourceObject.id) return false;
     const target = state.objects.get(targetId);
     if (!target) return true; // cel-gracz (id gracza) — jakość go nie chroni
     // Protection (CR 702.16b — DEBT: T): ten sam predykat co walidacja (F2),
@@ -1393,9 +1449,14 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
       });
     }
     case 'card_in_graveyard': {
+      // `graveyardOwnerId` (Batch 59, Memory's Journey): karty z grobu
+      // WSKAZANEGO gracza („from their graveyard"); bez zależności — własne.
+      // Karta w grobie jest kontrolowana przez właściciela (CR 400.3 + objects.js),
+      // więc porównanie kontrolera to porównanie właściciela grobu.
+      const ownerId = spec.graveyardOwnerId ?? playerId;
       return state.zones.graveyard.filter((objectId) => {
         const object = state.objects.get(objectId);
-        return object?.zone === 'graveyard' && object.controllerId === playerId;
+        return object?.zone === 'graveyard' && object.controllerId === ownerId;
       });
     }
     case 'card_in_opponent_graveyard': {
@@ -1629,23 +1690,68 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
  * z liczbą 2 — Dead Ringers ma oba sloty oznaczone `targetWord: 0`).
  * `null` (slot „up to one" / odmowa celu) powtarzać wolno zawsze — to brak
  * celu, nie obiekt.
+ *
+ * Batch 59 (Memory's Journey, „target player shuffles up to three target cards
+ * from THEIR graveyard into their library"): kombinacje liczymy rekurencją po
+ * PREFIKSIE wyboru, bo pula pozycji może zależeć od gracza wskazanego wcześniej
+ * (`graveyardOfSlot` w deskryptorze celu — patrz `resolveSlotDependency`).
+ *
+ * Grupa jednego wystąpienia słowa „target" jest enumerowana BEZ LUK: po
+ * pustym slocie (`optional`) kolejne sloty grupy też są puste. Zbiór celów jest
+ * zbiorem, więc [null, karta] i [karta, null] to ten sam wybór gracza — oferta
+ * niesie jedną, kanoniczną postać (mniej wariantów w panelu, zero duplikatów).
+ * Grupę większą niż `cap` przycinamy jak `variableTargets`
+ * (`trimVariableTargetCombos`): zostają skrajne wybory (zero, po jednym,
+ * maksimum), a środek mieści się w limicie panelu.
  */
-function cartesian(pools, words = null) {
-  if (pools.length === 0) return [[]];
-  const tags = words ?? pools.map((_, i) => i);
-  const [first, ...rest] = pools;
-  const tails = cartesian(rest, tags.slice(1));
-  const out = [];
-  for (const head of first) {
-    for (const tail of tails) {
-      const clash = head !== null && head !== undefined && tail.some(
-        (t, j) => t === head && tags[0] === tags[j + 1],
-      );
-      if (clash) continue;
-      out.push([head, ...tail]);
+export function legalTargetCombos(state, playerId, targetSpec, sourceObject = null,
+  targetOrderPreference = null, cap = VARIABLE_TARGET_OPTION_CAP) {
+  const tags = targetSpec.map((spec, index) => spec?.targetWord ?? index);
+  // Pule pozycji BEZ zależności liczymy raz (jak dawny `cartesian`); pozycja
+  // zależna (`graveyardOfSlot`) pyta o pulę dopiero po ustaleniu prefiksu.
+  const staticPools = targetSpec.map((spec) => (spec?.graveyardOfSlot == null
+    ? [...legalTargetCandidates(state, playerId, spec, sourceObject, targetOrderPreference)]
+    : null));
+  const optionsOf = (index, prefix) => {
+    const spec = targetSpec[index];
+    const pool = staticPools[index]
+      ?? legalTargetCandidates(state, playerId, spec, sourceObject, targetOrderPreference, prefix);
+    return spec?.optional ? [...pool, null] : pool;
+  };
+  const walk = (index, prefix) => {
+    if (index >= targetSpec.length) return [prefix];
+    const tag = tags[index];
+    let groupEnd = index;
+    while (groupEnd + 1 < targetSpec.length && tags[groupEnd + 1] === tag) groupEnd += 1;
+    // Warianty grupy (jedno wystąpienie słowa „target"), bez luk: po wyborze
+    // pustej pozycji kolejne pozycje grupy też są puste.
+    const variants = [];
+    const step = (position, current, closed) => {
+      if (position > groupEnd) { variants.push(current); return; }
+      const spec = targetSpec[position];
+      const open = position === index || !closed;
+      const options = open ? optionsOf(position, prefix) : (spec?.optional ? [null] : []);
+      for (const candidate of options) {
+        if (candidate != null
+          && (prefix.some((chosen, j) => chosen === candidate && tags[j] === tag)
+            || current.some((chosen) => chosen === candidate))) continue;
+        step(position + 1, [...current, candidate], candidate == null);
+      }
+    };
+    step(index, [], false);
+    const groupSize = groupEnd - index + 1;
+    // Przycinamy WYŁĄCZNIE grupy wieloslotowe („up to three target …"):
+    // pojedyncza pozycja to zwykła pula kandydatów — cięcie jej i tak dałoby
+    // duplikaty (ten sam wariant trafia do dwóch kubełków trimu).
+    const trimmed = groupSize > 1 && variants.length > cap
+      ? trimVariableTargetCombos(variants, cap, groupSize) : variants;
+    const out = [];
+    for (const variant of trimmed) {
+      for (const tail of walk(groupEnd + 1, [...prefix, ...variant])) out.push(tail);
     }
-  }
-  return out;
+    return out;
+  };
+  return walk(0, []);
 }
 
 /**
@@ -1662,7 +1768,10 @@ function collectLegalTargets(state, targetSpec, chosen, casterId, sourceColors =
   // cele nawet, gdy jeden z nich zniknął przed rozstrzygnięciem.
   return targetSpec.map((spec, index) => {
     try {
-      return validateTargets(state, [spec], [chosen[index]], casterId, sourceColors, sourceObject)[0];
+      // `chosen` (pełny wektor) jako odniesienie dla pozycji zależnych
+      // (`graveyardOfSlot`) — walidujemy po jednej pozycji, ale zależność
+      // czyta gracza wybranego w innej.
+      return validateTargets(state, [spec], [chosen[index]], casterId, sourceColors, sourceObject, chosen)[0];
     } catch {
       return null;
     }
@@ -2939,12 +3048,7 @@ export function legalSpellCasts(state, playerId) {
     // podajemy adapter) — bez drugiego, rozjeżdżającego się klasyfikatora.
     const effectFriendly = triggerTargetEffectFriendly({ effect: object.spell.effects ?? [] });
     const targetOrderPreference = effectFriendly ? 'ownFirst' : 'opponentFirst';
-    const candidatePools = targetSpec.map((spec) => {
-      const pool = legalTargetCandidates(state, playerId, spec, object, targetOrderPreference);
-      return spec?.optional ? [...pool, null] : pool;
-    });
-    if (candidatePools.some((pool) => pool.length === 0)) continue;
-    for (const combo of cartesian(candidatePools, targetSpec.map((sp, wi) => sp?.targetWord ?? wi))) {
+    for (const combo of legalTargetCombos(state, playerId, targetSpec, object, targetOrderPreference)) {
       for (const sacId of sacrificePool) {
         const cast = { objectId: id, targets: combo };
         if (sacId !== null) cast.sacrificeTargetId = sacId;
@@ -3004,12 +3108,7 @@ export function legalCleaveCasts(state, playerId) {
     // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
     // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
     // nawet przy braku kandydatów na tej pozycji.
-    const candidatePools = targetSpec.map((spec) => {
-      const pool = legalTargetCandidates(state, playerId, spec, object);
-      return spec?.optional ? [...pool, null] : pool;
-    });
-    if (candidatePools.some((pool) => pool.length === 0)) continue;
-    for (const combo of cartesian(candidatePools, targetSpec.map((sp, wi) => sp?.targetWord ?? wi))) {
+    for (const combo of legalTargetCombos(state, playerId, targetSpec, object)) {
       casts.push({ objectId: id, targets: combo });
     }
   }
@@ -3038,12 +3137,11 @@ export function legalXCostCasts(state, playerId, objectId, object, manaAvailable
   const maxX = Math.max(0, manaAvailable - baseCost);
   const cap = object.spell.xCost.cap ?? 15;
   const targetSpec = object.spell.targets ?? [];
-  let pools = [[]];
-  if (targetSpec.length > 0) {
-    pools = cartesian(targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object)),
-      targetSpec.map((sp, wi) => sp?.targetWord ?? wi));
-  }
-  if (pools.length === 0) pools = [[]];
+  // „up to one target" (pozycja opcjonalna) też przechodzi przez wspólny
+  // enumerator — oferta = walidacja (L48), z zależnościami pozycji włącznie.
+  const pools = targetSpec.length > 0
+    ? legalTargetCombos(state, playerId, targetSpec, object)
+    : [[]];
   const basePips = coloredPipsOf(object.cardId);
   const blackX = Boolean(object.spell.xCost.black);
   // X-black (Consume Spirit): budżet PER X z tymi samymi pipami co walidacja
@@ -3087,10 +3185,14 @@ export const VARIABLE_TARGET_OPTION_CAP = 32;
 /** Wybór wariantów do oferty, gdy kombinacji jest więcej niż limit. */
 function trimVariableTargetCombos(combos, cap, maxSize) {
   if (combos.length <= cap) return combos;
-  const empty = combos.filter((combo) => combo.length === 0);
-  const singles = combos.filter((combo) => combo.length === 1);
-  const fullest = combos.filter((combo) => combo.length === maxSize);
-  const middle = combos.filter((combo) => combo.length !== 0 && combo.length !== 1 && combo.length !== maxSize);
+  // Długość wariantu to liczba WYBRANYCH celów: pozycje opcjonalne mogą nieść
+  // `null` („up to N" — bez luk, patrz legalTargetCombos), a dla dawnych
+  // wywołań (variableTargets) nulli nie ma, więc liczba się nie zmienia.
+  const size = (combo) => combo.filter((entry) => entry != null).length;
+  const empty = combos.filter((combo) => size(combo) === 0);
+  const singles = combos.filter((combo) => size(combo) === 1);
+  const fullest = combos.filter((combo) => size(combo) === maxSize);
+  const middle = combos.filter((combo) => size(combo) !== 0 && size(combo) !== 1 && size(combo) !== maxSize);
   // Kolejność deterministyczna (ADR 0005): „nic”, „po jednym”, „ilu się da”,
   // a na końcu warianty pośrednie — gracz zachowuje skrajne wybory, a panel
   // mieści się na telefonie.
@@ -3176,9 +3278,7 @@ export function legalModeCasts(state, playerId, objectId, modeIndex, mode, cap =
     return casts;
   }
   const source = state.objects.get(objectId);
-  const pools = spec.map((s) => legalTargetCandidates(state, playerId, s, source));
-  if (pools.some((p) => p.length === 0)) return casts;
-  for (const combo of cartesian(pools, spec.map((sp, wi) => sp?.targetWord ?? wi))) casts.push({ objectId, targets: combo, modeIndex });
+  for (const combo of legalTargetCombos(state, playerId, spec, source)) casts.push({ objectId, targets: combo, modeIndex });
   return casts;
 }
 
@@ -3490,12 +3590,7 @@ export function legalEscapeCasts(state, playerId) {
     // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
     // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
     // nawet przy braku kandydatów na tej pozycji.
-    const candidatePools = targetSpec.map((spec) => {
-      const pool = legalTargetCandidates(state, playerId, spec, object);
-      return spec?.optional ? [...pool, null] : pool;
-    });
-    if (candidatePools.some((pool) => pool.length === 0)) continue;
-    for (const combo of cartesian(candidatePools, targetSpec.map((sp, wi) => sp?.targetWord ?? wi))) {
+    for (const combo of legalTargetCombos(state, playerId, targetSpec, object)) {
       casts.push({ objectId: id, targets: combo });
     }
     // M241 (zgłoszenie J/K/L): komenda rzutu NIE niesie już podzbioru
@@ -3548,8 +3643,11 @@ export function castEscape(state, playerId, objectId, targets) {
     playerId,
     objectId,
     cardId: object.cardId ?? null,
-    targets: targetObjects.map((entry) => entry.id),
-    targetCardIds: targetObjects.map((entry) => entry.cardId),
+    // Pozycja opcjonalna bez celu (`null`) — Batch 59: flashback/escape/
+    // przygoda muszą nieść wektor z lukami tak samo jak rzut z ręki
+    // (W-4/L48: czar z „up to three target …" rzucany z grobu).
+    targets: targetObjects.map((entry) => entry?.id ?? null),
+    targetCardIds: targetObjects.map((entry) => entry?.cardId ?? null),
     exileCount: escape.exileCount,
     candidateIds: [...others],
     manaCost: escapeCost,
@@ -3652,12 +3750,7 @@ export function legalFlashbackCasts(state, playerId) {
     // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
     // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
     // nawet przy braku kandydatów na tej pozycji.
-    const candidatePools = targetSpec.map((spec) => {
-      const pool = legalTargetCandidates(state, playerId, spec, object);
-      return spec?.optional ? [...pool, null] : pool;
-    });
-    if (candidatePools.some((pool) => pool.length === 0)) continue;
-    for (const combo of cartesian(candidatePools, targetSpec.map((sp, wi) => sp?.targetWord ?? wi))) casts.push({ objectId: id, targets: combo });
+    for (const combo of legalTargetCombos(state, playerId, targetSpec, object)) casts.push({ objectId: id, targets: combo });
   }
   return casts;
 }
@@ -3695,8 +3788,11 @@ export function castFlashback(state, playerId, objectId, targets) {
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id),
-    targetCardIds: targetObjects.map((entry) => entry.cardId), flashedBack: true, manaSpent,
+    // Pozycja opcjonalna bez celu (`null`) — Batch 59: flashback/escape/
+    // przygoda muszą nieść wektor z lukami tak samo jak rzut z ręki
+    // (W-4/L48: czar z „up to three target …" rzucany z grobu).
+    targets: targetObjects.map((entry) => entry?.id ?? null),
+    targetCardIds: targetObjects.map((entry) => entry?.cardId ?? null), flashedBack: true, manaSpent,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);
@@ -3734,12 +3830,7 @@ export function legalAdventureCasts(state, playerId) {
     // Batch 45 (Assert Perfection): pozycja celu z `optional: true` („up to
     // one target") enumeruje też wariant BEZ celu (null) — czar rzucalny
     // nawet przy braku kandydatów na tej pozycji.
-    const candidatePools = targetSpec.map((spec) => {
-      const pool = legalTargetCandidates(state, playerId, spec, object);
-      return spec?.optional ? [...pool, null] : pool;
-    });
-    if (candidatePools.some((pool) => pool.length === 0)) continue;
-    for (const combo of cartesian(candidatePools, targetSpec.map((sp, wi) => sp?.targetWord ?? wi))) casts.push({ objectId: id, targets: combo });
+    for (const combo of legalTargetCombos(state, playerId, targetSpec, object)) casts.push({ objectId: id, targets: combo });
   }
   return casts;
 }
@@ -3784,8 +3875,11 @@ export function castAdventure(state, playerId, objectId, targets) {
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id),
-    targetCardIds: targetObjects.map((entry) => entry.cardId), adventure: true,
+    // Pozycja opcjonalna bez celu (`null`) — Batch 59: flashback/escape/
+    // przygoda muszą nieść wektor z lukami tak samo jak rzut z ręki
+    // (W-4/L48: czar z „up to three target …" rzucany z grobu).
+    targets: targetObjects.map((entry) => entry?.id ?? null),
+    targetCardIds: targetObjects.map((entry) => entry?.cardId ?? null), adventure: true,
     manaSpent: cost,
     colors: [...(adventure.colors ?? [])],
   });

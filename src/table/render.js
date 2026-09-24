@@ -229,6 +229,9 @@ export const targetTypeLabel = (spec) => {
   if (type === 'creature_with_subtypes' && spec.subtypes?.length) return `stwór z podtypem ${spec.subtypes.join(' lub ')}`;
   if (type === 'creature_with_power_at_least' && spec.min != null) return `stwór o sile ≥ ${spec.min}`;
   if (type === 'creature_with_keyword' && spec.keyword) return `stwór ze słowem kluczowym ${KEYWORD_LABELS[spec.keyword] ?? spec.keyword}`;
+  // Batch 59 (Memory's Journey): karty z grobu GRACZA wskazanego w innej
+  // pozycji („target cards from their graveyard").
+  if (type === 'card_in_graveyard' && spec.graveyardOfSlot != null) return `${base} wskazanego gracza`;
   // Batch 45 (Unearth): „creature card with mana value 3 or less".
   if (type === 'creature_card_in_graveyard' && spec.maxManaValue != null) return `karta-stwór w grobie o koszcie ≤ ${spec.maxManaValue}`;
   // Batch 45 (Assert Perfection): „up to one target creature an opponent
@@ -237,6 +240,35 @@ export const targetTypeLabel = (spec) => {
   if (spec.optional) return `${base} (opcjonalnie)`;
   return base;
 };
+
+/**
+ * Etykiety pozycji celów do kafla karty. Identyczne sąsiadujące pozycje
+ * zwijamy, bo jedna pozycja bywa zapisana kilkoma slotami:
+ *  - „up to N target …" (Batch 59, Memory's Journey: trzy sloty karty) →
+ *    „karta w grobie … (do 3)";
+ *  - kilka wystąpień tego samego słowa (Dead Ringers: „two target nonblack
+ *    creatures") → „stwór nieczarny ×2".
+ * Bez zwijania kafel pokazywał to samo trzy razy i wyglądał na błąd danych.
+ */
+function targetLabelsOf(specs) {
+  const labelOf = (spec) => (spec.type === 'any_target' ? 'dowolny cel' : targetTypeLabel(spec));
+  const groups = [];
+  for (const spec of specs) {
+    // Opcjonalność opisuje CAŁĄ grupę, nie pojedynczy slot (inaczej kafel
+    // powtarzałby „(opcjonalnie)" przy każdej pozycji grupy).
+    const base = labelOf({ ...spec, optional: false });
+    const last = groups[groups.length - 1];
+    if (last && last.base === base) last.specs.push(spec);
+    else groups.push({ base, specs: [spec] });
+  }
+  return groups.map((group) => {
+    if (group.specs.length === 1) return labelOf(group.specs[0]);
+    const count = group.specs.length;
+    return group.specs.every((spec) => spec.optional)
+      ? `${group.base} (do ${count})`
+      : `${group.base} \u00d7${count}`;
+  });
+}
 
 /** Opis efektów czaru do wiersza karty („Obrażenia 2, cel: stworek"). */
 export function describeSpellEffects(spell) {
@@ -296,7 +328,7 @@ export function describeSpellEffects(spell) {
     ? ''
     : (targetSpecs.length === 1 && targetSpecs[0].type === 'any_target')
       ? 'dowolny cel'
-      : `cel: ${targetSpecs.map((spec) => (spec.type === 'any_target' ? 'dowolny cel' : targetTypeLabel(spec))).join(' + ')}`;
+      : `cel: ${targetLabelsOf(targetSpecs).join(' + ')}`;
   return [parts.join(' + '), target].filter(Boolean).join(' \u00b7 ');
 }
 
@@ -1259,6 +1291,9 @@ function describeEffect(e, ctx = {}) {
     exile_opponent_creature: () => 'wygnij stwora przeciwnika',
     // Batch 59 (Scavenging Harpy): wygnanie KARTY z grobu celu (dowolny typ).
     exile_graveyard_card: () => 'wygnij kartę z grobu',
+    // Batch 59 (Memory's Journey): karty z grobu celu wracają do JEGO biblioteki
+    // i biblioteka jest tasowana.
+    shuffle_graveyard_cards_into_library: () => 'wtasuj karty z grobu do biblioteki',
     exile_own_land: () => 'wygnij własny ląd',
     exile_target_creature: () => 'wygnij stwora',
     exile_nonland_permanent_linked: () => 'wygnij nie-lądowy permanent do odejścia',

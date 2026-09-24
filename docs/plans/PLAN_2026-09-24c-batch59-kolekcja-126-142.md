@@ -40,7 +40,11 @@ batch 58 (komentarz `artId: 265, plan: 'Zendikar'` dla OGW).
       `supported`/`token`/`back`). Dlatego **snapshot wchodzi w tym samym
       commicie co definicja karty**, a pliki czekające leżą POZA repozytorium
       (katalog roboczy `/home/user/batch59-snapshots/`); w drzewie zostało
-      6 snapshotów wdrożonych kart (G0 → G1.1–G1.6), 4 czekają na G1.7–G1.10.
+      8 snapshotów wdrożonych kart (G0 → G1.1–G1.8), 2 czekają na G1.9–G1.10.
+      **KOREKTA (G1.8):** katalog roboczy `/home/user/batch59-snapshots/` nie
+      istnieje (środowisko go nie zachowało) — snapshot G1.8 pobrano ponownie
+      (`fetch_page`: `cards/named` + `/rulings`) i zapisano OD RAZU w
+      `docs/cards/scryfall-memory-s-journey.json`; tak samo zrobić dla G1.9/G1.10.
       Precedens i pełne uzasadnienie: PLAN_2026-09-23b (batch 58, KOREKTA B1).
 - [x] **Rulingi „przy kartce" (ADR 0028)** — pobrane dla każdej karty, także puste
       (`[]` = „sprawdzono, WotC nic nie ma"): Bird Admirer (9, day/night),
@@ -99,15 +103,24 @@ w `test/real-cards-batch59.test.js`) używają odtąd JEDNEJ numeracji — poni�
       etykieta logu `buff_creatures_you_control` (M255/C1), klasyfikacja
       dublowania na stosie (M179/B1), licznik tokenów 43 → 44 (M419/B),
       rozjazd etykiet etapów i literówka E5/1 w tym planie.
-- [ ] **G1.7 Scavenging Harpy** (130 THB) — nowy typ celu
+- [x] **G1.7 Scavenging Harpy** (130 THB) — nowy typ celu
       `card_in_opponent_graveyard` (generyczny, ADR 0002) + efekt
       `exile_graveyard_card`; pin: cel z własnego grobu ODRZUCONY, pusty grób
       przeciwnika = trigger bez celu (M106/Z2). Snapshot w
-      `/home/user/batch59-snapshots/` wchodzi w tym commicie.
-- [ ] **G1.8 Memory's Journey** (131 ISD) — nowy efekt „target player tasuje do N
-      wskazanych kart ze swojego grobu do biblioteki”; pin na rulingi:
-      gracz-cel obowiązkowy, brak wskazanych kart → gracz i tak tasuje, karta
-      nielegalna w chwili rozstrzygnięcia → nie wchodzi.
+      `/home/user/batch59-snapshots/` wchodzi w tym commicie. **Commit
+      `2987d3b`** (5 testów G1.7; `withArt` 508 → 509; `npm test` 6490/6490).
+- [x] **G1.8 Memory's Journey** (131 ISD) — generyczny mechanizm ZALEŻNYCH
+      pozycji celu (`graveyardOfSlot` → `graveyardOwnerId`: pula pozycji 1–3
+      liczy się po wybraniu gracza w pozycji 0) + wspólny enumerator
+      `legalTargetCombos` (zastąpił `cartesian` w `spells.js` i
+      `cartesianTargetPools` w `game-state.js`: grupy wg `targetWord`, brak luk
+      przy pozycjach opcjonalnych, cap wariantów w panelu) + efekt
+      `shuffle_graveyard_cards_into_library` z osobnym zdarzeniem
+      `library_shuffled` (M134) + zakaz celowania w SAMĄ SIEBIE dla czarów
+      (ruling ISD 2011-09-22, „it can't target itself") + wycena u bota (M157).
+      Pin na rulingi: gracz-cel obowiązkowy, brak wskazanych kart → gracz i tak
+      tasuje, karta nielegalna w chwili rozstrzygnięcia → nie wchodzi (CR
+      608.2b). Bramy: `npm test` 6498/6498 (0 fail), build 60 modułów.
 - [ ] **G1.9 Kumano's Blessing** (135 BOK) — ciągły efekt zastępczy z aury:
       „stwór, któremu ZACZAROWANY zadał obrażenia w tej turze, zamiast umrzeć →
       wygnaj”. Wymaga znacznika „obrażenia od tego źródła w tej turze” na
