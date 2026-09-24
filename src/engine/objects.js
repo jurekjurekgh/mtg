@@ -4,7 +4,7 @@ import { assertStateInvariants } from './invariants.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { syncStationKind } from './counters.js';
 import { registerMover } from './mover.js';
-import { entersUntappedOverride } from './permanents.js';
+import { entersTappedNow } from './permanents.js';
 
 /**
  * Rejestr LKI nazw (CR 603.10): identyfikator → ostatnia znana tożsamość
@@ -203,9 +203,10 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // tapniętego stwora dawała tapnięty permanent.
     // Batch 58/B7 (Gond Gate): statyk kontrolera „permanenty o podtypie X
     // wchodzą odkręcone" znosi „enters tapped" tej karty (efekt zastępczy
-    // wejścia, CR 614.1d) — jeden predykat dla wszystkich ścieżek ruchu.
-    tapped: toZone === 'battlefield' && Boolean(object.entersTapped) && !object.entersTappedCondition && !object.faceDown
-      && !entersUntappedOverride(state, object, { enteringId: newObjectId }),
+    // wejścia, CR 614.1d). O-1 (audyt PR #134, klasa L101): sama decyzja
+    // siedzi we wspólnym `entersTappedNow` (permanents.js), żeby żadna
+    // ścieżka wejścia — w tym ścieżki KOPII — nie mogła jej pominąć.
+    tapped: toZone === 'battlefield' && entersTappedNow(state, object, { enteringId: newObjectId }),
     counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
     goaded: false, goadedUntilTurn: null, hexproofUntilTurn: null, cantBeBlockedUntilTurn: null,
     // CR 400.7: flagi opisujące HISTORIĘ permanentu w tej turze też nie

@@ -23,7 +23,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
-import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersUntappedOverride } from './permanents.js';
+import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers, triggerSourceZoneResolvable } from './triggers.js';
@@ -3424,12 +3424,21 @@ export function execute(state, input) {
       // lądy (katalog), ale ścieżka jest generyczna.
       // Batch 58/B7 (Gond Gate): statyk kontrolera „Gates you control enter
       // untapped" znosi tapnięcie także przy wejściu z biblioteki (CR 614.1d).
-      const overridden = destZone === 'battlefield'
-        && entersUntappedOverride(state, moved, { enteringId: newId });
+      // O-1 (audyt PR #134, klasa L101): decyzja idzie przez wspólny
+      // `entersTappedNow`. Ta ścieżka łączy dwa źródła flagi (wybór `pending`
+      // i druk karty) i NIE rozstrzyga warunków „enters tapped unless …”
+      // (CR 614.1c — te zostawia `playLand`), więc do helpera idą cechy
+      // znormalizowane; wynik jest dokładnie dotychczasowy.
+      const entersTapped = destZone === 'battlefield' && entersTappedNow(state, {
+        ...moved,
+        entersTapped: Boolean(pending.entersTapped || moved.entersTapped),
+        entersTappedCondition: null,
+        faceDown: false,
+      }, { enteringId: newId });
       const placed = destZone === 'battlefield'
         ? Object.freeze({
             ...moved,
-            tapped: !overridden && Boolean(pending.entersTapped || moved.entersTapped),
+            tapped: entersTapped,
             summoningSickness: moved.kind === 'creature' || (moved.types ?? []).includes('Creature'),
           })
         : moved;
@@ -3921,7 +3930,13 @@ export function execute(state, input) {
             // tapped” (CR 701.21a — brak zdarzenia object_tapped jest poprawny).
             ...(copyBase.entersTapped ? { entersTapped: true } : {}),
             ...(copyBase.entersTappedCondition ? { entersTappedCondition: copyBase.entersTappedCondition } : {}),
-            ...(copyBase.entersTapped && !copyBase.entersTappedCondition ? { tapped: true } : {}),
+            // O-1 (audyt PR #134, klasa L101): tapnięcie kopii rozstrzyga
+            // wspólny `entersTappedNow` — statyk kontrolera „Gates you control
+            // enter untapped” (Batch 58/B7) znosi je także tutaj. Obiekt jest
+            // JUŻ na polu (decyzja po permanent_entered_battlefield), więc
+            // `enteringId` wyklucza go z liczenia „other …”, a cechy bierzemy
+            // z kopiowalnej bazy celu (CR 707.2) z kontrolerem kopii.
+            ...(entersTappedNow(state, { ...copyBase, id: null, controllerId: src.controllerId }, { enteringId: pending.sourceId }) ? { tapped: true } : {}),
             // M264/2.3 (CR 712.9): kopia na KARCIE jednostronnej (Jwari —
             // zwykła karta wchodząca jako kopia) nie ma drugiej strony.
             // „If a spell or ability instructs a player to transform ... any

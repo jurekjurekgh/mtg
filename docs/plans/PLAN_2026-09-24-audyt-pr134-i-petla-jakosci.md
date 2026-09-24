@@ -162,6 +162,36 @@ Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134
       (O-6), (b) `colorsFrom` nie jest rozliczany warstwowo, (c) kolejność
       efektów „until end of turn” zależy od kolejności zapisu. Wymaga decyzji
       właściciela: model warstw to zmiana architektury, nie łatka.
+- [x] D5 — **obserwacje audytu (O-2, O-1)** domknięte jako KLASA, nie jako
+      łatka (polecenie właściciela: „kontynuuj naprawianie wszystkich
+      znalezionych błędów”):
+      • **O-2** — zamknięta lista typów kart (CR 205.2a) miała **TRZY** kopie,
+        nie dwie (audyt szukał znanych nazw zmiennych, nie wzorca listy):
+        `DELIRIUM_CARD_TYPES` (`triggers.js`), `ALL_GRAVEYARD_CARD_TYPES`
+        (`permanents.js`) i `ALLOWED` (`render.js` — badge Altar of the Goyf).
+        Jedno źródło: `export const CARD_TYPES` w `permanents.js`.
+        Pin `test/audyt-pr134-2026-09-24-jedna-lista-typow.test.js` (O-2/1..3,
+        w tym skan całego `src/`); mutacja M11 (duplikat w `objects.js`) →
+        O-2/2 czerwony. Commit `57c8eb9`.
+      • **O-1** — decyzja „czy wchodzący obiekt wchodzi tapnięty” miała pięć
+        realizacji, a dwie ścieżki KOPII (`create_copy_token` w `effects.js`,
+        `resolve_enter_as_copy` w `game-state.js`) nie konsultowały efektu
+        zastępczego „Gates you control enter untapped” (Batch 58/B7, Gond Gate).
+        Jedno źródło: `entersTappedNow(state, cechy, { enteringId })`
+        w `permanents.js`; ścieżki kopii dostają kopiowalne cechy oryginału
+        (CR 707.2) z kontrolerem kopii i bez `id`. Użyty w `objects.js`
+        (`moveObjectDirectly`), `game-state.js` (wejście z biblioteki +
+        enter-as-copy) i `effects.js` (token-kopia); `resources.js` rozstrzyga
+        najpierw warunki „enters tapped unless” (CR 614.1c) i czyta override
+        wprost — bez zmiany zachowania.
+        Pin `test/audyt-pr134-2026-09-24-kopia-wchodzi-odkreta.test.js`
+        (O-1/1..5, w tym strażnik klasy L101); mutacje M12a/M12b (stary idiom
+        w ścieżkach kopii) → O-1/1 i O-1/3 czerwone; M12c (idiom obok helpera)
+        → także O-1/5.
+      Otwarte obserwacje: **O-6** (transform w miejscu gubi animację — korzeń:
+      brak warstw 613, patrz D4b), **O-3** (8 wywołań
+      `getSourceForObject(o, null)` w bocie — zaniżona wycena Gond Gate),
+      **O-4/O-5** (uproszczenia udokumentowane, bez różnicy behawioralnej).
 
 ## Etap E — domknięcie sesji
 

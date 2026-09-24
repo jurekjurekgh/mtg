@@ -774,6 +774,35 @@ export function entersUntappedOverride(state, object, { enteringId = null } = {}
 }
 
 /**
+ * O-1 (audyt PR #134, klasa L101 — jedna decyzja dla wszystkich ścieżek
+ * wejścia): czy obiekt wchodzący na pole bitwy wchodzi TAPNIĘTY z
+ * wydrukowanego „enters tapped”.
+ *
+ * Helper składa trzy rzeczy, które wcześniej każda ścieżka układała sobie sama
+ * (a dwie ścieżki KOPII nie miały trzeciej wcale):
+ *   • CR 614.1d/614.12 — bezwarunkowe „enters tapped” to efekt zastępczy
+ *     wejścia (także reanimacji i wejścia z biblioteki), nie trigger;
+ *   • warunkowe „enters tapped unless …” rozstrzyga `playLand` (CR 614.1c) —
+ *     tu zwracamy false, żeby ścieżka ruchu nie tapnęła landa z warunkiem
+ *     spełnionym;
+ *   • statyk kontrolera „permanenty o podtypie X wchodzą odkręcone”
+ *     (Batch 58/B7, Gond Gate: „Gates you control enter untapped”) znosi
+ *     tapnięcie — `entersUntappedOverride`.
+ *
+ * `characteristics` to dowolny nośnik cech wejścia: żywy obiekt (zwykłe
+ * ścieżki ruchu) albo KOPIOWALNE cechy oryginału z kontrolerem kopii (CR
+ * 707.2 — ścieżki kopii, gdzie obiektu jeszcze nie ma albo jest przepisywany
+ * w miejscu). `enteringId` wyklucza sam wchodzący obiekt z liczenia „other …”.
+ */
+export function entersTappedNow(state, characteristics, { enteringId = null } = {}) {
+  if (!state || !characteristics) return false;
+  if (!characteristics.entersTapped) return false;
+  if (characteristics.entersTappedCondition) return false;
+  if (characteristics.faceDown) return false;
+  return !entersUntappedOverride(state, characteristics, { enteringId });
+}
+
+/**
  * Efektywne zdolności obiektu = własne + nadane „do końca tury"
  * (abilityGrants — np. Fake Your Own Death nadaje stworowi trigger dies).
  * Triggery i legalne aktywacje czytają zawsze tę listę, nie object.abilities.

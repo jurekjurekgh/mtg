@@ -1,7 +1,7 @@
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { hasCreatureType, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, untapObject, tapObject, entersUntappedOverride } from './permanents.js';
+import { hasCreatureType, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -1771,7 +1771,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       ...(src.transformTo && src.frontFaceId ? { frontFaceId: src.frontFaceId } : {}),
       // F3 (audyt PR106, CR 707.2 + 614.1d): kopia przejmuje kopiowalny
       // „enters tapped” oryginału — token wchodzi tapnięty (jak Static Net).
-      ...(copyBase.entersTapped && !copyBase.entersTappedCondition ? { tapped: true } : {}),
+      // O-1 (audyt PR #134, klasa L101): decyzja idzie przez wspólny
+      // `entersTappedNow` (permanents.js), więc statyk kontrolera „Gates you
+      // control enter untapped” (Batch 58/B7, Gond Gate) znosi tapnięcie
+      // TAKŻE kopii — ta ścieżka nie konsultowała efektu zastępczego wcale.
+      // Tokenu jeszcze nie ma, więc helper dostaje kopiowalne cechy oryginału
+      // (CR 707.2 — typy i podtypy pierwowzoru) z kontrolerem kopii i bez `id`
+      // (załączniki oryginału nie rozstrzygają o wejściu kopii).
+      ...(entersTappedNow(state, { ...copyBase, id: null, controllerId: ctrl }) ? { tapped: true } : {}),
     });
     // M105/B6 (CR 603.7b): „Exile it at the beginning of THE NEXT end step"
     // — najbliższy krok końcowy, niezależnie od tego, czyja to tura.
