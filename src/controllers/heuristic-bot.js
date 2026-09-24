@@ -43,20 +43,34 @@ import { normalizeHeuristicParams } from './heuristic-params.js';
  * (-10), choć nie może zostać zablokowany — a na plus wyciągała go dopiero
  * premia wyścigu. Reguła generyczna po keywordach i `cantBeBlocked` z widoku.
  */
-function attackerCanBeBlocked(attacker, blockers) {
+export function attackerCanBeBlocked(attacker, blockers) {
   if (!attacker) return false;
   if (attacker.cantBeBlocked === true) return false;
   const keywords = attacker.keywords ?? [];
   const flying = keywords.includes('flying');
   // Audyt Batch53/C (Rust-Shield Rampager): ewazja mocowa („can't be blocked
   // by creatures with power N or less") — blokerzy o mocy ≤ progu nie liczą
-  // się do obrony. Próg z PlayerView (efektywna statyka, ADR 0017); moc
-  // blokera efektywna (power + grantedPower, jak equipValuation).
+  // się do obrony. Próg z PlayerView (efektywna statyka, ADR 0017).
+  //
+  // Z-1 (audyt PR #135; klasa domknięta po F-4 z audytu PR #133): wpis
+  // PlayerView niesie moc EFEKTYWNĄ — `effectivePower` (permanents.js) dodaje
+  // do bazy modyfikatory, liczniki i bonusy z efektów ciągłych, a
+  // `grantedPower` to TEN SAM dodatek z efektów ciągłych (załączniki, statyki,
+  // anthemy, buffy do EOT — `grantedStatBonus`), powtórzony jawnie dla badge'a
+  // na kaflu. Suma `power + grantedPower` podwajała bonus: bloker 1/1 z aurą
+  // +2/+2 (moc efektywna 3, `grantedPower` 2) był liczony jako 5 i nie był
+  // wykluczany progiem „power 3 or less", więc atakujący wydawał się
+  // blokowalny, choć nie był. Kontrakt widoku pinuje
+  // test/m188-uwagi-wlasciciela.test.js (A1: `power` efektywne, `grantedPower`
+  // jawnie obok), a klasę w całym `src/` —
+  // test/audyt-pr135-2026-09-24-moc-efektywna.test.js.
+  // Próg dotyczy MOCY, nie obrażeń bojowych, więc celowo NIE `combatPower`
+  // (ten zwraca wytrzymałość przy `combatDamageByToughness`).
   const powerCap = attacker.cantBeBlockedByPower;
   const able = (blockers ?? []).filter((b) => {
     const kw = b?.keywords ?? [];
     if (flying && !kw.includes('flying') && !kw.includes('reach')) return false;
-    if (powerCap != null && ((b?.power ?? 0) + (b?.grantedPower ?? 0)) <= powerCap) return false;
+    if (powerCap != null && (b?.power ?? 0) <= powerCap) return false;
     return true;
   });
   if (keywords.includes('menace') && able.length < 2) return false;
@@ -3094,7 +3108,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const pumpToughness = def.pump?.toughness ?? 0;
     const hasteAdds = freshGrants.includes('haste') && creature.summoningSickness === true;
     const blockers = untappedEnemyBlockers(view);
-    const effectivePower = (creature.power ?? 0) + (creature.grantedPower ?? 0);
+    // Z-1 (audyt PR #135): `creature.power` z widoku to już moc EFEKTYWNA
+    // (`effectivePower` = baza + modyfikatory + liczniki + załączniki/statyki/
+    // anthemy/EOT), a `grantedPower` to ten sam dodatek dla badge'a — suma
+    // podwajała bonus i zawyżała bazę, od której liczona jest pompa equipmentu
+    // i warunek `cantBeBlockedMaxPower`.
+    const effectivePower = creature.power ?? 0;
     const conditionalEvasion = def.cantBeBlockedMaxPower != null
       && effectivePower <= def.cantBeBlockedMaxPower;
     const grantsEvasion = (freshGrants.includes('flying')
@@ -6752,7 +6771,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const hasteAdds = freshGrants.includes('haste') && target.summoningSickness === true;
               const pumpPower = equipmentDef.pump?.power ?? 0;
               const pumpToughness = equipmentDef.pump?.toughness ?? 0;
-              const effectiveTargetPower = (target.power ?? 0) + (target.grantedPower ?? 0);
+              const effectiveTargetPower = target.power ?? 0; // Z-1: moc z widoku jest efektywna
               const conditionalEvasion = equipmentDef.cantBeBlockedMaxPower != null
                 && effectiveTargetPower <= equipmentDef.cantBeBlockedMaxPower;
               const grantsEvasion = (freshGrants.includes('flying')

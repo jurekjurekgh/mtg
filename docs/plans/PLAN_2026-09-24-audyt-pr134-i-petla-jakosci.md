@@ -105,11 +105,28 @@ C/D). Zakaz force push; przed pushem `git fetch` i porównanie
 
 Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134):
 
-- [ ] D1 — **Z-1**: klasa `power + grantedPower` w trzech miejscach
-      `heuristic-bot.js` (F-4 naprawił jedno — `cantBeBlockedTargetValue`):
-      sprawdzić każde miejsce wobec kontraktu widoku (czy `power` jest już
-      efektywny, a `grantedPower` tym samym dodatkiem — L55 §3) i domknąć
-      klasę jednym helperem + strażnikiem.
+- [x] D1 — **Z-1**: klasa `power + grantedPower` — zweryfikowana wobec kontraktu
+      widoku i domknięta. `playerView` niesie `power` EFEKTYWNE
+      (`effectivePower` = baza + `powerModifier` + liczniki + załączniki +
+      statyki + anthemy + buffy EOT), a `grantedPower` to `grantedStatBonus` —
+      TEN SAM dodatek z efektów ciągłych, wysłany jawnie dla badge'a (M188/A),
+      więc `grantedPower ⊆ power` i suma podwaja bonus. Naprawione trzy miejsca
+      w `heuristic-bot.js`: `attackerCanBeBlocked` (próg ewazji „can't be
+      blocked by creatures with power N or less”, Batch53/C) oraz obie wyceny
+      equipmentu (`effectivePower`, `effectiveTargetPower` przy
+      `cantBeBlockedMaxPower`) — czwarte (`cantBeBlockedTargetValue`) naprawił
+      audyt PR #133 (F-4). Próg dotyczy MOCY, nie obrażeń bojowych, więc celowo
+      nie `combatPower` (zwraca wytrzymałość przy `combatDamageByToughness`).
+      `attackerCanBeBlocked` wyeksportowana dla pinu (wzorzec `blockExchangeOf`,
+      `effectiveTypesOf`, `temporaryPumpOf`). Pin
+      `test/audyt-pr135-2026-09-24-moc-efektywna.test.js`: Z-1/1 (bloker 1/1
+      z aurą +2/+2 mieści się pod progiem 3 — atakujący nieblokowalny), Z-1/2
+      (anty-over-fix: bloker 4 i 5 nadal blokuje), Z-1/3 (menace: liczą się
+      blokerzy ZDOLNI do bloku, CR 702.111b), Z-1/4 (strażnik klasy: idiom
+      „power + grantedPower” zakazany w `src/` i `test/`, komentarze
+      wyłączone). Mutacja M10 (przywrócona suma) czerwieni Z-1/1, Z-1/3 i Z-1/4.
+      Kontraktu widoku nie duplikuję — pinuje go `m188-uwagi-wlasciciela` A1/A3
+      (L41).
 - [x] D2 — **Z-2**: klauzula `bestow == null` w guardzie CR 704.5m
       (`attachments.js:541`) bez pinu — zweryfikowana wobec dosłownego CR
       (ADR 0030): pobrany tekst `702.103a–g` (edhmeta, CR 2024-11-08) pokazał,
@@ -196,8 +213,11 @@ _(stan pośredni — dopisywane na końcu sesji)_
   podreguły, piny H/5–H/6, mutacje M7/M8. D4 (łowy CR) zamknięty osią cytatów:
   F-6 (112 rozjazdów w dwóch falach), F-7 (9 rozjazdów znalezionych nowym
   detektorem okna), O-6 (odstępstwo od CR 712.18 przy transformie w miejscu)
-  i D4b (warstwy 613 — nowa pozycja, wymaga decyzji właściciela). Otwarte:
-  D1 (Z-1, `power + grantedPower`), D3 (Żywy Tester), D4b.
+  i D4b (warstwy 613 — nowa pozycja, wymaga decyzji właściciela). D1 (Z-1)
+  zamknięty: `power` z widoku jest EFEKTYWNE, a `grantedPower` to ten sam
+  dodatek dla badge'a — trzy miejsca w `heuristic-bot.js` poprawione, pin
+  Z-1/1..Z-1/4 (w tym strażnik klasy na idiom), mutacja M10. Otwarte:
+  D3 (Żywy Tester), D4b.
 - **Nowe strażniki (Etap D):** `test/cr-numery-702-tabela-straznik.test.js`
   (tabela 702.1–702.195 z CR 2026-09-25 + aliasy + udokumentowane wyjątki;
   każdy cytat `702.<n>` musi siedzieć przy nazwie mechaniki w oknie ±8 linii;
@@ -206,7 +226,8 @@ _(stan pośredni — dopisywane na końcu sesji)_
   equipment/DFC) + wyłączenia plików-strażników ze skanu, pin
   `audyt-pr134-…-cytaty-cr.test.js` przepisany na bieżące wydanie (C1 martwe
   numery, C2 = 26 wymaganych cytatów w tym dwa „BEZ ZMIAN”, C3 bez zmian).
-  Bramy po Etapie D: **6334/6334** testy, build **59 modułów / 4129,8 kB**.
+  Bramy po Etapie D (F-3 f2 + F-6 + F-7 + Z-2): **6334/6334** testy, build
+  **59 modułów / 4129,8 kB**; po Z-1: **6338/6338** testy, build **59 / 4131,0 kB**.
   Mutacja M9 (vigilance 702.20 → 702.21) czerwieni detektor okna I parę.
 - **Lekcje:** L164 (lustro CR bywa o wydanie do tyłu — potwierdzaj numer
   w BIEŻĄCYM wydaniu, cytaty „BEZ ZMIAN” w pinie), L165 (strażnik liniowy nie
