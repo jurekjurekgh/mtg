@@ -956,7 +956,7 @@ export function creaturesNotControlledByOwner(state) {
  */
 /**
  * M258/F3 — WARD (CR 702.21): kontrowanie obiektu na stosie. Czar-karta
- * wraca do grobu właściciela (jak counter_spell, CR 701.2a); wpis
+ * wraca do grobu właściciela (jak counter_spell, CR 701.6a); wpis
  * zdolności (activated/trigger — pseudo-obiekt) znika ze stosu bez strefy
  * docelowej: skontrowana zdolność po prostu nic nie robi.
  */

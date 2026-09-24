@@ -162,7 +162,8 @@ test('B1: Magmarch {1}{B}: Regenerate — tarcza chroni przed zniszczeniem, zuż
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok((state.regenerationShields ?? []).includes('mag'), 'tarcza regeneracji aktywna');
 
-  // Destroy (CR 701.19): tarcza zużyta, stwór ODTAPANY i żyje.
+  // Regeneracja (CR 701.19) zastępuje zniszczenie (CR 701.8): tarcza zużyta,
+  // stwór ODTAPANY i żyje.
   applyEffect(state, { type: 'destroy_permanent' }, state.objects.get('mag'), ['mag']);
   assert.ok(state.objects.has('mag') && state.objects.get('mag').zone === 'battlefield', 'regeneracja zamiast grobu');
   assert.equal(state.objects.get('mag').tapped, true, 'regeneracja odtapowuje... (CR 701.19: tapped)');
