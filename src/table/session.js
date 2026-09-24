@@ -367,6 +367,10 @@ function defaultBotFactory(seed, ctx) {
     attack_as_though_no_defender_until_end_of_turn: 'atak mimo defendera do końca tury',
     becomes_subtype_until_end_of_turn: 'zmiana podtypu do końca tury',
     buff_attacking_creatures: 'premia dla atakujących stworów do końca tury',
+    // Batch 59 (Charismatic Vanguard): aktywacja {4}{W} dawała w logu gołe
+    // „Bot aktywuje: Charismatic Vanguard" (strażnik M255/C1 — klasa L84:
+    // nowy deskryptor zdolności musi mieć etykietę w logu).
+    buff_creatures_you_control: 'premia dla twoich stworów do końca tury',
     buff_creature_until_end_of_turn: 'premia P/T dla celu do końca tury',
     cant_be_blocked: 'cel nie może być blokowany',
     create_copy_token: 'stworzenie kopii stwora',

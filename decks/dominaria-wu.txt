@@ -7,6 +7,7 @@
 1x Willbender
 1x Wormfang Newt
 1x Alaborn Trooper
+1x Charismatic Vanguard
 1x Fortify
 1x Razorfoot Griffin
 1x Serra's Embrace
@@ -15,6 +16,6 @@
 1x Altar of the Goyf
 1x Dragon Arch
 1x Koilos Roc
-4x Plains
-3x Island
+5x Plains
+2x Island
 1x Swamp

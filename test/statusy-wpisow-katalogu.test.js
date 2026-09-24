@@ -42,7 +42,8 @@ test('M419/B: każdy wpis katalogu ma status supported, token albo back', () => 
   const tokeny = ALL.filter((c) => c.support.status === 'token').length;
   const tyly = ALL.filter((c) => c.support.status === 'back').length;
   const karty = ALL.filter((c) => c.support.status === 'supported').length;
-  assert.equal(tokeny, 43, 'tyle tokenów zna katalog (stan po M419)');
+  // Batch 59 (Slithering Cryptid): +token_mutagen (predefined token TMT) → 44.
+  assert.equal(tokeny, 44, 'tyle tokenów zna katalog (stan po M419 + Batch 59)');
   assert.equal(tyly, 8, 'tyle tylnych stron DFC zna katalog (stan po M419)');
   assert.equal(karty + tokeny + tyly, ALL.length, 'każdy wpis policzony dokładnie raz');
 });

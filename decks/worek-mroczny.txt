@@ -12,6 +12,7 @@
 1x Crew Captain
 1x Kulrath Mystic
 1x Mobile Garrison
+1x Slithering Cryptid
 1x Stomping Slabs
 1x Brightwood Tracker
 1x Security Rhox
@@ -19,7 +20,7 @@
 1x Voice of the Vermin
 1x Puppeteer Clique
 2x Plains
-1x Island
+2x Island
 2x Swamp
 2x Mountain
 2x Forest

@@ -837,6 +837,11 @@ export const STACKING_ACTIVATED_EFFECTS = new Set([
   'damage_each_opponent', 'draw_cards', 'discard_cards', 'create_token',
   'create_copy_token', 'create_token_copy_of_source', 'reveal_top_pick_card_rest_bottom',
   'station_counters', 'scry', 'regenerate',
+  // Batch 59 (Charismatic Vanguard): „Creatures you control get +1/+1 until
+  // end of turn" — każda aktywacja dokłada kolejną premię (+1/+1, potem
+  // +2/+2), więc dublowanie na stosie jest legalne i sensowne (nie jest to
+  // set, jak `set_base_pt_creatures_you_control` z Batcha 52).
+  'buff_creatures_you_control',
   'search_library_to_battlefield', 'search_library_to_battlefield_tapped',
   'put_graveyard_card_on_bottom', 'return_to_battlefield_tapped',
   'return_to_battlefield_under_control_at_upkeep', 'unearth_return',

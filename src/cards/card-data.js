@@ -4044,6 +4044,86 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['flashback {3}{G}{W}: rzut z grobu za koszt alternatywny, po rozstrzygnięciu karta na wygnanie (CR 702.34a); mana value czaru pozostaje 2 (ruling MID 2025-06-06)'],
   }),
+  // Token Mutagen (TMT, Batch 59): bezbarwny artefakt z podtypem Mutagen i
+  // zdolnością „{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target
+  // creature. Activate only as a sorcery." (ruling TMT 2026-01-27: to predefined
+  // token; zdolność ma timing sorcery). Lustro w silniku: MUTAGEN_TOKEN_EFFECT
+  // (src/engine/tokens.js) — równość pilnuje test batcha 59.
+  defineCard({
+    id: 'token_mutagen', name: 'Mutagen', set: null,
+    types: ['Artifact', 'Token'], subtypes: ['Mutagen'], colors: [],
+    // Grafika druku ttmt/9 (Teenage Mutant Ninja Turtles Tokens) ze Scryfalla;
+    // bez wpisu M202/K i M369/I czerwienieją (kafel = syntetyczna zaślepka).
+    imageUri: 'https://cards.scryfall.io/large/front/6/5/6559c423-449c-4e8e-8384-3ce78183e317.jpg?1783904002',  // ttmt
+    manaCost: 0,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { mana: 1, tap: true, sacrificeSelf: true },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
+  }),
+
+  // Slithering Cryptid (TMT) {2}{G/U} 2/3 Fish Mutant — ETB: token Mutagen.
+  // Pierwsza karta w katalogu z pipem HYBRYDOWYM {G/U} (parser mana-cost.js zna
+  // hybrydy; komentarz M389 przy Messenger Falcons). Ruling TMT 2026-01-27:
+  // Mutagen to predefined token (artefakt + zdolność jak wyżej).
+  defineCard({
+    id: 'slithering-cryptid', name: 'Slithering Cryptid', set: 'TMT',
+    types: ['Creature'], subtypes: ['Fish', 'Mutant'], colors: ['G', 'U'],
+    power: 2, toughness: 3, manaCost: 3,
+    oracleText: 'When this creature enters, create a Mutagen token. (It\'s an artifact with "{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.")',
+    imageUri: 'https://cards.scryfall.io/large/front/6/d/6d35cb39-8832-4cf1-be73-8de49fbea529.jpg?1783904070',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'create_token', cardId: 'token_mutagen', name: 'Mutagen',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Mutagen'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              timing: 'sorcery',
+              cost: { mana: 1, tap: true, sacrificeSelf: true },
+              targets: [{ type: 'creature' }],
+              effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+            }),
+          ],
+        },
+      }),
+    ],
+    artId: 139, plan: 'Teenage Mutant Ninja Turtles',
+    support: { status: 'supported', limitations: [] },
+    notes: ['pip hybrydowy `{G/U}` — opłacalny maną {G} ALBO {U} (parser mana-cost.js, CR 107.4e); zdolność Mutagenu tylko jak sorcery (CR 107.3a/ruling TMT 2026-01-27)'],
+  }),
+  // Waveskimmer Aven (ALA) {2}{G}{W}{U} 2/4 Bird Soldier — flying + exalted.
+  // Exalted jak Akrasan Squire (trigger `attacks_alone` → `exalted_pump`).
+  // Ruling ALA 2008-10-01: przy DOKŁADNIE jednym zadeklarowanym atakującym
+  // odpala każdy exalted każdego mojego permanentu (także samego atakującego);
+  // stwory wprowadzone „atakujące" nie deklarowały ataku, więc exalted ich
+  // ignoruje — zbiór liczy deklarację, nie stan pola bitwy.
+  defineCard({
+    id: 'waveskimmer-aven', name: 'Waveskimmer Aven', set: 'ALA',
+    types: ['Creature'], subtypes: ['Bird', 'Soldier'], colors: ['G', 'U', 'W'],
+    power: 2, toughness: 4, manaCost: 5, keywords: ['flying', 'exalted'],
+    oracleText: 'Flying\nExalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/7/e75ebcb4-5db8-4c72-9f65-8ee8f2c893ea.jpg?1783942536',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks_alone' },
+        effect: { type: 'exalted_pump', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 134, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['exalted liczy DEKLARACJĘ atakujących: samotny atak = +1/+1 za każdy mój exalted; drugi stwór w ataku wyłącza wszystkie (ruling ALA 2008-10-01)'],
+  }),
 ]);
 
 

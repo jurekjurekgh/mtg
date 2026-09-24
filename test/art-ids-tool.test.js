@@ -85,7 +85,9 @@ test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z duble
   // 2026-09-23: usunięte 71 wierszy kodu STO (karty spoza kolekcji MTG —
   // decyzja właściciela: STO nie istnieje ani w katalogu, ani w danych).
   // 502 = 573 − 71 (FUS usunięte 2026-09-14, batch 56 +10, batch 57 +10).
-  assert.equal(data.length, 502, 'pełna lista kolekcji (502 pozycje kolekcji MTG; wiersze STO usunięte 2026-09-23)');
+  // Batch 59 (G1.5–G1.6): +11 pozycji (126–142 — dokładnie luki w arkuszu
+  // właściciela) → 513.
+  assert.equal(data.length, 513, 'pełna lista kolekcji (513 pozycji kolekcji MTG; wiersze STO usunięte 2026-09-23)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -131,12 +133,15 @@ test('słownik kolekcji nie zawiera kodów spoza MTG (STO/FUS/LOR)', () => {
 
 test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', () => {
   const dict = artIdsFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
-  // Pełna lista kolekcji z arkusza: 499 unikalnych nazw wśród 502 wierszy
+  // Pełna lista kolekcji z arkusza: 510 unikalnych nazw wśród 513 wierszy
   // (duplikaty nazw to RÓŻNE druki — np. Curate 65STX/302BRO, Phyrexian
   // Rager 75DMU/85APC, Negate 76M15/… — pierwsze wystąpienie wygrywa).
   // 2026-09-23: usunięte 71 wierszy STO (kody spoza kolekcji MTG) — liczba
   // zeszła z 570 nazw do 499; pin trzyma liczbę, żeby cięcie/wzrost był widoczny.
-  assert.equal(dict.size, 499, 'słownik zawiera pełną listę kolekcji (499 unikalnych nazw)');
+  // Batch 59 (G1.5–G1.6): +11 wierszy (126 MID przód + 127 MID tył, 129 DMU,
+  // 130 THB, 131 ISD, 134 ALA, 135 BOK, 138 MID, 139 TMT, 141 RIX, 142 ALA)
+  // wypełniło dokładnie luki 126–142 w arkuszu → 499 → 510 nazw.
+  assert.equal(dict.size, 510, 'słownik zawiera pełną listę kolekcji (510 unikalnych nazw)');
 
   // Każda karta z artId w katalogu ma zgodny wpis w słowniku — gdy nowy batch
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
@@ -158,7 +163,9 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // pierwszy druk DMU/75 zostaje jako osobny wpis, wzorzec Curate): 485 → 495.
   // Batch 58 (etapy B1–B7, karty po jednej): katalog rośnie 543 → 550, a wpisy
   // z artId 495 → 502 (wiersze arkusza dla tych kart JUŻ były w słowniku).
-  assert.equal(withArt.length, 502, 'wszystkie realne karty mają artId (Batche 1–58, etap B7)');
+  // Batch 59 (G1.1–G1.6): +6 kart z artId → 508. Do końca batcha dojdą jeszcze
+  // 130 THB, 131 ISD, 135 BOK i para 126 MID/127 MID (przód + tył) → 514.
+  assert.equal(withArt.length, 508, 'wszystkie realne karty mają artId (Batche 1–58 + Batch 59 G1.6)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

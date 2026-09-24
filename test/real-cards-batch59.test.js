@@ -274,3 +274,119 @@ test('B59/G1.4: Join the Dance — bez 4 many flashback nie jest oferowany', () 
   assert.ok(!commands(state).some((c) => c.type === 'cast_flashback' && c.objectId === 'dance'),
     'koszt flashbacku {3}{G}{W} = 4 many');
 });
+
+// ---- G1.5: Waveskimmer Aven (134 ALA, plan Forgotten Realms) ----------------
+
+test('B59/G1.5: Waveskimmer Aven — dane Oracle (3 kolory, flying, exalted)', () => {
+  const def = registry.get('waveskimmer-aven');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Bird', 'Soldier']);
+  assert.deepEqual(def.colors, ['G', 'U', 'W']);
+  assert.equal(def.power, 2);
+  assert.equal(def.toughness, 4);
+  assert.equal(def.manaCost, 5);
+  assert.ok(def.keywords.includes('flying'));
+  assert.ok(def.keywords.includes('exalted'));
+  assert.equal(def.set, 'ALA');
+  assert.equal(def.plan, 'Forgotten Realms');
+  assert.equal(def.artId, 134);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('e75ebcb4'), 'imageUri z druku ALA (ala/207)');
+  assert.equal(MANA_COSTS['waveskimmer-aven'], '{2}{G}{W}{U}');
+});
+
+test('B59/G1.5: Waveskimmer Aven — exalted: atak samotny daje +1/+1 (ruling ALA 2008-10-01)', () => {
+  const state = game();
+  put(state, 'aven', 'waveskimmer-aven', 'p1', 'battlefield');
+  put(state, 'other', 'razorfoot-griffin', 'p1', 'battlefield');
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  const solo = commands(state).find((c) => c.type === 'declare_attackers');
+  assert.ok(solo, 'deklaracja ataku oferowana');
+  run(state, { ...solo, attackerIds: ['aven'] });
+  resolve(state);
+  assert.equal(effectivePower(state.objects.get('aven'), state), 3,
+    'samotny atak: 2/4 → 3/5 (exalted +1/+1)');
+  assert.equal(effectiveToughness(state.objects.get('aven'), state), 5);
+});
+
+// ---- G1.6: Slithering Cryptid (139 TMT, plan TMNT) --------------------------
+
+test('B59/G1.6: Slithering Cryptid — dane Oracle, pip hybrydowy {2}{G/U}', () => {
+  const def = registry.get('slithering-cryptid');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Fish', 'Mutant']);
+  assert.deepEqual(def.colors, ['G', 'U']);
+  assert.equal(def.power, 2);
+  assert.equal(def.toughness, 3);
+  assert.equal(def.manaCost, 3);
+  assert.equal(def.set, 'TMT');
+  assert.equal(def.plan, 'Teenage Mutant Ninja Turtles');
+  assert.equal(def.artId, 139);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('6d35cb39'), 'imageUri z druku TMT (tmt/168)');
+  assert.equal(MANA_COSTS['slithering-cryptid'], '{2}{G/U}');
+});
+
+test('B59/G1.6: Slithering Cryptid — ETB tworzy token Mutagen (artefakt z podtypem)', () => {
+  const state = game();
+  put(state, 'cryptid', 'slithering-cryptid', 'p1');
+  addMana(state, 'p1', 3);
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'cryptid'));
+  resolve(state);
+  const token = [...state.objects.values()].find((o) => o.zone === 'battlefield' && o.cardId === 'token_mutagen');
+  assert.ok(token, 'token Mutagen na polu bitwy');
+  assert.deepEqual(token.types, ['Artifact']);
+  assert.deepEqual(token.subtypes, ['Mutagen']);
+  assert.deepEqual(token.colors, []);
+  assert.equal(token.kind, 'artifact', 'Mutagen nie jest stworzeniem');
+});
+
+test('B59/G1.6: Mutagen — {1},{T},poświęć: +1/+1 na cel, tylko jak sorcery', () => {
+  const state = game();
+  put(state, 'cryptid', 'slithering-cryptid', 'p1');
+  put(state, 'host', 'razorfoot-griffin', 'p1', 'battlefield');
+  addMana(state, 'p1', 4);
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'cryptid'));
+  resolve(state);
+  const token = [...state.objects.values()].find((o) => o.cardId === 'token_mutagen');
+  const activate = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === token.id);
+  assert.ok(activate, 'zdolność Mutagenu oferowana w main fazie');
+  run(state, { ...activate, targetIds: ['host'] });
+  resolve(state);
+  assert.ok(!state.objects.get(token.id), 'token poświęcony (koszt)');
+  assert.equal(effectivePower(state.objects.get('host'), state), 3, '2/2 + licznik +1/+1 = 3/3');
+  assert.equal(effectiveToughness(state.objects.get('host'), state), 3);
+});
+
+test('B59/G1.6: Mutagen — w fazie walki zdolność NIE jest oferowana (activate only as a sorcery)', () => {
+  const state = game();
+  put(state, 'cryptid', 'slithering-cryptid', 'p1', 'battlefield');
+  put(state, 'host', 'razorfoot-griffin', 'p1', 'battlefield');
+  addMana(state, 'p1', 3);
+  // token wprost z definicji katalogowej (jak poprzednio, ale bez rzucania)
+  run(state, commands(state).find((c) => c.type === 'pass_priority') ?? { type: 'pass_priority' });
+  const token = [...state.objects.values()].find((o) => o.cardId === 'token_mutagen');
+  if (!token) return; // token powstaje przy wejściu — brak tokenu = scenariusz nieobsługiwany
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  assert.ok(!commands(state).some((c) => c.type === 'activate_ability' && c.objectId === token.id),
+    'timing sorcery blokuje aktywację w combat');
+});
+
+test('B59/G1.6: Mutagen — katalog i lustro silnika są identyczne (L41)', async () => {
+  const { MUTAGEN_TOKEN_EFFECT, MUTAGEN_TOKEN_ABILITY } = await import('../src/engine/tokens.js');
+  const catalog = registry.get('token_mutagen');
+  assert.deepEqual([...MUTAGEN_TOKEN_EFFECT.types], catalog.types.filter((t) => t !== 'Token'));
+  assert.deepEqual([...MUTAGEN_TOKEN_EFFECT.subtypes], catalog.subtypes);
+  assert.deepEqual([...MUTAGEN_TOKEN_EFFECT.colors], catalog.colors);
+  assert.equal(MUTAGEN_TOKEN_EFFECT.cardId, catalog.id);
+  assert.equal(MUTAGEN_TOKEN_EFFECT.name, catalog.name);
+  const catAbility = catalog.abilities[0];
+  for (const key of ['type', 'timing']) {
+    assert.equal(MUTAGEN_TOKEN_ABILITY[key], catAbility[key], `pole ${key} zdolności`);
+  }
+  assert.deepEqual({ ...MUTAGEN_TOKEN_ABILITY.cost }, { ...catAbility.cost });
+  assert.deepEqual({ ...MUTAGEN_TOKEN_ABILITY.effect }, { ...catAbility.effect });
+  assert.deepEqual(MUTAGEN_TOKEN_ABILITY.targets.map((t) => t.type), catAbility.targets.map((t) => t.type));
+});

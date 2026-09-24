@@ -38,6 +38,11 @@ const SLOWNIK_REGUL = new Set([
   // PÓKI nie było wpisu katalogowego, silnik i render nie były zgłaszane;
   // wpis token_servo (grafika Scryfalla) tylko ujawnił ten zastany dług.
   'Servo',
+  // Batch 59 (Slithering Cryptid): 'Mutagen' to nazwa predefined tokenu (TMT)
+  // i jego podtyp — jak Treasure/Servo wyżej: słowo ze słownika reguł
+  // (definicja tokenu siedzi w katalogu jako `token_mutagen`), nie odwołanie
+  // do karty o tym tytule.
+  'Mutagen',
 ]);
 const DOZWOLONE_ID = new Set([
   'basic-plains', 'basic-island', 'basic-swamp', 'basic-mountain', 'basic-forest',

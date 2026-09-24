@@ -507,4 +507,6 @@ export const MANA_COSTS = {
   "sun-collared-raptor": "{1}{R}",
   "savage-hunger": "{2}{G}",
   "join-the-dance": "{G}{W}",
+  "slithering-cryptid": "{2}{G/U}",
+  "waveskimmer-aven": "{2}{G}{W}{U}",
 };
