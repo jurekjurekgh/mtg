@@ -1931,7 +1931,59 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return false;
   };
 
-  // M234 (zlecenie właściciela — efektywność removalu). Kolory MOICH stworów
+  /** Delta P/T licznika statystyk (CR 122.1) — `null` dla liczników bez modelu
+   * P/T (shield, liczniki keywordowe): te nie wchodzą do symulacji walki. */
+  const counterStatDelta = (counterName, amount = 1) => {
+    if (counterName === '+1/+1') return { power: amount, toughness: amount };
+    if (counterName === '+1/+0') return { power: amount, toughness: 0 };
+    if (counterName === '+0/+1') return { power: 0, toughness: amount };
+    return null;
+  };
+
+  /**
+   * M429 (zlecenie właściciela 2026-09-24e, karty batcha 59 — „P1 Mutagen"):
+   * WARTOŚĆ LICZNIKA NA TYM GOSPODARZU. Dotąd obie bliźniacze gałęzie (czar
+   * i aktywowana zdolność, L41) dawały płaskie 8 + 4·amount, więc wybór celu był
+   * remisem, a bot brał pierwszą ofertę z listy legalnych komend — pomiar
+   * (6 seedów, talia `decks/audyt-batch59.txt`) pokazał 14/14/14 dla tokena 1/1,
+   * Cryptida 2/3 i Hill Gianta 4/4 (klasa L50: decyzja bez treści).
+   *
+   * Model jest PRZEMYŚLANY i zapożyczony z podobnych efektów (zlecenie: „weź
+   * przykład z innych podobnych kart"):
+   *  - „im większy gospodarz, tym więcej kupuje wzmocnienie" — dokładnie reguła
+   *    aury-buffa (M257 r4, `auraBuffWorthWeight` = 2 na mocy i 1 na
+   *    wytrzymałości: „Opłaca się tym bardziej, im większy gospodarz");
+   *  - licznik, który POPRAWIA wynik toczonej walki, ma wartość natychmiastową
+   *    — to ta sama miara, którą M218/2 stosuje do pumpów (`pumpImprovesOutcome`
+   *    czyta wyłącznie PlayerView: atakujący/blokujący z `view.combat`);
+   *  - licznik na gospodarzu SKAZANYM w tej turze (ginie w walce, w której nie
+   *    zabija atakującego, albo jest celem usunięcia na stosie — M236/2
+   *    `permanentDoomedThisTurn`) wyparowuje razem z nim. Karę nakładamy TYLKO
+   *    gdy licznik NIE poprawia walki — inaczej byłaby sprzeczna z punktem wyżej
+   *    (licznik, który ratuje blokera, jest właśnie tym, po co go kładziemy).
+   *
+   * Czytamy wyłącznie deskryptory i PlayerView (ADR 0017), zero nazw kart
+   * (ADR 0002). Domyślne wartości parametrów są tak dobrane, że gospodarz-wzorzec
+   * (token 1/1, worth = 3) daje DOKŁADNIE dawną stałą 8 + 4·amount — kontrakt
+   * B6 T0 dla przypadku z obserwacji właściciela (pin w
+   * `test/audyt-m429-taktyczna-wycena-batch59.test.js`).
+   */
+  const counterHostValue = (view, host, counterName, amount = 1) => {
+    // Worth gospodarza: moc podwójnie (jak w aurach i w wycenie stwora),
+    // brak obiektu = gospodarz-wzorzec 1/1 (brak regresji wyceny).
+    const worth = host ? 2 * (host.power ?? 0) + (host.toughness ?? 0) : 3;
+    let value = P.counterBase + P.counterAmountWeight * amount + P.counterHostWorthWeight * worth;
+    const delta = counterStatDelta(counterName, amount);
+    if (delta && host && host.controllerId === view.playerId) {
+      if (pumpImprovesOutcome(view, host, {}, delta)) value += P.counterCombatBonus;
+      // Gospodarz skazany: licznik ginie razem z nim, więc NIE KUPUJE NIC
+      // (wartość zerowana, nie zmniejszana) — aktywacja schodzi pod pass
+      // niezależnie od wielkości ciała, bo „wielki, ale martwy" to nadal zero.
+      else if (permanentDoomedThisTurn(view, host)) value = -P.counterDoomedHostPenalty;
+    }
+    return value;
+  };
+
   // z pola bitwy: potrzebne, by ocenić, czy wrogi stwór ma protekcję od koloru,
   // którym mógłbym w niego uderzyć w walce (wtedy jest „nie do przejścia" i wart
   // zdjęcia czarem nawet przy niskich statystykach). Czytamy wyłącznie widok
@@ -5712,7 +5764,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const amount = Math.max(1, effect.amount ?? 1);
             if (beneficial && target) {
               if (target.controllerId === view.playerId) {
-                score += 8 + 4 * amount;
+                // M429: gospodarz różnicowany wartością ciała + kontekstem walki
+                // (ta sama funkcja co w gałęzi aktywowanej zdolności, L41).
+                score += counterHostValue(view, target, counterName, amount);
               } else if (target.kind === 'creature' || (target.types ?? []).includes('Creature')) {
                 score -= 90; // wzmacnianie stwora przeciwnika — mocna kara
               }
@@ -6396,7 +6450,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score -= 90;
               }
             } else if (statCounter) {
-              if (tgt?.controllerId === view.playerId) score += 8 + 4 * amount;
+              // M429 (P1 Mutagen): dotąd płaskie 8 + 4·amount dla KAŻDEGO
+              // własnego celu (pomiar: remis 14/14/14 — bot brał pierwszy
+              // legalny wariant, często token 1/1). Ta sama funkcja co w
+              // bliźniaczej gałęzi czarów (L41): wartość rośnie z ciałem
+              // gospodarza (wzorzec aury), premia gdy licznik poprawia wynik
+              // TRWAJĄCEJ walki, kara gdy gospodarz i tak ginie w tej turze.
+              if (tgt?.controllerId === view.playerId) score += counterHostValue(view, tgt, counterName, amount);
               else score -= 90;
             } else if (counterName !== 'charge') { // charge wycenia station_counters
               const consumers = (source?.cardId ? (cardDef(source.cardId)?.abilities ?? []) : [])

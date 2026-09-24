@@ -67,6 +67,12 @@ export const DESCRIPTOR_PARAMS = Object.freeze({
     'auraProtectionNoThreatPenalty', 'auraProtectionBase', 'auraProtectionThreatWeight',
     'flashProtectionAuraOffWindowPenalty',
   ]),
+  // M429 (sesja 2026-09-24e, „P1 Mutagen"): rodzina „licznik na wskazanym
+  // celu" — gospodarz licznika wybierany po wartości ciała i kontekstu walki.
+  counter: Object.freeze([
+    'counterBase', 'counterAmountWeight', 'counterHostWorthWeight',
+    'counterCombatBonus', 'counterDoomedHostPenalty',
+  ]),
   // Rodziny mechanik czekające na własne parametry (kolejne sesje T1):
   // surge:   ['surgeBias'],
   // manifest:['manifestEarlyBias'],
@@ -77,6 +83,24 @@ export const DESCRIPTOR_PARAMS = Object.freeze({
  * nie po nazwie/ID). Zwraca też deskryptory „bez parametrów", aby narzędzie
  * mogło UCZCIWIE zgłosić, że danej mechaniki nie da się jeszcze stroić.
  */
+/**
+ * M429: czy karta niesie efekt danego typu — w treści czaru (także w trybach
+ * modalnych), w przygodzie albo w zdolnościach (aktywowanych/triggerowanych).
+ * Generycznie po strukturze deskryptora, zero nazw kart (ADR 0002).
+ */
+export function cardHasEffect(def, type) {
+  const listy = [
+    def?.spell?.effects,
+    ...(def?.spell?.modes ?? []).map((m) => m?.effects),
+    def?.adventure?.spell?.effects,
+    ...(def?.abilities ?? []).flatMap((a) => (Array.isArray(a?.effect) ? a.effect : [a?.effect])),
+    ...(def?.equipment?.grantedAbilities ?? []).flatMap((a) => (Array.isArray(a?.effect) ? a.effect : [a?.effect])),
+  ];
+  return listy
+    .flatMap((fx) => (Array.isArray(fx) ? fx : fx ? [fx] : []))
+    .some((e) => e?.type === type);
+}
+
 export function cardDescriptors(def) {
   const descriptors = new Set();
   const types = def?.types ?? [];
@@ -86,6 +110,9 @@ export function cardDescriptors(def) {
   if (def?.surge) descriptors.add('surge');
   const spellEffects = def?.spell?.effects ?? [];
   if (spellEffects.some((e) => e?.type === 'manifest_dread')) descriptors.add('manifest');
+  // M429: „licznik na wskazanym celu" (P1 Mutagen) — szukamy efektu w treści
+  // czaru ORAZ w zdolnościach (Mutagen dokłada licznik aktywowaną zdolnością).
+  if (cardHasEffect(def, 'add_counter')) descriptors.add('counter');
   return [...descriptors];
 }
 
