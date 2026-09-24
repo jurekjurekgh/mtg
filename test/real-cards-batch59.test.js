@@ -20,6 +20,7 @@ import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
 import { addMana } from '../src/engine/resources.js';
+import { moveObjectDirectly } from '../src/engine/objects.js';
 
 const registry = createCardRegistry();
 
@@ -389,4 +390,114 @@ test('B59/G1.6: Mutagen — katalog i lustro silnika są identyczne (L41)', asyn
   assert.deepEqual({ ...MUTAGEN_TOKEN_ABILITY.cost }, { ...catAbility.cost });
   assert.deepEqual({ ...MUTAGEN_TOKEN_ABILITY.effect }, { ...catAbility.effect });
   assert.deepEqual(MUTAGEN_TOKEN_ABILITY.targets.map((t) => t.type), catAbility.targets.map((t) => t.type));
+});
+
+// ---- G1.7: Scavenging Harpy (130 THB, plan Wiedźmin) -----------------------
+
+test('B59/G1.7: Scavenging Harpy — dane Oracle, koszt i druk', () => {
+  const def = registry.get('scavenging-harpy');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Harpy']);
+  assert.deepEqual(def.colors, ['B']);
+  assert.deepEqual(def.keywords, ['flying']);
+  assert.equal(def.power, 2);
+  assert.equal(def.toughness, 1);
+  assert.equal(def.manaCost, 3);
+  assert.equal(def.set, 'THB');
+  assert.equal(def.plan, 'Wiedźmin', 'plan przepisany DOSŁOWNIE z arkusza (nie kraina setu)');
+  assert.equal(def.artId, 130);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('b0e237c5'), 'imageUri z druku THB (thb/114)');
+  assert.equal(MANA_COSTS['scavenging-harpy'], '{2}{B}');
+});
+
+test('B59/G1.7: Scavenging Harpy — ETB wygania kartę z grobu PRZECIWNIKA', () => {
+  const state = game();
+  put(state, 'harpy', 'scavenging-harpy', 'p1');
+  put(state, 'g-mine', 'shock', 'p1', 'graveyard');
+  put(state, 'g-shock', 'shock', 'p2', 'graveyard');
+  put(state, 'g-hunger', 'savage-hunger', 'p2', 'graveyard');
+  addMana(state, 'p1', 3, { colors: ['B'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'harpy'));
+  resolve(state);
+  const oferty = commands(state).filter((c) => c.type === 'resolve_trigger_target');
+  assert.deepEqual(oferty.map((c) => c.targetId), ['g-hunger', 'g-shock'],
+    'kandydaci to WYŁĄCZNIE karty z grobu przeciwnika (najwartościowsza pierwsza — efekt wrogi)');
+  run(state, oferty[0]);
+  resolve(state);
+  const inZone = (cardId, zone) => [...state.objects.values()].filter((o) => o.cardId === cardId && o.zone === zone);
+  assert.equal(inZone('savage-hunger', 'graveyard').length, 0, 'cel opuścił grób');
+  assert.equal(inZone('savage-hunger', 'exile').length, 1, 'cel jest na wygnaniu (nowy obiekt, CR 400.7)');
+  assert.equal(inZone('shock', 'graveyard').length, 2, 'pozostałe karty zostają w grobach');
+  assert.equal(inZone('shock', 'exile').length, 0);
+});
+
+test('B59/G1.7: Scavenging Harpy — karta z WŁASNEGO grobu nie jest legalnym celem', () => {
+  const state = game();
+  put(state, 'harpy', 'scavenging-harpy', 'p1');
+  put(state, 'g-mine', 'shock', 'p1', 'graveyard');
+  put(state, 'g-opponent-a', 'shock', 'p2', 'graveyard');
+  put(state, 'g-opponent-b', 'savage-hunger', 'p2', 'graveyard');
+  addMana(state, 'p1', 3, { colors: ['B'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'harpy'));
+  resolve(state);
+  const oferty = commands(state).filter((c) => c.type === 'resolve_trigger_target');
+  // Dwóch kandydatów w grobie przeciwnika → decyzja celu (przy jednym engine
+  // wybiera automatycznie, CR 115.1d — pilnuje tego test niżej).
+  assert.deepEqual(oferty.map((c) => c.targetId), ['g-opponent-b', 'g-opponent-a'],
+    'własna karta nie jest oferowana; kolejność = najwartościowsza pierwsza');
+  // Wymuszona komenda z nielegalnym celem: odrzucona, nic nie znika.
+  const forced = execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'g-mine' });
+  assert.equal(forced.ok, false, 'walidacja odrzuca własny grób');
+  assert.ok(state.objects.get('g-mine'), 'karta z własnego grobu została na miejscu');
+});
+
+test('B59/G1.7: Scavenging Harpy — JEDEN kandydat = cel wybierany automatycznie (CR 115.1d)', () => {
+  const state = game();
+  put(state, 'harpy', 'scavenging-harpy', 'p1');
+  put(state, 'g-opponent', 'savage-hunger', 'p2', 'graveyard');
+  addMana(state, 'p1', 3, { colors: ['B'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'harpy'));
+  resolve(state);
+  assert.ok(!commands(state).some((c) => c.type === 'resolve_trigger_target'),
+    'z jednym legalnym celem engine nie pyta kontrolera (duch CR 115.1d)');
+  const auto = state.events.find((e) => e.type === 'trigger_target_resolved' && e.cardId === 'scavenging-harpy');
+  assert.equal(auto?.auto, true, 'stół widzi automatyczny wybór celu (wpis w logu)');
+  const wygnane = [...state.objects.values()].filter((o) => o.cardId === 'savage-hunger' && o.zone === 'exile');
+  assert.equal(wygnane.length, 1, 'karta celu trafiła na wygnanie');
+});
+
+test('B59/G1.7: Scavenging Harpy — pusty grób przeciwnika = trigger bez celu (M106/Z2)', () => {
+  const state = game();
+  put(state, 'harpy', 'scavenging-harpy', 'p1');
+  put(state, 'g-mine', 'shock', 'p1', 'graveyard');
+  addMana(state, 'p1', 3, { colors: ['B'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'harpy'));
+  resolve(state);
+  assert.ok(!commands(state).some((c) => c.type === 'resolve_trigger_target'),
+    'brak decyzji celu, gdy w grobach przeciwników nie ma KART');
+  const skipped = state.events.find((e) => e.type === 'trigger_resolved' && e.cardId === 'scavenging-harpy');
+  assert.equal(skipped?.noEffect, true, 'stół dowiaduje się, że trigger nic nie zrobił');
+  assert.equal(skipped?.reason, 'no_targets');
+  assert.equal(state.zones.graveyard.length, 1, 'własna karta w grobie nietknięta');
+  assert.equal(state.zones.exile.length, 0);
+});
+
+test('B59/G1.7: Scavenging Harpy — cel nielegalny przy rozstrzygnięciu = brak efektu (CR 608.2b)', () => {
+  const state = game();
+  put(state, 'harpy', 'scavenging-harpy', 'p1');
+  put(state, 'g-hunger', 'savage-hunger', 'p2', 'graveyard');
+  put(state, 'g-shock', 'shock', 'p2', 'graveyard');
+  addMana(state, 'p1', 3, { colors: ['B'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'harpy'));
+  resolve(state);
+  run(state, commands(state).find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'g-hunger'));
+  // Inny efekt wygania wybraną kartę, ZANIM trigger się rozstrzygnie.
+  const przed = moveObjectDirectly(state, 'g-hunger', 'exile', 'exile-b59');
+  assert.ok(przed, 'karta opuściła grób przed rozstrzygnięciem');
+  resolve(state);
+  const wygnane = [...state.objects.values()].filter((o) => o.cardId === 'savage-hunger' && o.zone === 'exile');
+  assert.equal(wygnane.length, 1, 'efekt nie kładzie drugiej kopii — brak celu = brak efektu (CR 608.2b)');
+  assert.ok(state.objects.get('g-shock'), 'inna karta w grobie zostaje nietknięta');
 });

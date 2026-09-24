@@ -9,6 +9,7 @@
 1x Chittering Rats
 1x Dread Warlock
 1x Nature's Embrace
+1x Scavenging Harpy
 1x Springbloom Druid
 1x Time to Feed
 1x Emerald Oryx
@@ -18,5 +19,5 @@
 1x Polluted Dead
 1x Segmented Krotiq
 1x Howl of the Night Pack
-5x Swamp
+6x Swamp
 4x Forest

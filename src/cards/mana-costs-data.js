@@ -509,4 +509,5 @@ export const MANA_COSTS = {
   "join-the-dance": "{G}{W}",
   "slithering-cryptid": "{2}{G/U}",
   "waveskimmer-aven": "{2}{G}{W}{U}",
+  "scavenging-harpy": "{2}{B}",
 };

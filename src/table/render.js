@@ -190,6 +190,9 @@ const TARGET_TYPE_LABELS = Object.freeze({
   creature_with_subtypes: 'stwór z podtypem', creature_with_power_at_least: 'stwór o sile ≥',
   creature_card_in_graveyard: 'karta-stwór w grobie', creature_card_in_opponent_graveyard: 'karta-stwór w grobie przeciwnika',
   card_in_graveyard: 'karta w grobie', permanent_card_in_graveyard: 'karta-permanent w grobie',
+  // Batch 59 (Scavenging Harpy): „exile target card from an opponent's
+  // graveyard" — dowolna KARTA (nie tylko stwór) z grobu przeciwnika.
+  card_in_opponent_graveyard: 'karta w grobie przeciwnika',
   instant_or_sorcery_card_in_graveyard: 'instant/sorcery w grobie',
   aura_or_equipment_card_in_graveyard: 'karta Aura/Equipment w grobie',
   noncreature_spell_on_stack: 'czar niebędący stworem na stosie',
@@ -1254,6 +1257,8 @@ function describeEffect(e, ctx = {}) {
     exalted_pump: () => `${signed(e.power ?? 1)}/${signed(e.toughness ?? 1)} do końca tury (egzaltacja)`,
     exile_all: () => 'wygnij wszystkie (filtr)',
     exile_opponent_creature: () => 'wygnij stwora przeciwnika',
+    // Batch 59 (Scavenging Harpy): wygnanie KARTY z grobu celu (dowolny typ).
+    exile_graveyard_card: () => 'wygnij kartę z grobu',
     exile_own_land: () => 'wygnij własny ląd',
     exile_target_creature: () => 'wygnij stwora',
     exile_nonland_permanent_linked: () => 'wygnij nie-lądowy permanent do odejścia',

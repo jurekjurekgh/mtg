@@ -4124,6 +4124,32 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['exalted liczy DEKLARACJĘ atakujących: samotny atak = +1/+1 za każdy mój exalted; drugi stwór w ataku wyłącza wszystkie (ruling ALA 2008-10-01)'],
   }),
+
+  // Scavenging Harpy (THB) {2}{B} 2/1 Harpy — flying + ETB: „exile target card
+  // from an opponent's graveyard". Nowy typ celu `card_in_opponent_graveyard`
+  // (generyczny, ADR 0002): predykat w `zones.js` czytają walidacja i oferta
+  // (`spells.js`) oraz enumeracja triggerów (`triggers.js`) — jedna reguła
+  // (L41/M82), a token nie jest kartą (CR 108.2b). Efekt `exile_graveyard_card`
+  // = graveyard → exile (CR 400.7: nowy obiekt; CR 608.2b: cel nielegalny przy
+  // rozstrzygnięciu = brak efektu). Rulingi: brak (sprawdzone 2026-09-24 —
+  // WotC nie opublikował nic do tej karty).
+  defineCard({
+    id: 'scavenging-harpy', name: 'Scavenging Harpy', set: 'THB',
+    types: ['Creature'], subtypes: ['Harpy'], colors: ['B'],
+    power: 2, toughness: 1, manaCost: 3, keywords: ['flying'],
+    oracleText: 'Flying\nWhen this creature enters, exile target card from an opponent\'s graveyard.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/0/b0e237c5-45b4-49df-adb9-62b9f3b62986.jpg?1783931561',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'card_in_opponent_graveyard' } },
+        effect: { type: 'exile_graveyard_card' },
+      }),
+    ],
+    artId: 130, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['cel OBOWIĄZKOWY: gdy w grobach przeciwników nie ma żadnej KARTY, trigger schodzi bez efektu (CR 603.3d, komunikat M106/Z2); karta z WŁASNEGO grobu nie jest legalnym celem'],
+  }),
 ]);
 
 

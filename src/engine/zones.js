@@ -67,3 +67,23 @@ export function spellExitZone(object, { adventure = false, flashedBack = false, 
     : 'graveyard';
 }
 
+/**
+ * Batch 59 (Scavenging Harpy): predykat celu „card from an opponent's
+ * graveyard" — dowolna KARTA (nie token: obiekty kart mają `name: null`,
+ * tokeny noszą nazwę — wzorzec Puppeteer Clique, CR 108.2b) w grobie gracza
+ * innego niż wskazany kontroler.
+ *
+ * JEDNO źródło reguły dla OFERTY i WALIDACJI (L41/M82: oferta nie może
+ * proponować celu, który walidacja odrzuca) — czytają je `spells.js`
+ * (walidacja + enumeracja celów czarów i zdolności aktywowanych) oraz
+ * `triggers.js` (ETB Harpy). Mieszka w `zones.js` z tego samego powodu co
+ * `spellExitZone`: to najniższa warstwa grafu importów, więc nie tworzy cyklu
+ * (pilnuje tego `test/module-graph.test.js`).
+ */
+export function isCardInOpponentGraveyard(object, controllerId) {
+  return Boolean(object)
+    && object.zone === 'graveyard'
+    && object.name == null
+    && object.controllerId !== controllerId;
+}
+

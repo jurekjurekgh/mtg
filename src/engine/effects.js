@@ -4084,6 +4084,22 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'library', toBottom: true }));
     return;
   }
+  if (effect.type === 'exile_graveyard_card') {
+    // Batch 59 (Scavenging Harpy): „exile target card from an opponent's
+    // graveyard" — karta-cel opuszcza grób i idzie na wygnanie (nowy obiekt,
+    // CR 400.7). CR 608.2b: cel mógł opuścić grób przed rozstrzygnięciem
+    // (np. inny efekt wygnał go wcześniej) — wtedy brak efektu, bez błędu.
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'graveyard') return;
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
+    state.events.push(event('object_moved', {
+      fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'exile',
+    }));
+    return;
+  }
   if (effect.type === 'put_graveyard_card_on_top') {
     // Batch 24 (Mystic Sanctuary): „put target instant or sorcery card from
     // your graveyard on top of your library". Na wierzch = przed pierwszą

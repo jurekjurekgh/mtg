@@ -1,6 +1,6 @@
 import { holdReplacementResolution } from './destruction.js';
 import { event } from '../protocol/types.js';
-import { spellExitZone } from './zones.js';
+import { spellExitZone, isCardInOpponentGraveyard } from './zones.js';
 import { triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
@@ -342,6 +342,15 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // w grobie kontrolera źródła.
     if (spec?.type === 'card_in_graveyard') {
       if (object && object.zone === 'graveyard' && object.controllerId === casterId) return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
+    // Cel „card from an opponent's graveyard" (Scavenging Harpy, Batch 59):
+    // dowolna KARTA (token nie jest kartą — CR 108.2b, wzorzec Puppeteer
+    // Clique) w grobie gracza innego niż kontroler źródła. Predykat IDENTYCZNY
+    // z ofertą (M82/L48: oferta nie może proponować celu, który walidacja
+    // odrzuca).
+    if (spec?.type === 'card_in_opponent_graveyard') {
+      if (isCardInOpponentGraveyard(object, casterId)) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „noncreature spell on the stack" (Negate) — czar na stosie, który
@@ -1387,6 +1396,14 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
       return state.zones.graveyard.filter((objectId) => {
         const object = state.objects.get(objectId);
         return object?.zone === 'graveyard' && object.controllerId === playerId;
+      });
+    }
+    case 'card_in_opponent_graveyard': {
+      // Batch 59 (Scavenging Harpy): karty z grobów PRZECIWNYCH graczy (token
+      // nie jest kartą — CR 108.2b). Wspólny predykat z walidacją (L41/M82).
+      return state.zones.graveyard.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return isCardInOpponentGraveyard(object, playerId);
       });
     }
     case 'noncreature_spell_on_stack': {
