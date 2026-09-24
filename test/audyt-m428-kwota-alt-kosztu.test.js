@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { costSymbols } from '../src/table/mana-icons.js';
+import { choiceGroupTitle, commandLabel } from '../src/table/render.js';
 
 /**
  * M428 — Żywy Tester na kartach batcha 59 (sesja 2026-09-24d).
@@ -59,13 +60,18 @@ const FAMILY = [
  */
 const ORACLE_SKIP = new Map([['Adventure', 'koszt w drugiej części karty, nie przy słowie-kluczu']]);
 
-/** Napis symboli przy słowie-kluczu Oracle (albo null, gdy brak/nieparowalny). */
+/**
+ * Napis symboli przy słowie-kluczu Oracle (albo null, gdy brak/nieparowalny).
+ * `ambiguous` = słowo-klucz z kosztem występuje w Oracle WIELOKROTNIE (kicker
+ * może mieć kilka kosztów) — wtedy parowanie 1:1 nie jest pewne i karta MUSI
+ * wypaść z automatu, a nie przejść po cichu na pierwszym trafieniu.
+ */
 function oracleCostSymbols(text, keyword) {
   // `Suspend 4—{B}`: między słowem a napisem może stać LICZNIK czasu.
-  const re = new RegExp(`${keyword}\\s*\\d*\\s*(?:—|-|\\u2014)?\\s*((?:\\{[^}]+\\}\\s*)+)`, 'i');
-  const match = re.exec(String(text ?? ''));
-  if (!match) return null;
-  return [...match[1].matchAll(/\{([^}]+)\}/g)].map((m) => `{${m[1]}}`).join('');
+  const re = new RegExp(`${keyword}\\s*\\d*\\s*(?:—|-|\\u2014)?\\s*((?:\\{[^}]+\\}\\s*)+)`, 'gi');
+  const matches = [...String(text ?? '').matchAll(re)];
+  if (matches.length !== 1) return null;
+  return [...matches[0][1].matchAll(/\{([^}]+)\}/g)].map((m) => `{${m[1]}}`).join('');
 }
 
 /** Zwraca listę rozjazdów „definicja vs Oracle" dla podanych kart. */
@@ -93,9 +99,16 @@ test('M428 (klasa): kwota alt-kosztu w definicji == napis Oracle (nie tylko pipy
   assert.deepEqual(offenders, [], 'alt-koszty, których kwota rozjeżdża się z Oracle');
 });
 
-test('M428 (klasa): karty z nieparowalnym kosztem są WYMIENIONE, nie milczące', () => {
+test('M428 (klasa): karty pominięte przez skan są WYMIENIONE wprost', () => {
   // Skan nie może „przemilczeć" karty: każdy pominięty przypadek ląduje na tej
   // liście, więc nowy wyjątek wymaga świadomej decyzji (wzorzec L5/L165).
+  const skipped = [];
+  for (const card of REGISTRY.all()) {
+    for (const [keyword, get] of FAMILY) if (ORACLE_SKIP.has(keyword) && get(card)) skipped.push(`${card.id}[${keyword}]`);
+  }
+  assert.deepEqual(skipped.sort(), ['ettercap[Adventure]', 'gray-slaad[Adventure]'],
+    'lista wyjątków skanu — nowa karta tutaj wymaga powodu w ORACLE_SKIP');
+
   const { unparsed } = scanAmounts(REGISTRY.all());
   assert.deepEqual(unparsed, [],
     'deskryptor bez parowania z Oracle — dopisz powód do ORACLE_SKIP albo popraw dane');
@@ -137,4 +150,65 @@ test('M428: F3 Boulder Salvo — surge {1}{R} = 2 many', () => {
   assert.deepEqual(def.surge, { cost: 2, colors: ['R'] });
   assert.equal(costSymbols(def.surge.cost, def.surge.colors), '{1}{R}');
   assert.match(def.oracleText, /Surge \{1\}\{R\}/, 'deskryptor zgadza się z Oracle obok');
+});
+
+// --- F2: etykieta flashbacku (render.js) -------------------------------------
+
+const LABEL_VIEW = (objects) => ({
+  zones: { hand: objects, battlefield: objects, stack: [], graveyard: objects, library: [], exile: [] },
+  players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+});
+const labelSession = (names) => ({
+  nameOf: (id) => names[id] ?? String(id),
+  cardDetails: (cardId) => REGISTRY.get(cardId),
+  state: { objects: new Map() },
+});
+
+/** Tytuł grupy flashbacku w kanale TEKSTOWYM (bez HTML-a ikon). */
+function flashbackGroupTitle(cardId, objectId = 'o1') {
+  const view = LABEL_VIEW([{ id: objectId, cardId, zone: 'graveyard' }]);
+  const session = labelSession({ [objectId]: cardId });
+  return choiceGroupTitle({
+    options: [{ type: 'cast_flashback', objectId }, { type: 'cast_flashback', objectId }],
+  }, session, view);
+}
+
+test('M428: F2 etykieta flashbacku pokazuje PIPY, nie gołą kwotę', () => {
+  // Dowód z transkryptów audytu: „>> Flashback: Memory's Journey (koszt 1)"
+  // (druk: {G}) i „>> Flashback: Join the Dance (koszt 4)" (druk: {3}{G}{W}).
+  const memory = flashbackGroupTitle('memory-s-journey');
+  assert.match(memory, /\(\koszt \{G\}\)/, `pip {G} w etykiecie: ${memory}`);
+  assert.doesNotMatch(memory, /\(\koszt 1\)/, 'gołe „1" to cena generyczna, której nie ma w koszcie');
+
+  const dance = flashbackGroupTitle('join-the-dance');
+  assert.match(dance, /\(\koszt \{3\}\{G\}\{W\}\)/, `pełny koszt {3}{G}{W}: ${dance}`);
+});
+
+test('M428 (klasa): każda etykieta flashbacku niesie symbole z Oracle', () => {
+  const cards = REGISTRY.all().filter((c) => c.spell?.flashback);
+  assert.ok(cards.length >= 3, `rodzina flashbacku: ${cards.length} kart`);
+  const offenders = [];
+  for (const card of cards) {
+    const oracle = oracleCostSymbols(card.oracleText, 'Flashback');
+    const label = flashbackGroupTitle(card.id, `o-${card.id}`);
+    for (const symbol of oracle.matchAll(/\{[^}]+\}/g)) {
+      if (!label.includes(symbol[0])) offenders.push(`${card.id}: brak ${symbol[0]} w „${label}"`);
+    }
+    if (/\(\koszt \d+\)/.test(label)) offenders.push(`${card.id}: goła kwota w „${label}"`);
+  }
+  assert.deepEqual(offenders, [], 'etykiety flashbacku bez symboli z Oracle');
+});
+
+test('M428: etykiety pojedynczej komendy (panel działań) też niosą pipy', () => {
+  // `commandLabel` to drugie miejsce z tym samym kosztem (A/M268: dwie kopie
+  // składanki kosztu rozjeżdżają się — dlatego oba czytają `costSymbols`).
+  for (const [cardId, shape] of [['memory-s-journey', /ms-g/], ['join-the-dance', /ms-c.*ms-g.*ms-w/s]]) {
+    const objectId = `o-${cardId}`;
+    const view = LABEL_VIEW([{ id: objectId, cardId, zone: 'graveyard' }]);
+    const label = commandLabel(
+      { type: 'cast_flashback', objectId, targets: [], playerId: 'p1' },
+      labelSession({ [objectId]: cardId }), view,
+    );
+    assert.match(label, shape, `pip w etykiecie komendy (${cardId}): ${label}`);
+  }
 });

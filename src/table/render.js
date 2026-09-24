@@ -2685,10 +2685,17 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
     && options.every((o) => o?.type === 'cast_flashback' && o.objectId === options[0].objectId)) {
     const fbObject = findViewObject(options[0].objectId, view);
     if (fbObject?.cardId) {
-      const fbCost = session.cardDetails?.(fbObject.cardId)?.spell?.flashback?.cost;
-      const fbShown = fbCost != null
-        ? (manaHtml ? manaCostHtml(`{${fbCost}}`) : `{${fbCost}}`)
-        : null;
+      // M428 (Żywy Tester 24d): koszt flashbacku to SUMA symboli —
+      // `costSymbols(cost, colors)`, nie gołe `{cost}` (Memory's Journey
+      // pokazywała „(koszt 1)" dla {G}, Join the Dance „(koszt 4)" dla
+      // {3}{G}{W}). Ta sama składanka co escape/warp/suspend/plot (M151/M267/
+      // M268); ręczne `{N}` gubiło pipy i obiecywało koszt generyczny.
+      const fbDescriptor = session.cardDetails?.(fbObject.cardId)?.spell?.flashback;
+      const fbCost = fbDescriptor?.cost;
+      const fbSymbols = fbCost != null ? costSymbols(fbCost, fbDescriptor?.colors) : null;
+      // Dwa kanały jak w reszcie tytułów (M87/A): nagłówek modala przez
+      // `textContent`, panel akcji przez `innerHTML` (ikony many).
+      const fbShown = fbSymbols != null ? (manaHtml ? manaCostHtml(fbSymbols) : fbSymbols) : null;
       return `Flashback: ${session.nameOf(fbObject.cardId)}${fbShown ? ` (koszt ${fbShown})` : ''}`;
     }
   }
@@ -3285,7 +3292,10 @@ export function commandLabel(cmd, session, view) {
     }
     case 'cast_escape': {
       // Koszt escape czyta z REGISTRY karty (graveyard view nie niesie spell —
-      // strefa grobu to {id,cardId,zone}). escape.cost = {generic} (+ kolory).
+      // strefa grobu to {id,cardId,zone}). `escape.cost` = SUMA symboli
+      // (generic + pipy) — poprawka komentarza przy okazji M428: wcześniejszy
+      // zapis „= {generic}" utrwalał błędne przekonanie, przez które kwoty
+      // alt-kosztów rozjeżdżały się z Oracle o wartość pipów.
       const objCard = obj(cmd.objectId);
       const defCard = objCard?.cardId ? session.cardDetails(objCard.cardId) : null;
       const escCost = defCard?.spell?.escape?.cost;
@@ -3303,8 +3313,13 @@ export function commandLabel(cmd, session, view) {
     case 'cast_flashback': {
       const objCard = obj(cmd.objectId);
       const defCard = objCard?.cardId ? session.cardDetails(objCard.cardId) : null;
-      const fbCost = defCard?.spell?.flashback?.cost;
-      const fb = fbCost != null ? manaCostHtml(`{${fbCost}}`) : '?';
+      // M428: koszt flashbacku to suma symboli (`costSymbols`), nie gołe `{N}`
+      // — Memory's Journey {G} pokazywała „(koszt 1)", Join the Dance
+      // {3}{G}{W} „(koszt 4)". Wzorzec M151 (suspend) / M267/C (escape) /
+      // M268 (warp, plot): JEDNA składanka kosztu na całą warstwę etykiet.
+      const fbDescriptor = defCard?.spell?.flashback;
+      const fb = fbDescriptor?.cost != null
+        ? manaCostHtml(costSymbols(fbDescriptor.cost, fbDescriptor.colors)) : '?';
       // A (znalezisko testera): cel w etykiecie jak w cast_spell — bez tego
       // dwie różne komendy (Dream Twist w Ty / w Nieprzyjaciela) wyglądały
       // identycznie („dwie oferty flashback jednej karty”).
