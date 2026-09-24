@@ -2,6 +2,25 @@ import { basicLandTypeCount, isPlaneswalker } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
+
+/**
+ * O-3 (audyt PR #134): źródło many obiektu Z WIDOKU. Widok niesie
+ * `manaSource` (kolory + ilość) rozstrzygnięte przez silnik ze stanem, więc
+ * heurystyki nie muszą zgadywać bez stanu: `getSourceForObject(o, null)` dla
+ * Gond Gate („{T}: Add one mana of any color that a Gate you control could
+ * produce”, deskryptor `colorsFrom`) zwracał `colors: []` i Brama była
+ * wyceniana jako źródło bezbarwne (zaniżona wycena, nie błąd legalności).
+ * Fallback na liczenie bez stanu zostaje dla widoków składanych ręcznie
+ * (fixtures, które nie niosą `manaSource`).
+ */
+export function manaSourceOfView(object) {
+  return object?.manaSource ?? getSourceForObject(object, null);
+}
+
+/** Kolory produkowane przez obiekt widoku (O-3) — pusta lista, gdy brak. */
+function koloryZrodlaWidoku(object) {
+  return manaSourceOfView(object)?.colors ?? [];
+}
 import { coloredPipsOf } from '../engine/mana-cost.js';
 import { POISON_LOSS_LIMIT } from '../engine/state-based.js';
 import { expandManaPool } from '../engine/resources.js';
@@ -1673,7 +1692,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (o.kind === 'land' || (o.types ?? []).includes('Land')) czyste += 1;
       // I: kolory CZYSTYCH źródeł — rozstrzygają, czy pip da się zapłacić bez
       // sięgania po mielące źródło (te same dane co silnik, L28).
-      for (const kolor of getSourceForObject(o, null)?.colors ?? []) czysteKolory.add(kolor);
+      for (const kolor of koloryZrodlaWidoku(o)) czysteKolory.add(kolor);
     }
     // I (uwaga właściciela 2026-09-23c, Chronic Flooding): model ilościowy
     // (koszt − pula − czyste) nie widział PIPÓW. Bot rzucał czar {U}, gdy
@@ -2563,7 +2582,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       .filter((o) => o?.controllerId === ja && o.kind === 'land');
     const dostepne = new Map();
     for (const o of pola) {
-      for (const kolor of getSourceForObject(o, null)?.colors ?? []) {
+      for (const kolor of koloryZrodlaWidoku(o)) {
         dostepne.set(kolor, (dostepne.get(kolor) ?? 0) + 1);
       }
     }
@@ -2611,7 +2630,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const licznik = (lista) => {
       const m = new Map();
       for (const x of lista) {
-        for (const kolor of getSourceForObject(x, null)?.colors ?? []) m.set(kolor, (m.get(kolor) ?? 0) + 1);
+        for (const kolor of koloryZrodlaWidoku(x)) m.set(kolor, (m.get(kolor) ?? 0) + 1);
       }
       return m;
     };
@@ -3194,7 +3213,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     let suma = self?.mana ?? 0;
     for (const o of view.zones.battlefield ?? []) {
       if (o?.controllerId !== view.playerId) continue;
-      const zrodlo = getSourceForObject(o, null);
+      const zrodlo = manaSourceOfView(o);
       if (!zrodlo) continue;
       suma += Number.isFinite(zrodlo.amount) ? zrodlo.amount : 1;
     }
@@ -3724,7 +3743,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const dostepne = new Set();
     for (const o of view.zones.battlefield ?? []) {
       if (o?.controllerId !== view.playerId) continue;
-      for (const kolor of getSourceForObject(o, null)?.colors ?? []) dostepne.add(kolor);
+      for (const kolor of koloryZrodlaWidoku(o)) dostepne.add(kolor);
     }
     for (const jednostka of coloredPipsOf(karta.cardId)) {
       if (!jednostka.some((k) => dostepne.has(k))) return false;
@@ -4001,7 +4020,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const available = new Map();
         for (const o of (view.zones.battlefield ?? [])) {
           if (o.controllerId !== view.playerId) continue;
-          for (const c of getSourceForObject(o, null)?.colors ?? []) {
+          for (const c of koloryZrodlaWidoku(o)) {
             available.set(c, (available.get(c) ?? 0) + 1);
           }
         }
@@ -7613,7 +7632,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const jegoLady = (view.zones.battlefield ?? [])
             .filter((o) => o.controllerId === t.controllerId && isLand(o));
           const kopie = jegoLady.filter((o) => o.cardId === t.cardId).length;
-          const kolory = (o) => getSourceForObject(o, null)?.colors ?? [];
+          const kolory = koloryZrodlaWidoku;
           const pozostale = new Set();
           for (const o of jegoLady) {
             if (o.id === t.id) continue;
@@ -8158,7 +8177,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const available = new Map();
         for (const o of (view.zones.battlefield ?? [])) {
           if (o.controllerId !== view.playerId) continue;
-          for (const c of getSourceForObject(o, null)?.colors ?? []) {
+          for (const c of koloryZrodlaWidoku(o)) {
             available.set(c, (available.get(c) ?? 0) + 1);
           }
         }

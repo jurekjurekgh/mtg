@@ -188,10 +188,21 @@ Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134
         (O-1/1..5, w tym strażnik klasy L101); mutacje M12a/M12b (stary idiom
         w ścieżkach kopii) → O-1/1 i O-1/3 czerwone; M12c (idiom obok helpera)
         → także O-1/5.
+      • **O-3** — heurystyki czytały źródła many bez stanu (dziewięć wywołań
+        `getSourceForObject(o, null)`, audyt widział osiem): Gond Gate
+        („any color a Gate you control could produce”, deskryptor `colorsFrom`)
+        wracał `colors: []`, więc `czysteKolory`/`landDenialDelta`/
+        `ownPotentialMana` wyceniały Bramę jako źródło bezbarwne. Kierunek
+        z audytu (produkowane kolory w `PlayerView`, ADR 0017): `playerView`
+        dokłada `entry.manaSource = { colors, amount }` rozstrzygnięte ze
+        stanem, z tym samym wyjątkiem FoW co `cardId`/`manaCost`; bot czyta je
+        jednym pomocnikiem `manaSourceOfView` (fallback: liczenie bez stanu dla
+        widoków ręcznych). Pin `test/audyt-pr134-2026-09-24-zrodlo-many-w-widoku.test.js`
+        (O-3/1..5, w tym FoW i strażnik „jedno wywołanie bez stanu”); mutacje
+        M13a/M13b → O-3/1..3 i O-3/5 czerwone.
       Otwarte obserwacje: **O-6** (transform w miejscu gubi animację — korzeń:
-      brak warstw 613, patrz D4b), **O-3** (8 wywołań
-      `getSourceForObject(o, null)` w bocie — zaniżona wycena Gond Gate),
-      **O-4/O-5** (uproszczenia udokumentowane, bez różnicy behawioralnej).
+      brak warstw 613, patrz D4b), **O-4/O-5** (uproszczenia udokumentowane,
+      bez różnicy behawioralnej).
 
 ## Etap E — domknięcie sesji
 

@@ -9,7 +9,7 @@ import { assertStateInvariants } from './invariants.js';
 import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
-import { allControlledManaSources, isActivatedManaAbility } from './mana-sources.js';
+import { allControlledManaSources, getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
 
 function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   const costStr = MANA_COSTS[cardId];
@@ -6207,6 +6207,24 @@ export function playerView(state, playerId) {
         // widza, ktory kartę zna — tak samo jak manaCost/subtypes/types wyzej.
         // ADR 0017: skutek widoczny w grze musi byc widoczny w widoku.
         if (!hiddenFromViewer && (object.colors ?? []).length) entry.colors = [...object.colors];
+        // O-3 (audyt PR #134): opis ŹRÓDŁA MANY jest informacją publiczną
+        // (zdolności many odsłoniętego permanentu, CR 605 + 113.6), a bot nie
+        // ma stanu: wołał `getSourceForObject(o, null)` i dla Gond Gate
+        // („{T}: Add one mana of any color that a Gate you control could
+        // produce”) dostawał `colors: []`, bo deskryptor `colorsFrom` trzeba
+        // rozstrzygnąć na polu bitwy. Widok niesie więc rozstrzygnięte kolory
+        // i ilość — heurystyki (`czysteKolory`, `landDenialDelta`,
+        // `ownPotentialMana`) czytają te same dane co silnik (L28), a legalność
+        // pozostaje po stronie silnika (ten czyta stan).
+        if (!hiddenFromViewer) {
+          const zrodloMany = getSourceForObject(object, state);
+          if (zrodloMany) {
+            entry.manaSource = {
+              colors: [...(zrodloMany.colors ?? [])],
+              amount: Number.isFinite(zrodloMany.amount) ? zrodloMany.amount : 1,
+            };
+          }
+        }
         // Keywordy efektywne (własne + tymczasowe granty + nadane przez
         // załączniki) — publiczna informacja liczona tak samo jak w combat.
         // Zakryty stwór nie ma własnych keywordów (CR 708.2), ale MOŻE mieć
