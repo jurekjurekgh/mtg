@@ -73,6 +73,12 @@ export const DESCRIPTOR_PARAMS = Object.freeze({
     'counterBase', 'counterAmountWeight', 'counterHostWorthWeight',
     'counterCombatBonus', 'counterDoomedHostPenalty',
   ]),
+  // M429 („P2 Memory's Journey"): wtasowanie kart z grobu do biblioteki —
+  // wartość zależy od presji deck-outu (próg: `librarySafeMargin`).
+  graveyardShuffle: Object.freeze([
+    'graveyardShuffleBase', 'graveyardShuffleCardValue', 'graveyardShuffleRescueWeight',
+    'graveyardShuffleNoPressurePenalty', 'graveyardShuffleEmptyPenalty',
+  ]),
   // Rodziny mechanik czekające na własne parametry (kolejne sesje T1):
   // surge:   ['surgeBias'],
   // manifest:['manifestEarlyBias'],
@@ -113,6 +119,7 @@ export function cardDescriptors(def) {
   // M429: „licznik na wskazanym celu" (P1 Mutagen) — szukamy efektu w treści
   // czaru ORAZ w zdolnościach (Mutagen dokłada licznik aktywowaną zdolnością).
   if (cardHasEffect(def, 'add_counter')) descriptors.add('counter');
+  if (cardHasEffect(def, 'shuffle_graveyard_cards_into_library')) descriptors.add('graveyardShuffle');
   return [...descriptors];
 }
 

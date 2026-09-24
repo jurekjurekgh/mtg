@@ -1941,6 +1941,43 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
+   * M429 (zlecenie właściciela 2026-09-24e, karty batcha 59 — „P2 Memory's
+   * Journey"): ile kupuje WTASOWANIE KART Z GROBU DO BIBLIOTEKI.
+   *
+   * Dotąd efekt był wart płasko `4 + 2·karty` bez patrzenia na bibliotekę —
+   * pomiar (sonda na silniku): 58 pkt przy 30 kartach i 58 pkt przy 12, a nawet
+   * wariant z ZERO wybranych kart dawał 58 (bot rzucał czar-molestowany
+   * „na zero"). Karty wracają do BIBLIOTEKI, nie do ręki, więc jedyną realną
+   * wartością jest CZAS (CR 121.4/704.5b — deck-out to przegrana) — dokładnie
+   * ta miara, którą posługuje się istniejąca rodzina biblioteczna
+   * (`librarySafeMargin`, `libraryThinPerCardPenalty`, `drawDeckingPenalty`).
+   * Dlatego:
+   *  - biblioteka zdrowa (≥ `librarySafeMargin`, domyślnie 20) → kara: rzut to
+   *    strata karty z ręki, instant czeka na realne zagrożenie (jak M235
+   *    „trzymaj flash-a na okno"), więc wariant schodzi POD „pass";
+   *  - biblioteka cienka → wartość zwrotu (4 + 2/kartę, dawne stałe) PLUS
+   *    dopłata ratunkowa za każdą kartę, która kupuje turę życia;
+   *  - zero wybranych kart → efekt jałowy (zmienia tylko kolejność biblioteki):
+   *    kara jak wyżej, niezależnie od stanu biblioteki.
+   *
+   * Cel-przeciwnik zostaje na dawnej karze −60 (oddajemy mu zasoby z grobu —
+   * jego biblioteka to nie nasz ratunek; zmiana tego wariantu wymagałaby
+   * modelu „grobu jako zasobu przeciwnika", którego bot nie ma).
+   * Czytamy wyłącznie PlayerView (ADR 0017) i deskryptor efektu (ADR 0002).
+   */
+  const graveyardShuffleValue = (view, effect, cmd) => {
+    const playerSlot = cmd.targets?.[effect.playerTargetIndex ?? 0] ?? null;
+    if (playerSlot == null) return 0;
+    if (playerSlot !== view.playerId) return -60;
+    const cards = (effect.cardTargetIndexes ?? [])
+      .filter((idx) => cmd.targets?.[idx] != null).length;
+    if (cards === 0) return -P.graveyardShuffleEmptyPenalty;
+    if (myLibraryCount(view) >= P.librarySafeMargin) return -P.graveyardShuffleNoPressurePenalty;
+    return P.graveyardShuffleBase + P.graveyardShuffleCardValue * cards
+      + P.graveyardShuffleRescueWeight * cards;
+  };
+
+  /**
    * M429 (zlecenie właściciela 2026-09-24e, karty batcha 59 — „P1 Mutagen"):
    * WARTOŚĆ LICZNIKA NA TYM GOSPODARZU. Dotąd obie bliźniacze gałęzie (czar
    * i aktywowana zdolność, L41) dawały płaskie 8 + 4·amount, więc wybór celu był
@@ -5465,13 +5502,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // (generycznie po kontrolerze celu — ADR 0002, jak `prevent_next_damage`
           // niżej: kara przechodzi bazę 50, żeby bot nie pomagał przeciwnikowi).
           if (effect.type === 'shuffle_graveyard_cards_into_library') {
-            const playerSlot = cmd.targets?.[effect.playerTargetIndex ?? 0] ?? null;
-            if (playerSlot != null && playerSlot === view.playerId) {
-              const cards = (effect.cardTargetIndexes ?? []).filter((i) => cmd.targets?.[i] != null).length;
-              score += 4 + cards * 2;
-            } else if (playerSlot != null) {
-              score -= 60;
-            }
+            // M429 (P2 Memory's Journey): wartość zależy od PRESJI deck-outu
+            // i od tego, ile kart realnie wraca (zero = efekt jałowy) — cała
+            // reguła w `graveyardShuffleValue` (ta sama w obu gałęziach, L41).
+            score += graveyardShuffleValue(view, effect, cmd);
           }
           // M218/4 — regenerate jako efekt czaru (jeśli kiedyś pojawi się taki czar):
           // wartość tylko gdy cel zagrożony, inaczej kara.
@@ -6473,6 +6507,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score += ownPostcombat ? 6 : -8; // uzupełnij zapas PO walce
               }
             }
+          }
+          // M429 (P2 Memory's Journey): wtasowanie kart z grobu do biblioteki —
+          // bliźniacza gałąź czarów (L41). Dziś wszystkie źródła tego efektu to
+          // czary (katalog ADR 0029), ale reguła musi być w OBU gałęziach, bo
+          // aktywacja dawałaby gołe `score = 2` (klasa M279).
+          if (effect.type === 'shuffle_graveyard_cards_into_library') {
+            score += graveyardShuffleValue(view, effect, cmd);
           }
           if (effect.type === 'station_counters') {
             // Station (Wedgelight Rammer / Warmaker Gunship): cenne tylko do

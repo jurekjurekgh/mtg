@@ -219,3 +219,64 @@ test('M429/licznik instant: JEDYNY gospodarz skazany → licznik w ogóle nie id
   assert.notEqual(cmd.type, 'activate_ability');
 });
 
+// =====================================================================
+// P2 — Memory's Journey (Batch 59): wtasowanie kart z grobu do biblioteki
+// =====================================================================
+
+test('M429/T1: karta z wtasowaniem grobu dostaje deskryptor `graveyardShuffle`', async () => {
+  const { cardDescriptors, paramsForDescriptors } = await import('../tools/tune-card.mjs');
+  const journey = REGISTRY.get('memory-s-journey');
+  assert.ok(cardDescriptors(journey).includes('graveyardShuffle'), 'Memory\'s Journey ma deskryptor');
+  assert.deepEqual(paramsForDescriptors(['graveyardShuffle']).keys.sort(), [
+    'graveyardShuffleBase', 'graveyardShuffleCardValue', 'graveyardShuffleEmptyPenalty',
+    'graveyardShuffleNoPressurePenalty', 'graveyardShuffleRescueWeight',
+  ]);
+});
+
+test("M429/Memory's Journey (P2): zdrowa biblioteka → bot TRZYMA kartę (pass)", () => {
+  // Pomiar PRZED: 58 pkt przy 30 kartach w bibliotece (bez żadnej presji).
+  // Rzut w zdrową bibliotekę to strata karty (3 karty wracają do biblioteki,
+  // nie do ręki) — instant czeka na realne zagrożenie (wzorzec M235).
+  const state = game();
+  put(state, 'mj', 'memory-s-journey', 'p1', 'hand');
+  lands(state, 30);
+  put(state, 'gy0', 'hill-giant', 'p1', 'graveyard');
+  put(state, 'gy1', 'razorfoot-griffin', 'p1', 'graveyard');
+  put(state, 'gy2', 'trestle-troll', 'p1', 'graveyard');
+  addMana(state, 'p1', 3, { colors: ['U'] });
+  const { cmd, scores } = decide(state);
+  assert.notEqual(cmd.type, 'cast_spell', `bot nie marnuje karty: ${label(cmd)}`);
+  assert.ok(scores['cast_spell(mj->p1+gy0+gy1+gy2)'] < 0, 'wariant z 3 kartami schodzi pod pass');
+});
+
+test("M429/Memory's Journey (P2): presja deck-outu → rzut ratujący bibliotekę", () => {
+  // Ta sama ręka i grób, ale biblioteka pod progiem bezpieczeństwa (~20 kart,
+  // `librarySafeMargin`): każda wracająca karta to dodatkowa tura życia.
+  const state = game();
+  put(state, 'mj', 'memory-s-journey', 'p1', 'hand');
+  lands(state, 12);
+  put(state, 'gy0', 'hill-giant', 'p1', 'graveyard');
+  put(state, 'gy1', 'razorfoot-griffin', 'p1', 'graveyard');
+  put(state, 'gy2', 'trestle-troll', 'p1', 'graveyard');
+  addMana(state, 'p1', 3, { colors: ['U'] });
+  const { cmd, scores } = decide(state);
+  assert.equal(cmd.type, 'cast_spell', `oczekiwano rzutu, wybrano ${label(cmd)}`);
+  assert.deepEqual(cmd.targets.slice(0, 1), ['p1']);
+  assert.equal(cmd.targets.filter((t) => t != null).length, 4, 'cel-gracz + 3 karty z grobu');
+  assert.ok(scores['cast_spell(mj->p1+gy0+gy1+gy2)'] > scores['cast_spell(mj->p1+++)'],
+    'ratunek (3 karty) bije wariant bez kart');
+});
+
+test("M429/Memory's Journey (P2): zero wracających kart → jałowy efekt pod passem", () => {
+  // Wariant „target player + 0 kart" zmienia tylko kolejność biblioteki —
+  // żadnego zasobu, więc karta jest wyrzucona (L3/M146: kara przebija bazę).
+  const state = game();
+  put(state, 'mj', 'memory-s-journey', 'p1', 'hand');
+  lands(state, 12);
+  addMana(state, 'p1', 3, { colors: ['U'] });
+  const { cmd, scores } = decide(state);
+  const zero = scores['cast_spell(mj->p1+++)'];
+  assert.ok(zero != null, 'silnik oferuje wariant bez kart');
+  assert.ok(zero < 0, `wariant bez kart poniżej passu (${zero})`);
+  assert.notEqual(cmd.type, 'cast_spell');
+});

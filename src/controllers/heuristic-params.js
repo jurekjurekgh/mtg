@@ -189,6 +189,21 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'counterHostWorthWeight',      // waga ciała gospodarza (moc×2 + wytrzymałość), wzorzec aury
   'counterCombatBonus',          // premia, gdy licznik poprawia wynik WALKI, która trwa
   'counterDoomedHostPenalty',    // kara, gdy gospodarz ginie w tej turze mimo licznika
+  // M429 („P2 Memory's Journey"): rodzina „wtasowanie kart z grobu do
+  // biblioteki". Dotąd efekt był wart płasko 4 + 2·karty (NIEZALEŻNIE od stanu
+  // biblioteki — pomiar: 58 pkt przy 30 i przy 12 kartach, a wariant z ZERO
+  // wybranych kart też dawał 58), więc bot rzucał czar „na zero kart" i bez
+  // żadnej presji deck-outu, tracąc kartę z ręki. Model z istniejącej rodziny
+  // bibliotecznej (D/M162: `librarySafeMargin` + kara per karta, CR 121.4/
+  // 704.5b): karty wracają do BIBLIOTEKI, więc kupują czas tylko wtedy, gdy
+  // biblioteka jest cienka — inaczej instant czeka na realne zagrożenie
+  // (wzorzec „trzymaj czar na okno", M235). Karne warianty schodzą pod „pass"
+  // (L3: kara musi przebić bazę czaru i wartość zwrotu).
+  'graveyardShuffleBase',        // wartość samego zwrotu (dawna 4, gdy karty wracają)
+  'graveyardShuffleCardValue',   // wartość każdej wracającej karty (dawna *2)
+  'graveyardShuffleRescueWeight',// dopłata za kartę, gdy biblioteka jest pod progiem
+  'graveyardShuffleNoPressurePenalty', // kara, gdy biblioteka jest zdrowa (czekaj na okno)
+  'graveyardShuffleEmptyPenalty',// kara, gdy nie wraca ŻADNA karta (efekt jałowy)
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -281,6 +296,16 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   counterHostWorthWeight: 2,
   counterCombatBonus: 12,
   counterDoomedHostPenalty: 20,
+  // M429 „wtasowanie kart z grobu do biblioteki" (P2 Memory's Journey).
+  // Próg presji = `librarySafeMargin` (20, istniejąca rodzina biblioteczna).
+  // Dopłata ratunkowa 8/kartę: 3 karty przy cienkiej bibliotece = 34 pkt efektu
+  // (84 z bazą czaru) — realny ratunek, a nie „ładna karta"; przy zdrowej
+  // bibliotece kara 70 spycha rzut pod pass.
+  graveyardShuffleBase: 4,
+  graveyardShuffleCardValue: 2,
+  graveyardShuffleRescueWeight: 8,
+  graveyardShuffleNoPressurePenalty: 70,
+  graveyardShuffleEmptyPenalty: 70,
 });
 
 /**
