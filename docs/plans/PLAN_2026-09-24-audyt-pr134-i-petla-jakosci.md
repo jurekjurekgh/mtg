@@ -164,7 +164,9 @@ Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134
       ofiary), Cathartic Reunion (odrzuć 2 jako koszt), rebound + trigger
       Barala, suspend Mindstab, Halo Forager, crew + Skilled Animator (W-10/
       W-11), bot odrzuca inertne X = 0; noop Dockhand X = 0 = legalna aktywacja
-      (decyzja: oferty X = 0 zostają, boty ich unikają).
+      (decyzja: oferty X = 0 zostają, boty ich unikają — zaakceptowana przez
+      właściciela 2026-09-24 razem z „odrzuć N” w komendzie i animacjami
+      jako osobnymi efektami).
 - [x] D4 — **łowy CR** inną ścieżką niż poprzednie sesje: poszły przez OŚ
       CYTATÓW CR (F-3 z audytu jako punkt wejścia). Pobranie dosłownego spisu
       `702. Keyword Abilities` z CR 2026-09-25 (`mtg.wiki/page/Keyword_ability`)
