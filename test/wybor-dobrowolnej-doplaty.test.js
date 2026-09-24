@@ -21,6 +21,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { resolveUntilDecision, optionalPayOpen } from './helpers/deferred-trigger.js';
 import { commandLabel } from '../src/table/render.js';
 
 const view = {
@@ -80,6 +81,7 @@ test('M101/B: zgłoszony przypadek — trigger Furious Forebear ({1}{W}) w prawd
   state.objects.set('ofiara', Object.freeze({ ...state.objects.get('ofiara'), damage: 99 }));
   execute(state, { type: 'pass_priority', playerId: 'p1' });
 
+  resolveUntilDecision(state, optionalPayOpen); // Etap F (CR 603.5): pytanie przy rozstrzyganiu
   const gameView = playerView(state, 'p1');
   const opcje = gameView.legalCommands.filter((c) => c.type === 'resolve_optional_pay_choice');
   assert.equal(opcje.length, 2, 'trigger miał zaoferować wybór tak/nie');

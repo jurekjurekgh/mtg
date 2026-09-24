@@ -8,6 +8,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { applyEffect } from '../src/engine/effects.js';
+import { resolveUntilDecision, optionalPayOpen } from './helpers/deferred-trigger.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 
 const REGISTRY = createCardRegistry();
@@ -110,6 +111,8 @@ test('B44/5: Descendant of Storms — atak → opłata {1}{W} → endure 1 (licz
     .find((c) => c.type === 'declare_attackers' && (c.attackerIds ?? []).includes('dos'));
   assert.ok(atk, 'oferta ataku');
   assert.ok(execute(state, atk).ok);
+  // Etap F (CR 603.5): trigger ataku na stosie — płatność przy rozstrzyganiu.
+  assert.ok(resolveUntilDecision(state, optionalPayOpen));
   const payOffer = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === true);
   assert.ok(payOffer, 'decyzja opłaty {1}{W} po ataku');

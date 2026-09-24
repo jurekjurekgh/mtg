@@ -97,10 +97,18 @@ function armGrant(state) {
   return grant;
 }
 
-/** Rozstrzyga stos i — gdy trzeba — wybiera cel nadanej zdolności. */
-function resolveStack(state, { chooseTarget = null } = {}) {
+/** Rozstrzyga stos i — gdy trzeba — wybiera cel nadanej zdolności.
+ *  Etap F (CR 603.5): „you may" pada przy rozstrzyganiu — `fire` decyduje
+ *  (odmowa = pass, F1). */
+function resolveStack(state, { chooseTarget = null, fire = true } = {}) {
   for (let i = 0; i < 30; i += 1) {
     const commands = playerView(state, state.turn.priorityPlayerId).legalCommands;
+    const optional = commands.find((c) => c.type === 'resolve_optional_trigger_choice' && c.fire);
+    if (optional) {
+      const result = execute(state, fire ? optional : { type: 'pass_priority', playerId: optional.playerId });
+      assert.ok(result.ok, `decyzja „you may": ${why(result)}`);
+      continue;
+    }
     const decision = commands.find((c) => c.type === 'resolve_trigger_target');
     if (decision) {
       const wanted = chooseTarget ?? decision.targetId;
@@ -161,22 +169,28 @@ test('M381/C: bez grantu nie ma zdolności (kontrola)', () => {
   assert.equal(state.objects.get('foe')?.damage ?? 0, 0, 'nikt nie walczył');
 });
 
-test('M381/D: „you may" — rezygnacja z celu nic nie robi', () => {
+test('M381/D: „you may" — odmowa przy rozstrzyganiu nic nie robi (CR 603.5)', () => {
   const state = scenario();
   armGrant(state);
   const cast = ofType(state, 'cast_permanent').find((c) => c.objectId === 'dino');
   assert.ok(execute(state, cast).ok);
-  // Decyzja ma wariant rezygnacji (`targetId: null`) — „you may".
-  let declined = false;
-  for (let i = 0; i < 20 && !declined; i += 1) {
+  // Etap F: „another target creature" jest obowiązkowy przy kładzeniu na stos
+  // (brak wariantu `targetId: null`), a „you may" pada przy rozstrzyganiu.
+  let offeredNone = false;
+  let sawOptional = false;
+  for (let i = 0; i < 30; i += 1) {
     const commands = playerView(state, state.turn.priorityPlayerId).legalCommands;
-    const none = commands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === null);
-    if (none) { assert.ok(execute(state, none).ok); declined = true; break; }
+    if (commands.some((c) => c.type === 'resolve_trigger_target' && c.targetId === null)) offeredNone = true;
+    if (commands.some((c) => c.type === 'resolve_optional_trigger_choice')) { sawOptional = true; break; }
+    const pick = commands.find((c) => c.type === 'resolve_trigger_target');
+    if (pick) { assert.ok(execute(state, pick).ok); continue; }
     const pass = commands.find((c) => c.type === 'pass_priority');
     if (!pass || state.zones.stack.length === 0) break;
     execute(state, pass);
   }
-  assert.ok(declined, 'oferta rezygnacji (targetId: null) istnieje');
+  assert.equal(offeredNone, false, 'brak oferty „bez celu" — cel obowiązkowy (CR 603.3d)');
+  assert.ok(sawOptional, '„you may" przy rozstrzyganiu');
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, 'odmowa = pass (F1)');
   resolveStack(state);
   const monster = [...state.objects.values()].find((o) => o.cardId === DINO && o.zone === 'battlefield');
   assert.equal(state.objects.get('foe')?.damage ?? 0, 0, 'wróg bez obrażeń');

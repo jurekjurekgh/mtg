@@ -22,25 +22,29 @@ import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './
  *
  * Uruchamiany po każdej zaakceptowanej komendzie (game-state.js `accepted`):
  * skanuje zdarzenia wygenerowane przez tę komendę (łącznie z centralnymi
- * state-based actions) i odpala triggery pasujących źródeł. Efekty triggerów
- * rozstrzygają się od razu — bez własnego okna priorytetu (uproszczenie:
- * obecne karty nie potrzebują interakcji na stosie w oknie triggera).
+ * state-based actions) i odpala triggery pasujących źródeł. Od T6 każda
+ * odpalona zdolność idzie na WSPÓLNY STOS (queueTriggerToStack, CR 603.3)
+ * i rozstrzyga się po pełnej rundzie passów — obaj gracze mają okno
+ * odpowiedzi. Wybory „may" / „you may pay" / „unless" zapadają przy
+ * rozstrzyganiu (CR 603.5, Etap F — queueDeferredChoiceTrigger); cele
+ * i tryby — przy kładzeniu na stos (CR 603.3c/d).
  *
  * Obsługiwane zdarzenia triggerów:
  * - `dies` — obiekt opuszcza battlefield do graveyard (np. Highland Game);
  * - `combat_damage_to_player` — stwór zadaje obrażenia combat graczowi
- *   (Kappa Tech-Wrecker); `requiresTarget` daje deterministyczną wersję
- *   opcjonalnego „you may" (gdy celu brak, opcja jest odrzucona);
+ *   (Kappa Tech-Wrecker); cel wybiera kontroler (Temat 2), a „up to one"
+ *   pozwala odmówić (allowNone);
  * - `enter_battlefield` — permanent wchodzi na pole bitwy (Zoraline; także landy:
  *   Rupture Spire z obowiązkową płatnością „sacrifice it unless you pay {1}",
- *   deskryptor `payMana` + `sacrificeIfUnpaid` — patrz firePayOrSacrifice);
+ *   deskryptor `payMana` + `sacrificeIfUnpaid` — patrz queuePayOrSacrifice);
  * - `attacks` — stwór zostaje zadeklarowany jako atakujący (Zoraline);
  * - `bat_attacks` — „whenever a Bat you control attacks" (tribał Zoraline);
  * - `upkeep` — początek kroku upkeep z warunkiem na liczbę czarów
  *   w poprzedniej turze (transform wilkołaków).
  *
- * Opcjonalny koszt triggera: `payMana` / `payLife` w deskryptorze — trigger
- * odpala się tylko, gdy kontroler może zapłacić (deterministyczne „you may").
+ * Opcjonalny koszt triggera: `payMana` / `payLife` w deskryptorze — zdolność
+ * idzie na stos zawsze, a przy rozstrzyganiu kontroler decyduje, czy płaci
+ * (resolve_optional_pay_choice; bez możliwości zapłaty — brak efektu).
  */
 
 /**
@@ -280,10 +284,18 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   return true;
 }
 
-/** Czy kontroler triggera może opłacić opcjonalny koszt (mana / życie). */
-function canPayTrigger(state, controllerId, trigger) {
+/** Czy kontroler triggera może opłacić opcjonalny koszt (mana / życie /
+ *  znacznik ze źródła — `payCounter`, Kappa Tech-Wrecker „you may remove
+ *  a deathtouch counter from it"). */
+function canPayTrigger(state, controllerId, trigger, source = null) {
   const player = state.players.find((p) => p.id === controllerId);
   if (!player) return false;
+  if (trigger?.payCounter) {
+    // Usunąć znacznik można tylko z permanentu, który nadal jest na polu
+    // bitwy i go ma (nowy obiekt po zmianie strefy nie ma znaczników, CR 400.7).
+    const { counter, amount = 1 } = trigger.payCounter;
+    if (!source || source.zone !== 'battlefield' || !hasCounter(source, counter, amount)) return false;
+  }
   // Opcjonalna płatność many (Panic Spellbomb {R}, Zoraline {W}{B}) liczy
   // manę PRODUKOWALNĄ (pula + nietapnięte źródła) — sama pula pomijała
   // gracza z nietapniętym landem, choć w MtG można go tapnąć (bug złotej
@@ -700,10 +712,6 @@ function abilitiesOnDeath(object) {
 }
 
 /** Czy któryś efekt wymaga zdjęcia licznika ze źródła (warunek odpalenia). */
-function requiresCounter(ability, counterName) {
-  return toEffectList(ability).some((effect) => effect.type === 'remove_counter' && effect.counter === counterName);
-}
-
 /**
  * CR 714.2b — „{rN}—[Effect]" znaczy „When one or more lore counters are put
  * onto this Saga, if the number of lore counters on it was less than N and
@@ -1085,6 +1093,105 @@ function resolveDelayedTrigger(state, payload, events) {
 }
 
 /**
+ * Etap F (CR 603.5) — rozstrzygnięcie zdolności z wyborem odroczonym do
+ * rozstrzygania (queueDeferredChoiceTrigger). Otwiera blokującą decyzję
+ * kontrolera; jej komenda (game-state.js) wykonuje efekt W RAMACH tego
+ * rozstrzygnięcia (`resolveAbility` / `onResolution`) — przez
+ * `applyDeferredTriggerEffects`, z tym samym źródłem (żywym albo stubem LKI).
+ */
+function resolveDeferredChoice(state, entry, payload, source, extra, choice) {
+  const { deferredChoice: _omit, ...plainExtra } = extra;
+  const controllerId = entry.controllerId;
+  const resolvedEvent = (fields) => event('trigger_resolved', {
+    objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId, ...fields,
+  });
+  if (choice.kind === 'payOrSacrifice') {
+    // „Sacrifice it unless you pay": permanent, który opuścił pole bitwy,
+    // nie ma czego poświęcać — płatność nic by nie dała (CR 608.2b).
+    const live = state.objects.get(payload.sourceId);
+    if (!live || live.zone !== 'battlefield') {
+      state.events.push(resolvedEvent({ noEffect: true, reason: 'source_left' }));
+      return;
+    }
+    queuePayOrSacrifice(state, live, choice.amount ?? 0, [], choice.triggerEvent ?? 'echo', choice.colors ?? []);
+    state.events.push(resolvedEvent({ payOrSacrifice: true }));
+    return;
+  }
+  if (choice.kind === 'optionalPay') {
+    const trigger = payload.ability?.trigger ?? {};
+    if (!canPayTrigger(state, controllerId, trigger, state.objects.get(payload.sourceId) ?? null)) {
+      // Nie da się zapłacić — „If/When you do" nie zachodzi.
+      state.events.push(resolvedEvent({ noEffect: true, reason: 'cannot_pay' }));
+      return;
+    }
+    state.pendingOptionalPay = {
+      playerId: controllerId,
+      sourceId: payload.sourceId,
+      ability: Object.freeze({ ...payload.ability }),
+      targetId: null,
+      extra: Object.freeze({ ...plainExtra }),
+      restorePriorityTo: state.turn.priorityPlayerId,
+      requiresTargetDecision: Boolean(choice.requiresTargetDecision),
+      onResolution: true,
+      stackEntryId: entry.id,
+      source,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('optional_pay_required', {
+      playerId: controllerId, sourceId: payload.sourceId, cardId: entry.cardId,
+      payMana: trigger.payMana ?? 0, payLife: trigger.payLife ?? 0,
+      payColors: trigger.payColors ?? [],
+      payCounter: trigger.payCounter ?? null,
+    }));
+    return;
+  }
+  // choice.kind === 'optional' — „you may [efekt]".
+  // Zdolność z celami, których żaden nie istnieje już w grze (przesunięty
+  // obiekt = nowy obiekt, CR 400.7), nie rozstrzyga się (CR 608.2b) — nie
+  // ma o co pytać.
+  const targets = payload.targets ?? [];
+  const targetObjectIds = targets.filter((id) => typeof id === 'string' && !state.players.some((p) => p.id === id));
+  if (targetObjectIds.length > 0 && targetObjectIds.length === targets.length
+    && targetObjectIds.every((id) => !state.objects.has(id))) {
+    state.events.push(resolvedEvent({ noEffect: true, reason: 'no_targets' }));
+    return;
+  }
+  state.pendingOptionalTrigger = {
+    playerId: controllerId,
+    sourceId: payload.sourceId,
+    cardId: entry.cardId,
+    ability: Object.freeze({ ...payload.ability }),
+    extra: Object.freeze({ ...plainExtra }),
+    targets: [...(payload.targets ?? [])],
+    restorePriorityTo: state.turn.priorityPlayerId,
+    resolveAbility: true,
+    stackEntryId: entry.id,
+    source,
+  };
+  state.turn.priorityPlayerId = controllerId;
+  state.events.push(event('optional_trigger_required', {
+    playerId: controllerId, sourceId: payload.sourceId, cardId: entry.cardId,
+  }));
+}
+
+/**
+ * Etap F (CR 603.5): efekty zdolności, której wybór zapadł przy
+ * rozstrzyganiu (decyzja tak / zapłacono). Źródło: żywy obiekt, a gdy
+ * zniknął — stub LKI zapamiętany przy rozstrzyganiu (CR 603.10).
+ */
+export function applyDeferredTriggerEffects(state, pending, ability) {
+  const live = state.objects.get(pending.sourceId);
+  const source = live ?? pending.source;
+  if (!source) return;
+  const sourceForEffects = Object.freeze({ ...source, controllerId: pending.playerId });
+  applyTriggerEffects(state, ability, sourceForEffects, pending.targets ?? [], pending.extra ?? {});
+  state.events.push(event('trigger_resolved', {
+    objectId: pending.stackEntryId ?? null, sourceId: pending.sourceId,
+    cardId: source.cardId ?? pending.cardId ?? null,
+  }));
+}
+
+/**
  * Rozstrzyga wpis triggera ze stosu (wywoływane przez resolveTopOfStack):
  * zdolność opuszcza stos, ponowna walidacja intervening-if (CR 603.4) —
  * gdy warunek nie zachodzi, zdolność nic nie robi; efekty aplikowane z LKI
@@ -1383,6 +1490,19 @@ export function resolveTriggerEntry(state, entry) {
     state.events.push(resolved);
     return state.events.slice(before);
   }
+  // Etap F (CR 603.5): wybór „may" / płatność „you may pay" / „unless"
+  // zapada TERAZ — przy rozstrzyganiu, po sprawdzeniu intervening-if.
+  // „You may [czasownik] target ..." (Reclusive Artificer, Battle-Rattle
+  // Shaman, Mystic Sanctuary ...): cel wybrano przy kładzeniu na stos
+  // (CR 603.3d — obowiązkowo, gdy istnieje), a samo „may" rozstrzyga się
+  // tutaj — ścieżka resolve_trigger_target nie niesie `deferredChoice`,
+  // więc wybór wynika z deskryptora (`mayFire`).
+  const deferredChoice = extra.deferredChoice
+    ?? (payload.ability?.trigger?.mayFire ? Object.freeze({ kind: 'optional' }) : null);
+  if (deferredChoice) {
+    resolveDeferredChoice(state, entry, payload, source, extra, deferredChoice);
+    return state.events.slice(before);
+  }
   // Cele: efekty same pomijają cele, które przestały być legalne
   // (CR 608.2b — applyEffect sprawdza strefę przy każdej akcji).
   const beforeEffects = state.events.length;
@@ -1543,25 +1663,13 @@ function applyTriggerEffectsWereNoOp(state, ability, targets, source) {
 }
 
 /**
- * Obowiązkowy trigger płatności w stylu „sacrifice it unless you pay {N}"
- * (Rupture Spire). Nie jest to opcjonalne „you may" — trigger odpala się
- * ZAWSZE, a kontroler musi zapłacić albo poświęcić permanent.
- *
- * Świadome uproszczenie (minimalny wymiar, udokumentowane w M10): płatność
- * jest automatyczna — najpierw z puli many, a gdy jej brak, engine tapuje
- * jednego nietapniętego landa kontrolera (pierwszego z listy pola bitwy),
- * żeby opłacić koszt. Kontroler nie może dobrowolnie zrezygnować z płatności;
- * poświęcenie następuje wyłącznie, gdy zapłacić się nie da.
- */
-function firePayOrSacrifice(state, ability, source, events) {
-  return queuePayOrSacrifice(state, source, ability.trigger?.payMana ?? 0, events, ability.trigger?.event);
-}
-
-/**
  * Wspólna procedura „zapłać {N} albo poświęć" (CR 601.2h/702.1): Rupture Spire
  * (trigger ETB) i ECHO (CR 702.30, Bone Shredder — pierwszy własny upkeep po
  * wejściu). Wydzielona w Batchu 46, żeby obie ścieżki miały JEDNĄ regułę
- * płatności i te same zdarzenia (L41).
+ * płatności i te same zdarzenia (L41). Etap F (CR 603.5): wywoływana przy
+ * ROZSTRZYGANIU triggera ze stosu (resolveDeferredChoice), nie przy
+ * odpaleniu. Wybór zapłać/poświęć należy do kontrolera
+ * (resolve_pay_or_sacrifice); bez możliwości zapłaty — poświęcenie.
  */
 function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo', colors = []) {
   const controllerId = source.controllerId;
@@ -1602,7 +1710,8 @@ function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo
 
 /** Czy trigger ma opcjonalny koszt (mana/życie) — poza sacrificeIfUnpaid. */
 function hasPayCost(trigger) {
-  return ((trigger.payMana ?? 0) > 0 || (trigger.payLife ?? 0) > 0) && !trigger.sacrificeIfUnpaid;
+  return ((trigger.payMana ?? 0) > 0 || (trigger.payLife ?? 0) > 0 || Boolean(trigger.payCounter))
+    && !trigger.sacrificeIfUnpaid;
 }
 
 /**
@@ -1740,7 +1849,6 @@ export function triggerTargetDecisionPending(state, pending) {
   // odpalał. To NIE jest intervening-if (CR 603.4) — warunek jest częścią
   // ZDARZENIA triggera, nie stanu gry.
   if (!conditionHolds(pending.ability?.trigger, state, source, pending.extra ?? {})) return false;
-  if (requiresCounter(pending.ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
   const candidates = triggerTargetCandidates(state, pending.ability?.trigger?.requiresTarget, source, pending.extra);
   if (candidates.length === 0 && !pending.allowNone) return false;
   return true;
@@ -1769,11 +1877,31 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
   if (ability?.type !== 'triggered') return false;
   // eventData (extra) dla warunków z danymi zdarzenia (spellColorsInclude).
   if (!conditionHolds(trigger, state, source, extra)) return false;
+  // Etap F (CR 603.5 + 603.12): „you may pay [koszt]. When you do, [efekt
+  // z celem]" (Zoraline) — pierwsza zdolność NIE ma celu: idzie na stos
+  // zawsze, płatność to wybór przy JEJ rozstrzyganiu, a dopiero opłacenie
+  // tworzy refleksyjny trigger z celem. Kandydaci celu liczą się więc wtedy,
+  // nie w chwili odpalenia (resolve_optional_pay_choice → decyzja celu).
+  if (trigger.requiresTarget && hasPayCost(trigger)) {
+    return queueDeferredChoiceTrigger(state, ability, source, events, extra, 'optionalPay', { requiresTargetDecision: true });
+  }
   if (trigger.requiresTarget) {
     const spec = trigger.requiresTarget;
     const candidates = triggerTargetCandidates(state, spec, source, extra);
-    // Cel-obowiązkowy bez kandydata albo „up to one" bez kandydata: trigger
-    // nie odpala (CR 603.3d; „up to one" = deterministyczne „nie" jak dotąd).
+    // Cel obowiązkowy bez kandydata: zdolność jest usuwana ze stosu
+    // (CR 603.3d). „Up to one target" (spec.optional — Lodestone Needle,
+    // Jill) bez kandydata: CR pozwala położyć ją z zerem celów, ale jej
+    // JEDYNY efekt dotyczy celu, więc rozstrzygnięcie nic by nie zrobiło —
+    // pomijamy ją z wpisem „brak celów" (bez wpływu na grę: w katalogu nie ma
+    // kart reagujących na samo położenie zdolności na stosie).
+    // KARTA SPOZA KATALOGU: gdy pojawi się „up to one target" z efektem
+    // NIEZALEŻNYM od celu (np. „draw a card and tap up to one target
+    // creature"), taka zdolność musi iść na stos z zerem celów, a efekt bez
+    // celu — wykonać się przy rozstrzyganiu (wzorzec: Greatsword of Tyr
+    // w gałęzi `equipped_creature_attacks` — decyzja z allowNone i pustymi
+    // kandydatami, licznik na nosicielu ląduje mimo braku celu).
+    // „You may [czasownik] target" NIE używa spec.optional (Etap F, CR 603.5):
+    // cel obowiązkowy + `mayFire` — wybór „may" przy rozstrzyganiu.
     if (candidates.length === 0) {
       // M106/Z2 (decyzja właściciela 2026-08-16): gracz MA się dowiedzieć,
       // że trigger nie zrobił nic i dlaczego. Wcześniej Puppeteer Clique
@@ -1787,36 +1915,23 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
       events?.push?.(skipped);
       return false;
     }
-    if (requiresCounter(ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
     if (!canPayTrigger(state, source.controllerId, trigger)) return false;
-    // Zoraline („you may pay ... When you do, ..."): NAJPIERW decyzja
-    // płatności (Temat 8), PO zapłacie decyzja CELU (Temat 2).
-    if (hasPayCost(trigger)) {
-      return fireOrQueuePay(state, ability, source, [], events, extra, { requiresTargetDecision: true });
-    }
     // Temat 2: cel wybiera kontroler — resolve_trigger_target zamiast
     // deterministycznego findTriggerTarget (Forge Devil, Kor Sanctifiers,
     // Jill, Puppeteer Clique itd.).
     return queueTargetDecision(state, ability, source, candidates, Boolean(spec.optional), [], events, extra);
   }
   if (trigger.mayFire) {
-    // „You may" bez celu (Angel's Feather — „you may gain 1 life"): decyzja
-    // tak/nie kontrolera (resolve_optional_trigger_choice).
-    if (!canPayTrigger(state, source.controllerId, trigger)) return false;
-    state.pendingOptionalTrigger = {
-      playerId: source.controllerId,
-      sourceId: source.id,
-      ability: Object.freeze({ ...ability }),
-      extra: Object.freeze({ ...extra }),
-      restorePriorityTo: state.turn.priorityPlayerId,
-    };
-    state.turn.priorityPlayerId = source.controllerId;
-    const required = event('optional_trigger_required', {
-      playerId: source.controllerId, sourceId: source.id, cardId: source.cardId,
-    });
-    state.events.push(required);
-    events.push(required);
-    return true;
+    // „You may" bez celu (Angel's Feather — „you may gain 1 life"); wariant
+    // z celem idzie gałęzią requiresTarget wyżej, a „may" rozstrzyga
+    // resolveTriggerEntry z deskryptora.
+    // Etap F (CR 603.5): zdolność idzie na stos NIEZALEŻNIE od zamiaru
+    // kontrolera, a wybór tak/nie zapada przy rozstrzyganiu
+    // (resolveTriggerEntry → pendingOptionalTrigger z `resolveAbility`).
+    // Dawniej pytanie padało w chwili odpalenia, a „nie" w ogóle nie
+    // kładło zdolności na stos — przeciwnik tracił okno odpowiedzi, a gracz
+    // decydował przed nią.
+    return queueDeferredChoiceTrigger(state, ability, source, events, extra, 'optional');
   }
   // Modalne triggery (Batch 22: Etherwrought Page upkeep): trigger ma
   // `effect.modes` (jak spell.modes dla modalnych czarów) — kolejkuje
@@ -1824,7 +1939,6 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
   // Tryb jest wybierany przez kontrolera, po czym efekty trybu są
   // aplikowane jak zwykły efekt triggera.
   if (Array.isArray(trigger.modes) && trigger.modes.length > 0) {
-    if (requiresCounter(ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
     if (!canPayTrigger(state, source.controllerId, trigger)) return false;
     // M174/E-fix (Downwind Ambusher, CR 603.3b): tryb wybiera się przy
     // kładzeniu na stos — gdy KAŻDY tryb wymaga celu i żaden nie ma
@@ -1863,46 +1977,49 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
     events.push(required);
     return true;
   }
-  if (!canPayTrigger(state, source.controllerId, trigger)) return false;
+  // Etap F (CR 603.5): opcjonalna płatność nie bramkuje odpalenia —
+  // opłacalność sprawdza się przy rozstrzyganiu (resolveDeferredChoice).
+  if (!hasPayCost(trigger) && !canPayTrigger(state, source.controllerId, trigger)) return false;
   return fireOrQueuePay(state, ability, source, [], events, extra);
 }
 
 /**
- * Temat 8 — opcjonalne płatności triggerów („you may pay ... When you do, ...":
- * Panic Spellbomb {R}, Zoraline {W}{B} i 2 życia) to DECYZJA gracza, a nie
- * automat. Gdy trigger niesie payMana/payLife (bez sacrificeIfUnpaid),
- * kolejkujemy resolve_optional_pay_choice; po wyborze „tak" komenda płaci
- * i odpala trigger (z zachowanym kontekstem zdarzenia). Przy „nie" trigger
- * po prostu nie odpala. Dla triggerów z requiresTarget (Zoraline) płatność
- * poprzedza decyzję CELU (requiresTargetDecision).
+ * Etap F (CR 603.5): „Some triggered abilities' effects are optional (they
+ * contain “may,” ...). These abilities go on the stack when they trigger,
+ * regardless of whether their controller intends to exercise the ability's
+ * option or not. The choice is made when the ability resolves. Likewise,
+ * triggered abilities that have an effect “unless” something is true or a
+ * player chooses to do something will go on the stack normally; the “unless”
+ * part of the ability is dealt with when the ability resolves."
+ *
+ * Wspólne wejście na stos dla trzech rodzin: `optional` („you may [efekt]"),
+ * `optionalPay` („you may pay ... If/When you do") i `payOrSacrifice`
+ * („sacrifice it unless you pay" — Rupture Spire, echo). Wybór rozstrzyga
+ * `resolveDeferredChoice` przy rozstrzyganiu wpisu.
  */
-function fireOrQueuePay(state, ability, source, triggerTargets, events, extra, { requiresTargetDecision = false } = {}) {
+function queueDeferredChoiceTrigger(state, ability, source, events, extra, kind, options = {}) {
+  queueTriggerToStack(state, ability, source, [], events, {
+    ...(extra ?? {}),
+    deferredChoice: Object.freeze({ kind, ...options }),
+  });
+  return true;
+}
+
+/**
+ * Temat 8 — opcjonalne płatności triggerów („you may pay [koszt]. If you do,
+ * [efekt]": Panic Spellbomb {R}, Furious Forebear {1}{W}, Descendant of
+ * Storms {1}{W}) to DECYZJA gracza, a nie automat.
+ *
+ * Etap F (CR 603.5): zdolność idzie na stos ZAWSZE — także gdy kontroler nie
+ * zamierza albo nie może zapłacić — a płatność jest wyborem przy jej
+ * rozstrzyganiu (resolveTriggerEntry → pendingOptionalPay z `onResolution`).
+ * Dawniej decyzja i płatność padały w chwili odpalenia, a na stos szedł już
+ * opłacony efekt: gracz płacił, zanim przeciwnik mógł odpowiedzieć.
+ */
+function fireOrQueuePay(state, ability, source, triggerTargets, events, extra) {
   const trigger = ability?.trigger ?? {};
-  const hasPay = (trigger.payMana ?? 0) > 0 || (trigger.payLife ?? 0) > 0;
-  if (hasPay && !trigger.sacrificeIfUnpaid) {
-    state.pendingOptionalPay = {
-      playerId: source.controllerId,
-      sourceId: source.id,
-      ability: Object.freeze({ ...ability }),
-      targetId: triggerTargets[0] ?? null,
-      extra: Object.freeze({ ...extra }),
-      restorePriorityTo: state.turn.priorityPlayerId,
-      requiresTargetDecision: Boolean(requiresTargetDecision),
-    };
-    state.turn.priorityPlayerId = source.controllerId;
-    const required = event('optional_pay_required', {
-      playerId: source.controllerId, sourceId: source.id, cardId: source.cardId,
-      payMana: trigger.payMana ?? 0, payLife: trigger.payLife ?? 0,
-      // M265 (Żywy Tester, worek-basni vs final-fantasy seed 303): koszt bywa
-      // KOLOROWY (Zoraline {W}{B}, Furious Forebear {1}{W}). Bez pipów opis
-      // zdarzenia pisał generyczne „{2}" — cenę, której w grze nie ma —
-      // podczas gdy przycisk decyzji (playerView.costColors) pokazywał
-      // prawidłowe {W}{B}. Zdarzenie musi nieść ten sam koszt co komenda.
-      payColors: trigger.payColors ?? [],
-    });
-    state.events.push(required);
-    events.push(required);
-    return true;
+  if (hasPayCost(trigger)) {
+    return queueDeferredChoiceTrigger(state, ability, source, events, extra, 'optionalPay');
   }
   // Kontekst zdarzenia (extra) trafia do efektów triggera: manaSpent rzutu
   // (Tellah), enteredControllerId landa przeciwnika (Nightshade Harvester),
@@ -2000,8 +2117,8 @@ export function applyDayNightAtTurnStart(state, previousActivePlayerId) {
  * ZASTĘPCZY efekt — liczniki lądują na permanencie, zanim odpali się
  * jakikolwiek trigger ETB; triggery wchodzą więc po rozstrzygnięciu
  * decyzji, patrz deferredDevourEtb w processTriggersScan):
- * 1) własne „enter_battlefield" (firePayOrSacrifice dla obowiązkowej
- *    płatności sacrifice-unless-you-pay, tryFire dla reszty);
+ * 1) własne „enter_battlefield" (queueDeferredChoiceTrigger 'payOrSacrifice'
+ *    dla „sacrifice it unless you pay", tryFire dla reszty);
  * 2) triggery INNYCH permanentów (another_creature_enters, landfall,
  *    creature_you_control_enters — Impact Tremors — itd.).
  */
@@ -2009,9 +2126,15 @@ function fireEnterBattlefieldTriggers(state, entered, events, context = {}) {
   for (const ability of effectiveAbilities(entered)) {
     if (ability?.trigger?.event !== 'enter_battlefield') continue;
     // Obowiązkowa płatność typu „sacrifice unless you pay" to nie „you may"
-    // — osobna, deterministyczna ścieżka (firePayOrSacrifice).
+    // — decyzja zapłać/poświęć przy rozstrzyganiu (queuePayOrSacrifice).
     if (ability.trigger?.sacrificeIfUnpaid) {
-      firePayOrSacrifice(state, ability, entered, events);
+      // Etap F (CR 603.5): „unless" rozstrzyga się przy rozstrzyganiu
+      // zdolności — trigger idzie na stos jak każdy inny.
+      queueDeferredChoiceTrigger(state, ability, entered, events, {}, 'payOrSacrifice', {
+        amount: ability.trigger?.payMana ?? 0,
+        colors: [...(ability.trigger?.payColors ?? [])],
+        triggerEvent: ability.trigger?.event ?? 'enter_battlefield',
+      });
       continue;
     }
     // Batch 24 (Mystic Sanctuary): „When this land enters UNTAPPED" —
@@ -3468,7 +3591,17 @@ function processTriggersScan(state, recentEvents) {
         if (object.controllerId !== state.turn.activePlayerId) continue;
         const cost = object.echo ?? 0;
         state.objects.set(object.id, Object.freeze({ ...object, echoUnpaid: false }));
-        queuePayOrSacrifice(state, object, cost, events, 'echo', object.echoColors ?? []);
+        // Etap F (CR 702.30a + 603.5): echo to zdolność WYZWALANA — idzie
+        // na stos (przeciwnik może odpowiedzieć), a „sacrifice it unless you
+        // pay" rozstrzyga się przy jej rozstrzyganiu.
+        const echoAbility = Object.freeze({
+          type: 'triggered', keyword: 'echo',
+          trigger: Object.freeze({ event: 'echo' }),
+          effect: null,
+        });
+        queueDeferredChoiceTrigger(state, echoAbility, state.objects.get(object.id), events, {}, 'payOrSacrifice', {
+          amount: cost, colors: [...(object.echoColors ?? [])], triggerEvent: 'echo',
+        });
       }
     }
     // Suspend (CR 702.62a): „At the beginning of your upkeep, if this card is

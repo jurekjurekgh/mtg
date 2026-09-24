@@ -69,13 +69,17 @@ export const REAL_CARDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: {
           event: 'combat_damage_to_player',
-          // Temat 2: „you may remove a deathtouch counter... When you do, exile
-          // target artifact or enchantment" — cel wybiera kontroler, a „you
-          // may" daje opcję odmowy (allowNone).
-          requiresTarget: { type: 'artifact_or_enchantment', controlledBy: 'damaged_player', optional: true },
+          // Etap F (CR 603.5 + 603.12): „you may remove a deathtouch counter
+          // from it. When you do, exile target artifact or enchantment that
+          // player controls." — zdolność idzie na stos BEZ celu; przy
+          // rozstrzyganiu kontroler decyduje, czy usuwa znacznik (payCounter,
+          // jak „you may pay" Zoraline), a dopiero „When you do" to refleksyjna
+          // zdolność z celem wybieranym po zapłacie. Dawniej cel wybierano
+          // przy odpaleniu, a znacznik usuwał efekt.
+          payCounter: { counter: 'deathtouch', amount: 1 },
+          requiresTarget: { type: 'artifact_or_enchantment', controlledBy: 'damaged_player' },
         },
         effect: [
-          { type: 'remove_counter', counter: 'deathtouch', amount: 1 },
           { type: 'exile_permanent', targetType: 'artifact_or_enchantment', controlledBy: 'damaged_player' },
         ],
       }),
@@ -2585,10 +2589,13 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.triggered,
         // Temat 2: „you may have it deal damage to target creature" — cel
-        // wybiera kontroler, a „you may" daje opcję odmowy (allowNone).
-        // Obrażenia = liczba artefaktów kontrolera źródła (wartość dynamiczna
-        // 'artifacts_you_control').
-        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', optional: true } },
+        // wybiera kontroler. Obrażenia = liczba artefaktów kontrolera źródła
+        // (wartość dynamiczna 'artifacts_you_control').
+        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
+        // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
+        // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
+        // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+        trigger: { event: 'enter_battlefield', mayFire: true, requiresTarget: { type: 'creature' } },
         effect: { type: 'damage', amount: 'artifacts_you_control' },
       }),
     ],
@@ -4167,7 +4174,12 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         trigger: {
           event: 'enter_battlefield',
           condition: { enteredUntapped: true },
-          requiresTarget: { type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller', optional: true },
+          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
+          // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
+          // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
+          // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+          mayFire: true,
+          requiresTarget: { type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller' },
         },
         effect: [{ type: 'put_graveyard_card_on_top' }],
       }),
@@ -4705,7 +4717,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'beginning_of_combat', requiresTarget: { type: 'creature', optional: true } },
+        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
+        // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
+        // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
+        // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+        trigger: { event: 'beginning_of_combat', mayFire: true, requiresTarget: { type: 'creature' } },
         effect: { type: 'pump', power: 2, toughness: 0 },
       }),
     ],
@@ -5171,7 +5187,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       // Druga zdolność: „you may tap target creature" przy samotnym ataku.
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'attacks_alone', requiresTarget: { type: 'creature', optional: true } },
+        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
+        // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
+        // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
+        // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+        trigger: { event: 'attacks_alone', mayFire: true, requiresTarget: { type: 'creature' } },
         effect: { type: 'tap_permanent' },
       }),
     ],
@@ -9730,14 +9750,16 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         // Dinozaura rzucony w tej turze — „When this creature enters, you may
         // have it fight another target creature." (Oracle, Scryfall
         // 2026-09-18). `sourceIsFighter`: walczy sam czar/permanent, a nie
-        // dwa wskazane cele; `optional` = „you may".
+        // dwa wskazane cele; `mayFire` = „you may" (Etap F, CR 603.5: cel
+        // obowiązkowy przy kładzeniu na stos, wybór „may" przy rozstrzyganiu).
         effect: [{
           type: 'subtype_spells_gain_flash_and_etb_fight_this_turn', subtype: 'Dinosaur',
           grantedAbility: createAbility({
             type: ABILITY_TYPE.triggered,
             trigger: {
               event: 'enter_battlefield',
-              requiresTarget: { type: 'creature', notSelf: true, optional: true },
+              mayFire: true,
+              requiresTarget: { type: 'creature', notSelf: true },
             },
             effect: { type: 'fight', sourceIsFighter: true },
           }),
@@ -10385,10 +10407,12 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: {
           event: 'enter_battlefield',
-          // „you may have target creature..." — opcjonalność całości jest
-          // w OPCJONALNYM CELU (spec.optional), nie w mayFire (mayFire jest
-          // dla „you may" BEZ celu — Angel's Feather).
-          requiresTarget: { type: 'creature', optional: true },
+          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
+          // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
+          // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
+          // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+          mayFire: true,
+          requiresTarget: { type: 'creature' },
         },
         effect: { type: 'buff_creature_until_end_of_turn', power: -1, toughness: -1 },
       }),
@@ -10536,7 +10560,12 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: {
           event: 'enter_battlefield',
-          requiresTarget: { type: 'aura_or_equipment_card_in_graveyard', controlledBy: 'controller', optional: true },
+          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
+          // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
+          // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
+          // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+          mayFire: true,
+          requiresTarget: { type: 'aura_or_equipment_card_in_graveyard', controlledBy: 'controller' },
         },
         effect: { type: 'return_card_from_graveyard_to_hand' },
       }),

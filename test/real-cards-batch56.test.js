@@ -10,6 +10,7 @@ import { addMana } from '../src/engine/resources.js';
 import { effectivePower, effectiveToughness, attachmentRestrictions, untapControlled, tapObject, untapByEffect } from '../src/engine/permanents.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
+import { resolveUntilDecision, optionalTriggerOpen } from './helpers/deferred-trigger.js';
 import { addEnergyCounters } from '../src/engine/players.js';
 
 /**
@@ -660,10 +661,13 @@ test("B56/B6: 28 Kraken's Eye — niebieski czar PRZECIWNIKA: „you may gain 1 
   const castBlue = commands(s, 'p2').find((c) => c.type === 'cast_permanent' && c.objectId === 'blue');
   assert.ok(castBlue, 'oferta rzucenia niebieskiego stwora');
   run(s, castBlue);
+  // Etap F (CR 603.5): trigger idzie na stos NAD czarem; „you may” to wybór
+  // przy jego rozstrzyganiu — czar jest wtedy jeszcze na stosie.
+  assert.ok(resolveUntilDecision(s, optionalTriggerOpen));
   const choice = commands(s, 'p1').find((c) => c.type === 'resolve_optional_trigger_choice');
   assert.ok(choice, '„you may” — decyzja kontrolera Oka (ruling: dowolny gracz)');
-  run(s, { ...choice, fire: true });
   assert.ok(s.zones.stack.length >= 1, 'trigger rozstrzyga się, gdy czar jest jeszcze na stosie');
+  run(s, { ...choice, fire: true });
   resolve(s);
   assert.equal(player(s, 'p1').life, before + 1, '„you may gain 1 life”');
   // Permanent wchodzi z NOWYM id (moveObjectDirectly) — szukamy po cardId.

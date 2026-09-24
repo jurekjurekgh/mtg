@@ -23,6 +23,7 @@ import { addMana } from '../src/engine/resources.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 import { drawPlayerCards } from '../src/engine/effects.js';
 import { processTriggers } from '../src/engine/triggers.js';
+import { resolveUntilDecision, optionalTriggerOpen } from './helpers/deferred-trigger.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -398,7 +399,10 @@ test('B52: Fourth Bridge Prowler — dane Oracle i deskryptor triggera', () => {
   assert.equal(def.plan, 'Kaladesh');
   const trigger = def.abilities[0].trigger;
   assert.equal(trigger.event, 'enter_battlefield');
-  assert.deepEqual(trigger.requiresTarget, { type: 'creature', optional: true }, 'cel opcjonalny (you may)');
+  // Etap F (CR 603.5 + 603.3d): cel obowiązkowy przy kładzeniu na stos,
+  // „you may" rozstrzyga się przy rozstrzyganiu (mayFire).
+  assert.deepEqual(trigger.requiresTarget, { type: 'creature' }, 'cel obowiązkowy');
+  assert.equal(trigger.mayFire, true, '„you may" przy rozstrzyganiu');
   assert.deepEqual(def.abilities[0].effect, { type: 'buff_creature_until_end_of_turn', power: -1, toughness: -1 });
 });
 
@@ -410,27 +414,32 @@ test('B52: Fourth Bridge Prowler — ETB nakłada -1/-1 na wybranego stwora', ()
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'prowler' }).ok);
   resolveStack(state); // zatrzymuje się na decyzji celu triggera
   const pend = state.pendingTriggerTargets.find((p) => p.cardId === 'fourth-bridge-prowler');
-  assert.ok(pend, 'trigger czeka na wybór celu (you may)');
+  assert.ok(pend, 'trigger czeka na wybór celu (Prowler i foe — dwaj kandydaci)');
+  assert.equal(pend.allowNone, false, 'cel obowiązkowy (CR 603.3d)');
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe' }).ok);
-  resolveStack(state); // rozstrzygnij trigger → -1/-1 do końca tury
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen), '„you may" przy rozstrzyganiu (CR 603.5)');
+  assert.deepEqual(state.pendingOptionalTrigger.targets, ['foe']);
+  assert.ok(execute(state, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true }).ok);
   const foe = state.objects.get('foe');
   assert.equal(effectivePower(foe, state), 3, '4 - 1 mocy');
   assert.equal(effectiveToughness(foe, state), 3, '4 - 1 wytrzymałości');
 });
 
-test('B52: Fourth Bridge Prowler — „you may": odmowa celu = brak efektu', () => {
+test('B52: Fourth Bridge Prowler — „you may": odmowa przy rozstrzyganiu = brak efektu', () => {
   const state = game();
   addMana(state, 'p1', 1, { colors: ['B'] });
   addSimpleCreature(state, 'foe', 'p2', { power: 4, toughness: 4 });
   put(state, 'prowler', 'fourth-bridge-prowler', 'p1', 'hand');
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'prowler' }).ok);
   resolveStack(state);
-  // Cel opcjonalny — odmowa (targetId null) zostawia stwora nietkniętego.
-  const pend = state.pendingTriggerTargets.find((p) => p.cardId === 'fourth-bridge-prowler');
-  if (pend) {
-    assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: null }).ok);
-    resolveStack(state);
-  }
+  // Etap F (CR 603.5): cel wybrany przy kładzeniu na stos, odmowa („Dalej")
+  // przy rozstrzyganiu zostawia stwora nietkniętego.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: null }).ok === false,
+    'brak opcji „bez celu" — cel obowiązkowy');
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe' }).ok);
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen));
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  assert.equal(state.pendingOptionalTrigger, null);
   assert.equal(effectivePower(state.objects.get('foe'), state), 4, 'bez wyboru celu stwór nietknięty');
 });
 

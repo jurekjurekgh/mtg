@@ -11,6 +11,7 @@ import { createAggroBot } from '../src/controllers/aggro-bot.js';
 import { createCardRegistry, UNDERCITY_DUNGEON } from '../src/cards/card-data.js';
 import { gameObjectDataOf, setupCardMatch } from '../src/cards/materialize.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
+import { resolveUntilDecision, optionalTriggerOpen } from './helpers/deferred-trigger.js';
 import { UNDERCITY_ROOMS } from '../src/engine/effects.js';
 
 /**
@@ -446,6 +447,8 @@ test("Angel's Feather: biały czar dowolnego gracza daje +1 życia właścicielo
   addMana(state, 'p2', 2);
   const before = state.players.find((player) => player.id === 'p1').life;
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p2', objectId: 'white', targets: [] }).ok);
+  // Etap F (CR 603.5): trigger na stosie NAD czarem — wybór przy rozstrzyganiu.
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen));
   // Temat 2: „you may gain 1 life" — decyzja kontrolera Pióra (tak).
   assert.ok(execute(state, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true }).ok);
   passBoth(state); // T6: rozstrzygnij trigger ze stosu
@@ -489,6 +492,8 @@ test("Angel's Feather: białe permanenty (Porcelain Legionnaire) też są biały
   const before = state.players.find((player) => player.id === 'p1').life;
   const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'porc' });
   assert.ok(rCast2.ok);
+  // Etap F (CR 603.5): trigger na stosie NAD czarem — wybór przy rozstrzyganiu.
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen));
   // Temat 2: „you may gain 1 life" — decyzja kontrolera Pióra PRZED rundą
   // passów (pending blokuje pass).
   assert.ok(execute(state, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true }).ok);

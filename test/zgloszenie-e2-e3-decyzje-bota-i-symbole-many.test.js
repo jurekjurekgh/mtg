@@ -117,6 +117,18 @@ function sesjaZeSmiercia({ graczOfiary, graczRzucajacy }) {
     type: 'cast_spell', playerId: graczRzucajacy, objectId: 'szok', targets: ['ofiara'],
   });
   assert.ok(r.ok, `setup: rzut Shocka (${r.events?.[0]?.reason ?? 'ok'})`);
+  // Etap F (CR 603.5): zdolność Forebeara idzie na stos po śmierci ofiary,
+  // a pytanie o dopłatę pada przy JEJ rozstrzyganiu — domykamy rundy passów
+  // człowieka (ruchy bota wykonuje sesja).
+  for (let i = 0; i < 8 && !state.events.some((e) => e.type === 'optional_pay_required'); i += 1) {
+    if (state.zones.stack.length === 0) break;
+    if (state.turn.priorityPlayerId !== HUMAN_ID) {
+      if (!session.botPausePending) break;
+      session.continueBotPlay();
+      continue;
+    }
+    session.apply({ type: 'pass_priority', playerId: HUMAN_ID });
+  }
   assert.ok(state.events.some((e) => e.type === 'optional_pay_required'),
     'setup: zdolność Forebeara pyta o dopłatę {1}{W}');
   const decyzja = state.events.find((e) => e.type === 'optional_pay_required');

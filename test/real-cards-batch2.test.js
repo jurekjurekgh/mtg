@@ -8,6 +8,7 @@ import { hasCounter } from '../src/engine/counters.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf, setupCardMatch } from '../src/cards/materialize.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
+import { resolveUntilDecision, optionalPayOpen } from './helpers/deferred-trigger.js';
 import fs from 'node:fs';
 
 /**
@@ -353,6 +354,7 @@ test('Zoraline: atak odpala trigger ataku (powrót z grobu) i tribał nietoperzy
   assert.equal(result.ok, true, result.events[0]?.reason);
   // bat_attacks: +1 życie; attacks: „you may pay 2 many i 2 życia" — decyzja.
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'bat_attacks'), 'brak triggera nietoperza');
+  resolveUntilDecision(state, optionalPayOpen); // Etap F (CR 603.5)
   assert.ok(state.pendingOptionalPay, 'decyzja opcjonalnej płatności czeka');
   const pay = execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: true });
   assert.ok(pay.ok, pay.events[0]?.reason);

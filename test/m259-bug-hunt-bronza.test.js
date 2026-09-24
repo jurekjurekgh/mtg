@@ -13,6 +13,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { createCardDeck } from '../src/cards/materialize.js';
 import { addMana } from '../src/engine/resources.js';
+import { resolveUntilDecision, payOrSacrificeOpen } from './helpers/deferred-trigger.js';
 import { processTriggers } from '../src/engine/triggers.js';
 
 const REGISTRY = createCardRegistry();
@@ -212,6 +213,7 @@ test('B7: echo {2}{B} nie jest opłacalne maną bezbarwną — stwór poświęco
   state.objects.set('shredder', Object.freeze({ ...shredder, echoUnpaid: true }));
   addMana(state, 'p1', 3, { colors: [] }); // pula bezbarwna, zero źródeł kolorowych
   processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', playerId: 'p1' }]);
+  resolveUntilDecision(state, payOrSacrificeOpen); // Etap F: echo na stosie (CR 603.5)
   assert.ok(!state.pendingPayOrSacrifice,
     'bez źródła {B} echo NIE oferuje płatności (koszt {2}{B} nieopłacalny)');
   const after = state.objects.get('shredder');
@@ -227,6 +229,7 @@ test('B7: echo {2}{B} płacone źródłami z błękitem... z bagienkiem: decyzja
   addLand(state, 'm1', 'p1', 'Mountain');
   addLand(state, 'm2', 'p1', 'Mountain');
   processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', playerId: 'p1' }]);
+  resolveUntilDecision(state, payOrSacrificeOpen); // Etap F: echo na stosie (CR 603.5)
   assert.ok(state.pendingPayOrSacrifice, 'przy bagience decyzja echo jest oferowana');
   assert.equal(state.pendingPayOrSacrifice.amount, 3, 'echo = {2}{B} (3 many)');
   const r = execute(state, { type: 'resolve_pay_or_sacrifice', playerId: 'p1', pay: true });

@@ -26,7 +26,7 @@ import { legalActivatedAbilities, legalManaAbilities, activateAbility, performAc
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
-import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers, triggerSourceZoneResolvable } from './triggers.js';
+import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers, triggerSourceZoneResolvable } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -3688,7 +3688,14 @@ export function execute(state, input) {
       const abilityToFire = { ...pending.ability, effect: effects.length === 1 ? effects[0] : effects };
       if (payMana > 0) spendMana(state, pending.playerId, payMana, payColors);
       if (payLife > 0) changeLife(state, pending.playerId, -payLife);
-      const source = state.objects.get(pending.sourceId);
+      // „You may remove a [X] counter from it. When you do, ..." (Kappa
+      // Tech-Wrecker): koszt = znacznik z ŻYWEGO źródła (resolveDeferredChoice
+      // otworzył decyzję tylko, gdy źródło nadal jest na polu bitwy i go ma).
+      const payCounter = pending.ability?.trigger?.payCounter ?? null;
+      if (payCounter) removeCounter(state, pending.sourceId, payCounter.counter, payCounter.amount ?? 1);
+      // Etap F (CR 603.5/603.10): decyzja zapada przy ROZSTRZYGANIU triggera —
+      // źródło mogło już zmienić strefę; wtedy efekty czytają stub LKI.
+      const source = state.objects.get(pending.sourceId) ?? pending.source ?? null;
       if (source) {
         if (pending.requiresTargetDecision) {
           // Zoraline (Temat 2): PO zapłacie kontroler wybiera CEL reanimacji
@@ -3722,8 +3729,10 @@ export function execute(state, input) {
             }));
           }
         } else {
-          // T6: opłacony trigger idzie na STOS — rozstrzyga się po passach.
-          queueTriggerToStack(state, abilityToFire, source, pending.targetId ? [pending.targetId] : [], [], pending.extra ?? {});
+          // Etap F (CR 603.5): „If you do, [efekt]" — efekt jest częścią
+          // TEGO rozstrzygnięcia (zdolność już była na stosie i przeciwnik
+          // miał okno odpowiedzi przed płatnością).
+          applyDeferredTriggerEffects(state, pending, abilityToFire);
         }
       }
       state.events.push(event('optional_pay_resolved', { playerId: pending.playerId, paid: true }));
@@ -3859,10 +3868,17 @@ export function execute(state, input) {
       const source = state.objects.get(pending.sourceId);
       if (pending.resolveEffect) {
         if (source) applyEffect(state, pending.resolveEffect, source, []);
-      } else if (source && source.zone === 'battlefield') {
-        // T6: zaakceptowany „you may" idzie na STOS — rozstrzyga się po passach.
-        queueTriggerToStack(state, pending.ability, source, [], [], pending.extra ?? {});
+      } else if (pending.resolveAbility) {
+        // Etap F (CR 603.5): „you may" wybrane przy rozstrzyganiu — efekty
+        // tej samej zdolności, od razu (była już na stosie).
+        applyDeferredTriggerEffects(state, pending, pending.ability);
       }
+    } else if (pending.resolveAbility) {
+      // M106/Z2: gracz widzi, że zdolność rozstrzygnęła się bez skutku.
+      state.events.push(event('trigger_resolved', {
+        objectId: pending.stackEntryId ?? null, sourceId: pending.sourceId,
+        cardId: pending.cardId ?? null, noEffect: true, reason: 'declined',
+      }));
     }
     state.events.push(event('optional_trigger_resolved', {
       playerId: pending.playerId, fired: Boolean(cmd.fire),
@@ -7168,7 +7184,19 @@ export function playerView(state, playerId) {
       cost: optionalPayTrigger.payMana ?? null,
       costColors: optionalPayTrigger.payColors ?? null,
       lifeCost: optionalPayTrigger.payLife ?? null,
+      counterCost: optionalPayTrigger.payCounter ?? null,
       sourceId: state.pendingOptionalPay.sourceId ?? null,
+      // Etap F (CR 603.5 + 603.12): „When you do, [efekt z celem]" — płatność
+      // pada przy rozstrzyganiu, zanim wybiera się cel refleksyjnej zdolności.
+      // Liczba legalnych celów TERAZ mówi graczowi i botowi, czy zapłata
+      // w ogóle może coś dać (CR pozwala zapłacić także bez celu).
+      ...(state.pendingOptionalPay.requiresTargetDecision ? {
+        reflexiveTargetCount: legalTriggerTargetCandidates(state, {
+          sourceId: state.pendingOptionalPay.sourceId,
+          ability: state.pendingOptionalPay.ability,
+          extra: state.pendingOptionalPay.extra ?? {},
+        }).length,
+      } : {}),
     };
     legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: true, ...optionalPayInfo }));
     legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: false, ...optionalPayInfo }));
@@ -7198,9 +7226,23 @@ export function playerView(state, playerId) {
     const effs = Array.isArray(optionalAbility?.effect) ? optionalAbility.effect
       : (optionalAbility?.effect ? [optionalAbility.effect] : []);
     const selfMillEffect = effs.find((e) => e?.type === 'mill_cards' && !e.targetPlayerId && !e.applyTo);
+    // Etap F (CR 603.5): „you may [czasownik] target" — cel wybrano przy
+    // kładzeniu na stos, a „tak/nie" pada teraz; oferta niesie cele i te same
+    // sygnały intencji co resolve_trigger_target (friendly/debuff/pump/
+    // removesTarget — ADR 0002), żeby bot nie odpalił szkodliwego efektu we
+    // własnego stwora, gdy był on jedynym legalnym celem.
+    const optionalTargets = state.pendingOptionalTrigger?.targets ?? [];
+    const optionalTargetInfo = optionalTargets.length > 0 && optionalAbility ? {
+      targetIds: [...optionalTargets],
+      friendly: triggerTargetEffectFriendly(optionalAbility),
+      removesTarget: triggerTargetRemovesTargetOf(optionalAbility),
+      ...(triggerTargetDebuffOf(optionalAbility) ? { debuff: triggerTargetDebuffOf(optionalAbility) } : {}),
+      ...(triggerTargetPowerPumpOf(optionalAbility) ? { pump: triggerTargetPowerPumpOf(optionalAbility) } : {}),
+    } : {};
     legalCommands.push(command('resolve_optional_trigger_choice', playerId, {
       fire: true,
       ...(selfMillEffect ? { selfMill: selfMillEffect.amount ?? 0 } : {}),
+      ...optionalTargetInfo,
     }));
     // F1 (uwaga właściciela 2026-09-23c): ODMOWA to zwykły pass — panel rysuje
     // „Dalej (Pass)" (pierwszy przycisk, reguła E), a `execute` przyjmuje go

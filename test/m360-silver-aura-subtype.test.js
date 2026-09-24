@@ -5,6 +5,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { resolveUntilDecision, optionalTriggerOpen, triggerTargetOpen } from './helpers/deferred-trigger.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -27,20 +28,16 @@ function addCard(state, id, cardId, controllerId, zone = 'hand') {
   return state.objects.get(id);
 }
 
-function resolveStack(state) {
-  let guard = 0;
-  while (state.zones.stack.length > 0 && guard++ < 20) {
-    const result = execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
-    if (!result.ok) break;
-  }
-}
-
 function slayerReturns(state, auraId, auraCardId) {
   addMana(state, 'p1', 6, { colors: ['W'] });
   addCard(state, 'is', 'ironclad-slayer', 'p1', 'hand');
   addCard(state, auraId, auraCardId, 'p1', 'graveyard');
+  // Etap F (CR 603.5): cel „you may return target" jest obowiązkowy, więc
+  // przy JEDYNYM kandydacie silnik wybiera go sam (M242). Drugi kandydat
+  // (Equipment) utrzymuje decyzję celu, w której sprawdzamy ofertę Aury.
+  addCard(state, 'decoy', 'greatsword-of-tyr', 'p1', 'graveyard');
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'is' }).ok);
-  resolveStack(state);
+  resolveUntilDecision(state, triggerTargetOpen);
   const offers = playerView(state, 'p1').legalCommands
     .filter((c) => c.type === 'resolve_trigger_target');
   return { offers, auraId };
@@ -57,7 +54,8 @@ test('M360/B2a: Ironclad Slayer zawraca Spectral Prison (Aura z grobu)', () => {
   const target = offers.find((c) => c.targetId === auraId);
   assert.ok(target, 'Spectral Prison w ofercie celu Slayera');
   assert.ok(execute(state, target).ok);
-  resolveStack(state);
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen), '„you may\" przy rozstrzyganiu');
+  assert.ok(execute(state, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true }).ok);
   const back = [...state.objects.values()].find((o) => o.cardId === 'spectral-prison' && o.zone === 'hand');
   assert.ok(back, 'Spectral Prison wrócił do ręki');
 });
@@ -68,7 +66,8 @@ test('M360/B2b: Ironclad Slayer zawraca Treefolk Umbrę (Aura z grobu)', () => {
   const target = offers.find((c) => c.targetId === auraId);
   assert.ok(target, 'Treefolk Umbra w ofercie celu Slayera');
   assert.ok(execute(state, target).ok);
-  resolveStack(state);
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen), '„you may\" przy rozstrzyganiu');
+  assert.ok(execute(state, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true }).ok);
   const back = [...state.objects.values()].find((o) => o.cardId === 'treefolk-umbra' && o.zone === 'hand');
   assert.ok(back, 'Treefolk Umbra wróciła do ręki');
 });

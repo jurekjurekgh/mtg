@@ -11,6 +11,7 @@ import { createAggroBot } from '../src/controllers/aggro-bot.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf, setupCardMatch } from '../src/cards/materialize.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
+import { resolveUntilDecision, payOrSacrificeOpen, optionalPayOpen } from './helpers/deferred-trigger.js';
 import { verifyReplay, replayFromState } from '../src/engine/replay.js';
 
 /**
@@ -124,6 +125,7 @@ test('Rupture Spire: z maną w puli płaci {1} i zostaje (trigger obowiązkowy)'
   const result = execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' });
   assert.equal(result.ok, true);
   // Temat 7: „zapłać {1} albo poświęć" to decyzja KONTROLERA.
+  resolveUntilDecision(state, payOrSacrificeOpen); // Etap F (CR 603.5): „unless" przy rozstrzyganiu
   assert.ok(state.pendingPayOrSacrifice, 'decyzja pay-or-sacrifice czeka');
   const pay = execute(state, { type: 'resolve_pay_or_sacrifice', playerId: 'p1', pay: true });
   assert.ok(pay.ok, pay.events[0]?.reason);
@@ -138,6 +140,7 @@ test('Rupture Spire: bez many auto-tapuje innego nietapniętego landa i płaci',
   const result = execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' });
   assert.equal(result.ok, true, result.events[0]?.reason);
   // Temat 7: płatność możliwa (nietapnięty las) — decyzja kontrolera.
+  resolveUntilDecision(state, payOrSacrificeOpen); // Etap F (CR 603.5)
   assert.ok(state.pendingPayOrSacrifice, 'decyzja pay-or-sacrifice czeka');
   const pay = execute(state, { type: 'resolve_pay_or_sacrifice', playerId: 'p1', pay: true });
   assert.ok(pay.ok, pay.events[0]?.reason);
@@ -151,8 +154,13 @@ test('Rupture Spire: bez many i bez landów do tapnięcia jest poświęcany', ()
   addRealCard(state, 'spire', 'rupture-spire', 'p1', 'hand');
   const result = execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' });
   assert.equal(result.ok, true, result.events[0]?.reason);
-  assert.ok(result.events.some((e) => e.type === 'permanent_sacrificed' && e.cardId === 'rupture-spire'), 'brak zdarzenia poświęcenia');
-  assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.sacrificed === true), 'trigger nie odnotował poświęcenia');
+  // Etap F (CR 603.5): trigger idzie na stos; „unless" przy rozstrzyganiu.
+  assert.ok(findOnBattlefield(state, 'rupture-spire'), 'przed rozstrzygnięciem triggera Spire jest na polu bitwy');
+  const mark = state.events.length;
+  resolveUntilDecision(state, payOrSacrificeOpen);
+  const resolution = state.events.slice(mark);
+  assert.ok(resolution.some((e) => e.type === 'permanent_sacrificed' && e.cardId === 'rupture-spire'), 'brak zdarzenia poświęcenia');
+  assert.ok(resolution.some((e) => e.type === 'ability_triggered' && e.sacrificed === true), 'trigger nie odnotował poświęcenia');
   assert.equal(findOnBattlefield(state, 'rupture-spire'), undefined, 'Spire nie może zostać na polu bitwy');
   assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'rupture-spire'), 'Spire nie trafił do grobu');
 });
@@ -163,7 +171,9 @@ test('Rupture Spire: nie może tapnięć samego siebie do własnej płatności (
   addRealCard(state, 'spire', 'rupture-spire', 'p1', 'hand');
   const result = execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' });
   assert.equal(result.ok, true);
-  assert.ok(result.events.some((e) => e.type === 'permanent_sacrificed'), 'Spire miał poświęcić się bez innego landa');
+  const mark = state.events.length;
+  resolveUntilDecision(state, payOrSacrificeOpen); // Etap F (CR 603.5)
+  assert.ok(state.events.slice(mark).some((e) => e.type === 'permanent_sacrificed'), 'Spire miał poświęcić się bez innego landa');
 });
 
 test('Rupture Spire: land drop zużywa limit na turę (drugi land tej tury odrzucony)', () => {
@@ -172,6 +182,7 @@ test('Rupture Spire: land drop zużywa limit na turę (drugi land tej tury odrzu
   addMana(state, 'p1', 1);
   execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' });
   // Temat 7: decyzja „zapłać albo poświęć" musi być rozstrzygnięta.
+  resolveUntilDecision(state, payOrSacrificeOpen); // Etap F (CR 603.5)
   assert.ok(state.pendingPayOrSacrifice, 'decyzja czeka');
   execute(state, { type: 'resolve_pay_or_sacrifice', playerId: 'p1', pay: true });
   addRealCard(state, 'forest', 'basic-forest', 'p1', 'hand');
@@ -424,8 +435,12 @@ test('bestow: Kappa może wygnąć załączoną aurę (dla predykatu wciąż jes
   // wybiera cel (załączona aura-dryad jest Enchantmentem); id dynamiczne
   // (po T1 obiekt zmienia id przy wejściu na pole bitwy).
   const dryadId = findOnBattlefield(state, 'leafcrown-dryad').id;
+  // Etap F (CR 603.5 + 603.12): najpierw „you may remove a deathtouch
+  // counter" przy rozstrzyganiu, potem cel refleksyjnego „When you do".
+  assert.ok(resolveUntilDecision(state, optionalPayOpen), 'decyzja przy rozstrzyganiu');
+  assert.ok(execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p2', pay: true }).ok);
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p2', targetId: dryadId }).ok);
-  resolveStack(state); // T6: trigger Kap-py ze stosu
+  resolveStack(state); // refleksyjna zdolność ze stosu
   assert.ok(state.events.some((e) => e.type === 'object_moved' && e.toZone === 'exile' && e.object?.cardId === 'leafcrown-dryad'), 'załączona aura nie została wygnana jako enchantment');
   assert.equal(findOnBattlefield(state, 'leafcrown-dryad'), undefined);
 });
@@ -514,8 +529,12 @@ test('Kappa Tech-Wrecker: trigger „artifact or enchantment" wygania Dryada (en
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'combat_damage_to_player'), 'brak triggera Kap-py');
   // Temat 2: „you may ... exile target" — kontroler wybiera Dryada.
   const dryadId = findOnBattlefield(state, 'leafcrown-dryad').id;
+  // Etap F (CR 603.5 + 603.12): najpierw „you may remove a deathtouch
+  // counter" przy rozstrzyganiu, potem cel refleksyjnego „When you do".
+  assert.ok(resolveUntilDecision(state, optionalPayOpen), 'decyzja przy rozstrzyganiu');
+  assert.ok(execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: true }).ok);
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: dryadId }).ok);
-  resolveStack(state); // T6: trigger Kap-py ze stosu
+  resolveStack(state); // refleksyjna zdolność ze stosu
   assert.ok(state.events.some((e) => e.type === 'object_moved' && e.toZone === 'exile' && e.object?.cardId === 'leafcrown-dryad'), 'Dryad nie został wygnany mimo typu Enchantment');
 });
 
@@ -533,6 +552,11 @@ test('Kappa Tech-Wrecker: predykat nie sięga po stwora bez typu Artifact/Enchan
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(result.ok, true);
   assert.ok(!result.events.some((e) => e.type === 'object_moved' && e.toZone === 'exile'), 'zwykły stwór nie może być celem Kap-py');
+  // Etap F (CR 603.12): zdolność i tak idzie na stos; przy rozstrzyganiu
+  // oferta płatności mówi, że refleksyjne „exile target" nie ma celu.
+  assert.ok(resolveUntilDecision(state, optionalPayOpen), 'decyzja przy rozstrzyganiu');
+  const payOffer = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_optional_pay_choice' && c.pay);
+  assert.equal(payOffer?.reflexiveTargetCount, 0, 'stwór bez typu Artifact/Enchantment nie jest kandydatem');
   assert.ok(findOnBattlefield(state, 'highland-game'), 'stwór pozostaje na polu bitwy');
 });
 

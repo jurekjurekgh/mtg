@@ -11,6 +11,7 @@ import { applyEffect } from '../src/engine/effects.js';
 import { processTriggers } from '../src/engine/triggers.js';
 import { createSession, HUMAN_ID, BOT_ID } from '../src/table/session.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
+import { resolveUntilDecision, optionalTriggerOpen } from './helpers/deferred-trigger.js';
 
 /**
  * Batch 27 — 10 kart (2026-08-09):
@@ -199,7 +200,7 @@ test('Homicidal Brute: end step bez ataku → tap + transform z powrotem', () =>
 
 // --- Battle-Rattle Shaman ----------------------------------------------------
 
-test('Battle-Rattle Shaman: beginning_of_combat — target +2/+0 do końca tury (opcja odmowy)', () => {
+test('Battle-Rattle Shaman: beginning_of_combat — target +2/+0 do końca tury (odmowa przy rozstrzyganiu)', () => {
   const state = mainPhase(game());
   addRealCard(state, 'shaman', 'battle-rattle-shaman', 'p1', 'battlefield');
   addRealCard(state, 'gob', 'goblin-piker', 'p1', 'battlefield'); // 2/1
@@ -209,13 +210,17 @@ test('Battle-Rattle Shaman: beginning_of_combat — target +2/+0 do końca tury 
   const view = playerView(state, 'p1');
   const tt = view.legalCommands.find((c) => c.type === 'resolve_trigger_target');
   assert.ok(tt, 'brak decyzji celu');
-  // możliwa odmowa (optional): pozwólmy najpierw odmówić
+  // Etap F (CR 603.3d + 603.5): cel obowiązkowy przy kładzeniu na stos,
+  // odmowa („you may") dopiero przy rozstrzyganiu.
   const decline = view.legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId == null);
-  assert.ok(decline, 'brak opcji odmowy');
+  assert.equal(decline, undefined, 'brak „bez celu" — cel obowiązkowy');
   const r = execute(state, { ...tt, targetId: 'gob' });
   assert.ok(r.ok, r.events?.[0]?.reason);
-  // rozstrzygnij trigger (passy)
-  passBoth(state, 'p1');
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen), '„you may" przy rozstrzyganiu');
+  const fire = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_optional_trigger_choice');
+  assert.deepEqual(fire.targetIds, ['gob'], 'oferta niesie wybrany cel');
+  assert.equal(fire.friendly, true, 'sygnał intencji: pump przyjazny');
+  assert.ok(execute(state, fire).ok);
   assert.equal(eff(state, 'gob').p, 4, 'gob +2/+0');
 });
 

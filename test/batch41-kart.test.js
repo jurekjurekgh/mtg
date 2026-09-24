@@ -7,6 +7,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { resolveUntilDecision, optionalPayOpen } from './helpers/deferred-trigger.js';
 import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
 
 const REGISTRY = createCardRegistry();
@@ -114,9 +115,11 @@ test('A3: Horizon Spellbomb — sac→szukaj basic land do RĘKI; dies→opcjona
     .find((c) => c.type === 'activate_ability' && c.objectId === 'bomb');
   assert.ok(activate, 'oferta aktywacji {2},{T},sac');
   assert.ok(execute(state, activate).ok);
-  // Sacrifice to KOSZT — trigger „dies" odpala od razu (przed rozstrzygnięciem
-  // szukania): najpierw decyzja „you may pay {G}".
-  assert.ok(state.pendingOptionalPay, 'decyzja „you may pay {G}" po poświęceniu');
+  // Sacrifice to KOSZT — trigger „dies" odpala od razu i trafia na stos NAD
+  // szukaniem; decyzja „you may pay {G}" zapada przy JEGO rozstrzyganiu
+  // (Etap F, CR 603.5).
+  assert.equal(state.pendingOptionalPay, null, 'brak decyzji w chwili odpalenia (CR 603.5)');
+  assert.ok(resolveUntilDecision(state, optionalPayOpen), 'decyzja „you may pay {G}" przy rozstrzyganiu');
   const pay = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === true);
   assert.ok(pay, 'oferta zapłaty {G}');

@@ -769,6 +769,9 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   player_casts_spell: 'rzucenie czaru przez gracza',
   turned_face_up: 'odkrycie twarzy',
   upkeep: 'krok podtrzymania',
+  // Etap F (CR 702.30a + 603.5): zdolność echa to trigger na stosie
+  // (pseudo-zdolność silnika — triggers.js, `event: 'echo'`).
+  echo: 'echo — początek twojego podtrzymania',
   when_you_cast_spell: 'rzucenie czaru',
   you_cast_noncreature_spell: 'rzucenie czaru niebędącego stworem',
   you_cast_second_spell_each_turn: 'drugi czar w turze',
@@ -2024,6 +2027,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           parts.push(costSymbols(e.payMana, e.payColors));
         }
         if (e.payLife) parts.push(`${e.payLife} życia`);
+        if (e.payCounter?.counter) parts.push(`usunięciem znacznika ${e.payCounter.counter}`);
         return `${objectOrLki(e.sourceId, e.cardId)} — zapłacić ${parts.join(' i ')}? (${decisionOwnerNote(e.playerId)})`;
       }
       case 'optional_pay_resolved': return e.paid

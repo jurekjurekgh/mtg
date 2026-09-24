@@ -6,6 +6,7 @@ import { addMana } from '../src/engine/resources.js';
 import { effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypesOnBattlefield } from '../src/engine/permanents.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
+import { resolveUntilDecision, optionalPayOpen } from './helpers/deferred-trigger.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 
 /**
@@ -219,6 +220,8 @@ test('Furious Forebear: w grobie, gdy stwór umiera — zapłać {1}{W} i wróć
   // Zapewnij manę {1}{W} dostępną, gdy trigger odpali się w momencie śmierci.
   addMana(state, 'p1', 2, { colors: ['W'] });
   assert.ok(execute(state, cast).ok);
+  // Etap F (CR 603.5): trigger z grobu idzie na stos NAD Village Rites — płatność przy rozstrzyganiu.
+  resolveUntilDecision(state, optionalPayOpen);
   // Furious Forebear trigger z grobu -> may pay {1}{W} (pendingOptionalPay ustawione w trakcie rzutu).
   const pay = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_optional_pay_choice');
   assert.ok(pay, 'opcjonalna płatność {1}{W}');

@@ -3477,7 +3477,11 @@ export function commandLabel(cmd, session, view) {
       // opisu decyzji (L41), więc panel i modal nie mogą się rozjechać.
       if (cmd.fire) {
         const named = choiceSourceTitle(cmd, session, view);
-        if (named) return named;
+        // Etap F (CR 603.5): „you may [czasownik] target" — cel wybrano przy
+        // kładzeniu na stos; etykieta mówi, w co efekt uderzy.
+        const targetNote = Array.isArray(cmd.targetIds) && cmd.targetIds.length > 0
+          ? ` → ${cmd.targetIds.map((id) => nameOfObjectId(id)).join(', ')}` : '';
+        if (named) return `${named}${targetNote}`;
       }
       // M163/A: tak/nie dobrowolnego efektu — j.w. (fallback dla widoku bez
       // `pendingOptionalTrigger`, np. starych replayów).
@@ -3518,8 +3522,14 @@ export function commandLabel(cmd, session, view) {
         parts.push(manaCostHtml(costSymbols(cmd.cost, cmd.costColors)));
       }
       if (cmd.lifeCost != null && cmd.lifeCost > 0) parts.push(`${cmd.lifeCost} życia`);
+      if (cmd.counterCost?.counter) parts.push(`usunięciem znacznika ${cmd.counterCost.counter}`);
       const price = parts.join(' + ');
       if (!cmd.pay) return `Nie płać${source ? ` (${source} — efekt nie odpali)` : ' — efekt nie odpali'}`;
+      // Etap F (CR 603.12): refleksyjna zdolność bez legalnego celu — zapłata
+      // jest legalna, ale nic nie da; etykieta mówi to wprost.
+      if (cmd.reflexiveTargetCount === 0) {
+        return `Zapłać${price ? ` ${price}` : ''}${source ? ` (${source})` : ''} — brak celu, efekt nic nie zrobi`;
+      }
       return `Zapłać${price ? ` ${price}` : ''}${source ? ` (${source})` : ''} — efekt odpali`;
     }
     case 'resolve_pay_or_sacrifice': {

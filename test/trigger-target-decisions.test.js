@@ -5,6 +5,7 @@ import { addMana } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
+import { resolveUntilDecision, optionalTriggerOpen, optionalPayOpen } from './helpers/deferred-trigger.js';
 import { queueTriggerToStack } from '../src/engine/triggers.js';
 
 /**
@@ -179,13 +180,12 @@ test('Kappa Tech-Wrecker: „you may\" — odmowa nie zdejmuje licznika, wybór 
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
-  // Decyzja: cel (artefakt p2) albo odmowa.
-  assert.equal(state.pendingTriggerTargets.length, 1);
-  assert.equal(state.pendingTriggerTargets[0].allowNone, true);
-  assert.deepEqual(state.pendingTriggerTargets[0].candidates, ['art']);
+  // Etap F (CR 603.5 + 603.12): zdolność idzie na stos BEZ celu — przy
+  // rozstrzyganiu decyzja „usuń znacznik" (tak/nie), cel dopiero potem.
+  assert.equal(state.pendingTriggerTargets.length, 0, 'brak wyboru celu przy odpaleniu');
+  assert.ok(resolveUntilDecision(state, optionalPayOpen));
   // Odmowa: licznik zostaje, artefakt zostaje.
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: null }).ok);
-  resolveStack(state); // T6: rozstrzygnij trigger ze stosu
+  assert.ok(execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: false }).ok);
   assert.equal((state.objects.get('kappa').counters ?? {}).deathtouch, 1);
   assert.equal(state.objects.get('art').zone, 'battlefield');
 
@@ -200,9 +200,13 @@ test('Kappa Tech-Wrecker: „you may\" — odmowa nie zdejmuje licznika, wybór 
   assert.ok(execute(state2, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
   execute(state2, { type: 'pass_priority', playerId: 'p2' }); // M172/C: okno obrońcy po blokach (CR 509.4)
   assert.ok(execute(state2, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
+  assert.ok(resolveUntilDecision(state2, optionalPayOpen));
+  assert.ok(execute(state2, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: true }).ok);
+  assert.equal((state2.objects.get('kappa').counters ?? {}).deathtouch, undefined, 'licznik zdjęty jako koszt');
+  // „When you do" — refleksyjna zdolność: cel wybierany PO usunięciu znacznika.
+  assert.deepEqual(state2.pendingTriggerTargets[0]?.candidates, ['art']);
   assert.ok(execute(state2, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'art' }).ok);
-  resolveStack(state2); // T6: rozstrzygnij trigger ze stosu
-  assert.equal((state2.objects.get('kappa').counters ?? {}).deathtouch, undefined, 'licznik zdjęty');
+  resolveStack(state2); // refleksyjna zdolność ze stosu (CR 603.12)
   assert.ok([...state2.objects.values()].some((o) => o.cardId === 'x-art' && o.zone === 'exile'));
 });
 
@@ -260,6 +264,9 @@ test('Angel\'s Feather: „you may gain 1 life\" to decyzja gracza (tak/nie)', (
   state.turn.activePlayerId = 'p2';
   state.turn.priorityPlayerId = 'p2';
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p2', objectId: 'white', targets: [] }).ok);
+  // Etap F (CR 603.5): zdolność na stosie NAD czarem — decyzja przy jej rozstrzyganiu.
+  assert.equal(state.pendingOptionalTrigger, null);
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen));
   // Po rzucie: decyzja „you may\" u kontrolera Pióra (p1).
   assert.ok(state.pendingOptionalTrigger, 'decyzja you-may czeka');
   assert.equal(state.pendingOptionalTrigger.playerId, 'p1');
@@ -276,6 +283,7 @@ test('Angel\'s Feather: „you may gain 1 life\" to decyzja gracza (tak/nie)', (
   state2.turn.activePlayerId = 'p2';
   state2.turn.priorityPlayerId = 'p2';
   assert.ok(execute(state2, { type: 'cast_spell', playerId: 'p2', objectId: 'white', targets: [] }).ok);
+  assert.ok(resolveUntilDecision(state2, optionalTriggerOpen));
   assert.ok(execute(state2, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true }).ok);
   resolveStack(state2); // T6: rozstrzygnij trigger ze stosu
   assert.equal(state2.players[0].life, 21);

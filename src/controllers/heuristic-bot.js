@@ -7510,9 +7510,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_ward_pay_choice':
         return finish(cmd.pay ? 80 : 20);
       // „You may pay ... When you do, ..." (Panic Spellbomb, Zoraline):
-      // trigger jest kolejkowany tylko gdy opłacalny (canPayTrigger) — efekt
+      // decyzja otwiera się tylko gdy opłacalna (canPayTrigger) — efekt
       // jest sensem karty, zapłata niemal zawsze na plusie.
+      // Etap F (CR 603.5 + 603.12): wyjątek — refleksyjna zdolność z celem
+      // (Zoraline, Kappa), gdy celu brak: zapłata to czysta strata.
       case 'resolve_optional_pay_choice':
+        if (cmd.pay && cmd.reflexiveTargetCount === 0) return finish(-10);
         return finish(cmd.pay ? 75 : 15);
       case 'resolve_discover_choice': {
         // Geological Appraiser: rzuć bez kosztu albo weź do ręki.
@@ -7786,6 +7789,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Wycena po TYPIE efektu i po progach z parametrów (ADR 0002, L41).
         if (cmd.fire && faceDownLibraryEffects(view) > 0) {
           return finish(myLibraryCount(view) < P.cloakLibraryFloor ? -P.cloakThinLibraryPenalty : 50);
+        }
+        // Etap F (CR 603.5): „you may [czasownik] target" — cel wybrano przy
+        // kładzeniu na stos (obowiązkowo, także gdy jedynym kandydatem był
+        // własny stwór), więc „tak" wyceniamy TĄ SAMĄ polityką celu co
+        // resolve_trigger_target (jedno źródło wyceny — L41): odpal tylko,
+        // gdy efekt na wybranym celu jest korzystny.
+        if (cmd.fire && Array.isArray(cmd.targetIds) && cmd.targetIds.length > 0) {
+          const targetScore = scoreCommand(view, { ...cmd, type: 'resolve_trigger_target' });
+          return finish(targetScore > 0 ? 50 : -10);
         }
         // „You may" bez celu (Angel's Feather — +1 życie): „tak" jak dotąd.
         return finish(cmd.fire ? 50 : 0);
