@@ -1,6 +1,7 @@
 import { event } from '../protocol/types.js';
 import { assertZone, deathZoneFor } from './zones.js';
 import { addCounter, removeCounter, syncStationKind } from './counters.js';
+import { nextTimestamp } from './timestamps.js';
 import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality } from './attachments.js';
 // M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
 // z ochroną kolorową); permanents.js re-eksportuje je, bo stamtąd biorą je
@@ -436,6 +437,11 @@ function staticBonuses(state, object) {
     // Zdolności hymnowe ze scope (Trostani — „other creatures you control")
     // NIE buffują samego źródła — obsługuje je anthemBonuses na INNYCH obiektach.
     if (ability.scope) continue;
+    // W-1 (D4b, CR 613.4a): zdolność definiująca P/T (CDA — Tarmogoyf) NIE
+    // jest modyfikatorem warstwy 7c. Działa w warstwie 7a jako BAZA
+    // (`characteristicDefiningStat`), więc efekt warstwy 7b („has base power
+    // and toughness 4/4” — Voice of the Vermin) ją nadpisuje.
+    if (ability.characteristicDefining) continue;
     if (!staticConditionHolds(state, object, ability.condition)) continue;
     // Dynamiczny pump (np. Emissary Escort): `power` bywa markerem zamiast
     // liczbą — wartość liczona z planszy, nie stała w definicji (CR 611.3a).
@@ -699,9 +705,65 @@ function untilEndOfTurnBonuses(state, object) {
   return out;
 }
 
+/**
+ * W-1 (D4b, CR 613.4a): wartość P/T z zdolności definiującej cechę (CDA,
+ * CR 604.3) — deskryptor statyczny z `characteristicDefining: true` i pumpem
+ * liczonym z planszy (Tarmogoyf: „power is equal to the number of card types
+ * among cards in all graveyards and its toughness is equal to that number
+ * plus 1”). `null` = obiekt nie ma CDA dla tej cechy.
+ */
+function characteristicDefiningStat(state, object, stat) {
+  if (!state || object.zone !== 'battlefield') return null;
+  for (const ability of object.abilities ?? []) {
+    if (ability?.type !== 'static' || !ability.characteristicDefining) continue;
+    const marker = ability.pump?.[stat];
+    if (marker === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
+    if (marker === 'card_types_in_all_graveyards_plus_1') return allGraveyardsCardTypeCount(state) + 1;
+    if (Number.isInteger(marker)) return marker;
+  }
+  return null;
+}
+
+/**
+ * D4b — BAZOWE P/T po warstwach 1b, 7a i 7b (CR 613.2b, 613.4a, 613.4b).
+ *
+ * CR 613.4b (CR 2026-09-25, dosłownie): „Layer 7b: Effects that set power
+ * and/or toughness to a specific number or value are applied. Effects that
+ * refer to the base power and/or toughness of a creature apply in this
+ * layer.” W obrębie podwarstwy — znaczniki czasu (CR 613.7).
+ *
+ *  - 7b: `tempBasePT` (set_base_pt — Voice of the Vermin, Jolrael) i warstwa
+ *    animacji z ustawionym P/T (Silvanus's Invoker 8/8, Skilled Animator 5/5)
+ *    — wygrywa PÓŹNIEJSZY znacznik (W-5; dotąd `tempBasePT` wygrywało zawsze).
+ *    Crew NIE ustawia P/T (CR 702.122a: „This permanent becomes an artifact
+ *    creature until end of turn.”) — warstwa bez `power` nie konkuruje (W-6).
+ *  - 7a: CDA (Tarmogoyf) — nadpisywana przez każdy efekt 7b (W-1).
+ *  - 1b: zakryty permanent to 2/2 jako WARTOŚCI KOPIOWALNE (CR 708.2: „Any
+ *    listed characteristics are the copiable values of that object’s
+ *    characteristics.”) — późniejsze warstwy, w tym 7b, działają na niego
+ *    normalnie (W-2; dotąd zakrycie wygrywało z efektem „base 4/4”).
+ */
+function layeredBaseStat(object, stat) {
+  const temp = object.tempBasePT ?? null;
+  const layer = object.originalBeforeAnimation ? animationLayerOf(object) : null;
+  const animationSets = layer != null && layer[stat] != null;
+  if (temp && (!animationSets || (temp.ts ?? 0) >= (layer.ptTs ?? 0))) return temp[stat];
+  if (animationSets) return layer[stat];
+  return null;
+}
+
+function baseStat(object, state, stat) {
+  const set = layeredBaseStat(object, stat);
+  if (set != null) return set;
+  if (object.faceDown) return 2;
+  const cda = characteristicDefiningStat(state, object, stat);
+  if (cda != null) return cda;
+  return object[stat];
+}
+
 export function effectivePower(object, state = null) {
-  if (object.power === null) return null;
-  const base = object.faceDown ? 2 : (object.tempBasePT?.power ?? object.power);
+  if (object.power === null && !object.faceDown) return null;
+  const base = baseStat(object, state, 'power');
   return base + (object.powerModifier ?? 0) + counterDelta(object)
     + attachmentBonuses(state, object).power + staticBonuses(state, object).power
     + anthemBonuses(state, object).power
@@ -737,8 +799,8 @@ export function grantedStatBonus(object, state = null) {
 }
 
 export function effectiveToughness(object, state = null) {
-  if (object.toughness === null) return null;
-  const base = object.faceDown ? 2 : (object.tempBasePT?.toughness ?? object.toughness);
+  if (object.toughness === null && !object.faceDown) return null;
+  const base = baseStat(object, state, 'toughness');
   return base + (object.toughnessModifier ?? 0) + counterDelta(object)
     + attachmentBonuses(state, object).toughness + staticBonuses(state, object).toughness
     + anthemBonuses(state, object).toughness
@@ -1576,20 +1638,33 @@ export function animationLayerOf(object) {
   return {
     power: object.power ?? null,
     toughness: object.toughness ?? null,
+    ptTs: 0,
     typesAdd: retainTypes ? current.types.filter((t) => !(original.types ?? []).includes(t)) : [...current.types],
     subtypesAdd: retainTypes ? current.subtypes.filter((t) => !(original.subtypes ?? []).includes(t)) : [...current.subtypes],
     retainTypes,
   };
 }
 
-/** Łączy warstwę nowej animacji z trwającą (późniejszy znacznik czasu wygrywa P/T). */
-export function mergedAnimationLayer(object, { power, toughness, typesAdd = [], subtypesAdd = [], retainTypes = true }) {
+/**
+ * Łączy warstwę nowej animacji z trwającą (późniejszy znacznik czasu wygrywa
+ * P/T — CR 613.7). `ts` to znacznik NOWEGO efektu (CR 613.7b).
+ *
+ * W-6 (D4b): animacja BEZ P/T (crew — CR 702.122a: „This permanent becomes an
+ * artifact creature until end of turn.”) nie jest efektem warstwy 7b, więc
+ * zachowuje P/T i znacznik `ptTs` poprzedniej warstwy (Skilled Animator 5/5
+ * trwa po crew), a bez poprzedniej — `power: null` (wydrukowane P/T pojazdu).
+ */
+export function mergedAnimationLayer(object, { power, toughness, typesAdd = [], subtypesAdd = [], retainTypes = true, ts = 0 }) {
   const previous = animationLayerOf(object);
+  const setsPT = power != null || toughness != null;
+  const pt = setsPT
+    ? { power: power ?? null, toughness: toughness ?? null, ptTs: ts }
+    : { power: previous?.power ?? null, toughness: previous?.toughness ?? null, ptTs: previous?.ptTs ?? null };
   if (!previous || !retainTypes) {
-    return { power, toughness, typesAdd: [...typesAdd], subtypesAdd: [...subtypesAdd], retainTypes };
+    return { ...pt, typesAdd: [...typesAdd], subtypesAdd: [...subtypesAdd], retainTypes };
   }
   return {
-    power, toughness,
+    ...pt,
     typesAdd: [...new Set([...previous.typesAdd, ...typesAdd])],
     subtypesAdd: [...new Set([...previous.subtypesAdd, ...subtypesAdd])],
     retainTypes: previous.retainTypes,
@@ -1602,7 +1677,9 @@ function withAnimationLayer(base, layer) {
   const subtypes = layer.retainTypes ? [...new Set([...(base.subtypes ?? []), ...layer.subtypesAdd])] : [...layer.subtypesAdd];
   return {
     kind: types.includes('Creature') ? 'creature' : base.kind,
-    types, subtypes, power: layer.power, toughness: layer.toughness,
+    types, subtypes,
+    // W-6: warstwa bez P/T (crew) zostawia wydrukowane P/T strony.
+    power: layer.power ?? base.power, toughness: layer.toughness ?? base.toughness,
   };
 }
 
@@ -1679,13 +1756,15 @@ export function animatePermanentUntilEndOfTurn(state, objectId, { power, toughne
   const kind = types.includes('Creature') ? 'creature' : object.kind;
   // O-6 (CR 712.18): zapis cofnięcia niesie też WARSTWĘ animacji, żeby
   // transform w miejscu umiał nałożyć ją na drugą stronę (`transformInPlaceFields`).
-  const layer = mergedAnimationLayer(object, { power, toughness, typesAdd, subtypesAdd, retainTypes });
+  const layer = mergedAnimationLayer(object, { power, toughness, typesAdd, subtypesAdd, retainTypes, ts: nextTimestamp(state) });
   const updated = replaceObject(state, object, {
     kind,
     types,
     subtypes,
-    power,
-    toughness,
+    // W-6 (D4b): pole power/toughness obiektu = P/T warstwy animacji, a gdy
+    // żadna animacja nie ustawia P/T (crew) — wydrukowane P/T.
+    power: layer.power ?? originalBeforeAnimation.power,
+    toughness: layer.toughness ?? originalBeforeAnimation.toughness,
     originalBeforeAnimation: Object.freeze({ ...originalBeforeAnimation, layer }),
   });
   if (keywordsAdd.length > 0) {
@@ -1694,8 +1773,8 @@ export function animatePermanentUntilEndOfTurn(state, objectId, { power, toughne
   state.events.push(event('permanent_animated', {
     objectId,
     cardId: object.cardId,
-    power,
-    toughness,
+    power: updated.power,
+    toughness: updated.toughness,
     types,
     subtypes,
     untilEndOfTurn: true,

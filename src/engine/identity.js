@@ -262,6 +262,10 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Numer tury, w której obiekt wszedł na pole bitwy (Crew Captain —
     // „as long as it entered this turn\"). null poza polem bitwy.
     enteredOnTurn: null,
+    // D4b (CR 613.7): znacznik czasu obiektu (wejście na pole bitwy, obrót,
+    // transformacja) i znaczniki efektów na nim — patrz timestamps.js.
+    timestamp: null,
+    keywordGrantTs: null, lostKeywordTs: null, counterTs: null, subtypeOverrideTs: null, attachedTs: null,
     damagedByDeathtouch: false,
     powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
     counters: {}, faceDown: false,

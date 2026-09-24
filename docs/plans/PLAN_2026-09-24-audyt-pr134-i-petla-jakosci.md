@@ -157,12 +157,18 @@ Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134
       Kandydaci z listy powyżej (614.1d vs ścieżki wejścia, `colorsFrom` vs
       warstwy, cel refleksyjny vs 608.2b/2h) zostają otwarte — ich wspólnym
       mianownikiem są warstwy 613, czyli ten sam korzeń co O-6.
-- [ ] D4b — **warstwy 613** jako osobna oś łowów (spadkobierca D4): silnik
-      trzyma efekty jako mutacje pól obiektu, więc (a) transform gubił animację
-      (O-6 — naprawione w D5 warstwą animacji w zapisie cofnięcia, bez pełnego
-      modelu), (b) `colorsFrom` nie jest rozliczany warstwowo, (c) kolejność
-      efektów „until end of turn” zależy od kolejności zapisu. Wymaga decyzji
-      właściciela: model warstw to zmiana architektury, nie łatka.
+- [ ] D4b — **warstwy 613** (spadkobierca D4). Decyzja właściciela
+      2026-09-24: „Jeśli to jest błąd lub uproszczenie niezgodne z CR, to trzeba
+      to poprawić.” Rozbite na konkretne odchyłki W-1…W-8 (audyt §9), każda
+      z sondą RED na prawdziwych kartach: W-1 CDA vs 7b, W-2 zakrycie vs 7b,
+      W-3 zakryty stwór vs efekty zewnętrzne, W-4 utrata vs nadanie keywordu
+      (613.9), W-5 dwa efekty 7b bez znaczników, W-6 crew jako ukryty 7b, W-7
+      nadpisanie podtypów vs załącznik, W-8 Krotiq „as though” jako utrata.
+      Infrastruktura: znaczniki czasu CR 613.7 (`timestamps.js`).
+      • [x] warstwa 7: W-1, W-2, W-5, W-6
+      • [ ] warstwa 6 + zakrycie: W-3, W-4
+      • [ ] warstwa 4: W-7
+      • [ ] W-8
 - [x] D5 — **obserwacje audytu (O-2, O-1)** domknięte jako KLASA, nie jako
       łatka (polecenie właściciela: „kontynuuj naprawianie wszystkich
       znalezionych błędów”):

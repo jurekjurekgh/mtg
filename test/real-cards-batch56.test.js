@@ -368,8 +368,11 @@ test('B56/B4: 58 Mobile Garrison — deskryptor: crew 2 + cel „you control" tr
   assert.equal(def.manaCost, 3);
   const crewAbility = def.abilities.find((a) => a.cost?.crewPower === 2);
   assert.ok(crewAbility, 'crew 2 w deskryptorze');
+  // W-6 (D4b, CR 702.122a): crew NIE ustawia P/T („becomes an artifact
+  // creature until end of turn”) — deskryptor nie niesie kopii P/T; pojazd
+  // używa wydrukowanego 3/4 z obiektu (materialize).
   assert.deepEqual(crewAbility.effect,
-    { type: 'animate_permanent_until_end_of_turn', power: 3, toughness: 4, typesAdd: ['Creature'] });
+    { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] });
   const trigger = def.abilities.find((a) => a.trigger?.event === 'attacks');
   assert.deepEqual(trigger.trigger.requiresTarget,
     { type: 'artifact_or_creature', controlledBy: 'controller' });

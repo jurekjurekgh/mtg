@@ -1,5 +1,6 @@
 import { event } from '../protocol/types.js';
 import { createGameObject } from './identity.js';
+import { nextTimestamp } from './timestamps.js';
 import { effectivePower, effectiveToughness } from './permanents.js';
 
 /**
@@ -187,6 +188,8 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     // (CR 701.21a — brak zdarzenia object_tapped jest poprawny). L24/C.
     ...(tapped ? { tapped: true } : {}),
     enteredOnTurn: state.turn.number,
+    // D4b (CR 613.7d): token dostaje znacznik czasu przy wejściu na pole bitwy.
+    timestamp: nextTimestamp(state),
     // „This token can't block\" (Phyrexian Mite, Goblin Construct) to cecha
     // WYDRUKOWANA na tokenie, a nie efekt „until end of turn\" — cleanup
     // (CR 514.2) zdejmuje wyłącznie te drugie. Pole `cantBlock` niesie oba

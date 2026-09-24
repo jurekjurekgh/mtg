@@ -148,6 +148,16 @@ export function gameObjectDataOf(card) {
       data.power = card.power;
       data.toughness = card.toughness;
     }
+    // W-6 (D4b): Vehicle — tak samo jak station — ma wydrukowane P/T, którego
+    // używa dopiero jako stwór. Crew NIE ustawia P/T (CR 702.122a: „This
+    // permanent becomes an artifact creature until end of turn.”), więc
+    // animacja czyta P/T z obiektu, a nie z deskryptora efektu (dawna kopia
+    // P/T w efekcie crew była ukrytym efektem warstwy 7b i nadpisywała np.
+    // bazowe 5/5 od Skilled Animator).
+    if ((card.subtypes ?? []).includes('Vehicle') && Number.isInteger(card.power)) {
+      data.power = card.power;
+      data.toughness = card.toughness;
+    }
     return data;
   }
   if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {

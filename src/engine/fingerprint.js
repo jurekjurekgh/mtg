@@ -97,6 +97,7 @@ export const OBJECT_FINGERPRINT_EXCLUSIONS = Object.freeze({
 });
 
 export const STATE_FINGERPRINT_EXCLUSIONS = Object.freeze({
+  timestampSeq: 'generator znaczników czasu (timestamps.js, CR 613.7); kolejność efektów widać w polach obiektów (timestamp, attachedTs, keywordGrantTs…) i wpisach efektów (ts)',
   objectSequence: 'generator id/etykiet (abilities.js: `exile-${objectSequence++}`); fakt „obiekt powstał/zmienił strefę" widać w objects/zones',
   commands: 'dziennik poleceń do replayu (createReplay) — pochodna wejść, nie stan',
   events: 'dziennik rozgrywki — pochodna stanu, nie sam stan (ADR 0005)',

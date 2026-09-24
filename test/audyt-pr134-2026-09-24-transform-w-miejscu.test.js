@@ -142,6 +142,7 @@ test('O-6/7: warstwa animacji wyprowadzana także z zapisu bez `layer` (fixtures
     types: ['Artifact', 'Creature'], subtypes: ['Vehicle'], power: 3, toughness: 3,
     originalBeforeAnimation: { kind: 'artifact', types: ['Artifact'], subtypes: ['Vehicle'], power: null, toughness: null },
   });
-  assert.deepEqual(layer, { power: 3, toughness: 3, typesAdd: ['Creature'], subtypesAdd: [], retainTypes: true });
+  // D4b: zapis bez warstwy = efekt 7b bez znacznika (ptTs 0 — najstarszy).
+  assert.deepEqual(layer, { power: 3, toughness: 3, ptTs: 0, typesAdd: ['Creature'], subtypesAdd: [], retainTypes: true });
   assert.equal(animationLayerOf({ types: ['Creature'] }), null, 'bez zapisu cofnięcia = brak animacji');
 });

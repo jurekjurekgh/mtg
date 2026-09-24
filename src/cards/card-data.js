@@ -3513,7 +3513,7 @@ export const REAL_CARDS = Object.freeze([
         // Audyt Batchu 26 (M65): timing 'sorcery' blokował crew w odpowiedzi
         // na czar i w turze przeciwnika.
         cost: { crewPower: 3 },
-        effect: { type: 'animate_permanent_until_end_of_turn', power: 6, toughness: 6, typesAdd: ['Creature'] },
+        effect: { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] },
       }),
     ],
     artId: 455, plan: 'Warhammer Fantasy',
@@ -3619,10 +3619,12 @@ export const REAL_CARDS = Object.freeze([
           kind: 'creature', power: 0, toughness: 0, colors: ['G'],
           types: ['Creature'], subtypes: ['Lhurgoyf'],
           // Dynamiczne P/T: liczba typów kart we WSZYSTKICH grobach (+1
-          // do wytrzymałości) — marker liczony w permanents.staticBonuses.
+          // do wytrzymałości) — CDA liczona w permanents.characteristicDefiningStat (warstwa 7a).
           abilities: [createAbility({
             type: ABILITY_TYPE.static,
             pump: { power: 'card_types_in_all_graveyards', toughness: 'card_types_in_all_graveyards_plus_1' },
+            // W-1 (D4b): CDA — warstwa 7a (CR 613.4a), nadpisywana przez 7b.
+            characteristicDefining: true,
           })],
         }],
       }),
@@ -3641,6 +3643,8 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.static,
         pump: { power: 'card_types_in_all_graveyards', toughness: 'card_types_in_all_graveyards_plus_1' },
+        // W-1 (D4b): CDA — warstwa 7a (CR 613.4a), nadpisywana przez 7b.
+        characteristicDefining: true,
       }),
     ],
     imageUri: 'https://cards.scryfall.io/large/front/f/2/f26e1f55-284c-4540-bf5c-ebc7ab9687ab.jpg?1783911122',  // tm3c
@@ -4520,7 +4524,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         // Crew (CR 702.122) — jak wyżej: instant, bez „Activate only as a
         // sorcery" w Oracle (audyt Batchu 26, M65).
         cost: { crewPower: 3 },
-        effect: { type: 'animate_permanent_until_end_of_turn', power: 5, toughness: 5, typesAdd: ['Creature'] },
+        effect: { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] },
       }),
     ],
     artId: 541, plan: 'Kaladesh',
@@ -8423,7 +8427,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.activated,
         // Crew (CR 702.122) aktywuje się jak instant (audyt Batchu 26/M65).
         cost: { crewPower: 1 },
-        effect: { type: 'animate_permanent_until_end_of_turn', power: 5, toughness: 4, typesAdd: ['Creature'] },
+        effect: { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] },
       }),
     ],
     artId: 153, plan: 'Final Fantasy',
@@ -11195,7 +11199,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         // Crew 2 (CR 702.122) — jak w pozostałych pojazdach: instant, bez
         // „Activate only as a sorcery" w Oracle (audyt Batchu 26, M65).
         cost: { crewPower: 2 },
-        effect: { type: 'animate_permanent_until_end_of_turn', power: 3, toughness: 4, typesAdd: ['Creature'] },
+        effect: { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] },
       }),
     ],
     artId: 58, plan: 'New Capenna', support: { status: 'supported', limitations: [] },

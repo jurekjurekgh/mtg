@@ -159,7 +159,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null, entersUntapped = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -190,6 +190,10 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // `permanents.entersUntappedOverride` we wszystkich ścieżkach wejścia.
     entersUntapped: entersUntapped ? Object.freeze({ ...entersUntapped }) : null,
     pump: pump ? Object.freeze({ ...pump }) : null,
+    // W-1 (D4b, CR 604.3 + 613.4a): zdolność DEFINIUJĄCA cechę (P/T
+    // Tarmogoyfa) — warstwa 7a, nie modyfikator 7c. Pole tylko gdy prawda,
+    // żeby kształt pozostałych zdolności się nie zmienił.
+    ...(characteristicDefining ? { characteristicDefining: true } : {}),
     keywords: keywords ? Object.freeze([...keywords]) : null,
     // „Activate only once each turn\" (Snarling Wolf): limit aktywacji tej
     // zdolności do raz na turę na źródło (tracking w state.abilityActivatedThisTurn).

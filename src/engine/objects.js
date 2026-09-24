@@ -5,6 +5,7 @@ import { detachAttachmentsFromHost } from './attachments.js';
 import { syncStationKind } from './counters.js';
 import { registerMover } from './mover.js';
 import { entersTappedNow } from './permanents.js';
+import { nextTimestamp } from './timestamps.js';
 
 /**
  * Rejestr LKI nazw (CR 603.10): identyfikator → ostatnia znana tożsamość
@@ -184,6 +185,9 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
     // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).
     enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,
+    // D4b (CR 613.7d): „An object receives a timestamp at the time it enters
+    // a zone.” Znacznik porządkuje efekty statyczne obiektu w warstwach 613.
+    timestamp: toZone === 'battlefield' ? nextTimestamp(state) : null,
     // M258 (Żywy Tester): ECHO (CR 702.30) — znacznik „nieopłacone echo"
     // stawiało dotąd WYŁĄCZNIE addObject (helpery testowe), a realna ścieżka
     // rzutu (stos → pole bitwy przez ten choke point) go pomijała: Bone
@@ -208,6 +212,9 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // ścieżka wejścia — w tym ścieżki KOPII — nie mogła jej pominąć.
     tapped: toZone === 'battlefield' && entersTappedNow(state, object, { enteringId: newObjectId }),
     counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
+    // D4b: znaczniki efektów (CR 613.7b/c/e) nie przechodzą na nowy obiekt
+    // (CR 400.7) — razem z grantami, licznikami i przypięciem.
+    keywordGrantTs: null, lostKeywordTs: null, counterTs: null, subtypeOverrideTs: null, attachedTs: null,
     goaded: false, goadedUntilTurn: null, hexproofUntilTurn: null, cantBeBlockedUntilTurn: null,
     // CR 400.7: flagi opisujące HISTORIĘ permanentu w tej turze też nie
     // przechodzą na nowy obiekt. Bez tego:

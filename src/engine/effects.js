@@ -13,6 +13,7 @@ import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, nextFaceDown
 
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
+import { nextTimestamp } from './timestamps.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
 import { attachAuraToCreature, attachAuraToPlayer, attachEquipmentToCreature, detachAttachmentsFromHost, isLegalAuraHost, legalAuraHosts } from './attachments.js';
 
@@ -1160,6 +1161,8 @@ export function resolveCraftExileOutcome(state, { sourceId, candidates = [], tra
       // null`, przez co permanent wracający na pole bitwy nie liczył się jako
       // „entered this turn” (Crew Captain).
       enteredOnTurn: state.turn.number,
+      // D4b (CR 613.7d): nowy obiekt na polu bitwy = nowy znacznik czasu.
+      timestamp: nextTimestamp(state),
       ...transformedCharacteristics(transformTo, previousSide),
       // CR 202.3b (M258/Etap 2.3b): MV po crafcie = koszt twarzy przedniej;
       // payload transformTo niesie go od materialize.
@@ -5141,6 +5144,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // czytały turę SPRZED wygnania: permanent, który wrócił właśnie teraz,
       // nie był uznawany za świeżo przybyły.
       enteredOnTurn: state.turn.number,
+      // D4b (CR 613.7d): nowy obiekt na polu bitwy = nowy znacznik czasu.
+      timestamp: nextTimestamp(state),
       // Komplet charakterystyk drugiej strony (CR 712.8) — wspólny helper
       // niesie też `kind`, którego wcześniej brakowało: strona zmieniająca
       // rodzaj permanentu (Incubator → Phyrexian) wracała z pola bitwy jako
@@ -5238,6 +5243,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const layer = mergedAnimationLayer(target, {
       power: effect.power ?? 0, toughness: effect.toughness ?? 0,
       typesAdd, subtypesAdd: effect.subtypesAdd ?? [], retainTypes: true,
+      // D4b (CR 613.7b): znacznik efektu — porządek w warstwie 7b.
+      ts: nextTimestamp(state),
     });
     const updated = replaceObject(state, target, {
       kind: types.includes('Creature') ? 'creature' : target.kind,
@@ -6382,8 +6389,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
     const newPower = effect.power ?? 4;
     const newToughness = effect.toughness ?? 4;
+    // D4b (CR 613.4b + 613.7b): efekt warstwy 7b ze znacznikiem czasu —
+    // porządkuje go względem animacji ustawiających P/T (`layeredBaseStat`).
     state.objects.set(targetId, Object.freeze({
-      ...object, tempBasePT: Object.freeze({ power: newPower, toughness: newToughness }),
+      ...object, tempBasePT: Object.freeze({ power: newPower, toughness: newToughness, ts: nextTimestamp(state) }),
     }));
     // M138/Z4 (audyt Żywym Testerem, L24): skutek bez zdarzenia jest dla reszty
     // systemu NIEWIDZIALNY — a `resolveTrigger` uznaje „0 nowych zdarzeń” za
@@ -6410,10 +6419,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // stats_modified z basePower/baseToughness — konsument logu opisuje
     // „X staje się X/X do końca tury". Masowy wariant nie używa
     // mass_stats_modified (ten niesie modyfikatory +X/+Y, nie bazę).
+    // D4b (CR 613.7b): JEDEN efekt = jeden znacznik dla wszystkich stworów.
+    const ts = nextTimestamp(state);
     for (const object of [...state.objects.values()]) {
       if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId || object.kind !== 'creature') continue;
       state.objects.set(object.id, Object.freeze({
-        ...object, tempBasePT: Object.freeze({ power: x, toughness: x }),
+        ...object, tempBasePT: Object.freeze({ power: x, toughness: x, ts }),
       }));
       state.events.push(event('stats_modified', {
         objectId: object.id, cardId: object.cardId,

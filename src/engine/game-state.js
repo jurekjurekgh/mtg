@@ -34,6 +34,7 @@ import { queueSearchChoice, emitReflexiveSearch, dealNonCombatDamage, librarySea
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
+import { nextTimestamp } from './timestamps.js';
 import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive, warpTurnReached, canPlayByImpulseFromExile } from './impulse-window.js';
 
 /**
@@ -478,6 +479,9 @@ export function createGameState({ seed, players }) {
     // się do obiektów wchodzących później). Poprzednio buff aplikowano tylko
     // do stworów obecnych w chwili rozstrzygnięcia (bug złotej odznaki).
     untilEndOfTurnBuffs: [],
+    // D4b (CR 613.7): monotoniczny licznik znaczników czasu efektów ciągłych
+    // (timestamps.js) — kolejność stosowania efektów w obrębie warstwy.
+    timestampSeq: 0,
     // M109 (Spare from Evil): ochrona przed JAKOŚCIĄ do końca tury.
     untilEndOfTurnProtections: [],
     // Zgłoszenie właściciela B1 (2026-09-10): opóźnione zdolności triggerowane
@@ -602,7 +606,8 @@ export function addObject(state, config) {
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.30).
-    ? Object.freeze({ ...object, enteredOnTurn: state.turn.number, ...(object.echo != null ? { echoUnpaid: true } : {}) })
+    // D4b (CR 613.7d): obiekt dostaje znacznik czasu przy wejściu do strefy.
+    ? Object.freeze({ ...object, enteredOnTurn: state.turn.number, timestamp: nextTimestamp(state), ...(object.echo != null ? { echoUnpaid: true } : {}) })
     : object;
   state.objects.set(id, placed);
   state.zones[zone].push(id);
