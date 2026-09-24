@@ -7471,3 +7471,44 @@ widoku — RED przed fixem: 2 fail, darmowe akcje bez kosztu, FoW przeciwnika).
 Bramy: `npm test` **6304/6304** (0 fail, ~242 s), pełna brama
 `node tools/run-tests.mjs all` **6314/6314** (0 fail, ~416 s), build
 **59 modułów / 4124,0 kB**. Handoff: `docs/setup/HANDOFF_2026-09-23d.md`.
+
+## M423 — audyt scalonego PR #134 + warstwy CR 613 (D4b) (sesja 2026-09-24, PR #135)
+
+Sesja wg ADR 0020/0021: audyt PR #134 (`docs/audits/AUDYT_PR134_2026-09-24.md`,
+werdykt APPROVE z zastrzeżeniami), naprawy znalezisk i obserwacji, pętla
+jakości. Plan: `docs/plans/PLAN_2026-09-24-audyt-pr134-i-petla-jakosci.md`.
+
+**Znaleziska audytu (naprawione):** F-1 Gond Gate „{T}: Add {C}” dawał kolory
+Bram; F-2 „could produce” pomijało kolor wybrany przy wejściu i podtypy
+podstawowe; F-3/F-6/F-7 — 4 + 121 przestarzałych cytatów CR przepisanych na
+wydanie 2026-09-25 (strażnik tabeli 702 z detektorem okna, L164/L165); F-4
+proliferate bez zawężenia po typie; Z-1 moc z `PlayerView` efektywna; Z-2
+bestow/704.5m (702.103f); O-1 jedna decyzja „wchodzi tapnięte” także na
+ścieżkach kopii; O-2 jedna lista typów kart; O-3 widok niesie źródło many;
+O-6 transform w miejscu przenosi trwające efekty (CR 712.18).
+
+**D4b — warstwy CR 613 (decyzja właściciela: uproszczenia niezgodne z CR
+naprawiamy).** Silnik nie miał znaczników czasu; kolizje efektów rozstrzygała
+stała kolejność w kodzie. Nowy moduł `src/engine/timestamps.js` (613.7a–g:
+wejście, efekt, licznik, przypięcie, obrót, transformacja) i dziewięć odchyłek
+z sondą RED na prawdziwych kartach:
+
+| # | Przed | Po (CR) |
+|---|---|---|
+| W-1 | Tarmogoyf 2/3 + „base 4/4” = 6/7 | 4/4 (613.4a/b) |
+| W-2 | zakryty + „base 4/4” = 2/2 | 4/4 (708.2) |
+| W-3 | zakryty bez efektów z zewnątrz | nadania, aury, hymny działają (708.2/708.8) |
+| W-4 | Grounded, potem „gains flying” = bez flying | flying (613.9) |
+| W-5 | „base 4/4”, potem animacja 8/8 = 4/4 | 8/8 (613.7) |
+| W-6 | Skilled Animator 5/5, potem crew = 6/6 | 5/5 (702.122a) |
+| W-7 | Warrior's Sword, potem „becomes a Human” = Human Warrior | Human (205.1a) |
+| W-8 | Krotiq „as though no defender” = utrata defendera | reguła ataku, defender zostaje |
+| W-9 | obsadzony pojazd odbity = stwór w ręce | artefakt; umiera jako stwór (400.7, LKI) |
+
+Piny: `test/audyt-d4b-2026-09-24-warstwa-7.test.js` (10),
+`…-warstwa-6.test.js` (10), `…-warstwa-4-i-nowy-obiekt.test.js` (9); mutacje
+M15–M20. Lekcja **L166**.
+
+Bramy: `npm test` **6387/6387**, `npm run test:all` **6397/6397** (0 fail,
+~299 s), build **60 modułów / 4161,2 kB**. Handoff:
+`docs/setup/HANDOFF_2026-09-24.md`.

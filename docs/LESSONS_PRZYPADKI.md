@@ -2567,3 +2567,22 @@ spoza tabeli) i wymaga, żeby świeciły, oraz liniami poprawnymi (702.20,
 żywym repo (M9: vigilance 702.20 → 702.21) czerwieni jednocześnie detektor
 okna i parę liniową — oba strażniki są niezależne, więc jeden nie maskuje
 drugiego.
+
+## L166 (2026-09-24) — przypadek
+
+Właściciel zapytał, czym jest „D4b” z planu, i postawił warunek: jeśli to
+uproszczenie niezgodne z CR — naprawić. Sonda `.probe-613.mjs` (poza repo) na
+prawdziwych kartach katalogu dała osiem odchyłek W-1…W-8, każdą z wynikiem
+liczbowym przed naprawą (Tarmogoyf 6/7 zamiast 4/4, zakryty 2/2 zamiast 4/4,
+Grounded blokujące późniejsze „gains flying”, Skilled Animator 6/6 zamiast 5/5
+po crew, Warrior's Sword zostawiający typ Warrior po „becomes a Human”,
+Krotiq tracący defendera). Dziewiąta (W-9) wyszła przy dodawaniu flagi W-8:
+pytanie „gdzie jeszcze trzeba wyzerować nowe pole?” pokazało, że
+`moveObjectDirectly` nie zeruje ŻADNEGO z pól „do końca tury” zapisanych
+mutacją — ani animacji, ani nadpisania podtypów. Naprawa resetu od razu
+zepsułaby triggery śmierci obsadzonego pojazdu (karta w grobie przestała być
+stworem), więc w tym samym commicie weszło LKI rodzaju (`diedAs`) z testem
+obu stron (obsadzony odpala, nieobsadzony nie). Znaczniki trafiły do jednego
+modułu i do choke pointów (wejście na pole, przypięcie, licznik, nadanie,
+obrót, transformacja); przypięcie do tego samego obiektu nie daje znacznika
+(701.3b) — pokazał to istniejący probe no-op (U9), nie nowy test.

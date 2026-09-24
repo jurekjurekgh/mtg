@@ -140,7 +140,8 @@ Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134
       i H/6 (czysta aura bez hosta idzie do grobu właściciela — 704.5m).
       Mutacje M7 (guard bez `bestow == null`) i M8 (guard bez `aura != null`)
       czerwienią H/5–H/6 (L13). 6/6 zielone.
-- [ ] D3 — **Żywy Tester** (`tools/table-tester`): partie na taliach z kartami
+- [ ] D3 — **PRZENIESIONE do następnej sesji** (priorytet przeszedł na D4b na
+      polecenie właściciela; handoff §2). **Żywy Tester** (`tools/table-tester`): partie na taliach z kartami
       batcha 58 i z mechanikami sesji c (detain, Epic Experiment, Mana Wizard,
       cloak) — trzy osie audytu z `TESTER_STOLU.md`; braki narzędzia naprawiane
       w narzędziu (L12/L27); każda klasa znaleziona ręcznie → nowy detektor.
@@ -157,7 +158,7 @@ Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134
       Kandydaci z listy powyżej (614.1d vs ścieżki wejścia, `colorsFrom` vs
       warstwy, cel refleksyjny vs 608.2b/2h) zostają otwarte — ich wspólnym
       mianownikiem są warstwy 613, czyli ten sam korzeń co O-6.
-- [ ] D4b — **warstwy 613** (spadkobierca D4). Decyzja właściciela
+- [x] D4b — **warstwy 613** (spadkobierca D4). Decyzja właściciela
       2026-09-24: „Jeśli to jest błąd lub uproszczenie niezgodne z CR, to trzeba
       to poprawić.” Rozbite na konkretne odchyłki W-1…W-8 (audyt §9), każda
       z sondą RED na prawdziwych kartach: W-1 CDA vs 7b, W-2 zakrycie vs 7b,
@@ -220,17 +221,17 @@ Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134
         `test/audyt-pr134-2026-09-24-transform-w-miejscu.test.js` (O-6/1..7);
         mutacja M14 (stara gałąź) → 5/7 czerwonych.
       Otwarte obserwacje: **O-4/O-5** (uproszczenia udokumentowane, bez różnicy
-      behawioralnej); **D4b** (pełny model warstw 613).
+      behawioralnej). D4b — domknięte niżej (W-1…W-9).
 
 ## Etap E — domknięcie sesji
 
-- [ ] E1: `npm test` + `npm run test:all` + `npm run build` — liczby ZMIERZONE
+- [x] E1: `npm test` + `npm run test:all` + `npm run build` — liczby ZMIERZONE
       (L92: stan odświeżany na koniec, nie w środku PR).
-- [ ] E2: `docs/setup/HANDOFF_2026-09-24.md`, wpis w `docs/PROJECT_HISTORY.md`,
+- [x] E2: `docs/setup/HANDOFF_2026-09-24.md`, wpis w `docs/PROJECT_HISTORY.md`,
       `docs/ENGINE_MILESTONES.md` (M423+), `README.md` (sekcja Status).
-- [ ] E3: lekcje trwałe → `docs/LESSONS.md` (nowy wpis płaci się skróceniem
+- [x] E3: lekcje trwałe → `docs/LESSONS.md` (nowy wpis płaci się skróceniem
       innego; próg 100k bez zmian — `test/dokumentacja-budzet-lektury.test.js`).
-- [ ] E4: opis PR zaktualizowany kumulatywnie; podsumowanie wykonania w tym planie.
+- [x] E4: opis PR zaktualizowany kumulatywnie; podsumowanie wykonania w tym planie.
 
 ## Ryzyka i pułapki (z LESSONS/ENVIRONMENT)
 
@@ -308,3 +309,12 @@ _(stan pośredni — dopisywane na końcu sesji)_
      per znalezisko nie był możliwy bez interaktywnego `git add -p`.
      Wniosek praktyczny (ENVIRONMENT §2 działa w drugą stronę): push od razu po
      znalezisku ratuje HISTORIĘ, nie tylko pliki.
+
+## Podsumowanie wykonania (2026-09-24)
+
+- Etap A–C: plan, PR #135, audyt PR #134 (APPROVE z zastrzeżeniami).
+- Etap D: F-1…F-4, F-6/F-7, Z-1, Z-2, O-1, O-2, O-3, O-6 naprawione z pinami;
+  D4b (warstwy 613) — W-1…W-9 naprawione (`timestamps.js`, 29 pinów, M15–M20);
+  D3 przeniesione (handoff §2).
+- Etap E: `npm test` 6387/6387, `npm run test:all` 6397/6397 (~299 s), build
+  60 modułów / 4161,2 kB; M423, handoff 2026-09-24, README, L166.

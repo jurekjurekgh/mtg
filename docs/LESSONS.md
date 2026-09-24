@@ -2440,3 +2440,28 @@ z F-7 muszą świecić, poprawne nie). Mutacja M9 (vigilance 702.20 → 702.21)
 czerwieni i detektor okna, i parę liniową.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L165)
+
+## L166 (2026-09-24) — Efekt ciągły zapisany jako mutacja pola ma znacznik czasu i nie przeżywa zmiany strefy
+
+**Przypadek (D4b, W-1…W-9):** silnik nie miał znaczników CR 613.7, więc każda
+para kolidujących efektów rozstrzygała się STAŁĄ kolejnością wpisaną w kod:
+utrata keywordu zawsze wygrywała z nadaniem (613.9 mówi: późniejszy), `set P/T`
+zawsze z animacją, zakrycie zawsze dawało 2/2, a CDA Tarmogoyfa była pumpem 7c.
+Przy okazji: efekty „do końca tury” trzymane w polach obiektu przeżywały
+zmianę strefy (odbity obsadzony pojazd był w ręce stworem), bo cleanup
+przywraca tylko pole bitwy.
+
+**Reguła:**
+1. Stała kolejność „X zawsze wygrywa z Y” w kodzie warstw to ukryta reguła —
+   sprawdź ją z CR 613.3/613.7: w obrębie warstwy decyduje znacznik
+   (`src/engine/timestamps.js`), nie kolejność linii.
+2. Nowe pole efektu „do końca tury” wymaga TRZECH miejsc: ustawienie (+ znacznik),
+   cleanup i reset w `moveObjectDirectly` (CR 400.7), a jeśli triggery patrzą
+   wstecz — LKI (`formerKind`/`formerTypes`, CR 603.10).
+3. „Can X as though it didn't have Y” zmienia regułę, nie zdejmuje zdolności —
+   modelowanie jako utraty psuje widok i interakcje z późniejszym nadaniem.
+
+**Strażnik:** `test/audyt-d4b-2026-09-24-warstwa-{7,6,4-i-nowy-obiekt}.test.js`
+(29 testów, mutacje M15–M20).
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L166)
