@@ -241,7 +241,7 @@ test('M140/B2: karta z polem name NIE jest kasowana jak token', () => {
   assert.ok(state.objects.has('lib1'), 'karta w bibliotece z polem name przetrwała SBA');
 });
 
-// --- BUG #3: goad to wymóg ATAKU, nie zakaz blokowania (CR 701.38b) ---------
+// --- BUG #3: goad to wymóg ATAKU, nie zakaz blokowania (CR 701.15b) ---------
 
 test('M140/B3: goadowany stwór może blokować', () => {
   const state = game();
@@ -268,7 +268,7 @@ test('M140/B3: goadowany stwór może blokować', () => {
   const blockOption = playerView(state, 'p2').legalCommands
     .filter((cmd) => cmd.type === 'declare_blockers')
     .find((cmd) => JSON.stringify(cmd.assignments ?? {}).includes('blk'));
-  assert.ok(blockOption, 'goadowany stwór jest oferowany jako bloker (CR 701.38b)');
+  assert.ok(blockOption, 'goadowany stwór jest oferowany jako bloker (CR 701.15b)');
   assert.ok(execute(state, blockOption).ok, 'blok goadowanym stworem przyjęty');
   assert.ok(state.combat.blockers.get('atk')?.includes('blk'), 'blok zapisany w stanie walki');
 });

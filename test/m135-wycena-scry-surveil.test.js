@@ -17,7 +17,7 @@
 // (ADR 0002).
 //
 // RÓŻNICA SEMANTYCZNA, która musi być widoczna w wycenie: przy scry karta idzie
-// na SPÓD BIBLIOTEKI (odsunięcie w czasie), przy surveil do GROBU (CR 701.44 —
+// na SPÓD BIBLIOTEKI (odsunięcie w czasie), przy surveil do GROBU (CR 701.25 —
 // strata nieodwracalna). Dlatego surveil ma wyższy próg opłacalności.
 // =============================================================================
 
@@ -139,7 +139,7 @@ test('M135: surveil mieli zbędny land (jak scry)', () => {
     `zbędny land wolno zmielić: ${JSON.stringify(chosen)}`);
 });
 
-test('M135: surveil NIE mieli dobrego stwora (grób = strata nieodwracalna, CR 701.44)', () => {
+test('M135: surveil NIE mieli dobrego stwora (grób = strata nieodwracalna, CR 701.25)', () => {
   const { view } = lookBoard({ look: ['highland-game'], lands: 3, kind: 'surveil' });
   const chosen = decide(view);
   assert.deepEqual(chosen.millIds ?? [], [],

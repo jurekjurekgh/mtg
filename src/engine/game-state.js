@@ -123,10 +123,10 @@ export function createGameState({ seed, players }) {
     // (triggers.js — każde zdarzenie skanowane raz), zerowana z turą.
     spellsCastThisTurnByPlayer: {},
     lastTurnSpellsCast: 0,
-    // Oczekująca decyzja scry (CR 701.18): kto i jakie karty (w kolejności od
+    // Oczekująca decyzja scry (CR 701.22a): kto i jakie karty (w kolejności od
     // wierzchu) przegląda. Blokuje bieg gry do komendy resolve_scry.
     pendingScry: null,
-    // Oczekująca decyzja surveil (CR 701.41, Curate): jak scry, ale wybór
+    // Oczekująca decyzja surveil (CR 701.25, Curate): jak scry, ale wybór
     // dotyczy liczby kart do grobu (reszta zostaje na wierzchu). Blokuje grę
     // do komendy resolve_surveil.
     pendingSurveil: null,
@@ -135,7 +135,7 @@ export function createGameState({ seed, players }) {
     // pozostałe efekty dokończy komenda resolve_*, zanim czar opuści stos
     // (Curate: „Surveil 2, then draw a card").
     pendingSpell: null,
-    // Oczekujące decyzje clash (CR 701.40): kto i którą kartę (wierzch/spód)
+    // Oczekujące decyzje clash (CR 701.30): kto i którą kartę (wierzch/spód)
     // odkłada. Wpis: { choices: [playerId…], cards: {playerId: objectId|null},
     // won, returnToHandOnWin, restorePriorityTo }. Blokuje grę do
     // resolve_clash_choice; po ostatniej decyzji dokańcza wstrzymany czar.
@@ -151,7 +151,7 @@ export function createGameState({ seed, players }) {
     pendingUndercityRoute: null,
     // M191/Batch 46 (fabricate, CR 702.123): wybór licznik ALBO tokeny.
     pendingFabricate: null,
-    // Batch 22: oczekująca decyzja proliferate (CR 701.27, Courage in
+    // Batch 22: oczekująca decyzja proliferate (CR 701.34, Courage in
     // Crisis). Gracz wybiera DOWOLNĄ liczbę permanentów i/lub graczy
     // (z licznikami) — każdy dostaje po +1 do każdego typu licznika
     // już obecnego. Wpis: { playerId, sourceId, sourceCardId,
@@ -159,7 +159,7 @@ export function createGameState({ seed, players }) {
     // resolve_proliferate (jak pendingSurveil).
     pendingProliferate: null,
     // Batch 22: oczekująca decyzja reveal + reorder (Stomping Slabs,
-    // CR 701.16 + 401.4): kto przegląda wierzchnie N kart biblioteki
+    // CR 701.20e + 401.2): kto przegląda wierzchnie N kart biblioteki
     // i układa je na spodzie w DOWOLNEJ kolejności. Wpis:
     // { playerId, sourceId, sourceCardId, cardIds, amount,
     // restorePriorityTo }. Blokuje grę do resolve_reveal_order.
@@ -249,7 +249,7 @@ export function createGameState({ seed, players }) {
     // Flaga z efektu clash (Release the Ants): wygrany czar wraca do ręki
     // właściciela zamiast do grobu (rozstrzyga resolveTopOfStack).
     pendingSpellReturnToHand: false,
-    // Oczekująca decyzja odrzucenia (Temat 4 — CR 701.18 „discard a card"):
+    // Oczekująca decyzja odrzucenia (Temat 4 — CR 701.9b „discard a card"):
     // decider to gracz, który WYBIERA karty z ręki do odrzucenia — koszt
     // (Goblin Picker, Plague Reaver — kontroler) albo efekt (Dementia Bat —
     // cel, Evangel — kontroler). Wpis: { playerId, count, handIds, purpose:
@@ -271,7 +271,7 @@ export function createGameState({ seed, players }) {
     pendingLibraryPlacement: null,
     // Oczekująca decyzja szukania w bibliotece (Temat 6 — „you may search
     // your library for ...": gracz wybiera KARTĘ albo rezygnuje (fail to
-    // find, CR 701.19b). Wpis: { playerId, qualifier, destination,
+    // find, CR 701.23b). Wpis: { playerId, qualifier, destination,
     // entersTapped, sourceCardId, emitter, restorePriorityTo }.
     pendingSearchChoice: null,
     // Oczekująca decyzja „zapłać albo poświęć" (Rupture Spire, Temat 7):
@@ -357,7 +357,7 @@ export function createGameState({ seed, players }) {
     // Oczekująca decyzja poświęcenia Food (Insatiable Appetite):
     // blokująca decyzja jak scry/surveil.
     pendingFoodChoice: null,
-    // Oczekująca decyzja amass z wieloma armiami (CR 701.43): gracz wybiera,
+    // Oczekująca decyzja amass z wieloma armiami (CR 701.47): gracz wybiera,
     // która Army dostaje liczniki. Wpis: { playerId, armyIds, amount, subtype,
     // restorePriorityTo } — resolve_amass_choice.
     pendingAmass: null,
@@ -432,12 +432,12 @@ export function createGameState({ seed, players }) {
     // CR 615 w minimalnym wymiarze): { targetId, remaining } — cel to gracz
     // albo obiekt; zużywane przez preventDamageTo, czyszczone w cleanup.
     damageShields: [],
-    // Tarcze regeneracji (CR 701.12): id obiektów z aktywną „regeneracją"
+    // Tarcze regeneracji (CR 701.19): id obiektów z aktywną „regeneracją"
     // („the next time it would be destroyed this turn"). Zużywane przez
     // tryRegenerate (SBA/efekty destroy), czyszczone w cleanup.
     regenerationShields: [],
     // Flaga „can't be regenerated this turn" (Rage of Purphoros: „It can't
-    // be regenerated this turn.", CR 701.12b w minimalnym wymiarze) — id
+    // be regenerated this turn.", CR 701.19a w minimalnym wymiarze) — id
     // obiektów zablokowanych przed regeneracją do końca tury. Ustawiana
     // efektem `cant_be_regenerated_this_turn`, sprawdzana w tryRegenerate
     // (SBA) i destroy_permanent; czyszczona w cleanup razem z
@@ -1405,7 +1405,7 @@ function pruneDeadPendingDecisions(state) {
 
 /**
  * M109 (Nightsnare): decyzję o odrzuceniu podejmuje zwykle ten, kto odrzuca
- * (CR 701.8a), ale bywa, że wskazuje ją KTO INNY („You may choose a nonland
+ * (CR 701.9b), ale bywa, że wskazuje ją KTO INNY („You may choose a nonland
  * card from it") — wtedy pending niesie chooserId.
  */
 /**
@@ -1450,7 +1450,7 @@ function discardChooserId(pending) {
 /**
  * „Prosty zakres\" rzutu kartą spoza ręki — JEDNA definicja dla oferty i
  * walidacji wszystkich ścieżek, które rzucają kartę leżącą w innej strefie
- * bez wybierania jej kosztu z ręki: darmowy rzut z Discover (CR 701.53) i
+ * bez wybierania jej kosztu z ręki: darmowy rzut z Discover (CR 701.57) i
  * rzut z wygnania po Vaanie, Street Thief.
  *
  * Powód istnienia (audyt PR #92, znalezisko 5): filtr miał trzy kopie —
@@ -1858,7 +1858,7 @@ function accepted(state, cmd, result) {
   // Zgłoszenie właściciela B2 (2026-09-10), CR 714.4 / 704.5s: poświęcenie
   // Sagi, której rozdział zszedł ze stosu. PO triggerach (jak cleanup tokenów
   // z CR 704.5d powyżej), bo rozdział dołożony właśnie licznikiem lore
-  // (proliferate — CR 701.27 → 714.2b) musi najpierw trafić na stos: CR 704.3
+  // (proliferate — CR 701.34 → 714.2b) musi najpierw trafić na stos: CR 704.3
   // powtarza akcje stanowe dopiero po włożeniu triggerów na stos.
   const sagaEvents = sacrificeFinishedSagas(state);
   if (sagaEvents.length > 0) {
@@ -1989,7 +1989,7 @@ export function execute(state, input) {
       movedBack.push(moved);
       state.events.push(event('object_moved', { fromId: handId, object: moved, fromZone: 'hand', toZone: 'library', mulliganShuffle: true }));
     }
-    // 2. Tasowanie CAŁEJ własnej biblioteki (jak po przeszukaniu, CR 701.19c).
+    // 2. Tasowanie CAŁEJ własnej biblioteki (jak po przeszukaniu, CR 701.24a).
     const ownLib = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
     const shuffled = shuffle(ownLib, state.seed + state.objectSequence);
     let cursor = 0;
@@ -2008,7 +2008,7 @@ export function execute(state, input) {
       const newId = `hand-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, topId, 'hand', newId);
       drawn.push(moved);
-      // CR 701.3b: karty wzięte po mulliganie NIE są dobraniami — licznik
+      // CR 103.5: karty wzięte po mulliganie NIE są dobraniami — licznik
       //      tury ich nie liczy, a kontrakt `drawNumberThisTurn` jest
       //      wypełniony JAWNYM null (ADR 0027: brak pola to rozjazd ładunków).
       state.events.push(event('card_drawn', {
@@ -2050,7 +2050,7 @@ export function execute(state, input) {
     if (new Set(bottomIds).size !== bottomIds.length || bottomIds.some((id) => !scry.objectIds.includes(id))) {
       return reject('illegal_scry_choice');
     }
-    // „...and the rest on top of your library in any order\" (CR 701.18) —
+    // „...and the rest on top of your library in any order\" (CR 701.22a) —
     // M148: gracz wybiera KOLEJNOŚĆ kart, które zostają na wierzchu (topOrder,
     // permutacja od wierzchu), analogicznie do surveil. Domyślnie pierwotna.
     const rest = scry.objectIds.filter((id) => !bottomIds.includes(id));
@@ -2060,7 +2060,7 @@ export function execute(state, input) {
       return reject('illegal_scry_order');
     }
     // Karta na spodzie biblioteki to ten sam obiekt w tej samej strefie —
-    // zmienia się wyłącznie kolejność (CR 701.18 nie jest zmianą strefy).
+    // zmienia się wyłącznie kolejność (CR 701.22a nie jest zmianą strefy).
     const bottomSet = new Set(bottomIds);
     const topSet = new Set(topOrder);
     const withoutLooked = state.zones.library.filter((id) => !bottomSet.has(id) && !topSet.has(id));
@@ -2094,7 +2094,7 @@ export function execute(state, input) {
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
-  // Oczekująca decyzja surveil (CR 701.41): jak scry — blokuje wszystko poza
+  // Oczekująca decyzja surveil (CR 701.25): jak scry — blokuje wszystko poza
   // resolve_surveil. Po rozstrzygnięciu dokańczamy czar wstrzymany w środku
   // listy efektów (state.pendingSpell — np. Curate: surveil, potem dobranie).
   if (state.pendingSurveil) {
@@ -2105,7 +2105,7 @@ export function execute(state, input) {
     if (new Set(millIds).size !== millIds.length || millIds.some((id) => !surveil.objectIds.includes(id))) {
       return reject('illegal_surveil_choice');
     }
-    // „The rest on top of your library in any order" (CR 701.41): topOrder to
+    // „The rest on top of your library in any order" (CR 701.25): topOrder to
     // permutacja kart, które NIE idą do grobu — kolejność od wierzchu.
     const rest = surveil.objectIds.filter((id) => !millIds.includes(id));
     const order = Array.isArray(cmd.topOrder) ? cmd.topOrder : rest;
@@ -2148,7 +2148,7 @@ export function execute(state, input) {
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
   // Oczekująca decyzja reveal + reorder (Batch 22: Stomping Slabs,
-  // CR 701.16 + 401.4): kto przegląda wierzchnie N kart biblioteki i
+  // CR 701.20e + 401.2): kto przegląda wierzchnie N kart biblioteki i
   // układa je na spodzie w DOWOLNEJ kolejności. Rozstrzyga
   // applyEffect(type 'reveal_top_to_bottom_order', namedCard, thenDamage).
   if (state.pendingRevealOrder) {
@@ -2197,7 +2197,7 @@ export function execute(state, input) {
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
-  // Oczekująca decyzja proliferate (Batch 22: Courage in Crisis, CR 701.27):
+  // Oczekująca decyzja proliferate (Batch 22: Courage in Crisis, CR 701.34):
   // gracz wybiera DOWOLNĄ liczbę celów (permanenty z licznikami +
   // gracze z poison > 0); każdy zwiększa licznik każdego typu o 1.
   if (state.pendingProliferate) {
@@ -2444,7 +2444,7 @@ export function execute(state, input) {
     const moved = moveObjectDirectly(state, landId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
       // M272 (błąd #20): `toZone` w zdarzeniu — po nim triggery śmierci
-      // rozpoznają wygnanie przez licznik finality (CR 122.1b).
+      // rozpoznają wygnanie przez licznik finality (CR 122.1h).
       fromId: landId, objectId: destId, playerId: pending.controllerId,
       cardId: moved.cardId, reason: 'springbloom_druid', toZone,
     }));
@@ -2455,7 +2455,7 @@ export function execute(state, input) {
     }));
     // „Search your library for up to two basic land cards, put them onto the
     // battlefield tapped, then shuffle" — liczba (0/1/2) i wybór kart należą
-    // do GRACZA (CR 701.19b; fix 2026-08-10: wcześniej deterministycznie
+    // do GRACZA (CR 701.23b; fix 2026-08-10: wcześniej deterministycznie
     // pierwsze 2 ze WSPÓLNEJ listy bibliotek — mogło wziąć landy przeciwnika).
     // Dwie kolejne decyzje resolve_search_choice (declinable); shuffle w
     // handlerze search (dystrybucyjnie równoważne pojedynczemu tasowaniu
@@ -3226,7 +3226,7 @@ export function execute(state, input) {
     }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
-  // Oczekujący clash (CR 701.40): każdy gracz z odsłoniętą kartą decyduje,
+  // Oczekujący clash (CR 701.30): każdy gracz z odsłoniętą kartą decyduje,
   // kładzie ją na wierzch albo spód — po kolei (caster, potem przeciwnik).
   // Po ostatniej decyzji dokańczamy wstrzymany czar (powrót do ręki przy
   // wygranej — pendingSpellReturnToHand).
@@ -3393,7 +3393,7 @@ export function execute(state, input) {
     const before = state.events.length;
     let foundCardId = null;
     // M177/C (Final Parting): szukanie bez kryterium jakości jest OBOWIĄZKOWE
-    // (CR 701.19c — fail to find tylko przy ograniczonym kryterium).
+    // (CR 701.23b — fail to find tylko przy ograniczonym kryterium).
     if (cmd.found == null && pending.mandatory
       && state.zones.library.some((id) => matches(state.objects.get(id)))) {
       return reject('search_mandatory');
@@ -3444,7 +3444,7 @@ export function execute(state, input) {
         }));
       }
     }
-    // Po przeszukaniu biblioteka jest tasowana (CR 701.19c) — także przy
+    // Po przeszukaniu biblioteka jest tasowana (CR 701.24a) — także przy
     // rezygnacji („search... then shuffle" — samo szukanie tasuje).
     const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
     const shuffled = shuffle(ownLibrary, state.seed + state.objectSequence);
@@ -3478,7 +3478,7 @@ export function execute(state, input) {
     }
     // „Up to N" (Springbloom Druid — chain): po UDANYM znalezieniu gracz może
     // wziąć kolejną kartę — kolejkujemy następną decyzję przed domknięciem
-    // (rezygnacja z którejkolwiek decyzji kończy łańcuch; CR 701.19b).
+    // (rezygnacja z którejkolwiek decyzji kończy łańcuch; CR 701.23b).
     if (pending.chain && pending.chain.remaining > 0 && foundCardId != null) {
       const queued = queueSearchChoice(state, { controllerId: pending.playerId, cardId: pending.sourceCardId }, {
         qualifier: pending.chain.qualifier ?? pending.qualifier,
@@ -3582,7 +3582,7 @@ export function execute(state, input) {
       cardId: target?.cardId ?? null, sourceCardId: pending.sourceCardId ?? null,
     }));
     // „That player discards a card" — wybór odrzucanej karty należy do
-    // odrzucającego (CR 701.18); przy pustej ręce nic się nie dzieje.
+    // odrzucającego (CR 701.9b); przy pustej ręce nic się nie dzieje.
     const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
     // Znalezisko A: wymuszony discard całości bez decyzji (kontynuacja jak w gałęzi else).
     const autoDiscard = (pending.discardCount ?? 0) > 0 && handIds.length > 0
@@ -3758,7 +3758,7 @@ export function execute(state, input) {
     // M272 (błąd #20): `toZone` jest CZĘŚCIĄ faktu — triggery śmierci
     // (triggers.js: `if (ev.toZone === 'exile') return`) po nim rozpoznają,
     // że permanent został wygnany przez licznik finality i „dies" się NIE
-    // wydarzyło (CR 122.1b). Bez tego pola exploit odpalał zdolności śmierci
+    // wydarzyło (CR 122.1h). Bez tego pola exploit odpalał zdolności śmierci
     // mimo wygnania. Prefiks id też musi zgadzać się ze strefą.
     const exploitZone = deathZoneFor(state, target);
     const moved = moveObjectDirectly(state, cmd.targetId, exploitZone, `${exploitZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
@@ -3933,7 +3933,7 @@ export function execute(state, input) {
             // kopiowalny tekst karty. Obiekt jest JUŻ na polu (decyzja po
             // permanent_entered_battlefield), więc samo pole go nie tapnie —
             // tapnięcie ustawiamy wprost. To wejście tapnięte, nie „becomes
-            // tapped” (CR 701.21a — brak zdarzenia object_tapped jest poprawny).
+            // tapped” (CR 701.26 — brak zdarzenia object_tapped jest poprawny).
             ...(copyBase.entersTapped ? { entersTapped: true } : {}),
             ...(copyBase.entersTappedCondition ? { entersTappedCondition: copyBase.entersTappedCondition } : {}),
             // O-1 (audyt PR #134, klasa L101): tapnięcie kopii rozstrzyga
@@ -4389,7 +4389,7 @@ export function execute(state, input) {
     if (batchChoice && (!Array.isArray(cmd.cardIds) || Object.hasOwn(cmd, 'cardId'))) return reject('illegal_discard_choice');
     // M109 (Nightsnare): „If you don't" — rezygnacja wybierającego przełącza
     // decyzję na WŁAŚCICIELA ręki, który odrzuca declineAmount kart wg
-    // własnego wyboru (CR 701.8a).
+    // własnego wyboru (CR 701.9b).
     if (!batchChoice && pending.allowDecline && cmd.cardId == null) {
       const before = state.events.length;
       const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
@@ -4607,9 +4607,9 @@ export function execute(state, input) {
       return reject('illegal_sacrifice_target');
     }
     // M269 (błąd #5): wybór ofiary nie zmienia tego, że poświęcenie jest
-    // śmiercią (CR 701.17a) — ta sama wspólna strefa docelowa.
+    // śmiercią (CR 700.4 + 701.21a) — ta sama wspólna strefa docelowa.
     // M272 (błąd #20): strefa musi trafić do ZDARZENIA, bo po niej triggery
-    // śmierci poznają wygnanie przez finality (CR 122.1b).
+    // śmierci poznają wygnanie przez finality (CR 122.1h).
     const sacZone = deathZoneFor(state, target);
     const graveId = `${sacZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, target.id, sacZone, graveId);
@@ -4651,7 +4651,7 @@ export function execute(state, input) {
   }
   // Oczekująca decyzja poświęcenia Food (Insatiable Appetite):
   // blokuje grę do resolve_food_choice.
-  // Oczekująca decyzja amass z wieloma armiami (CR 701.43): gracz wybiera,
+  // Oczekująca decyzja amass z wieloma armiami (CR 701.47): gracz wybiera,
   // która Army dostaje liczniki. resolve_amass_choice { armyId }.
   if (state.pendingAmass) {
     const amass = state.pendingAmass;
@@ -4792,7 +4792,7 @@ export function execute(state, input) {
       playerId: disc.playerId, amount: disc.amount, foundCardId: disc.foundCardId, castFree: cmd.castFree,
       // I (zgłoszenie właściciela 2026-09-20): także przy TRAFIENIU log musi
       // powiedzieć, że resztę odłożono na spód biblioteki w losowej kolejności
-      // (CR 701.53) — inaczej karty po prostu „ginęły" z narracji.
+      // (CR 701.57) — inaczej karty po prostu „ginęły" z narracji.
       bottomCount: disc.restExileIds.length,
     }));
     state.pendingDiscover = null;
@@ -4919,7 +4919,7 @@ export function execute(state, input) {
       const moved = moveObjectDirectly(state, cmd.targetId, 'battlefield', bfId);
       const permanent = Object.freeze({ ...moved, summoningSickness: true });
       state.objects.set(bfId, permanent);
-      // M274 (#24, CR 121.6): wprowadzenie stwora z RĘKI na pole bitwy
+      // M274 (#24, CR 122.6): wprowadzenie stwora z RĘKI na pole bitwy
       // (Dragon Arch) to wejście jak każde inne — liczniki wejścia obowiązują.
       applyEnterCounters(state, bfId);
       state.events.push(event('permanent_entered_battlefield', {
@@ -4963,7 +4963,7 @@ export function execute(state, input) {
     if (!legalDevourCandidates(state, pending).includes(cmd.targetId)) return reject('illegal_devour_target');
     // M269 (błąd #5): devour pożera permanent przez poświęcenie — ta sama
     // wspólna strefa śmierci (licznik finality → wygnanie).
-    // M272 (błąd #20): strefa śmierci trafia też do zdarzenia (CR 122.1b).
+    // M272 (błąd #20): strefa śmierci trafia też do zdarzenia (CR 122.1h).
     const devourZone = deathZoneFor(state, state.objects.get(cmd.targetId));
     const moved = moveObjectDirectly(state, cmd.targetId, devourZone, `${devourZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
     state.events.push(event('permanent_sacrificed', {
@@ -5195,7 +5195,7 @@ export function execute(state, input) {
     const buriedCardIds = [];
     for (const objectId of pending.candidateIds) {
       if (objectId === cmd.keepId) continue;
-      // Finality counter (CR 122.1b): śmierć z prawa legend też jest śmiercią
+      // Finality counter (CR 122.1h): śmierć z prawa legend też jest śmiercią
       // — obiekt z finality idzie do exile zamiast do grobu.
       const doomed = state.objects.get(objectId);
       const toZone = deathZoneFor(state, doomed);
@@ -5271,7 +5271,7 @@ export function execute(state, input) {
         // attacks each combat if able"): deklaracja atakujących jest akcją
         // turową (CR 508.1a) — runda passów jej nie pomija. Stwór wymuszony
         // (`mandatoryAttackerIds`: „attacks each combat if able" CR 508.1c
-        // albo goad CR 701.38) MUSI atakować, więc przed wyjściem z kroku
+        // albo goad CR 701.15) MUSI atakować, więc przed wyjściem z kroku
         // deklarujemy MINIMALNY zestaw — same stwory wymuszone; te opcjonalne
         // zostają decyzją gracza, który właśnie spasował (świadomie z nich
         // zrezygnował). Wcześniej pass p1+p2 przechodził do blokowania bez
@@ -5393,7 +5393,7 @@ export function execute(state, input) {
           state.preventCombatExceptEnchanted = false;
           // Tarcze prewencji „this turn" (Withstand) wygasają w cleanup.
           state.damageShields = [];
-          // Tarcze regeneracji (CR 701.12a — „this turn") wygasają w cleanup.
+          // Tarcze regeneracji (CR 701.19a — „this turn") wygasają w cleanup.
           state.regenerationShields = [];
           // Flaga „can't be regenerated this turn" (Rage of Purphoros) wygasa
           // w cleanup razem z tarczami regeneracji (oba są efektami trwałymi
@@ -5469,12 +5469,12 @@ export function execute(state, input) {
           // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
           // wyniku komendy — konsument protokołu dostaje pełny strumień.
           events.push(...beginTurn(state, state.turn.activePlayerId).events);
-          // CR 701.38c: goad trwa do początku NASTĘPNEJ tury gracza, który
+          // CR 701.15a: goad trwa do początku NASTĘPNEJ tury gracza, który
           // goadował (w 1v1 turn.number + 2) — wygasa na starcie tury, gdy
           // goadedUntilTurn <= bieżący numer tury. Wcześniej goad wygasał
           // w cleanup tej samej tury, więc zaczarowany stwór nie musiał
           // atakować w turze przeciwnika (bug znaleziony w srebrnym audycie).
-          // Detain (CR 701.29, M177/E): wygasa na początku następnej tury
+          // Detain (CR 701.35, M177/E): wygasa na początku następnej tury
           // gracza, który detainował — ten sam mechanizm co goad.
           for (const detainedObject of state.objects.values()) {
             if (detainedObject.zone !== 'battlefield' || !detainedObject.detained) continue;
@@ -6063,7 +6063,7 @@ function exileAdditionalCostCandidates(state, playerId, object) {
  * Widok niesie ją osobno od `options` decyzji, bo opcje są ograniczone
  * `COMBAT_OPTION_CAP` (rozmiar menu), a wizard bloków rysował kandydatów z sumy
  * ofert — legalne pary wycięte przez cap nie miały wiersza i gracz nie mógł ich
- * zadeklarować (CR 509.1b). Pole jest wyłącznie tam, gdzie jest decyzja:
+ * zadeklarować (CR 509.1a). Pole jest wyłącznie tam, gdzie jest decyzja:
  * krok deklaracji bloków, walka zadeklarowana, stos pusty, gracz broniący,
  * bloki jeszcze niezadeklarowane (warunki lustrzane wobec `legalCommands`).
  */
@@ -6235,7 +6235,7 @@ export function playerView(state, playerId) {
         // nie pokazywał „Ward {2}\", a test W8 sprawdzał cardInfo na SUROWYM
         // obiekcie i luki nie widział.
         if (object.ward != null) entry.ward = object.ward;
-        // M315: mechanika zakrycia JAWNA dla kontrolera (CR 708.2d — swój
+        // M315: mechanika zakrycia JAWNA dla kontrolera (CR 708.5 — swój
         // permanent możesz obejrzeć; kafel podpisuje „Cloak" zamiast „Morph").
         // Przeciwnik nie dostaje tej flagi — cloak-vs-morph to informacja
         // ukryta (FoW, CR 708.2a).
@@ -6515,7 +6515,7 @@ export function playerView(state, playerId) {
         // M260/B1 (zgłoszenie właściciela z PR #89, Pyxis of Pandemonium):
         // karta wygnana ZAKRYTA nie ujawnia tożsamości NIKOMU — CR 406.3
         // („no player may look at it"), także właścicielowi. To NIE jest morph
-        // na polu bitwy (CR 708.6 pozwala kontrolerowi patrzeć na własne
+        // na polu bitwy (CR 708.5 pozwala kontrolerowi patrzeć na własne
         // zakryte permanenty) — strefa decyduje o zasadzie. Zwracamy minimalny
         // kształt: id, właściciel, strefa + znaczniki zakrycia/ukrycia, BEZ
         // cech karty (cardId, kind, types, spell, statystyk) — wiedza „to
@@ -6648,7 +6648,7 @@ export function playerView(state, playerId) {
   const firstDecisionOwner = state.status === 'active' ? firstPendingDecisionPlayerId(state) : null;
   const blockedByOthersDecision = firstDecisionOwner != null && firstDecisionOwner !== playerId;
   // M337 (macierz B0 przerwana na 56%): AKCJE OPCJONALNE — specjalne (obrót
-  // twarzą do góry, CR 701.40b/701.58b) i pass — są nielegalne, gdy JAKA
+  // twarzą do góry (manifest/cloak), CR 701.40b/701.58b) i pass — są nielegalne, gdy JAKA
   // KOLWIEK decyzja czeka, także ta, której właścicielem jest sam gracz.
   // execute pilnuje tego 64 bramkami `if (cmd.type !== 'resolve_*') reject`
   // (zmierzone: 64 = liczba pól w `firstPendingDecision`, więc reguły są
@@ -6864,7 +6864,7 @@ export function playerView(state, playerId) {
       legalCommands.push(command('resolve_mulligan_bottom_choice', playerId, { cardIds: combo }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeScry) {
-    // Oczekująca decyzja scry (CR 701.18): warianty = podzbiór kart na SPÓD ×
+    // Oczekująca decyzja scry (CR 701.22a): warianty = podzbiór kart na SPÓD ×
     // permutacja reszty na WIERZCHU („...and the rest on top of your library in
     // any order\") — M148: gracz wybiera kolejność kart, które zostają na górze,
     // nie tylko spód/top. Przy większych przeglądach (N>4) kolejność zostaje
@@ -6892,7 +6892,7 @@ export function playerView(state, playerId) {
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSurveil) {
-    // Oczekująca decyzja surveil (CR 701.41): warianty = podzbiór kart do
+    // Oczekująca decyzja surveil (CR 701.25): warianty = podzbiór kart do
     // grobu × permutacja reszty na wierzchu („in any order"). Przy większych
     // przeglądach (N>4) kolejność pozostaje pierwotna (ograniczenie enumeracji).
     const permutations = (arr) => {
@@ -6925,7 +6925,7 @@ export function playerView(state, playerId) {
     // przyjmuje każdą permutację cardIds).
     legalCommands.push(command('resolve_reveal_order', playerId, { order: [...state.pendingRevealOrder.cardIds] }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeProliferate) {
-    // Proliferate (CR 701.27, Courage in Crisis): „choose any number of
+    // Proliferate (CR 701.34, Courage in Crisis): „choose any number of
     // permanents and/or players" — podzbiory kandydatów (permanenty z
     // licznikami + gracze z poison). Przy dużych pulach ograniczamy enumerację
     // (jak combat options): pełne podzbiory do 6 kandydatów, wyżej warianty
@@ -7015,7 +7015,7 @@ export function playerView(state, playerId) {
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeClash) {
-    // Oczekujący clash (CR 701.40): gracz, którego kolej, wybiera wierzch/spód
+    // Oczekujący clash (CR 701.30): gracz, którego kolej, wybiera wierzch/spód
     // dla swojej odsłoniętej karty.
     legalCommands.push(command('resolve_clash_choice', playerId, {}));
     legalCommands.push(command('resolve_clash_choice', playerId, { putOnBottom: true }));
@@ -7087,7 +7087,7 @@ export function playerView(state, playerId) {
       }
     }
     // M177/C + M203/2: szukanie OBOWIĄZKOWE (Final Parting — „search your
-    // library for a card") nie oferuje rezygnacji (CR 701.19c); przy
+    // library for a card") nie oferuje rezygnacji (CR 701.23d); przy
     // nieobowiązkowym „nie znajdź karty" jest OSTATNIĄ opcją — gracz i bot
     // biorą pierwszą ofertę, a domyślnym zamiarem jest znalezienie karty.
     if (!state.pendingSearchChoice.mandatory) {
@@ -7447,7 +7447,7 @@ export function playerView(state, playerId) {
       legalCommands.push(command('resolve_sacrifice_choice', playerId, { targetId, ...(reflexReady === undefined ? {} : { reflexReady }) }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeAmassChoice) {
-    // Amass z wieloma armiami (CR 701.43): gracz wybiera, która Army dostaje
+    // Amass z wieloma armiami (CR 701.47): gracz wybiera, która Army dostaje
     // liczniki. Boty biorą pierwszą ofertę (pierwsza armia — zachowanie).
     for (const armyId of state.pendingAmass.armyIds) {
       legalCommands.push(command('resolve_amass_choice', playerId, { armyId, amount: state.pendingAmass.amount }));
@@ -8369,7 +8369,7 @@ export function playerView(state, playerId) {
       })
       : null,
   } : null;
-  // Clash (CR 701.40): odsłonięte karty są jawne — obaj gracze widzą, czyja
+  // Clash (CR 701.30): odsłonięte karty są jawne — obaj gracze widzą, czyja
   // to decyzja, ile zostało i którą kartę (cardId) się odkłada.
   const pendingClash = state.pendingClash ? {
     playerId: state.pendingClash.choices[0],
@@ -8667,7 +8667,7 @@ export function playerView(state, playerId) {
         restTo: state.pendingSatyrLook.restTo ?? 'graveyard',
         restOrder: state.pendingSatyrLook.restOrder ?? 'preserve',
         // A1 (audyt PR #100): efekt każe odsłonić wierzch biblioteki
-        // WYŁĄCZNIE jej właścicielowi (CR 701.3 „look at"), więc widok nosi
+        // WYŁĄCZNIE jej właścicielowi (CR 701.20e „look at"), więc widok nosi
         // dane kandydatów tylko dla decydenta — dokładnie jak
         // `pendingManifestDreadView` (M223). Bez nich wycena i projekcja bota
         // nie miały czym różnicować kart (wpisy `zones.library` są puste).
@@ -8790,7 +8790,7 @@ export function playerView(state, playerId) {
       allowDecline: Boolean(state.pendingDiscardChoice.allowDecline),
     } : null,
     pendingDamageAssignment: buildDamageAssignmentView(state, playerId),
-    // E6: pełna pula kandydatów na blokerów (niezależna od cap-a menu, CR 509.1b).
+    // E6: pełna pula kandydatów na blokerów (niezależna od cap-a menu, CR 509.1a).
     blockCandidates: blockerView?.pool ?? null,
     // F14: liczba użyć, jaką silnik przyjmie od jednego blokera (L48 — wizard
     // musi znać tę samą regułę, żeby nie wysyłać komendy do odrzucenia).
@@ -8804,11 +8804,11 @@ export function playerView(state, playerId) {
       candidateIds: [...state.pendingExploits[0].candidateIds],
     } : null,
     // A1/A2 (Final Parting): szukanie w bibliotece ujawnia WSZYSTKIE karty
-    // decydentowi (CR 400.2 + 701.19 — przeszukanie = full information),
+    // decydentowi (CR 400.2 + 701.23 — przeszukanie = full information),
     // tak samo jak manifest_dread (M223), peek-pick-order (M293) czy scry.
     // Widok niesie: (a) listę KART-kandydatów z pełnymi danymi (tylko dla
     // wybierającego), (b) źródło i cel strefy (hand/graveyard/battlefield),
-    // (c) czy szukanie jest obowiązkowe (CR 701.19c), (d) informację o
+    // (c) czy szukanie jest obowiązkowe (CR 701.23d), (d) informację o
     // chain (Final Parting: karta do ręki → karta do grobu). UI buduje
     // z tego modal z zaznaczaniem (ptaszek) + podglądem karty pełnym
     // ekranem (zgłoszenie A1: modal z lupą ma być zastąpiony wszędzie

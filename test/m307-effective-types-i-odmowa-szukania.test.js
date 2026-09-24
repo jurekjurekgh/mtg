@@ -55,5 +55,5 @@ test('A5: szukanie OBOWIĄZKOWE nie oferuje odmowy (gwarancja po stronie silnika
   const przymusowe = stan(true);
   assert.ok(przymusowe.length > 0, 'szukanie obowiązkowe ma kandydatów');
   assert.ok(!przymusowe.some((c) => c.found == null),
-    'CR 701.19c: przy obowiązkowym szukaniu NIE MA wariantu „nie znajduję" — dlatego UI nie musi sprawdzać `mandatory`');
+    'CR 701.23d: przy obowiązkowym szukaniu NIE MA wariantu „nie znajduję" — dlatego UI nie musi sprawdzać `mandatory`');
 });

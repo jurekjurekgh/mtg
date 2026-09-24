@@ -122,7 +122,7 @@ function thronePutChosenCreature(state, pending, targetId) {
     hexproofUntilTurn: state.turn.number + 2,
   });
   state.objects.set(newId, permanent);
-  // M273 (błąd #24): liczniki WEJŚCIA karty (CR 121.6) są niezależne od
+  // M273 (błąd #24): liczniki WEJŚCIA karty (CR 122.6) są niezależne od
   // liczników nadawanych przez sam efekt — obie porcje się sumują.
   applyEnterCounters(state, newId);
   state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'library', toZone: 'battlefield' }));
@@ -332,7 +332,7 @@ function isFinalRoom(roomIndex) {
 }
 
 /**
- * Batch 47 (CR 701.51b): gracz UKOŃCZYŁ loch, gdy jego znacznik dotarł do
+ * Batch 47 (CR 309.7): gracz UKOŃCZYŁ loch, gdy jego znacznik dotarł do
  * pokoju bez dalszych ścieżek. Undercity jest GRAFEM (M190/B), więc „ostatni
  * pokój" to nie „pokój numer 9", tylko taki, z którego nie ma wyjścia —
  * liczone z danych lochu, nie ze stałej.
@@ -678,14 +678,14 @@ export function librarySearchMatches(object, qualifier, ownerId) {
   const minMv = qualifier.minManaValue;
   const mvOk = minMv == null || (object.manaCost ?? 0) >= minMv;
   // Batch 44 (Angel's Herald): „search ... for a card named Empyrial
-  // Archangel" — kwalifikator po dokładnej nazwie karty (CR 701.19b;
+  // Archangel" — kwalifikator po dokładnej nazwie karty (CR 701.23b;
   // kryterium jakości, więc fail to find pozostaje legalny).
   const nameOk = !qualifier.name || (object.cardName ?? object.name) === qualifier.name;
   return typeMatch && subtypeMatch && kindMatch && mvOk && nameOk;
 }
 
 /**
- * Temat 6 — „You may search your library for ..." (CR 701.19b): blokująca
+ * Temat 6 — „You may search your library for ..." (CR 701.23b): blokująca
  * decyzja gracza, KTÓRĄ kartę znaleźć (albo w ogóle nie szukać — fail to
  * find). Ruch karty + tasowanie wykonuje komenda resolve_search_choice.
  * Zwraca true (blokada), gdy są kandydaci; bez kandydatów automatycznie
@@ -839,7 +839,7 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
     // Emiter decyzji pośredniej z aktywacji (cycling/channel): po wyborze
     // handler resolve_search_choice emituje ability_activated (jak cycling).
     emitter: emitter ? { ...emitter } : null,
-    // M177/C (Final Parting, CR 701.19c): szukanie BEZ kryterium jakości
+    // M177/C (Final Parting, CR 701.23d): szukanie BEZ kryterium jakości
     // nie może „fail to find” — przy kandydatach decline nie jest oferowany.
     mandatory: Boolean(mandatory),
     // Batch 58/B6: linka refleksyjna przeżywa odroczenie decyzji — zdarzenie
@@ -972,7 +972,7 @@ export function counterStackObject(state, stackId, { counteredBy = null, counter
     }));
     return object;
   }
-  // M271 (błąd #15, CR 701.5a + 118.9): skontrowany czar idzie do grobu
+  // M271 (błąd #15, CR 701.6a + 118.9): skontrowany czar idzie do grobu
   // WŁAŚCICIELA, ale zastąpienie „if it would be put into a graveyard, exile
   // it instead" (Halo Forager) obowiązuje także tutaj — strefę wyznacza
   // WSPÓLNY `spellExitZone`, ten sam co przy rozstrzygnięciu i fizzlu.
@@ -987,11 +987,11 @@ export function counterStackObject(state, stackId, { counteredBy = null, counter
 }
 
 /**
- * Kanoniczne „destroy" jednego permanentu (CR 701.7a) wraz z całą warstwą
+ * Kanoniczne „destroy" jednego permanentu (CR 701.8a) wraz z całą warstwą
  * efektów zastępujących i chroniących, w kolejności wymaganej przez reguły:
  *  1. indestructible (CR 702.12) — zniszczenie po prostu się nie dzieje;
  *  2. licznik shield (CR 122.1) — pochłania zniszczenie i znika;
- *  3. regeneracja (CR 701.15) — zastępuje zniszczenie;
+ *  3. regeneracja (CR 701.19) — zastępuje zniszczenie;
  *  4. strefa śmierci przez `deathZoneFor` (licznik finality / naznaczenie
  *     wygnaniem, CR 122.1h) — a nie sztywno cmentarz.
  *
@@ -1008,7 +1008,7 @@ export function destroyPermanentByEffect(state, objectId, options = {}) {
 }
 
 /**
- * Liczniki WEJŚCIA na pole bitwy (CR 121.6 + 614.1c) — „enters with a +1/+1
+ * Liczniki WEJŚCIA na pole bitwy (CR 122.6 + 614.1c) — „enters with a +1/+1
  * counter on it" to efekt zastępujący samo wejście, więc obowiązuje przy
  * KAŻDYM wejściu: rzucie czaru, reanimacji z cmentarza, wprowadzeniu efektem.
  *
@@ -1034,7 +1034,7 @@ export function destroyPermanentByEffect(state, objectId, options = {}) {
 export function applyEnterCounters(state, objectId) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.faceDown) return;
-  // Batch 53 (Sheriff of Safe Passage, CR 121.6/614.1c): „enters with a
+  // Batch 53 (Sheriff of Safe Passage, CR 122.6/614.1c): „enters with a
   // +1/+1 counter on it plus an additional one for each other creature you
   // control" — kwota jest cechą WEJŚCIA i zależy od stanu stołu w chwili
   // wejścia. Formuła jako string (jak greatest_power_you_control w tokenach)
@@ -1185,7 +1185,7 @@ export function resolveCraftExileOutcome(state, { sourceId, candidates = [], tra
     state.zones.exile = state.zones.exile.filter((id) => id !== sourceExileId);
     state.zones.battlefield.push(bfId);
     // M273 (błąd #24): craft wprowadza permanent na pole bitwy — liczniki
-    // wejścia (CR 121.6) obowiązują jak przy każdym innym wejściu.
+    // wejścia (CR 122.6) obowiązują jak przy każdym innym wejściu.
     applyEnterCounters(state, bfId);
     state.events.push(event('object_moved', { fromId: sourceExileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', craft: true }));
     // controllerId: warstwa stołu kwalifikuje transform do panelu
@@ -1196,7 +1196,7 @@ export function resolveCraftExileOutcome(state, { sourceId, candidates = [], tra
 }
 
 /**
- * Wejście permanentu wracającego z grobu (CR 303.4f/121.6/122.1b) — JEDNO
+ * Wejście permanentu wracającego z grobu (CR 303.4f/122.6/122.1b) — JEDNO
  * źródło dla ścieżki natychmiastowej (brak aury albo dokładnie jeden legalny
  * gospodarz) i dla wznowienia po decyzji gracza `resolve_aura_host`
  * (`pendingAuraHost` → game-state.js). Wzorzec `resolveCraftExileOutcome`
@@ -1219,7 +1219,7 @@ export function returnPermanentFromGraveyardOutcome(state, targetId, effect, aur
     ...(enterTapped ? { tapped: true } : {}),
   });
   state.objects.set(newId, permanent);
-  // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
+  // M273 (błąd #24, CR 122.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
   // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
   // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
   applyEnterCounters(state, newId);
@@ -1234,7 +1234,7 @@ export function returnPermanentFromGraveyardOutcome(state, targetId, effect, aur
   }
   if (effect?.finalityCounter) addCounter(state, newId, 'finality', 1);
   // Batch 24 (Unbreakable Bond): „return ... with a lifelink counter on it" —
-  // wejście z licznikami (CR 122.1b — licznik lifelink nadaje keyword).
+  // wejście z licznikami (CR 122.1h — licznik lifelink nadaje keyword).
   for (const [name, amount] of Object.entries(effect?.counters ?? {})) {
     addCounter(state, newId, name, amount);
   }
@@ -1496,10 +1496,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return true; // decyzja blokuje dalsze efekty
   }
   if (effect.type === 'fight') {
-    // Batch 45 (Malamet Battle Glyph, CR 701.12): dwa stwory-cele zadają
+    // Batch 45 (Malamet Battle Glyph, CR 701.14): dwa stwory-cele zadają
     // sobie NAWZAJEM obrażenia równe swojej mocy. Obie moce liczone PRZED
-    // zadaniem (jednoczesność — CR 701.12b); jeśli którykolwiek przestał
-    // być legalny, ŻADEN nie zadaje obrażeń (CR 701.12c).
+    // zadaniem (jednoczesność — CR 701.14a); jeśli którykolwiek przestał
+    // być legalny, ŻADEN nie zadaje obrażeń (CR 701.14b).
     // M381: `sourceIsFighter` — zdolność brzmi „it fights target creature",
     // więc walczącym A jest ŹRÓDŁO zdolności, a B wybrany cel (ruling WotC
     // 2018-01-19 dla Cherished Hatchling: gdy źródło opuściło pole bitwy,
@@ -1715,7 +1715,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     modifyStats(state, attackerId, { power: effect.power ?? 1, toughness: effect.toughness ?? 1 });
     return;
   }
-  // Investigate (CR 701.37, Floodhound): stwórz token Clue. Token Clue to
+  // Investigate (CR 701.16a, Floodhound): stwórz token Clue. Token Clue to
   // artefakt z „{2}, Sacrifice this token: Draw a card.".
   if (effect.type === 'create_copy_token') {
     // Cogwork Assembler: „Create a token that's a copy of target artifact.
@@ -2010,7 +2010,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'regenerate') {
-    // M158/Batch 39 (Exterminator Magmarch, CR 701.12): „{1}{B}: Regenerate
+    // M158/Batch 39 (Exterminator Magmarch, CR 701.19): „{1}{B}: Regenerate
     // this creature." — tarcza regeneracji do końca tury; zużywa ją
     // tryRegenerate przy próbie zniszczenia (state-based/effects), a cleanup
     // czyści niewykorzystane tarcze (razem z cantBeRegeneratedThisTurn).
@@ -2064,7 +2064,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     for (const player of state.players) {
       const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === player.id);
       // Pusta biblioteka: ten gracz nic nie odsłania, nie traci życia i nic nie
-      // bierze (CR 701.3 — odsłonięcie z pustej strefy nie tworzy karty;
+      // bierze (CR 701.20a — odsłonięcie z pustej strefy nie tworzy karty;
       // spójnie z rodziną reveal_top_*).
       if (topId == null) continue;
       const card = state.objects.get(topId);
@@ -2493,7 +2493,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
-  // M109 (Tiller of Flesh — incubate N, CR 701.47): „Create an Incubator token
+  // M109 (Tiller of Flesh — incubate N, CR 701.53): „Create an Incubator token
   // with N +1/+1 counters on it and ”{2}: Transform this token.” It transforms
   // into a 0/0 Phyrexian artifact creature." Token jest DWUSTRONNY (CR 707.8a):
   // strona przednia to artefakt, tylna — artefaktowy stwór 0/0; liczniki
@@ -2518,7 +2518,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         types: ['Artifact', 'Creature', 'Token'], subtypes: ['Phyrexian'],
         keywords: [], abilities: [],
       },
-      // M264/2.3 (CR 701.51 + 707.8a): Incubator to dwustronny token
+      // M264/2.3 (CR 701.53 + 707.8a): Incubator to dwustronny token
       // „z własnym zestawem cech" — zna front pary, więc ewentualna kopia
       // Phyrexiana (tył) policzy MV 0 i reset K5 zadziała jak dla każdego
       // dwustronnego obiektu (bez tego frontFaceId ginął na zawsze).
@@ -2749,7 +2749,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   if (effect.type === 'search_library_to_battlefield') {
     // „You may search your library for a card with qualifier, put it onto the
     // battlefield [tapped], then shuffle" (Kor Cartographer, Dawntreader Elk;
-    // Temat 6 — CR 701.19b). Którą kartę wziąć (i czy w ogóle szukać) wybiera
+    // Temat 6 — CR 701.23b). Którą kartę wziąć (i czy w ogóle szukać) wybiera
     // GRACZ: blokująca decyzja resolve_search_choice; sam ruch + tasowanie
     // wykonuje komenda.
     // Batch 58/B6 (Prishe's Wanderings): efekt może nieść linkę refleksyjną
@@ -2864,7 +2864,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const armies = [...state.objects.values()].filter((object) => object.zone === 'battlefield'
       && object.controllerId === sourceObject.controllerId && object.kind === 'creature'
       && hasCreatureType(object, 'Army', state));
-    // CR 701.43: „Amass N — Choose an Army you control or create one" — przy
+    // CR 701.47: „Amass N — Choose an Army you control or create one" — przy
     // 2+ armiach gracz wybiera (blokująca decyzja resolve_amass_choice).
     if (armies.length > 1) {
       state.pendingAmass = {
@@ -2962,7 +2962,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'discard_cards') {
-    // Odrzucenie N kart (Temat 4 — CR 701.18: wybór należy do gracza, który
+    // Odrzucenie N kart (Temat 4 — CR 701.9b: wybór należy do gracza, który
     // odrzuca). applyTo: 'target' → GRACZ-CEL wybiera (Dementia Bat: „Target
     // player discards two cards"); bez applyTo → kontroler źródła wybiera
     // (Evangel: „draw a card, then discard a card"). Blokująca decyzja
@@ -3059,7 +3059,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'goad') {
-    // Goad (CR 701.38, loch Undercity — Arena): „goad target creature" —
+    // Goad (CR 701.15, loch Undercity — Arena): „goad target creature" —
     // stwór musi atakować w każdym combacie do końca tury.
     const targetId = targets[0];
     if (!targetId) return;
@@ -3121,7 +3121,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
     const permanent = Object.freeze({ ...moved, tapped: true, summoningSickness: true });
     state.objects.set(newId, permanent);
-    // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
+    // M273 (błąd #24, CR 122.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
     // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
     // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
     applyEnterCounters(state, newId);
@@ -3359,7 +3359,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!enchantedId) return;
     const object = state.objects.get(enchantedId);
     if (!object || object.zone !== 'battlefield' || object.tapped) return;
-    // CR 701.20a: tapnięcie wykonuje KONTROLER permanentu (tapObject tego
+    // CR 701.26: tapnięcie wykonuje KONTROLER permanentu (tapObject tego
     // wymaga) — aura może należeć do innego gracza niż gospodarz.
     tapObject(state, enchantedId, object.controllerId);
     return;
@@ -3388,7 +3388,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.type === 'untap_all_creatures_you_control') {
     // Village Bell-Ringer: „When this creature enters, untap all creatures you
-    // control.” — odkręca KAŻDEGO stwora kontrolera źródła (CR 701.16a),
+    // control.” — odkręca KAŻDEGO stwora kontrolera źródła (CR 701.26),
     // po jednym zdarzeniu object_untapped na stwora.
     const ctrl = sourceObject.controllerId;
     for (const object of creaturesYouControl(state, ctrl)) {
@@ -3599,7 +3599,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.type === 'detain') {
     // M177/E (Azorius Justiciar): detain KAŻDEGO z wybranych celów
-    // („up to two target creatures” — multi-target trigger; CR 701.29).
+    // („up to two target creatures” — multi-target trigger; CR 701.35).
     for (const targetId of targets) {
       const detainee = state.objects.get(targetId);
       if (!detainee || detainee.zone !== 'battlefield') continue; // CR 608.2b
@@ -3780,7 +3780,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
   }
   // M154 (Batch 38, Divine Offering): „Destroy target artifact. You gain life
   // equal to its mana value." — zniszcz artefakt-cel i zyskaj życie równe jego
-  // mana value (przed zniszczeniem; CR 701.7). Generyczne: cel-arteFakt,
+  // mana value (przed zniszczeniem; CR 701.8a). Generyczne: cel-arteFakt,
   // efekt niszczy i nagradza życiem wg kosztu many celu.
   if (effect.type === 'destroy_artifact_gain_life_mana_value') {
     const targetId = targets[effect.targetIndex ?? 0];
@@ -3790,7 +3790,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const isArtifact = object.kind === 'artifact' || (object.types ?? []).includes('Artifact');
     if (!isArtifact) return; // nie-artefakt — brak efektu (legalność zapewnia target type)
     const manaValue = object.manaCost ?? 0;
-    // Niszcz (CR 701.7) — reużycie logicznej części destroy_permanent przez
+    // Niszcz (CR 701.8a) — reużycie logicznej części destroy_permanent przez
     // ponowne wywołanie efektu (niszczy i emituje zdarzenia); potem zysk życia.
     applyEffect(state, { type: 'destroy_permanent' }, sourceObject, [targetId]);
     // M156/F3 (audyt PR #65): „Destroy target artifact. You gain life equal to
@@ -3808,7 +3808,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
       destroyPermanents(state,effect.targetIndices.map(i=>targets[i]).filter(Boolean));
       return Boolean(state.pendingReplacementChoice);
     }
-    // Destroy target artifact/permanent (Shatter, CR 701.7): cel trafia do grobu
+    // Destroy target artifact/permanent (Shatter, CR 701.8a): cel trafia do grobu
     // (zmiana strefy battlefield → graveyard), co odpala trigger „dies” przez
     // zdarzenie object_moved (jak sacrifice). W engine bez regeneracji destroy
     // i sacrifice różnią się wyłącznie eventem.
@@ -3835,7 +3835,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
-    // Finality counter (CR 122.1b): poświęcenie też jest śmiercią — zamiast
+    // Finality counter (CR 122.1h): poświęcenie też jest śmiercią — zamiast
     // grobu obiekt idzie do exile (wcześniej tylko zgony SBA).
     const toZone = deathZoneFor(state, object);
     const destId = `${toZone}-${state.objectSequence++}`;
@@ -3856,7 +3856,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const newId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
     state.objects.set(newId, Object.freeze({ ...moved, summoningSickness: true }));
-    // M273 (błąd #24): najpierw liczniki WEJŚCIA karty (CR 121.6), potem
+    // M273 (błąd #24): najpierw liczniki WEJŚCIA karty (CR 122.6), potem
     // licznik nadawany przez efekt („return with a -1/-1 counter on it").
     applyEnterCounters(state, newId);
     addCounter(state, newId, effect.counter ?? '-1/-1', effect.amount ?? 1);
@@ -3879,7 +3879,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const keywords = [...new Set([...(moved.keywords ?? []), ...(effect.grantKeywords ?? [])])];
     const permanent = Object.freeze({ ...moved, controllerId, keywords: Object.freeze(keywords), summoningSickness: true });
     state.objects.set(newId, permanent);
-    // M273 (błąd #24, CR 121.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
+    // M273 (błąd #24, CR 122.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
     // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
     // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
     applyEnterCounters(state, newId);
@@ -3902,7 +3902,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // library. You gain life equal to that card's mana value” — reveal
     // dzieje się PO decyzji scry (flaga na pendingScry, konsumowana w
     // resolve_scry); bez blokady (pusta biblioteka) — od razu.
-    // Scry N (CR 701.18, minimalny wymiar — pierwsza karta to Prismari Campus):
+    // Scry N (CR 701.22a, minimalny wymiar — pierwsza karta to Prismari Campus):
     // patrzymy na N wierzchnich kart własnej biblioteki; decyzję o spodzie
     // podejmuje gracz osobną komendą resolve_scry (patrz game-state.js).
     if (!Number.isInteger(effect.amount) || effect.amount < 1) throw new RangeError('Scry wymaga dodatniej liczby kart');
@@ -3930,7 +3930,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return seen.length > 0;
   }
   if (effect.type === 'surveil') {
-    // Surveil N (CR 701.41, Curate): patrzymy na N wierzchnich kart własnej
+    // Surveil N (CR 701.25, Curate): patrzymy na N wierzchnich kart własnej
     // biblioteki; decyzja o liczbie kart do grobu należy do gracza (komenda
     // resolve_surveil), reszta zostaje na wierzchu w pierwotnej kolejności.
     if (!Number.isInteger(effect.amount) || effect.amount < 1) throw new RangeError('Surveil wymaga dodatniej liczby kart');
@@ -3971,7 +3971,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return;
   }
   if (effect.type === 'clash') {
-    // Clash (CR 701.40, Release the Ants): obaj gracze odsłaniają wierzchnią
+    // Clash (CR 701.30, Release the Ants): obaj gracze odsłaniają wierzchnią
     // kartę swojej biblioteki i każdy kładzie ją na WIERZCH ALBO SPÓD — to
     // realny wybór gracza (blokująca decyzja resolve_clash_choice, jak
     // scry/surveil). Wygrywa wyższa mana value; remis i brak karty (pusta
@@ -4366,7 +4366,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
         controllerId: attackerId, fromControllerId: previous,
       }));
     }
-    // M269 (błąd #3, lekcja L24 / CR 701.21a): „and untaps it" jest zdarzeniem
+    // M269 (błąd #3, lekcja L24 / CR 701.26): „and untaps it" jest zdarzeniem
     // widocznym dla reguł i dla gracza — NIEZALEŻNIE od tego, czy przy okazji
     // zmienił się kontroler. Dotąd `object_untapped` powstawało wyłącznie
     // w gałęzi „ten sam kontroler": gdy piłka realnie zmieniała ręce (ścieżka
@@ -4791,7 +4791,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
         ...moved, controllerId: ownerId, faceDown: false,
         summoningSickness: (moved.types ?? []).includes('Creature'),
       }));
-      // M274 (#24, CR 121.6): wprowadzenie permanentu z wygnania to WEJŚCIE —
+      // M274 (#24, CR 122.6): wprowadzenie permanentu z wygnania to WEJŚCIE —
       // liczniki wejścia obowiązują. Karta jest tu już odkryta (faceDown:
       // false ustawione wyżej), więc helper nadaje liczniki.
       applyEnterCounters(state, battlefieldId);
@@ -4837,7 +4837,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return true;
   }
   if (effect.type === 'discover') {
-    // Discover X (Geological Appraiser, CR 701.53): odsłoń karty z wierzchu
+    // Discover X (Geological Appraiser, CR 701.57): odsłoń karty z wierzchu
     // biblioteki, aż odsłonisz nie-land z mana value ≤ X. Możesz rzucić ją
     // bez kosztu many albo wziąć do ręki. Reszta trafia na spód w losowej
     // kolejności. Blokująca decyzja jak scry/surveil.
@@ -4859,7 +4859,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }
     // I (zgłoszenie właściciela 2026-09-20): brak trafienia musi być widoczne
     // w logu i w „Rozgrywce" — odsłonięte karty wracają na spód biblioteki
-    // w LOSOWEJ kolejności (CR 701.53), a bez tej informacji wpis kończył się
+    // w LOSOWEJ kolejności (CR 701.57a — discover), a bez tej informacji wpis kończył się
     // na „trigger się rozstrzyga" i gracz nie wiedział, co się stało z jego
     // biblioteką. Nazwy odsłoniętych kart są już jawne (`card_revealed`),
     // więc zdarzenie może nieść ich cardId.
@@ -4902,14 +4902,24 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return true;
   }
   if (effect.type === 'explore') {
-    // Explore (Lodestone Needle back — Guidestone Compass, CR 701.54):
+    // Explore (Lodestone Needle back — Guidestone Compass, CR 701.44a):
     // odsłoń wierzchnią kartę biblioteki. Jeśli to land — do ręki. Wpp
     // połóż licznik +1/+1 na docelowym stworze, potem odłóż kartę na wierzch
     // albo do grobu. Blokująca decyzja (jak scry).
     const ownerId = sourceObject.controllerId;
     const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === ownerId);
     if (!topId) {
-      state.events.push(event('explore_resolved', { playerId: ownerId, found: false }));
+      // Pusta biblioteka: nic nie odsłonięto, więc „If a land card is
+      // revealed this way” jest fałszywe i działa gałąź „Otherwise, that
+      // player puts a +1/+1 counter on the exploring permanent” (CR 701.44a);
+      // permanent i tak „explores” (CR 701.44b — nawet gdy część kroków była
+      // niemożliwa). Wcześniej zwracaliśmy bez licznika, choć log pisał
+      // „+1/+1 na stworze” — uproszczenie niezgodne z CR (audyt PR #134, §7).
+      const creatureId = targets[0];
+      if (creatureId && state.objects.get(creatureId)?.zone === 'battlefield') {
+        addCounter(state, creatureId, '+1/+1', 1);
+      }
+      state.events.push(event('explore_resolved', { playerId: ownerId, found: false, objectId: creatureId ?? null }));
       return;
     }
     const topCard = state.objects.get(topId);
@@ -5198,7 +5208,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.zones.exile = state.zones.exile.filter((id) => id !== exileId);
     state.zones.battlefield.push(bfId);
     // M273 (błąd #24): powrót transformowanej karty to WEJŚCIE na pole bitwy
-    // (CR 121.6) — liczniki wejścia obowiązują także tutaj. Ta ścieżka omija
+    // (CR 122.6) — liczniki wejścia obowiązują także tutaj. Ta ścieżka omija
     // choke point stref (mutuje `state.zones` wprost), więc helper trzeba
     // zawołać jawnie.
     applyEnterCounters(state, bfId);
@@ -5436,7 +5446,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return;
   }
   if (effect.type === 'proliferate') {
-    // Proliferate (CR 701.27, Courage in Crisis): „choose any number of
+    // Proliferate (CR 701.34, Courage in Crisis): „choose any number of
     // permanents and/or players" — DECYZJA gracza. Bez oczekującej decyzji
     // kolejkujemy pendingProliferate (kandydaci: permanenty z licznikami +
     // gracze z poison > 0) i zwracamy true — rozstrzyganie czaru/triggera
@@ -5484,7 +5494,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     for (const targetId of targets) {
       const player = state.players.find((p) => p.id === targetId);
       if (player) {
-        // CR 701.27a: +1 licznik trucizny na graczu — pole player.poison
+        // CR 701.34: +1 licznik trucizny na graczu — pole player.poison
         // (poprzednio +1 szło do nigdzie nieczytanego player.counters.poison).
         if ((player.poison ?? 0) > 0) {
           // M269 (błąd #4): trucizna idzie przez WSPÓLNY helper
@@ -5761,7 +5771,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     });
     state.objects.set(newId, permanent);
     // M273 (błąd #24): powrót z wygnania to też WEJŚCIE na pole bitwy
-    // (CR 121.6) — liczniki wejścia obowiązują.
+    // (CR 122.6) — liczniki wejścia obowiązują.
     applyEnterCounters(state, newId);
     state.events.push(event('object_moved', {
       fromId: exiledCardId, object: permanent, fromZone: 'exile', toZone: 'battlefield',
@@ -6043,7 +6053,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
       .slice(0, 2);
     if (topIds.length === 0) return;
     if (topIds.length === 1) {
-      // Tylko jedna karta w bibliotece: manifestujemy ją bez wyboru (CR 701.62a
+      // Tylko jedna karta w bibliotece: manifest dread bez wyboru (CR 701.62a
       // — „as many as possible"), nic do grobu.
       // M335 (Żywy Tester, talia audytowa 2026-09-07, seed 4001): TEJ ścieżki
       // NIE wolno oznaczać jako blokującej. Truthy zwrot z tego efektu znaczy dla
@@ -6185,7 +6195,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
 
   // Civilized Scholar (ISD): „{T}: Draw a card, then discard a card. If a
   // creature card is discarded this way, untap this creature, then transform
-  // it." — draw 1, potem blokująca decyzja odrzucenia (CR 701.18 — wybór
+  // it." — draw 1, potem blokująca decyzja odrzucenia (CR 701.9b — wybór
   // odrzucającego). Po odrzuceniu karty-stwora resolve_discard_choice wykonuje
   // untap + transform źródła (pole onCreatureDiscard w pendingDiscardChoice).
   if (effect.type === 'draw_then_discard') {
@@ -6300,7 +6310,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
   // If you don't, that player discards two cards." Reveal + decyzja
   // RZUCAJĄCEGO (chooserId) o karcie z CUDZEJ ręki; rezygnacja przełącza
   // na zwykłe odrzucenie dwóch kart wybieranych przez właściciela ręki
-  // (CR 701.8a — odrzuca ten, kto odrzuca).
+  // (CR 701.9b — odrzuca ten, kto odrzuca).
   if (effect.type === 'reveal_hand_choose_discard') {
     const targetId = targets[0];
     if (!state.players.some((p) => p.id === targetId)) return;

@@ -102,7 +102,7 @@ test('M360/B1a: Negate kontruje bestow rzucony jako Aurę (czar nie-stworowy, CR
   assert.equal(state.zones.stack.length, 0, 'stos pusty po rozstrzygnięciu');
   const dryadGrave = [...state.objects.values()]
     .find((o) => o.cardId === 'leafcrown-dryad' && o.zone === 'graveyard');
-  assert.ok(dryadGrave, 'skontrowany bestow ląduje w grobie (CR 701.5a)');
+  assert.ok(dryadGrave, 'skontrowany bestow ląduje w grobie (CR 701.6a)');
   assert.equal(state.objects.get('host').zone, 'battlefield');
   assert.ok(!(state.objects.get('host').attachments ?? []).length
     && ![...state.objects.values()].some((o) => o.attachedTo === 'host'),

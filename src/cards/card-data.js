@@ -554,7 +554,7 @@ export const REAL_CARDS = Object.freeze([
       targets: [{ type: 'creature' }],
       effects: [
         { type: 'add_counter', counter: '+1/+1', amount: 1 },
-        // Proliferate (CR 701.27): po +1/+1 counter wybieramy DOWOLNĄ
+        // Proliferate (CR 701.34): po +1/+1 counter wybieramy DOWOLNĄ
         // liczbę celów (permanenty z licznikami + gracze z poison > 0);
         // każdy dostaje +1 do każdego typu licznika. Brak wybranych
         // celów → czeka na resolve_proliferate z listą (kolejka
@@ -1473,7 +1473,7 @@ export const REAL_CARDS = Object.freeze([
       targets: [{ type: 'creature' }],
       effects: [
         { type: 'damage', amount: 4 },
-        // CR 701.12b: „It can't be regenerated this turn" — flaga trwała
+        // CR 701.19c: „It can't be regenerated this turn" — flaga trwała
         // do końca tury ustawiana na celu (effects.js). tryRegenerate
         // (SBA) i destroy_permanent (efekty) sprawdzają listę
         // state.cantBeRegeneratedThisTurn, więc tarcza regeneracji
@@ -2538,7 +2538,7 @@ export const REAL_CARDS = Object.freeze([
         { type: 'bounce_permanent' },
         { type: 'draw_cards', amount: 1 },
       ],
-      // Cleave (CR 701.33): alternatywny koszt, który „wykreśla" ograniczenie
+      // Cleave (CR 702.148): alternatywny koszt, który „wykreśla" ograniczenie
       // podtypu celu — cleave celuje dowolnego stwora (creature), nie tylko
       // Wolf/Werewolf. Efekt i cele pochodzą z deskryptora cleave.
       cleave: {
@@ -4278,7 +4278,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         cost: { mana: 3, colors: ['B', 'G'] },
         keyword: 'regenerate',
         // Efekt pusty: tarczę regeneracji zakłada ścieżka keyword
-        // (performActivation → addRegenerationShield, CR 701.12); efekt
+        // (performActivation → addRegenerationShield, CR 701.19); efekt
         // {type:'regenerate'} nie istnieje w applyEffect — audyt B26 (M65)
         // wykrył, że z nim aktywacja była ODRZUCANA („Nieznany typ efektu").
         effect: [],
@@ -6306,7 +6306,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
-  // Token Incubator (incubate, CR 701.47) — artefakt z licznikami +1/+1
+  // Token Incubator (incubate, CR 701.53) — artefakt z licznikami +1/+1
   // i zdolnością „{2}: Transform this token"; druga strona to token_phyrexian.
   defineCard({
     id: 'token_incubator', name: 'Incubator', set: null,
@@ -7394,7 +7394,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 501,
     plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
-    notes: ['trigger kopiowania wymaga DRUGIEGO przeciwnika — w 1v1 nigdy się nie odpala (fakt formatu, jak brak command zone); {1}{B}: Regenerate = tarcza regeneracji do końca tury (CR 701.12)'],
+    notes: ['trigger kopiowania wymaga DRUGIEGO przeciwnika — w 1v1 nigdy się nie odpala (fakt formatu, jak brak command zone); {1}{B}: Regenerate = tarcza regeneracji do końca tury (CR 701.19)'],
   }),
   defineCard({
     id: 'dire-fleet-ravager', name: 'Dire Fleet Ravager', set: 'OTC',
@@ -8131,7 +8131,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
   // 7. Final Parting (DOM) {3}{B}{B} Sorcery — przeszukaj bibliotekę po DWIE
   //    karty: jedna do ręki, druga do grobu; potem tasowanie. Wyszukiwanie
-  //    bez kryterium = OBOWIĄZKOWE (CR 701.19c — bez fail to find).
+  //    bez kryterium = OBOWIĄZKOWE (CR 701.23d — bez fail to find).
   defineCard({
     id: 'final-parting', name: 'Final Parting', set: 'DOM',
     types: ['Sorcery'], colors: ['B'], manaCost: 5,
@@ -8174,7 +8174,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
   // 9. Azorius Justiciar (RTR) {2}{W}{W} 2/2 Human Wizard — ETB: detain up to
   //    two target creatures your opponents control (NOWA mechanika detain,
-  //    CR 701.29: do twojej następnej tury cel nie atakuje, nie blokuje,
+  //    CR 701.35: do twojej następnej tury cel nie atakuje, nie blokuje,
   //    nie aktywuje zdolności; multi-target z upTo — reuse M171/Z6).
   defineCard({
     id: 'azorius-justiciar', name: 'Azorius Justiciar', set: 'RTR',
@@ -8679,7 +8679,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 262, plan: 'Alara',
     support: { status: 'supported', limitations: [] },
-    notes: ['Empyrial Archangel nie jest w katalogu — search legalnie „fails to find" (CR 701.19b: kryterium nazwy); zdolność w pełni wg Oracle, użyteczna po ewentualnym dodaniu anioła'],
+    notes: ['Empyrial Archangel nie jest w katalogu — search legalnie „fails to find" (CR 701.23b: kryterium nazwy); zdolność w pełni wg Oracle, użyteczna po ewentualnym dodaniu anioła'],
   }),
 
   // 10. Frightful Delusion (ISD) — „Counter target spell unless its
@@ -8697,7 +8697,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     },
     artId: 256, plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
-    notes: ['kontroler celu decyduje (resolve_counter_pay_choice): zapłać {1} — czar zostaje; nie płać — skontrowany; NIEZALEŻNIE od decyzji odrzuca potem kartę (wybór odrzucanej — CR 701.18); bez many na {1} decyzji nie ma'],
+    notes: ['kontroler celu decyduje (resolve_counter_pay_choice): zapłać {1} — czar zostaje; nie płać — skontrowany; NIEZALEŻNIE od decyzji odrzuca potem kartę (wybór odrzucanej — CR 701.9b); bez many na {1} decyzji nie ma'],
   }),
 
   // =========================================================================
@@ -8876,7 +8876,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   // 7. Malamet Battle Glyph (LCI) — dwa cele; licznik, jeśli własny stwór
-  //    wszedł w tej turze; potem FIGHT (NOWY efekt, CR 701.12).
+  //    wszedł w tej turze; potem FIGHT (NOWY efekt, CR 701.14).
   defineCard({
     id: 'malamet-battle-glyph', name: 'Malamet Battle Glyph', set: 'LCI',
     types: ['Sorcery'], colors: ['G'], manaCost: 1,
@@ -9376,7 +9376,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // ---- Batch 47 — transza D: Caves of Chaos Adventurer ----
 
   // 7. Caves of Chaos Adventurer (CLB) — trample, ETB inicjatywa, a przy
-  //    ataku impulse-exile z bonusem za UKOŃCZONY loch (CR 701.51b).
+  //    ataku impulse-exile z bonusem za UKOŃCZONY loch (CR 309.7).
   defineCard({
     id: 'caves-of-chaos-adventurer', name: 'Caves of Chaos Adventurer', set: 'CLB',
     types: ['Creature'], subtypes: ['Human', 'Barbarian'], colors: ['R'],
@@ -9573,7 +9573,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       targets: [{ type: 'spell_on_stack' }],
       effects: [
         { type: 'counter_spell' },
-        // Proliferate (CR 701.27) — blokująca decyzja gracza (resolve_proliferate).
+        // Proliferate (CR 701.34) — blokująca decyzja gracza (resolve_proliferate).
         { type: 'proliferate' },
       ],
     },
@@ -10720,7 +10720,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     entersWithCounters: { '+1/+1': 'other_creatures_you_control_plus_one' },
     artId: 598, plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
-    notes: ['enters-with liczy INNE stwory przy każdym wejściu (CR 121.6), także reanimacja; plot obsługuje ścieżka cast_permanent (exile z ręki i późniejszy rzut bez many)'],
+    notes: ['enters-with liczy INNE stwory przy każdym wejściu (CR 122.6), także reanimacja; plot obsługuje ścieżka cast_permanent (exile z ręki i późniejszy rzut bez many)'],
   }),
 
   // Batch 54 — dokładne druki i rulingi zweryfikowane 2026-09-08.
@@ -11005,8 +11005,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       ],
       effects: [
         // „Then that creature fights…" — walka TYM stworom, już po liczniku
-        // (obrażenia liczone z nowej mocy, CR 701.12b); jeśli któryś cel
-        // zniknął, walka nie wykonuje się wcale (CR 701.12c), a licznik na
+        // (obrażenia liczone z nowej mocy, CR 701.14a); jeśli któryś cel
+        // zniknął, walka nie wykonuje się wcale (CR 701.14b), a licznik na
         // legalnym celu zostaje (ruling 2017-11-17).
         { type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0 },
         { type: 'fight', targetIndexA: 0, targetIndexB: 1 },
@@ -11464,7 +11464,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     oracleText: 'Exile target creature. Incubate 3. (Create an Incubator token with three +1/+1 counters on it and "{2}: Transform this token." It transforms into a 0/0 Phyrexian artifact creature.)',
     imageUri: 'https://cards.scryfall.io/large/front/7/0/70edec35-1770-47f0-9ad2-32e597ee0327.jpg?1783917004',
     // Bliźniak 1:1 Tillera of Flesh co do efektu inkubacji (`incubate`,
-    // CR 701.47 — token Incubator z trzema licznikami). Kolejność efektów ma
+    // CR 701.53 — token Incubator z trzema licznikami). Kolejność efektów ma
     // znaczenie dla rulingi MOM (2023-04-14): gdy CEL stanie się nielegalny
     // przed rozstrzygnięciem, czar fizzluje W CAŁOŚCI (CR 608.2b) — inkubacja
     // NIE biegnie (pin w test/real-cards-batch57.test.js).

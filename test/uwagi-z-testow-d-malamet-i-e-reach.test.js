@@ -5,7 +5,7 @@
 // nie ma.” Pomiar 2026-09-19: po scalonym ficie M386 (PR #128 — crash
 // renderEnergyPanel przerywał showBotMoves) ŻADNA badana ścieżka nie gubi
 // linii walki — bufor modala „Rozgrywka” (botMoves) i przebieg tur niosą
-// licznik, oba wzajemne obrażenia (CR 701.12) i obie śmierci, dla rzutu
+// licznik, oba wzajemne obrażenia (CR 701.14) i obie śmierci, dla rzutu
 // człowieka i bota. Ten plik to STRAŻNIK tego stanu (L13: pin, który ma być
 // zielony — mutacją jest tu każda przyszła zmiana bramki noteBotMove).
 //
@@ -77,7 +77,7 @@ test('D/1: walka z Malamet Battle Glyph (rzut człowieka) — linie efektów w b
   assert.ok(session.botMoves.some((m) => m.type === 'counter_added' && /licznik/.test(m.text)),
     `licznik +1/+1 w modalu (cel wszedł w tej turze): ${JSON.stringify(session.botMoves.map((m) => m.text))}`);
   const damages = session.botMoves.filter((m) => m.type === 'damage_dealt');
-  assert.equal(damages.length, 2, 'oba wzajemne obrażenia walki (CR 701.12) w modalu');
+  assert.equal(damages.length, 2, 'oba wzajemne obrażenia walki (CR 701.14) w modalu');
   assert.ok(session.botMoves.some((m) => m.type === 'spell_resolved'), 'rozstrzygnięcie czaru w modalu');
   const deaths = session.botMoves.filter((m) => m.type === 'creature_destroyed' || m.type === 'permanent_destroyed');
   assert.ok(deaths.length >= 1, `śmierć z walki w modalu (typy: ${JSON.stringify(typy)})`);

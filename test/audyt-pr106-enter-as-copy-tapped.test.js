@@ -46,7 +46,7 @@ test('F3: Jwari jako kopia Rotting Legion wchodzi tapnięty', () => {
   assert.equal(j.tapped, true, 'kopiowany „enters tapped” tapie przy wejściu (707.2 + 614.1d)');
   assert.equal(j.entersTapped, true, 'pole kopiowalne niesione dalej (kopia kopii, 707.3)');
   assert.equal(s.events.some((e) => e.type === 'object_tapped' && e.objectId === 'jwari'), false,
-    'wejście tapnięte to nie „becomes tapped” (701.21a)');
+    'wejście tapnięte to nie „becomes tapped” (701.26)');
 });
 
 test('F3: odmowa kopii = zwykłe 0/0, ginie w SBA bez tapnięcia (kontrola negatywna)', () => {

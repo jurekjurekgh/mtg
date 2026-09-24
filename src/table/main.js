@@ -1145,7 +1145,7 @@ function bootstrapTable() {
     // nie powinna się pokazywać” (przy kartach ukrytych rzucanych przez
     // bota), a potem doprecyzował: „własny morph gracza otwiera warstwę.
     // FoW dotyczy tylko zagrań bota” — stąd krycie tylko gdy rzucający
-    // to bot (widok = HUMAN_ID; rzucający zna swoją kartę, CR 708.6).
+    // to bot (widok = HUMAN_ID; rzucający zna swoją kartę, CR 708.5).
     if (isCastHiddenFromViewer({ faceDown, playerId }, HUMAN_ID)) return false;
     if (!session) return false;
     // 15f: „moment analogiczny do pokazania warstwy" — gdy warstwy nie
@@ -2320,7 +2320,7 @@ function bootstrapTable() {
       opts.alternativeCost = reduceAlternativeCost(session.state, stateObject, cleave.manaCost, cleave.colors ?? []);
     }
     // M327 (audyt PR #102, F7): koszt ODSŁONIĘCIA (CR 701.58b cloaka,
-    // 701.55c manifestu) nosi tylko pełny stan — zakryty permanent ma w widoku
+    // 701.40b manifestu) nosi tylko pełny stan — zakryty permanent ma w widoku
     // `manaCost: 0`, więc kreator brałby liczbę z kosztu karty i musiał ją
     // porównać z prawdą silnika. Podajemy ją jak `escapeCost` wyżej.
     if (cmd.type === 'turn_cloak_face_up' || cmd.type === 'turn_manifest_face_up') {

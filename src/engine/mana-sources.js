@@ -291,7 +291,7 @@ export const ANY_COLOR_MANA = Object.freeze(['W', 'U', 'B', 'R', 'G']);
  * rolę. `manaAbilityColors` takich zdolności celowo NIE liczy (produkcja nie
  * jest „od ręki", bo wymaga zdjęcia permanentu), a tu pytamy o coś innego: co
  * obiekt na polu bitwy JEST w stanie wyprodukować — płatność i tak musi go
- * poświęcić (CR 701.14a — poświęcenie jest kosztem zdolności, nie celem).
+ * poświęcić (CR 701.21a — poświęcenie jest kosztem zdolności, nie celem).
  *
  * Brak tu nazwy karty: predykat czyta deskryptor (cost + effect.fromTreasure),
  * więc kopia tej samej zdolności pod innym `cardId` liczy się identycznie

@@ -10,7 +10,7 @@ import { assertStateInvariants } from '../src/engine/invariants.js';
 import { modifyStats } from '../src/engine/permanents.js';
 
 /**
- * T5 — regeneracja (CR 701.12): aktywacja „regenerate\" zakłada tarczę;
+ * T5 — regeneracja (CR 701.19): aktywacja „regenerate\" zakłada tarczę;
  * następne ZNISZCZENIE w tej turze (śmiertelne obrażenia albo efekt destroy)
  * jest zastępowane — stwór zostaje odkręcony, bez obrażeń, poza walką.
  * Tarcza nie chroni przed poświęceniem, prawem legend ani wytrzymałością <= 0.
@@ -120,7 +120,7 @@ test('efekt destroy jest zastępowany przez regenerację', () => {
   assert.deepEqual(state.regenerationShields, []);
 });
 
-test('poświęcenie NIE jest chronione przez regenerację (CR 701.12a)', () => {
+test('poświęcenie NIE jest chronione przez regenerację (CR 701.19a)', () => {
   const state = game();
   addRegenerator(state, 'guy');
   addMana(state, 'p1', 1);
@@ -143,7 +143,7 @@ test('wytrzymałość <= 0 nie jest zniszczeniem — regeneracja nie chroni (CR 
   assert.ok(events.some((e) => e.type === 'creature_destroyed'), '0 wytrzymałości zabija mimo tarczy');
 });
 
-test('tarcza znika w cleanup (CR 701.12a — „this turn\")', () => {
+test('tarcza znika w cleanup (CR 701.19a — „this turn\")', () => {
   const state = game();
   addRegenerator(state, 'guy');
   addMana(state, 'p1', 1);
@@ -160,7 +160,7 @@ test('tarcza znika w cleanup (CR 701.12a — „this turn\")', () => {
 test('B7/benchmark (seed 2030): zregenerowany ATAKUJĄCY nie zostawia klucza w mapie bloków', () => {
   // Znalezisko z pomiaru B7: mecz benchmarku random(mirrodin-wu) vs
   // heuristic(mirrodin-brg), seed 2030 — random zabił zregenerowanego
-  // atakującego w oknie combat_damage. Ścieżka regeneracji (CR 701.12a
+  // atakującego w oknie combat_damage. Ścieżka regeneracji (CR 701.19a
   // „removed from combat") usuwała go z listy `attackers`, ale ZOSTAWIAŁA
   // klucz w mapie `blockers` (klucz = atakujący) → inwariant stanu rzucał
   // przy następnej komendzie („Combat ma blok nieistniejącego atakującego …")
@@ -191,7 +191,7 @@ test('B7/benchmark (seed 2030): zregenerowany ATAKUJĄCY nie zostawia klucza w m
   activateRegenerate(state, 'guy');
   assert.equal(destroyPermanentByEffect(state, 'guy', { reason: 'b7-test' }), false, 'zniszczenie zastąpione');
   assert.equal(state.objects.get('guy').zone, 'battlefield', 'stwór uratowany');
-  assert.equal(state.combat.attackers.includes('guy'), false, 'odcięty od walki (CR 701.12a)');
+  assert.equal(state.combat.attackers.includes('guy'), false, 'odcięty od walki (CR 701.19a)');
   assert.equal(state.combat.blockers.has('guy'), false, 'klucz bloków po atakującym SPRZĄTNIĘTY');
   assert.equal(state.combat.blockedAttackers.has('guy'), false, 'marker bloku sprzątnięty');
   assert.doesNotThrow(() => assertStateInvariants(state), 'inwariant walki trzyma po regeneracji');

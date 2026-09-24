@@ -375,3 +375,11 @@ _(stan pośredni — dopisywane na końcu sesji)_
   sekcje wyżej; `npm test` **6444/6444**, `npm run test:all` **6454/6454**, build
   **60 modułów / 4197,8 kB**;
   M424, handoff §1–§2, L167.
+- **Weryfikacja cytatów CR u źródła (polecenie „a ty nie możesz sprawdzić
+  sam?”):** sekcja 701 ma numerację historyczną — 553 rozjazdy znalezione
+  strażnikiem tabelarycznym i naprawione (mapowanie w AUDYT_PR134 §7), poza
+  701 poprawione nieistniejące numery (708.2d, 122.12, 701.30e) i klasy
+  122.6/122.1h/122.1d/509.1a; przy okazji **błąd reguł**: explore z pustą
+  biblioteką nie dawało +1/+1 (CR 701.44a) — naprawione z pinem; bramy:
+  `npm test` **6455/6455**, `npm run test:all` **6465/6465**, build **60 modułów / 4199,5 kB**;
+  M425, handoff §3.

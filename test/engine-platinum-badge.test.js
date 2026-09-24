@@ -18,7 +18,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 //   2. CR 119.3 — zdarzenia damage_dealt niosły kwotę PRZED prewencją w
 //      ścieżkach combat atakujący→bloker, bloker→atakujący oraz
 //      damage_to_controller (niespójność z konwencją złotej odznaki).
-//   3. CR 701.27a — proliferate nie mógł celować w graczy ze znacznikami
+//   3. CR 701.34 — proliferate nie mógł celować w graczy ze znacznikami
 //      trucizny (czytał/pisał player.counters.poison zamiast player.poison).
 //   4. CR 401.4 — mill_from_bottom brał ostatni element WSPÓLNEJ listy
 //      biblioteki zamiast spodu biblioteki GRACZA-CELU (Cellar Door młynował
@@ -149,9 +149,9 @@ test('B2b: damage_to_controller raportuje kwotę zadaną po prewencji (CR 119.3)
   assert.equal(state.players.find((p) => p.id === 'p1').life, 20, 'brak utraty życia');
 });
 
-// ---------------------------------------------------------- 3. CR 701.27a
+// ---------------------------------------------------------- 3. CR 701.34
 
-test('B3: proliferate celuje w gracza ze znacznikami trucizny i dokłada poison (CR 701.27a)', () => {
+test('B3: proliferate celuje w gracza ze znacznikami trucizny i dokłada poison (CR 701.34)', () => {
   const state = createGameState({ seed: 5, players: [{ id: 'p1' }, { id: 'p2' }] });
 
   // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
@@ -167,7 +167,7 @@ test('B3: proliferate celuje w gracza ze znacznikami trucizny i dokłada poison 
   assert.equal(victim.poison, 3, '+1 licznik trucizny na graczu');
 });
 
-test('B3b: proliferate doprowadza poison do 10 i kończy grę (CR 104.2c/701.27a)', () => {
+test('B3b: proliferate doprowadza poison do 10 i kończy grę (CR 104.2c/701.34)', () => {
   const state = createGameState({ seed: 6, players: [{ id: 'p1' }, { id: 'p2' }] });
 
   // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).

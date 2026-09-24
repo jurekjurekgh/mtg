@@ -44,7 +44,7 @@ export function deathZoneFor(state, object) {
 
 /**
  * Strefa, do której czar schodzi ze stosu — po rozstrzygnięciu, fizzlu
- * (CR 608.2b) albo skontrowaniu (CR 701.5a).
+ * (CR 608.2b) albo skontrowaniu (CR 701.6a).
  *
  * M271 (błędy #14 i #15): regułę liczyło RÓWNOLEGLE osiem miejsc w
  * `spells.js` i `effects.js`; część gubiła `exileInsteadOfGraveyard`

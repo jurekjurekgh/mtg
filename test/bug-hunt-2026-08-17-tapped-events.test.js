@@ -55,7 +55,7 @@ function putBlank(state, id, controllerId, extra = {}) {
 }
 
 test('L24/A: regeneracja tapuje permanent i MÓWI o tym zdarzeniem', () => {
-  // CR 701.15a: regeneracja to efekt zastępczy, który m.in. TAPUJE permanent.
+  // CR 701.19a: regeneracja to efekt zastępczy, który m.in. TAPUJE permanent.
   // Tapnięcie jest widoczną zmianą stanu, więc musi wygenerować zdarzenie —
   // inaczej trigger „becomes tapped” (Chronic Flooding) go nie zobaczy,
   // a gracz nie przeczyta w logu, dlaczego jego stwór jest tapnięty.
@@ -70,7 +70,7 @@ test('L24/A: regeneracja tapuje permanent i MÓWI o tym zdarzeniem', () => {
 
   const regenerated = state.objects.get('regen');
   assert.equal(regenerated.zone, 'battlefield', 'tarcza uratowała stwora');
-  assert.equal(regenerated.tapped, true, 'CR 701.15a: regeneracja TAPUJE');
+  assert.equal(regenerated.tapped, true, 'CR 701.19a: regeneracja TAPUJE');
   const tapEvents = state.events.filter((e) => e.type === 'object_tapped' && e.objectId === 'regen');
   assert.equal(tapEvents.length, 1,
     'tapnięcie przez regenerację musi emitować object_tapped (lekcja L24) — '
@@ -111,7 +111,7 @@ test('L24/C: żadna ścieżka w silniku nie ustawia tapped:true po cichu', () =>
   // Strażnik statyczny: każda linia mutująca `tapped: true` musi mieć
   // w pobliżu emisję `object_tapped` albo jawny komentarz wyjaśniający,
   // dlaczego zdarzenia nie ma (np. permanent WCHODZI już tapnięty —
-  // to nie jest „becomes tapped”, CR 701.21a).
+  // to nie jest „becomes tapped”, CR 701.26).
   const files = fs.readdirSync('src/engine').filter((f) => f.endsWith('.js')).map((f) => `src/engine/${f}`);
   const silent = [];
   for (const file of files) {
@@ -128,7 +128,7 @@ test('L24/C: żadna ścieżka w silniku nie ustawia tapped:true po cichu', () =>
       if (inStringLiteral) return;
       const window = lines.slice(Math.max(0, index - 8), index + 22).join('\n');
       const emitsEvent = /object_tapped|entersTapped|shouldEnterTapped|enters_tapped/.test(window);
-      // Permanent, który WCHODZI na pole bitwy tapnięty (CR 701.21a), nie
+      // Permanent, który WCHODZI na pole bitwy tapnięty (CR 701.26), nie
       // „staje się” tapnięty — nie ma tu zdarzenia object_tapped i nie
       // powinno być. Rozpoznajemy to po tym, że obiekt właśnie zmienił strefę.
       const entersTapped = /moveObjectDirectly|\.\.\.moved|permanent_entered_battlefield/.test(window);

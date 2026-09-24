@@ -379,7 +379,7 @@ test('B55/B2: 614 Hunt the Weak — licznik, potem walka TYM wzmocnionym stworom
   run(s, commands(s).find((c) => c.type === 'cast_spell' && c.objectId === 'hunt'));
   resolve(s);
 
-  // CR 701.12b: moce liczone PRZED zadaniem obrażeń, ale PO liczniku — stwór
+  // CR 701.14a (fight): moce liczone PRZED zadaniem obrażeń, ale PO liczniku — stwór
   // bije już jako 5/6 (inaczej zadałby 4, nie 5). Obrażenia czytamy ze zdarzeń,
   // bo zabity stwór zmienia strefę (nowy obiekt w grobie).
   assert.deepEqual(countersOf(s, 'mine'), { '+1/+1': 1 });
@@ -434,7 +434,7 @@ test('B55/B2: 614 Hunt the Weak — własny cel nielegalny: ani licznika, ani wa
   resolve(s);
 
   // Ruling 2017-11-17: oba warunki — brak licznika na nielegalnym celu
-  // i brak obrażeń po którejkolwiek stronie (CR 701.12c).
+  // i brak obrażeń po którejkolwiek stronie (CR 701.14b — walka: oba albo żaden).
   assert.equal(s.objects.get('theirs').damage ?? 0, 0);
   assert.equal(s.events.filter((e) => e.type === 'damage_dealt').length, 0);
   assert.equal(s.events.filter((e) => e.type === 'counter_added' && e.objectId === 'mine').length, 0);
@@ -645,7 +645,7 @@ test('B55/B4: 23 Brightwood Tracker — stwór z wierzchu do ręki, reszta NA SP
   assert.deepEqual([...s.zones.library.slice(-3)].sort(), [a, b, d].sort(), 'pozostałe trzy leżą na DOLNYCH trzech miejscach biblioteki');
   assert.equal(s.events.filter((e) => e.type === 'object_moved' && e.milled).length, 0, 'to nie Satyr Wayfinder: NIC nie idzie do grobu');
   const revealed = s.events.filter((e) => e.type === 'object_moved' && e.toZone === 'hand' && e.revealed);
-  assert.equal(revealed.length, 1, 'karta wchodzi do ręki jako ODSŁONIĘTA (CR 701.3)');
+  assert.equal(revealed.length, 1, 'karta wchodzi do ręki jako ODSŁONIĘTA (CR 701.20a)');
 });
 
 test('B55/B4: 23 Brightwood Tracker — kolejność spodu jest seedowana (replay), nie wybierana przez gracza', () => {
@@ -1029,7 +1029,7 @@ test('B55/B6: 613 Duskmantle Seer — pula 3 graczy: każdy odsłania i traci; p
   put(s, 'seer', 'duskmantle-seer', 'p1', 'battlefield');
   libraryTops(s, { p1: 'inferno-titan', p2: 'typhoid-rats', p3: 'colossodon-yearling' });
   // p3 nie ma już nic pod wierzchem — po odsłonięciu jego biblioteka jest pusta,
-  // a w kolejnych turach nie ma czego odsłaniać (CR 701.3: bez dobierania „na siłę").
+  // a w kolejnych turach nie ma czego odsłaniać (CR 701.20a — odsłonięcie, bez dobierania „na siłę").
   const przed = { p1: life(s, 'p1'), p2: life(s, 'p2'), p3: life(s, 'p3') };
   toUpkeep(s, 'p1');
   resolve(s);

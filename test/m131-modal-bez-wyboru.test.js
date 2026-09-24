@@ -15,7 +15,7 @@
 // jeśli po odjęciu opcji-rezygnacji zostaje dokładnie JEDEN wariant, decyzja
 // nie jest wyborem — trafia do panelu jako zwykła akcja („Szukanie: Swamp"),
 // a rezygnacja zostaje osobnym przyciskiem. Nie odbieramy legalnego ruchu:
-// „fail to find" (CR 701.19b) jest dostępne dalej.
+// „fail to find" (CR 701.23b) jest dostępne dalej.
 //
 // Anty-over-fix: decyzja z DWOMA realnymi wariantami nadal otwiera modal.
 //
@@ -107,7 +107,7 @@ test('M131/A (odwrócone dla szukania): swampcycling otwiera MODAL, nie panele',
   const { modals, buttons } = panelOf(view);
   assert.equal(modals.length, 1,
     `szukanie to wybór karty — ma iść modalem, nie przyciskami panelu: ${JSON.stringify(buttons)}`);
-  // Modal niesie realne warianty + rezygnację (CR 701.19b wolno wybrać zawsze).
+  // Modal niesie realne warianty + rezygnację (CR 701.23b wolno wybrać zawsze).
   assert.equal(modals[0].options.length, 2,
     `modal: znalezienie + „nie znajduj karty”: ${JSON.stringify(modals[0].options)}`);
   assert.ok(modals[0].options.some((c) => c.found == null), 'opcja rezygnacji jest w modalu');
@@ -115,7 +115,7 @@ test('M131/A (odwrócone dla szukania): swampcycling otwiera MODAL, nie panele',
     `panel nie może dublować wariantów decyzji: ${JSON.stringify(buttons)}`);
 });
 
-test('M131/A: rezygnacja („fail to find”, CR 701.19b) pozostaje dostępna', () => {
+test('M131/A: rezygnacja („fail to find”, CR 701.23b) pozostaje dostępna', () => {
   // Anty-over-fix: odwrócenie kolapsu nie może odebrać legalnego ruchu.
   const view = searchDecisionBoard({ library: ['basic-swamp', 'basic-forest'] });
   const { modals } = panelOf(view);

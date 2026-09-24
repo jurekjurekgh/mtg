@@ -137,7 +137,7 @@ export function hasHexproofAgainst(state, object, casterId) {
  */
 export function isNoncreatureSpellOnStack(object) {
   if (!object || object.zone !== 'stack') return false;
-  // Zdolności (kind 'trigger'/'activated') to nie czary (CR 701.5a).
+  // Zdolności (kind 'trigger'/'activated') to nie czary (CR 113.9).
   if (object.kind === 'trigger' || object.kind === 'activated') return false;
   // Czar aury z bestow: kind 'creature', ale spell.aura — nie-stworowy.
   if (object.kind === 'creature' && object.spell?.aura !== true) return false;
@@ -197,7 +197,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       }
       return object;
     }
-    // Cel „artifact" (Shatter, CR 701.7): artefakt na polu bitwy (kind artifact
+    // Cel „artifact" (Shatter — Destroy, CR 701.8a): artefakt na polu bitwy (kind artifact
     // albo typ Artifact — uwzględnia artefaktowe stwory, np. Esper Stormblade).
     if (spec?.type === 'artifact') {
       const isArtifact = object && object.zone === 'battlefield'
@@ -349,7 +349,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // rzucony jako Aura — M360/B1, CR 702.103b: na stosie to czar AURY).
     if (spec?.type === 'noncreature_spell_on_stack') {
       // Zdolności triggerowane (kind 'trigger') i aktywowane (kind 'activated')
-      // to nie czary — Negate ich nie kontruje (CR 701.5a: „counter target spell").
+      // to nie czary — Negate ich nie kontruje (CR 113.9: „counter target spell").
       if (isNoncreatureSpellOnStack(object)) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
@@ -806,7 +806,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   if (sacrificeCost && !payAltCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
     sacrificedToughness = effectiveToughness(sacObject, state);
-    // Finality (CR 122.1b): koszt poświęcenia to też śmierć — obiekt z finality
+    // Finality (CR 122.1h): koszt poświęcenia to też śmierć — obiekt z finality
     // idzie do exile zamiast do grobu (spójnie z sacrifice_permanent).
     const toZone = deathZoneFor(state, sacObject);
     const destId = `${toZone}-${state.objectSequence++}`;
@@ -1801,7 +1801,7 @@ function resolveActivatedAbilityEntry(state, entry) {
           }
           const handId = `hand-${state.objectSequence++}`;
           const drawn = moveObjectDirectly(state, topId, 'hand', handId);
-          // A92/3: cycling to pełnoprawne dobranie (CR 122.12) — idzie przez
+          // A92/3: cycling to pełnoprawne dobranie (CR 121.1) — idzie przez
           // ten sam choke point co krok dobierania i efekt `draw_cards`.
           recordCardDrawn(state, payload.playerId, { fromId: topId, object: drawn });
         }
@@ -1812,7 +1812,7 @@ function resolveActivatedAbilityEntry(state, entry) {
         return state.events.slice(before);
       }
       // Typecycling / channel: szukanie w bibliotece — wybór gracza
-      // (resolve_search_choice; CR 701.19b). Bez kandydatów: fail-to-find
+      // (resolve_search_choice; CR 701.23b). Bez kandydatów: fail-to-find
       // (przeszukanie + tasowanie, zdolność domyka się).
       const searchQualifier = {
         types: qualifier?.allTypes ?? qualifier?.types ?? [],
@@ -1978,7 +1978,7 @@ export function resolveTopOfStack(state) {
   if (object.spell?.fireball) {
     return resolveFireball(state, stackId, object, before);
   }
-  // Cleave (CR 701.33): rzucony z kosztem cleave czar rozstrzyga się z celami
+  // Cleave (CR 702.148): rzucony z kosztem cleave czar rozstrzyga się z celami
   // i efektami z deskryptora cleave (wykreślony fragment tekstu zmienia legalne
   // cele — np. Lunar Rejection zamiast stwora Wolf/Werewolf celuje dowolnego).
   const targetSpec = (object.cleaved && object.spell.cleave)

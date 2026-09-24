@@ -17,7 +17,7 @@ function game() {
   return state;
 }
 
-test('Negate nie celuje w zdolność aktywowaną na stosie (CR 701.5)', () => {
+test('Negate nie kontruje zdolności aktywowanej na stosie (CR 701.6 + 113.9)', () => {
   const state = game();
   addMana(state, 'p2', 2, { colors: ['U'] });
   addObject(state, {

@@ -11,7 +11,7 @@ import { applyEffect } from '../src/engine/effects.js';
 // =============================================================================
 // Srebrna odznaka „wyłapywacz błędów" (sesja 2026-08-08, M56) — 5 błędów vs
 // zasady MtG znalezionych w przeglądzie istniejących kart i mechanik:
-//   1. Goad (CR 701.38c) — wygasał w cleanup TEJ SAMEJ tury zamiast trwać
+//   1. Goad (CR 701.15a) — wygasał w cleanup TEJ SAMEJ tury zamiast trwać
 //      do początku NASTĘPNEJ tury goadującego (pokoje lochu Forge/Arena).
 //   2. Aury (CR 702.11b) — czar aury nie respektował hexproof przeciwnika.
 //   3. Lifelink (CR 702.15) — obrażenia NIEcombat nie dawały zysku życia
@@ -72,7 +72,7 @@ function passToNextTurn(state, changes) {
   for (let i = 0; i < 240 && turns < changes; i += 1) {
     const before = state.turn.number;
     // Znalezisko J (2026-09-17): runda passów nie pomija wymuszonego ataku
-    // (goad CR 701.38 / „attacks each combat if able" CR 508.1c), więc
+    // (goad CR 701.15 / „attacks each combat if able" CR 508.1c), więc
     // goadowany stwór NAPRAWDĘ atakuje — walkę domyka `resolve_combat`
     // (passy go pomijają tylko przy braku atakujących, CR 510).
     const view = playerView(state, state.turn.priorityPlayerId);
@@ -88,7 +88,7 @@ function passToNextTurn(state, changes) {
 
 // ---------------------------------------------------------------- 1. Goad
 
-test('B1: goad trwa do NASTĘPNEJ tury goadującego (CR 701.38c), nie do cleanup', () => {
+test('B1: goad trwa do NASTĘPNEJ tury goadującego (CR 701.15a), nie do cleanup', () => {
   const state = newState();
   addCreature(state, 'cre', 'p2', 2, 2);
   goadUntilNextTurn(state, 'cre', 'p1');

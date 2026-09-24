@@ -110,7 +110,7 @@ test('A1: playerView nie zdradza cardId żywego zakrytego stwora przeciwnika', (
   const mine = findObject(view, 'my-morph');
   assert.ok(mine, 'własny morph jest w widoku');
   assert.equal(mine.cardId, SECRET,
-    'własny morph MA być rozpoznawalny dla kontrolera (CR 708.6)');
+    'własny morph MA być rozpoznawalny dla kontrolera (CR 708.5)');
 });
 
 function findObject(view, id) {
@@ -249,7 +249,7 @@ test('D2: odwrócenie twarzą do góry ujawnia nazwę (CR 707.9)', () => {
     `odwrócenie twarzą do góry MA ujawniać nazwę; log: ${lines.join(' | ')}`);
 });
 
-test('D3: własny zakryty stwór pozostaje rozpoznawalny dla właściciela (CR 708.6)', () => {
+test('D3: własny zakryty stwór pozostaje rozpoznawalny dla właściciela (CR 708.5)', () => {
   const state = game();
   addFaceDown(state, 'my-morph', SECRET, HUMAN);
   const lines = logLines([{

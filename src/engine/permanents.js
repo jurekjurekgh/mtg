@@ -145,7 +145,7 @@ export function untapObject(state, objectId, playerId) {
   if (!object.tapped) return object;
   if (isUntapStepLocked(state, object)) return object;
   // Stun counters (Lodestone Needle): jeśli permanent ma liczniki stun,
-  // zamiast odkręcenia zdejmij jeden licznik stun (CR 122.1b).
+  // zamiast odkręcenia zdejmij jeden licznik stun (CR 122.1d).
   if ((object.counters ?? {}).stun > 0) {
     removeCounter(state, objectId, 'stun', 1);
     return state.objects.get(objectId);
@@ -198,7 +198,7 @@ export function untapControlled(state, playerId) {
       // źródłem aktywnej blokady nie odkręca się — deterministycznie
       // zawsze wybieramy „nie odkręcaj", żeby blokada nie wygasła.
       if (cured.tapped && isActiveLockSource(state, cured.id)) continue;
-      // M101/B3 (CR 122.1b — liczniki stun): „If a permanent with a stun
+      // M101/B3 (CR 122.1d — liczniki stun): „If a permanent with a stun
       // counter on it would become untapped, remove one from it instead."
       // Dotyczy KAŻDEGO odkręcenia, więc także turn-based action kroku
       // odkręcania (CR 502.2) — nie tylko punktowego untapObject. Bez tego
@@ -1565,7 +1565,7 @@ export function grantBasicLandTypeUntilEndOfTurn(state, objectId, subtype) {
 }
 
 /**
- * Goad (CR 701.38): do końca tury stwór musi atakować w każdym combacie,
+ * Goad (CR 701.15): do końca tury stwór musi atakować w każdym combacie,
  * jeśli tylko może (loch Undercity — pokój Arena). Znacznik zdejmuje cleanup
  * (clearStatModifiers). Zwraca obiekt po zmianie.
  */
@@ -1575,7 +1575,7 @@ export function goadUntilNextTurn(state, objectId, sourceControllerId) {
     throw new Error('Goadować można tylko stwora na polu bitwy');
   }
   if (object.goaded) return object;
-  // CR 701.38c: goad trwa do początku NASTĘPNEJ tury gracza, który goadował —
+  // CR 701.15a: goad trwa do początku NASTĘPNEJ tury gracza, który goadował —
   // w 1v1 (tury naprzemienne) to turn.number + 2. Wcześniej goad wygasał
   // w cleanup TEJ SAMEJ tury („until end of turn") — zaczarowany stwór nie
   // musiał atakować w turze przeciwnika, co łamało całą mechanikę goadu
@@ -1591,13 +1591,13 @@ export function goadUntilNextTurn(state, objectId, sourceControllerId) {
  */
 /**
  * M177/A (Agate Assault, CR 614.6): strefa śmierci permanentu — licznik
- * finality (CR 122.1b) ALBO znacznik „if it would die this turn, exile it
+ * finality (CR 122.1h) ALBO znacznik „if it would die this turn, exile it
  * instead” (`state.exileIfDiesThisTurn`, czyszczony w cleanup) kierują
  * obiekt do exile zamiast do grobu. Jedno źródło prawdy dla WSZYSTKICH
  * ścieżek śmierci (SBA, destroy, sacrifice, legend rule).
  */
 /**
- * M177/E (Azorius Justiciar, CR 701.29): detain — „until your next turn,
+ * M177/E (Azorius Justiciar, CR 701.35): detain — „until your next turn,
  * that permanent can't attack or block and its activated abilities can't be
  * activated”. Wygasa na POCZĄTKU następnej tury gracza, który detainował
  * (wzorzec goadedUntilTurn — wygaszenie w game-state przy starcie tury).

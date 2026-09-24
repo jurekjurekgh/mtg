@@ -20,8 +20,8 @@
 //  • CR 702.8 (flash): rzut „as though it had flash" = w każdej chwili, gdy
 //    można rzucić instant (https://media.wizards.com/2026/downloads/
 //    MagicCompRules%2020260819.txt, efektywne 2026-08-07).
-//  • CR 701.12 (fight): dwa stwory zadają sobie NAWZAJEM obrażenia równe
-//    swojej mocy (701.12b jednocześnie; 701.12c — nielegalny uczestnik =
+//  • CR 701.14 (fight): dwa stwory zadają sobie NAWZAJEM obrażenia równe
+//    swojej mocy (701.14a jednocześnie; 701.14b — nielegalny uczestnik =
 //    żaden nie zadaje obrażeń).
 //  • CR 603.6a (enters-the-battlefield): zdolność ETB odpala się, gdy
 //    permanent wchodzi — także zdolność nadana mu na turę.
@@ -136,7 +136,7 @@ test('M381/A: grant flash — komenda z OFERTY jest przyjmowana (L41/L48)', () =
   assert.ok(result.ok, `oferta musi być wykonalna: ${why(result)}`);
 });
 
-test('M381/B: nadana zdolność istnieje i walczy (CR 701.12 + 603.6a)', () => {
+test('M381/B: nadana zdolność istnieje i walczy (CR 701.14 + 603.6a)', () => {
   const state = scenario();
   armGrant(state);
   const cast = ofType(state, 'cast_permanent').find((c) => c.objectId === 'dino');

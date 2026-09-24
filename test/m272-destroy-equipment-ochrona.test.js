@@ -7,9 +7,9 @@ import { addCounter } from '../src/engine/counters.js';
 import { applyEffect } from '../src/engine/effects.js';
 
 /**
- * M272 (błąd #19) — „destroy" to JEDNA procedura (CR 701.7a) z warstwą
+ * M272 (błąd #19) — „destroy" to JEDNA procedura (CR 701.8a) z warstwą
  * efektów zastępujących: indestructible (CR 702.12), licznik shield
- * (CR 122.1), regeneracja (CR 701.15), a na końcu strefa śmierci wyznaczana
+ * (CR 122.1), regeneracja (CR 701.19), a na końcu strefa śmierci wyznaczana
  * przez `deathZoneFor` (licznik finality → wygnanie, CR 122.1h).
  *
  * Sekwencję znała tylko ścieżka `destroy_permanent`. `destroy_equipment_attached`

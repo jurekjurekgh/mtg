@@ -310,7 +310,7 @@ test('Greater Tanuki: channel z ręki — basic land tapped, karta do grobu, tas
   const tanuki = [...state.objects.values()].find((o) => o.cardId === 'greater-tanuki');
   assert.equal(tanuki.zone, 'graveyard', 'karta odrzucona (koszt)');
   // B7.2: channel to zdolność na stosie — szukanie po rozstrzygnięciu
-  // (pełna runda passów). CR 701.19b: wybór karty należy do GRACZA.
+  // (pełna runda passów). CR 701.23b: wybór karty należy do GRACZA.
   const holder = state.turn.priorityPlayerId;
   assert.ok(execute(state, { type: 'pass_priority', playerId: holder }).ok, 'pass 1');
   const holder2 = state.turn.priorityPlayerId;

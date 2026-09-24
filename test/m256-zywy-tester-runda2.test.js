@@ -311,7 +311,7 @@ test('H6: Village Bell-Ringer ze wszystkimi odkręconymi to legalny no-op (M106/
   // Odkryte skanem katalogu (strażnik H7), nie transkryptem: „untap all
   // creatures you control" ma w zbiorze SAMO ŹRÓDŁO, więc „pusty zbiór
   // odbiorców" nie zdarza się nigdy — za to „wszystkie już odkręcone" to
-  // wykonana zdolność (CR 701.20b), a nie porażka triggera.
+  // wykonana zdolność (CR 701.26), a nie porażka triggera.
   const state = game('p1');
   putCard(state, 'bell', 'village-bell-ringer', 'p1', 'hand');
   addMana(state, 'p1', 3, { colors: ['W'] });
@@ -381,7 +381,7 @@ function rzucSilkenStrength(state, celId, tapped = false) {
     && e.cardId === 'silken-strength');
 }
 
-test('J1: Silken Strength na OD KRĘCONYM stworze to legalny no-op (CR 701.20b)', () => {
+test('J1: Silken Strength na OD KRĘCONYM stworze to legalny no-op (CR 701.26)', () => {
   // Runda 3, final-fantasy×worek-dziki s316: „Silken Strength — trigger bez
   // efektu (nie było czego wykonać)", choć zdolność wykonała się w całości
   // (gospodarz był odkręcony). Ta sama klasa co M189/Z2 (Glaring Aegis) —

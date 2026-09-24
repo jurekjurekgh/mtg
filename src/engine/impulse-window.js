@@ -2,7 +2,7 @@
  * Okno impulsu — jedno miejsce prawdy o polach `playableUntilTurn` i
  * `playableWithoutPaying` (audyt PR #93, tura 3, wątek 4 z HANDOFF).
  *
- * Mechanika (Batch 46/47, CR 601.2b i 701.51b): efekt wygnania kładzie kartę
+ * Mechanika (Batch 46/47, CR 601.2b i 701.18): efekt wygnania kładzie kartę
  * do exile ze STEMPLEM „graj ją do końca tury N" (`playableUntilTurn`), a
  * czasem dodatkowo z flagą „bez płacenia kosztu many" (`playableWithoutPaying`).
  * Do tego jedna kopia karty (permanent na stosie) dziedziczy oba pola.
@@ -113,7 +113,7 @@ export function hasFreeCastStamp(object) {
  * H2 (zgłoszenie właściciela 2026-09-19b, Sheriff of Safe Passage): rzut
  * karty CZEKAJĄCEJ w wygnaniu, który NIE płaci kosztu many:
  *  - plot (CR 702.170d: „cast it … without paying its mana cost"),
- *  - darmowy impuls (CR 701.51b + stempel „bez płacenia").
+ *  - darmowy impuls — zagranie karty (CR 701.18 + stempel „bez płacenia").
  *
  * JEDNO źródło tej reguły dla obu konsumentów: etykiety oferty (render.js,
  * `waitingCastLabel`) i bramki kreatora many (mana-wizard.js,

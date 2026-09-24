@@ -8,7 +8,7 @@ import { applyEffect } from '../src/engine/effects.js';
 import { addCounter } from '../src/engine/counters.js';
 
 /**
- * M269 błąd #2 — proliferate (CR 701.27) dokładał liczniki WŁASNĄ ścieżką,
+ * M269 błąd #2 — proliferate (CR 701.34) dokładał liczniki WŁASNĄ ścieżką,
  * omijając wspólny helper `addCounter`, a więc i `syncStationKind`. Spacecraft
  * ze station dobity proliferatem do progu („It's an artifact creature at 6+")
  * zostawał zwykłym artefaktem — nie mógł atakować ani blokować (CR 205.1).

@@ -280,7 +280,7 @@ export function mulliganBottomPlanOf(commands) {
 // ===========================================================================
 
 /**
- * Plan proliferate (CR 701.27, Spread the Sickness): komendy
+ * Plan proliferate (CR 701.34, Spread the Sickness): komendy
  * `resolve_proliferate` niosą `targetIds` (podzbiory kandydatów z
  * licznikami), a NIE `targets` — stąd osobny plan zamiast multiTargetPlanOf.
  * Null dla grupy jednoelementowej (pojedyncza oferta nie wymaga kreatora).
@@ -415,7 +415,7 @@ const SINGLE_PICK_EXCLUDED_TYPES = new Set([
 function isNonePickCommand(cmd, field) {
   if (!cmd) return false;
   if (field === 'cardId' && cmd.cardId === null) return true;
-  // Szukanie w bibliotece: odmowa (fail to find) to `found == null` (CR 701.19b).
+  // Szukanie w bibliotece: odmowa (fail to find) to `found == null` (CR 701.23b).
   // Sprawdzania `mandatory` TU nie ma i być nie może: gwarancja jest
   // strukturalna po stronie silnika — oferta odmowy jest emitowana wyłącznie
   // w gałęzi `if (!pending.mandatory)` (game-state ~6210), więc komenda z

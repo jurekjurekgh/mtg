@@ -637,7 +637,7 @@ export function tapLandForMana(state, playerId, objectId, { grantColor = null } 
   if (object.tapped) throw new Error('Land jest już tapped');
   const updated = Object.freeze({ ...object, tapped: true });
   state.objects.set(objectId, updated);
-  // M114 (CR 701.21a): tapnięcie za manę to TAKŻE „becomes tapped" — zdarzenie
+  // M114 (CR 701.26): tapnięcie za manę to TAKŻE „becomes tapped" — zdarzenie
   // musi powstać, inaczej triggery reagujące na tapnięcie (Chronic Flooding:
   // „whenever enchanted land becomes tapped") nigdy nie odpalą. Dotąd ta
   // ścieżka mutowała `tapped` po cichu (lekcja L24: brak zdarzenia = brak
@@ -1412,7 +1412,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // (CR 702.170 — „Cast it as a sorcery on a later turn without paying its
   // mana cost"). Batch 24: Spinewoods Paladin — plot dla permanentów.
   const plotted = object?.zone === 'exile' && object.plotted;
-  // Batch 47 (Caves of Chaos Adventurer, CR 701.51b): karta wygnana impulse
+  // Batch 47 (Caves of Chaos Adventurer, CR 309.7): karta wygnana impulse
   // po UKOŃCZONYM lochu gra się „without paying its mana cost" — tak jak
   // plot. Flagę ustawia efekt wygnania (exile_top_playable_until_next_turn),
   // tutaj tylko ZERUJEMY koszt; bez tego pole byłoby martwe (L48: oferta

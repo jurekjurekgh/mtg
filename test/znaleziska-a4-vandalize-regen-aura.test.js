@@ -105,7 +105,7 @@ test('A4-2/1: tryb „Zniszcz artefakt” — regen ratuje stwora, aura zostaje 
   const host = s.objects.get('art1');
   assert.equal(host.zone, 'battlefield', 'regen zastąpił destroy (614.8/701.19a)');
   assert.equal(host.damage, 0);
-  assert.equal(host.tapped, true, 'regen tapuje (701.19a)');
+  assert.equal(host.tapped, true, 'regeneracja tapuje (701.19a)');
   assert.equal(s.objects.get('aura1')?.zone, 'battlefield', 'aura NIE odłączona (stwór nie zmienił strefy)');
   assert.equal(s.objects.get('aura1')?.attachedTo, 'art1', 'aura nadal na hoście');
   assert.ok(!(s.regenerationShields ?? []).includes('art1'), 'tarcza zużyta (701.19a+614.5)');

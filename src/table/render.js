@@ -731,7 +731,7 @@ function buildChoiceRequestEntries(commands, view) {
     // JEDEN wariant, decyzja nie niesie wyboru i idzie do panelu jako
     // zwykła akcja. Etykieta `commandLabel` mówi wprost, co się stanie
     // („Szukanie: Swamp"), a rezygnacja pozostaje dostępna osobnym
-    // przyciskiem — nie odbieramy legalnego ruchu (CR 701.19b: „fail to
+    // przyciskiem — nie odbieramy legalnego ruchu (CR 701.23b: „fail to
     // find" wolno wybrać zawsze).
     //
     // Świadome ograniczenie zakresu: dotyczy wyłącznie decyzji, które MAJĄ
@@ -748,7 +748,7 @@ function buildChoiceRequestEntries(commands, view) {
     // To ŚWIADOME odwrócenie reguły M131 dla SZUKANIA (wcześniejsze zgłoszenie
     // dotyczyło swampcyclingu Gloomfanga i jest zachowane dla pozostałych
     // rodzin decyzji). Szukanie to wybór KARTY: „znajdź TĘ kartę / nie znajduj
-    // żadnej” (CR 701.19b) — a nie potwierdzenie akcji, którą gracz już
+    // żadnej” (CR 701.23b) — a nie potwierdzenie akcji, którą gracz już
     // wykonał. Konsekwencja dla M131: kolaps „1 realny wariant + rezygnacja”
     // nadal obowiązuje decyzje typu `skip` (Springbloom i pokrewne), ale NIE
     // szukanie w bibliotece.
@@ -2734,8 +2734,14 @@ export function labelChoiceOptions(options, session, view) {
 /**
  * M126/#1 — efekty, które CZYTAJĄ własną bibliotekę. Przy pustej bibliotece
  * gracza taka zdolność jest jałowa: koszt (mana + tapnięcie) zostaje
- * zapłacony, a skutku nie ma (CR 701.54a — explore bez karty nic nie robi;
- * analogicznie scry/surveil/mill/look).
+ * zapłacony, a skutku nie ma (scry/surveil/mill/look/discover bez kart nie
+ * mają czego obejrzeć ani przenieść).
+ *
+ * NIE należą tu: explore — przy pustej bibliotece nic nie zostaje odsłonięte,
+ * więc działa gałąź „Otherwise … +1/+1 counter on the exploring permanent”
+ * (CR 701.44a), a zdolność ma skutek; dobieranie — próba dobrania z pustej
+ * biblioteki nie jest „bez skutku”, tylko przegrywa grę (CR 704.5b), więc
+ * ostrzeżenie mówi o tym osobno (`abilityDrawsFromEmptyLibrary`).
  *
  * Żywy Tester (M126) pokazał to na Guidestone Compass, a audyt rozszerzył
  * na całą rodzinę: Seer's Lantern, Prismari Campus, Cellar Door. Nie
@@ -2744,8 +2750,8 @@ export function labelChoiceOptions(options, session, view) {
  * „czar fizzluje" przy Bone Splinters (M102/U8).
  */
 const LIBRARY_READING_EFFECTS = new Set([
-  'explore', 'scry', 'surveil', 'mill_cards', 'mill_from_bottom',
-  'look_top_n', 'discover', 'draw_cards',
+  'scry', 'surveil', 'mill_cards', 'mill_from_bottom',
+  'look_top_n', 'discover',
 ]);
 
 /** Czy własna biblioteka gracza jest pusta (w jego widoku)? */
@@ -2762,6 +2768,16 @@ function abilityFizzlesOnEmptyLibrary(ability, view) {
   // Ostrzegamy tylko, gdy CAŁA treść zdolności zależy od biblioteki —
   // inaczej „mill 3 + zysk życia" dostałby fałszywe ostrzeżenie.
   return effects.every((e) => e?.type && LIBRARY_READING_EFFECTS.has(e.type));
+}
+
+/**
+ * Czy zdolność każe graczowi dobrać z PUSTEJ biblioteki? Taka próba nie jest
+ * jałowa: gracz przegrywa przy najbliższym sprawdzeniu SBA (CR 704.5b).
+ */
+function abilityDrawsFromEmptyLibrary(ability, view) {
+  if (!ability || !ownLibraryEmpty(view)) return false;
+  const effects = Array.isArray(ability.effect) ? ability.effect : (ability.effect ? [ability.effect] : []);
+  return effects.some((e) => e?.type === 'draw_cards' && (e.amount ?? 1) !== 0);
 }
 
 /**
@@ -2905,7 +2921,7 @@ export function commandLabel(cmd, session, view) {
     // Face-down (morph, CR 708.2): „morph" zamiast „?" w etykietach celów
     // (audyt żywym testerem M73c — „Rzuć: Expunge → cel: ?").
     // M100/E10 (P12 — Żywy Tester h01): WŁASNY morph ma być nazwany
-    // (właściciel zna tożsamość własnej zakrytej karty — CR 708.6; np.
+    // (właściciel zna tożsamość własnej zakrytej karty — CR 708.5; np.
     // „Rzuć: Village Rites — poświęć Segmented Krotiq"). playerView maskuje
     // cardId wrogiego face-down do null → wróg zostaje „morph" (CR 708.2).
     // M100/E12 (pytanie właściciela): własny morph nazwany ZE znacznikiem
@@ -2972,7 +2988,7 @@ export function commandLabel(cmd, session, view) {
   const costOfCard = cardCostHtml;
   // H (zgłoszenie właściciela, Sheriff of Safe Passage) + ta sama klasa dla
   // impulsu: rzut karty CZEKAJĄCEJ w wygnaniu (plot CR 702.170d, impuls
-  // CR 701.51b) nie jest zwykłym rzutem z ręki — kosztu many nie ma, a okno
+  // CR 701.18) nie jest zwykłym rzutem z ręki — kosztu many nie ma, a okno
   // impulsu ma numer tury („this turn" kończy się w turze zdolności).
   // Etykieta „Zagraj: X (koszt {2}{W})" kłamała o koszcie i milczała
   // o oknie; gracz zgłosił to jako „plot nie działa".
@@ -3367,7 +3383,9 @@ export function commandLabel(cmd, session, view) {
         ? ` — ${crewTail}${crewNeeded > 0 ? ` (moc ≥ ${crewNeeded})` : ''}`
         : '';
       // M126/#1: zdolność czytająca pustą bibliotekę zabierze koszt i nic nie da.
-      const emptyLibWarn = abilityFizzlesOnEmptyLibrary(ability, view)
+      const emptyLibWarn = abilityDrawsFromEmptyLibrary(ability, view)
+        ? ' — UWAGA: twoja biblioteka jest pusta, dobranie z niej przegrywa grę (CR 704.5b)'
+        : abilityFizzlesOnEmptyLibrary(ability, view)
         ? ' — UWAGA: twoja biblioteka jest pusta, zdolność nie zadziała'
         : (abilityFizzlesOnHand(ability, view)
           ? ' — UWAGA: brak pasującej karty w ręce, zdolność nie zadziała' : '');
@@ -3719,10 +3737,10 @@ export function commandLabel(cmd, session, view) {
     case 'turn_cloak_face_up': {
       // M315 (Veiled Ascension): cloak — specjalna akcja (bez stosu), koszt
       // many karty. Etykieta nazywa mechanikę i kartę (koszt = koszt karty,
-      // którą kontroler zna — CR 708.2d).
+      // którą kontroler zna — CR 708.5).
       // F3 (uwaga właściciela 2026-09-23c): etykieta musi nieść TAKŻE KOSZT
       // odkrycia — sam wpis „Obróć twarzą do góry (Cloak): X” nie mówił, ile
-      // many to kosztuje (koszt = mana value karty, CR 708.2d; silnik czyta
+      // many to kosztuje (koszt = mana value karty, CR 701.58b; silnik czyta
       // go z `cloakTurnUpCost`/`cloak.colors`, walidacja w game-state.js).
       const cloakObj = obj(cmd.objectId);
       // H (audyt 2026-09-23d): koszt czytamy ze STANU (widok go nie niesie —
@@ -4065,16 +4083,16 @@ export function cardInfo(session, object, combat = null) {
   // M260/B1 (zgłoszenie właściciela z PR #89, Pyxis of Pandemonium): karta
   // wygnana ZAKRYTA nie ujawnia tożsamości NIKOMU (CR 406.3) — także
   // właścicielowi. Własny zakryty permanent NA POLU BITWY to co innego
-  // (CR 708.6: kontroler może patrzeć) — strefa rozstrzyga.
+  // (CR 708.5: kontroler może patrzeć) — strefa rozstrzyga.
   const exiledFaceDown = faceDown && object.zone === 'exile';
   // M100/E12 (pytanie właściciela): WŁASNY zakryty permanent pokazuje
-  // NAZWĘ (kontroler zna tożsamość — CR 708.6), ale wyłącznie nazwę:
+  // NAZWĘ (kontroler zna tożsamość — CR 708.5), ale wyłącznie nazwę:
   // reszta (tekst, staty blueprintu, art) zostaje zamaskowana, żeby kafel
   // nie wyglądał jak pełny stwór — jest „zakryty (morph)", 2/2.
   const ownFaceDown = faceDown && !exiledFaceDown && object.controllerId === HUMAN_ID;
   const details = faceDown ? {} : (session.cardDetails(cardId) || {});
   // M254/B (zgłoszenie właściciela): właściciel zna swoją kartę zakrytą
-  // (CR 708.6 — tożsamość nie jest informacją ukrytą dla niego), więc
+  // (CR 708.5 — tożsamość nie jest informacją ukrytą dla niego), więc
   // PODGLĄD (hover / pełny ekran) pokazuje prawdziwą ilustrację. Kafel na
   // stole zostaje zakryty (imageUri/artId niżej są nadal null) — znacznik
   // niesie wyłącznie dane do obrazu, żeby nie odkryć reszty (tekst, staty).
@@ -4538,7 +4556,7 @@ export function buildStateOverlay(visual, info) {
     // M333: j.w. — null oznacza „żadnego znacznika" (zakryte wygnanie, M260/B1).
     if (info.morphBadge) flags.push(['morph', info.morphBadge]);
     if (info.goaded) flags.push(['goad', 'goad']);
-    // M177/E (CR 701.29): detain — nie atakuje, nie blokuje, bez aktywacji.
+    // M177/E (CR 701.35): detain — nie atakuje, nie blokuje, bez aktywacji.
     if (info.detained) flags.push(['kw', 'zatrzymany (detain)']);
     // M168/B: AKTYWNE zmiany — badge tekstowy, póki efekt działa.
     for (const kw of info.grantedKeywords ?? []) {

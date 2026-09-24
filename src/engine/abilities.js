@@ -396,10 +396,10 @@ function effectIsNoOpOnTarget(state, effect, target, source = null) {
       if (!target || keywords.length === 0) return false;
       return keywords.every((kw) => effectiveKeywords(target, state).includes(kw));
     }
-    // Tapnięcie tapniętego / odkręcenie odkręconego (CR 701.20b): efekt widzi
+    // Tapnięcie tapniętego / odkręcenie odkręconego (CR 701.26): efekt widzi
     // permanent już w docelowym stanie i nic nie robi. Uwaga: odkręcenie
     // TAPNIĘTEGO permanentu z licznikiem stun realnie zdejmuje licznik
-    // (CR 122.1b) — dlatego bramka patrzy wyłącznie na `tapped`.
+    // (CR 122.1d) — dlatego bramka patrzy wyłącznie na `tapped`.
     case 'tap_permanent':
       return Boolean(target && target.zone === 'battlefield' && target.tapped);
     case 'untap_permanent':
@@ -411,7 +411,7 @@ function effectIsNoOpOnTarget(state, effect, target, source = null) {
       // M407: dar „this turn" — drugie nadanie w TEJ samej turze to no-op,
       // w kolejnej turze dar już wygasł i nadanie znów coś robi.
       return Boolean(target?.cantBeBlockedUntilTurn != null && state.turn.number < target.cantBeBlockedUntilTurn);
-    // Liczniki KUMULUJĄ się (także stun — CR 122.1b), więc no-opem jest
+    // Liczniki KUMULUJĄ się (także stun — CR 122.1d), więc no-opem jest
     // wyłącznie zerowa (albo ujemna) liczba liczników.
     case 'add_counter':
       return (effect.amount ?? 1) <= 0;
@@ -576,7 +576,7 @@ export function legalActivatedAbilities(state, playerId) {
       // graveyard") działa WYŁĄCZNIE z grobu — na polu bitwy nie jest oferowana
       // (oferta z grobu jest niżej; spójność oferty i walidacji).
       if (ability.fromGraveyard) continue;
-      // Detain (CR 701.29, M177/E): zdolności aktywowane zatrzymanego
+      // Detain (CR 701.35, M177/E): zdolności aktywowane zatrzymanego
       // permanentu nie mogą być aktywowane (oferta i walidacja — L48).
       if (object.detained) continue;
       // Bramki warunków zdolności (Batch 58/B5 max speed + delirium, B7
@@ -1314,7 +1314,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   } else if (object.zone !== 'battlefield') {
     throw new Error('Zdolność wymaga permanenta na polu bitwy');
   }
-  // Detain (CR 701.29, M177/E): walidacja niezależna od oferty (L48).
+  // Detain (CR 701.35, M177/E): walidacja niezależna od oferty (L48).
   if (object.detained) throw new Error('Zatrzymany (detain) permanent nie aktywuje zdolności');
   // Morph/megamorph (CR 702.37 / 702.37b; 702.36 to Fear): obrót twarzą do góry działa tylko,
   // póki permanent leży twarzą w dół — po obrocie zdolność wygasa. Walidacja
@@ -1370,7 +1370,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     if ((object.counters?.[rc.name] ?? 0) < (rc.amount ?? 1)) throw new Error(`Brak licznika ${rc.name} (koszt)`);
   }
   // Koszt „Discard a card" (Goblin Picker) / „Discard N cards" (Plague
-  // Reaver) — Temat 4 (CR 701.18): KONTROLER wybiera karty z ręki. Blokująca
+  // Reaver) — Temat 4 (CR 701.9b): KONTROLER wybiera karty z ręki. Blokująca
   // decyzja resolve_discard_choice; cała aktywacja czeka (pendingAbilityActivation)
   // i wykonuje się po dokończeniu wyborów (koszty atomowo, jak dotąd).
   // M116 (Cuombajj Witches): „and 1 damage to any target of an OPPONENT'S
@@ -1754,7 +1754,7 @@ export function performActivation(state, ctx) {
   // obiektu — dla add_mana i tak liczy się wyłącznie kontroler. Koszt
   // „tap another creature" (Station) podaje tapniętego stwora jako cel
   // efektu (station_counters czyta jego moc).
-  // Regeneracja (CR 701.12): zdolność „regenerate" po opłaceniu kosztu
+  // Regeneracja (CR 701.19): zdolność „regenerate" po opłaceniu kosztu
   // zakłada tarczę na źródle („the next time it would be destroyed this turn").
   if (ability.keyword === 'regenerate') {
     addRegenerationShield(state, objectId);

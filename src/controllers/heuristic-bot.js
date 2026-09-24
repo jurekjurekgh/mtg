@@ -914,10 +914,10 @@ function effectIsInertNow(view, effect, cmd) {
     case 'mill_from_bottom':
       return (effect.amount ?? 1) === 0;
     // M126/#10 (Żywy Tester): efekty czytające WŁASNĄ bibliotekę są jałowe,
-    // gdy nie ma z czego czytać (CR 701.54a — explore bez karty nic nie robi;
-    // analogicznie scry/surveil/look). Bot aktywował Guidestone Compass
-    // i Seer's Lantern przy pustej bibliotece, płacąc manę i tapnięcie za nic.
-    case 'explore':
+    // gdy nie ma z czego czytać (scry/surveil/look). Bot aktywował Seer's
+    // Lantern przy pustej bibliotece, płacąc manę i tapnięcie za nic.
+    // Explore tu NIE należy: przy pustej bibliotece nic nie jest odsłonięte,
+    // więc stwór dostaje +1/+1 (gałąź „Otherwise”, CR 701.44a) — to skutek.
     case 'scry':
     case 'surveil':
     case 'look_top_n':
@@ -1335,7 +1335,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // Uwaga A właściciela z testów (2026-09-18, Azorius Justiciar): jedyny
   // wróg zatrzymany przez detain nie może blokować, a bot liczył go jako
   // ryzyko i nie atakował. Zakazy są JAWNE w PlayerView (ADR 0017):
-  //  • `detained` — detain (CR 701.29): „Until your next turn, those
+  //  • `detained` — detain (CR 701.35): „Until your next turn, those
   //    creatures can't attack or block…” (Oracle, snapshot
   //    scryfall-azorius-justiciar.json; engine: blockRestrictionError);
   //  • `cantBlock` — centralny odczyt silnika `creatureCantBlock`
@@ -2059,7 +2059,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   /**
    * O (2026-09-22): efekty TRZYMAJĄCE permanent tapniętym przez najbliższy
-   * untap step (CR 701.20a). Jedno źródło prawdy dla obu ścieżek wyceny
+   * untap step (CR 701.26). Jedno źródło prawdy dla obu ścieżek wyceny
    * (czar i zdolność) — L41.
    */
   const LOCK_UNTAP_EFFECTS = new Set(['lock_untap', 'dont_untap_next_untap_step']);
@@ -2137,7 +2137,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // `dont_untap_next_untap_step`). Gdy groźny cel był JUŻ TAPNIĘTY, składowa
     // „tap” zwracała −12 („nic nie zmienia”) i to ona przeważała sumę, mimo że
     // druga składowa — blokada odkręcania — jest wtedy warta NAJWIĘCEJ: stwór
-    // nie odkręci się i nie zaatakuje w następnej turze (CR 302.6, 701.20a).
+    // nie odkręci się i nie zaatakuje w następnej turze (CR 302.6, 701.26).
     // `noopWhenTapped` mówi więc „ta składowa nic nie wnosi” (0), a nie „to
     // złe zagranie” (−12): karać wolno tylko czar, który POZA tapnięciem nie
     // robi nic (wtedy `locking` jest false i kara zostaje).
@@ -2183,7 +2183,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     //
     // O (2026-09-22, Chill of the Grave): cel JUŻ TAPNIĘTY dostaje tę samą
     // formułę co nietapnięty. „Nie odkręci się w następnym untap stepie”
-    // (CR 302.6, 701.20a) znaczy dla obu dokładnie to samo — stwór wypada
+    // (CR 302.6, 701.26) znaczy dla obu dokładnie to samo — stwór wypada
     // z następnej tury — a cel tapnięty jest dodatkowo już teraz nieczynny.
     // O wyborze decyduje więc SIŁA celu (baza `8 + 2·power` z mocy
     // EFEKTYWNEJ, czyli z aurami: 1/1 z +2/+2 liczy się jak 3/3), a nie to,
@@ -3618,7 +3618,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // jest `undefined`, `?? 0` zeruje różnice, a wycena i projekcja remisują —
   // nie dlatego, że warianty są równe, tylko dlatego, że bot jest ślepy.
   // Źródłem prawdy jest payload samej decyzji (silnik odsłania karty tylko
-  // decydentowi: CR 701.3 „look at"), a strefy jawne (grób, wygnanie, własna
+  // decydentowi: CR 701.20e „look at"), a strefy jawne (grób, wygnanie, własna
   // ręka) mają dane w widoku. Wycena (`scoreCommand`) i projekcja remisów
   // (`tieProjection`) MUSZĄ iść przez tę jedną funkcję (L131/L41/L48).
   const decisionCandidateCard = (view, id) => {
@@ -4207,7 +4207,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           + (copied.toughness ?? 0) * P.creatureToughnessWeight);
       }
       case 'resolve_amass_choice': {
-        // E2/B (plan 2026-09-07, CR 701.43b): Amass z wieloma armiami —
+        // E2/B (plan 2026-09-07, CR 701.47): Amass z wieloma armiami —
         // liczniki dostaje najsilniejsza armia (najlepsza platforma ataku),
         // nie pierwsza z listy; przeskalowanie jest równe, więc kolejność
         // ciała rozstrzyga wprost.
@@ -6917,7 +6917,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Zgłoszenie B (2026-09-20): typecycling/basic landcycling, którego
             // CELU nie ma już w bibliotece, to zmarnowana mana I karta — gracz
             // zna swoją talię, więc wie, że szukanie nie znajdzie nic
-            // (CR 701.19b „fail to find" jest legalne, ale bezsensowne).
+            // (CR 701.23b „fail to find" jest legalne, ale bezsensowne).
             // Kara poniżej passu (L3: musi przebić premię +2).
             const remaining = searchTargetsRemaining(view, ability.cycling ?? {});
             if (remaining === 0) return finish(-12);
@@ -7456,7 +7456,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // przetasowania, więc wariant z topOrder != oryginał punktujemy niżej.
         // M135: ta sama wycena co przy scry, ale z WAŻNĄ różnicą semantyczną —
         // przy surveil karta nie idzie na spód biblioteki, tylko do GROBU
-        // (CR 701.44). To decyzja nieodwracalna: kartę stracimy z talii
+        // (CR 701.25). To decyzja nieodwracalna: kartę stracimy z talii
         // zamiast odsunąć ją w czasie. Dlatego mielimy ostrożniej — próg
         // opłacalności jest wyższy niż przy scry (bufor `MILL_CAUTION`).
         const milled = cmd.millIds ?? [];
@@ -7472,7 +7472,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(20 + millDelta + (keepsOrder ? 1 : 0));
       }
       case 'resolve_clash_choice': {
-        // Clash (CR 701.40): „na spód albo zostaw" — ta sama decyzja co scry,
+        // Clash (CR 701.30): „na spód albo zostaw" — ta sama decyzja co scry,
         // więc ta sama wycena (M135, L28: jedna reguła zamiast trzech kopii
         // warunku „land przy przesycie"). Widok clash niesie cardId (karta
         // odsłonięta = informacja publiczna), więc deskryptory bierzemy
@@ -8325,7 +8325,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // której strata MNIEJ boli (gorsza), żeby zachować wartościową na potem.
       // Face-down 2/2 jest w 100% wymienny niezależnie od karty pod spodem
       // (dopóki jej nie odwrócimy), więc decyzja = „która karta może spaść".
-      // M336 (klasa L133 — decyzja bez wyceny): Proliferate (CR 701.27) to
+      // M336 (klasa L133 — decyzja bez wyceny): Proliferate (CR 701.34) to
       // wybór DOWOLNEJ liczby permanentów i/lub graczy z licznikami, więc
       // silnik enumeruje PODZBIORY. Pusty wariant jest pierwszy (zmierzone
       // sondą na `courage-in-crisis`; komentarz w grze mówił odwrotnie —

@@ -329,7 +329,7 @@ test('B57/80 Merciless Repurposing: wygania cel i inkubuje 3 (token z trzema lic
   resolve(s);
   assert.ok(find(s, 'ordinary-bear', 'exile'), 'cel wygnany (nie w grobie; po przenosinach obiekt ma nowe id)');
   const tokens = incubatorsOf(s, 'p1');
-  assert.equal(tokens.length, 1, 'jeden Incubator (CR 701.47)');
+  assert.equal(tokens.length, 1, 'jeden Incubator (CR 701.53)');
   assert.equal((tokens[0].counters ?? {})['+1/+1'], 3, 'inkubuj 3 → trzy liczniki +1/+1');
   assert.ok(find(s, 'merciless-repurposing', 'graveyard'), 'czar rozstrzygnięty idzie do grobu');
   // {2}: transformacja tokenu w 0/0 Phyrexian — liczniki ZOSTAJĄ na tylnej
@@ -340,7 +340,7 @@ test('B57/80 Merciless Repurposing: wygania cel i inkubuje 3 (token z trzema lic
   run(s, act);
   resolve(s);
   const phyrexian = [...s.objects.values()].find((o) => o.cardId === 'token_phyrexian' && o.zone === 'battlefield');
-  assert.ok(phyrexian, 'token transformował się w 0/0 Phyrexian (CR 701.51)');
+  assert.ok(phyrexian, 'token transformował się w 0/0 Phyrexian (CR 701.53)');
   assert.equal((phyrexian.counters ?? {})['+1/+1'], 3, 'trzy liczniki zostają → 3/3');
 });
 

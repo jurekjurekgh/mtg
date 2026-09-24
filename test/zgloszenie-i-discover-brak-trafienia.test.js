@@ -11,7 +11,7 @@ import { describeGameEvent, isMainLogEvent } from '../src/table/session.js';
  * przejrzał CAŁĄ bibliotekę i nie trafił karty. Karty wróciły do biblioteki,
  * ale „Rozgrywka” i log milczały: brak informacji, że biblioteka się
  * wyczerpała, że nie było trafienia i że karty wróciły na spód w LOSOWEJ
- * kolejności (CR 701.53). Wpis kończył się na „trigger się rozstrzyga”.
+ * kolejności (CR 701.57). Wpis kończył się na „trigger się rozstrzyga”.
  *
  * Trzy warstwy kontraktu pinowane tutaj:
  * 1. SILNIK: `discover_resolved` niesie fakty (found:false, ile kart wróciło,

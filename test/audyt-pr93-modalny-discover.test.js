@@ -1,4 +1,4 @@
-// Audyt PR #93 (2026-09-03), znalezisko B — darmowy rzut DISCOVER (CR 701.53)
+// Audyt PR #93 (2026-09-03), znalezisko B — darmowy rzut DISCOVER (CR 701.57)
 // gubił czary modalne: predykat „prostego zakresu” wycinał `spell.modes`, a
 // gałąź czaru kładła obiekt na stos bez `chosenMode`. Skutek: czar z „Choose
 // one” trafiony przez Discover w ogóle nie był rzucalny — zostawało „weź do
@@ -63,7 +63,7 @@ test('A93/B: Discover oferuje darmowy rzut czaru modalnego — z wyborem trybu',
   const state = discoverState(MODAL_SORCERY);
   const free = freeOffers(state);
   assert.ok(free.length > 0,
-    'czar z „Choose one” jest rzucalny z Discover (CR 701.53 nie zna wyjątku dla '
+    'czar z „Choose one” jest rzucalny z Discover (CR 701.57 nie zna wyjątku dla '
     + 'czarów modalnych); dziś jedyną ofertą jest „weź do ręki”');
   assert.ok(free.some((c) => c.modeIndex === 0), 'wariant niesie wybrany tryb');
   assert.ok(offers(state).some((c) => c.castFree === false), '„weź do ręki” nadal dostępne');

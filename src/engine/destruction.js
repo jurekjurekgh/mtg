@@ -99,13 +99,13 @@ export function holdReplacementResolution(state,entry,resolvedEvent) {
 export function regeneratePermanent(state, object, collected = null) {
   if (!object || object.zone !== 'battlefield') return false;
   if (!(state.regenerationShields ?? []).includes(object.id)) return false;
-  // CR 701.12b (minimalny wymiar): „It can't be regenerated this turn" (Rage
+  // CR 701.19c (minimalny wymiar): „It can't be regenerated this turn" (Rage
   // of Purphoros) — flaga trwała do końca tury ustawiana na obiekcie
   // efektem cant_be_regenerated_this_turn. Blokuje regenerację TEGO
   // obiektu niezależnie od źródła tarczy (regenerate / destroy z efektem
   // regeneracji / planeswalker itd.).
   if ((state.cantBeRegeneratedThisTurn ?? []).includes(object.id)) return false;
-  // E8/B1 (wyzwanie wyłapywacza błędów, CR 701.15b): każda tarcza regeneracji
+  // E8/B1 (wyzwanie wyłapywacza błędów, CR 701.19a): każda tarcza regeneracji
   // zastępuje JEDNO zniszczenie — dwie tarcze ratują dwukrotnie. Dotąd filter
   // zdejmował WSZYSTKIE instancje naraz i drugie zniszczenie w turze zabijało
   // mimo nietkniętej drugiej tarczy. Konsumujemy dokładnie jedną.
@@ -116,7 +116,7 @@ export function regeneratePermanent(state, object, collected = null) {
       ...(state.regenerationShields ?? []).slice(shieldIndex + 1),
     ];
   }
-  // Odcięcie od walki (CR 701.12a: „removed from combat").
+  // Odcięcie od walki (CR 701.19a: „removed from combat").
   if (state.combat) {
     state.combat.attackers = (state.combat.attackers ?? []).filter((id) => id !== object.id);
     // Znalezisko B7 (benchmark, seed 2030): klucz mapy bloków to ATAKUJĄCY —
@@ -141,7 +141,7 @@ export function regeneratePermanent(state, object, collected = null) {
   state.events.push(regenerationEvent);
   collected?.push(regenerationEvent);
   // M117 (lekcja L24, ta sama klasa co tapnięcie landa za manę z M114):
-  // regeneracja TAPUJE permanent (CR 701.15a), a tapnięcie jest zdarzeniem
+  // regeneracja TAPUJE permanent (CR 701.19a), a tapnięcie jest zdarzeniem
   // widocznym dla reguł — bez `object_tapped` żaden trigger „becomes tapped”
   // (Chronic Flooding) by go nie zobaczył, a gracz nie przeczytałby w logu,
   // dlaczego jego stwór stoi tapnięty. Zdarzenie tylko przy REALNEJ zmianie:

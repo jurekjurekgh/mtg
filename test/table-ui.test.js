@@ -1451,7 +1451,7 @@ test('Diament/D: komunikat odrzucenia przy limicie ręki jest gramatyczny', asyn
 // ---------------------------------------------------------------------------
 // M100/E10 (P12 — Żywy Tester h01): obj nameOfObject za twardo — WŁASNY morph
 // pokazywany jako „morph" w etykietach („Rzuć: Village Rites — poświęć morph"),
-// choć właściciel zna tożsamość własnej zakrytej karty (CR 708.6). Morf
+// choć właściciel zna tożsamość własnej zakrytej karty (CR 708.5). Morf
 // PRZECIWNIKA zostaje „morph" (CR 708.2).
 // ---------------------------------------------------------------------------
 

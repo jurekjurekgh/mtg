@@ -430,7 +430,7 @@ test('goad: sprowokowany stwór MUSI atakować do końca tury', () => {
     assert.ok(option.attackerIds.includes('g1'), 'każda legalna opcja zawiera goadowanego');
   }
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['g1', 'g2'] }).ok);
-  // CR 701.38c: goad trwa do początku NASTĘPNEJ tury gracza, który goadował —
+  // CR 701.15a: goad trwa do początku NASTĘPNEJ tury gracza, który goadował —
   // NIE znika w cleanup tej samej tury (poprzednio błędnie zdejmowany „do
   // końca tury", przez co zaczarowany stwór nie musiał atakować w turze
   // przeciwnika).

@@ -12736,3 +12736,36 @@ Mutacje M25–M30 (każda = stan przed naprawą, czerwieni swój pin). Lekcja
 podaje 6445 — pomiar z tymczasową talią audytową, która dokłada jeden test
 per talia; po jej usunięciu zmierzone 6444.)
 Handoff: `docs/setup/HANDOFF_2026-09-24.md`.
+
+## M425 — weryfikacja cytatów CR u źródła + explore z pustą biblioteką (sesja 2026-09-24, PR #135)
+
+Na polecenie właściciela („a ty nie możesz sprawdzić sam?”) cała klasa cytatów
+CR zweryfikowana wobec oficjalnego tekstu „These rules are effective as of
+September 25, 2026” (`MagicCompRules 20260925.txt`), bez człowieka w pętli.
+Sekcja „701. Keyword Actions” jest numerowana historycznie — detektor
+tabelaryczny (`test/cr-numery-701-tabela-straznik.test.js`, tabela 701.2–701.71
++ okno ±4 linii) wskazał **553 rozjazdy „numer ↔ akcja”** z ≥3 epok numeracji
+(regeneracja jako 701.12/701.15, szukanie jako 701.19, goad jako 701.38,
+surveil jako 701.41/701.44…). Wszystkie poprawione: 366 linii mapowaniem
+mechanicznym, 21 ręcznie, 3 notki historyczne („dawniej…”) zostawione i
+objaśnione w `WYJATKI_701` — bez rewrightów. Poza 701: `708.2d`/`122.12`/
+`701.30e` nie istnieją (→ 708.5/701.58b, 121.1, 701.43-exert), liczniki wejścia
+to `122.6` nie `121.6`, finality/stun to `122.1h`/`122.1d` nie `122.1b`,
+deklaracja bloków to `509.1a`, „kto patrzy na wierzch biblioteki” to
+`701.20e + 401.2`. Pełne mapowanie i werdykty ~30 numerów odroczonych:
+`docs/audits/AUDYT_PR134_2026-09-24.md` §7.
+
+Przy weryfikacji znaleziony i naprawiony **błąd reguł**: explore z pustą
+biblioteką nie dawało +1/+1 — CR 701.44a „Otherwise…” kładzie licznik na
+stworze eksplorującym nawet bez odsłoniętej karty (701.44b: eksploracja
+odbywa się nawet przy niemożliwych krokach). Pin
+`test/audyt-pr134-explore-pusta-biblioteka.test.js` (mutacja: bez addCounter —
+czerwony), komunikat sesji, warning renderu (dobranie z pustej przegrywa grę,
+CR 704.5b/121.4) i lista jałowych bota zsynchronizowane.
+
+Nowi strażnicy: `test/cr-numery-701-tabela-straznik.test.js` (dowód RED bez
+mutacji repo) + 4 piny w `test/cr-numery-mechanik-straznik.test.js`
+(finality/stun vs 122.1b, nieistniejące 708.2d i 122.12). Bramy:
+`npm test` **6455/6455**, `npm run test:all` **6465/6465** (~409 s),
+build **60 modułów / 4199,5 kB**.
+Handoff: `docs/setup/HANDOFF_2026-09-24.md`.

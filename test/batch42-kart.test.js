@@ -256,7 +256,7 @@ test('C2: Final Parting — dwa OBOWIĄZKOWE wybory: ręka, potem grób', () => 
   assert.equal(state.pendingSearchChoice.mandatory, true, 'bez kryterium = obowiązkowe');
   const offers1 = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_search_choice');
   assert.ok(offers1.length > 0, 'są oferty wyboru');
-  assert.ok(!offers1.some((c) => c.found == null), 'BEZ oferty rezygnacji (CR 701.19c)');
+  assert.ok(!offers1.some((c) => c.found == null), 'BEZ oferty rezygnacji (CR 701.23d)');
   const declined = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: null });
   assert.equal(declined.ok, false, 'decline odrzucony (search_mandatory)');
   // Wybór 1: Gorger Wurm do ręki.
@@ -390,7 +390,7 @@ test('E2: detain — cel nie atakuje, nie blokuje, nie aktywuje zdolności; wyga
   // Aktywacja zdolności zatrzymanego stwora: brak oferty + odrzucenie.
   const offers = playerView(state, 'p2').legalCommands
     .filter((c) => c.type === 'activate_ability' && c.objectId === 'cobra');
-  assert.equal(offers.length, 0, 'zero ofert aktywacji (CR 701.29)');
+  assert.equal(offers.length, 0, 'zero ofert aktywacji (CR 701.35)');
   const rej = execute(state, { type: 'activate_ability', playerId: 'p2', objectId: 'cobra', abilityIndex: 0 });
   assert.equal(rej.ok, false, 'walidacja też odrzuca (L48)');
   // Blok zatrzymanym stworem nielegalny.
@@ -407,7 +407,7 @@ test('E2b: detain — zatrzymany stwór nie może być deklarowany jako atakują
   state.objects.set('foe', Object.freeze({ ...foe, detained: true, detainedUntilTurn: state.turn.number + 1 }));
   state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p2', priorityPlayerId: 'p2' };
   const atk = execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['foe'] });
-  assert.equal(atk.ok, false, 'zatrzymany stwór nie atakuje (CR 701.29)');
+  assert.equal(atk.ok, false, 'zatrzymany stwór nie atakuje (CR 701.35)');
 });
 
 test('E3: Merchant\'s Dockhand — tap X artefaktów, top X: jedna do ręki, reszta na spód', () => {

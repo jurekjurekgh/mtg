@@ -281,7 +281,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Tymczasowa zmiana podtypów (Unstable Frontier: land staje się wybranym
     // typem podstawowym do końca tury) — { subtypes: [...] } albo null.
     typeGrant: null,
-    // Goad (CR 701.38, loch Undercity — pokój Arena): stwór musi atakować
+    // Goad (CR 701.15, loch Undercity — pokój Arena): stwór musi atakować
     // w każdym combacie, jeśli tylko może; znacznik znika w cleanup (do końca
     // tury), razem z innymi grantami.
     goaded: false, goadedUntilTurn: null,

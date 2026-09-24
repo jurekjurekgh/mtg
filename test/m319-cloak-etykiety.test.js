@@ -87,7 +87,7 @@ test('M319/B: widok wlasciciela niesie cloakReady + copyNumber; przeciwnik — b
   const own = playerView(state, 'p1').zones.battlefield.find((o) => o.id === cloak.id);
   assert.equal(own.cloakReady, true, 'wlasciciel widzi flage cloak (M315)');
   assert.equal(own.copyNumber, 1, 'numer kopii w widoku (etykiety celow go czytaja)');
-  assert.ok(own.cardId, 'wlasciciel zna tozsamosc wlasnego zakrycia (CR 708.6)');
+  assert.ok(own.cardId, 'wlasciciel zna tozsamosc wlasnego zakrycia (CR 708.5)');
   const foe = playerView(state, 'p2').zones.battlefield.find((o) => o.id === cloak.id);
   assert.equal(foe.cardId ?? null, null, 'przeciwnik nie zna cardId (FoW, CR 708.2)');
   assert.equal(foe.cloakReady ?? null, null, 'cloak-vs-morph to informacja ukryta — bez flagi');

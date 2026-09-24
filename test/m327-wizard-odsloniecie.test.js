@@ -17,7 +17,7 @@ import { paymentDescriptorOf, shouldOpenManaWizard, WIZARD_PAYMENT_COMMAND_TYPES
  * być wizard\". `paymentDescriptorOf` znał rzuty, aktywacje i decyzje
  * płatnicze — a `turn_cloak_face_up` / `turn_manifest_face_up` są w silniku
  * JEDYNYMI nie-rzutowymi `spendMana` z pipami koloru (CR 701.58b: obrot
- * cloaka płaci koszt many KARTY; 701.55c: manifest tak samo). Zmierzone przed
+ * cloaka płaci koszt many KARTY; 701.40b: manifest tak samo). Zmierzone przed
  * naprawą: deskryptor dla obu typów to `null` → kreator się nie otwierał i o
  * tym, które źródła tapują, decydowała kolejność w `spendMana`.
  *

@@ -1,7 +1,7 @@
 // Audyt PR #93 (2026-09-03), znalezisko C — trzecie wyłączenie „prostego
 // zakresu”: karta z KOSZTEM DODATKOWYM (CR 601.2h / 118.9) wygnana w oknie
 // zdolności albo trafiona przez Discover nie miała żadnej oferty rzutu, choć
-// Oracle mówi „You may cast it” / CR 701.53 pozwala rzucić bez kosztu many
+// Oracle mówi „You may cast it” / CR 701.57 pozwala rzucić bez kosztu many
 // (koszty dodatkowe nadal się płaci — CR 118.9d).
 //
 // Ta sama klasa co znaleziska A i B, kolejna ścieżka płatności. Zakres:
@@ -194,7 +194,7 @@ test('A93/C: Discover — darmowy rzut płaci koszt dodatkowy (poświęcenie), n
   const state = discoverState(SAC_SPELL);
   const offers = discoverFrees(state);
   assert.ok(offers.some((c) => c.sacrificeTargetId === 'mine'),
-    'CR 701.53 + 118.9d: rzut bez kosztu many nadal wymaga kosztu dodatkowego');
+    'CR 701.57 + 118.9d: rzut bez kosztu many nadal wymaga kosztu dodatkowego');
   const handBefore = state.zones.hand.length;
   const manaBefore = state.players.find((p) => p.id === 'p1').mana;
   const r = execute(state, offers.find((c) => c.sacrificeTargetId === 'mine'));

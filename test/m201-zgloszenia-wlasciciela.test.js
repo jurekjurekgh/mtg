@@ -109,7 +109,7 @@ test('M201/F: auto-pass sesji NIE przewija okna z reanimacją w turze bota', () 
 
 // ---------------------------------------------------------------------------
 // M/M2 — Frightful Delusion („Counter target spell unless its controller pays
-// {1}. That player discards a card.”). Cel = SPELL (CR 701.5a); zdolność
+// {1}. That player discards a card.”). Cel = SPELL (CR 701.6a); zdolność
 // aktywowana czarem nie jest i celem być nie może.
 // ---------------------------------------------------------------------------
 

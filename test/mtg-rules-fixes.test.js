@@ -191,7 +191,7 @@ test('T1: Dawntreader Elk — koszt zdolności to {G} (1 mana), nie 2', () => {
 
 // =============================================================================
 // TEMAT 2 — finality counter: „would die → exile" dla KAŻDEJ przyczyny śmierci
-// (CR 122.1b). Wcześniej tylko zgony SBA (obrażenia) — zniszczenie, poświęcenie
+// (CR 122.1h). Wcześniej tylko zgony SBA (obrażenia) — zniszczenie, poświęcenie
 // i prawo legend wysyłały stwora do grobu.
 // =============================================================================
 
@@ -286,7 +286,7 @@ assert.ok(rCast.ok, rCast.events[0]?.reason);
 
 // =============================================================================
 // TEMAT 4 — wybór kart przez gracza: odrzucanie (koszt i efekt) oraz „karta
-// z ręki na wierzch biblioteki" (CR 701.18 — „of their choice"). Wcześniej
+// z ręki na wierzch biblioteki" (CR 701.9b — „of their choice"). Wcześniej
 // engine wybierał deterministycznie (najdroższa/najtańsza) — bez decyzji gracza.
 // =============================================================================
 
@@ -463,7 +463,7 @@ test('T5: Zwykłe landy dalej produkują swoje kolory (Plains → W)', () => {
 
 // =============================================================================
 // TEMAT 6 — „You may search your library for ...": gracz wybiera KARTĘ albo
-// rezygnuje (fail to find, CR 701.19b). Wcześniej engine brał pierwszą kartę.
+// rezygnuje (fail to find, CR 701.23b). Wcześniej engine brał pierwszą kartę.
 // =============================================================================
 
 test('T6: Kor Cartographer — gracz wybiera, KTÓRĄ kartę Plains wziąć (dwie RÓŻNE w bibliotece)', () => {

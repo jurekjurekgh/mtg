@@ -63,19 +63,42 @@ const labelOf = (cmd, view) => commandLabel(cmd, SESSION, view).replace(/<[^>]*>
 
 // --- #1: pusta biblioteka -------------------------------------------------
 
-test('M126/#1: explore przy PUSTEJ bibliotece ostrzega gracza', () => {
-  const { view, sourceId } = board({ source: 'guidestone-compass' });
-  const cmd = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === sourceId);
+test('M126/#1: scry przy PUSTEJ bibliotece ostrzega gracza', () => {
+  const { view, sourceId } = board({ source: 'seers-lantern' });
+  const cmd = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === sourceId
+    && c.abilityIndex === 1);
   assert.ok(cmd, 'zdolność jest oferowana (zagranie pozostaje legalne)');
-  assert.match(labelOf(cmd, view), /biblioteka jest pusta/,
+  assert.match(labelOf(cmd, view), /biblioteka jest pusta, zdolność nie zadziała/,
     'gracz musi wiedzieć, że zapłaci koszt bez skutku');
 });
 
 test('M126/#1 (anty-over-fix): przy pełnej bibliotece BRAK ostrzeżenia', () => {
-  const { view, sourceId } = board({ source: 'guidestone-compass', ownLibrary: ['basic-island'] });
-  const cmd = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === sourceId);
+  const { view, sourceId } = board({ source: 'seers-lantern', ownLibrary: ['basic-island'] });
+  const cmd = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === sourceId
+    && c.abilityIndex === 1);
   assert.doesNotMatch(labelOf(cmd, view), /biblioteka jest pusta/,
     'normalne zagranie nie może straszyć ostrzeżeniem');
+});
+
+// Audyt PR #134 §7: explore przy pustej bibliotece MA skutek — nic nie jest
+// odsłonięte, więc stwór dostaje +1/+1 (CR 701.44a, gałąź „Otherwise”).
+// Wcześniejsze „zdolność nie zadziała” wprowadzało gracza w błąd.
+test('M126/#1 (CR 701.44a): explore przy pustej bibliotece NIE jest „bez skutku”', () => {
+  const { view, sourceId } = board({ source: 'guidestone-compass' });
+  const cmd = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === sourceId);
+  assert.ok(cmd, 'zdolność jest oferowana');
+  assert.doesNotMatch(labelOf(cmd, view), /biblioteka jest pusta/,
+    'explore bez karty daje +1/+1 — ostrzeżenie o braku skutku byłoby fałszem');
+});
+
+// Dobranie z pustej biblioteki nie jest „bez skutku” — przegrywa grę
+// (CR 704.5b), więc ostrzeżenie mówi o tym wprost.
+test('M126/#1 (CR 704.5b): dobranie z pustej biblioteki ostrzega o przegranej', () => {
+  const { view, sourceId } = board({ source: 'deepwood-denizen' });
+  const cmd = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === sourceId);
+  assert.ok(cmd, 'zdolność dobierania jest oferowana');
+  assert.match(labelOf(cmd, view), /dobranie z niej przegrywa grę/);
+  assert.doesNotMatch(labelOf(cmd, view), /zdolność nie zadziała/);
 });
 
 // --- #2: brak pasującej karty w ręce --------------------------------------
@@ -97,8 +120,10 @@ test('M126/#2 (anty-over-fix): z wielokolorowym stworem BRAK ostrzeżenia', () =
 
 // --- #10: bot nie marnuje many na jałowe zdolności ------------------------
 
-test('M126/#10: bot NIE aktywuje explore przy pustej bibliotece', () => {
-  const { view, sourceId } = board({ source: 'guidestone-compass' });
+test('M126/#10: bot NIE aktywuje scry przy pustej bibliotece', () => {
+  // Audyt PR #134 §7: dawniej explore (Guidestone Compass) — ale explore przy
+  // pustej bibliotece daje +1/+1 (CR 701.44a), więc nie jest jałowe.
+  const { view, sourceId } = board({ source: 'seers-lantern', mana: 2 });
   const chosen = createHeuristicBot({ seed: 1 }).chooseCommand(view);
   const wastes = chosen.type === 'activate_ability' && chosen.objectId === sourceId;
   assert.equal(wastes, false, `bot zmarnował koszt: ${JSON.stringify(chosen)}`);

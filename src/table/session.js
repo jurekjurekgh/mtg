@@ -60,7 +60,7 @@ export function faceDownSuffix(label = FACE_DOWN_LABEL) {
 }
 
 /**
- * Nazwa zakrytego permanentu/czaru wg CR 708.2 i 708.6.
+ * Nazwa zakrytego permanentu/czaru wg CR 708.2 i 708.5.
  *
  * - cudzy face-down: bezimienny (Fog of War) — sama etykieta mechaniki;
  * - własny face-down: kontroler zna swoją kartę, więc nazwa + znacznik, żeby
@@ -1112,7 +1112,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // I (zgłoszenie właściciela 2026-09-20): brak trafienia w discover było
       // w logu CICHE (null) — gracz widział tylko odsłaniane karty i nie
       // wiedział, że biblioteka się wyczerpała ani że karty wróciły na spód
-      // w losowej kolejności (CR 701.53). Teraz oba przypadki mają pełny wpis.
+      // w losowej kolejności (CR 701.57). Teraz oba przypadki mają pełny wpis.
       case 'discover_resolved': {
         const naSpod = e.bottomCount > 0
           ? `odsłonięte karty (${e.bottomCount}) na spód biblioteki w losowej kolejności`
@@ -1129,7 +1129,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'explore_resolved': {
         if (e.isLand) return `Explore: ${nameOf(e.foundCardId)} trafia do ręki`;
         if (e.putInGraveyard) return `Explore: ${nameOf(e.foundCardId)} trafia do grobu (+1/+1 na stworze)`;
-        if (e.found === false) return 'Explore: wierzch biblioteki nie jest lądem — +1/+1 na stworze';
+        if (e.found === false) return 'Explore: biblioteka pusta — nic nie odsłonięto, +1/+1 na stworze (CR 701.44a)';
         return `Explore: ${nameOf(e.foundCardId)} zostaje na wierzchu (+1/+1 na stworze)`;
       }
       case 'craft_exile_required': return `${whoN(e.playerId)} wybiera karty do craftu (${nameOfObject(e.sourceId)})`;
@@ -1149,7 +1149,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'mana_produced': return `${whoN(e.playerId)} przygotowuje manę (${nameOfObject(e.source)})`;
       case 'permanent_cast': {
         // M100 (BUG A): face-down rzut PRZECIWNIKA jest bezimienny (CR 708.2)
-        // — własny morph znamy (rzucający widzi swoją kartę, CR 708.6).
+        // — własny morph znamy (rzucający widzi swoją kartę, CR 708.5).
         if (e.faceDown) {
           // M127: etykieta z jednego źródła (FACE_DOWN_LABEL) — pisownia
           // mechaniki jest wspólna dla logu, kafli i wizardów.
@@ -1210,7 +1210,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'spell_resolved': {
         // M102/U6 (CR 708.2): zakryty permanent PRZECIWNIKA zostaje bezimienny
         // — inaczej log zdradzał kartę tuż pod zamaskowanym „morph wchodzi na
-        // pole bitwy". Własny morph nazywamy (kontroler zna kartę — CR 708.6),
+        // pole bitwy". Własny morph nazywamy (kontroler zna kartę — CR 708.5),
         // dokładnie jak w gałęzi `permanent_cast`.
         if (e.faceDown) {
           const own = seesHiddenOf(e.controllerId);
@@ -1636,7 +1636,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${whoN(e.playerId)} wybiera: ${objectOrLki(e.targetId, e.cardId)} na wierzch czy spód biblioteki`;
       case 'library_placement_resolved':
         return `${objectOrLki(e.targetId, e.cardId)} trafia na ${e.placement === 'top' ? 'WIERZCH' : 'SPÓD'} biblioteki właściciela`;
-      // M177/E (Azorius Justiciar): detain (CR 701.29).
+      // M177/E (Azorius Justiciar): detain (CR 701.35).
       case 'object_detained':
         return `${objectOrLki(e.objectId, e.cardId)} zatrzymany (detain): do następnej tury ${whoN(e.byPlayerId)} nie atakuje, nie blokuje i nie aktywuje zdolności`;
       case 'exile_if_dies_marked':
@@ -2130,7 +2130,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${whoN(e.playerId)}: ochrona przed ${quality} do końca tury${source} — ${ile}`;
       }
       // M109 (Nightsnare): odsłonięcie ręki celu — log nazywa karty, bo są
-      // jawne dla obu graczy (CR 701.16a).
+      // jawne dla obu graczy (CR 701.20a).
       case 'hand_revealed': {
         const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
         const cards = (e.cardNames ?? []).filter(Boolean).map((cid) => nameOf(cid)).join(', ');
@@ -2993,7 +2993,7 @@ export function createSession(config) {
     // ostatni z sekwencji (zgłoszenie: mój czar zniknął, pokazał się cudzy).
     // M257 r3 (uwaga A): `faceDown` (CR 708.2 — twarzą w dół = 2/2;
     // tożsamość ukryta przed PRZECIWNIKIEM, rzucający zna swoją kartę,
-    // CR 708.6) — UI decyduje widokowo (main.js: ukryte zagranie bota jest
+    // CR 708.5) — UI decyduje widokowo (main.js: ukryte zagranie bota jest
     // z warstwy ilustracji wykluczane, własny morph gracza warstwę otwiera).
     if (onCast({ cardId, playerId: e.playerId ?? null, eventType: e.type,
       faceDown: Boolean(e.faceDown ?? e.object?.faceDown) }) === true) {
@@ -3127,7 +3127,7 @@ export function createSession(config) {
   // żeby dodawać nagłówek „Faza: …" tylko przy ZMIANIE fazy (nie co krok).
   let lastBotPhaseKey = null;
   // M157/D (uwaga właściciela, Lodestone Needle): obiekty, które zdjęły
-  // licznik stun (blokada untap, CR 122.1b). Ich KOLEJNY untap jest istotny —
+  // licznik stun (blokada untap, CR 122.1d). Ich KOLEJNY untap jest istotny —
   // bez pauzy kreatura „nigdy nie odkręcała się wizualnie" (engine ją
   // odkręcał w upkeepie i legalnie atakowała, ale między upkeepem bota
   // a jego atakiem nie było żadnego renderu stołu).

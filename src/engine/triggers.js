@@ -720,7 +720,7 @@ function abilitiesOnDeath(object) {
  * Jedno miejsce wyliczające przekroczone progi (L41: kopie się rozjeżdżają).
  * Zgłoszenie właściciela B2 (2026-09-10): poświęcenie Sagi jest AKCJĄ
  * STANOWĄ (CR 714.4), więc od tej pory liczy się KAŻDA droga dołożenia
- * licznika lore — proliferate (CR 701.27) też. Wcześniej rozdziały
+ * licznika lore — proliferate (CR 701.34) też. Wcześniej rozdziały
  * kolejkowały tylko wejście i akcja turowa, więc Saga dobita proliferatem do
  * ostatniego progu była poświęcana bez rozstrzygnięcia rozdziału.
  */
@@ -1075,7 +1075,7 @@ function resolveDelayedTrigger(state, payload, events) {
     const moved = moveObjectDirectly(state, pending.objectId, 'battlefield', newId);
     const permanent = Object.freeze({ ...moved, controllerId: pending.playerId, summoningSickness: true });
     state.objects.set(newId, permanent);
-    // M274 (#24, CR 121.6): opóźniony powrót na pole bitwy to też WEJŚCIE —
+    // M274 (#24, CR 122.6): opóźniony powrót na pole bitwy to też WEJŚCIE —
     // liczniki wejścia obowiązują jak przy każdej innej ścieżce ETB.
     applyEnterCounters(state, newId);
     const movedEvent = event('object_moved', {
@@ -1611,7 +1611,7 @@ export function resolveTriggerEntry(state, entry) {
   // bez rzutów commandera — 0 tokenów), ma to powiedzieć wprost. Dotąd gracz
   // widział „trigger się rozstrzyga" i nie wiedział, czy coś przegapił.
   // M106/Z2 wnioskowało „brak efektu" z BRAKU ZDARZEŃ. To za mocny wniosek:
-  // legalny no-op (CR 701.20b — tap już tapniętego, untap odkręconego) też
+  // legalny no-op (CR 701.26 — tap już tapniętego, untap odkręconego) też
   // nie produkuje zdarzeń, a trigger wykonał się w całości. M189/Z2 (Żywy
   // Tester, transkrypt audyt-m187/g10): bot rzucił Glaring Aegis w stwora
   // stapowanego wcześniej zdolnością many, a log ogłosił „nic się nie
@@ -1643,7 +1643,7 @@ export function resolveTriggerEntry(state, entry) {
 
 /**
  * Czy efekty triggera nie zmieniły stanu dlatego, że stan JUŻ był docelowy
- * (CR 701.20b: tap tapniętego / untap odkręconego to legalne, wykonane
+ * (CR 701.26: tap tapniętego / untap odkręconego to legalne, wykonane
  * działanie bez zmiany)? Rozróżnia „zdolność wykonała się, tylko nie było
  * co zmieniać" od „zdolność nie zrobiła nic" (Undead Servant przy pustym
  * grobie). Deskryptorowo — po typie efektu, nie po nazwie karty (ADR 0002).
@@ -1653,7 +1653,7 @@ const STATE_IDEMPOTENT_EFFECTS = Object.freeze({
   untap_permanent: (object) => object?.tapped === false,
   // Silken Strength (M256/J, runda 3 Żywym Testerem): „when this Aura enters,
   // untap enchanted permanent" — odkręcenie już odkręconego gospodarza to
-  // legalny no-op (CR 701.20b), nie porażka triggera (klasa M189/Z2).
+  // legalny no-op (CR 701.26), nie porażka triggera (klasa M189/Z2).
   untap_enchanted_permanent: (object) => object?.tapped === false,
 });
 
@@ -1670,7 +1670,7 @@ const STATE_IDEMPOTENT_TARGET = Object.freeze({
 
 /**
  * Efekty ZBIOROWE, które legalnie nie zmieniają niczego, gdy stan jest już
- * docelowy (CR 701.20b). Osobna tabela, bo predykat dostaje CAŁY zbiór, nie
+ * docelowy (CR 701.26). Osobna tabela, bo predykat dostaje CAŁY zbiór, nie
  * jeden obiekt: Village Bell-Ringer („untap all creatures you control")
  * odkręca zbiór, w którym sam jest — więc „pusty zbiór odbiorców" nie zdarza
  * się nigdy, a „wszystkie już odkręcone" jest wykonaniem zdolności, nie jej
@@ -2544,7 +2544,7 @@ function processTriggersScan(state, recentEvents) {
       }
     };
     if (ev.type === 'creature_destroyed') {
-      // Finality (exile) NIE uruchamia triggera „dies" (CR 122.1b — obiekt
+      // Finality (exile) NIE uruchamia triggera „dies" (CR 122.1h — obiekt
       // nie umiera, jest wygnany).
       if (ev.toZone === 'exile') return;
       // M160/A: współzgony tej samej partii SBA (simultaneousIds) — LKI
@@ -3355,7 +3355,7 @@ function processTriggersScan(state, recentEvents) {
     // robi się przy dobraniach wsadowych: „draw two" na starcie tury to
     // JEDEN wyzwalacz (ordery 1 i 2), a przy 1 + 2 odpala drugi dobór, choć
     // licznik kończy na 3 (audyt PR #92, znalezisko 3). Mulligan ma jawne
-    // null — karty wzięte po mulliganie nie są dobraniami (CR 701.3b).
+    // null — karty wzięte po mulliganie nie są dobraniami (CR 103.5).
     // card_drawn to jedyne zdarzenie dobrania (draw step, efekty, cycling).
     if (ev.type === 'card_drawn' && ev.playerId != null && ev.drawNumberThisTurn === 2) {
       for (const source of state.objects.values()) {
@@ -3730,7 +3730,7 @@ function processTriggersScan(state, recentEvents) {
         }, card, [], events, { reboundObjectId: id });
       }
     }
-    // CR 714.2b: licznik lore dołożony DOWOLNĄ drogą (proliferate — CR 701.27,
+    // CR 714.2b: licznik lore dołożony DOWOLNĄ drogą (proliferate — CR 701.34,
     // efekt „put a lore counter") triggeruje przekroczone rozdziały. Zdarzenie
     // `counter_added` jest tu widoczne, bo pochodzi z ciała komendy
     // (`state.events.slice(before)` w execute); liczniki z wejścia i z akcji

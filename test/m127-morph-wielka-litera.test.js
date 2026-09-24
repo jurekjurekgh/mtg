@@ -56,7 +56,7 @@ test('M127: FACE_DOWN_LABEL to „Morph" — nazwa mechaniki wielką literą', (
     'etykieta zakrytej karty zaczyna się wielką literą (uwaga A właściciela)');
 });
 
-test('M127: faceDownName — cudzy bezimienny (CR 708.2), własny z nazwą i znacznikiem (CR 708.6)', () => {
+test('M127: faceDownName — cudzy bezimienny (CR 708.2), własny z nazwą i znacznikiem (CR 708.5)', () => {
   assert.equal(faceDownName(null), 'Morph', 'cudzy face-down zostaje bezimienny (FoW)');
   assert.equal(faceDownName('Segmented Krotiq'), 'Segmented Krotiq (Morph)',
     'własny face-down: nazwa + znacznik, żeby nie wyglądał jak pełny stwór (M100/E12)');

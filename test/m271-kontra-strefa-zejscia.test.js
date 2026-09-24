@@ -8,7 +8,7 @@ import { applyEffect, counterStackObject } from '../src/engine/effects.js';
 import { spellExitZone } from '../src/engine/zones.js';
 
 /**
- * M271 (błąd #15, CR 701.5a + 118.9) — skontrowany czar idzie do grobu
+ * M271 (błąd #15, CR 701.6a + 118.9) — skontrowany czar idzie do grobu
  * WŁAŚCICIELA, ale zastąpienie Halo Foragera („if it would be put into a
  * graveyard, exile it instead") obowiązuje także przy kontrze. PIĘĆ kopii
  * kodu kontrującego szło na sztywno do grobu, więc czar rzucony z grobu

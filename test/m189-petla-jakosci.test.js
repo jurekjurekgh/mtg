@@ -1,6 +1,6 @@
 // M189 — pętla jakości Żywym Testerem (dokończenie po M187).
 // Z2: „trigger bez efektu (nic się nie wydarzyło (zerowy wynik))" pokazywany
-// dla LEGALNEGO no-opa (tap już tapniętego celu — CR 701.20b). Komunikat
+// dla LEGALNEGO no-opa (tap już tapniętego celu — CR 701.26). Komunikat
 // sugerował graczowi zgubioną zdolność albo błąd silnika.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

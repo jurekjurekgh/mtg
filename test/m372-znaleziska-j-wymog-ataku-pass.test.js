@@ -14,7 +14,7 @@ import { declareAttackers, legalAttackerOptions } from '../src/engine/combat.js'
  * deklaracji. Deklaracja atakujących jest akcją turową (CR 508.1a), więc
  * stwór wymuszony musi zostać zadeklarowany także wtedy, gdy gracz spasuje:
  * `pass_priority` auto-deklaruje MINIMALNY zestaw (same stwory wymuszone —
- * goad CR 701.38 albo deskryptor `mustAttack`).
+ * goad CR 701.15 albo deskryptor `mustAttack`).
  */
 
 const REGISTRY = createCardRegistry();
@@ -71,7 +71,7 @@ test('J1: runda passów nie pomija wymogu ataku — Ramroller atakuje automatycz
   assert.deepEqual(declared[0].attackerIds, ['ram']);
 });
 
-test('J2: goad (CR 701.38) działa tak samo jak „attacks each combat if able"', () => {
+test('J2: goad (CR 701.15) działa tak samo jak „attacks each combat if able"', () => {
   const state = krokAtakow();
   pole(state, 'ogar', 'highland-game', { goaded: true });
   spasujRunde(state);

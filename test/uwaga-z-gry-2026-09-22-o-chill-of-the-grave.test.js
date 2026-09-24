@@ -14,7 +14,7 @@
 //   2. składowa „tap” na celu już tapniętym zwracała −12 („nic nie zmienia”)
 //      i ta kara przeważała sumę, choć blokada odkręcania jest wtedy warta
 //      NAJWIĘCEJ — stwór nie odkręci się i wypada z następnej tury
-//      (CR 302.6, 701.20a);
+//      (CR 302.6, 701.26);
 //   3. baza liczyła surowe `power` wydruku zamiast mocy EFEKTYWNEJ, więc
 //      „1/1 z aurą +2/+2” było dla bota jedynką, a nie trójką.
 //

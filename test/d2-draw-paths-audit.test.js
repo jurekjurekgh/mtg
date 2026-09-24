@@ -8,8 +8,8 @@
 //     → własne pętle, ale TEN SAM znacznik.
 // A Selhoff Occultist (pamięć właściciela) NIE dobiera — MIELI („target
 // player mills a card"), a mill z pustej biblioteki to legalny no-op
-// (CR 701.13b) — stąd brak game over. Tak samo: szukanie do ręki, explore,
-// satyr/pick do ręki, bounce, mulligan (CR 701.3b) — „połóż do ręki" to NIE
+// (CR 701.17b) — stąd brak game over. Tak samo: szukanie do ręki, explore,
+// satyr/pick do ręki, bounce, mulligan (CR 103.5) — „połóż do ręki" to NIE
 // jest dobranie (CR 121.1: dobrać = wziąć WIERZCHNIĄ kartę jako ZDARZENIE
 // dobrania).
 // Testy biorą efekty WPROST Z REJESTRU kart (nie ręcznie składane kopie).
@@ -76,6 +76,6 @@ test('D2-audyt: Selhoff Occultist (MILL) z pustej biblioteki = GRA TOCZY SIĘ DA
   const fx = REGISTRY.get('selhoff-occultist').abilities[0].effect;
   applyEffect(s, fx, { id: 'src', cardId: 'selhoff-occultist', controllerId: 'p1' }, ['p2']);
   runStateBasedActions(s);
-  assert.equal(s.status, 'active', 'mill z pustej to no-op (CR 701.13b), nie próba dobrania');
+  assert.equal(s.status, 'active', 'mill z pustej to no-op (CR 701.17b), nie próba dobrania');
   assert.equal(lostReason(s, 'p2'), null);
 });

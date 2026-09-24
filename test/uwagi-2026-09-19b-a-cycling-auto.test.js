@@ -15,9 +15,9 @@
 //
 // Kontrakt więc:
 //   1. 0 kandydatów („szukaj karty, której nie ma”) → zdolność rozstrzyga się
-//      SAMA (przeszukanie + tasowanie, CR 701.19b „fail to find”), bez decyzji;
+//      SAMA (przeszukanie + tasowanie, CR 701.24a „fail to find”), bez decyzji;
 //   2. ≥1 kandydatów → decyzja (modal) z wariantami: każdy kandydat ORAZ
-//      „nie znajduj karty” — odmowa jest legalna ZAWSZE (CR 701.19b), nie
+//      „nie znajduj karty” — odmowa jest legalna ZAWSZE (CR 701.23b), nie
 //      tylko przy braku kandydatów;
 //   3. decyzja nie kolapsuje się do panelu „Twoje działania” (odwrócenie M131
 //      dla szukania — patrz test/m131-modal-bez-wyboru.test.js).
@@ -91,13 +91,13 @@ test('A/1: typecycling BEZ kandydata w bibliotece rozstrzyga się SAM (fail to f
   assert.equal(state.pendingSearchChoice, null,
     'brak Plainsa w bibliotece = brak wyboru; zdolność domyka się sama');
   const searched = state.events.filter((e) => e.type === 'library_searched');
-  assert.equal(searched.length, 1, 'przeszukanie + tasowanie odbyło się (CR 701.19b)');
+  assert.equal(searched.length, 1, 'przeszukanie + tasowanie odbyło się (CR 701.24a)');
   assert.equal(searched[0].foundCardId, null, 'nic nie trafiło do ręki');
   assert.equal(searched[0].shuffled, true, 'biblioteka została potasowana');
   assert.equal(state.zones.stack.length, 0, 'stos pusty — zdolność rozstrzygnięta');
 });
 
-test('A/2: typecycling Z kandydatami otwiera decyzję z odmową (CR 701.19b)', () => {
+test('A/2: typecycling Z kandydatami otwiera decyzję z odmową (CR 701.23b)', () => {
   const { state, sourceId } = cyclingBoard({ library: ['basic-plains', 'basic-forest'] });
   activateCycling(state, sourceId);
   assert.ok(state.pendingSearchChoice, 'wybór karty ma być decyzją gracza');

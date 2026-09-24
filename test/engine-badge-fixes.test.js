@@ -130,7 +130,7 @@ test('B3: Stomping Slabs — reveal top 7, reorder na spód, 7 obrażeń po name
 
 // ------------------------------------------------- 4. Courage in Crisis proliferate
 
-test('B4: proliferate kolejkuje decyzję gracza (choose any number, CR 701.27)', () => {
+test('B4: proliferate kolejkuje decyzję gracza (choose any number, CR 701.34)', () => {
   const state = newState();
   giveMana(state, 'p1', 3, { G: 1 });
   addCardFromRegistry(state, 'courage', 'courage-in-crisis', 'p1', 'hand');
