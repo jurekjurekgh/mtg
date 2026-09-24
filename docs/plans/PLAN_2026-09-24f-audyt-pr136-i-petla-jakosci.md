@@ -33,8 +33,8 @@ nieodhaczone pozycje planów → pętla jakości (Żywy Tester + łowy CR).
 
 ## Etap A — PR na starcie (ADR 0020 A)
 
-- [ ] A1: ten plan jako OSOBNY commit wypchnięty na gałąź sesji.
-- [ ] A2: `gh pr create` (base `main`) — opis z szablonem: zakres audytu,
+- [x] A1: ten plan jako OSOBNY commit wypchnięty na gałąź sesji.
+- [x] A2: `gh pr create` (base `main`) — opis z szablonem: zakres audytu,
       bramy, znaleziska; uzupełniany kumulatywnie.
 
 ## Etap B — audyt PR #136 (ADR 0020 B / ADR 0016): 96 plików, 8 osi
@@ -45,31 +45,31 @@ pamięć treningowa nie jest źródłem), każde „przypięte testem" sprawdzon
 mutacją w kierunku PRZED naprawą (L13/L34/L159), każde „0 zgłoszeń" traktowane
 jako pomiar narzędzia (L27).
 
-- [ ] B0 — rozpoznanie stanu: czy PR #136 nie zostawił pozycji otwartych
+- [x] B0 — rozpoznanie stanu: czy PR #136 nie zostawił pozycji otwartych
       (plany 24b–24e odhaczone do końca; ryzyka 1–5 z handoffu 24e: co z nich
       jest długiem, a co świadomą granicą).
-- [ ] B1 — **warstwa adresowania CR z sesji 24b** (F-1: 16 martwych numerów /
+- [x] B1 — **warstwa adresowania CR z sesji 24b** (F-1: 16 martwych numerów /
       55 wystąpień w 30 plikach; F-2: 3 rozjazdy pary „mechanika ↔ numer";
       F-3: strażnik istnienia — `tools/cr-numery.mjs`,
       `test/helpers/cr-numery-tabela.js`, `test/cr-numery-istnienie-straznik.test.js`).
       Czy tabela 482 numerów odpowiada dosłownemu CR 2026-09-25 (L164: lustro
       bywa o wydanie do tyłu), czy strażnik mierzy REGUŁĘ, nie tekst źródła
       (L5), i czy dowody RED są prawdziwe (mutacja w kierunku PRZED naprawą).
-- [ ] B2 — **batch 59 (10 kart)** wobec snapshotów Scryfall w repo: dosłowny
+- [x] B2 — **batch 59 (10 kart)** wobec snapshotów Scryfall w repo: dosłowny
       Oracle text, koszt druku, typy/podtypy, P/T, słowa-klucze, koszty
       alternatywne (flashback {G} i {3}{G}{W}, cycling {2}, {4}{W}, {2}{R}),
       tokeny (Human 1/1, Mutagen), DFC `bird-admirer`/`wing-shredder`,
       `limitations`/`notes` (ADR 0022), proweniencja (ADR 0029: nowe wiersze
       `tools/collection-art-ids.csv`, strażnik `proweniencja-katalogu`),
       talie z generatora (ADR 0023/0024).
-- [ ] B3 — **silnik** (`spells.js` +255/−72, `effects.js`, `zones.js` +63,
+- [x] B3 — **silnik** (`spells.js` +255/−72, `effects.js`, `zones.js` +63,
       `tokens.js`, `permanents.js`, `triggers.js`, `game-state.js` −40/+19,
       `objects.js`, `identity.js`, `fingerprint.js`, `resources.js`,
       `mana-sources.js`, `abilities.js`, `combat.js`, `effect-intent.js`):
       generyczność (ADR 0002 — zero przypadków po nazwie/ID karty), zgodność
       z CR (ADR 0030), brak regresji, determinizm i nowe pola w odcisku
       (ADR 0005).
-- [ ] B4 — **M429 (taktyczna wycena, L169)**: trzy rodziny (`add_counter` na
+- [x] B4 — **M429 (taktyczna wycena, L169)**: trzy rodziny (`add_counter` na
       celu, `shuffle_graveyard_cards_into_library`, `buff_creatures_you_control`
       z AKTYWOWANEJ zdolności) — czy wymiar różnicowania jest czytany
       z `PlayerView` (ADR 0017, nie zgadywanie w bocie), czy stałe są pod
@@ -77,23 +77,23 @@ jako pomiar narzędzia (L27).
       czy kalibracja T0 trzyma (gospodarz 1/1 = dawna stała), czy golden-master
       `bot-scoring-snapshot` zielenieje BEZ regeneracji, i czy pin dowodzi, że
       „pokrętło nie jest atrapą" (L5 pkt 6, L169 §6).
-- [ ] B5 — **M428 (kwota alt-kosztu, L168)**: Join the Dance `flashback
+- [x] B5 — **M428 (kwota alt-kosztu, L168)**: Join the Dance `flashback
       {3}{G}{W}` i Boulder Salvo `surge {1}{R}` — czy `cost` = SUMA symboli
       w całej rodzinie alt-kosztów, czy skan Oracle↔definicja porównuje CAŁY
       napis (nie tylko pipy), czy etykieta ma jedno źródło składanki
       (`costSymbols`).
-- [ ] B6 — **warstwy prezentacji i protokołu** (`render.js` +81/−10,
+- [x] B6 — **warstwy prezentacji i protokołu** (`render.js` +81/−10,
       `session.js`, `protocol/types.js`): etykiety, FoW (ADR 0003/0017),
       kompletność informacji jawnych, brak globali Node w kodzie artefaktu
       (L58).
-- [ ] B7 — **testy** (`real-cards-batch59.test.js` 958 linii,
+- [x] B7 — **testy** (`real-cards-batch59.test.js` 958 linii,
       `audyt-m428-kwota-alt-kosztu.test.js` 214, `audyt-m429-…` 331,
       `cr-numery-istnienie-straznik.test.js`, zmiany w ~35 istniejących
       plikach testów): RED→GREEN przez mutację, anty-over-fix, brak pinów
       utrwalających błędną regułę (L13 §6), strażniki klasowe (L5/L39),
       a przy zmianach w istniejących testach — czy zmieniono OCZEKIWANIE
       dlatego, że reguła była błędna (i z cytatem CR), nie żeby zazielenić.
-- [ ] B8 — **werdykt** + znaleziska F-n w `docs/audits/AUDYT_PR136_2026-09-24f.md`
+- [x] B8 — **werdykt** + znaleziska F-n w `docs/audits/AUDYT_PR136_2026-09-24f.md`
       (pokrycie plików, matryca mutacji, cytaty CR z datą pobrania, jawny
       werdykt APPROVE / APPROVE z zastrzeżeniami / REQUEST CHANGES).
 
