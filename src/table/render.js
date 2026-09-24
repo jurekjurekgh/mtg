@@ -2104,7 +2104,9 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_exile_cast: 'Vaan — rzucić wygnaną kartę czy stworzyć Skarb?',
   resolve_suspend_cast: 'Suspend — rzucić zawieszony czar?',
   resolve_rebound_cast: 'Rebound — rzucić czar ponownie?',
-  resolve_epic_choice: 'Epic — który czar skopiować?',
+  // D3 (PR #135, Etap F): „skopiować” było mylące — efekt wygania wierzch
+  // biblioteki i RZUCA wygnane czary bez kosztu many (CR 118.9), nie kopiuje.
+  resolve_epic_choice: 'Wygnane czary — który rzucić bez kosztu many?',
   resolve_delirium_target: 'Delirium — cel obrażeń',
   resolve_mentor_target: 'Mentor — kto dostaje licznik?',
   resolve_graveyard_top_choice: 'Karta z grobu na wierzch biblioteki',

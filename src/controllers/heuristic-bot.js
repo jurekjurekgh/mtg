@@ -1074,9 +1074,25 @@ export function isNegativePump(effect) {
  * (świeci, gdy dojdzie nowy typ rzutu — trzeba świadomie zdecydować, czy
  * podlega, i ewentualnie wyłączyć go jawnym wyjątkiem z powodem).
  */
+/**
+ * D3 (PR #135): rodzina okien rzutu bez kosztu many (CR 118.9) — wspólny zbiór
+ * dla `reservedManaOf`/`reservedPipsOf` (L41: bliźniacze funkcje nie mogą się
+ * rozjeżdżać). Madness NIE należy — płaci koszt madness (koszt alternatywny).
+ */
+const FREE_CAST_WINDOW_TYPES = new Set([
+  'resolve_suspend_cast', 'resolve_rebound_cast', 'resolve_grave_free_cast',
+  'resolve_epic_choice', 'resolve_discover_choice', 'resolve_hand_free_cast',
+]);
+
 export const WARD_TAXED_TYPES = new Set([
   ...COMMAND_TYPES.filter((type) => type.startsWith('cast_') || type.endsWith('_cast')),
   'activate_ability', 'resolve_trigger_target',
+  // D3 (Żywy Tester, PR #135): okna Epic i Discover RZUCAJĄ czar (spell_cast →
+  // `fireWardTriggers`), choć nazwa komendy nie kończy się na `_cast` — filtr
+  // po nazwie je gubił. Zmierzone sondą: bot bez many rzucał z Discover
+  // „Destroy target creature” w stwora z ward {2} (czar kontrowany, karta
+  // stracona) zamiast wziąć ją do ręki.
+  'resolve_discover_choice', 'resolve_epic_choice',
 ]);
 
 /**
@@ -3278,6 +3294,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   /** M320/NA2: mana zarezerwowana na sam koszt czaru/zdolności (przed ward). */
+  /**
+   * D3 (Żywy Tester, PR #135 — Etap F/4 domknięty po stronie bota): okna rzutu
+   * „without paying its mana cost” (CR 118.9) — suspend, rebound, rzut z grobu
+   * (Halo Forager), Epic, Discover i darmowy rzut z ręki (Baral) — płacą
+   * WYŁĄCZNIE: {X} okna z grobu (X = MV, pole `xValue`), dopłatę {1} za każdy
+   * cel Fireballa ponad pierwszy (CR 601.2f) i alternatywę kosztu dodatkowego
+   * „albo zapłać {N}” (`payAltCost`). Dawniej Epic/Discover/Baral szły ścieżką
+   * ogólną (koszt karty + X), więc podatek ward i kara biblioteczna liczyły
+   * się od many, której nikt nie płaci. Discover „weź do ręki” nic nie płaci.
+   */
+  function freeCastPaidMana(view, cmd) {
+    if (cmd.type === 'resolve_discover_choice' && cmd.castFree !== true) return 0;
+    if (cmd.type === 'resolve_epic_choice' && cmd.done) return 0;
+    const obj = zoneCard(view, cmd.objectId) ?? zoneCard(view, cmd.cardId);
+    const def = cardDef(obj?.cardId ?? cmd.cardId);
+    const spell = obj?.spell ?? def?.spell;
+    let paid = cmd.type === 'resolve_grave_free_cast' ? (cmd.xValue ?? 0) : 0;
+    if (spell?.fireball) paid += Math.max(0, (cmd.targets ?? []).length - 1);
+    if (cmd.payAltCost === true) paid += spell?.additionalCost?.orPayMana ?? 0;
+    return paid;
+  }
+
   function reservedManaOf(view, cmd) {
     // M324: okna darmowego rzutu nie płacą kosztu karty (CR 702.62a suspend,
     // 702.88 rebound, M195 Epic z grobu) — z puli wychodzi wyłącznie to, co
@@ -3285,8 +3323,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // podatek ward liczony był od reszty pomniejszonej o koszt, którego nikt
     // nie płaci, i bot odmawiał darmowych rzutów (over-fix w drugą stronę).
     if (cmd.type === 'resolve_madness_cast') return cmd.cost ?? 0;
-    if (cmd.type === 'resolve_suspend_cast' || cmd.type === 'resolve_rebound_cast'
-      || cmd.type === 'resolve_grave_free_cast') return cmd.xValue ?? 0;
+    if (FREE_CAST_WINDOW_TYPES.has(cmd.type)) return freeCastPaidMana(view, cmd);
     // `resolve_exile_cast` (Vaana) NIE jest darmowe — idzie przez castSpell i
     // płaci pełny koszt, więc zostaje na ścieżce ogólnej (koszt karty).
     if (cmd.type === 'activate_ability') {
@@ -3313,8 +3350,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * `resolve_exile_cast` (Vaana) płaci pełny koszt, więc zostaje niżej.
    */
   function reservedPipsOf(view, cmd) {
-    if (cmd?.type === 'resolve_madness_cast' || cmd?.type === 'resolve_suspend_cast'
-      || cmd?.type === 'resolve_rebound_cast' || cmd?.type === 'resolve_grave_free_cast') return [];
+    if (cmd?.type === 'resolve_madness_cast' || FREE_CAST_WINDOW_TYPES.has(cmd?.type)) return [];
     if (cmd?.type === 'activate_ability') {
       const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
       const abilityObject = source ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
