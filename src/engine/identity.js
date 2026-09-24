@@ -123,6 +123,8 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // M158/Batch 39: tymczasowe nadpisanie podtypów + utrata keywordów (EOT).
     subtypesBeforeOverride: subtypesBeforeOverride ? Object.freeze([...subtypesBeforeOverride]) : null,
     lostKeywordsUntilEOT: Object.freeze([...(lostKeywordsUntilEOT ?? [])]),
+    // W-8 (D4b): „can attack this turn as though it didn't have defender”.
+    attacksAsThoughNoDefenderUntilEOT: false,
     // M158/Batch 39 (Revolutionist, CR 702.35): Madness — odrzucenie idzie do
     // exile (madnessReady) z jednorazową decyzją rzutu za koszt madness.
     madness: madness ? Object.freeze({ ...madness }) : null,
@@ -292,6 +294,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     hexproofUntilTurn: null, cantBeBlockedUntilTurn: null,
     // LKI (CR 603.10): wypełniane dopiero przy zmianie strefy (objects.js).
     formerCounters: Object.freeze({}), formerZone: null, formerAbilityGrants: Object.freeze([]),
+    formerKind: null, formerTypes: Object.freeze([]),
     // CR 111 / CR 111.7: JAWNY znacznik tokenu. Wcześniej token rozpoznawano
     // po `name != null`, ale to heurystyka — kartom też wolno nieść `name`,
     // więc reguła stanu „token poza polem bitwy przestaje istnieć" kasowałaby

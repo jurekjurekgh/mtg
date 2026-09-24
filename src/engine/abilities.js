@@ -424,6 +424,9 @@ function effectIsNoOpOnTarget(state, effect, target, source = null) {
     // M180/Z5 (Żywy Tester, precedens M103/M104: no-op CHOWAMY, nie
     // ostrzegamy): powtórna zmiana podtypu/utrata keywordów „do końca tury”
     // (Krotiq Nestguard drugi raz w tej samej turze) niczego nie zmienia.
+    // W-8: druga aktywacja „as though it didn't have defender” w tej turze.
+    case 'attack_as_though_no_defender_until_end_of_turn':
+      return Boolean(target && target.zone === 'battlefield' && target.attacksAsThoughNoDefenderUntilEOT);
     case 'becomes_subtype_until_end_of_turn': {
       if (!target || target.zone !== 'battlefield') return false;
       const losesCovered = (effect.losesKeywords ?? []).every((kw) => (target.lostKeywordsUntilEOT ?? []).includes(kw));

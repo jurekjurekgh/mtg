@@ -7533,8 +7533,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   // 3. Krotiq Nestguard (TDM) {2}{G} 4/4 Insect — defender; {2}{G}: może
-  //    atakować w tej turze jakby nie miał defendera (lostKeywordsUntilEOT —
-  //    warstwa z Wishful Merfolk; cleanup końca tury przywraca).
+  //    atakować w tej turze jakby nie miał defendera (W-8: efekt zmieniający
+  //    regułę ataku — defender ZOSTAJE; cleanup końca tury zdejmuje flagę).
   defineCard({
     id: 'krotiq-nestguard', name: 'Krotiq Nestguard', set: 'TDM',
     types: ['Creature'], subtypes: ['Insect'], colors: ['G'],
@@ -7545,15 +7545,15 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         cost: { mana: 3, colors: ['G'] },
-        // „attack as though it didn't have defender" = utrata defendera
-        // do końca tury (przenośnik generyczny becomes_subtype_until_end_of_
-        // turn bez nadpisywania podtypów — niesie wyłącznie losesKeywords).
-        effect: [{ type: 'becomes_subtype_until_end_of_turn', losesKeywords: ['defender'] }],
+        // W-8 (D4b): „as though it didn't have defender” NIE zdejmuje
+        // defendera (to nie efekt warstwy 6) — tylko uchyla ograniczenie
+        // ataku z 702.3b do końca tury.
+        effect: [{ type: 'attack_as_though_no_defender_until_end_of_turn' }],
       }),
     ],
     artId: 81, plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
-    notes: ['aktywacja odsuwa defendera do końca tury (cleanup przywraca) — atak legalny po aktywacji, w następnej turze znów nie'],
+    notes: ['W-8 (D4b): aktywacja NIE zdejmuje defendera — stwór go ma, ale do końca tury może atakować „as though it didn’t have defender” (cleanup zdejmuje flagę); w następnej turze znów nie atakuje'],
   }),
 
   // ---- Batch 40 — transza B: nowe słowa kluczowe proste ----

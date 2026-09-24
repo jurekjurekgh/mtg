@@ -1277,6 +1277,7 @@ function describeEffect(e, ctx = {}) {
     // M166/D (Inferno Titan).
     damage_divided: () => 'obrażenia dzielone między cele',
     becomes_subtype_until_end_of_turn: () => 'zmiana podtypu i utrata keyworda do końca tury',
+    attack_as_though_no_defender_until_end_of_turn: () => 'może atakować w tej turze mimo defendera',
     // M184/Z1 (Żywy Tester): „ten sam efekt na każdym z celów" nie mówił,
     // CO się stanie (Sea God's Scorn wyglądał na pustą kartę) — opisujemy
     // efekty WEWNĘTRZNE rekurencyjnie.
@@ -4126,6 +4127,9 @@ export function cardInfo(session, object, combat = null) {
     // F-A (Wishful Merfolk): nadpisanie podtypów DO KOŃCA TURY — widok niesie
     // subtypesBeforeOverride (active), żywe `subtypes` to już cel („Human").
     subtypesOverride: faceDown ? false : Boolean(object.subtypesBeforeOverride?.length),
+    // W-8 (Krotiq Nestguard): atak „as though it didn't have defender” do
+    // końca tury — defender zostaje na kaflu, badge mówi o uchyleniu reguły.
+    attacksAsThoughNoDefenderNow: faceDown ? false : Boolean(object.attacksAsThoughNoDefenderUntilEOT),
     cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
@@ -4517,6 +4521,7 @@ export function buildStateOverlay(visual, info) {
     if (info.subtypesOverride && (info.subtypes ?? []).length) {
       flags.push(['kw', `typ: ${info.subtypes.join(' ')} do końca tury`]);
     }
+    if (info.attacksAsThoughNoDefenderNow) flags.push(['kw', 'może atakować mimo obrońcy (do końca tury)']);
     if (info.cantBlockNow) flags.push(['kw', 'nie może blokować']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona jako

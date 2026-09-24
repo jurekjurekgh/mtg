@@ -957,8 +957,16 @@ export function effectiveSubtypes(object) {
  *  Warrior in addition to its other types"). Wymaga stanu (read-time). */
 export function attachmentSubtypes(state, object) {
   if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return [];
+  // W-7 (D4b, warstwa 4 — CR 613.1d w kolejności znaczników 613.7). CR 205.1a:
+  // „when an effect sets one or more of an object's subtypes, the new
+  // subtype(s) replaces any existing subtypes from the appropriate set”. Efekt
+  // nadpisujący typy stworów (Wishful Merfolk „becomes a Human”) zastępuje
+  // także typy dodane WCZEŚNIEJ przez załącznik (Warrior's Sword); załącznik
+  // przypięty PÓŹNIEJ (613.7e) dodaje swój typ na wierzch nadpisania.
+  const overrideTs = object.subtypeOverrideTs ?? null;
   const out = [];
   for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    if (overrideTs != null && attachmentTimestampOf(attachment) < overrideTs) continue;
     const grant = attachmentGrant(attachment);
     out.push(...(grant.subtypes ?? []));
   }
@@ -1406,6 +1414,11 @@ export function clearStatModifiers(state) {
           : {}),
         lostKeywordsUntilEOT: Object.freeze([]), lostKeywordTs: null,
       });
+    }
+    // W-8 (Krotiq Nestguard): „can attack THIS TURN as though it didn't have
+    // defender” — flaga reguły ataku wygasa w cleanup.
+    if (object.attacksAsThoughNoDefenderUntilEOT) {
+      replaceObject(state, state.objects.get(object.id), { attacksAsThoughNoDefenderUntilEOT: false });
     }
     if (object.originalBeforeAnimation) {
       // M157/C (uwaga właściciela, Skilled Animator): animacja LINKED („for as

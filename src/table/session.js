@@ -364,6 +364,7 @@ function defaultBotFactory(seed, ctx) {
     animate_permanent_until_end_of_turn: 'animacja permanentu do końca tury',
     attach_equipment_to_source: 'przypięcie sprzętu do źródła',
     become_basic_land_type: 'zmiana na wybrany podstawowy typ lądu',
+    attack_as_though_no_defender_until_end_of_turn: 'atak mimo defendera do końca tury',
     becomes_subtype_until_end_of_turn: 'zmiana podtypu do końca tury',
     buff_attacking_creatures: 'premia dla atakujących stworów do końca tury',
     buff_creature_until_end_of_turn: 'premia P/T dla celu do końca tury',

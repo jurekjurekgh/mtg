@@ -189,7 +189,9 @@ export function staticAttackPrevented(state, object, playerId) {
   if (!object || object.kind !== 'creature') return false;
   const controllerId = playerId ?? object.controllerId;
   // Defender (CR 702.3), detain (CR 701.29), aura/attachment „can't attack"
-  if (hasKeyword(state, object, 'defender')) return true;
+  // W-8: „can attack as though it didn't have defender” uchyla TYLKO to
+  // ograniczenie (defender zostaje cechą stwora).
+  if (hasKeyword(state, object, 'defender') && !object.attacksAsThoughNoDefenderUntilEOT) return true;
   if (object.detained) return true;
   if (attachmentRestrictions(state, object).cantAttack) return true;
   // „Can't attack unless defending player controls a creature with flying".
@@ -212,7 +214,7 @@ export function staticAttackPrevented(state, object, playerId) {
 function isLegalAttacker(state, object, playerId) {
   if (object?.controllerId !== playerId || object.kind !== 'creature' || object.tapped) return false;
   // Defender (CR 702.3): stwór z defender NIE może atakować.
-  if (hasKeyword(state, object, 'defender')) return false;
+  if (hasKeyword(state, object, 'defender') && !object.attacksAsThoughNoDefenderUntilEOT) return false;
   // Detain (CR 701.29, M177/E): zatrzymany stwór nie atakuje.
   if (object.detained) return false;
   // M243/F: ograniczenia STATYCZNE (defender, detain, attachment, unless-

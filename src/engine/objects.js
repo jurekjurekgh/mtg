@@ -180,8 +180,25 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
       }),
     };
   }
+  // W-9 (D4b, CR 400.7): „An object that moves from one zone to another
+  // becomes a new object with no memory of, or relation to, its previous
+  // existence.” Efekty „do końca tury” zapisane jako mutacja pól (animacja,
+  // nadpisanie podtypów, utrata keywordów, reguła ataku mimo defendera) NIE
+  // przechodzą na nowy obiekt — cleanup przywracał je tylko na polu bitwy, więc
+  // odbity crewowany pojazd był w ręce STWOREM, a Wishful Merfolk — Humanem
+  // bez defendera. Przywracamy cechy sprzed efektu (DFC nadpisuje niżej).
+  const original = object.originalBeforeAnimation ?? null;
+  const untilEndOfTurnReset = {
+    ...(original ? {
+      kind: original.kind, types: original.types, subtypes: original.subtypes,
+      power: original.power, toughness: original.toughness,
+    } : {}),
+    ...(object.subtypesBeforeOverride ? { subtypes: object.subtypesBeforeOverride } : {}),
+    originalBeforeAnimation: null, subtypesBeforeOverride: null,
+    lostKeywordsUntilEOT: Object.freeze([]), attacksAsThoughNoDefenderUntilEOT: false,
+  };
   const moved = Object.freeze({
-    ...object, ...dfcFaceReset, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
+    ...object, ...untilEndOfTurnReset, ...dfcFaceReset, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
     // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).
     enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,
@@ -238,6 +255,11 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // które zmiana strefy już zdjęła).
     formerCounters: Object.freeze({ ...(object.counters ?? {}) }),
     formerZone: object.zone,
+    // W-9 (LKI, CR 603.10): rodzaj i typy z chwili OPUSZCZENIA strefy —
+    // obsadzony pojazd / ożywiony ląd umiera jako STWÓR, choć nowy obiekt
+    // w grobie wraca do cech karty (CR 400.7; triggery „dies” czytają LKI).
+    formerKind: object.kind ?? null,
+    formerTypes: Object.freeze([...(object.types ?? [])]),
     // LKI zdolności nadanych „do końca tury": trigger „when this creature
     // dies" nadany przez czar (Fake Your Own Death) działa z ostatniej znanej
     // informacji, choć sam grant nie przechodzi przez zmianę strefy.
@@ -249,7 +271,8 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // CR 712.8: rodzaj twarzy przedniej przy DFCE (np. Incubator: tył to
     // stwór, przód to artefakt) — reset twarzi (M257/K5) nadaje `kind`
     // przedniej strony, a nie stalej `object.kind` (tylnej).
-    kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : (dfcFaceReset?.kind ?? object.kind),
+    // W-9: po animacji „do końca tury” — rodzaj sprzed animacji (CR 400.7).
+    kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : (dfcFaceReset?.kind ?? untilEndOfTurnReset.kind ?? object.kind),
     baseKind: null,
   });
   state.objects.delete(object.id); state.objects.set(newObjectId, moved);

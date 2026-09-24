@@ -799,6 +799,7 @@ const NEVER = Number.NEGATIVE_INFINITY;
 export const IDEMPOTENT_EOT_EFFECTS = new Set([
   'grant_keywords_until_end_of_turn', 'cant_be_blocked', 'cant_block',
   'becomes_subtype_until_end_of_turn', 'animate_permanent_until_end_of_turn',
+  'attack_as_though_no_defender_until_end_of_turn',
   'lock_untap', 'dont_untap_next_untap_step', 'tap_permanent', 'untap_permanent',
   'set_saddled',
   // Batch 52 (Jolrael): bazowe X/X do końca tury — ponowna aktywacja nie
@@ -6064,7 +6065,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // aktywowany w turze przeciwnika to czyste marnowanie many
           // (klasa L42: efekt „do końca tury” wycenia się razem z zegarkiem).
           // Reguła generyczna po deskryptorze `losesKeywords` (ADR 0002).
-          if ((effect.losesKeywords ?? []).includes('defender')) {
+          // W-8: „can attack as though it didn't have defender” (Krotiq) —
+          // ta sama wycena (to samo okno, ten sam zegarek „do końca tury”).
+          if ((effect.losesKeywords ?? []).includes('defender')
+            || effect.type === 'attack_as_though_no_defender_until_end_of_turn') {
             const self = objectOnBoard(view, cmd.objectId) ?? target;
             // M350/B (znalezisko właściciela z testów, 2026-09-14): samo okno
             // i „stwór może zaatakować" NIE wystarczy — bot kupował efekt

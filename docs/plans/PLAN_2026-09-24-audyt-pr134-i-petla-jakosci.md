@@ -167,8 +167,9 @@ Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134
       Infrastruktura: znaczniki czasu CR 613.7 (`timestamps.js`).
       • [x] warstwa 7: W-1, W-2, W-5, W-6
       • [x] warstwa 6 + zakrycie: W-3, W-4
-      • [ ] warstwa 4: W-7
-      • [ ] W-8
+      • [x] warstwa 4: W-7
+      • [x] W-8 (reguła „as though”) + W-9 (CR 400.7 — efekty do końca tury
+        przeżywały zmianę strefy; znalezione przy W-8)
 - [x] D5 — **obserwacje audytu (O-2, O-1)** domknięte jako KLASA, nie jako
       łatka (polecenie właściciela: „kontynuuj naprawianie wszystkich
       znalezionych błędów”):

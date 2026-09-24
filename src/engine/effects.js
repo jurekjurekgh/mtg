@@ -2136,6 +2136,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'attack_as_though_no_defender_until_end_of_turn') {
+    // W-8 (D4b): „This creature can attack this turn as though it didn't have
+    // defender.” To efekt ZMIENIAJĄCY REGUŁĘ ataku, nie utrata keywordu:
+    // stwór NADAL MA defendera (CR 613 — żadna warstwa go nie zdejmuje), tylko
+    // ograniczenie 702.3b nie blokuje deklaracji ataku do końca tury. Dotąd
+    // modelowane jako „loses defender” — kafel pokazywał stwora bez defendera,
+    // a po W-4 późniejsze „gains defender” odebrałoby prawo ataku.
+    const targetId = targets[0] ?? sourceObject.id;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    state.objects.set(targetId, Object.freeze({ ...object, attacksAsThoughNoDefenderUntilEOT: true }));
+    return;
+  }
+
   if (effect.type === 'becomes_subtype_until_end_of_turn') {
     // M158/Batch 39 (Wishful Merfolk): „This creature loses defender and
     // becomes a Human until end of turn." — nadpisanie podtypów DO KOŃCA TURY

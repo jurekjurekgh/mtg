@@ -6412,6 +6412,9 @@ export function playerView(state, playerId) {
         // każdy widoczny skutek efektu ma być badge'em na kaflu; te pola
         // istniały tylko w stanie (klasa L1/ADR 0017).
         if (object.saddled === true) entry.saddled = true;
+        // W-8 (Krotiq Nestguard): „może atakować mimo defendera do końca tury”
+        // — widoczny skutek efektu (M173/C, ADR 0017); defender NADAL na kaflu.
+        if (object.attacksAsThoughNoDefenderUntilEOT === true) entry.attacksAsThoughNoDefenderUntilEOT = true;
         // M230 (audyt talii spoza podziału, Bomat Bazaar Barge): pojazd JUŻ
         // animowany do EOT (crew rozstrzygnięty) nosi originalBeforeAnimation.
         // Widoczny stan → badge/decyzja bota (nie re-crewuj), ADR 0017.

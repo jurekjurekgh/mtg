@@ -681,6 +681,20 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
  * Zdolności działające przy śmierci: własne + nadane „do końca tury" przed
  * zmianą strefy (LKI, CR 603.10 — np. trigger z Fake Your Own Death).
  */
+/**
+ * W-9 (D4b, LKI — CR 603.10): czy obiekt, który opuścił pole bitwy, BYŁ
+ * danego rodzaju w chwili odejścia. Nowy obiekt w grobie ma cechy karty
+ * (CR 400.7 — animacja „do końca tury” nie przechodzi), więc obsadzony
+ * pojazd czy ożywiony ląd rozpoznajemy po `formerKind`/`formerTypes`.
+ * Token usunięty z grobu (fallback `ev.object`) — cechy z chwili zdarzenia.
+ */
+function diedAs(object, kind, type) {
+  if (!object) return false;
+  if (object.kind === kind || (object.types ?? []).includes(type)) return true;
+  if (object.formerZone !== 'battlefield') return false;
+  return object.formerKind === kind || (object.formerTypes ?? []).includes(type);
+}
+
 function abilitiesOnDeath(object) {
   return [...effectiveAbilities(object), ...(object.formerAbilityGrants ?? [])];
 }
@@ -2251,7 +2265,7 @@ function processTriggersScan(state, recentEvents) {
       // Dotąd Selhoff Occultist mielił kartę przy każdym poświęceniu
       // jakiegokolwiek permanentu („trigger zadziałał dwa razy” = fałszywy
       // trigger na poświęcony artefakt + prawdziwy na zginętego stwora).
-      const diedIsCreature = died?.kind === 'creature' || (died?.types ?? []).includes('Creature');
+      const diedIsCreature = diedAs(died, 'creature', 'Creature');
       // M160/A (Selhoff Occultist, CR 603.10a): przy JEDNOCZESNYCH zgonach
       // (jeden przebieg SBA — walka, masowe -X/-X) zdolności
       // any_creature_dies stworów, które zginęły RAZEM z `died`, też odpalają
@@ -2262,8 +2276,7 @@ function processTriggersScan(state, recentEvents) {
       // („another creature dies”) również się liczy.
       for (const fellow of simultaneousFellows) {
         if (!fellow || fellow.id === died.id) continue;
-        const fellowIsCreature = fellow?.kind === 'creature'
-          || (fellow?.types ?? []).includes('Creature');
+        const fellowIsCreature = diedAs(fellow, 'creature', 'Creature');
         if (!fellowIsCreature) continue;
         for (const ability of abilitiesOnDeath(fellow)) {
           if (ability?.trigger?.event === 'any_creature_dies') {
@@ -2280,8 +2293,7 @@ function processTriggersScan(state, recentEvents) {
         // is put into a graveyard from the battlefield, put an oil counter on
         // this creature." Trigger skanuje INNE permanenty kontrolera źródła,
         // które zginęły (nie samego źródła), i jest stworem LUB artefaktem.
-        const isCreatureOrArtifact = died?.kind === 'creature' || died?.kind === 'artifact'
-          || (died?.types ?? []).includes('Creature') || (died?.types ?? []).includes('Artifact');
+        const isCreatureOrArtifact = diedAs(died, 'creature', 'Creature') || diedAs(died, 'artifact', 'Artifact');
         if (!isCreatureOrArtifact) continue;
         if (diedControllerId !== source.controllerId) continue;
         for (const ability of effectiveAbilities(source)) {
