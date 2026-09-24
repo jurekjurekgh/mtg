@@ -12769,3 +12769,211 @@ mutacji repo) + 4 piny w `test/cr-numery-mechanik-straznik.test.js`
 `npm test` **6455/6455**, `npm run test:all` **6465/6465** (~409 s),
 build **60 modułów / 4199,5 kB**.
 Handoff: `docs/setup/HANDOFF_2026-09-24.md`.
+
+## M426 — audyt scalonego PR #135 + strażnik istnienia numerów CR (sesja 2026-09-24b, PR #136)
+
+Prompt „Kontynuujemy projekt." → pętla ADR 0021: plan jako osobny commit
+(`ee68f2f`), **PR #136** na starcie (ADR 0020 A), audyt scalonego PR #135
+(ADR 0020 B; raport `docs/audits/AUDYT_PR135_2026-09-24b.md`, commit `558a20a`).
+Audyt prowadzony wobec **dosłownego CR 2026-09-25** (mirror `nwgarne/mtg-data`,
+sha256 `8d860e45…70ca`; sandbox blokuje media.wizards.com, więc jedyna droga to
+`api.github.com` z `Accept: raw` — ADR 0030).
+
+**Rdzeń PR #135 bez znalezisk:** twierdzenia D4b (warstwy CR 613) i Etapu F
+zgodne z dosłownym CR (§4 raportu — 19 wierszy tabeli, wszystkie ✔ poza
+adresem `110.6b`), ścieżki wejścia na pole bitwy i znaczniki czasu bez luki
+(125 wywołań `state.objects.set(`, §5), a piny warstw mają moc różnicującą
+(mutacja „utrata wygrywa zawsze" → 4 RED; `tempBasePT` bez znaczników → RED).
+Znaleziska dotyczyły **warstwy adresowania reguł** — wszystkie sprzed #135:
+
+- **F-1** — 16 numerów nieistniejących / 57 wystąpień: `103.7a` ×26 (skok draw
+  stepu to **103.8a**), `110.6b`→110.5b, `110.6`→110.5d, `117.11`→602.2b,
+  `700.4c`→700.4, `510.5`→510.4, `603.4b`→608.2b, `116.3b/c`→117.4/117.3b,
+  `706.10c`→707.10c, `708.9c/f`→702.145d/731.2a-b, `106.2b`→105.1,
+  `704.10`→704.5c, `602.2c`→602.2a, `720.4a`→104.3a. Naprawa **C1** (`39b1587`)
+  — 55 podmian w 30 plikach; dowód „to nie regresja #135": identyczne liczby
+  wystąpień na `4f75e22` i `f9bc44b`, poza zasięgiem strażników 701/702/712.
+- **F-2** — 3 rozjazdy pary „mechanika ↔ numer", które przeszły przez detektory
+  OKNA (w oknie stało przypadkowe słowo-alias): counter_spell `701.2a`→**701.6a**,
+  „Destroy (CR 701.19)"→**701.8**, „Surge/**Cleave** (CR 702.117)"→Surge 702.117
+  + **Cleave 702.148**. Naprawa **C2** (`47ec68b`) + 3 pary klasy z wykluczeniami
+  w `test/cr-numery-mechanik-straznik.test.js`; dowód mutacyjny: oryginalne linie
+  błędów w pliku poza repo → 3/3 RED (not ok 27–29).
+- **F-3** — brak strażnika ISTNIENIA numeru (sekcje poza 701/702 nie były pilnowane
+  przez nic). Naprawa **C3** (`5fa8759`): `tools/cr-numery.mjs` (detektor cytatów
+  + weryfikacja/generator wobec pliku CR + lista wykluczeń z uzasadnieniami),
+  `test/helpers/cr-numery-tabela.js` (GENEROWANA: 482 cytowane numery, każdy
+  zweryfikowany wobec CR 2026-09-25; wersjonowana wydaniem, sha256 i źródłem),
+  `test/cr-numery-istnienie-straznik.test.js` (4 inwarianty: istnienie, wersja
+  tabeli, rozmiar skanu + kotwice, próba własna detektora). Dowód mutacyjny:
+  `CR 103.7a` (martwy numer) i `CR 100.1` (nowy, niezweryfikowany) → RED
+  z lokalizacjami; strażniki 701/702 dostały tabelę i strażnika do `POMIN`.
+
+**Pętla jakości (Etap D, §9 raportu):** 6 partii Żywego Testera na `dist/`
+(5 profili domyślnych + `impatient`) — 0 zgłoszeń detektorów, 0 wyjątków runtime,
+partie dobiegają końca, 2214 linie transkryptów bez `undefined`/`NaN`/`błąd`;
+łowy CR na **175 nowych cytatach #135 w `src/`** (pełny przegląd sekcji 6xx/7xx)
+— 0 rozjazdów; kandydat `205.1a` (permanents.js) rozstrzygnięty jako poprawny
+(cytat dosłowny: „the new subtype(s) replaces any existing subtypes from the
+appropriate set"); potwierdzone też `701.19c`, `613.9` i `115.6`.
+
+Bramy: `npm test` **6462/6462** (było 6455/6455 przed sesją: +3 pary C2,
++4 inwarianty C3), build bez zmian (60 modułów / 4199,5 kB). Handoff:
+`docs/setup/HANDOFF_2026-09-24b.md`.
+
+## M427 — batch 59: kolekcja 126–142 (10 kart, sesja 2026-09-24c, PR #136)
+
+Zlecenie właściciela (2026-09-24, po zamknięciu sesji 24b): nowy batch kart —
+11 wpisów arkusza = **10 kart**, bo `126 MID` i `127 MID` to przód i tył
+jednej karty dwustronnej (Bird Admirer // Wing Shredder). Realizacja według
+`docs/cards/HOW_TO_ADD_CARD.md` Kroki 1–9: Scryfall **przed** kodowaniem
+(ADR 0010 §2a, `set=` obowiązkowe; sandbox blokuje `curl`, dane przez
+`fetch_page`), rulingi przy kartce (ADR 0028 — także puste listy jako dowód
+sprawdzenia), mechaniki w 100% bez `limitations`, nowe mechaniki wyłącznie
+generycznie (ADR 0002), talie singleton generatorem planów (Krok 5, ADR
+0023/0024), każda karta = jeden zielony commit z pinami.
+
+Karty (jeden commit na etap, `G1.x` = kolejność wdrożenia):
+`44dc8eb` Charismatic Vanguard (129 DMU) + Sun-Collared Raptor (141 RIX) ·
+`e135540` Savage Hunger (142 ALA) + Join the Dance (138 MID) · `88e46ee`
+Waveskimmer Aven (134 ALA) + Slithering Cryptid (139 TMT) + token Mutagen ·
+`2987d3b` Scavenging Harpy (130 THB) · `ba5932c` Memory's Journey (131 ISD) ·
+`adcb2e5` Kumano's Blessing (135 BOK) · `1265cf5` Bird Admirer // Wing
+Shredder (126/127 MID). Dane etapu G0: `fa8d70f`.
+
+Cztery mechaniki silnika są ogólne i będą pracować dla kolejnych kart:
+wspólny enumerator kombinacji celów `legalTargetCombos` (zastąpił `cartesian`
+i duplikat z `game-state.js`; grupy pozycji wg wystąpienia słowa „target",
+cap panelu, zakaz celowania w samą siebie dla czarów), ZALEŻNE pozycje celu
+(`graveyardOfSlot` → `graveyardOwnerId`: pula licząca się po wyborze gracza),
+pary obrażeń „this turn" (`damageSourcesThisTurn` — odpowiedź na „zadał
+obrażenia KONKRETNY stwór", na której stoi efekt zastępczy Kumano's Blessing;
+decyzja przy śmierci, CR 616.1) oraz bramka obrotu permanentów daybound/
+nightbound (`dayNightDriven` — obraca wyłącznie para tych zdolności, ruling
+MID 2021-09-24). Nowe efekty: `shuffle_graveyard_cards_into_library`
+(z eventem `library_shuffled`, M134), `exile_graveyard_card`, typ celu
+`card_in_opponent_graveyard`, predefined token **Mutagen**, hybrydowy pip
+`{2}{G/U}`.
+
+Dwa pouczenia metodyczne zapisane przy tej okazji: (1) katalog roboczy
+snapshotów poza repozytorium nie przetrwał resetu sandboxa — snapshot pobierać
+i zapisywać OD RAZU w `docs/cards/` (KOREKTA w planie i w M427); (2) dla kart
+dwustronnych scenariusze mechaniczne trzeba budować z PRAWDZIWEJ talii
+(`setupCardMatch`), bo tylko materializacja talii niesie `transformTo`
+i `frontFaceId` — ręcznie wstawiony obiekt testuje atrapę bez drugiej strony
+(L21). Domknięte też piny, które nowe karty odsłoniły: CSV 502 → 513 pozycji,
+tokeny 43 → 44, tylne strony DFC 8 → 9, liczniki talii w README, etykiety
+logu i opisy kafli.
+
+Bramy: `npm test` **6511/6511** (0 fail), build **60 modułów / 4239,9 kB**;
+pełna brama `npm run test:all` i handoff `docs/setup/HANDOFF_2026-09-24c.md`.
+
+## M429 — taktyczna wycena kart batcha 59: wymiar zamiast płaskiej stałej (sesja 2026-09-24e, PR #136)
+
+Zlecenie właściciela: „Nie chodzi o sprzeczność z CR — tego pilnuje engine.
+Chodzi o OPTYMALNE TAKTYCZNIE wykorzystanie tych czarów (…). Nie chodzi
+o automatyczne strojenie wag tylko o PRZEMYŚLANE ustawienie ich. Weź przykład
+z innych podobnych kart o podobnych efektach." Punktem wyjścia były obserwacje
+z audytu 24d: Mutagen aktywowany bez różnicy celu, Memory's Journey rzucana bez
+presji deck-outu, Charismatic Vanguard {4}{W} przepalany w Głównej 1 (Boulder
+Salvo zachowany — surge wybierany oszczędnie).
+
+Pomiar PRZED (6 seedów, tymczasowa talia z 2 egzemplarzami każdej karty batcha,
+sonda na silniku) pokazał jedną klasę: **warianty remisowały co do punktu**, więc
+o wyborze decydowała kolejność `legalCommands` — Mutagen **14/14/14** (token 1/1,
+Cryptid 2/3, Hill Giant 4/4), Memory's Journey **58 pkt** niezależnie od
+biblioteki (30 vs 12 kart) i tyle samo dla wariantu „zero wracających kart",
+Charismatic Vanguard **2 pkt** (sama baza zdolności) w każdym kroku tury.
+
+Trzy rodziny parametrów (`heuristic-params.js`), każda z osobnym commitem,
+z precedensem w istniejącym kodzie i domyślnymi wartościami dobranymi tak, by
+NAJSŁABSZY realny wariant był wart dokładnie tyle, co przed zmianą:
+
+- **A1 `counter*`** (commit 7c1646e) — licznik na wskazanym celu: baza 2 +
+  4·amount + 2·wartość ciała gospodarza (moc podwójnie — jak w aurach M257 r4),
+  premia gdy licznik poprawia wynik toczącej się walki (M218/2), zerowanie
+  wartości przy gospodarzu skazanym w tej turze (M236/2). PO: te same
+  6 aktywacji w 6 seedach, wszystkie na NAJLEPSZYM ciele (Cryptid/Aven), zero
+  na tokenie 1/1.
+- **A2 `graveyardShuffle*`** (commit de03efb) — wtasowanie z grobu do
+  biblioteki: kara przy zdrowej bibliotece (instant czeka na okno, wzorzec
+  M235), zwrot + dopłata ratunkowa przy bibliotece pod progiem
+  `librarySafeMargin`, kara za efekt jałowy (zero kart); cel-przeciwnik dalej
+  −60. PO: 5 rzutów zamiast 11 i wyłącznie przy bibliotece 19 kart.
+- **A3 `teamPump*`** (commit c091bd7) — masowy pump „do końca tury": reguła
+  M106/Z7/M218 była tylko w gałęzi CZARÓW, więc aktywowana zdolność dostawała
+  gołe 2 pkt; wyjęta do wspólnej funkcji (L41) z timingiem ze źródła. PO:
+  Główna 1 bez walki −23 (pass wygrywa), okno walki z dwoma atakującymi +20.
+
+Bramy: `npm test` **6534/6534** (0 fail; 24d: 6519 → +15 testów M429), build
+**60 modułów / 4254,4 kB**, golden-master `bot-scoring-snapshot` zielony BEZ
+regeneracji (dowód, że reguły są wąskie), szybka macierz `node tools/benchmark.mjs`
+(672 mecze): heuristic 78,0 % vs aggro (próg 62 %) i 97,6 % vs random (próg 78 %)
+— artefakt `tools/b1-quick-2026-09-24e.{json,txt}`; **pełne B0 nie było
+uruchamiane** (ADR 0018 — tylko na wyraźną komendę właściciela). Ewaluacja
+lustrzana (`tools/mirror-eval.mjs`, nowe reguły vs ich wyłączenie): 72:72
+(0,5000), 144 mecze, 0 niedokończonych. Żywy Tester PO (4 partie, transkrypty
+`/tmp/po-audyt/po-*.txt`): 4× „DETEKTORY: brak zgłoszeń", 4× „NIEWYCENIONE:
+brak"; Mutagen na najlepszym ciele, Memory's Journey trzymana w ręce (odsłonięta
+przez Toll of the Invasion), Vanguard aktywowany w kroku ataku.
+
+Lekcja **L169** (+ narracja w `docs/LESSONS_PRZYPADKI.md`), plan
+`docs/plans/PLAN_2026-09-24e-strojenie-bota-batch59.md`, handoff
+`docs/setup/HANDOFF_2026-09-24e.md`.
+
+## M428 — Żywy Tester na kartach batcha 59: raport talii + klasa „kwota alt-kosztu" (sesja 2026-09-24d, PR #136)
+
+Zlecenie właściciela po domknięciu batcha 59: (a) raport, do których talii
+trafiły karty batcha i czy nastąpiły przetasowania; (b) audyt Żywym Testerem
+celujący w karty batcha — zgodność z CR i taktyka bota.
+
+**Ad (a) — same DOŁOŻENIA, bez przenosin:** `git diff f9bc44b..c805674 --
+decks/ README.md` to 8 plików. Siedem talii dostało karty batcha, w każdej
+wyrównano landy (bez usunięć nie-basiców i bez przenosin między taliami):
+dominaria-wu +Charismatic Vanguard (Plains 4→5, Island 3→2), forgotten-realms
++Waveskimmer Aven (Plains 2→3, Mountain 3→2), ixalan +Sun-Collared Raptor
+(23→24), wiedzmin-bg +Scavenging Harpy (Swamp 5→6), worek-basni +Join the
+Dance, +Memory's Journey, +Kumano's Blessing, +Bird Admirer (Island 1→2,
+Forest 4→5; 38→44), worek-dziki +Savage Hunger (Mountain 2→3; 30→32),
+worek-mroczny +Slithering Cryptid (Island 1→2; 27→29). Rejestr commitów:
+44dc8eb i e135540 nie ruszyły plików talii (regen zbiorczy dopiero w 88e46ee,
+6 plików), 2987d3b → wiedzmin-bg, ba5932c/adcb2e5/1265cf5 → worek-basni.
+
+**Ad (b) — dwie partie rozpoznawcze najpierw na taliach standardowych**
+(8 partii A–H, po jednej na talię z kartami batcha, 8× naturalny koniec, 8×
+„DETEKTORY: brak zgłoszeń", 8× „NIEWYCENIONE: brak"), ale ekspozycja kart
+batcha wyszła mała (karty 1-of w taliach singletonowych): Sun-Collared Raptor
+87 wystąpień, Charismatic Vanguard 34, Join the Dance 6+3, Scavenging Harpy 1,
+reszta 0. Dlatego audyt celowany zrobiono na tymczasowej talii
+`decks/audyt-batch59.txt` (2× każda z 10 kart + 4× każdy basic, ~50 % landów):
+**8 partii P1–P6 (bot gra talią audytową) i Q1–Q2 (gracz)** po 700 kroków —
+8× naturalny koniec, 8× zero zgłoszeń detektorów. Talia usunięta przed
+commitem (łamie cztery strażniki talii), `dist/` przebudowany.
+
+**Zgodność z CR — bez zastrzeżeń w mechanikach:** Bird Admirer // Wing Shredder
+(702.145: dzień przy wejściu pierwszego permanentu pary, w nocy obrót
+w Wing Shreddera, 4/5 z aurą w ataku), Charismatic Vanguard (611.2c — „4
+stwory" w chwili rozstrzygnięcia), Scavenging Harpy (603.3d bez celu oraz
+wygnanie karty z grobu przeciwnika), Waveskimmer Aven (egzaltacja przy samotnym
+ataku), Slithering Cryptid (token Mutagen + zdolność tylko jak sorcery),
+Sun-Collared Raptor ({2}{R}, trample, przydział obrażeń), Savage Hunger
+(+1/+0, trample, cycling {2} z ręki), Memory's Journey (tasowanie, cele
+zależne), Kumano's Blessing (błysk, efekt zastępczy — ten jeden raz nie zszedł
+„na żywo", pokrycie w testach).
+
+**Znaleziska (F1–F3, jedna klasa — kwota kosztu alternatywnego):**
+F1 Join the Dance: `flashback.cost = 4` przy druku `{3}{G}{W}` = 5 many
+(dowód: transkrypt P1 — cztery tapnięcia przy rzucie z grobu); F2 etykieta
+flashbacku pokazywała KWOTĘ jako cenę generyczną („Flashback: Memory's Journey
+(koszt 1)" dla {G}, „Join the Dance (koszt 4)" dla {3}{G}{W}); F3 Boulder
+Salvo (batch 58): `surge.cost = 3` przy druku `{1}{R}` = 2 many — to samo
+znalezisko z tego samego skanu. Przyczyna wspólna: `cost` deskryptora czytano
+jako część generyczną, choć to SUMA symboli (`costSymbols` sam odejmuje pipy),
+a strażnik M268 porównywał z Oracle tylko PIPY — kwota mogła się rozjechać
+niezauważona. Naprawy w commitach `990b5f0` (dane + skan symboli + korekta
+twierdzeń w testach batchy 58/59) i `aff9597` (etykiety przez `costSymbols`)
++ lekcja L168.
+
+**Bramy:** `npm test` **6519/6519** (0 fail; 6511 → +8 testów M428), build
+**60 modułów / 4241,6 kB**; plan `docs/plans/PLAN_2026-09-24d-zywy-tester-
+batch59.md`, handoff `docs/setup/HANDOFF_2026-09-24d.md`.

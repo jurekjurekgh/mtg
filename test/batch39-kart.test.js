@@ -123,7 +123,7 @@ test('A4: Knight — {3}{G}: +3/+3 tylko raz na turę', () => {
   const offer1 = view1.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'knight');
   assert.ok(offer1, 'pierwsza aktywacja oferowana');
   assert.ok(execute(state, offer1).ok);
-  // Zdolność idzie na stos (CR 602.2c/117.4) — rozstrzygnięcie po pasach.
+  // Zdolność idzie na stos (CR 602.2a/117.4) — rozstrzygnięcie po pasach.
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(effectivePower(state.objects.get('knight'), state), 5, '2/2 + 3/3 = 5/5');
@@ -162,7 +162,8 @@ test('B1: Magmarch {1}{B}: Regenerate — tarcza chroni przed zniszczeniem, zuż
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.ok((state.regenerationShields ?? []).includes('mag'), 'tarcza regeneracji aktywna');
 
-  // Destroy (CR 701.19): tarcza zużyta, stwór ODTAPANY i żyje.
+  // Regeneracja (CR 701.19) zastępuje zniszczenie (CR 701.8): tarcza zużyta,
+  // stwór ODTAPANY i żyje.
   applyEffect(state, { type: 'destroy_permanent' }, state.objects.get('mag'), ['mag']);
   assert.ok(state.objects.has('mag') && state.objects.get('mag').zone === 'battlefield', 'regeneracja zamiast grobu');
   assert.equal(state.objects.get('mag').tapped, true, 'regeneracja odtapowuje... (CR 701.19: tapped)');

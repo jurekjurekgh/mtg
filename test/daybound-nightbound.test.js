@@ -79,7 +79,7 @@ function resolveStack(state) {
   return state.zones.stack.length === 0;
 }
 
-test('daybound: wejście przy nieustalonym designation ustawia dzień (CR 708.9c)', () => {
+test('daybound: wejście przy nieustalonym designation ustawia dzień (CR 702.145d)', () => {
   const state = mainPhase(game());
   assert.equal(state.dayNight, null);
   addDayboundWolf(state, 'wolf', 'p1');

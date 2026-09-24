@@ -164,6 +164,57 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // pod próg (jedyna realna strata to deck-out, CR 121.4).
   'cloakLibraryFloor',           // biblioteka < próg ⇒ „pass” (właściciel: 10)
   'cloakThinLibraryPenalty',     // kara za cloak przy cienkiej bibliotece (> 50 ⇒ schodzi pod „pass”)
+  // M429 (zlecenie właściciela 2026-09-24e — karty batcha 59, „P1 Mutagen"):
+  // rodzina „licznik na wskazanym celu". Dotąd licznik na WŁASNYM stworze był
+  // wart płasko 8 + 4·amount w OBU bliźniaczych gałęziach (czar i aktywacja),
+  // więc wszystkie gospodarze remisowały (pomiar: 14/14/14 dla tokena 1/1,
+  // Cryptida 2/3 i Hill Gianta 4/4) i bot brał pierwszą ofertę — najczęściej
+  // najsłabsze ciało (L50). Model z precedensu aury-buffa (M257 r4: „opłaca się
+  // tym bardziej, im większy gospodarz" — tam waga 2 na mocy i 1 na
+  // wytrzymałości): wartość licznika rośnie z WAGĄ CIAŁA gospodarza, a dwa
+  // terminy taktyczne rozstrzygają remisy wartości:
+  //  - `counterCombatBonus` — licznik, który POPRAWIA wynik toczonej walki
+  //    (M218/2 `pumpImprovesOutcome`), kupuje coś TERAZ (żywy bloker/lethal);
+  //  - `counterDoomedHostPenalty` — licznik na gospodarzu SKAZANYM w tej turze
+  //    (M236/2 `permanentDoomedThisTurn`) ginie razem z nim, więc nie kupuje
+  //    NIC: wartość licznika jest ZEROWANA do −kara (nie zmniejszana), żeby
+  //    aktywacja zeszła pod „pass" niezależnie od wielkości ciała („wielki, ale
+  //    martwy" to nadal zero) — L3: kara musi przebić bazę aktywacji.
+  // Domyślne wartości są PRZEMYŚLANE, nie wytunerowane (zlecenie): baza 2 + waga
+  // gospodarza 2 × worth(1/1)=3 odtwarza dawną stałą 8 co do punktu, więc
+  // NAJSŁABSZY gospodarz nie traci na wartości (kontrakt B6 T0 dla przypadku
+  // z obserwacji), a różnicę zyskują realne ciała: 2/3 → +6, 4/4 → +12.
+  'counterBase',                 // baza licznika przy gospodarzu-wzorcu 1/1 (dawna 8 = 2 + 2·3)
+  'counterAmountWeight',         // wartość każdego punktu licznika (dawna *4)
+  'counterHostWorthWeight',      // waga ciała gospodarza (moc×2 + wytrzymałość), wzorzec aury
+  'counterCombatBonus',          // premia, gdy licznik poprawia wynik WALKI, która trwa
+  'counterDoomedHostPenalty',    // kara, gdy gospodarz ginie w tej turze mimo licznika
+  // M429 („P2 Memory's Journey"): rodzina „wtasowanie kart z grobu do
+  // biblioteki". Dotąd efekt był wart płasko 4 + 2·karty (NIEZALEŻNIE od stanu
+  // biblioteki — pomiar: 58 pkt przy 30 i przy 12 kartach, a wariant z ZERO
+  // wybranych kart też dawał 58), więc bot rzucał czar „na zero kart" i bez
+  // żadnej presji deck-outu, tracąc kartę z ręki. Model z istniejącej rodziny
+  // bibliotecznej (D/M162: `librarySafeMargin` + kara per karta, CR 121.4/
+  // 704.5b): karty wracają do BIBLIOTEKI, więc kupują czas tylko wtedy, gdy
+  // biblioteka jest cienka — inaczej instant czeka na realne zagrożenie
+  // (wzorzec „trzymaj czar na okno", M235). Karne warianty schodzą pod „pass"
+  // (L3: kara musi przebić bazę czaru i wartość zwrotu).
+  'graveyardShuffleBase',        // wartość samego zwrotu (dawna 4, gdy karty wracają)
+  'graveyardShuffleCardValue',   // wartość każdej wracającej karty (dawna *2)
+  'graveyardShuffleRescueWeight',// dopłata za kartę, gdy biblioteka jest pod progiem
+  'graveyardShuffleNoPressurePenalty', // kara, gdy biblioteka jest zdrowa (czekaj na okno)
+  'graveyardShuffleEmptyPenalty',// kara, gdy nie wraca ŻADNA karta (efekt jałowy)
+  // M429 („P3 Charismatic Vanguard"): rodzina „masowy pump/debuff do końca
+  // tury". Czar miał tę wycenę od M106/Z7 (okno walki: pump wygasa w cleanup,
+  // CR 514.2, więc poza walką nie kupuje nic), ale AKTYWOWANA ZDOLNOŚĆ nie
+  // miała żadnej — bot dostawał gołe `score = 2` i przepalał {4}{W}
+  // w Głównej 1 (pomiar: 2 pkt w każdym kroku tury). Te same stałe wyjęte pod
+  // nazwy (kontrakt B6 T0: domyślne == dawne wartości) + jedna ścieżka dla obu
+  // gałęzi (L41 — bliźniacze gałęzie, jedna reguła).
+  'teamPumpPerCreature',         // wartość za każdego objętego stwora (dawna *6)
+  'teamPumpEmptyPoolPenalty',    // kara, gdy nie ma kogo objąć (dawna -30)
+  'teamPumpNoChangePenalty',     // kara, gdy pump nie zmienia wyniku walki (dawna -25)
+  'teamPumpSorceryOffWindowPenalty', // kara dla sorcery poza własną Główną 1 (dawna -60)
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -249,6 +300,29 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   repeatLibraryDrainTurns: 3,
   cloakLibraryFloor: 10,
   cloakThinLibraryPenalty: 60,
+  // M429 „licznik na wskazanym celu" (P1 Mutagen, pomiar PRZED: remis 14/14/14).
+  // Przemysłane wartości (nie tuner): patrz uzasadnienie przy HEURISTIC_PARAM_KEYS.
+  counterBase: 2,
+  counterAmountWeight: 4,
+  counterHostWorthWeight: 2,
+  counterCombatBonus: 12,
+  counterDoomedHostPenalty: 20,
+  // M429 „wtasowanie kart z grobu do biblioteki" (P2 Memory's Journey).
+  // Próg presji = `librarySafeMargin` (20, istniejąca rodzina biblioteczna).
+  // Dopłata ratunkowa 8/kartę: 3 karty przy cienkiej bibliotece = 34 pkt efektu
+  // (84 z bazą czaru) — realny ratunek, a nie „ładna karta"; przy zdrowej
+  // bibliotece kara 70 spycha rzut pod pass.
+  graveyardShuffleBase: 4,
+  graveyardShuffleCardValue: 2,
+  graveyardShuffleRescueWeight: 8,
+  graveyardShuffleNoPressurePenalty: 70,
+  graveyardShuffleEmptyPenalty: 70,
+  // M429 „masowy pump/debuff do końca tury" (P3 Charismatic Vanguard) —
+  // ekstrakcja stałych istniejącej reguły (M106/Z7, M218/1); wartości == dawne.
+  teamPumpPerCreature: 6,
+  teamPumpEmptyPoolPenalty: 30,
+  teamPumpNoChangePenalty: 25,
+  teamPumpSorceryOffWindowPenalty: 60,
 });
 
 /**

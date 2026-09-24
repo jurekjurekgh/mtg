@@ -239,6 +239,10 @@ export function stateFingerprint(state) {
     regenerationShields: [...(state.regenerationShields ?? [])],
     cantBeRegeneratedThisTurn: [...(state.cantBeRegeneratedThisTurn ?? [])],
     exileIfDiesThisTurn: (state.exileIfDiesThisTurn ?? []).map((entry) => ({ ...entry })),
+    // Batch 59 (Kumano's Blessing): pary obrażeń „this turn" są stanem gry —
+    // bez nich sonda „oferta bez skutku" nie widziałaby różnicy między
+    // stanem z naznaczoną ofiarą i bez niej (strażnik B2 wymaga pokrycia).
+    damageSourcesThisTurn: (state.damageSourcesThisTurn ?? []).map((entry) => ({ ...entry })),
     gainLifeIfDiesThisTurn: (state.gainLifeIfDiesThisTurn ?? []).map((entry) => ({ ...entry })),
     untilEndOfTurnProtections: (state.untilEndOfTurnProtections ?? []).map((g) => ({
       controllerId: g.controllerId,

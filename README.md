@@ -118,12 +118,12 @@ liczone z plików `decks/*.txt`).
 |---|---|---|---:|---:|---:|
 | `alara` | Alara | WUBRG | 38 | 13 | 25 |
 | `dominaria-brg` | Dominaria (BRG) | BRG | 27 | 9 | 18 |
-| `dominaria-wu` | Dominaria (WU) | WUB | 23 | 8 | 15 |
+| `dominaria-wu` | Dominaria (WU) | WUB | 24 | 8 | 16 |
 | `final-fantasy` | Final Fantasy | WUBRG | 27 | 9 | 18 |
-| `forgotten-realms` | Forgotten Realms | WUBRG | 38 | 13 | 25 |
+| `forgotten-realms` | Forgotten Realms | WUBRG | 39 | 13 | 26 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 29 | 10 | 19 |
 | `innistrad-wu` | Innistrad (WU) | WU | 29 | 10 | 19 |
-| `ixalan` | Ixalan | UBRG | 23 | 8 | 15 |
+| `ixalan` | Ixalan | UBRG | 24 | 8 | 16 |
 | `kaladesh` | Kaladesh | WUBRG | 27 | 9 | 18 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 32 | 11 | 21 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 26 | 9 | 17 |
@@ -134,7 +134,7 @@ liczone z plików `decks/*.txt`).
 | `theros` | Theros | WUBRG | 26 | 9 | 17 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 36 | 12 | 24 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
-| `wiedzmin-bg` | Wiedźmin (BG) | BG | 27 | 9 | 18 |
+| `wiedzmin-bg` | Wiedźmin (BG) | BG | 29 | 10 | 19 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
 | `zendikar` | Zendikar | WURG | 35 | 12 | 23 |
 
@@ -142,10 +142,10 @@ liczone z plików `decks/*.txt`).
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
 |---|---|---|---:|---:|---:|
-| `worek-basni` | Worek: Baśnie | WUBRG | 38 | 13 | 25 |
-| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 30 | 10 | 20 |
+| `worek-basni` | Worek: Baśnie | WUBRG | 44 | 15 | 29 |
+| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 32 | 11 | 21 |
 | `worek-legend` | Worek: Legendy | WUBRG | 23 | 8 | 15 |
-| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 27 | 9 | 18 |
+| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 29 | 10 | 19 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
 

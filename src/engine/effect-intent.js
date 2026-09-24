@@ -23,6 +23,9 @@ export const HOSTILE_TRIGGER_TARGET_EFFECTS = new Set([
   'damage', 'damage_from_target_power', 'damage_divided', 'damage_to_controller', 'destroy_permanent',
   'destroy_if_least_power', 'destroy_artifact_gain_life_mana_value',
   'exile_permanent', 'exile_target_creature', 'exile_opponent_creature',
+  // Batch 59 (Scavenging Harpy): wygnanie karty z grobu PRZECIWNIKA — cel
+  // wybiera się spośród cudzych kart, więc bot bierze najwartościowszą.
+  'exile_graveyard_card',
   'exile_nonland_permanent_linked', 'bounce_permanent', 'bounce_to_library_top',
   'sacrifice_permanent', 'player_sacrifices_creature', 'tap_permanent', 'shrink',
   'pump_negative', 'cant_block', 'mill_cards', 'dont_untap_next_untap_step',

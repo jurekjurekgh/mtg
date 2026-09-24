@@ -8,7 +8,7 @@ import {
   counterStackObject,
 } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
-import { deathZoneFor } from './zones.js';
+import { deathZoneFor, isCardInOpponentGraveyard } from './zones.js';
 import { changeLife, setPlayerSpeed } from './players.js';
 // CARD_TYPES (O-2 audytu PR #134, L41): zamknięta lista typów kart (CR 205.2a)
 // ma JEDNO źródło w `permanents.js` — delirium (CR 207.2c), licznik wszystkich
@@ -389,6 +389,18 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     // CR 603.3d / Oracle ‘target opponent’: wybór spośród przeciwników,
     // nie tylko pierwszy gracz (1v1 pozostaje identyczne).
     return state.players.filter(p => p.id !== sourceObject.controllerId).map(p => p.id);
+  }
+  if (spec.type === 'card_in_opponent_graveyard') {
+    // Batch 59 (Scavenging Harpy): „exile target card from an opponent's
+    // graveyard" — dowolna KARTA z grobu przeciwnika (nie tylko stwór).
+    // Kolejność = polityka deterministyczna (prezentacja = enumeracja):
+    // najpierw karty najwartościowsze (efekt jest WROGI wobec celu —
+    // HOSTILE_TRIGGER_TARGET_EFFECTS), remis rozstrzyga kolejność grobu
+    // (sort stabilny). Tokeny nie są kartami (CR 108.2b) — odsiewa je
+    // wspólny predykat z `zones.js` (to samo w ofercie i walidacji).
+    return state.zones.graveyard
+      .filter((objectId) => isCardInOpponentGraveyard(state.objects.get(objectId), sourceObject.controllerId))
+      .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
   }
   if (spec.type === 'creature_card_in_opponent_graveyard') {
     // Puppeteer Clique: karty-stwory z grobu PRZECIWNIKA — najsilniejszy
@@ -2175,7 +2187,9 @@ export function setDayNight(state, designation) {
     if (!(object.keywords ?? []).includes(transformKeyword)) continue;
     if (!object.transformTo) continue;
     const before = state.events.length;
-    applyEffect(state, { type: 'transform' }, object, []);
+    // `dayNightDriven`: jedyna legalna droga obrotu permanentu daybound/
+    // nightbound (ruling MID 2021-09-24 — bramka w effects.transform).
+    applyEffect(state, { type: 'transform', dayNightDriven: true }, object, []);
     events.push(...state.events.slice(before));
   }
   return events;
@@ -2478,7 +2492,7 @@ function processTriggersScan(state, recentEvents) {
           tryFire(state, ability, diedLki, [], events, { wasBlocking: died?.isBlockingThisCombat === true });
         }
       }
-      // M200/D+E2 (uwagi właściciela, CR 700.4c): „die” dotyczy STWORÓW —
+      // M200/D+E2 (uwagi właściciela, CR 700.4): „die” dotyczy STWORÓW —
       // poświęcenie/zniszczenie lądu lub artefaktu (Blazing Torch, Rupture
       // Spire) NIE jest śmiercią i nie może odpalać any_creature_dies.
       // Dotąd Selhoff Occultist mielił kartę przy każdym poświęceniu
@@ -2999,10 +3013,13 @@ function processTriggersScan(state, recentEvents) {
         setDayNight(state, dayboundAnywhere ? 'day' : 'night');
         entered = state.objects.get(entered.id) ?? entered;
       } else if (state.dayNight === 'night' && enterKw.includes('daybound') && entered.transformTo) {
-        applyEffect(state, { type: 'transform' }, entered, []);
+        // `dayNightDriven`: to obrót STEROWANY parą daybound/nightbound
+        // (CR 702.145c — wejście w nocy poza rzutem wchodzi tylną stroną),
+        // więc przechodzi przez bramkę `effects.transform` (Batch 59/G1.10).
+        applyEffect(state, { type: 'transform', dayNightDriven: true }, entered, []);
         entered = state.objects.get(entered.id) ?? entered;
       } else if (state.dayNight === 'day' && enterKw.includes('nightbound') && entered.transformTo) {
-        applyEffect(state, { type: 'transform' }, entered, []);
+        applyEffect(state, { type: 'transform', dayNightDriven: true }, entered, []);
         entered = state.objects.get(entered.id) ?? entered;
       }
       // stworem może być dowolny stwór (także samo źródło; wtedy bez grantu

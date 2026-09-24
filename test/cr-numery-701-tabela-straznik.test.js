@@ -44,6 +44,12 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 
 /** Pliki, które celowo cytują numery przestarzałe, żeby je opisać. */
 const POMIN = new Set([
+  // Tabela istnienia numerów (C3 audytu PR #135): DANE — lista numerów bez
+  // nazw akcji/mechanik, więc okno ±4/±8 nie ma czego dopasować. Numer trafia
+  // tam tylko po weryfikacji wobec dosłownego CR (tools/cr-numery.mjs).
+  'test/helpers/cr-numery-tabela.js',
+  // Strażnik istnienia: próba detektora (CR 999.99) i asercja na fixture 701.99.
+  'test/cr-numery-istnienie-straznik.test.js',
   'test/cr-numery-701-tabela-straznik.test.js',
   'test/cr-numery-702-tabela-straznik.test.js',
   'test/cr-numery-mechanik-straznik.test.js',

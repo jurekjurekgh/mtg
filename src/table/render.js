@@ -190,6 +190,9 @@ const TARGET_TYPE_LABELS = Object.freeze({
   creature_with_subtypes: 'stwór z podtypem', creature_with_power_at_least: 'stwór o sile ≥',
   creature_card_in_graveyard: 'karta-stwór w grobie', creature_card_in_opponent_graveyard: 'karta-stwór w grobie przeciwnika',
   card_in_graveyard: 'karta w grobie', permanent_card_in_graveyard: 'karta-permanent w grobie',
+  // Batch 59 (Scavenging Harpy): „exile target card from an opponent's
+  // graveyard" — dowolna KARTA (nie tylko stwór) z grobu przeciwnika.
+  card_in_opponent_graveyard: 'karta w grobie przeciwnika',
   instant_or_sorcery_card_in_graveyard: 'instant/sorcery w grobie',
   aura_or_equipment_card_in_graveyard: 'karta Aura/Equipment w grobie',
   noncreature_spell_on_stack: 'czar niebędący stworem na stosie',
@@ -226,6 +229,9 @@ export const targetTypeLabel = (spec) => {
   if (type === 'creature_with_subtypes' && spec.subtypes?.length) return `stwór z podtypem ${spec.subtypes.join(' lub ')}`;
   if (type === 'creature_with_power_at_least' && spec.min != null) return `stwór o sile ≥ ${spec.min}`;
   if (type === 'creature_with_keyword' && spec.keyword) return `stwór ze słowem kluczowym ${KEYWORD_LABELS[spec.keyword] ?? spec.keyword}`;
+  // Batch 59 (Memory's Journey): karty z grobu GRACZA wskazanego w innej
+  // pozycji („target cards from their graveyard").
+  if (type === 'card_in_graveyard' && spec.graveyardOfSlot != null) return `${base} wskazanego gracza`;
   // Batch 45 (Unearth): „creature card with mana value 3 or less".
   if (type === 'creature_card_in_graveyard' && spec.maxManaValue != null) return `karta-stwór w grobie o koszcie ≤ ${spec.maxManaValue}`;
   // Batch 45 (Assert Perfection): „up to one target creature an opponent
@@ -234,6 +240,35 @@ export const targetTypeLabel = (spec) => {
   if (spec.optional) return `${base} (opcjonalnie)`;
   return base;
 };
+
+/**
+ * Etykiety pozycji celów do kafla karty. Identyczne sąsiadujące pozycje
+ * zwijamy, bo jedna pozycja bywa zapisana kilkoma slotami:
+ *  - „up to N target …" (Batch 59, Memory's Journey: trzy sloty karty) →
+ *    „karta w grobie … (do 3)";
+ *  - kilka wystąpień tego samego słowa (Dead Ringers: „two target nonblack
+ *    creatures") → „stwór nieczarny ×2".
+ * Bez zwijania kafel pokazywał to samo trzy razy i wyglądał na błąd danych.
+ */
+function targetLabelsOf(specs) {
+  const labelOf = (spec) => (spec.type === 'any_target' ? 'dowolny cel' : targetTypeLabel(spec));
+  const groups = [];
+  for (const spec of specs) {
+    // Opcjonalność opisuje CAŁĄ grupę, nie pojedynczy slot (inaczej kafel
+    // powtarzałby „(opcjonalnie)" przy każdej pozycji grupy).
+    const base = labelOf({ ...spec, optional: false });
+    const last = groups[groups.length - 1];
+    if (last && last.base === base) last.specs.push(spec);
+    else groups.push({ base, specs: [spec] });
+  }
+  return groups.map((group) => {
+    if (group.specs.length === 1) return labelOf(group.specs[0]);
+    const count = group.specs.length;
+    return group.specs.every((spec) => spec.optional)
+      ? `${group.base} (do ${count})`
+      : `${group.base} \u00d7${count}`;
+  });
+}
 
 /** Opis efektów czaru do wiersza karty („Obrażenia 2, cel: stworek"). */
 export function describeSpellEffects(spell) {
@@ -293,7 +328,7 @@ export function describeSpellEffects(spell) {
     ? ''
     : (targetSpecs.length === 1 && targetSpecs[0].type === 'any_target')
       ? 'dowolny cel'
-      : `cel: ${targetSpecs.map((spec) => (spec.type === 'any_target' ? 'dowolny cel' : targetTypeLabel(spec))).join(' + ')}`;
+      : `cel: ${targetLabelsOf(targetSpecs).join(' + ')}`;
   return [parts.join(' + '), target].filter(Boolean).join(' \u00b7 ');
 }
 
@@ -1254,6 +1289,11 @@ function describeEffect(e, ctx = {}) {
     exalted_pump: () => `${signed(e.power ?? 1)}/${signed(e.toughness ?? 1)} do końca tury (egzaltacja)`,
     exile_all: () => 'wygnij wszystkie (filtr)',
     exile_opponent_creature: () => 'wygnij stwora przeciwnika',
+    // Batch 59 (Scavenging Harpy): wygnanie KARTY z grobu celu (dowolny typ).
+    exile_graveyard_card: () => 'wygnij kartę z grobu',
+    // Batch 59 (Memory's Journey): karty z grobu celu wracają do JEGO biblioteki
+    // i biblioteka jest tasowana.
+    shuffle_graveyard_cards_into_library: () => 'wtasuj karty z grobu do biblioteki',
     exile_own_land: () => 'wygnij własny ląd',
     exile_target_creature: () => 'wygnij stwora',
     exile_nonland_permanent_linked: () => 'wygnij nie-lądowy permanent do odejścia',
@@ -2011,6 +2051,12 @@ export function rulesText(info) {
       // Opis generyczny po deskryptorze — nowa jakość dopisuje się tutaj,
       // a strażnik M138/#11 pilnuje, żeby żadne pole aury nie zostało nieme.
       aura.protection ? `zaczarowany ma ochronę przed ${protectionQualityLabel(aura.protection)}` : '',
+      // Batch 59 (Kumano's Blessing): efekt zastępczy na śmierć ofiary obrażeń
+      // zaczarowanego stwora — M138/#11: każde pole deskryptora aury ma opis,
+      // inaczej kafel pokazuje samo „Enchantment — Aura”.
+      aura.exileIfDiesFromEnchantedDamage
+        ? 'stwór, któremu zaczarowany zadał obrażenia w tej turze, zamiast umrzeć zostaje wygnany'
+        : '',
     ].filter(Boolean).join(' · ')
     : '';
   // M192/Z4 (weryfikacja M193 Zywym Testerem): produkcja many ladu opisywana
@@ -2639,10 +2685,17 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
     && options.every((o) => o?.type === 'cast_flashback' && o.objectId === options[0].objectId)) {
     const fbObject = findViewObject(options[0].objectId, view);
     if (fbObject?.cardId) {
-      const fbCost = session.cardDetails?.(fbObject.cardId)?.spell?.flashback?.cost;
-      const fbShown = fbCost != null
-        ? (manaHtml ? manaCostHtml(`{${fbCost}}`) : `{${fbCost}}`)
-        : null;
+      // M428 (Żywy Tester 24d): koszt flashbacku to SUMA symboli —
+      // `costSymbols(cost, colors)`, nie gołe `{cost}` (Memory's Journey
+      // pokazywała „(koszt 1)" dla {G}, Join the Dance „(koszt 4)" dla
+      // {3}{G}{W}). Ta sama składanka co escape/warp/suspend/plot (M151/M267/
+      // M268); ręczne `{N}` gubiło pipy i obiecywało koszt generyczny.
+      const fbDescriptor = session.cardDetails?.(fbObject.cardId)?.spell?.flashback;
+      const fbCost = fbDescriptor?.cost;
+      const fbSymbols = fbCost != null ? costSymbols(fbCost, fbDescriptor?.colors) : null;
+      // Dwa kanały jak w reszcie tytułów (M87/A): nagłówek modala przez
+      // `textContent`, panel akcji przez `innerHTML` (ikony many).
+      const fbShown = fbSymbols != null ? (manaHtml ? manaCostHtml(fbSymbols) : fbSymbols) : null;
       return `Flashback: ${session.nameOf(fbObject.cardId)}${fbShown ? ` (koszt ${fbShown})` : ''}`;
     }
   }
@@ -3239,7 +3292,10 @@ export function commandLabel(cmd, session, view) {
     }
     case 'cast_escape': {
       // Koszt escape czyta z REGISTRY karty (graveyard view nie niesie spell —
-      // strefa grobu to {id,cardId,zone}). escape.cost = {generic} (+ kolory).
+      // strefa grobu to {id,cardId,zone}). `escape.cost` = SUMA symboli
+      // (generic + pipy) — poprawka komentarza przy okazji M428: wcześniejszy
+      // zapis „= {generic}" utrwalał błędne przekonanie, przez które kwoty
+      // alt-kosztów rozjeżdżały się z Oracle o wartość pipów.
       const objCard = obj(cmd.objectId);
       const defCard = objCard?.cardId ? session.cardDetails(objCard.cardId) : null;
       const escCost = defCard?.spell?.escape?.cost;
@@ -3257,8 +3313,13 @@ export function commandLabel(cmd, session, view) {
     case 'cast_flashback': {
       const objCard = obj(cmd.objectId);
       const defCard = objCard?.cardId ? session.cardDetails(objCard.cardId) : null;
-      const fbCost = defCard?.spell?.flashback?.cost;
-      const fb = fbCost != null ? manaCostHtml(`{${fbCost}}`) : '?';
+      // M428: koszt flashbacku to suma symboli (`costSymbols`), nie gołe `{N}`
+      // — Memory's Journey {G} pokazywała „(koszt 1)", Join the Dance
+      // {3}{G}{W} „(koszt 4)". Wzorzec M151 (suspend) / M267/C (escape) /
+      // M268 (warp, plot): JEDNA składanka kosztu na całą warstwę etykiet.
+      const fbDescriptor = defCard?.spell?.flashback;
+      const fb = fbDescriptor?.cost != null
+        ? manaCostHtml(costSymbols(fbDescriptor.cost, fbDescriptor.colors)) : '?';
       // A (znalezisko testera): cel w etykiecie jak w cast_spell — bez tego
       // dwie różne komendy (Dream Twist w Ty / w Nieprzyjaciela) wyglądały
       // identycznie („dwie oferty flashback jednej karty”).
@@ -3303,7 +3364,7 @@ export function commandLabel(cmd, session, view) {
         return `Channel: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → szukaj podstawowego lądu`;
       }
       // Batch 51 (Skinbrand Goblin): koszt bloodrushu to mana + ODRZUCENIE
-      // karty z ręki (CR 117.11) — etykieta pokazuje oba, bo gracz widzi tu
+      // karty z ręki (CR 602.2b) — etykieta pokazuje oba, bo gracz widzi tu
       // jedynie „{R}”, a traci kartę.
       if (ability?.bloodrush) {
         const pw = ability.bloodrush.power ?? 0;
@@ -5510,7 +5571,7 @@ export function renderPoisonPanel(els, view, { onOpenCard = null, hover = null }
   for (const p of view.players ?? []) {
     div(info, 'poison-count', `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${p.poison ?? 0} ${polishPluralCount(p.poison ?? 0, 'licznik', 'liczniki', 'liczników')} trucizny`);
   }
-  div(info, 'poison-note', 'Gracz z 10 licznikami trucizny przegrywa (CR 704.10). Liczniki znikają tylko z końcem gry — obrażenia ich nie leczą.');
+  div(info, 'poison-note', 'Gracz z 10 licznikami trucizny przegrywa (CR 704.5c). Liczniki znikają tylko z końcem gry — obrażenia ich nie leczą.');
 }
 
 /**

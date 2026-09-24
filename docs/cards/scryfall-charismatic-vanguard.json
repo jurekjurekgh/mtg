@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Charismatic%20Vanguard&set=dmu",
+  "print": "dmu",
+  "name": "Charismatic Vanguard",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Creature — Dwarf Soldier",
+  "oracle_text": "{4}{W}: Creatures you control get +1/+1 until end of turn.",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "dmu",
+  "set_name": "Dominaria United",
+  "collector_number": "10",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/5/a51764fe-0d75-4cfa-a699-0d9e7ffb7843.jpg?1783921370",
+    "normal": "https://cards.scryfall.io/normal/front/a/5/a51764fe-0d75-4cfa-a699-0d9e7ffb7843.jpg?1783921370"
+  },
+  "pobrano": "2026-09-24",
+  "artist": "David Palumbo",
+  "power": "3",
+  "toughness": "2",
+  "rulings": []
+}

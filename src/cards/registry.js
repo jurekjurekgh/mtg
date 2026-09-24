@@ -233,6 +233,10 @@ export function defineCard(data) {
         ? { replaceTokenCreation: Object.freeze({ ...data.aura.replaceTokenCreation }) }
         : {}),
       ...(data.aura.keepOwnAttachmentsOnProtection ? { keepOwnAttachmentsOnProtection: true } : {}),
+      // Batch 59 (Kumano's Blessing): efekt zastępczy śmierci od obrażeń
+      // zaczarowanego stwora („exile it instead") — deskryptor, nie nazwa
+      // karty (ADR 0002), czytany przez `zones.exiledByEnchantedDamage`.
+      ...(data.aura.exileIfDiesFromEnchantedDamage ? { exileIfDiesFromEnchantedDamage: true } : {}),
       // M174/D (Predator's Gambit, klasa L47): warunkowe keywordy aury —
       // ta sama zdolność co equipment (Hunter's Blowgun), gubiona przy
       // ręcznym przepisywaniu deskryptora.

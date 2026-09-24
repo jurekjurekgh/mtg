@@ -2,7 +2,7 @@
 //
 // A: Squire's Lightblade — bot rzucił flash-Equipment NIE MAJĄC NA STOLE
 //    ŻADNEJ KREATURY. ETB „attach to target creature you control” fizzluje
-//    (CR 603.4b), a karta czeka za koszt Equip {3} zamiast darmowego attachu.
+//    (CR 608.2b), a karta czeka za koszt Equip {3} zamiast darmowego attachu.
 //    Root cause: wycena cast_permanent = P.creatureBase + P/T (equipment to
 //    0/0) = 70 — tyle co zwykły stwór, zero kontekstu nosiciela. Fix: reguła
 //    generyczna po deskryptorze equipmentu (ADR 0002): brak nosiciela = kara

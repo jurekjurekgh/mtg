@@ -21,7 +21,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
-import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets } from './spells.js';
+import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -88,7 +88,7 @@ export function createGameState({ seed, players }) {
   if (ids.some((id) => !id) || new Set(ids).size !== ids.length) throw new TypeError('Gracze muszą mieć unikalne id');
   // M257-r5b/B (uwaga z testów): „Gracz zawsze zaczyna. Czy to kto zaczyna
   // nie powinno być losowe?” — rzut monetą z seeda (deterministyczny,
-  // ADR 0005; 1v1 = 50/50). Reguły CR 103.7a/103.4 czytały players[0]
+  // ADR 0005; 1v1 = 50/50). Reguły CR 103.8/103.4 czytały players[0]
   // na sztywno — teraz są przymocowane do `starterId`.
   const starterId = ids[Math.floor(createRng(seed)() * ids.length)];
   const state = {
@@ -447,6 +447,11 @@ export function createGameState({ seed, players }) {
     // exile it instead” — czyszczone w cleanup.
     exileIfDiesThisTurn: [],
     gainLifeIfDiesThisTurn: [],
+    // Batch 59 (Kumano's Blessing): pary {objectId, sourceId} obrażeń zadanych
+    // w tej turze — na tej podstawie `deathZoneFor` wie, czy ofiarę zabiły
+    // obrażenia ZACZAROWANEGO stwora („dealt damage by … this turn”).
+    // Czyszczone w cleanup razem z pozostałymi efektami „this turn”.
+    damageSourcesThisTurn: [],
     // Animacje z linkiem do źródła (Skilled Animator — „as long as this
     // creature remains on the battlefield"): wpisy { sourceId, targetId };
     // cofane przy odejściu źródła z pola bitwy (objects.js).
@@ -687,7 +692,7 @@ function performDrawStepDraw(state, playerId, objectId = null) {
  * kliknięcia „Dobierz kartę" pozwalało pominąć dobranie passem, co jest
  * niemożliwe w prawdziwej grze.
  *
- * CR 103.7a: gracz rozpoczynający partię pomija dobranie w swojej pierwszej
+ * CR 103.8a: gracz rozpoczynający partię pomija dobranie w swojej pierwszej
  * turze.
  */
 function drawStepTurnBasedAction(state) {
@@ -738,33 +743,6 @@ function untapStepTurnBasedAction(state, { pushToState = true } = {}) {
  * 2026-08-05, `illegal_room_target` przy losowym bocie). legalCommands oferuje
  * wyłącznie ten zbiór, execute waliduje identycznie — komenda zawsze spójna.
  */
-/**
- * Iloczyn kartezjański pul celów (oferta Epic Experiment — per legalny cel;
- * ścieżka okien dla czarów bez `modes`).
- *
- * CR 601.2c (jak `cartesian` w spells.js): ten sam obiekt wolno wskazać
- * raz na KŻADE wystąpienie słowa „target" — w obrębie jednego wystąpienia
- * sloty muszą wskazywać różne obiekty. `words` niesie numery wystąpień
- * (domyślnie: slot = wystąpienie). `null` powtarzać wolno („up to one”).
- */
-function cartesianTargetPools(pools, words = null) {
-  if (pools.length === 0) return [[]];
-  const tags = words ?? pools.map((_, i) => i);
-  const [first, ...rest] = pools;
-  const tails = cartesianTargetPools(rest, tags.slice(1));
-  const out = [];
-  for (const head of first) {
-    for (const tail of tails) {
-      const clash = head !== null && head !== undefined && tail.some(
-        (t, j) => t === head && tags[0] === tags[j + 1],
-      );
-      if (clash) continue;
-      out.push([head, ...tail]);
-    }
-  }
-  return out;
-}
-
 /**
  * Oferty free-castu Epic Experiment dla wygnanej karty: per legalny zestaw
  * celów (i per tryb modalny). Pusta lista = karta wymaga celów, których
@@ -1075,9 +1053,10 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
   if (free && spell.xCost && !spell.modes) {
     const xSpec = spell.targets ?? [];
     if (xSpec.length === 0) return withCosts([{ cardId: obj.id, targets: [], xValue: 0 }]);
-    const xPools = xSpec.map((entry) => legalTargetCandidates(state, playerId, entry));
-    if (xPools.some((pool) => pool.length === 0)) return [];
-    return withCosts(cartesianTargetPools(xPools, xSpec.map((sp, wi) => sp?.targetWord ?? wi))
+    // Wspólny enumerator celów (`spells.js`) — jedna reguła dla wszystkich
+    // ścieżek: pozycje opcjonalne, wspólne wystąpienia słowa „target" i
+    // zależności pozycji (L48: oferta = walidacja).
+    return withCosts(legalTargetCombos(state, playerId, xSpec, obj)
       .map((combo) => ({ cardId: obj.id, targets: combo, xValue: 0 })));
   }
   if (spell.xCost) {
@@ -1114,9 +1093,7 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
   }
   const spec = spell.targets ?? [];
   if (spec.length === 0) return withCosts([{ cardId: obj.id, targets: [] }]);
-  const pools = spec.map((entry) => legalTargetCandidates(state, playerId, entry));
-  if (pools.some((pool) => pool.length === 0)) return [];
-  return withCosts(cartesianTargetPools(pools, spec.map((sp, wi) => sp?.targetWord ?? wi))
+  return withCosts(legalTargetCombos(state, playerId, spec, obj)
     .map((combo) => ({ cardId: obj.id, targets: combo })));
 }
 
@@ -4021,7 +3998,7 @@ export function execute(state, input) {
     const spec = pending.specs[targetIndex];
     const before = state.events.length;
     if (copy && copy.zone === 'stack') {
-      // Nowy cel musi być LEGALNY dla kopii (CR 706.10c) — walidujemy tak
+      // Nowy cel musi być LEGALNY dla kopii (CR 707.10c) — walidujemy tak
       // samo jak przy rzucie, ze źródłem = kopia czaru.
       try {
         validateTargets(state, [spec], [cmd.targetId], pending.playerId, copy.colors ?? [], copy);
@@ -5402,6 +5379,8 @@ export function execute(state, input) {
           // M177/A: znaczniki „exile zamiast śmierci” wygasają z końcem tury.
           state.exileIfDiesThisTurn = [];
           state.gainLifeIfDiesThisTurn = [];
+          // Batch 59: „dealt damage … this turn" kończy się w cleanup (CR 514.2).
+          state.damageSourcesThisTurn = [];
           // M158/Batch 39 (Invasion of the Giants III): rabat „this turn" wygasa.
           state.pendingSpellDiscounts = [];
           // CR 514.1 (limit ręki): w cleanup TYLKO AKTYWNY gracz odrzuca
@@ -5438,7 +5417,7 @@ export function execute(state, input) {
         if (state.turn.number !== previousTurnNumber) {
           // Przeliczenie licznika czarów poprzedniej tury (transform).
           state.lastTurnSpellsCast = state.spellsCastThisTurn;
-          // M68: per-gracz kopia poprzedniej tury (daybound upkeep — CR 708.9f).
+          // M68: per-gracz kopia poprzedniej tury (daybound upkeep — CR 731.2a/b).
           state.lastTurnSpellsCastByPlayer = { ...state.spellsCastThisTurnByPlayer };
           const previousActive = state.turn.activePlayerId === state.players[0].id
             ? state.players[1].id
@@ -5986,7 +5965,7 @@ export function execute(state, input) {
 
   if (cmd.type === 'draw_card') {
     if (state.turn.step !== 'draw' || state.turn.activePlayerId !== cmd.playerId) return reject('wrong_timing');
-    // CR 103.7a: pierwsza tura gry — aktywny gracz (startujący) nie dobiera.
+    // CR 103.8a: pierwsza tura gry — aktywny gracz (startujący) nie dobiera.
     if (state.turn.number === 1 && state.turn.activePlayerId === state.starterId) {
       return reject('first_turn_no_draw');
     }
@@ -7866,7 +7845,7 @@ export function playerView(state, playerId) {
   // M101/A (CR 504.1): dobranie w kroku dobierania jest AKCJĄ TUROWĄ —
   // wykonuje je drawStepTurnBasedAction przy wejściu w krok. Nie oferujemy go
   // już jako komendy: opcja „Dobierz kartę" pozwalała pominąć dobranie passem.
-  // Wyjątek CR 103.7a (rozpoczynający nie dobiera w 1. turze) obsługuje sama
+  // Wyjątek CR 103.8a (rozpoczynający nie dobiera w 1. turze) obsługuje sama
   // akcja turowa, więc nie ma tu czego filtrować.
   const player = state.players.find((entry) => entry.id === playerId);
   // Mana produkowalna (pula + nietapnięte landy) steruje ofertą rzutów i

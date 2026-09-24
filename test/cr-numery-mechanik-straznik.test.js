@@ -146,6 +146,21 @@ const PARY = [
   { mechanika: /dwustronn|DFC|dwie twarze|twarz|transform/i,
     zakazany: /711\.\d|712\.4(?![0-9])/, poprawny: '712.8/712.8a/712.8e/712.9/712.11/712.13/712.14/712.18',
     wyklucz: /meld/i, zrodlo: 'CR 2026-09-25, mtg.wiki/page/Double-faced_card §Rules (F-3, fala 2)' },
+  // Pary dodane w sesji 2026-09-24b (audyt PR #135, znalezisko F-2): rozjazdy
+  // pary „mechanika <-> numer", które PRZESZŁY przez detektory okna, bo w oknie
+  // ±4 linie stało przypadkowe słowo-alias cytowanego numeru (np. „activated"
+  // dla 701.2 Activate, „Regenerate" dla 701.19). Dowody i analiza:
+  // docs/audits/AUDYT_PR135_2026-09-24b.md §3/F-2. Wykluczenie po poprawnym
+  // numerze chroni komentarze, które cytują OBA numery (jak naprawione wyżej).
+  { mechanika: /counter|kontr/i, zakazany: /701\.2(?![0-9])/, poprawny: '701.6a',
+    wyklucz: /701\.6/,
+    zrodlo: '701.2 to Activate; „A countered spell is put into its owner’s graveyard" = 701.6a (F-2)' },
+  { mechanika: /destroy|zniszcz/i, zakazany: /701\.19(?![0-9a])/, poprawny: '701.8',
+    wyklucz: /701\.8|regen|614\.8/i,
+    zrodlo: '701.19 to Regenerate; zniszczenie = 701.8 (F-2)' },
+  { mechanika: /cleave/i, zakazany: /702\.117(?![0-9])/, poprawny: '702.148',
+    wyklucz: /702\.148/,
+    zrodlo: '702.117 to Surge; Cleave = 702.148 (702.148b: tekst zmienia 612) (F-2)' },
 ];
 
 /** Rekurencyjna lista plików `.js` w katalogu (bez node_modules). */

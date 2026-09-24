@@ -249,7 +249,7 @@ test('M200/C2: „Zatrzymaj tę rękę” pokazuje aktualną liczbę kart (nie z
   assert.ok(label.includes('5 kart'), `etykieta liczy żywą rękę (5): ${label}`);
   assert.ok(!label.includes('7 kart'), 'stare „7 kart” zniknęło: ' + label);
 });
-// ---- D+E2: any_creature_dies dotyczy WYŁĄCZNIE stworów (CR 700.4c) --------
+// ---- D+E2: any_creature_dies dotyczy WYŁĄCZNIE stworów (CR 700.4) --------
 // Zgłoszenie D: „w jednej turze trigger zadziałał dwa razy” — Selhoff
 // Occultist mielił przy poświęceniu Blazing Torch (ARTEFAKT) i przy śmierci
 // Reassembling Skeleton (stwór). E2: „poświęciłem Rupture Spire (LAND) i
@@ -300,7 +300,7 @@ test('M200/E2: poświęcenie LANDU nie odpala any_creature_dies (Selhoff)', () =
   assert.ok(res.ok, res.events?.[0]?.reason);
   drainTriggersAndStack(state);
   assert.equal(state.pendingTriggerTargets.length, 0,
-    'poświęcony LAND nie jest śmiercią (CR 700.4c) — trigger NIE mógł odpalić');
+    'poświęcony LAND nie jest śmiercią (CR 700.4) — trigger NIE mógł odpalić');
   assert.equal(milledBy(state, 'p2'), 0, 'żadna karta zmielona');
   assert.ok(state.objects.get('land') == null, 'ląd faktycznie poświęcony (test nie jest próżny)');
 });

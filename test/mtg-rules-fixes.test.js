@@ -785,7 +785,7 @@ test('T13: cleanup odrzuca nadmiar ręki do 7 — wybór należy do gracza', () 
   assert.equal(handCount, 7, 'ręka po cleanup = 7');
 });
 
-// --- T14: pierwsza tura gry pomija draw step (CR 103.7a) --------------------
+// --- T14: pierwsza tura gry pomija draw step (CR 103.8a) --------------------
 
 test('T14: pierwsza tura gry nie dobiera; tura 2 dobiera normalnie', () => {
   const state = game();
@@ -798,7 +798,7 @@ test('T14: pierwsza tura gry nie dobiera; tura 2 dobiera normalnie', () => {
   assert.equal(state.turn.number, 1);
   assert.ok(!playerView(state, 'p1').legalCommands.some((c) => c.type === 'draw_card'), 'tura 1 nie oferuje dobrania');
   // M101/A: dobranie jest akcją turową (CR 504.1), ale w 1. turze gracza
-  // rozpoczynającego NIE wykonuje się wcale (CR 103.7a).
+  // rozpoczynającego NIE wykonuje się wcale (CR 103.8a).
   assert.ok(!state.turn.drawnInStep, 'tura 1 rozpoczynającego — brak dobrania');
   assert.ok(state.zones.library.includes('lib'), 'karta została w bibliotece');
   const r = execute(state, { type: 'draw_card', playerId: 'p1', objectId: 'lib' });

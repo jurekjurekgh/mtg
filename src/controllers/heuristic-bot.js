@@ -837,6 +837,11 @@ export const STACKING_ACTIVATED_EFFECTS = new Set([
   'damage_each_opponent', 'draw_cards', 'discard_cards', 'create_token',
   'create_copy_token', 'create_token_copy_of_source', 'reveal_top_pick_card_rest_bottom',
   'station_counters', 'scry', 'regenerate',
+  // Batch 59 (Charismatic Vanguard): „Creatures you control get +1/+1 until
+  // end of turn" — każda aktywacja dokłada kolejną premię (+1/+1, potem
+  // +2/+2), więc dublowanie na stosie jest legalne i sensowne (nie jest to
+  // set, jak `set_base_pt_creatures_you_control` z Batcha 52).
+  'buff_creatures_you_control',
   'search_library_to_battlefield', 'search_library_to_battlefield_tapped',
   'put_graveyard_card_on_bottom', 'return_to_battlefield_tapped',
   'return_to_battlefield_under_control_at_upkeep', 'unearth_return',
@@ -1926,7 +1931,131 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return false;
   };
 
-  // M234 (zlecenie właściciela — efektywność removalu). Kolory MOICH stworów
+  /** Delta P/T licznika statystyk (CR 122.1) — `null` dla liczników bez modelu
+   * P/T (shield, liczniki keywordowe): te nie wchodzą do symulacji walki. */
+  const counterStatDelta = (counterName, amount = 1) => {
+    if (counterName === '+1/+1') return { power: amount, toughness: amount };
+    if (counterName === '+1/+0') return { power: amount, toughness: 0 };
+    if (counterName === '+0/+1') return { power: 0, toughness: amount };
+    return null;
+  };
+
+  /**
+   * M429 (zlecenie właściciela 2026-09-24e, karty batcha 59 — „P3 Charismatic
+   * Vanguard"): ile kupuje MASOWY PUMP/DEBUFF „do końca tury".
+   *
+   * Reguła istniała wyłącznie w gałęzi CZARÓW (M106/Z7 + M218/1: „do końca
+   * tury" wygasa w cleanup, CR 514.2, więc poza walką nie kupuje nic), a zdolność
+   * aktywowana nie miała żadnej wyceny efektu — pomiar (6 seedów, talia
+   * `decks/audyt-batch59.txt`): Charismatic Vanguard {4}{W} oceniany na 2 pkt
+   * (sama baza zdolności) w KAŻDYM kroku, więc bot przepalał 5 many w Głównej 1
+   * stojąc w miejscu. Ta funkcja jest JEDNĄ ścieżką dla obu gałęzi (L41) —
+   * różni je tylko źródło timingu (`spell.timing` vs `ability.timing`):
+   *  - brak stworów w puli → kara (efekt nie ma na kogo działać);
+   *  - sorcery poza własną Główną 1 (gdy nikt gotowy do ataku) → kara;
+   *  - instant/zdolność bez zmiany wyniku ŻADNEJ toczącej się walki → kara
+   *    (M218/2: +1/+1 na 1/1 blokowanym przez 5/5 nie zmienia gry);
+   *  - inaczej wartość za każdego objętego stwora (pump zespołu = N obrażeń
+   *    więcej w tej walce).
+   * Zero nazw kart (ADR 0002), wyłącznie PlayerView (ADR 0017).
+   */
+  const teamPumpValue = (view, effect, { sorcerySpeed = false } = {}) => {
+    const targetsOpponents = effect.type === 'buff_opponents_creatures';
+    const pool = targetsOpponents ? enemyCreatures(view) : myCreatures(view);
+    const affected = pool.length;
+    if (affected === 0) return -P.teamPumpEmptyPoolPenalty;
+    if (sorcerySpeed) {
+      return (myTurn(view) && view.turn.phase === 'precombat_main'
+        && pool.some((entry) => canAttackNow(entry)))
+        ? P.teamPumpPerCreature * affected
+        : -P.teamPumpSorceryOffWindowPenalty;
+    }
+    const anyChange = pool.some((entry) => pumpChangesOutcome(view, entry, pumpDelta(view, effect)));
+    if (!anyChange) return -P.teamPumpNoChangePenalty;
+    return P.teamPumpPerCreature * affected;
+  };
+
+  /**
+   * M429 (zlecenie właściciela 2026-09-24e, karty batcha 59 — „P2 Memory's
+   * Journey"): ile kupuje WTASOWANIE KART Z GROBU DO BIBLIOTEKI.
+   *
+   * Dotąd efekt był wart płasko `4 + 2·karty` bez patrzenia na bibliotekę —
+   * pomiar (sonda na silniku): 58 pkt przy 30 kartach i 58 pkt przy 12, a nawet
+   * wariant z ZERO wybranych kart dawał 58 (bot rzucał czar-molestowany
+   * „na zero"). Karty wracają do BIBLIOTEKI, nie do ręki, więc jedyną realną
+   * wartością jest CZAS (CR 121.4/704.5b — deck-out to przegrana) — dokładnie
+   * ta miara, którą posługuje się istniejąca rodzina biblioteczna
+   * (`librarySafeMargin`, `libraryThinPerCardPenalty`, `drawDeckingPenalty`).
+   * Dlatego:
+   *  - biblioteka zdrowa (≥ `librarySafeMargin`, domyślnie 20) → kara: rzut to
+   *    strata karty z ręki, instant czeka na realne zagrożenie (jak M235
+   *    „trzymaj flash-a na okno"), więc wariant schodzi POD „pass";
+   *  - biblioteka cienka → wartość zwrotu (4 + 2/kartę, dawne stałe) PLUS
+   *    dopłata ratunkowa za każdą kartę, która kupuje turę życia;
+   *  - zero wybranych kart → efekt jałowy (zmienia tylko kolejność biblioteki):
+   *    kara jak wyżej, niezależnie od stanu biblioteki.
+   *
+   * Cel-przeciwnik zostaje na dawnej karze −60 (oddajemy mu zasoby z grobu —
+   * jego biblioteka to nie nasz ratunek; zmiana tego wariantu wymagałaby
+   * modelu „grobu jako zasobu przeciwnika", którego bot nie ma).
+   * Czytamy wyłącznie PlayerView (ADR 0017) i deskryptor efektu (ADR 0002).
+   */
+  const graveyardShuffleValue = (view, effect, cmd) => {
+    const playerSlot = cmd.targets?.[effect.playerTargetIndex ?? 0] ?? null;
+    if (playerSlot == null) return 0;
+    if (playerSlot !== view.playerId) return -60;
+    const cards = (effect.cardTargetIndexes ?? [])
+      .filter((idx) => cmd.targets?.[idx] != null).length;
+    if (cards === 0) return -P.graveyardShuffleEmptyPenalty;
+    if (myLibraryCount(view) >= P.librarySafeMargin) return -P.graveyardShuffleNoPressurePenalty;
+    return P.graveyardShuffleBase + P.graveyardShuffleCardValue * cards
+      + P.graveyardShuffleRescueWeight * cards;
+  };
+
+  /**
+   * M429 (zlecenie właściciela 2026-09-24e, karty batcha 59 — „P1 Mutagen"):
+   * WARTOŚĆ LICZNIKA NA TYM GOSPODARZU. Dotąd obie bliźniacze gałęzie (czar
+   * i aktywowana zdolność, L41) dawały płaskie 8 + 4·amount, więc wybór celu był
+   * remisem, a bot brał pierwszą ofertę z listy legalnych komend — pomiar
+   * (6 seedów, talia `decks/audyt-batch59.txt`) pokazał 14/14/14 dla tokena 1/1,
+   * Cryptida 2/3 i Hill Gianta 4/4 (klasa L50: decyzja bez treści).
+   *
+   * Model jest PRZEMYŚLANY i zapożyczony z podobnych efektów (zlecenie: „weź
+   * przykład z innych podobnych kart"):
+   *  - „im większy gospodarz, tym więcej kupuje wzmocnienie" — dokładnie reguła
+   *    aury-buffa (M257 r4, `auraBuffWorthWeight` = 2 na mocy i 1 na
+   *    wytrzymałości: „Opłaca się tym bardziej, im większy gospodarz");
+   *  - licznik, który POPRAWIA wynik toczonej walki, ma wartość natychmiastową
+   *    — to ta sama miara, którą M218/2 stosuje do pumpów (`pumpImprovesOutcome`
+   *    czyta wyłącznie PlayerView: atakujący/blokujący z `view.combat`);
+   *  - licznik na gospodarzu SKAZANYM w tej turze (ginie w walce, w której nie
+   *    zabija atakującego, albo jest celem usunięcia na stosie — M236/2
+   *    `permanentDoomedThisTurn`) wyparowuje razem z nim. Karę nakładamy TYLKO
+   *    gdy licznik NIE poprawia walki — inaczej byłaby sprzeczna z punktem wyżej
+   *    (licznik, który ratuje blokera, jest właśnie tym, po co go kładziemy).
+   *
+   * Czytamy wyłącznie deskryptory i PlayerView (ADR 0017), zero nazw kart
+   * (ADR 0002). Domyślne wartości parametrów są tak dobrane, że gospodarz-wzorzec
+   * (token 1/1, worth = 3) daje DOKŁADNIE dawną stałą 8 + 4·amount — kontrakt
+   * B6 T0 dla przypadku z obserwacji właściciela (pin w
+   * `test/audyt-m429-taktyczna-wycena-batch59.test.js`).
+   */
+  const counterHostValue = (view, host, counterName, amount = 1) => {
+    // Worth gospodarza: moc podwójnie (jak w aurach i w wycenie stwora),
+    // brak obiektu = gospodarz-wzorzec 1/1 (brak regresji wyceny).
+    const worth = host ? 2 * (host.power ?? 0) + (host.toughness ?? 0) : 3;
+    let value = P.counterBase + P.counterAmountWeight * amount + P.counterHostWorthWeight * worth;
+    const delta = counterStatDelta(counterName, amount);
+    if (delta && host && host.controllerId === view.playerId) {
+      if (pumpImprovesOutcome(view, host, {}, delta)) value += P.counterCombatBonus;
+      // Gospodarz skazany: licznik ginie razem z nim, więc NIE KUPUJE NIC
+      // (wartość zerowana, nie zmniejszana) — aktywacja schodzi pod pass
+      // niezależnie od wielkości ciała, bo „wielki, ale martwy" to nadal zero.
+      else if (permanentDoomedThisTurn(view, host)) value = -P.counterDoomedHostPenalty;
+    }
+    return value;
+  };
+
   // z pola bitwy: potrzebne, by ocenić, czy wrogi stwór ma protekcję od koloru,
   // którym mógłbym w niego uderzyć w walce (wtedy jest „nie do przejścia" i wart
   // zdjęcia czarem nawet przy niskich statystykach). Czytamy wyłącznie widok
@@ -4449,7 +4578,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           * ((card?.manaCost ?? 0) + coloredPipsOf(card?.cardId ?? '').length);
         // M258/A (uwaga właściciela, Squire's Lightblade): wartość equipmentu
         // żyje na NOSICIELU. Rzut przy braku własnych kreatur to marnowanie:
-        // ETB „attach za darmo" fizzluje (CR 603.4b), a karta czeka na stole
+        // ETB „attach za darmo" fizzluje (CR 608.2b), a karta czeka na stole
         // za koszt equipu (tu {3} zamiast 0). Baza P.creatureBase (70 — tyle
         // co stwór 0/0) nie zna tego kontekstu, więc bot rzucał flash-equipment
         // na pusty stół. Reguła generyczna po deskryptorze (ADR 0002):
@@ -5341,20 +5470,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Battle) nie poczeka na combat: jedyne sensowne okno to Główna 1
           // przed własnym atakiem (jak M179/C dla pojedynczego pumpu).
           if (effect.type === 'buff_opponents_creatures' || effect.type === 'buff_creatures_you_control') {
-            const targetsOpponents = effect.type === 'buff_opponents_creatures';
-            const pool = targetsOpponents ? enemyCreatures(view) : myCreatures(view);
-            const affected = pool.length;
-            // M218/2: uczestnictwo w walce to warunek konieczny, nie
-            // wystarczający — masowy pump/debuff, który nie zmienia wyniku
-            // ŻADNEJ toczącej się wymiany (np. −4/−0 na 5/5 blokowanym po
-            // cichu przez 1/1), jest skutkiem zerowym.
-            const anyChange = pool.some((entry) => pumpChangesOutcome(view, entry, pumpDelta(view, effect)));
-            if (affected === 0) score -= 30;          // nie ma na kogo działać
-            else if (card?.spell?.timing === 'sorcery') {
-              score += (myTurn(view) && view.turn.phase === 'precombat_main'
-                && pool.some((entry) => canAttackNow(entry))) ? 6 * affected : -60;
-            } else if (!anyChange) score -= 25;       // wygaśnie przed walką / nic nie zmieni
-            else score += 6 * affected;
+            // M429: cała reguła w `teamPumpValue` — TĘ SAMĄ funkcję woła
+            // bliźniacza gałąź aktywowanej zdolności (L41); tu różnica to tylko
+            // źródło timingu.
+            score += teamPumpValue(view, effect, { sorcerySpeed: card?.spell?.timing === 'sorcery' });
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') {
@@ -5399,6 +5518,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (pureBonusWindow && isPureDeckArranging) score += isSorcery ? 6 : 10;
             else if (isPureDeckArranging) score -= 60;
             else if (!pureBonusWindow) score -= 12;
+          }
+          // Batch 59 (Memory's Journey): „Target player shuffles up to three
+          // target cards from their graveyard into their library". Efekt jest
+          // PRZYJAZNY wobec właściciela kart (wracają do JEGO biblioteki), więc
+          // cel-własna strona to odzyskanie zasobów (lekki plus, rośnie z liczbą
+          // wybranych kart), a cel-przeciwnik oddaje mu karty z grobu z powrotem
+          // (generycznie po kontrolerze celu — ADR 0002, jak `prevent_next_damage`
+          // niżej: kara przechodzi bazę 50, żeby bot nie pomagał przeciwnikowi).
+          if (effect.type === 'shuffle_graveyard_cards_into_library') {
+            // M429 (P2 Memory's Journey): wartość zależy od PRESJI deck-outu
+            // i od tego, ile kart realnie wraca (zero = efekt jałowy) — cała
+            // reguła w `graveyardShuffleValue` (ta sama w obu gałęziach, L41).
+            score += graveyardShuffleValue(view, effect, cmd);
           }
           // M218/4 — regenerate jako efekt czaru (jeśli kiedyś pojawi się taki czar):
           // wartość tylko gdy cel zagrożony, inaczej kara.
@@ -5691,7 +5823,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const amount = Math.max(1, effect.amount ?? 1);
             if (beneficial && target) {
               if (target.controllerId === view.playerId) {
-                score += 8 + 4 * amount;
+                // M429: gospodarz różnicowany wartością ciała + kontekstem walki
+                // (ta sama funkcja co w gałęzi aktywowanej zdolności, L41).
+                score += counterHostValue(view, target, counterName, amount);
               } else if (target.kind === 'creature' || (target.types ?? []).includes('Creature')) {
                 score -= 90; // wzmacnianie stwora przeciwnika — mocna kara
               }
@@ -6375,7 +6509,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score -= 90;
               }
             } else if (statCounter) {
-              if (tgt?.controllerId === view.playerId) score += 8 + 4 * amount;
+              // M429 (P1 Mutagen): dotąd płaskie 8 + 4·amount dla KAŻDEGO
+              // własnego celu (pomiar: remis 14/14/14 — bot brał pierwszy
+              // legalny wariant, często token 1/1). Ta sama funkcja co w
+              // bliźniaczej gałęzi czarów (L41): wartość rośnie z ciałem
+              // gospodarza (wzorzec aury), premia gdy licznik poprawia wynik
+              // TRWAJĄCEJ walki, kara gdy gospodarz i tak ginie w tej turze.
+              if (tgt?.controllerId === view.playerId) score += counterHostValue(view, tgt, counterName, amount);
               else score -= 90;
             } else if (counterName !== 'charge') { // charge wycenia station_counters
               const consumers = (source?.cardId ? (cardDef(source.cardId)?.abilities ?? []) : [])
@@ -6392,6 +6532,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score += ownPostcombat ? 6 : -8; // uzupełnij zapas PO walce
               }
             }
+          }
+          // M429 (P3 Charismatic Vanguard): masowy pump/debuff „do końca tury"
+          // z AKTYWOWANEJ zdolności — dotąd ta rodzina nie miała tu wyceny
+          // (gołe `score = 2`), więc bot przepalał {4}{W} w Głównej 1, bez walki
+          // i bez zmiany jakiegokolwiek wyniku. Ta sama funkcja co w czarach
+          // (L41), timing zdolności z deskryptora (`ability.timing`).
+          if (effect.type === 'buff_opponents_creatures' || effect.type === 'buff_creatures_you_control') {
+            score += teamPumpValue(view, effect, { sorcerySpeed: ability?.timing === 'sorcery' });
+          }
+          // M429 (P2 Memory's Journey): wtasowanie kart z grobu do biblioteki —
+          // bliźniacza gałąź czarów (L41). Dziś wszystkie źródła tego efektu to
+          // czary (katalog ADR 0029), ale reguła musi być w OBU gałęziach, bo
+          // aktywacja dawałaby gołe `score = 2` (klasa M279).
+          if (effect.type === 'shuffle_graveyard_cards_into_library') {
+            score += graveyardShuffleValue(view, effect, cmd);
           }
           if (effect.type === 'station_counters') {
             // Station (Wedgelight Rammer / Warmaker Gunship): cenne tylko do

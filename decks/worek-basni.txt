@@ -9,12 +9,16 @@
 1x Dragon Fodder
 1x Forever Young
 1x Insatiable Appetite
+1x Join the Dance
 1x Kappa Tech-Wrecker
+1x Memory's Journey
 1x Steelclaw Lance
 1x Agate Assault
 1x Barkform Harvester
+1x Bird Admirer
 1x Blade-Blizzard Kitsune
 1x Halo Forager
+1x Kumano's Blessing
 1x Talion's Messenger
 1x Thistledown Players
 1x Vow of Flight
@@ -26,7 +30,7 @@
 1x Burning-Yard Trainer
 1x Greater Tanuki
 2x Plains
-1x Island
+2x Island
 4x Swamp
 2x Mountain
-4x Forest
+5x Forest

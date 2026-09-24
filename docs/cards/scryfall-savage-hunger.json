@@ -1,0 +1,36 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Savage%20Hunger&set=ala",
+  "print": "ala",
+  "name": "Savage Hunger",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nEnchanted creature gets +1/+0 and has trample.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Enchant",
+    "Cycling"
+  ],
+  "set": "ala",
+  "set_name": "Shards of Alara",
+  "collector_number": "147",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/3/0367fac8-6990-4544-ac7d-ed363b55a9cf.jpg?1783942550",
+    "normal": "https://cards.scryfall.io/normal/front/0/3/0367fac8-6990-4544-ac7d-ed363b55a9cf.jpg?1783942550"
+  },
+  "pobrano": "2026-09-24",
+  "artist": "Trevor Claxton",
+  "rulings": [
+    {
+      "date": "2008-10-01",
+      "source": "wotc",
+      "comment": "Cycling is an activated ability. Effects that interact with activated abilities (such as Stifle or Rings of Brighthearth) will interact with cycling. Effects that interact with spells (such as Remove Soul or Faerie Tauntings) will not."
+    }
+  ]
+}

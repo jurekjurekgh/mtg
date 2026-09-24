@@ -67,6 +67,24 @@ export const DESCRIPTOR_PARAMS = Object.freeze({
     'auraProtectionNoThreatPenalty', 'auraProtectionBase', 'auraProtectionThreatWeight',
     'flashProtectionAuraOffWindowPenalty',
   ]),
+  // M429 (sesja 2026-09-24e, „P1 Mutagen"): rodzina „licznik na wskazanym
+  // celu" — gospodarz licznika wybierany po wartości ciała i kontekstu walki.
+  counter: Object.freeze([
+    'counterBase', 'counterAmountWeight', 'counterHostWorthWeight',
+    'counterCombatBonus', 'counterDoomedHostPenalty',
+  ]),
+  // M429 („P2 Memory's Journey"): wtasowanie kart z grobu do biblioteki —
+  // wartość zależy od presji deck-outu (próg: `librarySafeMargin`).
+  graveyardShuffle: Object.freeze([
+    'graveyardShuffleBase', 'graveyardShuffleCardValue', 'graveyardShuffleRescueWeight',
+    'graveyardShuffleNoPressurePenalty', 'graveyardShuffleEmptyPenalty',
+  ]),
+  // M429 („P3 Charismatic Vanguard"): masowy pump/debuff „do końca tury" —
+  // jedna reguła dla czarów i aktywowanych zdolności (L41).
+  teamPump: Object.freeze([
+    'teamPumpPerCreature', 'teamPumpEmptyPoolPenalty', 'teamPumpNoChangePenalty',
+    'teamPumpSorceryOffWindowPenalty',
+  ]),
   // Rodziny mechanik czekające na własne parametry (kolejne sesje T1):
   // surge:   ['surgeBias'],
   // manifest:['manifestEarlyBias'],
@@ -77,6 +95,24 @@ export const DESCRIPTOR_PARAMS = Object.freeze({
  * nie po nazwie/ID). Zwraca też deskryptory „bez parametrów", aby narzędzie
  * mogło UCZCIWIE zgłosić, że danej mechaniki nie da się jeszcze stroić.
  */
+/**
+ * M429: czy karta niesie efekt danego typu — w treści czaru (także w trybach
+ * modalnych), w przygodzie albo w zdolnościach (aktywowanych/triggerowanych).
+ * Generycznie po strukturze deskryptora, zero nazw kart (ADR 0002).
+ */
+export function cardHasEffect(def, type) {
+  const listy = [
+    def?.spell?.effects,
+    ...(def?.spell?.modes ?? []).map((m) => m?.effects),
+    def?.adventure?.spell?.effects,
+    ...(def?.abilities ?? []).flatMap((a) => (Array.isArray(a?.effect) ? a.effect : [a?.effect])),
+    ...(def?.equipment?.grantedAbilities ?? []).flatMap((a) => (Array.isArray(a?.effect) ? a.effect : [a?.effect])),
+  ];
+  return listy
+    .flatMap((fx) => (Array.isArray(fx) ? fx : fx ? [fx] : []))
+    .some((e) => e?.type === type);
+}
+
 export function cardDescriptors(def) {
   const descriptors = new Set();
   const types = def?.types ?? [];
@@ -86,6 +122,13 @@ export function cardDescriptors(def) {
   if (def?.surge) descriptors.add('surge');
   const spellEffects = def?.spell?.effects ?? [];
   if (spellEffects.some((e) => e?.type === 'manifest_dread')) descriptors.add('manifest');
+  // M429: „licznik na wskazanym celu" (P1 Mutagen) — szukamy efektu w treści
+  // czaru ORAZ w zdolnościach (Mutagen dokłada licznik aktywowaną zdolnością).
+  if (cardHasEffect(def, 'add_counter')) descriptors.add('counter');
+  if (cardHasEffect(def, 'shuffle_graveyard_cards_into_library')) descriptors.add('graveyardShuffle');
+  if (cardHasEffect(def, 'buff_creatures_you_control') || cardHasEffect(def, 'buff_opponents_creatures')) {
+    descriptors.add('teamPump');
+  }
   return [...descriptors];
 }
 

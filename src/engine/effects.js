@@ -616,12 +616,15 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     } else {
       removeLoyaltyForDamage(state, targetObject, dealt);
       addCounter(state, targetId, '-1/-1', dealt);
-      markDealtDamageThisTurn(state, targetId);
+      markDealtDamageThisTurn(state, targetId, sourceObject.id);
     }
   } else if (targetIsPlayer) {
     changeLife(state, targetId, -dealt);
   } else {
-    markDamage(state, targetId, dealt);
+    // Batch 59: źródło obrażeń jedzie do markDamage — bez niego para
+    // {ofiara, źródło} nie powstawała dla obrażeń nie-bojowych (Kumano's
+    // Blessing nie widziałaby obrażeń z fightu/efektów).
+    markDamage(state, targetId, dealt, sourceObject.id);
   }
   // Deathtouch (CR 702.2b): „Any amount of damage this deals to a creature is
   // enough to destroy it" — dotyczy WSZYSTKICH obrażeń, także niecombatowych
@@ -956,7 +959,7 @@ export function creaturesNotControlledByOwner(state) {
  */
 /**
  * M258/F3 — WARD (CR 702.21): kontrowanie obiektu na stosie. Czar-karta
- * wraca do grobu właściciela (jak counter_spell, CR 701.2a); wpis
+ * wraca do grobu właściciela (jak counter_spell, CR 701.6a); wpis
  * zdolności (activated/trigger — pseudo-obiekt) znika ze stosu bez strefy
  * docelowej: skontrowana zdolność po prostu nic nie robi.
  */
@@ -3517,6 +3520,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'transform') {
+    // Batch 59/G1.10 (Bird Admirer // Wing Shredder; ruling MID 2021-09-24):
+    // permanent z daybound/nightbound NIE da się obrócić żadnym innym
+    // sposobem — twarze zmienia wyłącznie para zdolności daybound/nightbound
+    // (`setDayNight` w triggers.js przekazuje `dayNightDriven: true`).
+    // Bez tej bramki każda przyszła karta typu Moonmist („transform all
+    // creatures") obracałaby wilkołaki wbrew regule (ADR 0002: reguła żyje
+    // w silniku, nie w kartach).
+    if (!effect.dayNightDriven
+        && (sourceObject.keywords ?? []).some((k) => k === 'daybound' || k === 'nightbound')) return;
     const object = state.objects.get(sourceObject.id);
     // LKI (CR 603.10/608.2b): trigger transform wilkołaków poszedł na stos,
     // a źródło zdążyło opuścić pole bitwy (np. -1/-1 z Trigonu, ping w oknie
@@ -4082,6 +4094,56 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const libId = `library-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'library', libId);
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'library', toBottom: true }));
+    return;
+  }
+  if (effect.type === 'exile_graveyard_card') {
+    // Batch 59 (Scavenging Harpy): „exile target card from an opponent's
+    // graveyard" — karta-cel opuszcza grób i idzie na wygnanie (nowy obiekt,
+    // CR 400.7). CR 608.2b: cel mógł opuścić grób przed rozstrzygnięciem
+    // (np. inny efekt wygnał go wcześniej) — wtedy brak efektu, bez błędu.
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'graveyard') return;
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
+    state.events.push(event('object_moved', {
+      fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'exile',
+    }));
+    return;
+  }
+  if (effect.type === 'shuffle_graveyard_cards_into_library') {
+    // Batch 59 (Memory's Journey): „Target player shuffles up to three target
+    // cards from their graveyard into their library."
+    // Ruling WotC 2011-09-22 (ADR 0028) rozstrzyga DWA przypadki brzegowe:
+    //  - nielegalny cel-GRACZ → czar nie robi NIC (nawet jeśli karty są nadal
+    //    legalne — czar nie może kazać nielegalnemu celowi tasować);
+    //  - brak wskazanych kart (albo wszystkie przestały być legalne) → gracz
+    //    i tak tasuje swoją bibliotekę.
+    const playerIndex = effect.playerTargetIndex ?? 0;
+    const playerId = targets[playerIndex];
+    if (playerId == null || !state.players.some((player) => player.id === playerId)) return;
+    // Pozycje kart: wszystkie celowane poza pozycją gracza (kolejność slotów
+    // zależy od deskryptora, więc pytamy o jawną listę, a nie o „resztę").
+    const cardIndexes = effect.cardTargetIndexes
+      ?? targets.map((_, index) => index).filter((index) => index !== playerIndex);
+    for (const index of cardIndexes) {
+      const cardId = targets[index];
+      if (cardId == null) continue;
+      const object = state.objects.get(cardId);
+      // CR 608.2b: karta, która opuściła grób (albo przestała być kartą tego
+      // gracza) przed rozstrzygnięciem, nie jest tasowana do biblioteki.
+      if (!object || object.zone !== 'graveyard' || object.controllerId !== playerId) continue;
+      const libId = `library-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, cardId, 'library', libId);
+      state.events.push(event('object_moved', {
+        fromId: cardId, object: moved, fromZone: 'graveyard', toZone: 'library', shuffledIn: true,
+      }));
+    }
+    // Tasowanie należy do CELU („their library") — dokładnie jego karty
+    // mieszamy w bibliotece; seed z numeru obiektu (deterministyczny, ADR 0005).
+    shuffleOwnLibrary(state, playerId);
+    state.events.push(event('library_shuffled', { playerId, sourceCardId: sourceObject?.cardId ?? null }));
     return;
   }
   if (effect.type === 'put_graveyard_card_on_top') {

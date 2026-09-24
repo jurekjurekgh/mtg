@@ -62,6 +62,32 @@ export function elseEffectSummary(effect) {
   return Object.freeze({ type: effect.type });
 }
 
+/**
+ * Mutagen (TMT, Batch 59 / G1.6): predefined token — bezbarwny artefakt
+ * z podtypem Mutagen i zdolnością „{1}, {T}, Sacrifice this token: Put a +1/+1
+ * counter on target creature. Activate only as a sorcery." (ruling TMT
+ * 2026-01-27). Zdolność jest pisana jawnie (bez `createAbility`) z tego samego
+ * powodu co Skarb: `abilities.js` importuje `effects.js`, więc powstałby cykl
+ * modułów. Katalog tokenów ma bliźniaka `token_mutagen`; równość obu definicji
+ * pilnuje test w `test/real-cards-batch59.test.js` (precedens: Skarb,
+ * `test/audyt-treasure-katalog.test.js`).
+ */
+export const MUTAGEN_TOKEN_ABILITY = Object.freeze({
+  type: 'activated', timing: 'sorcery', keyword: null,
+  cost: Object.freeze({ mana: 1, tap: true, sacrificeSelf: true }),
+  targets: Object.freeze([Object.freeze({ type: 'creature' })]),
+  effect: Object.freeze({ type: 'add_counter', counter: '+1/+1', amount: 1 }),
+  trigger: null, cycling: null, condition: null, pump: null,
+  keywords: null, oncePerTurn: false, mustAttack: false,
+});
+
+/** Efekt `create_token` dla Mutagenu — gotowy do wstawienia w deskryptor. */
+export const MUTAGEN_TOKEN_EFFECT = Object.freeze({
+  type: 'create_token', cardId: 'token_mutagen', name: 'Mutagen', kind: 'artifact',
+  colors: [], types: Object.freeze(['Artifact']), subtypes: Object.freeze(['Mutagen']),
+  abilities: Object.freeze([MUTAGEN_TOKEN_ABILITY]),
+});
+
 export const TREASURE_TOKEN_EFFECT = Object.freeze({
   type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
   colors: [], types: Object.freeze(['Artifact']), subtypes: Object.freeze(['Treasure']),

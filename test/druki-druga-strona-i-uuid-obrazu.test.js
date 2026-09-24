@@ -31,7 +31,8 @@ const ARKUSZ = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-ar
 const snapshot = (id) => snapshotOfPlik(id);
 const def = (id) => REGISTRY.get(id);
 
-// Pary zmierzone 2026-09-12: druga twarz ← karta ze snapshotem (ten sam UUID obrazu).
+// Pary zmierzone 2026-09-12 (uzupełniane razem z batchami): druga twarz ← karta
+// ze snapshotem (ten sam UUID obrazu; u DFC obraz tyłu to ten sam plik z /back/).
 const PARY = [
   ['krallenhorde-wantons', 'grizzled-outcasts'],
   ['guidestone-compass', 'lodestone-needle'],
@@ -40,6 +41,8 @@ const PARY = [
   ['ballista-wielder', 'ballista-watcher'],
   ['dire-strain-brawler', 'tireless-hauler'],
   ['balamb-garden-airborne', 'balamb-garden-seed-academy'],
+  // Batch 59 (2026-09-24): Bird Admirer // Wing Shredder (126/127 MID).
+  ['wing-shredder', 'bird-admirer'],
 ];
 
 test('D/1 uuidObrazuSnapshotu: zwykła karta — UUID z image_uris.large', () => {
@@ -124,7 +127,7 @@ test('D/9 przegląd: drugie twarze w klasie B2, a nie na liście DO POBRANIA', (
   const w = przegladDrukow({ registry: REGISTRY, arkusz: ARKUSZ, snapshotOf: snapshot });
   const b2 = w.grupy.get('B2-druga-strona-pokryta-snapshotem') ?? [];
   assert.deepEqual(b2.map((x) => x.id).sort(), PARY.map((p) => p[0]).sort(),
-    'dokładnie siedem zmierzonych drugich twarzy');
+    'dokładnie osiem zmierzonych drugich twarzy (PARY = rejestr pomiaru)');
   for (const x of b2) assert.equal(w.doSieci.some((s) => s.id === x.id), false,
     `${x.id} nie może być na liście DO POBRANIA`);
   assert.equal(w.doSieci.length, 0, 'nic nie wymaga sieci: prowieniencja całej kolekcji jest offline');

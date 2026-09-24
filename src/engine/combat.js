@@ -388,7 +388,7 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
   // `passes` — `passes[true]` koercjuje do `passes[1]` (zwykły przebieg),
   // więc wznowienie decyzji stwora z first/double strike pomijało CAŁY przebieg
   // first strike (stawory z first strike nie zadają też w zwykłym przebiegu —
-  // CR 510.5). Mapa na indeks numeryczny: true→0 (first strike), false→1.
+  // CR 510.4). Mapa na indeks numeryczny: true→0 (first strike), false→1.
   const startIndex = resume ? (resume.pass ? 0 : 1) : 0;
   const startFrom = resume ? (resume.resumeFrom ?? 0) : 0;
   // M360/B3 (CR 510.4 + 510.3, mtg.wiki/Combat_damage_step 2026-09-16): przy first/double
@@ -1230,7 +1230,7 @@ function assignDamageToAttackers(state, events, blocker, blockerId, targets, amo
         removeLoyaltyForDamage(state, state.objects.get(attackerId), blockerDealt);
         addCounter(state, attackerId, '-1/-1', blockerDealt);
         events.push(...state.events.slice(countersBefore));
-        markDealtDamageThisTurn(state, attackerId);
+        markDealtDamageThisTurn(state, attackerId, blockerId);
       }
     } else if (blockerDealt > 0) {
       markDamage(state, attackerId, blockerDealt, blockerId);
@@ -1310,7 +1310,7 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
         removeLoyaltyForDamage(state, state.objects.get(blockerId), dealt);
         addCounter(state, blockerId, '-1/-1', dealt);
         events.push(...state.events.slice(countersBefore));
-        markDealtDamageThisTurn(state, blockerId);
+        markDealtDamageThisTurn(state, blockerId, attackerId);
       }
     } else if (dealt > 0) {
       markDamage(state, blockerId, dealt, attackerId);

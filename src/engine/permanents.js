@@ -1359,11 +1359,28 @@ export function isDamagePreventedByProtection(state, target, source) {
   return sourceColors.some(c => protColors.includes(c));
 }
 
-export function markDealtDamageThisTurn(state, objectId) {
+export function markDealtDamageThisTurn(state, objectId, sourceId = null) {
+  recordDamageSource(state, objectId, sourceId);
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield') return object;
   if (object.damagedThisTurn) return object;
   return replaceObject(state, object, { damagedThisTurn: true });
+}
+
+/**
+ * Batch 59 (Kumano's Blessing): zapisuje PARĘ {ofiara, źródło} obrażeń
+ * zadanych w tej turze. `damagedThisTurn` mówi tylko „dostał obrażenia", więc
+ * bez tej listy engine nie odpowiadał na pytanie „czy obrażenia zadał mu
+ * KONKRETNY stwór?" (a tego wymaga efekty typu „dealt damage by enchanted
+ * creature this turn"). Lista jest czyszczona w cleanup (CR 514.2 —
+ * „this turn", ta sama rodzina co `exileIfDiesThisTurn`) i wchodzi do odcisku
+ * stanu (B2: bez tego zmiana warunku byłaby dla sondy no-op niewidzialna).
+ */
+export function recordDamageSource(state, objectId, sourceId) {
+  if (objectId == null || sourceId == null || objectId === sourceId) return;
+  const list = state.damageSourcesThisTurn ?? [];
+  if (list.some((entry) => entry.objectId === objectId && entry.sourceId === sourceId)) return;
+  state.damageSourcesThisTurn = [...list, { objectId, sourceId }];
 }
 
 export function markDamage(state, objectId, amount, sourceId = null) {
@@ -1395,6 +1412,8 @@ export function markDamage(state, objectId, amount, sourceId = null) {
   }
   const updated = replaceObject(state, object, { damage: object.damage + amount, damagedThisTurn: true });
   state.events.push(event('damage_marked', { objectId, amount, total: updated.damage }));
+  // Batch 59: para {ofiara, źródło} — patrz recordDamageSource.
+  recordDamageSource(state, objectId, sourceId);
   return updated;
 }
 

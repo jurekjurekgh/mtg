@@ -18,7 +18,7 @@ import { createAggroBot } from '../src/controllers/aggro-bot.js';
 //     strike POMIJA cały przebieg first strike (CR 510.4) — stwór z first
 //     strike zablokowany wieloma blokerami albo z trample nie zadaje NIC
 //     w pierwszym przebiegu (a w zwykłym przebiegu first strike nie zadaje —
-//     CR 510.5). Realne karty: porcelain-legionnaire (3/1 FS), ainok-tracker.
+//     CR 510.4). Realne karty: porcelain-legionnaire (3/1 FS), ainok-tracker.
 //  2) Lifelink liczy obrażenia PRZED prewencją protection (CR 702.16d + 702.15):
 //     w assignDamageToBlockers oraz w ścieżce bloker→atakujący w
 //     processCombatPass kwota lifelink/deathtouch pochodzi z `dealt` sprzed

@@ -1,0 +1,42 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Slithering%20Cryptid&set=tmt",
+  "print": "tmt",
+  "name": "Slithering Cryptid",
+  "mana_cost": "{2}{G/U}",
+  "cmc": 3,
+  "type_line": "Creature — Fish Mutant",
+  "oracle_text": "When this creature enters, create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")",
+  "colors": [
+    "G",
+    "U"
+  ],
+  "color_identity": [
+    "G",
+    "U"
+  ],
+  "keywords": [],
+  "set": "tmt",
+  "set_name": "Teenage Mutant Ninja Turtles",
+  "collector_number": "168",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/d/6d35cb39-8832-4cf1-be73-8de49fbea529.jpg?1783904070",
+    "normal": "https://cards.scryfall.io/normal/front/6/d/6d35cb39-8832-4cf1-be73-8de49fbea529.jpg?1783904070"
+  },
+  "pobrano": "2026-09-24",
+  "artist": "Nicholas Gregory",
+  "power": "2",
+  "toughness": "3",
+  "rulings": [
+    {
+      "date": "2026-01-27",
+      "source": "wotc",
+      "comment": "Some spells and abilities that create Mutagen tokens require targets. If each target chosen is an illegal target as that spell or ability tries to resolve, it won't resolve. The Mutagen token won't be created."
+    },
+    {
+      "date": "2026-01-27",
+      "source": "wotc",
+      "comment": "Mutagen tokens are a kind of predefined token. Each one is a colorless artifact with the artifact subtype Mutagen and the ability \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\""
+    }
+  ]
+}

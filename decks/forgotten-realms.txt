@@ -24,9 +24,10 @@
 1x Angel of the Dawn
 1x Ettercap
 1x Underdark Explorer
+1x Waveskimmer Aven
 1x Marut
-2x Plains
+3x Plains
 1x Island
 3x Swamp
-3x Mountain
+2x Mountain
 4x Forest

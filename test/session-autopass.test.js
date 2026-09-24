@@ -89,7 +89,7 @@ test('po zagraniu ostatniego lądu bez kart do zagrania sesja przewija do nastę
   const session = createSession({ seed: 9, registry, decks });
   // T4 (mulligan): zatrzymaj rękę otwarcia.
   assert.ok(session.apply(session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice')).ok);
-  // Tura 1 nie dobiera (CR 103.7a) — zagraj landy z ręki startowej (7 z 8).
+  // Tura 1 nie dobiera (CR 103.8a) — zagraj landy z ręki startowej (7 z 8).
   for (let i = 0; i < 10; i += 1) {
     const view = session.view();
     const land = view.legalCommands.find((c) => c.type === 'play_land');
@@ -115,7 +115,7 @@ test('main phase: zagranie jest oferowane od razu — płatność sama tapuje la
   const session = createSession({ seed: 3, registry, decks });
   // T4 (mulligan): zatrzymaj rękę otwarcia.
   assert.ok(session.apply(session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice')).ok);
-  // Tura 1 nie dobiera (CR 103.7a) — zagraj landa z ręki startowej.
+  // Tura 1 nie dobiera (CR 103.8a) — zagraj landa z ręki startowej.
   assert.equal(session.apply(session.view().legalCommands.find((c) => c.type === 'play_land')).ok, true);
   // Main phase: 0 many w puli, 1 nietapnięty land, w ręce Forge Devil za 1.
   // Okno musi zostać u człowieka, a cast_permanent jest oferowany OD RAZU —

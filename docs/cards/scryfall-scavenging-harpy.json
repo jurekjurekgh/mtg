@@ -1,0 +1,31 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Scavenging%20Harpy&set=thb",
+  "print": "thb",
+  "name": "Scavenging Harpy",
+  "mana_cost": "{2}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Harpy",
+  "oracle_text": "Flying\nWhen this creature enters, exile target card from an opponent's graveyard.",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Flying"
+  ],
+  "set": "thb",
+  "set_name": "Theros Beyond Death",
+  "collector_number": "114",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/0/b0e237c5-45b4-49df-adb9-62b9f3b62986.jpg?1783931561",
+    "normal": "https://cards.scryfall.io/normal/front/b/0/b0e237c5-45b4-49df-adb9-62b9f3b62986.jpg?1783931561"
+  },
+  "pobrano": "2026-09-24",
+  "artist": "Daniel Ljunggren",
+  "power": "2",
+  "toughness": "1",
+  "rulings": []
+}

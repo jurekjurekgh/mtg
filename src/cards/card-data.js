@@ -3939,6 +3939,314 @@ export const REAL_CARDS = Object.freeze([
     plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
+  // ==========================================================================
+  // Batch 59 (2026-09-24) — lista właściciela: 126 MID (DWUSTRONNA, przód i tył),
+  // 129 DMU, 130 THB, 131 ISD, 134 ALA, 135 BOK, 138 MID, 139 TMT, 141 RIX,
+  // 142 ALA. Dane Oracle + rulingi pobrane ze Scryfalla 2026-09-24, set-aware
+  // (docs/cards/scryfall-*.json, ADR 0010 §2a; rulingi „przy kartce" — ADR 0028).
+  // Plan: docs/plans/PLAN_2026-09-24c-batch59-kolekcja-126-142.md.
+  //
+  // Karty wchodzą do katalogu TYLKO w 100% gotowe i po jednej, w swoim etapie
+  // (ADR 0022 + M419). Etapy: G1.1 Charismatic Vanguard, G1.2 Sun-Collared
+  // Raptor, G1.3 Savage Hunger, G1.4 Join the Dance, G1.5 Waveskimmer Aven,
+  // G1.6 Scavenging Harpy, G1.7 Memory's Journey, G1.8 Kumano's Blessing,
+  // G1.9 Slithering Cryptid, G1.10 Bird Admirer // Wing Shredder.
+  // ==========================================================================
+  // Charismatic Vanguard (DMU) {2}{W} 3/2 Dwarf Soldier — „{4}{W}: Creatures
+  // you control get +1/+1 until end of turn." Mechanizm hymnu czasowego istniał
+  // (Fortify: `buff_creatures_you_control`), więc karta wnosi dane + test.
+  // Rulingi: brak (sprawdzone 2026-09-24 — WotC nie opublikował nic).
+  defineCard({
+    id: 'charismatic-vanguard', name: 'Charismatic Vanguard', set: 'DMU',
+    types: ['Creature'], subtypes: ['Dwarf', 'Soldier'], colors: ['W'],
+    power: 3, toughness: 2, manaCost: 3,
+    oracleText: '{4}{W}: Creatures you control get +1/+1 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/5/a51764fe-0d75-4cfa-a699-0d9e7ffb7843.jpg?1783921370',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 5, colors: ['W'] },
+        effect: { type: 'buff_creatures_you_control', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 129, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['hymn do końca tury: zbiór objętych stworów ustala się W CHWILI ROZSTRZYGNIĘCIA (CR 611.2c) — stwór wchodzący później w tej turze buffa NIE dostaje'],
+  }),
+
+  // Sun-Collared Raptor (RIX) {1}{R} 1/2 Dinosaur — trample + „{2}{R}: This
+  // creature gets +3/+0 until end of turn." Ten sam deskryptor `pump` co
+  // Snarling Wolf; różnica: bez limitu aktywacji (Oracle nie ma „once each turn").
+  defineCard({
+    id: 'sun-collared-raptor', name: 'Sun-Collared Raptor', set: 'RIX',
+    types: ['Creature'], subtypes: ['Dinosaur'], colors: ['R'],
+    power: 1, toughness: 2, manaCost: 2, keywords: ['trample'],
+    oracleText: 'Trample\n{2}{R}: This creature gets +3/+0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/2/62fbd1bc-3e57-43d5-ad54-443ca740fcc4.jpg?1783935291',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['R'] },
+        effect: { type: 'pump', power: 3, toughness: 0 },
+      }),
+    ],
+    artId: 141, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+    notes: ['+3/+0 do końca tury można aktywować wielokrotnie (każda aktywacja to osobny wpis ze znacznikiem czasu — CR 613.7b)'],
+  }),
+  // Savage Hunger (ALA) {2}{G} Aura — „Enchant creature / Enchanted creature gets
+  // +1/+0 and has trample. / Cycling {2}". Aura-pump z keywordem (Vow of
+  // Wildness) + cycling (karta-źródło Desolate Mire); karta wnosi dane + test.
+  // Ruling ALA 2008-10-01: cycling to zdolność AKTYWOWANA (wchodzi w interakcje
+  // z efektami wobec zdolności, nie wobec czarów) — stąd deskryptor `cycling`
+  // na zdolności, nie pole „spell".
+  defineCard({
+    id: 'savage-hunger', name: 'Savage Hunger', set: 'ALA',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 3,
+    oracleText: 'Enchant creature\nEnchanted creature gets +1/+0 and has trample.\nCycling {2} ({2}, Discard this card: Draw a card.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/3/0367fac8-6990-4544-ac7d-ed363b55a9cf.jpg?1783942550',
+    aura: { pump: { power: 1, toughness: 0 }, keywords: ['trample'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 2 },
+        cycling: { drawCards: 1 },
+        effect: [],
+      }),
+    ],
+    artId: 142, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+    notes: ['cycling {2} z RĘKI (CR 702.29a) — karta na polu bitwy nie ma tej zdolności; brak tarczy obrażeń: +1/+0 nie ratuje przed 1 obrażeniem'],
+  }),
+
+  // Join the Dance (MID) {G}{W} Sorcery — „Create two 1/1 white Human creature
+  // tokens. / Flashback {3}{G}{W}". Dwa tokeny jak Raise the Alarm, ale typ
+  // Human + flashback na sorcery (Dream Twist ma flashback na instantcie).
+  // Rulingi MID 2025-06-06: flashback zawsze wygania kartę (także skontrowaną
+  // albo rozstrzygniętą); timing ograniczeń typu karty obowiązuje (sorcery —
+  // main phase, pusty stos).
+  defineCard({
+    id: 'join-the-dance', name: 'Join the Dance', set: 'MID',
+    types: ['Sorcery'], colors: ['G', 'W'], manaCost: 2,
+    oracleText: 'Create two 1/1 white Human creature tokens.\nFlashback {3}{G}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/5/6/56b30a99-601b-40b9-b012-30fa4be5fd3c.jpg?1783925558',
+    spell: {
+      timing: 'sorcery', targets: [],
+      effects: [{
+        type: 'create_token', cardId: 'token_human', name: 'Human',
+        kind: 'creature', power: 1, toughness: 1, colors: ['W'],
+        types: ['Creature'], subtypes: ['Human'], amount: 2,
+      }],
+      // M428 (Żywy Tester, sesja 24d): `cost` to SUMA symboli (generic + pipy),
+      // nie część generyczna — `costSymbols(5, ['G','W'])` = {3}{G}{W}. Wartość
+      // 4 (zapis z G1.4) kazała silnikowi brać o {1} mniej, niż mówi druk
+      // (CR 702.34a: zapłać koszt flashbacku); poprawka + skan symboli
+      // w `test/audyt-m428-kwota-alt-kosztu.test.js` + lekcja L168.
+      flashback: { cost: 5, colors: ['G', 'W'] },
+    },
+    artId: 138, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+    notes: ['flashback {3}{G}{W} = 5 many: rzut z grobu za koszt alternatywny, po rozstrzygnięciu karta na wygnanie (CR 702.34a); mana value czaru pozostaje 2 (ruling MID 2025-06-06)'],
+  }),
+  // Token Mutagen (TMT, Batch 59): bezbarwny artefakt z podtypem Mutagen i
+  // zdolnością „{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target
+  // creature. Activate only as a sorcery." (ruling TMT 2026-01-27: to predefined
+  // token; zdolność ma timing sorcery). Lustro w silniku: MUTAGEN_TOKEN_EFFECT
+  // (src/engine/tokens.js) — równość pilnuje test batcha 59.
+  defineCard({
+    id: 'token_mutagen', name: 'Mutagen', set: null,
+    types: ['Artifact', 'Token'], subtypes: ['Mutagen'], colors: [],
+    // Grafika druku ttmt/9 (Teenage Mutant Ninja Turtles Tokens) ze Scryfalla;
+    // bez wpisu M202/K i M369/I czerwienieją (kafel = syntetyczna zaślepka).
+    imageUri: 'https://cards.scryfall.io/large/front/6/5/6559c423-449c-4e8e-8384-3ce78183e317.jpg?1783904002',  // ttmt
+    manaCost: 0,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { mana: 1, tap: true, sacrificeSelf: true },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
+  }),
+
+  // Slithering Cryptid (TMT) {2}{G/U} 2/3 Fish Mutant — ETB: token Mutagen.
+  // Pierwsza karta w katalogu z pipem HYBRYDOWYM {G/U} (parser mana-cost.js zna
+  // hybrydy; komentarz M389 przy Messenger Falcons). Ruling TMT 2026-01-27:
+  // Mutagen to predefined token (artefakt + zdolność jak wyżej).
+  defineCard({
+    id: 'slithering-cryptid', name: 'Slithering Cryptid', set: 'TMT',
+    types: ['Creature'], subtypes: ['Fish', 'Mutant'], colors: ['G', 'U'],
+    power: 2, toughness: 3, manaCost: 3,
+    oracleText: 'When this creature enters, create a Mutagen token. (It\'s an artifact with "{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.")',
+    imageUri: 'https://cards.scryfall.io/large/front/6/d/6d35cb39-8832-4cf1-be73-8de49fbea529.jpg?1783904070',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'create_token', cardId: 'token_mutagen', name: 'Mutagen',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Mutagen'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              timing: 'sorcery',
+              cost: { mana: 1, tap: true, sacrificeSelf: true },
+              targets: [{ type: 'creature' }],
+              effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+            }),
+          ],
+        },
+      }),
+    ],
+    artId: 139, plan: 'Teenage Mutant Ninja Turtles',
+    support: { status: 'supported', limitations: [] },
+    notes: ['pip hybrydowy `{G/U}` — opłacalny maną {G} ALBO {U} (parser mana-cost.js, CR 107.4e); zdolność Mutagenu tylko jak sorcery (CR 107.3a/ruling TMT 2026-01-27)'],
+  }),
+  // Waveskimmer Aven (ALA) {2}{G}{W}{U} 2/4 Bird Soldier — flying + exalted.
+  // Exalted jak Akrasan Squire (trigger `attacks_alone` → `exalted_pump`).
+  // Ruling ALA 2008-10-01: przy DOKŁADNIE jednym zadeklarowanym atakującym
+  // odpala każdy exalted każdego mojego permanentu (także samego atakującego);
+  // stwory wprowadzone „atakujące" nie deklarowały ataku, więc exalted ich
+  // ignoruje — zbiór liczy deklarację, nie stan pola bitwy.
+  defineCard({
+    id: 'waveskimmer-aven', name: 'Waveskimmer Aven', set: 'ALA',
+    types: ['Creature'], subtypes: ['Bird', 'Soldier'], colors: ['G', 'U', 'W'],
+    power: 2, toughness: 4, manaCost: 5, keywords: ['flying', 'exalted'],
+    oracleText: 'Flying\nExalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/7/e75ebcb4-5db8-4c72-9f65-8ee8f2c893ea.jpg?1783942536',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks_alone' },
+        effect: { type: 'exalted_pump', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 134, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['exalted liczy DEKLARACJĘ atakujących: samotny atak = +1/+1 za każdy mój exalted; drugi stwór w ataku wyłącza wszystkie (ruling ALA 2008-10-01)'],
+  }),
+
+  // Scavenging Harpy (THB) {2}{B} 2/1 Harpy — flying + ETB: „exile target card
+  // from an opponent's graveyard". Nowy typ celu `card_in_opponent_graveyard`
+  // (generyczny, ADR 0002): predykat w `zones.js` czytają walidacja i oferta
+  // (`spells.js`) oraz enumeracja triggerów (`triggers.js`) — jedna reguła
+  // (L41/M82), a token nie jest kartą (CR 108.2b). Efekt `exile_graveyard_card`
+  // = graveyard → exile (CR 400.7: nowy obiekt; CR 608.2b: cel nielegalny przy
+  // rozstrzygnięciu = brak efektu). Rulingi: brak (sprawdzone 2026-09-24 —
+  // WotC nie opublikował nic do tej karty).
+  defineCard({
+    id: 'scavenging-harpy', name: 'Scavenging Harpy', set: 'THB',
+    types: ['Creature'], subtypes: ['Harpy'], colors: ['B'],
+    power: 2, toughness: 1, manaCost: 3, keywords: ['flying'],
+    oracleText: 'Flying\nWhen this creature enters, exile target card from an opponent\'s graveyard.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/0/b0e237c5-45b4-49df-adb9-62b9f3b62986.jpg?1783931561',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'card_in_opponent_graveyard' } },
+        effect: { type: 'exile_graveyard_card' },
+      }),
+    ],
+    artId: 130, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['cel OBOWIĄZKOWY: gdy w grobach przeciwników nie ma żadnej KARTY, trigger schodzi bez efektu (CR 603.3d, komunikat M106/Z2); karta z WŁASNEGO grobu nie jest legalnym celem'],
+  }),
+
+  // Memory's Journey (ISD, Batch 59/G1.8): {1}{U} Instant + flashback {G}.
+  // PIERWSZA karta z ZALEŻNĄ pozycją celu: „target cards from THEIR graveyard"
+  // — karty pochodzą z grobu gracza wskazanego w pozycji 0 (generyczny
+  // deskryptor `graveyardOfSlot`, ADR 0002), więc pula pozycji 1–3 liczy się
+  // dopiero po wybraniu celu-gracza. Trzy sloty z tym samym `targetWord` to
+  // JEDNO wystąpienie słowa „target" („up to three"), więc oferta enumeruje
+  // podzbiory bez powtórzeń i bez luk (CR 601.2c).
+  defineCard({
+    id: 'memory-s-journey', name: "Memory's Journey", set: 'ISD',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: "Target player shuffles up to three target cards from their graveyard into their library.\nFlashback {G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    imageUri: 'https://cards.scryfall.io/large/front/2/6/265aaa73-1a1e-4282-a860-f7c422f21db3.jpg?1783940971',
+    spell: {
+      timing: 'instant',
+      targets: [
+        { type: 'player' },
+        { type: 'card_in_graveyard', graveyardOfSlot: 0, optional: true, targetWord: 'cards' },
+        { type: 'card_in_graveyard', graveyardOfSlot: 0, optional: true, targetWord: 'cards' },
+        { type: 'card_in_graveyard', graveyardOfSlot: 0, optional: true, targetWord: 'cards' },
+      ],
+      effects: [{
+        type: 'shuffle_graveyard_cards_into_library',
+        playerTargetIndex: 0, cardTargetIndexes: [1, 2, 3],
+      }],
+      flashback: { cost: 1, colors: ['G'] },
+    },
+    artId: 131, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'gracz-cel OBOWIĄZKOWY, karty OPCJONALNE (ruling ISD 2011-09-22): bez wskazanych kart gracz i tak tasuje bibliotekę',
+      'nielegalny cel-gracz przy rozstrzygnięciu → czar nie robi NIC, nawet gdy karty są nadal legalne (ruling ISD 2011-09-22)',
+      'karta z flashbackiem nie może obrać SIEBIE (rzucana leży na stosie, nie w grobie) — ruling ISD 2011-09-22',
+      'flashback {G}: rzut z grobu za koszt alternatywny, po opuszczeniu stosu karta na wygnanie (CR 702.34a)',
+    ],
+  }),
+  // Kumano's Blessing (BOK, Batch 59/G1.9): {2}{R} Aura — flash, enchant
+  // creature, „If a creature dealt damage by enchanted creature this turn
+  // would die, exile it instead." PIERWSZY efekt zastępczy, który pyta
+  // o ŹRÓDŁO obrażeń (dotąd engine znał tylko `damagedThisTurn`, czyli fakt
+  // „dostał obrażenia"): pary {ofiara, źródło} z tej tury zbiera
+  // `permanents.recordDamageSource`, a `zones.exiledByEnchantedDamage`
+  // rozstrzyga w chwili śmierci (CR 616.1), czy ofiarę zabił stwór
+  // ZACZAROWANY tą aurą — dlatego aura dołożona PO obrażeniach też działa,
+  // a odczepiona przestaje. Deskryptor generyczny (ADR 0002), bez nazwy
+  // karty w silniku; `flash` daje okno rzutu poza własną turą (CR 702.8).
+  // Rulingi: brak (sprawdzone 2026-09-24 — WotC nic nie opublikował do ISD/BOK
+  // tej karty).
+  defineCard({
+    id: 'kumanos-blessing', name: "Kumano's Blessing", set: 'BOK',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['R'], manaCost: 3,
+    keywords: ['flash'],
+    oracleText: "Flash\nEnchant creature\nIf a creature dealt damage by enchanted creature this turn would die, exile it instead.",
+    imageUri: 'https://cards.scryfall.io/large/front/5/6/56f0d9aa-4270-41cd-8993-765354c03d03.jpg?1783944187',
+    aura: { enchant: 'creature', exileIfDiesFromEnchantedDamage: true },
+    artId: 135, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'warunek sprawdzany przy ŚMIERCI ofiary (CR 616.1): działa też, gdy aurę dołożono już PO zadaniu obrażeń w tej turze, a gaśnie, gdy aura opuści stwora',
+      'wygnanie działa w każdej ścieżce śmierci — SBA, zniszczenie, sacrifice, obrażenia bojowe i nie-bojowe (wspólne `deathZoneFor`)',
+      'wygnana karta dostaje odznakę źródła (`meta.exiledBy` = kumanos-blessing, M262)',
+    ],
+  }),
+  // Bird Admirer // Wing Shredder (MID, Batch 59/G1.10): karta DWUSTRONNA
+  // z pary 126 MID (przód) + 127 MID (tył) arkusza kolekcji. Daybound/
+  // nightbound (CR 702.145) — wzorzec `tireless-hauler`/`dire-strain-brawler`:
+  // przód wchodzi OD RAZU jako tył, gdy jest noc (ruling MID 2021-09-24),
+  // a transformację robi WYŁĄCZNIE para daybound/nightbound (żaden inny efekt
+  // nie może jej obrócić). Tylna strona ma `status: 'back'` — jest w katalogu
+  // (render, transformacja), ale nie wchodzi do talii.
+  defineCard({
+    id: 'bird-admirer', name: 'Bird Admirer', set: 'MID',
+    types: ['Creature'], subtypes: ['Human', 'Archer', 'Werewolf'], colors: ['G'],
+    power: 1, toughness: 4, manaCost: 3, keywords: ['reach', 'daybound'],
+    oracleText: 'Reach\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/7/1/71ccc444-54c8-4f7c-a425-82bc3eea1eb0.jpg?1783925590',
+    transformTo: 'wing-shredder',
+    artId: 126, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+    notes: ['daybound: w nocy karta wchodzi jako tył (ruling MID 2021-09-24), bez rzucania też — dotyczy każdego wejścia na pole bitwy'],
+  }),
+  defineCard({
+    id: 'wing-shredder', name: 'Wing Shredder', set: 'MID',
+    types: ['Creature'], subtypes: ['Werewolf'], colors: ['G'],
+    power: 3, toughness: 5, manaCost: 3, keywords: ['reach', 'nightbound'],
+    oracleText: 'Reach\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)',
+    imageUri: 'https://cards.scryfall.io/large/back/7/1/71ccc444-54c8-4f7c-a425-82bc3eea1eb0.jpg?1783925590',
+    transformTo: 'bird-admirer',
+    artId: 127, plan: 'Eldraine',
+    support: { status: 'back', limitations: ['tylna strona daybound/nightbound — nie można umieścić w talii'] },
+  }),
+
 ]);
 
 
@@ -11594,7 +11902,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({
     id: 'boulder-salvo', name: 'Boulder Salvo', set: 'OGW',
     types: ['Sorcery'], colors: ['R'], manaCost: 5,
-    surge: { cost: 3, colors: ['R'] },
+    // M428: `cost` = SUMA symboli → Surge {1}{R} to 2 many (było 3 — karta
+    // brała o {1} za dużo; ten sam skan symboli co Join the Dance).
+    surge: { cost: 2, colors: ['R'] },
     oracleText: 'Surge {1}{R} (You may cast this spell for its surge cost if you or a teammate has cast another spell this turn.)\nBoulder Salvo deals 4 damage to target creature.',
     imageUri: 'https://cards.scryfall.io/large/front/4/e/4e269989-bb22-4da4-a374-434a572e8e8f.jpg?1783937908',
     spell: {

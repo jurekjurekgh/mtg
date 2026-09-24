@@ -347,7 +347,7 @@ function fireTouch(el, x0, x1, y0 = 300, y1 = 312) {
 test('pełny ekran karty: swipe w lewo/prawo karuzeluje kartami strefy, strzałki też', () => {
   restart();
   const first = pickActionButton(dom.get('actions'));
-  assert.ok(first, 'brak pierwszej akcji (tura 1: zagranie lądu — CR 103.7a bez draw)');
+  assert.ok(first, 'brak pierwszej akcji (tura 1: zagranie lądu — CR 103.8a bez draw)');
   first.click();
   // Kafle ręki z gestem double-tap (pełny ekran).
   const tiles = dom.get('hand').children.filter((c) => (c.listeners.dblclick ?? []).length > 0);
@@ -392,7 +392,7 @@ test('bug A (iOS): touchend tuż po otwarciu pełnego ekranu (powolny double-tap
   try {
     restart();
     const first = pickActionButton(dom.get('actions'));
-    assert.ok(first, 'brak pierwszej akcji (tura 1: bez draw — CR 103.7a)');
+    assert.ok(first, 'brak pierwszej akcji (tura 1: bez draw — CR 103.8a)');
     first.click();
     const tiles = dom.get('hand').children.filter((c) => (c.listeners.dblclick ?? []).length > 0);
     assert.ok(tiles.length >= 1, 'brak kafli ręki z gestem');
@@ -603,7 +603,7 @@ test('kreator many (E.3a): dwukolorowa płatność Curate otwiera wizard, źród
   assert.match(body, /pozostało 2 many/);
   let sources = wizardSourceButtons();
   // Układ nietapniętych źródeł zależy od ręki startowej (tura 1 bez draw,
-  // CR 103.7a) — istotne: co najmniej 3 źródła, w tym Island i Plains.
+  // CR 103.8a) — istotne: co najmniej 3 źródła, w tym Island i Plains.
   assert.ok(sources.length >= 3, `kreator ma pokazać nietapnięte źródła (Island + Plains): ${body}`);
   assert.match(body, /Island/, 'brak wysp w kreatorze');
   assert.match(body, /Plains/, 'brak równiny w kreatorze');
