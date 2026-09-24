@@ -18,7 +18,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
+import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
 import { addMana } from '../src/engine/resources.js';
 
 const registry = createCardRegistry();
@@ -163,4 +163,114 @@ test('B59/G1.2: Sun-Collared Raptor — bez many nie ma aktywacji', () => {
   addMana(state, 'p1', 2);
   assert.ok(!commands(state).some((c) => c.type === 'activate_ability' && c.objectId === 'raptor'),
     'przy 2 manie oferty brak (koszt {2}{R} = 3)');
+});
+
+// ---- G1.3: Savage Hunger (142 ALA, plan Kaldheim) ---------------------------
+
+test('B59/G1.3: Savage Hunger — dane Oracle, aura z pumpem i trample', () => {
+  const def = registry.get('savage-hunger');
+  assert.deepEqual(def.types, ['Enchantment']);
+  assert.deepEqual(def.subtypes, ['Aura']);
+  assert.deepEqual(def.colors, ['G']);
+  assert.equal(def.manaCost, 3);
+  assert.deepEqual(def.aura, { pump: { power: 1, toughness: 0 }, keywords: ['trample'] });
+  assert.equal(def.set, 'ALA');
+  assert.equal(def.plan, 'Kaldheim');       // plan DOSŁOWNIE z arkusza właściciela
+  assert.equal(def.artId, 142);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('0367fac8'), 'imageUri z druku ALA (ala/147)');
+  assert.equal(MANA_COSTS['savage-hunger'], '{2}{G}');
+});
+
+test('B59/G1.3: Savage Hunger — +1/+0 i trample na zaczarowanym stworze', () => {
+  const state = game();
+  put(state, 'savage', 'savage-hunger', 'p1');
+  put(state, 'host', 'razorfoot-griffin', 'p1', 'battlefield');
+  addMana(state, 'p1', 3);
+  const cast = commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'savage');
+  assert.ok(cast, 'rzut aury oferowany (aury idą ścieżką cast_permanent)');
+  run(state, { ...cast, targetIds: ['host'] });
+  resolve(state);
+  const host = state.objects.get('host');
+  assert.equal(host.zone, 'battlefield', 'aura weszła na pole bitwy przypięta');
+  assert.equal(effectivePower(host, state), 3, '2/2 → 3/2 (+1/+0)');
+  assert.equal(effectiveToughness(host, state), 2, 'toughness bez zmian');
+  assert.ok(effectiveKeywords(host, state).includes('trample'), 'trample nadany przez aurę');
+});
+
+test('B59/G1.3: Savage Hunger — cycling {2} z ręki: odrzucenie i dobranie (CR 702.29a)', () => {
+  const state = game();
+  put(state, 'savage', 'savage-hunger', 'p1');
+  put(state, 'lib-p1-9', 'basic-swamp', 'p1', 'library');
+  addMana(state, 'p1', 2);
+  const before = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
+  const cyc = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'savage');
+  assert.ok(cyc, 'cycling oferowany z ręki');
+  run(state, cyc);
+  assert.equal(state.zones.stack.length, 1, 'cycling to zdolność AKTYWOWANA — idzie na stos (ruling ALA 2008-10-01)');
+  resolve(state);
+  assert.ok(find(state, 'savage-hunger', 'graveyard'), 'karta odrzucona do grobu (koszt); zmiana strefy = nowy obiekt (CR 400.7)');
+  const after = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
+  assert.equal(after, before - 1 + 1, 'odrzucenie (-1) i dobranie (+1)');
+});
+
+test('B59/G1.3: Savage Hunger — aury nie można rzucić bez celu-stwora', () => {
+  const state = game();
+  put(state, 'savage', 'savage-hunger', 'p1');
+  addMana(state, 'p1', 3);
+  assert.ok(!commands(state).some((c) => c.type === 'cast_permanent' && c.objectId === 'savage'),
+    'brak stworów na polu bitwy → brak oferty rzutu aury (607.2 / „enchant creature")');
+});
+
+// ---- G1.4: Join the Dance (138 MID, plan Eldraine) -------------------------
+
+test('B59/G1.4: Join the Dance — dane Oracle i dwa tokeny 1/1 Human', () => {
+  const def = registry.get('join-the-dance');
+  assert.deepEqual(def.types, ['Sorcery']);
+  assert.deepEqual(def.colors, ['G', 'W']);
+  assert.equal(def.manaCost, 2);
+  assert.deepEqual(def.spell.flashback, { cost: 4, colors: ['G', 'W'] });
+  assert.equal(def.set, 'MID');
+  assert.equal(def.plan, 'Eldraine');
+  assert.equal(def.artId, 138);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('56b30a99'), 'imageUri z druku MID (mid/229)');
+  assert.equal(MANA_COSTS['join-the-dance'], '{G}{W}');
+});
+
+test('B59/G1.4: Join the Dance — rozstrzygnięcie tworzy DWA tokeny 1/1 białe Human', () => {
+  const state = game();
+  put(state, 'dance', 'join-the-dance', 'p1');
+  addMana(state, 'p1', 2);
+  run(state, commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'dance'));
+  resolve(state);
+  const tokens = [...state.objects.values()].filter((o) => o.zone === 'battlefield' && o.cardId === 'token_human');
+  assert.equal(tokens.length, 2, 'dokładnie dwa tokeny Human');
+  assert.equal(effectivePower(tokens[0], state), 1);
+  assert.equal(effectiveToughness(tokens[0], state), 1);
+  assert.deepEqual(tokens[0].colors, ['W'], 'tokeny są białe');
+});
+
+test('B59/G1.4: Join the Dance — flashback {3}{G}{W} z grobu (koszt alternatywny)', () => {
+  const state = game();
+  put(state, 'dance', 'join-the-dance', 'p1', 'graveyard');
+  addMana(state, 'p1', 4);
+  const fb = commands(state).find((c) => c.type === 'cast_flashback' && c.objectId === 'dance');
+  assert.ok(fb, 'flashback oferowany z grobu przy 4 manie');
+  run(state, fb);
+  resolve(state);
+  assert.ok(find(state, 'join-the-dance', 'exile'),
+    'karta rzucona z flashbackiem idzie na WYGNANIE (CR 702.34a), nie do grobu');
+  const tokens = [...state.objects.values()].filter((o) => o.zone === 'battlefield' && o.cardId === 'token_human');
+  assert.equal(tokens.length, 2, 'efekt zadziałał także z flashbacku');
+});
+
+test('B59/G1.4: Join the Dance — bez 4 many flashback nie jest oferowany', () => {
+  const state = game();
+  put(state, 'dance', 'join-the-dance', 'p1', 'graveyard');
+  addMana(state, 'p1', 3);
+  assert.ok(!commands(state).some((c) => c.type === 'cast_flashback' && c.objectId === 'dance'),
+    'koszt flashbacku {3}{G}{W} = 4 many');
 });

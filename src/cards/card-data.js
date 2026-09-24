@@ -3994,6 +3994,56 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['+3/+0 do końca tury można aktywować wielokrotnie (każda aktywacja to osobny wpis ze znacznikiem czasu — CR 613.7b)'],
   }),
+  // Savage Hunger (ALA) {2}{G} Aura — „Enchant creature / Enchanted creature gets
+  // +1/+0 and has trample. / Cycling {2}". Aura-pump z keywordem (Vow of
+  // Wildness) + cycling (karta-źródło Desolate Mire); karta wnosi dane + test.
+  // Ruling ALA 2008-10-01: cycling to zdolność AKTYWOWANA (wchodzi w interakcje
+  // z efektami wobec zdolności, nie wobec czarów) — stąd deskryptor `cycling`
+  // na zdolności, nie pole „spell".
+  defineCard({
+    id: 'savage-hunger', name: 'Savage Hunger', set: 'ALA',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 3,
+    oracleText: 'Enchant creature\nEnchanted creature gets +1/+0 and has trample.\nCycling {2} ({2}, Discard this card: Draw a card.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/3/0367fac8-6990-4544-ac7d-ed363b55a9cf.jpg?1783942550',
+    aura: { pump: { power: 1, toughness: 0 }, keywords: ['trample'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 2 },
+        cycling: { drawCards: 1 },
+        effect: [],
+      }),
+    ],
+    artId: 142, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+    notes: ['cycling {2} z RĘKI (CR 702.29a) — karta na polu bitwy nie ma tej zdolności; brak tarczy obrażeń: +1/+0 nie ratuje przed 1 obrażeniem'],
+  }),
+
+  // Join the Dance (MID) {G}{W} Sorcery — „Create two 1/1 white Human creature
+  // tokens. / Flashback {3}{G}{W}". Dwa tokeny jak Raise the Alarm, ale typ
+  // Human + flashback na sorcery (Dream Twist ma flashback na instantcie).
+  // Rulingi MID 2025-06-06: flashback zawsze wygania kartę (także skontrowaną
+  // albo rozstrzygniętą); timing ograniczeń typu karty obowiązuje (sorcery —
+  // main phase, pusty stos).
+  defineCard({
+    id: 'join-the-dance', name: 'Join the Dance', set: 'MID',
+    types: ['Sorcery'], colors: ['G', 'W'], manaCost: 2,
+    oracleText: 'Create two 1/1 white Human creature tokens.\nFlashback {3}{G}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/5/6/56b30a99-601b-40b9-b012-30fa4be5fd3c.jpg?1783925558',
+    spell: {
+      timing: 'sorcery', targets: [],
+      effects: [{
+        type: 'create_token', cardId: 'token_human', name: 'Human',
+        kind: 'creature', power: 1, toughness: 1, colors: ['W'],
+        types: ['Creature'], subtypes: ['Human'], amount: 2,
+      }],
+      flashback: { cost: 4, colors: ['G', 'W'] },
+    },
+    artId: 138, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+    notes: ['flashback {3}{G}{W}: rzut z grobu za koszt alternatywny, po rozstrzygnięciu karta na wygnanie (CR 702.34a); mana value czaru pozostaje 2 (ruling MID 2025-06-06)'],
+  }),
 ]);
 
 

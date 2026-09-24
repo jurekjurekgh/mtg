@@ -505,4 +505,6 @@ export const MANA_COSTS = {
   // w deskryptorach, np. {4}{W} Vanguarda i {2}{R} Raptora).
   "charismatic-vanguard": "{2}{W}",
   "sun-collared-raptor": "{1}{R}",
+  "savage-hunger": "{2}{G}",
+  "join-the-dance": "{G}{W}",
 };
