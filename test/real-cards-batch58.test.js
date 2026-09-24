@@ -76,7 +76,8 @@ test('B58/B1: Boulder Salvo — dane Oracle + deskryptor surge', () => {
   assert.deepEqual(def.types, ['Sorcery']);
   assert.deepEqual(def.colors, ['R']);
   assert.equal(def.manaCost, 5);
-  assert.deepEqual(def.surge, { cost: 3, colors: ['R'] });
+  // M428: Surge {1}{R} to DWIE many (`cost` = suma symboli, nie część generyczna).
+  assert.deepEqual(def.surge, { cost: 2, colors: ['R'] });
   assert.equal(def.set, 'OGW');
   assert.equal(def.plan, 'Zendikar');
   assert.equal(def.artId, 265);
@@ -107,19 +108,19 @@ test('B58/B1: Boulder Salvo — surge oferowany dopiero po innym czarze w turze'
     'po rzucie innego czaru surge jest oferowany');
 });
 
-test('B58/B1: Boulder Salvo — surge płaci 3 many (nie 5), MV zostaje 5', () => {
+test('B58/B1: Boulder Salvo — surge płaci 2 many (nie 5), MV zostaje 5', () => {
   const state = game();
-  addMana(state, 'p1', 3); // dokładnie koszt surge {1}{R}
+  addMana(state, 'p1', 2); // dokładnie koszt surge {1}{R} = 2 many (M428)
   state.spellsCastThisTurnByPlayer = { p1: 1 };
   put(state, 'salvo', 'boulder-salvo', 'p1');
   put(state, 'tgt', 'razorfoot-griffin', 'p2', 'battlefield');
   const offer = commands(state);
   const surge = offer.find((c) => c.type === 'cast_spell' && c.objectId === 'salvo' && c.surgeCast);
-  assert.ok(surge, 'surge oferowany przy 3 manie');
+  assert.ok(surge, 'surge oferowany przy 2 manie');
   assert.ok(!offer.some((c) => c.type === 'cast_spell' && c.objectId === 'salvo' && !c.surgeCast),
-    'pełny koszt (5) NIE jest opłacalny przy 3 manie');
+    'pełny koszt (5) NIE jest opłacalny przy 2 manie');
   run(state, surge);
-  assert.equal(player(state, 'p1').mana, 0, 'surge kosztuje 3 many');
+  assert.equal(player(state, 'p1').mana, 0, 'surge kosztuje 2 many');
   const onStack = find(state, 'boulder-salvo', 'stack');
   assert.equal(onStack.manaCost, 5, 'surge nie zmienia kosztu many/MV (ruling OGW 2016-01-22)');
   assert.equal(onStack.surgeCast, true, 'fakt zapłaty surge jest jawny na obiekcie stosu');
@@ -143,20 +144,20 @@ test('B58/B1: Boulder Salvo — surge bez innego czaru i rzut bez celu odrzucone
 
 test('B58/B1: Boulder Salvo — etykieta surge i kreator płatności znają {1}{R}', () => {
   const state = game();
-  addMana(state, 'p1', 3);
+  addMana(state, 'p1', 2);
   state.spellsCastThisTurnByPlayer = { p1: 1 };
   put(state, 'salvo', 'boulder-salvo', 'p1');
   put(state, 'tgt', 'razorfoot-griffin', 'p2', 'battlefield');
   const view = playerView(state, 'p1');
   const surge = view.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'salvo' && c.surgeCast);
   const normal = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'salvo', targets: ['tgt'] });
-  assert.equal(normal.ok, false, 'przy 3 manie zwykły rzut odrzucony (oferta != walidacja)');
+  assert.equal(normal.ok, false, 'przy 2 manie zwykły rzut odrzucony (oferta != walidacja)');
   const label = plain(commandLabel(surge, SESSION, view));
   assert.match(label, /surge/i, `etykieta nazywa koszt surge: ${label}`);
   assert.ok(!label.includes('?'), `koszt surge znany w etykiecie: ${label}`);
   const descriptor = paymentDescriptorOf(surge, view);
   assert.ok(descriptor, 'surge ma deskryptor płatności kreatora');
-  assert.equal(descriptor.totalNeeded, 3, 'surge {1}{R} = 3 many');
+  assert.equal(descriptor.totalNeeded, 2, 'surge {1}{R} = 2 many (M428)');
   assert.deepEqual(descriptor.requirements, [['R']], 'pip surge to {R}');
 });
 

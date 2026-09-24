@@ -4038,11 +4038,16 @@ export const REAL_CARDS = Object.freeze([
         kind: 'creature', power: 1, toughness: 1, colors: ['W'],
         types: ['Creature'], subtypes: ['Human'], amount: 2,
       }],
-      flashback: { cost: 4, colors: ['G', 'W'] },
+      // M428 (Żywy Tester, sesja 24d): `cost` to SUMA symboli (generic + pipy),
+      // nie część generyczna — `costSymbols(5, ['G','W'])` = {3}{G}{W}. Wartość
+      // 4 (zapis z G1.4) kazała silnikowi brać o {1} mniej, niż mówi druk
+      // (CR 702.34a: zapłać koszt flashbacku); poprawka + skan symboli
+      // w `test/audyt-m428-kwota-alt-kosztu.test.js` + lekcja L168.
+      flashback: { cost: 5, colors: ['G', 'W'] },
     },
     artId: 138, plan: 'Eldraine',
     support: { status: 'supported', limitations: [] },
-    notes: ['flashback {3}{G}{W}: rzut z grobu za koszt alternatywny, po rozstrzygnięciu karta na wygnanie (CR 702.34a); mana value czaru pozostaje 2 (ruling MID 2025-06-06)'],
+    notes: ['flashback {3}{G}{W} = 5 many: rzut z grobu za koszt alternatywny, po rozstrzygnięciu karta na wygnanie (CR 702.34a); mana value czaru pozostaje 2 (ruling MID 2025-06-06)'],
   }),
   // Token Mutagen (TMT, Batch 59): bezbarwny artefakt z podtypem Mutagen i
   // zdolnością „{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target
@@ -11897,7 +11902,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({
     id: 'boulder-salvo', name: 'Boulder Salvo', set: 'OGW',
     types: ['Sorcery'], colors: ['R'], manaCost: 5,
-    surge: { cost: 3, colors: ['R'] },
+    // M428: `cost` = SUMA symboli → Surge {1}{R} to 2 many (było 3 — karta
+    // brała o {1} za dużo; ten sam skan symboli co Join the Dance).
+    surge: { cost: 2, colors: ['R'] },
     oracleText: 'Surge {1}{R} (You may cast this spell for its surge cost if you or a teammate has cast another spell this turn.)\nBoulder Salvo deals 4 damage to target creature.',
     imageUri: 'https://cards.scryfall.io/large/front/4/e/4e269989-bb22-4da4-a374-434a572e8e8f.jpg?1783937908',
     spell: {

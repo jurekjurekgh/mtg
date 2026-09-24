@@ -233,7 +233,8 @@ test('B59/G1.4: Join the Dance — dane Oracle i dwa tokeny 1/1 Human', () => {
   assert.deepEqual(def.types, ['Sorcery']);
   assert.deepEqual(def.colors, ['G', 'W']);
   assert.equal(def.manaCost, 2);
-  assert.deepEqual(def.spell.flashback, { cost: 4, colors: ['G', 'W'] });
+  // M428: {3}{G}{W} to PIĘĆ many (cost = suma symboli, nie część generyczna).
+  assert.deepEqual(def.spell.flashback, { cost: 5, colors: ['G', 'W'] });
   assert.equal(def.set, 'MID');
   assert.equal(def.plan, 'Eldraine');
   assert.equal(def.artId, 138);
@@ -259,9 +260,9 @@ test('B59/G1.4: Join the Dance — rozstrzygnięcie tworzy DWA tokeny 1/1 białe
 test('B59/G1.4: Join the Dance — flashback {3}{G}{W} z grobu (koszt alternatywny)', () => {
   const state = game();
   put(state, 'dance', 'join-the-dance', 'p1', 'graveyard');
-  addMana(state, 'p1', 4);
+  addMana(state, 'p1', 5);
   const fb = commands(state).find((c) => c.type === 'cast_flashback' && c.objectId === 'dance');
-  assert.ok(fb, 'flashback oferowany z grobu przy 4 manie');
+  assert.ok(fb, 'flashback oferowany z grobu przy 5 manie ({3}{G}{W})');
   run(state, fb);
   resolve(state);
   assert.ok(find(state, 'join-the-dance', 'exile'),
@@ -270,12 +271,12 @@ test('B59/G1.4: Join the Dance — flashback {3}{G}{W} z grobu (koszt alternatyw
   assert.equal(tokens.length, 2, 'efekt zadziałał także z flashbacku');
 });
 
-test('B59/G1.4: Join the Dance — bez 4 many flashback nie jest oferowany', () => {
+test('B59/G1.4: Join the Dance — bez 5 many flashback nie jest oferowany', () => {
   const state = game();
   put(state, 'dance', 'join-the-dance', 'p1', 'graveyard');
-  addMana(state, 'p1', 3);
+  addMana(state, 'p1', 4);
   assert.ok(!commands(state).some((c) => c.type === 'cast_flashback' && c.objectId === 'dance'),
-    'koszt flashbacku {3}{G}{W} = 4 many');
+    'koszt flashbacku {3}{G}{W} = 5 many (M428: wcześniej oferta szła już przy 4)');
 });
 
 // ---- G1.5: Waveskimmer Aven (134 ALA, plan Forgotten Realms) ----------------
