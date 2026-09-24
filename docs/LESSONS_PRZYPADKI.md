@@ -2639,3 +2639,63 @@ licznik czasu — po naprawie regexu paruje się poprawnie). Wyjątki trafiły d
 testów batchy 58/59 (tytuły twierdzące błędną arytmetykę) i ze strażnikiem
 `test/audyt-m428-kwota-alt-kosztu.test.js`, który ma wbudowany dowód RED na
 obu znalezionych rozjazdach.
+
+## L169 (2026-09-24) — przypadek
+
+Zlecenie właściciela po raporcie 24d brzmiało: „Pociągnij ten temat" — taktyczne
+doszlifowanie wyceny trzech kart batcha 59, z zastrzeżeniem WPROST, że nie chodzi
+o automatyczne strojenie wag, tylko o przemysłane ich ustawienie („weź przykład
+z innych podobnych kart o podobnych efektach"). Pomiar na silniku (6 seedów,
+tymczasowa talia z 2 egzemplarzami każdej karty) pokazał, że problem nie leży
+w wartościach, a w BRAKU WYMIARU: warianty tej samej komendy remisowały co do
+punktu, więc o wyborze decydowała kolejność z `legalCommands`.
+
+Mutagen (deskryptor zdolności: `{1}, {T}, poświęć: +1/+1 na cel`, tylko jak
+sorcery) dawał 14/14/14 — tyle samo dla tokena 1/1, Cryptida 2/3 i Hill Gianta
+4/4. Bot brał pierwszy wariant, więc zdolność „awansowała" najmniejsze ciało,
+a jednocześnie przepalała {1} na dokładnie ten sam efekt, który mógł kupić
+znacznie więcej. Naprawa nie polegała na podbiciu liczby: podzieliłem dawną
+stałą 8 + 4·amount na bazę (2), wagę ilości (4) i WAGĘ CIAŁA GOSPODARZA (2 na
+mocy, 1 na wytrzymałości — co do punktu jak w wycenie aury-buffa z M257 r4,
+gdzie komentarz mówi: „opłaca się tym bardziej, im większy gospodarz"). Przy
+takim doborze token 1/1 jest wart dokładnie tyle, ile przed zmianą (2 + 4 +
+2·3 = 12), więc żadne wcześniejsze zachowanie nie straciło wartości — różnicę
+zyskują realne ciała. Dodatkowo licznik, który poprawia wynik TRWAJĄCEJ walki,
+dostaje premię (M218/2 `pumpImprovesOutcome`), a licznik na gospodarzu skazanym
+w tej turze (deklarowany bloker, który ginie nie zabijając; cel usunięcia na
+stosie — M236/2) ma wartość ZEROWANĄ do −20: duży trup to nadal zero, więc
+aktywacja schodzi pod „pass". Ciekawostka silnika wyszła przy testach: Mutagen
+ma timing sorcery, więc silnik NIE oferuje jego aktywacji przy niepustym stosie
+ani poza własną fazą główną — obserwacja właściciela „aktywowany zawsze w fazie
+głównej" to reguła karty, a nie wada wyceny; dwa „kontekstowe" terminy licznika
+są jednak żywe dla instantowych źródeł liczników (Reinforce Mosquito Guarda,
+Cenn's Tactician) i tam mają testy.
+
+Memory's Journey („target player shuffles up to three target cards from their
+graveyard into their library") była warta płasko 4 + 2·karty, czyli 58 punktów
+niezależnie od tego, czy biblioteka ma 30 czy 12 kart, a wariant z ZERO
+wybranych kart też dawał 58 — czyli bot oddawał kartę z ręki za przetasowanie
+własnej biblioteki. Karty wracają do BIBLIOTEKI, nie do ręki, więc jedyną
+realną wartością jest czas przed deck-outem (CR 121.4/704.5b) — a to ta sama
+miara, którą posługuje się istniejąca rodzina biblioteczna (`librarySafeMargin`
+= 20, kara per karta). Reguła: zdrowa biblioteka → kara (instant czeka na okno,
+wzorzec M235), cienka → zwrot plus dopłata ratunkowa za każdą wracającą kartę,
+zero kart → kara jak za efekt jałowy. Po zmianie w tych samych 6 partiach czar
+poleciał 5 razy zamiast 11 i WYŁĄCZNIE przy bibliotece 19 kart.
+
+Charismatic Vanguard to przykład trzeciej twarzy tego samego problemu: reguła
+dla `buff_creatures_you_control` istniała od M106/Z7, ale tylko w gałęzi
+CZARÓW. Zdolność aktywowana szła przez pętlę efektów bez gałęzi dla tego typu,
+więc dostawała gołe `score = 2` (sama baza) w KAŻDYM kroku tury — bot przepalał
+{4}{W} w Głównej 1, gdzie pump „do końca tury" wygasa w cleanup, nie zmieniając
+niczego. Wyjęcie reguły do jednej funkcji (`teamPumpValue`) i użycie jej w obu
+gałęziach (L41) dało: Główna 1 bez walki = −23 (pass wygrywa), okno walki z dwoma
+atakującymi = 20 punktów. Ta sama lekcja co przy czarach: bliźniacza gałąź,
+której nie odwiedzono, nie „nie ma problemu" — po prostu nie ma wyceny.
+
+Dowód na końcu: `npm test` 6534/6534, golden-master zielony BEZ regeneracji
+(zmiana jest wąska, nie globalna), szybka macierz 672 mecze — heuristic 78,0 %
+vs aggro i 97,6 % vs random (progi 62 % / 78 %), ewaluacja lustrzana 72:72,
+a Żywy Tester na 4 partiach: 0 zgłoszeń detektorów, 0 niewycenionych ruchów,
+Mutagen na najlepszym ciele, Memory's Journey trzymana w ręce, Vanguard
+aktywowany w walce (transkrypty `/tmp/po-audyt/po-*.txt`).

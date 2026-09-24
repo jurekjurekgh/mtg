@@ -42,27 +42,30 @@ pump/okna walki (M206/M218), leczenie-deck-outu (`drawDeckingPenalty`),
 
 ## Etapy
 
-- [ ] **A0** — ten plan (commit przed kodowaniem, ADR 0020) + `npm run build`
-      i `npm i` w testerze (odtworzenie środowiska po resecie).
-- [ ] **A1** — **rodzina `counter*`** (licznik na wskazanym celu): gospodarz
+- [x] **A0** — ten plan (commit przed kodowaniem, ADR 0020; `7c1646e`… poprzedzony
+      `d0e57c0`) + `npm run build` i `npm i` w testerze (odtworzenie środowiska
+      po resecie).
+- [x] **A1** (`7c1646e`) — **rodzina `counter*`** (licznik na wskazanym celu): gospodarz
       wybierany po WARTOŚCI BOJOWEJ (moc ×2 + wytrzymałość, wzorzec aury),
       premia gdy zmienia wynik toczonej walki, premia „może atakować teraz",
       kara gdy gospodarz i tak ginie w tej turze (M236/2
       `permanentDoomedThisTurn`). Rodzina dopięta w `tune-card.mjs` pod nowym
       deskryptorem `counter`.
-- [ ] **A2** — **rodzina `graveyardShuffle*`** (wtasowanie kart z grobu do
+- [x] **A2** (`de03efb`) — **rodzina `graveyardShuffle*`** (wtasowanie kart z grobu do
       biblioteki): wartość tylko przy PRESJI DECK-OUTU (biblioteka ≤ próg),
       zero-kartowe wtasowanie = poniżej passu (M146 — remis 0:0 idzie w rzut),
       cel-przeciwnik nadal −60. Rodzina pod deskryptorem `graveyardShuffle`.
-- [ ] **A3** — **rodzina `teamPump*`** (masowy pump z AKTYWOWANEJ zdolności):
+- [x] **A3** (`c091bd7`) — **rodzina `teamPump*`** (masowy pump z AKTYWOWANEJ zdolności):
       okno decyzyjne — po deklaracji atakujących własnej walki albo w obronie
       (M206/M218), lethal-przed-atakiem jako wyjątek, poza oknem kara
       przebijająca wartość (L3). Rodzina pod deskryptorem `teamPump`.
-- [ ] **A4** — dowody i domknięcie: pomiar PO (te same seedy + tester),
-      próbka szybka benchmarku (`node tools/benchmark.mjs`, ADR 0018 pkt 2),
-      `tools/b1-final-2026-09-24e.{json,txt}` jako bieżący stan bota, M429
-      w dziennikach, lekcja **L169**, handoff 24e, opis PR kumulatywnie,
-      sprzątanie (usunięcie `decks/audyt-batch59.txt`, rebuild `dist/`).
+- [x] **A4** — dowody i domknięcie: pomiar PO (te same seedy + tester),
+      próbka szybka benchmarku (`node tools/benchmark.mjs`, ADR 0018 pkt 2 —
+      **nazwa pliku `tools/b1-quick-2026-09-24e.{json,txt}` zamiast `b1-final`**:
+      „final" w tym repozytorium oznacza przebieg PEŁNEJ macierzy, a tej nie
+      uruchamiamy bez wyraźnej komendy właściciela), M429 w dziennikach, lekcja
+      **L169** (+ narracja), handoff 24e, opis PR kumulatywnie, sprzątanie
+      (usunięcie `decks/audyt-batch59.txt`, rebuild `dist/`).
 
 ## Bramy i ryzyka
 
@@ -83,3 +86,28 @@ pump/okna walki (M206/M218), leczenie-deck-outu (`drawDeckingPenalty`),
   (L61) + pin „pokrętło nie jest atrapą" (wzorzec `bot-params.test.js`).
 - Tymczasowa talia `decks/audyt-batch59.txt` **nie wchodzi do żadnego commita**
   (łamie 4 strażniki talii) — po pomiarze PO usunąć i przebudować `dist/`.
+
+
+## Podsumowanie wykonania (A4)
+
+| etap | commit | bramy | pomiar |
+| --- | --- | --- | --- |
+| A0 plan | `d0e57c0` | — | pomiar PRZED P1–P3 (sondy) |
+| A1 licznik | `7c1646e` | `npm test` 6523/6528* | 14/14/14 → cel = największe ciało |
+| A2 wtasowanie | `de03efb` | `npm test` 6527/6532* | 58 płasko → 5 rzutów, tylko przy 19 kartach |
+| A3 pump zespołu | `c091bd7` | `npm test` 6530/6535* | 2 pkt w każdym kroku → −23 / +20 |
+| A4 domknięcie | (ten commit) | `npm test` 6534/6534 (0 fail, talia audytowa usunięta) | `tools/b1-quick-2026-09-24e.*`, mirror-eval 72:72 |
+
+\* w trakcie etapów `npm test` czerwienił wyłącznie PIĘĆ znanych strażników
+tymczasowej talii `decks/audyt-batch59.txt` (M203/7, M338/3, strażnik talii,
+M178 ×2); po jej usunięciu (A4) brama jest w pełni zielona.
+
+**Odstępstwa od planu (świadome):**
+1. artefakt pomiaru nazwany `b1-quick-*` (uzasadnienie wyżej),
+2. pełne B0 nieuruchomione (ADR 0018 — tylko na komendę właściciela), więc progi
+   w `test/bot-benchmark.test.js` bez zmian,
+3. dorzucony **test deskryptorów tunera** (`counter`, `graveyardShuffle`,
+   `teamPump`) — rodzina bez deskryptora nie jest strojana przez
+   `tools/tune-card.mjs`, co było częścią zlecenia „przemysłane ustawienie",
+4. reguła „skazany gospodarz" dla Mutagenu jest nieosiągalna (timing sorcery),
+   ale żywa dla instantowych źródeł liczników — opisane w kodzie i w handoffie.

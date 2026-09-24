@@ -12868,6 +12868,59 @@ logu i opisy kafli.
 Bramy: `npm test` **6511/6511** (0 fail), build **60 modułów / 4239,9 kB**;
 pełna brama `npm run test:all` i handoff `docs/setup/HANDOFF_2026-09-24c.md`.
 
+## M429 — taktyczna wycena kart batcha 59: wymiar zamiast płaskiej stałej (sesja 2026-09-24e, PR #136)
+
+Zlecenie właściciela: „Nie chodzi o sprzeczność z CR — tego pilnuje engine.
+Chodzi o OPTYMALNE TAKTYCZNIE wykorzystanie tych czarów (…). Nie chodzi
+o automatyczne strojenie wag tylko o PRZEMYŚLANE ustawienie ich. Weź przykład
+z innych podobnych kart o podobnych efektach." Punktem wyjścia były obserwacje
+z audytu 24d: Mutagen aktywowany bez różnicy celu, Memory's Journey rzucana bez
+presji deck-outu, Charismatic Vanguard {4}{W} przepalany w Głównej 1 (Boulder
+Salvo zachowany — surge wybierany oszczędnie).
+
+Pomiar PRZED (6 seedów, tymczasowa talia z 2 egzemplarzami każdej karty batcha,
+sonda na silniku) pokazał jedną klasę: **warianty remisowały co do punktu**, więc
+o wyborze decydowała kolejność `legalCommands` — Mutagen **14/14/14** (token 1/1,
+Cryptid 2/3, Hill Giant 4/4), Memory's Journey **58 pkt** niezależnie od
+biblioteki (30 vs 12 kart) i tyle samo dla wariantu „zero wracających kart",
+Charismatic Vanguard **2 pkt** (sama baza zdolności) w każdym kroku tury.
+
+Trzy rodziny parametrów (`heuristic-params.js`), każda z osobnym commitem,
+z precedensem w istniejącym kodzie i domyślnymi wartościami dobranymi tak, by
+NAJSŁABSZY realny wariant był wart dokładnie tyle, co przed zmianą:
+
+- **A1 `counter*`** (commit 7c1646e) — licznik na wskazanym celu: baza 2 +
+  4·amount + 2·wartość ciała gospodarza (moc podwójnie — jak w aurach M257 r4),
+  premia gdy licznik poprawia wynik toczącej się walki (M218/2), zerowanie
+  wartości przy gospodarzu skazanym w tej turze (M236/2). PO: te same
+  6 aktywacji w 6 seedach, wszystkie na NAJLEPSZYM ciele (Cryptid/Aven), zero
+  na tokenie 1/1.
+- **A2 `graveyardShuffle*`** (commit de03efb) — wtasowanie z grobu do
+  biblioteki: kara przy zdrowej bibliotece (instant czeka na okno, wzorzec
+  M235), zwrot + dopłata ratunkowa przy bibliotece pod progiem
+  `librarySafeMargin`, kara za efekt jałowy (zero kart); cel-przeciwnik dalej
+  −60. PO: 5 rzutów zamiast 11 i wyłącznie przy bibliotece 19 kart.
+- **A3 `teamPump*`** (commit c091bd7) — masowy pump „do końca tury": reguła
+  M106/Z7/M218 była tylko w gałęzi CZARÓW, więc aktywowana zdolność dostawała
+  gołe 2 pkt; wyjęta do wspólnej funkcji (L41) z timingiem ze źródła. PO:
+  Główna 1 bez walki −23 (pass wygrywa), okno walki z dwoma atakującymi +20.
+
+Bramy: `npm test` **6534/6534** (0 fail; 24d: 6519 → +15 testów M429), build
+**60 modułów / 4254,4 kB**, golden-master `bot-scoring-snapshot` zielony BEZ
+regeneracji (dowód, że reguły są wąskie), szybka macierz `node tools/benchmark.mjs`
+(672 mecze): heuristic 78,0 % vs aggro (próg 62 %) i 97,6 % vs random (próg 78 %)
+— artefakt `tools/b1-quick-2026-09-24e.{json,txt}`; **pełne B0 nie było
+uruchamiane** (ADR 0018 — tylko na wyraźną komendę właściciela). Ewaluacja
+lustrzana (`tools/mirror-eval.mjs`, nowe reguły vs ich wyłączenie): 72:72
+(0,5000), 144 mecze, 0 niedokończonych. Żywy Tester PO (4 partie, transkrypty
+`/tmp/po-audyt/po-*.txt`): 4× „DETEKTORY: brak zgłoszeń", 4× „NIEWYCENIONE:
+brak"; Mutagen na najlepszym ciele, Memory's Journey trzymana w ręce (odsłonięta
+przez Toll of the Invasion), Vanguard aktywowany w kroku ataku.
+
+Lekcja **L169** (+ narracja w `docs/LESSONS_PRZYPADKI.md`), plan
+`docs/plans/PLAN_2026-09-24e-strojenie-bota-batch59.md`, handoff
+`docs/setup/HANDOFF_2026-09-24e.md`.
+
 ## M428 — Żywy Tester na kartach batcha 59: raport talii + klasa „kwota alt-kosztu" (sesja 2026-09-24d, PR #136)
 
 Zlecenie właściciela po domknięciu batcha 59: (a) raport, do których talii

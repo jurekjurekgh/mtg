@@ -7702,3 +7702,44 @@ alternatywnych.
   utrwalał błędne czytanie pola.
 
 Lekcja: **L168**. Bramy: `npm test` 6519/6519, build 60 modułów / 4241,6 kB.
+
+## M429 — taktyczna wycena kart batcha 59: trzy rodziny wymiarów zamiast płaskich stałych (sesja 2026-09-24e, PR #136)
+
+Zlecenie właściciela po raporcie 24d („Pociągnij ten temat"): używać czarów
+i zdolności wtedy, gdy mają NAJWIĘKSZY uzysk taktyczny — przemysłanym
+ustawieniem wycen, nie automatycznym tunerem, i Z PRECEDENSEM z istniejących
+kart o podobnych efektach. Pomiar (6 seedów, tymczasowa talia
+`decks/audyt-batch59.txt`, sonda na silniku) pokazał, że problem to BRAK
+WYMIARU, nie złe wartości: warianty remisowały, więc wybierała kolejność ofert.
+
+- **A1 — `add_counter` na wskazanym celu (Mutagen):** 14/14/14 dla tokena 1/1,
+  Cryptida 2/3 i Hill Gianta 4/4. Nowa rodzina `counter*`: baza 2 + ilość × 4 +
+  waga ciała gospodarza × 2 (moc liczona podwójnie — co do punktu jak aura-buff
+  M257 r4), premia gdy licznik poprawia wynik TRWAJĄCEJ walki (M218/2), a przy
+  gospodarzu skazanym w tej turze (M236/2) wartość Zerowana do −20, więc
+  aktywacja schodzi pod „pass". Token 1/1 jest wart dokładnie tyle, co przed
+  zmianą (12), realne ciała zyskują (+6 / +12). Bramka RED: wybór Cryptida
+  zamiast tokena; piny „pokrętło nie jest atrapą".
+- **A2 — `shuffle_graveyard_cards_into_library` (Memory's Journey):** 58 pkt
+  niezależnie od biblioteki (30 vs 12) i tyle samo dla wariantu „zero kart".
+  Nowa rodzina `graveyardShuffle*`: zdrowa biblioteka (≥ `librarySafeMargin`)
+  → kara (instant czeka na okno — jak M235), cienka → zwrot + dopłata
+  ratunkowa za każdą wracającą kartę, zero kart → kara za efekt jałowy.
+  Cel-przeciwnik bez zmian (−60).
+- **A3 — `buff_creatures_you_control` z AKTYWOWANEJ zdolności (Charismatic
+  Vanguard):** reguła z M106/Z7 istniała tylko w gałęzi CZARÓW, więc zdolność
+  dostawała gołe 2 pkt w każdym kroku i bot przepalał {4}{W} w Głównej 1.
+  Wyjęcie do wspólnej funkcji `teamPumpValue` (L41) z timingiem ze źródła
+  (`spell.timing` vs `ability.timing`): Główna 1 bez walki −23 (pass wygrywa),
+  okno walki z dwoma atakującymi +20.
+
+**Dowody:** `test/audyt-m429-taktyczna-wycena-batch59.test.js` (15 testów,
+wszystkie z RED→GREEN), golden-master `bot-scoring-snapshot` zielony BEZ
+regeneracji (zmiana wąska), szybka macierz `tools/benchmark.mjs` 672 mecze —
+heuristic 78,0 % vs aggro / 97,6 % vs random (progi 62 % / 78 %),
+`tools/b1-quick-2026-09-24e.{json,txt}`, ewaluacja lustrzana 72:72 (0,5000;
+144 mecze, 0 niedokończonych), Żywy Tester (4 partie PO): 4× „DETEKTORY: brak",
+4× „NIEWYCENIONE: brak", Mutagen na najlepszym ciele, Memory's Journey
+trzymana w ręce, Vanguard aktywowany w oknie walki.
+
+Lekcja: **L169**. Bramy: `npm test` 6534/6534, build 60 modułów / 4254,4 kB.
