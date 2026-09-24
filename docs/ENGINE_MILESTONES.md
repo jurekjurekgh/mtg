@@ -7512,3 +7512,39 @@ M15–M20. Lekcja **L166**.
 Bramy: `npm test` **6387/6387**, `npm run test:all` **6397/6397** (0 fail,
 ~299 s), build **60 modułów / 4161,2 kB**. Handoff:
 `docs/setup/HANDOFF_2026-09-24.md`.
+
+## M424 — „żadnych uproszczeń wpływających na grę” (Etap F) + Żywy Tester D3 (sesja 2026-09-24, PR #135)
+
+Polecenie właściciela: „Nie chcę żadnych drobnych albo nie drobnych ograniczeń
+ani uproszczeń, które wpływałyby na grę. Kart, których nie ma, nie trzeba
+okodowywać — jak się pojawią, warto to jasno opisać w komentarzach w kodzie.
+Test trzeba zrobić.”
+
+| Etap | Commit | Co | Reguła | Pin (testy) |
+|---|---|---|---|---|
+| F/1 | `720aeb7` | escape/cleave płacą pipy kosztu alternatywnego; strażnik granic katalogu | CR 118.9 | `etap-f-…-koszt-alternatywny-pipy` (4), `…-granice-katalogu` (2) |
+| F/2 | `7ed5bed` | „may” / „you may pay” / „unless” (echo) na stos, wybór przy rozstrzyganiu; Zoraline/Kappa refleksyjne | CR 603.5, 603.12 | `…-wybor-przy-rozstrzyganiu` (10) |
+| F/3 | `6146660` | backup, echo, suspend, rebound, exploit, endure jako obiekty na stosie; intervening-if przy rozstrzyganiu; fizzle bez skutków „as it resolves” | CR 603.3, 603.4, 608.2b | `…-zdolnosci-slowkluczowe-na-stosie` (5), `…-fizzle-i-zejscie-ze-stosu` (3) |
+| F/4 | `00d4af4` | jedna ścieżka rzutu bez kosztu many (Epic, suspend, rebound, Discover, grób, Baral): X = 0, dopłata Fireballa, ofiara i „odrzuć N” jako koszt | CR 118.9, 107.3b, 601.2f, 601.2h | `…-rzut-bez-kosztu` (16) |
+| F/5 | `246b876` | animacje jako osobne efekty z własnym czasem trwania (W-10/W-11); O-4/O-5 jako komentarze „KARTY SPOZA KATALOGU” | CR 611.2, 613.7 | `…-animacje-czas-trwania` (4) |
+| D3 | `99ea49b` | Żywy Tester: 20 partii, 8 par talii + talia audytowa z kartami Etapu F | — | `d3-2026-09-24-bot-ward-okna-darmowe` (6), `d3-tester-kreator-x` (7) |
+
+**D3 — znaleziska:** (1) bot: okna Discover i Epic poza podatkiem ward
+(`WARD_TAXED_TYPES` filtrował po nazwie komendy) — bez many bot rzucał removal
+w stwora z ward {2} zamiast wziąć kartę do ręki; w oknach bez kosztu many
+rezerwował pełny koszt karty (nowe `FREE_CAST_WINDOW_TYPES` +
+`freeCastPaidMana`); (2) tester: kreator X + cele (Fireball) mylony z „Tap X
+artefaktów” — pętla „Rzuć: Fireball” do limitu kroków (polityka w
+`tools/table-tester/x-wizard.mjs`); (3) tester: drugie „Zatwierdź” w
+zamkniętym kreatorze walki po odmowie (fałszywe `[rules]`); (4) UI: tytuł
+decyzji Epic mówił „skopiować”. Zweryfikowane bez zmian: Discover → Severed
+Strands, Cathartic Reunion, rebound + Baral, suspend, Halo Forager, crew +
+Skilled Animator; noop Dockhand X = 0 to legalna aktywacja (oferty X = 0
+zostają, boty ich unikają).
+
+Mutacje M25–M30 (każda = stan przed naprawą, czerwieni swój pin). Lekcja
+**L167**. Bramy: `npm test` **6444/6444**, `npm run test:all` **6454/6454**
+(0 fail, ~387 s), build **60 modułów / 4197,8 kB**. (Opis commitu `99ea49b`
+podaje 6445 — pomiar z tymczasową talią audytową, która dokłada jeden test
+per talia; po jej usunięciu zmierzone 6444.)
+Handoff: `docs/setup/HANDOFF_2026-09-24.md`.

@@ -2465,3 +2465,26 @@ przywraca tylko pole bitwy.
 (29 testów, mutacje M15–M20).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L166)
+
+## L167 (2026-09-24) — Scalona warstwa stanu gubi czas trwania pojedynczych efektów
+
+**Przypadek (F/5, W-10/W-11):** animacje (Skilled Animator „dopóki źródło
+na polu bitwy”, crew „do końca tury”) zapisywały się w JEDNEJ warstwie pól
+obiektu. Koniec jednego efektu kasował całą warstwę albo żadnej: po crew
+i śmierci Animatora pojazd od razu przestawał być stworem, a cleanup
+zdejmował animację, która miała trwać. Przy naprawie druga łatka
+`replaceObject` na nieaktualnym obiekcie cofnęła pierwszą.
+
+**Reguła:**
+1. Efekt ciągły z własnym czasem trwania (CR 611.2) to osobny WPIS z tym
+   czasem, a stan warstwy jest pochodną wpisów, które jeszcze trwają
+   (CR 613.7) — nie mutacją pól, którą ktoś „cofa”.
+2. Koniec efektu = usunięcie wpisu + przeliczenie warstwy z reszty; sprawdź
+   test „dwa efekty, kończy się pierwszy / drugi / oba”.
+3. `replaceObject(state, obj, patch)` rozkłada przekazany obiekt — przed
+   kolejną łatką czytaj świeży z `state.objects.get`.
+
+**Strażnik:** `test/etap-f-2026-09-24-animacje-czas-trwania.test.js`
+(4 testy, mutacja M28: 3/4 czerwone).
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L167)

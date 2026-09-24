@@ -2586,3 +2586,19 @@ obu stron (obsadzony odpala, nieobsadzony nie). Znaczniki trafiły do jednego
 modułu i do choke pointów (wejście na pole, przypięcie, licznik, nadanie,
 obrót, transformacja); przypięcie do tego samego obiektu nie daje znacznika
 (701.3b) — pokazał to istniejący probe no-op (U9), nie nowy test.
+
+## L167 (2026-09-24) — przypadek
+
+Po D4b (W-6: crew nie nadpisuje P/T animacji) właściciel zażądał usunięcia
+KAŻDEGO uproszczenia wpływającego na grę. Sonda na prawdziwych kartach
+(Skilled Animator + Irontread Crusher) pokazała dwie odchyłki: W-10 — po crew
+i śmierci Animatora Crusher tracił typ Creature od razu, choć crew trwa do
+końca tury; W-11 — „set P/T do końca tury” nałożone na animację Animatora
+zdejmowało w cleanupie także animację (5/5 znikało razem z 8/8). Przyczyna
+wspólna: jedna scalona warstwa pól obiektu nie pamięta, który efekt co
+wniósł. Naprawa: lista `animationEffects` (każdy wpis ze swoim czasem
+trwania i znacznikiem), warstwa liczona z wpisów, obiekty bez listy idą
+ścieżką dotychczasową. W trakcie pierwsza wersja cofała się sama — druga
+łatka `replaceObject` dostawała obiekt sprzed pierwszej i rozkładała go
+w całości. D3 potwierdził ścieżkę w partiach (crew + Animator na Barge
+i Crusherze bez zgłoszeń).

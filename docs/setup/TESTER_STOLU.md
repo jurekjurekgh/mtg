@@ -486,6 +486,25 @@ etykiety crew/saddle prawdziwym `commandLabel`, wymaga, by każdy czasownik
 tabeli istniał w `render.js` jako literał, i pilnuje spójności klasyfikacji.
 Zakres osi 3 celowo bez lądów i „Wybierz:" (mulligan/deklaracje walki).
 
+### D3 2026-09-24 — kreator ze stepperem X i korekta po odmowie kreatora walki
+
+Dwa wzorce, które ukrywały przebieg partii (PR #135, Etap F):
+
+- **Stepper X ma dwa kształty** — „Tap X artefaktów” (Dockhand: Zatwierdź ⇔
+  dokładnie X wierszy) i X + CELE (Fireball: ≥ 1 cel, każdy dodatkowy cel
+  kosztuje {1}). Stara polityka „X = max, zaznacz X wierszy” nie włączała
+  Zatwierdź dla Fireballa i tester klikał „Rzuć: Fireball” ~120 razy do limitu
+  kroków, a detektory milczały. Polityka siedzi teraz w
+  `tools/table-tester/x-wizard.mjs` (od najwyższego X w dół, wiersze po jednym,
+  aż kreator włączy Zatwierdź — L48) i ma test behawioralny na atrapie
+  (`test/d3-tester-kreator-x.test.js`).
+- **„Bez bloków”/„Bez ataku” to deklaracja (M124)** — po odmowie kreatora
+  walki tester klikał jeszcze „Zatwierdź” w zamkniętym wizardzie; silnik
+  odrzucał drugą deklarację, a detektor `[rules]` przypisywał odrzucenie
+  OSTATNIEJ akcji z panelu (fałszywy trop). Przy zgłoszeniu „Komenda gracza
+  odrzucona” szukaj kroku w `--snapshot-every 1` (linia „Ruch odrzucony”
+  w LOG), nie ufaj nazwie akcji w dowodzie.
+
 **M151 — detektor `detectFalseNoEffect` używa okna POJEDYNCZEGO (naprzód).**
 Poprzednie ±4 mieszało dwa niezależne triggery w tym samym oknie (Veiled
 Ascension „zerowy wynik” + osobny pump Akrasan Squire) i produkowało fałszywe

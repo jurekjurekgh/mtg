@@ -140,11 +140,31 @@ Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134
       i H/6 (czysta aura bez hosta idzie do grobu właściciela — 704.5m).
       Mutacje M7 (guard bez `bestow == null`) i M8 (guard bez `aura != null`)
       czerwienią H/5–H/6 (L13). 6/6 zielone.
-- [ ] D3 — **PRZENIESIONE do następnej sesji** (priorytet przeszedł na D4b na
-      polecenie właściciela; handoff §2). **Żywy Tester** (`tools/table-tester`): partie na taliach z kartami
-      batcha 58 i z mechanikami sesji c (detain, Epic Experiment, Mana Wizard,
-      cloak) — trzy osie audytu z `TESTER_STOLU.md`; braki narzędzia naprawiane
-      w narzędziu (L12/L27); każda klasa znaleziona ręcznie → nowy detektor.
+- [x] D3 — **WYKONANE** (najpierw przeniesione — priorytet przeszedł na D4b;
+      po poleceniu właściciela „Test trzeba zrobić” wykonane po Etapie F).
+      **Żywy Tester** (`tools/table-tester`): 20 partii, 8 par talii
+      (kaladesh/ravnica/ixalan/warhammer-ubr/wg/worek-basni/dominaria-brg/
+      mirrodin-brg + tymczasowa talia audytowa z kartami Etapu F: Discover,
+      Epic, suspend, rebound, Halo Forager, Baral, Fireball, Consume Spirit,
+      koszty „poświęć”/„odrzuć”, Skilled Animator + pojazdy — usunięta po
+      teście), profile greedy/explorer, oba tryby `--quiet` i
+      `--snapshot-every 1` (wyniki zgodne — M99). Znaleziska (commit `99ea49b`):
+      1. **bot** — okna Discover/Epic poza podatkiem ward (filtr rodziny po
+         nazwie komendy) i pełny koszt karty rezerwowany w oknach bez kosztu
+         many (Epic/Discover/Baral); pin `d3-2026-09-24-bot-ward-okna-darmowe`
+         (6), mutacja **M30** 4/6 czerwone;
+      2. **tester** — kreator X + cele (Fireball) mylony z „Tap X artefaktów”:
+         ~120 kliknięć „Rzuć: Fireball” do limitu kroków; polityka wyodrębniona
+         do `x-wizard.mjs`, pin `d3-tester-kreator-x` (7), mutacja **M29**;
+      3. **tester** — po odmowie kreatora walki drugie „Zatwierdź” w zamkniętym
+         wizardzie (fałszywe `[rules]` przypisane „Zagraj: Irontread Crusher”);
+      4. **UI** — tytuł decyzji Epic „który czar skopiować?” (efekt rzuca,
+         nie kopiuje).
+      Zweryfikowane bez zmian: Discover → Severed Strands (życie = wytrzymałość
+      ofiary), Cathartic Reunion (odrzuć 2 jako koszt), rebound + trigger
+      Barala, suspend Mindstab, Halo Forager, crew + Skilled Animator (W-10/
+      W-11), bot odrzuca inertne X = 0; noop Dockhand X = 0 = legalna aktywacja
+      (decyzja: oferty X = 0 zostają, boty ich unikają).
 - [x] D4 — **łowy CR** inną ścieżką niż poprzednie sesje: poszły przez OŚ
       CYTATÓW CR (F-3 z audytu jako punkt wejścia). Pobranie dosłownego spisu
       `702. Keyword Abilities` z CR 2026-09-25 (`mtg.wiki/page/Keyword_ability`)
@@ -222,6 +242,37 @@ Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134
         mutacja M14 (stara gałąź) → 5/7 czerwonych.
       Otwarte obserwacje: **O-4/O-5** (uproszczenia udokumentowane, bez różnicy
       behawioralnej). D4b — domknięte niżej (W-1…W-9).
+
+## Etap F — „żadnych ograniczeń ani uproszczeń wpływających na grę” (polecenie właściciela)
+
+Polecenie: „Nie chcę żadnych drobnych albo nie drobnych ograniczeń ani
+uproszczeń, które wpływałyby na grę. Kart, których nie ma, nie trzeba
+okodowywać — jak się pojawią, warto to jasno opisać w komentarzach w kodzie.”
+
+- [x] F/1 (`720aeb7`) — koszty alternatywne escape/cleave płacą SWOJE pipy
+      (CR 118.9: koszt alternatywny w całości zastępuje koszt many); strażnik
+      granic katalogu (reguły świadomie nieimplementowane, bo brak karty —
+      pęka, gdy karta wejdzie). Piny `etap-f-…-koszt-alternatywny-pipy` (4),
+      `etap-f-…-granice-katalogu` (2).
+- [x] F/2 (`7ed5bed`) — CR 603.5: triggery „may” / „you may pay” / „unless”
+      (echo) idą na stos zawsze, wybór przy rozstrzyganiu; Zoraline i Kappa
+      jako refleksyjne (603.12). Pin `etap-f-…-wybor-przy-rozstrzyganiu` (10).
+- [x] F/3 (`6146660`) — zdolności słów kluczowych na stosie (CR 603.3:
+      backup, echo, suspend, rebound, exploit, endure; intervening-if przy
+      rozstrzyganiu — 603.4); fizzle bez skutków „as it resolves” (608.2b).
+      Piny `etap-f-…-zdolnosci-slowkluczowe-na-stosie` (5),
+      `etap-f-…-fizzle-i-zejscie-ze-stosu` (3); mutacje M25/M26.
+- [x] F/4 (`00d4af4`) — JEDNA ścieżka rzutu bez kosztu many
+      (`castSpellWithoutManaCost` + `freeSpellCastOffers`) dla Epic, suspend,
+      rebound, Discover, rzutu z grobu i Barala: X = 0 (107.3b), dopłata
+      Fireballa (601.2f), koszty dodatkowe (601.2h) z ofiarą i „odrzuć N”
+      (wybór kart jedzie atomowo w komendzie). Pin `etap-f-…-rzut-bez-kosztu`
+      (16); mutacja M27.
+- [x] F/5 (`246b876`) — animacje jako osobne efekty z WŁASNYM czasem trwania
+      (W-10/W-11, CR 611.2/613.7: koniec jednego efektu przelicza warstwę
+      z pozostałych); O-4/O-5 opisane w kodzie jako „KARTY SPOZA KATALOGU”.
+      Pin `etap-f-…-animacje-czas-trwania` (4); mutacja M28.
+- [x] D3 po Etapie F — patrz Etap D (commit `99ea49b`).
 
 ## Etap E — domknięcie sesji
 
@@ -318,3 +369,7 @@ _(stan pośredni — dopisywane na końcu sesji)_
   D3 przeniesione (handoff §2).
 - Etap E: `npm test` 6387/6387, `npm run test:all` 6397/6397 (~299 s), build
   60 modułów / 4161,2 kB; M423, handoff 2026-09-24, README, L166.
+- **Etap F + D3 (polecenie właściciela z 2026-09-24):** F/1–F/5 i D3 — patrz
+  sekcje wyżej; `npm test` **6444/6444**, `npm run test:all` **6454/6454**, build
+  **60 modułów / 4197,8 kB**;
+  M424, handoff §1–§2, L167.
