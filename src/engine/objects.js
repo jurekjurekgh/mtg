@@ -4,7 +4,7 @@ import { assertStateInvariants } from './invariants.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { syncStationKind } from './counters.js';
 import { registerMover } from './mover.js';
-import { entersTappedNow } from './permanents.js';
+import { entersTappedNow, animationEffectsOf, animationFieldsAfter } from './permanents.js';
 import { nextTimestamp } from './timestamps.js';
 
 /**
@@ -309,22 +309,39 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
       }
       state.linkedAnimations = remaining;
       for (const targetId of revertedTargets) {
-        const stillTargeted = remaining.some((entry) => entry.targetId === targetId);
-        if (stillTargeted) continue;
         const target = state.objects.get(targetId);
         if (!target || target.zone !== 'battlefield' || !target.originalBeforeAnimation) continue;
-        const original = target.originalBeforeAnimation;
-        const reverted = Object.freeze({
-          ...target,
-          kind: original.kind,
-          types: original.types,
-          subtypes: original.subtypes,
-          power: original.power,
-          toughness: original.toughness,
-          originalBeforeAnimation: null,
-          // A4: cofnięcie animacji gasi też znacznik crew (jak w cleanup).
-          crewed: false,
-        });
+        const effects = animationEffectsOf(target);
+        let reverted;
+        if (effects) {
+          // W-10/W-11 (Etap F/5, CR 611.2): kończy się TYLKO efekt tego
+          // źródła — crew („until end of turn”) i animacja innego źródła
+          // trwają, więc warstwę przeliczamy z pozostałych efektów.
+          const lasting = effects.filter((effect) => effect.linkedSourceId !== objectId);
+          if (lasting.length === effects.length) continue;
+          reverted = Object.freeze({
+            ...target,
+            ...animationFieldsAfter(target, lasting),
+            // A4: znacznik crew gaśnie wyłącznie z końcem animacji.
+            ...(lasting.length === 0 ? { crewed: false } : {}),
+          });
+        } else {
+          // Obiekt sprzed W-10 (warstwa bez listy efektów).
+          const stillTargeted = remaining.some((entry) => entry.targetId === targetId);
+          if (stillTargeted) continue;
+          const original = target.originalBeforeAnimation;
+          reverted = Object.freeze({
+            ...target,
+            kind: original.kind,
+            types: original.types,
+            subtypes: original.subtypes,
+            power: original.power,
+            toughness: original.toughness,
+            originalBeforeAnimation: null,
+            // A4: cofnięcie animacji gasi też znacznik crew (jak w cleanup).
+            crewed: false,
+          });
+        }
         state.objects.set(targetId, reverted);
         // M201 (znalezisko #1, CR 506.4c): permanent, który przestał być
         // stworem, jest USUWANY Z WALKI. Bez tego `state.combat` wskazywał

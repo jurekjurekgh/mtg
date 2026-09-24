@@ -149,6 +149,16 @@ function manaColorsIgnoringCosts(gameObject, state = null) {
  * Jedno miejsce prawdy (L41) dla: kreatora many/auto-tapu
  * (`getSourceForObject`), rozstrzygnięcia efektu (effects.js) i bramki
  * dostępności zdolności (abilities.js `abilityConditionFailure`).
+ *
+ * O-5 audytu PR #134: `colorsFrom` innych źródeł grupy (drugi Gond Gate) NIE
+ * jest rozwijany rekurencyjnie. Dla katalogu (stan 2026-09-24: jedyna karta
+ * z `colorsFrom` to Gond Gate, grupa = Gate) wynik jest identyczny z punktem
+ * stałym CR 106.7 — kolory drugiego Gond Gate to z definicji kolory
+ * pozostałych Bram, a same Gond Gate poprawnie dają zero kolorów.
+ * KARTY SPOZA KATALOGU: źródło z `colorsFrom` INNEJ grupy (np. „any color
+ * a land you control could produce" — Reflecting Pool) obok Gond Gate
+ * wymaga iteracji do punktu stałego (unia po kolejnych przebiegach, aż zbiór
+ * przestanie rosnąć), z ochroną przed cyklem.
  */
 export function colorsProducibleBySubtype(state, playerId, subtype, { excludeId = null } = {}) {
   const colors = [];

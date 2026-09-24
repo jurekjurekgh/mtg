@@ -5281,6 +5281,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
       typesAdd, subtypesAdd: effect.subtypesAdd ?? [], retainTypes: true,
       // D4b (CR 613.7b): znacznik efektu — porządek w warstwie 7b.
       ts: nextTimestamp(state),
+      // W-10/W-11: efekt trwa, dopóki TO źródło jest na polu bitwy.
+      linkedSourceId: sourceObject.id,
     });
     const updated = replaceObject(state, target, {
       kind: types.includes('Creature') ? 'creature' : target.kind,
@@ -5288,8 +5290,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
       power: effect.power ?? 0, toughness: effect.toughness ?? 0,
       originalBeforeAnimation: Object.freeze({ ...original, layer }),
     });
+    // W-11 (Etap F/5): DRUGI Skilled Animator na tym samym artefakcie to
+    // osobny efekt z własnym źródłem — dawniej jego wpis wypierał pierwszy,
+    // więc zejście drugiego cofało animację mimo trwającego pierwszego.
     state.linkedAnimations = [
-      ...(state.linkedAnimations ?? []).filter((entry) => entry.targetId !== targetId),
+      ...(state.linkedAnimations ?? []).filter((entry) => !(entry.targetId === targetId && entry.sourceId === sourceObject.id)),
       { sourceId: sourceObject.id, targetId },
     ];
     state.events.push(event('permanent_animated', {

@@ -833,6 +833,21 @@ export function effectiveToughness(object, state = null) {
  *
  * `enteringId` wyklucza sam wchodzący obiekt z grona źródeł (statyk na
  * wchodzącej Bramie nie „widzi" jeszcze siebie na polu bitwy).
+ *
+ * KARTY SPOZA KATALOGU (O-4 audytu PR #134, CR 616.1): własne „enters tapped"
+ * i „… enter untapped" to DWA efekty zastępcze tego samego wejścia, więc
+ * kolejność (a tym samym wynik) wybiera kontroler wchodzącego permanentu.
+ * Silnik stosuje „odkręcony" bez pytania, bo w katalogu (stan 2026-09-24)
+ * nie ma karty, dla której tapnięte wejście czegokolwiek daje (Chronic
+ * Flooding liczy „becomes tapped", czego wejście tapnięte nie wyzwala;
+ * Frontline War-Rager/Cautious Survivor liczą tapnięte STWORY, a Bramy nimi
+ * nie są, chyba że zostaną ożywione — a wtedy odkręcona Brama tapnięta za
+ * manę osiąga ten sam stan, zyskując manę) — wybór „tapnięty" jest więc
+ * zawsze zdominowany i nie zmienia gry.
+ * Gdy do katalogu wejdzie karta nagradzająca tapnięty ląd/Bramę (np. „as long
+ * as you control a tapped land", „whenever a land enters tapped"): zamienić
+ * ten override na decyzję kontrolera (`pendingReplacementChoice`, CR 616.1)
+ * we wszystkich ścieżkach wejścia (`entersTappedNow`).
  */
 export function entersUntappedOverride(state, object, { enteringId = null } = {}) {
   if (!state || !object) return false;
@@ -1420,7 +1435,20 @@ export function clearStatModifiers(state) {
     if (object.attacksAsThoughNoDefenderUntilEOT) {
       replaceObject(state, state.objects.get(object.id), { attacksAsThoughNoDefenderUntilEOT: false });
     }
-    if (object.originalBeforeAnimation) {
+    const animated = state.objects.get(object.id);
+    const animationEffects = animationEffectsOf(animated);
+    if (animated.originalBeforeAnimation && animationEffects) {
+      // W-10 (Etap F/5, CR 611.2 + 514.2): cleanup kończy WYŁĄCZNIE efekty
+      // „until end of turn”; animacja z linkiem (Skilled Animator) trwa do
+      // odejścia źródła, a zakończone efekty znikają z przeliczonej warstwy
+      // (np. P/T ustawione do końca tury nad trwającą animacją 5/5).
+      const lasting = animationEffects.filter((effect) => effect.linkedSourceId != null);
+      if (lasting.length !== animationEffects.length) {
+        replaceObject(state, animated, { ...animationFieldsAfter(animated, lasting), crewed: false });
+        syncStationKind(state, object.id);
+      }
+    } else if (animated.originalBeforeAnimation) {
+      // Obiekt sprzed W-10 (warstwa bez listy efektów — np. zbudowany w teście).
       // M157/C (uwaga właściciela, Skilled Animator): animacja LINKED („for as
       // long as this creature remains on the battlefield") NIE kończy się
       // w cleanup — trwa do odejścia ŹRÓDŁA z pola bitwy (cofnięcie w
@@ -1428,34 +1456,29 @@ export function clearStatModifiers(state) {
       // kończy wyłącznie animacje „until end of turn".
       const hasLiveLink = (state.linkedAnimations ?? [])
         .some((entry) => entry.targetId === object.id);
-      if (hasLiveLink) {
-        // Stacja i tak jest zsynchronizowana (obiekt niezmieniony), a animacja
-        // trwa — przechodzimy do kolejnych modyfikatorów tego obiektu.
-      } else {
-      replaceObject(state, object, {
-        kind: object.originalBeforeAnimation.kind,
-        types: object.originalBeforeAnimation.types,
-        subtypes: object.originalBeforeAnimation.subtypes,
-        power: object.originalBeforeAnimation.power,
-        toughness: object.originalBeforeAnimation.toughness,
-        originalBeforeAnimation: null,
-        // A4: koniec animacji = koniec „obsadzenia" (znacznik z crew).
-        crewed: false,
-      });
-      // M141/A (station + animacja): ożywiony Spacecraft (animacja 5/5)
-      // po zakończeniu animacji w cleanup wracał do artefaktu nawet przy
-      // 9+ licznikach charge — station nie była resynchronizowana.
-      // Naprawa: po przywróceniu cech pierwotnych natychmiast synchronizujemy
-      // rodzaj wg liczników (CR 205.1). Bez tego stwór traci typ Creature
-      // mimo spełnionego progu.
-      syncStationKind(state, object.id);
+      if (!hasLiveLink) {
+        replaceObject(state, animated, {
+          kind: animated.originalBeforeAnimation.kind,
+          types: animated.originalBeforeAnimation.types,
+          subtypes: animated.originalBeforeAnimation.subtypes,
+          power: animated.originalBeforeAnimation.power,
+          toughness: animated.originalBeforeAnimation.toughness,
+          originalBeforeAnimation: null,
+          // A4: koniec animacji = koniec „obsadzenia" (znacznik z crew).
+          crewed: false,
+        });
+        // M141/A (station + animacja): po przywróceniu cech pierwotnych
+        // natychmiast synchronizujemy rodzaj wg liczników (CR 205.1).
+        syncStationKind(state, object.id);
       }
     }
     // A4: strażnik inwariantu „crewed ⟹ trwa animacja" — znacznik stawia
     // wyłącznie rozstrzygnięcie crew (efekt animuje), ale gdyby przyszła
     // karta crew miała inny efekt, flaga nie może przeżyć tury.
+    // W-10: efekt crew („until end of turn”) kończy się w KAŻDYM cleanupie,
+    // także gdy animacja z linkiem trwa dalej.
     const afterAnim = state.objects.get(object.id);
-    if (afterAnim.crewed && !afterAnim.originalBeforeAnimation) {
+    if (afterAnim.crewed) {
       replaceObject(state, afterAnim, { crewed: false });
     }
     const current = state.objects.get(object.id);
@@ -1700,8 +1723,39 @@ export function animationLayerOf(object) {
  * zachowuje P/T i znacznik `ptTs` poprzedniej warstwy (Skilled Animator 5/5
  * trwa po crew), a bez poprzedniej — `power: null` (wydrukowane P/T pojazdu).
  */
-export function mergedAnimationLayer(object, { power, toughness, typesAdd = [], subtypesAdd = [], retainTypes = true, ts = 0 }) {
+export function mergedAnimationLayer(object, { power, toughness, typesAdd = [], subtypesAdd = [], retainTypes = true, ts = 0, linkedSourceId = null }) {
   const previous = animationLayerOf(object);
+  // W-10/W-11 (Etap F/5, CR 611.2 + 613.7): każda animacja jest OSOBNYM
+  // efektem z własnym czasem trwania — „until end of turn” (crew, Silvanus's
+  // Invoker) albo „for as long as [źródło] remains on the battlefield”
+  // (Skilled Animator). Scalona warstwa służy odczytowi; lista `effects`
+  // pozwala zakończyć JEDEN efekt i przeliczyć resztę (`animationFieldsAfter`).
+  // Dawniej koniec dowolnej animacji cofał wszystkie naraz.
+  const previousEffects = previous?.effects
+    ?? (previous ? [{ ...legacyAnimationEffect(previous) }] : []);
+  const record = Object.freeze({
+    ts, power: power ?? null, toughness: toughness ?? null,
+    typesAdd: [...typesAdd], subtypesAdd: [...subtypesAdd], retainTypes,
+    ...(linkedSourceId != null ? { linkedSourceId } : {}),
+  });
+  return { ...mergeAnimationLayer(previous, { power, toughness, typesAdd, subtypesAdd, retainTypes, ts }), effects: [...previousEffects, record] };
+}
+
+/** Warstwa bez listy efektów (obiekt sprzed W-10) jako jeden efekt „do końca tury”. */
+function legacyAnimationEffect(layer) {
+  return {
+    ts: layer.ptTs ?? 0, power: layer.power ?? null, toughness: layer.toughness ?? null,
+    typesAdd: [...(layer.typesAdd ?? [])], subtypesAdd: [...(layer.subtypesAdd ?? [])],
+    retainTypes: layer.retainTypes !== false,
+  };
+}
+
+/**
+ * Scala dwie warstwy animacji: późniejszy znacznik wygrywa P/T (CR 613.7b),
+ * typy/podtypy się sumują, a efekt „przestaje mieć inne typy” (retainTypes
+ * false) zeruje wcześniejsze dodatki.
+ */
+function mergeAnimationLayer(previous, { power, toughness, typesAdd = [], subtypesAdd = [], retainTypes = true, ts = 0 }) {
   const setsPT = power != null || toughness != null;
   const pt = setsPT
     ? { power: power ?? null, toughness: toughness ?? null, ptTs: ts }
@@ -1715,6 +1769,43 @@ export function mergedAnimationLayer(object, { power, toughness, typesAdd = [], 
     subtypesAdd: [...new Set([...previous.subtypesAdd, ...subtypesAdd])],
     retainTypes: previous.retainTypes,
   };
+}
+
+/**
+ * W-10/W-11: pola obiektu po zakończeniu części animacji — `remaining` to
+ * efekty, które TRWAJĄ (w kolejności znaczników, CR 613.7). Brak efektów =
+ * pełny powrót do cech sprzed animacji. Nadpisanie podtypów (warstwa 4 —
+ * Wishful Merfolk) trwa: obiekt zachowuje podtypy-cel, a zapis przywrócenia
+ * dostaje podtypy po animacji (jak `transformInPlaceFields`).
+ */
+export function animationFieldsAfter(object, remaining) {
+  const record = object?.originalBeforeAnimation;
+  if (!record) return {};
+  const { layer: _layer, ...base } = record;
+  if (!remaining || remaining.length === 0) {
+    return {
+      kind: base.kind, types: base.types,
+      ...(object.subtypesBeforeOverride ? { subtypesBeforeOverride: base.subtypes } : { subtypes: base.subtypes }),
+      power: base.power, toughness: base.toughness,
+      originalBeforeAnimation: null,
+    };
+  }
+  const ordered = [...remaining].sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0));
+  let layer = null;
+  for (const effect of ordered) layer = mergeAnimationLayer(layer, effect);
+  layer = { ...layer, effects: ordered };
+  const visible = withAnimationLayer(base, layer);
+  return {
+    kind: visible.kind, types: visible.types,
+    ...(object.subtypesBeforeOverride ? { subtypesBeforeOverride: visible.subtypes } : { subtypes: visible.subtypes }),
+    power: visible.power, toughness: visible.toughness,
+    originalBeforeAnimation: Object.freeze({ ...base, layer }),
+  };
+}
+
+/** Lista efektów animacji obiektu albo `null` (obiekt sprzed W-10 / bez animacji). */
+export function animationEffectsOf(object) {
+  return object?.originalBeforeAnimation?.layer?.effects ?? null;
 }
 
 /** Nakłada warstwę animacji na wydrukowane cechy strony. */
