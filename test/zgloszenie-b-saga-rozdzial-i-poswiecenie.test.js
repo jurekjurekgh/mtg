@@ -238,7 +238,7 @@ test('B3: log nie mówi już „Rediscover the Way zyskuje: podwójne uderzenie"
 
 test('B4 (CR 714.2b): licznik lore z proliferate odpala rozdział, a Saga czeka na jego rozstrzygnięcie', () => {
   // Poświęcenie Sagi jest akcją stanową (CR 714.4), więc od teraz liczy się
-  // KAŻDA droga dołożenia licznika lore — proliferate (CR 701.27) też.
+  // KAŻDA droga dołożenia licznika lore — proliferate (CR 701.34) też.
   // Bez rozdziału w `counter_added` Saga dobita proliferatem do progu była
   // poświęcana bez rozstrzygnięcia rozdziału (regresja, którą wprowadziłaby
   // sama przeprowadzka poświęcenia do SBA).

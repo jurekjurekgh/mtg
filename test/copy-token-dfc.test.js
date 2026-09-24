@@ -117,7 +117,7 @@ test('craft na tokenie-kopii DFC nie wywala partii (crash z benchmarku B0)', () 
 // transformTo (M90) musi nieść tożsamość twarzy PRZEDNIEJ pary (frontFaceId).
 // Bez niej inwariant „cardId ≠ frontFaceId ⇒ na tyle" (copyManaValueOf,
 // dfcFaceReset) nie rozpoznaje kopii tyłu: kopia kopii transformowanego DFC
-// nie mogłaby policzyć MV 0 (CR 202.3b), a reset K5 (CR 711.4a) nie odpaliłby
+// nie mogłaby policzyć MV 0 (CR 202.3b), a reset K5 (CR 712.8a) nie odpaliłby
 // się, gdyby kopia kiedykolwiek wróciła poza pole bitwy.
 test('M264/2.3-C1: token-kopia DFC niesie frontFaceId pierwowzoru (CR 707.8a)', () => {
   const state = table();
@@ -161,7 +161,7 @@ test('M264/2.3-C2: kopia TYLNEJ twarzy niesie front pierwotnej pary i trzyma go 
   assert.equal(back.transformTo.cardId, 'lodestone-needle', 'pętla transformTo nie tworzy chimery');
 });
 
-test('M264/2.3-C3: token Incubator (dwustronny, 701.51) niesie frontFaceId', () => {
+test('M264/2.3-C3: token Incubator (dwustronny, 701.53) niesie frontFaceId', () => {
   const state = table();
   const source = addObject(state, {
     id: 'src', instanceId: 'i-src', cardId: 'cogwork-assembler', controllerId: 'p1', ownerId: 'p1',
@@ -170,7 +170,7 @@ test('M264/2.3-C3: token Incubator (dwustronny, 701.51) niesie frontFaceId', () 
   applyEffect(state, { type: 'incubate', amount: 2 }, source, []);
   const incubator = [...state.objects.values()].find((o) => o.isToken && o.cardId === 'token_incubator');
   assert.ok(incubator, 'Incubator powstał');
-  assert.ok(incubator.transformTo, 'Incubator jest dwustronny (701.51)');
+  assert.ok(incubator.transformTo, 'Incubator jest dwustronny (701.53)');
   // frontFaceId: tożsamość frontu pary — kopia Phyrexiana (tył) musi umieć
   // policzyć MV 0 (CR 202.3b przez copyManaValueOf).
   assert.equal(incubator.frontFaceId, 'token_incubator', 'front pary = Incubator (RED: null)');

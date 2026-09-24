@@ -6,6 +6,7 @@ import { addMana } from '../src/engine/resources.js';
 import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
+import { resolveUntilDecision, optionalTriggerOpen } from './helpers/deferred-trigger.js';
 
 /**
  * Batch 17 realnych kart (ADR 0010 §2a) — 10 kart dokończających PR #26:
@@ -428,7 +429,9 @@ test('Reclusive Artificer: ETB zadaje obrażenia = liczba artefaktów kontrolera
   // Temat 2: „you may have it deal damage to target creature" — kontroler
   // wybiera cel (jedyny stwór = foe).
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe' }).ok);
-  passBoth(state); // T6: rozstrzygnij trigger ze stosu
+  // Etap F (CR 603.5): „you may" pada przy rozstrzyganiu.
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen));
+  assert.ok(execute(state, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true }).ok);
   // 2 artefakty → 2 obrażenia w stwora przeciwnika.
   assert.equal(state.objects.get('foe').damage, 2, 'Obrażenia = liczba artefaktów (2)');
 });
@@ -442,9 +445,11 @@ test('Reclusive Artificer: haste pozwala atakować w turze wejścia', () => {
   assert.ok(rCast3.ok);
   resolveStack(state);
   // BUG1 fix: Reclusive Artificer może celować w siebie („target creature").
-  // Trigger jest opcjonalny — odmawiamy, żeby nie czekać na decyzję celu.
-  const pend = state.pendingTriggerTargets[0];
-  if (pend) assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: null }).ok);
+  // Etap F (CR 603.3d + 603.5): jedyny kandydat (on sam) jest celem
+  // obowiązkowym, a „you may" odrzucamy przy rozstrzyganiu (pass, F1).
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen));
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  assert.equal(state.objects.get(findId(state, 'reclusive-artificer')).damage ?? 0, 0, 'odmowa — bez obrażeń');
   const ra = findId(state, 'reclusive-artificer');
   assert.ok(effectiveKeywords(state.objects.get(ra), state).includes('haste'));
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);

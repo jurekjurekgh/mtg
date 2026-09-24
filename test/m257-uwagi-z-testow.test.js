@@ -27,6 +27,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { createGameState, execute, playerView, addObject } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { resolveUntilDecision, payOrSacrificeOpen } from './helpers/deferred-trigger.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const REGISTRY = createCardRegistry();
@@ -91,6 +92,8 @@ function spireState() {
   addHand(state, 'spire', 'rupture-spire');
   const r = execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' });
   assert.ok(r.ok, `Spire ma wejść na stół: ${r.reason ?? ''}`);
+  // Etap F (CR 603.5): trigger ETB na stosie — „unless" przy rozstrzyganiu.
+  assert.ok(resolveUntilDecision(state, payOrSacrificeOpen), 'decyzja zapłać/poświęć po rozstrzygnięciu triggera');
   return state;
 }
 

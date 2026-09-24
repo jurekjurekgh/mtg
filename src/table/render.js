@@ -6,6 +6,7 @@ import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { castsWithoutPayingMana, hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
 import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
+import { CARD_TYPES } from '../engine/permanents.js';
 import { coloredPipsOf } from '../engine/mana-cost.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
@@ -269,7 +270,7 @@ export function describeSpellEffects(spell) {
       // you control" — amount to string). Doklejamy czytelny opis źródła
       // liczby, zamiast gołego „Stwórz 2/2 Wolf" (audyt diamentowy cz.2).
       const dynamicNote = typeof effect.amount === 'string' ? ` (${dynamicAmount(effect.amount)})` : '';
-      // Fateful hour (CR 702.86, Gather the Townsfolk): gdy amountIfCondition
+      // Fateful hour (CR 207.2c, Gather the Townsfolk): gdy amountIfCondition
       // podaje inną liczbę tokenów dla niskiego życia, doklej „(X przy życiu ≤ N)".
       const fateful = Number.isFinite(effect.ifLifeAtMost) && Number.isFinite(effect.amountIfCondition)
         ? ` (${effect.amountIfCondition} przy \u017cyciu \u2264 ${effect.ifLifeAtMost})` : '';
@@ -438,7 +439,7 @@ export function choiceRequestGroupKey(command) {
   // Ta sama reguła co dla rzutu z ręki (K/M z 2026-09-19b) i dla escape powyżej:
   // wybór CELU jest decyzją W TRAKCIE rzucania (CR 601.2c), więc panel dostaje
   // JEDNĄ ofertę „Rzuć za flashback: <karta>”, a cele rozstrzyga modal.
-  // Flashback (CR 702.33a) to alternatywny KOSZT tego samego rzutu, nie osobna
+  // Flashback (CR 702.34a) to alternatywny KOSZT tego samego rzutu, nie osobna
   // akcja — brak tej gałęzi był rozjazdem bliźniaczych ścieżek (L41): rzut
   // z ręki grupował cele, rzut z grobu nie.
   if (command.type === 'cast_flashback' && command.targets?.length) {
@@ -730,7 +731,7 @@ function buildChoiceRequestEntries(commands, view) {
     // JEDEN wariant, decyzja nie niesie wyboru i idzie do panelu jako
     // zwykła akcja. Etykieta `commandLabel` mówi wprost, co się stanie
     // („Szukanie: Swamp"), a rezygnacja pozostaje dostępna osobnym
-    // przyciskiem — nie odbieramy legalnego ruchu (CR 701.19b: „fail to
+    // przyciskiem — nie odbieramy legalnego ruchu (CR 701.23b: „fail to
     // find" wolno wybrać zawsze).
     //
     // Świadome ograniczenie zakresu: dotyczy wyłącznie decyzji, które MAJĄ
@@ -747,7 +748,7 @@ function buildChoiceRequestEntries(commands, view) {
     // To ŚWIADOME odwrócenie reguły M131 dla SZUKANIA (wcześniejsze zgłoszenie
     // dotyczyło swampcyclingu Gloomfanga i jest zachowane dla pozostałych
     // rodzin decyzji). Szukanie to wybór KARTY: „znajdź TĘ kartę / nie znajduj
-    // żadnej” (CR 701.19b) — a nie potwierdzenie akcji, którą gracz już
+    // żadnej” (CR 701.23b) — a nie potwierdzenie akcji, którą gracz już
     // wykonał. Konsekwencja dla M131: kolaps „1 realny wariant + rezygnacja”
     // nadal obowiązuje decyzje typu `skip` (Springbloom i pokrewne), ale NIE
     // szukanie w bibliotece.
@@ -963,7 +964,7 @@ export const KEYWORD_LABELS = Object.freeze({
   // akcji „Obróć twarzą do góry" pokazywała surowy slug małą literą — dokładnie
   // ten sam wyciek co L29 (`MAPA[key] ?? key` jest cichą dziurą, nie fallbackiem).
   megamorph: 'Megamorph',
-  // Batch 36 (Molten Nursery): Devoid — karta bezbarwna (CR 702.110? 702.131).
+  // Batch 36 (Molten Nursery): Devoid — karta bezbarwna (CR 702.114).
   devoid: 'Devoid (bezbarwna)',
 });
 
@@ -1032,10 +1033,13 @@ function altarTypeCount(session) {
   // nie supertypy; baza danych niesie je jawnie (ADR 0002). Używana do badge'a
   // Altaru i do opisu buffa +X/+X w overlayu. View ma już karty z grobów,
   // session dostarcza definicji typów (cardDetails).
-  // Dozwolone typy kart = ALL_GRAVEYARD_CARD_TYPES z permanents.js (CR 205.2a).
-  // Filtr wyklucza supertypy (Basic, Legendary, Snow) — inaczej Basic Forest
-  // liczyłby się jako 2 typy (Basic+Land) zamiast 1 (Land).
-  const ALLOWED = new Set(['Artifact','Battle','Conspiracy','Creature','Dungeon','Enchantment','Instant','Kindred','Land','Phenomenon','Plane','Planeswalker','Scheme','Sorcery','Tribal','Vanguard']);
+  // Dozwolone typy kart = wspólna `CARD_TYPES` z `permanents.js` (CR 205.2a):
+  // O-2 audytu PR #134 — ten sam zbiór siedział wcześniej w TRZECH miejscach
+  // (tutaj, `DELIRIUM_CARD_TYPES` w `triggers.js`, `ALL_GRAVEYARD_CARD_TYPES`
+  // w `permanents.js`), a jeden z nich decydował o dostępności zdolności (L41).
+  // Lista nie zawiera nadtypów, więc Basic Forest liczy się jako 1 typ (Land),
+  // nie 2 (Basic+Land).
+  const ALLOWED = new Set(CARD_TYPES);
   try {
     const view = session.view();
     const grave = view.zones?.graveyard ?? [];
@@ -1273,6 +1277,7 @@ function describeEffect(e, ctx = {}) {
     // M166/D (Inferno Titan).
     damage_divided: () => 'obrażenia dzielone między cele',
     becomes_subtype_until_end_of_turn: () => 'zmiana podtypu i utrata keyworda do końca tury',
+    attack_as_though_no_defender_until_end_of_turn: () => 'może atakować w tej turze mimo defendera',
     // M184/Z1 (Żywy Tester): „ten sam efekt na każdym z celów" nie mówił,
     // CO się stanie (Sea God's Scorn wyglądał na pustą kartę) — opisujemy
     // efekty WEWNĘTRZNE rekurencyjnie.
@@ -1873,7 +1878,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
 
 /** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
 export function rulesText(info) {
-  // M258/F3 (cloak, CR 701.56a): zakryty permanent z ward {2} — ward jest
+  // M258/F3 (cloak, CR 701.58a): zakryty permanent z ward {2} — ward jest
   // cechą JAWNĄ zakrycia (jak staty 2/2), więc kafel go pokazuje mimo
   // maskowania reszty tożsamości (CR 708.2a tłumi druk, nie definicję
   // zakrycia). Zwykły morph bez warda: linia pusta jak dotąd.
@@ -2099,7 +2104,9 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_exile_cast: 'Vaan — rzucić wygnaną kartę czy stworzyć Skarb?',
   resolve_suspend_cast: 'Suspend — rzucić zawieszony czar?',
   resolve_rebound_cast: 'Rebound — rzucić czar ponownie?',
-  resolve_epic_choice: 'Epic — który czar skopiować?',
+  // D3 (PR #135, Etap F): „skopiować” było mylące — efekt wygania wierzch
+  // biblioteki i RZUCA wygnane czary bez kosztu many (CR 118.9), nie kopiuje.
+  resolve_epic_choice: 'Wygnane czary — który rzucić bez kosztu many?',
   resolve_delirium_target: 'Delirium — cel obrażeń',
   resolve_mentor_target: 'Mentor — kto dostaje licznik?',
   resolve_graveyard_top_choice: 'Karta z grobu na wierzch biblioteki',
@@ -2186,7 +2193,7 @@ function findViewObject(objectId, view) {
 }
 
 /**
- * Koszt ODSŁONIĘCIA zakrytego permanentu (CR 701.56b cloak, CR 701.40b
+ * Koszt ODSŁONIĘCIA zakrytego permanentu (CR 701.58b cloak, CR 701.40b
  * manifest) — kwota należy do PEŁNEGO STANU, nie do widoku: prawa i koszt
  * obrotu są informacją właściciela zakrytej karty (FoW, CR 708.2a; widok
  * projektuje tylko `cloakReady` kontrolerowi). Stąd odczyt lustrzany do
@@ -2625,7 +2632,7 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
     }
   }
   // M (zgłoszenie z testów 2026-09-22, Dream Twist): grupa rzutu za FLASHBACK
-  // dostaje tytuł nazywający kartę i koszt alternatywny (CR 702.33a) — jak
+  // dostaje tytuł nazywający kartę i koszt alternatywny (CR 702.34a) — jak
   // „Rzuć: <karta>” dla rzutu z ręki. Bez tego modal celów szedł w generyczne
   // „Wybierz: Wariant”, bo cast_flashback nie ma wpisu w deskryptorach grup.
   if (options.length > 0
@@ -2727,8 +2734,14 @@ export function labelChoiceOptions(options, session, view) {
 /**
  * M126/#1 — efekty, które CZYTAJĄ własną bibliotekę. Przy pustej bibliotece
  * gracza taka zdolność jest jałowa: koszt (mana + tapnięcie) zostaje
- * zapłacony, a skutku nie ma (CR 701.54a — explore bez karty nic nie robi;
- * analogicznie scry/surveil/mill/look).
+ * zapłacony, a skutku nie ma (scry/surveil/mill/look/discover bez kart nie
+ * mają czego obejrzeć ani przenieść).
+ *
+ * NIE należą tu: explore — przy pustej bibliotece nic nie zostaje odsłonięte,
+ * więc działa gałąź „Otherwise … +1/+1 counter on the exploring permanent”
+ * (CR 701.44a), a zdolność ma skutek; dobieranie — próba dobrania z pustej
+ * biblioteki nie jest „bez skutku”, tylko przegrywa grę (CR 704.5b), więc
+ * ostrzeżenie mówi o tym osobno (`abilityDrawsFromEmptyLibrary`).
  *
  * Żywy Tester (M126) pokazał to na Guidestone Compass, a audyt rozszerzył
  * na całą rodzinę: Seer's Lantern, Prismari Campus, Cellar Door. Nie
@@ -2737,8 +2750,8 @@ export function labelChoiceOptions(options, session, view) {
  * „czar fizzluje" przy Bone Splinters (M102/U8).
  */
 const LIBRARY_READING_EFFECTS = new Set([
-  'explore', 'scry', 'surveil', 'mill_cards', 'mill_from_bottom',
-  'look_top_n', 'discover', 'draw_cards',
+  'scry', 'surveil', 'mill_cards', 'mill_from_bottom',
+  'look_top_n', 'discover',
 ]);
 
 /** Czy własna biblioteka gracza jest pusta (w jego widoku)? */
@@ -2755,6 +2768,16 @@ function abilityFizzlesOnEmptyLibrary(ability, view) {
   // Ostrzegamy tylko, gdy CAŁA treść zdolności zależy od biblioteki —
   // inaczej „mill 3 + zysk życia" dostałby fałszywe ostrzeżenie.
   return effects.every((e) => e?.type && LIBRARY_READING_EFFECTS.has(e.type));
+}
+
+/**
+ * Czy zdolność każe graczowi dobrać z PUSTEJ biblioteki? Taka próba nie jest
+ * jałowa: gracz przegrywa przy najbliższym sprawdzeniu SBA (CR 704.5b).
+ */
+function abilityDrawsFromEmptyLibrary(ability, view) {
+  if (!ability || !ownLibraryEmpty(view)) return false;
+  const effects = Array.isArray(ability.effect) ? ability.effect : (ability.effect ? [ability.effect] : []);
+  return effects.some((e) => e?.type === 'draw_cards' && (e.amount ?? 1) !== 0);
 }
 
 /**
@@ -2898,7 +2921,7 @@ export function commandLabel(cmd, session, view) {
     // Face-down (morph, CR 708.2): „morph" zamiast „?" w etykietach celów
     // (audyt żywym testerem M73c — „Rzuć: Expunge → cel: ?").
     // M100/E10 (P12 — Żywy Tester h01): WŁASNY morph ma być nazwany
-    // (właściciel zna tożsamość własnej zakrytej karty — CR 708.6; np.
+    // (właściciel zna tożsamość własnej zakrytej karty — CR 708.5; np.
     // „Rzuć: Village Rites — poświęć Segmented Krotiq"). playerView maskuje
     // cardId wrogiego face-down do null → wróg zostaje „morph" (CR 708.2).
     // M100/E12 (pytanie właściciela): własny morph nazwany ZE znacznikiem
@@ -2943,13 +2966,29 @@ export function commandLabel(cmd, session, view) {
     }
     return escapeHtml(`${base}${copyOrdinal}`);
   };
+  // Etap F/4 (M91/uwaga D, L29): rzut bez kosztu many enumeruje warianty
+  // per tryb, cel pod stun i ZAPŁATĘ kosztu dodatkowego (ofiara, dopłata,
+  // odrzucane karty — CR 601.2h). Jeden dopisek dla całej rodziny okien, żeby
+  // żadne z nich nie pokazywało kilku identycznych przycisków.
+  const freeCastChoiceSuffix = (c, card, { mode = true, sacrifice = true, altCost = true } = {}) => {
+    const parts = [];
+    const m = (mode && c.modeIndex != null && card?.spell?.modes) ? card.spell.modes[c.modeIndex] : null;
+    if (m?.name) parts.push(` — ${m.name}`);
+    if (mode && c.stunTargetId != null) parts.push(` · stun: ${nameOfObjectId(c.stunTargetId)}`);
+    if (sacrifice && c.sacrificeTargetId != null) parts.push(` · poświęć: ${nameOfObjectId(c.sacrificeTargetId)}`);
+    if (altCost && c.payAltCost === true) parts.push(` · dopłać {${card?.spell?.additionalCost?.orPayMana ?? '?'}}`);
+    if (Array.isArray(c.discardCardIds) && c.discardCardIds.length > 0) {
+      parts.push(` · odrzuć: ${c.discardCardIds.map((id) => nameOfObjectId(id)).join(', ')}`);
+    }
+    return parts.join('');
+  };
   // Koszt many karty → HTML z ikonami (MANA_COSTS: string typu „{2}{U}").
   // Implementacja w zasięgu modułu (`cardCostHtml`) — patrz H: tytuły grup
   // używają tej samej funkcji co etykiety pojedynczych ofert.
   const costOfCard = cardCostHtml;
   // H (zgłoszenie właściciela, Sheriff of Safe Passage) + ta sama klasa dla
   // impulsu: rzut karty CZEKAJĄCEJ w wygnaniu (plot CR 702.170d, impuls
-  // CR 701.51b) nie jest zwykłym rzutem z ręki — kosztu many nie ma, a okno
+  // CR 701.18) nie jest zwykłym rzutem z ręki — kosztu many nie ma, a okno
   // impulsu ma numer tury („this turn" kończy się w turze zdolności).
   // Etykieta „Zagraj: X (koszt {2}{W})" kłamała o koszcie i milczała
   // o oknie; gracz zgłosił to jako „plot nie działa".
@@ -3344,7 +3383,9 @@ export function commandLabel(cmd, session, view) {
         ? ` — ${crewTail}${crewNeeded > 0 ? ` (moc ≥ ${crewNeeded})` : ''}`
         : '';
       // M126/#1: zdolność czytająca pustą bibliotekę zabierze koszt i nic nie da.
-      const emptyLibWarn = abilityFizzlesOnEmptyLibrary(ability, view)
+      const emptyLibWarn = abilityDrawsFromEmptyLibrary(ability, view)
+        ? ' — UWAGA: twoja biblioteka jest pusta, dobranie z niej przegrywa grę (CR 704.5b)'
+        : abilityFizzlesOnEmptyLibrary(ability, view)
         ? ' — UWAGA: twoja biblioteka jest pusta, zdolność nie zadziała'
         : (abilityFizzlesOnHand(ability, view)
           ? ' — UWAGA: brak pasującej karty w ręce, zdolność nie zadziała' : '');
@@ -3472,7 +3513,11 @@ export function commandLabel(cmd, session, view) {
       // opisu decyzji (L41), więc panel i modal nie mogą się rozjechać.
       if (cmd.fire) {
         const named = choiceSourceTitle(cmd, session, view);
-        if (named) return named;
+        // Etap F (CR 603.5): „you may [czasownik] target" — cel wybrano przy
+        // kładzeniu na stos; etykieta mówi, w co efekt uderzy.
+        const targetNote = Array.isArray(cmd.targetIds) && cmd.targetIds.length > 0
+          ? ` → ${cmd.targetIds.map((id) => nameOfObjectId(id)).join(', ')}` : '';
+        if (named) return `${named}${targetNote}`;
       }
       // M163/A: tak/nie dobrowolnego efektu — j.w. (fallback dla widoku bez
       // `pendingOptionalTrigger`, np. starych replayów).
@@ -3489,7 +3534,7 @@ export function commandLabel(cmd, session, view) {
       return `Delirium: obrażenia w ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_mentor_target': {
-      // Mentor (CR 702.133): wybrany atakujący o mniejszej sile dostaje licznik.
+      // Mentor (CR 702.134): wybrany atakujący o mniejszej sile dostaje licznik.
       return `Mentor: licznik +1/+1 na ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_graveyard_top_choice': {
@@ -3513,8 +3558,14 @@ export function commandLabel(cmd, session, view) {
         parts.push(manaCostHtml(costSymbols(cmd.cost, cmd.costColors)));
       }
       if (cmd.lifeCost != null && cmd.lifeCost > 0) parts.push(`${cmd.lifeCost} życia`);
+      if (cmd.counterCost?.counter) parts.push(`usunięciem znacznika ${cmd.counterCost.counter}`);
       const price = parts.join(' + ');
       if (!cmd.pay) return `Nie płać${source ? ` (${source} — efekt nie odpali)` : ' — efekt nie odpali'}`;
+      // Etap F (CR 603.12): refleksyjna zdolność bez legalnego celu — zapłata
+      // jest legalna, ale nic nie da; etykieta mówi to wprost.
+      if (cmd.reflexiveTargetCount === 0) {
+        return `Zapłać${price ? ` ${price}` : ''}${source ? ` (${source})` : ''} — brak celu, efekt nic nie zrobi`;
+      }
       return `Zapłać${price ? ` ${price}` : ''}${source ? ` (${source})` : ''} — efekt odpali`;
     }
     case 'resolve_pay_or_sacrifice': {
@@ -3561,7 +3612,13 @@ export function commandLabel(cmd, session, view) {
       const found = obj(cmd.objectId);
       const mode = (cmd.modeIndex != null && found?.spell?.modes) ? found.spell.modes[cmd.modeIndex] : null;
       const modeName = mode?.name ? ` — ${mode.name}` : '';
-      return cmd.castFree ? `Discover: rzuć bez kosztu many${modeName}` : 'Discover: weź kartę do ręki';
+      // Etap F/4: rzut z celami (czar, tryb, gospodarz aury) — oferta per
+      // zestaw celów, więc etykieta nazywa cel (klasa M151/suspend).
+      const discTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      const discSac = cmd.sacrificeTargetId != null ? `, poświęć: ${nameOfObjectId(cmd.sacrificeTargetId)}` : '';
+      return cmd.castFree
+        ? `Discover: rzuć bez kosztu many${modeName}${discTargets ? ` → cel: ${discTargets}` : ''}${discSac}${freeCastChoiceSuffix(cmd, found, { mode: false, sacrifice: false })}`
+        : 'Discover: weź kartę do ręki';
     }
     case 'resolve_explore_choice': {
       // Explore (Guidestone Compass): wierzch albo grób.
@@ -3639,13 +3696,13 @@ export function commandLabel(cmd, session, view) {
       // widzi N identycznych „Rzuć zawieszone: X (bez kosztu many)\".
       const susTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       return cmd.cast
-        ? `Rzuć zawieszone: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)${susTargets ? ` → cel: ${susTargets}` : ''}`
+        ? `Rzuć zawieszone: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)${susTargets ? ` → cel: ${susTargets}` : ''}${freeCastChoiceSuffix(cmd, obj(cmd.cardId))}`
         : 'Zostaw w wygnaniu (koniec zawieszenia)';
     }
     case 'resolve_rebound_cast': {
       const rebTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       return cmd.cast
-        ? `Rzuć z odbiciem: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)${rebTargets ? ` → cel: ${rebTargets}` : ''}`
+        ? `Rzuć z odbiciem: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)${rebTargets ? ` → cel: ${rebTargets}` : ''}${freeCastChoiceSuffix(cmd, obj(cmd.cardId))}`
         : 'Zostaw w wygnaniu (koniec odbicia)';
     }
     case 'resolve_epic_choice': {
@@ -3654,7 +3711,7 @@ export function commandLabel(cmd, session, view) {
       // M163/A (klasa M151/suspend): oferta per legalny zestaw celów — bez
       // celu w etykiecie warianty tej samej karty są nieodróżnialne.
       const epicTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      return `Rzuć bez kosztu — ${nameOfObjectId(cmd.cardId)}${epicTargets ? ` → cel: ${epicTargets}` : ''}`;
+      return `Rzuć bez kosztu — ${nameOfObjectId(cmd.cardId)}${epicTargets ? ` → cel: ${epicTargets}` : ''}${freeCastChoiceSuffix(cmd, obj(cmd.cardId))}`;
     }
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
@@ -3680,10 +3737,10 @@ export function commandLabel(cmd, session, view) {
     case 'turn_cloak_face_up': {
       // M315 (Veiled Ascension): cloak — specjalna akcja (bez stosu), koszt
       // many karty. Etykieta nazywa mechanikę i kartę (koszt = koszt karty,
-      // którą kontroler zna — CR 708.2d).
+      // którą kontroler zna — CR 708.5).
       // F3 (uwaga właściciela 2026-09-23c): etykieta musi nieść TAKŻE KOSZT
       // odkrycia — sam wpis „Obróć twarzą do góry (Cloak): X” nie mówił, ile
-      // many to kosztuje (koszt = mana value karty, CR 708.2d; silnik czyta
+      // many to kosztuje (koszt = mana value karty, CR 701.58b; silnik czyta
       // go z `cloakTurnUpCost`/`cloak.colors`, walidacja w game-state.js).
       const cloakObj = obj(cmd.objectId);
       // H (audyt 2026-09-23d): koszt czytamy ze STANU (widok go nie niesie —
@@ -3729,7 +3786,7 @@ export function commandLabel(cmd, session, view) {
       const hfcModeName = hfcMode?.name ? ` — ${hfcMode.name}` : '';
       const hfcStun = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
       const hfcSac = cmd.sacrificeTargetId != null ? ` · poświęć: ${nameOfObjectId(cmd.sacrificeTargetId)}` : '';
-      return `Rzuć z ręki za darmo: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${hfcModeName}${hfcTargets ? ` → cel: ${hfcTargets}` : ''}${hfcStun}${hfcSac}`;
+      return `Rzuć z ręki za darmo: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${hfcModeName}${hfcTargets ? ` → cel: ${hfcTargets}` : ''}${hfcStun}${hfcSac}${freeCastChoiceSuffix(cmd, hfcCard, { mode: false, sacrifice: false })}`;
     }
     case 'resolve_grave_free_cast': {
       // M174/E: oferta nazywa kartę, koszt X i cele — inaczej N wpisów
@@ -3744,7 +3801,7 @@ export function commandLabel(cmd, session, view) {
       const gfcMode = (cmd.modeIndex != null && gfcCard?.spell?.modes) ? gfcCard.spell.modes[cmd.modeIndex] : null;
       const gfcModeName = gfcMode?.name ? ` — ${gfcMode.name}` : '';
       const gfcStun = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
-      return `Rzuć z grobu za {${cmd.xValue ?? '?'}}: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${gfcModeName}${gfcTargets ? ` → cel: ${gfcTargets}` : ''}${gfcStun}`;
+      return `Rzuć z grobu za {${cmd.xValue ?? '?'}}: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${gfcModeName}${gfcTargets ? ` → cel: ${gfcTargets}` : ''}${gfcStun}${freeCastChoiceSuffix(cmd, gfcCard, { mode: false })}`;
     }
     case 'resolve_madness_cast': {
       // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —
@@ -3783,7 +3840,7 @@ export function commandLabel(cmd, session, view) {
       // celem pod stun counter muszą nazywać ten wybór (jak `cast_spell`).
       const stunName = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
       return cmd.cast
-        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${modeName}${bestowName}${costName}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}${stunName}`
+        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${modeName}${bestowName}${costName}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}${stunName}${freeCastChoiceSuffix(cmd, exiled, { mode: false, sacrifice: false, altCost: false })}`
         : 'Zrezygnuj — stwórz token Skarb (Treasure)';
     }
     case 'resolve_reveal_choice': {
@@ -4026,16 +4083,16 @@ export function cardInfo(session, object, combat = null) {
   // M260/B1 (zgłoszenie właściciela z PR #89, Pyxis of Pandemonium): karta
   // wygnana ZAKRYTA nie ujawnia tożsamości NIKOMU (CR 406.3) — także
   // właścicielowi. Własny zakryty permanent NA POLU BITWY to co innego
-  // (CR 708.6: kontroler może patrzeć) — strefa rozstrzyga.
+  // (CR 708.5: kontroler może patrzeć) — strefa rozstrzyga.
   const exiledFaceDown = faceDown && object.zone === 'exile';
   // M100/E12 (pytanie właściciela): WŁASNY zakryty permanent pokazuje
-  // NAZWĘ (kontroler zna tożsamość — CR 708.6), ale wyłącznie nazwę:
+  // NAZWĘ (kontroler zna tożsamość — CR 708.5), ale wyłącznie nazwę:
   // reszta (tekst, staty blueprintu, art) zostaje zamaskowana, żeby kafel
   // nie wyglądał jak pełny stwór — jest „zakryty (morph)", 2/2.
   const ownFaceDown = faceDown && !exiledFaceDown && object.controllerId === HUMAN_ID;
   const details = faceDown ? {} : (session.cardDetails(cardId) || {});
   // M254/B (zgłoszenie właściciela): właściciel zna swoją kartę zakrytą
-  // (CR 708.6 — tożsamość nie jest informacją ukrytą dla niego), więc
+  // (CR 708.5 — tożsamość nie jest informacją ukrytą dla niego), więc
   // PODGLĄD (hover / pełny ekran) pokazuje prawdziwą ilustrację. Kafel na
   // stole zostaje zakryty (imageUri/artId niżej są nadal null) — znacznik
   // niesie wyłącznie dane do obrazu, żeby nie odkryć reszty (tekst, staty).
@@ -4048,7 +4105,7 @@ export function cardInfo(session, object, combat = null) {
   const attachedEquipment = Boolean(object.attachedTo) && !attachedAura;
   // M258/F3: ward zakrytego (cloak) jest jawny — keyword w widoku
   // (reszta keywordów tłumiona przez CR 708.2a jak dotąd).
-    // M315 (Veiled Ascension, CR 701.56a + 122.1b): zakryty permanent NOSI ward
+    // M315 (Veiled Ascension, CR 701.58a + 122.1b): zakryty permanent NOSI ward
   // {2} (definicja zakrycia) i MOŻE mieć jawne granty (licznik flying z Veiled
   // Ascension — „face-down creatures enter with a flying counter"). Widok
   // już rozstrzyga FoW (kontroler: pełna lista; przeciwnik: same granty),
@@ -4122,6 +4179,9 @@ export function cardInfo(session, object, combat = null) {
     // F-A (Wishful Merfolk): nadpisanie podtypów DO KOŃCA TURY — widok niesie
     // subtypesBeforeOverride (active), żywe `subtypes` to już cel („Human").
     subtypesOverride: faceDown ? false : Boolean(object.subtypesBeforeOverride?.length),
+    // W-8 (Krotiq Nestguard): atak „as though it didn't have defender” do
+    // końca tury — defender zostaje na kaflu, badge mówi o uchyleniu reguły.
+    attacksAsThoughNoDefenderNow: faceDown ? false : Boolean(object.attacksAsThoughNoDefenderUntilEOT),
     cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
@@ -4496,7 +4556,7 @@ export function buildStateOverlay(visual, info) {
     // M333: j.w. — null oznacza „żadnego znacznika" (zakryte wygnanie, M260/B1).
     if (info.morphBadge) flags.push(['morph', info.morphBadge]);
     if (info.goaded) flags.push(['goad', 'goad']);
-    // M177/E (CR 701.29): detain — nie atakuje, nie blokuje, bez aktywacji.
+    // M177/E (CR 701.35): detain — nie atakuje, nie blokuje, bez aktywacji.
     if (info.detained) flags.push(['kw', 'zatrzymany (detain)']);
     // M168/B: AKTYWNE zmiany — badge tekstowy, póki efekt działa.
     for (const kw of info.grantedKeywords ?? []) {
@@ -4513,6 +4573,7 @@ export function buildStateOverlay(visual, info) {
     if (info.subtypesOverride && (info.subtypes ?? []).length) {
       flags.push(['kw', `typ: ${info.subtypes.join(' ')} do końca tury`]);
     }
+    if (info.attacksAsThoughNoDefenderNow) flags.push(['kw', 'może atakować mimo obrońcy (do końca tury)']);
     if (info.cantBlockNow) flags.push(['kw', 'nie może blokować']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona jako

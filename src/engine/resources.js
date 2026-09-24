@@ -5,7 +5,7 @@ import { effectiveProtectionFromColors, isProtectedFromSource } from './attachme
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount, delveGenericMana } from './mana-cost.js';
+import { parseManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount, delveGenericMana } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, manaUnitKey, treasureManaAbilityOf, ANY_COLOR_MANA } from './mana-sources.js';
 import { effectiveSubtypes, entersUntappedOverride } from './permanents.js';
 import { canPlayByImpulseFromExile, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
@@ -637,7 +637,7 @@ export function tapLandForMana(state, playerId, objectId, { grantColor = null } 
   if (object.tapped) throw new Error('Land jest już tapped');
   const updated = Object.freeze({ ...object, tapped: true });
   state.objects.set(objectId, updated);
-  // M114 (CR 701.21a): tapnięcie za manę to TAKŻE „becomes tapped" — zdarzenie
+  // M114 (CR 701.26): tapnięcie za manę to TAKŻE „becomes tapped" — zdarzenie
   // musi powstać, inaczej triggery reagujące na tapnięcie (Chronic Flooding:
   // „whenever enchanted land becomes tapped") nigdy nie odpalą. Dotąd ta
   // ścieżka mutowała `tapped` po cichu (lekcja L24: brak zdarzenia = brak
@@ -1409,10 +1409,10 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
-  // (CR 702.136 — „Cast it as a sorcery on a later turn without paying its
+  // (CR 702.170 — „Cast it as a sorcery on a later turn without paying its
   // mana cost"). Batch 24: Spinewoods Paladin — plot dla permanentów.
   const plotted = object?.zone === 'exile' && object.plotted;
-  // Batch 47 (Caves of Chaos Adventurer, CR 701.51b): karta wygnana impulse
+  // Batch 47 (Caves of Chaos Adventurer, CR 309.7): karta wygnana impulse
   // po UKOŃCZONYM lochu gra się „without paying its mana cost" — tak jak
   // plot. Flagę ustawia efekt wygnania (exile_top_playable_until_next_turn),
   // tutaj tylko ZERUJEMY koszt; bez tego pole byłoby martwe (L48: oferta
@@ -1470,7 +1470,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   if (!hasFlash && !madnessCast && !abilityWindowCast && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
   if (warpCast && !object.warp) throw new Error('Ta karta nie ma mechaniki warp');
   if (madnessCast && !object.madness) throw new Error('Ta karta nie ma mechaniki madness');
-  // Surge (CR 702.111): koszt ALTERNATYWNY rzutu z ręki, legalny gdy ty (lub
+  // Surge (CR 702.117): koszt ALTERNATYWNY rzutu z ręki, legalny gdy ty (lub
   // sojusznik — w 1v1 tylko ty) rzuciłeś inny czar w tej turze. Płaci się
   // NORMALNĄ maną (inaczej niż treasureAlt). Gate liczony PRZED zagraniem tego
   // czaru: spellsCastThisTurnByPlayer > 0. Wyklucza inne warianty kosztu.
@@ -1647,7 +1647,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // alternatywny; 702.36 to Fear): koszt {3} jest BEZBARWNY — pipy karty nie
   // obowiązują (root cause: face-down Monastery Flock wymagał {U} z powodu
   // pipów karty; cicha zła płatność w consumeManaPool to maskowała).
-  // Plot – rzut bez kosztu many – nie ma też wymagań kolorowych (CR 702.136).
+  // Plot – rzut bez kosztu many – nie ma też wymagań kolorowych (CR 702.170).
   // M161/O2: przy madness/warp pipy AKTYWNEGO kosztu alternatywnego
   // (altCostColors — ta sama lista co bramka kolorów wyżej).
 
@@ -1743,7 +1743,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // karty, a efekty patrzące na podtyp/mana value widziały wartości spod
     // rewersu. Oryginał chowamy obok abilities i przywracamy przy obrocie.
     patch.faceDownOriginal = Object.freeze({
-      // M333: migawka niesie TEŻ ward (jak cloak u 701.56a i manifest) —
+      // M333: migawka niesie TEŻ ward (jak cloak u 701.58a i manifest) —
       // obrót przywraca drukowany ward, a zakryty go nie ma (CR 708.2a).
       ward: object.ward ?? null,
       colors: Object.freeze([...(object.colors ?? [])]),
@@ -1805,7 +1805,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // Offspring — jak kicker: fakt opłacenia dodatkowego kosztu (log i ewent.
     // triggery „you cast a spell with offspring").
     offspring: Boolean(offspringPaid),
-    // Surge/Cleave (CR 702.111, Batch 58/B1): fakt rzutu za KOSZT ALTERNATYWNY
+    // Surge/Cleave (CR 702.117, Batch 58/B1): fakt rzutu za KOSZT ALTERNATYWNY
     // (nie dodatkowy) — jawny w logu tak samo, jak `spell_cast.surgeCast`.
     surgeCast: Boolean(surgeCast),
     // Mana wydana na ten rzut (bez części opłaconej życiem — to nie mana) —
@@ -1872,7 +1872,7 @@ function auraPaymentCost(state, object, { bestow = false, surgeCast = false } = 
   return { cost, requirements };
 }
 
-export function castAuraSpell(state, playerId, objectId, { targetId, bestow = false, surgeCast = false, abilityWindowCast = false } = {}) {
+export function castAuraSpell(state, playerId, objectId, { targetId, bestow = false, surgeCast = false, abilityWindowCast = false, withoutManaCost = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Audyt PR #93 (znalezisko E): okno zdolności „you may cast it" (Vaan)
@@ -1893,7 +1893,13 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   if (surgeCast && (bestow || !object.surge || (state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) < 1)) {
     throw new Error('Surge wymaga własnego wcześniejszego czaru i wyklucza bestow');
   }
-  const { cost, requirements } = auraPaymentCost(state, object, { bestow, surgeCast });
+  // Etap F/4: rzut „without paying its mana cost" (okno decyzji — Discover)
+  // to koszt alternatywny (CR 118.9); bestow i surge też są kosztami
+  // alternatywnymi, a dwóch naraz stosować nie wolno (CR 601.2b).
+  if (withoutManaCost && (bestow || surgeCast)) throw new Error('Rzut bez kosztu many wyklucza bestow i surge (CR 601.2b)');
+  const { cost, requirements } = withoutManaCost
+    ? { cost: 0, requirements: [] }
+    : auraPaymentCost(state, object, { bestow, surgeCast });
   // M202/N1: czar aury to rzut czaru — cel wydania liczony z danych karty.
   const manaPurpose = spellManaPurpose(object);
   if (producibleMana(state, playerId, null, manaPurpose, requirements) < cost) throw new Error('Niewystarczająca mana');
@@ -2012,13 +2018,16 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
  * cast it" (Vaan) potrzebuje tego samego wyliczenia dla karty leżącej w exile
  * — L74: jeden generator, nie kopia (audyt PR #93, znalezisko E).
  */
-export function legalAuraCastsForObject(state, playerId, object) {
+export function legalAuraCastsForObject(state, playerId, object, { withoutManaCost = false } = {}) {
+  // Etap F/4: rzut bez kosztu many — tylko jako aura (bez bestow/surge,
+  // CR 601.2b), gospodarze jak przy zwykłym rzucie.
+  if (withoutManaCost) return auraCastsForPayment(state, playerId, object, false, true);
   const normal = auraCastsForPayment(state, playerId, object);
   if (!object?.aura || !object.surge || (state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) < 1) return normal;
   return [...normal, ...auraCastsForPayment(state, playerId, object, true).map(c => ({ ...c, surgeCast: true }))];
 }
 
-function auraCastsForPayment(state, playerId, object, surgeCast = false) {
+function auraCastsForPayment(state, playerId, object, surgeCast = false, withoutManaCost = false) {
   const out = [];
   if (!object) return out;
   // M202/N1 (L48): budżet PER KARTA z celem wydania many — mana ograniczona
@@ -2027,6 +2036,10 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false) {
   const options = [];
   for (const bestow of [false, true]) {
     if (bestow ? (surgeCast || !object.bestow) : !object.aura) continue;
+    if (withoutManaCost) {
+      if (!bestow) options.push(false);
+      continue;
+    }
     const { cost, requirements } = auraPaymentCost(state, object, { bestow, surgeCast });
     // A: budżet PER OPCJA (pip(y) bestow ≠ pip(y) aury) — joint (iv) bramki
     // źródeł kosztowych liczy się na pipach tej opcji (L48 z castAuraSpell).
@@ -2149,12 +2162,12 @@ export function legalAuraCasts(state, playerId) {
 
 /**
  * Zdolność obrócenia twarzą do góry dla face-down permanentu.
- * Megamorph (CR 702.37b — wariant morpha, nie osobny numer: 702.109 to
+ * Megamorph (CR 702.37b — wariant morpha, nie osobny numer: 702.110 to
  * Exploit) kładzie przy obrocie licznik +1/+1; zwykły morph
  * (CR 702.37, Woolly Loxodon) obraca kartę za koszt morph BEZ licznika.
  */
 // M322 (audyt PR #102, F9): eksport — ścieżka `cloak` (effects.js) musi dać zakrytemu
-// permanentowi TE SAME zdolności co rzut twarzą w dół, bo CR 701.56c/d zostawia
+// permanentowi TE SAME zdolności co rzut twarzą w dół, bo CR 701.58c/d zostawia
 // przy cloaku procedurę obrotu za koszt morpha/disguise.
 export function faceDownAbilities(object) {
   if (!object.morph) return [];

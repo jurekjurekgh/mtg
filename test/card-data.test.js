@@ -57,7 +57,7 @@ test('talia kart odrzuca karty bez statusu supported', () => {
   // Token (status `token`) nie jest taliowalny.
   assert.throws(() => createCardDeck({ cardIds: ['token_wolf'], ownerId: 'p1', registry }), /nieobsługiwane/);
   // Tyły kart dwustronnych mają status `back` — w talii i kreatorze nie istnieją
-  // (CR 711.3/711.4: poza polem bitwy karta istnieje wyłącznie przodem).
+  // (CR 712.7/712.8: poza polem bitwy karta istnieje wyłącznie przodem).
   for (const backId of ['guidestone-compass', 'shiva-warden-of-ice', 'krallenhorde-wantons', 'moonscarred-werewolf']) {
     assert.equal(registry.get(backId).support.status, 'back', `tył DFC ${backId} ma status back`);
     assert.throws(() => createCardDeck({ cardIds: [backId], ownerId: 'p1', registry }), /nieobsługiwane/);

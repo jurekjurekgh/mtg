@@ -9,7 +9,7 @@
 // nie jest naruszenie Fog of War) i liczy DOLNĄ granicę kart, które mogą
 // jeszcze leżeć w bibliotece: kopie zadeklarowane w talii minus kopie widoczne
 // poza biblioteką. Przy zerze typecycling/basic landcycling to zmarnowana
-// mana i karta (CR 701.19b „fail to find" jest legalne, ale bezsensowne), więc
+// mana i karta (CR 701.23b „fail to find" jest legalne, ale bezsensowne), więc
 // wycena spada PONIŻEJ passu (L3: kara musi przebić premię +2 z gałęzi
 // cyklowania).
 import { test } from 'node:test';

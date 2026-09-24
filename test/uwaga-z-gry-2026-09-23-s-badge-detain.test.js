@@ -7,7 +7,7 @@
 // Ten plik mierzy KOMPLET zachowania na ścieżce, którą realnie idzie gra:
 //   1) silnik: `detainUntilYourNextTurn` ustawia parę {detained,
 //      detainedUntilTurn} i WIDOK ją niesie (entry.detained — informacja
-//      publiczna, CR 701.29);
+//      publiczna, CR 701.35);
 //   2) render: kafel stołu (tile → buildStateOverlay) rysuje badge;
 //   3) trwałość: badge jest zdjęty DOKŁADNIE wtedy, gdy wygasa efekt
 //      (cleanup „do twojej następnej tury"), nie wcześniej.
@@ -165,7 +165,7 @@ test('B2/4: badge trwa przez efekt i znika dokładnie, gdy efekt wygasa (cleanup
     throw new Error(`nie udało się dojść do tury ${nr}`);
   }
   // Tura 4 (przeciwnika detainera): efekt TRWA — „do twojej następnej tury"
-  // (CR 701.29) nie kończy się z końcem tury, w której go nałożono.
+  // (CR 701.35) nie kończy się z końcem tury, w której go nałożono.
   doTury(4);
   assert.equal(state.objects.get('ofiara2').zone, 'battlefield', 'setup: cel nadal na stole');
   assert.equal(state.objects.get('ofiara2').detained, true,

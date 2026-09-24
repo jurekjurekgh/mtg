@@ -1145,7 +1145,7 @@ function bootstrapTable() {
     // nie powinna się pokazywać” (przy kartach ukrytych rzucanych przez
     // bota), a potem doprecyzował: „własny morph gracza otwiera warstwę.
     // FoW dotyczy tylko zagrań bota” — stąd krycie tylko gdy rzucający
-    // to bot (widok = HUMAN_ID; rzucający zna swoją kartę, CR 708.6).
+    // to bot (widok = HUMAN_ID; rzucający zna swoją kartę, CR 708.5).
     if (isCastHiddenFromViewer({ faceDown, playerId }, HUMAN_ID)) return false;
     if (!session) return false;
     // 15f: „moment analogiczny do pokazania warstwy" — gdy warstwy nie
@@ -1478,7 +1478,7 @@ function bootstrapTable() {
     // Obie strony są publiczne (CR 711/712). Dla takiej karty kliknięcie
     // ZAWSZE otwiera warstwę Działania z podglądem OBU stron — nawet bez
     // żadnych zdolności. Strefy spoza pola bitwy (grób/wygnanie/ręka) zachowują
-    // dotychczasowe zachowanie — tam DFC ma wyłącznie twarz przednią (CR 711.4a).
+    // dotychczasowe zachowanie — tam DFC ma wyłącznie twarz przednią (CR 712.8a).
     const viewEntry = view.zones.battlefield.find((o) => o.id === objectId);
     const otherSideId = viewEntry?.transformToCardId ?? null;
     const isDfc = Boolean(otherSideId);
@@ -1514,7 +1514,7 @@ function bootstrapTable() {
 
     // Grupowanie wariantów (cel, X, phyrexian) tak samo jak w panelu akcji,
     // żeby nie było niespójności „Twoje działania vs klik na kartę" (bug D).
-    // Klucz grupowania – uproszczony odpowiednik choiceRequestGroupKey z render.js
+    // Klucz grupowania (UI) – deleguje do choiceRequestGroupKey z render.js, reszta lokalnie
     const groupKey = (cmd) => {
       // Batch 54: wspólny klucz rozdziela także CELOWANY czar z kickerem.
       if (cmd.type === 'cast_spell') return choiceRequestGroupKey(cmd) ?? `spell:${cmd.objectId}:${Boolean(cmd.kicked)}${cmd.gifted ? `:gift:${cmd.giftRecipientId ?? '?'}` : ''}`;
@@ -2308,11 +2308,19 @@ function bootstrapTable() {
     }
     // Escape (E.3a cz. B): widok GROBÓW nie niesie spell.escape, więc koszt
     // czytamy z pełnego stanu i podajemy deskryptorowi (jak effectiveGeneric).
+    // Etap F (CR 118.9 + 601.2f): kwota PO OBNIŻKACH i pipy kosztu escape —
+    // te same, które zapłaci castEscape (L48).
     if (cmd.type === 'cast_escape' && Number.isInteger(stateObject?.spell?.escape?.cost)) {
-      opts.escapeCost = stateObject.spell.escape.cost;
+      const escape = stateObject.spell.escape;
+      opts.escapeCost = reduceAlternativeCost(session.state, stateObject, escape.cost, escape.colors ?? []);
+      opts.escapeColors = [...(escape.colors ?? [])];
     }
-    // M327 (audyt PR #102, F7): koszt ODSŁONIĘCIA (CR 701.56b cloaka,
-    // 701.55c manifestu) nosi tylko pełny stan — zakryty permanent ma w widoku
+    if (cmd.type === 'cast_cleave' && Number.isInteger(stateObject?.spell?.cleave?.manaCost)) {
+      const cleave = stateObject.spell.cleave;
+      opts.alternativeCost = reduceAlternativeCost(session.state, stateObject, cleave.manaCost, cleave.colors ?? []);
+    }
+    // M327 (audyt PR #102, F7): koszt ODSŁONIĘCIA (CR 701.58b cloaka,
+    // 701.40b manifestu) nosi tylko pełny stan — zakryty permanent ma w widoku
     // `manaCost: 0`, więc kreator brałby liczbę z kosztu karty i musiał ją
     // porównać z prawdą silnika. Podajemy ją jak `escapeCost` wyżej.
     if (cmd.type === 'turn_cloak_face_up' || cmd.type === 'turn_manifest_face_up') {

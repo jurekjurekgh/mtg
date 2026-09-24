@@ -15,7 +15,7 @@ export function changeLife(state, playerId, amount) {
   const player = state.players.find((entry) => entry.id === playerId);
   const before = player.life;
   player.life += amount;
-  // „Gained life this turn" (Ulna Alley Shopkeep — Infusion; CR 122.1b):
+  // „Gained life this turn" (Ulna Alley Shopkeep — Infusion):
   // licznik zyskanego życia per gracz, zerowany przy zmianie tury (jak
   // cardsDrawnThisTurn). changeLife to jedyny choke point zmiany życia, więc
   // obejmuje gain_life, gain_life_target i lifelink (CR 702.15).
@@ -31,7 +31,7 @@ export function changeLife(state, playerId, amount) {
 }
 
 /**
- * Jedyna droga nadawania znaczników trucizny graczowi (Infect — CR 702.89c).
+ * Jedyna droga nadawania znaczników trucizny graczowi (Infect — CR 702.90c).
  * Przegraną przy 10+ znacznikach obsługują centralne SBA (state-based.js).
  */
 export function addPoisonCounters(state, playerId, amount) {
@@ -135,8 +135,8 @@ export function startEnginesFor(state, playerId) {
  * „draw two” na starcie tury dawało dwa wyzwalacze Jolrael, a dobranie
  * w kroku + „draw two” nie dawało żadnego (audyt PR #92, znalezisko 3).
  *
- * Zakres: dobrania w rozumieniu CR 122.12. Karty wzięte po mulliganie NIE są
- * dobraniami (CR 701.3b) i nie przechodzą tędy — ich `card_drawn` nosi
+ * Zakres: dobrania w rozumieniu CR 121.1. Karty wzięte po mulliganie NIE są
+ * dobraniami (CR 103.5) i nie przechodzą tędy — ich `card_drawn` nosi
  * jawne `drawNumberThisTurn: null`, bo kontrakt pola musi być wypełniony
  * u WSZYSTKICH emiterów (ADR 0027).
  */

@@ -34,6 +34,7 @@ import { extractBotMoves, extractModalChoice, extractTileText, chronologicalLogE
 import { runDetectors, formatFindings, harmfulCardNames } from './detectors.mjs';
 import { observeRuntimeErrors } from './runtime-errors.mjs';
 import { PLAY_REGEX, SAFE_REGEX, GREEDY_PRIORITY } from './actions.mjs';
+import { chooseXWizard } from './x-wizard.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ARTIFACT = path.resolve(__dirname, '../../dist/mtg-table.html');
@@ -712,24 +713,20 @@ export async function runTableGame({
     // testera: X = maksimum (tap wszystkie, największy przegląd biblioteki),
     // zaznacz dokładnie X wierszy, Zatwierdź. X=0 nie wymaga zaznaczeń.
     if (multiConfirm && $('#choice-request .multi-target-x')) {
-      const readX = () => Number(text($('#choice-request .multi-target-x-count')) || 0);
-      const plus = $('#choice-request .multi-target-x-plus');
-      let prevX = readX();
-      for (let i = 0; i < 40 && plus; i += 1) {
-        plus.click();
-        await sleep(15);
-        const curX = readX();
-        if (curX === prevX) break; // szczyt zakresu — licznik przestał rosnąć
-        prevX = curX;
-      }
-      const xChosen = readX();
-      const artifactRows = $$('#choice-request .multi-target-toggle').filter((b) => !b.disabled);
-      for (let i = 0; i < Math.min(xChosen, artifactRows.length); i += 1) {
-        artifactRows[i].click();
-        await sleep(15);
-      }
-      logL(`  [tap-x wizard] X=${xChosen}, artefaktów w puli ${artifactRows.length}`);
-      const confirmX = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
+      // Kreator ze stepperem X: „Tap X artefaktów” (Dockhand) ALBO X + cele
+      // (Fireball). Polityka w `x-wizard.mjs` (D3, PR #135) — tam opis pętli
+      // „Rzuć: Fireball” do limitu kroków, którą naprawia.
+      const confirmOf = () => $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
+      const res = await chooseXWizard({
+        readX: () => Number(text($('#choice-request .multi-target-x-count')) || 0),
+        plus: $('#choice-request .multi-target-x-plus'),
+        minus: $('#choice-request .multi-target-x-minus'),
+        rows: () => $$('#choice-request .multi-target-toggle'),
+        confirmEnabled: () => Boolean(confirmOf() && !confirmOf().disabled),
+        sleep,
+      });
+      logL(`  [tap-x wizard] X=${res.x}, zaznaczonych ${res.picked}, wierszy w puli ${res.pool}`);
+      const confirmX = confirmOf();
       if (confirmX && !confirmX.disabled) { confirmX.click(); await sleep(80); return true; }
       const cancelX = $$('#choice-request button').find((b) => /multi-target-cancel/.test(String(b.className)));
       if (cancelX) { cancelX.click(); await sleep(60); }
@@ -1029,7 +1026,19 @@ export async function runTableGame({
           // Najprostsza legalna korekta: „Bez bloków" / „Bez ataku".
           const clear = $$('#choice-request button').find((b) => /Bez blok|Bez ataku/.test(text(b)));
           if (clear) { clear.click(); await sleep(60); }
-          const again = $$('#choice-request .choice-request-option').find((b) => /Zatwierdź/.test(text(b)));
+          // D3 (PR #135, audyt-f4-ubr vs kaladesh seed 9, profil explorer):
+          // od M124 „Bez bloków”/„Bez ataku” to DEKLARACJA — sam wysyła komendę
+          // i zamyka wizard. Dawne bezwarunkowe „Zatwierdź” po nim klikało
+          // przycisk nieaktualnego kreatora i silnik odrzucał drugą deklarację
+          // („Ruch odrzucony”), a detektor przypisywał odrzucenie ostatniej
+          // akcji z panelu (fałszywy trop: „Zagraj: Irontread Crusher”).
+          // Ponowne „Zatwierdź” tylko wtedy, gdy kreator został i znów pokazuje
+          // podpowiedź (przymus ataku — „Bez ataku” odznacza wtedy opcjonalne
+          // i przerysowuje wizard zamiast wysyłać).
+          const stillOpen = visible($('#choice-request')) && $('#choice-request .combat-wizard-error');
+          const again = stillOpen
+            ? $$('#choice-request .choice-request-option').find((b) => /Zatwierdź/.test(text(b)))
+            : null;
           if (again) { again.click(); await sleep(80); }
         }
         return true;

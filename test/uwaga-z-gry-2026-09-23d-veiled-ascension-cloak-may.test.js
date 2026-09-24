@@ -3,14 +3,14 @@
 // wyczerpania (< 10 kart)”.
 //
 // Co było przed: `resolve_optional_trigger_choice` miało gałąź self-millu
-// (M167/B) i fallback `fire ? 50 : 0`. Efekt `cloak` (CR 701.56a) NIE jest
+// (M167/B) i fallback `fire ? 50 : 0`. Efekt `cloak` (CR 701.58a) NIE jest
 // w `LIBRARY_DRAIN_EFFECTS`, więc strażnik kar bibliotecznych go nie widział —
 // bot zakrywał kartę także przy bibliotece 1–5 kart (pomiar sondą: lib = 30,
 // 12, 10, 9, 5, 3 → za każdym razem `fire`, 50 vs 0), czyli szedł prosto do
 // deck-outu (CR 121.4), marnując zarazem realną wartość cloaka.
 //
 // Reguła po: cloak/manifest ZAMIENIA kartę biblioteki na permanenta 2/2
-// z wardem {2} (karta nie ginie — jest wracalna twarzą do góry, CR 701.56b),
+// z wardem {2} (karta nie ginie — jest wracalna twarzą do góry, CR 701.58b),
 // więc bazowe „fire” zostaje na 50; kara wchodzi dopiero pod progiem
 // `cloakLibraryFloor` (właściciel: 10) i schodzi pod „pass”. Wycena idzie po
 // TYPIE efektu z widoku (ADR 0002 — zero nazw kart) i po parametrach (L41).

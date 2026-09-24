@@ -14,7 +14,7 @@
 // Naprawa: choke point `recordCardDrawn` (players.js, obok `changeLife`)
 // podnosi licznik i STEMPLUJE `drawNumberThisTurn` w zdarzeniu `card_drawn`;
 // trigger porównuje ordinal ZE ZDARZENIA. Mulligan pozostaje poza licznikiem
-// (CR 701.3b — wzięcie nowych kart po mulliganie nie jest dobraniem).
+// (CR 103.5 — wzięcie nowych kart po mulliganie nie jest dobraniem).
 //
 // Strażnik klasowy: narzędzie ADR 0027 (`tools/event-contract-audit.mjs`,
 // wpięte w `npm test`) pilnuje, by KAŻDY emiter `card_drawn` niósł
@@ -123,7 +123,7 @@ test('A92/3: KAŻDA ścieżka dobrania stempluje porządek w zdarzeniu (draw ste
     'porządki są kolejne i niepowtarzalne niezależnie od ścieżki');
 });
 
-test('A92/3: mulligan nie jest dobraniem (CR 701.3b) — licznik i trigger nietknięte', () => {
+test('A92/3: mulligan nie jest dobraniem (CR 103.5) — licznik i trigger nietknięte', () => {
   const state = game();
   put(state, 'jolrael', 'jolrael-mwonvuli-recluse', 'p1');
   library(state, ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8']);
@@ -134,7 +134,7 @@ test('A92/3: mulligan nie jest dobraniem (CR 701.3b) — licznik i trigger nietk
   const mullDraws = state.events.filter((e) => e.type === 'card_drawn' && e.mulligan === true);
   assert.ok(mullDraws.length > 0, 'mulligan rysuje zdarzenia card_drawn');
   assert.ok(mullDraws.every((e) => e.drawNumberThisTurn === null),
-    'wzięte karty NIE dostają porządku dobrania (CR 701.3b) — kontrakt pola jest '
+    'wzięte karty NIE dostają porządku dobrania (CR 103.5) — kontrakt pola jest '
     + 'wypełniony jawnym null, nie brakiem pola');
   assert.equal(state.cardsDrawnThisTurn?.p1 ?? 0, 0, 'licznik dobrań tury bez zmian');
   assert.equal(catCount(state), 0, 'Jolrael nie tworzy kotów za mulligan');

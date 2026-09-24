@@ -146,11 +146,11 @@ test('B2: buff „creatures your opponents control get -X/-0" nie łapie późni
 });
 
 // -------------------------------------------------------------- B3: stun
-// CR 122.1b (liczniki stun): „If a permanent with a stun counter on it would
+// CR 122.1d (liczniki stun): „If a permanent with a stun counter on it would
 // become untapped, remove one from it instead." Dotyczy KAŻDEGO odkręcania —
 // w tym kroku odkręcania (untap step). Kod obsługiwał tylko untapObject.
 
-test('B3: krok odkręcania honoruje licznik stun (CR 122.1b)', () => {
+test('B3: krok odkręcania honoruje licznik stun (CR 122.1d)', () => {
   const state = newState();
   addCreature(state, 'stunned', 'p1', 2, 2);
   state.objects.set('stunned', Object.freeze({

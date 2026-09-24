@@ -144,7 +144,7 @@ test('F3: „Obróć twarzą do góry (Cloak)” pokazuje koszt odkrycia', () =>
     },
   );
   assert.match(text, /Trostani Discordant/, `etykieta nazywa kartę: ${text}`);
-  assert.match(text, /koszt/i, `etykieta musi nieść koszt (CR 708.2d): ${text}`);
+  assert.match(text, /koszt/i, `etykieta musi nieść koszt (Cloak, CR 701.58b): ${text}`);
   assert.match(text, /ms-group/, `koszt ma ikony many: ${text}`);
 });
 

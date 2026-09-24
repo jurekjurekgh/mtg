@@ -60,7 +60,13 @@ function forebearChcePlacic(state, events) {
   const oczekuje = state.pendingOptionalPay != null
     && (state.pendingOptionalPay.cardId === 'furious-forebear'
       || state.objects.get(state.pendingOptionalPay.sourceId ?? '')?.cardId === 'furious-forebear');
-  return zdarzenie || oczekuje;
+  // Etap F (CR 603.5): zdolność z wyborem „you may pay" idzie na stos,
+  // a pytanie pada dopiero przy rozstrzyganiu — odpalenie to wpis na stosie.
+  const naStosie = state.zones.stack.some((id) => {
+    const entry = state.objects.get(id);
+    return entry?.kind === 'trigger' && entry.cardId === 'furious-forebear';
+  });
+  return zdarzenie || oczekuje || naStosie;
 }
 
 test('E1/1: własna śmierć Furious Forebear NIE odpala jego zdolności (nie było go jeszcze w grobie)', () => {

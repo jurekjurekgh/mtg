@@ -40,9 +40,9 @@ function addCreature(state, id, playerId, power, toughness, name = 'Test', optio
 
 // =============================================================================
 // Batch 22 — nowe mechaniki engine (2026-08-08).
-//   - proliferate (CR 701.27) — Courage in Crisis
-//   - reveal_top_to_bottom_order (CR 701.16) — Stomping Slabs
-//   - mill_from_bottom (CR 702.13 odwrotnie) — Cellar Door
+//   - proliferate (CR 701.34) — Courage in Crisis
+//   - reveal_top_to_bottom_order (CR 701.20a) — Stomping Slabs
+//   - mill_from_bottom (CR 701.17b odwrotnie) — Cellar Door
 //   - return_exiled_to_battlefield (paired LKI) — Wormfang Newt
 //   - nowe typy celów: creature_with_power_at_least (Selesnya Charm),
 //     nonland_permanent (Thistledown Players)
@@ -59,7 +59,7 @@ test('proliferate: +1 do każdego typu licznika >0 na wybranych celach', () => {
   addCounter(state, 'cr2', 'charge', 2);
   // Stwór z 0 liczników (nie powinien dostać nic)
   addCreature(state, 'cr3', 'p1', 2, 2, 'Empty');
-  // Gracz z poison (CR 701.27a — trucizna mieszka w player.poison; platynowa
+  // Gracz z poison (CR 701.34 — trucizna mieszka w player.poison; platynowa
   // odznaka: poprzednio test ustawiał nieczytane player.counters.poison).
   const p2 = state.players.find((p) => p.id === 'p2');
   p2.poison = 3;
@@ -91,7 +91,7 @@ test('proliferate: wybór pusty (0 celów) — brak zmian', () => {
   assert.equal(state.objects.get('cr1').counters['+1/+1'], 1, 'brak zmian');
 });
 
-test('proliferate: bez pending kolejkuje decyzję gracza (CR 701.27 — choose any number)', () => {
+test('proliferate: bez pending kolejkuje decyzję gracza (CR 701.34 — choose any number)', () => {
   const state = newState();
   addCreature(state, 'cr1', 'p1', 2, 2, 'Has Counter');
   addCounter(state, 'cr1', '+1/+1', 1);

@@ -7,7 +7,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { applyEffect, applyEnterCounters } from '../src/engine/effects.js';
 
 /**
- * M273 (błąd #24, CR 121.6 + 614.1c) — „enters with a +1/+1 counter on it"
+ * M273 (błąd #24, CR 122.6 + 614.1c) — „enters with a +1/+1 counter on it"
  * to efekt zastępujący samo WEJŚCIE na pole bitwy, więc obowiązuje przy
  * KAŻDYM wejściu: rzucie czaru, reanimacji z cmentarza, wprowadzeniu efektem.
  *
@@ -59,7 +59,7 @@ test('warunek wstępny: rejestr ma karty z licznikami wejścia', () => {
   }
 });
 
-test('KLASA: każda ścieżka reanimacji nadaje liczniki wejścia (CR 121.6)', () => {
+test('KLASA: każda ścieżka reanimacji nadaje liczniki wejścia (CR 122.6)', () => {
   for (const cardId of KARTY_Z_LICZNIKAMI) {
     for (const { typ, tylkoStwory } of SCIEZKI_REANIMACJI) {
       const jestStworem = (registry.get(cardId).types ?? []).includes('Creature');
@@ -136,7 +136,7 @@ test('SKAN ŹRÓDEŁ: każda ścieżka wprowadzająca permanent zna liczniki wej
       assert.ok(
         /applyEnterCounters|entersWithCounters/.test(okno),
         `${plik}:${index + 1} — permanent wchodzi na pole bitwy bez obsługi `
-        + 'liczników wejścia (CR 121.6). Zawołaj applyEnterCounters(state, id).',
+        + 'liczników wejścia (CR 122.6). Zawołaj applyEnterCounters(state, id).',
       );
     });
   }
@@ -145,7 +145,7 @@ test('SKAN ŹRÓDEŁ: każda ścieżka wprowadzająca permanent zna liczniki wej
 test('M274: Pyxis wprowadza permanent z wygnania Z licznikami wejścia', () => {
   // „Turns face up all cards they own exiled with this artifact, then puts all
   // permanent cards among them onto the battlefield" — karta jest ODKRYWANA
-  // przed wejściem, więc liczniki wejścia jej przysługują (CR 121.6).
+  // przed wejściem, więc liczniki wejścia jej przysługują (CR 122.6).
   const cardId = 'servant-of-the-scale';
   const karta = registry.get(cardId);
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });

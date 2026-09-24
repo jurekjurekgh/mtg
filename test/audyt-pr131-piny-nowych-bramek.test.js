@@ -581,7 +581,7 @@ test('F13: log decyzji aury nazywa źródło, wybór i liczbę kandydatów, a wy
 // --- F14 --------------------------------------------------------------------
 // Znalezisko audytu (klasa L48 na powierzchni zmienionej przez #131): wizard
 // bloków rysuje wiersze z PULI (E6), więc ten sam bloker ma wiersz pod KAŻDYM
-// atakującym — a silnik odrzuca użycie ponad `blockSlotsFor` (CR 509.1b;
+// atakującym — a silnik odrzuca użycie ponad `blockSlotsFor` (CR 509.1a;
 // wyjątek: „can block an additional creature", Cenn's Tactician). Gracz
 // zaznaczał blokera dwa razy i dowiadywał się o błędzie dopiero z odrzuconej
 // komendy („Bloker jest użyty więcej niż raz") — oferta ≠ walidacja.
@@ -666,7 +666,7 @@ test('F14: wizard bloków odrzuca duplikat ponad sloty, a wieloslotowy bloker na
   assert.match(jeden.host.textContent, /może blokować tylko jednego atakującego/,
     'gracz dostaje powód od razu w wizardzie, nie z odrzuconej komendy');
 
-  // (2) Bloker o 2 slotach: ten sam podwójny blok jest LEGALNY (CR 509.1b).
+  // (2) Bloker o 2 slotach: ten sam podwójny blok jest LEGALNY (CR 509.1a).
   const dwa = pokaz(scenariusz({ taktyk: true }));
   assert.equal(dwa.view.blockerSlots?.b1, 2, 'licznik + statyka dają drugi slot (blockSlotsFor)');
   zaznacz(dwa.host, 'Goblin Piker', 'Highland Game');

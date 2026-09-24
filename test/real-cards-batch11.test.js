@@ -11,6 +11,7 @@ import { createAggroBot } from '../src/controllers/aggro-bot.js';
 import { createCardRegistry, UNDERCITY_DUNGEON } from '../src/cards/card-data.js';
 import { gameObjectDataOf, setupCardMatch } from '../src/cards/materialize.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
+import { resolveUntilDecision, optionalTriggerOpen } from './helpers/deferred-trigger.js';
 import { UNDERCITY_ROOMS } from '../src/engine/effects.js';
 
 /**
@@ -429,7 +430,7 @@ test('goad: sprowokowany stwór MUSI atakować do końca tury', () => {
     assert.ok(option.attackerIds.includes('g1'), 'każda legalna opcja zawiera goadowanego');
   }
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['g1', 'g2'] }).ok);
-  // CR 701.38c: goad trwa do początku NASTĘPNEJ tury gracza, który goadował —
+  // CR 701.15a: goad trwa do początku NASTĘPNEJ tury gracza, który goadował —
   // NIE znika w cleanup tej samej tury (poprzednio błędnie zdejmowany „do
   // końca tury", przez co zaczarowany stwór nie musiał atakować w turze
   // przeciwnika).
@@ -446,6 +447,8 @@ test("Angel's Feather: biały czar dowolnego gracza daje +1 życia właścicielo
   addMana(state, 'p2', 2);
   const before = state.players.find((player) => player.id === 'p1').life;
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p2', objectId: 'white', targets: [] }).ok);
+  // Etap F (CR 603.5): trigger na stosie NAD czarem — wybór przy rozstrzyganiu.
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen));
   // Temat 2: „you may gain 1 life" — decyzja kontrolera Pióra (tak).
   assert.ok(execute(state, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true }).ok);
   passBoth(state); // T6: rozstrzygnij trigger ze stosu
@@ -489,6 +492,8 @@ test("Angel's Feather: białe permanenty (Porcelain Legionnaire) też są biały
   const before = state.players.find((player) => player.id === 'p1').life;
   const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'porc' });
   assert.ok(rCast2.ok);
+  // Etap F (CR 603.5): trigger na stosie NAD czarem — wybór przy rozstrzyganiu.
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen));
   // Temat 2: „you may gain 1 life" — decyzja kontrolera Pióra PRZED rundą
   // passów (pending blokuje pass).
   assert.ok(execute(state, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true }).ok);

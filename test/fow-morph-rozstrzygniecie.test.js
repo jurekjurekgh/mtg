@@ -11,7 +11,7 @@
 // — gracz i tak czyta z logu, co leży zakryte, i wie, czy opłaca się atakować.
 //
 // CR 708.2: zakryty czar/permanent jest bezimiennym stworem 2/2 bez tekstu,
-// typów kreatur i kosztu. Tożsamość zna wyłącznie jego kontroler (CR 708.6).
+// typów kreatur i kosztu. Tożsamość zna wyłącznie jego kontroler (CR 708.5).
 //
 // ROOT CAUSE: `permanent_cast` niesie flagę `faceDown` i czytelnik logu
 // poprawnie maskuje po niej nazwę (M100/BUG A), ale zdarzenie

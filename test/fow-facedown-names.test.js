@@ -242,7 +242,7 @@ test('M265: trigger_resolved od zakrytego źródła bota — modal bez SKANU kar
     if (!cmd || !session.apply(cmd).ok) break;
   }
 
-  // Zakryty permanent BOTA: cloak (CR 701.56a) → bezimienny 2/2 z ward {2},
+  // Zakryty permanent BOTA: cloak (CR 701.58a) → bezimienny 2/2 z ward {2},
   // pod spodem REALNA karta z wierzchu biblioteki bota (Forest/Veiled Ascension).
   const botPermanent = state.zones.battlefield
     .map((id) => state.objects.get(id)).find((o) => o?.controllerId === BOT_ID);

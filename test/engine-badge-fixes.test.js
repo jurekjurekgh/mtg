@@ -86,7 +86,7 @@ test('B1: channel (Greater Tanuki) tylko z ręki — nigdy z pola bitwy', () => 
   addCardFromRegistry(state, 'tanuki', 'greater-tanuki', 'p1', 'hand');
   const handOffers = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'tanuki');
   assert.equal(handOffers.length, 1, 'channel oferowany z ręki');
-  // Ten sam stwór na polu bitwy: zdolność channel nie może być oferowana (CR 702.85a).
+  // Ten sam stwór na polu bitwy: zdolność channel nie może być oferowana (CR 207.2c).
   const moved = moveObjectDirectly(state, 'tanuki', 'battlefield', 'tanuki-bf');
   state.objects.set('tanuki-bf', Object.freeze({ ...moved, summoningSickness: false, kind: 'creature' }));
   const bfOffers = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'tanuki-bf');
@@ -130,7 +130,7 @@ test('B3: Stomping Slabs — reveal top 7, reorder na spód, 7 obrażeń po name
 
 // ------------------------------------------------- 4. Courage in Crisis proliferate
 
-test('B4: proliferate kolejkuje decyzję gracza (choose any number, CR 701.27)', () => {
+test('B4: proliferate kolejkuje decyzję gracza (choose any number, CR 701.34)', () => {
   const state = newState();
   giveMana(state, 'p1', 3, { G: 1 });
   addCardFromRegistry(state, 'courage', 'courage-in-crisis', 'p1', 'hand');

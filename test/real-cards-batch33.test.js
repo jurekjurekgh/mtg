@@ -352,7 +352,7 @@ test('Nightsnare: BEZ wyboru cel odrzuca DWIE karty (sam decyduje które)', () =
   execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: null });
   const view = playerView(state, 'p2');
   const offers = view.legalCommands.filter((c) => c.type === 'resolve_discard_choice');
-  assert.ok(offers.length > 0, 'teraz wybiera WŁAŚCICIEL ręki (CR 701.8a)');
+  assert.ok(offers.length > 0, 'teraz wybiera WŁAŚCICIEL ręki (CR 701.9b)');
   assert.ok(offers.some((c) => c.cardId === 'r3'), 'przy własnym odrzuceniu ląd też wchodzi w grę');
   for (let i = 0; i < 2; i += 1) {
     const next = playerView(state, 'p2').legalCommands.find((c) => c.type === 'resolve_discard_choice');

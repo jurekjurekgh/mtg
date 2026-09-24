@@ -127,26 +127,37 @@ test('kreator many: deskryptor pomija komendy bez wyboru kolorów źródeł', ()
 
 // --- E.3a cz. B: tryby kosztu alternatywnego (cleave/escape/bestow/morph) ---
 
-test('kreator many: cleave — koszt alternatywny jako liczba, kolory z bazy', () => {
+test('kreator many: cleave — koszt alternatywny jako liczba, kolory z KOSZTU CLEAVE', () => {
   // Lunar Rejection {1}{U} (baza), cleave {3}{U} = manaCost 4.
-  const view = fakeView({ hand: [{ id: 'h1', cardId: 'lunar-rejection', controllerId: 'p1', spell: { cleave: { manaCost: 4 } } }] });
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'lunar-rejection', controllerId: 'p1', spell: { cleave: { manaCost: 4, colors: ['U'] } } }] });
   const d = paymentDescriptorOf({ type: 'cast_cleave', objectId: 'h1' }, view);
   assert.ok(d, 'cleave powinien mieć deskryptor');
   assert.equal(d.totalNeeded, 4);
-  assert.deepEqual(d.requirements, [['U']], 'kolory z bazowego {1}{U}');
+  assert.deepEqual(d.requirements, [['U']], 'pipy z kosztu cleave {3}{U}');
   assert.equal(d.costStr, 'Cleave (4)');
   assert.equal(d.effectiveGeneric, 3, '4 − 1 wymóg {U} = 3 generyczne (bez obniżek)');
+  // Etap F (CR 118.9): koszt alternatywny ZASTĘPUJE koszt many — gdy pipy
+  // cleave różnią się od wydruku, kreator żąda pipów cleave (dawniej: z bazy).
+  const other = fakeView({ hand: [{ id: 'h1', cardId: 'lunar-rejection', controllerId: 'p1', spell: { cleave: { manaCost: 4, colors: ['R', 'R'] } } }] });
+  assert.deepEqual(paymentDescriptorOf({ type: 'cast_cleave', objectId: 'h1' }, other).requirements, [['R'], ['R']]);
+  // Kwota po obniżkach z pełnego stanu (main.js → opts.alternativeCost).
+  assert.equal(paymentDescriptorOf({ type: 'cast_cleave', objectId: 'h1' }, view, { alternativeCost: 3 }).totalNeeded, 3);
 });
 
-test('kreator many: escape — koszt z opts (widok grobu nie niesie spell)', () => {
+test('kreator many: escape — koszt i pipy z opts (widok grobu nie niesie spell)', () => {
   // Sweet Oblivion {1}{U} (baza), escape {3}{U} = cost 4. Obiekt w GROBIE.
   const view = fakeView({ graveyard: [{ id: 'g1', cardId: 'sweet-oblivion', controllerId: 'p1' }] });
   assert.equal(paymentDescriptorOf({ type: 'cast_escape', objectId: 'g1' }, view), null, 'brak opts.escapeCost → null');
-  const d = paymentDescriptorOf({ type: 'cast_escape', objectId: 'g1' }, view, { escapeCost: 4 });
+  assert.equal(paymentDescriptorOf({ type: 'cast_escape', objectId: 'g1' }, view, { escapeCost: 4 }), null,
+    'brak opts.escapeColors → null (bez zgadywania kolorów z wydruku)');
+  const d = paymentDescriptorOf({ type: 'cast_escape', objectId: 'g1' }, view, { escapeCost: 4, escapeColors: ['U'] });
   assert.ok(d);
   assert.equal(d.totalNeeded, 4);
   assert.deepEqual(d.requirements, [['U']]);
   assert.equal(d.costStr, 'Escape (4)');
+  // Etap F (CR 118.9): pipy kosztu escape, nie wydruku.
+  const g = paymentDescriptorOf({ type: 'cast_escape', objectId: 'g1' }, view, { escapeCost: 4, escapeColors: ['B', 'B'] });
+  assert.deepEqual(g.requirements, [['B'], ['B']]);
 });
 
 test('kreator many: bestow — koszt alternatywny aury', () => {

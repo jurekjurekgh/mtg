@@ -899,7 +899,7 @@ test('renderDamageWizard (W5, oś 2 E6): etykieta celu mówi, że lethal pokrywa
 // kandydatów z SUMY OFERT, a menu jest ograniczone `COMBAT_OPTION_CAP` — na
 // większej planszy (pomiar: 6×6 → 5 braków, 10×10 → 69) część legalnych par
 // (atakujący, bloker) nie miała wiersza, więc gracz nie mógł zadeklarować
-// legalnego bloku (CR 509.1b). Pula kandydatów przychodzi teraz osobno
+// legalnego bloku (CR 509.1a). Pula kandydatów przychodzi teraz osobno
 // (`blockCandidates` z widoku), a menu zostaje skrótem.
 test('E6/5: renderCombatWizard (blokujący) — wiersze z puli `blockCandidates`, nie z wyciętego menu', () => {
   const view = {

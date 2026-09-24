@@ -15,7 +15,7 @@ import { beginTurn } from '../src/engine/resources.js';
  * Choroba przywołania zależy WYŁĄCZNIE od ciągłości kontroli — nie od tego,
  * czy stwór faktycznie się odkręcił. Silnik kasował flagę tylko w gałęzi
  * realnego odkręcenia (untapControlled), więc każdy stwór, który przeszedł
- * przez untap step TAPNIĘTY i z blokadą odkręcania (licznik stun CR 122.1b,
+ * przez untap step TAPNIĘTY i z blokadą odkręcania (licznik stun CR 122.1d,
  * untap-lock Entrancing Lyre, „doesn't untap next untap step"), zostawał
  * chory na przywołanie w nieskończoność — nie mógł atakować ani używać {T}
  * także wiele tur później, długo po wygaśnięciu blokady.
@@ -44,7 +44,7 @@ test('licznik stun zjada odkręcenie, ale choroba przywołania i tak znika (CR 3
   beginTurn(state, 'p1');
 
   const bear = state.objects.get('bear');
-  // CR 122.1b: licznik stun zjada to odkręcenie — stwór zostaje tapnięty.
+  // CR 122.1d: licznik stun zjada to odkręcenie — stwór zostaje tapnięty.
   assert.equal(bear.tapped, true, 'stun zjada odkręcenie');
   assert.equal(bear.counters?.stun ?? 0, 0, 'licznik stun zdjęty');
   // CR 302.6: kontrola trwa od początku tury, więc choroba przywołania mija

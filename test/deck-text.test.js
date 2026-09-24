@@ -29,7 +29,7 @@ test('writer egzekwuje singleton (2 kopie → błąd)', () => {
   assert.throws(() => writeDeckText({ name: 'Invalid', cardIds: ['bolt', 'bolt'] }, registry, { minNonland: 0 }), /Nieprawidłowa talia/);
 });
 
-test('nazwa TYŁU karty dwustronnej zamienia się w stronę frontową (CR 711.4)', () => {
+test('nazwa TYŁU karty dwustronnej zamienia się w stronę frontową (CR 712.8)', () => {
   // Regresja buga ze stołu 2026-08-05: „Guidestone Compass" trafiła do ręki
   // jako backside — nierzucalna. Zapis talii nazwą tyłu oznacza fizyczną
   // kartę, czyli jej front.

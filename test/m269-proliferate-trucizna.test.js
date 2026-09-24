@@ -8,7 +8,7 @@ import { applyEffect } from '../src/engine/effects.js';
 import { addPoisonCounters } from '../src/engine/players.js';
 
 /**
- * M269 błąd #4 — proliferate (CR 701.27a) dokładał truciznę przez
+ * M269 błąd #4 — proliferate (CR 701.34) dokładał truciznę przez
  * `player.poison += 1`, omijając helper `addPoisonCounters`. Nie powstawało
  * `poison_counters_added`: log stołu dostawał `counter_added` z ID GRACZA
  * w polu objectId i pisał „? dostaje +1 licznik poison" (klasa L29), a
@@ -58,7 +58,7 @@ test('obie ścieżki nabijania trucizny dają ten sam stan i ten sam fakt', () =
   assert.equal(typ(przezProliferate), typ(przezHelper), 'ten sam typ zdarzenia');
 });
 
-test('gracz bez trucizny nie dostaje jej z proliferate (CR 701.27a)', () => {
+test('gracz bez trucizny nie dostaje jej z proliferate (CR 701.34)', () => {
   const state = stan(0);
   proliferuj(state, ['p2']);
   assert.equal(poison(state, 'p2') ?? 0, 0, 'proliferate tylko zwiększa istniejące liczniki');

@@ -83,7 +83,7 @@ test('A/1: widok niesie zakazy blokowania wroga (kontrakt ADR 0017)', () => {
 
 test('A/2: jedyny wróg jest detained → bot atakuje pełnym składem (nie pasuje)', () => {
   const state = stanZJednymWrogimStworem({});
-  const turaDetainera = state.turn.number + 2; // until your next turn (CR 701.29)
+  const turaDetainera = state.turn.number + 2; // until your next turn (CR 701.35)
   state.objects.set('w1', Object.freeze({ ...state.objects.get('w1'), detained: true, detainedUntilTurn: turaDetainera }));
   const { w1, chosen, passScore, best } = wynikiAtaku(state);
   assert.equal(w1.detained, true, 'widok pokazuje flagę detain');

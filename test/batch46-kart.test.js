@@ -15,6 +15,7 @@ import { getSourceForObject } from '../src/engine/mana-sources.js';
 import { applyEffect } from '../src/engine/effects.js';
 import { createBattlefieldToken } from '../src/engine/tokens.js';
 import { runStateBasedActions } from '../src/engine/state-based.js';
+import { resolveUntilDecision, payOrSacrificeOpen } from './helpers/deferred-trigger.js';
 import { assertStateInvariants } from '../src/engine/invariants.js';
 
 const REGISTRY = createCardRegistry();
@@ -354,6 +355,8 @@ test('B46/7d: echo — bez many stwór jest POŚWIĘCANY (CR 702.30)', () => {
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', playerId: 'p1' }]);
+  // Etap F (CR 702.30a + 603.5): echo idzie na stos; „unless" przy rozstrzyganiu.
+  resolveUntilDecision(state, payOrSacrificeOpen);
   const shredder = state.objects.get('shredder');
   assert.ok(!shredder || shredder.zone !== 'battlefield', 'nieopłacone echo = poświęcenie');
 });
@@ -369,6 +372,7 @@ test('B46/7e: echo płaci się RAZ — w kolejnym upkeepie nie pyta ponownie', (
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', playerId: 'p1' }]);
+  resolveUntilDecision(state, payOrSacrificeOpen);
   assert.ok(state.pendingPayOrSacrifice, 'pierwszy upkeep: decyzja');
   const pay = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'resolve_pay_or_sacrifice' && c.pay === true);

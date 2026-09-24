@@ -9,8 +9,8 @@ import { addCounter } from '../src/engine/counters.js';
 import { deathZoneFor } from '../src/engine/permanents.js';
 
 /**
- * M269 błąd #5 — poświęcenie JEST śmiercią (CR 701.17a), więc strefę docelową
- * musi wyznaczać wspólny `deathZoneFor`: licznik finality (CR 122.1e,
+ * M269 błąd #5 — poświęcenie JEST śmiercią (CR 700.4 + 701.21a), więc strefę docelową
+ * musi wyznaczać wspólny `deathZoneFor`: licznik finality (CR 122.1h,
  * „If it would die, exile it instead") i naznaczenie `exileIfDiesThisTurn`
  * kierują permanent do wygnania. Cztery ścieżki poświęcenia (koszt dodatkowy,
  * exploit, devour, wybór ofiary / Food) szły na sztywno do CMENTARZA, więc

@@ -17,7 +17,7 @@
 //      — więc para (atakujący, bloker) wycięta przez cap NIE MA WIERSZA w wizardzie;
 //   4. wizard BUDUJE komendę z ptaszków (`declare_blockers` z dowolnym
 //      przypisaniem), więc brak wiersza = brak możliwości zadeklarowania bloku.
-// Wynik: legalny blok (CR 509.1b — broniący wybiera dowolny legalny zestaw)
+// Wynik: legalny blok (CR 509.1a — broniący wybiera dowolny legalny zestaw)
 // był nieosiągalny dla człowieka na większej planszy.
 //
 // POMIAR 2026-09-20c (sceny bez ewazji, `highland-game` vs `highland-game`,
@@ -184,7 +184,7 @@ test('E6/3: pula pomija blokery, które nie mogą blokować (tapnięte), i jest 
       `pula przy tapniętych blokerach: ${pula[attackerId].join(',')} vs komenda ${prawda[attackerId].join(',')}`);
   }
   assert.ok(blockerIds.slice(0, 2).every((id) => attackerIds.every((a) => !pula[a].includes(id))),
-    'tapnięty bloker nie jest kandydatem (CR 509.1b — musi być untapped)');
+    'tapnięty bloker nie jest kandydatem (CR 509.1a — musi być untapped)');
   assert.ok(blockerIds.slice(2).every((id) => attackerIds.every((a) => pula[a].includes(id))),
     'nietapnięci blokerzy są kandydatami pod każdego atakującego bez ewazji');
   // Determinizm (ADR 0005): dwa wywołania dają ten sam wynik, bez mutacji stanu.

@@ -114,6 +114,10 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
     // więc nie wchodzi w próbkę. Konstrukcyjnie: test/zaloga (A4/1–4)
     // i test/kreator-zalogi (A4/UI1–2).
     'crewed',
+    // W-8 (D4b, Krotiq Nestguard): widok dokłada flagę reguły „atak mimo
+    // defendera do końca tury” tylko po aktywacji — poza próbką. Konstrukcyjnie:
+    // test/m172-uwagi-wlasciciela (B2b) i test/audyt-d4b-…-warstwa-4-i-nowy-obiekt.
+    'attacksAsThoughNoDefenderUntilEOT',
     'cantBeBlocked', 'cantBlock', 'cantBlockPrinted', 'cantBeRegeneratedThisTurn',
     'grantedKeywords', 'grantedPower', 'grantedToughness', 'lostKeywordsUntilEOT',
     // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): widok dokłada

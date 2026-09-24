@@ -14,7 +14,7 @@ import { previewCardIdOfOption } from '../src/table/choice-request.js';
  * odsłoniętą kartę (teraz trzeba jej szukać w logu, żeby podjąć świadomą
  * decyzję)”.
  *
- * Kontrakt: decyzja Explore (CR 701.54) niesie w widoku decydenta ŹRÓDŁO
+ * Kontrakt: decyzja Explore (CR 701.44) niesie w widoku decydenta ŹRÓDŁO
  * eksploracji (Guidestone Compass — publiczny permanent) i ODSŁONIĘTĄ KARTĘ,
  * tytuł modala nazywa obie, a opcje mają podgląd odsłoniętej karty (ten sam
  * przycisk 🔍 co inne decyzje, `renderChoiceRequest` = wspólny kreator wyboru).

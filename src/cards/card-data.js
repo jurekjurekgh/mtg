@@ -27,9 +27,11 @@ const BATCH9_RELIQUARY_DRAGON_ETB = createAbility({
  * Pierwszy batch realnych kart (ADR 0010, decyzja właściciela 2026-08-01):
  * Highland Game (KTK), Kappa Tech-Wrecker (NEO), Segmented Krotiq (DTK).
  * Dane pobrane ze Scryfall przed kodowaniem (odfiltrowane JSON-y w docs/cards/),
- * a Oracle text zapisany dosłownie poniżej. Koszt many jest uproszczony do
- * liczby całkowitej (pula many jest bezbarwna) — {1}{G} = 2, {5}{G} = 6.
- * Świadome ograniczenia wsparcia każdej karty są opisane w ENGINE_MILESTONES.md.
+ * a Oracle text zapisany dosłownie poniżej. `manaCost` to wartość many
+ * (CR 202.3) — {1}{G} = 2, {5}{G} = 6; PEŁNY koszt z pipami kolorów żyje
+ * w src/cards/mana-costs-data.js (MANA_COSTS, parser mana-cost.js), a pula
+ * many jest kolorowa (resources.js). Ograniczeń gry nie ma (ADR 0022:
+ * pełny Oracle albo `unsupported`).
  */
 export const REAL_CARDS = Object.freeze([
   defineCard({
@@ -69,13 +71,17 @@ export const REAL_CARDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: {
           event: 'combat_damage_to_player',
-          // Temat 2: „you may remove a deathtouch counter... When you do, exile
-          // target artifact or enchantment" — cel wybiera kontroler, a „you
-          // may" daje opcję odmowy (allowNone).
-          requiresTarget: { type: 'artifact_or_enchantment', controlledBy: 'damaged_player', optional: true },
+          // Etap F (CR 603.5 + 603.12): „you may remove a deathtouch counter
+          // from it. When you do, exile target artifact or enchantment that
+          // player controls." — zdolność idzie na stos BEZ celu; przy
+          // rozstrzyganiu kontroler decyduje, czy usuwa znacznik (payCounter,
+          // jak „you may pay" Zoraline), a dopiero „When you do" to refleksyjna
+          // zdolność z celem wybieranym po zapłacie. Dawniej cel wybierano
+          // przy odpaleniu, a znacznik usuwał efekt.
+          payCounter: { counter: 'deathtouch', amount: 1 },
+          requiresTarget: { type: 'artifact_or_enchantment', controlledBy: 'damaged_player' },
         },
         effect: [
-          { type: 'remove_counter', counter: 'deathtouch', amount: 1 },
           { type: 'exile_permanent', targetType: 'artifact_or_enchantment', controlledBy: 'damaged_player' },
         ],
       }),
@@ -267,7 +273,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'Swampcycling {2} ({2}, Discard this card: Search your library for a Swamp card, reveal it, put it into your hand, then shuffle.)\nBackup 2 (When this creature enters, put two +1/+1 counters on target creature. If that\'s another creature, it gains the following ability until end of turn.)\nMenace',
     imageUri: 'https://cards.scryfall.io/large/front/0/2/025a5338-133f-486d-9f73-0896226685c0.jpg?1783917008',
     abilities: [
-      // Swampcycling {2} (CR 702.28-29): cycling z kwalifikacją na podtyp
+      // Swampcycling {2} (CR 702.29 — cycling, wariant typowany): cycling z kwalifikacją na podtyp
       // Swamp — szuka własnej biblioteki, reveal do ręki, tasowanie.
       createAbility({
         type: ABILITY_TYPE.activated,
@@ -548,7 +554,7 @@ export const REAL_CARDS = Object.freeze([
       targets: [{ type: 'creature' }],
       effects: [
         { type: 'add_counter', counter: '+1/+1', amount: 1 },
-        // Proliferate (CR 701.27): po +1/+1 counter wybieramy DOWOLNĄ
+        // Proliferate (CR 701.34): po +1/+1 counter wybieramy DOWOLNĄ
         // liczbę celów (permanenty z licznikami + gracze z poison > 0);
         // każdy dostaje +1 do każdego typu licznika. Brak wybranych
         // celów → czeka na resolve_proliferate z listą (kolejka
@@ -945,7 +951,7 @@ export const REAL_CARDS = Object.freeze([
           kind: 'creature', power: 1, toughness: 1, colors: ['W'],
           types: ['Creature'], subtypes: ['Human'],
           amount: 2,
-          // Fateful hour (CR 702.86 w minimalnym wymiarze): przy życiu ≤ 5
+          // Fateful hour (CR 207.2c w minimalnym wymiarze): przy życiu ≤ 5
           // powstaje pięć tokenów zamiast dwóch.
           ifLifeAtMost: 5, amountIfCondition: 5,
         },
@@ -1467,7 +1473,7 @@ export const REAL_CARDS = Object.freeze([
       targets: [{ type: 'creature' }],
       effects: [
         { type: 'damage', amount: 4 },
-        // CR 701.12b: „It can't be regenerated this turn" — flaga trwała
+        // CR 701.19c: „It can't be regenerated this turn" — flaga trwała
         // do końca tury ustawiana na celu (effects.js). tryRegenerate
         // (SBA) i destroy_permanent (efekty) sprawdzają listę
         // state.cantBeRegeneratedThisTurn, więc tarcza regeneracji
@@ -1825,7 +1831,7 @@ export const REAL_CARDS = Object.freeze([
   }),
   // Guidestone Compass — back face of Lodestone Needle. Tyły kart
   // dwustronnych NIE są osobnymi pozycjami do talii (poza polem bitwy karta
-  // istnieje tylko stroną frontową, CR 711.4) — bug ze stołu 2026-08-05:
+  // istnieje tylko stroną frontową, CR 712.8) — bug ze stołu 2026-08-05:
   // backside na ręku nie da się rzucić. Jak przy Shiva/tokenach: `back`
   // (walidacja talii i kreator odrzucają ten wpis).
   defineCard({
@@ -2427,7 +2433,7 @@ export const REAL_CARDS = Object.freeze([
       // celu spell_on_stack: dowolny czar na stosie, także czar-stwór bestow.
       targets: [{ type: 'spell_on_stack' }],
       effects: [{ type: 'counter_spell' }],
-      // Metalcraft (CR 702.80): koszt o 1 mniejszy przy >= 3 artefaktach
+      // Metalcraft (CR 207.2c): koszt o 1 mniejszy przy >= 3 artefaktach
       // kontrolera (warunek oceniany w chwili rzutu — spells.js).
       costReduction: { amount: 1, condition: { controlsArtifactsAtLeast: 3 } },
     },
@@ -2502,7 +2508,7 @@ export const REAL_CARDS = Object.freeze([
     artId: 31,
     plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
-    notes: ['tokeny z infect: obrażenia do gracza dają znaki trucizny (przegrana przy 10), do stwora — liczniki -1/-1 (CR 702.89)'],
+    notes: ['tokeny z infect: obrażenia do gracza dają znaki trucizny (przegrana przy 10), do stwora — liczniki -1/-1 (CR 702.90)'],
   }),
 
   // 3. Garruk's Companion (M11) — 3/2 Beast z trample.
@@ -2532,7 +2538,7 @@ export const REAL_CARDS = Object.freeze([
         { type: 'bounce_permanent' },
         { type: 'draw_cards', amount: 1 },
       ],
-      // Cleave (CR 701.33): alternatywny koszt, który „wykreśla" ograniczenie
+      // Cleave (CR 702.148): alternatywny koszt, który „wykreśla" ograniczenie
       // podtypu celu — cleave celuje dowolnego stwora (creature), nie tylko
       // Wolf/Werewolf. Efekt i cele pochodzą z deskryptora cleave.
       cleave: {
@@ -2585,10 +2591,13 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.triggered,
         // Temat 2: „you may have it deal damage to target creature" — cel
-        // wybiera kontroler, a „you may" daje opcję odmowy (allowNone).
-        // Obrażenia = liczba artefaktów kontrolera źródła (wartość dynamiczna
-        // 'artifacts_you_control').
-        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', optional: true } },
+        // wybiera kontroler. Obrażenia = liczba artefaktów kontrolera źródła
+        // (wartość dynamiczna 'artifacts_you_control').
+        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
+        // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
+        // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
+        // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+        trigger: { event: 'enter_battlefield', mayFire: true, requiresTarget: { type: 'creature' } },
         effect: { type: 'damage', amount: 'artifacts_you_control' },
       }),
     ],
@@ -2930,7 +2939,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       // Prowess (CR 702.108 — generyczny trigger „you cast a noncreature
       // spell"): instant/sorcery, czar aury (także karta-stwór rzucona za
-      // bestow — jest wtedy czarem aury, CR 702.103a) albo permanent
+      // bestow — jest wtedy czarem aury, CR 702.103b) albo permanent
       // nie-będący stworem. Land drop nie jest rzutem.
       createAbility({
         type: ABILITY_TYPE.triggered,
@@ -3016,7 +3025,7 @@ export const REAL_CARDS = Object.freeze([
     artId: 62,
     plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
-    notes: ['odbiór liczony w warstwie ostatniej effectiveKeywords (po grantach) — wygrywa np. z buffem „gains flying" z innej aury'],
+    notes: ['W-4 (D4b, CR 613.9): utrata i nadania flying porządkowane znacznikami czasu (warstwa 6) — późniejszy efekt wygrywa: aura z flying przypięta PO Grounded albo „gains flying” rzucone PO Grounded dają flying; nadanie sprzed przypięcia Grounded przegrywa'],
   }),
 
   // 3. Ruinous Rampage (EOE) — sorcery modalny „Choose one"
@@ -3513,7 +3522,7 @@ export const REAL_CARDS = Object.freeze([
         // Audyt Batchu 26 (M65): timing 'sorcery' blokował crew w odpowiedzi
         // na czar i w turze przeciwnika.
         cost: { crewPower: 3 },
-        effect: { type: 'animate_permanent_until_end_of_turn', power: 6, toughness: 6, typesAdd: ['Creature'] },
+        effect: { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] },
       }),
     ],
     artId: 455, plan: 'Warhammer Fantasy',
@@ -3619,10 +3628,12 @@ export const REAL_CARDS = Object.freeze([
           kind: 'creature', power: 0, toughness: 0, colors: ['G'],
           types: ['Creature'], subtypes: ['Lhurgoyf'],
           // Dynamiczne P/T: liczba typów kart we WSZYSTKICH grobach (+1
-          // do wytrzymałości) — marker liczony w permanents.staticBonuses.
+          // do wytrzymałości) — CDA liczona w permanents.characteristicDefiningStat (warstwa 7a).
           abilities: [createAbility({
             type: ABILITY_TYPE.static,
             pump: { power: 'card_types_in_all_graveyards', toughness: 'card_types_in_all_graveyards_plus_1' },
+            // W-1 (D4b): CDA — warstwa 7a (CR 613.4a), nadpisywana przez 7b.
+            characteristicDefining: true,
           })],
         }],
       }),
@@ -3641,6 +3652,8 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.static,
         pump: { power: 'card_types_in_all_graveyards', toughness: 'card_types_in_all_graveyards_plus_1' },
+        // W-1 (D4b): CDA — warstwa 7a (CR 613.4a), nadpisywana przez 7b.
+        characteristicDefining: true,
       }),
     ],
     imageUri: 'https://cards.scryfall.io/large/front/f/2/f26e1f55-284c-4540-bf5c-ebc7ab9687ab.jpg?1783911122',  // tm3c
@@ -3738,7 +3751,8 @@ export const REAL_CARDS = Object.freeze([
   // =========================================================================
 
   // 1. Vandalize (DTK) {4}{R} Sorcery — Choose one or both — Destroy artifact, Destroy land.
-  // Uproszczenie Oracle "one or both" do 3 trybów (artifact / land / both) — 100% pokrycia wyborów.
+  // „Choose one or both" (CR 700.2d) zapisane jako 3 tryby (artifact / land /
+  // both) — to DOKŁADNIE zbiór legalnych wyborów, nie uproszczenie.
   defineCard({
     id: 'vandalize', name: 'Vandalize', set: 'DTK',
     types: ['Sorcery'], colors: ['R'], manaCost: 5,
@@ -4163,7 +4177,12 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         trigger: {
           event: 'enter_battlefield',
           condition: { enteredUntapped: true },
-          requiresTarget: { type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller', optional: true },
+          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
+          // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
+          // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
+          // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+          mayFire: true,
+          requiresTarget: { type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller' },
         },
         effect: [{ type: 'put_graveyard_card_on_top' }],
       }),
@@ -4259,7 +4278,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         cost: { mana: 3, colors: ['B', 'G'] },
         keyword: 'regenerate',
         // Efekt pusty: tarczę regeneracji zakłada ścieżka keyword
-        // (performActivation → addRegenerationShield, CR 701.12); efekt
+        // (performActivation → addRegenerationShield, CR 701.19); efekt
         // {type:'regenerate'} nie istnieje w applyEffect — audyt B26 (M65)
         // wykrył, że z nim aktywacja była ODRZUCANA („Nieznany typ efektu").
         effect: [],
@@ -4520,7 +4539,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         // Crew (CR 702.122) — jak wyżej: instant, bez „Activate only as a
         // sorcery" w Oracle (audyt Batchu 26, M65).
         cost: { crewPower: 3 },
-        effect: { type: 'animate_permanent_until_end_of_turn', power: 5, toughness: 5, typesAdd: ['Creature'] },
+        effect: { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] },
       }),
     ],
     artId: 541, plan: 'Kaladesh',
@@ -4701,7 +4720,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'beginning_of_combat', requiresTarget: { type: 'creature', optional: true } },
+        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
+        // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
+        // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
+        // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+        trigger: { event: 'beginning_of_combat', mayFire: true, requiresTarget: { type: 'creature' } },
         effect: { type: 'pump', power: 2, toughness: 0 },
       }),
     ],
@@ -5167,7 +5190,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       // Druga zdolność: „you may tap target creature" przy samotnym ataku.
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'attacks_alone', requiresTarget: { type: 'creature', optional: true } },
+        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
+        // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
+        // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
+        // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+        trigger: { event: 'attacks_alone', mayFire: true, requiresTarget: { type: 'creature' } },
         effect: { type: 'tap_permanent' },
       }),
     ],
@@ -6279,7 +6306,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
-  // Token Incubator (incubate, CR 701.47) — artefakt z licznikami +1/+1
+  // Token Incubator (incubate, CR 701.53) — artefakt z licznikami +1/+1
   // i zdolnością „{2}: Transform this token"; druga strona to token_phyrexian.
   defineCard({
     id: 'token_incubator', name: 'Incubator', set: null,
@@ -6471,7 +6498,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     power: 3, toughness: 4, manaCost: 6,
     oracleText: 'Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nWhenever an artifact you control enters, untap this creature.',
     imageUri: 'https://cards.scryfall.io/large/front/7/e/7e7ca8b6-d7e0-4af2-a578-bf45a8731c19.jpg',
-    // Affinity (CR 702.42): obniżka PER artefakt — `amount` mnożona przez
+    // Affinity (CR 702.41): obniżka PER artefakt — `amount` mnożona przez
     // liczbę kontrolowanych artefaktów (mana-cost.conditionalCostReduction).
     costReduction: { amount: 1, condition: { affinityToArtifacts: true } },
     abilities: [
@@ -6555,8 +6582,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       effects: [{ type: 'discard_cards', amount: 3, applyTo: 'target' }],
     },
     // Suspend (CR 702.62): koszt zawieszenia + liczba liczników czasu.
-    // Uproszczenie: po zdjęciu ostatniego licznika karta zostaje w exile jako
-    // gotowa do rzutu bez kosztu (nie wygasa po jednym oknie priorytetu).
+    // Zdjęcie licznika w upkeepie i „when the last is removed" to zdolności
+    // wyzwalane NA STOSIE (triggers.js, Etap F); rozstrzygnięcie ostatniej
+    // otwiera jednorazową decyzję: rzuć za darmo albo zostaw w exile.
     suspend: { cost: 1, colors: ['B'], timeCounters: 4 },
     artId: 7, plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
@@ -7366,7 +7394,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 501,
     plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
-    notes: ['trigger kopiowania wymaga DRUGIEGO przeciwnika — w 1v1 nigdy się nie odpala (fakt formatu, jak brak command zone); {1}{B}: Regenerate = tarcza regeneracji do końca tury (CR 701.12)'],
+    notes: ['trigger kopiowania wymaga DRUGIEGO przeciwnika — w 1v1 nigdy się nie odpala (fakt formatu, jak brak command zone); {1}{B}: Regenerate = tarcza regeneracji do końca tury (CR 701.19)'],
   }),
   defineCard({
     id: 'dire-fleet-ravager', name: 'Dire Fleet Ravager', set: 'OTC',
@@ -7529,8 +7557,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   // 3. Krotiq Nestguard (TDM) {2}{G} 4/4 Insect — defender; {2}{G}: może
-  //    atakować w tej turze jakby nie miał defendera (lostKeywordsUntilEOT —
-  //    warstwa z Wishful Merfolk; cleanup końca tury przywraca).
+  //    atakować w tej turze jakby nie miał defendera (W-8: efekt zmieniający
+  //    regułę ataku — defender ZOSTAJE; cleanup końca tury zdejmuje flagę).
   defineCard({
     id: 'krotiq-nestguard', name: 'Krotiq Nestguard', set: 'TDM',
     types: ['Creature'], subtypes: ['Insect'], colors: ['G'],
@@ -7541,15 +7569,15 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         cost: { mana: 3, colors: ['G'] },
-        // „attack as though it didn't have defender" = utrata defendera
-        // do końca tury (przenośnik generyczny becomes_subtype_until_end_of_
-        // turn bez nadpisywania podtypów — niesie wyłącznie losesKeywords).
-        effect: [{ type: 'becomes_subtype_until_end_of_turn', losesKeywords: ['defender'] }],
+        // W-8 (D4b): „as though it didn't have defender” NIE zdejmuje
+        // defendera (to nie efekt warstwy 6) — tylko uchyla ograniczenie
+        // ataku z 702.3b do końca tury.
+        effect: [{ type: 'attack_as_though_no_defender_until_end_of_turn' }],
       }),
     ],
     artId: 81, plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
-    notes: ['aktywacja odsuwa defendera do końca tury (cleanup przywraca) — atak legalny po aktywacji, w następnej turze znów nie'],
+    notes: ['W-8 (D4b): aktywacja NIE zdejmuje defendera — stwór go ma, ale do końca tury może atakować „as though it didn’t have defender” (cleanup zdejmuje flagę); w następnej turze znów nie atakuje'],
   }),
 
   // ---- Batch 40 — transza B: nowe słowa kluczowe proste ----
@@ -8103,7 +8131,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
   // 7. Final Parting (DOM) {3}{B}{B} Sorcery — przeszukaj bibliotekę po DWIE
   //    karty: jedna do ręki, druga do grobu; potem tasowanie. Wyszukiwanie
-  //    bez kryterium = OBOWIĄZKOWE (CR 701.19c — bez fail to find).
+  //    bez kryterium = OBOWIĄZKOWE (CR 701.23d — bez fail to find).
   defineCard({
     id: 'final-parting', name: 'Final Parting', set: 'DOM',
     types: ['Sorcery'], colors: ['B'], manaCost: 5,
@@ -8146,7 +8174,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
   // 9. Azorius Justiciar (RTR) {2}{W}{W} 2/2 Human Wizard — ETB: detain up to
   //    two target creatures your opponents control (NOWA mechanika detain,
-  //    CR 701.29: do twojej następnej tury cel nie atakuje, nie blokuje,
+  //    CR 701.35: do twojej następnej tury cel nie atakuje, nie blokuje,
   //    nie aktywuje zdolności; multi-target z upTo — reuse M171/Z6).
   defineCard({
     id: 'azorius-justiciar', name: 'Azorius Justiciar', set: 'RTR',
@@ -8423,7 +8451,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.activated,
         // Crew (CR 702.122) aktywuje się jak instant (audyt Batchu 26/M65).
         cost: { crewPower: 1 },
-        effect: { type: 'animate_permanent_until_end_of_turn', power: 5, toughness: 4, typesAdd: ['Creature'] },
+        effect: { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] },
       }),
     ],
     artId: 153, plan: 'Final Fantasy',
@@ -8509,7 +8537,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
   // 5. Descendant of Storms (TDM) — „Whenever this creature attacks, you may
   //    pay {1}{W}. If you do, it endures 1." — opcjonalna płatność triggera
-  //    (wzorzec Zoraline) + endure (wzorzec Krumar Initiate, CR 702.174).
+  //    (wzorzec Zoraline) + endure (wzorzec Krumar Initiate, CR 701.63).
   defineCard({
     id: 'descendant-of-storms', name: 'Descendant of Storms', set: 'TDM',
     types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['W'],
@@ -8651,7 +8679,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 262, plan: 'Alara',
     support: { status: 'supported', limitations: [] },
-    notes: ['Empyrial Archangel nie jest w katalogu — search legalnie „fails to find" (CR 701.19b: kryterium nazwy); zdolność w pełni wg Oracle, użyteczna po ewentualnym dodaniu anioła'],
+    notes: ['Empyrial Archangel nie jest w katalogu — search legalnie „fails to find" (CR 701.23b: kryterium nazwy); zdolność w pełni wg Oracle, użyteczna po ewentualnym dodaniu anioła'],
   }),
 
   // 10. Frightful Delusion (ISD) — „Counter target spell unless its
@@ -8669,7 +8697,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     },
     artId: 256, plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
-    notes: ['kontroler celu decyduje (resolve_counter_pay_choice): zapłać {1} — czar zostaje; nie płać — skontrowany; NIEZALEŻNIE od decyzji odrzuca potem kartę (wybór odrzucanej — CR 701.18); bez many na {1} decyzji nie ma'],
+    notes: ['kontroler celu decyduje (resolve_counter_pay_choice): zapłać {1} — czar zostaje; nie płać — skontrowany; NIEZALEŻNIE od decyzji odrzuca potem kartę (wybór odrzucanej — CR 701.9b); bez many na {1} decyzji nie ma'],
   }),
 
   // =========================================================================
@@ -8848,7 +8876,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   // 7. Malamet Battle Glyph (LCI) — dwa cele; licznik, jeśli własny stwór
-  //    wszedł w tej turze; potem FIGHT (NOWY efekt, CR 701.12).
+  //    wszedł w tej turze; potem FIGHT (NOWY efekt, CR 701.14).
   defineCard({
     id: 'malamet-battle-glyph', name: 'Malamet Battle Glyph', set: 'LCI',
     types: ['Sorcery'], colors: ['G'], manaCost: 1,
@@ -8893,7 +8921,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['„up to one target" — wariant bez drugiego celu jest legalny (pump bez ugryzienia); pump PRZED obrażeniami (kolejność Oracle — obrażenia liczą moc po +1/+0)'],
   }),
 
-  // 9. Crawling Chorus (ONE) — Toxic 1 (NOWY keyword, CR 702.180); dies →
+  // 9. Crawling Chorus (ONE) — Toxic 1 (NOWY keyword, CR 702.164); dies →
   //    token Phyrexian Mite 1/1 (toxic 1, can't block).
   defineCard({
     id: 'crawling-chorus', name: 'Crawling Chorus', set: 'ONE',
@@ -9303,7 +9331,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // ---- Batch 47 — transza C: Enduring Sliver (keyword outlast) ----
 
   // 6. Enduring Sliver (MH1) — outlast {2} + nadanie outlast innym Sliverom.
-  //    CR 702.100a: „Outlast [cost]" = „[cost], {T}: Put a +1/+1 counter on
+  //    CR 702.107a: „Outlast [cost]" = „[cost], {T}: Put a +1/+1 counter on
   //    this creature. Activate only as a sorcery."
   defineCard({
     id: 'enduring-sliver', name: 'Enduring Sliver', set: 'MH1',
@@ -9342,13 +9370,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 349, plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
-    notes: ['outlast (CR 702.100a) wymaga {T} i działa tylko jak sorcery — stwór z chorobą przywołania go nie użyje', 'nadanie plemieniu liczone przy odczycie: zniknięcie Enduring Slivera natychmiast odbiera outlast pozostałym Sliverom'],
+    notes: ['outlast (CR 702.107a) wymaga {T} i działa tylko jak sorcery — stwór z chorobą przywołania go nie użyje', 'nadanie plemieniu liczone przy odczycie: zniknięcie Enduring Slivera natychmiast odbiera outlast pozostałym Sliverom'],
   }),
 
   // ---- Batch 47 — transza D: Caves of Chaos Adventurer ----
 
   // 7. Caves of Chaos Adventurer (CLB) — trample, ETB inicjatywa, a przy
-  //    ataku impulse-exile z bonusem za UKOŃCZONY loch (CR 701.51b).
+  //    ataku impulse-exile z bonusem za UKOŃCZONY loch (CR 309.7).
   defineCard({
     id: 'caves-of-chaos-adventurer', name: 'Caves of Chaos Adventurer', set: 'CLB',
     types: ['Creature'], subtypes: ['Human', 'Barbarian'], colors: ['R'],
@@ -9545,7 +9573,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       targets: [{ type: 'spell_on_stack' }],
       effects: [
         { type: 'counter_spell' },
-        // Proliferate (CR 701.27) — blokująca decyzja gracza (resolve_proliferate).
+        // Proliferate (CR 701.34) — blokująca decyzja gracza (resolve_proliferate).
         { type: 'proliferate' },
       ],
     },
@@ -9660,7 +9688,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['utrata życia (CR 118.2), nie obrażenia — prewencja obrażeń jej nie zatrzyma', 'wzorzec triggera upkeepu z Feedback (enchantedPermanentControllerUpkeep)'],
   }),
 
-  // 12. Stampeding Elk Herd (DTK) — formidable (CR 702.103): przy ataku,
+  // 12. Stampeding Elk Herd (DTK) — formidable: przy ataku,
   //     jeśli łączna moc twoich stworów ≥ 8, cała drużyna dostaje trample.
   defineCard({
     id: 'stampeding-elk-herd', name: 'Stampeding Elk Herd', set: 'DTK',
@@ -9726,14 +9754,16 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         // Dinozaura rzucony w tej turze — „When this creature enters, you may
         // have it fight another target creature." (Oracle, Scryfall
         // 2026-09-18). `sourceIsFighter`: walczy sam czar/permanent, a nie
-        // dwa wskazane cele; `optional` = „you may".
+        // dwa wskazane cele; `mayFire` = „you may" (Etap F, CR 603.5: cel
+        // obowiązkowy przy kładzeniu na stos, wybór „may" przy rozstrzyganiu).
         effect: [{
           type: 'subtype_spells_gain_flash_and_etb_fight_this_turn', subtype: 'Dinosaur',
           grantedAbility: createAbility({
             type: ABILITY_TYPE.triggered,
             trigger: {
               event: 'enter_battlefield',
-              requiresTarget: { type: 'creature', notSelf: true, optional: true },
+              mayFire: true,
+              requiresTarget: { type: 'creature', notSelf: true },
             },
             effect: { type: 'fight', sourceIsFighter: true },
           }),
@@ -10381,10 +10411,12 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: {
           event: 'enter_battlefield',
-          // „you may have target creature..." — opcjonalność całości jest
-          // w OPCJONALNYM CELU (spec.optional), nie w mayFire (mayFire jest
-          // dla „you may" BEZ celu — Angel's Feather).
-          requiresTarget: { type: 'creature', optional: true },
+          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
+          // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
+          // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
+          // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+          mayFire: true,
+          requiresTarget: { type: 'creature' },
         },
         effect: { type: 'buff_creature_until_end_of_turn', power: -1, toughness: -1 },
       }),
@@ -10532,7 +10564,12 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: {
           event: 'enter_battlefield',
-          requiresTarget: { type: 'aura_or_equipment_card_in_graveyard', controlledBy: 'controller', optional: true },
+          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
+          // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
+          // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
+          // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+          mayFire: true,
+          requiresTarget: { type: 'aura_or_equipment_card_in_graveyard', controlledBy: 'controller' },
         },
         effect: { type: 'return_card_from_graveyard_to_hand' },
       }),
@@ -10683,7 +10720,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     entersWithCounters: { '+1/+1': 'other_creatures_you_control_plus_one' },
     artId: 598, plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
-    notes: ['enters-with liczy INNE stwory przy każdym wejściu (CR 121.6), także reanimacja; plot obsługuje ścieżka cast_permanent (exile z ręki i późniejszy rzut bez many)'],
+    notes: ['enters-with liczy INNE stwory przy każdym wejściu (CR 122.6), także reanimacja; plot obsługuje ścieżka cast_permanent (exile z ręki i późniejszy rzut bez many)'],
   }),
 
   // Batch 54 — dokładne druki i rulingi zweryfikowane 2026-09-08.
@@ -10968,8 +11005,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       ],
       effects: [
         // „Then that creature fights…" — walka TYM stworom, już po liczniku
-        // (obrażenia liczone z nowej mocy, CR 701.12b); jeśli któryś cel
-        // zniknął, walka nie wykonuje się wcale (CR 701.12c), a licznik na
+        // (obrażenia liczone z nowej mocy, CR 701.14a); jeśli któryś cel
+        // zniknął, walka nie wykonuje się wcale (CR 701.14b), a licznik na
         // legalnym celu zostaje (ruling 2017-11-17).
         { type: 'add_counter', counter: '+1/+1', amount: 1, targetIndex: 0 },
         { type: 'fight', targetIndexA: 0, targetIndexB: 1 },
@@ -11195,7 +11232,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         // Crew 2 (CR 702.122) — jak w pozostałych pojazdach: instant, bez
         // „Activate only as a sorcery" w Oracle (audyt Batchu 26, M65).
         cost: { crewPower: 2 },
-        effect: { type: 'animate_permanent_until_end_of_turn', power: 3, toughness: 4, typesAdd: ['Creature'] },
+        effect: { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] },
       }),
     ],
     artId: 58, plan: 'New Capenna', support: { status: 'supported', limitations: [] },
@@ -11427,7 +11464,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     oracleText: 'Exile target creature. Incubate 3. (Create an Incubator token with three +1/+1 counters on it and "{2}: Transform this token." It transforms into a 0/0 Phyrexian artifact creature.)',
     imageUri: 'https://cards.scryfall.io/large/front/7/0/70edec35-1770-47f0-9ad2-32e597ee0327.jpg?1783917004',
     // Bliźniak 1:1 Tillera of Flesh co do efektu inkubacji (`incubate`,
-    // CR 701.47 — token Incubator z trzema licznikami). Kolejność efektów ma
+    // CR 701.53 — token Incubator z trzema licznikami). Kolejność efektów ma
     // znaczenie dla rulingi MOM (2023-04-14): gdy CEL stanie się nielegalny
     // przed rozstrzygnięciem, czar fizzluje W CAŁOŚCI (CR 608.2b) — inkubacja
     // NIE biegnie (pin w test/real-cards-batch57.test.js).
@@ -11552,7 +11589,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // Boulder Salvo (OGW) {4}{R} Sorcery — surge {1}{R} + 4 obrażenia w stwora.
   // Surge na INSTANT/SORCERY to nowa ścieżka (dotąd tylko permanent — Jwar
   // Isle Avenger, Batch 50): koszt alternatywny z własną kwotą i pipami,
-  // oferowany po rzucie innego czaru w tej turze (CR 702.111). Ruling OGW
+  // oferowany po rzucie innego czaru w tej turze (CR 702.117). Ruling OGW
   // 2016-01-22: surge nie zmienia kosztu many ani mana value karty.
   defineCard({
     id: 'boulder-salvo', name: 'Boulder Salvo', set: 'OGW',
@@ -11649,7 +11686,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // (nie tylko stworze), nie jest licznikiem słowa kluczowego, a wielokrotne
   // egzemplarze są redundantne — dlatego na typ licznika wystarcza jeden
   // `addCounter('finality')`, a wygnanie przy śmierci robi wspólny
-  // `deathZoneFor` (CR 122.1e; w Batchu 58/B5 = jedyne miejsce decyzji).
+  // `deathZoneFor` (CR 122.1h; w Batchu 58/B5 = jedyne miejsce decyzji).
   defineCard({
     id: 'resurrected-cultist', name: 'Resurrected Cultist', set: 'DSK',
     types: ['Creature'], subtypes: ['Human', 'Cleric'], colors: ['B'],

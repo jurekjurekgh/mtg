@@ -66,7 +66,7 @@ export function parseDeckText(text, registry) {
     if (!card) throw new Error(`Nieznana karta w talii: ${label}`);
     if (amount < 1) throw new Error(`Liczba kopii musi być dodatnia: ${line}`);
     // Karty dwustronne (DFC): zapis talii może wskazywać dowolną stronę —
-    // fizyczna karta w bibliotece/ręce istnieje wyłącznie przodem (CR 711.4).
+    // fizyczna karta w bibliotece/ręce istnieje wyłącznie przodem (CR 712.8).
     // Nazwa TYŁU (status `back`) zamienia się na stronę frontową, żeby
     // karta trafiała do ręki grywalna (bug ze stołu 2026-08-05: „Guidestone
     // Compass" na ręku nie dał się rzucić). Tokeny nadal odrzuca walidacja.

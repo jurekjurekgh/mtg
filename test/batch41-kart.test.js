@@ -7,6 +7,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { resolveUntilDecision, optionalPayOpen } from './helpers/deferred-trigger.js';
 import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
 
 const REGISTRY = createCardRegistry();
@@ -114,9 +115,11 @@ test('A3: Horizon Spellbomb — sac→szukaj basic land do RĘKI; dies→opcjona
     .find((c) => c.type === 'activate_ability' && c.objectId === 'bomb');
   assert.ok(activate, 'oferta aktywacji {2},{T},sac');
   assert.ok(execute(state, activate).ok);
-  // Sacrifice to KOSZT — trigger „dies" odpala od razu (przed rozstrzygnięciem
-  // szukania): najpierw decyzja „you may pay {G}".
-  assert.ok(state.pendingOptionalPay, 'decyzja „you may pay {G}" po poświęceniu');
+  // Sacrifice to KOSZT — trigger „dies" odpala od razu i trafia na stos NAD
+  // szukaniem; decyzja „you may pay {G}" zapada przy JEGO rozstrzyganiu
+  // (Etap F, CR 603.5).
+  assert.equal(state.pendingOptionalPay, null, 'brak decyzji w chwili odpalenia (CR 603.5)');
+  assert.ok(resolveUntilDecision(state, optionalPayOpen), 'decyzja „you may pay {G}" przy rozstrzyganiu');
   const pay = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === true);
   assert.ok(pay, 'oferta zapłaty {G}');
@@ -478,21 +481,24 @@ test('E2: Forager — rezygnacja nic nie kosztuje; oferty tylko w budżecie {X}'
   assert.ok(!state.pendingGraveFreeCast, 'decyzja zamknięta');
 });
 
-test('E3: Forager — czar z kosztem dodatkowym poza zakresem (jawnie nie oferowany)', () => {
+// Etap F/4 (PR #135 — „żadnych ograniczeń wpływających na grę"): Oracle
+// Foragera mówi „target instant or sorcery card with mana value X" — bez
+// wyjątku dla kosztu dodatkowego (CR 601.2h: płaci się go nadal).
+test('E3 → F/4: Forager — czar z kosztem dodatkowym oferowany; ofiara płacona przy rzucie', () => {
   const state = game('p1');
   putCard(state, 'grites', 'village-rites', 'p1', 'graveyard'); // additionalCost: sacrifice
   putCard(state, 'own', 'highland-game', 'p1', 'battlefield');
   castForager(state);
   addMana(state, 'p1', 1, { colors: [] });
   const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_grave_free_cast');
-  assert.ok(!offers.some((c) => c.objectId === 'grites'), 'additionalCost poza zakresem — brak oferty');
-  // Ręczna komenda = jawny reject (nie ciche obejście — L52). M203: komenda
-  // niesie POPRAWNE X (= MV karty), więc powód odrzucenia musi dotyczyć
-  // zakresu, a nie X — inaczej test przeszedłby „przez przypadek".
-  const r = execute(state, { type: 'resolve_grave_free_cast', playerId: 'p1', objectId: 'grites', xValue: 2, targets: ['own'] });
-  assert.equal(r.ok, false, 'jawny reject poza zakresem');
-  assert.equal(r.events?.find((e) => e.type === 'command_rejected')?.reason, 'illegal_grave_free_cast',
-    'odrzucone z powodu zakresu (additionalCost), nie z powodu X');
+  const cast = offers.find((c) => c.objectId === 'grites' && c.sacrificeTargetId === 'own');
+  assert.ok(cast, 'oferta z wariantem ofiary');
+  // Komenda bez wskazania ofiary = jawny reject (koszt dodatkowy obowiązkowy).
+  const bad = execute(state, { type: 'resolve_grave_free_cast', playerId: 'p1', objectId: 'grites', xValue: 1, targets: [] });
+  assert.equal(bad.ok, false, 'bez ofiary — odrzucone');
+  assert.ok(execute(state, cast).ok, 'rzut z ofiarą przyjęty');
+  assert.notEqual(state.objects.get('own')?.zone, 'battlefield', 'stwór poświęcony jako koszt');
+  assert.ok(state.zones.stack.some((id) => state.objects.get(id)?.cardId === 'village-rites'), 'czar na stosie');
 });
 
 test('D2c (deadlock z B0): modalny ETB bez ŻADNEGO wybieralnego trybu nie wchodzi na stos', () => {

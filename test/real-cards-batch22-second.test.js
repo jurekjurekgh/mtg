@@ -59,7 +59,7 @@ test('Courage in Crisis: +1/+1 counter na celu + proliferate (no-op przy pustych
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   // Po rozstrzygnięciu efektu 1 (add_counter): target ma +1/+1 counter,
-  // a proliferate (efekt 2) CZEKA na decyzję gracza (CR 701.27 — choose
+  // a proliferate (efekt 2) CZEKA na decyzję gracza (CR 701.34 — choose
   // any number): pendingProliferate z kandydatami (target z licznikiem).
   assert.ok(state.pendingProliferate, 'proliferate kolejkuje decyzję gracza');
   const cands = state.pendingProliferate.candidateIds;

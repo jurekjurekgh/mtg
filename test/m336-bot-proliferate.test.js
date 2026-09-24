@@ -13,7 +13,7 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 /**
  * M336 (klasa L133 — decyzja oferowana, ale nie wyceniona): Proliferate.
  *
- * CR 701.27: „You choose any number of permanents that have at least one
+ * CR 701.34: „You choose any number of permanents that have at least one
  * counter on them and/or players that have at least one counter of a given
  * kind, then put one counter of each kind already present on each of those
  * permanents and/or players onto each of them." „Any number" znaczy także zero
@@ -86,7 +86,7 @@ function castAndWaitForProliferate(state, targetId) {
   assert.ok(r.ok, `rzut przyjęty: ${JSON.stringify(r.events ?? r.reason)}`);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
-  assert.ok(state.pendingProliferate, 'decyzja proliferate czeka (CR 701.27 — „any number")');
+  assert.ok(state.pendingProliferate, 'decyzja proliferate czeka (CR 701.34 — „any number")');
   return state;
 }
 
@@ -198,7 +198,7 @@ test('M336/F: próg trucizny z JEDNEGO źródła i wycena bez nazw kart', () => 
 
   // Ślady wag, których NIE DA się uchwycić zachowaniem w tej decyzji: model
   // jest addytywny, a wariant pusty kosztuje 0 i jest zawsze dostępny (CR
-  // 701.27 „any number"), więc każda pojedyncza ujemna dokładka jest z góry
+  // 701.34 proliferate „any number"), więc każda pojedyncza ujemna dokładka jest z góry
   // przegrana z pustym zbiorem — mutacja „usuń ochronę przed własną
   // dziesiątą trucizną" NIE zmienia żadnego wyboru (zmierzone: testy A–E na
   // tej mutacji zielone). Pin jest więc strukturalny, tak samo jak w M334/F

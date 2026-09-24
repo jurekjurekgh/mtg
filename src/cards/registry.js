@@ -5,7 +5,7 @@
 //   - `supported`     — pełna karta (100% Oracle), taliowalna;
 //   - `token`         — token tworzony przez karty/mechaniki, nie do talii;
 //   - `back`          — tylna strona karty dwustronnej; w talii istnieje
-//                       wyłącznie przód (CR 711.4), do gry wchodzi transformem;
+//                       wyłącznie przód (CR 712.8), do gry wchodzi transformem;
 //   - `unsupported`   — karta bez pełnego Oracle; w katalogu jej NIE MA
 //   - `in-development`  (ADR 0022: karta albo jest w 100%, albo jej nie ma).
 // Bramką taliowalności pozostaje `status === 'supported'`.
@@ -109,7 +109,7 @@ export function defineCard(data) {
       cost: data.warp.cost,
       colors: Object.freeze([...(data.warp.colors ?? [])]),
     }) : null,
-    // Batch 50 (Jwar Isle Avenger, CR 702.111): Surge — alternatywny koszt
+    // Batch 50 (Jwar Isle Avenger, CR 702.117): Surge — alternatywny koszt
     // rzutu z ręki, gdy rzucono inny czar w tej turze. Koszt normalną maną.
     surge: data.surge ? Object.freeze({
       cost: data.surge.cost,
@@ -312,7 +312,7 @@ export function defineCard(data) {
     // Endure (TDM, Kin-Tree Nurturer): N liczników +1/+1 ALBO token Spirit N/N
     // — decyzja resolve_endure_choice; kwalifikacja licznika danymi.
     endure: data.endure ?? null,
-    // Toxic N (CR 702.180) — wartość liczbowa keyworda (Batch 45).
+    // Toxic N (CR 702.164) — wartość liczbowa keyworda (Batch 45).
     toxic: data.toxic ?? null,
     // Batch 46 (Bone Shredder): koszt echa (CR 702.30).
     echo: data.echo ?? null,
@@ -404,14 +404,14 @@ function freezeSpell(spell) {
       colors: Object.freeze([...(spell.escape.colors ?? [])]),
       exileCount: spell.escape.exileCount,
     }) } : {}),
-    // Obniżka kosztu warunkowa (Metalcraft, Stoic Rebuttal, CR 702.80):
+    // Obniżka kosztu warunkowa (Metalcraft, Stoic Rebuttal, CR 207.2c):
     // „this spell costs {1} less to cast if you control three or more
     // artifacts\" — deskryptor { amount, condition } oceniany w chwili rzutu.
     ...(spell.costReduction ? { costReduction: Object.freeze({
       amount: spell.costReduction.amount,
       condition: Object.freeze({ ...spell.costReduction.condition }),
     }) } : {}),
-    // Cleave (CR 701.33, Lunar Rejection): alternatywny koszt rzucenia czaru,
+    // Cleave (CR 702.148, Lunar Rejection): alternatywny koszt rzucenia czaru,
     // który „wykreśla\" fragment tekstu — zmienia legalne cele i efekty.
     // Deskryptor { manaCost, targets, effects } buduje warstwa kart; core używa
     // go przy rzucie (cast_cleave) i rozstrzyganiu (cleaved → cleave.targets/
@@ -423,10 +423,10 @@ function freezeSpell(spell) {
       targets: Object.freeze((spell.cleave.targets ?? []).map((spec) => Object.freeze({ ...spec }))),
       effects: Object.freeze((spell.cleave.effects ?? []).map((effect) => Object.freeze({ ...effect }))),
     }) } : {}),
-    // Buyback (CR 702.26): dodatkowy koszt — jeśli zapłacony, czar wraca
+    // Buyback (CR 702.27): dodatkowy koszt — jeśli zapłacony, czar wraca
     // do ręki po rozstrzygnięciu zamiast do grobu.
     ...(spell.buyback ? { buyback: Object.freeze({ cost: spell.buyback.cost ?? 0, colors: Object.freeze([...(spell.buyback.colors ?? [])]) }) } : {}),
-    // Rebound (CR 702.97, Ojutai's Breath): czar rzucony z RĘKI po rozstrzygnięciu
+    // Rebound (CR 702.88, Ojutai's Breath): czar rzucony z RĘKI po rozstrzygnięciu
     // idzie do exile, a na początku następnego upkeepu kontrolera można go rzucić
     // bez kosztu. Flaga na deskryptorze czaru — sprawdzana w castSpell (rzut
     // z ręki) i resolveTopOfStack (exile zamiast grobu).

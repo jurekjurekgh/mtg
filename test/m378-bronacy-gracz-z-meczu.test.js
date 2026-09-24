@@ -24,7 +24,7 @@
 // Piny: (A) spreparowana komenda jest ODRZUCANA (atomowo — nikt nie traci
 // życia), (B) komenda bez pola nadal zadaje obrażenia WŁAŚCIWEMU graczowi,
 // (C) poprawna wartość = wynik jak w (B), (D) ścieżka trucizny (infect) działa
-// bez pola (CR 702.89b), (E) blokowanie: atakujący z blokerem nie kieruje
+// bez pola (CR 702.90b), (E) blokowanie: atakujący z blokerem nie kieruje
 // obrażeń do gracza (kontrola negatywna — walidacja nie zepsuła bloków).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -109,7 +109,7 @@ test('M378/C: poprawna wartość daje wynik identyczny z brakiem pola', () => {
   assert.equal(life(state, 'p2'), 18);
 });
 
-test('M378/D: infect bez defendingPlayerId — trucizna do atakowanego (CR 702.89b)', () => {
+test('M378/D: infect bez defendingPlayerId — trucizna do atakowanego (CR 702.90b)', () => {
   const state = unblockedAttack({ cardId: 'ichorclaw-myr', power: 1 });
   const r = execute(state, { type: 'resolve_combat', playerId: 'p1' });
   assert.ok(r.ok, r.events?.[0]?.reason);

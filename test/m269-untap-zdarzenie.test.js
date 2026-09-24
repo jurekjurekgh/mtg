@@ -11,7 +11,7 @@ import { applyEffect } from '../src/engine/effects.js';
  * `object_untapped` TYLKO w gałęzi „kontroler się nie zmienił". W ścieżce
  * typowej (piłkę przejmuje przeciwnik) odkręcenie działo się po cichu:
  * żaden trigger „becomes untapped" go nie widział, a log stołu pokazywał samą
- * zmianę kontroli (CR 701.21a, lekcja L24: brak zdarzenia = brak faktu).
+ * zmianę kontroli (CR 701.26, lekcja L24: brak zdarzenia = brak faktu).
  * Strażnik KLASOWY: obie gałęzie tego samego efektu muszą raportować
  * odkręcenie identycznie (ADR 0002).
  */

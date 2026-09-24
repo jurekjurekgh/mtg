@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { describeSpellEffects } from '../src/table/render.js';
 
 // =============================================================================
-// Opis efektów czarów i zdolności z amount (A) + fateful hour (CR 702.86)
+// Opis efektów czarów i zdolności z amount (A) + fateful hour (CR 207.2c)
 // Zgłoszenie właściciela 2026-08-08: Gather the Townsfolk tworzy 2 (lub 5
 // przy życiu ≤ 5), ale UI mówił "Tworzysz token 1/1" (nominalnie). W logu
 // i na stole wszystko działa, tylko opis kłamał. Poniższe testy pilnują

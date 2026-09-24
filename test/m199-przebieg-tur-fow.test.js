@@ -87,7 +87,7 @@ test('M199: morph gracza jest bezimienny jak morph bota (CR 708.2)', () => {
   }
   const resolved = publicText({ type: 'spell_resolved', controllerId: HUMAN_ID, faceDown: true, cardId: 'segmented-krotiq' });
   assert.doesNotMatch(resolved, /Segmented Krotiq/, 'rozstrzygniecie tez bez nazwy');
-  // Glowny log nadal nazywa WLASNY morph gracza (CR 708.6 — wolno mu patrzec).
+  // Glowny log nadal nazywa WLASNY morph gracza (CR 708.5 — wolno mu patrzec).
   assert.match(ownerText({ type: 'permanent_cast', playerId: HUMAN_ID, faceDown: true, object: { cardId: 'segmented-krotiq' } }),
     /Segmented Krotiq/, 'w logu stolu wlasny morph zostaje nazwany');
 });

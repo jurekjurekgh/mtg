@@ -4,7 +4,8 @@ import { assertStateInvariants } from './invariants.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { syncStationKind } from './counters.js';
 import { registerMover } from './mover.js';
-import { entersUntappedOverride } from './permanents.js';
+import { entersTappedNow, animationEffectsOf, animationFieldsAfter } from './permanents.js';
+import { nextTimestamp } from './timestamps.js';
 
 /**
  * Rejestr LKI nazw (CR 603.10): identyfikator → ostatnia znana tożsamość
@@ -98,7 +99,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
   const object = state.objects.get(objectId);
   assertZone(toZone);
   if (!object || !newObjectId || state.objects.has(newObjectId)) throw new Error('Nieprawidłowy ruch obiektu');
-  // M69 (Unearth, CR 702.87b): „Exile it ... if it would leave the battlefield"
+  // M69 (Unearth, CR 702.84a): „Exile it ... if it would leave the battlefield"
   // — permanent z flagą unearthExile opuszczający pole bitwy idzie do exile
   // zamiast docelowej strefy (replacement, jak finality dla dies). Delayed
   // exile na end step też przechodzi tu — cel to już exile, bez zmian.
@@ -133,11 +134,11 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
   const controllerAfterMove = (object.zone === 'battlefield' && toZone !== 'battlefield' && toZone !== 'stack')
     ? (object.ownerId ?? object.controllerId)
     : object.controllerId;
-  // CR 711.4a (M257/K5, Żywy Tester g1001): DFC poza polem bitwy ma wyłącznie
+  // CR 712.8a (M257/K5, Żywy Tester g1001): DFC poza polem bitwy ma wyłącznie
   // cechy Twarzy PRZEDNIEJ. Obrócony na tył permanent (wilkołak), który
   // opuszcza pole bitwy (bounce, śmierć, wygnanie), odwraca się na przód:
   // w ręce/grobie/bibliotece widnieje przód, a rzut z ręki idzie na stos
-  // przodem (CR 711.7) i wchodzi przodem (CR 711.8). Twarzą przednią pary
+  // przodem (CR 712.11) i wchodzi przodem (CR 712.13). Twarzą przednią pary
   // jest `frontFaceId` (snapshot z materializacji); cechy przedniej twarzy
   // przy tylnym obrazku niesie `transformTo` (efekt transform buduje go z
   // cech sprzed obrócenia) — odwracamy go w `transformTo` nowego obiektu,
@@ -158,7 +159,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
       subtypes: front.subtypes ?? [],
       ...(front.kind != null ? { kind: front.kind } : {}),
       ...(front.types ? { types: front.types } : {}),
-      // Karta poza polem bitwy leży przodem (CR 711.4a) — jej MV to koszt
+      // Karta poza polem bitwy leży przodem (CR 712.8a) — jej MV to koszt
       // przedni; payload przedniej twarzy niesie go od Etapu 2.3b. Zwykły
       // DFC: spread i tak trzyma ten sam koszt (no-op).
       ...(front.manaCost != null ? { manaCost: front.manaCost } : {}),
@@ -179,11 +180,31 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
       }),
     };
   }
+  // W-9 (D4b, CR 400.7): „An object that moves from one zone to another
+  // becomes a new object with no memory of, or relation to, its previous
+  // existence.” Efekty „do końca tury” zapisane jako mutacja pól (animacja,
+  // nadpisanie podtypów, utrata keywordów, reguła ataku mimo defendera) NIE
+  // przechodzą na nowy obiekt — cleanup przywracał je tylko na polu bitwy, więc
+  // odbity crewowany pojazd był w ręce STWOREM, a Wishful Merfolk — Humanem
+  // bez defendera. Przywracamy cechy sprzed efektu (DFC nadpisuje niżej).
+  const original = object.originalBeforeAnimation ?? null;
+  const untilEndOfTurnReset = {
+    ...(original ? {
+      kind: original.kind, types: original.types, subtypes: original.subtypes,
+      power: original.power, toughness: original.toughness,
+    } : {}),
+    ...(object.subtypesBeforeOverride ? { subtypes: object.subtypesBeforeOverride } : {}),
+    originalBeforeAnimation: null, subtypesBeforeOverride: null,
+    lostKeywordsUntilEOT: Object.freeze([]), attacksAsThoughNoDefenderUntilEOT: false,
+  };
   const moved = Object.freeze({
-    ...object, ...dfcFaceReset, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
+    ...object, ...untilEndOfTurnReset, ...dfcFaceReset, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
     // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).
     enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,
+    // D4b (CR 613.7d): „An object receives a timestamp at the time it enters
+    // a zone.” Znacznik porządkuje efekty statyczne obiektu w warstwach 613.
+    timestamp: toZone === 'battlefield' ? nextTimestamp(state) : null,
     // M258 (Żywy Tester): ECHO (CR 702.30) — znacznik „nieopłacone echo"
     // stawiało dotąd WYŁĄCZNIE addObject (helpery testowe), a realna ścieżka
     // rzutu (stos → pole bitwy przez ten choke point) go pomijała: Bone
@@ -203,10 +224,14 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // tapniętego stwora dawała tapnięty permanent.
     // Batch 58/B7 (Gond Gate): statyk kontrolera „permanenty o podtypie X
     // wchodzą odkręcone" znosi „enters tapped" tej karty (efekt zastępczy
-    // wejścia, CR 614.1d) — jeden predykat dla wszystkich ścieżek ruchu.
-    tapped: toZone === 'battlefield' && Boolean(object.entersTapped) && !object.entersTappedCondition && !object.faceDown
-      && !entersUntappedOverride(state, object, { enteringId: newObjectId }),
+    // wejścia, CR 614.1d). O-1 (audyt PR #134, klasa L101): sama decyzja
+    // siedzi we wspólnym `entersTappedNow` (permanents.js), żeby żadna
+    // ścieżka wejścia — w tym ścieżki KOPII — nie mogła jej pominąć.
+    tapped: toZone === 'battlefield' && entersTappedNow(state, object, { enteringId: newObjectId }),
     counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
+    // D4b: znaczniki efektów (CR 613.7b/c/e) nie przechodzą na nowy obiekt
+    // (CR 400.7) — razem z grantami, licznikami i przypięciem.
+    keywordGrantTs: null, lostKeywordTs: null, counterTs: null, subtypeOverrideTs: null, attachedTs: null,
     goaded: false, goadedUntilTurn: null, hexproofUntilTurn: null, cantBeBlockedUntilTurn: null,
     // CR 400.7: flagi opisujące HISTORIĘ permanentu w tej turze też nie
     // przechodzą na nowy obiekt. Bez tego:
@@ -230,6 +255,11 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // które zmiana strefy już zdjęła).
     formerCounters: Object.freeze({ ...(object.counters ?? {}) }),
     formerZone: object.zone,
+    // W-9 (LKI, CR 603.10): rodzaj i typy z chwili OPUSZCZENIA strefy —
+    // obsadzony pojazd / ożywiony ląd umiera jako STWÓR, choć nowy obiekt
+    // w grobie wraca do cech karty (CR 400.7; triggery „dies” czytają LKI).
+    formerKind: object.kind ?? null,
+    formerTypes: Object.freeze([...(object.types ?? [])]),
     // LKI zdolności nadanych „do końca tury": trigger „when this creature
     // dies" nadany przez czar (Fake Your Own Death) działa z ostatniej znanej
     // informacji, choć sam grant nie przechodzi przez zmianę strefy.
@@ -238,10 +268,11 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // M262: stempel źródła wygnania — istnieje wyłącznie w exile (patrz
     // deriveExiledBy). Poza exile meta znika (CR 400.7).
     meta: toZone === 'exile' ? Object.freeze({ exiledBy: deriveExiledBy(state, object, opts) }) : null,
-    // CR 711.2: rodzaj twarzy przedniej przy DFCE (np. Incubator: tył to
+    // CR 712.8: rodzaj twarzy przedniej przy DFCE (np. Incubator: tył to
     // stwór, przód to artefakt) — reset twarzi (M257/K5) nadaje `kind`
     // przedniej strony, a nie stalej `object.kind` (tylnej).
-    kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : (dfcFaceReset?.kind ?? object.kind),
+    // W-9: po animacji „do końca tury” — rodzaj sprzed animacji (CR 400.7).
+    kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : (dfcFaceReset?.kind ?? untilEndOfTurnReset.kind ?? object.kind),
     baseKind: null,
   });
   state.objects.delete(object.id); state.objects.set(newObjectId, moved);
@@ -257,7 +288,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
   rememberLastKnownObject(state, object);
   // Załączniki wskazujące odchodzący obiekt rozłączają się od razu —
   // attachedTo nigdy nie wskazuje obiektu spoza pola bitwy (inwariant).
-  // Polityki zależą od rodziny: bestow znów jest stworem (CR 702.103b),
+  // Polityki zależą od rodziny: bestow znów jest stworem (CR 702.103f),
   // equipment zostaje odłączony (CR 704.5n), czysta aura idzie do grobu
   // (CR 704.5m) — detale w attachments.js.
   if (object.zone === 'battlefield') detachAttachmentsFromHost(state, objectId);
@@ -278,22 +309,39 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
       }
       state.linkedAnimations = remaining;
       for (const targetId of revertedTargets) {
-        const stillTargeted = remaining.some((entry) => entry.targetId === targetId);
-        if (stillTargeted) continue;
         const target = state.objects.get(targetId);
         if (!target || target.zone !== 'battlefield' || !target.originalBeforeAnimation) continue;
-        const original = target.originalBeforeAnimation;
-        const reverted = Object.freeze({
-          ...target,
-          kind: original.kind,
-          types: original.types,
-          subtypes: original.subtypes,
-          power: original.power,
-          toughness: original.toughness,
-          originalBeforeAnimation: null,
-          // A4: cofnięcie animacji gasi też znacznik crew (jak w cleanup).
-          crewed: false,
-        });
+        const effects = animationEffectsOf(target);
+        let reverted;
+        if (effects) {
+          // W-10/W-11 (Etap F/5, CR 611.2): kończy się TYLKO efekt tego
+          // źródła — crew („until end of turn”) i animacja innego źródła
+          // trwają, więc warstwę przeliczamy z pozostałych efektów.
+          const lasting = effects.filter((effect) => effect.linkedSourceId !== objectId);
+          if (lasting.length === effects.length) continue;
+          reverted = Object.freeze({
+            ...target,
+            ...animationFieldsAfter(target, lasting),
+            // A4: znacznik crew gaśnie wyłącznie z końcem animacji.
+            ...(lasting.length === 0 ? { crewed: false } : {}),
+          });
+        } else {
+          // Obiekt sprzed W-10 (warstwa bez listy efektów).
+          const stillTargeted = remaining.some((entry) => entry.targetId === targetId);
+          if (stillTargeted) continue;
+          const original = target.originalBeforeAnimation;
+          reverted = Object.freeze({
+            ...target,
+            kind: original.kind,
+            types: original.types,
+            subtypes: original.subtypes,
+            power: original.power,
+            toughness: original.toughness,
+            originalBeforeAnimation: null,
+            // A4: cofnięcie animacji gasi też znacznik crew (jak w cleanup).
+            crewed: false,
+          });
+        }
         state.objects.set(targetId, reverted);
         // M201 (znalezisko #1, CR 506.4c): permanent, który przestał być
         // stworem, jest USUWANY Z WALKI. Bez tego `state.combat` wskazywał

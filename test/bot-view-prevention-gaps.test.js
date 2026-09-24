@@ -9,7 +9,7 @@
 //   preventDamageThisTurn      (Ethersworn Shieldmage — „prevent all damage to
 //                               artifact creatures this turn")
 //   damageShields              (Withstand — „prevent the next 3 damage")
-//   regenerationShields        (CR 701.12 — „the next time it would be destroyed")
+//   regenerationShields        (CR 701.19 — „the next time it would be destroyed")
 //   cantBeRegeneratedThisTurn  (Rage of Purphoros — blokada regeneracji)
 //
 // Objawy potwierdzone repro PRZED naprawą:

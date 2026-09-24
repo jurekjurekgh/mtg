@@ -115,7 +115,7 @@ test('F1/3: klik w akcję = wykonanie (cloak wierzchniej karty biblioteki)', () 
   }
   const zakryta = zakryte(state);
   assert.equal(zakryta.length, 1, 'wykonanie: wierzchnia karta biblioteki leży zakryta na stole');
-  assert.equal(zakryta[0].faceDownCause, 'cloak', 'zakrycie pochodzi z mechaniki cloak (CR 701.56)');
+  assert.equal(zakryta[0].faceDownCause, 'cloak', 'zakrycie pochodzi z mechaniki cloak (CR 701.58)');
 });
 
 test('F1/4: panel — dwie ZWYKŁE akcje, żadnego modala („bez modala")', () => {

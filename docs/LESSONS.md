@@ -2378,3 +2378,113 @@ pełna droga zwrotu z grobu, etykieta, walidacja CR 608.2b, oba boty); mutacja
 bez gałęzi gracza w `legalAuraHosts` czerwieni G/1.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L163)
+
+## L164 (2026-09-24) — Lustro CR bywa o wydanie do tyłu: masowe przenumerowanie potwierdzaj w BIEŻĄCYM wydaniu, nie w pierwszym znalezionym źródle
+
+**Przypadek (audyt PR #134 → PR #135, F-3/fala 2):** numery DFC przepisano
+z `711.x` na `712.x` wg lustra `ancestral.vision` (712.4a = cechy twarzy,
+712.7 = rzut przodem, 712.9 = wejście przodem). W CR 2026-09-25 (Reality
+Fracture) meld został WCHŁONIĘTY przez sekcję 712 (712.4 = meld cards, 712.5 =
+siedem par), więc cechy twarzy siedzą w 712.8/712.8a–g, rzut w 712.11, wejście
+w 712.13. Przy okazji pierwsza fala „poprawiła” dwa cytaty, które były
+POPRAWNE w bieżącym wydaniu (712.9 = transform nie-DFC, 712.8e = MV tyłu).
+
+**Reguła:**
+1. Przed przenumerowaniem CZEGOKOLWIEK masowo: sprawdź DATĘ WYDANIA w nagłówku
+   źródła („Comprehensive Rules (September 25, 2026—Reality Fracture)”) i
+   porównaj z wydaniem, które repo już cytuje. ADR 0030 wymaga dosłownego
+   tekstu z BIEŻĄCEGO źródła, nie jakiegokolwiek.
+2. Sekcje CR rosną przez WCHŁANIANIE (712 zjadło meld, 713 to karty
+   zastępcze) — przesunięcie NIE jest jednolite (+1 nie działa), więc każdy
+   numer trzeba potwierdzić osobno, nie przesunąć arytmetycznie.
+3. Cytat, który „wygląda na stary”, może być poprawny: zanim go zmienisz,
+   sprawdź, co ten numer znaczy DZIŚ (712.9 i 712.8e były dobre). W pinie
+   zostaw wiersz „BEZ ZMIAN”, żeby następna sesja ich znowu nie „poprawiła”.
+
+**Strażnik:** `test/audyt-pr134-2026-09-24-cytaty-cr.test.js` C2 trzyma oba
+cytaty „BEZ ZMIAN” (712.9 w `game-state.js` i `m264`, 712.8e w `identity.js`
+i `m258`), C1 zakazuje martwych numerów (711.x, 712.4a/4d/5); para DFC w
+`cr-numery-mechanik-straznik.test.js` świeci na `711.\d` i `712.4` w kontekście
+kart dwustronnych.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L164)
+
+## L165 (2026-09-24) — Strażnik LINIOWY nie łapie rozjazdu, który siedzi o linię obok nazwy mechaniki
+
+**Przypadek (F-7):** para `fabricate` + zakazane `702.12[12]` istniała od
+audytu PR #116 i PRZECHODZIŁA, choć w trzech plikach fabricate był cytowany
+jako `702.122a` (= crew) — bo słowo „fabricate” stało linię WYŻEJ niż numer
+(`state.pendingFabricate = …` dwie linie niżej). To samo vigilance jako 702.21
+(= ward) i flashback jako 702.33a (= kicker): 9 miejsc, wszystkie niewidoczne
+dla par liniowych.
+
+**Reguła:**
+1. Detektor pary „nazwa ↔ zakazany numer” jest liniowy z definicji — w
+   komentarzach wieloliniowych (a takie są w tym repo) numer i nazwa rzadko
+   siedzą w jednej linii. Detektor klasy musi mieć OKNO (±8 linii wystarczyło:
+   0 fałszywych trafień po aliasach).
+2. Kierunek odwrócony jest silniejszy niż lista znanych błędów: nie „mechanika
+   X nie może cytować Y”, ale „KAŻDY cytat `702.<n>` musi mieć w oknie nazwę
+   mechaniki, którą `702.<n>` znaczy w bieżącym CR” + „numer spoza tabeli
+   świeci”. To łapie też rozjazdy, których nikt jeszcze nie zna.
+3. Tabela potrzebuje ALIASÓW (komentarze są po polsku: „chronionego” =
+   protection, „przydziały” = trample, „dar” = gift) i UDOKUMENTOWANYCH
+   wyjątków (lista sekcji, odniesienia negatywne „nie dotyczy”, reguły ogólne
+   typu 702.1) — każdy wyjątek z powodem, inaczej to wygaszanie detektora (L5).
+4. Pliki-strażniki muszą być wyłączone ze skanu innych strażników: opisują
+   historię rozjazdów i dowody RED, więc świecą na własną dokumentację.
+
+**Strażnik:** `test/cr-numery-702-tabela-straznik.test.js` — tabela 702.1–702.195
+(CR 2026-09-25) + aliasy + wyjątki + wbudowany dowód RED (syntetyczne linie
+z F-7 muszą świecić, poprawne nie). Mutacja M9 (vigilance 702.20 → 702.21)
+czerwieni i detektor okna, i parę liniową.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L165)
+
+## L166 (2026-09-24) — Efekt ciągły zapisany jako mutacja pola ma znacznik czasu i nie przeżywa zmiany strefy
+
+**Przypadek (D4b, W-1…W-9):** silnik nie miał znaczników CR 613.7, więc każda
+para kolidujących efektów rozstrzygała się STAŁĄ kolejnością wpisaną w kod:
+utrata keywordu zawsze wygrywała z nadaniem (613.9 mówi: późniejszy), `set P/T`
+zawsze z animacją, zakrycie zawsze dawało 2/2, a CDA Tarmogoyfa była pumpem 7c.
+Przy okazji: efekty „do końca tury” trzymane w polach obiektu przeżywały
+zmianę strefy (odbity obsadzony pojazd był w ręce stworem), bo cleanup
+przywraca tylko pole bitwy.
+
+**Reguła:**
+1. Stała kolejność „X zawsze wygrywa z Y” w kodzie warstw to ukryta reguła —
+   sprawdź ją z CR 613.3/613.7: w obrębie warstwy decyduje znacznik
+   (`src/engine/timestamps.js`), nie kolejność linii.
+2. Nowe pole efektu „do końca tury” wymaga TRZECH miejsc: ustawienie (+ znacznik),
+   cleanup i reset w `moveObjectDirectly` (CR 400.7), a jeśli triggery patrzą
+   wstecz — LKI (`formerKind`/`formerTypes`, CR 603.10).
+3. „Can X as though it didn't have Y” zmienia regułę, nie zdejmuje zdolności —
+   modelowanie jako utraty psuje widok i interakcje z późniejszym nadaniem.
+
+**Strażnik:** `test/audyt-d4b-2026-09-24-warstwa-{7,6,4-i-nowy-obiekt}.test.js`
+(29 testów, mutacje M15–M20).
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L166)
+
+## L167 (2026-09-24) — Scalona warstwa stanu gubi czas trwania pojedynczych efektów
+
+**Przypadek (F/5, W-10/W-11):** animacje (Skilled Animator „dopóki źródło
+na polu bitwy”, crew „do końca tury”) zapisywały się w JEDNEJ warstwie pól
+obiektu. Koniec jednego efektu kasował całą warstwę albo żadnej: po crew
+i śmierci Animatora pojazd od razu przestawał być stworem, a cleanup
+zdejmował animację, która miała trwać. Przy naprawie druga łatka
+`replaceObject` na nieaktualnym obiekcie cofnęła pierwszą.
+
+**Reguła:**
+1. Efekt ciągły z własnym czasem trwania (CR 611.2) to osobny WPIS z tym
+   czasem, a stan warstwy jest pochodną wpisów, które jeszcze trwają
+   (CR 613.7) — nie mutacją pól, którą ktoś „cofa”.
+2. Koniec efektu = usunięcie wpisu + przeliczenie warstwy z reszty; sprawdź
+   test „dwa efekty, kończy się pierwszy / drugi / oba”.
+3. `replaceObject(state, obj, patch)` rozkłada przekazany obiekt — przed
+   kolejną łatką czytaj świeży z `state.objects.get`.
+
+**Strażnik:** `test/etap-f-2026-09-24-animacje-czas-trwania.test.js`
+(4 testy, mutacja M28: 3/4 czerwone).
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L167)

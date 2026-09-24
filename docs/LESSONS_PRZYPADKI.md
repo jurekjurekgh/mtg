@@ -2489,3 +2489,116 @@ zostawienie jej w grobie (`aura_returned_without_host`).
 (`attachAuraToPlayer`: `kind: 'enchantment'` + `enchantedPlayerId`, jak
 w `spells.js`), a warstwy widza (etykieta „Ty"/„Nieprzyjaciel", wycena bota,
 projekcja pokrycia, narracja) poznały nową klasę tego samego dnia.
+
+## L164 (2026-09-24) — przypadek
+
+**Sytuacja.** Audyt PR #134 znalazł przestarzałe numery CR w komentarzach
+(F-3): surge jako 702.111, licznik finality jako 122.1e, cloak jako 701.56,
+DFC jako 711.x. Naprawa = przenumerowanie 107 wystąpień. Dla DFC źródłem było
+lustro `ancestral.vision/additional-rules/double-faced-cards.html`, które
+pokazywało sekcję 712 z podziałem 712.4a (cechy twarzy) / 712.7 (rzut przodem)
+/ 712.9 (wejście przodem) / 712.10 (wejście poza stosem).
+
+**Co poszło nie tak.** To lustro opisuje wydanie CR starsze o co najmniej jedno.
+Pobranie dosłownego spisu sekcji 712 z `mtg.wiki/page/Double-faced_card`
+(nagłówek: „Comprehensive Rules (September 25, 2026—Reality Fracture)”)
+pokazało inną strukturę: meld przestał być osobną sekcją 712 i został
+wchłonięty (712.4 = meld cards, 712.5 = siedem par meld), przez co cechy twarzy
+przesunęły się na 712.8/712.8a–g, rzut na 712.11, rozstrzygnięcie na 712.13,
+wejście z innej strefy na 712.14, a „transform nie tworzy nowego obiektu” na
+712.18. Karty zastępcze dostały własną sekcję 713. Pierwsza fala przepisała
+więc ~30 cytatów na numery, które w bieżącym wydaniu znaczą COŚ INNEGO, i
+dodatkowo „poprawiła” dwa cytaty poprawne: `712.9` (transform kopii
+jednostronnej = nothing happens) → `712.5` (siedem par meld) oraz `712.8e`
+(MV permanentu z tyłem = koszt przodu) → `712.4d` (podreguła meld).
+
+**Jak wykryte.** Weryfikacja drugiego źródła przed domknięciem znalezionej
+klasy (ADR 0030: dosłowny tekst, nie parafraza). Rozbieżność między dwoma
+„wiarygodnymi” lustrami to sygnał, że jedno jest z epoki — rozstrzyga data
+wydania w nagłówku, nie kolejność w wynikach wyszukiwania.
+
+**Naprawa.** Cofnięcie dwóch błędnych korekt, przenumerowanie DFC na
+712.6/712.7/712.8/712.8a/712.8e/712.9/712.11/712.13/712.18, tabela mapowania
+w pinie z wierszami „BEZ ZMIAN” dla 712.9 i 712.8e, para DFC w strażniku
+mechanik (zakaz `711.\d` i `712.4` w kontekście kart dwustronnych) oraz
+komentarz przy `transformedCharacteristics`, który zamiast powoływać 400.7 +
+711.2 jako rzekomą regułę dla resetu cech, cytuje 712.18 i nazywa reset
+ZNANYM ODSTĘPSTWEM (obserwacja O-6 audytu).
+
+## L165 (2026-09-24) — przypadek
+
+**Sytuacja.** Po fali 1 (72 zamiany parami „mechanika + numer na linii”) i
+fali 2 (31 miejsc poprawianych per-site, bo polska odmiana i cytaty w
+sąsiedniej linii uciekały dopasowaniu po granicy słowa) powstał detektor
+tabelaryczny: pełny spis `702. Keyword Abilities` z CR 2026-09-25
+(702.1–702.195) i reguła „każdy cytat `702.<n>` musi mieć w oknie ±8 linii
+nazwę mechaniki, którą `702.<n>` znaczy”.
+
+**Co wykrył od razu.** Dziewięć miejsc, których NIE łapały istniejące pary
+liniowe, w tym trzy pary już opisane w strażniku: fabricate cytowany jako
+`702.122a` (= crew) w `effects.js`, `game-state.js` i teście nazw tokenów
+(słowo „fabricate” stało linię wyżej niż numer, a `state.pendingFabricate`
+dwie linie niżej), vigilance jako `702.21` (= ward) w dwóch miejscach bota i
+w teście M221/D, flashback jako `702.33a` (= kicker) w `render.js` ×2 i w
+teście uwag z gry. Do tego infect jako `702.89b` (= umbra armor), plot jako
+`702.168a` (= disguise), endure jako `702.174` (= gift; endure to keyword
+ACTION 701.63a/b), equipment jako `702.16` (= protection) i outlast jako
+`702.100` (= evolve).
+
+**Wniosek ogólny.** Lista „znanych błędnych par” rośnie wolniej niż klasa:
+para jest liniowa, a komentarze w tym repo są wieloliniowe i po polsku.
+Detektor odwrócony (od numeru do nazwy, z oknem) nie wymaga znajomości
+błędu — wymaga tylko BIEŻĄCEJ tabeli. Żeby nie świecił fałszywie, potrzebował
+aliasów (polskie nazwy i odmiany: „chronionego”, „przydziały”, „dar”,
+„załoga”, „obrót”) oraz trzech udokumentowanych wyjątków (lista sekcji CR
+„w pełnym wymiarze”, odniesienia negatywne „nie dotyczy”, nagłówkowe listy
+źródeł w testach audytowych). Reguła ogólna 702.1 jest poza tabelą świadomie.
+
+**Pułapka przy wdrażaniu.** Nowy plik-strażnik opisuje historię rozjazdów
+(cytuje `702.122a` przy słowie „fabricate”), więc ISTNIEJĄCY strażnik par
+zaczął świecić na jego dokumentację; to samo pin audytu (wiersze mapowania
+„Surge | 702.111 | 702.117”). Każdy strażnik skanujący `test/` musi mieć
+listę wyłączeń obejmującą WSZYSTKIE pliki-strażniki, nie tylko siebie.
+
+**Dowód działania.** Wbudowany test RED karmi `znajdzRozjazdy()` syntetycznymi
+liniami z F-7 (vigilance+702.21, fabricate+702.122a w trzech liniach, numer
+spoza tabeli) i wymaga, żeby świeciły, oraz liniami poprawnymi (702.20,
+702.21 przy ward, 702.123a przy fabricate) i wymaga zera trafień. Mutacja na
+żywym repo (M9: vigilance 702.20 → 702.21) czerwieni jednocześnie detektor
+okna i parę liniową — oba strażniki są niezależne, więc jeden nie maskuje
+drugiego.
+
+## L166 (2026-09-24) — przypadek
+
+Właściciel zapytał, czym jest „D4b” z planu, i postawił warunek: jeśli to
+uproszczenie niezgodne z CR — naprawić. Sonda `.probe-613.mjs` (poza repo) na
+prawdziwych kartach katalogu dała osiem odchyłek W-1…W-8, każdą z wynikiem
+liczbowym przed naprawą (Tarmogoyf 6/7 zamiast 4/4, zakryty 2/2 zamiast 4/4,
+Grounded blokujące późniejsze „gains flying”, Skilled Animator 6/6 zamiast 5/5
+po crew, Warrior's Sword zostawiający typ Warrior po „becomes a Human”,
+Krotiq tracący defendera). Dziewiąta (W-9) wyszła przy dodawaniu flagi W-8:
+pytanie „gdzie jeszcze trzeba wyzerować nowe pole?” pokazało, że
+`moveObjectDirectly` nie zeruje ŻADNEGO z pól „do końca tury” zapisanych
+mutacją — ani animacji, ani nadpisania podtypów. Naprawa resetu od razu
+zepsułaby triggery śmierci obsadzonego pojazdu (karta w grobie przestała być
+stworem), więc w tym samym commicie weszło LKI rodzaju (`diedAs`) z testem
+obu stron (obsadzony odpala, nieobsadzony nie). Znaczniki trafiły do jednego
+modułu i do choke pointów (wejście na pole, przypięcie, licznik, nadanie,
+obrót, transformacja); przypięcie do tego samego obiektu nie daje znacznika
+(701.3b) — pokazał to istniejący probe no-op (U9), nie nowy test.
+
+## L167 (2026-09-24) — przypadek
+
+Po D4b (W-6: crew nie nadpisuje P/T animacji) właściciel zażądał usunięcia
+KAŻDEGO uproszczenia wpływającego na grę. Sonda na prawdziwych kartach
+(Skilled Animator + Irontread Crusher) pokazała dwie odchyłki: W-10 — po crew
+i śmierci Animatora Crusher tracił typ Creature od razu, choć crew trwa do
+końca tury; W-11 — „set P/T do końca tury” nałożone na animację Animatora
+zdejmowało w cleanupie także animację (5/5 znikało razem z 8/8). Przyczyna
+wspólna: jedna scalona warstwa pól obiektu nie pamięta, który efekt co
+wniósł. Naprawa: lista `animationEffects` (każdy wpis ze swoim czasem
+trwania i znacznikiem), warstwa liczona z wpisów, obiekty bez listy idą
+ścieżką dotychczasową. W trakcie pierwsza wersja cofała się sama — druga
+łatka `replaceObject` dostawała obiekt sprzed pierwszej i rozkładała go
+w całości. D3 potwierdził ścieżkę w partiach (crew + Animator na Barge
+i Crusherze bez zgłoszeń).

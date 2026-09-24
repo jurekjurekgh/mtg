@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 /**
- * M272 (błąd #20, CR 122.1b + 701.17a) — poświęcenie jest śmiercią, więc
+ * M272 (błąd #20, CR 122.1h + 700.4 + 701.21a) — poświęcenie jest śmiercią, więc
  * licznik finality przekierowuje permanent do wygnania. Wtedy „dies" się NIE
  * wydarzyło i zdolności śmierci nie odpalają.
  *
@@ -40,7 +40,7 @@ test('każdy emiter permanent_sacrificed przekazuje toZone (CR 122.1b)', () => {
       assert.ok(
         tekst.includes('toZone'),
         `${plik}:${numer} — zdarzenie poświęcenia bez toZone: triggery śmierci `
-        + 'nie rozpoznają wygnania przez licznik finality (CR 122.1b)',
+        + 'nie rozpoznają wygnania przez licznik finality (CR 122.1h)',
       );
     }
   }

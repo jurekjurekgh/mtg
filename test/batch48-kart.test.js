@@ -446,7 +446,7 @@ test('B48/D4: Stampeding Elk Herd — formidable nadaje trample całej drużynie
   const trig = (card.abilities ?? []).find((a) => a.trigger?.event === 'attacks');
   assert.ok(trig, 'trigger ataku');
   assert.equal(trig.trigger.condition?.minTotalPowerYouControl, 8,
-    'formidable = łączna moc twoich stworów ≥ 8 (CR 702.103)');
+    'formidable = łączna moc twoich stworów ≥ 8 (ability word, CR 207.2c)');
   const eff = (Array.isArray(trig.effect) ? trig.effect : [trig.effect])[0];
   assert.equal(eff.type, 'your_creatures_gain_keywords_until_end_of_turn');
   assert.deepEqual(eff.keywords, ['trample']);

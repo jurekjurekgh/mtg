@@ -49,7 +49,7 @@ test('M202/N3 (strażnik katalogu): żadna karta z kosztem dodatkowym NA OBIEKCI
     const objectCost = card.additionalCost ?? null;
     if (!objectCost) continue;
     // Ścieżki „bez płacenia kosztu many” dla CZARÓW: suspend (CR 702.62),
-    // rebound (CR 702.97), madness (CR 702.71) i grave free cast. Każda z nich
+    // rebound (CR 702.88), madness (CR 702.35) i grave free cast. Każda z nich
     // płaci koszt dodatkowy z `obj.spell.additionalCost` — koszt na obiekcie
     // byłby dla nich niewidoczny.
     if (card.suspend) problems.push(`${card.id}: suspend + additionalCost na obiekcie`);

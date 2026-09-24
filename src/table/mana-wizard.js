@@ -205,8 +205,8 @@ const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell', 'cast_cleave'
 
 /**
  * M327 (audyt PR #102, F7): ODSŁONIĘCIE zakrycia. To jedyne nie-rzutowe
- * `spendMana` w silniku, które płaci PIPY KOLORU (CR 701.56b: cloak płaci
- * koszt many karty; 701.55c: manifest tak samo) — a mimo to kreator many ich
+ * `spendMana` w silniku, które płaci PIPY KOLORU (CR 701.58b: cloak płaci
+ * koszt many karty; 701.40b: manifest tak samo) — a mimo to kreator many ich
  * nie znał, więc źródła tapował silnik w swojej kolejności. Reguła właściciela
  * z M168/M195 jest ogólna: „zawsze kiedy płatność many jest niejednoznaczna
  * (więcej niż 1 kombinacja rodzajów źródeł) powinien być wizard".
@@ -223,11 +223,11 @@ export const WIZARD_PAYMENT_COMMAND_TYPES = new Set([
 ]);
 
 /**
- * Wymagania kolorów z piper kolorowych karty bazowej (colored + hybrid +
+ * Wymagania kolorów z pipów kolorowych karty bazowej (colored + hybrid +
  * phyrexian po odjęciu symboli opłaconych życiem). Spójne z hasColorForObject
- * w engine — cleave/escape/bestow NIE zmieniają wymagań kolorów: alternatywny
- * koszt to liczba całkowita, a kolory zawsze liczy się z bazowego
- * MANA_COSTS[cardId] (uproszczenie engine, patrz castCleave/castEscape).
+ * w engine. Dotyczy WYŁĄCZNIE rzutów za koszt wydrukowany (także z kickerem,
+ * X, manifest/cloak) — koszty alternatywne (cleave, escape, bestow, surge,
+ * przygoda) niosą własne pipy (CR 118.9) i czytają je z deskryptora.
  */
 function baseColorRequirements(parsed, lifePaid = 0) {
   return [
@@ -264,9 +264,9 @@ function buildDescriptor(object, totalNeeded, requirements, costStr, effectiveGe
  * Sculptor, Metalcraft — z pełnego stanu, bo widok nie niesie zdolności; CR
  * 601.2f). Dotyczy tylko zwykłego rzutu (nie kosztów alternatywnych).
  * `opts.alternativeCost`: koszt bestow/surge po obniżkach z silnika.
- * `opts.escapeCost`: całkowity koszt escape — widok GROBÓW nie niesie
- * spell.escape (obiekt grobu ma tylko id/cardId/controllerId), więc main.js
- * czyta go z session.state.
+ * `opts.escapeCost` / `opts.escapeColors`: całkowity koszt escape po obniżkach
+ * i jego pipy — widok GROBÓW nie niesie spell.escape (obiekt grobu ma tylko
+ * id/cardId/controllerId), więc main.js czyta je z session.state.
  */
 export function paymentDescriptorOf(cmd, view, opts = {}) {
   if (!cmd) return null;
@@ -350,19 +350,29 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
   if (!parsed) return null;
 
   // --- Tryby kosztu alternatywnego (liczba całkowita, bez obniżek) ---
+  // Etap F (CR 118.9): koszt alternatywny ZASTĘPUJE koszt many — wymagania
+  // kolorów to pipy kosztu cleave/escape, nie wydruku karty (jedno źródło
+  // z legalCleaveCasts/castEscape w silniku — L48). Kwota po obniżkach
+  // przychodzi z pełnego stanu (`opts.alternativeCost` / `opts.escapeCost`).
   if (cmd.type === 'cast_cleave') {
-    const totalNeeded = object.spell?.cleave?.manaCost;
-    if (!Number.isInteger(totalNeeded)) return null;
-    const requirements = baseColorRequirements(parsed);
+    const cleave = object.spell?.cleave;
+    if (!Number.isInteger(cleave?.manaCost)) return null;
+    const requirements = (cleave.colors ?? []).map((color) => [color]);
+    const totalNeeded = Number.isInteger(opts.alternativeCost)
+      ? Math.max(requirements.length, opts.alternativeCost) : cleave.manaCost;
     return buildDescriptor(object, totalNeeded, requirements, `Cleave (${totalNeeded})`, totalNeeded - requirements.length);
   }
   if (cmd.type === 'cast_escape') {
     const totalNeeded = Number.isInteger(opts.escapeCost) ? opts.escapeCost : null;
     if (totalNeeded == null) return null;
-    const requirements = baseColorRequirements(parsed);
+    // Bez pipów z pełnego stanu kreator się zamyka (auto-tap) — zgadywanie
+    // kolorów z wydruku to dokładnie błąd, który tu usuwamy.
+    if (!Array.isArray(opts.escapeColors)) return null;
+    const requirements = opts.escapeColors.map((color) => [color]);
+    if (requirements.length > totalNeeded) return null;
     return buildDescriptor(object, totalNeeded, requirements, `Escape (${totalNeeded})`, totalNeeded - requirements.length);
   }
-  // Bestow istnieje tylko na ścieżce permanentów; surge (CR 702.111) także na
+  // Bestow istnieje tylko na ścieżce permanentów; surge (CR 702.117) także na
   // instantach/sorcerych — oba kształty rzutu muszą mieć własny koszt
   // w deskryptorze (Batch 58/B1: Boulder Salvo {1}{R}, nie {4}{R}).
   if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell') && (cmd.surgeCast || cmd.bestow)) {

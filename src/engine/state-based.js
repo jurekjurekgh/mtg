@@ -18,7 +18,7 @@ import { startEnginesFor } from './players.js';
 export const POISON_LOSS_LIMIT = 10;
 
 /**
- * Regeneracja (CR 701.12): tarcza z efektu „regenerate" zastępuje następne
+ * Regeneracja (CR 701.19): tarcza z efektu „regenerate" zastępuje następne
  * ZNISZCZENIE permanentu w tej turze — zamiast śmierci: odkręcenie,
  * zdjęcie wszystkich obrażeń, usunięcie z walki i zużycie tarczy. Chroni
  * przed śmiertelnymi obrażeniami i efektami destroy; NIE chroni przed
@@ -29,7 +29,7 @@ export function tryRegenerate(state, object, collected = null) {
   return regeneratePermanent(state, object, collected);
 }
 
-/** Dodaje tarczę regeneracji (koszt zdolności „regenerate" — CR 701.12). */
+/** Dodaje tarczę regeneracji (koszt zdolności „regenerate" — CR 701.19). */
 export function addRegenerationShield(state, objectId) {
   state.regenerationShields = [...(state.regenerationShields ?? []), objectId];
   const object = state.objects.get(objectId);
@@ -58,7 +58,7 @@ export function stateBasedActionsOpen(state) {
  * Kolejność w jednym przebiegu odzwierciedla zależności (CR 704.3): najpierw
  * śmierći stworów (gospodarz może odejść z pola bitwy), potem rozłączenie
  * załączników, które straciły legalnego gospodarza — bestow znów jest stworem
- * i zostaje (CR 702.103b), equipment zostaje odłączony (CR 704.5n), a czysta
+ * i zostaje (CR 702.103f), equipment zostaje odłączony (CR 704.5n), a czysta
  * aura trafia do grobu (CR 704.5m).
  */
 /**
@@ -78,7 +78,7 @@ export function stateBasedActionsOpen(state) {
  * Osobna funkcja (nie w `runStateBasedActions`): CR 704.3 każe powtórzyć akcje
  * stanowe DOPIERO po włożeniu zdolności triggerowanych na stos, a ten engine
  * robi przebieg SBA PRZED skanem triggerów. Gdyby reguła siedziała w zwykłym
- * przebiegu, Saga dobita proliferatem (CR 701.27 → 714.2b) byłaby poświęcona
+ * przebiegu, Saga dobita proliferatem (CR 701.34 → 714.2b) byłaby poświęcona
  * zanim jej rozdział trafiłby na stos. Wołana z `execute` po `processTriggers`
  * (jak cleanup tokenów z CR 704.5d).
  *
@@ -236,11 +236,11 @@ export function runStateBasedActions(state) {
     // an effect”. Lethal/deathtouch SBA NIE zużywa licznika i nie daje
     // wyboru shield vs regenerate. Prewencja shield działa przy obrażeniach,
     // zanim trafią tu; premaked damage (np. spadek toughness) zabija normalnie.
-    // Regeneracja (CR 701.12): zniszczenie z obrażeń zastępujemy odkręceniem,
+    // Regeneracja (CR 701.19): zniszczenie z obrażeń zastępujemy odkręceniem,
     // zdjęciem obrażeń i usunięciem z walki — stwór NIE umiera (brak dies).
     // Wytrzymałość <= 0 NIE jest zniszczeniem — regeneracja nie chroni.
 
-    // Finality counter: zamiast do grobu, stwór idzie do exile (CR 122.1b
+    // Finality counter: zamiast do grobu, stwór idzie do exile (CR 122.1h
     // w minimalnym wymiarze — dotyczy śmierci z obrażeń). Wygnanie NIE jest
     // śmiercią — nie wchodzi do simultaneousIds.
     // M177/A: finality LUB znacznik Agate Assault (deathZoneFor — jedno źródło).

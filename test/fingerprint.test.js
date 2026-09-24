@@ -95,7 +95,7 @@ test('M264/2.3: fingerprint odnotowuje frontFaceId (dwustronny token — MV 0 / 
   // ADR 0005: stan obejmuje wszystko, co wpływa na przyszły przebieg.
   // frontFaceId decyduje o (a) MV kopii TYLNEJ twarzy = 0 (CR 202.3b przez
   // copyManaValueOf) i (b) resetcie twarzy przy opuszczeniu pola bitwy
-  // (CR 711.4a / dfcFaceReset). Dwa stany różniące się tylko tym polem
+  // (CR 712.8a / dfcFaceReset). Dwa stany różniące się tylko tym polem
   // zachowują się inaczej, więc muszą mieć różne odciski — inaczej sonda
   // „oferta bez skutku" i weryfikacja replayów zrównałyby je.
   const make = (withFrontFaceId) => {

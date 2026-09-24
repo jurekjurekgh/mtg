@@ -9,6 +9,7 @@ import { castSpell } from '../src/engine/spells.js';
 import { legalActivatedAbilities, activateAbility } from '../src/engine/abilities.js';
 import { effectivePower, effectiveKeywords } from '../src/engine/permanents.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
+import { resolveUntilDecision, optionalTriggerOpen } from './helpers/deferred-trigger.js';
 
 // =============================================================================
 // Batch 24 — 10 realnych kart (kolejka właściciela). Testy behawioralne
@@ -166,7 +167,7 @@ test('Spinewoods Paladin: ETB gain 3 life + plot → cast z exile bez many', () 
   assert.ok(rPlot.ok, 'plot: ' + (rPlot.events?.[0]?.reason ?? ''));
   const exiled = byCard(state, 'spinewoods-paladin', 'exile');
   assert.ok(exiled && exiled.plotted, 'karta w exile z plotem');
-  // CR 702.136: plot wymaga "later turn" — w teście wymuszamy to przez
+  // CR 702.170: plot wymaga "later turn" — w teście wymuszamy to przez
   // ustawienie plottedAtTurn na 0 (symulacja "karta zaplotowana w turze 0").
   const exiledObj = state.objects.get(exiled.id);
   if (exiledObj) state.objects.set(exiled.id, Object.freeze({ ...exiledObj, plottedAtTurn: 0 }));
@@ -325,10 +326,13 @@ test('Mystic Sanctuary: enters tapped bez 3+ Islands; untapped z 3+; ETB put ins
   assert.ok(r2.ok, 'land drop: ' + (r2.events?.[0]?.reason ?? ''));
   const sanc2 = byCard(state2, 'mystic-sanctuary', 'battlefield');
   assert.equal(sanc2.tapped, false, 'wchodzi untapped przy 3+ wyspach');
-  assert.ok(state2.pendingTriggerTargets.length >= 1, 'ETB trigger z requiresTarget (may)');
-  const rr = resolveTriggerTarget(state2, 'curate-grave');
-  assert.ok(rr && rr.ok, 'cel: instant z grobu');
-  passRounds(state2, 2);
+  // Etap F (CR 603.3d + 603.5): cel obowiązkowy — jedyny kandydat
+  // (Curate w grobie) wybrany automatycznie (M242); „you may" przy
+  // rozstrzyganiu.
+  const onStack = state2.zones.stack.map((id) => state2.objects.get(id)).find((o) => o?.kind === 'trigger');
+  assert.deepEqual(onStack?.triggerEntry?.targets, ['curate-grave'], 'ETB trigger na stosie z celem');
+  assert.ok(resolveUntilDecision(state2, optionalTriggerOpen), '„you may" przy rozstrzyganiu');
+  assert.ok(execute(state2, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true }).ok);
   const top = state2.zones.library[0];
   assert.equal(state2.objects.get(top)?.cardId, 'curate', 'instant na wierzchu biblioteki');
 });

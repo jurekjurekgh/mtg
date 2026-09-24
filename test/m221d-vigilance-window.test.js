@@ -1,7 +1,7 @@
 // M221/D + B (zgłoszenie właściciela z realnej gry, Bladed Sentinel „{W}:
 // vigilance do końca tury"): bot wykupywał vigilance w MAIN1, po czym NIE
 // ATAKOW — zmarnowana mana {W}. Vigilance = „nie tapuje się przy ataku"
-// (CR 702.21) daje korzyść TYLKO jeśli stwór rzeczywiście atakuje w tej
+// (CR 702.20) daje korzyść TYLKO jeśli stwór rzeczywiście atakuje w tej
 // turze (wtedy zostaje odkręcony do bloku). Kupowanie w main1/beginning_of_combat
 // (przed decyzją o ataku) to marnowanie many. Reguła po STANIE: kupuj vigilance
 // dopiero w kroku deklaracji atakujących (gdy decyzja o ataku zapada razem z

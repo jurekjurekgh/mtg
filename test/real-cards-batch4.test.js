@@ -429,7 +429,7 @@ test('Swampcycling: bez many odrzucone (nielegalna aktywacja)', () => {
   assert.match(result.events[0].reason, /illegal_ability/);
 });
 
-test('Swampcycling: na polu bitwy zdolność jest martwa — widok jej nie oferuje (CR 702.28a)', () => {
+test('Swampcycling: na polu bitwy zdolność jest martwa — widok jej nie oferuje (CR 702.29a)', () => {
   // Regresja: bez pominięcia cyclingu w skanowaniu zdolności na polu bitwy
   // widok oferował komendę, którą execute słusznie odrzucał — bot wybierał
   // „legalną" komendę i partia padała na command_rejected.

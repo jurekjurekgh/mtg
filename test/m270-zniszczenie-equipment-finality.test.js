@@ -10,7 +10,7 @@ import { addCounter } from '../src/engine/counters.js';
 /**
  * M270 błąd #7 — `destroy_equipment_attached` niszczył Equipment własną
  * ścieżką: na sztywno do CMENTARZA i bez `toZone` w zdarzeniu. Licznik
- * finality (CR 122.1e, „If it would die, exile it instead") był ignorowany,
+ * finality (CR 122.1h, „If it would die, exile it instead") był ignorowany,
  * więc Equipment zwrócone przez Zoraline („nonland permanent card with mana
  * value 3 or less") dawało się odzyskać drugi raz. Brak `toZone` dodatkowo
  * mylił triggery śmierci (triggers.js pomija „dies", gdy toZone === 'exile').

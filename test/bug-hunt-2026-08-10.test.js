@@ -17,7 +17,7 @@ import { processTriggers } from '../src/engine/triggers.js';
 //     MARTWE. Trestle Troll mógł atakować (!), Goblin Deathraiders nie
 //     przebijali, Deadly Recluse bez deathtouch, Benevolent Blessing bez flash.
 //  2) Channel (Greater Tanuki): deterministycznie pierwszy basic land —
-//     CR 701.19b: szukający WYBIERA kartę; ten sam błąd co stary Springbloom.
+//     CR 701.23b: szukający WYBIERA kartę; ten sam błąd co stary Springbloom.
 // =============================================================================
 
 const REGISTRY = createCardRegistry();
@@ -187,7 +187,7 @@ const KNOWN_KEYWORDS = new Set([
   'level_up', 'exalted', 'station', 'devoid', 'toxic',
   // Batch 46: echo (CR 702.30) i fabricate (CR 702.123).
   'echo', 'fabricate',
-  // Batch 47: outlast (CR 702.100) — {koszt},{T}: licznik +1/+1, tylko jak sorcery.
+  // Batch 47: outlast (CR 702.107) — {koszt},{T}: licznik +1/+1, tylko jak sorcery.
   'outlast',
 ]);
 
@@ -203,7 +203,7 @@ test('Sherlock strażnik: każdy keyword w registry to mały snake_case z listy 
 });
 
 // ---------------------------------------------------------------------------
-// Błąd 2: Channel (Greater Tanuki) — wybór karty należy do gracza (CR 701.19b)
+// Błąd 2: Channel (Greater Tanuki) — wybór karty należy do gracza (CR 701.23b)
 // ---------------------------------------------------------------------------
 test('Sherlock 2: channel — gracz WYBIERA basic land (pendingSearchChoice), nie deterministycznie pierwszy', () => {
   const state = mainPhase(game());
@@ -220,7 +220,7 @@ test('Sherlock 2: channel — gracz WYBIERA basic land (pendingSearchChoice), ni
   assert.ok(execute(state, { type: 'pass_priority', playerId: holder }).ok, 'pass 1');
   const holder2 = state.turn.priorityPlayerId;
   assert.ok(execute(state, { type: 'pass_priority', playerId: holder2 }).ok, 'pass 2');
-  assert.ok(state.pendingSearchChoice, 'blokująca decyzja wyboru karty (CR 701.19b) — jak przy cycling/Temat 6');
+  assert.ok(state.pendingSearchChoice, 'blokująca decyzja wyboru karty (CR 701.23b) — jak przy cycling/Temat 6');
   assert.equal(state.pendingSearchChoice.playerId, 'p1');
   // Gracz wybiera SWAMP (nie deterministyczny island z wierzchu).
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib-swamp' });

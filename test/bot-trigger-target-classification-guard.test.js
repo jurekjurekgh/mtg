@@ -46,9 +46,6 @@ const REVIEWED_NEUTRAL = new Map([
   ['reanimate_under_your_control', 'puppeteer-clique: karty w grobie przeciwnika'],
   // zmiana celu czaru na stosie — unikalny cel (czar), strona bez znaczenia.
   ['redirect_spell_target', 'willbender: cel = czar na stosie'],
-  // zdjęcie licznika z artefaktu/enchantmentu gracza, który wziął obrażenia —
-  // kandydaci ograniczeni deskryptorem (controlledBy: damaged_player).
-  ['remove_counter', 'kappa-tech-wrecker: spec controlledBy:damaged_player'],
   // permanent z WŁASNEGO grobu na pole bitwy (spec controlledBy: controller).
   ['return_permanent_from_graveyard', 'zoraline: własna karta z grobu (maxManaValue)'],
   // „base power and toughness 4/4 do końca tury" na WŁASNYM stworze

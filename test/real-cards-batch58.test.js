@@ -19,6 +19,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { getSourceForObject } from '../src/engine/mana-sources.js';
 import { paymentDescriptorOf } from '../src/table/mana-wizard.js';
+import { resolveUntilDecision, optionalTriggerOpen } from './helpers/deferred-trigger.js';
 import { commandLabel } from '../src/table/render.js';
 
 const registry = createCardRegistry();
@@ -189,6 +190,9 @@ test('B58/B2: Grazing Gladehart — land z ręki daje decyzję, „tak" = 2 życ
   put(state, 'drop', 'basic-forest', 'p1');
   const before = player(state, 'p1').life;
   run(state, commands(state).find((c) => c.type === 'play_land' && c.objectId === 'drop'));
+  // Etap F (CR 603.5): landfall idzie na stos; „you may" przy rozstrzyganiu.
+  assert.equal(state.pendingOptionalTrigger, null, 'brak pytania w chwili odpalenia');
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen));
   const fire = commands(state).find((c) => c.type === 'resolve_optional_trigger_choice' && c.fire === true);
   assert.ok(fire, 'landfall odpala decyzję „możesz" (ruling: dowolny powód wejścia)');
   run(state, fire);
@@ -202,11 +206,14 @@ test('B58/B2: Grazing Gladehart — „nie" nic nie robi, a land przeciwnika nie
   put(state, 'drop', 'basic-forest', 'p1');
   const before = player(state, 'p1').life;
   run(state, commands(state).find((c) => c.type === 'play_land' && c.objectId === 'drop'));
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen), 'Etap F (CR 603.5): decyzja przy rozstrzyganiu');
   // F1 (uwaga z gry 2026-09-23c): odmowa decyzji „you may" to zwykły pass
   // (przycisk „Dalej (Pass)"), a nie osobny wariant resolve_optional_trigger_choice.
   const skip = commands(state).find((c) => c.type === 'pass_priority');
   assert.ok(skip, 'odmowa też jest ofertą (pass)');
   run(state, skip);
+  assert.equal(state.pendingOptionalTrigger, null, 'pass rozstrzygnął decyzję');
+  assert.equal(state.zones.stack.length, 0, 'zdolność opuściła stos bez skutku');
   assert.equal(player(state, 'p1').life, before, '„nie" nie daje życia');
 
   // Tura przeciwnika: „land YOU control" — cudzy land nie odpala.
@@ -219,6 +226,8 @@ test('B58/B2: Grazing Gladehart — „nie" nic nie robi, a land przeciwnika nie
   run(enemy, commands(enemy).find((c) => c.type === 'play_land' && c.objectId === 'enemy-land'));
   assert.ok(!commands(enemy).some((c) => c.type === 'resolve_optional_trigger_choice'),
     'land przeciwnika nie odpala landfallu („a land YOU control enters")');
+  assert.ok(!enemy.zones.stack.some((id) => enemy.objects.get(id)?.kind === 'trigger'),
+    'Etap F: brak zdolności na stosie (trigger nie odpalił)');
   assert.equal(player(enemy, 'p1').life, enemyBefore, 'bez zmiany życia');
 });
 
@@ -241,6 +250,7 @@ test('B58/B2: Grazing Gladehart — land z EFEKTU (nie zagrany) też odpala land
   const search = commands(state).find((c) => c.type === 'resolve_search_choice' && c.found === 'lib-forest');
   assert.ok(search, 'search podstawowego landa do pola bitwy');
   run(state, search);
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen), 'Etap F (CR 603.5): decyzja przy rozstrzyganiu');
   const fire = commands(state).find((c) => c.type === 'resolve_optional_trigger_choice' && c.fire === true);
   assert.ok(fire, 'land z efektu odpala landfall');
   run(state, fire);
@@ -481,7 +491,7 @@ test('B58/B5: Resurrected Cultist — aktywacja tylko jak sorcery (nie w walce)'
   assert.ok(find(state, 'resurrected-cultist', 'graveyard'), 'karta zostaje w grobie');
 });
 
-test('B58/B5: Resurrected Cultist — śmierć z licznikiem finality wygania (CR 122.1e)', () => {
+test('B58/B5: Resurrected Cultist — śmierć z licznikiem finality wygania (CR 122.1h)', () => {
   const state = game();
   deliriumGrave(state);
   addMana(state, 'p1', 4, { colors: ['B'] });

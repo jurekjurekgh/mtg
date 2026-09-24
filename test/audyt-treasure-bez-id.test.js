@@ -123,7 +123,7 @@ test('4) zapłata treasureAltCost idzie bez ID i bez litery kolorów (Security R
   // Poświęcenie przenosi permanent do cmentarza POD NOWYM id (moveObjectDirectly
   // z grave-N), więc o state.objects.get('faux1') nie pytamy — pytamy o strefy.
   assert.deepEqual([...stan.zones.battlefield], [],
-    'oba Skarby muszą zniknąć z pola bitwy (CR 701.14a: poświęcenie jest kosztem zdolności, nie tapnięciem)');
+    'oba Skarby muszą zniknąć z pola bitwy (CR 701.21a: poświęcenie jest kosztem zdolności, nie tapnięciem)');
   assert.equal(stan.zones.graveyard.length, 2,
     `oba Skarby trafiają na cmentarz, jest: ${JSON.stringify([...stan.zones.graveyard])}`);
 

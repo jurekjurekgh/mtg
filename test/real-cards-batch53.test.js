@@ -8,6 +8,7 @@ import { addMana } from '../src/engine/resources.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
 import { legalBlockerOptions } from '../src/engine/combat.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from '../src/engine/permanents.js';
+import { resolveUntilDecision, optionalTriggerOpen } from './helpers/deferred-trigger.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -177,7 +178,9 @@ test('B53: Ironclad Slayer — dane Oracle i filtr celu', () => {
   assert.equal(def.plan, 'Wiedźmin');
   assert.equal(def.abilities[0].trigger.event, 'enter_battlefield');
   assert.equal(def.abilities[0].trigger.requiresTarget.type, 'aura_or_equipment_card_in_graveyard');
-  assert.equal(def.abilities[0].trigger.requiresTarget.optional, true);
+  // Etap F (CR 603.3d + 603.5): cel obowiązkowy, „you may" przy rozstrzyganiu.
+  assert.equal(def.abilities[0].trigger.requiresTarget.optional, undefined);
+  assert.equal(def.abilities[0].trigger.mayFire, true);
 });
 
 test('B53: Ironclad Slayer — zwraca Equipment z grobu, gdy wybiorę cel', () => {
@@ -188,17 +191,19 @@ test('B53: Ironclad Slayer — zwraca Equipment z grobu, gdy wybiorę cel', () =
   addCard(state, 'creature-in-gy', 'highland-game', 'p1', 'graveyard');
 
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'is' }).ok);
-  resolveStack(state); // rozstrzygnij stos — trigger ETB przechodzi do fazy wskazywania celu
-  const target = commands(state).find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'equip-in-gy');
-  assert.ok(target, 'oferta celu: Equipment z grobu');
-  assert.ok(execute(state, target).ok);
-  resolveStack(state);
+  // Rozstrzygnij Slayera — jedyny kandydat (Equipment) wybrany sam (M242).
+  const triggerOnStack = (st) => st.zones.stack.map((id) => st.objects.get(id)).find((o) => o?.kind === 'trigger');
+  assert.ok(resolveUntilDecision(state, (st) => Boolean(triggerOnStack(st))));
+  const onStack = triggerOnStack(state);
+  assert.deepEqual(onStack?.triggerEntry?.targets, ['equip-in-gy'], 'cel: Equipment z grobu (nie stwór)');
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen), '„you may" przy rozstrzyganiu');
+  assert.ok(execute(state, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true }).ok);
   const returned = [...state.objects.values()].find((o) => o.cardId === 'warriors-sword' && o.zone === 'hand');
   assert.ok(returned, 'Equipment wrócił do ręki');
   assert.equal(state.objects.get('creature-in-gy')?.zone, 'graveyard', 'stwor w grobie nietknięty');
 });
 
-test('B53: Ironclad Slayer — odmowa celu = trigger bez efektu (you may)', () => {
+test('B53: Ironclad Slayer — odmowa przy rozstrzyganiu = trigger bez efektu (you may)', () => {
   const state = game();
   addMana(state, 'p1', 3, { colors: ['W'] });
   addCard(state, 'is', 'ironclad-slayer', 'p1', 'hand');
@@ -206,10 +211,9 @@ test('B53: Ironclad Slayer — odmowa celu = trigger bez efektu (you may)', () =
 
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'is' }).ok);
   resolveStack(state);
-  const decline = commands(state).find((c) => c.type === 'resolve_trigger_target' && c.targetId === null);
-  assert.ok(decline, 'odmowa celu dostępna');
-  assert.ok(execute(state, decline).ok);
-  resolveStack(state);
+  assert.ok(resolveUntilDecision(state, optionalTriggerOpen), '„you may" przy rozstrzyganiu');
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, 'odmowa = pass (F1)');
+  assert.equal(state.pendingOptionalTrigger, null);
   assert.equal(state.objects.get('equip-in-gy')?.zone, 'graveyard', 'bez wyboru celu nic nie wraca');
 });
 

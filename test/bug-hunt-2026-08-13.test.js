@@ -18,7 +18,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 //     „doesn't untap during controller's next untap step".
 //  3) Amass z wieloma armiami bez wyboru (engine bierze pierwszą).
 //  4) Caravan Vigil Morbid wymusza pole bitwy bez opcji „may" (ręka).
-//  5) Goad nie uniemożliwia blokowania (CR 701.38).
+//  5) Goad nie uniemożliwia blokowania (CR 701.15).
 // =============================================================================
 
 const REGISTRY = createCardRegistry();
@@ -113,14 +113,14 @@ test('BUG1: Forge Devil — „target creature\" może celować w siebie', () =>
 // BUG 5 — goad a blokowanie
 //
 // KOREKTA (M140, challenge o odznakę): pierwotny test utrwalał BŁĘDNĄ
-// interpretację. CR 701.38b definiuje goad wyłącznie jako wymogi ATAKU
+// interpretację. CR 701.15b definiuje goad wyłącznie jako wymogi ATAKU
 // („a goaded creature attacks each combat if able and attacks a player other
 // than the controller … if able”) i wprost zaznacza, że goad nie jest
 // zdolnością. O blokowaniu nie ma tam ani słowa, a oficjalne rulingi
 // potwierdzają, że goadowany stwór blokuje normalnie. Zakaz blokowania
 // odbierał obrońcy legalne bloki.
 // ---------------------------------------------------------------------------
-test('BUG5: goaded creature MOŻE blokować (CR 701.38b — goad to wymóg ataku)', () => {
+test('BUG5: goaded creature MOŻE blokować (CR 701.15b — goad to wymóg ataku)', () => {
   const state = game();
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1'; // M257-r5b/B: pin aktywności (starter losowy)
@@ -132,7 +132,7 @@ test('BUG5: goaded creature MOŻE blokować (CR 701.38b — goad to wymóg ataku
   execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   const r = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['gb'] } });
-  assert.ok(r.ok, 'goad nie ogranicza blokowania (CR 701.38b) — deklaracja przyjęta');
+  assert.ok(r.ok, 'goad nie ogranicza blokowania (CR 701.15b) — deklaracja przyjęta');
   assert.ok(state.combat.blockers.get('atk')?.includes('gb'), 'goadowany stwór faktycznie blokuje');
 });
 

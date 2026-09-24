@@ -5,6 +5,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { effectivePower, effectiveKeywords, clearStatModifiers } from '../src/engine/permanents.js';
+import { resolveUntilDecision, optionalPayOpen } from './helpers/deferred-trigger.js';
 import { addMana } from '../src/engine/resources.js';
 
 // =============================================================================
@@ -221,6 +222,7 @@ test('B4: opcjonalna płatność triggera liczy manę PRODUKOWALNĄ (Panic Spell
   const r = execute(state, { type: 'move_object', playerId: 'p1', objectId: bombId, toZone: 'graveyard', newObjectId: 'bomb-grave' });
   assert.ok(r.ok, 'bomb do grobu');
   // trigger „you may pay {R}" musi być OFEROWANY (produkowalna mana z góry)
+  resolveUntilDecision(state, optionalPayOpen); // Etap F (CR 603.5): wybór przy rozstrzyganiu
   assert.ok(state.pendingOptionalPay, 'trigger oferowany przy nietapniętym źródle many');
   const rr = execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: true });
   assert.ok(rr.ok, 'płatność {R}');

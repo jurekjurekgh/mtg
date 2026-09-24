@@ -6,7 +6,7 @@
 // seed 3003, profil hoarder): „[ROZGRYWKA] • token_servo ginie" — surowy
 // identyfikator zamiast nazwy. Root cause: mapa nazw tokenów (`collectTokenNames`,
 // M188/B) jest budowana z KATALOGU kart, a Servo powstaje z mechaniki fabricate
-// w kodzie silnika (CR 702.122a) — deskryptora nie ma w rejestrze, więc `nameOf`
+// w kodzie silnika (CR 702.123a) — deskryptora nie ma w rejestrze, więc `nameOf`
 // zwracał cardId. Token po śmierci znika ze stanu (CR 111.7), więc opis miał do
 // dyspozycji wyłącznie cardId.
 //

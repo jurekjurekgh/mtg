@@ -12659,3 +12659,113 @@ i dowodem, że idzie to jedną wspólną funkcją. Plan:
 Bramy: `npm test` **6304/6304** (0 fail, ~242 s), pełna brama
 `node tools/run-tests.mjs all` **6314/6314** (0 fail, ~416 s), build
 **59 modułów / 4124,0 kB**.
+
+## M423 — audyt scalonego PR #134 + warstwy CR 613 (D4b) (sesja 2026-09-24, PR #135)
+
+Sesja wg ADR 0020/0021: audyt PR #134 (`docs/audits/AUDYT_PR134_2026-09-24.md`,
+werdykt APPROVE z zastrzeżeniami), naprawy znalezisk i obserwacji, pętla
+jakości. Plan: `docs/plans/PLAN_2026-09-24-audyt-pr134-i-petla-jakosci.md`.
+
+**Znaleziska audytu (naprawione):** F-1 Gond Gate „{T}: Add {C}” dawał kolory
+Bram; F-2 „could produce” pomijało kolor wybrany przy wejściu i podtypy
+podstawowe; F-3/F-6/F-7 — 4 + 121 przestarzałych cytatów CR przepisanych na
+wydanie 2026-09-25 (strażnik tabeli 702 z detektorem okna, L164/L165); F-4
+proliferate bez zawężenia po typie; Z-1 moc z `PlayerView` efektywna; Z-2
+bestow/704.5m (702.103f); O-1 jedna decyzja „wchodzi tapnięte” także na
+ścieżkach kopii; O-2 jedna lista typów kart; O-3 widok niesie źródło many;
+O-6 transform w miejscu przenosi trwające efekty (CR 712.18).
+
+**D4b — warstwy CR 613 (decyzja właściciela: uproszczenia niezgodne z CR
+naprawiamy).** Silnik nie miał znaczników czasu; kolizje efektów rozstrzygała
+stała kolejność w kodzie. Nowy moduł `src/engine/timestamps.js` (613.7a–g:
+wejście, efekt, licznik, przypięcie, obrót, transformacja) i dziewięć odchyłek
+z sondą RED na prawdziwych kartach:
+
+| # | Przed | Po (CR) |
+|---|---|---|
+| W-1 | Tarmogoyf 2/3 + „base 4/4” = 6/7 | 4/4 (613.4a/b) |
+| W-2 | zakryty + „base 4/4” = 2/2 | 4/4 (708.2) |
+| W-3 | zakryty bez efektów z zewnątrz | nadania, aury, hymny działają (708.2/708.8) |
+| W-4 | Grounded, potem „gains flying” = bez flying | flying (613.9) |
+| W-5 | „base 4/4”, potem animacja 8/8 = 4/4 | 8/8 (613.7) |
+| W-6 | Skilled Animator 5/5, potem crew = 6/6 | 5/5 (702.122a) |
+| W-7 | Warrior's Sword, potem „becomes a Human” = Human Warrior | Human (205.1a) |
+| W-8 | Krotiq „as though no defender” = utrata defendera | reguła ataku, defender zostaje |
+| W-9 | obsadzony pojazd odbity = stwór w ręce | artefakt; umiera jako stwór (400.7, LKI) |
+
+Piny: `test/audyt-d4b-2026-09-24-warstwa-7.test.js` (10),
+`…-warstwa-6.test.js` (10), `…-warstwa-4-i-nowy-obiekt.test.js` (9); mutacje
+M15–M20. Lekcja **L166**.
+
+Bramy: `npm test` **6387/6387**, `npm run test:all` **6397/6397** (0 fail,
+~299 s), build **60 modułów / 4161,2 kB**. Handoff:
+`docs/setup/HANDOFF_2026-09-24.md`.
+
+## M424 — „żadnych uproszczeń wpływających na grę” (Etap F) + Żywy Tester D3 (sesja 2026-09-24, PR #135)
+
+Polecenie właściciela: „Nie chcę żadnych drobnych albo nie drobnych ograniczeń
+ani uproszczeń, które wpływałyby na grę. Kart, których nie ma, nie trzeba
+okodowywać — jak się pojawią, warto to jasno opisać w komentarzach w kodzie.
+Test trzeba zrobić.”
+
+| Etap | Commit | Co | Reguła | Pin (testy) |
+|---|---|---|---|---|
+| F/1 | `720aeb7` | escape/cleave płacą pipy kosztu alternatywnego; strażnik granic katalogu | CR 118.9 | `etap-f-…-koszt-alternatywny-pipy` (4), `…-granice-katalogu` (2) |
+| F/2 | `7ed5bed` | „may” / „you may pay” / „unless” (echo) na stos, wybór przy rozstrzyganiu; Zoraline/Kappa refleksyjne | CR 603.5, 603.12 | `…-wybor-przy-rozstrzyganiu` (10) |
+| F/3 | `6146660` | backup, echo, suspend, rebound, exploit, endure jako obiekty na stosie; intervening-if przy rozstrzyganiu; fizzle bez skutków „as it resolves” | CR 603.3, 603.4, 608.2b | `…-zdolnosci-slowkluczowe-na-stosie` (5), `…-fizzle-i-zejscie-ze-stosu` (3) |
+| F/4 | `00d4af4` | jedna ścieżka rzutu bez kosztu many (Epic, suspend, rebound, Discover, grób, Baral): X = 0, dopłata Fireballa, ofiara i „odrzuć N” jako koszt | CR 118.9, 107.3b, 601.2f, 601.2h | `…-rzut-bez-kosztu` (16) |
+| F/5 | `246b876` | animacje jako osobne efekty z własnym czasem trwania (W-10/W-11); O-4/O-5 jako komentarze „KARTY SPOZA KATALOGU” | CR 611.2, 613.7 | `…-animacje-czas-trwania` (4) |
+| D3 | `99ea49b` | Żywy Tester: 20 partii, 8 par talii + talia audytowa z kartami Etapu F | — | `d3-2026-09-24-bot-ward-okna-darmowe` (6), `d3-tester-kreator-x` (7) |
+
+**D3 — znaleziska:** (1) bot: okna Discover i Epic poza podatkiem ward
+(`WARD_TAXED_TYPES` filtrował po nazwie komendy) — bez many bot rzucał removal
+w stwora z ward {2} zamiast wziąć kartę do ręki; w oknach bez kosztu many
+rezerwował pełny koszt karty (nowe `FREE_CAST_WINDOW_TYPES` +
+`freeCastPaidMana`); (2) tester: kreator X + cele (Fireball) mylony z „Tap X
+artefaktów” — pętla „Rzuć: Fireball” do limitu kroków (polityka w
+`tools/table-tester/x-wizard.mjs`); (3) tester: drugie „Zatwierdź” w
+zamkniętym kreatorze walki po odmowie (fałszywe `[rules]`); (4) UI: tytuł
+decyzji Epic mówił „skopiować”. Zweryfikowane bez zmian: Discover → Severed
+Strands, Cathartic Reunion, rebound + Baral, suspend, Halo Forager, crew +
+Skilled Animator; noop Dockhand X = 0 to legalna aktywacja (oferty X = 0
+zostają, boty ich unikają).
+
+Mutacje M25–M30 (każda = stan przed naprawą, czerwieni swój pin). Lekcja
+**L167**. Bramy: `npm test` **6444/6444**, `npm run test:all` **6454/6454**
+(0 fail, ~387 s), build **60 modułów / 4197,8 kB**. (Opis commitu `99ea49b`
+podaje 6445 — pomiar z tymczasową talią audytową, która dokłada jeden test
+per talia; po jej usunięciu zmierzone 6444.)
+Handoff: `docs/setup/HANDOFF_2026-09-24.md`.
+
+## M425 — weryfikacja cytatów CR u źródła + explore z pustą biblioteką (sesja 2026-09-24, PR #135)
+
+Na polecenie właściciela („a ty nie możesz sprawdzić sam?”) cała klasa cytatów
+CR zweryfikowana wobec oficjalnego tekstu „These rules are effective as of
+September 25, 2026” (`MagicCompRules 20260925.txt`), bez człowieka w pętli.
+Sekcja „701. Keyword Actions” jest numerowana historycznie — detektor
+tabelaryczny (`test/cr-numery-701-tabela-straznik.test.js`, tabela 701.2–701.71
++ okno ±4 linii) wskazał **553 rozjazdy „numer ↔ akcja”** z ≥3 epok numeracji
+(regeneracja jako 701.12/701.15, szukanie jako 701.19, goad jako 701.38,
+surveil jako 701.41/701.44…). Wszystkie poprawione: 366 linii mapowaniem
+mechanicznym, 21 ręcznie, 3 notki historyczne („dawniej…”) zostawione i
+objaśnione w `WYJATKI_701` — bez rewrightów. Poza 701: `708.2d`/`122.12`/
+`701.30e` nie istnieją (→ 708.5/701.58b, 121.1, 701.43-exert), liczniki wejścia
+to `122.6` nie `121.6`, finality/stun to `122.1h`/`122.1d` nie `122.1b`,
+deklaracja bloków to `509.1a`, „kto patrzy na wierzch biblioteki” to
+`701.20e + 401.2`. Pełne mapowanie i werdykty ~30 numerów odroczonych:
+`docs/audits/AUDYT_PR134_2026-09-24.md` §7.
+
+Przy weryfikacji znaleziony i naprawiony **błąd reguł**: explore z pustą
+biblioteką nie dawało +1/+1 — CR 701.44a „Otherwise…” kładzie licznik na
+stworze eksplorującym nawet bez odsłoniętej karty (701.44b: eksploracja
+odbywa się nawet przy niemożliwych krokach). Pin
+`test/audyt-pr134-explore-pusta-biblioteka.test.js` (mutacja: bez addCounter —
+czerwony), komunikat sesji, warning renderu (dobranie z pustej przegrywa grę,
+CR 704.5b/121.4) i lista jałowych bota zsynchronizowane.
+
+Nowi strażnicy: `test/cr-numery-701-tabela-straznik.test.js` (dowód RED bez
+mutacji repo) + 4 piny w `test/cr-numery-mechanik-straznik.test.js`
+(finality/stun vs 122.1b, nieistniejące 708.2d i 122.12). Bramy:
+`npm test` **6455/6455**, `npm run test:all` **6465/6465** (~409 s),
+build **60 modułów / 4199,5 kB**.
+Handoff: `docs/setup/HANDOFF_2026-09-24.md`.

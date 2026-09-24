@@ -290,7 +290,7 @@ function renderPeekWizard(host, spec) {
   const orderAsked = (v) => Boolean(spec.order) && spec.order.ask(v, orderPool(v).length);
   /**
    * Sortera nie pytamy, gdy nie wnosi nic (0 albo 1 karta — „in any order",
-   * CR 701.18/701.41): wtedy kolejność bierzemy z listy, tak jak robił to
+   * scry/surveil, CR 701.22/701.25): wtedy kolejność bierzemy z listy, tak jak robił to
    * wizard przed M148. Jedno miejsce, obie rodziny.
    */
   const finalView = (v) => {
@@ -738,7 +738,7 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
     }
     // E6 (2026-09-20c): `options` to MENU ograniczone `COMBAT_OPTION_CAP`, a
     // pula kandydatów z widoku jest liczona wprost z reguł — bez niej pary
-    // wycięte przez cap nie miałyby wiersza i legalny blok (CR 509.1b) byłby
+    // wycięte przez cap nie miałyby wiersza i legalny blok (CR 509.1a) byłby
     // dla człowieka nieosiągalny (pomiar: 6×6 → 5 par, 10×10 → 69 par).
     for (const [attackerId, blockerIds] of Object.entries(blockCandidates ?? {})) {
       pushId(attackerId);
@@ -869,7 +869,7 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
       onComplete?.(pendingCombatCommand());
     } else {
       // F14 (audyt PR #131, L48 — oferta = walidacja): silnik odrzuca użycie
-      // tego samego blokera więcej razy, niż wynosi `blockSlotsFor` (CR 509.1b;
+      // tego samego blokera więcej razy, niż wynosi `blockSlotsFor` (CR 509.1a;
       // wyjątek „can block an additional creature” — Cenn's Tactician). Wizard
       // rysuje wiersze z PULI (E6), więc ten sam bloker ma wiersz pod KAŻDYM
       // atakującym: bez tej bramki gracz zaznaczał go dwa razy i dowiadywał się

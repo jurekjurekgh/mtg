@@ -8,6 +8,7 @@ import { gameObjectDataOf, setupCardMatch } from '../src/cards/materialize.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { hasCounter } from '../src/engine/counters.js';
 import fs from 'node:fs';
+import { resolveUntilDecision, optionalPayOpen } from './helpers/deferred-trigger.js';
 
 /**
  * Pierwszy batch realnych kart (Etap 2, ADR 0010): Highland Game (KTK),
@@ -222,20 +223,32 @@ test('Kappa Tech-Wrecker: trigger po obrażeniach usuwa licznik i wygania artefa
   assert.ok(resolveStack(state), 'stos po ninjutsu');
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'combat_damage_to_player'), 'brak triggera combat damage');
-  // Temat 2: „you may ... exile target artifact" — cel wybiera kontroler.
+  // Etap F (CR 603.5 + 603.12): zdolność na stosie bez celu; przy
+  // rozstrzyganiu „you may remove a deathtouch counter", a po usunięciu
+  // refleksyjne „exile target artifact" z celem wybieranym teraz.
+  assert.ok(resolveUntilDecision(state, optionalPayOpen), 'decyzja przy rozstrzyganiu');
+  const payOffer = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_optional_pay_choice' && c.pay);
+  assert.deepEqual(payOffer.counterCost, { counter: 'deathtouch', amount: 1 });
+  assert.equal(payOffer.reflexiveTargetCount, 1);
+  assert.ok(execute(state, payOffer).ok);
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'artifact' }).ok);
-  passRoundResolving(state); // T6: trigger ze stosu
+  passRoundResolving(state); // refleksyjna zdolność ze stosu (CR 603.12)
   const kappa = [...state.objects.values()].find((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'battlefield');
   assert.equal(hasCounter(kappa, 'deathtouch'), false, 'licznik deathtouch nie został usunięty');
   assert.ok(state.zones.exile.some((id) => state.objects.get(id)?.cardId === 'syn-artifact'), 'artefakt nie został wygnany');
 });
 
-test('Kappa Tech-Wrecker: bez celu trigger nie odpala się (licznik zostaje)', () => {
+test('Kappa Tech-Wrecker: bez celu zdolność i tak idzie na stos; odmowa zostawia licznik (CR 603.5/603.12)', () => {
   const state = ninjutsuSetup();
   execute(state, playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'kappa'));
   assert.ok(resolveStack(state), 'stos po ninjutsu');
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
-  assert.ok(!result.events.some((e) => e.type === 'ability_triggered'), 'trigger nie powinien odpalić się bez celu');
+  // Zdolność pierwotna nie ma celu (cel ma dopiero refleksyjne „When you do").
+  assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'combat_damage_to_player'));
+  assert.ok(resolveUntilDecision(state, optionalPayOpen));
+  const payOffer = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_optional_pay_choice' && c.pay);
+  assert.equal(payOffer.reflexiveTargetCount, 0, 'oferta mówi, że celu brak');
+  assert.ok(execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: false }).ok);
   const kappa = [...state.objects.values()].find((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'battlefield');
   assert.ok(hasCounter(kappa, 'deathtouch'), 'licznik nie powinien zostać zdjęty bez celu');
 });

@@ -69,7 +69,7 @@ test('M323/A: zdjęcie cloakReady zabiera ofertę obrotu — odcisk musi się zm
 test('M323/B: kwota wardu jest częścią odcisku (decyduje, ile kosztuje celowanie)', () => {
   const ctx = cloaked();
   const przed = stateFingerprint(ctx.state);
-  assert.equal(ctx.state.objects.get(ctx.cloakId).ward, 2, 'baza: ward {2} z 701.56a');
+  assert.equal(ctx.state.objects.get(ctx.cloakId).ward, 2, 'baza: ward {2} z 701.58a');
   patch(ctx, { ward: 1 });
   assert.notEqual(stateFingerprint(ctx.state), przed, 'ward {1} ≠ ward {2} w odcisku');
 });

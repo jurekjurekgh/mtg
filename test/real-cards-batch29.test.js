@@ -490,7 +490,7 @@ test('Batch 29 regresja: pendingOptionalTrigger + pendingTriggerTarget tego same
 
 // --- Audyt PR #41 (B2): attacks_alone — trigger tylko dla KONTROLERA atakującego
 
-test('Audyt B2: cudza Angelic Benediction NIE odpala przy moim samotnym ataku (CR 702.82)', () => {
+test('Audyt B2: cudza Angelic Benediction NIE odpala przy moim samotnym ataku (CR 702.83)', () => {
   const state = game();
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
@@ -656,7 +656,7 @@ test('Audyt B6: gospodarz zyskuje protection na stosie -> czysta aura fizzluje (
   assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'curiosity'), 'aura poszła do grobu (fizzle)');
 });
 
-test('Audyt B6: bestow w chronionego -> wchodzi jako zwykły stwór (CR 702.103b)', () => {
+test('Audyt B6: bestow w chronionego -> wchodzi jako zwykły stwór (CR 702.103e)', () => {
   const state = mainPhase(game());
   addRealCard(state, 'dryad', 'leafcrown-dryad', 'p1', 'hand'); // {1}{G}, bestow {3}{G}
   addRealCard(state, 'host', 'highland-game', 'p2', 'battlefield');

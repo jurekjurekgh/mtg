@@ -517,7 +517,7 @@ test('M200/L: ograniczenie turewcze — późniejszy stwór objęty, nowa tura =
 // WERDYKT (L7/L57 — zweryfikowane na bieżącym kodzie): oba zachowania są
 // PRAWIDŁOWE i testy PINUJĄ je, żeby nie wróciły:
 // - spec „spell on the stack” wyklucza zdolności (kind 'activated'/'trigger')
-//   — Oracle „Counter target spell” (CR 701.5a): zdolność NIE jest czarem;
+//   — Oracle „Counter target spell” (CR 113.9): zdolność NIE jest czarem;
 //   oferta bota może więc zawierać wyłącznie czary (zdolność Cellar Door
 //   nigdy nie jest celem — bot nie może jej „nie skontrować”, bo nie celuje
 //   w nią; rozstrzyga się normalnie, co jest poprawne);
@@ -558,7 +558,7 @@ test('M200/M+M2: Delusion — cel wyłącznie czar; cel ma nazwę na stosie (nie
   assert.ok(execute(state, { type: 'cast_spell', playerId: HUMAN_ID, objectId: 'insp', targets: [BOT_ID] }).ok);
   assert.ok(execute(state, { type: 'pass_priority', playerId: HUMAN_ID }).ok);
   // M2: oferta Deluzji = WYŁĄCZNIE czar (Inspiration); zdolność Cellar Door
-  // (kind 'activated') nie jest celem „counter target spell” (CR 701.5a).
+  // (kind 'activated') nie jest celem „counter target spell” (CR 701.6a).
   const botView = playerView(state, BOT_ID);
   const offers = botView.legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'del');
   assert.equal(offers.length, 1, `jedyny legalny cel = czar, nie zdolność: ${JSON.stringify(offers)}`);

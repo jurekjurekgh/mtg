@@ -33,7 +33,7 @@ const hasKeyword = (state, object, keyword) => effectiveKeywords(object, state).
  * bloki, nadmiar trample): tarcze prewencji (Withstand) redukują obrażenia,
  * a lifelink źródła (True Conviction) daje kontrolerowi zysk życia równy
  * obrażeniom ZADANYM (po prewencji). Infect zadaje znaczniki trucizny
- * zamiast utraty życia (CR 702.89) i też jest ograniczony prewencją.
+ * zamiast utraty życia (CR 702.90) i też jest ograniczony prewencją.
  */
 /** Inspire Awe (CR): „Prevent all combat damage this turn except by enchanted
  * creatures and enchantment creatures." Zwraca true, gdy obrażenia combat z
@@ -122,7 +122,7 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   if (actual > 0 && hasKeyword(state, source, 'lifelink')) {
     events.push(...changeLife(state, source.controllerId, actual));
   }
-  // Toxic N (CR 702.180a, Batch 45 — Crawling Chorus): gracz, któremu to
+  // Toxic N (CR 702.164, Batch 45 — Crawling Chorus): gracz, któremu to
   // źródło zadało combat damage, dostaje DODATKOWO N poison counterów
   // (życie spada normalnie — w odróżnieniu od infect). Tylko przy realnie
   // zadanych obrażeniach (prewencja w całości = brak poisonu).
@@ -188,8 +188,10 @@ function hasAloneRestriction(object, field) {
 export function staticAttackPrevented(state, object, playerId) {
   if (!object || object.kind !== 'creature') return false;
   const controllerId = playerId ?? object.controllerId;
-  // Defender (CR 702.3), detain (CR 701.29), aura/attachment „can't attack"
-  if (hasKeyword(state, object, 'defender')) return true;
+  // Defender (CR 702.3), detain (CR 701.35), aura/attachment „can't attack"
+  // W-8: „can attack as though it didn't have defender” uchyla TYLKO to
+  // ograniczenie (defender zostaje cechą stwora).
+  if (hasKeyword(state, object, 'defender') && !object.attacksAsThoughNoDefenderUntilEOT) return true;
   if (object.detained) return true;
   if (attachmentRestrictions(state, object).cantAttack) return true;
   // „Can't attack unless defending player controls a creature with flying".
@@ -212,8 +214,8 @@ export function staticAttackPrevented(state, object, playerId) {
 function isLegalAttacker(state, object, playerId) {
   if (object?.controllerId !== playerId || object.kind !== 'creature' || object.tapped) return false;
   // Defender (CR 702.3): stwór z defender NIE może atakować.
-  if (hasKeyword(state, object, 'defender')) return false;
-  // Detain (CR 701.29, M177/E): zatrzymany stwór nie atakuje.
+  if (hasKeyword(state, object, 'defender') && !object.attacksAsThoughNoDefenderUntilEOT) return false;
+  // Detain (CR 701.35, M177/E): zatrzymany stwór nie atakuje.
   if (object.detained) return false;
   // M243/F: ograniczenia STATYCZNE (defender, detain, attachment, unless-
   // defender-flying/poisoned) — jedno źródło prawdy dzielone z PlayerView
@@ -227,7 +229,7 @@ function isLegalAttacker(state, object, playerId) {
 /**
  * Znalezisko J (właściciel, 2026-09-17 — Ramroller „This creature attacks each
  * combat if able"): JEDNO źródło prawdy o atakujących wymuszonych (L41) —
- * goad (CR 701.38) i deskryptor `mustAttack` (CR 508.1c) — używane przez:
+ * goad (CR 701.15) i deskryptor `mustAttack` (CR 508.1c) — używane przez:
  *   • ofertę `legalAttackerOptions` (każda opcja zawiera wymuszonych),
  *   • walidację `declareAttackers` (pominięcie wymuszonego = odrzucenie),
  *   • auto-deklarację rundy passów w `pass_priority` (deklaracja atakujących
@@ -255,7 +257,7 @@ export function declareAttackers(state, playerId, attackerIds, { pushToState = t
   if (!Array.isArray(attackerIds) || new Set(attackerIds).size !== attackerIds.length) throw new Error('Atakujący nie może wystąpić więcej niż raz');
   const attackers = attackerIds.map((id) => getCreature(state, id));
   if (attackers.some((object) => !isLegalAttacker(state, object, playerId))) throw new Error('Nielegalny atakujący');
-  // Wymuszeni atakujący (CR 701.38 goad + CR 508.1c „attacks each combat if
+  // Wymuszeni atakujący (CR 701.15 goad + CR 508.1c „attacks each combat if
   // able\" — Ramroller): zdolny do ataku stwór z wymogiem musi być zadeklarowany
   // — deklaracja go pomijająca jest nielegalna. Lista i wyjątek „if able"
   // (M270, CR 508.1c/508.1d) mieszkają w `mandatoryAttackerIds` — tym samym
@@ -835,7 +837,7 @@ export function buildDamageAssignmentView(state, viewerId = null) {
   const entries = [];
   // M100 (BUG A): widok podziału obrażeń nie zdradza nazwy zakrytej karty
   // przeciwnika (face-down = bezimienny stwór 2/2, CR 708.2) — jak pole
-  // cardId w PlayerView pola bitwy. Kontroler widzi swoją kartę (CR 708.6);
+  // cardId w PlayerView pola bitwy. Kontroler widzi swoją kartę (CR 708.5);
   // wewnętrzni konsumenci (domyślne przydziały bota) wołają bez viewerId
   // i dostają pełne dane.
   const faceId = (object) => (
@@ -1019,7 +1021,7 @@ export function validateDamageAssignment(state, attackerId, assignment, context 
  *  3. zadanie obrażeń — „Second, all combat damage that's been assigned is dealt
  *     simultaneously" (CR 510.2). Kwoty i przydziały domyślne liczone są RAZ, na
  *     początku tej fazy, więc to, co dzieje się w trakcie zadawania (liczniki
- *     −1/−1 z infect, CR 702.3), nie zmienia przydzielonej mocy.
+ *     −1/−1 z infect, CR 702.90), nie zmienia przydzielonej mocy.
  * Między ogłoszeniem przydziałów a zadaniem obrażeń nie ma priorytetu ani akcji
  * stanowych (CR 510.2: „No player has the chance to cast spells or activate
  * abilities between the time combat damage is assigned and the time it's dealt";
@@ -1407,7 +1409,7 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
     const object = state.objects.get(id);
     if (object && object.zone === 'battlefield' && isLegalAttacker(state, object, playerId)) legal.push(id);
   }
-  // Wymuszeni atakujący (goad CR 701.38 oraz „attacks each combat if able"
+  // Wymuszeni atakujący (goad CR 701.15 oraz „attacks each combat if able"
   // CR 508.1c — Ramroller) MUSZĄ być w każdej opcji; wybór dotyczy tylko
   // pozostałych stworów. Lista i wyjątek „if able" (M270) — wspólny helper
   // (znalezisko J: oferta, walidacja i auto-deklaracja to jedno źródło).
@@ -1496,7 +1498,7 @@ export function attackerBlockPowerRestriction(state, attacker) {
 }
 
 /**
- * M380 (ODZNAKA, CR 509.1b + L41): JEDNO ŹRÓDŁO PRAWDY o PAROWEJ legalności
+ * M380 (ODZNAKA, CR 509.1a + L41): JEDNO ŹRÓDŁO PRAWDY o PAROWEJ legalności
  * bloku — „czy ten bloker może blokować tego atakującego". Zwraca komunikat
  * naruszenia albo `null`. Korzystają z niej OBIE strony kontraktu L48:
  *  • `canBlock` — enumeracja oferty (`legalBlockerOptions`, panel bloków),
@@ -1514,7 +1516,7 @@ export function attackerBlockPowerRestriction(state, attacker) {
  * teraz wymaga jednej.
  */
 function blockRestrictionError(state, attacker, blocker) {
-  // Detain (CR 701.29, M177/E): zatrzymany stwór nie blokuje.
+  // Detain (CR 701.35, M177/E): zatrzymany stwór nie blokuje.
   if (blocker.detained) return 'Zatrzymany (detain) stwór nie może blokować';
   // Dread Warlock: „can't be blocked except by black creatures" — bloker
   // musi mieć jeden z dozwolonych kolorów.
@@ -1590,7 +1592,7 @@ function canBlock(state, attacker, blocker) {
  * Warstwy są rozdzielone świadomie: restrykcje PAROWE (ewazje, próg mocy,
  * ochrona, landwalk) siedzą w `blockRestrictionError` (M380), a reguły
  * ZBIORU/kontekstu tutaj: własne zakazy blokowania blokera
- * (`creatureCantBlock`, restrykcje z załączników), menace (CR 702.110b:
+ * (`creatureCantBlock`, restrykcje z załączników), menace (CR 702.111b:
  * atakującego z menace blokuje 0 albo ≥2 stworów) oraz „can't block alone”
  * (CR 509.1c: blokujący musi mieć partnera przy TYM SAMYM atakującym).
  *
@@ -1625,7 +1627,7 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   const blockers = [];
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
-    // CR 701.38b: goad nie ogranicza blokowania — nie filtrujemy po `goaded`.
+    // CR 701.15b: goad nie ogranicza blokowania — nie filtrujemy po `goaded`.
     if (object && object.zone === 'battlefield' && object.controllerId === playerId && object.kind === 'creature' && !object.tapped && !creatureCantBlock(object, state)
       && !attachmentRestrictions(state, object).cantBlock) blockers.push(id);
   }
@@ -1775,7 +1777,7 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
  * `COMBAT_OPTION_CAP` (32) ze względu na ROZMIAR LISTY, a wizard bloków brał
  * kandydatów z SUMY OFERT — więc na większej planszy (`(atakujący+1)^blokerzy >
  * cap`) pary wycięte przez `slice(0, cap)` nie miały wiersza i gracz nie mógł
- * zadeklarować legalnego bloku (CR 509.1b: broniący wybiera dowolny legalny
+ * zadeklarować legalnego bloku (CR 509.1a: broniący wybiera dowolny legalny
  * zestaw bloków). Pomiar 2026-09-20c: 6×6 → 5 utraconych par, 8×8 → 33,
  * 10×10 → 69.
  *
@@ -1798,7 +1800,7 @@ export function blockCandidatePool(state, playerId) {
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
     if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) continue;
-    if (object.kind !== 'creature' || object.tapped) continue; // CR 509.1b: untapped
+    if (object.kind !== 'creature' || object.tapped) continue; // CR 509.1a: untapped
     if (creatureCantBlock(object, state)) continue;
     if (attachmentRestrictions(state, object).cantBlock) continue;
     if (blockSlotsFor(state, object) < 1) continue;

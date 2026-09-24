@@ -10,6 +10,7 @@ import { addCounter } from '../src/engine/counters.js';
 import { event } from '../src/protocol/types.js';
 import { effectivePower, effectiveSubtypes } from '../src/engine/permanents.js';
 import { getSourceForObject } from '../src/engine/mana-sources.js';
+import { resolveUntilDecision, optionalPayOpen, payOrSacrificeOpen } from './helpers/deferred-trigger.js';
 import { attachEquipmentToCreature } from '../src/engine/attachments.js';
 
 /**
@@ -160,6 +161,7 @@ test('T1: Panic Spellbomb — trigger dies faktycznie PŁACI {R} (wcześniej tyl
   // kolejkuje DECYZJĘ gracza (Temat 8) — płacimy i dobieramy.
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bomb', abilityIndex: 0, targets: ['foe'] });
   assert.ok(r.ok, r.events[0]?.reason);
+  resolveUntilDecision(state, optionalPayOpen); // Etap F (CR 603.5): wybór przy rozstrzyganiu
   assert.ok(state.pendingOptionalPay, 'decyzja opcjonalnej płatności czeka');
   const pay = execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: true });
   assert.ok(pay.ok, pay.events[0]?.reason);
@@ -189,7 +191,7 @@ test('T1: Dawntreader Elk — koszt zdolności to {G} (1 mana), nie 2', () => {
 
 // =============================================================================
 // TEMAT 2 — finality counter: „would die → exile" dla KAŻDEJ przyczyny śmierci
-// (CR 122.1b). Wcześniej tylko zgony SBA (obrażenia) — zniszczenie, poświęcenie
+// (CR 122.1h). Wcześniej tylko zgony SBA (obrażenia) — zniszczenie, poświęcenie
 // i prawo legend wysyłały stwora do grobu.
 // =============================================================================
 
@@ -284,7 +286,7 @@ assert.ok(rCast.ok, rCast.events[0]?.reason);
 
 // =============================================================================
 // TEMAT 4 — wybór kart przez gracza: odrzucanie (koszt i efekt) oraz „karta
-// z ręki na wierzch biblioteki" (CR 701.18 — „of their choice"). Wcześniej
+// z ręki na wierzch biblioteki" (CR 701.9b — „of their choice"). Wcześniej
 // engine wybierał deterministycznie (najdroższa/najtańsza) — bez decyzji gracza.
 // =============================================================================
 
@@ -461,7 +463,7 @@ test('T5: Zwykłe landy dalej produkują swoje kolory (Plains → W)', () => {
 
 // =============================================================================
 // TEMAT 6 — „You may search your library for ...": gracz wybiera KARTĘ albo
-// rezygnuje (fail to find, CR 701.19b). Wcześniej engine brał pierwszą kartę.
+// rezygnuje (fail to find, CR 701.23b). Wcześniej engine brał pierwszą kartę.
 // =============================================================================
 
 test('T6: Kor Cartographer — gracz wybiera, KTÓRĄ kartę Plains wziąć (dwie RÓŻNE w bibliotece)', () => {
@@ -540,6 +542,7 @@ test('T7: Rupture Spire — kontroler może POŚWIĘCIĆ mimo możliwej zapłaty
   addRealCard(state, 'spire', 'rupture-spire', 'p1', 'hand');
   giveMana(state, 'p1', 1);
   assert.ok(execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' }).ok);
+  resolveUntilDecision(state, payOrSacrificeOpen); // Etap F (CR 603.5)
   assert.ok(state.pendingPayOrSacrifice, 'decyzja czeka');
   const view = playerView(state, 'p1');
   const offers = (view.legalCommands ?? []).filter((c) => c.type === 'resolve_pay_or_sacrifice');
@@ -561,6 +564,7 @@ test('T8: Panic Spellbomb — gracz może NIE ZAPŁACIĆ {R} (brak dobrania)', (
   addObject(state, { id: 'top', instanceId: 'it', cardId: 'highland-game', controllerId: 'p1', zone: 'library', kind: 'creature', manaCost: 2, types: ['Creature'], subtypes: [], colors: ['G'] });
   giveMana(state, 'p1', 1, ['R']);
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bomb', abilityIndex: 0, targets: ['foe'] }).ok);
+  resolveUntilDecision(state, optionalPayOpen); // Etap F (CR 603.5)
   assert.ok(state.pendingOptionalPay, 'decyzja czeka');
   const view = playerView(state, 'p1');
   const offers = (view.legalCommands ?? []).filter((c) => c.type === 'resolve_optional_pay_choice');

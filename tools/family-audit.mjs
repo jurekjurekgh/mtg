@@ -182,7 +182,7 @@ export const FIELD_FAMILIES = [
     label: 'licznik dobrań w turze',
     owner: 'src/engine/players.js',
     pattern: /\.cardsDrawnThisTurn\s*(?:\[[^\]]+\])?\s*(?:\+=|\+\+|=(?!=)\s*\d)/,
-    why: 'podnosi licznik dobrań poza recordCardDrawn — gubi stemplowanie drawNumberThisTurn w card_drawn (CR 122.5)',
+    why: 'podnosi licznik dobrań poza recordCardDrawn — gubi stemplowanie drawNumberThisTurn w card_drawn (CR 121.2)',
     bypass: [
       'state.cardsDrawnThisTurn[p.id] = 2;',
       'p.cardsDrawnThisTurn += 1;',
@@ -223,7 +223,7 @@ export const FIELD_FAMILIES = [
     owner: 'src/engine/impulse-window.js',
     pattern: /\bplayableWithoutPaying\s*[:=](?!=)/,
     why: 'pisze playableWithoutPaying poza impulse-window.js — flaga bez okna to darmowy rzut '
-      + 'bez terminu ważności (CR 701.51b „without paying its mana cost" żyje tyle, co impuls)',
+      + 'bez terminu ważności (CR 701.18 „without paying its mana cost" żyje tyle, co impuls)',
     bypass: [
       'target.playableWithoutPaying = true;',
       'Object.freeze({ ...moved, playableWithoutPaying: true }),',

@@ -1,6 +1,6 @@
 // E8/B1 (wyzwanie wyłapywacza błędów): REGENERACJA KONSUMUJE WSZYSTKIE TARCZE.
 //
-// CR 701.15b: każdy efekt „Regenerate [permanent]" tworzy zastępczy efekt
+// CR 701.19a: każdy efekt „Regenerate [permanent]" tworzy zastępczy efekt
 // chroniący przy NASTĘPNEJ próbie zniszczenia — czyli JEDNA tarcza = jedno
 // uratowanie. Dwie tarcze na tym samym permanencie ratują DWUKROTNIE.
 // `tryRegenerate` (state-based.js) robiło `filter((id) => id !== object.id)`
@@ -43,7 +43,7 @@ test('E8/B1: dwie tarcze regeneracji ratują DWUKROTNIE (jedna tarcza = jedno zn
   assert.equal(destroyPermanentAndClear(state, 'husk'), false, '2. zniszczenie też zastąpione');
   assert.equal((state.regenerationShields ?? []).filter((id) => id === 'husk').length, 0, 'tarcze wyczerpane');
   assert.equal(husk(state).zone, 'battlefield', 'stwór nadal żyje');
-  // 3. zniszczenie — bez tarczy: śmierć (CR 701.15a).
+  // 3. zniszczenie — bez tarczy: śmierć (CR 701.19a).
   assert.equal(destroyPermanentAndClear(state, 'husk'), true, '3. zniszczenie skuteczne');
   assert.equal(husk(state).zone, 'graveyard', 'stwór w grobie');
 });

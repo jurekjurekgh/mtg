@@ -1,9 +1,10 @@
 import { event } from '../protocol/types.js';
 import { createGameObject } from './identity.js';
+import { nextTimestamp } from './timestamps.js';
 import { effectivePower, effectiveToughness } from './permanents.js';
 
 /**
- * Tokeny: uproszczone stałe obiekty gry, tworzone z reguły (np. efekt czaru).
+ * Tokeny (CR 111.1): obiekty gry bez karty, tworzone efektem (np. czaru).
  * Moduł celowo nie importuje game-state.js (unika cykli w sklejaniu artefaktu);
  * tworzy obiekt bezpośrednio przez createGameObject i jawne strefy.
  */
@@ -184,9 +185,11 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     ...(copyNumber ? { copyNumber } : {}),
     // Static Net (BRO): „create a tapped Powerstone token\" — token WCHODZI
     // na pole bitwy tapnięty (enters tapped), co nie jest „becomes tapped\"
-    // (CR 701.21a — brak zdarzenia object_tapped jest poprawny). L24/C.
+    // (CR 701.26 — brak zdarzenia object_tapped jest poprawny). L24/C.
     ...(tapped ? { tapped: true } : {}),
     enteredOnTurn: state.turn.number,
+    // D4b (CR 613.7d): token dostaje znacznik czasu przy wejściu na pole bitwy.
+    timestamp: nextTimestamp(state),
     // „This token can't block\" (Phyrexian Mite, Goblin Construct) to cecha
     // WYDRUKOWANA na tokenie, a nie efekt „until end of turn\" — cleanup
     // (CR 514.2) zdejmuje wyłącznie te drugie. Pole `cantBlock` niesie oba
@@ -201,7 +204,7 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     // Insect itd.) nie dostają tego pola.
     ...(transformTo ? { transformTo } : {}),
     // M264/2.3 (CR 707.8a): tożsamość twarzy PRZEDNIEJ pary — inaczej
-    // `copyManaValueOf` (MV 0 dla kopii tyłu, 202.3b) i reset K5 (711.4a)
+    // `copyManaValueOf` (MV 0 dla kopii tyłu, 202.3b) i reset K5 (712.8a)
     // nie rozpoznają dwustronnego tokenu. Idzie w parze z transformTo:
     // bez drugiej strony nie ma czego identyfikować jako pary.
     ...(transformTo && frontFaceId ? { frontFaceId } : {}),

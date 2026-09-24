@@ -2,7 +2,7 @@ import { effectiveAbilities, effectiveSubtypes } from './permanents.js';
 
 /**
  * Mapowanie źródeł many -> jakie kolory mogą wyprodukować.
- * Na podstawie Oracle text kart (uproszczone, ale dokładniejsze niż „non-basic = any”).
+ * Na podstawie Oracle text kart — wyłącznie źródła BEZ deskryptora (patrz niżej).
  *
  * Każdy wpis: cardId -> { colors: ['W','U',...], amount: number }
  * - colors puste = tylko bezbarwna (C)
@@ -33,7 +33,7 @@ const MANA_SOURCE_MAP = Object.freeze({
   'raucous-carnival': { colors: ['R', 'W'], amount: 1 },
   'great-furnace': { colors: ['R'], amount: 1 },
   'basilisk-gate': { colors: [], amount: 1 }, // {T}: Add {C}
-  // Urza's Mine — tron (CR 702.??): {T}: Add {C}; jeśli kontrolujesz też
+  // Urza's Mine — tron (tekst karty, bez osobnej reguły CR): {T}: Add {C}; jeśli kontrolujesz też
   // Urza's Power-Plant i Urza's Tower → zamiast tego Add {C}{C}.
   // Intencja: oba pozostałe landy z linii Urzy pojawią się w przyszłości
   // (decyzja właściciela). Mapa nie zawiera dosłownego porównania cardId —
@@ -87,16 +87,78 @@ export function getManaSourceInfo(cardId) {
  * ktorego nie da sie oplacic (odwrotny bug tej samej klasy, L48).
  */
 /**
+ * Kolory many, które OBIEKT mógłby wyprodukować, IGNORUJĄC koszty aktywacji —
+ * dosłownie CR 106.7: „The type of mana a permanent could produce at any time
+ * includes any type of mana that an ability of that permanent would produce if
+ * the ability were to resolve at that time, taking into account any applicable
+ * replacement effects in any possible order. Ignore whether any costs of the
+ * ability could or could not be paid."
+ *
+ * Źródła kolorów (audyt PR #134, F-2 — dawniej tylko punkt 1, więc „could
+ * produce" gubiło resztę produkcji obiektu):
+ *  1. deskryptory `add_mana` WSZYSTKICH zdolności aktywowanych (bez filtra
+ *     kosztów — Heap Gate {1},{T}: any color liczy się w pełni), w tym
+ *     zagnieżdżone `colorsFrom` z wykluczeniem samego obiektu;
+ *  2. kolor WYBRANY przy wejściu (`chosenColor` — Manor Gate: „{T}: Add {G}
+ *     or one mana of the chosen color");
+ *  3. wewnętrzna zdolność many z podstawowego podtypu lądu (CR 305.6 —
+ *     podtyp EFEKTYWNY, więc nadanie typu też się liczy);
+ *  4. produkcja implikowana (karta bez deskryptora many w danych — mapa
+ *     źródeł, np. „{T}: Add {R}" jako cały tekst karty).
+ *
+ * `effectiveAbilities`/`effectiveSubtypes`: nadania zdolności i zmian typu
+ * honorujemy jak każdy inny odczyt na polu bitwy.
+ */
+function manaColorsIgnoringCosts(gameObject, state = null) {
+  const colors = [];
+  const push = (color) => { if (color && !colors.includes(color)) colors.push(color); };
+  let hasManaAbility = false;
+  for (const ability of effectiveAbilities(gameObject)) {
+    if (ability?.type !== 'activated') continue;
+    const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    for (const effect of effects) {
+      if (effect?.type !== 'add_mana') continue;
+      hasManaAbility = true;
+      const producible = effect.colorsFrom
+        ? colorsProducibleBySubtype(state, gameObject.controllerId, effect.colorsFrom.controlledSubtype,
+          { excludeId: gameObject.id })
+        : (effect.colors ?? []);
+      for (const color of producible) push(color);
+    }
+  }
+  if (hasManaAbility && gameObject.chosenColor) push(gameObject.chosenColor);
+  const isLand = gameObject.kind === 'land' || (gameObject.types ?? []).includes('Land');
+  if (isLand) {
+    for (const subtype of effectiveSubtypes(gameObject)) push(BASIC_SUBTYPE_COLORS[subtype]);
+  }
+  // Punkt 4 tylko dla obiektów BEZ deskryptora many — inaczej `getSourceForObject`
+  // wszedłby z powrotem w `colorsProducibleBySubtype` (rekurencja).
+  if (!hasManaAbility) {
+    for (const color of getSourceForObject(gameObject, state)?.colors ?? []) push(color);
+  }
+  return colors;
+}
+
+/**
  * Batch 58/B7 (Gond Gate: „{T}: Add one mana of any color that a Gate you
  * control could produce"): kolory produkowalne przez KONTROLOWANE permanenty
- * o danym podtypie — unia kolorów z deskryptorów `add_mana` ich zdolności
- * (koszt bez znaczenia: Oracle mówi „could produce", a nie „za samo {T}" —
- * CR 106.1; Heap Gate ze swoim {1},{T}: any color liczy się więc w pełni).
+ * o danym podtypie — unia tego, co każdy z nich „could produce" (CR 106.7,
+ * koszt bez znaczenia; pełny odczyt w `manaColorsIgnoringCosts` wyżej).
  *
  * `excludeId` wyklucza samo źródło (Gond Gate nie liczy własnego {C}).
  * Jedno miejsce prawdy (L41) dla: kreatora many/auto-tapu
  * (`getSourceForObject`), rozstrzygnięcia efektu (effects.js) i bramki
  * dostępności zdolności (abilities.js `abilityConditionFailure`).
+ *
+ * O-5 audytu PR #134: `colorsFrom` innych źródeł grupy (drugi Gond Gate) NIE
+ * jest rozwijany rekurencyjnie. Dla katalogu (stan 2026-09-24: jedyna karta
+ * z `colorsFrom` to Gond Gate, grupa = Gate) wynik jest identyczny z punktem
+ * stałym CR 106.7 — kolory drugiego Gond Gate to z definicji kolory
+ * pozostałych Bram, a same Gond Gate poprawnie dają zero kolorów.
+ * KARTY SPOZA KATALOGU: źródło z `colorsFrom` INNEJ grupy (np. „any color
+ * a land you control could produce" — Reflecting Pool) obok Gond Gate
+ * wymaga iteracji do punktu stałego (unia po kolejnych przebiegach, aż zbiór
+ * przestanie rosnąć), z ochroną przed cyklem.
  */
 export function colorsProducibleBySubtype(state, playerId, subtype, { excludeId = null } = {}) {
   const colors = [];
@@ -106,15 +168,8 @@ export function colorsProducibleBySubtype(state, playerId, subtype, { excludeId 
     if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) continue;
     if (excludeId != null && object.id === excludeId) continue;
     if (!effectiveSubtypes(object).includes(subtype)) continue;
-    // `effectiveAbilities`: podtypy i zdolności honorują nadania/zmiany typu
-    // (typeGrant/abilityGrants) — jak każdy inny odczyt na polu bitwy.
-    for (const ability of effectiveAbilities(object)) {
-      if (ability?.type !== 'activated') continue;
-      const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-      for (const effect of effects) {
-        if (effect?.type !== 'add_mana') continue;
-        for (const color of effect.colors ?? []) if (!colors.includes(color)) colors.push(color);
-      }
+    for (const color of manaColorsIgnoringCosts(object, state)) {
+      if (!colors.includes(color)) colors.push(color);
     }
   }
   return colors;
@@ -236,7 +291,7 @@ export const ANY_COLOR_MANA = Object.freeze(['W', 'U', 'B', 'R', 'G']);
  * rolę. `manaAbilityColors` takich zdolności celowo NIE liczy (produkcja nie
  * jest „od ręki", bo wymaga zdjęcia permanentu), a tu pytamy o coś innego: co
  * obiekt na polu bitwy JEST w stanie wyprodukować — płatność i tak musi go
- * poświęcić (CR 701.14a — poświęcenie jest kosztem zdolności, nie celem).
+ * poświęcić (CR 701.21a — poświęcenie jest kosztem zdolności, nie celem).
  *
  * Brak tu nazwy karty: predykat czyta deskryptor (cost + effect.fromTreasure),
  * więc kopia tej samej zdolności pod innym `cardId` liczy się identycznie

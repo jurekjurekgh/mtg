@@ -176,7 +176,7 @@ test('F3: walka 5/3 vs blok 3/3, combat_damage — bot AKTYWUJE TARCZĘ przed re
 
   // Dokończenie: aktywacja (stack) → pełna runda passów (p2, p1 — stack się
   // rozstrzyga, tarcza zostaje) → resolve_combat → stwór PRZEŻYWA (tarcza
-  // konsumowana przy próbie zniszczenia; CR 701.12a: odcięty od walki).
+  // konsumowana przy próbie zniszczenia; CR 701.19a: odcięty od walki).
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p2', objectId: choice.objectId, abilityIndex: choice.abilityIndex }).ok);
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok);
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);

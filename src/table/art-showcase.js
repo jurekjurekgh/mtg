@@ -31,7 +31,7 @@
  * dół, CR 708.2) ma być WYKŁUCZONY z warstwy ilustracji. FoW dotyczy zagrań
  * BOTa (przeciwnika widoku) — WŁASNY morph gracza warstwę otwiera
  * (właściciel: „wolałbym, żeby własny morph gracza otwierał warstwę. FoW
- * dotyczy tylko zagrań bota”): rzucający zna swoją kartę (CR 708.6).
+ * dotyczy tylko zagrań bota”): rzucający zna swoją kartę (CR 708.5).
  * `playerId === null` (nieznany rzucający) = bezpieczna domyślna krycie.
  */
 export function isCastHiddenFromViewer({ faceDown, playerId }, viewerId) {

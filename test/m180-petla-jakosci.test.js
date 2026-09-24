@@ -98,7 +98,8 @@ test('Z5: Krotiq Nestguard — druga aktywacja w tej samej turze nie jest oferow
   for (let i = 0; i < 6 && state.zones.stack.length > 0; i += 1) {
     execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   }
-  assert.ok((state.objects.get('krotiq').lostKeywordsUntilEOT ?? []).includes('defender'), 'defender zdjęty do EOT');
+  // W-8 (D4b): defender ZOSTAJE — aktywacja uchyla tylko ograniczenie ataku.
+  assert.equal(state.objects.get('krotiq').attacksAsThoughNoDefenderUntilEOT, true, 'atak mimo defendera do EOT');
   const again = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'activate_ability' && c.objectId === 'krotiq');
   assert.equal(again, undefined, 'powtórka = no-op, oferta schowana (precedens M103/M104)');

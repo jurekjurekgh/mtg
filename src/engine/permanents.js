@@ -1,6 +1,7 @@
 import { event } from '../protocol/types.js';
 import { assertZone, deathZoneFor } from './zones.js';
 import { addCounter, removeCounter, syncStationKind } from './counters.js';
+import { nextTimestamp, timestampOf, attachmentTimestampOf } from './timestamps.js';
 import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality } from './attachments.js';
 // M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
 // z ochroną kolorową); permanents.js re-eksportuje je, bo stamtąd biorą je
@@ -144,7 +145,7 @@ export function untapObject(state, objectId, playerId) {
   if (!object.tapped) return object;
   if (isUntapStepLocked(state, object)) return object;
   // Stun counters (Lodestone Needle): jeśli permanent ma liczniki stun,
-  // zamiast odkręcenia zdejmij jeden licznik stun (CR 122.1b).
+  // zamiast odkręcenia zdejmij jeden licznik stun (CR 122.1d).
   if ((object.counters ?? {}).stun > 0) {
     removeCounter(state, objectId, 'stun', 1);
     return state.objects.get(objectId);
@@ -197,7 +198,7 @@ export function untapControlled(state, playerId) {
       // źródłem aktywnej blokady nie odkręca się — deterministycznie
       // zawsze wybieramy „nie odkręcaj", żeby blokada nie wygasła.
       if (cured.tapped && isActiveLockSource(state, cured.id)) continue;
-      // M101/B3 (CR 122.1b — liczniki stun): „If a permanent with a stun
+      // M101/B3 (CR 122.1d — liczniki stun): „If a permanent with a stun
       // counter on it would become untapped, remove one from it instead."
       // Dotyczy KAŻDEGO odkręcenia, więc także turn-based action kroku
       // odkręcania (CR 502.2) — nie tylko punktowego untapObject. Bez tego
@@ -348,7 +349,7 @@ function staticConditionHolds(state, object, condition) {
       && candidate.controllerId === object.controllerId
       && (candidate.kind === 'artifact' || (candidate.types ?? []).includes('Artifact')));
   }
-  // Carapace Forger — Metalcraft (CR 702.80): trzy lub więcej artefaktów.
+  // Carapace Forger — Metalcraft (CR 207.2c): trzy lub więcej artefaktów.
   if (condition.minArtifactsControlled != null) {
     const count = [...(state?.objects?.values?.() ?? [])].filter((c) => c.zone === 'battlefield'
       && c.controllerId === object.controllerId
@@ -360,7 +361,7 @@ function staticConditionHolds(state, object, condition) {
   if (condition.enduringStory) {
     return hasEnduringStory(state, object.controllerId);
   }
-  // Kabira Vindicator — Level counters (CR 702.86)
+  // Kabira Vindicator — Level counters (CR 702.87)
   if (condition.minLevel != null || condition.maxLevel != null) {
     const level = object.counters?.level ?? 0;
     if (condition.minLevel != null && level < condition.minLevel) return false;
@@ -371,22 +372,41 @@ function staticConditionHolds(state, object, condition) {
 }
 
 /**
- * Liczba RÓŻNYCH typów kart wśród kart we WSZYSTKICH grobach (Tarmogoyf —
- * token Disy the Restless; wariant graveyardCardTypeCount liczący jednego
- * gracza). Tokeny nie są kartami (name ustawione) i się nie liczą.
+ * ZAMKNIĘTA lista TYPÓW KART (CR 205.2a) — JEDNO źródło dla wszystkich
+ * konsumentów (O-2 audytu PR #134, L41/L48: ta sama lista siedziała wcześniej
+ * w dwóch plikach jako `DELIRIUM_CARD_TYPES` w `triggers.js` i
+ * `ALL_GRAVEYARD_CARD_TYPES` tutaj; 16 elementów, zero różnicy, a od PR #134
+ * jedna z nich decydowała o dostępności zdolności — bramka delirium
+ * Resurrected Cultist).
+ *
+ * Konsumenty:
+ *   • delirium (CR 207.2c) — `graveyardCardTypeCount` w `triggers.js`
+ *     i bramka aktywacji w `abilities.js`;
+ *   • „liczba typów kart we wszystkich grobach” (Tarmogoyf — token Disy the
+ *     Restless) — `allGraveyardsCardTypeCount` poniżej;
+ *   • dozwolone typy kart w warstwie stołu (`render.js`).
+ *
+ * Nadtypy (Basic, Legendary, Snow, World) NIE są typami kart i nie wchodzą do
+ * listy; tokeny w grobie nie są kartami (`name` ustawione) i nie wnoszą typu.
  */
-const ALL_GRAVEYARD_CARD_TYPES = Object.freeze([
+export const CARD_TYPES = Object.freeze([
   'Artifact', 'Battle', 'Conspiracy', 'Creature', 'Dungeon', 'Enchantment',
   'Instant', 'Kindred', 'Land', 'Phenomenon', 'Plane', 'Planeswalker',
   'Scheme', 'Sorcery', 'Tribal', 'Vanguard',
 ]);
+
+/**
+ * Liczba RÓŻNYCH typów kart wśród kart we WSZYSTKICH grobach (Tarmogoyf —
+ * token Disy the Restless; wariant graveyardCardTypeCount liczący jednego
+ * gracza). Tokeny nie są kartami (name ustawione) i się nie liczą.
+ */
 export function allGraveyardsCardTypeCount(state) {
   const present = new Set();
   for (const objectId of state.zones.graveyard) {
     const object = state.objects.get(objectId);
     if (!object || object.name != null) continue;
     for (const type of object.types ?? []) {
-      if (ALL_GRAVEYARD_CARD_TYPES.includes(type)) present.add(type);
+      if (CARD_TYPES.includes(type)) present.add(type);
     }
   }
   return present.size;
@@ -417,6 +437,11 @@ function staticBonuses(state, object) {
     // Zdolności hymnowe ze scope (Trostani — „other creatures you control")
     // NIE buffują samego źródła — obsługuje je anthemBonuses na INNYCH obiektach.
     if (ability.scope) continue;
+    // W-1 (D4b, CR 613.4a): zdolność definiująca P/T (CDA — Tarmogoyf) NIE
+    // jest modyfikatorem warstwy 7c. Działa w warstwie 7a jako BAZA
+    // (`characteristicDefiningStat`), więc efekt warstwy 7b („has base power
+    // and toughness 4/4” — Voice of the Vermin) ją nadpisuje.
+    if (ability.characteristicDefining) continue;
     if (!staticConditionHolds(state, object, ability.condition)) continue;
     // Dynamiczny pump (np. Emissary Escort): `power` bywa markerem zamiast
     // liczbą — wartość liczona z planszy, nie stała w definicji (CR 611.3a).
@@ -468,11 +493,16 @@ function staticBonuses(state, object) {
  * po permanentach-źródłach, nie po zdolnościach samego obiektu.
  */
 function anthemBonuses(state, object) {
-  const bonus = { power: 0, toughness: 0, keywords: [] };
-  if (!state || object.zone !== 'battlefield' || object.faceDown) return bonus;
+  const bonus = { power: 0, toughness: 0, keywords: [], keywordEntries: [] };
+  // W-3 (D4b, CR 708.2): zakryty permanent to 2/2 STWÓR — cudzy hymn („other
+  // creatures you control get +1/+1”) działa na niego jak na każdy inny stwór.
+  // Zakrycie tłumi tylko JEGO WŁASNE zdolności (staticBonuses), nie efekty
+  // z zewnątrz. Hymn z zasięgiem na podtyp i tak go omija (brak podtypów).
+  if (!state || object.zone !== 'battlefield') return bonus;
   if (object.kind !== 'creature') return bonus;
   for (const source of state.objects.values()) {
-    if (source.zone !== 'battlefield') continue;
+    // CR 708.2a: zakryte ŹRÓDŁO nie ma zdolności — nie daje hymnu.
+    if (source.zone !== 'battlefield' || source.faceDown) continue;
     for (const ability of source.abilities ?? []) {
       if (ability?.type !== 'static' || !ability.scope) continue;
       // Altar of the Goyf: „Lhurgoyf creatures you control have trample." —
@@ -489,6 +519,8 @@ function anthemBonuses(state, object) {
       bonus.power += ability.pump?.power ?? 0;
       bonus.toughness += ability.pump?.toughness ?? 0;
       bonus.keywords.push(...(ability.keywords ?? []));
+      // D4b (CR 613.7a): efekt statyczny ma znacznik obiektu-źródła.
+      for (const keyword of ability.keywords ?? []) bonus.keywordEntries.push({ keyword, ts: timestampOf(source) });
     }
   }
   return bonus;
@@ -579,13 +611,16 @@ export function attachmentRestrictions(state, object) {
 }
 
 function attachmentBonuses(state, object) {
-  if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return { power: 0, toughness: 0, keywords: [] };
-  const bonus = { power: 0, toughness: 0, keywords: [] };
+  if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return { power: 0, toughness: 0, keywords: [], keywordEntries: [] };
+  const bonus = { power: 0, toughness: 0, keywords: [], keywordEntries: [] };
   for (const attachment of attachmentsAttachedTo(state, object.id)) {
     const grant = attachmentGrant(attachment);
+    // D4b (CR 613.7e): efekty załącznika mają znacznik PRZYPIĘCIA.
+    const ts = attachmentTimestampOf(attachment);
     bonus.power += grant.power;
     bonus.toughness += grant.toughness;
     bonus.keywords.push(...grant.keywords);
+    for (const keyword of grant.keywords) bonus.keywordEntries.push({ keyword, ts });
 
     // Conditional keywords (Hunter's Blowgun): different keywords granted
     // based on whose turn it is (evaluated at read time with game state).
@@ -620,7 +655,10 @@ function attachmentBonuses(state, object) {
           && other.controllerId === object.controllerId
           && other.kind === 'creature' && other.id !== object.id);
       }
-      if (active) bonus.keywords.push(...ck.keywords);
+      if (active) {
+        bonus.keywords.push(...ck.keywords);
+        for (const keyword of ck.keywords) bonus.keywordEntries.push({ keyword, ts });
+      }
     }
   }
   return bonus;
@@ -646,9 +684,9 @@ function counterDelta(object) {
  *  Turn the Tide, Angel of the Dawn, Your Temple). */
 function untilEndOfTurnBonuses(state, object) {
   if (!state || !object || object.zone !== 'battlefield' || object.kind !== 'creature') {
-    return { power: 0, toughness: 0, keywords: [] };
+    return { power: 0, toughness: 0, keywords: [], keywordEntries: [] };
   }
-  const out = { power: 0, toughness: 0, keywords: [] };
+  const out = { power: 0, toughness: 0, keywords: [], keywordEntries: [] };
   for (const buff of state.untilEndOfTurnBuffs ?? []) {
     // Buff TYLKO jednego obiektu (Altar of the Goyf — atakujący samotnie):
     // buff.objectId ogranicza do wskazanego obiektu; inaczej buff grupowy.
@@ -676,13 +714,71 @@ function untilEndOfTurnBonuses(state, object) {
     out.power += buff.power ?? 0;
     out.toughness += buff.toughness ?? 0;
     out.keywords.push(...(buff.keywords ?? []));
+    // D4b (CR 613.7b): znacznik efektu z chwili rozstrzygnięcia.
+    for (const keyword of buff.keywords ?? []) out.keywordEntries.push({ keyword, ts: buff.ts ?? 0 });
   }
   return out;
 }
 
+/**
+ * W-1 (D4b, CR 613.4a): wartość P/T z zdolności definiującej cechę (CDA,
+ * CR 604.3) — deskryptor statyczny z `characteristicDefining: true` i pumpem
+ * liczonym z planszy (Tarmogoyf: „power is equal to the number of card types
+ * among cards in all graveyards and its toughness is equal to that number
+ * plus 1”). `null` = obiekt nie ma CDA dla tej cechy.
+ */
+function characteristicDefiningStat(state, object, stat) {
+  if (!state || object.zone !== 'battlefield') return null;
+  for (const ability of object.abilities ?? []) {
+    if (ability?.type !== 'static' || !ability.characteristicDefining) continue;
+    const marker = ability.pump?.[stat];
+    if (marker === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
+    if (marker === 'card_types_in_all_graveyards_plus_1') return allGraveyardsCardTypeCount(state) + 1;
+    if (Number.isInteger(marker)) return marker;
+  }
+  return null;
+}
+
+/**
+ * D4b — BAZOWE P/T po warstwach 1b, 7a i 7b (CR 613.2b, 613.4a, 613.4b).
+ *
+ * CR 613.4b (CR 2026-09-25, dosłownie): „Layer 7b: Effects that set power
+ * and/or toughness to a specific number or value are applied. Effects that
+ * refer to the base power and/or toughness of a creature apply in this
+ * layer.” W obrębie podwarstwy — znaczniki czasu (CR 613.7).
+ *
+ *  - 7b: `tempBasePT` (set_base_pt — Voice of the Vermin, Jolrael) i warstwa
+ *    animacji z ustawionym P/T (Silvanus's Invoker 8/8, Skilled Animator 5/5)
+ *    — wygrywa PÓŹNIEJSZY znacznik (W-5; dotąd `tempBasePT` wygrywało zawsze).
+ *    Crew NIE ustawia P/T (CR 702.122a: „This permanent becomes an artifact
+ *    creature until end of turn.”) — warstwa bez `power` nie konkuruje (W-6).
+ *  - 7a: CDA (Tarmogoyf) — nadpisywana przez każdy efekt 7b (W-1).
+ *  - 1b: zakryty permanent to 2/2 jako WARTOŚCI KOPIOWALNE (CR 708.2: „Any
+ *    listed characteristics are the copiable values of that object’s
+ *    characteristics.”) — późniejsze warstwy, w tym 7b, działają na niego
+ *    normalnie (W-2; dotąd zakrycie wygrywało z efektem „base 4/4”).
+ */
+function layeredBaseStat(object, stat) {
+  const temp = object.tempBasePT ?? null;
+  const layer = object.originalBeforeAnimation ? animationLayerOf(object) : null;
+  const animationSets = layer != null && layer[stat] != null;
+  if (temp && (!animationSets || (temp.ts ?? 0) >= (layer.ptTs ?? 0))) return temp[stat];
+  if (animationSets) return layer[stat];
+  return null;
+}
+
+function baseStat(object, state, stat) {
+  const set = layeredBaseStat(object, stat);
+  if (set != null) return set;
+  if (object.faceDown) return 2;
+  const cda = characteristicDefiningStat(state, object, stat);
+  if (cda != null) return cda;
+  return object[stat];
+}
+
 export function effectivePower(object, state = null) {
-  if (object.power === null) return null;
-  const base = object.faceDown ? 2 : (object.tempBasePT?.power ?? object.power);
+  if (object.power === null && !object.faceDown) return null;
+  const base = baseStat(object, state, 'power');
   return base + (object.powerModifier ?? 0) + counterDelta(object)
     + attachmentBonuses(state, object).power + staticBonuses(state, object).power
     + anthemBonuses(state, object).power
@@ -718,8 +814,8 @@ export function grantedStatBonus(object, state = null) {
 }
 
 export function effectiveToughness(object, state = null) {
-  if (object.toughness === null) return null;
-  const base = object.faceDown ? 2 : (object.tempBasePT?.toughness ?? object.toughness);
+  if (object.toughness === null && !object.faceDown) return null;
+  const base = baseStat(object, state, 'toughness');
   return base + (object.toughnessModifier ?? 0) + counterDelta(object)
     + attachmentBonuses(state, object).toughness + staticBonuses(state, object).toughness
     + anthemBonuses(state, object).toughness
@@ -737,6 +833,21 @@ export function effectiveToughness(object, state = null) {
  *
  * `enteringId` wyklucza sam wchodzący obiekt z grona źródeł (statyk na
  * wchodzącej Bramie nie „widzi" jeszcze siebie na polu bitwy).
+ *
+ * KARTY SPOZA KATALOGU (O-4 audytu PR #134, CR 616.1): własne „enters tapped"
+ * i „… enter untapped" to DWA efekty zastępcze tego samego wejścia, więc
+ * kolejność (a tym samym wynik) wybiera kontroler wchodzącego permanentu.
+ * Silnik stosuje „odkręcony" bez pytania, bo w katalogu (stan 2026-09-24)
+ * nie ma karty, dla której tapnięte wejście czegokolwiek daje (Chronic
+ * Flooding liczy „becomes tapped", czego wejście tapnięte nie wyzwala;
+ * Frontline War-Rager/Cautious Survivor liczą tapnięte STWORY, a Bramy nimi
+ * nie są, chyba że zostaną ożywione — a wtedy odkręcona Brama tapnięta za
+ * manę osiąga ten sam stan, zyskując manę) — wybór „tapnięty" jest więc
+ * zawsze zdominowany i nie zmienia gry.
+ * Gdy do katalogu wejdzie karta nagradzająca tapnięty ląd/Bramę (np. „as long
+ * as you control a tapped land", „whenever a land enters tapped"): zamienić
+ * ten override na decyzję kontrolera (`pendingReplacementChoice`, CR 616.1)
+ * we wszystkich ścieżkach wejścia (`entersTappedNow`).
  */
 export function entersUntappedOverride(state, object, { enteringId = null } = {}) {
   if (!state || !object) return false;
@@ -752,6 +863,35 @@ export function entersUntappedOverride(state, object, { enteringId = null } = {}
     }
   }
   return false;
+}
+
+/**
+ * O-1 (audyt PR #134, klasa L101 — jedna decyzja dla wszystkich ścieżek
+ * wejścia): czy obiekt wchodzący na pole bitwy wchodzi TAPNIĘTY z
+ * wydrukowanego „enters tapped”.
+ *
+ * Helper składa trzy rzeczy, które wcześniej każda ścieżka układała sobie sama
+ * (a dwie ścieżki KOPII nie miały trzeciej wcale):
+ *   • CR 614.1d/614.12 — bezwarunkowe „enters tapped” to efekt zastępczy
+ *     wejścia (także reanimacji i wejścia z biblioteki), nie trigger;
+ *   • warunkowe „enters tapped unless …” rozstrzyga `playLand` (CR 614.1c) —
+ *     tu zwracamy false, żeby ścieżka ruchu nie tapnęła landa z warunkiem
+ *     spełnionym;
+ *   • statyk kontrolera „permanenty o podtypie X wchodzą odkręcone”
+ *     (Batch 58/B7, Gond Gate: „Gates you control enter untapped”) znosi
+ *     tapnięcie — `entersUntappedOverride`.
+ *
+ * `characteristics` to dowolny nośnik cech wejścia: żywy obiekt (zwykłe
+ * ścieżki ruchu) albo KOPIOWALNE cechy oryginału z kontrolerem kopii (CR
+ * 707.2 — ścieżki kopii, gdzie obiektu jeszcze nie ma albo jest przepisywany
+ * w miejscu). `enteringId` wyklucza sam wchodzący obiekt z liczenia „other …”.
+ */
+export function entersTappedNow(state, characteristics, { enteringId = null } = {}) {
+  if (!state || !characteristics) return false;
+  if (!characteristics.entersTapped) return false;
+  if (characteristics.entersTappedCondition) return false;
+  if (characteristics.faceDown) return false;
+  return !entersUntappedOverride(state, characteristics, { enteringId });
 }
 
 /**
@@ -776,7 +916,9 @@ export function effectiveAbilities(object) {
  * zdolności wydrukowanych nie zmieniają się (komendy niosą abilityIndex).
  */
 export function grantedActivatedAbilities(state, object) {
-  if (!state || object?.zone !== 'battlefield' || object.faceDown) return [];
+  // W-3 (D4b, CR 708.2): zakrycie tłumi WŁASNE zdolności, nie nadane z
+  // zewnątrz — zakryty stwór bez podtypów i tak nie spełnia zasięgu „Sliver”.
+  if (!state || object?.zone !== 'battlefield') return [];
   if (object.kind !== 'creature') return [];
   const out = [];
   for (const source of state.objects.values()) {
@@ -830,8 +972,16 @@ export function effectiveSubtypes(object) {
  *  Warrior in addition to its other types"). Wymaga stanu (read-time). */
 export function attachmentSubtypes(state, object) {
   if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return [];
+  // W-7 (D4b, warstwa 4 — CR 613.1d w kolejności znaczników 613.7). CR 205.1a:
+  // „when an effect sets one or more of an object's subtypes, the new
+  // subtype(s) replaces any existing subtypes from the appropriate set”. Efekt
+  // nadpisujący typy stworów (Wishful Merfolk „becomes a Human”) zastępuje
+  // także typy dodane WCZEŚNIEJ przez załącznik (Warrior's Sword); załącznik
+  // przypięty PÓŹNIEJ (613.7e) dodaje swój typ na wierzch nadpisania.
+  const overrideTs = object.subtypeOverrideTs ?? null;
   const out = [];
   for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    if (overrideTs != null && attachmentTimestampOf(attachment) < overrideTs) continue;
     const grant = attachmentGrant(attachment);
     out.push(...(grant.subtypes ?? []));
   }
@@ -929,7 +1079,7 @@ export function effectiveSubtypesOnBattlefield(state, object) {
  * Zwraca null, gdy obiekt nie ma warda (keyword czytany EFEKTYWNIE —
  * granty/utrata), inaczej kwotę many z pola `ward`; domyślnie 2, bo
  * jedyne źródło w katalogu to zakryte permanenty (cloak/disguise,
- * CR 701.56a: „2/2 creature with ward {2}").
+ * CR 701.58a: „2/2 creature with ward {2}").
  */
 export function wardAmountOf(object, state = null) {
   if (!object) return null;
@@ -938,87 +1088,94 @@ export function wardAmountOf(object, state = null) {
 }
 
 export function effectiveKeywords(object, state = null) {
-  // CR 708.2a — face-down permanent (morph/megamorph) ma TYLKO cechy, które
-  // sam określa: 2/2, bez nazwy, bez zdolności i bez keywordów. Keywordy
-  // karty są zakryte, dopóki stwór nie zostanie odsłonięty (turnFaceUp
-  // czyta oryginalne `keywords` z obiektu — pole niezmieniane). Bez tego
-  // zakryty stwór z flying błędnie odblokowywałby Lurking Green Dragon
-  // („defending player controls a creature with flying") i mógł blokować
-  // flyery — audyt Batchu 26 (M65).
+  // D4b / warstwa 6 (CR 613.1f): „Ability-adding effects, keyword counters,
+  // ability-removing effects, and effects that say an object can’t have an
+  // ability are applied.” W obrębie warstwy — znaczniki czasu (CR 613.7).
+  // CR 613.9 (przykład, dosłownie): „Two effects are affecting the same
+  // creature: one from an Aura that says ‘Enchanted creature has flying’ and
+  // one from an Aura that says ‘Enchanted creature loses flying.’ […] Applying
+  // them in timestamp order means the one that was generated last ‘wins.’”
+  //
+  // Wpisy: `base` (wydrukowane keywordy albo cechy zakrycia — nie efekt, każda
+  // utrata je zdejmuje) i nadania ze znacznikiem `ts`. Keyword jest obecny,
+  // gdy nie dotyczy go żadna utrata, albo gdy któreś nadanie jest PÓŹNIEJSZE od
+  // ostatniej utraty (W-4 — dotąd utrata wygrywała zawsze, wbrew 613.9).
+  const objectTs = timestampOf(object);
+  const entries = [];
+  const grant = (keyword, ts) => entries.push({ keyword, ts, base: false });
+  const counterGrant = (name) => {
+    if ((object.counters ?? {})[name] > 0) grant(name, object.counterTs?.[name] ?? objectTs);
+  };
+  const external = () => {
+    // Efekty z zewnątrz — działają także na zakryty permanent (W-3, CR 708.2:
+    // zakrycie ustala WARTOŚCI KOPIOWALNE 2/2, późniejsze warstwy działają;
+    // CR 708.8: „Any effects that have been applied to the face-down permanent
+    // still apply to the face-up permanent.”).
+    for (const keyword of object.keywordGrants ?? []) grant(keyword, object.keywordGrantTs?.[keyword] ?? objectTs);
+    for (const entry of attachmentBonuses(state, object).keywordEntries) grant(entry.keyword, entry.ts);
+  };
   if (object.faceDown) {
-    // Audyt PR #41 (B4): CR 708.2a tłumi DRUKOWANE keywordy/zdolności
-    // zakrytego stwora (morph/cloak) — ale nie liczniki nadające zdolności
-    // (CR 122.1b). Ruling cloak/Veiled Ascension: „Other effects that apply
-    // to the permanent can still grant it any characteristics it doesn't
-    // have." Licznik flying na zakrytym stworze daje flying — to sedno
-    // Veiled Ascension (zakryte stwory mogą blokować flyery).
-    const counterKeywords = [];
-    if ((object.counters ?? {}).flying > 0) counterKeywords.push('flying');
-    if ((object.counters ?? {}).deathtouch > 0) counterKeywords.push('deathtouch');
-    if ((object.counters ?? {}).lifelink > 0) counterKeywords.push('lifelink');
-    // M258/F3 (CR 701.56a + 702.21): zakryty permanent z CLOAK/DISGUISE to
-    // 2/2 Z WARD {2} — ward jest częścią definicji zakrycia (jak staty 2/2),
-    // a nie drukowanym keywordem zakrywanej karty, więc CR 708.2a go NIE
-    // tłumi (ruling cloak: „Other effects can still grant it any
-    // characteristics it doesn't have"). Morph bez warda: pole ward = null.
-    if (object.ward != null) counterKeywords.push('ward');
-    return counterKeywords;
+    // CR 708.2a — zakryty permanent nie ma WŁASNYCH keywordów ani zdolności
+    // (drukowane są schowane; turnFaceUp je przywraca). Liczniki keywordów
+    // (CR 122.1b — Veiled Ascension) i efekty z zewnątrz działają.
+    counterGrant('flying');
+    counterGrant('deathtouch');
+    counterGrant('lifelink');
+    // M258/F3 (CR 701.58a + 702.21): ward {2} cloaka/disguise jest częścią
+    // definicji zakrycia (warstwa 1b), nie drukowanym keywordem karty.
+    if (object.ward != null) entries.push({ keyword: 'ward', ts: 0, base: true });
+    external();
+  } else {
+    for (const keyword of object.keywords ?? []) entries.push({ keyword, ts: 0, base: true });
+    external();
+    // Statyki własne (CR 613.7a — znacznik obiektu).
+    for (const keyword of staticBonuses(state, object).keywords) grant(keyword, objectTs);
   }
-  const base = [...(object.keywords ?? [])];
-  for (const keyword of [
-    ...(object.keywordGrants ?? []),
-    ...attachmentBonuses(state, object).keywords,
-    ...staticBonuses(state, object).keywords,
-    ...anthemBonuses(state, object).keywords,
-    ...untilEndOfTurnBonuses(state, object).keywords,
-  ]) {
-    if (!base.includes(keyword)) base.push(keyword);
-  }
+  for (const entry of anthemBonuses(state, object).keywordEntries) grant(entry.keyword, entry.ts);
+  for (const entry of untilEndOfTurnBonuses(state, object).keywordEntries) grant(entry.keyword, entry.ts);
   // Hexproof „do twojej następnej tury" (Throne of the Dead Three): trwa przez
   // turę przeciwnika i gaśnie z początkiem następnej tury kontrolera — to NIE
   // grant czyszczony w cleanup, tylko licznik tur.
   if (object.hexproofUntilTurn != null && state && state.turn.number < object.hexproofUntilTurn) {
-    if (!base.includes('hexproof')) base.push('hexproof');
+    grant('hexproof', objectTs);
   }
-  // Licznik deathtouch (Kappa Tech-Wrecker): permanent z licznikiem deathtouch
-  // ma keyword deathtouch (CR 122.1b — counters grant abilities).
-  if ((object.counters ?? {}).deathtouch > 0) {
-    if (!base.includes('deathtouch')) base.push('deathtouch');
-  }
-  // Licznik lifelink (Batch 24: Unbreakable Bond) — CR 122.1b, jak wyżej.
-  if ((object.counters ?? {}).lifelink > 0) {
-    if (!base.includes('lifelink')) base.push('lifelink');
-  }
-  // Licznik flying (Veiled Ascension, MKC) — face-down stwory dostają flying
-  // counter; CR 122.1b (counters grant abilities), jak deathtouch/lifelink.
-  if ((object.counters ?? {}).flying > 0) {
-    if (!base.includes('flying')) base.push('flying');
-  }
-  // Station (EOE Spacecraft, Wedgelight Rammer): po osiągnięciu progu
-  // liczników charge obiekt jest stworem i ma keywordy z deskryptora
-  // („9+ | Flying, first strike\"). Liczone przy odczycie, jak static bonus.
-  if (object.station && (object.counters?.charge ?? 0) >= object.station.threshold) {
-    for (const keyword of object.station.keywords ?? []) {
-      if (!base.includes(keyword)) base.push(keyword);
+  if (!object.faceDown) {
+    // Liczniki deathtouch (Kappa Tech-Wrecker), lifelink (Unbreakable Bond),
+    // flying (Veiled Ascension) — CR 122.1b; znacznik licznika (CR 613.7c).
+    counterGrant('deathtouch');
+    counterGrant('lifelink');
+    counterGrant('flying');
+    // Station (EOE Spacecraft, Wedgelight Rammer): po osiągnięciu progu
+    // liczników charge obiekt jest stworem i ma keywordy z deskryptora
+    // („9+ | Flying, first strike\"). Własna zdolność — znacznik obiektu.
+    if (object.station && (object.counters?.charge ?? 0) >= object.station.threshold) {
+      for (const keyword of object.station.keywords ?? []) grant(keyword, objectTs);
     }
   }
-  // „Enchanted creature loses flying" (Grounded, CR 604/613): załącznik z
-  // deskryptorem losesKeywords ODBIERA keywordy gospodarzowi. Warstwa
-  // ostatnia — po wszystkich grantach (karta, liczniki, statyki, załączniki)
-  // — więc odbiór wygrywa np. z buffem „gains flying" z innej aury.
+  // Utraty: „Enchanted creature loses flying\" (Grounded — znacznik przypięcia,
+  // CR 613.7e) i własna utrata „do końca tury\" (Wishful Merfolk — znacznik
+  // rozstrzygnięcia, CR 613.7b).
+  const lastLoss = new Map();
+  const lose = (keyword, ts) => lastLoss.set(keyword, Math.max(lastLoss.get(keyword) ?? -Infinity, ts));
   if (state && object.zone === 'battlefield') {
-    const lost = new Set();
-    // M158/Batch 39 (Wishful Merfolk): własna tymczasowa utrata keywordów
-    // („loses defender ... until end of turn") — ta sama warstwa co odbiór
-    // z załączników (odbiera po grantach).
-    for (const keyword of object.lostKeywordsUntilEOT ?? []) lost.add(keyword);
+    for (const keyword of object.lostKeywordsUntilEOT ?? []) lose(keyword, object.lostKeywordTs?.[keyword] ?? 0);
     for (const attachment of attachmentsAttachedTo(state, object.id)) {
       const descriptor = attachment.aura ?? attachment.equipment ?? null;
-      for (const keyword of descriptor?.losesKeywords ?? []) lost.add(keyword);
+      for (const keyword of descriptor?.losesKeywords ?? []) lose(keyword, attachmentTimestampOf(attachment));
     }
-    if (lost.size > 0) return base.filter((keyword) => !lost.has(keyword));
   }
-  return base;
+  const out = [];
+  for (const entry of entries) {
+    if (out.includes(entry.keyword)) continue;
+    const loss = lastLoss.get(entry.keyword);
+    if (loss == null) {
+      out.push(entry.keyword);
+      continue;
+    }
+    // Obecny tylko, gdy istnieje nadanie późniejsze niż ostatnia utrata.
+    if (entries.some((e) => e.keyword === entry.keyword && !e.base && e.ts > loss)) out.push(entry.keyword);
+  }
+  return out;
 }
 
 /**
@@ -1036,6 +1193,9 @@ export function turnFaceUp(state, objectId, counters = {}) {
   if (!object || object.zone !== 'battlefield' || !object.faceDown) throw new Error('Obrócić twarzą do góry można tylko face-down permanent');
   replaceObject(state, object, {
     faceDown: false,
+    // D4b (CR 613.7f): „A permanent receives a new timestamp each time it
+    // turns face up or face down.”
+    timestamp: nextTimestamp(state),
     // Przywrócenie oryginalnych zdolności karty po obrocie (Batch 24 —
     // Willbender; face-down cast ukrył je pod flip-ability — patrz
     // resources.castPermanent). CR 702.37e: obrót „odkrywa" kartę wraz
@@ -1064,7 +1224,7 @@ export function turnFaceUp(state, objectId, counters = {}) {
         // zakryciem (uśpione: dziś 0 kart w katalogu ma drukowany ward — F4
         // w audycie PR #102 opisał to samo złą stronę przy cloaku).
         ward: object.faceDownOriginal.ward ?? null,
-        // M321: uncover przywraca też P/T karty (CR 701.56b — „turn it face
+        // M321: uncover przywraca też P/T karty (CR 701.58b — „turn it face
         // up"; odkryty cloak zostawał 2/2, bo cloak nadpisuje power/toughness
         // na staty zakrycia). Morfy, których faceDownOriginal nie niesie P/T,
         // zostają przy obecnym zachowaniu (fallback na obiekt).
@@ -1077,7 +1237,7 @@ export function turnFaceUp(state, objectId, counters = {}) {
     // MECHANIKI w punkcie zbierającym, nie u wołającego. Do tej pory kasowaniem
     // `ward`/`cloakReady`/`cloakTurnUpCost`/`copyNumber` zajmował się handler
     // komendy `turn_cloak_face_up`, więc obrót inną procedurą tej samej karty
-    // (CR 701.56c: koszt morpha) zostawiał ward {2} na face-up permanencie —
+    // (CR 701.58c: koszt morpha) zostawiał ward {2} na face-up permanencie —
     // pole `ward` idzie do PlayerView i do odznaki kafla, więc stwór „miał"
     // ward już po odsłonięciu. Tak samo manifest: flagi zdjęte tu, a nie w
     // handlerze `turn_manifest_face_up` (L41 — jedno źródło dla obu dróg).
@@ -1265,12 +1425,30 @@ export function clearStatModifiers(state) {
     if (object.subtypesBeforeOverride || (object.lostKeywordsUntilEOT ?? []).length > 0) {
       replaceObject(state, object, {
         ...(object.subtypesBeforeOverride
-          ? { subtypes: object.subtypesBeforeOverride, subtypesBeforeOverride: null }
+          ? { subtypes: object.subtypesBeforeOverride, subtypesBeforeOverride: null, subtypeOverrideTs: null }
           : {}),
-        lostKeywordsUntilEOT: Object.freeze([]),
+        lostKeywordsUntilEOT: Object.freeze([]), lostKeywordTs: null,
       });
     }
-    if (object.originalBeforeAnimation) {
+    // W-8 (Krotiq Nestguard): „can attack THIS TURN as though it didn't have
+    // defender” — flaga reguły ataku wygasa w cleanup.
+    if (object.attacksAsThoughNoDefenderUntilEOT) {
+      replaceObject(state, state.objects.get(object.id), { attacksAsThoughNoDefenderUntilEOT: false });
+    }
+    const animated = state.objects.get(object.id);
+    const animationEffects = animationEffectsOf(animated);
+    if (animated.originalBeforeAnimation && animationEffects) {
+      // W-10 (Etap F/5, CR 611.2 + 514.2): cleanup kończy WYŁĄCZNIE efekty
+      // „until end of turn”; animacja z linkiem (Skilled Animator) trwa do
+      // odejścia źródła, a zakończone efekty znikają z przeliczonej warstwy
+      // (np. P/T ustawione do końca tury nad trwającą animacją 5/5).
+      const lasting = animationEffects.filter((effect) => effect.linkedSourceId != null);
+      if (lasting.length !== animationEffects.length) {
+        replaceObject(state, animated, { ...animationFieldsAfter(animated, lasting), crewed: false });
+        syncStationKind(state, object.id);
+      }
+    } else if (animated.originalBeforeAnimation) {
+      // Obiekt sprzed W-10 (warstwa bez listy efektów — np. zbudowany w teście).
       // M157/C (uwaga właściciela, Skilled Animator): animacja LINKED („for as
       // long as this creature remains on the battlefield") NIE kończy się
       // w cleanup — trwa do odejścia ŹRÓDŁA z pola bitwy (cofnięcie w
@@ -1278,34 +1456,29 @@ export function clearStatModifiers(state) {
       // kończy wyłącznie animacje „until end of turn".
       const hasLiveLink = (state.linkedAnimations ?? [])
         .some((entry) => entry.targetId === object.id);
-      if (hasLiveLink) {
-        // Stacja i tak jest zsynchronizowana (obiekt niezmieniony), a animacja
-        // trwa — przechodzimy do kolejnych modyfikatorów tego obiektu.
-      } else {
-      replaceObject(state, object, {
-        kind: object.originalBeforeAnimation.kind,
-        types: object.originalBeforeAnimation.types,
-        subtypes: object.originalBeforeAnimation.subtypes,
-        power: object.originalBeforeAnimation.power,
-        toughness: object.originalBeforeAnimation.toughness,
-        originalBeforeAnimation: null,
-        // A4: koniec animacji = koniec „obsadzenia" (znacznik z crew).
-        crewed: false,
-      });
-      // M141/A (station + animacja): ożywiony Spacecraft (animacja 5/5)
-      // po zakończeniu animacji w cleanup wracał do artefaktu nawet przy
-      // 9+ licznikach charge — station nie była resynchronizowana.
-      // Naprawa: po przywróceniu cech pierwotnych natychmiast synchronizujemy
-      // rodzaj wg liczników (CR 205.1). Bez tego stwór traci typ Creature
-      // mimo spełnionego progu.
-      syncStationKind(state, object.id);
+      if (!hasLiveLink) {
+        replaceObject(state, animated, {
+          kind: animated.originalBeforeAnimation.kind,
+          types: animated.originalBeforeAnimation.types,
+          subtypes: animated.originalBeforeAnimation.subtypes,
+          power: animated.originalBeforeAnimation.power,
+          toughness: animated.originalBeforeAnimation.toughness,
+          originalBeforeAnimation: null,
+          // A4: koniec animacji = koniec „obsadzenia" (znacznik z crew).
+          crewed: false,
+        });
+        // M141/A (station + animacja): po przywróceniu cech pierwotnych
+        // natychmiast synchronizujemy rodzaj wg liczników (CR 205.1).
+        syncStationKind(state, object.id);
       }
     }
     // A4: strażnik inwariantu „crewed ⟹ trwa animacja" — znacznik stawia
     // wyłącznie rozstrzygnięcie crew (efekt animuje), ale gdyby przyszła
     // karta crew miała inny efekt, flaga nie może przeżyć tury.
+    // W-10: efekt crew („until end of turn”) kończy się w KAŻDYM cleanupie,
+    // także gdy animacja z linkiem trwa dalej.
     const afterAnim = state.objects.get(object.id);
-    if (afterAnim.crewed && !afterAnim.originalBeforeAnimation) {
+    if (afterAnim.crewed) {
       replaceObject(state, afterAnim, { crewed: false });
     }
     const current = state.objects.get(object.id);
@@ -1324,7 +1497,7 @@ export function clearStatModifiers(state) {
       || (current.cantBlock === true && current.cantBlockPrinted !== true);
     if (dirty) {
       replaceObject(state, current, {
-        powerModifier: 0, toughnessModifier: 0, keywordGrants: [],
+        powerModifier: 0, toughnessModifier: 0, keywordGrants: [], keywordGrantTs: null,
         abilityGrants: [], typeGrant: null,
         // „Can't block this turn\" (Panic Spellbomb) — cleanup zdejmuje
         // EFEKT (CR 514.2). Cecha WYDRUKOWANA („This token can't block\" —
@@ -1392,7 +1565,7 @@ export function grantBasicLandTypeUntilEndOfTurn(state, objectId, subtype) {
 }
 
 /**
- * Goad (CR 701.38): do końca tury stwór musi atakować w każdym combacie,
+ * Goad (CR 701.15): do końca tury stwór musi atakować w każdym combacie,
  * jeśli tylko może (loch Undercity — pokój Arena). Znacznik zdejmuje cleanup
  * (clearStatModifiers). Zwraca obiekt po zmianie.
  */
@@ -1402,7 +1575,7 @@ export function goadUntilNextTurn(state, objectId, sourceControllerId) {
     throw new Error('Goadować można tylko stwora na polu bitwy');
   }
   if (object.goaded) return object;
-  // CR 701.38c: goad trwa do początku NASTĘPNEJ tury gracza, który goadował —
+  // CR 701.15a: goad trwa do początku NASTĘPNEJ tury gracza, który goadował —
   // w 1v1 (tury naprzemienne) to turn.number + 2. Wcześniej goad wygasał
   // w cleanup TEJ SAMEJ tury („until end of turn") — zaczarowany stwór nie
   // musiał atakować w turze przeciwnika, co łamało całą mechanikę goadu
@@ -1418,13 +1591,13 @@ export function goadUntilNextTurn(state, objectId, sourceControllerId) {
  */
 /**
  * M177/A (Agate Assault, CR 614.6): strefa śmierci permanentu — licznik
- * finality (CR 122.1b) ALBO znacznik „if it would die this turn, exile it
+ * finality (CR 122.1h) ALBO znacznik „if it would die this turn, exile it
  * instead” (`state.exileIfDiesThisTurn`, czyszczony w cleanup) kierują
  * obiekt do exile zamiast do grobu. Jedno źródło prawdy dla WSZYSTKICH
  * ścieżek śmierci (SBA, destroy, sacrifice, legend rule).
  */
 /**
- * M177/E (Azorius Justiciar, CR 701.29): detain — „until your next turn,
+ * M177/E (Azorius Justiciar, CR 701.35): detain — „until your next turn,
  * that permanent can't attack or block and its activated abilities can't be
  * activated”. Wygasa na POCZĄTKU następnej tury gracza, który detainował
  * (wzorzec goadedUntilTurn — wygaszenie w game-state przy starcie tury).
@@ -1450,7 +1623,13 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options =
   if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Tymczasowe keywordy można nadawać tylko stworowi na polu bitwy');
   if (!Array.isArray(keywords) || keywords.some((k) => typeof k !== 'string' || !k)) throw new TypeError('Keywordy muszą być niepustymi napisami');
   const grants = [...new Set([...(object.keywordGrants ?? []), ...keywords])];
-  const updated = replaceObject(state, object, { keywordGrants: grants });
+  // D4b (CR 613.7b): nadanie dostaje znacznik czasu — w warstwie 6 wygrywa
+  // z utratą keywordu tylko wtedy, gdy jest PÓŹNIEJSZE (CR 613.9, W-4).
+  const ts = nextTimestamp(state);
+  const keywordGrantTs = Object.freeze({
+    ...(object.keywordGrantTs ?? {}), ...Object.fromEntries(keywords.map((keyword) => [keyword, ts])),
+  });
+  const updated = replaceObject(state, object, { keywordGrants: grants, keywordGrantTs });
   state.events.push(event('keyword_granted', {
     objectId, cardId: object.cardId, keywords: [...keywords], untilEndOfTurn: true,
     // M96: backup opisuje nadane keywordy własnym zdarzeniem
@@ -1465,14 +1644,27 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options =
  * Pola obiektu opisujące „czym permanent jest” po TRANSFORMACJI
  * (transform / craft / daybound→nightbound).
  *
- * CR 400.7 + CR 711.2: przemieniony permanent to wciąż ten sam permanent, ale
- * o cechach DRUGIEJ STRONY — efekty typu „until end of turn” nadające mu
- * charakterystyki (animacja: Skilled Animator robi z artefaktu stwora 5/5)
- * NIE przenoszą się na nową stronę. Bez tego resetu ożywiony artefakt po
- * crafcie zostawał `kind='creature'` z `power/toughness = null` z drugiej
- * strony: stwór bez liczbowego P/T (łamie CR 208.1), którego SBA nie potrafiły
- * zabić (CR 704.5f porównuje `null <= 0`, czyli `false` — permanent był
- * nieśmiertelny).
+ * CRAFT: permanent jest WYGNANY i wraca, a zmiana strefy tworzy nowy obiekt
+ * (CR 400.7), więc nadane charakterystyki wygasają i nowa strona wchodzi
+ * z własnymi cechami (CR 712.8/712.8e). Tu reset jest zgodny z CR. Bez niego
+ * ożywiony artefakt po crafcie zostawał `kind='creature'` z
+ * `power/toughness = null` z drugiej strony: stwór bez liczbowego P/T (łamie
+ * CR 208.1), którego SBA nie potrafiły zabić (CR 704.5f porównuje `null <= 0`,
+ * czyli `false` — permanent był nieśmiertelny).
+ *
+ * Wołający: craft (`resolveCraftExileOutcome`), powrót z wygnania
+ * przemienioną stroną (`effects.js`) i wejście nocną stroną (daybound,
+ * `spells.js` — obiekt dopiero wszedł, nic na niego jeszcze nie działa).
+ * WSZYSTKIE trzy dotyczą NOWEGO obiektu, więc reset jest zgodny z CR.
+ *
+ * Transform W MIEJSCU (efekt `transform`, `effects.js`) tego helpera NIE
+ * używa: CR 712.18 — „When a double-faced permanent transforms or converts, it
+ * doesn’t become a new object. Any effects that applied to that permanent will
+ * continue to apply to it.” Tamta ścieżka przenosi trwające efekty
+ * (modyfikatory, granty, animację — `transformInPlaceFields` niżej).
+ * O-6 audytu PR #134: poprzednia wersja tego komentarza twierdziła, że
+ * transform w miejscu przechodzi przez ten reset — nie przechodził; realny
+ * błąd siedział w samej ścieżce `transform` (patrz `transformInPlaceFields`).
  *
  * `back` to deskryptor drugiej strony (obiekt `transformTo`). Zwracany jest
  * zestaw pól do rozłożenia w nowym obiekcie.
@@ -1498,6 +1690,191 @@ export function transformedCharacteristics(back, previous = null) {
 }
 
 /**
+ * O-6 (audyt PR #134, CR 712.18 + 613): opis TRWAJĄCEJ animacji obiektu jako
+ * „warstwy” nakładanej na wydrukowane cechy — typy/podtypy dodane (albo
+ * zastąpione przy `retainTypes: false`) i ustawione bazowe P/T (warstwa 7b).
+ * Animacje zapisują ją w `originalBeforeAnimation.layer`; dla zapisów bez
+ * warstwy (fixtures, stan sprzed tej zmiany) wyprowadzamy ją z różnicy
+ * między stanem bieżącym a zapisem cofnięcia. `null` = obiekt nie jest
+ * animowany.
+ */
+export function animationLayerOf(object) {
+  const original = object?.originalBeforeAnimation;
+  if (!original) return null;
+  if (original.layer) return original.layer;
+  const current = { types: object.types ?? [], subtypes: object.subtypes ?? [] };
+  const retainTypes = (original.types ?? []).every((type) => current.types.includes(type));
+  return {
+    power: object.power ?? null,
+    toughness: object.toughness ?? null,
+    ptTs: 0,
+    typesAdd: retainTypes ? current.types.filter((t) => !(original.types ?? []).includes(t)) : [...current.types],
+    subtypesAdd: retainTypes ? current.subtypes.filter((t) => !(original.subtypes ?? []).includes(t)) : [...current.subtypes],
+    retainTypes,
+  };
+}
+
+/**
+ * Łączy warstwę nowej animacji z trwającą (późniejszy znacznik czasu wygrywa
+ * P/T — CR 613.7). `ts` to znacznik NOWEGO efektu (CR 613.7b).
+ *
+ * W-6 (D4b): animacja BEZ P/T (crew — CR 702.122a: „This permanent becomes an
+ * artifact creature until end of turn.”) nie jest efektem warstwy 7b, więc
+ * zachowuje P/T i znacznik `ptTs` poprzedniej warstwy (Skilled Animator 5/5
+ * trwa po crew), a bez poprzedniej — `power: null` (wydrukowane P/T pojazdu).
+ */
+export function mergedAnimationLayer(object, { power, toughness, typesAdd = [], subtypesAdd = [], retainTypes = true, ts = 0, linkedSourceId = null }) {
+  const previous = animationLayerOf(object);
+  // W-10/W-11 (Etap F/5, CR 611.2 + 613.7): każda animacja jest OSOBNYM
+  // efektem z własnym czasem trwania — „until end of turn” (crew, Silvanus's
+  // Invoker) albo „for as long as [źródło] remains on the battlefield”
+  // (Skilled Animator). Scalona warstwa służy odczytowi; lista `effects`
+  // pozwala zakończyć JEDEN efekt i przeliczyć resztę (`animationFieldsAfter`).
+  // Dawniej koniec dowolnej animacji cofał wszystkie naraz.
+  const previousEffects = previous?.effects
+    ?? (previous ? [{ ...legacyAnimationEffect(previous) }] : []);
+  const record = Object.freeze({
+    ts, power: power ?? null, toughness: toughness ?? null,
+    typesAdd: [...typesAdd], subtypesAdd: [...subtypesAdd], retainTypes,
+    ...(linkedSourceId != null ? { linkedSourceId } : {}),
+  });
+  return { ...mergeAnimationLayer(previous, { power, toughness, typesAdd, subtypesAdd, retainTypes, ts }), effects: [...previousEffects, record] };
+}
+
+/** Warstwa bez listy efektów (obiekt sprzed W-10) jako jeden efekt „do końca tury”. */
+function legacyAnimationEffect(layer) {
+  return {
+    ts: layer.ptTs ?? 0, power: layer.power ?? null, toughness: layer.toughness ?? null,
+    typesAdd: [...(layer.typesAdd ?? [])], subtypesAdd: [...(layer.subtypesAdd ?? [])],
+    retainTypes: layer.retainTypes !== false,
+  };
+}
+
+/**
+ * Scala dwie warstwy animacji: późniejszy znacznik wygrywa P/T (CR 613.7b),
+ * typy/podtypy się sumują, a efekt „przestaje mieć inne typy” (retainTypes
+ * false) zeruje wcześniejsze dodatki.
+ */
+function mergeAnimationLayer(previous, { power, toughness, typesAdd = [], subtypesAdd = [], retainTypes = true, ts = 0 }) {
+  const setsPT = power != null || toughness != null;
+  const pt = setsPT
+    ? { power: power ?? null, toughness: toughness ?? null, ptTs: ts }
+    : { power: previous?.power ?? null, toughness: previous?.toughness ?? null, ptTs: previous?.ptTs ?? null };
+  if (!previous || !retainTypes) {
+    return { ...pt, typesAdd: [...typesAdd], subtypesAdd: [...subtypesAdd], retainTypes };
+  }
+  return {
+    ...pt,
+    typesAdd: [...new Set([...previous.typesAdd, ...typesAdd])],
+    subtypesAdd: [...new Set([...previous.subtypesAdd, ...subtypesAdd])],
+    retainTypes: previous.retainTypes,
+  };
+}
+
+/**
+ * W-10/W-11: pola obiektu po zakończeniu części animacji — `remaining` to
+ * efekty, które TRWAJĄ (w kolejności znaczników, CR 613.7). Brak efektów =
+ * pełny powrót do cech sprzed animacji. Nadpisanie podtypów (warstwa 4 —
+ * Wishful Merfolk) trwa: obiekt zachowuje podtypy-cel, a zapis przywrócenia
+ * dostaje podtypy po animacji (jak `transformInPlaceFields`).
+ */
+export function animationFieldsAfter(object, remaining) {
+  const record = object?.originalBeforeAnimation;
+  if (!record) return {};
+  const { layer: _layer, ...base } = record;
+  if (!remaining || remaining.length === 0) {
+    return {
+      kind: base.kind, types: base.types,
+      ...(object.subtypesBeforeOverride ? { subtypesBeforeOverride: base.subtypes } : { subtypes: base.subtypes }),
+      power: base.power, toughness: base.toughness,
+      originalBeforeAnimation: null,
+    };
+  }
+  const ordered = [...remaining].sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0));
+  let layer = null;
+  for (const effect of ordered) layer = mergeAnimationLayer(layer, effect);
+  layer = { ...layer, effects: ordered };
+  const visible = withAnimationLayer(base, layer);
+  return {
+    kind: visible.kind, types: visible.types,
+    ...(object.subtypesBeforeOverride ? { subtypesBeforeOverride: visible.subtypes } : { subtypes: visible.subtypes }),
+    power: visible.power, toughness: visible.toughness,
+    originalBeforeAnimation: Object.freeze({ ...base, layer }),
+  };
+}
+
+/** Lista efektów animacji obiektu albo `null` (obiekt sprzed W-10 / bez animacji). */
+export function animationEffectsOf(object) {
+  return object?.originalBeforeAnimation?.layer?.effects ?? null;
+}
+
+/** Nakłada warstwę animacji na wydrukowane cechy strony. */
+function withAnimationLayer(base, layer) {
+  const types = layer.retainTypes ? [...new Set([...(base.types ?? []), ...layer.typesAdd])] : [...layer.typesAdd];
+  const subtypes = layer.retainTypes ? [...new Set([...(base.subtypes ?? []), ...layer.subtypesAdd])] : [...layer.subtypesAdd];
+  return {
+    kind: types.includes('Creature') ? 'creature' : base.kind,
+    types, subtypes,
+    // W-6: warstwa bez P/T (crew) zostawia wydrukowane P/T strony.
+    power: layer.power ?? base.power, toughness: layer.toughness ?? base.toughness,
+  };
+}
+
+/**
+ * O-6 (audyt PR #134): pola obiektu po transformie W MIEJSCU (CR 712.18 —
+ * ten sam obiekt, trwające efekty działają dalej).
+ *
+ * Przed poprawką efekt `transform` rozkładał cechy drugiej strony na obiekt
+ * wprost i zostawiał zapis cofnięcia animacji STAREJ strony, a do
+ * `transformTo` zapisywał cechy ANIMOWANE. Skutek (sonda na Ballista
+ * Watcher ożywionym do 5/5 artefaktu): po transformie animacja znikała
+ * (Artifact ginął), cleanup nakładał na Ballista WIELDER wydrukowane cechy
+ * PRZEDNIEJ strony (4/3 Human Soldier Werewolf — chimera), a powrotny
+ * transform dawał Ballista Watcher trwale 5/5 artefakt.
+ *
+ * Teraz: (1) opuszczana strona zapisuje się w `transformTo` WYDRUKOWANYMI
+ * cechami (zapis cofnięcia animacji / nadpisania podtypów), (2) nowa strona
+ * dostaje wydrukowane cechy drugiej strony, (3) trwająca animacja jest
+ * nakładana na nie ponownie, a zapis cofnięcia wskazuje cechy NOWEJ strony,
+ * (4) nadpisanie podtypów „do końca tury” (Wishful Merfolk) trwa, a jego
+ * zapis cofnięcia też wskazuje nową stronę. Modyfikatory P/T, liczniki i
+ * granty keywordów/zdolności zostają na obiekcie bez zmian (spread wyżej).
+ *
+ * Zwraca `{ fields, leavingFace }`: `fields` do rozłożenia na obiekcie,
+ * `leavingFace` — wydrukowane kind/types/subtypes/P/T opuszczanej strony.
+ */
+export function transformInPlaceFields(object, back) {
+  const original = object.originalBeforeAnimation ?? null;
+  const layer = animationLayerOf(object);
+  const leavingFace = {
+    kind: original ? original.kind : object.kind,
+    types: [...((original ? original.types : object.types) ?? [])],
+    subtypes: [...((object.subtypesBeforeOverride ?? (original ? original.subtypes : object.subtypes)) ?? [])],
+    power: original ? original.power : object.power,
+    toughness: original ? original.toughness : object.toughness,
+  };
+  const printedBack = {
+    kind: back.kind ?? (((back.types ?? []).includes('Creature')) ? 'creature' : leavingFace.kind),
+    types: [...(back.types ?? leavingFace.types)],
+    subtypes: [...(back.subtypes ?? [])],
+    power: back.power ?? null,
+    toughness: back.toughness ?? null,
+  };
+  const visible = layer ? withAnimationLayer(printedBack, layer) : printedBack;
+  const fields = {
+    ...visible,
+    originalBeforeAnimation: layer ? Object.freeze({ ...printedBack, layer }) : null,
+  };
+  if (object.subtypesBeforeOverride) {
+    // Nadpisanie podtypów trwa (712.18) — obiekt zachowuje podtypy-cel,
+    // a cleanup przywróci podtypy NOWEJ strony.
+    fields.subtypesBeforeOverride = [...visible.subtypes];
+    fields.subtypes = [...(object.subtypes ?? [])];
+  }
+  return { fields, leavingFace };
+}
+
+/**
  * Animuje permanent do końca tury (Silvanus's Invoker: land staje się
  * stworzeniem 8/8 z trample i haste, wciąż będąc landem).
  */
@@ -1514,13 +1891,18 @@ export function animatePermanentUntilEndOfTurn(state, objectId, { power, toughne
   const types = retainTypes ? [...new Set([...(object.types ?? []), ...typesAdd])] : [...typesAdd];
   const subtypes = retainTypes ? [...new Set([...(object.subtypes ?? []), ...subtypesAdd])] : [...subtypesAdd];
   const kind = types.includes('Creature') ? 'creature' : object.kind;
+  // O-6 (CR 712.18): zapis cofnięcia niesie też WARSTWĘ animacji, żeby
+  // transform w miejscu umiał nałożyć ją na drugą stronę (`transformInPlaceFields`).
+  const layer = mergedAnimationLayer(object, { power, toughness, typesAdd, subtypesAdd, retainTypes, ts: nextTimestamp(state) });
   const updated = replaceObject(state, object, {
     kind,
     types,
     subtypes,
-    power,
-    toughness,
-    originalBeforeAnimation,
+    // W-6 (D4b): pole power/toughness obiektu = P/T warstwy animacji, a gdy
+    // żadna animacja nie ustawia P/T (crew) — wydrukowane P/T.
+    power: layer.power ?? originalBeforeAnimation.power,
+    toughness: layer.toughness ?? originalBeforeAnimation.toughness,
+    originalBeforeAnimation: Object.freeze({ ...originalBeforeAnimation, layer }),
   });
   if (keywordsAdd.length > 0) {
     grantKeywordsUntilEndOfTurn(state, objectId, keywordsAdd);
@@ -1528,8 +1910,8 @@ export function animatePermanentUntilEndOfTurn(state, objectId, { power, toughne
   state.events.push(event('permanent_animated', {
     objectId,
     cardId: object.cardId,
-    power,
-    toughness,
+    power: updated.power,
+    toughness: updated.toughness,
     types,
     subtypes,
     untilEndOfTurn: true,

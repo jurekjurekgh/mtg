@@ -219,7 +219,7 @@ test('karta zakryta PRZECIWNIKA pokazuje wspólny rewers, nie swoją ilustrację
   assert.equal(host.textContent.includes('Kappa'), false, 'nazwa zakrytej karty nie może wyciec do DOM-u');
 });
 
-test('M100/E12: WŁASNA karta zakryta pokazuje nazwę + rewers (CR 708.6) — nazwa znana właścicielowi, art zostaje tyłem', () => {
+test('M100/E12: WŁASNA karta zakryta pokazuje nazwę + rewers (CR 708.5) — nazwa znana właścicielowi, art zostaje tyłem', () => {
   const registry = createCardRegistry();
   const host = new MiniEl('#host');
   // Pytanie właściciela 2026-08-15: nazwa własnego morpha nie może ukrywać,

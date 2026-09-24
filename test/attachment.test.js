@@ -116,7 +116,7 @@ test('zmiana strefy gospodarza samodzielnie rozłącza załączniki (inwariant a
   const state = gameWithHostAndAura();
   attachAuraToCreature(state, 'aura', 'host');
   // Gospodarz odchodzi z pola bitwy (jak przy śmierci/wygnaniu) — aura odłącza
-  // się w chwili ruchu i zostaje na polu bitwy jako stwór (CR 702.103b).
+  // się w chwili ruchu i zostaje na polu bitwy jako stwór (CR 702.103f).
   moveObjectDirectly(state, 'host', 'graveyard', 'grave-x');
   const aura = state.objects.get('aura');
   assert.equal(aura.zone, 'battlefield');

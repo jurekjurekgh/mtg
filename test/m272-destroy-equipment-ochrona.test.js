@@ -7,10 +7,10 @@ import { addCounter } from '../src/engine/counters.js';
 import { applyEffect } from '../src/engine/effects.js';
 
 /**
- * M272 (błąd #19) — „destroy" to JEDNA procedura (CR 701.7a) z warstwą
+ * M272 (błąd #19) — „destroy" to JEDNA procedura (CR 701.8a) z warstwą
  * efektów zastępujących: indestructible (CR 702.12), licznik shield
- * (CR 122.1), regeneracja (CR 701.15), a na końcu strefa śmierci wyznaczana
- * przez `deathZoneFor` (licznik finality → wygnanie, CR 122.1e).
+ * (CR 122.1), regeneracja (CR 701.19), a na końcu strefa śmierci wyznaczana
+ * przez `deathZoneFor` (licznik finality → wygnanie, CR 122.1h).
  *
  * Sekwencję znała tylko ścieżka `destroy_permanent`. `destroy_equipment_attached`
  * (Awaken the Sleeper) miała własną, uboższą kopię i niszczyła chroniony
@@ -79,7 +79,7 @@ test('KLASA: licznik shield pochłania zniszczenie w każdej ścieżce (CR 122.1
   }
 });
 
-test('KLASA: licznik finality kieruje zniszczenie do wygnania (CR 122.1e)', () => {
+test('KLASA: licznik finality kieruje zniszczenie do wygnania (CR 122.1h)', () => {
   for (const [nazwa, wykonaj] of sciezki) {
     const state = stan({ counters: { finality: 1 } });
     wykonaj(state);

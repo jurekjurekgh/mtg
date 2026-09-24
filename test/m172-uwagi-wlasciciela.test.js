@@ -163,7 +163,10 @@ test('B2: cel Mesmerize ma w WIDOKU cantBeBlocked (badge „nie do zablokowania"
     'WIDOK niesie cantBeBlocked (klasa L1/ADR 0017 — render liczy badge z widoku, nie ze stanu)');
 });
 
-test('B2b: utrata keyworda do EOT (Krotiq) jest w WIDOKU (badge „bez: defender")', () => {
+// W-8 (D4b, audyt PR #134 §9): Krotiq NIE traci defendera — „can attack this
+// turn as though it didn't have defender” uchyla tylko ograniczenie ataku.
+// Widok niesie flagę reguły (badge), a defender zostaje na kaflu.
+test('B2b: atak mimo defendera do EOT (Krotiq) jest w WIDOKU (badge), defender zostaje', () => {
   const state = game('p1');
   putCard(state, 'krotiq', 'krotiq-nestguard', 'p1', 'battlefield', { summoningSickness: false });
   addMana(state, 'p1', 3, { colors: ['G'] });
@@ -175,8 +178,9 @@ test('B2b: utrata keyworda do EOT (Krotiq) jest w WIDOKU (badge „bez: defender
     assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
   }
   const entry = playerView(state, 'p2').zones.battlefield.find((o) => o.id === 'krotiq');
-  assert.ok((entry?.lostKeywordsUntilEOT ?? []).includes('defender'),
-    'WIDOK niesie lostKeywordsUntilEOT (badge „bez: obrońca")');
+  assert.equal(entry?.attacksAsThoughNoDefenderUntilEOT, true,
+    'WIDOK niesie flagę reguły ataku (badge „może atakować mimo obrońcy”)');
+  assert.equal((entry?.lostKeywordsUntilEOT ?? []).includes('defender'), false, 'defender NIE jest utracony');
 });
 
 // ---- D: kopie rozróżnialne na stole -----------------------------------------

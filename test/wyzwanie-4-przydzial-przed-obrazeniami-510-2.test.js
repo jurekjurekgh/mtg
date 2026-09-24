@@ -13,7 +13,7 @@
 //           „Whenever a player would get priority ... performs all applicable
 //           state-based actions simultaneously" i 704.5g o śmiertelnych
 //           obrażeniach — biegną DOPIERO po zadaniu obrażeń kroku).
-//   702.3  infect: obrażenia w formie znaczników −1/−1 (na stworach).
+//   702.90 infect: obrażenia w formie znaczników −1/−1 (na stworach).
 //   510.4  drugi przebieg (first strike) to OSOBNY krok — tam moc liczy się już
 //           po znacznikach z pierwszego przebiegu.
 // Stan sprzed W4 (zmierzony sondą tools/probe-w4-infect-przydzial.mjs): faza
