@@ -2187,7 +2187,9 @@ export function setDayNight(state, designation) {
     if (!(object.keywords ?? []).includes(transformKeyword)) continue;
     if (!object.transformTo) continue;
     const before = state.events.length;
-    applyEffect(state, { type: 'transform' }, object, []);
+    // `dayNightDriven`: jedyna legalna droga obrotu permanentu daybound/
+    // nightbound (ruling MID 2021-09-24 — bramka w effects.transform).
+    applyEffect(state, { type: 'transform', dayNightDriven: true }, object, []);
     events.push(...state.events.slice(before));
   }
   return events;
@@ -3011,10 +3013,13 @@ function processTriggersScan(state, recentEvents) {
         setDayNight(state, dayboundAnywhere ? 'day' : 'night');
         entered = state.objects.get(entered.id) ?? entered;
       } else if (state.dayNight === 'night' && enterKw.includes('daybound') && entered.transformTo) {
-        applyEffect(state, { type: 'transform' }, entered, []);
+        // `dayNightDriven`: to obrót STEROWANY parą daybound/nightbound
+        // (CR 702.145c — wejście w nocy poza rzutem wchodzi tylną stroną),
+        // więc przechodzi przez bramkę `effects.transform` (Batch 59/G1.10).
+        applyEffect(state, { type: 'transform', dayNightDriven: true }, entered, []);
         entered = state.objects.get(entered.id) ?? entered;
       } else if (state.dayNight === 'day' && enterKw.includes('nightbound') && entered.transformTo) {
-        applyEffect(state, { type: 'transform' }, entered, []);
+        applyEffect(state, { type: 'transform', dayNightDriven: true }, entered, []);
         entered = state.objects.get(entered.id) ?? entered;
       }
       // stworem może być dowolny stwór (także samo źródło; wtedy bez grantu

@@ -15,6 +15,7 @@
 1x Steelclaw Lance
 1x Agate Assault
 1x Barkform Harvester
+1x Bird Admirer
 1x Blade-Blizzard Kitsune
 1x Halo Forager
 1x Kumano's Blessing
@@ -32,4 +33,4 @@
 2x Island
 4x Swamp
 2x Mountain
-4x Forest
+5x Forest

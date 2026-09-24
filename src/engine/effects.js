@@ -3520,6 +3520,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'transform') {
+    // Batch 59/G1.10 (Bird Admirer // Wing Shredder; ruling MID 2021-09-24):
+    // permanent z daybound/nightbound NIE da się obrócić żadnym innym
+    // sposobem — twarze zmienia wyłącznie para zdolności daybound/nightbound
+    // (`setDayNight` w triggers.js przekazuje `dayNightDriven: true`).
+    // Bez tej bramki każda przyszła karta typu Moonmist („transform all
+    // creatures") obracałaby wilkołaki wbrew regule (ADR 0002: reguła żyje
+    // w silniku, nie w kartach).
+    if (!effect.dayNightDriven
+        && (sourceObject.keywords ?? []).some((k) => k === 'daybound' || k === 'nightbound')) return;
     const object = state.objects.get(sourceObject.id);
     // LKI (CR 603.10/608.2b): trigger transform wilkołaków poszedł na stos,
     // a źródło zdążyło opuścić pole bitwy (np. -1/-1 z Trigonu, ping w oknie

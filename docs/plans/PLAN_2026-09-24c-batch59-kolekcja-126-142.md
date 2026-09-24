@@ -40,7 +40,7 @@ batch 58 (komentarz `artId: 265, plan: 'Zendikar'` dla OGW).
       `supported`/`token`/`back`). Dlatego **snapshot wchodzi w tym samym
       commicie co definicja karty**, a pliki czekające leżą POZA repozytorium
       (katalog roboczy `/home/user/batch59-snapshots/`); w drzewie zostało
-      9 snapshotów wdrożonych kart (G0 → G1.1–G1.9), 1 czeka na G1.10.
+      10 snapshotów wdrożonych kart (G0 → G1.1–G1.10) — komplet batcha.
       **KOREKTA (G1.8):** katalog roboczy `/home/user/batch59-snapshots/` nie
       istnieje (środowisko go nie zachowało) — snapshot G1.8 pobrano ponownie
       (`fetch_page`: `cards/named` + `/rulings`) i zapisano OD RAZU w
@@ -133,9 +133,17 @@ w `test/real-cards-batch59.test.js`) używają odtąd JEDNEJ numeracji — poni�
       przeprowadzony przez łańcuch registry → identity (L21) + opis na kaflu
       (M138/#11) + reset w cleanupie (CR 514.2, L166/L167) + odcisk stanu (B2).
       Bramy: `npm test` 6506/6506 (0 fail), build 60 modułów.
-- [ ] **G1.10 Bird Admirer // Wing Shredder** (126/127 MID) — DFC
-      daybound/nightbound (wzorzec `tireless-hauler`), artId 126 (przód) i 127
-      (tył, `status: 'back'`).
+- [x] **G1.10 Bird Admirer // Wing Shredder** (126/127 MID) — DFC
+      daybound/nightbound (wzorzec `tireless-hauler`), artId 126 (przód 1/4
+      reach, `supported`) i 127 (tył 3/5 reach, `status: 'back'`). Nowa bramka
+      silnika z rulingu MID 2021-09-24: **permanent daybound/nightbound obraca
+      wyłącznie para tych zdolności** — `effects.transform` odrzuca obrót bez
+      flagi `dayNightDriven` (drogi legalne: `setDayNight` i wejście w nocy/
+      za dnia w `triggers.js`), więc przyszłe efekty typu Moonmist nie ruszą
+      wilkołaków (ADR 0002: reguła w silniku, nie w kartach). Scenariusze
+      mechaniczne idą na obiekcie Z TALII (`setupCardMatch` + `decks/worek-basni.txt`)
+      — tylko materializacja talii niesie `transformTo` i `frontFaceId` (L21).
+      Bramy: `npm test` 6511/6511 (0 fail), build 60 modułów / 4239,9 kB.
 - [ ] **G1.11** — talie singleton (Krok 5, generator ADR 0023/0024) +
       regeneracja `decks/*` + `docs/` (M427, handoff).
 - [ ] **G1.12** — domknięcie: `npm test` + `npm run test:all` + `npm run build`,

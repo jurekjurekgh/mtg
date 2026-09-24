@@ -15,7 +15,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { gameObjectDataOf } from '../src/cards/materialize.js';
+import { readFileSync } from 'node:fs';
+import { gameObjectDataOf, setupCardMatch } from '../src/cards/materialize.js';
+import { parseDeckText } from '../src/cards/deck-text.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { effectivePower, effectiveToughness, effectiveKeywords, replaceObject, markDamage } from '../src/engine/permanents.js';
@@ -821,4 +823,135 @@ test('B59/G1.9: pary obrażeń wygasają w cleanupie (CR 514.2 — „this turn"
   destroyPermanents(state, ['victim']);
   assert.equal(byCard(state, 'giant-spider').zone, 'graveyard',
     'w nowej turze obrażenia sprzed cleanupu nie wyganiają');
+});
+
+// ---- G1.10: Bird Admirer // Wing Shredder (126/127 MID, plan Eldraine) -----
+// Karta DWUSTRONNA z pary wpisów arkusza (przód 126, tył 127). Daybound
+// (CR 702.145): przód 1/4 reach, tył 3/5 reach. Rulingi MID 2021-09-24:
+// wejście w nocy od razu tylną stroną (bez transformu na polu bitwy) oraz
+// zakaz obrotu permanentu daybound/nightbound czymkolwiek innym niż para tych
+// zdolności — bramka `dayNightDriven` w `effects.transform`.
+//
+// Scenariusze mechaniczne idą na karcie Z TALII (`worek-baśni` = plan
+// Eldraine, Krok 5): tylko materializacja talii niesie `transformTo`, więc
+// ręcznie wstawiony obiekt (helper `put`) testowałby atrapę bez drugiej strony.
+
+/** Partia złożona z PRAWDZIWYCH talii (p1: worek-baśni z Bird Admirerem). */
+function matchWithBird() {
+  const deck = (path) => parseDeckText(readFileSync(path, 'utf8'), registry).cardIds;
+  const state = setupCardMatch({
+    seed: 59,
+    players: [{ id: 'p1' }, { id: 'p2' }],
+    decks: new Map([['p1', deck('decks/worek-basni.txt')], ['p2', deck('decks/worek-dziki.txt')]]),
+    registry,
+  });
+  state.pendingMulligans = []; // testy mechaniczne: bez kolejki mulliganów
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  state.turn.passes = 0;
+  return state;
+}
+
+const birdEntry = (state) => [...state.objects.values()].find((o) => o.cardId === 'bird-admirer');
+const birdsOnBoard = (state, cardId) => [...state.objects.values()]
+  .filter((o) => o.zone === 'battlefield' && o.cardId === cardId);
+
+test('B59/G1.10: Bird Admirer // Wing Shredder — dane obu twarzy i druk', () => {
+  const front = registry.get('bird-admirer');
+  assert.deepEqual(front.types, ['Creature']);
+  assert.deepEqual(front.subtypes, ['Human', 'Archer', 'Werewolf']);
+  assert.deepEqual(front.colors, ['G']);
+  assert.deepEqual([front.power, front.toughness], [1, 4]);
+  assert.equal(front.manaCost, 3);
+  assert.equal(front.set, 'MID');
+  assert.equal(front.plan, 'Eldraine');
+  assert.equal(front.artId, 126, 'przód pary wpisów 126 MID / 127 MID');
+  assert.equal(front.support.status, 'supported');
+  assert.deepEqual(front.support.limitations, []);
+  assert.deepEqual(front.keywords, ['reach', 'daybound']);
+  assert.equal(front.transformTo, 'wing-shredder');
+  assert.ok(front.imageUri.includes('/front/') && front.imageUri.includes('71ccc444'),
+    'obraz przodu z druku mid/169');
+  assert.equal(MANA_COSTS['bird-admirer'], '{2}{G}');
+
+  const back = registry.get('wing-shredder');
+  assert.deepEqual([back.power, back.toughness], [3, 5]);
+  assert.deepEqual(back.keywords, ['reach', 'nightbound']);
+  assert.equal(back.artId, 127);
+  assert.equal(back.transformTo, 'bird-admirer');
+  assert.ok(back.imageUri.includes('/back/') && back.imageUri.includes('71ccc444'),
+    'obraz tyłu z tego samego druku (back)');
+  assert.equal(back.support.status, 'back', 'tylna strona nie wchodzi do talii');
+  assert.ok(back.support.limitations.length > 0, 'status back niesie powód');
+});
+
+test('B59/G1.10: wejście na pole bitwy ustawia dzień — 1/4 z reach', async () => {
+  const { processTriggers } = await import('../src/engine/triggers.js');
+  const state = matchWithBird();
+  const entry = birdEntry(state);
+  assert.ok(entry, 'Bird Admirer w talii worek-baśni (Krok 5: talie singleton)');
+  assert.equal(entry.transformTo?.cardId, 'wing-shredder',
+    'transformTo obecne na obiekcie z materializacji talii (inaczej daybound martwy)');
+  assert.equal(entry.frontFaceId, 'bird-admirer', 'karta z talii wchodzi ZAWSZE przodem (CR 712.8a)');
+  const bf = moveObjectDirectly(state, entry.id, 'battlefield', `bf-${entry.id}`);
+  assert.equal(state.dayNight, null, 'gra startuje bez oznaczenia dnia/nocy (ruling MID)');
+  processTriggers(state, [{
+    type: 'permanent_entered_battlefield', objectId: bf.id, object: bf,
+    cardId: bf.cardId, controllerId: 'p1', resolved: true,
+  }]);
+  assert.equal(state.dayNight, 'day', 'wejście permanentu z daybound ustawia dzień');
+  assert.equal(effectivePower(state.objects.get(bf.id), state), 1);
+  assert.equal(effectiveToughness(state.objects.get(bf.id), state), 4);
+  assert.ok(effectiveKeywords(state.objects.get(bf.id), state).includes('reach'));
+});
+
+test('B59/G1.10: staje się noc → permanent obraca się na Wing Shredder 3/5', async () => {
+  const { setDayNight } = await import('../src/engine/triggers.js');
+  const state = matchWithBird();
+  const entry = birdEntry(state);
+  const bf = moveObjectDirectly(state, entry.id, 'battlefield', `bf-${entry.id}`);
+  const changed = setDayNight(state, 'night');
+  assert.ok(changed.some((e) => e.type === 'day_night_changed'), 'designation się zmieniło');
+  const shredded = state.objects.get(bf.id);
+  assert.equal(shredded.cardId, 'wing-shredder', 'tylna strona (transform natychmiastowy, CR 702.145)');
+  assert.equal(shredded.id, bf.id, 'transform jest IN PLACE — ten sam obiekt, to samo id (CR 712.18)');
+  assert.equal(effectivePower(shredded, state), 3);
+  assert.equal(effectiveToughness(shredded, state), 5);
+  assert.ok(effectiveKeywords(shredded, state).includes('reach'));
+  assert.equal(birdsOnBoard(state, 'bird-admirer').length, 0, 'front zniknął z pola bitwy');
+  setDayNight(state, 'day');
+  assert.equal(state.objects.get(bf.id).cardId, 'bird-admirer', 'świt obraca z powrotem na przód');
+});
+
+test('B59/G1.10: rzut przodu W NOCY wchodzi od razu jako tył (ruling MID 2021-09-24)', async () => {
+  const { setDayNight } = await import('../src/engine/triggers.js');
+  const state = matchWithBird();
+  setDayNight(state, 'night');
+  const designation = state.events.filter((e) => e.type === 'day_night_changed').length;
+  const entry = birdEntry(state);
+  const handId = moveObjectDirectly(state, entry.id, 'hand', `hand-${entry.id}`).id;
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === handId));
+  resolve(state);
+  const shredded = birdsOnBoard(state, 'wing-shredder');
+  assert.equal(shredded.length, 1, 'wchodzi tylną stroną, gdy jest noc');
+  assert.equal(effectiveToughness(shredded[0], state), 5);
+  assert.equal(state.events.filter((e) => e.type === 'day_night_changed').length, designation,
+    'bez dodatkowej zmiany dnia/nocy — karta nie ląduje przodem i nie obraca się na stole');
+  assert.equal(birdsOnBoard(state, 'bird-admirer').length, 0, 'przód nigdy nie pojawia się na polu bitwy');
+});
+
+test('B59/G1.10: zakaz obrotu przez INNE efekty niż daybound/nightbound (ruling MID 2021-09-24)', async () => {
+  const { applyEffect } = await import('../src/engine/effects.js');
+  const { setDayNight } = await import('../src/engine/triggers.js');
+  const state = matchWithBird();
+  const entry = birdEntry(state);
+  const bf = moveObjectDirectly(state, entry.id, 'battlefield', `bf-${entry.id}`);
+  // Efekt „transform permanentu" innej karty (wzorzec Moonmist) — bez flagi
+  // pary daybound/nightbound silnik odmawia (tylko te zdolności obracają).
+  applyEffect(state, { type: 'transform' }, state.objects.get(bf.id), []);
+  assert.equal(state.objects.get(bf.id).cardId, 'bird-admirer', 'obcy efekt NIE obraca karty z daybound');
+  assert.equal(birdsOnBoard(state, 'wing-shredder').length, 0);
+  setDayNight(state, 'night');
+  assert.equal(state.objects.get(bf.id).cardId, 'wing-shredder', 'a para daybound/nightbound obraca normalnie');
 });

@@ -4213,6 +4213,35 @@ export const REAL_CARDS = Object.freeze([
       'wygnana karta dostaje odznakę źródła (`meta.exiledBy` = kumanos-blessing, M262)',
     ],
   }),
+  // Bird Admirer // Wing Shredder (MID, Batch 59/G1.10): karta DWUSTRONNA
+  // z pary 126 MID (przód) + 127 MID (tył) arkusza kolekcji. Daybound/
+  // nightbound (CR 702.145) — wzorzec `tireless-hauler`/`dire-strain-brawler`:
+  // przód wchodzi OD RAZU jako tył, gdy jest noc (ruling MID 2021-09-24),
+  // a transformację robi WYŁĄCZNIE para daybound/nightbound (żaden inny efekt
+  // nie może jej obrócić). Tylna strona ma `status: 'back'` — jest w katalogu
+  // (render, transformacja), ale nie wchodzi do talii.
+  defineCard({
+    id: 'bird-admirer', name: 'Bird Admirer', set: 'MID',
+    types: ['Creature'], subtypes: ['Human', 'Archer', 'Werewolf'], colors: ['G'],
+    power: 1, toughness: 4, manaCost: 3, keywords: ['reach', 'daybound'],
+    oracleText: 'Reach\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/7/1/71ccc444-54c8-4f7c-a425-82bc3eea1eb0.jpg?1783925590',
+    transformTo: 'wing-shredder',
+    artId: 126, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+    notes: ['daybound: w nocy karta wchodzi jako tył (ruling MID 2021-09-24), bez rzucania też — dotyczy każdego wejścia na pole bitwy'],
+  }),
+  defineCard({
+    id: 'wing-shredder', name: 'Wing Shredder', set: 'MID',
+    types: ['Creature'], subtypes: ['Werewolf'], colors: ['G'],
+    power: 3, toughness: 5, manaCost: 3, keywords: ['reach', 'nightbound'],
+    oracleText: 'Reach\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)',
+    imageUri: 'https://cards.scryfall.io/large/back/7/1/71ccc444-54c8-4f7c-a425-82bc3eea1eb0.jpg?1783925590',
+    transformTo: 'bird-admirer',
+    artId: 127, plan: 'Eldraine',
+    support: { status: 'back', limitations: ['tylna strona daybound/nightbound — nie można umieścić w talii'] },
+  }),
+
 ]);
 
 

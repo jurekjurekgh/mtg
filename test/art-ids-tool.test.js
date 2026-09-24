@@ -167,7 +167,9 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // 135 BOK i para 126 MID/127 MID (przód + tył) → 513.
   // Batch 59 (G1.8–G1.9): Memory's Journey (131 ISD) + Kumano's Blessing
   // (135 BOK) → 511.
-  assert.equal(withArt.length, 511, 'wszystkie realne karty mają artId (Batche 1–58 + Batch 59 G1.1–G1.9)');
+  // Batch 59 (G1.10): para 126 MID (przód) + 127 MID (tył) → 513 (każda twarz
+  // karty dwustronnej ma w arkuszu własny numer ilustracji).
+  assert.equal(withArt.length, 513, 'wszystkie realne karty mają artId (Batche 1–58 + Batch 59 G1.1–G1.10)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

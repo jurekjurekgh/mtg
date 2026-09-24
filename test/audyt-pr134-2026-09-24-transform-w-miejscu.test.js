@@ -55,7 +55,12 @@ function wilkolak(state, id = 'w') {
   return state.objects.get(id);
 }
 
-const transformuj = (state, id = 'w') => applyEffect(state, { type: 'transform' }, state.objects.get(id), []);
+// `dayNightDriven`: sonda używa karty daybound (Ballista Watcher — najbliższy
+// pomiar w katalogu: druga strona 5/5 Werewolf), a Batch 59/G1.10 wprowadził
+// bramkę z rulingu MID 2021-09-24 — permanent daybound/nightbound obraca
+// WYŁĄCZNIE para tych zdolności. Flaga mówi „to ten legalny obrót"; reszta
+// ścieżki (transformInPlaceFields, CR 712.18) jest dokładnie ta sama.
+const transformuj = (state, id = 'w') => applyEffect(state, { type: 'transform', dayNightDriven: true }, state.objects.get(id), []);
 const animuj = (state, id = 'w') => animatePermanentUntilEndOfTurn(state, id, {
   power: 2, toughness: 2, typesAdd: ['Artifact', 'Creature'], retainTypes: true,
 });

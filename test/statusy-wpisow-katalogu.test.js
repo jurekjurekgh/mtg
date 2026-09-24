@@ -44,7 +44,8 @@ test('M419/B: każdy wpis katalogu ma status supported, token albo back', () => 
   const karty = ALL.filter((c) => c.support.status === 'supported').length;
   // Batch 59 (Slithering Cryptid): +token_mutagen (predefined token TMT) → 44.
   assert.equal(tokeny, 44, 'tyle tokenów zna katalog (stan po M419 + Batch 59)');
-  assert.equal(tyly, 8, 'tyle tylnych stron DFC zna katalog (stan po M419)');
+  // Batch 59 (Bird Admirer // Wing Shredder): +wing-shredder (127 MID) → 9.
+  assert.equal(tyly, 9, 'tyle tylnych stron DFC zna katalog (stan po M419 + Batch 59)');
   assert.equal(karty + tokeny + tyly, ALL.length, 'każdy wpis policzony dokładnie raz');
 });
 
@@ -71,8 +72,8 @@ test('M419/D: wpis z arkusza kolekcji (artId + plan) nie jest tokenem', () => {
   const nieKarty = zArkusza.filter((c) => !['supported', 'back'].includes(c.support.status));
   assert.deepEqual(nieKarty.map((c) => c.id), [],
     'pozycja z arkusza jest taliowalna (supported) albo tyłem DFC (back)');
-  assert.equal(zArkusza.filter((c) => c.support.status === 'back').length, 8,
-    'tylko 8 tylnych stron DFC pochodzi z arkusza');
+  assert.equal(zArkusza.filter((c) => c.support.status === 'back').length, 9,
+    'tyle tylnych stron DFC pochodzi z arkusza (Batch 59: 127 MID dołożył jedną)');
 });
 
 test('M419/E: token i tył nie wchodzą do talii (bramka taliowalności)', () => {

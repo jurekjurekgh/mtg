@@ -514,4 +514,8 @@ export const MANA_COSTS = {
   // alternatywny i żyje w deskryptorze `spell.flashback`.
   "memory-s-journey": "{1}{U}",
   "kumanos-blessing": "{2}{R}",
+  // Bird Admirer // Wing Shredder (MID): przód {2}{G}; tył dziedziczy koszt
+  // druku, bo karta jest JEDNA (MANA_COSTS czyta kafel twarzy po cardId).
+  "bird-admirer": "{2}{G}",
+  "wing-shredder": "{2}{G}",
 };
