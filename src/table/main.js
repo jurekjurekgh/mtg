@@ -2308,8 +2308,16 @@ function bootstrapTable() {
     }
     // Escape (E.3a cz. B): widok GROBÓW nie niesie spell.escape, więc koszt
     // czytamy z pełnego stanu i podajemy deskryptorowi (jak effectiveGeneric).
+    // Etap F (CR 118.9 + 601.2f): kwota PO OBNIŻKACH i pipy kosztu escape —
+    // te same, które zapłaci castEscape (L48).
     if (cmd.type === 'cast_escape' && Number.isInteger(stateObject?.spell?.escape?.cost)) {
-      opts.escapeCost = stateObject.spell.escape.cost;
+      const escape = stateObject.spell.escape;
+      opts.escapeCost = reduceAlternativeCost(session.state, stateObject, escape.cost, escape.colors ?? []);
+      opts.escapeColors = [...(escape.colors ?? [])];
+    }
+    if (cmd.type === 'cast_cleave' && Number.isInteger(stateObject?.spell?.cleave?.manaCost)) {
+      const cleave = stateObject.spell.cleave;
+      opts.alternativeCost = reduceAlternativeCost(session.state, stateObject, cleave.manaCost, cleave.colors ?? []);
     }
     // M327 (audyt PR #102, F7): koszt ODSŁONIĘCIA (CR 701.58b cloaka,
     // 701.55c manifestu) nosi tylko pełny stan — zakryty permanent ma w widoku

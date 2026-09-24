@@ -14,7 +14,7 @@ import { addCounter } from './counters.js';
 import { shuffle } from './shuffle.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, coloredPipsOf, consumePendingSpellDiscount, delveGenericMana } from './mana-cost.js';
+import { parseManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, coloredPipsOf, consumePendingSpellDiscount, delveGenericMana } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
 
 function hasColorForSpell(state, playerId, cardId, phyrexianPay = 0) {
@@ -1148,7 +1148,8 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
       throw new Error('Nielegalny cel dodatkowego kosztu (sacrifice a creature)');
     }
   }
-  if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  // Etap F (CR 118.9): bramka kolorów WYDRUKU tu nie obowiązuje — płacony
+  // jest wyłącznie koszt cleave (jego pipy sprawdza canPayColoredCost niżej).
   // M267/C: pipy KOSZTU CLEAVE, nie karty (wzorzec madness M161/O2). Dotąd
   // płatność czytała `coloredPipsOf(cardId)` i trafiała przypadkiem — koszt
   // bazowy Lunar Rejection ma ten sam {U} co cleave. Pierwsza karta o innym
@@ -2886,9 +2887,13 @@ export function legalCleaveCasts(state, playerId) {
   for (const id of ids) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId || object.kind !== 'spell' || !object.spell || !object.spell.cleave) continue;
-    const cleaveCost = reduceAlternativeCost(state, object, object.spell.cleave.manaCost ?? 0, coloredPipsOf(object.cardId).map((req) => req[0]));
-    if (!object.plotted && cleaveCost > manaAvailable(object, coloredPipsOf(object.cardId, 0))) continue;
-    if (!object.plotted && !hasColorForObject(state, playerId, object)) continue;
+    // Etap F (CR 118.9 + 601.2f): koszt alternatywny ZASTĘPUJE koszt many —
+    // bramka kolorów i budżet pytają o pipy KOSZTU CLEAVE, nie wydruku karty
+    // (lustro legalFlashbackCasts; jedno źródło z castCleave — L48).
+    const cleaveRequirements = (object.spell.cleave.colors ?? []).map((color) => [color]);
+    const cleaveCost = reduceAlternativeCost(state, object, object.spell.cleave.manaCost ?? 0, object.spell.cleave.colors ?? []);
+    if (!object.plotted && cleaveCost > manaAvailable(object, cleaveRequirements)) continue;
+    if (!object.plotted && cleaveRequirements.length > 0 && !canPayColoredCost(state, playerId, cleaveRequirements)) continue;
     if (object.spell.timing === 'sorcery') {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
@@ -3374,8 +3379,12 @@ export function legalEscapeCasts(state, playerId) {
     const escape = object.spell.escape;
     // M111 (CR 601.2f): obniżki kosztu z permanentów dotyczą też kosztu
     // alternatywnego — escape nie jest wyjątkiem.
-    if (reduceAlternativeCost(state, object, escape.cost ?? 0, escape.colors ?? []) > manaAvailable(object, coloredPipsOf(object.cardId, 0))) continue;
-    if (!hasColorForObject(state, playerId, object)) continue;
+    // Etap F (CR 118.9 + 601.2f): płacony jest WYŁĄCZNIE koszt escape —
+    // budżet i bramka kolorów pytają o jego pipy, nie o wydruk karty
+    // (lustro legalFlashbackCasts i castEscape — L48).
+    const escapeRequirements = (escape.colors ?? []).map((color) => [color]);
+    if (reduceAlternativeCost(state, object, escape.cost ?? 0, escape.colors ?? []) > manaAvailable(object, escapeRequirements)) continue;
+    if (escapeRequirements.length > 0 && !canPayColoredCost(state, playerId, escapeRequirements)) continue;
     const others = ownGraveyard.filter((otherId) => otherId !== id);
     if (others.length < escape.exileCount) continue;
     const targetSpec = object.spell.targets ?? [];
@@ -3437,8 +3446,9 @@ export function castEscape(state, playerId, objectId, targets) {
   if (others.length < escape.exileCount) throw new Error('Za mało kart w grobie na koszt Escape');
   // Opłacalność — jak przy zwykłym rzucie (nie oddajemy, dopóki nie zapłacimy).
   const escapeCost = reduceAlternativeCost(state, object, escape.cost ?? 0, escape.colors ?? []);
-  if (escapeCost > producibleMana(state, playerId, null, spellManaPurpose(object), (escape.colors ?? []).map((color) => [color]))) throw new Error('Niewystarczająca mana na Escape');
-  if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  const escapeRequirements = (escape.colors ?? []).map((color) => [color]);
+  if (escapeCost > producibleMana(state, playerId, null, spellManaPurpose(object), escapeRequirements)) throw new Error('Niewystarczająca mana na Escape');
+  if (escapeRequirements.length > 0 && !canPayColoredCost(state, playerId, escapeRequirements)) throw new Error('Brak kolorowego źródła many');
   state.pendingEscapeExile = {
     playerId,
     objectId,
