@@ -109,7 +109,8 @@ const WYMAGANE = [
   ['test/m264-enter-as-copy-dfc.test.js', '712.9', 'pin: kopia Jwari nie ma transformTo'],
   ['src/engine/identity.js', '712.8e', 'MV permanentu z tyłem = koszt przodu'],
   ['test/m258-cr202-kopia-tylu-dfc.test.js', '712.8e', 'pin: MV przekształconego permanentu'],
-  ['src/engine/permanents.js', '712.18', 'transform to ten sam obiekt (znane odstępstwo — O-6)'],
+  ['src/engine/permanents.js', '712.18', 'transform w miejscu = ten sam obiekt, efekty trwają (O-6, naprawione)'],
+  ['src/engine/effects.js', '712.18', 'gałąź transform przenosi trwające efekty (O-6)'],
   // F-7 (audyt PR #135, druga fala rozjazdów tej samej klasy)
   ['src/controllers/heuristic-bot.js', '702.20', 'vigilance (nie 702.21 = ward)'],
   ['test/m221d-vigilance-window.test.js', '702.20', 'pin okna kupowania vigilance'],

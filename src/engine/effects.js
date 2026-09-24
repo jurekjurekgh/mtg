@@ -1,7 +1,7 @@
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { hasCreatureType, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
+import { hasCreatureType, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -3491,20 +3491,23 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (bez crasha). Pełne B0 (seed 1025, random red vs heuristic green).
     if (!sourceObject || sourceObject.zone !== 'battlefield' || !sourceObject.transformTo) return;
     const target = sourceObject.transformTo;
+    // O-6 (audyt PR #134, CR 712.18): transform NIE tworzy nowego obiektu —
+    // trwające efekty (animacja, nadpisanie podtypów, modyfikatory, granty)
+    // działają dalej na nowej stronie, a `transformTo` zapisuje opuszczaną
+    // stronę WYDRUKOWANYMI cechami. Wcześniej cechy drugiej strony szły wprost
+    // na obiekt, zapis cofnięcia animacji zostawał od STAREJ strony (cleanup
+    // robił chimerę), a `transformTo` utrwalał cechy animowane.
+    // M109 (incubate): druga strona może zmieniać RODZAJ permanentu
+    // (Incubator: artefakt → artefaktowy stwór) — `transformInPlaceFields`
+    // niesie `kind` i `types` drugiej strony.
+    const { fields: sideFields, leavingFace } = transformInPlaceFields(sourceObject, target);
     const updated = Object.freeze({
       ...sourceObject,
       cardId: target.cardId,
       cardName: target.cardName ?? sourceObject.cardName,
-      power: target.power,
-      toughness: target.toughness,
       abilities: target.abilities,
       keywords: target.keywords ?? [],
-      subtypes: target.subtypes ?? [],
-      // M109 (incubate): druga strona może zmieniać RODZAJ permanentu
-      // (Incubator: artefakt → artefaktowy stwór). Bez tego obiekt zostawał
-      // artefaktem z P/T, więc nie mógł atakować ani blokować.
-      ...(target.kind ? { kind: target.kind } : {}),
-      ...(target.types ? { types: target.types } : {}),
+      ...sideFields,
       // CR 202.3b (M258/Etap 2.3b): przy zmianie twarzy MV obiektu = koszt
       // twarzy PRZEDNIEJ. Payload transformTo niesie właśnie to (materialize
       // buduje go jako card.manaCost), więc aplikujemy go wprost; fallback
@@ -3516,13 +3519,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       transformTo: {
         cardId: sourceObject.cardId,
         cardName: sourceObject.cardName,
-        power: sourceObject.power,
-        toughness: sourceObject.toughness,
+        power: leavingFace.power,
+        toughness: leavingFace.toughness,
         abilities: sourceObject.abilities,
         keywords: sourceObject.keywords ?? [],
-        subtypes: sourceObject.subtypes ?? [],
-        kind: sourceObject.kind,
-        types: sourceObject.types ?? [],
+        subtypes: leavingFace.subtypes,
+        kind: leavingFace.kind,
+        types: leavingFace.types,
         // MV obiektu z TĄ (opuszczaną) twarzą w górę — symetryczny kontrakt:
         // zwykły DFC = koszt przedni, token-kopia tyłu = 0 póki jest tyłem.
         manaCost: sourceObject.manaCost ?? 0,
@@ -5230,11 +5233,17 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const typesAdd = effect.typesAdd ?? ['Artifact', 'Creature'];
     const types = [...new Set([...(target.types ?? []), ...typesAdd])];
     const subtypes = [...new Set([...(target.subtypes ?? []), ...(effect.subtypesAdd ?? [])])];
+    // O-6 (CR 712.18): warstwa animacji w zapisie cofnięcia — transform
+    // w miejscu nakłada ją na drugą stronę (`transformInPlaceFields`).
+    const layer = mergedAnimationLayer(target, {
+      power: effect.power ?? 0, toughness: effect.toughness ?? 0,
+      typesAdd, subtypesAdd: effect.subtypesAdd ?? [], retainTypes: true,
+    });
     const updated = replaceObject(state, target, {
       kind: types.includes('Creature') ? 'creature' : target.kind,
       types, subtypes,
       power: effect.power ?? 0, toughness: effect.toughness ?? 0,
-      originalBeforeAnimation: original,
+      originalBeforeAnimation: Object.freeze({ ...original, layer }),
     });
     state.linkedAnimations = [
       ...(state.linkedAnimations ?? []).filter((entry) => entry.targetId !== targetId),

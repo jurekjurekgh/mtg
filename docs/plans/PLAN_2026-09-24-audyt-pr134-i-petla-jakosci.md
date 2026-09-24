@@ -158,8 +158,9 @@ Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134
       warstwy, cel refleksyjny vs 608.2b/2h) zostają otwarte — ich wspólnym
       mianownikiem są warstwy 613, czyli ten sam korzeń co O-6.
 - [ ] D4b — **warstwy 613** jako osobna oś łowów (spadkobierca D4): silnik
-      trzyma efekty jako mutacje pól obiektu, więc (a) transform gubi animację
-      (O-6), (b) `colorsFrom` nie jest rozliczany warstwowo, (c) kolejność
+      trzyma efekty jako mutacje pól obiektu, więc (a) transform gubił animację
+      (O-6 — naprawione w D5 warstwą animacji w zapisie cofnięcia, bez pełnego
+      modelu), (b) `colorsFrom` nie jest rozliczany warstwowo, (c) kolejność
       efektów „until end of turn” zależy od kolejności zapisu. Wymaga decyzji
       właściciela: model warstw to zmiana architektury, nie łatka.
 - [x] D5 — **obserwacje audytu (O-2, O-1)** domknięte jako KLASA, nie jako
@@ -200,9 +201,19 @@ Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134
         widoków ręcznych). Pin `test/audyt-pr134-2026-09-24-zrodlo-many-w-widoku.test.js`
         (O-3/1..5, w tym FoW i strażnik „jedno wywołanie bez stanu”); mutacje
         M13a/M13b → O-3/1..3 i O-3/5 czerwone.
-      Otwarte obserwacje: **O-6** (transform w miejscu gubi animację — korzeń:
-      brak warstw 613, patrz D4b), **O-4/O-5** (uproszczenia udokumentowane,
-      bez różnicy behawioralnej).
+      • **O-6** — sonda pokazała, że realny błąd siedział w ścieżce `transform`
+        W MIEJSCU (nie w `transformedCharacteristics`, którego wołają tylko
+        ścieżki nowego obiektu) i był gorszy niż obserwacja: po transformie
+        ożywionego wilkołaka animacja znikała, cleanup robił CHIMERĘ (Ballista
+        Wielder z P/T i podtypami Ballista Watcher), a `transformTo` utrwalał
+        cechy animowane. Naprawa w granicach modelu mutacyjnego: animacje
+        zapisują warstwę (`originalBeforeAnimation.layer`),
+        `transformInPlaceFields` przenosi trwające efekty na nową stronę
+        (CR 712.18) i zapisuje opuszczaną stronę z druku. Pin
+        `test/audyt-pr134-2026-09-24-transform-w-miejscu.test.js` (O-6/1..7);
+        mutacja M14 (stara gałąź) → 5/7 czerwonych.
+      Otwarte obserwacje: **O-4/O-5** (uproszczenia udokumentowane, bez różnicy
+      behawioralnej); **D4b** (pełny model warstw 613).
 
 ## Etap E — domknięcie sesji
 

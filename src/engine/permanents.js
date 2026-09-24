@@ -1521,17 +1521,19 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options =
  * CR 208.1), którego SBA nie potrafiły zabić (CR 704.5f porównuje `null <= 0`,
  * czyli `false` — permanent był nieśmiertelny).
  *
- * TRANSFORM W MIEJSCU (transform / daybound→nightbound): CR 712.18 mówi
- * dosłownie „When a double-faced permanent transforms or converts, it doesn’t
- * become a new object. Any effects that applied to that permanent will continue
- * to apply to it.” (przykład CR: +2/+2 przechodzi przez transform Village
- * Ironsmith → Ironfang). Silnik zapisuje animację jako MUTACJĘ pól obiektu,
- * a nie jako efekt ciągły rozliczany warstwami (CR 613), więc ten sam reset
- * gubi trwającą animację. ZNANE ODSTĘPSTWO od 712.18 — obserwacja O-6 audytu
- * PR #134 (docs/audits/AUDYT_PR134_2026-09-24.md §5): ożywiony artefakt, który
- * transformuje w miejscu, traci animację, choć wg CR powinien ją zachować.
- * Poprawka docelowa to model warstw, nie reset — zapisana w planie sesji
- * (docs/plans/PLAN_2026-09-24-audyt-pr134-i-petla-jakosci.md, Etap E/backlog).
+ * Wołający: craft (`resolveCraftExileOutcome`), powrót z wygnania
+ * przemienioną stroną (`effects.js`) i wejście nocną stroną (daybound,
+ * `spells.js` — obiekt dopiero wszedł, nic na niego jeszcze nie działa).
+ * WSZYSTKIE trzy dotyczą NOWEGO obiektu, więc reset jest zgodny z CR.
+ *
+ * Transform W MIEJSCU (efekt `transform`, `effects.js`) tego helpera NIE
+ * używa: CR 712.18 — „When a double-faced permanent transforms or converts, it
+ * doesn’t become a new object. Any effects that applied to that permanent will
+ * continue to apply to it.” Tamta ścieżka przenosi trwające efekty
+ * (modyfikatory, granty, animację — `transformInPlaceFields` niżej).
+ * O-6 audytu PR #134: poprzednia wersja tego komentarza twierdziła, że
+ * transform w miejscu przechodzi przez ten reset — nie przechodził; realny
+ * błąd siedział w samej ścieżce `transform` (patrz `transformInPlaceFields`).
  *
  * `back` to deskryptor drugiej strony (obiekt `transformTo`). Zwracany jest
  * zestaw pól do rozłożenia w nowym obiekcie.
@@ -1557,6 +1559,108 @@ export function transformedCharacteristics(back, previous = null) {
 }
 
 /**
+ * O-6 (audyt PR #134, CR 712.18 + 613): opis TRWAJĄCEJ animacji obiektu jako
+ * „warstwy” nakładanej na wydrukowane cechy — typy/podtypy dodane (albo
+ * zastąpione przy `retainTypes: false`) i ustawione bazowe P/T (warstwa 7b).
+ * Animacje zapisują ją w `originalBeforeAnimation.layer`; dla zapisów bez
+ * warstwy (fixtures, stan sprzed tej zmiany) wyprowadzamy ją z różnicy
+ * między stanem bieżącym a zapisem cofnięcia. `null` = obiekt nie jest
+ * animowany.
+ */
+export function animationLayerOf(object) {
+  const original = object?.originalBeforeAnimation;
+  if (!original) return null;
+  if (original.layer) return original.layer;
+  const current = { types: object.types ?? [], subtypes: object.subtypes ?? [] };
+  const retainTypes = (original.types ?? []).every((type) => current.types.includes(type));
+  return {
+    power: object.power ?? null,
+    toughness: object.toughness ?? null,
+    typesAdd: retainTypes ? current.types.filter((t) => !(original.types ?? []).includes(t)) : [...current.types],
+    subtypesAdd: retainTypes ? current.subtypes.filter((t) => !(original.subtypes ?? []).includes(t)) : [...current.subtypes],
+    retainTypes,
+  };
+}
+
+/** Łączy warstwę nowej animacji z trwającą (późniejszy znacznik czasu wygrywa P/T). */
+export function mergedAnimationLayer(object, { power, toughness, typesAdd = [], subtypesAdd = [], retainTypes = true }) {
+  const previous = animationLayerOf(object);
+  if (!previous || !retainTypes) {
+    return { power, toughness, typesAdd: [...typesAdd], subtypesAdd: [...subtypesAdd], retainTypes };
+  }
+  return {
+    power, toughness,
+    typesAdd: [...new Set([...previous.typesAdd, ...typesAdd])],
+    subtypesAdd: [...new Set([...previous.subtypesAdd, ...subtypesAdd])],
+    retainTypes: previous.retainTypes,
+  };
+}
+
+/** Nakłada warstwę animacji na wydrukowane cechy strony. */
+function withAnimationLayer(base, layer) {
+  const types = layer.retainTypes ? [...new Set([...(base.types ?? []), ...layer.typesAdd])] : [...layer.typesAdd];
+  const subtypes = layer.retainTypes ? [...new Set([...(base.subtypes ?? []), ...layer.subtypesAdd])] : [...layer.subtypesAdd];
+  return {
+    kind: types.includes('Creature') ? 'creature' : base.kind,
+    types, subtypes, power: layer.power, toughness: layer.toughness,
+  };
+}
+
+/**
+ * O-6 (audyt PR #134): pola obiektu po transformie W MIEJSCU (CR 712.18 —
+ * ten sam obiekt, trwające efekty działają dalej).
+ *
+ * Przed poprawką efekt `transform` rozkładał cechy drugiej strony na obiekt
+ * wprost i zostawiał zapis cofnięcia animacji STAREJ strony, a do
+ * `transformTo` zapisywał cechy ANIMOWANE. Skutek (sonda na Ballista
+ * Watcher ożywionym do 5/5 artefaktu): po transformie animacja znikała
+ * (Artifact ginął), cleanup nakładał na Ballista WIELDER wydrukowane cechy
+ * PRZEDNIEJ strony (4/3 Human Soldier Werewolf — chimera), a powrotny
+ * transform dawał Ballista Watcher trwale 5/5 artefakt.
+ *
+ * Teraz: (1) opuszczana strona zapisuje się w `transformTo` WYDRUKOWANYMI
+ * cechami (zapis cofnięcia animacji / nadpisania podtypów), (2) nowa strona
+ * dostaje wydrukowane cechy drugiej strony, (3) trwająca animacja jest
+ * nakładana na nie ponownie, a zapis cofnięcia wskazuje cechy NOWEJ strony,
+ * (4) nadpisanie podtypów „do końca tury” (Wishful Merfolk) trwa, a jego
+ * zapis cofnięcia też wskazuje nową stronę. Modyfikatory P/T, liczniki i
+ * granty keywordów/zdolności zostają na obiekcie bez zmian (spread wyżej).
+ *
+ * Zwraca `{ fields, leavingFace }`: `fields` do rozłożenia na obiekcie,
+ * `leavingFace` — wydrukowane kind/types/subtypes/P/T opuszczanej strony.
+ */
+export function transformInPlaceFields(object, back) {
+  const original = object.originalBeforeAnimation ?? null;
+  const layer = animationLayerOf(object);
+  const leavingFace = {
+    kind: original ? original.kind : object.kind,
+    types: [...((original ? original.types : object.types) ?? [])],
+    subtypes: [...((object.subtypesBeforeOverride ?? (original ? original.subtypes : object.subtypes)) ?? [])],
+    power: original ? original.power : object.power,
+    toughness: original ? original.toughness : object.toughness,
+  };
+  const printedBack = {
+    kind: back.kind ?? (((back.types ?? []).includes('Creature')) ? 'creature' : leavingFace.kind),
+    types: [...(back.types ?? leavingFace.types)],
+    subtypes: [...(back.subtypes ?? [])],
+    power: back.power ?? null,
+    toughness: back.toughness ?? null,
+  };
+  const visible = layer ? withAnimationLayer(printedBack, layer) : printedBack;
+  const fields = {
+    ...visible,
+    originalBeforeAnimation: layer ? Object.freeze({ ...printedBack, layer }) : null,
+  };
+  if (object.subtypesBeforeOverride) {
+    // Nadpisanie podtypów trwa (712.18) — obiekt zachowuje podtypy-cel,
+    // a cleanup przywróci podtypy NOWEJ strony.
+    fields.subtypesBeforeOverride = [...visible.subtypes];
+    fields.subtypes = [...(object.subtypes ?? [])];
+  }
+  return { fields, leavingFace };
+}
+
+/**
  * Animuje permanent do końca tury (Silvanus's Invoker: land staje się
  * stworzeniem 8/8 z trample i haste, wciąż będąc landem).
  */
@@ -1573,13 +1677,16 @@ export function animatePermanentUntilEndOfTurn(state, objectId, { power, toughne
   const types = retainTypes ? [...new Set([...(object.types ?? []), ...typesAdd])] : [...typesAdd];
   const subtypes = retainTypes ? [...new Set([...(object.subtypes ?? []), ...subtypesAdd])] : [...subtypesAdd];
   const kind = types.includes('Creature') ? 'creature' : object.kind;
+  // O-6 (CR 712.18): zapis cofnięcia niesie też WARSTWĘ animacji, żeby
+  // transform w miejscu umiał nałożyć ją na drugą stronę (`transformInPlaceFields`).
+  const layer = mergedAnimationLayer(object, { power, toughness, typesAdd, subtypesAdd, retainTypes });
   const updated = replaceObject(state, object, {
     kind,
     types,
     subtypes,
     power,
     toughness,
-    originalBeforeAnimation,
+    originalBeforeAnimation: Object.freeze({ ...originalBeforeAnimation, layer }),
   });
   if (keywordsAdd.length > 0) {
     grantKeywordsUntilEndOfTurn(state, objectId, keywordsAdd);
