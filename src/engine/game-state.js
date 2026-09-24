@@ -21,7 +21,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
-import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets } from './spells.js';
+import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -816,19 +816,76 @@ function freeCastAdditionalCostVariants(state, playerId, obj) {
     }
     return variants;
   }
-  // Koszt wymagający WYBORU kart w trakcie płacenia (Cathartic Reunion:
-  // „discard two cards") nie jest obsługiwany na ścieżce darmowego rzutu —
-  // zamiast pominąć koszt (złamanie reguł) nie oferujemy rzutu.
+  // Etap F/4b (Cathartic Reunion: „As an additional cost to cast this spell,
+  // discard two cards"): koszt płaci się także przy rzucie bez kosztu many
+  // (CR 601.2h). Wybór kart należy do gracza, więc oferta niesie KOMPLET
+  // odrzucanych kart (`discardCardIds`) — każda kombinacja N kart z ręki
+  // rzucającego poza samym czarem (czar jest już na stosie, CR 601.2a).
+  // Atomowo w komendzie, bo decyzja rzutu (Epic/Discover/…) jest zamykana
+  // tym samym poleceniem — osobna decyzja odrzucenia nie miałaby gdzie
+  // „wisieć" przed zamknięciem okna. Za mało kart = kosztu nie da się
+  // zapłacić = brak oferty (CR 601.2h, 118.3).
+  if (Number.isInteger(additional.discardCards) && additional.discardCards > 0) {
+    const handIds = state.zones.hand.filter((id) => id !== obj.id
+      && state.objects.get(id)?.controllerId === playerId);
+    return handCombinations(handIds, additional.discardCards)
+      .map((discardCardIds) => ({ discardCardIds }));
+  }
+  // KARTY SPOZA KATALOGU: inny rodzaj kosztu dodatkowego (np. „exile a card
+  // from your graveyard", „pay N life", „tap an untapped creature") trzeba
+  // tu dopisać jako wariant zapłaty, a w `payFreeCastAdditionalCost` jego
+  // rozliczenie — do tego czasu brak oferty zamiast pominięcia kosztu.
   return [];
+}
+
+/** Wszystkie kombinacje `size` elementów listy (kolejność jak w ręce). */
+function handCombinations(ids, size) {
+  const out = [];
+  const walk = (start, picked) => {
+    if (picked.length === size) { out.push(picked.slice()); return; }
+    for (let i = start; i <= ids.length - (size - picked.length); i += 1) {
+      picked.push(ids[i]);
+      walk(i + 1, picked);
+      picked.pop();
+    }
+  };
+  if (size <= ids.length) walk(0, []);
+  return out;
+}
+
+/**
+ * Etap F/4b: walidacja komendowego wyboru kart odrzucanych jako koszt
+ * dodatkowy (CR 601.2h) — dokładnie N różnych kart z ręki rzucającego,
+ * bez samego rzucanego czaru. Zwraca `null` albo powód odrzucenia.
+ */
+export function validateDiscardCostChoice(state, playerId, castObjectId, count, discardCardIds) {
+  if (!Array.isArray(discardCardIds) || discardCardIds.length !== count) return 'additional_cost_unpaid';
+  if (new Set(discardCardIds).size !== discardCardIds.length) return 'additional_cost_unpaid';
+  for (const id of discardCardIds) {
+    const card = state.objects.get(id);
+    if (id === castObjectId || !card || card.zone !== 'hand' || card.controllerId !== playerId
+      || !state.zones.hand.includes(id)) return 'additional_cost_unpaid';
+  }
+  return null;
 }
 
 /**
  * Płaci koszt dodatkowy darmowego rzutu zgodnie z wariantem z komendy.
  * Zwraca `null` przy sukcesie albo powód odrzucenia (string).
  */
-function payFreeCastAdditionalCost(state, playerId, obj, cmd) {
+function payFreeCastAdditionalCost(state, playerId, obj, cmd, paid = {}) {
   const additional = obj?.spell?.additionalCost;
   if (!additional) return null;
+  if (Number.isInteger(additional.discardCards) && additional.discardCards > 0) {
+    // Etap F/4b: odrzucenie jako KOSZT (CR 601.2h) — karty wskazane w komendzie.
+    const invalid = validateDiscardCostChoice(state, playerId, obj.id, additional.discardCards, cmd.discardCardIds);
+    if (invalid) return invalid;
+    discardCardsForced(state, {
+      playerId, cardIds: [...cmd.discardCardIds], purpose: 'cost',
+      sourceCardId: obj.cardId ?? null, restorePriorityTo: state.turn.priorityPlayerId,
+    });
+    return null;
+  }
   if (!additional.sacrificeCreature) return 'additional_cost_unsupported';
   if (cmd.payAltCost === true) {
     const need = additional.orPayMana;
@@ -848,6 +905,10 @@ function payFreeCastAdditionalCost(state, playerId, obj, cmd) {
   // poświęcony jako KOSZT DODATKOWY lądował w cmentarzu i dawał się
   // reanimować drugi raz. `unearthExile` obsługuje sam moveObjectDirectly.
   const toZone = deathZoneFor(state, sacrifice);
+  // Etap F/4: wytrzymałość ofiary w chwili płacenia kosztu (LKI) — czyta ją
+  // efekt czaru (Severed Strands: „gain life equal to the sacrificed
+  // creature's toughness"); dawniej darmowy rzut jej nie zapisywał (zysk 0).
+  paid.sacrificedToughness = effectiveToughness(sacrifice, state);
   const destId = `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, cmd.sacrificeTargetId, toZone, destId);
   state.events.push(event('permanent_sacrificed', {
@@ -858,6 +919,124 @@ function payFreeCastAdditionalCost(state, playerId, obj, cmd) {
 }
 
 /**
+ * Etap F/4 (PR #135, polecenie właściciela: „żadnych ograniczeń wpływających
+ * na grę"): JEDNA ścieżka rzutu instantu/sorcery „without paying its mana
+ * cost" z okna decyzji — suspend (CR 702.62a), rebound (CR 702.88a),
+ * Discover (CR 701.57a), Epic Experiment, Halo Forager. Dawniej pięć kopii
+ * tej samej walidacji, każda z inną luką: tryby „up to N target" odrzucane
+ * (suspend/rebound/Epic), X i Fireball wykluczone (Epic/Discover/grób),
+ * Discover bez celów w ogóle, a poświęcenie jako koszt dodatkowy nie
+ * zapisywało wytrzymałości ofiary.
+ * Reguły: CR 118.9 (rzut bez kosztu many to koszt alternatywny), CR 107.3b
+ * (X = 0), CR 601.2f (zwiększenia kosztu — {1} za każdy dodatkowy cel
+ * Fireballa — płaci się nadal), CR 601.2h (koszty dodatkowe płaci się nadal).
+ * `extraMana` — mana płacona obok rzutu przez samą decyzję (Halo Forager:
+ * „you may pay {X}"), liczona w tym samym budżecie.
+ * Walidacja PRZED mutacją (L4). Zwraca `{ reason }` albo `{ stackId, stacked,
+ * chosenTargets, chosenMode, modeExtra, manaSpent }`.
+ */
+function castSpellWithoutManaCost(state, playerId, objectId, cmd, { extraMana = 0, objectStamp = {}, eventStamp = {} } = {}) {
+  const card = state.objects.get(objectId);
+  const spell = card?.spell;
+  if (!card || card.kind !== 'spell' || !spell || !['instant', 'sorcery'].includes(spell.timing)) {
+    return { reason: 'illegal_free_cast' };
+  }
+  if ((spell.xCost || spell.fireball) && cmd.xValue != null && cmd.xValue !== 0) {
+    return { reason: 'illegal_free_cast_x' };
+  }
+  const chosen = Array.isArray(cmd.targets) ? cmd.targets : [];
+  let chosenTargets = [];
+  let chosenMode = null;
+  let modeExtra = null;
+  let costIncrease = 0;
+  try {
+    if (spell.modes) {
+      const modeIndex = cmd.modeIndex;
+      if (!Number.isInteger(modeIndex) || modeIndex < 0 || modeIndex >= spell.modes.length) {
+        return { reason: 'illegal_free_cast_mode' };
+      }
+      const mode = spell.modes[modeIndex];
+      if (mode.variableTargets) {
+        // „Up to N target …" (CR 601.2c) — ten sam walidator co rzut z ręki;
+        // tryb ze `stunAmongTargets` niesie wybór celu pod stun counter.
+        chosenTargets = validateVariableTargets(state, playerId, mode, chosen, card, cmd.stunTargetId);
+        if (mode.stunAmongTargets) modeExtra = { stunTargetId: cmd.stunTargetId };
+      } else {
+        const spec = mode.targets ?? [];
+        if (chosen.length !== spec.length) return { reason: 'illegal_free_cast_targets' };
+        if (spec.length > 0) validateTargets(state, spec, chosen, playerId, card.colors ?? [], card);
+        chosenTargets = chosen.slice();
+      }
+      chosenMode = modeIndex;
+    } else if (spell.fireball) {
+      validateFireballTargets(state, playerId, card, chosen);
+      chosenTargets = chosen.slice();
+      costIncrease = Math.max(0, chosen.length - 1);
+    } else {
+      const spec = spell.targets ?? [];
+      if (chosen.length !== spec.length) return { reason: 'illegal_free_cast_targets' };
+      if (spec.length > 0) validateTargets(state, spec, chosen, playerId, card.colors ?? [], card);
+      chosenTargets = chosen.slice();
+    }
+  } catch {
+    return { reason: 'illegal_free_cast_targets' };
+  }
+  const purpose = spellManaPurpose(card);
+  const altNeed = cmd.payAltCost === true ? (spell.additionalCost?.orPayMana ?? 0) : 0;
+  const manaSpent = extraMana + costIncrease;
+  if (producibleMana(state, playerId, null, purpose, []) < manaSpent + altNeed) return { reason: 'free_cast_mana_unpaid' };
+  const paid = {};
+  const costReason = payFreeCastAdditionalCost(state, playerId, card, cmd, paid);
+  if (costReason) return { reason: costReason };
+  if (manaSpent > 0) spendMana(state, playerId, manaSpent, [], purpose);
+  const stackId = `spell-${state.objectSequence++}`;
+  moveObjectDirectly(state, objectId, 'stack', stackId);
+  const stacked = Object.freeze({
+    ...state.objects.get(stackId),
+    tapped: false,
+    chosenTargets,
+    ...(chosenMode != null ? { chosenMode } : {}),
+    ...(modeExtra != null ? { modeExtra } : {}),
+    ...(spell.xCost ? { spellX: 0 } : {}),
+    ...(spell.fireball ? { fireballX: 0 } : {}),
+    ...(paid.sacrificedToughness != null ? { sacrificedToughness: paid.sacrificedToughness } : {}),
+    // CR 702.88a: rebound działa przy rzucie Z RĘKI (także bez kosztu many).
+    ...(spell.rebound && card.zone === 'hand' ? { reboundCast: true } : {}),
+    ...objectStamp,
+  });
+  state.objects.set(stackId, stacked);
+  state.spellsCastThisTurn += 1;
+  state.events.push(event('spell_cast', {
+    playerId, fromId: objectId, object: stacked, cardId: card.cardId,
+    targets: chosenTargets,
+    targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
+    // M273 (błąd #23): `colors` to część kontraktu zdarzenia rzutu (triggery
+    // „whenever a player casts a WHITE spell" / „a COLORLESS spell").
+    colors: [...(card.colors ?? [])],
+    manaSpent,
+    ...(spell.xCost || spell.fireball ? { xValue: 0 } : {}),
+    // M91 (uwaga D): log nazywa wybrany tryb (i cel pod stun counter).
+    ...(chosenMode != null ? {
+      modeIndex: chosenMode,
+      modeName: spell.modes?.[chosenMode]?.name ?? null,
+      ...(modeExtra?.stunTargetId != null ? { stunTargetId: modeExtra.stunTargetId } : {}),
+    } : {}),
+    ...eventStamp,
+  }));
+  return { stackId, stacked, chosenTargets, chosenMode, modeExtra, manaSpent };
+}
+
+/**
+ * Oferty rzutu „without paying its mana cost" z okna decyzji — ten sam
+ * generator co okno Vaana, w trybie `free` (X = 0, Fireball z dopłatą za
+ * dodatkowe cele, tryby „up to N"). Oferta = walidacja
+ * (`castSpellWithoutManaCost`, L48).
+ */
+function freeSpellCastOffers(state, playerId, obj) {
+  return epicCastOffers(state, playerId, obj, { variableTargets: true, free: true });
+}
+
+/**
  * `variableTargets` — czy ścieżka, dla której liczymy ofertę, potrafi ROZLICZYĆ
  * tryb z „up to N target ...” (CR 601.2c). Okno zdolności Vaana idzie przez
  * `castSpell` → `castModalSpell`, który takie tryby waliduje; madness
@@ -865,9 +1044,9 @@ function payFreeCastAdditionalCost(state, playerId, obj, cmd) {
  * odrzucają je JAWNIE, więc tam oferta musi milczeć (L48: oferta nie może
  * obiecywać czegoś, co wykonanie odrzuci).
  */
-function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost = false, aura = false } = {}) {
+function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost = false, aura = false, free = false } = {}) {
   const spell = obj.spell ?? {};
-  if (spell.fireball && !xCost) return [];
+  if (spell.fireball && !xCost && !free) return [];
   // Aura (CR 303.4a): czar z celem wybieranym przy rzucie — ten sam generator
   // co dla ręki (`legalAuraCastsForObject`). Tylko dla ścieżek, które wyliczają
   // cele i płacą koszt many (okno zdolności) — audyt PR #93, znalezisko E.
@@ -886,6 +1065,21 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
   // Koszt X / Fireball (CR 107.3a): X wybiera gracz, więc oferta niesie
   // `xValue`. Tylko dla ścieżek, które płacą koszt many (okno zdolności) —
   // madness i darmowy rzut z grobu X nie rozliczają.
+  // Etap F/4: rzut bez kosztu many — X = 0 (CR 107.3b); Fireball płaci
+  // wyłącznie dopłatę {1} za każdy cel ponad pierwszy (CR 601.2f).
+  if (free && spell.fireball) {
+    const budget = producibleMana(state, playerId, null, spellManaPurpose(obj), []);
+    return withCosts(legalFireballCasts(state, playerId, obj.id, obj, budget, { withoutManaCost: true })
+      .map((cast) => ({ cardId: obj.id, targets: cast.targets, xValue: 0 })));
+  }
+  if (free && spell.xCost && !spell.modes) {
+    const xSpec = spell.targets ?? [];
+    if (xSpec.length === 0) return withCosts([{ cardId: obj.id, targets: [], xValue: 0 }]);
+    const xPools = xSpec.map((entry) => legalTargetCandidates(state, playerId, entry));
+    if (xPools.some((pool) => pool.length === 0)) return [];
+    return withCosts(cartesianTargetPools(xPools, xSpec.map((sp, wi) => sp?.targetWord ?? wi))
+      .map((combo) => ({ cardId: obj.id, targets: combo, xValue: 0 })));
+  }
   if (spell.xCost) {
     if (!xCost) return [];
     const budget = producibleMana(state, playerId, null, spellManaPurpose(obj), coloredPipsOf(obj.cardId));
@@ -934,9 +1128,8 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
  *  - MNIEJSZE mana value niż czar wyzwalający (ruling: „lesser mana value”;
  *    „lesser" = ostro mniejsze, więc MV równy odpada),
  *  - wspólny typ karty z czarem wyzwalającym (instant/sorcery),
- *  - bez kosztu X: przy rzucie bez kosztu many X = 0 (CR 107.3b), czyli ruch
- *    który nic nie robi — taka „oferta" byłaby pułapką (ta sama zasada co
- *    `allowX` w `outsideHandCastScope` dla Discover),
+ *  - czar X / Fireball z X = 0 (CR 107.3b) — Etap F/4, wspólna ścieżka
+ *    `castSpellWithoutManaCost`,
  *  - warianty celów/trybów/kosztów dodatkowych z tego samego generatora co
  *    okno zdolności Vaana (`epicCastOffers`). Koszty dodatkowe są PŁACONE
  *    (ruling: „additional costs are allowed … mandatory"), a kosztów
@@ -954,8 +1147,14 @@ function handFreeCastOffers(state, playerId, pending) {
     if ((card.manaCost ?? 0) >= (pending.maxManaValue ?? 0)) continue;
     const spell = card.spell ?? {};
     if (!['instant', 'sorcery'].includes(spell.timing)) continue;
-    if (spell.xCost || spell.fireball) continue;
-    for (const offer of epicCastOffers(state, playerId, card, { variableTargets: true })) {
+    // Etap F/4: czar X / Fireball też jest rzucalny — z X = 0 (CR 107.3b)
+    // przez wspólną ścieżkę rzutu bez kosztu many (dawniej wykluczony jako
+    // „pułapka"; to legalny wybór gracza: rzut liczy się jako rzucony czar
+    // i karta idzie na cmentarz).
+    const offersFor = (spell.xCost || spell.fireball)
+      ? freeSpellCastOffers(state, playerId, card)
+      : epicCastOffers(state, playerId, card, { variableTargets: true });
+    for (const offer of offersFor) {
       // Uwaga na kolejność: `epicCastOffers` zwraca `cardId` = id OBIEKTU
       // (w tamtych ścieżkach obiekt jest kartą w strefie publicznej), a tu
       // karta leży w RĘCE — pole `cardId` ma nieść identyfikator karty
@@ -973,15 +1172,20 @@ function handFreeCastOfferMatches(offer, cmd) {
   if ((offer.stunTargetId ?? null) !== (cmd.stunTargetId ?? null)) return false;
   if ((offer.sacrificeTargetId ?? null) !== (cmd.sacrificeTargetId ?? null)) return false;
   if (Boolean(offer.payAltCost) !== Boolean(cmd.payAltCost)) return false;
+  if ((offer.xValue ?? null) !== (cmd.xValue ?? null)) return false;
+  // Etap F/4b: komplet kart odrzucanych jako koszt dodatkowy (kolejność bez znaczenia).
+  const da = [...(offer.discardCardIds ?? [])].sort();
+  const db = [...(cmd.discardCardIds ?? [])].sort();
+  if (da.length !== db.length || da.some((id, index) => id !== db[index])) return false;
   const a = offer.targets ?? [];
   const b = cmd.targets ?? [];
   return a.length === b.length && a.every((id, index) => id === b[index]);
 }
 
-/** Warianty rzutu zawieszonego czaru (suspend, CR 702.62): te same co epic,
- *  ale z flagą cast:true — komenda resolve_suspend_cast. */
+/** Warianty rzutu zawieszonego czaru (suspend, CR 702.62) i rebound: te
+ *  same co epic (`freeSpellCastOffers`), ale z flagą cast:true. */
 function suspendCastOffers(state, playerId, obj) {
-  return epicCastOffers(state, playerId, obj).map((offer) => ({ ...offer, cast: true }));
+  return freeSpellCastOffers(state, playerId, obj).map((offer) => ({ ...offer, cast: true }));
 }
 
 export function legalRoomTargetCandidates(state, pending) {
@@ -1272,22 +1476,21 @@ function discardChooserId(pending) {
  * `allowAura` — czysta aura (i bestow). Audyt PR #93, znalezisko E: Oracle
  * Vaana mówi po prostu „You may cast it”, a aura jest czarem z celem
  * wybieranym przy rzucie (CR 303.4a/601.2c) — okno, które wylicza
- * gospodarzy, może ją rozliczyć. Discover nadal nie wylicza celów, więc tam
- * `allowAura` zostaje wyłączone (przypięte testem).
+ * gospodarzy, może ją rozliczyć.
  *
  * `allowX` — koszt X (`spell.xCost`) i Fireball. Audyt PR #93: okno zdolności
- * płaci koszt many, więc X wybiera gracz (CR 107.3a) i karta jest rzucalna;
- * rzut BEZ kosztu many (Discover) nie ma tego wyboru — CR 107.3b zmusza X = 0,
- * czyli do ruchu, który nic nie robi. Taki wariant nie jest ofertą, tylko
- * pułapką (uwaga właściciela F z M280), więc tam `allowX` zostaje wyłączone.
+ * płaci koszt many, więc X wybiera gracz (CR 107.3a) i karta jest rzucalna.
+ *
+ * Etap F/4: rzuty BEZ kosztu many (Discover, Epic, suspend, rebound) nie
+ * używają już tego predykatu — idą przez `freeSpellCastOffers` /
+ * `castSpellWithoutManaCost` (cele, tryby, X = 0 wg CR 107.3b, aury).
  *
  * `allowAdditionalCost` — koszt dodatkowy (CR 601.2h). Audyt PR #93: wykluczenie
  * powstało dla ścieżek, które kosztu NIE rozliczają (dawna oferta Discover),
  * ale okno zdolności Vaana rozlicza go w `castSpell` (ofiara albo dopłata),
- * a darmowy rzut Discover w `payFreeCastAdditionalCost` (CR 118.9d: rzut bez
- * kosztu many nadal płaci koszty dodatkowe). Koszt wymagający wyboru kart
- * w trakcie płacenia („discard two cards”) jest nieobsługiwany wszędzie —
- * o braku oferty decyduje `freeCastAdditionalCostVariants`, nie ten predykat.
+ * a darmowe rzuty w `payFreeCastAdditionalCost` (CR 118.9d: rzut bez
+ * kosztu many nadal płaci koszty dodatkowe). O ofercie kosztu dodatkowego
+ * decyduje `freeCastAdditionalCostVariants`, nie ten predykat.
  */
 function outsideHandCastScope(card, {
   allowTargets = false, allowModes = false, allowAdditionalCost = false, allowX = false, allowAura = false,
@@ -1307,30 +1510,6 @@ function outsideHandCastScope(card, {
   // Czyste aury mają własną ścieżkę celu (castAuraSpell); okno zdolności, które
   // wylicza gospodarzy (`allowAura`), może ją rozliczyć (audyt PR #93, znalezisko E).
   return ['creature', 'artifact', 'enchantment'].includes(card.kind) && (allowAura || !card.aura);
-}
-
-/**
- * Tryby czaru modalnego, które NIE wymagają wyboru celu — zakres darmowego
- * rzutu Discover (CR 701.53).
- *
- * Discover nie enumeruje celów (uwaga właściciela F z M280): tryb „destroy
- * target artifact” wszedłby na stos z `chosenTargets: []` i sfizzlował
- * (CR 608.2b), czyli zaoferował graczowi ruch, który nic nie robi. Tryb z
- * `variableTargets` („up to N target …”) odpada z tego samego powodu — jego
- * wybór to cel (a bywa, że i dodatkowy cel pod stun counter).
- *
- * Jeden filtr dla oferty i dla bramki `resolve_discover_choice` (L48).
- */
-function targetlessModeIndexes(card) {
-  const modes = card?.spell?.modes ?? [];
-  const out = [];
-  for (let index = 0; index < modes.length; index += 1) {
-    const mode = modes[index];
-    if ((mode.targets ?? []).length > 0) continue;
-    if (mode.variableTargets) continue;
-    out.push(index);
-  }
-  return out;
 }
 
 function firstPendingDecision(state) {
@@ -2570,102 +2749,38 @@ export function execute(state, input) {
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
     const card = state.objects.get(cmd.objectId);
+    // Etap F/4: „cast target instant or sorcery card with mana value X from
+    // a graveyard without paying its mana cost" — KAŻDY instant/sorcery
+    // (dawniej wykluczone: koszt dodatkowy, X, Fireball). Rzut idzie wspólną
+    // ścieżką `castSpellWithoutManaCost` (X czaru = 0, CR 107.3b; dopłaty
+    // i koszty dodatkowe płatne), a {X} Foragera wchodzi do tego samego budżetu.
     const inScope = card && card.zone === 'graveyard' && card.kind === 'spell'
-      && ['instant', 'sorcery'].includes(card.spell?.timing)
-      && !card.spell?.additionalCost && !card.spell?.xCost && !card.spell?.fireball;
+      && ['instant', 'sorcery'].includes(card.spell?.timing);
     if (!inScope) return reject('illegal_grave_free_cast');
     // M203: X jest częścią KOMENDY (wybór gracza), a walidacja pilnuje druku —
     // „card with mana value X". Wcześniej X było czytane z karty, więc komenda
     // z dowolnym X przechodziła (zmierzone: xValue 3 przy karcie MV 1 → ok).
     const xValue = card.manaCost ?? 0;
     if (!Number.isInteger(cmd.xValue) || cmd.xValue !== xValue) return reject('illegal_grave_free_cast_x');
-    if (producibleMana(state, cmd.playerId, null, spellManaPurpose(card), []) < xValue) return reject('illegal_grave_free_cast');
-    // Cele/tryb jak przy Epic (walidacja przed płatnością — L4).
-    const chosen = Array.isArray(cmd.targets) ? cmd.targets : [];
-    let chosenTargets = [];
-    let chosenMode;
-    // Audyt PR #94 / K1: wybór celu pod stun counter (`stunAmongTargets`)
-    // musi dojechać na stos — rozstrzyganie czyta `object.modeExtra`
-    // (`resolveModalEffectTargets` → `extra:stunTargetId`), mirror
-    // `castModalSpell`.
-    let chosenModeExtra = null;
-    try {
-      if (card.spell?.modes) {
-        const modeIndex = cmd.modeIndex;
-        if (!Number.isInteger(modeIndex) || modeIndex < 0 || modeIndex >= card.spell.modes.length) {
-          return reject('illegal_grave_free_cast');
-        }
-        const mode = card.spell.modes[modeIndex];
-        if (mode.variableTargets) {
-          // Liczbę celów wybiera gracz („up to three”), a oferta jest
-          // PRZYCIĘTA limitem (znalezisko H) — walidacja musi być pełna:
-          // ten sam walidator co przy rzucie z ręki (`castModalSpell`).
-          // Audyt PR #94 / K1: tryb ze `stunAmongTargets` wymaga wyboru celu
-          // pod stun counter — tego samego wyboru, który niesie oferta.
-          chosenTargets = validateVariableTargets(state, pending.playerId, mode, chosen, card, cmd.stunTargetId);
-          if (mode.stunAmongTargets) chosenModeExtra = { stunTargetId: cmd.stunTargetId };
-        } else {
-          const spec = mode.targets ?? [];
-          if (chosen.length !== spec.length) return reject('illegal_grave_free_cast_targets');
-          if (spec.length > 0) validateTargets(state, spec, chosen, pending.playerId, card.colors ?? []);
-          chosenTargets = chosen.slice();
-        }
-        chosenMode = modeIndex;
-      } else {
-        const spec = card.spell?.targets ?? [];
-        if (chosen.length !== spec.length) return reject('illegal_grave_free_cast_targets');
-        if (spec.length > 0) validateTargets(state, spec, chosen, pending.playerId, card.colors ?? []);
-        chosenTargets = chosen.slice();
-      }
-    } catch {
-      return reject('illegal_grave_free_cast_targets');
-    }
-    // Zapłata {X} (CR 601.2h — koszt płacony przy rozstrzyganiu „you may pay
-    // {X}"); koszt many samego czaru wynosi {0} (CR 118.9a), więc nic więcej
-    // nie jest pobierane. Cel wydania = rzucana karta: {X} wydane na czar
-    // nie-artefaktowy nie może pochodzić z many ograniczonej drukiem.
-    spendMana(state, cmd.playerId, xValue, [], spellManaPurpose(card));
-    const stackId = `spell-${state.objectSequence++}`;
-    moveObjectDirectly(state, cmd.objectId, 'stack', stackId);
-    const stacked = Object.freeze({
-      ...state.objects.get(stackId),
-      tapped: false,
+    // Zapłata {X} (koszt decyzji „you may pay {X}"); koszt many samego czaru
+    // wynosi {0} (CR 118.9a). Cel wydania = rzucana karta (M202/N1). Komenda
+    // niesie X Foragera w `xValue`, więc X samego czaru (zawsze 0) nie jedzie
+    // osobno — `castSpellWithoutManaCost` dostaje komendę bez `xValue`.
+    const { xValue: _foragerX, ...castChoice } = cmd;
+    const graveCast = castSpellWithoutManaCost(state, pending.playerId, cmd.objectId, castChoice, {
+      extraMana: xValue,
       // Czar rzucony przez KONTROLERA Foragera — także z grobu przeciwnika.
-      controllerId: pending.playerId,
-      chosenTargets,
-      ...(chosenMode != null ? { chosenMode } : {}),
-      ...(chosenModeExtra != null ? { modeExtra: chosenModeExtra } : {}),
       // „If that spell would be put into a graveyard, exile it instead."
-      exileInsteadOfGraveyard: true,
-      freeGraveCast: true,
+      objectStamp: { controllerId: pending.playerId, exileInsteadOfGraveyard: true, freeGraveCast: true },
+      eventStamp: { fromGraveyard: true, xPaid: xValue },
     });
-    state.objects.set(stackId, stacked);
-    state.spellsCastThisTurn += 1;
+    if (graveCast.reason) {
+      return reject(graveCast.reason === 'free_cast_mana_unpaid' ? 'illegal_grave_free_cast' : graveCast.reason);
+    }
     state.pendingGraveFreeCast = null;
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    state.events.push(event('spell_cast', {
-      playerId: pending.playerId, fromId: cmd.objectId, object: stacked, cardId: card.cardId,
-      targets: chosenTargets,
-      targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
-      // M273 (błąd #23): `colors` to CZĘŚĆ kontraktu zdarzenia rzutu —
-      // triggers.js czyta `eventData.colors` dla „whenever a player casts
-      // a WHITE spell" (Angel's Feather) i dla „casts a COLORLESS spell".
-      // Brak pola dawał `?? []`, czyli czar udawał BEZBARWNY: trigger na
-      // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
-      colors: [...(card.colors ?? [])],
-      fromGraveyard: true, xPaid: xValue, manaSpent: xValue,
-      // Audyt PR #94 / K1: log stołu czyta `e.modeName` (session.js) — bez
-      // niego rzut modalny z grobu wyglądał w logu jak niemodalny; wybór
-      // stun celu też jest częścią decyzji (M91/uwaga D), mirror
-      // `castModalSpell`.
-      ...(chosenMode != null ? {
-        modeIndex: chosenMode,
-        modeName: card.spell?.modes?.[chosenMode]?.name ?? null,
-        stunTargetId: chosenModeExtra?.stunTargetId ?? null,
-      } : {}),
-    }));
     state.events.push(event('grave_free_cast_resolved', {
       playerId: pending.playerId, sourceCardId: pending.sourceCardId,
       cardId: card.cardId, xPaid: xValue, declined: false,
@@ -2715,6 +2830,13 @@ export function execute(state, input) {
     if (!offer) return reject('illegal_hand_free_cast');
     const card = state.objects.get(offer.objectId);
     if (!card || card.zone !== 'hand') return reject('illegal_hand_free_cast');
+    if (card.spell?.xCost || card.spell?.fireball) {
+      // Etap F/4: X = 0 i dopłaty Fireballa — wspólna ścieżka rzutu bez
+      // kosztu many (castSpell rozlicza X jako płacony).
+      const handXCast = castSpellWithoutManaCost(state, cmd.playerId, offer.objectId, offer);
+      if (handXCast.reason) return reject(`illegal_hand_free_cast:${handXCast.reason}`);
+      return finish({ declined: false, objectId: offer.objectId, cardId: offer.cardId });
+    }
     try {
       // Rzut następuje w rozstrzyganiu zdolności → timing czaru ignorowany
       // (CR 601.2b pomijany; ruling: „The spell is cast during the resolution
@@ -2725,6 +2847,7 @@ export function execute(state, input) {
           abilityWindowCast: true,
           handFreeCast: true,
           ...(offer.payAltCost === true ? { payAltCost: true } : {}),
+          ...(offer.discardCardIds ? { discardCardIds: offer.discardCardIds } : {}),
         });
     } catch (error) {
       return reject(`illegal_hand_free_cast:${error.message}`);
@@ -2793,6 +2916,8 @@ export function execute(state, input) {
             // Koszt X (CR 107.3a): wartość wybrana w ofercie.
             ...(cmd.xValue != null ? { xValue: cmd.xValue } : {}),
             ...(cmd.payAltCost === true ? { payAltCost: true } : {}),
+            // Etap F/4b: odrzucenie jako koszt dodatkowy — wybór z oferty.
+            ...(Array.isArray(cmd.discardCardIds) ? { discardCardIds: cmd.discardCardIds } : {}),
           });
       } else if (card.aura || card.bestow) {
         // Aura (CR 303.4a): cel (gospodarz albo gracz dla Curse) wybrał gracz
@@ -2906,63 +3031,20 @@ export function execute(state, input) {
     if (!card || card.zone !== 'exile' || !card.suspended || card.timeCounters !== 0) {
       return reject('illegal_suspend_cast');
     }
-    const chosen = Array.isArray(cmd.targets) ? cmd.targets : [];
-    let chosenTargets = [];
-    let chosenMode;
-    try {
-      if (card.spell?.modes) {
-        const modeIndex = cmd.modeIndex;
-        if (!Number.isInteger(modeIndex) || modeIndex < 0 || modeIndex >= card.spell.modes.length) return reject('illegal_suspend_cast');
-        const mode = card.spell.modes[modeIndex];
-        if (mode.variableTargets) return reject('illegal_suspend_cast');
-        const spec = mode.targets ?? [];
-        if (chosen.length !== spec.length) return reject('illegal_suspend_targets');
-        if (spec.length > 0) validateTargets(state, spec, chosen, pending.playerId, card.colors ?? []);
-        chosenTargets = chosen.slice();
-        chosenMode = modeIndex;
-      } else {
-        const spec = card.spell?.targets ?? [];
-        if (chosen.length !== spec.length) return reject('illegal_suspend_targets');
-        if (spec.length > 0) validateTargets(state, spec, chosen, pending.playerId, card.colors ?? []);
-        chosenTargets = chosen.slice();
-      }
-    } catch {
-      return reject('illegal_suspend_targets');
-    }
-    // M201/U2 (CR 601.2h): koszt dodatkowy płacony także przy rzucie suspend.
-    const suspendCostReason = payFreeCastAdditionalCost(state, pending.playerId, card, cmd);
-    if (suspendCostReason) return reject(suspendCostReason);
-    // Rzut bez kosztu MANY — czar idzie na stos (jak discover/epic free cast);
-    // timing sorcery IGNOROWANY (CR 702.62c — rzut w trakcie rozpatrywania
-    // zdolności, nawet w turze przeciwnika).
-    const stackId = `spell-${state.objectSequence++}`;
-    moveObjectDirectly(state, pending.objectId, 'stack', stackId);
-    const stacked = Object.freeze({
-      ...state.objects.get(stackId),
-      tapped: false,
-      chosenTargets,
-      ...(chosenMode != null ? { chosenMode } : {}),
-      freeSuspend: true,
+    // Etap F/4: wspólna ścieżka rzutu bez kosztu many (cele, tryby, X = 0,
+    // koszty dodatkowe); timing sorcery IGNOROWANY (CR 702.62a — rzut
+    // w trakcie rozpatrywania zdolności, nawet w turze przeciwnika).
+    // KARTY SPOZA KATALOGU: jedyna karta z suspend (Mindstab) to sorcery —
+    // gdy pojawi się PERMANENT z suspend, rzut idzie ścieżką permanentu
+    // i stwór zyskuje haste (CR 702.62a), czego ta gałąź nie robi.
+    const suspendCast = castSpellWithoutManaCost(state, pending.playerId, pending.objectId, cmd, {
+      objectStamp: { freeSuspend: true }, eventStamp: { suspend: true },
     });
-    state.objects.set(stackId, stacked);
-    state.spellsCastThisTurn += 1;
+    if (suspendCast.reason) return reject(suspendCast.reason);
     state.pendingSuspendCast = null;
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    state.events.push(event('spell_cast', {
-      playerId: pending.playerId, fromId: pending.objectId, object: stacked, cardId: card.cardId,
-      targets: chosenTargets,
-      targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
-      // M273 (błąd #23): `colors` to CZĘŚĆ kontraktu zdarzenia rzutu —
-      // triggers.js czyta `eventData.colors` dla „whenever a player casts
-      // a WHITE spell" (Angel's Feather) i dla „casts a COLORLESS spell".
-      // Brak pola dawał `?? []`, czyli czar udawał BEZBARWNY: trigger na
-      // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
-      colors: [...(card.colors ?? [])],
-      suspend: true, manaSpent: 0,
-      ...(chosenMode != null ? { modeIndex: chosenMode } : {}),
-    }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
 
@@ -2993,63 +3075,18 @@ export function execute(state, input) {
     if (!card || card.zone !== 'exile' || !card.reboundReady) {
       return reject('illegal_rebound_cast');
     }
-    const chosen = Array.isArray(cmd.targets) ? cmd.targets : [];
-    let chosenTargets = [];
-    let chosenMode;
-    try {
-      if (card.spell?.modes) {
-        const modeIndex = cmd.modeIndex;
-        if (!Number.isInteger(modeIndex) || modeIndex < 0 || modeIndex >= card.spell.modes.length) return reject('illegal_rebound_cast');
-        const mode = card.spell.modes[modeIndex];
-        if (mode.variableTargets) return reject('illegal_rebound_cast');
-        const spec = mode.targets ?? [];
-        if (chosen.length !== spec.length) return reject('illegal_rebound_targets');
-        if (spec.length > 0) validateTargets(state, spec, chosen, pending.playerId, card.colors ?? []);
-        chosenTargets = chosen.slice();
-        chosenMode = modeIndex;
-      } else {
-        const spec = card.spell?.targets ?? [];
-        if (chosen.length !== spec.length) return reject('illegal_rebound_targets');
-        if (spec.length > 0) validateTargets(state, spec, chosen, pending.playerId, card.colors ?? []);
-        chosenTargets = chosen.slice();
-      }
-    } catch {
-      return reject('illegal_rebound_targets');
-    }
-    // M201/U2 (CR 601.2h): koszt dodatkowy płacony także przy rzucie rebound.
-    const reboundCostReason = payFreeCastAdditionalCost(state, pending.playerId, card, cmd);
-    if (reboundCostReason) return reject(reboundCostReason);
-    // Rzut bez kosztu MANY — czar idzie na stos; timing sorcery IGNOROWANY
-    // (CR 702.88c — rzut z exile w trakcie rozpatrywania zdolności).
-    const stackId = `spell-${state.objectSequence++}`;
-    moveObjectDirectly(state, pending.objectId, 'stack', stackId);
-    const stacked = Object.freeze({
-      ...state.objects.get(stackId),
-      tapped: false,
-      chosenTargets,
-      ...(chosenMode != null ? { chosenMode } : {}),
-      reboundCast: false,
-      reboundReady: false,
+    // Etap F/4: wspólna ścieżka rzutu bez kosztu many; timing sorcery
+    // IGNOROWANY (CR 702.88a — rzut z exile w trakcie rozpatrywania
+    // zdolności). Rzut z exile to nie rzut „z ręki" — rebound się nie
+    // powtarza (reboundCast/reboundReady = false).
+    const reboundCastResult = castSpellWithoutManaCost(state, pending.playerId, pending.objectId, cmd, {
+      objectStamp: { reboundCast: false, reboundReady: false }, eventStamp: { rebound: true },
     });
-    state.objects.set(stackId, stacked);
-    state.spellsCastThisTurn += 1;
+    if (reboundCastResult.reason) return reject(reboundCastResult.reason);
     state.pendingReboundCast = null;
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    state.events.push(event('spell_cast', {
-      playerId: pending.playerId, fromId: pending.objectId, object: stacked, cardId: card.cardId,
-      targets: chosenTargets,
-      targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
-      // M273 (błąd #23): `colors` to CZĘŚĆ kontraktu zdarzenia rzutu —
-      // triggers.js czyta `eventData.colors` dla „whenever a player casts
-      // a WHITE spell" (Angel's Feather) i dla „casts a COLORLESS spell".
-      // Brak pola dawał `?? []`, czyli czar udawał BEZBARWNY: trigger na
-      // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
-      colors: [...(card.colors ?? [])],
-      rebound: true, manaSpent: 0,
-      ...(chosenMode != null ? { modeIndex: chosenMode } : {}),
-    }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
 
@@ -3090,70 +3127,18 @@ export function execute(state, input) {
     const isSpell = exileObj.kind === 'spell' && (exileObj.spell?.timing === 'instant' || exileObj.spell?.timing === 'sorcery');
     const mv = exileObj.manaCost ?? 0;
     if (!isSpell || mv > pending.maxMV) return reject('illegal_epic_choice');
-    const chosen = Array.isArray(cmd.targets) ? cmd.targets : [];
-    let chosenTargets = [];
-    let chosenMode;
-    try {
-      if (exileObj.spell?.fireball) return reject('illegal_epic_choice');
-      if (exileObj.spell?.modes) {
-        const modeIndex = cmd.modeIndex;
-        if (!Number.isInteger(modeIndex) || modeIndex < 0 || modeIndex >= exileObj.spell.modes.length) {
-          return reject('illegal_epic_choice');
-        }
-        const mode = exileObj.spell.modes[modeIndex];
-        if (mode.variableTargets) return reject('illegal_epic_choice');
-        const spec = mode.targets ?? [];
-        if (chosen.length !== spec.length) return reject('illegal_epic_targets');
-        if (spec.length > 0) validateTargets(state, spec, chosen, pending.playerId, exileObj.colors ?? []);
-        chosenTargets = chosen.slice();
-        chosenMode = modeIndex;
-      } else {
-        const spec = exileObj.spell?.targets ?? [];
-        if (chosen.length !== spec.length) return reject('illegal_epic_targets');
-        if (spec.length > 0) validateTargets(state, spec, chosen, pending.playerId, exileObj.colors ?? []);
-        chosenTargets = chosen.slice();
-      }
-    } catch {
-      return reject('illegal_epic_targets');
-    }
-    // M201/U2 (CR 601.2h): koszt dodatkowy płacony PRZED położeniem czaru na
-    // stosie — „bez kosztu many" nie znaczy „bez kosztów" (CR 118.5).
-    const epicCostReason = payFreeCastAdditionalCost(state, pending.playerId, exileObj, cmd);
-    if (epicCostReason) return reject(epicCostReason);
-    // Rzuć bez kosztu many — czar idzie na stos (jak discover free cast).
-    const stackId = `spell-${state.objectSequence++}`;
-    moveObjectDirectly(state, cardId, 'stack', stackId);
-    const stacked = Object.freeze({
-      ...state.objects.get(stackId),
-      tapped: false,
-      chosenTargets,
-      ...(chosenMode != null ? { chosenMode } : {}),
-      ...(exileObj.spell?.xCost ? { spellX: 0 } : {}),
-      freeDiscover: true,
-      epicCast: true,
+    // Etap F/4: wspólna ścieżka rzutu bez kosztu many — cele, tryby (także
+    // „up to N"), X = 0 (CR 107.3b), Fireball z dopłatą za dodatkowe cele
+    // (CR 601.2f), koszty dodatkowe (CR 601.2h). Dawniej Fireball i tryby
+    // „up to N" były tu odrzucane.
+    const epicCastResult = castSpellWithoutManaCost(state, pending.playerId, cardId, cmd, {
+      objectStamp: { freeDiscover: true, epicCast: true }, eventStamp: { discover: true, epic: true },
     });
-    state.objects.set(stackId, stacked);
-    state.spellsCastThisTurn += 1;
-    const modeName_ = chosenMode != null ? exileObj.spell?.modes?.[chosenMode]?.name : undefined;
-    state.events.push(event('spell_cast', {
-      playerId: pending.playerId, fromId: cardId, object: stacked, cardId: exileObj.cardId,
-      targets: chosenTargets,
-      targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
-      // M273 (błąd #23): `colors` to CZĘŚĆ kontraktu zdarzenia rzutu —
-      // triggers.js czyta `eventData.colors` dla „whenever a player casts
-      // a WHITE spell" (Angel's Feather) i dla „casts a COLORLESS spell".
-      // Brak pola dawał `?? []`, czyli czar udawał BEZBARWNY: trigger na
-      // kolor milczał, a trigger na bezbarwność odpalał fałszywie.
-      colors: [...(exileObj.colors ?? [])],
-      discover: true, epic: true, manaSpent: 0,
-      ...(chosenMode != null ? { modeIndex: chosenMode, modeName: modeName_ } : {}),
-    }));
-    // Uwaga: czar rozstrzygnie się po swojej rundzie passów; Epic Experiment
-    // czeka na stosie (pendingSpell) — dokończenie po rozstrzygnięciu czaru.
-    // Dla prostoty: pozwalamy na dalsze wybory (remaining exile jest wciąż na
-    // stosie — nie zdejmujemy go; resolveTopOfStack dokończy po rozstrzygnięciu).
-    const resolvedEvents = state.events.slice(before);
-    return accepted(state, cmd, { ok: true, events: resolvedEvents });
+    if (epicCastResult.reason) return reject(epicCastResult.reason);
+    // Epic Experiment rzuca czary W TRAKCIE swojego rozstrzygania (decyzja
+    // zostaje otwarta do `done`); rzucone czary czekają na stosie nad nim
+    // i rozstrzygną się po jego dokończeniu.
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
 
     if (state.pendingRedirectChoice) {
@@ -4739,54 +4724,36 @@ export function execute(state, input) {
     const before = state.events.length;
     const foundObj = state.objects.get(disc.foundExileId);
     if (!foundObj) return reject('illegal_discover_choice');
-    // A92/5 (L48): ta sama bramka co oferta — darmowy rzut TYLKO dla kart
-    // w prostym zakresie. Bez niej komenda spoza oferty kładła czar na
-    // stosie z `targets: []` i pozwalała mu fizzlować (CR 608.2b).
-    if (cmd.castFree && !outsideHandCastScope(foundObj, { allowTargets: false, allowModes: true, allowAdditionalCost: true })) {
-      return reject('illegal_discover_free_cast');
-    }
-    // Audyt PR #93: czar modalny wymaga WYBORU TRYBU w komendzie — bez niego
-    // trafiał na stos bez `chosenMode` i rozstrzygał się jak czar niemodalny
-    // (czyli wcale). Tryb celowany jest poza zakresem Discover (L48: oferta
-    // i walidacja liczą ten sam filtr `targetlessModeIndexes`).
-    let chosenDiscoverMode = null;
-    if (cmd.castFree && (foundObj.spell?.modes ?? []).length > 0) {
-      if (!targetlessModeIndexes(foundObj).includes(cmd.modeIndex)) {
-        return reject('illegal_discover_free_cast_mode');
-      }
-      chosenDiscoverMode = cmd.modeIndex;
-    }
-    if (cmd.castFree && ['spell', 'creature', 'artifact', 'enchantment'].includes(foundObj.kind)) {
-      // CR 118.9d: „without paying its mana cost” nie zwalnia z kosztów
-      // DODATKOWYCH. Ten sam helper co suspend/rebound/epic (M201/U2).
-      const costReason = payFreeCastAdditionalCost(state, disc.playerId, foundObj, cmd);
-      if (costReason) return reject(costReason);
-    }
+    // Etap F/4 (PR #135 — „żadnych ograniczeń wpływających na grę"):
+    // Discover (CR 701.57a: „you may cast it without paying its mana cost")
+    // rzuca KAŻDĄ znalezioną kartę niebędącą landem — czar z celami, trybami
+    // (także „up to N"), X = 0 (CR 107.3b), Fireball z dopłatą za dodatkowe
+    // cele i z kosztami dodatkowymi idzie wspólną ścieżką
+    // `castSpellWithoutManaCost`; aura — `castAuraSpell` bez kosztu many
+    // z wybranym gospodarzem. Dawniej celowane czary, tryby z celem, X/Fireball
+    // i aury trafiały wyłącznie „do ręki".
     if (cmd.castFree && foundObj.kind === 'spell') {
-      // Rzuć czar (instant/sorcery) bez kosztu many — idzie na stos.
-      const stackId = `spell-${state.objectSequence++}`;
-      moveObjectDirectly(state, disc.foundExileId, 'stack', stackId);
-      const spellTargets = (foundObj.spell?.targets ?? []);
-      const stacked = Object.freeze({
-        ...state.objects.get(stackId), tapped: false, chosenTargets: [], freeDiscover: true,
-        ...(chosenDiscoverMode != null ? { chosenMode: chosenDiscoverMode } : {}),
+      const discoverCast = castSpellWithoutManaCost(state, disc.playerId, disc.foundExileId, cmd, {
+        objectStamp: { freeDiscover: true }, eventStamp: { discover: true },
       });
-      state.objects.set(stackId, stacked);
-      state.spellsCastThisTurn += 1;
-      state.events.push(event('spell_cast', {
-        // M273 (błąd #23): kolory czaru są częścią kontraktu zdarzenia.
-        playerId: disc.playerId, fromId: disc.foundExileId, object: stacked,
-        cardId: foundObj.cardId, targets: [], discover: true, manaSpent: 0,
-        // M91 (uwaga D): log stołu mówi, KTÓRY tryb wybrano — opis zdarzenia
-        // jest czystą funkcją bez dostępu do obiektu na stosie (L107).
-        ...(chosenDiscoverMode != null
-          ? { modeIndex: chosenDiscoverMode, modeName: foundObj.spell?.modes?.[chosenDiscoverMode]?.name ?? null }
-          : {}),
-        colors: [...(foundObj.colors ?? [])],
-      }));
+      if (discoverCast.reason) return reject(discoverCast.reason);
+    } else if (cmd.castFree && foundObj.aura) {
+      const hostId = Array.isArray(cmd.targets) ? cmd.targets[0] : undefined;
+      try {
+        castAuraSpell(state, disc.playerId, disc.foundExileId, {
+          targetId: hostId, abilityWindowCast: true, withoutManaCost: true,
+        });
+      } catch {
+        return reject('illegal_discover_free_cast');
+      }
     } else if (cmd.castFree && (foundObj.kind === 'creature' || foundObj.kind === 'artifact' || foundObj.kind === 'enchantment')) {
       // Rzuć permanent bez kosztu many — idzie na STOS jak każdy rzut czaru
       // (CR 601); na pole bitwy wchodzi po rozstrzygnięciu (resolvePermanentSpell).
+      // KARTY SPOZA ZAKRESU TEJ GAŁĘZI (w katalogu brak permanentu MV ≤ 3
+      // z kosztem opcjonalnym, który miałby sens przy Discover, poza
+      // kickerem/offspring): gdy talia połączy Discover z takim permanentem,
+      // rzut musi pozwolić dopłacić koszt dodatkowy (CR 601.2b/f) — dziś
+      // permanent wchodzi bez kickera/offspring.
       const stackId = `spell-${state.objectSequence++}`;
       moveObjectDirectly(state, disc.foundExileId, 'stack', stackId);
       const perm = Object.freeze({
@@ -4803,6 +4770,10 @@ export function execute(state, input) {
         manaCost: 0, discover: true, manaSpent: 0,
         colors: [...(perm.colors ?? [])],
       }));
+    } else if (cmd.castFree) {
+      // CR 305.1: land nie jest czarem — nie „rzuca się" (Discover i tak
+      // pomija landy przy odkrywaniu, CR 701.57a).
+      return reject('illegal_discover_free_cast');
     } else {
       // Do ręki.
       const handId = `hand-${state.objectSequence++}`;
@@ -7488,40 +7459,29 @@ export function playerView(state, playerId) {
     legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: false }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDiscover) {
     // Oczekująca decyzja Discover (Geological Appraiser): rzuć bez kosztu
-    // albo weź do ręki. F (uwaga właściciela, „noop Discover"): oferta
-    // „rzuć za darmo" była pokazywana także dla kart, których ścieżka
-    // darmowego rzutu NIE obsługuje (czary z celami, kosztami dodatkowymi,
-    // X/Fireball, mody) — czar wchodził na stos bez celów i fizzlował
-    // (CR 608.2b), a Żywy Tester zgłaszał ofertę jako no-op. Oferujemy
-    // darmowy rzut wyłącznie dla kart w „prostym zakresie" — ta sama bramka
-    // co Vaan `resolve_exile_cast` (oferta = walidacja), zaostrzona
-    // o cele: Discover nie enumeruje celów, więc celowany czar nie jest
-    // darmowo rzucalny. Reszta trafia do „weź do ręki" (zawsze legalny
-    // wynik Discover — CR 701.53).
+    // albo weź do ręki (CR 701.57a). Historia: M280/F zamknął ofertę dla
+    // czarów celowanych/modalnych/X/z kosztem dodatkowym, bo ścieżka rzutu
+    // nie enumerowała celów (czar fizzlował — CR 608.2b). Etap F/4 usuwa to
+    // ograniczenie u źródła: cele, tryby, X = 0 (CR 107.3b) i koszt dodatkowy
+    // są enumerowane jak w pozostałych oknach rzutu bez kosztu many.
     const discoverCard = state.objects.get(state.pendingDiscover.foundExileId);
-    // Ten sam predykat co bramka w `execute()` (L48 — jeden filtr, dwa miejsca).
-    const discoverFreeCastable = outsideHandCastScope(discoverCard, { allowTargets: false, allowModes: true, allowAdditionalCost: true });
-    // Audyt PR #93: czar z „Choose one” rzuca się z wyborem TRYBU (jeden wariant
-    // per tryb bezcelowy). Gdy każdy tryb wymaga celu (Vandalize), karty nie
-    // da się rzucić bez wyboru celu — zostaje „weź do ręki” (zawsze legalne).
-    const discoverModes = targetlessModeIndexes(discoverCard);
-    const modalBezTrybu = (discoverCard?.spell?.modes ?? []).length > 0 && discoverModes.length === 0;
-    // Koszt dodatkowy (CR 118.9d): rzut bez kosztu many płaci go nadal — jeden
-    // wariant na ofiarę i (gdy karta tak ma) wariant „albo zapłać {N}”. Koszt
-    // wymagający wyboru kart („discard two cards”) daje pustą listę = bez oferty.
-    const discoverCosts = freeCastAdditionalCostVariants(state, playerId, discoverCard);
-    if (discoverFreeCastable && !modalBezTrybu && discoverCosts.length > 0) {
-      // `objectId`/`cardId` jadą w komendzie dla etykiety UI: przy czarze
-      // modalnym wariantów jest kilka i etykieta musi nazwać tryb (M91).
-      const discoverIds = { objectId: state.pendingDiscover.foundExileId, cardId: discoverCard.cardId };
-      const modeVariants = discoverModes.length === 0 ? [{}] : discoverModes.map((modeIndex) => ({ modeIndex }));
-      for (const modeVariant of modeVariants) {
-        for (const costVariant of discoverCosts) {
-          legalCommands.push(command('resolve_discover_choice', playerId, {
-            castFree: true, ...modeVariant, ...costVariant, ...discoverIds,
-          }));
-        }
+    // Etap F/4: oferta = walidacja (L48) — czar: warianty celów/trybu/X = 0/
+    // kosztu dodatkowego z `freeSpellCastOffers` (te same, co w execute
+    // `castSpellWithoutManaCost`); aura: gospodarz z generatora aur w trybie
+    // bez kosztu many; permanent: jeden wariant. `objectId`/`cardId` jadą
+    // dla etykiety UI (nazwa karty, tryb, cele — M91).
+    const discoverIds = { objectId: state.pendingDiscover.foundExileId, cardId: discoverCard?.cardId ?? null };
+    if (discoverCard?.kind === 'spell') {
+      for (const offer of freeSpellCastOffers(state, playerId, discoverCard)) {
+        const { cardId: _offerObjectId, ...choice } = offer;
+        legalCommands.push(command('resolve_discover_choice', playerId, { castFree: true, ...choice, ...discoverIds }));
       }
+    } else if (discoverCard?.aura) {
+      for (const cast of legalAuraCastsForObject(state, playerId, discoverCard, { withoutManaCost: true })) {
+        legalCommands.push(command('resolve_discover_choice', playerId, { castFree: true, targets: [cast.targetId], ...discoverIds }));
+      }
+    } else if (discoverCard && ['creature', 'artifact', 'enchantment'].includes(discoverCard.kind)) {
+      legalCommands.push(command('resolve_discover_choice', playerId, { castFree: true, ...discoverIds }));
     }
     legalCommands.push(command('resolve_discover_choice', playerId, { castFree: false }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeExplore) {
@@ -7686,17 +7646,27 @@ export function playerView(state, playerId) {
       const card = state.objects.get(graveId);
       if (!card || card.zone !== 'graveyard' || card.kind !== 'spell') continue;
       if (!['instant', 'sorcery'].includes(card.spell?.timing)) continue;
-      if (card.spell?.additionalCost || card.spell?.xCost || card.spell?.fireball) continue;
       const xValue = card.manaCost ?? 0;
-      if (producibleMana(state, playerId, null, spellManaPurpose(card), []) < xValue) continue;
+      const graveBudget = producibleMana(state, playerId, null, spellManaPurpose(card), []);
+      if (graveBudget < xValue) continue;
       // Audyt PR #93 (znalezisko F): Halo Forager płaci {X} = MV, a CELE trybu
       // wybiera gracz (CR 601.2c) — „up to three target creatures” nie może
       // wyłączać karty z oferty, skoro Oracle mówi „any instant or sorcery
       // card with mana value X". Ten sam generator co w oknie Vaana.
-      for (const offer of epicCastOffers(state, playerId, card, { variableTargets: true })) {
+      // Etap F/4: ten sam generator co pozostałe rzuty bez kosztu many
+      // (koszt dodatkowy, X = 0, Fireball); {X} Foragera + dopłaty mieszczą
+      // się w JEDNYM budżecie (oferta = walidacja `castSpellWithoutManaCost`).
+      for (const offer of freeSpellCastOffers(state, playerId, card)) {
+        const offerMana = xValue
+          + (card.spell?.fireball ? Math.max(0, (offer.targets ?? []).length - 1) : 0)
+          + (offer.payAltCost === true ? (card.spell?.additionalCost?.orPayMana ?? 0) : 0);
+        if (offerMana > graveBudget) continue;
         legalCommands.push(command('resolve_grave_free_cast', playerId, {
           objectId: graveId, cardId: card.cardId, xValue,
           targets: offer.targets,
+          ...(offer.sacrificeTargetId != null ? { sacrificeTargetId: offer.sacrificeTargetId } : {}),
+          ...(offer.payAltCost === true ? { payAltCost: true } : {}),
+          ...(offer.discardCardIds ? { discardCardIds: offer.discardCardIds } : {}),
           ...(offer.modeIndex != null ? { modeIndex: offer.modeIndex } : {}),
           // Audyt PR #94 / K1: tryb „up to N … put a stun counter on ONE OF
           // THEM” niesie wybór celu pod stun — bez niego w panelu są N
@@ -7720,6 +7690,10 @@ export function playerView(state, playerId) {
         ...(offer.stunTargetId != null ? { stunTargetId: offer.stunTargetId } : {}),
         ...(offer.sacrificeTargetId != null ? { sacrificeTargetId: offer.sacrificeTargetId } : {}),
         ...(offer.payAltCost === true ? { payAltCost: true } : {}),
+        // Etap F/4: X czaru (zawsze 0 — CR 107.3b) i karty odrzucane jako
+        // koszt dodatkowy (F/4b) — pola oferty jadą do komendy (L48).
+        ...(offer.xValue != null ? { xValue: offer.xValue } : {}),
+        ...(offer.discardCardIds ? { discardCardIds: offer.discardCardIds } : {}),
       }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision
@@ -7753,6 +7727,7 @@ export function playerView(state, playerId) {
           // epicCastOffers) daje wariant per ofiara i wariant z dopłatą.
           ...(offer.sacrificeTargetId != null ? { sacrificeTargetId: offer.sacrificeTargetId } : {}),
           ...(offer.payAltCost === true ? { payAltCost: true } : {}),
+          ...(offer.discardCardIds ? { discardCardIds: offer.discardCardIds } : {}),
           // Koszt X (CR 107.3a) i bestow (CR 702.103) — wybór gracza z oferty.
           ...(offer.xValue != null ? { xValue: offer.xValue } : {}),
           ...(offer.bestow === true ? { bestow: true } : {}),
@@ -7800,9 +7775,16 @@ export function playerView(state, playerId) {
       && canPayMadnessCost(state, playerId, madnessObj)) {
       // M161/O1: instant/sorcery z madness — oferta per legalny zestaw celów
       // (i per tryb modalny), jak przy suspend/epic (czar z celem bez
-      // chosenTargets fizzluje, CR 601.2c / 608.2b). Czary z kosztem
-      // dodatkowym/X są poza zakresem castMadnessSpell — nie oferujemy ich
-      // wcale (L48 oferta=walidacja). Brak puli celów = tylko rezygnacja.
+      // chosenTargets fizzluje, CR 601.2c / 608.2b). Brak puli celów = tylko
+      // rezygnacja.
+      // KARTY SPOZA KATALOGU (Etap F/4, stan katalogu 2026-09-24: jedyny czar
+      // z madness to Terminal Agony — bez X i bez kosztu dodatkowego):
+      // `castMadnessSpell` nie rozlicza X (CR 107.3a — przy koszcie madness
+      // X wybiera gracz i płaci go obok kosztu madness, CR 702.35 + 601.2f)
+      // ani kosztów dodatkowych (CR 601.2h). Gdy taka karta wejdzie do
+      // katalogu: dopisać do oferty warianty `xValue` / `freeCastAdditional-
+      // CostVariants` i ich zapłatę w `castMadnessSpell`, zamiast tej bramki.
+      // Do tego czasu bramka zostaje (L48: oferta = walidacja).
       if (madnessObj.kind === 'spell') {
         if (!madnessObj.spell?.additionalCost && !madnessObj.spell?.xCost) {
           for (const offer of epicCastOffers(state, playerId, madnessObj)) {
@@ -7827,7 +7809,7 @@ export function playerView(state, playerId) {
       if (!obj || obj.zone !== 'exile') continue;
       const isSpell = obj.kind === 'spell' && (obj.spell?.timing === 'instant' || obj.spell?.timing === 'sorcery');
       if (!isSpell || (obj.manaCost ?? 0) > pending.maxMV) continue;
-      for (const offer of epicCastOffers(state, playerId, obj)) {
+      for (const offer of freeSpellCastOffers(state, playerId, obj)) {
         legalCommands.push(command('resolve_epic_choice', playerId, offer));
       }
     }

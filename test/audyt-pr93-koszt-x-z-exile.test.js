@@ -6,10 +6,10 @@
 // Zakres naprawy wyznacza CR 107.3b:
 //   • okno zdolności (Vaan) płaci koszt many → X wybiera gracz (0..budżet),
 //   • darmowy rzut Discover NIE płaci kosztu many → „the only legal choice for
-//     X is 0”, a obie karty X w katalogu robią wtedy NIC (Epic Experiment
-//     wygania 0 kart, Consume Spirit zadaje 0 obrażeń). Oferta takiego ruchu
-//     byłaby no-opem — tę samą klasę właściciel zgłaszał jako uwagę F (M280),
-//     więc Discover dla kart X zostaje ŚWIADOMIE zamknięty i przypięty testem.
+//     X is 0”. Etap F/4 (PR #135, polecenie właściciela „żadnych ograniczeń
+//     wpływających na grę”): oferta X = 0 JEST dostępna — to legalny ruch
+//     wg CR, a jego (bez)wartość ocenia gracz/bot, nie silnik. Uwaga F z M280
+//     dotyczyła fizzla czaru celowanego bez celów, nie rzutu z X = 0.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
@@ -179,17 +179,23 @@ test('A93/D: Vaan — Fireball: X i liczba celów w ofercie, koszt {1} za cel po
   assert.equal(lifeLost, 1, 'gracz-cel traci 1 życie (3 / 2 = 1 w dół)');
 });
 
-test('A93/D: Discover — karta z X pozostaje bez oferty: CR 107.3b wymusza X=0, czyli no-op', () => {
+// Etap F/4 (PR #135 — „żadnych ograniczeń wpływających na grę"): rzut bez
+// kosztu many czaru X jest LEGALNY z X = 0 (CR 107.3b). Nie jest no-opem dla
+// gry: liczy się jako rzucony czar (triggery „whenever you cast", licznik
+// czarów w turze) i karta idzie na cmentarz zamiast do ręki — to wybór
+// gracza, nie silnika. Dawny pin (brak oferty) utrwalał ograniczenie.
+test('A93/D → F/4: Discover — karta z X: oferta z X = 0 (CR 107.3b), X > 0 odrzucone', () => {
   for (const cardId of [X_BLACK, X_UNTARGETED]) {
     const state = discoverState(cardId);
     const free = playerView(state, 'p1').legalCommands
       .filter((c) => c.type === 'resolve_discover_choice' && c.castFree === true);
-    assert.equal(free.length, 0,
-      `${cardId}: rzut bez kosztu many zmusza X=0 (CR 107.3b), a przy X=0 karta `
-      + 'nie robi nic — oferta byłaby no-opem (uwaga właściciela F z M280)');
-    assert.equal(execute(state, { type: 'resolve_discover_choice', playerId: 'p1', castFree: true }).ok, false,
-      'komenda spoza oferty odrzucona (L48)');
+    assert.ok(free.length > 0, `${cardId}: oferta rzutu bez kosztu many`);
+    assert.ok(free.every((c) => c.xValue === 0), `${cardId}: każda oferta z X = 0`);
+    const withX = { ...free[0], xValue: 2 };
+    assert.equal(execute(state, withX).ok, false, 'X > 0 przy rzucie bez kosztu many odrzucone');
     assert.equal(state.zones.stack.length, 0);
+    assert.ok(execute(state, free[0]).ok, 'X = 0 przyjęte');
+    assert.equal(state.objects.get(state.zones.stack[0]).spellX, 0, 'X na stosie = 0');
   }
 });
 

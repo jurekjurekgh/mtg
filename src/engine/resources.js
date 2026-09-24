@@ -1872,7 +1872,7 @@ function auraPaymentCost(state, object, { bestow = false, surgeCast = false } = 
   return { cost, requirements };
 }
 
-export function castAuraSpell(state, playerId, objectId, { targetId, bestow = false, surgeCast = false, abilityWindowCast = false } = {}) {
+export function castAuraSpell(state, playerId, objectId, { targetId, bestow = false, surgeCast = false, abilityWindowCast = false, withoutManaCost = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Audyt PR #93 (znalezisko E): okno zdolności „you may cast it" (Vaan)
@@ -1893,7 +1893,13 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   if (surgeCast && (bestow || !object.surge || (state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) < 1)) {
     throw new Error('Surge wymaga własnego wcześniejszego czaru i wyklucza bestow');
   }
-  const { cost, requirements } = auraPaymentCost(state, object, { bestow, surgeCast });
+  // Etap F/4: rzut „without paying its mana cost" (okno decyzji — Discover)
+  // to koszt alternatywny (CR 118.9); bestow i surge też są kosztami
+  // alternatywnymi, a dwóch naraz stosować nie wolno (CR 601.2b).
+  if (withoutManaCost && (bestow || surgeCast)) throw new Error('Rzut bez kosztu many wyklucza bestow i surge (CR 601.2b)');
+  const { cost, requirements } = withoutManaCost
+    ? { cost: 0, requirements: [] }
+    : auraPaymentCost(state, object, { bestow, surgeCast });
   // M202/N1: czar aury to rzut czaru — cel wydania liczony z danych karty.
   const manaPurpose = spellManaPurpose(object);
   if (producibleMana(state, playerId, null, manaPurpose, requirements) < cost) throw new Error('Niewystarczająca mana');
@@ -2012,13 +2018,16 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
  * cast it" (Vaan) potrzebuje tego samego wyliczenia dla karty leżącej w exile
  * — L74: jeden generator, nie kopia (audyt PR #93, znalezisko E).
  */
-export function legalAuraCastsForObject(state, playerId, object) {
+export function legalAuraCastsForObject(state, playerId, object, { withoutManaCost = false } = {}) {
+  // Etap F/4: rzut bez kosztu many — tylko jako aura (bez bestow/surge,
+  // CR 601.2b), gospodarze jak przy zwykłym rzucie.
+  if (withoutManaCost) return auraCastsForPayment(state, playerId, object, false, true);
   const normal = auraCastsForPayment(state, playerId, object);
   if (!object?.aura || !object.surge || (state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) < 1) return normal;
   return [...normal, ...auraCastsForPayment(state, playerId, object, true).map(c => ({ ...c, surgeCast: true }))];
 }
 
-function auraCastsForPayment(state, playerId, object, surgeCast = false) {
+function auraCastsForPayment(state, playerId, object, surgeCast = false, withoutManaCost = false) {
   const out = [];
   if (!object) return out;
   // M202/N1 (L48): budżet PER KARTA z celem wydania many — mana ograniczona
@@ -2027,6 +2036,10 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false) {
   const options = [];
   for (const bestow of [false, true]) {
     if (bestow ? (surgeCast || !object.bestow) : !object.aura) continue;
+    if (withoutManaCost) {
+      if (!bestow) options.push(false);
+      continue;
+    }
     const { cost, requirements } = auraPaymentCost(state, object, { bestow, surgeCast });
     // A: budżet PER OPCJA (pip(y) bestow ≠ pip(y) aury) — joint (iv) bramki
     // źródeł kosztowych liczy się na pipach tej opcji (L48 z castAuraSpell).

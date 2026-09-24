@@ -136,7 +136,9 @@ test('A93/F: walidacja odrzuca cel nielegalny — komenda spoza oferty (L48)', (
   assert.equal(state.zones.stack.length, 0, 'odrzucony rzut nie zostawia nic na stosie');
 });
 
-test('A93/F: Discover — tryb z celami zmiennymi nadal bez oferty (okno nie wylicza celów)', () => {
+// Etap F/4: Discover wylicza cele — tryb „up to N" jest oferowany (jak w oknie
+// Vaana i Foragera), rzut idzie wspólną ścieżką rzutu bez kosztu many.
+test('A93/F → F/4: Discover — tryb z celami zmiennymi oferowany i rzucalny', () => {
   const state = game('p1');
   addMana(state, 'p1', 10, { colors: ['W', 'U', 'B', 'R', 'G'] });
   addSimpleCreature(state, 'foe1', 'p2');
@@ -147,5 +149,10 @@ test('A93/F: Discover — tryb z celami zmiennymi nadal bez oferty (okno nie wyl
   };
   const free = playerView(state, 'p1').legalCommands
     .filter((c) => c.type === 'resolve_discover_choice' && c.castFree === true);
-  assert.equal(free.length, 0, 'Discover nie wylicza celów — czar z celem nie ma oferty (CR 608.2b)');
+  const withFoe = free.find((c) => (c.targets ?? []).includes('foe1'));
+  assert.ok(withFoe, 'oferta z celem w trybie „up to N"');
+  assert.ok(execute(state, withFoe).ok, 'rzut przyjęty');
+  const stacked = state.objects.get(state.zones.stack[0]);
+  assert.ok(stacked.chosenTargets.includes('foe1'), 'cel na stosie');
+  assert.equal(stacked.chosenMode, withFoe.modeIndex, 'tryb na stosie');
 });

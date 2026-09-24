@@ -7,9 +7,7 @@
 // Miara: 22 aury w 12 z 23 talii (`decks/*.txt`), Vaan w `final-fantasy` —
 // więc przeciwnik z talią Theros/Innistrad/Ravnica dokłada żywy przypadek.
 //
-// Discover zostaje przy aurach zamknięte ŚWIADOMIE (jak przy trybach z celem,
-// CR 608.2b): tamto okno nie wylicza celów, a czaru wymagającego celu nie
-// da się rzucić bez wyboru celu. Przypięte testem, nie milczeniem.
+// Etap F/4: Discover też rzuca aury (oferta per gospodarz, bez kosztu many).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
@@ -167,13 +165,23 @@ test('A93/E: Vaan — aura (timing sorcery) w oknie zdolności nie pyta o fazę'
   assert.ok(execute(state, cast).ok, 'rzut w oknie zdolności ignoruje timing (ruling WotC 2025-02-10)');
 });
 
-test('A93/E: Discover — aura bez oferty (okno nie wylicza celów) i komenda odrzucona', () => {
+// Etap F/4 (PR #135 — „żadnych ograniczeń wpływających na grę"): Discover
+// rzuca aurę bez kosztu many z wybranym gospodarzem (CR 701.57a + 303.4a).
+// Dawniej okno nie wyliczało celów i aura szła wyłącznie „do ręki".
+test('A93/E → F/4: Discover — aura: oferta per gospodarz, rzut bez kosztu many, wchodzi zaczepiona', () => {
   const state = discoverState(AURA_CREATURE);
   const free = playerView(state, 'p1').legalCommands
     .filter((c) => c.type === 'resolve_discover_choice' && c.castFree === true);
-  assert.equal(free.length, 0, 'czar wymagający celu nie ma oferty w oknie darmowego rzutu');
-  assert.equal(execute(state, { type: 'resolve_discover_choice', playerId: 'p1', castFree: true }).ok, false);
+  const hosts = new Set(free.map((c) => c.targets?.[0]));
+  assert.ok(hosts.has('mine') && hosts.has('foe'), `gospodarze w ofercie ([${[...hosts]}])`);
+  assert.equal(execute(state, { type: 'resolve_discover_choice', playerId: 'p1', castFree: true }).ok, false,
+    'komenda bez gospodarza odrzucona (L48)');
   assert.equal(state.zones.stack.length, 0);
+  assert.ok(execute(state, free.find((c) => c.targets?.[0] === 'mine')).ok, 'rzut z gospodarzem przyjęty');
+  resolveStack(state);
+  const aura = findByCard(state, AURA_CREATURE);
+  assert.equal(aura.zone, 'battlefield', 'aura na polu bitwy');
+  assert.equal(aura.attachedTo, 'mine', 'zaczepiona o wybranego gospodarza');
 });
 
 test('A93/E: strażnik klasy — KAŻDA aura katalogu jest rzucalna w oknie zdolności', () => {

@@ -73,24 +73,37 @@ const MODAL_INSTANT = {
   },
 };
 
-test('A92/5: Discover — walidacja odrzuca darmowy rzut czaru celowanego (nie fizzle na stosie)', () => {
+// Etap F/4 (PR #135, polecenie właściciela: „żadnych ograniczeń wpływających
+// na grę"): Discover (CR 701.57a) rzuca czar Z CELAMI — oferta per zestaw
+// celów, walidacja celów przy wykonaniu. Dawny pin (M280/F: „celowany czar
+// bez oferty") utrwalał ograniczenie; L48 (oferta = walidacja) zostaje:
+// komenda bez celów nadal nie wchodzi na stos (nie fizzluje).
+test('A92/5 → F/4: Discover — czar celowany: oferta per cel, komenda bez celu odrzucona', () => {
   const state = discoverState(TARGETED_SORCERY);
-  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_discover_choice');
-  assert.ok(!offers.some((c) => c.castFree === true), 'oferta: brak darmowego rzutu (pin M280/F)');
-  const r = execute(state, { type: 'resolve_discover_choice', playerId: 'p1', castFree: true });
-  assert.equal(r.ok, false,
-    'komenda spoza zakresu oferty musi być ODRZUCONA (L48: oferta = walidacja); '
-    + 'dawniej wchodziła na stos bez celów i fizzlowała (CR 608.2b)');
-  assert.match(String(r.events[0]?.reason ?? ''), /discover_free_cast/,
-    'powód odrzucenia maszynowo rozpoznawalny i czytelny');
+  addObject(state, {
+    id: 'victim', instanceId: 'i-victim', cardId: 'test-victim', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, types: ['Creature'], colors: [],
+  });
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_discover_choice' && c.castFree);
+  assert.ok(offers.some((c) => (c.targets ?? []).includes('victim')), 'oferta: darmowy rzut z celem');
+  const bad = execute(state, { type: 'resolve_discover_choice', playerId: 'p1', castFree: true });
+  assert.equal(bad.ok, false, 'komenda bez celu odrzucona (L48), nie fizzle na stosie');
+  assert.match(String(bad.events[0]?.reason ?? ''), /free_cast/, 'powód maszynowo rozpoznawalny');
   assert.equal(state.zones.stack.length, 0, 'żaden czar nie wszedł na stos');
-  assert.equal(state.objects.get('found').zone, 'exile', 'karta zostaje w wygnaniu');
+  const ok = execute(state, offers.find((c) => (c.targets ?? []).includes('victim')));
+  assert.equal(ok.ok, true, 'rzut z celem przyjęty');
+  const stacked = state.objects.get(state.zones.stack[0]);
+  assert.deepEqual(stacked.chosenTargets, ['victim'], 'cel na stosie');
 });
 
-test('A92/5: Discover — walidacja odrzuca X-cost, a przyjmuje permanent bez celów', () => {
-  const withX = discoverState({ kind: 'spell', spell: { timing: 'sorcery', targets: [], xCost: true, effects: [] } });
-  assert.equal(execute(withX, { type: 'resolve_discover_choice', playerId: 'p1', castFree: true }).ok, false,
-    'X-cost poza prostym zakresem także w walidacji');
+test('A92/5 → F/4: Discover — X-cost rzucany z X = 0 (CR 107.3b), X > 0 odrzucone; permanent bez celów', () => {
+  const withX = discoverState({ kind: 'spell', spell: { timing: 'sorcery', targets: [], xCost: true, effects: [{ type: 'gain_life', amount: 1 }] } });
+  const xOffers = playerView(withX, 'p1').legalCommands.filter((c) => c.type === 'resolve_discover_choice' && c.castFree);
+  assert.deepEqual(xOffers.map((c) => c.xValue), [0], 'jedna oferta, X = 0');
+  assert.equal(execute(withX, { type: 'resolve_discover_choice', playerId: 'p1', castFree: true, xValue: 3 }).ok, false,
+    'X > 0 bez płacenia kosztu many — odrzucone');
+  assert.equal(execute(withX, xOffers[0]).ok, true, 'X = 0 — przyjęte');
+  assert.equal(withX.objects.get(withX.zones.stack[0]).spellX, 0, 'X na stosie = 0');
 
   const creatureState = discoverState({ kind: 'creature', power: 2, toughness: 2, types: ['Creature'], colors: [] });
   const ok = execute(creatureState, { type: 'resolve_discover_choice', playerId: 'p1', castFree: true });

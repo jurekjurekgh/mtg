@@ -2948,6 +2948,22 @@ export function commandLabel(cmd, session, view) {
     }
     return escapeHtml(`${base}${copyOrdinal}`);
   };
+  // Etap F/4 (M91/uwaga D, L29): rzut bez kosztu many enumeruje warianty
+  // per tryb, cel pod stun i ZAPŁATĘ kosztu dodatkowego (ofiara, dopłata,
+  // odrzucane karty — CR 601.2h). Jeden dopisek dla całej rodziny okien, żeby
+  // żadne z nich nie pokazywało kilku identycznych przycisków.
+  const freeCastChoiceSuffix = (c, card, { mode = true, sacrifice = true, altCost = true } = {}) => {
+    const parts = [];
+    const m = (mode && c.modeIndex != null && card?.spell?.modes) ? card.spell.modes[c.modeIndex] : null;
+    if (m?.name) parts.push(` — ${m.name}`);
+    if (mode && c.stunTargetId != null) parts.push(` · stun: ${nameOfObjectId(c.stunTargetId)}`);
+    if (sacrifice && c.sacrificeTargetId != null) parts.push(` · poświęć: ${nameOfObjectId(c.sacrificeTargetId)}`);
+    if (altCost && c.payAltCost === true) parts.push(` · dopłać {${card?.spell?.additionalCost?.orPayMana ?? '?'}}`);
+    if (Array.isArray(c.discardCardIds) && c.discardCardIds.length > 0) {
+      parts.push(` · odrzuć: ${c.discardCardIds.map((id) => nameOfObjectId(id)).join(', ')}`);
+    }
+    return parts.join('');
+  };
   // Koszt many karty → HTML z ikonami (MANA_COSTS: string typu „{2}{U}").
   // Implementacja w zasięgu modułu (`cardCostHtml`) — patrz H: tytuły grup
   // używają tej samej funkcji co etykiety pojedynczych ofert.
@@ -3576,7 +3592,13 @@ export function commandLabel(cmd, session, view) {
       const found = obj(cmd.objectId);
       const mode = (cmd.modeIndex != null && found?.spell?.modes) ? found.spell.modes[cmd.modeIndex] : null;
       const modeName = mode?.name ? ` — ${mode.name}` : '';
-      return cmd.castFree ? `Discover: rzuć bez kosztu many${modeName}` : 'Discover: weź kartę do ręki';
+      // Etap F/4: rzut z celami (czar, tryb, gospodarz aury) — oferta per
+      // zestaw celów, więc etykieta nazywa cel (klasa M151/suspend).
+      const discTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      const discSac = cmd.sacrificeTargetId != null ? `, poświęć: ${nameOfObjectId(cmd.sacrificeTargetId)}` : '';
+      return cmd.castFree
+        ? `Discover: rzuć bez kosztu many${modeName}${discTargets ? ` → cel: ${discTargets}` : ''}${discSac}${freeCastChoiceSuffix(cmd, found, { mode: false, sacrifice: false })}`
+        : 'Discover: weź kartę do ręki';
     }
     case 'resolve_explore_choice': {
       // Explore (Guidestone Compass): wierzch albo grób.
@@ -3654,13 +3676,13 @@ export function commandLabel(cmd, session, view) {
       // widzi N identycznych „Rzuć zawieszone: X (bez kosztu many)\".
       const susTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       return cmd.cast
-        ? `Rzuć zawieszone: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)${susTargets ? ` → cel: ${susTargets}` : ''}`
+        ? `Rzuć zawieszone: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)${susTargets ? ` → cel: ${susTargets}` : ''}${freeCastChoiceSuffix(cmd, obj(cmd.cardId))}`
         : 'Zostaw w wygnaniu (koniec zawieszenia)';
     }
     case 'resolve_rebound_cast': {
       const rebTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       return cmd.cast
-        ? `Rzuć z odbiciem: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)${rebTargets ? ` → cel: ${rebTargets}` : ''}`
+        ? `Rzuć z odbiciem: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)${rebTargets ? ` → cel: ${rebTargets}` : ''}${freeCastChoiceSuffix(cmd, obj(cmd.cardId))}`
         : 'Zostaw w wygnaniu (koniec odbicia)';
     }
     case 'resolve_epic_choice': {
@@ -3669,7 +3691,7 @@ export function commandLabel(cmd, session, view) {
       // M163/A (klasa M151/suspend): oferta per legalny zestaw celów — bez
       // celu w etykiecie warianty tej samej karty są nieodróżnialne.
       const epicTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      return `Rzuć bez kosztu — ${nameOfObjectId(cmd.cardId)}${epicTargets ? ` → cel: ${epicTargets}` : ''}`;
+      return `Rzuć bez kosztu — ${nameOfObjectId(cmd.cardId)}${epicTargets ? ` → cel: ${epicTargets}` : ''}${freeCastChoiceSuffix(cmd, obj(cmd.cardId))}`;
     }
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
@@ -3744,7 +3766,7 @@ export function commandLabel(cmd, session, view) {
       const hfcModeName = hfcMode?.name ? ` — ${hfcMode.name}` : '';
       const hfcStun = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
       const hfcSac = cmd.sacrificeTargetId != null ? ` · poświęć: ${nameOfObjectId(cmd.sacrificeTargetId)}` : '';
-      return `Rzuć z ręki za darmo: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${hfcModeName}${hfcTargets ? ` → cel: ${hfcTargets}` : ''}${hfcStun}${hfcSac}`;
+      return `Rzuć z ręki za darmo: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${hfcModeName}${hfcTargets ? ` → cel: ${hfcTargets}` : ''}${hfcStun}${hfcSac}${freeCastChoiceSuffix(cmd, hfcCard, { mode: false, sacrifice: false })}`;
     }
     case 'resolve_grave_free_cast': {
       // M174/E: oferta nazywa kartę, koszt X i cele — inaczej N wpisów
@@ -3759,7 +3781,7 @@ export function commandLabel(cmd, session, view) {
       const gfcMode = (cmd.modeIndex != null && gfcCard?.spell?.modes) ? gfcCard.spell.modes[cmd.modeIndex] : null;
       const gfcModeName = gfcMode?.name ? ` — ${gfcMode.name}` : '';
       const gfcStun = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
-      return `Rzuć z grobu za {${cmd.xValue ?? '?'}}: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${gfcModeName}${gfcTargets ? ` → cel: ${gfcTargets}` : ''}${gfcStun}`;
+      return `Rzuć z grobu za {${cmd.xValue ?? '?'}}: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${gfcModeName}${gfcTargets ? ` → cel: ${gfcTargets}` : ''}${gfcStun}${freeCastChoiceSuffix(cmd, gfcCard, { mode: false })}`;
     }
     case 'resolve_madness_cast': {
       // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —
@@ -3798,7 +3820,7 @@ export function commandLabel(cmd, session, view) {
       // celem pod stun counter muszą nazywać ten wybór (jak `cast_spell`).
       const stunName = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
       return cmd.cast
-        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${modeName}${bestowName}${costName}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}${stunName}`
+        ? `Rzuć wygnaną: ${nameOfObjectId(cmd.cardId ?? cmd.objectId)}${modeName}${bestowName}${costName}${vaanTargets ? ` → cel: ${vaanTargets}` : ''}${stunName}${freeCastChoiceSuffix(cmd, exiled, { mode: false, sacrifice: false, altCost: false })}`
         : 'Zrezygnuj — stwórz token Skarb (Treasure)';
     }
     case 'resolve_reveal_choice': {

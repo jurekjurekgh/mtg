@@ -310,7 +310,9 @@ test('A–F/F: Discover oferuje darmowy rzut dla permanenta bez celów', () => {
   assert.ok(offers.some((c) => c.castFree === false), 'zawsze opcja „weź do ręki"');
 });
 
-test('A–F/F: Discover NIE oferuje darmowego rzutu dla czaru z celami (noop → fizzle)', () => {
+test('A–F/F: Discover NIE oferuje darmowego rzutu dla czaru z celami, gdy celu brak (noop → fizzle)', () => {
+  // Etap F/4: Discover wylicza cele — bez legalnego celu oferty rzutu nie ma
+  // (czar nie może iść na stos bez celów), „weź do ręki" zostaje.
   const state = discoverState({
     kind: 'spell',
     spell: { timing: 'sorcery', targets: [{ type: 'creature' }], effects: [{ type: 'destroy_permanent' }] },
@@ -320,8 +322,8 @@ test('A–F/F: Discover NIE oferuje darmowego rzutu dla czaru z celami (noop →
   assert.ok(!offers.some((c) => c.castFree === true), 'celowany czar nie może iść na stos bez celów');
 });
 
-test('A–F/F: Discover NIE oferuje darmowego rzutu dla czaru z kosztem dodatkowym/X/modami', () => {
+test('A–F/F → F/4: Discover oferuje czar X z X = 0 (CR 107.3b — rzut bez kosztu many)', () => {
   const withX = discoverState({ kind: 'spell', spell: { timing: 'sorcery', targets: [], xCost: true, effects: [] } });
-  const xOffers = playerView(withX, 'p1').legalCommands.filter((c) => c.type === 'resolve_discover_choice');
-  assert.ok(!xOffers.some((c) => c.castFree === true), 'X-cost poza prostym zakresem');
+  const xOffers = playerView(withX, 'p1').legalCommands.filter((c) => c.type === 'resolve_discover_choice' && c.castFree === true);
+  assert.deepEqual(xOffers.map((c) => c.xValue), [0], 'jedna oferta, X = 0');
 });

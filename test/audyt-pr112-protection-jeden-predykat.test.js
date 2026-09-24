@@ -168,7 +168,9 @@ test('F2/6 (anty-over-fix): jakość NIEpasująca do czaru nie blokuje Fireballa
 const SCIEZKI = [
   ['src/engine/spells.js', 'validateTargets'],
   ['src/engine/spells.js', 'legalTargetCandidates'],
-  ['src/engine/spells.js', 'castFireball'],
+  // Etap F/4: walidacja celów Fireballa wydzielona do wspólnej funkcji
+  // (rzut z ręki i rzut bez kosztu many z okien decyzji).
+  ['src/engine/spells.js', 'validateFireballTargets'],
   ['src/engine/spells.js', 'legalFireballCasts'],
   ['src/engine/triggers.js', 'triggerTargetCandidates'],
 ];

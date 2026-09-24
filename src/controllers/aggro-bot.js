@@ -154,8 +154,21 @@ export function createAggroBot() {
           return byType(view, 'resolve_food_choice').find((c) => c.sacrifice) ?? found;
         }
         if (type === 'resolve_discover_choice') {
-          // Geological Appraiser: aggro rzuca bez kosztu.
-          return byType(view, 'resolve_discover_choice').find((c) => c.castFree) ?? found;
+          // Geological Appraiser: aggro rzuca bez kosztu. Etap F/4: oferta
+          // niesie cele/tryby/X, więc „pierwsza z brzegu" mogłaby celować we
+          // własny permanent albo rzucić czar X za X = 0 (CR 107.3b — efekt
+          // skalowany X nic nie robi). Aggro odrzuca oba przypadki i wtedy
+          // bierze kartę do ręki (zawsze legalny wynik Discover).
+          const offers = byType(view, 'resolve_discover_choice');
+          const foundCard = (id) => (view.zones.exile ?? []).find((o) => o.id === id);
+          const xAtZero = (cmd) => {
+            const spell = foundCard(cmd.objectId)?.spell;
+            return Boolean(spell && (spell.xCost || spell.fireball) && (cmd.xValue ?? 0) === 0);
+          };
+          const hitsOwn = (cmd) => (cmd.targets ?? []).some((id) => id === view.playerId
+            || view.zones.battlefield.some((o) => o.id === id && o.controllerId === view.playerId));
+          const cast = offers.find((c) => c.castFree && !xAtZero(c) && !hitsOwn(c));
+          return cast ?? offers.find((c) => c.castFree === false) ?? found;
         }
         if (type === 'resolve_exile_cast') {
           // Vaan, Street Thief: aggro rzuca ukradzioną kartę TERAZ, jeśli

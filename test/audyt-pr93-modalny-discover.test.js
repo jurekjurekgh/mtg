@@ -4,9 +4,8 @@
 // one” trafiony przez Discover w ogóle nie był rzucalny — zostawało „weź do
 // ręki”, choć Oracle pozwala rzucić i wybrać tryb.
 //
-// Ta sama klasa co znalezisko A (okno zdolności Vaana), ale inna ścieżka:
-// Discover NIE enumeruje celów (M280/F — czar celowany fizzlowałby bez celów,
-// CR 608.2b), więc w ofercie są wyłącznie tryby, które celów nie potrzebują.
+// Ta sama klasa co znalezisko A (okno zdolności Vaana), ale inna ścieżka.
+// Etap F/4: Discover wylicza też cele — tryb celowany jest oferowany z celem.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
@@ -87,8 +86,8 @@ test('A93/B: darmowy rzut wykonuje efekt WYBRANEGO trybu (nie pierwszego z brzeg
   assert.equal(heroes.length, 3, 'rozstrzygnięcie wykonuje efekt trybu 0 (trzy tokeny Hero)');
 });
 
-test('A93/B: tryb WYMAGAJĄCY celu pozostaje poza ofertą (Discover nie enumeruje celów)', () => {
-  // Vandalize — każdy z trzech trybów celuje w artefakt i/lub ląd.
+test('A93/B: tryb WYMAGAJĄCY celu bez legalnego celu pozostaje poza ofertą', () => {
+  // Vandalize — każdy z trzech trybów celuje w artefakt i/lub ląd (tu: brak).
   const state = discoverState(TARGETED_MODAL);
   assert.ok(offers(state).some((c) => c.castFree === false), '„weź do ręki” zawsze legalne');
   assert.equal(freeOffers(state).length, 0,
@@ -141,32 +140,27 @@ test('A93/B: etykieta stołu nazywa TRYB — dwa warianty nie wyglądają identy
   }
 });
 
-test('A93/B: strażnik klasy — każdy czar modalny katalogu: tryb bezcelowy → oferta, celowy → cisza', () => {
+// Etap F/4: Discover wylicza cele (oferta per zestaw celów, jak okno Vaana),
+// więc tryb celowany JEST oferowany, gdy ma legalny cel — zawsze Z CELEM.
+test('A93/B → F/4: strażnik klasy — każdy czar modalny katalogu: tryb bezcelowy → oferta, celowy → oferta tylko z celem', () => {
   const modalCards = REGISTRY.all().filter((card) => (card.spell?.modes ?? []).length > 0);
   assert.ok(modalCards.length >= 10, `katalog ma czary modalne (znaleziono ${modalCards.length})`);
   const bledy = [];
   for (const card of modalCards) {
     const state = discoverState(card.id);
     const free = freeOffers(state);
-    const targetlessModes = card.spell.modes
-      .map((mode, index) => ({ mode, index }))
-      .filter(({ mode }) => (mode.targets ?? []).length === 0 && !mode.variableTargets)
-      .map(({ index }) => index);
-    if (targetlessModes.length === 0) {
-      // Karta, w której KAŻDY tryb wymaga celu (Vandalize) — oferta milczy.
-      if (free.length > 0) bledy.push(`${card.id}: oferuje tryb wymagający celu`);
-      continue;
-    }
-    const offered = free.map((c) => c.modeIndex).sort();
-    if (offered.length === 0) {
-      bledy.push(`${card.id}: brak oferty, choć tryby ${targetlessModes.join(',')} nie wymagają celów`);
-      continue;
-    }
-    for (const modeIndex of offered) {
-      if (!targetlessModes.includes(modeIndex)) bledy.push(`${card.id}: oferuje tryb celowany #${modeIndex}`);
-    }
+    card.spell.modes.forEach((mode, index) => {
+      const fixedTargets = (mode.targets ?? []).length;
+      const forMode = free.filter((c) => c.modeIndex === index);
+      if (fixedTargets === 0 && !mode.variableTargets && forMode.length === 0) {
+        bledy.push(`${card.id}: brak oferty trybu bezcelowego #${index}`);
+      }
+      if (fixedTargets > 0 && forMode.some((c) => (c.targets ?? []).length !== fixedTargets)) {
+        bledy.push(`${card.id}: tryb #${index} oferowany bez kompletu celów`);
+      }
+    });
   }
   assert.deepEqual(bledy, [],
-    'Discover musi oferować dokładnie te tryby, które nie wymagają celów — reguła '
-    + 'nie zależy od wybranej karty (ADR 0002)');
+    'Discover musi oferować tryby bezcelowe zawsze, a celowane wyłącznie z celami — '
+    + 'reguła nie zależy od wybranej karty (ADR 0002)');
 });

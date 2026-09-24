@@ -883,6 +883,10 @@ function dynamicTokenCount(view, amountKey) {
  */
 function effectIsInertNow(view, effect, cmd) {
   if (!effect) return false;
+  // Etap F/4 (CR 107.3b): efekt skalowany X (`amount: 'X'`, podział Fireballa)
+  // przy X = 0 nic nie robi — dotyczy zwłaszcza rzutów bez kosztu many
+  // (Discover, Epic, grób, Baral), w których X czaru MUSI wynosić 0.
+  if ((effect.amount === 'X' || effect.type === 'fireball_resolve') && cmd?.xValue === 0) return true;
   // Helpery zasięgowe (myCreatures/enemyCreatures żyją w domknięciu bota) —
   // tutaj liczymy wprost z widoku, żeby funkcja była czysta i testowalna.
   const creatures = (mine) => (view.zones.battlefield ?? [])
@@ -2996,10 +3000,30 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * (wrapper „each target”) oraz odmowa, gdy czar jest TERAZ jałowy (M233:
    * „up to three targets” bez celów to wyrzucona karta).
    */
-  function freeCastVariantScore(view, effects, cmd, base) {
-    if (effects.length > 0 && allEffectsInertNow(view, effects, cmd)) return -40;
+  function freeCastVariantScore(view, effects, cmd, base, { withoutManaCost = true } = {}) {
+    // Etap F/4: w rzucie bez kosztu many X czaru wynosi 0 (CR 107.3b) —
+    // `cmd.xValue` bywa tam czymś innym (okno grobu: {X} Foragera), więc do
+    // oceny jałowości podstawiamy X czaru jawnie. Vaan/madness płacą koszt.
+    const inertCmd = withoutManaCost ? { ...cmd, xValue: 0 } : cmd;
+    if (effects.length > 0 && allEffectsInertNow(view, effects, inertCmd)) return -40;
     let score = base - freeCastTargetPenalty(view, effects, cmd);
     for (const effect of effects) score += wrapTargetsValue(view, effect, cmd);
+    // Etap F/4b: koszt dodatkowy płaci się także przy rzucie bez kosztu many
+    // (CR 601.2h), a oferta enumeruje JEGO warianty — bez wyceny bot brałby
+    // pierwszą ofiarę / pierwszą parę kart z brzegu. Ofiara: wartość ciała
+    // (jak M149/A3 w `cast_spell`); odrzucenie: preferencja M408/D per karta.
+    return score + freeCastAdditionalCostScore(view, cmd);
+  }
+
+  function freeCastAdditionalCostScore(view, cmd) {
+    let score = 0;
+    if (cmd.sacrificeTargetId != null) {
+      const victim = objectOnBoard(view, cmd.sacrificeTargetId);
+      if (victim) score -= (victim.power ?? 0) * 2 + (victim.toughness ?? 0) + (victim.manaCost ?? 0);
+    }
+    for (const id of cmd.discardCardIds ?? []) {
+      score += discardCostPreference(view, (view.zones.hand ?? []).find((o) => o.id === id));
+    }
     return score;
   }
 
@@ -3961,12 +3985,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (!cmd.cast) return finish(0);
         const exiled = cmd.cardId ? view.zones.exile.find((o) => o.id === cmd.cardId) : null;
         const effects = exiled?.spell?.effects ?? [];
+        // Etap F/4: rzut bez kosztu many — X czaru = 0 (CR 107.3b); czar,
+        // którego cała treść jest teraz jałowa, przegrywa z rezygnacją.
+        if (effects.length > 0 && allEffectsInertNow(view, effects, { ...cmd, xValue: 0 })) return finish(-40);
         let score = 70;
         for (const effect of effects) {
           if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
           if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
         }
         score -= freeCastTargetPenalty(view, effects, cmd);
+        score += freeCastAdditionalCostScore(view, cmd);
         return finish(score);
       }
       case 'resolve_look_top_choice': {
@@ -4162,12 +4190,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (cmd.done) return finish(0);
         const exiled = cmd.cardId ? view.zones.exile.find((o) => o.id === cmd.cardId) : null;
         const effects = freeCastVariantEffects(exiled, cmd);
+        // Etap F/4: rzut bez kosztu many — X czaru = 0 (CR 107.3b); czar,
+        // którego cała treść jest teraz jałowa, przegrywa z rezygnacją.
+        if (effects.length > 0 && allEffectsInertNow(view, effects, { ...cmd, xValue: 0 })) return finish(-40);
         let score = 70;
         for (const effect of effects) {
           if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
           if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
         }
         score -= freeCastTargetPenalty(view, effects, cmd);
+        score += freeCastAdditionalCostScore(view, cmd);
         return finish(score);
       }
       case 'resolve_rebound_cast': {
@@ -4178,12 +4210,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (!cmd.cast) return finish(0);
         const exiled = cmd.cardId ? view.zones.exile.find((o) => o.id === cmd.cardId) : null;
         const effects = exiled?.spell?.effects ?? [];
+        // Etap F/4: rzut bez kosztu many — X czaru = 0 (CR 107.3b); czar,
+        // którego cała treść jest teraz jałowa, przegrywa z rezygnacją.
+        if (effects.length > 0 && allEffectsInertNow(view, effects, { ...cmd, xValue: 0 })) return finish(-40);
         let score = 70;
         for (const effect of effects) {
           if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
           if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
         }
         score -= freeCastTargetPenalty(view, effects, cmd);
+        score += freeCastAdditionalCostScore(view, cmd);
         return finish(score);
       }
       case 'warp_card': {
@@ -7520,8 +7556,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(cmd.pay ? 75 : 15);
       case 'resolve_discover_choice': {
         // Geological Appraiser: rzuć bez kosztu albo weź do ręki.
-        // Bot rzuca bez kosztu (darmowa karta na stole).
-        return finish(cmd.castFree ? 60 : 20);
+        // Bot rzuca bez kosztu (darmowa karta na stole). Etap F/4: oferta
+        // niesie cele/tryb/X = 0/koszt dodatkowy — wycena wariantu ta sama co
+        // w rodzinie rzutów bez kosztu many (L41), a aura czyta polaryzację
+        // gospodarza jak `resolve_aura_host`. Jałowy rzut (X = 0, zero celów)
+        // przegrywa z „weź do ręki".
+        if (!cmd.castFree) return finish(20);
+        const found = cmd.objectId ? (view.zones.exile ?? []).find((o) => o.id === cmd.objectId) : null;
+        const foundDef = cardDef(found?.cardId ?? cmd.cardId);
+        if (found?.spell ?? (foundDef?.spell && !foundDef?.aura)) {
+          const spellCard = found?.spell ? found : foundDef;
+          return finish(freeCastVariantScore(view, freeCastVariantEffects(spellCard, cmd), cmd, 60));
+        }
+        const auraDef = found?.aura ? found : foundDef;
+        if (auraDef?.aura && (cmd.targets ?? []).length > 0) {
+          const hostile = auraIsHostile(auraDef.aura, auraDef);
+          const hostId = cmd.targets[0];
+          const host = objectOnBoard(view, hostId);
+          const mine = host ? host.controllerId === view.playerId : hostId === view.playerId;
+          const worth = host ? combatPower(host) : 0;
+          if (hostile) return finish(mine ? 60 - P.auraHostileOwnPenalty - worth : 60 + worth);
+          return finish(mine ? 60 + worth : 60 - P.auraHostileEnemyBase - worth);
+        }
+        return finish(60);
       }
       case 'resolve_explore_choice': {
         // Guidestone Compass: karta na wierzch albo do grobu.
@@ -7970,7 +8027,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           ? view.zones.exile.find((o) => o.id === cmd.objectId)
           : null;
         // Audyt PR #93 (znalezisko F): ta sama wycena co w oknie grobu.
-        return finish(freeCastVariantScore(view, freeCastVariantEffects(madnessCard, cmd), cmd, 60));
+        return finish(freeCastVariantScore(view, freeCastVariantEffects(madnessCard, cmd), cmd, 60, { withoutManaCost: false }));
       }
       case 'resolve_exile_cast': {
         // Vaan, Street Thief: rzut ukradzionej karty za normalny koszt to
@@ -7983,7 +8040,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           ? view.zones.exile.find((o) => o.id === cmd.objectId)
           : null;
         // Audyt PR #93 (znalezisko F): jw. — Vaan wycenia wybrany tryb i cele.
-        return finish(freeCastVariantScore(view, freeCastVariantEffects(exiledCard, cmd), cmd, 52));
+        return finish(freeCastVariantScore(view, freeCastVariantEffects(exiledCard, cmd), cmd, 52, { withoutManaCost: false }));
       }
       case 'resolve_reveal_choice': {
         // M158/Batch 39 (Invasion of the Giants II): ujawnij Olbrzyma za 2

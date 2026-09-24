@@ -535,6 +535,10 @@ export const CAST_SPELL_OPTIONS = Object.freeze([
   // nazwa pola co na ścieżce permanentów (`cast_permanent.surgeCast`), więc
   // komenda, etykieta i kreator płatności używają jednego słowa.
   'surgeCast',
+  // Etap F/4b (Cathartic Reunion w oknie rzutu — Vaan, Baral): karty
+  // odrzucane jako koszt dodatkowy (CR 601.2h) wskazane Z GÓRY w komendzie
+  // okna; bez tej opcji wybór otwiera zwykła decyzja `pendingDiscardChoice`.
+  'discardCardIds',
 ]);
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
@@ -547,7 +551,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const {
     buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0,
     abilityWindowCast = false, kicked = false, gifted = false, giftRecipientId = null,
-    delveExileIds = null, handFreeCast = false, surgeCast = false,
+    delveExileIds = null, handFreeCast = false, surgeCast = false, discardCardIds = null,
   } = options;
   const preObject = state.objects.get(objectId);
   // Surge (CR 702.117, Batch 58/B1): koszt alternatywny rozlicza tylko TA
@@ -662,6 +666,15 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const discardCost = object.spell.additionalCost?.discardCards ?? 0;
   if (discardCost > 0 && countDiscardableFor(state, playerId, objectId) < discardCost) {
     throw new Error('Za mało kart w ręce na dodatkowy koszt (discard)');
+  }
+  if (discardCardIds != null) {
+    // Etap F/4b: wybór z komendy okna — dokładnie N różnych kart z ręki,
+    // bez samego czaru; walidacja PRZED mutacją (L4).
+    const ok = discardCost > 0 && Array.isArray(discardCardIds) && discardCardIds.length === discardCost
+      && new Set(discardCardIds).size === discardCardIds.length
+      && discardCardIds.every((id) => id !== objectId && state.zones.hand.includes(id)
+        && state.objects.get(id)?.controllerId === playerId);
+    if (!ok) throw new Error('Nieprawidłowy wybór kart do odrzucenia (koszt dodatkowy)');
   }
   // Kolorowa walidacja many (Sweet Oblivion: 2 Plains nie mogą rzucić U)
   // Plot – rzut bez kosztu many (bez koloru) – pomijamy walidację kolorową, jak w legalSpellCasts.
@@ -837,7 +850,12 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // płacone przy rzucaniu, po umieszczeniu czaru na stosie (czar nie może
   // odrzucić sam siebie). Wybór kart należy do gracza, więc kolejkujemy
   // blokującą decyzję; kontrczar nie zwraca odrzuconych kart.
-  if (discardCost > 0) {
+  if (discardCost > 0 && discardCardIds != null) {
+    discardCardsForced(state, {
+      playerId, cardIds: [...discardCardIds], purpose: 'cost',
+      sourceCardId: object.cardId ?? null, restorePriorityTo: state.turn.priorityPlayerId,
+    });
+  } else if (discardCost > 0) {
     const handIds = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId);
     // Znalezisko A: koszt „odrzuć N" przy dokładnie N kartach płaci się sam
     // (priorytet nietknięty — nie ma decyzji do oddawania).
@@ -1007,6 +1025,31 @@ export function castMadnessSpell(state, playerId, objectId, targets, modeIndex) 
  * cel ponad pierwszy. Obrażenia X dzielone po równo (zaokr. w dół) między
  * wszystkie cele; reszta z dzielenia przepada (CR 119.4 „divided evenly").
  */
+/**
+ * Walidacja celów Fireballa („any number of targets"): stwory na polu bitwy
+ * (bez hexproof wobec rzucającego, bez protection — CR 702.16b) i/lub
+ * gracze, bez powtórzeń. Jedno źródło dla rzutu z ręki i dla rzutu „without
+ * paying its mana cost" z okien decyzji (Etap F/4, game-state.js).
+ */
+export function validateFireballTargets(state, playerId, object, chosen) {
+  const seen = new Set();
+  for (const tId of chosen) {
+    if (seen.has(tId)) throw new Error('Cel czaru X nie może się powtarzać');
+    seen.add(tId);
+    const target = state.objects.get(tId);
+    const isPlayer = state.players.some((p) => p.id === tId);
+    if (isPlayer) continue;
+    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') throw new Error(`Nielegalny cel czaru X: ${tId}`);
+    if (hasHexproofAgainst(state, target, playerId)) throw new Error(`Nielegalny cel czaru X (hexproof): ${tId}`);
+    // Protection (CR 702.16b — DEBT: T): wspólny predykat (F2). Fireball to {R},
+    // ale reguła czyta też JAKOŚCI (np. „protection from creatures" — czar nie
+    // jest stworem, więc nie blokuje; wcześniej ta kopia wcale nie znała jakości).
+    if (isTargetingBlockedByProtection(state, target, object, { sourceColors: object.colors ?? [] })) {
+      throw new Error(`Nielegalny cel czaru X (protection): ${tId}`);
+    }
+  }
+}
+
 function castFireball(state, playerId, objectId, targets, xValue, abilityWindowCast = false) {
   const object = state.objects.get(objectId);
   // Patrz `castXCostSpell`: to samo uprawnienie okna zdolności (audyt PR #93).
@@ -1029,22 +1072,7 @@ function castFireball(state, playerId, objectId, targets, xValue, abilityWindowC
   // przestrzeń Oracle. Duplikaty celów nielegalne — cel wybiera się raz.
   // Walidacja celów: stwory na polu bitwy (nie hexproof, nie protection od koloru
   // czaru — CR 702.16b) i/lub gracze. Brak górnego limitu poza opłacalnością.
-  const seen = new Set();
-  for (const tId of chosen) {
-    if (seen.has(tId)) throw new Error('Cel czaru X nie może się powtarzać');
-    seen.add(tId);
-    const target = state.objects.get(tId);
-    const isPlayer = state.players.some((p) => p.id === tId);
-    if (isPlayer) continue;
-    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') throw new Error(`Nielegalny cel czaru X: ${tId}`);
-    if (hasHexproofAgainst(state, target, playerId)) throw new Error(`Nielegalny cel czaru X (hexproof): ${tId}`);
-    // Protection (CR 702.16b — DEBT: T): wspólny predykat (F2). Fireball to {R},
-    // ale reguła czyta też JAKOŚCI (np. „protection from creatures" — czar nie
-    // jest stworem, więc nie blokuje; wcześniej ta kopia wcale nie znała jakości).
-    if (isTargetingBlockedByProtection(state, target, object, { sourceColors: object.colors ?? [] })) {
-      throw new Error(`Nielegalny cel czaru X (protection): ${tId}`);
-    }
-  }
+  validateFireballTargets(state, playerId, object, chosen);
   // Koszt: {X} + {R} + {1} za każdy cel ponad pierwszy.
   const extraTargets = Math.max(0, chosen.length - 1);
   const totalCost = X + (object.manaCost ?? 0) + extraTargets;
@@ -1079,6 +1107,15 @@ function castFireball(state, playerId, objectId, targets, xValue, abilityWindowC
  *  (komenda niesie xValue). Całkowity koszt = manaCost + X. Cele walidowane
  *  wg `spell.targets` (zazwyczaj 0-1 cel — „any target"). X zapisujemy na
  *  obiekcie stosu (spellX), żeby efekty (damage/gain/exile) mogły go użyć.
+ *
+ *  KARTY SPOZA KATALOGU (Etap F/4, stan 2026-09-24: żaden czar X/Fireball
+ *  w katalogu nie ma plot, suspend, flashback, kickera ani surge): ta ścieżka
+ *  (i `castFireball`) zawsze płaci manaCost + X z ręki/okna zdolności. Rzut
+ *  „without paying its mana cost" (plot, suspend, Discover, Epic…) idzie
+ *  przez `castSpellWithoutManaCost` (game-state.js) z X = 0 (CR 107.3b).
+ *  Gdy do katalogu wejdzie czar X z plot/flashbackiem/kickerem: rozliczyć
+ *  tu koszt alternatywny/dodatkowy (CR 118.9, 601.2f) zamiast dopłacać
+ *  pełny manaCost — dziś `castSpell` kieruje X do tej funkcji bez tych opcji.
  */
 function castXCostSpell(state, playerId, objectId, targets, xValue, abilityWindowCast = false) {
   const object = state.objects.get(objectId);
@@ -2579,7 +2616,7 @@ export function suspendCard(state, playerId, objectId) {
  * spread setek tysięcy wariantów wywalał stos). Wspólne dla ręki i okna
  * zdolności Vaana — audyt PR #93, L74: jedna implementacja.
  */
-export function legalFireballCasts(state, playerId, objectId, object, manaAvailable) {
+export function legalFireballCasts(state, playerId, objectId, object, manaAvailable, { withoutManaCost = false } = {}) {
   const casts = [];
   const creatures = state.zones.battlefield
     .map((id) => state.objects.get(id))
@@ -2608,6 +2645,13 @@ export function legalFireballCasts(state, playerId, objectId, object, manaAvaila
   for (let n = 1; n <= maxTargets; n += 1) {
     const extra = Math.max(0, n - 1);
     for (const combo of subsets(allTargets, n)) {
+      // Etap F/4: rzut „without paying its mana cost" — X = 0 (CR 107.3b),
+      // koszt {X}{R} zniesiony, ale dopłata {1} za każdy cel ponad pierwszy
+      // to zwiększenie kosztu, które płaci się nadal (CR 601.2f).
+      if (withoutManaCost) {
+        if (extra <= manaAvailable) casts.push({ objectId, targets: combo, xValue: 0 });
+        continue;
+      }
       const maxX = Math.min(manaAvailable - base - extra, 15);
       for (let X = 1; X <= maxX; X += 1) {
         casts.push({ objectId, targets: combo, xValue: X });
