@@ -204,6 +204,17 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'graveyardShuffleRescueWeight',// dopłata za kartę, gdy biblioteka jest pod progiem
   'graveyardShuffleNoPressurePenalty', // kara, gdy biblioteka jest zdrowa (czekaj na okno)
   'graveyardShuffleEmptyPenalty',// kara, gdy nie wraca ŻADNA karta (efekt jałowy)
+  // M429 („P3 Charismatic Vanguard"): rodzina „masowy pump/debuff do końca
+  // tury". Czar miał tę wycenę od M106/Z7 (okno walki: pump wygasa w cleanup,
+  // CR 514.2, więc poza walką nie kupuje nic), ale AKTYWOWANA ZDOLNOŚĆ nie
+  // miała żadnej — bot dostawał gołe `score = 2` i przepalał {4}{W}
+  // w Głównej 1 (pomiar: 2 pkt w każdym kroku tury). Te same stałe wyjęte pod
+  // nazwy (kontrakt B6 T0: domyślne == dawne wartości) + jedna ścieżka dla obu
+  // gałęzi (L41 — bliźniacze gałęzie, jedna reguła).
+  'teamPumpPerCreature',         // wartość za każdego objętego stwora (dawna *6)
+  'teamPumpEmptyPoolPenalty',    // kara, gdy nie ma kogo objąć (dawna -30)
+  'teamPumpNoChangePenalty',     // kara, gdy pump nie zmienia wyniku walki (dawna -25)
+  'teamPumpSorceryOffWindowPenalty', // kara dla sorcery poza własną Główną 1 (dawna -60)
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -306,6 +317,12 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   graveyardShuffleRescueWeight: 8,
   graveyardShuffleNoPressurePenalty: 70,
   graveyardShuffleEmptyPenalty: 70,
+  // M429 „masowy pump/debuff do końca tury" (P3 Charismatic Vanguard) —
+  // ekstrakcja stałych istniejącej reguły (M106/Z7, M218/1); wartości == dawne.
+  teamPumpPerCreature: 6,
+  teamPumpEmptyPoolPenalty: 30,
+  teamPumpNoChangePenalty: 25,
+  teamPumpSorceryOffWindowPenalty: 60,
 });
 
 /**

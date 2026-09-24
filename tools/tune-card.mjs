@@ -79,6 +79,12 @@ export const DESCRIPTOR_PARAMS = Object.freeze({
     'graveyardShuffleBase', 'graveyardShuffleCardValue', 'graveyardShuffleRescueWeight',
     'graveyardShuffleNoPressurePenalty', 'graveyardShuffleEmptyPenalty',
   ]),
+  // M429 („P3 Charismatic Vanguard"): masowy pump/debuff „do końca tury" —
+  // jedna reguła dla czarów i aktywowanych zdolności (L41).
+  teamPump: Object.freeze([
+    'teamPumpPerCreature', 'teamPumpEmptyPoolPenalty', 'teamPumpNoChangePenalty',
+    'teamPumpSorceryOffWindowPenalty',
+  ]),
   // Rodziny mechanik czekające na własne parametry (kolejne sesje T1):
   // surge:   ['surgeBias'],
   // manifest:['manifestEarlyBias'],
@@ -120,6 +126,9 @@ export function cardDescriptors(def) {
   // czaru ORAZ w zdolnościach (Mutagen dokłada licznik aktywowaną zdolnością).
   if (cardHasEffect(def, 'add_counter')) descriptors.add('counter');
   if (cardHasEffect(def, 'shuffle_graveyard_cards_into_library')) descriptors.add('graveyardShuffle');
+  if (cardHasEffect(def, 'buff_creatures_you_control') || cardHasEffect(def, 'buff_opponents_creatures')) {
+    descriptors.add('teamPump');
+  }
   return [...descriptors];
 }
 

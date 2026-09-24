@@ -280,3 +280,52 @@ test("M429/Memory's Journey (P2): zero wracających kart → jałowy efekt pod p
   assert.ok(zero < 0, `wariant bez kart poniżej passu (${zero})`);
   assert.notEqual(cmd.type, 'cast_spell');
 });
+
+// =====================================================================
+// P3 — Charismatic Vanguard (Batch 59): masowy pump z aktywowanej zdolności
+// =====================================================================
+
+test('M429/T1: karta z masowym pumpem dostaje deskryptor `teamPump`', async () => {
+  const { cardDescriptors, paramsForDescriptors } = await import('../tools/tune-card.mjs');
+  assert.ok(cardDescriptors(REGISTRY.get('charismatic-vanguard')).includes('teamPump'),
+    'zdolność aktywowana (deskryptor zdolności, nie tylko treść czaru)');
+  assert.ok(cardDescriptors(REGISTRY.get('hysterical-blindness')).includes('teamPump'),
+    'czar-debuff zespołu też');
+  assert.deepEqual(paramsForDescriptors(['teamPump']).keys.sort(), [
+    'teamPumpEmptyPoolPenalty', 'teamPumpNoChangePenalty',
+    'teamPumpPerCreature', 'teamPumpSorceryOffWindowPenalty',
+  ]);
+});
+
+test('M429/Vanguard (P3): poza oknem walki zdolność schodzi pod pass', () => {
+  // Pomiar PRZED: aktywacja = 2 pkt (goła baza) w KAŻDYM kroku, więc bot
+  // przepalał {4}{W} w Głównej 1. Pump „do końca tury" wygasa w cleanup
+  // (CR 514.2) — poza walką nie kupuje nic (M106/Z7, M218/1).
+  const state = game();
+  put(state, 'van', 'charismatic-vanguard', 'p1');
+  put(state, 'a', 'hill-giant', 'p1');
+  put(state, 'b', 'razorfoot-griffin', 'p1');
+  addMana(state, 'p1', 7, { colors: ['W'] });
+  const { cmd, scores } = decide(state);
+  assert.ok(scores['activate_ability(van#0)'] < 0, `aktywacja w Głównej 1 pod passem (${scores['activate_ability(van#0)']})`);
+  assert.notEqual(cmd.type, 'activate_ability');
+});
+
+test('M429/Vanguard (P3): okno walki → aktywacja z premią za liczbę stworów', () => {
+  // Zadeklarowani atakujący (mój turn, krok blokujących): pump zmienia
+  // zadawane obrażenia, więc jest wart 6 pkt za każdego objętego stwora.
+  const state = game('declare_blockers', 'p1', 'p1');
+  put(state, 'van', 'charismatic-vanguard', 'p1');
+  put(state, 'a', 'hill-giant', 'p1');
+  put(state, 'b', 'razorfoot-griffin', 'p1');
+  put(state, 'foe', 'trestle-troll', 'p2');
+  state.combat = {
+    attackingPlayerId: 'p1', defendingPlayerId: 'p2',
+    attackers: ['a', 'b'], blockers: new Map(),
+  };
+  addMana(state, 'p1', 7, { colors: ['W'] });
+  const { cmd, entry } = decide(state);
+  assert.equal(cmd.type, 'activate_ability', `oczekiwano aktywacji, wybrano ${label(cmd)}`);
+  assert.equal(cmd.objectId, 'van');
+  assert.equal(entry.score, 2 + 6 * 3, 'baza 2 + 6 pkt × 3 stwory (w tym źródło)');
+});

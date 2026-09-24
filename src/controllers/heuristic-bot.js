@@ -1941,6 +1941,41 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
+   * M429 (zlecenie właściciela 2026-09-24e, karty batcha 59 — „P3 Charismatic
+   * Vanguard"): ile kupuje MASOWY PUMP/DEBUFF „do końca tury".
+   *
+   * Reguła istniała wyłącznie w gałęzi CZARÓW (M106/Z7 + M218/1: „do końca
+   * tury" wygasa w cleanup, CR 514.2, więc poza walką nie kupuje nic), a zdolność
+   * aktywowana nie miała żadnej wyceny efektu — pomiar (6 seedów, talia
+   * `decks/audyt-batch59.txt`): Charismatic Vanguard {4}{W} oceniany na 2 pkt
+   * (sama baza zdolności) w KAŻDYM kroku, więc bot przepalał 5 many w Głównej 1
+   * stojąc w miejscu. Ta funkcja jest JEDNĄ ścieżką dla obu gałęzi (L41) —
+   * różni je tylko źródło timingu (`spell.timing` vs `ability.timing`):
+   *  - brak stworów w puli → kara (efekt nie ma na kogo działać);
+   *  - sorcery poza własną Główną 1 (gdy nikt gotowy do ataku) → kara;
+   *  - instant/zdolność bez zmiany wyniku ŻADNEJ toczącej się walki → kara
+   *    (M218/2: +1/+1 na 1/1 blokowanym przez 5/5 nie zmienia gry);
+   *  - inaczej wartość za każdego objętego stwora (pump zespołu = N obrażeń
+   *    więcej w tej walce).
+   * Zero nazw kart (ADR 0002), wyłącznie PlayerView (ADR 0017).
+   */
+  const teamPumpValue = (view, effect, { sorcerySpeed = false } = {}) => {
+    const targetsOpponents = effect.type === 'buff_opponents_creatures';
+    const pool = targetsOpponents ? enemyCreatures(view) : myCreatures(view);
+    const affected = pool.length;
+    if (affected === 0) return -P.teamPumpEmptyPoolPenalty;
+    if (sorcerySpeed) {
+      return (myTurn(view) && view.turn.phase === 'precombat_main'
+        && pool.some((entry) => canAttackNow(entry)))
+        ? P.teamPumpPerCreature * affected
+        : -P.teamPumpSorceryOffWindowPenalty;
+    }
+    const anyChange = pool.some((entry) => pumpChangesOutcome(view, entry, pumpDelta(view, effect)));
+    if (!anyChange) return -P.teamPumpNoChangePenalty;
+    return P.teamPumpPerCreature * affected;
+  };
+
+  /**
    * M429 (zlecenie właściciela 2026-09-24e, karty batcha 59 — „P2 Memory's
    * Journey"): ile kupuje WTASOWANIE KART Z GROBU DO BIBLIOTEKI.
    *
@@ -5435,20 +5470,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Battle) nie poczeka na combat: jedyne sensowne okno to Główna 1
           // przed własnym atakiem (jak M179/C dla pojedynczego pumpu).
           if (effect.type === 'buff_opponents_creatures' || effect.type === 'buff_creatures_you_control') {
-            const targetsOpponents = effect.type === 'buff_opponents_creatures';
-            const pool = targetsOpponents ? enemyCreatures(view) : myCreatures(view);
-            const affected = pool.length;
-            // M218/2: uczestnictwo w walce to warunek konieczny, nie
-            // wystarczający — masowy pump/debuff, który nie zmienia wyniku
-            // ŻADNEJ toczącej się wymiany (np. −4/−0 na 5/5 blokowanym po
-            // cichu przez 1/1), jest skutkiem zerowym.
-            const anyChange = pool.some((entry) => pumpChangesOutcome(view, entry, pumpDelta(view, effect)));
-            if (affected === 0) score -= 30;          // nie ma na kogo działać
-            else if (card?.spell?.timing === 'sorcery') {
-              score += (myTurn(view) && view.turn.phase === 'precombat_main'
-                && pool.some((entry) => canAttackNow(entry))) ? 6 * affected : -60;
-            } else if (!anyChange) score -= 25;       // wygaśnie przed walką / nic nie zmieni
-            else score += 6 * affected;
+            // M429: cała reguła w `teamPumpValue` — TĘ SAMĄ funkcję woła
+            // bliźniacza gałąź aktywowanej zdolności (L41); tu różnica to tylko
+            // źródło timingu.
+            score += teamPumpValue(view, effect, { sorcerySpeed: card?.spell?.timing === 'sorcery' });
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') {
@@ -6507,6 +6532,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score += ownPostcombat ? 6 : -8; // uzupełnij zapas PO walce
               }
             }
+          }
+          // M429 (P3 Charismatic Vanguard): masowy pump/debuff „do końca tury"
+          // z AKTYWOWANEJ zdolności — dotąd ta rodzina nie miała tu wyceny
+          // (gołe `score = 2`), więc bot przepalał {4}{W} w Głównej 1, bez walki
+          // i bez zmiany jakiegokolwiek wyniku. Ta sama funkcja co w czarach
+          // (L41), timing zdolności z deskryptora (`ability.timing`).
+          if (effect.type === 'buff_opponents_creatures' || effect.type === 'buff_creatures_you_control') {
+            score += teamPumpValue(view, effect, { sorcerySpeed: ability?.timing === 'sorcery' });
           }
           // M429 (P2 Memory's Journey): wtasowanie kart z grobu do biblioteki —
           // bliźniacza gałąź czarów (L41). Dziś wszystkie źródła tego efektu to
