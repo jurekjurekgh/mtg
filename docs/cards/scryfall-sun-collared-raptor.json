@@ -1,0 +1,31 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Sun-Collared%20Raptor&set=rix",
+  "print": "rix",
+  "name": "Sun-Collared Raptor",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Creature — Dinosaur",
+  "oracle_text": "Trample\n{2}{R}: This creature gets +3/+0 until end of turn.",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Trample"
+  ],
+  "set": "rix",
+  "set_name": "Rivals of Ixalan",
+  "collector_number": "118",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/2/62fbd1bc-3e57-43d5-ad54-443ca740fcc4.jpg?1783935291",
+    "normal": "https://cards.scryfall.io/normal/front/6/2/62fbd1bc-3e57-43d5-ad54-443ca740fcc4.jpg?1783935291"
+  },
+  "pobrano": "2026-09-24",
+  "artist": "Zoltan Boros",
+  "power": "1",
+  "toughness": "2",
+  "rulings": []
+}

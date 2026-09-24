@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kumano%27s%20Blessing&set=bok",
+  "print": "bok",
+  "name": "Kumano's Blessing",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Flash\nEnchant creature\nIf a creature dealt damage by enchanted creature this turn would die, exile it instead.",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Enchant",
+    "Flash"
+  ],
+  "set": "bok",
+  "set_name": "Betrayers of Kamigawa",
+  "collector_number": "111",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/6/56f0d9aa-4270-41cd-8993-765354c03d03.jpg?1783944187",
+    "normal": "https://cards.scryfall.io/normal/front/5/6/56f0d9aa-4270-41cd-8993-765354c03d03.jpg?1783944187"
+  },
+  "pobrano": "2026-09-24",
+  "artist": "Keith Garletts",
+  "rulings": []
+}

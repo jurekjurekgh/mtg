@@ -1,0 +1,67 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Waveskimmer%20Aven&set=ala",
+  "print": "ala",
+  "name": "Waveskimmer Aven",
+  "mana_cost": "{2}{G}{W}{U}",
+  "cmc": 5,
+  "type_line": "Creature — Bird Soldier",
+  "oracle_text": "Flying\nExalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)",
+  "colors": [
+    "G",
+    "U",
+    "W"
+  ],
+  "color_identity": [
+    "G",
+    "U",
+    "W"
+  ],
+  "keywords": [
+    "Flying",
+    "Exalted"
+  ],
+  "set": "ala",
+  "set_name": "Shards of Alara",
+  "collector_number": "207",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/7/e75ebcb4-5db8-4c72-9f65-8ee8f2c893ea.jpg?1783942536",
+    "normal": "https://cards.scryfall.io/normal/front/e/7/e75ebcb4-5db8-4c72-9f65-8ee8f2c893ea.jpg?1783942536"
+  },
+  "pobrano": "2026-09-24",
+  "artist": "Mark Zug",
+  "power": "2",
+  "toughness": "4",
+  "rulings": [
+    {
+      "date": "2008-10-01",
+      "source": "wotc",
+      "comment": "If you declare exactly one creature as an attacker, each exalted ability on each permanent you control (including, perhaps, the attacking creature itself) will trigger. The bonuses are given to the attacking creature, not to the permanent with exalted. Ultimately, the attacking creature will wind up with +1/+1 for each of your exalted abilities."
+    },
+    {
+      "date": "2008-10-01",
+      "source": "wotc",
+      "comment": "If you attack with multiple creatures, but then all but one are removed from combat, your exalted abilities won’t trigger."
+    },
+    {
+      "date": "2008-10-01",
+      "source": "wotc",
+      "comment": "Some effects put creatures onto the battlefield attacking. Since those creatures were never declared as attackers, they’re ignored by exalted abilities. They won’t cause exalted abilities to trigger. If any exalted abilities have already triggered (because exactly one creature was declared as an attacker), those abilities will resolve as normal even though there may now be multiple attackers."
+    },
+    {
+      "date": "2008-10-01",
+      "source": "wotc",
+      "comment": "Exalted abilities will resolve before blockers are declared."
+    },
+    {
+      "date": "2008-10-01",
+      "source": "wotc",
+      "comment": "Exalted bonuses last until end of turn. If an effect creates an additional combat phase during your turn, a creature that attacked alone during the first combat phase will still have its exalted bonuses in that new phase. If a creature attacks alone during the second combat phase, all your exalted abilities will trigger again."
+    },
+    {
+      "date": "2008-10-01",
+      "source": "wotc",
+      "comment": "In a Two-Headed Giant game, a creature “attacks alone” if it’s the only creature declared as an attacker by your entire team. If you control that attacking creature, your exalted abilities will trigger but your teammate’s exalted abilities won’t."
+    }
+  ]
+}

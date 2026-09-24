@@ -1,0 +1,111 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Bird%20Admirer%20//%20Wing%20Shredder&set=mid",
+  "print": "mid",
+  "name": "Bird Admirer // Wing Shredder",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Creature — Human Archer Werewolf // Creature — Werewolf",
+  "oracle_text": null,
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Reach",
+    "Transform",
+    "Daybound",
+    "Nightbound"
+  ],
+  "set": "mid",
+  "set_name": "Innistrad: Midnight Hunt",
+  "collector_number": "169",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/1/71ccc444-54c8-4f7c-a425-82bc3eea1eb0.jpg?1783925590",
+    "normal": "https://cards.scryfall.io/large/front/7/1/71ccc444-54c8-4f7c-a425-82bc3eea1eb0.jpg?1783925590"
+  },
+  "pobrano": "2026-09-24",
+  "layout": "transform",
+  "artist": "Slawomir Maniak",
+  "card_faces": [
+    {
+      "name": "Bird Admirer",
+      "mana_cost": "{2}{G}",
+      "type_line": "Creature — Human Archer Werewolf",
+      "oracle_text": "Reach\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+      "power": "1",
+      "toughness": "4",
+      "colors": [
+        "G"
+      ],
+      "image_uris": {
+        "large": "https://cards.scryfall.io/large/front/7/1/71ccc444-54c8-4f7c-a425-82bc3eea1eb0.jpg?1783925590",
+        "normal": "https://cards.scryfall.io/normal/front/7/1/71ccc444-54c8-4f7c-a425-82bc3eea1eb0.jpg?1783925590"
+      }
+    },
+    {
+      "name": "Wing Shredder",
+      "mana_cost": "",
+      "type_line": "Creature — Werewolf",
+      "oracle_text": "Reach\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+      "power": "3",
+      "toughness": "5",
+      "colors": [
+        "G"
+      ],
+      "image_uris": {
+        "large": "https://cards.scryfall.io/large/back/7/1/71ccc444-54c8-4f7c-a425-82bc3eea1eb0.jpg?1783925590",
+        "normal": "https://cards.scryfall.io/normal/back/7/1/71ccc444-54c8-4f7c-a425-82bc3eea1eb0.jpg?1783925590"
+      }
+    }
+  ],
+  "rulings": [
+    {
+      "date": "2021-09-24",
+      "source": "wotc",
+      "comment": "Day and night are designations that the game itself can have. The game starts as neither. Once the game becomes day (or less commonly, night), the game will be exactly one of them—day or night—going back and forth for the rest of the game."
+    },
+    {
+      "date": "2021-09-24",
+      "source": "wotc",
+      "comment": "If it is night, permanents with daybound that enter the battlefield without being cast will enter with their nightbound faces up."
+    },
+    {
+      "date": "2021-09-24",
+      "source": "wotc",
+      "comment": "If it is night, and the active player of the previous turn cast two or more spells during their turn, it becomes day."
+    },
+    {
+      "date": "2021-09-24",
+      "source": "wotc",
+      "comment": "If it's neither day nor night, and a creature with daybound and a creature with nightbound somehow appear on the battlefield at the same time, it becomes day. The creature with nightbound will transform."
+    },
+    {
+      "date": "2021-09-24",
+      "source": "wotc",
+      "comment": "If you cast a spell with daybound during night, that spell will be front face up (that is, daybound face up) on the stack. However, it will enter the battlefield with its back face up (that is, with its nightbound face up). It won't enter with its daybound face up and then transform."
+    },
+    {
+      "date": "2021-09-24",
+      "source": "wotc",
+      "comment": "Before a player untaps their permanents during the untap step, the game checks to see if the day/night designation should change."
+    },
+    {
+      "date": "2021-09-24",
+      "source": "wotc",
+      "comment": "Permanents with daybound and nightbound can't transform via any means other than their daybound and nightbound abilities. Notably, older cards such as Moonmist that instruct a player to transform permanents don't affect permanents with daybound or nightbound."
+    },
+    {
+      "date": "2021-09-24",
+      "source": "wotc",
+      "comment": "If it is day, and the active player of the previous turn cast no spells during their turn, it becomes night."
+    },
+    {
+      "date": "2021-09-24",
+      "source": "wotc",
+      "comment": "Double-faced permanents with daybound transform to their nightbound faces as it becomes night. Similarly, double-faced permanents with nightbound transform to their daybound faces as it becomes day. This happens immediately and is not a state-based action. It happens any time it becomes day or night, not just during the untap step."
+    }
+  ]
+}
