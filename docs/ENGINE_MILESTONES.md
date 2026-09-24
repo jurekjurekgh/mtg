@@ -7581,3 +7581,29 @@ mutacji repo) + 4 piny w `test/cr-numery-mechanik-straznik.test.js`
 `npm test` **6455/6455**, `npm run test:all` **6465/6465** (~409 s),
 build **60 modułów / 4199,5 kB**.
 Handoff: `docs/setup/HANDOFF_2026-09-24.md`.
+
+## M426 — audyt scalonego PR #135 + strażnik istnienia numerów CR (sesja 2026-09-24b, PR #136)
+
+Audyt PR #135 (ADR 0020 B, raport `docs/audits/AUDYT_PR135_2026-09-24b.md`)
+wobec dosłownego CR 2026-09-25 (mirror `nwgarne/mtg-data`, sha256 `8d860e45…70ca`):
+rdzeń regułowy bez znalezisk (twierdzenia D4b/Etapu F zgodne z CR; ścieżki wejścia
+i znaczniki bez luki; piny warstw czerwienieją przy mutacjach w kierunku PRZED
+naprawą). Znaleziska dotyczyły wyłącznie ADRESOWANIA reguł:
+
+- **F-1** — 16 numerów nieistniejących / 57 wystąpień (m.in. `103.7a` w 26
+  miejscach: skok draw stepu to 103.8a; `110.6b`→110.5b; `117.11`→602.2b;
+  `510.5`→510.4; `704.10`→704.5c; `706.10c`→707.10c). Wszystkie sprzed #135
+  (te same liczby wystąpień na `4f75e22`). Naprawa: commit **C1** `39b1587`.
+- **F-2** — 3 rozjazdy pary „mechanika ↔ numer" przepuszczone przez detektory
+  OKNA (701.2a→701.6a przy counter_spell; „Destroy (CR 701.19)"; „Surge/Cleave
+  (CR 702.117)"). Naprawa + 3 pary klasy w strażniku: commit **C2** `47ec68b`.
+- **F-3** — brak strażnika ISTNIENIA numeru (sekcje poza 701/702 nie były
+  pilnowane przez nic). Nowe narzędzie `tools/cr-numery.mjs` + generowana
+  `test/helpers/cr-numery-tabela.js` (482 cytowane numery, wersjonowana wydaniem
+  i sha256) + strażnik `test/cr-numery-istnienie-straznik.test.js`: commit
+  **C3** `5fa8759`.
+
+Pętla jakości (Etap D): 6 partii Żywego Testera bez zgłoszeń detektorów i bez
+runtime-errorów; łowy CR na 175 nowych cytatach #135 (sekcje 6xx/7xx) — bez
+rozjazdów; kandydat `205.1a` rozstrzygnięty jako poprawny (cytat dosłowny).
+Bramy: `npm test` **6462/6462**; handoff: `docs/setup/HANDOFF_2026-09-24b.md`.

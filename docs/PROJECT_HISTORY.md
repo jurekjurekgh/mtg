@@ -12769,3 +12769,54 @@ mutacji repo) + 4 piny w `test/cr-numery-mechanik-straznik.test.js`
 `npm test` **6455/6455**, `npm run test:all` **6465/6465** (~409 s),
 build **60 modułów / 4199,5 kB**.
 Handoff: `docs/setup/HANDOFF_2026-09-24.md`.
+
+## M426 — audyt scalonego PR #135 + strażnik istnienia numerów CR (sesja 2026-09-24b, PR #136)
+
+Prompt „Kontynuujemy projekt." → pętla ADR 0021: plan jako osobny commit
+(`ee68f2f`), **PR #136** na starcie (ADR 0020 A), audyt scalonego PR #135
+(ADR 0020 B; raport `docs/audits/AUDYT_PR135_2026-09-24b.md`, commit `558a20a`).
+Audyt prowadzony wobec **dosłownego CR 2026-09-25** (mirror `nwgarne/mtg-data`,
+sha256 `8d860e45…70ca`; sandbox blokuje media.wizards.com, więc jedyna droga to
+`api.github.com` z `Accept: raw` — ADR 0030).
+
+**Rdzeń PR #135 bez znalezisk:** twierdzenia D4b (warstwy CR 613) i Etapu F
+zgodne z dosłownym CR (§4 raportu — 19 wierszy tabeli, wszystkie ✔ poza
+adresem `110.6b`), ścieżki wejścia na pole bitwy i znaczniki czasu bez luki
+(125 wywołań `state.objects.set(`, §5), a piny warstw mają moc różnicującą
+(mutacja „utrata wygrywa zawsze" → 4 RED; `tempBasePT` bez znaczników → RED).
+Znaleziska dotyczyły **warstwy adresowania reguł** — wszystkie sprzed #135:
+
+- **F-1** — 16 numerów nieistniejących / 57 wystąpień: `103.7a` ×26 (skok draw
+  stepu to **103.8a**), `110.6b`→110.5b, `110.6`→110.5d, `117.11`→602.2b,
+  `700.4c`→700.4, `510.5`→510.4, `603.4b`→608.2b, `116.3b/c`→117.4/117.3b,
+  `706.10c`→707.10c, `708.9c/f`→702.145d/731.2a-b, `106.2b`→105.1,
+  `704.10`→704.5c, `602.2c`→602.2a, `720.4a`→104.3a. Naprawa **C1** (`39b1587`)
+  — 55 podmian w 30 plikach; dowód „to nie regresja #135": identyczne liczby
+  wystąpień na `4f75e22` i `f9bc44b`, poza zasięgiem strażników 701/702/712.
+- **F-2** — 3 rozjazdy pary „mechanika ↔ numer", które przeszły przez detektory
+  OKNA (w oknie stało przypadkowe słowo-alias): counter_spell `701.2a`→**701.6a**,
+  „Destroy (CR 701.19)"→**701.8**, „Surge/**Cleave** (CR 702.117)"→Surge 702.117
+  + **Cleave 702.148**. Naprawa **C2** (`47ec68b`) + 3 pary klasy z wykluczeniami
+  w `test/cr-numery-mechanik-straznik.test.js`; dowód mutacyjny: oryginalne linie
+  błędów w pliku poza repo → 3/3 RED (not ok 27–29).
+- **F-3** — brak strażnika ISTNIENIA numeru (sekcje poza 701/702 nie były pilnowane
+  przez nic). Naprawa **C3** (`5fa8759`): `tools/cr-numery.mjs` (detektor cytatów
+  + weryfikacja/generator wobec pliku CR + lista wykluczeń z uzasadnieniami),
+  `test/helpers/cr-numery-tabela.js` (GENEROWANA: 482 cytowane numery, każdy
+  zweryfikowany wobec CR 2026-09-25; wersjonowana wydaniem, sha256 i źródłem),
+  `test/cr-numery-istnienie-straznik.test.js` (4 inwarianty: istnienie, wersja
+  tabeli, rozmiar skanu + kotwice, próba własna detektora). Dowód mutacyjny:
+  `CR 103.7a` (martwy numer) i `CR 100.1` (nowy, niezweryfikowany) → RED
+  z lokalizacjami; strażniki 701/702 dostały tabelę i strażnika do `POMIN`.
+
+**Pętla jakości (Etap D, §9 raportu):** 6 partii Żywego Testera na `dist/`
+(5 profili domyślnych + `impatient`) — 0 zgłoszeń detektorów, 0 wyjątków runtime,
+partie dobiegają końca, 2214 linie transkryptów bez `undefined`/`NaN`/`błąd`;
+łowy CR na **175 nowych cytatach #135 w `src/`** (pełny przegląd sekcji 6xx/7xx)
+— 0 rozjazdów; kandydat `205.1a` (permanents.js) rozstrzygnięty jako poprawny
+(cytat dosłowny: „the new subtype(s) replaces any existing subtypes from the
+appropriate set"); potwierdzone też `701.19c`, `613.9` i `115.6`.
+
+Bramy: `npm test` **6462/6462** (było 6455/6455 przed sesją: +3 pary C2,
++4 inwarianty C3), build bez zmian (60 modułów / 4199,5 kB). Handoff:
+`docs/setup/HANDOFF_2026-09-24b.md`.

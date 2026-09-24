@@ -22,8 +22,8 @@ właściciela) i **bez pełnego B0** (ADR 0018).
 
 ## Etap A — PR na starcie (ADR 0020 A)
 
-- [ ] A1: ten plan jako OSOBNY commit wypchnięty na gałąź sesji.
-- [ ] A2: `gh pr create` → PR tej sesji (base `main`), opis z szablonem:
+- [x] A1: ten plan jako OSOBNY commit wypchnięty na gałąź sesji (`ee68f2f`).
+- [x] A2: `gh pr create` → **PR #136** (base `main`), opis z szablonem:
       zakres audytu, bramy, znaleziska (uzupełniany kumulatywnie).
 
 ## Etap B — audyt PR #135 (ADR 0020 B / ADR 0016): 227 plików, 6 osi
@@ -33,27 +33,27 @@ twierdzenie regułowe weryfikowane wobec dosłownego CR/Oracle (ADR 0030 —
 pamięć treningowa nie jest źródłem), każde „przypięte testem" sprawdzone
 mutacją w kierunku PRZED naprawą (L13/L34/L159).
 
-- [ ] B1 — **D4b / warstwy CR 613** (największa nowość: `src/engine/timestamps.js`
+- [x] B1 — **D4b / warstwy CR 613** (największa nowość: `src/engine/timestamps.js`
       + `permanents.effectiveKeywords`/`baseStat`/`animationFieldsAfter`): czy
       każda ścieżka nadania/utraty ma znacznik, czy `timestamp` ustawia KAŻDA
       droga wejścia na pole bitwy (L107/L21), czy W-1…W-11 zgadzają się
       z dosłownym CR 613.4/613.7/613.9/708.2/712.18/400.7.
-- [ ] B2 — **Etap F (F/1–F/5)**: zdolności słów-kluczy na stosie (backup, echo,
+- [x] B2 — **Etap F (F/1–F/5)**: zdolności słów-kluczy na stosie (backup, echo,
       suspend, rebound, exploit, endure — CR 603.3/603.4/608.2b), „may"/„unless"
       przy rozstrzyganiu (603.5/603.12), jedna ścieżka rzutu bez kosztu many
       (118.9, 107.3b, 601.2f/h), animacje jako osobne efekty (611.2).
-- [ ] B3 — **pętla jakości z poprzedniej sesji (Z-1, O-1, O-2, O-3, O-6, F-1..F-7,
+- [x] B3 — **pętla jakości z poprzedniej sesji (Z-1, O-1, O-2, O-3, O-6, F-1..F-7,
       M425 — 553 przenumerowania w 701)** — czy naprawy są u root cause i czy
       nie wprowadziły regresji; próbka numerów CR sprawdzona wobec bieżącego
       wydania (L164: masowe przenumerowanie bywa o wydanie do tyłu).
-- [ ] B4 — **heurystyki bota + warstwa stołu**: nowe pola widoku (`manaSource`),
+- [x] B4 — (zakres ograniczony — raport §8) **heurystyki bota + warstwa stołu**: nowe pola widoku (`manaSource`),
       wyceny po typie efektu (ADR 0002), FoW (ADR 0003/0017) i determinizm
       (ADR 0005: nowe pola w odcisku).
-- [ ] B5 — **dane i statusy**: `src/cards/card-data.js` (±175 linii) wobec
+- [x] B5 — (zakres ograniczony — raport §8) **dane i statusy**: `src/cards/card-data.js` (±175 linii) wobec
       snapshotów Scryfall i `limitations`/`notes` (ADR 0022), talie z generatora.
-- [ ] B6 — **testy**: RED→GREEN dla nowych pinów (mutacje), anty-over-fix, brak
+- [x] B6 — **testy**: RED→GREEN dla nowych pinów (mutacje), anty-over-fix, brak
       pinów utrwalających błędną regułę (L13 §6), strażniki klasowe (L5/L39).
-- [ ] B7 — **werdykt** + znaleziska F-n w `docs/audits/AUDYT_PR135_2026-09-24b.md`
+- [x] B7 — **werdykt** + znaleziska F-n w `docs/audits/AUDYT_PR135_2026-09-24b.md`
       (pokrycie plików, matryca mutacji, cytaty CR z datą pobrania).
 
 Kryterium ukończenia: raport w `docs/audits/` z jawnym werdyktem
@@ -63,8 +63,18 @@ każde znalezisko z repro i propozycją naprawy u root cause.
 
 ## Etap C — naprawy znalezisk audytu (osobne, zielone commity)
 
-- [ ] C1..Cn — po jednym commicie na znalezisko: test RED → naprawa u root cause
-      → mutacja dowodząca, że pin czerwienieje → `npm test` + `npm run build` → push.
+- [x] **C1** — F-1 (16 martwych numerów / 57 wystąpień): commit `39b1587`
+      (`npm test` 6458/6458; push). Każdy numer potwierdzony wobec `/tmp/cr.txt`.
+- [x] **C2** — F-2 (3 rozjazdy pary „mechanika ↔ numer"): commit `47ec68b`
+      + 3 pary klasy w `test/cr-numery-mechanik-straznik.test.js`; dowód mutacyjny
+      (oryginalne linie błędów → 3/3 RED, not ok 27–29); `npm test` 6458→6458.
+- [x] **C3** — F-3 (brak strażnika istnienia): commit `5fa8759` —
+      `tools/cr-numery.mjs` + `test/helpers/cr-numery-tabela.js` (482 numery,
+      CR 2026-09-25 + sha256) + `test/cr-numery-istnienie-straznik.test.js`
+      (4 inwarianty); dowód mutacyjny (CR 103.7a i CR 100.1 → RED);
+      `npm test` 6462/6462.
+- Zasada dla kolejnych znalezisk: test RED → naprawa u root cause → mutacja
+  dowodząca, że pin czerwienieje → `npm test` + `npm run build` → push.
 
 Zasada (ADR 0020 C/D): każdy samodzielnie zielony krok to OSOBNY commit i push;
 zakaz force push; przed pushem `git fetch` + porównanie `HEAD..FETCH_HEAD`
@@ -72,26 +82,34 @@ i `FETCH_HEAD..HEAD`.
 
 ## Etap D — pętla jakości (ADR 0021 §4)
 
-- [ ] D1 — **Żywy Tester** (`tools/table-tester/`): audyt z perspektywy gracza
+- [x] D1 — **Żywy Tester** (`tools/table-tester/`): audyt z perspektywy gracza
       wzdłuż trzech osi (bezsensowne działania bota, kompletność logu/modala,
       ptaszki auto-passu), z naciskiem na mechaniki nowe w PR #135 (rzut bez
       kosztu many, zdolności-klucze na stosie, animacje, crew/pojazdy).
-      Braki testera naprawiane W TESTERZE (L12).
-- [ ] D2 — **łowy CR inną ścieżką niż poprzednia sesja**: weryfikacja liczb
+      Braki testera naprawiane W TESTERZE (L12). Wynik: 6 partii (5 profili
+      domyślnych + `impatient`), 0 zgłoszeń detektorów, 0 runtime — raport §9.
+- [x] D2 — **łowy CR inną ścieżką niż poprzednia sesja**: weryfikacja liczb
       i tez regułowych, których poprzednia sesja nie tknęła (sekcje poza 701/702
-      i „do weryfikacji u źródła" z §7 audytu PR #134).
-- [ ] D3 — **sondy własne na warstwy i znaczniki** (pary efektów na prawdziwych
+      i „do weryfikacji u źródła" z §7 audytu PR #134). Wynik: 482 numery
+      (istnienie) + 175 nowych cytatów #135 w `src/` (semantyka 6xx/7xx) —
+      0 rozjazdów; kandydat `205.1a` rozstrzygnięty jako poprawny.
+- [x] D3 — **sondy własne na warstwy i znaczniki** (pary efektów na prawdziwych
       kartach, kolejność 613.7, przejście przez zmianę strefy) — nowe piny.
-- [ ] D4 — pozycje otwarte planu poprzedniej sesji (O-4/O-5 = karty spoza
+      Wynik: brak luki do zapinowania (wszystkie wejścia mają znaczniki;
+      613.7e/f/g mają piny z #135).
+- [x] D4 — pozycje otwarte planu poprzedniej sesji (O-4/O-5 = karty spoza
       katalogu: bez zmian, dopóki karta nie wejdzie).
 
 ## Etap E — domknięcie sesji (ADR 0013)
 
-- [ ] E1 — pomiar bram na koniec (`npm test`, `npm run build`,
-      `node --test test/bot-benchmark.test.js`).
-- [ ] E2 — `docs/PROJECT_HISTORY.md` + `docs/setup/HANDOFF_2026-09-24b.md`,
-      aktualizacja `README.md` i planu (podsumowanie wykonania).
-- [ ] E3 — opis PR zaktualizowany kumulatywnie + blok przekazania w czacie.
+- [x] E1 — pomiar bram na koniec: `npm test` **6462/6462** (~225 s),
+      `npm run test:all` **6472/6472** (0 fail, ~387 s), `npm run build`
+      **60 modułów / 4199,5 kB** (bez zmian — sesja nie ruszała `src/`).
+- [x] E2 — `docs/PROJECT_HISTORY.md` + `docs/ENGINE_MILESTONES.md` (**M426**),
+      `docs/setup/HANDOFF_2026-09-24b.md`; plan odhaczony (README bez zmian —
+      zakres sesji go nie dotyczy).
+- [x] E3 — opis PR #136 zaktualizowany kumulatywnie (znaleziska F-1/F-2/F-3,
+      commity C1–C3, wyniki Etapu D, bramy).
 
 ## Ryzyka i pułapki (z lektur)
 
