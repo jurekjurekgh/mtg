@@ -371,22 +371,41 @@ function staticConditionHolds(state, object, condition) {
 }
 
 /**
- * Liczba RÓŻNYCH typów kart wśród kart we WSZYSTKICH grobach (Tarmogoyf —
- * token Disy the Restless; wariant graveyardCardTypeCount liczący jednego
- * gracza). Tokeny nie są kartami (name ustawione) i się nie liczą.
+ * ZAMKNIĘTA lista TYPÓW KART (CR 205.2a) — JEDNO źródło dla wszystkich
+ * konsumentów (O-2 audytu PR #134, L41/L48: ta sama lista siedziała wcześniej
+ * w dwóch plikach jako `DELIRIUM_CARD_TYPES` w `triggers.js` i
+ * `ALL_GRAVEYARD_CARD_TYPES` tutaj; 16 elementów, zero różnicy, a od PR #134
+ * jedna z nich decydowała o dostępności zdolności — bramka delirium
+ * Resurrected Cultist).
+ *
+ * Konsumenty:
+ *   • delirium (CR 207.2c) — `graveyardCardTypeCount` w `triggers.js`
+ *     i bramka aktywacji w `abilities.js`;
+ *   • „liczba typów kart we wszystkich grobach” (Tarmogoyf — token Disy the
+ *     Restless) — `allGraveyardsCardTypeCount` poniżej;
+ *   • dozwolone typy kart w warstwie stołu (`render.js`).
+ *
+ * Nadtypy (Basic, Legendary, Snow, World) NIE są typami kart i nie wchodzą do
+ * listy; tokeny w grobie nie są kartami (`name` ustawione) i nie wnoszą typu.
  */
-const ALL_GRAVEYARD_CARD_TYPES = Object.freeze([
+export const CARD_TYPES = Object.freeze([
   'Artifact', 'Battle', 'Conspiracy', 'Creature', 'Dungeon', 'Enchantment',
   'Instant', 'Kindred', 'Land', 'Phenomenon', 'Plane', 'Planeswalker',
   'Scheme', 'Sorcery', 'Tribal', 'Vanguard',
 ]);
+
+/**
+ * Liczba RÓŻNYCH typów kart wśród kart we WSZYSTKICH grobach (Tarmogoyf —
+ * token Disy the Restless; wariant graveyardCardTypeCount liczący jednego
+ * gracza). Tokeny nie są kartami (name ustawione) i się nie liczą.
+ */
 export function allGraveyardsCardTypeCount(state) {
   const present = new Set();
   for (const objectId of state.zones.graveyard) {
     const object = state.objects.get(objectId);
     if (!object || object.name != null) continue;
     for (const type of object.types ?? []) {
-      if (ALL_GRAVEYARD_CARD_TYPES.includes(type)) present.add(type);
+      if (CARD_TYPES.includes(type)) present.add(type);
     }
   }
   return present.size;

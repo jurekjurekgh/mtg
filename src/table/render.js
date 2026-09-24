@@ -6,6 +6,7 @@ import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { castsWithoutPayingMana, hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
 import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
+import { CARD_TYPES } from '../engine/permanents.js';
 import { coloredPipsOf } from '../engine/mana-cost.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
@@ -1032,10 +1033,13 @@ function altarTypeCount(session) {
   // nie supertypy; baza danych niesie je jawnie (ADR 0002). Używana do badge'a
   // Altaru i do opisu buffa +X/+X w overlayu. View ma już karty z grobów,
   // session dostarcza definicji typów (cardDetails).
-  // Dozwolone typy kart = ALL_GRAVEYARD_CARD_TYPES z permanents.js (CR 205.2a).
-  // Filtr wyklucza supertypy (Basic, Legendary, Snow) — inaczej Basic Forest
-  // liczyłby się jako 2 typy (Basic+Land) zamiast 1 (Land).
-  const ALLOWED = new Set(['Artifact','Battle','Conspiracy','Creature','Dungeon','Enchantment','Instant','Kindred','Land','Phenomenon','Plane','Planeswalker','Scheme','Sorcery','Tribal','Vanguard']);
+  // Dozwolone typy kart = wspólna `CARD_TYPES` z `permanents.js` (CR 205.2a):
+  // O-2 audytu PR #134 — ten sam zbiór siedział wcześniej w TRZECH miejscach
+  // (tutaj, `DELIRIUM_CARD_TYPES` w `triggers.js`, `ALL_GRAVEYARD_CARD_TYPES`
+  // w `permanents.js`), a jeden z nich decydował o dostępności zdolności (L41).
+  // Lista nie zawiera nadtypów, więc Basic Forest liczy się jako 1 typ (Land),
+  // nie 2 (Basic+Land).
+  const ALLOWED = new Set(CARD_TYPES);
   try {
     const view = session.view();
     const grave = view.zones?.graveyard ?? [];

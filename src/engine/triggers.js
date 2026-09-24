@@ -10,7 +10,10 @@ import {
 import { addCounter, hasCounter } from './counters.js';
 import { deathZoneFor } from './zones.js';
 import { changeLife, setPlayerSpeed } from './players.js';
-import { effectiveAbilities, effectiveKeywords, effectivePower, wardAmountOf, grantKeywordsUntilEndOfTurn } from './permanents.js';
+// CARD_TYPES (O-2 audytu PR #134, L41): zamknięta lista typów kart (CR 205.2a)
+// ma JEDNO źródło w `permanents.js` — delirium (CR 207.2c), licznik wszystkich
+// grobów i dozwolone typy w `render.js` czytają tę samą listę.
+import { CARD_TYPES, effectiveAbilities, effectiveKeywords, effectivePower, wardAmountOf, grantKeywordsUntilEndOfTurn } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './resources.js';
 
@@ -39,18 +42,6 @@ import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './
  * Opcjonalny koszt triggera: `payMana` / `payLife` w deskryptorze — trigger
  * odpala się tylko, gdy kontroler może zapłacić (deterministyczne „you may").
  */
-
-/**
- * Typy KART (delirium, CR 207.2c): liczba różnych typów kart wśród kart
- * w grobie gracza. Nadtypy (Basic, Legendary…) się nie liczą — filtrujemy
- * do zamkniętej listy typów kart. Tokeny w grobie nie są kartami (name
- * ustawione) i nie wnoszą typu.
- */
-const DELIRIUM_CARD_TYPES = Object.freeze([
-  'Artifact', 'Battle', 'Conspiracy', 'Creature', 'Dungeon', 'Enchantment',
-  'Instant', 'Kindred', 'Land', 'Phenomenon', 'Plane', 'Planeswalker',
-  'Scheme', 'Sorcery', 'Tribal', 'Vanguard',
-]);
 
 /**
  * Speed (Batch 24, Glitch Ghost Surveyor — „Start your engines!"): wzrasta
@@ -87,7 +78,9 @@ function bumpSpeedOnLifeLost(state, loserId) {
 }
 
 /**
- * Liczba różnych typów kart obecnych w grobie gracza (delirium: próg 4).
+ * Liczba różnych typów kart obecnych w grobie gracza (delirium, CR 207.2c:
+ * próg 4). Filtr typów to wspólna `CARD_TYPES` (CR 205.2a) — nadtypy się nie
+ * liczą, tokeny w grobie nie są kartami (`name` ustawione) i nie wnoszą typu.
  */
 export function graveyardCardTypeCount(state, playerId) {
   const present = new Set();
@@ -95,7 +88,7 @@ export function graveyardCardTypeCount(state, playerId) {
     const object = state.objects.get(objectId);
     if (!object || object.controllerId !== playerId || object.name != null) continue;
     for (const type of object.types ?? []) {
-      if (DELIRIUM_CARD_TYPES.includes(type)) present.add(type);
+      if (CARD_TYPES.includes(type)) present.add(type);
     }
   }
   return present.size;
