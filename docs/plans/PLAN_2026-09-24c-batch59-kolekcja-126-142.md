@@ -144,10 +144,16 @@ w `test/real-cards-batch59.test.js`) używają odtąd JEDNEJ numeracji — poni�
       mechaniczne idą na obiekcie Z TALII (`setupCardMatch` + `decks/worek-basni.txt`)
       — tylko materializacja talii niesie `transformTo` i `frontFaceId` (L21).
       Bramy: `npm test` 6511/6511 (0 fail), build 60 modułów / 4239,9 kB.
-- [ ] **G1.11** — talie singleton (Krok 5, generator ADR 0023/0024) +
-      regeneracja `decks/*` + `docs/` (M427, handoff).
-- [ ] **G1.12** — domknięcie: `npm test` + `npm run test:all` + `npm run build`,
-      wpis M427, handoff, opis PR #136.
+- [x] **G1.11** — talie singleton (Krok 5, generator ADR 0023/0024):
+      regeneracja po każdej karcie; plan „Eldraine" (Bird Admirer) i „Kamigawa"
+      (Kumano's Blessing, Memory's Journey) siedzą w worku „Baśnie" → worek
+      urósł do 44 kart / 15 landów, liczniki README odświeżone (M203/7).
+      `docs/`: wpisy **M427** w `docs/PROJECT_HISTORY.md`
+      i `docs/ENGINE_MILESTONES.md` + handoff
+      `docs/setup/HANDOFF_2026-09-24c.md`.
+- [x] **G1.12** — domknięcie: `npm test` 6511/6511 (0 fail), `npm run test:all`
+      6521/6521 (0 fail, ~340 s), `npm run build` 60 modułów / 4239,9 kB;
+      opis PR #136 uzupełniony kumulatywnie (sesje 24b + 24c).
 
 ## Bramy i zasady
 

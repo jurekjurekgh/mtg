@@ -7607,3 +7607,67 @@ Pętla jakości (Etap D): 6 partii Żywego Testera bez zgłoszeń detektorów i 
 runtime-errorów; łowy CR na 175 nowych cytatach #135 (sekcje 6xx/7xx) — bez
 rozjazdów; kandydat `205.1a` rozstrzygnięty jako poprawny (cytat dosłowny).
 Bramy: `npm test` **6462/6462**; handoff: `docs/setup/HANDOFF_2026-09-24b.md`.
+
+## M427 — batch 59: kolekcja 126–142 (10 kart, sesja 2026-09-24c, PR #136)
+
+Zlecenie właściciela: 11 wpisów arkusza = **10 kart** (126 MID / 127 MID to
+przód i tył jednej karty dwustronnej). Plan:
+`docs/plans/PLAN_2026-09-24c-batch59-kolekcja-126-142.md`; karty wchodziły po
+jednej, każda jako zielony commit z pinami w `test/real-cards-batch59.test.js`
+(49 testów), snapshotem Scryfall i regeneracją talii (Krok 5):
+
+| etap | karta | commit | nowa mechanika w silniku |
+| --- | --- | --- | --- |
+| G1.1 | Charismatic Vanguard (129 DMU) | `44dc8eb` | `buff_creatures_you_control` `{4}{W}` (zbiór z CR 611.2c) |
+| G1.2 | Sun-Collared Raptor (141 RIX) | `44dc8eb` | `pump` +3/+0 bez limitu aktywacji |
+| G1.3 | Savage Hunger (142 ALA) | `e135540` | aura + cycling `{2}` z ręki (CR 702.29a) |
+| G1.4 | Join the Dance (138 MID) | `e135540` | dwa tokeny 1/1 W Human + flashback na sorcery |
+| G1.5 | Waveskimmer Aven (134 ALA) | `88e46ee` | exalted liczący DEKLARACJĘ atakujących (ruling ALA) |
+| G1.6 | Slithering Cryptid (139 TMT) | `88e46ee` | hybryda `{2}{G/U}` + predefined token **Mutagen** (lustro `tokens.js`, L41) |
+| G1.7 | Scavenging Harpy (130 THB) | `2987d3b` | typ celu `card_in_opponent_graveyard` + `exile_graveyard_card` |
+| G1.8 | Memory's Journey (131 ISD) | `ba5932c` | ZALEŻNE pozycje celu (`graveyardOfSlot`) + wspólny `legalTargetCombos` + `shuffle_graveyard_cards_into_library` |
+| G1.9 | Kumano's Blessing (135 BOK) | `adcb2e5` | pary obrażeń `damageSourcesThisTurn` + efekt zastępczy aury `exileIfDiesFromEnchantedDamage` |
+| G1.10 | Bird Admirer // Wing Shredder (126/127 MID) | `1265cf5` | daybound/nightbound + bramka `dayNightDriven` (tylko para tych zdolności obraca) |
+
+Cztery zmiany mają charakter ogólny, nie „jednokartowy" (ADR 0002):
+
+- **Wspólny enumerator kombinacji celów** (`legalTargetCombos`, `spells.js`) —
+  zastąpił `cartesian` i lokalny duplikat `cartesianTargetPools`
+  w `game-state.js`; grupy pozycji dzielące jedno wystąpienie słowa „target"
+  (`targetWord`), brak luk przy pozycjach opcjonalnych, cap wariantów panelu.
+  Dołożony też zakaz celowania w SAMĄ SIEBIE dla źródeł nie-permanentów
+  (ruling ISD 2011-09-22) i `validateTargets(…, referenceChosen)` dla
+  rewalidacji pozycji zależnych (CR 608.2b).
+- **Pary obrażeń „this turn"** (`permanents.recordDamageSource` →
+  `state.damageSourcesThisTurn`, reset w cleanupie CR 514.2) — silnik umie
+  odpowiedzieć na pytanie „czy obrażenia zadał KONKRETNY stwór", czego wymaga
+  rodzina efektów „dealt damage by … this turn". Decyzja zapada w chwili
+  śmierci (CR 616.1) w `zones.exiledByEnchantedDamage`, czytana przez
+  `deathZoneFor` (wszystkie ścieżki śmierci) i stemplująca odznakę
+  `meta.exiledBy` (M262).
+- **Bramka obrotu DFC daybound/nightbound** (`effects.transform` +
+  `dayNightDriven`) — permanent daybound/nightbound obraca wyłącznie para tych
+  zdolności (ruling MID 2021-09-24); przyszłe efekty typu Moonmist nie ruszą
+  wilkołaków.
+- **Event `library_shuffled`** (M134) + opis efektu wtasowania na kaflu.
+
+Domknięcia przy okazji (odkryte przez nowe karty i zmierzone pełnym biegiem):
+CSV kolekcji 502 → **513** pozycji (`withArt` 513), tokeny katalogu 43 → **44**
+(M419/B), tylne strony DFC 8 → **9** (+ `PARY` w D/9 = 8 par), regeneracja
+`decks/*` generatorem planów (ADR 0023/0024) z licznikami README (M203/7),
+snapshoty `docs/cards/scryfall-{charismatic-vanguard,sun-collared-raptor,
+savage-hunger,join-the-dance,waveskimmer-aven,slithering-cryptid,
+scavenging-harpy,memory-s-journey,kumanos-blessing,bird-admirer}.json`
+(10 plików, rulingi przy kartkach — ADR 0028, także puste listy).
+
+**KOREKTA metodyczna (G1.8):** katalog roboczy `/home/user/batch59-snapshots/`
+nie przetrwał resetu środowiska — snapshoty od G1.8 pobierano ponownie
+(`fetch_page`: `cards/named` + `/rulings`) i zapisywano OD RAZU do
+`docs/cards/`; wcześniejsze „sieroty" w planie były nieaktualne.
+**KOREKTA techniczna (G1.10):** scenariusze mechaniczne kart dwustronnych
+uruchamiać na obiekcie Z TALII (`setupCardMatch`) — tylko materializacja talii
+niesie `transformTo` i `frontFaceId`, więc ręcznie wstawiony obiekt testuje
+atrapę bez drugiej strony (L21).
+
+Bramy: `npm test` **6511/6511** (0 fail), build **60 modułów / 4239,9 kB**;
+handoff: `docs/setup/HANDOFF_2026-09-24c.md`.

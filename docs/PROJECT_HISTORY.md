@@ -12820,3 +12820,50 @@ appropriate set"); potwierdzone też `701.19c`, `613.9` i `115.6`.
 Bramy: `npm test` **6462/6462** (było 6455/6455 przed sesją: +3 pary C2,
 +4 inwarianty C3), build bez zmian (60 modułów / 4199,5 kB). Handoff:
 `docs/setup/HANDOFF_2026-09-24b.md`.
+
+## M427 — batch 59: kolekcja 126–142 (10 kart, sesja 2026-09-24c, PR #136)
+
+Zlecenie właściciela (2026-09-24, po zamknięciu sesji 24b): nowy batch kart —
+11 wpisów arkusza = **10 kart**, bo `126 MID` i `127 MID` to przód i tył
+jednej karty dwustronnej (Bird Admirer // Wing Shredder). Realizacja według
+`docs/cards/HOW_TO_ADD_CARD.md` Kroki 1–9: Scryfall **przed** kodowaniem
+(ADR 0010 §2a, `set=` obowiązkowe; sandbox blokuje `curl`, dane przez
+`fetch_page`), rulingi przy kartce (ADR 0028 — także puste listy jako dowód
+sprawdzenia), mechaniki w 100% bez `limitations`, nowe mechaniki wyłącznie
+generycznie (ADR 0002), talie singleton generatorem planów (Krok 5, ADR
+0023/0024), każda karta = jeden zielony commit z pinami.
+
+Karty (jeden commit na etap, `G1.x` = kolejność wdrożenia):
+`44dc8eb` Charismatic Vanguard (129 DMU) + Sun-Collared Raptor (141 RIX) ·
+`e135540` Savage Hunger (142 ALA) + Join the Dance (138 MID) · `88e46ee`
+Waveskimmer Aven (134 ALA) + Slithering Cryptid (139 TMT) + token Mutagen ·
+`2987d3b` Scavenging Harpy (130 THB) · `ba5932c` Memory's Journey (131 ISD) ·
+`adcb2e5` Kumano's Blessing (135 BOK) · `1265cf5` Bird Admirer // Wing
+Shredder (126/127 MID). Dane etapu G0: `fa8d70f`.
+
+Cztery mechaniki silnika są ogólne i będą pracować dla kolejnych kart:
+wspólny enumerator kombinacji celów `legalTargetCombos` (zastąpił `cartesian`
+i duplikat z `game-state.js`; grupy pozycji wg wystąpienia słowa „target",
+cap panelu, zakaz celowania w samą siebie dla czarów), ZALEŻNE pozycje celu
+(`graveyardOfSlot` → `graveyardOwnerId`: pula licząca się po wyborze gracza),
+pary obrażeń „this turn" (`damageSourcesThisTurn` — odpowiedź na „zadał
+obrażenia KONKRETNY stwór", na której stoi efekt zastępczy Kumano's Blessing;
+decyzja przy śmierci, CR 616.1) oraz bramka obrotu permanentów daybound/
+nightbound (`dayNightDriven` — obraca wyłącznie para tych zdolności, ruling
+MID 2021-09-24). Nowe efekty: `shuffle_graveyard_cards_into_library`
+(z eventem `library_shuffled`, M134), `exile_graveyard_card`, typ celu
+`card_in_opponent_graveyard`, predefined token **Mutagen**, hybrydowy pip
+`{2}{G/U}`.
+
+Dwa pouczenia metodyczne zapisane przy tej okazji: (1) katalog roboczy
+snapshotów poza repozytorium nie przetrwał resetu sandboxa — snapshot pobierać
+i zapisywać OD RAZU w `docs/cards/` (KOREKTA w planie i w M427); (2) dla kart
+dwustronnych scenariusze mechaniczne trzeba budować z PRAWDZIWEJ talii
+(`setupCardMatch`), bo tylko materializacja talii niesie `transformTo`
+i `frontFaceId` — ręcznie wstawiony obiekt testuje atrapę bez drugiej strony
+(L21). Domknięte też piny, które nowe karty odsłoniły: CSV 502 → 513 pozycji,
+tokeny 43 → 44, tylne strony DFC 8 → 9, liczniki talii w README, etykiety
+logu i opisy kafli.
+
+Bramy: `npm test` **6511/6511** (0 fail), build **60 modułów / 4239,9 kB**;
+pełna brama `npm run test:all` i handoff `docs/setup/HANDOFF_2026-09-24c.md`.
