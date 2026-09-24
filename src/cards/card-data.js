@@ -3939,6 +3939,61 @@ export const REAL_CARDS = Object.freeze([
     plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
+  // ==========================================================================
+  // Batch 59 (2026-09-24) — lista właściciela: 126 MID (DWUSTRONNA, przód i tył),
+  // 129 DMU, 130 THB, 131 ISD, 134 ALA, 135 BOK, 138 MID, 139 TMT, 141 RIX,
+  // 142 ALA. Dane Oracle + rulingi pobrane ze Scryfalla 2026-09-24, set-aware
+  // (docs/cards/scryfall-*.json, ADR 0010 §2a; rulingi „przy kartce" — ADR 0028).
+  // Plan: docs/plans/PLAN_2026-09-24c-batch59-kolekcja-126-142.md.
+  //
+  // Karty wchodzą do katalogu TYLKO w 100% gotowe i po jednej, w swoim etapie
+  // (ADR 0022 + M419). Etapy: G1.1 Charismatic Vanguard, G1.2 Sun-Collared
+  // Raptor, G1.3 Savage Hunger, G1.4 Join the Dance, G1.5 Waveskimmer Aven,
+  // G1.6 Scavenging Harpy, G1.7 Memory's Journey, G1.8 Kumano's Blessing,
+  // G1.9 Slithering Cryptid, G1.10 Bird Admirer // Wing Shredder.
+  // ==========================================================================
+  // Charismatic Vanguard (DMU) {2}{W} 3/2 Dwarf Soldier — „{4}{W}: Creatures
+  // you control get +1/+1 until end of turn." Mechanizm hymnu czasowego istniał
+  // (Fortify: `buff_creatures_you_control`), więc karta wnosi dane + test.
+  // Rulingi: brak (sprawdzone 2026-09-24 — WotC nie opublikował nic).
+  defineCard({
+    id: 'charismatic-vanguard', name: 'Charismatic Vanguard', set: 'DMU',
+    types: ['Creature'], subtypes: ['Dwarf', 'Soldier'], colors: ['W'],
+    power: 3, toughness: 2, manaCost: 3,
+    oracleText: '{4}{W}: Creatures you control get +1/+1 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/5/a51764fe-0d75-4cfa-a699-0d9e7ffb7843.jpg?1783921370',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 5, colors: ['W'] },
+        effect: { type: 'buff_creatures_you_control', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 129, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['hymn do końca tury: zbiór objętych stworów ustala się W CHWILI ROZSTRZYGNIĘCIA (CR 611.2c) — stwór wchodzący później w tej turze buffa NIE dostaje'],
+  }),
+
+  // Sun-Collared Raptor (RIX) {1}{R} 1/2 Dinosaur — trample + „{2}{R}: This
+  // creature gets +3/+0 until end of turn." Ten sam deskryptor `pump` co
+  // Snarling Wolf; różnica: bez limitu aktywacji (Oracle nie ma „once each turn").
+  defineCard({
+    id: 'sun-collared-raptor', name: 'Sun-Collared Raptor', set: 'RIX',
+    types: ['Creature'], subtypes: ['Dinosaur'], colors: ['R'],
+    power: 1, toughness: 2, manaCost: 2, keywords: ['trample'],
+    oracleText: 'Trample\n{2}{R}: This creature gets +3/+0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/2/62fbd1bc-3e57-43d5-ad54-443ca740fcc4.jpg?1783935291',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['R'] },
+        effect: { type: 'pump', power: 3, toughness: 0 },
+      }),
+    ],
+    artId: 141, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+    notes: ['+3/+0 do końca tury można aktywować wielokrotnie (każda aktywacja to osobny wpis ze znacznikiem czasu — CR 613.7b)'],
+  }),
 ]);
 
 

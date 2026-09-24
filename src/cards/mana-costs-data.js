@@ -501,4 +501,8 @@ export const MANA_COSTS = {
   // {2}{B}{B} i żyje w deskryptorze zdolności, nie w MANA_COSTS (strażnik B3).
   "resurrected-cultist": "{2}{B}",
   "prishes-wanderings": "{2}{G}",
+  // Batch 59 (2026-09-24) — koszty DRUKU (zdolności mają własne koszty
+  // w deskryptorach, np. {4}{W} Vanguarda i {2}{R} Raptora).
+  "charismatic-vanguard": "{2}{W}",
+  "sun-collared-raptor": "{1}{R}",
 };
