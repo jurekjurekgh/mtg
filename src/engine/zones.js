@@ -39,7 +39,50 @@ export function deathZoneFor(state, object) {
   if (((object?.counters ?? {}).finality ?? 0) > 0) return 'exile';
   // M262: wpisy {id, byCardId} — sprawdzamy id obiektu w naznaczonych.
   if ((state.exileIfDiesThisTurn ?? []).some((entry) => entry.id === object?.id)) return 'exile';
+  // Batch 59 (Kumano's Blessing): efekt zastępczy AURY należącej do gracza —
+  // „If a creature dealt damage by enchanted creature this turn would die,
+  // exile it instead." Wykładnię timingu (kiedy czytać warunek) opisuje
+  // `exiledByEnchantedDamage` niżej.
+  if (exiledByEnchantedDamage(state, object)) return 'exile';
   return 'graveyard';
+}
+
+/**
+ * Batch 59 (Kumano's Blessing): czy permanent umiera jako ofiara obrażeń
+ * zadanych w tej turze przez stwora, który JEST zaczarowany aurą z
+ * deskryptorem `exileIfDiesFromEnchantedDamage`? Zwraca `cardId` aury
+ * (odznaka `meta.exiledBy` — M262) albo `null`, gdy warunek nie zachodzi.
+ *
+ * Warunek sprawdzamy w CHWILI śmierci (CR 616.1), a nie przy zadawaniu
+ * obrażeń: „enchanted creature" to stwór, który jest zaczarowany TERAZ
+ * (rulingowa wykładnia efektów typu „dealt damage by … this turn" — inne
+ * sformułowanie tego samego wzorca co CR 608.2b dla celów). Dlatego engine
+ * pamięta PARY {ofiara, źródło} z tej tury (`damageSourcesThisTurn`,
+ * czyszczone w cleanup), a nie sam fakt „ten stwór oberwał": aura dołożona
+ * PO zadaniu obrażeń nadal wygania ofiarę, a aura odczepiona od stwora
+ * (albo zdjęta razem z nim z pola bitwy) przestaje działać.
+ *
+ * Funkcja mieszka w `zones.js` (najniższa warstwa grafu importów — jak
+ * `deathZoneFor`) i czyta wyłącznie dane obiektów: żadnego importu
+ * `attachments.js`, żadnego cyklu (`test/module-graph.test.js`).
+ */
+export function exiledByEnchantedDamage(state, object) {
+  // „If a CREATURE …": permanent niebędący stworem nie kwalifikuje się.
+  if (!object?.id || object.kind !== 'creature') return null;
+  const dealers = new Set((state.damageSourcesThisTurn ?? [])
+    .filter((entry) => entry?.objectId === object.id)
+    .map((entry) => entry.sourceId));
+  if (dealers.size === 0) return null;
+  for (const dealerId of dealers) {
+    const dealer = state.objects.get(dealerId);
+    if (!dealer || dealer.zone !== 'battlefield' || dealer.kind !== 'creature') continue;
+    for (const battlefieldId of state.zones.battlefield) {
+      const attachment = state.objects.get(battlefieldId);
+      if (!attachment || attachment.zone !== 'battlefield' || attachment.attachedTo !== dealerId) continue;
+      if (attachment.aura?.exileIfDiesFromEnchantedDamage) return attachment.cardId ?? 'effect';
+    }
+  }
+  return null;
 }
 
 /**

@@ -40,7 +40,7 @@ batch 58 (komentarz `artId: 265, plan: 'Zendikar'` dla OGW).
       `supported`/`token`/`back`). Dlatego **snapshot wchodzi w tym samym
       commicie co definicja karty**, a pliki czekające leżą POZA repozytorium
       (katalog roboczy `/home/user/batch59-snapshots/`); w drzewie zostało
-      8 snapshotów wdrożonych kart (G0 → G1.1–G1.8), 2 czekają na G1.9–G1.10.
+      9 snapshotów wdrożonych kart (G0 → G1.1–G1.9), 1 czeka na G1.10.
       **KOREKTA (G1.8):** katalog roboczy `/home/user/batch59-snapshots/` nie
       istnieje (środowisko go nie zachowało) — snapshot G1.8 pobrano ponownie
       (`fetch_page`: `cards/named` + `/rulings`) i zapisano OD RAZU w
@@ -121,10 +121,18 @@ w `test/real-cards-batch59.test.js`) używają odtąd JEDNEJ numeracji — poni�
       Pin na rulingi: gracz-cel obowiązkowy, brak wskazanych kart → gracz i tak
       tasuje, karta nielegalna w chwili rozstrzygnięcia → nie wchodzi (CR
       608.2b). Bramy: `npm test` 6498/6498 (0 fail), build 60 modułów.
-- [ ] **G1.9 Kumano's Blessing** (135 BOK) — ciągły efekt zastępczy z aury:
+- [x] **G1.9 Kumano's Blessing** (135 BOK) — generyczny efekt zastępczy aury:
       „stwór, któremu ZACZAROWANY zadał obrażenia w tej turze, zamiast umrzeć →
-      wygnaj”. Wymaga znacznika „obrażenia od tego źródła w tej turze” na
-      ścieżce śmierci (`destruction.js`/`deathZoneFor`) + resetu (L166/L167).
+      wygnaj”. Nowy stan `damageSourcesThisTurn` (pary {ofiara, źródło} z tej
+      tury; zapisuje `permanents.recordDamageSource` — wołany z `markDamage`
+      i `markDealtDamageThisTurn`, więc i walka, i fight/efekty) + decyzja
+      w `zones.exiledByEnchantedDamage` czytana przez `deathZoneFor` (wszystkie
+      ścieżki śmierci) i przez odznakę `meta.exiledBy` (M262). Warunek liczony
+      PRZY ŚMIERCI (CR 616.1), więc aura dołożona po obrażeniach też wygania,
+      a odczepiona przestaje. Deskryptor `exileIfDiesFromEnchantedDamage`
+      przeprowadzony przez łańcuch registry → identity (L21) + opis na kaflu
+      (M138/#11) + reset w cleanupie (CR 514.2, L166/L167) + odcisk stanu (B2).
+      Bramy: `npm test` 6506/6506 (0 fail), build 60 modułów.
 - [ ] **G1.10 Bird Admirer // Wing Shredder** (126/127 MID) — DFC
       daybound/nightbound (wzorzec `tireless-hauler`), artId 126 (przód) i 127
       (tył, `status: 'back'`).

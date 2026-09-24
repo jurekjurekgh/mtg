@@ -447,6 +447,11 @@ export function createGameState({ seed, players }) {
     // exile it instead” — czyszczone w cleanup.
     exileIfDiesThisTurn: [],
     gainLifeIfDiesThisTurn: [],
+    // Batch 59 (Kumano's Blessing): pary {objectId, sourceId} obrażeń zadanych
+    // w tej turze — na tej podstawie `deathZoneFor` wie, czy ofiarę zabiły
+    // obrażenia ZACZAROWANEGO stwora („dealt damage by … this turn”).
+    // Czyszczone w cleanup razem z pozostałymi efektami „this turn”.
+    damageSourcesThisTurn: [],
     // Animacje z linkiem do źródła (Skilled Animator — „as long as this
     // creature remains on the battlefield"): wpisy { sourceId, targetId };
     // cofane przy odejściu źródła z pola bitwy (objects.js).
@@ -5374,6 +5379,8 @@ export function execute(state, input) {
           // M177/A: znaczniki „exile zamiast śmierci” wygasają z końcem tury.
           state.exileIfDiesThisTurn = [];
           state.gainLifeIfDiesThisTurn = [];
+          // Batch 59: „dealt damage … this turn" kończy się w cleanup (CR 514.2).
+          state.damageSourcesThisTurn = [];
           // M158/Batch 39 (Invasion of the Giants III): rabat „this turn" wygasa.
           state.pendingSpellDiscounts = [];
           // CR 514.1 (limit ręki): w cleanup TYLKO AKTYWNY gracz odrzuca

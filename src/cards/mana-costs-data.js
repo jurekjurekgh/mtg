@@ -513,4 +513,5 @@ export const MANA_COSTS = {
   // Memory's Journey (ISD): koszt druku {1}{U}; flashback {G} to koszt
   // alternatywny i żyje w deskryptorze `spell.flashback`.
   "memory-s-journey": "{1}{U}",
+  "kumanos-blessing": "{2}{R}",
 };

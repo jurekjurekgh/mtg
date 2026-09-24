@@ -142,7 +142,7 @@ liczone z plików `decks/*.txt`).
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
 |---|---|---|---:|---:|---:|
-| `worek-basni` | Worek: Baśnie | WUBRG | 41 | 14 | 27 |
+| `worek-basni` | Worek: Baśnie | WUBRG | 42 | 14 | 28 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 32 | 11 | 21 |
 | `worek-legend` | Worek: Legendy | WUBRG | 23 | 8 | 15 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 29 | 10 | 19 |

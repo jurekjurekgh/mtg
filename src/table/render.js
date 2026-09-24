@@ -2051,6 +2051,12 @@ export function rulesText(info) {
       // Opis generyczny po deskryptorze — nowa jakość dopisuje się tutaj,
       // a strażnik M138/#11 pilnuje, żeby żadne pole aury nie zostało nieme.
       aura.protection ? `zaczarowany ma ochronę przed ${protectionQualityLabel(aura.protection)}` : '',
+      // Batch 59 (Kumano's Blessing): efekt zastępczy na śmierć ofiary obrażeń
+      // zaczarowanego stwora — M138/#11: każde pole deskryptora aury ma opis,
+      // inaczej kafel pokazuje samo „Enchantment — Aura”.
+      aura.exileIfDiesFromEnchantedDamage
+        ? 'stwór, któremu zaczarowany zadał obrażenia w tej turze, zamiast umrzeć zostaje wygnany'
+        : '',
     ].filter(Boolean).join(' · ')
     : '';
   // M192/Z4 (weryfikacja M193 Zywym Testerem): produkcja many ladu opisywana

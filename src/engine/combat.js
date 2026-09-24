@@ -1230,7 +1230,7 @@ function assignDamageToAttackers(state, events, blocker, blockerId, targets, amo
         removeLoyaltyForDamage(state, state.objects.get(attackerId), blockerDealt);
         addCounter(state, attackerId, '-1/-1', blockerDealt);
         events.push(...state.events.slice(countersBefore));
-        markDealtDamageThisTurn(state, attackerId);
+        markDealtDamageThisTurn(state, attackerId, blockerId);
       }
     } else if (blockerDealt > 0) {
       markDamage(state, attackerId, blockerDealt, blockerId);
@@ -1310,7 +1310,7 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
         removeLoyaltyForDamage(state, state.objects.get(blockerId), dealt);
         addCounter(state, blockerId, '-1/-1', dealt);
         events.push(...state.events.slice(countersBefore));
-        markDealtDamageThisTurn(state, blockerId);
+        markDealtDamageThisTurn(state, blockerId, attackerId);
       }
     } else if (dealt > 0) {
       markDamage(state, blockerId, dealt, attackerId);

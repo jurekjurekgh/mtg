@@ -616,12 +616,15 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     } else {
       removeLoyaltyForDamage(state, targetObject, dealt);
       addCounter(state, targetId, '-1/-1', dealt);
-      markDealtDamageThisTurn(state, targetId);
+      markDealtDamageThisTurn(state, targetId, sourceObject.id);
     }
   } else if (targetIsPlayer) {
     changeLife(state, targetId, -dealt);
   } else {
-    markDamage(state, targetId, dealt);
+    // Batch 59: źródło obrażeń jedzie do markDamage — bez niego para
+    // {ofiara, źródło} nie powstawała dla obrażeń nie-bojowych (Kumano's
+    // Blessing nie widziałaby obrażeń z fightu/efektów).
+    markDamage(state, targetId, dealt, sourceObject.id);
   }
   // Deathtouch (CR 702.2b): „Any amount of damage this deals to a creature is
   // enough to destroy it" — dotyczy WSZYSTKICH obrażeń, także niecombatowych

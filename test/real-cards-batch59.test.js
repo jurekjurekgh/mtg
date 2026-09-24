@@ -18,7 +18,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
+import { effectivePower, effectiveToughness, effectiveKeywords, replaceObject, markDamage } from '../src/engine/permanents.js';
 import { addMana } from '../src/engine/resources.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
 
@@ -670,4 +670,155 @@ test('B59/G1.8: przy dużym grobie oferta jest przycięta, ale trzyma skrajne wy
   assert.ok(offers.some((c) => c.targets.slice(1).filter((t) => t != null).length === 3),
     'wariant „trzy karty" (maksimum) zostaje');
   assert.ok(!offers.some((c) => c.targets.slice(1).filter((t) => t != null).length > 3), 'nigdy więcej niż trzy');
+});
+
+// ---- G1.9: Kumano's Blessing (135 BOK, plan Kamigawa) ----------------------
+// „Flash / Enchant creature / If a creature dealt damage by enchanted creature
+// this turn would die, exile it instead." Pierwszy efekt zastępczy pytający
+// o ŹRÓDŁO obrażeń: silnik znał dotąd tylko fakt „dostał obrażenia"
+// (`damagedThisTurn`). Pary {ofiara, źródło} zbiera `recordDamageSource`
+// (permanents.js), a `zones.exiledByEnchantedDamage` rozstrzyga w chwili
+// śmierci (CR 616.1) — dlatego aura dołożona PO obrażeniach też działa
+// („enchanted creature" czytamy teraz), a odczepiona przestaje.
+
+/** Walka: deklaracja ataku → okna → blok → obrażenia (ścieżka silnika). */
+function fight(state, attackerId, blockerId) {
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  run(state, { ...commands(state).find((c) => c.type === 'declare_attackers'), attackerIds: [attackerId] });
+  run(state, { type: 'pass_priority', playerId: 'p1' });
+  run(state, { type: 'pass_priority', playerId: 'p2' });
+  run(state, { type: 'declare_blockers', playerId: 'p2', assignments: { [attackerId]: [blockerId] } });
+  run(state, { type: 'pass_priority', playerId: 'p2' });
+  run(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+}
+
+/** Aura dołożona do stwora wprost (bez rzucania) — jak w testach aury M210. */
+function enchanting(state, auraId, hostId) {
+  return replaceObject(state, state.objects.get(auraId), { kind: 'aura', attachedTo: hostId });
+}
+
+const byCard = (state, cardId) => [...state.objects.values()].find((o) => o.cardId === cardId);
+
+test('B59/G1.9: Kumano\'s Blessing — dane Oracle, koszt, druk i deskryptor aury', () => {
+  const def = registry.get('kumanos-blessing');
+  assert.deepEqual(def.types, ['Enchantment']);
+  assert.deepEqual(def.subtypes, ['Aura']);
+  assert.deepEqual(def.colors, ['R']);
+  assert.equal(def.manaCost, 3);
+  assert.equal(def.set, 'BOK');
+  assert.equal(def.plan, 'Kamigawa');
+  assert.equal(def.artId, 135);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('56f0d9aa'), 'imageUri z druku BOK (bok/111)');
+  assert.equal(MANA_COSTS['kumanos-blessing'], '{2}{R}');
+  assert.deepEqual(def.keywords, ['flash'], 'Flash rzucamy w oknie instant (CR 702.8)');
+  assert.equal(def.aura.enchant, 'creature');
+  assert.equal(def.aura.exileIfDiesFromEnchantedDamage, true, 'deskryptor generyczny (ADR 0002)');
+});
+
+test('B59/G1.9: flash — aura rzucana w oknie instant i załączana do stwora', () => {
+  const state = game();
+  put(state, 'host', 'fear-of-burning-alive', 'p1', 'battlefield');
+  put(state, 'aura', 'kumanos-blessing', 'p1');
+  addMana(state, 'p1', 3, { colors: ['R'] });
+  // Krok blokujących = okno instant (nie main) — bez flash nie byłoby oferty.
+  state.turn = jumpToStep(state.turn, 'declare_blockers', 'p1');
+  const offer = commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'aura');
+  assert.ok(offer, 'aura z flash oferowana w oknie instant');
+  run(state, { ...offer, targetId: 'host' });
+  resolve(state);
+  const aura = find(state, 'kumanos-blessing');
+  assert.equal(aura.attachedTo, 'host', 'aura zaczarowuje wskazanego stwora');
+  assert.equal(aura.aura.enchant, 'creature');
+  assert.equal(aura.aura.exileIfDiesFromEnchantedDamage, true,
+    'deskryptor przechodzi łańcuch karta → registry → obiekt gry (L21)');
+});
+
+test('B59/G1.9: ofiara obrażeń zaczarowanego stwora idzie na WYGNANIE, nie do grobu', () => {
+  const state = game();
+  put(state, 'dealer', 'fear-of-burning-alive', 'p1', 'battlefield');
+  put(state, 'victim', 'soulmender', 'p2', 'battlefield');
+  put(state, 'aura', 'kumanos-blessing', 'p1', 'battlefield');
+  enchanting(state, 'aura', 'dealer');
+  fight(state, 'dealer', 'victim');
+  const victim = byCard(state, 'soulmender');
+  assert.equal(victim.zone, 'exile', 'śmierć od obrażeń bojowych zamiast grobu → wygnanie');
+  assert.equal(victim.meta.exiledBy, 'kumanos-blessing', 'odznaka źródła wygnania (M262)');
+  assert.equal(state.objects.get('dealer').zone, 'battlefield', 'zaczarowany atakujący przeżył (1/1 nie zabija 4/4)');
+});
+
+test('B59/G1.9: bez aury ten sam atak kończy się zwykłym grobem (kontrola)', () => {
+  const state = game();
+  put(state, 'dealer', 'fear-of-burning-alive', 'p1', 'battlefield');
+  put(state, 'victim', 'soulmender', 'p2', 'battlefield');
+  fight(state, 'dealer', 'victim');
+  assert.equal(byCard(state, 'soulmender').zone, 'graveyard');
+});
+
+test('B59/G1.9: obrażenia nie muszą być śmiertelne — liczy się ŹRÓDŁO z tej tury', async () => {
+  const { destroyPermanents } = await import('../src/engine/destruction.js');
+  const state = game();
+  put(state, 'dealer', 'fear-of-burning-alive', 'p1', 'battlefield');
+  put(state, 'victim', 'giant-spider', 'p2', 'battlefield');
+  put(state, 'aura', 'kumanos-blessing', 'p1', 'battlefield');
+  enchanting(state, 'aura', 'dealer');
+  markDamage(state, 'victim', 2, 'dealer'); // 2/4 przeżywa, ale „dostał obrażenia od zaczarowanego"
+  assert.deepEqual(state.damageSourcesThisTurn, [{ objectId: 'victim', sourceId: 'dealer' }],
+    'para {ofiara, źródło} zapisana (nie tylko „dostał obrażenia")');
+  destroyPermanents(state, ['victim']);
+  assert.equal(byCard(state, 'giant-spider').zone, 'exile',
+    'śmierć od INNEGO efektu też jest wygnaniem (Oracle: „would die", nie „lethal damage")');
+});
+
+test('B59/G1.9: aura podłożona PO obrażeniach też wygania (warunek liczony przy śmierci, CR 616.1)', async () => {
+  const { destroyPermanents } = await import('../src/engine/destruction.js');
+  const { deathZoneFor } = await import('../src/engine/zones.js');
+  const state = game();
+  put(state, 'dealer', 'fear-of-burning-alive', 'p1', 'battlefield');
+  put(state, 'victim', 'giant-spider', 'p2', 'battlefield');
+  markDamage(state, 'victim', 2, 'dealer');
+  assert.equal(deathZoneFor(state, state.objects.get('victim')), 'graveyard',
+    'bez aury na polu bitwy efektu zastępczego nie ma');
+  put(state, 'aura', 'kumanos-blessing', 'p1', 'battlefield');
+  enchanting(state, 'aura', 'dealer');
+  assert.equal(deathZoneFor(state, state.objects.get('victim')), 'exile',
+    'aura dołożona po obrażeniach przechwytuje śmierć — „enchanted creature" czytamy TERAZ');
+  destroyPermanents(state, ['victim']);
+  assert.equal(byCard(state, 'giant-spider').meta.exiledBy, 'kumanos-blessing');
+});
+
+test('B59/G1.9: aura odczepiona od stwora przestaje działać („enchanted creature")', async () => {
+  const { destroyPermanents } = await import('../src/engine/destruction.js');
+  const state = game();
+  put(state, 'dealer', 'fear-of-burning-alive', 'p1', 'battlefield');
+  put(state, 'other', 'razorfoot-griffin', 'p1', 'battlefield');
+  put(state, 'victim', 'giant-spider', 'p2', 'battlefield');
+  put(state, 'aura', 'kumanos-blessing', 'p1', 'battlefield');
+  enchanting(state, 'aura', 'dealer');
+  markDamage(state, 'victim', 2, 'dealer');
+  enchanting(state, 'aura', 'other'); // aura przeniesiona na innego stwora
+  destroyPermanents(state, ['victim']);
+  assert.equal(byCard(state, 'giant-spider').zone, 'graveyard',
+    'zaczarowany jest teraz INNY stwór, więc pary obrażeń nie łapie');
+});
+
+test('B59/G1.9: pary obrażeń wygasają w cleanupie (CR 514.2 — „this turn")', async () => {
+  const { destroyPermanents } = await import('../src/engine/destruction.js');
+  const state = game();
+  put(state, 'dealer', 'fear-of-burning-alive', 'p1', 'battlefield');
+  put(state, 'victim', 'giant-spider', 'p2', 'battlefield');
+  put(state, 'aura', 'kumanos-blessing', 'p1', 'battlefield');
+  enchanting(state, 'aura', 'dealer');
+  markDamage(state, 'victim', 2, 'dealer');
+  state.turn = jumpToStep(state.turn, 'end', 'p1');
+  // Pełna runda passów wychodzi z kroku końcowego i wchodzi w cleanup —
+  // dopiero TA ścieżka (nie ręczny jumpToStep) uruchamia blok sprzątania.
+  run(state, { type: 'pass_priority', playerId: 'p1' });
+  run(state, { type: 'pass_priority', playerId: 'p2' });
+  assert.equal(state.turn.step, 'cleanup', 'jesteśmy w cleanupie');
+  assert.deepEqual(state.damageSourcesThisTurn, [], 'pary obrażeń skasowane na koniec tury');
+  destroyPermanents(state, ['victim']);
+  assert.equal(byCard(state, 'giant-spider').zone, 'graveyard',
+    'w nowej turze obrażenia sprzed cleanupu nie wyganiają');
 });

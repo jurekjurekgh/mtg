@@ -4186,6 +4186,33 @@ export const REAL_CARDS = Object.freeze([
       'flashback {G}: rzut z grobu za koszt alternatywny, po opuszczeniu stosu karta na wygnanie (CR 702.34a)',
     ],
   }),
+  // Kumano's Blessing (BOK, Batch 59/G1.9): {2}{R} Aura — flash, enchant
+  // creature, „If a creature dealt damage by enchanted creature this turn
+  // would die, exile it instead." PIERWSZY efekt zastępczy, który pyta
+  // o ŹRÓDŁO obrażeń (dotąd engine znał tylko `damagedThisTurn`, czyli fakt
+  // „dostał obrażenia"): pary {ofiara, źródło} z tej tury zbiera
+  // `permanents.recordDamageSource`, a `zones.exiledByEnchantedDamage`
+  // rozstrzyga w chwili śmierci (CR 616.1), czy ofiarę zabił stwór
+  // ZACZAROWANY tą aurą — dlatego aura dołożona PO obrażeniach też działa,
+  // a odczepiona przestaje. Deskryptor generyczny (ADR 0002), bez nazwy
+  // karty w silniku; `flash` daje okno rzutu poza własną turą (CR 702.8).
+  // Rulingi: brak (sprawdzone 2026-09-24 — WotC nic nie opublikował do ISD/BOK
+  // tej karty).
+  defineCard({
+    id: 'kumanos-blessing', name: "Kumano's Blessing", set: 'BOK',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['R'], manaCost: 3,
+    keywords: ['flash'],
+    oracleText: "Flash\nEnchant creature\nIf a creature dealt damage by enchanted creature this turn would die, exile it instead.",
+    imageUri: 'https://cards.scryfall.io/large/front/5/6/56f0d9aa-4270-41cd-8993-765354c03d03.jpg?1783944187',
+    aura: { enchant: 'creature', exileIfDiesFromEnchantedDamage: true },
+    artId: 135, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'warunek sprawdzany przy ŚMIERCI ofiary (CR 616.1): działa też, gdy aurę dołożono już PO zadaniu obrażeń w tej turze, a gaśnie, gdy aura opuści stwora',
+      'wygnanie działa w każdej ścieżce śmierci — SBA, zniszczenie, sacrifice, obrażenia bojowe i nie-bojowe (wspólne `deathZoneFor`)',
+      'wygnana karta dostaje odznakę źródła (`meta.exiledBy` = kumanos-blessing, M262)',
+    ],
+  }),
 ]);
 
 

@@ -185,6 +185,10 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
         ? { replaceTokenCreation: Object.freeze({ ...aura.replaceTokenCreation }) }
         : {}),
       ...(aura.keepOwnAttachmentsOnProtection ? { keepOwnAttachmentsOnProtection: true } : {}),
+      // Batch 59 (Kumano's Blessing): efekt zastępczy „dealt damage by
+      // enchanted creature → exile" — lustro registry.js (L21: pole spoza
+      // łańcucha ginie po cichu i aura jest martwa).
+      ...(aura.exileIfDiesFromEnchantedDamage ? { exileIfDiesFromEnchantedDamage: true } : {}),
       // Batch 56 (Bonds of Faith): warunkowy pump po podtypie gospodarza —
       // lustro registry.js i attachments.js („gets +2/+2 as long as it's a
       // Human").
