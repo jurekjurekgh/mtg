@@ -3016,7 +3016,7 @@ export const REAL_CARDS = Object.freeze([
     artId: 62,
     plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
-    notes: ['odbiór liczony w warstwie ostatniej effectiveKeywords (po grantach) — wygrywa np. z buffem „gains flying" z innej aury'],
+    notes: ['W-4 (D4b, CR 613.9): utrata i nadania flying porządkowane znacznikami czasu (warstwa 6) — późniejszy efekt wygrywa: aura z flying przypięta PO Grounded albo „gains flying” rzucone PO Grounded dają flying; nadanie sprzed przypięcia Grounded przegrywa'],
   }),
 
   // 3. Ruinous Rampage (EOE) — sorcery modalny „Choose one"

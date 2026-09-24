@@ -1,4 +1,5 @@
 import { event } from '../protocol/types.js';
+import { nextTimestamp } from './timestamps.js';
 
 /**
  * Liczniki na permanentach (CR 122) — minimalny wspólny framework.
@@ -63,7 +64,13 @@ export function addCounter(state, objectId, counterName, amount = 1) {
   if (amount === 0) return object;
   const counters = { ...(object.counters ?? {}) };
   counters[counterName] = (counters[counterName] ?? 0) + amount;
-  const updated = Object.freeze({ ...object, counters });
+  // D4b (CR 613.7c): „Each counter receives a timestamp as it’s put on an
+  // object or player. If that object or player already has a counter of that
+  // kind on it, each counter of that kind receives a new timestamp identical
+  // to that of the new counter.” — liczniki keywordów (flying, deathtouch…)
+  // porządkowane w warstwie 6 (CR 613.1f).
+  const counterTs = Object.freeze({ ...(object.counterTs ?? {}), [counterName]: nextTimestamp(state) });
+  const updated = Object.freeze({ ...object, counters, counterTs });
   state.objects.set(objectId, updated);
   // M126/#6: log stołu nazywa obiekt przez LKI, gdy ten zdążył już opuścić
   // pole bitwy (token z licznikiem -1/-1 ginie w regule stanu, ZANIM gracz

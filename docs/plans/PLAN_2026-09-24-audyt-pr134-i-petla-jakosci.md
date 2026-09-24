@@ -166,7 +166,7 @@ Pozycje jawnie zostawione przez poprzednią sesję („Otwarte" w opisie PR #134
       nadpisanie podtypów vs załącznik, W-8 Krotiq „as though” jako utrata.
       Infrastruktura: znaczniki czasu CR 613.7 (`timestamps.js`).
       • [x] warstwa 7: W-1, W-2, W-5, W-6
-      • [ ] warstwa 6 + zakrycie: W-3, W-4
+      • [x] warstwa 6 + zakrycie: W-3, W-4
       • [ ] warstwa 4: W-7
       • [ ] W-8
 - [x] D5 — **obserwacje audytu (O-2, O-1)** domknięte jako KLASA, nie jako

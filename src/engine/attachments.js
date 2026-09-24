@@ -1,6 +1,7 @@
 import { event } from '../protocol/types.js';
 import { deathZoneFor } from './zones.js';
 import { moveObject } from './mover.js';
+import { nextTimestamp } from './timestamps.js';
 
 /**
  * Załączniki — aury (bestow i czyste) oraz equipmenty (CR 301.5, 303.4,
@@ -28,7 +29,17 @@ import { moveObject } from './mover.js';
  */
 
 function patchAttachmentObject(state, object, patch) {
-  const updated = Object.freeze({ ...object, ...patch });
+  // D4b (CR 613.7e): „An Aura, Equipment, or Fortification receives a new
+  // timestamp each time it becomes attached to an object or player.” Choke
+  // point przypięć — znacznik porządkuje efekty załącznika w warstwach 4/6.
+  // CR 701.3b/701.3c: przypięcie do TEGO SAMEGO obiektu „does nothing” —
+  // nowy znacznik tylko przy zmianie celu (probe U9: jedyna zmiana to koszt).
+  const nextTarget = 'attachedTo' in patch ? patch.attachedTo ?? null : object.attachedTo ?? null;
+  const nextPlayer = 'enchantedPlayerId' in patch ? patch.enchantedPlayerId ?? null : object.enchantedPlayerId ?? null;
+  const moved = nextTarget !== (object.attachedTo ?? null) || nextPlayer !== (object.enchantedPlayerId ?? null);
+  const stamp = !moved ? {}
+    : { attachedTs: (nextTarget != null || nextPlayer != null) ? nextTimestamp(state) : null };
+  const updated = Object.freeze({ ...object, ...patch, ...stamp });
   state.objects.set(object.id, updated);
   return updated;
 }

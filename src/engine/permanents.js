@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { assertZone, deathZoneFor } from './zones.js';
 import { addCounter, removeCounter, syncStationKind } from './counters.js';
-import { nextTimestamp } from './timestamps.js';
+import { nextTimestamp, timestampOf, attachmentTimestampOf } from './timestamps.js';
 import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality } from './attachments.js';
 // M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
 // z ochroną kolorową); permanents.js re-eksportuje je, bo stamtąd biorą je
@@ -493,11 +493,16 @@ function staticBonuses(state, object) {
  * po permanentach-źródłach, nie po zdolnościach samego obiektu.
  */
 function anthemBonuses(state, object) {
-  const bonus = { power: 0, toughness: 0, keywords: [] };
-  if (!state || object.zone !== 'battlefield' || object.faceDown) return bonus;
+  const bonus = { power: 0, toughness: 0, keywords: [], keywordEntries: [] };
+  // W-3 (D4b, CR 708.2): zakryty permanent to 2/2 STWÓR — cudzy hymn („other
+  // creatures you control get +1/+1”) działa na niego jak na każdy inny stwór.
+  // Zakrycie tłumi tylko JEGO WŁASNE zdolności (staticBonuses), nie efekty
+  // z zewnątrz. Hymn z zasięgiem na podtyp i tak go omija (brak podtypów).
+  if (!state || object.zone !== 'battlefield') return bonus;
   if (object.kind !== 'creature') return bonus;
   for (const source of state.objects.values()) {
-    if (source.zone !== 'battlefield') continue;
+    // CR 708.2a: zakryte ŹRÓDŁO nie ma zdolności — nie daje hymnu.
+    if (source.zone !== 'battlefield' || source.faceDown) continue;
     for (const ability of source.abilities ?? []) {
       if (ability?.type !== 'static' || !ability.scope) continue;
       // Altar of the Goyf: „Lhurgoyf creatures you control have trample." —
@@ -514,6 +519,8 @@ function anthemBonuses(state, object) {
       bonus.power += ability.pump?.power ?? 0;
       bonus.toughness += ability.pump?.toughness ?? 0;
       bonus.keywords.push(...(ability.keywords ?? []));
+      // D4b (CR 613.7a): efekt statyczny ma znacznik obiektu-źródła.
+      for (const keyword of ability.keywords ?? []) bonus.keywordEntries.push({ keyword, ts: timestampOf(source) });
     }
   }
   return bonus;
@@ -604,13 +611,16 @@ export function attachmentRestrictions(state, object) {
 }
 
 function attachmentBonuses(state, object) {
-  if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return { power: 0, toughness: 0, keywords: [] };
-  const bonus = { power: 0, toughness: 0, keywords: [] };
+  if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return { power: 0, toughness: 0, keywords: [], keywordEntries: [] };
+  const bonus = { power: 0, toughness: 0, keywords: [], keywordEntries: [] };
   for (const attachment of attachmentsAttachedTo(state, object.id)) {
     const grant = attachmentGrant(attachment);
+    // D4b (CR 613.7e): efekty załącznika mają znacznik PRZYPIĘCIA.
+    const ts = attachmentTimestampOf(attachment);
     bonus.power += grant.power;
     bonus.toughness += grant.toughness;
     bonus.keywords.push(...grant.keywords);
+    for (const keyword of grant.keywords) bonus.keywordEntries.push({ keyword, ts });
 
     // Conditional keywords (Hunter's Blowgun): different keywords granted
     // based on whose turn it is (evaluated at read time with game state).
@@ -645,7 +655,10 @@ function attachmentBonuses(state, object) {
           && other.controllerId === object.controllerId
           && other.kind === 'creature' && other.id !== object.id);
       }
-      if (active) bonus.keywords.push(...ck.keywords);
+      if (active) {
+        bonus.keywords.push(...ck.keywords);
+        for (const keyword of ck.keywords) bonus.keywordEntries.push({ keyword, ts });
+      }
     }
   }
   return bonus;
@@ -671,9 +684,9 @@ function counterDelta(object) {
  *  Turn the Tide, Angel of the Dawn, Your Temple). */
 function untilEndOfTurnBonuses(state, object) {
   if (!state || !object || object.zone !== 'battlefield' || object.kind !== 'creature') {
-    return { power: 0, toughness: 0, keywords: [] };
+    return { power: 0, toughness: 0, keywords: [], keywordEntries: [] };
   }
-  const out = { power: 0, toughness: 0, keywords: [] };
+  const out = { power: 0, toughness: 0, keywords: [], keywordEntries: [] };
   for (const buff of state.untilEndOfTurnBuffs ?? []) {
     // Buff TYLKO jednego obiektu (Altar of the Goyf — atakujący samotnie):
     // buff.objectId ogranicza do wskazanego obiektu; inaczej buff grupowy.
@@ -701,6 +714,8 @@ function untilEndOfTurnBonuses(state, object) {
     out.power += buff.power ?? 0;
     out.toughness += buff.toughness ?? 0;
     out.keywords.push(...(buff.keywords ?? []));
+    // D4b (CR 613.7b): znacznik efektu z chwili rozstrzygnięcia.
+    for (const keyword of buff.keywords ?? []) out.keywordEntries.push({ keyword, ts: buff.ts ?? 0 });
   }
   return out;
 }
@@ -886,7 +901,9 @@ export function effectiveAbilities(object) {
  * zdolności wydrukowanych nie zmieniają się (komendy niosą abilityIndex).
  */
 export function grantedActivatedAbilities(state, object) {
-  if (!state || object?.zone !== 'battlefield' || object.faceDown) return [];
+  // W-3 (D4b, CR 708.2): zakrycie tłumi WŁASNE zdolności, nie nadane z
+  // zewnątrz — zakryty stwór bez podtypów i tak nie spełnia zasięgu „Sliver”.
+  if (!state || object?.zone !== 'battlefield') return [];
   if (object.kind !== 'creature') return [];
   const out = [];
   for (const source of state.objects.values()) {
@@ -1048,87 +1065,94 @@ export function wardAmountOf(object, state = null) {
 }
 
 export function effectiveKeywords(object, state = null) {
-  // CR 708.2a — face-down permanent (morph/megamorph) ma TYLKO cechy, które
-  // sam określa: 2/2, bez nazwy, bez zdolności i bez keywordów. Keywordy
-  // karty są zakryte, dopóki stwór nie zostanie odsłonięty (turnFaceUp
-  // czyta oryginalne `keywords` z obiektu — pole niezmieniane). Bez tego
-  // zakryty stwór z flying błędnie odblokowywałby Lurking Green Dragon
-  // („defending player controls a creature with flying") i mógł blokować
-  // flyery — audyt Batchu 26 (M65).
+  // D4b / warstwa 6 (CR 613.1f): „Ability-adding effects, keyword counters,
+  // ability-removing effects, and effects that say an object can’t have an
+  // ability are applied.” W obrębie warstwy — znaczniki czasu (CR 613.7).
+  // CR 613.9 (przykład, dosłownie): „Two effects are affecting the same
+  // creature: one from an Aura that says ‘Enchanted creature has flying’ and
+  // one from an Aura that says ‘Enchanted creature loses flying.’ […] Applying
+  // them in timestamp order means the one that was generated last ‘wins.’”
+  //
+  // Wpisy: `base` (wydrukowane keywordy albo cechy zakrycia — nie efekt, każda
+  // utrata je zdejmuje) i nadania ze znacznikiem `ts`. Keyword jest obecny,
+  // gdy nie dotyczy go żadna utrata, albo gdy któreś nadanie jest PÓŹNIEJSZE od
+  // ostatniej utraty (W-4 — dotąd utrata wygrywała zawsze, wbrew 613.9).
+  const objectTs = timestampOf(object);
+  const entries = [];
+  const grant = (keyword, ts) => entries.push({ keyword, ts, base: false });
+  const counterGrant = (name) => {
+    if ((object.counters ?? {})[name] > 0) grant(name, object.counterTs?.[name] ?? objectTs);
+  };
+  const external = () => {
+    // Efekty z zewnątrz — działają także na zakryty permanent (W-3, CR 708.2:
+    // zakrycie ustala WARTOŚCI KOPIOWALNE 2/2, późniejsze warstwy działają;
+    // CR 708.8: „Any effects that have been applied to the face-down permanent
+    // still apply to the face-up permanent.”).
+    for (const keyword of object.keywordGrants ?? []) grant(keyword, object.keywordGrantTs?.[keyword] ?? objectTs);
+    for (const entry of attachmentBonuses(state, object).keywordEntries) grant(entry.keyword, entry.ts);
+  };
   if (object.faceDown) {
-    // Audyt PR #41 (B4): CR 708.2a tłumi DRUKOWANE keywordy/zdolności
-    // zakrytego stwora (morph/cloak) — ale nie liczniki nadające zdolności
-    // (CR 122.1b). Ruling cloak/Veiled Ascension: „Other effects that apply
-    // to the permanent can still grant it any characteristics it doesn't
-    // have." Licznik flying na zakrytym stworze daje flying — to sedno
-    // Veiled Ascension (zakryte stwory mogą blokować flyery).
-    const counterKeywords = [];
-    if ((object.counters ?? {}).flying > 0) counterKeywords.push('flying');
-    if ((object.counters ?? {}).deathtouch > 0) counterKeywords.push('deathtouch');
-    if ((object.counters ?? {}).lifelink > 0) counterKeywords.push('lifelink');
-    // M258/F3 (CR 701.58a + 702.21): zakryty permanent z CLOAK/DISGUISE to
-    // 2/2 Z WARD {2} — ward jest częścią definicji zakrycia (jak staty 2/2),
-    // a nie drukowanym keywordem zakrywanej karty, więc CR 708.2a go NIE
-    // tłumi (ruling cloak: „Other effects can still grant it any
-    // characteristics it doesn't have"). Morph bez warda: pole ward = null.
-    if (object.ward != null) counterKeywords.push('ward');
-    return counterKeywords;
+    // CR 708.2a — zakryty permanent nie ma WŁASNYCH keywordów ani zdolności
+    // (drukowane są schowane; turnFaceUp je przywraca). Liczniki keywordów
+    // (CR 122.1b — Veiled Ascension) i efekty z zewnątrz działają.
+    counterGrant('flying');
+    counterGrant('deathtouch');
+    counterGrant('lifelink');
+    // M258/F3 (CR 701.58a + 702.21): ward {2} cloaka/disguise jest częścią
+    // definicji zakrycia (warstwa 1b), nie drukowanym keywordem karty.
+    if (object.ward != null) entries.push({ keyword: 'ward', ts: 0, base: true });
+    external();
+  } else {
+    for (const keyword of object.keywords ?? []) entries.push({ keyword, ts: 0, base: true });
+    external();
+    // Statyki własne (CR 613.7a — znacznik obiektu).
+    for (const keyword of staticBonuses(state, object).keywords) grant(keyword, objectTs);
   }
-  const base = [...(object.keywords ?? [])];
-  for (const keyword of [
-    ...(object.keywordGrants ?? []),
-    ...attachmentBonuses(state, object).keywords,
-    ...staticBonuses(state, object).keywords,
-    ...anthemBonuses(state, object).keywords,
-    ...untilEndOfTurnBonuses(state, object).keywords,
-  ]) {
-    if (!base.includes(keyword)) base.push(keyword);
-  }
+  for (const entry of anthemBonuses(state, object).keywordEntries) grant(entry.keyword, entry.ts);
+  for (const entry of untilEndOfTurnBonuses(state, object).keywordEntries) grant(entry.keyword, entry.ts);
   // Hexproof „do twojej następnej tury" (Throne of the Dead Three): trwa przez
   // turę przeciwnika i gaśnie z początkiem następnej tury kontrolera — to NIE
   // grant czyszczony w cleanup, tylko licznik tur.
   if (object.hexproofUntilTurn != null && state && state.turn.number < object.hexproofUntilTurn) {
-    if (!base.includes('hexproof')) base.push('hexproof');
+    grant('hexproof', objectTs);
   }
-  // Licznik deathtouch (Kappa Tech-Wrecker): permanent z licznikiem deathtouch
-  // ma keyword deathtouch (CR 122.1b — counters grant abilities).
-  if ((object.counters ?? {}).deathtouch > 0) {
-    if (!base.includes('deathtouch')) base.push('deathtouch');
-  }
-  // Licznik lifelink (Batch 24: Unbreakable Bond) — CR 122.1b, jak wyżej.
-  if ((object.counters ?? {}).lifelink > 0) {
-    if (!base.includes('lifelink')) base.push('lifelink');
-  }
-  // Licznik flying (Veiled Ascension, MKC) — face-down stwory dostają flying
-  // counter; CR 122.1b (counters grant abilities), jak deathtouch/lifelink.
-  if ((object.counters ?? {}).flying > 0) {
-    if (!base.includes('flying')) base.push('flying');
-  }
-  // Station (EOE Spacecraft, Wedgelight Rammer): po osiągnięciu progu
-  // liczników charge obiekt jest stworem i ma keywordy z deskryptora
-  // („9+ | Flying, first strike\"). Liczone przy odczycie, jak static bonus.
-  if (object.station && (object.counters?.charge ?? 0) >= object.station.threshold) {
-    for (const keyword of object.station.keywords ?? []) {
-      if (!base.includes(keyword)) base.push(keyword);
+  if (!object.faceDown) {
+    // Liczniki deathtouch (Kappa Tech-Wrecker), lifelink (Unbreakable Bond),
+    // flying (Veiled Ascension) — CR 122.1b; znacznik licznika (CR 613.7c).
+    counterGrant('deathtouch');
+    counterGrant('lifelink');
+    counterGrant('flying');
+    // Station (EOE Spacecraft, Wedgelight Rammer): po osiągnięciu progu
+    // liczników charge obiekt jest stworem i ma keywordy z deskryptora
+    // („9+ | Flying, first strike\"). Własna zdolność — znacznik obiektu.
+    if (object.station && (object.counters?.charge ?? 0) >= object.station.threshold) {
+      for (const keyword of object.station.keywords ?? []) grant(keyword, objectTs);
     }
   }
-  // „Enchanted creature loses flying" (Grounded, CR 604/613): załącznik z
-  // deskryptorem losesKeywords ODBIERA keywordy gospodarzowi. Warstwa
-  // ostatnia — po wszystkich grantach (karta, liczniki, statyki, załączniki)
-  // — więc odbiór wygrywa np. z buffem „gains flying" z innej aury.
+  // Utraty: „Enchanted creature loses flying\" (Grounded — znacznik przypięcia,
+  // CR 613.7e) i własna utrata „do końca tury\" (Wishful Merfolk — znacznik
+  // rozstrzygnięcia, CR 613.7b).
+  const lastLoss = new Map();
+  const lose = (keyword, ts) => lastLoss.set(keyword, Math.max(lastLoss.get(keyword) ?? -Infinity, ts));
   if (state && object.zone === 'battlefield') {
-    const lost = new Set();
-    // M158/Batch 39 (Wishful Merfolk): własna tymczasowa utrata keywordów
-    // („loses defender ... until end of turn") — ta sama warstwa co odbiór
-    // z załączników (odbiera po grantach).
-    for (const keyword of object.lostKeywordsUntilEOT ?? []) lost.add(keyword);
+    for (const keyword of object.lostKeywordsUntilEOT ?? []) lose(keyword, object.lostKeywordTs?.[keyword] ?? 0);
     for (const attachment of attachmentsAttachedTo(state, object.id)) {
       const descriptor = attachment.aura ?? attachment.equipment ?? null;
-      for (const keyword of descriptor?.losesKeywords ?? []) lost.add(keyword);
+      for (const keyword of descriptor?.losesKeywords ?? []) lose(keyword, attachmentTimestampOf(attachment));
     }
-    if (lost.size > 0) return base.filter((keyword) => !lost.has(keyword));
   }
-  return base;
+  const out = [];
+  for (const entry of entries) {
+    if (out.includes(entry.keyword)) continue;
+    const loss = lastLoss.get(entry.keyword);
+    if (loss == null) {
+      out.push(entry.keyword);
+      continue;
+    }
+    // Obecny tylko, gdy istnieje nadanie późniejsze niż ostatnia utrata.
+    if (entries.some((e) => e.keyword === entry.keyword && !e.base && e.ts > loss)) out.push(entry.keyword);
+  }
+  return out;
 }
 
 /**
@@ -1146,6 +1170,9 @@ export function turnFaceUp(state, objectId, counters = {}) {
   if (!object || object.zone !== 'battlefield' || !object.faceDown) throw new Error('Obrócić twarzą do góry można tylko face-down permanent');
   replaceObject(state, object, {
     faceDown: false,
+    // D4b (CR 613.7f): „A permanent receives a new timestamp each time it
+    // turns face up or face down.”
+    timestamp: nextTimestamp(state),
     // Przywrócenie oryginalnych zdolności karty po obrocie (Batch 24 —
     // Willbender; face-down cast ukrył je pod flip-ability — patrz
     // resources.castPermanent). CR 702.37e: obrót „odkrywa" kartę wraz
@@ -1375,9 +1402,9 @@ export function clearStatModifiers(state) {
     if (object.subtypesBeforeOverride || (object.lostKeywordsUntilEOT ?? []).length > 0) {
       replaceObject(state, object, {
         ...(object.subtypesBeforeOverride
-          ? { subtypes: object.subtypesBeforeOverride, subtypesBeforeOverride: null }
+          ? { subtypes: object.subtypesBeforeOverride, subtypesBeforeOverride: null, subtypeOverrideTs: null }
           : {}),
-        lostKeywordsUntilEOT: Object.freeze([]),
+        lostKeywordsUntilEOT: Object.freeze([]), lostKeywordTs: null,
       });
     }
     if (object.originalBeforeAnimation) {
@@ -1434,7 +1461,7 @@ export function clearStatModifiers(state) {
       || (current.cantBlock === true && current.cantBlockPrinted !== true);
     if (dirty) {
       replaceObject(state, current, {
-        powerModifier: 0, toughnessModifier: 0, keywordGrants: [],
+        powerModifier: 0, toughnessModifier: 0, keywordGrants: [], keywordGrantTs: null,
         abilityGrants: [], typeGrant: null,
         // „Can't block this turn\" (Panic Spellbomb) — cleanup zdejmuje
         // EFEKT (CR 514.2). Cecha WYDRUKOWANA („This token can't block\" —
@@ -1560,7 +1587,13 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options =
   if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Tymczasowe keywordy można nadawać tylko stworowi na polu bitwy');
   if (!Array.isArray(keywords) || keywords.some((k) => typeof k !== 'string' || !k)) throw new TypeError('Keywordy muszą być niepustymi napisami');
   const grants = [...new Set([...(object.keywordGrants ?? []), ...keywords])];
-  const updated = replaceObject(state, object, { keywordGrants: grants });
+  // D4b (CR 613.7b): nadanie dostaje znacznik czasu — w warstwie 6 wygrywa
+  // z utratą keywordu tylko wtedy, gdy jest PÓŹNIEJSZE (CR 613.9, W-4).
+  const ts = nextTimestamp(state);
+  const keywordGrantTs = Object.freeze({
+    ...(object.keywordGrantTs ?? {}), ...Object.fromEntries(keywords.map((keyword) => [keyword, ts])),
+  });
+  const updated = replaceObject(state, object, { keywordGrants: grants, keywordGrantTs });
   state.events.push(event('keyword_granted', {
     objectId, cardId: object.cardId, keywords: [...keywords], untilEndOfTurn: true,
     // M96: backup opisuje nadane keywordy własnym zdarzeniem

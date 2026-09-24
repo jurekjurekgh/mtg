@@ -1586,6 +1586,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       controllerId,
       summoningSickness: false, // untap + haste → może atakować od razu
       keywordGrants: [...(untapped.keywordGrants ?? []), 'haste'],
+      // D4b (CR 613.7b): znacznik nadania — porządek w warstwie 6.
+      keywordGrantTs: Object.freeze({ ...(untapped.keywordGrantTs ?? {}), haste: nextTimestamp(state) }),
       tempControlUntilTurn: state.turn.number,
       tempControlOwner: ownerId,
     });
@@ -1936,7 +1938,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Przypnij źródło (equipment) do tokenu Hero.
     const equipment = state.objects.get(sourceObject.id);
     if (equipment && equipment.zone === 'battlefield' && equipment.equipment) {
-      const attached = Object.freeze({ ...equipment, attachedTo: hero.id });
+      const attached = Object.freeze({ ...equipment, attachedTo: hero.id, attachedTs: nextTimestamp(state) });
       state.objects.set(sourceObject.id, attached);
       state.events.push(event('object_attached', {
         // M102/U2: kontrakt zdarzenia musi być TEN SAM co w emitAttached
@@ -2143,14 +2145,23 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const targetId = targets[0] ?? sourceObject.id;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
+    // D4b (CR 613.7b): JEDEN znacznik efektu dla utraty keywordów (warstwa 6)
+    // i nadpisania podtypów (warstwa 4) — porządek względem nadań/załączników.
+    const ts = nextTimestamp(state);
     const patch = {
       lostKeywordsUntilEOT: Object.freeze([
         ...new Set([...(object.lostKeywordsUntilEOT ?? []), ...(effect.losesKeywords ?? [])]),
       ]),
+      lostKeywordTs: Object.freeze({
+        ...(object.lostKeywordTs ?? {}),
+        ...Object.fromEntries((effect.losesKeywords ?? []).map((keyword) => [keyword, ts])),
+      }),
     };
-    if (Array.isArray(effect.subtypes) && effect.subtypes.length > 0 && !object.subtypesBeforeOverride) {
-      patch.subtypesBeforeOverride = Object.freeze([...(object.subtypes ?? [])]);
+    if (Array.isArray(effect.subtypes) && effect.subtypes.length > 0) {
+      if (!object.subtypesBeforeOverride) patch.subtypesBeforeOverride = Object.freeze([...(object.subtypes ?? [])]);
       patch.subtypes = Object.freeze([...effect.subtypes]);
+      // W-7: kolejna aktywacja to NOWY efekt z nowym znacznikiem (613.7b).
+      patch.subtypeOverrideTs = ts;
     }
     state.objects.set(targetId, Object.freeze({ ...object, ...patch }));
     state.events.push(event('became_subtype', {
@@ -2193,7 +2204,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     });
     const equipment = state.objects.get(sourceObject.id);
     if (equipment && equipment.zone === 'battlefield' && equipment.equipment) {
-      const attached = Object.freeze({ ...equipment, attachedTo: germ.id });
+      const attached = Object.freeze({ ...equipment, attachedTo: germ.id, attachedTs: nextTimestamp(state) });
       state.objects.set(sourceObject.id, attached);
       state.events.push(event('object_attached', {
         objectId: sourceObject.id, hostId: germ.id,
@@ -2545,6 +2556,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
       Object.freeze({
+        // D4b (CR 613.7b): znacznik efektu — porządek w warstwie 6 (keywordy).
+        ts: nextTimestamp(state),
         controllerId: sourceObject.controllerId,
         opponent: false,
         objectIds: Object.freeze(buffIds),
@@ -2571,6 +2584,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
       Object.freeze({
+        // D4b (CR 613.7b): znacznik efektu — porządek w warstwie 6 (keywordy).
+        ts: nextTimestamp(state),
         controllerId: sourceObject.controllerId,
         opponent: false,
         objectIds: Object.freeze(buffIds),
@@ -2609,6 +2624,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
       Object.freeze({
+        // D4b (CR 613.7b): znacznik efektu — porządek w warstwie 6 (keywordy).
+        ts: nextTimestamp(state),
         objectId: targetId,
         controllerId: target.controllerId,
         opponent: false,
@@ -3511,6 +3528,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       abilities: target.abilities,
       keywords: target.keywords ?? [],
       ...sideFields,
+      // D4b (CR 613.7g): „A double-faced permanent receives a new timestamp
+      // each time it transforms or converts.”
+      timestamp: nextTimestamp(state),
       // CR 202.3b (M258/Etap 2.3b): przy zmianie twarzy MV obiektu = koszt
       // twarzy PRZEDNIEJ. Payload transformTo niesie właśnie to (materialize
       // buduje go jako card.manaCost), więc aplikujemy go wprost; fallback
@@ -4077,6 +4097,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
       Object.freeze({
+        // D4b (CR 613.7b): znacznik efektu — porządek w warstwie 6 (keywordy).
+        ts: nextTimestamp(state),
         controllerId: sourceObject.controllerId,
         opponent: true,
         objectIds: Object.freeze(affectedCreatureIds(state, sourceObject.controllerId, true)),
@@ -4176,6 +4198,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
       Object.freeze({
+        // D4b (CR 613.7b): znacznik efektu — porządek w warstwie 6 (keywordy).
+        ts: nextTimestamp(state),
         controllerId,
         objectIds: Object.freeze(affected),
         power: 0,
