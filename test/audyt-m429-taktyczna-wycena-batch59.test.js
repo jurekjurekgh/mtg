@@ -8,7 +8,7 @@
 //
 // ETAP A1 — „licznik na wskazanym celu" (P1 `token_mutagen`). Pomiar PRZED
 // (deterministyczny, 6 seedów na talii `decks/audyt-batch59.txt`): 14/14/14 dla
-// tokena 1/1, Cryptida 2/3 i Hill Gianta 4/4 — bot brał PIERWSZĄ ofertę, czyli
+// tokena 1/1, Cryptida 2/3 i Hill Gianta 3/3 — bot brał PIERWSZĄ ofertę, czyli
 // najsłabsze ciało (klasa L50). Precedensy w kodzie: gospodarz aury (M257 r4 —
 // „opłaca się tym bardziej, im większy gospodarz"), kryterium zmiany wyniku
 // walki (M218/2), skazany permanent (M236/2). Reguły po deskryptorach
@@ -103,7 +103,7 @@ test('M429/T1: karta z efektem licznika dostaje deskryptor `counter` (tuner)', a
 });
 
 test('M429/Mutagen (P1): licznik idzie na ciało o największej WARTOŚCI BOJOWEJ', () => {
-  // Pomiar PRZED: 14/14/14 (token 1/1, Cryptid 2/3, Hill Giant 4/4) — bot brał
+  // Pomiar PRZED: 14/14/14 (token 1/1, Cryptid 2/3, Hill Giant 3/3) — bot brał
   // pierwszą ofertę, czyli token. Po zmianie gospodarz jest różnicowany wagą
   // wartości (precedens aury: moc×2 + wytrzymałość), więc wygrywa realne ciało.
   const state = game();

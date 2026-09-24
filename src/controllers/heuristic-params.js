@@ -168,7 +168,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // rodzina „licznik na wskazanym celu". Dotąd licznik na WŁASNYM stworze był
   // wart płasko 8 + 4·amount w OBU bliźniaczych gałęziach (czar i aktywacja),
   // więc wszystkie gospodarze remisowały (pomiar: 14/14/14 dla tokena 1/1,
-  // Cryptida 2/3 i Hill Gianta 4/4) i bot brał pierwszą ofertę — najczęściej
+  // Cryptida 2/3 i Hill Gianta 3/3) i bot brał pierwszą ofertę — najczęściej
   // najsłabsze ciało (L50). Model z precedensu aury-buffa (M257 r4: „opłaca się
   // tym bardziej, im większy gospodarz" — tam waga 2 na mocy i 1 na
   // wytrzymałości): wartość licznika rośnie z WAGĄ CIAŁA gospodarza, a dwa
@@ -183,7 +183,9 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // Domyślne wartości są PRZEMYŚLANE, nie wytunerowane (zlecenie): baza 2 + waga
   // gospodarza 2 × worth(1/1)=3 odtwarza dawną stałą 8 co do punktu, więc
   // NAJSŁABSZY gospodarz nie traci na wartości (kontrakt B6 T0 dla przypadku
-  // z obserwacji), a różnicę zyskują realne ciała: 2/3 → +6, 4/4 → +12.
+  // z obserwacji), a różnicę zyskują realne ciała. Pomiar PO na ścieżce bota
+  // (audyt PR #136, F-3): token 1/1 → 14, Cryptid 2/3 → 22 (+8), Hill Giant
+  // 3/3 → 26 (+12); worth = moc×2 + wytrwałość, więc 2/3 = 7, 3/3 = 9.
   'counterBase',                 // baza licznika przy gospodarzu-wzorcu 1/1 (dawna 8 = 2 + 2·3)
   'counterAmountWeight',         // wartość każdego punktu licznika (dawna *4)
   'counterHostWorthWeight',      // waga ciała gospodarza (moc×2 + wytrzymałość), wzorzec aury

@@ -2018,7 +2018,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * i aktywowana zdolność, L41) dawały płaskie 8 + 4·amount, więc wybór celu był
    * remisem, a bot brał pierwszą ofertę z listy legalnych komend — pomiar
    * (6 seedów, talia `decks/audyt-batch59.txt`) pokazał 14/14/14 dla tokena 1/1,
-   * Cryptida 2/3 i Hill Gianta 4/4 (klasa L50: decyzja bez treści).
+   * Cryptida 2/3 i Hill Gianta 3/3 (klasa L50: decyzja bez treści). Pomiar PO
+   * (audyt PR #136, F-3): 14 / 22 (+8) / 26 (+12).
    *
    * Model jest PRZEMYŚLANY i zapożyczony z podobnych efektów (zlecenie: „weź
    * przykład z innych podobnych kart"):
