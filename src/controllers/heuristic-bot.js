@@ -4449,7 +4449,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           * ((card?.manaCost ?? 0) + coloredPipsOf(card?.cardId ?? '').length);
         // M258/A (uwaga właściciela, Squire's Lightblade): wartość equipmentu
         // żyje na NOSICIELU. Rzut przy braku własnych kreatur to marnowanie:
-        // ETB „attach za darmo" fizzluje (CR 603.4b), a karta czeka na stole
+        // ETB „attach za darmo" fizzluje (CR 608.2b), a karta czeka na stole
         // za koszt equipu (tu {3} zamiast 0). Baza P.creatureBase (70 — tyle
         // co stwór 0/0) nie zna tego kontekstu, więc bot rzucał flash-equipment
         // na pusty stół. Reguła generyczna po deskryptorze (ADR 0002):

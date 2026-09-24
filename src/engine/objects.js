@@ -213,9 +213,9 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // to nowy obiekt, „came under your control since your last upkeep").
     ...(toZone === 'battlefield' && object.echo != null ? { echoUnpaid: true } : {}),
     damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
-    // CR 110.6/400.7: tapnięcie to status PERMANENTU — istnieje wyłącznie na
+    // CR 110.5d/400.7: tapnięcie to status PERMANENTU — istnieje wyłącznie na
     // polu bitwy. Nowy obiekt nie pamięta poprzedniego istnienia, a permanent
-    // wchodzi na pole bitwy nietapnięty (CR 110.6b), chyba że efekt wprost
+    // wchodzi na pole bitwy nietapnięty (CR 110.5b), chyba że efekt wprost
     // każe inaczej. CR 614.1d/614.12 (F2, audyt PR106 — dawny „603.6d”
     // nie istnieje): bezwarunkowe entersTapped jest efektem zastępczym
     // wchodzącym w skład wejścia (także reanimacji), nie triggerem.

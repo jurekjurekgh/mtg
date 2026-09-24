@@ -1946,7 +1946,7 @@ function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
  * M166/B (Reinforce, CR 702.77a, Mosquito Guard): „{1}{W}, Discard this
  * card: Put a +1/+1 counter on target creature." Zdolność karty w RĘCE:
  * koszt = mana + ODRZUCENIE karty (przed wejściem zdolności na stos,
- * CR 117.11/601.2h jak cycling), efekt przez stos z wybranym celem —
+ * CR 602.2b/601.2h jak cycling), efekt przez stos z wybranym celem —
  * przeciwnik może odpowiedzieć (cel może zniknąć → efekt fizzluje).
  */
 function activateReinforce(state, playerId, cardObject, abilityIndex, ability, targets) {
@@ -1991,7 +1991,7 @@ function activateReinforce(state, playerId, cardObject, abilityIndex, ability, t
  * Batch 51 (Bloodrush, CR 207.2c — słowo zdolności; wzorzec M166/B reinforce):
  * „{R}, Discard this card: Target attacking creature gets +2/+1 until end of
  * turn.\" Zdolność karty w RĘCE — koszt to mana + ODRZUCENIE karty (przed
- * wejściem zdolności na stos, CR 117.11/601.2h). Efekt idzie przez STOS z
+ * wejściem zdolności na stos, CR 602.2b/601.2h). Efekt idzie przez STOS z
  * wybranym celem, więc przeciwnik może odpowiedzieć, a cel, który zniknie,
  * sprawia, że efekt fizzluje (CR 608.2b).
  */

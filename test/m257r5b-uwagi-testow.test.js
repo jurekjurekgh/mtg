@@ -6,7 +6,7 @@ import { createGameState, addObject, playerView, execute } from '../src/engine/g
  * M257 r5b (uwagi z testów, część 2) — cztery znaleziska właściciela:
  *
  * A — „Tasuj talię” bez komunikatu (test w table-ui.test.js — dom stołu);
- * B — kto zaczyna partię powinien być losowy (starter z seeda, CR 103.7a/
+ * B — kto zaczyna partię powinien być losowy (starter z seeda, CR 103.8a/
  *     103.4 przymocowane do state.starterId, nie players[0]);
  * C — Awaken the Sleeper: bot po przejęciu stwora nie atakuje (testy w
  *     dalszej części pliku — etap C);
@@ -53,7 +53,7 @@ function advanceToDraw(state, maxCommands = 40) {
   return state;
 }
 
-test('r5b/B: CR 103.7a — starter (teraz może być p2) pomija dobranie tury 1', () => {
+test('r5b/B: CR 103.8a — starter (teraz może być p2) pomija dobranie tury 1', () => {
   const seed = seedsWithStarter('p2')[0];
   assert.ok(seed, 'znaleziono seed ze starterem p2');
   const state = createGameState({ seed, players: [{ id: 'p1' }, { id: 'p2' }] });
@@ -66,7 +66,7 @@ test('r5b/B: CR 103.7a — starter (teraz może być p2) pomija dobranie tury 1'
   advanceToDraw(state);
   assert.equal(state.turn.step, 'draw');
   assert.equal(state.turn.activePlayerId, 'p2', 'tura 1 = tura startera (p2)');
-  assert.ok(!state.turn.drawnInStep, 'starter NIE dobiera w turze 1 (CR 103.7a)');
+  assert.ok(!state.turn.drawnInStep, 'starter NIE dobiera w turze 1 (CR 103.8a)');
   // Drugi gracz (p1) dobiera w SWOJEJ pierwszej turze (tura numer 2).
   for (let i = 0; i < 200 && state.status === 'active'
     && !(state.turn.step === 'draw' && state.turn.activePlayerId === 'p1' && state.turn.number === 2); i += 1) {
@@ -78,7 +78,7 @@ test('r5b/B: CR 103.7a — starter (teraz może być p2) pomija dobranie tury 1'
   assert.ok(state.turn.drawnInStep, 'p1 (drugi gracz) DOBIERA w swojej pierwszej turze');
 });
 
-test('r5b/B: CR 103.7a — starter p1: zachowanie jak dotąd (regresja)', () => {
+test('r5b/B: CR 103.8a — starter p1: zachowanie jak dotąd (regresja)', () => {
   const seed = seedsWithStarter('p1')[0];
   const state = createGameState({ seed, players: [{ id: 'p1' }, { id: 'p2' }] });
   advanceToDraw(state);

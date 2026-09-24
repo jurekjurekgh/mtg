@@ -16,7 +16,7 @@ const registry = createCardRegistry();
 
 function game() {
   // M257-r5b/B: starter losowy — testy operują turą 1 p1 BEZ dobierania
-  // (CR 103.7a: starter nie dobiera w turze 1; biblioteki tu są puste),
+  // (CR 103.8a: starter nie dobiera w turze 1; biblioteki tu są puste),
   // więc seed musi dawać startera p1 (seed 7) i aktywności nie pinujemy.
   const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }], registry });
   return state;

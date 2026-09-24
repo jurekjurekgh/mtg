@@ -273,7 +273,7 @@ const BASIC_SUBTYPE_COLORS = Object.freeze({
  */
 /**
  * Pięć kolorów many — awaryjna odpowiedź na „Add one mana of any color"
- * (CR 106.2b: {W}{U}{B}{R}{G}). To stała REGUŁOWA, nie nazwa karty.
+ * (CR 105.1: {W}{U}{B}{R}{G}). To stała REGUŁOWA, nie nazwa karty.
  *
  * Definicje w katalogu podają kolory JAWNIE w deskryptora (`effect.colors`,
  * audyt PR #93 tura 3 — wcześniej szło to z MANA_SOURCE_MAP i z dwóch literałów

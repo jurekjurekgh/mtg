@@ -104,7 +104,7 @@ test('M337/B: WŁASNA czekająca decyzja zamyka akcje opcjonalne i wraca po jej 
   assert.equal(oferty.includes('turn_cloak_face_up'), false,
     `przy czekającym scry nie wolno oferować obrotu twarzą do góry (execute i tak odrzuci): ${oferty.join(',')}`);
   assert.equal(oferty.includes('pass_priority'), false, 'ani pasa (też bramkowany tą samą regułą)');
-  assert.ok(oferty.includes('concede'), 'koncesja pozostaje (CR 720.4a — z niej nikt nie musi korzystać z priorytetu)');
+  assert.ok(oferty.includes('concede'), 'koncesja pozostaje (CR 104.3a — z niej nikt nie musi korzystać z priorytetu)');
 
   const scry = view.legalCommands.find((c) => c.type === 'resolve_scry');
   assert.ok(execute(state, scry).ok, 'rozstrzygnięcie scry przyjęte');

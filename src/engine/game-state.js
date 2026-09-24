@@ -88,7 +88,7 @@ export function createGameState({ seed, players }) {
   if (ids.some((id) => !id) || new Set(ids).size !== ids.length) throw new TypeError('Gracze muszą mieć unikalne id');
   // M257-r5b/B (uwaga z testów): „Gracz zawsze zaczyna. Czy to kto zaczyna
   // nie powinno być losowe?” — rzut monetą z seeda (deterministyczny,
-  // ADR 0005; 1v1 = 50/50). Reguły CR 103.7a/103.4 czytały players[0]
+  // ADR 0005; 1v1 = 50/50). Reguły CR 103.8/103.4 czytały players[0]
   // na sztywno — teraz są przymocowane do `starterId`.
   const starterId = ids[Math.floor(createRng(seed)() * ids.length)];
   const state = {
@@ -687,7 +687,7 @@ function performDrawStepDraw(state, playerId, objectId = null) {
  * kliknięcia „Dobierz kartę" pozwalało pominąć dobranie passem, co jest
  * niemożliwe w prawdziwej grze.
  *
- * CR 103.7a: gracz rozpoczynający partię pomija dobranie w swojej pierwszej
+ * CR 103.8a: gracz rozpoczynający partię pomija dobranie w swojej pierwszej
  * turze.
  */
 function drawStepTurnBasedAction(state) {
@@ -4021,7 +4021,7 @@ export function execute(state, input) {
     const spec = pending.specs[targetIndex];
     const before = state.events.length;
     if (copy && copy.zone === 'stack') {
-      // Nowy cel musi być LEGALNY dla kopii (CR 706.10c) — walidujemy tak
+      // Nowy cel musi być LEGALNY dla kopii (CR 707.10c) — walidujemy tak
       // samo jak przy rzucie, ze źródłem = kopia czaru.
       try {
         validateTargets(state, [spec], [cmd.targetId], pending.playerId, copy.colors ?? [], copy);
@@ -5438,7 +5438,7 @@ export function execute(state, input) {
         if (state.turn.number !== previousTurnNumber) {
           // Przeliczenie licznika czarów poprzedniej tury (transform).
           state.lastTurnSpellsCast = state.spellsCastThisTurn;
-          // M68: per-gracz kopia poprzedniej tury (daybound upkeep — CR 708.9f).
+          // M68: per-gracz kopia poprzedniej tury (daybound upkeep — CR 731.2a/b).
           state.lastTurnSpellsCastByPlayer = { ...state.spellsCastThisTurnByPlayer };
           const previousActive = state.turn.activePlayerId === state.players[0].id
             ? state.players[1].id
@@ -5986,7 +5986,7 @@ export function execute(state, input) {
 
   if (cmd.type === 'draw_card') {
     if (state.turn.step !== 'draw' || state.turn.activePlayerId !== cmd.playerId) return reject('wrong_timing');
-    // CR 103.7a: pierwsza tura gry — aktywny gracz (startujący) nie dobiera.
+    // CR 103.8a: pierwsza tura gry — aktywny gracz (startujący) nie dobiera.
     if (state.turn.number === 1 && state.turn.activePlayerId === state.starterId) {
       return reject('first_turn_no_draw');
     }
@@ -7866,7 +7866,7 @@ export function playerView(state, playerId) {
   // M101/A (CR 504.1): dobranie w kroku dobierania jest AKCJĄ TUROWĄ —
   // wykonuje je drawStepTurnBasedAction przy wejściu w krok. Nie oferujemy go
   // już jako komendy: opcja „Dobierz kartę" pozwalała pominąć dobranie passem.
-  // Wyjątek CR 103.7a (rozpoczynający nie dobiera w 1. turze) obsługuje sama
+  // Wyjątek CR 103.8a (rozpoczynający nie dobiera w 1. turze) obsługuje sama
   // akcja turowa, więc nie ma tu czego filtrować.
   const player = state.players.find((entry) => entry.id === playerId);
   // Mana produkowalna (pula + nietapnięte landy) steruje ofertą rzutów i

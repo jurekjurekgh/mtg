@@ -123,7 +123,7 @@ test('A4: Knight — {3}{G}: +3/+3 tylko raz na turę', () => {
   const offer1 = view1.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'knight');
   assert.ok(offer1, 'pierwsza aktywacja oferowana');
   assert.ok(execute(state, offer1).ok);
-  // Zdolność idzie na stos (CR 602.2c/117.4) — rozstrzygnięcie po pasach.
+  // Zdolność idzie na stos (CR 602.2a/117.4) — rozstrzygnięcie po pasach.
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal(effectivePower(state.objects.get('knight'), state), 5, '2/2 + 3/3 = 5/5');

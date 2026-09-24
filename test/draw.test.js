@@ -7,7 +7,7 @@ import { addObject, createGameState, execute, playerView } from '../src/engine/g
 // SKUTEK wejścia w krok, a nie ofertę `draw_card` (której już nie ma).
 
 function toDraw(state) {
-  // CR 103.7a: pierwsza tura gry (p1) pomija draw step — przechodzimy do
+  // CR 103.8a: pierwsza tura gry (p1) pomija draw step — przechodzimy do
   // draw stepa TURY 2+, gdzie dobranie jest obowiązkowe.
   for (let i = 0; i < 60 && !(state.turn.step === 'draw' && state.turn.activePlayerId === 'p1' && state.turn.number > 1); i += 1) {
     execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });

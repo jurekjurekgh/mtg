@@ -328,7 +328,7 @@ test('Backup: każdy bot rozstrzyga decyzję akceptowalną komendą (kontrakt Pl
 // --- Swampcycling -----------------------------------------------------------
 
 test('Swampcycling: zapłać {2}, odrzuć Maulera, znajdź Swampa do ręki (reveal) i potasuj', () => {
-  const state = matchState('mirrodin-brg', 7); // M257-r5b/B: seed 7 = starter p1 (CR 103.7a: tura 1 bez dobierania startera)
+  const state = matchState('mirrodin-brg', 7); // M257-r5b/B: seed 7 = starter p1 (CR 103.8a: tura 1 bez dobierania startera)
   // Normalizacja ręki otwarcia: usuwamy trafione tam Swampy, żeby licznik
   // końcowy był przewidywalny niezależnie od rozdania.
   for (const id of [...state.zones.hand]) {

@@ -11,7 +11,7 @@ test('dobieranie z pustej biblioteki kończy partię przegraną aktywnego gracza
   // wymagają seeda ze starterem p1 (seed 7); aktywności nie pinujemy.
   const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
 
-  // Obie biblioteki są puste. CR 103.7a zwalnia z dobierania TYLKO gracza
+  // Obie biblioteki są puste. CR 103.8a zwalnia z dobierania TYLKO gracza
   // rozpoczynającego (p1) i tylko w turze 1, więc pierwszym graczem, który
   // musi dobrać, jest p2 na starcie tury 2 — i to on przegrywa.
   for (let i = 0; i < 60 && state.status === 'active'; i += 1) {

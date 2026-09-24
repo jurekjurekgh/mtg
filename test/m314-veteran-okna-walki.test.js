@@ -22,7 +22,7 @@ import { BOT_ID, HUMAN_ID, createSession, commandOptionKey } from '../src/table/
  *     obowiązkowy cel bez kandydata = brak triggera, zdarzenie no_targets).
  *  3./4. Piny SILNIKA (zielone z natury — dowód, że okna istnieją):
  *     po rozstrzygnięciu triggera gracz ATAKUJĄCY dostaje priorytet
- *     (aktywny pierwszy, CR 116.3c) z aktywacją Wardena, a drugie okno ma
+ *     (aktywny pierwszy, CR 117.3b) z aktywacją Wardena, a drugie okno ma
  *     po blokach w combat_damage (M172/C) — pump #2 przed obrażeniami.
  *  5./6. Piny SESJI: bez pinezki sesja zatrzymuje się z aktywacją (pump #2
  *     możliwy, 2 pumpy = 16 życia bota); Z pinezką (Feature 2026-08-11)
@@ -67,7 +67,7 @@ function activateWarden(state, targetId) {
   assert.ok(cmd, 'aktywacja Ghost Warden w legalCommands');
   const result = execute(state, cmd);
   assert.ok(result.ok, `aktywacja GW przyjęta: ${JSON.stringify(result.events[0]?.reason)}`);
-  // zdolność idzie na STOS — rozstrzygnij (CR 116.3b: pass obu graczy)
+  // zdolność idzie na STOS — rozstrzygnij (CR 117.4: pass obu graczy)
   for (let i = 0; i < 4 && state.zones.stack.length > 0; i += 1) {
     const pid = state.turn.priorityPlayerId;
     const pass = playerView(state, pid).legalCommands.find((c) => c.type === 'pass_priority');
@@ -179,7 +179,7 @@ test('M314/4 (pin silnika): okno po blokach — pump #2 możliwy też w combat_d
   assert.equal(state.zones.stack.length, 0, 'stos pusty po rozstrzygnięciu triggera');
   // okno po deklaracji (M314/3) — celowo POMINIĘTE: p1 pass, p2 pass
   // (pełna runda przechodzi do kroku bloków, priorytet obrońcy)
-  assert.equal(state.turn.priorityPlayerId, 'p1', 'aktywny pierwszy po rozstrzygnięciu (CR 116.3c)');
+  assert.equal(state.turn.priorityPlayerId, 'p1', 'aktywny pierwszy po rozstrzygnięciu (CR 117.3b)');
   const pass4 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'pass_priority');
   execute(state, pass4);
   const pass4b = playerView(state, 'p2').legalCommands.find((c) => c.type === 'pass_priority');

@@ -2478,7 +2478,7 @@ function processTriggersScan(state, recentEvents) {
           tryFire(state, ability, diedLki, [], events, { wasBlocking: died?.isBlockingThisCombat === true });
         }
       }
-      // M200/D+E2 (uwagi właściciela, CR 700.4c): „die” dotyczy STWORÓW —
+      // M200/D+E2 (uwagi właściciela, CR 700.4): „die” dotyczy STWORÓW —
       // poświęcenie/zniszczenie lądu lub artefaktu (Blazing Torch, Rupture
       // Spire) NIE jest śmiercią i nie może odpalać any_creature_dies.
       // Dotąd Selhoff Occultist mielił kartę przy każdym poświęceniu

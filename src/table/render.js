@@ -3303,7 +3303,7 @@ export function commandLabel(cmd, session, view) {
         return `Channel: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → szukaj podstawowego lądu`;
       }
       // Batch 51 (Skinbrand Goblin): koszt bloodrushu to mana + ODRZUCENIE
-      // karty z ręki (CR 117.11) — etykieta pokazuje oba, bo gracz widzi tu
+      // karty z ręki (CR 602.2b) — etykieta pokazuje oba, bo gracz widzi tu
       // jedynie „{R}”, a traci kartę.
       if (ability?.bloodrush) {
         const pw = ability.bloodrush.power ?? 0;
@@ -5510,7 +5510,7 @@ export function renderPoisonPanel(els, view, { onOpenCard = null, hover = null }
   for (const p of view.players ?? []) {
     div(info, 'poison-count', `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${p.poison ?? 0} ${polishPluralCount(p.poison ?? 0, 'licznik', 'liczniki', 'liczników')} trucizny`);
   }
-  div(info, 'poison-note', 'Gracz z 10 licznikami trucizny przegrywa (CR 704.10). Liczniki znikają tylko z końcem gry — obrażenia ich nie leczą.');
+  div(info, 'poison-note', 'Gracz z 10 licznikami trucizny przegrywa (CR 704.5c). Liczniki znikają tylko z końcem gry — obrażenia ich nie leczą.');
 }
 
 /**

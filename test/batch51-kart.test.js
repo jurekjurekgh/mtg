@@ -109,7 +109,7 @@ test('B51: Skinbrand Goblin — bloodrush z ręki: karta do grobu, atakujący +2
   assert.ok(execute(state, cmd).ok, 'aktywacja przyjęta');
   // Odrzucenie jest KOSZTEM — karta leci do grobu przed rozstrzygnięciem.
   const inGrave = [...state.objects.values()].some((o) => o.cardId === 'skinbrand-goblin' && o.zone === 'graveyard');
-  assert.ok(inGrave, 'karta odrzucona do grobu (koszt, CR 117.11)');
+  assert.ok(inGrave, 'karta odrzucona do grobu (koszt, CR 602.2b)');
   assert.equal(effectivePower(state.objects.get('atk'), state), 2, 'jeszcze przed rozstrzygnięciem');
   resolveStack(state);
   const attacker = state.objects.get('atk');

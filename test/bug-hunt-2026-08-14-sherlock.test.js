@@ -179,13 +179,13 @@ test('regresja: normalna śmierć NIE zmienia kontrolera (właściciel = kontrol
 // Objaw: `moveObjectDirectly` czyściło obrażenia, liczniki, modyfikatory,
 // goaded i hexproof, ale ZOSTAWIAŁO `tapped: true`. Skutki:
 //  - karta w ręce/grobie miała stan tapnięcia (pojęcie istniejące tylko dla
-//    permanentów — CR 110.6);
+//    permanentów — CR 110.5d);
 //  - stwór odbity na rękę i zagrany ponownie wchodził TAPNIĘTY;
 //  - reanimacja tapniętego stwora dawała tapnięty permanent.
 //
 // CR 400.7: „an object that moves from one zone to another becomes a new
 // object with no memory of its previous existence".
-// CR 110.6b: „A permanent enters the battlefield untapped unless a spell or
+// CR 110.5b: „A permanent enters the battlefield untapped unless a spell or
 // ability instructs otherwise."
 //
 // Ślad maskowania: 12 miejsc w effects.js/spells.js ręcznie ustawiało
@@ -199,21 +199,21 @@ test('CR 400.7: status tapnięcia nie przechodzi przez zmianę strefy', () => {
     state.objects.set('o', Object.freeze({ ...object, tapped: true }));
     const moved = moveObjectDirectly(state, 'o', zone, 'n1');
     assert.notEqual(moved.tapped, true,
-      `battlefield → ${zone}: karta poza polem bitwy nie ma stanu tapnięcia (CR 110.6)`);
+      `battlefield → ${zone}: karta poza polem bitwy nie ma stanu tapnięcia (CR 110.5d)`);
   }
 });
 
-test('CR 110.6b: permanent wraca na pole bitwy NIETAPNIĘTY (bounce → ponowne zagranie)', () => {
+test('CR 110.5b: permanent wraca na pole bitwy NIETAPNIĘTY (bounce → ponowne zagranie)', () => {
   const state = createGameState({ seed: 11, players: [{ id: 'p1' }, { id: 'p2' }] });
   const object = creature(state, { id: 'o', controllerId: 'p1' });
   state.objects.set('o', Object.freeze({ ...object, tapped: true }));
   moveObjectDirectly(state, 'o', 'hand', 'h1');
   const back = moveObjectDirectly(state, 'h1', 'battlefield', 'b1');
   assert.notEqual(back.tapped, true,
-    'permanent wchodzi na pole bitwy nietapnięty, chyba że efekt mówi inaczej (CR 110.6b)');
+    'permanent wchodzi na pole bitwy nietapnięty, chyba że efekt mówi inaczej (CR 110.5b)');
 });
 
-test('CR 110.6b: reanimacja tapniętego stwora daje NIETAPNIĘTY permanent', () => {
+test('CR 110.5b: reanimacja tapniętego stwora daje NIETAPNIĘTY permanent', () => {
   const state = createGameState({ seed: 12, players: [{ id: 'p1' }, { id: 'p2' }] });
   const object = creature(state, { id: 'o', controllerId: 'p1' });
   state.objects.set('o', Object.freeze({ ...object, tapped: true }));

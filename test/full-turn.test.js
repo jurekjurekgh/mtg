@@ -14,7 +14,7 @@ function buildState(seed = 5) {
 
   // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).
   state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
-  // CR 103.7a: pierwsza tura gry pomija draw step — testujemy pełną turę
+  // CR 103.8a: pierwsza tura gry pomija draw step — testujemy pełną turę
   // z dobraniem, więc zaczynamy od tury 2.
   state.turn = { ...state.turn, number: 2 };
   addObject(state, { id: 'p1-top', instanceId: 'it', cardId: 'Top', controllerId: 'p1', zone: 'library', kind: 'land' });

@@ -69,7 +69,7 @@ test('M202/#1 (anty-over-fix): pojedynczy deck-out z efektu = przegrana tego gra
 test('M202/#1 (anty-over-fix): deck-out w kroku dobierania nadal kończy partię', () => {
   const state = stateWith({ library1: 0, library2: 5 });
   // wchodzimy w krok dobierania przez normalne przejście tury (CR 504.1)
-  // tura 3 — w turze 1 gracz zaczynający pomija dobranie (CR 103.7a)
+  // tura 3 — w turze 1 gracz zaczynający pomija dobranie (CR 103.8a)
   state.turn = { ...state.turn, ...TURN_STEPS[1], stepIndex: 1, number: 3, activePlayerId: 'p1', drawnInStep: false };
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });

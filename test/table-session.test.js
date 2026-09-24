@@ -85,7 +85,7 @@ test('świeża sesja przewija puste okna do pierwszej decyzji człowieka', () =>
   assert.equal(view.turn.phase, 'beginning');
   assert.ok(view.legalCommands.some((cmd) => cmd.type === 'resolve_mulligan_choice'), 'mulligan to pierwsza decyzja');
   assert.ok(session.apply(view.legalCommands.find((cmd) => cmd.type === 'resolve_mulligan_choice')).ok, 'keep');
-  // Po zatrzymaniu ręki: untap/upkeep/draw mają wyłącznie pass (CR 103.7a —
+  // Po zatrzymaniu ręki: untap/upkeep/draw mają wyłącznie pass (CR 103.8a —
   // pierwsza tura nie dobiera) — sesja staje w main na pierwszej decyzji.
   const view2 = session.view();
   assert.equal(view2.turn.phase, 'precombat_main');

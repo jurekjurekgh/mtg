@@ -11,7 +11,7 @@
 // bez dobranej karty, co jest niemożliwe w prawdziwym MtG.
 //
 // Wyjątki, które muszą zostać zachowane:
-//  - CR 103.7a: gracz rozpoczynający grę nie dobiera w swojej pierwszej turze;
+//  - CR 103.8a: gracz rozpoczynający grę nie dobiera w swojej pierwszej turze;
 //  - CR 104.3c: próba dobrania z pustej biblioteki przegrywa partię.
 
 import { test } from 'node:test';
@@ -37,7 +37,7 @@ const handOf = (state, playerId) => state.zones.hand.filter((id) => state.object
 
 test('M101/A: wejście w krok dobierania samo dobiera kartę (CR 504.1)', () => {
   const state = makeState();
-  // Stoimy w upkeep tury 3 (nie pierwszej — CR 103.7a).
+  // Stoimy w upkeep tury 3 (nie pierwszej — CR 103.8a).
   state.turn = jumpToStep({ ...state.turn, number: 3, activePlayerId: 'p1' }, 'upkeep', 'p1');
   const before = handOf(state, 'p1').length;
 
@@ -77,7 +77,7 @@ test('M101/A: passa w kroku dobierania NIE da się już zagrać bez dobrania', (
   assert.equal(handOf(state, 'p1').length, before + 1, 'karta z kroku dobierania musi być w ręce');
 });
 
-test('M101/A: CR 103.7a — gracz rozpoczynający nie dobiera w pierwszej turze', () => {
+test('M101/A: CR 103.8a — gracz rozpoczynający nie dobiera w pierwszej turze', () => {
   const state = makeState();
   // Tura 1, aktywny = gracz rozpoczynający (M257-r5b/B: state.starterId —
   // losowany z seeda, nie zawsze p1).
