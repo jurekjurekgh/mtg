@@ -8,7 +8,7 @@
  * `test/module-graph.test.js` (bundler składa moduły w jeden zasięg).
  *
  * Zamiast duplikować logikę przenoszenia — co historycznie kosztowało dwa
- * błędy (M271 #11 grób właściciela CR 400.3, #12 finality CR 122.1e) — moduł
+ * błędy (M271 #11 grób właściciela CR 400.3, #12 finality CR 122.1h) — moduł
  * `objects.js` REJESTRUJE tu swoją funkcję przy załadowaniu, a warstwy niższe
  * ją pobierają. Kierunek importów pozostaje jednostronny.
  */

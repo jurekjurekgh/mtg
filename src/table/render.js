@@ -269,7 +269,7 @@ export function describeSpellEffects(spell) {
       // you control" — amount to string). Doklejamy czytelny opis źródła
       // liczby, zamiast gołego „Stwórz 2/2 Wolf" (audyt diamentowy cz.2).
       const dynamicNote = typeof effect.amount === 'string' ? ` (${dynamicAmount(effect.amount)})` : '';
-      // Fateful hour (CR 702.86, Gather the Townsfolk): gdy amountIfCondition
+      // Fateful hour (CR 207.2c, Gather the Townsfolk): gdy amountIfCondition
       // podaje inną liczbę tokenów dla niskiego życia, doklej „(X przy życiu ≤ N)".
       const fateful = Number.isFinite(effect.ifLifeAtMost) && Number.isFinite(effect.amountIfCondition)
         ? ` (${effect.amountIfCondition} przy \u017cyciu \u2264 ${effect.ifLifeAtMost})` : '';
@@ -438,7 +438,7 @@ export function choiceRequestGroupKey(command) {
   // Ta sama reguła co dla rzutu z ręki (K/M z 2026-09-19b) i dla escape powyżej:
   // wybór CELU jest decyzją W TRAKCIE rzucania (CR 601.2c), więc panel dostaje
   // JEDNĄ ofertę „Rzuć za flashback: <karta>”, a cele rozstrzyga modal.
-  // Flashback (CR 702.33a) to alternatywny KOSZT tego samego rzutu, nie osobna
+  // Flashback (CR 702.34a) to alternatywny KOSZT tego samego rzutu, nie osobna
   // akcja — brak tej gałęzi był rozjazdem bliźniaczych ścieżek (L41): rzut
   // z ręki grupował cele, rzut z grobu nie.
   if (command.type === 'cast_flashback' && command.targets?.length) {
@@ -963,7 +963,7 @@ export const KEYWORD_LABELS = Object.freeze({
   // akcji „Obróć twarzą do góry" pokazywała surowy slug małą literą — dokładnie
   // ten sam wyciek co L29 (`MAPA[key] ?? key` jest cichą dziurą, nie fallbackiem).
   megamorph: 'Megamorph',
-  // Batch 36 (Molten Nursery): Devoid — karta bezbarwna (CR 702.110? 702.131).
+  // Batch 36 (Molten Nursery): Devoid — karta bezbarwna (CR 702.114).
   devoid: 'Devoid (bezbarwna)',
 });
 
@@ -1873,7 +1873,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
 
 /** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
 export function rulesText(info) {
-  // M258/F3 (cloak, CR 701.56a): zakryty permanent z ward {2} — ward jest
+  // M258/F3 (cloak, CR 701.58a): zakryty permanent z ward {2} — ward jest
   // cechą JAWNĄ zakrycia (jak staty 2/2), więc kafel go pokazuje mimo
   // maskowania reszty tożsamości (CR 708.2a tłumi druk, nie definicję
   // zakrycia). Zwykły morph bez warda: linia pusta jak dotąd.
@@ -2186,7 +2186,7 @@ function findViewObject(objectId, view) {
 }
 
 /**
- * Koszt ODSŁONIĘCIA zakrytego permanentu (CR 701.56b cloak, CR 701.40b
+ * Koszt ODSŁONIĘCIA zakrytego permanentu (CR 701.58b cloak, CR 701.40b
  * manifest) — kwota należy do PEŁNEGO STANU, nie do widoku: prawa i koszt
  * obrotu są informacją właściciela zakrytej karty (FoW, CR 708.2a; widok
  * projektuje tylko `cloakReady` kontrolerowi). Stąd odczyt lustrzany do
@@ -2625,7 +2625,7 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
     }
   }
   // M (zgłoszenie z testów 2026-09-22, Dream Twist): grupa rzutu za FLASHBACK
-  // dostaje tytuł nazywający kartę i koszt alternatywny (CR 702.33a) — jak
+  // dostaje tytuł nazywający kartę i koszt alternatywny (CR 702.34a) — jak
   // „Rzuć: <karta>” dla rzutu z ręki. Bez tego modal celów szedł w generyczne
   // „Wybierz: Wariant”, bo cast_flashback nie ma wpisu w deskryptorach grup.
   if (options.length > 0
@@ -3489,7 +3489,7 @@ export function commandLabel(cmd, session, view) {
       return `Delirium: obrażenia w ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_mentor_target': {
-      // Mentor (CR 702.133): wybrany atakujący o mniejszej sile dostaje licznik.
+      // Mentor (CR 702.134): wybrany atakujący o mniejszej sile dostaje licznik.
       return `Mentor: licznik +1/+1 na ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_graveyard_top_choice': {
@@ -4048,7 +4048,7 @@ export function cardInfo(session, object, combat = null) {
   const attachedEquipment = Boolean(object.attachedTo) && !attachedAura;
   // M258/F3: ward zakrytego (cloak) jest jawny — keyword w widoku
   // (reszta keywordów tłumiona przez CR 708.2a jak dotąd).
-    // M315 (Veiled Ascension, CR 701.56a + 122.1b): zakryty permanent NOSI ward
+    // M315 (Veiled Ascension, CR 701.58a + 122.1b): zakryty permanent NOSI ward
   // {2} (definicja zakrycia) i MOŻE mieć jawne granty (licznik flying z Veiled
   // Ascension — „face-down creatures enter with a flying counter"). Widok
   // już rozstrzyga FoW (kontroler: pełna lista; przeciwnik: same granty),

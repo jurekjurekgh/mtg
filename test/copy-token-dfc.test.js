@@ -117,7 +117,7 @@ test('craft na tokenie-kopii DFC nie wywala partii (crash z benchmarku B0)', () 
 // transformTo (M90) musi nieść tożsamość twarzy PRZEDNIEJ pary (frontFaceId).
 // Bez niej inwariant „cardId ≠ frontFaceId ⇒ na tyle" (copyManaValueOf,
 // dfcFaceReset) nie rozpoznaje kopii tyłu: kopia kopii transformowanego DFC
-// nie mogłaby policzyć MV 0 (CR 202.3b), a reset K5 (CR 711.4a) nie odpaliłby
+// nie mogłaby policzyć MV 0 (CR 202.3b), a reset K5 (CR 712.8a) nie odpaliłby
 // się, gdyby kopia kiedykolwiek wróciła poza pole bitwy.
 test('M264/2.3-C1: token-kopia DFC niesie frontFaceId pierwowzoru (CR 707.8a)', () => {
   const state = table();

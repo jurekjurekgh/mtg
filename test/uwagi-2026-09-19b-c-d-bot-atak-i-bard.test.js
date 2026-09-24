@@ -19,7 +19,7 @@
 //   właściciela: używać TYLKO we własnej turze w kroku deklaracji atakujących
 //   i tylko na (a) stwora z chorobą przyzwania, który zaatakuje (haste
 //   odblokowuje — CR 302.6), albo (b) atakującego (menace utrudnia blok —
-//   CR 702.76); każde inne okno = nie używać wcale.
+//   CR 702.111); każde inne okno = nie używać wcale.
 // =============================================================================
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -198,7 +198,7 @@ test('D/4: gdy atakuje zdrowszy stwór (bez chorego) — bot wskazuje ATAKUJĄCE
   put(state, 'foe', 'inferno-titan', 'p2');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atak'] }).ok);
   const target = chosenActivation(playerView(state, 'p1'), 'bard');
-  assert.equal(target, 'atak', `(b) atakujący dostaje menace (CR 702.76) — wybrał: ${target}`);
+  assert.equal(target, 'atak', `(b) atakujący dostaje menace (CR 702.111) — wybrał: ${target}`);
 });
 
 test('D/5: w kroku bloków (i poza oknem) bot NIE używa zdolności', () => {

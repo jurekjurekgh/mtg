@@ -201,7 +201,7 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     // Insect itd.) nie dostają tego pola.
     ...(transformTo ? { transformTo } : {}),
     // M264/2.3 (CR 707.8a): tożsamość twarzy PRZEDNIEJ pary — inaczej
-    // `copyManaValueOf` (MV 0 dla kopii tyłu, 202.3b) i reset K5 (711.4a)
+    // `copyManaValueOf` (MV 0 dla kopii tyłu, 202.3b) i reset K5 (712.8a)
     // nie rozpoznają dwustronnego tokenu. Idzie w parze z transformTo:
     // bez drugiej strony nie ma czego identyfikować jako pary.
     ...(transformTo && frontFaceId ? { frontFaceId } : {}),

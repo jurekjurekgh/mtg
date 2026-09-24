@@ -370,7 +370,7 @@ test('bestow: nielegalny cel przy rozstrzygnięciu — karta wchodzi jako ZWYKŁ
   assert.ok(state.events.some((e) => e.type === 'permanent_entered_battlefield' && e.unattached), 'brak zdarzenia wejścia bez załączenia');
 });
 
-test('bestow: śmierć gospodarza — aura odłącza się i ZOSTAJE na polu bitwy jako stwór (CR 702.103b)', () => {
+test('bestow: śmierć gospodarza — aura odłącza się i ZOSTAJE na polu bitwy jako stwór (CR 702.103f)', () => {
   const state = bestowAttachedState();
   // Zabijamy gospodarza instantem. Uwaga: buff bestow podnosi wytrzymałość
   // gospodarza do 4 (2/2 +2/+2) — potrzeba co najmniej 4 obrażeń, bierzemy 5.

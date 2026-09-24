@@ -31,7 +31,7 @@ export function changeLife(state, playerId, amount) {
 }
 
 /**
- * Jedyna droga nadawania znaczników trucizny graczowi (Infect — CR 702.89c).
+ * Jedyna droga nadawania znaczników trucizny graczowi (Infect — CR 702.90c).
  * Przegraną przy 10+ znacznikach obsługują centralne SBA (state-based.js).
  */
 export function addPoisonCounters(state, playerId, amount) {

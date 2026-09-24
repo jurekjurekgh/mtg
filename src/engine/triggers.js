@@ -268,7 +268,10 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
     }
     return tapped >= condition.minTappedCreaturesControlled;
   }
-  // Batch 48 (Stampeding Elk Herd, DTK): FORMIDABLE (CR 702.103) —
+  // Batch 48 (Stampeding Elk Herd, DTK): FORMIDABLE — ability WORD (CR 207.2c:
+  // „they have no special rules meaning and no individual entries in the
+  // Comprehensive Rules"), więc warunek bierzemy z TEKSTU karty, nie z numeru
+  // reguły (dawniej cytowane „CR 702.103", czyli bestow — audyt PR #134, D2).
   // „if creatures you control have total power 8 or greater". Intervening-if
   // (CR 603.4) sprawdzany PRZY ODPALENIU i ponownie przy rozstrzyganiu.
   // Liczymy moc EFEKTYWNA (bufy, liczniki), nie wydrukowana.
@@ -2039,7 +2042,7 @@ function fireEnterBattlefieldTriggers(state, entered, events, context = {}) {
           tryFire(state, ability, source, [], events);
         }
       } else if (triggerEvent === 'enchantment_you_control_enters') {
-        // Constellation (CR 702.131): enchantment you control enters.
+        // Constellation (CR 207.2c): enchantment you control enters.
         const isEnch = entered.kind === 'enchantment' || (entered.types ?? []).includes('Enchantment');
         if (isEnch && entered.controllerId === source.controllerId) {
           tryFire(state, ability, source, [], events);
@@ -3019,7 +3022,7 @@ function processTriggersScan(state, recentEvents) {
             // Prowess (CR 702.108, Jeskai Windscout): „whenever you cast a
             // noncreature spell". Noncreature = instant/sorcery (spell_cast),
             // czar aury (aura_spell_cast — także karta-stwór rzucona za bestow,
-            // bo wtedy jest czarem AURY, nie stwora, CR 702.103a) albo
+            // bo wtedy jest czarem AURY, nie stwora, CR 702.103b) albo
             // permanent nie-będący stworem (permanent_cast z kind innym niż
             // 'creature': artefakt, enchantment). Land drop nie jest rzutem
             // (osobne zdarzenie) i tu nie wchodzi.
@@ -3118,7 +3121,7 @@ function processTriggersScan(state, recentEvents) {
           }
         }
       }
-      // Heroic (Wavecrash Triton, CR 702.128): „Whenever you cast a spell that
+      // Heroic (Wavecrash Triton, CR 207.2c — ability word): „Whenever you cast a spell that
       // targets this creature, ..." — trigger na stwórze, na który celuje
       // rzucony czar (spell_cast/aura_spell_cast z celami). Odpala się na
       // KAŻDYM takim stwórze (tylko kontroler może rzucić czar celujący).
@@ -3254,7 +3257,7 @@ function processTriggersScan(state, recentEvents) {
     // triggery załączników „whenever equipped creature attacks" (Greatsword
     // of Tyr — zdolność siedzi na EQUIPMENTU, nie na nosicielu).
     if (ev.type === 'attackers_declared') {
-      // „Attacks alone" (Exalted, CR 702.82; Angelic Benediction): dokładnie
+      // „Attacks alone" (Exalted, CR 702.83; Angelic Benediction): dokładnie
       // JEDEN atakujący. Triggery attacks_alone odpalają się na każdym źródle
       // z tą zdolnością (exalted jest keywordem na źródle); extra niesie
       // attackerId — ten sam dla wszystkich źródeł (jeden samotny atakujący).
@@ -3262,7 +3265,7 @@ function processTriggersScan(state, recentEvents) {
       if (attacksAlone) {
         const aloneId = ev.attackerIds[0];
         const aloneAttacker = state.objects.get(aloneId);
-        // Audyt PR #41 (B2, CR 702.82): „Whenever a creature YOU CONTROL
+        // Audyt PR #41 (B2, CR 702.83): „Whenever a creature YOU CONTROL
         // attacks alone" — trigger odpala się tylko, gdy KONTROLER źródła
         // kontroluje samotnie atakującego. Bez tego cudza Angelic Benediction
         // pompowała mojego stwora i dawała przeciwnikowi „you may tap target
@@ -3350,7 +3353,7 @@ function processTriggersScan(state, recentEvents) {
             queueTargetDecision(state, ability, attachment, candidates, allowNone, [attackerId], events, { defendingPlayerId }, targetSpec);
           }
         }
-        // Mentor (CR 702.133, Boros Challenger): „Whenever this creature
+        // Mentor (CR 702.134, Boros Challenger): „Whenever this creature
         // attacks, put a +1/+1 counter on target attacking creature with
         // lesser power". Cel wybiera KONTROLER blokującą decyzją
         // resolve_mentor_target (jak cel delirium, M36). Kandydaci liczeni
@@ -3497,7 +3500,7 @@ function processTriggersScan(state, recentEvents) {
           }, card, [], events, { suspendObjectId: id });
         }
       }
-      // Rebound (CR 702.97, Ojutai's Breath): „At the beginning of your next
+      // Rebound (CR 702.88, Ojutai's Breath): „At the beginning of your next
       // upkeep, you may cast this card from exile without paying its mana
       // cost.\" — na początku upkeepu AKTYWNEGO gracza sprawdzamy, czy w exile
       // leży karta z `reboundReady` (zaznaczona przy rozstrzygnięciu czaru

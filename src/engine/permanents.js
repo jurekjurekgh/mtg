@@ -348,7 +348,7 @@ function staticConditionHolds(state, object, condition) {
       && candidate.controllerId === object.controllerId
       && (candidate.kind === 'artifact' || (candidate.types ?? []).includes('Artifact')));
   }
-  // Carapace Forger — Metalcraft (CR 702.80): trzy lub więcej artefaktów.
+  // Carapace Forger — Metalcraft (CR 207.2c): trzy lub więcej artefaktów.
   if (condition.minArtifactsControlled != null) {
     const count = [...(state?.objects?.values?.() ?? [])].filter((c) => c.zone === 'battlefield'
       && c.controllerId === object.controllerId
@@ -360,7 +360,7 @@ function staticConditionHolds(state, object, condition) {
   if (condition.enduringStory) {
     return hasEnduringStory(state, object.controllerId);
   }
-  // Kabira Vindicator — Level counters (CR 702.86)
+  // Kabira Vindicator — Level counters (CR 702.87)
   if (condition.minLevel != null || condition.maxLevel != null) {
     const level = object.counters?.level ?? 0;
     if (condition.minLevel != null && level < condition.minLevel) return false;
@@ -929,7 +929,7 @@ export function effectiveSubtypesOnBattlefield(state, object) {
  * Zwraca null, gdy obiekt nie ma warda (keyword czytany EFEKTYWNIE —
  * granty/utrata), inaczej kwotę many z pola `ward`; domyślnie 2, bo
  * jedyne źródło w katalogu to zakryte permanenty (cloak/disguise,
- * CR 701.56a: „2/2 creature with ward {2}").
+ * CR 701.58a: „2/2 creature with ward {2}").
  */
 export function wardAmountOf(object, state = null) {
   if (!object) return null;
@@ -956,7 +956,7 @@ export function effectiveKeywords(object, state = null) {
     if ((object.counters ?? {}).flying > 0) counterKeywords.push('flying');
     if ((object.counters ?? {}).deathtouch > 0) counterKeywords.push('deathtouch');
     if ((object.counters ?? {}).lifelink > 0) counterKeywords.push('lifelink');
-    // M258/F3 (CR 701.56a + 702.21): zakryty permanent z CLOAK/DISGUISE to
+    // M258/F3 (CR 701.58a + 702.21): zakryty permanent z CLOAK/DISGUISE to
     // 2/2 Z WARD {2} — ward jest częścią definicji zakrycia (jak staty 2/2),
     // a nie drukowanym keywordem zakrywanej karty, więc CR 708.2a go NIE
     // tłumi (ruling cloak: „Other effects can still grant it any
@@ -1064,7 +1064,7 @@ export function turnFaceUp(state, objectId, counters = {}) {
         // zakryciem (uśpione: dziś 0 kart w katalogu ma drukowany ward — F4
         // w audycie PR #102 opisał to samo złą stronę przy cloaku).
         ward: object.faceDownOriginal.ward ?? null,
-        // M321: uncover przywraca też P/T karty (CR 701.56b — „turn it face
+        // M321: uncover przywraca też P/T karty (CR 701.58b — „turn it face
         // up"; odkryty cloak zostawał 2/2, bo cloak nadpisuje power/toughness
         // na staty zakrycia). Morfy, których faceDownOriginal nie niesie P/T,
         // zostają przy obecnym zachowaniu (fallback na obiekt).
@@ -1077,7 +1077,7 @@ export function turnFaceUp(state, objectId, counters = {}) {
     // MECHANIKI w punkcie zbierającym, nie u wołającego. Do tej pory kasowaniem
     // `ward`/`cloakReady`/`cloakTurnUpCost`/`copyNumber` zajmował się handler
     // komendy `turn_cloak_face_up`, więc obrót inną procedurą tej samej karty
-    // (CR 701.56c: koszt morpha) zostawiał ward {2} na face-up permanencie —
+    // (CR 701.58c: koszt morpha) zostawiał ward {2} na face-up permanencie —
     // pole `ward` idzie do PlayerView i do odznaki kafla, więc stwór „miał"
     // ward już po odsłonięciu. Tak samo manifest: flagi zdjęte tu, a nie w
     // handlerze `turn_manifest_face_up` (L41 — jedno źródło dla obu dróg).
@@ -1465,14 +1465,25 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options =
  * Pola obiektu opisujące „czym permanent jest” po TRANSFORMACJI
  * (transform / craft / daybound→nightbound).
  *
- * CR 400.7 + CR 711.2: przemieniony permanent to wciąż ten sam permanent, ale
- * o cechach DRUGIEJ STRONY — efekty typu „until end of turn” nadające mu
- * charakterystyki (animacja: Skilled Animator robi z artefaktu stwora 5/5)
- * NIE przenoszą się na nową stronę. Bez tego resetu ożywiony artefakt po
- * crafcie zostawał `kind='creature'` z `power/toughness = null` z drugiej
- * strony: stwór bez liczbowego P/T (łamie CR 208.1), którego SBA nie potrafiły
- * zabić (CR 704.5f porównuje `null <= 0`, czyli `false` — permanent był
- * nieśmiertelny).
+ * CRAFT: permanent jest WYGNANY i wraca, a zmiana strefy tworzy nowy obiekt
+ * (CR 400.7), więc nadane charakterystyki wygasają i nowa strona wchodzi
+ * z własnymi cechami (CR 712.8/712.8e). Tu reset jest zgodny z CR. Bez niego
+ * ożywiony artefakt po crafcie zostawał `kind='creature'` z
+ * `power/toughness = null` z drugiej strony: stwór bez liczbowego P/T (łamie
+ * CR 208.1), którego SBA nie potrafiły zabić (CR 704.5f porównuje `null <= 0`,
+ * czyli `false` — permanent był nieśmiertelny).
+ *
+ * TRANSFORM W MIEJSCU (transform / daybound→nightbound): CR 712.18 mówi
+ * dosłownie „When a double-faced permanent transforms or converts, it doesn’t
+ * become a new object. Any effects that applied to that permanent will continue
+ * to apply to it.” (przykład CR: +2/+2 przechodzi przez transform Village
+ * Ironsmith → Ironfang). Silnik zapisuje animację jako MUTACJĘ pól obiektu,
+ * a nie jako efekt ciągły rozliczany warstwami (CR 613), więc ten sam reset
+ * gubi trwającą animację. ZNANE ODSTĘPSTWO od 712.18 — obserwacja O-6 audytu
+ * PR #134 (docs/audits/AUDYT_PR134_2026-09-24.md §5): ożywiony artefakt, który
+ * transformuje w miejscu, traci animację, choć wg CR powinien ją zachować.
+ * Poprawka docelowa to model warstw, nie reset — zapisana w planie sesji
+ * (docs/plans/PLAN_2026-09-24-audyt-pr134-i-petla-jakosci.md, Etap E/backlog).
  *
  * `back` to deskryptor drugiej strony (obiekt `transformTo`). Zwracany jest
  * zestaw pól do rozłożenia w nowym obiekcie.

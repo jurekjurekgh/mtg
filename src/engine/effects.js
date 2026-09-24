@@ -199,7 +199,7 @@ export function manifestCardFaceDown(state, cardObjectId, controllerId) {
       // characteristics while it was face down ends, and it regains its normal
       // characteristics" — zmanifestowany 6/5 po obrocie jest 6/5, nie 2/2.
       // Bez migawki `turnFaceUp` brał P/T z już nadpisanego obiektu (dokładnie
-      // ten błąd co u cloaka w M315, naprawiony tam dla 701.56b).
+      // ten błąd co u cloaka w M315, naprawiony tam dla 701.58b).
       power: card.power ?? null,
       toughness: card.toughness ?? null,
     }),
@@ -527,7 +527,7 @@ export function drawPlayerCards(state, playerId, amount, source = 'effect') {
  *    „zapobiegnięte obrażenia nie są zadane" (CR 119.3); triggery czytające
  *    ev.amount (delirium Fear of Burning Alive: „deals that much damage")
  *    dostają właściwą kwotę zamiast kwoty sprzed prewencji;
- *  - infect: do gracza → poison, do stwora → -1/-1 (po prewencji — CR 702.89);
+ *  - infect: do gracza → poison, do stwora → -1/-1 (po prewencji — CR 702.90);
  *  - lifelink źródła: zysk życia = obrażenia zadane (CR 702.15 — dotyczy
  *    WSZYSTKICH obrażeń, także niecombat).
  *  Zwraca kwotę zadaną (0, gdy w pełni zapobiegnięta).
@@ -992,7 +992,7 @@ export function counterStackObject(state, stackId, { counteredBy = null, counter
  *  2. licznik shield (CR 122.1) — pochłania zniszczenie i znika;
  *  3. regeneracja (CR 701.15) — zastępuje zniszczenie;
  *  4. strefa śmierci przez `deathZoneFor` (licznik finality / naznaczenie
- *     wygnaniem, CR 122.1e) — a nie sztywno cmentarz.
+ *     wygnaniem, CR 122.1h) — a nie sztywno cmentarz.
  *
  * M272 (błąd #19): tę sekwencję znała TYLKO ścieżka `destroy_permanent`.
  * `destroy_equipment_attached` (Awaken the Sleeper) miała własną, uboższą
@@ -1476,7 +1476,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const source = state.objects.get(sourceObject.id);
     // Stwór mógł opuścić pole bitwy, zanim trigger się rozstrzygnął — wtedy
     // liczniki nie mają na czym usiąść, ale tokeny powstają normalnie
-    // (CR 702.122a: wybór nadal należy do gracza).
+    // (CR 702.123a: wybór nadal należy do gracza).
     state.pendingFabricate = {
       playerId: controllerId,
       sourceId: sourceObject.id,
@@ -1698,7 +1698,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     modifyStats(state, targetId, { power, toughness });
     return;
   }
-  // Exalted (CR 702.82, Angelic Benediction): „Whenever a creature you control
+  // Exalted (CR 702.83, Angelic Benediction): „Whenever a creature you control
   // attacks alone, that creature gets +1/+1 until end of turn." Trigger
   // attacks_alone niesie attackerId w context; pumpuje SAMOTNEGO atakującego.
   // modifyStats (powerModifier/toughnessModifier) jest czyszczone w cleanup —
@@ -1767,7 +1767,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       ...(src.transformTo ? { transformTo: src.transformTo } : {}),
       // M264/2.3 (CR 707.8a): dwustronny token zna też front pary — inaczej
       // kopia TYLNEJ twarzy nie odróżnia się od zwykłego obiektu na tyle
-      // (MV 0 — CR 202.3b przez copyManaValueOf; reset K5 — CR 711.4a).
+      // (MV 0 — CR 202.3b przez copyManaValueOf; reset K5 — CR 712.8a).
       ...(src.transformTo && src.frontFaceId ? { frontFaceId: src.frontFaceId } : {}),
       // F3 (audyt PR106, CR 707.2 + 614.1d): kopia przejmuje kopiowalny
       // „enters tapped” oryginału — token wchodzi tapnięty (jak Static Net).
@@ -2167,7 +2167,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'living_weapon') {
-    // Living weapon (CR 702.91, Strandwalker): „When this Equipment enters,
+    // Living weapon (CR 702.92, Strandwalker): „When this Equipment enters,
     // create a 0/0 black Phyrexian Germ creature token, then attach this to
     // it.” — jak job_select, ale token to 0/0 Germ (żyje dzięki +2/+4
     // z equipmentu). Deskryptor tokenu generyczny (dane karty, ADR 0002).
@@ -2246,12 +2246,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       }
     }
   }
-  // Cloak (Veiled Ascension, MKC; CR 701.56 — „cloak"): wierzch biblioteki
-  // UWAGA CO DO NUMERU (audyt PR #102, F5): cloak to keyword ACTION, więc
-  // siedzi w CR 701 (akcje), NIE w 702 (ability keywords). Komentarze w tym
-  // repo cytały „702.75" od M258 — przepisane na 701.56a–g wg tekstu z 2024
-  // r.; słownik z VIII 2026 przesuwa je na 701.58a–g, więc przy kolejnym
-  // odświeżaniu CR chodzi o TEN sam blok (listę mapowań trzyma
+  // Cloak (Veiled Ascension, MKC; CR 701.58 — „cloak"): wierzch biblioteki
+  // UWAGA CO DO NUMERU (audyt PR #102, F5; domknięte w audycie PR #134, F-3):
+  // cloak to keyword ACTION, więc siedzi w CR 701 (akcje), NIE w 702 (ability
+  // keywords). Komentarze w tym repo cytały najpierw numer z sekcji 702 (od
+  // M258), potem numer z wydania CR 2024 (audyt PR #102, F5); bieżące wydania
+  // (2025-11-14, 2026-08-07, 2026-09-25) numerują ten blok 701.58a–h, więc całe
+  // repo przepisano na 701.58 — stare numery i źródła trzyma pin
+  // test/audyt-pr134-2026-09-24-cytaty-cr.test.js (historia:
   // docs/audits/AUDYT_PR102_2026-09-06.md).
   // gracza na pole bitwy TWARZĄ W DÓŁ jako bezimienny stwór 2/2 bez zdolności
   // (jak morph). Rzeczywisty cardId zostaje ukryty (faceDown), a obiekt ma
@@ -2272,13 +2274,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       power: 2, toughness: 2,
       types: ['Creature'],
       subtypes: [],
-      // M258/F3 (CR 701.56a): zakryty permanent to stwór 2/2 z WARD {2} —
+      // M258/F3 (CR 701.58a): zakryty permanent to stwór 2/2 z WARD {2} —
       // pełna mechanika CR 702.21 (decyzja właściciela: żadnych
       // limitations), nie wpis w support.limitations. Keyword + kwota
       // (czyta wardAmountOf).
       keywords: ['ward'],
       // M322 (audyt PR #102, F0+F9) — dwa braki tego samego kształtu:
-      //  • 708.2a tłumi DRUKOWANE zdolności, ale 701.56c/d zostawia przy
+      //  • 708.2a tłumi DRUKOWANE zdolności, ale 701.58c/d zostawia przy
       //    cloaku procedurę obrotu za koszt morpha/disguise — lista zdolności
       //    zakrycia jest więc TA SAMa co przy rzucie twarzą w dół (provider
       //    `faceDownAbilities`, bez kopiowania jego logiki — L41);
@@ -2294,7 +2296,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       ward: 2,
       summoningSickness: true,
       tapped: false,
-      // M315 (CR 701.56b + ruling WotC 2024-02-02): „Any time you have
+      // M315 (CR 701.58b + ruling WotC 2024-02-02): „Any time you have
       // priority, you can turn a cloaked permanent you control face-up by
       // revealing that it's a creature card ... and paying its mana cost.
       // This is a special action." — flagi dla turn_cloak_face_up
@@ -2307,14 +2309,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         keywords: Object.freeze([...(topObj.keywords ?? [])]),
         manaCost: topObj.manaCost ?? 0,
         cardName: topObj.cardName ?? null,
-        // M321: P/T karty — uncover ma przywrócić pełne ciało (CR 701.56b).
+        // M321: P/T karty — uncover ma przywrócić pełne ciało (CR 701.58b).
         // Pole `power`/`toughness` obiektu jest nadpisane na 2/2 zakrycia, więc
         // bez tego odkryty cloak zostawał 2/2 (bug z M315: turnFaceUp
         // przywracał nazwę/kolory/koszt, ale nie statystyki).
         power: topObj.power ?? null,
         toughness: topObj.toughness ?? null,
         // M322 (F4): kwota warda też jest cechą karty — zakrycie nadpisuje ją
-        // na 2 (701.56a), a obrót ma przywrócić to, co było wydrukowane. Bez
+        // na 2 (701.58a), a obrót ma przywrócić to, co było wydrukowane. Bez
         // tego uncover kasował drukowany ward twardym `ward: null` (poprawny
         // wynik z niepoprawnego źródła — klasa L104; dziś katalog nie ma karty
         // z drukowanym wardem, więc błąd był uśpiony).
@@ -2439,7 +2441,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         abilities: effect.abilities ?? [],
         // M69 (Relic Robber — Goblin Construct „This token can't block").
         cantBlock: Boolean(effect.cantBlock),
-        // Batch 45 (Crawling Chorus — token Mite z toxic 1, CR 702.180).
+        // Batch 45 (Crawling Chorus — token Mite z toxic 1, CR 702.164).
         ...(effect.toxic != null ? { toxic: effect.toxic } : {}),
         // M147 (Static Net — Powerstone): token wchodzi TAPNIĘTY.
         tapped: Boolean(effect.tapped),
@@ -5129,7 +5131,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // czytały turę SPRZED wygnania: permanent, który wrócił właśnie teraz,
       // nie był uznawany za świeżo przybyły.
       enteredOnTurn: state.turn.number,
-      // Komplet charakterystyk drugiej strony (CR 711.2) — wspólny helper
+      // Komplet charakterystyk drugiej strony (CR 712.8) — wspólny helper
       // niesie też `kind`, którego wcześniej brakowało: strona zmieniająca
       // rodzaj permanentu (Incubator → Phyrexian) wracała z pola bitwy jako
       // obiekt o rodzaju strony przedniej.
@@ -6173,7 +6175,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return true;
   }
 
-  // Etherium Abomination — Unearth (CR 702.87): „{1}{U}{B}: Return this card
+  // Etherium Abomination — Unearth (CR 702.84a): „{1}{U}{B}: Return this card
   // from your graveyard to the battlefield. It gains haste. Exile it at the
   // beginning of the next end step or if it would leave the battlefield.
   // Unearth only as a sorcery." Podobne do Puppeteer (haste + delayed exile),
@@ -6196,7 +6198,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.events.push(event('object_moved', { fromId: sourceObject.id, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', unearth: true }));
     state.delayedTriggers.push({
       type: 'exile_object', objectId: newId, playerId: ownerId,
-      // Unearth (CR 702.83a): „Exile it at the beginning of THE NEXT end
+      // Unearth (CR 702.84a): „Exile it at the beginning of THE NEXT end
       // step" — jak wyżej, najbliższy krok końcowy (M105/B6).
       anyPlayerEndStep: true,
       armedOnTurn: state.turn.number, cardId: permanent.cardId,
@@ -6208,7 +6210,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
   // Batch 58/B5 (Resurrected Cultist): powrót SOBIE z grobu na pole bitwy —
   // bez celu i bez haste (unearth_return ma własną, szytą na unearth ścieżkę);
   // licznik finality dokłada `effect.finalityCounter`, a wygnanie przy śmierci
-  // robi wspólny `deathZoneFor` (CR 122.1e).
+  // robi wspólny `deathZoneFor` (CR 122.1h).
   if (effect.type === 'return_source_from_graveyard') {
     const sourceObj = state.objects.get(sourceObject.id);
     if (!sourceObj || sourceObj.zone !== 'graveyard') return;

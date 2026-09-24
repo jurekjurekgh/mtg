@@ -6,7 +6,7 @@
  *
  * Słownik: `supported` (pełna karta, taliowalna), `token` (token tworzony przez
  * karty/mechaniki), `back` (tylna strona karty dwustronnej — w talii jest tylko
- * przód, CR 711.4), a `unsupported`/`in-development` są zarezerwowane na prace
+ * przód, CR 712.8), a `unsupported`/`in-development` są zarezerwowane na prace
  * w toku (w katalogu nie występują).
  *
  * Ten strażnik pilnuje trzech rzeczy naraz:

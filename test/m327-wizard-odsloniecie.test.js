@@ -16,7 +16,7 @@ import { paymentDescriptorOf, shouldOpenManaWizard, WIZARD_PAYMENT_COMMAND_TYPES
  * many jest niejednoznaczna (więcej niż 1 kombinacja rodzajów źródeł) powinien
  * być wizard\". `paymentDescriptorOf` znał rzuty, aktywacje i decyzje
  * płatnicze — a `turn_cloak_face_up` / `turn_manifest_face_up` są w silniku
- * JEDYNYMI nie-rzutowymi `spendMana` z pipami koloru (CR 701.56b: obrot
+ * JEDYNYMI nie-rzutowymi `spendMana` z pipami koloru (CR 701.58b: obrot
  * cloaka płaci koszt many KARTY; 701.55c: manifest tak samo). Zmierzone przed
  * naprawą: deskryptor dla obu typów to `null` → kreator się nie otwierał i o
  * tym, które źródła tapują, decydowała kolejność w `spendMana`.

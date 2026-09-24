@@ -73,7 +73,7 @@ test('Akrasan Squire: dane zgodne z Oracle ({W} 1/1, exalted)', () => {
   assert.equal(def.abilities[0].trigger.event, 'attacks_alone');
 });
 
-test('Akrasan Squire: samotny atakujący dostaje +1/+1 (CR 702.82)', () => {
+test('Akrasan Squire: samotny atakujący dostaje +1/+1 (CR 702.83)', () => {
   const state = newState();
   putCard(state, 'squire', 'akrasan-squire', 'p1');
   putBlank(state, 'wojownik', 'p1', { power: 2, toughness: 2 });

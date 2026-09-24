@@ -1528,7 +1528,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // mill_from_bottom to też mielenie (to samo co mill_cards — ADR 0002).
   const LIBRARY_DRAIN_EFFECTS = new Set(['mill_cards', 'draw_cards', 'draw_then_discard', 'mill_from_bottom']);
   // F1 v2 (uwaga właściciela 2026-09-23d, Veiled Ascension): efekty, które
-  // przenoszą kartę z biblioteki na pole bitwy TWARZĄ W DÓŁ (cloak — CR 701.56a,
+  // przenoszą kartę z biblioteki na pole bitwy TWARZĄ W DÓŁ (cloak — CR 701.58a,
   // manifest — CR 701.40a). Dla własnej biblioteki to NIE to samo co mill czy
   // dobranie: karta nie ginie, tylko staje się permanentem 2/2 z wardem
   // (i da się ją później obrócić twarzą do góry), więc „you may” jest opłacalne
@@ -2880,7 +2880,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   /**
    * M212/Z7 (audyt Żywym Testerem): kara za CEL przy rzucie DARMOWYM
-   * (suspend / rebound — CR 702.62a, 702.97).
+   * (suspend / rebound — CR 702.62a, 702.88).
    *
    * Root cause zgłoszenia: obie gałęzie wyceniały wyłącznie TYP efektu
    * („czy czar jest ofensywny"), a silnik enumeruje ofertę PER ZESTAW CELÓW.
@@ -3216,7 +3216,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   /** M320/NA2: mana zarezerwowana na sam koszt czaru/zdolności (przed ward). */
   function reservedManaOf(view, cmd) {
     // M324: okna darmowego rzutu nie płacą kosztu karty (CR 702.62a suspend,
-    // 702.97 rebound, M195 Epic z grobu) — z puli wychodzi wyłącznie to, co
+    // 702.88 rebound, M195 Epic z grobu) — z puli wychodzi wyłącznie to, co
     // naprawdę: {X} (Epic płaci X = MV, CR 118.9a) i koszt madness. Bez tego
     // podatek ward liczony był od reszty pomniejszonej o koszt, którego nikt
     // nie płaci, i bot odmawiał darmowych rzutów (over-fix w drugą stronę).
@@ -3426,7 +3426,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           value -= 10; // każde inne okno (Main 1/2, bloki, cudza tura) = nie używać
         } else if (attacking) {
           // (b) zadeklarowany atakujący: menace działa przy deklaracji bloków
-          // (CR 702.76), więc grant przed blokami realnie zmienia matematykę.
+          // (CR 702.111), więc grant przed blokami realnie zmienia matematykę.
           value += 2 + (recipient.power ?? 0);
         } else if (recipient.summoningSickness === true && !recipient.tapped
           && (recipient.power ?? 0) > 0 && recipient.cantAttackStatic !== true) {
@@ -3438,7 +3438,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
       } else if (kw === 'vigilance') {
         // M221/D + B (zgłoszenie właściciela, Bladed Sentinel „{W}: vigilance
-        // do końca tury"): vigilance = „nie tapuje się, gdy atakuje" (CR 702.21).
+        // do końca tury"): vigilance = „nie tapuje się, gdy atakuje" (CR 702.20).
         // Daje korzyść WYŁĄCZNIE jeśli ten stwór ATAKUJE w tej turze i pozostanie
         // odkręcony do bloku. Kupowanie go w main1 (przed decyzją o ataku)
         // marnuje manę — bot po takim kupnie nie atakował (widział presję
@@ -3859,7 +3859,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     switch (cmd.type) {
       case 'concede': return finish(NEVER);
-      // M315/M321 + M334 (CR 701.56b, 701.40b, 702.37e): rodzina OBROTÓW
+      // M315/M321 + M334 (CR 701.58b, 701.40b, 702.37e): rodzina OBROTÓW
       // twarzą do góry — cloak i manifest to TA SAMA decyzja („zapłać koszt
       // many karty, żeby odzyskać to, co leży pod zakryciem"), więc mają
       // JEDEN wspólny przypadek (L137: rodzina wyceniana w jednym miejscu,
@@ -3881,7 +3881,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // playerView nie niesie `cloakTurnUpCost`/`manifestTurnUpCost` (prawa
         // do obrotu są u kontrolera, a kwoty i tak nie są publiczne) — koszt
         // obrotu to koszt many KARTY; odczyt z rejestru, tak samo jak czyta go
-        // oferta w game-state (CR 701.56b/701.40b: „paying its mana cost").
+        // oferta w game-state (CR 701.58b/701.40b: „paying its mana cost").
         const uncoverCost = covered.cloakTurnUpCost ?? covered.manifestTurnUpCost
           ?? coveredDef.manaCost ?? 0;
         if (uncoverCost <= 0 || ownOpenMana(view) < uncoverCost) return finish(NEVER);
@@ -3892,11 +3892,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // ETB (ruling WotC 2024-02-02, Veiled Ascension).
         // Ile warda TRACI się na obrocie — liczone ze STANU, nie z mechaniki:
         // kwotę zakrycia niesie publiczne pole `ward` widoku (M258/F3,
-        // CR 701.56a: cloak to 2/2 Z WARD {2}), a drukowaną kwotę karty
+        // CR 701.58a: cloak to 2/2 Z WARD {2}), a drukowaną kwotę karty
         // widać w rejestrze. Stąd cloak z kartą bez drukowanego warda płaci za
         // utratę ward {2} (jak w M321), a manifest i morph — zero, bo ich
         // definicje zakrycia wardu nie dają (CR 701.40a, 702.37a); karta
-        // z drukowanym wardem {2} pod cloakiem nie traci nic (701.56a tylko
+        // z drukowanym wardem {2} pod cloakiem nie traci nic (701.58a tylko
         // PODNOSI ward do 2 → obrót nic nie zabiera). Waga 1.5 kalibruje tak,
         // by dzisiejszy cloak płacił −3, czyli dokładnie tyle, ile płacił przed
         // tą zmianą (zero dryfu wycen na karcie, którą mierzył benchmark).
@@ -4131,7 +4131,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(score);
       }
       case 'resolve_rebound_cast': {
-        // Rebound (CR 702.97): jednorazowa decyzja na początku następnego
+        // Rebound (CR 702.88): jednorazowa decyzja na początku następnego
         // upkeepu — rzuć wygnany czar ZA DARMO (ignorując timing) albo zostaw
         // w exile na stałe. Jak suspend: rzut niemal zawsze lepszy niż strata
         // karty — chyba że czar nie ma sensownego celu.
@@ -7520,7 +7520,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(30 + (target.power ?? 0) * 2 + (target.toughness ?? 0));
       }
       case 'resolve_mentor_target': {
-        // Mentor (CR 702.133): licznik +1/+1 na WŁASNYM atakującym o mniejszej
+        // Mentor (CR 702.134): licznik +1/+1 na WŁASNYM atakującym o mniejszej
         // sile — najsilniejszy kandydat zyskuje najwięcej (twardszy napastnik).
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!target) return finish(0);
@@ -7736,8 +7736,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         // F1 v2 (uwaga właściciela 2026-09-23d, Veiled Ascension): cloak
         // w upkeepie to „you may” ZAWSZE — efekt zakrywa kartę z biblioteki,
-        // ale jej nie marnuje (2/2 z wardem, CR 701.56a; odkrycie wraca do
-        // karty, CR 701.56b), więc bazowa wartość „fire” (50) zostaje.
+        // ale jej nie marnuje (2/2 z wardem, CR 701.58a; odkrycie wraca do
+        // karty, CR 701.58b), więc bazowa wartość „fire” (50) zostaje.
         // Wyjątek: własna biblioteka pod progiem `cloakLibraryFloor` — każde
         // zakrycie przybliża deck-out (CR 121.4), a przegrana na pustej
         // bibliotece jest nieodwracalna; kara schodzi pod 0, czyli pod „pass”.
@@ -8450,7 +8450,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // projekcji pytała o sumę wytrzymałości stworów, które nie atakują, i
       // findingi na tym polu okazały się artefaktem metryki, nie ślepotą bota:
       // stwór tapnięty atakiem odświeża się w NASZYM kroku odświeżania, czyli
-      // zdąży zablokować w turze wroga (CR 502.3 + 702.21 dla vigilance —
+      // zdąży zablokować w turze wroga (CR 502.3 + 702.20 dla vigilance —
       // wyjątek „doesn't untap" obsługuje osobna gałąź wyceny). Pytanie
       // „co zostaje w obronie" jest więc w Magic pytaniem o efekt, nie o
       // tapnięcie; metryka, która o tym zapomina, produkuje szum (L118).

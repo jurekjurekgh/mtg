@@ -6,7 +6,7 @@
 //
 // Reguły (zweryfikowane u źródła — L57): CR 406.3 — karty wygnane są DOMYŚLNIE
 // odkryte i każdy gracz może je oglądać; suspend (CR 702.62a) i plot
-// (CR 702.168a) nie mówią „face down”, więc obie strefy są jawne dla obu
+// (CR 702.170a) nie mówią „face down”, więc obie strefy są jawne dla obu
 // graczy. Pokazanie ich na stole nie łamie Fog of War.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

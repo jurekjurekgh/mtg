@@ -19,9 +19,9 @@ import { jumpToStep } from '../src/engine/turn.js';
  *   madness → Revolutionist, Terminal Agony (warhammer-ubr): odrzucenie
  *             nie oferowało rzutu za koszt madness (CR 702.35),
  *   surge   → Jwar Isle Avenger (zendikar): brak oferty rzutu za {2}{U}
- *             po innym czarze w turze (CR 702.111),
+ *             po innym czarze w turze (CR 702.117),
  *   toxic   → Crawling Chorus (mirrodin-wu): combat damage graczowi NIE dawał
- *             poison counterów (CR 702.180a; zaobserwowane na żywym stole:
+ *             poison counterów (CR 702.164a; zaobserwowane na żywym stole:
  *             3 ataki Chorus bez trucizny, licznik ruszył dopiero od tokenu
  *             Mite, który niesie toxic jawnie w efekcie create_token),
  *   warp    → Weftblade Enhancer (worek-legend): brak alternatywnego kosztu.
@@ -80,7 +80,7 @@ test('M258/D2: toxic z talii działa — atak Crawling Chorus daje obrońcy pois
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
   const p2 = state.players.find((p) => p.id === 'p2');
   assert.equal(p2.life, 19, 'życie spada normalnie (toxic ≠ infect)');
-  assert.equal(p2.poison, 1, 'toxic 1 z ObiektU Z TALII → 1 poison counter (CR 702.180a)');
+  assert.equal(p2.poison, 1, 'toxic 1 z ObiektU Z TALII → 1 poison counter (CR 702.164)');
 });
 
 test('M258/D3: echo z talii działa — Bone Shredder wchodzi z echoUnpaid (CR 702.30)', () => {

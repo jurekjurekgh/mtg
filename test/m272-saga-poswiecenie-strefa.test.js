@@ -11,7 +11,7 @@ import { resolveTopOfStack } from '../src/engine/spells.js';
 import { event } from '../src/protocol/types.js';
 
 /**
- * M272 (błąd #17, CR 704.5s + 122.1e) — po ostatnim rozdziale kontroler
+ * M272 (błąd #17, CR 704.5s + 122.1h) — po ostatnim rozdziale kontroler
  * POŚWIĘCA Sagę. Poświęcenie to śmierć permanenta, więc obowiązuje
  * zastąpienie strefy (`deathZoneFor`: licznik finality / „exile it instead").
  * M269 (błąd #5) sprowadził cztery ścieżki poświęcenia do wspólnego helpera,
@@ -58,7 +58,7 @@ test('katalog zawiera Sagi (sanity)', () => {
   assert.ok(sagi.length >= 3, `znaleziono ${sagi.length} Sag`);
 });
 
-test('KLASA: Saga z licznikiem finality idzie na WYGNANIE (CR 122.1e)', () => {
+test('KLASA: Saga z licznikiem finality idzie na WYGNANIE (CR 122.1h)', () => {
   for (const descriptor of sagi) {
     const { sacrificed, zone } = dobijSage(descriptor.id, { finality: true });
     assert.ok(sacrificed, `${descriptor.id}: Saga została poświęcona (CR 704.5s)`);
@@ -93,7 +93,7 @@ test('KLASA: żaden emiter permanent_sacrificed nie przenosi na sztywno do grobu
       if (!kontekst.includes('moveObjectDirectly')) return;
       assert.ok(
         kontekst.includes('deathZoneFor') || !kontekst.includes("'graveyard'"),
-        `${plik}:${index + 1} — poświęcenie omija deathZoneFor (CR 122.1e)`,
+        `${plik}:${index + 1} — poświęcenie omija deathZoneFor (CR 122.1h)`,
       );
     });
   }

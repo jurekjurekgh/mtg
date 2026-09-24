@@ -7,7 +7,7 @@
 //
 // Root cause (klasa „rozdźwięk oferta ↔ walidacja"): przy dwóch
 // oczekujących decyzjach tego samego gracza — rebound Ojutai's Breath
-// (CR 702.97) i wybór ścieżki lochu (M190/B) — silnik oferował
+// (CR 702.88) i wybór ścieżki lochu (M190/B) — silnik oferował
 // `resolve_undercity_route`, po czym SAM go odrzucał, bo bramka `execute` dla
 // reboundu odrzuca każdą komendę inną niż `resolve_rebound_cast`.
 //

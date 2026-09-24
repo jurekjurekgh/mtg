@@ -213,7 +213,7 @@ test('M333/F: pod zakryciem nie ma drukowanego warda — morph i manifest (CR 70
   // (permanents.js), więc dopóki punkty tworzące zakrycie nie zerowały pola,
   // zmanifestowany/zblokowany wardem stwór miał ward pod zakryciem — a
   // face-down permanent nie ma zdolności (CR 708.2a); ward {2} ma CLOAK, bo
-  // to definicja zakrycia z 701.56a. Dziś w katalogu nie ma karty z drukowanym
+  // to definicja zakrycia z 701.58a. Dziś w katalogu nie ma karty z drukowanym
   // wardem (zmierzone w audycie PR #102: 0 definicji), więc test buduje stan
   // ręcznie — to celowo SYNTETYCZNY obiekt, a nie nowa karta (ADR 0029).
   const state = game('p1', 'main');

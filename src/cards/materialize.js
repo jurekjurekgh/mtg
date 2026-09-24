@@ -53,7 +53,7 @@ export function gameObjectDataOf(card) {
     if (card.devour) data.devour = card.devour;
     // Endure (Kin-Tree Nurturer): ETB z decyzją resolve_endure_choice.
     if (card.endure != null) data.endure = card.endure;
-    // Toxic (CR 702.180): wartość na obiekcie gry (combat czyta source.toxic).
+    // Toxic (CR 702.164): wartość na obiekcie gry (combat czyta source.toxic).
     if (card.toxic != null) data.toxic = card.toxic;
     // Batch 46 (Bone Shredder): echo — koszt musi dojść na obiekt gry (L21).
     if (card.echo != null) data.echo = card.echo;
@@ -152,7 +152,7 @@ export function gameObjectDataOf(card) {
   }
   if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {
     // Spelle mogą nosić zdolności aktywowane z ręki (cycling — Fiery Fall,
-    // CR 702.28): materializujemy je także na obiekcie czaru.
+    // CR 702.29): materializujemy je także na obiekcie czaru.
     const data = { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null, suspend: card.suspend ?? null, colors: colors(), abilities: card.abilities ?? [], cardName: card.name };
     // Batch 54: kicker musi dojść również z definicji instanta na obiekt.
     if (card.kicker) data.kicker = card.kicker;
@@ -202,16 +202,16 @@ export function createCardDeck({ cardIds, ownerId, registry }) {
     if (card.transformTo) {
       const back = registry.get(card.transformTo);
       if (!back) throw new Error(`Brak drugiej strony transform: ${card.transformTo}`);
-      // CR 711.4a (M257/K5, Żywy Tester): DFC poza polem bitwy ma wyłącznie
+      // CR 712.8a (M257/K5, Żywy Tester): DFC poza polem bitwy ma wyłącznie
       // cechy twarzy przedniej. Karta z talii ZAWSZE wchodzi przodem (parser
       // talii zamienia nazwę tyłu na front), więc `card` jest tu twarzą
       // przednią pary — engine resetuje na nią twarz przy opuszczeniu pola
       // bitwy (obrócony wilkołak odbity na rękę wraca przodem; rzut z ręki
-      // idzie na stos przodem — CR 711.7/711.8).
+      // idzie na stos przodem — CR 712.11/712.13).
       data.frontFaceId = card.id;
       data.transformTo = {
         cardId: back.id,
-        // RODZAJ drugiej strony (CR 711.2): bez niego transformacja nie umiała
+        // RODZAJ drugiej strony (CR 712.8): bez niego transformacja nie umiała
         // odróżnić „artefakt → artefaktowy stwór" od zwykłej podmiany statystyk
         // i musiała zgadywać z types. Liczony tym samym kodem, co strona
         // przednia, więc pozostaje spójny z `kind` obiektu wejściowego.

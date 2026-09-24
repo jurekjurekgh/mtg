@@ -21,7 +21,7 @@
 //    whether it's affected by any requirements (effects that say a creature
 //    must block, or that it must block if some condition is met). If the number
 //    of requirements … the declaration is illegal."
-//  • CR 702.110b (menace): „A creature with menace can't be blocked except by
+//  • CR 702.111b (menace): „A creature with menace can't be blocked except by
 //    two or more creatures."
 //  • Oracle Ember Beast (GTC): „This creature can't attack or block alone."
 //    (deskryptor `cantBlockAlone` — CR 509.1c: wymóg partnera przy TYM SAMYM
@@ -130,14 +130,14 @@ test('M387/B: menace — pojedynczy bloker nie w ofercie i odrzucony, dwóch OK'
   enterBlockStep(state, ['menacer']);
 
   assert.equal(offered(state, { menacer: ['b1'] }), false,
-    'CR 702.110b: pojedynczy bloker nie jest oferowany na atakującego z menace');
+    'CR 702.111b: pojedynczy bloker nie jest oferowany na atakującego z menace');
   const single = verdict(state, { menacer: ['b1'] });
   assert.equal(single.ok, false, 'komenda z pojedynczym blokerem musi zostać odrzucona');
   assert.match(String(single.reason), /menace|dwóch/i, `odrzucenie po stronie bloków: ${single.reason}`);
 
   assert.equal(offered(state, { menacer: ['b1', 'b2'] }), true, 'dwóch blokerów jest oferowanych');
   assert.equal(verdict(state, { menacer: ['b1', 'b2'] }).ok, true, 'dwóch blokerów jest przyjmowanych');
-  // Pusty blok (0 blokerów) jest legalny — menace mówi „0 albo ≥2" (CR 702.110b).
+  // Pusty blok (0 blokerów) jest legalny — menace mówi „0 albo ≥2" (CR 702.111b).
   assert.equal(offered(state, {}), true, 'brak bloków musi zostać w ofercie');
   assert.equal(verdict(state, {}).ok, true, 'brak bloków jest legalny');
 });

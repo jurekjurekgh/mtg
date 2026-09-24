@@ -481,7 +481,7 @@ test('B58/B5: Resurrected Cultist — aktywacja tylko jak sorcery (nie w walce)'
   assert.ok(find(state, 'resurrected-cultist', 'graveyard'), 'karta zostaje w grobie');
 });
 
-test('B58/B5: Resurrected Cultist — śmierć z licznikiem finality wygania (CR 122.1e)', () => {
+test('B58/B5: Resurrected Cultist — śmierć z licznikiem finality wygania (CR 122.1h)', () => {
   const state = game();
   deliriumGrave(state);
   addMana(state, 'p1', 4, { colors: ['B'] });

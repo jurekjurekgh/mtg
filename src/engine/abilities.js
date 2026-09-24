@@ -178,7 +178,7 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     effect: effects,
     trigger: trigger ? Object.freeze(trigger) : null,
     targets: targets ? Object.freeze(targets.map((spec) => Object.freeze({ ...spec }))) : null,
-    // Cycling (CR 702.28): deskryptor kwalifikacji poszukiwanej karty
+    // Cycling (CR 702.29): deskryptor kwalifikacji poszukiwanej karty
     // ({ types: [...] } albo { subtypes: [...] }); obecność oznacza zdolność
     // aktywowaną z ręki — koszt many + odrzucenie tej karty (koszt).
     cycling: cycling ? Object.freeze({ ...cycling }) : null,
@@ -257,7 +257,7 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // a +1/+1 counter on it can block an additional creature each combat"
     // — licznik uprawniający do dodatkowego slotu bloku.
     grantsExtraBlockWithCounter,
-    // Forecast (CR 702.94, Piercing Rays): „[koszt], Reveal this card from
+    // Forecast (CR 702.57, Piercing Rays): „[koszt], Reveal this card from
     // your hand: [efekt]. Activate only during your upkeep and only once each
     // turn." Zdolność aktywowana z RĘKI; karta zostaje w ręce (ujawniona).
     forecast: Boolean(forecast),
@@ -616,11 +616,11 @@ export function legalActivatedAbilities(state, playerId) {
         const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
         if (effs.length === 1 && effs[0]?.type === 'transform' && transformActivationPending(state, id)) continue;
       }
-      // Cycling również działa wyłącznie z ręki (CR 702.28a) — na polu bitwy
+      // Cycling również działa wyłącznie z ręki (CR 702.29a) — na polu bitwy
       // ta zdolność jest martwa; oferowanie jej kończy się odrzuceniem legalnej
       // z pozoru komendy (execute krzyczy „Cycling aktywuje się z ręki").
       if (ability.cycling) continue;
-      // Channel (CR 702.85a, Greater Tanuki) — jak cycling: zdolność karty
+      // Channel (CR 207.2c, Greater Tanuki) — jak cycling: zdolność karty
       // w RĘCE; na polu bitwy jest martwa. Bez tego bota oferowano channel z
       // pola bitwy i execute odrzucał „Channel aktywuje się z ręki" (regresja
       // benchmarku B0 po dodaniu Greater Tanuki do talii green).
@@ -637,7 +637,7 @@ export function legalActivatedAbilities(state, playerId) {
       // Megamorph (obrócenie twarzą do góry) działa tylko, póki permanent
       // leży twarzą w dół; po obrocie zdolność wygasa.
       if ((ability.keyword === 'megamorph' || ability.keyword === 'morph') && !object.faceDown) continue;
-      // Craft (CR 702.9? — Lodestone Needle // Guidestone Compass): wymaga
+      // Craft (CR 702.167 — Lodestone Needle // Guidestone Compass): wymaga
       // drugiej strony (transformTo). Kopia bez drugiej strony (enterAsCopy
       // skopiował zdolność craft, ale transformTo jest warunkowe) nie ma czego
       // przywrócić — nie oferujemy (no-op zamiast crasha, jak efekty.js).
@@ -1079,7 +1079,7 @@ export function legalActivatedAbilities(state, playerId) {
       }
     }
   }
-  // Cycling (CR 702.28) — zdolność aktywowana karty w RĘCE z szybkością
+  // Cycling (CR 702.29) — zdolność aktywowana karty w RĘCE z szybkością
   // instanta (dostępna z priorytetem, niezależnie od fazy). Koszt: mana;
   // odrzucenie karty jest częścią kosztu rozpatrywaną przy aktywacji.
   for (const id of state.zones.hand) {
@@ -1093,7 +1093,7 @@ export function legalActivatedAbilities(state, playerId) {
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
-  // Channel (CR 702.85, Greater Tanuki) — jak cycling: zdolność karty w RĘCE,
+  // Channel (CR 207.2c, Greater Tanuki) — jak cycling: zdolność karty w RĘCE,
   // koszt many + discard, efekt search. Rozpatrywane tak samo (priorytet instant).
   for (const id of state.zones.hand) {
     const object = state.objects.get(id);
@@ -1151,7 +1151,7 @@ export function legalActivatedAbilities(state, playerId) {
       }
     }
   }
-  // Forecast (CR 702.94, Piercing Rays) — zdolność z RĘKI, tylko w swoim
+  // Forecast (CR 702.57, Piercing Rays) — zdolność z RĘKI, tylko w swoim
   // upkeepie, raz na turę. Karta zostaje w ręce (koszt to UJAWNIENIE).
   if (state.turn?.step === 'upkeep' && state.turn.activePlayerId === playerId) {
     for (const id of state.zones.hand) {
@@ -1914,7 +1914,7 @@ function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
   const drawAmount = qualifier?.drawCards;
   if (drawAmount != null && (!Number.isInteger(drawAmount) || drawAmount < 1)) throw new RangeError('Cycling drawCards musi być dodatnią liczbą całkowitą');
   spendMana(state, playerId, ability.cost?.mana ?? 0, cyclingReqs);
-  // Odrzucenie karty to KOSZT (CR 702.28: „Discard this card: ...") —
+  // Odrzucenie karty to KOSZT (CR 702.29: „Discard this card: ...") —
   // następuje przed wejściem zdolności na stos (CR 601.2h).
   const graveId = `grave-${state.objectSequence++}`;
   const discarded = moveObjectDirectly(state, cardObject.id, 'graveyard', graveId);
@@ -2034,7 +2034,7 @@ function activateChannel(state, playerId, cardObject, abilityIndex, ability) {
   }
   const effMana = effectiveAbilityManaCost(state, playerId, ability, cardObject);
   spendMana(state, playerId, effMana, channelReqs);
-  // Odrzucenie karty to koszt (CR 702.85: „Discard [card]: ...").
+  // Odrzucenie karty to koszt (CR 207.2c — ability word: „Discard [card]: ...").
   const graveId = `grave-${state.objectSequence++}`;
   const discarded = moveObjectDirectly(state, cardObject.id, 'graveyard', graveId);
   // Audyt PR #41 (B7.2, CR 602.2a): channel to aktywowana zdolność NA STOSIE —
@@ -2055,7 +2055,7 @@ function activateChannel(state, playerId, cardObject, abilityIndex, ability) {
 }
 
 /**
- * Forecast (CR 702.94, Piercing Rays): zdolność z RĘKI. Koszt: mana +
+ * Forecast (CR 702.57, Piercing Rays): zdolność z RĘKI. Koszt: mana +
  * UJAWNIENIE karty (karta zostaje w ręce); tylko w swoim upkeepie, raz na
  * turę. Efekt idzie na stos (CR 602.2a) — przeciwnik może odpowiedzieć.
  */
@@ -2167,7 +2167,7 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
 
 /**
  * Ninjutsu: wróć nieblokowanego atakującego do ręki właściciela, a kartę
- * z ręki połóż na battlefield tapniętą i atakującą (CR 702.48 w minimalnym
+ * z ręki połóż na battlefield tapniętą i atakującą (CR 702.49 w minimalnym
  * wymiarze: okno aktywacji to krok combat_damage przed rozstrzygnięciem).
  */
 function activateNinjutsu(state, playerId, cardObject, abilityIndex, ability, attackerId) {
@@ -2194,7 +2194,7 @@ function activateNinjutsu(state, playerId, cardObject, abilityIndex, ability, at
   // z ofertą (L48). spendMana atomowy (CR 601.2h) — nieudana płatność nie
   // zostawia tapniętych źródeł ani zwrotu atakującego (to następuje dalej).
   spendMana(state, playerId, ability.cost?.mana ?? 0, colorRequirementsOf(ability.cost));
-  // Zwrot atakującego do ręki to KOSZT (CR 702.48: „Return an unblocked
+  // Zwrot atakującego do ręki to KOSZT (CR 702.49: „Return an unblocked
   // attacker you control to hand: ...") — następuje przed wejściem zdolności
   // na stos (CR 601.2h). Atakujący znika z combat PRZED zmianą strefy, żeby
   // inwariant combat (odwołania tylko do battlefield) był spełniony w trakcie.
@@ -2203,7 +2203,7 @@ function activateNinjutsu(state, playerId, cardObject, abilityIndex, ability, at
   if (state.combat) state.combat.attackers = state.combat.attackers.filter((id) => id !== attackerId);
   const handId = `hand-${state.objectSequence++}`;
   moveObjectDirectly(state, attackerId, 'hand', handId);
-  // Audyt PR #41 (B7.2, CR 702.48a + 602.2a): ninjutsu to aktywowana zdolność
+  // Audyt PR #41 (B7.2, CR 702.49a + 602.2a): ninjutsu to aktywowana zdolność
   // NA STOSIE — karta wchodzi na pole bitwy tapnięta i atakująca przy
   // rozstrzyganiu (po pełnej rundzie passów; przeciwnik może odpowiedzieć
   // instanitem, np. zniszczyć kartę z ręki nie zdąży — ale może kontrować).

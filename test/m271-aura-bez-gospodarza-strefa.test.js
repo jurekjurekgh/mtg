@@ -13,7 +13,7 @@ import { addCounter } from '../src/engine/counters.js';
  * przez jedyny choke point `moveObjectDirectly`. Kopia gubiła dwie korekty:
  *   #11 CR 400.3 + 110.2a — poza polem bitwy obiekt należy do WŁAŚCICIELA,
  *       więc ukradziona aura lądowała w grobie ZŁODZIEJA;
- *   #12 CR 122.1e — `deathZoneFor` (finality) był ignorowany.
+ *   #12 CR 122.1h — `deathZoneFor` (finality) był ignorowany.
  *
  * Strażnik jest KLASOWY: sprawdza RÓWNOWAŻNOŚĆ ścieżki aury ze ścieżką
  * zwykłego permanentu, a nie zachowanie konkretnej karty.
@@ -43,7 +43,7 @@ test('#11 CR 400.3: ukradziona aura trafia do grobu WŁAŚCICIELA', () => {
   assert.equal(moved.controllerId, 'p2', 'poza polem bitwy kontroluje WŁAŚCICIEL, nie złodziej');
 });
 
-test('#12 CR 122.1e: aura z licznikiem finality idzie na wygnanie', () => {
+test('#12 CR 122.1h: aura z licznikiem finality idzie na wygnanie', () => {
   const state = stan();
   addCounter(state, 'a', 'finality', 1);
   removeIllegalAttachments(state);

@@ -1,11 +1,11 @@
 // M257 (audyt Żywym Testerem, pool Innistrad, g1001) — poprawki:
 //
-// K5 (CR 711.4a/711.7/711.8): DFC poza polem bitwy ma wyłącznie cechy
+// K5 (CR 712.8a/712.11/712.13): DFC poza polem bitwy ma wyłącznie cechy
 //    twarzy PRZEDNIEJ. W partii g1001 obrócony na tył Scorned Villager
 //    (Moonscarred Werewolf) odbity Lunar Rejectionem został w ręce tyłem
 //    (2/2, Czujność) i z ręki wszedł na pole bitwy TYŁEM — wg CR w ręce
 //    widnieje przód (Scorned Villager 1/1), a rzut z ręki idzie na stos
-//    przodem (711.7) i wchodzi przodem (711.8).
+//    przodem (712.11) i wchodzi przodem (712.13).
 //
 // K4 (panel „Rozgrywka"): zdarzenie `object_transformed` nie niosło
 //    kontrolera, więc `isHumanHeadline` (M100/E5) dla transformu
@@ -86,7 +86,7 @@ function flipFrontToBack(state) {
   return bfId;
 }
 
-test('M257/K5: obrócony DFC opuszczający pole bitwy wraca przodem (CR 711.4a)', () => {
+test('M257/K5: obrócony DFC opuszczający pole bitwy wraca przodem (CR 712.8a)', () => {
   const state = freshState();
   const bfId = flipFrontToBack(state);
   const flipped = state.objects.get(bfId);
@@ -97,7 +97,7 @@ test('M257/K5: obrócony DFC opuszczający pole bitwy wraca przodem (CR 711.4a)'
   // Bounce na rękę (to samo robi Lunar Rejection: moveObjectDirectly).
   const handId = moveObjectDirectly(state, bfId, 'hand', `hand-villager-${bfId}`).id;
   const inHand = state.objects.get(handId);
-  assert.equal(inHand.cardId, 'scorned-villager', 'CR 711.4a: w ręce twarz PRZEDNIA');
+  assert.equal(inHand.cardId, 'scorned-villager', 'CR 712.8a: w ręce twarz PRZEDNIA');
   assert.equal(inHand.cardName, 'Scorned Villager');
   assert.equal(inHand.power, 1);
   assert.equal(inHand.toughness, 1);
@@ -109,7 +109,7 @@ test('M257/K5: obrócony DFC opuszczający pole bitwy wraca przodem (CR 711.4a)'
   const lki = state.lastKnownObjects?.get(bfId);
   assert.equal(lki?.cardId, 'moonscarred-werewolf', 'LKI = stan na polu bitwy (tył)');
 
-  // Powtórny rzut wchodzi przodem (CR 711.7/711.8).
+  // Powtórny rzut wchodzi przodem (CR 712.11/712.13).
   const bf2 = moveObjectDirectly(state, handId, 'battlefield', `bf2-villager-${handId}`).id;
   const reentered = state.objects.get(bf2);
   assert.equal(reentered.cardId, 'scorned-villager', 'rzut z ręki wchodzi PRZODEM');

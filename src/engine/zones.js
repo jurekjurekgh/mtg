@@ -24,7 +24,7 @@ export function moveToZone(object, zone, newObjectId) {
 }
 
 /**
- * Strefa, do której trafia permanent zamiast umrzeć (CR 122.1e).
+ * Strefa, do której trafia permanent zamiast umrzeć (CR 122.1h).
  * Licznik finality („if it would die, exile it instead") oraz znacznik
  * `exileIfDiesThisTurn` (Agate Assault) przekierowują z cmentarza na wygnanie.
  *
@@ -58,7 +58,7 @@ export function deathZoneFor(state, object) {
  * `test/module-graph.test.js`).
  *
  * `adventure` (CR 715.3), `flashedBack` (CR 702.34a) i `reboundCast`
- * (CR 702.97) dotyczą wyłącznie pełnej ścieżki rozstrzygnięcia — przekazuje
+ * (CR 702.88) dotyczą wyłącznie pełnej ścieżki rozstrzygnięcia — przekazuje
  * je caller.
  */
 export function spellExitZone(object, { adventure = false, flashedBack = false, reboundCast = false } = {}) {

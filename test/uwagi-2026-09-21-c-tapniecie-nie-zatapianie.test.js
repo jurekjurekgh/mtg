@@ -65,7 +65,7 @@ test('C/1: log aktywacji forecast (Piercing Rays) mówi „tapnięcie celu"', ()
   }
   const oferta = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'activate_ability' && c.objectId === 'rays' && c.targets?.includes('cel'));
-  assert.ok(oferta, 'forecast ma być ofertą w kroku podtrzymania (CR 702.60)');
+  assert.ok(oferta, 'forecast ma być ofertą w kroku podtrzymania (CR 702.57)');
   const wynik = execute(state, oferta);
   assert.equal(wynik.ok, true, 'aktywacja forecast przyjęta');
   const zdarzenie = wynik.events.find((e) => e.type === 'ability_activated');

@@ -64,7 +64,7 @@ export function createAggroBot() {
           return (casts[0] ?? found);
         }
         if (type === 'resolve_rebound_cast') {
-          // Rebound (CR 702.97): jak suspend — darmowy rzut z exile, pierwszy
+          // Rebound (CR 702.88): jak suspend — darmowy rzut z exile, pierwszy
           // wariant rzutu; rezygnacja tylko, gdy nic nie ma.
           const casts = byType(view, 'resolve_rebound_cast').filter((cmd) => cmd.cast);
           return (casts[0] ?? found);

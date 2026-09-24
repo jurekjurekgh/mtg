@@ -98,7 +98,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
   const object = state.objects.get(objectId);
   assertZone(toZone);
   if (!object || !newObjectId || state.objects.has(newObjectId)) throw new Error('Nieprawidłowy ruch obiektu');
-  // M69 (Unearth, CR 702.87b): „Exile it ... if it would leave the battlefield"
+  // M69 (Unearth, CR 702.84a): „Exile it ... if it would leave the battlefield"
   // — permanent z flagą unearthExile opuszczający pole bitwy idzie do exile
   // zamiast docelowej strefy (replacement, jak finality dla dies). Delayed
   // exile na end step też przechodzi tu — cel to już exile, bez zmian.
@@ -133,11 +133,11 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
   const controllerAfterMove = (object.zone === 'battlefield' && toZone !== 'battlefield' && toZone !== 'stack')
     ? (object.ownerId ?? object.controllerId)
     : object.controllerId;
-  // CR 711.4a (M257/K5, Żywy Tester g1001): DFC poza polem bitwy ma wyłącznie
+  // CR 712.8a (M257/K5, Żywy Tester g1001): DFC poza polem bitwy ma wyłącznie
   // cechy Twarzy PRZEDNIEJ. Obrócony na tył permanent (wilkołak), który
   // opuszcza pole bitwy (bounce, śmierć, wygnanie), odwraca się na przód:
   // w ręce/grobie/bibliotece widnieje przód, a rzut z ręki idzie na stos
-  // przodem (CR 711.7) i wchodzi przodem (CR 711.8). Twarzą przednią pary
+  // przodem (CR 712.11) i wchodzi przodem (CR 712.13). Twarzą przednią pary
   // jest `frontFaceId` (snapshot z materializacji); cechy przedniej twarzy
   // przy tylnym obrazku niesie `transformTo` (efekt transform buduje go z
   // cech sprzed obrócenia) — odwracamy go w `transformTo` nowego obiektu,
@@ -158,7 +158,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
       subtypes: front.subtypes ?? [],
       ...(front.kind != null ? { kind: front.kind } : {}),
       ...(front.types ? { types: front.types } : {}),
-      // Karta poza polem bitwy leży przodem (CR 711.4a) — jej MV to koszt
+      // Karta poza polem bitwy leży przodem (CR 712.8a) — jej MV to koszt
       // przedni; payload przedniej twarzy niesie go od Etapu 2.3b. Zwykły
       // DFC: spread i tak trzyma ten sam koszt (no-op).
       ...(front.manaCost != null ? { manaCost: front.manaCost } : {}),
@@ -238,7 +238,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // M262: stempel źródła wygnania — istnieje wyłącznie w exile (patrz
     // deriveExiledBy). Poza exile meta znika (CR 400.7).
     meta: toZone === 'exile' ? Object.freeze({ exiledBy: deriveExiledBy(state, object, opts) }) : null,
-    // CR 711.2: rodzaj twarzy przedniej przy DFCE (np. Incubator: tył to
+    // CR 712.8: rodzaj twarzy przedniej przy DFCE (np. Incubator: tył to
     // stwór, przód to artefakt) — reset twarzi (M257/K5) nadaje `kind`
     // przedniej strony, a nie stalej `object.kind` (tylnej).
     kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : (dfcFaceReset?.kind ?? object.kind),
@@ -257,7 +257,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
   rememberLastKnownObject(state, object);
   // Załączniki wskazujące odchodzący obiekt rozłączają się od razu —
   // attachedTo nigdy nie wskazuje obiektu spoza pola bitwy (inwariant).
-  // Polityki zależą od rodziny: bestow znów jest stworem (CR 702.103b),
+  // Polityki zależą od rodziny: bestow znów jest stworem (CR 702.103f),
   // equipment zostaje odłączony (CR 704.5n), czysta aura idzie do grobu
   // (CR 704.5m) — detale w attachments.js.
   if (object.zone === 'battlefield') detachAttachmentsFromHost(state, objectId);

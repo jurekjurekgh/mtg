@@ -187,7 +187,7 @@ const KNOWN_KEYWORDS = new Set([
   'level_up', 'exalted', 'station', 'devoid', 'toxic',
   // Batch 46: echo (CR 702.30) i fabricate (CR 702.123).
   'echo', 'fabricate',
-  // Batch 47: outlast (CR 702.100) — {koszt},{T}: licznik +1/+1, tylko jak sorcery.
+  // Batch 47: outlast (CR 702.107) — {koszt},{T}: licznik +1/+1, tylko jak sorcery.
   'outlast',
 ]);
 

@@ -33,7 +33,7 @@ const hasKeyword = (state, object, keyword) => effectiveKeywords(object, state).
  * bloki, nadmiar trample): tarcze prewencji (Withstand) redukują obrażenia,
  * a lifelink źródła (True Conviction) daje kontrolerowi zysk życia równy
  * obrażeniom ZADANYM (po prewencji). Infect zadaje znaczniki trucizny
- * zamiast utraty życia (CR 702.89) i też jest ograniczony prewencją.
+ * zamiast utraty życia (CR 702.90) i też jest ograniczony prewencją.
  */
 /** Inspire Awe (CR): „Prevent all combat damage this turn except by enchanted
  * creatures and enchantment creatures." Zwraca true, gdy obrażenia combat z
@@ -122,7 +122,7 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   if (actual > 0 && hasKeyword(state, source, 'lifelink')) {
     events.push(...changeLife(state, source.controllerId, actual));
   }
-  // Toxic N (CR 702.180a, Batch 45 — Crawling Chorus): gracz, któremu to
+  // Toxic N (CR 702.164, Batch 45 — Crawling Chorus): gracz, któremu to
   // źródło zadało combat damage, dostaje DODATKOWO N poison counterów
   // (życie spada normalnie — w odróżnieniu od infect). Tylko przy realnie
   // zadanych obrażeniach (prewencja w całości = brak poisonu).
@@ -1019,7 +1019,7 @@ export function validateDamageAssignment(state, attackerId, assignment, context 
  *  3. zadanie obrażeń — „Second, all combat damage that's been assigned is dealt
  *     simultaneously" (CR 510.2). Kwoty i przydziały domyślne liczone są RAZ, na
  *     początku tej fazy, więc to, co dzieje się w trakcie zadawania (liczniki
- *     −1/−1 z infect, CR 702.3), nie zmienia przydzielonej mocy.
+ *     −1/−1 z infect, CR 702.90), nie zmienia przydzielonej mocy.
  * Między ogłoszeniem przydziałów a zadaniem obrażeń nie ma priorytetu ani akcji
  * stanowych (CR 510.2: „No player has the chance to cast spells or activate
  * abilities between the time combat damage is assigned and the time it's dealt";
@@ -1590,7 +1590,7 @@ function canBlock(state, attacker, blocker) {
  * Warstwy są rozdzielone świadomie: restrykcje PAROWE (ewazje, próg mocy,
  * ochrona, landwalk) siedzą w `blockRestrictionError` (M380), a reguły
  * ZBIORU/kontekstu tutaj: własne zakazy blokowania blokera
- * (`creatureCantBlock`, restrykcje z załączników), menace (CR 702.110b:
+ * (`creatureCantBlock`, restrykcje z załączników), menace (CR 702.111b:
  * atakującego z menace blokuje 0 albo ≥2 stworów) oraz „can't block alone”
  * (CR 509.1c: blokujący musi mieć partnera przy TYM SAMYM atakującym).
  *

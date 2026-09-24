@@ -1409,7 +1409,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
-  // (CR 702.136 — „Cast it as a sorcery on a later turn without paying its
+  // (CR 702.170 — „Cast it as a sorcery on a later turn without paying its
   // mana cost"). Batch 24: Spinewoods Paladin — plot dla permanentów.
   const plotted = object?.zone === 'exile' && object.plotted;
   // Batch 47 (Caves of Chaos Adventurer, CR 701.51b): karta wygnana impulse
@@ -1470,7 +1470,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   if (!hasFlash && !madnessCast && !abilityWindowCast && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
   if (warpCast && !object.warp) throw new Error('Ta karta nie ma mechaniki warp');
   if (madnessCast && !object.madness) throw new Error('Ta karta nie ma mechaniki madness');
-  // Surge (CR 702.111): koszt ALTERNATYWNY rzutu z ręki, legalny gdy ty (lub
+  // Surge (CR 702.117): koszt ALTERNATYWNY rzutu z ręki, legalny gdy ty (lub
   // sojusznik — w 1v1 tylko ty) rzuciłeś inny czar w tej turze. Płaci się
   // NORMALNĄ maną (inaczej niż treasureAlt). Gate liczony PRZED zagraniem tego
   // czaru: spellsCastThisTurnByPlayer > 0. Wyklucza inne warianty kosztu.
@@ -1647,7 +1647,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // alternatywny; 702.36 to Fear): koszt {3} jest BEZBARWNY — pipy karty nie
   // obowiązują (root cause: face-down Monastery Flock wymagał {U} z powodu
   // pipów karty; cicha zła płatność w consumeManaPool to maskowała).
-  // Plot – rzut bez kosztu many – nie ma też wymagań kolorowych (CR 702.136).
+  // Plot – rzut bez kosztu many – nie ma też wymagań kolorowych (CR 702.170).
   // M161/O2: przy madness/warp pipy AKTYWNEGO kosztu alternatywnego
   // (altCostColors — ta sama lista co bramka kolorów wyżej).
 
@@ -1743,7 +1743,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // karty, a efekty patrzące na podtyp/mana value widziały wartości spod
     // rewersu. Oryginał chowamy obok abilities i przywracamy przy obrocie.
     patch.faceDownOriginal = Object.freeze({
-      // M333: migawka niesie TEŻ ward (jak cloak u 701.56a i manifest) —
+      // M333: migawka niesie TEŻ ward (jak cloak u 701.58a i manifest) —
       // obrót przywraca drukowany ward, a zakryty go nie ma (CR 708.2a).
       ward: object.ward ?? null,
       colors: Object.freeze([...(object.colors ?? [])]),
@@ -1805,7 +1805,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // Offspring — jak kicker: fakt opłacenia dodatkowego kosztu (log i ewent.
     // triggery „you cast a spell with offspring").
     offspring: Boolean(offspringPaid),
-    // Surge/Cleave (CR 702.111, Batch 58/B1): fakt rzutu za KOSZT ALTERNATYWNY
+    // Surge/Cleave (CR 702.117, Batch 58/B1): fakt rzutu za KOSZT ALTERNATYWNY
     // (nie dodatkowy) — jawny w logu tak samo, jak `spell_cast.surgeCast`.
     surgeCast: Boolean(surgeCast),
     // Mana wydana na ten rzut (bez części opłaconej życiem — to nie mana) —
@@ -2149,12 +2149,12 @@ export function legalAuraCasts(state, playerId) {
 
 /**
  * Zdolność obrócenia twarzą do góry dla face-down permanentu.
- * Megamorph (CR 702.37b — wariant morpha, nie osobny numer: 702.109 to
+ * Megamorph (CR 702.37b — wariant morpha, nie osobny numer: 702.110 to
  * Exploit) kładzie przy obrocie licznik +1/+1; zwykły morph
  * (CR 702.37, Woolly Loxodon) obraca kartę za koszt morph BEZ licznika.
  */
 // M322 (audyt PR #102, F9): eksport — ścieżka `cloak` (effects.js) musi dać zakrytemu
-// permanentowi TE SAME zdolności co rzut twarzą w dół, bo CR 701.56c/d zostawia
+// permanentowi TE SAME zdolności co rzut twarzą w dół, bo CR 701.58c/d zostawia
 // przy cloaku procedurę obrotu za koszt morpha/disguise.
 export function faceDownAbilities(object) {
   if (!object.morph) return [];

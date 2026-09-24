@@ -30,7 +30,7 @@
 //    Root cause: `choiceRequestGroupKey` grupowało cele dla `cast_spell`
 //    i `cast_escape`, ale NIE dla `cast_flashback` (L41 — rozjazd bliźniaczych
 //    ścieżek: rzut z ręki grupował, rzut z grobu nie). Flashback to
-//    alternatywny KOSZT tego samego rzutu (CR 702.33a), a wybór celu jest
+//    alternatywny KOSZT tego samego rzutu (CR 702.34a), a wybór celu jest
 //    decyzją w trakcie rzucania (CR 601.2c) — więc jedna oferta + modal.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

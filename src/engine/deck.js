@@ -51,7 +51,7 @@ export function installDeck(state, deck, { seed }) {
       transformTo: card.transformTo,
       // M257/K5 (L21 — deskryptor ginie w łańcuchu): twarz przednia pary
       // transform — engine resetuje na nią DFC przy opuszczeniu pola bitwy
-      // (CR 711.4a). Pominięcie = mechanika martwa w prawdziwych partiach.
+      // (CR 712.8a). Pominięcie = mechanika martwa w prawdziwych partiach.
       frontFaceId: card.frontFaceId ?? null,
       types: card.types,
       entersTapped: card.entersTapped,

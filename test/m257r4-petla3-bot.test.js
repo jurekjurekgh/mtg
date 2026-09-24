@@ -23,7 +23,7 @@ import { runStateBasedActions } from '../src/engine/state-based.js';
  * jest deterministyczny — partia odtworzona 1:1): BRAK DEFENSY.
  *
  * Mechanizm (poprawny wg CR): sprzęt może być przypięty tylko do stwora
- * (CR 702.16 / 702.6). Pojazd animowany crewem jest stworem TYLKO do końca
+ * (CR 702.6a). Pojazd animowany crewem jest stworem TYLKO do końca
  * tury — w cleanupu (`clearStatModifiers`) animacja wygasa, pojazd traci
  * typ Creature, a SBA (`removeIllegalAttachments`) odłącza sprzęt. Każde
  * kolejne przypięcie to więc PRZYPINANIE ŚWIEŻE (legalne, potrzebne do ataku
@@ -98,7 +98,7 @@ function botScores(view) {
   return { entry, pass, bot };
 }
 
-test('Z1/1: koniec animacji crew — sprzęt z pojazdu odłącza się (SBA, CR 702.16)', () => {
+test('Z1/1: koniec animacji crew — sprzęt z pojazdu odłącza się (SBA, CR 704.5n)', () => {
   const state = createGameState({ seed: 3002, players: [{ id: 'p1' }, { id: 'p2' }] });
   crewedIrontread(state, true);
   addCard(state, 'plate', 'brawlers-plate');

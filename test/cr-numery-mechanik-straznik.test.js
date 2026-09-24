@@ -26,6 +26,21 @@
 // delirium jako 702.34, crew jako 701.36 w dokumentach). Wszystkie
 // naprawione; ten test pilnuje, żeby nie wróciły.
 //
+// Audyt PR #135 (2026-09-24) dopisał dwie rzeczy:
+//   1. Wydanie CR, z którego pochodzą numery: pary poniżej weryfikowane wobec
+//      CR efektywnego 2026-08-07, a następnie przeliczone na CR 2026-09-25
+//      (Reality Fracture) — dosłowny spis sekcji 702 z mtg.wiki/page/Keyword_ability.
+//      L164: lustro `ancestral.vision` BYWA o wydanie do tyłu (sekcja 712 DFC:
+//      tam 712.4a = cechy twarzy, w CR 2026-09-25 meld wchłonął 712.4/712.5,
+//      a cechy twarzy to 712.8/712.8a) — przed masowym przenumerowaniem trzeba
+//      potwierdzić numer w BIEŻĄCYM wydaniu, nie w pierwszym znalezionym lustrze.
+//   2. Detektor OKNA: pary poniżej są liniowe (mechanika i numer na jednej
+//      linii), więc nie łapią cytatu o linię obok nazwy mechaniki. Tym
+//      przypadkiem zajmuje się `test/cr-numery-702-tabela-straznik.test.js`
+//      (każdy cytat 702.<n> musi mieć nazwę mechaniki 702.<n> w oknie ±8 linii).
+//      L41: mechanizmy się nie dublują — tu historia par i numery spoza 702.x,
+//      tam tabela bieżącego wydania.
+//
 // Zakres: `src/**/*.js` i `test/**/*.js` — pliki źródłowe, nie dokumenty
 // (dokumenty historyczne, np. `docs/PROJECT_HISTORY.md` i stare plany,
 // cytują numery z epoki i zostają bez zmian).
@@ -35,8 +50,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-/** Ten plik cytuje błędne pary, żeby je opisać — nie skanujemy go. */
-const PLIK_STRAGNIKA = 'test/cr-numery-mechanik-straznik.test.js';
+/**
+ * Pliki, które CELOWO cytują numery błędne i przestarzałe, żeby je opisać
+ * (historia rozjazdów, tabela mapowania, dowody RED). Bez wyłączenia pary
+ * poniżej świeciłyby na własną dokumentację — audyt PR #135 dodał dwa takie
+ * pliki i oba muszą być na tej liście.
+ */
+const PLIKI_STRAGNIKOW = new Set([
+  'test/cr-numery-mechanik-straznik.test.js',
+  'test/cr-numery-702-tabela-straznik.test.js',
+  'test/audyt-pr134-2026-09-24-cytaty-cr.test.js',
+]);
 
 /**
  * Tabela-par: mechanika (wzorzec na linii) + numer, którego NIE wolno
@@ -79,6 +103,39 @@ const PARY = [
     zrodlo: '702.35a: rzut w rozstrzyganiu zdolności; 702.35b to koszt alternatywny (601.2b/f-h); timing: ruling DMU 2023-01-06' },
   { mechanika: /przelicza(ne|ny)|liczony przy (każdym )?odczycie/, zakazany: /604\.3/, poprawny: '611.3a',
     zrodlo: '604.3 to CDA (604.3a(5) wyklucza warunkowe); 611.3a: „isn\'t locked in"' },
+  // Pary dodane przez audyt PR #134 → PR #135 (2026-09-24, F-3/F-6/F-7).
+  // Numery z CR 2026-09-25 (Reality Fracture), spis 702.x z mtg.wiki/page/Keyword_ability.
+  { mechanika: /surge/i, zakazany: /702\.111(?![0-9])/, poprawny: '702.117',
+    wyklucz: /menace/i, zrodlo: '702.111 to Menace, 702.117 to Surge (F-3)' },
+  { mechanika: /finality/i, zakazany: /122\.1e(?![0-9a-z])/, poprawny: '122.1h',
+    wyklucz: /loyalty/i, zrodlo: '122.1e to loyalty counters, 122.1h to finality (F-3)' },
+  { mechanika: /cloak|zasłon/i, zakazany: /701\.56/, poprawny: '701.58',
+    zrodlo: '701.58a–h Cloak w CR 2025-11-14, 2026-08-07 i 2026-09-25 (F-3)' },
+  { mechanika: /vigilance|czujno/i, zakazany: /702\.21(?![0-9])/, poprawny: '702.20',
+    wyklucz: /ward/i, zrodlo: '702.20 Vigilance, 702.21 Ward (F-7a)' },
+  { mechanika: /flashback/i, zakazany: /702\.33/, poprawny: '702.34',
+    wyklucz: /kicker/i, zrodlo: '702.33 Kicker, 702.34 Flashback (F-7d)' },
+  { mechanika: /plot/i, zakazany: /702\.168/, poprawny: '702.170',
+    wyklucz: /disguise/i, zrodlo: '702.168 Disguise, 702.170 Plot (F-7b)' },
+  { mechanika: /endure/i, zakazany: /702\.174/, poprawny: '701.63 (keyword action)',
+    zrodlo: '701.63a Endure (mtg.wiki/page/Endure, CR 2026-09-25); 702.174 to Gift (F-7c)' },
+  { mechanika: /infect/i, zakazany: /702\.89/, poprawny: '702.90',
+    wyklucz: /umbra/i, zrodlo: '702.89 Umbra Armor, 702.90 Infect (F-7f)' },
+  { mechanika: /outlast/i, zakazany: /702\.100/, poprawny: '702.107',
+    wyklucz: /evolve/i, zrodlo: '702.100 Evolve, 702.107 Outlast (F-6)' },
+  { mechanika: /equipment|sprzęt/i, zakazany: /702\.16(?![0-9])/, poprawny: '702.6a / 704.5n',
+    wyklucz: /protection|ochron|chronion/i,
+    zrodlo: '702.6a equip celuje w stwora, 704.5n odłącza sprzęt; 702.16 to Protection (F-7g)' },
+  // Karty dwustronne: sekcja 711 z wydań ≤2025 i 712.4x ze starszego lustra CR
+  // nie opisują już DFC. W CR 2026-09-25: 712.6 obie strony widoczne,
+  // 712.7 ukryte strefy, 712.8/8a cechy twarzy (poza polem bitwy tylko przód),
+  // 712.8e MV permanentu z tyłem = koszt przodu, 712.9 transform nie-DFC = nic,
+  // 712.11 rzut przodem na stos, 712.13 rozstrzygnięty czar wchodzi tą samą
+  // twarzą, 712.14 wejście z innej strefy niż stos przodem, 712.18 transform
+  // nie tworzy nowego obiektu. Meld to 712.4/712.5 (wykluczony: brak kart meld).
+  { mechanika: /dwustronn|DFC|dwie twarze|twarz|transform/i,
+    zakazany: /711\.\d|712\.4(?![0-9])/, poprawny: '712.8/712.8a/712.8e/712.9/712.11/712.13/712.14/712.18',
+    wyklucz: /meld/i, zrodlo: 'CR 2026-09-25, mtg.wiki/page/Double-faced_card §Rules (F-3, fala 2)' },
 ];
 
 /** Rekurencyjna lista plików `.js` w katalogu (bez node_modules). */
@@ -88,7 +145,7 @@ function plikiJs(katalog) {
     if (wejscie.name === 'node_modules') continue;
     const pelna = path.join(katalog, wejscie.name);
     if (wejscie.isDirectory()) out.push(...plikiJs(pelna));
-    else if (wejscie.name.endsWith('.js') && pelna !== PLIK_STRAGNIKA) out.push(pelna);
+    else if (wejscie.name.endsWith('.js') && !PLIKI_STRAGNIKOW.has(pelna)) out.push(pelna);
   }
   return out.sort();
 }

@@ -112,7 +112,7 @@ export function hasFreeCastStamp(object) {
 /**
  * H2 (zgłoszenie właściciela 2026-09-19b, Sheriff of Safe Passage): rzut
  * karty CZEKAJĄCEJ w wygnaniu, który NIE płaci kosztu many:
- *  - plot (CR 702.170d/702.136: „cast it … without paying its mana cost"),
+ *  - plot (CR 702.170d: „cast it … without paying its mana cost"),
  *  - darmowy impuls (CR 701.51b + stempel „bez płacenia").
  *
  * JEDNO źródło tej reguły dla obu konsumentów: etykiety oferty (render.js,

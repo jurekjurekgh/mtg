@@ -480,7 +480,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
 
 /**
  * Efektywny koszt many czaru z warunkową obniżką (Metalcraft, Stoic Rebuttal,
- * CR 702.80): „this spell costs {1} less to cast if you control three or
+ * CR 207.2c — ability word): „this spell costs {1} less to cast if you control three or
  * more artifacts\". Warunek oceniany w chwili rzucenia; koszt nigdy nie
  * spadnie poniżej 0. Zwraca liczbę (bez zmian, gdy brak deskryptora).
  */
@@ -530,7 +530,7 @@ export const CAST_SPELL_OPTIONS = Object.freeze([
   // `cast_spell`/`cast_permanent` tej opcji nie przekazuje (jak
   // `abilityWindowCast`) — inaczej każdy mógłby rzucić darmowo.
   'handFreeCast',
-  // CR 702.111 (Surge, Batch 58/B1 — pierwszy INSTANT/SORCERY z surgiem):
+  // CR 702.117 (Surge, Batch 58/B1 — pierwszy INSTANT/SORCERY z surgiem):
   // alternatywny koszt rzutu, gdy rzuciłeś inny czar w tej turze. Ta sama
   // nazwa pola co na ścieżce permanentów (`cast_permanent.surgeCast`), więc
   // komenda, etykieta i kreator płatności używają jednego słowa.
@@ -550,7 +550,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     delveExileIds = null, handFreeCast = false, surgeCast = false,
   } = options;
   const preObject = state.objects.get(objectId);
-  // Surge (CR 702.111, Batch 58/B1): koszt alternatywny rozlicza tylko TA
+  // Surge (CR 702.117, Batch 58/B1): koszt alternatywny rozlicza tylko TA
   // funkcja — tryby „choose one", koszt X i Fireball mają własne ścieżki
   // płatności, więc wariant surge dostaje jawny błąd zamiast cichego
   // zignorowania kosztu (L5; lustro bramki kickera niżej).
@@ -563,7 +563,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // łączenie wariantów jest jawnie odrzucane, dopóki katalog nie ma karty z
   // oboma (żadna nie ma; L5 — jawny brak obsługi zamiast złej płatności).
   if (surgeCast && delveExileIds != null) {
-    throw new Error('Koszt surge wyklucza delve');
+    throw new Error('Surge + delve: połączenie nieobsługiwane (limit delve liczony z wydruku — ograniczenie silnika, nie reguła)');
   }
   // Kicker (CR 702.33) na instantach i sorcerych rozlicza TA funkcja. Ścieżki
   // z własną walidacją kosztu (tryby „choose one\", koszt X, Fireball) idą do
@@ -614,17 +614,25 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Uprawnienie jest ważne wyłącznie dla karty w RĘCE (strefa sprawdzana tu,
   // bo tylko ta ścieżka woła `handFreeCast`).
   if (handFreeCast && object.zone !== 'hand') throw new Error('Darmowy rzut bez kosztu many dotyczy karty z ręki');
-  // Surge (CR 702.111, Batch 58/B1): koszt alternatywny — wymaga innego czaru
+  // Surge (CR 702.117a, Batch 58/B1): koszt ALTERNATYWNY — wymaga innego czaru
   // rzuconego w tej turze (licznik czytany PRZED tym rzutem, jak na ścieżce
-  // permanentów) i wyklucza pozostałe warianty kosztu (CR 601.2b: jeden
-  // koszt alternatywny na rzut).
+  // permanentów). Co do łączenia z innymi wariantami kosztu: CR 601.2b zabrania
+  // zastosować DWA koszty alternatywne („A player can't apply two alternative
+  // methods of casting or two alternative costs to a single spell"), ale CR
+  // 601.2f składa koszt całkowity jako „alternatywny + wszystkie dodatkowe −
+  // redukcje", więc ani kicker (702.33a: „an ADDITIONAL [cost]"), ani delve
+  // (702.66a: „isn't an additional or alternative cost") nie są regułowo
+  // wykluczone. Bramki niżej to OGRANICZENIE IMPLEMENTACJI (ta ścieżka nie
+  // składa kosztu surge z dopłatą/redukcją), a nie reguła gry — audyt PR #134,
+  // F-3e; w katalogu nie ma karty z oboma mechanizmami (L5: jawny brak obsługi
+  // zamiast złej płatności).
   const surge = surgeCast ? (object.surge ?? null) : null;
   if (surgeCast && !surge) throw new Error('Ta karta nie ma mechaniki surge');
   if (surgeCast && (state.spellsCastThisTurnByPlayer?.[playerId] ?? 0) < 1) {
     throw new Error('Surge: wymaga rzucenia innego czaru w tej turze');
   }
-  if (surgeCast && kicked) throw new Error('Koszt surge wyklucza kicker');
-  if (surgeCast && phyrexianPayWithLife > 0) throw new Error('Koszt surge wyklucza płatność phyrexian');
+  if (surgeCast && kicked) throw new Error('Surge + kicker: połączenie nieobsługiwane (koszt alternatywny nie składa się z dodatkowym — ograniczenie silnika, CR 601.2f takie łączenie dopuszcza)');
+  if (surgeCast && phyrexianPayWithLife > 0) throw new Error('Surge + phyrexian: połączenie nieobsługiwane (ograniczenie silnika, nie reguła)');
   // Dodatkowy koszt „sacrifice a creature" (Village Rites): walidacja celu-
   // poświęcenia PRZED jakąkolwiek mutacją (CR 601.2h) — nieudany rzut nie może
   // utracić many ani zostawić karty na stosie.
@@ -708,7 +716,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal) oraz modyfikatory
   // z permanentów (Etherium Sculptor): płacimy efektywny koszt wyliczony
   // w chwili rzutu (warunki i modyfikatory oceniane na bieżącej planszy).
-  // Surge (CR 702.111): kwota kosztu ALTERNATYWNEGO redukowana jak każdy inny
+  // Surge (CR 702.117): kwota kosztu ALTERNATYWNEGO redukowana jak każdy inny
   // alt-koszt (`reduceAlternativeCost` — ta sama reguła co cleave/escape/
   // flashback/bestow: obniżki działają na generyczną część AKTYWNEGO kosztu,
   // nie na wydruk karty). Limit delve (CR 702.66) liczy się z kosztu
@@ -796,10 +804,10 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   }
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
-    // Buyback (CR 702.26): jeśli gracz wybrał wariant z buyback, czar po
+    // Buyback (CR 702.27): jeśli gracz wybrał wariant z buyback, czar po
   // rozstrzygnięciu wraca do ręki zamiast do grobu. Flaga na obiekcie stosu.
   const wasBuyback = Boolean(object.spell?.buyback && buyback);
-  // Rebound (CR 702.97): „If you cast this spell FROM YOUR HAND, exile it as
+  // Rebound (CR 702.88): „If you cast this spell FROM YOUR HAND, exile it as
   // it resolves.\" — flaga tylko dla rzutu z RĘKI (nie z grobu/exile przez
   // flashback/suspend/plot). Przechodzi z kartą do strefy po rozstrzygnięciu
   // (resolveTopOfStack), gdzie decyduje o exile zamiast grobu.
@@ -809,7 +817,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // CR 702.33a: „was kicked" to własność CZARU na stosie — trigger wchodzący
     // po rozstrzygnięciu czyta ją z obiektu, nie ze zdarzenia rzutu.
     wasKicked: Boolean(kicker),
-    // CR 702.111a: koszt surge to fakt CZARU na stosie (jak „was kicked") —
+    // CR 702.117a: koszt surge to fakt CZARU na stosie (jak „was kicked") —
     // publiczny dla logu i dla triggerów czytających wybrany koszt.
     surgeCast: Boolean(surge),
     // CR 702.174a-b: obietnica daru (i jego odbiorca) jest własnością CZARU na
@@ -873,7 +881,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // kicked spell" — triggers.js czyta `ev.kicked`; lustrzane pole
     // `permanent_cast` w resources.js).
     kicked: Boolean(kicker),
-    // Surge (CR 702.111, Batch 58/B1) — jawny w logu i na obiekcie stosu
+    // Surge (CR 702.117, Batch 58/B1) — jawny w logu i na obiekcie stosu
     // (lustrzane pole `permanent_cast` w resources.js).
     surgeCast: Boolean(surge),
     // Fakt obietnicy daru i jej odbiorca (jawny w logu; własność czaru na
@@ -1613,7 +1621,10 @@ function collectLegalTargets(state, targetSpec, chosen, casterId, sourceColors =
  * Czar AURY (spell.aura — bestow albo czysta aura) rozstrzyga się inaczej:
  * przy legalnym celu aura WCHODZI na pole bitwy załączona do stwora (przestaje
  * być stworem). Gdy cel stał się nielegalny: karta z bestow wchodzi jako
- * zwykły stwór (wyjątek CR 702.103b), a czysta aura — jak każdy czar
+ * zwykły stwór (CR 702.103e: „As a bestowed Aura spell begins resolving, if
+ * its target is illegal, it ceases to be bestowed and the effect making it an
+ * Aura spell ends. It continues resolving as a creature spell."), a czysta aura —
+ * jak każdy czar
  * bez legalnego celu — idzie do grobu, nie wchodząc na pole bitwy (CR 608.2b).
  */
 /**
@@ -1694,7 +1705,7 @@ function resolveActivatedAbilityEntry(state, entry) {
   const resolveCount = (state.objects.get(payload.sourceId)?.abilityResolvedThisTurn
     ?? (liveSource?.abilityResolvedThisTurn ?? 0) + 1);
   for (const effect of effectList) {
-    // Audyt PR #41 (B7.2, CR 702.48a + 602.2a): ninjutsu rozstrzyga się ze
+    // Audyt PR #41 (B7.2, CR 702.49a + 602.2a): ninjutsu rozstrzyga się ze
     // stosu — karta wchodzi na pole bitwy tapnięta i atakująca; celem
     // (payload.targets[0]) jest atakujący zwrócony do ręki (koszt).
     if (effect?.type === '__ninjutsu_enter__') {
@@ -2035,7 +2046,7 @@ export function resolveTopOfStack(state) {
       }
     }
   }
-  // Buyback (CR 702.26): jeśli czar miał zapłacony buyback, wraca do ręki
+  // Buyback (CR 702.27): jeśli czar miał zapłacony buyback, wraca do ręki
   // właściciela zamiast do grobu (analogicznie do clash — pendingSpellReturnToHand).
   if (object.wasBuyback) {
     state.pendingSpellReturnToHand = true;
@@ -2069,7 +2080,7 @@ export function resolveTopOfStack(state) {
   }
   const adventure = Boolean(object.adventure);
   const flashedBack = Boolean(object.flashedBack);
-  // Rebound (CR 702.97, Ojutai's Breath): czar rzucony z ręki z deskryptorem
+  // Rebound (CR 702.88, Ojutai's Breath): czar rzucony z ręki z deskryptorem
   // `rebound` idzie po rozstrzygnięciu do EXILE zamiast do grobu, a na początku
   // następnego upkeepu kontrolera otwiera jednorazową decyzję rzutu bez kosztu.
   const reboundCast = Boolean(object.reboundCast && !object.isSpellCopy);
@@ -2220,7 +2231,8 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
   // Audyt PR #41 (B6, CR 702.16b): gospodarz mógł ZYSKAĆ protection od koloru
   // czaru, gdy aura czekała na stosie (np. Benevolent Blessing z flash na
   // celu). Czysta aura fizzluje (CR 608.2b — grób), bestow wchodzi jako stwór
-  // (wyjątek CR 702.103b).
+  // (CR 702.103e — cel nielegalny przy rozstrzyganiu kończy bycie bestowed,
+  // „It continues resolving as a creature spell. See rule 608.3b.").
   const hostProtected = host && effectiveProtectionFromColors(state, host)
     && (object.colors ?? []).some((c) => effectiveProtectionFromColors(state, host).includes(c));
   const legalNow = hostLegal && !hostProtected;
@@ -2309,7 +2321,7 @@ function resolvePermanentSpell(state, stackId, object, before) {
     const target = permanent.transformTo;
     const nightbound = Object.freeze({
       ...permanent,
-      // Komplet charakterystyk drugiej strony (CR 711.2) — wspólny helper,
+      // Komplet charakterystyk drugiej strony (CR 712.8) — wspólny helper,
       // ten sam co w transform_permanent i crafcie: niesie też `kind`/`types`,
       // więc strona nocna zmieniająca rodzaj permanentu nie gubi typu.
       ...transformedCharacteristics(target, permanent),
@@ -2463,7 +2475,7 @@ export function plotCard(state, playerId, objectId) {
   }
   spendMana(state, playerId, object.plot.cost ?? 0, plotColors);
   const exileId = `exile-${state.objectSequence++}`;
-  // M262: plot (CR 702.168a) — badge mechaniki „Wygnane: Plot".
+  // M262: plot (CR 702.170a) — badge mechaniki „Wygnane: Plot".
   const moved = moveObjectDirectly(state, objectId, 'exile', exileId, { exiledBy: 'plot' });
   const plotted = Object.freeze({ ...moved, plotted: true, plottedAtTurn: state.turn.number });
   state.objects.set(exileId, plotted);
@@ -2650,7 +2662,7 @@ export function legalSpellCasts(state, playerId) {
       }
       return out;
     })();
-    // Surge (CR 702.111, Batch 58/B1 — pierwszy instant/sorcery z surgiem):
+    // Surge (CR 702.117, Batch 58/B1 — pierwszy instant/sorcery z surgiem):
     // koszt alternatywny ma WŁASNĄ kwotę i WŁASNE pipy, więc jest liczony
     // niezależnie od wariantów kosztu bazowego (przy 3 manie Boulder Salvo nie
     // ma wariantu bazowego, a surge ma być oferowany). Gate licznika czyta to
@@ -2708,10 +2720,12 @@ export function legalSpellCasts(state, playerId) {
       // Kolejność panelu (M203/2): przy konwencji „prezentacja = enumeracja"
       // wariant manowy (k=null) jest PIERWSZY wprost z tablicy wariantów —
       // dawniej wymagało to odwrócenia, bo playerView wstawiał przez unshift.
-      // Surge (CR 702.111) jest kosztem TAŃSZYM od wydrukowanego, więc idzie
+      // Surge (CR 702.117a) jest kosztem TAŃSZYM od wydrukowanego, więc idzie
       // PRZED wariantem bazowym — jak na ścieżce permanentów (`cast_permanent`
-      // oferuje surge przed zwykłym rzutem). Koszt surge wyklucza kickera
-      // (CR 601.2b), więc wariantu z dopłatą przy surgu nie ma.
+      // oferuje surge przed zwykłym rzutem). Wariantu z dopłatą kickera przy
+      // surgu nie ma: to ograniczenie implementacji (koszt surge nie składa się
+      // z kosztem dodatkowym — audyt PR #134, F-3e), a nie reguła; CR 601.2f
+      // łączenie kosztu alternatywnego z dodatkowym wprost dopuszcza.
       if (surgeOffer) casts.push({ ...cast, surgeCast: true });
       for (const k of spellPhyrexianVariants) {
         casts.push(k == null ? cast : { ...cast, phyrexianPayWithLife: k });
@@ -2801,7 +2815,7 @@ export function legalSpellCasts(state, playerId) {
         pushSpellCast(cast);
       }
       if (payAltAvailable) pushSpellCast({ objectId: id, targets: [], payAltCost: true });
-      // Buyback (CR 702.26): wariant z dodatkowym kosztem — czar wraca do ręki
+      // Buyback (CR 702.27): wariant z dodatkowym kosztem — czar wraca do ręki
       // po rozstrzygnięciu zamiast do grobu. Enumerujemy osobną komendę
       // tylko gdy gracz ma dość many na bazę + buyback.
       if (object.spell.buyback && !object.plotted) {
@@ -3475,7 +3489,7 @@ export function resolveEscapeExile(state, playerId, exileIds) {
   state.spellsCastThisTurn += 1;
   for (const exId of exileIds) {
     const exileId = `exile-${state.objectSequence++}`;
-    // M262: escape (CR 702.26) — karta wygania materiał z grobu; źródłem
+    // M262: escape (CR 702.138) — karta wygania materiał z grobu; źródłem
     // jest karta uciekająca („Wygnane: <ta sama karta>", decyzja właściciela).
     const moved = moveObjectDirectly(state, exId, 'exile', exileId, { exiledBy: object.cardId });
     state.events.push(event('object_moved', { fromId: exId, object: moved, fromZone: 'graveyard', toZone: 'exile', escape: true }));

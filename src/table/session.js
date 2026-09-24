@@ -72,7 +72,7 @@ export function faceDownName(cardName, label = FACE_DOWN_LABEL) {
 
 /**
  * M319/NA1 (zgłoszenie właściciela 2026-09-06, cz. 5): zakryty CLOAK
- * (CR 701.56) ma własny znacznik — „Morph" kłamał o mechanice (cloak to
+ * (CR 701.58) ma własny znacznik — „Morph" kłamał o mechanice (cloak to
  * 2/2 z ward {2}; morph to 2/2 bez ward). Nazwa WŁASNEGO cloak-a dostaje
  * STAŁY numer kopii („Nazwa (Cloak 1)", „Nazwa (Cloak 2)") — kilka jednakowych
  * zakrytych kart musi dać się rozpoznać przy wyborze celów, tak jak tokeny-kopie
@@ -231,7 +231,7 @@ export function paidExtraCostSuffix(e) {
 }
 
 /**
- * CR 702.111 (Surge, Batch 58/B1): fakt rzutu za KOSZT ALTERNATYWNY jako
+ * CR 702.117 (Surge, Batch 58/B1): fakt rzutu za KOSZT ALTERNATYWNY jako
  * dopisek do opisu zdarzenia — jedno brzmienie dla obu gałęzi rzutu
  * (`permanent_cast`, `spell_cast`) i dla aury (`aura_spell_cast` już je ma),
  * lustrzane do `paidExtraCostSuffix` (L41). Czysta funkcja (ADR 0011).
@@ -1405,7 +1405,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           return `${whoN(e.playerId)} aktywuje ${name}: ${e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId)} — odkrycie karty za koszt ${name.toLowerCase()}`;
         }
         // M255/B1 (pętla jakości, Skinbrand Goblin): bloodrush to NAZWANA
-        // mechanika (CR 702.63) — koszt to odrzucenie karty z ręki, a celem
+        // mechanika (CR 207.2c — ability word: brak własnego wpisu w CR) — koszt
+        // to odrzucenie karty z ręki, a celem
         // jest atakujący stwór. Goły „aktywuje zdolność: Skinbrand Goblin —
         // zmiana statystyk celu” nie mówił, co się właściwie stało (wzorzec
         // M158/A dla Morph: log nazywa mechanikę, nie tylko źródło).

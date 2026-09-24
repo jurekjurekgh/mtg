@@ -1478,7 +1478,7 @@ function bootstrapTable() {
     // Obie strony są publiczne (CR 711/712). Dla takiej karty kliknięcie
     // ZAWSZE otwiera warstwę Działania z podglądem OBU stron — nawet bez
     // żadnych zdolności. Strefy spoza pola bitwy (grób/wygnanie/ręka) zachowują
-    // dotychczasowe zachowanie — tam DFC ma wyłącznie twarz przednią (CR 711.4a).
+    // dotychczasowe zachowanie — tam DFC ma wyłącznie twarz przednią (CR 712.8a).
     const viewEntry = view.zones.battlefield.find((o) => o.id === objectId);
     const otherSideId = viewEntry?.transformToCardId ?? null;
     const isDfc = Boolean(otherSideId);
@@ -2311,7 +2311,7 @@ function bootstrapTable() {
     if (cmd.type === 'cast_escape' && Number.isInteger(stateObject?.spell?.escape?.cost)) {
       opts.escapeCost = stateObject.spell.escape.cost;
     }
-    // M327 (audyt PR #102, F7): koszt ODSŁONIĘCIA (CR 701.56b cloaka,
+    // M327 (audyt PR #102, F7): koszt ODSŁONIĘCIA (CR 701.58b cloaka,
     // 701.55c manifestu) nosi tylko pełny stan — zakryty permanent ma w widoku
     // `manaCost: 0`, więc kreator brałby liczbę z kosztu karty i musiał ją
     // porównać z prawdą silnika. Podajemy ją jak `escapeCost` wyżej.

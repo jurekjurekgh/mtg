@@ -9,7 +9,7 @@ import { turnFaceUp } from '../src/engine/permanents.js';
 import { addMana } from '../src/engine/resources.js';
 
 /**
- * M322 (audyt PR #102): zakrycie z `cloak` (Veiled Ascension, CR 701.56 —
+ * M322 (audyt PR #102): zakrycie z `cloak` (Veiled Ascension, CR 701.58 —
  * keyword action) w dwóch miejscach rozmijało się z regułami.
  *
  * F0 — uncover NIE przywracał zdolności karty. Ścieżka cloaku skopiowała kształt
@@ -19,7 +19,7 @@ import { addMana } from '../src/engine/resources.js';
  * permanentu bez zdolności. Zmierzone przed naprawą: cloak + uncover dawał
  * `abilities: []` dla karty z triggerem „when this creature is turned face up\".
  *
- * F9 — brak procedury obrotu za koszt morpha/disguise pod cloakem. CR 701.56c/d:
+ * F9 — brak procedury obrotu za koszt morpha/disguise pod cloakem. CR 701.58c/d:
  * „If a card with morph is cloaked, its controller may turn that card face up
  * using either the procedure described in rule 702.37e … or the procedure
  * described above\". Skutek uboczny: sprzątanie śladów zakrycia (ward {2},
@@ -66,13 +66,13 @@ function game(cardId) {
 
 const abilityKeys = (list) => (list ?? []).map((a) => `${a?.keyword ?? a?.type}:${a?.trigger?.event ?? '-'}`);
 
-// ---- A: zakryty klosz z morphem zna procedurę obrotu (CR 701.56c) ----------
+// ---- A: zakryty klosz z morphem zna procedurę obrotu (CR 701.58c) ----------
 
 test('M322/A1: cloak karty z morphem — zdolność obrotu za koszt morpha jest w ofercie', () => {
   const { state, cloakId } = game('willbender'); // Morph {1}{U}
   const cloak = state.objects.get(cloakId);
   assert.deepEqual(abilityKeys(cloak.abilities), ['morph:-'],
-    `twarzą w dół: tylko procedura obrotu (708.2a tłumi druk, 701.56c zostawia morph): ${JSON.stringify(abilityKeys(cloak.abilities))}`);
+    `twarzą w dół: tylko procedura obrotu (708.2a tłumi druk, 701.58c zostawia morph): ${JSON.stringify(abilityKeys(cloak.abilities))}`);
   addMana(state, 'p1', 4, { colors: ['U'] });
   const view = playerView(state, 'p1');
   const entry = view.zones.battlefield.find((o) => o.id === cloakId);
@@ -86,7 +86,7 @@ test('M322/A1: cloak karty z morphem — zdolność obrotu za koszt morpha jest 
   assert.equal(after.power, 1, `ciało karty (1/2), nie 2/2: ${after.power}/${after.toughness}`);
   assert.equal(after.toughness, 2, `ciało karty (1/2): ${after.power}/${after.toughness}`);
   // F9: ślady zakrycia sprząta punkt zbierający — nie handler `turn_cloak_face_up`
-  assert.equal(after.ward ?? null, null, 'po obrocie NIE ma wardu zakrycia (701.56a: efekt konczy się przy obrocie)');
+  assert.equal(after.ward ?? null, null, 'po obrocie NIE ma wardu zakrycia (701.58a: efekt konczy się przy obrocie)');
   assert.ok(!after.cloakReady, 'flaga cloak zdjęta niezależnie od procedury obrotu');
   assert.equal(after.cloakTurnUpCost ?? null, null, 'koszt obrotu skasowany');
   assert.equal(after.copyNumber ?? null, null, 'numer zakrycia nie zostaje na face-up karcie');

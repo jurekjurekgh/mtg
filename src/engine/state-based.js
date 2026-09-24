@@ -58,7 +58,7 @@ export function stateBasedActionsOpen(state) {
  * Kolejność w jednym przebiegu odzwierciedla zależności (CR 704.3): najpierw
  * śmierći stworów (gospodarz może odejść z pola bitwy), potem rozłączenie
  * załączników, które straciły legalnego gospodarza — bestow znów jest stworem
- * i zostaje (CR 702.103b), equipment zostaje odłączony (CR 704.5n), a czysta
+ * i zostaje (CR 702.103f), equipment zostaje odłączony (CR 704.5n), a czysta
  * aura trafia do grobu (CR 704.5m).
  */
 /**

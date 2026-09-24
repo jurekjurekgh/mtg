@@ -93,7 +93,7 @@ test('M262: moveObjectDirectly stempluje exiledBy (jawne źródło, keyword, fal
 
 test('M262: auto-deriwacja — unearth, flashback, finality, exileIfDiesThisTurn', () => {
   const state = game();
-  // Unearth (CR 702.87b): permanent z flagą opuszczający pole bitwy → exile.
+  // Unearth (CR 702.84a): permanent z flagą opuszczający pole bitwy → exile.
   put(state, 'u1', 'goblin-piker', 'p1', 'battlefield', { unearthExile: true });
   moveObjectDirectly(state, 'u1', 'graveyard', 'ex-u1');
   assert.equal(state.objects.get('ex-u1').meta?.exiledBy, 'unearth', 'redirect unearth');
@@ -103,7 +103,7 @@ test('M262: auto-deriwacja — unearth, flashback, finality, exileIfDiesThisTurn
   moveObjectDirectly(state, 'f1', 'graveyard', 'ex-f1');
   assert.equal(state.objects.get('ex-f1').meta?.exiledBy, 'flashback', 'redirect flashback');
 
-  // Finality (CR 702.195): licznik finality — śmierć zamiast grobu to exile.
+  // Finality (CR 122.1h): licznik finality — śmierć zamiast grobu to exile.
   put(state, 'd1', 'goblin-piker', 'p1', 'battlefield', {
     counters: { finality: 1 }, damage: 99, toughness: 1,
   });

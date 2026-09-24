@@ -95,7 +95,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Audyt PR #93 (CR 702.185a): numer tury wygnania po warp-caście — karta
     // wraca na stos dopiero PO tej turze (lustrzane do `plottedAtTurn`).
     warpedAtTurn: warpedAtTurn ?? null,
-    // Batch 50 (Surge, CR 702.111): alternatywny koszt rzutu z ręki.
+    // Batch 50 (Surge, CR 702.117): alternatywny koszt rzutu z ręki.
     surge: surge ? Object.freeze({ ...surge }) : null,
     // Batch 50 (Manifest, CR 701.40b): gotowość obrotu twarzą do góry za koszt.
     manifestReady: Boolean(manifestReady),
@@ -103,7 +103,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     suspended: Boolean(suspended),
     timeCounters: timeCounters ?? 0,
     suspendReady: Boolean(suspendReady),
-    // Rebound (CR 702.97, Ojutai's Breath): jeśli czar rzucony z RĘKI ma
+    // Rebound (CR 702.88, Ojutai's Breath): jeśli czar rzucony z RĘKI ma
     // deskryptor `rebound`, po rozstrzygnięciu idzie do exile (reboundCast na
     // obiekcie stosu — rzut z ręki), a na początku NASTĘPNEGO upkeepu kontrolera
     // otwiera jednorazową decyzję rzutu bez kosztu z exile (reboundReady).
@@ -117,7 +117,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     ward: ward ?? null,
     keywords: Object.freeze([...keywords]), subtypes: Object.freeze([...subtypes]),
     transformTo,
-    // M257/K5 (CR 711.4a): id twarzy PRZEDNIEJ pary transform — engine resetuje
+    // M257/K5 (CR 712.8a): id twarzy PRZEDNIEJ pary transform — engine resetuje
     // na nią DFC opuszczający pole bitwy tyłem (obrócony wilkołak na ręce).
     frontFaceId,
     // M158/Batch 39: tymczasowe nadpisanie podtypów + utrata keywordów (EOT).
@@ -232,7 +232,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // +1/+1 na docelowym stworze; jeśli to inny stwór, zyskuje podane
     // zdolności do końca tury". Cel wybiera kontroler (komenda resolve_backup).
     backup: backup ? Object.freeze({ counters: backup.counters, grantKeywords: Object.freeze([...(backup.grantKeywords ?? [])]) }) : null,
-    // Toxic (CR 702.180, Batch 45 — Crawling Chorus): combat damage graczowi
+    // Toxic (CR 702.164, Batch 45 — Crawling Chorus): combat damage graczowi
     // daje mu N poison counterów DODATKOWO do obrażeń (inaczej niż infect).
     toxic: toxic ?? null,
     // Batch 46 (Bone Shredder) — ECHO (CR 702.30): koszt echa z karty oraz

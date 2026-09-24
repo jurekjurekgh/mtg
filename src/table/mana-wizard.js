@@ -205,7 +205,7 @@ const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell', 'cast_cleave'
 
 /**
  * M327 (audyt PR #102, F7): ODSŁONIĘCIE zakrycia. To jedyne nie-rzutowe
- * `spendMana` w silniku, które płaci PIPY KOLORU (CR 701.56b: cloak płaci
+ * `spendMana` w silniku, które płaci PIPY KOLORU (CR 701.58b: cloak płaci
  * koszt many karty; 701.55c: manifest tak samo) — a mimo to kreator many ich
  * nie znał, więc źródła tapował silnik w swojej kolejności. Reguła właściciela
  * z M168/M195 jest ogólna: „zawsze kiedy płatność many jest niejednoznaczna
@@ -362,7 +362,7 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     const requirements = baseColorRequirements(parsed);
     return buildDescriptor(object, totalNeeded, requirements, `Escape (${totalNeeded})`, totalNeeded - requirements.length);
   }
-  // Bestow istnieje tylko na ścieżce permanentów; surge (CR 702.111) także na
+  // Bestow istnieje tylko na ścieżce permanentów; surge (CR 702.117) także na
   // instantach/sorcerych — oba kształty rzutu muszą mieć własny koszt
   // w deskryptorze (Batch 58/B1: Boulder Salvo {1}{R}, nie {4}{R}).
   if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell') && (cmd.surgeCast || cmd.bestow)) {

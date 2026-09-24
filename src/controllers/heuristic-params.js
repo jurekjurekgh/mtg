@@ -158,7 +158,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'libraryTapSafeMargin',        // minimalny zapas kart po mielącym tapnięciu (właściciel: ~30)
   'repeatLibraryDrainTurns',     // horyzont: ile odpaleń powtarzalnego triggera zakładamy
   // F1 v2 (uwaga właściciela 2026-09-23d, Veiled Ascension): efekt zakrywający
-  // kartę z biblioteki (cloak — CR 701.56a) ZAMIENIA ją na permanenta 2/2
+  // kartę z biblioteki (cloak — CR 701.58a) ZAMIENIA ją na permanenta 2/2
   // z wardem, a nie marnuje jak mill czy dobranie — więc „you may” jest
   // opłacalne ZAWSZE; karę nakładamy dopiero, gdy własna biblioteka spadnie
   // pod próg (jedyna realna strata to deck-out, CR 121.4).

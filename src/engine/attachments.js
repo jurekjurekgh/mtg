@@ -16,7 +16,7 @@ import { moveObject } from './mover.js';
  *   (bestow/aura/equipment: pump + keywordy) — patrz attachmentGrant i
  *   permanents.effective*; buff liczony uproszczoną warstwą CR 613.
  * - Utrata gospodarza (zginał, wygnany, odszedł):
- *   bestow    → odłącza się i zostaje na polu bitwy jako stwór (CR 702.103b);
+ *   bestow    → odłącza się i zostaje na polu bitwy jako stwór (CR 702.103f);
  *   equipment → odłącza się i zostaje na polu bitwy (CR 704.5n);
  *   czysta aura → trafia do grobu (CR 704.5m — aura bez legalnego
  *   zaczarowanego obiektu jest niszczona).
@@ -217,7 +217,10 @@ function emitAttached(state, attachment, hostId, via) {
 /**
  * Załącza aurę do stwora przy wejściu na pole bitwy (rozstrzygnięcie czaru
  * aury — bestow albo czystej). Załączona aura przestaje być stworem;
- * obrażenia i liczniki z czasu bycia stworem zerujemy (CR 702.103a).
+ * załączony permanent przestaje być stworem (CR 702.103b: „the permanent it
+ * becomes as it resolves will be a bestowed Aura"); obrażenia i liczniki z czasu
+ * bycia stworem zerujemy jako higienę stanu (SBA 704.5f/g dotyczą wyłącznie
+ * stworów, a cleanup 514.2 i tak by je zdjął).
  */
 export function attachAuraToCreature(state, auraId, hostId) {
   const aura = state.objects.get(auraId);
@@ -299,7 +302,10 @@ export function attachEquipmentToCreature(state, equipmentId, hostId) {
  */
 function detachOrphanedAttachment(state, attachment, hostId, events) {
   if (attachment.bestow) {
-    // Bestow (CR 702.103b): aura odłącza się i znów jest stworem — zostaje.
+    // Bestow (CR 702.103f): „If a bestowed Aura becomes unattached, it ceases
+    // to be bestowed. If a bestowed Aura is attached to an illegal object or
+    // player, it becomes unattached and ceases to be bestowed. This is an
+    // exception to rule 704.5m." — aura odłącza się i znów jest stworem: ZOSTAJE.
     const updated = patchAttachmentObject(state, attachment, {
       attachedTo: null,
       kind: attachment.baseKind ?? 'creature',
@@ -331,13 +337,13 @@ function detachOrphanedAttachment(state, attachment, hostId, events) {
   // które choke point wykonuje:
   //  - CR 400.3 + 110.2a: poza polem bitwy obiekt należy do WŁAŚCICIELA,
   //    więc ukradziona aura lądowała w grobie ZŁODZIEJA (błąd #11);
-  //  - CR 122.1e: `deathZoneFor` (finality / „exile if it would die") był
+  //  - CR 122.1h: `deathZoneFor` (finality / „exile if it would die") był
   //    ignorowany, więc aura z finality szła do grobu i dawała się odzyskać
   //    (błąd #12).
   // Odczepienie WŁASNYCH załączników aury (Feedback na Hobble, Batch 24)
   // wykonuje teraz sam choke point — nie duplikujemy go tutaj.
   // `kind` też ustawia choke point: bestow wraca do bycia stworem
-  // (CR 702.103b), czysta aura zostaje enchantmentem.
+  // (CR 702.103f), czysta aura zostaje enchantmentem.
   const toZone = deathZoneFor(state, attachment);
   const newId = `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
   const moved = moveObject(state, attachment.id, toZone, newId);
@@ -533,7 +539,8 @@ export function removeIllegalAttachments(state) {
       // obiektu idzie do grobu WŁAŚCICIELA przez ten sam choke point ruchu,
       // co zrzucanie z hosta (`detachOrphanedAttachment`, M271). Dwa kształty
       // są LEGALNE i zostają na polu bitwy: bestow bez hosta znów jest
-      // stworem (CR 702.103b), equipment bez hosta jest normalnym artefaktem
+      // stworem (CR 702.103f — wyjątek od 704.5m), equipment bez hosta jest
+      // normalnym artefaktem
       // (CR 704.5n), a aura na GRACZA niesie `enchantedPlayerId`
       // (reprezentacja `attachAuraToPlayer` — przypięta DO GRACZA, pin H/4).
       // Guard = WYŁĄCZNIE czysta aura (deskryptor `aura`, bez `bestow`):

@@ -159,7 +159,7 @@ export function conditionalCostReduction(state, object) {
       .filter((c) => c.kind === 'artifact' || (c.types ?? []).includes('Artifact')).length;
     return artifacts >= condition.controlsArtifactsAtLeast ? amount : 0;
   }
-  // Affinity (CR 702.42, Steelfin Whale): „This spell costs {1} less to cast
+  // Affinity (CR 702.41, Steelfin Whale): „This spell costs {1} less to cast
   // for each artifact you control" — obniżka PER ARTEFAKT, nie progowa.
   // `amount` = obniżka za każdy artefakt (zwykle 1). Warunek niesie flagę,
   // więc liczba artefaktów kontrolera mnoży kwotę.

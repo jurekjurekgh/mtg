@@ -267,7 +267,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'Swampcycling {2} ({2}, Discard this card: Search your library for a Swamp card, reveal it, put it into your hand, then shuffle.)\nBackup 2 (When this creature enters, put two +1/+1 counters on target creature. If that\'s another creature, it gains the following ability until end of turn.)\nMenace',
     imageUri: 'https://cards.scryfall.io/large/front/0/2/025a5338-133f-486d-9f73-0896226685c0.jpg?1783917008',
     abilities: [
-      // Swampcycling {2} (CR 702.28-29): cycling z kwalifikacją na podtyp
+      // Swampcycling {2} (CR 702.29 — cycling, wariant typowany): cycling z kwalifikacją na podtyp
       // Swamp — szuka własnej biblioteki, reveal do ręki, tasowanie.
       createAbility({
         type: ABILITY_TYPE.activated,
@@ -945,7 +945,7 @@ export const REAL_CARDS = Object.freeze([
           kind: 'creature', power: 1, toughness: 1, colors: ['W'],
           types: ['Creature'], subtypes: ['Human'],
           amount: 2,
-          // Fateful hour (CR 702.86 w minimalnym wymiarze): przy życiu ≤ 5
+          // Fateful hour (CR 207.2c w minimalnym wymiarze): przy życiu ≤ 5
           // powstaje pięć tokenów zamiast dwóch.
           ifLifeAtMost: 5, amountIfCondition: 5,
         },
@@ -1825,7 +1825,7 @@ export const REAL_CARDS = Object.freeze([
   }),
   // Guidestone Compass — back face of Lodestone Needle. Tyły kart
   // dwustronnych NIE są osobnymi pozycjami do talii (poza polem bitwy karta
-  // istnieje tylko stroną frontową, CR 711.4) — bug ze stołu 2026-08-05:
+  // istnieje tylko stroną frontową, CR 712.8) — bug ze stołu 2026-08-05:
   // backside na ręku nie da się rzucić. Jak przy Shiva/tokenach: `back`
   // (walidacja talii i kreator odrzucają ten wpis).
   defineCard({
@@ -2427,7 +2427,7 @@ export const REAL_CARDS = Object.freeze([
       // celu spell_on_stack: dowolny czar na stosie, także czar-stwór bestow.
       targets: [{ type: 'spell_on_stack' }],
       effects: [{ type: 'counter_spell' }],
-      // Metalcraft (CR 702.80): koszt o 1 mniejszy przy >= 3 artefaktach
+      // Metalcraft (CR 207.2c): koszt o 1 mniejszy przy >= 3 artefaktach
       // kontrolera (warunek oceniany w chwili rzutu — spells.js).
       costReduction: { amount: 1, condition: { controlsArtifactsAtLeast: 3 } },
     },
@@ -2502,7 +2502,7 @@ export const REAL_CARDS = Object.freeze([
     artId: 31,
     plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
-    notes: ['tokeny z infect: obrażenia do gracza dają znaki trucizny (przegrana przy 10), do stwora — liczniki -1/-1 (CR 702.89)'],
+    notes: ['tokeny z infect: obrażenia do gracza dają znaki trucizny (przegrana przy 10), do stwora — liczniki -1/-1 (CR 702.90)'],
   }),
 
   // 3. Garruk's Companion (M11) — 3/2 Beast z trample.
@@ -2930,7 +2930,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       // Prowess (CR 702.108 — generyczny trigger „you cast a noncreature
       // spell"): instant/sorcery, czar aury (także karta-stwór rzucona za
-      // bestow — jest wtedy czarem aury, CR 702.103a) albo permanent
+      // bestow — jest wtedy czarem aury, CR 702.103b) albo permanent
       // nie-będący stworem. Land drop nie jest rzutem.
       createAbility({
         type: ABILITY_TYPE.triggered,
@@ -6471,7 +6471,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     power: 3, toughness: 4, manaCost: 6,
     oracleText: 'Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nWhenever an artifact you control enters, untap this creature.',
     imageUri: 'https://cards.scryfall.io/large/front/7/e/7e7ca8b6-d7e0-4af2-a578-bf45a8731c19.jpg',
-    // Affinity (CR 702.42): obniżka PER artefakt — `amount` mnożona przez
+    // Affinity (CR 702.41): obniżka PER artefakt — `amount` mnożona przez
     // liczbę kontrolowanych artefaktów (mana-cost.conditionalCostReduction).
     costReduction: { amount: 1, condition: { affinityToArtifacts: true } },
     abilities: [
@@ -8509,7 +8509,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
   // 5. Descendant of Storms (TDM) — „Whenever this creature attacks, you may
   //    pay {1}{W}. If you do, it endures 1." — opcjonalna płatność triggera
-  //    (wzorzec Zoraline) + endure (wzorzec Krumar Initiate, CR 702.174).
+  //    (wzorzec Zoraline) + endure (wzorzec Krumar Initiate, CR 701.63).
   defineCard({
     id: 'descendant-of-storms', name: 'Descendant of Storms', set: 'TDM',
     types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['W'],
@@ -8893,7 +8893,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['„up to one target" — wariant bez drugiego celu jest legalny (pump bez ugryzienia); pump PRZED obrażeniami (kolejność Oracle — obrażenia liczą moc po +1/+0)'],
   }),
 
-  // 9. Crawling Chorus (ONE) — Toxic 1 (NOWY keyword, CR 702.180); dies →
+  // 9. Crawling Chorus (ONE) — Toxic 1 (NOWY keyword, CR 702.164); dies →
   //    token Phyrexian Mite 1/1 (toxic 1, can't block).
   defineCard({
     id: 'crawling-chorus', name: 'Crawling Chorus', set: 'ONE',
@@ -9303,7 +9303,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // ---- Batch 47 — transza C: Enduring Sliver (keyword outlast) ----
 
   // 6. Enduring Sliver (MH1) — outlast {2} + nadanie outlast innym Sliverom.
-  //    CR 702.100a: „Outlast [cost]" = „[cost], {T}: Put a +1/+1 counter on
+  //    CR 702.107a: „Outlast [cost]" = „[cost], {T}: Put a +1/+1 counter on
   //    this creature. Activate only as a sorcery."
   defineCard({
     id: 'enduring-sliver', name: 'Enduring Sliver', set: 'MH1',
@@ -9342,7 +9342,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 349, plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
-    notes: ['outlast (CR 702.100a) wymaga {T} i działa tylko jak sorcery — stwór z chorobą przywołania go nie użyje', 'nadanie plemieniu liczone przy odczycie: zniknięcie Enduring Slivera natychmiast odbiera outlast pozostałym Sliverom'],
+    notes: ['outlast (CR 702.107a) wymaga {T} i działa tylko jak sorcery — stwór z chorobą przywołania go nie użyje', 'nadanie plemieniu liczone przy odczycie: zniknięcie Enduring Slivera natychmiast odbiera outlast pozostałym Sliverom'],
   }),
 
   // ---- Batch 47 — transza D: Caves of Chaos Adventurer ----
@@ -9660,7 +9660,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['utrata życia (CR 118.2), nie obrażenia — prewencja obrażeń jej nie zatrzyma', 'wzorzec triggera upkeepu z Feedback (enchantedPermanentControllerUpkeep)'],
   }),
 
-  // 12. Stampeding Elk Herd (DTK) — formidable (CR 702.103): przy ataku,
+  // 12. Stampeding Elk Herd (DTK) — formidable: przy ataku,
   //     jeśli łączna moc twoich stworów ≥ 8, cała drużyna dostaje trample.
   defineCard({
     id: 'stampeding-elk-herd', name: 'Stampeding Elk Herd', set: 'DTK',
@@ -11552,7 +11552,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // Boulder Salvo (OGW) {4}{R} Sorcery — surge {1}{R} + 4 obrażenia w stwora.
   // Surge na INSTANT/SORCERY to nowa ścieżka (dotąd tylko permanent — Jwar
   // Isle Avenger, Batch 50): koszt alternatywny z własną kwotą i pipami,
-  // oferowany po rzucie innego czaru w tej turze (CR 702.111). Ruling OGW
+  // oferowany po rzucie innego czaru w tej turze (CR 702.117). Ruling OGW
   // 2016-01-22: surge nie zmienia kosztu many ani mana value karty.
   defineCard({
     id: 'boulder-salvo', name: 'Boulder Salvo', set: 'OGW',
@@ -11649,7 +11649,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // (nie tylko stworze), nie jest licznikiem słowa kluczowego, a wielokrotne
   // egzemplarze są redundantne — dlatego na typ licznika wystarcza jeden
   // `addCounter('finality')`, a wygnanie przy śmierci robi wspólny
-  // `deathZoneFor` (CR 122.1e; w Batchu 58/B5 = jedyne miejsce decyzji).
+  // `deathZoneFor` (CR 122.1h; w Batchu 58/B5 = jedyne miejsce decyzji).
   defineCard({
     id: 'resurrected-cultist', name: 'Resurrected Cultist', set: 'DSK',
     types: ['Creature'], subtypes: ['Human', 'Cleric'], colors: ['B'],

@@ -42,7 +42,7 @@ function addCreature(state, id, playerId, power, toughness, name = 'Test', optio
 // Batch 22 — nowe mechaniki engine (2026-08-08).
 //   - proliferate (CR 701.27) — Courage in Crisis
 //   - reveal_top_to_bottom_order (CR 701.16) — Stomping Slabs
-//   - mill_from_bottom (CR 702.13 odwrotnie) — Cellar Door
+//   - mill_from_bottom (CR 701.13 odwrotnie) — Cellar Door
 //   - return_exiled_to_battlefield (paired LKI) — Wormfang Newt
 //   - nowe typy celów: creature_with_power_at_least (Selesnya Charm),
 //     nonland_permanent (Thistledown Players)

@@ -398,7 +398,7 @@ export function createGameState({ seed, players }) {
     // należy do kontrolera triggera (nie do poszkodowanego). Wpis:
     // { playerId, sourceId, amount, opponentId, candidateIds, restorePriorityTo }.
     pendingDeliriumTargets: [],
-    // Oczekujące wybory celu triggera mentora (CR 702.133, Boros Challenger):
+    // Oczekujące wybory celu triggera mentora (CR 702.134, Boros Challenger):
     // wpisy jak przy delirium (playerId/sourceId/candidateIds + snapshot
     // siły źródła), rozstrzygane komendą resolve_mentor_target.
     pendingMentorTargets: [],
@@ -838,7 +838,7 @@ function payFreeCastAdditionalCost(state, playerId, obj, cmd) {
   if (!sacrifice || sacrifice.zone !== 'battlefield' || sacrifice.kind !== 'creature'
     || sacrifice.controllerId !== playerId) return 'additional_cost_unpaid';
   // M269 (błąd #5): strefę śmierci wyznacza WSPÓLNY `deathZoneFor` (licznik
-  // finality — CR 122.1e, oraz naznaczenie exileIfDiesThisTurn). Ta ścieżka
+  // finality — CR 122.1h, oraz naznaczenie exileIfDiesThisTurn). Ta ścieżka
   // sprawdzała wyłącznie `unearthExile`, więc stwór z licznikiem finality
   // poświęcony jako KOSZT DODATKOWY lądował w cmentarzu i dawał się
   // reanimować drugi raz. `unearthExile` obsługuje sam moveObjectDirectly.
@@ -1035,7 +1035,7 @@ function deliriumDecisionPending(state, pending) {
 }
 
 /**
- * Legalni kandydaci celu mentora (CR 702.133): atakujący stwory kontrolera
+ * Legalni kandydaci celu mentora (CR 702.134): atakujący stwory kontrolera
  * o sile MNIEJSZEJ niż siła źródła. Siła źródła i celu jest sprawdzana
  * dynamicznie (intervening — cel mógł urosnąć, źródło zniknąć: wtedy
  * porównujemy do snapshotu z chwili odpalenia). Kandydaci muszą nadal
@@ -2961,7 +2961,7 @@ export function execute(state, input) {
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
 
-  // Rebound (CR 702.97, Ojutai's Breath): jednorazowa decyzja na początku
+  // Rebound (CR 702.88, Ojutai's Breath): jednorazowa decyzja na początku
   // następnego upkeepu — rzuć wygnany czar za darmo (ignorując timing, nawet
   // sorcery w turze przeciwnika) albo zostaw go w exile na stałe (karta traci
   // reboundReady — rebound nie powtarza się). To samo co resolve_suspend_cast,
@@ -3015,7 +3015,7 @@ export function execute(state, input) {
     const reboundCostReason = payFreeCastAdditionalCost(state, pending.playerId, card, cmd);
     if (reboundCostReason) return reject(reboundCostReason);
     // Rzut bez kosztu MANY — czar idzie na stos; timing sorcery IGNOROWANY
-    // (CR 702.97c — rzut z exile w trakcie rozpatrywania zdolności).
+    // (CR 702.88c — rzut z exile w trakcie rozpatrywania zdolności).
     const stackId = `spell-${state.objectSequence++}`;
     moveObjectDirectly(state, pending.objectId, 'stack', stackId);
     const stacked = Object.freeze({
@@ -3305,7 +3305,7 @@ export function execute(state, input) {
       addCounter(state, pending.sourceId, '+1/+1', pending.amount);
     } else {
       // Wariant tokenów (także gdy stwór odszedł — liczniki nie mają na czym
-      // usiąść, ale tokeny powstają: CR 702.122a).
+      // usiąść, ale tokeny powstają: CR 702.123a).
       for (let i = 0; i < pending.amount; i += 1) {
         createBattlefieldToken(state, pending.playerId, {
           cardId: 'token_servo', name: 'Servo', kind: 'creature',
@@ -5074,7 +5074,7 @@ export function execute(state, input) {
     }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
-  // Oczekujący wybór celu mentora (CR 702.133, Boros Challenger): kontroler
+  // Oczekujący wybór celu mentora (CR 702.134, Boros Challenger): kontroler
   // wskazuje atakującego stwora o mniejszej sile — CEL dostaje licznik +1/+1.
   // Siła porównywana dynamicznie przy rozstrzygnięciu (intervening — cel
   // mógł urosnąć albo źródło zniknąć; wtedy liczy się snapshot z odpalenia).
@@ -5598,12 +5598,12 @@ export function execute(state, input) {
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
 
-  // M315 — cloak: obrót twarzą do góry (CR 701.56b). Specjalna akcja:
+  // M315 — cloak: obrót twarzą do góry (CR 701.58b). Specjalna akcja:
   // bez stosu, niereagowalna, w każdym oknie priorytetu. Walidacja
   // tożsama z ofertą (L48). Po obrocie permanent traci ward {2} i resztę
   // śladów zakrycia — sprząta je punkt zbierający `turnFaceUp` (M322), bo do
-  // odsłonięcia prowadzą dwie procedury: koszt karty (701.56b) i koszt
-  // morpha/disguise (701.56c/d).
+  // odsłonięcia prowadzą dwie procedury: koszt karty (701.58b) i koszt
+  // morpha/disguise (701.58c/d).
   if (cmd.type === 'turn_cloak_face_up') {
     const object = state.objects.get(cmd.objectId);
     if (!object || object.zone !== 'battlefield' || !object.faceDown || !object.cloakReady) {
@@ -5724,7 +5724,7 @@ export function execute(state, input) {
       const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId, {
         buyback: cmd.buyback, payAltCost: cmd.payAltCost, xValue: cmd.xValue,
         phyrexianPayWithLife: cmd.phyrexianPayWithLife, kicked: Boolean(cmd.kicked),
-        // CR 702.111 (Surge, Batch 58/B1): koszt alternatywny niesie komenda
+        // CR 702.117 (Surge, Batch 58/B1): koszt alternatywny niesie komenda
         // (jak kicked/gifted) — walidacja i płatność w `castSpell`.
         surgeCast: Boolean(cmd.surgeCast),
         // CR 702.174 (Gift): obietnica daru to dodatkowy koszt rzutu; odbiorcę
@@ -6480,7 +6480,7 @@ export function playerView(state, playerId) {
       // dotąd widok niósł sam cardId, więc stół nie miał z czego narysować
       // kafla (ADR 0017: skutek widoczny w grze musi być widoczny na stole).
       // CR 406.3: wygnanie jest domyślnie ODKRYTE, a suspend (CR 702.62a)
-      // i plot (CR 702.168a) nie wyganiają zakrytych — pola są publiczne dla
+      // i plot (CR 702.170a) nie wyganiają zakrytych — pola są publiczne dla
       // OBU graczy. Zakryte wygnanie (`faceDown`) tożsamości nie ujawnia.
       const waiting = {};
       if (zone === 'exile') {
@@ -6528,7 +6528,7 @@ export function playerView(state, playerId) {
         if (object.kind) waiting.kind = object.kind;
         if ((object.types ?? []).length) waiting.types = [...object.types];
         // M212/Z7: deskryptor czaru dla kart czekających na DARMOWY rzut
-        // (suspend CR 702.62a, rebound CR 702.97, madness, impuls). Bez niego
+        // (suspend CR 702.62a, rebound CR 702.88, madness, impuls). Bez niego
         // kontroler oceniał ofertę „rzuć za darmo" nie wiedząc, CO czar robi:
         // wycena bota czytała `spell.effects` z widoku i dostawała pustą
         // listę, więc każdy zestaw celów miał identyczny wynik i bot brał
@@ -6620,7 +6620,7 @@ export function playerView(state, playerId) {
   const firstDecisionOwner = state.status === 'active' ? firstPendingDecisionPlayerId(state) : null;
   const blockedByOthersDecision = firstDecisionOwner != null && firstDecisionOwner !== playerId;
   // M337 (macierz B0 przerwana na 56%): AKCJE OPCJONALNE — specjalne (obrót
-  // twarzą do góry, CR 701.40b/701.56b) i pass — są nielegalne, gdy JAKA
+  // twarzą do góry, CR 701.40b/701.58b) i pass — są nielegalne, gdy JAKA
   // KOLWIEK decyzja czeka, także ta, której właścicielem jest sam gracz.
   // execute pilnuje tego 64 bramkami `if (cmd.type !== 'resolve_*') reject`
   // (zmierzone: 64 = liczba pól w `firstPendingDecision`, więc reguły są
@@ -6654,7 +6654,7 @@ export function playerView(state, playerId) {
         legalCommands.push(command('turn_manifest_face_up', playerId, { objectId: objId }));
       }
     }
-    // M315 (CR 701.56b + ruling WotC 2024-02-02): cloak — obrót twarzą do
+    // M315 (CR 701.58b + ruling WotC 2024-02-02): cloak — obrót twarzą do
     // góry to SPECJALNA AKCJA: „any time you have priority", bez stosu,
     // niereagowalna; tylko gdy pod zakryciem karta STWORA („revealing that
     // it's a creature card"); koszt = koszt many KARTY. Oferta = walidacja
@@ -7004,7 +7004,7 @@ export function playerView(state, playerId) {
   // wybrał nielegalną komendę". Reguła (jak przy `firstPendingDecisionPlayerId`):
   // pierwszy właściciel decyzji = pierwsza bramka execute = pierwsza gałąź ofert.
   } else if (state.status === 'active' && !blockedByOthersDecision && activeReboundCast) {
-    // Rebound (CR 702.97): jednorazowa decyzja na początku następnego upkeepu —
+    // Rebound (CR 702.88): jednorazowa decyzja na początku następnego upkeepu —
     // rzuć wygnany czar za darmo (ignorując timing) albo zostaw w exile.
     // Ta sama struktura ofert co suspend/epic (cele + tryb modalny).
     const pending = state.pendingReboundCast;
@@ -7670,7 +7670,7 @@ export function playerView(state, playerId) {
           // epicCastOffers) daje wariant per ofiara i wariant z dopłatą.
           ...(offer.sacrificeTargetId != null ? { sacrificeTargetId: offer.sacrificeTargetId } : {}),
           ...(offer.payAltCost === true ? { payAltCost: true } : {}),
-          // Koszt X (CR 107.3a) i bestow (CR 702.102) — wybór gracza z oferty.
+          // Koszt X (CR 107.3a) i bestow (CR 702.103) — wybór gracza z oferty.
           ...(offer.xValue != null ? { xValue: offer.xValue } : {}),
           ...(offer.bestow === true ? { bestow: true } : {}),
           ...(offer.surgeCast === true ? { surgeCast: true } : {}),
@@ -7950,7 +7950,7 @@ export function playerView(state, playerId) {
         const object = state.objects.get(id);
         if (object?.controllerId === playerId && object.plotted && !object.aura
           && (object.kind === 'creature' || object.kind === 'artifact' || object.kind === 'enchantment')
-          // CR 702.136: "on a later turn" — don't offer cast on the same turn as plot
+          // CR 702.170: "on a later turn" — don't offer cast on the same turn as plot
           && (object.plottedAtTurn == null || state.turn.number > object.plottedAtTurn)) {
           legalCommands.push(command('cast_permanent', playerId, { objectId: id }));
         }
@@ -8091,7 +8091,7 @@ export function playerView(state, playerId) {
           legalCommands.push(command('cast_permanent', playerId, { objectId: id, treasureAlt: true }));
         }
       }
-      // Surge (Jwar Isle Avenger, CR 702.111): alternatywny koszt rzutu z ręki,
+      // Surge (Jwar Isle Avenger, CR 702.117): alternatywny koszt rzutu z ręki,
       // gdy rzuciłeś inny czar w tej turze. Płatność NORMALNĄ maną — oferta
       // liczona z producibleMana i kolorów kosztu surge (jak warp/madness, ale
       // z ręki). Gate: spellsCastThisTurnByPlayer > 0 (ten sam odczyt co

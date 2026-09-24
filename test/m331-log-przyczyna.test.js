@@ -19,7 +19,7 @@ import { createSession, HUMAN_ID, BOT_ID } from '../src/table/session.js';
  *   • Bladed Sentinel zadaje 2 obrażenia (Veiled Ascension (Morph))
  *
  * Same nazwy kart są poprawne i przypadkowe (pod cloakami leżały lądy i druga
- * Veiled Ascension; ląd zakryty z cloaka to zgodny z CR 701.56a 2/2, tylko bez
+ * Veiled Ascension; ląd zakryty z cloaka to zgodny z CR 701.58a 2/2, tylko bez
  * prawa obrotu za koszt karty). BŁĘDEM był znacznik mechaniki: cloak to nie
  * morph (2/2 z ward {2}), a bez numeru kopii dwa zakrycia wyglądały w logu
  * identycznie — ta sama klasa co F6 na kaflach, tylko w pięciu miejscach więcej

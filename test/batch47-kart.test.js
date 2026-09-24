@@ -251,7 +251,7 @@ test('B47/C2: Enduring Sliver ma outlast {2} i nadaje go INNYM Sliverom', () => 
   const outlast = card.abilities.find((a) => a.keyword === 'outlast');
   assert.ok(outlast, 'własne outlast jako zdolność aktywowana');
   assert.equal(outlast.cost.mana, 2, 'koszt {2}');
-  assert.equal(outlast.cost.tap, true, 'outlast wymaga {T} (CR 702.100a)');
+  assert.equal(outlast.cost.tap, true, 'outlast wymaga {T} (CR 702.107a)');
   assert.equal(outlast.timing, 'sorcery', 'outlast tylko jak sorcery');
   const eff = Array.isArray(outlast.effect) ? outlast.effect[0] : outlast.effect;
   assert.deepEqual([eff.type, eff.counter], ['add_counter', '+1/+1']);
@@ -299,7 +299,7 @@ test('B47/C2b: outlast jest ZNANYM keywordem (nie martwym wpisem)', async () => 
   assert.equal(after.counters?.['+1/+1'] ?? 0, 1, 'outlast kładzie licznik +1/+1');
 });
 
-test('B47/C2c: outlast NIE jest dostępny w oknie instant (CR 702.100a)', async () => {
+test('B47/C2c: outlast NIE jest dostępny w oknie instant (CR 702.107a)', async () => {
   const { createGameState, addObject, playerView } = await import('../src/engine/game-state.js');
   const { gameObjectDataOf } = await import('../src/cards/materialize.js');
   const { jumpToStep } = await import('../src/engine/turn.js');
