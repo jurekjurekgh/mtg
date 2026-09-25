@@ -7743,3 +7743,59 @@ heuristic 78,0 % vs aggro / 97,6 % vs random (progi 62 % / 78 %),
 trzymana w ręce, Vanguard aktywowany w oknie walki.
 
 Lekcja: **L169**. Bramy: `npm test` 6534/6534, build 60 modułów / 4254,4 kB.
+
+## M430 — audyt scalonego PR #136 (5 znalezisk) i pętla jakości: wektor celów w dwóch warstwach (sesja 2026-09-24f, PR #137)
+
+Zlecenie właściciela bez nazwanego tematu („Kontynuujemy projekt") → obowiązuje
+pętla domyślna (ADR 0021) w trybie audytu ostatniego scalonego PR (ADR 0020 B).
+Bez nowego batcha kart (ADR 0029), bez pełnego B0 (ADR 0018).
+
+**Pięć znalezisk, cztery klasy.** F-2 (regułowe, średnie): predykat „karta w
+grobie przeciwnika" odsiewał tokeny heurystyką po nazwie, a poległa kopia
+„enter as copy" nosi `name` i nie ma `isToken` — karta przegrywała status celu
+wbrew CR 108.2b, który wyklucza wyłącznie tokeny; naprawa na jawną flagę
+`!object.isToken` w `zones.js` + bliźniak w `triggers.js` (Puppeteer Clique czyta
+ten sam predykat). F-1 (dokumentacyjne): nota `slithering-cryptid` cytowała dla
+„Activate only as a sorcery" CR 107.3a (wybór X) zamiast 602.5d; poprawione w
+karcie i w handoffzie 24e + nowa para w strażniku numerów. F-3: komentarz M429
+podawał liczby, których kod nie produkuje (Hill Giant „4/4" — katalog 3/3, „2/3
+→ +6"); sonda na botu dała 14/22/26, piny przepisane na pomiar. F-4: kreator
+celów liczył rozmiary z długości wektora z wypełnieniem `null` (4/4 zamiast
+1–3), zostawiał pusty kandydat w worku i budował klucz z nullami — „Zatwierdź"
+gaśnie i Memory's Journey jest nie do zagrania z UI. F-5: w grupie jednego słowa
+„target" enumeracja mnożyła permutacje tego samego zbioru (CR 601.2c — ten sam
+cel nie może być wybrany dwa razy w jednej pozycji); naprawa kanonizuje
+kolejność w grupach o identycznych deskryptorach, czyli przechodzi z permutacji
+na kombinacje.
+
+**Klasa znalezisk (do zapamiętania):** to samo pojęcie („pozycja opcjonalna to
+`null` w wektorze, nie cel") mieszkało w dwóch warstwach i zostało przepisane
+osobno — silnik oferował kartę, testy karty szły przez `execute` i świeciły
+zielenią, a UI nie pozwalał jej zagrać. Przy zmianie wektora celów przechodzi się
+cztery warstwy: enumeracja → walidacja → plan kreatora → etykieta. Dowody RED
+dla obu napraw + trzy mutacje czerwienią w
+`test/audyt-pr136-kreator-up-to-three.test.js`.
+
+**Incydent metody (warty powtórzenia jako ostrzeżenie):** restaurowanie mutacji
+przez `s.replace()` na całym pliku przywróciło wzorzec w trzech funkcjach, z
+których tylko jedna ma `realSizes` → `ReferenceError` poza ścieżką testowaną.
+`npm test` (fast core) był zielony; złapało to dopiero `npm run test:all` —
+rozszerzenie L159: restaurować wierszem/zakresem i czytać `git diff`.
+
+**Żywy Tester (Etap D1):** 4 partie na chwilowej talii batcha 59. Przed naprawą
+seed 78 przerwał „Kreator wielocelowy nie do zamknięcia po 5 próbach" (to było
+źródło F-4/F-5); po naprawie partia kończy się pełnym rozstrzygnięciem
+(„Rzucasz Memory's Journey → cel: Ty, Waveskimmer Aven, Savage Hunger,
+Sun-Collared Raptor" + „Tasujesz bibliotekę"), 0 zgłoszeń detektorów, 0 ruchów
+niewycenionych. Chwilowa talia `decks/audyt-batch59.txt` usunięta — jej obecność
+psuła pięć strażników talii (M178/ADR 0023, round-trip, HELP--seeds).
+
+**Werdykt audytu: APPROVE po naprawach** — `docs/audits/AUDYT_PR136_2026-09-24f.md`.
+
+Bramy: `npm test` **6545/6545** (start 6534 → +11), `npm run test:all`
+**6555/6555**, build 60 modułów / **4257,9 kB**, `bot-benchmark` 10/10 (progi
+bez zmian), szybka macierz 672 mecze: **78,3 %** vs aggro / **97,9 %** vs random
+(24e: 78,0 / 97,6 — bez regresji), `tools/b1-quick-2026-09-24f.{json,txt}`,
+golden-master `bot-scoring-snapshot` zielony BEZ regeneracji, katalog 562 wpisy
+/ 509 `supported` / 1 z niepustym `limitations`. Nowa lekcja: celowo żadna —
+budżet lektury ~99,9k/100k znaków, klasy żyją w L41/L43/L129/L135/L151/L163/L13 §6.

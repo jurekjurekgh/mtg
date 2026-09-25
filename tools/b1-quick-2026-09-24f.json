@@ -1,0 +1,499 @@
+{
+  "generatedAt": "2026-09-24T22:17:11.945Z",
+  "elapsedMs": 188713,
+  "config": {
+    "bots": [
+      "aggro",
+      "heuristic",
+      "random"
+    ],
+    "pairs": [
+      [
+        "heuristic",
+        "random"
+      ],
+      [
+        "aggro",
+        "heuristic"
+      ]
+    ],
+    "decks": [
+      "alara",
+      "dominaria-brg",
+      "dominaria-wu",
+      "final-fantasy",
+      "forgotten-realms",
+      "innistrad-brg"
+    ],
+    "seedsCount": 8,
+    "seedBase": 2026,
+    "maxCommands": 8000,
+    "selfPlay": false,
+    "stallMs": 0,
+    "totalMatches": 672,
+    "budgetMatches": 6000,
+    "deckPairsPlayed": 21,
+    "deckPairsAll": 21
+  },
+  "pairs": {
+    "aggro | heuristic": {
+      "games": 336,
+      "unfinished": 0,
+      "wins": {
+        "heuristic": 263,
+        "aggro": 73
+      },
+      "avgTurns": 19.14,
+      "avgCommands": 477.6,
+      "decks": {
+        "alara | alara": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 7
+          },
+          "avgTurns": 24.94,
+          "avgCommands": 614.8
+        },
+        "alara | dominaria-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 17.13,
+          "avgCommands": 421.1
+        },
+        "alara | dominaria-wu": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 19.63,
+          "avgCommands": 484.6
+        },
+        "alara | final-fantasy": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 15,
+            "aggro": 1
+          },
+          "avgTurns": 22.44,
+          "avgCommands": 561.1
+        },
+        "alara | forgotten-realms": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 17.88,
+          "avgCommands": 451.4
+        },
+        "alara | innistrad-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 12,
+            "aggro": 4
+          },
+          "avgTurns": 23.56,
+          "avgCommands": 573.6
+        },
+        "dominaria-brg | dominaria-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 14,
+            "aggro": 2
+          },
+          "avgTurns": 18.44,
+          "avgCommands": 456.3
+        },
+        "dominaria-brg | dominaria-wu": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 10,
+            "aggro": 6
+          },
+          "avgTurns": 18,
+          "avgCommands": 449
+        },
+        "dominaria-brg | final-fantasy": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 9,
+            "aggro": 7
+          },
+          "avgTurns": 19.06,
+          "avgCommands": 467
+        },
+        "dominaria-brg | forgotten-realms": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 11,
+            "aggro": 5
+          },
+          "avgTurns": 16.56,
+          "avgCommands": 416.9
+        },
+        "dominaria-brg | innistrad-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 9
+          },
+          "avgTurns": 18.25,
+          "avgCommands": 438.6
+        },
+        "dominaria-wu | dominaria-wu": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 13,
+            "aggro": 3
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 519.1
+        },
+        "dominaria-wu | final-fantasy": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 12,
+            "aggro": 4
+          },
+          "avgTurns": 19.38,
+          "avgCommands": 489.4
+        },
+        "dominaria-wu | forgotten-realms": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 13,
+            "aggro": 3
+          },
+          "avgTurns": 17.19,
+          "avgCommands": 439.8
+        },
+        "dominaria-wu | innistrad-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 11,
+            "aggro": 5
+          },
+          "avgTurns": 18.13,
+          "avgCommands": 451.5
+        },
+        "final-fantasy | final-fantasy": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 12,
+            "aggro": 4
+          },
+          "avgTurns": 22.25,
+          "avgCommands": 570.5
+        },
+        "final-fantasy | forgotten-realms": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 15,
+            "aggro": 1
+          },
+          "avgTurns": 17.06,
+          "avgCommands": 436.3
+        },
+        "final-fantasy | innistrad-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 12,
+            "aggro": 4
+          },
+          "avgTurns": 17.94,
+          "avgCommands": 452.2
+        },
+        "forgotten-realms | forgotten-realms": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 12,
+            "aggro": 4
+          },
+          "avgTurns": 17.75,
+          "avgCommands": 465.4
+        },
+        "forgotten-realms | innistrad-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 12,
+            "aggro": 4
+          },
+          "avgTurns": 19,
+          "avgCommands": 471.4
+        },
+        "innistrad-brg | innistrad-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 16.94,
+          "avgCommands": 400.4
+        }
+      }
+    },
+    "heuristic | random": {
+      "games": 336,
+      "unfinished": 0,
+      "wins": {
+        "heuristic": 329,
+        "random": 7
+      },
+      "avgTurns": 16.84,
+      "avgCommands": 419.7,
+      "decks": {
+        "alara | alara": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 20.88,
+          "avgCommands": 521.3
+        },
+        "alara | dominaria-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 22.44,
+          "avgCommands": 562
+        },
+        "alara | dominaria-wu": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "random": 2,
+            "heuristic": 14
+          },
+          "avgTurns": 23.06,
+          "avgCommands": 587.1
+        },
+        "alara | final-fantasy": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 22.88,
+          "avgCommands": 582.8
+        },
+        "alara | forgotten-realms": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 15,
+            "random": 1
+          },
+          "avgTurns": 19.94,
+          "avgCommands": 495.3
+        },
+        "alara | innistrad-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 18.19,
+          "avgCommands": 456.3
+        },
+        "dominaria-brg | dominaria-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 15.25,
+          "avgCommands": 382.1
+        },
+        "dominaria-brg | dominaria-wu": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 13.75,
+          "avgCommands": 335.3
+        },
+        "dominaria-brg | final-fantasy": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 14.88,
+          "avgCommands": 366.5
+        },
+        "dominaria-brg | forgotten-realms": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 13.13,
+          "avgCommands": 320.2
+        },
+        "dominaria-brg | innistrad-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 15,
+            "random": 1
+          },
+          "avgTurns": 12.75,
+          "avgCommands": 312.4
+        },
+        "dominaria-wu | dominaria-wu": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 16.25,
+          "avgCommands": 401.4
+        },
+        "dominaria-wu | final-fantasy": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 17.25,
+          "avgCommands": 434
+        },
+        "dominaria-wu | forgotten-realms": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 15,
+            "random": 1
+          },
+          "avgTurns": 17.25,
+          "avgCommands": 434.2
+        },
+        "dominaria-wu | innistrad-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 15,
+            "random": 1
+          },
+          "avgTurns": 14.31,
+          "avgCommands": 348.7
+        },
+        "final-fantasy | final-fantasy": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 17,
+          "avgCommands": 429.4
+        },
+        "final-fantasy | forgotten-realms": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 15,
+            "random": 1
+          },
+          "avgTurns": 16.56,
+          "avgCommands": 415.9
+        },
+        "final-fantasy | innistrad-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 14.25,
+          "avgCommands": 353.8
+        },
+        "forgotten-realms | forgotten-realms": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 15,
+          "avgCommands": 370.1
+        },
+        "forgotten-realms | innistrad-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 14.13,
+          "avgCommands": 352.6
+        },
+        "innistrad-brg | innistrad-brg": {
+          "games": 16,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 16
+          },
+          "avgTurns": 14.5,
+          "avgCommands": 352.6
+        }
+      }
+    }
+  },
+  "totals": {
+    "aggro": {
+      "games": 336,
+      "unfinished": 0,
+      "wins": {
+        "heuristic": 263,
+        "aggro": 73
+      },
+      "avgTurns": 19.14,
+      "avgCommands": 477.6
+    },
+    "heuristic": {
+      "games": 672,
+      "unfinished": 0,
+      "wins": {
+        "heuristic": 592,
+        "random": 7,
+        "aggro": 73
+      },
+      "avgTurns": 17.99,
+      "avgCommands": 448.7
+    },
+    "random": {
+      "games": 336,
+      "unfinished": 0,
+      "wins": {
+        "heuristic": 329,
+        "random": 7
+      },
+      "avgTurns": 16.84,
+      "avgCommands": 419.7
+    }
+  },
+  "stalls": []
+}
