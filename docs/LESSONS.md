@@ -2411,18 +2411,14 @@ kart dwustronnych.
 
 ## L165 (2026-09-24) — Strażnik LINIOWY nie łapie rozjazdu, który siedzi o linię obok nazwy mechaniki
 
-**Przypadek (F-7):** para `fabricate` + zakazane `702.12[12]` istniała od
-audytu PR #116 i PRZECHODZIŁA, choć w trzech plikach fabricate był cytowany
-jako `702.122a` (= crew) — bo słowo „fabricate” stało linię WYŻEJ niż numer
-(`state.pendingFabricate = …` dwie linie niżej). To samo vigilance jako 702.21
-(= ward) i flashback jako 702.33a (= kicker): 9 miejsc, wszystkie niewidoczne
-dla par liniowych.
+**Przypadek (F-7):** `fabricate` jako `702.122a` (= crew), vigilance jako 702.21,
+flashback jako 702.33a — 9 miejsc przechodziło, bo nazwa stała linię wyżej niż
+numer (narracja: `docs/LESSONS_PRZYPADKI.md`).
 
 **Reguła:**
-1. Detektor pary „nazwa ↔ zakazany numer” jest liniowy z definicji — w
-   komentarzach wieloliniowych (a takie są w tym repo) numer i nazwa rzadko
-   siedzą w jednej linii. Detektor klasy musi mieć OKNO (±8 linii wystarczyło:
-   0 fałszywych trafień po aliasach).
+1. Detektor pary „nazwa ↔ zakazany numer” jest liniowy z definicji — a numery
+   i nazwy siedzą tu w komentarzach wieloliniowych. Detektor klasy musi mieć
+   OKNO (±8 linii: 0 fałszywych trafień po aliasach).
 2. Kierunek odwrócony jest silniejszy niż lista znanych błędów: nie „mechanika
    X nie może cytować Y”, ale „KAŻDY cytat `702.<n>` musi mieć w oknie nazwę
    mechaniki, którą `702.<n>` znaczy w bieżącym CR” + „numer spoza tabeli
@@ -2440,13 +2436,9 @@ czerwieni i detektor okna, i parę liniową.
 
 ## L166 (2026-09-24) — Efekt ciągły zapisany jako mutacja pola ma znacznik czasu i nie przeżywa zmiany strefy
 
-**Przypadek (D4b, W-1…W-9):** silnik nie miał znaczników CR 613.7, więc każda
-para kolidujących efektów rozstrzygała się STAŁĄ kolejnością wpisaną w kod:
-utrata keywordu zawsze wygrywała z nadaniem (613.9 mówi: późniejszy), `set P/T`
-zawsze z animacją, zakrycie zawsze dawało 2/2, a CDA Tarmogoyfa była pumpem 7c.
-Przy okazji: efekty „do końca tury” trzymane w polach obiektu przeżywały
-zmianę strefy (odbity obsadzony pojazd był w ręce stworem), bo cleanup
-przywraca tylko pole bitwy.
+**Przypadek (D4b, W-1…W-9):** brak znaczników CR 613.7 → pary kolidujących
+efektów rozstrzygała STAŁA kolejność w kodzie (utrata keywordu ponad nadaniem,
+`set P/T` ponad animacją, zakrycie = 2/2).
 
 **Reguła:**
 1. Stała kolejność „X zawsze wygrywa z Y” w kodzie warstw to ukryta reguła —
@@ -2467,10 +2459,7 @@ przywraca tylko pole bitwy.
 
 **Przypadek (F/5, W-10/W-11):** animacje (Skilled Animator „dopóki źródło
 na polu bitwy”, crew „do końca tury”) zapisywały się w JEDNEJ warstwie pól
-obiektu. Koniec jednego efektu kasował całą warstwę albo żadnej: po crew
-i śmierci Animatora pojazd od razu przestawał być stworem, a cleanup
-zdejmował animację, która miała trwać. Przy naprawie druga łatka
-`replaceObject` na nieaktualnym obiekcie cofnęła pierwszą.
+obiektu — koniec jednego efektu kasował całą warstwę albo żadnej.
 
 **Reguła:**
 1. Efekt ciągły z własnym czasem trwania (CR 611.2) to osobny WPIS z tym
@@ -2489,8 +2478,8 @@ zdejmował animację, która miała trwać. Przy naprawie druga łatka
 ## L168 (2026-09-24) — „Kwota" kosztu alternatywnego to SUMA symboli, nie część generyczna
 
 **Przypadek (M428, F1/F3 z Żywego Testera):** `cost` alt-kosztów czytano jako
-część GENERYCZNĄ (`generic = amount − pipy`) — Join the Dance i Boulder Salvo
-miały kwotę o {1} rozjechaną z Oracle, a strażnik porównywał tylko PIPY.
+część GENERYCZNĄ — Join the Dance i Boulder Salvo miały kwotę o {1} rozjechaną z
+Oracle, a strażnik porównywał tylko PIPY.
 
 **Reguła:**
 1. `cost`/`manaCost` deskryptora = SUMA symboli (dowód: bestow {3}{G} = 4,
@@ -2513,9 +2502,9 @@ znaleziskach, piny etykiet) + piny w `test/real-cards-batch{58,59}.test.js`.
 ## L169 (2026-09-24) — Remis wariantów to brak WYMIARU, nie brak wiedzy o karcie
 
 **Przypadek:** trzy karty batcha 59 miały efekt wyceniony PŁASKO (14/14/14 dla
-licznika na celu, 58 pkt dla tasowania grobu niezależnie od biblioteki, 2 pkt dla
-pumpa z aktywacji), więc bot decydował o „najlepszym" wariancie kolejnością ofert.
-Pomiary wariantów i kalibracja: `docs/LESSONS_PRZYPADKI.md` (L169).
+licznika na celu, 58 pkt dla tasowania grobu, 2 pkt dla pumpa z aktywacji) — bot
+decydował o „najlepszym" wariancie kolejnością ofert. Pomiary:
+`docs/LESSONS_PRZYPADKI.md` (L169).
 
 **Reguła:**
 1. Zanim dodasz wagę, znajdź WYMIAR RÓŻNICOWANIA w tym, co już masz
@@ -2548,21 +2537,38 @@ pokręteł w `test/bot-params.test.js`; pomiar `tools/b1-quick-2026-09-24e.{json
 tylko grał ofertę; osobno uwaga D — Log pełny, panel „Rozgrywka" pusty.
 
 **Reguła:**
-1. Zdarzenie aktywacji i zdarzenie kontrolki OSADZONEJ w przycisku muszą być
-   PAROWANE: przy aktywacji na `pointer*` `stopPropagation` na `click` jest
-   iluzją. Wyspa interakcji nosi markę w module gestu (`PRESS_EXEMPT_ATTRIBUTE`),
-   bramka mieszka w gesturze — nie w klasach CSS.
-2. „Panel pusty, log pełny" to nie wina bramki treści: policz ŻYWIOTNOŚĆ wpisu.
-   Modal czyszczący bufor w chwili renderu gubi wszystko, co doszło po renderze.
-   Konsumpcja = po potwierdzeniu gracza (`consumeBotMoves(n)`); przy otwartym oknie
-   w pauzie re-render TYLKO gdy DOSZŁO nowa pozycja (inaczej okno mruga i klika się
-   w kółko — pułapka złapana przez `test/table-ui.test.js`).
-3. „Poprzedni PR przesunął obiekty" = czytam, KTÓRY element jest rodzicem
-   słuchacza; naprawiam w jednym miejscu obsługi, nie kolejnym wyrażeniem.
+1. Aktywacja i zdarzenie kontrolki OSADZONEJ w przycisku muszą być PAROWANE:
+   przy aktywacji na `pointer*` `stopPropagation` na `click` jest iluzją. Wyspa
+   interakcji nosi markę w module gestu (`PRESS_EXEMPT_ATTRIBUTE`), bramka
+   mieszka w gesturze — nie w klasach CSS.
+2. „Panel pusty, log pełny" to nie bramka treści, tylko ŻYWIOTNOŚĆ wpisu: modal
+   czyszczący bufor przy renderze gubi to, co doszło po renderze. Konsumpcja = po
+   potwierdzeniu gracza (`consumeBotMoves(n)`); re-render otwartego okna w pauzie
+   TYLKO gdy DOSZŁO nowa pozycja (inaczej mruga i klika się w kółko — łapie
+   `test/table-ui.test.js`).
+3. „Poprzedni PR przesunął obiekty" = czytam, KTÓRY element jest rodzicem słuchacza.
 
 **Strażnik:** `test/uwaga-z-gry-C-ptaszek-2026-09-25.test.js` (C1–C7, sekwencje
 zdarzeń na stubie MiniEl — repo bez zależności, więc bez jsdomu),
 `test/uwaga-z-gry-D-discover-bota-2026-09-25.test.js` (D1–D8),
-`test/b5-bramka-logu-gracza.test.js`; finał: Żywy Tester na żywych taliach.
+`test/b5-bramka-logu-gracza.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L170)
+
+## L171 (2026-09-25) — reguła bez ścieżki importu: wynoszę LIŚĆ; re-eksport bez wiązania = padnięty moduł
+
+
+**Reguła:**
+1. Regule bez ścieżki importu (tu: `polishPluralCount` w `render.js`, a
+   `session.js` nie może go stamtąd brać — cykl) idzie do **liścia o zerowych
+   zależnościach**, a dawny dom zostawia re-eksport, by konsumenci nie zmieniali
+   importów (L41: naprawiam GEOGRAFIĘ, nie przepisuję reguły).
+2. Gołe `export { x } from './liść.js'` NIE wiąże `x` lokalnie: jeśli plik używa
+   jej u siebie, dostaje `ReferenceError` (tu: 60 testów). Zatem
+   `import` + osobny `export {}`; kontrakt spinam **wywołaniem funkcji**
+   (`commandLabel`), bo odczyt tekstu pliku nie widzi niezwiązanej nazwy.
+3. Odmiana 1 / 2–4 / 5+ (nastki 12–14 za mod100) to KLASA, nie lista przypadków:
+   jedna funkcja + strażnik J1–J5. W
+   regexpach JS `\b` nie działa po diakrytykach — granicę: `(?![a-z])`.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L171)

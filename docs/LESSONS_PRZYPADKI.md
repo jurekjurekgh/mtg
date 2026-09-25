@@ -2808,3 +2808,51 @@ vs „została, ale nie DOŻYŁA do ekranu" rozstrzyga porównanie dwóch konsum
 tego samego strumienia (log vs panel). Dowód bierze się z transkryptu Żywego
 Testera, nie z repro na `createSession` — tam log jest pełny i test byłby zielony
 przy psuciu produktu.
+
+## L171 (2026-09-25) — przypadek
+
+**Objaw.** W transkrypcie Żywego Testera (sonda uwagi D, talie
+`innistrad-brg` vs `ixalan`, seed 43) pojawił się opis discover:
+„Nieprzyjaciel nie znajduje karty dla discover (3) — biblioteka się wyczerpała
+(przejrzano 4 **kart**)". Ten sam błąd w logu startowym: „Ręka startowa
+Nieprzyjaciel: 7 **kart**" — oraz trzy miejsca w kreatorze talii: podsumowanie
+talii „100 **kart** · lądów …" (tu 100 jest poprawne), „Dodano 4 **kart** z
+filtrów." i „Zaimportowano talię „X" (60 **kart**)".
+
+**Przyczyna.** Geografia, nie brak reguły. Odmiana liczebnika istnieje w repo od
+dawna — `polishPluralCount(n, one, few, many)` — ale mieszkała w `render.js`.
+`session.js` NIE MOŻE importować z `render.js`, bo `render.js` importuje z
+`session.js` (`PLAYER_NAMES`, `describeGameEvent` dla modala itd.) — powstałby
+cykl modułów, a `test/module-graph.test.js` pilnuje, żeby importy szły „w dół".
+Więc `describeGameEvent` (w `session.js`) i `deck-builder.js` (osobny moduł
+kreatora) sklejały licznik na sztywno: `${n} kart`, „poprawne" dla 0 i 5+, złe
+dla 1 i 2–4. Detektor językowy testera miał rację, a nikt go nie pytał o zgodę.
+
+**Naprawa.** Nowy liść `src/table/polish-plural.js` — JEDNO źródło odmiany dla
+całego stołu, zero zależności, więc dostępny z każdego kierunku bez cyklu.
+`render.js` zostaje konsumentem i re-eksportem (dawni konsumenci
+`choice-request.js`, `main.js` nie zmieniają importów); `session.js` (2 miejsca)
+i `deck-builder.js` (3 miejsca) liczą przez helpera. Build: 60 → 61 modułów,
+4290,5 → 4292,1 kB.
+
+**Pułapka, która kosztowała 60 czerwonych testów.** Pierwsza wersja re-eksportu
+w `render.js` to było gołe `export { polishPluralCount } from './polish-plural.js';`
+— re-eksportuje nazwę dla innych modułów, ale NIE wiąże jej lokalnie, a
+`render.js` używa helpera u siebie w ~20 miejscach (`commandLabel`, opisy
+dobierania/millowania, etykiety wizarda). Objaw: `ReferenceError:
+polishPluralCount is not defined` na każdym renderze, w tym w testach, które w
+ogóle nie dotyczyły liczebników (`a-hover-track-cycle`). Kontrakt naprawiono na
+`import` + osobny `export {}`, a w J5 spinano go **wywołaniem** `commandLabel` —
+odczyt tekstu pliku (J3/J4) był zielony przy psuciu produktu, bo szukał tylko
+braku definicji i braku sztywnej formy.
+
+**Warstwa narzędzi (do odnotowania).** W tej samej turze sandbox again
+przeklonował repo: lokalna gałąź stała na `main` (`0b2f771`), a cała praca
+M431/M432 leżała jako „brudne drzewo" + pliki nieśledzone (testy C/D, audyty,
+plany). Procedura ratunku, która NISZCZY NIC: `git add -A` (nieśledzone stają się
+śledzone) → `git diff --cached FETCH_HEAD --name-status` po `git fetch origin
+<branch>` → jeśli jedyną różnicą jest bieżąca robocizna, `git reset <tip-zdalny>`
+bez flagi (rusza wskaźnik, zostawia drzewo i indeks). Wcześniejsza wersja tej
+procedury (ślepy `reset --hard`) skasowała kiedyś niecommitowane naprawy —
+różnica jest w kolejności: NAJPIERW porównanie co do ścieżki, dopiero potem
+przestawienie wskaźnika.

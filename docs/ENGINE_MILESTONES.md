@@ -7978,3 +7978,61 @@ skanujących `decks/` (`repo-decks`, `m132-proporcje-landow`,
 `m203-talie-testera-i-dokumentacji`, `m338-pomoc-benchmarku`, 2 × `M178`) —
 każdy plik w `decks/` jest DANYMI testowymi, więc talie próbne tworzymy poza
 repo albo usuwamy PRZED bramą.
+
+## M433 — uwaga J: odmiana liczebników w warstwie stołu + reguła „znalezione błędy naprawiam od razu" (sesja 2026-09-25b, PR #137)
+
+**Skąd.** Przy sondzie uwagi D Żywy Tester zwrócił formę „przejrzano 4 **kart**"
+w opisie discover (a w logu startowym „Ręka startowa Nieprzyjaciel: 7 **kart**").
+Zgłosiłem to właścicielowi jako „drobiazg do decyzji" — stąd druga, ważniejsza
+część tej uwagi: **„ZNALEZIONE BŁĘDY NAPRAWIASZ, a nie pytasz mnie o to, czy
+naprawić"**. Wdrożone jako reguła w `AGENTS.md` (§ „Zasady pracy z
+repozytorium") — nie jako notatka sesyjna. Razem z nią: artefakty reprodukcji
+(kopia runnera, chwilowa talia w `decks/`) sprząta się PRZED bramą `npm test`
+sekcja „Co dzieje się z tym, czego tester dotknął" w `docs/setup/TESTER_STOLU.md`;
+`decks/geo-tester.txt` z sondy D usunięty.
+
+**Przyczyna (geografia, nie reguła).** `polishPluralCount` istniał, ale w
+`render.js`, a `session.js` nie może importować z `render.js` (render importuje z
+session → cykl; pilnuje tego `test/module-graph.test.js`), więc `describeGameEvent`
+i `deck-builder.js` sklejały licznik na sztywno `${n} kart`.
+
+**Naprawa (commit `8b64e06`).** Nowy liść `src/table/polish-plural.js` (zero
+zależności) = JEDNO źródło odmiany; `render.js` = `import` + osobny `export {}`
+(dawni konsumenci `choice-request.js`, `main.js` bez zmian importów); 2 miejsca w
+`session.js` + 3 w `deck-builder.js` liczą przez helpera (1 → „kartę/karta",
+2–4 → „karty", 5+/0 i nastki 12–14 → „kart").
+
+**Cenna wpadka w trakcie (utrwalona w L171 pkt 2).** Pierwsza wersja re-eksportu
+to gołe `export { x } from './liść.js'` — re-eksportuje nazwę dla innych modułów,
+ale NIE wiąże jej lokalnie, a `render.js` używa helpera u siebie w ~20 miejscach ⇒
+`ReferenceError: polishPluralCount is not defined` na każdym renderze i **60
+czerwonych testów**, w tym zupełnie niezwiązanych z liczebnikami
+(`a-hover-track-cycle`). Naprawione `import` + `export {}` oraz **J5, który woła
+`commandLabel`** — odczyt tekstu pliku (J3/J4) był zielony przy psuciu produktu.
+Druga pułapka testowa: `\b` w regexpach JS nie działa po diakrytykach, więc
+granicę wyrazu trzeba pisać `(?![a-z])` (inaczej asercja „1 kartę\b" odpada).
+
+**Bramy po naprawie.** `npm test` **6587/6587, fail 0** (start M432: 6582 → +5:
+J1–J5), build **61 modułów / 4292,3 kB** (nowy liść dopiął się do grafu przez
+`collectModules` z `ENTRY='src/table/main.js'`), `docs-decisions` 25/25,
+budżet lektury startowej zmieszczony (100 000 — ani jednego tokena zapasu;
+patrz niżej).
+
+**Budżet lektury (kondensacja parowana).** Wpis L171 w `docs/LESSONS.md` (+ nowe
+zdanie w `AGENTS.md`) przekraczały próg 100k, więc w tej samej turze skondensowano
+to, co MA JUŻ drugie miejsce: przypadek L165 (narracja `LESSONS_PRZYPADKI.md`
+L165:92), punkt 2/3 L170, akapity przypadków L166/L167/L168/L169, a w `AGENTS.md`
+przepis procedury force-pushu/odyskiwania zastąpiono wskazaniem na
+`docs/setup/ENVIRONMENT.md` §2 (tam jest pełna, razem z wariantem „snapshot
+przywrócił pliki, a cofnął tylko ref") i przeniesiono porządek po sondzie do
+`TESTER_STOLU.md`. Numer L nie zniknął, żaden fakt nie zniknął z repo — zmienił
+nośnik.
+
+**Warstwa narzędzi (drugie spotkanie z tym samym).** Sandbox przeklonował repo w
+środku tury: lokalna gałąź stała na `0b2f771`, cała praca M431/M432 leżała jako
+„brudne drzewo" + 14 plików nieśledzonych. Zamiast `reset --hard` (który kiedyś
+skasował niecommitowane naprawy) procedura bezstratna: `cp` ruszanych plików →
+`git fetch origin <gałąź>` → `git add -A` (nieśledzone wchodzą do indeksu) →
+`git diff --cached FETCH_HEAD --name-status` (padło dokładnie 5 ścieżek bieżącej
+robocizny ⇒ reszta to ten sam kontent) → `git reset <tip-zdalny>` bez flagi
+(rusza ref i indeks, nie rusza plików).

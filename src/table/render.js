@@ -20,6 +20,7 @@ import { COUNTER_LABELS, counterLabelGen } from './counter-labels.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installPressActivation, installTapGesture } from './gestures.js';
 import { renderPickerRow } from './picker.js';
+import { polishPluralCount } from './polish-plural.js';
 
 /**
  * Renderowanie stołu: PlayerView + log sesji → DOM (M7).
@@ -1053,10 +1054,12 @@ function signed(n) { return (Number(n) >= 0 ? '+' : '') + n; }
  * Odmiana przez liczebnik — implementacja mieszka w `polish-plural.js` (liść
  * bez zależności), bo `session.js` NIE może importować z `render.js` (cykl), a
  * bez tego lepiono liczniki ręcznie („przejrzano 4 kart" — uwaga właściciela
- * 2026-09-25b). Re-eksport zostawia dotychczasowych konsumentów
- * (`choice-request.js`, `main.js`) bez zmian w importach.
+ * 2026-09-25b). Re-eksport (import + `export {}`, a NIE gołe `export ... from`)
+ * zostawia dotychczasowych konsumentów (`choice-request.js`, `main.js`) bez
+ * zmian w importach i — co istotne — wiąże nazwę WEWNĄTRZ tego modułu, który
+ * używa helpera w ~20 miejscach.
  */
-export { polishPluralCount } from './polish-plural.js';
+export { polishPluralCount };
 
 /** Diament (2026-08-11): opis dynamicznej wartości P/T (np. „source_power"). */
 const DYNAMIC_PT_LABELS = Object.freeze({
