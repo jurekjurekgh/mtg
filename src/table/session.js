@@ -2409,6 +2409,36 @@ export const MAIN_LOG_NOISE = new Set(['mana_produced', 'step_advanced']);
 // — gracz widział skutek, nie widział transformacji.
 export const TRANSFORM_DIGEST_EVENTS = new Set(['object_transformed']);
 
+// UWAGA D (zgłoszenie właściciela 2026-09-25b): „Gdy tę kartę [Geological
+// Appraiser] wystawia bot, w Rozgrywce i w Logu powinny być widoczne karty,
+// które w ten sposób są odsłaniane zdolnością Discover. A nie są." Odsłonięcie
+// jest JAWNE dla obu graczy (CR 701.20: discover = rzucasz wierzchołki na bok,
+// każdy je widzi), więc nie podlega ani oknu `botActing`, ani stanowi stosu.
+// Dotąd typy te wchodziły do bramki wyłącznie przez `BOT_RESOLUTION_EVENTS`
+// (czyli tylko przy `stackSize > 0`) albo przez `HUMAN_DIGEST_EVENTS` (czyli
+// tylko dla człowieka — samo `card_revealed` nie miało tam zresztą wpisu);
+// a rozstrzygnięcie ODRACZONEGO triggera (ETB granego w Głównej, rozstrzygane
+// dopiero po passa(ch) człowieka; delayed trigger w upkeep/cleanup) trafia w
+// okno bez pauzy i z pustym `stackObjects`: wpisy znikały z bufora modala,
+// a przy braku `botActing` także z logu. Rodzina zdarzeń, nie nazwa karty
+// (ADR 0002); opis nazywa tylko to, co wolno (L41).
+export const PUBLIC_INFO_EVENTS = new Set(['card_revealed', 'discover_started', 'discover_resolved']);
+
+/**
+ * UWAGA D (2026-09-25b): ile pozycji z bufora „Rozgrywka" WARSTWA UI już
+ * pokazała. Modal NIE czyści bufora przy otwarciu (czyścił — i tym samym
+ * gubił wpisy docierające po renderze, np. skutek odsuniętego triggera), więc
+ * odświeżenie = „pokaż WSZYSTKO, ale tylko gdy DOSZŁO coś nowego". Czytane
+ * pozycje schodzą z bufora przez `consumeBotMoves(n)` (klik „Rozumiem"), a nie
+ * przez kasowanie w chwili renderu. Czysta funkcja (ADR 0011): bez DOM-u i bez
+ * domknięcia sesji, więc regułę życia modala da się przypiąć testem.
+ */
+export function botMovesPaintedUpdate({ moves, painted = 0 } = {}) {
+  const total = Array.isArray(moves) ? moves.length : 0;
+  const seen = Number.isInteger(painted) && painted > 0 ? Math.min(painted, total) : 0;
+  return { visible: total > seen, painted: total };
+}
+
 /** M100/E5: nagłówkowe zagrania CZŁOWIEKA w panelu „Rozgrywka" — panel
  * jest wspólnym streszczeniem rozgrywki (uwaga właściciela: „inne istotne
  * zagrania obu graczy"), a samo kliknięcie nie zawsze odzwierciedla stan
@@ -2525,7 +2555,10 @@ export function isHumanControllerEvent(e, humanId = HUMAN_ID) {
  * - transformacja permanentu (E6/A2, zgłoszenie właściciela, Moonscarred
  *   Werewolf s20603): jest publiczna (CR 400.2 — twarz na polu bitwy widzi
  *   każdy: P/T, zdolności, daybound/nightbound) i zmienia ocenę pozycji, więc
- *   jest treścią panelu NIEZALEŻNIE od okna botActing/stosu.
+ *   jest treścią panelu NIEZALEŻNIE od okna botActing/stosu;
+ * - jawne odsłonięcia i bieg discover (UWAGA D, zgłoszenie właściciela
+ *   2026-09-25b): `PUBLIC_INFO_EVENTS` — ten sam tryb „niezależnie od okna",
+ *   bo CR 701.20 robi z odsłoniętych kart informację publiczną.
  */
 export function isMainLogEvent(e, ctx = {}) {
   const {
@@ -2541,6 +2574,9 @@ export function isMainLogEvent(e, ctx = {}) {
   if (e?.type === 'object_moved' && e?.additionalCost === true) return true;
   if (isBotDecisionPrompt(e, { humanId })) return true;
   if (stackSize > 0 && BOT_RESOLUTION_EVENTS.has(e?.type)) return true;
+  // UWAGA D (2026-09-25b): jawne odsłonięcia i wynik discover — zawsze, dla
+  // obu graczy, bez względu na `botActing` i grubość stosu.
+  if (PUBLIC_INFO_EVENTS.has(e?.type)) return true;
   if (HUMAN_DIGEST_EVENTS.has(e?.type) && isHumanControllerEvent(e, humanId)) return true;
   if (e?.type === 'card_drawn' && e?.playerId === humanId) return true;
   return TRANSFORM_DIGEST_EVENTS.has(e?.type);
@@ -3714,6 +3750,18 @@ export function createSession(config) {
     botMoves,
     /** Czyści bufor po pokazaniu go graczowi. */
     clearBotMoves() { botMoves.length = 0; lastBotPhaseKey = null; pendingBotPhase = null; lastBotMoveWasSearchResolved = false; },
+    /**
+     * UWAGA D (2026-09-25b): konsumpcja przeczytanego PREFIKSU bufora —
+     * `n` pierwszych pozycji znika, reszta (w tym niepokazane wpisy i ewentualny
+     * nagłówek tury, kontrakt M261) zostaje na własny blok modala. Bez tego
+     * „Rozumiem" kasowało CAŁY bufor i każdy skutek docierający po renderze
+     * przepadał (najbliższe `apply()` czyściło to, co zdążyło dojść).
+     */
+    consumeBotMoves(n = 0) {
+      const count = Number.isInteger(n) && n > 0 ? Math.min(n, botMoves.length) : 0;
+      if (count > 0) botMoves.splice(0, count);
+      return botMoves.length;
+    },
     /** Pełne tury w kolejności zakończenia (M25, sekcja „Przebieg tur"). */
     turnHistory,
     /** Tekst N ostatnich pełnych tur (1–2) dla AI — imiona Czarodziejka/Nieprzyjaciel. */

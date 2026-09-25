@@ -209,8 +209,47 @@ export function installSwipeGesture(element, { onSwipeLeft = null, onSwipeRight 
  * `slopPx` (gest przewijania rodzi `pointercancel` albo przekracza próg, więc
  * nie aktywuje). Klawiatura (Enter/Spacja) idzie ścieżką `click` z
  * `detail === 0` — działa jak dotąd.
+ *
+ * UWAGA C (zgłoszenie właściciela 2026-09-25b, KRYTYCZNE): press zjadł
+ * ptaszka „ta opcja nie przerywa auto-passu". Root cause: `stopPropagation`
+ * wiesza się wyłącznie na `click` (patrz `picker.js`), a press aktywuje na
+ * `pointerup`, więc wskaźnik startujący w checkboxie/labelu DOBIZAŁ do
+ * przycisku i odpalił `play(cmd)` — zamiast tylko zaznaczyć. Naprawa jest
+ * GESTEM, nie CSS-em: element może się jawnie wyłączyć z aktywacji pressem
+ * marką `data-press-exempt` (stała niżej), a `installPressActivation` pyta o
+ * nią cel zdarzenia ZANIM cokolwiek zapamięta (pointerdown), przy release (pointerup)
+ * i w ścieżce `click` (także klawiatura: spacja na ptaszku nie ma prawa
+ * zagrać opcji). Znacznik nadaje WYWOŁUJĄCY (tu: wiersz ptaszka z
+ * `stopRowPropagation` w `picker.js`), więc reguła jest generyczna: każdy
+ * węzeł wewnątrz przycisku, który ma przejąć gest, oznacza siebie, a przycisk
+ * nic nie wie o rodzinie `.action-ignore`.
  */
 export const PRESS_SLOP_PX = 12;
+
+/** Marka wyłączenia z aktywacji pressem (patrzy na nią `isPressExemptTarget`). */
+export const PRESS_EXEMPT_ATTRIBUTE = 'data-press-exempt';
+
+/** Znacznik dla wywołującego: ten węzeł (i jego dzieci) nie obsługuje pressu. */
+export function markPressExempt(element) {
+  if (element?.setAttribute) element.setAttribute(PRESS_EXEMPT_ATTRIBUTE, '1');
+  return element;
+}
+
+/**
+ * Czy cel zdarzenia siedzi w wyspie wyłączonej z pressu? Czysta funkcja na
+ * jedynym, czego potrzebuje (odporność: stuby DOM bez `closest`, zdarzenia
+ * bez `target` — wtedy NIE wyłączamy, bo zgubiona aktywacja przycisku to
+ * większa szkoda niż nadmiarowy gest, L24).
+ */
+export function isPressExemptTarget(target) {
+  const node = target?.closest ? target : (target?.element ?? null);
+  if (!node || typeof node.closest !== 'function') return false;
+  try {
+    return Boolean(node.closest(`[${PRESS_EXEMPT_ATTRIBUTE}]`));
+  } catch {
+    return false;
+  }
+}
 
 export function installPressActivation(element, activate, { slopPx = PRESS_SLOP_PX } = {}) {
   if (!element || typeof activate !== 'function') return null;
@@ -218,6 +257,12 @@ export function installPressActivation(element, activate, { slopPx = PRESS_SLOP_
   let handled = false;
   element.addEventListener('pointerdown', (event) => {
     if ((event?.button ?? 0) > 0) return; // prawy/środkowy przycisk myszy
+    // UWAGA C: press startujący w wyspie `data-press-exempt` (ptaszek
+    // wyciszenia, krok 2026-09-25b) w ogóle nie wchodzi w gest — bez tego
+    // pointerup z checkboxa odpalał akcję przycisku mimo `stopPropagation`
+    // na `click`. Nie kasujemy `start`/`handled`: wiszący gest z INNEGO
+    // miejsca nie może przejąć zwolnienia znad ptaszka ani go zgasić.
+    if (isPressExemptTarget(event?.target)) return;
     handled = false;
     start = { x: event?.clientX ?? 0, y: event?.clientY ?? 0 };
     // Bez tego release po przebudowie layoutu trafia w INNY węzeł i click nie
@@ -230,6 +275,12 @@ export function installPressActivation(element, activate, { slopPx = PRESS_SLOP_
   element.addEventListener('pointercancel', () => { start = null; });
   element.addEventListener('pointerup', (event) => {
     if (!start) return;
+    // UWAGA C: zwolnienie znad ptaszka NIE aktywuje opcji — z `setPointerCapture`
+    // release wraca do przycisku nawet gdy palec wylądował na wyspie
+    // `data-press-exempt`, a `target` bywa wtedy przerzucony na znacznik.
+    // Zostawiamy `handled = false`, żeby ścieżka `click` poniżej zachowała się
+    // identycznie (też pyta o wyspę) — bez cichego „raz zadziała, raz nie".
+    if (isPressExemptTarget(event?.target ?? element)) { start = null; return; }
     const { x, y } = start;
     start = null;
     const ruch = Math.hypot((event?.clientX ?? 0) - x, (event?.clientY ?? 0) - y);
@@ -238,6 +289,10 @@ export function installPressActivation(element, activate, { slopPx = PRESS_SLOP_
     activate();
   });
   element.addEventListener('click', (event) => {
+    // UWAGA C: ta sama wyspa zamyka ścieżkę `click` — w tym klawiaturę
+    // (spacja/enter na ptaszku: `detail === 0`), gdzie press w ogóle nie
+    // startował. Bez tego znacznika zaznaczenie opcji kosztowałoby jej zagranie.
+    if (isPressExemptTarget(event?.target ?? element)) { handled = false; return; }
     if (event?.detail === 0) { handled = false; activate(); return; } // klawiatura
     if (handled) { handled = false; return; } // pointerup już aktywował
     activate();

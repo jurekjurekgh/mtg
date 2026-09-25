@@ -7854,8 +7854,7 @@ gospodarza (jałowy grant = kara `auraKeywordAllWastedPenalty`, część grantó
 `--bot mirrodin-brg`, kroków 600): oferta decyzji pojawiła się w panelu i
 przeszła przez kreatora celów („Wybierz: Odkręcanie — które permanenty
 zostają tapnięte?" z wariantem „Odkręć wszystko…" jako pierwszym), 0 zgłoszeń
-detektorów, 0 ruchów niewycenionych; E2-lite (dwie klauzule naraz, porządek
-kanoniczny kandydatów, „decyduje tylko kontroler źródła", odcisk na oba
+detektorów, 0 ruchów niewycenionych; E2-lite (dwie klauzule naraz, porządek kanoniczny kandydatów, „decyduje tylko kontroler źródła", odcisk na oba
 kierunki wyboru) wypięty w pinie A12. C2 bez zmian: tester skanuje oferty po
 `data-option-key`, więc nowy typ komendy łapie automatycznie, a rodzina
 `resolve_*` nie wchodzi do `OPTION_IGNORABLE_TYPES` (wyciszalna blokada
@@ -7878,3 +7877,103 @@ vs aggro / **97,6 %** vs random (24f: bez zmian), ewaluacja lustrzana przy
 podbitych pokrętłach 24:24 (realne talie nie noszą klauzuli → gałąź
 niedostępna poza deskryptorem, co jest właśnie celem ADR 0029), build
 60 modułów / **4281,5 kB** (po usunięciu chwilowej talii audytowej i przebudowie).
+
+
+## M432 — uwagi z gry C+D: ptaszek wyciszenia pod gestem pressa oraz discover bota w „Rozgrywce" (sesja 2026-09-25b, PR #137)
+
+Dwie uwagi właściciela z tej samej partii; bez nowego batcha kart (ADR 0029),
+bez pełnego B0 (ADR 0018/0025), zero przypadków po nazwie karty w
+`src/engine`/`src/cards` (ADR 0002).
+
+**C (KRYTYCZNE) — „klikanie w pole wyboru nie powoduje zaznaczenia go, tylko
+aktywuje czar/zdolność/ofertę".** Zmierzone, nie zgadywane: panel akcji od
+poprzedniej sesji (K, 2026-09-23 — „klik nie działa, gdy layout przebuduje się
+między press a release") aktywuje opcję **presem** (`installPressActivation`,
+`src/table/gestures.js`: `pointerdown` + `pointerup` + `setPointerCapture`), a
+wspólny wiersz ptaszka (M292, `renderPickerRow` w `src/table/picker.js`)
+chronił przycisk wyłącznie przez `stopPropagation` na `click`. Zagnieżdżenie
+ptaszka w przycisku zmieniło się tak, że wskaźnik startuje w dziecku przycisku,
+więc `pointerup` dobiega do rodzica i gra opcję. Naprawa w warstwie gestu, nie
+w CSS ani w nazwach klas: `PRESS_EXEMPT_ATTRIBUTE` (`data-press-exempt`) +
+`markPressExempt`/`isPressExemptTarget` w `gestures.js`, a znacznik nadaje
+**centralnie** `renderPickerRow` dla wszystkiego, co zgłosiło
+`stopRowPropagation` (wiersz-ptaszek, nazwa otwierająca kartę, przyciski −/+,
+dubler `<input>` w `host`) — czyli JEDNO miejsce decyduje „to jest wyspa
+interakcji", a `installPressActivation` pyta o markę w `pointerdown`,
+`pointerup` i `click` (także klawiatura, `detail === 0`). Modal wyboru
+(`choice-request.js`) trzymał ptaszka na natywnym `click` i nie używał pressa —
+dlatego tam usterki nie było i naprawa go nie dotyka. Reguła generyczna (ADR
+0002), nie łatanie rodziny `.action-ignore*`.
+
+**D — „gdy tę kartę [Geological Appraiser] wystawia bot, w Rozgrywce i w Logu
+powinny być widoczne karty odsłaniane Discover. A nie są".** Repro na
+prawdziwych taliach (`innistrad-brg` vs `ixalan`, seed 43, 2000 kroków): log
+miał całą serię („Nieprzyjaciel odsłania Swamp ⏎ … discover (3) — trafiono
+Skymarch Bloodletter ⏎ trigger się rozstrzyga"), modal ruchu bota kończył się
+na „— trigger (wejście na pole bitwy)". Winowajcą **nie była** bramka treści
+(jak sugerowało pierwsze czytanie `isMainLogEvent`), tylko **życie bufora**:
+`showBotMoves()` renderował `botMoves` i w tej samej chwili wołał
+`clearBotMoves()`, a skutek odraczonego triggera (ETB rozstrzygany po passa(ch)
+człowieka) wpada do bufora dopiero PO tym czyszczeniu i jest kasowany przez
+najbliższe `apply()`. Naprawa: bufor żyje, `clearBotMoves()` odpada z otwarcia
+modala, a klik „Rozumiem" konsumuje **tylko pokazany prefiks**
+(`consumeBotMoves(n)` w sesji); otwarte okno w pauzie dostaje re-render gdy
+DOSZŁO coś nowego (`botMovesPaintedUpdate`, czysta funkcja w `session.js` —
+ADR 0011). Druga, mniejsza dziura domknięta przy okazji: rodzina
+`card_revealed|discover_started|discover_resolved` wchodziła do
+`isMainLogEvent` wyłącznie przez `BOT_RESOLUTION_EVENTS` (tylko przy
+`stackSize > 0`) albo `HUMAN_DIGEST_EVENTS` (tylko dla człowieka, a
+`card_revealed` nie miało tam w ogóle wpisu) — stąd `PUBLIC_INFO_EVENTS`,
+puszczany bez okna `botActing` i bez stanu stosu (CR 701.20: odsłonięte karty
+są informacją publiczną; opis warstwy UI nazywa wyłącznie to, co wolno (L41)).
+
+**Metoda (do powtórzenia):** przy usterce UI różnicę „treść nie została
+WYPRODUKOWANA" vs „została, ale NIE DOŻYŁA do ekranu" rozstrzyga porównanie
+dwóch konsumentów tego samego strumienia (log vs panel). Repro na poziomie
+`createSession` + `s.log` jest TU BEZUŻYTECZNE — log jest pełny, więc test
+byłby zielony przy zepsutym produkcie; dowód bierze się z transkryptu Żywego
+Testera. Dowód RED C na tym samym artefakcie: kopia testera z `--tick-rate 1`,
+w której `tick.click()` zastąpiono sekwencją `pointerdown/pointerup/click` —
+PRZED naprawą każda wyciszona akcja była natychmiast obudowana „zamykam planszę
+ilustracji: Rzuca: Czarodziejka" (karta wychodziła z ręki), PO naprawie ten sam
+gest kończy się na „▶ Wznów grę bota" bez rzutu.
+
+**Nowe testy:** `test/uwaga-z-gry-C-ptaszek-2026-09-25.test.js` (C1–C7:
+sekwencje zdarzeń na stubie MiniEl — repo ma zero zależności, więc nie ma
+jsdomu; C1–C3 i C5–C6 świecą RED bez naprawy),
+`test/uwaga-z-gry-D-discover-bota-2026-09-25.test.js` (D1–D8: bramka dla obu
+graczy, brak wycieku szumu i ruchu po strefach zakrytych, `consumeBotMoves`,
+odporność licznika).
+
+**Budżet lektury:** LESSONS.md rósł prozą ostatnich wpisów milowych, więc przy
+okazji skondensowano L165/L168/L169 (reguła zostaje w rejestrze, narracja i
+wyniesione punkty jadą do `docs/LESSONS_PRZYPADKI.md` pod tymi samymi
+numerami), a nowa lekcja **L170** („gest warstwy UI zjada kontrolkę osadzoną w
+przycisku; bramę daję GESTOWI, nie CSS") mieści się w budżecie 100k — próg NIE
+jest podnoszony.
+
+
+**Bramy:** `npm test` **6582/6582** (start M431: 6567 → +15: 7 testów C, 8 testów D),
+w tym zielone `test/table-ui.test.js` (72/72 — pętla klikań przez całą partię,
+`choice-ignore`, `choice-group-ignore`, `m292`, `b5-bramka-logu-gracza`,
+`m255-petla-jakosci`, `table-touch-gestures`) oraz straże dokumentacji
+(`dokumentacja-budzet-lektury` ~99,8k, `docs-decisions` 25/25).
+Weryfikacja końcowa na artefakcie: build 60 modułów / **4290,4 kB**; Żywy Tester
+`innistrad-brg` vs `ixalan` (seed 43, 2000 kroków) — modal „Rozgrywka" pokazuje
+„Nieprzyjaciel odsłania Island / Swamp / Skymarch Bloodletter", „wykonuje
+discover (3) — trafiono Skymarch Bloodletter" i wynik „odsłonięte karty (2) na
+spód biblioteki w losowej kolejności" (PRZED naprawą: zero takich linii),
+DETEKTORY: brak zgłoszeń, NIEWYCENIONE: brak. Osobna sonda gestu C na tym samym
+artefakcie (kopia testera z `--tick-rate 1` i `pointerdown/pointerup/click`
+zamiast `.click()`): 3 wyciszenia, 0 zagrań, 0 zgłoszeń.
+
+**Warstwa narzędzi (do odnotowania):** reset sandboxa w tej sesji zostawił
+gałąź na `0b2f771` z pracą M431 jako „brudnym drzewem" — porównanie z tipem
+zdalnym (`git fetch` + `git diff --stat FETCH_HEAD`) rozstrzygnęło, że to ten sam
+kontent, więc `git reset --hard f83801f` był bezpieczny; PUŁAPKA: chwila, w której
+między `git stash` a `git stash pop`, w której istniał NIEŚLEDZONY
+`decks/geo-tester.txt` (talia z poprzedniej sondy), czerwieniła 6 testów
+skanujących `decks/` (`repo-decks`, `m132-proporcje-landow`,
+`m203-talie-testera-i-dokumentacji`, `m338-pomoc-benchmarku`, 2 × `M178`) —
+każdy plik w `decks/` jest DANYMI testowymi, więc talie próbne tworzymy poza
+repo albo usuwamy PRZED bramą.

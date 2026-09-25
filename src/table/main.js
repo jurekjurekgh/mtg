@@ -21,7 +21,7 @@ import { stateFingerprint } from '../engine/fingerprint.js';
 import { formatLocalTimestamp } from './clock.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
-import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TURN_NAMES, gameOverNotice } from './session.js';
+import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TURN_NAMES, gameOverNotice, botMovesPaintedUpdate } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installPressActivation, installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
@@ -296,6 +296,13 @@ function bootstrapTable() {
   castSoundPlayer.setEnabled(topbarToggles.soundsOn());
 
   let session = null;
+  // UWAGA D (zgłoszenie właściciela 2026-09-25b): ile pozycji bufora
+  // „Rozgrywka" już WYRENDEROWALIŚMY. Bufor NIE jest kasowany przy otwarciu
+  // modala (było: `clearBotMoves()` tuż po renderze — i każdy wpis, który
+  // doszedł po tym czyszczeniu, np. odsłonięcia discover z rozstrzygnięcia
+  // odsuniętego triggera, znikał bez śladu przy najbliższym `apply()`), więc
+  // odświeżenie = re-render przy ZMIANIE zawartości. 0 = „nic nie pokazane".
+  let botMovesPainted = 0;
   // M103 (L15): mostek diagnostyczny Żywego Testera (tools/table-tester) —
   // włączany wyłącznie, gdy artefakt otwarto z ?tester=1. W normalnej grze
   // stan silnika nie jest eksponowany. Sonda wykonuje komendy na KLONACH
@@ -1977,9 +1984,26 @@ function bootstrapTable() {
     const meaningful = moves.filter((m) => !/^Faza:/.test(m.text ?? ''));
     if (meaningful.length === 0 && moves.length > 0) {
       session.clearBotMoves();
+      botMovesPainted = 0;
       if (session.botPausePending) continueAfterBotPause();
       return;
     }
+    const refresh = botMovesPaintedUpdate({ moves, painted: botMovesPainted });
+    // UWAGA D (2026-09-25b) — DOKLEJKA do otwartego modala: tylko gdy gra STOI
+    // w pauzie (gracz czyta), czyli kiedy i tak nie ma czego klikać. Tam właśnie
+    // wpadają wpisy DOCIERAJĄCE PO RENDERZE (skutek czaru/triggera po „Rozumiem").
+    // Poza pauzą modal jest domykany przez „Rozumiem" i nie wolno mu wracać pod
+    // mysz gracza (kontrakt: jeden modal = jedna pauza; bez tej bramki
+    // `test/table-ui.test.js` wpada w pętlę klikania tego samego okna).
+    if (refresh.visible && els.botMove?.className === 'modal active' && session.botPausePending) {
+      botMovesPainted = refresh.painted;
+      renderBotMoves(els.botMoveBody, moves, session, {
+        onCardClick: (cardId) => openCardFullscreenByCardId(cardId),
+        hover: scryfallHover,
+      });
+      return;
+    }
+    botMovesPainted = refresh.painted;
     if (moves.length > 0) {
       // Miniaturka w modalu otwiera pełny ekran tej samej karty (M18).
       // `onCardClick` dostaje `cardId`, nie `objectId` — modal nie ma objectId
@@ -1991,7 +2015,6 @@ function bootstrapTable() {
         onCardClick: (cardId) => openCardFullscreenByCardId(cardId),
         hover: scryfallHover,
       });
-      session.clearBotMoves();
       showModal('bot-move');
       return;
     }
@@ -2025,6 +2048,9 @@ function bootstrapTable() {
    */
   function closeBotMoveModalPause() {
     hideModal('bot-move');
+    // UWAGA D: modal niewidoczny, a bufor żyje dalej — następne otwarcie
+    // pokazuje go w całości (inaczej samo zamknięcie = utrata linii).
+    botMovesPainted = 0;
     // Bug #1: po X auto-pass jest wstrzymany (awaitingBotAck = true), ale
     // w panelu akcji często nie ma pass (priorytet nadal ma bot, np. po
     // land_played). Gracz widzi tylko „Poddaj” i gra wygląda na zawieszoną.
@@ -2034,6 +2060,13 @@ function bootstrapTable() {
   /** Wznowienie gry i zamknięcie modala (klik w „Rozumiem"). Stare
    *  zachowanie, z którego korzysta jawna ścieżka „obejrzałem, jedź dalej". */
   function closeBotMoveModalResume() {
+    // UWAGA D: „Rozumiem" = PRZECZYTANE — kasujemy TYLKO pokazany prefiks
+    // bufora (`consumeBotMoves`), a nie cały bufor: wpisy, które dojdą po
+    // wznowieniu (skutek czaru/triggera), muszą dożyć własnego bloku modala.
+    if (session?.botMoves) {
+      session.consumeBotMoves(botMovesPainted);
+      botMovesPainted = 0;
+    }
     hideModal('bot-move');
     if (!session) return;
     session.continueBotPlay();
@@ -2487,6 +2520,7 @@ function bootstrapTable() {
       });
       // B: nowa partia czyści rejestr odwróceń pokazanych na warstwie.
       transformedShowcaseShown.clear();
+      botMovesPainted = 0; // UWAGA D: nowa partia = nowy bufor modala
       // Nowa gra unieważnia wstrzymany rzut kreatora many (E.3a): deskryptor
       // odnosił się do starej sesji, więc zamykamy modal i zapominamy komendę.
       closeManaWizard();

@@ -2427,12 +2427,9 @@ dla par liniowych.
    X nie może cytować Y”, ale „KAŻDY cytat `702.<n>` musi mieć w oknie nazwę
    mechaniki, którą `702.<n>` znaczy w bieżącym CR” + „numer spoza tabeli
    świeci”. To łapie też rozjazdy, których nikt jeszcze nie zna.
-3. Tabela potrzebuje ALIASÓW (komentarze są po polsku: „chronionego” =
-   protection, „przydziały” = trample, „dar” = gift) i UDOKUMENTOWANYCH
-   wyjątków (lista sekcji, odniesienia negatywne „nie dotyczy”, reguły ogólne
-   typu 702.1) — każdy wyjątek z powodem, inaczej to wygaszanie detektora (L5).
-4. Pliki-strażniki muszą być wyłączone ze skanu innych strażników: opisują
-   historię rozjazdów i dowody RED, więc świecą na własną dokumentację.
+3. Tabela potrzebuje ALIASÓW (polskie komentarze: „przydziały” = trample) i
+   WYJĄTKÓW z powodem — bez powodu to wygaszanie detektora (L5); pliki samych
+   strażników są ze skanu wyłączone (opisują dowody RED). Szczegóły: archiwum.
 
 **Strażnik:** `test/cr-numery-702-tabela-straznik.test.js` — tabela 702.1–702.195
 (CR 2026-09-25) + aliasy + wyjątki + wbudowany dowód RED (syntetyczne linie
@@ -2491,14 +2488,9 @@ zdejmował animację, która miała trwać. Przy naprawie druga łatka
 
 ## L168 (2026-09-24) — „Kwota" kosztu alternatywnego to SUMA symboli, nie część generyczna
 
-**Przypadek (M428, znaleziska F1/F3 z audytu żywym testerem):** `cost` w
-deskryptorach alt-kosztów czytano jako część GENERYCZNĄ, a
-`costSymbols(amount, colors)` liczy `generic = amount − pipy`. Dwie karty miały
-kwotę o {1} rozjechaną z Oracle obok: Join the Dance „Flashback {3}{G}{W}" →
-`cost: 4` (silnik brał o {1} mniej, oferta szła już przy 4 manie), Boulder
-Salvo „Surge {1}{R}" → `cost: 3` (brał o {1} więcej). Strażnik M268 porównywał
-z Oracle tylko PIPY, więc kwota mogła się rozjechać niezauważona, a testy
-batchy powtarzały błąd w tytule („{3}{G}{W} = 4 many").
+**Przypadek (M428, F1/F3 z Żywego Testera):** `cost` alt-kosztów czytano jako
+część GENERYCZNĄ (`generic = amount − pipy`) — Join the Dance i Boulder Salvo
+miały kwotę o {1} rozjechaną z Oracle, a strażnik porównywał tylko PIPY.
 
 **Reguła:**
 1. `cost`/`manaCost` deskryptora = SUMA symboli (dowód: bestow {3}{G} = 4,
@@ -2507,11 +2499,10 @@ batchy powtarzały błąd w tytule („{3}{G}{W} = 4 many").
 2. Skan Oracle↔definicja porównuje CAŁY napis, nie tylko pipy; wyjątki (cleave
    trzyma kwotę w `manaCost`, adventure nie ma kosztu przy słowie-kluczu)
    wymienia się WPROST, a karta nieparowalna nie może przejść po cichu.
-3. Etykieta kosztu alternatywnego ma JEDNO źródło składanki (`costSymbols`);
-   gołe `{N}` z `cost` obiecuje cenę generyczną, której nie da się zapłacić
-   kolorowym pipem (M151 suspend, M267/C escape, M428 flashback).
-4. Test, którego TYTUŁ powtarza arytmetykę kosztu, bywa konserwatorem błędu:
-   popraw kwotę w danych, potem w tytule testu.
+3. Etykieta alt-kosztu ma JEDNO źródło składanki (`costSymbols`); gołe `{N}`
+   obiecuje cenę nie do zapłacenia pipem (M151, M267/C, M428).
+4. Test, którego TYTUŁ powtarza arytmetykę, bywa konserwatorem błędu: popraw
+   dane, potem tytuł.
 
 **Strażnik:** `test/audyt-m428-kwota-alt-kosztu.test.js` (8 testów: skan
 symboli całej rodziny alt-kosztów, lista pominiętych kart, dowód RED na obu
@@ -2521,18 +2512,10 @@ znaleziskach, piny etykiet) + piny w `test/real-cards-batch{58,59}.test.js`.
 
 ## L169 (2026-09-24) — Remis wariantów to brak WYMIARU, nie brak wiedzy o karcie
 
-**Przypadek (M429, zlecenie „optymalne taktycznie użycie, nie automatyczne
-strojenie wag"):** trzy karty batcha 59 miały efekt wyceniony PŁASKO, więc bot
-decydował o „najlepszym" wariancie przez kolejność ofert:
-
-- `add_counter` na wskazanym celu: **14/14/14** dla tokena 1/1, Cryptida 2/3
-  i Hill Gianta 4/4 → mutant Mutagen lądował na pierwszym legalnym celu
-  (najczęściej najsłabszym);
-- `shuffle_graveyard_cards_into_library`: **58 pkt** niezależnie od stanu
-  biblioteki (30 vs 12 kart), a wariant „zero wracających kart" też 58 →
-  Memory's Journey rzucana bez presji deck-outu, czasem dosłownie na nic;
-- `buff_creatures_you_control` z AKTYWOWANEJ zdolności: **2 pkt** (sama baza)
-  w każdym kroku → {4}{W} Charismatic Vanguarda przepalane w Głównej 1.
+**Przypadek:** trzy karty batcha 59 miały efekt wyceniony PŁASKO (14/14/14 dla
+licznika na celu, 58 pkt dla tasowania grobu niezależnie od biblioteki, 2 pkt dla
+pumpa z aktywacji), więc bot decydował o „najlepszym" wariancie kolejnością ofert.
+Pomiary wariantów i kalibracja: `docs/LESSONS_PRZYPADKI.md` (L169).
 
 **Reguła:**
 1. Zanim dodasz wagę, znajdź WYMIAR RÓŻNICOWANIA w tym, co już masz
@@ -2543,27 +2526,43 @@ decydował o „najlepszym" wariancie przez kolejność ofert:
    aura-buff (`auraBuffWorthWeight`), wtasowanie = rodzina biblioteczna
    (`librarySafeMargin` + kara per karta), pump = `pumpImprovesOutcome` (M218/2)
    + `permanentDoomedThisTurn` (M236/2).
-3. Kalibruj tak, żeby NAJSŁABSZY realny wariant był wart dokładnie tyle, co
-   przed zmianą (baza 2 + waga gospodarza 2·worth(1/1)=6 = dawna stała 8) —
-   inaczej „strojenie" zjada zachowania, które były dobre, i nie widać, co
-   dokładnie się poprawiło.
-4. Wariant bez sensu musi zejść PONIŻEJ passu (L3), a wartość zerowa ma być
-   ZEROWANA, nie zmniejszana: licznik na gospodarzu skazanym w tej turze jest
-   wart −20 niezależnie od wielkości ciała („wielki, ale martwy" to nadal zero);
-   zmniejszanie zostawiłoby dużego trupa nad passem.
+3. Kalibruj tak, żeby NAJSŁABSZY realny wariant był wart tyle co przed zmianą
+   (baza 2 + 2·worth(1/1)=6 = dawna stała 8); wariant bez sensu musi zejść
+   PONIŻEJ passu (L3), a zero ma być ZEROWANE, nie zmniejszane (M243/4).
 5. Ta sama reguła w OBU bliźniaczych gałęziach (czar i aktywowana zdolność,
    L41) — reguła dopisana tylko czarom zostawia aktywację na gołej bazie 2,
    czyli bot spamuje zdolność za 5 many tam, gdzie czar ma karę.
-6. Nowa rodzina stałych wchodzi pod nazwy + deskryptor tunera (T1), a dowód
-   „pokrętło nie jest atrapą" (wyzerowanie wagi wraca do remisu) jest częścią
-   pinu — inaczej następna sesja nie wie, czy liczba cokolwiek robi.
-
-7. Koszt ŹRÓDŁA (np. „nie odkręciłem permanentu z {T}") liczy się RAZ NA
-   WARIANT, nie na każdy trzymany cel — wstawiony do pętli po celach koszt
-   rósł z liczbą ofiar i zasłaniał blokadę (pin w `test/bot-params.test.js`).
+6. Nowa stała wchodzi pod nazwy + deskryptor tunera (T1), a pin dowodzi, że
+   pokrętło NIE jest atrapą (wyzerowanie wraca do remisu); koszt ŹRÓDŁA liczy
+   się RAZ NA WARIANT, nie na każdy cel (patrz archiwum).
 
 **Strażnik:** `test/audyt-m429-taktyczna-wycena-batch59.test.js`, wycena
 rodziny odkręcania: `test/audyt-m431-untap-choice.test.js` + piny przepływu
 pokręteł w `test/bot-params.test.js`; pomiar `tools/b1-quick-2026-09-24e.{json,txt}`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L169, M431)
+
+## L170 (2026-09-25) — gest warstwy UI zjada kontrolkę osadzoną w przycisku; bramę daję GESTOWI, nie CSS
+
+**Przypadek:** ptaszek „ta opcja nie przerywa auto-passu" (uwaga C) nie przełączał,
+tylko grał ofertę; osobno uwaga D — Log pełny, panel „Rozgrywka" pusty.
+
+**Reguła:**
+1. Zdarzenie aktywacji i zdarzenie kontrolki OSADZONEJ w przycisku muszą być
+   PAROWANE: przy aktywacji na `pointer*` `stopPropagation` na `click` jest
+   iluzją. Wyspa interakcji nosi markę w module gestu (`PRESS_EXEMPT_ATTRIBUTE`),
+   bramka mieszka w gesturze — nie w klasach CSS.
+2. „Panel pusty, log pełny" to nie wina bramki treści: policz ŻYWIOTNOŚĆ wpisu.
+   Modal czyszczący bufor w chwili renderu gubi wszystko, co doszło po renderze.
+   Konsumpcja = po potwierdzeniu gracza (`consumeBotMoves(n)`); przy otwartym oknie
+   w pauzie re-render TYLKO gdy DOSZŁO nowa pozycja (inaczej okno mruga i klika się
+   w kółko — pułapka złapana przez `test/table-ui.test.js`).
+3. „Poprzedni PR przesunął obiekty" = czytam, KTÓRY element jest rodzicem
+   słuchacza; naprawiam w jednym miejscu obsługi, nie kolejnym wyrażeniem.
+
+**Strażnik:** `test/uwaga-z-gry-C-ptaszek-2026-09-25.test.js` (C1–C7, sekwencje
+zdarzeń na stubie MiniEl — repo bez zależności, więc bez jsdomu),
+`test/uwaga-z-gry-D-discover-bota-2026-09-25.test.js` (D1–D8),
+`test/b5-bramka-logu-gracza.test.js`; finał: Żywy Tester na żywych taliach.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L170)

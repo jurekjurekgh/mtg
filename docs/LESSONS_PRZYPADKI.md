@@ -2568,6 +2568,16 @@ spoza tabeli) i wymaga, żeby świeciły, oraz liniami poprawnymi (702.20,
 okna i parę liniową — oba strażniki są niezależne, więc jeden nie maskuje
 drugiego.
 
+
+**Wyniesione z rejestru (kondensacja 2026-09-25b) — punkty 3–4:** aliasy tabeli są
+konieczne, bo komentarze w tym repo są po polsku („chronionego" = protection,
+„przydziały" = trample, „dar" = gift), a wyjątki muszą mieć POWÓD zapisany w
+dokumencie — lista sekcji, odniesienia negatywne („nie dotyczy"), reguły ogólne
+typu 702.1; bez powodu wyjątek jest cichym wygaszaniem detektora (L5).
+Pliki-strażniki są wyłączone ze skanu innych strażników, bo opisują historię
+rozjazdów i zawierają dowody RED (syntetyczne linie z F-7 muszą świecić) —
+inaczej detektor świeci na własną dokumentację.
+
 ## L166 (2026-09-24) — przypadek
 
 Właściciel zapytał, czym jest „D4b” z planu, i postawił warunek: jeśli to
@@ -2630,7 +2640,16 @@ Skan Oracle↔definicja po KWOCIE (nie tylko po pipach, jak strażnik M268)
 wskazał trzy trafienia: dwa prawdziwe (join-the-dance, boulder-salvo — surge
 {1}{R} zamiast {2}{R}, karta z batcha 58, czyli klasa nie zna granic batcha)
 i jedno narzędziowe (`lunar-rejection`: cleave trzyma kwotę w `manaCost`).
-Trzy karty wypadły ze skanu z powodu, który trzeba było nazwać: dwie przygody
+Trzy karty wypadły ze skanu z powodu, który trzeba b
+**Wyniesione z rejestru (kondensacja 2026-09-25b) — rozwinienie przyczyny:**
+rozjazd dotknął dwóch kart na dwie strony — Join the Dance („Flashback {3}{G}{W}"
+→ `cost: 4`) otwierał ofertę już przy czterech manach (rzut legalny tylko na
+papierze), a Boulder Salvo („Surge {1}{R}" → `cost: 3`) blokał płatność, którą
+gracz mógł wykonać. Trzeci ślad błędu siedział w teście: tytuł batchowy powtarzał
+fałszywą arytmetykę („{3}{G}{W} = 4 many"), więc każdy, kto czytał wyniki,
+dostawał potwierdzenie nieprawdy — stąd punkt 4 rejestru.
+
+yło nazwać: dwie przygody
 (Scryfall nie pisze kosztu przy słowie „Adventure" — druga część karty jest
 osobnym czarem) i `mindstab` z „Suspend 4—{B}" (między słowem a kosztem stoi
 licznik czasu — po naprawie regexu paruje się poprawnie). Wyjątki trafiły do
@@ -2711,7 +2730,16 @@ nie przez przegląd kodu:
 1. **podwójne odejmowanie** — przy jednym trzymanym celu `10 + 2·6 = 22`
    i jednocześnie `−6`, czyli model nie był równy opisowi w komentarzu;
    przy dwóch celach koszt rósł drugi raz, choć „nie odkręciłem źródła" jest
-   jednym aktem gracza. Stąd reguła 7: koszt źródła to cecha **wariantu**;
+   j
+**Wyniesione z rejestru (kondensacja 2026-09-25b) — punkty 6–7:** nowa rodzina
+stałych wchodzi pod własne nazwy + deskryptor tunera (T1), a pin dowodzi, że
+pokrętło NIE jest atrapą (wyzerowanie wagi wraca do remisu — bez tego następna
+sesja nie wie, czy liczba cokolwiek robi). Koszt ŹRÓDŁA (np. „nie odkręciłem
+permanentu z {T}") liczy się RAZ NA WARIANT, nie na każdy trzymany cel: wstawiony
+do pętli po celach rósł z liczbą ofiar i zasłaniał blokadę (pin w
+`test/bot-params.test.js`).
+
+ednym aktem gracza. Stąd reguła 7: koszt źródła to cecha **wariantu**;
 2. **ślepota na kształt widoku** — gałąź czytała `zrodlo.abilities`, a
    `PlayerView` niesie tylko `activatableAbilities` (M243): permanent
    **tapnięty** nie ma tam żadnej zdolności z `{T}`, bo akurat nie może jej
@@ -2728,3 +2756,55 @@ bez mechaniki nie wystawiała decyzji — zielony test udowadniał nie to, że
 silnik działa, ale to, że test nic nie mierzy (L21). Naprawa: `addObject`
 dostaje `...data` całym spreadem, a pola bojowe (`tapped`,
 `untapLockedBy`) nadal osobno, bo `addObject` je normalizuje i ostrzega.
+
+
+## L170 (2026-09-25) — przypadek
+
+**Objaw C (uwaga właściciela, KRYTYCZNE):** „Nie działa »zaptaszkowanie« zdolności,
+która ma nie przerywać auto-passu. Po zmianie w UI w poprzednim PR przesunęły się
+obiekty i teraz klikanie w pole wyboru nie powoduje zaznaczenia go, tylko aktywuje
+czar/zdolność/ofertę."
+
+**Przyczyna C:** od M292 ptaszek wyciszenia buduje wspólny komponent
+(`renderPickerRow` w `src/table/picker.js`), który chroni przycisk-rodzica przez
+`stopPropagation` na `click`. Ale panel akcji od K (2026-09-23, poprawka „klik nie
+działa po przebudowie layoutu") aktywuje opcję pressem (`installPressActivation` w
+`src/table/gestures.js`, słucha `pointerdown`/`pointerup`). Zagnieżdżenie zmieniło
+się tak, że wskaźnik STARTUJE w węźle będącym dzieckiem przycisku, więc `pointerup`
+dobiega do przycisku i odpala `play(cmd)` — blokada `click` nie ma nic do rzeczy.
+Naprawa: wyspa interakcji dostaje markę `data-press-exempt` nadawaną centralnie
+przez `stopRowPropagation`, a gest pyta o nią w `pointerdown`, `pointerup` i `click`
+(klawiatura `detail === 0` też). Modal wyboru trzymał ptaszka na starych zasadach
+(natywny `click`, bez pressa) — dlatego tam usterki nie było i dlatego naprawa nie
+dotyka `choice-request.js`. Dowód RED na prawdziwym artefakcie (Żywy Tester z
+`--tick-rate 1` + `dispatchEvent` pointerów zamiast `.click()`): PRZED naprawą
+„`[ptaszek] wyciszam: Zagraj: Akrasan Squire`" było natychmiast obudowane
+„zamykam planszę ilustracji: Rzuca: Czarodziejka" (karta wyszła z ręki), PO naprawie
+ten sam gest kończy się na „▶ Wznów grę bota" (brak rzutu).
+
+**Objaw D:** „Gdy tę kartę [Geological Appraiser] wystawia bot, w Rozgrywce i w
+Logu powinny być widoczne karty odsłaniane zdolnością Discover. A nie są." Pomiar
+Żywym Testerem (`innistrad-brg` vs `ixalan`, seed 43, 2000 kroków): LOG miał całą
+serię („Nieprzyjaciel odsłania Swamp ⏎ … wykonuje discover (3) — trafiono
+Skymarch Bloodletter …"), a modal ruchu bota kończył się na linii „— trigger
+(wejście na pole bitwy)".
+
+**Przyczyna D:** NIE sama bramka treści (choć i ona miała dziurę: rodzina
+`card_revealed|discover_started|discover_resolved` wchodziła do `isMainLogEvent`
+jedynie przez `BOT_RESOLUTION_EVENTS` przy `stackSize > 0` albo przez
+`HUMAN_DIGEST_EVENTS` dla człowieka — samo `card_revealed` nie miało tam wpisu,
+więc odsłonięcie przy pustym `stackObjects` wypadało z bufora modala). Główna
+przyczyna to ŻYWIOTNOŚĆ wpisu: `showBotMoves()` renderował bufor i w tej samej
+chwoli wołał `clearBotMoves()`, a skutek odsuniętego triggera dociera dopiero po
+„Rozumiem" — wpisy szły do bufora, który najbliższe `apply()` wyrzucało bez
+pokazania. Pierwsza próba naprawy (sam licznik `painted`, zero czyszczenia)
+wpadła w nową usterkę złapaną przez `test/table-ui.test.js`: okno otwarte i nigdy
+nie czyszczone pozwala klikać „Rozumiem" w kółko bez postępu. Stąd kształt finalny:
+doklejenie tylko gdy `session.botPausePending`, a kasowanie PRZECZYTANEGO prefiksu
+(`consumeBotMoves(n)`) przy zamknięciu.
+
+**Wniosek o metodzie:** przy usterce UI różnicę „treść nie została WYPRODUKOWANA"
+vs „została, ale nie DOŻYŁA do ekranu" rozstrzyga porównanie dwóch konsumentów
+tego samego strumienia (log vs panel). Dowód bierze się z transkryptu Żywego
+Testera, nie z repro na `createSession` — tam log jest pełny i test byłby zielony
+przy psuciu produktu.
