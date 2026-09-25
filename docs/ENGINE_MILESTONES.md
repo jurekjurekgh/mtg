@@ -7925,7 +7925,8 @@ ADR 0011). Druga, mniejsza dziura domknięta przy okazji: rodzina
 `stackSize > 0`) albo `HUMAN_DIGEST_EVENTS` (tylko dla człowieka, a
 `card_revealed` nie miało tam w ogóle wpisu) — stąd `PUBLIC_INFO_EVENTS`,
 puszczany bez okna `botActing` i bez stanu stosu (CR 701.20: odsłonięte karty
-są informacją publiczną; opis warstwy UI nazywa wyłącznie to, co wolno (L41)).
+są informacją publiczną — CR 701.20: „reveal = pokazać kartę WSZYSTKIM
+graczom"; opis warstwy UI nazywa wyłącznie to, co wolno (L41)).
 
 **Metoda (do powtórzenia):** przy usterce UI różnicę „treść nie została
 WYPRODUKOWANA" vs „została, ale NIE DOŻYŁA do ekranu" rozstrzyga porównanie

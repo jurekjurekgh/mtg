@@ -2412,8 +2412,9 @@ export const TRANSFORM_DIGEST_EVENTS = new Set(['object_transformed']);
 // UWAGA D (zgłoszenie właściciela 2026-09-25b): „Gdy tę kartę [Geological
 // Appraiser] wystawia bot, w Rozgrywce i w Logu powinny być widoczne karty,
 // które w ten sposób są odsłaniane zdolnością Discover. A nie są." Odsłonięcie
-// jest JAWNE dla obu graczy (CR 701.20: discover = rzucasz wierzchołki na bok,
-// każdy je widzi), więc nie podlega ani oknu `botActing`, ani stanowi stosu.
+// jest JAWNE dla obu graczy z definicji słowa-klucza (CR 701.20: „reveal =
+// pokazać kartę WSZYSTKIM graczom"), więc nie podlega ani oknu `botActing`,
+// ani stanowi stosu.
 // Dotąd typy te wchodziły do bramki wyłącznie przez `BOT_RESOLUTION_EVENTS`
 // (czyli tylko przy `stackSize > 0`) albo przez `HUMAN_DIGEST_EVENTS` (czyli
 // tylko dla człowieka — samo `card_revealed` nie miało tam zresztą wpisu);
