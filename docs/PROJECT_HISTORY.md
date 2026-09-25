@@ -19,6 +19,37 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-25g — audyt PR #139 + pętla jakości (pin modalu, Kumano×token)
+
+Prompt bez nazwanego tematu → po lekturze obowiązkowej pętla domyślna
+z ADR 0021 (PR #140 na starcie, audyt #139, brak niedokończonego planu
+na main → pętla jakości). Bez batcha kart, bez pełnego B0, bez nowej
+lekcji (rejestr powyżej progu 100k — instancje L160 i L39).
+
+**Audyt #139** (raport: `docs/audits/AUDYT_PR139_2026-09-25.md`): gest C2
+domknięty w 15 przypadkach brzegowych, modal pod tą samą bramką.
+Mutacje: M-A (gestures@3f1af5e → RED C2/1,1b,2,3,5), M-B
+(choice-request@3f1af5e → RED tylko C2/10 — regex jedynym pinem modalu,
+stąd zadanie Q1). Bez zastrzeżeń blokujących.
+
+**Q1** (`60d3707`): `test/audyt-pr139-modal-gest-integracja.test.js` — modal
+przez prawdziwy `renderChoiceRequest`, sekwencje C2 z Chromium; mutacja M-B
+czerwieni Q1/Q2 zachowaniem. **Q2** (`cfe1c3b`):
+`test/audyt-kumano-token-wygnanie.test.js` — token-ofiara Kumano → exile
+z odznaką → `token_ceased_to_exist` (CR 614 + 704.5d), z kontrolą bez aury.
+
+**Żywy Tester:** `innistrad-brg vs zendikar` s=203 (92 kroki) i
+`mirrodin-wu vs tarkir-bg` s=77 (79 kroków) — 0 zgłoszeń, odczytane ręcznie
+w całości, czysto. **Polowanie CR:** exiledBy (exploit/finality,
+exileFromGraveyard) i Kumano end-to-end — zgodne z CR, bez znalezisk.
+
+**Luka procesowa po 25e/f:** brak `HANDOFF_2026-09-25e/f.md` i wpisu w tym
+dzienniku — nie rekonstruuję wstecz. Handoff: `HANDOFF_2026-09-25g.md`.
+
+**Bramy:** `npm test` **6613/6613**, `npm run test:all` **6623/6623**,
+`node --test test/bot-benchmark.test.js` **10/10**, `npm run build**
+61 modułów / **4299,4 kB**.
+
 ## 2026-09-25d — audyt PR #137: jednoczesne odkręcenie
 
 Audyt scalonego #137 (squash `7ccc440`). Krok odkręcania ustalał blokadę na
