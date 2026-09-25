@@ -48,6 +48,12 @@ function stat(state, id, patch) {
   state.objects.set(id, Object.freeze({ ...o, ...patch }));
 }
 
+/** Neutralna mana wroga (fala C): bez odtapowanych landów lockout (+10)
+ * zapala się w KAŻDYM setupie — „bez kontekstu" wymaga landów na recast. */
+function neutralFoeMana(state, n = 3) {
+  for (let i = 0; i < n; i += 1) put(state, `nfi${i}`, 'basic-island', 'p2');
+}
+
 /** Decyzja bota + mapa wyników wariantów (po etykiecie komendy). */
 function decide(state, { playerId = 'p1', params } = {}) {
   const bot = createHeuristicBot({ seed: 7, params });
@@ -125,6 +131,7 @@ test('PMSSB-1/A/F2: token trwale znika (CR 704.5d) — bije stwora tego samego r
   // jawnie (definicja karty-tokena jej nie ustawia na obiekcie).
   stat(state, 'org', { power: 2, toughness: 1 });
   stat(state, 'tok', { power: 2, toughness: 1, isToken: true });
+  neutralFoeMana(state);
   addMana(state, 'p1', 4);
   const { cmd, scores } = decide(state);
   assert.ok(scores['cast_spell(fa->tok)'] > scores['cast_spell(fa->org)'],
@@ -165,6 +172,7 @@ test('PMSSB-1/A anty-over-fix: goły 1/1 wroga bez kontekstu wart DOKŁADNIE 80 
   const state = game();
   put(state, 'fa', 'force-away', 'p1', 'hand');
   put(state, 'g', 'goldmeadow-nomad', 'p2');
+  neutralFoeMana(state);
   addMana(state, 'p1', 4);
   const { scores } = decide(state);
   assert.equal(scores['cast_spell(fa->g)'], 80, `wzorzec = dawna wartość: ${JSON.stringify(scores)}`);
@@ -314,4 +322,198 @@ test('PMSSB-1/B/F4: Invasive-trigger — reuse ETB-removalu bije taniego plaina 
   // butcher −29 = −20 − value(7) + reuse(20) − recast(4×3) − tempo(10).
   assert.equal(scores['resolve_trigger_target(butcher)'], -29,
     `ekonomika reuse-recast: ${JSON.stringify(scores)}`);
+});
+
+// =====================================================================
+// Fala C — timing (F1) + stan (lockout, overflow, lethal, screw)
+// =====================================================================
+
+/** Bounce w danym kroku/czyjej turze — wynik wariantu (do porównań okien). */
+function bounceScoreAt(step, activeId, priorityId, setup) {
+  const state = game(step, activeId, priorityId);
+  setup(state);
+  addMana(state, 'p1', 9);
+  return decide(state).scores;
+}
+
+test('PMSSB-1/C params: timing + lethal + overflow WŁĄCZONE (wartości przemyślane)', () => {
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceTimingSwing, 8);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceLethalDodgeBonus, 100);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceOverflowBonus, 12);
+});
+
+test('PMSSB-1/C/F1: okna instantu — EOT-wroga (88) > main-własna (80) > main-wroga (72)', () => {
+  const setup = (state) => {
+    put(state, 'fa', 'force-away', 'p1', 'hand');
+    put(state, 'g', 'goldmeadow-nomad', 'p2');
+    neutralFoeMana(state);
+  };
+  const eot = bounceScoreAt('end', 'p2', 'p1', setup)['cast_spell(fa->g)'];
+  const own = bounceScoreAt('main1', 'p1', 'p1', setup)['cast_spell(fa->g)'];
+  const foe = bounceScoreAt('main1', 'p2', 'p1', setup)['cast_spell(fa->g)'];
+  assert.equal(eot, 88, `EOT wroga = max-tempo: ${eot}`);
+  assert.equal(own, 80, `main własna = neutralna (pin fali A trzyma): ${own}`);
+  assert.equal(foe, 72, `main wroga = natychmiastowy recast: ${foe}`);
+});
+
+test('PMSSB-1/C/fizzle-off: pump wroga na stosie — bounce pompowanego WYGRYWA (2-za-1)', () => {
+  const state = game('main1', 'p2', 'p1');
+  put(state, 'fa', 'force-away', 'p1', 'hand');
+  put(state, 'pumped', 'goldmeadow-nomad', 'p2');
+  put(state, 'plain', 'goldmeadow-nomad', 'p2');
+  // Brute Force wroga (pump, jeden cel) na stosie, cel: jego pumped.
+  put(state, 'pump', 'brute-force', 'p2', 'stack');
+  const o = state.objects.get('pump');
+  state.objects.set('pump', Object.freeze({ ...o, chosenTargets: ['pumped'] }));
+  state.zones.stack.push('pump');
+  addMana(state, 'p1', 4);
+  const { cmd, scores } = decide(state);
+  assert.ok(scores['cast_spell(fa->pumped)'] > scores['cast_spell(fa->plain)'],
+    `fizzle pompy bije zwykły bounce: ${JSON.stringify(scores)}`);
+  assert.equal(cmd.targets?.[0], 'pumped');
+});
+
+test('PMSSB-1/C/overflow-foe: ręka wroga pełna (7) — bounce z premią odrzutu (92)', () => {
+  const state = game();
+  put(state, 'fa', 'force-away', 'p1', 'hand');
+  put(state, 'g', 'goldmeadow-nomad', 'p2');
+  neutralFoeMana(state);
+  for (let i = 0; i < 7; i += 1) put(state, `fh${i}`, 'goldmeadow-nomad', 'p2', 'hand');
+  addMana(state, 'p1', 4);
+  const { scores } = decide(state);
+  assert.equal(scores['cast_spell(fa->g)'], 92, `80 + 12 za wymuszony odrzut: ${JSON.stringify(scores)}`);
+});
+
+test('PMSSB-1/C/overflow-own: MOJA ręka pełna (7) — bounce własnego gorszy (−126)', () => {
+  const state = game();
+  put(state, 'fa', 'force-away', 'p1', 'hand');
+  put(state, 'g', 'goldmeadow-nomad', 'p1');
+  stat(state, 'g', { power: 2, toughness: 2 });
+  for (let i = 0; i < 6; i += 1) put(state, `mh${i}`, 'goldmeadow-nomad', 'p1', 'hand');
+  addMana(state, 'p1', 4);
+  const { scores } = decide(state);
+  assert.equal(scores['cast_spell(fa->g)'], -126, `−114 − 12 (sam odrzucę): ${JSON.stringify(scores)}`);
+});
+
+test('PMSSB-1/C/attacker: dwóch identycznych 3/3 wroga — bounce ATAKUJĄCEGO (unik-obrażeń)', () => {
+  const state = game('declare_blockers', 'p2', 'p1');
+  put(state, 'fa', 'force-away', 'p1', 'hand');
+  put(state, 'atk', 'highland-game', 'p2');
+  stat(state, 'atk', { power: 3, toughness: 3 });
+  put(state, 'sit', 'highland-game', 'p2');
+  stat(state, 'sit', { power: 3, toughness: 3 });
+  state.combat = { attackers: ['atk'], attackingPlayerId: 'p2', blockers: new Map() };
+  addMana(state, 'p1', 4);
+  const { cmd, scores } = decide(state);
+  assert.ok(scores['cast_spell(fa->atk)'] > scores['cast_spell(fa->sit)'],
+    `atakujący bije siedzącego: ${JSON.stringify(scores)}`);
+  assert.equal(cmd.targets?.[0], 'atk');
+});
+
+test('PMSSB-1/C/combat-rescue: mój 2/2 zablokowany przez 2/2-zabójcę — bounce ZABÓJCY bije 5/5', () => {
+  const state = game('declare_blockers', 'p1', 'p1');
+  put(state, 'fa', 'force-away', 'p1', 'hand');
+  put(state, 'mine', 'goldmeadow-nomad', 'p1');
+  stat(state, 'mine', { power: 2, toughness: 2 });
+  put(state, 'killer', 'goldmeadow-nomad', 'p2');
+  stat(state, 'killer', { power: 2, toughness: 2 });
+  put(state, 'big', 'highland-game', 'p2');
+  stat(state, 'big', { power: 5, toughness: 5, manaCost: 5 });
+  state.combat = {
+    attackers: ['mine'], attackingPlayerId: 'p1',
+    blockers: new Map([['mine', ['killer']]]), blockedAttackers: ['mine'],
+  };
+  addMana(state, 'p1', 4);
+  const { cmd, scores } = decide(state);
+  // PRZED: big (5/5, worth 10) bije killer (2/2, worth 4). PO: ratunek
+  // atakującego (22 + 8) dokłada do killera i odwraca wybór.
+  assert.ok(scores['cast_spell(fa->killer)'] > scores['cast_spell(fa->big)'],
+    `ratunek bojowy odwraca wybór: ${JSON.stringify(scores)}`);
+  assert.equal(cmd.targets?.[0], 'killer');
+});
+
+test('PMSSB-1/C/lethal-dodge: nieblokowany lethal-atakujący — bounce ratuje życie (>150)', () => {
+  const state = game('declare_blockers', 'p2', 'p1');
+  put(state, 'fa', 'force-away', 'p1', 'hand');
+  put(state, 'kill', 'highland-game', 'p2');
+  stat(state, 'kill', { power: 5, toughness: 5, manaCost: 5 });
+  state.players.find((p) => p.id === 'p1').life = 5;
+  state.combat = { attackers: ['kill'], attackingPlayerId: 'p2', blockers: new Map() };
+  addMana(state, 'p1', 4);
+  const { cmd, scores } = decide(state);
+  const s = scores['cast_spell(fa->kill)'];
+  assert.ok(s > 150, `unik-lethal to duża premia: ${s} ${JSON.stringify(scores)}`);
+  assert.equal(cmd.targets?.[0], 'kill');
+});
+
+test('PMSSB-1/C/lockout: wróg bez odtapowanych landów, cel TMC5 — premia tempa (112)', () => {
+  const state = game();
+  put(state, 'fa', 'force-away', 'p1', 'hand');
+  put(state, 'big', 'highland-game', 'p2');
+  stat(state, 'big', { power: 5, toughness: 5, manaCost: 5 });
+  put(state, 'ti1', 'basic-island', 'p2', 'battlefield', { tapped: true });
+  put(state, 'ti2', 'basic-island', 'p2', 'battlefield', { tapped: true });
+  addMana(state, 'p1', 4);
+  const { scores } = decide(state);
+  // 50 + 22 + 20 + M234 (2×5) + lockout (tempo 10) = 112.
+  assert.equal(scores['cast_spell(fa->big)'], 112, `lockout +10: ${JSON.stringify(scores)}`);
+});
+
+test('PMSSB-1/C/screw: Invasive przy 2 landach — ŚMIEĆ bije land (land-drop to życie)', () => {
+  const mk = (lands) => {
+    const s = game();
+    put(s, 'inv', 'invasive-species', 'p1');
+    put(s, 'cheap', 'goldmeadow-nomad', 'p1');
+    put(s, 'land', 'basic-plains', 'p1');
+    for (let i = 0; i < lands - 1; i += 1) put(s, `l${i}`, 'basic-plains', 'p1');
+    s.pendingTriggerTargets.push({
+      playerId: 'p1', sourceId: 'inv', cardId: 'invasive-species',
+      ability: Object.freeze(JSON.parse(JSON.stringify(REGISTRY.get('invasive-species').abilities[0]))),
+      candidates: [], allowNone: false, fixedTargetIds: [], extra: {},
+    });
+    return s;
+  };
+  const screw = decide(mk(2));
+  assert.equal(screw.cmd.targetId, 'cheap', `przy 2 landach wraca śmieć: ${screw.cmd.targetId}`);
+  const rich = decide(mk(4));
+  assert.equal(rich.cmd.targetId, 'land', `przy 4 landach wraca land: ${rich.cmd.targetId}`);
+});
+
+test('PMSSB-1/C/sorcery-precombat: Sea God-s Scorn przed atakiem > po walce (odblokowanie)', () => {
+  const setup = (state) => {
+    put(state, 'scorn', 'sea-gods-scorn', 'p1', 'hand');
+    put(state, 'atk', 'goldmeadow-nomad', 'p1');
+    put(state, 'blk', 'goldmeadow-nomad', 'p2');
+  };
+  const pre = bounceScoreAt('main1', 'p1', 'p1', setup);
+  const post = bounceScoreAt('main2', 'p1', 'p1', setup);
+  const preBest = Math.max(...Object.entries(pre)
+    .filter(([k]) => k.startsWith('cast_spell(scorn')).map(([, v]) => v ?? -Infinity));
+  const postBest = Math.max(...Object.entries(post)
+    .filter(([k]) => k.startsWith('cast_spell(scorn')).map(([, v]) => v ?? -Infinity));
+  assert.ok(preBest > postBest, `precombat (${preBest}) > main2 (${postBest})`);
+});
+
+test('PMSSB-1/C pokrętła: swing/lethal/overflow sterują (nie atrapy)', () => {
+  const mkEot = () => {
+    const state = game('end', 'p2', 'p1');
+    put(state, 'fa', 'force-away', 'p1', 'hand');
+    put(state, 'g', 'goldmeadow-nomad', 'p2');
+    addMana(state, 'p1', 4);
+    return state;
+  };
+  const eot = decide(mkEot()).scores['cast_spell(fa->g)'];
+  const eotFlat = decide(mkEot(), { params: { bounceTimingSwing: 0 } }).scores['cast_spell(fa->g)'];
+  assert.equal(eotFlat, eot - 8, `swing 0 zdejmuje premię EOT: ${eot} → ${eotFlat}`);
+  const mkOver = () => {
+    const state = game();
+    put(state, 'fa', 'force-away', 'p1', 'hand');
+    put(state, 'g', 'goldmeadow-nomad', 'p2');
+    for (let i = 0; i < 7; i += 1) put(state, `fh${i}`, 'goldmeadow-nomad', 'p2', 'hand');
+    addMana(state, 'p1', 4);
+    return state;
+  };
+  const over = decide(mkOver()).scores['cast_spell(fa->g)'];
+  const overFlat = decide(mkOver(), { params: { bounceOverflowBonus: 0 } }).scores['cast_spell(fa->g)'];
+  assert.equal(overFlat, over - 12, `overflow 0 zdejmuje 12: ${over} → ${overFlat}`);
 });

@@ -65,6 +65,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // kosztem przerzucenia (many) i tempem (tura + choroba po powrocie).
   'bounceRecastManaWeight',  // waga 1 many przerzucenia własnego stwora
   'bounceTempoPenalty',      // kara tempa za zdjęcie własnego stwora ze stołu
+  // PMSSB-1/C: timing (F1: okna instantu + sorcery-precombat), unik-lethal
+  // i przepełnienie ręki (CR 514.1 — limit 7, odrzut w cleanupie).
+  'bounceTimingSwing',       // wahnięcie wartości między oknami rzutu
+  'bounceLethalDodgeBonus',  // premia: bounce zdejmuje lethal z atakujących
+  'bounceOverflowBonus',     // premia/kara: pełna ręka (wróg odrzuci / ja odrzucę)
   // M239/2 (audyt PR #83, znalezisko Z3): rodzina „damage w stwora" (baza,
   // waga mocy celu, premia lethal) usunięta — po M237/4 damageTargetValue
   // wycenia obrażenia MODELIEM PER-CEL (bezpieczny blok → do wyceny wartości
@@ -265,6 +270,13 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // mniej niż strata permanenta, więcej niż nic).
   bounceRecastManaWeight: 3,
   bounceTempoPenalty: 10,
+  // PMSSB-1/C (wartości przemyślane): swing 8 (jak top — „pół tempa”,
+  // za słaby by przebić różnicę celów, dość silny by rozstrzygać okna),
+  // lethal 100 (życie > karta, poniżej twardego bana), overflow 12
+  // (symetria z tokenem — wymuszony odrzut ≈ zniszczony zasób).
+  bounceTimingSwing: 8,
+  bounceLethalDodgeBonus: 100,
+  bounceOverflowBonus: 12,
   drawCardValue: 6,
   graveReturnManaWeight: 4,
   // M234 — WŁĄCZONE wprost jako część zlecenia właściciela (efektywność

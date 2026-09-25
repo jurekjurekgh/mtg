@@ -2193,6 +2193,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!mine && victim.cardId) {
       delta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(victim.cardId));
     }
+    // PMSSB-1/C — wymiary STANU celu wroga (wspólne dla cast_spell,
+    // activate_ability i wrappera apply_to_each_target — L41):
+    if (!mine) {
+      // Fizzle ofensywny: wrogi buff na stosie w TEN cel → 2-za-1.
+      if (foeBuffTargetingOwnOnStack(view, victim.id)) delta += P.removalEnemyBase;
+      // Wymiary bojowe: unik-obrażeń + unik-lethal + ratunek bojowy.
+      delta += bounceFoeCombatDelta(view, victim);
+      // Overflow: pełna ręka wroga (7+) — zwrócona karta wymusi odrzut.
+      const foeId = victim.controllerId;
+      if (foeId && handSizeOf(view, foeId) >= 7) delta += P.bounceOverflowBonus;
+      // Lockout: wróg bez odtapowanych landów na recast (TMC celu) —
+      // karta wypada na całą turę; premia = strata tempa (ta sama
+      // jednostka co kara bounceTempoPenalty fali B). Ignoruje dorki
+      // i manę w puli (konserwatywnie — jak M247, tylko lądy).
+      const cost = victim.manaCost ?? 0;
+      if (foeId && cost > 0 && landsOf(view, foeId, { untappedOnly: true }).length < cost) {
+        delta += P.bounceTempoPenalty;
+      }
+    }
     return delta;
   };
   // PMSSB-1/B (F5): czy WROGI efekt na stosie celuje w mój obiekt i
@@ -2272,6 +2291,154 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const reuse = etbEnterBonusValue(view, cardDef(victim.cardId));
       if (fullEconomics) delta += Math.max(0, reuse) - recast;
       else if (reuse > recast) delta += reuse - recast; // oportunistyczny reuse
+    }
+    // PMSSB-1/C (screw): trigger MUSI coś zwrócić — przy ≤2 landach
+    // własny land-drop to życie (brak 3. dropu = screw), więc cofnięcie
+    // landu boli jak strata karty wroga w fali B (ta sama jednostka).
+    // Przy 3+ landach land wraca bez dopłaty (jak dotąd).
+    if (fullEconomics && pureLandTarget(victim) && landsOf(view, view.playerId).length <= 2) {
+      delta -= P.removalEnemyBase;
+    }
+    // PMSSB-1/C (overflow): MOJA pełna ręka (7+, CR 514.1) — zwrócony
+    // własny permanent sam mnie zmusi do odrzutu w cleanupie.
+    if (handSizeOf(view, view.playerId) >= 7) delta -= P.bounceOverflowBonus;
+    return delta;
+  };
+  // PMSSB-1/C: rozmiar ręki (ręka wroga to same liczniki FoW — do
+  // overflow (CR 514.1: limit 7, odrzut w cleanupie) licznik wystarczy).
+  const handSizeOf = (view, playerId) => (view.zones.hand ?? [])
+    .filter((o) => o.controllerId === playerId).length;
+  // PMSSB-1/C: lądy gracza na stole (lockout: tylko ODTAPOWANE wroga —
+  // tapnięte nie rzucą recastu; screw: WSZYSTKIE własne — liczy się
+  // liczba land-dropów, nie gotowa mana).
+  const landsOf = (view, playerId, { untappedOnly = false } = {}) => (view.zones.battlefield ?? [])
+    .filter((o) => o.controllerId === playerId && (o.types ?? []).includes('Land')
+      && (!untappedOnly || !o.tapped));
+  // PMSSB-1/C (F1) — WARTOŚĆ BOUNCE'A ZALEŻY OD CHWILI (jak tapowanie M139):
+  // instant we własnej main = neutralny (EOT dopiero nadejdzie, więc rzut
+  // „za wcześnie" nie traci — 0, żeby nie karać braku cierpliwości, gdy
+  // bot i tak decyduje się rzucić); EOT wroga (krok `end` w JEGO turze) =
+  // max-tempo (karta wraca mu do ręki tuż przed jego turą i jest martwa
+  // cały cykl, +swing); main wroga = natychmiastowy recast w tej samej
+  // fazie głównej (−swing). Sorcery nie ma wyboru okna — premiujemy tylko
+  // rzut PRZED atakiem (własna main1 + gotowy atakujący + odtapowany
+  // potencjalny bloker wroga = odblokowanie obrażeń, +swing); w main2
+  // to zwykły bounce (0). EOT własny = 0 (wróg i tak odtapuje po nas).
+  const bounceCastTimingDelta = (view, timing) => {
+    const myTurnNow = myTurn(view);
+    if (timing === 'sorcery') {
+      if (!myTurnNow || view.turn.phase !== 'precombat_main') return 0;
+      const ready = (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+        && o.kind === 'creature' && canAttackNow(o) && (o.power ?? 0) > 0);
+      const foeBlocker = (view.zones.battlefield ?? []).some((o) => o.controllerId !== view.playerId
+        && o.kind === 'creature' && !o.tapped);
+      return ready && foeBlocker ? P.bounceTimingSwing : 0;
+    }
+    if (timing !== 'instant') return 0;
+    if (!myTurnNow && view.turn.step === 'end') return P.bounceTimingSwing;
+    if (!myTurnNow && (view.turn.phase === 'precombat_main' || view.turn.phase === 'postcombat_main')) {
+      return -P.bounceTimingSwing;
+    }
+    return 0;
+  };
+  // PMSSB-1/C — fizzle OFENSYWNY: wrogi czar/zdolność na stosie celuje
+  // w JEGO WŁASNY permanent (pump/grant/licznik/regeneracja) — bounce celu
+  // sfizzle efekt wroga (CR 608.2b) i daje 2-za-1 (karta wroga w plecy —
+  // ta sama jednostka co ratunek F5). TYLKO cel jednoelementowy: przy
+  // wielu celach efekt rozstrzyga się na pozostałe (CR 608.2b) i fizzle
+  // nie następuje. TYLKO efekty korzystne dla celu: fizzle efektu, który
+  // celowi szkodzi (koszt, obrażenia we własne), POMAGAŁBY wrogowi.
+  // Ograniczenie: czary-aury na stosie pomijamy (widok stosu nie niesie
+  // deskryptora aury — ofiara i tak zwykle dostaje premię z aury F3).
+  const FOE_BUFF_EFFECTS = new Set([
+    'pump', 'pump_enchanted_creature', 'pump_by_gates', 'pump_by_creature_count',
+    'grant_keywords_until_end_of_turn', 'grant_abilities',
+    'grant_protection_until_end_of_turn',
+    'grant_double_strike_on_noncreature_cast_this_turn',
+    'regenerate', 'untap_permanent', 'prevent_damage_this_turn',
+  ]);
+  const foeBuffTargetingOwnOnStack = (view, objId) => {
+    if (!objId) return false;
+    for (const entry of (view.zones.stack ?? [])) {
+      if (entry.controllerId === view.playerId) continue;
+      const targets = entry.targets ?? [];
+      if (targets.length !== 1 || targets[0] !== objId) continue;
+      const effs = [
+        ...((entry.spell?.effects) ?? []),
+        ...((entry.spell?.modes ?? []).flatMap((m) => m.effects ?? [])),
+        ...((Array.isArray(entry.abilityEffects) ? entry.abilityEffects : (entry.abilityEffects ? [entry.abilityEffects] : []))),
+      ];
+      if (effs.some((e) => FOE_BUFF_EFFECTS.has(e?.type))) return true;
+      const counter = effs.find((e) => e?.type === 'add_counter');
+      if (counter && BENEFICIAL_COUNTERS.has(counter.counter ?? '+1/+1')) return true;
+    }
+    return false;
+  };
+  // PMSSB-1/C — wkład zadeklarowanego atakującego WROGA w obrażenia na
+  // mnie: nieblokowany = cała moc, blokowany = tylko trample-faceDamage
+  // z symulacji (jak M218 — ten sam `combatOutcome`). 0, gdy ofiara nie
+  // atakuje albo obrażenia już zostały zadane (CR 510 — po
+  // combat_damage bounce niczego nie ratuje).
+  const foeAttackerFaceContribution = (view, attackerId) => {
+    const combat = view.combat ?? null;
+    if (!combat || combat.damageAssigned) return 0;
+    if (!(combat.attackers ?? []).includes(attackerId)) return 0;
+    if ((combat.unblockedAttackers ?? []).includes(attackerId)) {
+      return objectOnBoard(view, attackerId)?.power ?? 0;
+    }
+    const obj = objectOnBoard(view, attackerId);
+    return obj ? (combatOutcome(view, obj)?.faceDamage ?? 0) : 0;
+  };
+  // PMSSB-1/C — wymiary BOJOWE bounce'a celu wroga (tylko walka w toku):
+  // (a) unik-obrażeń: atakujący wnosi X na moją twarz — zdjęcie go to
+  // +2×X (lustro kary −2×amt za obrażenia we mnie przy damage-spellach);
+  // (b) unik-lethal: suma twarzy wrogich atakujących mnie zabija, a bez
+  // tego atakującego — już nie → premia lethal (życie > karta);
+  // (c) ratunek bojowy: ofiara BLOKUJE mojego atakującego A, który w
+  // symulacji ginie, a po zdjęciu ofiary przeżywa (reszta blokerów nie
+  // dobija: suma mocy < wytrzymałość − obrażenia, żaden bez deathtoucha)
+  // → premia jak ratunek F5 (karta-tempo + utrzymane ciało), bez recastu
+  // (to czar we wroga, nie zwrot własnego). Uproszczenie: arytmetyka mocy
+  // ignoruje first/double strike (konserwatywne — przy równych mocach
+  // premia może nie wpaść, ale nigdy nie wpada na próżno).
+  const bounceFoeCombatDelta = (view, victim) => {
+    const combat = view.combat ?? null;
+    if (!combat || combat.damageAssigned) return 0;
+    let delta = 0;
+    const contribution = foeAttackerFaceContribution(view, victim.id);
+    if (contribution > 0) {
+      delta += 2 * contribution;
+      const totalFace = (combat.attackers ?? [])
+        .reduce((sum, aid) => sum + foeAttackerFaceContribution(view, aid), 0);
+      const life = myLife(view);
+      if (totalFace >= life && totalFace - contribution < life) {
+        delta += P.bounceLethalDodgeBonus;
+      }
+    }
+    // Ratunek bojowy: ofiara blokuje MOJEGO atakującego.
+    const myAttackerId = (combat.attackers ?? []).find((aid) => {
+      const atk = objectOnBoard(view, aid);
+      return atk && atk.controllerId === view.playerId
+        && ((combat.blockers ?? {})[aid] ?? []).includes(victim.id);
+    });
+    if (myAttackerId) {
+      const mine = objectOnBoard(view, myAttackerId);
+      const outcome = mine ? combatOutcome(view, mine) : null;
+      if (outcome?.attackerDies) {
+        const rest = ((combat.blockers ?? {})[myAttackerId] ?? [])
+          .filter((bid) => bid !== victim.id)
+          .map((bid) => objectOnBoard(view, bid))
+          .filter(Boolean);
+        const restPower = rest.reduce((sum, b) => sum + (b.power ?? 0), 0);
+        const toughLeft = (mine.toughness ?? 0) - (mine.damage ?? 0);
+        const deathtouchLeft = rest.some((b) => (b.keywords ?? []).includes('deathtouch'));
+        if (!deathtouchLeft && restPower < toughLeft) {
+          const worth = (mine.power ?? 0) + (mine.toughness ?? 0);
+          delta += P.removalEnemyBase + P.removalEnemyBase + P.removalWorthWeight * worth
+            + P.removalTmcWeight * (mine.manaCost ?? 0)
+            + ((mine.keywords ?? []).includes('deathtouch') ? P.removalDeathtouchBonus : 0);
+        }
+      }
     }
     return delta;
   };
@@ -3227,6 +3394,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       'destroy_permanent', 'exile_permanent', 'exile_target_creature',
     ]);
     const hasRemoval = inner.some((x) => WRAP_REMOVAL.has(x?.type));
+    // PMSSB-1/C (L41 z REMOVAL branch): wrapper z WEWNĘTRZNYM bounce'em
+    // (Sea God's Scorn) liczy te same wymiary co bezpośredni bounce —
+    // siła efektu + wymiary celu + timing rzutu (M233/2 zostawia bazę
+    // −90/+base+worth+M234 bez zmian, dopłaty idą na wierzch).
+    const innerBounce = inner.find((x) => BOUNCE_STRENGTH.has(x?.type)) ?? null;
+    let wrapHadFoeBounce = false;
     if (hasDamage || hasCantBlock || hasRemoval) {
       for (const slot of cmd.targets ?? []) {
         const t3 = objectOnBoard(view, slot);
@@ -3243,7 +3416,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             ? -90
             : P.removalEnemyBase + P.removalWorthWeight * ((t3.power ?? 0) + (t3.toughness ?? 0))
               + enemyRemovalTargetBonus(view, t3); // M234
+          if (innerBounce) {
+            if (mine) score += bounceOwnTargetValue(view, t3);
+            else {
+              score += bounceEffectStrengthBonus(innerBounce.type);
+              score += bounceTargetAdjustments(view, t3);
+              wrapHadFoeBounce = true;
+            }
+          }
         }
+      }
+      if (wrapHadFoeBounce) {
+        const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+        score += bounceCastTimingDelta(view, card?.spell?.timing);
       }
     }
   
@@ -5211,6 +5396,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const scoredEffects = (effects ?? []).map((e) => (
           e && e.amount === 'X' ? { ...e, amount: xResolved } : e
         ));
+        // PMSSB-1/C (F1): timing liczy się RAZ na rzut (nie na cel) —
+        // flaga mówi, czy ten czar odbił ≥1 cel wroga.
+        let bounceCastHadFoeTarget = false;
         for (const effect of scoredEffects) {
           // M91 (uwaga C właściciela): efekty USUWAJĄCE permanent (destroy,
           // exile, bounce) nie miały ŻADNEJ wyceny — czar dostawał domyślne
@@ -5284,6 +5472,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 if (BOUNCE_STRENGTH.has(effect.type)) {
                   score += bounceEffectStrengthBonus(effect.type);
                   score += bounceTargetAdjustments(view, victim);
+                  bounceCastHadFoeTarget = true; // PMSSB-1/C (F1): timing raz na rzut
                 }
               }
             }
@@ -6047,6 +6236,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
         }
+        // PMSSB-1/C (F1): timing bounce'a (okna instantu, sorcery-precombat)
+        // — raz na rzut, tylko gdy czar odbił cel wroga (ratunek własnego
+        // nie czeka na okno: fizzle musi nastąpić PRZED rozstrzygnięciem).
+        if (bounceCastHadFoeTarget) score += bounceCastTimingDelta(view, card?.spell?.timing);
         // CR 702.174 (Gift, M355): obietnica daru to KOSZT — obiecany
         // przeciwnik dostaje realny zasób (tu: token Food). Warianty różnią
         // się wyceną efektów warunkowych (`condition.wasGifted` wyżej), więc
