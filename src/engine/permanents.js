@@ -74,20 +74,35 @@ export function tapObject(state, objectId, playerId, events = null) {
   return updated;
 }
 
-/** Czy permanent nie może się odkręcić z powodu aktywnej blokady (np. Lira). */
-export function isUntapStepLocked(state, object) {
+/**
+ * Czy permanent nie może się odkręcić z powodu aktywnej blokady (np. Lira).
+ *
+ * `sourceSnapshot` to stan źródeł Z CHWILI USTALENIA zbioru (CR 502.3:
+ * determine, then untap simultaneously). Bez migawki pętla `untapControlled`
+ * odkręca źródło wcześniej w Map, `replaceObject` podbija `untapVersion`,
+ * a niezgodność wersji odrzuca blokadę ZANIM sprawdzimy `tapped` — cel tego
+ * samego kontrolera wstaje w tym samym kroku. Wywołania spoza kroku (widok,
+ * efekt) czytają żywy stan.
+ */
+export function isUntapStepLocked(state, object, sourceSnapshot = null) {
   // Stała cecha załącznika, nie ETB trigger; tylko krok odkręcania.
   if (attachmentsAttachedTo(state, object.id).some(a => attachmentGrant(a)?.doesntUntap)) return true;
   return (object.untapLockedBy ?? []).some((sourceId) => {
-    const source = state.objects.get(sourceId);
-    if (!source || source.zone !== 'battlefield') return false;
+    const live = state.objects.get(sourceId);
+    const snap = sourceSnapshot?.get(sourceId);
+    if (!live && !snap) return false;
+    const zone = snap ? snap.zone : live.zone;
+    if (zone !== 'battlefield') return false;
+    const sourceVersion = snap ? snap.untapVersion : (live.untapVersion ?? 0);
+    const sourceTapped = snap ? snap.tapped : live.tapped;
     const version = object.untapLockVersions?.[sourceId];
-    if (version != null && version !== (source.untapVersion ?? 0)) return false;
+    if (version != null && version !== sourceVersion) return false;
     // Lira: blokada działa, gdy źródło jest tapnięte.
-    if (source.tapped) return true;
+    if (sourceTapped) return true;
     // Aura lock (Spectral Prison): blokada działa zawsze, gdy źródło jest
-    // załączoną aurą na polu bitwy (nie wymaga tapped).
-    if (source.kind === 'aura' && source.attachedTo) return true;
+    // załączoną aurą na polu bitwy (nie wymaga tapped). Cecha aury nie zmienia
+    // się w kroku odkręcania, więc czytamy ją z żywego obiektu.
+    if (live?.kind === 'aura' && live.attachedTo) return true;
     return false;
   });
 }
@@ -179,6 +194,18 @@ export function untapControlled(state, playerId, keepTappedIds = []) {
   // mieć znaczenia, a `includes` na liście to O(n) w pętli po permanentach.
   const keepTapped = keepTappedIds instanceof Set ? keepTappedIds : new Set(keepTappedIds);
   const untapped = [];
+  // CR 502.3: ustalenie PRZED jakąkolwiek mutacją. Wersja jedzie razem z
+  // `tapped` — samo zdjęcie tapnięcia nie wystarcza, bo `replaceObject`
+  // podbija `untapVersion` i stara blokada wygląda na wygasłą.
+  const sourceSnapshot = new Map();
+  for (const object of state.objects.values()) {
+    if (object.zone !== 'battlefield') continue;
+    sourceSnapshot.set(object.id, {
+      tapped: Boolean(object.tapped),
+      untapVersion: object.untapVersion ?? 0,
+      zone: object.zone,
+    });
+  }
   for (const object of state.objects.values()) {
     if (object.zone === 'battlefield' && object.controllerId === playerId && (object.tapped || object.summoningSickness || object.dontUntapNextUntapStep)) {
       // M101/B5 (CR 302.6): choroba przywołania zależy WYŁĄCZNIE od ciągłości
@@ -205,7 +232,9 @@ export function untapControlled(state, playerId, keepTappedIds = []) {
         continue; // odkręcony — flaga zużyta bez skutku (nie ma czego odkręcać)
       }
       // Zablokowane stworzenie (np. przez Entrancing Lyre) nie odkręca się.
-      if (cured.tapped && isUntapStepLocked(state, cured)) continue;
+      // Migawka, nie żywy stan — źródło odkręcone wcześniej w tej pętli
+      // nadal jest tapnięte DLA CELÓW ustalenia (CR 502.3).
+      if (cured.tapped && isUntapStepLocked(state, cured, sourceSnapshot)) continue;
       // M431 (CR 502.3): „you may choose not to untap" — NIE odkręcamy tylko
       // tego, co gracz WYRAŹNIE zostawił w tapie (albo co pomijamy w teście
       // jednostkowym, gdy `beginTurn` pominięto). Brak decyzji = odkręcamy.
