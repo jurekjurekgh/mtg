@@ -13088,3 +13088,32 @@ F-4/F-5 opisali w raportach i handoffzie, a nie w `LESSONS`. Chwilowa talia
 audytowa `decks/audyt-batch59.txt` została usunięta razem z przebudowaniem
 `dist/` — jej obecność psuła pięć strażników talii, co jest samo w sobie
 wartościową informacją o tym, że `decks/` nie jest miejscem na śmieci.
+
+## PMSSB-1/C — bounce: timing F1 + stan (sesja 2026-09-25h, branch arena/01a0d980-mtg)
+
+Domknięcie pętli PMSSB-1 (audyt 25h: kierunek x cel x timing x stan, F1–F8).
+Fala C: 12 testów RED → implementacja → 29/29 w pliku → suit 6668/6668 GREEN.
+Trzy nowe pokrętła (`bounceTimingSwing: 8`, `bounceLethalDodgeBonus: 100`,
+`bounceOverflowBonus: 12`); reszta wymiarów na istniejących jednostkach
+(`removalEnemyBase`, `bounceTempoPenalty`, lustro 2xpower). F1: EOT-wroga +8 /
+main-własna 0 / main-wroga −8, sorcery tylko premia precombat; fizzle ofensywny
++22 (tylko cel pojedynczy, CR 608.2b); overflow CR 514.1 ±12; lethal-dodge +100;
+ratunek bojowy jak F5; lockout +10; screw −22 przy ≤2 landach; wrapper
+`apply_to_each_target` (Sea God's Scorn) podpięty pod wspólne helpery (L41).
+Piny: 88/80/72, 92, −126, 112, >150. Setupy „bez kontekstu" dostały
+`neutralFoeMana` (bez landów wroga lockout psuł piny fal A/B).
+Ewaluacja: lustro 48 gier 24–24 (brak sygnału — próbka, nie parametr, por. B6);
+golden-master 0/6 divergencji (hash 227e6cbe stoi, bez regeneracji).
+Manual: `docs/PMSSB.md`. Bez wpisu LESSONS (budżet lektury 99992/100000 —
+precedens PR136: opis w raporcie/dzienniku, nie w rejestrze).
+
+**Incydent narzędziowy (2× w sesji, oba z naprawą).** (a) Migawka platformy
+przywróciła drzewo bez historii git (fresh clone, HEAD 605a8dc) + korupcja
+bajtowa w `heuristic-params.js` (stray `}` na końcu, linia z bajtem 0x86);
+naprawa: `git fetch origin <branch>` + `git reset FETCH_HEAD` (zdalny push
+z poprzedniego sandboxu ocalał) + bajtowa rekonstrukcja linii z REMOTE.
+(b) Równoległe `edit_file` do TEGO SAMEGO pliku gubią edycje (last-write-wins:
+z 5 przeżyła 1, z 3 przeżyła 1) mimo raportów „success" — odtworzone
+i zweryfikowane grepem; reguła: jeden plik = jedna edycja na blok albo
+atomowy skrypt. Commit 26ab5b7 + push; weryfikacja każdej edycji diffem
+przed zaufaniem raportom (jak po poprzednim wyścigu).
